@@ -1,6 +1,6 @@
 "GameInfo"
 {
-	game	"My First HL2MP Mod"
+	game	"Project Heist V2"
 	title	"HALF+LIFE'"
 	title2	"deathmatch mod"
 	nomodels 0
@@ -11,7 +11,6 @@
 		"test_speakers"		1
 		"test_hardware"		1
 	}
-	supportsvr	1
 
 
 	FileSystem
