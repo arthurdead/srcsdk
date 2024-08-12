@@ -9,6 +9,7 @@ $Macro GAMENAME 	"sdk2013ce" [!$SOURCESDK]
 $Macro GAMENAME 	"mod_hl2mp" [$SOURCESDK]
 
 $Include "$SRCDIR\game\client\client_base.vpc"
+$Include "$SRCDIR\coplay\src\coplay.vpc"
 
 $Configuration
 {
