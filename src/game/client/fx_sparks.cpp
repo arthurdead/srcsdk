@@ -40,6 +40,8 @@ PMaterialHandle g_Material_Spark = NULL;
 
 static ConVar fx_drawmetalspark( "fx_drawmetalspark", "1", FCVAR_DEVELOPMENTONLY, "Draw metal spark effects." );
 
+ConVar fx_sparkdlight("fx_sparkdlight", "1", FCVAR_ARCHIVE);
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : &pos - 
@@ -523,14 +525,16 @@ void FX_ElectricSpark( const Vector &pos, int nMagnitude, int nTrailLength, cons
 	// Dlight
 	//
 
-	/*
-	dlight_t *dl= effects->CL_AllocDlight ( 0 );
+	if (fx_sparkdlight.GetBool())
+	{
+		dlight_t* dl = effects->CL_AllocDlight(0);
 
-	dl->origin	= pos;
-	dl->color.r = dl->color.g = dl->color.b = 250;
-	dl->radius	= random->RandomFloat(16,32);
-	dl->die		= gpGlobals->curtime + 0.001;
-	*/
+		dl->origin = pos;
+		dl->color.r = dl->color.g = dl->color.b = 250;
+		float flHalfMag = nMagnitude * .5f;
+		dl->radius = randomgaussian->RandomFloat(100.f * flHalfMag, 5.f * flHalfMag);
+		dl->die = gpGlobals->curtime + 0.05;
+	}
 
 #endif	// !_XBOX
 }
