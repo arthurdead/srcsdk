@@ -507,6 +507,15 @@ void CHud::Shutdown( void )
 	}
 
 	m_HudList.Purge();
+
+	int c = m_Icons.Count();
+	for ( int i = c - 1; i >= 0; i-- )
+	{
+		CHudTexture *tex = m_Icons[ i ];
+		g_HudTextureMemoryPool.Free( tex );
+	}
+	m_Icons.Purge();
+
 	m_bHudTexturesLoaded = false;
 }
 
@@ -549,15 +558,7 @@ void CHud::LevelShutdown( void )
 //-----------------------------------------------------------------------------
 CHud::~CHud()
 {
-	int c = m_Icons.Count();
-	for ( int i = c - 1; i >= 0; i-- )
-	{
-		CHudTexture *tex = m_Icons[ i ];
-		g_HudTextureMemoryPool.Free( tex );
-	}
-	m_Icons.Purge();
-
-	c = m_RenderGroups.Count();
+	int c = m_RenderGroups.Count();
 	for ( int i = c - 1; i >= 0; i-- )
 	{
 		CHudRenderGroup *group = m_RenderGroups[ i ];
