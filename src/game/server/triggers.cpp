@@ -1598,7 +1598,7 @@ void CChangeLevel::WarnAboutActiveLead( void )
 #ifdef SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
 extern ConVar mp_transition_players_percent;
 extern ConVar sv_transitions;
-#endif SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
+#endif //SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
 
 void CChangeLevel::ChangeLevelNow( CBaseEntity *pActivator )
 {
