@@ -4,3 +4,6 @@
 [submodule "src/coplay"]
 	path = src/coplay
 	url = https://github.com/CoaXioN-Games/coplay.git
+[submodule "src/vaudio_minimp3"]
+	path = src/vaudio_minimp3
+	url = https://github.com/Joshua-Ashton/VAudio-MiniMP3.git
