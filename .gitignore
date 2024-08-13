@@ -71,6 +71,9 @@ server_blacklist.txt
 *.ain
 *.jpg
 modelsounds.cache
+videoconfig_linux.cfg
+glshaders.cfg
+transition.cfg
 
 # shader files
 *.tmp
