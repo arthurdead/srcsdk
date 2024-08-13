@@ -39,7 +39,7 @@
 		
 	//SecobMod__MiscFixes: Here we include the globalstate.h file so that darkness mode will work for GLOBAL_ON state.
 	#include "globalstate.h"
-	#include "FileSystem.h"
+	#include "filesystem.h"
 
 #ifdef DEBUG	
 	#include "hl2mp_bot_temp.h"

@@ -278,7 +278,7 @@ void UpdateAIIndexes();
 
 #ifdef SM_AI_FIXES
 	CUtlFixedLinkedList< LagRecord >	m_EntityTrack[ MAX_AIS ]; 
-#endif SM_AI_FIXES
+#endif //SM_AI_FIXES
 
 	// Scratchpad for determining what needs to be restored
 	CBitVec<MAX_PLAYERS>	m_RestorePlayer;
