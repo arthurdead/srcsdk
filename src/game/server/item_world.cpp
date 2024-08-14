@@ -18,6 +18,10 @@
 #include "hl2mp_gamerules.h"
 #endif
 
+#ifdef HEIST_DLL
+#include "heist_gamerules.h"
+#endif
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -98,7 +102,7 @@ BEGIN_DATADESC( CItem )
 	DEFINE_THINKFUNC( Materialize ),
 	DEFINE_THINKFUNC( ComeToRest ),
 
-#if defined( HL2MP ) || defined( TF_DLL )
+#if defined( HL2MP ) || defined( TF_DLL ) || defined( HEIST_DLL )
 	DEFINE_FIELD( m_flNextResetCheckTime, FIELD_TIME ),
 	DEFINE_THINKFUNC( FallThink ),
 #endif
@@ -202,7 +206,7 @@ void CItem::Spawn( void )
 	}
 #endif //CLIENT_DLL
 
-#if defined( HL2MP ) || defined( TF_DLL )
+#if defined( HL2MP ) || defined( TF_DLL ) || defined( HEIST_DLL )
 	SetThink( &CItem::FallThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 #endif
@@ -272,7 +276,7 @@ void CItem::ComeToRest( void )
 	}
 }
 
-#if defined( HL2MP ) || defined( TF_DLL )
+#if defined( HL2MP ) || defined( TF_DLL ) || defined( HEIST_DLL )
 
 //-----------------------------------------------------------------------------
 // Purpose: Items that have just spawned run this think to catch them when 
@@ -328,6 +332,29 @@ void CItem::FallThink ( void )
 		SetThink( &CItem::ComeToRest );
 	}
 #endif // TF
+
+#if defined( HEIST_DLL )
+	bool shouldMaterialize = false;
+	IPhysicsObject *pPhysics = VPhysicsGetObject();
+	if ( pPhysics )
+	{
+		shouldMaterialize = pPhysics->IsAsleep();
+	}
+	else
+	{
+		shouldMaterialize = (GetFlags() & FL_ONGROUND) ? true : false;
+	}
+
+	if ( shouldMaterialize )
+	{
+		SetThink ( NULL );
+
+		m_vOriginalSpawnOrigin = GetAbsOrigin();
+		m_vOriginalSpawnAngles = GetAbsAngles();
+
+		HeistGamerules()->AddLevelDesignerPlacedObject( this );
+	}
+#endif // HL2MP
 }
 
 #endif // HL2MP, TF

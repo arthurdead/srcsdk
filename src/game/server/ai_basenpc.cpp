@@ -88,8 +88,10 @@
 #include "vstdlib/jobthread.h"
 
 #ifdef SM_AI_FIXES
-#include "ilagcompensationmanager.h" 
+#include "ilagcompensationmanager.h"
+#ifdef HL2MP
 #include "hl2mp_gamerules.h"
+#endif
 #endif
 
 #ifdef HL2_EPISODIC

@@ -35,7 +35,12 @@
 #include "gameinterface.h"
 #include "ilagcompensationmanager.h"
 #ifdef SecobMod__SAVERESTORE
+#ifdef HL2MP
 #include "hl2mp_player.h"
+#endif
+#ifdef HEIST_DLL
+#include "heist_player.h"
+#endif
 #endif //SecobMod__SAVERESTORE
 
 #ifdef HL2_DLL
@@ -1644,8 +1649,14 @@ CBasePlayer *pPlayer = (pActivator && pActivator->IsPlayer()) ? ToBasePlayer( pA
 	}
 //===================================================================================
 #ifdef SecobMod__SAVERESTORE
+#ifdef HL2MP
 CHL2MP_Player *p2Player = (CHL2MP_Player *)UTIL_GetLocalPlayer();
 p2Player->SaveTransitionFile();
+#endif
+#ifdef HEIST_DLL
+CHeistPlayer *p2Player = (CHeistPlayer *)UTIL_GetLocalPlayer();
+p2Player->SaveTransitionFile();
+#endif
 Transitioned = true;
 #endif //SecobMod__SAVERESTORE
 

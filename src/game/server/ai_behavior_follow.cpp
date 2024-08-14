@@ -19,7 +19,9 @@
 #include "ai_senses.h"
 
 //SecobMod__MiscFixes: Here we include the hl2mp gamerules so that calls to darkness mode work. Calls to HL2GameRules are also changed to HL2MPRules in this file for darkness mode to work.
+#ifdef HL2MP
 #include "hl2mp_gamerules.h"
+#endif
 
 #ifdef HL2_EPISODIC
 	#include "info_darknessmode_lightsource.h"

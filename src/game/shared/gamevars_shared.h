@@ -5,8 +5,8 @@
 // $NoKeywords: $
 //=============================================================================//
 
-#ifndef CS_GAMEVARS_SHARED_H
-#define CS_GAMEVARS_SHARED_H
+#ifndef GAMEVARS_SHARED_H
+#define GAMEVARS_SHARED_H
 #ifdef _WIN32
 #pragma once
 #endif
@@ -18,4 +18,4 @@ extern ConVar mp_allowspectators;
 extern ConVar friendlyfire;
 extern ConVar mp_fadetoblack;
 
-#endif // CS_GAMEVARS_SHARED_H
+#endif // GAMEVARS_SHARED_H

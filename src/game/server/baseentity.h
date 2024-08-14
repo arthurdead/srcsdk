@@ -87,7 +87,22 @@ class IHasAttributes;
 
 typedef CUtlVector< CBaseEntity* > EntityList_t;
 
-#if defined( HL2_DLL )
+#if defined( HEIST_DLL )
+
+enum Class_T
+{
+	CLASS_NONE = 0,
+
+	CLASS_PLAYER,
+	CLASS_PLAYER_ALLY,
+	CLASS_PLAYER_ALLY_VITAL,
+
+	CLASS_POLICE,
+
+	NUM_AI_CLASSES
+};
+
+#elif defined( HL2_DLL )
 
 // For CLASSIFY
 enum Class_T
@@ -195,6 +210,7 @@ enum Class_T
 	CLASS_NONE = 0,
 	CLASS_PLAYER,
 	CLASS_PLAYER_ALLY,
+	CLASS_PLAYER_ALLY_VITAL,
 	NUM_AI_CLASSES
 };
 

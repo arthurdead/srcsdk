@@ -49,7 +49,9 @@
 #endif
 
 #ifdef SM_AI_FIXES
+#ifdef HL2MP
 #include "hl2mp_gamerules.h"
+#endif
 #endif
 #ifdef PORTAL
 	#include "portal_util_shared.h"

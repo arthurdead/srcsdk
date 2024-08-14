@@ -77,3 +77,7 @@ transition.cfg
 
 # shader files
 *.tmp
+
+# 
+game/debug.sh
+game/test_content/

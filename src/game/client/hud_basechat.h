@@ -92,11 +92,6 @@ struct TextRange
 	bool preserveAlpha;
 };
 
-void StripEndNewlineFromString( char *str );
-void StripEndNewlineFromString( wchar_t *str );
-
-char* ConvertCRtoNL( char *str );
-wchar_t* ConvertCRtoNL( wchar_t *str );
 wchar_t* ReadLocalizedString( bf_read &msg, OUT_Z_BYTECAP(outSizeInBytes) wchar_t *pOut, int outSizeInBytes, bool bStripNewline, OUT_Z_CAP(originalSize) char *originalString = NULL, int originalSize = 0 );
 wchar_t* ReadChatTextString( bf_read &msg, OUT_Z_BYTECAP(outSizeInBytes) wchar_t *pOut, int outSizeInBytes );
 char* RemoveColorMarkup( char *str );
