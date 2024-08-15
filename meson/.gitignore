@@ -1,0 +1,5 @@
+build_*/
+
+*.sublime-workspace
+
+subprojects/webm/

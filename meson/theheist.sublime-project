@@ -1,0 +1,20 @@
+{
+	"folders":
+	[
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"LSP": {
+			"clangd": {
+				"enabled": true,
+				"initializationOptions": {
+					"clangd.compile-commands-dir": "./build_linux",
+				},
+			},
+		},
+		"SublimeLinter.linters.g++.disable": true,
+		"SublimeLinter.linters.clang++.disable": true
+	}
+}

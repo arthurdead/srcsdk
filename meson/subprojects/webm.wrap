@@ -1,0 +1,5 @@
+[wrap-git]
+url = https://github.com/webmproject/libwebm.git
+revision = head
+depth = 1
+method = cmake
