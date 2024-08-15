@@ -83,7 +83,7 @@ $Project
 		$File	"$SRCDIR\game\shared\achievement_saverestore.h"
 		$File	"$SRCDIR\game\shared\achievementmgr.cpp"
 		$File	"$SRCDIR\game\shared\achievementmgr.h"
-		$File	"$SRCDIR\game\shared\achievements_hlx.cpp"
+		$File	"$SRCDIR\game\shared\hl2\achievements_hlx.cpp"
 		$File	"$SRCDIR\game\shared\activitylist.cpp"
 		$File	"$SRCDIR\game\shared\activitylist.h"
 		$File	"ai_activity.cpp"

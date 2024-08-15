@@ -172,7 +172,7 @@ $Project
 		
 	$Folder	"Source Files"
 	{
-		$File	"hl2\C_Func_Monitor.cpp"
+		$File	"C_Func_Monitor.cpp"
 		$File	"geiger.cpp"
 		$File	"history_resource.cpp"
 		$File	"hud_weapon.cpp"
@@ -281,7 +281,7 @@ $Project
 		$File	"c_vehicle_choreo_generic.cpp"
 		$File	"c_vehicle_jeep.cpp"
 		$File	"c_vguiscreen.cpp"
-		$File	"hl2\c_waterbullet.cpp"
+		$File	"c_waterbullet.cpp"
 		$File	"hl2\hud_autoaim.cpp"
 		$File	"C_WaterLODControl.cpp"
 		$File	"c_world.cpp"
