@@ -87,6 +87,7 @@ public:
 	virtual void	StudioFrameAdvance(); // advance animation frame to some time in the future
 	void StudioFrameAdvanceManual( float flInterval );
 	bool	IsValidSequence( int iSequence );
+	virtual void ReachedEndOfSequence() { return; }
 
 	inline float					GetPlaybackRate();
 	inline void						SetPlaybackRate( float rate );
@@ -344,10 +345,12 @@ private:
 	void InputSetLightingOriginRelative( inputdata_t &inputdata );
 	void InputSetLightingOrigin( inputdata_t &inputdata );
 	void InputSetModelScale( inputdata_t &inputdata );
+public:
 
-	bool CanSkipAnimation( void );
+	bool CanSkipAnimation(void); // this shouldnt be private
 
 public:
+
 	CNetworkVar( int, m_nForceBone );
 	CNetworkVector( m_vecForce );
 
