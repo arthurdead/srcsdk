@@ -1,0 +1,86 @@
+//-----------------------------------------------------------------------------
+//	SERVER_SDK2013CE.VPC
+//
+//	Project Script
+//-----------------------------------------------------------------------------
+
+$Macro SRCDIR		"..\.."
+$Macro GAMENAME 	"sdk2013ce" [!$SOURCESDK]
+$Macro GAMENAME 	"mod_hl2mp" [$SOURCESDK]
+
+$Include "$SRCDIR\game\server\server_base.vpc"
+$Include "$SRCDIR\game\server\nav_mesh.vpc" [$SOURCESDK]
+
+$Configuration
+{
+	$Compiler
+	{
+		$AdditionalIncludeDirectories		"$SRCDIR\game\server\heist;$SRCDIR\game\server\heist\vgui;$SRCDIR\game\shared\heist;$SRCDIR\game\shared\heist\vgui"
+		$PreprocessorDefinitions			"$BASE;HEIST_GAME_DLL;SDK2013CE;SM_SP_FIXES;SM_AI_FIXES;SM_IMPROVEMENTS"
+
+	}
+}
+
+$Project "Server"
+{
+	$Folder	"Source Files"
+	{
+		$File	"ai_relationship.cpp"
+		$File	"basegrenade_concussion.cpp"
+		$File	"basegrenade_contact.cpp"
+		$File	"basegrenade_timed.cpp"
+		$File	"EntityFlame.h"
+		$File	"grenadethrown.cpp"
+		$File	"grenadethrown.h"
+		$File	"h_cycler.cpp"
+		$File	"h_cycler.h"
+		$File	"monstermaker.cpp"
+		$File	"monstermaker.h"
+		$File	"physics_bone_follower.h"
+		$File	"$SRCDIR\game\shared\predicted_viewmodel.cpp"
+		$File	"$SRCDIR\game\shared\predicted_viewmodel.h"
+		$File	"$SRCDIR\game\shared\ragdoll_shared.h"
+		$File	"$SRCDIR\game\shared\solidsetdefaults.h"
+		$File	"$SRCDIR\game\shared\hl2\survival_gamerules.cpp"
+		$File	"team_objectiveresource.cpp"
+		$File	"team_objectiveresource.h"
+		$File	"team_spawnpoint.cpp"
+		$File	"team_spawnpoint.h"
+		$File	"team_control_point.cpp"
+		$File	"team_control_point.h"
+		$File	"team_control_point_master.cpp"
+		$File	"team_control_point_master.h"
+		$File	"team_control_point_round.cpp"
+		$File	"team_control_point_round.h"
+		$File	"team_train_watcher.cpp"
+		$File	"team_train_watcher.h"
+		$File	"$SRCDIR\game\shared\teamplayroundbased_gamerules.cpp"
+		$File	"$SRCDIR\game\shared\touchlink.h"
+		$File	"trigger_area_capture.cpp"
+		$File	"trigger_area_capture.h"
+		$File   "$SRCDIR\game\shared\teamplay_round_timer.cpp"
+		$File   "$SRCDIR\game\shared\teamplay_round_timer.h"
+	}
+
+	
+	$Folder "Shared"
+	{
+		$File "./../shared/heist/heist_gamerules.cpp"
+		$File "./../shared/heist/heist_playeranimstate.cpp"
+		$File "./../shared/heist/weapon_heistbase.cpp"
+		$File "./../shared/heist/heist_usermessages.cpp"
+		$File "./../shared/heist/heist_gamemovement.cpp"
+		$File "./../shared/heist/heist_weapon_parse.cpp"
+		$File "./../shared/heist/heist_player_shared.cpp"
+	}
+
+	$Folder "HEIST DLL"
+	{
+		$File   "./heist/heist_gameinterface.cpp"
+		$File   "./heist/heist_client.cpp"
+		$File   "./heist/heist_player.cpp"
+		$File   "./heist/heist_playermove.cpp"
+		$File   "./heist/heist_eventlog.cpp"
+		$File	"./heist/monster_dummy.cpp"
+	}
+}
