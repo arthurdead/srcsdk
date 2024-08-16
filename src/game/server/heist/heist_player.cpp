@@ -455,6 +455,7 @@ bool CHeistPlayer::ClientCommand(const CCommand &args)
 	return BaseClass::ClientCommand( args );
 }
 
+#pragma warning(disable: 4065)
 void CHeistPlayer::CheatImpulseCommands(int iImpulse)
 {
 	switch(iImpulse)
