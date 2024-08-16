@@ -38,13 +38,9 @@ game_shared_dep = declare_dependency(
 	)
 )
 
-shared_library('server',
-	cpp_args: [
+server_lib_dep = declare_dependency(
+	compile_args: [
 		'-DHEIST_GAME_DLL'
-	],
-	cpp_pch: [
-		#join_paths(server_src_dir,'cbase.h'),
-		#join_paths(server_src_dir,'stdafx.cpp')
 	],
 	sources: files(
 		join_paths(server_game_src_dir,'heist_gameinterface.cpp'),
@@ -58,8 +54,29 @@ shared_library('server',
 		server_game_src_dir
 	),
 	dependencies: [
-		game_shared_dep,
+		game_shared_dep
+	]
+)
+
+shared_library('server',
+	cpp_pch: [
+		#join_paths(server_src_dir,'cbase.h'),
+		#join_paths(server_src_dir,'stdafx.cpp')
+	],
+	dependencies: [
+		server_lib_dep,
 		source_game_base.get_variable('source_linux_server_lib_dep')
+	]
+)
+
+shared_library('server_srv',
+	cpp_pch: [
+		#join_paths(server_src_dir,'cbase.h'),
+		#join_paths(server_src_dir,'stdafx.cpp')
+	],
+	dependencies: [
+		server_lib_dep,
+		source_game_base.get_variable('source_linux_dedicated_server_lib_dep')
 	]
 )
 

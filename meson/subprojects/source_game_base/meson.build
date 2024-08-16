@@ -515,6 +515,16 @@ source_linux_server_lib_dep = declare_dependency(
 	]
 )
 
+source_linux_dedicated_server_lib_dep = declare_dependency(
+	compile_args: [
+		'-DDEDICATED',
+		'-DSWDS'
+	],
+	dependencies: [
+		source_linux_server_lib_dep
+	]
+)
+
 source_linux_client_lib_dep = declare_dependency(
 	compile_args: [
 		'-DCLIENT_DLL',
