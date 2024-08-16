@@ -1,0 +1,48 @@
+//-----------------------------------------------------------------------------
+//	CLIENT_HEIST.VPC
+//
+//	Project Script
+//-----------------------------------------------------------------------------
+
+$Macro SRCDIR		"..\.."
+$Macro GAMENAME 	"heist" [!$SOURCESDK]
+//$Macro GAMENAME 	"mod_hl2mp" [$SOURCESDK]
+
+
+$Include "$SRCDIR\game\client\client_base.vpc"
+$Include "$SRCDIR\coplay\src\coplay.vpc"
+
+$Configuration
+{
+	$Compiler
+	{
+		$AdditionalIncludeDirectories		"$SRCDIR\game\client\heist;$SRCDIR\game\client\heist\vgui"
+		$PreprocessorDefinitions			"$BASE;HEIST_CLIENT_DLL;SDK2013CE;SM_SP_FIXES;SM_AI_FIXES;SM_IMPROVEMENTS"
+	}
+}
+
+$Project "Client"
+{
+	$Folder	"Source Files"
+	{
+		-$File	"$SRCDIR\game\shared\weapon_parse_default.cpp"
+
+		$Folder	"HEIST DLL"
+		{
+			$File	"heist/c_heist_player.cpp"
+			$File	"heist/heist_in_main.cpp"
+			$File	"heist/heist_prediction.cpp"
+			$File	"heist/clientmode_heist.cpp"
+			$File	"heist/heist_hud_chat.cpp"
+			$File	"heist/heist_hud_weaponselection.cpp"
+			$File	"heist/vgui/heistviewport.cpp"
+			$File	"heist/vgui/vgui_rootpanel_heist.cpp"
+		}
+		
+		$Folder	"SDK2013CE DLL"
+		{
+			$File	"shaderapihack.h"
+		}
+
+	}
+}
