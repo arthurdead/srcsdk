@@ -51,7 +51,8 @@ shared_library('server',
 		join_paths(server_game_src_dir,'heist_client.cpp'),
 		join_paths(server_game_src_dir,'heist_player.cpp'),
 		join_paths(server_game_src_dir,'heist_playermove.cpp'),
-		join_paths(server_game_src_dir,'heist_eventlog.cpp')
+		join_paths(server_game_src_dir,'heist_eventlog.cpp'),
+		join_paths(server_game_src_dir,'monster_dummy.cpp')
 	),
 	include_directories: include_directories(
 		server_game_src_dir

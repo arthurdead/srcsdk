@@ -29,10 +29,18 @@ enum AI_BaseTaskFailureCodes_t
 	FAIL_NO_TARGET,
 	FAIL_WEAPON_OWNED,
 	FAIL_ITEM_NO_FIND,
+#ifndef AI_USES_NAV_MESH
 	FAIL_NO_HINT_NODE,
+#else
+	FAIL_NO_NAV_AREA,
+#endif
 	FAIL_SCHEDULE_NOT_FOUND,
 	FAIL_NO_ENEMY,
+#ifndef AI_USES_NAV_MESH
 	FAIL_NO_BACKAWAY_NODE,
+#else
+	FAIL_NO_BACKAWAY_AREA,
+#endif
 	FAIL_NO_COVER,
 	FAIL_NO_FLANK,
 	FAIL_NO_SHOOT,
@@ -47,8 +55,16 @@ enum AI_BaseTaskFailureCodes_t
 	FAIL_BAD_ACTIVITY,
 	FAIL_NO_GOAL,
 	FAIL_NO_PLAYER,
+#ifndef AI_USES_NAV_MESH
 	FAIL_NO_REACHABLE_NODE,
+#else
+	FAIL_NO_REACHABLE_AREA,
+#endif
+#ifndef AI_USES_NAV_MESH
 	FAIL_NO_AI_NETWORK,
+#else
+	FAIL_NO_NAV_MESH,
+#endif
 	FAIL_BAD_POSITION,
 	FAIL_BAD_PATH_GOAL,
 	FAIL_STUCK_ONTOP,
@@ -181,7 +197,11 @@ enum sharedtasks_e
 		TASK_CREATE_PENDING_WEAPON,
 
 		// Path to nodes[ m_pHintNode ]
+	#ifndef AI_USES_NAV_MESH
 		TASK_GET_PATH_TO_HINTNODE,
+	#else
+		TASK_GET_PATH_TO_NAV_AREA,
+	#endif
 
 		// Store current position for later reference
 		TASK_STORE_LASTPOSITION,
@@ -218,7 +238,11 @@ enum sharedtasks_e
 		TASK_GET_PATH_TO_SAVEPOSITION_LOS,
 
 		// Path to random node
+	#ifndef AI_USES_NAV_MESH
 		TASK_GET_PATH_TO_RANDOM_NODE,
+	#else
+		TASK_GET_PATH_TO_RANDOM_AREA,
+	#endif
 
 		// Path to source of loudest heard sound that I care about
 		TASK_GET_PATH_TO_BESTSOUND,
@@ -284,10 +308,17 @@ enum sharedtasks_e
 		TASK_FACE_ENEMY,
 
 		// Turn to face nodes[ m_pHintNode ]
+	#ifndef AI_USES_NAV_MESH
 		TASK_FACE_HINTNODE,
 
 		// Play activity associate with the current hint
 		TASK_PLAY_HINT_ACTIVITY,
+	#else
+		TASK_FACE_NAV_AREA,
+
+		// Play activity associate with the current hint
+		TASK_PLAY_AREA_ACTIVITY,
+	#endif
 
 		// Turn to face m_hTargetEnt
 		TASK_FACE_TARGET,
@@ -317,6 +348,7 @@ enum sharedtasks_e
 		TASK_SPECIAL_ATTACK1,
 		TASK_SPECIAL_ATTACK2,
 
+	#ifndef AI_USES_NAV_MESH
 		TASK_FIND_HINTNODE,
 		TASK_FIND_LOCK_HINTNODE,
 
@@ -324,6 +356,15 @@ enum sharedtasks_e
 
 		// Claim m_pHintNode exclusively for this NPC.
 		TASK_LOCK_HINTNODE,
+	#else
+		TASK_FIND_NAV_AREA,
+		TASK_FIND_LOCK_NAV_AREA,
+
+		TASK_CLEAR_NAV_AREA,
+
+		// Claim m_pHintNode exclusively for this NPC.
+		TASK_LOCK_NAV_AREA,
+	#endif
 
 		// Emit an angry sound
 		TASK_SOUND_ANGRY,
@@ -393,6 +434,7 @@ enum sharedtasks_e
 		// Find a place further from the saved position
 		TASK_FIND_BACKAWAY_FROM_SAVEPOSITION,
 
+	#ifndef AI_USES_NAV_MESH
 		// Fine a place to hide from the enemy, anywhere. Use the node system.
 		TASK_FIND_NODE_COVER_FROM_ENEMY,
 
@@ -401,6 +443,16 @@ enum sharedtasks_e
 
 		// data for this one is there MINIMUM aceptable distance to the cover.
 		TASK_FIND_FAR_NODE_COVER_FROM_ENEMY,
+	#else
+		// Fine a place to hide from the enemy, anywhere. Use the node system.
+		TASK_FIND_AREA_COVER_FROM_ENEMY,
+
+		// Find a place to hide from the enemy that's within the specified distance
+		TASK_FIND_NEAR_AREA_COVER_FROM_ENEMY,
+
+		// data for this one is there MINIMUM aceptable distance to the cover.
+		TASK_FIND_FAR_AREA_COVER_FROM_ENEMY,
+	#endif
 
 		// Find a place to go that can't see to where I am now.
 		TASK_FIND_COVER_FROM_ORIGIN,

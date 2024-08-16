@@ -20,9 +20,13 @@ bitmap = subproject('bitmap')
 
 public_dir = join_paths(src_root_dir,'public')
 common_dir = join_paths(src_root_dir,'common')
+
 server_src_dir = join_paths(src_root_dir,'game','server')
+server_navmesh_src_dir = join_paths(server_src_dir,'navmesh')
+
 client_src_dir = join_paths(src_root_dir,'game','client')
 client_game_ctrls_src_dir = join_paths(client_src_dir,'game_controls')
+
 shared_src_dir = join_paths(src_root_dir,'game','shared')
 
 source_game_shared_dep = declare_dependency(
@@ -172,17 +176,18 @@ source_linux_server_lib_dep = declare_dependency(
 	compile_args: [
 		'-DGAME_DLL',
 		'-DSERVER_DLL',
-		'-DUSE_NAV_MESH'
+		'-DUSE_NAV_MESH',
+		'-DAI_USES_NAV_MESH'
 	],
 	sources: files(
 		join_paths(server_src_dir,'ai_activity.cpp'),
 		join_paths(server_src_dir,'ai_baseactor.cpp'),
 		join_paths(server_src_dir,'ai_basehumanoid.cpp'),
 		join_paths(server_src_dir,'ai_basenpc.cpp'),
-		join_paths(server_src_dir,'ai_basenpc_flyer.cpp'),
-		join_paths(server_src_dir,'ai_basenpc_flyer_new.cpp'),
+		#join_paths(server_src_dir,'ai_basenpc_flyer.cpp'),
+		#join_paths(server_src_dir,'ai_basenpc_flyer_new.cpp'),
 		join_paths(server_src_dir,'ai_basenpc_movement.cpp'),
-		join_paths(server_src_dir,'ai_basenpc_physicsflyer.cpp'),
+		#join_paths(server_src_dir,'ai_basenpc_physicsflyer.cpp'),
 		join_paths(server_src_dir,'ai_basenpc_schedule.cpp'),
 		join_paths(server_src_dir,'ai_basenpc_squad.cpp'),
 		join_paths(server_src_dir,'ai_behavior.cpp'),
@@ -197,14 +202,14 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_condition.cpp'),
 		join_paths(server_src_dir,'AI_Criteria.cpp'),
 		join_paths(server_src_dir,'ai_default.cpp'),
-		join_paths(server_src_dir,'ai_dynamiclink.cpp'),
+		#join_paths(server_src_dir,'ai_dynamiclink.cpp'),
 		join_paths(server_src_dir,'ai_event.cpp'),
 		join_paths(server_src_dir,'ai_goalentity.cpp'),
-		join_paths(server_src_dir,'ai_hint.cpp'),
+		#join_paths(server_src_dir,'ai_hint.cpp'),
 		join_paths(server_src_dir,'ai_hull.cpp'),
-		join_paths(server_src_dir,'ai_initutils.cpp'),
+		#join_paths(server_src_dir,'ai_initutils.cpp'),
 		join_paths(server_src_dir,'AI_Interest_Target.cpp'),
-		join_paths(server_src_dir,'ai_link.cpp'),
+		#join_paths(server_src_dir,'ai_link.cpp'),
 		join_paths(server_src_dir,'ai_localnavigator.cpp'),
 		join_paths(server_src_dir,'ai_looktarget.cpp'),
 		join_paths(server_src_dir,'ai_memory.cpp'),
@@ -214,9 +219,9 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_movesolver.cpp'),
 		join_paths(server_src_dir,'ai_namespaces.cpp'),
 		join_paths(server_src_dir,'ai_navigator.cpp'),
-		join_paths(server_src_dir,'ai_network.cpp'),
-		join_paths(server_src_dir,'ai_networkmanager.cpp'),
-		join_paths(server_src_dir,'ai_node.cpp'),
+		#join_paths(server_src_dir,'ai_network.cpp'),
+		#join_paths(server_src_dir,'ai_networkmanager.cpp'),
+		#join_paths(server_src_dir,'ai_node.cpp'),
 		join_paths(server_src_dir,'ai_pathfinder.cpp'),
 		join_paths(server_src_dir,'ai_planesolver.cpp'),
 		join_paths(server_src_dir,'ai_playerally.cpp'),
@@ -238,18 +243,18 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_waypoint.cpp'),
 		join_paths(server_src_dir,'ai_waypoint.h'),
 		join_paths(server_src_dir,'wcedit.cpp'),
-		join_paths(server_src_dir,'nav_area.cpp'),
-		join_paths(server_src_dir,'nav_colors.cpp'),
-		join_paths(server_src_dir,'nav_edit.cpp'),
-		join_paths(server_src_dir,'nav_entities.cpp'),
-		join_paths(server_src_dir,'nav_file.cpp'),
-		join_paths(server_src_dir,'nav_generate.cpp'),
-		join_paths(server_src_dir,'nav_ladder.cpp'),
-		join_paths(server_src_dir,'nav_merge.cpp'),
-		join_paths(server_src_dir,'nav_mesh.cpp'),
-		join_paths(server_src_dir,'nav_mesh_factory.cpp'),
-		join_paths(server_src_dir,'nav_node.cpp'),
-		join_paths(server_src_dir,'nav_simplify.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_area.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_colors.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_edit.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_entities.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_file.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_generate.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_ladder.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_merge.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_mesh.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_mesh_factory.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_node.cpp'),
+		join_paths(server_navmesh_src_dir,'nav_simplify.cpp'),
 		join_paths(server_src_dir,'base_transmit_proxy.cpp'),
 		join_paths(server_src_dir,'baseanimating.cpp'),
 		join_paths(server_src_dir,'BaseAnimatingOverlay.cpp'),
@@ -501,7 +506,8 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(shared_src_dir,'SceneCache.cpp')
 	),
 	include_directories: include_directories(
-		server_src_dir
+		server_src_dir,
+		server_navmesh_src_dir
 	),
 	dependencies: [
 		source_game_shared_dep

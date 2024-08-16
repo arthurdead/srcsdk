@@ -7,7 +7,11 @@
 #include "cbase.h"
 #include "ai_motor.h"
 #include "ai_behavior_fear.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_hint.h"
+#else
+#include "nav_area.h"
+#endif
 #include "ai_navigator.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -16,8 +20,10 @@
 BEGIN_DATADESC( CAI_FearBehavior )
 	DEFINE_FIELD( m_flTimeToSafety, FIELD_TIME ),
 	DEFINE_FIELD( m_flTimePlayerLastVisible, FIELD_TIME ),
+#ifndef AI_USES_NAV_MESH
 	DEFINE_FIELD( m_hSafePlaceHint, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_hMovingToHint, FIELD_EHANDLE ),
+#endif
 	DEFINE_EMBEDDED( m_SafePlaceMoveMonitor ),
 	DEFINE_FIELD( m_flDeferUntil, FIELD_TIME ),
 END_DATADESC();
@@ -36,7 +42,11 @@ ConVar ai_fear_player_dist("ai_fear_player_dist", "720" );
 //-----------------------------------------------------------------------------
 CAI_FearBehavior::CAI_FearBehavior()
 {
+#ifndef AI_USES_NAV_MESH
 	ReleaseAllHints();
+#else
+	ReleaseAllAreas();
+#endif
 	m_SafePlaceMoveMonitor.ClearMark();
 }
 
@@ -58,8 +68,12 @@ void CAI_FearBehavior::StartTask( const Task_t *pTask )
 	{
 	case TASK_FEAR_IN_SAFE_PLACE:
 		// We've arrived! Lock the hint and set the marker. we're safe for now.
+	#ifndef AI_USES_NAV_MESH
 		m_hSafePlaceHint = m_hMovingToHint;
 		m_hSafePlaceHint->Lock( GetOuter() );
+	#else
+		m_pSafePlaceArea = m_pMovingToArea;
+	#endif
 		m_SafePlaceMoveMonitor.SetMark( GetOuter(), FEAR_SAFE_PLACE_TOLERANCE );
 		TaskComplete();
 		break;
@@ -107,17 +121,29 @@ void CAI_FearBehavior::RunTask( const Task_t *pTask )
 			{
 			case 0:// Find the hint node
 				{
+				#ifndef AI_USES_NAV_MESH
 					ReleaseAllHints();
-					CAI_Hint *pHint = FindFearWithdrawalDest();
+				#else
+					ReleaseAllAreas();
+				#endif
+				#ifndef AI_USES_NAV_MESH
+					CAI_Hint *pDest = FindFearWithdrawalDest();
+				#else
+					CNavArea *pDest = FindFearWithdrawalDest();
+				#endif
 
-					if( pHint == NULL )
+					if( pDest == NULL )
 					{
 						TaskFail("Fear: Couldn't find hint node\n");
 						m_flDeferUntil = gpGlobals->curtime + 3.0f;// Don't bang the hell out of this behavior. If we don't find a node, take a short break and run regular AI.
 					}
 					else
 					{
-						m_hMovingToHint.Set( pHint );
+					#ifndef AI_USES_NAV_MESH
+						m_hMovingToHint.Set( pDest );
+					#else
+						m_pMovingToArea = pDest;
+					#endif
 						GetOuter()->TaskInterrupt();
 					}
 				}
@@ -127,11 +153,19 @@ void CAI_FearBehavior::RunTask( const Task_t *pTask )
 				{
 					Assert( m_hMovingToHint != NULL );
 
+				#ifndef AI_USES_NAV_MESH
 					AI_NavGoal_t goal(m_hMovingToHint->GetAbsOrigin());
+				#else
+					AI_NavGoal_t goal(m_pMovingToArea->GetCenter());
+				#endif
 					goal.pTarget = NULL;
 					if( GetNavigator()->SetGoal( goal ) == false )
 					{
+					#ifndef AI_USES_NAV_MESH
 						m_hMovingToHint.Set( NULL );
+					#else
+						m_pMovingToArea = NULL;
+					#endif
 						// Do whatever we'd want to do if we can't find a path
 						/*
 						Msg("Can't path to the Fear Hint!\n");
@@ -149,7 +183,11 @@ void CAI_FearBehavior::RunTask( const Task_t *pTask )
 					}
 					else
 					{
+					#ifndef AI_USES_NAV_MESH
 						GetNavigator()->SetArrivalDirection( m_hMovingToHint->GetAbsAngles() );
+					#else
+						GetNavigator()->SetArrivalDirection( vec3_origin );
+					#endif
 					}
 				}
 				break;
@@ -196,7 +234,9 @@ void CAI_FearBehavior::MarkAsUnsafe()
 	Assert( m_hSafePlaceHint );
 
 	// Disable the node to stop anyone from picking it for a while.
+#ifndef AI_USES_NAV_MESH
 	m_hSafePlaceHint->DisableForSeconds( 5.0f );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -224,6 +264,7 @@ void CAI_FearBehavior::SpoilSafePlace()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 void CAI_FearBehavior::ReleaseAllHints()
 {
 	if( m_hSafePlaceHint )
@@ -245,6 +286,22 @@ void CAI_FearBehavior::ReleaseAllHints()
 
 	m_SafePlaceMoveMonitor.ClearMark();
 }
+#else
+void CAI_FearBehavior::ReleaseAllAreas()
+{
+	if( m_pSafePlaceArea )
+	{
+		m_pSafePlaceArea = NULL;
+	}
+
+	if( m_pMovingToArea )
+	{
+		m_pMovingToArea = NULL;
+	}
+
+	m_SafePlaceMoveMonitor.ClearMark();
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -357,6 +414,7 @@ void CAI_FearBehavior::GatherConditions()
 //-----------------------------------------------------------------------------
 void CAI_FearBehavior::BeginScheduleSelection()
 {
+#ifndef AI_USES_NAV_MESH
 	if( m_hSafePlaceHint )
 	{
 		// We think we're safe. Is it true?
@@ -366,6 +424,17 @@ void CAI_FearBehavior::BeginScheduleSelection()
 			ReleaseAllHints();
 		}
 	}
+#else
+	if( m_pSafePlaceArea )
+	{
+		// We think we're safe. Is it true?
+		if( !IsInASafePlace() )
+		{
+			// no! So mark it so.
+			ReleaseAllAreas();
+		}
+	}
+#endif
 
 	m_flTimePlayerLastVisible = gpGlobals->curtime;
 }
@@ -452,6 +521,7 @@ int CAI_FearBehavior::TranslateSchedule( int scheduleType )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 CAI_Hint *CAI_FearBehavior::FindFearWithdrawalDest()
 {
 	CAI_Hint *pHint;
@@ -486,6 +556,12 @@ CAI_Hint *CAI_FearBehavior::FindFearWithdrawalDest()
 
 	return pHint;
 }
+#else
+CNavArea *CAI_FearBehavior::FindFearWithdrawalDest()
+{
+	return NULL;
+}
+#endif
 
 AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER( CAI_FearBehavior )
 

@@ -313,7 +313,7 @@ public:
 	void MarkAsBlocked( int teamID, CBaseEntity *blocker, bool bGenerateEvent = true );	// An entity can force a nav area to be blocked
 	virtual void UpdateBlocked( bool force = false, int teamID = TEAM_ANY );		// Updates the (un)blocked status of the nav area (throttled)
 	virtual bool IsBlocked( int teamID, bool ignoreNavBlockers = false ) const;
-	void UnblockArea( int teamID = TEAM_ANY );					// clear blocked status for the given team(s)
+	void UnblockArea( int teamID = TEAM_ANY, float delay = 0.0f );					// clear blocked status for the given team(s)
 
 	void CheckFloor( CBaseEntity *ignore );						// Checks if there is a floor under the nav area, in case a breakable floor is gone
 
@@ -350,7 +350,9 @@ public:
 	bool Contains( const CNavArea *area ) const;	
 	bool IsCoplanar( const CNavArea *area ) const;				// return true if this area and given area are approximately co-planar
 	void GetClosestPointOnArea( const Vector * RESTRICT pPos, Vector *close ) const RESTRICT;	// return closest point to 'pos' on this area - returned point in 'close'
-	void GetClosestPointOnArea( const Vector &pos, Vector *close ) const { return GetClosestPointOnArea( &pos, close ); }
+	void GetClosestPointOnArea( const Vector &pos, Vector *close ) const { GetClosestPointOnArea( &pos, close ); }
+	Vector GetClosestPointOnArea( const Vector &pos ) const { Vector close; GetClosestPointOnArea( &pos, &close ); return close; }
+	Vector GetClosestPointOnArea( const CBaseEntity *pEnt ) const { Vector close; GetClosestPointOnArea( &pEnt->GetAbsOrigin(), &close ); return close; }
 	float GetDistanceSquaredToPoint( const Vector &pos ) const;	// return shortest distance between point and this area
 	bool IsDegenerate( void ) const;							// return true if this area is badly formed
 	bool IsRoughlySquare( void ) const;							// return true if this area is approximately square
@@ -389,7 +391,8 @@ public:
 	void ComputePortal( const CNavArea *to, NavDirType dir, Vector *center, float *halfWidth ) const;		// compute portal to adjacent area
 	NavDirType ComputeLargestPortal( const CNavArea *to, Vector *center, float *halfWidth ) const;		// compute largest portal to adjacent area, returning direction
 	void ComputeClosestPointInPortal( const CNavArea *to, NavDirType dir, const Vector &fromPos, Vector *closePos ) const; // compute closest point within the "portal" between to adjacent areas
-	NavDirType ComputeDirection( Vector *point ) const;			// return direction from this area to the given point
+	NavDirType ComputeDirection( const Vector *point ) const;			// return direction from this area to the given point
+	NavDirType ComputeDirection( const Vector &point ) const { return ComputeDirection(&point); }
 
 	//- for hunting algorithm ---------------------------------------------------------------------------
 	void SetClearedTimestamp( int teamID );						// set this area's "clear" timestamp to now
@@ -676,6 +679,7 @@ private:
 	Place m_place;												// place descriptor
 
 	CountdownTimer m_blockedTimer;								// Throttle checks on our blocked state while blocked
+	CountdownTimer m_unblockedDelayTimer;
 	void UpdateBlockedFromNavBlockers( void );					// checks if nav blockers are still blocking the area
 
 	bool m_isUnderwater;										// true if the center of the area is underwater

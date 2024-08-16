@@ -2649,7 +2649,7 @@ bool CNavArea::IsEdge( NavDirType dir ) const
 /**
  * Return direction from this area to the given point
  */
-NavDirType CNavArea::ComputeDirection( Vector *point ) const
+NavDirType CNavArea::ComputeDirection( const Vector *point ) const
 {
 	if (point->x >= m_nwCorner.x && point->x <= m_seCorner.x)
 	{
@@ -4650,6 +4650,8 @@ bool CNavArea::IsBlocked( int teamID, bool ignoreNavBlockers ) const
 //--------------------------------------------------------------------------------------------------------
 void CNavArea::MarkAsBlocked( int teamID, CBaseEntity *blocker, bool bGenerateEvent )
 {
+	m_unblockedDelayTimer.Invalidate();
+
 	if ( blocker && blocker->ClassMatches( "func_nav_blocker" ) )
 	{
 		m_attributeFlags |= NAV_MESH_NAV_BLOCKER;
@@ -4772,38 +4774,44 @@ void CNavArea::UpdateBlockedFromNavBlockers( void )
 
 
 //--------------------------------------------------------------------------------------------------------------
-void CNavArea::UnblockArea( int teamID )
+void CNavArea::UnblockArea( int teamID, float delay )
 {
-	bool wasBlocked = IsBlocked( teamID );
+	if( delay == 0.0f ) {
+		m_unblockedDelayTimer.Invalidate();
 
-	if ( teamID == TEAM_ANY )
-	{
-		for ( int i=0; i<MAX_NAV_TEAMS; ++i )
+		bool wasBlocked = IsBlocked( teamID );
+
+		if ( teamID == TEAM_ANY )
 		{
-			m_isBlocked[ i ] = false;
+			for ( int i=0; i<MAX_NAV_TEAMS; ++i )
+			{
+				m_isBlocked[ i ] = false;
+			}
 		}
-	}
-	else
-	{
-		int teamIdx = teamID % MAX_NAV_TEAMS;
-		m_isBlocked[ teamIdx ] = false;
-	}
-
-	if ( wasBlocked )
-	{
-		IGameEvent * event = gameeventmanager->CreateEvent( "nav_blocked" );
-		if ( event )
+		else
 		{
-			event->SetInt( "area", m_id );
-			event->SetInt( "blocked", false );
-			gameeventmanager->FireEvent( event );
+			int teamIdx = teamID % MAX_NAV_TEAMS;
+			m_isBlocked[ teamIdx ] = false;
 		}
 
-		if ( nav_debug_blocked.GetBool() )
+		if ( wasBlocked )
 		{
-			ConColorMsg( Color( 255, 0, 128, 255 ), "area %d is unblocked by UnblockArea\n", GetID() );
+			IGameEvent * event = gameeventmanager->CreateEvent( "nav_blocked" );
+			if ( event )
+			{
+				event->SetInt( "area", m_id );
+				event->SetInt( "blocked", false );
+				gameeventmanager->FireEvent( event );
+			}
+
+			if ( nav_debug_blocked.GetBool() )
+			{
+				ConColorMsg( Color( 255, 0, 128, 255 ), "area %d is unblocked by UnblockArea\n", GetID() );
+			}
+			TheNavMesh->OnAreaUnblocked( this );
 		}
-		TheNavMesh->OnAreaUnblocked( this );
+	} else {
+		m_unblockedDelayTimer.Start( delay );
 	}
 }
 
@@ -4816,6 +4824,41 @@ void CNavArea::UnblockArea( int teamID )
 void CNavArea::UpdateBlocked( bool force, int teamID )
 {
 	VPROF( "CNavArea::UpdateBlocked" );
+
+	if( m_unblockedDelayTimer.HasStarted() && m_unblockedDelayTimer.IsElapsed() ) {
+		bool wasBlocked = IsBlocked( teamID );
+
+		if ( teamID == TEAM_ANY )
+		{
+			for ( int i=0; i<MAX_NAV_TEAMS; ++i )
+			{
+				m_isBlocked[ i ] = false;
+			}
+		}
+		else
+		{
+			int teamIdx = teamID % MAX_NAV_TEAMS;
+			m_isBlocked[ teamIdx ] = false;
+		}
+
+		if ( wasBlocked )
+		{
+			IGameEvent * event = gameeventmanager->CreateEvent( "nav_blocked" );
+			if ( event )
+			{
+				event->SetInt( "area", m_id );
+				event->SetInt( "blocked", false );
+				gameeventmanager->FireEvent( event );
+			}
+
+			if ( nav_debug_blocked.GetBool() )
+			{
+				ConColorMsg( Color( 255, 0, 128, 255 ), "area %d is unblocked by UnblockArea\n", GetID() );
+			}
+			TheNavMesh->OnAreaUnblocked( this );
+		}
+	}
+
 	if ( !force && !m_blockedTimer.IsElapsed() )
 	{
 		return;
@@ -4870,7 +4913,7 @@ void CNavArea::UpdateBlocked( bool force, int teamID )
 
 	}
 
-	if ( !tr.startsolid )
+	if ( !tr.startsolid && (!m_unblockedDelayTimer.HasStarted() || m_unblockedDelayTimer.IsElapsed()) )
 	{
 		// unblock ourself
 #ifdef TERROR

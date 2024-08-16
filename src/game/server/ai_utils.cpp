@@ -578,3 +578,82 @@ bool CTraceFilterNav::ShouldHitEntity( IHandleEntity *pHandleEntity, int content
 
 	return CTraceFilterSimple::ShouldHitEntity( pHandleEntity, contentsMask );
 }
+
+//----------------------------------------------------------------------------------
+// Purpose: Returns z value of floor below given point (up to fMaxDrop inches below)
+// Input  :
+// Output :
+//----------------------------------------------------------------------------------
+float GetFloorZ(const Vector &origin, float fMaxDrop) 
+{
+	// trace to the ground, then pop up 8 units and place node there to make it
+	// easier for them to connect (think stairs, chairs, and bumps in the floor).
+	// After the routing is done, push them back down.
+	//
+	trace_t	tr;
+	AI_TraceLine ( origin,
+					 origin - Vector ( 0, 0, fMaxDrop ),
+					 MASK_NPCSOLID_BRUSHONLY,
+					 NULL,
+					 COLLISION_GROUP_NONE, 
+					 &tr );
+
+	// This trace is ONLY used if we hit an entity flagged with FL_WORLDBRUSH
+	trace_t	trEnt;
+	AI_TraceLine ( origin,
+					 origin - Vector ( 0, 0, fMaxDrop ),
+					 MASK_NPCSOLID,
+					 NULL,
+					 COLLISION_GROUP_NONE, 
+					 &trEnt );
+
+	
+	// Did we hit something closer than the floor?
+	if ( trEnt.fraction < tr.fraction )
+	{
+		// If it was a world brush entity, copy the node location
+		if ( trEnt.m_pEnt )
+		{
+			CBaseEntity *e = trEnt.m_pEnt;
+			if ( e && ( e->GetFlags() & FL_WORLDBRUSH ) )
+			{
+				tr.endpos = trEnt.endpos;
+			}
+		}
+	}
+
+	return tr.endpos.z;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns z value of floor below given point (up to 384 inches below)
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+float GetFloorZ(const Vector &origin) 
+{
+	return GetFloorZ(origin, 384); 
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns distance of floor from the origin (up to 384 inches)
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+float GetFloorDistance(const Vector &origin) 
+{
+	return (origin.z - GetFloorZ(origin));
+}
+
+Vector PointOnLineNearestPoint(const Vector& vStartPos, const Vector& vEndPos, const Vector& vPoint)
+{
+	Vector	vEndToStart		= (vEndPos - vStartPos);
+	Vector	vOrgToStart		= (vPoint  - vStartPos);
+	float	fNumerator		= DotProduct(vEndToStart,vOrgToStart);
+	float	fDenominator	= vEndToStart.Length() * vOrgToStart.Length();
+	float	fIntersectDist	= vOrgToStart.Length()*(fNumerator/fDenominator);
+	VectorNormalize( vEndToStart ); 
+	Vector	vIntersectPos	= vStartPos + vEndToStart * fIntersectDist;
+
+	return vIntersectPos;
+}

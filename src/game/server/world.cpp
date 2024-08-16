@@ -18,9 +18,13 @@
 #include "activitylist.h"
 #include "eventlist.h"
 #include "eventqueue.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_network.h"
+#endif
 #include "ai_schedule.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_networkmanager.h"
+#endif
 #include "ai_utils.h"
 #include "basetempentity.h"
 #include "world.h"
@@ -661,10 +665,12 @@ void CWorld::Precache( void )
 	// 63 testing
 	engine->LightStyle(63, "a");
 
+#ifndef AI_USES_NAV_MESH
 	// =================================================
 	//	Load and Init AI Networks
 	// =================================================
 	CAI_NetworkManager::InitializeAINetworks();
+#endif
 	// =================================================
 	//	Load and Init AI Schedules
 	// =================================================

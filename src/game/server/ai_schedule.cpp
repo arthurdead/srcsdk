@@ -14,7 +14,9 @@
 #include "ai_activity.h"
 #include "ai_schedule.h"
 #include "ai_default.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_hint.h"
+#endif
 #include "bitstring.h"
 #include "stringregistry.h"
 
@@ -141,7 +143,11 @@ int CAI_SchedulesManager::GetMemoryID(const char *state_name)
 	else if (!stricmp(state_name,"PATH_FAILED"))	{	return bits_MEMORY_PATH_FAILED;		}
 	else if (!stricmp(state_name,"FLINCHED"))		{	return bits_MEMORY_FLINCHED;		}
 	else if (!stricmp(state_name,"TOURGUIDE"))		{	return bits_MEMORY_TOURGUIDE;		}
+#ifndef AI_USES_NAV_MESH
 	else if (!stricmp(state_name,"LOCKED_HINT"))	{	return bits_MEMORY_LOCKED_HINT;		}
+#else
+	else if (!stricmp(state_name,"LOCKED_AREA"))	{	return bits_MEMORY_LOCKED_AREA;		}
+#endif
 	else if (!stricmp(state_name,"TURNING"))		{	return bits_MEMORY_TURNING;			}
 	else if (!stricmp(state_name,"TURNHACK"))		{	return bits_MEMORY_TURNHACK;		}
 	else if (!stricmp(state_name,"CUSTOM4"))		{	return bits_MEMORY_CUSTOM4;			}
@@ -414,6 +420,7 @@ bool CAI_SchedulesManager::LoadSchedulesFromBuffer( const char *prefix, const ch
 					return false;
 				}
 			}
+		#ifndef AI_USES_NAV_MESH
 			else if ( !stricmp( "HintFlags",token ) )
 			{
 				// Skip the ":", but make sure it's present
@@ -435,6 +442,7 @@ bool CAI_SchedulesManager::LoadSchedulesFromBuffer( const char *prefix, const ch
 					return false;
 				}
 			}
+		#endif
 			else if (!stricmp("Interrupts",token) || !strnicmp("TASK_",token,5) )
 			{
 				// a parse error.  Interrupts is the next section, TASK_ is probably the next task, missing task argument?

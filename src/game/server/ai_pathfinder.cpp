@@ -12,14 +12,23 @@
 #include "ai_pathfinder.h"
 
 #include "ai_basenpc.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_node.h"
 #include "ai_network.h"
+#else
+#include "nav_mesh.h"
+#include "nav_pathfind.h"
+#endif
 #include "ai_waypoint.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_link.h"
+#endif
 #include "ai_routedist.h"
 #include "ai_moveprobe.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_dynamiclink.h"
 #include "ai_hint.h"
+#endif
 #include "bitstring.h"
 
 //@todo: bad dependency!
@@ -41,7 +50,9 @@ BEGIN_SIMPLE_DATADESC( CAI_Pathfinder )
 
 	//								m_TriDebugOverlay
 	//								m_bIgnoreStaleLinks
+#ifndef AI_USES_NAV_MESH
   	DEFINE_FIELD( m_flLastStaleLinkCheckTime,		FIELD_TIME ),
+#endif
 	//								m_pNetwork
 
 END_DATADESC()
@@ -75,11 +86,17 @@ Navigation_t MoveBitsToNavType( int fBits )
 
 //-----------------------------------------------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 void CAI_Pathfinder::Init( CAI_Network *pNetwork )
 {
 	Assert( pNetwork );
 	m_pNetwork = pNetwork;
 }
+#else
+void CAI_Pathfinder::Init()
+{
+}
+#endif
 	
 //-----------------------------------------------------------------------------
 //
@@ -103,6 +120,7 @@ bool CAI_Pathfinder::UseStrongOptimizations()
 //-----------------------------------------------------------------------------
 // Computes the link type
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 Navigation_t CAI_Pathfinder::ComputeWaypointType( CAI_Node **ppNodes, int parentID, int destID )
 {
 	Navigation_t navType = NAV_NONE;
@@ -163,7 +181,6 @@ Navigation_t CAI_Pathfinder::ComputeWaypointType( CAI_Node **ppNodes, int parent
 
 	return navType;
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Given an array of parentID's and endID, contruct a linked 
@@ -256,10 +273,11 @@ bool CAI_Pathfinder::IsLinkStillStale(int moveType, CAI_Link *nodeLink)
 
 	return true;
 }
-
+#endif
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 int	CAI_Pathfinder::NearestNodeToNPC()
 {
 	return GetNetwork()->NearestNodeToPoint( GetOuter(), GetAbsOrigin() );
@@ -271,22 +289,44 @@ int CAI_Pathfinder::NearestNodeToPoint( const Vector &vecOrigin )
 {
 	return GetNetwork()->NearestNodeToPoint( GetOuter(), vecOrigin );
 }
+#else
+CNavArea *CAI_Pathfinder::NearestAreaToNPC()
+{
+	return TheNavMesh->GetNearestNavArea( GetOuter() );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+CNavArea *CAI_Pathfinder::NearestAreaToPoint( const Vector &vecOrigin )
+{
+	return TheNavMesh->GetNearestNavArea( vecOrigin, false, 10000.0f, false, true, GetOuter()->GetTeamNumber() );
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Build a path between two nodes
 //-----------------------------------------------------------------------------
-
+#ifndef AI_USES_NAV_MESH
 AI_Waypoint_t *CAI_Pathfinder::FindBestPath(int startID, int endID) 
+#else
+AI_Waypoint_t *CAI_Pathfinder::FindBestPath(CNavArea * startArea, CNavArea * endArea) 
+#endif
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_FindBestPath );
-	
+
+#ifndef AI_USES_NAV_MESH
 	if ( !GetNetwork()->NumNodes() )
 		return NULL;
+#else
+	if ( !TheNavMesh->GetNavAreaCount() )
+		return NULL;
+#endif
 
 #ifdef AI_PERF_MON
 	m_nPerfStatPB++;
 #endif
 
+#ifndef AI_USES_NAV_MESH
 	int nNodes = GetNetwork()->NumNodes();
 	CAI_Node **pAInode = GetNetwork()->AccessNodes();
 
@@ -367,6 +407,70 @@ AI_Waypoint_t *CAI_Pathfinder::FindBestPath(int startID, int endID)
 	}
 
 	return NULL;   
+#else
+	if (startArea == NULL || endArea == NULL)
+		return NULL;
+
+	if (startArea == endArea)
+	{
+		AI_Waypoint_t *pWaypoint = new AI_Waypoint_t( startArea->GetCenter(),
+			0.0f, NAV_GROUND, bits_WP_TO_AREA, startArea );
+		return pWaypoint;
+	}
+
+	if(!IsAreaUsable(startArea) || !IsAreaUsable(endArea)) {
+		return NULL;
+	}
+
+	// make sure path end position is on the ground
+	Vector pathEndPosition = endArea->GetCenter();
+	pathEndPosition.z = endArea->GetZ( &pathEndPosition );
+
+	ShortestPathCost costFunc;
+
+	//
+	// Compute shortest path to goal
+	//
+	CNavArea *closestArea;
+	bool pathToGoalExists = NavAreaBuildPath( startArea, endArea, &pathEndPosition, costFunc, &closestArea );
+
+	if(!IsAreaUsable(closestArea)) {
+		return NULL;
+	}
+
+	int count = 0;
+	CNavArea *area;
+	for( area = closestArea; area; area = area->GetParent() )
+		++count;
+
+	if (count == 0)
+		return NULL;
+
+	if (count == 1)
+	{
+		AI_Waypoint_t *pWaypoint = new AI_Waypoint_t( area->GetCenter(),
+			0.0f, NAV_GROUND, bits_WP_TO_AREA, area );
+		return pWaypoint;
+	}
+
+	AI_Waypoint_t *pOldWaypoint = NULL;
+
+	for( area = closestArea; count && area; area = area->GetParent() )
+	{
+		--count;
+
+		if(!IsAreaUsable(area)) {
+			break;
+		}
+
+		AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t( area->GetCenter(),
+			0.0f, NAV_GROUND, bits_WP_TO_AREA, area );
+		pNewWaypoint->SetNext(pOldWaypoint);
+		pOldWaypoint = pNewWaypoint;
+	}
+
+	return pOldWaypoint;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -374,9 +478,13 @@ AI_Waypoint_t *CAI_Pathfinder::FindBestPath(int startID, int endID)
 //			vDirection is given random path will expand in the given direction,
 //			and then attempt to go generally straight
 //-----------------------------------------------------------------------------
-
+#ifndef AI_USES_NAV_MESH
 AI_Waypoint_t* CAI_Pathfinder::FindShortRandomPath(int startID, float minPathLength, const Vector &directionIn) 
+#else
+AI_Waypoint_t* CAI_Pathfinder::FindShortRandomPath(CNavArea * startArea, float minPathLength, const Vector &directionIn) 
+#endif
 {
+#ifndef AI_USES_NAV_MESH
 	int				pNeighbor[AI_MAX_NODE_LINKS];
 	int				pStaleNeighbor[AI_MAX_NODE_LINKS];
 	int				numNeighbors		= 1;	// The start node
@@ -585,6 +693,11 @@ AI_Waypoint_t* CAI_Pathfinder::FindShortRandomPath(int startID, float minPathLen
 	}
 	// Failed to get a path of full length, but return what we have
 	return MakeRouteFromParents(&nodeParent[0], neighborID);
+#else
+	//TODO!!!! Arthurdead
+
+	return NULL;
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -592,6 +705,7 @@ AI_Waypoint_t* CAI_Pathfinder::FindShortRandomPath(int startID, float minPathLen
 //			 startID node.
 //------------------------------------------------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 bool CAI_Pathfinder::IsLinkUsable(CAI_Link *pLink, int startID)
 {
 	// --------------------------------------------------------------------------
@@ -693,6 +807,17 @@ bool CAI_Pathfinder::IsLinkUsable(CAI_Link *pLink, int startID)
 	}
 	return true;
 }
+#else
+bool CAI_Pathfinder::IsAreaUsable(CNavArea *pArea)
+{
+	if (GetOuter()->IsUnusableArea(pArea))
+	{
+		return false;
+	}
+
+	return true;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 
@@ -724,6 +849,7 @@ static int NPCBuildFlags( CAI_BaseNPC *pNPC, const Vector &vecOrigin )
 //-----------------------------------------------------------------------------
 // Creates a node waypoint
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 AI_Waypoint_t* CAI_Pathfinder::CreateNodeWaypoint( Hull_t hullType, int nodeID, int nodeFlags )
 {
 	CAI_Node *pNode = GetNetwork()->GetNode(nodeID);
@@ -746,12 +872,18 @@ AI_Waypoint_t* CAI_Pathfinder::CreateNodeWaypoint( Hull_t hullType, int nodeID, 
 
 	return new AI_Waypoint_t( pNode->GetPosition(hullType), pNode->GetYaw(), navType, ( bits_WP_TO_NODE | nodeFlags) , nodeID );
 }
-
+#else
+AI_Waypoint_t* CAI_Pathfinder::CreateAreaWaypoint( Hull_t hullType, CNavArea *area, int nodeFlags )
+{
+	return new AI_Waypoint_t( area->GetCenter(), 0.0f, NAV_GROUND, ( bits_WP_TO_AREA | nodeFlags) , area );
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns a route to a node for the given npc with the given 
 //			build flags
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 AI_Waypoint_t* CAI_Pathfinder::RouteToNode(const Vector &vecOrigin, int buildFlags, int nodeID, float goalTolerance)
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_RouteToNode );
@@ -814,10 +946,75 @@ AI_Waypoint_t* CAI_Pathfinder::RouteFromNode(const Vector &vecOrigin, int buildF
 
 	return pResult;
 }
+#else
+AI_Waypoint_t* CAI_Pathfinder::RouteToArea(const Vector &vecOrigin, int buildFlags, CNavArea *area, float goalTolerance)
+{
+	AI_PROFILE_SCOPE( CAI_Pathfinder_RouteToNode );
+	
+	buildFlags |= NPCBuildFlags( GetOuter(), vecOrigin );
+	buildFlags &= ~bits_BUILD_GET_CLOSE;
+
+	// Check if vecOrigin is already at the smallest node
+
+	// FIXME: an equals check is a bit sloppy, this should be a tolerance
+	const Vector &vecNodePosition = area->GetClosestPointOnArea( vecOrigin );
+	if (VectorsAreEqual(vecOrigin, vecNodePosition, 0.5f))
+	{
+		return CreateAreaWaypoint( GetHullType(), area, bits_WP_TO_GOAL );
+	}
+
+	// Otherwise try to build a local route to the node
+	AI_Waypoint_t *pResult = BuildLocalRoute(vecOrigin, 
+		vecNodePosition, NULL, bits_WP_TO_AREA, area, buildFlags, goalTolerance);
+	if ( pResult )
+		pResult->pArea = area;
+	return pResult;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns a route to a node for the given npc with the given 
+//			build flags
+//-----------------------------------------------------------------------------
+
+AI_Waypoint_t* CAI_Pathfinder::RouteFromArea(const Vector &vecOrigin, int buildFlags, CNavArea * area, float goalTolerance)
+{
+	AI_PROFILE_SCOPE( CAI_Pathfinder_RouteFromNode );
+	
+	buildFlags |= NPCBuildFlags( GetOuter(), vecOrigin );
+	buildFlags |= bits_BUILD_GET_CLOSE;
+
+	// Check if vecOrigin is already at the smallest node
+	// FIXME: an equals check is a bit sloppy, this should be a tolerance
+	const Vector &vecNodePosition = area->GetClosestPointOnArea( vecOrigin );
+	if (VectorsAreEqual(vecOrigin, vecNodePosition, 0.5f))
+	{
+		return CreateAreaWaypoint( GetHullType(), area, bits_WP_TO_GOAL );
+	}
+
+	// Otherwise try to build a local route from the node
+	AI_Waypoint_t* pResult = BuildLocalRoute( vecNodePosition, 
+											  vecOrigin, NULL, bits_WP_TO_GOAL, NULL, buildFlags, goalTolerance);
+
+	// Handle case of target hanging over edge near climb dismount
+#if 0
+	if ( !pResult &&
+		 pNode->GetType() == NODE_CLIMB && 
+		 ( vecOrigin - vecNodePosition ).Length2DSqr() < 32.0*32.0 &&
+		 GetOuter()->GetMoveProbe()->CheckStandPosition(vecNodePosition, MASK_NPCSOLID_BRUSHONLY ) )
+	{
+		pResult = new AI_Waypoint_t( vecOrigin, 0, NAV_GROUND, bits_WP_TO_GOAL, area );
+	}
+#endif
+
+	return pResult;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Builds a simple route (no triangulation, no making way)
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 AI_Waypoint_t *CAI_Pathfinder::BuildSimpleRoute( Navigation_t navType, const Vector &vStart, 
 	const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, int nodeID, 
 	int nodeTargetType, float flYaw )
@@ -839,21 +1036,52 @@ AI_Waypoint_t *CAI_Pathfinder::BuildSimpleRoute( Navigation_t navType, const Vec
 	}
 	return NULL;
 }
+#else
+AI_Waypoint_t *CAI_Pathfinder::BuildSimpleRoute( Navigation_t navType, const Vector &vStart, 
+	const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, CNavArea *area, float flYaw )
+{
+	Assert( navType == NAV_JUMP || navType == NAV_CLIMB ); // this is what this here function is for
+	// Only allowed to jump to ground nodes
+	if (area == NULL )
+	{
+		AIMoveTrace_t moveTrace;
+		GetOuter()->GetMoveProbe()->MoveLimit( navType, vStart, vEnd, MASK_NPCSOLID, pTarget, &moveTrace );
 
+		// If I was able to make the move, or the vEnd is the
+		// goal and I'm within tolerance, just move to vEnd
+		if (!IsMoveBlocked(moveTrace))
+		{
+			// It worked so return a route of length one to the endpoint
+			return new AI_Waypoint_t( vEnd, flYaw, navType, endFlags, area );
+		}
+	}
+	return NULL;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Builds a complex route (triangulation, making way)
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 AI_Waypoint_t *CAI_Pathfinder::BuildComplexRoute( Navigation_t navType, const Vector &vStart, 
 	const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, int nodeID, 
 	int buildFlags, float flYaw, float goalTolerance, float maxLocalNavDistance )
+#else
+AI_Waypoint_t *CAI_Pathfinder::BuildComplexRoute( Navigation_t navType, const Vector &vStart, 
+	const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, CNavArea *area, 
+	int buildFlags, float flYaw, float goalTolerance, float maxLocalNavDistance )
+#endif
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_BuildComplexRoute );
 	
 	float flTotalDist = ComputePathDistance( navType, vStart, vEnd );
 	if ( flTotalDist < 0.0625 )
 	{
+	#ifndef AI_USES_NAV_MESH
 		return new AI_Waypoint_t( vEnd, flYaw, navType, endFlags, nodeID );
+	#else
+		return new AI_Waypoint_t( vEnd, flYaw, navType, endFlags, area );
+	#endif
 	}
 	
 	unsigned int collideFlags = (buildFlags & bits_BUILD_IGNORE_NPCS) ? MASK_NPCSOLID_BRUSHONLY : MASK_NPCSOLID;
@@ -872,7 +1100,11 @@ AI_Waypoint_t *CAI_Pathfinder::BuildComplexRoute( Navigation_t navType, const Ve
 		if (!IsMoveBlocked(moveTrace))
 		{
 			// It worked so return a route of length one to the endpoint
+		#ifndef AI_USES_NAV_MESH
 			return new AI_Waypoint_t( vEnd, flYaw, navType, endFlags, nodeID );
+		#else
+			return new AI_Waypoint_t( vEnd, flYaw, navType, endFlags, area );
+		#endif
 		}
 	
 		// ...or the vEnd is thegoal and I'm within tolerance, just move to vEnd
@@ -880,7 +1112,11 @@ AI_Waypoint_t *CAI_Pathfinder::BuildComplexRoute( Navigation_t navType, const Ve
 			 (endFlags & bits_WP_TO_GOAL) && 
 			 moveTrace.flDistObstructed <= goalTolerance ) 
 		{
+		#ifndef AI_USES_NAV_MESH
 			return new AI_Waypoint_t( vEnd, flYaw, navType, endFlags, nodeID );
+		#else
+			return new AI_Waypoint_t( vEnd, flYaw, navType, endFlags, area );
+		#endif
 		}
 
 		AI_PROFILE_SCOPE_END();
@@ -897,8 +1133,13 @@ AI_Waypoint_t *CAI_Pathfinder::BuildComplexRoute( Navigation_t navType, const Ve
 			{
 				float flTotalDist = ComputePathDistance( navType, vStart, vEnd );
 
+			#ifndef AI_USES_NAV_MESH
 				AI_Waypoint_t *triangRoute = BuildTriangulationRoute(vStart, vEnd, pTarget, 
 					endFlags, nodeID, flYaw, flTotalDist - moveTrace.flDistObstructed, navType);
+			#else
+				AI_Waypoint_t *triangRoute = BuildTriangulationRoute(vStart, vEnd, pTarget, 
+					endFlags, area, flYaw, flTotalDist - moveTrace.flDistObstructed, navType);
+			#endif
 
 				if (triangRoute)
 				{
@@ -923,7 +1164,11 @@ AI_Waypoint_t *CAI_Pathfinder::BuildComplexRoute( Navigation_t navType, const Ve
 				// If I can clear the way return a route of length one to the target location
 				if ( CanGiveWay(vStart, vEnd, moveTrace.pObstruction) )
 				{
+				#ifndef AI_USES_NAV_MESH
 					return new AI_Waypoint_t( vEnd, flYaw, navType, endFlags, nodeID );
+				#else
+					return new AI_Waypoint_t( vEnd, flYaw, navType, endFlags, area );
+				#endif
 				}
 			}
 		}
@@ -938,6 +1183,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildComplexRoute( Navigation_t navType, const Ve
 // Input  :
 // Output : Returns a route if sucessful or NULL if no local route was possible
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 AI_Waypoint_t *CAI_Pathfinder::BuildJumpRoute(const Vector &vStart, const Vector &vEnd, 
 	const CBaseEntity *pTarget, int endFlags, int nodeID, int buildFlags, float flYaw)
 {
@@ -986,7 +1232,56 @@ AI_Waypoint_t *CAI_Pathfinder::BuildFlyRoute(const Vector &vStart, const Vector 
 	return BuildComplexRoute( NAV_FLY, vStart, vEnd, pTarget, 
 		endFlags, nodeID, buildFlags, flYaw, goalTolerance, MAX_LOCAL_NAV_DIST_FLY[UseStrongOptimizations()] );
 }
+#else
+AI_Waypoint_t *CAI_Pathfinder::BuildJumpRoute(const Vector &vStart, const Vector &vEnd, 
+	const CBaseEntity *pTarget, int endFlags, CNavArea *area, int buildFlags, float flYaw)
+{
+	// Only allowed to jump to ground nodes
+	return BuildSimpleRoute( NAV_JUMP, vStart, vEnd, pTarget, 
+		endFlags, area, flYaw );
+}
 
+//-----------------------------------------------------------------------------
+// Purpose: Attempts to build a climb route between vStart
+//			and vEnd, ignoring entity pTarget
+// Input  :
+// Output : Returns a route if sucessful or NULL if no climb route was possible
+//-----------------------------------------------------------------------------
+AI_Waypoint_t *CAI_Pathfinder::BuildClimbRoute(const Vector &vStart, const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, CNavArea *area, int buildFlags, float flYaw)
+{
+	// Only allowed to climb to climb nodes
+	return BuildSimpleRoute( NAV_CLIMB, vStart, vEnd, pTarget, 
+		endFlags, area, flYaw );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Attempts to build a ground route between vStart
+//			and vEnd, ignoring entity pTarget the the given tolerance
+// Input  :
+// Output : Returns a route if sucessful or NULL if no ground route was possible
+//-----------------------------------------------------------------------------
+AI_Waypoint_t *CAI_Pathfinder::BuildGroundRoute(const Vector &vStart, const Vector &vEnd, 
+	const CBaseEntity *pTarget, int endFlags, CNavArea * area, int buildFlags, float flYaw, float goalTolerance)
+{
+	return BuildComplexRoute( NAV_GROUND, vStart, vEnd, pTarget, 
+		endFlags, area, buildFlags, flYaw, goalTolerance, MAX_LOCAL_NAV_DIST_GROUND[UseStrongOptimizations()] );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Attempts to build a fly route between vStart
+//			and vEnd, ignoring entity pTarget the the given tolerance
+// Input  :
+// Output : Returns a route if sucessful or NULL if no ground route was possible
+//-----------------------------------------------------------------------------
+AI_Waypoint_t *CAI_Pathfinder::BuildFlyRoute(const Vector &vStart, const Vector &vEnd, 
+	const CBaseEntity *pTarget, int endFlags, CNavArea *area, int buildFlags, float flYaw, float goalTolerance)
+{
+	return BuildComplexRoute( NAV_FLY, vStart, vEnd, pTarget, 
+		endFlags, area, buildFlags, flYaw, goalTolerance, MAX_LOCAL_NAV_DIST_FLY[UseStrongOptimizations()] );
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Attempts to build a route between vStart and vEnd, requesting the
@@ -1043,7 +1338,11 @@ AI_Waypoint_t *CAI_Pathfinder::BuildTriangulationRoute(
 	  const Vector &vEnd,	// to where
 	  const CBaseEntity *pTarget,	// an entity I can ignore
 	  int endFlags,			// add these WP flags to the last waypoint
+#ifndef AI_USES_NAV_MESH
 	  int nodeID,			// node id for the last waypoint
+#else
+	  CNavArea* area,
+#endif
 	  float flYaw,			// ideal yaw for the last waypoint
 	  float flDistToBlocker,// how far away is the obstruction from the start?
 	  Navigation_t navType)
@@ -1057,10 +1356,17 @@ AI_Waypoint_t *CAI_Pathfinder::BuildTriangulationRoute(
 	//-----------------------------------------------------------------------------
 	// it worked, create a route
 	//-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 	AI_Waypoint_t *pWayPoint2 = new AI_Waypoint_t( vEnd, flYaw, navType, endFlags, nodeID );
 
 	// FIXME: Compute a reasonable yaw here
 	AI_Waypoint_t *waypoint1 = new AI_Waypoint_t( vApex, 0, navType, bits_WP_TO_DETOUR, NO_NODE );
+#else
+	AI_Waypoint_t *pWayPoint2 = new AI_Waypoint_t( vEnd, flYaw, navType, endFlags, area );
+
+	// FIXME: Compute a reasonable yaw here
+	AI_Waypoint_t *waypoint1 = new AI_Waypoint_t( vApex, 0, navType, bits_WP_TO_DETOUR, NULL );
+#endif
 	waypoint1->SetNext(pWayPoint2);
 
 	return waypoint1;
@@ -1141,12 +1447,20 @@ AI_Waypoint_t *CAI_Pathfinder::BuildRouteThroughPoints( Vector *vecPoints, int n
 		if ( pHeadRoute == NULL )
 		{
 			// Start a new route head
+		#ifndef AI_USES_NAV_MESH
 			pFirstRoute = pHeadRoute = new AI_Waypoint_t( vecPoints[nCurIndex], 0.0f, navType, bits_WP_TO_DETOUR, NO_NODE );
+		#else
+			pFirstRoute = pHeadRoute = new AI_Waypoint_t( vecPoints[nCurIndex], 0.0f, navType, bits_WP_TO_DETOUR, NULL );
+		#endif
 		}
 		else
 		{
 			// Link a new waypoint into the path
+		#ifndef AI_USES_NAV_MESH
 			AI_Waypoint_t *pNewNode = new AI_Waypoint_t( vecPoints[nCurIndex], 0.0f, navType, bits_WP_TO_DETOUR|bits_WP_DONT_SIMPLIFY, NO_NODE );
+		#else
+			AI_Waypoint_t *pNewNode = new AI_Waypoint_t( vecPoints[nCurIndex], 0.0f, navType, bits_WP_TO_DETOUR|bits_WP_DONT_SIMPLIFY, NULL );
+		#endif
 			pHeadRoute->SetNext( pNewNode );
 			pHeadRoute = pNewNode;
 		}
@@ -1154,7 +1468,11 @@ AI_Waypoint_t *CAI_Pathfinder::BuildRouteThroughPoints( Vector *vecPoints, int n
 		// See if we're done
 		if ( nNextIndex == nEndIndex )
 		{
+		#ifndef AI_USES_NAV_MESH
 			AI_Waypoint_t *pNewNode = new AI_Waypoint_t( vecPoints[nEndIndex], 0.0f, navType, bits_WP_TO_DETOUR, NO_NODE );
+		#else
+			AI_Waypoint_t *pNewNode = new AI_Waypoint_t( vecPoints[nEndIndex], 0.0f, navType, bits_WP_TO_DETOUR, NULL );
+		#endif
 			pHeadRoute->SetNext( pNewNode );
 			pHeadRoute = pNewNode;
 			break;
@@ -1315,17 +1633,23 @@ AI_Waypoint_t *CAI_Pathfinder::BuildOBBAvoidanceRoute(	const Vector &vStart, con
 // Input  :
 // Output : Returns a route if successful or NULL if no local route was possible
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 AI_Waypoint_t *CAI_Pathfinder::BuildLocalRoute(const Vector &vStart, const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, int nodeID, int buildFlags, float goalTolerance)
+#else
+AI_Waypoint_t *CAI_Pathfinder::BuildLocalRoute(const Vector &vStart, const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, CNavArea *area, int buildFlags, float goalTolerance)
+#endif
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_BuildLocalRoute );
 
 	// Get waypoint yaw
 	float flYaw;
+#ifndef AI_USES_NAV_MESH
 	if (nodeID != NO_NODE)
 	{
 		flYaw = GetNetwork()->GetNode(nodeID)->GetYaw();
 	}
 	else
+#endif
 	{
 		flYaw = 0;
 	}
@@ -1333,7 +1657,11 @@ AI_Waypoint_t *CAI_Pathfinder::BuildLocalRoute(const Vector &vStart, const Vecto
 	// Try a ground route if requested
 	if (buildFlags & bits_BUILD_GROUND)
 	{
+	#ifndef AI_USES_NAV_MESH
 		AI_Waypoint_t *groundRoute = BuildGroundRoute(vStart,vEnd,pTarget,endFlags,nodeID,buildFlags,flYaw,goalTolerance);
+	#else
+		AI_Waypoint_t *groundRoute = BuildGroundRoute(vStart,vEnd,pTarget,endFlags,area,buildFlags,flYaw,goalTolerance);
+	#endif
 
 		if (groundRoute)
 		{
@@ -1344,7 +1672,11 @@ AI_Waypoint_t *CAI_Pathfinder::BuildLocalRoute(const Vector &vStart, const Vecto
 	// Try a fly route if requested
 	if ( buildFlags & bits_BUILD_FLY )
 	{
+	#ifndef AI_USES_NAV_MESH
 		AI_Waypoint_t *flyRoute = BuildFlyRoute(vStart,vEnd,pTarget,endFlags,nodeID,buildFlags,flYaw,goalTolerance);
+	#else
+		AI_Waypoint_t *flyRoute = BuildFlyRoute(vStart,vEnd,pTarget,endFlags,area,buildFlags,flYaw,goalTolerance);
+	#endif
 
 		if (flyRoute)
 		{
@@ -1355,7 +1687,11 @@ AI_Waypoint_t *CAI_Pathfinder::BuildLocalRoute(const Vector &vStart, const Vecto
 	// Try a jump route if NPC can jump and requested
 	if ((buildFlags & bits_BUILD_JUMP) && (CapabilitiesGet() & bits_CAP_MOVE_JUMP))
 	{
+	#ifndef AI_USES_NAV_MESH
 		AI_Waypoint_t *jumpRoute = BuildJumpRoute(vStart,vEnd,pTarget,endFlags,nodeID,buildFlags,flYaw);
+	#else
+		AI_Waypoint_t *jumpRoute = BuildJumpRoute(vStart,vEnd,pTarget,endFlags,area,buildFlags,flYaw);
+	#endif
 
 		if (jumpRoute)
 		{
@@ -1366,7 +1702,11 @@ AI_Waypoint_t *CAI_Pathfinder::BuildLocalRoute(const Vector &vStart, const Vecto
 	// Try a climb route if NPC can climb and requested
 	if ((buildFlags & bits_BUILD_CLIMB)	&& (CapabilitiesGet() & bits_CAP_MOVE_CLIMB))
 	{
+	#ifndef AI_USES_NAV_MESH
 		AI_Waypoint_t *climbRoute = BuildClimbRoute(vStart,vEnd,pTarget,endFlags,nodeID,buildFlags,flYaw);
+	#else
+		AI_Waypoint_t *climbRoute = BuildClimbRoute(vStart,vEnd,pTarget,endFlags,area,buildFlags,flYaw);
+	#endif
 		
 		if (climbRoute)
 		{
@@ -1421,22 +1761,35 @@ AI_Waypoint_t *CAI_Pathfinder::BuildRoute( const Vector &vStart, const Vector &v
 	//  First try a local route 
 	if ( bTryLocal && CanUseLocalNavigation() )
 	{
+	#ifndef AI_USES_NAV_MESH
 		pResult = BuildLocalRoute(vStart, vEnd, pTarget, 
 								  bits_WP_TO_GOAL, NO_NODE, 
 								  buildFlags, goalTolerance);
+	#else
+		pResult = BuildLocalRoute(vStart, vEnd, pTarget, 
+								  bits_WP_TO_GOAL, NULL, 
+								  buildFlags, goalTolerance);
+	#endif
 	}
 
 	//  If the fails, try a node route
 	if ( !pResult )
 	{
+	#ifndef AI_USES_NAV_MESH
 		pResult = BuildNodeRoute( vStart, vEnd, buildFlags, goalTolerance );
+	#else
+		pResult = BuildAreaRoute( vStart, vEnd, buildFlags, goalTolerance );
+	#endif
 	}
 
+#ifndef AI_USES_NAV_MESH
 	m_bIgnoreStaleLinks = false;
+#endif
 
 	return pResult;
 }
 
+#ifndef AI_USES_NAV_MESH
 void CAI_Pathfinder::UnlockRouteNodes( AI_Waypoint_t *pPath )
 {
 	CAI_Node *pNode;
@@ -1447,6 +1800,7 @@ void CAI_Pathfinder::UnlockRouteNodes( AI_Waypoint_t *pPath )
 		pPath = pPath->GetNext();
 	}
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Attempts to build a radial route around the given center position
@@ -1514,8 +1868,12 @@ AI_Waypoint_t *CAI_Pathfinder::BuildRadialRoute( const Vector &vStartPos, const 
 		vNextPos.y	+= flRadius * sin( flCurAngle );
 
 		// Build a route from the last position to the current one
+	#ifndef AI_USES_NAV_MESH
 		pNextRoute = BuildLocalRoute( vLastPos, vNextPos, NULL, NULL, NO_NODE, fRouteBits, goalTolerance);
-		
+	#else
+		pNextRoute = BuildLocalRoute( vLastPos, vNextPos, NULL, NULL, NULL, fRouteBits, goalTolerance);
+	#endif
+
 		// If we can't find a route, we failed
 		if ( pNextRoute == NULL )
 			return NULL;
@@ -1547,7 +1905,11 @@ AI_Waypoint_t *CAI_Pathfinder::BuildRadialRoute( const Vector &vStartPos, const 
 		return NULL;
 
 	// Append a path to the final position
+#ifndef AI_USES_NAV_MESH
 	pLastRoute = BuildLocalRoute( vLastPos, vGoalPos, NULL, NULL, NO_NODE, bAirRoute ? bits_BUILD_FLY : bits_BUILD_GROUND, goalTolerance );	
+#else
+	pLastRoute = BuildLocalRoute( vLastPos, vGoalPos, NULL, NULL, NULL, bAirRoute ? bits_BUILD_FLY : bits_BUILD_GROUND, goalTolerance );	
+#endif
 	if ( pLastRoute == NULL )
 		return NULL;
 
@@ -1566,6 +1928,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildRadialRoute( const Vector &vStartPos, const 
 //-----------------------------------------------------------------------------
 // Checks a stale navtype route 
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 bool CAI_Pathfinder::CheckStaleNavTypeRoute( Navigation_t navType, const Vector &vStart, const Vector &vEnd )
 {
 	AIMoveTrace_t moveTrace;
@@ -1602,8 +1965,6 @@ bool CAI_Pathfinder::CheckStaleNavTypeRoute( Navigation_t navType, const Vector 
 
 	return false;
 }
-
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Checks if a local route (not using nodes) between vStart
@@ -1669,12 +2030,14 @@ bool CAI_Pathfinder::CheckStaleRoute(const Vector &vStart, const Vector &vEnd, i
 	// Man do we suck! Couldn't get there by any route
 	return false;
 }
+#endif
 
 //-----------------------------------------------------------------------------
 
 #define MAX_NODE_TRIES 4
 #define MAX_TRIANGULATIONS 2
 
+#ifndef AI_USES_NAV_MESH
 class CPathfindNearestNodeFilter : public INearestNodeFilter
 {
 public:
@@ -1741,8 +2104,9 @@ public:
 
 	AI_Waypoint_t *	m_pRoute;
 };
+#endif
 
-
+#ifndef AI_USES_NAV_MESH
 AI_Waypoint_t *CAI_Pathfinder::BuildNearestNodeRoute( const Vector &vGoal, bool bToNode, int buildFlags, float goalTolerance, int *pNearestNode )
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_BuildNearestNodeRoute );
@@ -1823,6 +2187,97 @@ AI_Waypoint_t *CAI_Pathfinder::BuildNodeRoute(const Vector &vStart, const Vector
 	DbgNavMsg(  GetOuter(), "Node pathfind succeeded\n");
 	return srcRoute;
 }
+#else
+AI_Waypoint_t *CAI_Pathfinder::BuildNearestAreaRoute( const Vector &vGoal, bool bToArea, int buildFlags, float goalTolerance, CNavArea **pNearestArea )
+{
+	AI_PROFILE_SCOPE( CAI_Pathfinder_BuildNearestNodeRoute );
+
+	CNavArea *area = TheNavMesh->GetNearestNavArea( vGoal, false, 10000.0f, false, true, GetOuter()->GetTeamNumber() );
+	if(!area || !IsAreaUsable(area)) {
+		return NULL;
+	}
+
+	if(pNearestArea) {
+		*pNearestArea = area;
+	}
+
+	AI_Waypoint_t *route = NULL;
+
+	if ( bToArea )
+		route = RouteToArea( vGoal, buildFlags, area, goalTolerance );
+	else
+		route = RouteFromArea( vGoal, buildFlags, area, goalTolerance );
+
+	return route;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Attemps to build a node route between vStart and vEnd
+// Input  :
+// Output : Returns a route if sucessful or NULL if no node route was possible
+//-----------------------------------------------------------------------------
+
+AI_Waypoint_t *CAI_Pathfinder::BuildAreaRoute(const Vector &vStart, const Vector &vEnd, int buildFlags, float goalTolerance)
+{
+	AI_PROFILE_SCOPE( CAI_Pathfinder_BuildNodeRoute );
+
+	// ----------------------------------------------------------------------
+	//  Make sure network has nodes
+	// ----------------------------------------------------------------------
+	if (TheNavMesh->GetNavAreaCount() == 0)
+		return NULL;
+
+	// ----------------------------------------------------------------------
+	//	Find the nearest source node
+	// ----------------------------------------------------------------------
+	CNavArea *srcArea;
+	AI_Waypoint_t *srcRoute = BuildNearestAreaRoute( vStart, true, buildFlags, goalTolerance, &srcArea );
+	if ( !srcRoute )
+	{
+		DbgNavMsg1( GetOuter(), "Node pathfind failed, no route to source %p\n", srcArea );
+		return NULL;
+	}
+
+	// ----------------------------------------------------------------------
+	//	Find the nearest destination node
+	// ----------------------------------------------------------------------
+	CNavArea *destArea;
+	AI_Waypoint_t *destRoute = BuildNearestAreaRoute( vEnd, false, buildFlags, goalTolerance, &destArea );
+	if ( !destRoute )
+	{
+		DeleteAll( srcRoute );
+		DbgNavMsg1( GetOuter(), "Node pathfind failed, no route to dest %p\n", destArea );
+		return NULL;
+	}
+
+	// ----------------------------------------------------------------------
+	// If source and destination are the same, we can bypass finding a route
+	// ----------------------------------------------------------------------
+	if (destArea == srcArea)
+	{
+		AddWaypointLists(srcRoute,destRoute);
+		DbgNavMsg(  GetOuter(), "Node pathfind succeeded: dest == source\n");
+		return srcRoute;
+	}
+
+	AI_Waypoint_t *path = FindBestPath(srcArea, destArea);
+
+	if (!path)
+	{
+		DeleteAll(srcRoute);
+		DeleteAll(destRoute);
+		DbgNavMsg2( GetOuter(), "Node pathfind failed, no route between %p and %p\n", srcArea, destArea );
+		return NULL;
+	}
+
+	// Now put all the pieces together to form our route
+	AddWaypointLists(srcRoute,path);
+	AddWaypointLists(srcRoute,destRoute);
+
+	DbgNavMsg(  GetOuter(), "Node pathfind succeeded\n");
+	return srcRoute;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Test the triangulation route...

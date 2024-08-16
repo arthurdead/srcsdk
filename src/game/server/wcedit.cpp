@@ -15,6 +15,7 @@
 #include "mathlib/mathlib.h"
 #include "player.h"
 #include "wcedit.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_network.h"
 #include "ai_initutils.h"
 #include "ai_hull.h"
@@ -22,6 +23,7 @@
 #include "ai_node.h"
 #include "ai_dynamiclink.h"
 #include "ai_networkmanager.h"
+#endif
 #include "ndebugoverlay.h"
 #include "editor_sendcommand.h"
 #include "movevars_shared.h"
@@ -31,12 +33,15 @@
 #include "items.h"
 #include "utlsymbol.h"
 #include "physobj.h"
+#include "tier1/fmtstr.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifndef AI_USES_NAV_MESH
 extern CAI_Node*		FindPickerAINode( CBasePlayer* pPlayer, NodeType_e nNodeType );
 extern CAI_Link*		FindPickerAILink( CBasePlayer* pPlayer );
+#endif
 extern float			GetFloorZ(const Vector &origin);
 
 //-----------------------------------------------------------------------------
@@ -74,6 +79,7 @@ bool NWCEdit::IsWCVersionValid(void)
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 Vector NWCEdit::AirNodePlacementPosition( void )
 {
 	CBasePlayer* pPlayer = UTIL_PlayerByIndex(CBaseEntity::m_nDebugPlayer);
@@ -445,6 +451,7 @@ void NWCEdit::DestroyAILink( CBasePlayer *pPlayer )
 		}
 	}
 }
+#endif
 
 Vector *g_EntityPositions = NULL;
 QAngle *g_EntityOrientations = NULL;
@@ -546,6 +553,7 @@ error:
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 void CC_WC_Create( void )
 {
 	// Only allowed in wc_edit_mode
@@ -686,7 +694,7 @@ void CC_WC_LinkEdit( void )
 	}
 }
 static ConCommand wc_link_edit("wc_link_edit", CC_WC_LinkEdit, 0, FCVAR_CHEAT);
-
+#endif
 
 /// This is an entity used by the hammer_update_safe_entities command. It allows designers
 /// to specify objects that should be ignored. It stores an array of sixteen strings

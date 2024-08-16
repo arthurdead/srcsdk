@@ -11,10 +11,14 @@
 #include "ai_schedule.h"
 #include "ai_squad.h"
 #include "ai_senses.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_networkmanager.h"
+#endif
 #include "stringregistry.h"
 #include "igamesystem.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_network.h"
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -475,7 +479,9 @@ public:
 	void LevelShutdownPostEntity( void )
 	{
 		g_AI_SensedObjectsManager.Term();
+	#ifndef AI_USES_NAV_MESH
 		g_pAINetworkManager->DeleteAllAINetworks();
+	#endif
 		g_AI_SchedulesManager.DeleteAllSchedules();
 		g_AI_SquadManager.DeleteAllSquads();
 		g_AI_SchedulesManager.DestroyStringRegistries();

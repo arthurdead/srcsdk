@@ -8,21 +8,25 @@
 #include "ai_basenpc.h"
 #include "player.h"
 #include "entitylist.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_network.h"
 #include "ai_node.h"
 #include "ai_link.h"
 #include "ai_networkmanager.h"
+#endif
 #include "ndebugoverlay.h"
 #include "datacache/imdlcache.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifndef AI_USES_NAV_MESH
 extern CAI_Node*	FindPickerAINode( CBasePlayer* pPlayer, NodeType_e nNodeType );
+#endif
 extern void			SetDebugBits( CBasePlayer* pPlayer, const char *name, int bit );
 extern CBaseEntity *FindPickerEntity( CBasePlayer *pPlayer );
 
-extern bool g_bAIDisabledByUser;
+bool g_bAIDisabledByUser = false;
 
 
 //------------------------------------------------------------------------------
@@ -46,6 +50,7 @@ void CC_AI_Disable( void )
 }
 static ConCommand ai_disable("ai_disable", CC_AI_Disable, "Bi-passes all AI logic routines and puts all NPCs into their idle animations.  Can be used to get NPCs out of your way and to test effect of AI logic routines on frame rate", FCVAR_CHEAT);
 
+#ifndef AI_USES_NAV_MESH
 //------------------------------------------------------------------------------
 // Purpose: Show hint nodes
 //------------------------------------------------------------------------------
@@ -150,6 +155,7 @@ void CC_AI_ShowGrid( const CCommand &args )
 	CBaseEntity::m_nDebugPlayer = UTIL_GetCommandClientIndex();
 }
 static ConCommand ai_show_grid("ai_show_grid", CC_AI_ShowGrid, "Draw a grid on the floor where looking.", FCVAR_CHEAT);
+#endif
 
 //------------------------------------------------------------------------------
 // Purpose: NPC step trough AI
@@ -176,6 +182,7 @@ void CC_AI_Resume( void )
 }
 static ConCommand ai_resume("ai_resume", CC_AI_Resume, "If NPC is stepping through tasks (see ai_step ) will resume normal processing.", FCVAR_CHEAT);
 
+#ifndef AI_USES_NAV_MESH
 //------------------------------------------------------------------------------
 // Purpose: Switch to display of next hull type
 //------------------------------------------------------------------------------
@@ -342,6 +349,7 @@ void CC_AI_GraphConnect( const CCommand &args )
 	CBaseEntity::m_nDebugPlayer = UTIL_GetCommandClientIndex();
 }
 static ConCommand ai_show_graph_connect("ai_show_graph_connect", CC_AI_GraphConnect, "Toggles graph connection display for the node that the player is looking at.  Nodes that are connected to the selected node by the net graph will be drawn in red with magenta lines connecting to the selected node.  Nodes that are not connected via the net graph from the selected node will be drawn in blue.", FCVAR_CHEAT);
+#endif
 
 //------------------------------------------------------------------------------
 // Purpose: Show route triangulation attempts
@@ -845,6 +853,7 @@ CON_COMMAND( npc_ammo_deplete, "Subtracts half of the target's ammo" )
 	}
 }
 
+#ifndef AI_USES_NAV_MESH
 CON_COMMAND( ai_clear_bad_links, "Clears bits set on nav links indicating link is unusable " )
 {
 	if ( !UTIL_IsCommandIssuedByServerAdmin() )
@@ -861,6 +870,7 @@ CON_COMMAND( ai_clear_bad_links, "Clears bits set on nav links indicating link i
 		}
 	}
 }
+#endif
 
 CON_COMMAND( ai_test_los, "Test AI LOS from the player's POV" )
 {

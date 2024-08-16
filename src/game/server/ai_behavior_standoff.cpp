@@ -7,8 +7,12 @@
 
 #include "cbase.h"
 
+#ifndef AI_USES_NAV_MESH
 #include "ai_hint.h"
 #include "ai_node.h"
+#else
+#include "nav_area.h"
+#endif
 #include "ai_navigator.h"
 #include "ai_tacticalservices.h"
 #include "ai_behavior_standoff.h"
@@ -25,7 +29,7 @@
 ConVar DrawBattleLines( "ai_drawbattlelines", "0", FCVAR_CHEAT );
 
 
-static AI_StandoffParams_t AI_DEFAULT_STANDOFF_PARAMS = { AIHCR_MOVE_ON_COVER, true, 1.5, 2.5, 1, 3, 25, 0 };
+static AI_StandoffParams_t AI_DEFAULT_STANDOFF_PARAMS = {AIHCR_MOVE_ON_COVER, true, 1.5, 2.5, 1, 3, 25, 0};
 
 #define MAKE_ACTMAP_KEY( posture, activity ) ( (((unsigned)(posture)) << 16) | ((unsigned)(activity)) )
 
@@ -180,7 +184,7 @@ END_DATADESC()
 //-----------------------------------------------------------------------------
 
 BEGIN_SIMPLE_DATADESC( AI_StandoffParams_t )
-	DEFINE_FIELD( hintChangeReaction,	FIELD_INTEGER ),
+	DEFINE_FIELD( tactChangeReaction,	FIELD_INTEGER ),
 	DEFINE_FIELD( fPlayerIsBattleline,	FIELD_BOOLEAN ),
 	DEFINE_FIELD( fCoverOnReload,		FIELD_BOOLEAN ),
 	DEFINE_FIELD( minTimeShots,			FIELD_FLOAT ),
@@ -203,7 +207,7 @@ BEGIN_DATADESC( CAI_StandoffBehavior )
 	DEFINE_FIELD( 		m_SavedDistTooFar, 				FIELD_FLOAT ),
 	DEFINE_FIELD( 		m_fForceNewEnemy, 				FIELD_BOOLEAN ),
 	DEFINE_EMBEDDED( 	m_PlayerMoveMonitor ),
-	DEFINE_EMBEDDED( 	m_TimeForceCoverHint ),
+	DEFINE_EMBEDDED( 	m_TimeForceCover ),
 	DEFINE_EMBEDDED( 	m_TimePreventForceNewEnemy ),
 	DEFINE_EMBEDDED( 	m_RandomCoverChangeTimer ),
 	// 											m_UpdateBattleLinesSemaphore 	(not saved, only an in-think item)
@@ -306,7 +310,7 @@ void CAI_StandoffBehavior::BeginScheduleSelection()
 	m_SavedDistTooFar = GetOuter()->m_flDistTooFar;
 	GetOuter()->m_flDistTooFar = FLT_MAX;
 	
-	m_TimeForceCoverHint.Set( 8, false );
+	m_TimeForceCover.Set( 8, false );
 	m_RandomCoverChangeTimer.Set( 8, 16, false );
 	UpdateTranslateActivityMap();
 }
@@ -323,7 +327,11 @@ void CAI_StandoffBehavior::OnUpdateShotRegulator()
 
 void CAI_StandoffBehavior::EndScheduleSelection()
 {
+#ifndef AI_USES_NAV_MESH
 	UnlockHintNode();
+#else
+	UnlockActiveArea();
+#endif
 
 	m_vecStandoffGoalPosition = GOAL_POSITION_INVALID;
 	GetOuter()->m_flDistTooFar = m_SavedDistTooFar;
@@ -366,7 +374,7 @@ void CAI_StandoffBehavior::PrescheduleThink()
 void CAI_StandoffBehavior::GatherConditions()
 {
 	CBaseEntity *pLeader = GetPlayerLeader();
-	if ( pLeader && m_TimeForceCoverHint.Expired() )
+	if ( pLeader && m_TimeForceCover.Expired() )
 	{
 		if ( m_PlayerMoveMonitor.IsMarkSet() )
 		{
@@ -516,10 +524,14 @@ int CAI_StandoffBehavior::SelectScheduleCheckCover( void )
 	if ( GetOuter()->GetShotRegulator()->IsInRestInterval() )
 	{
 		StandoffMsg( "Regulated to not shoot\n" );
+	#ifndef AI_USES_NAV_MESH
 		if ( GetHintType() == HINT_TACTICAL_COVER_LOW )
 			SetPosture( AIP_CROUCHING );
 		else
 			SetPosture( AIP_STANDING );
+	#else
+		SetPosture( AIP_STANDING );
+	#endif
 
 		if ( random->RandomInt(0,99) < 80 )
 			SetReuseCurrentCover();
@@ -846,6 +858,7 @@ bool CAI_StandoffBehavior::IsBehindBattleLines( const Vector &point )
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 bool CAI_StandoffBehavior::IsValidCover( const Vector &vecCoverLocation, const CAI_Hint *pHint )
 {
 	if ( !BaseClass::IsValidCover( vecCoverLocation, pHint ) )
@@ -866,6 +879,28 @@ bool CAI_StandoffBehavior::IsValidShootPosition( const Vector &vLocation, CAI_No
 
 	return ( m_fIgnoreFronts || IsBehindBattleLines( vLocation ) );
 }
+#else
+bool CAI_StandoffBehavior::IsValidCover( const Vector &vecCoverLocation, const CNavArea *pArea )
+{
+	if ( !BaseClass::IsValidCover( vecCoverLocation, pArea ) )
+		return false;
+
+	if ( IsCurSchedule( SCHED_TAKE_COVER_FROM_BEST_SOUND ) )
+		return true;
+
+	return ( m_fIgnoreFronts || IsBehindBattleLines( vecCoverLocation ) );
+}
+
+//-------------------------------------
+
+bool CAI_StandoffBehavior::IsValidShootPosition( const Vector &vLocation, CNavArea *pArea )
+{
+	if ( !BaseClass::IsValidShootPosition( vLocation, pArea ) )
+		return false;
+
+	return ( m_fIgnoreFronts || IsBehindBattleLines( vLocation ) );
+}
+#endif
 
 //-------------------------------------
 
@@ -886,9 +921,9 @@ void CAI_StandoffBehavior::StartTask( const Task_t *pTask )
 			StandoffMsg( "TASK_FIND_COVER_FROM_ENEMY\n" );
 
 			// If within time window to force change
-			if ( !m_params.fStayAtCover && (!m_TimeForceCoverHint.Expired() || m_RandomCoverChangeTimer.Expired()) )
+			if ( !m_params.fStayAtCover && (!m_TimeForceCover.Expired() || m_RandomCoverChangeTimer.Expired()) )
 			{
-				m_TimeForceCoverHint.Force();
+				m_TimeForceCover.Force();
 				m_RandomCoverChangeTimer.Set( 8, 16, false );
 
 				// @TODO (toml 03-24-03):  clean this up be tool-izing base tasks. Right now, this is here to force to not use lateral cover search
@@ -988,18 +1023,20 @@ void CAI_StandoffBehavior::StartTask( const Task_t *pTask )
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 void CAI_StandoffBehavior::OnChangeHintGroup( string_t oldGroup, string_t newGroup )
 {
 	OnChangeTacticalConstraints();
 }
+#endif
 
 //-------------------------------------
 
 void CAI_StandoffBehavior::OnChangeTacticalConstraints()
 {
-	if ( m_params.hintChangeReaction > AIHCR_DEFAULT_AI )
-		m_TimeForceCoverHint.Set( 8.0, false );
-	if ( m_params.hintChangeReaction == AIHCR_MOVE_IMMEDIATE )
+	if ( m_params.tactChangeReaction > AIHCR_DEFAULT_AI )
+		m_TimeForceCover.Set( 8.0, false );
+	if ( m_params.tactChangeReaction == AIHCR_MOVE_IMMEDIATE )
 		m_fTakeCover = true;
 }
 
@@ -1047,6 +1084,7 @@ bool CAI_StandoffBehavior::GetDirectionOfStandoff( Vector *pDir )
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 Hint_e CAI_StandoffBehavior::GetHintType()
 {
 	CAI_Hint *pHintNode = GetHintNode();
@@ -1054,18 +1092,22 @@ Hint_e CAI_StandoffBehavior::GetHintType()
 		return pHintNode->HintType();
 	return HINT_NONE;
 }
+#endif
 
 //-------------------------------------
 
 void CAI_StandoffBehavior::SetReuseCurrentCover()
 {
+#ifndef AI_USES_NAV_MESH
 	CAI_Hint *pHintNode = GetHintNode();
 	if ( pHintNode && pHintNode->GetNode() && pHintNode->GetNode()->IsLocked() )
 		pHintNode->GetNode()->Unlock();
+#endif
 }
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 void CAI_StandoffBehavior::UnlockHintNode()
 {
 	CAI_Hint *pHintNode = GetHintNode();
@@ -1079,15 +1121,26 @@ void CAI_StandoffBehavior::UnlockHintNode()
 		ClearHintNode();
 	}
 }
-
+#else
+void CAI_StandoffBehavior::UnlockActiveArea()
+{
+	CNavArea *pActiveArea = GetActiveArea();
+	if ( pActiveArea )
+	{
+		ClearActiveArea();
+	}
+}
+#endif
 
 //-------------------------------------
 
 Activity CAI_StandoffBehavior::GetCoverActivity()
 {
+#ifndef AI_USES_NAV_MESH
 	CAI_Hint *pHintNode = GetHintNode();
 	if ( pHintNode && pHintNode->HintType() == HINT_TACTICAL_COVER_LOW )
 		return GetOuter()->GetCoverActivity( pHintNode );
+#endif
 	return ACT_INVALID;
 }
 
@@ -1208,7 +1261,7 @@ public:
 	{
 		m_aggressiveness = AGGR_MEDIUM;	
 		m_fPlayerIsBattleline = true;
-		m_HintChangeReaction = AIHCR_DEFAULT_AI;
+		m_TactChangeReaction = AIHCR_DEFAULT_AI;
 		m_fStayAtCover = false;
 		m_bAbandonIfEnemyHides = false;
 		m_customParams = AI_DEFAULT_STANDOFF_PARAMS;
@@ -1277,7 +1330,7 @@ public:
 		else
 			params = m_customParams;
 
-		params.hintChangeReaction = m_HintChangeReaction;
+		params.tactChangeReaction = m_TactChangeReaction;
 		params.fPlayerIsBattleline = m_fPlayerIsBattleline;
 		params.fStayAtCover = m_fStayAtCover;
 		if ( !m_bAbandonIfEnemyHides )
@@ -1322,7 +1375,7 @@ private:
 	};
 
 	Aggressiveness_t 		m_aggressiveness;	
-	AI_HintChangeReaction_t m_HintChangeReaction;
+	AI_TactChangeReaction_t m_TactChangeReaction;
 	bool					m_fPlayerIsBattleline;
 	bool					m_fStayAtCover;
 	bool					m_bAbandonIfEnemyHides;
@@ -1336,7 +1389,7 @@ LINK_ENTITY_TO_CLASS( ai_goal_standoff, CAI_StandoffGoal );
 BEGIN_DATADESC( CAI_StandoffGoal )
 	DEFINE_KEYFIELD( m_aggressiveness,				FIELD_INTEGER, 	"Aggressiveness" ),
 	//								   m_customParams  (individually)
-	DEFINE_KEYFIELD( m_HintChangeReaction,			FIELD_INTEGER, 	"HintGroupChangeReaction" ),
+	DEFINE_KEYFIELD( m_TactChangeReaction,			FIELD_INTEGER, 	"TactChangeReaction" ),
 	DEFINE_KEYFIELD( m_fPlayerIsBattleline,			FIELD_BOOLEAN,	"PlayerBattleline" ),
 	DEFINE_KEYFIELD( m_fStayAtCover,				FIELD_BOOLEAN,	"StayAtCover" ),
 	DEFINE_KEYFIELD( m_bAbandonIfEnemyHides,		FIELD_BOOLEAN, 	"AbandonIfEnemyHides" ),

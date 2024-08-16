@@ -5,7 +5,9 @@
 //=============================================================================//
 
 #include "cbase.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_link.h"
+#endif
 #include "ai_navtype.h"
 #include "ai_waypoint.h"
 #include "ai_pathfinder.h"
@@ -353,7 +355,11 @@ void CAI_Path::SetGoalPosition(const Vector &goalPos)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 void CAI_Path::SetLastNodeAsGoal(bool bReset)
+#else
+void CAI_Path::SetLastAreaAsGoal(bool bReset)
+#endif
 {
 	#ifdef _DEBUG
 		// Make sure goal position isn't set more than once
@@ -485,10 +491,17 @@ void CAI_Path::Advance( void )
 		AI_Waypoint_t *pNext = GetCurWaypoint()->GetNext();
 
 		// If waypoint was a node take note of it
+	#ifndef AI_USES_NAV_MESH
 		if (GetCurWaypoint()->Flags() & bits_WP_TO_NODE)
 		{
 			m_iLastNodeReached = GetCurWaypoint()->iNodeID;
 		}
+	#else
+		if (GetCurWaypoint()->Flags() & bits_WP_TO_AREA)
+		{
+			m_pLastAreaReached = GetCurWaypoint()->pArea;
+		}
+	#endif
 
 		delete GetCurWaypoint();
 		SetWaypoints(pNext);
@@ -669,7 +682,11 @@ CAI_Path::CAI_Path()
 	m_arrivalActivity	= ACT_INVALID;
 	m_arrivalSequence	= ACT_INVALID;
 
+#ifndef AI_USES_NAV_MESH
 	m_iLastNodeReached  = NO_NODE;
+#else
+	m_pLastAreaReached  = NULL;
+#endif
 
 	m_waypointTolerance = DEF_WAYPOINT_TOLERANCE;
 

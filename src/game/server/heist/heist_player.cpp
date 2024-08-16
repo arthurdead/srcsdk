@@ -110,6 +110,8 @@ void CHeistPlayer::UpdateOnRemove()
 void CHeistPlayer::Precache()
 {
 	BaseClass::Precache();
+
+	PrecacheModel("models/player/pd2_dallas_p.mdl");
 }
 
 static bool TestEntityPosition(CBasePlayer *pPlayer)
@@ -244,6 +246,8 @@ void CHeistPlayer::Spawn(void)
 	m_cycleLatchTimer.Start(CYCLELATCH_UPDATE_INTERVAL);
 
 	DoAnimationEvent(PLAYERANIMEVENT_SPAWN);
+
+	SetModel("models/player/pd2_dallas_p.mdl");
 }
 
 void CHeistPlayer::PickupObject(CBaseEntity *pObject, bool bLimitMassAndSize)
