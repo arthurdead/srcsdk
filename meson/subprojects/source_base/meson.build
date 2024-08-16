@@ -3,6 +3,23 @@ project('source_game')
 src_root_dir = get_option('src_root_dir')
 src_engine_dir = get_option('src_engine_dir')
 
+source_debug_dep = declare_dependency(
+	compile_args: [
+		'-DFRAME_POINTER_OMISSION_DISABLED',
+		'-DDEV_BUILD',
+		'-DSTAGING_ONLY',
+		'-DDEBUG',
+		'-D_DEBUG'
+	]
+)
+
+source_release_dep = declare_dependency(
+	compile_args: [
+		'-DNDEBUG',
+		'-D_NDEBUG'
+	]
+)
+
 source_dep = declare_dependency(
 	compile_args: [
 		'-DRAD_TELEMETRY_DISABLED',
@@ -47,6 +64,9 @@ source_dep = declare_dependency(
 	link_args: [
 		'-L'+join_paths(src_engine_dir,'bin'),
 		'-L'+join_paths(src_root_dir,'lib','public','linux32')
+	],
+	dependencies: [
+		source_debug_dep
 	]
 )
 
@@ -57,23 +77,6 @@ source_slop_dep = declare_dependency(
 		#'-Dsprintf=use_Q_snprintf_instead_of_sprintf',
 		#'-Dstrncpy=use_Q_strncpy_instead',
 		#'-D_snprintf=use_Q_snprintf_instead'
-	]
-)
-
-source_debug_dep = declare_dependency(
-	compile_args: [
-		'-DFRAME_POINTER_OMISSION_DISABLED',
-		'-DDEV_BUILD',
-		'-DSTAGING_ONLY',
-		'-DDEBUG',
-		'-D_DEBUG'
-	]
-)
-
-source_release_dep = declare_dependency(
-	compile_args: [
-		'-DNDEBUG',
-		'-D_NDEBUG'
 	]
 )
 

@@ -151,11 +151,13 @@ void CAI_FearBehavior::RunTask( const Task_t *pTask )
 
 			case 1:// Do the pathfinding.
 				{
+				#ifndef AI_USES_NAV_MESH
 					Assert( m_hMovingToHint != NULL );
 
-				#ifndef AI_USES_NAV_MESH
 					AI_NavGoal_t goal(m_hMovingToHint->GetAbsOrigin());
 				#else
+					Assert( m_pMovingToArea != NULL );
+
 					AI_NavGoal_t goal(m_pMovingToArea->GetCenter());
 				#endif
 					goal.pTarget = NULL;
@@ -231,7 +233,11 @@ bool CAI_FearBehavior::EnemyDislikesMe()
 //-----------------------------------------------------------------------------
 void CAI_FearBehavior::MarkAsUnsafe()
 {
+#ifndef AI_USES_NAV_MESH
 	Assert( m_hSafePlaceHint );
+#else
+	Assert( m_pSafePlaceArea != NULL );
+#endif
 
 	// Disable the node to stop anyone from picking it for a while.
 #ifndef AI_USES_NAV_MESH

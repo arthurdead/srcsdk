@@ -10,6 +10,7 @@
 
 #include "ai_component.h"
 #include "ai_navtype.h"
+#include "ai_hull.h"
 
 #if defined( _WIN32 )
 #pragma once
@@ -24,8 +25,39 @@ class CAI_Network;
 class CAI_Node;
 #else
 class CNavArea;
+class CNavLadder;
+class CFuncElevator;
+#endif
+class CAI_Pathfinder;
+
+#ifdef AI_USES_NAV_MESH
+enum AreaType_e
+{
+	AREA_ANY,			// Used to specify any type of node (for search)
+	AREA_GROUND,     
+	AREA_AIR,       
+	AREA_CLIMB,  
+	AREA_WATER     
+};
+
+AreaType_e GetAreaType(CNavArea *area);
+
+int GetAreaAcceptedMoveTypes(CNavArea *area, Hull_t hull);
 #endif
 
+#ifdef AI_USES_NAV_MESH
+class NPCPathCost
+{
+public:
+	NPCPathCost(CAI_Pathfinder *pPathFinder);
+
+	float operator()(CNavArea *area, CNavArea *fromArea, const CNavLadder *ladder, const CFuncElevator *elevator, float length);
+
+protected:
+	CAI_Pathfinder *m_pPathFinder;
+	CAI_BaseNPC *m_pNPC;
+};
+#endif
 
 //-----------------------------------------------------------------------------
 // The type of route to build
@@ -171,7 +203,7 @@ private:
 	//---------------------------------
 	
 	AI_Waypoint_t*	MakeRouteFromParents(int *parentArray, int endID);
-	AI_Waypoint_t*	CreateAreaWaypoint( Hull_t hullType, CNavArea *area, int nodeFlags = 0 );
+	AI_Waypoint_t*	CreateAreaWaypoint( Hull_t hullType, CNavArea *area, int areaFlags = 0 );
 #endif
 
 	AI_Waypoint_t*	BuildRouteThroughPoints( Vector *vecPoints, int nNumPoints, int nDirection, int nStartIndex, int nEndIndex, Navigation_t navType, CBaseEntity *pTarget );
@@ -198,7 +230,7 @@ private:
 #else
 	// Builds a simple route (no triangulation, no making way)
 	AI_Waypoint_t	*BuildSimpleRoute( Navigation_t navType, const Vector &vStart, const Vector &vEnd, 
-		const CBaseEntity *pTarget, int endFlags, CNavArea * area, float flYaw);
+		const CBaseEntity *pTarget, int endFlags, CNavArea * area, int areaTargetType, float flYaw);
 
 	// Builds a complex route (triangulation, making way)
 	AI_Waypoint_t	*BuildComplexRoute( Navigation_t navType, const Vector &vStart, 
@@ -214,6 +246,8 @@ private:
 #ifndef AI_USES_NAV_MESH
 	// Computes the link type
 	Navigation_t ComputeWaypointType( CAI_Node **ppNodes, int parentID, int destID );
+#else
+	Navigation_t ComputeWaypointType( CNavArea *parentArea, CNavArea *destArea );
 #endif
 
 	// --------------------------------

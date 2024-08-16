@@ -140,7 +140,7 @@ void CNewNPC::InitCustomSchedules(void)
 //-----------------------------------------------------------------------------
 void CNewNPC::Precache( void )
 {
-	PrecacheModel( "models/payday2/units/cop1_player_pd2anim.mdl" );
+	PrecacheModel( "models/stalker.mdl" );
 
 	BaseClass::Precache();
 }
@@ -155,7 +155,7 @@ void CNewNPC::Spawn( void )
 {
 	Precache();
 
-	SetModel( "models/payday2/units/cop1_player_pd2anim.mdl" );
+	SetModel( "models/stalker.mdl" );
 	SetHullType(HULL_HUMAN);
 	SetHullSizeNormal();
 

@@ -1316,9 +1316,6 @@ Vector CAI_Navigator::GetNodePos( AI_PathNode_t node )
 #else
 AI_PathArea_t CAI_Navigator::GetNearestArea()
 {
-#ifdef WIN32
-	COMPILE_TIME_ASSERT( (int)AIN_NO_NODE == NO_NODE );
-#endif
 	return (AI_PathArea_t)( GetPathfinder()->NearestAreaToNPC() );
 }
 
@@ -2648,6 +2645,8 @@ bool CAI_Navigator::Move( float flInterval )
 					{
 					#ifndef AI_USES_NAV_MESH
 						if ( MarkCurWaypointFailedLink() )
+					#else
+						if ( MarkCurWaypointFailed() )
 					#endif
 						{
 							AI_Waypoint_t *pSavedWaypoints = GetPath()->GetCurWaypoint();
@@ -3590,12 +3589,17 @@ bool CAI_Navigator::FindPath( bool fSignalTaskStatus, bool bDontIgnoreBadLinks )
 //-----------------------------------------------------------------------------
 #ifndef AI_USES_NAV_MESH
 bool CAI_Navigator::MarkCurWaypointFailedLink( void )
+#else
+bool CAI_Navigator::MarkCurWaypointFailed( void )
+#endif
 {
 	if ( TestingSteering() )
 		return false;
 
+#ifndef AI_USES_NAV_MESH
 	if ( !m_fRememberStaleNodes )
 		return false;
+#endif
 
 	// Prevent a crash in release
 	if( !GetPath() || !GetPath()->GetCurWaypoint() )
@@ -3603,11 +3607,19 @@ bool CAI_Navigator::MarkCurWaypointFailedLink( void )
 
 	bool didMark = false;
 
+#ifndef AI_USES_NAV_MESH
 	int startID =	GetPath()->GetLastNodeReached();
 	int endID	=	GetPath()->GetCurWaypoint()->iNodeID;
 
 	if ( endID != NO_NODE )
 	{
+#else
+	CNavArea *startArea =	GetPath()->GetLastAreaReached();
+	CNavArea* endArea	=	GetPath()->GetCurWaypoint()->pArea;
+
+	if ( endArea != NULL )
+	{
+#endif
 		bool bBlockAll = false;
 
 		if ( m_hLastBlockingEnt != NULL && 
@@ -3640,7 +3652,11 @@ bool CAI_Navigator::MarkCurWaypointFailedLink( void )
 
 			if ( bFoundLarge && !bFoundSmall )
 			{
+			#ifndef AI_USES_NAV_MESH
 				Vector vStartPos = GetNetwork()->GetNode( endID )->GetPosition( GetHullType() );
+			#else
+				Vector vStartPos = endArea->GetCenter();
+			#endif
 				Vector vEndPos = vStartPos;
 				vEndPos.z += 0.01;
 				trace_t tr;
@@ -3652,6 +3668,7 @@ bool CAI_Navigator::MarkCurWaypointFailedLink( void )
 			}
 		}
 
+	#ifndef AI_USES_NAV_MESH
 		if ( bBlockAll )
 		{
 			CAI_Node *pDestNode = GetNetwork()->GetNode( endID );
@@ -3676,11 +3693,20 @@ bool CAI_Navigator::MarkCurWaypointFailedLink( void )
 				didMark = true;
 			}
 		}
+	#else
+		if ( bBlockAll )
+		{
+			didMark = true;
+		}
+		else if ( startArea != NULL )
+		{
+			didMark = true;
+		}
+	#endif
 	}
 
 	return didMark;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Builds a route to the given vecGoal using either local movement

@@ -31,6 +31,8 @@ ConVar ai_find_lateral_los( "ai_find_lateral_los", "1" );
 
 #ifdef _DEBUG
 ConVar ai_debug_cover( "ai_debug_cover", "0" );
+
+#ifndef AI_USES_NAV_MESH
 int g_AIDebugFindCoverNode = -1;
 #define DebugFindCover( node, from, to, r, g, b ) \
 	if ( !ai_debug_cover.GetBool() || \
@@ -47,10 +49,35 @@ int g_AIDebugFindCoverNode = -1;
 		; \
 	else \
 		NDebugOverlay::Line( from, to, r, g, b, false, 1 )
+#else
+CNavArea *g_AIDebugFindCoverArea = NULL;
+#define DebugFindCover( area, from, to, r, g, b ) \
+	if ( !ai_debug_cover.GetBool() || \
+		 (g_AIDebugFindCoverArea != NULL && g_AIDebugFindCoverArea != area) || \
+		 !GetOuter()->m_bSelected ) \
+		; \
+	else \
+		NDebugOverlay::Line( from, to, r, g, b, false, 1 )
+
+#define DebugFindCover2( area, from, to, r, g, b ) \
+	if ( ai_debug_cover.GetInt() < 2 || \
+		 (g_AIDebugFindCoverArea != NULL && g_AIDebugFindCoverArea != area) || \
+		 !GetOuter()->m_bSelected ) \
+		; \
+	else \
+		NDebugOverlay::Line( from, to, r, g, b, false, 1 )
+#endif
 
 ConVar ai_debug_tactical_los( "ai_debug_tactical_los", "0" );
+
+#ifndef AI_USES_NAV_MESH
 int g_AIDebugFindLosNode = -1;
 #define ShouldDebugLos( node ) ( ai_debug_tactical_los.GetBool() && ( g_AIDebugFindLosNode == -1 || g_AIDebugFindLosNode == ( node ) ) && GetOuter()->m_bSelected )
+#else
+CNavArea *g_AIDebugFindLosArea = NULL;
+#define ShouldDebugLos( area ) ( ai_debug_tactical_los.GetBool() && ( g_AIDebugFindLosArea == NULL || g_AIDebugFindLosArea == ( area ) ) && GetOuter()->m_bSelected )
+#endif
+
 #else
 #define DebugFindCover( node, from, to, r, g, b ) ((void)0)
 #define DebugFindCover2( node, from, to, r, g, b ) ((void)0)
@@ -205,14 +232,22 @@ bool CAI_TacticalServices::TestLateralCover( const Vector &vecCheckStart, const 
 				GetOuter()->GetMoveProbe()->MoveLimit( NAV_GROUND, GetLocalOrigin(), vecCheckEnd, MASK_NPCSOLID, NULL, &moveTrace );
 				if (moveTrace.fStatus == AIMR_OK)
 				{
+				#ifndef AI_USES_NAV_MESH
 					DebugFindCover( NO_NODE, vecCheckEnd + GetOuter()->GetViewOffset(), vecCheckStart, 0, 255, 0 );
+				#else
+					DebugFindCover( NULL, vecCheckEnd + GetOuter()->GetViewOffset(), vecCheckStart, 0, 255, 0 );
+				#endif
 					return true;
 				}
 			}
 		}
 	}
 
+#ifndef AI_USES_NAV_MESH
 	DebugFindCover( NO_NODE, vecCheckEnd + GetOuter()->GetViewOffset(), vecCheckStart, 255, 0, 0 );
+#else
+	DebugFindCover( NULL, vecCheckEnd + GetOuter()->GetViewOffset(), vecCheckStart, 255, 0, 0 );
+#endif
 
 	return false;
 }
@@ -603,7 +638,7 @@ CNavArea * CAI_TacticalServices::FindCoverArea(const Vector &vNearPos, const Vec
 
 	MARK_TASK_EXPENSIVE();
 
-	DebugFindCover( NO_NODE, GetOuter()->EyePosition(), vThreatEyePos, 0, 255, 255 );
+	DebugFindCover( NULL, GetOuter()->EyePosition(), vThreatEyePos, 0, 255, 255 );
 
 	CNavArea * pMyArea = GetPathfinder()->NearestAreaToPoint( vNearPos );
 

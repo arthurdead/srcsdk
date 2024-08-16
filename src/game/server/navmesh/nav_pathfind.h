@@ -38,6 +38,12 @@ enum RouteType
 /**
  * Functor used with NavAreaBuildPath()
  */
+class INavPathCost
+{
+public:
+	virtual float operator() ( CNavArea *area, CNavArea *fromArea, const CNavLadder *ladder, const CFuncElevator *elevator, float length ) = 0;
+};
+
 class ShortestPathCost
 {
 public:

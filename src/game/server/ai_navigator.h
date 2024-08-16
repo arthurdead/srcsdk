@@ -605,6 +605,8 @@ private:
 	bool				FindPath( bool fSignalTaskStatus = true, bool bDontIgnoreBadLinks = false );
 #ifndef AI_USES_NAV_MESH
 	bool				MarkCurWaypointFailedLink( void );			// Call when route fails
+#else
+	bool				MarkCurWaypointFailed( void );			// Call when route fails
 #endif
 
 	struct SimplifyForwardScanParams

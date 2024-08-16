@@ -111,7 +111,7 @@ void CHeistPlayer::Precache()
 {
 	BaseClass::Precache();
 
-	PrecacheModel("models/player/pd2_dallas_p.mdl");
+	PrecacheModel("models/barney.mdl");
 }
 
 static bool TestEntityPosition(CBasePlayer *pPlayer)
@@ -247,7 +247,7 @@ void CHeistPlayer::Spawn(void)
 
 	DoAnimationEvent(PLAYERANIMEVENT_SPAWN);
 
-	SetModel("models/player/pd2_dallas_p.mdl");
+	SetModel("models/barney.mdl");
 }
 
 void CHeistPlayer::PickupObject(CBaseEntity *pObject, bool bLimitMassAndSize)

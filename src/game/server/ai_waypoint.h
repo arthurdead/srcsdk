@@ -136,7 +136,7 @@ public:
 #else
 	CNavArea * pArea;
 	NavTraverseType nNavHow;
-	const CNavLadder *pLadder;
+	const CNavLadder *pNavLadder;
 #endif
 	
 	//---------------------------------

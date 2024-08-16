@@ -62,27 +62,85 @@ END_DATADESC()
 //-----------------------------------------------------------------------------
 Navigation_t MoveBitsToNavType( int fBits )
 {
-	switch (fBits)
-	{
-	case bits_CAP_MOVE_GROUND:
-		return NAV_GROUND;
-
-	case bits_CAP_MOVE_FLY:
+	if (fBits & bits_CAP_MOVE_FLY)
 		return NAV_FLY;
 
-	case bits_CAP_MOVE_CLIMB:
+	if (fBits & bits_CAP_MOVE_CLIMB)
 		return NAV_CLIMB;
 
-	case bits_CAP_MOVE_JUMP:
+	if (fBits & bits_CAP_MOVE_JUMP)
 		return NAV_JUMP;
 
-	default:
-		// This will only happen if more than one bit is set
-		Assert(0);
-		return NAV_NONE;
-	}
+	if (fBits & bits_CAP_MOVE_GROUND)
+		return NAV_GROUND;
+
+	return NAV_NONE;
 }
 
+#ifdef AI_USES_NAV_MESH
+AreaType_e GetAreaType(CNavArea *area)
+{
+	if(area->IsUnderwater()) {
+		return AREA_WATER;
+	}
+
+	return AREA_GROUND;
+}
+
+int GetAreaAcceptedMoveTypes(CNavArea *area, Hull_t hull)
+{
+	int areaMoveTypes = bits_CAP_MOVE_GROUND;
+
+	if(area->GetAttributes() & NAV_MESH_JUMP) {
+		areaMoveTypes |= bits_CAP_MOVE_JUMP;
+	}
+
+	if(area->GetAttributes() & NAV_MESH_CROUCH) {
+		areaMoveTypes |= bits_CAP_DUCK;
+	}
+
+	return areaMoveTypes;
+}
+#endif
+
+#ifdef AI_USES_NAV_MESH
+NPCPathCost::NPCPathCost(CAI_Pathfinder *pPathFinder)
+	: m_pPathFinder(pPathFinder), m_pNPC(pPathFinder->GetOuter())
+{
+}
+
+float NPCPathCost::operator()(CNavArea *area, CNavArea *fromArea, const CNavLadder *ladder, const CFuncElevator *elevator, float length)
+{
+	static const float jumpPenalty = 5.0f;
+
+	if(fromArea == NULL) {
+		return 0.0f;
+	}
+
+	if(!m_pNPC->IsAreaTraversable(area) || !m_pPathFinder->IsAreaUsable(area)) {
+		return -1.0f;
+	}
+
+	float dist;
+
+	if(ladder) {
+		dist = ladder->m_length;
+	} else if(length > 0.0) {
+		dist = length;
+	} else {
+		dist = (area->GetCenter() - fromArea->GetCenter()).Length();
+	}
+
+	float cost = (dist + fromArea->GetCostSoFar());
+
+	float deltaZ = fromArea->ComputeAdjacentConnectionHeightChange(area);
+	if(deltaZ >= m_pNPC->StepHeight()) {
+		cost += jumpPenalty * dist;
+	}
+
+	return cost;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 
@@ -122,9 +180,13 @@ bool CAI_Pathfinder::UseStrongOptimizations()
 //-----------------------------------------------------------------------------
 #ifndef AI_USES_NAV_MESH
 Navigation_t CAI_Pathfinder::ComputeWaypointType( CAI_Node **ppNodes, int parentID, int destID )
+#else
+Navigation_t CAI_Pathfinder::ComputeWaypointType( CNavArea *parentArea, CNavArea *destArea )
+#endif
 {
 	Navigation_t navType = NAV_NONE;
 
+#ifndef AI_USES_NAV_MESH
 	CAI_Node *pNode = ppNodes[parentID];
 	for (int link=0; link < pNode->NumLinks();link++) 
 	{
@@ -151,7 +213,21 @@ Navigation_t CAI_Pathfinder::ComputeWaypointType( CAI_Node **ppNodes, int parent
 			break;
 		}
 	}
+#else
+	int linkMoveTypeBits = GetAreaAcceptedMoveTypes(destArea ? destArea : parentArea, GetHullType());
+	int moveTypeBits = ( linkMoveTypeBits & CapabilitiesGet());
+	if ( !moveTypeBits && linkMoveTypeBits == bits_CAP_MOVE_JUMP )
+	{
+		moveTypeBits = linkMoveTypeBits;
+	}
+	Navigation_t linkType = MoveBitsToNavType( moveTypeBits );
 
+	// This will only trigger if the links disagree about their nav type
+	Assert( (navType == NAV_NONE) || (navType == linkType) );
+	navType = linkType; 
+#endif
+
+#ifndef AI_USES_NAV_MESH
 	// @TODO (toml 10-15-02): one would not expect to come out of the above logic
 	// with NAV_NONE. However, if a graph is newly built, it can contain malformed
 	// links that are referred to by the destination node, not the source node.
@@ -176,12 +252,14 @@ Navigation_t CAI_Pathfinder::ComputeWaypointType( CAI_Node **ppNodes, int parent
 			}
 		}
 	}
+#endif
 
 	AssertMsg( navType != NAV_NONE, "Pathfinder appears to have output a path with consecutive nodes thate are not actually connected\n" );
 
 	return navType;
 }
 
+#ifndef AI_USES_NAV_MESH
 //-----------------------------------------------------------------------------
 // Purpose: Given an array of parentID's and endID, contruct a linked 
 //			list of waypoints through those parents
@@ -408,65 +486,140 @@ AI_Waypoint_t *CAI_Pathfinder::FindBestPath(CNavArea * startArea, CNavArea * end
 
 	return NULL;   
 #else
-	if (startArea == NULL || endArea == NULL)
-		return NULL;
-
-	if (startArea == endArea)
-	{
-		AI_Waypoint_t *pWaypoint = new AI_Waypoint_t( startArea->GetCenter(),
-			0.0f, NAV_GROUND, bits_WP_TO_AREA, startArea );
-		return pWaypoint;
-	}
-
-	if(!IsAreaUsable(startArea) || !IsAreaUsable(endArea)) {
+	if(startArea == NULL || endArea == NULL) {
 		return NULL;
 	}
 
-	// make sure path end position is on the ground
+	if(startArea == endArea) {
+		return CreateAreaWaypoint( GetHullType(), startArea, bits_WP_TO_GOAL );
+	}
+
 	Vector pathEndPosition = endArea->GetCenter();
 	pathEndPosition.z = endArea->GetZ( &pathEndPosition );
 
-	ShortestPathCost costFunc;
+	NPCPathCost costFunc(this);
 
-	//
-	// Compute shortest path to goal
-	//
 	CNavArea *closestArea;
-	bool pathToGoalExists = NavAreaBuildPath( startArea, endArea, &pathEndPosition, costFunc, &closestArea );
+	bool pathToGoalExists = NavAreaBuildPath(startArea, endArea, &pathEndPosition, costFunc, &closestArea, 0.0f, GetOuter()->GetTeamNumber(), false);
 
-	if(!IsAreaUsable(closestArea)) {
+	if(closestArea == NULL) {
 		return NULL;
 	}
 
+	CNavArea *effectiveGoalArea = (pathToGoalExists) ? endArea : closestArea;
+
 	int count = 0;
 	CNavArea *area;
-	for( area = closestArea; area; area = area->GetParent() )
+	for(area = effectiveGoalArea; area; area = area->GetParent()) {
 		++count;
 
-	if (count == 0)
-		return NULL;
+		if(area == startArea) {
+			break;
+		}
+	}
 
-	if (count == 1)
-	{
-		AI_Waypoint_t *pWaypoint = new AI_Waypoint_t( area->GetCenter(),
-			0.0f, NAV_GROUND, bits_WP_TO_AREA, area );
-		return pWaypoint;
+	if(count == 0) {
+		return NULL;
+	}
+
+	if(count == 1) {
+		return CreateAreaWaypoint(GetHullType(), area, bits_WP_TO_GOAL);
 	}
 
 	AI_Waypoint_t *pOldWaypoint = NULL;
 
-	for( area = closestArea; count && area; area = area->GetParent() )
-	{
+	for(area = effectiveGoalArea; count && area; area = area->GetParent()) {
 		--count;
 
-		if(!IsAreaUsable(area)) {
-			break;
-		}
+		Navigation_t waypointType = ComputeWaypointType(area, area->GetParent());
 
-		AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t( area->GetCenter(),
-			0.0f, NAV_GROUND, bits_WP_TO_AREA, area );
+		AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t(area->GetCenter(), 0.0f, waypointType, bits_WP_TO_AREA, area);
+		pNewWaypoint->nNavHow = area->GetParentHow();
+
 		pNewWaypoint->SetNext(pOldWaypoint);
 		pOldWaypoint = pNewWaypoint;
+	}
+
+	AI_Waypoint_t *pFromWaypoint = pOldWaypoint;
+	while(pFromWaypoint) {
+		AI_Waypoint_t *pToWaypoint = pFromWaypoint->GetNext();
+
+		if(pToWaypoint) {
+			if(pToWaypoint->nNavHow <= GO_WEST) {
+				pToWaypoint->pNavLadder = NULL;
+
+				pFromWaypoint->pArea->ComputeClosestPointInPortal(pToWaypoint->pArea, (NavDirType)pToWaypoint->nNavHow, pFromWaypoint->vecLocation, &pToWaypoint->vecLocation);
+
+				pToWaypoint->vecLocation.z = pFromWaypoint->pArea->GetZ(pToWaypoint->vecLocation);
+
+				Vector fromPos = pFromWaypoint->vecLocation;
+				fromPos.z = pFromWaypoint->pArea->GetZ( fromPos );
+
+				Vector toPos = pToWaypoint->vecLocation;
+				toPos.z = pToWaypoint->pArea->GetZ( toPos );
+
+				Vector groundNormal;
+				pFromWaypoint->pArea->ComputeNormal(&groundNormal);
+
+				Vector alongPath = toPos - fromPos;
+
+				float expectedHeightDrop = -DotProduct(alongPath, groundNormal);
+
+				const float stepHeight = GetOuter()->StepHeight();
+
+				if(expectedHeightDrop > stepHeight) {
+					Vector2D dir;
+					DirectionToVector2D((NavDirType)pToWaypoint->nNavHow, &dir);
+
+					const float hullWidth = GetHullWidth();
+
+					static const float inc = 10.0f;
+					const float maxPushDist = 2.0f * hullWidth;
+					float halfWidth = hullWidth/2.0f;
+					float hullHeight = 1.0f;
+
+					float pushDist;
+					for(pushDist = 0.0f; pushDist <= maxPushDist; pushDist += inc) {
+						Vector pos = pToWaypoint->vecLocation + Vector(pushDist * dir.x, pushDist * dir.y, 0.0f);
+						Vector lowerPos = Vector(pos.x, pos.y, toPos.z);
+
+						trace_t result;
+						CTraceFilterNoNPCsOrPlayer filter(GetOuter(), COLLISION_GROUP_NONE);
+						AI_TraceHull(pos, lowerPos, Vector(-halfWidth, -halfWidth, stepHeight), Vector(halfWidth, halfWidth, hullHeight), MASK_NPCSOLID, &filter, &result);
+						if(result.fraction >= 1.0f) {
+							break;
+						}
+					}
+
+					Vector startDrop(pToWaypoint->vecLocation.x + pushDist * dir.x, pToWaypoint->vecLocation.y + pushDist * dir.y, pToWaypoint->vecLocation.z);
+					Vector endDrop(startDrop.x, startDrop.y, pToWaypoint->pArea->GetZ(pToWaypoint->vecLocation));
+
+					if(GetOuter()->m_nDebugBits & OVERLAY_NPC_ROUTE_BIT) {
+						NDebugOverlay::Cross3D(startDrop, 5.0f, 255, 0, 255, true, 5.0f);
+						NDebugOverlay::Cross3D(endDrop, 5.0f, 255, 255, 0, true, 5.0f);
+						NDebugOverlay::VertArrow(startDrop, endDrop, 5.0f, 255, 100, 0, 255, true, 5.0f);
+					}
+
+					float ground;
+					if(TheNavMesh->GetGroundHeight(endDrop, &ground)) {
+						if(startDrop.z > ground + stepHeight) {
+							pToWaypoint->vecLocation = startDrop;
+
+							AI_Waypoint_t *pCopyWaypoint = new AI_Waypoint_t(*pFromWaypoint);
+
+							pCopyWaypoint->vecLocation.x = endDrop.x;
+							pCopyWaypoint->vecLocation.y = endDrop.y;
+							pCopyWaypoint->vecLocation.z = ground;
+
+							pFromWaypoint->SetNext(pCopyWaypoint);
+							pCopyWaypoint->SetNext(pToWaypoint);
+						}
+					}
+				}
+			}
+		}
+
+		pFromWaypoint = pToWaypoint;
 	}
 
 	return pOldWaypoint;
@@ -810,9 +963,29 @@ bool CAI_Pathfinder::IsLinkUsable(CAI_Link *pLink, int startID)
 #else
 bool CAI_Pathfinder::IsAreaUsable(CNavArea *pArea)
 {
+	int areaMoveTypes = GetAreaAcceptedMoveTypes(pArea, GetHullType());
+	int moveType = ( areaMoveTypes & CapabilitiesGet() );
+
+	if (!moveType)
+	{
+		return false;
+	}
+
 	if (GetOuter()->IsUnusableArea(pArea))
 	{
 		return false;
+	}
+
+	if (moveType == bits_CAP_MOVE_JUMP)
+	{	
+		/*
+		if (!GetOuter()->IsJumpLegal(pStartNode->GetPosition(GetHullType()), 
+									 pEndNode->GetPosition(GetHullType()),
+									 pEndNode->GetPosition(GetHullType())))
+		{
+			return false;
+		}
+		*/
 	}
 
 	return true;
@@ -873,9 +1046,25 @@ AI_Waypoint_t* CAI_Pathfinder::CreateNodeWaypoint( Hull_t hullType, int nodeID, 
 	return new AI_Waypoint_t( pNode->GetPosition(hullType), pNode->GetYaw(), navType, ( bits_WP_TO_NODE | nodeFlags) , nodeID );
 }
 #else
-AI_Waypoint_t* CAI_Pathfinder::CreateAreaWaypoint( Hull_t hullType, CNavArea *area, int nodeFlags )
+AI_Waypoint_t* CAI_Pathfinder::CreateAreaWaypoint( Hull_t hullType, CNavArea *area, int areaFlags )
 {
-	return new AI_Waypoint_t( area->GetCenter(), 0.0f, NAV_GROUND, ( bits_WP_TO_AREA | nodeFlags) , area );
+	Navigation_t navType;
+	switch(GetAreaType(area))
+	{
+	case AREA_CLIMB:
+		navType = NAV_CLIMB;
+		break;
+
+	case AREA_AIR:
+		navType = NAV_FLY;
+		break;
+
+	default:
+		navType = NAV_GROUND;
+		break;
+	}
+
+	return new AI_Waypoint_t( area->GetCenter(), 0.0f, navType, ( bits_WP_TO_AREA | areaFlags) , area );
 }
 #endif
 
@@ -1038,11 +1227,11 @@ AI_Waypoint_t *CAI_Pathfinder::BuildSimpleRoute( Navigation_t navType, const Vec
 }
 #else
 AI_Waypoint_t *CAI_Pathfinder::BuildSimpleRoute( Navigation_t navType, const Vector &vStart, 
-	const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, CNavArea *area, float flYaw )
+	const Vector &vEnd, const CBaseEntity *pTarget, int endFlags, CNavArea *area, int areaTargetType, float flYaw )
 {
 	Assert( navType == NAV_JUMP || navType == NAV_CLIMB ); // this is what this here function is for
 	// Only allowed to jump to ground nodes
-	if (area == NULL )
+	if ((area == NULL) || (GetAreaType(area) == areaTargetType) )
 	{
 		AIMoveTrace_t moveTrace;
 		GetOuter()->GetMoveProbe()->MoveLimit( navType, vStart, vEnd, MASK_NPCSOLID, pTarget, &moveTrace );
@@ -1238,7 +1427,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildJumpRoute(const Vector &vStart, const Vector
 {
 	// Only allowed to jump to ground nodes
 	return BuildSimpleRoute( NAV_JUMP, vStart, vEnd, pTarget, 
-		endFlags, area, flYaw );
+		endFlags, area, AREA_GROUND, flYaw );
 }
 
 //-----------------------------------------------------------------------------
@@ -1251,7 +1440,7 @@ AI_Waypoint_t *CAI_Pathfinder::BuildClimbRoute(const Vector &vStart, const Vecto
 {
 	// Only allowed to climb to climb nodes
 	return BuildSimpleRoute( NAV_CLIMB, vStart, vEnd, pTarget, 
-		endFlags, area, flYaw );
+		endFlags, area, AREA_CLIMB, flYaw );
 }
 
 
