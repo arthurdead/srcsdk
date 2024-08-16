@@ -420,6 +420,10 @@ void CBaseAnimating::StudioFrameAdvanceInternal( CStudioHdr *pStudioHdr, float f
 	float flNewCycle = GetCycle() + flCycleDelta;
 	if (flNewCycle < 0.0 || flNewCycle >= 1.0) 
 	{
+		if (flNewCycle >= 1.0f)
+		{
+			ReachedEndOfSequence();
+		}
 		if (m_bSequenceLoops)
 		{
 			flNewCycle -= (int)(flNewCycle);
@@ -1754,22 +1758,20 @@ ConVar sv_pvsskipanimation( "sv_pvsskipanimation", "1", FCVAR_ARCHIVE, "Skips Se
 ConVar ai_setupbones_debug( "ai_setupbones_debug", "0", 0, "Shows that bones that are setup every think" );
 
 
-
-
-inline bool CBaseAnimating::CanSkipAnimation( void )
+bool CBaseAnimating::CanSkipAnimation(void)
 {
-	if ( !sv_pvsskipanimation.GetBool() )
+	if (!sv_pvsskipanimation.GetBool())
 		return false;
-		
-	CAI_BaseNPC *pNPC = MyNPCPointer();
-	if ( pNPC && !pNPC->HasCondition( COND_IN_PVS ) && ( m_fBoneCacheFlags & (BCF_NO_ANIMATION_SKIP | BCF_IS_IN_SPAWN) ) == false )
+
+	CAI_BaseNPC* pNPC = MyNPCPointer();
+	if (pNPC && !pNPC->HasCondition(COND_IN_PVS) && (m_fBoneCacheFlags & (BCF_NO_ANIMATION_SKIP | BCF_IS_IN_SPAWN)) == false)
 	{
 		// If we have a player as a child, then we better setup our bones. If we don't,
 		// the PVS will be screwy. 
 		return !DoesHavePlayerChild();
 	}
 	else
-	{	
+	{
 		return false;
 	}
 }

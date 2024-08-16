@@ -704,7 +704,7 @@ void CAI_BaseActor::UpdateLatchedValues( )
 		// set head latch
 		m_fLatchedPositions |= HUMANOID_LATCHED_HEAD;
 
-		if (!HasCondition( COND_IN_PVS ) || !GetAttachment( "eyes", m_latchedEyeOrigin, &m_latchedHeadDirection ))
+		if (CanSkipAnimation() || !GetAttachment("eyes", m_latchedEyeOrigin, &m_latchedHeadDirection))
 		{
 			m_latchedEyeOrigin = BaseClass::EyePosition( );
 			AngleVectors( GetLocalAngles(), &m_latchedHeadDirection );
@@ -1495,7 +1495,7 @@ void CAI_BaseActor::MaintainLookTargets( float flInterval )
 	}
 
 	// don't bother with any of the rest if the player can't see you
-	if (!HasCondition( COND_IN_PVS ))
+	if (CanSkipAnimation())
 	{
 		return;
 	}

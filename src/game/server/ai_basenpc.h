@@ -617,6 +617,8 @@ public:
 	virtual bool		ShouldAlwaysThink();
 	void				ForceGatherConditions()	{ m_bForceConditionsGather = true; SetEfficiency( AIE_NORMAL ); }	// Force an NPC out of PVS to call GatherConditions on next think
 
+	bool IsForceGatherConditionsSet() { return m_bForceConditionsGather; }
+
 	virtual float		LineOfSightDist( const Vector &vecDir = vec3_invalid, float zEye = FLT_MAX );
 
 	virtual void		MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
@@ -904,7 +906,7 @@ public:
 	void				RemoveSleepFlags( int flags ) { m_SleepFlags &= ~flags; }
 	bool				HasSleepFlags( int flags ) { return (m_SleepFlags & flags) == flags; }
 
-	void				UpdateSleepState( bool bInPVS );
+	virtual void				UpdateSleepState( bool bInPVS );
 	virtual	void		Wake( bool bFireOutput = true );
 	void				Sleep();
 	bool				WokeThisTick() const;
