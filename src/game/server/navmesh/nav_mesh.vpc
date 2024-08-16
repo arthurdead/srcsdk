@@ -9,6 +9,7 @@ $Configuration
 	$Compiler
 	{
 		$PreprocessorDefinitions		"$BASE;USE_NAV_MESH"
+		$AdditionalIncludeDirectories	"$BASE;.\navmesh"
 	}
 }
 
