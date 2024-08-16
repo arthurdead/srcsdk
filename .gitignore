@@ -54,6 +54,11 @@ vaudio_minimp3.pdb
 vaudio_minimp3.so
 vaudio_minimp3.so.dbg
 
+vaudio_miles.dll
+vaudio_miles.pdb
+vaudio_miles.so
+vaudio_miles.so.dbg
+
 video_services.dll
 video_services.pdb
 video_services.so

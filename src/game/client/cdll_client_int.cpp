@@ -1024,7 +1024,7 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 
 	// get video_services.dll from our game's bin folder
 	char video_service_path[MAX_PATH];
-	Q_snprintf( video_service_path, sizeof( video_service_path ), "%s\\bin\\video_services.dll", engine->GetGameDirectory() );
+	Q_snprintf( video_service_path, sizeof( video_service_path ), "%s\\bin\\video_services" DLL_EXT_STRING, engine->GetGameDirectory() );
 
 	CSysModule *video_services_module = Sys_LoadModule( video_service_path );
 	if ( video_services_module != nullptr )

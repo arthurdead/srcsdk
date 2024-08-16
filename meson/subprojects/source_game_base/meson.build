@@ -116,6 +116,7 @@ source_game_shared_dep = declare_dependency(
 		join_paths(shared_src_dir,'teamplay_round_timer.cpp'),
 		join_paths(shared_src_dir,'script_intro_shared.cpp'),
 		join_paths(shared_src_dir,'Multiplayer','multiplayer_animstate.cpp'),
+		join_paths(shared_src_dir,'dlloverride.cpp'),
 		join_paths(public_dir,'SoundParametersInternal.cpp'),
 		join_paths(public_dir,'haptics','haptic_msgs.cpp'),
 		join_paths(public_dir,'bone_setup.cpp'),
