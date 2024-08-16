@@ -16,7 +16,7 @@ $Configuration
 {
 	$Compiler
 	{
-		$AdditionalIncludeDirectories		"$SRCDIR\game\client\heist;$SRCDIR\game\client\heist\vgui"
+		$AdditionalIncludeDirectories		"$SRCDIR\game\client\heist;$SRCDIR\game\client\heist\vgui;$SRCDIR\game\shared\heist;$SRCDIR\game\client\heist\vgui"
 		$PreprocessorDefinitions			"$BASE;HEIST_CLIENT_DLL;SDK2013CE;SM_SP_FIXES;SM_AI_FIXES;SM_IMPROVEMENTS"
 	}
 }
@@ -25,7 +25,17 @@ $Project "Client"
 {
 	$Folder	"Source Files"
 	{
-		-$File	"$SRCDIR\game\shared\weapon_parse_default.cpp"
+		//-$File	"$SRCDIR\game\shared\weapon_parse_default.cpp"
+
+		$Folder "Shared"{
+			$File "./../shared/heist/heist_gamerules.cpp"
+			$File "./../shared/heist/heist_playeranimstate.cpp"
+			$File "./../shared/heist/weapon_heistbase.cpp"
+			$File "./../shared/heist/heist_usermessages.cpp"
+			$File "./../shared/heist/heist_gamemovement.cpp"
+			$File "./../shared/heist/heist_weapon_parse.cpp"
+			$File "./../shared/heist/heist_player_shared.cpp"
+		}
 
 		$Folder	"HEIST DLL"
 		{
