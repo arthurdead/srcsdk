@@ -17,7 +17,7 @@ class C_HeistRootPanel : public vgui::Panel
 
 public:
 	C_HeistRootPanel(vgui::VPANEL parent);
-	~C_HeistRootPanel() override;
+	~C_HeistRootPanel();
 
 	void PostChildPaint() override;
 

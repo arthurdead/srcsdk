@@ -155,7 +155,7 @@ void UTIL_DrawPositioningOverlay( float flCrossDistance )
 	Vector pRight;
 	pPlayer->EyeVectors( NULL, &pRight, NULL );
 
-#ifdef _WIN32
+#if defined _WIN32 && !defined AI_USES_NAV_MESH
 	Vector topPos		= NWCEdit::AirNodePlacementPosition();
 #else
         Vector pForward;
