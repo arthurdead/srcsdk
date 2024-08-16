@@ -17,7 +17,7 @@ $Configuration
 	$Compiler
 	{
 		$AdditionalIncludeDirectories		"$SRCDIR\game\client\heist;$SRCDIR\game\client\heist\vgui;$SRCDIR\game\shared\heist;$SRCDIR\game\shared\heist\vgui"
-		$PreprocessorDefinitions			"$BASE;HEIST_CLIENT_DLL;SDK2013CE;SM_SP_FIXES;SM_AI_FIXES;SM_IMPROVEMENTS"
+		$PreprocessorDefinitions			"$BASE;HEIST_DLL;HEIST_CLIENT_DLL;SDK2013CE;SecobMod__SAVERESTORE;SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS;SecobMod__MULTIPLAYER_VIEWCONTROL_CAMERAS;SecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE;SecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE;SecobMod__ALLOW_PLAYER_MODELS_IN_VEHICLES;SM_SP_FIXES;SM_AI_FIXES;SM_IMPROVEMENTS"
 	}
 }
 
