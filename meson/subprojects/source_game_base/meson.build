@@ -502,6 +502,7 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'team_train_watcher.cpp'),
 		join_paths(server_src_dir,'trigger_area_capture.cpp'),
 		join_paths(server_src_dir,'weapon_cubemap.cpp'),
+		join_paths(server_src_dir,'Func_Monitor.cpp'),
 		join_paths(shared_src_dir,'voice_gamemgr.cpp'),
 		join_paths(shared_src_dir,'ModelSoundsCache.cpp'),
 		join_paths(shared_src_dir,'SceneCache.cpp')

@@ -4,7 +4,7 @@
 
 $Games
 {
-	"HL2MP"
+	"HEIST"
 }
 
 $Conditional "SOURCESDK" "1"

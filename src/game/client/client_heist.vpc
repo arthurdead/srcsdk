@@ -5,19 +5,19 @@
 //-----------------------------------------------------------------------------
 
 $Macro SRCDIR		"..\.."
-$Macro GAMENAME 	"heist" [!$SOURCESDK]
-//$Macro GAMENAME 	"mod_hl2mp" [$SOURCESDK]
-
+$Macro GAMENAME 	"heist"
 
 $Include "$SRCDIR\game\client\client_base.vpc"
-$Include "$SRCDIR\coplay\src\coplay.vpc"
 
 $Configuration
 {
 	$Compiler
 	{
-		$AdditionalIncludeDirectories		"$SRCDIR\game\client\heist;$SRCDIR\game\client\heist\vgui;$SRCDIR\game\shared\heist;$SRCDIR\game\shared\heist\vgui"
-		$PreprocessorDefinitions			"$BASE;HEIST_DLL;HEIST_CLIENT_DLL;SDK2013CE;SecobMod__SAVERESTORE;SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS;SecobMod__MULTIPLAYER_VIEWCONTROL_CAMERAS;SecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE;SecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE;SecobMod__ALLOW_PLAYER_MODELS_IN_VEHICLES;SM_SP_FIXES;SM_AI_FIXES;SM_IMPROVEMENTS"
+		$AdditionalIncludeDirectories		"$BASE;$SRCDIR\game\shared\heist;.\heist;.\heist\vgui"
+		$PreprocessorDefinitions			"$BASE;SM_SP_FIXES;SM_AI_FIXES;SM_IMPROVEMENTS"
+		$PreprocessorDefinitions			"$BASE;SecobMod__SAVERESTORE;SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS;SecobMod__MULTIPLAYER_VIEWCONTROL_CAMERAS;SecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE;SecobMod__ENABLE_FAKE_PASSENGER_SEATS;SecobMod__ALLOW_PLAYER_MODELS_IN_VEHICLES"
+		$PreprocessorDefinitions			"$BASE;HEIST_DLL;HEIST_CLIENT_DLL"
+		//$PreprocessorDefinitions			"$BASE;WEBM_VIDEO_SERVICES_MOD"
 	}
 }
 
@@ -25,35 +25,24 @@ $Project "Client"
 {
 	$Folder	"Source Files"
 	{
-		//-$File	"$SRCDIR\game\shared\weapon_parse_default.cpp"
-
-		$Folder "Shared"
-		{
-			$File "./../shared/heist/heist_gamerules.cpp"
-			$File "./../shared/heist/heist_playeranimstate.cpp"
-			$File "./../shared/heist/weapon_heistbase.cpp"
-			$File "./../shared/heist/heist_usermessages.cpp"
-			$File "./../shared/heist/heist_gamemovement.cpp"
-			$File "./../shared/heist/heist_weapon_parse.cpp"
-			$File "./../shared/heist/heist_player_shared.cpp"
-		}
-
 		$Folder	"HEIST DLL"
 		{
-			$File	"heist/c_heist_player.cpp"
-			$File	"heist/heist_in_main.cpp"
-			$File	"heist/heist_prediction.cpp"
-			$File	"heist/clientmode_heist.cpp"
-			$File	"heist/heist_hud_chat.cpp"
-			$File	"heist/heist_hud_weaponselection.cpp"
-			$File	"heist/vgui/heistviewport.cpp"
-			$File	"heist/vgui/vgui_rootpanel_heist.cpp"
-		}
-		
-		$Folder	"SDK2013CE DLL"
-		{
-			$File	"shaderapihack.h"
-		}
+ 			$File	"$SRCDIR\game\shared\heist\heist_gamerules.cpp"
+ 			$File	"$SRCDIR\game\shared\heist\heist_playeranimstate.cpp"
+ 			$File	"$SRCDIR\game\shared\heist\weapon_heistbase.cpp"
+ 			$File	"$SRCDIR\game\shared\heist\heist_usermessages.cpp"
+ 			$File	"$SRCDIR\game\shared\heist\heist_gamemovement.cpp"
+ 			$File	"$SRCDIR\game\shared\heist\heist_weapon_parse.cpp"
+ 			$File	"$SRCDIR\game\shared\heist\heist_player_shared.cpp"
 
+ 			$File	"heist\c_heist_player.cpp"
+ 			$File	"heist\heist_in_main.cpp"
+ 			$File	"heist\heist_prediction.cpp"
+ 			$File	"heist\clientmode_heist.cpp"
+ 			$File	"heist\heist_hud_chat.cpp"
+ 			$File	"heist\heist_hud_weaponselection.cpp"
+ 			$File	"heist\vgui\heistviewport.cpp"
+ 			$File	"heist\vgui\vgui_rootpanel_heist.cpp"
+		}
 	}
 }

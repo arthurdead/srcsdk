@@ -1,2 +1,2 @@
-devtools\bin\vpc.exe +game /hl2mp /mksln game.sln
+devtools\bin\vpc.exe +game /heist /mksln game.sln
 pause

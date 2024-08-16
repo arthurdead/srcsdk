@@ -1,2 +1,2 @@
-devtools\bin\vpc.exe +everything /hl2mp /mksln everything.sln
+devtools\bin\vpc.exe +everything /heist /mksln everything.sln
 pause

@@ -52,7 +52,8 @@ $Configuration
 	$Compiler
 	{
 		$AdditionalIncludeDirectories	".\;$BASE;$SRCDIR\vgui2\include;$SRCDIR\vgui2\controls;$SRCDIR\game\shared;.\game_controls;$SRCDIR\thirdparty\sixensesdk\include"
-		$PreprocessorDefinitions		"$BASE;NO_STRING_T;CLIENT_DLL;VECTOR;VERSION_SAFE_STEAM_API_INTERFACES;PROTECTED_THINGS_ENABLE;strncpy=use_Q_strncpy_instead;_snprintf=use_Q_snprintf_instead" 
+		$AdditionalIncludeDirectories	"$BASE;$SRCDIR\game\shared\sdk2013ce;.\sdk2013ce;$SRCDIR\game\shared\Multiplayer"
+		$PreprocessorDefinitions		"$BASE;NO_STRING_T;CLIENT_DLL;USES_SAVERESTORE;VECTOR;VERSION_SAFE_STEAM_API_INTERFACES;PROTECTED_THINGS_ENABLE;strncpy=use_Q_strncpy_instead;_snprintf=use_Q_snprintf_instead" 
 		$PreprocessorDefinitions		"$BASE;fopen=dont_use_fopen" [$WIN32]
 		$PreprocessorDefinitions		"$BASE;USE_WEBM_FOR_REPLAY;" [$LINUXALL]
 		$PreprocessorDefinitions		"$BASE;CURL_STATICLIB" [$WIN32 && $BUILD_REPLAY]
@@ -172,18 +173,29 @@ $Project
 		
 	$Folder	"Source Files"
 	{
+		$File	"$SRCDIR\game\shared\Multiplayer\multiplayer_animstate.h"
+		$File	"$SRCDIR\game\shared\Multiplayer\multiplayer_animstate.cpp"
+		$File	"$SRCDIR\game\shared\script_intro_shared.cpp"
+		$File	"c_team_objectiveresource.cpp"
+		$File	"c_team_objectiveresource.h"
+		$File	"c_team_train_watcher.cpp"
+		$File	"c_team_train_watcher.h"
+		$File	"hud_voicestatus.cpp"
+		$File	"$SRCDIR\game\shared\predicted_viewmodel.cpp"
+		$File	"$SRCDIR\game\shared\predicted_viewmodel.h"
+		$File	"$SRCDIR\game\shared\teamplay_round_timer.cpp"
+		$File	"$SRCDIR\game\shared\teamplay_round_timer.h"
 		$File	"C_Func_Monitor.cpp"
 		$File	"geiger.cpp"
 		$File	"history_resource.cpp"
 		$File	"hud_weapon.cpp"
 		$File	"train.cpp"
-		$File	"$SRCDIR\game\shared\weapon_parse_default.cpp"
+		//$File	"$SRCDIR\game\shared\weapon_parse_default.cpp"
 		$File	"$SRCDIR\game\shared\achievement_saverestore.cpp"
 		$File	"$SRCDIR\game\shared\achievement_saverestore.h"
 		$File	"$SRCDIR\game\shared\achievementmgr.cpp"
 		$File	"$SRCDIR\game\shared\achievementmgr.h"
 		$File   "$SRCDIR\game\shared\achievements_and_stats_interface.h"
-		$File	"$SRCDIR\game\shared\hl2\achievements_hlx.cpp"
 		$File	"achievement_notification_panel.cpp"
 		$File	"achievement_notification_panel.h"
 		$File	"$SRCDIR\game\shared\activitylist.cpp"
@@ -282,7 +294,6 @@ $Project
 		$File	"c_vehicle_jeep.cpp"
 		$File	"c_vguiscreen.cpp"
 		$File	"c_waterbullet.cpp"
-		$File	"hl2\hud_autoaim.cpp"
 		$File	"C_WaterLODControl.cpp"
 		$File	"c_world.cpp"
 		$File	"$SRCDIR\game\shared\cam_thirdperson.cpp"
@@ -503,6 +514,11 @@ $Project
 		//Haptics
 		$File	"$SRCDIR\public\haptics\haptic_msgs.cpp"	[!$X360]
 		$File	"$SRCDIR\public\haptics\haptic_utils.cpp"	[$WIN32&&!$X360]
+
+		$Folder	"SDK2013CE DLL"
+		{
+			$File	"shaderapihack.h"
+		}
 
 		$Folder	"Sixense"
 		{

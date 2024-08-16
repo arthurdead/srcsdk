@@ -69,6 +69,7 @@ shared_library('server',
 	]
 )
 
+if false
 shared_library('server_srv',
 	cpp_pch: [
 		#join_paths(server_src_dir,'cbase.h'),
@@ -79,6 +80,7 @@ shared_library('server_srv',
 		source_game_base.get_variable('source_linux_dedicated_server_lib_dep')
 	]
 )
+endif
 
 shared_library('client',
 	cpp_args: [

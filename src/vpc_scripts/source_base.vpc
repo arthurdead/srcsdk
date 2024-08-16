@@ -15,6 +15,7 @@ $Configuration "Debug"
 		$PreprocessorDefinitions		"VPC"
 		$PreprocessorDefinitions		"$BASE;_RETAIL"					[$RETAIL]
 		$PreprocessorDefinitions		"$BASE;RAD_TELEMETRY_DISABLED"	[$SOURCESDK]
+		$PreprocessorDefinitions		"$BASE;SDK2013CE"
 	}
 }
 
@@ -25,5 +26,6 @@ $Configuration "Release"
 		$PreprocessorDefinitions		"VPC"
 		$PreprocessorDefinitions		"$BASE;_RETAIL"					[$RETAIL]
 		$PreprocessorDefinitions		"$BASE;RAD_TELEMETRY_DISABLED"	[$SOURCESDK]
+		$PreprocessorDefinitions		"$BASE;SDK2013CE"
 	}
 }
