@@ -10,7 +10,9 @@
 #include "soundent.h"
 #include "TemplateEntities.h"
 #include "point_template.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_initutils.h"
+#endif
 #include "lights.h"
 #include "mapentities.h"
 #include "wcedit.h"
@@ -18,6 +20,7 @@
 #include "datacache/imdlcache.h"
 #include "world.h"
 #include "toolframework/iserverenginetools.h"
+#include "tier0/vprof.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -386,7 +389,7 @@ void MapEntity_ParseAllEntities(const char *pMapData, IMapEntityFilter *pFilter,
 			DispatchSpawn(pEntity);
 			continue;
 		}
-				
+	#ifndef AI_USES_NAV_MESH
 		CNodeEnt *pNode = dynamic_cast<CNodeEnt*>(pEntity);
 		if ( pNode )
 		{
@@ -406,6 +409,7 @@ void MapEntity_ParseAllEntities(const char *pMapData, IMapEntityFilter *pFilter,
 			}
 			continue;
 		}
+	#endif
 
 		if ( dynamic_cast<CLight*>(pEntity) )
 		{

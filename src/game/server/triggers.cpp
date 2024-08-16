@@ -2820,6 +2820,7 @@ void CAI_ChangeTarget::InputActivate( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Change an NPC's hint group to something new
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 class CAI_ChangeHintGroup : public CBaseEntity
 {
 public:
@@ -2907,7 +2908,7 @@ void CAI_ChangeHintGroup::InputActivate( inputdata_t &inputdata )
 		pTarget->SetHintGroup( m_strNewHintGroup, m_bHintGroupNavLimiting );
 	}
 }
-
+#endif
 
 
 

@@ -30,7 +30,6 @@
 #include "utlvector.h"
 #include "activitylist.h"
 #include "bitstring.h"
-#include "ai_basenpc.h"
 #include "ai_navgoaltype.h" //GoalType_t enum
 #include "eventlist.h"
 #include "soundent.h"
@@ -43,8 +42,12 @@
 class CAI_Schedule;
 class CAI_Network;
 class CAI_Route;
+#ifndef AI_USES_NAV_MESH
 class CAI_Hint;
 class CAI_Node;
+#else
+class CNavArea;
+#endif
 class CAI_Navigator;
 class CAI_Pathfinder;
 class CAI_Senses;
@@ -117,7 +120,11 @@ enum Interruptability_t
 //#define bits_MEMORY_ 					( 1 << 7 )
 #define bits_MEMORY_TOURGUIDE			( 1 << 8 )// I have been acting as a tourguide.
 //#define bits_MEMORY_					( 1 << 9 )// 
+#ifndef AI_USES_NAV_MESH
 #define bits_MEMORY_LOCKED_HINT			( 1 << 10 )// 
+#else
+#define bits_MEMORY_LOCKED_AREA			( 1 << 10 )// 
+#endif
 //#define bits_MEMORY_					( 1 << 12 )
 
 #define bits_MEMORY_TURNING				( 1 << 13 )// Turning, don't interrupt me.
@@ -1309,8 +1316,12 @@ public:
 	virtual	bool		OverrideMoveFacing( const AILocalMoveGoal_t &move, float flInterval );
 
 	//---------------------------------
-	
+
+#ifndef AI_USES_NAV_MESH
 	virtual bool		IsUnusableNode(int iNodeID, CAI_Hint *pHint); // Override for special NPC behavior
+#else
+	virtual bool		IsUnusableArea(CNavArea *pArea);
+#endif
 	virtual bool		ValidateNavGoal();
 	virtual bool		IsCurTaskContinuousMove();
 	virtual bool		IsValidMoveAwayDest( const Vector &vecDest )	{ return true; }
@@ -1401,7 +1412,11 @@ public:
 	
 	void				SetDefaultEyeOffset ( void );
 	const Vector &		GetDefaultEyeOffset( void )			{ return m_vDefaultEyeOffset;	}
+#ifndef AI_USES_NAV_MESH
 	virtual Vector		GetNodeViewOffset()					{ return GetViewOffset();		}
+#else
+	virtual Vector		GetAreaViewOffset()					{ return GetViewOffset();		}
+#endif
 
 	virtual Vector		EyeOffset( Activity nActivity );
 	virtual Vector		EyePosition( void );
@@ -1621,10 +1636,12 @@ public:
 
 	int					NumWeaponsInSquad( const char *pszWeaponClassname );
 
+#ifndef AI_USES_NAV_MESH
 	string_t			GetHintGroup( void )			{ return m_strHintGroup;		}
 	void				ClearHintGroup( void )			{ SetHintGroup( NULL_STRING );	}
 	void				SetHintGroup( string_t name, bool bHintGroupNavLimiting = false );
 	bool				IsLimitingHintGroups( void )	{ return m_bHintGroupNavLimiting; }
+#endif
 
 	//---------------------------------
 
@@ -1637,15 +1654,25 @@ public:
 	virtual bool		FindCoverPos( CBaseEntity *pEntity, Vector *pResult );
 	virtual bool		FindCoverPosInRadius( CBaseEntity *pEntity, const Vector &goalPos, float coverRadius, Vector *pResult );
 	virtual bool		FindCoverPos( CSound *pSound, Vector *pResult );
+#ifndef AI_USES_NAV_MESH
 	virtual bool		IsValidCover ( const Vector &vecCoverLocation, CAI_Hint const *pHint );
+#else
+	virtual bool		IsValidCover ( const Vector &vecCoverLocation, CNavArea const *pArea );
+#endif
+#ifndef AI_USES_NAV_MESH
 	virtual bool		IsValidShootPosition ( const Vector &vecCoverLocation, CAI_Node *pNode, CAI_Hint const *pHint );
+#else
+	virtual bool		IsValidShootPosition ( const Vector &vecCoverLocation, CNavArea *pArea );
+#endif
 	virtual bool		TestShootPosition(const Vector &vecShootPos, const Vector &targetPos )	{ return WeaponLOSCondition( vecShootPos, targetPos, false ); }
 	virtual bool		IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition );
 	virtual float		CoverRadius( void ) { return 1024; } // Default cover radius
 	virtual float		GetMaxTacticalLateralMovement( void ) { return MAXTACLAT_IGNORE; }
 
 protected:
+#ifndef AI_USES_NAV_MESH
 	virtual void		OnChangeHintGroup( string_t oldGroup, string_t newGroup ) {}
+#endif
 
 	CAI_Squad *			m_pSquad;		// The squad that I'm on
 	string_t			m_SquadName;
@@ -1653,8 +1680,10 @@ protected:
 	int					m_iMySquadSlot;	// this is the behaviour slot that the npc currently holds in the squad. 
 
 private:
+#ifndef AI_USES_NAV_MESH
 	string_t			m_strHintGroup;
 	bool				m_bHintGroupNavLimiting;
+#endif
 	CAI_TacticalServices *m_pTacticalServices;
 
 public:
@@ -1725,11 +1754,19 @@ public:
 	virtual bool		FCanCheckAttacks ( void );
 	virtual void		CheckAmmo( void ) {}
 
+#ifndef AI_USES_NAV_MESH
 	virtual bool		FValidateHintType( CAI_Hint *pHint );
 	virtual Activity	GetHintActivity( short sHintType, Activity HintsActivity );
 	virtual float		GetHintDelay( short sHintType );
 	virtual Activity	GetCoverActivity( CAI_Hint* pHint );
 	virtual Activity	GetReloadActivity( CAI_Hint* pHint );
+#else
+	virtual bool		FValidateArea( CNavArea *pArea );
+	virtual Activity	GetAreaActivity( CNavArea* pArea, Activity AreaActivity );
+	virtual float		GetAreaDelay( CNavArea* pArea );
+	virtual Activity	GetCoverActivity( CNavArea* pArea );
+	virtual Activity	GetReloadActivity( CNavArea* pArea );
+#endif
 
 	virtual void		SetTurnActivity( void );
 	bool				UpdateTurnGesture( void );
@@ -1841,10 +1878,17 @@ public:
 	CBaseEntity*	GetGoalEnt()							{ return m_hGoalEnt;	}
 	void			SetGoalEnt( CBaseEntity *pGoalEnt )		{ m_hGoalEnt.Set( pGoalEnt ); }
 
+#ifndef AI_USES_NAV_MESH
 	CAI_Hint		*GetHintNode()							{ return m_pHintNode; }
 	const CAI_Hint *GetHintNode() const						{ return m_pHintNode; }
 	void			SetHintNode( CAI_Hint *pHintNode );
 	void			ClearHintNode( float reuseDelay = 0.0 );
+#else
+	CNavArea		*GetActiveArea()							{ return m_pActiveArea; }
+	const CNavArea *GetActiveArea() const						{ return m_pActiveArea; }
+	void			SetActiveArea( CNavArea *pArea );
+	void			ClearActiveArea();
+#endif
 
 	float				m_flWaitFinished;			// if we're told to wait, this is the time that the wait will be over.
 
@@ -1858,7 +1902,11 @@ public:
 	Vector				m_vInterruptSavePosition;	// position stored by a task that was interrupted
 
 private:
+#ifndef AI_USES_NAV_MESH
 	CHandle<CAI_Hint>	m_pHintNode;				// this is the hint that the npc is moving towards or performing active idle on.
+#else
+	CNavArea *m_pActiveArea;
+#endif
 
 public:
 	int					m_cAmmoLoaded;				// how much ammo is in the weapon (used to trigger reload anim sequences)

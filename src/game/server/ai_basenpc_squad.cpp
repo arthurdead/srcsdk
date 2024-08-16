@@ -15,7 +15,9 @@
 #include "ai_squad.h"
 #include "bitstring.h"
 #include "entitylist.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_hint.h"
+#endif
 #include "IEffects.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -88,9 +90,14 @@ void CAI_BaseNPC::VacateStrategySlot(void)
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 bool CAI_BaseNPC::IsValidCover( const Vector &vecCoverLocation, CAI_Hint const *pHint )
+#else
+bool CAI_BaseNPC::IsValidCover( const Vector &vecCoverLocation, CNavArea const *pArea )
+#endif
 {
 	// firstly, limit choices to hint groups
+#ifndef AI_USES_NAV_MESH
 	string_t iszHint = GetHintGroup();
 	char *pszHint = (char *)STRING(iszHint);
 	if ((iszHint != NULL_STRING) && (pszHint[0] != '\0'))
@@ -100,6 +107,7 @@ bool CAI_BaseNPC::IsValidCover( const Vector &vecCoverLocation, CAI_Hint const *
 			return false;
 		}
 	}
+#endif
 
 	/*
 	// If I'm in a squad don't pick cover node it other squad member
@@ -136,8 +144,13 @@ bool CAI_BaseNPC::IsValidCover( const Vector &vecCoverLocation, CAI_Hint const *
 // Output :
 //-----------------------------------------------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 bool CAI_BaseNPC::IsValidShootPosition( const Vector &vecShootLocation, CAI_Node *pNode, CAI_Hint const *pHint )
+#else
+bool CAI_BaseNPC::IsValidShootPosition( const Vector &vecShootLocation, CNavArea *pArea )
+#endif
 {
+#ifndef AI_USES_NAV_MESH
 	// limit choices to hint groups
 	if (GetHintGroup() != NULL_STRING)
 	{
@@ -147,6 +160,7 @@ bool CAI_BaseNPC::IsValidShootPosition( const Vector &vecShootLocation, CAI_Node
 				return false;
 		}
 	}
+#endif
 
 	return true;
 }

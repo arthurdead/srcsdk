@@ -81,7 +81,9 @@ public:
 	void BridgeEvent_Killed( const CTakeDamageInfo &info )	{ Event_Killed( info );	}
 	void BridgeCleanupOnDeath( CBaseEntity *pCulprit, bool bFireDeathOutput )		{ CleanupOnDeath( pCulprit, bFireDeathOutput ); }
 
+#ifndef AI_USES_NAV_MESH
 	void BridgeOnChangeHintGroup( string_t oldGroup, string_t newGroup ) { 	OnChangeHintGroup( oldGroup, newGroup ); }
+#endif
 
 	void BridgeGatherConditions()					{ GatherConditions(); }
 	void BridgePrescheduleThink()					{ PrescheduleThink(); }
@@ -102,11 +104,20 @@ public:
 	void BridgeOnMovementFailed()					{ OnMovementFailed(); }
 	void BridgeOnMovementComplete()					{ OnMovementComplete(); }
 	float BridgeGetDefaultNavGoalTolerance();
+#ifndef AI_USES_NAV_MESH
 	bool BridgeFValidateHintType( CAI_Hint *pHint, bool *pResult );
+#else
+	bool BridgeFValidateArea( CNavArea *pArea, bool *pResult );
+#endif
 	bool BridgeIsValidEnemy( CBaseEntity *pEnemy );
 	CBaseEntity *BridgeBestEnemy();
+#ifndef AI_USES_NAV_MESH
 	bool BridgeIsValidCover( const Vector &vLocation, CAI_Hint const *pHint );
 	bool BridgeIsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint );
+#else
+	bool BridgeIsValidCover( const Vector &vLocation, CNavArea const *pArea );
+	bool BridgeIsValidShootPosition( const Vector &vLocation, CNavArea *pArea );
+#endif
 	float BridgeGetMaxTacticalLateralMovement( void );
 	bool BridgeShouldIgnoreSound( CSound *pSound );
 	void BridgeOnSeeEntity( CBaseEntity *pEntity );
@@ -170,11 +181,17 @@ protected:
 	virtual void BuildScheduleTestBits() {}
 	bool IsCurSchedule( int schedId, bool fIdeal = true );
 
-
+#ifndef AI_USES_NAV_MESH
 	CAI_Hint *		GetHintNode()							{ return GetOuter()->GetHintNode(); }
 	const CAI_Hint *GetHintNode() const						{ return GetOuter()->GetHintNode(); }
 	void			SetHintNode( CAI_Hint *pHintNode )		{ GetOuter()->SetHintNode( pHintNode ); }
 	void			ClearHintNode( float reuseDelay = 0.0 )	{ GetOuter()->ClearHintNode( reuseDelay ); }
+#else
+	CNavArea *		GetActiveArea()							{ return GetOuter()->GetActiveArea(); }
+	const CNavArea *GetActiveArea() const						{ return GetOuter()->GetActiveArea(); }
+	void			SetActiveArea( CNavArea *pHintNode )		{ GetOuter()->SetActiveArea( pHintNode ); }
+	void			ClearActiveArea()	{ GetOuter()->ClearActiveArea(); }
+#endif
 
 protected:
 	// Used by derived classes to chain a task to a task that might not be the 
@@ -190,12 +207,21 @@ protected:
 	virtual void OnMovementFailed() {};
 	virtual void OnMovementComplete() {};
 	virtual float GetDefaultNavGoalTolerance();
+#ifndef AI_USES_NAV_MESH
 	virtual bool FValidateHintType( CAI_Hint *pHint );
+#else
+	virtual bool FValidateArea( CNavArea *pArea );
+#endif
 
 	virtual	bool IsValidEnemy( CBaseEntity *pEnemy );
 	virtual CBaseEntity *BestEnemy();
+#ifndef AI_USES_NAV_MESH
 	virtual	bool IsValidCover( const Vector &vLocation, CAI_Hint const *pHint );
 	virtual	bool IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint );
+#else
+	virtual	bool IsValidCover( const Vector &vLocation, CNavArea const *pArea );
+	virtual	bool IsValidShootPosition( const Vector &vLocation, CNavArea *pArea );
+#endif
 	virtual float GetMaxTacticalLateralMovement( void );
 	virtual bool ShouldIgnoreSound( CSound *pSound );
 	virtual void OnSeeEntity( CBaseEntity *pEntity );
@@ -229,11 +255,13 @@ protected:
 	
 	//---------------------------------
 
+#ifndef AI_USES_NAV_MESH
 	string_t			GetHintGroup()			{ return GetOuter()->GetHintGroup();	}
 	void				ClearHintGroup()			{ GetOuter()->ClearHintGroup();			}
 	void				SetHintGroup( string_t name )	{ GetOuter()->SetHintGroup( name );		}
 
 	virtual void		OnChangeHintGroup( string_t oldGroup, string_t newGroup ) {}
+#endif
 
 	//
 	// These allow derived classes to implement custom schedules
@@ -337,8 +365,13 @@ public:
 	virtual Activity 	 BackBridge_NPC_TranslateActivity( Activity activity ) = 0;
 	virtual bool		 BackBridge_IsValidEnemy(CBaseEntity *pEnemy) = 0;
 	virtual CBaseEntity* BackBridge_BestEnemy(void) = 0;
+#ifndef AI_USES_NAV_MESH
 	virtual bool		 BackBridge_IsValidCover( const Vector &vLocation, CAI_Hint const *pHint ) = 0;
 	virtual bool		 BackBridge_IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint ) = 0;
+#else
+	virtual bool		 BackBridge_IsValidCover( const Vector &vLocation, CNavArea const *pArea ) = 0;
+	virtual bool		 BackBridge_IsValidShootPosition( const Vector &vLocation, CNavArea *pArea ) = 0;
+#endif
 	virtual float		 BackBridge_GetMaxTacticalLateralMovement( void ) = 0;
 	virtual bool		 BackBridge_ShouldIgnoreSound( CSound *pSound ) = 0;
 	virtual void		 BackBridge_OnSeeEntity( CBaseEntity *pEntity ) = 0;
@@ -426,20 +459,31 @@ public:
 	const char *	TaskName(int taskID);
 	void			BuildScheduleTestBits();
 
+#ifndef AI_USES_NAV_MESH
 	void			OnChangeHintGroup( string_t oldGroup, string_t newGroup );
-	
+#endif
+
 	Activity 		NPC_TranslateActivity( Activity activity );
 
 	bool			IsCurTaskContinuousMove();
 	void			OnMovementFailed();
 	void			OnMovementComplete();
+#ifndef AI_USES_NAV_MESH
 	bool			FValidateHintType( CAI_Hint *pHint );
+#else
+	bool			FValidateArea( CNavArea *pArea );
+#endif
 	float			GetDefaultNavGoalTolerance();
 
 	bool			IsValidEnemy(CBaseEntity *pEnemy);
 	CBaseEntity*	BestEnemy(void);
+#ifndef AI_USES_NAV_MESH
 	bool			IsValidCover( const Vector &vLocation, CAI_Hint const *pHint );
 	bool			IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint );
+#else
+	bool			IsValidCover( const Vector &vLocation, CNavArea const *pArea );
+	bool			IsValidShootPosition( const Vector &vLocation, CNavArea *pArea );
+#endif
 	float			GetMaxTacticalLateralMovement( void );
 	bool			ShouldIgnoreSound( CSound *pSound );
 	void			OnSeeEntity( CBaseEntity *pEntity );
@@ -493,8 +537,13 @@ private:
 	Activity		BackBridge_NPC_TranslateActivity( Activity activity );
 	bool			BackBridge_IsValidEnemy(CBaseEntity *pEnemy);
 	CBaseEntity*	BackBridge_BestEnemy(void);
+#ifndef AI_USES_NAV_MESH
 	bool			BackBridge_IsValidCover( const Vector &vLocation, CAI_Hint const *pHint );
 	bool			BackBridge_IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint );
+#else
+	bool			BackBridge_IsValidCover( const Vector &vLocation, CNavArea const *pArea );
+	bool			BackBridge_IsValidShootPosition( const Vector &vLocation, CNavArea *pArea );
+#endif
 	float			BackBridge_GetMaxTacticalLateralMovement( void );
 	bool			BackBridge_ShouldIgnoreSound( CSound *pSound );
 	void			BackBridge_OnSeeEntity( CBaseEntity *pEntity );
@@ -678,11 +727,19 @@ inline bool CAI_BehaviorBase::BridgeIsCurTaskContinuousMove( bool *pResult )
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 inline bool CAI_BehaviorBase::BridgeFValidateHintType( CAI_Hint *pHint, bool *pResult )
+#else
+inline bool CAI_BehaviorBase::BridgeFValidateArea( CNavArea *pArea, bool *pResult )
+#endif
 {
 	bool fPrevOverride = m_fOverrode;
 	m_fOverrode = true;
+#ifndef AI_USES_NAV_MESH
 	*pResult = FValidateHintType( pHint );
+#else
+	*pResult = FValidateArea( pArea );
+#endif
 	bool result = m_fOverrode;
 	m_fOverrode = fPrevOverride;
 	return result;
@@ -704,17 +761,31 @@ inline CBaseEntity *CAI_BehaviorBase::BridgeBestEnemy()
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 inline bool CAI_BehaviorBase::BridgeIsValidCover( const Vector &vLocation, CAI_Hint const *pHint )
 {
 	return IsValidCover( vLocation, pHint );
 }
+#else
+inline bool CAI_BehaviorBase::BridgeIsValidCover( const Vector &vLocation, CNavArea const *pArea )
+{
+	return IsValidCover( vLocation, pArea );
+}
+#endif
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 inline bool CAI_BehaviorBase::BridgeIsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint )
 {
 	return IsValidShootPosition( vLocation, pNode, pHint );
 }
+#else
+inline bool CAI_BehaviorBase::BridgeIsValidShootPosition( const Vector &vLocation, CNavArea *pArea )
+{
+	return IsValidShootPosition( vLocation, pArea );
+}
+#endif
 
 //-------------------------------------
 
@@ -1187,6 +1258,7 @@ inline void CAI_BehaviorHost<BASE_NPC>::BuildScheduleTestBits()
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 template <class BASE_NPC>
 inline void CAI_BehaviorHost<BASE_NPC>::OnChangeHintGroup( string_t oldGroup, string_t newGroup )
 {
@@ -1196,6 +1268,7 @@ inline void CAI_BehaviorHost<BASE_NPC>::OnChangeHintGroup( string_t oldGroup, st
 	}
 	BaseClass::OnChangeHintGroup( oldGroup, newGroup );
 }
+#endif
 
 //-------------------------------------
 
@@ -1268,6 +1341,7 @@ inline float CAI_BehaviorHost<BASE_NPC>::BackBridge_GetDefaultNavGoalTolerance()
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 template <class BASE_NPC>
 inline bool CAI_BehaviorHost<BASE_NPC>::FValidateHintType( CAI_Hint *pHint )
 {
@@ -1276,6 +1350,16 @@ inline bool CAI_BehaviorHost<BASE_NPC>::FValidateHintType( CAI_Hint *pHint )
 		return result;
 	return BaseClass::FValidateHintType( pHint );
 }
+#else
+template <class BASE_NPC>
+inline bool CAI_BehaviorHost<BASE_NPC>::FValidateArea( CNavArea *pArea )
+{
+	bool result = false;
+	if ( m_pCurBehavior && m_pCurBehavior->BridgeFValidateArea( pArea, &result ) )
+		return result;
+	return BaseClass::FValidateArea( pArea );
+}
+#endif
 
 //-------------------------------------
 
@@ -1295,19 +1379,35 @@ inline CBaseEntity *CAI_BehaviorHost<BASE_NPC>::BackBridge_BestEnemy(void)
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 template <class BASE_NPC>
 inline bool CAI_BehaviorHost<BASE_NPC>::BackBridge_IsValidCover( const Vector &vLocation, CAI_Hint const *pHint )
 {
 	return BaseClass::IsValidCover( vLocation, pHint );
 }
+#else
+template <class BASE_NPC>
+inline bool CAI_BehaviorHost<BASE_NPC>::BackBridge_IsValidCover( const Vector &vLocation, CNavArea const *pArea )
+{
+	return BaseClass::IsValidCover( vLocation, pArea );
+}
+#endif
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 template <class BASE_NPC>
 inline bool CAI_BehaviorHost<BASE_NPC>::BackBridge_IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint )
 {
 	return BaseClass::IsValidShootPosition( vLocation, pNode, pHint );
 }
+#else
+template <class BASE_NPC>
+inline bool CAI_BehaviorHost<BASE_NPC>::BackBridge_IsValidShootPosition( const Vector &vLocation, CNavArea *pArea )
+{
+	return BaseClass::IsValidShootPosition( vLocation, pArea );
+}
+#endif
 
 //-------------------------------------
 
@@ -1535,6 +1635,7 @@ inline void CAI_BehaviorHost<BASE_NPC>::OnRestore()
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 template <class BASE_NPC>
 inline bool CAI_BehaviorHost<BASE_NPC>::IsValidCover( const Vector &vLocation, CAI_Hint const *pHint )
 {
@@ -1543,9 +1644,20 @@ inline bool CAI_BehaviorHost<BASE_NPC>::IsValidCover( const Vector &vLocation, C
 	
 	return BaseClass::IsValidCover( vLocation, pHint );
 }
+#else
+template <class BASE_NPC>
+inline bool CAI_BehaviorHost<BASE_NPC>::IsValidCover( const Vector &vLocation, CNavArea const *pArea )
+{
+	if ( m_pCurBehavior )
+		return m_pCurBehavior->BridgeIsValidCover( vLocation, pArea );
+	
+	return BaseClass::IsValidCover( vLocation, pArea );
+}
+#endif
 	
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 template <class BASE_NPC>
 inline bool CAI_BehaviorHost<BASE_NPC>::IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint )
 {
@@ -1554,6 +1666,16 @@ inline bool CAI_BehaviorHost<BASE_NPC>::IsValidShootPosition( const Vector &vLoc
 	
 	return BaseClass::IsValidShootPosition( vLocation, pNode, pHint );
 }
+#else
+template <class BASE_NPC>
+inline bool CAI_BehaviorHost<BASE_NPC>::IsValidShootPosition( const Vector &vLocation, CNavArea *pArea )
+{
+	if ( m_pCurBehavior )
+		return m_pCurBehavior->BridgeIsValidShootPosition( vLocation, pArea );
+	
+	return BaseClass::IsValidShootPosition( vLocation, pArea );
+}
+#endif
 
 //-------------------------------------
 

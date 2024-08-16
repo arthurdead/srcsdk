@@ -315,7 +315,11 @@ void CAI_Enemies::RefreshMemories(void)
 // Output : Returns true if new enemy, false if already know of enemy
 //-----------------------------------------------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 bool CAI_Enemies::UpdateMemory(CAI_Network* pAINet, CBaseEntity *pEnemy, const Vector &vPosition, float reactionDelay, bool firstHand )
+#else
+bool CAI_Enemies::UpdateMemory(CBaseEntity *pEnemy, const Vector &vPosition, float reactionDelay, bool firstHand )
+#endif
 {
 	if ( pEnemy == AI_UNKNOWN_ENEMY )
 		pEnemy = NULL;

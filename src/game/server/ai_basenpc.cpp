@@ -28,16 +28,24 @@
 #include "hl2_gamerules.h"
 #endif // HL2_DLL
 
+#ifndef AI_USES_NAV_MESH
 #include "ai_network.h"
 #include "ai_networkmanager.h"
+#else
+#include "nav_mesh.h"
+#endif
 #include "ai_pathfinder.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_node.h"
+#endif
 #include "ai_default.h"
 #include "ai_schedule.h"
 #include "ai_task.h"
 #include "ai_hull.h"
 #include "ai_moveprobe.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_hint.h"
+#endif
 #include "ai_navigator.h"
 #include "ai_senses.h"
 #include "ai_squadslot.h"
@@ -46,7 +54,9 @@
 #include "ai_localnavigator.h"
 #include "ai_tacticalservices.h"
 #include "ai_behavior.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_dynamiclink.h"
+#endif
 #include "AI_Criteria.h"
 #include "basegrenade_shared.h"
 #include "ammodef.h"
@@ -521,11 +531,18 @@ void CAI_BaseNPC::CleanupOnDeath( CBaseEntity *pCulprit, bool bFireDeathOutput )
 			// now keep going with the death code
 		}
 
+	#ifndef AI_USES_NAV_MESH
 		if ( GetHintNode() )
 		{
 			GetHintNode()->Unlock();
 			SetHintNode( NULL );
 		}
+	#else
+		if ( GetActiveArea() )
+		{
+			SetActiveArea( NULL );
+		}
+	#endif
 
 		if( bFireDeathOutput )
 		{
@@ -2198,7 +2215,11 @@ void CAI_BaseNPC::OnListened()
 // FValidateHintType - tells use whether or not the npc cares
 // about the type of Hint Node given
 //=========================================================
+#ifndef AI_USES_NAV_MESH
 bool CAI_BaseNPC::FValidateHintType ( CAI_Hint *pHint )
+#else
+bool CAI_BaseNPC::FValidateArea ( CNavArea *pArea )
+#endif
 {
 	return false;
 }
@@ -2207,10 +2228,14 @@ bool CAI_BaseNPC::FValidateHintType ( CAI_Hint *pHint )
 // Purpose: Override in subclasses to associate specific hint types
 //			with activities
 //-----------------------------------------------------------------------------
-Activity CAI_BaseNPC::GetHintActivity( short sHintType, Activity HintsActivity )
+#ifndef AI_USES_NAV_MESH
+Activity CAI_BaseNPC::GetHintActivity( short sHintType, Activity act )
+#else
+Activity CAI_BaseNPC::GetAreaActivity( CNavArea* pArea, Activity act )
+#endif
 {
-	if ( HintsActivity != ACT_INVALID )
-		return HintsActivity;
+	if ( act != ACT_INVALID )
+		return act;
 
 	return ACT_IDLE;
 }
@@ -2221,7 +2246,11 @@ Activity CAI_BaseNPC::GetHintActivity( short sHintType, Activity HintsActivity )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 float	CAI_BaseNPC::GetHintDelay( short sHintType )
+#else
+float	CAI_BaseNPC::GetAreaDelay( CNavArea* pArea )
+#endif
 {
 	return 0;
 }
@@ -2930,7 +2959,11 @@ bool CAI_BaseNPC::PreThink( void )
 	//
 	// Don't do this if the convar wants it hidden
 	// ----------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 	if ( (CAI_BaseNPC::m_nDebugBits & bits_debugDisableAI || !g_pAINetworkManager->NetworksLoaded()) )
+#else
+	if ( (CAI_BaseNPC::m_nDebugBits & bits_debugDisableAI || !TheNavMesh->IsLoaded()) )
+#endif
 	{
 		if ( gpGlobals->curtime >= g_AINextDisabledMessageTime && !IsInCommentaryMode() )
 		{
@@ -3970,7 +4003,11 @@ void CAI_BaseNPC::NPCThink( void )
 		if ( thinkLimit > 0 )
 			timer.Start();
 
+	#ifndef AI_USES_NAV_MESH
 		if ( g_pAINetworkManager && g_pAINetworkManager->IsInitialized() )
+	#else
+		if ( TheNavMesh && TheNavMesh->IsLoaded() )
+	#endif
 		{
 			VPROF_BUDGET( "NPCs", VPROF_BUDGETGROUP_NPCS );
 
@@ -4879,7 +4916,11 @@ void CAI_BaseNPC::RunAI( void )
 	m_bConditionsGathered = false;
 	m_bSkippedChooseEnemy = false;
 
+#ifndef AI_USES_NAV_MESH
 	if ( g_pDeveloper->GetInt() && !GetNavigator()->IsOnNetwork() )
+#else
+	if ( g_pDeveloper->GetInt() && !GetNavigator()->IsOnNavMesh() )
+#endif
 	{
 		AddTimedOverlay( "NPC w/no reachable nodes!", 5 );
 	}
@@ -5541,7 +5582,12 @@ bool CAI_BaseNPC::UpdateEnemyMemory( CBaseEntity *pEnemy, const Vector &position
 			FoundEnemySound();
 		}
 		float reactionDelay = ( !pInformer || pInformer == this ) ? GetReactionDelay( pEnemy ) : 0.0;
+
+	#ifndef AI_USES_NAV_MESH
 		bool result = GetEnemies()->UpdateMemory(GetNavigator()->GetNetwork(), pEnemy, position, reactionDelay, firstHand);
+	#else
+		bool result = GetEnemies()->UpdateMemory(pEnemy, position, reactionDelay, firstHand);
+	#endif
 
 		if ( !firstHand && pEnemy && result && GetState() == NPC_STATE_IDLE ) // if it's a new potential enemy
 			ForceDecisionThink();
@@ -5750,7 +5796,11 @@ void CAI_BaseNPC::GatherEnemyConditions( CBaseEntity *pEnemy )
 	// ----------------------------------------------------------------------------
 	// Check if enemy is reachable via the node graph unless I'm not on a network
 	// ----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 	if (GetNavigator()->IsOnNetwork())
+#else
+	if (GetNavigator()->IsOnNavMesh())
+#endif
 	{
 		// Note that unreachablity times out
 		if (IsUnreachable(GetEnemy()))
@@ -5998,12 +6048,20 @@ Activity CAI_BaseNPC::NPC_TranslateActivity( Activity eNewActivity )
 	{
 		if (eNewActivity == ACT_RELOAD)
 		{
+		#ifndef AI_USES_NAV_MESH
 			return GetReloadActivity(GetHintNode());
+		#else
+			return GetReloadActivity(GetActiveArea());
+		#endif
 		}
 		else if ((eNewActivity == ACT_COVER	)								 ||
 				 (eNewActivity == ACT_IDLE && HasMemory(bits_MEMORY_INCOVER)))
 		{
+		#ifndef AI_USES_NAV_MESH
 			Activity nCoverActivity = GetCoverActivity(GetHintNode());
+		#else
+			Activity nCoverActivity = GetCoverActivity(GetActiveArea());
+		#endif
 			// ---------------------------------------------------------------
 			// Some NPCs don't have a cover activity defined so just use idle
 			// ---------------------------------------------------------------
@@ -6527,7 +6585,9 @@ CBaseEntity *CAI_BaseNPC::GetNavTargetEntity(void)
 //			if the throw fails, returns the distance
 //			that can be travelled before an obstacle is hit
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 #include "ai_initutils.h"
+#endif
 //#define _THROWDEBUG
 float CAI_BaseNPC::ThrowLimit(	const Vector &vecStart,
 								const Vector &vecEnd,
@@ -6891,7 +6951,11 @@ void CAI_BaseNPC::NPCInit ( void )
 		ResetEventIndexes();
 	}
 
+#ifndef AI_USES_NAV_MESH
 	SetHintNode( NULL );
+#else
+	SetActiveArea( NULL );
+#endif
 
 	m_afMemory			= MEMORY_CLEAR;
 
@@ -8023,10 +8087,15 @@ CBaseEntity *CAI_BaseNPC::BestEnemy( void )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 Activity CAI_BaseNPC::GetReloadActivity( CAI_Hint* pHint )
+#else
+Activity CAI_BaseNPC::GetReloadActivity( CNavArea* pArea )
+#endif
 {
 	Activity nReloadActivity = ACT_RELOAD;
 
+#ifndef AI_USES_NAV_MESH
 	if (pHint && GetEnemy()!=NULL)
 	{
 		switch (pHint->HintType())
@@ -8049,6 +8118,7 @@ Activity CAI_BaseNPC::GetReloadActivity( CAI_Hint* pHint )
 			}
 		}
 	}
+#endif
 	return nReloadActivity;
 }
 
@@ -8057,13 +8127,18 @@ Activity CAI_BaseNPC::GetReloadActivity( CAI_Hint* pHint )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 Activity CAI_BaseNPC::GetCoverActivity( CAI_Hint *pHint )
+#else
+Activity CAI_BaseNPC::GetCoverActivity( CNavArea *pArea )
+#endif
 {
 	Activity nCoverActivity = ACT_INVALID;
 
 	// ---------------------------------------------------------------
 	//  Check if hint node specifies different cover type
 	// ---------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 	if (pHint)
 	{
 		switch (pHint->HintType())
@@ -8080,6 +8155,7 @@ Activity CAI_BaseNPC::GetCoverActivity( CAI_Hint *pHint )
 			}
 		}
 	}
+#endif
 
 	if ( nCoverActivity == ACT_INVALID )
 		nCoverActivity = ACT_COVER;
@@ -8782,11 +8858,19 @@ void CAI_BaseNPC::DrawDebugGeometryOverlays(void)
 	// ------------------------------
 	if ((m_debugOverlays & OVERLAY_NPC_NEAREST_BIT))
 	{
+	#ifndef AI_USES_NAV_MESH
 		int iNodeID = GetPathfinder()->NearestNodeToNPC();
 		if (iNodeID != NO_NODE)
 		{
 			NDebugOverlay::Box(GetNavigator()->GetNetwork()->AccessNodes()[iNodeID]->GetPosition(GetHullType()), Vector(-10,-10,-10),Vector(10,10,10), 255, 255, 255, 0, 0);
 		}
+	#else
+		CNavArea* pArea = GetPathfinder()->NearestAreaToNPC();
+		if (pArea != NULL)
+		{
+			NDebugOverlay::Box(pArea->GetCenter(), Vector(-10,-10,-10),Vector(10,10,10), 255, 255, 255, 0, 0);
+		}
+	#endif
 	}
 
 	// ------------------------------
@@ -9090,12 +9174,14 @@ int CAI_BaseNPC::DrawDebugTextOverlays(void)
 		// -----------------
 		// Hint Group?
 		// -----------------
+	#ifndef AI_USES_NAV_MESH
 		if( GetHintGroup() != NULL_STRING )
 		{
 			Q_snprintf(tempstr,sizeof(tempstr),"Hint Group: %s", STRING(GetHintGroup()) );
 			EntityText(text_offset,tempstr,0);
 			text_offset++;
 		}
+	#endif
 
 		// -----------------
 		// Print MotionType
@@ -9523,7 +9609,7 @@ CanPlaySequence_t CAI_BaseNPC::CanPlaySequence( bool fDisregardNPCState, int int
 
 
 //-----------------------------------------------------------------------------
-
+#ifndef AI_USES_NAV_MESH
 void CAI_BaseNPC::SetHintGroup( string_t newGroup, bool bHintGroupNavLimiting )	
 { 
 	string_t oldGroup = m_strHintGroup;
@@ -9534,6 +9620,7 @@ void CAI_BaseNPC::SetHintGroup( string_t newGroup, bool bHintGroupNavLimiting )
 		OnChangeHintGroup( oldGroup, newGroup );
 
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
@@ -10604,12 +10691,19 @@ void CAI_BaseNPC::OnScheduleChange ( void )
 	UnlockBestSound();
 
 	// If I locked a hint node clear it
+#ifndef AI_USES_NAV_MESH
 	if ( HasMemory(bits_MEMORY_LOCKED_HINT)	&& GetHintNode() != NULL)
 	{
 		float hintDelay = GetHintDelay(GetHintNode()->HintType());
 		GetHintNode()->Unlock(hintDelay);
 		SetHintNode( NULL );
 	}
+#else
+	if ( HasMemory(bits_MEMORY_LOCKED_AREA)	&& GetActiveArea() != NULL)
+	{
+		SetActiveArea( NULL );
+	}
+#endif
 }
 
 
@@ -10740,8 +10834,10 @@ BEGIN_DATADESC( CAI_BaseNPC )
 	// 							m_pSquad					Saved specially in ai_saverestore.cpp
 	DEFINE_KEYFIELD(m_SquadName,				FIELD_STRING, "squadname" ),
     DEFINE_FIELD( m_iMySquadSlot,				FIELD_INTEGER ),
+#ifndef AI_USES_NAV_MESH
 	DEFINE_KEYFIELD( m_strHintGroup,			FIELD_STRING, "hintgroup" ),
 	DEFINE_KEYFIELD( m_bHintGroupNavLimiting,	FIELD_BOOLEAN, "hintlimiting" ),
+#endif
  	DEFINE_EMBEDDEDBYREF( m_pTacticalServices ),
  	DEFINE_FIELD( m_flWaitFinished,			FIELD_TIME ),
 	DEFINE_FIELD( m_flNextFlinchTime,		FIELD_TIME ),
@@ -10750,7 +10846,9 @@ BEGIN_DATADESC( CAI_BaseNPC )
 	DEFINE_FIELD( m_vecLastPosition,			FIELD_POSITION_VECTOR ),
 	DEFINE_FIELD( m_vSavePosition,			FIELD_POSITION_VECTOR ),
 	DEFINE_FIELD( m_vInterruptSavePosition,		FIELD_POSITION_VECTOR ),
+#ifndef AI_USES_NAV_MESH
 	DEFINE_FIELD( m_pHintNode,				FIELD_EHANDLE),
+#endif
 	DEFINE_FIELD( m_cAmmoLoaded,				FIELD_INTEGER ),
     DEFINE_FIELD( m_flDistTooFar,				FIELD_FLOAT ),
 	DEFINE_FIELD( m_hGoalEnt,					FIELD_EHANDLE ),
@@ -11154,9 +11252,15 @@ void CAI_BaseNPC::OnRestore()
 {
 	gm_iszPlayerSquad = AllocPooledString( PLAYER_SQUADNAME ); // cache for fast IsPlayerSquad calls
 
+#ifndef AI_USES_NAV_MESH
 	if ( m_bDoPostRestoreRefindPath  && CAI_NetworkManager::NetworksLoaded() )
+#else
+	if ( m_bDoPostRestoreRefindPath  && TheNavMesh->IsLoaded() )
+#endif
 	{
+	#ifndef AI_USES_NAV_MESH
 		CAI_DynamicLink::InitDynamicLinks();
+	#endif
 		if ( !GetNavigator()->RefindPathToGoal( false ) )
 			DiscardScheduleState();
 	}
@@ -11429,7 +11533,9 @@ CAI_BaseNPC::CAI_BaseNPC(void)
 
 	m_fIsUsingSmallHull			= true;
 
+#ifndef AI_USES_NAV_MESH
 	m_bHintGroupNavLimiting		= false;
+#endif
 
 	m_fNoDamageDecal			= false;
 
@@ -11560,9 +11666,15 @@ bool CAI_BaseNPC::CreateComponents()
 
 	m_pMotor->Init( m_pLocalNavigator );
 	m_pLocalNavigator->Init( m_pNavigator );
+#ifndef AI_USES_NAV_MESH
 	m_pNavigator->Init( g_pBigAINet );
 	m_pPathfinder->Init( g_pBigAINet );
 	m_pTacticalServices->Init( g_pBigAINet );
+#else
+	m_pNavigator->Init();
+	m_pPathfinder->Init();
+	m_pTacticalServices->Init();
+#endif
 	
 	return true;
 }
@@ -12340,7 +12452,11 @@ bool CAI_BaseNPC::OnUpcomingPropDoor( AILocalMoveGoal_t *pMoveGoal,
 			opendata.vecStandPos,
 			NULL, 
 			bits_WP_TO_DOOR | bits_WP_DONT_SIMPLIFY, 
+		#ifndef AI_USES_NAV_MESH
 			NO_NODE,
+		#else
+			NULL,
+		#endif
 			bits_BUILD_GROUND | bits_BUILD_IGNORE_NPCS,
 			0.0);
 		
@@ -12907,6 +13023,7 @@ bool CAI_BaseNPC::FindNearestValidGoalPos( const Vector &vTestPoint, Vector *pRe
 
 	if ( vCandidate == vec3_invalid )
 	{
+	#ifndef AI_USES_NAV_MESH
 		int iNearestNode = GetPathfinder()->NearestNodeToPoint( vTestPoint );
 		if ( iNearestNode != NO_NODE )
 		{
@@ -12923,6 +13040,24 @@ bool CAI_BaseNPC::FindNearestValidGoalPos( const Vector &vTestPoint, Vector *pRe
 				vCandidate = moveTrace.vEndPosition;
 			}
 		}
+	#else
+		CNavArea *pNearestArea = GetPathfinder()->NearestAreaToPoint( vTestPoint );
+		if ( pNearestArea != NULL )
+		{
+			GetMoveProbe()->MoveLimit( NAV_GROUND, 
+									   pNearestArea->GetClosestPointOnArea( GetLocalOrigin() ), 
+									   vTestPoint, 
+									   MASK_SOLID_BRUSHONLY, 
+									   NULL, 
+									   0, 
+									   &moveTrace );
+			if ( ( moveTrace.vEndPosition - vTestPoint ).Length2DSqr() < Square( GetHullWidth() * 3.0 ) &&
+				 GetMoveProbe()->CheckStandPosition( moveTrace.vEndPosition, MASK_SOLID_BRUSHONLY ) )
+			{
+				vCandidate = moveTrace.vEndPosition;
+			}
+		}
+	#endif
 	}
 
 	if ( vCandidate != vec3_invalid )
@@ -12935,7 +13070,9 @@ bool CAI_BaseNPC::FindNearestValidGoalPos( const Vector &vTestPoint, Vector *pRe
 
 		if ( pPathToPoint )
 		{
+		#ifndef AI_USES_NAV_MESH
 			GetPathfinder()->UnlockRouteNodes( pPathToPoint );
+		#endif
 			CAI_Path tempPath;
 			tempPath.SetWaypoints( pPathToPoint ); // path object will delete waypoints
 		}

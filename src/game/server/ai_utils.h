@@ -297,4 +297,7 @@ private:
 
 extern string_t g_iszFuncBrushClassname;
 
+extern float	GetFloorZ(const Vector &origin);
+extern float	GetFloorDistance(const Vector &origin);
+
 #endif // AI_UTILS_H

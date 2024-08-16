@@ -15,12 +15,22 @@
 #include "basecombatweapon.h"
 #include "bitstring.h"
 #include "ai_task.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_network.h"
+#else
+#include "nav_mesh.h"
+#endif
 #include "ai_schedule.h"
 #include "ai_hull.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_node.h"
+#else
+#include "nav_area.h"
+#endif
 #include "ai_motor.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_hint.h"
+#endif
 #include "ai_memory.h"
 #include "ai_navigator.h"
 #include "ai_tacticalservices.h"
@@ -927,6 +937,7 @@ void CAI_BaseNPC::StartTurn( float flDeltaYaw )
 //-----------------------------------------------------------------------------
 // TASK_CLEAR_HINTNODE
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 void CAI_BaseNPC::ClearHintNode( float reuseDelay )
 {
 	if ( m_pHintNode )
@@ -937,12 +948,24 @@ void CAI_BaseNPC::ClearHintNode( float reuseDelay )
 	}
 }
 
-
 void CAI_BaseNPC::SetHintNode( CAI_Hint *pHintNode )
 {
 	m_pHintNode = pHintNode;
 }
+#else
+void CAI_BaseNPC::ClearActiveArea()
+{
+	if ( m_pActiveArea )
+	{
+		m_pActiveArea = NULL;
+	}
+}
 
+void CAI_BaseNPC::SetActiveArea( CNavArea *pArea )
+{
+	m_pActiveArea = pArea;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 
@@ -956,8 +979,12 @@ bool CAI_BaseNPC::FindCoverFromEnemy( bool bNodesOnly, float flMinDistance, floa
 
 	Vector coverPos = vec3_invalid;
 
+#ifndef AI_USES_NAV_MESH
 	ClearHintNode();
-	
+#else
+	ClearActiveArea();
+#endif
+
 	if ( bNodesOnly )
 	{
 		if ( flMaxDistance == FLT_MAX )
@@ -976,13 +1003,22 @@ bool CAI_BaseNPC::FindCoverFromEnemy( bool bNodesOnly, float flMinDistance, floa
 
 	if ( !GetNavigator()->SetGoal( goal ) )
 		return false;
-		
+
+#ifndef AI_USES_NAV_MESH
 	// FIXME: add to goal
 	if (GetHintNode())
 	{
 		GetNavigator()->SetArrivalActivity( GetCoverActivity( GetHintNode() ) );
 		GetNavigator()->SetArrivalDirection( GetHintNode()->GetDirection() );
 	}
+#else
+	// FIXME: add to goal
+	if (GetActiveArea())
+	{
+		GetNavigator()->SetArrivalActivity( GetCoverActivity( GetActiveArea() ) );
+		GetNavigator()->SetArrivalDirection( vec3_origin );
+	}
+#endif
 	
 	return true;
 }
@@ -1249,6 +1285,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		TaskComplete();
 		break;
 
+#ifndef AI_USES_NAV_MESH
 	case TASK_FIND_HINTNODE:
 	case TASK_FIND_LOCK_HINTNODE:
 		{
@@ -1286,6 +1323,40 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		}
 		break;
 	}
+#else
+	case TASK_FIND_NAV_AREA:
+	case TASK_FIND_LOCK_NAV_AREA:
+		{
+			if (!GetActiveArea())
+			{
+				SetActiveArea( NULL );
+			}
+			if (GetActiveArea())
+			{
+				TaskComplete();
+			}
+			else
+			{
+				TaskFail(FAIL_NO_NAV_AREA);
+			}
+			if ( task == TASK_FIND_NAV_AREA )
+				break;
+		}
+		// Fall through on TASK_FIND_LOCK_HINTNODE...
+		
+	case TASK_LOCK_NAV_AREA:
+	{
+		if (!GetActiveArea())
+		{
+			TaskFail(FAIL_NO_NAV_AREA);
+		}
+		else
+		{
+			TaskComplete();
+		}
+		break;
+	}
+#endif
 
 	case TASK_STORE_LASTPOSITION:
 		m_vecLastPosition = GetLocalOrigin();
@@ -1354,10 +1425,17 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		}
 		break;
 
+#ifndef AI_USES_NAV_MESH
 	case TASK_CLEAR_HINTNODE:
 		ClearHintNode(pTask->flTaskData);
 		TaskComplete();
 		break;
+#else
+	case TASK_CLEAR_NAV_AREA:
+		ClearActiveArea();
+		TaskComplete();
+		break;
+#endif
 
 	case TASK_STOP_MOVING:
 		if ( ( GetNavigator()->IsGoalSet() && GetNavigator()->IsGoalActive() ) || GetNavType() == NAV_JUMP )
@@ -1425,6 +1503,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			break;
 		}
 
+#ifndef AI_USES_NAV_MESH
 	case TASK_PLAY_HINT_ACTIVITY:
 		if ( GetHintNode()->HintActivityName() != NULL_STRING )
 		{
@@ -1450,6 +1529,11 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			SetIdealActivity( ACT_IDLE );
 		}
 		break;
+#else
+	case TASK_PLAY_AREA_ACTIVITY:
+		SetIdealActivity( ACT_IDLE );
+		break;
+#endif
 
 	case TASK_SET_SCHEDULE:
 		if ( !SetSchedule( pTask->flTaskData ) )
@@ -1464,7 +1548,11 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 				if ( !GetTacticalServices()->FindBackAwayPos( m_vSavePosition, &backPos ) )
 				{
 					// no place to backaway
+				#ifndef AI_USES_NAV_MESH
 					TaskFail(FAIL_NO_BACKAWAY_NODE);
+				#else
+					TaskFail(FAIL_NO_BACKAWAY_AREA);
+				#endif
 				}
 				else 
 				{
@@ -1486,15 +1574,26 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		}
 		break;
 
+#ifndef AI_USES_NAV_MESH
 	case TASK_FIND_NEAR_NODE_COVER_FROM_ENEMY:
 	case TASK_FIND_FAR_NODE_COVER_FROM_ENEMY:
 	case TASK_FIND_NODE_COVER_FROM_ENEMY:
+#else
+	case TASK_FIND_NEAR_AREA_COVER_FROM_ENEMY:
+	case TASK_FIND_FAR_AREA_COVER_FROM_ENEMY:
+	case TASK_FIND_AREA_COVER_FROM_ENEMY:
+#endif
 	case TASK_FIND_COVER_FROM_ENEMY:
 		{	
 			bool 	bNodeCover 		= ( task != TASK_FIND_COVER_FROM_ENEMY );
+		#ifndef AI_USES_NAV_MESH
 			float 	flMinDistance 	= ( task == TASK_FIND_FAR_NODE_COVER_FROM_ENEMY ) ? pTask->flTaskData : 0.0;
 			float 	flMaxDistance 	= ( task == TASK_FIND_NEAR_NODE_COVER_FROM_ENEMY ) ? pTask->flTaskData : FLT_MAX;
-			
+		#else
+			float 	flMinDistance 	= ( task == TASK_FIND_FAR_AREA_COVER_FROM_ENEMY ) ? pTask->flTaskData : 0.0;
+			float 	flMaxDistance 	= ( task == TASK_FIND_NEAR_AREA_COVER_FROM_ENEMY ) ? pTask->flTaskData : FLT_MAX;
+		#endif
+
 			if ( FindCoverFromEnemy( bNodeCover, flMinDistance, flMaxDistance ) )
 			{
 				if ( task == TASK_FIND_COVER_FROM_ENEMY )
@@ -1532,12 +1631,15 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		}
 		break;
 
+#ifndef AI_USES_NAV_MESH
 	case TASK_FACE_HINTNODE:
-		
+#else
+	case TASK_FACE_NAV_AREA:
+#endif
 		// If the yaw is locked, this function will not act correctly
 		Assert( GetMotor()->IsYawLocked() == false );
 
-		GetMotor()->SetIdealYaw( GetHintNode()->Yaw() );
+		//GetMotor()->SetIdealYaw( GetHintNode()->Yaw() );
 		GetMotor()->SetIdealYaw( CalcReasonableFacing( true ) ); // CalcReasonableFacing() is based on previously set ideal yaw
    		if ( FacingIdeal() )
    			TaskComplete();
@@ -2273,6 +2375,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			{
 				// Since this weapon MAY be on a table, we find the nearest node without verifying
 				// line-of-sight, since weapons on the table will not be able to see nodes very nearby.
+			#ifndef AI_USES_NAV_MESH
 				int node = GetNavigator()->GetNetwork()->NearestNodeToPoint( this, m_hTargetEnt->GetAbsOrigin(), false );
 				CAI_Node *pNode = GetNavigator()->GetNetwork()->GetNode( node );
 
@@ -2281,11 +2384,23 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 					TaskFail( FAIL_NO_ROUTE );
 					break;
 				}
+			#else
+				CNavArea *pArea = TheNavMesh->GetNearestNavArea( m_hTargetEnt );
+				if( !pArea )
+				{
+					TaskFail( FAIL_NO_ROUTE );
+					break;
+				}
+			#endif
 
 				bool bHasPath = true;
 				Vector vecNodePos;
 
+			#ifndef AI_USES_NAV_MESH
 				vecNodePos = pNode->GetPosition( GetHullType() );
+			#else
+				vecNodePos = pArea->GetClosestPointOnArea( m_hTargetEnt->GetAbsOrigin() );
+			#endif
 
 				float flDistZ;
 				flDistZ = fabs( vecNodePos.z - m_hTargetEnt->GetAbsOrigin().z );
@@ -2361,6 +2476,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			break;
 		}
 
+#ifndef AI_USES_NAV_MESH
 	case TASK_GET_PATH_TO_HINTNODE:// for active idles!
 		{
 			if (!GetHintNode())
@@ -2393,6 +2509,24 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			}
 			break;
 		}
+#else
+	case TASK_GET_PATH_TO_NAV_AREA:// for active idles!
+		{
+			if (!GetActiveArea())
+			{
+				TaskFail(FAIL_NO_NAV_AREA);
+			}
+			else
+			{
+				Vector vHintPos = GetActiveArea()->GetClosestPointOnArea( GetLocalOrigin() );
+
+				GetNavigator()->SetGoal( AI_NavGoal_t( vHintPos, ACT_RUN ) );
+				if ( pTask->flTaskData == 0 )
+					GetNavigator()->SetArrivalDirection( vec3_origin );
+			}
+			break;
+		}
+#endif
 
 	case TASK_GET_PATH_TO_COMMAND_GOAL:
 		{
@@ -2434,7 +2568,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			break;
 		}
 
-
+#ifndef AI_USES_NAV_MESH
 	case TASK_GET_PATH_TO_RANDOM_NODE:  // Task argument is lenth of path to build
 		{
 			if ( GetNavigator()->SetRandomGoal( pTask->flTaskData ) )
@@ -2444,6 +2578,17 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		
 			break;
 		}
+#else
+	case TASK_GET_PATH_TO_RANDOM_AREA:  // Task argument is lenth of path to build
+		{
+			if ( GetNavigator()->SetRandomGoal( pTask->flTaskData ) )
+				TaskComplete();
+			else
+				TaskFail(FAIL_NO_REACHABLE_AREA);
+		
+			break;
+		}
+#endif
 
 	case TASK_GET_PATH_TO_BESTSOUND:
 		{
@@ -3053,7 +3198,11 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 				if ( GetNavigator()->SetWanderGoal( iMinDist, iMaxDist ) )
 					TaskComplete();
 				else
+				#ifndef AI_USES_NAV_MESH
 					TaskFail(FAIL_NO_REACHABLE_NODE);
+				#else
+					TaskFail(FAIL_NO_REACHABLE_AREA);
+				#endif
 			}
 		}
 		break;
@@ -3193,7 +3342,11 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 	VPROF_BUDGET( "CAI_BaseNPC::RunTask", VPROF_BUDGETGROUP_NPCS );
 	switch ( pTask->iTask )
 	{
+#ifndef AI_USES_NAV_MESH
 	case TASK_GET_PATH_TO_RANDOM_NODE:
+#else
+	case TASK_GET_PATH_TO_RANDOM_AREA:
+#endif
 		{
 			break;
 		}
@@ -3234,6 +3387,7 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 		}		
 		break;
 
+#ifndef AI_USES_NAV_MESH
 	case TASK_PLAY_HINT_ACTIVITY:
 		{
 			if (!GetHintNode())
@@ -3254,6 +3408,22 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 
 			break;
 		}
+#else
+	case TASK_PLAY_AREA_ACTIVITY:
+		{
+			if (!GetActiveArea())
+			{
+				TaskFail(FAIL_NO_NAV_AREA);
+			}
+
+			if ( IsActivityFinished() )
+			{
+				TaskComplete();
+			}
+
+			break;
+		}
+#endif
 
 	case TASK_STOP_MOVING:
 		{
@@ -3419,7 +3589,11 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 		}
 		break;
 
+#ifndef AI_USES_NAV_MESH
 	case TASK_FACE_HINTNODE:
+#else
+	case TASK_FACE_NAV_AREA:
+#endif
 	case TASK_FACE_LASTPOSITION:
 	case TASK_FACE_SAVEPOSITION:
 	case TASK_FACE_AWAY_FROM_SAVEPOSITION:
@@ -3652,6 +3826,7 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 				{
 					if( IsPlayerAlly() )
 					{
+					#ifndef AI_USES_NAV_MESH
 						// Look for a move away hint node.
 						CAI_Hint *pHint;
 						CHintCriteria hintCriteria;
@@ -3682,6 +3857,7 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 								}
 							}
 						}
+					#endif
 					}
 
 #ifdef HL2_EPISODIC

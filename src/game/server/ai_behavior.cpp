@@ -190,7 +190,11 @@ float CAI_BehaviorBase::GetDefaultNavGoalTolerance()
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 bool CAI_BehaviorBase::FValidateHintType( CAI_Hint *pHint )
+#else
+bool CAI_BehaviorBase::FValidateArea( CNavArea *pArea )
+#endif
 {
 	m_fOverrode = false;
 	return false;
@@ -216,6 +220,7 @@ CBaseEntity *CAI_BehaviorBase::BestEnemy( void )
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 bool CAI_BehaviorBase::IsValidCover( const Vector &vLocation, CAI_Hint const *pHint )
 {
 	Assert( m_pBackBridge != NULL );
@@ -231,6 +236,23 @@ bool CAI_BehaviorBase::IsValidShootPosition( const Vector &vLocation, CAI_Node *
 	
 	return m_pBackBridge->BackBridge_IsValidShootPosition( vLocation, pNode, pHint );
 }
+#else
+bool CAI_BehaviorBase::IsValidCover( const Vector &vLocation, CNavArea const *pArea )
+{
+	Assert( m_pBackBridge != NULL );
+	
+	return m_pBackBridge->BackBridge_IsValidCover( vLocation, pArea );
+}
+
+//-------------------------------------
+
+bool CAI_BehaviorBase::IsValidShootPosition( const Vector &vLocation, CNavArea *pArea )
+{
+	Assert( m_pBackBridge != NULL );
+	
+	return m_pBackBridge->BackBridge_IsValidShootPosition( vLocation, pArea );
+}
+#endif
 
 //-------------------------------------
 

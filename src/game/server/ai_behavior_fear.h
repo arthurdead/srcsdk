@@ -50,9 +50,17 @@ public:
 	void MarkAsUnsafe();
 	bool IsInASafePlace();
 	void SpoilSafePlace();
+#ifndef AI_USES_NAV_MESH
 	void ReleaseAllHints();
+#else
+	void ReleaseAllAreas();
+#endif
 
+#ifndef AI_USES_NAV_MESH
 	CAI_Hint *FindFearWithdrawalDest();
+#else
+	CNavArea *FindFearWithdrawalDest();
+#endif
 	void BuildScheduleTestBits();
 	int TranslateSchedule( int scheduleType );
 
@@ -87,8 +95,13 @@ private:
 	float			m_flDeferUntil;
 
 	CAI_MoveMonitor		m_SafePlaceMoveMonitor;
+#ifndef AI_USES_NAV_MESH
 	CHandle<CAI_Hint>	m_hSafePlaceHint;
 	CHandle<CAI_Hint>	m_hMovingToHint;
+#else
+	CNavArea *	m_pSafePlaceArea;
+	CNavArea *	m_pMovingToArea;
+#endif
 
 	DECLARE_DATADESC();
 };

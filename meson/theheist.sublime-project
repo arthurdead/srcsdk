@@ -10,7 +10,7 @@
 			"clangd": {
 				"enabled": true,
 				"initializationOptions": {
-					"clangd.compile-commands-dir": "./build_linux",
+					"clangd.compile-commands-dir": "$project_path/build_linux",
 				},
 			},
 		},

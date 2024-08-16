@@ -14,7 +14,9 @@
 #include "tier0/vprof.h"
 #include "mapentities.h"
 #include "client.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_initutils.h"
+#endif
 #include "globalstate.h"
 #include "datacache/imdlcache.h"
 
@@ -1475,7 +1477,9 @@ public:
 			engine->AllowImmediateEdictReuse();
 
 			// Reset node counter used during load
+		#ifndef AI_USES_NAV_MESH
 			CNodeEnt::m_nNodeCount = 0;
+		#endif
 
 			CRespawnEntitiesFilter filter;
 			MapEntity_ParseAllEntities( engine->GetMapEntitiesString(), &filter, true );

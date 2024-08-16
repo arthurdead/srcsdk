@@ -13,7 +13,9 @@
 
 #include "ai_behavior.h"
 #include "ai_utils.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_hint.h"
+#endif
 
 #if defined( _WIN32 )
 #pragma once
@@ -21,7 +23,7 @@
 
 //-----------------------------------------------------------------------------
 
-enum AI_HintChangeReaction_t
+enum AI_TactChangeReaction_t
 {
 	AIHCR_DEFAULT_AI,
 	AIHCR_MOVE_ON_COVER,
@@ -30,7 +32,7 @@ enum AI_HintChangeReaction_t
 
 struct AI_StandoffParams_t
 {
-	AI_HintChangeReaction_t hintChangeReaction;
+	AI_TactChangeReaction_t tactChangeReaction;
 	bool					fCoverOnReload;
 	bool					fPlayerIsBattleline;
 	float 					minTimeShots;
@@ -119,13 +121,20 @@ protected:
 	virtual void OnUpdateShotRegulator();
 
 	Activity 	NPC_TranslateActivity( Activity eNewActivity );
-	
+
+#ifndef AI_USES_NAV_MESH
 	bool		IsValidCover( const Vector &vecCoverLocation, CAI_Hint const *pHint );
 	bool		IsValidShootPosition( const Vector &vecCoverLocation, CAI_Node *pNode, CAI_Hint const *pHint );
+#else
+	bool		IsValidCover( const Vector &vecCoverLocation, CNavArea const *pArea );
+	bool		IsValidShootPosition( const Vector &vecCoverLocation, CNavArea *pArea );
+#endif
 
 	void		SetPosture( AI_Posture_t posture );
-	
+
+#ifndef AI_USES_NAV_MESH
 	void		OnChangeHintGroup( string_t oldGroup, string_t newGroup );
+#endif
 
 	virtual int SelectScheduleUpdateWeapon();
 	virtual int SelectScheduleCheckCover();
@@ -138,9 +147,13 @@ protected:
 			
 	void UpdateBattleLines();
 
+#ifndef AI_USES_NAV_MESH
 	Hint_e GetHintType();
-	void SetReuseCurrentCover();
 	void UnlockHintNode();
+#else
+	void UnlockActiveArea();
+#endif
+	void SetReuseCurrentCover();
 	Activity GetCoverActivity();
 
 	void OnRestore();
@@ -184,7 +197,7 @@ private:
 	bool			m_fForceNewEnemy;
 	CAI_MoveMonitor m_PlayerMoveMonitor;
 	
-	CSimTimer		m_TimeForceCoverHint;
+	CSimTimer		m_TimeForceCover;
 	CSimTimer		m_TimePreventForceNewEnemy;
 	CRandSimTimer	m_RandomCoverChangeTimer;
 

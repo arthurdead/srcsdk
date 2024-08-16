@@ -162,7 +162,4 @@ public:
 };
 
 
-extern float	GetFloorZ(const Vector &origin);
-extern float	GetFloorDistance(const Vector &origin);
-
 #endif // AI_NODE_H

@@ -26,7 +26,9 @@ class CAI_Pathfinder;
 class CAI_LocalNavigator;
 struct AI_Waypoint_t;
 class CAI_WaypointList;
+#ifndef AI_USES_NAV_MESH
 class CAI_Network;
+#endif
 struct AIMoveTrace_t;
 struct AILocalMoveGoal_t;
 typedef int AI_TaskFailureCode_t;
@@ -59,7 +61,11 @@ extern ConVar ai_debug_nav;
 // STRUCTURES & ENUMERATIONS
 //-----------------------------------------------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 DECLARE_POINTER_HANDLE( AI_PathNode_t );
+#else
+DECLARE_POINTER_HANDLE( AI_PathArea_t );
+#endif
 
 //-------------------------------------
 // Purpose: Constants used to specify the properties of a requested navigation
@@ -85,8 +91,11 @@ CBaseEntity * const AIN_DEF_TARGET = (AIN_NO_TARGET + 1);
 extern const Vector AIN_NO_DEST;
 
 // Goal does not specify a node location
+#ifndef AI_USES_NAV_MESH
 #define AIN_NO_NODE ((AI_PathNode_t)-1)
-
+#else
+#define AIN_NO_AREA ((AI_PathArea_t)-1)
+#endif
 
 //-------------------------------------
 
@@ -170,6 +179,7 @@ struct AI_NavGoal_t
 				  CBaseEntity * pTarget   = AIN_DEF_TARGET);
 
 	// Goal is a specific node, and GOALTYPE_LOCATION
+#ifndef AI_USES_NAV_MESH
 	AI_NavGoal_t( AI_PathNode_t	destNode,
 				  Activity		activity  = AIN_DEF_ACTIVITY, 
 				  float			tolerance = AIN_DEF_TOLERANCE,
@@ -183,6 +193,21 @@ struct AI_NavGoal_t
 				  float			tolerance = AIN_DEF_TOLERANCE,
 				  unsigned 		flags     = AIN_DEF_FLAGS,
 				  CBaseEntity *	pTarget   = AIN_DEF_TARGET);
+#else
+	AI_NavGoal_t( AI_PathArea_t	destArea,
+				  Activity		activity  = AIN_DEF_ACTIVITY, 
+				  float			tolerance = AIN_DEF_TOLERANCE,
+				  unsigned 		flags     = AIN_DEF_FLAGS,
+				  CBaseEntity *	pTarget   = AIN_DEF_TARGET);
+				  
+	// Goal is a specific location and goal type
+	AI_NavGoal_t( GoalType_t	type,
+				  AI_PathArea_t	destArea,
+				  Activity		activity  = AIN_DEF_ACTIVITY, 
+				  float			tolerance = AIN_DEF_TOLERANCE,
+				  unsigned 		flags     = AIN_DEF_FLAGS,
+				  CBaseEntity *	pTarget   = AIN_DEF_TARGET);
+#endif
 				  
 	//----------------------------------
 	
@@ -191,7 +216,11 @@ struct AI_NavGoal_t
 
 	// The destination, either as a vector, or as a path node
 	Vector 			dest;
+#ifndef AI_USES_NAV_MESH
 	AI_PathNode_t	destNode;
+#else
+	AI_PathArea_t	destArea;
+#endif
 
 	// The activity to use, or none if a previosly set activity should be used
 	Activity		activity;
@@ -279,12 +308,17 @@ public:
 	CAI_Navigator(CAI_BaseNPC *pOuter);
 	virtual ~CAI_Navigator();
 
+#ifndef AI_USES_NAV_MESH
 	virtual void Init( CAI_Network *pNetwork );
-	
+#else
+	virtual void Init();
+#endif
 	// --------------------------------
 
 	void SetPathcornerPathfinding( bool fNewVal)					{ m_bNoPathcornerPathfinds = !fNewVal; }
+#ifndef AI_USES_NAV_MESH
 	void SetRememberStaleNodes( bool fNewVal)						{ m_fRememberStaleNodes = fNewVal; }
+#endif
 	void SetValidateActivitySpeed( bool bValidateActivitySpeed )	{ m_bValidateActivitySpeed = bValidateActivitySpeed; }
 	void SetLocalSucceedOnWithinTolerance( bool fNewVal )			{ m_bLocalSucceedOnWithinTolerance = fNewVal; }
 
@@ -402,13 +436,20 @@ public:
 	
 	AI_NavPathProgress_t ProgressFlyPath( const AI_ProgressFlyPathParams_t &params); // note: will not return "blocked"
 
+#ifndef AI_USES_NAV_MESH
 	AI_PathNode_t		GetNearestNode();
 	Vector				GetNodePos( AI_PathNode_t );
+#else
+	AI_PathArea_t		GetNearestArea();
+	Vector				GetAreaPos( AI_PathArea_t );
+#endif
 
+#ifndef AI_USES_NAV_MESH
 	CAI_Network *		GetNetwork()						{ return m_pAINetwork; }
 	const CAI_Network *	GetNetwork() const					{ return m_pAINetwork; }
 	void 				SetNetwork( CAI_Network *pNetwork ) { m_pAINetwork = pNetwork; }
-	
+#endif
+
 	CAI_Path *			GetPath()							{ return m_pPath; }
 	const CAI_Path *	GetPath() const						{ return m_pPath; }
 
@@ -419,12 +460,21 @@ public:
 										 float strictPointTolerance = 32.0, float blockTolerance = 0.0,
 										 AI_NpcBlockHandling_t blockHandling = AISF_BLOCK);
 	bool				SimplifyFlyPath(  const AI_ProgressFlyPathParams_t &params );
-	
-	bool				CanFitAtNode(int nodeNum, unsigned int collisionMask = MASK_NPCSOLID_BRUSHONLY); 
+
+#ifndef AI_USES_NAV_MESH
+	bool				CanFitAtNode(int nodeNum, unsigned int collisionMask = MASK_NPCSOLID_BRUSHONLY);
+#else
+	bool				CanFitAtArea(CNavArea *pArea, unsigned int collisionMask = MASK_NPCSOLID_BRUSHONLY);
+#endif
+
 	float				MovementCost( int moveType, Vector &vecStart, Vector &vecEnd );
 
 	bool				CanFitAtPosition( const Vector &vStartPos, unsigned int collisionMask, bool bIgnoreTransients = false, bool bAllowPlayerAvoid = true );
+#ifndef AI_USES_NAV_MESH
 	bool				IsOnNetwork() const			{ return !m_bNotOnNetwork; }
+#else
+	bool				IsOnNavMesh() const			{ return !m_bNotOnNavMesh; }
+#endif
 
 	void				SetMaxRouteRebuildTime(float time) { m_timePathRebuildMax = time;			}
 
@@ -553,7 +603,9 @@ protected:
 private:
 	bool				FindPath( const AI_NavGoal_t &goal, unsigned flags );
 	bool				FindPath( bool fSignalTaskStatus = true, bool bDontIgnoreBadLinks = false );
+#ifndef AI_USES_NAV_MESH
 	bool				MarkCurWaypointFailedLink( void );			// Call when route fails
+#endif
 
 	struct SimplifyForwardScanParams
 	{
@@ -589,7 +641,9 @@ private:
 
     // ---------------------------------
 
+#ifndef AI_USES_NAV_MESH
 	CAI_Network*		m_pAINetwork;			 					// My current AINetwork
+#endif
 	CAI_Path*			m_pPath;									// My current route
 
 	CAI_WaypointList *	m_pClippedWaypoints;
@@ -599,8 +653,12 @@ private:
 
 	bool				m_bValidateActivitySpeed;
 	bool				m_bCalledStartMove;
-	
+
+#ifndef AI_USES_NAV_MESH
 	bool				m_bNotOnNetwork;							// This NPC has no reachable nodes!
+#else
+	bool				m_bNotOnNavMesh;
+#endif
 
 	float				m_flNextSimplifyTime;						// next time we should try to simplify our route
 	bool				m_bForcedSimplify;
@@ -617,8 +675,10 @@ private:
 	float				m_timePathRebuildNext;						// Global time to try rebuilding again
 
 	// --------------
-	
+
+#ifndef AI_USES_NAV_MESH
 	bool				m_fRememberStaleNodes;
+#endif
 	bool				m_bNoPathcornerPathfinds;
 	bool				m_bLocalSucceedOnWithinTolerance;
 
@@ -661,7 +721,11 @@ inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t   type,
 								   CBaseEntity *pTarget)
  :	type(type),
 	dest(AIN_NO_DEST),
+#ifndef AI_USES_NAV_MESH
 	destNode(AIN_NO_NODE),
+#else
+	destArea(AIN_NO_AREA),
+#endif
 	activity(activity),
 	tolerance(tolerance),
 	maxInitialSimplificationDist(-1),
@@ -679,7 +743,11 @@ inline AI_NavGoal_t::AI_NavGoal_t( const Vector &dest,
 								   CBaseEntity *pTarget)
  :	type(GOALTYPE_LOCATION),
 	dest(dest),
+#ifndef AI_USES_NAV_MESH
 	destNode(AIN_NO_NODE),
+#else
+	destArea(AIN_NO_AREA),
+#endif
 	activity(activity),
 	tolerance(tolerance),
 	maxInitialSimplificationDist(-1),
@@ -698,7 +766,11 @@ inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t 	type,
 								   CBaseEntity *pTarget)
  :	type(type),
 	dest(dest),
+#ifndef AI_USES_NAV_MESH
 	destNode(AIN_NO_NODE),
+#else
+	destArea(AIN_NO_AREA),
+#endif
 	activity(activity),
 	tolerance(tolerance),
 	maxInitialSimplificationDist(-1),
@@ -709,6 +781,7 @@ inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t 	type,
 {
 }
 
+#ifndef AI_USES_NAV_MESH
 inline AI_NavGoal_t::AI_NavGoal_t( AI_PathNode_t destNode,
 								   Activity		 activity, 
 								   float		 tolerance,
@@ -745,6 +818,44 @@ inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t	 type,
 	arrivalSequence( ACT_INVALID )
 {
 }
+#else
+inline AI_NavGoal_t::AI_NavGoal_t( AI_PathArea_t destArea,
+								   Activity		 activity, 
+								   float		 tolerance,
+								   unsigned 	 flags,
+								   CBaseEntity * pTarget)
+ :	type(GOALTYPE_LOCATION),
+	dest(AIN_NO_DEST),
+	destArea(destArea),
+	activity(activity),
+	tolerance(tolerance),
+	maxInitialSimplificationDist(-1),
+	flags(flags),
+	pTarget(pTarget),
+	arrivalActivity( AIN_DEF_ACTIVITY ),
+	arrivalSequence( ACT_INVALID )
+{
+}
+
+inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t	 type,
+								   AI_PathArea_t destArea,
+								   Activity		 activity, 
+								   float		 tolerance,
+								   unsigned 	 flags,
+								   CBaseEntity * pTarget)
+ :	type(type),
+	dest(AIN_NO_DEST),
+	destArea(destArea),
+	activity(activity),
+	tolerance(tolerance),
+	maxInitialSimplificationDist(-1),
+	flags(flags),
+	pTarget(pTarget),
+	arrivalActivity( AIN_DEF_ACTIVITY ),
+	arrivalSequence( ACT_INVALID )
+{
+}
+#endif
 
 //-----------------------------------------------------------------------------
 

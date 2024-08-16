@@ -26,7 +26,11 @@ enum WaypointFlags_t
 	// The type of waypoint
 	bits_WP_TO_DETOUR =			0x01, // move to detour point.
 	bits_WP_TO_PATHCORNER =		0x02, // move to a path corner
+#ifndef AI_USES_NAV_MESH
 	bits_WP_TO_NODE =			0x04, // move to a node
+#else
+	bits_WP_TO_AREA =			0x04,
+#endif
 	bits_WP_TO_GOAL =			0x08, // move to an arbitrary point
 	bits_WP_TO_DOOR =			0x10, // move to position to open a door
 
@@ -41,7 +45,11 @@ struct AI_Waypoint_t
 {
 public:
 	AI_Waypoint_t();
+#ifndef AI_USES_NAV_MESH
 	AI_Waypoint_t( const Vector &vecPosition, float flYaw, Navigation_t navType, int fWaypointFlags, int nNodeID );
+#else
+	AI_Waypoint_t( const Vector &vecPosition, float flYaw, Navigation_t navType, int fWaypointFlags, CNavArea *pArea );
+#endif
 	AI_Waypoint_t( const AI_Waypoint_t &from )
 	{
 		memcpy( this, &from, sizeof(*this) );
@@ -117,7 +125,11 @@ public:
 	//
 	Vector			vecLocation;
 	float			flYaw;				// Waypoint facing dir 
+#ifndef AI_USES_NAV_MESH
 	int				iNodeID;			// If waypoint is a node, which one
+#else
+	CNavArea * pArea;
+#endif
 	
 	//---------------------------------
 	//

@@ -13,10 +13,14 @@
 
 #include "ai_basenpc.h"
 #include "ai_hull.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_node.h"
+#endif
 #include "ai_motor.h"
 #include "ai_navigator.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_hint.h"
+#endif
 #include "scripted.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -188,6 +192,7 @@ bool CAI_BaseNPC::IsCurTaskContinuousMove()
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 bool CAI_BaseNPC::IsUnusableNode(int iNodeID, CAI_Hint *pHint)
 {
 	if ( m_bHintGroupNavLimiting && m_strHintGroup != NULL_STRING && STRING(m_strHintGroup)[0] != 0 )
@@ -199,6 +204,12 @@ bool CAI_BaseNPC::IsUnusableNode(int iNodeID, CAI_Hint *pHint)
 	}
 	return false;
 }
+#else
+bool CAI_BaseNPC::IsUnusableArea(CNavArea *pArea)
+{
+	return false;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Checks the validity of the given route's goaltype
@@ -212,7 +223,11 @@ bool CAI_BaseNPC::ValidateNavGoal()
 		// Check if this location will block my enemy's line of sight to me
 		if (GetEnemy())
 		{
+		#ifndef AI_USES_NAV_MESH
 			Activity nCoverActivity = GetCoverActivity( GetHintNode() );
+		#else
+			Activity nCoverActivity = GetCoverActivity( GetActiveArea() );
+		#endif
 			Vector	 vCoverLocation = GetNavigator()->GetGoalPos();
 
 

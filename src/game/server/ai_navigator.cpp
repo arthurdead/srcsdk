@@ -17,17 +17,25 @@
 #include "saverestore_utlvector.h"
 
 #include "ai_navigator.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_node.h"
+#else
+#include "nav_mesh.h"
+#endif
 #include "ai_route.h"
 #include "ai_routedist.h"
 #include "ai_waypoint.h"
 #include "ai_pathfinder.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_link.h"
+#endif
 #include "ai_memory.h"
 #include "ai_motor.h"
 #include "ai_localnavigator.h"
 #include "ai_moveprobe.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_hint.h"
+#endif
 #include "BasePropDoor.h"
 #include "props.h"
 #include "physics_npc_solver.h"
@@ -43,7 +51,11 @@ const char * g_ppszGoalTypes[] =
 	"GOALTYPE_ENEMY",
 	"GOALTYPE_PATHCORNER",
 	"GOALTYPE_LOCATION",
+#ifndef AI_USES_NAV_MESH
 	"GOALTYPE_LOCATION_NEAREST_NODE",
+#else
+	"GOALTYPE_LOCATION_NEAREST_AREA",
+#endif
 	"GOALTYPE_FLANK",
 	"GOALTYPE_COVER",
 };
@@ -75,6 +87,7 @@ bool g_fTestSteering = 0;
 
 //-----------------------------------------------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 class CAI_NavInHintGroupFilter : public INearestNodeFilter
 {
 public:
@@ -106,6 +119,7 @@ public:
 	  string_t m_iszGroup;
 
 };
+#endif
 
 //-----------------------------------------------------------------------------
 
@@ -135,7 +149,11 @@ BEGIN_SIMPLE_DATADESC( CAI_Navigator )
 	DEFINE_FIELD( m_bValidateActivitySpeed,		FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bCalledStartMove,			FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_fNavComplete,				FIELD_BOOLEAN ),
+#ifndef AI_USES_NAV_MESH
 	DEFINE_FIELD( m_bNotOnNetwork,				FIELD_BOOLEAN ),
+#else
+	DEFINE_FIELD( m_bNotOnNavMesh,				FIELD_BOOLEAN ),
+#endif
 	DEFINE_FIELD( m_bLastNavFailed,				FIELD_BOOLEAN ),
   	DEFINE_FIELD( m_flNextSimplifyTime,			FIELD_TIME ),
 	DEFINE_FIELD( m_bForcedSimplify,			FIELD_BOOLEAN ),
@@ -145,7 +163,9 @@ BEGIN_SIMPLE_DATADESC( CAI_Navigator )
   	DEFINE_FIELD( m_timePathRebuildDelay,		FIELD_FLOAT ),
   	DEFINE_FIELD( m_timePathRebuildFail,		FIELD_TIME ),
   	DEFINE_FIELD( m_timePathRebuildNext,		FIELD_TIME ),
+#ifndef AI_USES_NAV_MESH
 	DEFINE_FIELD( m_fRememberStaleNodes,		FIELD_BOOLEAN ),
+#endif
 	DEFINE_FIELD( m_bNoPathcornerPathfinds,		FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bLocalSucceedOnWithinTolerance, FIELD_BOOLEAN ),
 	// 								m_fPeerMoveWait		(think transient)
@@ -169,8 +189,12 @@ CAI_Navigator::CAI_Navigator(CAI_BaseNPC *pOuter)
  :	BaseClass(pOuter)
 {
 	m_pPath					= new CAI_Path;
+#ifndef AI_USES_NAV_MESH
 	m_pAINetwork			= NULL;
 	m_bNotOnNetwork			= false;
+#else
+	m_bNotOnNavMesh			= false;
+#endif
 	m_flNextSimplifyTime	= 0;
 
 	m_flLastSuccessfulSimplifyTime = -1;
@@ -203,8 +227,10 @@ CAI_Navigator::CAI_Navigator(CAI_BaseNPC *pOuter)
 	m_bNoPathcornerPathfinds = false;
 	m_bLocalSucceedOnWithinTolerance = false;
 
+#ifndef AI_USES_NAV_MESH
 	m_fRememberStaleNodes = true;
-	
+#endif
+
 	m_pMotor = NULL;
 	m_pMoveProbe = NULL;
 	m_pLocalNavigator = NULL;
@@ -215,14 +241,18 @@ CAI_Navigator::CAI_Navigator(CAI_BaseNPC *pOuter)
 }
 
 //-----------------------------------------------------------------------------
-
+#ifndef AI_USES_NAV_MESH
 void CAI_Navigator::Init( CAI_Network *pNetwork )
+#else
+void CAI_Navigator::Init()
+#endif
 {
 	m_pMotor = GetOuter()->GetMotor();
 	m_pMoveProbe = GetOuter()->GetMoveProbe();
 	m_pLocalNavigator = GetOuter()->GetLocalNavigator();
+#ifndef AI_USES_NAV_MESH
 	m_pAINetwork = pNetwork;
-
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -402,8 +432,13 @@ bool CAI_Navigator::FindPath( const AI_NavGoal_t &goal, unsigned flags )
 		// the goal position here because it won't get set during DoFindPath().
 		if ( goal.dest != AIN_NO_DEST )
 			pPath->ResetGoalPosition( goal.dest );
+	#ifndef AI_USES_NAV_MESH
 		else if ( goal.destNode != AIN_NO_NODE )
 			pPath->ResetGoalPosition( GetNodePos( goal.destNode ) );
+	#else
+		else if ( goal.destArea != AIN_NO_AREA )
+			pPath->ResetGoalPosition( GetAreaPos( goal.destArea ) );
+	#endif
 	}
 
 	if ( pPathTarget > AIN_DEF_TARGET )
@@ -492,7 +527,11 @@ bool CAI_Navigator::SetGoal( const AI_NavGoal_t &goal, unsigned flags )
 		DbgNavMsg(  GetOuter(), "Failed to pathfind to nav goal:\n" );
 		DbgNavMsg1( GetOuter(), "   Type:      %s\n", AIGetGoalTypeText( goal.type) );
 		DbgNavMsg1( GetOuter(), "   Dest:      %s\n", NavVecToString( goal.dest ) );
+	#ifndef AI_USES_NAV_MESH
 		DbgNavMsg1( GetOuter(), "   Dest node: %p\n", goal.destNode );
+	#else
+		DbgNavMsg1( GetOuter(), "   Dest area: %p\n", goal.destArea );
+	#endif
 		DbgNavMsg1( GetOuter(), "   Target:    %p\n", goal.pTarget );
 
 		if ( flags & AIN_DISCARD_IF_FAIL )
@@ -503,7 +542,11 @@ bool CAI_Navigator::SetGoal( const AI_NavGoal_t &goal, unsigned flags )
 		DbgNavMsg(  GetOuter(), "New goal set:\n" );
 		DbgNavMsg1( GetOuter(), "   Type:         %s\n", AIGetGoalTypeText( goal.type) );
 		DbgNavMsg1( GetOuter(), "   Dest:         %s\n", NavVecToString( goal.dest ) );
+	#ifndef AI_USES_NAV_MESH
 		DbgNavMsg1( GetOuter(), "   Dest node:    %p\n", goal.destNode );
+	#else
+		DbgNavMsg1( GetOuter(), "   Dest area:    %p\n", goal.destArea );
+	#endif
 		DbgNavMsg1( GetOuter(), "   Target:       %p\n", goal.pTarget );
 		DbgNavMsg1( GetOuter(), "   Tolerance:    %.1f\n", GetPath()->GetGoalTolerance() );
 		DbgNavMsg1( GetOuter(), "   Waypoint tol: %.1f\n", GetPath()->GetWaypointTolerance() );
@@ -561,9 +604,16 @@ bool CAI_Navigator::SetRandomGoal( const Vector &from, float minPathLength, cons
 {
 	DbgNavMsg( GetOuter(), "Set random goal\n" );
 	OnNewGoal();
+
+#ifndef AI_USES_NAV_MESH
 	if ( GetNetwork()->NumNodes() <= 0 )
 		return false;
+#else
+	if ( TheNavMesh->GetNavAreaCount() <= 0 )
+		return false;
+#endif
 
+#ifndef AI_USES_NAV_MESH
 	INearestNodeFilter *pFilter = NULL;
 	CAI_NavInHintGroupFilter filter;
 	if ( GetOuter()->GetHintGroup() != NULL_STRING )
@@ -571,20 +621,32 @@ bool CAI_Navigator::SetRandomGoal( const Vector &from, float minPathLength, cons
 		filter.m_iszGroup = GetOuter()->GetHintGroup();
 		pFilter = &filter;
 	}
-		
+
 	int fromNodeID = GetNetwork()->NearestNodeToPoint( GetOuter(), from, true, pFilter );
-	
 	if (fromNodeID == NO_NODE)
 		return false;
-		
+#else
+	CNavArea *fromArea = TheNavMesh->GetNearestNavArea( GetOuter(), GETNAVAREA_CHECK_GROUND|GETNAVAREA_CHECK_LOS );
+	if (fromArea == NULL)
+		return false;
+#endif
+
+#ifndef AI_USES_NAV_MESH
 	AI_Waypoint_t* pRoute = GetPathfinder()->FindShortRandomPath( fromNodeID, minPathLength, dir );
+#else
+	AI_Waypoint_t* pRoute = GetPathfinder()->FindShortRandomPath( fromArea, minPathLength, dir );
+#endif
 
 	if (!pRoute)
 		return false;
 
 	GetPath()->SetGoalType(GOALTYPE_LOCATION);
 	GetPath()->SetWaypoints(pRoute);
+#ifndef AI_USES_NAV_MESH
 	GetPath()->SetLastNodeAsGoal();
+#else
+	GetPath()->SetLastAreaAsGoal();
+#endif
 	GetPath()->SetGoalTolerance( GetOuter()->GetDefaultNavGoalTolerance() );
 
 	SimplifyPath( true );
@@ -600,7 +662,12 @@ bool CAI_Navigator::SetDirectGoal( const Vector &goalPos, Navigation_t navType )
 	OnNewGoal();
 	ClearPath();
 	GetPath()->SetGoalType( GOALTYPE_LOCATION );
+
+#ifndef AI_USES_NAV_MESH
 	GetPath()->SetWaypoints( new AI_Waypoint_t( goalPos, 0, navType, bits_WP_TO_GOAL, NO_NODE ) );
+#else
+	GetPath()->SetWaypoints( new AI_Waypoint_t( goalPos, 0, navType, bits_WP_TO_GOAL, NULL ) );
+#endif
 	GetPath()->SetGoalTolerance( GetOuter()->GetDefaultNavGoalTolerance() );
 	GetPath()->SetGoalPosition( goalPos );
 	return true;
@@ -632,16 +699,20 @@ bool CAI_Navigator::SetWanderGoal( float minRadius, float maxRadius )
 	// First try using a random setvector goal, and then try SetRandomGoal().
 	// Except, if we have a hint group, first try SetRandomGoal() (which 
 	// respects hint groups) and then fall back on the setvector.
+#ifndef AI_USES_NAV_MESH
 	if( !GetOuter()->GetHintGroup() )
+#endif
 	{
 		return ( SetWanderGoalByRandomVector( this, minRadius, maxRadius, 5 ) || 
 			SetRandomGoal( 1 ) );
 	}
+#ifndef AI_USES_NAV_MESH
 	else
 	{
 		return ( SetRandomGoal(1) ||
 			SetWanderGoalByRandomVector( this, minRadius, maxRadius, 5 ) );
 	}
+#endif
 }
 
 
@@ -762,7 +833,11 @@ bool CAI_Navigator::PrependLocalAvoidance( float distObstacle, const AIMoveTrace
 													 flags, &backawayTrace ) )
 		{
 			vStart = backawayTrace.vEndPosition;
+		#ifndef AI_USES_NAV_MESH
 			pAvoidanceRoute = new AI_Waypoint_t( vStart, 0, GetNavType(), bits_WP_TO_DETOUR, NO_NODE );
+		#else
+			pAvoidanceRoute = new AI_Waypoint_t( vStart, 0, GetNavType(), bits_WP_TO_DETOUR, NULL );
+		#endif
 		}
 	}
 
@@ -771,7 +846,11 @@ bool CAI_Navigator::PrependLocalAvoidance( float distObstacle, const AIMoveTrace
 		GetCurWaypointPos(), 
 		GetNavTargetEntity(), 
 		bits_WP_TO_DETOUR, 
+	#ifndef AI_USES_NAV_MESH
 		NO_NODE,
+	#else
+		NULL,
+	#endif
 		0.0, 
 		distObstacle, 
 		GetNavType() );
@@ -1219,6 +1298,7 @@ float CAI_Navigator::GetPathTimeToGoal()
 
 //-----------------------------------------------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 AI_PathNode_t CAI_Navigator::GetNearestNode()
 {
 #ifdef WIN32
@@ -1233,6 +1313,22 @@ Vector CAI_Navigator::GetNodePos( AI_PathNode_t node )
 {
 	return GetNetwork()->GetNode((int)node)->GetPosition(GetHullType());
 }
+#else
+AI_PathArea_t CAI_Navigator::GetNearestArea()
+{
+#ifdef WIN32
+	COMPILE_TIME_ASSERT( (int)AIN_NO_NODE == NO_NODE );
+#endif
+	return (AI_PathArea_t)( GetPathfinder()->NearestAreaToNPC() );
+}
+
+//-----------------------------------------------------------------------------
+
+Vector CAI_Navigator::GetAreaPos( AI_PathArea_t area )
+{
+	return ((CNavArea *)area)->GetRandomPoint();
+}
+#endif
 
 //-----------------------------------------------------------------------------
 
@@ -2546,7 +2642,9 @@ bool CAI_Navigator::Move( float flInterval )
 					bool bRecovered = false;
 					if (moveResult != AIMR_BLOCKED_NPC || GetNavType() == NAV_CLIMB || GetNavType() == NAV_JUMP || GetPath()->CurWaypointNavType() == NAV_JUMP )
 					{
+					#ifndef AI_USES_NAV_MESH
 						if ( MarkCurWaypointFailedLink() )
+					#endif
 						{
 							AI_Waypoint_t *pSavedWaypoints = GetPath()->GetCurWaypoint();
 							if ( pSavedWaypoints )
@@ -2779,7 +2877,11 @@ void CAI_Navigator::SimplifyPathInsertSimplification( AI_Waypoint_t *pSegmentSta
 		Assert( pNextWaypoint );
 		Assert( pSegmentStart->NavType() == pNextWaypoint->NavType() );
 
+	#ifndef AI_USES_NAV_MESH
 		AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t( point, 0, pSegmentStart->NavType(), 0, NO_NODE );
+	#else
+		AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t( point, 0, pSegmentStart->NavType(), 0, NULL );
+	#endif
 
 		while ( GetPath()->GetCurWaypoint() != pNextWaypoint )
 		{
@@ -2933,11 +3035,19 @@ bool CAI_Navigator::SimplifyPathBacktrack()
 	// more than 24 inches, try to aim for (roughly) the nearest point on the line 
 	// connecting the first two waypoints
 	// ------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 	if (pCurWaypoint->GetNext() &&
 		(pNextWaypoint->Flags() & bits_WP_TO_NODE) &&
 		(pNextWaypoint->NavType() == NAV_GROUND) &&
 		(pCurWaypoint->NavType() == NAV_GROUND)	&&
 		(pCurWaypoint->Flags() & bits_WP_TO_NODE) )	
+#else
+	if (pCurWaypoint->GetNext() &&
+		(pNextWaypoint->Flags() & bits_WP_TO_AREA) &&
+		(pNextWaypoint->NavType() == NAV_GROUND) &&
+		(pCurWaypoint->NavType() == NAV_GROUND)	&&
+		(pCurWaypoint->Flags() & bits_WP_TO_AREA) )	
+#endif
 	{
 
 		Vector firstToMe	= (GetLocalOrigin()			   - pCurWaypoint->GetPos());
@@ -2960,12 +3070,20 @@ bool CAI_Navigator::SimplifyPathBacktrack()
 				buildFlags |= bits_BUILD_JUMP;
 
 			// Make sure I can get to the new point
+		#ifndef AI_USES_NAV_MESH
 			AI_Waypoint_t *route1 = GetPathfinder()->BuildLocalRoute(GetLocalOrigin(), targetPos, GetPath()->GetTarget(), bits_WP_TO_DETOUR, NO_NODE, buildFlags, goalTolerance);
+		#else
+			AI_Waypoint_t *route1 = GetPathfinder()->BuildLocalRoute(GetLocalOrigin(), targetPos, GetPath()->GetTarget(), bits_WP_TO_DETOUR, NULL, buildFlags, goalTolerance);
+		#endif
 			if (!route1) 
 				return false;
 
 			// Make sure the new point gets me to the target location
+		#ifndef AI_USES_NAV_MESH
 			AI_Waypoint_t *route2 = GetPathfinder()->BuildLocalRoute(targetPos, pNextWaypoint->GetPos(), GetPath()->GetTarget(), bits_WP_TO_DETOUR, NO_NODE, buildFlags, goalTolerance);
+		#else
+			AI_Waypoint_t *route2 = GetPathfinder()->BuildLocalRoute(targetPos, pNextWaypoint->GetPos(), GetPath()->GetTarget(), bits_WP_TO_DETOUR, NULL, buildFlags, goalTolerance);
+		#endif
 			if (!route2) 
 			{
 				DeleteAll(route1);
@@ -3232,6 +3350,7 @@ float CAI_Navigator::MovementCost( int moveType, Vector &vecStart, Vector &vecEn
 // Input  :
 // Output : Returns true if hull fits at node
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 bool CAI_Navigator::CanFitAtNode(int nodeNum, unsigned int collisionMask ) 
 {
 	// Make sure I have a network
@@ -3281,6 +3400,40 @@ bool CAI_Navigator::CanFitAtNode(int nodeNum, unsigned int collisionMask )
 
 	return true;
 }
+#else
+bool CAI_Navigator::CanFitAtArea(CNavArea *area, unsigned int collisionMask ) 
+{
+	// Make sure I have a network
+	if (!TheNavMesh->IsLoaded())
+	{
+		DevMsg("CanFitAtNode() called with no network!\n");
+		return false;
+	}
+
+	Vector startPos		= area->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() );
+
+	// -------------------------------------------------------------------
+	// Check ground nodes for standable bottom
+	// -------------------------------------------------------------------
+	if (!GetMoveProbe()->CheckStandPosition( startPos, collisionMask ))
+	{
+		return false;
+	}
+
+
+	// -------------------------------------------------------------------
+	// Check that hull fits at position of node
+	// -------------------------------------------------------------------
+	if (!CanFitAtPosition( startPos, collisionMask ))
+	{
+		startPos.z += GetOuter()->StepHeight();
+		if (!CanFitAtPosition( startPos, collisionMask ))
+			return false;
+	}
+
+	return true;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns true if NPC's hull fits in the given spot with the
@@ -3386,7 +3539,9 @@ bool CAI_Navigator::FindPath( bool fSignalTaskStatus, bool bDontIgnoreBadLinks )
 
 	if ( !bDontIgnoreBadLinks && !bFindResult && GetOuter()->IsNavigationUrgent() )
 	{
+	#ifndef AI_USES_NAV_MESH
 		GetPathfinder()->SetIgnoreBadLinks();
+	#endif
 		bFindResult = DoFindPath();
 	}
 
@@ -3429,6 +3584,7 @@ bool CAI_Navigator::FindPath( bool fSignalTaskStatus, bool bDontIgnoreBadLinks )
 // Input  :
 // Output : 
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 bool CAI_Navigator::MarkCurWaypointFailedLink( void )
 {
 	if ( TestingSteering() )
@@ -3520,6 +3676,7 @@ bool CAI_Navigator::MarkCurWaypointFailedLink( void )
 
 	return didMark;
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Builds a route to the given vecGoal using either local movement
@@ -3608,6 +3765,7 @@ CBaseEntity *CAI_Navigator::GetNextPathcorner( CBaseEntity *pPathCorner )
 	{
 		pNextPathCorner = pPathCorner->GetNextTarget();
 
+	#ifndef AI_USES_NAV_MESH
 		CAI_Hint *pHint;
 		if ( !pNextPathCorner && ( pHint = dynamic_cast<CAI_Hint *>( pPathCorner ) ) != NULL )
 		{
@@ -3618,6 +3776,7 @@ CBaseEntity *CAI_Navigator::GetNextPathcorner( CBaseEntity *pPathCorner )
 				pNextPathCorner = pTestNode->GetHint();
 			}
 		}
+	#endif
 	}
 
 	return pNextPathCorner;
@@ -3645,13 +3804,23 @@ bool CAI_Navigator::DoFindPathToPathcorner( CBaseEntity *pPathCorner )
 
 			GetPath()->ClearWaypoints();
 
+		#ifndef AI_USES_NAV_MESH
 			AI_Waypoint_t *pRoute = new AI_Waypoint_t( pPathCorner->GetLocalOrigin(), 0, GetNavType(), bits_WP_TO_PATHCORNER, NO_NODE );
+		#else
+			AI_Waypoint_t *pRoute = new AI_Waypoint_t( pPathCorner->GetLocalOrigin(), 0, GetNavType(), bits_WP_TO_PATHCORNER, NULL );
+		#endif
+
 			pRoute->hPathCorner = pPathCorner;
 			AI_Waypoint_t *pLast = pRoute;
 			pPathCorner = GetNextPathcorner(pPathCorner);
 			if ( pPathCorner )
 			{
+			#ifndef AI_USES_NAV_MESH
 				pLast = new AI_Waypoint_t( pPathCorner->GetLocalOrigin(), 0, GetNavType(), bits_WP_TO_PATHCORNER, NO_NODE );
+			#else
+				pLast = new AI_Waypoint_t( pPathCorner->GetLocalOrigin(), 0, GetNavType(), bits_WP_TO_PATHCORNER, NULL );
+			#endif
+
 				pLast->hPathCorner = pPathCorner;
 				pRoute->SetNext(pLast);
 			}
@@ -3697,7 +3866,12 @@ bool CAI_Navigator::DoFindPathToPathcorner( CBaseEntity *pPathCorner )
 					lastWaypoint->ModifyFlags( bits_WP_TO_GOAL, false );
 					// BRJ 10/4/02
 					// FIXME: I'm not certain about the navtype here
+				#ifndef AI_USES_NAV_MESH
 					AI_Waypoint_t *curWaypoint = new AI_Waypoint_t( pPathCorner->GetLocalOrigin(), 0, GetNavType(), (bits_WP_TO_PATHCORNER | bits_WP_TO_GOAL), NO_NODE );
+				#else
+					AI_Waypoint_t *curWaypoint = new AI_Waypoint_t( pPathCorner->GetLocalOrigin(), 0, GetNavType(), (bits_WP_TO_PATHCORNER | bits_WP_TO_GOAL), NULL );
+				#endif
+
 					Vector waypointPos = curWaypoint->GetPos();
 					TranslateNavGoal( pPathCorner, waypointPos );
 					curWaypoint->SetPos( waypointPos );
@@ -3774,6 +3948,7 @@ bool CAI_Navigator::DoFindPath( void )
 		returnCode = DoFindPathToPos();
 		break;
 
+#ifndef AI_USES_NAV_MESH
 	case GOALTYPE_LOCATION_NEAREST_NODE:
 		{
 			int myNodeID;
@@ -3799,6 +3974,33 @@ bool CAI_Navigator::DoFindPath( void )
 			}
 		}
 		break;
+#else
+	case GOALTYPE_LOCATION_NEAREST_AREA:
+		{
+			CNavArea *myArea;
+			CNavArea *destArea;
+
+			returnCode = false;
+			
+			myArea = GetPathfinder()->NearestAreaToNPC();
+			if (myArea != NULL)
+			{
+				destArea = GetPathfinder()->NearestAreaToPoint( GetPath()->ActualGoalPosition() );
+				if (destArea != NULL)
+				{
+					AI_Waypoint_t *pRoute = GetPathfinder()->FindBestPath( myArea, destArea );
+					
+					if ( pRoute != NULL )
+					{
+						GetPath()->SetWaypoints( pRoute );
+						GetPath()->SetLastAreaAsGoal(true);
+						returnCode = true;
+					}
+				}
+			}
+		}
+		break;
+#endif
 
 	case GOALTYPE_TARGETENT:
 		{
@@ -3852,6 +4054,7 @@ void CAI_Navigator::ClearPath( void )
 			Assert( m_PreviousMoveActivity > ACT_RESET );
 		}
 
+	#ifndef AI_USES_NAV_MESH
 		while ( pWaypoint )
 		{
 			if ( pWaypoint->iNodeID != NO_NODE )
@@ -3866,6 +4069,7 @@ void CAI_Navigator::ClearPath( void )
 			}
 			pWaypoint = pWaypoint->GetNext();
 		}
+	#endif
 	}
 
 	GetPath()->Clear();
@@ -3935,8 +4139,13 @@ bool CAI_Navigator::GetStoppingPath( CAI_WaypointList *	pClippedWaypoints )
 						pNewWaypoint->hPathCorner = NULL;
 					}
 
+				#ifndef AI_USES_NAV_MESH
 					pNewWaypoint->ModifyFlags( bits_WP_TO_GOAL | bits_WP_TO_NODE, false );
 					pNewWaypoint->iNodeID = NO_NODE;
+				#else
+					pNewWaypoint->ModifyFlags( bits_WP_TO_GOAL | bits_WP_TO_AREA, false );
+					pNewWaypoint->pArea = NULL;
+				#endif
 
 					if ( pLastSavedWaypoint )
 						pLastSavedWaypoint->SetNext( pNewWaypoint );
@@ -4087,11 +4296,18 @@ static Vector GetRouteColor(Navigation_t navType, int waypointFlags)
 	{
 		return Vector(0,200,255);
 	}
-	
+
+#ifndef AI_USES_NAV_MESH
 	if (waypointFlags & bits_WP_TO_NODE)
 	{
 		return Vector(0,0,255);
 	}
+#else
+	if (waypointFlags & bits_WP_TO_AREA)
+	{
+		return Vector(0,0,255);
+	}
+#endif
 
 	else //if (waypointBits & bits_WP_TO_PATHCORNER)
 	{

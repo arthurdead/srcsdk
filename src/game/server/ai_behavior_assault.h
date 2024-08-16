@@ -150,7 +150,9 @@ public:
 	}
 
 public:
+#ifndef AI_USES_NAV_MESH
 	string_t		m_AssaultHintGroup;
+#endif
 	string_t		m_NextAssaultPointName;
 	COutputEvent	m_OnAssaultClear;
 	float			m_flAssaultTimeout;
@@ -216,7 +218,11 @@ public:
 	void SetParameters( CBaseEntity *pRallyEnt, AssaultCue_t assaultcue );
 
 	bool IsAllowedToDivert( void );
+#ifndef AI_USES_NAV_MESH
 	bool IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint );
+#else
+	bool IsValidShootPosition( const Vector &vLocation, CNavArea *pArea );
+#endif
 	float GetMaxTacticalLateralMovement( void );
 
 	void UpdateOnRemove();

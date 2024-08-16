@@ -12,8 +12,10 @@
 #include "ai_saverestore.h"
 #include "ai_basenpc.h"
 #include "ai_squad.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_network.h"
 #include "ai_networkmanager.h"
+#endif
 
 #ifdef HL2_DLL
 #include "npc_playercompanion.h"
@@ -154,7 +156,8 @@ public:
 			
 			pRestore->EndBlock();
 		}
-		
+	
+	#ifndef AI_USES_NAV_MESH
 		if ( g_AI_Manager.NumAIs() && g_pBigAINet->NumNodes() == 0 && !g_pAINetworkManager->NetworksLoaded() )
 		{
 			Msg( "***\n");
@@ -163,6 +166,7 @@ public:
 			CAI_BaseNPC::m_nDebugBits |= bits_debugDisableAI;
 			g_pAINetworkManager->MarkDontSaveGraph();
 		}
+	#endif
 	}
 
 	void PostRestore( void )

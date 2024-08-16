@@ -22,9 +22,11 @@
 #include "globalstate.h"
 #include "basecombatweapon.h"
 #include "ai_basenpc.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_network.h"
 #include "ai_node.h"
 #include "ai_networkmanager.h"
+#endif
 #include "ammodef.h"
 #include "mathlib/mathlib.h"
 #include "ndebugoverlay.h"
@@ -164,6 +166,7 @@ int MapTextureTypeStepType(char chTextureType);
 extern void	SpawnBlood(Vector vecSpot, const Vector &vecDir, int bloodColor, float flDamage);
 extern void AddMultiDamage( const CTakeDamageInfo &info, CBaseEntity *pEntity );
 
+extern Vector PointOnLineNearestPoint(const Vector& vStartPos, const Vector& vEndPos, const Vector& vPoint);
 
 #define CMD_MOSTRECENT 0
 
@@ -5883,6 +5886,7 @@ CBaseEntity *FindPickerEntity( CBasePlayer *pPlayer )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 CAI_Node *FindPickerAINode( CBasePlayer *pPlayer, NodeType_e nNodeType )
 {
 	Vector forward;
@@ -5907,6 +5911,7 @@ CAI_Link *FindPickerAILink( CBasePlayer* pPlayer )
 	origin = pPlayer->EyePosition();	
 	return g_pAINetworkManager->GetEditOps()->FindAILinkNearestFacing( origin, forward,0.90);
 }
+#endif
 
 /*
 ===============

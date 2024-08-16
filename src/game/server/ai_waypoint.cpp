@@ -8,7 +8,9 @@
 #include "cbase.h"
 #include "mempool.h"
 #include "ai_navtype.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_node.h"
+#endif
 #include "ai_waypoint.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -45,13 +47,21 @@ AI_Waypoint_t::AI_Waypoint_t()
 {
 	memset( this, 0, sizeof(*this) );
 	vecLocation	= vec3_invalid;
+#ifndef AI_USES_NAV_MESH
 	iNodeID		= NO_NODE;
+#else
+	pArea = NULL;
+#endif
 	flPathDistGoal = -1;
 }
 
 //-------------------------------------
 
+#ifndef AI_USES_NAV_MESH
 AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigation_t initNavType, int initWaypointFlags, int initNodeID )
+#else
+AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigation_t initNavType, int initWaypointFlags, CNavArea *initArea )
+#endif
 {
 	memset( this, 0, sizeof(*this) );
 
@@ -60,7 +70,11 @@ AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigat
 	flYaw		= initYaw;
 	m_iWPType	= initNavType;
 	m_fWaypointFlags = initWaypointFlags;
+#ifndef AI_USES_NAV_MESH
 	iNodeID		= initNodeID;
+#else
+	pArea		= initArea;
+#endif
 
 	flPathDistGoal = -1;
 }
@@ -100,7 +114,11 @@ void CAI_WaypointList::PrependWaypoints( AI_Waypoint_t *pWaypoints )
 
 void CAI_WaypointList::PrependWaypoint( const Vector &newPoint, Navigation_t navType, unsigned waypointFlags, float flYaw )
 {
+#ifndef AI_USES_NAV_MESH
 	PrependWaypoints( new AI_Waypoint_t( newPoint, flYaw, navType, waypointFlags, NO_NODE ) );
+#else
+	PrependWaypoints( new AI_Waypoint_t( newPoint, flYaw, navType, waypointFlags, NULL ) );
+#endif
 }
 
 //-------------------------------------
@@ -184,8 +202,13 @@ void AddWaypointLists(AI_Waypoint_t *oldRoute, AI_Waypoint_t *addRoute)
 	waypoint->ModifyFlags( bits_WP_TO_GOAL, false );
 
 	// Check for duplication, but copy the type
+#ifndef AI_USES_NAV_MESH
 	if (waypoint->iNodeID != NO_NODE			&&
 		waypoint->iNodeID == addRoute->iNodeID	)
+#else
+	if (waypoint->pArea != NULL			&&
+		waypoint->pArea == addRoute->pArea	)
+#endif
 	{
 //		waypoint->iWPType = addRoute->iWPType; <<TODO>> found case where this was bad
 		AI_Waypoint_t *pNext = addRoute->GetNext();

@@ -15,8 +15,10 @@
 
 #ifdef POSIX
 #include "ai_basenpc.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_network.h"
 #include "ai_networkmanager.h"
+#endif
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -166,7 +168,11 @@ void UTIL_DrawPositioningOverlay( float flCrossDistance )
 
         float cosAngle = DotProduct(floorVec,pForward);
 
+    #ifndef AI_USES_NAV_MESH
         float lookDist = g_pAINetworkManager->GetEditOps()->m_flAirEditDistance/cosAngle;
+    #else
+        float lookDist = 300.0f/cosAngle;
+    #endif
         Vector topPos = pPlayer->EyePosition()+pForward * lookDist;
 #endif
 

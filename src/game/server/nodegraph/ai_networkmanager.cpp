@@ -920,7 +920,7 @@ void CAI_NetworkManager::BuildNetworkGraph( void )
 }
 
 //------------------------------------------------------------------------------
-bool g_bAIDisabledByUser = false;
+extern bool g_bAIDisabledByUser;
 
 void CAI_NetworkManager::InitializeAINetworks()
 {
@@ -1263,20 +1263,6 @@ CAI_Node *CAI_NetworkEditTools::FindAINodeNearestFacing( const Vector &origin, c
 		}
 	}
 	return best;
-}
-
-
-Vector PointOnLineNearestPoint(const Vector& vStartPos, const Vector& vEndPos, const Vector& vPoint)
-{
-	Vector	vEndToStart		= (vEndPos - vStartPos);
-	Vector	vOrgToStart		= (vPoint  - vStartPos);
-	float	fNumerator		= DotProduct(vEndToStart,vOrgToStart);
-	float	fDenominator	= vEndToStart.Length() * vOrgToStart.Length();
-	float	fIntersectDist	= vOrgToStart.Length()*(fNumerator/fDenominator);
-	VectorNormalize( vEndToStart ); 
-	Vector	vIntersectPos	= vStartPos + vEndToStart * fIntersectDist;
-
-	return vIntersectPos;
 }
 
 //-----------------------------------------------------------------------------

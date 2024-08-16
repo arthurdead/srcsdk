@@ -18,10 +18,14 @@
 #include "soundent.h"
 #include "player.h"
 #include "server_class.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_node.h"
 #include "ai_link.h"
+#endif
 #include "ai_saverestore.h"
+#ifndef AI_USES_NAV_MESH
 #include "ai_networkmanager.h"
+#endif
 #include "ndebugoverlay.h"
 #include "ivoiceserver.h"
 #include <stdarg.h>
@@ -263,7 +267,9 @@ const IChangeInfoAccessor *CBaseEdict::GetChangeAccessor() const
 	return engine->GetChangeAccessor( (const edict_t *)this );
 }
 
+#ifndef AI_USES_NAV_MESH
 const char *GetHintTypeDescription( CAI_Hint *pHint );
+#endif
 
 void ClientPutInServerOverride( ClientPutInServerOverrideFn fn )
 {
@@ -332,13 +338,17 @@ bool UTIL_GetModDir( char *lpszTextOut, unsigned int nSize )
 extern void InitializeCvars( void );
 
 CBaseEntity*	FindPickerEntity( CBasePlayer* pPlayer );
+#ifndef AI_USES_NAV_MESH
 CAI_Node*		FindPickerAINode( CBasePlayer* pPlayer, NodeType_e nNodeType );
 CAI_Link*		FindPickerAILink( CBasePlayer* pPlayer );
+#endif
 float			GetFloorZ(const Vector &origin);
 void			UpdateAllClientData( void );
 void			DrawMessageEntities();
 
+#ifndef AI_USES_NAV_MESH
 #include "ai_network.h"
+#endif
 
 // For now just using one big AI network
 extern ConVar think_limit;
@@ -441,6 +451,7 @@ void DrawAllDebugOverlays( void )
 	// ------------------------------------------------------------------------
 	// If in wc_edit mode draw a box to highlight which node I'm looking at
 	// ------------------------------------------------------------------------
+#ifndef AI_USES_NAV_MESH
 	if (engine->IsInEditMode())
 	{
 		CBasePlayer* pPlayer = UTIL_PlayerByIndex( CBaseEntity::m_nDebugPlayer );
@@ -515,6 +526,7 @@ void DrawAllDebugOverlays( void )
 	{
 		g_pAINetworkManager->GetEditOps()->DrawAINetworkOverlay();
 	}
+#endif
 
 	// PERFORMANCE: only do this in developer mode
 	if ( g_pDeveloper->GetInt() && !engine->IsDedicatedServer() )
