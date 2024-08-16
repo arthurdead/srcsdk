@@ -13045,7 +13045,7 @@ bool CAI_BaseNPC::FindNearestValidGoalPos( const Vector &vTestPoint, Vector *pRe
 		if ( pNearestArea != NULL )
 		{
 			GetMoveProbe()->MoveLimit( NAV_GROUND, 
-									   pNearestArea->GetClosestPointOnArea( GetLocalOrigin() ), 
+									   pNearestArea->GetClosestPointOnArea( vTestPoint ), 
 									   vTestPoint, 
 									   MASK_SOLID_BRUSHONLY, 
 									   NULL, 

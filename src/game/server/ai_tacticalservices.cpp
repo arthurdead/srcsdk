@@ -404,13 +404,13 @@ CNavArea * CAI_TacticalServices::FindBackAwayArea(const Vector &vecThreat )
 		if ( !m_pPathfinder->IsAreaUsable( adjArea ) )
 			continue;
 
-		float flTestDist = ( vecThreat - adjArea->GetClosestPointOnArea( vecThreat ) ).Length();
+		float flTestDist = ( vecThreat - adjArea->GetCenter() ).Length();
 
 		if ( flTestDist > flCurDist )
 		{
 			// Make sure this node doesn't take me past the enemy's position.
 			Vector vecToNode;
-			vecToNode = adjArea->GetClosestPointOnArea( GetLocalOrigin() ) - GetLocalOrigin();
+			vecToNode = adjArea->GetCenter() - GetLocalOrigin();
 			VectorNormalize( vecToNode );
 		
 			if( DotProduct( vecToNode, vecToThreat ) < 0.0 )
@@ -973,7 +973,7 @@ Vector CAI_TacticalServices::GetNodePos( int node )
 #else
 Vector CAI_TacticalServices::GetAreaPos( CNavArea * area )
 {
-	return area->GetRandomPoint();
+	return area->GetCenter();
 }
 #endif
 

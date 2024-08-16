@@ -2518,7 +2518,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			}
 			else
 			{
-				Vector vHintPos = GetActiveArea()->GetClosestPointOnArea( GetLocalOrigin() );
+				Vector vHintPos = GetActiveArea()->GetCenter();
 
 				GetNavigator()->SetGoal( AI_NavGoal_t( vHintPos, ACT_RUN ) );
 				if ( pTask->flTaskData == 0 )

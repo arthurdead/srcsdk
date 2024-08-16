@@ -14,6 +14,12 @@
 
 #include <mempool.h>
 
+#ifdef AI_USES_NAV_MESH
+#include "nav.h"
+
+class CNavLadder;
+#endif
+
 // ----------------------------------------------------------------------------
 // Forward declarations
 // ----------------------------------------------------------------------------
@@ -129,6 +135,8 @@ public:
 	int				iNodeID;			// If waypoint is a node, which one
 #else
 	CNavArea * pArea;
+	NavTraverseType nNavHow;
+	const CNavLadder *pLadder;
 #endif
 	
 	//---------------------------------

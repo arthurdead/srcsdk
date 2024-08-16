@@ -391,7 +391,8 @@ public:
 	void ComputePortal( const CNavArea *to, NavDirType dir, Vector *center, float *halfWidth ) const;		// compute portal to adjacent area
 	NavDirType ComputeLargestPortal( const CNavArea *to, Vector *center, float *halfWidth ) const;		// compute largest portal to adjacent area, returning direction
 	void ComputeClosestPointInPortal( const CNavArea *to, NavDirType dir, const Vector &fromPos, Vector *closePos ) const; // compute closest point within the "portal" between to adjacent areas
-	NavDirType ComputeDirection( Vector *point ) const;			// return direction from this area to the given point
+	NavDirType ComputeDirection( const Vector *point ) const;			// return direction from this area to the given point
+	NavDirType ComputeDirection( const Vector &point ) const { return ComputeDirection(&point); }
 
 	//- for hunting algorithm ---------------------------------------------------------------------------
 	void SetClearedTimestamp( int teamID );						// set this area's "clear" timestamp to now

@@ -156,7 +156,7 @@ void CAI_FearBehavior::RunTask( const Task_t *pTask )
 				#ifndef AI_USES_NAV_MESH
 					AI_NavGoal_t goal(m_hMovingToHint->GetAbsOrigin());
 				#else
-					AI_NavGoal_t goal(m_pMovingToArea->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() ));
+					AI_NavGoal_t goal(m_pMovingToArea->GetCenter());
 				#endif
 					goal.pTarget = NULL;
 					if( GetNavigator()->SetGoal( goal ) == false )

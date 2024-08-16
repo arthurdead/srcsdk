@@ -1326,7 +1326,7 @@ AI_PathArea_t CAI_Navigator::GetNearestArea()
 
 Vector CAI_Navigator::GetAreaPos( AI_PathArea_t area )
 {
-	return ((CNavArea *)area)->GetRandomPoint();
+	return ((CNavArea *)area)->GetCenter();
 }
 #endif
 
@@ -2504,6 +2504,10 @@ bool CAI_Navigator::Move( float flInterval )
 		flInterval = 1.0;
 	}
 
+#ifdef AI_USES_NAV_MESH
+	GetOuter()->UpdateLastKnownArea();
+#endif
+
 	if ( !GetOuter()->OverrideMove( flInterval ) )
 	{
 		// UNDONE: Figure out how much of the timestep was consumed by movement
@@ -3410,7 +3414,7 @@ bool CAI_Navigator::CanFitAtArea(CNavArea *area, unsigned int collisionMask )
 		return false;
 	}
 
-	Vector startPos		= area->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() );
+	Vector startPos		= area->GetCenter();
 
 	// -------------------------------------------------------------------
 	// Check ground nodes for standable bottom

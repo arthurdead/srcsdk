@@ -1000,7 +1000,7 @@ bool CAI_FollowBehavior::IsFollowPointInRange()
 			 (GetHintNode()->GetAbsOrigin() - GetFollowTarget()->GetAbsOrigin()).LengthSqr() < Square(MAX(m_FollowNavGoal.followPointTolerance, GetGoalRange())) );
 #else
 	return ( GetActiveArea() && 
-			 (GetActiveArea()->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() ) - GetFollowTarget()->GetAbsOrigin()).LengthSqr() < Square(MAX(m_FollowNavGoal.followPointTolerance, GetGoalRange())) );
+			 (GetActiveArea()->GetCenter() - GetFollowTarget()->GetAbsOrigin()).LengthSqr() < Square(MAX(m_FollowNavGoal.followPointTolerance, GetGoalRange())) );
 #endif
 }
 
@@ -1077,7 +1077,7 @@ int CAI_FollowBehavior::SelectScheduleFollowPoints()
 	#ifndef AI_USES_NAV_MESH
 		distSqToPoint = (GetHintNode()->GetAbsOrigin() - GetAbsOrigin()).LengthSqr();
 	#else
-		distSqToPoint = (GetActiveArea()->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() ) - GetAbsOrigin()).LengthSqr();
+		distSqToPoint = (GetActiveArea()->GetClosestPointOnArea( GetAbsOrigin() ) - GetAbsOrigin()).LengthSqr();
 	#endif
 
 		if ( !bShouldUseFollowPoints || 
@@ -1127,7 +1127,7 @@ int CAI_FollowBehavior::SelectScheduleFollowPoints()
 			SetFollowPoint( ( m_pInterruptWaitPoint ) ? m_pInterruptWaitPoint : FindFollowPoint() );
 			
 			if ( GetActiveArea() )
-				distSqToPoint = (GetActiveArea()->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() ) - GetAbsOrigin()).LengthSqr();
+				distSqToPoint = (GetActiveArea()->GetClosestPointOnArea( GetAbsOrigin() ) - GetAbsOrigin()).LengthSqr();
 		}
 	#endif
 	
@@ -1691,7 +1691,7 @@ void CAI_FollowBehavior::StartTask( const Task_t *pTask )
 		#else
 			if ( GetActiveArea() && !ShouldIgnoreFollowPointFacing() )
 			{
-				float distSqToPoint = (GetActiveArea()->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() ) - GetAbsOrigin()).LengthSqr();
+				float distSqToPoint = (GetActiveArea()->GetClosestPointOnArea( GetAbsOrigin() ) - GetAbsOrigin()).LengthSqr();
 				if ( distSqToPoint < WAIT_HINT_MIN_DIST )
 				{
 					GetOuter()->SetSchedule( SCHED_FOLLOWER_STAND_AT_WAIT_POINT );

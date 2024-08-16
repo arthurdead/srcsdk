@@ -2649,7 +2649,7 @@ bool CNavArea::IsEdge( NavDirType dir ) const
 /**
  * Return direction from this area to the given point
  */
-NavDirType CNavArea::ComputeDirection( Vector *point ) const
+NavDirType CNavArea::ComputeDirection( const Vector *point ) const
 {
 	if (point->x >= m_nwCorner.x && point->x <= m_seCorner.x)
 	{

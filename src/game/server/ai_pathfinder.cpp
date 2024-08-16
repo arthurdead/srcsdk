@@ -413,7 +413,7 @@ AI_Waypoint_t *CAI_Pathfinder::FindBestPath(CNavArea * startArea, CNavArea * end
 
 	if (startArea == endArea)
 	{
-		AI_Waypoint_t *pWaypoint = new AI_Waypoint_t( startArea->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() ),
+		AI_Waypoint_t *pWaypoint = new AI_Waypoint_t( startArea->GetCenter(),
 			0.0f, NAV_GROUND, bits_WP_TO_AREA, startArea );
 		return pWaypoint;
 	}
@@ -423,7 +423,7 @@ AI_Waypoint_t *CAI_Pathfinder::FindBestPath(CNavArea * startArea, CNavArea * end
 	}
 
 	// make sure path end position is on the ground
-	Vector pathEndPosition = endArea->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() );
+	Vector pathEndPosition = endArea->GetCenter();
 	pathEndPosition.z = endArea->GetZ( &pathEndPosition );
 
 	ShortestPathCost costFunc;
@@ -448,13 +448,12 @@ AI_Waypoint_t *CAI_Pathfinder::FindBestPath(CNavArea * startArea, CNavArea * end
 
 	if (count == 1)
 	{
-		AI_Waypoint_t *pWaypoint = new AI_Waypoint_t( area->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() ),
+		AI_Waypoint_t *pWaypoint = new AI_Waypoint_t( area->GetCenter(),
 			0.0f, NAV_GROUND, bits_WP_TO_AREA, area );
 		return pWaypoint;
 	}
 
-	AI_Waypoint_t *pWaypoint = new AI_Waypoint_t( startArea->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() ),
-		0.0f, NAV_GROUND, bits_WP_TO_AREA, startArea );
+	AI_Waypoint_t *pOldWaypoint = NULL;
 
 	for( area = closestArea; count && area; area = area->GetParent() )
 	{
@@ -464,13 +463,13 @@ AI_Waypoint_t *CAI_Pathfinder::FindBestPath(CNavArea * startArea, CNavArea * end
 			break;
 		}
 
-		AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t( area->GetClosestPointOnArea( GetOuter()->GetLocalOrigin() ),
+		AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t( area->GetCenter(),
 			0.0f, NAV_GROUND, bits_WP_TO_AREA, area );
-		pWaypoint->SetNext(pNewWaypoint);
-		pWaypoint = pNewWaypoint;
+		pNewWaypoint->SetNext(pOldWaypoint);
+		pOldWaypoint = pNewWaypoint;
 	}
 
-	return pWaypoint;
+	return pOldWaypoint;
 #endif
 }
 
@@ -876,7 +875,7 @@ AI_Waypoint_t* CAI_Pathfinder::CreateNodeWaypoint( Hull_t hullType, int nodeID, 
 #else
 AI_Waypoint_t* CAI_Pathfinder::CreateAreaWaypoint( Hull_t hullType, CNavArea *area, int nodeFlags )
 {
-	return new AI_Waypoint_t( area->GetRandomPoint(), 0.0f, NAV_GROUND, ( bits_WP_TO_AREA | nodeFlags) , area );
+	return new AI_Waypoint_t( area->GetCenter(), 0.0f, NAV_GROUND, ( bits_WP_TO_AREA | nodeFlags) , area );
 }
 #endif
 
@@ -959,7 +958,7 @@ AI_Waypoint_t* CAI_Pathfinder::RouteToArea(const Vector &vecOrigin, int buildFla
 
 	// FIXME: an equals check is a bit sloppy, this should be a tolerance
 	const Vector &vecNodePosition = area->GetClosestPointOnArea( vecOrigin );
-	if (vecOrigin == vecNodePosition)
+	if (VectorsAreEqual(vecOrigin, vecNodePosition, 0.5f))
 	{
 		return CreateAreaWaypoint( GetHullType(), area, bits_WP_TO_GOAL );
 	}
@@ -988,8 +987,7 @@ AI_Waypoint_t* CAI_Pathfinder::RouteFromArea(const Vector &vecOrigin, int buildF
 	// Check if vecOrigin is already at the smallest node
 	// FIXME: an equals check is a bit sloppy, this should be a tolerance
 	const Vector &vecNodePosition = area->GetClosestPointOnArea( vecOrigin );
-
-	if (vecOrigin == vecNodePosition)
+	if (VectorsAreEqual(vecOrigin, vecNodePosition, 0.5f))
 	{
 		return CreateAreaWaypoint( GetHullType(), area, bits_WP_TO_GOAL );
 	}
@@ -2194,7 +2192,23 @@ AI_Waypoint_t *CAI_Pathfinder::BuildNearestAreaRoute( const Vector &vGoal, bool 
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_BuildNearestNodeRoute );
 
-	return NULL;
+	CNavArea *area = TheNavMesh->GetNearestNavArea( vGoal, false, 10000.0f, false, true, GetOuter()->GetTeamNumber() );
+	if(!area || !IsAreaUsable(area)) {
+		return NULL;
+	}
+
+	if(pNearestArea) {
+		*pNearestArea = area;
+	}
+
+	AI_Waypoint_t *route = NULL;
+
+	if ( bToArea )
+		route = RouteToArea( vGoal, buildFlags, area, goalTolerance );
+	else
+		route = RouteFromArea( vGoal, buildFlags, area, goalTolerance );
+
+	return route;
 }
 
 //-----------------------------------------------------------------------------
@@ -2245,10 +2259,6 @@ AI_Waypoint_t *CAI_Pathfinder::BuildAreaRoute(const Vector &vStart, const Vector
 		DbgNavMsg(  GetOuter(), "Node pathfind succeeded: dest == source\n");
 		return srcRoute;
 	}
-
-	// If nodes are not connected by network graph, no route is possible
-	//TODO!!! Arthurdead
-	return NULL;
 
 	AI_Waypoint_t *path = FindBestPath(srcArea, destArea);
 
