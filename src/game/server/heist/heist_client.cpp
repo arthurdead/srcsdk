@@ -41,7 +41,8 @@ void FinishClientPutInServer(CHeistPlayer *pPlayer)
 
 	UTIL_ClientPrintAll(HUD_PRINTNOTIFY, "#Game_connected", sName[0] != 0 ? sName : "<unconnected>");
 
-	if(gpGlobals->maxClients > 1 ) {
+	if(gpGlobals->maxClients > 1) {
+		/*
 		const ConVar *hostname = cvar->FindVar("hostname");
 		const char *title = hostname ? hostname->GetString() : "MESSAGE OF THE DAY";
 
@@ -53,6 +54,7 @@ void FinishClientPutInServer(CHeistPlayer *pPlayer)
 
 		pPlayer->ShowViewPortPanel(PANEL_INFO, true, data);
 		data->deleteThis();
+		*/
 	}
 
 	KeyValues *pkvTransitionRestoreFile = new KeyValues("transition.cfg");

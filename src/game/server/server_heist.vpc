@@ -39,7 +39,7 @@ $Project "Server"
  			$File	"heist\heist_player.cpp"
  			$File	"heist\heist_playermove.cpp"
  			$File	"heist\heist_eventlog.cpp"
- 			$File	"heist\monster_dummy.cpp"
+ 			$File	"heist\npc_civilian.cpp"
 			$Folder	"Entities"
 			{
 				$File	"heist\vgui_text_display.cpp"

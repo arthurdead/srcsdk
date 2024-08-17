@@ -899,44 +899,21 @@ void InitBodyQue()
 
 void CHeistGamerules::InitDefaultAIRelationships()
 {
-	int i, j;
-
 	CBaseCombatCharacter::AllocateDefaultRelationships();
 
-	for(i = 0; i < NUM_AI_CLASSES; ++i) {
-		for(j = 0; j < NUM_AI_CLASSES; ++j) {
+	for(int i = 0; i < NUM_AI_CLASSES; ++i) {
+		for(int j = 0; j < NUM_AI_CLASSES; ++j) {
 			CBaseCombatCharacter::SetDefaultRelationship((Class_T)i, (Class_T)j, D_NU, 0);
 		}
 	}
 
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_NONE, CLASS_NONE, D_NU, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_NONE, CLASS_PLAYER, D_NU, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_NONE, CLASS_POLICE, D_NU, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_NONE, CLASS_PLAYER_ALLY, D_NU, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_NONE, CLASS_PLAYER_ALLY_VITAL, D_NU, 0);
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_HEISTER, CLASS_HEISTER, D_LI, 0);
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_HEISTER, CLASS_POLICE, D_HT, 0);
 
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER, CLASS_NONE, D_NU, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER, CLASS_PLAYER, D_NU, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER, CLASS_POLICE, D_HT, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER, CLASS_PLAYER_ALLY, D_LI, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER, CLASS_PLAYER_ALLY_VITAL, D_LI, 0);
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_CIVILIAN, CLASS_HEISTER, D_FR, 0);
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_CIVILIAN, CLASS_POLICE, D_LI, 0);
 
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER_ALLY, CLASS_NONE, D_NU, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER_ALLY, CLASS_PLAYER, D_LI, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER_ALLY, CLASS_POLICE, D_HT, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER_ALLY, CLASS_PLAYER_ALLY, D_LI, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER_ALLY, CLASS_PLAYER_ALLY_VITAL, D_LI, 0);
-
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER_ALLY_VITAL, CLASS_NONE, D_NU, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER_ALLY_VITAL, CLASS_PLAYER, D_LI, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER_ALLY_VITAL, CLASS_POLICE, D_HT, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER_ALLY_VITAL, CLASS_PLAYER_ALLY, D_LI, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER_ALLY_VITAL, CLASS_PLAYER_ALLY_VITAL, D_LI, 0);
-
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_POLICE, CLASS_NONE, D_NU, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_POLICE, CLASS_PLAYER, D_HT, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_POLICE, CLASS_POLICE, D_NU, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_POLICE, CLASS_PLAYER_ALLY, D_HT, 0);
-	CBaseCombatCharacter::SetDefaultRelationship(CLASS_POLICE, CLASS_PLAYER_ALLY_VITAL, D_HT, 0);
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_POLICE, CLASS_POLICE, D_LI, 0);
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_POLICE, CLASS_HEISTER, D_HT, 0);
 }
 #endif

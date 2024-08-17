@@ -10,10 +10,15 @@
 
 #pragma once
 
+#include "networkvar.h"
+#include "ai_hull.h"
+#include "ai_activity.h"
+
 class CAI_BaseNPC;
 class CAI_Enemies;
 typedef int AI_TaskFailureCode_t;
 struct Task_t;
+struct edict_t;
 
 //-----------------------------------------------------------------------------
 // CAI_Component

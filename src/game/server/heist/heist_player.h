@@ -43,6 +43,8 @@ public:
 	void Precache() override;
 	void Spawn() override;
 
+	Class_T Classify() override;
+
 	void PickupObject(CBaseEntity *pObject, bool bLimitMassAndSize) override;
 
 	static void SaveTransitionFile();

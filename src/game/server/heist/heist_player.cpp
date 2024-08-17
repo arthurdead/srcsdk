@@ -206,7 +206,7 @@ void CHeistPlayer::Spawn(void)
 				++MovedYet;
 
 				if(MovedYet >= 6) {
-					ent->TakeDamage( CTakeDamageInfo( GetContainingEntity(INDEXENT(0)), GetContainingEntity(INDEXENT(0)), 3000, DMG_GENERIC ) );
+					ent->TakeDamage(CTakeDamageInfo(GetContainingEntity(INDEXENT(0)), GetContainingEntity(INDEXENT(0)), 3000, DMG_GENERIC));
 				} else {
 					goto LoopSpot;
 				}
@@ -248,6 +248,13 @@ void CHeistPlayer::Spawn(void)
 	DoAnimationEvent(PLAYERANIMEVENT_SPAWN);
 
 	SetModel("models/barney.mdl");
+}
+
+ConVar sv_heist_dev_players_disguised("sv_heist_dev_players_disguised", "1");
+
+Class_T CHeistPlayer::Classify()
+{
+	return sv_heist_dev_players_disguised.GetBool() ? CLASS_HEISTER_DISGUISED : CLASS_HEISTER;
 }
 
 void CHeistPlayer::PickupObject(CBaseEntity *pObject, bool bLimitMassAndSize)
@@ -464,15 +471,15 @@ void CHeistPlayer::CheatImpulseCommands(int iImpulse)
 	switch(iImpulse)
 	{
 	default:
-		BaseClass::CheatImpulseCommands( iImpulse );
+		BaseClass::CheatImpulseCommands(iImpulse);
 	}
 }
 
 bool CHeistPlayer::ShouldRunRateLimitedCommand(const CCommand &args)
 {
-	int i = m_RateLimitLastCommandTimes.Find( args[0] );
+	int i = m_RateLimitLastCommandTimes.Find(args[0]);
 	if(i == m_RateLimitLastCommandTimes.InvalidIndex()) {
-		m_RateLimitLastCommandTimes.Insert( args[0], gpGlobals->curtime );
+		m_RateLimitLastCommandTimes.Insert(args[0], gpGlobals->curtime);
 		return true;
 	} else if((gpGlobals->curtime - m_RateLimitLastCommandTimes[i]) < HEIST_COMMAND_MAX_RATE) {
 		return false;
@@ -516,7 +523,7 @@ void CHeistPlayer::FlashlightTurnOn()
 
 void CHeistPlayer::FlashlightTurnOff( void )
 {
-	RemoveEffects( EF_DIMLIGHT );
+	RemoveEffects(EF_DIMLIGHT);
 
 	if(IsAlive()) {
 		EmitSound("HL2Player.FlashlightOff");
@@ -525,7 +532,7 @@ void CHeistPlayer::FlashlightTurnOff( void )
 
 void CHeistPlayer::Weapon_Drop(CBaseCombatWeapon *pWeapon, const Vector *pvecTarget, const Vector *pVelocity)
 {
-	BaseClass::Weapon_Drop( pWeapon, pvecTarget, pVelocity );
+	BaseClass::Weapon_Drop(pWeapon, pvecTarget, pVelocity);
 }
 
 void CHeistPlayer::Event_Killed(const CTakeDamageInfo &info)
@@ -558,9 +565,9 @@ int CHeistPlayer::OnTakeDamage(const CTakeDamageInfo &inputInfo)
 {
 	m_vecTotalBulletForce += inputInfo.GetDamageForce();
 
-	gamestats->Event_PlayerDamage( this, inputInfo );
+	gamestats->Event_PlayerDamage(this, inputInfo);
 
-	return BaseClass::OnTakeDamage( inputInfo );
+	return BaseClass::OnTakeDamage(inputInfo);
 }
 
 void CHeistPlayer::DeathSound(const CTakeDamageInfo &info)
@@ -571,7 +578,7 @@ void CHeistPlayer::DeathSound(const CTakeDamageInfo &info)
 	const char *pModelName = STRING(GetModelName());
 
 	CSoundParameters params;
-	if(GetParametersForSound( szStepSound, params, pModelName ) == false) {
+	if(GetParametersForSound(szStepSound, params, pModelName) == false) {
 		return;
 	}
 
@@ -592,7 +599,7 @@ void CHeistPlayer::DeathSound(const CTakeDamageInfo &info)
 	EmitSound(filter, entindex(), ep);
 }
 
-CBaseEntity* CHeistPlayer::EntSelectSpawnPoint( void )
+CBaseEntity* CHeistPlayer::EntSelectSpawnPoint()
 {
 	return BaseClass::EntSelectSpawnPoint();
 }
@@ -613,7 +620,7 @@ void CHeistPlayer::SetReady(bool bReady)
 	m_bReady = bReady;
 }
 
-void CHeistPlayer::CheckChatText( char *p, int bufsize )
+void CHeistPlayer::CheckChatText(char *p, int bufsize)
 {
 	char *buf = new char[bufsize];
 	int pos = 0;
@@ -666,13 +673,12 @@ void CHeistPlayer::State_PreThink()
 
 CHeistPlayerStateInfo *CHeistPlayer::State_LookupInfo(HeistPlayerState state)
 {
-	static CHeistPlayerStateInfo playerStateInfos[] =
-	{
+	static CHeistPlayerStateInfo playerStateInfos[]{
 		{STATE_ACTIVE, "STATE_ACTIVE", &CHeistPlayer::State_Enter_ACTIVE, NULL, &CHeistPlayer::State_PreThink_ACTIVE},
 		{STATE_OBSERVER_MODE, "STATE_OBSERVER_MODE", &CHeistPlayer::State_Enter_OBSERVER_MODE, NULL, &CHeistPlayer::State_PreThink_OBSERVER_MODE}
 	};
 
-	for(int i=0; i < ARRAYSIZE(playerStateInfos); ++i) {
+	for(int i = 0; i < ARRAYSIZE(playerStateInfos); ++i) {
 		if(playerStateInfos[i].m_iPlayerState == state) {
 			return &playerStateInfos[i];
 		}
@@ -720,7 +726,7 @@ void CHeistPlayer::State_PreThink_OBSERVER_MODE()
 	//Assert(GetMoveType() == MOVETYPE_FLY);
 	Assert(m_takedamage == DAMAGE_NO);
 	Assert(IsSolidFlagSet(FSOLID_NOT_SOLID));
-	//Assert( IsEffectActive(EF_NODRAW));
+	//Assert(IsEffectActive(EF_NODRAW));
 
 	Assert(m_lifeState == LIFE_DEAD);
 	Assert(pl.deadflag);

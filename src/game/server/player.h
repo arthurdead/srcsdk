@@ -16,6 +16,7 @@
 #include "hintsystem.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "util_shared.h"
+#include "baseplayer_shared.h"
 
 #if defined USES_ECON_ITEMS
 #include "game_item_schema.h"
@@ -110,6 +111,21 @@ enum PlayerPhysFlag_e
 
 	// If you add another flag here check that you aren't 
 	// overwriting phys flags in the HL2 of TF2 player classes
+};
+
+enum
+{
+	itbd_Paralyze = 0,
+	itbd_NerveGas,
+	itbd_PoisonRecover,
+	itbd_Radiation,
+	itbd_DrownRecover,
+	itbd_Acid,
+	itbd_SlowBurn,
+	itbd_SlowFreeze,
+
+	// Must be last!
+	CDMG_TIMEBASED
 };
 
 //

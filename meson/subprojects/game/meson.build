@@ -53,7 +53,7 @@ server_lib_dep = declare_dependency(
 		join_paths(server_game_src_dir,'heist_playermove.cpp'),
 		join_paths(server_game_src_dir,'heist_eventlog.cpp'),
 		join_paths(server_game_src_dir,'vgui_text_display.cpp'),
-		join_paths(server_game_src_dir,'monster_dummy.cpp')
+		join_paths(server_game_src_dir,'npc_civilian.cpp')
 	),
 	include_directories: include_directories(
 		server_game_src_dir
@@ -65,8 +65,8 @@ server_lib_dep = declare_dependency(
 
 shared_library('server',
 	cpp_pch: [
-		join_paths(server_src_dir,'pch','cbase_pch.h'),
-		join_paths(server_src_dir,'pch','stdafx.cpp')
+		#join_paths(server_src_dir,'pch','cbase_pch.h'),
+		#join_paths(server_src_dir,'pch','stdafx.cpp')
 	],
 	dependencies: [
 		server_lib_dep,
@@ -77,8 +77,8 @@ shared_library('server',
 if false
 shared_library('server_srv',
 	cpp_pch: [
-		join_paths(server_src_dir,'pch','cbase_pch.h'),
-		join_paths(server_src_dir,'pch','stdafx.cpp')
+		#join_paths(server_src_dir,'pch','cbase_pch.h'),
+		#join_paths(server_src_dir,'pch','stdafx.cpp')
 	],
 	dependencies: [
 		server_lib_dep,
@@ -93,8 +93,8 @@ shared_library('client',
 		'-DWEBM_VIDEO_SERVICES_MOD'
 	],
 	cpp_pch: [
-		join_paths(client_src_dir,'pch','cbase_pch.h'),
-		join_paths(client_src_dir,'pch','stdafx.cpp')
+		#join_paths(client_src_dir,'pch','cbase_pch.h'),
+		#join_paths(client_src_dir,'pch','stdafx.cpp')
 	],
 	sources: files(
 		join_paths(client_game_src_dir,'c_heist_player.cpp'),

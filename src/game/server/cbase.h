@@ -99,23 +99,6 @@ extern void FireTargets( const char *targetName, CBaseEntity *pActivator, CBaseE
 
 #define MAX_OLD_ENEMIES		4 // how many old enemies to remember
 
-// used by suit voice to indicate damage sustained and repaired type to player
-
-enum
-{
-	itbd_Paralyze = 0,
-	itbd_NerveGas,
-	itbd_PoisonRecover,
-	itbd_Radiation,
-	itbd_DrownRecover,
-	itbd_Acid,
-	itbd_SlowBurn,
-	itbd_SlowFreeze,
-
-	// Must be last!
-	CDMG_TIMEBASED
-};
-
 // when calling KILLED(), a value that governs gib behavior is expected to be 
 // one of these three values
 #define GIB_NORMAL			0// gib if entity was overkilled
