@@ -21,15 +21,7 @@
 #include "dt_send.h"
 #include "server_class.h"
 #include "shake.h"
-
-// no idea why but it seems to not be able to find vmatrix, if it builds on linux then ?????
-// put it in an ifdef so i dont break anything.
-
-#ifdef _WIN32
 #include "mathlib/vmatrix.h"
-#else
-#include "vmatrix.h"
-#endif // _WIN32
 
 #include "vstdlib/random.h"
 #include <string.h>

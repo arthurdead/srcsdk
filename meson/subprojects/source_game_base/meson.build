@@ -141,7 +141,6 @@ source_game_shared_dep = declare_dependency(
 		join_paths(public_dir,'studio.cpp'),
 		join_paths(public_dir,'bone_setup.cpp'),
 		join_paths(public_dir,'tools','bonelist.cpp'),
-		join_paths(public_dir,'posedebugger.cpp'),
 		join_paths(public_dir,'client_class.cpp'),
 		join_paths(public_dir,'crtmemdebug.cpp'),
 		join_paths(public_dir,'dt_recv.cpp'),
@@ -437,7 +436,6 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'gamehandle.cpp'),
 		join_paths(server_src_dir,'h_export.cpp'),
 		join_paths(server_src_dir,'init_factory.cpp'),
-		join_paths(server_src_dir,'stdafx.cpp'),
 		join_paths(server_src_dir,'entity_tools_server.cpp'),
 		join_paths(server_src_dir,'toolframework_server.cpp'),
 		join_paths(server_src_dir,'basetempentity.cpp'),
@@ -753,7 +751,6 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'vgui_video_player.cpp'),
 		join_paths(client_src_dir,'c_vote_controller.cpp'),
 		join_paths(client_src_dir,'hltvcamera.cpp'),
-		join_paths(client_src_dir,'stdafx.cpp'),
 		join_paths(client_src_dir,'hud_lcd.cpp'),
 		join_paths(client_src_dir,'in_mouse.cpp'),
 		join_paths(client_src_dir,'mumble.cpp'),
@@ -844,7 +841,8 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(shared_src_dir,'voice_banmgr.cpp'),
 		join_paths(shared_src_dir,'cam_thirdperson.cpp'),
 		join_paths(shared_src_dir,'particle_property.cpp'),
-		join_paths(public_dir,'jigglebones.cpp')
+		join_paths(public_dir,'jigglebones.cpp'),
+		join_paths(public_dir,'posedebugger.cpp')
 	),
 	include_directories: include_directories(
 		client_src_dir,

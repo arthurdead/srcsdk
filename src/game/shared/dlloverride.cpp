@@ -5,7 +5,7 @@
 #include "tier0/memdbgon.h"
 
 #ifdef GAME_DLL
-extern char	*UTIL_VarArgs( PRINTF_FORMAT_STRING const char *format, ... );
+extern const char *UTIL_VarArgs( PRINTF_FORMAT_STRING const char *format, ... ) FMTFUNCTION( 1, 2 );
 #else
 extern char	*VarArgs( PRINTF_FORMAT_STRING const char *format, ... );
 #endif

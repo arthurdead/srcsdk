@@ -575,7 +575,7 @@ $Project
 
 		$Folder	"Precompiled Header"
 		{
-			$File "stdafx.cpp"
+			$File "pch\stdafx.cpp"
 			{
 				$Configuration
 				{

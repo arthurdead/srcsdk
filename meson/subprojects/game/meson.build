@@ -2,9 +2,13 @@ project('game', 'cpp')
 
 src_root_dir = get_option('src_root_dir')
 
-client_game_src_dir = join_paths(src_root_dir,'game','client','heist')
-client_game_vgui_src_dir = join_paths(src_root_dir,'game','client','heist','vgui')
-server_game_src_dir = join_paths(src_root_dir,'game','server','heist')
+client_src_dir = join_paths(src_root_dir,'game','client')
+client_game_src_dir = join_paths(client_src_dir,'heist')
+client_game_vgui_src_dir = join_paths(client_game_src_dir,'vgui')
+
+server_src_dir = join_paths(src_root_dir,'game','server')
+server_game_src_dir = join_paths(server_src_dir,'heist')
+
 shared_game_src_dir = join_paths(src_root_dir,'game','shared','heist')
 
 source_game_base = subproject('source_game_base')
@@ -60,8 +64,8 @@ server_lib_dep = declare_dependency(
 
 shared_library('server',
 	cpp_pch: [
-		#join_paths(server_src_dir,'cbase.h'),
-		#join_paths(server_src_dir,'stdafx.cpp')
+		join_paths(server_src_dir,'pch','cbase_pch.h'),
+		join_paths(server_src_dir,'pch','stdafx.cpp')
 	],
 	dependencies: [
 		server_lib_dep,
@@ -72,8 +76,8 @@ shared_library('server',
 if false
 shared_library('server_srv',
 	cpp_pch: [
-		#join_paths(server_src_dir,'cbase.h'),
-		#join_paths(server_src_dir,'stdafx.cpp')
+		join_paths(server_src_dir,'pch','cbase_pch.h'),
+		join_paths(server_src_dir,'pch','stdafx.cpp')
 	],
 	dependencies: [
 		server_lib_dep,
@@ -88,8 +92,8 @@ shared_library('client',
 		'-DWEBM_VIDEO_SERVICES_MOD'
 	],
 	cpp_pch: [
-		#join_paths(client_src_dir,'cbase.h'),
-		#join_paths(client_src_dir,'stdafx.cpp')
+		join_paths(client_src_dir,'pch','cbase_pch.h'),
+		join_paths(client_src_dir,'pch','stdafx.cpp')
 	],
 	sources: files(
 		join_paths(client_game_src_dir,'c_heist_player.cpp'),
