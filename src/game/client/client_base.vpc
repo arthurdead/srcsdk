@@ -173,6 +173,8 @@ $Project
 		
 	$Folder	"Source Files"
 	{
+		$File	"c_weapon_cubemap.cpp"
+		$File	"c_h_cycler.cpp"
 		$File	"$SRCDIR\game\shared\Multiplayer\multiplayer_animstate.h"
 		$File	"$SRCDIR\game\shared\Multiplayer\multiplayer_animstate.cpp"
 		$File	"$SRCDIR\game\shared\script_intro_shared.cpp"
@@ -1128,7 +1130,6 @@ $Project
 		$File	"$SRCDIR\game\shared\base_playeranimstate.h"
 		$File	"$SRCDIR\game\shared\baseentity_shared.h"
 		$File	"$SRCDIR\game\shared\basegrenade_shared.h"
-		$File	"$SRCDIR\game\shared\hl2\basehlcombatweapon_shared.h"
 		$File	"$SRCDIR\game\shared\baseparticleentity.h"
 		$File	"$SRCDIR\game\shared\baseplayer_shared.h"
 		$File	"$SRCDIR\game\shared\baseviewmodel_shared.h"
@@ -1160,8 +1161,6 @@ $Project
 		$File	"$SRCDIR\game\shared\gamestringpool.h"
 		$File	"$SRCDIR\game\shared\gamevars_shared.h"
 		$File	"$SRCDIR\game\shared\groundlink.h"
-		$File	"$SRCDIR\game\shared\hl2\hl2_player_shared.h"
-		$File	"$SRCDIR\game\shared\hl2\hl_movedata.h"
 		$File	"$SRCDIR\game\shared\ichoreoeventcallback.h"
 		$File	"$SRCDIR\game\shared\IEffects.h"
 		$File	"$SRCDIR\game\shared\igamemovement.h"
