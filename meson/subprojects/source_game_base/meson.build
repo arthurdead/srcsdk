@@ -665,8 +665,6 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'hud_closecaption.cpp'),
 		join_paths(client_src_dir,'hud_crosshair.cpp'),
 		join_paths(client_src_dir,'hud_element_helper.cpp'),
-		join_paths(client_src_dir,'hl2\hud_filmdemo.cpp'),
-		join_paths(client_src_dir,'hl2\hud_hdrdemo.cpp'),
 		join_paths(client_src_dir,'hud_hintdisplay.cpp'),
 		join_paths(client_src_dir,'hud_msg.cpp'),
 		join_paths(client_src_dir,'hud_numericdisplay.cpp'),
