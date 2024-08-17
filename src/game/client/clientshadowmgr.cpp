@@ -3831,7 +3831,7 @@ void CClientShadowMgr::AdvanceFrame()
 	m_ShadowAllocator.AdvanceFrame();
 }
 
-int _cdecl CompareLights(const ClientShadowHandle_t* light_left, const ClientShadowHandle_t* light_right)
+int __cdecl CompareLights(const ClientShadowHandle_t* light_left, const ClientShadowHandle_t* light_right)
 {
 	const FlashlightState_t& flashlightState1 = shadowmgr->GetFlashlightState(g_pClientShadowMgr->GetShadowHandle(*light_left));
 	const FlashlightState_t& flashlightState2 = shadowmgr->GetFlashlightState(g_pClientShadowMgr->GetShadowHandle(*light_right));
