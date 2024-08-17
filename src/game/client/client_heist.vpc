@@ -43,6 +43,10 @@ $Project "Client"
  			$File	"heist\heist_hud_weaponselection.cpp"
  			$File	"heist\vgui\heistviewport.cpp"
  			$File	"heist\vgui\vgui_rootpanel_heist.cpp"
+			$Folder	"Entities"
+			{
+				$File	"heist\vgui\c_vgui_text_display.cpp"
+			}
 		}
 	}
 }
