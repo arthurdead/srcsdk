@@ -101,6 +101,8 @@ public:
 
 	virtual void ComputeShadowDepthTextures( const CViewSetup &pView ) = 0;
 
+	virtual ShadowHandle_t GetShadowHandle(ClientShadowHandle_t clienthandle) = 0;
+
 };
 
 
