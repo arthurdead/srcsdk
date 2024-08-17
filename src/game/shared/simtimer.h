@@ -10,6 +10,14 @@
 
 #pragma once
 
+#include "datamap.h"
+#include "sharedInterface.h"
+#ifdef GAME_DLL
+#include "util.h"
+#else
+#include "cdll_client_int.h"
+#endif
+
 #define ST_EPS 0.001
 
 #define DEFINE_SIMTIMER( type, name ) 	DEFINE_EMBEDDED( type, name )

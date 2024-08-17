@@ -19,7 +19,6 @@
 #define POWERUP_THINK_CONTEXT	"PowerupThink"
 #endif
 
-#include "cbase.h"
 #include "baseentity.h"
 #include "baseflex.h"
 #include "damagemodifier.h"

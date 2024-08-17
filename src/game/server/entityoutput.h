@@ -11,9 +11,10 @@
 
 #pragma once
 
-
-#include "baseentity.h"
-
+#include "string_t.h"
+//#include "baseentity.h"
+#include "saverestore.h"
+#include "variant_t.h"
 
 #define EVENT_FIRE_ALWAYS	-1
 

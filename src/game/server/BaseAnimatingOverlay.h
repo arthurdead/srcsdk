@@ -12,6 +12,9 @@
 #define BASE_ANIMATING_OVERLAY_H
 #pragma once
 
+#include "baseanimating.h"
+#include "ai_activity.h"
+
 class CBaseAnimatingOverlay;
 
 class CAnimationLayer

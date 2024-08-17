@@ -11,7 +11,17 @@
 
 #pragma once
 
-#include "baseentity.h"
+#include "tier0/platform.h"
+//#include "baseentity.h"
+#include "entitylist_base.h"
+#include "tier1/utlvector.h"
+#include "edict.h"
+#include "iserverunknown.h"
+#include "ehandle.h"
+
+class CBaseEntity;
+
+typedef CHandle<CBaseEntity> EHANDLE;
 
 class IEntityListener;
 

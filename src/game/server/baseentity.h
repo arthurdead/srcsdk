@@ -18,6 +18,12 @@
 #include "ServerNetworkProperty.h"
 #include "shareddefs.h"
 #include "engine/ivmodelinfo.h"
+#include "predictableid.h"
+#include "engine/IEngineTrace.h"
+#include "takedamageinfo.h"
+#include "touchlink.h"
+#include "groundlink.h"
+#include "irecipientfilter.h"
 
 class CDamageModifier;
 class CDmgAccumulator;

@@ -21,6 +21,7 @@
 #include "dt_send.h"
 #include "server_class.h"
 #include "shake.h"
+#include "vmatrix.h"
 
 #include "vstdlib/random.h"
 #include <string.h>

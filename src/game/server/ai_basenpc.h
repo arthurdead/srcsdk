@@ -33,7 +33,7 @@
 #include "soundent.h"
 #include "ai_navigator.h"
 #include "tier1/functors.h"
-
+#include "igamesystem.h"
 
 #define PLAYER_SQUADNAME "player_squad"
 

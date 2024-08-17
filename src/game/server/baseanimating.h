@@ -13,7 +13,7 @@
 #include "studio.h"
 #include "datacache/idatacache.h"
 #include "tier0/threadtools.h"
-
+#include "ai_activity.h"
 
 struct animevent_t;
 struct matrix3x4_t;
