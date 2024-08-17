@@ -9,9 +9,7 @@
 #ifndef DATATABLE_RECV_H
 #define DATATABLE_RECV_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "dt_common.h"
 #include "tier0/dbg.h"

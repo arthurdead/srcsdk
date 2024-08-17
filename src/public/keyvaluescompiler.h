@@ -6,9 +6,7 @@
 
 #ifndef KEYVALUESCOMPILER_H
 #define KEYVALUESCOMPILER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/platform.h"
 #include "tier1/utlbuffer.h"

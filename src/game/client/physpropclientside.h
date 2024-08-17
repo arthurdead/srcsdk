@@ -6,9 +6,7 @@
 
 #ifndef PHYSPROPCLIENTSIDE_H
 #define PHYSPROPCLIENTSIDE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_breakableprop.h"
 #include "props_shared.h"

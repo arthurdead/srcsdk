@@ -11,9 +11,7 @@
 #include <limits.h>
 #include "weapon_proficiency.h"
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #ifdef INVASION_DLL
 #include "tf_shareddefs.h"

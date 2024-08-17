@@ -7,9 +7,7 @@
 
 #ifndef PHYSOBJ_H
 #define PHYSOBJ_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #ifndef PHYSICS_H
 #include "physics.h"

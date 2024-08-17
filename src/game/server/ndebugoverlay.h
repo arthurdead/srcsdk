@@ -7,9 +7,7 @@
 #ifndef NDEBUGOVERLAY_H
 #define NDEBUGOVERLAY_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "debugoverlay_shared.h"
 

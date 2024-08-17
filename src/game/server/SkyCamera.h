@@ -8,9 +8,7 @@
 #ifndef SKYCAMERA_H
 #define SKYCAMERA_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 class CSkyCamera;
 

@@ -8,9 +8,7 @@
 #ifndef SAVERESTORE_STRINGTABLE_H
 #define SAVERESTORE_STRINGTABLE_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 
 #include "isaverestore.h"

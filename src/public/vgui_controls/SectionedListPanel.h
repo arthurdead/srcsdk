@@ -8,9 +8,7 @@
 #ifndef SECTIONEDLISTPANEL_H
 #define SECTIONEDLISTPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <utlvector.h>
 #include <utllinkedlist.h>

@@ -7,9 +7,7 @@
 
 #ifndef HUD_BASEDEATHNOTICE_H
 #define HUD_BASEDEATHNOTICE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // Player entries in a death notice
 struct DeathNoticePlayer

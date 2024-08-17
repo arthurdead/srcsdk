@@ -6,9 +6,7 @@
 
 #ifndef VEHICLE_VIEWBLEND_SHARED_H
 #define VEHICLE_VIEWBLEND_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // Definition for how to calculate a point on the remap curve
 enum RemapAngleRange_CurvePart_t

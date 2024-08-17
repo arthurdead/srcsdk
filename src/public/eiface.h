@@ -9,9 +9,7 @@
 #ifndef EIFACE_H
 #define EIFACE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "convar.h"
 #include "icvar.h"

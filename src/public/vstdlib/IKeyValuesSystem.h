@@ -6,9 +6,7 @@
 //=============================================================================//
 #ifndef VSTDLIB_IKEYVALUESSYSTEM_H
 #define VSTDLIB_IKEYVALUESSYSTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vstdlib/vstdlib.h"
 

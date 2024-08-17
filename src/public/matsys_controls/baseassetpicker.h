@@ -6,9 +6,7 @@
 
 #ifndef BASEASSETPICKER_H
 #define BASEASSETPICKER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/EditablePanel.h"
 #include "vgui_controls/Frame.h"

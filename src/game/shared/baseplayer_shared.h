@@ -7,9 +7,7 @@
 
 #ifndef BASEPLAYER_SHARED_H
 #define BASEPLAYER_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // PlayerUse defines
 #define	PLAYER_USE_RADIUS	80.f

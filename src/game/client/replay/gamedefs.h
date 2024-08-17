@@ -4,9 +4,7 @@
 
 #ifndef GAMEDEFS_H
 #define GAMEDEFS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #if defined( TF_CLIENT_DLL )
 

@@ -6,9 +6,7 @@
 
 #ifndef C_PHYSICSPROP_H
 #define C_PHYSICSPROP_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_breakableprop.h"
 //-----------------------------------------------------------------------------

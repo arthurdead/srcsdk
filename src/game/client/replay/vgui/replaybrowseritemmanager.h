@@ -4,9 +4,7 @@
 
 #ifndef REPLAYBROWSER_ITEMMANAGER_H
 #define REPLAYBROWSER_ITEMMANAGER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utllinkedlist.h"
 #include <vgui_controls/Panel.h>

@@ -9,9 +9,7 @@
 #if !defined( IENGINEVGUI_H )
 #define IENGINEVGUI_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 #include "vgui/VGUI.h"

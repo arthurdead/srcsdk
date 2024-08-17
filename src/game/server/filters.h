@@ -21,9 +21,7 @@
 
 #ifndef FILTERS_H
 #define FILTERS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "baseentity.h"
 #include "entityoutput.h"

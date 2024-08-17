@@ -7,9 +7,7 @@
 
 #ifndef TEAM_H
 #define TEAM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shareddefs.h"
 #include "utlvector.h"

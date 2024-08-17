@@ -6,9 +6,7 @@
 
 #ifndef TRIGGER_AREA_CAPTURE_H
 #define TRIGGER_AREA_CAPTURE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basemultiplayerplayer.h"
 #include "triggers.h"

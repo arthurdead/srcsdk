@@ -7,9 +7,7 @@
 
 #ifndef VCR_SHARED_H
 #define VCR_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #define VCRFILE_VERSION		2

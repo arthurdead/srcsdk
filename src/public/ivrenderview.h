@@ -7,9 +7,7 @@
 //===========================================================================//
 #if !defined( IVRENDERVIEW_H )
 #define IVRENDERVIEW_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basetypes.h"
 #include "mathlib/vplane.h"

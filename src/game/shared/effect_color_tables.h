@@ -6,9 +6,7 @@
 
 #ifndef EFFECT_COLOR_TABLES_H
 #define EFFECT_COLOR_TABLES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 struct colorentry_t
 {

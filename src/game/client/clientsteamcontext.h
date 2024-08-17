@@ -1,9 +1,7 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 #if !defined( CLIENTSTEAMCONTEXT_H )
 #define CLIENTSTEAMCONTEXT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "steam/steam_api.h"
 #include "utldelegate.h"

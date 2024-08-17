@@ -4,9 +4,7 @@
 
 #ifndef REPLAYBROWSERMOVIEPLAYERPANEL_H
 #define REPLAYBROWSERMOVIEPLAYERPANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "replaybrowserbasepanel.h"
 #include "video/ivideoservices.h"

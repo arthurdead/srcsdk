@@ -6,9 +6,7 @@
 
 #ifndef IPLAYERANIMSTATE_H
 #define IPLAYERANIMSTATE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 

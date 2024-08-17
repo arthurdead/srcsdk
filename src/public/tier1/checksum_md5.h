@@ -7,9 +7,7 @@
 #ifndef CHECKSUM_MD5_H
 #define CHECKSUM_MD5_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // 16 bytes == 128 bit digest
 #define MD5_DIGEST_LENGTH 16  

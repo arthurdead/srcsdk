@@ -9,9 +9,7 @@
 
 #ifndef VALOBJECT_H
 #define VALOBJECT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #ifdef DBGFLAG_VALIDATE

@@ -8,9 +8,7 @@
 
 #if !defined( CLIENTEFFECTPRECACHESYSTEM_H )
 #define CLIENTEFFECTPRECACHESYSTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "igamesystem.h"
 #include "commonmacros.h"

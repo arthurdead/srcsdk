@@ -9,9 +9,7 @@
 #ifndef TIER1_ILOCALIZE_H
 #define TIER1_ILOCALIZE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "appframework/IAppSystem.h"
 #include <tier1/KeyValues.h>

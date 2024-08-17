@@ -6,9 +6,7 @@
 
 #ifndef MAPENTITIES_SHARED_H
 #define MAPENTITIES_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define MAPKEY_MAXLENGTH	2048
 

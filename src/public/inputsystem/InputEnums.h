@@ -6,9 +6,7 @@
 
 #ifndef INPUTENUMS_H
 #define INPUTENUMS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // Standard maximum +/- value of a joystick axis
 #define MAX_BUTTONSAMPLE			32768

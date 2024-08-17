@@ -10,9 +10,7 @@
 
 #ifndef EVENTQUEUE_H
 #define EVENTQUEUE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mempool.h"
 

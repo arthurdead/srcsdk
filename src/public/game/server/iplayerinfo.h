@@ -5,9 +5,7 @@
 //=============================================================================//
 #ifndef IPLAYERINFO_H
 #define IPLAYERINFO_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mathlib/vector.h"
 

@@ -6,9 +6,7 @@
 //===========================================================================//
 #if !defined( BEAMSEGDRAW_H )
 #define BEAMSEGDRAW_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define NOISE_DIVISIONS		128
 

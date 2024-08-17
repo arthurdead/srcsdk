@@ -8,9 +8,7 @@
 //=============================================================================//
 #if !defined( GAMEMOVEMENT_H )
 #define GAMEMOVEMENT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "igamemovement.h"
 #include "cmodel.h"

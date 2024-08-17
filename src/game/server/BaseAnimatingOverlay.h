@@ -10,9 +10,7 @@
 
 #ifndef BASE_ANIMATING_OVERLAY_H
 #define BASE_ANIMATING_OVERLAY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class CBaseAnimatingOverlay;
 

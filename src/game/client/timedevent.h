@@ -6,9 +6,7 @@
 
 #ifndef TIMEDEVENT_H
 #define TIMEDEVENT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // This class triggers events at a specified rate. Just call NextEvent() and do an event until it 
 // returns false. For example, if you want to spawn particles 10 times per second, do this:

@@ -4,9 +4,7 @@
 
 #ifndef IENGINEREPLAY_H
 #define IENGINEREPLAY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

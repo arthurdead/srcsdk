@@ -6,9 +6,7 @@
 
 #ifndef PARTICLES_LOCALSPACE_H
 #define PARTICLES_LOCALSPACE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "particles_simple.h"
 

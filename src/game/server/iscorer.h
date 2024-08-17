@@ -8,9 +8,7 @@
 
 #ifndef ISCORER_H
 #define ISCORER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface that entities can use to redirect scoring to other entities.

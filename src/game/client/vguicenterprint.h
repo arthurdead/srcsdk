@@ -8,9 +8,7 @@
 //=============================================================================//
 #if !defined( VGUICENTERPRINT_H )
 #define VGUICENTERPRINT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ivguicenterprint.h"
 #include <vgui/VGUI.h>

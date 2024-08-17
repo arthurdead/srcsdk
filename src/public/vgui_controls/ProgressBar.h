@@ -8,9 +8,7 @@
 #ifndef PROGRESSBAR_H
 #define PROGRESSBAR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include <vgui_controls/Panel.h>

@@ -7,9 +7,7 @@
 #ifndef VALVEMAYA_H
 #define VALVEMAYA_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 // Maya Includes
 

@@ -7,9 +7,7 @@
 
 #ifndef CVARTOGGLECHECKBUTTON_H
 #define CVARTOGGLECHECKBUTTON_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui/VGUI.h"
 #include "vgui_controls/CheckButton.h"

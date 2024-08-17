@@ -9,9 +9,7 @@
 #ifndef SYSTEMINFORMATION_H
 #define SYSTEMINFORMATION_H
 
-#ifdef _WIN32
-	#pragma once
-#endif
+#pragma once
 
 #ifndef PLATFORM_INTERFACE
 	#define PLATFORM_INTERFACE

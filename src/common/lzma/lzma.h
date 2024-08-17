@@ -13,9 +13,7 @@
 #ifndef LZMA_H
 #define LZMA_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 //	These routines are designed for TOOL TIME encoding/decoding on the PC!

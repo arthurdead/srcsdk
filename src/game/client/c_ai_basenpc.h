@@ -7,9 +7,7 @@
 
 #ifndef C_AI_BASENPC_H
 #define C_AI_BASENPC_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "c_basecombatcharacter.h"

@@ -7,9 +7,7 @@
 
 #ifndef IFILELIST_H
 #define IFILELIST_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // This class represents a group of files. Internally, it can represent whole folders of files

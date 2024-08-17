@@ -12,9 +12,7 @@
 #include "isaverestore.h"
 #include "saverestore_utlclass.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 //-------------------------------------
 

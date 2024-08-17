@@ -9,9 +9,7 @@
 #ifndef VECTOR4D_H
 #define VECTOR4D_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <math.h>
 #include <stdlib.h>		// For rand(). We really need a library!

@@ -7,9 +7,7 @@
 
 #ifndef COMMENTARY_MODELVIEWER_H
 #define COMMENTARY_MODELVIEWER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/Frame.h>
 #include <game/client/iviewport.h>

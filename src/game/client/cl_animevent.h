@@ -9,9 +9,7 @@
 
 #if !defined( CL_ANIMEVENT_H )
 #define CL_ANIMEVENT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //Animation event codes
 #define CL_EVENT_MUZZLEFLASH0		5001	// Muzzleflash on attachment 0

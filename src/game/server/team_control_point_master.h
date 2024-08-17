@@ -6,9 +6,7 @@
 
 #ifndef TEAM_CONTROL_POINT_MASTER_H
 #define TEAM_CONTROL_POINT_MASTER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlmap.h"
 #include "team.h"

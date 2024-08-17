@@ -6,9 +6,7 @@
 
 #ifndef NAVPROGRESS_H
 #define NAVPROGRESS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/Frame.h>
 #include <vgui_controls/ProgressBar.h>

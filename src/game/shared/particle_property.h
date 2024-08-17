@@ -6,9 +6,7 @@
 
 #ifndef PARTICLEPROPERTY_H
 #define PARTICLEPROPERTY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "smartptr.h"
 #include "globalvars_base.h"

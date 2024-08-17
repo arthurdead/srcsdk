@@ -16,9 +16,7 @@
 #include <process.h>
 #endif
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/platform.h"
 #include "tier0/vcr_shared.h"

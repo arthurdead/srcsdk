@@ -7,9 +7,7 @@
 
 #ifndef ENVLASER_H
 #define ENVLASER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "baseentity.h"
 #include "beam_shared.h"

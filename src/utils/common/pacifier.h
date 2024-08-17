@@ -7,9 +7,7 @@
 
 #ifndef PACIFIER_H
 #define PACIFIER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // Use these to display a pacifier like:

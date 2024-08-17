@@ -10,9 +10,7 @@
 #include "simtimer.h"
 #include "ai_behavior.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 typedef const char *AIConcept_t;
 

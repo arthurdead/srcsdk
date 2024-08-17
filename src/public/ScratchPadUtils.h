@@ -7,9 +7,7 @@
 
 #ifndef SCRATCHPADUTILS_H
 #define SCRATCHPADUTILS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "iscratchpad3d.h"

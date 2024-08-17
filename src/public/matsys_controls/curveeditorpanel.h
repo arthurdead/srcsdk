@@ -7,9 +7,7 @@
 #ifndef CURVEEDITORPANEL_H
 #define CURVEEDITORPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "vgui_controls/Panel.h"

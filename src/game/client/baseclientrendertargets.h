@@ -17,9 +17,7 @@
 //=============================================================================//
 #ifndef CLIENTRENDERTARTETS_H_
 #define CLIENTRENDERTARTETS_H_
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "game/client/iclientrendertargets.h"		// base class with interfaces called by the engine
 #include "materialsystem/imaterialsystem.h"		// for material system classes and interfaces

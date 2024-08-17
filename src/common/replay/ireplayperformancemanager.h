@@ -4,9 +4,7 @@
 
 #ifndef IREPLAYPERFORMANCEMANAGER_H
 #define IREPLAYPERFORMANCEMANAGER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

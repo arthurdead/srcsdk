@@ -7,9 +7,7 @@
 
 #ifndef C_WEAPON__STUBS_H
 #define C_WEAPON__STUBS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "client_class.h"
 

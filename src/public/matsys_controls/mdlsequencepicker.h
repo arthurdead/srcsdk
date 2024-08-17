@@ -6,9 +6,7 @@
 
 #ifndef MDLSEQUENCEPICKER_H
 #define MDLSEQUENCEPICKER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/ImageList.h"
 #include "vgui_controls/Frame.h"

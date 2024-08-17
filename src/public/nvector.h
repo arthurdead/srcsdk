@@ -7,9 +7,7 @@
 
 #ifndef NVECTOR_H
 #define NVECTOR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include <math.h>

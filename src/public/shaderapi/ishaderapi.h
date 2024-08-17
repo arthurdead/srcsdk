@@ -9,9 +9,7 @@
 #ifndef ISHADERAPI_H
 #define ISHADERAPI_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mathlib/vector4d.h"
 #include "shaderapi/ishaderdynamic.h"

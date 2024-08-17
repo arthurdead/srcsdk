@@ -8,9 +8,7 @@
 
 #ifndef REPLAYCAMERA_H
 #define REPLAYCAMERA_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "replay/ireplaycamera.h"
 #include "GameEventListener.h"

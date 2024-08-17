@@ -6,9 +6,7 @@
 
 #ifndef TEAMPLAYROUNDBASED_GAMERULES_H
 #define TEAMPLAYROUNDBASED_GAMERULES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "teamplay_gamerules.h"
 #include "teamplay_round_timer.h"

@@ -9,9 +9,7 @@
 #ifndef BASESHADER_H
 #define BASESHADER_H
 
-#ifdef _WIN32		   
 #pragma once
-#endif
 
 #include "materialsystem/IShader.h"
 #include "materialsystem/imaterialvar.h"

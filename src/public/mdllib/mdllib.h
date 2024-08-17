@@ -7,9 +7,7 @@
 #ifndef MDLLIB_H
 #define MDLLIB_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlbuffer.h"
 #include "appframework/IAppSystem.h"

@@ -8,9 +8,7 @@
 #ifndef URLLABEL_H
 #define URLLABEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include <vgui_controls/Label.h>

@@ -14,9 +14,7 @@
 #ifndef HARDWAREVERTS_H
 #define HARDWAREVERTS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "datamap.h"
 

@@ -10,9 +10,7 @@
 #ifndef	SPOTLIGHTEND_H
 #define	SPOTLIGHTEND_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "baseentity.h"

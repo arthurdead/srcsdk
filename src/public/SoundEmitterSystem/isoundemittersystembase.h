@@ -7,9 +7,7 @@
 
 #ifndef ISOUNDEMITTERSYSTEMBASE_H
 #define ISOUNDEMITTERSYSTEMBASE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utldict.h"
 #include "vstdlib/random.h"

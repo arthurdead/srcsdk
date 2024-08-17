@@ -7,9 +7,7 @@
 
 #ifndef EHANDLE_H
 #define EHANDLE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #if defined( _DEBUG ) && defined( GAME_DLL )
 #include "tier0/dbg.h"

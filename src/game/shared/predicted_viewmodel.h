@@ -7,9 +7,7 @@
 
 #ifndef PREDICTED_VIEWMODEL_H
 #define PREDICTED_VIEWMODEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "predictable_entity.h"
 #include "utlvector.h"

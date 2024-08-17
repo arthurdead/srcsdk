@@ -6,9 +6,7 @@
 
 #ifndef PARTICLE_SYSTEM_H
 #define PARTICLE_SYSTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "cbase.h"
 

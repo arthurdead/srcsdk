@@ -6,9 +6,7 @@
 
 #ifndef FUNC_LADDER_H
 #define FUNC_LADDER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #if defined( CLIENT_DLL )
 #define CFuncLadder C_FuncLadder

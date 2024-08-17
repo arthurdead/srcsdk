@@ -6,9 +6,7 @@
 
 #ifndef MOVEVARS_SHARED_H
 #define MOVEVARS_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "convar.h"
 

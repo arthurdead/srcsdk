@@ -11,9 +11,7 @@
 #ifndef UTLVECTOR_H
 #define UTLVECTOR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include <string.h>

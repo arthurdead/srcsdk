@@ -6,9 +6,7 @@
 
 #ifndef FX_TRAIL_H
 #define FX_TRAIL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "particle_util.h"
 #include "baseparticleentity.h"

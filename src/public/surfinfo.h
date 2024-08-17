@@ -6,9 +6,7 @@
 //=============================================================================//
 #ifndef SURFINFO_H
 #define SURFINFO_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mathlib/vplane.h"
 

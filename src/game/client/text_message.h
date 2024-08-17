@@ -6,9 +6,7 @@
 //=============================================================================//
 #if !defined( TEXT_MESSAGE_H )
 #define TEXT_MESSAGE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 abstract_class IHudTextMessage
 {

@@ -7,9 +7,7 @@
 
 #ifndef BASEPROJECTILE_H
 #define BASEPROJECTILE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "cbase.h"
 

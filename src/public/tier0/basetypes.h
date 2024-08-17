@@ -13,9 +13,7 @@
 
 #include "tier0/valve_off.h"
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // This is a trick to get the DLL extension off the -D option on the command line.

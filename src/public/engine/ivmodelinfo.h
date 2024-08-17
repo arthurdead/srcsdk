@@ -8,9 +8,7 @@
 #ifndef IVMODELINFO_H
 #define IVMODELINFO_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "platform.h"
 #include "dbg.h"

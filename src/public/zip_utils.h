@@ -6,9 +6,7 @@
 
 #ifndef ZIP_UTILS_H
 #define ZIP_UTILS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlsymbol.h"
 

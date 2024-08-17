@@ -7,9 +7,7 @@
 
 #ifndef FX_EXPLOSION_H
 #define FX_EXPLOSION_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "particle_collision.h"
 #include "glow_overlay.h"

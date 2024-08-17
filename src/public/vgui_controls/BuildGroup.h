@@ -8,9 +8,7 @@
 #ifndef VGUI_BUILDGROUP_H
 #define VGUI_BUILDGROUP_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlvector.h"
 #include "tier1/utlsymbol.h"

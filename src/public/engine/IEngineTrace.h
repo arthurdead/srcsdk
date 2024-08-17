@@ -8,9 +8,7 @@
 
 #ifndef ENGINE_IENGINETRACE_H
 #define ENGINE_IENGINETRACE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basehandle.h"
 #include "utlvector.h" //need CUtlVector for IEngineTrace::GetBrushesIn*()

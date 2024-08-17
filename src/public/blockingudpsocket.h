@@ -6,9 +6,7 @@
 
 #ifndef BLOCKINGUDPSOCKET_H
 #define BLOCKINGUDPSOCKET_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "netadr.h"
 

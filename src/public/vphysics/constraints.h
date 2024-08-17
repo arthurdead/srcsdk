@@ -7,9 +7,7 @@
 
 #ifndef CONSTRAINTS_H
 #define CONSTRAINTS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vphysics_interface.h"
 #include "mathlib/mathlib.h"

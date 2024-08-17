@@ -6,9 +6,7 @@
 
 #ifndef AI_DEBUG_SHARED_H
 #define AI_DEBUG_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "tier0/vprof.h"

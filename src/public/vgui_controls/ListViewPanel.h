@@ -8,9 +8,7 @@
 #ifndef LISTVIEWPANEL_H
 #define LISTVIEWPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <utllinkedlist.h>
 #include <utlvector.h>

@@ -6,9 +6,7 @@
 
 #ifndef SCRATCHPAD_GAMEDLL_HELPERS_H
 #define SCRATCHPAD_GAMEDLL_HELPERS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 class IScratchPad3D;

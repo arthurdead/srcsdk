@@ -7,9 +7,7 @@
 #ifndef TGAPREVIEWPANEL_H
 #define TGAPREVIEWPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "matsys_controls/proceduraltexturepanel.h"

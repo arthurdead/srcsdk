@@ -5,9 +5,7 @@
 
 #ifndef GENERICCLASSBASED_REPLAY_H
 #define GENERICCLASSBASED_REPLAY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

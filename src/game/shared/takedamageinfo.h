@@ -7,9 +7,7 @@
 
 #ifndef TAKEDAMAGEINFO_H
 #define TAKEDAMAGEINFO_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "networkvar.h" // todo: change this when DECLARE_CLASS is moved into a better location.

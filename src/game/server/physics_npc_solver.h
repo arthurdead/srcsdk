@@ -6,9 +6,7 @@
 
 #ifndef PHYSICS_NPC_SOLVER_H
 #define PHYSICS_NPC_SOLVER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 extern CBaseEntity *NPCPhysics_CreateSolver( CAI_BaseNPC *pNPC, CBaseEntity *pPhysicsObject, bool disableCollisions, float separationDuration );

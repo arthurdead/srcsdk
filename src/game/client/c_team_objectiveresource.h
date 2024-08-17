@@ -6,9 +6,7 @@
 
 #ifndef C_TEAM_OBJECTIVERESOURCE_H
 #define C_TEAM_OBJECTIVERESOURCE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shareddefs.h"
 #include "const.h"

@@ -4,9 +4,7 @@
 
 #ifndef REPLAYBROWSER_LISTPANEL_H
 #define REPLAYBROWSER_LISTPANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <game/client/iviewport.h>
 #include "vgui_controls/PropertyPage.h"

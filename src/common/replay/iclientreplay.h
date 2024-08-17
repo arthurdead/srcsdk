@@ -4,9 +4,7 @@
 
 #ifndef ICLIENTREPLAY_H
 #define ICLIENTREPLAY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

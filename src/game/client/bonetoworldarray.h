@@ -9,9 +9,7 @@
 
 #include "tier0/tslist.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "tier0/memdbgon.h" // for _aligned_malloc usage below
 //-----------------------------------------------------------------------------

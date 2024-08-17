@@ -10,9 +10,7 @@
 #include "utlmap.h"
 #include "saverestore_utlrbtree.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 template <class UTLMAP, int KEY_TYPE, int FIELD_TYPE>
 class CUtlMapDataOps : public CDefSaveRestoreOps

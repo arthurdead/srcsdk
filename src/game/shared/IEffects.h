@@ -8,9 +8,7 @@
 #ifndef IEFFECTS_H
 #define IEFFECTS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basetypes.h"
 #include "mathlib/vector.h"

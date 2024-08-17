@@ -6,9 +6,7 @@
 
 #ifndef CDLL_INT_H
 #define CDLL_INT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basetypes.h"
 #include "interface.h"

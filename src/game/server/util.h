@@ -7,9 +7,7 @@
 
 #ifndef UTIL_H
 #define UTIL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ai_activity.h"
 #include "steam/steam_gameserver.h"

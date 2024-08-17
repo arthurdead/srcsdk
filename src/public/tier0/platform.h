@@ -52,9 +52,7 @@
 #endif
 #endif
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // feature enables
 #define NEW_SOFTWARE_LIGHTING

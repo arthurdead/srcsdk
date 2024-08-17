@@ -6,9 +6,7 @@
 
 #ifndef BASE_PLAYERANIMSTATE_H
 #define BASE_PLAYERANIMSTATE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "iplayeranimstate.h"

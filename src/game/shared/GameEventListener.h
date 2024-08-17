@@ -7,9 +7,7 @@
 
 #ifndef GAME_EVENT_LISTENER_H
 #define GAME_EVENT_LISTENER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "igameevents.h"
 extern IGameEventManager2 *gameeventmanager;

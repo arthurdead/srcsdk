@@ -14,9 +14,7 @@
 
 #ifndef PARTICLEPROPERTY_INLINES_H
 #define PARTICLEPROPERTY_INLINES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 /// Set the parent of a given control point on a given effect to the index of another control point. This is

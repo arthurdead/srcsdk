@@ -6,9 +6,7 @@
 
 #ifndef PROPS_SHARED_H
 #define PROPS_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "igamesystem.h"
 #include <KeyValues.h>

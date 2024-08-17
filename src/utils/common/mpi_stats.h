@@ -7,9 +7,7 @@
 
 #ifndef MPI_STATS_H
 #define MPI_STATS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // The VMPI stats module reports a bunch of statistics to a MySQL server, and the

@@ -7,9 +7,7 @@
 
 #ifndef EVENTLIST_H
 #define EVENTLIST_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define AE_TYPE_SERVER			( 1 << 0 )
 #define AE_TYPE_SCRIPTED		( 1 << 1 )		// see scriptevent.h

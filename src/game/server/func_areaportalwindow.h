@@ -7,9 +7,7 @@
 
 #ifndef FUNC_AREAPORTALWINDOW_H
 #define FUNC_AREAPORTALWINDOW_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "baseentity.h"

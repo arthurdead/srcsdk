@@ -6,9 +6,7 @@
 
 #ifndef UNICODE_H
 #define UNICODE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 

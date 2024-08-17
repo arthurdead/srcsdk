@@ -12,9 +12,7 @@
 #ifndef ICONVAR_H
 #define ICONVAR_H
 
-#if _WIN32
 #pragma once
-#endif
 
 #include "tier0/dbg.h"
 #include "tier0/platform.h"

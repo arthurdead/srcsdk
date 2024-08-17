@@ -6,9 +6,7 @@
 
 #ifndef PHYSICS_CANNISTER_H
 #define PHYSICS_CANNISTER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "player_pickup.h"
 

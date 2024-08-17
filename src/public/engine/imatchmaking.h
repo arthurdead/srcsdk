@@ -6,9 +6,7 @@
 
 #ifndef IMATCHMAKING_H
 #define IMATCHMAKING_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "const.h"
 #include "vgui/VGUI.h"

@@ -32,9 +32,7 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #ifdef _LINUX
 #include <dlfcn.h> // dlopen,dlclose, et al

@@ -7,9 +7,7 @@
 #ifndef HLTVDIRECTOR_H
 #define HLTVDIRECTOR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "GameEventListener.h"
 #include <igamesystem.h>

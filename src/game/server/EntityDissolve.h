@@ -7,9 +7,7 @@
 #ifndef ENTITYDISSOLVE_H
 #define ENTITYDISSOLVE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 class CEntityDissolve : public CBaseEntity 
 {

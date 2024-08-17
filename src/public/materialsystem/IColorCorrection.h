@@ -7,9 +7,7 @@
 #ifndef ICOLORCORRECTION_H
 #define ICOLORCORRECTION_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/interface.h"
 #include "bitmap/imageformat.h"

@@ -6,9 +6,7 @@
 
 #ifndef PICKER_H
 #define PICKER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/EditablePanel.h"
 #include "vgui_controls/Frame.h"

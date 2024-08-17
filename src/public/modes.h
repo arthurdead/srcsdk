@@ -6,9 +6,7 @@
 //=============================================================================//
 #if !defined( MODES_H )
 #define MODES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 typedef struct vmode_s
 {

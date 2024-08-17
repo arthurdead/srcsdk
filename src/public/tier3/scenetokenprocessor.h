@@ -6,9 +6,7 @@
 
 #ifndef SCENETOKENPROCESSOR_H
 #define SCENETOKENPROCESSOR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class ISceneTokenProcessor;
 

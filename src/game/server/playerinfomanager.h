@@ -5,9 +5,7 @@
 //=============================================================================//
 #ifndef PLAYERINFOMANAGER_H
 #define PLAYERINFOMANAGER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "game/server/iplayerinfo.h"

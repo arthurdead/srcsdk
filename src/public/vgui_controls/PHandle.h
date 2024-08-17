@@ -8,9 +8,7 @@
 #ifndef PHANDLE_H
 #define PHANDLE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 

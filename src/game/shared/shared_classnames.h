@@ -7,9 +7,7 @@
 
 #ifndef SHARED_CLASSNAMES_H
 #define SHARED_CLASSNAMES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // Hacky macros to allow shared code to work without even worse macro-izing
 #if defined( CLIENT_DLL )

@@ -7,9 +7,7 @@
 
 #ifndef HUD_CLOSECAPTION_H
 #define HUD_CLOSECAPTION_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "hudelement.h"
 #include <vgui_controls/Panel.h>

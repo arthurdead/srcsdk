@@ -6,9 +6,7 @@
 
 #ifndef SENTENCE_H
 #define SENTENCE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // X360 optimizes out the extra memory needed by the editors in these types
 #ifndef _X360

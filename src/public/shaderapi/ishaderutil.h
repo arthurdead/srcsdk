@@ -9,9 +9,7 @@
 #ifndef ISHADERUTIL_H
 #define ISHADERUTIL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "materialsystem/imaterial.h"

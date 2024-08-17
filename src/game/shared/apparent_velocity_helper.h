@@ -6,9 +6,7 @@
 
 #ifndef APPARENT_VELOCITY_HELPER_H
 #define APPARENT_VELOCITY_HELPER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 inline float CalcDistance( float x, float y )

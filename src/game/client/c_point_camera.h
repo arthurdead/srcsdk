@@ -7,9 +7,7 @@
 
 #ifndef C_POINTCAMERA_H
 #define C_POINTCAMERA_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_baseentity.h"
 #include "basetypes.h"

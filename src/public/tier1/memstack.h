@@ -7,9 +7,7 @@
 #ifndef MEMSTACK_H
 #define MEMSTACK_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 

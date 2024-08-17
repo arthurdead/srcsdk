@@ -9,9 +9,7 @@
 #ifndef COMPRESSED_VECTOR_H
 #define COMPRESSED_VECTOR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <math.h>
 #include <float.h>

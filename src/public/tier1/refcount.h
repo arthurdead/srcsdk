@@ -10,9 +10,7 @@
 
 #include "tier0/threadtools.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 template <typename T>
 inline void SafeAssign(T** ppInoutDst, T* pInoutSrc )

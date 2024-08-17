@@ -7,9 +7,7 @@
 #ifndef UTLHASHDICT_H
 #define UTLHASHDICT_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "tier1/utlhash.h"
 #include "tier1/generichash.h"

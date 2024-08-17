@@ -6,9 +6,7 @@
 
 #ifndef C_BREAKABLEPROP_H
 #define C_BREAKABLEPROP_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 

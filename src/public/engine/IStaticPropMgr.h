@@ -7,9 +7,7 @@
 
 #ifndef IPROPS_H
 #define IPROPS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 #include "mathlib/vector.h"

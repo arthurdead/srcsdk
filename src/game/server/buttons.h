@@ -6,9 +6,7 @@
 
 #ifndef BUTTONS_H
 #define BUTTONS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 class CBaseButton : public CBaseToggle

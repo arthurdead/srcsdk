@@ -10,9 +10,7 @@
 
 #include "isaverestore.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 //-------------------------------------
 

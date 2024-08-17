@@ -6,9 +6,7 @@
 
 #ifndef VIRTUALMESH_H
 #define VIRTUALMESH_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // NOTE: These are fixed length to make it easy to fill these out without memory allocation or storage
 const int MAX_VIRTUAL_TRIANGLES = 1024;

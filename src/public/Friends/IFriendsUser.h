@@ -7,9 +7,7 @@
 
 #ifndef IFRIENDSUSER_H
 #define IFRIENDSUSER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 

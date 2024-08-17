@@ -6,9 +6,7 @@
 
 #ifndef SOUNDSCAPE_SYSTEM_H
 #define SOUNDSCAPE_SYSTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "stringregistry.h"

@@ -12,9 +12,7 @@
 #include "ai_movetypes.h"
 #include "ai_obstacle_type.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 class CAI_PlaneSolver;
 class CAI_MoveProbe;

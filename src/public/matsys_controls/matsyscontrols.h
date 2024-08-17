@@ -8,9 +8,7 @@
 #ifndef MATSYSCONTROLS_H
 #define MATSYSCONTROLS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/interface.h"
 

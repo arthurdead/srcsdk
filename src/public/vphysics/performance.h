@@ -6,9 +6,7 @@
 
 #ifndef PERFORMANCE_H
 #define PERFORMANCE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // Don't ever change these values, or face all kinds of subtle gameplay changes
 const float k_flMaxVelocity = 2000.0f;

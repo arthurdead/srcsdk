@@ -6,9 +6,7 @@
 
 #ifndef FORCEFEEDBACK_H
 #define FORCEFEEDBACK_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 enum
 {

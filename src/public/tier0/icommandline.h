@@ -6,9 +6,7 @@
 
 #ifndef TIER0_ICOMMANDLINE_H
 #define TIER0_ICOMMANDLINE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/platform.h"
 

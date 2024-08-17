@@ -7,9 +7,7 @@
 
 #ifndef ISTEAMPS3OVERLAYRENDERER_H
 #define ISTEAMPS3OVERLAYRENDERER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "cell/pad.h"
 

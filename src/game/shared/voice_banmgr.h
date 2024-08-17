@@ -7,9 +7,7 @@
 
 #ifndef VOICE_BANMGR_H
 #define VOICE_BANMGR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // This class manages the (persistent) list of squelched players.

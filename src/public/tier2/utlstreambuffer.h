@@ -10,9 +10,7 @@
 #ifndef UTLSTREAMBUFFER_H
 #define UTLSTREAMBUFFER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlbuffer.h"
 #include "filesystem.h"

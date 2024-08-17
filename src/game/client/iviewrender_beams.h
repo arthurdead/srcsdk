@@ -7,9 +7,7 @@
 //=============================================================================//
 #if !defined( IVIEWRENDER_BEAMS_H )
 #define IVIEWRENDER_BEAMS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mathlib/vector.h"
 // common to server, too

@@ -6,9 +6,7 @@
 
 #ifndef BONELIST_H
 #define BONELIST_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "studio.h"
 

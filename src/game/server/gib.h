@@ -10,9 +10,7 @@
 #ifndef GIB_H
 #define GIB_H
 
-#ifdef _WIN32
-#pragma once 
-#endif
+#pragma once
 
 #include "baseanimating.h"
 #include "player_pickup.h"

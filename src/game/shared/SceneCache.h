@@ -6,9 +6,7 @@
 
 #ifndef SCENECACHE_H
 #define SCENECACHE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "UtlCachedFileData.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"

@@ -7,9 +7,7 @@
 #ifndef SAVERESTORE_UTLCLASS_H
 #define SAVERESTORE_UTLCLASS_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 //-------------------------------------
 

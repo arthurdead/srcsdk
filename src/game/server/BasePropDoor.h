@@ -14,9 +14,7 @@
 
 #ifndef BASEPROPDOOR_H
 #define BASEPROPDOOR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "props.h"
 #include "locksounds.h"

@@ -6,9 +6,7 @@
 
 #ifndef BASE_TRANSMIT_PROXY_H
 #define BASE_TRANSMIT_PROXY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "ehandle.h"

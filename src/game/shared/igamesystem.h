@@ -7,9 +7,7 @@
 
 #ifndef IGAMESYSTEM_H
 #define IGAMESYSTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // Game systems are singleton objects in the client + server codebase responsible for

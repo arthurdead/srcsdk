@@ -11,9 +11,7 @@
 #ifndef CHARACTERSET_H
 #define CHARACTERSET_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 struct characterset_t

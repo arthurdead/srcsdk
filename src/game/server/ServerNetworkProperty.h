@@ -7,9 +7,7 @@
 
 #ifndef SERVERNETWORKPROPERTY_H
 #define SERVERNETWORKPROPERTY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "iservernetworkable.h"
 #include "server_class.h"

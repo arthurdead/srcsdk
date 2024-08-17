@@ -7,9 +7,7 @@
 
 #ifndef NETWORKSTRINGTABLEDEFS_H
 #define NETWORKSTRINGTABLEDEFS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 typedef int TABLEID;
 

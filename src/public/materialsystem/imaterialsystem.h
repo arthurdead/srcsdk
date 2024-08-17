@@ -9,9 +9,7 @@
 #ifndef IMATERIALSYSTEM_H
 #define IMATERIALSYSTEM_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define OVERBRIGHT 2.0f
 #define OO_OVERBRIGHT ( 1.0f / 2.0f )

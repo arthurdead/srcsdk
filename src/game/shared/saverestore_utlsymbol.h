@@ -6,9 +6,7 @@
 
 #ifndef SAVERESTORE_UTLSYMBOL_H
 #define SAVERESTORE_UTLSYMBOL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlsymbol.h"
 

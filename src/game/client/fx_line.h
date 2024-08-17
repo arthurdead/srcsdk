@@ -13,9 +13,7 @@
 
 #if !defined( FXLINE_H )
 #define FXLINE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 struct FXLineData_t
 {

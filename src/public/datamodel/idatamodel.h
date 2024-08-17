@@ -6,9 +6,7 @@
 
 #ifndef IDATAMODEL_H
 #define IDATAMODEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/interface.h"
 #include "tier1/utlvector.h"

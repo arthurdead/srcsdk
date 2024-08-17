@@ -9,9 +9,7 @@
 #ifndef SCREENSPACEEFFECTS_H
 #define SCREENSPACEEFFECTS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 class KeyValues;
 

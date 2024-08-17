@@ -7,9 +7,7 @@
 
 #ifndef ROPE_SHARED_H
 #define ROPE_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // Shared definitions for rope.

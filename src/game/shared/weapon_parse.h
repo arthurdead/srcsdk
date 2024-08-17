@@ -7,9 +7,7 @@
 
 #ifndef WEAPON_PARSE_H
 #define WEAPON_PARSE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shareddefs.h"
 

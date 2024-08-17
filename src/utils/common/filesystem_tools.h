@@ -7,9 +7,7 @@
 
 #ifndef FILESYSTEM_TOOLS_H
 #define FILESYSTEM_TOOLS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "filesystem.h"

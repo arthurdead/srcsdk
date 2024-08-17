@@ -6,9 +6,7 @@
 
 #ifndef LERP_FUNCTIONS_H
 #define LERP_FUNCTIONS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 template <class T>

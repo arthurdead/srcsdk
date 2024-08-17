@@ -7,9 +7,7 @@
 
 #ifndef PLUGINVARIANT_H
 #define PLUGINVARIANT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "stdstring.h"
 #include "mathlib/vmatrix.h"

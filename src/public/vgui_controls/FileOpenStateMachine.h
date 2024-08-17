@@ -8,9 +8,7 @@
 #ifndef FILEOPENSTATEMACHINE_H
 #define FILEOPENSTATEMACHINE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/Panel.h"
 #include "tier1/utlstring.h"

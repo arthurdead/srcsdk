@@ -7,9 +7,7 @@
 
 #ifndef IVAUDIO_H
 #define IVAUDIO_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class IAudioStreamEvent
 {

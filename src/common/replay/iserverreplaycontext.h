@@ -4,9 +4,7 @@
 
 #ifndef ISERVERREPLAYCONTEXT_H
 #define ISERVERREPLAYCONTEXT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

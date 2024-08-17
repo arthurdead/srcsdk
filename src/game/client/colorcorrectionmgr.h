@@ -8,9 +8,7 @@
 #ifndef COLORCORRECTIONMGR_H
 #define COLORCORRECTIONMGR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "igamesystem.h"
 

@@ -9,9 +9,7 @@
 #ifndef ISHADERDYNAMIC_H
 #define ISHADERDYNAMIC_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shaderapi/shareddefs.h"
 #include "materialsystem/imaterial.h"

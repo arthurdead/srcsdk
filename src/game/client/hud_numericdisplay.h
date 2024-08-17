@@ -6,9 +6,7 @@
 
 #ifndef HUD_NUMERICDISPLAY_H
 #define HUD_NUMERICDISPLAY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/Panel.h>
 

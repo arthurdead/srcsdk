@@ -6,9 +6,7 @@
 //=============================================================================//
 #ifndef QUERYCACHE_H
 #define QUERYCACHE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/platform.h"
 #include "mathlib/vector.h"

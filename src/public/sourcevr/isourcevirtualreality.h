@@ -9,9 +9,7 @@
 #ifndef ISOURCEVIRTUALREALITY_H
 #define ISOURCEVIRTUALREALITY_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/interface.h"
 #include "tier1/refcount.h"

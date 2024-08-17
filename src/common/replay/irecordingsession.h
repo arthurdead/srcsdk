@@ -4,9 +4,7 @@
 
 #ifndef IRECORDINGSESSION_H
 #define IRECORDINGSESSION_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

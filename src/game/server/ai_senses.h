@@ -14,9 +14,7 @@
 #include "ai_component.h"
 #include "soundent.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 class CBaseEntity;
 class CSound;

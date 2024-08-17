@@ -8,9 +8,7 @@
 #ifndef ILOCALIZE_H
 #define ILOCALIZE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/ilocalize.h"
 

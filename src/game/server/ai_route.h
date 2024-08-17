@@ -7,9 +7,7 @@
 
 #ifndef AI_ROUTE_H
 #define AI_ROUTE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ai_basenpc.h"
 #include "mathlib/vector.h"

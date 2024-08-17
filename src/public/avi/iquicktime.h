@@ -10,9 +10,7 @@
 #ifndef IQUICKTIME_H
 #define IQUICKTIME_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
   
 #include "appframework/IAppSystem.h"

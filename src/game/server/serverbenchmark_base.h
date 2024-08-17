@@ -6,9 +6,7 @@
 
 #ifndef SERVERBENCHMARK_BASE_H
 #define SERVERBENCHMARK_BASE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // The base server code calls into this.

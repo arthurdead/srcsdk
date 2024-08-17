@@ -6,9 +6,7 @@
 
 #ifndef PROGRESSBAR_H
 #define PROGRESSBAR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 PLATFORM_INTERFACE void ReportProgress(char const *job_name, int total_units_to_do, 

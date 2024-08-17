@@ -8,9 +8,7 @@
 #ifndef C_FUNC_REFLECTIVE_GLASS
 #define C_FUNC_REFLECTIVE_GLASS
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 struct cplane_t;
 class CViewSetup;

@@ -8,9 +8,7 @@
 #ifndef RADIOBUTTON_H
 #define RADIOBUTTON_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include <vgui_controls/ToggleButton.h>

@@ -6,9 +6,7 @@
 //=============================================================================//
 #if !defined( C_SPRITE_H )
 #define C_SPRITE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "Sprite.h"
 #include "c_pixel_visibility.h"

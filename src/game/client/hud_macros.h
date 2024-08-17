@@ -6,9 +6,7 @@
 //=============================================================================//
 #if !defined( HUD_MACROS_H )
 #define HUD_MACROS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "usermessages.h"
 

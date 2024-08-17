@@ -11,9 +11,7 @@
 
 #if !defined( CLIENTLEAFSYSTEM_H )
 #define CLIENTLEAFSYSTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "igamesystem.h"
 #include "engine/IClientLeafSystem.h"

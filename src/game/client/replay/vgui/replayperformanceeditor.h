@@ -9,9 +9,7 @@
 
 #ifndef REPLAYPERFORMANCEEDITOR_H
 #define REPLAYPERFORMANCEEDITOR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/EditablePanel.h"
 #include "vgui_controls/ImagePanel.h"

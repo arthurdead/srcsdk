@@ -6,9 +6,7 @@
 
 #ifndef PHYSICS_SHARED_H
 #define PHYSICS_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class IPhysics;
 class IPhysicsEnvironment;

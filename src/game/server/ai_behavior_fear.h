@@ -14,9 +14,7 @@
 
 #ifndef AI_BEHAVIOR_FEAR_H
 #define AI_BEHAVIOR_FEAR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ai_behavior.h"
 

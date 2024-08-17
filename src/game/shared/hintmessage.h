@@ -6,9 +6,7 @@
 
 #ifndef HINTMESSAGE_H
 #define HINTMESSAGE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlvector.h"
 #include "simtimer.h"

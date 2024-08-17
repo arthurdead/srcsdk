@@ -8,9 +8,7 @@
 //=============================================================================//
 #if !defined( CLIENTMODE_NORMAL_H )
 #define CLIENTMODE_NORMAL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "iclientmode.h"
 #include "GameEventListener.h"

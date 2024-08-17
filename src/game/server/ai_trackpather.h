@@ -7,9 +7,7 @@
 #ifndef AI_TRACKPATHER_H
 #define AI_TRACKPATHER_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 
 #include "ai_basenpc.h"

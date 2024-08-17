@@ -6,9 +6,7 @@
 
 #ifndef MDLPICKER_H
 #define MDLPICKER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlstring.h"
 #include "vgui_controls/Frame.h"

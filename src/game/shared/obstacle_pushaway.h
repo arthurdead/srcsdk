@@ -6,9 +6,7 @@
 
 #ifndef OBSTACLE_PUSHAWAY_H
 #define OBSTACLE_PUSHAWAY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "props_shared.h"
 #ifndef CLIENT_DLL

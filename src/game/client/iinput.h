@@ -7,9 +7,7 @@
 //=============================================================================//
 #if !defined( IINPUT_H )
 #define IINPUT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class bf_write;
 class bf_read;

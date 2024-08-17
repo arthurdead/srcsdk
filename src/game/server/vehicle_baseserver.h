@@ -6,9 +6,7 @@
 
 #ifndef VEHICLE_BASESERVER_H
 #define VEHICLE_BASESERVER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vehicle_sounds.h"
 #include "entityblocker.h"

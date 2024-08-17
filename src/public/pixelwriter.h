@@ -9,9 +9,7 @@
 #ifndef PIXELWRITER_H
 #define PIXELWRITER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #ifdef _WIN32
 #define FORCEINLINE_PIXEL FORCEINLINE

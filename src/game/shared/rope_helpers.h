@@ -7,9 +7,7 @@
 
 #ifndef ROPE_HELPERS_H
 #define ROPE_HELPERS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "mathlib/vector.h"

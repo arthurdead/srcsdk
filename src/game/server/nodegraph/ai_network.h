@@ -8,9 +8,7 @@
 #ifndef AI_NETWORK_H
 #define AI_NETWORK_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ispatialpartition.h"
 #include "utlpriorityqueue.h"

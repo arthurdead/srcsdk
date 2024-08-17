@@ -4,9 +4,7 @@
 
 #ifndef IREPLAYSCREENSHOTMANAGER_H
 #define IREPLAYSCREENSHOTMANAGER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

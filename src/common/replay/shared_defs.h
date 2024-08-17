@@ -4,9 +4,7 @@
 
 #ifndef SHARED_DEFS_H
 #define SHARED_DEFS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

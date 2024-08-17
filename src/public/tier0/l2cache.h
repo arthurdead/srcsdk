@@ -5,9 +5,7 @@
 //=============================================================================//
 #ifndef CL2CACHE_H
 #define CL2CACHE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class P4Event_BSQ_cache_reference;
 

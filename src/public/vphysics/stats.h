@@ -6,9 +6,7 @@
 
 #ifndef STATS_H
 #define STATS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // internal counters to measure cost of physics simulation
 struct physics_stats_t

@@ -7,9 +7,7 @@
 
 #ifndef AI_ACTIVITY_H
 #define AI_ACTIVITY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define ACTIVITY_NOT_AVAILABLE		-1
 

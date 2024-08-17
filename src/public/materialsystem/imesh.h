@@ -7,9 +7,7 @@
 #ifndef IMESH_H
 #define IMESH_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/interface.h"
 #include "materialsystem/imaterial.h"

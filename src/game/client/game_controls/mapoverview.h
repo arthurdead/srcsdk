@@ -7,9 +7,7 @@
 
 #if !defined HLTVPANEL_H
 #define HLTVPANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/Panel.h>
 #include <game/client/iviewport.h>

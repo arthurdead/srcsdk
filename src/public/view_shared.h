@@ -7,9 +7,7 @@
 #ifndef VIEW_SHARED_H
 #define VIEW_SHARED_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "convar.h"
 #include "mathlib/vector.h"

@@ -7,9 +7,7 @@
 #ifndef CAM_THIRDPERSON_H
 #define CAM_THIRDPERSON_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #ifdef CLIENT_DLL
 	#include "c_baseplayer.h"

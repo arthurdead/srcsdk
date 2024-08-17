@@ -6,9 +6,7 @@
 
 #ifndef VGUI_AVATARIMAGE_H
 #define VGUI_AVATARIMAGE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/Image.h>
 #include <vgui_controls/ImagePanel.h>

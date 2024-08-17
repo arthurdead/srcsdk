@@ -7,9 +7,7 @@
 
 #ifndef BEAM_H
 #define BEAM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "baseentity_shared.h"
 #include "baseplayer_shared.h"

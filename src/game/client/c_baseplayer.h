@@ -8,9 +8,7 @@
 
 #ifndef C_BASEPLAYER_H
 #define C_BASEPLAYER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_playerlocaldata.h"
 #include "c_basecombatcharacter.h"

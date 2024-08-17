@@ -7,9 +7,7 @@
 
 #ifndef VGUI_GRID_H
 #define VGUI_GRID_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include <vgui_controls/Panel.h>

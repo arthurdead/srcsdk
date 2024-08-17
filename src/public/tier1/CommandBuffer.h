@@ -11,9 +11,7 @@
 #ifndef COMMANDBUFFER_H
 #define COMMANDBUFFER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utllinkedlist.h"
 #include "tier1/convar.h"

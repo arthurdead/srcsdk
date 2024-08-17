@@ -9,9 +9,7 @@
 #ifndef IMATERIALVAR_H
 #define IMATERIALVAR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/platform.h"
 #include "tier1/utlsymbol.h"

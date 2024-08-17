@@ -7,9 +7,7 @@
 
 #ifndef ACTANIMATING_H
 #define ACTANIMATING_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "baseanimating.h"

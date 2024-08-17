@@ -8,9 +8,7 @@
 
 #ifndef C_PLAYERLOCALDATA_H
 #define C_PLAYERLOCALDATA_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basetypes.h"
 #include "mathlib/vector.h"

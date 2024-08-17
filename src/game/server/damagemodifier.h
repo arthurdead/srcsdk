@@ -7,9 +7,7 @@
 
 #ifndef DAMAGEMODIFIER_H
 #define DAMAGEMODIFIER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 class CBaseEntity;

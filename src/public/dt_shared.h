@@ -9,9 +9,7 @@
 #ifndef DATATABLE_SHARED_H
 #define DATATABLE_SHARED_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "dt_common.h"
 

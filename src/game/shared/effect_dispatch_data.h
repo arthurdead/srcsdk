@@ -7,9 +7,7 @@
 
 #ifndef EFFECT_DISPATCH_DATA_H
 #define EFFECT_DISPATCH_DATA_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "particle_parse.h"
 

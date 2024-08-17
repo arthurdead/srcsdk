@@ -6,9 +6,7 @@
 //=============================================================================//
 #ifndef PROPS_H
 #define PROPS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "props_shared.h"
 #include "baseanimating.h"

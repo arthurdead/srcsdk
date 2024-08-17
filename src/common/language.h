@@ -6,9 +6,7 @@
 
 #ifndef LANG_H
 #define LANG_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // if you change this enum also change language.cpp:s_LanguageNames
 enum ELanguage

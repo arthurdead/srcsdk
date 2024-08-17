@@ -11,9 +11,7 @@
 
 #ifndef C_BASEENTITY_H
 #define C_BASEENTITY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mathlib/vector.h"
 #include "icliententityinternal.h"

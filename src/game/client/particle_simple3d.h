@@ -13,9 +13,7 @@
 
 #if !defined( SIMPLE3D_H )
 #define SIMPLE3D_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "particles_simple.h"
 #include "particle_collision.h"

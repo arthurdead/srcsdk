@@ -10,9 +10,7 @@
 #ifndef UTILMATLIB_H
 #define UTILMATLIB_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define MATERIAL_NOT_FOUND NULL
 	

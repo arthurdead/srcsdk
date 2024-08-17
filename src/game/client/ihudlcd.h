@@ -6,9 +6,7 @@
 
 #ifndef IHUDLCD_H
 #define IHUDLCD_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class IHudLCD
 {

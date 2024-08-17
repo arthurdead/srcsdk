@@ -6,9 +6,7 @@
 
 #ifndef SIMPLE_KEYS_H
 #define SIMPLE_KEYS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 enum simplekeyinterp_t
 {

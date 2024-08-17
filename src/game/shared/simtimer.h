@@ -8,9 +8,7 @@
 #ifndef SIMTIMER_H
 #define SIMTIMER_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #define ST_EPS 0.001
 

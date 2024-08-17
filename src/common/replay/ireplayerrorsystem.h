@@ -4,9 +4,7 @@
 
 #ifndef IREPLAYERRORSYSYTEM_H
 #define IREPLAYERRORSYSYTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

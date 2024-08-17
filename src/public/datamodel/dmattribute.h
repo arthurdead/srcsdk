@@ -6,9 +6,7 @@
 
 #ifndef DMATTRIBUTE_H
 #define DMATTRIBUTE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "datamodel/attributeflags.h"
 #include "datamodel/idatamodel.h"

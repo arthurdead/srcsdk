@@ -10,9 +10,7 @@
 #ifndef BUILDDISP_H
 #define BUILDDISP_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "commonmacros.h"
 #include "tier0/dbg.h"

@@ -9,9 +9,7 @@
 #ifndef MP3PLAYER_H
 #define MP3PLAYER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 //
 // The MP3 player has a menu button for setting options, opening files, etc.

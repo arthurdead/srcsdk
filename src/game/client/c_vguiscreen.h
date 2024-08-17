@@ -8,9 +8,7 @@
 #ifndef C_VGUISCREEN_H
 #define C_VGUISCREEN_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include <vgui_controls/EditablePanel.h>

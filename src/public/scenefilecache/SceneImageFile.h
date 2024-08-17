@@ -6,9 +6,7 @@
 //=====================================================================================//
 #ifndef SCENE_IMAGE_FILE_H
 #define SCENE_IMAGE_FILE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "commonmacros.h"
 #include "tier1/checksum_crc.h"

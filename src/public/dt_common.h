@@ -9,9 +9,7 @@
 #ifndef DATATABLE_COMMON_H
 #define DATATABLE_COMMON_H
 
-#ifdef _WIN32
 #pragma once
-#endif	
 
 #include "basetypes.h"
 #include "tier0/dbg.h"

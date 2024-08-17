@@ -6,9 +6,7 @@
 
 #ifndef IMATERIALSYSTEMSTUB_H
 #define IMATERIALSYSTEMSTUB_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "materialsystem/imaterialsystem.h"

@@ -8,9 +8,7 @@
 #ifndef AI_PLANE_SOLVER_H
 #define AI_PLANE_SOLVER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlvector.h"
 #include "ai_movesolver.h"

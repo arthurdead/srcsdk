@@ -6,9 +6,7 @@
 
 #ifndef POINT_TEMPLATE_H
 #define POINT_TEMPLATE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define MAX_NUM_TEMPLATES		16
 

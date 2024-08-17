@@ -6,9 +6,7 @@
 
 #ifndef ENTITYLIST_BASE_H
 #define ENTITYLIST_BASE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "const.h"

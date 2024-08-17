@@ -6,9 +6,7 @@
 
 #ifndef ISERVERENGINETOOLS_H
 #define ISERVERENGINETOOLS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 

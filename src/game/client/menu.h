@@ -7,9 +7,7 @@
 
 #ifndef HUD_MENU_H
 #define HUD_MENU_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlvector.h"
 #include "hudelement.h"

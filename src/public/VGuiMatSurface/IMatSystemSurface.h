@@ -9,9 +9,7 @@
 
 #ifndef IMATSYSTEMSURFACE_H
 #define IMATSYSTEMSURFACE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include <vgui/VGUI.h>

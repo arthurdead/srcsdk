@@ -6,9 +6,7 @@
 
 #ifndef IENGINETOOL_H
 #define IENGINETOOL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 #include "soundflags.h"

@@ -7,9 +7,7 @@
 #ifndef VSVGUIWINDOW_H
 #define VSVGUIWINDOW_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "imayavgui.h"

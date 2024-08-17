@@ -10,9 +10,7 @@
 #ifndef UTLTSHASH_H
 #define UTLTSHASH_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <limits.h>
 #include "tier0/threadtools.h"

@@ -8,9 +8,7 @@
 //===========================================================================//
 #if !defined( IVIEWRENDER_H )
 #define IVIEWRENDER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "ivrenderview.h"

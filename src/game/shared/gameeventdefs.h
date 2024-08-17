@@ -7,9 +7,7 @@
 #ifndef GAMEEVENTDEFS_H
 #define GAMEEVENTDEFS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // Make sure your gameevents.res and this file is in sync
 // Event names may be 32 characters long and are case sensitive

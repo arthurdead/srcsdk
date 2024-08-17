@@ -9,9 +9,7 @@
 
 #include "ai_component.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // @TODO (toml 07-09-03): probably want to fold this into base NPC. evaluate when

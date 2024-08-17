@@ -11,9 +11,7 @@
 #ifndef VGUI_VIDEO_PLAYER
 #define VGUI_VIDEO_PLAYER
 
-#ifdef _WIN32
-	#pragma once
-#endif
+#pragma once
 
 #include <vgui_controls/Panel.h>
 #include "video/ivideoservices.h"

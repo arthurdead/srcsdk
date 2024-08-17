@@ -7,9 +7,7 @@
 
 #ifndef FASTTIMER_H
 #define FASTTIMER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #ifdef _WIN32
 #include <intrin.h>

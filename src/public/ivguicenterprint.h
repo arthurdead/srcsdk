@@ -12,9 +12,7 @@
 //=============================================================================//
 #if !defined( IVGUICENTERPRINT_H )
 #define IVGUICENTERPRINT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 

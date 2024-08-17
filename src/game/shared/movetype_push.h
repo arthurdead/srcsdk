@@ -6,9 +6,7 @@
 
 #ifndef MOVETYPE_PUSH_H
 #define MOVETYPE_PUSH_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 const int MAX_PUSHED_ENTITIES = 32;
 struct physicspushlist_t

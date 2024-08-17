@@ -21,9 +21,7 @@
 #include "tier1/checksum_md5.h"
 #include "tier1/refcount.h"
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // Forward declarations

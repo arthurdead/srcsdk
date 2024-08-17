@@ -7,9 +7,7 @@
 
 #ifndef C_VoteController_H
 #define C_VoteController_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shareddefs.h"
 #include "GameEventListener.h"

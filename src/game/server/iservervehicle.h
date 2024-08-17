@@ -8,9 +8,7 @@
 #ifndef ISERVERVEHICLE_H
 #define ISERVERVEHICLE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "IVehicle.h"
 #include "vphysics/vehicles.h"

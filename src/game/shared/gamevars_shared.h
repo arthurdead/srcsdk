@@ -7,9 +7,7 @@
 
 #ifndef GAMEVARS_SHARED_H
 #define GAMEVARS_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "convar.h"
 

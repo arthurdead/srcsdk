@@ -6,9 +6,7 @@
 
 #ifndef NPC_VEHICLEDRIVER_H
 #define NPC_VEHICLEDRIVER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ai_basenpc.h"
 

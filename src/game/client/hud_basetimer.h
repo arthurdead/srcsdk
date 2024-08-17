@@ -6,9 +6,7 @@
 
 #ifndef HUD_BASETIMER_H
 #define HUD_BASETIMER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "hud_numericdisplay.h"
 

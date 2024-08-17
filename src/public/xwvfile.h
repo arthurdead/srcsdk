@@ -6,9 +6,7 @@
 
 #ifndef XWVFILE_H
 #define XWVFILE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #pragma pack(1)
 

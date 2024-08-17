@@ -9,9 +9,7 @@
 #ifndef IHLTV_H
 #define IHLTV_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 

@@ -6,9 +6,7 @@
 
 #ifndef ICLIENT_H
 #define ICLIENT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <inetmsghandler.h>
 #include "tier0/platform.h"

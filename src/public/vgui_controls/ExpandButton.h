@@ -8,9 +8,7 @@
 #ifndef EXPANDBUTTON_H
 #define EXPANDBUTTON_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include <vgui_controls/ToggleButton.h>

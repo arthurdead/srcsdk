@@ -8,9 +8,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 class CCommand;

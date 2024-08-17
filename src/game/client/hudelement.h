@@ -6,9 +6,7 @@
 //=============================================================================//
 #if !defined( HUDELEMENT_H )
 #define HUDELEMENT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "hud.h"
 #include "hud_element_helper.h"

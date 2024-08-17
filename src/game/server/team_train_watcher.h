@@ -6,9 +6,7 @@
 
 #ifndef TEAM_TRAIN_WATCHER_H
 #define TEAM_TRAIN_WATCHER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "cbase.h"
 #include "trigger_area_capture.h"

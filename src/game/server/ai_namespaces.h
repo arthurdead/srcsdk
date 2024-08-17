@@ -10,9 +10,7 @@
 
 class CStringRegistry;
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #define MAX_STRING_INDEX 9999
 const int GLOBAL_IDS_BASE = 1000000000; // decimal for debugging readability

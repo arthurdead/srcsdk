@@ -6,9 +6,7 @@
 
 #ifndef CLIENT_TEXTMESSAGE_H
 #define CLIENT_TEXTMESSAGE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 struct client_textmessage_t
 {

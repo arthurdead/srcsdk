@@ -26,9 +26,7 @@
 #ifndef VMATRIX_H
 #define VMATRIX_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <string.h>
 #include "mathlib/vector.h"

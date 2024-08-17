@@ -7,9 +7,7 @@
 #ifndef VIEWDEBUG_H
 #define VIEWDEBUG_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 class CViewSetup;
 

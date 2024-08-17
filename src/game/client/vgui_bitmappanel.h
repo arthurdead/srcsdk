@@ -9,9 +9,7 @@
 #ifndef VGUI_BITMAPPANEL_H
 #define VGUI_BITMAPPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/Panel.h>
 

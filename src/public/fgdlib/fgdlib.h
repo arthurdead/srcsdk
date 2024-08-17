@@ -6,9 +6,7 @@
 
 #ifndef FGDLIB_H
 #define FGDLIB_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "HelperInfo.h"
 #include "GameData.h"

@@ -6,9 +6,7 @@
 
 #ifndef COMBATWEAPON_SHARED_H
 #define COMBATWEAPON_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "sharedInterface.h"
 #include "vphysics_interface.h"

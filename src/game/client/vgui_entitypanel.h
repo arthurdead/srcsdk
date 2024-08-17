@@ -9,9 +9,7 @@
 #ifndef VGUI_ENTITYPANEL_H
 #define VGUI_ENTITYPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_baseentity.h"
 #include <vgui/MouseCode.h>

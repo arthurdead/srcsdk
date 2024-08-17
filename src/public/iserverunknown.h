@@ -8,9 +8,7 @@
 #ifndef ISERVERUNKNOWN_H
 #define ISERVERUNKNOWN_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "ihandleentity.h"

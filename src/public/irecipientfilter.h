@@ -7,9 +7,7 @@
 
 #ifndef IRECIPIENTFILTER_H
 #define IRECIPIENTFILTER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Generic interface for routing messages to users

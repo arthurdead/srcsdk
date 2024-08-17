@@ -23,9 +23,7 @@
 #pragma warning(pop)
 #endif
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // the include <set> monkey's with the MAX() define, unbreak it
 #undef MINMAX_H

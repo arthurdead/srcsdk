@@ -7,9 +7,7 @@
 
 #ifndef REPLAYYOUTUBEAPI_H
 #define REPLAYYOUTUBEAPI_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class IReplayMovie;
 namespace vgui { class Panel; };

@@ -8,9 +8,7 @@
 #ifndef PCH_VGUI_CONTROLS_H
 #define PCH_VGUI_CONTROLS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // general includes
 #include <ctype.h>

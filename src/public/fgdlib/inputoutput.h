@@ -4,9 +4,7 @@
 
 #ifndef INPUTOUTPUT_H
 #define INPUTOUTPUT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include <utlvector.h>

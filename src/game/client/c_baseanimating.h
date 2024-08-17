@@ -8,9 +8,7 @@
 #ifndef C_BASEANIMATING_H
 #define C_BASEANIMATING_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_baseentity.h"
 #include "studio.h"

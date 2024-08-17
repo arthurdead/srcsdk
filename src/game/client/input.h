@@ -8,9 +8,7 @@
 
 #if !defined( INPUT_H )
 #define INPUT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "iinput.h"
 #include "mathlib/vector.h"

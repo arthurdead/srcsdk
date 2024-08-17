@@ -7,9 +7,7 @@
 
 #ifndef VSMAYAMPXFACTORY_H
 #define VSMAYAMPXFACTORY_H
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include <maya/MPxCommand.h>
 #include <maya/MPxDeformerNode.h>

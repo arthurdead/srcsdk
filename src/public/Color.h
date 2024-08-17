@@ -8,9 +8,7 @@
 #ifndef COLOR_H
 #define COLOR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Basic handler for an rgb set of colors

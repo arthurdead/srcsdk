@@ -4,9 +4,7 @@
 
 #ifndef IREPLAYSERIALIIZEABLE_H
 #define IREPLAYSERIALIIZEABLE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

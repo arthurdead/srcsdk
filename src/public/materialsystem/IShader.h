@@ -9,9 +9,7 @@
 #ifndef ISHADER_H
 #define ISHADER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 //==================================================================================================
 // **this goes into both platforms which run the translator, either the real Mac client or

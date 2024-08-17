@@ -8,9 +8,7 @@
 #ifndef TEXTIMAGE_H
 #define TEXTIMAGE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include <vgui/ILocalize.h>

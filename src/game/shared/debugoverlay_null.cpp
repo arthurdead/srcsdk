@@ -3,9 +3,7 @@
 // Purpose: 
 //
 //=============================================================================//
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "cbase.h"
 #include "engine/ivdebugoverlay.h"

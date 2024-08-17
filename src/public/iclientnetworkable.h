@@ -7,9 +7,7 @@
 
 #ifndef ICLIENTNETWORKABLE_H
 #define ICLIENTNETWORKABLE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "iclientunknown.h"

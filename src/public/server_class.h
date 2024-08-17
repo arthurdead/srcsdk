@@ -9,9 +9,7 @@
 #ifndef SERVER_CLASS_H
 #define SERVER_CLASS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/dbg.h"
 #include "dt_send.h"

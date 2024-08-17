@@ -8,9 +8,7 @@
 #ifndef DBG_H
 #define DBG_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basetypes.h"
 #include "dbgflag.h"

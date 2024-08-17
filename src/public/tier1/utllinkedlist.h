@@ -9,9 +9,7 @@
 #ifndef UTLLINKEDLIST_H
 #define UTLLINKEDLIST_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/basetypes.h"
 #include "utlmemory.h"

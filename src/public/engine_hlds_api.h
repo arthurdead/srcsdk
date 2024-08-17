@@ -6,9 +6,7 @@
 
 #ifndef ENGINE_HLDS_API_H
 #define ENGINE_HLDS_API_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 #include "appframework/IAppSystem.h"

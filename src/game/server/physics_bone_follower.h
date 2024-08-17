@@ -6,9 +6,7 @@
 
 #ifndef PHYSICS_BONE_FOLLOWER_H
 #define PHYSICS_BONE_FOLLOWER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class CBoneFollower;
 

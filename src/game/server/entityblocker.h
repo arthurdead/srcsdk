@@ -6,9 +6,7 @@
 
 #ifndef ENTITYBLOCKER_H
 #define ENTITYBLOCKER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //==================================================================================================================
 // Entity Blocker

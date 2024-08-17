@@ -6,9 +6,7 @@
 
 #ifndef DMELEMENTFACTORYHELPER_H
 #define DMELEMENTFACTORYHELPER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "datamodel/idatamodel.h"
 #include "datamodel/dmelement.h"

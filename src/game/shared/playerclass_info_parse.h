@@ -7,9 +7,7 @@
 
 #ifndef PLAYERCLASS_INFO_PARSE_H
 #define PLAYERCLASS_INFO_PARSE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shareddefs.h"
 

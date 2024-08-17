@@ -8,9 +8,7 @@
 #ifndef TIER2_H
 #define TIER2_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "tier1/tier1.h"
 

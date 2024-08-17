@@ -7,9 +7,7 @@
 
 #ifndef C_SOUNDSCAPE_H
 #define C_SOUNDSCAPE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 class IGameSystem;

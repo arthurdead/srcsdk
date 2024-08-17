@@ -6,9 +6,7 @@
 
 #ifndef SINGLEPLAY_GAMERULES_H
 #define SINGLEPLAY_GAMERULES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "gamerules.h"

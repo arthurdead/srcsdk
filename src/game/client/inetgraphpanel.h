@@ -9,9 +9,7 @@
 
 #if !defined( INETGRAPHPANEL_H )
 #define INETGRAPHPANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 

@@ -9,9 +9,7 @@
 #ifndef UTLSORTVECTOR_H
 #define UTLSORTVECTOR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlvector.h"
 

@@ -7,9 +7,7 @@
 
 #ifndef C_FUNC_DUST_H
 #define C_FUNC_DUST_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "c_baseentity.h"

@@ -14,9 +14,7 @@
 #ifndef MEMPOOL_H
 #define MEMPOOL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/memalloc.h"
 #include "tier0/tslist.h"

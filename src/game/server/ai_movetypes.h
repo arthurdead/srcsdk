@@ -7,9 +7,7 @@
 #ifndef AI_MOVETYPES_H
 #define AI_MOVETYPES_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "ai_navtype.h"
 

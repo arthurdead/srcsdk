@@ -6,9 +6,7 @@
 
 #ifndef ZIP_UNCOMPRESSED_H
 #define ZIP_UNCOMPRESSED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "datamap.h"
 

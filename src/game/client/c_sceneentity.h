@@ -7,9 +7,7 @@
 
 #ifndef C_SCENEENTITY_H
 #define C_SCENEENTITY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ichoreoeventcallback.h"
 #include "choreoscene.h"

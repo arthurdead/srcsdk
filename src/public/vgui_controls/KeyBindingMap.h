@@ -6,9 +6,7 @@
 
 #ifndef KEYBINDINGMAP_H
 #define KEYBINDINGMAP_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlvector.h"
 

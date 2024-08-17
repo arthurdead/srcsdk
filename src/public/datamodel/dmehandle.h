@@ -13,9 +13,7 @@
 #ifndef DMEHANDLE_H
 #define DMEHANDLE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "datamodel/idatamodel.h"

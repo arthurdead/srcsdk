@@ -8,9 +8,7 @@
 #ifndef CSHADER_H
 #define CSHADER_H
 
-#ifdef _WIN32		   
 #pragma once
-#endif
 
 // uncomment this if you want to build for nv3x
 //#define NV3X 1

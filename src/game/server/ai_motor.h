@@ -8,9 +8,7 @@
 #ifndef AI_MOTOR_H
 #define AI_MOTOR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "simtimer.h"
 #include "ai_component.h"

@@ -8,9 +8,7 @@
 #ifndef BUTTONCODE_H
 #define BUTTONCODE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "inputsystem/InputEnums.h"
 #include "mathlib/mathlib.h"

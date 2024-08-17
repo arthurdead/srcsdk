@@ -7,9 +7,7 @@
 #ifndef VEHICLE_CHOREO_GENERIC_SHARED_H
 #define VEHICLE_CHOREO_GENERIC_SHARED_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 
 //-----------------------------------------------------------------------------

@@ -6,9 +6,7 @@
 
 #ifndef BASEPRESENCE_H
 #define BASEPRESENCE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ipresence.h"
 #include "igamesystem.h"

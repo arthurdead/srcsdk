@@ -4,9 +4,7 @@
 
 #ifndef REPLAYMESSAGEPANEL_H
 #define REPLAYMESSAGEPANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/EditablePanel.h"
 

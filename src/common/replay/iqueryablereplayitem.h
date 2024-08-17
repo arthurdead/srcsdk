@@ -4,9 +4,7 @@
 
 #ifndef IQUERYABLEREPLAYITEM_H
 #define IQUERYABLEREPLAYITEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

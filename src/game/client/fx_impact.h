@@ -6,9 +6,7 @@
 
 #ifndef FX_IMPACT_H
 #define FX_IMPACT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_te_effect_dispatch.h"
 #include "istudiorender.h"

@@ -7,9 +7,7 @@
 
 #ifndef ACHIEVEMENT_NOTIFICATION_PANEL_H
 #define ACHIEVEMENT_NOTIFICATION_PANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/EditablePanel.h>
 #include "hudelement.h"

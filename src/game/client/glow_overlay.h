@@ -7,9 +7,7 @@
 
 #ifndef GLOW_OVERLAY_H
 #define GLOW_OVERLAY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mathlib/vector.h"
 #include "materialsystem/imaterial.h"

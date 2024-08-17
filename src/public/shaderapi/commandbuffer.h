@@ -15,9 +15,7 @@
 #define COMMANDBUFFER_H
 
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // all commands defined with their struct
 enum CommandBufferCommand_t

@@ -8,9 +8,7 @@
 #ifndef FOUR_WHEEL_VEHICLE_PHYSICS_H
 #define FOUR_WHEEL_VEHICLE_PHYSICS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vphysics/vehicles.h"
 #include "vcollide_parse.h"

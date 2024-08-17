@@ -7,9 +7,7 @@
 
 #ifndef CDLL_CLIENT_INT_H
 #define CDLL_CLIENT_INT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "iclientnetworkable.h"
 #include "utllinkedlist.h"

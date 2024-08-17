@@ -7,9 +7,7 @@
 
 #ifndef MOUSEOVERHTMLBUTTON_H
 #define MOUSEOVERHTMLBUTTON_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 //-----------------------------------------------------------------------------

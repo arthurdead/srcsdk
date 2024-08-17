@@ -7,9 +7,7 @@
 
 #ifndef SIMPLE_PHYSICS_H
 #define SIMPLE_PHYSICS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "mathlib/vector.h"

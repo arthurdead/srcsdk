@@ -8,9 +8,7 @@
 #ifndef POINT_H
 #define POINT_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 

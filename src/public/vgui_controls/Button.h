@@ -8,9 +8,7 @@
 #ifndef BUTTON_H
 #define BUTTON_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include <vgui/Dar.h>

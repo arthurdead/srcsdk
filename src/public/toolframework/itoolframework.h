@@ -6,9 +6,7 @@
 
 #ifndef ITOOLFRAMEWORK_H
 #define ITOOLFRAMEWORK_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "appframework/IAppSystem.h"
 #include "materialsystem/imaterialproxy.h"

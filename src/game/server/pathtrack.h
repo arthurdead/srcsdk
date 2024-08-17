@@ -6,9 +6,7 @@
 
 #ifndef PATHTRACK_H
 #define PATHTRACK_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "entityoutput.h"

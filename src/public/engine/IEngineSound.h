@@ -8,9 +8,7 @@
 #ifndef IENGINESOUND_H
 #define IENGINESOUND_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "basetypes.h"

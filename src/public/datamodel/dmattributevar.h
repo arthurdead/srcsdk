@@ -6,9 +6,7 @@
 
 #ifndef DMATTRIBUTEVAR_H
 #define DMATTRIBUTEVAR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlvector.h"
 #include "Color.h"

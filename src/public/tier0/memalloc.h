@@ -10,9 +10,7 @@
 #ifndef TIER0_MEMALLOC_H
 #define TIER0_MEMALLOC_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // These memory debugging switches aren't relevant under Linux builds since memoverride.cpp
 // isn't built into Linux projects

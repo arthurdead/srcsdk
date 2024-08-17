@@ -6,9 +6,7 @@
 
 #ifndef VMPI_TOOLS_SHARED_H
 #define VMPI_TOOLS_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // Packet IDs.

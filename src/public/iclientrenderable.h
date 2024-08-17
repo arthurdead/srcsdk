@@ -7,9 +7,7 @@
 
 #ifndef ICLIENTRENDERABLE_H
 #define ICLIENTRENDERABLE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mathlib/mathlib.h"
 #include "interface.h"

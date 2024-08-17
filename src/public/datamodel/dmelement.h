@@ -6,9 +6,7 @@
 
 #ifndef DMELEMENT_H
 #define DMELEMENT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlmap.h"
 #include "tier1/utlhash.h"

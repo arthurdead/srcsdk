@@ -8,9 +8,7 @@
 #ifndef VMTPANEL_H
 #define VMTPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "matsys_controls/potterywheelpanel.h"
 

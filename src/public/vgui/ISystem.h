@@ -8,9 +8,7 @@
 #ifndef ISYSTEM_H
 #define ISYSTEM_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/interface.h"
 #include <vgui/VGUI.h>

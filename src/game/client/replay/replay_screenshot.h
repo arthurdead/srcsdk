@@ -4,9 +4,7 @@
 
 #if !defined( REPLAY_SCREENSHOT_H )
 #define REPLAY_SCREENSHOT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 

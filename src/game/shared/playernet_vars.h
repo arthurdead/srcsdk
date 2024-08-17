@@ -7,9 +7,7 @@
 
 #ifndef PLAYERNET_VARS_H
 #define PLAYERNET_VARS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shared_classnames.h"
 

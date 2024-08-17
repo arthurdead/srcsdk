@@ -10,9 +10,7 @@
 
 #if !defined( PANELMETACLASSMGR_H )
 #define PANELMETACLASSMGR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/dbg.h"
 #include "basetypes.h"

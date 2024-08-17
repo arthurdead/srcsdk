@@ -6,9 +6,7 @@
 
 #ifndef HUD_PDUMP_H
 #define HUD_PDUMP_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/Panel.h>
 #include "hudelement.h"

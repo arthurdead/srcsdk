@@ -14,9 +14,7 @@
 #include <limits.h>
 
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // CAI_BaseActor

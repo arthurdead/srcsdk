@@ -12,9 +12,7 @@
 #ifndef SOUNDENT_H
 #define SOUNDENT_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 enum
 {

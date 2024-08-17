@@ -9,9 +9,7 @@
 #ifndef ISHADERSHADOW_H
 #define ISHADERSHADOW_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shaderapi/shareddefs.h"
 #include <materialsystem/imaterial.h>

@@ -10,9 +10,7 @@
 #ifndef IAVI_H
 #define IAVI_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "appframework/IAppSystem.h"
 

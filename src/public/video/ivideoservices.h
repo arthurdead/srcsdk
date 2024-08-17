@@ -10,9 +10,7 @@
 #ifndef IVIDEOSERVICES_H
 #define IVIDEOSERVICES_H
 
-#if defined ( WIN32 )
-    #pragma once
-#endif
+#pragma once
 
 #include <math.h>  
 #include "appframework/IAppSystem.h"

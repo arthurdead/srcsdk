@@ -12,9 +12,7 @@
 //=============================================================================//
 #if !defined( CLIENT_CLASS_H )
 #define CLIENT_CLASS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 #include "dt_recv.h"

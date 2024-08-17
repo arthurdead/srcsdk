@@ -6,9 +6,7 @@
 
 #ifndef INTERPOLATEDVAR_H
 #define INTERPOLATEDVAR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utllinkedlist.h"
 #include "rangecheckedvar.h"

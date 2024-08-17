@@ -8,9 +8,7 @@
 #ifndef PANELLISTPANEL_H
 #define PANELLISTPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <utllinkedlist.h>
 #include <utlvector.h>

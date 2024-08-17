@@ -8,9 +8,7 @@
 #ifndef AI_NPCSTATE_H
 #define AI_NPCSTATE_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 enum NPC_STATE
 {

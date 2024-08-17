@@ -7,9 +7,7 @@
 #ifndef STUDIOBYTESWAP_H
 #define STUDIOBYTESWAP_H
 
-#if defined(_WIN32)
 #pragma once
-#endif
 
 #include "byteswap.h"
 struct studiohdr_t;

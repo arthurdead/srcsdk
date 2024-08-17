@@ -6,9 +6,7 @@
 
 #ifndef AI_BEHAVIOR_PASSENGER_H
 #define AI_BEHAVIOR_PASSENGER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ai_speech.h"
 #include "ai_behavior.h"

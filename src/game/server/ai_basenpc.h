@@ -7,9 +7,7 @@
 #ifndef AI_BASENPC_H
 #define AI_BASENPC_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "simtimer.h" 	 	   
 #include "basecombatcharacter.h"

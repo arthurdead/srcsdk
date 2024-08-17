@@ -6,9 +6,7 @@
 
 #ifndef FLASHLIGHTEFFECT_H
 #define FLASHLIGHTEFFECT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 struct dlight_t;
 

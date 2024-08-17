@@ -7,9 +7,7 @@
 
 #ifndef C_BASETEMPENTITY_H
 #define C_BASETEMPENTITY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "client_class.h"

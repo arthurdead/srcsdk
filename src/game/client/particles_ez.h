@@ -6,9 +6,7 @@
 
 #ifndef PARTICLES_EZ_H
 #define PARTICLES_EZ_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "particles_simple.h"

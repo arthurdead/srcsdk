@@ -10,9 +10,7 @@
 #ifndef BSPFLAGS_H
 #define BSPFLAGS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // contents flags are seperate bits
 // a given brush can contribute multiple content bits

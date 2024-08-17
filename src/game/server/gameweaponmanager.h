@@ -7,9 +7,7 @@
 #ifndef GAMEWEAPONMANAGER_H
 #define GAMEWEAPONMANAGER_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 void CreateWeaponManager( const char *pWeaponName, int iMaxPieces );
 

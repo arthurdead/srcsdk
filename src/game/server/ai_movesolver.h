@@ -12,9 +12,7 @@
 #ifndef AI_MOVESOLVER_H
 #define AI_MOVESOLVER_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "utlvector.h"
 #include "ai_obstacle_type.h"

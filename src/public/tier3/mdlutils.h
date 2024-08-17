@@ -8,9 +8,7 @@
 #ifndef MDLUTILS_H
 #define MDLUTILS_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "datacache/imdlcache.h"
 #include "mathlib/vector.h"

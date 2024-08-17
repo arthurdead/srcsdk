@@ -6,9 +6,7 @@
 
 #ifndef WEAPON_WATERBULLET_H
 #define WEAPON_WATERBULLET_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define WATER_BULLET_BUBBLES_PER_INCH 0.05f
 

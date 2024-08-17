@@ -8,9 +8,7 @@
 #ifndef CONTROLS_H
 #define CONTROLS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include <vgui/IPanel.h>

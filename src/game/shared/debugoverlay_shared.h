@@ -6,9 +6,7 @@
 
 #ifndef DEBUGOVERLAY_SHARED_H
 #define DEBUGOVERLAY_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "engine/ivdebugoverlay.h"
 #include "mathlib/vector.h"

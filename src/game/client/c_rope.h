@@ -7,9 +7,7 @@
 
 #ifndef C_ROPE_H
 #define C_ROPE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_baseentity.h"
 #include "rope_physics.h"

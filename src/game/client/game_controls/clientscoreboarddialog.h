@@ -7,9 +7,7 @@
 
 #ifndef CLIENTSCOREBOARDDIALOG_H
 #define CLIENTSCOREBOARDDIALOG_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/EditablePanel.h>
 #include <game/client/iviewport.h>

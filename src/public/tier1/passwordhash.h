@@ -7,9 +7,7 @@
 #ifndef PASSWORDHASH_H
 #define PASSWORDHASH_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 
 #include "checksum_sha1.h"

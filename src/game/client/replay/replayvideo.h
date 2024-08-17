@@ -4,9 +4,7 @@
 
 #ifndef REPLAYVIDEO_H
 #define REPLAYVIDEO_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 

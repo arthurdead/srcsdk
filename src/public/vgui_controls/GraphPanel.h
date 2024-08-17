@@ -6,9 +6,7 @@
 
 #ifndef GRAPHPANEL_H
 #define GRAPHPANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/Panel.h>
 #include "utllinkedlist.h"

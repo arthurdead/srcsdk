@@ -16,9 +16,7 @@
 //-----------------------------------------------------------------------------
 #if !defined( TE_BASEBEAM_H )
 #define TE_BASEBEAM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basetempentity.h"
 

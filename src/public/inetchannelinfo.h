@@ -12,9 +12,7 @@
 //=============================================================================//
 #if !defined( INETCHANNELINFO_H )
 #define INETCHANNELINFO_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #define FLOW_OUTGOING	0		

@@ -8,9 +8,7 @@
 
 #ifndef POSEDEBUGGER_H
 #define POSEDEBUGGER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class IClientNetworkable;
 

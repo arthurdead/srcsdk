@@ -7,9 +7,7 @@
 
 #ifndef VIEW_SCENE_H
 #define VIEW_SCENE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "convar.h"

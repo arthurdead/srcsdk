@@ -6,9 +6,7 @@
 //=============================================================================//
 #ifndef ICLIENTENTITYINTERNAL_H
 #define ICLIENTENTITYINTERNAL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "icliententity.h"
 #include "clientleafsystem.h"

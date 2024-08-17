@@ -4,9 +4,7 @@
 
 #ifndef REPLAYLISTITEMPANEL_H
 #define REPLAYLISTITEMPANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "replaybrowserbasepanel.h"
 #include "replaybrowseritemmanager.h"

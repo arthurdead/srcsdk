@@ -7,9 +7,7 @@
 
 #ifndef MODELENTITIES_H
 #define MODELENTITIES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //!! replace this with generic start enabled/disabled
 #define SF_WALL_START_OFF		0x0001

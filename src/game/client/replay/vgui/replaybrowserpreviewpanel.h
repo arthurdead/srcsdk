@@ -7,9 +7,7 @@
 
 #ifndef REPLAYBROWSER_PREVIEWPANEL_H
 #define REPLAYBROWSER_PREVIEWPANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <game/client/iviewport.h>
 #include "vgui_controls/PropertyPage.h"

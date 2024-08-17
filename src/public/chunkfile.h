@@ -8,9 +8,7 @@
 #ifndef CHUNKFILE_H
 #define CHUNKFILE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <stdio.h>
 #include "tokenreader.h"

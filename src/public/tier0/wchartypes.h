@@ -9,9 +9,7 @@
 
 #ifndef WCHARTYPES_H
 #define WCHARTYPES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #ifdef _INC_TCHAR
 #error ("Must include tier0 type headers before tchar.h")

@@ -7,9 +7,7 @@
 
 #ifndef SHAREDDEFS_H
 #define SHAREDDEFS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define TICK_INTERVAL			(gpGlobals->interval_per_tick)
 

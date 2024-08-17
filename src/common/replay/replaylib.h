@@ -4,9 +4,7 @@
 
 #ifndef REPLAYLIB_H
 #define REPLAYLIB_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

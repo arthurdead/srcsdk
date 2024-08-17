@@ -5,9 +5,7 @@
 //=============================================================================//
 #ifndef MULTIPLAYERANIMSTATE_H
 #define MULTIPLAYERANIMSTATE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "convar.h"
 #include "basecombatweapon_shared.h"

@@ -6,9 +6,7 @@
 
 #ifndef INETCHANNEL_H
 #define INETCHANNEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/platform.h"
 #include "inetchannelinfo.h"

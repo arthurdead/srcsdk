@@ -6,9 +6,7 @@
 
 #ifndef SOUNDCHARS_H
 #define SOUNDCHARS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define CHAR_STREAM			'*'		// as one of 1st 2 chars in name, indicates streaming wav data
 #define CHAR_USERVOX		'?'		// as one of 1st 2 chars in name, indicates user realtime voice data

@@ -7,9 +7,7 @@
 
 #ifndef CONSOLEDIALOG_H
 #define CONSOLEDIALOG_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <Color.h>
 #include "tier1/utlvector.h"

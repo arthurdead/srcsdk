@@ -6,9 +6,7 @@
 
 #ifndef ENTITYFLAME_H
 #define ENTITYFLAME_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define FLAME_DAMAGE_INTERVAL			0.2f // How often to deal damage.
 #define FLAME_DIRECT_DAMAGE_PER_SEC		5.0f

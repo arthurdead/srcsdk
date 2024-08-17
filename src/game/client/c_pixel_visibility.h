@@ -6,9 +6,7 @@
 
 #ifndef C_PIXEL_VISIBILITY_H
 #define C_PIXEL_VISIBILITY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 const float PIXELVIS_DEFAULT_PROXY_SIZE = 2.0f;

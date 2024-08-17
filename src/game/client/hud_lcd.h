@@ -6,9 +6,7 @@
 //=============================================================================//
 #ifndef HUD_LCD_H
 #define HUD_LCD_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlvector.h"
 #include "tier1/utlstring.h"

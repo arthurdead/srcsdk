@@ -9,9 +9,7 @@
 
 #include "utlvector.h"
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "AI_Criteria.h"
 

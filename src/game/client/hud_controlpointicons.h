@@ -6,9 +6,7 @@
 
 #ifndef HUD_CONTROLPOINTICONS_H
 #define HUD_CONTROLPOINTICONS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "cbase.h"
 #include "hudelement.h"

@@ -8,9 +8,7 @@
 
 #if !defined( TE_H )
 #define TE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "itempents.h"
 

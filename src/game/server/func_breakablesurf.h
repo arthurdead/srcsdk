@@ -7,9 +7,7 @@
 
 #ifndef FUNC_BREAKABLESURF_H
 #define FUNC_BREAKABLESURF_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #define MAX_NUM_PANELS 16	//Must match client

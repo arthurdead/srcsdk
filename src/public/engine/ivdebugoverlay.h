@@ -15,9 +15,7 @@
 #ifndef IVDEBUGOVERLAY_H
 #define IVDEBUGOVERLAY_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 class Vector;
 

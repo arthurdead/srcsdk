@@ -7,9 +7,7 @@
 //=============================================================================//
 #if !defined ( DLIGHTH )
 #define DLIGHTH
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mathlib/vector.h"
 

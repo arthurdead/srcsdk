@@ -6,9 +6,7 @@
 
 #ifndef TEXTURE_GROUP_NAMES_H
 #define TEXTURE_GROUP_NAMES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // These are given to FindMaterial to reference the texture groups that show up on the 
 #define TEXTURE_GROUP_LIGHTMAP						"Lightmaps"

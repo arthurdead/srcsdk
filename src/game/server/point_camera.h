@@ -7,9 +7,7 @@
 
 #ifndef CAMERA_H
 #define CAMERA_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "cbase.h"
 

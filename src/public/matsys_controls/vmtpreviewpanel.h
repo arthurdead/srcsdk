@@ -7,9 +7,7 @@
 #ifndef VMTPREVIEWPANEL_H
 #define VMTPREVIEWPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "vgui_controls/Panel.h"

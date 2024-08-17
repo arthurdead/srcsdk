@@ -7,9 +7,7 @@
 
 #ifndef CHOREOSCENE_H
 #define CHOREOSCENE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class CChoreoEvent;
 class CChoreoChannel;

@@ -7,9 +7,7 @@
 
 #ifndef COLLISIONPROPERTY_H
 #define COLLISIONPROPERTY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "networkvar.h"
 #include "engine/ICollideable.h"

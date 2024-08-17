@@ -7,9 +7,7 @@
 
 #ifndef THASH_H
 #define THASH_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <typeinfo>
 

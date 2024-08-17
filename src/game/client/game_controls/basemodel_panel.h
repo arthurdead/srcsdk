@@ -5,9 +5,7 @@
 //=============================================================================
 #ifndef BASEMODEL_PANEL_H
 #define BASEMODEL_PANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "matsys_controls/mdlpanel.h"
 

@@ -11,9 +11,7 @@
 #ifndef BITBUF_H
 #define BITBUF_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "mathlib/mathlib.h"

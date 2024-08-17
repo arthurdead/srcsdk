@@ -6,9 +6,7 @@
 
 #ifndef TESLA_H
 #define TESLA_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "baseentity.h"

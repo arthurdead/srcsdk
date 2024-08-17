@@ -8,9 +8,7 @@
 #ifndef AI_WAYPOINT_H
 #define AI_WAYPOINT_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include <mempool.h>
 

@@ -6,9 +6,7 @@
 
 #ifndef FRICTION_H
 #define FRICTION_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // NOTE: This is an iterator for the contact points on an object
 // NOTE: This should only be used temporarily.  Holding one of these

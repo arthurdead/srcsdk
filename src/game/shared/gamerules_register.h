@@ -6,9 +6,7 @@
 
 #ifndef GAMERULES_REGISTER_H
 #define GAMERULES_REGISTER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // Each game rules class must register using this in it's .cpp file.

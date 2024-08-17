@@ -14,9 +14,7 @@
 #ifndef VGUIMATSYSAPP_H
 #define VGUIMATSYSAPP_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "appframework/tier3app.h"

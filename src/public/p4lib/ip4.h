@@ -6,9 +6,7 @@
 
 #ifndef IP4_H
 #define IP4_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlsymbol.h"
 #include "tier1/utlvector.h"

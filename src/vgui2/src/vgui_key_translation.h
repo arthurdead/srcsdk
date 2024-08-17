@@ -6,9 +6,7 @@
 
 #ifndef VGUI_KEY_TRANSLATION_H
 #define VGUI_KEY_TRANSLATION_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/KeyCode.h>
 

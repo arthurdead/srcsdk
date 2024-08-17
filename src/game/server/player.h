@@ -6,9 +6,7 @@
 
 #ifndef PLAYER_H
 #define PLAYER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basecombatcharacter.h"
 #include "usercmd.h"

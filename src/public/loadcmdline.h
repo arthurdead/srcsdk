@@ -7,9 +7,7 @@
 
 #ifndef LOADCMDLINE_H
 #define LOADCMDLINE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Loads additional commandline arguments from a config file for an app.

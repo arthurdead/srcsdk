@@ -7,9 +7,7 @@
 
 #ifndef RECIPIENTFILTER_H
 #define RECIPIENTFILTER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "irecipientfilter.h"
 #include "const.h"

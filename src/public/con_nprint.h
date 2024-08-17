@@ -7,9 +7,7 @@
 #ifndef CON_NPRINT_H
 #define CON_NPRINT_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:  Debug overlay / notfication printing 

@@ -8,9 +8,7 @@
 //=============================================================================//
 #if !defined( MEASURE_SECTION_H )
 #define MEASURE_SECTION_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "tier0/fasttimer.h"

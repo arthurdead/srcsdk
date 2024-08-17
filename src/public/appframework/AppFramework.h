@@ -9,9 +9,7 @@
 #ifndef APPFRAMEWORK_H
 #define APPFRAMEWORK_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "appframework/IAppSystemGroup.h"
 

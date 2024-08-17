@@ -4,9 +4,7 @@
 
 #ifndef IREPLAYPLAYERCACHE_H
 #define IREPLAYPLAYERCACHE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 

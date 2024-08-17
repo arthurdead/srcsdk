@@ -6,9 +6,7 @@
 
 #ifndef LIGHTS_H
 #define LIGHTS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 

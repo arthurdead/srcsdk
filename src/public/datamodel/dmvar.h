@@ -6,9 +6,7 @@
 
 #ifndef DMVAR_H
 #define DMVAR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 class CDmAttribute;

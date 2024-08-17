@@ -12,9 +12,7 @@
 //=============================================================================//
 #if !defined( BASETEMPENTITY_H )
 #define BASETEMPENTITY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "edict.h"
 

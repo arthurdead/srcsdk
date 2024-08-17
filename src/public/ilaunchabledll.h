@@ -6,9 +6,7 @@
 
 #ifndef ILAUNCHABLEDLL_H
 #define ILAUNCHABLEDLL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #define LAUNCHABLE_DLL_INTERFACE_VERSION "launchable_dll_1"

@@ -7,9 +7,7 @@
 
 #ifndef HUD_BASE_ACCOUNT_H
 #define HUD_BASE_ACCOUNT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "hudelement.h"
 #include "hud_numericdisplay.h"

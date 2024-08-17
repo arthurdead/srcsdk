@@ -4,9 +4,7 @@
 
 #ifndef REPLAYPERFORMANCE_H
 #define REPLAYPERFORMANCE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

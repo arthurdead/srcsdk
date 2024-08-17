@@ -8,9 +8,7 @@
 //=============================================================================//
 #if !defined( C_TE_BASEBEAM_H )
 #define C_TE_BASEBEAM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_basetempentity.h"
 

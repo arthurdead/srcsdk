@@ -7,9 +7,7 @@
 
 #ifndef AI_BASENPC_PHYSICSFLYER_H
 #define AI_BASENPC_PHYSICSFLYER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ai_basenpc.h"
 #include "ai_navigator.h"

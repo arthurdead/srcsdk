@@ -10,9 +10,7 @@
 #include "utlvector.h"
 #include "bitstring.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 class CAI_NetworkEditTools;
 class CAI_Network;

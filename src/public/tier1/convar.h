@@ -12,9 +12,7 @@
 #ifndef CONVAR_H
 #define CONVAR_H
 
-#if _WIN32
 #pragma once
-#endif
 
 #include "tier0/dbg.h"
 #include "tier1/iconvar.h"

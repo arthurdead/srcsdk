@@ -9,9 +9,7 @@
 #ifndef VGUI_BITMAPBUTTON_H
 #define VGUI_BITMAPBUTTON_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/Button.h>
 #include "vgui_bitmapimage.h"

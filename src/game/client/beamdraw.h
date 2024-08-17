@@ -6,9 +6,7 @@
 //===========================================================================//
 #if !defined( BEAMDRAW_H )
 #define BEAMDRAW_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "materialsystem/imaterial.h"
 #include "materialsystem/imesh.h"

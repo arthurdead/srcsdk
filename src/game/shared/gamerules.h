@@ -7,9 +7,7 @@
 
 #ifndef GAMERULES_H
 #define GAMERULES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // Debug history should be disabled in release builds
 //#define DISABLE_DEBUG_HISTORY	

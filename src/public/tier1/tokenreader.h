@@ -7,9 +7,7 @@
 
 #ifndef TOKENREADER_H
 #define TOKENREADER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/basetypes.h"
 

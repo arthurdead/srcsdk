@@ -14,9 +14,7 @@
 
 #ifndef AI_BEHAVIOR_RAPPEL_H
 #define AI_BEHAVIOR_RAPPEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ai_behavior.h"
 

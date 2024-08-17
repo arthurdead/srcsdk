@@ -9,9 +9,7 @@
 #ifndef POLYHEDRON_H_
 #define	POLYHEDRON_H_
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mathlib/mathlib.h"
 

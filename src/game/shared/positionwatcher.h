@@ -6,9 +6,7 @@
 
 #ifndef POSITIONWATCHER_H
 #define POSITIONWATCHER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ehandle.h"
 

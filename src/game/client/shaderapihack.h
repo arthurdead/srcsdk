@@ -1,8 +1,6 @@
 #ifndef SHADERAPIHACK_H
 #define SHADERAPIHACK_H
-#ifdef _WIN32
 #pragma once
-#endif
 #include "materialsystem/materialsystem_config.h"
 class CMaterialConfigWrapper
 {

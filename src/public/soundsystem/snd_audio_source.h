@@ -10,9 +10,7 @@
 #ifndef SND_AUDIO_SOURCE_H
 #define SND_AUDIO_SOURCE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/platform.h"
 

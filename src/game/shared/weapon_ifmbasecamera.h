@@ -6,9 +6,7 @@
 
 #ifndef WEAPON_IFMBASECAMERA_H
 #define WEAPON_IFMBASECAMERA_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "weapon_ifmbase.h"
 

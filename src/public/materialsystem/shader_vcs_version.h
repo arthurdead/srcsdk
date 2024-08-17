@@ -6,9 +6,7 @@
 
 #ifndef SHADER_VCS_VERSION_H
 #define SHADER_VCS_VERSION_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // 1 = hl2 shipped
 // 2 = compressed with diffs version (lostcoast)

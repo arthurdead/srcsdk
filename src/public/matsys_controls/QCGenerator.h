@@ -6,9 +6,7 @@
 
 #ifndef QCGENERATOR_H
 #define QCGENERATOR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/EditablePanel.h"
 #include "vgui_controls/Frame.h"

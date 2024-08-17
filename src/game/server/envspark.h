@@ -7,9 +7,7 @@
 
 #ifndef ENVSPARK_H
 #define ENVSPARK_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class CEnvSpark : public CPointEntity
 {

@@ -7,9 +7,7 @@
 
 #ifndef BASEENTITY_H
 #define BASEENTITY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define TEAMNUM_NUM_BITS	6
 

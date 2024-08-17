@@ -6,9 +6,7 @@
 
 #ifndef LUMPFILES_H
 #define LUMPFILES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define MAX_LUMPFILES	128
 

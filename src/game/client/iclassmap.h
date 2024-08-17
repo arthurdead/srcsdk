@@ -7,9 +7,7 @@
 
 #ifndef ICLASSMAP_H
 #define ICLASSMAP_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class C_BaseEntity;
 typedef C_BaseEntity* (*DISPATCHFUNCTION)( void );

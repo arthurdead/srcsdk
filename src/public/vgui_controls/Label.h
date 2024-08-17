@@ -8,9 +8,7 @@
 #ifndef LABEL_H
 #define LABEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlvector.h"
 #include "vgui/VGUI.h"

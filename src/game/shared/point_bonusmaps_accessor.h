@@ -8,9 +8,7 @@
 #ifndef POINT_BONUSMAPS_ACCESSOR_H
 #define POINT_BONUSMAPS_ACCESSOR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 void BonusMapChallengeUpdate( const char *pchFileName, const char *pchMapName, const char *pchChallengeName, int iBest );

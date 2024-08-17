@@ -6,9 +6,7 @@
 
 #ifndef IG15_H
 #define IG15_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 typedef void * G15_HANDLE;
 

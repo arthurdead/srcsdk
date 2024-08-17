@@ -6,9 +6,7 @@
 
 #ifndef FOGCONTROLLER_H
 #define FOGCONTROLLER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "playernet_vars.h"
 #include "igamesystem.h"

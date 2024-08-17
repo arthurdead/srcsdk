@@ -7,9 +7,7 @@
 
 #ifndef BASEVIEWMODEL_SHARED_H
 #define BASEVIEWMODEL_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "predictable_entity.h"
 #include "utlvector.h"

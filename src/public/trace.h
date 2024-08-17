@@ -14,9 +14,7 @@
 #ifndef TRACE_H
 #define TRACE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "mathlib/mathlib.h"

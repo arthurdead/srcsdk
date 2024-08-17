@@ -7,9 +7,7 @@
 
 #ifndef CONTROLLERMAP_H
 #define CONTROLLERMAP_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "Panel.h"
 #include "utlmap.h"

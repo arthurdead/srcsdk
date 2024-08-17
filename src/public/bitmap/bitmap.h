@@ -9,9 +9,7 @@
 #ifndef BITMAP_H
 #define BITMAP_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "bitmap/imageformat.h"

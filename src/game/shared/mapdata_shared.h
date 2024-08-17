@@ -7,9 +7,7 @@
 
 #ifndef MAPDATA_SHARED_H
 #define MAPDATA_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 #include "mathlib/vector.h"

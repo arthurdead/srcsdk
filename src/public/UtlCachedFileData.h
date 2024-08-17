@@ -8,9 +8,7 @@
 
 #ifndef UTLCACHEDFILEDATA_H
 #define UTLCACHEDFILEDATA_H
-#if defined( WIN32 )
 #pragma once
-#endif
 
 #include "filesystem.h" // FileNameHandle_t
 #include "utlrbtree.h"

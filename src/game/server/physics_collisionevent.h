@@ -11,9 +11,7 @@
 #ifndef PHYSICS_COLLISIONEVENT_H
 #define PHYSICS_COLLISIONEVENT_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "physics.h"
 #include "tier1/callqueue.h"

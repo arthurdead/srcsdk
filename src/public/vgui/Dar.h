@@ -8,9 +8,7 @@
 #ifndef DAR_H
 #define DAR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <stdlib.h>
 #include <string.h>

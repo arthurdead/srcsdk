@@ -6,9 +6,7 @@
 
 #ifndef PLAYER_PICKUP_H
 #define PLAYER_PICKUP_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #ifdef HL2_DLL
 // Needed for launch velocity

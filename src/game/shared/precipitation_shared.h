@@ -6,9 +6,7 @@
 
 #ifndef PRECIPITATION_SHARED_H
 #define PRECIPITATION_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // Types of precipitation

@@ -9,9 +9,7 @@
 #ifndef IVMODELRENDER_H
 #define IVMODELRENDER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 #include "mathlib/mathlib.h"

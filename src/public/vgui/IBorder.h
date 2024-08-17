@@ -8,9 +8,7 @@
 #ifndef IBORDER_H
 #define IBORDER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 

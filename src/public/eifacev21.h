@@ -14,9 +14,7 @@
 #ifndef EIFACEV21_H
 #define EIFACEV21_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "convar.h"
 #include "icvar.h"

@@ -6,9 +6,7 @@
 
 #ifndef FILESYSTEM_INIT_H
 #define FILESYSTEM_INIT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "filesystem.h"

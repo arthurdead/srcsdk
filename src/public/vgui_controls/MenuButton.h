@@ -8,9 +8,7 @@
 #ifndef MENUBUTTON_H
 #define MENUBUTTON_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/Button.h>
 #include "vgui_controls/Menu.h"

@@ -8,9 +8,7 @@
 #ifndef CIRCULARPROGRESSBAR_H
 #define CIRCULARPROGRESSBAR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include <vgui_controls/Panel.h>

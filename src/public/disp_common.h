@@ -7,9 +7,7 @@
 
 #ifndef DISP_COMMON_H
 #define DISP_COMMON_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "disp_vertindex.h"
 #include "bspfile.h"

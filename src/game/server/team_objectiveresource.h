@@ -6,9 +6,7 @@
 
 #ifndef TEAM_OBJECTIVERESOURCE_H
 #define TEAM_OBJECTIVERESOURCE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shareddefs.h"
 

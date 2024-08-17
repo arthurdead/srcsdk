@@ -39,9 +39,7 @@
 #include "tier1/refcount.h"
 #include "tier1/utlenvelope.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 //

@@ -6,9 +6,7 @@
 
 #ifndef H_CYCLER_H
 #define H_CYCLER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 

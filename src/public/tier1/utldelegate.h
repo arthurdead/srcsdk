@@ -10,9 +10,7 @@
 #ifndef UTLDELEGATE_H
 #define UTLDELEGATE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 //-----------------------------------------------------------------------------

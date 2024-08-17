@@ -7,9 +7,7 @@
 #ifndef PERFORCEFILELISTFRAME_H
 #define PERFORCEFILELISTFRAME_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/Frame.h"
 #include "tier1/utlvector.h"

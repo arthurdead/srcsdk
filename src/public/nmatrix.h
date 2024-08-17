@@ -7,9 +7,7 @@
 
 #ifndef NMATRIX_H
 #define NMATRIX_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include <assert.h>

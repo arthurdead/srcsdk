@@ -6,9 +6,7 @@
 
 #ifndef HUDTEXTUREHANDLE_H
 #define HUDTEXTUREHANDLE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class CHudTexture;
 

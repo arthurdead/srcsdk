@@ -7,9 +7,7 @@
 
 #ifndef SPRITE_H
 #define SPRITE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "predictable_entity.h"
 #include "baseentity_shared.h"

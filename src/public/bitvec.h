@@ -6,9 +6,7 @@
 
 #ifndef BITVEC_H
 #define BITVEC_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <limits.h>
 #include "tier0/dbg.h"

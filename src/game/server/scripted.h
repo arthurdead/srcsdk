@@ -6,9 +6,7 @@
 
 #ifndef SCRIPTED_H
 #define SCRIPTED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #ifndef SCRIPTEVENT_H
 #include "scriptevent.h"

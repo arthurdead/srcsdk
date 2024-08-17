@@ -6,9 +6,7 @@
 
 #ifndef WEAPON_IFMBASE_H
 #define WEAPON_IFMBASE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #if defined( CLIENT_DLL )

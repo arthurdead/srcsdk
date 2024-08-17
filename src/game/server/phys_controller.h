@@ -6,9 +6,7 @@
 
 #ifndef PHYS_CONTROLLER_H
 #define PHYS_CONTROLLER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 CBaseEntity *CreateKeepUpright( const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner, float flAngularLimit, bool bActive );

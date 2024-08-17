@@ -11,9 +11,7 @@
 #ifndef VALIDATOR_H
 #define VALIDATOR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #ifdef DBGFLAG_VALIDATE

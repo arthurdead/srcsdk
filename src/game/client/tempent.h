@@ -7,9 +7,7 @@
 //=============================================================================//
 #if !defined( TEMPENT_H )
 #define TEMPENT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_baseentity.h"
 #include "c_baseanimating.h"

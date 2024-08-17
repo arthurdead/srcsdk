@@ -7,9 +7,7 @@
 
 #ifndef FIRE_H
 #define FIRE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "entityoutput.h"
 #include "fire_smoke.h"

@@ -12,9 +12,7 @@
 #include "ai_navtype.h"
 #include "ai_hull.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 struct AIMoveTrace_t;
 struct OverlayLine_t;

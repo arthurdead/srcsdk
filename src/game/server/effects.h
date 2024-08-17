@@ -8,9 +8,7 @@
 #ifndef EFFECTS_H
 #define EFFECTS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 class CBaseEntity;

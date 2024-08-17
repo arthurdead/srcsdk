@@ -7,9 +7,7 @@
 
 #ifndef DATAMAP_H
 #define DATAMAP_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #ifndef VECTOR_H
 #include "mathlib/vector.h"

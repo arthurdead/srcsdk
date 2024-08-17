@@ -8,9 +8,7 @@
 //=============================================================================//
 #if !defined( C_TE_LEGACYTEMPENTS_H )
 #define C_TE_LEGACYTEMPENTS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class C_BaseEntity;
 class C_LocalTempEntity;

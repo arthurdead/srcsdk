@@ -7,9 +7,7 @@
 
 #ifndef BUYSUBMENU_H
 #define BUYSUBMENU_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/WizardSubPanel.h>
 #include <vgui_controls/Button.h>

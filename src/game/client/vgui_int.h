@@ -6,9 +6,7 @@
 //=============================================================================//
 #if !defined( VGUI_INT_H )
 #define VGUI_INT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 

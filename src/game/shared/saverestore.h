@@ -14,9 +14,7 @@
 #include "utlvector.h"
 #include "filesystem.h"
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-------------------------------------
 

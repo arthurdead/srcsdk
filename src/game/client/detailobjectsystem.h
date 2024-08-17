@@ -8,9 +8,7 @@
 
 #if !defined( DETAILOBJECTSYSTEM_H )
 #define DETAILOBJECTSYSTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "igamesystem.h"
 #include "icliententityinternal.h"

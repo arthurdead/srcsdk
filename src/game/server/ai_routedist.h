@@ -10,9 +10,7 @@
 
 #include "ai_navtype.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 // ----------------------------------------------------------------------------
 // Computes the route distance + route direction based on nav type

@@ -9,9 +9,7 @@
 
 #ifndef REPLAYBROWSER_MAIN_PANEL_H
 #define REPLAYBROWSER_MAIN_PANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/PropertyDialog.h"
 #include "replay/replayhandle.h"

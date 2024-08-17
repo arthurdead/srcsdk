@@ -8,9 +8,7 @@
 #ifndef MOVEHELPER_CLIENT_H
 #define MOVEHELPER_CLIENT_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "imovehelper.h"

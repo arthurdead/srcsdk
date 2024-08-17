@@ -6,9 +6,7 @@
 
 #ifndef MANIPULATOR_H
 #define MANIPULATOR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/Panel.h"
 #include "mathlib/vector.h"

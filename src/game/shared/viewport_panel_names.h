@@ -6,9 +6,7 @@
 
 #ifndef VIEWPORT_PANEL_NAMES_H
 #define VIEWPORT_PANEL_NAMES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // default panel name definitions

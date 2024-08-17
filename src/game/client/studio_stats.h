@@ -7,9 +7,7 @@
 #ifndef __STUDIO_STATS_H
 #define __STUDIO_STATS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 void StudioStats_FindClosestEntity( CClientRenderablesList *pClientRenderablesList );
 

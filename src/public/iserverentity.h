@@ -7,9 +7,7 @@
 
 #ifndef ISERVERENTITY_H
 #define ISERVERENTITY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "iserverunknown.h"

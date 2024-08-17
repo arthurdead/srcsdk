@@ -7,9 +7,7 @@
 
 #ifndef FUNC_DUST_SHARED_H
 #define FUNC_DUST_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // Flags for m_DustFlags.

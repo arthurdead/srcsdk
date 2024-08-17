@@ -6,9 +6,7 @@
 
 #ifndef VTFPICKER_H
 #define VTFPICKER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "matsys_controls/baseassetpicker.h"
 

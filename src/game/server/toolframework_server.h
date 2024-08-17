@@ -9,9 +9,7 @@
 #ifndef TOOLFRAMEWORK_SERVER_H
 #define TOOLFRAMEWORK_SERVER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 //-----------------------------------------------------------------------------

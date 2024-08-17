@@ -9,9 +9,7 @@
 #ifndef IEDITORTEXTURE_H
 #define IEDITORTEXTURE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include <utlvector.h>

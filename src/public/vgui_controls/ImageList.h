@@ -8,9 +8,7 @@
 #ifndef IMAGELIST_H
 #define IMAGELIST_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <utlvector.h>
 #include <vgui/VGUI.h>

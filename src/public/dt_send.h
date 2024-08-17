@@ -9,9 +9,7 @@
 #ifndef DATATABLE_SEND_H
 #define DATATABLE_SEND_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "dt_common.h"
 #include "tier0/dbg.h"

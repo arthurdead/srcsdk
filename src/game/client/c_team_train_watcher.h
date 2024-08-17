@@ -6,9 +6,7 @@
 
 #ifndef C_TEAM_TRAIN_WATCHER_H
 #define C_TEAM_TRAIN_WATCHER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_baseentity.h"
 #include "c_physicsprop.h"

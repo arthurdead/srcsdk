@@ -6,9 +6,7 @@
 
 #ifndef MAP_UTILS_H
 #define MAP_UTILS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "mathlib/vector.h"

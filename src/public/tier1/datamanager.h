@@ -6,9 +6,7 @@
 
 #ifndef RESOURCEMANAGER_H
 #define RESOURCEMANAGER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/threadtools.h"
 #include "utlmultilist.h"

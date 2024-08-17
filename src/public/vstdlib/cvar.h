@@ -8,9 +8,7 @@
 
 #if !defined( CVAR_H )
 #define CVAR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vstdlib/vstdlib.h"
 #include "icvar.h"

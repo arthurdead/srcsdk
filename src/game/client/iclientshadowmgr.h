@@ -9,9 +9,7 @@
 #ifndef ICLIENTSHADOWMGR_H
 #define ICLIENTSHADOWMGR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "igamesystem.h"
 #include "icliententityinternal.h"

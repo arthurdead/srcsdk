@@ -7,9 +7,7 @@
 
 #ifndef ISQLDLREPLYTARGET_H
 #define ISQLDLREPLYTARGET_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface to handle results of SQL queries

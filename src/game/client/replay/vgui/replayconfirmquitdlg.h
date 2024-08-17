@@ -7,9 +7,7 @@
 
 #ifndef REPLAYBROWSER_CONFIRMQUITDLG_H
 #define REPLAYBROWSER_CONFIRMQUITDLG_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "replaybrowserbasepanel.h"
 #include "vgui/IScheme.h"

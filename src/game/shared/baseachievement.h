@@ -6,9 +6,7 @@
 
 #ifndef BASEACHIEVEMENT_H
 #define BASEACHIEVEMENT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "GameEventListener.h"
 #include "hl2orange.spa.h"

@@ -6,9 +6,7 @@
 
 #ifndef PHYSICS_FX_H
 #define PHYSICS_FX_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 class CBaseEntity;

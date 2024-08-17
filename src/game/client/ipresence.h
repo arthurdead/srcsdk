@@ -6,9 +6,7 @@
 
 #ifndef IPRESENCE_H
 #define IPRESENCE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //--------------------------------------------------------------------
 // Purpose: Rich Presence interface

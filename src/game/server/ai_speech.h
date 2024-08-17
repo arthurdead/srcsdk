@@ -14,9 +14,7 @@
 #include "AI_ResponseSystem.h"
 #include "utldict.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 class KeyValues;
 class AI_CriteriaSet;

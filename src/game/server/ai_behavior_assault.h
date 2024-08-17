@@ -6,9 +6,7 @@
 
 #ifndef AI_BEHAVIOR_ASSAULT_H
 #define AI_BEHAVIOR_ASSAULT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "simtimer.h"
 #include "ai_behavior.h"

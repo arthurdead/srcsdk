@@ -7,9 +7,7 @@
 #ifndef DMELEMENTHANDLE_H
 #define DMELEMENTHANDLE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 //-----------------------------------------------------------------------------

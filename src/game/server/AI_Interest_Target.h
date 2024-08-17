@@ -8,9 +8,7 @@
 #ifndef AI_INTEREST_TARGET_H
 #define AI_INTEREST_TARGET_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 
 //-----------------------------------------------------------------------------

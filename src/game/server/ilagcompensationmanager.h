@@ -7,9 +7,7 @@
 
 #ifndef ILAGCOMPENSATIONMANAGER_H
 #define ILAGCOMPENSATIONMANAGER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class CBasePlayer;
 class CUserCmd;

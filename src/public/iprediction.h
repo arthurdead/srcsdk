@@ -12,9 +12,7 @@
 //=============================================================================//
 #if !defined( IPREDICTION_H )
 #define IPREDICTION_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "interface.h"

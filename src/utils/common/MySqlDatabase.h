@@ -7,9 +7,7 @@
 
 #ifndef MYSQLDATABASE_H
 #define MYSQLDATABASE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <windows.h>
 #include "ISQLDBReplyTarget.h"

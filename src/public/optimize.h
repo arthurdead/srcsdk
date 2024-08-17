@@ -8,9 +8,7 @@
 #ifndef OPTIMIZE_H
 #define OPTIMIZE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "studio.h"
 

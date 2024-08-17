@@ -7,9 +7,7 @@
 #ifndef POTTERYWHEELPANEL_H
 #define POTTERYWHEELPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "vgui_controls/EditablePanel.h"

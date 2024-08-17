@@ -11,9 +11,7 @@
 
 #ifndef FX_QUAD_H
 #define FX_QUAD_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // Flags
 #define	FXQUAD_BIAS_SCALE	0x0001	//Bias the scale's interpolation function

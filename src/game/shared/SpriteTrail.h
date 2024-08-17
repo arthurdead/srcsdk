@@ -6,9 +6,7 @@
 
 #ifndef SPRITETRAIL_H
 #define SPRITETRAIL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "Sprite.h"
 

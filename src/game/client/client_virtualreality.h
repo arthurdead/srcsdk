@@ -8,9 +8,7 @@
 
 #ifndef CLIENTVIRTUALREALITY_H
 #define CLIENTVIRTUALREALITY_H
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "tier3/tier3.h"
 #include "iclientvirtualreality.h"

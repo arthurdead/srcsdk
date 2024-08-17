@@ -7,9 +7,7 @@
 
 #ifndef VARIANT_T_H
 #define VARIANT_T_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "ehandle.h"

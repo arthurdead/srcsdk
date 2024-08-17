@@ -4,9 +4,7 @@
 
 #ifndef ISERVERENGINE_H
 #define ISERVERENGINE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

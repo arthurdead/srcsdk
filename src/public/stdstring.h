@@ -9,9 +9,7 @@
 #ifndef STDSTRING_H
 #define STDSTRING_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #ifdef _WIN32
 #pragma warning(push)

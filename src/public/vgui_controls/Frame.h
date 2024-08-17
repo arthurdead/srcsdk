@@ -8,9 +8,7 @@
 #ifndef VGUI_FRAME_H
 #define VGUI_FRAME_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include <vgui/Dar.h>

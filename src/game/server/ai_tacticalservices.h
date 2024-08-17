@@ -7,9 +7,7 @@
 
 #include "ai_component.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #ifndef AI_USES_NAV_MESH
 class CAI_Network;

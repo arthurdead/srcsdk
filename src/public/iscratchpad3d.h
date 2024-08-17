@@ -7,9 +7,7 @@
 
 #ifndef ISCRATCHPAD3D_H
 #define ISCRATCHPAD3D_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // IScratchPad3D will store drawing commands in a file to be viewed by ScratchPad3DViewer.

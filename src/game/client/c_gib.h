@@ -6,9 +6,7 @@
 
 #ifndef C_GIB_H
 #define C_GIB_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define	DEFAULT_GIB_LIFETIME	4.0f
 

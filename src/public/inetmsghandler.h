@@ -12,9 +12,7 @@
 //=============================================================================//
 #if !defined( INETMSGHANDLER_H )
 #define INETMSGHANDLER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class	INetChannel;
 typedef struct netpacket_s netpacket_t;

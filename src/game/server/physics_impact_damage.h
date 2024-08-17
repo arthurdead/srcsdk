@@ -6,9 +6,7 @@
 
 #ifndef PHYSICS_IMPACT_DAMAGE_H
 #define PHYSICS_IMPACT_DAMAGE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 struct impactentry_t

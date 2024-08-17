@@ -8,9 +8,7 @@
 #ifndef PSD_H
 #define PSD_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "bitmap/imageformat.h" //ImageFormat enum definition
 

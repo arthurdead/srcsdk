@@ -7,9 +7,7 @@
 #ifndef ICLIENTVEHICLE_H
 #define ICLIENTVEHICLE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "IVehicle.h"
 

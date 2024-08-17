@@ -7,9 +7,7 @@
 //=============================================================================//
 #if !defined( USERCMD_H )
 #define USERCMD_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mathlib/vector.h"
 #include "utlvector.h"

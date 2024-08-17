@@ -6,9 +6,7 @@
 
 #ifndef FX_ENVELOPE_H
 #define FX_ENVELOPE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "cbase.h"
 #include "fx.h"

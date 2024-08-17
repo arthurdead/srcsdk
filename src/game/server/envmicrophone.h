@@ -6,9 +6,7 @@
 
 #ifndef ENVMICROPHONE_H
 #define ENVMICROPHONE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class CBaseFilter;
 

@@ -8,9 +8,7 @@
 #ifndef AI_COMPONENT_H
 #define AI_COMPONENT_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 class CAI_BaseNPC;
 class CAI_Enemies;

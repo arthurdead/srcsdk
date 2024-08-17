@@ -6,9 +6,7 @@
 
 #ifndef KEYBINDINGHELPDIALOG_H
 #define KEYBINDINGHELPDIALOG_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/Frame.h"
 #include "vgui/KeyCode.h"

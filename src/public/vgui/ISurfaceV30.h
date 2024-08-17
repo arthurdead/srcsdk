@@ -13,9 +13,7 @@
 #ifndef ISURFACE_V30_H
 #define ISURFACE_V30_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include <vgui/IHTML.h> // CreateHTML, PaintHTML 

@@ -7,9 +7,7 @@
 #ifndef PROCEDURALTEXTUREPANEL_H
 #define PROCEDURALTEXTUREPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "materialsystem/itexture.h"

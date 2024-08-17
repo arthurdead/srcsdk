@@ -8,9 +8,7 @@
 #ifndef C_BASECOMBATCHARACTER_H
 #define C_BASECOMBATCHARACTER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shareddefs.h"
 #include "c_baseflex.h"

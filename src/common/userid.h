@@ -7,9 +7,7 @@
 
 #ifndef USERID_H
 #define USERID_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "strtools.h"
 #include "steam/steamclientpublic.h"

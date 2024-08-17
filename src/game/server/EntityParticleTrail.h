@@ -7,9 +7,7 @@
 #ifndef ENTITYPARTICLETRAIL_H
 #define ENTITYPARTICLETRAIL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "baseparticleentity.h"
 #include "entityparticletrail_shared.h"

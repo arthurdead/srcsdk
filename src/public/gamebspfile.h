@@ -9,9 +9,7 @@
 #ifndef GAMEBSPFILE_H
 #define GAMEBSPFILE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "mathlib/vector.h"

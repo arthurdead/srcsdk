@@ -12,9 +12,7 @@
 //=============================================================================//
 #if !defined( ICONSOLE_H )
 #define ICONSOLE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 

@@ -7,9 +7,7 @@
 
 #ifndef ISTUDIORENDER_H
 #define ISTUDIORENDER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/interface.h"
 #include "mathlib/vector.h"

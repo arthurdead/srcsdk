@@ -6,9 +6,7 @@
 
 #ifndef BONE_MERGE_CACHE_H
 #define BONE_MERGE_CACHE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 class C_BaseAnimating;

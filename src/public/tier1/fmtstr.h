@@ -15,9 +15,7 @@
 #include "tier0/dbg.h"
 #include "tier1/strtools.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 #if defined(POSIX)
 #pragma GCC visibility push(hidden)
 #endif

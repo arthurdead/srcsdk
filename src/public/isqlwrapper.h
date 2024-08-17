@@ -9,9 +9,7 @@
 
 #include "tier0/platform.h"
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // SQL column types
 enum EColumnType

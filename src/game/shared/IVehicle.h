@@ -8,9 +8,7 @@
 #ifndef IVEHICLE_H
 #define IVEHICLE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "baseplayer_shared.h"
 

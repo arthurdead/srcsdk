@@ -7,9 +7,7 @@
 
 #ifndef IINPUTINTERNAL_H
 #define IINPUTINTERNAL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/IInput.h>
 

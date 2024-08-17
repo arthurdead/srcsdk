@@ -9,9 +9,7 @@
 #ifndef MATERIALSYSTEMUTIL_H
 #define MATERIALSYSTEMUTIL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "bitmap/imageformat.h" //ImageFormat enum definition
 #include "materialsystem/imaterialsystem.h"  // RenderTargetSizeMode_t and MaterialRenderTargetDepth_t definition

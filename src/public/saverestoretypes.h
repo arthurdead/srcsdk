@@ -11,9 +11,7 @@
 #ifndef SAVERESTORETYPES_H
 #define SAVERESTORETYPES_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "tier1/utlhash.h"
 

@@ -7,9 +7,7 @@
 
 #ifndef GLOBALSTATE_H
 #define GLOBALSTATE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 typedef enum { GLOBAL_OFF = 0, GLOBAL_ON = 1, GLOBAL_DEAD = 2 } GLOBALESTATE;
 

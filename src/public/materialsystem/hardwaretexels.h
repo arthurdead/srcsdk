@@ -11,9 +11,7 @@
 #ifndef HARDWARETEXELS_H
 #define HARDWARETEXELS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "bitmap/imageformat.h"
 #include "datamap.h"

@@ -7,9 +7,7 @@
 
 #ifndef BUYMENU_H
 #define BUYMENU_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/WizardPanel.h>
 #include <game/client/iviewport.h>

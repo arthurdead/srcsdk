@@ -8,9 +8,7 @@
 #ifndef PHYSICS_SAVERESTORE_H
 #define PHYSICS_SAVERESTORE_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "vphysics_interface.h"
 

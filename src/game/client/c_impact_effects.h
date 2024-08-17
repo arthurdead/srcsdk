@@ -6,9 +6,7 @@
 
 #ifndef C_IMPACT_EFFECTS_H
 #define C_IMPACT_EFFECTS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/memdbgon.h"
 

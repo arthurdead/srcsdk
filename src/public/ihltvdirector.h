@@ -6,9 +6,7 @@
 
 #ifndef IHLTVDIRECTOR_H
 #define IHLTVDIRECTOR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class IHLTVServer;
 class KeyValues;

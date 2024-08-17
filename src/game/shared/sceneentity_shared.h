@@ -6,9 +6,7 @@
 
 #ifndef SCENEENTITY_SHARED_H
 #define SCENEENTITY_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #if defined( CLIENT_DLL )
 #define CBaseFlex C_BaseFlex

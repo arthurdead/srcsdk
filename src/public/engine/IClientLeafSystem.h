@@ -11,9 +11,7 @@
 
 #if !defined( ICLIENTLEAFSYSTEM_H )
 #define ICLIENTLEAFSYSTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "client_render_handle.h"

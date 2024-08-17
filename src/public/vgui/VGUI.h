@@ -8,9 +8,7 @@
 #ifndef VGUI_H
 #define VGUI_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define null 0L
 

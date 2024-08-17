@@ -4,9 +4,7 @@
 
 #ifndef IREPLAYCAMERA_H
 #define IREPLAYCAMERA_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

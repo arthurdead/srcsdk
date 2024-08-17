@@ -4,9 +4,7 @@
 
 #ifndef IREPLAYMANAGER_H
 #define IREPLAYMANAGER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

@@ -9,9 +9,7 @@
 #ifndef IMATERIAL_H
 #define IMATERIAL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "bitmap/imageformat.h"
 #include "materialsystem/imaterialsystem.h"

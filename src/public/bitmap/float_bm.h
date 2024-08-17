@@ -9,9 +9,7 @@
 #ifndef FLOAT_BM_H
 #define FLOAT_BM_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <tier0/platform.h>
 #include "tier0/dbg.h"

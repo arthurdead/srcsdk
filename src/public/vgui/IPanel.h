@@ -8,9 +8,7 @@
 #ifndef IPANEL_H
 #define IPANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include "tier1/interface.h"

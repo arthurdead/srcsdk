@@ -8,9 +8,7 @@
 #ifndef MESSAGEMAP_H
 #define MESSAGEMAP_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlvector.h"
 

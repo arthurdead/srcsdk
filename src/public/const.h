@@ -8,9 +8,7 @@
 #ifndef CONST_H
 #define CONST_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // the command line param that tells the engine to use steam
 #define STEAM_PARM					"-steam"

@@ -6,9 +6,7 @@
 
 #if !defined( VIEWRENDER_H )
 #define VIEWRENDER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shareddefs.h"
 #include "tier1/utlstack.h"

@@ -6,9 +6,7 @@
 
 #ifndef UTLSTRING_H
 #define UTLSTRING_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "tier1/utlmemory.h"

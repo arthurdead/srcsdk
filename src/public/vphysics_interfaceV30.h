@@ -7,9 +7,7 @@
 
 #ifndef VPHYSICS_INTERFACE_V30_H
 #define VPHYSICS_INTERFACE_V30_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 #include "mathlib/vector.h"

@@ -8,9 +8,7 @@
 #ifndef PANEL_H
 #define PANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlflags.h"
 #include "vgui/VGUI.h"

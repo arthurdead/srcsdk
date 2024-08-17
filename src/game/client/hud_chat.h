@@ -7,9 +7,7 @@
 
 #ifndef HUD_CHAT_H
 #define HUD_CHAT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <hud_basechat.h>
 

@@ -6,9 +6,7 @@
 
 #ifndef GAMEDATA_H
 #define GAMEDATA_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #pragma warning(push, 1)
 #pragma warning(disable:4701 4702 4530)

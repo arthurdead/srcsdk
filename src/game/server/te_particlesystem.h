@@ -7,9 +7,7 @@
 
 #ifndef TE_PARTICLESYSTEM_H
 #define TE_PARTICLESYSTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "basetempentity.h"

@@ -7,9 +7,7 @@
 
 #ifndef ISERVERNETWORKABLE_H
 #define ISERVERNETWORKABLE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "ihandleentity.h"

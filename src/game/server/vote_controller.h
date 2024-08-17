@@ -8,9 +8,7 @@
 #ifndef VOTE_CONTROLLER_H
 #define VOTE_CONTROLLER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shareddefs.h"
 

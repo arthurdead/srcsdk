@@ -8,9 +8,7 @@
 #ifndef IENGINEVOICE_H
 #define IENGINEVOICE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "basetypes.h"

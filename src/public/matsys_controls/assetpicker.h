@@ -6,9 +6,7 @@
 
 #ifndef ASSETPICKER_H
 #define ASSETPICKER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "matsys_controls/baseassetpicker.h"
 

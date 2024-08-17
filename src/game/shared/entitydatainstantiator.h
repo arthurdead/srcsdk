@@ -6,9 +6,7 @@
 
 #ifndef ENTITYDATAINSTANTIATOR_H
 #define ENTITYDATAINSTANTIATOR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlhash.h"
 

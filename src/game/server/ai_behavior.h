@@ -21,9 +21,7 @@
 #pragma warning(disable:4290)
 #endif
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // CAI_Behavior...

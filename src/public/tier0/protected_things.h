@@ -7,9 +7,7 @@
 
 #ifndef PROTECTED_THINGS_H
 #define PROTECTED_THINGS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // This header tries to prevent people from using potentially dangerous functions

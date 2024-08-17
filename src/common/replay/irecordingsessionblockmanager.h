@@ -4,9 +4,7 @@
 
 #ifndef IRECORDINGSESSIONBLOCKMANAGER_H
 #define IRECORDINGSESSIONBLOCKMANAGER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

@@ -8,9 +8,7 @@
 
 #ifndef PARTICLES_NEW_H
 #define PARTICLES_NEW_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "particlemgr.h"
 #include "particles/particles.h"

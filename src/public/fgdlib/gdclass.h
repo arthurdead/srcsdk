@@ -13,9 +13,7 @@
 
 #ifndef GDCLASS_H
 #define GDCLASS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "HelperInfo.h"
 #include "TokenReader.h"

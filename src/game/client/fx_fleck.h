@@ -13,9 +13,7 @@
 
 #if !defined( FXFLECKS_H )
 #define FXFLECKS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "particles_simple.h"
 #include "particlemgr.h"

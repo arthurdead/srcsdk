@@ -6,9 +6,7 @@
 //=============================================================================//
 #ifndef HUD_H
 #define HUD_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlvector.h"
 #include "utldict.h"

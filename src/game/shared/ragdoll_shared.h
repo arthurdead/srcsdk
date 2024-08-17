@@ -6,9 +6,7 @@
 
 #ifndef RAGDOLL_SHARED_H
 #define RAGDOLL_SHARED_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class IPhysicsObject;
 class IPhysicsConstraint;

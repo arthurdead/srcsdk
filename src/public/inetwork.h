@@ -6,9 +6,7 @@
 
 #ifndef INETWORK_H
 #define INETWORK_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class IConnectionlessPacketHandler;
 

@@ -7,9 +7,7 @@
 
 #ifndef C_PLAYERRESOURCE_H
 #define C_PLAYERRESOURCE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "shareddefs.h"
 #include "const.h"

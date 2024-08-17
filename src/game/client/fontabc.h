@@ -7,9 +7,7 @@
 
 #ifndef FONTABC_H
 #define FONTABC_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 typedef struct
 {

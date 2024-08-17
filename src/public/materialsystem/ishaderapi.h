@@ -12,9 +12,7 @@
 #ifndef ISHADERAPI_MS_H
 #define ISHADERAPI_MS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <shaderapi/shareddefs.h>
 #include <shaderapi/ishadershadow.h>

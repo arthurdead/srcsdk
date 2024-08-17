@@ -9,9 +9,7 @@
 #ifndef MOUSECODE_H
 #define MOUSECODE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "inputsystem/ButtonCode.h"
 

@@ -7,9 +7,7 @@
 //=============================================================================//
 #if !defined( VGUI_BASEPANEL_H )
 #define VGUI_BASEPANEL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <stdarg.h>
 #include <vgui_controls/Panel.h>

@@ -6,9 +6,7 @@
 
 #ifndef PANELANIMATIONVAR_H
 #define PANELANIMATIONVAR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlvector.h"
 #include <vgui_controls/Panel.h>

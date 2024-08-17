@@ -105,9 +105,7 @@ entities. Each one is useful under different conditions.
 #ifndef PARTICLEMGR_H
 #define PARTICLEMGR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "materialsystem/imaterial.h"
 #include "materialsystem/imaterialsystem.h"

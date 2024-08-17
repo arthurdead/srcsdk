@@ -6,9 +6,7 @@
 
 #ifndef FX_BLOOD_H
 #define FX_BLOOD_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/memdbgon.h"
 

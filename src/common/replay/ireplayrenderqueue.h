@@ -4,9 +4,7 @@
 
 #ifndef IREPLAYRENDERQUEUE_H
 #define IREPLAYRENDERQUEUE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

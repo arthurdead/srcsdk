@@ -7,9 +7,7 @@
 
 #ifndef UTLPRIORITYQUEUE_H
 #define UTLPRIORITYQUEUE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlvector.h"
 

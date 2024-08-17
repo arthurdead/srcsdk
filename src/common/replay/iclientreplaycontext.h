@@ -4,9 +4,7 @@
 
 #ifndef ICLIENTREPLAYCONTEXT_H
 #define ICLIENTREPLAYCONTEXT_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------
 

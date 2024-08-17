@@ -7,9 +7,7 @@
 
 #ifndef HUD_CROSSHAIR_H
 #define HUD_CROSSHAIR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "hudelement.h"
 #include <vgui_controls/Panel.h>

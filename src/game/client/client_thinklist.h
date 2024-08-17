@@ -7,9 +7,7 @@
 
 #ifndef CLIENT_THINKLIST_H
 #define CLIENT_THINKLIST_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "igamesystem.h"

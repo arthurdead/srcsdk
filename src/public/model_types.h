@@ -8,9 +8,7 @@
 //=============================================================================//
 #if !defined( MODEL_TYPES_H )
 #define MODEL_TYPES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define STUDIO_NONE						0x00000000
 #define STUDIO_RENDER					0x00000001

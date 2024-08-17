@@ -7,9 +7,7 @@
 
 #ifndef C_ENVPROJECTEDTEXTURE_H
 #define C_ENVPROJECTEDTEXTURE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_baseentity.h"
 #include "basetypes.h"

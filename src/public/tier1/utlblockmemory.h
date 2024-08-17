@@ -10,9 +10,7 @@
 #ifndef UTLBLOCKMEMORY_H
 #define UTLBLOCKMEMORY_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier0/dbg.h"
 #include "tier0/platform.h"

@@ -6,9 +6,7 @@
 
 #ifndef DECALS_H
 #define DECALS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 // NOTE: If you add a tex type, be sure to modify the s_pImpactEffect
 // array in fx_impact.cpp to get an effect when that surface is shot.

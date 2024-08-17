@@ -6,9 +6,7 @@
 
 #ifndef STEAMPS3PARAMS_H
 #define STEAMPS3PARAMS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------//
 //	PlayStation 3 initialization parameters

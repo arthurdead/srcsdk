@@ -6,9 +6,7 @@
 
 #ifndef IHANDLEENTITY_H
 #define IHANDLEENTITY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 class CBaseHandle;

@@ -7,9 +7,7 @@
 
 #ifndef TRIGGERS_H
 #define TRIGGERS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basetoggle.h"
 #include "entityoutput.h"

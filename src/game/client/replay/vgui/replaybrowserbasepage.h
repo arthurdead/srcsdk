@@ -7,9 +7,7 @@
 
 #ifndef REPLAYBROWSER_BASEPAGE_H
 #define REPLAYBROWSER_BASEPAGE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_controls/PropertyPage.h"
 #include "replaybrowseritemmanager.h"

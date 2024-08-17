@@ -10,9 +10,7 @@
 #ifndef CMDLIB_H
 #define CMDLIB_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // cmdlib.h
 

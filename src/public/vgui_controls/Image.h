@@ -8,9 +8,7 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui/VGUI.h>
 #include <Color.h>
