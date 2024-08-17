@@ -1,6 +1,7 @@
 project('vaudio_redirect', 'cpp')
 
 src_root_dir = get_option('src_root_dir')
+game_dir = get_option('game_dir')
 
 source_base = subproject('source_base')
 
@@ -25,11 +26,13 @@ vaudio_redirect_lib = declare_dependency(
 	]
 )
 
-vaudio_redirect_miles_lib = shared_library('vaudio_miles',
+vaudio_redirect_miles_lib = shared_library('vaudio_miles',name_prefix:'',
 	cpp_args: [
 		'-DLIBNAME=vaudio_miles'
 	],
 	dependencies: [
 		vaudio_redirect_lib
-	]
+	],
+	install: true,
+	install_dir: join_paths(game_dir,'bin')
 )

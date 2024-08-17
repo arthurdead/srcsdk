@@ -1,6 +1,7 @@
 project('game', 'cpp')
 
 src_root_dir = get_option('src_root_dir')
+game_dir = get_option('game_dir')
 
 client_src_dir = join_paths(src_root_dir,'game','client')
 client_game_src_dir = join_paths(client_src_dir,'heist')
@@ -63,7 +64,7 @@ server_lib_dep = declare_dependency(
 	]
 )
 
-shared_library('server',
+shared_library('server',name_prefix:'',
 	cpp_pch: [
 		#join_paths(server_src_dir,'pch','cbase_pch.h'),
 		#join_paths(server_src_dir,'pch','stdafx.cpp')
@@ -71,11 +72,13 @@ shared_library('server',
 	dependencies: [
 		server_lib_dep,
 		source_game_base.get_variable('source_linux_server_lib_dep')
-	]
+	],
+	install: true,
+	install_dir: join_paths(game_dir,'bin')
 )
 
 if false
-shared_library('server_srv',
+shared_library('server_srv',name_prefix:'',
 	cpp_pch: [
 		#join_paths(server_src_dir,'pch','cbase_pch.h'),
 		#join_paths(server_src_dir,'pch','stdafx.cpp')
@@ -83,11 +86,13 @@ shared_library('server_srv',
 	dependencies: [
 		server_lib_dep,
 		source_game_base.get_variable('source_linux_dedicated_server_lib_dep')
-	]
+	],
+	install: true,
+	install_dir: join_paths(game_dir,'bin')
 )
 endif
 
-shared_library('client',
+shared_library('client',name_prefix:'',
 	cpp_args: [
 		'-DHEIST_CLIENT_DLL',
 		'-DWEBM_VIDEO_SERVICES_MOD'
@@ -115,5 +120,7 @@ shared_library('client',
 		game_shared_dep,
 		source_game_base.get_variable('source_linux_client_lib_dep'),
 		coplay.get_variable('coplay_dep')
-	]
+	],
+	install: true,
+	install_dir: join_paths(game_dir,'bin')
 )

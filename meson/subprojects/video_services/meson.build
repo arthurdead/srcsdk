@@ -1,6 +1,7 @@
 project('video_services', 'cpp')
 
 src_root_dir = get_option('src_root_dir')
+game_dir = get_option('game_dir')
 
 source_base = subproject('source_base')
 
@@ -21,7 +22,7 @@ webm_opts.add_cmake_defines({
 })
 webm = cmake.subproject('webm', options: webm_opts)
 
-video_services_lib = shared_library('video_services',
+video_services_lib = shared_library('video_services',name_prefix:'',
 	cpp_args: [
 		'-DMPI',
 		'-DPROTECTED_THINGS_DISABLE'
@@ -51,7 +52,9 @@ video_services_lib = shared_library('video_services',
 		dependency('ogg'),
 		webm.get_variable('webm_dep'),
 		dependency('SDL2')
-	]
+	],
+	install: true,
+	install_dir: join_paths(game_dir,'bin')
 )
 
 video_services_dep = declare_dependency(
