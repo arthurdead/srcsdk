@@ -9,4 +9,4 @@ Medic bag not included
 - [source-sdk-ahhh](https://github.com/nooodles-ahh/source-sdk-ahhh)
 - [Coplay](https://github.com/CoaXioN-Games/coplay)
 - [SecobMod](https://github.com/whoozzem/SecobMod)
-- [Mapbase](https://github.com/mapbase-source/source-sdk-2013/pull/109/commits)
+- [Mapbase](https://github.com/mapbase-source/source-sdk-2013)
