@@ -115,6 +115,8 @@ public:
 
 	bool CanHearAndReadChatFrom(CBasePlayer *pPlayer) override;
 
+	void SetSpotted(bool value);
+
 private:
 	void PrecacheFootStepSounds();
 	bool HandleCommand_JoinTeam(int team);
@@ -144,6 +146,8 @@ private:
 
 	CNetworkVar(int, m_cycleLatch);
 	CountdownTimer m_cycleLatchTimer;
+
+	CNetworkVar(bool, m_bSpotted);
 };
 
 inline CHeistPlayer *ToHeistPlayer(CBaseEntity *pEntity)

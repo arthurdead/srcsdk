@@ -437,7 +437,7 @@ bool CAI_Navigator::FindPath( const AI_NavGoal_t &goal, unsigned flags )
 			pPath->ResetGoalPosition( GetNodePos( goal.destNode ) );
 	#else
 		else if ( goal.destArea != AIN_NO_AREA )
-			pPath->ResetGoalPosition( GetAreaPos( goal.destArea ) );
+			pPath->ResetGoalPosition( GetAreaRandomPos( goal.destArea ) );
 	#endif
 	}
 
@@ -1324,6 +1324,11 @@ AI_PathArea_t CAI_Navigator::GetNearestArea()
 Vector CAI_Navigator::GetAreaPos( AI_PathArea_t area )
 {
 	return ((CNavArea *)area)->GetCenter();
+}
+
+Vector CAI_Navigator::GetAreaRandomPos( AI_PathArea_t area )
+{
+	return ((CNavArea *)area)->GetRandomPoint();
 }
 #endif
 
@@ -3655,7 +3660,7 @@ bool CAI_Navigator::MarkCurWaypointFailed( void )
 			#ifndef AI_USES_NAV_MESH
 				Vector vStartPos = GetNetwork()->GetNode( endID )->GetPosition( GetHullType() );
 			#else
-				Vector vStartPos = endArea->GetCenter();
+				Vector vStartPos = endArea->GetClosestPointOnArea( startArea->GetClosestPointOnArea( GetAbsOrigin() ) );
 			#endif
 				Vector vEndPos = vStartPos;
 				vEndPos.z += 0.01;
@@ -4310,38 +4315,38 @@ bool CAI_Navigator::SetGoalFromStoppingPath()
 
 //-----------------------------------------------------------------------------
 
-static Vector GetRouteColor(Navigation_t navType, int waypointFlags)
+static Color GetRouteColor(Navigation_t navType, int waypointFlags)
 {
 	if (navType == NAV_JUMP)
 	{
-		return Vector(255,0,0);
+		return Color(255,0,0);
 	}
 
 	if (waypointFlags & bits_WP_TO_GOAL)
 	{
-		return Vector(200,0,255);
+		return Color(200,0,255);
 	}
 	
 	if (waypointFlags & bits_WP_TO_DETOUR)
 	{
-		return Vector(0,200,255);
+		return Color(0,200,255);
 	}
 
 #ifndef AI_USES_NAV_MESH
 	if (waypointFlags & bits_WP_TO_NODE)
 	{
-		return Vector(0,0,255);
+		return Color(0,0,255);
 	}
 #else
 	if (waypointFlags & bits_WP_TO_AREA)
 	{
-		return Vector(0,0,255);
+		return Color(0,0,255);
 	}
 #endif
 
 	else //if (waypointBits & bits_WP_TO_PATHCORNER)
 	{
-		return Vector(0,255,150);
+		return Color(0,255,150);
 	}
 }
 
@@ -4349,24 +4354,24 @@ static Vector GetRouteColor(Navigation_t navType, int waypointFlags)
 //-----------------------------------------------------------------------------
 // Returns a color for debugging purposes
 //-----------------------------------------------------------------------------
-static Vector GetWaypointColor(Navigation_t navType)
+static Color GetWaypointColor(Navigation_t navType)
 {
 	switch( navType )
 	{
 	case NAV_JUMP:
-		return Vector(255,90,90);
+		return Color(255,90,90);
 
 	case NAV_GROUND:
-		return Vector(0,255,255);
+		return Color(0,255,255);
 
 	case NAV_CLIMB:
-		return Vector(90,255,255);
+		return Color(90,255,255);
 
 	case NAV_FLY:
-		return Vector(90,90,255);
+		return Color(90,90,255);
 
 	default:
-		return Vector(255,0,0);
+		return Color(255,0,0);
 	}
 }
 
@@ -4374,22 +4379,101 @@ static Vector GetWaypointColor(Navigation_t navType)
 
 void CAI_Navigator::DrawDebugRouteOverlay(void)
 {
+	char szInfo[256];
+
 	AI_Waypoint_t *waypoint = GetPath()->GetCurWaypoint();
 
 	if (waypoint)
 	{
-		Vector RGB = GetRouteColor(waypoint->NavType(), waypoint->Flags());
+		Color RGB = GetRouteColor(waypoint->NavType(), waypoint->Flags());
 		NDebugOverlay::Line(GetLocalOrigin(), waypoint->GetPos(), RGB[0],RGB[1],RGB[2], true,0);
 	}
 
 	while (waypoint) 
 	{
-		Vector RGB = GetWaypointColor(waypoint->NavType());
-		NDebugOverlay::Box(waypoint->GetPos(), Vector(-3,-3,-3),Vector(3,3,3), RGB[0],RGB[1],RGB[2], true,0);
+		Color RGB = GetWaypointColor(waypoint->NavType());
+		NDebugOverlay::Box(waypoint->GetPos(), Vector(-3,-3,-3),Vector(3,3,3), RGB[0],RGB[1],RGB[2], 255,0);
+
+		switch( waypoint->NavType() )
+		{
+		case NAV_JUMP:
+			V_strncpy(szInfo, "Type: Jump", sizeof(szInfo));
+			break;
+		case NAV_GROUND:
+			V_strncpy(szInfo, "Type: Ground", sizeof(szInfo));
+			break;
+		case NAV_CLIMB:
+			V_strncpy(szInfo, "Type: Climb", sizeof(szInfo));
+			break;
+		case NAV_FLY:
+			V_strncpy(szInfo, "Type: Fly", sizeof(szInfo));
+			break;
+		case NAV_NONE:
+			V_strncpy(szInfo, "Type: None", sizeof(szInfo));
+			break;
+		}
+
+		NDebugOverlay::Text(waypoint->GetPos() + Vector(0.0f, 0.0f, 10.0f), szInfo, true, 0);
+
+		V_strncpy(szInfo, "Flags: ", sizeof(szInfo));
+
+		if(waypoint->Flags() & bits_WP_TO_DETOUR) {
+			V_strcat_safe(szInfo, "Detour|");
+		}
+		if(waypoint->Flags() & bits_WP_TO_PATHCORNER) {
+			V_strcat_safe(szInfo, "PathCorner|");
+		}
+		if(waypoint->Flags() & bits_WP_TO_AREA) {
+			V_strcat_safe(szInfo, "Area|");
+		}
+		if(waypoint->Flags() & bits_WP_TO_GOAL) {
+			V_strcat_safe(szInfo, "Goal|");
+		}
+		if(waypoint->Flags() & bits_WP_TO_DOOR) {
+			V_strcat_safe(szInfo, "Door|");
+		}
+		if(waypoint->Flags() & bits_WP_DONT_SIMPLIFY) {
+			V_strcat_safe(szInfo, "DontSimplify|");
+		}
+
+		NDebugOverlay::Text(waypoint->GetPos() + Vector(0.0f, 0.0f, 5.0f), szInfo, true, 0);
+
+		switch( waypoint->nNavHow )
+		{
+		case GO_NORTH:
+			V_sprintf_safe(szInfo, "Area how: North");
+			break;
+		case GO_EAST:
+			V_sprintf_safe(szInfo, "Area how: East");
+			break;
+		case GO_SOUTH:
+			V_sprintf_safe(szInfo, "Area how: South");
+			break;
+		case GO_WEST:
+			V_sprintf_safe(szInfo, "Area how: West");
+			break;
+		case GO_LADDER_UP:
+			V_sprintf_safe(szInfo, "Area how: Ladder up");
+			break;
+		case GO_LADDER_DOWN:
+			V_sprintf_safe(szInfo, "Area how: Ladder down");
+			break;
+		case GO_JUMP:
+			V_sprintf_safe(szInfo, "Area how: Jump");
+			break;
+		case GO_ELEVATOR_UP:
+			V_sprintf_safe(szInfo, "Area how: Elevator up");
+			break;
+		case GO_ELEVATOR_DOWN:
+			V_sprintf_safe(szInfo, "Area how: Elevator down");
+			break;
+		}
+
+		NDebugOverlay::Text(waypoint->GetPos() + Vector(0.0f, 0.0f, 15.0f), szInfo, true, 0);
 
 		if (waypoint->GetNext()) 
 		{
-			Vector RGB = GetRouteColor(waypoint->GetNext()->NavType(), waypoint->GetNext()->Flags());
+			Color RGB = GetRouteColor(waypoint->GetNext()->NavType(), waypoint->GetNext()->Flags());
 			NDebugOverlay::Line(waypoint->GetPos(), waypoint->GetNext()->GetPos(),RGB[0],RGB[1],RGB[2], true,0);
 		}
 		waypoint = waypoint->GetNext();

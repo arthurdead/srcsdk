@@ -15,6 +15,7 @@
 #include "ai_navgoaltype.h"
 #include "ai_navtype.h"
 #include "ai_motor.h"
+#include "isaverestore.h"
 
 class CAI_BaseNPC;
 class CAI_Motor;
@@ -26,6 +27,8 @@ struct AI_Waypoint_t;
 class CAI_WaypointList;
 #ifndef AI_USES_NAV_MESH
 class CAI_Network;
+#else
+class CNavArea;
 #endif
 struct AIMoveTrace_t;
 struct AILocalMoveGoal_t;
@@ -440,6 +443,7 @@ public:
 #else
 	AI_PathArea_t		GetNearestArea();
 	Vector				GetAreaPos( AI_PathArea_t );
+	Vector				GetAreaRandomPos( AI_PathArea_t );
 #endif
 
 #ifndef AI_USES_NAV_MESH

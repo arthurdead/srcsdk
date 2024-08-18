@@ -22,11 +22,13 @@ class CAI_Link;
 class CAI_Network;
 class CAI_Node;
 #else
+#include "nav_pathfind.h"
 class CNavArea;
 class CNavLadder;
 class CFuncElevator;
 #endif
 class CAI_Pathfinder;
+class CAI_Navigator;
 
 #ifdef AI_USES_NAV_MESH
 enum AreaType_e
@@ -53,7 +55,10 @@ public:
 
 protected:
 	CAI_Pathfinder *m_pPathFinder;
+	CAI_Navigator *m_pNavigator;
 	CAI_BaseNPC *m_pNPC;
+
+	RouteType m_routeType;
 };
 #endif
 
@@ -179,10 +184,10 @@ protected:
 	virtual bool	CanUseLocalNavigation() { return true; }
 
 private:
-	friend class CPathfindNearestNodeFilter;
-
 	//---------------------------------
 #ifndef AI_USES_NAV_MESH
+	friend class CPathfindNearestNodeFilter;
+
 	AI_Waypoint_t*	RouteToNode(const Vector &vecOrigin, int buildFlags, int nodeID, float goalTolerance);
 	AI_Waypoint_t*	RouteFromNode(const Vector &vecOrigin, int buildFlags, int nodeID, float goalTolerance);
 
@@ -193,6 +198,8 @@ private:
 	AI_Waypoint_t*	MakeRouteFromParents(int *parentArray, int endID);
 	AI_Waypoint_t*	CreateNodeWaypoint( Hull_t hullType, int nodeID, int nodeFlags = 0 );
 #else
+	friend class CPathfindNearestAreaFilter;
+
 	AI_Waypoint_t*	RouteToArea(const Vector &vecOrigin, int buildFlags, CNavArea * area, float goalTolerance);
 	AI_Waypoint_t*	RouteFromArea(const Vector &vecOrigin, int buildFlags, CNavArea * area, float goalTolerance);
 

@@ -54,6 +54,9 @@ server_lib_dep = declare_dependency(
 		join_paths(server_game_src_dir,'heist_playermove.cpp'),
 		join_paths(server_game_src_dir,'heist_eventlog.cpp'),
 		join_paths(server_game_src_dir,'vgui_text_display.cpp'),
+		join_paths(server_game_src_dir,'npc_dev.cpp'),
+		join_paths(server_game_src_dir,'npc_humanoidbase.cpp'),
+		join_paths(server_game_src_dir,'npc_cop.cpp'),
 		join_paths(server_game_src_dir,'npc_civilian.cpp')
 	),
 	include_directories: include_directories(
@@ -108,6 +111,7 @@ shared_library('client',name_prefix:'',
 		join_paths(client_game_src_dir,'clientmode_heist.cpp'),
 		join_paths(client_game_src_dir,'heist_hud_chat.cpp'),
 		join_paths(client_game_src_dir,'heist_hud_weaponselection.cpp'),
+		join_paths(client_game_src_dir,'c_npc_humanoidbase.cpp'),
 		join_paths(client_game_vgui_src_dir,'c_vgui_text_display.cpp'),
 		join_paths(client_game_vgui_src_dir,'heistviewport.cpp'),
 		join_paths(client_game_vgui_src_dir,'vgui_rootpanel_heist.cpp'),

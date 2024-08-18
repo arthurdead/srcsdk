@@ -105,13 +105,17 @@ int GetAreaAcceptedMoveTypes(CNavArea *area, Hull_t hull)
 
 #ifdef AI_USES_NAV_MESH
 NPCPathCost::NPCPathCost(CAI_Pathfinder *pPathFinder)
-	: m_pPathFinder(pPathFinder), m_pNPC(pPathFinder->GetOuter())
+	: m_pPathFinder(pPathFinder),
+	m_pNPC(pPathFinder->GetOuter()),
+	m_pNavigator(pPathFinder->GetOuter()->GetNavigator()),
+	m_routeType(DEFAULT_ROUTE)
 {
 }
 
 float NPCPathCost::operator()(CNavArea *area, CNavArea *fromArea, const CNavLadder *ladder, const CFuncElevator *elevator, float length)
 {
 	static const float jumpPenalty = 5.0f;
+	static const float combatDangerCost = 4.0f;
 
 	if(fromArea == NULL) {
 		return 0.0f;
@@ -131,14 +135,31 @@ float NPCPathCost::operator()(CNavArea *area, CNavArea *fromArea, const CNavLadd
 		dist = (area->GetCenter() - fromArea->GetCenter()).Length();
 	}
 
-	float cost = (dist + fromArea->GetCostSoFar());
-
 	float deltaZ = fromArea->ComputeAdjacentConnectionHeightChange(area);
 	if(deltaZ >= m_pNPC->StepHeight()) {
-		cost += jumpPenalty * dist;
+		if(deltaZ >= JumpHeight) {
+			return -1.0f;
+		}
+
+		dist *= jumpPenalty;
+	} else if(deltaZ < -DeathDrop) {
+		return -1.0f;
 	}
 
-	return cost;
+	float preference = 1.0f;
+
+	if(m_routeType == DEFAULT_ROUTE) {
+		int timeMod = (int)(gpGlobals->curtime / 10.0f) + 1;
+		preference = (1.0f + 50.0f * (1.0f + FastCos((float)(m_pNPC->entindex() * area->GetID() * timeMod))));
+	}
+
+	float cost = (dist * preference);
+
+	if(area->HasAttributes(NAV_MESH_FUNC_COST)) {
+		cost *= area->ComputeFuncNavCost(m_pNPC);
+	}
+
+	return (cost + fromArea->GetCostSoFar());
 }
 #endif
 
@@ -370,14 +391,14 @@ int CAI_Pathfinder::NearestNodeToPoint( const Vector &vecOrigin )
 #else
 CNavArea *CAI_Pathfinder::NearestAreaToNPC()
 {
-	return TheNavMesh->GetNearestNavArea( GetOuter() );
+	return GetOuter()->GetLastKnownArea();
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 CNavArea *CAI_Pathfinder::NearestAreaToPoint( const Vector &vecOrigin )
 {
-	return TheNavMesh->GetNearestNavArea( vecOrigin, false, 10000.0f, false, true, GetOuter()->GetTeamNumber() );
+	return TheNavMesh->GetNearestNavArea( vecOrigin, false, 10000.0f, true, true, GetOuter()->GetTeamNumber() );
 }
 #endif
 
@@ -486,137 +507,233 @@ AI_Waypoint_t *CAI_Pathfinder::FindBestPath(CNavArea * startArea, CNavArea * end
 
 	return NULL;   
 #else
-	if(startArea == NULL || endArea == NULL) {
+	if(startArea == NULL) {
 		return NULL;
 	}
 
-	if(startArea == endArea) {
+	if(startArea == endArea || endArea == NULL) {
 		return CreateAreaWaypoint( GetHullType(), startArea, bits_WP_TO_GOAL );
 	}
-
-	Vector pathEndPosition = endArea->GetCenter();
-	pathEndPosition.z = endArea->GetZ( &pathEndPosition );
 
 	NPCPathCost costFunc(this);
 
 	CNavArea *closestArea;
-	bool pathToGoalExists = NavAreaBuildPath(startArea, endArea, &pathEndPosition, costFunc, &closestArea, 0.0f, GetOuter()->GetTeamNumber(), false);
+	bool pathToGoalExists = NavAreaBuildPath(startArea, endArea, NULL, costFunc, &closestArea, 0.0f, GetOuter()->GetTeamNumber(), false);
 
 	if(closestArea == NULL) {
 		return NULL;
 	}
 
-	CNavArea *effectiveGoalArea = (pathToGoalExists) ? endArea : closestArea;
-
 	int count = 0;
 	CNavArea *area;
-	for(area = effectiveGoalArea; area; area = area->GetParent()) {
+	for(area = closestArea; area; area = area->GetParent()) {
 		++count;
-
-		if(area == startArea) {
-			break;
-		}
-	}
-
-	if(count == 0) {
-		return NULL;
-	}
-
-	if(count == 1) {
-		return CreateAreaWaypoint(GetHullType(), area, bits_WP_TO_GOAL);
 	}
 
 	AI_Waypoint_t *pOldWaypoint = NULL;
 
-	for(area = effectiveGoalArea; count && area; area = area->GetParent()) {
+	for(area = closestArea; count && area; area = area->GetParent()) {
 		--count;
 
 		Navigation_t waypointType = ComputeWaypointType(area, area->GetParent());
 
-		AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t(area->GetCenter(), 0.0f, waypointType, bits_WP_TO_AREA, area);
-		pNewWaypoint->nNavHow = area->GetParentHow();
+		WaypointFlags_t flags = bits_WP_TO_AREA;
+
+		NavTraverseType nNavHow = area->GetParentHow();
+		switch(nNavHow) {
+		case GO_JUMP:
+			waypointType = NAV_JUMP;
+			break;
+		case GO_LADDER_UP:
+			waypointType = NAV_CLIMB;
+			break;
+		case GO_LADDER_DOWN:
+			waypointType = NAV_CLIMB;
+			break;
+		}
+
+		AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t(area->GetCenter(), 0.0f, waypointType, flags, area);
+		pNewWaypoint->nNavHow = nNavHow;
 
 		pNewWaypoint->SetNext(pOldWaypoint);
 		pOldWaypoint = pNewWaypoint;
 	}
 
+	const float hullWidth = GetHullWidth();
+	const float hullHeight = GetHullHeight();
+	const float stepHeight = GetOuter()->StepHeight();
+
+	const float halfWidth = hullWidth/2.0f;
+
 	AI_Waypoint_t *pFromWaypoint = pOldWaypoint;
 	while(pFromWaypoint) {
 		AI_Waypoint_t *pToWaypoint = pFromWaypoint->GetNext();
 
-		if(pToWaypoint) {
-			if(pToWaypoint->nNavHow <= GO_WEST) {
-				pToWaypoint->pNavLadder = NULL;
+		if(!pToWaypoint) {
+			break;
+		}
 
-				pFromWaypoint->pArea->ComputeClosestPointInPortal(pToWaypoint->pArea, (NavDirType)pToWaypoint->nNavHow, pFromWaypoint->vecLocation, &pToWaypoint->vecLocation);
+		if(pToWaypoint->nNavHow <= GO_WEST) {
+			pToWaypoint->pNavLadder = NULL;
 
-				pToWaypoint->vecLocation.z = pFromWaypoint->pArea->GetZ(pToWaypoint->vecLocation);
+			pFromWaypoint->pArea->ComputeClosestPointInPortal(pToWaypoint->pArea, (NavDirType)pToWaypoint->nNavHow, pFromWaypoint->vecLocation, &pToWaypoint->vecLocation);
 
-				Vector fromPos = pFromWaypoint->vecLocation;
-				fromPos.z = pFromWaypoint->pArea->GetZ( fromPos );
+			pToWaypoint->vecLocation.z = pFromWaypoint->pArea->GetZ(pToWaypoint->vecLocation);
 
-				Vector toPos = pToWaypoint->vecLocation;
-				toPos.z = pToWaypoint->pArea->GetZ( toPos );
+			Vector fromPos = pFromWaypoint->vecLocation;
+			fromPos.z = pFromWaypoint->pArea->GetZ(fromPos);
 
-				Vector groundNormal;
-				pFromWaypoint->pArea->ComputeNormal(&groundNormal);
+			Vector toPos = pToWaypoint->vecLocation;
+			toPos.z = pToWaypoint->pArea->GetZ(toPos);
 
-				Vector alongPath = toPos - fromPos;
+			Vector groundNormal;
+			pFromWaypoint->pArea->ComputeNormal(&groundNormal);
 
-				float expectedHeightDrop = -DotProduct(alongPath, groundNormal);
+			Vector alongPath = toPos - fromPos;
 
-				const float stepHeight = GetOuter()->StepHeight();
+			float expectedHeightDrop = -DotProduct(alongPath, groundNormal);
 
-				if(expectedHeightDrop > stepHeight) {
-					Vector2D dir;
-					DirectionToVector2D((NavDirType)pToWaypoint->nNavHow, &dir);
+			if(expectedHeightDrop > stepHeight) {
+				Vector2D dir;
+				DirectionToVector2D((NavDirType)pToWaypoint->nNavHow, &dir);
 
-					const float hullWidth = GetHullWidth();
+				static const float inc = 10.0f;
+				const float maxPushDist = 2.0f * hullWidth;
 
-					static const float inc = 10.0f;
-					const float maxPushDist = 2.0f * hullWidth;
-					float halfWidth = hullWidth/2.0f;
-					float hullHeight = 1.0f;
+				float pushDist;
+				for(pushDist = 0.0f; pushDist <= maxPushDist; pushDist += inc) {
+					Vector pos = pToWaypoint->vecLocation + Vector(pushDist * dir.x, pushDist * dir.y, 0.0f);
+					Vector lowerPos = Vector(pos.x, pos.y, toPos.z);
 
-					float pushDist;
-					for(pushDist = 0.0f; pushDist <= maxPushDist; pushDist += inc) {
-						Vector pos = pToWaypoint->vecLocation + Vector(pushDist * dir.x, pushDist * dir.y, 0.0f);
-						Vector lowerPos = Vector(pos.x, pos.y, toPos.z);
-
-						trace_t result;
-						CTraceFilterNoNPCsOrPlayer filter(GetOuter(), COLLISION_GROUP_NONE);
-						AI_TraceHull(pos, lowerPos, Vector(-halfWidth, -halfWidth, stepHeight), Vector(halfWidth, halfWidth, hullHeight), MASK_NPCSOLID, &filter, &result);
-						if(result.fraction >= 1.0f) {
-							break;
-						}
+					trace_t result;
+					CTraceFilterNoNPCsOrPlayer filter(GetOuter(), COLLISION_GROUP_NONE);
+					AI_TraceHull(pos, lowerPos, Vector(-halfWidth, -halfWidth, stepHeight), Vector(halfWidth, halfWidth, hullHeight), MASK_NPCSOLID, &filter, &result);
+					if(result.fraction >= 1.0f) {
+						break;
 					}
+				}
 
-					Vector startDrop(pToWaypoint->vecLocation.x + pushDist * dir.x, pToWaypoint->vecLocation.y + pushDist * dir.y, pToWaypoint->vecLocation.z);
-					Vector endDrop(startDrop.x, startDrop.y, pToWaypoint->pArea->GetZ(pToWaypoint->vecLocation));
+				Vector startDrop(pToWaypoint->vecLocation.x + pushDist * dir.x, pToWaypoint->vecLocation.y + pushDist * dir.y, pToWaypoint->vecLocation.z);
+				Vector endDrop(startDrop.x, startDrop.y, pToWaypoint->pArea->GetZ(pToWaypoint->vecLocation));
 
-					if(GetOuter()->m_nDebugBits & OVERLAY_NPC_ROUTE_BIT) {
-						NDebugOverlay::Cross3D(startDrop, 5.0f, 255, 0, 255, true, 5.0f);
-						NDebugOverlay::Cross3D(endDrop, 5.0f, 255, 255, 0, true, 5.0f);
-						NDebugOverlay::VertArrow(startDrop, endDrop, 5.0f, 255, 100, 0, 255, true, 5.0f);
-					}
+				if(GetOuter()->m_debugOverlays & OVERLAY_NPC_ROUTE_BIT) {
+					NDebugOverlay::Cross3D(startDrop, 5.0f, 255, 0, 255, true, 5.0f);
+					NDebugOverlay::Cross3D(endDrop, 5.0f, 255, 255, 0, true, 5.0f);
+					NDebugOverlay::VertArrow(startDrop, endDrop, 5.0f, 255, 100, 0, 255, true, 5.0f);
+				}
 
-					float ground;
-					if(TheNavMesh->GetGroundHeight(endDrop, &ground)) {
-						if(startDrop.z > ground + stepHeight) {
-							pToWaypoint->vecLocation = startDrop;
+				float ground;
+				if(TheNavMesh->GetGroundHeight(endDrop, &ground)) {
+					if(startDrop.z > ground + stepHeight) {
+						//pFromWaypoint->m_iWPType = NAV_JUMP;
+						//pToWaypoint->m_iWPType = NAV_JUMP;
 
-							AI_Waypoint_t *pCopyWaypoint = new AI_Waypoint_t(*pFromWaypoint);
+						AI_Waypoint_t *pDropStartWaypoint = new AI_Waypoint_t(
+							startDrop, 0.0f,
+							NAV_GROUND,
+							(pToWaypoint->Flags() & ~bits_WP_TO_AREA),
+							pToWaypoint->pArea
+						);
 
-							pCopyWaypoint->vecLocation.x = endDrop.x;
-							pCopyWaypoint->vecLocation.y = endDrop.y;
-							pCopyWaypoint->vecLocation.z = ground;
+						AI_Waypoint_t *pDropEndWaypoint = new AI_Waypoint_t(
+							Vector( endDrop.x, endDrop.y, ground ), 0.0f,
+							NAV_GROUND,
+							(pToWaypoint->Flags() & ~bits_WP_TO_AREA),
+							pToWaypoint->pArea
+						);
 
-							pFromWaypoint->SetNext(pCopyWaypoint);
-							pCopyWaypoint->SetNext(pToWaypoint);
-						}
+						AI_Waypoint_t *pNextWaypoint = pToWaypoint->GetNext();
+
+						pToWaypoint->SetNext(pDropStartWaypoint);
+						pDropStartWaypoint->SetNext(pDropEndWaypoint);
+						pDropEndWaypoint->SetNext(pNextWaypoint);
+
+						pToWaypoint = pNextWaypoint;
 					}
 				}
 			}
+		}
+
+		pFromWaypoint = pToWaypoint;
+	}
+
+	pFromWaypoint = pOldWaypoint;
+	while(pFromWaypoint) {
+		AI_Waypoint_t *pToWaypoint = pFromWaypoint->GetNext();
+
+		if(!pFromWaypoint->pArea || (pFromWaypoint->nNavHow != NUM_TRAVERSE_TYPES && pFromWaypoint->nNavHow > GO_WEST)) {
+			pFromWaypoint = pToWaypoint;
+			continue;
+		}
+
+		if(!pToWaypoint) {
+			break;
+		}
+
+		if(!pToWaypoint->pArea || pToWaypoint->nNavHow > GO_WEST || pToWaypoint->NavType() != NAV_GROUND) {
+			pFromWaypoint = pToWaypoint;
+			continue;
+		}
+
+		Vector closeFrom, closeTo;
+		pToWaypoint->pArea->GetClosestPointOnArea(pFromWaypoint->vecLocation, &closeTo);
+		pFromWaypoint->pArea->GetClosestPointOnArea(closeTo, &closeFrom);
+
+		if(GetOuter()->m_debugOverlays & OVERLAY_NPC_ROUTE_BIT) {
+			NDebugOverlay::Line(closeFrom, closeTo, 255, 0, 255, true, 5.0f);
+		}
+
+		static const float separationTolerance = 1.9f * GenerationStepSize;
+		if((closeFrom - closeTo).AsVector2D().IsLengthGreaterThan(separationTolerance) && (closeTo - closeFrom).AsVector2D().IsLengthGreaterThan(0.5f * fabs(closeTo.z - closeFrom.z))) {
+			Vector landingPos;
+			pToWaypoint->pArea->GetClosestPointOnArea(pToWaypoint->vecLocation, &landingPos);
+
+			Vector launchPos;
+			pFromWaypoint->pArea->GetClosestPointOnArea(landingPos, &launchPos);
+
+			Vector forward = landingPos - launchPos;
+			forward.NormalizeInPlace();
+
+			const float halfWidth = hullWidth/2.0f;
+
+			pToWaypoint->vecLocation = landingPos + forward * halfWidth;
+
+			AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t(
+				(launchPos - forward * halfWidth), 0.0f,
+				NAV_GROUND,
+				(pFromWaypoint->Flags() & ~bits_WP_TO_AREA),
+				pFromWaypoint->pArea
+			);
+
+			AI_Waypoint_t *pNextWaypoint = pToWaypoint->GetNext();
+
+			pFromWaypoint->SetNext(pNewWaypoint);
+			pNewWaypoint->SetNext(pToWaypoint);
+
+			pToWaypoint = pNextWaypoint;
+		} else if((closeTo.z - closeFrom.z) > stepHeight) {
+			pToWaypoint->vecLocation = pToWaypoint->pArea->GetCenter();
+
+			Vector launchPos;
+			pFromWaypoint->pArea->GetClosestPointOnArea(pToWaypoint->vecLocation, &launchPos);
+
+			AI_Waypoint_t *pNewWaypoint = new AI_Waypoint_t(
+				launchPos, 0.0f,
+				NAV_GROUND,
+				(pFromWaypoint->Flags() & ~bits_WP_TO_AREA),
+				pFromWaypoint->pArea
+			);
+
+			if(GetOuter()->m_debugOverlays & OVERLAY_NPC_ROUTE_BIT) {
+				NDebugOverlay::Cross3D(pNewWaypoint->vecLocation, 15.0f, 255, 100, 255, true, 3.0f);
+			}
+
+			AI_Waypoint_t *pNextWaypoint = pToWaypoint->GetNext();
+
+			pFromWaypoint->SetNext(pNewWaypoint);
+			pNewWaypoint->SetNext(pToWaypoint);
+
+			pToWaypoint = pNextWaypoint;
 		}
 
 		pFromWaypoint = pToWaypoint;
@@ -848,7 +965,7 @@ AI_Waypoint_t* CAI_Pathfinder::FindShortRandomPath(CNavArea * startArea, float m
 	return MakeRouteFromParents(&nodeParent[0], neighborID);
 #else
 	//TODO!!!! Arthurdead
-
+	DebuggerBreak();
 	return NULL;
 #endif
 }
@@ -976,7 +1093,7 @@ bool CAI_Pathfinder::IsAreaUsable(CNavArea *pArea)
 		return false;
 	}
 
-	if (moveType == bits_CAP_MOVE_JUMP)
+	if (moveType & bits_CAP_MOVE_JUMP)
 	{	
 		/*
 		if (!GetOuter()->IsJumpLegal(pStartNode->GetPosition(GetHullType()), 
@@ -1064,7 +1181,7 @@ AI_Waypoint_t* CAI_Pathfinder::CreateAreaWaypoint( Hull_t hullType, CNavArea *ar
 		break;
 	}
 
-	return new AI_Waypoint_t( area->GetCenter(), 0.0f, navType, ( bits_WP_TO_AREA | areaFlags) , area );
+	return new AI_Waypoint_t( area->GetRandomPoint(), 0.0f, navType, ( bits_WP_TO_AREA | areaFlags) , area );
 }
 #endif
 
@@ -1146,8 +1263,8 @@ AI_Waypoint_t* CAI_Pathfinder::RouteToArea(const Vector &vecOrigin, int buildFla
 	// Check if vecOrigin is already at the smallest node
 
 	// FIXME: an equals check is a bit sloppy, this should be a tolerance
-	const Vector &vecNodePosition = area->GetClosestPointOnArea( vecOrigin );
-	if (VectorsAreEqual(vecOrigin, vecNodePosition, 0.5f))
+	const Vector &vecNodePosition = area->GetCenter();
+	if (VectorsAreEqual(vecOrigin, vecNodePosition))
 	{
 		return CreateAreaWaypoint( GetHullType(), area, bits_WP_TO_GOAL );
 	}
@@ -1175,8 +1292,8 @@ AI_Waypoint_t* CAI_Pathfinder::RouteFromArea(const Vector &vecOrigin, int buildF
 
 	// Check if vecOrigin is already at the smallest node
 	// FIXME: an equals check is a bit sloppy, this should be a tolerance
-	const Vector &vecNodePosition = area->GetClosestPointOnArea( vecOrigin );
-	if (VectorsAreEqual(vecOrigin, vecNodePosition, 0.5f))
+	const Vector &vecNodePosition = area->GetCenter();
+	if (VectorsAreEqual(vecOrigin, vecNodePosition))
 	{
 		return CreateAreaWaypoint( GetHullType(), area, bits_WP_TO_GOAL );
 	}
@@ -2223,10 +2340,11 @@ bool CAI_Pathfinder::CheckStaleRoute(const Vector &vStart, const Vector &vEnd, i
 
 //-----------------------------------------------------------------------------
 
-#define MAX_NODE_TRIES 4
 #define MAX_TRIANGULATIONS 2
 
 #ifndef AI_USES_NAV_MESH
+#define MAX_NODE_TRIES 4
+
 class CPathfindNearestNodeFilter : public INearestNodeFilter
 {
 public:
@@ -2292,6 +2410,99 @@ public:
 	int				m_moveTypes;
 
 	AI_Waypoint_t *	m_pRoute;
+};
+#else
+#define MAX_AREA_TRIES 4
+
+class CPathfindNearestAreaFilter : public ISearchSurroundingAreasFunctor
+{
+public:
+	CPathfindNearestAreaFilter(CAI_Pathfinder *pPathfinder, const Vector &vGoal, bool bToArea, int buildFlags, float goalTolerance)
+		:
+	 	m_pPathfinder(pPathfinder),
+	 	m_pNavigator(pPathfinder->GetOuter()->GetNavigator()),
+	 	m_pNPC(pPathfinder->GetOuter()),
+		m_nTries(0),
+		m_vGoal(vGoal),
+		m_bToArea(bToArea),
+		m_goalTolerance(goalTolerance),
+		m_moveTypes(buildFlags & (bits_BUILD_GROUND|bits_BUILD_FLY|bits_BUILD_JUMP|bits_BUILD_CLIMB)),
+		m_pRoute(NULL),
+		m_pTargetArea(NULL)
+	{
+		COMPILE_TIME_ASSERT(bits_BUILD_GROUND == (int)bits_CAP_MOVE_GROUND && bits_BUILD_FLY == (int)bits_CAP_MOVE_FLY && bits_BUILD_JUMP == (int)bits_CAP_MOVE_JUMP && bits_BUILD_CLIMB == (int)bits_CAP_MOVE_CLIMB);
+	}
+
+	AI_Waypoint_t *IsValid(CNavArea *pArea)
+	{
+		if(!m_pNavigator->CanFitAtArea(pArea)) {
+			return NULL;
+		}
+
+		trace_t tr;
+		Vector vTestLoc = pArea->GetCenter() + m_pNPC->GetAreaViewOffset();
+		Vector vecVisOrigin = m_vGoal + Vector(0,0,1);
+		CTraceFilterNav traceFilter(m_pNPC, true, m_pNPC, COLLISION_GROUP_NONE);
+		AI_TraceLine(vecVisOrigin, vTestLoc, MASK_NPCSOLID_BRUSHONLY, &traceFilter, &tr);
+		if(tr.fraction != 1.0) {
+			return NULL;
+		}
+
+		Hull_t hull = m_pPathfinder->GetOuter()->GetHullType();
+		if((GetAreaAcceptedMoveTypes(pArea, hull) & m_moveTypes) == 0) {
+			return NULL;
+		}
+
+		AI_Waypoint_t *pRoute = NULL;
+
+		int buildFlags = (m_nTries < MAX_TRIANGULATIONS) ? (bits_BUILD_IGNORE_NPCS|bits_BUILD_TRIANG) : bits_BUILD_IGNORE_NPCS;
+		if(m_bToArea) {
+			pRoute = m_pPathfinder->RouteToArea(m_vGoal, buildFlags, pArea, m_goalTolerance);
+		} else {
+			pRoute = m_pPathfinder->RouteFromArea(m_vGoal, buildFlags, pArea, m_goalTolerance);
+		}
+
+		m_nTries++;
+
+		return pRoute;
+	}
+
+	bool ShouldContinue()
+	{
+		return (!m_pRoute && m_nTries < MAX_AREA_TRIES);
+	}
+
+	bool operator()(CNavArea *area, CNavArea *priorArea, float travelDistanceSoFar) override
+	{
+		AI_Waypoint_t *pRoute = IsValid(area);
+		if(pRoute == NULL) {
+			if(!ShouldContinue()) {
+				return false;
+			}
+		} else {
+			if(m_pRoute) {
+				delete m_pRoute;
+			}
+
+			m_pRoute = pRoute;
+			m_pTargetArea = area;
+		}
+
+		return true;
+	}
+
+	CAI_Pathfinder *m_pPathfinder;
+	CAI_Navigator *m_pNavigator;
+	CAI_BaseNPC *m_pNPC;
+	int m_nTries;
+	Vector m_vGoal;
+	bool m_bToArea;
+	float m_goalTolerance;
+	int m_moveTypes;
+
+	AI_Waypoint_t *m_pRoute;
+
+	CNavArea *m_pTargetArea;
 };
 #endif
 
@@ -2377,27 +2588,23 @@ AI_Waypoint_t *CAI_Pathfinder::BuildNodeRoute(const Vector &vStart, const Vector
 	return srcRoute;
 }
 #else
-AI_Waypoint_t *CAI_Pathfinder::BuildNearestAreaRoute( const Vector &vGoal, bool bToArea, int buildFlags, float goalTolerance, CNavArea **pNearestArea )
+AI_Waypoint_t *CAI_Pathfinder::BuildNearestAreaRoute(const Vector &vGoal, bool bToArea, int buildFlags, float goalTolerance, CNavArea **pNearestArea)
 {
 	AI_PROFILE_SCOPE( CAI_Pathfinder_BuildNearestNodeRoute );
 
-	CNavArea *area = TheNavMesh->GetNearestNavArea( vGoal, false, 10000.0f, false, true, GetOuter()->GetTeamNumber() );
-	if(!area || !IsAreaUsable(area)) {
+	CNavArea *start = TheNavMesh->GetNearestNavArea(vGoal, false, 10000.0f, true, true, GetOuter()->GetTeamNumber());
+	if(!start) {
 		return NULL;
 	}
 
+	CPathfindNearestAreaFilter filter(this, vGoal, bToArea, buildFlags, goalTolerance);
+	SearchSurroundingAreas(start, filter);
+
 	if(pNearestArea) {
-		*pNearestArea = area;
+		*pNearestArea = filter.m_pTargetArea;
 	}
 
-	AI_Waypoint_t *route = NULL;
-
-	if ( bToArea )
-		route = RouteToArea( vGoal, buildFlags, area, goalTolerance );
-	else
-		route = RouteFromArea( vGoal, buildFlags, area, goalTolerance );
-
-	return route;
+	return filter.m_pRoute;
 }
 
 //-----------------------------------------------------------------------------

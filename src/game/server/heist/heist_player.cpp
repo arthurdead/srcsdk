@@ -50,6 +50,7 @@ BEGIN_SEND_TABLE_NOBASE(CHeistPlayer, DT_HeistNonLocalPlayerExclusive)
 	SendPropFloat(SENDINFO_VECTORELEM(m_angEyeAngles, 0), 8, SPROP_CHANGES_OFTEN, -90.0f, 90.0f),
 	SendPropAngle(SENDINFO_VECTORELEM(m_angEyeAngles, 1), 10, SPROP_CHANGES_OFTEN),
 	SendPropInt(SENDINFO(m_cycleLatch), 4, SPROP_UNSIGNED),
+	//SendPropBool(SENDINFO(m_bSpotted)),
 END_SEND_TABLE()
 
 IMPLEMENT_SERVERCLASS_ST(CHeistPlayer, DT_Heist_Player)
@@ -138,7 +139,43 @@ static int FindPassableSpace(CBasePlayer *pPlayer, const Vector &direction, floa
 	return 0;
 }
 
-void CHeistPlayer::Spawn(void)
+void CHeistPlayer::SetSpotted(bool value)
+{
+	m_bSpotted = value;
+
+	if(value) {
+		for(int i = 1; i <= MAX_PLAYERS; ++i) {
+			CHeistPlayer *other = (CHeistPlayer *)UTIL_PlayerByIndex(i);
+			if(!other) {
+				continue;
+			}
+
+			other->m_bSpotted = true;
+		}
+
+		HeistGamerules()->SetSpotted(true);
+	} else {
+		bool any_spotted = false;
+
+		for(int i = 1; i <= MAX_PLAYERS; ++i) {
+			CHeistPlayer *other = (CHeistPlayer *)UTIL_PlayerByIndex(i);
+			if(!other) {
+				continue;
+			}
+
+			if(other->m_bSpotted) {
+				any_spotted = true;
+				break;
+			}
+		}
+
+		if(!any_spotted) {
+			HeistGamerules()->SetSpotted(false);
+		}
+	}
+}
+
+void CHeistPlayer::Spawn()
 {
 	if(m_bTransition) {
 		if(m_bTransitionTeleported) {
@@ -250,11 +287,9 @@ void CHeistPlayer::Spawn(void)
 	SetModel("models/barney.mdl");
 }
 
-ConVar sv_heist_dev_players_disguised("sv_heist_dev_players_disguised", "1");
-
 Class_T CHeistPlayer::Classify()
 {
-	return sv_heist_dev_players_disguised.GetBool() ? CLASS_HEISTER_DISGUISED : CLASS_HEISTER;
+	return m_bSpotted ? CLASS_HEISTER : CLASS_HEISTER_DISGUISED;
 }
 
 void CHeistPlayer::PickupObject(CBaseEntity *pObject, bool bLimitMassAndSize)

@@ -134,6 +134,12 @@ public:
 
 	bool IsConnectedUserInfoChangeAllowed(CBasePlayer *pPlayer) override;
 
+	void SetSpotted(bool value)
+	{ m_bHeistersSpotted = value; }
+
+	bool AnyoneSpotted() const
+	{ return m_bHeistersSpotted; }
+
 private:
 	CNetworkVar(bool, m_bTeamPlayEnabled);
 	CNetworkVar(float, m_flGameStartTime);
@@ -143,6 +149,8 @@ private:
 	bool m_bCompleteReset;
 	bool m_bAwaitingReadyRestart;
 	bool m_bHeardAllPlayersReady;
+
+	CNetworkVar(bool, m_bHeistersSpotted);
 
 #ifndef CLIENT_DLL
 	bool m_bChangelevelDone;

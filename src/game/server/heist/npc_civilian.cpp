@@ -28,26 +28,9 @@ void CNPC_Civilian::InitCustomSchedules()
 
 void CNPC_Civilian::Spawn()
 {
-	BaseClass::Spawn();
-
 	if(GetModelName() == NULL_STRING) {
 		SetModel(g_pszCivilianModels[random->RandomInt(0, ARRAYSIZE(g_pszCivilianModels)-1)]);
 	}
 
-	CapabilitiesAdd(bits_CAP_TURN_HEAD|bits_CAP_ANIMATEDFACE);
-	SetBloodColor(BLOOD_COLOR_RED);
-
-	SetHullType(HULL_HUMAN);
-	SetHullSizeNormal();
-
-	SetSolid(SOLID_BBOX);
-	AddSolidFlags(FSOLID_NOT_STANDABLE);
-
-	SetMoveType(MOVETYPE_STEP);
-	CapabilitiesAdd(bits_CAP_MOVE_GROUND|bits_CAP_OPEN_DOORS);
-
-	m_NPCState = NPC_STATE_NONE;
-	m_iHealth = 10;
-	m_flFieldOfView = 0.5f;
-	NPCInit();
+	BaseClass::Spawn();
 }
