@@ -9,9 +9,10 @@
 #define DOORS_H
 #pragma once
 
-
+#include "basetoggle.h"
 #include "locksounds.h"
 #include "entityoutput.h"
+#include "baseentity_shared.h"
 
 //Since I'm here, might as well explain how these work.  Base.fgd is the file that connects
 //flags to entities.  It is full of lines with this number, a label, and a default value.

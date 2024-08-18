@@ -661,6 +661,7 @@ CNavArea * CAI_TacticalServices::FindCoverArea(const Vector &vNearPos, const Vec
 	}
 
 	//TODO!!!! Arthurdead
+	DebuggerBreak();
 	return NULL;
 
 	// We failed.  Not cover node was found
@@ -879,6 +880,7 @@ CNavArea * CAI_TacticalServices::FindLosArea(const Vector &vThreatPos, const Vec
 	}
 
 	//TODO!!!! Arthurdead
+	DebuggerBreak();
 	return NULL;
 
 	// We failed.  No range attack node node was found

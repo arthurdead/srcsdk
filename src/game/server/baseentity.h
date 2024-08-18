@@ -2656,6 +2656,8 @@ inline bool FClassnameIs(CBaseEntity *pEntity, const char *szClassname)
 	return pEntity->ClassMatches(szClassname); 
 }
 
+#include "baseentity_shared.h"
+
 class CPointEntity : public CBaseEntity
 {
 public:

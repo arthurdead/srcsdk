@@ -11,7 +11,7 @@
 #pragma once
 
 #include "datamap.h"
-
+#include "string_t.h"
 
 struct locksound_t					// sounds that doors and buttons make when locked/unlocked
 {

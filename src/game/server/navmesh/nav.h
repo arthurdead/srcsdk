@@ -14,6 +14,7 @@
 
 #include "modelentities.h"		// for CFuncBrush
 #include "doors.h"
+#include "util_shared.h"
 
 /**
  * Below are several constants used by the navigation system.

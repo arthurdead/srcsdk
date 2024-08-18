@@ -11,6 +11,7 @@
 #pragma once
 
 #include <mempool.h>
+#include "ai_navtype.h"
 
 #ifdef AI_USES_NAV_MESH
 #include "nav.h"
@@ -47,6 +48,8 @@ enum WaypointFlags_t
 // ----------------------------------------------------------------------------
 struct AI_Waypoint_t
 {
+	friend class CAI_Pathfinder;
+
 public:
 	AI_Waypoint_t();
 #ifndef AI_USES_NAV_MESH

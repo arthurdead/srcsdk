@@ -9,10 +9,15 @@
 #define SERVERNETWORKPROPERTY_H
 #pragma once
 
+#include "networkvar.h"
 #include "iservernetworkable.h"
 #include "server_class.h"
 #include "edict.h"
 #include "timedeventmgr.h"
+#include "ehandle.h"
+#include "util.h"
+
+typedef CHandle<CBaseEntity> EHANDLE;
 
 //
 // Lightweight base class for networkable data on the server.

@@ -10,6 +10,12 @@
 
 #pragma once
 
+#include "mathlib/vector.h"
+#include "datamap.h"
+#include "ehandle.h"
+
+class CBaseEntity;
+typedef CHandle<CBaseEntity> EHANDLE;
 
 //-----------------------------------------------------------------------------
 // CAI_BaseActor

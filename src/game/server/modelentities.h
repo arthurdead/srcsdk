@@ -9,6 +9,9 @@
 #define MODELENTITIES_H
 #pragma once
 
+#include "baseentity.h"
+#include "baseentity_shared.h"
+
 //!! replace this with generic start enabled/disabled
 #define SF_WALL_START_OFF		0x0001
 #define SF_IGNORE_PLAYERUSE		0x0002

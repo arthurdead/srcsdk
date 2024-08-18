@@ -15,6 +15,7 @@
 #include "tier0/vprof.h"
 #include "mathlib/ssemath.h"
 #include "nav_area.h"
+#include "shareddefs.h"
 
 #ifdef STAGING_ONLY
 extern int g_DebugPathfindCounter;

@@ -668,7 +668,7 @@ void CAI_BaseNPC::MaintainSchedule ( void )
 
 				pNewSchedule = GetFailSchedule();
 				m_IdealSchedule = pNewSchedule->GetId();
-				DevWarning( 2, "(%s) Schedule (%s) Failed at %d!\n", STRING( GetEntityName() ), GetCurSchedule() ? GetCurSchedule()->GetName() : "GetCurSchedule() == NULL", GetScheduleCurTaskIndex() );
+				DevWarning( 2, "(%s #%i) Schedule (%s) Failed at %d!\n", GetDebugName(), entindex(), GetCurSchedule() ? GetCurSchedule()->GetName() : "GetCurSchedule() == NULL", GetScheduleCurTaskIndex() );
 				SetSchedule( pNewSchedule );
 			}
 			else

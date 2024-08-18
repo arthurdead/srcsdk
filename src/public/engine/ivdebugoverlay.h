@@ -17,7 +17,11 @@
 
 #pragma once
 
+#include "tier0/platform.h"
+
 class Vector;
+class QAngle;
+struct Color;
 
 #define VDEBUG_OVERLAY_INTERFACE_VERSION	"VDebugOverlay003"
 

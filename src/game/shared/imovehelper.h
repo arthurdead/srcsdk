@@ -10,6 +10,9 @@
 
 #pragma once
 
+#include "shareddefs.h"
+#include "soundflags.h"
+#include "basehandle.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations

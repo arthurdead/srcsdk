@@ -9,6 +9,13 @@
 #define IGAMESYSTEM_H
 #pragma once
 
+#include "tier0/platform.h"
+#include "usercmd.h"
+
+#ifdef GAME_DLL
+class CBasePlayer;
+#endif
+
 //-----------------------------------------------------------------------------
 // Game systems are singleton objects in the client + server codebase responsible for
 // various tasks
