@@ -10,6 +10,14 @@
 
 #include "engine/ivdebugoverlay.h"
 #include "mathlib/vector.h"
+#include "mathlib.h"
+
+#ifdef GAME_DLL
+class CBaseEntity;
+#else
+#define CBaseEntity C_BaseEntity
+class C_BaseEntity;
+#endif
 
 //=============================================================================
 // NDebugOverlay
