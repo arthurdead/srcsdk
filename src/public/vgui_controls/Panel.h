@@ -65,7 +65,7 @@ inline T *SETUP_PANEL(T *panel)
 //
 //   example of use = to set the FG Color of a panel inside of a constructor (i.e before ApplySchemeSettings() has been run on the child)
 //
-#define CREATE_PANEL(type, parent, name) (SETUP_PANEL(new type(parent, name)))
+#define CREATE_PANEL(type, ...) (::vgui::SETUP_PANEL(new type(__VA_ARGS__)))
 
 //-----------------------------------------------------------------------------
 // Purpose: Drag/drop support context info (could defined within Panel...)

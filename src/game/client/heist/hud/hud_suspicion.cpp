@@ -4,6 +4,9 @@
 #include "vgui_controls/Panel.h"
 #include "iclientmode.h"
 #include "suspicioner.h"
+#include "heist_gamerules.h"
+#include "tier1/utlmap.h"
+#include "view.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -18,6 +21,25 @@ public:
 	CHudSuspicion(const char *pElementName);
 
 	void OnThink() override;
+	bool ShouldDraw() override;
+
+	class SuspicionMeter : public vgui::Panel
+	{
+		friend class CHudSuspicion;
+
+	public:
+		DECLARE_CLASS(SuspicionMeter, vgui::Panel)
+
+		SuspicionMeter();
+
+		void PerformLayout() override;
+
+	private:
+		EHANDLE m_hEntity;
+	};
+
+private:
+	CUtlMap<EHANDLE, SuspicionMeter *> m_Meters;
 };
 
 DECLARE_HUDELEMENT_DEPTH(CHudSuspicion, 1)
@@ -30,19 +52,56 @@ CHudSuspicion::CHudSuspicion(const char *pElementName)
 	SetScheme("ClientScheme");
 }
 
+bool CHudSuspicion::ShouldDraw()
+{
+	if(!CHudElement::ShouldDraw()) {
+		return false;
+	}
+
+	if(HeistGamerules()->AnyoneSpotted()) {
+		return false;
+	}
+
+	return true;
+}
+
+CHudSuspicion::SuspicionMeter::SuspicionMeter()
+	: BaseClass(g_pClientMode->GetViewport(), "SuspicionMeter")
+{
+
+}
+
+void CHudSuspicion::SuspicionMeter::PerformLayout()
+{
+	BaseClass::PerformLayout();
+
+
+}
+
 void CHudSuspicion::OnThink()
 {
 	BasePanel::OnThink();
 
-	auto &suspicioner_list = CSuspicioner::List();
-	FOR_EACH_VEC(suspicioner_list, i) {
-		const CSuspicioner &suspicioner = *suspicioner_list[i];
+	if(HeistGamerules()->AnyoneSpotted()) {
+		return;
+	}
 
-		C_BaseEntity *entity = suspicioner.GetOwner().Get();
-		if(!entity) {
+	auto &suspicioner_list = C_Suspicioner::List();
+	FOR_EACH_VEC(suspicioner_list, i) {
+		const C_Suspicioner &suspicioner = *suspicioner_list[i];
+
+		EHANDLE entity = suspicioner.GetOwner();
+		if(!entity.IsValid()) {
 			continue;
 		}
 
-		
+		auto meter_idx = m_Meters.Find(entity);
+		if(meter_idx == m_Meters.InvalidIndex()) {
+		#if 0
+			meter_idx = m_Meters.Insert(entity, 
+				CREATE_PANEL(SuspicionMeter)
+			);
+		#endif
+		}
 	}
 }
