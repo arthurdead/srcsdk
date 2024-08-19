@@ -162,5 +162,13 @@ T* CHandle<T>::operator -> () const
 	return Get();
 }
 
+#ifdef GAME_DLL
+class CBaseEntity;
+typedef CHandle<CBaseEntity> EHANDLE;
+#else
+class C_BaseEntity;
+typedef CHandle<C_BaseEntity> EHANDLE;
+#define CBaseEntity C_BaseEntity
+#endif
 
 #endif // EHANDLE_H

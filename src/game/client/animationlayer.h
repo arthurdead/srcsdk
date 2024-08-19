@@ -12,6 +12,7 @@
 #include "rangecheckedvar.h"
 #include "lerp_functions.h"
 #include "networkvar.h"
+#include "client_class.h"
 
 class C_AnimationLayer
 {

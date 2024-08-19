@@ -10,6 +10,10 @@
 #pragma once
 
 #include "shared_classnames.h"
+#include "networkvar.h"
+#ifndef CLIENT_DLL
+#include "datamap.h"
+#endif
 
 #define NUM_AUDIO_LOCAL_SOUNDS	8
 

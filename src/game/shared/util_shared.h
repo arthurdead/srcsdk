@@ -16,6 +16,9 @@
 #include "engine/IStaticPropMgr.h"
 #include "shared_classnames.h"
 #include "shareddefs.h"
+#ifdef GAME_DLL
+#include "enginecallback.h"
+#endif
 
 #ifdef CLIENT_DLL
 #include "cdll_client_int.h"
@@ -28,6 +31,7 @@
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
+class KeyValues;
 class CGameTrace;
 class CBasePlayer;
 typedef CGameTrace trace_t;
