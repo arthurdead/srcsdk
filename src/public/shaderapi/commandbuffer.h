@@ -99,6 +99,10 @@ enum CommandBufferInstanceCommand_t
 	CBICMD_SETMODULATIONVERTEXSHADERDYNAMICSTATE,							// int cmd, int constant register, Vector color2
 	CBICMD_SETMODULATIONPIXELSHADERDYNAMICSTATE_IDENTITY,					// int cmd, int constant register
 	CBICMD_SETMODULATIONVERTEXSHADERDYNAMICSTATE_LINEARSCALE,				// int cmd, int constant register, Vector color2, float scale
+
+	//ASW
+	CBICMD_SETMODULATIONPIXELSHADERDYNAMICSTATE_LINEARSCALE_SCALEINW,		// int cmd, int constant register, Vector color2, float scale
+
 	// This must be last
 	CBICMD_COUNT,
 };

@@ -17,6 +17,7 @@ vgui_controls = subproject('vgui_controls')
 vtf = subproject('vtf')
 matsys_controls = subproject('matsys_controls')
 bitmap = subproject('bitmap')
+shaderlib = subproject('shaderlib')
 
 public_dir = join_paths(src_root_dir,'public')
 common_dir = join_paths(src_root_dir,'common')
@@ -873,6 +874,7 @@ source_linux_game_shader_lib_dep = declare_dependency(
 		tier0.get_variable('tier0_dep'),
 		tier1.get_variable('tier1_dep'),
 		mathlib.get_variable('mathlib_dep'),
-		vstdlib.get_variable('vstdlib_dep')
+		vstdlib.get_variable('vstdlib_dep'),
+		shaderlib.get_variable('shaderlib_dep')
 	]
 )

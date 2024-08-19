@@ -22,6 +22,8 @@
 // Forward declarations
 //-----------------------------------------------------------------------------
 class IMaterialVar;
+class CPerInstanceContextData;
+class CBasePerInstanceContextData;
 
 //-----------------------------------------------------------------------------
 // Standard material vars
@@ -95,6 +97,7 @@ class CBaseShader : public IShader
 public:
 	// constructor
 	CBaseShader();
+	~CBaseShader();
 
 	// Methods inherited from IShader
 	virtual char const* GetFallbackShader( IMaterialVar** params ) const { return 0; }
@@ -105,10 +108,15 @@ public:
 	virtual char const* GetParamDefault( int paramIndex ) const;
 	virtual int GetParamFlags( int nParamIndex ) const;
 
+	int GetParamCount( ) const;
+	const ShaderParamInfo_t& GetParamInfo( int paramIndex ) const;
+
 	virtual void InitShaderParams( IMaterialVar** ppParams, const char *pMaterialName );
 	virtual void InitShaderInstance( IMaterialVar** ppParams, IShaderInit *pShaderInit, const char *pMaterialName, const char *pTextureGroupName );
 	virtual void DrawElements( IMaterialVar **params, int nModulationFlags, IShaderShadow* pShaderShadow, IShaderDynamicAPI* pShaderAPI,
 								VertexCompressionType_t vertexCompression, CBasePerMaterialContextData **pContext );
+	void DrawElements( IMaterialVar **params, int nModulationFlags, IShaderShadow* pShaderShadow, IShaderDynamicAPI* pShaderAPI,
+								VertexCompressionType_t vertexCompression, CBasePerMaterialContextData **pContext, CBasePerInstanceContextData** pInstanceDataPtr );
 
 	virtual	const SoftwareVertexShader_t GetSoftwareVertexShader() const { return m_SoftwareVertexShader; }
 
@@ -129,11 +137,29 @@ public:
 	// Draws a snapshot
 	void Draw( bool bMakeActualDrawCall = true );
 
+	void PI_BeginCommandBuffer();
+	void PI_EndCommandBuffer();
+	void PI_SetPixelShaderAmbientLightCube( int nFirstRegister );
+	void PI_SetPixelShaderLocalLighting( int nFirstRegister );
+	void PI_SetPixelShaderAmbientLightCubeLuminance( int nFirstRegister );
+	void PI_SetPixelShaderGlintDamping( int nFirstRegister );
+	void PI_SetVertexShaderAmbientLightCube( /*int nFirstRegister*/ );
+	void PI_SetModulationPixelShaderDynamicState( int nRegister );
+	void PI_SetModulationPixelShaderDynamicState_LinearColorSpace_LinearScale( int nRegister, float scale );
+	void PI_SetModulationPixelShaderDynamicState_LinearScale( int nRegister, float scale );
+	void PI_SetModulationPixelShaderDynamicState_LinearScale_ScaleInW( int nRegister, float scale );
+	void PI_SetModulationPixelShaderDynamicState_LinearColorSpace( int nRegister );
+	void PI_SetModulationPixelShaderDynamicState_Identity( int nRegister );
+	void PI_SetModulationVertexShaderDynamicState( void );
+	void PI_SetModulationVertexShaderDynamicState_LinearScale( float flScale );
+
 	// Are we currently taking a snapshot?
 	bool IsSnapshotting() const;
 
 	// Gets at the current materialvar flags
 	int CurrentMaterialVarFlags() const;
+	// Gets at the current materialvar2 flags
+	int CurrentMaterialVarFlags2() const;
 
 	// Finds a particular parameter	(works because the lowest parameters match the shader)
 	int FindParamIndex( const char *pName ) const;
@@ -143,28 +169,36 @@ public:
 
 	// Are we using editor materials?
 	bool CanUseEditorMaterials();
+	bool CanUseEditorMaterials() const;
 
 	// Gets the builder...
 	CMeshBuilder* MeshBuilder();
 
 	// Loads a texture
-	void LoadTexture( int nTextureVar, int nAdditionalCreationFlags = 0 );
+	void LoadTexture( int nTextureVar, int nAdditionalCreationFlags );
+	void LoadTexture( int nTextureVar )
+	{ LoadTexture(nTextureVar, 0); }
 
 	// Loads a bumpmap
 	void LoadBumpMap( int nTextureVar );
 
 	// Loads a cubemap
-	void LoadCubeMap( int nTextureVar, int nAdditionalCreationFlags = 0  );
+	void LoadCubeMap( int nTextureVar, int nAdditionalCreationFlags );
+	void LoadCubeMap( int nTextureVar )
+	{ LoadCubeMap(nTextureVar, 0); }
 
 	// get the shaderapi handle for a texture. BE CAREFUL WITH THIS. 
 	ShaderAPITextureHandle_t GetShaderAPITextureBindHandle( int nTextureVar, int nFrameVar, int nTextureChannel = 0 );
-
+	ShaderAPITextureHandle_t GetShaderAPITextureBindHandle( ITexture *pTexture, int nFrame, int nTextureChannel = 0 );
 
 	// Binds a texture
 	void BindTexture( Sampler_t sampler1, Sampler_t sampler2, int nTextureVar, int nFrameVar = -1 );
 	void BindTexture( Sampler_t sampler1, int nTextureVar, int nFrameVar = -1 );
 	void BindTexture( Sampler_t sampler1, ITexture *pTexture, int nFrame = 0 );
 	void BindTexture( Sampler_t sampler1, Sampler_t sampler2, ITexture *pTexture, int nFrame = 0 );
+
+	// Bind vertex texture
+	void BindVertexTexture( VertexTextureSampler_t vtSampler, int nTextureVar, int nFrame = 0 );
 
 	void GetTextureDimensions( float* pOutWidth, float* pOutHeight, int nTextureVar );
 
@@ -270,6 +304,13 @@ public:
 
 	static IMaterialVar **s_ppParams;
 
+private:
+	// This is a per-instance state which is handled completely by the system
+	void PI_SetSkinningMatrices();
+	void PI_SetVertexShaderLocalLighting( );
+
+	FORCEINLINE void SetFogMode( ShaderFogMode_t fogMode );
+
 protected:
 	SoftwareVertexShader_t m_SoftwareVertexShader;
 
@@ -281,6 +322,9 @@ protected:
 private:
 	static int s_nModulationFlags;
 	static CMeshBuilder *s_pMeshBuilder;
+
+	static int s_nPassCount;
+	static CPerInstanceContextData** s_pInstanceDataPtr;
 };
 
 
@@ -290,6 +334,14 @@ private:
 inline int CBaseShader::CurrentMaterialVarFlags() const
 {
 	return s_ppParams[FLAGS]->GetIntValue();
+}
+
+//-----------------------------------------------------------------------------
+// Gets at the current materialvar2 flags
+//-----------------------------------------------------------------------------
+inline int CBaseShader::CurrentMaterialVarFlags2() const
+{
+	return s_ppParams[FLAGS2]->GetIntValue();
 }
 
 //-----------------------------------------------------------------------------

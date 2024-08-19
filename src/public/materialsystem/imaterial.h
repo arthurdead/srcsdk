@@ -383,6 +383,9 @@ enum MaterialVarFlags_t
 	MATERIAL_VAR_ALLOWALPHATOCOVERAGE     = (1 << 29),
 	MATERIAL_VAR_IGNORE_ALPHA_MODULATION  = (1 << 30),
 
+	//ASW: potentially unused
+	MATERIAL_VAR_VERTEXFOG				  = (1 << 31),
+
 	// NOTE: Only add flags here that either should be read from
 	// .vmts or can be set directly from client code. Other, internal
 	// flags should to into the flag enum in imaterialinternal.h
@@ -424,6 +427,12 @@ enum MaterialVarFlags2_t
 	MATERIAL_VAR2_USES_VERTEXID								= (1 << 17),
 	MATERIAL_VAR2_SUPPORTS_HW_SKINNING						= (1 << 18),
 	MATERIAL_VAR2_SUPPORTS_FLASHLIGHT						= (1 << 19),
+
+	//ASW: potentially unused
+	MATERIAL_VAR2_USE_GBUFFER0                              = (1 << 20),
+	MATERIAL_VAR2_USE_GBUFFER1                              = (1 << 21),
+	MATERIAL_VAR2_SELFILLUMMASK								= (1 << 22),
+	MATERIAL_VAR2_SUPPORTS_TESSELLATION						= (1 << 23)
 };
 
 

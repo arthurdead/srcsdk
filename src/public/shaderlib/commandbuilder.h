@@ -18,6 +18,7 @@
 #include "shaderapi/commandbuffer.h"
 #include "shaderlib/BaseShader.h"
 #include "tier1/convar.h"
+#include "shaderapi/ishaderapi.h"
 
 
 #ifdef DBGFLAG_ASSERT

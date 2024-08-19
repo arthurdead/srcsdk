@@ -24,6 +24,15 @@
 // NOTE: This must be the last include file in a .cpp file!
 #include "tier0/memdbgon.h"
 
+class CBasePerInstanceContextData
+{
+public:
+	// virtual destructor so that derived classes can have their own data
+	// to be cleaned up on delete of material
+	virtual ~CBasePerInstanceContextData( void )
+	{
+	}
+};
 
 //-----------------------------------------------------------------------------
 // Storage buffer used for instance command buffers
@@ -69,6 +78,9 @@ CBaseShader::CBaseShader()
 	GetShaderDLL()->InsertShader( this );
 }
 
+CBaseShader::~CBaseShader()
+{
+}
 
 //-----------------------------------------------------------------------------
 // Shader parameter info
@@ -102,10 +114,45 @@ int CBaseShader::GetParamCount( ) const
 	return NUM_SHADER_MATERIAL_VARS; 
 }
 
+int CBaseShader::GetNumParams( ) const
+{ 
+	return NUM_SHADER_MATERIAL_VARS; 
+}
+
 const ShaderParamInfo_t &CBaseShader::GetParamInfo( int nParamIndex ) const
 {
 	Assert( nParamIndex < NUM_SHADER_MATERIAL_VARS );
 	return s_StandardParams[nParamIndex];
+}
+
+char const* CBaseShader::GetParamName( int nParamIndex ) const
+{
+	Assert( nParamIndex < NUM_SHADER_MATERIAL_VARS );
+	return s_StandardParams[nParamIndex].m_pName;
+}
+
+char const* CBaseShader::GetParamHelp( int nParamIndex ) const
+{
+	Assert( nParamIndex < NUM_SHADER_MATERIAL_VARS );
+	return s_StandardParams[nParamIndex].m_pHelp;
+}
+
+ShaderParamType_t CBaseShader::GetParamType( int nParamIndex ) const
+{
+	Assert( nParamIndex < NUM_SHADER_MATERIAL_VARS );
+	return s_StandardParams[nParamIndex].m_Type;
+}
+
+char const* CBaseShader::GetParamDefault( int nParamIndex ) const
+{
+	Assert( nParamIndex < NUM_SHADER_MATERIAL_VARS );
+	return s_StandardParams[nParamIndex].m_pDefaultValue;
+}
+
+int CBaseShader::GetParamFlags( int nParamIndex ) const
+{
+	Assert( nParamIndex < NUM_SHADER_MATERIAL_VARS );
+	return s_StandardParams[nParamIndex].m_nFlags;
 }
 
 
@@ -138,6 +185,12 @@ void CBaseShader::InitShaderInstance( IMaterialVar** ppParams, IShaderInit *pSha
 	s_pTextureGroupName = NULL;
 	s_ppParams = NULL;
 	s_pShaderInit = NULL;
+}
+
+void CBaseShader::DrawElements( IMaterialVar **ppParams, int nModulationFlags,
+	IShaderShadow* pShaderShadow, IShaderDynamicAPI* pShaderAPI, VertexCompressionType_t vertexCompression, CBasePerMaterialContextData **pContextDataPtr )
+{
+	DrawElements(ppParams, nModulationFlags, pShaderShadow, pShaderAPI, vertexCompression, pContextDataPtr, NULL);
 }
 
 void CBaseShader::DrawElements( IMaterialVar **ppParams, int nModulationFlags,
@@ -458,12 +511,16 @@ bool CBaseShader::CanUseEditorMaterials() const
 {
 	return GetShaderSystem()->CanUseEditorMaterials();
 }
+bool CBaseShader::CanUseEditorMaterials()
+{
+	return GetShaderSystem()->CanUseEditorMaterials();
+}
 
 
 //-----------------------------------------------------------------------------
 // Loads a texture
 //-----------------------------------------------------------------------------
-void CBaseShader::LoadTexture( int nTextureVar )
+void CBaseShader::LoadTexture( int nTextureVar, int nAdditionalCreationFlags )
 {
 	if ((!s_ppParams) || (nTextureVar == -1))
 		return;
@@ -471,7 +528,7 @@ void CBaseShader::LoadTexture( int nTextureVar )
 	IMaterialVar* pNameVar = s_ppParams[nTextureVar];
 	if( pNameVar && pNameVar->IsDefined() )
 	{
-		s_pShaderInit->LoadTexture( pNameVar, s_pTextureGroupName );
+		s_pShaderInit->LoadTexture( pNameVar, s_pTextureGroupName, nAdditionalCreationFlags );
 	}
 }
 
@@ -495,7 +552,7 @@ void CBaseShader::LoadBumpMap( int nTextureVar )
 //-----------------------------------------------------------------------------
 // Loads a cubemap
 //-----------------------------------------------------------------------------
-void CBaseShader::LoadCubeMap( int nTextureVar )
+void CBaseShader::LoadCubeMap( int nTextureVar, int nAdditionalCreationFlags )
 {
 	if ((!s_ppParams) || (nTextureVar == -1))
 		return;
@@ -503,7 +560,7 @@ void CBaseShader::LoadCubeMap( int nTextureVar )
 	IMaterialVar* pNameVar = s_ppParams[nTextureVar];
 	if( pNameVar && pNameVar->IsDefined() )
 	{
-		s_pShaderInit->LoadCubeMap( s_ppParams, pNameVar );
+		s_pShaderInit->LoadCubeMap( s_ppParams, pNameVar, nAdditionalCreationFlags );
 	}
 }
 
@@ -754,6 +811,56 @@ void CBaseShader::ApplyColor2Factor( float *pColorOut ) const // (*pColorOut) *=
 	}
 }
 
+void CBaseShader::ComputeModulationColor(float *color)
+{
+	if(!s_ppParams) {
+		return;
+	}
+
+	IMaterialVar *color_param = s_ppParams[COLOR];
+	if(color_param->GetType() == MATERIAL_VAR_TYPE_VECTOR) {
+		color_param->GetVecValue(color, 3);
+	} else {
+		float value = color_param->GetFloatValue();
+		color[0] = value;
+		color[1] = value;
+		color[2] = value;
+	}
+
+	ApplyColor2Factor(color);
+
+	if(!g_pConfig->bShowDiffuse) {
+		color[0] = 0.0f;
+		color[1] = 0.0f;
+		color[2] = 0.0f;
+	}
+
+	if(mat_fullbright.GetInt() == 2) {
+		color[0] = 1.0f;
+		color[1] = 1.0f;
+		color[2] = 1.0f;
+	}
+
+	color[3] = GetAlpha();
+}
+
+float CBaseShader::GetAlpha(IMaterialVar **params)
+{
+	if(!params) {
+		params = s_ppParams;
+	}
+
+	if(!params) {
+		return 1.0f;
+	}
+
+	if(params[FLAGS]->GetIntValue() & MATERIAL_VAR_NOALPHAMOD) {
+		return 1.0f;
+	}
+
+	float value = params[ALPHA]->GetFloatValue();
+	return clamp(value, 0.0f, 1.0f);
+}
 
 //-----------------------------------------------------------------------------
 //
@@ -892,12 +999,12 @@ FORCEINLINE void CBaseShader::SetFogMode( ShaderFogMode_t fogMode )
 {
 	if (( CurrentMaterialVarFlags() & MATERIAL_VAR_NOFOG ) == 0)
 	{
-		bool bVertexFog = ( ( CurrentMaterialVarFlags() & MATERIAL_VAR_VERTEXFOG ) != 0 );
-		s_pShaderShadow->FogMode( fogMode, bVertexFog );
+		//bool bVertexFog = ( ( CurrentMaterialVarFlags() & MATERIAL_VAR_VERTEXFOG ) != 0 );
+		s_pShaderShadow->FogMode( fogMode /*, bVertexFog*/ );
 	}
 	else
 	{
-		s_pShaderShadow->FogMode( SHADER_FOGMODE_DISABLED, false );
+		s_pShaderShadow->FogMode( SHADER_FOGMODE_DISABLED /*, false*/ );
 	}
 }
 
@@ -938,7 +1045,7 @@ void CBaseShader::FogToFogColor( void )
 void CBaseShader::DisableFog( void )
 {
 	Assert( IsSnapshotting() );
-	s_pShaderShadow->FogMode( SHADER_FOGMODE_DISABLED, false );
+	s_pShaderShadow->FogMode( SHADER_FOGMODE_DISABLED /*, false*/ );
 }
 
 void CBaseShader::DefaultFog( void )
