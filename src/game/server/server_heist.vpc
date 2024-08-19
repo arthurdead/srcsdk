@@ -28,10 +28,10 @@ $Project "Server"
 		{
 			$File	"$SRCDIR\game\shared\heist\heist_gamerules.cpp"
 			$File	"$SRCDIR\game\shared\heist\heist_playeranimstate.cpp"
-			$File	"$SRCDIR\game\shared\heist\weapon_heistbase.cpp"
+			$File	"$SRCDIR\game\shared\heist\weapons\weapon_heistbase.cpp"
 			$File	"$SRCDIR\game\shared\heist\heist_usermessages.cpp"
 			$File	"$SRCDIR\game\shared\heist\heist_gamemovement.cpp"
-			$File	"$SRCDIR\game\shared\heist\heist_weapon_parse.cpp"
+			$File	"$SRCDIR\game\shared\heist\weapons\heist_weapon_parse.cpp"
 			$File	"$SRCDIR\game\shared\heist\heist_player_shared.cpp"
 
 			$File	"heist\heist_gameinterface.cpp"
@@ -39,14 +39,14 @@ $Project "Server"
 			$File	"heist\heist_player.cpp"
 			$File	"heist\heist_playermove.cpp"
 			$File	"heist\heist_eventlog.cpp"
-			$File	"heist\npc_civilian.cpp"
-			$File	"heist\npc_humanoidbase.cpp"
-			$File	"heist\npc_dev.cpp"
-			$File	"heist\npc_cop.cpp"
+			$File	"heist\npcs\npc_civilian.cpp"
+			$File	"heist\npcs\npc_humanoidbase.cpp"
+			$File	"heist\npcs\npc_dev.cpp"
+			$File	"heist\npcs\npc_cop.cpp"
 
 			$Folder	"Entities"
 			{
-				$File	"heist\vgui_text_display.cpp"
+				$File	"heist\entitites\vgui_text_display.cpp"
 			}
 		}
 	}

@@ -134,8 +134,7 @@ public:
 
 	bool IsConnectedUserInfoChangeAllowed(CBasePlayer *pPlayer) override;
 
-	void SetSpotted(bool value)
-	{ m_bHeistersSpotted = value; }
+	void SetSpotted(bool value);
 
 	bool AnyoneSpotted() const
 	{ return m_bHeistersSpotted; }

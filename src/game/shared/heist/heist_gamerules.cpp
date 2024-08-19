@@ -5,6 +5,7 @@
 #include "viewport_panel_names.h"
 #include "weapon_heistbase.h"
 #include "ammodef.h"
+#include "suspicioner.h"
 
 #ifdef GAME_DLL
 #include "team.h"
@@ -61,8 +62,10 @@ REGISTER_GAMERULES_CLASS(CHeistGamerules);
 BEGIN_NETWORK_TABLE_NOBASE(CHeistGamerules, DT_HeistGamerules)
 #ifdef CLIENT_DLL
 	RecvPropBool(RECVINFO(m_bTeamPlayEnabled)),
+	RecvPropBool(RECVINFO(m_bHeistersSpotted)),
 #else
 	SendPropBool(SENDINFO(m_bTeamPlayEnabled)),
+	SendPropBool(SENDINFO(m_bHeistersSpotted)),
 #endif
 END_NETWORK_TABLE()
 
@@ -499,6 +502,15 @@ void CHeistGamerules::ClientDisconnected(edict_t *pClient)
 	}
 
 	BaseClass::ClientDisconnected(pClient);
+}
+
+void CHeistGamerules::SetSpotted(bool value)
+{
+	m_bHeistersSpotted = value;
+
+	if(value) {
+		CSuspicioner::ClearAll();
+	}
 }
 
 void CHeistGamerules::DeathNotice(CBasePlayer *pVictim, const CTakeDamageInfo &info)

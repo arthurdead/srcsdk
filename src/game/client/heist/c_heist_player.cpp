@@ -29,6 +29,7 @@ BEGIN_RECV_TABLE_NOBASE(C_HeistPlayer, DT_HeistLocalPlayerExclusive)
 	RecvPropVector(RECVINFO_NAME(m_vecNetworkOrigin, m_vecOrigin)),
 	RecvPropFloat(RECVINFO(m_angEyeAngles[0])),
 	//RecvPropFloat(RECVINFO(m_angEyeAngles[1])),
+	RecvPropBool(RECVINFO(m_bSpotted))
 END_RECV_TABLE()
 
 BEGIN_RECV_TABLE_NOBASE(C_HeistPlayer, DT_HeistNonLocalPlayerExclusive)

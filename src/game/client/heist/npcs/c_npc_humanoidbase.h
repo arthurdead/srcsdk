@@ -4,6 +4,7 @@
 #pragma once
 
 #include "c_ai_basenpc.h"
+#include "suspicioner.h"
 
 class C_NPC_HumanoidBase : public C_AI_BaseNPC
 {
@@ -13,10 +14,10 @@ public:
 
 	C_NPC_HumanoidBase();
 
-	int DrawModel(int flags) override;
+	void Spawn() override;
 
 protected:
-	float m_flSuspicion[MAX_PLAYERS];
+	C_Suspicioner m_Suspicioner;
 };
 
 #endif

@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "heist_player_shared.h"
 #include "movevars_shared.h"
+#include "heist_gamerules.h"
 
 #ifdef CLIENT_DLL
 #include "prediction.h"
@@ -75,4 +76,9 @@ void CHeistPlayer::PlayStepSound(Vector &vecOrigin, surfacedata_t *psurface, flo
 	ep.m_pOrigin = &vecOrigin;
 
 	EmitSound(filter, entindex(), ep);
+}
+
+bool CHeistPlayer::IsSpotted() const
+{
+	return (m_bSpotted || HeistGamerules()->AnyoneSpotted());
 }

@@ -5,17 +5,11 @@
 
 #include "ai_baseactor.h"
 #include "ai_heist.h"
+#include "suspicioner.h"
 
 class CHeistPlayer;
 
-#ifdef _DEBUG
-DECLARE_AUTO_LIST(NPCHumanoidBaseAutoList);
-#endif
-
 class CNPC_HumanoidBase : public CAI_BaseActor
-#ifdef _DEBUG
-	,public NPCHumanoidBaseAutoList
-#endif
 {
 public:
 	DECLARE_CLASS(CNPC_HumanoidBase, CAI_BaseActor);
@@ -28,10 +22,8 @@ public:
 
 	DEFINE_CUSTOM_AI;
 
-	void SetSuspicion(CHeistPlayer *pPlayer, float value);
-
-private:
-	CNetworkArray(float, m_flSuspicion, MAX_PLAYERS);
+protected:
+	CNetworkVarEmbedded(CSuspicioner, m_Suspicioner)
 };
 
 #endif

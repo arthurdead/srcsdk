@@ -116,6 +116,7 @@ public:
 	bool CanHearAndReadChatFrom(CBasePlayer *pPlayer) override;
 
 	void SetSpotted(bool value);
+	bool IsSpotted() const;
 
 private:
 	void PrecacheFootStepSounds();

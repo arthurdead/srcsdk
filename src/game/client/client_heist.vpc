@@ -13,7 +13,7 @@ $Configuration
 {
 	$Compiler
 	{
-		$AdditionalIncludeDirectories		"$BASE;$SRCDIR\game\shared\heist;.\heist;.\heist\vgui"
+		$AdditionalIncludeDirectories		"$BASE;$SRCDIR\game\shared\heist;.\heist;.\heist\vgui;.\heist\hud;.\heist\entities;.\heist\npcs"
 		$PreprocessorDefinitions			"$BASE;SM_SP_FIXES;SM_AI_FIXES;SM_IMPROVEMENTS"
 		$PreprocessorDefinitions			"$BASE;SecobMod__SAVERESTORE;SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS;SecobMod__MULTIPLAYER_VIEWCONTROL_CAMERAS;SecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE;SecobMod__ENABLE_FAKE_PASSENGER_SEATS;SecobMod__ALLOW_PLAYER_MODELS_IN_VEHICLES"
 		$PreprocessorDefinitions			"$BASE;HEIST_DLL;HEIST_CLIENT_DLL"
@@ -29,26 +29,26 @@ $Project "Client"
 		{
 			$File	"$SRCDIR\game\shared\heist\heist_gamerules.cpp"
 			$File	"$SRCDIR\game\shared\heist\heist_playeranimstate.cpp"
-			$File	"$SRCDIR\game\shared\heist\weapon_heistbase.cpp"
+			$File	"$SRCDIR\game\shared\heist\weapons\weapon_heistbase.cpp"
 			$File	"$SRCDIR\game\shared\heist\heist_usermessages.cpp"
 			$File	"$SRCDIR\game\shared\heist\heist_gamemovement.cpp"
-			$File	"$SRCDIR\game\shared\heist\heist_weapon_parse.cpp"
+			$File	"$SRCDIR\game\shared\heist\weapons\heist_weapon_parse.cpp"
 			$File	"$SRCDIR\game\shared\heist\heist_player_shared.cpp"
 
 			$File	"heist\c_heist_player.cpp"
 			$File	"heist\heist_in_main.cpp"
 			$File	"heist\heist_prediction.cpp"
 			$File	"heist\clientmode_heist.cpp"
-			$File	"heist\heist_hud_chat.cpp"
-			$File	"heist\heist_hud_weaponselection.cpp"
-			$File	"heist\c_npc_humanoidbase.cpp"
+			$File	"heist\hud\heist_hud_chat.cpp"
+			$File	"heist\hud\heist_hud_weaponselection.cpp"
+			$File	"heist\npcs\c_npc_humanoidbase.cpp"
 
 			$File	"heist\vgui\heistviewport.cpp"
 			$File	"heist\vgui\vgui_rootpanel_heist.cpp"
 
 			$Folder	"Entities"
 			{
-				$File	"heist\vgui\c_vgui_text_display.cpp"
+				$File	"heist\entitites\c_vgui_text_display.cpp"
 			}
 		}
 	}

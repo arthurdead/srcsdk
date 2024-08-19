@@ -43,6 +43,7 @@ BEGIN_SEND_TABLE_NOBASE(CHeistPlayer, DT_HeistLocalPlayerExclusive)
 	SendPropVector(SENDINFO(m_vecOrigin), -1, SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin),
 	SendPropFloat(SENDINFO_VECTORELEM(m_angEyeAngles, 0), 8, SPROP_CHANGES_OFTEN, -90.0f, 90.0f),
 	//SendPropAngle(SENDINFO_VECTORELEM(m_angEyeAngles, 1), 10, SPROP_CHANGES_OFTEN),
+	SendPropBool(SENDINFO(m_bSpotted)),
 END_SEND_TABLE()
 
 BEGIN_SEND_TABLE_NOBASE(CHeistPlayer, DT_HeistNonLocalPlayerExclusive)
@@ -50,7 +51,6 @@ BEGIN_SEND_TABLE_NOBASE(CHeistPlayer, DT_HeistNonLocalPlayerExclusive)
 	SendPropFloat(SENDINFO_VECTORELEM(m_angEyeAngles, 0), 8, SPROP_CHANGES_OFTEN, -90.0f, 90.0f),
 	SendPropAngle(SENDINFO_VECTORELEM(m_angEyeAngles, 1), 10, SPROP_CHANGES_OFTEN),
 	SendPropInt(SENDINFO(m_cycleLatch), 4, SPROP_UNSIGNED),
-	//SendPropBool(SENDINFO(m_bSpotted)),
 END_SEND_TABLE()
 
 IMPLEMENT_SERVERCLASS_ST(CHeistPlayer, DT_Heist_Player)
@@ -112,7 +112,7 @@ void CHeistPlayer::Precache()
 {
 	BaseClass::Precache();
 
-	PrecacheModel("models/barney.mdl");
+	PrecacheModel("models/player/leader.mdl");
 }
 
 static bool TestEntityPosition(CBasePlayer *pPlayer)
@@ -284,12 +284,12 @@ void CHeistPlayer::Spawn()
 
 	DoAnimationEvent(PLAYERANIMEVENT_SPAWN);
 
-	SetModel("models/barney.mdl");
+	SetModel("models/player/leader.mdl");
 }
 
 Class_T CHeistPlayer::Classify()
 {
-	return m_bSpotted ? CLASS_HEISTER : CLASS_HEISTER_DISGUISED;
+	return IsSpotted() ? CLASS_HEISTER : CLASS_HEISTER_DISGUISED;
 }
 
 void CHeistPlayer::PickupObject(CBaseEntity *pObject, bool bLimitMassAndSize)

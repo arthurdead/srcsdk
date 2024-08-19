@@ -29,6 +29,8 @@ client_game_ctrls_src_dir = join_paths(client_src_dir,'game_controls')
 
 shared_src_dir = join_paths(src_root_dir,'game','shared')
 
+stdshaders_src_dir = join_paths(src_root_dir,'materialsystem','stdshaders')
+
 source_game_shared_dep = declare_dependency(
 	compile_args: [
 		'-DUSES_SAVERESTORE',
@@ -854,5 +856,23 @@ source_linux_client_lib_dep = declare_dependency(
 		matsys_controls.get_variable('matsys_controls_dep'),
 		vtf.get_variable('vtf_dep'),
 		bitmap.get_variable('bitmap_dep')
+	]
+)
+
+source_linux_game_shader_lib_dep = declare_dependency(
+	compile_args: [
+		'-DSTDSHADER_DX9_DLL_EXPORT',
+		'-DFAST_MATERIALVAR_ACCESS',
+		'-DGAME_SHADER_DLL'
+	],
+	sources: files(
+		join_paths(stdshaders_src_dir,'BaseVSShader.cpp')
+	),
+	dependencies: [
+		source_base.get_variable('source_linux_shared_lib_dep'),
+		tier0.get_variable('tier0_dep'),
+		tier1.get_variable('tier1_dep'),
+		mathlib.get_variable('mathlib_dep'),
+		vstdlib.get_variable('vstdlib_dep')
 	]
 )

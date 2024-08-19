@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "npc_cop.h"
+#include "heist_player.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -39,7 +40,7 @@ void CNPC_Cop::StartTouch(CBaseEntity *pOther)
 {
 	BaseClass::StartTouch(pOther);
 
-	if(pOther->IsPlayer() && pOther->Classify() == CLASS_HEISTER_DISGUISED) {
-		SetSuspicion((CHeistPlayer *)pOther, 100.0f);
+	if(pOther->IsPlayer() && !((CHeistPlayer *)pOther)->IsSpotted()) {
+		m_Suspicioner.SetSuspicion((CHeistPlayer *)pOther, 100.0f);
 	}
 }
