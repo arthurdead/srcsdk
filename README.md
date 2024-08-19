@@ -12,3 +12,4 @@ Medic bag not included
 - [Coplay](https://github.com/CoaXioN-Games/coplay)
 - [SecobMod](https://github.com/whoozzem/SecobMod)
 - [Mapbase](https://github.com/mapbase-source/source-sdk-2013)
+- [ShaderCompile](https://github.com/SCell555/ShaderCompile)

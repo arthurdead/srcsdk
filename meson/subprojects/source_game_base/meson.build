@@ -869,6 +869,9 @@ source_linux_game_shader_lib_dep = declare_dependency(
 	sources: files(
 		join_paths(stdshaders_src_dir,'BaseVSShader.cpp')
 	),
+	include_directories: include_directories(
+		stdshaders_src_dir
+	),
 	dependencies: [
 		source_base.get_variable('source_linux_shared_lib_dep'),
 		tier0.get_variable('tier0_dep'),

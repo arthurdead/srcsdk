@@ -1,10 +1,17 @@
 [binaries]
 c = '/usr/bin/gcc'
 cpp = '/usr/bin/g++'
+c_ld = 'bfd'
+cpp_ld = 'bfd'
 ar = '/usr/bin/gcc-ar'
 strip = '/usr/bin/strip'
+cmake = '/usr/bin/cmake'
 pkg-config = '/usr/bin/pkgconf'
 llvm-config = '/usr/bin/llvm-config32'
+
+[cmake]
+CMAKE_C_COMPILER = '/usr/bin/gcc'
+CMAKE_CXX_COMPILER = '/usr/bin/g++'
 
 [built-in options]
 c_args = ['-m32']

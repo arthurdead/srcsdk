@@ -1,5 +1,6 @@
-build_*/
+/build_*/
 
-*.sublime-workspace
+/*.sublime-workspace
 
-subprojects/webm/
+/subprojects/ShaderCompile/
+/subprojects/webm/

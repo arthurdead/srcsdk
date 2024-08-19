@@ -388,6 +388,9 @@ inline bool CShader_IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag
 	_pshIndex.Set ## var( ( val ) );  if(g_shaderConfigDumpEnable){printf("\n   PS dyn  var %s = %d (%s)", #var, (int) val, #val );}; \
 	int psh_forgot_to_set_dynamic_ ## var = 0
 
+#define SET_DYNAMIC_PIXEL_SHADER_COMBO_OVERRIDE_DEFAULT( var, val ) \
+	_pshIndex.Set ## var( ( val ) )
+
 // vsh_forgot_to_set_dynamic_ ## var is used to make sure that you set all
 // all combos.  If you don't, you will get an undefined variable used error 
 // in the SET_DYNAMIC_VERTEX_SHADER block.
@@ -397,6 +400,8 @@ inline bool CShader_IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag
 	_vshIndex.Set ## var( ( val ) );  if(g_shaderConfigDumpEnable){printf("\n   VS dyn  var %s = %d (%s)", #var, (int) val, #val );}; \
 	int vsh_forgot_to_set_dynamic_ ## var = 0
 
+#define SET_DYNAMIC_VERTEX_SHADER_COMBO_OVERRIDE_DEFAULT( var, val ) \
+	_vshIndex.Set ## var( ( val ) )
 
 // psh_forgot_to_set_static_ ## var is used to make sure that you set all
 // all combos.  If you don't, you will get an undefined variable used error 
@@ -407,6 +412,9 @@ inline bool CShader_IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag
 	_pshIndex.Set ## var( ( val ) ); if(g_shaderConfigDumpEnable){printf("\n   PS stat var %s = %d (%s)", #var, (int) val, #val );}; \
 	int psh_forgot_to_set_static_ ## var = 0
 
+#define SET_STATIC_PIXEL_SHADER_COMBO_OVERRIDE_DEFAULT( var, val ) \
+	_pshIndex.Set ## var( ( val ) )
+
 // vsh_forgot_to_set_static_ ## var is used to make sure that you set all
 // all combos.  If you don't, you will get an undefined variable used error 
 // in the SET_STATIC_VERTEX_SHADER block.
@@ -416,6 +424,8 @@ inline bool CShader_IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag
 	_vshIndex.Set ## var( ( val ) ); if(g_shaderConfigDumpEnable){printf("\n   VS stat var %s = %d (%s)", #var, (int) val, #val );}; \
 	int vsh_forgot_to_set_static_ ## var = 0
 
+#define SET_STATIC_VERTEX_SHADER_COMBO_OVERRIDE_DEFAULT( var, val ) \
+	_vshIndex.Set ## var( ( val ) )
 
 // psh_testAllCombos adds up all of the psh_forgot_to_set_dynamic_ ## var's from 
 // SET_DYNAMIC_PIXEL_SHADER_COMBO so that an error is generated if they aren't set.

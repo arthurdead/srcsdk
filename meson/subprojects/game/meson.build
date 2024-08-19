@@ -21,6 +21,9 @@ shared_game_npcs_src_dir = join_paths(shared_game_src_dir,'npcs')
 
 source_game_base = subproject('source_game_base')
 
+stdshaders_src_dir = join_paths(src_root_dir,'materialsystem','stdshaders')
+gameshaders_src_dir = join_paths(src_root_dir,'materialsystem','heistshaders')
+
 coplay = subproject('coplay')
 
 game_shared_dep = declare_dependency(
