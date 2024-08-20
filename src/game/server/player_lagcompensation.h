@@ -16,6 +16,8 @@
 #include "igamesystem.h"
 #include "ilagcompensationmanager.h"
 #include "utllinkedlist.h"
+#include "BaseAnimatingOverlay.h"
+#include "tier1/utlmap.h"
 
 #define MAX_LAYER_RECORDS (CBaseAnimatingOverlay::MAX_OVERLAYS)
 
@@ -61,8 +63,8 @@ public:
 		m_fFlags = src.m_fFlags;
 		m_vecOrigin = src.m_vecOrigin;
 		m_vecAngles = src.m_vecAngles;
-		m_vecMins = src.m_vecMins;
-		m_vecMaxs = src.m_vecMaxs;
+		m_vecMinsPreScaled = src.m_vecMinsPreScaled;
+		m_vecMaxsPreScaled = src.m_vecMaxsPreScaled;
 		m_flSimulationTime = src.m_flSimulationTime;
 		for( int layerIndex = 0; layerIndex < MAX_LAYER_RECORDS; ++layerIndex )
 		{
@@ -77,8 +79,8 @@ public:
 		m_fFlags = 0;
 		m_vecOrigin.Init();
 		m_vecAngles.Init();
-		m_vecMins.Init();
-		m_vecMaxs.Init();
+		m_vecMinsPreScaled.Init();
+		m_vecMaxsPreScaled.Init();
 		m_flSimulationTime = -1;
 		m_masterSequence = 0;
 		m_masterCycle = 0;
@@ -94,8 +96,8 @@ public:
 	// Player position, orientation and bbox
 	Vector					m_vecOrigin;
 	QAngle					m_vecAngles;
-	Vector					m_vecMins;
-	Vector					m_vecMaxs;
+	Vector					m_vecMinsPreScaled;
+	Vector					m_vecMaxsPreScaled;
 
 	float					m_flSimulationTime;	
 
@@ -113,6 +115,7 @@ class CLagCompensationManager : public CAutoGameSystemPerFrame, public ILagCompe
 public:
 	CLagCompensationManager( char const *name ) : 
 		CAutoGameSystemPerFrame( name ), 
+		m_flTeleportDistanceSqr( 64.0f * 64.0f ),
 		m_CompensatedEntities( 0, 0, DefLessFunc( EHANDLE ) ),
 		m_AdditionalEntities( 0, 0, DefLessFunc( EHANDLE ) )
 	{
@@ -145,12 +148,15 @@ public:
 	virtual void	AddAdditionalEntity( CBaseEntity *pEntity );
 	virtual void	RemoveAdditionalEntity( CBaseEntity *pEntity );
 
+	bool			IsCurrentlyDoingLagCompensation() const OVERRIDE { return m_isCurrentlyDoingCompensation; }
+
 	void RecordDataIntoTrack( CBaseEntity *entity, LagRecordList *track, bool wantsAnims );
+
 	bool BacktrackEntity( CBaseEntity *entity, float flTargetTime, LagRecordList *track, LagRecord *restore, LagRecord *change, bool wantsAnims );
+
 	void RestoreEntityFromRecords( CBaseEntity *entity, LagRecord *restore, LagRecord *change, bool wantsAnims );
+
 private:
-
-
 	void ClearHistory()
 	{
 		FOR_EACH_MAP( m_CompensatedEntities, i )
@@ -189,7 +195,9 @@ private:
 	float					m_weaponRange;
 	bool					m_isCurrentlyDoingCompensation;	// Sentinel to prevent calling StartLagCompensation a second time before a Finish.
 
-    // List of additional entities flagged by mappers for lag compensation (shouldn't be more than a few)
+	float					m_flTeleportDistanceSqr;
+
+	// List of additional entities flagged by mappers for lag compensation (shouldn't be more than a few)
 	CUtlRBTree< EHANDLE >	m_AdditionalEntities;
 };
 

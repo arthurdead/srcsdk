@@ -320,6 +320,8 @@ inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask,
 	}
 }
 
+unsigned int UTIL_MaskForEntity( CBaseEntity *pEntity, bool brush_only = false );
+unsigned int UTIL_CollisionGroupForEntity( CBaseEntity *pEntity );
 
 // Sweeps a particular entity through the world
 void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, unsigned int mask, trace_t *ptr );

@@ -11,8 +11,11 @@
 #endif
 
 #include "ichoreoeventcallback.h"
+#include "baseentity.h"
+#include "networkvar.h"
 
 class CSceneListManager;
+class CBaseFlex;
 
 //-----------------------------------------------------------------------------
 // Purpose: FIXME, need to deal with save/restore
@@ -133,7 +136,7 @@ public:
 
 	static bool SpeakEventSoundLessFunc( const SpeakEventSound_t& lhs, const SpeakEventSound_t& rhs );
 
-	bool					GetSoundNameForPlayer( CChoreoEvent *event, CBasePlayer *player, char *buf, size_t buflen );
+	bool					GetSoundNameForPlayer( CChoreoEvent *event, CBasePlayer *player, char *buf, size_t buflen, CBaseEntity *pActor );
 
 	void					BuildSortedSpeakEventSoundsPrefetchList( 
 		CChoreoScene *scene, 
@@ -288,7 +291,7 @@ private:
 	CChoreoScene			*m_pScene;
 	CNetworkVar( int, m_nSceneStringIndex );
 
-	const ConVar			*m_pcvSndMixahead;
+	static const ConVar			*m_pcvSndMixahead;
 
 	COutputEvent			m_OnStart;
 	COutputEvent			m_OnCompletion;

@@ -619,6 +619,33 @@ private:
 	const IHandleEntity *m_pIgnoreOther;
 };
 
+unsigned int UTIL_MaskForEntity( CBaseEntity *pEntity, bool brush_only )
+{
+	if(pEntity->IsPlayer()) {
+		return brush_only ? MASK_PLAYERSOLID_BRUSHONLY : MASK_PLAYERSOLID;
+	}
+
+	if(pEntity->IsNPC()) {
+		CAI_BaseNPC *pNPC = pEntity->MyNPCPointer();
+		return brush_only ? pNPC->GetAITraceMask(true) : pNPC->GetAITraceMask(false);
+	}
+
+	return brush_only ? MASK_SOLID_BRUSHONLY : MASK_SOLID;
+}
+
+unsigned int UTIL_CollisionGroupForEntity( CBaseEntity *pEntity )
+{
+	if(pEntity->IsPlayer()) {
+		return COLLISION_GROUP_PLAYER_MOVEMENT;
+	}
+
+	if(pEntity->IsNPC()) {
+		return COLLISION_GROUP_NPC;
+	}
+
+	return COLLISION_GROUP_NONE;
+}
+
 //-----------------------------------------------------------------------------
 // Sweeps a particular entity through the world 
 //-----------------------------------------------------------------------------

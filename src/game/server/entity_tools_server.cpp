@@ -13,6 +13,7 @@
 #include "iserverentity.h"
 #include "sceneentity.h"
 #include "particles/particles.h"
+#include "entity_tools_server.h"
 
 #ifdef SDK2013CE
 #include "icommandline.h"

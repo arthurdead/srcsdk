@@ -5,6 +5,7 @@
 #define ENV_TONEMAP_CONTROLLER_H
 
 #include "triggers.h"
+#include "igamesystem.h"
 
 //--------------------------------------------------------------------------------------------------------
 class CTonemapTrigger : public CBaseTrigger

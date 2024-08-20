@@ -5,11 +5,12 @@
 // $NoKeywords: $
 //=============================================================================//
 
-#ifndef ASW_GENERIC_CLASSMAP_H
-#define ASW_GENERIC_CLASSMAP_H
-#ifdef _WIN32
+#ifndef GENERIC_CLASSMAP_H
+#define GENERIC_CLASSMAP_H
+
 #pragma once
-#endif
+
+#include "utldict.h"
 
 template <class T>
 class CGenericClassmap
@@ -168,4 +169,4 @@ LINK_BEHAVIOR_TO_CLASSNAME( CAI_ASW_ScuttleBehavior );
 
 #endif
 
-#endif // ASW_GENERIC_CLASSMAP_H
+#endif // GENERIC_CLASSMAP_H

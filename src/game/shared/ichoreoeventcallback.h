@@ -8,6 +8,8 @@
 #define ICHOREOEVENTCALLBACK_H
 #pragma once
 
+#include "tier0/platform.h"
+
 class CChoreoEvent;
 class CChoreoChannel;
 class CChoreoActor;
