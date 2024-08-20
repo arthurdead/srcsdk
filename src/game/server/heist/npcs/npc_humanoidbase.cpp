@@ -44,6 +44,7 @@ void CNPC_HumanoidBase::Spawn()
 	m_Suspicioner.Init(this);
 
 	CapabilitiesAdd(bits_CAP_TURN_HEAD|bits_CAP_ANIMATEDFACE);
+
 	SetBloodColor(BLOOD_COLOR_RED);
 
 	SetHullType(HULL_HUMAN);
@@ -53,7 +54,7 @@ void CNPC_HumanoidBase::Spawn()
 	AddSolidFlags(FSOLID_NOT_STANDABLE);
 
 	SetMoveType(MOVETYPE_STEP);
-	CapabilitiesAdd(bits_CAP_MOVE_GROUND|bits_CAP_OPEN_DOORS);
+	CapabilitiesAdd(bits_CAP_MOVE_GROUND|bits_CAP_DUCK|bits_CAP_MOVE_JUMP|bits_CAP_MOVE_CLIMB|bits_CAP_DOORS_GROUP);
 
 	m_NPCState = NPC_STATE_NONE;
 	m_iHealth = 10;

@@ -32,5 +32,7 @@ void CNPC_Civilian::Spawn()
 		SetModel(g_pszCivilianModels[random->RandomInt(0, ARRAYSIZE(g_pszCivilianModels)-1)]);
 	}
 
+	CapabilitiesAdd(bits_CAP_NO_HIT_PLAYER);
+
 	BaseClass::Spawn();
 }

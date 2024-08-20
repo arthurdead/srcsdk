@@ -33,6 +33,8 @@ void CNPC_Cop::Spawn()
 		SetModel(g_pszCopModels[random->RandomInt(0, ARRAYSIZE(g_pszCopModels)-1)]);
 	}
 
+	CapabilitiesAdd(bits_CAP_NO_HIT_SQUADMATES|bits_CAP_SQUAD|bits_CAP_MOVE_SHOOT|bits_CAP_USE_WEAPONS);
+
 	BaseClass::Spawn();
 }
 
