@@ -1471,25 +1471,6 @@ void CDetailObjectSystem::LevelInitPreEntity()
 		}
 	}
 
-	if ( m_DetailObjects.Count() || m_DetailSpriteDict.Count() )
-	{
-		// There are detail objects in the level, so precache the material
-		PrecacheMaterial( DETAIL_SPRITE_MATERIAL );
-		IMaterial *pMat = m_DetailSpriteMaterial;
-		// adjust for non-square textures (cropped)
-		float flRatio = (float)( pMat->GetMappingWidth() ) / pMat->GetMappingHeight();
-		if ( flRatio > 1.0 )
-		{
-			for( int i = 0; i<m_DetailSpriteDict.Count(); i++ )
-			{
-				m_DetailSpriteDict[i].m_TexUL.y *= flRatio;
-				m_DetailSpriteDict[i].m_TexLR.y *= flRatio;
-				m_DetailSpriteDictFlipped[i].m_TexUL.y *= flRatio;
-				m_DetailSpriteDictFlipped[i].m_TexLR.y *= flRatio;
-			}
-		}
-	}
-
 	int detailPropLightingLump;
 	if( g_pMaterialSystemHardwareConfig->GetHDRType() != HDR_TYPE_NONE )
 	{
@@ -1512,6 +1493,9 @@ void CDetailObjectSystem::LevelInitPreEntity()
 
 void CDetailObjectSystem::LevelInitPostEntity()
 {
+	// There are detail objects in the level, so precache the material
+	PrecacheMaterial( DETAIL_SPRITE_MATERIAL );
+
 	const char *pDetailSpriteMaterial = DETAIL_SPRITE_MATERIAL;
 	C_World *pWorld = GetClientWorldEntity();
 	if ( pWorld && pWorld->GetDetailSpriteMaterial() && *(pWorld->GetDetailSpriteMaterial()) )
@@ -1520,10 +1504,26 @@ void CDetailObjectSystem::LevelInitPostEntity()
 	}
 	m_DetailSpriteMaterial.Init( pDetailSpriteMaterial, TEXTURE_GROUP_OTHER );
 
+	if ( m_DetailObjects.Count() || m_DetailSpriteDict.Count() )
+	{
+		// adjust for non-square textures (cropped)
+		float flRatio = (float)( m_DetailSpriteMaterial->GetMappingWidth() ) / m_DetailSpriteMaterial->GetMappingHeight();
+		if ( flRatio > 1.0 )
+		{
+			for( int i = 0; i<m_DetailSpriteDict.Count(); i++ )
+			{
+				m_DetailSpriteDict[i].m_TexUL.y *= flRatio;
+				m_DetailSpriteDict[i].m_TexLR.y *= flRatio;
+				m_DetailSpriteDictFlipped[i].m_TexUL.y *= flRatio;
+				m_DetailSpriteDictFlipped[i].m_TexLR.y *= flRatio;
+			}
+		}
+	}
+
 	if ( GetDetailController() )
 	{
-		cl_detailfade.SetValue( MIN( m_flDefaultFadeStart, GetDetailController()->m_flFadeStartDist ) );
-		cl_detaildist.SetValue( MIN( m_flDefaultFadeEnd, GetDetailController()->m_flFadeEndDist ) );
+		cl_detailfade.SetValue( MIN( m_flDefaultFadeStart, GetDetailController()->m_flFadeStartDist.Get() ) );
+		cl_detaildist.SetValue( MIN( m_flDefaultFadeEnd, GetDetailController()->m_flFadeEndDist.Get() ) );
 	}
 	else
 	{

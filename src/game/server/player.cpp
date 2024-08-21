@@ -72,6 +72,9 @@
 #include "vote_controller.h"
 #include "ai_speech.h"
 
+#include "fogvolume.h"
+#include "colorcorrection.h"
+
 #if defined USES_ECON_ITEMS
 #include "econ_wearable.h"
 #endif
@@ -83,6 +86,9 @@
 #include "combine_mine.h"
 #include "weapon_physcannon.h"
 #endif
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 ConVar autoaim_max_dist( "autoaim_max_dist", "2160" ); // 2160 = 180 feet
 ConVar autoaim_max_deflect( "autoaim_max_deflect", "0.99" );
@@ -98,9 +104,6 @@ ConVar	spec_freeze_traveltime( "spec_freeze_traveltime", "0.4", FCVAR_CHEAT | FC
 ConVar sv_bonus_challenge( "sv_bonus_challenge", "0", FCVAR_REPLICATED, "Set to values other than 0 to select a bonus map challenge type." );
 
 static ConVar sv_maxusrcmdprocessticks( "sv_maxusrcmdprocessticks", "24", FCVAR_NOTIFY, "Maximum number of client-issued usrcmd ticks that can be replayed in packet loss conditions, 0 to allow no restrictions" );
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
 
 static ConVar old_armor( "player_old_armor", "0" );
 
@@ -197,11 +200,7 @@ ConVar  player_debug_print_damage( "player_debug_print_damage", "0", FCVAR_CHEAT
 
 void CC_GiveCurrentAmmo( void )
 {
-#ifdef SM_AI_FIXES
 	CBasePlayer *pPlayer = UTIL_GetCommandClient(); 
-#else
-	CBasePlayer *pPlayer = UTIL_PlayerByIndex(1);
-#endif
 
 	if( pPlayer )
 	{
@@ -220,7 +219,7 @@ void CC_GiveCurrentAmmo( void )
 					pPlayer->GiveAmmo( giveAmount, GetAmmoDef()->GetAmmoOfIndex(ammoIndex)->pName );
 				}
 			}
-			if( pWeapon->UsesSecondaryAmmo() && pWeapon->HasSecondaryAmmo() )
+			if( pWeapon->UsesSecondaryAmmo() )
 			{
 				// Give secondary ammo out, as long as the player already has some
 				// from a presumeably natural source. This prevents players on XBox
@@ -259,10 +258,8 @@ END_DATADESC()
 // Global Savedata for player
 BEGIN_DATADESC( CBasePlayer )
 
-#ifdef SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
 	DEFINE_FIELD( m_bTransition, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bTransitionTeleported, FIELD_BOOLEAN ),
-#endif
 
 	DEFINE_EMBEDDED( m_Local ),
 #if defined USES_ECON_ITEMS
@@ -464,7 +461,8 @@ BEGIN_DATADESC( CBasePlayer )
 
 	DEFINE_FIELD( m_nNumCrateHudHints, FIELD_INTEGER ),
 
-
+	DEFINE_FIELD( m_hColorCorrectionCtrl, FIELD_EHANDLE ),
+	DEFINE_FIELD( m_hTonemapController, FIELD_EHANDLE ),
 
 	// DEFINE_FIELD( m_nBodyPitchPoseParam, FIELD_INTEGER ),
 	// DEFINE_ARRAY( m_StepSoundCache, StepSoundCache_t,  2  ),
@@ -473,8 +471,6 @@ BEGIN_DATADESC( CBasePlayer )
 	// DEFINE_UTLVECTOR( m_vecPlayerSimInfo ),
 END_DATADESC()
 
-int giPrecacheGrunt = 0;
-
 edict_t *CBasePlayer::s_PlayerEdict = NULL;
 
 
@@ -482,11 +478,7 @@ inline bool ShouldRunCommandsInContext( const CCommandContext *ctx )
 {
 	// TODO: This should be enabled at some point. If usercmds can run while paused, then
 	// they can create entities which will never die and it will fill up the entity list.
-#ifdef NO_USERCMDS_DURING_PAUSE
 	return !ctx->paused || sv_noclipduringpause.GetInt();
-#else
-	return true;
-#endif
 }
 
 
@@ -562,10 +554,8 @@ CBasePlayer::CBasePlayer( )
 {
 	AddEFlags( EFL_NO_AUTO_EDICT_ATTACH );
 	
-#ifdef SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
 	m_bTransition = false;
 	m_bTransitionTeleported = false;
-#endif
 
 #ifdef _DEBUG
 	m_vecAutoAim.Init();
@@ -656,6 +646,9 @@ CBasePlayer::CBasePlayer( )
 	m_flMovementTimeForUserCmdProcessingRemaining = 0.0f;
 
 	m_flLastObjectiveTime = -1.f;
+
+	m_hTonemapController.Set( NULL );
+	m_hColorCorrectionCtrl.Set( NULL );
 }
 
 CBasePlayer::~CBasePlayer( )
@@ -745,7 +738,6 @@ int CBasePlayer::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 	return BaseClass::ShouldTransmit( pInfo );
 }
 
-#ifdef SM_AI_FIXES
 bool CBasePlayer::WantsLagCompensationOnEntity( const CBaseEntity *pEntity, const CUserCmd *pCmd, const CBitVec<MAX_EDICTS> *pEntityTransmitBits ) const 
 {
 	//Tony; only check teams in teamplay
@@ -773,24 +765,6 @@ bool CBasePlayer::WantsLagCompensationOnEntity( const CBaseEntity *pEntity, cons
 	else 
 		maxspeed = 600; 
 	float maxDistance = 1.5 * maxspeed * sv_maxunlag.GetFloat(); 
-#else
-bool CBasePlayer::WantsLagCompensationOnEntity( const CBasePlayer *pPlayer, const CUserCmd *pCmd, const CBitVec<MAX_EDICTS> *pEntityTransmitBits ) const
-{
-	// Team members shouldn't be adjusted unless friendly fire is on.
-	if ( !friendlyfire.GetInt() && pPlayer->GetTeamNumber() == GetTeamNumber() )
-		return false;
-
-	// If this entity hasn't been transmitted to us and acked, then don't bother lag compensating it.
-	if ( pEntityTransmitBits && !pEntityTransmitBits->Get( pPlayer->entindex() ) )
-		return false;
-
-	const Vector &vMyOrigin = GetAbsOrigin();
-	const Vector &vHisOrigin = pPlayer->GetAbsOrigin();
-
-	// get max distance player could have moved within max lag compensation time, 
-	// multiply by 1.5 to to avoid "dead zones"  (sqrt(2) would be the exact value)
-	float maxDistance = 1.5 * pPlayer->MaxSpeed() * sv_maxunlag.GetFloat();
-#endif	
 	
 	// If the player is within this distance, lag compensate them in case they're running past us.
 	if ( vHisOrigin.DistTo( vMyOrigin ) < maxDistance )
@@ -1671,7 +1645,7 @@ int CBasePlayer::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 	if ( event )
 	{
 		event->SetInt("userid", GetUserID() );
-		event->SetInt("health", MAX(0, m_iHealth) );
+		event->SetInt("health", MAX(0, m_iHealth.Get()) );
 		event->SetInt("priority", 5 );	// HLTV event priority, not transmitted
 
 		if ( attacker->IsPlayer() )
@@ -1976,6 +1950,8 @@ void CBasePlayer::WaterMove()
 {
 	if ( ( GetMoveType() == MOVETYPE_NOCLIP ) && !GetMoveParent() )
 	{
+		UpdateWaterState();
+		UpdateUnderwaterState();
 		m_AirFinished = gpGlobals->curtime + AIRTIME;
 		return;
 	}
@@ -2918,12 +2894,10 @@ float CBasePlayer::GetHeldObjectMass( IPhysicsObject *pHeldObject )
 	return 0;
 }
 
-#ifdef SDK2013CE
 CBaseEntity	*CBasePlayer::GetHeldObject( void )
 {
 	return NULL;
 }
-#endif // SDK2013CE
 
 //-----------------------------------------------------------------------------
 // Purpose:	Server side of jumping rules.  Most jumping logic is already
@@ -4574,6 +4548,9 @@ void CBasePlayer::PostThink()
 {
 	m_vecSmoothedVelocity = m_vecSmoothedVelocity * SMOOTHING_FACTOR + GetAbsVelocity() * ( 1 - SMOOTHING_FACTOR );
 
+	UpdateTonemapController();
+	UpdateFXVolume();
+
 	if ( !g_fGameOver && !m_iPlayerLocked )
 	{
 		if ( IsAlive() )
@@ -4950,6 +4927,51 @@ void CBasePlayer::InitialSpawn( void )
 	gamestats->Event_PlayerConnected( this );
 }
 
+void CBasePlayer::ClearTonemapParams( void )
+{
+	//Tony; clear all the variables to -1.0
+	m_Local.m_TonemapParams.m_flAutoExposureMin = -1.0f;
+	m_Local.m_TonemapParams.m_flAutoExposureMax = -1.0f;
+	m_Local.m_TonemapParams.m_flTonemapScale = -1.0f;
+	m_Local.m_TonemapParams.m_flBloomScale = -1.0f;
+	m_Local.m_TonemapParams.m_flTonemapRate = -1.0f;
+}
+void CBasePlayer::InputSetTonemapScale( inputdata_t &inputdata )
+{
+	m_Local.m_TonemapParams.m_flTonemapScale = inputdata.value.Float();
+}
+
+void CBasePlayer::InputSetTonemapRate( inputdata_t &inputdata )
+{
+	m_Local.m_TonemapParams.m_flTonemapRate = inputdata.value.Float();
+}
+void CBasePlayer::InputSetAutoExposureMin( inputdata_t &inputdata )
+{
+	m_Local.m_TonemapParams.m_flAutoExposureMin = inputdata.value.Float();
+}
+
+void CBasePlayer::InputSetAutoExposureMax( inputdata_t &inputdata )
+{
+	m_Local.m_TonemapParams.m_flAutoExposureMax = inputdata.value.Float();
+}
+
+void CBasePlayer::InputSetBloomScale( inputdata_t &inputdata )
+{
+	m_Local.m_TonemapParams.m_flBloomScale = inputdata.value.Float();
+}
+
+//Tony; restore defaults (set min/max to -1.0 so nothing gets overridden)
+void CBasePlayer::InputUseDefaultAutoExposure( inputdata_t &inputdata )
+{
+	m_Local.m_TonemapParams.m_flAutoExposureMin = -1.0f;
+	m_Local.m_TonemapParams.m_flAutoExposureMax = -1.0f;
+	m_Local.m_TonemapParams.m_flTonemapRate = -1.0f;
+}
+void CBasePlayer::InputUseDefaultBloomScale( inputdata_t &inputdata )
+{
+	m_Local.m_TonemapParams.m_flBloomScale = -1.0f;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Called everytime the player respawns
 //-----------------------------------------------------------------------------
@@ -4960,6 +4982,9 @@ void CBasePlayer::Spawn( void )
 	{
 		Hints()->ResetHints();
 	}
+
+	//Tony; make sure tonemap params is cleared.
+	ClearTonemapParams();
 
 	SetClassname( "player" );
 
@@ -4998,6 +5023,7 @@ void CBasePlayer::Spawn( void )
 
 	// Initialize the fog and postprocess controllers.
 	InitFogController();
+	InitColorCorrectionController();
 
 	m_DmgTake		= 0;
 	m_DmgSave		= 0;
@@ -5499,9 +5525,7 @@ bool CBasePlayer::GetInVehicle( IServerVehicle *pVehicle, int nRole )
 
 	if ( !pVehicle->IsPassengerVisible( nRole ) )
 	{
-	#ifndef SecobMod__ALLOW_PLAYER_MODELS_IN_VEHICLES
 		AddEffects( EF_NODRAW ); //SecobMod__Information: This causes players to have invisible third person models in vehicles.
-	#endif
 	}
 
 	// Put us in the vehicle
@@ -6089,94 +6113,6 @@ static ConCommand ch_createjalopy("ch_createjalopy", CC_CH_CreateJalopy, "Spawn 
 
 #endif // HL2_EPISODIC
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-static void CreateJeep( CBasePlayer *pPlayer )
-{
-	// Cheat to create a jeep in front of the player
-	Vector vecForward;
-	AngleVectors( pPlayer->EyeAngles(), &vecForward );
-//Tony; in sp sdk, we have prop_vehicle_hl2buggy; because episode 2 modified the jeep code to turn it into the jalopy instead of the regular buggy
-//SecobMod__Information: Changed the define to hl2_episodic so people can summon the hl2 buggy.
-#ifdef HL2_EPISODIC
-	CBaseEntity *pJeep = (CBaseEntity *)CreateEntityByName( "prop_vehicle_hl2buggy" );
-#else
-	CBaseEntity *pJeep = (CBaseEntity *)CreateEntityByName( "prop_vehicle_jeep" );
-#endif
-	if ( pJeep )
-	{
-		Vector vecOrigin = pPlayer->GetAbsOrigin() + vecForward * 256 + Vector(0,0,64);
-		QAngle vecAngles( 0, pPlayer->GetAbsAngles().y - 90, 0 );
-		pJeep->SetAbsOrigin( vecOrigin );
-		pJeep->SetAbsAngles( vecAngles );
-		pJeep->KeyValue( "model", "models/buggy.mdl" );
-		pJeep->KeyValue( "solid", "6" );
-	#ifdef SM_SP_FIXES
-		pJeep->KeyValue( "targetname", "hl2buggy" );
-	#else
-		pJeep->KeyValue( "targetname", "jeep" );
-	#endif
-		pJeep->KeyValue( "vehiclescript", "scripts/vehicles/jeep_test.txt" );
-		DispatchSpawn( pJeep );
-		pJeep->Activate();
-		pJeep->Teleport( &vecOrigin, &vecAngles, NULL );
-	}
-}
-
-
-void CC_CH_CreateJeep( void )
-{
-	CBasePlayer *pPlayer = UTIL_GetCommandClient();
-	if ( !pPlayer )
-		return;
-	CreateJeep( pPlayer );
-}
-
-static ConCommand ch_createjeep("ch_createjeep", CC_CH_CreateJeep, "Spawn jeep in front of the player.", FCVAR_CHEAT);
-
-
-//-----------------------------------------------------------------------------
-// Create an airboat in front of the specified player
-//-----------------------------------------------------------------------------
-static void CreateAirboat( CBasePlayer *pPlayer )
-{
-	// Cheat to create a jeep in front of the player
-	Vector vecForward;
-	AngleVectors( pPlayer->EyeAngles(), &vecForward );
-	CBaseEntity *pJeep = ( CBaseEntity* )CreateEntityByName( "prop_vehicle_airboat" );
-	if ( pJeep )
-	{
-		Vector vecOrigin = pPlayer->GetAbsOrigin() + vecForward * 256 + Vector( 0,0,64 );
-		QAngle vecAngles( 0, pPlayer->GetAbsAngles().y - 90, 0 );
-		pJeep->SetAbsOrigin( vecOrigin );
-		pJeep->SetAbsAngles( vecAngles );
-		pJeep->KeyValue( "model", "models/airboat.mdl" );
-		pJeep->KeyValue( "solid", "6" );
-		pJeep->KeyValue( "targetname", "airboat" );
-		pJeep->KeyValue( "vehiclescript", "scripts/vehicles/airboat.txt" );
-		DispatchSpawn( pJeep );
-		pJeep->Activate();
-	}
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CC_CH_CreateAirboat( void )
-{
-	CBasePlayer *pPlayer = UTIL_GetCommandClient();
-	if ( !pPlayer )
-		return;
-
-	CreateAirboat( pPlayer );
-
-}
-
-static ConCommand ch_createairboat( "ch_createairboat", CC_CH_CreateAirboat, "Spawn airboat in front of the player.", FCVAR_CHEAT );
-
-
 //=========================================================
 //=========================================================
 void CBasePlayer::CheatImpulseCommands( int iImpulse )
@@ -6193,19 +6129,7 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 	switch ( iImpulse )
 	{
 	case 76:
-		{
-			if (!giPrecacheGrunt)
-			{
-				giPrecacheGrunt = 1;
-				Msg( "You must now restart to use Grunt-o-matic.\n");
-			}
-			else
-			{
-				Vector forward = UTIL_YawToVector( EyeAngles().y );
-				Create("NPC_human_grunt", GetLocalOrigin() + forward * 128, GetLocalAngles());
-			}
-			break;
-		}
+		break;
 
 	case 81:
 
@@ -6213,48 +6137,14 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 		break;
 
 	case 82:
-		// Cheat to create a jeep in front of the player
-		CreateJeep( this );
 		break;
 
 	case 83:
-		// Cheat to create a airboat in front of the player
-		CreateAirboat( this );
 		break;
 
 	case 101:
 		gEvilImpulse101 = true;
 
-		EquipSuit();
-
-		// Give the player everything!
-		GiveAmmo( 255,	"Pistol");
-		GiveAmmo( 255,	"AR2");
-		GiveAmmo( 5,	"AR2AltFire");
-		GiveAmmo( 255,	"SMG1");
-		GiveAmmo( 255,	"Buckshot");
-		GiveAmmo( 3,	"smg1_grenade");
-		GiveAmmo( 3,	"rpg_round");
-		GiveAmmo( 5,	"grenade");
-		GiveAmmo( 32,	"357" );
-		GiveAmmo( 16,	"XBowBolt" );
-#ifdef HL2_EPISODIC
-		GiveAmmo( 5,	"Hopwire" );
-#endif		
-		GiveNamedItem( "weapon_smg1" );
-		GiveNamedItem( "weapon_frag" );
-		GiveNamedItem( "weapon_crowbar" );
-		GiveNamedItem( "weapon_pistol" );
-		GiveNamedItem( "weapon_ar2" );
-		GiveNamedItem( "weapon_shotgun" );
-		GiveNamedItem( "weapon_physcannon" );
-		GiveNamedItem( "weapon_bugbait" );
-		GiveNamedItem( "weapon_rpg" );
-		GiveNamedItem( "weapon_357" );
-		GiveNamedItem( "weapon_crossbow" );
-#ifdef HL2_EPISODIC
-		// GiveNamedItem( "weapon_magnade" );
-#endif
 		if ( GetHealth() < 100 )
 		{
 			TakeHealth( 25, DMG_GENERIC );
@@ -7686,204 +7576,20 @@ void CStripWeapons::StripWeapons(inputdata_t &data, bool stripSuit)
 	}
 	else if ( !g_pGameRules->IsDeathmatch() )
 	{
-#ifdef SM_AI_FIXES
-	for (int i = 1; i <= gpGlobals->maxClients; i++ ) 
-	{ 
-		CBasePlayer *pPlayer = UTIL_PlayerByIndex( i ); 
-		if ( pPlayer )
-		{
-		pPlayer->RemoveAllItems( stripSuit );
+		for (int i = 1; i <= gpGlobals->maxClients; i++ ) 
+		{ 
+			CBasePlayer *pPlayer = UTIL_PlayerByIndex( i ); 
+			if ( pPlayer )
+			{
+			pPlayer->RemoveAllItems( stripSuit );
+			}
 		}
-	}
-#else
-		pPlayer = UTIL_GetLocalPlayer();
-#endif
 	}
 
 	if ( pPlayer )
 	{
 		pPlayer->RemoveAllItems( stripSuit );
 	}
-}
-
-
-class CRevertSaved : public CPointEntity
-{
-	DECLARE_CLASS( CRevertSaved, CPointEntity );
-public:
-	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-	void	LoadThink( void );
-
-	DECLARE_DATADESC();
-
-	inline	float	Duration( void ) { return m_Duration; }
-	inline	float	HoldTime( void ) { return m_HoldTime; }
-	inline	float	LoadTime( void ) { return m_loadTime; }
-
-	inline	void	SetDuration( float duration ) { m_Duration = duration; }
-	inline	void	SetHoldTime( float hold ) { m_HoldTime = hold; }
-	inline	void	SetLoadTime( float time ) { m_loadTime = time; }
-
-	//Inputs
-	void InputReload(inputdata_t &data);
-
-#ifdef HL1_DLL
-	void	MessageThink( void );
-	inline	float	MessageTime( void ) { return m_messageTime; }
-	inline	void	SetMessageTime( float time ) { m_messageTime = time; }
-#endif
-
-private:
-
-	float	m_loadTime;
-	float	m_Duration;
-	float	m_HoldTime;
-
-#ifdef HL1_DLL
-	string_t m_iszMessage;
-	float	m_messageTime;
-#endif
-};
-
-LINK_ENTITY_TO_CLASS( player_loadsaved, CRevertSaved );
-
-BEGIN_DATADESC( CRevertSaved )
-
-#ifdef HL1_DLL
-	DEFINE_KEYFIELD( m_iszMessage, FIELD_STRING, "message" ),
-	DEFINE_KEYFIELD( m_messageTime, FIELD_FLOAT, "messagetime" ),	// These are not actual times, but durations, so save as floats
-
-	DEFINE_FUNCTION( MessageThink ),
-#endif
-
-	DEFINE_KEYFIELD( m_loadTime, FIELD_FLOAT, "loadtime" ),
-	DEFINE_KEYFIELD( m_Duration, FIELD_FLOAT, "duration" ),
-	DEFINE_KEYFIELD( m_HoldTime, FIELD_FLOAT, "holdtime" ),
-
-	DEFINE_INPUTFUNC( FIELD_VOID, "Reload", InputReload ),
-
-
-	// Function Pointers
-	DEFINE_FUNCTION( LoadThink ),
-
-END_DATADESC()
-
-CBaseEntity *CreatePlayerLoadSave( Vector vOrigin, float flDuration, float flHoldTime, float flLoadTime )
-{
-	CRevertSaved *pRevertSaved = (CRevertSaved *) CreateEntityByName( "player_loadsaved" );
-
-	if ( pRevertSaved == NULL )
-		return NULL;
-
-	UTIL_SetOrigin( pRevertSaved, vOrigin );
-
-	pRevertSaved->Spawn();
-	pRevertSaved->SetDuration( flDuration );
-	pRevertSaved->SetHoldTime( flHoldTime );
-	pRevertSaved->SetLoadTime( flLoadTime );
-
-	return pRevertSaved;
-}
-
-
-
-void CRevertSaved::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
-{
-	UTIL_ScreenFadeAll( m_clrRender, Duration(), HoldTime(), FFADE_OUT );
-	SetNextThink( gpGlobals->curtime + LoadTime() );
-	SetThink( &CRevertSaved::LoadThink );
-#ifdef SM_AI_FIXES
-	for (int i = 1; i <= gpGlobals->maxClients; i++ ) 
-	{ 
-		CBasePlayer *pPlayer = UTIL_PlayerByIndex( i ); 
-		if ( !pPlayer ) 
-			continue; 
-			
-		if ( pPlayer )
-		{		
-			//Adrian: Setting this flag so we can't move or save a game.
-			pPlayer->pl.deadflag = true;
-			pPlayer->AddFlag( (FL_NOTARGET|FL_FROZEN) );
-
-			// clear any pending autosavedangerous
-			g_ServerGameDLL.m_fAutoSaveDangerousTime = 0.0f;
-			g_ServerGameDLL.m_fAutoSaveDangerousMinHealthToCommit = 0.0f;
-		}
-	}
-#else
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-
-	if ( pPlayer )
-	{
-		//Adrian: Setting this flag so we can't move or save a game.
-		pPlayer->pl.deadflag = true;
-		pPlayer->AddFlag( (FL_NOTARGET|FL_FROZEN) );
-
-		// clear any pending autosavedangerous
-		g_ServerGameDLL.m_fAutoSaveDangerousTime = 0.0f;
-		g_ServerGameDLL.m_fAutoSaveDangerousMinHealthToCommit = 0.0f;
-	}
-#endif
-}
-
-void CRevertSaved::InputReload( inputdata_t &inputdata )
-{
-	UTIL_ScreenFadeAll( m_clrRender, Duration(), HoldTime(), FFADE_OUT );
-
-#ifdef HL1_DLL
-	SetNextThink( gpGlobals->curtime + MessageTime() );
-	SetThink( &CRevertSaved::MessageThink );
-#else
-	SetNextThink( gpGlobals->curtime + LoadTime() );
-	SetThink( &CRevertSaved::LoadThink );
-#endif
-
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-
-	if ( pPlayer )
-	{
-		//Adrian: Setting this flag so we can't move or save a game.
-		pPlayer->pl.deadflag = true;
-		pPlayer->AddFlag( (FL_NOTARGET|FL_FROZEN) );
-
-		// clear any pending autosavedangerous
-		g_ServerGameDLL.m_fAutoSaveDangerousTime = 0.0f;
-		g_ServerGameDLL.m_fAutoSaveDangerousMinHealthToCommit = 0.0f;
-	}
-}
-
-#ifdef HL1_DLL
-void CRevertSaved::MessageThink( void )
-{
-	UTIL_ShowMessageAll( STRING( m_iszMessage ) );
-	float nextThink = LoadTime() - MessageTime();
-	if ( nextThink > 0 ) 
-	{
-		SetNextThink( gpGlobals->curtime + nextThink );
-		SetThink( &CRevertSaved::LoadThink );
-	}
-	else
-		LoadThink();
-}
-#endif
-
-
-void CRevertSaved::LoadThink( void )
-{
-	if ( !gpGlobals->deathmatch )
-	{
-		engine->ServerCommand("reload\n");
-	}
-#ifdef SM_AI_FIXES
-	//SecobMod__Information: Here we change level to the map we're already on if a vital ally such as Alyx is killed etc etc etc.
-	else
-	{
-		char *szDefaultMapName = new char[32];
-		Q_strncpy( szDefaultMapName, STRING(gpGlobals->mapname), 32 );
-		engine->ChangeLevel( szDefaultMapName, NULL );
-		return;
-	}
-#endif	
 }
 
 #define SF_SPEED_MOD_SUPPRESS_WEAPONS	(1<<0)	// Take away weapons
@@ -7960,11 +7666,7 @@ void CMovementSpeedMod::InputSpeedMod(inputdata_t &data)
 	}
 	else if ( !g_pGameRules->IsDeathmatch() )
 	{
-#ifdef SM_AI_FIXES
 		pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
-#else
-		pPlayer = UTIL_GetLocalPlayer();
-#endif
 	}
 
 	if ( pPlayer )
@@ -8091,6 +7793,8 @@ void SendProxy_CropFlagsToPlayerFlagBitsLength( const SendProp *pProp, const voi
 		SendPropInt			( SENDINFO( m_nWaterLevel ), 2, SPROP_UNSIGNED ),
 		SendPropFloat		( SENDINFO( m_flLaggedMovementValue ), 0, SPROP_NOSCALE ),
 
+		SendPropEHandle		( SENDINFO(m_hTonemapController) ),
+
 	END_SEND_TABLE()
 
 
@@ -8134,6 +7838,8 @@ void SendProxy_CropFlagsToPlayerFlagBitsLength( const SendProp *pProp, const voi
 
 		// Data that only gets sent to the local player.
 		SendPropDataTable( "localdata", 0, &REFERENCE_SEND_TABLE(DT_LocalPlayerExclusive), SendProxy_SendLocalDataTable ),
+
+		SendPropEHandle		( SENDINFO(m_hColorCorrectionCtrl) ),
 
 	END_SEND_TABLE()
 
@@ -8590,7 +8296,7 @@ int CBasePlayer::GetFOVForNetworking( void )
 
 	if ( gpGlobals->curtime - m_flFOVTime < m_Local.m_flFOVRate )
 	{
-		fFOV = MIN( fFOV, m_iFOVStart );
+		fFOV = MIN( fFOV, m_iFOVStart.Get() );
 	}
 	return fFOV;
 }
@@ -8831,6 +8537,15 @@ void CBasePlayer::InitFogController( void )
 {
 	// Setup with the default master controller.
 	m_Local.m_PlayerFog.m_hCtrl = FogSystem()->GetMasterFogController();
+}
+
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+void CBasePlayer::InitColorCorrectionController( void )
+{
+	// Setup with the default master controller.
+	m_hColorCorrectionCtrl = ColorCorrectionSystem()->GetMasterColorCorrection();
 }
 
 //-----------------------------------------------------------------------------
@@ -9486,7 +9201,6 @@ void CBasePlayer::AdjustDrownDmg( int nAmount )
 	}
 }
 
-#ifdef SecobMod__ENABLE_FAKE_PASSENGER_SEATS
 //------------------------------------------------------------------------------
 // A small wrapper around SV_Move that never clips against the supplied entity.
 //------------------------------------------------------------------------------
@@ -9550,7 +9264,6 @@ void CBasePlayer::SafeVehicleExit(CBasePlayer *pPlayer)
 		AddFlag(FL_ONGROUND);
 	}
 }
-#endif
 
 
 #if !defined(NO_STEAM)
@@ -9580,3 +9293,72 @@ uint64 CBasePlayer::GetSteamIDAsUInt64( void )
 	return 0;
 }
 #endif // NO_STEAM
+
+void CBasePlayer::UpdateTonemapController( void )
+{
+	m_hTonemapController = TheTonemapSystem()->GetMasterTonemapController();
+}
+
+void CBasePlayer::UpdateFXVolume( void )
+{
+	CFogController *pFogController = NULL;
+	CColorCorrection* pColorCorrectionEnt = NULL;
+
+	Vector eyePos;
+	CBaseEntity *pViewEntity = GetViewEntity();
+	if ( pViewEntity )
+	{
+		eyePos = pViewEntity->GetAbsOrigin();
+	}
+	else
+	{
+		eyePos = EyePosition();
+	}
+
+	CFogVolume *pFogVolume = CFogVolume::FindFogVolumeForPosition( eyePos );
+	if ( pFogVolume )
+	{
+		pFogController = pFogVolume->GetFogController();
+		pColorCorrectionEnt = pFogVolume->GetColorCorrectionController();
+
+		if ( !pFogController )
+		{
+			pFogController = FogSystem()->GetMasterFogController();
+		}
+
+		if ( !pColorCorrectionEnt )
+		{
+			pColorCorrectionEnt = ColorCorrectionSystem()->GetMasterColorCorrection();
+		}
+	}
+	else if ( TheFogVolumes.Count() > 0 )
+	{
+		// If we're not in a fog volume, clear our fog volume, if the map has any.
+		// This will get us back to using the master fog controller.
+		pFogController = FogSystem()->GetMasterFogController();
+		pColorCorrectionEnt = ColorCorrectionSystem()->GetMasterColorCorrection();
+	}
+
+	if ( pFogController && m_Local.m_PlayerFog.m_hCtrl.Get() != pFogController )
+	{
+		m_Local.m_PlayerFog.m_hCtrl.Set( pFogController );
+	}
+
+	if ( pColorCorrectionEnt )
+	{
+		m_hColorCorrectionCtrl.Set( pColorCorrectionEnt );
+	}
+}
+
+void CBasePlayer::OnTonemapTriggerStartTouch( CTonemapTrigger *pTonemapTrigger )
+{
+	m_hTriggerTonemapList.FindAndRemove( pTonemapTrigger );
+	m_hTriggerTonemapList.AddToTail( pTonemapTrigger );
+}
+
+
+//--------------------------------------------------------------------------------------------------------
+void CBasePlayer::OnTonemapTriggerEndTouch( CTonemapTrigger *pTonemapTrigger )
+{
+	m_hTriggerTonemapList.FindAndRemove( pTonemapTrigger );
+}

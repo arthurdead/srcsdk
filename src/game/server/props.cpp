@@ -2054,9 +2054,8 @@ void CDynamicProp::CreateBoneFollowers()
 				pBone = pBone->GetNextKey();
 			}
 		}
-
-		modelKeyValues->deleteThis();
 	}
+	modelKeyValues->deleteThis();
 
 	// if we got here, we don't have a bone follower section, but if we have a ragdoll
 	// go ahead and create default bone followers for it
@@ -2086,7 +2085,7 @@ bool CDynamicProp::TestCollision( const Ray_t &ray, unsigned int mask, trace_t& 
 			}
 		}
 	}
-	return false;
+	return BaseClass::TestCollision( ray, mask, trace );
 }
 
 
@@ -2462,6 +2461,8 @@ bool PropIsGib( CBaseEntity *pEntity )
 
 CPhysicsProp::~CPhysicsProp()
 {
+	TheNavMesh->UnregisterAvoidanceObstacle( this );
+
 	if (HasSpawnFlags(SF_PHYSPROP_IS_GIB))
 	{
 		g_ActiveGibCount--;
@@ -2524,6 +2525,10 @@ void CPhysicsProp::Spawn( )
 		DisableAutoFade();
 	}
 	
+	if ( IsPotentiallyAbleToObstructNavAreas() )
+	{
+		TheNavMesh->RegisterAvoidanceObstacle( this );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -2938,6 +2943,101 @@ void CPhysicsProp::VPhysicsUpdate( IPhysicsObject *pPhysics )
 	{
 		m_OnOutOfWorld.FireOutput( this, this );
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CPhysicsProp::IsPotentiallyAbleToObstructNavAreas( void ) const
+{
+	if ( !IsSolid() )
+		return false;
+
+	if ( IsSolidFlagSet( FSOLID_NOT_SOLID ) )
+		return false;
+
+	const float MinObstructingMass = 100.0f;
+	if ( GetMass() <= MinObstructingMass )
+		return false;
+
+	Extent extent;
+	CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
+	return (extent.hi - extent.lo).IsLengthGreaterThan( StepHeight );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+float CPhysicsProp::GetNavObstructionHeight( void ) const
+{
+	Extent extent;
+	CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
+	return extent.hi.z - extent.lo.z;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CPhysicsProp::CanObstructNavAreas( void ) const
+{
+	if (m_bAwake )
+		return false;
+
+	const float MinObstructingMass = 100.0f;
+	if ( GetMass() <= MinObstructingMass )
+		return false;
+
+	if ( !IsSolid() )
+		return false;
+
+	if ( IsSolidFlagSet( FSOLID_NOT_SOLID ) )
+		return false;
+
+	Extent extent;
+	CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
+	float height = extent.hi.z - extent.lo.z;
+
+	if ( height < StepHeight )
+		return false;
+
+	if ( GetHealth() < 300 && m_takedamage == DAMAGE_YES )
+		return false;
+
+	return true;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CPhysicsProp::OnNavMeshLoaded( void )
+{
+#ifdef USE_NAV_MESH
+	if ( !m_bAwake )	// tank walls have a different behavior
+	{
+		SetContextThink( &CPhysicsProp::NavThink, gpGlobals->curtime, "NavContext" );
+	}
+#endif
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CPhysicsProp::NavThink( void )
+{
+#ifdef USE_NAV_MESH
+	if ( !CanObstructNavAreas() )
+		return;
+
+	Extent extent;
+	CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
+	extent.lo.z -= HumanHeight;
+	NavAreaCollector overlap;
+	TheNavMesh->ForAllAreasOverlappingExtent( overlap, extent );
+
+	float obstructionHeight = GetNavObstructionHeight();
+	FOR_EACH_VEC( overlap.m_area, it )
+	{
+		CNavArea *area = overlap.m_area[ it ];
+		area->MarkObstacleToAvoid( obstructionHeight );
+	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -3577,6 +3677,7 @@ BEGIN_DATADESC(CBasePropDoor)
 	DEFINE_THINKFUNC(DoorOpenMoveDone),
 	DEFINE_THINKFUNC(DoorCloseMoveDone),
 	DEFINE_THINKFUNC(DoorAutoCloseThink),
+	DEFINE_THINKFUNC(DisableAreaPortalThink),
 END_DATADESC()
 
 IMPLEMENT_SERVERCLASS_ST(CBasePropDoor, DT_BasePropDoor)
@@ -3585,6 +3686,7 @@ END_SEND_TABLE()
 CBasePropDoor::CBasePropDoor( void )
 {
 	m_hMaster = NULL;
+	m_nPhysicsMaterial = -1;
 }
 
 //-----------------------------------------------------------------------------
@@ -3636,6 +3738,11 @@ void CBasePropDoor::Spawn()
 }
 
 
+//-----------------------------------------------------------------------------
+bool CBasePropDoor::IsAbleToCloseAreaPortals( void ) const
+{
+	return true;
+}
 //-----------------------------------------------------------------------------
 // Purpose: Returns our capabilities mask.
 //-----------------------------------------------------------------------------
@@ -3726,7 +3833,10 @@ void CBasePropDoor::HandleAnimEvent(animevent_t *pEvent)
 	if (pEvent->event == AE_DOOR_OPEN)
 	{
 		DoorActivate();
+		return;
 	}
+
+	BaseClass::HandleAnimEvent( pEvent );
 }
 
 
@@ -3766,11 +3876,13 @@ void CBasePropDoor::CalcDoorSounds()
 				strSoundOpen = AllocPooledString( pkvSkinData->GetString( "open" ) );
 				strSoundClose = AllocPooledString( pkvSkinData->GetString( "close" ) );
 				strSoundMoving = AllocPooledString( pkvSkinData->GetString( "move" ) );
-				const char *pSurfaceprop = pkvSkinData->GetString( "surfaceprop" );
-				if ( pSurfaceprop && VPhysicsGetObject() )
+				if ( m_nPhysicsMaterial == -1 )
 				{
-					bFoundSkin = true;
-					VPhysicsGetObject()->SetMaterialIndex( physprops->GetSurfaceIndex( pSurfaceprop ) );
+					const char *pSurfaceprop = pkvSkinData->GetString( "surfaceprop" );
+					if ( pSurfaceprop && VPhysicsGetObject() )
+					{
+						m_nPhysicsMaterial = physprops->GetSurfaceIndex( pSurfaceprop );
+					}
 				}
 			}
 
@@ -3803,10 +3915,17 @@ void CBasePropDoor::CalcDoorSounds()
 	}
 	modelKeyValues->deleteThis();
 	modelKeyValues = NULL;
-	if ( !bFoundSkin && VPhysicsGetObject() )
+	if ( VPhysicsGetObject() )
 	{
-		Warning( "%s has Door model (%s) with no door_options! Verify that SKIN is valid, and has a corresponding options block in the model QC file\n", GetDebugName(), modelinfo->GetModelName( GetModel() ) );
-		VPhysicsGetObject()->SetMaterialIndex( physprops->GetSurfaceIndex("wood") );
+		if ( m_nPhysicsMaterial == -1 )
+		{
+			Warning( "%s has Door model (%s) with no door_options or m_nPhysicsMaterial specified! Verify that SKIN is valid, and has a corresponding options block in the model QC file\n", GetDebugName(), modelinfo->GetModelName( GetModel() ) );
+			VPhysicsGetObject()->SetMaterialIndex( physprops->GetSurfaceIndex("wood") );
+		}
+		else
+		{
+			VPhysicsGetObject()->SetMaterialIndex( m_nPhysicsMaterial );
+		}
 	}
 
 	// Any sound data members that are already filled out were specified as level designer overrides,
@@ -3831,6 +3950,12 @@ void CBasePropDoor::CalcDoorSounds()
 	PrecacheScriptSound( STRING( m_ls.sUnlockedSound ) );
 }
 
+// Purpose: Delay closing of area portals
+//-----------------------------------------------------------------------------
+void CBasePropDoor::DisableAreaPortalThink( void )
+{
+	UpdateAreaPortals( false );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -3838,6 +3963,13 @@ void CBasePropDoor::CalcDoorSounds()
 //-----------------------------------------------------------------------------
 void CBasePropDoor::UpdateAreaPortals(bool isOpen)
 {
+	SetContextThink( NULL, 0, "AreaPortal" );
+
+	if ( !IsAbleToCloseAreaPortals() )
+	{
+		isOpen = true;
+	}
+
 	string_t name = GetEntityName();
 	if (!name)
 		return;
@@ -4272,7 +4404,8 @@ void CBasePropDoor::DoorCloseMoveDone(void)
 	SetDoorState( DOOR_STATE_CLOSED );
 
 	m_OnFullyClosed.FireOutput(m_hActivator, this);
-	UpdateAreaPortals(false);
+	// Close the area portals just after the door closes, to prevent visual artifacts in multiplayer games
+	SetContextThink( &CBasePropDoor::DisableAreaPortalThink, gpGlobals->curtime + 0.5f, "AreaPortal" );
 
 	// Let the leaf class do its thing.
 	OnDoorClosed();
@@ -4557,6 +4690,7 @@ bool CBasePropDoor::TestCollision( const Ray_t &ray, unsigned int mask, trace_t&
 	if ( !VPhysicsGetObject() )
 		return false;
 
+	MDLCACHE_CRITICAL_SECTION();
 	CStudioHdr *pStudioHdr = GetModelPtr( );
 	if (!pStudioHdr)
 		return false;
@@ -4568,6 +4702,10 @@ bool CBasePropDoor::TestCollision( const Ray_t &ray, unsigned int mask, trace_t&
 
 	if ( trace.DidHit() )
 	{
+		trace.contents = pStudioHdr->contents();
+		// use the default surface properties
+		trace.surface.name = "**studio**";
+		trace.surface.flags = 0;
 		trace.surface.surfaceProps = VPhysicsGetObject()->GetMaterialIndex();
 		return true;
 	}
@@ -4694,7 +4832,7 @@ public:
 
 	void	GetNPCOpenData(CAI_BaseNPC *pNPC, opendata_t &opendata);
 
-	void	DoorClose( void );
+	//void	DoorClose( void );
 	bool	DoorCanClose( bool bAutoClose );
 	void	DoorOpen( CBaseEntity *pOpenAwayFrom );
 
@@ -4710,7 +4848,10 @@ public:
 
 	void	InputSetSpeed(inputdata_t &inputdata);
 
+	virtual void ComputeDoorExtent( Extent *extent, unsigned int extentType );	// extent contains the volume encompassing open + closed states
+
 	DECLARE_DATADESC();
+	DECLARE_SERVERCLASS();
 
 private:
 
@@ -4767,6 +4908,9 @@ BEGIN_DATADESC(CPropDoorRotating)
 	//m_vecBackBoundsMin
 	//m_vecBackBoundsMax
 END_DATADESC()
+
+IMPLEMENT_SERVERCLASS_ST( CPropDoorRotating, DT_PropDoorRotating )
+END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS(prop_door_rotating, CPropDoorRotating);
 
@@ -4935,6 +5079,8 @@ void CPropDoorRotating::OnDoorOpened( void )
 //-----------------------------------------------------------------------------
 void CPropDoorRotating::OnDoorClosed( void )
 {
+	BaseClass::OnDoorClosed();
+
 	if ( m_hDoorBlocker != NULL )
 	{
 		// Destroy the blocker that was preventing NPCs from getting in our way.
@@ -5027,6 +5173,32 @@ void CPropDoorRotating::OnRestore( void )
 	// Figure out our volumes of movement as this door opens
 	CalculateDoorVolume( GetLocalAngles(), m_angRotationOpenForward, &m_vecForwardBoundsMin, &m_vecForwardBoundsMax );
 	CalculateDoorVolume( GetLocalAngles(), m_angRotationOpenBack, &m_vecBackBoundsMin, &m_vecBackBoundsMax );
+}
+
+void CPropDoorRotating::ComputeDoorExtent( Extent *extent, unsigned int extentType )
+{
+	if ( !extent )
+		return;
+
+	if ( extentType & DOOR_EXTENT_CLOSED )
+	{
+		//Extent closedExtent;
+		CalculateDoorVolume( m_angRotationClosed, m_angRotationClosed, &extent->lo, &extent->hi );
+
+		if ( extentType & DOOR_EXTENT_OPEN )
+		{
+			Extent openExtent;
+			UTIL_ComputeAABBForBounds( m_vecForwardBoundsMin, m_vecForwardBoundsMax, m_vecBackBoundsMin, m_vecBackBoundsMax, &openExtent.lo, &openExtent.hi );
+			extent->Encompass( openExtent );
+		}
+	}
+	else if ( extentType & DOOR_EXTENT_OPEN )
+	{
+		UTIL_ComputeAABBForBounds( m_vecForwardBoundsMin, m_vecForwardBoundsMax, m_vecBackBoundsMin, m_vecBackBoundsMax, &extent->lo, &extent->hi );
+	}
+
+	extent->lo += GetAbsOrigin();
+	extent->hi += GetAbsOrigin();
 }
 
 //-----------------------------------------------------------------------------
@@ -5195,10 +5367,42 @@ void CPropDoorRotating::BeginOpening(CBaseEntity *pOpenAwayFrom)
 	{
 		if (pOpenAwayFrom != NULL)
 		{
-			Vector vecForwardDoor;
-			GetVectors(&vecForwardDoor, NULL, NULL);
+			// as well as which side "open forward" is on, so we can always try to
+			// open away from the player.
 
-			if (vecForwardDoor.Dot(pOpenAwayFrom->GetAbsOrigin()) > vecForwardDoor.Dot(GetAbsOrigin()))
+			Vector vecForwardDoor = WorldSpaceCenter() - GetAbsOrigin();
+			vecForwardDoor.z = 0;
+			vecForwardDoor.NormalizeInPlace();
+
+			Vector vecToActivator = pOpenAwayFrom->GetAbsOrigin() - GetAbsOrigin();
+			vecToActivator.z = 0;
+			vecToActivator.NormalizeInPlace();
+
+			Vector vecActivatorCross = vecForwardDoor.Cross( vecToActivator );
+			bool isActivatorOnLeft = false;
+			if ( vecActivatorCross.z < 0 )
+			{
+				// activator is on the right of the door (looking from hinge across doorway)
+			}
+			else
+			{
+				// activator is on the left of the door (looking from hinge across doorway)
+				isActivatorOnLeft = true;
+			}
+
+			bool isOpenForwardOnLeft = false;
+			float forwardYaw = AngleNormalize( m_angRotationOpenForward[1] - GetLocalAngles()[1] );
+			if ( forwardYaw < 0 )
+			{
+				// opening forward is on the right of the door (looking from hinge across doorway)
+			}
+			else
+			{
+				// opening forward is on the left of the door (looking from hinge across doorway)
+				isOpenForwardOnLeft = true;
+			}
+
+			if ( isActivatorOnLeft == isOpenForwardOnLeft )
 			{
 				angOpen = m_angRotationOpenBack;
 				eDirCheck = DOOR_CHECK_BACKWARD;
@@ -5389,6 +5593,12 @@ int CPropDoorRotating::DrawDebugTextOverlays(void)
 		EntityText( text_offset, tempstr, 0);
 		text_offset++;
 
+		if ( IsDoorLocked() )
+		{
+			EntityText( text_offset, "LOCKED", 0);
+			text_offset++;
+		}
+
 		if ( IsDoorOpen() )
 		{
 			Q_strncpy(tempstr, "DOOR STATE: OPEN", sizeof(tempstr));
@@ -5434,14 +5644,15 @@ class CPhysSphere : public CPhysicsProp
 {
 	DECLARE_CLASS( CPhysSphere, CPhysicsProp );
 public:
+	float m_fRadius;
 	virtual bool OverridePropdata() { return true; }
 	bool CreateVPhysics()
 	{
 		SetSolid( SOLID_BBOX );
-		SetCollisionBounds( -Vector(12,12,12), Vector(12,12,12) );
+		SetCollisionBounds( -Vector(m_fRadius), Vector(m_fRadius) );
 		objectparams_t params = g_PhysDefaultObjectParams;
 		params.pGameData = static_cast<void *>(this);
-		IPhysicsObject *pPhysicsObject = physenv->CreateSphereObject( 12, 0, GetAbsOrigin(), GetAbsAngles(), &params, false );
+		IPhysicsObject *pPhysicsObject = physenv->CreateSphereObject( m_fRadius, GetModelPtr()->GetRenderHdr()->textureindex, GetAbsOrigin(), GetAbsAngles(), &params, false );
 		if ( pPhysicsObject )
 		{
 			VPhysicsSetObject( pPhysicsObject );
@@ -5451,7 +5662,12 @@ public:
 	
 		return true;
 	}
+	DECLARE_DATADESC();
 };
+
+BEGIN_DATADESC( CPhysSphere )
+	DEFINE_KEYFIELD( m_fRadius, FIELD_FLOAT, "radius" ),
+END_DATADESC()
 
 void CPropDoorRotating::InputSetSpeed(inputdata_t &inputdata)
 {

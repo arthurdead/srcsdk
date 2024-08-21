@@ -523,12 +523,7 @@ CBaseEntity *CGlobalEntityList::FindEntityProcedural( const char *szName, CBaseE
 		//
 		if ( FStrEq( pName, "player" ) )
 		{
-		#ifdef SM_AI_FIXES
-			return (CBaseEntity *)UTIL_GetLocalPlayer(); 
-		#else
-			return (CBaseEntity *)UTIL_PlayerByIndex( 1 );
-		#endif
-
+			return UTIL_GetCommandClientIfAdmin(); 
 		}
 		else if ( FStrEq( pName, "pvsplayer" ) )
 		{
@@ -544,11 +539,7 @@ CBaseEntity *CGlobalEntityList::FindEntityProcedural( const char *szName, CBaseE
 			else
 			{
 				// FIXME: error condition?
-			#ifdef SM_AI_FIXES
-				return (CBaseEntity *)UTIL_GetLocalPlayer(); 
-			#else
-				return (CBaseEntity *)UTIL_PlayerByIndex( 1 );
-			#endif
+				return UTIL_GetCommandClientIfAdmin(); 
 			}
 
 		}
@@ -562,12 +553,7 @@ CBaseEntity *CGlobalEntityList::FindEntityProcedural( const char *szName, CBaseE
 		}
 		else if ( FStrEq( pName, "picker" ) )
 		{
-		#ifdef SM_AI_FIXES
-			return FindPickerEntity( UTIL_GetLocalPlayer() ); 
-		#else
-			return FindPickerEntity( UTIL_PlayerByIndex(1) );
-		#endif
-
+			return FindPickerEntity( UTIL_GetCommandClientIfAdmin() ); 
 		}
 		else if ( FStrEq( pName, "self" ) )
 		{

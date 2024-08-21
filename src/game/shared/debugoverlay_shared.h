@@ -14,9 +14,12 @@
 
 #ifdef GAME_DLL
 class CBaseEntity;
+class CBasePlayer;
 #else
 #define CBaseEntity C_BaseEntity
 class C_BaseEntity;
+#define CBasePlayer C_BasePlayer
+class C_BasePlayer;
 #endif
 
 //=============================================================================

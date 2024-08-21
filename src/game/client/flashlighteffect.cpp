@@ -51,6 +51,7 @@ static ConVar r_flashlightladderdist( "r_flashlightladderdist", "40.0", FCVAR_CH
 static ConVar mat_slopescaledepthbias_shadowmap( "mat_slopescaledepthbias_shadowmap", "16", FCVAR_CHEAT );
 static ConVar mat_depthbias_shadowmap(	"mat_depthbias_shadowmap", "0.0005", FCVAR_CHEAT  );
 
+ClientShadowHandle_t g_hFlashlightHandle[MAX_PLAYERS + 1] = { CLIENTSHADOW_INVALID_HANDLE };
 
 void r_newflashlightCallback_f( IConVar *pConVar, const char *pOldString, float flOldValue )
 {
@@ -73,6 +74,8 @@ CFlashlightEffect::CFlashlightEffect(int nEntIndex)
 
 	m_bIsOn = false;
 	m_pPointLight = NULL;
+	g_hFlashlightHandle[nEntIndex] = CLIENTSHADOW_INVALID_HANDLE;
+
 	if( engine->GetDXSupportLevel() < 70 )
 	{
 		r_newflashlight.SetValue( 0 );
@@ -155,8 +158,10 @@ void CFlashlightEffect::UpdateLightNew(const Vector &vecPos, const Vector &vecFo
 
 	FlashlightState_t state;
 
+	C_BasePlayer* pl = UTIL_PlayerByIndex( m_nEntIndex );
+
 	// We will lock some of the flashlight params if player is on a ladder, to prevent oscillations due to the trace-rays
-	bool bPlayerOnLadder = ( C_BasePlayer::GetLocalPlayer()->GetMoveType() == MOVETYPE_LADDER );
+	bool bPlayerOnLadder = ( pl && pl->GetMoveType() == MOVETYPE_LADDER );
 
 	const float flEpsilon = 0.1f;			// Offset flashlight position along vecUp
 	const float flDistCutoff = 128.0f;
@@ -337,19 +342,7 @@ void CFlashlightEffect::UpdateLightNew(const Vector &vecPos, const Vector &vecFo
 	state.m_flShadowSlopeScaleDepthBias = mat_slopescaledepthbias_shadowmap.GetFloat();
 	state.m_flShadowDepthBias = mat_depthbias_shadowmap.GetFloat();
 
-	if( m_FlashlightHandle == CLIENTSHADOW_INVALID_HANDLE )
-	{
-		m_FlashlightHandle = g_pClientShadowMgr->CreateFlashlight( state );
-	}
-	else
-	{
-		if( !r_flashlightlockposition.GetBool() )
-		{
-			g_pClientShadowMgr->UpdateFlashlightState( m_FlashlightHandle, state );
-		}
-	}
-	
-	g_pClientShadowMgr->UpdateProjectedTexture( m_FlashlightHandle, true );
+	UpdateLightProjection(state);
 	
 	// Kill the old flashlight method if we have one.
 	LightOffOld();
@@ -460,6 +453,8 @@ void CFlashlightEffect::LightOffNew()
 		g_pClientShadowMgr->DestroyFlashlight( m_FlashlightHandle );
 		m_FlashlightHandle = CLIENTSHADOW_INVALID_HANDLE;
 	}
+
+	g_hFlashlightHandle[m_nEntIndex] = CLIENTSHADOW_INVALID_HANDLE;
 }
 
 //-----------------------------------------------------------------------------
@@ -472,6 +467,25 @@ void CFlashlightEffect::LightOffOld()
 		m_pPointLight->die = gpGlobals->curtime;
 		m_pPointLight = NULL;
 	}
+}
+
+void CFlashlightEffect::UpdateLightProjection( FlashlightState_t& state )
+{
+	if( m_FlashlightHandle == CLIENTSHADOW_INVALID_HANDLE )
+	{
+		m_FlashlightHandle = g_pClientShadowMgr->CreateFlashlight( state );
+	}
+	else
+	{
+		if( !r_flashlightlockposition.GetBool() )
+		{
+			g_pClientShadowMgr->UpdateFlashlightState( m_FlashlightHandle, state );
+		}
+	}
+	
+	g_pClientShadowMgr->UpdateProjectedTexture( m_FlashlightHandle, true );
+	
+	g_hFlashlightHandle[m_nEntIndex] = m_FlashlightHandle;
 }
 
 //-----------------------------------------------------------------------------
@@ -525,16 +539,7 @@ void CHeadlightEffect::UpdateLight( const Vector &vecPos, const Vector &vecDir, 
 	state.m_bEnableShadows = true;
 	state.m_pSpotlightTexture = m_FlashlightTexture;
 	state.m_nSpotlightTextureFrame = 0;
-	
-	if( GetFlashlightHandle() == CLIENTSHADOW_INVALID_HANDLE )
-	{
-		SetFlashlightHandle( g_pClientShadowMgr->CreateFlashlight( state ) );
-	}
-	else
-	{
-		g_pClientShadowMgr->UpdateFlashlightState( GetFlashlightHandle(), state );
-	}
-	
-	g_pClientShadowMgr->UpdateProjectedTexture( GetFlashlightHandle(), true );
+
+	UpdateLightProjection( state );
 }
 

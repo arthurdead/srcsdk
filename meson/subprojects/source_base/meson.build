@@ -26,6 +26,8 @@ source_dep = declare_dependency(
 		'-DSDK2013CE',
 		'-DVERSION_SAFE_STEAM_API_INTERFACES',
 		'-DMOVE_CONSTRUCTOR_SUPPORT',
+		'-DVALVE_RVALUE_REFS',
+		'-DVALVE_INITIALIZER_LIST_SUPPORT',
 		'-Wno-unknown-pragmas',
 		'-Wno-unused-local-typedefs',
 		'-Wno-template-id-cdtor',

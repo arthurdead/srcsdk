@@ -228,12 +228,20 @@ IPanelMetaClassMgr* PanelMetaClassMgr()
 //-----------------------------------------------------------------------------
 // constructor, destructor
 //-----------------------------------------------------------------------------
-CPanelMetaClassMgrImp::CPanelMetaClassMgrImp() : m_PanelTypeDict( true, 0, 32 )
+CPanelMetaClassMgrImp::CPanelMetaClassMgrImp() : m_PanelTypeDict( k_eDictCompareTypeCaseInsensitive, 0, 32 )
 {
 }
 
 CPanelMetaClassMgrImp::~CPanelMetaClassMgrImp()
 {
+	unsigned short index = m_MetaClassKeyValues.First();
+	while ( index != m_MetaClassKeyValues.InvalidIndex() )
+	{
+		m_MetaClassKeyValues[index]->deleteThis();
+		index = m_MetaClassKeyValues.Next( index );
+	}
+
+	m_MetaClassKeyValues.RemoveAll();
 }
 
 

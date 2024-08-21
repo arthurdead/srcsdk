@@ -60,7 +60,7 @@ static void RestoreEntityTo( CBaseEntity *pEntity, const Vector &vWantedPos )
 	if( sv_lagcompensationforcerestore.GetBool() )
 	{
 		// We don't have to test for validity.  Just put them back where you found them.
-		LC_SetAbsOrigin( pEntity, vWantedPos, true );
+		UTIL_SetOrigin( pEntity, vWantedPos, true );
 	}
 
 	unsigned int mask = UTIL_MaskForEntity( pEntity );

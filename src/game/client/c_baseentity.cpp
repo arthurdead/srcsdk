@@ -75,11 +75,7 @@ void cc_cl_interp_all_changed( IConVar *pConVar, const char *pOldString, float f
 
 static ConVar  cl_extrapolate( "cl_extrapolate", "1", FCVAR_CHEAT, "Enable/disable extrapolation if interpolation history runs out." );
 
-#ifdef SM_AI_FIXES
 static ConVar  cl_interp_npcs( "cl_interp_npcs", "0.3", FCVAR_USERINFO, "Interpolate NPC positions starting this many seconds in past (or cl_interp, if greater)" );
-#else
-static ConVar  cl_interp_npcs( "cl_interp_npcs", "0.0", FCVAR_USERINFO, "Interpolate NPC positions starting this many seconds in past (or cl_interp, if greater)" );  
-#endif
 static ConVar  cl_interp_all( "cl_interp_all", "0", 0, "Disable interpolation list optimizations.", 0, 0, 0, 0, cc_cl_interp_all_changed );
 ConVar  r_drawmodeldecals( "r_drawmodeldecals", "1" );
 extern ConVar	cl_showerror;
@@ -3849,6 +3845,36 @@ void C_BaseEntity::operator delete( void *pMem )
 	MemAlloc_Free( pMem );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  : *pMem -
+//-----------------------------------------------------------------------------
+void C_BaseEntity::operator delete( void *pMem, int nBlockUse, const char *pFileName, int nLine )
+{
+	// get the engine to free the memory
+	MemAlloc_Free( pMem, pFileName, nLine );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  : *pMem -
+//-----------------------------------------------------------------------------
+void C_BaseEntity::operator delete[]( void *pMem )
+{
+	// get the engine to free the memory
+	MemAlloc_Free( pMem );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  : *pMem -
+//-----------------------------------------------------------------------------
+void C_BaseEntity::operator delete[]( void *pMem, int nBlockUse, const char *pFileName, int nLine )
+{
+	// get the engine to free the memory
+	MemAlloc_Free( pMem, pFileName, nLine );
+}
+
 #include "tier0/memdbgon.h"
 
 //========================================================================================
@@ -4866,9 +4892,63 @@ bool C_BaseEntity::IsClientCreated( void ) const
 //			line - 
 // Output : C_BaseEntity
 //-----------------------------------------------------------------------------
-C_BaseEntity *C_BaseEntity::CreatePredictedEntityByName( const char *classname, const char *module, int line, bool persist /*= false */ )
+C_BaseEntity *C_BaseEntity::CreateNoSpawn( const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, C_BaseEntity *pOwner )
 {
+	C_BaseEntity *ent = NULL;
+
+	// Try to create it
+	ent = CreateEntityByName( szName );
+	if ( !ent )
+	{
+		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
+		return NULL;
+	}
+
+	// Add to client entity list
+	ClientEntityList().AddNonNetworkableEntity( ent );
+
+	Assert( ent->IsClientCreated() );
+
+	// Add the client entity to the spatial partition. (Collidable)
+	ent->CollisionProp()->CreatePartitionHandle();
+
+	// CLIENT ONLY FOR NOW!!!
+	ent->index = -1;
+
+	if ( AddDataChangeEvent( ent, DATA_UPDATE_CREATED, &ent->m_DataChangeEventRef ) )
+	{
+		ent->OnPreDataChanged( DATA_UPDATE_CREATED );
+	}
+
+	ent->Interp_UpdateInterpolationAmounts( ent->GetVarMapping() );
+
+	ent->SetLocalOrigin( vecOrigin );
+	ent->SetLocalAngles( vecAngles );
+	ent->SetOwnerEntity( pOwner );
+
+	return ent;
+}
+
+C_BaseEntity *C_BaseEntity::Create( const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, C_BaseEntity *pOwner )
+{
+	C_BaseEntity *ent = NULL;
+
+	// Try to create it
+	ent = CreateNoSpawn( szName, vecOrigin, vecAngles, pOwner );
+	if ( !ent )
+	{
+		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
+		return NULL;
+	}
+
+	ent->SpawnClientEntity();
+
+	return ent;
+}
+
 #if !defined( NO_ENTITY_PREDICTION )
+int C_BaseEntity::__FindPredicted( C_BaseEntity **pEntity, const char *szName, const char *module, int line )
+{
 	C_BasePlayer *player = C_BaseEntity::GetPredictionPlayer();
 
 	Assert( player );
@@ -4884,36 +4964,46 @@ C_BaseEntity *C_BaseEntity::CreatePredictedEntityByName( const char *classname, 
 
 	// Create id/context
 	CPredictableId testId;
-	testId.Init( player_index, command_number, classname, module, line );
+	testId.Init( player_index, command_number, szName, module, line );
 
 	// If repredicting, should be able to find the entity in the previously created list
 	if ( !prediction->IsFirstTimePredicted() )
 	{
-		// Only find previous instance if entity was created with persist set
-		if ( persist )
+		ent = FindPreviouslyCreatedEntity( testId );
+		if ( ent )
 		{
-			ent = FindPreviouslyCreatedEntity( testId );
-			if ( ent )
-			{
-				return ent;
-			}
+			*pEntity = ent;
+			return 1;
 		}
-
-		return NULL;
 	}
 
-	// Try to create it
-	ent = CreateEntityByName( classname );
-	if ( !ent )
-	{
-		return NULL;
-	}
+	return 2;
+}
+
+void C_BaseEntity::__SetupAsPredicted( C_BaseEntity *pEntity, const char *szName, const char *module, int line )
+{
+	C_BasePlayer *player = C_BaseEntity::GetPredictionPlayer();
+
+	Assert( player );
+	Assert( player->m_pCurrentCommand );
+	Assert( prediction->InPrediction() );
+
+	C_BaseEntity *ent = NULL;
+
+	// What's my birthday (should match server)
+	int command_number	= player->m_pCurrentCommand->command_number;
+	// Who's my daddy?
+	int player_index	= player->entindex() - 1;
+
+	// Create id/context
+	CPredictableId testId;
+	testId.Init( player_index, command_number, szName, module, line );
 
 	// It's predictable
-	ent->SetPredictionEligible( true );
+	pEntity->SetPredictionEligible( true );
 
 	// Set up "shared" id number
-	ent->m_PredictableID.SetRaw( testId.GetRaw() );
+	pEntity->m_PredictableID.SetRaw( testId.GetRaw() );
 
 	// Get a context (mostly for debugging purposes)
 	PredictionContext *context			= new PredictionContext;
@@ -4923,36 +5013,16 @@ C_BaseEntity *C_BaseEntity::CreatePredictedEntityByName( const char *classname, 
 	context->m_pszCreationModule		= module;
 
 	// Attach to entity
-	ent->m_pPredictionContext = context;
-
-	// Add to client entity list
-	ClientEntityList().AddNonNetworkableEntity( ent );
+	pEntity->m_pPredictionContext = context;
 
 	//  and predictables
-	g_Predictables.AddToPredictableList( ent->GetClientHandle() );
+	g_Predictables.AddToPredictableList( pEntity->GetClientHandle() );
 
 	// Duhhhh..., but might as well be safe
-	Assert( !ent->GetPredictable() );
-	Assert( ent->IsClientCreated() );
-
-	// Add the client entity to the spatial partition. (Collidable)
-	ent->CollisionProp()->CreatePartitionHandle();
-
-	// CLIENT ONLY FOR NOW!!!
-	ent->index = -1;
-
-	if ( AddDataChangeEvent( ent, DATA_UPDATE_CREATED, &ent->m_DataChangeEventRef ) )
-	{
-		ent->OnPreDataChanged( DATA_UPDATE_CREATED );
-	}
-
-	ent->Interp_UpdateInterpolationAmounts( ent->GetVarMapping() );
-	
-	return ent;
-#else
-	return NULL;
-#endif
+	Assert( !pEntity->GetPredictable() );
+	Assert( pEntity->IsClientCreated() );
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Called each packet that the entity is created on and finally gets called after the next packet

@@ -552,6 +552,7 @@ CFishPool::CFishPool( void )
 	m_maxRange = 255.0f;
 	m_swimDepth = 0.0f;
 	m_isDormant = false;
+	m_waterLevel = 0.0f;
 
 	m_visTimer.Start( 0.5f );
 
@@ -581,10 +582,9 @@ void CFishPool::Spawn()
 		QAngle heading( 0.0f, RandomFloat( 0, 360.0f ), 0.0f );
 
 		CFish *fish = (CFish *)Create( "fish", GetAbsOrigin(), heading, this );
-		fish->Initialize( this, i );
-
 		if (fish)
 		{
+			fish->Initialize( this, i );
 			CHandle<CFish> hFish;
 			hFish.Set( fish );
 			m_fishes.AddToTail( hFish );

@@ -55,7 +55,14 @@ bool CBaseFilter::PassesDamageFilter(const CTakeDamageInfo &info)
 
 bool CBaseFilter::PassesDamageFilterImpl( const CTakeDamageInfo &info )
 {
-	return PassesFilterImpl( NULL, info.GetAttacker() );
+	//Tony; modified so it can check the inflictor or the attacker. We'll check the attacker first; which is normal if that fails, then check the inflictor.
+	bool bResult = false;
+	bResult = PassesFilterImpl( NULL, info.GetAttacker() );
+
+	if ( !bResult && info.GetInflictor() != NULL )
+		bResult = PassesFilterImpl( NULL, info.GetInflictor() );
+
+	return bResult;//PassesFilterImpl( NULL, info.GetAttacker() );
 }
 
 //-----------------------------------------------------------------------------
@@ -372,12 +379,8 @@ protected:
 
 	bool PassesDamageFilterImpl(const CTakeDamageInfo &info)
 	{
-#ifdef SDK2013CE
 		//Tony; these are bitflags. check them as so.
 		return ((info.GetDamageType() & m_iDamageType) == m_iDamageType);
-#else
-	 	return info.GetDamageType() == m_iDamageType;
-#endif // SDK2013CE
 	}
 
 	int m_iDamageType;

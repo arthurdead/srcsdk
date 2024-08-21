@@ -174,6 +174,7 @@ private:
 	float			m_flCurScroll;		// for scrolling texture.
 	float			m_flScrollSpeed;
 
+	bool WindEnabled() const;
 	int				m_RopeFlags;			// Combo of ROPE_ flags.
 	int				m_iRopeMaterialModelIndex;	// Index of sprite model with the rope's material.
 		
@@ -194,6 +195,7 @@ private:
 	float			m_TextureScale;		// pixels per inch
 	
 	int				m_fLockedPoints;	// Which points are locked down.
+	int				m_nChangeCount;
 
 	float				m_Width;
 
@@ -205,8 +207,8 @@ private:
 	int				m_TextureHeight;	// Texture height, for texture scale calculations.
 
 	// Instantaneous force
-	Vector			m_flImpulse;
-	Vector			m_flPreviousImpulse;
+	Vector			m_vecImpulse;
+	Vector			m_vecPreviousImpulse;
 
 	// Simulated wind gusts.
 	float			m_flCurrentGustTimer;
@@ -245,6 +247,7 @@ abstract_class IRopeManager
 {
 public:
 	virtual						~IRopeManager() {}
+	virtual void Shutdown() = 0;
 	virtual void				ResetRenderCache( void ) = 0;
 	virtual void				AddToRenderCache( C_RopeKeyframe *pRope ) = 0;
 	virtual void				DrawRenderCache( bool bShadowDepth ) = 0;

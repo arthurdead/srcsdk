@@ -607,6 +607,9 @@ bool V_MakeRelativePath( const char *pFullPath, const char *pDirectory, char *pR
 // Fixes up a file name, removing dot slashes, fixing slashes, converting to lowercase, etc.
 void V_FixupPathName( OUT_Z_CAP(nOutLen) char *pOut, size_t nOutLen, const char *pPath );
 
+// trim whitespace from both ends of the string
+int V_StrTrim( char *pStr );
+
 // Adds a path separator to the end of the string if there isn't one already. Returns false if it would run out of space.
 void V_AppendSlash( INOUT_Z_CAP(strSize) char *pStr, int strSize );
 

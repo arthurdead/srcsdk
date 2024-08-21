@@ -11,7 +11,7 @@
 
 
 #include "effect_dispatch_data.h"
-
+#include "irecipientfilter.h"
 
 typedef void (*ClientEffectCallback)( const CEffectData &data );
 
@@ -40,8 +40,6 @@ public:
 
 void DispatchEffectToCallback( const char *pEffectName, const CEffectData &m_EffectData );
 void DispatchEffect( const char *pName, const CEffectData &data );
-#ifdef SDK2013CE
 void DispatchEffect( const char *pName, const CEffectData &data, IRecipientFilter &filter );
-#endif // SDK2013CE
 
 #endif // C_TE_EFFECT_DISPATCH_H

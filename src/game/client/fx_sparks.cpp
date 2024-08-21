@@ -96,12 +96,12 @@ void CSimpleGlowEmitter::SimulateParticles( CParticleSimulateIterator *pIterator
 	BaseClass::SimulateParticles( pIterator );
 }
 
-bool CSimpleGlowEmitter::WasTestedInView( unsigned char viewMask )
+bool CSimpleGlowEmitter::WasTestedInView( unsigned char viewMask ) const
 {
 	return (m_wasTested & viewMask) ? true : false;
 }
 
-bool CSimpleGlowEmitter::IsVisibleInView( unsigned char viewMask )
+bool CSimpleGlowEmitter::IsVisibleInView( unsigned char viewMask ) const
 {
 	return (m_isVisible & viewMask) ? true : false;
 }
@@ -1054,7 +1054,7 @@ void FX_MicroExplosion( Vector &position, Vector &normal )
 #define	EXPLOSION_FLECK_DAMPEN			0.3f
 #define	EXPLOSION_FLECK_ANGULAR_SPRAY	0.8f
 
-void FX_Explosion( Vector& origin, Vector& normal, char materialType )
+void FX_Explosion( const Vector& origin, const Vector& normal, char materialType )
 {
 	VPROF_BUDGET( "FX_Explosion", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	Vector	offset = origin + ( normal * 2.0f );
@@ -1250,7 +1250,7 @@ void FX_Explosion( Vector& origin, Vector& normal, char materialType )
 // Input  : origin - 
 //			normal - 
 //-----------------------------------------------------------------------------
-void FX_ConcussiveExplosion( Vector &origin, Vector &normal )
+void FX_ConcussiveExplosion( const Vector &origin, const Vector &normal )
 {
 	VPROF_BUDGET( "FX_ConcussiveExplosion", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	Vector	offset = origin + ( normal * 2.0f );
@@ -1468,7 +1468,7 @@ void FX_ConcussiveExplosion( Vector &origin, Vector &normal )
 }
 
 
-void FX_SparkFan( Vector &position, Vector &normal )
+void FX_SparkFan( const Vector &position, const Vector &normal )
 {
 	Vector	offset = position + ( normal * 1.0f );
 

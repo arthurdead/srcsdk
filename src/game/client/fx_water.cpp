@@ -409,22 +409,45 @@ void FX_GunshotSlimeSplash( const Vector &origin, const Vector &normal, float sc
 	C_BaseEntity::EmitSound( filter, SOUND_FROM_WORLD, ep );
 }
 
+inline void FX_GetSplashLighting( const Vector &position, Vector *color, float *luminosity )
+{
+	// Compute our lighting at our position
+	Vector totalColor = engine->GetLightForPoint( position, true );
+	
+	// Get our lighting information
+	UTIL_GetNormalizedColorTintAndLuminosity( totalColor, color, luminosity );
+	
+	// Fake a specular highlight (too dim otherwise)
+	if ( luminosity != NULL )
+	{
+		*luminosity = MIN( 1.0f, (*luminosity) * 4.0f );
+		
+		// Clamp so that we never go completely translucent
+		if ( *luminosity < 0.25f )
+		{
+			*luminosity = 0.25f;
+		}
+	}
+	
+	// Only take a quarter of the tint, mostly we want to be white
+	if ( color != NULL )
+	{
+		(*color) = ( (*color) * 0.25f ) + Vector( 0.75f, 0.75f, 0.75f );
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void SplashCallback( const CEffectData &data )
 {
-	Vector	normal;
-
-	AngleVectors( data.m_vAngles, &normal );
-
 	if ( data.m_fFlags & FX_WATER_IN_SLIME )
 	{
-		FX_GunshotSlimeSplash( data.m_vOrigin, Vector(0,0,1), data.m_flScale );
+		FX_GunshotSlimeSplash( data.m_vOrigin, data.m_vNormal, data.m_flScale );
 	}
 	else
 	{
-		FX_GunshotSplash( data.m_vOrigin, Vector(0,0,1), data.m_flScale );
+		FX_GunshotSplash( data.m_vOrigin, data.m_vNormal, data.m_flScale );
 	}
 }
 
@@ -439,11 +462,11 @@ void GunshotSplashCallback( const CEffectData &data )
 {
 	if ( data.m_fFlags & FX_WATER_IN_SLIME )
 	{
-		FX_GunshotSlimeSplash( data.m_vOrigin, Vector(0,0,1), data.m_flScale );
+		FX_GunshotSlimeSplash( data.m_vOrigin, data.m_vNormal, data.m_flScale );
 	}
 	else
 	{
-		FX_GunshotSplash( data.m_vOrigin, Vector(0,0,1), data.m_flScale );
+		FX_GunshotSplash( data.m_vOrigin, data.m_vNormal, data.m_flScale );
 	}
 }
 
@@ -461,7 +484,7 @@ void RippleCallback( const CEffectData &data )
 	float	luminosity;
 	
 	// Get our lighting information
-	FX_GetSplashLighting( data.m_vOrigin + ( Vector(0,0,1) * 4.0f ), &color, &luminosity );
+	FX_GetSplashLighting( data.m_vOrigin + ( data.m_vNormal * 4.0f ), &color, &luminosity );
 
 	FX_WaterRipple( data.m_vOrigin, flScale, &color, 1.5f, luminosity );
 }

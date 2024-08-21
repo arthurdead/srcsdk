@@ -69,6 +69,7 @@ namespace
 
 			SetBlockDragChaining( true );
 		}
+		virtual ~GripPanel() {}
 		
 		// Purpose- handle window resizing
 		// Input- dx, dy, the offet of the mouse pointer from where we started dragging
@@ -265,6 +266,7 @@ namespace
 		CaptionGripPanel(Frame* frame, const char *name) : GripPanel(frame, name, 0, 0)
 		{
 		}
+		virtual ~CaptionGripPanel() {}
 		
 		void moved(int dx, int dy)
 		{
@@ -523,6 +525,7 @@ namespace vgui
 			SetTextInset(2, 1);
 			SetBlockDragChaining( true );
 		}
+		virtual ~FrameButton() {}
 		
 		virtual void ApplySchemeSettings(IScheme *pScheme)
 		{
@@ -628,6 +631,7 @@ public:
 		SetMouseClickEnabled( MOUSE_RIGHT, true );
 		SetBlockDragChaining( true );
 	}
+	virtual ~FrameSystemButton() {}
 	
 	void SetImages( const char *pEnabledImage, const char *pDisabledImage = NULL )
 	{
@@ -1335,7 +1339,7 @@ void Frame::SetTitle(const char *title, bool surfaceTitle)
 	if (*newTitle == '#')
 	{
 		// try lookup in localization tables
-		StringIndex_t unlocalizedTextSymbol = g_pVGuiLocalize->FindIndex(newTitle + 1);
+		LocalizeStringIndex_t unlocalizedTextSymbol = g_pVGuiLocalize->FindIndex(newTitle + 1);
 		if (unlocalizedTextSymbol != INVALID_LOCALIZE_STRING_INDEX)
 		{
 			// we have a new text value
@@ -2285,7 +2289,7 @@ void Frame::SetDeleteSelfOnClose( bool state )
 //-----------------------------------------------------------------------------
 void Frame::OnDialogVariablesChanged( KeyValues *dialogVariables )
 {
-	StringIndex_t index = _title->GetUnlocalizedTextSymbol();
+	LocalizeStringIndex_t index = _title->GetUnlocalizedTextSymbol();
 	if (index != INVALID_LOCALIZE_STRING_INDEX)
 	{
 		// reconstruct the string from the variables

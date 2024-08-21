@@ -90,17 +90,9 @@ public:
 			if ( m_bSelfCollisions )
 			{
 				char szToken[256];
-			#ifdef SDK2013CE
 				const char *pStr = nexttoken(szToken, pValue, ',', sizeof(szToken));
-			#else
-				const char *pStr = nexttoken(szToken, pValue, ',');
-			#endif
 				int index0 = atoi(szToken);
-			#ifdef SDK2013CE
 				nexttoken( szToken, pStr, ',', sizeof(szToken) );
-			#else
-				nexttoken( szToken, pStr, ',' );
-			#endif
 				int index1 = atoi(szToken);
 
 				m_pSet->EnableCollisions( index0, index1 );
@@ -320,6 +312,51 @@ static void RagdollCreateObjects( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragd
 	physcollision->VPhysicsKeyParserDestroy( pParse );
 }
 
+static void RagdollCreateDestrObjects( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragdoll, const ragdollparams_t &params )
+{
+	ragdoll.listCount = 0;
+	ragdoll.pGroup = NULL;
+	ragdoll.allowStretch = params.allowStretch;
+	memset( ragdoll.list, 0, sizeof( ragdoll.list ) );
+	memset( &ragdoll.animfriction, 0, sizeof( ragdoll.animfriction ) );
+
+	if ( !params.pCollide || params.pCollide->solidCount > RAGDOLL_MAX_ELEMENTS )
+		return;
+
+	constraint_groupparams_t group;
+	group.Defaults();
+	ragdoll.pGroup = pPhysEnv->CreateConstraintGroup( group );
+
+	IVPhysicsKeyParser *pParse = physcollision->VPhysicsKeyParserCreate( params.pCollide->pKeyValues );
+	while ( !pParse->Finished() )
+	{
+		const char *pBlock = pParse->GetCurrentBlockName();
+		if ( !strcmpi( pBlock, "solid" ) )
+		{
+			solid_t solid;
+
+			pParse->ParseSolid( &solid, &g_SolidSetup );
+			RagdollAddSolid( pPhysEnv, ragdoll, params, solid );
+		}
+		else if ( !strcmpi( pBlock, "collisionrules" ) )
+		{
+			IPhysicsCollisionSet *pSet = physics->FindOrCreateCollisionSet( params.modelIndex, ragdoll.listCount );
+			CRagdollCollisionRules rules( pSet );
+			pParse->ParseCustom( ( void * )&rules, &rules );
+		}
+		else if ( !strcmpi( pBlock, "animatedfriction" ) )
+		{
+			CRagdollAnimatedFriction friction( &ragdoll );
+			pParse->ParseCustom( ( void* )&friction, &friction );
+		}
+		else
+		{
+			pParse->SkipBlock();
+		}
+	}
+	physcollision->VPhysicsKeyParserDestroy( pParse );
+}
+
 void RagdollSetupCollisions( ragdoll_t &ragdoll, vcollide_t *pCollide, int modelIndex )
 {
 	Assert(pCollide);
@@ -410,6 +447,36 @@ void RagdollActivate( ragdoll_t &ragdoll, vcollide_t *pCollide, int modelIndex, 
 	}
 }
 
+void RagdollActivateDestr( ragdoll_t &ragdoll, vcollide_t *pCollide, int modelIndex, bool bForceWake )
+{
+	RagdollSetupCollisions( ragdoll, pCollide, modelIndex );
+
+	for ( int i = 0; i < ragdoll.listCount; i++ )
+	{
+		//SAVE THE FPS!!!
+		PhysSetGameFlags( ragdoll.list[i].pObject, FVPHYSICS_NO_SELF_COLLISIONS );
+		// now that the relationships are set, activate the collision system
+		ragdoll.list[i].pObject->EnableCollisions( true );
+
+		if ( bForceWake == true )
+		{
+			ragdoll.list[i].pObject->Wake();
+		}
+	}
+	if ( ragdoll.pGroup )
+	{
+		// NOTE: This also wakes the objects
+		ragdoll.pGroup->Activate();
+		// so if we didn't want that, we'll need to put them back to sleep here
+		if ( !bForceWake )
+		{
+			for ( int i = 0; i < ragdoll.listCount; i++ )
+			{
+				ragdoll.list[i].pObject->Sleep();
+			}
+		}
+	}
+}
 
 bool RagdollCreate( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsEnvironment *pPhysEnv )
 {
@@ -462,6 +529,12 @@ bool RagdollCreate( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsE
 	return true;
 }
 
+bool RagdollCreateDestr( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsEnvironment *pPhysEnv )
+{
+	RagdollCreateDestrObjects( pPhysEnv, ragdoll, params );
+
+	return true;
+}
 
 void RagdollApplyAnimationAsVelocity( ragdoll_t &ragdoll, const matrix3x4_t *pPrevBones, const matrix3x4_t *pCurrentBones, float dt )
 {
@@ -781,10 +854,6 @@ bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 	}
 
 #else
-#ifndef SM_AI_FIXES
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-#endif
-
 	if( !UTIL_FindClientInPVS( pRagdoll->edict() ) )
 	{
 		if ( g_debug_ragdoll_removal.GetBool() )
@@ -792,15 +861,6 @@ bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 
 		return true;
 	}
-#ifndef SM_AI_FIXES
-	else if( !pPlayer->FInViewCone( pRagdoll ) )
-	{
-		if ( g_debug_ragdoll_removal.GetBool() )
-			 NDebugOverlay::Line( pRagdoll->GetAbsOrigin(), pRagdoll->GetAbsOrigin() + Vector( 0, 0, 64 ), 0, 0, 255, true, 5 );
-		
-		return true;
-	}
-#endif
 
 #endif
 

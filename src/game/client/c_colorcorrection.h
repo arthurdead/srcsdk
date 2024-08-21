@@ -7,10 +7,9 @@
 
 #ifndef C_COLORCORRECTION_H
 #define C_COLORCORRECTION_H
-#ifdef _WIN32
 #pragma once
-#endif
 
+#include "c_baseentity.h"
 #include "colorcorrectionmgr.h"
 
 //------------------------------------------------------------------------------
@@ -29,6 +28,8 @@ public:
 	void OnDataChanged(DataUpdateType_t updateType);
 	bool ShouldDraw();
 
+	void ClientThink();
+
 	virtual void Update(C_BasePlayer *pPlayer, float ccScale);
 	
 	bool IsMaster() const { return m_bMaster; }
@@ -44,9 +45,9 @@ public:
 	void   SetWeight( float fWeight );
 
 protected:
-	void StartFade( int nSplitScreenSlot, float flDuration );
-	float GetFadeRatio( int nSplitScreenSlot ) const;
-	bool IsFadeTimeElapsed( int nSplitScreenSlot ) const;
+	void StartFade( float flDuration );
+	float GetFadeRatio() const;
+	bool IsFadeTimeElapsed() const;
 
 	Vector	m_vecOrigin;
 
@@ -63,12 +64,12 @@ protected:
 	bool	m_bClientSide;
 	bool	m_bExclusive;
 
-	bool	m_bEnabledOnClient[MAX_SPLITSCREEN_PLAYERS];
-	float	m_flCurWeightOnClient[MAX_SPLITSCREEN_PLAYERS];
-	bool	m_bFadingIn[MAX_SPLITSCREEN_PLAYERS];
-	float	m_flFadeStartWeight[MAX_SPLITSCREEN_PLAYERS];
-	float	m_flFadeStartTime[MAX_SPLITSCREEN_PLAYERS];
-	float	m_flFadeDuration[MAX_SPLITSCREEN_PLAYERS];
+	bool	m_bEnabledOnClient;
+	float	m_flCurWeightOnClient;
+	bool	m_bFadingIn;
+	float	m_flFadeStartWeight;
+	float	m_flFadeStartTime;
+	float	m_flFadeDuration;
 
 	ClientCCHandle_t m_CCHandle;
 };

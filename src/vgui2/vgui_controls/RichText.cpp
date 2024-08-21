@@ -54,6 +54,7 @@ public:
 		SetPaintEnabled(true);
 #endif
 	}
+	virtual ~ClickPanel() {}
 	
 	void SetTextIndex( int linkStartIndex, int viewStartIndex )
 	{
@@ -113,6 +114,7 @@ public:
 		SetPaintEnabled( false );
 		m_pRichText = pParent;
 	}
+	virtual ~RichTextInterior() {}
 
 /*	virtual IAppearance *GetAppearance()
 	{
@@ -349,7 +351,7 @@ const wchar_t *RichText::ResolveLocalizedTextAndVariables( char const *pchLookup
 	if ( pchLookup[ 0 ] == '#' )
 	{
 		// try lookup in localization tables
-		StringIndex_t index = g_pVGuiLocalize->FindIndex( pchLookup + 1 );
+		LocalizeStringIndex_t index = g_pVGuiLocalize->FindIndex( pchLookup + 1 );
 		if ( index == INVALID_LOCALIZE_STRING_INDEX )
 		{
 /*			// if it's not found, maybe it's a special expanded variable - look for an expansion

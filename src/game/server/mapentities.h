@@ -10,6 +10,9 @@
 #pragma once
 
 #include "mapentities_shared.h"
+#include "tier0/platform.h"
+
+class CBaseEntity;
 
 // This class provides hooks into the map-entity loading process that allows CS to do some tricks
 // when restarting the round. The main trick it tries to do is recreate all 

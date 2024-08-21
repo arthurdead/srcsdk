@@ -8,8 +8,9 @@
 #define FLASHLIGHTEFFECT_H
 #pragma once
 
+#include "iclientrenderable.h"
+#include "materialsystem/MaterialSystemUtil.h"
 struct dlight_t;
-
 
 class CFlashlightEffect
 {
@@ -27,6 +28,8 @@ public:
 	void SetFlashlightHandle( ClientShadowHandle_t Handle ) { m_FlashlightHandle = Handle;	}
 	
 protected:
+
+	void UpdateLightProjection( FlashlightState_t &state );
 
 	void LightOff();
 	void LightOffOld();

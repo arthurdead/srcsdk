@@ -44,6 +44,7 @@ enum SurroundingBoundsType_t
 	USE_GAME_CODE,
 	USE_ROTATION_EXPANDED_BOUNDS,
 	USE_COLLISION_BOUNDS_NEVER_VPHYSICS,
+	USE_ROTATION_EXPANDED_SEQUENCE_BOUNDS,
 
 	SURROUNDING_TYPE_BIT_COUNT = 3
 };
@@ -198,6 +199,9 @@ public:
 	// Does VPhysicsUpdate make us need to recompute the surrounding box?
 	bool			DoesVPhysicsInvalidateSurroundingBox( ) const;
 
+	// Does a sequence change make us need to recompute the surrounding box?
+	bool			DoesSequenceChangeInvalidateSurroundingBox() const;
+
 	// Marks the entity has having a dirty surrounding box
 	void			MarkSurroundingBoundsDirty();
 
@@ -210,6 +214,12 @@ private:
 
 	// Expand trigger bounds..
 	void ComputeVPhysicsSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs );
+
+	// Computes the surrounding collision bounds from the current sequence box
+	void ComputeRotationExpandedSequenceBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs );
+
+	// Computes the surrounding collision bounds based on the current sequence box
+	void ComputeOBBBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs );
 
 	// Expand trigger bounds..
 	bool ComputeHitboxSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs );
@@ -251,7 +261,7 @@ private:
 
 	// One of the SOLID_ defines. Use GetSolid/SetSolid.
 	CNetworkVar( unsigned char, m_nSolidType );			
-	CNetworkVar( unsigned char , m_triggerBloat );
+	CNetworkVar( float , m_triggerBloat );
 
 	// SUCKY: We didn't use to have to store this previously
 	// but storing it here means that we can network it + avoid a ton of
@@ -466,6 +476,13 @@ inline const Vector & CCollisionProperty::CollisionSpaceMaxs( void ) const
 	return m_vecMaxs;
 }
 
+//-----------------------------------------------------------------------------
+// Does a rotation make us need to recompute the surrounding box?
+//-----------------------------------------------------------------------------
+inline bool CCollisionProperty::DoesSequenceChangeInvalidateSurroundingBox() const
+{
+	return ( m_nSurroundType == USE_ROTATION_EXPANDED_SEQUENCE_BOUNDS );
+}
 
 //-----------------------------------------------------------------------------
 // Does a rotation make us need to recompute the surrounding box?
@@ -489,6 +506,7 @@ inline bool CCollisionProperty::DoesRotationInvalidateSurroundingBox( ) const
 
 	case USE_ROTATION_EXPANDED_BOUNDS:
 	case USE_SPECIFIED_BOUNDS:
+	case USE_ROTATION_EXPANDED_SEQUENCE_BOUNDS:
 		return false;
 
 	default:

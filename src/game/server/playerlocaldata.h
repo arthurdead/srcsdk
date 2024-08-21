@@ -82,6 +82,9 @@ public:
 	CNetworkVarEmbedded( audioparams_t, m_audio );
 
 	CNetworkVar( bool, m_bSlowMovement );
+
+	//Tony; added so tonemap controller can work in multiplayer with inputs.
+	CNetworkVarEmbedded( tonemap_params_t, m_TonemapParams );
 };
 
 EXTERN_SEND_TABLE(DT_Local);

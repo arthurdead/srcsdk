@@ -408,7 +408,7 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 		}
 
 		// Do this so inherited classes looking for 'angles' don't have to bother with 'angle'
-		return KeyValue( szKeyName, szBuf );
+		return KeyValue( "angles", szBuf );
 	}
 
 	// NOTE: Have to do these separate because they set two values instead of one
@@ -1428,6 +1428,8 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 	
 	int nDirtyFlags = 0;
 
+	int nChildrenChangeFlags = (nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED));
+
 	if ( nChangeFlags & VELOCITY_CHANGED )
 	{
 		nDirtyFlags |= EFL_DIRTY_ABSVELOCITY;
@@ -1442,59 +1444,86 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 #endif
 
 		// NOTE: This will also mark shadow projection + client leaf dirty
-		CollisionProp()->MarkPartitionHandleDirty();
+		if ( entindex() != 0 )
+		{
+			CollisionProp()->MarkPartitionHandleDirty();
+		}
 	}
+
+	bool bSurroundDirty = false;
 
 	// NOTE: This has to be done after velocity + position are changed
 	// because we change the nChangeFlags for the child entities
 	if ( nChangeFlags & ANGLES_CHANGED )
 	{
 		nDirtyFlags |= EFL_DIRTY_ABSTRANSFORM;
-		if ( CollisionProp()->DoesRotationInvalidateSurroundingBox() )
+
+		if ( !bSurroundDirty )
 		{
-			// NOTE: This will handle the KD-tree, surrounding bounds, PVS
-			// render-to-texture shadow, shadow projection, and client leaf dirty
-			CollisionProp()->MarkSurroundingBoundsDirty();
-		}
-		else
-		{
-#ifdef CLIENT_DLL
-			MarkRenderHandleDirty();
-			g_pClientShadowMgr->AddToDirtyShadowList( this );
-			g_pClientShadowMgr->MarkRenderToTextureShadowDirty( GetShadowHandle() );
-#endif
+			if ( CollisionProp()->DoesRotationInvalidateSurroundingBox() )
+			{
+				// NOTE: This will handle the KD-tree, surrounding bounds, PVS
+				// render-to-texture shadow, shadow projection, and client leaf dirty
+				bSurroundDirty = true;
+			}
 		}
 
-		// This is going to be used for all children: children
-		// have position + velocity changed
-		nChangeFlags |= POSITION_CHANGED | VELOCITY_CHANGED;
+		nChildrenChangeFlags |= (POSITION_CHANGED | VELOCITY_CHANGED);
 	}
 
-	AddEFlags( nDirtyFlags );
+	if ( nChangeFlags & SEQUENCE_CHANGED )
+	{
+		if ( !bSurroundDirty )
+		{
+			if ( CollisionProp()->DoesSequenceChangeInvalidateSurroundingBox() )
+			{
+				// NOTE: This will handle the KD-tree, surrounding bounds, PVS
+				// render-to-texture shadow, shadow projection, and client leaf dirty
+				bSurroundDirty = true;
+			}
+		}
+	}
 
-	// Set flags for children
-	bool bOnlyDueToAttachment = false;
 	if ( nChangeFlags & ANIMATION_CHANGED )
 	{
+		nChildrenChangeFlags |= (POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED);
+	}
+
+	if ( nChangeFlags & BOUNDS_CHANGED )
+	{
+		nChildrenChangeFlags |= (POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED);
+	}
+
+	if( bSurroundDirty )
+	{
+		CollisionProp()->MarkSurroundingBoundsDirty();
+	}
 #ifdef CLIENT_DLL
-		g_pClientShadowMgr->MarkRenderToTextureShadowDirty( GetShadowHandle() );
+	else
+	{
+		if ( entindex() != 0 )
+		{
+			if((nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | BOUNDS_CHANGED)))
+			{
+				MarkRenderHandleDirty();
+				g_pClientShadowMgr->AddToDirtyShadowList( this );
+			}
+
+			if((nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | BOUNDS_CHANGED)) || (nChangeFlags & ANIMATION_CHANGED))
+			{
+				g_pClientShadowMgr->MarkRenderToTextureShadowDirty( GetShadowHandle() );
+			}
+		}
+	}
 #endif
 
-		// Only set this flag if the only thing that changed us was the animation.
-		// If position or something else changed us, then we must tell all children.
-		if ( !( nChangeFlags & (POSITION_CHANGED | VELOCITY_CHANGED | ANGLES_CHANGED) ) )
-		{
-			bOnlyDueToAttachment = true;
-		}
-
-		nChangeFlags = POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED;
-	}
+	AddEFlags( nDirtyFlags );
 
 	for (CBaseEntity *pChild = FirstMoveChild(); pChild; pChild = pChild->NextMovePeer())
 	{
 		// If this is due to the parent animating, only invalidate children that are parented to an attachment
 		// Entities that are following also access attachments points on parents and must be invalidated.
-		if ( bOnlyDueToAttachment )
+		if ( (nChangeFlags & ANIMATION_CHANGED) && !(nChangeFlags & (POSITION_CHANGED | VELOCITY_CHANGED | ANGLES_CHANGED)) )
 		{
 #ifdef CLIENT_DLL
 			if ( (pChild->GetParentAttachment() == 0) && !pChild->IsFollowingEntity() )
@@ -1504,28 +1533,15 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 				continue;
 #endif
 		}
-		pChild->InvalidatePhysicsRecursive( nChangeFlags );
+		pChild->InvalidatePhysicsRecursive( nChildrenChangeFlags );
 	}
 
-	//
-	// This code should really be in here, or the bone cache should not be in world space.
-	// Since the bone transforms are in world space, if we move or rotate the entity, its
-	// bones should be marked invalid.
-	//
-	// As it is, we're near ship, and don't have time to setup a good A/B test of how much
-	// overhead this fix would add. We've also only got one known case where the lack of
-	// this fix is screwing us, and I just fixed it, so I'm leaving this commented out for now.
-	//
-	// Hopefully, we'll put the bone cache in entity space and remove the need for this fix.
-	//
-	//#ifdef CLIENT_DLL
-	//	if ( nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | ANIMATION_CHANGED) )
-	//	{
-	//		C_BaseAnimating *pAnim = GetBaseAnimating();
-	//		if ( pAnim )
-	//			pAnim->InvalidateBoneCache();		
-	//	}
-	//#endif
+	if ( nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | ANIMATION_CHANGED) )
+	{
+		CBaseAnimating *pAnim = GetBaseAnimating();
+		if ( pAnim )
+			pAnim->InvalidateBoneCache();
+	}
 }
 
 
@@ -1609,10 +1625,6 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 	int			nAmmoFlags	= pAmmoDef->Flags(info.m_iAmmoType);
 	
 	bool bDoServerEffects = true;
-
-#if defined( HL2MP ) && defined( GAME_DLL ) && !defined(SM_SP_FIXES)
-	bDoServerEffects = false;
-#endif
 
 #if defined( GAME_DLL )
 	if( IsPlayer() )
@@ -2047,11 +2059,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 bool CBaseEntity::ShouldDrawUnderwaterBulletBubbles()
 {
 #if defined( HL2_DLL ) && defined( GAME_DLL )
-#ifdef SM_AI_FIXES
 	CBaseEntity *pPlayer = UTIL_GetNearestVisiblePlayer(this); 
-#else
-	CBaseEntity *pPlayer = ( gpGlobals->maxClients == 1 ) ? UTIL_GetLocalPlayer() : NULL;
-#endif
 	return pPlayer && (pPlayer->GetWaterLevel() == 3);
 #else
 	return false;

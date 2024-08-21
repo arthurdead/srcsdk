@@ -13,7 +13,8 @@
 #include "iviewrender.h"
 #include "view_shared.h"
 #include "replay/ireplayscreenshotsystem.h"
-
+#include "networkvar.h"
+#include "tier1/mempool.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -158,6 +159,34 @@ struct WaterRenderInfo_t
 };
 
 //-----------------------------------------------------------------------------
+// Describes a pruned set of leaves to be rendered this view. Reference counted
+// because potentially shared by a number of views
+//-----------------------------------------------------------------------------
+struct ClientWorldListInfo_t : public CRefCounted1<WorldListInfo_t>
+{
+	ClientWorldListInfo_t() 
+	{ 
+		memset( (WorldListInfo_t *)this, 0, sizeof(WorldListInfo_t) ); 
+		m_pActualLeafIndex = NULL;
+		m_bPooledAlloc = false;
+	}
+
+	// Allocate a list intended for pruning
+	static ClientWorldListInfo_t *AllocPooled( const ClientWorldListInfo_t &exemplar );
+
+	// Because we remap leaves to eliminate unused leaves, we need a remap
+	// when drawing translucent surfaces, which requires the *original* leaf index
+	// using m_pActualLeafMap[ remapped leaf index ] == actual leaf index
+	LeafIndex_t *m_pActualLeafIndex;
+
+private:
+	virtual bool OnFinalRelease();
+
+	bool m_bPooledAlloc;
+	static CObjectPool<ClientWorldListInfo_t> gm_Pool;
+};
+
+//-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
 class CBase3dView : public CRefCounted<>,
@@ -190,7 +219,7 @@ public:
 	CRendering3dView( CViewRender *pMainView );
 	virtual ~CRendering3dView() { ReleaseLists(); }
 
-	void Setup( const CViewSetup &setup );
+	virtual void Setup( const CViewSetup &setup );
 
 	// What are we currently rendering? Returns a combination of DF_ flags.
 	virtual int		GetDrawFlags();
@@ -300,9 +329,7 @@ public:
 	virtual void	Init( void );
 	virtual void	Shutdown( void );
 
-#ifdef SM_SP_FIXES
-	virtual void    MP_PostSimulate();
-#endif
+	virtual void    PostSimulate();
 
 	const CViewSetup *GetPlayerViewSetup( ) const;
 
@@ -435,6 +462,9 @@ private:
 
 	void			DrawMonitors( const CViewSetup &cameraView );
 
+	void			SSAO_DepthPass( const CViewSetup &viewSet );
+	void			SSAO_DrawResults();
+
 	bool			DrawOneMonitor( ITexture *pRenderTarget, int cameraNum, C_PointCamera *pCameraEnt, const CViewSetup &cameraView, C_BasePlayer *localPlayer, 
 						int x, int y, int width, int height );
 
@@ -472,6 +502,7 @@ private:
 	void			SetupMain3DView( const CViewSetup &view, int &nClearFlags );
 	void			CleanupMain3DView( const CViewSetup &view );
 
+	void			UpdateCascadedShadow( const CViewSetup &view );
 
 	// This stores the current view
  	CViewSetup		m_CurrentView;

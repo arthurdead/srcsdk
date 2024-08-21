@@ -256,10 +256,8 @@ static void __MsgFunc_VGUIMenu( bf_read &msg )
 		}
 	}
 
-#ifdef SM_SP_FIXES
 	if ( !Q_stricmp( panelname, PANEL_INFO ) && engine->IsLevelMainMenuBackground() )
 		return;
-#endif
 
 	// is the server trying to show an MOTD panel? Check that it's allowed right now.
 	ClientModeShared *mode = ( ClientModeShared * )GetClientModeNormal();
@@ -856,6 +854,7 @@ void ClientModeShared::LevelInit( const char *newmap )
 	// Reset any player explosion/shock effects
 	CLocalPlayerFilter filter;
 	enginesound->SetPlayerDSP( filter, 0, true );
+	enginesound->SetRoomType( filter, 1 );
 }
 
 //-----------------------------------------------------------------------------
@@ -879,6 +878,7 @@ void ClientModeShared::LevelShutdown( void )
 	// Reset any player explosion/shock effects
 	CLocalPlayerFilter filter;
 	enginesound->SetPlayerDSP( filter, 0, true );
+	enginesound->SetRoomType( filter, 1 );
 }
 
 
@@ -1520,3 +1520,26 @@ void ClientModeShared::DeactivateInGameVGuiContext()
 	vgui::ivgui()->ActivateContext( DEFAULT_VGUI_CONTEXT );
 }
 
+void ClientModeShared::OnColorCorrectionWeightsReset()
+{
+	C_ColorCorrection *pNewColorCorrection = NULL;
+	C_ColorCorrection *pOldColorCorrection = m_pCurrentColorCorrection;
+	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( pPlayer )
+	{
+		pNewColorCorrection = pPlayer->GetActiveColorCorrection();
+	}
+
+	if ( pNewColorCorrection != pOldColorCorrection )
+	{
+		if ( pOldColorCorrection )
+		{
+			pOldColorCorrection->EnableOnClient( false );
+		}
+		if ( pNewColorCorrection )
+		{
+			pNewColorCorrection->EnableOnClient( true, pOldColorCorrection == NULL );
+		}
+		m_pCurrentColorCorrection = pNewColorCorrection;
+	}
+}

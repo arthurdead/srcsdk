@@ -345,7 +345,6 @@ BEGIN_DATADESC( CAI_PlayerAlly )
 
 END_DATADESC()
 
-CBaseEntity *CreatePlayerLoadSave( Vector vOrigin, float flDuration, float flHoldTime, float flLoadTime );
 ConVar npc_ally_deathmessage( "npc_ally_deathmessage", "1", FCVAR_CHEAT );
 
 void CAI_PlayerAlly::InputMakeGameEndAlly( inputdata_t &inputdata )
@@ -367,51 +366,16 @@ void CAI_PlayerAlly::DisplayDeathMessage( void )
 		return;
 
 		
-#ifdef SM_AI_FIXES
 	for( int i = 1; i <= gpGlobals->maxClients; i++)
 	{
 		CBasePlayer* pPlayer = UTIL_PlayerByIndex( i );
 		if ( pPlayer )	
 		{
-			UTIL_ShowMessageAll( GetDeathMessageText());//, ToBasePlayer( pPlayer ) );
-			ToBasePlayer(pPlayer)->NotifySinglePlayerGameEnding();
+			pPlayer->NotifySinglePlayerGameEnding();
 		}
-	
-		CBaseEntity *pReload = CreatePlayerLoadSave( GetAbsOrigin(), 1.5f, 8.0f, 4.5f );
-	
-		if ( pReload )
-		{
-			pReload->SetRenderColor( 0, 0, 0, 255 );
-	
-			g_EventQueue.AddEvent( pReload, "Reload", 1.5f, pReload, pReload );
-		}
-	
-		// clear any pending autosavedangerous
-		g_ServerGameDLL.m_fAutoSaveDangerousTime = 0.0f;
-		g_ServerGameDLL.m_fAutoSaveDangerousMinHealthToCommit = 0.0f;
-	}	
-#else
-	CBaseEntity *pPlayer = AI_GetSinglePlayer();
-
-	if ( pPlayer )	
-	{
-		UTIL_ShowMessage( GetDeathMessageText(), ToBasePlayer( pPlayer ) );
-		ToBasePlayer(pPlayer)->NotifySinglePlayerGameEnding();
 	}
 
-	CBaseEntity *pReload = CreatePlayerLoadSave( GetAbsOrigin(), 1.5f, 8.0f, 4.5f );
-
-	if ( pReload )
-	{
-		pReload->SetRenderColor( 0, 0, 0, 255 );
-
-		g_EventQueue.AddEvent( pReload, "Reload", 1.5f, pReload, pReload );
-	}
-
-	// clear any pending autosavedangerous
-	g_ServerGameDLL.m_fAutoSaveDangerousTime = 0.0f;
-	g_ServerGameDLL.m_fAutoSaveDangerousMinHealthToCommit = 0.0f;
-#endif
+	UTIL_ShowMessageAll( GetDeathMessageText());
 }
 
 //-----------------------------------------------------------------------------
@@ -432,12 +396,11 @@ void CAI_PlayerAlly::GatherConditions( void )
 		SetCondition( COND_TALKER_CLIENTUNSEEN );
 	}
 
-	CBasePlayer *pLocalPlayer = AI_GetSinglePlayer();
+	CBasePlayer *pLocalPlayer = UTIL_GetNearestPlayer(GetAbsOrigin());
 
 	if ( !pLocalPlayer )
 	{
-		if ( AI_IsSinglePlayer() )
-			SetCondition( COND_TALKER_PLAYER_DEAD );
+		SetCondition( COND_TALKER_PLAYER_DEAD );
 		return;
 	}
 
@@ -1028,10 +991,10 @@ void CAI_PlayerAlly::StartTask( const Task_t *pTask )
 	{
 	case TASK_MOVE_AWAY_PATH:
 		{
-			if ( HasCondition( COND_PLAYER_PUSHING ) && AI_IsSinglePlayer() )
+			if ( HasCondition( COND_PLAYER_PUSHING ) )
 			{
 				// @TODO (toml 10-22-04): cope with multiplayer push
-				GetMotor()->SetIdealYawToTarget( UTIL_GetLocalPlayer()->WorldSpaceCenter() );
+				GetMotor()->SetIdealYawToTarget( UTIL_GetNearestPlayer(GetAbsOrigin())->WorldSpaceCenter() );
 			}
 			BaseClass::StartTask( pTask );
 			break;
@@ -1198,7 +1161,7 @@ void CAI_PlayerAlly::Event_Killed( const CTakeDamageInfo &info )
 	// notify the player
 	if ( IsInPlayerSquad() )
 	{
-		CBasePlayer *player = AI_GetSinglePlayer();
+		CBasePlayer *player = UTIL_GetNearestPlayer(GetAbsOrigin());
 		if ( player )
 		{
 			variant_t emptyVariant;
@@ -1485,7 +1448,7 @@ bool CAI_PlayerAlly::IsOkToSpeak( ConceptCategory_t category, bool fRespondingTo
 		}
 
 		// Don't talk if we're too far from the player
-		CBaseEntity *pPlayer = AI_GetSinglePlayer();
+		CBaseEntity *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin());
 		if ( pPlayer )
 		{
 			float flDist = sv_npc_talker_maxdist.GetFloat();

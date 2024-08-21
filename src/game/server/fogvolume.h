@@ -4,10 +4,9 @@
 #ifndef FOG_VOLUME_H
 #define FOG_VOLUME_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
+#include "baseentity.h"
 
 class CFogController;
 class CPostProcessController;

@@ -17,7 +17,13 @@
 
 class CBaseCombatWeapon;
 class CBaseCombatCharacter;
+
+#ifdef GAME_DLL
 class CVGuiScreen;
+#else
+#define CVGuiScreen C_VGuiScreen
+class C_VGuiScreen;
+#endif
 
 #if defined( CLIENT_DLL )
 #define CBaseViewModel C_BaseViewModel
@@ -141,10 +147,7 @@ public:
 	virtual ShadowType_t	ShadowCastType() { return SHADOWS_NONE; }
 
 	// Should this object receive shadows?
-	virtual bool			ShouldReceiveProjectedTextures( int flags )
-	{
-		return false;
-	}
+	virtual bool			ShouldReceiveProjectedTextures( int flags );
 
 	// Add entity to visible view models list?
 	virtual void			AddEntity( void );

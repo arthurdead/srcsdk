@@ -22,9 +22,7 @@
 #include "ehandle.h"
 #include "iclientunknown.h"
 #include "client_thinklist.h"
-#if !defined( NO_ENTITY_PREDICTION )
 #include "predictableid.h"
-#endif
 #include "soundflags.h"
 #include "shareddefs.h"
 #include "networkvar.h"
@@ -157,10 +155,11 @@ struct thinkfunc_t
 	int			m_nLastThinkTick;
 };
 
-#define CREATE_PREDICTED_ENTITY( className )	\
-	C_BaseEntity::CreatePredictedEntityByName( className, __FILE__, __LINE__ );
+#define CREATE_PREDICTED_ENTITY( className, ... )	\
+	C_BaseEntity::__CreatePredictedHelper( __FILE__, __LINE__, className __VA_OPT__(, __VA_ARGS__) );
 
-
+#define CREATE_PREDICTED_ENTITY_AT( file, line, className, ... )	\
+	C_BaseEntity::__CreatePredictedHelper( file, line, className __VA_OPT__(, __VA_ARGS__) );
 
 // Entity flags that only exist on the client.
 #define ENTCLIENTFLAG_GETTINGSHADOWRENDERBOUNDS	0x0001		// Tells us if we're getting the real ent render bounds or the shadow render bounds.
@@ -186,8 +185,34 @@ public:
 									C_BaseEntity();
 	virtual							~C_BaseEntity();
 
-	static C_BaseEntity				*CreatePredictedEntityByName( const char *classname, const char *module, int line, bool persist = false );
-	
+	static C_BaseEntity *Create( const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, C_BaseEntity *pOwner = NULL );
+	static C_BaseEntity *CreateNoSpawn( const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, C_BaseEntity *pOwner = NULL );
+
+	//DO NOT USE DIRECTLY!!!!
+	static int __FindPredicted( C_BaseEntity **pEntity, const char *szName, const char *module, int line );
+
+	//DO NOT USE DIRECTLY!!!!
+	static void __SetupAsPredicted( C_BaseEntity *pEntity, const char *szName, const char *module, int line );
+
+	//DO NOT USE DIRECTLY!!!!
+	template <typename ...Args>
+	static C_BaseEntity *__CreatePredictedHelper( const char *module, int line, const char *szName, Args &&...args )
+	{
+		C_BaseEntity *pEntity = NULL;
+		int i = __FindPredicted( &pEntity, szName, module, line );
+		if(i == 1) {
+			return pEntity;
+		} else if(i == 0) {
+			return NULL;
+		} else {
+			pEntity = Create( szName, args... );
+			if(pEntity) {
+				__SetupAsPredicted( pEntity, szName, module, line );
+			}
+			return pEntity;
+		}
+	}
+
 	// FireBullets uses shared code for prediction.
 	virtual void					FireBullets( const FireBulletsInfo_t &info );
 	virtual void					ModifyFireBulletsDamage( CTakeDamageInfo* dmgInfo ) {}
@@ -246,7 +271,9 @@ public:
     void							*operator new( size_t stAllocateBlock, int nBlockUse, const char *pFileName, int nLine );
 	void							*operator new[]( size_t stAllocateBlock, int nBlockUse, const char *pFileName, int nLine );
 	void							operator delete( void *pMem );
-	void							operator delete( void *pMem, int nBlockUse, const char *pFileName, int nLine ) { operator delete( pMem ); }
+	void							operator delete( void *pMem, int nBlockUse, const char *pFileName, int nLine );
+	void							operator delete[]( void *pMem );
+	void							operator delete[]( void *pMem, int nBlockUse, const char *pFileName, int nLine );
 
 	// This just picks one of the routes to IClientUnknown.
 	IClientUnknown*					GetIClientUnknown()	{ return this; }

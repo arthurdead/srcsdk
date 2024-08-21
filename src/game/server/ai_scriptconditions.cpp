@@ -737,12 +737,10 @@ bool CAI_ScriptConditions::IsInFOV( CBaseEntity *pViewer, CBaseEntity *pViewed, 
 
 bool CAI_ScriptConditions::PlayerHasLineOfSight( CBaseEntity *pViewer, CBaseEntity *pViewed, bool fNot )
 {
-
-#ifdef SM_AI_FIXES
 	// SecobMod__Information: Fixes a crash on ep2_outland_09. This however breaks the map.
 	if (pViewer == NULL)
 		return false;
-#endif
+
 	CBaseCombatCharacter *pCombatantViewer = pViewer->MyCombatCharacterPointer();
 
 	if( pCombatantViewer )

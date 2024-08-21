@@ -48,6 +48,7 @@ public:
 	// constructor, destructor
 	explicit CUtlVector( int growSize = 0, int initSize = 0 );
 	explicit CUtlVector( T* pMemory, int allocationCount, int numElements = 0 );
+	CUtlVector( CUtlVector<T, A>&& src );
 	~CUtlVector();
 	
 	// Copy the array.
@@ -102,6 +103,7 @@ public:
 	int AddToTail( const T& src );
 	int InsertBefore( int elem, const T& src );
 	int InsertAfter( int elem, const T& src );
+	int AddToTail( T&& src );
 
 	// Adds multiple elements, uses default constructor
 	int AddMultipleToHead( int num );
@@ -125,6 +127,9 @@ public:
 
 	// Finds an element (element needs operator== defined)
 	int Find( const T& src ) const;
+
+	template < typename TMatchFunc >
+	int FindMatch( TMatchFunc&& func ) const;
 
 	bool HasElement( const T& src ) const;
 
@@ -545,6 +550,7 @@ public:
 	explicit CCopyableUtlVector( T* pMemory, int numElements ) : BaseClass( pMemory, numElements ) {}
 	virtual ~CCopyableUtlVector() {}
 	CCopyableUtlVector( CCopyableUtlVector const& vec ) { this->CopyArray( vec.Base(), vec.Count() ); }
+	CCopyableUtlVector( BaseClass const& vec ) { this->CopyArray( vec.Base(), vec.Count() ); }
 };
 
 // TODO (Ilya): It seems like all the functions in CUtlVector are simple enough that they should be inlined.
@@ -564,6 +570,12 @@ inline CUtlVector<T, A>::CUtlVector( T* pMemory, int allocationCount, int numEle
 	m_Memory(pMemory, allocationCount), m_Size(numElements)
 {
 	ResetDbgInfo();
+}
+
+template< typename T, class A >
+inline CUtlVector<T, A>::CUtlVector( CUtlVector<T, A>&& src ) : m_Size( 0 )
+{
+	Swap( src );
 }
 
 template< typename T, class A >
@@ -916,6 +928,17 @@ int CUtlVector<T, A>::InsertBefore( int elem, const T& src )
 	return elem;
 }
 
+// Optimized AddToTail path with move constructor.
+template< typename T, class A >
+int CUtlVector<T, A>::AddToTail( T&& src )
+{
+	// Can't insert something that's in the list... reallocation may hose us
+	Assert( ( &src < Base() ) || ( &src >= ( Base() + Count() ) ) );
+	int elem = m_Size;
+	GrowVector();
+	CopyConstruct( &Element( elem ), std::forward<T>( src ) );
+	return elem;
+}
 
 //-----------------------------------------------------------------------------
 // Adds multiple elements, uses default constructor
@@ -1047,6 +1070,18 @@ int CUtlVector<T, A>::Find( const T& src ) const
 			return i;
 	}
 	return -1;
+}
+
+template< typename T, class A >
+template < typename TMatchFunc >
+int CUtlVector<T, A>::FindMatch( TMatchFunc&& func ) const
+{
+	for ( int i = 0; i < Count(); ++i )
+	{
+		if ( func( ( *this )[i] ) )
+			return i;
+	}
+	return InvalidIndex();
 }
 
 template< typename T, class A >

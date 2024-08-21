@@ -61,7 +61,7 @@ public:
 	virtual void GetText(wchar_t *buffer, int bufferLength);
 	// get the text in it's unlocalized form
 	virtual void GetUnlocalizedText(char *buffer, int bufferSize);
-	virtual StringIndex_t GetUnlocalizedTextSymbol();
+	virtual LocalizeStringIndex_t GetUnlocalizedTextSymbol();
 
 	// set the font of the text
 	virtual void SetFont(vgui::HFont font);
@@ -123,7 +123,7 @@ private:
 	int _drawWidth;		// this is the width of the window we are drawing into. 
 						// if there is not enough room truncate the txt	and add an elipsis
 
-	StringIndex_t _unlocalizedTextSymbol;	// store off the unlocalized text index for build mode
+	LocalizeStringIndex_t _unlocalizedTextSymbol;	// store off the unlocalized text index for build mode
 	wchar_t *m_pwszEllipsesPosition;
 
 	bool m_bRecalculateTruncation : 1;

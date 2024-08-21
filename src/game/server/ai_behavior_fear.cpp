@@ -381,11 +381,7 @@ void CAI_FearBehavior::GatherConditions()
 	//  -I haven't seen the player in 2 seconds
 	//
 	// Here's the distance check:
-#ifdef SM_AI_FIXES
 	CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
-#else
-	CBasePlayer *pPlayer = AI_GetSinglePlayer();
-#endif
 
 	if( pPlayer != NULL && GetAbsOrigin().DistToSqr(pPlayer->GetAbsOrigin()) >= Square( ai_fear_player_dist.GetFloat() * 1.5f )  )
 	{
@@ -538,11 +534,7 @@ CAI_Hint *CAI_FearBehavior::FindFearWithdrawalDest()
 
 	hintCriteria.AddHintType( HINT_PLAYER_ALLY_FEAR_DEST );
 	hintCriteria.SetFlag( bits_HINT_NODE_VISIBLE_TO_PLAYER | bits_HINT_NOT_CLOSE_TO_ENEMY /*| bits_HINT_NODE_IN_VIEWCONE | bits_HINT_NPC_IN_NODE_FOV*/ );
-#ifdef SM_AI_FIXES
 	hintCriteria.AddIncludePosition( UTIL_GetNearestPlayer(GetAbsOrigin())->GetAbsOrigin(), ( ai_fear_player_dist.GetFloat() ) );
-#else
-	hintCriteria.AddIncludePosition( AI_GetSinglePlayer()->GetAbsOrigin(), ( ai_fear_player_dist.GetFloat() ) );
-#endif
 
 	pHint = CAI_HintManager::FindHint( pOuter, hintCriteria );
 

@@ -190,6 +190,7 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	RecvPropFloat( RECVINFO( m_skybox3d.fog.start ) ),
 	RecvPropFloat( RECVINFO( m_skybox3d.fog.end ) ),
 	RecvPropFloat( RECVINFO( m_skybox3d.fog.maxdensity ) ),
+	RecvPropFloat( RECVINFO( m_skybox3d.fog.HDRColorScale ) ),
 
 	// fog data
 	RecvPropEHandle( RECVINFO( m_PlayerFog.m_hCtrl ) ),
@@ -206,6 +207,14 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	RecvPropInt( RECVINFO( m_audio.soundscapeIndex ) ),
 	RecvPropInt( RECVINFO( m_audio.localBits ) ),
 	RecvPropEHandle( RECVINFO( m_audio.ent ) ),
+
+	//Tony; tonemap stuff! -- TODO! Optimize this with bit sizes from env_tonemap_controller.
+	RecvPropFloat( RECVINFO( m_TonemapParams.m_flTonemapScale ) ),
+	RecvPropFloat( RECVINFO( m_TonemapParams.m_flTonemapRate ) ),
+	RecvPropFloat( RECVINFO( m_TonemapParams.m_flBloomScale ) ),
+
+	RecvPropFloat( RECVINFO( m_TonemapParams.m_flAutoExposureMin ) ),
+	RecvPropFloat( RECVINFO( m_TonemapParams.m_flAutoExposureMax ) ),
 END_RECV_TABLE()
 
 // -------------------------------------------------------------------------------- //
@@ -248,6 +257,7 @@ END_RECV_TABLE()
 		RecvPropInt			( RECVINFO( m_nWaterLevel ) ),
 		RecvPropFloat		( RECVINFO( m_flLaggedMovementValue )),
 
+		RecvPropEHandle		( RECVINFO(m_hTonemapController) ),
 	END_RECV_TABLE()
 
 	
@@ -300,6 +310,7 @@ END_RECV_TABLE()
 		RecvPropUtlVector( RECVINFO_UTLVECTOR( m_hMyWearables ), MAX_WEARABLES_SENT_FROM_SERVER,	RecvPropEHandle(NULL, 0, 0) ),
 #endif
 
+		RecvPropEHandle		( RECVINFO(m_hColorCorrectionCtrl) ),
 	END_RECV_TABLE()
 
 BEGIN_PREDICTION_DATA_NO_BASE( CPlayerState )
@@ -489,7 +500,7 @@ void C_BasePlayer::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool C_BasePlayer::AudioStateIsUnderwater( Vector vecMainViewOrigin )
+bool C_BasePlayer::AudioStateIsUnderwater( const Vector &vecMainViewOrigin ) const
 {
 	if ( IsObserver() )
 	{
@@ -1873,14 +1884,12 @@ void C_BasePlayer::ThirdPersonSwitch( bool bThirdperson )
 			}
 		}
 		
-#ifdef SDK2013CE
 		//Notify weapon.
 		CBaseCombatWeapon *pWeapon = GetActiveWeapon();
 		if ( pWeapon )
 		{
 			pWeapon->ThirdPersonSwitch( bThirdperson );
 		}
-#endif// SDK2013CE
 	}
 }
 
@@ -2740,10 +2749,16 @@ void C_BasePlayer::FogControllerChanged( bool bSnap )
 		m_Local.m_PlayerFog.m_OldColor = m_CurrentFog.colorPrimary;
 		m_Local.m_PlayerFog.m_flOldStart = m_CurrentFog.start;
 		m_Local.m_PlayerFog.m_flOldEnd = m_CurrentFog.end;
+		m_Local.m_PlayerFog.m_flOldMaxDensity = m_CurrentFog.maxdensity;
+		m_Local.m_PlayerFog.m_flOldHDRColorScale = m_CurrentFog.HDRColorScale;
+		m_Local.m_PlayerFog.m_flOldFarZ = m_CurrentFog.farz;
 
 		m_Local.m_PlayerFog.m_NewColor = pFogParams->colorPrimary;
 		m_Local.m_PlayerFog.m_flNewStart = pFogParams->start;
 		m_Local.m_PlayerFog.m_flNewEnd = pFogParams->end;
+		m_Local.m_PlayerFog.m_flNewMaxDensity = pFogParams->maxdensity;
+		m_Local.m_PlayerFog.m_flNewHDRColorScale = pFogParams->HDRColorScale;
+		m_Local.m_PlayerFog.m_flNewFarZ = pFogParams->farz;
 
 		m_Local.m_PlayerFog.m_flTransitionTime = bSnap ? -1 : gpGlobals->curtime;
 

@@ -64,6 +64,7 @@ class ColumnButton : public Button
 {
 public:
 	ColumnButton(vgui::Panel *parent, const char *name, const char *text);
+	virtual ~ColumnButton() {}
 
 	// Inherited from Button
 	virtual void ApplySchemeSettings(IScheme *pScheme);
@@ -128,6 +129,7 @@ class Dragger : public Panel
 {
 public:
 	Dragger(int column);
+	virtual ~Dragger() {}
 
 	// Inherited from Panel
 	virtual void OnMousePressed(MouseCode code);
@@ -1418,7 +1420,7 @@ void ListPanel::GetCellText(int itemID, int col, wchar_t *wbuffer, int bufferSiz
 
 	if ( val[ 0 ] == '#' )
 	{
-		StringIndex_t si = g_pVGuiLocalize->FindIndex( val + 1 );
+		LocalizeStringIndex_t si = g_pVGuiLocalize->FindIndex( val + 1 );
 		if ( si != INVALID_LOCALIZE_STRING_INDEX )
 		{
 			wval = g_pVGuiLocalize->GetValueByIndex( si );

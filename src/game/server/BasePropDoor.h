@@ -19,6 +19,7 @@
 #include "props.h"
 #include "locksounds.h"
 #include "entityoutput.h"
+#include "nav.h"
 
 extern ConVar g_debug_doors;
 
@@ -44,6 +45,8 @@ public:
 	void Activate();
 	int	ObjectCaps();
 
+	virtual bool IsAbleToCloseAreaPortals( void ) const;
+
 	void HandleAnimEvent( animevent_t *pEvent );
 
 	// Base class services.
@@ -54,7 +57,7 @@ public:
 	inline bool IsDoorOpening();
 	inline bool IsDoorClosed();
 	inline bool IsDoorClosing();
-	inline bool IsDoorLocked();
+	virtual bool IsDoorLocked();
 	inline bool IsDoorBlocked() const;
 	inline bool IsNPCOpening(CAI_BaseNPC *pNPC);
 	inline bool IsPlayerOpening();
@@ -73,6 +76,13 @@ public:
 	virtual float GetOpenInterval(void) = 0;
 	// }
 
+	enum DoorExtent_t
+	{
+		DOOR_EXTENT_OPEN = 1,
+		DOOR_EXTENT_CLOSED = 2,
+	};
+	virtual void ComputeDoorExtent( Extent *extent, unsigned int extentType ) = 0;
+
 protected:
 
 	enum DoorState_t
@@ -85,7 +95,7 @@ protected:
 	};
 
 	// dvs: FIXME: make these private
-	void DoorClose();
+	virtual void DoorClose();
 
 	CBasePropDoor *GetMaster( void ) { return m_hMaster; }
 	bool HasSlaves( void ) { return ( m_hDoorList.Count() > 0 ); }
@@ -97,7 +107,7 @@ protected:
 
 	inline CBaseEntity *GetActivator();
 
-private:
+protected:
 
 	// Implement these in your leaf class.
 	// {
@@ -153,6 +163,7 @@ private:
 	void OnEndBlocked( void );
 
 	void UpdateAreaPortals(bool bOpen);
+	void DisableAreaPortalThink( void );
 
 	// Input handlers
 	void InputClose(inputdata_t &inputdata);
@@ -166,7 +177,7 @@ private:
 
 	void SetMaster( CBasePropDoor *pMaster ) { m_hMaster = pMaster; }
 
-	void CalcDoorSounds();
+	virtual void CalcDoorSounds();
 	// }
 
 	int		m_nHardwareType;
@@ -185,6 +196,8 @@ private:
 	string_t m_SoundMoving;
 	string_t m_SoundOpen;
 	string_t m_SoundClose;
+
+	int m_nPhysicsMaterial;
 
 	// dvs: FIXME: can we remove m_flSpeed from CBaseEntity?
 	//float m_flSpeed;			// Rotation speed when opening or closing in degrees per second.
@@ -240,7 +253,7 @@ bool CBasePropDoor::IsDoorClosing()
 	return m_eDoorState == DOOR_STATE_CLOSING;
 }
 
-bool CBasePropDoor::IsDoorLocked()
+inline bool CBasePropDoor::IsDoorLocked()
 {
 	return m_bLocked;
 }

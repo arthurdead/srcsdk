@@ -8,10 +8,13 @@
 #define SCENEENTITY_H
 #pragma once
 
+#include "ehandle.h"
+
 // List of the last 5 lines of speech from NPCs for bug reports
 #define SPEECH_LIST_MAX_SOUNDS	5
 
 class AI_Response;
+class CBaseFlex;
 
 struct recentNPCSpeech_t
 {

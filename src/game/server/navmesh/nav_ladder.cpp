@@ -278,9 +278,8 @@ void CNavLadder::SetDir( NavDirType dir )
 
 
 //--------------------------------------------------------------------------------------------------------------
-void CNavLadder::DrawLadder( void ) const
+void CNavLadder::DrawLadder( CBasePlayer *player ) const
 {
-	CBasePlayer *player = UTIL_GetListenServerHost();
 	if (player == NULL)
 		return;
 
@@ -416,7 +415,7 @@ void CNavLadder::DrawLadder( void ) const
 
 
 //--------------------------------------------------------------------------------------------------------------
-void CNavLadder::DrawConnectedAreas( void )
+void CNavLadder::DrawConnectedAreas( CBasePlayer *player )
 {
 	CUtlVector< CNavArea * > areas;
 	if ( m_topForwardArea )
@@ -434,7 +433,7 @@ void CNavLadder::DrawConnectedAreas( void )
 	{
 		CNavArea *adj = areas[i];
 
-		adj->Draw();
+		adj->Draw( player );
 
 		if ( !TheNavMesh->IsEditMode( CNavMesh::PLACE_PAINTING ) )
 		{

@@ -232,11 +232,12 @@ void CLight::FadeThink(void)
 LINK_ENTITY_TO_CLASS( light_spot, CLight );
 LINK_ENTITY_TO_CLASS( light_glspot, CLight );
 
+#define EnvLightBase CBaseEntity
 
-class CEnvLight : public CLight
+class CEnvLight : public EnvLightBase
 {
 public:
-	DECLARE_CLASS( CEnvLight, CLight );
+	DECLARE_CLASS( CEnvLight, EnvLightBase );
 
 	bool	KeyValue( const char *szKeyName, const char *szValue ); 
 	void	Spawn( void );

@@ -15,25 +15,13 @@
 #define	MAX_OVERLAY_DIST_SQR	90000000
 
 //-----------------------------------------------------------------------------
-// Purpose: Local player on the server or client
-//-----------------------------------------------------------------------------
-CBasePlayer *GetLocalPlayer( void )
-{
-#if defined( CLIENT_DLL)
-	return C_BasePlayer::GetLocalPlayer();
-#else
-	return UTIL_GetListenServerHost();
-#endif
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: Debug player by index
 //-----------------------------------------------------------------------------
 CBasePlayer *GetDebugPlayer( void )
 {
 #if defined( CLIENT_DLL )
 	//NOTENOTE: This doesn't necessarily make sense on the client
-	return GetLocalPlayer();
+	return C_BasePlayer::GetLocalPlayer();
 #else
 	return UTIL_PlayerByIndex(CBaseEntity::m_nDebugPlayer);
 #endif
@@ -99,7 +87,7 @@ void NDebugOverlay::Line( const Vector &origin, const Vector &target, int r, int
 	// Clip the line before sending so we 
 	// don't overflow the client message buffer
 	// --------------------------------------------------------------
-	CBasePlayer *player = GetLocalPlayer();
+	CBasePlayer *player = GetDebugPlayer();
 
 	if ( player == NULL )
 		return;
@@ -133,7 +121,7 @@ void NDebugOverlay::Line( const Vector &origin, const Vector &target, int r, int
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Triangle( const Vector &p1, const Vector &p2, const Vector &p3, int r, int g, int b, int a, bool noDepthTest, float duration )
 {
-	CBasePlayer *player = GetLocalPlayer();
+	CBasePlayer *player = GetDebugPlayer();
 	if ( !player )
 		return;
 
@@ -206,7 +194,7 @@ void NDebugOverlay::Grid( const Vector &vPosition )
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Text( const Vector &origin, const char *text, bool bViewCheck, float duration )
 {
-	CBasePlayer *player = GetLocalPlayer();
+	CBasePlayer *player = GetDebugPlayer();
 	
 	if ( !player )
 		return;
@@ -582,7 +570,7 @@ void NDebugOverlay::Sphere( const Vector &center, float radius, int r, int g, in
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Circle( const Vector &position, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration )
 {
-	CBasePlayer *player = GetLocalPlayer();
+	CBasePlayer *player = GetDebugPlayer();
 	if ( player == NULL )
 		return;
 

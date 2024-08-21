@@ -877,7 +877,7 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 //-----------------------------------------------------------------------------
 // Purpose: Blood puff
 //-----------------------------------------------------------------------------
-void FX_Blood( Vector &pos, Vector &dir, float r, float g, float b, float a )
+void FX_Blood( const Vector &pos, const Vector &dir, float r, float g, float b, float a )
 {
 	VPROF_BUDGET( "FX_Blood", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 

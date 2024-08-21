@@ -366,7 +366,7 @@ private:
 
 	struct PlayerLogo
 	{
-		unsigned int			crc;
+		CRC32_t			crc;
 		ITexture			*texture;
 	};
 
@@ -398,7 +398,7 @@ bool CPlayerLogoProxy::Init( IMaterial *pMaterial, KeyValues *pKeyValues )
 	if ( !found )
 		return false;
 
-	m_pDefaultTexture = materials->FindTexture( DEFAULT_DECAL_NAME, TEXTURE_GROUP_DECAL );
+	m_pDefaultTexture = materials->FindTexture( pKeyValues->GetString( "defaultDecal", DEFAULT_DECAL_NAME ), TEXTURE_GROUP_DECAL );
 	if ( IsErrorTexture( m_pDefaultTexture ) )
 		return false;
 

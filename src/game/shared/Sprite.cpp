@@ -407,10 +407,10 @@ CSprite *CSprite::SpriteCreate( const char *pSpriteName, const Vector &origin, b
 //-----------------------------------------------------------------------------
 CSprite *CSprite::SpriteCreatePredictable( const char *module, int line, const char *pSpriteName, const Vector &origin, bool animate )
 {
-	CSprite *pSprite = ( CSprite * )CBaseEntity::CreatePredictedEntityByName( "env_sprite", module, line );
+	CSprite *pSprite = ( CSprite * )CREATE_PREDICTED_ENTITY_AT( module, line, "env_sprite", origin, vec3_angle );
 	if ( pSprite )
 	{
-		pSprite->SpriteInit( pSpriteName, origin );
+		pSprite->SetModelName( MAKE_STRING(pSpriteName) );
 		pSprite->SetSolid( SOLID_NONE );
 		pSprite->SetSize( vec3_origin, vec3_origin );
 		pSprite->SetMoveType( MOVETYPE_NONE );

@@ -105,11 +105,7 @@ void CMessage::InputShowMessage( inputdata_t &inputdata )
 		}
 		else
 		{
-		#ifdef SM_AI_FIXES
-			pPlayer = UTIL_GetLocalPlayer(); // just show it to the host, if there is one 
-		#else
-			pPlayer = (gpGlobals->maxClients > 1) ? NULL : UTIL_GetLocalPlayer();
-		#endif
+			pPlayer = NULL;
 		}
 
 		if ( pPlayer && pPlayer->IsPlayer() )
@@ -223,19 +219,10 @@ void CCredits::RollOutroCredits()
 {
 	sv_unlockedchapters.SetValue( "15" );
 	
-#ifdef SM_AI_FIXES
 	CRecipientFilter filter; 
 	filter.AddAllPlayers(); 
 	filter.MakeReliable(); 
 	UserMessageBegin( filter, "CreditsMsg" ); 
-#else
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-
-	CSingleUserRecipientFilter user( pPlayer );
-	user.MakeReliable();
-
-	UserMessageBegin( user, "CreditsMsg" );
-#endif
 		WRITE_BYTE( 3 );
 	MessageEnd();
 }
@@ -252,40 +239,20 @@ void CCredits::InputRollOutroCredits( inputdata_t &inputdata )
 
 void CCredits::InputShowLogo( inputdata_t &inputdata )
 {
-#ifdef SM_AI_FIXES
 	CRecipientFilter filter; 
 	filter.AddAllPlayers(); 
 	filter.MakeReliable(); 
 
-	// Modification. Set to how old patched AI SDK had code. 
-	//CSingleUserRecipientFilter user( pPlayer ); 
-	//user.MakeReliable(); 
-#else
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-
-	CSingleUserRecipientFilter user( pPlayer );
-	user.MakeReliable();
-#endif
-
-
 	if ( m_flLogoLength )
 	{
-	#ifdef SM_AI_FIXES
 		UserMessageBegin( filter, "LogoTimeMsg" ); 
-	#else
-		UserMessageBegin( user, "LogoTimeMsg" );
-	#endif
 
 			WRITE_FLOAT( m_flLogoLength );
 		MessageEnd();
 	}
 	else
 	{
-	#ifdef SM_AI_FIXES
 		UserMessageBegin( filter, "CreditsMsg" ); 
-	#else
-		UserMessageBegin( user, "CreditsMsg" );
-	#endif
 
 			WRITE_BYTE( 1 );
 		MessageEnd();
@@ -299,20 +266,11 @@ void CCredits::InputSetLogoLength( inputdata_t &inputdata )
 
 void CCredits::InputRollCredits( inputdata_t &inputdata )
 {
-#ifdef SM_AI_FIXES
 	CRecipientFilter filter; 
 	filter.AddAllPlayers(); 
 	filter.MakeReliable(); 
 
 	UserMessageBegin( filter, "CreditsMsg" ); 
-#else
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-
-	CSingleUserRecipientFilter user( pPlayer );
-	user.MakeReliable();
-
-	UserMessageBegin( user, "CreditsMsg" );
-#endif
 	WRITE_BYTE( 2 );
 	MessageEnd();
 }

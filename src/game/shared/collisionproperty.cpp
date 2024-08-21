@@ -17,6 +17,7 @@
 #include "c_baseentity.h"
 #include "c_baseanimating.h"
 #include "recvproxy.h"
+#include "debugoverlay_shared.h"
 
 #else
 

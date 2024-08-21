@@ -13,6 +13,7 @@
 #include "prediction.h"
 #include "client_virtualreality.h"
 #include "sourcevr/isourcevirtualreality.h"
+#include "c_vguiscreen.h"
 #else
 #include "vguiscreen.h"
 #endif
@@ -86,25 +87,11 @@ void CBaseViewModel::Spawn( void )
 	SetSolid( SOLID_NONE );
 }
 
-
-#if defined ( CSTRIKE_DLL ) && !defined ( CLIENT_DLL )
-#define VGUI_CONTROL_PANELS
-#endif
-
-#if defined ( TF_DLL )
-#define VGUI_CONTROL_PANELS
-#endif
-
-#ifdef INVASION_DLL
-#define VGUI_CONTROL_PANELS
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CBaseViewModel::SetControlPanelsActive( bool bState )
 {
-#if defined( VGUI_CONTROL_PANELS )
 	// Activate control panel screens
 	for ( int i = m_hScreens.Count(); --i >= 0; )
 	{
@@ -113,7 +100,6 @@ void CBaseViewModel::SetControlPanelsActive( bool bState )
 			m_hScreens[i]->SetActive( bState );
 		}
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -121,7 +107,6 @@ void CBaseViewModel::SetControlPanelsActive( bool bState )
 //-----------------------------------------------------------------------------
 void CBaseViewModel::SpawnControlPanels()
 {
-#if defined( VGUI_CONTROL_PANELS )
 	char buf[64];
 
 	// Destroy existing panels
@@ -140,10 +125,10 @@ void CBaseViewModel::SpawnControlPanels()
 
 	// If we're attached to an entity, spawn control panels on it instead of use
 	CBaseAnimating *pEntityToSpawnOn = this;
-	char *pOrgLL = "controlpanel%d_ll";
-	char *pOrgUR = "controlpanel%d_ur";
-	char *pAttachmentNameLL = pOrgLL;
-	char *pAttachmentNameUR = pOrgUR;
+	const char *pOrgLL = "controlpanel%d_ll";
+	const char *pOrgUR = "controlpanel%d_ur";
+	const char *pAttachmentNameLL = pOrgLL;
+	const char *pAttachmentNameUR = pOrgUR;
 	/*
 	if ( IsBuiltOnAttachment() )
 	{
@@ -219,7 +204,7 @@ void CBaseViewModel::SpawnControlPanels()
 		float flWidth = lrlocal.x;
 		float flHeight = lrlocal.y;
 
-		CVGuiScreen *pScreen = CreateVGuiScreen( pScreenClassname, pScreenName, pEntityToSpawnOn, this, nLLAttachmentIndex );
+		CVGuiScreen *pScreen = CREATE_PREDICTED_VGUISCREEN( pScreenClassname, pScreenName, pEntityToSpawnOn, this, nLLAttachmentIndex );
 		pScreen->ChangeTeam( GetTeamNumber() );
 		pScreen->SetActualSize( flWidth, flHeight );
 		pScreen->SetActive( false );
@@ -232,12 +217,10 @@ void CBaseViewModel::SpawnControlPanels()
 		int nScreen = m_hScreens.AddToTail( );
 		m_hScreens[nScreen].Set( pScreen );
 	}
-#endif
 }
 
 void CBaseViewModel::DestroyControlPanels()
 {
-#if defined( VGUI_CONTROL_PANELS )
 	// Kill the control panels
 	int i;
 	for ( i = m_hScreens.Count(); --i >= 0; )
@@ -245,7 +228,6 @@ void CBaseViewModel::DestroyControlPanels()
 		DestroyVGuiScreen( m_hScreens[i].Get() );
 	}
 	m_hScreens.RemoveAll();
-#endif
 }
 
 //-----------------------------------------------------------------------------

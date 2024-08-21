@@ -1130,11 +1130,7 @@ Vector CBlood::BloodPosition( CBaseEntity *pActivator )
 		}
 		else
 		{
-		#ifdef SM_AI_FIXES
 			player = UTIL_GetNearestVisiblePlayer(this); 
-		#else
-			player = UTIL_GetLocalPlayer();
-		#endif
 		}
 
 		if ( player )
@@ -1484,30 +1480,43 @@ public:
 	DECLARE_SERVERCLASS();
 
 	CPrecipitation();
+	int UpdateTransmitState();
 	void	Spawn( void );
 
 	CNetworkVar( PrecipitationType_t, m_nPrecipType );
+	CNetworkVar( int, m_nSnowDustAmount );
 };
 
 LINK_ENTITY_TO_CLASS( func_precipitation, CPrecipitation );
 
 BEGIN_DATADESC( CPrecipitation )
 	DEFINE_KEYFIELD( m_nPrecipType, FIELD_INTEGER, "preciptype" ),
+	DEFINE_KEYFIELD( m_nSnowDustAmount, FIELD_INTEGER, "snowDustAmt" ),
 END_DATADESC()
 
 // Just send the normal entity crap
 IMPLEMENT_SERVERCLASS_ST( CPrecipitation, DT_Precipitation)
-	SendPropInt( SENDINFO( m_nPrecipType ), Q_log2( NUM_PRECIPITATION_TYPES ) + 1, SPROP_UNSIGNED )
+	SendPropInt( SENDINFO( m_nPrecipType ), Q_log2( NUM_PRECIPITATION_TYPES ) + 1, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO( m_nSnowDustAmount ) ),
 END_SEND_TABLE()
 
 
 CPrecipitation::CPrecipitation()
 {
 	m_nPrecipType = PRECIPITATION_TYPE_RAIN; // default to rain.
+	m_nSnowDustAmount = 0;
+}
+
+int CPrecipitation::UpdateTransmitState()
+{
+	return SetTransmitState( FL_EDICT_ALWAYS );
 }
 
 void CPrecipitation::Spawn( void )
 {
+	//SetTransmitState( FL_EDICT_ALWAYS );
+	SetTransmitState( FL_EDICT_PVSCHECK );
+
 	PrecacheMaterial( "effects/fleck_ash1" );
 	PrecacheMaterial( "effects/fleck_ash2" );
 	PrecacheMaterial( "effects/fleck_ash3" );
@@ -1518,9 +1527,68 @@ void CPrecipitation::Spawn( void )
 	SetMoveType( MOVETYPE_NONE );
 	SetModel( STRING( GetModelName() ) );		// Set size
 
+	if ( m_nPrecipType == PRECIPITATION_TYPE_PARTICLERAIN )
+	{
+		SetSolid( SOLID_VPHYSICS );
+		AddSolidFlags( FSOLID_NOT_SOLID );
+		AddSolidFlags( FSOLID_FORCE_WORLD_ALIGNED );
+		VPhysicsInitStatic();
+	}
+	else
+	{
+		SetSolid( SOLID_NONE );							// Remove model & collisions
+	}
+
 	// Default to rain.
 	if ( m_nPrecipType < 0 || m_nPrecipType > NUM_PRECIPITATION_TYPES )
 		m_nPrecipType = PRECIPITATION_TYPE_RAIN;
+
+	m_nRenderMode = kRenderEnvironmental;
+}
+
+//=========================================================
+// func_precipitation_blocker - prevents precipitation from happening in this volume
+//=========================================================
+
+class CPrecipitationBlocker : public CBaseEntity
+{
+public:
+	DECLARE_CLASS( CPrecipitationBlocker, CBaseEntity );
+	DECLARE_DATADESC();
+	DECLARE_SERVERCLASS();
+
+	CPrecipitationBlocker();
+	void	Spawn( void );
+	int		UpdateTransmitState( void );
+};
+
+LINK_ENTITY_TO_CLASS( func_precipitation_blocker, CPrecipitationBlocker );
+
+BEGIN_DATADESC( CPrecipitationBlocker )
+END_DATADESC()
+
+// Just send the normal entity crap
+IMPLEMENT_SERVERCLASS_ST( CPrecipitationBlocker, DT_PrecipitationBlocker )
+END_SEND_TABLE()
+
+
+CPrecipitationBlocker::CPrecipitationBlocker()
+{
+}
+
+int CPrecipitationBlocker::UpdateTransmitState()
+{
+	return SetTransmitState( FL_EDICT_ALWAYS );
+}
+
+
+void CPrecipitationBlocker::Spawn( void )
+{
+	SetTransmitState( FL_EDICT_ALWAYS );
+	Precache();
+	SetSolid( SOLID_NONE );							// Remove model & collisions
+	SetMoveType( MOVETYPE_NONE );
+	SetModel( STRING( GetModelName() ) );		// Set size
 
 	m_nRenderMode = kRenderEnvironmental;
 }
@@ -1543,11 +1611,7 @@ public:
 	DECLARE_SERVERCLASS();
 
 private:
-#ifdef POSIX
-	CEnvWindShared m_EnvWindShared; // FIXME - fails to compile as networked var due to operator= problem
-#else
 	CNetworkVarEmbedded( CEnvWindShared, m_EnvWindShared );
-#endif
 };
 
 LINK_ENTITY_TO_CLASS( env_wind, CEnvWind );
@@ -1619,7 +1683,8 @@ void CEnvWind::Spawn( void )
 	SetSolid( SOLID_NONE );
 	AddEffects( EF_NODRAW );
 
-	m_EnvWindShared.Init( entindex(), 0, gpGlobals->frametime, GetLocalAngles().y, 0 );
+	m_EnvWindShared.m_iInitialWindDir = (int)( anglemod( m_EnvWindShared.m_iInitialWindDir ) );
+	m_EnvWindShared.Init( entindex(), 0, gpGlobals->curtime, GetLocalAngles().y, 0 );
 
 	SetThink( &CEnvWind::WindThink );
 	SetNextThink( gpGlobals->curtime );
@@ -1931,6 +1996,8 @@ class CEnvSplash : public CPointEntity
 	DECLARE_CLASS( CEnvSplash, CPointEntity );
 
 public:
+	virtual void Precache();
+	virtual void Spawn();
 	// Input handlers
 	void	InputSplash( inputdata_t &inputdata );
 
@@ -1948,6 +2015,18 @@ BEGIN_DATADESC( CEnvSplash )
 END_DATADESC()
 
 LINK_ENTITY_TO_CLASS( env_splash, CEnvSplash );
+
+void CEnvSplash::Precache()
+{
+	BaseClass::Precache();
+	PrecacheParticleSystem( "watersplash" );
+}
+
+void CEnvSplash::Spawn()
+{
+	Precache();
+	BaseClass::Spawn();
+}
 
 //-----------------------------------------------------------------------------
 // Purpose:

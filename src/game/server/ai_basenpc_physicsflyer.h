@@ -11,6 +11,7 @@
 
 #include "ai_basenpc.h"
 #include "ai_navigator.h"
+#include "vphysics_interface.h"
 
 //-----------------------------------------------------------------------------
 // The combot.

@@ -439,6 +439,8 @@ CHudCapturePanel::CHudCapturePanel( const char *pElementName ) : CHudElement( pE
 
 	// load control settings...
 	LoadControlSettings( "resource/UI/HudCapturePanel.res" );
+
+	SetVisible(true);
 }
 
 //-----------------------------------------------------------------------------

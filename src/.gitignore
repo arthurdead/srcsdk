@@ -2,4 +2,6 @@
 *.mak
 *.project
 
-/materialsystem/stdshaders/include/
+/materialsystem/*shaders/fxctmp9/
+/materialsystem/*shaders/fxctmp9_tmp/
+/materialsystem/*shaders/include/

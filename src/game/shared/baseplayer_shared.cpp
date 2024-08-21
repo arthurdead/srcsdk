@@ -89,20 +89,15 @@
 
 #ifdef CLIENT_DLL
 ConVar mp_usehwmmodels( "mp_usehwmmodels", "0", NULL, "Enable the use of the hw morph models. (-1 = never, 1 = always, 0 = based upon GPU)" ); // -1 = never, 0 = if hasfastvertextextures, 1 = always
-#endif
 
 bool UseHWMorphModels()
 {
-// #ifdef CLIENT_DLL 
-// 	if ( mp_usehwmmodels.GetInt() == 0 )
-// 		return g_pMaterialSystemHardwareConfig->HasFastVertexTextures();
-// 
-// 	return mp_usehwmmodels.GetInt() > 0;
-// #else
-// 	return false;
-// #endif
-	return false;
+	if ( mp_usehwmmodels.GetInt() == 0 )
+		return g_pMaterialSystemHardwareConfig->HasFastVertexTextures();
+
+	return mp_usehwmmodels.GetInt() > 0;
 }
+#endif
 
 void CopySoundNameWithModifierToken( char *pchDest, const char *pchSource, int nMaxLenInChars, const char *pchToken )
 {
@@ -214,26 +209,6 @@ bool CBasePlayer::UsingStandardWeaponsInVehicle( void )
 	// may dump us out of the vehicle
 	int nRole = pVehicle->GetPassengerRole( this );
 	bool bUsingStandardWeapons = pVehicle->IsPassengerUsingStandardWeapons( nRole );
-
-#ifdef SecobMod__ENABLE_FAKE_PASSENGER_SEATS
-	//SecobMod__Information: Get the name of our vehicles entity. If it's our passenger seat, then give the player the ability to use their weapons in-car.
-	// You may be wondering why we don't just set IsPassengerUsingStandardWeapons to true in our passenger seat code, we did try this and discovered that 
-	//even if you give your player a different nrole (eg vehicle_passenger) it still says somewhere in the code (which we couldn't find) that your nrole is
-	//that of driver if you're the sole occupant so always returns false for using standard weapons. As such this code works perfectly for getting round the problem.
-	CBaseEntity *pVehicleEnt = pVehicle->GetVehicleEnt();
-
-	if( FClassnameIs( pVehicleEnt, "prop_vehicle_ss_passengerseat" ) ||
-	  ( FClassnameIs( pVehicleEnt, "C_PropVehicleSSPassengerSeat" )  ||
-	  ( FClassnameIs( pVehicleEnt, "class C_PropVehicleSSPassengerSeat" )))
-	  )
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-#endif
 		
 	// Fall through and check weapons, etc. if we're using them 
 	if (!bUsingStandardWeapons )
@@ -685,7 +660,7 @@ void CBasePlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOri
 //			fvol - 
 //			force - force sound to play
 //-----------------------------------------------------------------------------
-void CBasePlayer::PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force )
+void CBasePlayer::PlayStepSound( const Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force )
 {
 	if ( gpGlobals->maxClients > 1 && !sv_footsteps.GetFloat() )
 		return;

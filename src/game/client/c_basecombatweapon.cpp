@@ -197,21 +197,16 @@ bool C_BaseCombatWeapon::IsCarrierAlive() const
 //-----------------------------------------------------------------------------
 ShadowType_t C_BaseCombatWeapon::ShadowCastType()
 {
-#ifdef SDK2013CE
 	if ( IsEffectActive( EF_NODRAW | EF_NOSHADOW ) )
-#else
-	if ( IsEffectActive( /*EF_NODRAW |*/ EF_NOSHADOW ) )
-#endif
 		return SHADOWS_NONE;
 
 	if (!IsBeingCarried())
 		return SHADOWS_RENDER_TO_TEXTURE;
-#ifdef SDK2013CE
+
 	if ( !IsWeaponVisible() )
 	{
 		return SHADOWS_NONE;
 	}
-#endif
 
 	if (IsCarriedByLocalPlayer() && !C_BasePlayer::ShouldDrawLocalPlayer())
 		return SHADOWS_NONE;

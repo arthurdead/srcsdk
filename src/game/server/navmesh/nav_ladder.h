@@ -76,8 +76,8 @@ public:
 	void OnSplit( CNavArea *original, CNavArea *alpha, CNavArea *beta );	///< when original is split into alpha and beta, update our connections
 	void OnDestroyNotify( CNavArea *dead );			///< invoked when given area is going away
 
-	void DrawLadder( void ) const;					///< Draws ladder and connections
-	void DrawConnectedAreas( void );				///< Draws connected areas
+	void DrawLadder( CBasePlayer *player ) const;					///< Draws ladder and connections
+	void DrawConnectedAreas( CBasePlayer *player );				///< Draws connected areas
 
 	void UpdateDangling( void );					///< Checks if the ladder is dangling (bots cannot go up)
 

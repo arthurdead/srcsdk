@@ -28,16 +28,7 @@ coplay = subproject('coplay')
 
 game_shared_dep = declare_dependency(
 	compile_args: [
-		'-DHEIST_DLL',
-		'-DSecobMod__SAVERESTORE',
-		'-DSecobMod__MULTIPLAYER_LEVEL_TRANSITIONS',
-		'-DSecobMod__MULTIPLAYER_VIEWCONTROL_CAMERAS',
-		'-DSecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE',
-		'-DSecobMod__ENABLE_FAKE_PASSENGER_SEATS',
-		'-DSecobMod__ALLOW_PLAYER_MODELS_IN_VEHICLES',
-		'-DSM_SP_FIXES',
-		'-DSM_AI_FIXES',
-		'-DSM_IMPROVEMENTS'
+		'-DHEIST_DLL'
 	],
 	sources: files(
 		join_paths(shared_game_src_dir,'heist_gamerules.cpp'),
@@ -82,6 +73,7 @@ server_lib_dep = declare_dependency(
 	]
 )
 
+if true
 shared_library('server',name_prefix:'',
 	cpp_pch: [
 		#join_paths(server_src_dir,'pch','cbase_pch.h'),
@@ -94,6 +86,7 @@ shared_library('server',name_prefix:'',
 	install: true,
 	install_dir: join_paths(game_dir,'bin')
 )
+endif
 
 if false
 shared_library('server_srv',name_prefix:'',

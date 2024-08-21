@@ -1,0 +1,1 @@
+option('src_root_dir', type: 'string', yield: true)

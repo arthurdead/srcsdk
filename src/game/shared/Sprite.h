@@ -289,7 +289,10 @@ public:
 
 
 // Macro to wrap creation
-#define SPRITE_CREATE_PREDICTABLE( name, origin, animate ) \
-	CSprite::SpriteCreatePredictable( __FILE__, __LINE__, name, origin, animate )
+#define SPRITE_CREATE_PREDICTABLE( ... ) \
+	CSprite::SpriteCreatePredictable( __FILE__, __LINE__ __VA_OPT__(, __VA_ARGS__) )
+
+#define SPRITE_CREATE_PREDICTABLE_AT( file, line, ... ) \
+	CSprite::SpriteCreatePredictable( file, line, __VA_OPT__(, __VA_ARGS__) )
 
 #endif // SPRITE_H

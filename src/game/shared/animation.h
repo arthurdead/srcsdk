@@ -8,6 +8,9 @@
 #ifndef ANIMATION_H
 #define ANIMATION_H
 
+#include "mathlib/vector.h"
+#include "mathlib/mathlib.h"
+
 #define ACTIVITY_NOT_AVAILABLE		-1
 
 struct animevent_t;
@@ -51,6 +54,8 @@ const char *GetBodygroupName( CStudioHdr *pstudiohdr, int iGroup );
 int FindBodygroupByName( CStudioHdr *pstudiohdr, const char *name );
 int GetBodygroupCount( CStudioHdr *pstudiohdr, int iGroup );
 int GetNumBodyGroups( CStudioHdr *pstudiohdr );
+
+const char *GetBodygroupPartName( CStudioHdr *pstudiohdr, int iGroup, int iPart );
 
 int GetSequenceActivity( CStudioHdr *pstudiohdr, int sequence, int *pweight = NULL );
 

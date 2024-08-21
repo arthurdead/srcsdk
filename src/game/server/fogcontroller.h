@@ -10,6 +10,8 @@
 
 #include "playernet_vars.h"
 #include "igamesystem.h"
+#include "baseentity.h"
+#include "GameEventListener.h"
 
 // Spawn Flags
 #define SF_FOG_MASTER		0x0001
@@ -70,28 +72,30 @@ public:
 //
 // Fog Controller System.
 //
-class CFogSystem : public CAutoGameSystem
+class CFogSystem : public CAutoGameSystem, public CGameEventListener
 {
 public:
 
 	// Creation/Init.
 	CFogSystem( char const *name ) : CAutoGameSystem( name ) 
 	{
-		m_pMasterController = NULL;
+		m_hMasterController = NULL;
 	}
 
 	~CFogSystem()
 	{
-		m_pMasterController = NULL;
+		m_hMasterController = NULL;
 	}
 
 	virtual void LevelInitPreEntity();
 	virtual void LevelInitPostEntity();
-	CFogController *GetMasterFogController( void )			{ return m_pMasterController; }
+	virtual void FireGameEvent( IGameEvent *pEvent ) { InitMasterController(); }
+	CFogController *GetMasterFogController( void )			{ return m_hMasterController; }
 
 private:
 
-	CFogController	*m_pMasterController;
+	void InitMasterController( void );
+	CHandle< CFogController > m_hMasterController;
 };
 
 CFogSystem *FogSystem( void );

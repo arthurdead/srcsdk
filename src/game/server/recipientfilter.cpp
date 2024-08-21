@@ -13,10 +13,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#ifdef SM_SP_FIXES
-//SecobMod - Still required?
-extern ConVar BreenCastAudio;
-#endif
 static IPredictionSystem g_RecipientFilterPredictionSystem;
 
 //-----------------------------------------------------------------------------
@@ -370,16 +366,6 @@ CTeamRecipientFilter::CTeamRecipientFilter( int team, bool isReliable )
 //-----------------------------------------------------------------------------
 void CPASAttenuationFilter::Filter( const Vector& origin, float attenuation /*= ATTN_NORM*/ )
 {
-#ifdef SM_SP_FIXES
-	//SecobMod__Information: Try as we might, this was the only fix for getting breencasts.
-	// Don't crop for attenuation 
-	if ( gpGlobals->maxClients >= 1 )
-	{
-		AddAllPlayers();
-		return;
-	}
-#endif
-	
 	// Don't crop for attenuation in single player
 	if ( gpGlobals->maxClients == 1 )
 		return;

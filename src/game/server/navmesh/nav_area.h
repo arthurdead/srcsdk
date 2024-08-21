@@ -420,6 +420,26 @@ public:
 	void ComputeNormal( Vector *normal, bool alternate = false ) const;	// Computes the area's normal based on m_nwCorner.  If 'alternate' is specified, m_seCorner is used instead.
 	void RemoveOrthogonalConnections( NavDirType dir );
 
+	//- approach areas ----------------------------------------------------------------------------------
+	struct ApproachInfo
+	{
+		NavConnect here;										///< the approach area
+		NavConnect prev;										///< the area just before the approach area on the path
+		NavTraverseType prevToHereHow;
+		NavConnect next;										///< the area just after the approach area on the path
+		NavTraverseType hereToNextHow;
+	};
+	const ApproachInfo *GetApproachInfo(int i) const { return &m_approach[i]; }
+	int GetApproachInfoCount(void) const { return m_approachCount; }
+	void ComputeApproachAreas(void);							///< determine the set of "approach areas" - for map learning
+
+private:
+	//- approach areas ----------------------------------------------------------------------------------
+	enum { MAX_APPROACH_AREAS = 16 };
+	ApproachInfo m_approach[MAX_APPROACH_AREAS];
+	unsigned char m_approachCount;
+
+public:
 	//- occupy time ------------------------------------------------------------------------------------
 	float GetEarliestOccupyTime( int teamID ) const;			// returns the minimum time for someone of the given team to reach this spot from their spawn
 	bool IsBattlefront( void ) const	{ return m_isBattlefront; }	// true if this area is a "battlefront" - where rushing teams initially meet
@@ -467,19 +487,19 @@ public:
 	float GetPathLengthSoFar( void ) const	{ DebuggerBreakOnNaN_StagingOnly( m_pathLengthSoFar ); return m_pathLengthSoFar; }
 
 	//- editing -----------------------------------------------------------------------------------------
-	virtual void Draw( void ) const;							// draw area for debugging & editing
+	virtual void Draw( CBasePlayer *player ) const;							// draw area for debugging & editing
 	virtual void DrawFilled( int r, int g, int b, int a, float deltaT = 0.1f, bool noDepthTest = true, float margin = 5.0f ) const;	// draw area as a filled rect of the given color
 	virtual void DrawSelectedSet( const Vector &shift ) const;	// draw this area as part of a selected set
 	void DrawDragSelectionSet( Color &dragSelectionSetColor ) const;
-	void DrawConnectedAreas( void ) const;
+	void DrawConnectedAreas( CBasePlayer *player ) const;
 	void DrawHidingSpots( void ) const;
 	bool SplitEdit( bool splitAlongX, float splitEdge, CNavArea **outAlpha = NULL, CNavArea **outBeta = NULL );	// split this area into two areas at the given edge
 	bool MergeEdit( CNavArea *adj );							// merge this area and given adjacent area 
 	bool SpliceEdit( CNavArea *other );							// create a new area between this area and given area 
 	void RaiseCorner( NavCornerType corner, int amount, bool raiseAdjacentCorners = true );	// raise/lower a corner (or all corners if corner == NUM_CORNERS)
 	void PlaceOnGround( NavCornerType corner, float inset = 0.0f );	// places a corner (or all corners if corner == NUM_CORNERS) on the ground
-	NavCornerType GetCornerUnderCursor( void ) const;
-	bool GetCornerHotspot( NavCornerType corner, Vector hotspot[NUM_CORNERS] ) const;	// returns true if the corner is under the cursor
+	NavCornerType GetCornerUnderCursor( CBasePlayer *player ) const;
+	bool GetCornerHotspot( CBasePlayer *player, NavCornerType corner, Vector hotspot[NUM_CORNERS] ) const;	// returns true if the corner is under the cursor
 	void Shift( const Vector &shift );							// shift the nav area
 
 	//- ladders -----------------------------------------------------------------------------------------

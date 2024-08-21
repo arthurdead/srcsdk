@@ -5,12 +5,12 @@
 // $NoKeywords: $
 //===========================================================================//
 
-#ifndef ILOCALIZE_H
-#define ILOCALIZE_H
+#ifndef VGUI_ILOCALIZE_H
+#define VGUI_ILOCALIZE_H
 
 #pragma once
 
-#include "tier1/ilocalize.h"
+#include "tier1/localize.h"
 
 namespace vgui
 {

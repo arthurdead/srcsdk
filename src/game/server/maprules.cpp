@@ -16,10 +16,10 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-class CRuleEntity : public CBaseEntity
+class CRuleEntity : public CServerOnlyEntity
 {
 public:
-	DECLARE_CLASS( CRuleEntity, CBaseEntity );
+	DECLARE_CLASS( CRuleEntity, CServerOnlyEntity );
 
 	void	Spawn( void );
 
@@ -274,6 +274,8 @@ public:
 
 	void InputDisplay( inputdata_t &inputdata );
 	void Display( CBaseEntity *pActivator );
+	void InputSetText ( inputdata_t &inputdata );
+	void SetText( const char* pszStr );
 
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 	{
@@ -307,6 +309,7 @@ BEGIN_DATADESC( CGameText )
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Display", InputDisplay ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetText", InputSetText ),
 
 END_DATADESC()
 
@@ -349,35 +352,26 @@ void CGameText::Display( CBaseEntity *pActivator )
 	if ( !CanFireForActivator( pActivator ) )
 		return;
 
-#ifdef SM_AI_FIXES
-		// also send to all if we haven't got a specific activator player to send to 
-		if ( MessageToAll() || !pActivator || !pActivator->IsPlayer() ) 
-#else
-	if ( MessageToAll() )
-#endif
+	// also send to all if we haven't got a specific activator player to send to 
+	if ( MessageToAll() || !pActivator || !pActivator->IsPlayer() ) 
 	{
 		UTIL_HudMessageAll( m_textParms, MessageGet() );
 	}
 	else
 	{
-#ifdef SM_AI_FIXES
 		UTIL_HudMessage( ToBasePlayer( pActivator ), m_textParms, MessageGet() );
-#else
-		// If we're in singleplayer, show the message to the player.
-		if ( gpGlobals->maxClients == 1 )
-		{
-			CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-			UTIL_HudMessage( pPlayer, m_textParms, MessageGet() );
-		}
-		// Otherwise show the message to the player that triggered us.
-		else if ( pActivator && pActivator->IsNetClient() )
-		{
-			UTIL_HudMessage( ToBasePlayer( pActivator ), m_textParms, MessageGet() );
-		}
-#endif
 	}
 }
 
+void CGameText::InputSetText( inputdata_t &inputdata )
+{
+	SetText( inputdata.value.String() );
+}
+
+void CGameText::SetText( const char* pszStr )
+{
+	m_iszMessage = AllocPooledString( pszStr );
+}
 
 /* TODO: Replace with an entity I/O version
 //

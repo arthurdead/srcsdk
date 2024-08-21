@@ -83,6 +83,9 @@ public:
 	static void		RestoreSkyOverlayData( int iRestoreFromSlot );
 #endif
 
+	virtual Vector GetGlowDirection();
+	virtual float GetGlowScale();
+	virtual Vector GetGlowColor();
 protected:
 
 	void			UpdateGlowObstruction( const Vector &vToGlow, bool bCacheFullSceneState );
@@ -104,7 +107,7 @@ protected:
 		Vector &vRight );
 
 	virtual void	Draw( bool bCacheFullSceneState );
-	float			CalcGlowAspect();
+	float			CalcGlowAspect() const;
 	
 	float			m_flGlowObstructionScale;	
 	bool			m_bCacheGlowObstruction;			// Flags to cache obstruction scales

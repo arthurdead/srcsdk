@@ -622,12 +622,21 @@ private:
 unsigned int UTIL_MaskForEntity( CBaseEntity *pEntity, bool brush_only )
 {
 	if(pEntity->IsPlayer()) {
+	#ifdef GAME_DLL
+		CBasePlayer *pPlayer = (CBasePlayer *)pEntity;
+		return brush_only ? pPlayer->PlayerSolidMask(true) : pPlayer->PlayerSolidMask(false);
+	#else
 		return brush_only ? MASK_PLAYERSOLID_BRUSHONLY : MASK_PLAYERSOLID;
+	#endif
 	}
 
 	if(pEntity->IsNPC()) {
+	#ifdef GAME_DLL
 		CAI_BaseNPC *pNPC = pEntity->MyNPCPointer();
-		return brush_only ? pNPC->GetAITraceMask(true) : pNPC->GetAITraceMask(false);
+		return brush_only ? MASK_NPCSOLID_BRUSHONLY : MASK_NPCSOLID;
+	#else
+		return brush_only ? MASK_NPCSOLID_BRUSHONLY : MASK_NPCSOLID;
+	#endif
 	}
 
 	return brush_only ? MASK_SOLID_BRUSHONLY : MASK_SOLID;
@@ -802,25 +811,13 @@ void UTIL_Tracer( const Vector &vecStart, const Vector &vecEnd, int iEntIndex,
 
 void UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, int amount )
 {
-#ifdef SM_AI_FIXES
-IPredictionSystem::SuppressHostEvents( NULL );
-#endif
+	IPredictionSystem::SuppressHostEvents( NULL );
 
 	if ( !UTIL_ShouldShowBlood( color ) )
 		return;
 
 	if ( color == DONT_BLEED || amount == 0 )
 		return;
-
-	if ( g_Language.GetInt() == LANGUAGE_GERMAN && color == BLOOD_COLOR_RED )
-		color = 0;
-#ifndef SM_AI_FIXES
-	if ( g_pGameRules->IsMultiplayer() )
-	{
-		// scale up blood effect in multiplayer for better visibility
-		amount *= 5;
-	}
-#endif
 
 	if ( amount > 255 )
 		amount = 255;

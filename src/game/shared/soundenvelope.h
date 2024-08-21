@@ -13,6 +13,15 @@
 #pragma once
 
 #include "engine/IEngineSound.h"
+#include "shareddefs.h"
+#include "string_t.h"
+
+#ifdef GAME_DLL
+class CBasePlayer;
+#else
+#define CBasePlayer C_BasePlayer
+class C_BasePlayer;
+#endif
 
 class CSoundPatch;
 

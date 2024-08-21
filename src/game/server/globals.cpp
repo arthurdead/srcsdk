@@ -25,7 +25,4 @@
 Vector			g_vecAttackDir;
 int				g_iSkillLevel;
 bool			g_fGameOver;
-
-#ifdef SecobMod__SAVERESTORE
 bool Transitioned;
-#endif //SecobMod__SAVERESTORE

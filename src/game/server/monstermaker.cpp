@@ -660,9 +660,7 @@ CNPCSpawnDestination *CTemplateNPCMaker::FindSpawnDestination()
 			bool fValid = true;
 			Vector vecTest = pDestination->GetAbsOrigin();
 
-		#ifdef SM_AI_FIXES
 			pPlayer = UTIL_GetNearestPlayer(vecTest); 
-		#endif
 
 			if( m_CriterionVisibility != TS_YN_DONT_CARE )
 			{
@@ -731,9 +729,7 @@ CNPCSpawnDestination *CTemplateNPCMaker::FindSpawnDestination()
 			{
 				Vector vecTest = pDestinations[ i ]->GetAbsOrigin();
 
-			#ifdef SM_AI_FIXES
 				pPlayer = UTIL_GetNearestPlayer(vecTest); 
-			#endif
 
 				float flDist = ( vecTest - pPlayer->GetAbsOrigin() ).Length();
 

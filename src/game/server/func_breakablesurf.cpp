@@ -283,10 +283,10 @@ void CBreakableSurface::SurfaceTouch( CBaseEntity *pOther )
 	PanePos(vTouchPos, &flMaxsWidth, &flMaxsHeight);
 
 	int nMinWidth = Floor2Int(MAX(0,		MIN(flMinsWidth,flMaxsWidth)));
-	int nMaxWidth = Ceil2Int(MIN(m_nNumWide,MAX(flMinsWidth,flMaxsWidth)));
+	int nMaxWidth = Ceil2Int(MIN(m_nNumWide.Get(),MAX(flMinsWidth,flMaxsWidth)));
 
 	int nMinHeight = Floor2Int(MAX(0,		MIN(flMinsHeight,flMaxsHeight)));
-	int nMaxHeight = Ceil2Int(MIN(m_nNumHigh,MAX(flMinsHeight,flMaxsHeight)));
+	int nMaxHeight = Ceil2Int(MIN(m_nNumHigh.Get(),MAX(flMinsHeight,flMaxsHeight)));
 
 	Vector vHitVel;
 	pOther->GetVelocity( &vHitVel, NULL );

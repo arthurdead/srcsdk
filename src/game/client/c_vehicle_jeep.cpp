@@ -144,12 +144,6 @@ void C_PropJeep::DampenEyePosition( Vector &vecVehicleEyePos, QAngle &vecVehicle
 		return;
 	}
 
-	// Keep static the sideways motion.
-	// Dampen forward/backward motion.
-#ifndef SM_SP_FIXES
-	DampenForwardMotion( vecVehicleEyePos, vecVehicleEyeAngles, flFrameTime );
-#endif
-
 	// Blend up/down motion.
 	DampenUpMotion( vecVehicleEyePos, vecVehicleEyeAngles, flFrameTime );
 #endif

@@ -501,7 +501,7 @@ DECLARE_CLIENT_EFFECT( "MuzzleFlash", MuzzleFlashCallback );
 //			flRoll - 
 //			flRollDelta - 
 //-----------------------------------------------------------------------------
-CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity, float scale, int numParticles, float flDietime, unsigned char *pColor, int iAlpha, const char *pMaterial, float flRoll, float flRollDelta )
+CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity, float scale, int numParticles, float flDietime, const unsigned char *pColor, int iAlpha, const char *pMaterial, float flRoll, float flRollDelta )
 {
 	VPROF_BUDGET( "FX_Smoke", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	CSmartPtr<CSimpleEmitter> pSimple = CSimpleEmitter::Create( "FX_Smoke" );
@@ -538,7 +538,7 @@ CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity
 //-----------------------------------------------------------------------------
 // Purpose: Smoke puffs
 //-----------------------------------------------------------------------------
-void FX_Smoke( const Vector &origin, const QAngle &angles, float scale, int numParticles, unsigned char *pColor, int iAlpha )
+void FX_Smoke( const Vector &origin, const QAngle &angles, float scale, int numParticles, const unsigned char *pColor, int iAlpha )
 {
 	VPROF_BUDGET( "FX_Smoke", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	Vector vecVelocity;
@@ -620,7 +620,7 @@ public:
 		m_flDeathTime = gpGlobals->curtime + flTime;
 	}
 
-	void SetSpurtAngle( QAngle &vecAngles )
+	void SetSpurtAngle( const QAngle &vecAngles )
 	{
 		AngleVectors( vecAngles, &m_vecSpurtForward );
 	}
@@ -729,7 +729,7 @@ private:
 //-----------------------------------------------------------------------------
 // Purpose: Small hose gas spurt
 //-----------------------------------------------------------------------------
-void FX_BuildSmoke( Vector &vecOrigin, QAngle &vecAngles, ClientEntityHandle_t hEntity, int nAttachment, float flLifeTime, const Vector4D &pColor )
+void FX_BuildSmoke( const Vector &vecOrigin, const QAngle &vecAngles, ClientEntityHandle_t hEntity, int nAttachment, float flLifeTime, const Vector4D &pColor )
 {
 	CSmartPtr<CSmokeEmitter> pSimple = CSmokeEmitter::Create( hEntity, nAttachment, "FX_Smoke" );
 	pSimple->SetSortOrigin( vecOrigin );
@@ -862,7 +862,7 @@ void FX_GunshipMuzzleEffect( const Vector &origin, const QAngle &angles, float s
 //			velocity - 
 //			makeWhiz - 
 //-----------------------------------------------------------------------------
-void FX_GunshipTracer( Vector& start, Vector& end, int velocity, bool makeWhiz )
+void FX_GunshipTracer( const Vector& start, const Vector& end, int velocity, bool makeWhiz )
 {
 	VPROF_BUDGET( "FX_GunshipTracer", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	Vector	vNear, dStart, dEnd, shotDir;
@@ -912,7 +912,7 @@ void FX_StriderMuzzleEffect( const Vector &origin, const QAngle &angles, float s
 //			velocity - 
 //			makeWhiz - 
 //-----------------------------------------------------------------------------
-void FX_StriderTracer( Vector& start, Vector& end, int velocity, bool makeWhiz )
+void FX_StriderTracer( const Vector& start, const Vector& end, int velocity, bool makeWhiz )
 {
 	VPROF_BUDGET( "FX_StriderTracer", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	Vector	vNear, dStart, dEnd, shotDir;
@@ -946,7 +946,7 @@ void FX_StriderTracer( Vector& start, Vector& end, int velocity, bool makeWhiz )
 //			velocity - 
 //			makeWhiz - 
 //-----------------------------------------------------------------------------
-void FX_HunterTracer( Vector& start, Vector& end, int velocity, bool makeWhiz )
+void FX_HunterTracer( const Vector& start, const Vector& end, int velocity, bool makeWhiz )
 {
 	VPROF_BUDGET( "FX_HunterTracer", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	Vector	vNear, dStart, dEnd, shotDir;
@@ -980,7 +980,7 @@ void FX_HunterTracer( Vector& start, Vector& end, int velocity, bool makeWhiz )
 //			velocity - 
 //			makeWhiz - 
 //-----------------------------------------------------------------------------
-void FX_GaussTracer( Vector& start, Vector& end, int velocity, bool makeWhiz )
+void FX_GaussTracer( const Vector& start, const Vector& end, int velocity, bool makeWhiz )
 {
 	VPROF_BUDGET( "FX_GaussTracer", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	Vector	vNear, dStart, dEnd, shotDir;

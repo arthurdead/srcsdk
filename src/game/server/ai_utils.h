@@ -12,30 +12,6 @@
 
 #pragma once
 
-//-----------------------------------------------------------------------------
-//
-// Function to get the local player. AI does not want asserts or warnings,
-// just NULL result
-//
-//-----------------------------------------------------------------------------
-
-inline CBasePlayer *AI_GetSinglePlayer()
-{
-#ifndef SM_AI_FIXES
-	if ( gpGlobals->maxClients > 1 )
-	{
-		return NULL;
-	}
-#endif
-	
-	return UTIL_GetLocalPlayer();
-}
-
-inline bool AI_IsSinglePlayer()
-{
-	return ( gpGlobals->maxClients == 1 );
-}
-
 
 //-----------------------------------------------------------------------------
 //

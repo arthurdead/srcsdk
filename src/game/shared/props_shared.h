@@ -10,6 +10,10 @@
 
 #include "igamesystem.h"
 #include <KeyValues.h>
+#include "string_t.h"
+#include "ehandle.h"
+
+class IPhysicsObject;
 
 // Phys prop spawnflags
 #define SF_PHYSPROP_START_ASLEEP				0x000001

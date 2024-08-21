@@ -2317,18 +2317,10 @@ void CAI_FollowGoal::EnableGoal( CAI_BaseNPC *pAI )
 		return;
 	
 	CBaseEntity *pGoalEntity = GetGoalEntity();
-	
-#ifdef SM_AI_FIXES
+
 	if ( !pGoalEntity ) 
-#else
-	if ( !pGoalEntity && AI_IsSinglePlayer() )
-#endif
 	{
-	#ifdef SM_AI_FIXES
 		CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
-	#else
-		CBasePlayer *pPlayer = UTIL_GetLocalPlayer(); 
-	#endif
 		if ( pAI->IRelationType(pPlayer) == D_LI ) 
 		{
 			pGoalEntity = pPlayer;

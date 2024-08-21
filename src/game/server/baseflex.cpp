@@ -1197,11 +1197,7 @@ bool CBaseFlex::ProcessFlexAnimationSceneEvent( CSceneEventInfo *info, CChoreoSc
 					// only check occasionally
 					else if (info->m_flNext <= gpGlobals->curtime)
 					{
-					#ifdef SM_AI_FIXES
 						CBasePlayer *pPlayer = UTIL_GetNearestVisiblePlayer(this); 
-					#else
-						CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-					#endif
 
 						// if not in view, disable
 						info->m_bHasArrived = (pPlayer && !pPlayer->FInViewCone( this ) );
@@ -2161,13 +2157,8 @@ void CBaseFlex::DoBodyLean( void )
 		{
 			m_vecPrevVelocity = vecDelta;
 			float decay =  ExponentialDecay( 0.5, 0.1, dt );
-#ifdef SDK2013CE
 			m_vecShift *= decay;
 			m_vecLean *= decay;
-#else
-			m_vecShift = m_vecLean * decay;
-			m_vecLean = m_vecShift * decay;
-#endif // SDK2013CE
  		}
 
 		m_vecPrevOrigin = vecOrigin;
@@ -2721,12 +2712,7 @@ void CFlexCycler::Think( void )
 	Vector forward, right, up;
 	GetVectors( &forward, &right, &up );
 
-#ifdef SM_AI_FIXES
 	CBaseEntity *pPlayer = (CBaseEntity *)UTIL_GetNearestVisiblePlayer(this); 
-#else
-	CBaseEntity *pPlayer = (CBaseEntity *)UTIL_GetLocalPlayer();
-#endif
-
 
 	if (pPlayer)
 	{

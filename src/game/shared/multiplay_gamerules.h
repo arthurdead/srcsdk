@@ -223,14 +223,6 @@ public:
 
 public:
 
-#ifndef SDK2013CE
-	struct ResponseRules_t
-	{
-		CUtlVector<IResponseSystem*> m_ResponseSystems;
-	};
-	CUtlVector<ResponseRules_t>	m_ResponseRules;
-#endif
-
 	virtual void InitCustomResponseRulesDicts()	{}
 	virtual void ShutdownCustomResponseRulesDicts() {}
 

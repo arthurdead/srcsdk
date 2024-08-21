@@ -147,7 +147,7 @@ void CSheetSimulator::SetCollisionGroup( int group )
 // bounding box for collision
 //-----------------------------------------------------------------------------
 
-void CSheetSimulator::SetBoundingBox( Vector& mins, Vector& maxs )
+void CSheetSimulator::SetBoundingBox( const Vector& mins, const Vector& maxs )
 {
 	m_FrustumBoxMin = mins;
 	m_FrustumBoxMax = maxs;

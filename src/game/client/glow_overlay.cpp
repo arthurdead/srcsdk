@@ -65,7 +65,7 @@ float g_flOverlayRange = cos( DEG2RAD( 40 ) );
 // ----------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------- //
 
-void Do2DRotation( Vector vIn, Vector &vOut, float flDegrees, int i1, int i2, int i3 )
+void Do2DRotation( const Vector &vIn, Vector &vOut, float flDegrees, int i1, int i2, int i3 )
 {
 	float c, s;
 	SinCos( DEG2RAD( flDegrees ), &s, &c );
@@ -126,7 +126,7 @@ bool CGlowOverlay::Update()
 
 ConVar building_cubemaps( "building_cubemaps", "0" );
 
-float CGlowOverlay::CalcGlowAspect()
+float CGlowOverlay::CalcGlowAspect() const
 {
 	if ( m_nSprites )
 	{
@@ -185,6 +185,34 @@ void CGlowOverlay::UpdateSkyGlowObstruction( float zFar, bool bCacheFullSceneSta
 	}
 }
 
+Vector CGlowOverlay::GetGlowDirection()
+{
+	Vector vToGlow;
+	
+	if( m_bDirectional )
+		vToGlow = m_vDirection;
+	else
+		vToGlow = m_vPos - CurrentViewOrigin();
+
+	VectorNormalize( vToGlow );
+
+	return vToGlow;
+}
+
+float CGlowOverlay::GetGlowScale()
+{
+	return m_flGlowObstructionScale;
+}
+
+Vector CGlowOverlay::GetGlowColor()
+{
+	Assert( m_nSprites > 0 );
+
+	if ( m_nSprites > 0 )
+		return m_Sprites[0].m_vColor;
+
+	return Vector( 1, 1, 1 );
+}
 
 void CGlowOverlay::UpdateGlowObstruction( const Vector &vToGlow, bool bCacheFullSceneState )
 {

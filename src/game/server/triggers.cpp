@@ -34,14 +34,6 @@
 #include "ai_behavior_lead.h"
 #include "gameinterface.h"
 #include "ilagcompensationmanager.h"
-#ifdef SecobMod__SAVERESTORE
-#ifdef HL2MP
-#include "hl2mp_player.h"
-#endif
-#ifdef HEIST_DLL
-#include "heist_player.h"
-#endif
-#endif //SecobMod__SAVERESTORE
 
 #ifdef HL2_DLL
 #include "hl2_player.h"
@@ -59,10 +51,7 @@ CUtlVector< CHandle<CTriggerMultiple> >	g_hWeaponFireTriggers;
 
 extern CServerGameDLL	g_ServerGameDLL;
 extern bool				g_fGameOver;
-
-#ifdef SecobMod__SAVERESTORE
 extern bool Transitioned;
-#endif //SecobMod__SAVERESTORE
 
 ConVar showtriggers( "showtriggers", "0", FCVAR_CHEAT, "Shows trigger brushes" );
 
@@ -1513,14 +1502,6 @@ CBaseEntity *CChangeLevel::FindLandmark( const char *pLandmarkName )
 //-----------------------------------------------------------------------------
 void CChangeLevel::InputChangeLevel( inputdata_t &inputdata )
 {
-	// Ignore changelevel transitions if the player's dead or attempting a challenge
-	if ( gpGlobals->maxClients == 1 )
-	{
-		CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-		if ( pPlayer && ( !pPlayer->IsAlive() || pPlayer->GetBonusChallenge() > 0 ) )
-			return;
-	}
-
 	ChangeLevelNow( inputdata.pActivator );
 }
 
@@ -1600,10 +1581,10 @@ void CChangeLevel::WarnAboutActiveLead( void )
 	}
 }
 
-#ifdef SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
 extern ConVar mp_transition_players_percent;
 extern ConVar sv_transitions;
-#endif //SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
+
+extern void SaveTransitionFile();
 
 void CChangeLevel::ChangeLevelNow( CBaseEntity *pActivator )
 {
@@ -1611,20 +1592,6 @@ void CChangeLevel::ChangeLevelNow( CBaseEntity *pActivator )
 	levellist_t	levels[16];
 
 	Assert(!FStrEq(m_szMapName, ""));
-
-	#ifndef SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
-	// Don't work in deathmatch
-	if ( g_pGameRules->IsDeathmatch() )
-		return;
-	#endif //SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
-	
-#ifdef SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
-CBasePlayer *pPlayer = (pActivator && pActivator->IsPlayer()) ? ToBasePlayer( pActivator ) : UTIL_GetLocalPlayer(); //SecobMod__Information Get all the players who activate our multiplayer transition.
-	if ( !pPlayer )
-		return;
-
-
-	pPlayer->m_bTransition = true;
 
 	if ( mp_transition_players_percent.GetInt() > 0 )
 	{
@@ -1636,8 +1603,34 @@ CBasePlayer *pPlayer = (pActivator && pActivator->IsPlayer()) ? ToBasePlayer( pA
 			if ( pPlayer && pPlayer->IsAlive() )
 			{
 				totalPlayers++;
-				if ( pPlayer->m_bTransition )
-					transitionPlayers++;
+
+				int transitionState = InTransitionVolume(pPlayer, m_szLandmarkName);
+				if ( transitionState == TRANSITION_VOLUME_SCREENED_OUT )
+				{
+					continue;
+				}
+
+				// no transition volumes, check PVS of landmark
+				if ( transitionState == TRANSITION_VOLUME_NOT_FOUND )
+				{
+					byte pvs[MAX_MAP_CLUSTERS/8];
+					int clusterIndex = engine->GetClusterForOrigin( pLandmark->GetAbsOrigin() );
+					engine->GetPVSForCluster( clusterIndex, sizeof(pvs), pvs );
+					if ( pPlayer )
+					{
+						Vector vecSurroundMins, vecSurroundMaxs;
+						pPlayer->CollisionProp()->WorldSpaceSurroundingBounds( &vecSurroundMins, &vecSurroundMaxs );
+						bool playerInPVS = engine->CheckBoxInPVS( vecSurroundMins, vecSurroundMaxs, pvs, sizeof( pvs ) );
+
+						//Assert( playerInPVS );
+						if ( !playerInPVS )
+						{
+							continue;
+						}
+					}
+				}
+
+				transitionPlayers++;
 			}
 		}
 
@@ -1647,27 +1640,36 @@ CBasePlayer *pPlayer = (pActivator && pActivator->IsPlayer()) ? ToBasePlayer( pA
 			return;
 		}
 	}
-//===================================================================================
-#ifdef SecobMod__SAVERESTORE
-#ifdef HL2MP
-CHL2MP_Player *p2Player = (CHL2MP_Player *)UTIL_GetLocalPlayer();
-p2Player->SaveTransitionFile();
-#endif
-#ifdef HEIST_DLL
-CHeistPlayer *p2Player = (CHeistPlayer *)UTIL_GetLocalPlayer();
-p2Player->SaveTransitionFile();
-#endif
-Transitioned = true;
-#endif //SecobMod__SAVERESTORE
+	else if(pActivator && pActivator->IsPlayer())
+	{
+		CBasePlayer* pPlayer = (CBasePlayer *)pActivator;
 
-	// This object will get removed in the call to engine->ChangeLevel, copy the params into "safe" memory
-	Q_strncpy(st_szNextMap, m_szMapName, sizeof(st_szNextMap));
+		int transitionState = InTransitionVolume(pPlayer, m_szLandmarkName);
+		if ( transitionState == TRANSITION_VOLUME_SCREENED_OUT )
+		{
+			return;
+		}
 
-	//SecobMod__Information  Change to the next map.
-		engine->ChangeLevel( st_szNextMap, NULL );
-		//SecobMod__Information  As far as we're concerned this is where we stop the code because we just transitioned.
-		return;
-#endif //SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
+		// no transition volumes, check PVS of landmark
+		if ( transitionState == TRANSITION_VOLUME_NOT_FOUND )
+		{
+			byte pvs[MAX_MAP_CLUSTERS/8];
+			int clusterIndex = engine->GetClusterForOrigin( pLandmark->GetAbsOrigin() );
+			engine->GetPVSForCluster( clusterIndex, sizeof(pvs), pvs );
+			if ( pPlayer )
+			{
+				Vector vecSurroundMins, vecSurroundMaxs;
+				pPlayer->CollisionProp()->WorldSpaceSurroundingBounds( &vecSurroundMins, &vecSurroundMaxs );
+				bool playerInPVS = engine->CheckBoxInPVS( vecSurroundMins, vecSurroundMaxs, pvs, sizeof( pvs ) );
+
+				//Assert( playerInPVS );
+				if ( !playerInPVS )
+				{
+					return;
+				}
+			}
+		}
+	}
 
 	// Some people are firing these multiple times in a frame, disable
 	if ( m_bTouched )
@@ -1675,48 +1677,11 @@ Transitioned = true;
 
 	m_bTouched = true;
 
-//SecobMod__Information  Code can't compile without this ifndef.
-#ifndef SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
-CBaseEntity *pPlayer = (pActivator && pActivator->IsPlayer()) ? pActivator : UTIL_GetLocalPlayer();
-#endif //SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
-
-
-	int transitionState = InTransitionVolume(pPlayer, m_szLandmarkName);
-	if ( transitionState == TRANSITION_VOLUME_SCREENED_OUT )
-	{
-		DevMsg( 2, "Player isn't in the transition volume %s, aborting\n", m_szLandmarkName );
-		return;
-	}
-
 	// look for a landmark entity		
 	pLandmark = FindLandmark( m_szLandmarkName );
 
 	if ( !pLandmark )
 		return;
-
-	// no transition volumes, check PVS of landmark
-	if ( transitionState == TRANSITION_VOLUME_NOT_FOUND )
-	{
-		byte pvs[MAX_MAP_CLUSTERS/8];
-		int clusterIndex = engine->GetClusterForOrigin( pLandmark->GetAbsOrigin() );
-		engine->GetPVSForCluster( clusterIndex, sizeof(pvs), pvs );
-		if ( pPlayer )
-		{
-			Vector vecSurroundMins, vecSurroundMaxs;
-			pPlayer->CollisionProp()->WorldSpaceSurroundingBounds( &vecSurroundMins, &vecSurroundMaxs );
-			bool playerInPVS = engine->CheckBoxInPVS( vecSurroundMins, vecSurroundMaxs, pvs, sizeof( pvs ) );
-
-			//Assert( playerInPVS );
-			if ( !playerInPVS )
-			{
-				Warning( "Player isn't in the landmark's (%s) PVS, aborting\n", m_szLandmarkName );
-#ifndef HL1_DLL
-				// HL1 works even with these errors!
-				return;
-#endif
-			}
-		}
-	}
 
 	WarnAboutActiveLead();
 
@@ -1738,6 +1703,19 @@ CBaseEntity *pPlayer = (pActivator && pActivator->IsPlayer()) ? pActivator : UTI
 	{
 		Msg( "CHANGE LEVEL: %s %s\n", st_szNextMap, st_szNextSpot );
 	}
+
+	for( int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		CBasePlayer* pOther = UTIL_PlayerByIndex( i );
+		if ( pOther )
+		{
+			pOther->m_bTransition = true;
+		}
+	}
+
+	SaveTransitionFile();
+
+	Transitioned = true;
 
 	// If we're debugging, don't actually change level
 	if ( g_debug_transitions.GetInt() == 0 )
@@ -2560,177 +2538,6 @@ void CTriggerTeleportRelative::Touch( CBaseEntity *pOther )
 	pOther->Teleport( &finalPos, NULL, momentum );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Saves the game when the player touches the trigger. Can be enabled or disabled
-//-----------------------------------------------------------------------------
-class CTriggerToggleSave : public CBaseTrigger
-{
-public:
-	DECLARE_CLASS( CTriggerToggleSave, CBaseTrigger );
-
-	void Spawn( void );
-	void Touch( CBaseEntity *pOther );
-
-	void InputEnable( inputdata_t &inputdata )
-	{
-		m_bDisabled = false;
-	}
-
-	void InputDisable( inputdata_t &inputdata )
-	{
-		m_bDisabled = true;
-	}
-
-	bool	m_bDisabled;		// Initial state
-	
-	DECLARE_DATADESC();
-};
-
-BEGIN_DATADESC( CTriggerToggleSave )
-	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
-
-	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
-END_DATADESC()
-
-LINK_ENTITY_TO_CLASS( trigger_togglesave, CTriggerToggleSave );
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Called when spawning, after keyvalues have been set.
-//-----------------------------------------------------------------------------
-void CTriggerToggleSave::Spawn( void )
-{
-	if ( g_pGameRules->IsDeathmatch() )
-	{
-		UTIL_Remove( this );
-		return;
-	}
-
-	InitTrigger();
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Performs the autosave when the player touches us.
-// Input  : pOther - 
-//-----------------------------------------------------------------------------
-void CTriggerToggleSave::Touch( CBaseEntity *pOther )
-{
-	if( m_bDisabled )
-		return;
-
-	// Only save on clients
-	if ( !pOther->IsPlayer() )
-		return;
-    
-	// Can be re-enabled
-	m_bDisabled = true;
-
-	engine->ServerCommand( "autosave\n" );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Saves the game when the player touches the trigger.
-//-----------------------------------------------------------------------------
-class CTriggerSave : public CBaseTrigger
-{
-public:
-	DECLARE_CLASS( CTriggerSave, CBaseTrigger );
-
-	void Spawn( void );
-	void Touch( CBaseEntity *pOther );
-	DECLARE_DATADESC();
-
-	bool m_bForceNewLevelUnit;
-	float m_fDangerousTimer;
-	int m_minHitPoints;
-};
-
-
-BEGIN_DATADESC( CTriggerSave )
-
-	DEFINE_KEYFIELD( m_bForceNewLevelUnit, FIELD_BOOLEAN, "NewLevelUnit" ),
-	DEFINE_KEYFIELD( m_minHitPoints, FIELD_INTEGER, "MinimumHitPoints" ),
-	DEFINE_KEYFIELD( m_fDangerousTimer, FIELD_FLOAT, "DangerousTimer" ),
-
-END_DATADESC()
-LINK_ENTITY_TO_CLASS( trigger_autosave, CTriggerSave );
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Called when spawning, after keyvalues have been set.
-//-----------------------------------------------------------------------------
-void CTriggerSave::Spawn( void )
-{
-	if ( g_pGameRules->IsDeathmatch() )
-	{
-		UTIL_Remove( this );
-		return;
-	}
-
-	InitTrigger();
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Performs the autosave when the player touches us.
-// Input  : pOther - 
-//-----------------------------------------------------------------------------
-void CTriggerSave::Touch( CBaseEntity *pOther )
-{
-	// Only save on clients
-	if ( !pOther->IsPlayer() )
-		return;
-
-	if ( m_fDangerousTimer != 0.0f )
-	{
-		if ( g_ServerGameDLL.m_fAutoSaveDangerousTime != 0.0f && g_ServerGameDLL.m_fAutoSaveDangerousTime >= gpGlobals->curtime )
-		{
-			// A previous dangerous auto save was waiting to become safe
-#ifdef SM_SP_FIXES
-			CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
-#else
-			CBasePlayer *pPlayer = UTIL_PlayerByIndex( 1 );
-#endif
-
-			if ( pPlayer->GetDeathTime() == 0.0f || pPlayer->GetDeathTime() > gpGlobals->curtime )
-			{
-				// The player isn't dead, so make the dangerous auto save safe
-				engine->ServerCommand( "autosavedangerousissafe\n" );
-			}
-		}
-	}
-
-    // this is a one-way transition - there is no way to return to the previous map.
-	if ( m_bForceNewLevelUnit )
-	{
-		engine->ClearSaveDir();
-	}
-	UTIL_Remove( this );
-
-	if ( m_fDangerousTimer != 0.0f )
-	{
-		// There's a dangerous timer. Save if we have enough hitpoints.
-#ifdef SM_SP_FIXES
-		CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
-#else
-		CBasePlayer *pPlayer = UTIL_PlayerByIndex( 1 );
-#endif
-
-
-		if (pPlayer && pPlayer->GetHealth() >= m_minHitPoints)
-		{
-			engine->ServerCommand( "autosavedangerous\n" );
-			g_ServerGameDLL.m_fAutoSaveDangerousTime = gpGlobals->curtime + m_fDangerousTimer;
-		}
-	}
-	else
-	{
-		engine->ServerCommand( "autosave\n" );
-	}
-}
-
 
 class CTriggerGravity : public CBaseTrigger
 {
@@ -3117,7 +2924,6 @@ void CTriggerCamera::InputDisable( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-#ifdef SecobMod__MULTIPLAYER_VIEWCONTROL_CAMERAS
 void CTriggerCamera::Enable( void )
 {
 
@@ -3139,12 +2945,8 @@ m_hPlayer = pPlayer;
 	if ( !m_hPlayer || !m_hPlayer->IsPlayer() )
 	{
 		Msg ("Not m_hPlayer or m_hPlayer isn't a player!");
-#ifdef SM_AI_FIXES
 		m_hPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
 		Msg ("m_hPlayer should now be the nearest player.");
-#else
-		m_hPlayer = UTIL_GetLocalPlayer();
-#endif
 
 	}
 
@@ -3333,194 +3135,10 @@ pPlayer = ((CBasePlayer*)m_hPlayer.Get());
 	
 }
 }
-#else
-void CTriggerCamera::Enable( void )
-{
-	m_state = USE_ON;
-
-	if ( !m_hPlayer || !m_hPlayer->IsPlayer() )
-	{
-#ifdef SM_SP_FIXES
-		m_hPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
-#else
-		m_hPlayer = UTIL_GetLocalPlayer();
-#endif
-
-	}
-
-	if ( !m_hPlayer )
-	{
-		DispatchUpdateTransmitState();
-		return;
-	}
-
-	Assert( m_hPlayer->IsPlayer() );
-	CBasePlayer *pPlayer = NULL;
-
-	if ( m_hPlayer->IsPlayer() )
-	{
-		pPlayer = ((CBasePlayer*)m_hPlayer.Get());
-	}
-	else
-	{
-		Warning("CTriggerCamera could not find a player!\n");
-		return;
-	}
-
-	// if the player was already under control of a similar trigger, disable the previous trigger.
-	{
-		CBaseEntity *pPrevViewControl = pPlayer->GetViewEntity();
-		if (pPrevViewControl && pPrevViewControl != pPlayer)
-		{
-			CTriggerCamera *pOtherCamera = dynamic_cast<CTriggerCamera *>(pPrevViewControl);
-			if ( pOtherCamera )
-			{
-				if ( pOtherCamera == this )
-				{
-					// what the hell do you think you are doing?
-					Warning("Viewcontrol %s was enabled twice in a row!\n", GetDebugName());
-					return;
-				}
-				else
-				{
-					pOtherCamera->Disable();
-				}
-			}
-		}
-	}
-
-
-	m_nPlayerButtons = pPlayer->m_nButtons;
-
-	
-	// Make the player invulnerable while under control of the camera.  This will prevent situations where the player dies while under camera control but cannot restart their game due to disabled player inputs.
-	m_nOldTakeDamage = m_hPlayer->m_takedamage;
-	m_hPlayer->m_takedamage = DAMAGE_NO;
-	
-	if ( HasSpawnFlags( SF_CAMERA_PLAYER_NOT_SOLID ) )
-	{
-		m_hPlayer->AddSolidFlags( FSOLID_NOT_SOLID );
-	}
-	
-	m_flReturnTime = gpGlobals->curtime + m_flWait;
-	m_flSpeed = m_initialSpeed;
-	m_targetSpeed = m_initialSpeed;
-
-	// this pertains to view angles, not translation.
-	if ( HasSpawnFlags( SF_CAMERA_PLAYER_SNAP_TO ) )
-	{
-		m_bSnapToGoal = true;
-	}
-
-	if ( HasSpawnFlags(SF_CAMERA_PLAYER_TARGET ) )
-	{
-		m_hTarget = m_hPlayer;
-	}
-	else
-	{
-		m_hTarget = GetNextTarget();
-	}
-
-	// If we don't have a target, ignore the attachment / etc
-	if ( m_hTarget )
-	{
-		m_iAttachmentIndex = 0;
-		if ( m_iszTargetAttachment != NULL_STRING )
-		{
-			if ( !m_hTarget->GetBaseAnimating() )
-			{
-				Warning("%s tried to target an attachment (%s) on target %s, which has no model.\n", GetClassname(), STRING(m_iszTargetAttachment), STRING(m_hTarget->GetEntityName()) );
-			}
-			else
-			{
-				m_iAttachmentIndex = m_hTarget->GetBaseAnimating()->LookupAttachment( STRING(m_iszTargetAttachment) );
-				if ( m_iAttachmentIndex <= 0 )
-				{
-					Warning("%s could not find attachment %s on target %s.\n", GetClassname(), STRING(m_iszTargetAttachment), STRING(m_hTarget->GetEntityName()) );
-				}
-			}
-		}
-	}
-
-	if (HasSpawnFlags(SF_CAMERA_PLAYER_TAKECONTROL ) )
-	{
-		((CBasePlayer*)m_hPlayer.Get())->EnableControl(FALSE);
-	}
-
-	if ( m_sPath != NULL_STRING )
-	{
-		m_pPath = gEntList.FindEntityByName( NULL, m_sPath, NULL, m_hPlayer );
-	}
-	else
-	{
-		m_pPath = NULL;
-	}
-
-	m_flStopTime = gpGlobals->curtime;
-	if ( m_pPath )
-	{
-		if ( m_pPath->m_flSpeed != 0 )
-			m_targetSpeed = m_pPath->m_flSpeed;
-		
-		m_flStopTime += m_pPath->GetDelay();
-	}
-
-
-	// copy over player information. If we're interpolating from
-	// the player position, do something more elaborate.
-#ifdef HL2_EPISODIC
-	if (m_bInterpolatePosition)
-	{
-		// initialize the values we'll spline between
-		m_vStartPos = m_hPlayer->EyePosition();
-		m_vEndPos = GetAbsOrigin();
-		m_flInterpStartTime = gpGlobals->curtime;
-		UTIL_SetOrigin( this, m_hPlayer->EyePosition() );
-		SetLocalAngles( QAngle( m_hPlayer->GetLocalAngles().x, m_hPlayer->GetLocalAngles().y, 0 ) );
-
-		SetAbsVelocity( vec3_origin );
-	}
-	else
-#endif
-	if (HasSpawnFlags(SF_CAMERA_PLAYER_POSITION ) )
-	{
-		UTIL_SetOrigin( this, m_hPlayer->EyePosition() );
-		SetLocalAngles( QAngle( m_hPlayer->GetLocalAngles().x, m_hPlayer->GetLocalAngles().y, 0 ) );
-		SetAbsVelocity( m_hPlayer->GetAbsVelocity() );
-	}
-	else
-	{
-		SetAbsVelocity( vec3_origin );
-	}
-
-
-	pPlayer->SetViewEntity( this );
-
-	// Hide the player's viewmodel
-	if ( pPlayer->GetActiveWeapon() )
-	{
-		pPlayer->GetActiveWeapon()->AddEffects( EF_NODRAW );
-	}
-
-	// Only track if we have a target
-	if ( m_hTarget )
-	{
-		// follow the player down
-		SetThink( &CTriggerCamera::FollowTarget );
-		SetNextThink( gpGlobals->curtime );
-	}
-
-	m_moveDistance = 0;
-	Move();
-
-	DispatchUpdateTransmitState();
-}
-#endif //SecobMod__MULTIPLAYER_VIEWCONTROL_CAMERAS
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-#ifdef SecobMod__MULTIPLAYER_VIEWCONTROL_CAMERAS
 void CTriggerCamera::Disable( void )
 {
 for ( int i = 1; i <= gpGlobals->maxClients; i++ )
@@ -3565,47 +3183,6 @@ m_hPlayer = pPlayer;
 
 	DispatchUpdateTransmitState();
 }
-#else
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CTriggerCamera::Disable( void )
-{
-	if ( m_hPlayer && m_hPlayer->IsAlive() )
-	{
-		if ( HasSpawnFlags( SF_CAMERA_PLAYER_NOT_SOLID ) )
-		{
-			m_hPlayer->RemoveSolidFlags( FSOLID_NOT_SOLID );
-		}
-
-		((CBasePlayer*)m_hPlayer.Get())->SetViewEntity( m_hPlayer );
-		((CBasePlayer*)m_hPlayer.Get())->EnableControl(TRUE);
-
-		// Restore the player's viewmodel
-		if ( ((CBasePlayer*)m_hPlayer.Get())->GetActiveWeapon() )
-		{
-			((CBasePlayer*)m_hPlayer.Get())->GetActiveWeapon()->RemoveEffects( EF_NODRAW );
-		}
-		//return the player to previous takedamage state
-		m_hPlayer->m_takedamage = m_nOldTakeDamage;
-	}
-
-	//SecobMod__MiscFixes On ep2_outland_01 the game would crash as it didn't find a player, so define them as the nearest player.
-#ifdef SM_SP_FIXES	
-	CBasePlayer *m_hPlayer = UTIL_GetNearestPlayer(GetAbsOrigin());
-	//return the player to previous takedamage state
-	m_hPlayer->m_takedamage = m_nOldTakeDamage;
-#endif
-	m_state = USE_OFF;
-	m_flReturnTime = gpGlobals->curtime;
-	SetThink( NULL );
-
-	m_OnEndFollow.FireOutput(this, this); // dvsents2: what is the best name for this output?
-	SetLocalAngularVelocity( vec3_angle );
-
-	DispatchUpdateTransmitState();
-}
-#endif //SecobMod__MULTIPLAYER_VIEWCONTROL_CAMERAS
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -3811,104 +3388,6 @@ void CTriggerCamera::Move()
 	}
 #endif
 }
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Starts/stops cd audio tracks
-//-----------------------------------------------------------------------------
-class CTriggerCDAudio : public CBaseTrigger
-{
-public:
-	DECLARE_CLASS( CTriggerCDAudio, CBaseTrigger );
-
-	void Spawn( void );
-
-	virtual void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-	void PlayTrack( void );
-	void Touch ( CBaseEntity *pOther );
-};
-
-LINK_ENTITY_TO_CLASS( trigger_cdaudio, CTriggerCDAudio );
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Changes tracks or stops CD when player touches
-// Input  : pOther - The entity that touched us.
-//-----------------------------------------------------------------------------
-void CTriggerCDAudio::Touch ( CBaseEntity *pOther )
-{
-	if ( !pOther->IsPlayer() )
-	{
-		return;
-	}
-
-	PlayTrack();
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CTriggerCDAudio::Spawn( void )
-{
-	BaseClass::Spawn();
-	InitTrigger();
-}
-
-
-void CTriggerCDAudio::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
-{
-	PlayTrack();
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Issues a client command to play a given CD track. Called from
-//			trigger_cdaudio and target_cdaudio.
-// Input  : iTrack - Track number to play.
-//-----------------------------------------------------------------------------
-static void PlayCDTrack( int iTrack )
-{
-	edict_t *pClient;
-	
-	// manually find the single player. 
-	pClient = engine->PEntityOfEntIndex( 1 );
-
-#ifndef SM_SP_FIXES
-	Assert(gpGlobals->maxClients == 1); 
-#endif
-	
-	// Can't play if the client is not connected!
-	if ( !pClient )
-		return;
-
-	// UNDONE: Move this to engine sound
-	if ( iTrack < -1 || iTrack > 30 )
-	{
-		Warning( "TriggerCDAudio - Track %d out of range\n", iTrack );
-		return;
-	}
-
-	if ( iTrack == -1 )
-	{
-		engine->ClientCommand ( pClient, "cd pause\n");
-	}
-	else
-	{
-		engine->ClientCommand ( pClient, "cd play %3d\n", iTrack);
-	}
-}
-
-
-// only plays for ONE client, so only use in single play!
-void CTriggerCDAudio::PlayTrack( void )
-{
-	PlayCDTrack( (int)m_iHealth );
-	
-	SetTouch( NULL );
-	UTIL_Remove( this );
-}
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Measures the proximity to a specified entity of any entities within

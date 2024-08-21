@@ -38,7 +38,18 @@
  */
 CNavMesh *TheNavMesh = NULL;
 
-ConVar nav_edit( "nav_edit", "0", FCVAR_GAMEDLL | FCVAR_CHEAT, "Set to one to interactively edit the Navigation Mesh. Set to zero to leave edit mode." );
+ConVar nav_edit( "nav_edit", "", FCVAR_GAMEDLL | FCVAR_CHEAT, "Set to one to interactively edit the Navigation Mesh. Set to zero to leave edit mode." );
+
+CBasePlayer *GetNavEditPlayer()
+{
+	return UTIL_PlayerByString( nav_edit.GetString() );
+}
+
+bool NavEditEnabled()
+{
+	return (GetNavEditPlayer() != NULL);
+}
+
 ConVar nav_quicksave( "nav_quicksave", "1", FCVAR_GAMEDLL | FCVAR_CHEAT, "Set to one to skip the time consuming phases of the analysis.  Useful for data collection and testing." );	// TERROR: defaulting to 1, since we don't need the other data
 ConVar nav_show_approach_points( "nav_show_approach_points", "0", FCVAR_GAMEDLL | FCVAR_CHEAT, "Show Approach Points in the Navigation Mesh." );
 ConVar nav_show_danger( "nav_show_danger", "0", FCVAR_GAMEDLL | FCVAR_CHEAT, "Show current 'danger' levels." );
@@ -328,7 +339,7 @@ void CNavMesh::Update( void )
 	UpdateBlockedAreas();
 	UpdateAvoidanceObstacleAreas();
 
-	if (nav_edit.GetBool())
+	if (NavEditEnabled())
 	{
 		if (m_isEditing == false)
 		{
@@ -336,7 +347,7 @@ void CNavMesh::Update( void )
 			m_isEditing = true;
 		}
 
-		DrawEditMode();
+		DrawEditMode( GetNavEditPlayer() );
 	}
 	else
 	{
@@ -374,9 +385,9 @@ void CNavMesh::Update( void )
 	}
 #endif
 
-	if ( nav_show_potentially_visible.GetBool() )
+	if ( nav_show_potentially_visible.GetString()[0] != '\0' )
 	{
-		CBasePlayer *player = UTIL_GetListenServerHost();
+		CBasePlayer *player = UTIL_PlayerByString( nav_show_potentially_visible.GetString() );
 		if ( player && player->GetLastKnownArea() )
 		{
 			CNavArea *eyepointArea = player->GetLastKnownArea();
@@ -389,10 +400,6 @@ void CNavMesh::Update( void )
 					if ( eyepointArea->IsCompletelyVisible( area ) )
 					{
 						area->DrawFilled( 100, 100, 200, 255 );
-					}
-					else if ( eyepointArea->IsPotentiallyVisible( area ) && nav_show_potentially_visible.GetInt() == 1 )
-					{
-						area->DrawFilled( 100, 200, 100, 255 );
 					}
 				}
 			}
@@ -1641,7 +1648,7 @@ static ConCommand nav_remove_jump_areas( "nav_remove_jump_areas", CommandNavRemo
 //--------------------------------------------------------------------------------------------------------------
 void CommandNavDelete( void )
 {
-	if ( !UTIL_IsCommandIssuedByServerAdmin() || !nav_edit.GetBool() )
+	if ( !UTIL_IsCommandIssuedByServerAdmin() || !NavEditEnabled() )
 		return;
 
 	TheNavMesh->CommandNavDelete();
@@ -1652,7 +1659,7 @@ static ConCommand nav_delete( "nav_delete", CommandNavDelete, "Deletes the curre
 //-------------------------------------------------------------------------------------------------------------- 
 void CommandNavDeleteMarked( void ) 
 { 
-	if ( !UTIL_IsCommandIssuedByServerAdmin() || !nav_edit.GetBool() ) 
+	if ( !UTIL_IsCommandIssuedByServerAdmin() || !NavEditEnabled() ) 
 		return; 
 
 	TheNavMesh->CommandNavDeleteMarked(); 
@@ -2682,7 +2689,7 @@ void CommandNavAnalyze( void )
 	if ( !UTIL_IsCommandIssuedByServerAdmin() )
 		return;
 
-	if ( nav_edit.GetBool() )
+	if ( NavEditEnabled() )
 	{
 		TheNavMesh->BeginAnalysis();
 	}
@@ -2711,7 +2718,7 @@ void CommandNavAnalyzeScripted( const CCommand &args )
 		return;
 	}
 
-	if ( nav_edit.GetBool() )
+	if ( NavEditEnabled() )
 	{
 		TheNavMesh->BeginAnalysis( true );
 	}
@@ -2737,7 +2744,7 @@ void CNavMesh::CommandNavMarkWalkable( void )
 	if ( !UTIL_IsCommandIssuedByServerAdmin() )
 		return;
 
-	if (nav_edit.GetBool())
+	if (NavEditEnabled())
 	{
 		// we are in edit mode, use the edit cursor's location
 		pos = GetEditCursorPosition();
@@ -2745,7 +2752,7 @@ void CNavMesh::CommandNavMarkWalkable( void )
 	else
 	{
 		// we are not in edit mode, use the position of the local player
-		CBasePlayer *player = UTIL_GetListenServerHost();
+		CBasePlayer *player = UTIL_GetCommandClient();
 
 		if (player == NULL)
 		{

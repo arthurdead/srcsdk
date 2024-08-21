@@ -199,11 +199,7 @@ inline bool FStrEq( string_t str1, string_t str2 )
 }
 #endif
 
-#ifdef SDK2013CE
 const char *nexttoken(char *token, const char *str, char sep, size_t tokenLen);
-#else
-const char *nexttoken(char *token, const char *str, char sep);
-#endif
 
 // Misc. Prototypes
 void		UTIL_SetSize			(CBaseEntity *pEnt, const Vector &vecMin, const Vector &vecMax);
@@ -227,20 +223,12 @@ float		UTIL_GetSimulationInterval();
 CBasePlayer	*UTIL_PlayerByIndex( int playerIndex );
 CBasePlayer *UTIL_PlayerBySteamID( const CSteamID &steamID );
 
-// NOTENOTE: Use this instead of UTIL_PlayerByIndex IF you're in single player
-// and you want the player.
-// not useable in multiplayer - see UTIL_GetListenServerHost()
-CBasePlayer* UTIL_GetLocalPlayer( void );
-
-#ifdef SM_AI_FIXES
 // helper functions added for replacing the above 
 CBasePlayer *UTIL_GetNearestPlayer( const Vector &origin ); 
 CBasePlayer *UTIL_GetNearestVisiblePlayer(CBaseEntity *pLooker, int mask = MASK_SOLID_BRUSHONLY); 
 CBasePlayer *UTIL_GetOtherNearestPlayer( const Vector &origin );
-#endif
 
-// get the local player on a listen server
-CBasePlayer *UTIL_GetListenServerHost( void );
+CBasePlayer *UTIL_PlayerByString( const char *query ); 
 
 CBasePlayer* UTIL_PlayerByUserId( int userID );
 CBasePlayer* UTIL_PlayerByName( const char *name ); // not case sensitive
@@ -248,6 +236,9 @@ CBasePlayer* UTIL_PlayerByName( const char *name ); // not case sensitive
 // Returns true if the command was issued by the listenserver host, or by the dedicated server, via rcon or the server console.
 // This is valid during ConCommand execution.
 bool UTIL_IsCommandIssuedByServerAdmin( void );
+bool UTIL_IsPlayerServerAdmin( CBasePlayer *player );
+
+CBasePlayer *UTIL_GetCommandClientIfAdmin(); 
 
 CBaseEntity* UTIL_EntityByIndex( int entityIndex );
 

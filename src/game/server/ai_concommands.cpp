@@ -879,9 +879,9 @@ CON_COMMAND( ai_test_los, "Test AI LOS from the player's POV" )
 
 	trace_t tr;
 	// Use the custom LOS trace filter
-	CTraceFilterLOS traceFilter( UTIL_GetLocalPlayer(), COLLISION_GROUP_NONE );
-	UTIL_TraceLine( UTIL_GetLocalPlayer()->EyePosition(), UTIL_GetLocalPlayer()->EyePosition() + UTIL_GetLocalPlayer()->EyeDirection3D() * MAX_COORD_RANGE, MASK_BLOCKLOS_AND_NPCS, &traceFilter, &tr );
-	NDebugOverlay::Line( UTIL_GetLocalPlayer()->EyePosition(), tr.endpos, 127, 127, 127, true, 5 );
+	CTraceFilterLOS traceFilter( UTIL_GetCommandClient(), COLLISION_GROUP_NONE );
+	UTIL_TraceLine( UTIL_GetCommandClient()->EyePosition(), UTIL_GetCommandClient()->EyePosition() + UTIL_GetCommandClient()->EyeDirection3D() * MAX_COORD_RANGE, MASK_BLOCKLOS_AND_NPCS, &traceFilter, &tr );
+	NDebugOverlay::Line( UTIL_GetCommandClient()->EyePosition(), tr.endpos, 127, 127, 127, true, 5 );
 	NDebugOverlay::Cross3D( tr.endpos, 24, 255, 255, 255, true, 5 );
 }
 

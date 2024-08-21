@@ -4,6 +4,8 @@
 #ifndef ENV_TONEMAP_CONTROLLER_H
 #define ENV_TONEMAP_CONTROLLER_H
 
+#pragma once
+
 #include "triggers.h"
 #include "igamesystem.h"
 

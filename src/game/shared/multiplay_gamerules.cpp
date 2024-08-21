@@ -460,22 +460,14 @@ ConVarRef suitcharger( "sk_suitcharger" );
 	//=========================================================
 	bool CMultiplayRules::IsDeathmatch( void )
 	{
-#ifdef SDK2013CE
 		return gpGlobals->deathmatch;
-#else
-		return true;
-#endif
 	}
 
 	//=========================================================
 	//=========================================================
 	bool CMultiplayRules::IsCoOp( void )
 	{
-#ifdef SDK2013CE
 		return gpGlobals->coop;
-#else
-		return false;
-#endif
 	}
 
 	//=========================================================
@@ -686,9 +678,6 @@ ConVarRef suitcharger( "sk_suitcharger" );
 		bool		addDefault;
 		CBaseEntity	*pWeaponEntity = NULL;
 
-#ifndef SDK2013CE
-		pPlayer->EquipSuit();
-#endif
 		addDefault = true;
 
 		while ( (pWeaponEntity = gEntList.FindEntityByClassname( pWeaponEntity, "game_player_equip" )) != NULL)
@@ -709,11 +698,7 @@ ConVarRef suitcharger( "sk_suitcharger" );
 	//=========================================================
 	float CMultiplayRules::FlPlayerSpawnTime( CBasePlayer *pPlayer )
 	{
-	#ifdef SecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE
-		return gpGlobals->curtime + 3;//now!
-	#else
 		return gpGlobals->curtime;//now!
-	#endif
 	}
 
 	bool CMultiplayRules::AllowAutoTargetCrosshair( void )
@@ -1139,7 +1124,6 @@ ConVarRef suitcharger( "sk_suitcharger" );
 	//=========================================================
 	bool CMultiplayRules::FAllowNPCs( void )
 	{
-		return true; // E3 hack
 		return ( allowNPCs.GetInt() != 0 );
 	}
 

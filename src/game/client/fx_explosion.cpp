@@ -172,6 +172,7 @@ void C_BaseExplosionEffect::Create( const Vector &position, float force, float s
 {
 	m_vecOrigin = position;
 	m_fFlags	= flags;
+	m_flScale = scale;
 
 	//Find the force of the explosion
 	GetForceDirection( m_vecOrigin, force, &m_vecDirection, &m_flForce );
@@ -190,7 +191,7 @@ void C_BaseExplosionEffect::Create( const Vector &position, float force, float s
 	}
 
 	CreateDebris();
-	//FIXME: CreateDynamicLight();
+	CreateDynamicLight();
 	CreateMisc();
 }
 
@@ -701,11 +702,13 @@ void C_BaseExplosionEffect::CreateDynamicLight( void )
 		return;
 
 	dlight_t *dl = effects->CL_AllocDlight( 0 );
+	if(!dl)
+		return;
 	
 	VectorCopy (m_vecOrigin, dl->origin);
 	
 	dl->decay	= 200;
-	dl->radius	= 255;
+	dl->radius	= 255 * m_flScale;
 	dl->color.r = 255;
 	dl->color.g = 220;
 	dl->color.b = 128;

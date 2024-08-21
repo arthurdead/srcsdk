@@ -11,8 +11,12 @@
 #pragma once
 
 #include "mapentities.h"
+#include "networkstringtabledefs.h"
+#include "eiface.h"
+#include "tier1/utllinkedlist.h"
 
 class IReplayFactory;
+class CBasePlayer;
 
 extern INetworkStringTable *g_pStringTableInfoPanel;
 extern INetworkStringTable *g_pStringTableServerMapCycle;
@@ -120,8 +124,6 @@ public:
 
 	virtual void			SetServerHibernation( bool bHibernating ) OVERRIDE;
 
-	float	m_fAutoSaveDangerousTime;
-	float	m_fAutoSaveDangerousMinHealthToCommit;
 	bool	m_bIsHibernating;
 
 	// Called after the steam API has been activated post-level startup
@@ -186,30 +188,9 @@ extern CUtlLinkedList<CMapEntityRef, unsigned short> g_MapEntityRefs;
 class CMapLoadEntityFilter : public IMapEntityFilter
 {
 public:
-	virtual bool ShouldCreateEntity( const char *pClassname )
-	{
-		// During map load, create all the entities.
-		return true;
-	}
+	virtual bool ShouldCreateEntity( const char *pClassname ) OVERRIDE;
 
-	virtual CBaseEntity* CreateNextEntity( const char *pClassname )
-	{
-		CBaseEntity *pRet = CreateEntityByName( pClassname );
-
-		CMapEntityRef ref;
-		ref.m_iEdict = -1;
-		ref.m_iSerialNumber = -1;
-
-		if ( pRet )
-		{
-			ref.m_iEdict = pRet->entindex();
-			if ( pRet->edict() )
-				ref.m_iSerialNumber = pRet->edict()->m_NetworkSerialNumber;
-		}
-
-		g_MapEntityRefs.AddToTail( ref );
-		return pRet;
-	}
+	virtual CBaseEntity* CreateNextEntity( const char *pClassname ) OVERRIDE;
 };
 
 bool IsEngineThreaded();
@@ -220,7 +201,6 @@ public:
 	virtual void GetTaggedConVarList( KeyValues *pCvarTagList );
 
 };
-EXPOSE_SINGLE_INTERFACE( CServerGameTags, IServerGameTags, INTERFACEVERSION_SERVERGAMETAGS );
 
 #endif // GAMEINTERFACE_H
 

@@ -1330,6 +1330,8 @@ private:
 	COutputFloat m_OnGetValue;	// Used for polling the counter value.
 	COutputEvent m_OnHitMin;
 	COutputEvent m_OnHitMax;
+	COutputEvent m_OnChangedFromMin;
+	COutputEvent m_OnChangedFromMax;
 
 	DECLARE_DATADESC();
 };
@@ -1366,6 +1368,8 @@ BEGIN_DATADESC( CMathCounter )
 	DEFINE_OUTPUT(m_OnHitMin, "OnHitMin"),
 	DEFINE_OUTPUT(m_OnHitMax, "OnHitMax"),
 	DEFINE_OUTPUT(m_OnGetValue, "OnGetValue"),
+	DEFINE_OUTPUT(m_OnChangedFromMin, "OnChangedFromMin"),
+	DEFINE_OUTPUT(m_OnChangedFromMax, "OnChangedFromMax"),
 
 END_DATADESC()
 
@@ -1636,6 +1640,12 @@ void CMathCounter::UpdateOutValue(CBaseEntity *pActivator, float fNewValue)
 		}
 		else
 		{
+			// Fire an output if we just changed from the maximum value
+			if ( m_OutValue.Get() == m_flMax )
+			{
+				m_OnChangedFromMax.FireOutput( pActivator, this );
+			}
+
 			m_bHitMax = false;
 		}
 
@@ -1652,6 +1662,11 @@ void CMathCounter::UpdateOutValue(CBaseEntity *pActivator, float fNewValue)
 		}
 		else
 		{
+			// Fire an output if we just changed from the minimum value
+			if ( m_OutValue.Get() == m_flMin )
+			{
+				m_OnChangedFromMin.FireOutput( pActivator, this );
+			}
 			m_bHitMin = false;
 		}
 
@@ -2254,182 +2269,6 @@ int CLogicBranch::DrawDebugTextOverlays( void )
 	}
 
 	return text_offset;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Autosaves when triggered
-//-----------------------------------------------------------------------------
-class CLogicAutosave : public CLogicalEntity
-{
-	DECLARE_CLASS( CLogicAutosave, CLogicalEntity );
-
-protected:
-	// Inputs
-	void InputSave( inputdata_t &inputdata );
-	void InputSaveDangerous( inputdata_t &inputdata );
-	void InputSetMinHitpointsThreshold( inputdata_t &inputdata );
-
-	DECLARE_DATADESC();
-	bool m_bForceNewLevelUnit;
-	int m_minHitPoints;
-	int m_minHitPointsToCommit;
-};
-
-LINK_ENTITY_TO_CLASS(logic_autosave, CLogicAutosave);
-
-BEGIN_DATADESC( CLogicAutosave )
-	DEFINE_KEYFIELD( m_bForceNewLevelUnit, FIELD_BOOLEAN, "NewLevelUnit" ),
-	DEFINE_KEYFIELD( m_minHitPoints, FIELD_INTEGER, "MinimumHitPoints" ),
-	DEFINE_KEYFIELD( m_minHitPointsToCommit, FIELD_INTEGER, "MinHitPointsToCommit" ),
-	// Inputs
-	DEFINE_INPUTFUNC( FIELD_VOID, "Save", InputSave ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT, "SaveDangerous", InputSaveDangerous ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMinHitpointsThreshold", InputSetMinHitpointsThreshold ),
-END_DATADESC()
-
-//-----------------------------------------------------------------------------
-// Purpose: Save!
-//-----------------------------------------------------------------------------
-void CLogicAutosave::InputSave( inputdata_t &inputdata )
-{
-	if ( m_bForceNewLevelUnit )
-	{
-		engine->ClearSaveDir();
-	}
-
-	engine->ServerCommand( "autosave\n" );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Save safely!
-//-----------------------------------------------------------------------------
-void CLogicAutosave::InputSaveDangerous( inputdata_t &inputdata )
-{
-#ifdef SM_AI_FIXES
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer(); 
-#else
-	CBasePlayer *pPlayer = UTIL_PlayerByIndex( 1 );
-#endif
-
-	if ( g_ServerGameDLL.m_fAutoSaveDangerousTime != 0.0f && g_ServerGameDLL.m_fAutoSaveDangerousTime >= gpGlobals->curtime )
-	{
-		// A previous dangerous auto save was waiting to become safe
-
-		if ( pPlayer->GetDeathTime() == 0.0f || pPlayer->GetDeathTime() > gpGlobals->curtime )
-		{
-			// The player isn't dead, so make the dangerous auto save safe
-			engine->ServerCommand( "autosavedangerousissafe\n" );
-		}
-	}
-
-	if ( m_bForceNewLevelUnit )
-	{
-		engine->ClearSaveDir();
-	}
-
-	if ( pPlayer->GetHealth() >= m_minHitPoints )
-	{
-		engine->ServerCommand( "autosavedangerous\n" );
-		g_ServerGameDLL.m_fAutoSaveDangerousTime = gpGlobals->curtime + inputdata.value.Float();
-
-		// Player must have this much health when we go to commit, or we don't commit.
-		g_ServerGameDLL.m_fAutoSaveDangerousMinHealthToCommit = m_minHitPointsToCommit;
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Autosaves when triggered
-//-----------------------------------------------------------------------------
-class CLogicActiveAutosave : public CLogicAutosave
-{
-	DECLARE_CLASS( CLogicActiveAutosave, CLogicAutosave );
-
-	void InputEnable( inputdata_t &inputdata )
-	{
-		m_flStartTime = -1;
-		SetThink( &CLogicActiveAutosave::SaveThink );
-		SetNextThink( gpGlobals->curtime );
-	}
-
-	void InputDisable( inputdata_t &inputdata )
-	{
-		SetThink( NULL );
-	}
-
-	void SaveThink()
-	{
-	#ifdef SM_AI_FIXES
-		CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-		if ( pPlayer && gpGlobals->maxClients == 1 ) 
-	#else
-		CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-		if ( pPlayer )
-	#endif
-		{
-			if ( m_flStartTime < 0 )
-			{
-				if ( pPlayer->GetHealth() <= m_minHitPoints )
-				{
-					m_flStartTime = gpGlobals->curtime;
-				}
-			}
-			else
-			{
-				if ( pPlayer->GetHealth() >= m_TriggerHitPoints )
-				{
-					inputdata_t inputdata;
-					DevMsg( 2, "logic_active_autosave (%s, %d) triggered\n", STRING( GetEntityName() ), entindex() );
-					if ( !m_flDangerousTime )
-					{
-						InputSave( inputdata );
-					}
-					else
-					{
-						inputdata.value.SetFloat( m_flDangerousTime );
-						InputSaveDangerous( inputdata );
-					}
-					m_flStartTime = -1;
-				}
-				else if ( m_flTimeToTrigger > 0 && gpGlobals->curtime - m_flStartTime > m_flTimeToTrigger )
-				{
-					m_flStartTime = -1;
-				}
-			}
-		}
-
-		float thinkInterval = ( m_flStartTime < 0 ) ? 1.0 : 0.5;
-		SetNextThink( gpGlobals->curtime + thinkInterval );
-	}
-
-	DECLARE_DATADESC();
-
-	int m_TriggerHitPoints;
-	float m_flTimeToTrigger;
-	float m_flStartTime;
-	float m_flDangerousTime;
-};
-
-LINK_ENTITY_TO_CLASS(logic_active_autosave, CLogicActiveAutosave);
-
-BEGIN_DATADESC( CLogicActiveAutosave )
-	DEFINE_KEYFIELD( m_TriggerHitPoints, FIELD_INTEGER, "TriggerHitPoints" ),
-	DEFINE_KEYFIELD( m_flTimeToTrigger, FIELD_FLOAT, "TimeToTrigger" ),
-	DEFINE_KEYFIELD( m_flDangerousTime, FIELD_FLOAT, "DangerousTime" ),
-	DEFINE_FIELD( m_flStartTime, FIELD_TIME ),
-	DEFINE_THINKFUNC( SaveThink ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
-END_DATADESC()
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Keyfield set func
-//-----------------------------------------------------------------------------
-void CLogicAutosave::InputSetMinHitpointsThreshold( inputdata_t &inputdata )
-{
-	int setTo = inputdata.value.Int();
-	AssertMsg1(setTo >= 0 && setTo <= 100, "Tried to set autosave MinHitpointsThreshold to %d!\n", setTo);
-	m_minHitPoints = setTo;
 }
 
 // Finds the named physics object.  If no name, returns the world

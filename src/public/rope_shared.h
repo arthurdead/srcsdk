@@ -35,7 +35,8 @@
 											// (This is a flag because it requires special code on the client to
 											// find the weapon).
 #define ROPE_NO_GRAVITY			(1<<8)		// Disable gravity on this rope.
-#define ROPE_NUMFLAGS			9
+#define ROPE_USE_WIND			(1<<9)		// Wind simulation on this rope.
+#define ROPE_NUMFLAGS			10
 
 
 // This is added to all rope slacks so when a level designer enters a 

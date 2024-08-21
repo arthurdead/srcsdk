@@ -310,6 +310,8 @@ CON_COMMAND_F( mp_forcewin, "Forces team to win", FCVAR_CHEAT )
 	if ( !UTIL_IsCommandIssuedByServerAdmin() )
 		return;
 
+	CBasePlayer *pPlayer = UTIL_GetCommandClient();
+
 	CTeamplayRoundBasedRules *pRules = dynamic_cast<CTeamplayRoundBasedRules*>( GameRules() );
 	if ( pRules )
 	{
@@ -317,12 +319,7 @@ CON_COMMAND_F( mp_forcewin, "Forces team to win", FCVAR_CHEAT )
 		if ( args.ArgC() == 1 )
 		{
 			// if no team specified, use player 1's team
-		#ifdef SM_AI_FIXES
-			iTeam = UTIL_GetLocalPlayer()->GetTeamNumber();	
-		#else
-			iTeam = UTIL_PlayerByIndex( 1 )->GetTeamNumber();	
-		#endif
-
+			iTeam = pPlayer ? pPlayer->GetTeamNumber() : TEAM_UNASSIGNED;
 		}
 		else if ( args.ArgC() == 2 )
 		{

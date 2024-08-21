@@ -71,6 +71,8 @@ static ConVar	net_graphproportionalfont( "net_graphproportionalfont", "1", FCVAR
 //-----------------------------------------------------------------------------
 class CNetGraphPanel : public Panel
 {
+	friend class CNetGraphPanelInterface;
+
 	typedef Panel BaseClass;
 private:
 	typedef struct
@@ -198,6 +200,8 @@ private:
 
 	float				m_flServerFramerate;
 	float				m_flServerFramerateStdDeviation;
+
+	bool				m_bShouldDraw;
 };
 
 CNetGraphPanel *g_pNetGraphPanel = NULL;
@@ -279,6 +283,8 @@ CNetGraphPanel::CNetGraphPanel( VPANEL parent )
 	netcolors[COLOR_NORMAL].alpha = 232;
 
 	ivgui()->AddTickSignal( GetVPanel(), 500 );
+
+	m_bShouldDraw = engine->IsInGame();
 
 	m_WhiteMaterial.Init( "vgui/white", TEXTURE_GROUP_OTHER );
 	g_pNetGraphPanel = this;
@@ -1129,6 +1135,9 @@ void CNetGraphPanel::OnTick( void )
 
 bool CNetGraphPanel::ShouldDraw( void )
 {
+	if ( !m_bShouldDraw )
+		return false;
+
 	if ( GraphValue() != 0 )
 		return true;
 
@@ -1523,7 +1532,7 @@ void CNetGraphPanel::UpdateEstimatedServerFramerate( INetChannelInfo *netchannel
 	}
 }
 
-class CNetGraphPanelInterface : public INetGraphPanel
+class CNetGraphPanelInterface : public INetGraphPanel, public CAutoGameSystem
 {
 private:
 	CNetGraphPanel *netGraphPanel;
@@ -1532,11 +1541,11 @@ public:
 	{
 		netGraphPanel = NULL;
 	}
-	void Create( VPANEL parent )
+	void Create( VPANEL parent ) OVERRIDE
 	{
 		netGraphPanel = new CNetGraphPanel( parent );
 	}
-	void Destroy( void )
+	void Destroy( void ) OVERRIDE
 	{
 		if ( netGraphPanel )
 		{
@@ -1544,6 +1553,14 @@ public:
 			netGraphPanel->MarkForDeletion();
 			netGraphPanel = NULL;
 		}
+	}
+	void LevelInitPostEntity() OVERRIDE
+	{
+		netGraphPanel->m_bShouldDraw = true;
+	}
+	void LevelShutdownPreEntity() OVERRIDE
+	{
+		netGraphPanel->m_bShouldDraw = false;
 	}
 };
 

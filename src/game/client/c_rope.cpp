@@ -29,6 +29,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+static void PrecacheCable( void* )
+{
+	PrecacheMaterial( "cable/rope_shadowdepth" );
+}
+PRECACHE_REGISTER_FN(PrecacheCable);
+
 void RecvProxy_RecomputeSprings( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	// Have the regular proxy store the data.
@@ -40,6 +46,7 @@ void RecvProxy_RecomputeSprings( const CRecvProxyData *pData, void *pStruct, voi
 
 
 IMPLEMENT_CLIENTCLASS_DT_NOBASE( C_RopeKeyframe, DT_RopeKeyframe, CRopeKeyframe )
+	RecvPropInt( RECVINFO(m_nChangeCount) ),
 	RecvPropInt( RECVINFO(m_iRopeMaterialModelIndex) ),
 	RecvPropEHandle( RECVINFO(m_hStartPoint) ),
 	RecvPropEHandle( RECVINFO(m_hEndPoint) ),
@@ -79,13 +86,14 @@ static ConVar rope_smooth_minalpha( "rope_smooth_minalpha", "0.2", 0, "Alpha for
 static ConVar rope_smooth_maxalphawidth( "rope_smooth_maxalphawidth", "1.75" );
 static ConVar rope_smooth_maxalpha( "rope_smooth_maxalpha", "0.5", 0, "Alpha for rope antialiasing effect" );
 
-static ConVar mat_fullbright( "mat_fullbright", "0", FCVAR_CHEAT ); // get it from the engine
+extern ConVar mat_fullbright; // get it from the engine
 static ConVar r_drawropes( "r_drawropes", "1", FCVAR_CHEAT );
 static ConVar r_queued_ropes( "r_queued_ropes", "1" );
 static ConVar r_ropetranslucent( "r_ropetranslucent", "1");
 static ConVar r_rope_holiday_light_scale( "r_rope_holiday_light_scale", "0.055", FCVAR_DEVELOPMENTONLY );
 static ConVar r_ropes_holiday_lights_allowed( "r_ropes_holiday_lights_allowed", "1", FCVAR_DEVELOPMENTONLY );
 
+static ConVar rope_default_wind( "rope_default_wind", "1" );
 static ConVar rope_wind_dist( "rope_wind_dist", "1000", 0, "Don't use CPU applying small wind gusts to ropes when they're past this distance." );
 static ConVar rope_averagelight( "rope_averagelight", "1", 0, "Makes ropes use average of cubemap lighting instead of max intensity." );
 
@@ -103,6 +111,7 @@ static CCycleCount	g_RopeCollideTicks;
 static CCycleCount	g_RopeDrawTicks;
 static CCycleCount	g_RopeSimulateTicks;
 static int			g_nRopePointsSimulated;
+static CMaterialReference g_pSplineCableShadowdepth;
 
 // Active ropes.
 CUtlLinkedList<C_RopeKeyframe*, int> g_Ropes;
@@ -227,23 +236,25 @@ public:
 	CRopeManager();
 	~CRopeManager();
 
-	void ResetRenderCache( void );
-	void AddToRenderCache( C_RopeKeyframe *pRope );
-	void DrawRenderCache( bool bShadowDepth );
-	void OnRenderStart( void )
+	void Shutdown() OVERRIDE;
+
+	void ResetRenderCache( void ) OVERRIDE;
+	void AddToRenderCache( C_RopeKeyframe *pRope ) OVERRIDE;
+	void DrawRenderCache( bool bShadowDepth ) OVERRIDE;
+	void OnRenderStart( void ) OVERRIDE
 	{
 		m_QueuedModeMemory.SwitchStack();
 	}
 
-	void SetHolidayLightMode( bool bHoliday ) { m_bDrawHolidayLights = bHoliday; }
-	bool IsHolidayLightMode( void );
-	int GetHolidayLightStyle( void );
+	void SetHolidayLightMode( bool bHoliday ) OVERRIDE { m_bDrawHolidayLights = bHoliday; }
+	bool IsHolidayLightMode( void ) OVERRIDE;
+	int GetHolidayLightStyle( void ) OVERRIDE;
 	
 private:
 	struct RopeRenderData_t;
 public:
 	void DrawRenderCache_NonQueued( bool bShadowDepth, RopeRenderData_t *pRenderCache, int nRenderCacheCount, const Vector &vCurrentViewForward, const Vector &vCurrentViewOrigin, C_RopeKeyframe::BuildRopeQueuedData_t *pBuildRopeQueuedData );
-	
+
 	void			ResetSegmentCache( int nMaxSegments );
 	RopeSegData_t	*GetNextSegmentFromCache( void );
 
@@ -319,12 +330,9 @@ CRopeManager::CRopeManager()
 	m_nHolidayLightsStyle = 0;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-CRopeManager::~CRopeManager()
+void CRopeManager::Shutdown()
 {
-	int nRenderCacheCount = m_aRenderCache.Count();
+	const int nRenderCacheCount = m_aRenderCache.Count();
 	for ( int iRenderCache = 0; iRenderCache < nRenderCacheCount; ++iRenderCache )
 	{
 		if ( m_aRenderCache[iRenderCache].m_pSolidMaterial )
@@ -336,7 +344,13 @@ CRopeManager::~CRopeManager()
 			m_aRenderCache[iRenderCache].m_pBackMaterial->DecrementReferenceCount();
 		}
 	}
+}
 
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+CRopeManager::~CRopeManager()
+{
 	m_aRenderCache.Purge();
 	m_aSegmentCache.Purge();
 }
@@ -346,7 +360,7 @@ CRopeManager::~CRopeManager()
 //-----------------------------------------------------------------------------
 void CRopeManager::ResetRenderCache( void )
 {
-	int nRenderCacheCount = m_aRenderCache.Count();
+	const int nRenderCacheCount = m_aRenderCache.Count();
 	for ( int iRenderCache = 0; iRenderCache < nRenderCacheCount; ++iRenderCache )
 	{
 		m_aRenderCache[iRenderCache].m_nCacheCount = 0;
@@ -912,8 +926,8 @@ void C_RopeKeyframe::CPhysicsDelegate::GetNodeForces( CSimplePhysics::CNode *pNo
 	}
 
 	// Apply any instananeous forces and reset
-	*pAccel += ROPE_IMPULSE_SCALE * m_pKeyframe->m_flImpulse;
-	m_pKeyframe->m_flImpulse *= ROPE_IMPULSE_DECAY;
+	*pAccel += ROPE_IMPULSE_SCALE * m_pKeyframe->m_vecImpulse;
+	m_pKeyframe->m_vecImpulse *= ROPE_IMPULSE_DECAY;
 }
 
 
@@ -1053,7 +1067,7 @@ C_RopeKeyframe::C_RopeKeyframe()
 	m_iForcePointMoveCounter = 0;
 	m_flCurScroll = m_flScrollSpeed = 0;
 	m_TextureScale = 4;	// 4:1
-	m_flImpulse.Init();
+	m_vecImpulse.Init();
 
 	g_Ropes.AddToTail( this );
 }
@@ -1267,7 +1281,7 @@ void C_RopeKeyframe::ShakeRope( const Vector &vCenter, float flRadius, float flM
 		float flShakeAmount = 1.0f - flDist / flRadius;
 		if ( flShakeAmount >= 0 )
 		{
-			m_flImpulse.z += flShakeAmount * flMagnitude;
+			m_vecImpulse.z += flShakeAmount * flMagnitude;
 		}
 	}
 }
@@ -1592,6 +1606,20 @@ inline bool C_RopeKeyframe::DidEndPointMove( int iPt )
 	return false;
 }
 
+bool C_RopeKeyframe::WindEnabled() const
+{
+	if ( m_RopeFlags & ROPE_NO_WIND )
+	{
+		return false;
+	}
+
+	if ( m_RopeFlags & ROPE_USE_WIND )
+	{
+		return true;
+	}
+
+	return rope_default_wind.GetBool();
+}
 
 bool C_RopeKeyframe::DetectRestingState( bool &bApplyWind )
 {
@@ -1621,7 +1649,7 @@ bool C_RopeKeyframe::DetectRestingState( bool &bApplyWind )
 	Vector &vEnd1 = m_RopePhysics.GetFirstNode()->m_vPos;
 	Vector &vEnd2 = m_RopePhysics.GetLastNode()->m_vPos;
 	
-	if ( !( m_RopeFlags & ROPE_NO_WIND ) )
+	if ( WindEnabled() )
 	{
 		// Don't apply wind if more than half of the nodes are touching something.
 		float flDist1 = CalcDistanceToLineSegment( MainViewOrigin(), vEnd1, vEnd2 );
@@ -1629,9 +1657,9 @@ bool C_RopeKeyframe::DetectRestingState( bool &bApplyWind )
 			bApplyWind = flDist1 < rope_wind_dist.GetFloat();
 	}
 
-	if ( m_flPreviousImpulse != m_flImpulse )
+	if ( m_vecPreviousImpulse != m_vecImpulse )
 	{
-		m_flPreviousImpulse = m_flImpulse;
+		m_vecPreviousImpulse = m_vecImpulse;
 		return false;
 	}
 
@@ -2080,7 +2108,7 @@ void C_RopeKeyframe::ReceiveMessage( int classID, bf_read &msg )
 	}
 
 	// Read instantaneous fore data
-	m_flImpulse.x   = msg.ReadFloat();
-	m_flImpulse.y   = msg.ReadFloat();
-	m_flImpulse.z   = msg.ReadFloat();
+	m_vecImpulse.x   = msg.ReadFloat();
+	m_vecImpulse.y   = msg.ReadFloat();
+	m_vecImpulse.z   = msg.ReadFloat();
 }

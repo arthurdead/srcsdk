@@ -12,7 +12,7 @@
 #include "particlemgr.h"
 #include "particlesphererenderer.h"
 #include "smartptr.h"
-
+#include "networkvar.h"
 
 // ------------------------------------------------------------------------------------------------ //
 // CParticleEffect is the base class that you can derive from to make a particle effect.
@@ -138,6 +138,7 @@ public:
 	// AddSimpleParticle automatically initializes these fields.
 	Vector		m_vecVelocity;
 	float		m_flRoll;
+	float		m_flStartTime;	// How long until its visible.
 	float		m_flDieTime;	// How long it lives for.
 	float		m_flLifetime;	// How long it has been alive for so far.
 	unsigned char	m_uchColor[3];

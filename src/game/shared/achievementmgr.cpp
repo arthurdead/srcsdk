@@ -1518,21 +1518,14 @@ void CAchievementMgr::OnKillEvent( CBaseEntity *pVictim, CBaseEntity *pAttacker,
 	bool bAttackerIsPlayer = false;
 	bool bVictimIsPlayerEnemy = false;
 #ifdef GAME_DLL
-	if ( !g_pGameRules->IsMultiplayer() )
+	if ( pAttacker && pAttacker->IsPlayer() )
 	{
-		CBasePlayer *pLocalPlayer = UTIL_GetLocalPlayer();
-		if ( pLocalPlayer )
-		{
-			if ( pAttacker == pLocalPlayer )
-			{
-				bAttackerIsPlayer = true;
-			}
+		bAttackerIsPlayer = true;
 
-			CBaseCombatCharacter *pBCC = dynamic_cast<CBaseCombatCharacter *>( pVictim );
-			if ( pBCC && ( D_HT == pBCC->IRelationType( pLocalPlayer ) ) )
-			{
-				bVictimIsPlayerEnemy = true;
-			}
+		CBaseCombatCharacter *pBCC = dynamic_cast<CBaseCombatCharacter *>( pVictim );
+		if ( pBCC && ( D_HT == pBCC->IRelationType( pAttacker ) ) )
+		{
+			bVictimIsPlayerEnemy = true;
 		}
 	}
 #else

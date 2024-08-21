@@ -316,6 +316,11 @@ void PerformObstaclePushaway( CBaseCombatCharacter *pPushingEntity )
 				continue;
 		}
 
+		if ( props[i]->GetCollisionGroup() != COLLISION_GROUP_PUSHAWAY )
+		{
+			continue;
+		}
+
 		IPhysicsObject *pObj = props[i]->VPhysicsGetObject();
 
 		if ( pObj )
@@ -324,9 +329,14 @@ void PerformObstaclePushaway( CBaseCombatCharacter *pPushingEntity )
 			vPushAway.z = 0;
 			
 			float flDist = VectorNormalize( vPushAway );
+			if ( flDist < 0.1f )
+			{
+				continue;
+			}
+
 			flDist = MAX( flDist, 1 );
 			
-			float flForce = sv_pushaway_force.GetFloat() / flDist;
+			float flForce = sv_pushaway_force.GetFloat() / flDist * pObj->GetMass();
 			flForce = MIN( flForce, sv_pushaway_max_force.GetFloat() );
 
 			pObj->ApplyForceOffset( vPushAway * flForce, pPushingEntity->WorldSpaceCenter() );

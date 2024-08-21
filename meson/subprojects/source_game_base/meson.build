@@ -7,6 +7,7 @@ tier1 = subproject('tier1')
 tier0 = subproject('tier0')
 vstdlib = subproject('vstdlib')
 mathlib = subproject('mathlib')
+raytrace = subproject('raytrace')
 choreoobjects = subproject('choreoobjects')
 dmxloader = subproject('dmxloader')
 particles = subproject('particles')
@@ -25,6 +26,8 @@ common_dir = join_paths(src_root_dir,'common')
 server_src_dir = join_paths(src_root_dir,'game','server')
 server_navmesh_src_dir = join_paths(server_src_dir,'navmesh')
 
+game_ctrls_src_dir = join_paths(src_root_dir,'vgui2','game_controls')
+
 client_src_dir = join_paths(src_root_dir,'game','client')
 client_game_ctrls_src_dir = join_paths(client_src_dir,'game_controls')
 
@@ -35,6 +38,17 @@ stdshaders_src_dir = join_paths(src_root_dir,'materialsystem','stdshaders')
 source_game_shared_dep = declare_dependency(
 	compile_args: [
 		'-DUSES_SAVERESTORE',
+		'-DVGUI_CONTROL_PANELS',
+		'-DSecobMod__SAVERESTORE',
+		'-DSecobMod__MULTIPLAYER_LEVEL_TRANSITIONS',
+		'-DSecobMod__MULTIPLAYER_VIEWCONTROL_CAMERAS',
+		'-DSecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE',
+		'-DSecobMod__ENABLE_FAKE_PASSENGER_SEATS',
+		'-DSecobMod__ALLOW_PLAYER_MODELS_IN_VEHICLES',
+		'-DSM_SP_FIXES',
+		'-DSM_AI_FIXES',
+		'-DSM_IMPROVEMENTS',
+		'-DNO_USERCMDS_DURING_PAUSE'
 	],
 	sources: files(
 		join_paths(shared_src_dir,'achievement_saverestore.cpp'),
@@ -101,7 +115,6 @@ source_game_shared_dep = declare_dependency(
 		join_paths(shared_src_dir,'studio_shared.cpp'),
 		join_paths(shared_src_dir,'takedamageinfo.cpp'),
 		join_paths(shared_src_dir,'teamplay_gamerules.cpp'),
-		join_paths(shared_src_dir,'test_ehandle.cpp'),
 		join_paths(shared_src_dir,'usercmd.cpp'),
 		join_paths(shared_src_dir,'util_shared.cpp'),
 		join_paths(shared_src_dir,'vehicle_viewblend_shared.cpp'),
@@ -165,6 +178,7 @@ source_game_shared_dep = declare_dependency(
 		tier0.get_variable('tier0_dep'),
 		tier1.get_variable('tier1_dep'),
 		mathlib.get_variable('mathlib_dep'),
+		raytrace.get_variable('raytrace_dep'),
 		vstdlib.get_variable('vstdlib_dep'),
 		choreoobjects.get_variable('choreoobjects_dep'),
 		dmxloader.get_variable('dmxloader_dep'),
@@ -187,10 +201,10 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_baseactor.cpp'),
 		join_paths(server_src_dir,'ai_basehumanoid.cpp'),
 		join_paths(server_src_dir,'ai_basenpc.cpp'),
-		#join_paths(server_src_dir,'ai_basenpc_flyer.cpp'),
-		#join_paths(server_src_dir,'ai_basenpc_flyer_new.cpp'),
+		join_paths(server_src_dir,'ai_basenpc_flyer.cpp'),
+		join_paths(server_src_dir,'ai_basenpc_flyer_new.cpp'),
 		join_paths(server_src_dir,'ai_basenpc_movement.cpp'),
-		#join_paths(server_src_dir,'ai_basenpc_physicsflyer.cpp'),
+		join_paths(server_src_dir,'ai_basenpc_physicsflyer.cpp'),
 		join_paths(server_src_dir,'ai_basenpc_schedule.cpp'),
 		join_paths(server_src_dir,'ai_basenpc_squad.cpp'),
 		join_paths(server_src_dir,'ai_behavior.cpp'),
@@ -205,14 +219,10 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_condition.cpp'),
 		join_paths(server_src_dir,'AI_Criteria.cpp'),
 		join_paths(server_src_dir,'ai_default.cpp'),
-		#join_paths(server_src_dir,'ai_dynamiclink.cpp'),
 		join_paths(server_src_dir,'ai_event.cpp'),
 		join_paths(server_src_dir,'ai_goalentity.cpp'),
-		#join_paths(server_src_dir,'ai_hint.cpp'),
 		join_paths(server_src_dir,'ai_hull.cpp'),
-		#join_paths(server_src_dir,'ai_initutils.cpp'),
 		join_paths(server_src_dir,'AI_Interest_Target.cpp'),
-		#join_paths(server_src_dir,'ai_link.cpp'),
 		join_paths(server_src_dir,'ai_localnavigator.cpp'),
 		join_paths(server_src_dir,'ai_looktarget.cpp'),
 		join_paths(server_src_dir,'ai_memory.cpp'),
@@ -222,9 +232,6 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_movesolver.cpp'),
 		join_paths(server_src_dir,'ai_namespaces.cpp'),
 		join_paths(server_src_dir,'ai_navigator.cpp'),
-		#join_paths(server_src_dir,'ai_network.cpp'),
-		#join_paths(server_src_dir,'ai_networkmanager.cpp'),
-		#join_paths(server_src_dir,'ai_node.cpp'),
 		join_paths(server_src_dir,'ai_pathfinder.cpp'),
 		join_paths(server_src_dir,'ai_planesolver.cpp'),
 		join_paths(server_src_dir,'ai_playerally.cpp'),
@@ -381,7 +388,6 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'playerlocaldata.cpp'),
 		join_paths(server_src_dir,'plugin_check.cpp'),
 		join_paths(server_src_dir,'point_camera.cpp'),
-		join_paths(server_src_dir,'point_devshot_camera.cpp'),
 		join_paths(server_src_dir,'point_playermoveconstraint.cpp'),
 		join_paths(server_src_dir,'point_spotlight.cpp'),
 		join_paths(server_src_dir,'point_template.cpp'),
@@ -416,10 +422,6 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'team.cpp'),
 		join_paths(server_src_dir,'TemplateEntities.cpp'),
 		join_paths(server_src_dir,'tesla.cpp'),
-		join_paths(server_src_dir,'test_proxytoggle.cpp'),
-		join_paths(server_src_dir,'test_stressentities.cpp'),
-		join_paths(server_src_dir,'testfunctions.cpp'),
-		join_paths(server_src_dir,'testtraceline.cpp'),
 		join_paths(server_src_dir,'textstatsmgr.cpp'),
 		join_paths(server_src_dir,'timedeventmgr.cpp'),
 		join_paths(server_src_dir,'trains.cpp'),
@@ -504,6 +506,8 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'trigger_area_capture.cpp'),
 		join_paths(server_src_dir,'weapon_cubemap.cpp'),
 		join_paths(server_src_dir,'Func_Monitor.cpp'),
+		join_paths(server_src_dir,'fogvolume.cpp'),
+		join_paths(server_src_dir,'postprocesscontroller.cpp'),
 		join_paths(shared_src_dir,'voice_gamemgr.cpp'),
 		join_paths(shared_src_dir,'ModelSoundsCache.cpp'),
 		join_paths(shared_src_dir,'SceneCache.cpp')
@@ -530,7 +534,8 @@ source_linux_dedicated_server_lib_dep = declare_dependency(
 source_linux_client_lib_dep = declare_dependency(
 	compile_args: [
 		'-DCLIENT_DLL',
-		'-DNO_STRING_T'
+		'-DNO_STRING_T',
+		'-DUSE_MONITORS'
 	],
 	sources: files(
 		join_paths(client_src_dir,'C_Func_Monitor.cpp'),
@@ -610,7 +615,6 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'c_sun.cpp'),
 		join_paths(client_src_dir,'c_team.cpp'),
 		join_paths(client_src_dir,'c_tesla.cpp'),
-		join_paths(client_src_dir,'c_test_proxytoggle.cpp'),
 		join_paths(client_src_dir,'c_user_message_register.cpp'),
 		join_paths(client_src_dir,'c_vehicle_choreo_generic.cpp'),
 		join_paths(client_src_dir,'c_vehicle_jeep.cpp'),
@@ -812,7 +816,6 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'c_te_sprite.cpp'),
 		join_paths(client_src_dir,'c_te_spritespray.cpp'),
 		join_paths(client_src_dir,'c_te_worlddecal.cpp'),
-		join_paths(client_src_dir,'c_testtraceline.cpp'),
 		join_paths(client_src_dir,'c_tracer.cpp'),
 		join_paths(client_src_dir,'fx.cpp'),
 		join_paths(client_src_dir,'fx_discreetline.cpp'),
@@ -828,6 +831,10 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'c_team_train_watcher.cpp'),
 		join_paths(client_src_dir,'hud_voicestatus.cpp'),
 		join_paths(client_src_dir,'c_weapon_cubemap.cpp'),
+		join_paths(client_src_dir,'c_lights.cpp'),
+		join_paths(client_src_dir,'worldlight.cpp'),
+		join_paths(client_src_dir,'vis_tester.cpp'),
+		join_paths(client_src_dir,'c_postprocesscontroller.cpp'),
 		join_paths(client_game_ctrls_src_dir,'baseviewport.cpp'),
 		join_paths(client_game_ctrls_src_dir,'basemodelpanel.cpp'),
 		join_paths(client_game_ctrls_src_dir,'basemodel_panel.cpp'),
@@ -840,6 +847,7 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_game_ctrls_src_dir,'teammenu.cpp'),
 		join_paths(client_game_ctrls_src_dir,'vguitextwindow.cpp'),
 		join_paths(client_game_ctrls_src_dir,'IconPanel.cpp'),
+		join_paths(game_ctrls_src_dir,'FloatSlider.cpp'),
 		join_paths(shared_src_dir,'voice_status.cpp'),
 		join_paths(shared_src_dir,'voice_banmgr.cpp'),
 		join_paths(shared_src_dir,'cam_thirdperson.cpp'),

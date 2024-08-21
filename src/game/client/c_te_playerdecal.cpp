@@ -174,8 +174,26 @@ IMaterial *CreateTempMaterialForPlayerLogo( int iPlayerIndex, player_info_t *inf
 
 	if ( !filesystem->FileExists( fulltexname ) )
 	{
+		char searchPaths[512];
+
+		//find the download path, using the first path found
+		filesystem->GetSearchPath( "DOWNLOAD", false, searchPaths, sizeof( searchPaths ) );
+		const char* downloadPath = strtok( searchPaths, ";" );
+
+		//get download folder relative to game folder, or empty it out (to use root) if no download path found; GAME_WRITE works too
+		if ( downloadPath == NULL || !filesystem->FullPathToRelativePathEx( downloadPath, "GAME", searchPaths, ARRAYSIZE(searchPaths) ) )
+		{
+			V_strcpy_safe( searchPaths, "download/" );
+		}
+		else
+		{
+			//just in case
+			V_FixupPathName( searchPaths, ARRAYSIZE(searchPaths), searchPaths );
+		}
+
 		char custname[ 512 ];
-		Q_snprintf( custname, sizeof( custname ), "download/user_custom/%c%c/%s.dat", logohex[0], logohex[1], logohex );
+		V_sprintf_safe( custname, "%suser_custom/%c%c/%s.dat", searchPaths, logohex[0], logohex[1], logohex );
+
 		// it may have been downloaded but not copied under materials folder
 		if ( !filesystem->FileExists( custname ) )
 			return NULL; // not downloaded yet

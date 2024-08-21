@@ -12,6 +12,8 @@
 #include "mathlib/bumpvects.h"
 #include "cpp_shader_constant_register_map.h"
 #include "convar.h"
+#include "materialsystem/IShaderExtension.h"
+#include "bitvec.h"
 
 #ifndef GAME_SHADER_DLL
 #ifdef HDR
@@ -47,7 +49,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-static ConVar mat_fullbright( "mat_fullbright","0", FCVAR_CHEAT );
+ConVar mat_fullbright( "mat_fullbright","0", FCVAR_CHEAT );
 
 // These functions are to be called from the shaders.
 
@@ -2246,4 +2248,103 @@ void CBaseVSShader::DrawEqualDepthToDestAlpha( void )
 #else
 	Assert( 0 ); //probably just needs a shader update to the latest
 #endif
+}
+
+class CShaderExtension : public IShaderExtension
+{
+public:
+	void SetUberlightParamsForFlashlightState( FlashlightState_t& flashlightState, const UberlightState_t& uberlightState ) OVERRIDE
+	{
+		AUTO_LOCK( mutex );
+		const int index = flashlightState.m_nShadowQuality >> 24;
+		if ( index == 0 )
+		{
+			int emptySlot = -1;
+			for ( int i = 0; i < 32; ++i )
+			{
+				if ( !m_usedSlots.IsBitSet( i ) )
+				{
+					emptySlot = i;
+					break;
+				}
+			}
+
+			if ( emptySlot == -1 )
+				return Warning( "Could not set uberlight state for flashlight. Tell developer." );
+
+			flashlightState.m_nShadowQuality |= ( emptySlot + 1 ) << 24;
+			m_dataTable[emptySlot] = uberlightState;
+			m_usedSlots.Set( emptySlot );
+			return;
+		}
+		//if ( memcmp( &m_dataTable[index], &uberlightState, sizeof( UberlightState_t ) ) )
+			m_dataTable[index - 1] = uberlightState;
+	}
+
+	void OnFlashlightStateDestroyed( const FlashlightState_t& flashlightState ) OVERRIDE
+	{
+		AUTO_LOCK( mutex );
+		const int index = flashlightState.m_nShadowQuality >> 24;
+		if ( index != 0 )
+		{
+			m_usedSlots.Clear( index - 1 );
+		}
+	}
+
+	const UberlightState_t* GetState( const FlashlightState_t& flashlightState ) const
+	{
+		AUTO_LOCK( mutex );
+		const int index = flashlightState.m_nShadowQuality >> 24;
+		if ( index != 0 )
+		{
+			return &m_dataTable[index - 1];
+		}
+		return NULL;
+	}
+
+private:
+	CThreadMutex mutex;
+	UberlightState_t m_dataTable[32];
+	CBitVec<32> m_usedSlots;
+};
+
+static CShaderExtension s_shaderExtension;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CShaderExtension, IShaderExtension, SHADEREXTENSION_INTERFACE_VERSION, s_shaderExtension );
+
+#define	PSREG_UBERLIGHT_SMOOTH_EDGE_0			33
+#define	PSREG_UBERLIGHT_SMOOTH_EDGE_1			34
+#define	PSREG_UBERLIGHT_SMOOTH_EDGE_OOW			35
+#define	PSREG_UBERLIGHT_SHEAR_ROUND				36
+#define	PSREG_UBERLIGHT_AABB					37
+#define PSREG_UBERLIGHT_WORLD_TO_LIGHT			38
+
+bool SetupUberlightFromState( UberlightUploadFunc func, FlashlightState_t const &state )
+{
+	const UberlightState_t* uberlightState = s_shaderExtension.GetState( state );
+	if ( !uberlightState || !uberlightState->m_bEnabled )
+		return false;
+
+	// Set uberlight shader parameters as function of user controls from UberlightState_t
+	const Vector4D vSmoothEdge0( 0.0f, uberlightState->m_fCutOn - uberlightState->m_fNearEdge, uberlightState->m_fCutOff, 0.0f );
+	const Vector4D vSmoothEdge1( 0.0f, uberlightState->m_fCutOn, uberlightState->m_fCutOff + uberlightState->m_fFarEdge, 0.0f );
+	const Vector4D vSmoothOneOverW( 0.0f, 1.0f / uberlightState->m_fNearEdge, 1.0f / uberlightState->m_fFarEdge, 0.0f );
+	const Vector4D vShearRound( uberlightState->m_fShearx, uberlightState->m_fSheary, 2.0f / uberlightState->m_fRoundness, -uberlightState->m_fRoundness / 2.0f );
+	const Vector4D vaAbB( uberlightState->m_fWidth, uberlightState->m_fWidth + uberlightState->m_fWedge, uberlightState->m_fHeight, uberlightState->m_fHeight + uberlightState->m_fHedge );
+
+	func( PSREG_UBERLIGHT_SMOOTH_EDGE_0, vSmoothEdge0.Base(), 1 );
+	func( PSREG_UBERLIGHT_SMOOTH_EDGE_1, vSmoothEdge1.Base(), 1 );
+	func( PSREG_UBERLIGHT_SMOOTH_EDGE_OOW, vSmoothOneOverW.Base(), 1 );
+	func( PSREG_UBERLIGHT_SHEAR_ROUND, vShearRound.Base(), 1 );
+	func( PSREG_UBERLIGHT_AABB, vaAbB.Base(), 1 );
+
+	QAngle angles;
+	QuaternionAngles( state.m_quatOrientation, angles );
+
+	// World to Light's View matrix
+	matrix3x4_t viewMatrix;
+	AngleMatrix( angles, state.m_vecLightOrigin, viewMatrix );
+	MatrixInvert( viewMatrix, viewMatrix );
+	const VMatrix m( viewMatrix );
+	func( PSREG_UBERLIGHT_WORLD_TO_LIGHT, m.Base(), 4 );
+	return true;
 }

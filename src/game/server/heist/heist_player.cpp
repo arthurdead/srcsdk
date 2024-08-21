@@ -341,7 +341,7 @@ void CHeistPlayer::PlayerDeathThink()
 
 void CHeistPlayer::FireBullets(const FireBulletsInfo_t &info)
 {
-	lagcompensation->StartLagCompensation( this, this->GetCurrentCommand() );
+	lagcompensation->StartLagCompensation( this, LAG_COMPENSATE_HITBOXES );
 
 	FireBulletsInfo_t modinfo = info;
 
@@ -920,7 +920,7 @@ void CHeistPlayer::IncrementArmorValue( int nCount, int nMaxValue )
 	BaseClass::IncrementArmorValue(nCount, nMaxValue );
 }
 
-void CHeistPlayer::SaveTransitionFile()
+void SaveTransitionFile()
 {
 	FileHandle_t hFile = g_pFullFileSystem->Open("transition.cfg", "w");
 
@@ -938,8 +938,8 @@ void CHeistPlayer::SaveTransitionFile()
 				return;
 			}
 
-			int HealthValue = pPlayerMP->m_iHealth;
-			int ArmourValue = pPlayerMP->m_iArmor;
+			int HealthValue = pPlayerMP->GetHealth();
+			int ArmourValue = pPlayerMP->GetArmorValue();
 			int WeaponSlot = 0;
 
 			WeaponSlot = 0;

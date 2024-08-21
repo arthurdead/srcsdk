@@ -44,6 +44,7 @@ BEGIN_DATADESC( CColorCorrection )
 
 	DEFINE_KEYFIELD( m_bEnabled,		  FIELD_BOOLEAN, "enabled" ),
 	DEFINE_KEYFIELD( m_bStartDisabled,    FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD( m_bExclusive,		  FIELD_BOOLEAN, "exclusive" ),
 //	DEFINE_ARRAY( m_netlookupFilename, FIELD_CHARACTER, MAX_PATH ), 
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -59,8 +60,13 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE(CColorCorrection, DT_ColorCorrection)
 	SendPropFloat(  SENDINFO(m_MinFalloff) ),
 	SendPropFloat(  SENDINFO(m_MaxFalloff) ),
 	SendPropFloat(  SENDINFO(m_flCurWeight) ),
+	SendPropFloat(  SENDINFO(m_flMaxWeight) ),
+	SendPropFloat(  SENDINFO(m_flFadeInDuration) ),
+	SendPropFloat(  SENDINFO(m_flFadeOutDuration) ),
 	SendPropString( SENDINFO(m_netlookupFilename) ),
 	SendPropBool( SENDINFO(m_bEnabled) ),
+	SendPropBool( SENDINFO(m_bMaster) ),
+	SendPropBool( SENDINFO(m_bExclusive) ),
 END_SEND_TABLE()
 
 
@@ -78,6 +84,8 @@ CColorCorrection::CColorCorrection() : BaseClass()
 	m_flTimeStartFadeIn = 0.0f;
 	m_flTimeStartFadeOut = 0.0f;
 	m_netlookupFilename.GetForModify()[0] = 0;
+	m_bMaster = false;
+	m_bExclusive = false;
 	m_lookupFilename = NULL_STRING;
 }
 
@@ -115,6 +123,8 @@ void CColorCorrection::Spawn( void )
 		m_flCurWeight.Set ( 1.0f );
 	}
 
+	m_bMaster = IsMaster();
+
 	BaseClass::Spawn();
 }
 
@@ -130,6 +140,9 @@ void CColorCorrection::Activate( void )
 //-----------------------------------------------------------------------------
 void CColorCorrection::FadeIn ( void )
 {
+	if ( m_bEnabled && m_flCurWeight >= m_flMaxWeight )
+		return;
+
 	m_bEnabled = true;
 	m_flTimeStartFadeIn = gpGlobals->curtime;
 	m_flStartFadeInWeight = m_flCurWeight;
@@ -141,6 +154,9 @@ void CColorCorrection::FadeIn ( void )
 //-----------------------------------------------------------------------------
 void CColorCorrection::FadeOut ( void )
 {
+	if ( !m_bEnabled && m_flCurWeight <= 0.0f )
+		return;
+
 	m_bEnabled = false;
 	m_flTimeStartFadeOut = gpGlobals->curtime;
 	m_flStartFadeOutWeight = m_flCurWeight;
@@ -258,4 +274,68 @@ void CColorCorrection::InputSetFadeInDuration( inputdata_t& inputdata )
 void CColorCorrection::InputSetFadeOutDuration( inputdata_t& inputdata )
 {
 	m_flFadeOutDuration = inputdata.value.Float();
+}
+
+CColorCorrectionSystem s_ColorCorrectionSystem( "ColorCorrectionSystem" );
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+CColorCorrectionSystem *ColorCorrectionSystem( void )
+{
+	return &s_ColorCorrectionSystem;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Clear out the fog controller.
+//-----------------------------------------------------------------------------
+void CColorCorrectionSystem::LevelInitPreEntity( void )
+{
+	m_hMasterController = NULL;
+	ListenForGameEvent( "round_start" );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Find the master controller.  If no controller is 
+//			set as Master, use the first controller found.
+//-----------------------------------------------------------------------------
+void CColorCorrectionSystem::InitMasterController( void )
+{
+	CColorCorrection *pColorCorrection = NULL;
+	do
+	{
+		pColorCorrection = dynamic_cast<CColorCorrection*>( gEntList.FindEntityByClassname( pColorCorrection, "color_correction" ) );
+		if ( pColorCorrection )
+		{
+			if ( m_hMasterController.Get() == NULL )
+			{
+				m_hMasterController = pColorCorrection;
+			}
+			else
+			{
+				if ( pColorCorrection->IsMaster() )
+				{
+					m_hMasterController = pColorCorrection;
+				}
+			}
+		}
+	} while ( pColorCorrection );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: On a multiplayer map restart, re-find the master controller.
+//-----------------------------------------------------------------------------
+void CColorCorrectionSystem::FireGameEvent( IGameEvent *pEvent )
+{
+	InitMasterController();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: On level load find the master fog controller.  If no controller is 
+//			set as Master, use the first fog controller found.
+//-----------------------------------------------------------------------------
+void CColorCorrectionSystem::LevelInitPostEntity( void )
+{
+	InitMasterController();
 }

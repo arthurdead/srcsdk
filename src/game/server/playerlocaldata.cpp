@@ -68,6 +68,7 @@ BEGIN_SEND_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	SendPropFloat( SENDINFO_STRUCTELEM( m_skybox3d.fog.start ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO_STRUCTELEM( m_skybox3d.fog.end ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO_STRUCTELEM( m_skybox3d.fog.maxdensity ), 0, SPROP_NOSCALE ),
+	SendPropFloat( SENDINFO_STRUCTELEM( m_skybox3d.fog.HDRColorScale ), 0, SPROP_NOSCALE ),
 
 	SendPropEHandle( SENDINFO_STRUCTELEM( m_PlayerFog.m_hCtrl ) ),
 
@@ -83,6 +84,14 @@ BEGIN_SEND_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	SendPropInt( SENDINFO_STRUCTELEM( m_audio.soundscapeIndex ), 17, 0 ),
 	SendPropInt( SENDINFO_STRUCTELEM( m_audio.localBits ), NUM_AUDIO_LOCAL_SOUNDS, SPROP_UNSIGNED ),
 	SendPropEHandle( SENDINFO_STRUCTELEM( m_audio.ent ) ),
+
+	//Tony; tonemap stuff! -- TODO! Optimize this with bit sizes from env_tonemap_controller.
+	SendPropFloat( SENDINFO_STRUCTELEM( m_TonemapParams.m_flTonemapScale ), 0, SPROP_NOSCALE ),
+	SendPropFloat( SENDINFO_STRUCTELEM( m_TonemapParams.m_flTonemapRate ), 0, SPROP_NOSCALE ),
+	SendPropFloat( SENDINFO_STRUCTELEM( m_TonemapParams.m_flBloomScale ), 0, SPROP_NOSCALE ),
+
+	SendPropFloat( SENDINFO_STRUCTELEM( m_TonemapParams.m_flAutoExposureMin ), 0, SPROP_NOSCALE ),
+	SendPropFloat( SENDINFO_STRUCTELEM( m_TonemapParams.m_flAutoExposureMax ), 0, SPROP_NOSCALE ),
 END_SEND_TABLE()
 
 BEGIN_SIMPLE_DATADESC( fogplayerparams_t )
@@ -111,8 +120,10 @@ BEGIN_SIMPLE_DATADESC( fogparams_t )
 	DEFINE_FIELD( colorSecondaryLerpTo, FIELD_COLOR32 ),
 	DEFINE_FIELD( startLerpTo, FIELD_FLOAT ),
 	DEFINE_FIELD( endLerpTo, FIELD_FLOAT ),
+	DEFINE_FIELD( maxdensityLerpTo, FIELD_FLOAT ),
 	DEFINE_FIELD( lerptime, FIELD_TIME ),
 	DEFINE_FIELD( duration, FIELD_FLOAT ),
+	DEFINE_FIELD( HDRColorScale, FIELD_FLOAT ),
 END_DATADESC()
 
 BEGIN_SIMPLE_DATADESC( sky3dparams_t )
@@ -130,6 +141,17 @@ BEGIN_SIMPLE_DATADESC( audioparams_t )
 	DEFINE_FIELD( soundscapeIndex, FIELD_INTEGER ),
 	DEFINE_FIELD( localBits, FIELD_INTEGER ),
 	DEFINE_FIELD( ent, FIELD_EHANDLE ),
+
+END_DATADESC()
+
+//Tony; tonepam params!!
+BEGIN_SIMPLE_DATADESC( tonemap_params_t )
+
+	DEFINE_FIELD( m_flTonemapScale, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flTonemapRate, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flBloomScale, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flAutoExposureMin, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flAutoExposureMax, FIELD_FLOAT ),
 
 END_DATADESC()
 
@@ -159,6 +181,9 @@ BEGIN_SIMPLE_DATADESC( CPlayerLocalData )
 	DEFINE_EMBEDDED( m_PlayerFog ),
 	DEFINE_EMBEDDED( m_fog ),
 	DEFINE_EMBEDDED( m_audio ),
+
+	//Tony; added
+	DEFINE_EMBEDDED( m_TonemapParams ),
 	
 	// "Why don't we save this field, grandpa?"
 	//

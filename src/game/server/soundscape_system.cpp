@@ -29,7 +29,7 @@ CON_COMMAND(soundscape_flush, "Flushes the server & client side soundscapes")
 	else
 	{
 		// If it's a listen server, only the listen server host can run this.
-		if ( !pPlayer || pPlayer != UTIL_GetListenServerHost() )
+		if ( !UTIL_IsPlayerServerAdmin(pPlayer) )
 			return;
 	}
 

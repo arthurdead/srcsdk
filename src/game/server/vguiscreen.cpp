@@ -410,6 +410,19 @@ CVGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreen
 	return pScreen;
 }
 
+CVGuiScreen *__CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, CBaseEntity *pAttachedTo, CBaseEntity *pOwner, int nAttachmentIndex )
+{
+	Assert( pAttachedTo );
+	CVGuiScreen *pScreen = (CVGuiScreen *)CREATE_PREDICTED_ENTITY_AT( module, line, pScreenClassname, vec3_origin, vec3_angle, pAttachedTo );
+
+	pScreen->SetPanelName( pScreenType );
+	pScreen->FollowEntity( pAttachedTo );
+	pScreen->SetOwnerEntity( pOwner );
+	pScreen->SetAttachmentIndex( nAttachmentIndex );
+
+	return pScreen;
+}
+
 void DestroyVGuiScreen( CVGuiScreen *pVGuiScreen )
 {
 	if (pVGuiScreen)

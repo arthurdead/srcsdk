@@ -3258,7 +3258,7 @@ bool C_BaseAnimating::OnInternalDrawModel( ClientModelRenderInfo_t *pInfo )
 //-----------------------------------------------------------------------------
 void C_BaseAnimating::DoInternalDrawModel( ClientModelRenderInfo_t *pInfo, DrawModelState_t *pState, matrix3x4_t *pBoneToWorldArray )
 {
-	if ( pState)
+	if ( pState && pState->m_pRenderable && pState->m_pStudioHWData )
 	{
 		modelrender->DrawModelExecute( *pState, *pInfo, pBoneToWorldArray );
 	}
@@ -3385,20 +3385,26 @@ void C_BaseAnimating::ProcessMuzzleFlashEvent()
 		//FIXME: We should really use a named attachment for this
 		if ( m_Attachments.Count() > 0 )
 		{
-			Vector vAttachment;
-			QAngle dummyAngles;
-			GetAttachment( 1, vAttachment, dummyAngles );
+			Vector vAttachment, vAng;
+			QAngle angles;
+			GetAttachment( 1, vAttachment, angles );
+
+			AngleVectors( angles, &vAng );
+			vAttachment += vAng * 2;
 
 			// Make an elight
-			dlight_t *el = effects->CL_AllocElight( LIGHT_INDEX_MUZZLEFLASH + index );
-			el->origin = vAttachment;
-			el->radius = random->RandomInt( 32, 64 ); 
-			el->decay = el->radius / 0.05f;
-			el->die = gpGlobals->curtime + 0.05f;
-			el->color.r = 255;
-			el->color.g = 192;
-			el->color.b = 64;
-			el->color.exponent = 5;
+			dlight_t *dl = effects->CL_AllocDlight( entindex() );
+			if ( !dl )
+				return;
+
+			dl->origin = vAttachment;
+			dl->radius = random->RandomInt( 32, 64 ); 
+			dl->decay = dl->radius / 0.05f;
+			dl->die = gpGlobals->curtime + 0.05f;
+			dl->color.r = 255;
+			dl->color.g = 192;
+			dl->color.b = 64;
+			dl->color.exponent = 5;
 		}
 	}
 }
@@ -3604,11 +3610,7 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 	int			weaponType = 0;
 
 	// Get the first parameter
-#ifdef SDK2013CE
 	p = nexttoken( token, p, ' ', sizeof(token) );
-#else
-	p = nexttoken( token, p, ' ' );
-#endif
 
 	// Find the weapon type
 	if ( token[0] ) 
@@ -3652,11 +3654,7 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 	}
 
 	// Get the second parameter
-#ifdef SDK2013CE
 	p = nexttoken( token, p, ' ', sizeof(token) );
-#else
-	p = nexttoken( token, p, ' ' );
-#endif
 
 	int	attachmentIndex = -1;
 
@@ -3767,11 +3765,7 @@ void C_BaseAnimating::FireEvent( const Vector& origin, const QAngle& angles, int
 
 			// Get the particle effect name
 			const char *p = options;
-		#ifdef SDK2013CE
 			p = nexttoken(token, p, ' ', sizeof(token));
-		#else
-			p = nexttoken(token, p, ' ');
-		#endif
 
 			const char* mtoken = ModifyEventParticles( token );
 			if ( !mtoken || mtoken[0] == '\0' )
@@ -3779,11 +3773,7 @@ void C_BaseAnimating::FireEvent( const Vector& origin, const QAngle& angles, int
 			Q_strncpy( szParticleEffect, mtoken, sizeof(szParticleEffect) );
 
 			// Get the attachment type
-		#ifdef SDK2013CE
 			p = nexttoken(token, p, ' ', sizeof(token));
-		#else
-			p = nexttoken(token, p, ' ');
-		#endif
 
 			iAttachType = GetAttachTypeFromString( token );
 			if ( iAttachType == -1 )
@@ -3793,11 +3783,7 @@ void C_BaseAnimating::FireEvent( const Vector& origin, const QAngle& angles, int
 			}
 
 			// Get the attachment point index
-		#ifdef SDK2013CE
 			p = nexttoken(token, p, ' ', sizeof(token));
-		#else
-			p = nexttoken(token, p, ' ');
-		#endif
 			if ( token[0] )
 			{
 				iAttachment = atoi(token);
@@ -4001,19 +3987,11 @@ void C_BaseAnimating::FireEvent( const Vector& origin, const QAngle& angles, int
 			const char *p = options;
 
 			// Bodygroup Name
-		#ifdef SDK2013CE
 			p = nexttoken(token, p, ' ', sizeof(token));
-		#else
-			p = nexttoken(token, p, ' ');
-		#endif
 			Q_strncpy( szBodygroupName, token, sizeof(szBodygroupName) );
 
 			// Get the desired value
-		#ifdef SDK2013CE
 			p = nexttoken(token, p, ' ', sizeof(token));
-		#else
-			p = nexttoken(token, p, ' ');
-		#endif
 			value = token[0] ? atoi( token ) : 0;
 
 			int index = FindBodygroupByName( szBodygroupName );
@@ -4050,25 +4028,13 @@ void C_BaseAnimating::FireObsoleteEvent( const Vector& origin, const QAngle& ang
 
 			const char *p = options;
 
-		#ifdef SDK2013CE
 			p = nexttoken(token, p, ' ', sizeof(token));
-		#else
-			p = nexttoken(token, p, ' ');
-		#endif
 			Q_strncpy( effectFunc, token, sizeof(effectFunc) );
 
-		#ifdef SDK2013CE
 			p = nexttoken(token, p, ' ', sizeof(token));
-		#else
-			p = nexttoken(token, p, ' ');
-		#endif
 			iAttachment = token[0] ? atoi(token) : -1;
 
-		#ifdef SDK2013CE
 			p = nexttoken(token, p, ' ', sizeof(token));
-		#else
-			p = nexttoken(token, p, ' ');
-		#endif
 			iParam = token[0] ? atoi(token) : 0;
 
 			if ( iAttachment != -1 && m_Attachments.Count() >= iAttachment )
@@ -4165,14 +4131,14 @@ void C_BaseAnimating::FireObsoleteEvent( const Vector& origin, const QAngle& ang
 		break;
 
 	// Obsolete. Use the AE_MUZZLEFLASH / AE_NPC_MUZZLEFLASH events instead.
-	case CL_EVENT_MUZZLEFLASH0:
-	case CL_EVENT_MUZZLEFLASH1:
-	case CL_EVENT_MUZZLEFLASH2:
-	case CL_EVENT_MUZZLEFLASH3:
 	case CL_EVENT_NPC_MUZZLEFLASH0:
 	case CL_EVENT_NPC_MUZZLEFLASH1:
 	case CL_EVENT_NPC_MUZZLEFLASH2:
 	case CL_EVENT_NPC_MUZZLEFLASH3:
+	case CL_EVENT_MUZZLEFLASH0:
+	case CL_EVENT_MUZZLEFLASH1:
+	case CL_EVENT_MUZZLEFLASH2:
+	case CL_EVENT_MUZZLEFLASH3:
 		{
 			int iAttachment = -1;
 			bool bFirstPerson = true;
@@ -4216,6 +4182,15 @@ void C_BaseAnimating::FireObsoleteEvent( const Vector& origin, const QAngle& ang
 				iAttachment = 3;
 				bFirstPerson = false;
 				break;
+			}
+
+			C_BasePlayer *follow = ToBasePlayer( GetFollowedEntity() );
+			if ( follow && follow->IsLocalPlayer() ) {
+				if(bFirstPerson && ::input->CAM_IsThirdPerson()) {
+					break;
+				} else if(!bFirstPerson && !::input->CAM_IsThirdPerson()) {
+					break;
+				}
 			}
 
 			if ( iAttachment != -1 && m_Attachments.Count() > iAttachment )
@@ -5167,6 +5142,16 @@ void C_BaseAnimating::SetSequence( int nSequence )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Extracts the bounding box
+//-----------------------------------------------------------------------------
+void C_BaseAnimating::ExtractBbox( int nSequence, Vector &mins, Vector &maxs )
+{
+	CStudioHdr *pStudioHdr = GetModelPtr();
+	Assert( pStudioHdr );
+
+	::ExtractBbox( pStudioHdr, nSequence, mins, maxs );
+}
 
 //=========================================================
 // StudioFrameAdvance - advance the animation frame up some interval (default 0.1) into the future

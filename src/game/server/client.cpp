@@ -788,7 +788,7 @@ CON_COMMAND_F( killvector, "Kills a player applying force. Usage: killvector <pl
 //------------------------------------------------------------------------------
 CON_COMMAND_F( explodevector, "Kills a player applying an explosive force. Usage: explodevector <player> <x value> <y value> <z value>", FCVAR_CHEAT )
 {
-	killvector_helper( args, false );
+	killvector_helper( args, true );
 }
 
 
@@ -879,8 +879,7 @@ CON_COMMAND( give, "Give item to player.\n\tArguments: <item_name>" )
 			else if ( gpGlobals->maxClients > 1 )
 			{
 				// On listen servers with more than 1 player, only allow the host to create point_servercommand.
-				CBasePlayer *pHostPlayer = UTIL_GetListenServerHost();
-				if ( pPlayer != pHostPlayer )
+				if ( !UTIL_IsPlayerServerAdmin( pPlayer ) )
 					return;
 			}
 		}

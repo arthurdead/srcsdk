@@ -43,6 +43,8 @@
 	ConVar cl_flipviewmodels( "cl_flipviewmodels", "0", FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_NOT_CONNECTED, "Flip view models." );
 #endif
 
+ConVar r_flashlight_viewmodel("r_flashlight_viewmodel", "1");
+
 void PostToolMessage( HTOOLHANDLE hEntity, KeyValues *msg );
 
 void FormatViewModelAttachment( Vector &vOrigin, bool bInverse )
@@ -434,6 +436,15 @@ bool C_BaseViewModel::UsesPowerOfTwoFrameBufferTexture( void )
 	}
 
 	return BaseClass::UsesPowerOfTwoFrameBufferTexture();
+}
+
+bool C_BaseViewModel::ShouldReceiveProjectedTextures( int flags )
+{
+	if(!r_flashlight_viewmodel.GetBool()) {
+		return false;
+	}
+
+	return BaseClass::ShouldReceiveProjectedTextures( flags );
 }
 
 //-----------------------------------------------------------------------------

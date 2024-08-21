@@ -18,13 +18,9 @@
 #include "convar.h"
 #include <renderparm.h>
 
-#ifdef _X360
 #define SUPPORT_DX8 0
 #define SUPPORT_DX7 0
-#else
-#define SUPPORT_DX8 1
-#define SUPPORT_DX7 1
-#endif
+
 //-----------------------------------------------------------------------------
 // Helper macro for vertex shaders
 //-----------------------------------------------------------------------------
@@ -390,6 +386,8 @@ FORCEINLINE float ShadowFilterFromState( FlashlightState_t const &state )
 	return state.m_flShadowFilterSize / 1024.0f;
 }
 
+typedef void( *UberlightUploadFunc )( int, const float*, int );
+bool SetupUberlightFromState( UberlightUploadFunc func, FlashlightState_t const &state );
 
 // convenient material variable access functions for helpers to use.
 FORCEINLINE bool IsTextureSet( int nVar, IMaterialVar **params )

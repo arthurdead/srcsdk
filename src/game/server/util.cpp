@@ -591,6 +591,19 @@ CBasePlayer *UTIL_PlayerBySteamID( const CSteamID &steamID )
 	return NULL;
 }
 
+CBasePlayer *UTIL_PlayerByString( const char *query )
+{
+	if(query[0] == '#') {
+		return UTIL_PlayerByUserId( V_atoi(query+1) );
+	} else if(query[0] == '!') {
+		return UTIL_PlayerByIndex( V_atoi(query+1) );
+	} else if(query[0] == '$') {
+		return UTIL_PlayerByName( query+1 );
+	} else {
+		return NULL;
+	}
+}
+
 CBasePlayer* UTIL_PlayerByName( const char *name )
 {
 	if ( !name || !name[0] )
@@ -637,7 +650,6 @@ CBasePlayer* UTIL_PlayerByUserId( int userID )
 }
 
 
-#ifdef SM_AI_FIXES
 //SecobMod__Information: This is a new function designed to get the nearest player to a player that called the command, this is used for our respawn where killed code to try and respawn at a near-by player.
 CBasePlayer *UTIL_GetOtherNearestPlayer( const Vector &origin )
 {
@@ -710,67 +722,51 @@ CBasePlayer *UTIL_GetNearestVisiblePlayer( CBaseEntity *pLooker, int mask )
 
 	return pNearest; 
 }
-#endif
 
-//
-// Return the local player.
-// If this is a multiplayer game, return NULL.
-// 
-CBasePlayer *UTIL_GetLocalPlayer( void )
+CBasePlayer *UTIL_GetCommandClientIfAdmin()
 {
-#ifdef SM_AI_FIXES
-	// first try getting the host, failing that, get *ANY* player
-	CBasePlayer *pHost = UTIL_GetListenServerHost();
-	if ( pHost )
-		return pHost;
-
-	for (int i = 1; i <= gpGlobals->maxClients; i++ )
-
-	{
-		CBasePlayer *pPlayer = UTIL_PlayerByIndex( i );
-		if ( pPlayer )
-			return pPlayer;
-	}
+	CBasePlayer *player = UTIL_GetCommandClient();
+	if(UTIL_IsPlayerServerAdmin(player))
+		return player;
 
 	return NULL;
-#else
-	if ( gpGlobals->maxClients > 1 )
-	{
-		if ( developer.GetBool() )
-		{
-			Assert( !"UTIL_GetLocalPlayer" );
-			
-#ifdef	DEBUG
-			Warning( "UTIL_GetLocalPlayer() called in multiplayer game.\n" );
-#endif
-		}
-
-		return NULL;
-	}
-
-	return UTIL_PlayerByIndex( 1 );
-#endif
 }
 
-//
-// Get the local player on a listen server - this is for multiplayer use only
-// 
-CBasePlayer *UTIL_GetListenServerHost( void )
+bool UTIL_IsPlayerServerAdmin( CBasePlayer *player )
 {
-	// no "local player" if this is a dedicated server or a single player game
-	if (engine->IsDedicatedServer())
-	{
-#ifndef SM_AI_FIXES
-		Assert( !"UTIL_GetListenServerHost" ); 
-		Warning( "UTIL_GetListenServerHost() called from a dedicated server or single-player game.\n" ); 
-#endif //SM_AI_FIXES
+	if( !player )
+		return false;
 
-		return NULL;
+	if ( engine->IsDedicatedServer() )
+	{
+		if ( player->IsAutoKickDisabled() == true )
+			return true;
+
+		return false;
 	}
 
-	return UTIL_PlayerByIndex( 1 );
-}
+#if defined( REPLAY_ENABLED )
+	// entity 1 is replay?
+	player_info_t pi;
+	bool bPlayerIsReplay = engine->GetPlayerInfo( 1, &pi ) && pi.isreplay;
+#else
+	bool bPlayerIsReplay = false;
+#endif
 
+	int issuingPlayerIndex = player->entindex();
+
+	if ( bPlayerIsReplay )
+	{
+		if ( issuingPlayerIndex > 2 )
+			return false;
+	}
+	else if ( issuingPlayerIndex > 1 )
+	{
+		return false;
+	}
+
+	return true;
+}
 
 //--------------------------------------------------------------------------------------------------------------
 /**
@@ -781,8 +777,17 @@ bool UTIL_IsCommandIssuedByServerAdmin( void )
 {
 	int issuingPlayerIndex = UTIL_GetCommandClientIndex();
 
-	if ( engine->IsDedicatedServer() && issuingPlayerIndex > 0 )
+	if ( engine->IsDedicatedServer() )
+	{
+		if( issuingPlayerIndex == 0 )
+			return true;
+
+		CBasePlayer *player = UTIL_PlayerByIndex( issuingPlayerIndex );
+		if ( player && player->IsAutoKickDisabled() == true )
+			return true;
+
 		return false;
+	}
 
 #if defined( REPLAY_ENABLED )
 	// entity 1 is replay?
@@ -2163,7 +2168,6 @@ void UTIL_ValidateSoundName( string_t &name, const char *defaultStr )
 //          tokenLen - Length of token buffer
 // Output : Returns a pointer to the next token to be parsed.
 //-----------------------------------------------------------------------------
-#ifdef SDK2013CE
 const char *nexttoken(char *token, const char *str, char sep, size_t tokenLen)
 {
 	if ((str == NULL) || (*str == '\0'))
@@ -2209,36 +2213,6 @@ const char *nexttoken(char *token, const char *str, char sep, size_t tokenLen)
 
 	return(++str);
 }
-#else
-const char *nexttoken(char *token, const char *str, char sep)
-{
-	if ((str == NULL) || (*str == '\0'))
-	{
-		*token = '\0';
-		return(NULL);
-	}
-
-	//
-	// Copy everything up to the first separator into the return buffer.
-	// Do not include separators in the return buffer.
-	//
-	while ((*str != sep) && (*str != '\0'))
-	{
-		*token++ = *str++;
-	}
-	*token = '\0';
-
-	//
-	// Advance the pointer unless we hit the end of the input string.
-	//
-	if (*str == '\0')
-	{
-		return(str);
-	}
-
-	return(++str);
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Helper for UTIL_FindClientInPVS
@@ -3063,13 +3037,19 @@ void UTIL_BoundToWorldSize( Vector *pVecPos )
 
 void CC_KDTreeTest( const CCommand &args )
 {
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
 	Msg( "Testing kd-tree entity queries." );
 
 	// Get the testing spot.
 //	CBaseEntity *pSpot = gEntList.FindEntityByClassname( NULL, "info_player_start" );
 //	Vector vecStart = pSpot->GetAbsOrigin();
 
-	CBasePlayer *pPlayer = static_cast<CBasePlayer*>( UTIL_GetLocalPlayer() );
+	CBasePlayer *pPlayer = static_cast<CBasePlayer*>( UTIL_GetCommandClientIfAdmin() );
+	if(!pPlayer)
+		return;
+
 	Vector vecStart = pPlayer->GetAbsOrigin();
 
 	static Vector *vecTargets = NULL;
@@ -3233,6 +3213,9 @@ static ConCommand kdtree_test( "kdtree_test", CC_KDTreeTest, "Tests spatial part
 
 void CC_VoxelTreeView( void )
 {
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
 	Msg( "VoxelTreeView\n" );
 	partition->RenderAllObjectsInTree( 10.0f );
 }
@@ -3241,9 +3224,15 @@ static ConCommand voxeltree_view( "voxeltree_view", CC_VoxelTreeView, "View enti
 
 void CC_VoxelTreePlayerView( void )
 {
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
 	Msg( "VoxelTreePlayerView\n" );
 
-	CBasePlayer *pPlayer = static_cast<CBasePlayer*>( UTIL_GetLocalPlayer() );
+	CBasePlayer *pPlayer = static_cast<CBasePlayer*>( UTIL_GetCommandClientIfAdmin() );
+	if(!pPlayer)
+		return;
+
 	Vector vecStart = pPlayer->GetAbsOrigin();
 	partition->RenderObjectsInPlayerLeafs( vecStart - VEC_HULL_MIN_SCALED( pPlayer ), vecStart + VEC_HULL_MAX_SCALED( pPlayer ), 3.0f  );
 }
@@ -3252,6 +3241,9 @@ static ConCommand voxeltree_playerview( "voxeltree_playerview", CC_VoxelTreePlay
 
 void CC_VoxelTreeBox( const CCommand &args )
 {
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
 	Vector vecMin, vecMax;
 	if ( args.ArgC() >= 6 )
 	{
@@ -3303,6 +3295,9 @@ static ConCommand voxeltree_box( "voxeltree_box", CC_VoxelTreeBox, "View entitie
 
 void CC_VoxelTreeSphere( const CCommand &args )
 {
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
 	Vector vecCenter;
 	float flRadius;
 	if ( args.ArgC() >= 4 )
@@ -3361,6 +3356,9 @@ static ConCommand voxeltree_sphere( "voxeltree_sphere", CC_VoxelTreeSphere, "Vie
 void CC_CollisionTest( const CCommand &args )
 {
 	if ( !physenv )
+		return;
+
+	if(!UTIL_IsCommandIssuedByServerAdmin())
 		return;
 
 	Msg( "Testing collision system\n" );

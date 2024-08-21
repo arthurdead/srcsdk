@@ -381,7 +381,7 @@ void SharedVehicleViewSmoothing(CBasePlayer *pPlayer,
 			//debugoverlay->AddBoxOverlay( vecEyeExitEndpoint, -Vector(1,1,1), Vector(1,1,1), vec3_angle, 255,255,255, 64, 10 );
 
 			// Blend to the exit position
-			*pAbsOrigin = Lerp( flSplineFrac, vecAbsOrigin, vecEyeExitEndpoint );
+			*pAbsOrigin = VectorLerp( vecAbsOrigin, vecEyeExitEndpoint, flSplineFrac );
 			
 			if ( pFOV != NULL )
 			{
@@ -394,7 +394,7 @@ void SharedVehicleViewSmoothing(CBasePlayer *pPlayer,
 		else
 		{
 			// Blend from our starting position to the desired origin
-			*pAbsOrigin = Lerp( flSplineFrac, pData->vecOriginSaved, vecAbsOrigin );
+			*pAbsOrigin = VectorLerp( pData->vecOriginSaved, vecAbsOrigin, flSplineFrac );
 			
 			if ( pFOV != NULL )
 			{

@@ -41,7 +41,10 @@ END_DATADESC()
 
 CWeaponHeistBase::CWeaponHeistBase()
 {
+#ifdef CLIENT_DLL
 	SetPredictionEligible(true);
+#endif
+
 	AddSolidFlags(FSOLID_TRIGGER);
 
 	m_flNextResetCheckTime = 0.0f;

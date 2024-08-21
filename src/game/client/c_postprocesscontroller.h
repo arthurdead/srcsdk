@@ -6,11 +6,10 @@
 
 #ifndef C_POSTPROCESSCONTROLLER_H
 #define C_POSTPROCESSCONTROLLER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "postprocess_shared.h"
+#include "c_baseentity.h"
 
 //=============================================================================
 //

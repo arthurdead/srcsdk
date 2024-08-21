@@ -940,19 +940,12 @@ void CBaseEntity::DrawDebugGeometryOverlays(void)
 			NDebugOverlay::EntityBounds(this, 255, 255, 255, 0, 0 );
 		}
 	}
-#ifdef SM_AI_FIXES	
 	CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
 	if ( m_debugOverlays & OVERLAY_AUTOAIM_BIT && (GetFlags()&FL_AIMTARGET) && pPlayer != NULL ) 
-#else
-	if ( m_debugOverlays & OVERLAY_AUTOAIM_BIT && (GetFlags()&FL_AIMTARGET) && AI_GetSinglePlayer() != NULL )
-#endif
 	{
 		// Crude, but it gets the point across.
 		Vector vecCenter = GetAutoAimCenter();
 		Vector vecRight, vecUp, vecDiag;
-#ifndef SM_AI_FIXES
-		CBasePlayer *pPlayer = AI_GetSinglePlayer();
-#endif
 		float radius = GetAutoAimRadius();
 
 		QAngle angles = pPlayer->EyeAngles();
@@ -1584,30 +1577,20 @@ int CBaseEntity::VPhysicsTakeDamage( const CTakeDamageInfo &info )
 		if ( gameFlags & FVPHYSICS_PLAYER_HELD )
 		{
 			// if the player is holding the object, use it's real mass (player holding reduced the mass)
-#ifdef SDK2013CE
 			CBasePlayer *pPlayer = NULL;
 
-			if ( gpGlobals->maxClients == 1 )
+			// See which MP player is holding the physics object and then use that player to get the real mass of the object.
+			// This is ugly but better than having linkage between an object and its "holding" player.
+			for ( int i = 1; i <= gpGlobals->maxClients; i++ )
 			{
-				pPlayer = UTIL_GetLocalPlayer();
-			}
-			else
-			{
-				// See which MP player is holding the physics object and then use that player to get the real mass of the object.
-				// This is ugly but better than having linkage between an object and its "holding" player.
-				for ( int i = 1; i <= gpGlobals->maxClients; i++ )
+				CBasePlayer *tempPlayer = UTIL_PlayerByIndex( i );
+				if ( tempPlayer && (tempPlayer->GetHeldObject() == this ) )
 				{
-					CBasePlayer *tempPlayer = UTIL_PlayerByIndex( i );
-					if ( tempPlayer && (tempPlayer->GetHeldObject() == this ) )
-					{
-						pPlayer = tempPlayer;
-						break;
-					}
+					pPlayer = tempPlayer;
+					break;
 				}
 			}
-#else
-			CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-#endif // SDK2013CE
+
 			if ( pPlayer )
 			{
 				float mass = pPlayer->GetHeldObjectMass( VPhysicsGetObject() );
@@ -3145,6 +3128,11 @@ int CBaseEntity::ShouldToggle( USE_TYPE useType, int currentState )
 CBaseEntity *CBaseEntity::Create( const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner )
 {
 	CBaseEntity *pEntity = CreateNoSpawn( szName, vecOrigin, vecAngles, pOwner );
+	if ( !pEntity )
+	{
+		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
+		return NULL;
+	}
 
 	DispatchSpawn( pEntity );
 	return pEntity;
@@ -3171,6 +3159,23 @@ CBaseEntity * CBaseEntity::CreateNoSpawn( const char *szName, const Vector &vecO
 
 	return pEntity;
 }
+
+#if !defined( NO_ENTITY_PREDICTION )
+void CBaseEntity::__SetupAsPredicted( CBaseEntity *pEntity, const char *szName, const char *module, int line )
+{
+	CBasePlayer *player = CBaseEntity::GetPredictionPlayer();
+	Assert( player );
+
+	int command_number = player->CurrentCommandNumber();
+	int player_index = player->entindex() - 1;
+
+	CPredictableId testId;
+	testId.Init( player_index, command_number, szName, module, line );
+
+	// Set up "shared" id number
+	pEntity->m_PredictableID.GetForModify().SetRaw( testId.GetRaw() );
+}
+#endif
 
 Vector CBaseEntity::GetSoundEmissionOrigin() const
 {
@@ -4855,11 +4860,7 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 						{
 							char token[256];
 							const char *pOptions = pEvent->pszOptions();
-						#ifdef SDK2013CE
 							nexttoken( token, pOptions, ' ', sizeof(token) );
-						#else
-							nexttoken( token, pOptions, ' ' );
-						#endif
 							if ( token[0] ) 
 							{
 								PrecacheParticleSystem( token );
@@ -5398,8 +5399,7 @@ public:
 			else if ( gpGlobals->maxClients > 1 )
 			{
 				// On listen servers with more than 1 player, only allow the host to issue ent_fires.
-				CBasePlayer *pHostPlayer = UTIL_GetListenServerHost();
-				if ( pPlayer != pHostPlayer )
+				if ( !UTIL_IsPlayerServerAdmin( pPlayer ) )
 					return;
 			}
 
@@ -6225,51 +6225,6 @@ bool CBaseEntity::IsFloating()
 	return (flDensity < 1000.0f);
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: Created predictable and sets up Id.  Note that persist is ignored on the server.
-// Input  : *classname - 
-//			*module - 
-//			line - 
-//			persist - 
-// Output : CBaseEntity
-//-----------------------------------------------------------------------------
-CBaseEntity *CBaseEntity::CreatePredictedEntityByName( const char *classname, const char *module, int line, bool persist /* = false */ )
-{
-#if !defined( NO_ENTITY_PREDICTION )
-	CBasePlayer *player = CBaseEntity::GetPredictionPlayer();
-	Assert( player );
-
-	CBaseEntity *ent = NULL;
-
-	int command_number = player->CurrentCommandNumber();
-	int player_index = player->entindex() - 1;
-
-	CPredictableId testId;
-	testId.Init( player_index, command_number, classname, module, line );
-
-	ent = CreateEntityByName( classname );
-	// No factory???
-	if ( !ent )
-		return NULL;
-
-	ent->SetPredictionEligible( true );
-
-	// Set up "shared" id number
-	ent->m_PredictableID.GetForModify().SetRaw( testId.GetRaw() );
-
-	return ent;
-#else
-	return NULL;
-#endif
-
-}
-
-void CBaseEntity::SetPredictionEligible( bool canpredict )
-{
-// Nothing in game code	m_bPredictionEligible = canpredict;
-}
-
 //-----------------------------------------------------------------------------
 // These could be virtual, but only the player is overriding them
 // NOTE: If you make any of these virtual, remove this implementation!!!
@@ -6682,11 +6637,7 @@ void CBaseEntity::DispatchResponse( const char *conceptName )
 	ModifyOrAppendCriteria( set );
 
 	// Append local player criteria to set,too
-#ifdef SM_AI_FIXES
 	CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
-#else
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-#endif
 	if( pPlayer )
 		pPlayer->ModifyOrAppendPlayerCriteria( set );
 
@@ -6745,11 +6696,7 @@ void CBaseEntity::DumpResponseCriteria( void )
 	ModifyOrAppendCriteria( set );
 
 	// Append local player criteria to set,too
-#ifdef SM_AI_FIXES
 	CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
-#else
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-#endif
 	if ( pPlayer )
 	{
 		pPlayer->ModifyOrAppendPlayerCriteria( set );
@@ -7234,11 +7181,7 @@ bool CBaseEntity::SUB_AllowedToFade( void )
 
 	// on Xbox, allow these to fade out
 #ifndef _XBOX
-#ifdef SM_AI_FIXES
 	CBasePlayer *pPlayer = UTIL_GetNearestVisiblePlayer(this); 
-#else
-	CBasePlayer *pPlayer = ( AI_IsSinglePlayer() ) ? UTIL_GetLocalPlayer() : NULL;
-#endif
 
 	if ( pPlayer && pPlayer->FInViewCone( this ) )
 		return false;
@@ -7370,8 +7313,7 @@ void CC_Ent_Create( const CCommand& args )
 		else if ( gpGlobals->maxClients > 1 )
 		{
 			// On listen servers with more than 1 player, only allow the host to create point_servercommand.
-			CBasePlayer *pHostPlayer = UTIL_GetListenServerHost();
-			if ( pPlayer != pHostPlayer )
+			if ( !UTIL_IsPlayerServerAdmin(pPlayer) )
 				return;
 		}
 	}

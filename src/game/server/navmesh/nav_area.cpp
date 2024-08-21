@@ -63,7 +63,7 @@ const float DEF_NAV_VIEW_DISTANCE = 1500.0;
 ConVar nav_max_view_distance( "nav_max_view_distance", "6000", FCVAR_CHEAT, "Maximum range for precomputed nav mesh visibility (0 = default 1500 units)" );
 ConVar nav_update_visibility_on_edit( "nav_update_visibility_on_edit", "0", FCVAR_CHEAT, "If nonzero editing the mesh will incrementally recompue visibility" );
 ConVar nav_potentially_visible_dot_tolerance( "nav_potentially_visible_dot_tolerance", "0.98", FCVAR_CHEAT );
-ConVar nav_show_potentially_visible( "nav_show_potentially_visible", "0", FCVAR_CHEAT, "Show areas that are potentially visible from the current nav area" );
+ConVar nav_show_potentially_visible( "nav_show_potentially_visible", "", FCVAR_CHEAT, "Show areas that are potentially visible from the current nav area" );
 
 Color s_selectedSetColor( 255, 255, 200, 96 );
 Color s_selectedSetBorderColor( 100, 100, 0, 255 );
@@ -194,6 +194,8 @@ CNavArea::CNavArea( void )
 	m_totalCost = 0.0f;
 	m_costSoFar = 0.0f;
 	m_pathLengthSoFar = 0.0f;
+
+	m_approachCount = 0;
 
 	ResetNodes();
 
@@ -1841,6 +1843,7 @@ void CleanupApproachAreaAnalysisPrep( void )
  */
 void CNavArea::Strip( void )
 {
+	m_approachCount = 0;
 	m_spotEncounters.PurgeAndDeleteElements(); // this calls delete on each element
 }
 
@@ -2687,7 +2690,7 @@ NavDirType CNavArea::ComputeDirection( const Vector *point ) const
 
 
 //--------------------------------------------------------------------------------------------------------------
-bool CNavArea::GetCornerHotspot( NavCornerType corner, Vector hotspot[NUM_CORNERS] ) const
+bool CNavArea::GetCornerHotspot( CBasePlayer *player, NavCornerType corner, Vector hotspot[NUM_CORNERS] ) const
 {
 	Vector nw = GetCorner( NORTH_WEST );
 	Vector ne = GetCorner( NORTH_EAST );
@@ -2734,7 +2737,7 @@ bool CNavArea::GetCornerHotspot( NavCornerType corner, Vector hotspot[NUM_CORNER
 	}
 
 	Vector eyePos, eyeForward;
-	TheNavMesh->GetEditVectors( &eyePos, &eyeForward );
+	TheNavMesh->GetEditVectors( player, &eyePos, &eyeForward );
 
 	Ray_t ray;
 	ray.Init( eyePos, eyePos + 10000.0f * eyeForward, vec3_origin, vec3_origin );
@@ -2756,15 +2759,15 @@ bool CNavArea::GetCornerHotspot( NavCornerType corner, Vector hotspot[NUM_CORNER
 
 
 //--------------------------------------------------------------------------------------------------------------
-NavCornerType CNavArea::GetCornerUnderCursor( void ) const
+NavCornerType CNavArea::GetCornerUnderCursor( CBasePlayer *player ) const
 {
 	Vector eyePos, eyeForward;
-	TheNavMesh->GetEditVectors( &eyePos, &eyeForward );
+	TheNavMesh->GetEditVectors( player, &eyePos, &eyeForward );
 
 	for ( int i=0; i<NUM_CORNERS; ++i )
 	{
 		Vector hotspot[NUM_CORNERS];
-		if ( GetCornerHotspot( (NavCornerType)i, hotspot ) )
+		if ( GetCornerHotspot( player, (NavCornerType)i, hotspot ) )
 		{
 			return (NavCornerType)i;
 		}
@@ -2777,7 +2780,7 @@ NavCornerType CNavArea::GetCornerUnderCursor( void ) const
 /**
  * Draw area for debugging
  */
-void CNavArea::Draw( void ) const
+void CNavArea::Draw( CBasePlayer *player ) const
 {
 	NavEditColor color;
 	bool useAttributeColors = true;
@@ -2906,17 +2909,17 @@ void CNavArea::Draw( void ) const
 	if ( this == TheNavMesh->GetMarkedArea() && TheNavMesh->m_markedCorner != NUM_CORNERS )
 	{
 		Vector p[NUM_CORNERS];
-		GetCornerHotspot( TheNavMesh->m_markedCorner, p );
+		GetCornerHotspot( player, TheNavMesh->m_markedCorner, p );
 
 		NavDrawLine( p[1], p[2], NavMarkedColor );
 		NavDrawLine( p[2], p[3], NavMarkedColor );
 	}
 	if ( this != TheNavMesh->GetMarkedArea() && this == TheNavMesh->GetSelectedArea() && TheNavMesh->IsEditMode( CNavMesh::NORMAL ) )
 	{
-		NavCornerType bestCorner = GetCornerUnderCursor();
+		NavCornerType bestCorner = GetCornerUnderCursor( player );
 
 		Vector p[NUM_CORNERS];
-		if ( GetCornerHotspot( bestCorner, p ) )
+		if ( GetCornerHotspot( player, bestCorner, p ) )
 		{
 			NavDrawLine( p[1], p[2], NavSelectedColor );
 			NavDrawLine( p[2], p[3], NavSelectedColor );
@@ -3241,22 +3244,18 @@ void CNavArea::DrawHidingSpots( void ) const
 /**
  * Draw ourselves and adjacent areas
  */
-void CNavArea::DrawConnectedAreas( void ) const
+void CNavArea::DrawConnectedAreas( CBasePlayer *player ) const
 {
 	int i;
-
-	CBasePlayer *player = UTIL_GetListenServerHost();
-	if (player == NULL)
-		return;
 
 	// draw self
 	if (TheNavMesh->IsEditMode( CNavMesh::PLACE_PAINTING ))
 	{
-		Draw();
+		Draw( player );
 	}
 	else
 	{
-		Draw();
+		Draw( player );
 		DrawHidingSpots();
 	}
 
@@ -3266,7 +3265,7 @@ void CNavArea::DrawConnectedAreas( void ) const
 		{
 			CNavLadder *ladder = m_ladder[ CNavLadder::LADDER_UP ][ it ].ladder;
 
-			ladder->DrawLadder();
+			ladder->DrawLadder( player );
 
 			if ( !ladder->IsConnected( this, CNavLadder::LADDER_DOWN ) )
 			{
@@ -3279,7 +3278,7 @@ void CNavArea::DrawConnectedAreas( void ) const
 		{
 			CNavLadder *ladder = m_ladder[ CNavLadder::LADDER_DOWN ][ it ].ladder;
 
-			ladder->DrawLadder();
+			ladder->DrawLadder( player );
 
 			if ( !ladder->IsConnected( this, CNavLadder::LADDER_UP ) )
 			{
@@ -3299,7 +3298,7 @@ void CNavArea::DrawConnectedAreas( void ) const
 		{
 			CNavArea *adj = GetAdjacentArea( dir, a );
 
-			adj->Draw();
+			adj->Draw( player );
 
 			if ( !TheNavMesh->IsEditMode( CNavMesh::PLACE_PAINTING ) )
 			{
@@ -4604,7 +4603,7 @@ static void CommandNavUpdateBlocked( void )
 
 		if ( blockedArea )
 		{
-			CBasePlayer *player = UTIL_GetListenServerHost();
+			CBasePlayer *player = UTIL_GetCommandClient();
 			if ( player )
 			{
 				if ( ( player->IsDead() || player->IsObserver() ) && player->GetObserverMode() == OBS_MODE_ROAMING )

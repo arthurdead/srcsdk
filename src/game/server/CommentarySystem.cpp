@@ -73,9 +73,9 @@ public:
 	void Precache( void );
 	void Activate( void );
 	void SpinThink( void );
-	void StartCommentary( void );
-	void FinishCommentary( bool bBlendOut = true );
-	void CleanupPostCommentary( void );
+	void StartCommentary( CBasePlayer *pPlayer );
+	void FinishCommentary( CBasePlayer *pPlayer, bool bBlendOut = true );
+	void CleanupPostCommentary( CBasePlayer *pPlayer );
 	void UpdateViewThink( void );
 	void UpdateViewPostThink( void );
 	bool TestCollision( const Ray_t &ray, unsigned int mask, trace_t& trace );
@@ -91,9 +91,9 @@ public:
 	void SetUnderCrosshair( bool bUnderCrosshair );
 
 	// Called when the player attempts to activate the node
-	void PlayerActivated( void );
-	void StopPlaying( void );
-	void AbortPlaying( void );
+	void PlayerActivated( CBasePlayer *pPlayer );
+	void StopPlaying( CBasePlayer *pPlayer );
+	void AbortPlaying( CBasePlayer *pPlayer );
 	void TeleportTo( CBasePlayer *pPlayer );
 	bool CanTeleportTo( void );
 
@@ -219,30 +219,6 @@ public:
 
 LINK_ENTITY_TO_CLASS( point_commentary_viewpoint, CCommentaryViewPosition );
 
-//-----------------------------------------------------------------------------
-// Purpose: In multiplayer, always return player 1
-//-----------------------------------------------------------------------------
-CBasePlayer *GetCommentaryPlayer( void )
-{
-#ifndef SM_AI_FIXES
-	CBasePlayer *pPlayer;
-
-	if ( gpGlobals->maxClients <= 1 )
-	{
-		pPlayer = UTIL_GetLocalPlayer();
-	}
-	else
-	{
-		// only respond to the first player
-		pPlayer = UTIL_PlayerByIndex(1);
-	}
-
-	return pPlayer;
-#else
-	return UTIL_GetLocalPlayer(); 
-#endif //SM_AI_FIXES
-}
-
 //===========================================================================================================
 // COMMENTARY GAME SYSTEM
 //===========================================================================================================
@@ -297,7 +273,7 @@ public:
 
 	virtual void LevelShutdownPreEntity()
 	{
-		ShutDownCommentary();
+		ShutDownCommentary( NULL );
 	}
 
 	void ParseEntKVBlock( CBaseEntity *pNode, KeyValues *pkvNode )
@@ -359,9 +335,8 @@ public:
 		gameeventmanager->FireEventClientSide( event );
 	}
 
-	CPointCommentaryNode *GetNodeUnderCrosshair()
+	CPointCommentaryNode *GetNodeUnderCrosshair( CBasePlayer *pPlayer )
 	{
-		CBasePlayer *pPlayer = GetCommentaryPlayer();
 		if ( !pPlayer )
 			return NULL;
 
@@ -388,7 +363,7 @@ public:
 		if ( pPlayer->IsFakeClient() )
 			return;
 
-		CPointCommentaryNode *pCurrentNode = GetNodeUnderCrosshair();
+		CPointCommentaryNode *pCurrentNode = GetNodeUnderCrosshair( pPlayer );
 
 		// Changed nodes?
  		if ( m_hCurrentNode != pCurrentNode )
@@ -444,10 +419,10 @@ public:
 							// If we have an active node already, stop it
 							if ( GetActiveNode() && GetActiveNode() != m_hCurrentNode )
 							{
-								GetActiveNode()->StopPlaying();
+								GetActiveNode()->StopPlaying( pPlayer );
  							}
 
-							m_hCurrentNode->PlayerActivated();
+							m_hCurrentNode->PlayerActivated( pPlayer );
 						}
 
 						// Prevent weapon firing when toggling nodes
@@ -458,7 +433,7 @@ public:
 					{
 						if ( !GetActiveNode()->CannotBeStopped() )
 						{
-							GetActiveNode()->StopPlaying();
+							GetActiveNode()->StopPlaying( pPlayer );
 						}
 
 						// Prevent weapon firing when toggling nodes
@@ -670,11 +645,11 @@ public:
 		engine->LockNetworkStringTables( oldLock );
 	}
 
-	void ShutDownCommentary( void )
+	void ShutDownCommentary( CBasePlayer *pPlayer )
 	{
 		if ( GetActiveNode() )
 		{
-			GetActiveNode()->AbortPlaying();
+			GetActiveNode()->AbortPlaying( pPlayer );
 		}
 
 		// Destroy all the entities created by commentary
@@ -716,7 +691,7 @@ public:
 		m_iTeleportStage = TELEPORT_NONE;
 	}
 
-	void SetCommentaryMode( bool bCommentaryMode )
+	void SetCommentaryMode( CBasePlayer *pPlayer, bool bCommentaryMode )
 	{
 		g_bInCommentaryMode = bCommentaryMode;
 		CalculateCommentaryState();
@@ -729,7 +704,7 @@ public:
 		}
 		else
 		{
-			ShutDownCommentary();
+			ShutDownCommentary( pPlayer );
 		}
 	}
 
@@ -778,7 +753,7 @@ public:
 				// Stop any active nodes
 				if ( m_hActiveCommentaryNode )
 				{
-					m_hActiveCommentaryNode->StopPlaying();
+					m_hActiveCommentaryNode->StopPlaying( pPlayer );
 				}
 				break;
 			}
@@ -840,7 +815,7 @@ void CC_CommentaryChanged( IConVar *pConVar, const char *pOldString, float flOld
 	ConVarRef var( pConVar );
  	if ( var.GetBool() != g_bInCommentaryMode )
 	{
-		g_CommentarySystem.SetCommentaryMode( var.GetBool() );
+		g_CommentarySystem.SetCommentaryMode( NULL, var.GetBool() );
 	}
 }
 ConVar commentary( "commentary", "0", FCVAR_NONE, "Desired commentary mode state.", CC_CommentaryChanged );
@@ -1024,17 +999,17 @@ void CPointCommentaryNode::SpinThink( void )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CPointCommentaryNode::PlayerActivated( void )
+void CPointCommentaryNode::PlayerActivated( CBasePlayer *pPlayer )
 {
 	gamestats->Event_Commentary();
 
 	if ( m_bActive )
 	{
-		StopPlaying();
+		StopPlaying( pPlayer );
 	}
 	else
 	{
-		StartCommentary();
+		StartCommentary( pPlayer );
 		g_CommentarySystem.SetActiveNode( this );
 	}
 }
@@ -1042,11 +1017,11 @@ void CPointCommentaryNode::PlayerActivated( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointCommentaryNode::StopPlaying( void )
+void CPointCommentaryNode::StopPlaying( CBasePlayer *pPlayer )
 {
 	if ( m_bActive )
 	{
-		FinishCommentary();
+		FinishCommentary( pPlayer );
 	}
 }
 
@@ -1056,16 +1031,16 @@ void CPointCommentaryNode::StopPlaying( void )
 //			of playing a node, so we can't smoothly blend out (since the 
 //			commentary entities need to be removed).
 //-----------------------------------------------------------------------------
-void CPointCommentaryNode::AbortPlaying( void )
+void CPointCommentaryNode::AbortPlaying( CBasePlayer *pPlayer )
 {
 	if ( m_bActive )
 	{
-		FinishCommentary( false );
+		FinishCommentary( pPlayer, false );
 	}
 	else if ( m_bPreventChangesWhileMoving )
 	{
 		// We're a node that's not active, but is in the process of transitioning the view. Finish movement.
-		CleanupPostCommentary();
+		CleanupPostCommentary( pPlayer );
 	}
 }
 
@@ -1105,10 +1080,8 @@ void CPointCommentaryNode::TeleportTo( CBasePlayer *pPlayer )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CPointCommentaryNode::StartCommentary( void )
+void CPointCommentaryNode::StartCommentary( CBasePlayer *pPlayer )
 {
-	CBasePlayer *pPlayer = GetCommentaryPlayer();
-
 	if ( !pPlayer )
 		return;
 
@@ -1148,10 +1121,13 @@ void CPointCommentaryNode::StartCommentary( void )
 //-----------------------------------------------------------------------------
 void CC_CommentaryFinishNode( void )
 {
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
 	// We were told by the client DLL that our commentary has finished
 	if ( g_CommentarySystem.GetActiveNode() )
 	{
-		g_CommentarySystem.GetActiveNode()->StopPlaying();
+		g_CommentarySystem.GetActiveNode()->StopPlaying( UTIL_GetCommandClient() );
 	}
 }
 static ConCommand commentary_finishnode("commentary_finishnode", CC_CommentaryFinishNode, 0 );
@@ -1163,7 +1139,7 @@ void CPointCommentaryNode::UpdateViewThink( void )
 {
 	if ( !m_bActive )
 		return;
-	CBasePlayer *pPlayer = GetCommentaryPlayer();
+	CBasePlayer *pPlayer = NULL;
 	if ( !pPlayer )
 		return;
 
@@ -1264,16 +1240,16 @@ void CPointCommentaryNode::UpdateViewThink( void )
 //-----------------------------------------------------------------------------
 void CPointCommentaryNode::UpdateViewPostThink( void )
 {
-	CBasePlayer *pPlayer = GetCommentaryPlayer();
+	CBasePlayer *pPlayer = NULL;
 	if ( !pPlayer )
 		return;
 
- 	if ( m_hViewPosition.Get() && m_hViewPositionMover )
+	if ( m_hViewPosition.Get() && m_hViewPositionMover )
 	{
- 		// Blend back to the player's position over time.
-   		float flCurTime = (gpGlobals->curtime - m_flFinishedTime);
+		// Blend back to the player's position over time.
+		float flCurTime = (gpGlobals->curtime - m_flFinishedTime);
 		float flTimeToBlend = MIN( 2.0, m_flFinishedTime - m_flStartTime ); 
- 		float flBlendPerc = 1.0f - clamp( flCurTime / flTimeToBlend, 0.f, 1.f );
+		float flBlendPerc = 1.0f - clamp( flCurTime / flTimeToBlend, 0.f, 1.f );
 
 		//Msg("OUT: CurTime %.2f, BlendTime: %.2f, Blend: %.3f\n", flCurTime, flTimeToBlend, flBlendPerc );
 
@@ -1307,7 +1283,7 @@ void CPointCommentaryNode::UpdateViewPostThink( void )
 	}
 
 	// We're done
-	CleanupPostCommentary();
+	CleanupPostCommentary( pPlayer );
 
 	m_bPreventChangesWhileMoving = false;
 }
@@ -1315,18 +1291,23 @@ void CPointCommentaryNode::UpdateViewPostThink( void )
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CPointCommentaryNode::FinishCommentary( bool bBlendOut )
+void CPointCommentaryNode::FinishCommentary( CBasePlayer *pPlayer, bool bBlendOut )
 {
-	CBasePlayer *pPlayer = GetCommentaryPlayer();
-	if ( !pPlayer )
-		return;
-
 	// Fire off our postcommands
 	if ( m_iszPostCommands != NULL_STRING )
 	{
 		g_CommentarySystem.SetCommentaryConvarsChanging( true );
-		engine->ClientCommand( pPlayer->edict(), STRING(m_iszPostCommands) );
-		engine->ClientCommand( pPlayer->edict(), "commentary_cvarsnotchanging\n" );
+
+		if(pPlayer)
+		{
+			engine->ClientCommand( pPlayer->edict(), STRING(m_iszPostCommands) );
+			engine->ClientCommand( pPlayer->edict(), "commentary_cvarsnotchanging\n" );
+		}
+		else
+		{
+			engine->ServerCommand( STRING(m_iszPostCommands) );
+			engine->ServerCommand( "commentary_cvarsnotchanging\n" );
+		}
 	}
 
 	// Stop the commentary
@@ -1346,15 +1327,14 @@ void CPointCommentaryNode::FinishCommentary( bool bBlendOut )
 		return;
 	}
 
-	CleanupPostCommentary();
+	CleanupPostCommentary( pPlayer );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPointCommentaryNode::CleanupPostCommentary( void )
+void CPointCommentaryNode::CleanupPostCommentary( CBasePlayer *pPlayer )
 {
-	CBasePlayer *pPlayer = GetCommentaryPlayer();
 	if ( !pPlayer )
 		return;
 
@@ -1398,10 +1378,10 @@ void CPointCommentaryNode::InputStartCommentary( inputdata_t &inputdata )
 	{
 		if ( g_CommentarySystem.GetActiveNode() )
 		{
-			g_CommentarySystem.GetActiveNode()->StopPlaying();
+			g_CommentarySystem.GetActiveNode()->StopPlaying( NULL );
 		}
 
-		PlayerActivated();
+		PlayerActivated( NULL );
 	}	
 }
 

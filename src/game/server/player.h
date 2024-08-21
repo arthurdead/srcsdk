@@ -17,6 +17,8 @@
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "util_shared.h"
 #include "baseplayer_shared.h"
+#include "colorcorrection.h"
+#include "env_tonemap_controller.h"
 
 #if defined USES_ECON_ITEMS
 #include "game_item_schema.h"
@@ -267,14 +269,10 @@ public:
 	IPlayerInfo *GetPlayerInfo() { return &m_PlayerInfo; }
 	IBotController *GetBotController() { return &m_PlayerInfo; }
 
-#ifdef SecobMod__ENABLE_FAKE_PASSENGER_SEATS
 	void SafeVehicleExit(CBasePlayer *pPlayer);
-#endif //SecobMod__ENABLE_FAKE_PASSENGER_SEATS
 
-#ifdef SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
 	bool m_bTransition; //SecobMod__Information:  This is important as it allows the game to save each players progress over a map change. Create the booleans required for transitions to work.
 	bool m_bTransitionTeleported; //SecobMod__Information:  This is important as it allows the game to save each players progress over a map change.  Create the booleans required for transitions to work.
-#endif //SecobMod__MULTIPLAYER_LEVEL_TRANSITIONS
 
 	virtual void			SetModel( const char *szModelName );
 	void					SetBodyPitch( float flPitch );
@@ -305,11 +303,7 @@ public:
 	// Returns true if this player wants pPlayer to be moved back in time when this player runs usercmds.
 	// Saves a lot of overhead on the server if we can cull out entities that don't need to lag compensate
 	// (like team members, entities out of our PVS, etc).
-#ifdef SM_AI_FIXES
 	virtual bool			WantsLagCompensationOnEntity( const CBaseEntity	*pEntity, const CUserCmd *pCmd, const CBitVec<MAX_EDICTS> *pEntityTransmitBits ) const;
-#else
-	virtual bool			WantsLagCompensationOnEntity( const CBasePlayer	*pPlayer, const CUserCmd *pCmd, const CBitVec<MAX_EDICTS> *pEntityTransmitBits ) const;
-#endif
 
 	virtual void			Spawn( void );
 	virtual void			Activate( void );
@@ -469,7 +463,7 @@ public:
 	
 	void					UpdatePlayerSound ( void );
 	virtual void			UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity );
-	virtual void			PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force );
+	virtual void			PlayStepSound( const Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force );
 	virtual const char	   *GetOverrideStepSound( const char *pszBaseStepSoundName ) { return pszBaseStepSoundName; }
 	virtual void			GetStepSoundVelocities( float *velwalk, float *velrun );
 	virtual void			SetStepSoundTime( stepsoundtimes_t iStepSoundTime, bool bWalking );
@@ -577,9 +571,7 @@ public:
 	virtual void			PickupObject( CBaseEntity *pObject, bool bLimitMassAndSize = true ) {}
 	virtual void			ForceDropOfCarriedPhysObjects( CBaseEntity *pOnlyIfHoldindThis = NULL ) {}
 	virtual float			GetHeldObjectMass( IPhysicsObject *pHeldObject );
-#ifdef SDK2013CE
 	virtual CBaseEntity		*GetHeldObject( void );
-#endif // SDK2013CE
 
 	void					CheckSuitUpdate();
 	void					SetSuitUpdate(const char *name, int fgroup, int iNoRepeat);
@@ -626,6 +618,7 @@ public:
 	virtual bool		CanSpeak( void ) { return true; }
 
 	audioparams_t			&GetAudioParams() { return m_Local.m_audio; }
+	tonemap_params_t		&GetToneMapParams() { return m_Local.m_TonemapParams; }
 
 	virtual void 			ModifyOrAppendPlayerCriteria( AI_CriteriaSet& set );
 
@@ -850,8 +843,18 @@ private:
 	int					DetermineSimulationTicks( void );
 	void				AdjustPlayerTimeBase( int simulation_ticks );
 
+	void				UpdateFXVolume();
+	void				UpdateTonemapController();
+
+	CNetworkHandle( CColorCorrection, m_hColorCorrectionCtrl );		// active FXVolume color correction
+	CNetworkHandle( CBaseEntity, m_hTonemapController );
+
+	CUtlVector< CHandle< CTonemapTrigger > > m_hTriggerTonemapList;
+
 public:
-	
+	void OnTonemapTriggerStartTouch( CTonemapTrigger *pTonemapTrigger );
+	void OnTonemapTriggerEndTouch( CTonemapTrigger *pTonemapTrigger );
+
 	// How long since this player last interacted with something the game considers an objective/target/goal
 	float				GetTimeSinceLastObjective( void ) const { return ( m_flLastObjectiveTime == -1.f ) ? 999.f : gpGlobals->curtime - m_flLastObjectiveTime; }
 	void				SetLastObjectiveTime( float flTime ) { m_flLastObjectiveTime = flTime; }
@@ -870,6 +873,7 @@ public:
 #endif
 
 	void InitFogController( void );
+	void InitColorCorrectionController( void );
 	void InputSetFogController( inputdata_t &inputdata );
 
 	// Used by env_soundscape_triggerable to manage when the player is touching multiple
@@ -1169,15 +1173,7 @@ private:
 	char					m_szNetname[MAX_PLAYER_NAME_LENGTH];
 
 protected:
-	// HACK FOR TF2 Prediction
-	friend class CTFGameMovementRecon;
 	friend class CGameMovement;
-	friend class CTFGameMovement;
-	friend class CHL1GameMovement;
-	friend class CCSGameMovement;	
-	friend class CHL2GameMovement;
-	friend class CDODGameMovement;
-	friend class CPortalGameMovement;
 	
 	// Accessors for gamemovement
 	bool IsDucked( void ) const { return m_Local.m_bDucked; }
@@ -1254,6 +1250,22 @@ private:
 public:
 	virtual unsigned int PlayerSolidMask( bool brushOnly = false ) const;	// returns the solid mask for the given player, so bots can have a more-restrictive set
 
+private:
+	//
+	//Tony; new tonemap controller changes, specifically for multiplayer.
+	//
+	void	ClearTonemapParams();		//Tony; we need to clear our tonemap params every time we spawn to -1, if we trigger an input, the values will be set again.
+public:
+	void	InputSetTonemapScale( inputdata_t &inputdata );			//Set m_Local.
+																	//	void	InputBlendTonemapScale( inputdata_t &inputdata );		//TODO; this should be calculated on the client, if we use it; perhaps an entity message would suffice? .. hmm..
+	void	InputSetTonemapRate( inputdata_t &inputdata );
+	void	InputSetAutoExposureMin( inputdata_t &inputdata );
+	void	InputSetAutoExposureMax( inputdata_t &inputdata );
+	void	InputSetBloomScale( inputdata_t &inputdata );
+
+	//Tony; restore defaults (set min/max to -1.0 so nothing gets overridden)
+	void	InputUseDefaultAutoExposure( inputdata_t &inputdata );
+	void	InputUseDefaultBloomScale( inputdata_t &inputdata );
 };
 
 typedef CHandle<CBasePlayer> CBasePlayerHandle;

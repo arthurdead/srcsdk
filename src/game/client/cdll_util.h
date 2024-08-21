@@ -57,7 +57,7 @@ void	UTIL_Bubbles( const Vector& mins, const Vector& maxs, int count );
 void	UTIL_Smoke( const Vector &origin, const float scale, const float framerate );
 void	UTIL_ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName = NULL );
 int		UTIL_PrecacheDecal( const char *name, bool preload = false );
-void	UTIL_EmitAmbientSound( C_BaseEntity *entity, const Vector &vecOrigin, const char *samp, float vol, soundlevel_t soundlevel, int fFlags, int pitch );
+void	UTIL_EmitAmbientSound( C_BaseEntity *entity, const Vector &vecOrigin, const char *samp, float vol, soundlevel_t soundlevel, int fFlags, int pitch, float soundtime = 0.0f, float *duration = NULL );
 void	UTIL_SetOrigin( C_BaseEntity *entity, const Vector &vecOrigin );
 void	UTIL_ScreenShake( const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake=false );
 byte	*UTIL_LoadFileForMe( const char *filename, int *pLength );
@@ -71,7 +71,7 @@ unsigned char UTIL_ComputeEntityFade( C_BaseEntity *pEntity, float flMinDist, fl
 
 client_textmessage_t	*TextMessageGet( const char *pName );
 
-char	*VarArgs( PRINTF_FORMAT_STRING const char *format, ... );
+const char	*VarArgs( PRINTF_FORMAT_STRING const char *format, ... );
 	
 
 // Get the entity the local player is spectating (can be a player or a ragdoll entity).
@@ -87,11 +87,7 @@ void	NormalizeAngles( QAngle& angles );
 void	InterpolateAngles( const QAngle& start, const QAngle& end, QAngle& output, float frac );
 void	InterpolateVector( float frac, const Vector& src, const Vector& dest, Vector& output );
 
-#ifdef SDK2013CE
 const char *nexttoken(char *token, const char *str, char sep, size_t tokenLen);
-#else
-const char *nexttoken(char *token, const char *str, char sep);
-#endif
 
 //-----------------------------------------------------------------------------
 // Base light indices to avoid index collision

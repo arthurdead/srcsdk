@@ -61,10 +61,6 @@ enum PlayerAnimEvent_t
 	PLAYERANIMEVENT_STUN_BEGIN,
 	PLAYERANIMEVENT_STUN_MIDDLE,
 	PLAYERANIMEVENT_STUN_END,
-	PLAYERANIMEVENT_PASSTIME_THROW_BEGIN,
-	PLAYERANIMEVENT_PASSTIME_THROW_MIDDLE,
-	PLAYERANIMEVENT_PASSTIME_THROW_END,
-	PLAYERANIMEVENT_PASSTIME_THROW_CANCEL,
 
 	PLAYERANIMEVENT_ATTACK_PRIMARY_SUPER,
 
@@ -227,9 +223,7 @@ protected:
 	virtual bool HandleDucking( Activity &idealActivity );
 	virtual bool HandleMoving( Activity &idealActivity );
 	
-#ifdef SM_IMPROVEMENTS
 	virtual bool HandleVehicle( Activity &idealActivity );
-#endif
 	
 	virtual bool HandleSwimming( Activity &idealActivity );
 	virtual bool HandleDying( Activity &idealActivity );

@@ -1034,10 +1034,8 @@ void CBaseCombatWeapon::SetActivity( Activity act, float duration )
 
 	//Adrian: Oh man again...
 #if !defined( CLIENT_DLL ) && (defined( HL2MP ) || defined( PORTAL ) || defined( SDK_DLL ) )
-	#ifdef SM_AI_FIXES
-		if ( GetOwner()->IsPlayer() ) 
-	#endif
-	SetModel( GetViewModel() );
+	if ( GetOwner()->IsPlayer() ) 
+		SetModel( GetViewModel() );
 #endif
 
 	if ( sequence != ACTIVITY_NOT_AVAILABLE )
@@ -1051,7 +1049,11 @@ void CBaseCombatWeapon::SetActivity( Activity act, float duration )
 		{
 			// FIXME: does this even make sense in non-shoot animations?
 			m_flPlaybackRate = SequenceDuration( sequence ) / duration;
-			m_flPlaybackRate = MIN( m_flPlaybackRate, 12.0);  // FIXME; magic number!, network encoding range
+		#ifdef CLIENT_DLL
+			m_flPlaybackRate = MIN( m_flPlaybackRate, 12.f );  // FIXME; magic number!, network encoding range
+		#else
+			m_flPlaybackRate = MIN( m_flPlaybackRate.Get(), 12.f );  // FIXME; magic number!, network encoding range
+		#endif
 		}
 		else
 		{
@@ -2538,19 +2540,16 @@ void CDmgAccumulator::AccumulateMultiDamage( const CTakeDamageInfo &info, CBaseE
 	}
 	else
 	{
-		CTakeDamageInfo *pInfo = &m_TargetsDmgInfo[iIndex];
-		if ( pInfo )
-		{
-			// Update
-			m_TargetsDmgInfo[iIndex].AddDamageType( info.GetDamageType() );
-			m_TargetsDmgInfo[iIndex].SetDamage( pInfo->GetDamage() + info.GetDamage() );
-			m_TargetsDmgInfo[iIndex].SetDamageForce( pInfo->GetDamageForce() + info.GetDamageForce() );
-			m_TargetsDmgInfo[iIndex].SetDamagePosition( info.GetDamagePosition() );
-			m_TargetsDmgInfo[iIndex].SetReportedPosition( info.GetReportedPosition() );
-			m_TargetsDmgInfo[iIndex].SetMaxDamage( MAX( pInfo->GetMaxDamage(), info.GetDamage() ) );
-			m_TargetsDmgInfo[iIndex].SetAmmoType( info.GetAmmoType() );
-		}
+		CTakeDamageInfo &entityInfo = m_TargetsDmgInfo[iIndex];
 
+		// Update
+		entityInfo.AddDamageType( info.GetDamageType() );
+		entityInfo.SetDamage( entityInfo.GetDamage() + info.GetDamage() );
+		entityInfo.SetDamageForce( entityInfo.GetDamageForce() + info.GetDamageForce() );
+		entityInfo.SetDamagePosition( info.GetDamagePosition() );
+		entityInfo.SetReportedPosition( info.GetReportedPosition() );
+		entityInfo.SetMaxDamage( MAX( entityInfo.GetMaxDamage(), info.GetDamage() ) );
+		entityInfo.SetAmmoType( info.GetAmmoType() );
 	}
 #endif	// GAME_DLL
 }

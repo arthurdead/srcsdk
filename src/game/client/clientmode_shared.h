@@ -19,6 +19,7 @@ class CBaseHudWeaponSelection;
 class CViewSetup;
 class C_BaseEntity;
 class C_BasePlayer;
+class C_ColorCorrection;
 
 namespace vgui
 {
@@ -132,6 +133,9 @@ public:
 	virtual void	InfoPanelDisplayed() OVERRIDE { }
 	virtual bool	IsHTMLInfoPanelAllowed() OVERRIDE { return true; }
 
+	virtual void OnColorCorrectionWeightsReset();
+	virtual float GetColorCorrectionScale() const { return 1.0f; }
+
 protected:
 	CBaseViewport			*m_pViewport;
 
@@ -154,6 +158,8 @@ private:
 	vgui::HCursor			m_CursorNone;
 	CBaseHudWeaponSelection *m_pWeaponSelection;
 	int						m_nRootSize[2];
+
+	CHandle<C_ColorCorrection> m_pCurrentColorCorrection;
 };
 
 #endif // CLIENTMODE_NORMAL_H

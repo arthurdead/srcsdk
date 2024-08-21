@@ -12,6 +12,13 @@
 #include "utlstring.h"
 #include "ifilelist.h"
 
+#ifdef GAME_DLL
+class CBaseEntity;
+#else
+#define CBaseEntity C_BaseEntity
+class C_BaseEntity;
+#endif
+
 //-----------------------------------------------------------------------------
 // Particle attachment methods
 //-----------------------------------------------------------------------------
@@ -26,6 +33,8 @@ enum ParticleAttachment_t
 	PATTACH_WORLDORIGIN,			// Used for control points that don't attach to an entity
 
 	PATTACH_ROOTBONE_FOLLOW,		// Create at the root bone of the entity, and update to follow
+
+	PATTACH_BONE_FOLLOW,
 
 	MAX_PATTACH_TYPES,
 };
@@ -71,12 +80,12 @@ void ReloadParticleEffectsInList( IFileList *pFilesToReload );
 void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, const char *pszAttachmentName, bool bResetAllParticlesOnEntity = false );
 void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity = NULL, int iAttachmentPoint = -1, bool bResetAllParticlesOnEntity = false );
 void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, CBaseEntity *pEntity = NULL );
-void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CBaseEntity *pEntity = NULL );
-void DispatchParticleEffect( int iEffectIndex, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CBaseEntity *pEntity = NULL );
+void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CBaseEntity *pEntity = NULL, bool bUseColor = false, const Vector& color1 = vec3_origin, const Vector& color2 = vec3_origin );
+void DispatchParticleEffect( int iEffectIndex, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CBaseEntity *pEntity = NULL, bool bUseColor = false, const Vector& color1 = vec3_origin, const Vector& color2 = vec3_origin );
 
 void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, const char *pszAttachmentName, Vector vecColor1, Vector vecColor2, bool bUseColors=true, bool bResetAllParticlesOnEntity = false );
 void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, Vector vecColor1, Vector vecColor2, bool bUseColors=true, CBaseEntity *pEntity = NULL, int iAttachType = PATTACH_CUSTOMORIGIN );
-
+void DispatchParticleEffect( const char *pszParticleName, const Vector& vecStart, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, const char *pszAttachmentName, bool bResetAllParticlesOnEntity = false );
 
 void StopParticleEffects( CBaseEntity *pEntity );
 

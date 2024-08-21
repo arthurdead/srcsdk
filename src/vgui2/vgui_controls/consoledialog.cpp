@@ -49,6 +49,7 @@ public:
 		m_pFocus( 0 )
 	{
 	}
+	virtual ~CNonFocusableMenu() {}
 
 	void SetFocusPanel( Panel *panel )
 	{

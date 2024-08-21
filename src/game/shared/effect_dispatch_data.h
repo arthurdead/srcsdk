@@ -15,6 +15,7 @@
 
 	#include "dt_recv.h"
 	#include "client_class.h"
+	#include "icliententityinternal.h"
 
 	EXTERN_RECV_TABLE( DT_EffectData );
 

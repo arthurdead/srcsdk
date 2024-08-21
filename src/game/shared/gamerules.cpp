@@ -545,7 +545,7 @@ void CGameRules::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc
 				bIsPrimary = false;
 			}
 
-			gamestats->Event_WeaponHit( player, bIsPrimary, (pWeapon != NULL) ? player->GetActiveWeapon()->GetClassname() : "NULL", info );
+			gamestats->Event_WeaponHit( player, bIsPrimary, (pWeapon != NULL) ? pWeapon->GetClassname() : "NULL", info );
 		}
 #endif
 	}
@@ -790,11 +790,7 @@ float CGameRules::GetAmmoDamage( CBaseEntity *pAttacker, CBaseEntity *pVictim, i
 	float flDamage = 0;
 	CAmmoDef *pAmmoDef = GetAmmoDef();
 
-#ifdef SM_SP_FIXES
 	if ( pAttacker && pAttacker->IsPlayer() )
-#else
-	if ( pAttacker->IsPlayer() )
-#endif
 	{
 		flDamage = pAmmoDef->PlrDamage( nAmmoType );
 	}

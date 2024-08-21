@@ -2024,6 +2024,9 @@ public:
 				continue;
 
 			// Lookup the data
+			if (directories[nFileIndex].m_CaptionDirectory.Size() <= caption->dirindex)
+				return;
+
 			CaptionLookup_t &entry = directories[ nFileIndex ].m_CaptionDirectory[ caption->dirindex ];
 			if ( entry.blockNum != nBlockNum )
 				continue;
@@ -2357,19 +2360,11 @@ bool CHudCloseCaption::AddAsyncWork( const char *tokenstream, bool bIsStream, fl
 		char tokenname[ 512 ];
 		tokenname[ 0 ] = 0;
 		const char *p = tokenstream;
-	#ifdef SDK2013CE
 		p = nexttoken( tokenname, p, ' ', sizeof(tokenname) );
-	#else
-		p = nexttoken( tokenname, p, ' ' );
-	#endif
 		// p points to reset of sentence tokens, build up a unicode string from them...
 		while ( p && Q_strlen( tokenname ) > 0 )
 		{
-		#ifdef SDK2013CE
 			p = nexttoken( tokenname, p, ' ', sizeof( tokenname ) );
-		#else
-			p = nexttoken( tokenname, p, ' ' );
-		#endif
 
 			if ( Q_strlen( tokenname ) == 0 )
 				break;
@@ -2404,11 +2399,7 @@ void CHudCloseCaption::ProcessSentenceCaptionStream( const char *tokenstream )
 
 	const char *p = tokenstream;
 
-#ifdef SDK2013CE
 	p = nexttoken( tokenname, p, ' ', sizeof(tokenname) );
-#else
-	p = nexttoken( tokenname, p, ' ' );
-#endif
 
 	if ( Q_strlen( tokenname ) > 0 )
 	{
@@ -2677,7 +2668,7 @@ static int EmitCaptionCompletion( const char *partial, char commands[ COMMAND_CO
 		substringLen = strlen(substring);
 	}
 	
-	StringIndex_t i = g_pVGuiLocalize->GetFirstStringIndex();
+	LocalizeStringIndex_t i = g_pVGuiLocalize->GetFirstStringIndex();
 
 	while ( i != INVALID_LOCALIZE_STRING_INDEX &&
 		 current < COMMAND_COMPLETION_MAXITEMS )

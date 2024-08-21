@@ -14,12 +14,9 @@
 #include "sceneentity.h"
 #include "particles/particles.h"
 #include "entity_tools_server.h"
-
-#ifdef SDK2013CE
 #include "icommandline.h"
-#include "tier0/memdbgon.h"
-#endif // SDK2013CE
 
+#include "tier0/memdbgon.h"
 
 
 //-----------------------------------------------------------------------------
@@ -138,7 +135,7 @@ IServerEntity *CServerTools::GetIServerEntity( IClientEntity *pClientEntity )
 bool CServerTools::GetPlayerPosition( Vector &org, QAngle &ang, IClientEntity *pClientPlayer )
 {
 	IServerEntity *pServerPlayer = GetIServerEntity( pClientPlayer );
-	CBasePlayer *pPlayer = pServerPlayer ? ( CBasePlayer* )pServerPlayer : UTIL_GetLocalPlayer();
+	CBasePlayer *pPlayer = pServerPlayer ? ( CBasePlayer* )pServerPlayer : UTIL_GetCommandClientIfAdmin();
 	if ( pPlayer == NULL )
 		return false;
 
@@ -150,7 +147,7 @@ bool CServerTools::GetPlayerPosition( Vector &org, QAngle &ang, IClientEntity *p
 bool CServerTools::SnapPlayerToPosition( const Vector &org, const QAngle &ang, IClientEntity *pClientPlayer )
 {
 	IServerEntity *pServerPlayer = GetIServerEntity( pClientPlayer );
-	CBasePlayer *pPlayer = pServerPlayer ? ( CBasePlayer* )pServerPlayer : UTIL_GetLocalPlayer();
+	CBasePlayer *pPlayer = pServerPlayer ? ( CBasePlayer* )pServerPlayer : UTIL_GetCommandClientIfAdmin();
 	if ( pPlayer == NULL )
 		return false;
 
@@ -166,7 +163,7 @@ bool CServerTools::SnapPlayerToPosition( const Vector &org, const QAngle &ang, I
 int CServerTools::GetPlayerFOV( IClientEntity *pClientPlayer )
 {
 	IServerEntity *pServerPlayer = GetIServerEntity( pClientPlayer );
-	CBasePlayer *pPlayer = pServerPlayer ? ( CBasePlayer* )pServerPlayer : UTIL_GetLocalPlayer();
+	CBasePlayer *pPlayer = pServerPlayer ? ( CBasePlayer* )pServerPlayer : UTIL_GetCommandClientIfAdmin();
 	if ( pPlayer == NULL )
 		return 0;
 
@@ -176,7 +173,7 @@ int CServerTools::GetPlayerFOV( IClientEntity *pClientPlayer )
 bool CServerTools::SetPlayerFOV( int fov, IClientEntity *pClientPlayer )
 {
 	IServerEntity *pServerPlayer = GetIServerEntity( pClientPlayer );
-	CBasePlayer *pPlayer = pServerPlayer ? ( CBasePlayer* )pServerPlayer : UTIL_GetLocalPlayer();
+	CBasePlayer *pPlayer = pServerPlayer ? ( CBasePlayer* )pServerPlayer : UTIL_GetCommandClientIfAdmin();
 	if ( pPlayer == NULL )
 		return false;
 
@@ -188,7 +185,7 @@ bool CServerTools::SetPlayerFOV( int fov, IClientEntity *pClientPlayer )
 bool CServerTools::IsInNoClipMode( IClientEntity *pClientPlayer )
 {
 	IServerEntity *pServerPlayer = GetIServerEntity( pClientPlayer );
-	CBasePlayer *pPlayer = pServerPlayer ? ( CBasePlayer* )pServerPlayer : UTIL_GetLocalPlayer();
+	CBasePlayer *pPlayer = pServerPlayer ? ( CBasePlayer* )pServerPlayer : UTIL_GetCommandClientIfAdmin();
 	if ( pPlayer == NULL )
 		return true;
 
@@ -280,7 +277,7 @@ void CServerTools::AddOriginToPVS( const Vector &org )
 
 void CServerTools::MoveEngineViewTo( const Vector &vPos, const QAngle &vAngles )
 {
-	CBasePlayer *pPlayer = UTIL_GetListenServerHost();
+	CBasePlayer *pPlayer = UTIL_GetCommandClientIfAdmin();
 	if ( !pPlayer )
 		return;
 

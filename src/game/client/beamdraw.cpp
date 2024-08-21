@@ -801,7 +801,6 @@ void DrawSplineSegs( int noise_divisions, float *prgNoise,
 		seg.m_flAlpha = 1;
 
 		VectorScale( color, brightness, scaledColor );
-		seg.m_vColor.Init( scaledColor[0], scaledColor[1], scaledColor[2] );
 		
 
 		// -------------------------------------------------
@@ -838,6 +837,9 @@ void DrawSplineSegs( int noise_divisions, float *prgNoise,
 					brightness = 0;
 				}
 			}
+
+			VectorScale( color, brightness, scaledColor );
+			seg.m_vColor.Init( scaledColor[0], scaledColor[1], scaledColor[2] );
 
 			// -----------------------------------------------------------
 			//  Calculate spline position
@@ -915,7 +917,7 @@ void DrawSplineSegs( int noise_divisions, float *prgNoise,
 		// --------------------------------------------------------------
 		//  Draw halo on segment most facing the player 
 		// --------------------------------------------------------------
-		if (false&&pHaloMaterial)
+		if (pHaloMaterial)
 		{
 			Vector vHaloPos(0,0,0);
 			if (bestDot != 0)

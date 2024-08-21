@@ -40,6 +40,7 @@
 #include "materialsystem/imaterialsystemstub.h"
 #include "VGuiMatSurface/IMatSystemSurface.h"
 #include "materialsystem/imaterialsystemhardwareconfig.h"
+#include "materialsystem/IShaderExtension.h"
 #include "c_soundscape.h"
 #include "engine/ivdebugoverlay.h"
 #include "vguicenterprint.h"
@@ -87,9 +88,7 @@
 #include "ihudlcd.h"
 #include "toolframework_client.h"
 #include "hltvcamera.h"
-#ifdef SDK2013CE
 #include "shaderapihack.h"
-#endif
 #if defined( REPLAY_ENABLED )
 #include "replay/replaycamera.h"
 #include "replay/replay_ragdoll.h"
@@ -219,6 +218,9 @@ IEngineClientReplay *g_pEngineClientReplay = NULL;
 IReplaySystem *g_pReplay = NULL;
 #endif
 
+CSysModule* shaderDLL = NULL;
+IShaderExtension* g_pShaderExtension = NULL;
+
 IHaptics* haptics = NULL;// NVNT haptics system interface singleton
 
 //=============================================================================
@@ -347,7 +349,6 @@ class IClientPurchaseInterfaceV2 *g_pClientPurchaseInterface = (class IClientPur
 
 static ConVar *g_pcv_ThreadMode = NULL;
 
-#ifdef SDK2013CE
 void ApplyShaderConstantHack()
 {
 	CMaterialConfigWrapper Wrapper;
@@ -358,7 +359,6 @@ void ApplyShaderConstantHack()
 	Wrapper.SetNumIntegerPixelConstants(16);
 	Wrapper.PrintPixelConstants();
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: interface for gameui to modify voice bans
@@ -1060,9 +1060,7 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	IGameSystem::Add( PerfVisualBenchmark() );
 	IGameSystem::Add( MumbleSystem() );
 
-#ifdef SDK2013CE
 	ApplyShaderConstantHack();
-#endif
 
 #if defined( TF_CLIENT_DLL )
 	IGameSystem::Add( CustomTextureToolCacheGameSystem() );
@@ -1139,6 +1137,11 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	HookHapticMessages(); // Always hook the messages
 #endif
 
+	char dllPath[MAX_PATH * 2];
+	V_sprintf_safe( dllPath, "%s" CORRECT_PATH_SEPARATOR_S "bin" CORRECT_PATH_SEPARATOR_S "game_shader_dx9" DLL_EXT_STRING, engine->GetGameDirectory() );
+
+	Sys_LoadInterface( dllPath, SHADEREXTENSION_INTERFACE_VERSION, &shaderDLL, reinterpret_cast< void** >( &g_pShaderExtension ) );
+
 	return true;
 }
 
@@ -1190,6 +1193,9 @@ void CHLClient::PostInit()
 #endif
 
 	g_ClientVirtualReality.StartupComplete();
+
+	ConVarRef dsp_room( "dsp_room" );
+	dsp_room.SetValue( 1 );
 
 #ifdef HL1MP_CLIENT_DLL
 	if ( s_cl_load_hl1_content.GetBool() && steamapicontext && steamapicontext->SteamApps() )
@@ -1258,8 +1264,13 @@ void CHLClient::Shutdown( void )
 	
 	gHUD.Shutdown();
 	VGui_Shutdown();
-	
+
+	RopeManager()->Shutdown();
+
 	ParticleMgr()->Term();
+
+	if ( shaderDLL )
+		Sys_UnloadModule( shaderDLL );
 	
 	ClearKeyValuesCache();
 
@@ -2232,11 +2243,8 @@ void OnRenderStart()
 
 	C_BaseAnimating::ThreadedBoneSetup();
 
-#ifdef SM_SP_FIXES
 	// Tony; in multiplayer do some extra stuff. like re-calc the view if in a vehicle!
-	if ( engine->GetMaxClients() > 1 )
-		view->MP_PostSimulate();
-#endif
+	view->PostSimulate();
 
 	{
 		VPROF_("Client TempEnts", 0, VPROF_BUDGETGROUP_CLIENT_SIM, false, BUDGETFLAG_CLIENT);

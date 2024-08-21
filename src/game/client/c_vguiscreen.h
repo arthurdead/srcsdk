@@ -93,13 +93,19 @@ public:
 
 	// Is the screen turned on?
 	bool IsActive() const;
+	void SetActive( bool bActive );
 
+	// Sets the screen size + resolution
+	void SetActualSize( float flWidth, float flHeight );
+
+	void MakeVisibleOnlyToTeammates( bool bActive );
 	// Are we only visible to teammates?
 	bool IsVisibleOnlyToTeammates() const;
 
 	// Are we visible to someone on this team?
 	bool IsVisibleToTeam( int nTeam );
 
+	void SetAttachedToViewModel( bool bAttached );
 	bool IsAttachedToViewModel() const;
 
 	virtual RenderGroup_t GetRenderGroup();
@@ -125,6 +131,9 @@ private:
 	void DrawScreenOverlay();
 
 private:
+	void SetAttachmentIndex( int nIndex );
+	void SetPanelName( const char *pPanelName );
+
 	int m_nPixelWidth; 
 	int m_nPixelHeight;
 	float m_flWidth; 
@@ -155,14 +164,27 @@ private:
 	CPanelWrapper m_PanelWrapper;
 
 	CHandle<C_BasePlayer> m_hPlayerOwner;
+
+	friend C_VGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex );
+
+	//DO NOT USE DIRECTLY!!!!
+	friend C_VGuiScreen *__CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex );
 };
 
+#define CREATE_PREDICTED_VGUISCREEN(...) \
+	__CreatePredictedVGuiScreen( __FILE__, __LINE__, __VA_ARGS__ )
 
 //-----------------------------------------------------------------------------
 // Returns an entity that is the nearby vgui screen; NULL if there isn't one
 //-----------------------------------------------------------------------------
 C_BaseEntity *FindNearbyVguiScreen( const Vector &viewPosition, const QAngle &viewAngle, int nTeam = -1 );
 
+C_VGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex );
+
+//DO NOT USE DIRECTLY!!!!
+C_VGuiScreen *__CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex );
+
+void DestroyVGuiScreen( C_VGuiScreen *pVGuiScreen );
 
 //-----------------------------------------------------------------------------
 // Activates/Deactivates vgui screen

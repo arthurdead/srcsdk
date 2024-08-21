@@ -3860,9 +3860,7 @@ bool CNavMesh::UpdateGeneration( float maxTime )
 		{
 			host_thread_mode.SetValue( 0 );	// need non-threaded server for light calcs
 
-			CBasePlayer *host = UTIL_GetListenServerHost();
-
-			if ( !s_unlitAreas.Count() || !host )
+			if ( !s_unlitAreas.Count() )
 			{
 				Msg( "Finding light intensity...DONE\n" );
 
@@ -3911,7 +3909,6 @@ bool CNavMesh::UpdateGeneration( float maxTime )
 					{
 						eyePos.z += HalfHumanHeight - StepHeight;	// players light from their centers, and we light from slightly below that, to allow for low ceilings
 					}
-					host->SetAbsOrigin( eyePos );
 					AnalysisProgress( "Finding light intensity...", 100, 100 * (TheNavAreas.Count() - s_unlitAreas.Count()) / TheNavAreas.Count() );
 					s_movedPlayerToArea = moveArea->GetID();
 					s_playerSettleTimer.Start( 0.1f );

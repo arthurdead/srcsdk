@@ -133,7 +133,7 @@ void CEnvScreenOverlay::Precache( void )
 //-----------------------------------------------------------------------------
 void CEnvScreenOverlay::InputStartOverlay( inputdata_t &inputdata )
 {
-	if ( m_iszOverlayNames[0] == NULL_STRING )
+	if ( m_iszOverlayNames[m_iDesiredOverlay] == NULL_STRING )
 	{
 		Warning("env_screenoverlay %s has no overlays to display.\n", STRING(GetEntityName()) );
 		return;
@@ -177,7 +177,7 @@ void CEnvScreenOverlay::InputSwitchOverlay( inputdata_t &inputdata )
 
 void CEnvScreenOverlay::InputStopOverlay( inputdata_t &inputdata )
 {
-	if ( m_iszOverlayNames[0] == NULL_STRING )
+	if ( m_iszOverlayNames[m_iDesiredOverlay] == NULL_STRING )
 	{
 		Warning("env_screenoverlay %s has no overlays to display.\n", STRING(GetEntityName()) );
 		return;

@@ -6,12 +6,12 @@
 
 #ifndef POSTPROCESSCONTROLLER_H
 #define POSTPROCESSCONTROLLER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "GameEventListener.h"
 #include "postprocess_shared.h"
+#include "baseentity.h"
+#include "fogcontroller.h"
 
 // Spawn Flags
 #define SF_POSTPROCESS_MASTER		0x0001

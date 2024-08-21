@@ -166,12 +166,12 @@ void CAI_BaseFlyingBot::StartTask( const Task_t *pTask )
 			break;
 		}
 		// Override to get more to get a directional path
-		case TASK_GET_PATH_TO_RANDOM_NODE:  
+		case TASK_GET_PATH_TO_RANDOM_AREA:  
 		{
 			if ( GetNavigator()->SetRandomGoal( pTask->flTaskData, m_vLastPatrolDir ) )
 				TaskComplete();
 			else
-				TaskFail(FAIL_NO_REACHABLE_NODE);
+				TaskFail(FAIL_NO_REACHABLE_AREA);
 			break;
 		}
 		default:

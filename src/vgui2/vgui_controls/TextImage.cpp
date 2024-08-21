@@ -278,7 +278,7 @@ void TextImage::GetUnlocalizedText(char *buffer, int bufferSize)
 //-----------------------------------------------------------------------------
 // Purpose: unlocalized text symbol
 //-----------------------------------------------------------------------------
-StringIndex_t TextImage::GetUnlocalizedTextSymbol()
+LocalizeStringIndex_t TextImage::GetUnlocalizedTextSymbol()
 {
 	return _unlocalizedTextSymbol;
 }

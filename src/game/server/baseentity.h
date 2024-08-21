@@ -73,6 +73,7 @@ class CTeam;
 class Vector;
 struct gamevcollisionevent_t;
 class CBaseAnimating;
+class CBaseAnimatingOverlay;
 class CBasePlayer;
 class IServerVehicle;
 struct solid_t;
@@ -358,8 +359,11 @@ struct thinkfunc_t
 struct EmitSound_t;
 struct rotatingpushmove_t;
 
-#define CREATE_PREDICTED_ENTITY( className )	\
-	CBaseEntity::CreatePredictedEntityByName( className, __FILE__, __LINE__ );
+#define CREATE_PREDICTED_ENTITY( className, ... )	\
+	CBaseEntity::__CreatePredictedHelper( __FILE__, __LINE__, className __VA_OPT__(, __VA_ARGS__) );
+
+#define CREATE_PREDICTED_ENTITY_AT( file, line, className, ... )	\
+	CBaseEntity::__CreatePredictedHelper( file, line, className __VA_OPT__(, __VA_ARGS__) );
 
 //
 // Base Entity.  All entity types derive from this
@@ -408,9 +412,6 @@ public:
     void *operator new( size_t stAllocateBlock, int nBlockUse, const char *pFileName, int nLine );
 	void operator delete( void *pMem );
 	void operator delete( void *pMem, int nBlockUse, const char *pFileName, int nLine ) { operator delete(pMem); }
-
-	// Class factory
-	static CBaseEntity				*CreatePredictedEntityByName( const char *classname, const char *module, int line, bool persist = false );
 
 // IHandleEntity overrides.
 public:
@@ -616,6 +617,11 @@ public:
 	bool		ClassMatches( const char *pszClassOrWildcard );
 	bool		NameMatches( string_t nameStr );
 	bool		ClassMatches( string_t nameStr );
+	bool		NameMatchesExact( string_t nameStr );
+	bool		ClassMatchesExact( string_t nameStr );
+
+	template <typename T>
+	bool		Downcast( string_t iszClass, T **ppResult );
 
 private:
 	bool		NameMatchesComplex( const char *pszNameOrWildcard );
@@ -896,7 +902,8 @@ private:
 public:
 
 	// Returns a CBaseAnimating if the entity is derived from CBaseAnimating.
-	virtual CBaseAnimating*	GetBaseAnimating() { return 0; }
+	virtual CBaseAnimating*	GetBaseAnimating() { return NULL; }
+	virtual CBaseAnimatingOverlay *	GetBaseAnimatingOverlay() { return NULL; }
 
 	virtual IResponseSystem *GetResponseSystem();
 	virtual void	DispatchResponse( const char *conceptName );
@@ -1187,6 +1194,20 @@ public:
 	// creates an entity of a specified class, by name
 	static CBaseEntity *Create( const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner = NULL );
 	static CBaseEntity *CreateNoSpawn( const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner = NULL );
+
+	//DO NOT USE DIRECTLY!!!!
+	static void __SetupAsPredicted( CBaseEntity *pEntity, const char *szName, const char *module, int line );
+
+	//DO NOT USE DIRECTLY!!!!
+	template <typename ...Args>
+	static CBaseEntity *__CreatePredictedHelper( const char *module, int line, const char *szName, Args &&...args )
+	{
+		CBaseEntity *pEntity = Create( szName, args... );
+		if(pEntity) {
+			__SetupAsPredicted( pEntity, szName, module, line );
+		}
+		return pEntity;
+	}
 
 	// Collision group accessors
 	int				GetCollisionGroup() const;
@@ -1487,8 +1508,6 @@ public:
 
 	// Computes the abs position of a direction specified in local space
 	void					ComputeAbsDirection( const Vector &vecLocalDirection, Vector *pAbsDirection );
-
-	void					SetPredictionEligible( bool canpredict );
 
 protected:
 	// Invalidates the abs state of all children
@@ -1980,6 +1999,16 @@ inline bool CBaseEntity::ClassMatches( const char *pszClassOrWildcard )
 	return ClassMatchesComplex( pszClassOrWildcard );
 }
 
+inline bool CBaseEntity::NameMatchesExact( string_t nameStr )
+{
+	return IDENT_STRINGS(m_iName, nameStr);
+}
+
+inline bool CBaseEntity::ClassMatchesExact( string_t nameStr )
+{
+	return IDENT_STRINGS(m_iClassname, nameStr );
+}
+
 inline const char* CBaseEntity::GetClassname()
 {
 	return STRING(m_iClassname);
@@ -1991,6 +2020,18 @@ inline bool CBaseEntity::ClassMatches( string_t nameStr )
 	if ( IDENT_STRINGS(m_iClassname, nameStr ) )
 		return true;
 	return ClassMatchesComplex( STRING(nameStr) );
+}
+
+template <typename T>
+inline bool CBaseEntity::Downcast( string_t iszClass, T **ppResult )
+{
+	if ( IDENT_STRINGS( iszClass, m_iClassname ) )
+	{
+		*ppResult = static_cast< T* >( this );
+		return true;
+	}
+	*ppResult = NULL;
+	return false;
 }
 
 inline int CBaseEntity::GetSpawnFlags( void ) const

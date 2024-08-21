@@ -2267,23 +2267,15 @@ void CSceneEntity::BuildSortedSpeakEventSoundsPrefetchList(
 					event->GetPlaybackCloseCaptionToken( soundname, sizeof( soundname ) );
 				}
 				
-				// In single player, try to use the combined or regular .wav files as needed
-				if ( gpGlobals->maxClients == 1 )
+				//TODO!!!! Arthurdead
+			#if 0
+				CBasePlayer *player = UTIL_GetLocalPlayer();
+				if ( player && !GetSoundNameForPlayer( event, player, soundname, sizeof( soundname ), player ) )
 				{
-					CBasePlayer *player = UTIL_GetLocalPlayer();
-					if ( player && !GetSoundNameForPlayer( event, player, soundname, sizeof( soundname ), player ) )
-					{
-						// Skip to next event
-						continue;
-					}
+					// Skip to next event
+					continue;
 				}
-				/*
-				else
-				{
-					// UNDONE:  Probably need some other solution in multiplayer... (not sure how to "prefetch" on certain players
-					// with one sound, but not prefetch the same sound for others...)
-				}
-				*/
+			#endif
 
 				SpeakEventSound_t ses;
 				ses.m_Symbol = table.AddString( soundname );
@@ -3394,11 +3386,7 @@ CBaseEntity *CSceneEntity::FindNamedEntity( const char *name, CBaseEntity *pActo
 
 	if ( !stricmp( name, "Player" ) || !stricmp( name, "!player" ))
 	{
-#ifdef SM_AI_FIXES
 		entity = UTIL_GetNearestPlayer(GetAbsOrigin()); 
-#else
-		entity = ( gpGlobals->maxClients == 1 ) ? ( CBaseEntity * )UTIL_GetLocalPlayer() : NULL;
-#endif
 	}
 	else if ( !stricmp( name, "!target1" ) )
 	{
@@ -3525,11 +3513,7 @@ CBaseEntity *CSceneEntity::FindNamedEntityClosest( const char *name, CBaseEntity
 	} 
 	else if ( !stricmp( name, "Player" ) || !stricmp( name, "!player" ))
 	{
-#ifdef SM_AI_FIXES
 		entity = UTIL_GetNearestPlayer(GetAbsOrigin()); 
-#else
-		entity = ( gpGlobals->maxClients == 1 ) ? ( CBaseEntity * )UTIL_GetLocalPlayer() : NULL;
-#endif
 		return entity;
 	}
 	else if ( !stricmp( name, "!target1" ) )

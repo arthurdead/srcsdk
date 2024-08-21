@@ -64,7 +64,6 @@ END_SEND_TABLE()
 
 
 CPostProcessController::CPostProcessController()
-:	m_bMaster( false )
 {	
 }
 
@@ -202,17 +201,4 @@ void CPostProcessSystem::FireGameEvent( IGameEvent *pEvent )
 void CPostProcessSystem::LevelInitPostEntity( void )
 {
 	InitMasterController();
-
-	// HACK: Singleplayer games don't get a call to CBasePlayer::Spawn on level transitions.
-	// CBasePlayer::Activate is called before this is called so that's too soon to set up the PostProcess controller.
-	// We don't have a hook similar to Activate that happens after LevelInitPostEntity
-	// is called, or we could just do this in the player itself.
-	if ( gpGlobals->maxClients == 1 )
-	{
-		CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-		if ( pPlayer && ( pPlayer->m_hPostProcessCtrl.Get() == NULL ) )
-		{
-			pPlayer->InitPostProcessController();
-		}
-	}
 }

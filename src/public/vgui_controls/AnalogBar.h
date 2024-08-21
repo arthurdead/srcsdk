@@ -98,6 +98,7 @@ class ContinuousAnalogBar : public AnalogBar
 
 public:
 	ContinuousAnalogBar(Panel *parent, const char *panelName);
+	virtual ~ContinuousAnalogBar() {}
 
 	virtual void Paint();
 };

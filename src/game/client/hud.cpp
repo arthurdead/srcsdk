@@ -217,9 +217,9 @@ CHudTexture& CHudTexture::operator =( const CHudTexture& src )
 
 CHudTexture::~CHudTexture()
 {
-	if ( vgui::surface() && textureId != -1 )
+	if ( vgui::surface() && vgui::surface()->IsTextureIDValid( textureId ) )
 	{
-		vgui::surface()->DestroyTextureID( textureId );
+		vgui::surface()->DeleteTextureByID( textureId );
 		textureId = -1;
 	}
 }
@@ -585,14 +585,14 @@ void CHudTexture::DrawSelf( int x, int y, const Color& clr ) const
 	DrawSelf( x, y, Width(), Height(), clr );
 }
 
-void CHudTexture::DrawSelf( int x, int y, int w, int h, const Color& clr ) const
+void CHudTexture::DrawSelf( int x, int y, int w, int h, const Color& clr, vgui::FontDrawType_t type ) const
 {
 	if ( bRenderUsingFont )
 	{
 		vgui::surface()->DrawSetTextFont( hFont );
 		vgui::surface()->DrawSetTextColor( clr );
 		vgui::surface()->DrawSetTextPos( x, y );
-		vgui::surface()->DrawUnicodeChar( cCharacterInFont );
+		vgui::surface()->DrawUnicodeChar( cCharacterInFont, type );
 	}
 	else
 	{
@@ -949,6 +949,8 @@ float CHud::GetFOVSensitivityAdjust()
 bool CHud::IsHidden( int iHudFlags )
 {
 	// Not in game?
+	if ( engine->IsLevelMainMenuBackground() )
+		return true;
 	if ( !engine->IsInGame() )
 		return true;
 

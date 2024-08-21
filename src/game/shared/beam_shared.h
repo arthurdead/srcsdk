@@ -99,7 +99,7 @@ public:
 	void SetColor( int r, int g, int b );
 	void SetBrightness( int brightness );
 	void SetFrame( float frame );
-	void SetScrollRate( int speed );
+	void SetScrollRate( float speed );
 	void SetFireTime( float flFireTime );
 	void SetFrameRate( float flFrameRate ) { m_flFrameRate = flFrameRate; }
 
@@ -119,7 +119,7 @@ public:
 
 	virtual const Vector &WorldSpaceCenter( void ) const;
 
-	int GetTexture( void );
+	int GetTexture( void ) const;
 	float GetWidth( void ) const;
 	float GetEndWidth( void ) const;
 	float GetFadeLength( void ) const;
@@ -149,7 +149,7 @@ public:
 	// Input handlers
 
 	static CBeam *BeamCreate( const char *pSpriteName, float width );
-	static CBeam *BeamCreatePredictable( const char *module, int line, bool persist, const char *pSpriteName, float width, CBasePlayer *pOwner );
+	static CBeam *BeamCreatePredictable( const char *module, int line, const char *pSpriteName, float width, CBasePlayer *pOwner );
 
 	void LiveForTime( float time );
 	void BeamDamageInstant( trace_t *ptr, float damage );
@@ -349,7 +349,7 @@ inline void CBeam::SetFrame( float frame )
 	m_fStartFrame = frame; 
 }
 
-inline void CBeam::SetScrollRate( int speed )			
+inline void CBeam::SetScrollRate( float speed )			
 { 
 	m_fSpeed = speed; 
 }
@@ -386,7 +386,7 @@ inline int CBeam::GetEndAttachment() const
 	return m_nAttachIndex[m_nNumBeamEnts-1] & ATTACHMENT_INDEX_MASK;
 }
 
-inline int CBeam::GetTexture( void )		
+inline int CBeam::GetTexture( void ) const		
 { 
 	return GetModelIndex(); 
 }
@@ -447,11 +447,11 @@ inline void	CBeam::BeamDamageInstant( trace_t *ptr, float damage )
 bool IsStaticPointEntity( CBaseEntity *pEnt );
 
 // Macro to wrap creation
-#define BEAM_CREATE_PREDICTABLE( name, width, player ) \
-	CBeam::BeamCreatePredictable( __FILE__, __LINE__, false, name, width, player )
+#define BEAM_CREATE_PREDICTABLE( ... ) \
+	CBeam::BeamCreatePredictable( __FILE__, __LINE__, __VA_ARGS__ )
 
-#define BEAM_CREATE_PREDICTABLE_PERSIST( name, width, player ) \
-	CBeam::BeamCreatePredictable( __FILE__, __LINE__, true, name, width, player )
+#define BEAM_CREATE_PREDICTABLE_AT( ... ) \
+	CBeam::BeamCreatePredictable( file, line, __VA_ARGS__ )
 
 // Start/End Entity is encoded as 12 bits of entity index, and 4 bits of attachment (4:12)
 #define BEAMENT_ENTITY(x)		((x)&0xFFF)

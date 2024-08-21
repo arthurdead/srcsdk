@@ -35,6 +35,8 @@ extern vgui::IInputInternal *g_InputInternal;
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#undef CVGuiScreen
+
 #define VGUI_SCREEN_MODE_RADIUS	80
 
 //Precache the materials
@@ -76,6 +78,9 @@ void ClearKeyValuesCache()
 	g_KeyValuesCache.Purge();
 }
 
+
+LINK_ENTITY_TO_CLASS( vgui_screen, C_VGuiScreen );
+LINK_ENTITY_TO_CLASS( vgui_screen_team, C_VGuiScreen );
 
 IMPLEMENT_CLIENTCLASS_DT(C_VGuiScreen, DT_VGuiScreen, CVGuiScreen)
 	RecvPropFloat( RECVINFO(m_flWidth) ),
@@ -204,6 +209,20 @@ void C_VGuiScreen::DestroyVguiScreen( )
 	m_PanelWrapper.Deactivate();
 }
 
+void C_VGuiScreen::SetActive( bool bActive )
+{
+	if (bActive != IsActive())
+	{
+		if (!bActive)
+		{
+			m_fScreenFlags &= ~VGUI_SCREEN_ACTIVE;
+		}
+		else
+		{
+			m_fScreenFlags = ( m_fScreenFlags | VGUI_SCREEN_ACTIVE );
+		}
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Is the screen active?
@@ -211,6 +230,26 @@ void C_VGuiScreen::DestroyVguiScreen( )
 bool C_VGuiScreen::IsActive() const
 {
 	return (m_fScreenFlags & VGUI_SCREEN_ACTIVE) != 0;
+}
+
+void C_VGuiScreen::SetAttachmentIndex( int nIndex )
+{
+	m_nAttachmentIndex = nIndex;
+}
+
+void C_VGuiScreen::SetAttachedToViewModel( bool bAttached )
+{
+	if (bAttached != IsActive())
+	{
+		if (!bAttached)
+		{
+			m_fScreenFlags &= ~VGUI_SCREEN_ATTACHED_TO_VIEWMODEL;
+		}
+		else
+		{
+			m_fScreenFlags = ( m_fScreenFlags | VGUI_SCREEN_ATTACHED_TO_VIEWMODEL );
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -251,6 +290,41 @@ RenderGroup_t C_VGuiScreen::GetRenderGroup()
 		return RENDER_GROUP_VIEW_MODEL_TRANSLUCENT;
 
 	return BaseClass::GetRenderGroup();
+}
+
+void C_VGuiScreen::SetActualSize( float flWidth, float flHeight )
+{
+	m_flWidth = flWidth;
+	m_flHeight = flHeight;
+
+	Vector mins, maxs;
+	mins.Init( 0.0f, 0.0f, -0.1f );
+	maxs.Init( 0.0f, 0.0f, 0.1f );
+	if (flWidth > 0)
+		maxs.x = flWidth;
+	else
+		mins.x = flWidth;
+	if (flHeight > 0)
+		maxs.y = flHeight;
+	else
+		mins.y = flHeight;
+
+	SetSize( mins, maxs );
+}
+
+void C_VGuiScreen::MakeVisibleOnlyToTeammates( bool bActive )
+{
+	if (bActive != IsVisibleOnlyToTeammates())
+	{
+		if (!bActive)
+		{
+			m_fScreenFlags &= ~VGUI_SCREEN_VISIBLE_TO_TEAMMATES;
+		}
+		else
+		{
+			m_fScreenFlags = (  m_fScreenFlags | VGUI_SCREEN_VISIBLE_TO_TEAMMATES );
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -302,6 +376,10 @@ void C_VGuiScreen::SetButtonState( int nButtonState )
 }
 
 
+void C_VGuiScreen::SetPanelName( const char *pPanelName )
+{
+	m_nPanelName = g_StringTableVguiScreen->AddString( false, pPanelName );
+}
 
 //-----------------------------------------------------------------------------
 // Returns the panel name 
@@ -876,3 +954,40 @@ void CVGuiScreenPanel::OnCommand( const char *command)
 }
 
 DECLARE_VGUI_SCREEN_FACTORY( CVGuiScreenPanel, "vgui_screen_panel" );
+
+//-----------------------------------------------------------------------------
+// Creates a vgui screen, attaches it to another player
+//-----------------------------------------------------------------------------
+C_VGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex )
+{
+	Assert( pAttachedTo );
+	C_VGuiScreen *pScreen = (C_VGuiScreen *)C_BaseEntity::Create( pScreenClassname, vec3_origin, vec3_angle, pAttachedTo );
+
+	pScreen->SetPanelName( pScreenType );
+	pScreen->FollowEntity( pAttachedTo );
+	pScreen->SetOwnerEntity( pOwner );
+	pScreen->SetAttachmentIndex( nAttachmentIndex );
+
+	return pScreen;
+}
+
+C_VGuiScreen *__CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex )
+{
+	Assert( pAttachedTo );
+	C_VGuiScreen *pScreen = (C_VGuiScreen *)CREATE_PREDICTED_ENTITY_AT( module, line, pScreenClassname, vec3_origin, vec3_angle, pAttachedTo );
+
+	pScreen->SetPanelName( pScreenType );
+	pScreen->FollowEntity( pAttachedTo );
+	pScreen->SetOwnerEntity( pOwner );
+	pScreen->SetAttachmentIndex( nAttachmentIndex );
+
+	return pScreen;
+}
+
+void DestroyVGuiScreen( C_VGuiScreen *pVGuiScreen )
+{
+	if (pVGuiScreen)
+	{
+		pVGuiScreen->Release();
+	}
+}

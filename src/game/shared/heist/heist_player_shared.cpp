@@ -27,7 +27,7 @@ Vector CHeistPlayer::GetAttackSpread(CBaseCombatWeapon *pWeapon, CBaseEntity *pT
 	return VECTOR_CONE_15DEGREES;
 }
 
-void CHeistPlayer::PlayStepSound(Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force)
+void CHeistPlayer::PlayStepSound(const Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force)
 {
 	if(gpGlobals->maxClients > 1 && !sv_footsteps.GetFloat()) {
 		return;

@@ -73,7 +73,7 @@ public:
 	bool Weapon_Switch(CBaseCombatWeapon *pWeapon, int viewmodelindex = 0) override;
 	bool BumpWeapon(CBaseCombatWeapon *pWeapon) override;
 	void ChangeTeam(int iTeam) override;
-	void PlayStepSound(Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force) override;
+	void PlayStepSound(const Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force) override;
 	void Weapon_Drop(CBaseCombatWeapon *pWeapon, const Vector *pvecTarget = NULL, const Vector *pVelocity = NULL) override;
 	void DeathSound(const CTakeDamageInfo &info) override;
 	CBaseEntity *EntSelectSpawnPoint() override;

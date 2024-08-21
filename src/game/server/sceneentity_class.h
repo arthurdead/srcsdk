@@ -70,7 +70,7 @@ public:
 	virtual void			OnRestore();
 	virtual void			OnLoaded();
 
-	virtual int				DrawDebugTextOverlays();
+	//virtual int				DrawDebugTextOverlays();
 
 	DECLARE_DATADESC();
 
@@ -253,11 +253,11 @@ public:
 	virtual CBaseFlex		*FindNamedActor( CChoreoActor *pChoreoActor );
 	virtual CBaseFlex		*FindNamedActor( const char *name );
 	virtual CBaseEntity		*FindNamedEntity( const char *name, CBaseEntity *pActor = NULL, bool bBaseFlexOnly = false, bool bUseClear = false );
-	virtual CBaseEntity		*FindNamedEntityFallback( const char *name, CBaseEntity *pActor = NULL, bool bBaseFlexOnly = false, bool bUseClear = false );
+	//virtual CBaseEntity		*FindNamedEntityFallback( const char *name, CBaseEntity *pActor = NULL, bool bBaseFlexOnly = false, bool bUseClear = false );
 	CBaseEntity				*FindNamedTarget( string_t iszTarget, bool bBaseFlexOnly = false );
 	virtual CBaseEntity		*FindNamedEntityClosest( const char *name, CBaseEntity *pActor = NULL, bool bBaseFlexOnly = false, bool bUseClear = false, const char *pszSecondary = NULL );
 
-	EOZ_Hacks::ResponseFollowup m_followup;
+	//EOZ_Hacks::ResponseFollowup m_followup;
 
 private:
 

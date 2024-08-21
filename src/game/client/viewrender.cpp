@@ -59,9 +59,7 @@
 #include "portal_render_targets.h"
 #include "PortalRender.h"
 #endif
-#if defined( HL2_CLIENT_DLL ) || defined( CSTRIKE_DLL )
-#define USE_MONITORS
-#endif
+
 #include "rendertexture.h"
 #include "viewpostprocess.h"
 #include "viewdebug.h"
@@ -70,16 +68,31 @@
 #include "econ_wearable.h"
 #endif
 
-#ifdef USE_MONITORS
 #include "c_point_camera.h"
-#endif // USE_MONITORS
 
 // Projective textures
 #include "C_Env_Projected_Texture.h"
 
+#include "c_lights.h"
+
+#include "colorcorrectionmgr.h"
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+static ConVar gstring_csm_color_light( "gstring_csm_color_light", "0" );
+static ConVar gstring_csm_color_ambient( "gstring_csm_color_ambient", "0" );
+
+static Vector ConvertLightmapGammaToLinear( int *iColor4 )
+{
+	Vector vecColor;
+	for ( int i = 0; i < 3; ++i )
+	{
+		vecColor[i] = powf( iColor4[i] / 255.0f, 2.2f );
+	}
+	vecColor *= iColor4[3] / 255.0f;
+	return vecColor;
+}
 
 static void testfreezeframe_f( void )
 {
@@ -108,15 +121,15 @@ ConVar r_entityclips( "r_entityclips", "1" ); //FIXME: Nvidia drivers before 81.
 // Matches the version in the engine
 static ConVar r_drawopaqueworld( "r_drawopaqueworld", "1", FCVAR_CHEAT );
 static ConVar r_drawtranslucentworld( "r_drawtranslucentworld", "1", FCVAR_CHEAT );
-static ConVar r_3dsky( "r_3dsky","1", 0, "Enable the rendering of 3d sky boxes" );
-static ConVar r_skybox( "r_skybox","1", FCVAR_CHEAT, "Enable the rendering of sky boxes" );
+ConVar r_3dsky( "r_3dsky","1", 0, "Enable the rendering of 3d sky boxes" );
+ConVar r_skybox( "r_skybox","1", FCVAR_CHEAT, "Enable the rendering of sky boxes" );
 #ifdef TF_CLIENT_DLL
 ConVar r_drawviewmodel( "r_drawviewmodel","1", FCVAR_ARCHIVE );
 #else
 ConVar r_drawviewmodel( "r_drawviewmodel","1", FCVAR_CHEAT );
 #endif
 static ConVar r_drawtranslucentrenderables( "r_drawtranslucentrenderables", "1", FCVAR_CHEAT );
-static ConVar r_drawopaquerenderables( "r_drawopaquerenderables", "1", FCVAR_CHEAT );
+ConVar r_drawopaquerenderables( "r_drawopaquerenderables", "1", FCVAR_CHEAT );
 static ConVar r_threaded_renderables( "r_threaded_renderables", "0" );
 
 // FIXME: This is not static because we needed to turn it off for TF2 playtests
@@ -127,7 +140,17 @@ ConVar r_worldlistcache( "r_worldlistcache", "1" );
 //-----------------------------------------------------------------------------
 // Convars related to fog color
 //-----------------------------------------------------------------------------
-static ConVar fog_override( "fog_override", "0", FCVAR_CHEAT );
+static void GetFogColor( fogparams_t *pFogParams, float *pColor, bool ignoreOverride = false, bool ignoreHDRColorScale = false );
+static float GetFogMaxDensity( fogparams_t *pFogParams, bool ignoreOverride = false );
+static bool GetFogEnable( fogparams_t *pFogParams, bool ignoreOverride = false );
+static float GetFogStart( fogparams_t *pFogParams, bool ignoreOverride = false );
+static float GetFogEnd( fogparams_t *pFogParams, bool ignoreOverride = false );
+float GetSkyboxFogStart( bool ignoreOverride = false );
+static float GetSkyboxFogEnd( bool ignoreOverride = false );
+float GetSkyboxFogMaxDensity( bool ignoreOverride = false );
+void GetSkyboxFogColor( float *pColor, bool ignoreOverride = false, bool ignoreHDRColorScale = false );
+static void FogOverrideCallback( IConVar *pConVar, char const *, float );
+static ConVar fog_override( "fog_override", "0", FCVAR_CHEAT, "", FogOverrideCallback );
 // set any of these to use the maps fog
 static ConVar fog_start( "fog_start", "-1", FCVAR_CHEAT );
 static ConVar fog_end( "fog_end", "-1", FCVAR_CHEAT );
@@ -137,9 +160,39 @@ static ConVar fog_startskybox( "fog_startskybox", "-1", FCVAR_CHEAT );
 static ConVar fog_endskybox( "fog_endskybox", "-1", FCVAR_CHEAT );
 static ConVar fog_maxdensityskybox( "fog_maxdensityskybox", "-1", FCVAR_CHEAT );
 static ConVar fog_colorskybox( "fog_colorskybox", "-1 -1 -1", FCVAR_CHEAT );
-static ConVar fog_enableskybox( "fog_enableskybox", "1", FCVAR_CHEAT );
+ConVar fog_enableskybox( "fog_enableskybox", "1", FCVAR_CHEAT );
 static ConVar fog_maxdensity( "fog_maxdensity", "-1", FCVAR_CHEAT );
+static ConVar fog_hdrcolorscale( "fog_hdrcolorscale", "-1", FCVAR_CHEAT );
+static ConVar fog_hdrcolorscaleskybox( "fog_hdrcolorscaleskybox", "-1", FCVAR_CHEAT );
 
+static void FogOverrideCallback( IConVar *pConVar, char const *, float )
+{
+	C_BasePlayer *localPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( !localPlayer )
+		return;
+
+	ConVarRef var( pConVar );
+	if ( var.GetInt() == -1 )
+	{
+		fogparams_t *pFogParams = localPlayer->GetFogParams();
+
+		float fogColor[3];
+		fog_start.SetValue( GetFogStart( pFogParams, true ) );
+		fog_end.SetValue( GetFogEnd( pFogParams, true ) );
+		GetFogColor( pFogParams, fogColor, true, true );
+		fog_color.SetValue( VarArgs( "%.1f %.1f %.1f", fogColor[0]*255, fogColor[1]*255, fogColor[2]*255 ) );
+		fog_enable.SetValue( GetFogEnable( pFogParams, true ) );
+		fog_startskybox.SetValue( GetSkyboxFogStart( true ) );
+		fog_endskybox.SetValue( GetSkyboxFogEnd( true ) );
+		fog_maxdensityskybox.SetValue( GetSkyboxFogMaxDensity( true ) );
+		GetSkyboxFogColor( fogColor, true, true );
+		fog_colorskybox.SetValue( VarArgs( "%.1f %.1f %.1f", fogColor[0]*255, fogColor[1]*255, fogColor[2]*255 ) );
+		fog_enableskybox.SetValue( localPlayer->m_Local.m_skybox3d.fog.enable.Get() );
+		fog_maxdensity.SetValue( GetFogMaxDensity( pFogParams, true ) );
+		fog_hdrcolorscale.SetValue( pFogParams->HDRColorScale );
+		fog_hdrcolorscaleskybox.SetValue( localPlayer->m_Local.m_skybox3d.fog.HDRColorScale.Get() );
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Water-related convars
@@ -151,9 +204,9 @@ static ConVar r_waterforceexpensive( "r_waterforceexpensive", "0", FCVAR_ARCHIVE
 static ConVar r_waterforcereflectentities( "r_waterforcereflectentities", "0" );
 static ConVar r_WaterDrawRefraction( "r_WaterDrawRefraction", "1", 0, "Enable water refraction" );
 static ConVar r_WaterDrawReflection( "r_WaterDrawReflection", "1", 0, "Enable water reflection" );
-static ConVar r_ForceWaterLeaf( "r_ForceWaterLeaf", "1", 0, "Enable for optimization to water - considers view in leaf under water for purposes of culling" );
+ConVar r_ForceWaterLeaf( "r_ForceWaterLeaf", "1", 0, "Enable for optimization to water - considers view in leaf under water for purposes of culling" );
 static ConVar mat_drawwater( "mat_drawwater", "1", FCVAR_CHEAT );
-static ConVar mat_clipz( "mat_clipz", "1" );
+ConVar mat_clipz( "mat_clipz", "1" );
 
 
 //-----------------------------------------------------------------------------
@@ -162,7 +215,7 @@ static ConVar mat_clipz( "mat_clipz", "1" );
 static ConVar r_screenfademinsize( "r_screenfademinsize", "0" );
 static ConVar r_screenfademaxsize( "r_screenfademaxsize", "0" );
 static ConVar cl_drawmonitors( "cl_drawmonitors", "1" );
-static ConVar r_eyewaterepsilon( "r_eyewaterepsilon", "10.0f", FCVAR_CHEAT );
+ConVar r_eyewaterepsilon( "r_eyewaterepsilon", "10.0f", FCVAR_CHEAT );
 
 #ifdef TF_CLIENT_DLL
 static ConVar pyro_dof( "pyro_dof", "1", FCVAR_ARCHIVE );
@@ -182,7 +235,7 @@ static VMatrix g_matCurrentCamInverse;
 bool s_bCanAccessCurrentView = false;
 IntroData_t *g_pIntroData = NULL;
 static bool	g_bRenderingView = false;			// For debugging...
-static int g_CurrentViewID = VIEW_NONE;
+int g_CurrentViewID = VIEW_NONE;
 bool g_bRenderingScreenshot = false;
 
 
@@ -220,37 +273,6 @@ CON_COMMAND( r_cheapwaterend,  "" )
 		Warning( "r_cheapwaterend: %f\n", end );
 	}
 }
-
-
-
-//-----------------------------------------------------------------------------
-// Describes a pruned set of leaves to be rendered this view. Reference counted
-// because potentially shared by a number of views
-//-----------------------------------------------------------------------------
-struct ClientWorldListInfo_t : public CRefCounted1<WorldListInfo_t>
-{
-	ClientWorldListInfo_t() 
-	{ 
-		memset( (WorldListInfo_t *)this, 0, sizeof(WorldListInfo_t) ); 
-		m_pActualLeafIndex = NULL;
-		m_bPooledAlloc = false;
-	}
-
-	// Allocate a list intended for pruning
-	static ClientWorldListInfo_t *AllocPooled( const ClientWorldListInfo_t &exemplar );
-
-	// Because we remap leaves to eliminate unused leaves, we need a remap
-	// when drawing translucent surfaces, which requires the *original* leaf index
-	// using m_pActualLeafMap[ remapped leaf index ] == actual leaf index
-	LeafIndex_t *m_pActualLeafIndex;
-
-private:
-	virtual bool OnFinalRelease();
-
-	bool m_bPooledAlloc;
-	static CObjectPool<ClientWorldListInfo_t> gm_Pool;
-};
-
 
 //-----------------------------------------------------------------------------
 //
@@ -366,6 +388,11 @@ private:
 };
 
 CWorldListCache g_WorldListCache;
+
+void FlushWorldLists()
+{
+	g_WorldListCache.Flush();
+}
 
 //-----------------------------------------------------------------------------
 // Standard 3d skybox view
@@ -747,7 +774,7 @@ static inline unsigned long BuildEngineDrawWorldListFlags( unsigned nDrawFlags )
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-static void SetClearColorToFogColor()
+void SetClearColorToFogColor()
 {
 	unsigned char ucFogColor[3];
 	CMatRenderContextPtr pRenderContext( materials );
@@ -1297,9 +1324,11 @@ bool CViewRender::UpdateShadowDepthTexture( ITexture *pRenderTarget, ITexture *p
 
 	CMatRenderContextPtr pRenderContext( materials );
 
+#ifdef PIX_ENABLE
 	char szPIXEventName[128];
 	sprintf( szPIXEventName, "UpdateShadowDepthTexture (%s)", pDepthTexture->GetName() );
 	PIXEVENT( pRenderContext, szPIXEventName );
+#endif
 
 	CRefPtr<CShadowDepthView> pShadowDepthView = new CShadowDepthView( this );
 	pShadowDepthView->Setup( shadowViewIn, pRenderTarget, pDepthTexture );
@@ -1327,6 +1356,18 @@ void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxV
 	if ( r_flashlightdepthtexture.GetBool() && (viewID == VIEW_MAIN) )
 	{
 		g_pClientShadowMgr->ComputeShadowDepthTextures( view );
+
+		CMatRenderContextPtr pRenderContext( materials );
+
+		// GSTRINGMIGRATION
+		if ( g_pCSMEnvLight != NULL && g_pCSMEnvLight->IsCascadedShadowMappingEnabled() )
+		{
+			UpdateCascadedShadow( view );
+		}
+		else
+		{
+			pRenderContext->SetIntRenderingParameter( INT_CASCADED_DEPTHTEXTURE, 0 );
+		}
 	}
 
 	m_BaseDrawFlags = baseDrawFlags;
@@ -1446,18 +1487,33 @@ static void GetFogColorTransition( fogparams_t *pFogParams, float *pColorPrimary
 //-----------------------------------------------------------------------------
 // Purpose: Returns the fog color to use in rendering the current frame.
 //-----------------------------------------------------------------------------
-static void GetFogColor( fogparams_t *pFogParams, float *pColor )
+static void GetFogColor( fogparams_t *pFogParams, float *pColor, bool ignoreOverride, bool ignoreHDRColorScale )
 {
 	C_BasePlayer *pbp = C_BasePlayer::GetLocalPlayer();
 	if ( !pbp || !pFogParams )
 		return;
 
+	bool bFogOverride = fog_override.GetBool() && !ignoreOverride;
+
+	float HDRColorScale;
+	if( bFogOverride && (fog_hdrcolorscale.GetFloat() != -1.0f) )
+	{
+		HDRColorScale = fog_hdrcolorscale.GetFloat();
+	}
+	else
+	{
+		HDRColorScale = pFogParams->HDRColorScale;
+	}
+
+	pColor[0] = pColor[1] = pColor[2] = -1.0f;
+
 	const char *fogColorString = fog_color.GetString();
-	if( fog_override.GetInt() && fogColorString )
+	if( bFogOverride && fogColorString )
 	{
 		sscanf( fogColorString, "%f%f%f", pColor, pColor+1, pColor+2 );
 	}
-	else
+
+	if( (pColor[0] == -1.0f) && (pColor[1] == -1.0f) && (pColor[2] == -1.0f) ) //if not overriding fog, or if we get non-overridden fog color values
 	{
 		float flPrimaryColor[3] = { (float)pFogParams->colorPrimary.GetR(), (float)pFogParams->colorPrimary.GetG(), (float)pFogParams->colorPrimary.GetB() };
 		float flSecondaryColor[3] = { (float)pFogParams->colorSecondary.GetR(), (float)pFogParams->colorSecondary.GetG(), (float)pFogParams->colorSecondary.GetB() };
@@ -1492,16 +1548,21 @@ static void GetFogColor( fogparams_t *pFogParams, float *pColor )
 		}
 	}
 
+	if ( !ignoreHDRColorScale && g_pMaterialSystemHardwareConfig->GetHDRType() != HDR_TYPE_NONE )
+	{
+		VectorScale( pColor, HDRColorScale, pColor );
+	}
+
 	VectorScale( pColor, 1.0f / 255.0f, pColor );
 }
 
 
-static float GetFogStart( fogparams_t *pFogParams )
+static float GetFogStart( fogparams_t *pFogParams, bool ignoreOverride )
 {
 	if( !pFogParams )
 		return 0.0f;
 
-	if( fog_override.GetInt() )
+	if( fog_override.GetInt() && !ignoreOverride )
 	{
 		if( fog_start.GetFloat() == -1.0f )
 		{
@@ -1538,12 +1599,12 @@ static float GetFogStart( fogparams_t *pFogParams )
 	}
 }
 
-static float GetFogEnd( fogparams_t *pFogParams )
+static float GetFogEnd( fogparams_t *pFogParams, bool ignoreOverride )
 {
 	if( !pFogParams )
 		return 0.0f;
 
-	if( fog_override.GetInt() )
+	if( fog_override.GetInt() && !ignoreOverride )
 	{
 		if( fog_end.GetFloat() == -1.0f )
 		{
@@ -1580,7 +1641,7 @@ static float GetFogEnd( fogparams_t *pFogParams )
 	}
 }
 
-static bool GetFogEnable( fogparams_t *pFogParams )
+static bool GetFogEnable( fogparams_t *pFogParams, bool ignoreOverride )
 {
 	if ( cl_leveloverview.GetFloat() > 0 )
 		return false;
@@ -1589,7 +1650,7 @@ static bool GetFogEnable( fogparams_t *pFogParams )
 	if ( g_pClientMode->ShouldDrawFog() == false )
 		return false;
 
-	if( fog_override.GetInt() )
+	if( fog_override.GetInt() && !ignoreOverride )
 	{
 		if( fog_enable.GetInt() )
 		{
@@ -1610,7 +1671,7 @@ static bool GetFogEnable( fogparams_t *pFogParams )
 }
 
 
-static float GetFogMaxDensity( fogparams_t *pFogParams )
+static float GetFogMaxDensity( fogparams_t *pFogParams, bool ignoreOverride )
 {
 	if( !pFogParams )
 		return 1.0f;
@@ -1622,7 +1683,7 @@ static float GetFogMaxDensity( fogparams_t *pFogParams )
 	if ( !g_pClientMode->ShouldDrawFog() )
 		return 1.0f;
 
-	if ( fog_override.GetInt() )
+	if ( fog_override.GetInt() && !ignoreOverride )
 	{
 		if ( fog_maxdensity.GetFloat() == -1.0f )
 			return pFogParams->maxdensity;
@@ -1630,14 +1691,36 @@ static float GetFogMaxDensity( fogparams_t *pFogParams )
 			return fog_maxdensity.GetFloat();
 	}
 	else
+	{
+		if ( pFogParams->lerptime > gpGlobals->curtime )
+		{
+			if ( pFogParams->maxdensity != pFogParams->maxdensityLerpTo )
+			{
+				if ( pFogParams->lerptime > gpGlobals->curtime )
+				{
+					float flPercent = 1.0f - (( pFogParams->lerptime - gpGlobals->curtime ) / pFogParams->duration );
+
+					return FLerp( pFogParams->maxdensity, pFogParams->maxdensityLerpTo, flPercent );
+				}
+				else
+				{
+					if ( pFogParams->maxdensity != pFogParams->maxdensityLerpTo )
+					{
+						pFogParams->maxdensity = pFogParams->maxdensityLerpTo;
+					}
+				}
+			}
+		}
+
 		return pFogParams->maxdensity;
+	}
 }
 
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns the skybox fog color to use in rendering the current frame.
 //-----------------------------------------------------------------------------
-static void GetSkyboxFogColor( float *pColor )
+void GetSkyboxFogColor( float *pColor, bool ignoreOverride, bool ignoreHDRColorScale )
 {			   
 	C_BasePlayer *pbp = C_BasePlayer::GetLocalPlayer();
 	if( !pbp )
@@ -1646,12 +1729,24 @@ static void GetSkyboxFogColor( float *pColor )
 	}
 	CPlayerLocalData	*local		= &pbp->m_Local;
 
+	bool bFogOverride = fog_override.GetBool() && !ignoreOverride;
+	float HDRColorScale;
+	if( bFogOverride && (fog_hdrcolorscaleskybox.GetFloat() != -1.0f) )
+	{
+		HDRColorScale = fog_hdrcolorscaleskybox.GetFloat();
+	}
+	else
+	{
+		HDRColorScale = local->m_skybox3d.fog.HDRColorScale;
+	}
+
 	const char *fogColorString = fog_colorskybox.GetString();
-	if( fog_override.GetInt() && fogColorString )
+	if( bFogOverride && fogColorString )
 	{
 		sscanf( fogColorString, "%f%f%f", pColor, pColor+1, pColor+2 );
 	}
-	else
+
+	if( (pColor[0] == -1.0f) && (pColor[1] == -1.0f) && (pColor[2] == -1.0f) ) //if not overriding fog, or if we get non-overridden fog color values
 	{
 		if( local->m_skybox3d.fog.blend )
 		{
@@ -1681,11 +1776,16 @@ static void GetSkyboxFogColor( float *pColor )
 		}
 	}
 
+	if ( !ignoreHDRColorScale && g_pMaterialSystemHardwareConfig->GetHDRType() != HDR_TYPE_NONE )
+	{
+		VectorScale( pColor, HDRColorScale, pColor );
+	}
+
 	VectorScale( pColor, 1.0f / 255.0f, pColor );
 }
 
 
-static float GetSkyboxFogStart( void )
+float GetSkyboxFogStart( bool ignoreOverride )
 {
 	C_BasePlayer *pbp = C_BasePlayer::GetLocalPlayer();
 	if( !pbp )
@@ -1694,7 +1794,7 @@ static float GetSkyboxFogStart( void )
 	}
 	CPlayerLocalData	*local		= &pbp->m_Local;
 
-	if( fog_override.GetInt() )
+	if( fog_override.GetInt() && !ignoreOverride )
 	{
 		if( fog_startskybox.GetFloat() == -1.0f )
 		{
@@ -1711,7 +1811,7 @@ static float GetSkyboxFogStart( void )
 	}
 }
 
-static float GetSkyboxFogEnd( void )
+float GetSkyboxFogEnd( bool ignoreOverride )
 {
 	C_BasePlayer *pbp = C_BasePlayer::GetLocalPlayer();
 	if( !pbp )
@@ -1720,7 +1820,7 @@ static float GetSkyboxFogEnd( void )
 	}
 	CPlayerLocalData	*local		= &pbp->m_Local;
 
-	if( fog_override.GetInt() )
+	if( fog_override.GetInt() && !ignoreOverride )
 	{
 		if( fog_endskybox.GetFloat() == -1.0f )
 		{
@@ -1738,7 +1838,7 @@ static float GetSkyboxFogEnd( void )
 }
 
 
-static float GetSkyboxFogMaxDensity()
+float GetSkyboxFogMaxDensity( bool ignoreOverride )
 {
 	C_BasePlayer *pbp = C_BasePlayer::GetLocalPlayer();
 	if ( !pbp )
@@ -1753,7 +1853,7 @@ static float GetSkyboxFogMaxDensity()
 	if ( !g_pClientMode->ShouldDrawFog() )
 		return 1.0f;
 
-	if ( fog_override.GetInt() )
+	if ( fog_override.GetInt() && !ignoreOverride )
 	{
 		if ( fog_maxdensityskybox.GetFloat() == -1.0f )
 			return local->m_skybox3d.fog.maxdensity;
@@ -1855,6 +1955,195 @@ void CViewRender::CleanupMain3DView( const CViewSetup &view )
 	render->PopView( GetFrustum() );
 }
 
+void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
+{
+	static CTextureReference s_CascadedShadowDepthTexture;
+	static CTextureReference s_CascadedShadowColorTexture;
+	if ( !s_CascadedShadowDepthTexture.IsValid() )
+	{
+		s_CascadedShadowDepthTexture.Init( "_rt_CascadedShadowDepth", TEXTURE_GROUP_OTHER );
+	}
+
+	if ( !s_CascadedShadowColorTexture.IsValid() )
+	{
+		s_CascadedShadowColorTexture.Init( "_rt_CascadedShadowColor", TEXTURE_GROUP_OTHER );
+	}
+
+	ITexture *pDepthTexture = s_CascadedShadowDepthTexture;
+	CMatRenderContextPtr pRenderContext( materials );
+	pRenderContext->SetIntRenderingParameter( INT_CASCADED_DEPTHTEXTURE, int( pDepthTexture ) );
+
+	QAngle angCascadedAngles;
+	Vector vecLight, vecAmbient;
+	g_pCSMEnvLight->GetShadowMappingConstants( angCascadedAngles, vecLight, vecAmbient );
+
+	if ( gstring_csm_color_light.GetBool() )
+	{
+		int iParsed[4];
+		UTIL_StringToIntArray( iParsed, 4, gstring_csm_color_light.GetString() );
+		vecLight = ConvertLightmapGammaToLinear( iParsed );
+	}
+
+	if ( gstring_csm_color_ambient.GetBool() )
+	{
+		int iParsed[4];
+		UTIL_StringToIntArray( iParsed, 4, gstring_csm_color_ambient.GetString() );
+		vecAmbient = ConvertLightmapGammaToLinear( iParsed );
+	}
+
+	for ( int i = 0; i < 3; i++ )
+	{
+		vecAmbient[i] = MIN( vecAmbient[i], vecLight[i] );
+	}
+
+	Vector vecAmbientDelta = vecLight - vecAmbient;
+	vecAmbientDelta.NormalizeInPlace();
+	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_AMBIENT_MIN, vecAmbient );
+	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_AMBIENT_DELTA, vecAmbientDelta );
+
+	Vector vecFwd, vecRight, vecUp;
+	AngleVectors( angCascadedAngles, &vecFwd, &vecRight, &vecUp );
+
+	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD, vecFwd );
+
+	Vector vecMainViewFwd;
+	AngleVectors( view.angles, &vecMainViewFwd );
+
+	CViewSetup cascadedShadowView;
+	cascadedShadowView.angles = angCascadedAngles;
+	cascadedShadowView.m_bOrtho = true;
+
+	cascadedShadowView.width = s_CascadedShadowDepthTexture->GetMappingWidth() / 2;
+	cascadedShadowView.height = s_CascadedShadowDepthTexture->GetMappingHeight();
+
+	cascadedShadowView.m_flAspectRatio = 1.0f;
+	cascadedShadowView.m_bDoBloomAndToneMapping = false;
+	cascadedShadowView.zFar = cascadedShadowView.zFarViewmodel = 2000.0f;
+	cascadedShadowView.zNear = cascadedShadowView.zNearViewmodel = 7.0f;
+	cascadedShadowView.fov = cascadedShadowView.fovViewmodel = 90.0f;
+
+	struct ShadowConfig_t
+	{
+		float flOrthoSize;
+		float flForwardOffset;
+		float flUVOffsetX;
+		float flViewDepthBiasHack;
+	} shadowConfigs[] = {
+		{ 64.0f, 0.0f, 0.25f, 0.0f },
+		{ 384.0f, 256.0f, 0.75f, 0.0f }
+	};
+	const int iCascadedShadowCount = ARRAYSIZE( shadowConfigs );
+
+	/*switch ( mode )
+	{
+	case CASCADEDCONFIG_NORMAL:
+	{
+		ShadowConfig_t &closeShadow = shadowConfigs[0];
+		ShadowConfig_t &farShadow = shadowConfigs[1];
+		closeShadow.flOrthoSize = 256.0f;
+		closeShadow.flForwardOffset = 102.0f;
+		farShadow.flOrthoSize = 786.0f;
+		farShadow.flForwardOffset = 384.0f;
+
+		vecMainViewFwd.z = 0.0f;
+		vecMainViewFwd.NormalizeInPlace();
+	}
+	break;
+
+	case CASCADEDCONFIG_SPACE:
+	{
+		ShadowConfig_t &closeShadow = shadowConfigs[0];
+		ShadowConfig_t &farShadow = shadowConfigs[1];
+		closeShadow.flOrthoSize = 4.0f;
+		closeShadow.flForwardOffset = 2.0f;
+		closeShadow.flUVOffsetX = 0.25f;
+		farShadow.flViewDepthBiasHack = 1.5f;
+	}
+	break;
+	}*/
+
+	g_pCSMEnvLight->CopyShadowConfigData( shadowConfigs );
+
+	vecMainViewFwd -= vecFwd * DotProduct( vecMainViewFwd, vecFwd );
+
+	static VMatrix s_CSMSwapMatrix[2];
+	static int s_iCSMSwapIndex = 0;
+
+	//C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+
+	//Vector vecCascadeOrigin( ( mode == CASCADEDCONFIG_SPACE ) ? view.origin :
+	//						 pPlayer ? pPlayer->GetRenderOrigin() : vec3_origin );
+	Vector vecCascadeOrigin = view.origin - ( vecFwd * 1536 );
+
+	// This can only be set once per frame, not per shadow view. Fuckers.
+	/*if ( mode == CASCADEDCONFIG_SPACE )
+	{
+		pRenderContext->SetShadowDepthBiasFactors( 1.0f, 0.000005f );
+	}
+	else*/
+	{
+		pRenderContext->SetShadowDepthBiasFactors( 8.0f, 0.0005f );
+	}
+
+	for ( int i = 0; i < iCascadedShadowCount; i++ )
+	{
+		const ShadowConfig_t &shadowConfig = shadowConfigs[i];
+
+		cascadedShadowView.m_OrthoTop = -shadowConfig.flOrthoSize;
+		cascadedShadowView.m_OrthoRight = shadowConfig.flOrthoSize;
+		cascadedShadowView.m_OrthoBottom = shadowConfig.flOrthoSize;
+		cascadedShadowView.m_OrthoLeft = -shadowConfig.flOrthoSize;
+
+		cascadedShadowView.x = i * cascadedShadowView.width;
+		cascadedShadowView.y = 0;
+
+		Vector vecOrigin = vecCascadeOrigin + vecMainViewFwd * shadowConfig.flForwardOffset;
+		const float flViewFrustumWidthScale = shadowConfig.flOrthoSize * 2.0f / cascadedShadowView.width;
+		const float flViewFrustumHeightScale = shadowConfig.flOrthoSize * 2.0f / cascadedShadowView.height;
+		const float flFractionX = fmod( DotProduct( vecOrigin, vecRight ), flViewFrustumWidthScale );
+		const float flFractionY = fmod( DotProduct( vecOrigin, vecUp ), flViewFrustumHeightScale );
+		vecOrigin -= flFractionX * vecRight;
+		vecOrigin -= flFractionY * vecUp;
+
+		if ( i > 0 )
+		{
+			const ShadowConfig_t &prevShadowConfig = shadowConfigs[i - 1];
+			const float flCascadedScale = prevShadowConfig.flOrthoSize / shadowConfig.flOrthoSize;
+			Vector vecOffsetShadowMapSpace = vecOrigin - cascadedShadowView.origin;
+			Vector2D vecCascadedOffset( DotProduct( -vecRight, vecOffsetShadowMapSpace ) * 0.5f,
+										DotProduct( vecUp, vecOffsetShadowMapSpace ) );
+			vecCascadedOffset *= 0.5f / shadowConfig.flOrthoSize;
+
+			vecCascadedOffset.x = vecCascadedOffset.x + 0.5f + 0.25f * ( 1.0f - flCascadedScale );
+			vecCascadedOffset.y = vecCascadedOffset.y + 0.5f - flCascadedScale * 0.5f;
+
+			vecOffsetShadowMapSpace.Init( flCascadedScale, vecCascadedOffset.x, vecCascadedOffset.y );
+			pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_STEP, vecOffsetShadowMapSpace );
+		}
+
+		cascadedShadowView.origin = vecOrigin;
+
+		VMatrix worldToView, viewToProjection, worldToProjection, worldToTexture;
+		render->GetMatricesForView( cascadedShadowView, &worldToView, &viewToProjection, &worldToProjection, &worldToTexture );
+
+		if ( i == 0 )
+		{
+			VMatrix tmp;
+			MatrixBuildScale( tmp, 0.25f, -0.5f, 1.0f );
+			tmp[0][3] = shadowConfig.flUVOffsetX;
+			tmp[1][3] = 0.5f;
+
+			VMatrix &currentSwapMatrix = s_CSMSwapMatrix[s_iCSMSwapIndex];
+			MatrixMultiply( tmp, worldToProjection, currentSwapMatrix );
+			pRenderContext->SetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_0, reinterpret_cast<int>( &currentSwapMatrix ) );
+		}
+
+		cascadedShadowView.origin -= vecFwd * shadowConfig.flViewDepthBiasHack;
+		UpdateShadowDepthTexture( s_CascadedShadowColorTexture, s_CascadedShadowDepthTexture, cascadedShadowView );
+	}
+
+	s_iCSMSwapIndex = ( s_iCSMSwapIndex + 1 ) % 2;
+}
 
 //-----------------------------------------------------------------------------
 // Queues up an overlay rendering
@@ -1924,16 +2213,13 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 	{
 		// We know they were running at least 8.0 when the game started...we check the 
 		// value in ClientDLL_Init()...so they must be messing with their DirectX settings.
-		if ( ( Q_stricmp( COM_GetModDirectory(), "tf" ) == 0 ) || ( Q_stricmp( COM_GetModDirectory(), "tf_beta" ) == 0 ) )
+		static bool bFirstTime = true;
+		if ( bFirstTime )
 		{
-			static bool bFirstTime = true;
-			if ( bFirstTime )
-			{
-				bFirstTime = false;
-				Msg( "This game has a minimum requirement of DirectX 8.0 to run properly.\n" );
-			}
-			return;
+			bFirstTime = false;
+			Msg( "This game has a minimum requirement of DirectX 8.0 to run properly.\n" );
 		}
+		return;
 	}
 
 	CMatRenderContextPtr pRenderContext( materials );
@@ -1955,7 +2241,6 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 
 		g_pClientShadowMgr->AdvanceFrame();
 
-	#ifdef USE_MONITORS
 		if ( cl_drawmonitors.GetBool() && 
 			( g_pMaterialSystemHardwareConfig->GetDXSupportLevel() >= 70 ) &&
 			( ( whatToDraw & RENDERVIEW_SUPPRESSMONITORRENDERING ) == 0 ) )
@@ -1963,12 +2248,16 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 			CViewSetup viewMiddle = GetView( STEREO_EYE_MONO );
 			DrawMonitors( viewMiddle );	
 		}
-	#endif
 
 		g_bRenderingView = true;
 
 		// Must be first 
 		render->SceneBegin();
+
+		g_pColorCorrectionMgr->UpdateColorCorrection();
+
+		// Send the current tonemap scalar to the material system
+		//UpdateMaterialSystemTonemapScalar();
 
 		pRenderContext.GetFrom( materials );
 		pRenderContext->TurnOnToneMapping();
@@ -2059,6 +2348,13 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		render->ViewDrawFade( color, pMaterial );
 		PerformScreenOverlay( view.x, view.y, view.width, view.height );
 
+		if ( g_pMaterialSystemHardwareConfig->GetHDRType() != HDR_TYPE_NONE )
+		{
+			pRenderContext.GetFrom( materials );
+			pRenderContext->SetToneMappingScaleLinear( Vector( 1, 1, 1 ) );
+			pRenderContext.SafeRelease();
+		}
+
 		// Prevent sound stutter if going slow
 		engine->Sound_ExtraUpdate();	
 	
@@ -2090,13 +2386,6 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		}
 
 		PerformScreenSpaceEffects( 0, 0, view.width, view.height );
-
-		if ( g_pMaterialSystemHardwareConfig->GetHDRType() == HDR_TYPE_INTEGER )
-		{
-			pRenderContext.GetFrom( materials );
-			pRenderContext->SetToneMappingScaleLinear(Vector(1,1,1));
-			pRenderContext.SafeRelease();
-		}
 
 		CleanupMain3DView( view );
 
@@ -3051,7 +3340,6 @@ void CViewRender::ViewDrawScene_Intro( const CViewSetup &view, int nClearFlags, 
 bool CViewRender::DrawOneMonitor( ITexture *pRenderTarget, int cameraNum, C_PointCamera *pCameraEnt, 
 	const CViewSetup &cameraView, C_BasePlayer *localPlayer, int x, int y, int width, int height )
 {
-#ifdef USE_MONITORS
 	VPROF_INCREMENT_COUNTER( "cameras rendered", 1 );
 	// Setup fog state for the camera.
 	fogparams_t oldFogParams;
@@ -3115,7 +3403,6 @@ bool CViewRender::DrawOneMonitor( ITexture *pRenderTarget, int cameraNum, C_Poin
 		}
 		monitorView.zFar = flOldZFar;
 	}
-#endif // USE_MONITORS
 	return true;
 }
 
@@ -3124,8 +3411,6 @@ void CViewRender::DrawMonitors( const CViewSetup &cameraView )
 #ifdef PORTAL
 	g_pPortalRender->DrawPortalsToTextures( this, cameraView );
 #endif
-
-#ifdef USE_MONITORS
 
 	// Early out if no cameras
 	C_PointCamera *pCameraEnt = GetPointCameraList();
@@ -3171,8 +3456,6 @@ void CViewRender::DrawMonitors( const CViewSetup &cameraView )
 #ifdef _DEBUG
 	g_bRenderingCameraView = false;
 #endif
-
-#endif // USE_MONITORS
 }
 
 
@@ -3899,13 +4182,13 @@ static void DrawOpaqueRenderables_DrawStaticProps( CClientRenderablesList::CEntr
 		if ( -- numAvailable > 0 )
 			continue; // place a hint for compiler to predict more common case in the loop
 		
-		staticpropmgr->DrawStaticProps( pStatics, numScheduled, DepthMode, vcollide_wireframe.GetBool() );
+		staticpropmgr->DrawStaticProps( pStatics, numScheduled, DepthMode != DEPTH_MODE_NORMAL, vcollide_wireframe.GetBool() );
 		numScheduled = 0;
 		numAvailable = MAX_STATICS_PER_BATCH;
 	}
 	
 	if ( numScheduled )
-		staticpropmgr->DrawStaticProps( pStatics, numScheduled, DepthMode, vcollide_wireframe.GetBool() );
+		staticpropmgr->DrawStaticProps( pStatics, numScheduled, DepthMode != DEPTH_MODE_NORMAL, vcollide_wireframe.GetBool() );
 }
 
 static void DrawOpaqueRenderables_Range( CClientRenderablesList::CEntry *pEntitiesBegin, CClientRenderablesList::CEntry *pEntitiesEnd, ERenderDepthMode DepthMode )
@@ -4128,8 +4411,8 @@ void CRendering3dView::DrawOpaqueRenderables( ERenderDepthMode DepthMode )
 	//
 	// Ropes and particles
 	//
-	RopeManager()->DrawRenderCache( DepthMode );
-	g_pParticleSystemMgr->DrawRenderCache( DepthMode );
+	RopeManager()->DrawRenderCache( DepthMode != DEPTH_MODE_NORMAL );
+	g_pParticleSystemMgr->DrawRenderCache( DepthMode != DEPTH_MODE_NORMAL );
 }
 
 
@@ -4782,7 +5065,7 @@ void CSkyboxView::DrawInternal( view_id_t iSkyBoxViewID, bool bInvokePreAndPostR
 	}
 
 	render->BeginUpdateLightmaps();
-	BuildWorldRenderLists( true, true, -1 );
+	BuildWorldRenderLists( true, -1, true );
 	BuildRenderableRenderLists( iSkyBoxViewID );
 	render->EndUpdateLightmaps();
 
@@ -4973,15 +5256,11 @@ void CShadowDepthView::Draw()
 
 	pRenderContext.SafeRelease();
 
-	if( IsPC() )
-	{
-		render->Push3DView( (*this), VIEW_CLEAR_DEPTH, m_pRenderTarget, GetFrustum(), m_pDepthTexture );
-	}
-	else if( IsX360() )
-	{
-		//for the 360, the dummy render target has a separate depth buffer which we Resolve() from afterward
-		render->Push3DView( (*this), VIEW_CLEAR_DEPTH, m_pRenderTarget, GetFrustum() );
-	}
+	render->Push3DView( (*this), VIEW_CLEAR_DEPTH, m_pRenderTarget, GetFrustum(), m_pDepthTexture );
+
+	pRenderContext.GetFrom(materials);
+	pRenderContext->PushRenderTargetAndViewport( m_pRenderTarget, m_pDepthTexture, x, y, width, height );
+	pRenderContext.SafeRelease();
 
 	SetupCurrentView( origin, angles, VIEW_SHADOW_DEPTH_TEXTURE );
 
@@ -5021,11 +5300,7 @@ void CShadowDepthView::Draw()
 
 	pRenderContext.GetFrom( materials );
 
-	if( IsX360() )
-	{
-		//Resolve() the depth texture here. Before the pop so the copy will recognize that the resolutions are the same
-		pRenderContext->CopyRenderTargetToTextureEx( m_pDepthTexture, -1, NULL, NULL );
-	}
+	pRenderContext->PopRenderTargetAndViewport();
 
 	render->PopView( GetFrustum() );
 
@@ -5043,7 +5318,7 @@ void CFreezeFrameView::Setup( const CViewSetup &shadowViewIn )
 	BaseClass::Setup( shadowViewIn );
 
 	KeyValues *pVMTKeyValues = new KeyValues( "UnlitGeneric" );
-	pVMTKeyValues->SetString( "$basetexture", IsX360() ? "_rt_FullFrameFB1" : "_rt_FullScreen" );
+	pVMTKeyValues->SetString( "$basetexture", "_rt_FullScreen" );
 	pVMTKeyValues->SetInt( "$nocull", 1 );
 	pVMTKeyValues->SetInt( "$nofog", 1 );
 	pVMTKeyValues->SetInt( "$ignorez", 1 );
@@ -5464,14 +5739,7 @@ void CBaseWorldView::SSAO_DepthPass()
 
 	pRenderContext.SafeRelease();
 
-	if( IsPC() )
-	{
-		render->Push3DView( (*this), VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR, pSSAO, GetFrustum() );
-	}
-	else if( IsX360() )
-	{
-		render->Push3DView( (*this), VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR, pSSAO, GetFrustum() );
-	}
+	render->Push3DView( (*this), VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR, pSSAO, GetFrustum() );
 
 	MDLCACHE_CRITICAL_SECTION();
 
@@ -5700,7 +5968,6 @@ void CBaseWaterView::CSoftwareIntersectionView::Setup( bool bAboveWater )
 {
 	BaseClass::Setup( *GetOuter() );
 
-	m_DrawFlags = 0;
 	m_DrawFlags = ( bAboveWater ) ? DF_RENDER_UNDERWATER : DF_RENDER_ABOVEWATER;
 }
 
@@ -6191,7 +6458,11 @@ void CReflectiveGlassView::Draw()
 	bool bVisOcclusion = r_visocclusion.GetInt();
 	r_visocclusion.SetValue( 0 );
 				   
+
+	int lastView = g_CurrentViewID;
+	g_CurrentViewID = VIEW_REFLECTION;
 	BaseClass::Draw();
+	g_CurrentViewID = lastView;
 
 	r_visocclusion.SetValue( bVisOcclusion );
 

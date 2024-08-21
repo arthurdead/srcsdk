@@ -294,7 +294,7 @@ void CVoiceStatus::UpdateSpeakerStatus(int entindex, bool bTalking)
 	// Is it the local player talking?
 	if( entindex == -1 )
 	{
-		m_bTalking = !!bTalking;
+		m_bTalking = bTalking;
 		if( bTalking )
 		{
 			// Enable voice for them automatically if they try to talk.
@@ -347,7 +347,7 @@ void CVoiceStatus::UpdateServerState(bool bForce)
 		return;
 	}
 	
-	int bCVarModEnable = !!voice_modenable.GetInt();
+	int bCVarModEnable = voice_modenable.GetBool();
 	if(bForce || m_bServerModEnable != bCVarModEnable)
 	{
 		m_bServerModEnable = bCVarModEnable;

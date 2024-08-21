@@ -529,7 +529,7 @@ void ComboBox::OnSetText(const wchar_t *newtext)
 		g_pVGuiLocalize->ConvertUnicodeToANSI(text, cbuf, 255);
 
 		// try lookup in localization tables
-		StringIndex_t unlocalizedTextSymbol = g_pVGuiLocalize->FindIndex(cbuf + 1);
+		LocalizeStringIndex_t unlocalizedTextSymbol = g_pVGuiLocalize->FindIndex(cbuf + 1);
 		
 		if (unlocalizedTextSymbol != INVALID_LOCALIZE_STRING_INDEX)
 		{

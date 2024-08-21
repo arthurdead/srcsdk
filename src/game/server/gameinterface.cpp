@@ -210,7 +210,6 @@ extern ConVar sv_noclipduringpause;
 ConVar sv_massreport( "sv_massreport", "0" );
 ConVar sv_force_transmit_ents( "sv_force_transmit_ents", "0", FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY, "Will transmit all entities to client, regardless of PVS conditions (will still skip based on transmit flags, however)." );
 
-ConVar sv_autosave( "sv_autosave", "1", 0, "Set to 1 to autosave game on level transition. Does not affect autosave triggers." );
 ConVar *sv_maxreplay = NULL;
 static ConVar  *g_pcv_commentary = NULL;
 static ConVar *g_pcv_ThreadMode = NULL;
@@ -765,14 +764,11 @@ void CServerGameDLL::PostInit()
 
 void CServerGameDLL::DLLShutdown( void )
 {
-
 	//SecobMod__Information: Clear the transition file.
-	#ifdef SecobMod__SAVERESTORE
-		FileHandle_t hFile = g_pFullFileSystem->Open( "transition.cfg", "w" );
-		CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
-		g_pFullFileSystem->WriteFile( "transition.cfg", "MOD", buf );
-		g_pFullFileSystem->Close( hFile );
-	#endif //SecobMod__SAVERESTORE
+	FileHandle_t hFile = g_pFullFileSystem->Open( "transition.cfg", "w" );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
+	g_pFullFileSystem->WriteFile( "transition.cfg", "MOD", buf );
+	g_pFullFileSystem->Close( hFile );
 
 	// Due to dependencies, these are not autogamesystems
 	ModelSoundsCacheShutdown();
@@ -1030,18 +1026,6 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 		{
 			engine->ClearSaveDirAfterClientLoad();
 		}
-
-		if ( pOldLevel && sv_autosave.GetBool() == true )
-		{
-			// This is a single-player style level transition.
-			// Queue up an autosave one second into the level
-			CBaseEntity *pAutosave = CBaseEntity::Create( "logic_autosave", vec3_origin, vec3_angle, NULL );
-			if ( pAutosave )
-			{
-				g_EventQueue.AddEvent( pAutosave, "Save", 1.0, NULL, NULL );
-				g_EventQueue.AddEvent( pAutosave, "Kill", 1.1, NULL, NULL );
-			}
-		}
 	}
 	else
 	{
@@ -1083,9 +1067,6 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 	g_AIFoesTalkSemaphore.Release();
 	g_OneWayTransition = false;
 
-	// clear any pending autosavedangerous
-	m_fAutoSaveDangerousTime = 0.0f;
-	m_fAutoSaveDangerousMinHealthToCommit = 0.0f;
 	return true;
 }
 
@@ -1358,29 +1339,7 @@ void CServerGameDLL::PreClientUpdate( bool simulating )
 
 void CServerGameDLL::Think( bool finalTick )
 {
-	if ( m_fAutoSaveDangerousTime != 0.0f && m_fAutoSaveDangerousTime < gpGlobals->curtime )
-	{
-		// The safety timer for a dangerous auto save has expired
-	#ifdef SM_AI_FIXES
-		CBasePlayer *pPlayer = UTIL_GetLocalPlayer(); 
-	#else
-		CBasePlayer *pPlayer = UTIL_PlayerByIndex( 1 );
-	#endif
-
-		if ( pPlayer && ( pPlayer->GetDeathTime() == 0.0f || pPlayer->GetDeathTime() > gpGlobals->curtime )
-			&& !pPlayer->IsSinglePlayerGameEnding()
-			)
-		{
-			if( pPlayer->GetHealth() >= m_fAutoSaveDangerousMinHealthToCommit )
-			{
-				// The player isn't dead, so make the dangerous auto save safe
-				engine->ServerCommand( "autosavedangerousissafe\n" );
-			}
-		}
-
-		m_fAutoSaveDangerousTime = 0.0f;
-		m_fAutoSaveDangerousMinHealthToCommit = 0.0f;
-	}
+	
 }
 
 void CServerGameDLL::OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue )
@@ -1399,10 +1358,8 @@ void CServerGameDLL::LevelShutdown( void )
 
 	g_pServerBenchmark->EndBenchmark();
 
-#ifdef SecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE
 	extern ConVar sv_SecobMod__increment_killed;
 	sv_SecobMod__increment_killed.SetValue (0);
-#endif //SecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE
 
 	MDLCACHE_CRITICAL_SECTION();
 	IGameSystem::LevelShutdownPreEntityAllSystems();
@@ -2670,6 +2627,30 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 //	Msg("A:%i, N:%i, F: %i, P: %i\n", always, dontSend, fullCheck, PVS );
 }
 
+bool CMapLoadEntityFilter::ShouldCreateEntity( const char *pClassname )
+{
+	// During map load, create all the entities.
+	return true;
+}
+
+CBaseEntity* CMapLoadEntityFilter::CreateNextEntity( const char *pClassname )
+{
+	CBaseEntity *pRet = CreateEntityByName( pClassname );
+
+	CMapEntityRef ref;
+	ref.m_iEdict = -1;
+	ref.m_iSerialNumber = -1;
+
+	if ( pRet )
+	{
+		ref.m_iEdict = pRet->entindex();
+		if ( pRet->edict() )
+			ref.m_iSerialNumber = pRet->edict()->m_NetworkSerialNumber;
+	}
+
+	g_MapEntityRefs.AddToTail( ref );
+	return pRet;
+}
 
 CServerGameClients g_ServerGameClients;
 // INTERFACEVERSION_SERVERGAMECLIENTS_VERSION_3 is compatible with the latest since we're only adding things to the end, so expose that as well.
@@ -2791,9 +2772,8 @@ void CServerGameClients::ClientDisconnect( edict_t *pEdict )
 				gamestats->Event_PlayerDisconnected( player );
 			}
 			
-		//SecobMod__Information: If a client disconnects wipe them from the transition file. Note that if you want it so people who lag out can rejoin instantly without picking a class, then comment all this section out.
-		#ifdef SecobMod__SAVERESTORE
-		  KeyValues *pkvTransitionRestoreFile = new KeyValues( "transition.cfg" );
+			//SecobMod__Information: If a client disconnects wipe them from the transition file. Note that if you want it so people who lag out can rejoin instantly without picking a class, then comment all this section out.
+			KeyValues *pkvTransitionRestoreFile = new KeyValues( "transition.cfg" );
 			if ( pkvTransitionRestoreFile->LoadFromFile( filesystem, "transition.cfg" ) )
 			{
 				while ( pkvTransitionRestoreFile )
@@ -2801,19 +2781,19 @@ void CServerGameClients::ClientDisconnect( edict_t *pEdict )
 					const char *pszSteamID = pkvTransitionRestoreFile->GetName(); //Gets our header, which we use the players SteamID for.
 					const char *PlayerSteamID = engine->GetPlayerNetworkIDString(player->edict()); //Finds the current players Steam ID.	
 		
-						if ( Q_strcmp( PlayerSteamID, pszSteamID ) != 0)	 
-						{
-							break;		 
-						}
-				KeyValues *pkvNULL= pkvTransitionRestoreFile->FindKey( pszSteamID );
-				pkvNULL->deleteThis();	
-				//pkvNULL = NULL;
-				//pkvNULL->SaveToFile( filesystem, pkvTransitionRestoreFile, NULL );
-				pkvTransitionRestoreFile->SaveToFile( filesystem, "cfg/transition.cfg" );
-				break;
+					if ( Q_strcmp( PlayerSteamID, pszSteamID ) != 0)	 
+					{
+						break;		 
+					}
+
+					KeyValues *pkvNULL= pkvTransitionRestoreFile->FindKey( pszSteamID );
+					pkvNULL->deleteThis();	
+					//pkvNULL = NULL;
+					//pkvNULL->SaveToFile( filesystem, pkvTransitionRestoreFile, NULL );
+					pkvTransitionRestoreFile->SaveToFile( filesystem, "cfg/transition.cfg" );
+					break;
 				}
 			}
-		#endif //SecobMod__SAVERESTORE
 		}
 
 		// Make sure all Untouch()'s are called for this client leaving
@@ -3250,11 +3230,7 @@ void CServerGameClients::GetBugReportInfo( char *buf, int buflen )
 
 	if ( gpGlobals->maxClients == 1 )
 	{
-	#ifdef SM_AI_FIXES
-		CBaseEntity *ent = FindPickerEntity( UTIL_GetLocalPlayer() ); 
-	#else
-		CBaseEntity *ent = FindPickerEntity( UTIL_PlayerByIndex(1) );
-	#endif
+		CBaseEntity *ent = FindPickerEntity( UTIL_GetCommandClientIfAdmin() ); 
 
 		if ( ent )
 		{
@@ -3345,6 +3321,14 @@ void MessageWriteByte( int iValue)
 	g_pMsgBuffer->WriteByte( iValue );
 }
 
+void MessageWriteBytes( const void *pBuf, int nBytes )
+{
+	if (!g_pMsgBuffer)
+		Error("WRITE_BYTES called with no active message\n");
+
+	g_pMsgBuffer->WriteBytes( pBuf, nBytes );
+}
+
 void MessageWriteChar( int iValue)
 {
 	if (!g_pMsgBuffer)
@@ -3369,7 +3353,7 @@ void MessageWriteWord( int iValue )
 	g_pMsgBuffer->WriteWord( iValue );
 }
 
-void MessageWriteLong( int iValue)
+void MessageWriteLong( long iValue)
 {
 	if (!g_pMsgBuffer)
 		Error( "WriteLong called with no active message\n" );
@@ -3531,6 +3515,7 @@ private:
 
 EXPOSE_SINGLE_INTERFACE( CServerDLLSharedAppSystems, IServerDLLSharedAppSystems, SERVER_DLL_SHARED_APPSYSTEMS );
 
+EXPOSE_SINGLE_INTERFACE( CServerGameTags, IServerGameTags, INTERFACEVERSION_SERVERGAMETAGS );
 
 //-----------------------------------------------------------------------------
 //

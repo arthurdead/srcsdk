@@ -1053,7 +1053,7 @@ public:
 
 protected:
 	virtual void PostCustomAnalysis( void ) { }					// invoked when custom analysis step is complete
-	bool FindActiveNavArea( void );								// Finds the area or ladder the local player is currently pointing at.  Returns true if a surface was hit by the traceline.
+	bool FindActiveNavArea( CBasePlayer *player );								// Finds the area or ladder the local player is currently pointing at.  Returns true if a surface was hit by the traceline.
 	virtual void RemoveNavArea( CNavArea *area );				// remove an area from the grid
 	bool FindGroundForNode( Vector *pos, Vector *normal );
 	void GenerateNodes( const Extent &bounds );
@@ -1107,9 +1107,9 @@ private:
 
 	unsigned int m_navPlace;									// current navigation place for editing
 	void OnEditModeStart( void );								// called when edit mode has just been enabled
-	void DrawEditMode( void );									// draw navigation areas
+	void DrawEditMode( CBasePlayer *player );									// draw navigation areas
 	void OnEditModeEnd( void );									// called when edit mode has just been disabled
-	void UpdateDragSelectionSet( void );							// update which areas are overlapping the drag selected bounds
+	void UpdateDragSelectionSet( CBasePlayer *player );							// update which areas are overlapping the drag selected bounds
 	Vector m_editCursorPos;										// current position of the cursor
 	CNavArea *m_markedArea;										// currently marked area for edit operations
 	CNavArea *m_selectedArea;									// area that is selected this frame
@@ -1128,9 +1128,9 @@ private:
 	CNavLadder *m_lastSelectedLadder;							// ladder that was selected last frame
 	CNavLadder *m_markedLadder;									// currently marked ladder for edit operations
 
-	bool FindLadderCorners( Vector *c1, Vector *c2, Vector *c3 );	// computes the other corners of a ladder given m_ladderAnchor, m_editCursorPos, and m_ladderNormal
+	bool FindLadderCorners( CBasePlayer *player, Vector *c1, Vector *c2, Vector *c3 );	// computes the other corners of a ladder given m_ladderAnchor, m_editCursorPos, and m_ladderNormal
 
-	void GetEditVectors( Vector *pos, Vector *forward );		// Gets the eye position and view direction of the editing player
+	void GetEditVectors( CBasePlayer *player, Vector *pos, Vector *forward );		// Gets the eye position and view direction of the editing player
 
 	CountdownTimer m_showAreaInfoTimer;							// Timer that controls how long area info is displayed
 	

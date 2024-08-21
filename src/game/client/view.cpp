@@ -736,11 +736,7 @@ void CViewRender::SetUpViews()
 	float flFOVOffset = fDefaultFov - view.fov;
 
 	//Adjust the viewmodel's FOV to move with any FOV offsets on the viewer's end
-#ifdef SDK2013CE
 	view.fovViewmodel = fabs( g_pClientMode->GetViewModelFOV() - flFOVOffset );
-#else
-	view.fovViewmodel = g_pClientMode->GetViewModelFOV() - flFOVOffset;
-#endif
 
 	if ( UseVR() )
 	{
@@ -1358,8 +1354,7 @@ CON_COMMAND( getpos, "dump position and angles to the console" )
 	Warning( "%s %f %f %f\n", pCommand2, angles.x, angles.y, angles.z );
 }
 
-#ifdef SM_SP_FIXES
-void CViewRender::MP_PostSimulate()
+void CViewRender::PostSimulate()
 {
     C_BasePlayer *pLocal = C_BasePlayer::GetLocalPlayer();
     if ( !pLocal )
@@ -1412,4 +1407,3 @@ void CViewRender::MP_PostSimulate()
 #endif
 
 }
-#endif

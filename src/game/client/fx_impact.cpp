@@ -98,7 +98,7 @@ DECLARE_CLIENT_EFFECT( "RagdollImpact", RagdollImpactCallback );
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool Impact( Vector &vecOrigin, Vector &vecStart, int iMaterial, int iDamageType, int iHitbox, C_BaseEntity *pEntity, trace_t &tr, int nFlags, int maxLODToDecal )
+bool Impact( const Vector &vecOrigin, const Vector &vecStart, int iMaterial, int iDamageType, int iHitbox, C_BaseEntity *pEntity, trace_t &tr, int nFlags, int maxLODToDecal )
 {
 	VPROF( "Impact" );
 
@@ -207,7 +207,7 @@ char const *GetImpactDecal( C_BaseEntity *pEntity, int iMaterial, int iDamageTyp
 //-----------------------------------------------------------------------------
 // Purpose: Perform custom effects based on the Decal index
 //-----------------------------------------------------------------------------
-static ConVar cl_new_impact_effects( "cl_new_impact_effects", "0" );
+static ConVar cl_new_impact_effects( "cl_new_impact_effects", "1" );
 
 struct ImpactEffect_t
 {
@@ -256,7 +256,7 @@ static void SetImpactControlPoint( CNewParticleEffect *pEffect, int nPoint, cons
 	pEffect->SetControlPointEntity( nPoint, pEntity );
 }
 
-static void PerformNewCustomEffects( const Vector &vecOrigin, trace_t &tr, const Vector &shotDir, int iMaterial, int iScale, int nFlags )
+static bool PerformNewCustomEffects( const Vector &vecOrigin, trace_t &tr, const Vector &shotDir, int iMaterial, int iScale, int nFlags )
 {
 	bool bNoFlecks = !r_drawflecks.GetBool();
 	if ( !bNoFlecks )
@@ -272,11 +272,11 @@ static void PerformNewCustomEffects( const Vector &vecOrigin, trace_t &tr, const
 		pImpactName = effect.m_pNameNoFlecks;
 	}
 	if ( !pImpactName )
-		return;
+		return false;
 
 	CSmartPtr<CNewParticleEffect> pEffect = CNewParticleEffect::Create( NULL, pImpactName );
 	if ( !pEffect->IsValid() )
-		return;
+		return false;
 
 	Vector	vecReflect;
 	float	flDot = DotProduct( shotDir, tr.plane.normal );
@@ -298,6 +298,8 @@ static void PerformNewCustomEffects( const Vector &vecOrigin, trace_t &tr, const
 		GetColorForSurface( &tr, &vecColor );
 		pEffect->SetControlPoint( 4, vecColor );
 	}
+
+	return true;
 }
 
 void PerformCustomEffects( const Vector &vecOrigin, trace_t &tr, const Vector &shotDir, int iMaterial, int iScale, int nFlags )
@@ -306,9 +308,8 @@ void PerformCustomEffects( const Vector &vecOrigin, trace_t &tr, const Vector &s
 	if ( tr.surface.flags & (SURF_SKY|SURF_NODRAW|SURF_HINT|SURF_SKIP) )
 		return;
 
-	if ( cl_new_impact_effects.GetInt() )
+	if ( cl_new_impact_effects.GetBool() && PerformNewCustomEffects( vecOrigin, tr, shotDir, iMaterial, iScale, nFlags ) )
 	{
-		PerformNewCustomEffects( vecOrigin, tr, shotDir, iMaterial, iScale, nFlags );
 		return;
 	}
 
@@ -365,7 +366,7 @@ void PerformCustomEffects( const Vector &vecOrigin, trace_t &tr, const Vector &s
 // Purpose: Play a sound for an impact. If tr contains a valid hit, use that. 
 //			If not, use the passed in origin & surface.
 //-----------------------------------------------------------------------------
-void PlayImpactSound( CBaseEntity *pEntity, trace_t &tr, Vector &vecServerOrigin, int nServerSurfaceProp )
+void PlayImpactSound( CBaseEntity *pEntity, trace_t &tr, const Vector &vecServerOrigin, int nServerSurfaceProp )
 {
 	VPROF( "PlayImpactSound" );
 	surfacedata_t *pdata;
@@ -400,11 +401,7 @@ void PlayImpactSound( CBaseEntity *pEntity, trace_t &tr, Vector &vecServerOrigin
 		else
 		{
 			CLocalPlayerFilter filter;
-#ifdef SM_AI_FIXES
 			C_BaseEntity::EmitSound( filter, NULL, pbulletImpactSoundName, /*pdata->soundhandles.bulletImpact,*/ &vecOrigin );
-#else
-			C_BaseEntity::EmitSound( filter, NULL, pbulletImpactSoundName, pdata->soundhandles.bulletImpact, &vecOrigin );
-#endif
 		}
 
 		return;

@@ -1077,7 +1077,7 @@ static CEmptyConVar s_EmptyConVar;
 
 ConVarRef::ConVarRef( const char *pName )
 {
-	Init( pName, false );
+	Init( pName );
 }
 
 ConVarRef::ConVarRef( const char *pName, bool bIgnoreMissing )
@@ -1105,6 +1105,11 @@ void ConVarRef::Init( const char *pName, bool bIgnoreMissing )
 			bFirst = false;
 		}
 	}
+}
+
+void ConVarRef::Init( const char *pName )
+{
+	Init( pName, false );
 }
 
 ConVarRef::ConVarRef( IConVar *pConVar )

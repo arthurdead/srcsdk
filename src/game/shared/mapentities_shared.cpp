@@ -283,11 +283,13 @@ bool CEntityMapData::SetValue( const char *keyName, char *NewValue, int nKeyInst
 		return false;
 
 	char token[MAPKEY_MAXLENGTH];
-	char *inputData = m_pEntData;
+	char *inputData = (char *)m_pEntData;
 	char *prevData;
 
 	char newvaluebuf[ 1024 ];
 	int nCurrKeyInstance = 0;
+
+	int entLen = strlen(m_pEntData);
 
 	while ( inputData )
 	{
@@ -302,7 +304,6 @@ bool CEntityMapData::SetValue( const char *keyName, char *NewValue, int nKeyInst
 			if ( nCurrKeyInstance > nKeyInstance )
 			{
 				// Find the start & end of the token we're going to replace
-				int entLen = strlen(m_pEntData);
 				char *postData = new char[entLen];
 				prevData = inputData;
 				inputData = (char*)MapEntity_ParseToken( inputData, token );	// get keyname
