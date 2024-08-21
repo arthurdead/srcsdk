@@ -5,7 +5,7 @@
 [![Last Commit](https://img.shields.io/github/last-commit/ledmics/source-sdk-heist)](https://github.com/ledmics/source-sdk-heist)
 [![Discord](https://img.shields.io/discord/1231403460826763364)](https://discord.gg/UWuN4caQqb)
 # The Heist: Source
-[Dallas my beloved](https://youtu.be/icZQKJUVKJw)
+The Heist: Source is A Spiritual Successor to PAYDAY, built in the Source Engine. This repo contains the source code.
 ### Medic bag not included
 ## Projects Used
 - [Mini Source SDK](https://github.com/Joshua-Ashton/mini-source-sdk)
