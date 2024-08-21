@@ -32,9 +32,41 @@ public:
 	virtual void OnDataChanged( DataUpdateType_t updateType );
 	void	ShutDownLightHandle( void );
 
-	virtual bool Simulate();
+	virtual void Simulate();
 
-	void	UpdateLight( void );
+	void	UpdateLight( bool bForceUpdate );
+
+	// GSTRINGMIGRATION
+	virtual void UpdateOnRemove()
+	{
+		if ( m_pVolmetricMesh != NULL )
+		{
+			CMatRenderContextPtr pRenderContext( materials );
+			pRenderContext->DestroyStaticMesh( m_pVolmetricMesh );
+			m_pVolmetricMesh = NULL;
+		}
+		BaseClass::UpdateOnRemove();
+	}
+
+	virtual bool					IsTransparent() { return true; }
+	virtual bool					IsTwoPass() { return false; }
+
+	virtual void GetRenderBoundsWorldspace( Vector& mins, Vector& maxs )
+	{
+		if ( m_bEnableVolumetrics )
+		{
+			mins = m_vecRenderBoundsMin;
+			maxs = m_vecRenderBoundsMax;
+		}
+		else
+		{
+			BaseClass::GetRenderBoundsWorldspace( mins, maxs );
+		}
+	}
+	virtual bool ShouldDraw() { return true; }
+	virtual int DrawModel( int flags );
+
+	virtual bool ShouldReceiveProjectedTextures( int flags ) { return false; }
 
 	C_EnvProjectedTexture();
 	~C_EnvProjectedTexture();
@@ -43,11 +75,19 @@ public:
 	static float GetVisibleBBoxMinHeight( void ) { return m_flVisibleBBoxMinHeight; }
 	static C_EnvProjectedTexture *Create( );
 
+	void ClearVolumetricsMesh();
+
 private:
 
 	inline bool IsBBoxVisible( void );
 	bool IsBBoxVisible( Vector vecExtentsMin,
 						Vector vecExtentsMax );
+
+	void RebuildVolumetricMesh();
+	void GetShadowViewSetup( CViewSetup &setup );
+
+	IMesh	*m_pVolmetricMesh;
+	CMaterialReference m_matVolumetricsMaterial;
 
 	ClientShadowHandle_t m_LightHandle;
 	bool m_bForceUpdate;
@@ -82,6 +122,20 @@ private:
 
 	Vector	m_vecExtentsMin;
 	Vector	m_vecExtentsMax;
+
+	FlashlightState_t	m_FlashlightState;
+	UberlightState_t	m_UberlightState;
+	Vector m_vecRenderBoundsMin, m_vecRenderBoundsMax;
+
+	bool m_bEnableVolumetrics;
+	bool m_bEnableVolumetricsLOD;
+	float m_flVolumetricsFadeDistance;
+	int m_iVolumetricsQuality;
+	float m_flVolumetricsMultiplier;
+	float m_flVolumetricsQualityBias;
+
+	float m_flLastFOV;
+	int m_iCurrentVolumetricsSubDiv;
 
 	static float m_flVisibleBBoxMinHeight;
 };
