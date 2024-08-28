@@ -155,4 +155,4 @@ IMaterial *CConveyorMaterialProxy::GetMaterial()
 	return m_pTextureScrollVar ? m_pTextureScrollVar->GetOwningMaterial() : NULL;
 }
 
-EXPOSE_INTERFACE( CConveyorMaterialProxy, IMaterialProxy, "ConveyorScroll" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CConveyorMaterialProxy, ConveyorScroll );

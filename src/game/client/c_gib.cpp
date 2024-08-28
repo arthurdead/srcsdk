@@ -33,10 +33,7 @@ C_Gib::~C_Gib( void )
 C_Gib *C_Gib::CreateClientsideGib( const char *pszModelName, Vector vecOrigin, Vector vecForceDir, AngularImpulse vecAngularImp, float flLifetime )
 {
 	C_Gib *pGib = new C_Gib;
-
-	if ( pGib == NULL )
-		return NULL;
-
+	pGib->SetClassname("gib");
 	if ( pGib->InitializeGib( pszModelName, vecOrigin, vecForceDir, vecAngularImp, flLifetime ) == false )
 		return NULL;
 
@@ -53,11 +50,13 @@ C_Gib *C_Gib::CreateClientsideGib( const char *pszModelName, Vector vecOrigin, V
 //-----------------------------------------------------------------------------
 bool C_Gib::InitializeGib( const char *pszModelName, Vector vecOrigin, Vector vecForceDir, AngularImpulse vecAngularImp, float flLifetime )
 {
-	if ( InitializeAsClientEntity( pszModelName, RENDER_GROUP_OPAQUE_ENTITY ) == false )
+	if ( InitializeAsClientEntity() == false )
 	{
-		Release();
+		UTIL_Remove( this );
 		return false;
 	}
+
+	SetModel( pszModelName );
 
 	SetAbsOrigin( vecOrigin );
 	SetCollisionGroup( COLLISION_GROUP_DEBRIS );
@@ -78,11 +77,11 @@ bool C_Gib::InitializeGib( const char *pszModelName, Vector vecOrigin, Vector ve
 	else
 	{
 		// failed to create a physics object
-		Release();
+		UTIL_Remove( this );
 		return false;
 	}
 
-	SetNextClientThink( gpGlobals->curtime + flLifetime );
+	SetContextThink( &C_Gib::FadeThink, gpGlobals->curtime + flLifetime, "FadeThink" );
 
 	return true;
 }
@@ -90,21 +89,21 @@ bool C_Gib::InitializeGib( const char *pszModelName, Vector vecOrigin, Vector ve
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_Gib::ClientThink( void )
+void C_Gib::FadeThink( void )
 {
 	SetRenderMode( kRenderTransAlpha );
-	m_nRenderFX		= kRenderFxFadeFast;
+	SetRenderFX( kRenderFxFadeFast );
 
-	if ( m_clrRender->a == 0 )
+	if ( GetRenderAlpha() == 0 )
 	{
 #ifdef HL2_CLIENT_DLL
 		s_AntlionGibManager.RemoveGib( this );
 #endif
-		Release();
+		UTIL_Remove( this );
 		return;
 	}
 
-	SetNextClientThink( gpGlobals->curtime + 1.0f );
+	SetNextThink( gpGlobals->curtime + 1.0f, "FadeThink" );
 }
 
 //-----------------------------------------------------------------------------

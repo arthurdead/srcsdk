@@ -365,11 +365,12 @@ void C_EnvProjectedTexture::UpdateLight( bool bForceUpdate )
 	}
 }
 
-void C_EnvProjectedTexture::Simulate( void )
+bool C_EnvProjectedTexture::Simulate( void )
 {
 	UpdateLight( GetMoveParent() != NULL );
 
 	BaseClass::Simulate();
+	return true;
 }
 
 bool C_EnvProjectedTexture::IsBBoxVisible( Vector vecExtentsMin, Vector vecExtentsMax )
@@ -382,7 +383,7 @@ bool C_EnvProjectedTexture::IsBBoxVisible( Vector vecExtentsMin, Vector vecExten
 	return !engine->CullBox( vecExtentsMin, vecExtentsMax );
 }
 
-int C_EnvProjectedTexture::DrawModel( int flags )
+int C_EnvProjectedTexture::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 	if ( !m_bState ||
 		m_LightHandle == CLIENTSHADOW_INVALID_HANDLE ||

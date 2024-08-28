@@ -47,7 +47,7 @@ DECLARE_HUDELEMENT_DEPTH(CHudSuspicion, 1)
 CHudSuspicion::CHudSuspicion(const char *pElementName)
 	: CHudElement(pElementName), BasePanel(NULL, pElementName)
 {
-	vgui::Panel *pParent = g_pClientMode->GetViewport();
+	vgui::Panel *pParent = GetClientMode()->GetViewport();
 	SetParent(pParent);
 	SetScheme("ClientScheme");
 }
@@ -66,7 +66,7 @@ bool CHudSuspicion::ShouldDraw()
 }
 
 CHudSuspicion::SuspicionMeter::SuspicionMeter()
-	: BaseClass(g_pClientMode->GetViewport(), "SuspicionMeter")
+	: BaseClass(GetClientMode()->GetViewport(), "SuspicionMeter")
 {
 
 }

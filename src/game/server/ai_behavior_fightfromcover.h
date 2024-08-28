@@ -7,9 +7,7 @@
 #ifndef AI_BEHAVIOR_FIGHTFROMCOVER_H
 #define AI_BEHAVIOR_FIGHTFROMCOVER_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "ai_goalentity.h"
 #include "ai_behavior.h"

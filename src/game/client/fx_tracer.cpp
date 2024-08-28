@@ -15,6 +15,7 @@
 
 ConVar r_drawtracers( "r_drawtracers", "1", FCVAR_CHEAT );
 ConVar r_drawtracers_firstperson( "r_drawtracers_firstperson", "1", FCVAR_ARCHIVE, "Toggle visibility of first person weapon tracers" );
+extern void FormatViewModelAttachment( C_BasePlayer *pPlayer, Vector &vOrigin, bool bInverse );
 
 #define	TRACER_SPEED			5000 
 
@@ -41,10 +42,8 @@ Vector GetTracerOrigin( const CEffectData &data )
 		C_BaseEntity *pEnt = data.GetEntity();
 
 // This check should probably be for all multiplayer games, investigate later
-#if defined( HL2MP ) || defined( TF_CLIENT_DLL )
 		if ( pEnt && pEnt->IsDormant() )
 			return vecStart;
-#endif
 
 		C_BaseCombatWeapon *pWpn = dynamic_cast<C_BaseCombatWeapon *>( pEnt );
 		if ( pWpn && pWpn->ShouldDrawUsingViewModel() )
@@ -97,7 +96,7 @@ void TracerCallback( const CEffectData &data )
 	bool bWhiz = (data.m_fFlags & TRACER_FLAG_WHIZ);
 	int iEntIndex = data.entindex();
 
-	if ( iEntIndex && iEntIndex == player->index )
+	if ( iEntIndex && iEntIndex == player->entindex() )
 	{
 		Vector	foo = data.m_vStart;
 		QAngle	vangles;
@@ -123,11 +122,13 @@ void TracerCallback( const CEffectData &data )
 	FX_Tracer( (Vector&)vecStart, (Vector&)data.m_vOrigin, flVelocity, bWhiz );
 }
 
-DECLARE_CLIENT_EFFECT( "Tracer", TracerCallback );
+DECLARE_CLIENT_EFFECT( Tracer, TracerCallback );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+static int s_nWeaponTracerIndex;
+
 void ParticleTracerCallback( const CEffectData &data )
 {
 	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
@@ -151,24 +152,41 @@ void ParticleTracerCallback( const CEffectData &data )
 
 	// Adjust view model tracers
 	C_BaseEntity *pEntity = data.GetEntity();
-	if ( data.entindex() && data.entindex() == player->index )
+	C_BaseViewModel *pViewModel = ToBaseViewModel(pEntity);
+	C_BaseCombatWeapon *pWpn = (pEntity) ? pEntity->MyCombatWeaponPointer() : NULL;
+	if ( !pWpn && !pViewModel )
 	{
-		QAngle	vangles;
-		Vector	vforward, vright, vup;
+		if ( data.entindex() && data.entindex() == player->entindex() )
+		{
+			QAngle	vangles;
+			Vector	vforward, vright, vup;
 
-		engine->GetViewAngles( vangles );
-		AngleVectors( vangles, &vforward, &vright, &vup );
+			engine->GetViewAngles( vangles );
+			AngleVectors( vangles, &vforward, &vright, &vup );
 
-		VectorMA( data.m_vStart, 4, vright, vecStart );
-		vecStart[2] -= 0.5f;
+			VectorMA( data.m_vStart, 4, vright, vecStart );
+			vecStart[2] -= 0.5f;
+		}
+
+		// Create the particle effect
+		QAngle vecAngles;
+		Vector vecToEnd = vecEnd - vecStart;
+		VectorNormalize(vecToEnd);
+		VectorAngles( vecToEnd, vecAngles );
+		DispatchParticleEffect( data.m_nHitBox, vecStart, vecEnd, vecAngles, pEntity );
 	}
+	else
+	{
+		QAngle dummy;
+		
+		if ( pViewModel )
+		{
+			C_BasePlayer *pPlayer = ToBasePlayer( ((C_BaseViewModel *)pViewModel)->GetOwner() );
+			FormatViewModelAttachment( pPlayer, vecStart, true );
+		}
 
-	// Create the particle effect
-	QAngle vecAngles;
-	Vector vecToEnd = vecEnd - vecStart;
-	VectorNormalize(vecToEnd);
-	VectorAngles( vecToEnd, vecAngles );
-	DispatchParticleEffect( data.m_nHitBox, vecStart, vecEnd, vecAngles, pEntity );
+		DispatchParticleEffect( data.m_nHitBox, vecStart, vecEnd, dummy );
+	}
 
 	if ( data.m_fFlags & TRACER_FLAG_WHIZ )
 	{
@@ -176,7 +194,7 @@ void ParticleTracerCallback( const CEffectData &data )
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "ParticleTracer", ParticleTracerCallback );
+DECLARE_CLIENT_EFFECT( ParticleTracer, ParticleTracerCallback );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -190,5 +208,5 @@ void TracerSoundCallback( const CEffectData &data )
 	FX_TracerSound( vecStart, (Vector&)data.m_vOrigin, data.m_fFlags );
 }
 
-DECLARE_CLIENT_EFFECT( "TracerSound", TracerSoundCallback );
+DECLARE_CLIENT_EFFECT( TracerSound, TracerSoundCallback );
 

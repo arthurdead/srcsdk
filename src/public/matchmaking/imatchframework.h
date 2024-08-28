@@ -8,21 +8,15 @@
 #ifndef IMATCHFRAMEWORK_H
 #define IMATCHFRAMEWORK_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 class IMatchFramework;
 class IMatchSession;
 
-#include "appframework/iAppSystem.h"
+#include "appframework/IAppSystem.h"
 
 #include "tier1/interface.h"
-#include "keyvalues.h"
-
-#if !defined( _X360 )
-#include "xbox/xboxstubs.h"
-#endif
+#include "KeyValues.h"
 
 #include "inetchannel.h"
 

@@ -72,7 +72,7 @@ public:
 	// Updates the state of the temp ent beams
 	virtual void		UpdateTempEntBeams();
 
-	virtual void		DrawBeam( C_Beam* pbeam, ITraceFilter *pEntityBeamTraceFilter = NULL );
+	virtual void		DrawBeam( C_Beam* pbeam, const RenderableInstance_t &instance, ITraceFilter *pEntityBeamTraceFilter = NULL );
 	virtual void		DrawBeam( Beam_t *pbeam );
 
 	virtual	void		KillDeadBeams( C_BaseEntity *pDeadEntity );
@@ -119,7 +119,7 @@ public:
 
 private:
 	void					FreeDeadTrails( BeamTrail_t **trail );
-	void					UpdateBeam( Beam_t *pbeam, float frametime );
+	void					UpdateBeam( Beam_t *pbeam, float frametime, C_Beam *pcbeam = NULL );
 	void					DrawBeamWithHalo( Beam_t* pbeam,int frame,int rendermode,float *color, float *srcColor, const model_t *sprite,const model_t *halosprite, float flHDRColorScale );
 	void					DrawBeamFollow( const model_t* pSprite, Beam_t *pbeam, int frame, int rendermode, float frametime, const float* color, float flHDRColorScale = 1.0f );
 	void					DrawLaser( Beam_t* pBeam, int frame, int rendermode, float* color, model_t const* sprite, model_t const* halosprite, float flHDRColorScale = 1.0f );
@@ -128,6 +128,9 @@ private:
 	bool					RecomputeBeamEndpoints( Beam_t *pbeam );
 
 	int						CullBeam( const Vector &start, const Vector &end, int pvsOnly );
+
+	// special case clipping to geometry behavior
+	void					ClipBeam( C_Beam *pcbeam, Beam_t *pbeamt );
 
 	// Creation
 	Beam_t					*CreateGenericBeam( BeamInfo_t &beamInfo );
@@ -142,24 +145,14 @@ private:
 private:
 	enum
 	{
-
-#ifndef _XBOX
 		// default max # of particles at one time
 		DEFAULT_PARTICLES	= 2048,
-#else
-		DEFAULT_PARTICLES   = 1024,
-#endif
 
 		// no fewer than this no matter what's on the command line
 		MIN_PARTICLES		= 512,	
 
-#ifndef _XBOX
 		// Maximum length of the free list.
 		BEAM_FREELIST_MAX	= 32
-#else
-		BEAM_FREELIST_MAX   = 4
-#endif
-
 	};
 
 	Beam_t					*m_pActiveBeams;
@@ -420,25 +413,15 @@ bool Beam_t::ShouldDraw( void )
 	return true;
 }
 
-bool Beam_t::IsTransparent( void )
+RenderableTranslucencyType_t Beam_t::ComputeTranslucencyType()
 {
-	return true;
-}
-
-void Beam_t::ComputeFxBlend( )
-{
-	// Do nothing, they're always 255
-}
-
-int	Beam_t::GetFxBlend( )
-{
-	return 255;
+	return RENDERABLE_IS_TRANSLUCENT;
 }
 
 extern bool g_bRenderingScreenshot;
 extern ConVar r_drawviewmodel;
 
-int Beam_t::DrawModel( int flags )
+int Beam_t::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 #ifdef PORTAL
 	if ( ( !g_pPortalRender->IsRenderingPortal() && !m_bDrawInMainRender ) || 
@@ -455,7 +438,7 @@ int Beam_t::DrawModel( int flags )
 		// If the beam is attached
 		for (int i=0;i<MAX_BEAM_ENTS;i++)
 		{
-			C_BaseViewModel *vm = dynamic_cast<C_BaseViewModel *>(entity[i].Get());
+			C_BaseViewModel *vm = ToBaseViewModel(entity[i].Get());
 			if ( vm )
 			{
 				return 0;
@@ -593,7 +576,7 @@ Beam_t *CViewRenderBeams::BeamAlloc( bool bRenderable )
 	if ( bRenderable )
 	{
 		// Hook it into the rendering system...
-		ClientLeafSystem()->AddRenderable( pBeam, RENDER_GROUP_TRANSLUCENT_ENTITY );
+		ClientLeafSystem()->AddRenderable( pBeam, false, RENDERABLE_IS_TRANSLUCENT, RENDERABLE_MODEL_ENTITY );
 	}
 	else
 	{
@@ -1466,7 +1449,7 @@ void CViewRenderBeams::FreeDeadTrails( BeamTrail_t **trail )
 //-----------------------------------------------------------------------------
 // Updates beam state
 //-----------------------------------------------------------------------------
-void CViewRenderBeams::UpdateBeam( Beam_t *pbeam, float frametime )
+void CViewRenderBeams::UpdateBeam( Beam_t *pbeam, float frametime, C_Beam *pcbeam )
 {
 	if ( pbeam->modelIndex < 0 )
 	{
@@ -1518,6 +1501,12 @@ void CViewRenderBeams::UpdateBeam( Beam_t *pbeam, float frametime )
 		// Makes sure attachment[0] + attachment[1] are valid
 		if (!RecomputeBeamEndpoints( pbeam ))
 			return;
+
+		// clip if requested
+		if ( pcbeam && pcbeam->GetClipStyle() != CBeam::kNOCLIP )
+		{
+			ClipBeam( pcbeam, pbeam );
+		}
 
 		// Compute segments from the new endpoints
 		VectorSubtract( pbeam->attachment[1], pbeam->attachment[0], pbeam->delta );
@@ -2115,10 +2104,61 @@ bool CViewRenderBeams::RecomputeBeamEndpoints( Beam_t *pbeam )
 	bool bBeamDrawingThroughPortal = false;
 #endif
 
+#ifdef VPROF_ENABLED
+ConVar cl_beam_test_traces( "cl_beam_test_traces", "0", FCVAR_DEVELOPMENTONLY, "Enable debug overlay on traces that determine where the client-side visible env_beam is drawn. Has no bearing on the server-side damage-causing part of the beam." );
+static inline bool BeamDebugOverlay() { return cl_beam_test_traces.GetBool(); }
+#else
+static inline bool BeamDebugOverlay() { return false; }
+#endif
+
+void CViewRenderBeams::ClipBeam( C_Beam * RESTRICT pcbeam, Beam_t * RESTRICT pbeam )
+{
+	// Assert( pbeam->GetClipStyle() != C_Beam::kNOCLIP );
+	int colmask = 0;
+	int colgroup = COLLISION_GROUP_NONE;
+	switch ( pcbeam->GetClipStyle() )
+	{
+	case C_Beam::kGEOCLIP:
+		colmask = CONTENTS_SOLID; // lasers go through gates and windows.
+		break;
+	case C_Beam::kMODELCLIP:
+		colmask = MASK_SOLID; 
+		break;
+	default:
+		AssertMsg1(false, "Unknown beam clipping type %d\n", pcbeam->GetClipStyle() );
+		return;
+	}
+
+	trace_t tr;
+	Vector &vstart = pbeam->attachment[0];
+	Vector &vend = pbeam->attachment[1];
+	// start the trace from a few inches ahead of the start position (in case of coplanarity)
+	// use a fast estimated normalize ( i'll push this into mathlib later )
+	Vector delta = vend - vstart;
+	delta *= 8.0f * FastRSqrtFast((delta).LengthSqr()) ;
+	if ( BeamDebugOverlay() )
+	{
+		NDebugOverlay::Line( vstart + delta, vend, 255, 255, 0, true, 0.2f );
+	}
+
+	UTIL_TraceLine( vstart + delta , vend, colmask, NULL, colgroup, &tr );
+
+	if ( tr.fraction < 1.0f )
+	{
+		// move the endpoint to wherever the trace stopped
+		// if ( test_spam.GetBool() ) Msg( "(%s) %s\n", tr.startsolid ? "x" : " ", tr.m_pEnt->GetDebugName() );
+		if ( BeamDebugOverlay() ) {
+			//NDebugOverlay::Cross( tr.endpos, 8, 255, 255, 0, false, 0.2f );
+		}
+
+		vend = tr.endpos;
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Draws a single beam
 //-----------------------------------------------------------------------------
-void CViewRenderBeams::DrawBeam( C_Beam* pbeam, ITraceFilter *pEntityBeamTraceFilter )
+void CViewRenderBeams::DrawBeam( C_Beam* pbeam, const RenderableInstance_t &instance, ITraceFilter *pEntityBeamTraceFilter )
 {
 	Beam_t beam;
 
@@ -2137,7 +2177,7 @@ void CViewRenderBeams::DrawBeam( C_Beam* pbeam, ITraceFilter *pEntityBeamTraceFi
 	beamInfo.m_flEndWidth = pbeam->GetEndWidth();
 	beamInfo.m_flFadeLength = pbeam->GetFadeLength();
 	beamInfo.m_flAmplitude = pbeam->GetNoise();
-	beamInfo.m_flBrightness = pbeam->GetFxBlend();
+	beamInfo.m_flBrightness = instance.m_nAlpha;
 	beamInfo.m_flSpeed = pbeam->GetScrollRate();
 
 #ifdef PORTAL	// Beams need to recursively draw through portals
@@ -2252,9 +2292,9 @@ void CViewRenderBeams::DrawBeam( C_Beam* pbeam, ITraceFilter *pEntityBeamTraceFi
 
 	beamInfo.m_nStartFrame = pbeam->m_fStartFrame;
 	beamInfo.m_flFrameRate = pbeam->m_flFrameRate;
-	beamInfo.m_flRed = pbeam->m_clrRender->r;
-	beamInfo.m_flGreen = pbeam->m_clrRender->g;
-	beamInfo.m_flBlue = pbeam->m_clrRender->b;
+	beamInfo.m_flRed = pbeam->GetRenderColorR();
+	beamInfo.m_flGreen = pbeam->GetRenderColorG();
+	beamInfo.m_flBlue = pbeam->GetRenderColorB();
 
 	SetBeamAttributes( &beam, beamInfo );
 
@@ -2339,8 +2379,7 @@ void CViewRenderBeams::DrawBeam( C_Beam* pbeam, ITraceFilter *pEntityBeamTraceFi
 		// don't draw viewmodel effects in reflections
 		if ( CurrentViewID() == VIEW_REFLECTION )
 		{
-			int group = beam.entity[0]->GetRenderGroup();
-			if (group == RENDER_GROUP_VIEW_MODEL_TRANSLUCENT || group == RENDER_GROUP_VIEW_MODEL_OPAQUE)
+			if ( ClientLeafSystem()->IsRenderingWithViewModels( beam.entity[0]->RenderHandle() ) )
 				return;
 		}
 	}
@@ -2348,6 +2387,6 @@ void CViewRenderBeams::DrawBeam( C_Beam* pbeam, ITraceFilter *pEntityBeamTraceFi
 	beam.m_flHDRColorScale = pbeam->GetHDRColorScale();
 
 	// Draw it
-	UpdateBeam( &beam, gpGlobals->frametime );
+	UpdateBeam( &beam, gpGlobals->frametime, pbeam );
 	DrawBeam( &beam );
 }

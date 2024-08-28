@@ -31,10 +31,35 @@
 
 class C_PlasmaSprite : public C_Sprite
 {
+public:
 	DECLARE_CLASS( C_PlasmaSprite, C_Sprite );
+
+	C_PlasmaSprite()
+		: C_Sprite(true)
+	{
+	}
+
+	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
+	virtual	bool			IsClientCreated( void ) const { return true; }
+	virtual bool						IsServerEntity( void ) { return false; }
 
 public:
 	Vector	m_vecMoveDir;
+};
+
+class C_PlasmaGlow : public C_Sprite
+{
+public:
+	DECLARE_CLASS( C_PlasmaGlow, C_Sprite );
+
+	C_PlasmaGlow()
+		: C_Sprite(true)
+	{
+	}
+
+	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
+	virtual	bool			IsClientCreated( void ) const { return true; }
+	virtual bool						IsServerEntity( void ) { return false; }
 };
 
 
@@ -47,7 +72,7 @@ public:
 	C_Plasma();
 	~C_Plasma();
 
-	void	AddEntity( void );
+	bool	Simulate( void );
 
 protected:
 	void	Update( void );
@@ -87,10 +112,10 @@ public:
 	bool	m_bClipTested;
 
 protected:
-	C_PlasmaSprite		m_entFlames[NUM_CHILD_FLAMES];
+	C_PlasmaSprite		*m_pEntFlames[NUM_CHILD_FLAMES];
 	float				m_entFlameScales[NUM_CHILD_FLAMES];
 
-	C_Sprite			m_entGlow;
+	C_PlasmaGlow			*m_pEntGlow;
 	float				m_flGlowScale;
 
 	TimedEvent			m_tParticleSpawn;
@@ -191,17 +216,28 @@ C_Plasma::C_Plasma()
 	m_flGlowScale		= 0.0f;
 	m_bClipTested		= false;
 	
-	m_entGlow.Clear();
+	m_pEntGlow = NULL;
 	
 	//Clear all child flames
 	for ( int i = 0; i < NUM_CHILD_FLAMES; i++ )
 	{
-		m_entFlames[i].Clear();
+		m_pEntFlames[i] = NULL;
 	}
+	AddToEntityList(ENTITY_LIST_SIMULATE);
 }
 
 C_Plasma::~C_Plasma()
 {
+	if(m_pEntGlow) {
+		UTIL_Remove( m_pEntGlow );
+	}
+
+	for ( int i = 0; i < NUM_CHILD_FLAMES; i++ )
+	{
+		if(m_pEntFlames[i]) {
+			UTIL_Remove( m_pEntFlames[i] );
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -222,11 +258,11 @@ float C_Plasma::GetFlickerScale( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_Plasma::AddEntity( void )
+bool C_Plasma::Simulate( void )
 {
 	//Only do this if we're active
 	if ( ( m_nFlags & bitsFIRESMOKE_ACTIVE ) == false )
-		return;
+		return false;
 
 	Update();
 	AddFlames();
@@ -235,8 +271,11 @@ void C_Plasma::AddEntity( void )
 	m_flGlowScale = m_flScaleRegister;
 
 	// Note: Sprite renderer assumes scale of 0.0 is 1.0
-	m_entGlow.SetScale( MAX( 0.0000001f, (m_flScaleRegister*1.5f) + GetFlickerScale() ) );
-	m_entGlow.SetLocalOriginDim( Z_INDEX, m_entGlow.GetLocalOriginDim( Z_INDEX ) + ( dScale * 32.0f ) );
+	if(m_pEntGlow) {
+		m_pEntGlow->SetScale( MAX( 0.0000001f, (m_flScaleRegister*1.5f) + GetFlickerScale() ) );
+		m_pEntGlow->SetLocalOriginDim( Z_INDEX, m_pEntGlow->GetLocalOriginDim( Z_INDEX ) + ( dScale * 32.0f ) );
+	}
+	return true;
 }
 
 #define	FLAME_ALPHA_START	0.8f
@@ -263,13 +302,16 @@ void C_Plasma::AddFlames( void )
 
 	for ( int i = 0; i < NUM_CHILD_FLAMES; i++ )
 	{
-		if ( m_entFlames[i].GetScale() > 0.0f )
+		if(!m_pEntFlames[i])
+			continue;
+
+		if ( m_pEntFlames[i]->GetScale() > 0.0f )
 		{
-			m_entFlames[i].SetRenderColor( ( 255.0f * alpha ), ( 255.0f * alpha ), ( 255.0f * alpha ) );
-			m_entFlames[i].SetBrightness( 255.0f * alpha );
+			m_pEntFlames[i]->SetRenderColor( ( 255.0f * alpha ), ( 255.0f * alpha ), ( 255.0f * alpha ) );
+			m_pEntFlames[i]->SetBrightness( 255.0f * alpha );
 		}
 
-		m_entFlames[i].AddToLeafSystem();
+		m_pEntFlames[i]->AddToLeafSystem();
 	}
 }
 
@@ -284,6 +326,11 @@ void C_Plasma::OnDataChanged( DataUpdateType_t updateType )
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
 		Start();
+	}
+
+	if ( m_nFlags & bitsFIRESMOKE_ACTIVE )
+	{
+		AddToEntityList(ENTITY_LIST_SIMULATE);
 	}
 }
 
@@ -316,8 +363,16 @@ void C_Plasma::Start( void )
 		offset[0] = 0.0f;
 		offset[1] = random->RandomFloat( 0, 360 );
 		offset[2] = 0.0f;
+
+		if(!m_pEntFlames[i]) {
+			m_pEntFlames[i] = new C_PlasmaSprite();
+			if(!m_pEntFlames[i]->InitializeAsClientEntity()) {
+				UTIL_Remove( m_pEntFlames[i] );
+				m_pEntFlames[i] = NULL;
+			}
+		}
 	
-  		AngleVectors( offset, &m_entFlames[i].m_vecMoveDir );
+  		AngleVectors( offset, &m_pEntFlames[i]->m_vecMoveDir );
 		
 		int	nModelIndex = ( i % 2 ) ? m_nPlasmaModelIndex : m_nPlasmaModelIndex2;
 
@@ -325,16 +380,16 @@ void C_Plasma::Start( void )
 		maxFrames	= modelinfo->GetModelFrameCount( pModel );
 
 		// Setup all the information for the client entity
-		m_entFlames[i].SetModelByIndex( nModelIndex );
-		m_entFlames[i].SetLocalOrigin( GetLocalOrigin() );
-		m_entFlames[i].m_flFrame			= random->RandomInt( 0.0f, maxFrames );
-		m_entFlames[i].m_flSpriteFramerate	= (float) random->RandomInt( 15, 20 );
-		m_entFlames[i].SetScale( m_flStartScale );
-		m_entFlames[i].SetRenderMode( kRenderTransAddFrameBlend );
-		m_entFlames[i].m_nRenderFX			= kRenderFxNone;
-		m_entFlames[i].SetRenderColor( 255, 255, 255, 255 );
-		m_entFlames[i].SetBrightness( 255 );
-		m_entFlames[i].index				= -1;
+		m_pEntFlames[i]->SetModelByIndex( nModelIndex );
+		m_pEntFlames[i]->SetLocalOrigin( GetLocalOrigin() );
+		m_pEntFlames[i]->m_flFrame			= random->RandomInt( 0.0f, maxFrames );
+		m_pEntFlames[i]->m_flSpriteFramerate	= (float) random->RandomInt( 15, 20 );
+		m_pEntFlames[i]->SetScale( m_flStartScale );
+		m_pEntFlames[i]->SetRenderMode( kRenderTransAddFrameBlend );
+		m_pEntFlames[i]->SetRenderFX( kRenderFxNone );
+		m_pEntFlames[i]->SetRenderColor( 255, 255, 255 );
+		m_pEntFlames[i]->SetRenderAlpha( 255 );
+		m_pEntFlames[i]->SetBrightness( 255 );
 		
 		if ( i == 0 )
 		{
@@ -347,22 +402,30 @@ void C_Plasma::Start( void )
 		}
 	}
 
+	if(!m_pEntGlow) {
+		m_pEntGlow = new C_PlasmaGlow();
+		if(!m_pEntGlow->InitializeAsClientEntity()) {
+			UTIL_Remove(m_pEntGlow);
+			m_pEntGlow = NULL;
+		}
+	}
+
 	// Setup the glow
-	m_entGlow.SetModelByIndex( m_nGlowModelIndex );
-	m_entGlow.SetLocalOrigin( GetLocalOrigin() );
-	m_entGlow.SetScale( m_flStartScale );
-	m_entGlow.SetRenderMode( kRenderTransAdd );
-	m_entGlow.m_nRenderFX		= kRenderFxNone;
-	m_entGlow.SetRenderColor( 255, 255, 255, 255 );
-	m_entGlow.SetBrightness( 255 );
-	m_entGlow.index				= -1;
+	m_pEntGlow->SetModelByIndex( m_nGlowModelIndex );
+	m_pEntGlow->SetLocalOrigin( GetLocalOrigin() );
+	m_pEntGlow->SetScale( m_flStartScale );
+	m_pEntGlow->SetRenderMode( kRenderTransAdd );
+	m_pEntGlow->SetRenderFX( kRenderFxNone );
+	m_pEntGlow->SetRenderColor( 255, 255, 255 );
+	m_pEntGlow->SetRenderAlpha( 255 );
+	m_pEntGlow->SetBrightness( 255 );
 	
 	m_flGlowScale				= m_flStartScale;
 
-	m_entGlow.AddToLeafSystem( RENDER_GROUP_TRANSLUCENT_ENTITY );
+	m_pEntGlow->AddToLeafSystem( false );
 
 	for( i=0; i < NUM_CHILD_FLAMES; i++ )
-		m_entFlames[i].AddToLeafSystem( RENDER_GROUP_TRANSLUCENT_ENTITY );
+		m_pEntFlames[i]->AddToLeafSystem( false );
 }
 
 //-----------------------------------------------------------------------------
@@ -375,13 +438,16 @@ void C_Plasma::UpdateAnimation( void )
 
 	for ( int i = 0; i < NUM_CHILD_FLAMES; i++ )
 	{
-		m_entFlames[i].m_flFrame += m_entFlames[i].m_flSpriteFramerate * frametime;
+		if(!m_pEntFlames[i])
+			continue;
 
-		numFrames = modelinfo->GetModelFrameCount( m_entFlames[i].GetModel() );
+		m_pEntFlames[i]->m_flFrame += m_pEntFlames[i]->m_flSpriteFramerate * frametime;
 
-		if ( m_entFlames[i].m_flFrame >= numFrames )
+		numFrames = modelinfo->GetModelFrameCount( m_pEntFlames[i]->GetModel() );
+
+		if ( m_pEntFlames[i]->m_flFrame >= numFrames )
 		{
-			m_entFlames[i].m_flFrame = m_entFlames[i].m_flFrame - (int)(m_entFlames[i].m_flFrame);
+			m_pEntFlames[i]->m_flFrame = m_pEntFlames[i]->m_flFrame - (int)(m_pEntFlames[i]->m_flFrame);
 		}
 	}
 }
@@ -394,8 +460,11 @@ void C_Plasma::UpdateFlames( void )
 {
 	for ( int i = 0; i < NUM_CHILD_FLAMES; i++ )
 	{
+		if(!m_pEntFlames[i])
+			continue;
+
 		float	newScale = m_flScaleRegister * m_entFlameScales[i];
-		float	dScale = newScale - m_entFlames[i].GetScale();
+		float	dScale = newScale - m_pEntFlames[i]->GetScale();
 
 		Vector dir;
 
@@ -404,18 +473,18 @@ void C_Plasma::UpdateFlames( void )
 		dir[2] = 0.0f;
 
 		Vector	offset = GetAbsOrigin();
-		offset[2] = m_entFlames[i].GetAbsOrigin()[2];
+		offset[2] = m_pEntFlames[i]->GetAbsOrigin()[2];
 
 		// Note: Sprite render assumes 0 scale means 1.0
-		m_entFlames[i].SetScale ( MAX(0.000001,newScale) );
+		m_pEntFlames[i]->SetScale ( MAX(0.000001,newScale) );
 		
 		if ( i != 0 )
 		{
-			m_entFlames[i].SetLocalOrigin( offset + ( m_entFlames[i].m_vecMoveDir * ((m_entFlames[i].GetScale())*CHILD_SPREAD) ) );
+			m_pEntFlames[i]->SetLocalOrigin( offset + ( m_pEntFlames[i]->m_vecMoveDir * ((m_pEntFlames[i]->GetScale())*CHILD_SPREAD) ) );
 		}
 
-		Assert( !m_entFlames[i].GetMoveParent() );
-		m_entFlames[i].SetLocalOriginDim( Z_INDEX, m_entFlames[i].GetLocalOriginDim( Z_INDEX ) + ( dScale * 64.0f ) );
+		Assert( !m_pEntFlames[i]->GetMoveParent() );
+		m_pEntFlames[i]->SetLocalOriginDim( Z_INDEX, m_pEntFlames[i]->GetLocalOriginDim( Z_INDEX ) + ( dScale * 64.0f ) );
 	}
 }
 

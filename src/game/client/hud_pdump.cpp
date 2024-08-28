@@ -10,34 +10,38 @@
 #include "predictioncopy.h"
 #include <vgui/ISurface.h>
 #include <vgui/ILocalize.h>
+#include "vgui_int.h"
+#include "in_buttons.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-static CPDumpPanel *g_pPDumpPanel = NULL;
+static CPDumpPanel *s_PDumpPanel = NULL;
 using namespace vgui;
 
 CPDumpPanel *GetPDumpPanel()
 {
-	return g_pPDumpPanel;
+	return GET_FULLSCREEN_HUDELEMENT( CPDumpPanel );
 }
 
 DECLARE_HUDELEMENT( CPDumpPanel );
 
 CPDumpPanel::CPDumpPanel( const char *pElementName ) :
-	CHudElement( pElementName ), BaseClass( NULL, "HudPredictionDump" )
+	CHudElement( pElementName ), BaseClass( NULL, "HudPredictionDump" ), m_nCurrentIndex( 0 )
 {
-	g_pPDumpPanel = this;
+	s_PDumpPanel = this;
 
-	vgui::Panel *pParent = g_pClientMode->GetViewport();
+	vgui::Panel *pParent = GetFullscreenClientMode()->GetViewport();
 	SetParent( pParent );
 
 	SetProportional( false );
+	SetKeyBoardInputEnabled( false );
+	SetMouseInputEnabled( false );
 }
 
 CPDumpPanel::~CPDumpPanel()
 {
-	g_pPDumpPanel = NULL;
+	s_PDumpPanel = NULL;
 }
 
 void CPDumpPanel::ApplySettings( KeyValues *inResourceData )
@@ -67,25 +71,157 @@ bool CPDumpPanel::ShouldDraw()
 	return CHudElement::ShouldDraw();
 }
 
+static char const *pchButtonFields[]=
+{
+	"m_nOldButtons",
+	"m_nButtons",
+	"m_afButtonLast",
+	"m_afButtonPressed",
+	"m_afButtonReleased",
+	"m_afButtonForced",
+};
+
+static bool IsButtonField( char const *fieldname )
+{
+	for ( int i =0 ; i < ARRAYSIZE( pchButtonFields ); ++i )
+	{
+		if ( !Q_stricmp( fieldname, pchButtonFields[ i ] ) )
+			return true;
+	}
+	return false;
+}
+
+struct buttonname_t
+{
+	int			nBit;
+	char const	*pchName;
+};
+
+#define DECLARE_BUTTON_NAME( x ) { IN_##x, #x }
+
+static buttonname_t g_ButtonNames[] =
+{
+	DECLARE_BUTTON_NAME( ATTACK ),
+	DECLARE_BUTTON_NAME( JUMP ),
+	DECLARE_BUTTON_NAME( DUCK ),
+	DECLARE_BUTTON_NAME( FORWARD ),
+	DECLARE_BUTTON_NAME( BACK ),
+	DECLARE_BUTTON_NAME( USE ),
+	DECLARE_BUTTON_NAME( CANCEL ),
+	DECLARE_BUTTON_NAME( LEFT ),
+	DECLARE_BUTTON_NAME( RIGHT ),
+	DECLARE_BUTTON_NAME( MOVELEFT ),
+	DECLARE_BUTTON_NAME( MOVERIGHT ),
+	DECLARE_BUTTON_NAME( ATTACK2 ),
+	DECLARE_BUTTON_NAME( RUN ),
+	DECLARE_BUTTON_NAME( RELOAD ),
+	DECLARE_BUTTON_NAME( ALT1 ),
+	DECLARE_BUTTON_NAME( ALT2 ),
+	DECLARE_BUTTON_NAME( SCORE ),
+	DECLARE_BUTTON_NAME( SPEED),
+	DECLARE_BUTTON_NAME( WALK ),
+	DECLARE_BUTTON_NAME( ZOOM ),
+	DECLARE_BUTTON_NAME( WEAPON1 ),
+	DECLARE_BUTTON_NAME( WEAPON2 ),
+	DECLARE_BUTTON_NAME( BULLRUSH ),
+	DECLARE_BUTTON_NAME( GRENADE1 ),
+	DECLARE_BUTTON_NAME( GRENADE2 ),
+	DECLARE_BUTTON_NAME( LOOKSPIN ),
+};
+
+
+static char const *GetButtonFieldValue( char const *value, char *buf, size_t bufsize )
+{
+	buf[ 0 ] = 0;
+	char *pchDataStart = Q_strstr( value, "(" );
+	if ( !pchDataStart )
+		return value;
+
+	int bits = Q_atoi( pchDataStart + 1 );
+
+	// Assign button bits
+	bool first = true;
+	for ( int i = 0; i < ARRAYSIZE( g_ButtonNames ); ++i )
+	{
+		int mask = (1<<i);
+		if ( bits & mask )
+		{
+			if ( !first )
+			{
+				Q_strncat( buf, ",", bufsize, COPY_ALL_CHARACTERS );
+			}
+			Q_strncat( buf, g_ButtonNames[ i ].pchName, bufsize, COPY_ALL_CHARACTERS );
+			first = false;
+		}
+	}
+
+	Q_strlower( buf );
+	return buf;
+}
+
+static char const *CleanupZeros( char const *value, char *buf, size_t bufsize )
+{
+	char *out = buf;
+	while ( *value )
+	{
+		if ( *value != '.' )
+		{
+			*out++ = *value++;
+			continue;
+		}
+
+		// Found a . now see if next run of characters until space or ')' is all zeroes
+		char const *next = value + 1;
+		while ( *next && *next == '0' )
+			++next;
+		if ( *next == ' ' || *next == ')' )
+		{
+			// Don't write the . or the zeroes, just put value at the terminator
+			value = next;
+		}
+		else
+		{
+			*out++ = *value++;
+		}
+	}
+
+	*out = 0;
+	return buf;
+}
+
 void CPDumpPanel::DumpComparision( const char *classname, const char *fieldname, const char *fieldtype,
 	bool networked, bool noterrorchecked, bool differs, bool withintolerance, const char *value )
 {
 	if ( fieldname == NULL )
 		return;
 
-	int idx = m_DumpEntityInfo.AddToTail();
+	DumpInfo slot;
 
-	DumpInfo *slot = &m_DumpEntityInfo[ idx ];
+	slot.index = m_nCurrentIndex++;
 
-	Q_snprintf( slot->classname, sizeof( slot->classname ), "%s", classname );
-	slot->networked = networked;
-	Q_snprintf( slot->fieldstring, sizeof( slot->fieldstring ), "%s %s",
+	Q_snprintf( slot.classname, sizeof( slot.classname ), "%s", classname );
+	slot.networked = networked;
+
+	char bv[ DUMP_STRING_SIZE ];
+
+	if ( IsButtonField( fieldname ) )
+	{
+		value = GetButtonFieldValue( value, bv, sizeof( bv ) );
+	}
+	else
+	{
+		value = CleanupZeros( value, bv, sizeof( bv ) );
+	}
+
+	Q_snprintf( slot.fieldstring, sizeof( slot.fieldstring ), "%s %s",
 		fieldname,
 		value );
 
-	slot->differs = differs;
-	slot->withintolerance = withintolerance;
-	slot->noterrorchecked = noterrorchecked;
+	slot.differs = differs;
+	slot.withintolerance = withintolerance;
+	slot.noterrorchecked = noterrorchecked;
+
+	m_DumpEntityInfo.InsertNoSort( slot );
 }
 
 //-----------------------------------------------------------------------------
@@ -103,10 +239,11 @@ void CPDumpPanel::DumpComparision( const char *classname, const char *fieldname,
 static void DumpComparision( const char *classname, const char *fieldname, const char *fieldtype,
 	bool networked, bool noterrorchecked, bool differs, bool withintolerance, const char *value )
 {
-	if ( !g_pPDumpPanel )
+	CPDumpPanel *pPanel = GetPDumpPanel();
+	if ( !pPanel )
 		return;
 
-	g_pPDumpPanel->DumpComparision( classname, fieldname, fieldtype, networked, noterrorchecked, differs, withintolerance, value );
+	pPanel->DumpComparision( classname, fieldname, fieldtype, networked, noterrorchecked, differs, withintolerance, value );
 }
 
 //-----------------------------------------------------------------------------
@@ -121,13 +258,17 @@ static void DumpComparision( const char *classname, const char *fieldname, const
 //			a - 
 // Output : static void
 //-----------------------------------------------------------------------------
-void CPDumpPanel::PredictionDumpColor( bool networked, bool errorchecked, bool differs, bool withintolerance,
+void CPDumpPanel::PredictionDumpColor( bool legend, bool predictable, bool networked, bool errorchecked, bool differs, bool withintolerance,
 	int& r, int& g, int& b, int& a )
 {
-	r = 255;
-	g = 255;
-	b = 255;
-	a = 255;
+	if ( !legend && !predictable )
+	{
+		r = 150;
+		g = 180;
+		b = 150;
+		a = 255;
+		return;
+	}
 
 	if ( networked )
 	{
@@ -181,14 +322,6 @@ void CPDumpPanel::PredictionDumpColor( bool networked, bool errorchecked, bool d
 //-----------------------------------------------------------------------------
 void CPDumpPanel::DumpEntity( C_BaseEntity *ent, int commands_acknowledged )
 {
-	if ( IsXbox() )
-	{
-		return;
-	}
-
-#ifdef NO_ENTITY_PREDICTION
-	return;
-#else
 	Assert( ent );
 
 	void *original_state_data = NULL;	
@@ -225,10 +358,10 @@ void CPDumpPanel::DumpEntity( C_BaseEntity *ent, int commands_acknowledged )
 		true,   // describe fields
 		::DumpComparision );
 	// Don't spew debugging info
-	datacompare.TransferData( "", -1, ent->GetPredDescMap() );
-
+	m_nCurrentIndex = 0;
+	datacompare.TransferData( "", ent->entindex(), ent->GetPredDescMap() );
 	m_hDumpEntity = ent;
-#endif
+	m_DumpEntityInfo.RedoSort();
 }
 
 void CPDumpPanel::Clear()
@@ -244,6 +377,8 @@ void CPDumpPanel::Paint()
 		Clear();
 		return;
 	}
+
+	bool bPredictable = ent->GetPredictable();
 
 	// Now output the strings
 	int x[5];
@@ -326,7 +461,7 @@ void CPDumpPanel::Paint()
 		}
 
 	
-		PredictionDumpColor( slot->networked, !slot->noterrorchecked, slot->differs, slot->withintolerance,
+		PredictionDumpColor( false, bPredictable, slot->networked, !slot->noterrorchecked, slot->differs, slot->withintolerance,
 			r, g, b, a );
 
 		surface()->DrawSetTextFont( m_FontSmall );
@@ -362,7 +497,7 @@ void CPDumpPanel::Paint()
 	y = ScreenHeight() - 7 * fonttall - 80;
 
 	// Not networked, no differences
-	PredictionDumpColor( false, false, false, false, r, g, b, a );
+	PredictionDumpColor( true, bPredictable, false, false, false, false, r, g, b, a );
 
 
 	surface()->DrawSetTextColor( Color( r, g, b, a ) );
@@ -374,7 +509,7 @@ void CPDumpPanel::Paint()
 	y += fonttall;
 
 	// Networked, no error check
-	PredictionDumpColor( true, false, false, false, r, g, b, a );
+	PredictionDumpColor( true, bPredictable, true, false, false, false, r, g, b, a );
 
 	surface()->DrawSetTextColor( Color( r, g, b, a ) );
 	surface()->DrawSetTextPos( xpos, y );
@@ -385,7 +520,7 @@ void CPDumpPanel::Paint()
 	y += fonttall;
 
 	// Networked, with error check
-	PredictionDumpColor( true, true, false, false, r, g, b, a );
+	PredictionDumpColor( true, bPredictable, true, true, false, false, r, g, b, a );
 
 	surface()->DrawSetTextColor( Color( r, g, b, a ) );
 	surface()->DrawSetTextPos( xpos, y );
@@ -396,7 +531,7 @@ void CPDumpPanel::Paint()
 	y += fonttall;
 
 	// Differs, but within tolerance
-	PredictionDumpColor( true, true, true, true, r, g, b, a );
+	PredictionDumpColor( true, bPredictable, true, true, true, true, r, g, b, a );
 
 	surface()->DrawSetTextColor( Color( r, g, b, a ) );
 	surface()->DrawSetTextPos( xpos, y );
@@ -407,7 +542,7 @@ void CPDumpPanel::Paint()
 	y += fonttall;
 
 	// Differs, not within tolerance, but not networked
-	PredictionDumpColor( false, true, true, false, r, g, b, a );
+	PredictionDumpColor( true, bPredictable, false, true, true, false, r, g, b, a );
 
 	surface()->DrawSetTextColor( Color( r, g, b, a ) );
 	surface()->DrawSetTextPos( xpos, y );
@@ -418,7 +553,7 @@ void CPDumpPanel::Paint()
 	y += fonttall;
 
 	// Differs, networked, not within tolerance
-	PredictionDumpColor( true, true, true, false, r, g, b, a );
+	PredictionDumpColor( true, bPredictable, true, true, true, false, r, g, b, a );
 
 	surface()->DrawSetTextColor( Color( r, g, b, a ) );
 	surface()->DrawSetTextPos( xpos, y );

@@ -173,6 +173,9 @@ CBaseEntityList::~CBaseEntityList()
 
 CBaseHandle CBaseEntityList::AddNetworkableEntity( IHandleEntity *pEnt, int index, int iForcedSerialNum )
 {
+	if(LookupEntity(pEnt->GetRefEHandle()) != NULL)
+		return pEnt->GetRefEHandle();
+
 	Assert( index >= 0 && index < MAX_EDICTS );
 	return AddEntityAtSlot( pEnt, index, iForcedSerialNum );
 }
@@ -180,6 +183,9 @@ CBaseHandle CBaseEntityList::AddNetworkableEntity( IHandleEntity *pEnt, int inde
 
 CBaseHandle CBaseEntityList::AddNonNetworkableEntity( IHandleEntity *pEnt )
 {
+	if(LookupEntity(pEnt->GetRefEHandle()) != NULL)
+		return pEnt->GetRefEHandle();
+
 	// Find a slot for it.
 	CEntInfo *pSlot = m_freeNonNetworkableList.Head();
 	if ( !pSlot )

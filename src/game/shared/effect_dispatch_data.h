@@ -60,15 +60,17 @@ public:
 	int		m_nMaterial;
 	int		m_nDamageType;
 	int		m_nHitBox;
+
+	int		m_nOtherEntIndex;
 	
 	unsigned char	m_nColor;
 
 	// Color customizability
 	bool							m_bCustomColors;
-	te_tf_particle_effects_colors_t	m_CustomColors;
+	te_particle_effects_colors_t	m_CustomColors;
 
 	bool									m_bControlPoint1;
-	te_tf_particle_effects_control_point_t	m_ControlPoint1;
+	te_particle_effects_control_point_t	m_ControlPoint1;
 
 // Don't mess with stuff below here. DispatchEffect handles all of this.
 public:
@@ -105,6 +107,8 @@ public:
 		m_bControlPoint1 = false;
 		m_ControlPoint1.m_eParticleAttachment = PATTACH_ABSORIGIN;
 		m_ControlPoint1.m_vecOffset.Init();
+
+		m_nOtherEntIndex = 0;
 	}
 
 	int GetEffectNameIndex() { return m_iEffectName; }

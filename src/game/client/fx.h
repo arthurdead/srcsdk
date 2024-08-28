@@ -103,6 +103,5 @@ extern PMaterialHandle g_Mat_Fleck_Tile[2];
 extern PMaterialHandle g_Mat_DustPuff[2];
 extern PMaterialHandle g_Mat_BloodPuff[2];
 extern PMaterialHandle g_Mat_Fleck_Glass[2];
-extern PMaterialHandle g_Mat_SMG_Muzzleflash[4];
-extern PMaterialHandle g_Mat_Combine_Muzzleflash[3];
+extern PMaterialHandle g_Mat_Muzzleflash[4];
 #endif // FX_H

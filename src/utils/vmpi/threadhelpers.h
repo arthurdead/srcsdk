@@ -7,9 +7,7 @@
 
 #ifndef THREADHELPERS_H
 #define THREADHELPERS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "tier1/utllinkedlist.h"

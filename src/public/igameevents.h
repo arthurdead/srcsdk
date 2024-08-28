@@ -82,6 +82,8 @@ public:
 	virtual void SetString( const char *keyName, const char *value ) = 0;
 };
 
+#define EVENT_DEBUG_ID_INIT			42
+#define EVENT_DEBUG_ID_SHUTDOWN		13
 
 abstract_class IGameEventListener2
 {

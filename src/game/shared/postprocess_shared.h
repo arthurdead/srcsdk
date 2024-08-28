@@ -7,9 +7,7 @@
 #ifndef POSTPROCESS_SHARED_H
 #define POSTPROCESS_SHARED_H
 
-#if defined( COMPILER_MSVC )
 #pragma once
-#endif
 
 enum PostProcessParameterNames_t
 {

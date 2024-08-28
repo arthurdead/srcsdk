@@ -10,6 +10,10 @@
 #pragma once
 
 #ifdef CLIENT_DLL
+#include "c_baseentity.h"
+#endif
+
+#ifdef CLIENT_DLL
 #define CTeamRoundTimer C_TeamRoundTimer
 #endif
 
@@ -84,7 +88,7 @@ private:
 	void CalculateOutputMessages( void );
 
 #ifdef CLIENT_DLL
-	virtual void ClientThink();
+	virtual void WarningThink();
 	void OnPreDataChanged( DataUpdateType_t updateType );
 	void OnDataChanged( DataUpdateType_t updateType );
 	void SendTimeWarning( int nWarning );

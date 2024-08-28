@@ -9,9 +9,10 @@
 #define PROXY_ENTITY_H
 
 #include "materialsystem/imaterialproxy.h"
-
+#include "imaterialproxydict.h"
 
 class IMaterialVar;
+class C_BaseEntity;
 
 //-----------------------------------------------------------------------------
 // Base class all material proxies should inherit from
@@ -20,7 +21,9 @@ abstract_class CEntityMaterialProxy : public IMaterialProxy
 {
 public:
 	virtual void Release( void );
-	virtual void OnBind( void *pC_BaseEntity );
+
+private:
+	virtual void OnBind( void *pC_BaseEntity ) final;
 
 protected:
 	// base classes should implement these

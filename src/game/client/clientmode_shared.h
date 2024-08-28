@@ -13,6 +13,9 @@
 #include "iclientmode.h"
 #include "GameEventListener.h"
 #include <baseviewport.h>
+#include "networkvar.h"
+#include "cdll_int.h"
+#include "ehandle.h"
 
 class CBaseHudChat;
 class CBaseHudWeaponSelection;
@@ -42,6 +45,7 @@ class CReplayReminderPanel;
 #define USERID2PLAYER(i) ToBasePlayer( ClientEntityList().GetEnt( engine->GetPlayerForUserID( i ) ) )	
 
 extern IClientMode *GetClientModeNormal(); // must be implemented
+extern IClientMode *GetFullscreenClientMode();
 
 // This class implements client mode functionality common to HL2 and TF2.
 class ClientModeShared : public IClientMode, public CGameEventListener
@@ -62,11 +66,14 @@ public:
 	virtual void	LevelShutdown( void );
 
 	virtual void	Enable();
+	virtual void	EnableWithRootPanel( vgui::VPANEL pRoot );
 	virtual void	Disable();
-	virtual void	Layout();
+	virtual void	Layout(bool bForce = false);
 
 	virtual void	ReloadScheme( bool flushLowLevel );
+	virtual void	ReloadSchemeWithRoot( vgui::VPANEL pRoot, bool flushLowLevel );
 	virtual void	OverrideView( CViewSetup *pSetup );
+	virtual void	OverrideAudioState( AudioState_t *pAudioState ) { return; }
 	virtual bool	ShouldDrawDetailObjects( );
 	virtual bool	ShouldDrawEntity(C_BaseEntity *pEnt);
 	virtual bool	ShouldDrawLocalPlayer( C_BasePlayer *pPlayer );
@@ -74,7 +81,6 @@ public:
 	virtual bool	ShouldDrawParticles( );
 	virtual bool	ShouldDrawCrosshair( void );
 	virtual bool	ShouldBlackoutAroundHUD() OVERRIDE;
-	virtual HeadtrackMovementMode_t ShouldOverrideHeadtrackControl() OVERRIDE;
 	virtual void	AdjustEngineViewport( int& x, int& y, int& width, int& height );
 	virtual void	PreRender(CViewSetup *pSetup);
 	virtual void	PostRender();
@@ -82,6 +88,10 @@ public:
 	virtual void	ProcessInput(bool bActive);
 	virtual bool	CreateMove( float flInputSampleTime, CUserCmd *cmd );
 	virtual void	Update();
+	virtual void	OnColorCorrectionWeightsReset( void );
+	virtual float	GetColorCorrectionScale( void ) const;
+	virtual void	SetBlurFade( float scale ) {}
+	virtual float	GetBlurFade( void ) { return 0.0f; }
 
 	// Input
 	virtual int		KeyInput( int down, ButtonCode_t keynum, const char *pszCurrentBinding );
@@ -98,6 +108,7 @@ public:
 	
 	virtual float	GetViewModelFOV( void );
 	virtual vgui::Panel* GetViewport() { return m_pViewport; }
+	virtual vgui::Panel *GetPanelFromViewport( const char *pchNamePath );
 	// Gets at the viewports vgui panel animation controller, if there is one...
 	virtual vgui::AnimationController *GetViewportAnimationController()
 		{ return m_pViewport->GetAnimationController(); }
@@ -107,6 +118,9 @@ public:
 	virtual bool CanRecordDemo( char *errorMsg, int length ) const { return true; }
 
 	virtual int HandleSpectatorKeyInput( int down, ButtonCode_t keynum, const char *pszCurrentBinding );
+
+	virtual void InitChatHudElement( void );
+	virtual void InitWeaponSelectionHudElement( void );
 
 	virtual void	ComputeVguiResConditions( KeyValues *pkvConditions ) OVERRIDE;
 
@@ -132,9 +146,6 @@ public:
 	virtual bool	IsInfoPanelAllowed() OVERRIDE { return true; }
 	virtual void	InfoPanelDisplayed() OVERRIDE { }
 	virtual bool	IsHTMLInfoPanelAllowed() OVERRIDE { return true; }
-
-	virtual void OnColorCorrectionWeightsReset();
-	virtual float GetColorCorrectionScale() const { return 1.0f; }
 
 protected:
 	CBaseViewport			*m_pViewport;

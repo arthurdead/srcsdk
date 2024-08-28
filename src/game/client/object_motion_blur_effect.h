@@ -7,9 +7,7 @@
 #ifndef OBJECT_MOTION_BLUR_EFFECT_H
 #define OBJECT_MOTION_BLUR_EFFECT_H
 
-#if defined( COMPILER_MSVC )
 #pragma once
-#endif
 
 #include "utlvector.h"
 

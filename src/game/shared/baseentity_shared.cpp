@@ -19,6 +19,7 @@
 #include "debugoverlay_shared.h"
 #include "coordsize.h"
 #include "vphysics/performance.h"
+#include "ai_criteria.h"
 
 #ifdef CLIENT_DLL
 	#include "c_te_effect_dispatch.h"
@@ -30,28 +31,13 @@
 	#include "waterbullet.h"
 	#include "func_break.h"
 
-#ifdef HL2MP
-	#include "te_hl2mp_shotgun_shot.h"
-#endif
-
 	#include "gamestats.h"
 
 #endif
 
-#ifdef HL2_EPISODIC
-ConVar hl2_episodic( "hl2_episodic", "1", FCVAR_REPLICATED );
-#else
-ConVar hl2_episodic( "hl2_episodic", "0", FCVAR_REPLICATED );
-#endif//HL2_EPISODIC
-
 #ifdef PORTAL
 	#include "prop_portal_shared.h"
 #endif
-
-#ifdef TF_DLL
-#include "tf_gamerules.h"
-#include "tf_weaponbase.h"
-#endif // TF_DLL
 
 #include "rumble_shared.h"
 
@@ -65,6 +51,7 @@ ConVar hl2_episodic( "hl2_episodic", "0", FCVAR_REPLICATED );
 #endif
 
 bool CBaseEntity::m_bAllowPrecache = false;
+bool CBaseEntity::sm_bAccurateTriggerBboxChecks = true;	// set to false for legacy behavior in ep1
 
 // Set default max values for entities based on the existing constants from elsewhere
 float k_flMaxEntityPosCoord = MAX_COORD_FLOAT;
@@ -106,7 +93,6 @@ void SpawnBlood(Vector vecSpot, const Vector &vecDir, int bloodColor, float flDa
 	UTIL_BloodDrips( vecSpot, vecDir, bloodColor, (int)flDamage );
 }
 
-#if !defined( NO_ENTITY_PREDICTION )
 //-----------------------------------------------------------------------------
 // The player drives simulation of this entity
 //-----------------------------------------------------------------------------
@@ -126,7 +112,6 @@ void CBaseEntity::UnsetPlayerSimulated( void )
 	m_hPlayerSimulationOwner = NULL;
 	m_bIsPlayerSimulated = false;
 }
-#endif
 
 // position of eyes
 Vector CBaseEntity::EyePosition( void )
@@ -200,7 +185,6 @@ void CBaseEntity::SetEffects( int nEffects )
 	if ( nEffects != m_fEffects )
 	{
 #if !defined( CLIENT_DLL )
-#ifdef HL2_EPISODIC
 		// Hack for now, to avoid player emitting radius with his flashlight
 		if ( !IsPlayer() )
 		{
@@ -213,7 +197,6 @@ void CBaseEntity::SetEffects( int nEffects )
 				RemoveEntityFromDarknessCheck( this );
 			}
 		}
-#endif // HL2_EPISODIC
 #endif // !CLIENT_DLL
 
 		m_fEffects = nEffects;
@@ -229,7 +212,6 @@ void CBaseEntity::SetEffects( int nEffects )
 void CBaseEntity::AddEffects( int nEffects ) 
 { 
 #if !defined( CLIENT_DLL )
-#ifdef HL2_EPISODIC
 	if ( (nEffects & (EF_BRIGHTLIGHT|EF_DIMLIGHT)) && !(m_fEffects & (EF_BRIGHTLIGHT|EF_DIMLIGHT)) )
 	{
 		// Hack for now, to avoid player emitting radius with his flashlight
@@ -238,10 +220,16 @@ void CBaseEntity::AddEffects( int nEffects )
 			AddEntityToDarknessCheck( this );
 		}
 	}
-#endif // HL2_EPISODIC
 #endif // !CLIENT_DLL
 
 	m_fEffects |= nEffects; 
+
+#ifdef CLIENT_DLL
+	if ( m_fEffects & (EF_DIMLIGHT|EF_DIMLIGHT) )
+	{
+		AddToEntityList(ENTITY_LIST_PRERENDER);
+	}
+#endif
 
 	if ( nEffects & EF_NODRAW)
 	{
@@ -312,6 +300,8 @@ void CBaseEntity::ParseMapData( CEntityMapData *mapData )
 		} 
 		while ( mapData->GetNextKey(keyName, value) );
 	}
+
+	OnParseMapDataFinished();
 }
 
 //-----------------------------------------------------------------------------
@@ -327,18 +317,34 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 		*s = '\0';
 	}
 
-	if ( FStrEq( szKeyName, "rendercolor" ) || FStrEq( szKeyName, "rendercolor32" ))
+	if ( FStrEq( szKeyName, "rendercolor" ))
 	{
 		color32 tmp;
 		UTIL_StringToColor32( &tmp, szValue );
 		SetRenderColor( tmp.r, tmp.g, tmp.b );
-		// don't copy alpha, legacy support uses renderamt
+		return true;
+	}
+
+	if ( FStrEq( szKeyName, "rendercolor24" ))
+	{
+		color32 tmp;
+		UTIL_StringToColor32( &tmp, szValue );
+		SetRenderColor( tmp.r, tmp.g, tmp.b );
+		return true;
+	}
+
+	if ( FStrEq( szKeyName, "rendercolor32" ))
+	{
+		color32 tmp;
+		UTIL_StringToColor32( &tmp, szValue );
+		SetRenderColor( tmp.r, tmp.g, tmp.b );
+		SetRenderAlpha( tmp.a );
 		return true;
 	}
 	
 	if ( FStrEq( szKeyName, "renderamt" ) )
 	{
-		SetRenderColorA( atoi( szValue ) );
+		SetRenderAlpha( atoi( szValue ) );
 		return true;
 	}
 
@@ -489,6 +495,30 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 			Msg( "!! (%s) key not handled: \"%s\" \"%s\"\n", STRING(m_iClassname), szKeyName, szValue );
 	}
 
+#else
+
+	// HACK: Read dxlevels for client-side entities
+	if ( FStrEq( szKeyName, "mincpulevel" ))
+	{
+		m_nMinCPULevel = atoi( szValue );
+		return true;
+	}
+	if ( FStrEq( szKeyName, "maxcpulevel" ))
+	{
+		m_nMaxCPULevel = atoi( szValue );
+		return true;
+	}
+	if ( FStrEq( szKeyName, "mingpulevel" ))
+	{
+		m_nMinGPULevel = atoi( szValue );
+		return true;
+	}
+	if ( FStrEq( szKeyName, "maxgpulevel" ))
+	{
+		m_nMaxGPULevel = atoi( szValue );
+		return true;
+	}
+
 #endif
 
 	// key hasn't been handled
@@ -513,6 +543,15 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const Vector &vecValue )
 	return KeyValue( szKeyName, string );
 }
 
+bool CBaseEntity::KeyValue( const char *szKeyName, int nValue ) 
+{
+	char	string[256];
+
+	Q_snprintf(string,sizeof(string), "%d", nValue );
+
+	return KeyValue( szKeyName, string );
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  :
@@ -521,17 +560,32 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const Vector &vecValue )
 
 bool CBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen )
 {
-	if ( FStrEq( szKeyName, "rendercolor" ) || FStrEq( szKeyName, "rendercolor32" ))
+	if ( FStrEq( szKeyName, "rendercolor" ) )
 	{
-		color32 tmp = GetRenderColor();
-		Q_snprintf( szValue, iMaxLen, "%d %d %d %d", tmp.r, tmp.g, tmp.b, tmp.a );
+		color24 tmp = GetRenderColor();
+		Q_snprintf( szValue, iMaxLen, "%d %d %d", tmp.r, tmp.g, tmp.b );
+		return true;
+	}
+
+	if ( FStrEq( szKeyName, "rendercolor24" ) )
+	{
+		color24 tmp = GetRenderColor();
+		Q_snprintf( szValue, iMaxLen, "%d %d %d", tmp.r, tmp.g, tmp.b );
+		return true;
+	}
+
+	if ( FStrEq( szKeyName, "rendercolor32" ))
+	{
+		color24 tmp = GetRenderColor();
+		unsigned char a = GetRenderAlpha();
+		Q_snprintf( szValue, iMaxLen, "%d %d %d %d", tmp.r, tmp.g, tmp.b, a );
 		return true;
 	}
 	
 	if ( FStrEq( szKeyName, "renderamt" ) )
 	{
-		color32 tmp = GetRenderColor();
-		Q_snprintf( szValue, iMaxLen, "%d", tmp.a );
+		unsigned char a = GetRenderAlpha();
+		Q_snprintf( szValue, iMaxLen, "%d", a );
 		return true;
 	}
 
@@ -681,6 +735,10 @@ void CBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCu
 	data.m_vOrigin = pTrace->endpos;
 	data.m_vStart = pTrace->startpos;
 	data.m_nSurfaceProp = pTrace->surface.surfaceProps;
+	if ( data.m_nSurfaceProp < 0 )
+	{
+		data.m_nSurfaceProp = 0;
+	}
 	data.m_nDamageType = iDamageType;
 	data.m_nHitBox = pTrace->hitbox;
 #ifdef CLIENT_DLL
@@ -707,10 +765,10 @@ void CBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCu
 //-----------------------------------------------------------------------------
 char const *CBaseEntity::DamageDecal( int bitsDamageType, int gameMaterial )
 {
-	if ( m_nRenderMode == kRenderTransAlpha )
+	if ( GetRenderMode() == kRenderTransAlpha )
 		return "";
 
-	if ( m_nRenderMode != kRenderNormal && gameMaterial == 'G' )
+	if ( GetRenderMode() != kRenderNormal && gameMaterial == 'G' )
 		return "BulletProof";
 
 	if ( bitsDamageType == DMG_SLASH )
@@ -747,7 +805,7 @@ int CBaseEntity::RegisterThinkContext( const char *szContext )
 	thinkfunc_t sNewFunc;
 	Q_memset( &sNewFunc, 0, sizeof( sNewFunc ) );
 	sNewFunc.m_pfnThink = NULL;
-	sNewFunc.m_nNextThinkTick = 0;
+	sNewFunc.m_nNextThinkTick = TICK_NEVER_THINK;
 	sNewFunc.m_iszContext = AllocPooledString(szContext);
 
 	// Insert it into our list
@@ -797,9 +855,17 @@ BASEPTR	CBaseEntity::ThinkSet( BASEPTR func, float thinkTime, const char *szCont
 
 	if ( thinkTime != 0 )
 	{
-		int thinkTick = ( thinkTime == TICK_NEVER_THINK ) ? TICK_NEVER_THINK : TIME_TO_TICKS( thinkTime );
+		int thinkTick;
+
+		if(thinkTime == TICK_NEVER_THINK)
+			thinkTick = TICK_NEVER_THINK;
+		else if(thinkTime == TICK_ALWAYS_THINK)
+			thinkTick = TICK_ALWAYS_THINK;
+		else
+			thinkTick = TIME_TO_TICKS( thinkTime );
+
 		m_aThinkFunctions[ iIndex ].m_nNextThinkTick = thinkTick;
-		CheckHasThinkFunction( thinkTick == TICK_NEVER_THINK ? false : true );
+		CheckHasThinkFunction( thinkTick );
 	}
 	return func;
 }
@@ -809,7 +875,14 @@ BASEPTR	CBaseEntity::ThinkSet( BASEPTR func, float thinkTime, const char *szCont
 //-----------------------------------------------------------------------------
 void CBaseEntity::SetNextThink( float thinkTime, const char *szContext )
 {
-	int thinkTick = ( thinkTime == TICK_NEVER_THINK ) ? TICK_NEVER_THINK : TIME_TO_TICKS( thinkTime );
+	int thinkTick;
+
+	if(thinkTime == TICK_NEVER_THINK)
+		thinkTick = TICK_NEVER_THINK;
+	else if(thinkTime == TICK_ALWAYS_THINK)
+		thinkTick = TICK_ALWAYS_THINK;
+	else
+		thinkTick = TIME_TO_TICKS( thinkTime );
 
 	// Are we currently in a think function with a context?
 	int iIndex = 0;
@@ -824,7 +897,7 @@ void CBaseEntity::SetNextThink( float thinkTime, const char *szContext )
 
 		// Old system
 		m_nNextThinkTick = thinkTick;
-		CheckHasThinkFunction( thinkTick == TICK_NEVER_THINK ? false : true );
+		CheckHasThinkFunction( thinkTick );
 		return;
 	}
 	else
@@ -839,7 +912,7 @@ void CBaseEntity::SetNextThink( float thinkTime, const char *szContext )
 
 	// Old system
 	m_aThinkFunctions[ iIndex ].m_nNextThinkTick = thinkTick;
-	CheckHasThinkFunction( thinkTick == TICK_NEVER_THINK ? false : true );
+	CheckHasThinkFunction( thinkTick );
 }
 
 //-----------------------------------------------------------------------------
@@ -847,6 +920,9 @@ void CBaseEntity::SetNextThink( float thinkTime, const char *szContext )
 //-----------------------------------------------------------------------------
 float CBaseEntity::GetNextThink( const char *szContext )
 {
+	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
+		return TICK_NEVER_THINK;
+
 	// Are we currently in a think function with a context?
 	int iIndex = 0;
 	if ( !szContext )
@@ -860,9 +936,10 @@ float CBaseEntity::GetNextThink( const char *szContext )
 
 		if ( m_nNextThinkTick == TICK_NEVER_THINK )
 			return TICK_NEVER_THINK;
-
-		// Old system
-		return TICK_INTERVAL * (m_nNextThinkTick );
+		else if ( m_nNextThinkTick == TICK_ALWAYS_THINK )
+			return gpGlobals->curtime;
+		else
+			return m_nNextThinkTick * TICK_INTERVAL;
 	}
 	else
 	{
@@ -874,14 +951,18 @@ float CBaseEntity::GetNextThink( const char *szContext )
 		return TICK_NEVER_THINK;
 
 	if ( m_aThinkFunctions[ iIndex ].m_nNextThinkTick == TICK_NEVER_THINK )
-	{
 		return TICK_NEVER_THINK;
-	}
-	return TICK_INTERVAL * (m_aThinkFunctions[ iIndex ].m_nNextThinkTick );
+	else if ( m_aThinkFunctions[ iIndex ].m_nNextThinkTick == TICK_ALWAYS_THINK )
+		return gpGlobals->curtime;
+	else
+		return m_aThinkFunctions[ iIndex ].m_nNextThinkTick * TICK_INTERVAL;
 }
 
 int	CBaseEntity::GetNextThinkTick( const char *szContext /*= NULL*/ )
 {
+	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
+		return TICK_NEVER_THINK;
+
 	// Are we currently in a think function with a context?
 	int iIndex = 0;
 	if ( !szContext )
@@ -895,9 +976,10 @@ int	CBaseEntity::GetNextThinkTick( const char *szContext /*= NULL*/ )
 
 		if ( m_nNextThinkTick == TICK_NEVER_THINK )
 			return TICK_NEVER_THINK;
-
-		// Old system
-		return m_nNextThinkTick;
+		else if ( m_nNextThinkTick == TICK_ALWAYS_THINK )
+			return gpGlobals->tickcount;
+		else
+			return m_nNextThinkTick;
 	}
 	else
 	{
@@ -908,12 +990,87 @@ int	CBaseEntity::GetNextThinkTick( const char *szContext /*= NULL*/ )
 		Assert( iIndex != -1 );
 	}
 
-	if ( ( iIndex == -1 ) || ( m_aThinkFunctions[ iIndex ].m_nNextThinkTick == TICK_NEVER_THINK ) )
+	if ( iIndex == -1 )
 	{
 		return TICK_NEVER_THINK;
 	}
 
-	return m_aThinkFunctions[ iIndex ].m_nNextThinkTick;
+	if ( m_aThinkFunctions[ iIndex ].m_nNextThinkTick == TICK_NEVER_THINK )
+		return TICK_NEVER_THINK;
+	else if ( m_aThinkFunctions[ iIndex ].m_nNextThinkTick == TICK_ALWAYS_THINK )
+		return gpGlobals->tickcount;
+	else
+		return m_aThinkFunctions[ iIndex ].m_nNextThinkTick;
+}
+
+bool	CBaseEntity::AlwaysThink( const char *szContext /*= NULL*/ )
+{
+	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
+		return false;
+
+	// Are we currently in a think function with a context?
+	int iIndex = 0;
+	if ( !szContext )
+	{
+#ifdef _DEBUG
+		if ( m_iCurrentThinkContext != NO_THINK_CONTEXT )
+		{
+			Msg( "Warning: Getting base nextthink time within think context %s\n", STRING(m_aThinkFunctions[m_iCurrentThinkContext].m_iszContext) );
+		}
+#endif
+
+		return (m_nNextThinkTick == TICK_ALWAYS_THINK);
+	}
+	else
+	{
+		// Find the think function in our list
+		iIndex = GetIndexForThinkContext( szContext );
+
+		// Looking up an invalid think context!
+		Assert( iIndex != -1 );
+	}
+
+	if ( iIndex == -1 )
+	{
+		return false;
+	}
+
+	return (m_aThinkFunctions[ iIndex ].m_nNextThinkTick == TICK_ALWAYS_THINK);
+}
+
+bool	CBaseEntity::NeverThink( const char *szContext /*= NULL*/ )
+{
+	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
+		return true;
+
+	// Are we currently in a think function with a context?
+	int iIndex = 0;
+	if ( !szContext )
+	{
+#ifdef _DEBUG
+		if ( m_iCurrentThinkContext != NO_THINK_CONTEXT )
+		{
+			Msg( "Warning: Getting base nextthink time within think context %s\n", STRING(m_aThinkFunctions[m_iCurrentThinkContext].m_iszContext) );
+		}
+#endif
+
+		return (m_nNextThinkTick == TICK_NEVER_THINK);
+	}
+	else
+	{
+		// Find the think function in our list
+		iIndex = GetIndexForThinkContext( szContext );
+
+		// Looking up an invalid think context!
+		Assert( iIndex != -1 );
+	}
+
+	if ( iIndex == -1 )
+	{
+		return true;
+	}
+
+	return (m_aThinkFunctions[ iIndex ].m_nNextThinkTick == TICK_NEVER_THINK);
 }
 
 //-----------------------------------------------------------------------------
@@ -931,8 +1088,12 @@ float CBaseEntity::GetLastThink( const char *szContext )
 			Msg( "Warning: Getting base lastthink time within think context %s\n", STRING(m_aThinkFunctions[m_iCurrentThinkContext].m_iszContext) );
 		}
 #endif
-		// Old system
-		return m_nLastThinkTick * TICK_INTERVAL;
+		if(m_nLastThinkTick == TICK_NEVER_THINK)
+			return TICK_NEVER_THINK;
+		else if(m_nLastThinkTick == TICK_ALWAYS_THINK)
+			return TICK_NEVER_THINK;
+		else
+			return m_nLastThinkTick * TICK_INTERVAL;
 	}
 	else
 	{
@@ -940,7 +1101,12 @@ float CBaseEntity::GetLastThink( const char *szContext )
 		iIndex = GetIndexForThinkContext( szContext );
 	}
 
-	return m_aThinkFunctions[ iIndex ].m_nLastThinkTick * TICK_INTERVAL;
+	if(m_aThinkFunctions[ iIndex ].m_nLastThinkTick == TICK_NEVER_THINK)
+		return TICK_NEVER_THINK;
+	else if(m_aThinkFunctions[ iIndex ].m_nLastThinkTick == TICK_ALWAYS_THINK)
+		return TICK_NEVER_THINK;
+	else
+		return m_aThinkFunctions[ iIndex ].m_nLastThinkTick * TICK_INTERVAL;
 }
 	
 int CBaseEntity::GetLastThinkTick( const char *szContext /*= NULL*/ )
@@ -955,8 +1121,12 @@ int CBaseEntity::GetLastThinkTick( const char *szContext /*= NULL*/ )
 			Msg( "Warning: Getting base lastthink time within think context %s\n", STRING(m_aThinkFunctions[m_iCurrentThinkContext].m_iszContext) );
 		}
 #endif
-		// Old system
-		return m_nLastThinkTick;
+		if(m_nLastThinkTick == TICK_NEVER_THINK)
+			return TICK_NEVER_THINK;
+		else if(m_nLastThinkTick == TICK_ALWAYS_THINK)
+			return TICK_NEVER_THINK;
+		else
+			return m_nLastThinkTick;
 	}
 	else
 	{
@@ -964,57 +1134,115 @@ int CBaseEntity::GetLastThinkTick( const char *szContext /*= NULL*/ )
 		iIndex = GetIndexForThinkContext( szContext );
 	}
 
-	return m_aThinkFunctions[ iIndex ].m_nLastThinkTick;
+	if(m_aThinkFunctions[ iIndex ].m_nLastThinkTick == TICK_NEVER_THINK)
+		return TICK_NEVER_THINK;
+	else if(m_aThinkFunctions[ iIndex ].m_nLastThinkTick == TICK_ALWAYS_THINK)
+		return TICK_NEVER_THINK;
+	else
+		return m_aThinkFunctions[ iIndex ].m_nLastThinkTick;
 }
 
 bool CBaseEntity::WillThink()
 {
-	if ( m_nNextThinkTick > 0 )
+	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
+		return false;
+
+	if ( m_nNextThinkTick > 0 || m_nNextThinkTick == TICK_ALWAYS_THINK )
 		return true;
 
 	for ( int i = 0; i < m_aThinkFunctions.Count(); i++ )
 	{
-		if ( m_aThinkFunctions[i].m_nNextThinkTick > 0 )
+		if ( m_aThinkFunctions[i].m_nNextThinkTick > 0 || m_aThinkFunctions[i].m_nNextThinkTick == TICK_ALWAYS_THINK )
 			return true;
 	}
 
 	return false;
 }
 
+#if !defined( CLIENT_DLL )
+
+// Rebase all the current ticks in the think functions as delta ticks or from delta ticks to absolute ticks
+void CBaseEntity::RebaseThinkTicks( bool bMakeDeltas )
+{
+	int nCurTick = TIME_TO_TICKS( gpGlobals->curtime );
+	for ( int i = 0; i < m_aThinkFunctions.Count(); i++ )
+	{
+		if ( m_aThinkFunctions[i].m_nNextThinkTick > 0 )
+		{
+			if ( bMakeDeltas )
+			{
+				// Turn into a delta value
+				m_aThinkFunctions[i].m_nNextThinkTick = m_aThinkFunctions[i].m_nNextThinkTick - nCurTick;
+				m_aThinkFunctions[i].m_nLastThinkTick = m_aThinkFunctions[i].m_nLastThinkTick - nCurTick;
+			}
+			else
+			{
+				// Change a delta to an absolute tick value
+				m_aThinkFunctions[i].m_nNextThinkTick = m_aThinkFunctions[i].m_nNextThinkTick + nCurTick;
+				m_aThinkFunctions[i].m_nLastThinkTick = m_aThinkFunctions[i].m_nLastThinkTick + nCurTick;
+			}
+		}
+	}
+}
+
+#endif // !CLIENT_DLL
+
 // returns the first tick the entity will run any think function
 // returns TICK_NEVER_THINK if no think functions are scheduled
 int CBaseEntity::GetFirstThinkTick()
 {
-	int minTick = TICK_NEVER_THINK;
-	if ( m_nNextThinkTick > 0 )
-	{
+	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
+		return TICK_NEVER_THINK;
+
+	int minTick;
+	if(m_nNextThinkTick == TICK_NEVER_THINK)
+		minTick = TICK_NEVER_THINK;
+	else if(m_nNextThinkTick == TICK_ALWAYS_THINK)
+		return gpGlobals->tickcount;
+	else
 		minTick = m_nNextThinkTick;
-	}
 
 	for ( int i = 0; i < m_aThinkFunctions.Count(); i++ )
 	{
 		int next = m_aThinkFunctions[i].m_nNextThinkTick;
-		if ( next > 0 )
-		{
+		if(next == TICK_NEVER_THINK)
+			continue;
+		else if(next == TICK_ALWAYS_THINK)
+			return gpGlobals->tickcount;
+		else
 			if ( next < minTick || minTick == TICK_NEVER_THINK )
-			{
 				minTick = next;
-			}
-		}
 	}
 	return minTick;
 }
 
 // NOTE: pass in the isThinking hint so we have to search the think functions less
-void CBaseEntity::CheckHasThinkFunction( bool isThinking )
+void CBaseEntity::CheckHasThinkFunction( int thinkTick )
 {
+	bool isThinking = (thinkTick != TICK_NEVER_THINK);
+
 	if ( IsEFlagSet( EFL_NO_THINK_FUNCTION ) && isThinking )
 	{
 		RemoveEFlags( EFL_NO_THINK_FUNCTION );
+
+	#ifdef CLIENT_DLL
+		Assert( GetClientHandle() != INVALID_CLIENTENTITY_HANDLE );
+		if(thinkTick == TICK_NEVER_THINK)
+			ClientThinkList()->RemoveThinkable( GetClientHandle() );
+		else if(thinkTick == TICK_ALWAYS_THINK)
+			ClientThinkList()->SetNextClientThink( GetClientHandle(), TICK_ALWAYS_THINK );
+		else
+			ClientThinkList()->SetNextClientThink( GetClientHandle(), thinkTick * TICK_INTERVAL );
+	#endif
 	}
 	else if ( !isThinking && !IsEFlagSet( EFL_NO_THINK_FUNCTION ) && !WillThink() )
 	{
 		AddEFlags( EFL_NO_THINK_FUNCTION );
+
+	#ifdef CLIENT_DLL
+		Assert( GetClientHandle() != INVALID_CLIENTENTITY_HANDLE );
+		ClientThinkList()->RemoveThinkable( GetClientHandle() );
+	#endif
 	}
 #if !defined( CLIENT_DLL )
 	SimThink_EntityChanged( this );
@@ -1064,7 +1292,14 @@ void CBaseEntity::CheckHasGamePhysicsSimulation()
 //-----------------------------------------------------------------------------
 void CBaseEntity::SetNextThink( int nContextIndex, float thinkTime )
 {
-	int thinkTick = ( thinkTime == TICK_NEVER_THINK ) ? TICK_NEVER_THINK : TIME_TO_TICKS( thinkTime );
+	int thinkTick;
+
+	if(thinkTime == TICK_NEVER_THINK)
+		thinkTick = TICK_NEVER_THINK;
+	else if(thinkTime == TICK_ALWAYS_THINK)
+		thinkTick = TICK_ALWAYS_THINK;
+	else
+		thinkTick = TIME_TO_TICKS( thinkTime );
 
 	if (nContextIndex < 0)
 	{
@@ -1074,12 +1309,19 @@ void CBaseEntity::SetNextThink( int nContextIndex, float thinkTime )
 	{
 		m_aThinkFunctions[nContextIndex].m_nNextThinkTick = thinkTick;
 	}
-	CheckHasThinkFunction( thinkTick == TICK_NEVER_THINK ? false : true );
+	CheckHasThinkFunction( thinkTick );
 }
 
 void CBaseEntity::SetLastThink( int nContextIndex, float thinkTime )
 {
-	int thinkTick = ( thinkTime == TICK_NEVER_THINK ) ? TICK_NEVER_THINK : TIME_TO_TICKS( thinkTime );
+	int thinkTick;
+
+	if(thinkTime == TICK_NEVER_THINK)
+		thinkTick = TICK_NEVER_THINK;
+	else if(thinkTime == TICK_ALWAYS_THINK)
+		thinkTick = TICK_NEVER_THINK;
+	else
+		thinkTick = TIME_TO_TICKS( thinkTime );
 
 	if (nContextIndex < 0)
 	{
@@ -1093,20 +1335,75 @@ void CBaseEntity::SetLastThink( int nContextIndex, float thinkTime )
 
 float CBaseEntity::GetNextThink( int nContextIndex ) const
 {
-	if (nContextIndex < 0)
-		return m_nNextThinkTick * TICK_INTERVAL;
+	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
+		return TICK_NEVER_THINK;
 
-	return m_aThinkFunctions[nContextIndex].m_nNextThinkTick * TICK_INTERVAL; 
+	if (nContextIndex < 0)
+	{
+		if(m_nNextThinkTick == TICK_NEVER_THINK)
+			return TICK_NEVER_THINK;
+		else if(m_nNextThinkTick == TICK_ALWAYS_THINK)
+			return gpGlobals->curtime;
+		else
+			return m_nNextThinkTick * TICK_INTERVAL;
+	}
+
+	if(m_aThinkFunctions[nContextIndex].m_nNextThinkTick == TICK_NEVER_THINK)
+		return TICK_NEVER_THINK;
+	else if(m_aThinkFunctions[nContextIndex].m_nNextThinkTick == TICK_ALWAYS_THINK)
+		return gpGlobals->curtime;
+	else
+		return m_aThinkFunctions[nContextIndex].m_nNextThinkTick * TICK_INTERVAL; 
 }
 
 int	CBaseEntity::GetNextThinkTick( int nContextIndex ) const
 {
-	if (nContextIndex < 0)
-		return m_nNextThinkTick;
+	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
+		return TICK_NEVER_THINK;
 
-	return m_aThinkFunctions[nContextIndex].m_nNextThinkTick; 
+	if (nContextIndex < 0)
+	{
+		if(m_nNextThinkTick == TICK_NEVER_THINK)
+			return TICK_NEVER_THINK;
+		else if(m_nNextThinkTick == TICK_ALWAYS_THINK)
+			return gpGlobals->tickcount;
+		else
+			return m_nNextThinkTick;
+	}
+
+	if(m_aThinkFunctions[nContextIndex].m_nNextThinkTick == TICK_NEVER_THINK)
+		return TICK_NEVER_THINK;
+	else if(m_aThinkFunctions[nContextIndex].m_nNextThinkTick == TICK_ALWAYS_THINK)
+		return gpGlobals->tickcount;
+	else
+		return m_aThinkFunctions[nContextIndex].m_nNextThinkTick;
 }
 
+bool	CBaseEntity::AlwaysThink( int nContextIndex ) const
+{
+	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
+		return false;
+
+	if (nContextIndex < 0)
+	{
+		return (m_nNextThinkTick == TICK_ALWAYS_THINK);
+	}
+
+	return (m_aThinkFunctions[nContextIndex].m_nNextThinkTick == TICK_NEVER_THINK);
+}
+
+bool	CBaseEntity::NeverThink( int nContextIndex ) const
+{
+	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
+		return true;
+
+	if (nContextIndex < 0)
+	{
+		return (m_nNextThinkTick == TICK_NEVER_THINK);
+	}
+
+	return (m_aThinkFunctions[nContextIndex].m_nNextThinkTick == TICK_NEVER_THINK);
+}
 
 int CheckEntityVelocity( Vector &v )
 {
@@ -1158,6 +1455,16 @@ void CBaseEntity::VPhysicsUpdate( IPhysicsObject *pPhysics )
 				}
 				angles = vec3_angle;
 			}
+
+			for ( int i = 0; i < 3; ++i )
+			{
+				angles[ i ] = AngleNormalize( angles[ i ] );
+			}
+
+#ifndef CLIENT_DLL 
+			NetworkQuantize( origin, angles );
+#endif
+
 #ifndef CLIENT_DLL 
 			Vector prevOrigin = GetAbsOrigin();
 #endif
@@ -1174,10 +1481,6 @@ void CBaseEntity::VPhysicsUpdate( IPhysicsObject *pPhysics )
 				}
 			}
 
-			for ( int i = 0; i < 3; ++i )
-			{
-				angles[ i ] = AngleNormalize( angles[ i ] );
-			}
 			SetAbsAngles( angles );
 
 			// Interactive debris converts back to debris when it comes to rest
@@ -1255,6 +1558,18 @@ void CBaseEntity::VPhysicsSetObject( IPhysicsObject *pPhysics )
 		Warning( "Overwriting physics object for %s\n", GetClassname() );
 	}
 	m_pPhysicsObject = pPhysics;
+#ifndef CLIENT_DLL
+	RemoveSolidFlags(FSOLID_NOT_MOVEABLE);
+#endif
+	if ( m_pPhysicsObject )
+	{
+#ifndef CLIENT_DLL
+		if ( m_pPhysicsObject->IsStatic() )
+		{
+			AddSolidFlags(FSOLID_NOT_MOVEABLE);
+		}
+#endif
+	}
 	if ( pPhysics && !m_pPhysicsObject )
 	{
 		CollisionRulesChanged();
@@ -1649,12 +1964,12 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 	}
 #endif// GAME_DLL
 
-	int iPlayerDamage = info.m_iPlayerDamage;
-	if ( iPlayerDamage == 0 )
+	float flPlayerDamage = info.m_flPlayerDamage;
+	if ( flPlayerDamage == 0.0f )
 	{
 		if ( nAmmoFlags & AMMO_INTERPRET_PLRDAMAGE_AS_DAMAGE_TO_PLAYER )
 		{
-			iPlayerDamage = pAmmoDef->PlrDamage( info.m_iAmmoType );
+			flPlayerDamage = pAmmoDef->PlrDamage( info.m_iAmmoType );
 		}
 	}
 
@@ -1678,7 +1993,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 	traceFilter.SetPassEntity( this ); // Standard pass entity for THIS so that it can be easily removed from the list after passing through a portal
 	traceFilter.AddEntityToIgnore( info.m_pAdditionalIgnoreEnt );
 
-#if defined( HL2_EPISODIC ) && defined( GAME_DLL )
+#if defined( GAME_DLL )
 	// FIXME: We need to emulate this same behavior on the client as well -- jdw
 	// Also ignore a vehicle we're a passenger in
 	if ( MyCombatCharacterPointer() != NULL && MyCombatCharacterPointer()->IsInAVehicle() )
@@ -1881,18 +2196,18 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 
 			// If we hit a player, and we have player damage specified, use that instead
 			// Adrian: Make sure to use the currect value if we hit a vehicle the player is currently driving.
-			if ( iPlayerDamage )
+			if ( flPlayerDamage != 0.0f )
 			{
 				if ( tr.m_pEnt->IsPlayer() )
 				{
-					flActualDamage = iPlayerDamage;
+					flActualDamage = flPlayerDamage;
 				}
 #ifdef GAME_DLL
 				else if ( tr.m_pEnt->GetServerVehicle() )
 				{
 					if ( tr.m_pEnt->GetServerVehicle()->GetPassenger() && tr.m_pEnt->GetServerVehicle()->GetPassenger()->IsPlayer() )
 					{
-						flActualDamage = iPlayerDamage;
+						flActualDamage = flPlayerDamage;
 					}
 				}
 #endif
@@ -2181,16 +2496,6 @@ void CBaseEntity::DoImpactEffect( trace_t &tr, int nDamageType )
 //-----------------------------------------------------------------------------
 void CBaseEntity::ComputeTracerStartPosition( const Vector &vecShotSrc, Vector *pVecTracerStart )
 {
-#ifndef HL2MP
-	if ( g_pGameRules->IsMultiplayer() )
-	{
-		// NOTE: we do this because in MakeTracer, we force it to use the attachment position
-		// in multiplayer, so the results from this function should never actually get used.
-		pVecTracerStart->Init( 999, 999, 999 );
-		return;
-	}
-#endif
-	
 	if ( IsPlayer() )
 	{
 		// adjust tracer position for player
@@ -2429,9 +2734,14 @@ void CBaseEntity::ApplyLocalVelocityImpulse( const Vector &inVecImpulse )
 
 		if ( GetMoveType() == MOVETYPE_VPHYSICS )
 		{
-			Vector worldVel;
-			VPhysicsGetObject()->LocalToWorld( &worldVel, vecImpulse );
-			VPhysicsGetObject()->AddVelocity( &worldVel, NULL );
+			IPhysicsObject *ppPhysObjs[ VPHYSICS_MAX_OBJECT_LIST_COUNT ];
+			int nNumPhysObjs = VPhysicsGetObjectList( ppPhysObjs, VPHYSICS_MAX_OBJECT_LIST_COUNT );
+			for ( int i = 0; i < nNumPhysObjs; i++ )
+			{
+				Vector worldVel;
+				ppPhysObjs[ i ]->LocalToWorld( &worldVel, vecImpulse );
+				ppPhysObjs[ i ]->AddVelocity(  &worldVel, NULL );
+			}
 		}
 		else
 		{
@@ -2464,7 +2774,12 @@ void CBaseEntity::ApplyAbsVelocityImpulse( const Vector &inVecImpulse )
 
 		if ( GetMoveType() == MOVETYPE_VPHYSICS )
 		{
-			VPhysicsGetObject()->AddVelocity( &vecImpulse, NULL );
+			IPhysicsObject *ppPhysObjs[ VPHYSICS_MAX_OBJECT_LIST_COUNT ];
+			int nNumPhysObjs = VPhysicsGetObjectList( ppPhysObjs, VPHYSICS_MAX_OBJECT_LIST_COUNT );
+			for ( int i = 0; i < nNumPhysObjs; i++ )
+			{
+				ppPhysObjs[ i ]->AddVelocity( &vecImpulse, NULL );
+			}
 		}
 		else
 		{
@@ -2490,7 +2805,12 @@ void CBaseEntity::ApplyLocalAngularVelocityImpulse( const AngularImpulse &angImp
 
 		if ( GetMoveType() == MOVETYPE_VPHYSICS )
 		{
-			VPhysicsGetObject()->AddVelocity( NULL, &angImpulse );
+			IPhysicsObject *ppPhysObjs[ VPHYSICS_MAX_OBJECT_LIST_COUNT ];
+			int nNumPhysObjs = VPhysicsGetObjectList( ppPhysObjs, VPHYSICS_MAX_OBJECT_LIST_COUNT );
+			for ( int i = 0; i < nNumPhysObjs; i++ )
+			{
+				ppPhysObjs[ i ]->AddVelocity( NULL, &angImpulse );
+			}
 		}
 		else
 		{
@@ -2553,7 +2873,7 @@ void CBaseEntity::SetWaterType( int nType )
 		m_nWaterType |= 2;
 }
 
-ConVar	sv_alternateticks( "sv_alternateticks", ( IsX360() ) ? "1" : "0", FCVAR_SPONLY, "If set, server only simulates entities on even numbered ticks.\n" );
+ConVar	sv_alternateticks( "sv_alternateticks", "0", FCVAR_NONE, "If set, server only simulates entities on even numbered ticks.\n" );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -2577,10 +2897,110 @@ bool CBaseEntity::IsSimulatingOnAlternateTicks()
 //-----------------------------------------------------------------------------
 bool CBaseEntity::IsToolRecording() const
 {
-#ifndef NO_TOOLFRAMEWORK
 	return m_bToolRecording;
-#else
-	return false;
-#endif
 }
 #endif
+
+#if defined( CLIENT_DLL ) 
+extern void TouchTriggerPlayerMovement( C_BaseEntity *pEntity );
+#endif
+
+void CBaseEntity::PhysicsTouchTriggers( const Vector *pPrevAbsOrigin )
+{
+#if defined( CLIENT_DLL )
+	Assert( !pPrevAbsOrigin );
+	TouchTriggerPlayerMovement( this );
+#else
+	edict_t *pEntity = edict();
+
+	if ( pEntity && !IsWorld() )
+	{
+		Assert(CollisionProp());
+		bool isTriggerCheckSolids = IsSolidFlagSet( FSOLID_TRIGGER );
+		bool isSolidCheckTriggers = IsSolid() && !isTriggerCheckSolids;		// NOTE: Moving triggers (items, ammo etc) are not 
+		// checked against other triggers ot reduce the number of touchlinks created
+		if ( !(isSolidCheckTriggers || isTriggerCheckSolids) )
+			return;
+
+		if ( GetSolid() == SOLID_BSP ) 
+		{
+			if ( !GetModel() && Q_strlen( STRING( GetModelName() ) ) == 0 ) 
+			{
+				Warning( "Inserted %s with no model\n", GetClassname() );
+				return;
+			}
+		}
+
+		SetCheckUntouch( true );
+		if ( isSolidCheckTriggers )
+		{
+			engine->SolidMoved( pEntity, CollisionProp(), pPrevAbsOrigin, sm_bAccurateTriggerBboxChecks );
+		}
+		if ( isTriggerCheckSolids )
+		{
+			engine->TriggerMoved( pEntity, sm_bAccurateTriggerBboxChecks );
+		}
+	}
+#endif
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : set - 
+//-----------------------------------------------------------------------------
+void CBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
+{
+	// TODO
+	// Append chapter/day?
+
+	set.AppendCriteria( "randomnum", UTIL_VarArgs("%d", RandomInt(0,100)) );
+	
+	// Append our classname and game name
+	set.AppendCriteria( "classname", GetClassname() );
+
+	const char *pEntityName = "";
+
+#ifdef CLIENT_DLL
+	pEntityName = GetEntityName();
+#else
+	pEntityName = GetEntityNameAsCStr();
+#endif
+
+	set.AppendCriteria( "name", pEntityName );
+
+	// Append our health
+	set.AppendCriteria( "health", UTIL_VarArgs( "%i", GetHealth() ) );
+
+	float healthfrac = 0.0f;
+	if ( GetMaxHealth() > 0 )
+	{
+		healthfrac = (float)GetHealth() / (float)GetMaxHealth();
+	}
+
+	set.AppendCriteria( "healthfrac", UTIL_VarArgs( "%.3f", healthfrac ) );
+
+	// Go through all the global states and append them
+
+#ifdef GAME_DLL
+	for ( int i = 0; i < GlobalEntity_GetNumGlobals(); i++ ) 
+	{
+		const char *szGlobalName = GlobalEntity_GetName(i);
+		int iGlobalState = (int)GlobalEntity_GetStateByIndex(i);
+		set.AppendCriteria( szGlobalName, UTIL_VarArgs( "%i", iGlobalState ) );
+	}
+
+	// Append map name
+	set.AppendCriteria( "map", gpGlobals->mapname.ToCStr() );
+
+	// Append anything from I/O or keyvalues pairs
+	AppendContextToCriteria( set );
+
+	// Append anything from world I/O/keyvalues with "world" as prefix
+	CWorld *world = assert_cast< CWorld * >( CBaseEntity::Instance( INDEXENT( 0 ) ) );
+	if ( world )
+	{
+		world->AppendContextToCriteria( set, "world" );
+	}
+#endif
+}

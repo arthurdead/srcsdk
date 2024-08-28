@@ -21,9 +21,9 @@ void CIconPanel::ApplySettings( KeyValues *inResourceData )
 {
 	Q_strncpy( m_szIcon, inResourceData->GetString( "icon", "" ), sizeof( m_szIcon ) );
 
-	m_icon = gHUD.GetIcon( m_szIcon );
+	m_icon = HudIcons().GetIcon( m_szIcon );
 
-	m_bScaleImage = inResourceData->GetInt("scaleImage", 0);
+	m_bScaleImage = inResourceData->GetBool("scaleImage", false);
 
 	BaseClass::ApplySettings( inResourceData );
 }
@@ -32,7 +32,7 @@ void CIconPanel::SetIcon( const char *szIcon )
 {
 	Q_strncpy( m_szIcon, szIcon, sizeof(m_szIcon) );
 
-	m_icon = gHUD.GetIcon( m_szIcon );
+	m_icon = HudIcons().GetIcon( m_szIcon );
 }
 
 void CIconPanel::Paint()
@@ -61,7 +61,7 @@ void CIconPanel::ApplySchemeSettings( vgui::IScheme *pScheme )
     
 	if ( m_szIcon[0] != '\0' )
 	{
-		m_icon = gHUD.GetIcon( m_szIcon );
+		m_icon = HudIcons().GetIcon( m_szIcon );
 	}
 
 	SetFgColor( pScheme->GetColor( "FgColor", Color( 255, 255, 255, 255 ) ) );

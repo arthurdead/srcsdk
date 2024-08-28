@@ -3,6 +3,8 @@ project('source_game')
 src_root_dir = get_option('src_root_dir')
 src_engine_dir = get_option('src_engine_dir')
 
+common_dir = join_paths(src_root_dir,'common')
+
 source_debug_dep = declare_dependency(
 	compile_args: [
 		'-DFRAME_POINTER_OMISSION_DISABLED',
@@ -82,10 +84,23 @@ source_slop_dep = declare_dependency(
 	]
 )
 
-source_linux_dep = declare_dependency(
+source_static_lib_dep = declare_dependency(
 	dependencies: [
 		source_dep
 	],
+)
+
+source_shared_lib_dep = declare_dependency(
+	dependencies: [
+		source_dep
+	],
+	sources: files(
+		join_paths(common_dir,'debug_dll_check.cpp'),
+		join_paths(common_dir,'dlloverride.cpp'),
+	)
+)
+
+source_linux_dep = declare_dependency(
 	compile_args: [
 		'-DGNUC',
 		'-DCOMPILER_GCC',
@@ -105,12 +120,14 @@ source_linux_dep = declare_dependency(
 
 source_linux_static_lib_dep = declare_dependency(
 	dependencies: [
+		source_static_lib_dep,
 		source_linux_dep
 	],
 )
 
 source_linux_shared_lib_dep = declare_dependency(
 	dependencies: [
+		source_shared_lib_dep,
 		source_linux_dep
 	],
 )

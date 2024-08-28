@@ -6,9 +6,7 @@
 
 #ifndef FOUNDRYHELPERS_SERVER_H
 #define FOUNDRYHELPERS_SERVER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "foundry/iserverfoundry.h"

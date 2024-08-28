@@ -3,9 +3,7 @@
 #ifndef __TOKENSET_H
 #define __TOKENSET_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 //-----------------------------------------------------------------------------
 // 

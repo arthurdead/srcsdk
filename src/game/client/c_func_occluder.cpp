@@ -19,7 +19,7 @@ public:
 // Overrides.
 public:
 	virtual bool	ShouldDraw();
-	virtual int		DrawModel( int flags );
+	virtual int		DrawModel( int flags, const RenderableInstance_t &instance );
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
 
 private:
@@ -44,7 +44,7 @@ bool C_FuncOccluder::ShouldDraw()
 	return false;
 }
 
-int C_FuncOccluder::DrawModel( int flags )
+int C_FuncOccluder::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 	Assert(0);
 	return 0;

@@ -20,7 +20,7 @@
 #define HISTORY_DRAW_TIME	"5"
 
 ConVar hud_drawhistory_time( "hud_drawhistory_time", HISTORY_DRAW_TIME, 0 );
-ConVar hud_fastswitch( "hud_fastswitch", "0", FCVAR_ARCHIVE | FCVAR_ARCHIVE_XBOX );
+ConVar hud_fastswitch( "hud_fastswitch", "0", FCVAR_ARCHIVE );
 
 //-----------------------------------------------------------------------------
 // Purpose: Weapon Selection commands
@@ -101,7 +101,7 @@ void CBaseHudWeaponSelection::Reset(void)
 	// Start hidden
 	m_bSelectionVisible = false;
 	m_flSelectionTime = gpGlobals->curtime;
-	gHUD.UnlockRenderGroup( gHUD.LookupRenderGroupIndexByName( "weapon_selection" ) );
+	GetHud().UnlockRenderGroup( GetHud().LookupRenderGroupIndexByName( "weapon_selection" ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -159,12 +159,12 @@ void CBaseHudWeaponSelection::ProcessInput()
 	if ( pPlayer->IsInVGuiInputMode() && !pPlayer->IsInViewModelVGuiInputMode() )
 	{
 		// If so, close weapon selection when they press fire
-		if ( gHUD.m_iKeyBits & IN_ATTACK )
+		if ( GetHud().m_iKeyBits & IN_ATTACK )
 		{
 			if ( HUDTYPE_PLUS != hud_fastswitch.GetInt() )
 			{
 				// Swallow the button
-				gHUD.m_iKeyBits &= ~IN_ATTACK;
+				GetHud().m_iKeyBits &= ~IN_ATTACK;
 				input->ClearInputButton( IN_ATTACK );
 			}
 
@@ -174,16 +174,14 @@ void CBaseHudWeaponSelection::ProcessInput()
 	}
 
 	// Has the player selected a weapon?
-	if ( gHUD.m_iKeyBits & IN_ATTACK )
+	if ( GetHud().m_iKeyBits & IN_ATTACK )
 	{
 		if ( IsWeaponSelectable() )
 		{
-#ifndef TF_CLIENT_DLL
 			if ( HUDTYPE_PLUS != hud_fastswitch.GetInt() )
-#endif
 			{
 				// Swallow the button
-				gHUD.m_iKeyBits &= ~IN_ATTACK;
+				GetHud().m_iKeyBits &= ~IN_ATTACK;
 				input->ClearInputButton( IN_ATTACK );
 			}
 
@@ -192,10 +190,10 @@ void CBaseHudWeaponSelection::ProcessInput()
 		}
 	}
 
-	if ( gHUD.m_iKeyBits & IN_ATTACK2 )
+	if ( GetHud().m_iKeyBits & IN_ATTACK2 )
 	{
 		// Swallow the button
-		gHUD.m_iKeyBits &= ~IN_ATTACK2;
+		GetHud().m_iKeyBits &= ~IN_ATTACK2;
 		input->ClearInputButton( IN_ATTACK2 );
 		CancelWeaponSelection();
 	}
@@ -215,7 +213,7 @@ bool CBaseHudWeaponSelection::IsInSelectionMode()
 void CBaseHudWeaponSelection::OpenSelection( void )
 {
 	m_bSelectionVisible = true;
-	gHUD.LockRenderGroup( gHUD.LookupRenderGroupIndexByName( "weapon_selection" ) );
+	GetHud().LockRenderGroup( GetHud().LookupRenderGroupIndexByName( "weapon_selection" ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -224,7 +222,7 @@ void CBaseHudWeaponSelection::OpenSelection( void )
 void CBaseHudWeaponSelection::HideSelection( void )
 {
 	m_bSelectionVisible = false;
-	gHUD.UnlockRenderGroup( gHUD.LookupRenderGroupIndexByName( "weapon_selection" ) );
+	GetHud().UnlockRenderGroup( GetHud().LookupRenderGroupIndexByName( "weapon_selection" ) );
 }
 
 //-----------------------------------------------------------------------------

@@ -33,7 +33,7 @@ public:
 
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
 
-	void ClientThink( void );
+	void SlideshowThink( void );
 
 	bool IsEnabled( void ) { return m_bEnabled; }
 

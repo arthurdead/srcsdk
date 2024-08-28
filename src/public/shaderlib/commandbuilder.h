@@ -10,9 +10,7 @@
 #define COMMANDBUILDER_H
 
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "shaderapi/commandbuffer.h"

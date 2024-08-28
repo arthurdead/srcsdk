@@ -796,7 +796,6 @@ Frame::Frame(Panel *parent, const char *panelName, bool showTaskbarIcon /*=true*
 	
 	GetFocusNavGroup().SetFocusTopLevel(true);
 	
-#if !defined( _X360 )
 	_sysMenu = NULL;
 
 	// add dragging grips
@@ -843,7 +842,6 @@ Frame::Frame(Panel *parent, const char *panelName, bool showTaskbarIcon /*=true*
 
 	_menuButton = new FrameSystemButton(this, "frame_menu");
 	_menuButton->SetMenu(GetSysMenu());
-#endif
 	
 	SetupResizeCursors();
 
@@ -870,7 +868,6 @@ Frame::~Frame()
 		}
 	}
 
-#if !defined( _X360 )
 	delete _topGrip;
 	delete _bottomGrip;
 	delete _leftGrip;
@@ -885,7 +882,7 @@ Frame::~Frame()
 	delete _closeButton;
 	delete _menuButton;
 	delete _minimizeToSysTrayButton;
-#endif
+
 	delete _title;
 }
 
@@ -894,7 +891,6 @@ Frame::~Frame()
 //-----------------------------------------------------------------------------
 void Frame::SetupResizeCursors()
 {
-#if !defined( _X360 )
 	if (IsSizeable())
 	{
 		_topGrip->SetCursor(dc_sizens);
@@ -924,7 +920,6 @@ void Frame::SetupResizeCursors()
 		_bottomRightGrip->SetPaintEnabled(false);
 		_bottomRightGrip->SetPaintBackgroundEnabled(false);
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1057,7 +1052,7 @@ void Frame::OnThink()
 		if (m_bFadingOut)
 		{
 			// we're fading out, see if we're done so we can fully hide the window
-			if (GetAlpha() < ( IsX360() ? 64 : 1 ))
+			if (GetAlpha() < 1 )
 			{
 				FinishClose();
 			}
@@ -1068,14 +1063,7 @@ void Frame::OnThink()
 			m_bPreviouslyVisible = true;
 			
 			// fade in
-			if (IsX360())
-			{
-				SetAlpha(64);
-			}
-			else
-			{
-				SetAlpha(0);
-			}
+			SetAlpha(0);
 			GetAnimationController()->RunAnimationCommand(this, "alpha", 255.0f, 0.0f, m_flTransitionEffectTime, AnimationController::INTERPOLATOR_LINEAR);
 		}
 	}
@@ -1120,7 +1108,6 @@ void Frame::OnThink()
 //-----------------------------------------------------------------------------
 void Frame::OnFrameFocusChanged(bool bHasFocus)
 {
-#if !defined( _X360 )
 	// enable/disable the frame buttons
 	_minimizeButton->SetDisabledLook(!bHasFocus);
 	_maximizeButton->SetDisabledLook(!bHasFocus);
@@ -1132,7 +1119,6 @@ void Frame::OnFrameFocusChanged(bool bHasFocus)
 	_minimizeToSysTrayButton->InvalidateLayout();
 	_closeButton->InvalidateLayout();
 	_menuButton->InvalidateLayout();
-#endif
 
 	if (bHasFocus)
 	{
@@ -1229,7 +1215,6 @@ void Frame::PerformLayout()
 	int wide, tall;
 	GetSize(wide, tall);
 		
-#if !defined( _X360 )
 	int DRAGGER_SIZE = GetDraggerSize();
 	int CORNER_SIZE = GetCornerSize();
 	int CORNER_SIZE2 = CORNER_SIZE * 2;
@@ -1263,7 +1248,6 @@ void Frame::PerformLayout()
 	_minimizeButton->MoveToFront();
 	_minimizeToSysTrayButton->MoveToFront();
 	_menuButton->SetBounds(5+2, 5+3, GetCaptionHeight()-5, GetCaptionHeight()-5);
-#endif
 
 	float scale = 1;
 	if (IsProportional())
@@ -1277,7 +1261,6 @@ void Frame::PerformLayout()
 		scale =	( (float)( screenH ) / (float)( proH ) );
 	}
 	
-#if !defined( _X360 )
 	int offset_start = (int)( 20 * scale );
 	int offset = offset_start;
 
@@ -1314,7 +1297,6 @@ void Frame::PerformLayout()
 		offset += offset_start;
 		LayoutProportional( _minimizeButton );
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1620,7 +1602,7 @@ void Frame::PaintBackground()
 		{
 			int nTitleX = m_iTitleTextInsetXOverride ? m_iTitleTextInsetXOverride : m_iTitleTextInsetX;
 			int nTitleWidth = wide - 72;
-#if !defined( _X360 )
+
 			if ( _menuButton && _menuButton->IsVisible() )
 			{
 				int mw, mh;
@@ -1628,7 +1610,7 @@ void Frame::PaintBackground()
 				nTitleX += mw;
 				nTitleWidth -= mw;
 			}
-#endif
+
 			int nTitleY;
 			if ( m_iTitleTextInsetYOverride )
 			{
@@ -1681,7 +1663,6 @@ void Frame::ApplySchemeSettings(IScheme *pScheme)
 	_title->SetFont( titlefont );
 	_title->ResizeImageToContent();
 
-#if !defined( _X360 )
 	HFont marfont = (HFont)0;
 	if ( m_bSmallCaption )
 	{
@@ -1696,7 +1677,6 @@ void Frame::ApplySchemeSettings(IScheme *pScheme)
 	_maximizeButton->SetFont(marfont);
 	_minimizeToSysTrayButton->SetFont(marfont);
 	_closeButton->SetFont(marfont);
-#endif
 
 	m_flTransitionEffectTime = atof(pScheme->GetResourceString("Frame.TransitionEffectTime"));
 	m_flFocusTransitionEffectTime = atof(pScheme->GetResourceString("Frame.FocusTransitionEffectTime"));
@@ -1887,7 +1867,6 @@ void Frame::OnCommand(const char *command)
 //-----------------------------------------------------------------------------
 Menu *Frame::GetSysMenu()
 {
-#if !defined( _X360 )
 	if (!_sysMenu)
 	{
 		_sysMenu = new Menu(this, NULL);
@@ -1918,9 +1897,6 @@ Menu *Frame::GetSysMenu()
 	}
 	
 	return _sysMenu;
-#else
-	return NULL;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1928,7 +1904,6 @@ Menu *Frame::GetSysMenu()
 //-----------------------------------------------------------------------------
 void Frame::SetSysMenu(Menu *menu)
 {
-#if !defined( _X360 )
 	if (menu == _sysMenu)
 		return;
 	
@@ -1936,7 +1911,6 @@ void Frame::SetSysMenu(Menu *menu)
 	_sysMenu = menu;
 
 	_menuButton->SetMenu(_sysMenu);
-#endif
 }
 
 
@@ -1945,9 +1919,7 @@ void Frame::SetSysMenu(Menu *menu)
 //-----------------------------------------------------------------------------
 void Frame::SetImages( const char *pEnabledImage, const char *pDisabledImage )
 {
-#if !defined( _X360 )
 	_menuButton->SetImages( pEnabledImage, pDisabledImage );
-#endif
 }
 
 
@@ -2022,9 +1994,7 @@ void Frame::OnMousePressed(MouseCode code)
 //-----------------------------------------------------------------------------
 void Frame::SetMenuButtonVisible(bool state)
 {
-#if !defined( _X360 )
 	_menuButton->SetVisible(state);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2034,9 +2004,7 @@ void Frame::SetMenuButtonVisible(bool state)
 //-----------------------------------------------------------------------------
 void Frame::SetMenuButtonResponsive(bool state)
 {
-#if !defined( _X360 )
 	_menuButton->SetResponsive(state);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2044,9 +2012,7 @@ void Frame::SetMenuButtonResponsive(bool state)
 //-----------------------------------------------------------------------------
 void Frame::SetMinimizeButtonVisible(bool state)
 {
-#if !defined( _X360 )
 	_minimizeButton->SetVisible(state);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2054,9 +2020,7 @@ void Frame::SetMinimizeButtonVisible(bool state)
 //-----------------------------------------------------------------------------
 void Frame::SetMaximizeButtonVisible(bool state)
 {
-#if !defined( _X360 )
 	_maximizeButton->SetVisible(state);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2064,9 +2028,7 @@ void Frame::SetMaximizeButtonVisible(bool state)
 //-----------------------------------------------------------------------------
 void Frame::SetMinimizeToSysTrayButtonVisible(bool state)
 {
-#if !defined( _X360 )
 	_minimizeToSysTrayButton->SetVisible(state);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2074,9 +2036,7 @@ void Frame::SetMinimizeToSysTrayButtonVisible(bool state)
 //-----------------------------------------------------------------------------
 void Frame::SetCloseButtonVisible(bool state)
 {
-#if !defined( _X360 )
 	_closeButton->SetVisible(state);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2163,16 +2123,6 @@ void Frame::OnKeyCodeTyped(KeyCode code)
 	bool shift = (input()->IsKeyDown(KEY_LSHIFT) || input()->IsKeyDown(KEY_RSHIFT));
 	bool ctrl = (input()->IsKeyDown(KEY_LCONTROL) || input()->IsKeyDown(KEY_RCONTROL));
 	bool alt = (input()->IsKeyDown(KEY_LALT) || input()->IsKeyDown(KEY_RALT));
-	
-	if ( IsX360() )
-	{
-		vgui::Panel *pMap = FindChildByName( "ControllerMap" );
-		if ( pMap && pMap->IsKeyBoardInputEnabled() )
-		{
-			pMap->OnKeyCodeTyped( code );
-			return;
-		}
-	}
 
 	if ( ctrl && shift && alt && code == KEY_B)
 	{

@@ -17,10 +17,9 @@
 #include "voice_common.h"
 #include "voice_banmgr.h"
 #include "hudelement.h"
+#include "util_shared.h"
 
-#ifdef VOICE_VOX_ENABLE
 extern ConVar voice_vox;
-#endif // VOICE_VOX_ENABLE
 
 class CVoiceStatus;
 class IMaterial;
@@ -83,6 +82,9 @@ public:
 	// ackPosition is the bottom position of where CVoiceStatus will draw the voice acknowledgement labels.
 	virtual void VidInit();
 
+	void LevelInit( void );
+	void LevelShutdown( void );
+
 public:
 	
 	// Call from HUD_Frame each frame.
@@ -128,6 +130,9 @@ public:
 	// returns true if the local player is attempting to speak
 	bool	IsLocalPlayerSpeaking( void );
 
+	// returns true if the local player is attempting to speak, and is above the volume threshold
+	bool	IsLocalPlayerSpeakingAboveThreshold();
+
 	// blocks the target client from being heard
 	void	SetPlayerBlockedState(int iPlayerIndex, bool blocked);
 
@@ -148,18 +153,18 @@ private:
 	int				m_bServerModEnable;				// What we've sent to the server about our "voice_modenable" cvar.
 
 	vgui::VPANEL	m_pParentPanel;
-	CPlayerBitVec	m_VoicePlayers;		// Who is currently talking. Indexed by client index.
+	CVoicePlayerBitVec	m_VoicePlayers;		// Who is currently talking. Indexed by client index.
 	
 	// This is the gamerules-defined list of players that you can hear. It is based on what teams people are on 
 	// and is totally separate from the ban list. Indexed by client index.
-	CPlayerBitVec	m_AudiblePlayers;
+	CVoicePlayerBitVec	m_AudiblePlayers;
 
 	// Players who have spoken at least once in the game so far
-	CPlayerBitVec	m_VoiceEnabledPlayers;	
+	CVoicePlayerBitVec	m_VoiceEnabledPlayers;	
 
 	// This is who the server THINKS we have banned (it can become incorrect when a new player arrives on the server).
 	// It is checked periodically, and the server is told to squelch or unsquelch the appropriate players.
-	CPlayerBitVec	m_ServerBannedPlayers;
+	CVoicePlayerBitVec	m_ServerBannedPlayers;
 
 	IVoiceStatusHelper	*m_pHelper;		// Each mod provides an implementation of this.
 
@@ -167,6 +172,7 @@ private:
 	bool				m_bInSquelchMode;
 	
 	bool				m_bTalking;				// Set to true when the client thinks it's talking.
+	bool				m_bAboveThreshold;		// Set to true when the client thinks it's voice is above the threshold to send to the server
 	bool				m_bServerAcked;			// Set to true when the server knows the client is talking.
 
 public:
@@ -183,9 +189,7 @@ private:
 
 	bool				m_bHeadLabelsDisabled;
 
-#ifdef VOICE_VOX_ENABLE
 	CountdownTimer		m_bAboveThresholdTimer;
-#endif // VOICE_VOX_ENABLE
 };
 
 
@@ -193,5 +197,7 @@ private:
 CVoiceStatus* GetClientVoiceMgr();
 void ClientVoiceMgr_Init();
 void ClientVoiceMgr_Shutdown();
+void ClientVoiceMgr_LevelInit();
+void ClientVoiceMgr_LevelShutdown();
 
 #endif // VOICE_STATUS_H

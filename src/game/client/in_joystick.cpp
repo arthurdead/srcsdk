@@ -29,12 +29,6 @@
 #include "tier1/convar_serverbounded.h"
 #include "cam_thirdperson.h"
 
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#else
-#include "../common/xbox/xboxstubs.h"
-#endif
-
 #ifdef HL2_CLIENT_DLL
 // FIXME: Autoaim support needs to be moved from HL2_DLL to the client dll, so this include should be c_baseplayer.h
 #include "c_basehlplayer.h"
@@ -47,6 +41,17 @@
 #define JOY_ABSOLUTE_AXIS	0x00000000		
 // Control like a mouse, spinner, trackball
 #define JOY_RELATIVE_AXIS	0x00000010		
+
+static ConVar joy_variable_frametime( "joy_variable_frametime", "1", 0 );
+
+static ConVar joy_sensitive_step0( "joy_sensitive_step0", "0.1", FCVAR_ARCHIVE);
+static ConVar joy_sensitive_step1( "joy_sensitive_step1", "0.4", FCVAR_ARCHIVE);
+static ConVar joy_sensitive_step2( "joy_sensitive_step2", "0.90", FCVAR_ARCHIVE);
+static ConVar joy_circle_correct( "joy_circle_correct", "1", FCVAR_ARCHIVE);
+
+static ConVar joy_lookspin_default( "joy_lookspin_default", "0.35", FCVAR_NONE );
+
+static ConVar joy_cfg_preset( "joy_cfg_preset", "0", FCVAR_NONE );
 
 // Axis mapping
 static ConVar joy_name( "joy_name", "joystick", FCVAR_ARCHIVE );
@@ -65,8 +70,8 @@ static ConVar joy_pitchthreshold( "joy_pitchthreshold", "0.15", FCVAR_ARCHIVE );
 static ConVar joy_yawthreshold( "joy_yawthreshold", "0.15", FCVAR_ARCHIVE );
 static ConVar joy_forwardsensitivity( "joy_forwardsensitivity", "-1", FCVAR_ARCHIVE );
 static ConVar joy_sidesensitivity( "joy_sidesensitivity", "1", FCVAR_ARCHIVE );
-static ConVar joy_pitchsensitivity( "joy_pitchsensitivity", "1", FCVAR_ARCHIVE | FCVAR_ARCHIVE_XBOX );
-static ConVar joy_yawsensitivity( "joy_yawsensitivity", "-1", FCVAR_ARCHIVE | FCVAR_ARCHIVE_XBOX );
+static ConVar joy_pitchsensitivity( "joy_pitchsensitivity", "1", FCVAR_ARCHIVE );
+static ConVar joy_yawsensitivity( "joy_yawsensitivity", "-1", FCVAR_ARCHIVE );
 
 // Advanced sensitivity and response
 static ConVar joy_response_move( "joy_response_move", "1", FCVAR_ARCHIVE, "'Movement' stick response mode: 0=Linear, 1=quadratic, 2=cubic, 3=quadratic extreme, 4=power function(i.e., pow(x,1/sensitivity)), 5=two-stage" );
@@ -89,21 +94,21 @@ static ConVar joy_display_input("joy_display_input", "0", FCVAR_ARCHIVE);
 static ConVar joy_wwhack2( "joy_wingmanwarrior_turnhack", "0", FCVAR_ARCHIVE, "Wingman warrior hack related to turn axes." );
 ConVar joy_autosprint("joy_autosprint", "0", 0, "Automatically sprint when moving with an analog joystick" );
 
-static ConVar joy_inverty("joy_inverty", "0", FCVAR_ARCHIVE | FCVAR_ARCHIVE_XBOX, "Whether to invert the Y axis of the joystick for looking." );
+static ConVar joy_inverty("joy_inverty", "0", FCVAR_ARCHIVE, "Whether to invert the Y axis of the joystick for looking." );
 
 // XBox Defaults
 static ConVar joy_yawsensitivity_default( "joy_yawsensitivity_default", "-1.25", FCVAR_NONE );
 static ConVar joy_pitchsensitivity_default( "joy_pitchsensitivity_default", "-1.0", FCVAR_NONE );
 static ConVar option_duck_method_default( "option_duck_method_default", "1.0", FCVAR_NONE );
-static ConVar joy_inverty_default( "joy_inverty_default", "0", FCVAR_ARCHIVE_XBOX );				// Extracted & saved from profile
-static ConVar joy_movement_stick_default( "joy_movement_stick_default", "0", FCVAR_ARCHIVE_XBOX );	// Extracted & saved from profile
+static ConVar joy_inverty_default( "joy_inverty_default", "0", FCVAR_NONE );				// Extracted & saved from profile
+static ConVar joy_movement_stick_default( "joy_movement_stick_default", "0", FCVAR_NONE );	// Extracted & saved from profile
 static ConVar sv_stickysprint_default( "sv_stickysprint_default", "0", FCVAR_NONE );
 
 void joy_movement_stick_Callback( IConVar *var, const char *pOldString, float flOldValue )
 {
-	engine->ClientCmd( "joyadvancedupdate" );
+	engine->ClientCmd( "joyadvancedupdate silent\n" );
 }
-static ConVar joy_movement_stick("joy_movement_stick", "0", FCVAR_ARCHIVE | FCVAR_ARCHIVE_XBOX, "Which stick controls movement (0 is left stick)", joy_movement_stick_Callback );
+static ConVar joy_movement_stick("joy_movement_stick", "0", FCVAR_ARCHIVE, "Which stick controls movement (0 is left stick)", joy_movement_stick_Callback );
 
 static ConVar joy_xcontroller_cfg_loaded( "joy_xcontroller_cfg_loaded", "0", FCVAR_ARCHIVE, "If 0, the 360controller.cfg file will be executed on startup & option changes." );
 
@@ -129,7 +134,7 @@ extern ConVar thirdperson_screenspace;
 //-----------------------------------------------------------------
 bool CInput::EnableJoystickMode()
 {
-	return IsConsole() || in_joystick.GetBool();
+	return in_joystick.GetBool();
 }
 
 
@@ -218,6 +223,74 @@ static float ResponseCurve( int curve, float x, int axis, float sensitivity )
 			//else
 			//	fall through and just return x*sensitivity below (as if using default curve)
 		}
+	case 7:
+		{
+			float xAbs = fabs(x);
+			if(xAbs < joy_sensitive_step0.GetFloat())
+			{
+				return 0;
+			}
+			else if (xAbs < joy_sensitive_step2.GetFloat())
+			{
+				return (85.0f/cl_forwardspeed.GetFloat()) * ((x < 0)? -1.0f : 1.0f);
+			}
+			else
+			{
+				return ((x < 0)? -1.0f : 1.0f);
+			}
+		}
+		break;
+	case 8: //same concept as above but with smooth speeds
+		{
+			float xAbs = fabs(x);
+			if(xAbs < joy_sensitive_step0.GetFloat())
+			{
+				return 0;
+			}
+			else if (xAbs < joy_sensitive_step2.GetFloat())
+			{
+				float maxSpeed = (85.0f/cl_forwardspeed.GetFloat());
+				float t = (xAbs-joy_sensitive_step0.GetFloat())
+					/ (joy_sensitive_step2.GetFloat()-joy_sensitive_step0.GetFloat());
+				float speed = t*maxSpeed;
+				return speed * ((x < 0)? -1.0f : 1.0f);
+			}
+			else
+			{
+				float maxSpeed = 1.0f;
+				float minSpeed = (85.0f/cl_forwardspeed.GetFloat());
+				float t = (xAbs-joy_sensitive_step2.GetFloat())
+					/ (1.0f-joy_sensitive_step2.GetFloat());
+				float speed = t*(maxSpeed-minSpeed) + minSpeed;
+				return speed * ((x < 0)? -1.0f : 1.0f);
+			}
+		}
+		break;
+	case 9: //same concept as above but with smooth speeds for walking and a hard speed for running
+		{
+			float xAbs = fabs(x);
+			if(xAbs < joy_sensitive_step0.GetFloat())
+			{
+				return 0;
+			}
+			else if (xAbs < joy_sensitive_step1.GetFloat())
+			{
+				float maxSpeed = (85.0f/cl_forwardspeed.GetFloat());
+				float t = (xAbs-joy_sensitive_step0.GetFloat())
+					/ (joy_sensitive_step1.GetFloat()-joy_sensitive_step0.GetFloat());
+				float speed = t*maxSpeed;
+				return speed * ((x < 0)? -1.0f : 1.0f);
+			}
+			else if (xAbs < joy_sensitive_step2.GetFloat())
+			{
+				return (85.0f/cl_forwardspeed.GetFloat()) * ((x < 0)? -1.0f : 1.0f);
+			}
+			else
+			{
+				return ((x < 0)? -1.0f : 1.0f);
+			}
+		}
+		break;
 	}
 
 	// linear
@@ -234,25 +307,22 @@ static float ResponseCurve( int curve, float x, int axis, float sensitivity )
 //-----------------------------------------------
 float AutoAimDampening( float x, int axis, float dist )
 {
-	// FIXME: Autoaim support needs to be moved from HL2_DLL to the client dll, so all games can use it.
-#ifdef HL2_CLIENT_DLL
 	// Help the user stay on target if the feature is enabled and the user
 	// is not making a gross stick movement.
 	if( joy_autoaimdampen.GetFloat() > 0.0f && fabs(x) < joy_autoaimdampenrange.GetFloat() )
 	{
-		// Get the HL2 player
-		C_BaseHLPlayer *pLocalPlayer = (C_BaseHLPlayer *)C_BasePlayer::GetLocalPlayer();
+		C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
 
 		if( pLocalPlayer )
 		{
 			// Get the autoaim target
-			if( pLocalPlayer->m_HL2Local.m_bAutoAimTarget )
+			if ( pLocalPlayer->m_Local.m_bAutoAimTarget )
 			{
 				return joy_autoaimdampen.GetFloat();
 			}
 		}
 	}
-#endif
+
 	return 1.0f;// No dampening.
 }
 
@@ -453,17 +523,13 @@ static float ResponseCurveLook( int curve, float x, int axis, float otherAxis, f
 //-----------------------------------------------------------------------------
 // Purpose: Advanced joystick setup
 //-----------------------------------------------------------------------------
-void CInput::Joystick_Advanced(void)
+void CInput::Joystick_Advanced(bool bSilent)
 {
+	m_fJoystickAdvancedInit = true;
+
 	// called whenever an update is needed
 	int	i;
 	DWORD dwTemp;
-
-	if ( IsX360() )
-	{
-		// Xbox always uses a joystick
-		in_joystick.SetValue( 1 );
-	}
 
 	// Initialize all the maps
 	for ( i = 0; i < MAX_JOYSTICK_AXES; i++ )
@@ -481,7 +547,7 @@ void CInput::Joystick_Advanced(void)
 	}
 	else
 	{
-		if ( Q_stricmp( joy_name.GetString(), "joystick") != 0 )
+		if ( !bSilent && Q_stricmp( joy_name.GetString(), "joystick") != 0 )
 		{
 			// notify user of advanced controller
 			Msg( "Using joystick '%s' configuration\n", joy_name.GetString() );
@@ -493,39 +559,36 @@ void CInput::Joystick_Advanced(void)
 		m_rgAxes[JOY_AXIS_X].AxisMap = dwTemp & 0x0000000f;
 		m_rgAxes[JOY_AXIS_X].ControlMap = dwTemp & JOY_RELATIVE_AXIS;
 
-		DescribeJoystickAxis( "JOY_AXIS_X", &m_rgAxes[JOY_AXIS_X] );
-
 		dwTemp = ( joy_movement_stick.GetBool() ) ? (DWORD)joy_advaxisr.GetInt() : (DWORD)joy_advaxisy.GetInt();
 		m_rgAxes[JOY_AXIS_Y].AxisMap = dwTemp & 0x0000000f;
 		m_rgAxes[JOY_AXIS_Y].ControlMap = dwTemp & JOY_RELATIVE_AXIS;
-
-		DescribeJoystickAxis( "JOY_AXIS_Y", &m_rgAxes[JOY_AXIS_Y] );
 
 		dwTemp = (DWORD)joy_advaxisz.GetInt();
 		m_rgAxes[JOY_AXIS_Z].AxisMap = dwTemp & 0x0000000f;
 		m_rgAxes[JOY_AXIS_Z].ControlMap = dwTemp & JOY_RELATIVE_AXIS;
 
-		DescribeJoystickAxis( "JOY_AXIS_Z", &m_rgAxes[JOY_AXIS_Z] );
-
 		dwTemp = ( joy_movement_stick.GetBool() ) ? (DWORD)joy_advaxisy.GetInt() : (DWORD)joy_advaxisr.GetInt();
 		m_rgAxes[JOY_AXIS_R].AxisMap = dwTemp & 0x0000000f;
 		m_rgAxes[JOY_AXIS_R].ControlMap = dwTemp & JOY_RELATIVE_AXIS;
-
-		DescribeJoystickAxis( "JOY_AXIS_R", &m_rgAxes[JOY_AXIS_R] );
 
 		dwTemp = ( joy_movement_stick.GetBool() ) ? (DWORD)joy_advaxisx.GetInt() : (DWORD)joy_advaxisu.GetInt();
 		m_rgAxes[JOY_AXIS_U].AxisMap = dwTemp & 0x0000000f;
 		m_rgAxes[JOY_AXIS_U].ControlMap = dwTemp & JOY_RELATIVE_AXIS;
 
-		DescribeJoystickAxis( "JOY_AXIS_U", &m_rgAxes[JOY_AXIS_U] );
-
 		dwTemp = (DWORD)joy_advaxisv.GetInt();
 		m_rgAxes[JOY_AXIS_V].AxisMap = dwTemp & 0x0000000f;
 		m_rgAxes[JOY_AXIS_V].ControlMap = dwTemp & JOY_RELATIVE_AXIS;
 
-		DescribeJoystickAxis( "JOY_AXIS_V", &m_rgAxes[JOY_AXIS_V] );
+		if(!bSilent) {
+			DescribeJoystickAxis( "JOY_AXIS_X", &m_rgAxes[JOY_AXIS_X] );
+			DescribeJoystickAxis( "JOY_AXIS_Y", &m_rgAxes[JOY_AXIS_Y] );
+			DescribeJoystickAxis( "JOY_AXIS_Z", &m_rgAxes[JOY_AXIS_Z] );
+			DescribeJoystickAxis( "JOY_AXIS_R", &m_rgAxes[JOY_AXIS_R] );
+			DescribeJoystickAxis( "JOY_AXIS_U", &m_rgAxes[JOY_AXIS_U] );
+			DescribeJoystickAxis( "JOY_AXIS_V", &m_rgAxes[JOY_AXIS_V] );
 
-		Msg( "Advanced Joystick settings initialized\n" );
+			Msg( "Advanced Joystick settings initialized\n" );
+		}
 	}
 
 	// If we have an xcontroller, load the cfg file if it hasn't been loaded.
@@ -534,11 +597,11 @@ void CInput::Joystick_Advanced(void)
 	{
 		if ( joy_xcontroller_cfg_loaded.GetInt() < 2 )
 		{
+		#ifdef _LINUX
+			engine->ClientCmd_Unrestricted( "exec 360controller-linux.cfg" );
+		#else
 			engine->ClientCmd_Unrestricted( "exec 360controller.cfg" );
-			if ( IsLinux () )
-			{
-				engine->ClientCmd_Unrestricted( "exec 360controller-linux.cfg" );
-			}
+		#endif
 			joy_xcontroller_cfg_loaded.SetValue( 2 );
 		}
 	}
@@ -615,21 +678,14 @@ float CInput::ScaleAxisValue( const float axisValue, const float axisThreshold )
 	// has a (potentially) unique threshold value.  If all axes were restricted to a single threshold
 	// as they are on the Xbox, this function could move to inputsystem and be slightly more optimal.
 	float result = 0.f;
-	if ( IsPC() )
+
+	if ( axisValue < -axisThreshold )
 	{
-		if ( axisValue < -axisThreshold )
-		{
-			result = ( axisValue + axisThreshold ) / ( MAX_BUTTONSAMPLE - axisThreshold );
-		}
-		else if ( axisValue > axisThreshold )
-		{
-			result = ( axisValue - axisThreshold ) / ( MAX_BUTTONSAMPLE - axisThreshold );
-		}
+		result = ( axisValue + axisThreshold ) / ( MAX_BUTTONSAMPLE - axisThreshold );
 	}
-	else
+	else if ( axisValue > axisThreshold )
 	{
-		// IsXbox
-		result =  axisValue * ( 1.f / MAX_BUTTONSAMPLE );
+		result = ( axisValue - axisThreshold ) / ( MAX_BUTTONSAMPLE - axisThreshold );
 	}
 
 	return result;
@@ -671,7 +727,7 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 	// complete initialization if first time in ( needed as cvars are not available at initialization time )
 	if ( !m_fJoystickAdvancedInit )
 	{
-		Joystick_Advanced();
+		Joystick_Advanced(true);
 		m_fJoystickAdvancedInit = true;
 	}
 
@@ -683,7 +739,7 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 	bool haveJoysticks = ( inputsystem->GetJoystickCount() > 0 );
 	if ( haveJoysticks != m_fHadJoysticks )
 	{
-		Joystick_Advanced();
+		Joystick_Advanced(true);
 		m_fHadJoysticks = haveJoysticks;
 	}
 
@@ -811,7 +867,7 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 
 	float	joySideMove = 0.f;
 	float	joyForwardMove = 0.f;
-	float   aspeed = frametime * gHUD.GetFOVSensitivityAdjust();
+	float   aspeed = frametime * GetHud().GetFOVSensitivityAdjust();
 
 	// apply forward and side control
 	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
@@ -852,7 +908,7 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 	cmd->mousedx = angle;
 
 	// apply look control
-	if ( IsX360() || in_jlook.state & 1 )
+	if ( in_jlook.state & 1 )
 	{
 		float angle = 0;
 		if ( JOY_ABSOLUTE_AXIS == gameAxes[GAME_AXIS_PITCH].controlType )
@@ -866,14 +922,14 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 		}
 		viewangles[PITCH] += angle;
 		cmd->mousedy = angle;
-		view->StopPitchDrift();
+		GetViewRenderInstance()->StopPitchDrift();
 		if( m_flPreviousJoystickPitch == 0.f && lookspring.GetFloat() == 0.f )
 		{
 			// no pitch movement
 			// disable pitch return-to-center unless requested by user
 			// *** this code can be removed when the lookspring bug is fixed
 			// *** the bug always has the lookspring feature on
-			view->StopPitchDrift();
+			GetViewRenderInstance()->StopPitchDrift();
 		}
 	}
 
@@ -894,17 +950,14 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 		cmd->sidemove += joySideMove;
 	}
 
-	if ( IsPC() )
+	CCommand tmp;
+	if ( FloatMakePositive(joyForwardMove) >= joy_autosprint.GetFloat() || FloatMakePositive(joySideMove) >= joy_autosprint.GetFloat() )
 	{
-		CCommand tmp;
-		if ( FloatMakePositive(joyForwardMove) >= joy_autosprint.GetFloat() || FloatMakePositive(joySideMove) >= joy_autosprint.GetFloat() )
-		{
-			KeyDown( &in_joyspeed, NULL );
-		}
-		else
-		{
-			KeyUp( &in_joyspeed, NULL );
-		}
+		KeyDown( &in_joyspeed, NULL );
+	}
+	else
+	{
+		KeyUp( &in_joyspeed, NULL );
 	}
 
 	// Bound pitch

@@ -5,7 +5,6 @@
 // $NoKeywords: $
 //=============================================================================//
 #include "cbase.h"
-#include "particle_prototype.h"
 #include "particle_util.h"
 #include "baseparticleentity.h"
 #include "clienteffectprecachesystem.h"
@@ -26,7 +25,7 @@
 // C_SteamJet
 //==================================================
 
-class C_SteamJet : public C_BaseParticleEntity, public IPrototypeAppEffect
+class C_SteamJet : public C_BaseParticleEntity
 {
 public:
 	DECLARE_CLIENTCLASS();
@@ -57,7 +56,7 @@ public:
 
 //IPrototypeAppEffect
 public:
-	virtual void		Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs);
+	virtual void		Start(CParticleMgr *pParticleMgr);
 	virtual bool		GetPropEditInfo(RecvTable **ppTable, void **ppObj);
 
 
@@ -112,10 +111,6 @@ private:
 // ------------------------------------------------------------------------- //
 // Tables.
 // ------------------------------------------------------------------------- //
-
-// Expose to the particle app.
-EXPOSE_PROTOTYPE_EFFECT(SteamJet, C_SteamJet);
-
 
 // Datatable..
 IMPLEMENT_CLIENTCLASS_DT(C_SteamJet, DT_SteamJet, CSteamJet)
@@ -172,7 +167,7 @@ void C_SteamJet::OnDataChanged(DataUpdateType_t updateType)
 
 	if(updateType == DATA_UPDATE_CREATED)
 	{
-		Start(ParticleMgr(), NULL);
+		Start(ParticleMgr());
 	}
 
 	// Recalulate lifetime in case length or speed changed.
@@ -186,7 +181,7 @@ void C_SteamJet::OnDataChanged(DataUpdateType_t updateType)
 // Input  : *pParticleMgr - 
 //			*pArgs - 
 //-----------------------------------------------------------------------------
-void C_SteamJet::Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs)
+void C_SteamJet::Start(CParticleMgr *pParticleMgr)
 {
 	pParticleMgr->AddEffect( &m_ParticleEffect, this );
 	
@@ -415,7 +410,7 @@ void C_SteamJet::RenderParticles( CParticleRenderIterator *pIterator )
 				pIterator->GetParticleDraw(),
 				tPos,
 				vRampColor,
-				sinLifetime * (m_clrRender->a/255.0f),
+				sinLifetime * (GetRenderAlpha()/255.0f),
 				FLerp(m_StartSize, m_EndSize, pParticle->m_Lifetime));
 		}
 		else
@@ -424,7 +419,7 @@ void C_SteamJet::RenderParticles( CParticleRenderIterator *pIterator )
 				pIterator->GetParticleDraw(),
 				tPos,
 				vRampColor,
-				sinLifetime * (m_clrRender->a/255.0f),
+				sinLifetime * (GetRenderAlpha()/255.0f),
 				FLerp(pParticle->m_uchStartSize, pParticle->m_uchEndSize, pParticle->m_Lifetime),
 				pParticle->m_flRoll );
 		}
@@ -494,13 +489,13 @@ void C_SteamJet::UpdateLightingRamp()
 		Vector vTestPos = startPos + (endPos - startPos) * t;
 		
 		Vector *pRamp = &m_Ramps[iRamp];
-		*pRamp = WorldGetLightForPoint(vTestPos, false);
+		*pRamp = engine->GetLightForPoint(vTestPos, false);
 		
 		if ( IsEmissive() )
 		{
-			pRamp->x += (m_clrRender->r/255.0f);
-			pRamp->y += (m_clrRender->g/255.0f);
-			pRamp->z += (m_clrRender->b/255.0f);
+			pRamp->x += (GetRenderColorR()/255.0f);
+			pRamp->y += (GetRenderColorG()/255.0f);
+			pRamp->z += (GetRenderColorB()/255.0f);
 
 			pRamp->x = clamp( pRamp->x, 0.0f, 1.0f );
 			pRamp->y = clamp( pRamp->y, 0.0f, 1.0f );
@@ -508,9 +503,9 @@ void C_SteamJet::UpdateLightingRamp()
 		}
 		else
 		{
-			pRamp->x *= (m_clrRender->r/255.0f);
-			pRamp->y *= (m_clrRender->g/255.0f);
-			pRamp->z *= (m_clrRender->b/255.0f);
+			pRamp->x *= (GetRenderColorR()/255.0f);
+			pRamp->y *= (GetRenderColorG()/255.0f);
+			pRamp->z *= (GetRenderColorB()/255.0f);
 		}
 
 		// Renormalize?

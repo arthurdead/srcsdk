@@ -10,9 +10,7 @@
 #ifndef C_PHYSICS_PROP_STATUE_H
 #define C_PHYSICS_PROP_STATUE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "c_physicsprop.h"

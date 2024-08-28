@@ -7,9 +7,7 @@
 
 #ifndef FLEX_EXPRESSER_H
 #define FLEX_EXPRESSER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "flexcycler.h"
 #include "ai_speech.h"

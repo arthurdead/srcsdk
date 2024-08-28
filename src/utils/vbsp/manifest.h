@@ -7,9 +7,7 @@
 #ifndef __MANIFEST_H
 #define __MANIFEST_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "boundbox.h"
 

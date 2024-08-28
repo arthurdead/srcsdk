@@ -949,36 +949,10 @@ private:
 
 //-----------------------------------------------------------------------------
 
-#if defined( _X360 ) && !defined( _RETAIL )
-extern char g_szXboxProfileLastFileOpened[MAX_PATH];
-#define SetLastProfileFileRead( s ) Q_strncpy( g_szXboxProfileLastFileOpened, sizeof( g_szXboxProfileLastFileOpened), pFileName )
-#define GetLastProfileFileRead() (&g_szXboxProfileLastFileOpened[0])
-#else
 #define SetLastProfileFileRead( s ) ((void)0)
 #define GetLastProfileFileRead() NULL
-#endif
 
-#if defined( _X360 ) && defined( _BASETSD_H_ )
-class CXboxDiskCacheSetter
-{
-public:
-	CXboxDiskCacheSetter( SIZE_T newSize )
-	{
-		m_oldSize = XGetFileCacheSize();
-		XSetFileCacheSize( newSize );
-	}
-
-	~CXboxDiskCacheSetter()
-	{
-		XSetFileCacheSize( m_oldSize );
-	}
-private:
-	SIZE_T m_oldSize;
-};
-#define DISK_INTENSIVE() CXboxDiskCacheSetter cacheSetter( 1024*1024 )
-#else
 #define DISK_INTENSIVE() ((void)0)
-#endif
 
 //-----------------------------------------------------------------------------
 

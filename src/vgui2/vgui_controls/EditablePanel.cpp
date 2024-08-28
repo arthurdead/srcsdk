@@ -122,7 +122,7 @@ void EditablePanel::OnKeyCodePressed( KeyCode code )
 
 		// check for a default button
 		VPANEL panel = GetFocusNavGroup().GetCurrentDefaultButton();
-		if ( panel && !IsConsoleStylePanel() )
+		if ( panel )
 		{
 			switch ( nButtonCode )
 			{
@@ -728,10 +728,6 @@ FocusNavGroup &EditablePanel::GetFocusNavGroup()
 bool EditablePanel::RequestFocusNext(VPANEL panel)
 {
 	bool bRet = m_NavGroup.RequestFocusNext(panel);
-	if ( IsPC() && !bRet && IsConsoleStylePanel() )
-	{
-		NavigateDown();
-	}
 	return bRet;
 }
 
@@ -741,10 +737,6 @@ bool EditablePanel::RequestFocusNext(VPANEL panel)
 bool EditablePanel::RequestFocusPrev(VPANEL panel)
 {
 	bool bRet = m_NavGroup.RequestFocusPrev(panel);
-	if ( IsPC() && !bRet && IsConsoleStylePanel() )
-	{
-		NavigateUp();
-	}
 	return bRet;
 }
 

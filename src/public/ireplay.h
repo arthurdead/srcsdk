@@ -9,9 +9,7 @@
 #ifndef IREPLAY_H
 #define IREPLAY_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 

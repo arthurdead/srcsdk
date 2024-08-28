@@ -12,7 +12,7 @@
 // The current network protocol version.  Changing this makes clients and servers incompatible
 #define PROTOCOL_VERSION    24
 
-#define DEMO_BACKWARDCOMPATABILITY
+//#define DEMO_BACKWARDCOMPATABILITY
 
 // For backward compatibility of demo files (NET_MAX_PAYLOAD_BITS went away)
 #define PROTOCOL_VERSION_23		23

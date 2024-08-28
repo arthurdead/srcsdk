@@ -14,6 +14,7 @@
 #include "interface.h"
 #include "mathlib/mathlib.h"
 #include "istudiorender.h"
+#include "datacache/idatacache.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -26,6 +27,7 @@ class Vector;
 struct studiohdr_t;
 class IMaterial;
 class CStudioHdr;
+struct MaterialLightingState_t;
 
 FORWARD_DECLARE_HANDLE( LightCacheHandle_t ); 
 
@@ -91,6 +93,18 @@ struct StaticPropRenderInfo_t
 	Vector					*pLightingOrigin;
 	short					skin;
 	ModelInstanceHandle_t	instance;
+};
+
+struct LightingQuery_t
+{
+	Vector m_LightingOrigin;
+	ModelInstanceHandle_t m_InstanceHandle;
+	bool m_bAmbientBoost;
+};
+
+struct StaticLightingQuery_t : public LightingQuery_t
+{
+	IClientRenderable *m_pRenderable;
 };
 
 // UNDONE: Move this to hud export code, subsume previous functions

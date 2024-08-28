@@ -18,7 +18,6 @@
 // Forward declarations
 //-----------------------------------------------------------------------------
 
-enum PLAYER_ANIM;
 class IPhysicsSurfaceProps;
 class Vector;
 struct model_t;
@@ -62,6 +61,9 @@ public:
 	// Methods associated with a particular entity
 	virtual	char const*		GetName( EntityHandle_t handle ) const = 0;
 
+	// sets the entity being moved
+	virtual void	SetHost( CBaseEntity *host ) = 0;
+
 	// Adds the trace result to touch list, if contact is not already in list.
 	virtual void	ResetTouchList( void ) = 0;
 	virtual bool	AddToTouched( const CGameTrace& tr, const Vector& impactvelocity ) = 0;
@@ -77,9 +79,6 @@ public:
 
 	// Apply falling damage to m_pHostPlayer based on m_pHostPlayer->m_flFallVelocity.
 	virtual bool	PlayerFallingDamage( void ) = 0;
-
-	// Apply falling damage to m_pHostPlayer based on m_pHostPlayer->m_flFallVelocity.
-	virtual void	PlayerSetAnimation( PLAYER_ANIM playerAnim ) = 0;
 
 	virtual IPhysicsSurfaceProps *GetSurfaceProps( void ) = 0;
 

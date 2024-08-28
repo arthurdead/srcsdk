@@ -40,14 +40,10 @@ public:
 static CToolFrameworkServer g_ToolFrameworkServer;
 IToolFrameworkServer *g_pToolFrameworkServer = &g_ToolFrameworkServer;
 
-#ifndef NO_TOOLFRAMEWORK
-
 bool ToolsEnabled()
 {
 	return g_ToolFrameworkServer.m_pTools && g_ToolFrameworkServer.m_pTools->InToolMode() && !engine->IsDedicatedServer();
 }
-
-#endif
 
 bool CToolFrameworkServer::Init()
 {

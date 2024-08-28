@@ -26,7 +26,7 @@ using namespace vgui;
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-CIntroMenu::CIntroMenu( IViewPort *pViewPort ) : Frame( NULL, PANEL_INTRO )
+CIntroMenu::CIntroMenu( IViewPort *pViewPort ) : BaseClass( NULL, PANEL_INTRO )
 {
 	// initialize dialog
 	m_pViewPort = pViewPort;

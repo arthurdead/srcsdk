@@ -25,7 +25,6 @@
 #include "materialsystem/imaterialsystem.h"
 #include "soundinfo.h"
 #include "mathlib/vmatrix.h"
-#include "isaverestore.h"
 #include "interval.h"
 #include "engine/ivdebugoverlay.h"
 #include "c_ai_basenpc.h"
@@ -40,6 +39,9 @@
 #include "cdll_bounded_cvars.h"
 #include "inetchannelinfo.h"
 #include "proto_version.h"
+#include "clientalphaproperty.h"
+#include "cellcoord.h"
+#include "gamestringpool.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -54,6 +56,8 @@
 static bool g_bWasSkipping = (bool)-1;
 static bool g_bWasThreaded =(bool)-1;
 static int  g_nThreadModeTicks = 0;
+static ConVar cl_interp_threadmodeticks( "cl_interp_threadmodeticks", "0", 0, "Additional interpolation ticks to use when interpolating with threaded engine mode set." );
+
 
 void cc_cl_interp_all_changed( IConVar *pConVar, const char *pOldString, float flOldValue )
 {
@@ -73,6 +77,7 @@ void cc_cl_interp_all_changed( IConVar *pConVar, const char *pOldString, float f
 }
 
 
+static ConVar  report_cliententitysim( "report_cliententitysim", "0", FCVAR_CHEAT, "List all clientside simulations and time - will report and turn itself off." );
 static ConVar  cl_extrapolate( "cl_extrapolate", "1", FCVAR_CHEAT, "Enable/disable extrapolation if interpolation history runs out." );
 
 static ConVar  cl_interp_npcs( "cl_interp_npcs", "0.3", FCVAR_USERINFO, "Interpolate NPC positions starting this many seconds in past (or cl_interp, if greater)" );
@@ -92,29 +97,8 @@ static ConVar  r_drawrenderboxes( "r_drawrenderboxes", "0", FCVAR_CHEAT );
 static bool g_bAbsRecomputationStack[8];
 static unsigned short g_iAbsRecomputationStackPos = 0;
 
-// All the entities that want Interpolate() called on them.
-static CUtlLinkedList<C_BaseEntity*, unsigned short> g_InterpolationList;
-static CUtlLinkedList<C_BaseEntity*, unsigned short> g_TeleportList;
-
-#if !defined( NO_ENTITY_PREDICTION )
-//-----------------------------------------------------------------------------
-// Purpose: Maintains a list of predicted or client created entities
-//-----------------------------------------------------------------------------
-class CPredictableList : public IPredictableList
-{
-public:
-	virtual C_BaseEntity *GetPredictable( int slot );
-	virtual int GetPredictableCount( void );
-
-protected:
-	void	AddToPredictableList( ClientEntityHandle_t add );
-	void	RemoveFromPredictablesList( ClientEntityHandle_t remove );
-
-private:
-	CUtlVector< ClientEntityHandle_t >	m_Predictables;
-
-	friend class C_BaseEntity;
-};
+static CUtlLinkedList<C_BaseEntity*, unsigned short> g_EntityLists[NUM_ENTITY_LISTS];
+static bool s_bImmediateRemovesAllowed = true;
 
 // Create singleton
 static CPredictableList g_Predictables;
@@ -134,7 +118,7 @@ void CPredictableList::AddToPredictableList( ClientEntityHandle_t add )
 	}
 
 	// Add to general list
-	m_Predictables.AddToTail( add );
+	m_Predictables.Insert( add );
 
 	// Maintain sort order by entindex
 	int count = m_Predictables.Size();
@@ -194,15 +178,6 @@ C_BaseEntity *CPredictableList::GetPredictable( int slot )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Output : int
-//-----------------------------------------------------------------------------
-int CPredictableList::GetPredictableCount( void )
-{
-	return m_Predictables.Count();
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: Searc predictables for previously created entity (by testId)
 // Input  : testId - 
 // Output : static C_BaseEntity
@@ -219,7 +194,7 @@ static C_BaseEntity *FindPreviouslyCreatedEntity( CPredictableId& testId )
 			continue;
 
 		// Found it, note use of operator ==
-		if ( testId == e->m_PredictableID )
+		if ( testId == e->GetPredictableID() )
 		{
 			return e;
 		}
@@ -227,7 +202,6 @@ static C_BaseEntity *FindPreviouslyCreatedEntity( CPredictableId& testId )
 
 	return NULL;
 }
-#endif
 
 abstract_class IRecordingList
 {
@@ -300,6 +274,29 @@ int CRecordingList::Count()
 	return m_Recording.Count();
 }
 
+// Helper object implementation
+CCurTimeScopeGuard::CCurTimeScopeGuard( float flNewCurTime, bool bOptionalCondition /*= true*/ )
+{
+	m_bActive = bOptionalCondition;
+	if ( m_bActive )
+	{
+		m_flSavedTime = gpGlobals->curtime;
+		gpGlobals->curtime = flNewCurTime;
+	}
+	else
+	{
+		m_flSavedTime = 0.0f;
+	}
+}
+
+CCurTimeScopeGuard::~CCurTimeScopeGuard()
+{
+	if ( m_bActive )
+	{
+		gpGlobals->curtime = m_flSavedTime;
+	}
+}
+
 // Should these be somewhere else?
 #define PITCH 0
 
@@ -313,7 +310,6 @@ int CRecordingList::Count()
 void RecvProxy_AnimTime( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	C_BaseEntity *pEntity = ( C_BaseEntity * )pStruct;
-	Assert( pOut == &pEntity->m_flAnimTime );
 
 	int t;
 	int tickbase;
@@ -335,13 +331,12 @@ void RecvProxy_AnimTime( const CRecvProxyData *pData, void *pStruct, void *pOut 
 	while (t > gpGlobals->tickcount + 127)
 		t -= 256;
 	
-	pEntity->m_flAnimTime = ( t * TICK_INTERVAL );
+	pEntity->SetAnimTime( t * TICK_INTERVAL );
 }
 
 void RecvProxy_SimulationTime( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	C_BaseEntity *pEntity = ( C_BaseEntity * )pStruct;
-	Assert( pOut == &pEntity->m_flSimulationTime );
 
 	int t;
 	int tickbase;
@@ -363,7 +358,129 @@ void RecvProxy_SimulationTime( const CRecvProxyData *pData, void *pStruct, void 
 	while (t > gpGlobals->tickcount + 127)
 		t -= 256;
 	
-	pEntity->m_flSimulationTime = ( t * TICK_INTERVAL );
+	pEntity->SetSimulationTime( t * TICK_INTERVAL );
+}
+
+void C_BaseEntity::RecvProxy_CellBits( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+
+	if ( pEnt->SetCellBits( pData->m_Value.m_Int ) )
+	{
+		if ( pEnt->ShouldRegenerateOriginFromCellBits() )
+		{
+			pEnt->m_vecNetworkOrigin.x = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellX, pEnt->m_vecCellOrigin.x );
+			pEnt->m_vecNetworkOrigin.y = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellY, pEnt->m_vecCellOrigin.y );
+			pEnt->m_vecNetworkOrigin.z = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellZ, pEnt->m_vecCellOrigin.z );
+		}
+	}
+}
+
+void C_BaseEntity::RecvProxy_CellX( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+
+	int *cellX = (int *)pOut;
+	Assert( cellX == &pEnt->m_cellX );
+
+	*cellX = pData->m_Value.m_Int;
+
+	// Cell changed, update world position
+	if ( pEnt->ShouldRegenerateOriginFromCellBits() )
+	{
+		pEnt->m_vecNetworkOrigin.x = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellX, pEnt->m_vecCellOrigin.x );
+	}
+}
+
+void C_BaseEntity::RecvProxy_CellY( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+
+	int *cellY = (int *)pOut;
+	Assert( cellY == &pEnt->m_cellY );
+
+	*cellY = pData->m_Value.m_Int;
+
+	// Cell changed, update world position
+	if ( pEnt->ShouldRegenerateOriginFromCellBits() )
+	{
+		pEnt->m_vecNetworkOrigin.y = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellY, pEnt->m_vecCellOrigin.y );
+	}
+}
+
+void C_BaseEntity::RecvProxy_CellZ( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+
+	int *cellZ = (int *)pOut;
+	Assert( cellZ == &pEnt->m_cellZ );
+
+	*cellZ = pData->m_Value.m_Int;
+
+	// Cell changed, update world position
+	if ( pEnt->ShouldRegenerateOriginFromCellBits() )
+	{
+		pEnt->m_vecNetworkOrigin.z = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellZ, pEnt->m_vecCellOrigin.z );
+	}
+}
+
+void C_BaseEntity::RecvProxy_CellOrigin( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+
+	Vector *vecNetworkOrigin = (Vector *)pOut;
+
+	Assert( vecNetworkOrigin == &pEnt->m_vecNetworkOrigin );
+
+	pEnt->m_vecCellOrigin.x = pData->m_Value.m_Vector[0];
+	pEnt->m_vecCellOrigin.y = pData->m_Value.m_Vector[1];
+	pEnt->m_vecCellOrigin.z = pData->m_Value.m_Vector[2];
+
+	if ( pEnt->ShouldRegenerateOriginFromCellBits() )
+	{
+		register int const cellwidth = pEnt->m_cellwidth; // Load it into a register
+		vecNetworkOrigin->x = CoordFromCell( cellwidth, pEnt->m_cellX, pData->m_Value.m_Vector[0] );
+		vecNetworkOrigin->y = CoordFromCell( cellwidth, pEnt->m_cellY, pData->m_Value.m_Vector[1] );
+		vecNetworkOrigin->z = CoordFromCell( cellwidth, pEnt->m_cellZ, pData->m_Value.m_Vector[2] );
+	}
+}
+
+void C_BaseEntity::RecvProxy_CellOriginXY( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+
+	Vector *vecNetworkOrigin = (Vector *)pOut;
+
+	Assert( vecNetworkOrigin == &pEnt->m_vecNetworkOrigin );
+
+	pEnt->m_vecCellOrigin.x = pData->m_Value.m_Vector[0];
+	pEnt->m_vecCellOrigin.y = pData->m_Value.m_Vector[1];
+
+	register int const cellwidth = pEnt->m_cellwidth; // Load it into a register
+
+	if ( pEnt->ShouldRegenerateOriginFromCellBits() )
+	{
+		vecNetworkOrigin->x = CoordFromCell( cellwidth, pEnt->m_cellX, pData->m_Value.m_Vector[0] );
+		vecNetworkOrigin->y = CoordFromCell( cellwidth, pEnt->m_cellY, pData->m_Value.m_Vector[1] );
+	}
+}
+
+void C_BaseEntity::RecvProxy_CellOriginZ( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+
+	float *vecNetworkOriginZ = (float *)pOut;
+
+	Assert( vecNetworkOriginZ == &pEnt->m_vecNetworkOrigin[2] );
+
+	pEnt->m_vecCellOrigin.z = pData->m_Value.m_Float;
+
+	register int const cellwidth = pEnt->m_cellwidth; // Load it into a register
+
+	if ( pEnt->ShouldRegenerateOriginFromCellBits() )
+	{
+		*vecNetworkOriginZ = CoordFromCell( cellwidth, pEnt->m_cellZ, pData->m_Value.m_Float );
+	}
 }
 
 void RecvProxy_LocalVelocity( const CRecvProxyData *pData, void *pStruct, void *pOut )
@@ -416,42 +533,107 @@ void RecvProxy_EffectFlags( const CRecvProxyData *pData, void *pStruct, void *pO
 	((C_BaseEntity*)pStruct)->SetEffects( pData->m_Value.m_Int );
 }
 
+void RecvProxy_ClrRender( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	// This proxy will cause the alpha modulation to get updated correctly
+	C_BaseEntity *pEnt = (C_BaseEntity*)pStruct;
+	uint32 color = LittleDWord((uint32)pData->m_Value.m_Int);
+	color32 c = *(color32*)( &color );
+	pEnt->SetRenderColor( c.r, c.g, c.b );
+	pEnt->SetRenderAlpha( c.a );
+}
+
+void RecvProxy_RenderMode( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	// This proxy will cause the alpha modulation to get updated correctly
+	C_BaseEntity *pEnt = (C_BaseEntity*)pStruct;
+	pEnt->SetRenderMode( (RenderMode_t)(pData->m_Value.m_Int) );
+}
+
+void RecvProxy_RenderFX( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	// This proxy will cause the alpha modulation to get updated correctly
+	C_BaseEntity *pEnt = (C_BaseEntity*)pStruct;
+	pEnt->SetRenderFX( (RenderFx_t)(pData->m_Value.m_Int), FLT_MAX, 0.0f );
+}
 
 BEGIN_RECV_TABLE_NOBASE( C_BaseEntity, DT_AnimTimeMustBeFirst )
 	RecvPropInt( RECVINFO(m_flAnimTime), 0, RecvProxy_AnimTime ),
 END_RECV_TABLE()
 
-
-#ifndef NO_ENTITY_PREDICTION
 BEGIN_RECV_TABLE_NOBASE( C_BaseEntity, DT_PredictableId )
 	RecvPropPredictableId( RECVINFO( m_PredictableID ) ),
 	RecvPropInt( RECVINFO( m_bIsPlayerSimulated ) ),
 END_RECV_TABLE()
-#endif
 
+void RecvProxyArrayLength_ModelIndexesOverrides( void *pStruct, int objectID, int currentArrayLength )
+{
+	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
+	if(currentArrayLength == 0) {
+		if(pEnt->m_nModelIndexOverrides) {
+			free(pEnt->m_nModelIndexOverrides);
+		}
+		pEnt->m_nModelIndexOverrides = NULL;
+		pEnt->m_nModelIndexOverridesLength = currentArrayLength;
+	} else if(pEnt->m_nModelIndexOverridesLength != currentArrayLength) {
+		if(!pEnt->m_nModelIndexOverrides) {
+			pEnt->m_nModelIndexOverrides = (int *)malloc(sizeof(int) * currentArrayLength);
+		} else {
+			pEnt->m_nModelIndexOverrides = (int *)realloc(pEnt->m_nModelIndexOverrides, sizeof(int) * currentArrayLength);
+		}
+		pEnt->m_nModelIndexOverridesLength = currentArrayLength;
+	}
+}
+
+void RecvProxy_FadeMinDist( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	// This proxy will cause the alpha modulation to get updated correctly
+	C_BaseEntity *pEnt = (C_BaseEntity*)pStruct;
+	pEnt->SetDistanceFade( pData->m_Value.m_Float, pEnt->GetMaxFadeDist() );
+}
+
+void RecvProxy_FadeMaxDist( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	// This proxy will cause the alpha modulation to get updated correctly
+	C_BaseEntity *pEnt = (C_BaseEntity*)pStruct;
+	pEnt->SetDistanceFade( pEnt->GetMinFadeDist(), pData->m_Value.m_Float );
+}
+
+void RecvProxy_FadeScale( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	// This proxy will cause the alpha modulation to get updated correctly
+	C_BaseEntity *pEnt = (C_BaseEntity*)pStruct;
+	pEnt->SetGlobalFadeScale( pData->m_Value.m_Float );
+}
 
 BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropDataTable( "AnimTimeMustBeFirst", 0, 0, &REFERENCE_RECV_TABLE(DT_AnimTimeMustBeFirst) ),
 	RecvPropInt( RECVINFO(m_flSimulationTime), 0, RecvProxy_SimulationTime ),
 	RecvPropInt( RECVINFO( m_ubInterpolationFrame ) ),
 
-	RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ) ),
+	RecvPropFloat( RECVINFO( m_flCreateTime ) ),
+
+	RecvPropInt( RECVINFO( m_cellbits ), 0, C_BaseEntity::RecvProxy_CellBits ),
+//	RecvPropArray( RecvPropInt( RECVINFO(m_cellXY[0]) ), m_cellXY ),
+	RecvPropInt( RECVINFO( m_cellX ), 0, C_BaseEntity::RecvProxy_CellX ),
+	RecvPropInt( RECVINFO( m_cellY ), 0, C_BaseEntity::RecvProxy_CellY ),
+	RecvPropInt( RECVINFO( m_cellZ ), 0, C_BaseEntity::RecvProxy_CellZ ),
+
+	RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ), 0, C_BaseEntity::RecvProxy_CellOrigin ),
 #if PREDICTION_ERROR_CHECK_LEVEL > 1 
 	RecvPropVector( RECVINFO_NAME( m_angNetworkAngles, m_angRotation ) ),
 #else
 	RecvPropQAngles( RECVINFO_NAME( m_angNetworkAngles, m_angRotation ) ),
 #endif
 
-#ifdef DEMO_BACKWARDCOMPATABILITY
-	RecvPropInt( RECVINFO(m_nModelIndex), 0, RecvProxy_IntToModelIndex16_BackCompatible ),
-#else
 	RecvPropInt( RECVINFO(m_nModelIndex) ),
-#endif
 
 	RecvPropInt(RECVINFO(m_fEffects), 0, RecvProxy_EffectFlags ),
-	RecvPropInt(RECVINFO(m_nRenderMode)),
-	RecvPropInt(RECVINFO(m_nRenderFX)),
-	RecvPropInt(RECVINFO(m_clrRender)),
+	RecvPropInt("m_nRenderMode", 0, sizeof(unsigned char), 0, RecvProxy_RenderMode),
+	RecvPropInt("m_nRenderFX", 0, sizeof(unsigned char), 0, RecvProxy_RenderFX),
+
+	RecvPropInt("m_clrRender", 0, sizeof(color32), 0, RecvProxy_ClrRender),
+
 	RecvPropInt(RECVINFO(m_iTeamNum)),
 	RecvPropInt(RECVINFO(m_CollisionGroup)),
 	RecvPropFloat(RECVINFO(m_flElasticity)),
@@ -461,22 +643,31 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropInt( RECVINFO_NAME(m_hNetworkMoveParent, moveparent), 0, RecvProxy_IntToMoveParent ),
 	RecvPropInt( RECVINFO( m_iParentAttachment ) ),
 
+	RecvPropString( RECVINFO( m_iName ) ),
+
 	RecvPropInt( "movetype", 0, SIZEOF_IGNORE, 0, RecvProxy_MoveType ),
 	RecvPropInt( "movecollide", 0, SIZEOF_IGNORE, 0, RecvProxy_MoveCollide ),
 	RecvPropDataTable( RECVINFO_DT( m_Collision ), 0, &REFERENCE_RECV_TABLE(DT_CollisionProperty) ),
 	
 	RecvPropInt( RECVINFO ( m_iTextureFrameIndex ) ),
-#if !defined( NO_ENTITY_PREDICTION )
+
+	RecvPropEHandle (RECVINFO(m_hPlayerSimulationOwner)),
 	RecvPropDataTable( "predictable_id", 0, 0, &REFERENCE_RECV_TABLE( DT_PredictableId ) ),
-#endif
 
 	RecvPropInt		( RECVINFO( m_bSimulatedEveryTick ), 0, RecvProxy_InterpolationAmountChanged ),
 	RecvPropInt		( RECVINFO( m_bAnimatedEveryTick ), 0, RecvProxy_InterpolationAmountChanged ),
 	RecvPropBool	( RECVINFO( m_bAlternateSorting ) ),
 
-#ifdef TF_CLIENT_DLL
-	RecvPropArray3( RECVINFO_ARRAY(m_nModelIndexOverrides),	RecvPropInt( RECVINFO(m_nModelIndexOverrides[0]) ) ),
-#endif
+	RecvPropFloat( "m_fadeMinDist", 0, sizeof(float), 0, RecvProxy_FadeMinDist ), 
+	RecvPropFloat( "m_fadeMaxDist", 0, sizeof(float), 0, RecvProxy_FadeMaxDist ), 
+	RecvPropFloat( "m_flFadeScale", 0, sizeof(float), 0, RecvProxy_FadeScale ), 
+
+	RecvPropInt( RECVINFO( m_nMinCPULevel ) ), 
+	RecvPropInt( RECVINFO( m_nMaxCPULevel ) ), 
+	RecvPropInt( RECVINFO( m_nMinGPULevel ) ), 
+	RecvPropInt( RECVINFO( m_nMaxGPULevel ) ), 
+
+	RecvPropArray2( RecvProxyArrayLength_ModelIndexesOverrides,	RecvPropInt( RECVINFO(m_nModelIndexOverrides[0]) ), NUM_SHARED_VISION_FILTERS, sizeof(int), m_nModelIndexOverrides ),
 
 END_RECV_TABLE()
 
@@ -493,8 +684,11 @@ BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 	DEFINE_FIELD( m_vecAbsVelocity, FIELD_VECTOR ),
 	DEFINE_PRED_FIELD_TOL( m_vecVelocity, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.5f ),
 //	DEFINE_PRED_FIELD( m_fEffects, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_nRenderMode, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_nRenderFX, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
+
+	//TODO!!!!! Arthurdead
+	//DEFINE_PRED_FIELD( m_nRenderMode, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
+	//DEFINE_PRED_FIELD( m_nRenderFX, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
+
 //	DEFINE_PRED_FIELD( m_flAnimTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 //	DEFINE_PRED_FIELD( m_flSimulationTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_fFlags, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
@@ -502,6 +696,7 @@ BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 	DEFINE_PRED_FIELD( m_nModelIndex, FIELD_SHORT, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
 	DEFINE_PRED_FIELD( m_flFriction, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_iTeamNum, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD( m_iHealth, FIELD_INTEGER ),
 	DEFINE_PRED_FIELD( m_hOwnerEntity, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
 
 //	DEFINE_FIELD( m_nSimulationTick, FIELD_INTEGER ),
@@ -525,6 +720,10 @@ BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 	DEFINE_FIELD( m_vecAngVelocity, FIELD_VECTOR ),
 //	DEFINE_FIELD( m_vecAbsAngVelocity, FIELD_VECTOR ),
 
+//	DEFINE_FIELD( m_nMinCPULevel, FIELD_CHARACTER ),
+//	DEFINE_FIELD( m_nMaxCPULevel, FIELD_CHARACTER ),
+//	DEFINE_FIELD( m_nMinGPULevel, FIELD_CHARACTER ),
+//	DEFINE_FIELD( m_nMaxGPULevel, FIELD_CHARACTER ),
 
 //	DEFINE_FIELD( model, FIELD_INTEGER ), // writing pointer literally
 //	DEFINE_FIELD( index, FIELD_INTEGER ),
@@ -540,6 +739,7 @@ BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 //	DEFINE_FIELD( m_ModelInstance, FIELD_SHORT ),
 	DEFINE_FIELD( m_flProxyRandomValue, FIELD_FLOAT ),
 
+	DEFINE_PRED_FIELD( m_hPlayerSimulationOwner, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),	
 //	DEFINE_FIELD( m_PredictableID, FIELD_INTEGER ),
 //	DEFINE_FIELD( m_pPredictionContext, FIELD_POINTER ),
 	// Stuff specific to rendering and therefore not to be copied back and forth
@@ -891,12 +1091,16 @@ inline int C_BaseEntity::Interp_Interpolate( VarMapping_t *map, float currentTim
 //-----------------------------------------------------------------------------
 // Functions.
 //-----------------------------------------------------------------------------
-C_BaseEntity::C_BaseEntity() : 
+C_BaseEntity::C_BaseEntity( bool bClientOnly ) : 
 	m_iv_vecOrigin( "C_BaseEntity::m_iv_vecOrigin" ),
 	m_iv_angRotation( "C_BaseEntity::m_iv_angRotation" ),
 	m_iv_vecVelocity( "C_BaseEntity::m_iv_vecVelocity" )
 {
-	m_pAttributes = NULL;
+	CleanUpAlphaProperty();
+	m_pClientAlphaProperty = static_cast< CClientAlphaProperty * >( g_pClientAlphaPropertyMgr->CreateClientAlphaProperty( this ) );
+
+	m_nMinCPULevel = m_nMaxCPULevel = 0;
+	m_nMinGPULevel = m_nMaxGPULevel = 0;
 
 	AddVar( &m_vecOrigin, &m_iv_vecOrigin, LATCH_SIMULATION_VAR );
 	AddVar( &m_angRotation, &m_iv_angRotation, LATCH_SIMULATION_VAR );
@@ -908,10 +1112,13 @@ C_BaseEntity::C_BaseEntity() :
 	// AddVar( &m_vecVelocity, &m_iv_vecVelocity, LATCH_SIMULATION_VAR );
 
 	m_DataChangeEventRef = -1;
-	m_EntClientFlags = 0;
+	m_EntClientFlags = bClientOnly ? ENTCLIENTFLAG_CLIENTONLY : 0;
 
 	m_iParentAttachment = 0;
-	m_nRenderFXBlend = 255;
+
+	m_bRenderWithViewModels = false;
+	m_bDisableCachedRenderBounds = false;
+	m_bIsValidIKAttachment = false;
 
 	SetPredictionEligible( false );
 	m_bPredictable = false;
@@ -936,6 +1143,7 @@ C_BaseEntity::C_BaseEntity() :
 
 #endif
 
+	SetIdentityMatrix( m_rgflCoordinateFrame );
 	m_nSimulationTick = -1;
 
 	// Assume drawing everything
@@ -943,52 +1151,14 @@ C_BaseEntity::C_BaseEntity() :
 	m_flProxyRandomValue = 0.0f;
 
 	m_fBBoxVisFlags = 0;
-#if !defined( NO_ENTITY_PREDICTION )
 	m_pPredictionContext = NULL;
-#endif
 	
-	//NOTE: not virtual! we are in the constructor!
-	C_BaseEntity::Clear();
-	
-	m_InterpolationListEntry = 0xFFFF;
-	m_TeleportListEntry = 0xFFFF;
+	for ( int i = 0; i < NUM_ENTITY_LISTS; i++ )
+	{
+		m_ListEntry[i] = 0xFFFF;
+	}
+	AddToEntityList( ENTITY_LIST_PRERENDER );
 
-#ifndef NO_TOOLFRAMEWORK
-	m_bEnabledInToolView = true;
-	m_bToolRecording = false;
-	m_ToolHandle = 0;
-	m_nLastRecordedFrame = -1;
-	m_bRecordInTools = true;
-#endif
-
-#ifdef TF_CLIENT_DLL
-	m_bValidatedOwner = false;
-	m_bDeemedInvalid = false;
-	m_bWasDeemedInvalid = false;
-#endif
-
-	ParticleProp()->Init( this );
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : 
-// Output : 
-//-----------------------------------------------------------------------------
-C_BaseEntity::~C_BaseEntity()
-{
-	Term();
-	ClearDataChangedEvent( m_DataChangeEventRef );
-#if !defined( NO_ENTITY_PREDICTION )
-	delete m_pPredictionContext;
-#endif
-	RemoveFromInterpolationList();
-	RemoveFromTeleportList();
-}
-
-void C_BaseEntity::Clear( void )
-{
 	m_bDormant = true;
 
 	m_nCreationTick = -1;
@@ -999,11 +1169,11 @@ void C_BaseEntity::Clear( void )
 	m_hThink = INVALID_THINK_HANDLE;
 	m_AimEntsListHandle = INVALID_AIMENTS_LIST_HANDLE;
 
-	index = -1;
+	m_nEntIndex = -1;
 	m_Collision.Init( this );
 	SetLocalOrigin( vec3_origin );
 	SetLocalAngles( vec3_angle );
-	model = NULL;
+	m_pModel = NULL;
 	m_vecAbsOrigin.Init();
 	m_angAbsRotation.Init();
 	m_vecVelocity.Init();
@@ -1018,12 +1188,14 @@ void C_BaseEntity::Clear( void )
 	SetMoveCollide( MOVECOLLIDE_DEFAULT );
 	SetMoveType( MOVETYPE_NONE );
 
+	SetDistanceFade( 0.0f, 0.0f );
+	SetGlobalFadeScale( 0.0f );
+
 	ClearEffects();
 	m_iEFlags = 0;
-	m_nRenderMode = 0;
-	m_nOldRenderMode = 0;
-	SetRenderColor( 255, 255, 255, 255 );
-	m_nRenderFX = 0;
+	SetRenderColor( 255, 255, 255 );
+	SetRenderAlpha( 255 );
+	SetRenderFX( kRenderFxNone );
 	m_flFriction = 0.0f;       
 	m_flGravity = 0.0f;
 	SetCheckUntouch( false );
@@ -1031,21 +1203,186 @@ void C_BaseEntity::Clear( void )
 
 	m_nLastThinkTick = gpGlobals->tickcount;
 
-#if defined(SIXENSE)
-	m_vecEyeOffset.Init();
-	m_EyeAngleOffset.Init();
-#endif
-
 	// Remove prediction context if it exists
-#if !defined( NO_ENTITY_PREDICTION )
 	delete m_pPredictionContext;
 	m_pPredictionContext = NULL;
-#endif
+
 	// Do not enable this on all entities. It forces bone setup for entities that
 	// don't need it.
 	//AddEFlags( EFL_USE_PARTITION_WHEN_NOT_SOLID );
 
 	UpdateVisibility();
+
+	m_bEnabledInToolView = true;
+	m_bToolRecording = false;
+	m_ToolHandle = 0;
+	m_nLastRecordedFrame = -1;
+	m_bRecordInTools = true;
+
+#ifdef TF_CLIENT_DLL
+	m_bValidatedOwner = false;
+	m_bDeemedInvalid = false;
+	m_bWasDeemedInvalid = false;
+#endif
+
+	ParticleProp()->Init( this );
+
+	m_spawnflags = 0;
+
+	m_flCreateTime = 0.0f;
+
+	m_nModelIndexOverridesLength = 0;
+	m_nModelIndexOverrides = NULL;
+}
+
+C_BaseEntity::C_BaseEntity() : C_BaseEntity(false)
+{
+
+}
+
+IClientNetworkable*C_BaseEntity::GetClientNetworkable()
+{
+	if ( m_pPredictionContext != NULL )
+	{
+		// For now can't be both
+		Assert( !GetPredictable() );
+		return this;
+	}
+
+	if( m_EntClientFlags & ENTCLIENTFLAG_CLIENTONLY )
+		return NULL;
+
+	if(m_nEntIndex == -1)
+		return NULL;
+
+	return this;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns whether this entity was created on the client.
+//-----------------------------------------------------------------------------
+bool C_BaseEntity::IsServerEntity( void )
+{
+	if ( m_pPredictionContext != NULL )
+	{
+		// For now can't be both
+		Assert( !GetPredictable() );
+		return true;
+	}
+
+	if( m_EntClientFlags & ENTCLIENTFLAG_CLIENTONLY )
+		return false;
+
+	return m_nEntIndex != -1;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool C_BaseEntity::IsClientCreated( void ) const
+{
+	if ( m_pPredictionContext != NULL )
+	{
+		// For now can't be both
+		Assert( !GetPredictable() );
+		return true;
+	}
+
+	if(m_EntClientFlags & ENTCLIENTFLAG_CLIENTONLY)
+		return true;
+
+	return m_nEntIndex == -1;
+}
+
+//-----------------------------------------------------------------------------
+// Deallocates the alpha property
+//-----------------------------------------------------------------------------
+void C_BaseEntity::CleanUpAlphaProperty()
+{
+	if ( m_pClientAlphaProperty )
+	{
+		g_pClientAlphaPropertyMgr->DestroyClientAlphaProperty( m_pClientAlphaProperty );
+		m_pClientAlphaProperty = NULL;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : 
+// Output : 
+//-----------------------------------------------------------------------------
+C_BaseEntity::~C_BaseEntity()
+{
+	C_BaseEntity::PhysicsRemoveTouchedList( this );
+	C_BaseEntity::PhysicsRemoveGroundList( this );
+	DestroyAllDataObjects();
+
+	// Remove from the predictables list
+	if ( GetPredictable() || IsClientCreated() )
+	{
+		g_Predictables.RemoveFromPredictablesList( GetClientHandle() );
+	}
+
+	// If it's play simulated, remove from simulation list if the player still exists...
+	if ( IsPlayerSimulated()  )
+	{
+		UnsetPlayerSimulated();
+	}
+
+	if ( GetClientHandle() != INVALID_CLIENTENTITY_HANDLE )
+	{
+		if ( GetThinkHandle() != INVALID_THINK_HANDLE )
+		{
+			ClientThinkList()->RemoveThinkable( GetClientHandle() );
+		}
+
+		// Remove from the client entity list.
+		ClientEntityList().RemoveEntity( GetClientHandle() );
+
+		m_RefEHandle = INVALID_CLIENTENTITY_HANDLE;
+	}
+	
+	// Are we in the partition?
+	CollisionProp()->DestroyPartitionHandle();
+
+	// If Client side only entity index will be -1
+	if ( m_nEntIndex != -1 )
+	{
+		beams->KillDeadBeams( this );
+	}
+
+	// Clean up the model instance
+	DestroyModelInstance();
+
+	// Clean up drawing
+	RemoveFromLeafSystem();
+
+	RemoveFromAimEntsList();
+
+	CleanUpAlphaProperty();
+	ClearDataChangedEvent( m_DataChangeEventRef );
+	delete m_pPredictionContext;
+	for ( int i = 0; i < NUM_ENTITY_LISTS; i++ )
+	{
+		RemoveFromEntityList(entity_list_ids_t(i));
+	}
+
+	if(m_nModelIndexOverrides) {
+		free(m_nModelIndexOverrides);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// IClientUnknown 
+//-----------------------------------------------------------------------------
+IClientAlphaProperty* C_BaseEntity::GetClientAlphaProperty()
+{
+	return m_pClientAlphaProperty;
+}
+IClientAlphaPropertyEx* C_BaseEntity::GetClientAlphaPropertyEx()
+{
+	return m_pClientAlphaProperty;
 }
 
 //-----------------------------------------------------------------------------
@@ -1065,13 +1402,6 @@ void C_BaseEntity::Activate()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_BaseEntity::SpawnClientEntity( void )
-{
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void C_BaseEntity::Precache( void )
 {
 }
@@ -1081,11 +1411,14 @@ void C_BaseEntity::Precache( void )
 // Input  : *pEnt - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool C_BaseEntity::Init( int entnum, int iSerialNum )
+bool C_BaseEntity::InitializeAsServerEntity( int entnum, int iSerialNum )
 {
 	Assert( entnum >= 0 && entnum < NUM_ENT_ENTRIES );
 
-	index = entnum;
+	m_EntClientFlags &= ~ENTCLIENTFLAG_CLIENTONLY;
+
+	m_nEntIndex = entnum;
+	m_pClientAlphaProperty->SetDesyncOffset( m_nEntIndex );
 
 	cl_entitylist->AddNetworkableEntity( GetIClientUnknown(), entnum, iSerialNum );
 
@@ -1098,55 +1431,101 @@ bool C_BaseEntity::Init( int entnum, int iSerialNum )
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-bool C_BaseEntity::InitializeAsClientEntity( const char *pszModelName, RenderGroup_t renderGroup )
+bool C_BaseEntity::InitializeAsPredictedEntity( const char *className, const char *module, int line )
 {
-	int nModelIndex;
+	m_EntClientFlags &= ~ENTCLIENTFLAG_CLIENTONLY;
 
-	if ( pszModelName != NULL )
-	{
-		nModelIndex = modelinfo->GetModelIndex( pszModelName );
-		
-		if ( nModelIndex == -1 )
-		{
-			// Model could not be found
-			Assert( !"Model could not be found, index is -1" );
-			return false;
-		}
-	}
-	else
-	{
-		nModelIndex = -1;
-	}
-
-	Interp_SetupMappings( GetVarMapping() );
-
-	return InitializeAsClientEntityByIndex( nModelIndex, renderGroup );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-bool C_BaseEntity::InitializeAsClientEntityByIndex( int iIndex, RenderGroup_t renderGroup )
-{
-	index = -1;
-
-	// Setup model data.
-	SetModelByIndex( iIndex );
+	m_nEntIndex = -1;
+	m_pClientAlphaProperty->SetDesyncOffset( rand() % 1024 );
 
 	// Add the client entity to the master entity list.
 	cl_entitylist->AddNonNetworkableEntity( GetIClientUnknown() );
 	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
 
-	// Add the client entity to the renderable "leaf system." (Renderable)
-	AddToLeafSystem( renderGroup );
+	CollisionProp()->CreatePartitionHandle();
+
+	Interp_SetupMappings( GetVarMapping() );
+
+	m_nCreationTick = gpGlobals->tickcount;
+
+	C_BasePlayer *player = C_BaseEntity::GetPredictionPlayer();
+
+	Assert( player );
+	Assert( player->m_pCurrentCommand );
+	Assert( prediction->InPrediction() );
+
+	// What's my birthday (should match server)
+	int command_number	= player->m_pCurrentCommand->command_number;
+	// Who's my daddy?
+	int player_index	= player->entindex() - 1;
+
+	// Create id/context
+	CPredictableId testId;
+	testId.Init( player_index, command_number, className, module, line );
+
+	// It's predictable
+	SetPredictionEligible( true );
+
+	// Set up "shared" id number
+	m_PredictableID.SetRaw( testId.GetRaw() );
+
+	// Get a context (mostly for debugging purposes)
+	PredictionContext *context			= new PredictionContext;
+	context->m_bActive					= true;
+	context->m_nCreationCommandNumber	= command_number;
+	context->m_nCreationLineNumber		= line;
+	context->m_pszCreationModule		= module;
+
+	// Attach to entity
+	m_pPredictionContext = context;
+
+	//  and predictables
+	g_Predictables.AddToPredictableList( GetClientHandle() );
+
+	// Duhhhh..., but might as well be safe
+	Assert( !GetPredictable() );
+	Assert( IsClientCreated() );
+
+	return true;
+}
+
+bool C_BaseEntity::InitializeAsEventEntity()
+{
+	m_EntClientFlags &= ~ENTCLIENTFLAG_CLIENTONLY;
+
+	m_nEntIndex = -1;
+	m_pClientAlphaProperty->SetDesyncOffset( rand() % 1024 );
+
+	// Add the client entity to the master entity list.
+	cl_entitylist->AddNonNetworkableEntity( GetIClientUnknown() );
+	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
+
+	CollisionProp()->CreatePartitionHandle();
+
+	Interp_SetupMappings( GetVarMapping() );
+
+	m_nCreationTick = gpGlobals->tickcount;
+
+	return true;
+}
+
+bool C_BaseEntity::InitializeAsClientEntity()
+{
+	m_EntClientFlags |= ENTCLIENTFLAG_CLIENTONLY;
+
+	m_nEntIndex = -1;
+	m_pClientAlphaProperty->SetDesyncOffset( rand() % 1024 );
+
+	// Add the client entity to the master entity list.
+	cl_entitylist->AddNonNetworkableEntity( GetIClientUnknown() );
+	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
 
 	// Add the client entity to the spatial partition. (Collidable)
 	CollisionProp()->CreatePartitionHandle();
 
-	SpawnClientEntity();
+	Interp_SetupMappings( GetVarMapping() );
+
+	m_nCreationTick = gpGlobals->tickcount;
 
 	return true;
 }
@@ -1158,58 +1537,6 @@ void C_BaseEntity::TrackAngRotation( bool bTrack )
 	else
 		RemoveVar( &m_angRotation, false );
 }
-
-void C_BaseEntity::Term()
-{
-	C_BaseEntity::PhysicsRemoveTouchedList( this );
-	C_BaseEntity::PhysicsRemoveGroundList( this );
-	DestroyAllDataObjects();
-
-#if !defined( NO_ENTITY_PREDICTION )
-	// Remove from the predictables list
-	if ( GetPredictable() || IsClientCreated() )
-	{
-		g_Predictables.RemoveFromPredictablesList( GetClientHandle() );
-	}
-
-	// If it's play simulated, remove from simulation list if the player still exists...
-	if ( IsPlayerSimulated() && C_BasePlayer::GetLocalPlayer() )
-	{
-		C_BasePlayer::GetLocalPlayer()->RemoveFromPlayerSimulationList( this );
-	}
-#endif
-
-	if ( GetClientHandle() != INVALID_CLIENTENTITY_HANDLE )
-	{
-		if ( GetThinkHandle() != INVALID_THINK_HANDLE )
-		{
-			ClientThinkList()->RemoveThinkable( GetClientHandle() );
-		}
-
-		// Remove from the client entity list.
-		ClientEntityList().RemoveEntity( GetClientHandle() );
-
-		m_RefEHandle = INVALID_CLIENTENTITY_HANDLE;
-	}
-	
-	// Are we in the partition?
-	CollisionProp()->DestroyPartitionHandle();
-
-	// If Client side only entity index will be -1
-	if ( index != -1 )
-	{
-		beams->KillDeadBeams( this );
-	}
-
-	// Clean up the model instance
-	DestroyModelInstance();
-
-	// Clean up drawing
-	RemoveFromLeafSystem();
-
-	RemoveFromAimEntsList();
-}
-
 
 void C_BaseEntity::SetRefEHandle( const CBaseHandle &handle )
 {
@@ -1225,20 +1552,8 @@ const CBaseHandle& C_BaseEntity::GetRefEHandle() const
 //-----------------------------------------------------------------------------
 // Purpose: Free beams and destroy object
 //-----------------------------------------------------------------------------
-void C_BaseEntity::Release()
+void C_BaseEntity::DO_NOT_USE_Release()
 {
-	{
-		C_BaseAnimating::AutoAllowBoneAccess boneaccess( true, true );
-		UnlinkFromHierarchy();
-	}
-
-	// Note that this must be called from here, not the destructor, because otherwise the
-	//  vtable is hosed and the derived classes function is not going to get called!!!
-	if ( IsIntermediateDataAllocated() )
-	{
-		DestroyIntermediateData();
-	}
-
 	UpdateOnRemove();
 
 	delete this;
@@ -1277,6 +1592,72 @@ void C_BaseEntity::SetRemovalFlag( bool bRemove )
 		m_iEFlags &= ~EFL_KILLME; 
 }
 
+//-----------------------------------------------------------------------------
+// Alpha
+//-----------------------------------------------------------------------------
+void C_BaseEntity::SetRenderAlpha( byte a )
+{
+	if ( GetRenderAlpha() != a )
+	{
+		AlphaProp()->SetAlphaModulation( a );
+	}
+}
+
+byte C_BaseEntity::GetRenderAlpha() const
+{
+	return AlphaProp()->GetAlphaModulation( );
+}
+
+
+//-----------------------------------------------------------------------------
+// Methods related to fade scale
+//-----------------------------------------------------------------------------
+float C_BaseEntity::GetMinFadeDist( ) const
+{
+	return AlphaProp()->GetMinFadeDist();
+}
+
+float C_BaseEntity::GetMaxFadeDist( ) const
+{
+	return AlphaProp()->GetMaxFadeDist();
+}
+
+void C_BaseEntity::SetDistanceFade( float flMinDist, float flMaxDist )
+{
+	// NOTE: Setting the fade will not necessarily produce the same values
+	// as what was passed in. I'm deliberately choosing not to grab them back out
+	// because I'm not sure what client logic depends on them being negative, for example
+
+	// Specifically, I'm certain the loading logic in C_PhysPropClientside,
+	// as well as code inside of C_PhysPropClientside::Initialize
+	// will definitely not work unless I'm doing it the way I'm currently doing it.
+	AlphaProp()->SetFade( GetGlobalFadeScale(), flMinDist, flMaxDist );
+}
+
+void C_BaseEntity::SetGlobalFadeScale( float flFadeScale )
+{
+	int modelType = modelinfo->GetModelType( m_pModel );
+	if ( modelType == mod_studio )
+	{
+		MDLCACHE_CRITICAL_SECTION();
+		MDLHandle_t hStudioHdr = modelinfo->GetCacheHandle( m_pModel );
+		if ( hStudioHdr != MDLHANDLE_INVALID )
+		{
+			const studiohdr_t *pStudioHdr = mdlcache->LockStudioHdr( hStudioHdr );
+			if ( pStudioHdr->flags & STUDIOHDR_FLAGS_NO_FORCED_FADE )
+			{
+				flFadeScale = 0.0f;
+			}
+			mdlcache->UnlockStudioHdr( hStudioHdr );
+		}
+	}
+	AlphaProp()->SetFade( flFadeScale, GetMinFadeDist(), GetMaxFadeDist() );
+}
+
+float C_BaseEntity::GetGlobalFadeScale( ) const
+{
+	return AlphaProp()->GetGlobalFadeScale();
+}
 
 //-----------------------------------------------------------------------------
 // VPhysics objects..
@@ -1306,7 +1687,7 @@ bool C_BaseEntity::VPhysicsIsFlesh( void )
 		int material = pList[i]->GetMaterialIndex();
 		const surfacedata_t *pSurfaceData = physprops->GetSurfaceData( material );
 		// Is flesh ?, don't allow pickup
-		if ( pSurfaceData->game.material == CHAR_TEX_ANTLION || pSurfaceData->game.material == CHAR_TEX_FLESH || pSurfaceData->game.material == CHAR_TEX_BLOODYFLESH || pSurfaceData->game.material == CHAR_TEX_ALIENFLESH )
+		if ( IsTexFlesh(pSurfaceData->game.material) )
 			return true;
 	}
 	return false;
@@ -1405,23 +1786,72 @@ void C_BaseEntity::UpdateVisibility()
 	}
 }
 
+void C_BaseEntity::UpdateVisibilityAllEntities()
+{
+	C_BaseEntityIterator iterator;
+	C_BaseEntity *pEnt;
+	while ( (pEnt = iterator.Next()) != NULL )	
+	{
+		pEnt->UpdateVisibility();	
+	}
+}
+
+// (static function)
+CON_COMMAND( cl_updatevisibility, "Updates visibility bits." )
+{
+	C_BaseEntity::UpdateVisibilityAllEntities();
+}
+
+void C_BaseEntity::RenderWithViewModels( bool bEnable )
+{
+	m_bRenderWithViewModels = bEnable;
+	ClientLeafSystem()->RenderWithViewModels( m_hRender, bEnable );
+}
+
+bool C_BaseEntity::IsRenderingWithViewModels() const
+{
+	Assert( ( m_hRender == INVALID_CLIENT_RENDER_HANDLE ) || 
+		( m_bRenderWithViewModels == ClientLeafSystem()->IsRenderingWithViewModels( m_hRender ) ) );
+	return m_bRenderWithViewModels;
+}
+
+void C_BaseEntity::DisableCachedRenderBounds( bool bDisabled )
+{
+	m_bDisableCachedRenderBounds = bDisabled;
+	ClientLeafSystem()->DisableCachedRenderBounds( m_hRender, bDisabled );
+}
+
+bool C_BaseEntity::IsCachedRenderBoundsDisabled() const
+{
+	return m_bDisableCachedRenderBounds;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Returns whether object should render.
 //-----------------------------------------------------------------------------
 bool C_BaseEntity::ShouldDraw()
 {
-// Only test this in tf2
-#if defined( INVASION_CLIENT_DLL )
 	// Let the client mode (like commander mode) reject drawing entities.
-	if (g_pClientMode && !g_pClientMode->ShouldDrawEntity(this) )
+	if (GetClientMode() && !GetClientMode()->ShouldDrawEntity(this) )
 		return false;
-#endif
+
+	CPULevel_t nCPULevel = GetCPULevel();
+	bool bNoDraw = ( m_nMinCPULevel && m_nMinCPULevel-1 > nCPULevel );
+	bNoDraw = bNoDraw || ( m_nMaxCPULevel && m_nMaxCPULevel-1 < nCPULevel );
+	if ( bNoDraw )
+		return false;
+
+	GPULevel_t nGPULevel = GetGPULevel();
+	bNoDraw = ( m_nMinGPULevel && m_nMinGPULevel-1 > nGPULevel );
+	bNoDraw = bNoDraw || ( m_nMaxGPULevel && m_nMaxGPULevel-1 < nGPULevel );
+	if ( bNoDraw )
+		return false;
 
 	// Some rendermodes prevent rendering
-	if ( m_nRenderMode == kRenderNone )
+	if ( GetRenderMode() == kRenderNone )
 		return false;
 
-	return (model != 0) && !IsEffectActive(EF_NODRAW) && (index != 0);
+	return (m_pModel != NULL) && !IsEffectActive(EF_NODRAW) && (m_nEntIndex != 0);
 }
 
 bool C_BaseEntity::TestCollision( const Ray_t& ray, unsigned int mask, trace_t& trace )
@@ -1478,7 +1908,7 @@ ShadowType_t C_BaseEntity::ShadowCastType()
 	if (IsEffectActive(EF_NODRAW | EF_NOSHADOW))
 		return SHADOWS_NONE;
 
-	int modelType = modelinfo->GetModelType( model );
+	int modelType = modelinfo->GetModelType( m_pModel );
 	return (modelType == mod_studio) ? SHADOWS_RENDER_TO_TEXTURE : SHADOWS_NONE;
 }
 
@@ -1544,9 +1974,9 @@ bool C_BaseEntity::ShouldReceiveProjectedTextures( int flags )
 	if ( IsEffectActive( EF_NODRAW ) )
 		 return false;
 
-	if( flags & SHADOW_FLAGS_FLASHLIGHT )
+	if( ( flags & ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SIMPLE_PROJECTION ) ) != 0 )
 	{
-		if ( GetRenderMode() > kRenderNormal && GetRenderColor().a == 0 )
+		if ( GetRenderMode() > kRenderNormal && GetRenderAlpha() == 0 )
 			 return false;
 
 		return true;
@@ -1557,7 +1987,7 @@ bool C_BaseEntity::ShouldReceiveProjectedTextures( int flags )
 	if ( IsEffectActive( EF_NORECEIVESHADOW ) )
 		 return false;
 
-	if (modelinfo->GetModelType( model ) == mod_studio)
+	if (modelinfo->GetModelType( m_pModel ) == mod_studio)
 		return false;
 
 	return true;
@@ -1609,15 +2039,15 @@ IClientRenderable *C_BaseEntity::NextShadowPeer()
 //-----------------------------------------------------------------------------
 int	C_BaseEntity::entindex( void ) const
 {
-	return index;
+	return m_nEntIndex;
 }
 
 int C_BaseEntity::GetSoundSourceIndex() const
 {
 #ifdef _DEBUG
-	if ( index != -1 )
+	if ( m_nEntIndex != -1 )
 	{
-		Assert( index == GetRefEHandle().GetEntryIndex() );
+		Assert( m_nEntIndex == GetRefEHandle().GetEntryIndex() );
 	}
 #endif
 	return GetRefEHandle().GetEntryIndex();
@@ -1653,7 +2083,7 @@ IPVSNotify* C_BaseEntity::GetPVSNotifyInterface()
 //-----------------------------------------------------------------------------
 void C_BaseEntity::GetRenderBounds( Vector& theMins, Vector& theMaxs )
 {
-	int nModelType = modelinfo->GetModelType( model );
+	int nModelType = modelinfo->GetModelType( m_pModel );
 	if (nModelType == mod_studio || nModelType == mod_brush)
 	{
 		modelinfo->GetModelRenderBounds( GetModel(), theMins, theMaxs );
@@ -1755,10 +2185,10 @@ void C_BaseEntity::SetModelIndex( int index )
 
 void C_BaseEntity::SetModelPointer( const model_t *pModel )
 {
-	if ( pModel != model )
+	if ( pModel != m_pModel )
 	{
 		DestroyModelInstance();
-		model = pModel;
+		m_pModel = pModel;
 		OnNewModel();
 
 		UpdateVisibility();
@@ -1794,30 +2224,34 @@ void C_BaseEntity::SetMoveCollide( MoveCollide_t val )
 // Purpose: Get rendermode
 // Output : int - the render mode
 //-----------------------------------------------------------------------------
-bool C_BaseEntity::IsTransparent( void )
+RenderableTranslucencyType_t C_BaseEntity::ComputeTranslucencyType()
 {
-	bool modelIsTransparent = modelinfo->IsTranslucent(model);
-	return modelIsTransparent || (m_nRenderMode != kRenderNormal);
+	modelinfo->RecomputeTranslucency( GetModel(), GetSkin(), GetBody(), GetClientRenderable() );
+
+	if( modelinfo->IsTranslucentTwoPass( GetModel() ) )
+	{
+		return RENDERABLE_IS_TWO_PASS;
+	}
+
+	if( modelinfo->IsTranslucent( GetModel() ) || (GetRenderMode() != kRenderNormal) || m_bIsBlurred )
+	{
+		return RENDERABLE_IS_TRANSLUCENT;
+	}
+
+	return RENDERABLE_IS_OPAQUE;
 }
 
-bool C_BaseEntity::IsTwoPass( void )
+void C_BaseEntity::OnTranslucencyTypeChanged()
 {
-	return modelinfo->IsTranslucentTwoPass( GetModel() );
+	if ( m_hRender != INVALID_CLIENT_RENDER_HANDLE )
+	{
+		ClientLeafSystem()->SetTranslucencyType( m_hRender, ComputeTranslucencyType() );
+	}
 }
 
-bool C_BaseEntity::UsesPowerOfTwoFrameBufferTexture()
+int C_BaseEntity::GetRenderFlags( void )
 {
-	return false;
-}
-
-bool C_BaseEntity::UsesFullFrameBufferTexture()
-{
-	return false;
-}
-
-bool C_BaseEntity::IgnoresZBuffer( void ) const
-{
-	return m_nRenderMode == kRenderGlow || m_nRenderMode == kRenderWorldGlow;
+	return 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -1838,7 +2272,7 @@ CMouthInfo *C_BaseEntity::GetMouth( void )
 bool C_BaseEntity::GetSoundSpatialization( SpatializationInfo_t& info )
 {
 	// World is always audible
-	if ( entindex() == 0 )
+	if ( m_nEntIndex == 0 )
 	{
 		return true;
 	}
@@ -1934,7 +2368,7 @@ int C_BaseEntity::DrawBrushModel( bool bDrawingTranslucency, int nFlags, bool bT
 {
 	VPROF_BUDGET( "C_BaseEntity::DrawBrushModel", VPROF_BUDGETGROUP_BRUSHMODEL_RENDERING );
 	// Identity brushes are drawn in view->DrawWorld as an optimization
-	Assert ( modelinfo->GetModelType( model ) == mod_brush );
+	Assert ( modelinfo->GetModelType( m_pModel ) == mod_brush );
 
 	ERenderDepthMode DepthMode = DEPTH_MODE_NORMAL;
 	if ( ( nFlags & STUDIO_SSAODEPTHTEXTURE ) != 0 )
@@ -1948,7 +2382,7 @@ int C_BaseEntity::DrawBrushModel( bool bDrawingTranslucency, int nFlags, bool bT
 
 	if ( DepthMode != DEPTH_MODE_NORMAL )
 	{
-		render->DrawBrushModelShadowDepth( this, (model_t *)model, GetAbsOrigin(), GetAbsAngles(), DepthMode );
+		render->DrawBrushModelShadowDepth( this, (model_t *)m_pModel, GetAbsOrigin(), GetAbsAngles(), DepthMode );
 	}
 	else
 	{
@@ -1957,7 +2391,7 @@ int C_BaseEntity::DrawBrushModel( bool bDrawingTranslucency, int nFlags, bool bT
 		{
 			mode = bDrawingTranslucency ? DBM_DRAW_TRANSLUCENT_ONLY : DBM_DRAW_OPAQUE_ONLY;
 		}
-		render->DrawBrushModelEx( this, (model_t *)model, GetAbsOrigin(), GetAbsAngles(), mode );
+		render->DrawBrushModelEx( this, (model_t *)m_pModel, GetAbsOrigin(), GetAbsAngles(), mode );
 	}
 
 	return 1;
@@ -1967,27 +2401,28 @@ int C_BaseEntity::DrawBrushModel( bool bDrawingTranslucency, int nFlags, bool bT
 // Purpose: Draws the object
 // Input  : flags - 
 //-----------------------------------------------------------------------------
-int C_BaseEntity::DrawModel( int flags )
+int C_BaseEntity::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 	if ( !m_bReadyToDraw )
 		return 0;
 
 	int drawn = 0;
-	if ( !model )
+	if ( !m_pModel )
 	{
 		return drawn;
 	}
 
-	int modelType = modelinfo->GetModelType( model );
+	int modelType = modelinfo->GetModelType( m_pModel );
 	switch ( modelType )
 	{
 	case mod_brush:
+		render->SetBlend( ( flags & STUDIO_SHADOWDEPTHTEXTURE ) ? 1.0f : (float)instance.m_nAlpha * ( 1.0f / 255.0f ) );
 		drawn = DrawBrushModel( flags & STUDIO_TRANSPARENCY ? true : false, flags, ( flags & STUDIO_TWOPASS ) ? true : false );
 		break;
 	case mod_studio:
 		// All studio models must be derived from C_BaseAnimating.  Issue warning.
 		Warning( "ERROR:  Can't draw studio model %s because %s is not derived from C_BaseAnimating\n",
-			modelinfo->GetModelName( model ), GetClientClass()->m_pNetworkName ? GetClientClass()->m_pNetworkName : "unknown" );
+			modelinfo->GetModelName( m_pModel ), GetClientClass()->m_pNetworkName ? GetClientClass()->m_pNetworkName : "unknown" );
 		break;
 	case mod_sprite:
 		//drawn = DrawSprite();
@@ -2039,6 +2474,11 @@ void C_BaseEntity::UpdatePartitionListEntry()
 	else if (shouldCollide == ENTITY_SHOULD_RESPOND)
 		list |= PARTITION_CLIENT_RESPONSIVE_EDICTS;
 
+	if ( m_bIsValidIKAttachment )
+	{
+		list |= PARTITION_CLIENT_IK_ATTACHMENT;
+	}
+
 	// add the entity to the KD tree so we will collide against it
 	partition->RemoveAndInsert( PARTITION_CLIENT_SOLID_EDICTS | PARTITION_CLIENT_RESPONSIVE_EDICTS | PARTITION_CLIENT_NON_STATIC_EDICTS, list, CollisionProp()->GetPartitionHandle() );
 }
@@ -2048,7 +2488,7 @@ void C_BaseEntity::NotifyShouldTransmit( ShouldTransmitState_t state )
 {
 	// Init should have been called before we get in here.
 	Assert( CollisionProp()->GetPartitionHandle() != PARTITION_INVALID_HANDLE );
-	if ( entindex() < 0 )
+	if ( m_nEntIndex < 0 )
 		return;
 	
 	switch( state )
@@ -2060,7 +2500,6 @@ void C_BaseEntity::NotifyShouldTransmit( ShouldTransmitState_t state )
 			
 			UpdatePartitionListEntry();
 
-#if !defined( NO_ENTITY_PREDICTION )
 			// Note that predictables get a chance to hook up to their server counterparts here
 			if ( m_PredictableID.IsActive() )
 			{
@@ -2079,11 +2518,10 @@ void C_BaseEntity::NotifyShouldTransmit( ShouldTransmitState_t state )
 					if ( OnPredictedEntityRemove( false, otherEntity ) )
 					{
 						// Mark it for delete after receive all network data
-						otherEntity->Release();
+						UTIL_Remove( otherEntity );
 					}
 				}
 			}
-#endif
 		}
 		break;
 
@@ -2130,7 +2568,6 @@ void C_BaseEntity::PreDataUpdate( DataUpdateType_t updateType )
 		OnPreDataChanged( updateType );
 	}
 
-
 	// Need to spawn on client before receiving original network data 
 	// in case it overrides any values set up in spawn ( e.g., m_iState )
 	bool bnewentity = (updateType == DATA_UPDATE_CREATED);
@@ -2161,8 +2598,6 @@ void C_BaseEntity::PreDataUpdate( DataUpdateType_t updateType )
 
 	m_flOldAnimTime = m_flAnimTime;
 	m_flOldSimulationTime = m_flSimulationTime;
-
-	m_nOldRenderMode = m_nRenderMode;
 
 	if ( m_hRender != INVALID_CLIENT_RENDER_HANDLE )
 	{
@@ -2378,6 +2813,24 @@ void C_BaseEntity::HierarchySetParent( C_BaseEntity *pNewParent )
 #ifdef TF_CLIENT_DLL
 	m_bValidatedOwner = false;
 #endif
+
+	// iterate the hierarchy using a ring buffer
+	CBaseEntity *list[1024];	// assume power of 2 elements
+	int listReadIndex = 0;
+	int listWriteIndex = 1;
+	list[0] = this;
+
+	while ( listReadIndex != listWriteIndex )
+	{
+		CBaseEntity *pParent = list[listReadIndex];
+		pParent->InvalidateAttachments();
+		listReadIndex = (listReadIndex+1) & (ARRAYSIZE(list)-1);
+		for (CBaseEntity *pChild = pParent->FirstMoveChild(); pChild; pChild = pChild->NextMovePeer())
+		{
+			list[listWriteIndex] = pChild;
+			listWriteIndex = (listWriteIndex+1) & (ARRAYSIZE(list)-1);
+		}
+	}
 }
 
 
@@ -2460,46 +2913,29 @@ void C_BaseEntity::UnlinkFromHierarchy()
 	}
 }
 
+bool C_BaseEntity::IsParentChanging()
+{
+	return ( m_hNetworkMoveParent.ToInt() != m_pMoveParent.ToInt() );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Make sure that the correct model is referenced for this entity
 //-----------------------------------------------------------------------------
 void C_BaseEntity::ValidateModelIndex( void )
 {
-#ifdef TF_CLIENT_DLL
-	if ( IsLocalPlayerUsingVisionFilterFlags( TF_VISION_FILTER_HALLOWEEN ) )
-	{
-		if ( m_nModelIndexOverrides[VISION_MODE_HALLOWEEN] > 0 )
-		{
-			SetModelByIndex( m_nModelIndexOverrides[VISION_MODE_HALLOWEEN] );
-			return;
-		}
-	}
-		
-	if ( IsLocalPlayerUsingVisionFilterFlags( TF_VISION_FILTER_PYRO ) )
-	{
-		if ( m_nModelIndexOverrides[VISION_MODE_PYRO] > 0 )
-		{
-			SetModelByIndex( m_nModelIndexOverrides[VISION_MODE_PYRO] );
-			return;
-		}
-	}
+	for(int i = 0; i < m_nModelIndexOverridesLength; ++i) {
+		int flags = (m_nModelIndexOverrides[i] & 255);
+		int modelindex = (m_nModelIndexOverrides[i] >> 8);
 
-	if ( IsLocalPlayerUsingVisionFilterFlags( TF_VISION_FILTER_ROME ) )
-	{
-		if ( m_nModelIndexOverrides[VISION_MODE_ROME] > 0 )
+		if ( IsLocalPlayerUsingVisionFilterFlags( flags ) )
 		{
-			SetModelByIndex( m_nModelIndexOverrides[VISION_MODE_ROME] );
-			return;
+			if ( modelindex > 0 )
+			{
+				SetModelByIndex( modelindex );
+				return;
+			}
 		}
 	}
-
-	if ( m_nModelIndexOverrides[VISION_MODE_NONE] > 0 ) 
-	{
-		SetModelByIndex( m_nModelIndexOverrides[VISION_MODE_NONE] );		
-		return;
-	}
-#endif
 
 	SetModelByIndex( m_nModelIndex );
 }
@@ -2515,7 +2951,7 @@ void C_BaseEntity::PostDataUpdate( DataUpdateType_t updateType )
 	PREDICTION_TRACKVALUECHANGESCOPE_ENTITY( this, "postdataupdate" );
 
 	// NOTE: This *has* to happen first. Otherwise, Origin + angles may be wrong 
-	if ( m_nRenderFX == kRenderFxRagdoll && updateType == DATA_UPDATE_CREATED )
+	if ( m_bClientSideRagdoll && updateType == DATA_UPDATE_CREATED )
 	{
 		MoveToLastReceivedPosition( true );
 	}
@@ -2525,7 +2961,7 @@ void C_BaseEntity::PostDataUpdate( DataUpdateType_t updateType )
 	}
 
 	// If it's the world, force solid flags
-	if ( index == 0 )
+	if ( m_nEntIndex == 0 )
 	{
 		m_nModelIndex = 1;
 		SetSolid( SOLID_BSP );
@@ -2533,11 +2969,6 @@ void C_BaseEntity::PostDataUpdate( DataUpdateType_t updateType )
 		// FIXME: Should these be assertions?
 		SetAbsOrigin( vec3_origin );
 		SetAbsAngles( vec3_angle );
-	}
-
-	if ( m_nOldRenderMode != m_nRenderMode )
-	{
-		SetRenderMode( (RenderMode_t)m_nRenderMode, true );
 	}
 
 	bool animTimeChanged = ( m_flAnimTime != m_flOldAnimTime ) ? true : false;
@@ -2596,16 +3027,11 @@ void C_BaseEntity::PostDataUpdate( DataUpdateType_t updateType )
 
 	// It's possible that a new entity will need to be forceably added to the 
 	//   player simulation list.  If so, do this here
-#if !defined( NO_ENTITY_PREDICTION )
-	C_BasePlayer *local = C_BasePlayer::GetLocalPlayer();
-	if ( IsPlayerSimulated() &&
-		( NULL != local ) && 
-		( local == m_hOwnerEntity ) )
+	if ( IsPlayerSimulated() && C_BasePlayer::IsLocalPlayer( m_hPlayerSimulationOwner ) )
 	{
 		// Make sure player is driving simulation (field is only ever sent to local player)
-		SetPlayerSimulated( local );
+		SetPlayerSimulated( ToBasePlayer( m_hPlayerSimulationOwner ) );
 	}
-#endif
 
 	UpdatePartitionListEntry();
 	
@@ -2640,7 +3066,6 @@ void C_BaseEntity::OnDataUnchangedInPVS()
 //-----------------------------------------------------------------------------
 void C_BaseEntity::CheckInitPredictable( const char *context )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	// Prediction is disabled
 	if ( !cl_predict->GetInt() )
 		return;
@@ -2653,7 +3078,7 @@ void C_BaseEntity::CheckInitPredictable( const char *context )
 	if ( !GetPredictionEligible() )
 	{
 		if ( m_PredictableID.IsActive() &&
-			( player->index - 1 ) == m_PredictableID.GetPlayer() )
+			( player->entindex() - 1 ) == m_PredictableID.GetPlayer() )
 		{
 			// If it comes through with an ID, it should be eligible
 			SetPredictionEligible( true );
@@ -2675,8 +3100,34 @@ void C_BaseEntity::CheckInitPredictable( const char *context )
 
 	// Msg( "Predicting init %s at %s\n", GetClassname(), context );
 
-	InitPredictable();
-#endif
+	// It's either a player, a weapon or a view model
+	C_BasePlayer *pOwner = GetPredictionOwner();
+	Assert( pOwner );
+	if ( !pOwner )
+		return;
+
+	InitPredictable( pOwner );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Return the player who will predict this entity
+//-----------------------------------------------------------------------------
+C_BasePlayer* C_BaseEntity::GetPredictionOwner()
+{
+	C_BasePlayer *pOwner = ToBasePlayer( this );
+	if ( !pOwner )
+	{
+		pOwner = ToBasePlayer( GetOwnerEntity() );
+		if ( !pOwner )
+		{
+			C_BaseViewModel *vm = ToBaseViewModel(this);
+			if ( vm )
+			{
+				pOwner = ToBasePlayer( vm->GetOwner() );
+			}
+		}
+	}
+	return pOwner;
 }
 
 bool C_BaseEntity::IsSelfAnimating()
@@ -2734,7 +3185,7 @@ void C_BaseEntity::OnStoreLastNetworkedValue()
 
 	// Kind of a hack, but we want to latch the actual networked value for origin/angles, not what's sitting in m_vecOrigin in the
 	//  ragdoll case where we don't copy it over in MoveToLastNetworkOrigin
-	if ( m_nRenderFX == kRenderFxRagdoll && GetPredictable() )
+	if ( m_bClientSideRagdoll && GetPredictable() )
 	{
 		bRestore = true;
 		savePos = GetLocalOrigin();
@@ -2792,7 +3243,7 @@ void C_BaseEntity::OnLatchInterpolatedVariables( int flags )
 		if ( type & EXCLUDE_AUTO_LATCH )
 			continue;
 
-		if ( watcher->NoteChanged( changetime, bUpdateLastNetworkedValue ) )
+		if ( watcher->NoteChanged( gpGlobals->curtime, changetime, bUpdateLastNetworkedValue ) )
 			e->m_bNeedsToInterpolate = true;
 	}
 	
@@ -2909,10 +3360,20 @@ CStudioHdr *C_BaseEntity::OnNewModel()
 	m_bValidatedOwner = false;
 #endif
 
+	OnTranslucencyTypeChanged();
+	ClientLeafSystem()->SetModelType( m_hRender );
+	InvalidatePhysicsRecursive( BOUNDS_CHANGED | SEQUENCE_CHANGED );
+	SetGlobalFadeScale( GetGlobalFadeScale() );
+
 	return NULL;
 }
 
 void C_BaseEntity::OnNewParticleEffect( const char *pszParticleName, CNewParticleEffect *pNewParticleEffect )
+{
+	return;
+}
+
+void C_BaseEntity::OnParticleEffectDeleted( CNewParticleEffect *pParticleEffect )
 {
 	return;
 }
@@ -2944,9 +3405,9 @@ bool C_BaseEntity::Teleported( void )
 //-----------------------------------------------------------------------------
 bool C_BaseEntity::IsSubModel( void )
 {
-	if ( model &&
-		modelinfo->GetModelType( model ) == mod_brush &&
-		modelinfo->GetModelName( model )[0] == '*' )
+	if ( m_pModel &&
+		modelinfo->GetModelType( m_pModel ) == mod_brush &&
+		modelinfo->GetModelName( m_pModel )[0] == '*' )
 	{
 		return true;
 	}
@@ -2957,36 +3418,46 @@ bool C_BaseEntity::IsSubModel( void )
 //-----------------------------------------------------------------------------
 // Purpose: Create entity lighting effects
 //-----------------------------------------------------------------------------
-void C_BaseEntity::CreateLightEffects( void )
+bool C_BaseEntity::CreateLightEffects( void )
 {
 	dlight_t *dl;
 
+	bool bHasLightEffects = false;
 	// Is this for player flashlights only, if so move to linkplayers?
-	if ( index == render->GetViewEntity() )
-		return;
-
-	if (IsEffectActive(EF_BRIGHTLIGHT))
+	if ( !IsViewEntity() )
 	{
-		dl = effects->CL_AllocDlight ( index );
-		dl->origin = GetAbsOrigin();
-		dl->origin[2] += 16;
-		dl->color.r = dl->color.g = dl->color.b = 250;
-		dl->radius = random->RandomFloat(400,431);
-		dl->die = gpGlobals->curtime + 0.001;
+		if (IsEffectActive(EF_BRIGHTLIGHT))
+		{
+			dl = effects->CL_AllocDlight ( m_nEntIndex );
+			if(dl) {
+				dl->origin = GetAbsOrigin();
+				dl->origin[2] += 16;
+				dl->color.r = dl->color.g = dl->color.b = 250;
+				dl->radius = random->RandomFloat(400,431);
+				dl->die = gpGlobals->curtime + 0.001;
+				bHasLightEffects = true;
+			}
+		}
+
+		if (IsEffectActive(EF_DIMLIGHT))
+		{			
+			dl = effects->CL_AllocDlight ( m_nEntIndex );
+			if(dl) {
+				dl->origin = GetAbsOrigin();
+				dl->color.r = dl->color.g = dl->color.b = 100;
+				dl->radius = random->RandomFloat(200,231);
+				dl->die = gpGlobals->curtime + 0.001;
+				bHasLightEffects = true;
+			}
+		}
 	}
-	if (IsEffectActive(EF_DIMLIGHT))
-	{			
-		dl = effects->CL_AllocDlight ( index );
-		dl->origin = GetAbsOrigin();
-		dl->color.r = dl->color.g = dl->color.b = 100;
-		dl->radius = random->RandomFloat(200,231);
-		dl->die = gpGlobals->curtime + 0.001;
-	}
+
+	return bHasLightEffects;
 }
 
 void C_BaseEntity::MoveToLastReceivedPosition( bool force )
 {
-	if ( force || ( m_nRenderFX != kRenderFxRagdoll ) )
+	if ( force || ( !m_bClientSideRagdoll ) )
 	{
 		SetLocalOrigin( GetNetworkOrigin() );
 		SetLocalAngles( GetNetworkAngles() );
@@ -2995,10 +3466,10 @@ void C_BaseEntity::MoveToLastReceivedPosition( bool force )
 
 bool C_BaseEntity::ShouldInterpolate()
 {
-	if ( render->GetViewEntity() == index )
+	if ( IsViewEntity() )
 		return true;
 
-	if ( index == 0 || !GetModel() )
+	if ( m_nEntIndex == 0 || !GetModel() )
 		return false;
 
 	// always interpolate if visible
@@ -3023,10 +3494,10 @@ bool C_BaseEntity::ShouldInterpolate()
 void C_BaseEntity::ProcessTeleportList()
 {
 	int iNext;
-	for ( int iCur=g_TeleportList.Head(); iCur != g_TeleportList.InvalidIndex(); iCur=iNext )
+	for ( int iCur=g_EntityLists[ENTITY_LIST_TELEPORT].Head(); iCur != g_EntityLists[ENTITY_LIST_TELEPORT].InvalidIndex(); iCur=iNext )
 	{
-		iNext = g_TeleportList.Next( iCur );
-		C_BaseEntity *pCur = g_TeleportList[iCur];
+		iNext = g_EntityLists[ENTITY_LIST_TELEPORT].Next( iCur );
+		C_BaseEntity *pCur = g_EntityLists[ENTITY_LIST_TELEPORT].Element(iCur);
 
 		bool teleport = pCur->Teleported();
 		bool ef_nointerp = pCur->IsNoInterpolationFrame();
@@ -3093,27 +3564,13 @@ void C_BaseEntity::ProcessInterpolatedList()
 
 	// Interpolate the minimal set of entities that need it.
 	int iNext;
-	for ( int iCur=g_InterpolationList.Head(); iCur != g_InterpolationList.InvalidIndex(); iCur=iNext )
+	for ( int iCur=g_EntityLists[ENTITY_LIST_INTERPOLATE].Head(); iCur != g_EntityLists[ENTITY_LIST_INTERPOLATE].InvalidIndex(); iCur=iNext )
 	{
-		iNext = g_InterpolationList.Next( iCur );
-		C_BaseEntity *pCur = g_InterpolationList[iCur];
+		iNext = g_EntityLists[ENTITY_LIST_INTERPOLATE].Next( iCur );
+		C_BaseEntity *pCur = g_EntityLists[ENTITY_LIST_INTERPOLATE].Element(iCur);
 		
 		pCur->m_bReadyToDraw = pCur->Interpolate( gpGlobals->curtime );
 	}
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Add entity to visibile entities list
-//-----------------------------------------------------------------------------
-void C_BaseEntity::AddEntity( void )
-{
-	// Don't ever add the world, it's drawn separately
-	if ( index == 0 )
-		return;
-
-	// Create flashlight effects, etc.
-	CreateLightEffects();
 }
 
 
@@ -3169,14 +3626,9 @@ void C_BaseEntity::TextureAnimationWrapped()
 {
 }
 
-
-void C_BaseEntity::ClientThink()
+bool C_BaseEntity::Simulate()
 {
-}
-
-void C_BaseEntity::Simulate()
-{
-	AddEntity();	// Legacy support. Once-per-frame stuff should go in Simulate().
+	return false;
 }
 
 // Defined in engine
@@ -3186,6 +3638,8 @@ static ConVar cl_interpolate( "cl_interpolate", "1.0f", FCVAR_USERINFO | FCVAR_D
 void C_BaseEntity::InterpolateServerEntities()
 {
 	VPROF_BUDGET( "C_BaseEntity::InterpolateServerEntities", VPROF_BUDGETGROUP_INTERPOLATION );
+
+	bool bPrevInterpolate = s_bInterpolate;
 
 	s_bInterpolate = cl_interpolate.GetBool();
 
@@ -3205,10 +3659,12 @@ void C_BaseEntity::InterpolateServerEntities()
 		}
 	}
 
-	if ( IsSimulatingOnAlternateTicks() != g_bWasSkipping || IsEngineThreaded() != g_bWasThreaded )
+	if ( IsSimulatingOnAlternateTicks() != g_bWasSkipping || IsEngineThreaded() != g_bWasThreaded ||
+		 cl_interp_threadmodeticks.GetInt() != g_nThreadModeTicks )
 	{
 		g_bWasSkipping = IsSimulatingOnAlternateTicks();
 		g_bWasThreaded = IsEngineThreaded();
+		g_nThreadModeTicks = cl_interp_threadmodeticks.GetInt();
 
 		C_BaseEntityIterator iterator;
 		C_BaseEntity *pEnt;
@@ -3226,6 +3682,17 @@ void C_BaseEntity::InterpolateServerEntities()
 		context.EnableExtrapolation( true );
 	}
 
+	if ( bPrevInterpolate != s_bInterpolate && !s_bInterpolate )
+	{
+		// Clear interp history when we disable interpolation
+		C_BaseEntityIterator iterator;
+		C_BaseEntity *pEnt;
+		while ( (pEnt = iterator.Next()) != NULL )
+		{
+			pEnt->ResetLatched();
+		}
+	}
+
 	// Smoothly interpolate position for server entities.
 	ProcessTeleportList();
 	ProcessInterpolatedList();
@@ -3235,7 +3702,6 @@ void C_BaseEntity::InterpolateServerEntities()
 // (static function)
 void C_BaseEntity::AddVisibleEntities()
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	VPROF_BUDGET( "C_BaseEntity::AddVisibleEntities", VPROF_BUDGETGROUP_WORLD_RENDERING );
 
 	// Let non-dormant client created predictables get added, too
@@ -3259,7 +3725,6 @@ void C_BaseEntity::AddVisibleEntities()
 
 		pEnt->UpdateVisibility();	
 	}
-#endif
 }
 
 
@@ -3285,6 +3750,13 @@ void C_BaseEntity::OnDataChanged( DataUpdateType_t type )
 	{
 		UpdateVisibility();
 	}
+
+	// These may have changed in the network update
+	AlphaProp()->SetRenderFX( GetRenderFX(), GetRenderMode(), FLT_MAX, 0.0f );
+	AlphaProp()->SetDesyncOffset( m_nEntIndex );
+
+	// Copy in fade parameters
+	AlphaProp()->SetFade( GetGlobalFadeScale(), GetMinFadeDist(), GetMaxFadeDist() );
 }
 
 ClientThinkHandle_t C_BaseEntity::GetThinkHandle()
@@ -3307,6 +3779,7 @@ void C_BaseEntity::SetThinkHandle( ClientThinkHandle_t hThink )
 //			alpha - 
 // Output : int
 //-----------------------------------------------------------------------------
+#if 0
 void C_BaseEntity::ComputeFxBlend( void )
 {
 	// Don't recompute if we've already computed this frame
@@ -3528,6 +4001,7 @@ int C_BaseEntity::GetFxBlend( void )
 	Assert( m_nFXComputeFrame == gpGlobals->framecount );
 	return m_nRenderFXBlend;
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Determine the color modulation amount
@@ -3535,9 +4009,9 @@ int C_BaseEntity::GetFxBlend( void )
 
 void C_BaseEntity::GetColorModulation( float* color )
 {
-	color[0] = m_clrRender->r / 255.0f;
-	color[1] = m_clrRender->g / 255.0f;
-	color[2] = m_clrRender->b / 255.0f;
+	color[0] = m_clrRenderRGB->r / 255.0f;
+	color[1] = m_clrRenderRGB->g / 255.0f;
+	color[2] = m_clrRenderRGB->b / 255.0f;
 }
 
 
@@ -3546,14 +4020,14 @@ void C_BaseEntity::GetColorModulation( float* color )
 //-----------------------------------------------------------------------------
 CollideType_t C_BaseEntity::GetCollideType( void )
 {
-	if ( !m_nModelIndex || !model )
+	if ( !m_nModelIndex || !m_pModel )
 		return ENTITY_SHOULD_NOT_COLLIDE;
 
 	if ( !IsSolid( ) )
 		return ENTITY_SHOULD_NOT_COLLIDE;
 
 	// If the model is a bsp or studio (i.e. it can collide with the player
-	if ( ( modelinfo->GetModelType( model ) != mod_brush ) && ( modelinfo->GetModelType( model ) != mod_studio ) )
+	if ( ( modelinfo->GetModelType( m_pModel ) != mod_brush ) && ( modelinfo->GetModelType( m_pModel ) != mod_studio ) )
 		return ENTITY_SHOULD_NOT_COLLIDE;
 
 	// Don't get stuck on point sized entities ( world doesn't count )
@@ -3572,7 +4046,7 @@ CollideType_t C_BaseEntity::GetCollideType( void )
 //-----------------------------------------------------------------------------
 bool C_BaseEntity::IsBrushModel() const
 {
-	int modelType = modelinfo->GetModelType( model );
+	int modelType = modelinfo->GetModelType( m_pModel );
 	return (modelType == mod_brush);
 }
 
@@ -3677,8 +4151,8 @@ void C_BaseEntity::AddBrushModelDecal( const Ray_t& ray, const Vector& decalCent
 			return;
 	}
 
-	effects->DecalShoot( decalIndex, index, 
-		model, GetAbsOrigin(), GetAbsAngles(), decalCenter, 0, 0 );
+	effects->DecalShoot( decalIndex, m_nEntIndex, 
+		m_pModel, GetAbsOrigin(), GetAbsAngles(), decalCenter, NULL, 0 );
 }
 
 
@@ -3695,7 +4169,7 @@ void C_BaseEntity::AddDecal( const Vector& rayStart, const Vector& rayEnd,
 	// Bloat a little bit so we get the intersection
 	ray.m_Delta *= 1.1f;
 
-	int modelType = modelinfo->GetModelType( model );
+	int modelType = modelinfo->GetModelType( m_pModel );
 	switch ( modelType )
 	{
 	case mod_studio:
@@ -3724,7 +4198,7 @@ void C_BaseEntity::AddColoredDecal( const Vector& rayStart, const Vector& rayEnd
 	// Bloat a little bit so we get the intersection
 	ray.m_Delta *= 1.1f;
 
-	int modelType = modelinfo->GetModelType( model );
+	int modelType = modelinfo->GetModelType( m_pModel );
 	if ( doTrace )
 	{
 		enginetrace->ClipRayToEntity( ray, MASK_SHOT, this, &tr );
@@ -3752,7 +4226,7 @@ void C_BaseEntity::AddColoredDecal( const Vector& rayStart, const Vector& rayEnd
 	case mod_brush:
 		{
 			color32 cColor32 = { (byte)cColor.r(), (byte)cColor.g(), (byte)cColor.b(), (byte)cColor.a() };
-			effects->DecalColorShoot( decalIndex, index, model, GetAbsOrigin(), GetAbsAngles(), decalCenter, 0, 0, cColor32 );
+			effects->DecalColorShoot( decalIndex, m_nEntIndex, m_pModel, GetAbsOrigin(), GetAbsAngles(), decalCenter, 0, 0, cColor32 );
 		}
 		break;
 
@@ -3769,7 +4243,7 @@ void C_BaseEntity::AddColoredDecal( const Vector& rayStart, const Vector& rayEnd
 void C_BaseEntity::RemoveAllDecals( void )
 {
 	// For now, we only handle removing decals from studiomodels
-	if ( modelinfo->GetModelType( model ) == mod_studio )
+	if ( modelinfo->GetModelType( m_pModel ) == mod_studio )
 	{
 		CreateModelInstance();
 		modelrender->RemoveAllDecals( m_ModelInstance );
@@ -3922,30 +4396,29 @@ bool C_BaseEntity::InLocalTeam( void )
 }
 
 
-void C_BaseEntity::SetNextClientThink( float nextThinkTime )
-{
-	Assert( GetClientHandle() != INVALID_CLIENTENTITY_HANDLE );
-	ClientThinkList()->SetNextClientThink( GetClientHandle(), nextThinkTime );
-}
-
 void C_BaseEntity::AddToLeafSystem()
 {
-	AddToLeafSystem( GetRenderGroup() );
+	AddToLeafSystem( IsRenderingWithViewModels() );
 }
 
-void C_BaseEntity::AddToLeafSystem( RenderGroup_t group )
+void C_BaseEntity::AddToLeafSystem( bool bRenderWithViewModels )
 {
+	m_bRenderWithViewModels = bRenderWithViewModels;
 	if( m_hRender == INVALID_CLIENT_RENDER_HANDLE )
 	{
 		// create new renderer handle
-		ClientLeafSystem()->AddRenderable( this, group );
+		ClientLeafSystem()->AddRenderable( this, bRenderWithViewModels, ComputeTranslucencyType(), RENDERABLE_MODEL_UNKNOWN_TYPE );
 		ClientLeafSystem()->EnableAlternateSorting( m_hRender, m_bAlternateSorting );
+		ClientLeafSystem()->DisableCachedRenderBounds( m_hRender, m_bDisableCachedRenderBounds );
 	}
 	else
 	{
 		// handle already exists, just update group & origin
-		ClientLeafSystem()->SetRenderGroup( m_hRender, group );
-		ClientLeafSystem()->RenderableChanged( m_hRender );
+		ClientLeafSystem()->RenderWithViewModels( m_hRender, bRenderWithViewModels );
+		// this should already be edge detected, no need to do it per frame
+		// ClientLeafSystem()->SetTranslucencyType( m_hRender, ComputeTranslucencyType() );
+		ClientLeafSystem()->SetModelType( m_hRender );
+		ClientLeafSystem()->DisableCachedRenderBounds( m_hRender, m_bDisableCachedRenderBounds );
 	}
 }
 
@@ -3967,9 +4440,11 @@ void C_BaseEntity::CreateShadow()
 			int flags = SHADOW_FLAGS_SHADOW;
 			if (shadowType != SHADOWS_SIMPLE)
 				flags |= SHADOW_FLAGS_USE_RENDER_TO_TEXTURE;
-			if (shadowType == SHADOWS_RENDER_TO_TEXTURE_DYNAMIC)
+			if (shadowType == SHADOWS_RENDER_TO_TEXTURE_DYNAMIC || shadowType == SHADOWS_RENDER_TO_TEXTURE_DYNAMIC_CUSTOM)
 				flags |= SHADOW_FLAGS_ANIMATING_SOURCE;
-			m_ShadowHandle = g_pClientShadowMgr->CreateShadow(GetClientHandle(), flags);
+			if (shadowType != SHADOWS_RENDER_TO_TEXTURE_DYNAMIC_CUSTOM)
+				flags |= SHADOW_FLAGS_ANIMATING_SOURCE | SHADOW_FLAGS_CUSTOM_DRAW;
+			m_ShadowHandle = g_pClientShadowMgr->CreateShadow(GetClientHandle(), m_nEntIndex, flags);
 		}
 	}
 }
@@ -4019,6 +4494,9 @@ void C_BaseEntity::SetDormant( bool bDormant )
 	UpdateVisibility();
 
 	ParticleProp()->OwnerSetDormantTo( bDormant );
+
+	OnSetDormant( bDormant );
+	cl_entitylist->SetDormant(m_nEntIndex, bDormant);
 }
 
 //-----------------------------------------------------------------------------
@@ -4544,21 +5022,18 @@ void C_BaseEntity::MarkRenderHandleDirty( )
 //-----------------------------------------------------------------------------
 void C_BaseEntity::ShutdownPredictable( void )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	Assert( GetPredictable() );
 
 	g_Predictables.RemoveFromPredictablesList( GetClientHandle() );
 	DestroyIntermediateData();
 	SetPredictable( false );
-#endif
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Turn entity into something the predicts locally
 //-----------------------------------------------------------------------------
-void C_BaseEntity::InitPredictable( void )
+void C_BaseEntity::InitPredictable( C_BasePlayer *pOwner )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	Assert( !GetPredictable() );
 
 	// Mark as predictable
@@ -4579,7 +5054,6 @@ void C_BaseEntity::InitPredictable( void )
 	{
 		SaveData( "InitPredictable", i, PC_EVERYTHING );
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -4610,7 +5084,6 @@ bool C_BaseEntity::GetPredictable( void ) const
 //-----------------------------------------------------------------------------
 void C_BaseEntity::PreEntityPacketReceived( int commands_acknowledged )					
 {				
-#if !defined( NO_ENTITY_PREDICTION )
 	// Don't need to copy intermediate data if server did ack any new commands
 	bool copyintermediate = ( commands_acknowledged > 0 ) ? true : false;
 
@@ -4633,7 +5106,6 @@ void C_BaseEntity::PreEntityPacketReceived( int commands_acknowledged )
 	// Unpacked and OnDataChanged will fill in any changed, networked fields.
 
 	// That networked data will be copied forward into the starting slot for the next prediction round
-#endif
 }	
 
 //-----------------------------------------------------------------------------
@@ -4644,7 +5116,6 @@ void C_BaseEntity::PreEntityPacketReceived( int commands_acknowledged )
 //-----------------------------------------------------------------------------
 void C_BaseEntity::PostEntityPacketReceived( void )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	Assert( GetPredictable() );
 	Assert( cl_predict->GetInt() );
 
@@ -4653,7 +5124,6 @@ void C_BaseEntity::PostEntityPacketReceived( void )
 
 	// Save networked fields into "original data" store
 	SaveData( "PostEntityPacketReceived", SLOT_ORIGINALDATA, PC_NETWORKED_ONLY );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -4664,7 +5134,7 @@ void C_BaseEntity::PostEntityPacketReceived( void )
 bool C_BaseEntity::PostNetworkDataReceived( int commands_acknowledged )
 {
 	bool haderrors = false;
-#if !defined( NO_ENTITY_PREDICTION )
+
 	Assert( GetPredictable() );
 
 	bool errorcheck = ( commands_acknowledged > 0 ) ? true : false;
@@ -4677,7 +5147,7 @@ bool C_BaseEntity::PostNetworkDataReceived( int commands_acknowledged )
 
 	if ( cl_showerror.GetInt() < 0 )
 	{
-		if ( entindex() == -cl_showerror.GetInt() )
+		if ( m_nEntIndex == -cl_showerror.GetInt() )
 		{
 			showthis = true;
 		}
@@ -4710,7 +5180,7 @@ bool C_BaseEntity::PostNetworkDataReceived( int commands_acknowledged )
 		//	Msg( "%i errors %i on entity %i %s\n", gpGlobals->tickcount, ecount, index, IsClientCreated() ? "true" : "false" );
 		}
 	}
-#endif
+
 	return haderrors;
 }
 
@@ -4734,19 +5204,33 @@ int C_BaseEntity::PrecacheModel( const char *name )
 // Purpose: 
 // Input  : *obj - 
 //-----------------------------------------------------------------------------
-void C_BaseEntity::Remove( )
+void UTIL_Remove( C_BaseEntity *pEntity )
 {
-	// Nothing for now, if it's a predicted entity, could flag as "delete" or dormant
-	if ( GetPredictable() || IsClientCreated() )
-	{
-		// Make it solid
-		AddSolidFlags( FSOLID_NOT_SOLID );
-		SetMoveType( MOVETYPE_NONE );
+	if ( pEntity->IsMarkedForDeletion( ) )
+		return;
+	pEntity->AddEFlags( EFL_KILLME );	// Make sure to ignore further calls into here or UTIL_Remove.
 
-		AddEFlags( EFL_KILLME );	// Make sure to ignore further calls into here or UTIL_Remove.
+	if ( !s_bImmediateRemovesAllowed )
+	{
+		pEntity->AddToEntityList( ENTITY_LIST_DELETE );
+		return;
 	}
 
-	Release();
+	pEntity->DO_NOT_USE_Release();
+}
+
+static bool in_purge_entities = false;
+
+void UTIL_RemoveImmediate( C_BaseEntity *pEntity )
+{
+	bool lastallowed = s_bImmediateRemovesAllowed;
+	s_bImmediateRemovesAllowed = true;
+	pEntity->AddEFlags( EFL_KILLME );
+	if(!in_purge_entities) {
+		pEntity->RemoveFromEntityList( ENTITY_LIST_DELETE );
+	}
+	pEntity->DO_NOT_USE_Release();
+	s_bImmediateRemovesAllowed = lastallowed;
 }
 
 
@@ -4756,11 +5240,7 @@ void C_BaseEntity::Remove( )
 //-----------------------------------------------------------------------------
 bool C_BaseEntity::GetPredictionEligible( void ) const
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	return m_bPredictionEligible;
-#else
-	return false;
-#endif
 }
 
 
@@ -4788,18 +5268,21 @@ const char *C_BaseEntity::GetClassname( void )
 {
 	static char outstr[ 256 ];
 	outstr[ 0 ] = 0;
+
+	if(m_iClassname != NULL_STRING)
+		return STRING(m_iClassname);
+
 	bool gotname = false;
-#ifndef NO_ENTITY_PREDICTION
+
 	if ( GetPredDescMap() )
 	{
-		const char *mapname =  GetClassMap().Lookup( GetPredDescMap()->dataClassName );
+		const char *mapname =  GetClassMap().ClassnameToMapName( GetPredDescMap()->dataClassName );
 		if ( mapname && mapname[ 0 ] ) 
 		{
 			Q_strncpy( outstr, mapname, sizeof( outstr ) );
 			gotname = true;
 		}
 	}
-#endif
 
 	if ( !gotname )
 	{
@@ -4824,11 +5307,60 @@ C_BaseEntity *CreateEntityByName( const char *className )
 	C_BaseEntity *ent = GetClassMap().CreateEntity( className );
 	if ( ent )
 	{
+		if(!ent->InitializeAsClientEntity())
+		{
+			UTIL_Remove( ent );
+			return NULL;
+		}
 		return ent;
 	}
 
 	Warning( "Can't find factory for entity: %s\n", className );
 	return NULL;
+}
+
+int DispatchSpawn( C_BaseEntity *pEntity )
+{
+	if ( pEntity )
+	{
+		MDLCACHE_CRITICAL_SECTION();
+
+		// keep a smart pointer that will now if the object gets deleted
+		EHANDLE pEntSafe;
+		pEntSafe = pEntity;
+
+		// Initialize these or entities who don't link to the world won't have anything in here
+		// is this necessary?
+		//pEntity->SetAbsMins( pEntity->GetOrigin() - Vector(1,1,1) );
+		//pEntity->SetAbsMaxs( pEntity->GetOrigin() + Vector(1,1,1) );
+
+#if defined(TRACK_ENTITY_MEMORY) && defined(USE_MEM_DEBUG)
+		const char *pszClassname = GetClassMap().MapNameToClassname( pEntity->GetClassname() );
+		if ( pszClassname )
+		{
+			MemAlloc_PushAllocDbgInfo( pszClassname, __LINE__ );
+		}
+#endif
+		bool bAsyncAnims = mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, false );
+		pEntity->m_flSpawnTime = engine->GetLastTimeStamp();
+		pEntity->Spawn();
+		mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, bAsyncAnims );
+
+#if defined(TRACK_ENTITY_MEMORY) && defined(USE_MEM_DEBUG)
+		if ( pszClassname )
+		{
+			MemAlloc_PopAllocDbgInfo();
+		}
+#endif
+		// Try to get the pointer again, in case the spawn function deleted the entity.
+		// UNDONE: Spawn() should really return a code to ask that the entity be deleted, but
+		// that would touch too much code for me to do that right now.
+
+		if ( pEntSafe == NULL || pEntity->IsMarkedForDeletion() )
+			return -1;
+	}
+
+	return 0;
 }
 
 #ifdef _DEBUG
@@ -4868,22 +5400,6 @@ CON_COMMAND_F( dlight_debug, "Creates a dlight in front of the player", FCVAR_CH
 	el->color.exponent = 5;
 
 }
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool C_BaseEntity::IsClientCreated( void ) const
-{
-#ifndef NO_ENTITY_PREDICTION
-	if ( m_pPredictionContext != NULL )
-	{
-		// For now can't be both
-		Assert( !GetPredictable() );
-		return true;
-	}
-#endif
-	return false;
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -4897,30 +5413,14 @@ C_BaseEntity *C_BaseEntity::CreateNoSpawn( const char *szName, const Vector &vec
 	C_BaseEntity *ent = NULL;
 
 	// Try to create it
-	ent = CreateEntityByName( szName );
+	ent = GetClassMap().CreateEntity( szName );
 	if ( !ent )
 	{
 		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
 		return NULL;
 	}
 
-	// Add to client entity list
-	ClientEntityList().AddNonNetworkableEntity( ent );
-
-	Assert( ent->IsClientCreated() );
-
-	// Add the client entity to the spatial partition. (Collidable)
-	ent->CollisionProp()->CreatePartitionHandle();
-
-	// CLIENT ONLY FOR NOW!!!
-	ent->index = -1;
-
-	if ( AddDataChangeEvent( ent, DATA_UPDATE_CREATED, &ent->m_DataChangeEventRef ) )
-	{
-		ent->OnPreDataChanged( DATA_UPDATE_CREATED );
-	}
-
-	ent->Interp_UpdateInterpolationAmounts( ent->GetVarMapping() );
+	ent->InitializeAsClientEntity();
 
 	ent->SetLocalOrigin( vecOrigin );
 	ent->SetLocalAngles( vecAngles );
@@ -4941,13 +5441,52 @@ C_BaseEntity *C_BaseEntity::Create( const char *szName, const Vector &vecOrigin,
 		return NULL;
 	}
 
-	ent->SpawnClientEntity();
+	if(DispatchSpawn( ent ) == -1)
+		return NULL;
 
 	return ent;
 }
 
-#if !defined( NO_ENTITY_PREDICTION )
-int C_BaseEntity::__FindPredicted( C_BaseEntity **pEntity, const char *szName, const char *module, int line )
+C_BaseEntity *C_BaseEntity::DO_NOT_USE_CreatePredictedNoSpawn( const char *module, int line, const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, C_BaseEntity *pOwner )
+{
+	C_BaseEntity *ent = NULL;
+
+	// Try to create it
+	ent = GetClassMap().CreateEntity( szName );
+	if ( !ent )
+	{
+		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
+		return NULL;
+	}
+
+	ent->InitializeAsPredictedEntity( szName, module, line );
+
+	ent->SetLocalOrigin( vecOrigin );
+	ent->SetLocalAngles( vecAngles );
+	ent->SetOwnerEntity( pOwner );
+
+	return ent;
+}
+
+C_BaseEntity *C_BaseEntity::DO_NOT_USE_CreatePredicted( const char *module, int line, const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, C_BaseEntity *pOwner )
+{
+	C_BaseEntity *ent = NULL;
+
+	// Try to create it
+	ent = DO_NOT_USE_CreatePredictedNoSpawn( module, line, szName, vecOrigin, vecAngles, pOwner );
+	if ( !ent )
+	{
+		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
+		return NULL;
+	}
+
+	if(DispatchSpawn( ent ) == -1)
+		return NULL;
+
+	return ent;
+}
+
+int C_BaseEntity::DO_NOT_USE_FindPredicted( C_BaseEntity **pEntity, const char *szName, const char *module, int line )
 {
 	C_BasePlayer *player = C_BaseEntity::GetPredictionPlayer();
 
@@ -4980,50 +5519,6 @@ int C_BaseEntity::__FindPredicted( C_BaseEntity **pEntity, const char *szName, c
 	return 2;
 }
 
-void C_BaseEntity::__SetupAsPredicted( C_BaseEntity *pEntity, const char *szName, const char *module, int line )
-{
-	C_BasePlayer *player = C_BaseEntity::GetPredictionPlayer();
-
-	Assert( player );
-	Assert( player->m_pCurrentCommand );
-	Assert( prediction->InPrediction() );
-
-	C_BaseEntity *ent = NULL;
-
-	// What's my birthday (should match server)
-	int command_number	= player->m_pCurrentCommand->command_number;
-	// Who's my daddy?
-	int player_index	= player->entindex() - 1;
-
-	// Create id/context
-	CPredictableId testId;
-	testId.Init( player_index, command_number, szName, module, line );
-
-	// It's predictable
-	pEntity->SetPredictionEligible( true );
-
-	// Set up "shared" id number
-	pEntity->m_PredictableID.SetRaw( testId.GetRaw() );
-
-	// Get a context (mostly for debugging purposes)
-	PredictionContext *context			= new PredictionContext;
-	context->m_bActive					= true;
-	context->m_nCreationCommandNumber	= command_number;
-	context->m_nCreationLineNumber		= line;
-	context->m_pszCreationModule		= module;
-
-	// Attach to entity
-	pEntity->m_pPredictionContext = context;
-
-	//  and predictables
-	g_Predictables.AddToPredictableList( pEntity->GetClientHandle() );
-
-	// Duhhhh..., but might as well be safe
-	Assert( !pEntity->GetPredictable() );
-	Assert( pEntity->IsClientCreated() );
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose: Called each packet that the entity is created on and finally gets called after the next packet
 //  that doesn't have a create message for the "parent" entity so that the predicted version
@@ -5031,7 +5526,6 @@ void C_BaseEntity::__SetupAsPredicted( C_BaseEntity *pEntity, const char *szName
 //-----------------------------------------------------------------------------
 bool C_BaseEntity::OnPredictedEntityRemove( bool isbeingremoved, C_BaseEntity *predicted )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	// Nothing right now, but in theory you could look at the error in origins and set
 	//  up something to smooth out the error
 	PredictionContext *ctx = predicted->m_pPredictionContext;
@@ -5066,7 +5560,7 @@ bool C_BaseEntity::OnPredictedEntityRemove( bool isbeingremoved, C_BaseEntity *p
 	// If a derived class implements this method, it might chain to here but return
 	// false if it wants to keep the dormant predictable around until the chain of
 	//  DATA_UPDATE_CREATED messages passes
-#endif
+
 	return true;
 }
 
@@ -5110,6 +5604,26 @@ string_t C_BaseEntity::GetModelName( void ) const
 //-----------------------------------------------------------------------------
 void C_BaseEntity::UpdateOnRemove( void )
 {
+	// Nothing for now, if it's a predicted entity, could flag as "delete" or dormant
+	if ( GetPredictable() || IsClientCreated() )
+	{
+		// Make it solid
+		AddSolidFlags( FSOLID_NOT_SOLID );
+		SetMoveType( MOVETYPE_NONE );
+	}
+
+	{
+		C_BaseAnimating::AutoAllowBoneAccess boneaccess( true, true );
+		UnlinkFromHierarchy();
+	}
+
+	// Note that this must be called from here, not the destructor, because otherwise the
+	//  vtable is hosed and the derived classes function is not going to get called!!!
+	if ( IsIntermediateDataAllocated() )
+	{
+		DestroyIntermediateData();
+	}
+
 	VPhysicsDestroyObject(); 
 
 	Assert( !GetMoveParent() );
@@ -5123,9 +5637,7 @@ void C_BaseEntity::UpdateOnRemove( void )
 //-----------------------------------------------------------------------------
 void C_BaseEntity::SetPredictionEligible( bool canpredict )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	m_bPredictionEligible = canpredict;
-#endif
 }
 
 
@@ -5148,7 +5660,6 @@ float C_BaseEntity::GetAttackDamageScale( void )
 	return flScale;
 }
 
-#if !defined( NO_ENTITY_PREDICTION )
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : Returns true on success, false on failure.
@@ -5157,14 +5668,13 @@ bool C_BaseEntity::IsDormantPredictable( void ) const
 {
 	return m_bDormantPredictable;
 }
-#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : dormant - 
 //-----------------------------------------------------------------------------
 void C_BaseEntity::SetDormantPredictable( bool dormant )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	Assert( IsClientCreated() );
 
 	m_bDormantPredictable = true;
@@ -5177,7 +5687,6 @@ void C_BaseEntity::SetDormantPredictable( bool dormant )
 	// Don't render
 	AddEffects( EF_NODRAW );
 #endif
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5187,16 +5696,12 @@ void C_BaseEntity::SetDormantPredictable( bool dormant )
 //-----------------------------------------------------------------------------
 bool C_BaseEntity::BecameDormantThisPacket( void ) const
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	Assert( IsDormantPredictable() );
 
 	if ( m_nIncomingPacketEntityBecameDormant != prediction->GetIncomingPacketNumber() )
 		return false;
 
 	return true;
-#else
-	return false;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5205,11 +5710,7 @@ bool C_BaseEntity::BecameDormantThisPacket( void ) const
 //-----------------------------------------------------------------------------
 bool C_BaseEntity::IsIntermediateDataAllocated( void ) const
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	return m_pOriginalData != NULL ? true : false;
-#else
-	return false;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5217,7 +5718,6 @@ bool C_BaseEntity::IsIntermediateDataAllocated( void ) const
 //-----------------------------------------------------------------------------
 void C_BaseEntity::AllocateIntermediateData( void )
 {				
-#if !defined( NO_ENTITY_PREDICTION )
 	if ( m_pOriginalData )
 		return;
 	size_t allocsize = GetIntermediateDataSize();
@@ -5232,7 +5732,6 @@ void C_BaseEntity::AllocateIntermediateData( void )
 	}
 
 	m_nIntermediateDataCount = 0;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5240,7 +5739,6 @@ void C_BaseEntity::AllocateIntermediateData( void )
 //-----------------------------------------------------------------------------
 void C_BaseEntity::DestroyIntermediateData( void )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	if ( !m_pOriginalData )
 		return;
 	for ( int i = 0; i < MULTIPLAYER_BACKUP; i++ )
@@ -5252,7 +5750,6 @@ void C_BaseEntity::DestroyIntermediateData( void )
 	m_pOriginalData = NULL;
 
 	m_nIntermediateDataCount = 0;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5262,7 +5759,6 @@ void C_BaseEntity::DestroyIntermediateData( void )
 //-----------------------------------------------------------------------------
 void C_BaseEntity::ShiftIntermediateDataForward( int slots_to_remove, int number_of_commands_run )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	Assert( m_pIntermediateData );
 	if ( !m_pIntermediateData )
 		return;
@@ -5292,7 +5788,6 @@ void C_BaseEntity::ShiftIntermediateDataForward( int slots_to_remove, int number
 
 		m_pIntermediateData[ slot ] = saved[ i ];
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5301,7 +5796,6 @@ void C_BaseEntity::ShiftIntermediateDataForward( int slots_to_remove, int number
 //-----------------------------------------------------------------------------
 void *C_BaseEntity::GetPredictedFrame( int framenumber )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	Assert( framenumber >= 0 );
 
 	if ( !m_pOriginalData )
@@ -5310,9 +5804,6 @@ void *C_BaseEntity::GetPredictedFrame( int framenumber )
 		return NULL;
 	}
 	return (void *)m_pIntermediateData[ framenumber % MULTIPLAYER_BACKUP ];
-#else
-	return NULL;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5320,16 +5811,12 @@ void *C_BaseEntity::GetPredictedFrame( int framenumber )
 //-----------------------------------------------------------------------------
 void *C_BaseEntity::GetOriginalNetworkDataObject( void )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	if ( !m_pOriginalData )
 	{
 		Assert( 0 );
 		return NULL;
 	}
 	return (void *)m_pOriginalData;
-#else
-	return NULL;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5337,7 +5824,6 @@ void *C_BaseEntity::GetOriginalNetworkDataObject( void )
 //-----------------------------------------------------------------------------
 void C_BaseEntity::ComputePackedOffsets( void )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	datamap_t *map = GetPredDescMap();
 	if ( !map )
 		return;
@@ -5348,7 +5834,6 @@ void C_BaseEntity::ComputePackedOffsets( void )
 	ComputePackedSize_R( map );
 
 	Assert( map->packed_offsets_computed );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5357,7 +5842,6 @@ void C_BaseEntity::ComputePackedOffsets( void )
 //-----------------------------------------------------------------------------
 int C_BaseEntity::GetIntermediateDataSize( void )
 {
-#if !defined( NO_ENTITY_PREDICTION )
 	ComputePackedOffsets();
 
 	const datamap_t *map = GetPredDescMap();
@@ -5370,9 +5854,6 @@ int C_BaseEntity::GetIntermediateDataSize( void )
 
 	// At least 4 bytes to avoid some really bad stuff
 	return MAX( size, 4 );
-#else
-	return 0;
-#endif
 }	
 
 static int g_FieldSizes[FIELD_TYPECOUNT] = 
@@ -5545,7 +6026,7 @@ void C_BaseEntity::SUB_Remove( void )
 		DevWarning( 2, "SUB_Remove called on entity with health > 0\n");
 	}
 
-	Remove( );
+	UTIL_Remove( this );
 }
 
 CBaseEntity *FindEntityInFrontOfLocalPlayer()
@@ -5580,6 +6061,13 @@ static void RemoveDecals_f( void )
 
 static ConCommand cl_removedecals( "cl_removedecals", RemoveDecals_f, "Remove the decals from the entity under the crosshair.", FCVAR_CHEAT );
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void C_BaseEntity::ClearBBoxVisualization( void )
+{
+	m_fBBoxVisFlags = 0;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -5682,16 +6170,32 @@ void C_BaseEntity::DrawBBoxVisualizations( void )
 //-----------------------------------------------------------------------------
 // Sets the render mode
 //-----------------------------------------------------------------------------
-void C_BaseEntity::SetRenderMode( RenderMode_t nRenderMode, bool bForceUpdate )
+void C_BaseEntity::SetRenderMode( RenderMode_t nRenderMode )
 {
-	m_nRenderMode = nRenderMode;
+	if ( nRenderMode != GetRenderMode() )
+	{
+		AlphaProp()->SetRenderFX( GetRenderFX(), nRenderMode, FLT_MAX, 0.0f );
+	}
 }
 
+void CBaseEntity::SetRenderFX( RenderFx_t nRenderFX, float flStartTime, float flDuration )
+{
+	bool bStartTimeUnspecified = ( flStartTime == FLT_MAX );
+	if ( nRenderFX != GetRenderFX() || !bStartTimeUnspecified )
+	{
+		if ( bStartTimeUnspecified )
+		{
+			flStartTime = gpGlobals->curtime;
+		}
+		AlphaProp()->SetRenderFX( nRenderFX, GetRenderMode(), flStartTime, flDuration );
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : RenderGroup_t
 //-----------------------------------------------------------------------------
+#if 0
 RenderGroup_t C_BaseEntity::GetRenderGroup()
 {
 	// Don't sort things that don't need rendering
@@ -5741,150 +6245,7 @@ RenderGroup_t C_BaseEntity::GetRenderGroup()
 
 	return renderGroup;
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: Copy from this entity into one of the save slots (original or intermediate)
-// Input  : slot - 
-//			type - 
-//			false - 
-//			false - 
-//			true - 
-//			false - 
-//			NULL - 
-// Output : int
-//-----------------------------------------------------------------------------
-int C_BaseEntity::SaveData( const char *context, int slot, int type )
-{
-#if !defined( NO_ENTITY_PREDICTION )
-	VPROF( "C_BaseEntity::SaveData" );
-
-	void *dest = ( slot == SLOT_ORIGINALDATA ) ? GetOriginalNetworkDataObject() : GetPredictedFrame( slot );
-	Assert( dest );
-
-	char sz[ 64 ];
-	sz[0] = 0;
-	// don't build debug strings per entity per frame, unless we are watching the entity
-	static ConVarRef pwatchent( "pwatchent" );
-	if ( pwatchent.GetInt() == entindex() )
-	{
-		if ( slot == SLOT_ORIGINALDATA )
-		{
-			Q_snprintf( sz, sizeof( sz ), "%s SaveData(original)", context );
-		}
-		else
-		{
-			Q_snprintf( sz, sizeof( sz ), "%s SaveData(slot %02i)", context, slot );
-		}
-	}
-
-	if ( slot != SLOT_ORIGINALDATA )
-	{
-		// Remember high water mark so that we can detect below if we are reading from a slot not yet predicted into...
-		m_nIntermediateDataCount = slot;
-	}
-
-	CPredictionCopy copyHelper( type, dest, PC_DATA_PACKED, this, PC_DATA_NORMAL );
-	int error_count = copyHelper.TransferData( sz, entindex(), GetPredDescMap() );
-	return error_count;
-#else
-	return 0;
 #endif
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Restore data from specified slot into current entity
-// Input  : slot - 
-//			type - 
-//			false - 
-//			false - 
-//			true - 
-//			false - 
-//			NULL - 
-// Output : int
-//-----------------------------------------------------------------------------
-int C_BaseEntity::RestoreData( const char *context, int slot, int type )
-{
-#if !defined( NO_ENTITY_PREDICTION )
-	VPROF( "C_BaseEntity::RestoreData" );
-
-	const void *src = ( slot == SLOT_ORIGINALDATA ) ? GetOriginalNetworkDataObject() : GetPredictedFrame( slot );
-	Assert( src );
-
-	// This assert will fire if the server ack'd a CUserCmd which we hadn't predicted yet...
-	// In that case, we'd be comparing "old" data from this "unused" slot with the networked data and reporting all kinds of prediction errors possibly.
-	Assert( slot == SLOT_ORIGINALDATA || slot <= m_nIntermediateDataCount );
-
-	char sz[ 64 ];
-	sz[0] = 0;
-	// don't build debug strings per entity per frame, unless we are watching the entity
-	static ConVarRef pwatchent( "pwatchent" );
-	if ( pwatchent.GetInt() == entindex() )
-	{
-		if ( slot == SLOT_ORIGINALDATA )
-		{
-			Q_snprintf( sz, sizeof( sz ), "%s RestoreData(original)", context );
-		}
-		else
-		{
-			Q_snprintf( sz, sizeof( sz ), "%s RestoreData(slot %02i)", context, slot );
-		}
-	}
-
-	// some flags shouldn't be predicted - as we find them, add them to the savedEFlagsMask
-	const int savedEFlagsMask = EFL_DIRTY_SHADOWUPDATE;
-	int savedEFlags = GetEFlags() & savedEFlagsMask;
-
-	// model index needs to be set manually for dynamic model refcounting purposes
-	int oldModelIndex = m_nModelIndex;
-
-	CPredictionCopy copyHelper( type, this, PC_DATA_NORMAL, src, PC_DATA_PACKED );
-	int error_count = copyHelper.TransferData( sz, entindex(), GetPredDescMap() );
-
-	// set non-predicting flags back to their prior state
-	RemoveEFlags( savedEFlagsMask );
-	AddEFlags( savedEFlags );
-
-	// restore original model index and change via SetModelIndex
-	int newModelIndex = m_nModelIndex;
-	m_nModelIndex = oldModelIndex;
-	int overrideModelIndex = CalcOverrideModelIndex();
-	if( overrideModelIndex != -1 )
-		newModelIndex = overrideModelIndex;
-	if ( oldModelIndex != newModelIndex )
-	{
-		MDLCACHE_CRITICAL_SECTION(); // ???
-		SetModelIndex( newModelIndex );
-	}
-
-	OnPostRestoreData();
-
-	return error_count;
-#else
-	return 0;
-#endif
-}
-
-
-void C_BaseEntity::OnPostRestoreData()
-{
-	// HACK Force recomputation of origin
-	InvalidatePhysicsRecursive( POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED );
-
-	if ( GetMoveParent() )
-	{
-		AddToAimEntsList();
-	}
-
-	// If our model index has changed, then make sure it's reflected in our model pointer.
-	// (Mostly superseded by new modelindex delta check in RestoreData, but I'm leaving it
-	// because it might be band-aiding any other missed calls to SetModelByIndex --henryg)
-	if ( GetModel() != modelinfo->GetModel( GetModelIndex() ) )
-	{
-		MDLCACHE_CRITICAL_SECTION();
-		SetModelByIndex( GetModelIndex() );
-	}
-}
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Determine approximate velocity based on updates from server
@@ -5892,7 +6253,7 @@ void C_BaseEntity::OnPostRestoreData()
 //-----------------------------------------------------------------------------
 void C_BaseEntity::EstimateAbsVelocity( Vector& vel )
 {
-	if ( this == C_BasePlayer::GetLocalPlayer() )
+	if ( C_BasePlayer::IsLocalPlayer( this ) )
 	{
 		// This is interpolated and networked
 		vel = GetAbsVelocity();
@@ -5913,7 +6274,7 @@ void C_BaseEntity::Interp_Reset( VarMapping_t *map )
 		VarMapEntry_t *e = &map->m_Entries[ i ];
 		IInterpolatedVar *watcher = e->watcher;
 
-		watcher->Reset();
+		watcher->Reset( gpGlobals->curtime );
 	}
 }
 
@@ -5981,7 +6342,7 @@ float C_BaseEntity::GetInterpolationAmount( int flags )
 	int expandedServerTickMultiple = serverTickMultiple;
 	if ( IsEngineThreaded() )
 	{
-		expandedServerTickMultiple += g_nThreadModeTicks;
+		expandedServerTickMultiple += cl_interp_threadmodeticks.GetInt();
 	}
 
 	if ( IsAnimatedEveryTick() && IsSimulatedEveryTick() )
@@ -6061,101 +6422,9 @@ BEGIN_DATADESC_NO_BASE( C_BaseEntity )
 	DEFINE_FIELD( m_fFlags, FIELD_INTEGER ),
 END_DATADESC()
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool C_BaseEntity::ShouldSavePhysics()
-{
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// handler to do stuff before you are saved
-//-----------------------------------------------------------------------------
-void C_BaseEntity::OnSave()
-{
-	// Here, we must force recomputation of all abs data so it gets saved correctly
-	// We can't leave the dirty bits set because the loader can't cope with it.
-	CalcAbsolutePosition();
-	CalcAbsoluteVelocity();
-}
-
-
-//-----------------------------------------------------------------------------
-// handler to do stuff after you are restored
-//-----------------------------------------------------------------------------
-void C_BaseEntity::OnRestore()
-{
-	InvalidatePhysicsRecursive( POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED );
-	
-	UpdatePartitionListEntry();
-	CollisionProp()->UpdatePartition();
-
-	UpdateVisibility();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Saves the current object out to disk, by iterating through the objects
-//			data description hierarchy
-// Input  : &save - save buffer which the class data is written to
-// Output : int	- 0 if the save failed, 1 on success
-//-----------------------------------------------------------------------------
-int C_BaseEntity::Save( ISave &save )
-{
-	// loop through the data description list, saving each data desc block
-	int status = SaveDataDescBlock( save, GetDataDescMap() );
-
-	return status;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Recursively saves all the classes in an object, in reverse order (top down)
-// Output : int 0 on failure, 1 on success
-//-----------------------------------------------------------------------------
-int C_BaseEntity::SaveDataDescBlock( ISave &save, datamap_t *dmap )
-{
-	int nResult = save.WriteAll( this, dmap );
-	return nResult;
-}
-
 void C_BaseEntity::SetClassname( const char *className )
 {
 	m_iClassname = MAKE_STRING( className );
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Restores the current object from disk, by iterating through the objects
-//			data description hierarchy
-// Input  : &restore - restore buffer which the class data is read from
-// Output : int	- 0 if the restore failed, 1 on success
-//-----------------------------------------------------------------------------
-int C_BaseEntity::Restore( IRestore &restore )
-{
-	// loops through the data description list, restoring each data desc block in order
-	int status = RestoreDataDescBlock( restore, GetDataDescMap() );
-
-	// NOTE: Do *not* use GetAbsOrigin() here because it will
-	// try to recompute m_rgflCoordinateFrame!
-	MatrixSetColumn( m_vecAbsOrigin, 3, m_rgflCoordinateFrame );
-
-	// Restablish ground entity
-	if ( m_hGroundEntity != NULL )
-	{
-		m_hGroundEntity->AddEntityToGroundList( this );
-	}
-
-	return status;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Recursively restores all the classes in an object, in reverse order (top down)
-// Output : int 0 on failure, 1 on success
-//-----------------------------------------------------------------------------
-int C_BaseEntity::RestoreDataDescBlock( IRestore &restore, datamap_t *dmap )
-{
-	return restore.ReadAll( this, dmap );
 }
 
 //-----------------------------------------------------------------------------
@@ -6202,15 +6471,12 @@ void C_BaseEntity::RemoveRecipientsIfNotCloseCaptioning( C_RecipientFilter& filt
 //-----------------------------------------------------------------------------
 void C_BaseEntity::EnableInToolView( bool bEnable )
 {
-#ifndef NO_TOOLFRAMEWORK
 	m_bEnabledInToolView = bEnable;
 	UpdateVisibility();
-#endif
 }
 
 void C_BaseEntity::SetToolRecording( bool recording )
 {
-#ifndef NO_TOOLFRAMEWORK
 	m_bToolRecording = recording;
 	if ( m_bToolRecording )
 	{
@@ -6220,17 +6486,12 @@ void C_BaseEntity::SetToolRecording( bool recording )
 	{
         recordinglist->RemoveFromList( GetClientHandle() );
 	}
-#endif
 }
 
 bool C_BaseEntity::HasRecordedThisFrame() const
 {
-#ifndef NO_TOOLFRAMEWORK
 	Assert( m_nLastRecordedFrame <= gpGlobals->framecount );
 	return m_nLastRecordedFrame == gpGlobals->framecount;
-#else
-	return false;
-#endif
 }
 
 void C_BaseEntity::GetToolRecordingState( KeyValues *msg )
@@ -6256,14 +6517,14 @@ void C_BaseEntity::GetToolRecordingState( KeyValues *msg )
 	// use EF_NOINTERP if the owner or a hierarchical parent has NO_INTERP
 	if ( pOwner && pOwner->IsNoInterpolationFrame() )
 	{
-		state.m_nEffects |= EF_NOINTERP;
+		state.m_nEffects |= EF_DEPRECATED_NOINTERP;
 	}
 	C_BaseEntity *pParent = GetMoveParent();
 	while ( pParent )
 	{
 		if ( pParent->IsNoInterpolationFrame() )
 		{
-			state.m_nEffects |= EF_NOINTERP;
+			state.m_nEffects |= EF_DEPRECATED_NOINTERP;
 			break;
 		}
 
@@ -6319,38 +6580,55 @@ void C_BaseEntity::ToolRecordEntities()
 	}
 }
 
+#ifdef _DEBUG
+static entity_list_ids_t s_nSuppressChanges = NUM_ENTITY_LISTS;
+#endif
+
+void C_BaseEntity::AddToEntityList( entity_list_ids_t listId )
+{
+	if(listId == ENTITY_LIST_DELETE && in_purge_entities)
+		return;
+	Assert(listId < NUM_ENTITY_LISTS);
+	if ( m_ListEntry[listId] == 0xFFFF )
+	{
+		m_ListEntry[listId] = g_EntityLists[listId].AddToTail( this );
+	}
+}
+
+void C_BaseEntity::RemoveFromEntityList( entity_list_ids_t listId )
+{
+	if(listId == ENTITY_LIST_DELETE && in_purge_entities)
+		return;
+	Assert( s_nSuppressChanges != listId );
+	Assert( listId < NUM_ENTITY_LISTS );
+	if ( m_ListEntry[listId] != 0xFFFF )
+	{
+		g_EntityLists[listId].Remove( m_ListEntry[listId] );
+		m_ListEntry[listId] = 0xFFFF;
+	}
+}
 
 void C_BaseEntity::AddToInterpolationList()
 {
-	if ( m_InterpolationListEntry == 0xFFFF )
-		m_InterpolationListEntry = g_InterpolationList.AddToTail( this );
+	AddToEntityList( ENTITY_LIST_INTERPOLATE );
 }
 
 
 void C_BaseEntity::RemoveFromInterpolationList()
 {
-	if ( m_InterpolationListEntry != 0xFFFF )
-	{
-		g_InterpolationList.Remove( m_InterpolationListEntry );
-		m_InterpolationListEntry = 0xFFFF;
-	}
+	RemoveFromEntityList( ENTITY_LIST_INTERPOLATE );
 }
 
 				
 void C_BaseEntity::AddToTeleportList()
 {
-	if ( m_TeleportListEntry == 0xFFFF )
-		m_TeleportListEntry = g_TeleportList.AddToTail( this );
+	AddToEntityList( ENTITY_LIST_TELEPORT );
 }
 
 
 void C_BaseEntity::RemoveFromTeleportList()
 {
-	if ( m_TeleportListEntry != 0xFFFF )
-	{
-		g_TeleportList.Remove( m_TeleportListEntry );
-		m_TeleportListEntry = 0xFFFF;
-	}
+	RemoveFromEntityList( ENTITY_LIST_TELEPORT );
 }
 
 #ifdef TF_CLIENT_DLL
@@ -6506,14 +6784,189 @@ void C_BaseEntity::CheckCLInterpChanged()
 
 void C_BaseEntity::DontRecordInTools()
 {
-#ifndef NO_TOOLFRAMEWORK
 	m_bRecordInTools = false;
-#endif
 }
 
 int C_BaseEntity::GetCreationTick() const
 {
 	return m_nCreationTick;
+}
+
+// static method
+void C_BaseEntity::SimulateEntities()
+{
+	VPROF_("C_BaseEntity::Simulate", 1, VPROF_BUDGETGROUP_CLIENT_SIM, false, BUDGETFLAG_CLIENT);
+
+	s_bImmediateRemovesAllowed = false;
+
+	if ( !report_cliententitysim.GetBool() )
+	{
+		int iNext;
+		for ( int iCur = g_EntityLists[ENTITY_LIST_SIMULATE].Head(); iCur != g_EntityLists[ENTITY_LIST_SIMULATE].InvalidIndex(); iCur = iNext )
+		{
+			iNext = g_EntityLists[ENTITY_LIST_SIMULATE].Next( iCur );
+			C_BaseEntity *pCur = g_EntityLists[ENTITY_LIST_SIMULATE].Element(iCur);
+			if ( pCur->IsEFlagSet( EFL_KILLME ) )
+				continue;
+
+#ifdef _DEBUG
+			s_nSuppressChanges = ENTITY_LIST_SIMULATE;
+#endif
+			bool bRemove = !pCur->Simulate();
+#ifdef _DEBUG
+			s_nSuppressChanges = NUM_ENTITY_LISTS;
+#endif
+			if ( bRemove )
+			{
+				pCur->RemoveFromEntityList(ENTITY_LIST_SIMULATE);
+			}
+		}
+	}
+	else
+	{
+		CFastTimer fastTimer;
+	
+		int iNext;
+		for ( int iCur = g_EntityLists[ENTITY_LIST_SIMULATE].Head(); iCur != g_EntityLists[ENTITY_LIST_SIMULATE].InvalidIndex(); iCur = iNext )
+		{
+			iNext = g_EntityLists[ENTITY_LIST_SIMULATE].Next( iCur );
+			C_BaseEntity *pCur = g_EntityLists[ENTITY_LIST_SIMULATE].Element(iCur);
+			if ( pCur->IsEFlagSet( EFL_KILLME ) )
+				continue;
+
+			fastTimer.Start();
+#ifdef _DEBUG
+			s_nSuppressChanges = ENTITY_LIST_SIMULATE;
+#endif
+			bool bRemove = !pCur->Simulate();
+#ifdef _DEBUG
+			s_nSuppressChanges = NUM_ENTITY_LISTS;
+#endif
+			if ( bRemove )
+			{
+				pCur->RemoveFromEntityList(ENTITY_LIST_SIMULATE);
+			}
+			fastTimer.End();
+			Msg( "Entity(%d): %s - %f\n", pCur->entindex(), pCur->GetDebugName(), fastTimer.GetDuration().GetMillisecondsF() );
+		}
+
+		// Report only once per turn on.
+		report_cliententitysim.SetValue( 0 );
+	}
+
+	s_bImmediateRemovesAllowed = true;
+	PurgeRemovedEntities();
+}
+
+// static method
+void C_BaseEntity::PurgeRemovedEntities()
+{
+	in_purge_entities = true;
+	int iNext;
+	for ( int iCur = g_EntityLists[ENTITY_LIST_DELETE].Head(); iCur != g_EntityLists[ENTITY_LIST_DELETE].InvalidIndex(); iCur = iNext )
+	{
+		iNext = g_EntityLists[ENTITY_LIST_DELETE].Next( iCur );
+		C_BaseEntity *pCur = g_EntityLists[ENTITY_LIST_DELETE].Element(iCur);
+		UTIL_RemoveImmediate( pCur );
+	}
+	g_EntityLists[ENTITY_LIST_DELETE].RemoveAll();
+	in_purge_entities = false;
+}
+
+// static method
+// This is the per-viewport setup hook
+void C_BaseEntity::PreRenderEntities()
+{
+	MDLCACHE_CRITICAL_SECTION();
+	int iNext;
+	for ( int iCur = g_EntityLists[ENTITY_LIST_PRERENDER].Head(); iCur != g_EntityLists[ENTITY_LIST_PRERENDER].InvalidIndex(); iCur = iNext )
+	{
+		iNext = g_EntityLists[ENTITY_LIST_PRERENDER].Next( iCur );
+		C_BaseEntity *pCur = g_EntityLists[ENTITY_LIST_PRERENDER].Element(iCur);
+
+#ifdef _DEBUG
+		s_nSuppressChanges = ENTITY_LIST_PRERENDER;
+#endif
+		bool bRemove = !pCur->PreRender();
+#ifdef _DEBUG
+		s_nSuppressChanges = NUM_ENTITY_LISTS;
+#endif	
+		if ( bRemove )
+		{
+			pCur->RemoveFromEntityList(ENTITY_LIST_PRERENDER);
+		}
+	}
+
+}
+
+bool C_BaseEntity::PreRender()
+{
+	bool bNeedsPrerender = false;
+
+	// Create flashlight effects, etc.
+	if ( CreateLightEffects() )
+	{
+		bNeedsPrerender = true;
+	}
+	return bNeedsPrerender;
+}
+
+bool C_BaseEntity::IsViewEntity() const
+{
+	return render->GetViewEntity() == m_nEntIndex;
+}
+
+bool C_BaseEntity::IsAbleToHaveFireEffect( void ) const
+{
+	return true;
+}
+
+
+void C_BaseEntity::SetBlurState( bool bShouldBlur )
+{
+	if( bShouldBlur != m_bIsBlurred )
+	{
+		m_bIsBlurred = bShouldBlur;
+		OnTranslucencyTypeChanged();
+	}
+}
+
+bool C_BaseEntity::IsBlurred( void )
+{
+	return m_bIsBlurred;
+}
+
+void C_BaseEntity::OnParseMapDataFinished()
+{
+}
+
+//-----------------------------------------------------------------------------
+// Adjust the number of cell bits
+//-----------------------------------------------------------------------------
+bool C_BaseEntity::SetCellBits( int cellbits )
+{
+	if ( m_cellbits == cellbits )
+		return false;
+
+	m_cellbits = cellbits;
+	m_cellwidth = ( 1 << cellbits );
+	return true;
+}
+
+
+bool C_BaseEntity::ShouldRegenerateOriginFromCellBits() const
+{
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : IResponseSystem
+//-----------------------------------------------------------------------------
+IResponseSystem *CBaseEntity::GetResponseSystem()
+{
+	extern IResponseSystem *g_pResponseSystem;
+	return g_pResponseSystem;
 }
 
 //------------------------------------------------------------------------------

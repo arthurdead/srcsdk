@@ -23,7 +23,7 @@ public:
 
 	// Inherited from C_BaseEntity
 	virtual void	GetRenderBounds( Vector& theMins, Vector& theMaxs );
-	virtual int		DrawModel( int flags );
+	virtual int		DrawModel( int flags, const RenderableInstance_t &instance );
 	virtual bool	ShouldDraw() { return true; }
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
 	virtual void	UpdateOnRemove( void );
@@ -36,7 +36,7 @@ public:
 	
 	void			SetupEmitter( void );
 
-	void			ClientThink( void );
+	void			DissolveThink( void );
 
 	void			SetServerLinkState( bool state ) { m_bLinkedToServerEnt = state; }
 

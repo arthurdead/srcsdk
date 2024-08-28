@@ -12,7 +12,6 @@
 #define PARTICLE_SMOKETRAIL_H
 
 #include "particlemgr.h"
-#include "particle_prototype.h"
 #include "particle_util.h"
 #include "particles_simple.h"
 #include "c_baseentity.h"
@@ -24,7 +23,7 @@
 // Smoke Trail
 //
 
-class C_SmokeTrail : public C_BaseParticleEntity, public IPrototypeAppEffect
+class C_SmokeTrail : public C_BaseParticleEntity
 {
 public:
 	DECLARE_CLASS( C_SmokeTrail, C_BaseParticleEntity );
@@ -53,7 +52,7 @@ public:
 
 // IPrototypeAppEffect.
 public:
-	virtual void	Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs);
+	virtual void	Start(CParticleMgr *pParticleMgr);
 
 // IParticleEffect.
 public:
@@ -104,7 +103,7 @@ private:
 // C_RocketTrail
 //==================================================
 
-class C_RocketTrail : public C_BaseParticleEntity, public IPrototypeAppEffect
+class C_RocketTrail : public C_BaseParticleEntity
 {
 public:
 	DECLARE_CLASS( C_RocketTrail, C_BaseParticleEntity );
@@ -131,7 +130,7 @@ public:
 
 // IPrototypeAppEffect.
 public:
-	virtual void	Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs);
+	virtual void	Start(CParticleMgr *pParticleMgr);
 
 // IParticleEffect.
 public:
@@ -204,7 +203,7 @@ private:
 // C_SporeExplosion
 //==================================================
 
-class C_SporeExplosion : public C_BaseParticleEntity, public IPrototypeAppEffect
+class C_SporeExplosion : public C_BaseParticleEntity
 {
 public:
 	DECLARE_CLASS( C_SporeExplosion, C_BaseParticleEntity );
@@ -221,7 +220,7 @@ public:
 
 // IPrototypeAppEffect
 public:
-	virtual void	Start( CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs );
+	virtual void	Start( CParticleMgr *pParticleMgr );
 
 // IParticleEffect
 public:
@@ -268,7 +267,7 @@ public:
 	C_FireTrail( void );
 	virtual ~C_FireTrail( void );
 
-	virtual void	Start( CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs );
+	virtual void	Start( CParticleMgr *pParticleMgr );
 	virtual void	Update( float fTimeDelta );
 
 private:
@@ -315,7 +314,7 @@ private:
 // C_DustTrail
 //==================================================
 
-class C_DustTrail : public C_BaseParticleEntity, public IPrototypeAppEffect
+class C_DustTrail : public C_BaseParticleEntity
 {
 public:
 	DECLARE_CLASS( C_DustTrail, C_BaseParticleEntity );
@@ -341,7 +340,7 @@ public:
 
 // IPrototypeAppEffect.
 public:
-	virtual void	Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs);
+	virtual void	Start(CParticleMgr *pParticleMgr);
 
 // IParticleEffect.
 public:
@@ -386,5 +385,45 @@ private:
 	CParticleMgr	*m_pParticleMgr;
 	CSmartPtr<CSimpleEmitter> m_pDustEmitter;
 };
+
+//-----------------------------------------------------------------------------
+// Purpose:  High drag, non color changing particle
+//-----------------------------------------------------------------------------
+
+
+class CDustFollower : public CSimpleEmitter
+{
+public:
+	
+	CDustFollower( const char *pDebugName ) : CSimpleEmitter( pDebugName ) {}
+	
+	//Create
+	static CDustFollower *Create( const char *pDebugName );
+
+	//Alpha
+	virtual float UpdateAlpha( const SimpleParticle *pParticle )
+	{
+		return ( ((float)pParticle->m_uchStartAlpha/255.0f) * sin( M_PI * (pParticle->m_flLifetime / pParticle->m_flDieTime) ) );
+	}
+
+	virtual	void	UpdateVelocity( SimpleParticle *pParticle, float timeDelta )
+	{
+		pParticle->m_vecVelocity = pParticle->m_vecVelocity * ExponentialDecay( 0.3, timeDelta );
+	}
+
+	//Roll
+	virtual	float UpdateRoll( SimpleParticle *pParticle, float timeDelta )
+	{
+		pParticle->m_flRoll += pParticle->m_flRollDelta * timeDelta;
+		
+		pParticle->m_flRollDelta *= ExponentialDecay( 0.5, timeDelta );
+
+		return pParticle->m_flRoll;
+	}
+
+private:
+	CDustFollower( const CDustFollower & );
+};
+
 
 #endif

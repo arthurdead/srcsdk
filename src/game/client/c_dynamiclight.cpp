@@ -14,19 +14,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-
-#ifdef HL2_EPISODIC
-// In Episodic we unify the NO_WORLD_ILLUMINATION lights to use 
-// the more efficient elight structure instead. This should theoretically
-// be extended to other projects but may have unintended consequences
-// and bears more thorough testing.
-//
-// For an earlier iteration on this technique see changelist 214433,
-// which had a specific flag for use of elights.
-#define DLIGHT_NO_WORLD_USES_ELIGHT 1
-#endif
-
-
 //-----------------------------------------------------------------------------
 // A dynamic light, with the goofy hack needed for spotlights
 //-----------------------------------------------------------------------------
@@ -41,8 +28,8 @@ public:
 public:
 	void	OnDataChanged(DataUpdateType_t updateType);
 	bool	ShouldDraw();
-	void	ClientThink( void );
-	void	Release( void );
+	void	LightThink( void );
+	void	UpdateOnRemove( void );
 
 	unsigned char	m_Flags;
 	unsigned char	m_LightStyle;
@@ -87,7 +74,7 @@ void C_DynamicLight::OnDataChanged(DataUpdateType_t updateType)
 {
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
-		SetNextClientThink(gpGlobals->curtime + 0.05);
+		SetContextThink( &C_DynamicLight::LightThink, gpGlobals->curtime + 0.05, "LightThink" );
 	}
 
 	BaseClass::OnDataChanged( updateType );
@@ -105,7 +92,7 @@ bool C_DynamicLight::ShouldDraw()
 //------------------------------------------------------------------------------
 // Purpose : Disable drawing of this light when entity perishes
 //------------------------------------------------------------------------------
-void C_DynamicLight::Release()
+void C_DynamicLight::UpdateOnRemove()
 {
 	if (m_pDynamicLight)
 	{
@@ -119,14 +106,14 @@ void C_DynamicLight::Release()
 		m_pSpotlightEnd = 0;
 	}
 
-	BaseClass::Release();
+	BaseClass::UpdateOnRemove();
 }
 
 
 //------------------------------------------------------------------------------
 // Purpose :
 //------------------------------------------------------------------------------
-void C_DynamicLight::ClientThink(void)
+void C_DynamicLight::LightThink(void)
 {
 	Vector forward;
 	AngleVectors( GetAbsAngles(), &forward );
@@ -134,15 +121,11 @@ void C_DynamicLight::ClientThink(void)
 	if ( (m_Flags & DLIGHT_NO_MODEL_ILLUMINATION) == 0 )
 	{
 		// Deal with the model light
- 		if ( !m_pDynamicLight || (m_pDynamicLight->key != index) )
+ 		if ( !m_pDynamicLight || (m_pDynamicLight->key != entindex()) )
 		{
-#if DLIGHT_NO_WORLD_USES_ELIGHT
 			m_pDynamicLight = ShouldBeElight() != 0
-				? effects->CL_AllocElight( index )
-				: effects->CL_AllocDlight( index );
-#else
-			m_pDynamicLight = effects->CL_AllocDlight( index );
-#endif
+				? effects->CL_AllocElight( entindex() )
+				: effects->CL_AllocDlight( entindex() );
 			Assert (m_pDynamicLight);
 			m_pDynamicLight->minlight = 0;
 		}
@@ -152,9 +135,10 @@ void C_DynamicLight::ClientThink(void)
 		m_pDynamicLight->flags = m_Flags;
 		if ( m_OuterAngle > 0 )
 			m_pDynamicLight->flags |= DLIGHT_NO_WORLD_ILLUMINATION;
-		m_pDynamicLight->color.r = m_clrRender->r;
-		m_pDynamicLight->color.g = m_clrRender->g;
-		m_pDynamicLight->color.b = m_clrRender->b;
+		color24 c = GetRenderColor();
+		m_pDynamicLight->color.r = c.r;
+		m_pDynamicLight->color.g = c.g;
+		m_pDynamicLight->color.b = c.b;
 		m_pDynamicLight->color.exponent	= m_Exponent;	// this makes it match the world
 		m_pDynamicLight->origin		= GetAbsOrigin();
 		m_pDynamicLight->m_InnerAngle = m_InnerAngle;
@@ -172,17 +156,13 @@ void C_DynamicLight::ClientThink(void)
 		}
 	}
 	
-#if DLIGHT_NO_WORLD_USES_ELIGHT
 	if (( m_OuterAngle > 0 ) && !ShouldBeElight())
-#else
-	if (( m_OuterAngle > 0 ) && ((m_Flags & DLIGHT_NO_WORLD_ILLUMINATION) == 0))
-#endif
 	{
 		// Raycast to where the endpoint goes
 		// Deal with the environment light
-		if ( !m_pSpotlightEnd || (m_pSpotlightEnd->key != -index) )
+		if ( !m_pSpotlightEnd || (m_pSpotlightEnd->key != -entindex()) )
 		{
-			m_pSpotlightEnd = effects->CL_AllocDlight( -index );
+			m_pSpotlightEnd = effects->CL_AllocDlight( -entindex() );
 			Assert (m_pSpotlightEnd);
 		}
 				  
@@ -210,9 +190,10 @@ void C_DynamicLight::ClientThink(void)
 			m_pSpotlightEnd->flags = DLIGHT_NO_MODEL_ILLUMINATION | (m_Flags & DLIGHT_DISPLACEMENT_MASK);
 			m_pSpotlightEnd->radius		= m_SpotRadius; // * falloff;
 			m_pSpotlightEnd->die		= gpGlobals->curtime + 1e6;
-			m_pSpotlightEnd->color.r	= m_clrRender->r * falloff;
-			m_pSpotlightEnd->color.g	= m_clrRender->g * falloff;
-			m_pSpotlightEnd->color.b	= m_clrRender->b * falloff;
+			color24 c = GetRenderColor();
+			m_pSpotlightEnd->color.r	= c.r * falloff;
+			m_pSpotlightEnd->color.g	= c.g * falloff;
+			m_pSpotlightEnd->color.b	= c.b * falloff;
 			m_pSpotlightEnd->color.exponent	= m_Exponent;
 
 			// For bumped lighting
@@ -232,6 +213,6 @@ void C_DynamicLight::ClientThink(void)
 		}
 	}
 
-	SetNextClientThink(gpGlobals->curtime + 0.001);
+	SetNextThink( gpGlobals->curtime + 0.001, "LightThink" );
 }
 

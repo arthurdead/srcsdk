@@ -43,6 +43,7 @@ public:
 
 	// Detach from a material
 	void Shutdown();
+	void Shutdown( bool bDeleteIfUnreferenced );
 	bool IsValid() { return m_pMaterial != 0; }
 
 	// Automatic casts to IMaterial
@@ -50,8 +51,13 @@ public:
 	operator IMaterial*() const { return m_pMaterial; }
 	operator IMaterial const*() const { return m_pMaterial; }
 	IMaterial* operator->() { return m_pMaterial; }
+
+	// Assignment operator
+	const CMaterialReference& operator=( const CMaterialReference &ref );
 	
 private:
+	CMaterialReference( CMaterialReference &ref ) { }
+
 	IMaterial* m_pMaterial;
 };
 
@@ -74,11 +80,7 @@ public:
 	{
 		InitRenderTarget(w, h, sizeMode, fmt, depth, bHDR, const_cast<char*>(pStrOptionalName));
 	}
-#if defined( _X360 )
-	// used when RT coupling is disparate (texture is DDR based, surface is EDRAM based)
-	void InitRenderTargetTexture( int width, int height, RenderTargetSizeMode_t sizeMode, ImageFormat fmt, MaterialRenderTargetDepth_t depth, bool bHDR, char *pStrOptionalName = NULL );
-	void InitRenderTargetSurface( int width, int height, ImageFormat fmt, bool bSameAsTexture );
-#endif
+
 	void Init( ITexture* pTexture );
 
 	// Detach from a texture
@@ -93,7 +95,7 @@ public:
 	ITexture* Get() const { return m_pTexture; }
 
 	// Assignment operator
-	void operator=( CTextureReference &ref );
+	const CTextureReference& operator=( CTextureReference &ref );
 
 private:
 	ITexture* m_pTexture;

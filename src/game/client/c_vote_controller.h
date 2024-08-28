@@ -11,6 +11,7 @@
 
 #include "shareddefs.h"
 #include "GameEventListener.h"
+#include "c_baseentity.h"
 
 class C_VoteController : public C_BaseEntity, public CGameEventListener
 {
@@ -22,7 +23,7 @@ public:
 	virtual ~C_VoteController();
 
 	virtual void	Spawn( void );
-	virtual void	ClientThink( void );
+	virtual void	VoteThink( void );
 
 	static void		RecvProxy_VoteType( const CRecvProxyData *pData, void *pStruct, void *pOut );
 	static void		RecvProxy_VoteOption( const CRecvProxyData *pData, void *pStruct, void *pOut );

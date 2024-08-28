@@ -9,18 +9,8 @@
 #define SHAKE_H
 #pragma once
 
+#include "mathlib/vector.h"
 
-//
-// Commands for the screen shake effect.
-//
-
-struct ScreenShake_t
-{
-	int		command;
-	float	amplitude;
-	float	frequency;
-	float	duration;
-};
 
 enum ShakeCommand_t
 {
@@ -30,6 +20,36 @@ enum ShakeCommand_t
 	SHAKE_FREQUENCY,		// Modifies the frequency of an active screen shake for all players within the radius.
 	SHAKE_START_RUMBLEONLY,	// Starts a shake effect that only rumbles the controller, no screen effect.
 	SHAKE_START_NORUMBLE,	// Starts a shake that does NOT rumble the controller.
+};
+
+//
+// Commands for the screen tilt effect.
+//
+
+struct ScreenTilt_t
+{
+	int		command;
+	bool	easeInOut;
+	QAngle	angle;
+	float	duration;
+	float	time;
+};
+
+//
+// Commands for the screen shake effect.
+//
+
+struct ScreenShake_t
+{
+	ShakeCommand_t		command;
+	float	amplitude;
+	float	frequency;
+	float	duration;
+	Vector  direction;
+
+	inline ScreenShake_t() : direction(0,0,0) {};
+	inline ScreenShake_t( ShakeCommand_t _command, float _amplitude, float _frequency, 
+		float _duration, const Vector &_direction );
 };
 
 
@@ -56,6 +76,12 @@ struct ScreenFade_t
 	short			fadeFlags;		// flags
 	byte			r, g, b, a;		// fade to color ( max alpha )
 };
+
+inline ScreenShake_t::ScreenShake_t( ShakeCommand_t _command, float _amplitude, float _frequency, 
+									float _duration, const Vector &_direction ) :
+	command(_command), amplitude(_amplitude), frequency(_frequency),
+		duration(_duration), direction(_direction)
+{}
 
 
 #endif // SHAKE_H

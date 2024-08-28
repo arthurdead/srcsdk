@@ -10,9 +10,8 @@
 
 #include "particle_util.h"
 #include "baseparticleentity.h"
-#include "particle_prototype.h"
 
-class C_ParticleTrail : public C_BaseParticleEntity, public IPrototypeAppEffect
+class C_ParticleTrail : public C_BaseParticleEntity
 {
 public:
 
@@ -33,7 +32,7 @@ public:
 public:
 	virtual	void	OnDataChanged(DataUpdateType_t updateType);
 
-	virtual void	Start( CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs );
+	virtual void	Start( CParticleMgr *pParticleMgr );
 
 	int				m_nAttachment;
 	float			m_flLifetime;			// How long this effect will last

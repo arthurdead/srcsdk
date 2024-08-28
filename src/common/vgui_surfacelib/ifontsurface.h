@@ -8,9 +8,7 @@
 #ifndef IFONTSURFACE_H
 #define IFONTSURFACE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "mathlib/vector2d.h"  // must be before the namespace line
 

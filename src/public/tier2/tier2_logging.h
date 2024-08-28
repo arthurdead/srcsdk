@@ -7,9 +7,7 @@
 #ifndef TIER2_LOGGING_H
 #define TIER2_LOGGING_H
 
-#if defined( COMPILER_MSVC )
 #pragma once
-#endif
 
 #include "logging.h"
 

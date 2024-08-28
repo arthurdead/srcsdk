@@ -407,7 +407,7 @@ DBG_INTERFACE struct SDL_Window * GetAssertDialogParent();
 #define MESSAGE(msg) message(__FILE__ "(" V_STRINGIFY(__LINE__) "): " msg)
 
 
-#if !defined( _X360 ) || !defined( _RETAIL )
+#if !defined( _RETAIL )
 
 /* These are always compiled in */
 DBG_INTERFACE void Msg( PRINTF_FORMAT_STRING const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
@@ -461,7 +461,7 @@ inline void ErrorV( PRINTF_FORMAT_STRING const tchar *pMsg, va_list arglist ) {}
 		Error msg;			\
 	}
 
-#if !defined( _X360 ) || !defined( _RETAIL )
+#if !defined( _RETAIL )
 
 /* A couple of super-common dynamic spew messages, here for convenience */
 /* These looked at the "developer" group */
@@ -563,10 +563,10 @@ public:
 // We're using an ancient version of GCC that can't quite handle some
 // of our complicated templates properly.  Use some preprocessor trickery
 // to workaround this
-#ifdef __GNUC__
+#if defined __GNUC__ && 0
 	#define COMPILE_TIME_ASSERT( pred ) typedef int UNIQUE_ID[ (pred) ? 1 : -1 ]
 #else
-	#if _MSC_VER >= 1600
+	#if _MSC_VER >= 1600 || defined __GNUC__
 	// If available use static_assert instead of weird language tricks. This
 	// leads to much more readable messages when compile time assert constraints
 	// are violated.
@@ -684,7 +684,7 @@ private:
 //
 // Purpose: Embed debug info in each file.
 //
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 
 	#ifdef _DEBUG
 		#pragma comment(compiler)

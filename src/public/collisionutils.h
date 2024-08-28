@@ -189,6 +189,25 @@ bool IsBoxIntersectingSphereExtents( const Vector& boxCenter, const Vector& boxH
 									const Vector& center, float radius );
 
 //-----------------------------------------------------------------------------
+// Returns true if a box intersects with a sphere
+// NOTE: f4RadiusSq must have the radius sq in all components
+//-----------------------------------------------------------------------------
+FORCEINLINE bool IsBoxIntersectingSphere( const Vector& boxMin, const Vector& boxMax, 
+											 const fltx4& f4Center, const fltx4& f4RadiusSq )
+{
+	// See Graphics Gems, box-sphere intersection
+	fltx4 f4Mins = LoadUnalignedSIMD( &boxMin.x );
+	fltx4 f4Maxs = LoadUnalignedSIMD( &boxMax.x );
+	fltx4 f4MinDelta = SubSIMD( f4Mins, f4Center );
+	fltx4 f4MaxDelta = SubSIMD( f4Center, f4Maxs );
+	f4MinDelta = MaxSIMD( f4MinDelta, Four_Zeros );
+	f4MaxDelta = MaxSIMD( f4MaxDelta, Four_Zeros );
+	fltx4 f4Delta = AddSIMD( f4MinDelta, f4MaxDelta );
+	fltx4 f4DistSq = Dot3SIMD( f4Delta, f4Delta );
+	return IsAllGreaterThan( f4RadiusSq, f4DistSq );
+}
+
+//-----------------------------------------------------------------------------
 // returns true if there's an intersection between ray and sphere
 //-----------------------------------------------------------------------------
 bool IsRayIntersectingSphere( const Vector &vecRayOrigin, const Vector &vecRayDelta, 
@@ -219,13 +238,6 @@ bool IsBoxIntersectingBox( const Vector& boxMin1, const Vector& boxMax1,
 bool IsBoxIntersectingBoxExtents( const Vector& boxCenter1, const Vector& boxHalfDiagonal1, 
 						   const Vector& boxCenter2, const Vector& boxHalfDiagonal2 );
 
-
-#ifdef _X360
-// inline version:
-#include "mathlib/ssemath.h"
-inline bool IsBoxIntersectingBoxExtents( const fltx4 boxCenter1, const fltx4 boxHalfDiagonal1, 
-								 const fltx4 boxCenter2, const fltx4 boxHalfDiagonal2 );
-#endif
 
 //-----------------------------------------------------------------------------
 // 
@@ -259,17 +271,10 @@ bool FASTCALL IsBoxIntersectingRay( const Vector& boxMin, const Vector& boxMax,
 
 // On the PC, we can't pass fltx4's in registers like this. On the x360, it is 
 // much better if we do.
-#ifdef _X360
-bool FASTCALL IsBoxIntersectingRay( fltx4 boxMin, fltx4 boxMax, 
-								   fltx4 origin, fltx4 delta, fltx4 invDelta, // ray parameters
-								   fltx4 vTolerance = LoadZeroSIMD() ///< eg from ReplicateX4(flTolerance)
-								   );
-#else
 bool FASTCALL IsBoxIntersectingRay( const fltx4 &boxMin, const fltx4 &boxMax, 
 								   const fltx4 & origin, const fltx4 & delta, const fltx4 & invDelta, // ray parameters
 								   const fltx4 & vTolerance = Four_Zeros ///< eg from ReplicateX4(flTolerance)
 								   );
-#endif
 
 bool inline FASTCALL IsBoxIntersectingRay( const fltx4& boxMin, const fltx4& boxMax, 
 								   const fltx4& origin, const fltx4& delta, float flTolerance = 0.0f )
@@ -419,30 +424,29 @@ bool RayHasFullyContainedIntersectionWithQuad( const Ray_t &ray,
 											  const Vector &vQuadExtent1_Normalized, float fQuadExtent1Length, 
 											  const Vector &vQuadExtent2_Normalized, float fQuadExtent2Length );
 
+//-----------------------------------------------------------------------------
+// Compute the intersection of a line and a circle
+//-----------------------------------------------------------------------------
+bool LineCircleIntersection(const Vector2D &center,
+							const float radius,
+							const Vector2D &vLinePt,
+							const Vector2D &vLineDir,
+							float *fIntersection1,
+							float *fIntersection2);
 
+
+//-----------------------------------------------------------------------------
+// Find the intersection of a ray with an axis-aligned cylinder
+//-----------------------------------------------------------------------------
+bool IntersectRayWithAACylinder( const Ray_t &ray, 
+								 const Vector &center, 
+								 float radius, 
+								 float height, 
+								 CBaseTrace *pTrace );
 
 //-----------------------------------------------------------------------------
 // INLINES
 //-----------------------------------------------------------------------------
-
-
-#ifdef _X360
-inline bool IsBoxIntersectingBoxExtents( const fltx4 boxCenter1, const fltx4 boxHalfDiagonal1, 
-								 const fltx4 boxCenter2, const fltx4 boxHalfDiagonal2 )
-{
-	fltx4 vecDelta, vecSize;
-
-	vecDelta = SubSIMD(boxCenter1, boxCenter2);
-	vecSize = AddSIMD(boxHalfDiagonal1, boxHalfDiagonal2);
-
-	uint condition;
-	XMVectorInBoundsR(&condition, vecDelta, vecSize);
-	// we want the top three words to be all 1's ; that means in bounds
-
-
-	return XMComparisonAllInBounds( condition );
-}
-#endif
 
 
 #endif // COLLISIONUTILS_H

@@ -1,8 +1,6 @@
 #ifndef	C_WEAPONCUSTOM_H
 #define	C_WEAPONCUSTOM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #ifdef HL2_CLIENT_DLL
 #include "hl2/c_basehlcombatweapon.h"

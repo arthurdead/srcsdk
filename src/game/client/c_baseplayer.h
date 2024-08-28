@@ -26,18 +26,12 @@
 #include "vphysics_interface.h"
 #include "baseplayer_shared.h"
 #include "c_colorcorrection.h"
-
-#if defined USES_ECON_ITEMS
-#include "econ_item.h"
-#include "game_item_schema.h"
-#include "econ_item_view.h"
-#endif
+#include "c_postprocesscontroller.h"
 
 class C_BaseCombatWeapon;
 class C_BaseViewModel;
 class C_FuncLadder;
 class CFlashlightEffect;
-class C_EconWearable;
 
 extern int g_nKillCamMode;
 extern int g_nKillCamTarget1;
@@ -63,6 +57,12 @@ public:
 #define CHASE_CAM_DISTANCE_MAX	96.0f
 #define WALL_OFFSET				6.0f
 
+enum PlayerRenderMode_t
+{
+	PLAYER_RENDER_NONE = 0,
+	PLAYER_RENDER_FIRSTPERSON,
+	PLAYER_RENDER_THIRDPERSON,
+};
 
 bool IsInFreezeCam( void );
 
@@ -83,10 +83,9 @@ public:
 	virtual void	Spawn( void );
 	virtual void	SharedSpawn(); // Shared between client and server.
 	virtual bool	GetSteamID( CSteamID *pID );
-		
-#ifdef SecobMod__ALLOW_PLAYER_MODELS_IN_VEHICLES
+	Class_T		Classify( void ) { return CLASS_PLAYER; }
+
 	virtual const Vector &GetRenderOrigin();
-#endif //SecobMod__ALLOW_PLAYER_MODELS_IN_VEHICLES
 
 	// IClientEntity overrides.
 	virtual void	OnPreDataChanged( DataUpdateType_t updateType );
@@ -96,10 +95,6 @@ public:
 	virtual void	PostDataUpdate( DataUpdateType_t updateType );
 	
 	virtual void	ReceiveMessage( int classID, bf_read &msg );
-
-	virtual void	OnRestore();
-
-	virtual void	AddEntity( void );
 
 	virtual void	MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
 
@@ -122,13 +117,17 @@ public:
 	void				SmoothViewOnStairs( Vector& eyeOrigin );
 	virtual float		CalcRoll (const QAngle& angles, const Vector& velocity, float rollangle, float rollspeed);
 	void				CalcViewRoll( QAngle& eyeAngles );
+	virtual void		CalcViewBob( Vector& eyeOrigin );
 	void				CreateWaterEffects( void );
 
 	virtual void			SetPlayerUnderwater( bool state );
 	void					UpdateUnderwaterState( void );
 	bool					IsPlayerUnderwater( void ) { return m_bPlayerUnderwater; }
 
+	virtual	C_BaseCombatCharacter *ActivePlayerCombatCharacter( void ) { return this; }
+
 	virtual Vector			Weapon_ShootPosition();
+	virtual bool			Weapon_CanUse( C_BaseCombatWeapon *pWeapon );
 	virtual void			Weapon_DropPrimary( void ) {}
 
 	virtual Vector			GetAutoaimVector( float flScale );
@@ -189,6 +188,17 @@ public:
 	// Flashlight
 	void	Flashlight( void );
 	void	UpdateFlashlight( void );
+	void	TurnOffFlashlight( void );	// TERROR
+	virtual const char *GetFlashlightTextureName( void ) const { return NULL; } // TERROR
+	virtual float GetFlashlightFOV( void ) const { return 0.0f; } // TERROR
+	virtual float GetFlashlightFarZ( void ) const { return 0.0f; } // TERROR
+	virtual float GetFlashlightLinearAtten( void ) const { return 0.0f; } // TERROR
+	virtual bool CastsFlashlightShadows( void ) const { return true; } // TERROR
+	virtual void GetFlashlightOffset( const Vector &vecForward, const Vector &vecRight, const Vector &vecUp, Vector *pVecOffset ) const;
+	Vector	m_vecFlashlightOrigin;
+	Vector	m_vecFlashlightForward;
+	Vector	m_vecFlashlightUp;
+	Vector	m_vecFlashlightRight;
 
 	// Weapon selection code
 	virtual bool				IsAllowedToSwitchWeapons( void ) { return !IsObserver(); }
@@ -200,12 +210,14 @@ public:
 	virtual C_BaseAnimating*	GetRenderedWeaponModel();
 
 	virtual bool				IsOverridingViewmodel( void ) { return false; };
-	virtual int					DrawOverriddenViewmodel( C_BaseViewModel *pViewmodel, int flags ) { return 0; };
+	virtual int					ViewModel_DrawModel( C_BaseViewModel *pViewmodel, int flags, const RenderableInstance_t &instance ) { return 0; };
 
 	virtual float				GetDefaultAnimSpeed( void ) { return 1.0; }
 
 	void						SetMaxSpeed( float flMaxSpeed ) { m_flMaxspeed = flMaxSpeed; }
 	float						MaxSpeed() const		{ return m_flMaxspeed; }
+
+	bool	ShouldPlayerDrawParticles( void );
 
 	// Should this object cast shadows?
 	virtual ShadowType_t		ShadowCastType() { return SHADOWS_NONE; }
@@ -215,7 +227,9 @@ public:
 		return false;
 	}
 
+	void						CheckForLocalPlayer();
 
+	static bool					IsLocalPlayer( const C_BaseEntity *pl );
 	bool						IsLocalPlayer( void ) const;
 
 	// Global/static methods
@@ -223,33 +237,38 @@ public:
 	static bool					LocalPlayerInFirstPersonView();
 	static bool					ShouldDrawLocalPlayer();
 	static C_BasePlayer			*GetLocalPlayer( void );
-	int							GetUserID( void );
+	int							GetUserID( void ) const;
 	virtual bool				CanSetSoundMixer( void );
-	virtual int					GetVisionFilterFlags( bool bWeaponsCheck = false ) { return 0x00; }
-	bool						HasVisionFilterFlags( int nFlags, bool bWeaponsCheck = false ) { return ( GetVisionFilterFlags( bWeaponsCheck ) & nFlags ) == nFlags; }
-	virtual void				CalculateVisionUsingCurrentFlags( void ) {}
+	// return the entity used for soundscape radius checks
+	virtual C_BaseEntity		*GetSoundscapeListener();
+	virtual int					GetVisionFilterFlags();
+	bool						HasVisionFilterFlags( int nFlags ) { return ( GetVisionFilterFlags() & nFlags ) == nFlags; }
+	virtual void				CalculateVisionUsingCurrentFlags( void );
 	void						BuildFirstPersonMeathookTransformations( CStudioHdr *hdr, Vector *pos, Quaternion q[], const matrix3x4_t& cameraTransform, int boneMask, CBoneBitList &boneComputed, const char *pchHeadBoneName );
 
 	// Specific queries about this player.
 	bool						InFirstPersonView();
 	bool						ShouldDrawThisPlayer();
 
-	// Called by the view model if its rendering is being overridden.
-	virtual bool				ViewModel_IsTransparent( void );
-	virtual bool				ViewModel_IsUsingFBTexture( void );
+	virtual IClientModelRenderable*	GetClientModelRenderable();
+	virtual bool				PreRender();
 
-#if !defined( NO_ENTITY_PREDICTION )
+	// Called by the view model if its rendering is being overridden.
+	virtual uint8 ViewModel_OverrideRenderAlpha( uint8 nAlpha );
+	virtual RenderableTranslucencyType_t ViewModel_ComputeTranslucencyType( void );
+	virtual int				ViewModel_GetRenderFlags( void );
+
 	void						AddToPlayerSimulationList( C_BaseEntity *other );
 	void						SimulatePlayerSimulatedEntities( void );
 	void						RemoveFromPlayerSimulationList( C_BaseEntity *ent );
 	void						ClearPlayerSimulationList( void );
-#endif
 
 	virtual void				PhysicsSimulate( void );
 	virtual unsigned int	PhysicsSolidMaskForEntity( void ) const { return MASK_PLAYERSOLID; }
 
 	// Prediction stuff
 	virtual bool				ShouldPredict( void );
+	virtual C_BasePlayer		*GetPredictionOwner( void );
 
 	virtual void				PreThink( void );
 	virtual void				PostThink( void );
@@ -283,37 +302,41 @@ public:
 	void						UpdateButtonState( int nUserCmdButtonMask );
 	int							GetImpulse( void ) const;
 
-	virtual void				Simulate();
+	virtual bool				Simulate();
 
 	virtual bool				ShouldInterpolate();
 
 	virtual bool				ShouldDraw();
-	virtual int					DrawModel( int flags );
+	virtual int					DrawModel( int flags, const RenderableInstance_t &instance );
 
 	// Called when not in tactical mode. Allows view to be overriden for things like driving a tank.
 	virtual void				OverrideView( CViewSetup *pSetup );
+
+	C_BaseEntity				*GetViewEntity( void ) const { return m_hViewEntity; }
 
 	// returns the player name
 	const char *				GetPlayerName();
 	virtual const Vector		GetPlayerMins( void ) const; // uses local player
 	virtual const Vector		GetPlayerMaxs( void ) const; // uses local player
 
+	virtual void				UpdateCollisionBounds( void );
+
 	// Is the player dead?
 	bool				IsPlayerDead();
 	bool				IsPoisoned( void ) { return m_Local.m_bPoisoned; }
 
-	C_BaseEntity				*GetUseEntity();
+	virtual C_BaseEntity* GetUseEntity( void ) const;
+	virtual C_BaseEntity* GetPotentialUseEntity( void ) const;
 
 	// Vehicles...
 	IClientVehicle			*GetVehicle();
+	const IClientVehicle	*GetVehicle() const;
 
 	bool			IsInAVehicle() const	{ return ( NULL != m_hVehicle.Get() ) ? true : false; }
 	virtual void	SetVehicleRole( int nRole );
 	void					LeaveVehicle( void );
 
 	bool					UsingStandardWeaponsInVehicle( void );
-
-	virtual void			SetAnimation( PLAYER_ANIM playerAnim );
 
 	float					GetTimeBase( void ) const;
 	float					GetFinalPredictedTime() const;
@@ -327,7 +350,7 @@ public:
 	int CurrentCommandNumber() const;
 	const CUserCmd *GetCurrentUserCommand() const;
 
-	const QAngle& GetPunchAngle();
+	virtual const QAngle&	GetPunchAngle();
 	void SetPunchAngle( const QAngle &angle );
 
 	float					GetWaterJumpTime() const;
@@ -368,7 +391,12 @@ public:
 
 	surfacedata_t *GetSurfaceData( void ) { return m_pSurfaceData; }
 
+	void	ForceButtons( int nButtons );
+	void	UnforceButtons( int nButtons );
+
 	void SetLadderNormal( const Vector &vecLadderNormal ) { m_vecLadderNormal = vecLadderNormal; }
+	const Vector &GetLadderNormal( void ) const { return m_vecLadderNormal; }
+	int GetLadderSurfaceProps( void ) const { return m_ladderSurfaceProps; }
 
 	// Hints
 	virtual CHintSystem		*Hints( void ) { return NULL; }
@@ -379,26 +407,22 @@ public:
 	virtual	IMaterial *GetHeadLabelMaterial( void );
 
 	// Fog
-	fogparams_t				*GetFogParams( void ) { return &m_CurrentFog; }
+	virtual fogparams_t				*GetFogParams( void ) { return &m_CurrentFog; }
 	void					FogControllerChanged( bool bSnap );
 	void					UpdateFogController( void );
 	void					UpdateFogBlend( void );
 
+	C_PostProcessController* GetActivePostProcessController() const;
+	C_ColorCorrection*		GetActiveColorCorrection() const;
+
 	float					GetFOVTime( void ){ return m_flFOVTime; }
+
+	PlayerRenderMode_t 		GetPlayerRenderMode();
 
 	virtual void			OnAchievementAchieved( int iAchievement ) {}
 	
 	bool					ShouldAnnounceAchievement( void ){ return m_flNextAchievementAnnounceTime < gpGlobals->curtime; }
 	void					SetNextAchievementAnnounceTime( float flTime ){ m_flNextAchievementAnnounceTime = flTime; }
-
-	C_ColorCorrection*		GetActiveColorCorrection() const;
-
-#if defined USES_ECON_ITEMS
-	// Wearables
-	virtual void			UpdateWearables();
-	C_EconWearable			*GetWearable( int i ) { return m_hMyWearables[i]; }
-	int						GetNumWearables( void ) { return m_hMyWearables.Count(); }
-#endif
 
 	bool					HasFiredWeapon( void ) { return m_bFiredWeapon; }
 	void					SetFiredWeapon( bool bFlag ) { m_bFiredWeapon = bFlag; }
@@ -410,14 +434,20 @@ protected:
 	EHANDLE					m_hOldFogController;
 
 public:
+	// RecvProxies
+	static void RecvProxy_LocalOriginXY( const CRecvProxyData *pData, void *pStruct, void *pOut );
+	static void RecvProxy_LocalOriginZ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+	static void RecvProxy_NonLocalOriginXY( const CRecvProxyData *pData, void *pStruct, void *pOut );
+	static void RecvProxy_NonLocalOriginZ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+	static void RecvProxy_NonLocalCellOriginXY( const CRecvProxyData *pData, void *pStruct, void *pOut );
+	static void RecvProxy_NonLocalCellOriginZ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+
+	virtual bool ShouldRegenerateOriginFromCellBits() const;
+
 	int m_StuckLast;
 	
 	// Data for only the local player
 	CNetworkVarEmbedded( CPlayerLocalData, m_Local );
-
-#if defined USES_ECON_ITEMS
-	CNetworkVarEmbedded( CAttributeList, m_AttributeList );
-#endif
 
 	// Data common to all other players, too
 	CPlayerState			pl;
@@ -439,9 +469,15 @@ public:
 	int				m_afButtonPressed;
 	int				m_afButtonReleased;
 
+	int				m_afButtonForced;	// These are forced onto the player's inputs
+
 	int				m_nButtons;
 
+	int						m_nOldTickBase;
+
 	CUserCmd		*m_pCurrentCommand;
+
+	EHANDLE			m_hViewEntity;
 
 	// Movement constraints
 	EHANDLE			m_hConstraintEntity;
@@ -449,6 +485,7 @@ public:
 	float			m_flConstraintRadius;
 	float			m_flConstraintWidth;
 	float			m_flConstraintSpeedFactor;
+	bool			m_bConstraintPastRadius;
 
 protected:
 
@@ -518,7 +555,8 @@ private:
 	int				m_nImpulse;
 
 	float			m_flSwimSoundTime;
-	Vector			m_vecLadderNormal;
+	CNetworkVector( m_vecLadderNormal );
+	CNetworkVar( int, m_ladderSurfaceProps );
 	
 	QAngle			m_vecOldViewAngles;
 
@@ -534,14 +572,12 @@ private:
 
 
 	// Player flashlight dynamic light pointers
-	CFlashlightEffect *m_pFlashlight;
+	bool			m_bFlashlightEnabled;
 
 	typedef CHandle<C_BaseCombatWeapon> CBaseCombatWeaponHandle;
 	CNetworkVar( CBaseCombatWeaponHandle, m_hLastWeapon );
 
-#if !defined( NO_ENTITY_PREDICTION )
 	CUtlVector< CHandle< C_BaseEntity > > m_SimulatedByThisPlayer;
-#endif
 
 	// players own view models, left & right hand
 	CHandle< C_BaseViewModel >	m_hViewModel[ MAX_VIEWMODELS ];		
@@ -569,15 +605,7 @@ private:
 
 	friend class CPrediction;
 
-	// HACK FOR TF2 Prediction
-	friend class CTFGameMovementRecon;
 	friend class CGameMovement;
-	friend class CTFGameMovement;
-	friend class CHL1GameMovement;
-	friend class CCSGameMovement;
-	friend class CHL2GameMovement;
-	friend class CDODGameMovement;
-	friend class CPortalGameMovement;
 	
 	// Accessors for gamemovement
 	float GetStepSize( void ) const { return m_Local.m_flStepSize; }
@@ -620,13 +648,11 @@ protected:
 	int				m_nForceVisionFilterFlags; // Force our vision filter to a specific setting
 	int				m_nLocalPlayerVisionFlags;
 
-#if defined USES_ECON_ITEMS
-	// Wearables
-	CUtlVector<CHandle<C_EconWearable > >	m_hMyWearables;
-#endif
+	bool					m_bIsLocalPlayer;
 
 	CNetworkHandle( C_ColorCorrection, m_hColorCorrectionCtrl );		// active FXVolume color correction
 	CNetworkHandle( C_BaseEntity, m_hTonemapController );
+	CNetworkHandle( C_PostProcessController, m_hPostProcessCtrl );	// active postprocessing controller
 
 	friend void GetTonemapSettingsFromEnvTonemapController();
 
@@ -649,6 +675,12 @@ public:
 	bool  ShouldGoSouth( Vector vNPCForward, Vector vNPCRight ); //Such a bad name.
 
 	void SetOldPlayerZ( float flOld ) { m_flOldPlayerZ = flOld;	}
+
+	const fogplayerparams_t& GetPlayerFog() const { return m_Local.m_PlayerFog; }
+
+private:
+	friend class CMoveHelperClient;
+
 };
 
 EXTERN_RECV_TABLE(DT_BasePlayer);
@@ -668,11 +700,27 @@ inline C_BasePlayer *ToBasePlayer( C_BaseEntity *pEntity )
 	return static_cast<C_BasePlayer *>( pEntity );
 }
 
-inline C_BaseEntity *C_BasePlayer::GetUseEntity() 
+inline const C_BasePlayer *ToBasePlayer( const C_BaseEntity *pEntity )
+{
+	if ( !pEntity || !pEntity->IsPlayer() )
+		return NULL;
+
+#if _DEBUG
+	Assert( dynamic_cast<const C_BasePlayer *>( pEntity ) != NULL );
+#endif
+
+	return static_cast<const C_BasePlayer *>( pEntity );
+}
+
+inline C_BaseEntity *C_BasePlayer::GetUseEntity() const
 { 
 	return m_hUseEntity;
 }
 
+inline C_BaseEntity* C_BasePlayer::GetPotentialUseEntity( void ) const 
+{ 
+	return GetUseEntity();
+}
 
 inline IClientVehicle *C_BasePlayer::GetVehicle() 
 { 
@@ -699,6 +747,8 @@ inline C_CommandContext* C_BasePlayer::GetCommandContext()
 inline int CBasePlayer::CurrentCommandNumber() const
 {
 	Assert( m_pCurrentCommand );
+	if ( !m_pCurrentCommand )
+		return 0;
 	return m_pCurrentCommand->command_number;
 }
 
@@ -711,6 +761,11 @@ inline const CUserCmd *CBasePlayer::GetCurrentUserCommand() const
 inline C_ColorCorrection* C_BasePlayer::GetActiveColorCorrection() const
 {
 	return m_hColorCorrectionCtrl.Get();
+}
+
+inline C_PostProcessController* C_BasePlayer::GetActivePostProcessController() const
+{
+	return m_hPostProcessCtrl.Get();
 }
 
 #endif // C_BASEPLAYER_H

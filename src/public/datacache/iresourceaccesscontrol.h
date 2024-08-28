@@ -10,9 +10,7 @@
 #ifndef IRESOURCEACCESSCONTROL_H
 #define IRESOURCEACCESSCONTROL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "tier0/dbg.h"

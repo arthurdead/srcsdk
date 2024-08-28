@@ -34,6 +34,15 @@ typedef unsigned short MDLHandle_t;
 class CUtlBuffer;
 class IClientRenderable;
 
+//-----------------------------------------------------------------------------
+// Indicates the type of translucency of an unmodulated renderable
+//-----------------------------------------------------------------------------
+enum RenderableTranslucencyType_t
+{
+	RENDERABLE_IS_OPAQUE = 0,
+	RENDERABLE_IS_TRANSLUCENT,
+	RENDERABLE_IS_TWO_PASS,	// has both translucent and opaque sub-partsa
+};
 
 //-----------------------------------------------------------------------------
 // Purpose: a callback class that is notified when a model has finished loading

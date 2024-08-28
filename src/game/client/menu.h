@@ -5,8 +5,8 @@
 // $NoKeywords: $
 //=============================================================================//
 
-#ifndef HUD_MENU_H
-#define HUD_MENU_H
+#ifndef MENU_H
+#define MENU_H
 #pragma once
 
 #include "utlvector.h"

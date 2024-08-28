@@ -27,6 +27,17 @@ class CBoneList;
 //-----------------------------------------------------------------------------
 // Standard messages
 //-----------------------------------------------------------------------------
+struct EffectRecordingState_t
+{
+	bool m_bVisible : 1;
+	bool m_bThirdPerson : 1;
+	Color m_Color;
+	float m_Scale;
+	const char *m_pMaterialName;
+	int m_nAttachment;
+	Vector m_vecAttachment; // only used if m_nAttachment is -1
+};
+
 struct BaseEntityRecordingState_t
 {
 	BaseEntityRecordingState_t() :	
@@ -59,6 +70,36 @@ struct SpriteRecordingState_t
 	bool m_nRenderFX;
 	Color m_Color;
 	float m_flProxyRadius;
+};
+
+struct BaseAnimatingHighLevelRecordingState_t
+{
+	BaseAnimatingHighLevelRecordingState_t()
+	:	m_bClearIkTargets( false ),
+		m_bIsRagdoll( false ),
+		m_bShouldCreateIkContext( false ),
+		m_nNumPoseParams( 0 ),
+		m_flCycle( 0.0f ),
+		m_flPlaybackRate( 1.0f ),
+		m_flCycleRate( 0.0f ),
+		m_nFrameCount( 0 ),
+		m_bInterpEffectActive( false )
+	{
+	}
+
+	bool m_bClearIkTargets;
+	bool m_bIsRagdoll;
+	bool m_bShouldCreateIkContext;
+	int m_nNumPoseParams;
+
+	float m_flCycle;
+	float m_flPlaybackRate;
+	float m_flCycleRate;
+	int m_nFrameCount;
+
+	float m_flPoseParameter[MAXSTUDIOPOSEPARAM];
+
+	bool m_bInterpEffectActive;
 };
 
 struct BaseAnimatingRecordingState_t

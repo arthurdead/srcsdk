@@ -6,9 +6,7 @@
 
 #ifndef ENTITY_TOOLS_SERVER_H
 #define ENTITY_TOOLS_SERVER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "toolframework/itoolentity.h"

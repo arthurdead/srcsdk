@@ -2,9 +2,7 @@
 
 #ifndef VOLUME_CLOUDS_HELPER_H
 #define VOLUME_CLOUDS_HELPER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <string.h>
 

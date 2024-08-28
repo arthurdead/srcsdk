@@ -50,4 +50,4 @@ void CAnimateSpecificTexture::OnBind( void *pC_BaseEntity )
 	//else do nothing
 }
 
-EXPOSE_INTERFACE( CAnimateSpecificTexture, IMaterialProxy, "AnimateSpecificTexture" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CAnimateSpecificTexture, AnimateSpecificTexture );

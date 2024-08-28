@@ -64,6 +64,8 @@ protected:
 	unsigned long	m_Index;
 };
 
+inline const CBaseHandle NULL_HANDLE;
+
 
 #include "ihandleentity.h"
 

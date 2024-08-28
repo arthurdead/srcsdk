@@ -27,14 +27,12 @@ enum ClearFlags_t
 	VIEW_CLEAR_STENCIL = 0x20,
 };
 
-enum StereoEye_t
+enum MotionBlurMode_t
 {
-	STEREO_EYE_MONO = 0,
-	STEREO_EYE_LEFT = 1,
-	STEREO_EYE_RIGHT = 2,
-	STEREO_EYE_MAX = 3,
+	MOTION_BLUR_DISABLE = 1,
+	MOTION_BLUR_GAME = 2,			// Game uses real-time inter-frame data
+	MOTION_BLUR_SFM = 3				// Use SFM data passed in CViewSetup structure
 };
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Renderer setup data.  
@@ -52,7 +50,7 @@ public:
 		m_bCacheFullSceneState = false;
 //		m_bUseExplicitViewVector = false;
         m_bViewToProjectionOverride = false;
-		m_eStereoEye = STEREO_EYE_MONO;
+		reserved = 0;
 	}
 
 // shared by 2D & 3D views
@@ -69,7 +67,7 @@ public:
 	// height of view window
 	int			height;				
 	// which eye are we rendering?
-	StereoEye_t m_eStereoEye;
+	int reserved;
 	int			m_nUnscaledHeight;
 
 // the rest are only used by 3D views
@@ -129,6 +127,57 @@ public:
     VMatrix     m_ViewToProjection;
 };
 
+class CViewSetupEx : public CViewSetup
+{
+public:
+	CViewSetupEx()
+		: CViewSetup()
+	{
+		// These match mat_dof convars
+		m_flNearBlurDepth = 20.0;
+		m_flNearFocusDepth = 100.0;
+		m_flFarFocusDepth = 250.0;
+		m_flFarBlurDepth = 1000.0;
+		m_flNearBlurRadius = 10.0;
+		m_flFarBlurRadius = 5.0;
+		m_nDoFQuality = 0;
+
+		m_nMotionBlurMode = MOTION_BLUR_GAME;
+		m_bDoDepthOfField = false;
+		m_bHDRTarget = false;
+		m_bDrawWorldNormal = false;
+		m_bCullFrontFaces = false;
+		m_bCustomViewMatrix = false;
+		m_bRenderFlashlightDepthTranslucents = false;
+	}
+
+	bool		m_bCustomViewMatrix;
+	matrix3x4_t	m_matCustomViewMatrix;
+
+	// Camera settings to control depth of field
+	float		m_flNearBlurDepth;
+	float		m_flNearFocusDepth;
+	float		m_flFarFocusDepth;
+	float		m_flFarBlurDepth;
+	float		m_flNearBlurRadius;
+	float		m_flFarBlurRadius;
+	int			m_nDoFQuality;
+
+	// Camera settings to control motion blur
+	MotionBlurMode_t	m_nMotionBlurMode;
+	float	m_flShutterTime;				// In seconds
+	Vector	m_vShutterOpenPosition;			// Start of frame or "shutter open"
+	QAngle	m_shutterOpenAngles;			//
+	Vector	m_vShutterClosePosition;		// End of frame or "shutter close"
+	QAngle	m_shutterCloseAngles;			// 
+
+	bool		m_bDoDepthOfField:1;
+	bool		m_bHDRTarget:1;
+	bool		m_bDrawWorldNormal:1;
+	bool		m_bCullFrontFaces:1;
+
+	bool		m_bRenderFlashlightDepthTranslucents:1;
+};
 
 
 #endif // VIEW_SHARED_H

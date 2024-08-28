@@ -12,6 +12,7 @@
 #include "engine/ivdebugoverlay.h"
 #include "datacache/imdlcache.h"
 #include "eventlist.h"
+#include "npcevent.h"
 
 #include "dt_utlvector_recv.h"
 
@@ -20,7 +21,99 @@
 
 extern ConVar r_sequence_debug;
 
-C_BaseAnimatingOverlay::C_BaseAnimatingOverlay()
+template class CInterpolatedVar<CAnimationLayer>;
+
+
+mstudioevent_t *GetEventIndexForSequence( mstudioseqdesc_t &seqdesc );
+
+
+void C_AnimationLayer::SetOwner( C_BaseAnimatingOverlay *pOverlay )
+{
+	m_pOwner = pOverlay;
+}
+
+C_BaseAnimatingOverlay *C_AnimationLayer::GetOwner() const
+{
+	return m_pOwner;
+}
+
+void C_AnimationLayer::Reset()
+{
+	if ( m_pOwner )
+	{
+		int nFlags = 0;
+		if ( m_nSequence != 0 || m_flWeight != 0.0f )
+		{
+			nFlags |= BOUNDS_CHANGED;
+		}
+		if ( m_flCycle != 0.0f )
+		{
+			nFlags |= ANIMATION_CHANGED;
+		}
+		if ( nFlags )
+		{
+			m_pOwner->InvalidatePhysicsRecursive( nFlags );
+		}
+	}
+
+	m_nSequence = 0;
+	m_flPrevCycle = 0;
+	m_flWeight = 0;
+	m_flPlaybackRate = 0;
+	m_flCycle = 0;
+	m_flLayerAnimtime = 0;
+	m_flLayerFadeOuttime = 0;
+
+	m_flBlendIn = 0;
+	m_flBlendOut = 0;
+	m_bClientBlend = false;
+}
+
+void C_AnimationLayer::SetSequence( int nSequence )
+{
+	if ( m_pOwner && m_nSequence != nSequence )
+	{
+		m_pOwner->InvalidatePhysicsRecursive( BOUNDS_CHANGED );
+	}
+	m_nSequence = nSequence;
+}
+
+void C_AnimationLayer::SetCycle( float flCycle )
+{
+	if ( m_pOwner && m_flCycle != flCycle )
+	{
+		m_pOwner->InvalidatePhysicsRecursive( ANIMATION_CHANGED );
+	}
+	m_flCycle = flCycle;
+}
+
+void C_AnimationLayer::SetOrder( int order )
+{
+	if ( m_pOwner && ( m_nOrder != order ) )
+	{
+		if ( m_nOrder == C_BaseAnimatingOverlay::MAX_OVERLAYS || order == C_BaseAnimatingOverlay::MAX_OVERLAYS )
+		{
+			m_pOwner->InvalidatePhysicsRecursive( BOUNDS_CHANGED );
+		}
+	}
+	m_nOrder = order;
+}
+
+
+void C_AnimationLayer::SetWeight( float flWeight )
+{
+	if ( m_pOwner && m_flWeight != flWeight )
+	{
+		if ( m_flWeight == 0.0f || flWeight == 0.0f )
+		{
+			m_pOwner->InvalidatePhysicsRecursive( BOUNDS_CHANGED );
+		}
+	}
+	m_flWeight = flWeight;
+}
+
+C_BaseAnimatingOverlay::C_BaseAnimatingOverlay(bool bClientSide)
+	: C_BaseAnimating(bClientSide)
 {
 	// FIXME: where does this initialization go now?
 	//for ( int i=0; i < MAX_OVERLAYS; i++ )
@@ -33,16 +126,43 @@ C_BaseAnimatingOverlay::C_BaseAnimatingOverlay()
 	// AddVar( m_Layer, &m_iv_AnimOverlay, LATCH_ANIMATION_VAR );
 }
 
+C_BaseAnimatingOverlay::C_BaseAnimatingOverlay()
+	: C_BaseAnimatingOverlay(false)
+{
+}
+
 #undef CBaseAnimatingOverlay
 
+void RecvProxy_SequenceChanged( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	CAnimationLayer *pLayer = (CAnimationLayer *)pStruct;
+	pLayer->SetSequence( pData->m_Value.m_Int );
+}
 
+void RecvProxy_WeightChanged( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	CAnimationLayer *pLayer = (CAnimationLayer *)pStruct;
+	pLayer->SetWeight( pData->m_Value.m_Float );
+}
+
+void RecvProxy_CycleChanged( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	CAnimationLayer *pLayer = (CAnimationLayer *)pStruct;
+	pLayer->SetCycle( pData->m_Value.m_Float );
+}
+
+void RecvProxy_OrderChanged( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	CAnimationLayer *pLayer = (CAnimationLayer *)pStruct;
+	pLayer->SetOrder( pData->m_Value.m_Int );
+}
 
 BEGIN_RECV_TABLE_NOBASE(CAnimationLayer, DT_Animationlayer)
-	RecvPropInt(	RECVINFO_NAME(m_nSequence, m_nSequence)),
-	RecvPropFloat(	RECVINFO_NAME(m_flCycle, m_flCycle)),
+	RecvPropInt(	RECVINFO_NAME(m_nSequence, m_nSequence), 0, RecvProxy_SequenceChanged),
+	RecvPropFloat(	RECVINFO_NAME(m_flCycle, m_flCycle), 0, RecvProxy_CycleChanged),
 	RecvPropFloat(	RECVINFO_NAME(m_flPrevCycle, m_flPrevCycle)),
-	RecvPropFloat(	RECVINFO_NAME(m_flWeight, m_flWeight)),
-	RecvPropInt(	RECVINFO_NAME(m_nOrder, m_nOrder))
+	RecvPropFloat(	RECVINFO_NAME(m_flWeight, m_flWeight), 0, RecvProxy_WeightChanged),
+	RecvPropInt(	RECVINFO_NAME(m_nOrder, m_nOrder), 0, RecvProxy_OrderChanged)
 END_RECV_TABLE()
 
 const char *s_m_iv_AnimOverlayNames[C_BaseAnimatingOverlay::MAX_OVERLAYS] =
@@ -75,9 +195,6 @@ void ResizeAnimationLayerCallback( void *pStruct, int offsetToUtlVector, int len
 	Assert( pVec->Count() <= C_BaseAnimatingOverlay::MAX_OVERLAYS );
 	
 	int diff = len - pVec->Count();
-
-	
-
 	if ( diff == 0 )
 		return;
 
@@ -87,10 +204,16 @@ void ResizeAnimationLayerCallback( void *pStruct, int offsetToUtlVector, int len
 		pEnt->RemoveVar( &pVec->Element( i ) );
 	}
 
+	pEnt->InvalidatePhysicsRecursive( BOUNDS_CHANGED );
+
 	// adjust vector sizes
 	if ( diff > 0 )
 	{
-		pVec->AddMultipleToTail( diff );
+		for ( int i = 0; i < diff; ++i )
+		{
+			int j = pVec->AddToTail( );
+			(*pVec)[j].SetOwner( pEnt );
+		}
 		pVecIV->AddMultipleToTail( diff );
 	}
 	else
@@ -108,6 +231,15 @@ void ResizeAnimationLayerCallback( void *pStruct, int offsetToUtlVector, int len
 	}
 	// FIXME: need to set historical values of nOrder in pVecIV to MAX_OVERLAY
 	
+	// Ensure capacity
+	pVec->EnsureCapacity( len );
+
+	int nNumAllocated = pVec->NumAllocated();
+
+	// This is important to do because EnsureCapacity doesn't actually call the constructors
+	// on the elements, but we need them to be initialized, otherwise it'll have out-of-range
+	// values which will piss off the datatable encoder.
+	UtlVector_InitializeAllocatedElements( pVec->Base() + pVec->Count(), nNumAllocated - pVec->Count() );
 }
 
 
@@ -157,12 +289,28 @@ void C_BaseAnimatingOverlay::SetNumAnimOverlays( int num )
 {
 	if ( m_AnimOverlay.Count() < num )
 	{
-		m_AnimOverlay.AddMultipleToTail( num - m_AnimOverlay.Count() );
+		int nCountToAdd = num - m_AnimOverlay.Count();
+		for ( int i = 0; i < nCountToAdd; ++i )
+		{
+			int j = m_AnimOverlay.AddToTail( );
+			m_AnimOverlay[j].SetOwner( this );
+		}
 	}
 	else if ( m_AnimOverlay.Count() > num )
 	{
 		m_AnimOverlay.RemoveMultiple( num, m_AnimOverlay.Count() - num );
+		InvalidatePhysicsRecursive( BOUNDS_CHANGED );
 	}
+
+	// Ensure capacity
+	m_AnimOverlay.EnsureCapacity( C_BaseAnimatingOverlay::MAX_OVERLAYS );
+
+	int nNumAllocated = m_AnimOverlay.NumAllocated();
+
+	// This is important to do because EnsureCapacity doesn't actually call the constructors
+	// on the elements, but we need them to be initialized, otherwise it'll have out-of-range
+	// values which will piss off the datatable encoder.
+	UtlVector_InitializeAllocatedElements( m_AnimOverlay.Base() + m_AnimOverlay.Count(), nNumAllocated - m_AnimOverlay.Count() );
 }
 
 
@@ -187,7 +335,7 @@ void C_BaseAnimatingOverlay::GetRenderBounds( Vector& theMins, Vector& theMaxs )
 		int i;
 		for (i = 0; i < m_AnimOverlay.Count(); i++)
 		{
-			if (m_AnimOverlay[i].m_flWeight > 0.0)
+			if (m_AnimOverlay[i].m_flWeight > 0.0 && m_AnimOverlay[i].m_nOrder != MAX_OVERLAYS )
 			{
 				if ( m_AnimOverlay[i].m_nSequence >= nSequences )
 				{
@@ -202,7 +350,14 @@ void C_BaseAnimatingOverlay::GetRenderBounds( Vector& theMins, Vector& theMaxs )
 	}
 }
 
+bool C_BaseAnimatingOverlay::Interpolate( float flCurrentTime )
+{
+	bool bOk = BaseClass::Interpolate( flCurrentTime );
 
+	CheckForLayerPhysicsInvalidate();
+
+	return bOk;
+}
 
 void C_BaseAnimatingOverlay::CheckForLayerChanges( CStudioHdr *hdr, float currentTime )
 {
@@ -315,7 +470,7 @@ void C_BaseAnimatingOverlay::AccumulateLayers( IBoneSetup &boneSetup, Vector pos
 			// hacky code until initialization of new layers is finished
 			if (layer[m_AnimOverlay[i].m_nOrder] != MAX_OVERLAYS)
 			{
-				m_AnimOverlay[i].m_nOrder = MAX_OVERLAYS;
+				m_AnimOverlay[i].SetOrder( MAX_OVERLAYS );
 			}
 			else
 			{
@@ -450,6 +605,12 @@ void C_BaseAnimatingOverlay::DoAnimationEvents( CStudioHdr *pStudioHdr )
 			continue;
 		}
 
+		// Don't bother with 0-weight layers
+		if ( m_AnimOverlay[j].m_flWeight == 0.0f || m_AnimOverlay[j].m_nOrder == MAX_OVERLAYS )
+		{
+			continue;
+		}
+
 		mstudioseqdesc_t &seqdesc = pStudioHdr->pSeqdesc( m_AnimOverlay[j].m_nSequence );
 		if ( seqdesc.numevents == 0 )
 			continue;
@@ -479,7 +640,7 @@ void C_BaseAnimatingOverlay::DoAnimationEvents( CStudioHdr *pStudioHdr )
 			}
 		}
 
-		mstudioevent_t *pevent = seqdesc.pEvent( 0 );
+		mstudioevent_t *pevent = GetEventIndexForSequence( seqdesc );
 
 		// This makes sure events that occur at the end of a sequence occur are
 		// sent before events that occur at the beginning of a sequence.
@@ -493,7 +654,7 @@ void C_BaseAnimatingOverlay::DoAnimationEvents( CStudioHdr *pStudioHdr )
 					if ( !( pevent[i].type & AE_TYPE_CLIENT ) )
 						 continue;
 				}
-				else if ( pevent[i].event < 5000 ) //Adrian - Support the old event system
+				else if ( pevent[i].Event_OldSystem() < EVENT_CLIENT ) //Adrian - Support the old event system
 					continue;
 			
 				if ( pevent[i].cycle <= m_flOverlayPrevEventCycle[j] )
@@ -503,7 +664,7 @@ void C_BaseAnimatingOverlay::DoAnimationEvents( CStudioHdr *pStudioHdr )
 				{
 					Msg( "%i FE %i Looped cycle %f, prev %f ev %f (time %.3f)\n",
 						gpGlobals->tickcount,
-						pevent[i].event,
+						pevent[i].Event(),
 						pevent[i].cycle,
 						m_flOverlayPrevEventCycle[j],
 						(float)m_AnimOverlay[j].m_flCycle,
@@ -511,7 +672,7 @@ void C_BaseAnimatingOverlay::DoAnimationEvents( CStudioHdr *pStudioHdr )
 				}
 					
 					
-				FireEvent( GetAbsOrigin(), GetAbsAngles(), pevent[ i ].event, pevent[ i ].pszOptions() );
+				FireEvent( GetAbsOrigin(), GetAbsAngles(), pevent[ i ].Event(), pevent[ i ].pszOptions() );
 			}
 
 			// Necessary to get the next loop working
@@ -525,7 +686,7 @@ void C_BaseAnimatingOverlay::DoAnimationEvents( CStudioHdr *pStudioHdr )
 				if ( !( pevent[i].type & AE_TYPE_CLIENT ) )
 					 continue;
 			}
-			else if ( pevent[i].event < 5000 ) //Adrian - Support the old event system
+			else if ( pevent[i].Event_OldSystem() < EVENT_CLIENT ) //Adrian - Support the old event system
 				continue;
 
 			if ( (pevent[i].cycle > m_flOverlayPrevEventCycle[j] && pevent[i].cycle <= m_AnimOverlay[j].m_flCycle) )
@@ -535,14 +696,14 @@ void C_BaseAnimatingOverlay::DoAnimationEvents( CStudioHdr *pStudioHdr )
 					Msg( "%i (seq: %d) FE %i Normal cycle %f, prev %f ev %f (time %.3f)\n",
 						gpGlobals->tickcount,
 						m_AnimOverlay[j].m_nSequence.GetRaw(),
-						pevent[i].event,
+						pevent[i].Event(),
 						pevent[i].cycle,
 						m_flOverlayPrevEventCycle[j],
 						(float)m_AnimOverlay[j].m_flCycle,
 						gpGlobals->curtime );
 				}
 
-				FireEvent( GetAbsOrigin(), GetAbsAngles(), pevent[ i ].event, pevent[ i ].pszOptions() );
+				FireEvent( GetAbsOrigin(), GetAbsAngles(), pevent[ i ].Event(), pevent[ i ].pszOptions() );
 			}
 		}
 
@@ -565,4 +726,55 @@ CStudioHdr *C_BaseAnimatingOverlay::OnNewModel()
 	}
 
 	return hdr;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void C_BaseAnimatingOverlay::CheckInterpChanges( void )
+{
+	CDisableRangeChecks disableRangeChecks; 
+
+	for (int i = 0; i < m_AnimOverlay.Count(); i++)
+	{
+		int iHead, iPrev1, iPrev2;
+		m_iv_AnimOverlay[i].GetInterpolationInfo( gpGlobals->curtime, &iHead, &iPrev1, &iPrev2 );
+
+		float t0;
+		CAnimationLayer *pHead = m_iv_AnimOverlay[i].GetHistoryValue( iHead, t0 );
+
+		float t1;
+		CAnimationLayer *pPrev = m_iv_AnimOverlay[i].GetHistoryValue( iPrev1, t1 );
+
+		if ( !pHead || !pPrev )
+			continue;
+
+		m_AnimOverlay[ i ].m_nInvalidatePhysicsBits = CheckForSequenceBoxChanges( *pHead, *pPrev );
+	}
+
+	CheckForLayerPhysicsInvalidate();
+}
+
+void C_BaseAnimatingOverlay::CheckForLayerPhysicsInvalidate( void )
+{
+	// When the layers interpolate they may change the animation or bbox so we 
+	//  have them accumulate the changes and call InvalidatePhysicsRecursive if any
+	//  changes are needed.
+	int nInvalidatePhysicsChangeBits = 0;
+
+	int nLayerCount = m_AnimOverlay.Count();
+	for ( int i = 0; i < nLayerCount; ++i )
+	{
+		int nChangeBits = m_AnimOverlay[ i ].m_nInvalidatePhysicsBits;
+		if ( nChangeBits )
+		{
+			nInvalidatePhysicsChangeBits |= nChangeBits;
+			continue;
+		}
+	}
+
+	if ( nInvalidatePhysicsChangeBits )
+	{
+		InvalidatePhysicsRecursive( nInvalidatePhysicsChangeBits );
+	}
 }

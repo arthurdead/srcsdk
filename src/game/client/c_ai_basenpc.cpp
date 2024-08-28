@@ -37,7 +37,7 @@ extern ConVar cl_npc_speedmod_intime;
 
 bool NPC_IsImportantNPC( C_BaseAnimating *pAnimating )
 {
-	C_AI_BaseNPC *pBaseNPC = dynamic_cast < C_AI_BaseNPC* > ( pAnimating );
+	C_AI_BaseNPC *pBaseNPC = pAnimating->MyNPCPointer();
 
 	if ( pBaseNPC == NULL )
 		return false;
@@ -63,10 +63,8 @@ unsigned int C_AI_BaseNPC::PhysicsSolidMaskForEntity( void ) const
 }
 
 
-void C_AI_BaseNPC::ClientThink( void )
+void C_AI_BaseNPC::SpeedModThink( void )
 {
-	BaseClass::ClientThink();
-
 #ifdef HL2_DLL
 	C_BaseHLPlayer *pPlayer = dynamic_cast<C_BaseHLPlayer*>( C_BasePlayer::GetLocalPlayer() );
 
@@ -149,7 +147,7 @@ void C_AI_BaseNPC::OnDataChanged( DataUpdateType_t type )
 
 	if ( ( ShouldModifyPlayerSpeed() == true ) || ( m_flTimePingEffect > gpGlobals->curtime ) )
 	{
-		SetNextClientThink( CLIENT_THINK_ALWAYS );
+		SetContextThink( &C_AI_BaseNPC::SpeedModThink, TICK_ALWAYS_THINK, "SpeedModThink" );
 	}
 }
 

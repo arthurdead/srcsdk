@@ -6,9 +6,7 @@
 
 #ifndef MATERIALPATCH_H
 #define MATERIALPATCH_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utilmatlib.h"
 

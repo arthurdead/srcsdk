@@ -7,7 +7,7 @@
 #include "cbase.h"
 #include "imaterialproxydict.h"
 #include "materialsystem/imaterialproxy.h"
-#include "tier1/utlstringmap.h"
+#include "tier1/UtlStringMap.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

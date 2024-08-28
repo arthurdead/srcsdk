@@ -33,6 +33,8 @@ CLIENTEFFECT_MATERIAL( "effects/fleck_tile1" )
 CLIENTEFFECT_MATERIAL( "effects/fleck_tile2" )
 CLIENTEFFECT_REGISTER_END()
 
+ConVar fx_glass_velocity_cap("fx_glass_velocity_cap", "0", 0, "Maximum downwards speed of shattered glass particles");
+
 //###################################################
 // > C_TEShatterSurface
 //###################################################
@@ -222,6 +224,12 @@ void C_TEShatterSurface::PostDataUpdate( DataUpdateType_t updateType )
 				{
 					vForceVel *= ( 40.0f / flForceDistSqr );
 				}
+			}
+
+			// cap the Z velocity of the shards
+			if (fx_glass_velocity_cap.GetFloat() > 0 && vForceVel.z < -fx_glass_velocity_cap.GetFloat())
+			{
+				vForceVel.z = random->RandomFloat(-fx_glass_velocity_cap.GetFloat(), -(fx_glass_velocity_cap.GetFloat() * 0.66f));
 			}
 
 			if (pParticle)

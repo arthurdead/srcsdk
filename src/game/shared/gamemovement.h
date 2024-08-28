@@ -13,6 +13,8 @@
 #include "igamemovement.h"
 #include "cmodel.h"
 #include "tier0/vprof.h"
+#include "networkvar.h"
+#include "engine/IEngineTrace.h"
 
 #define CTEXTURESMAX		512			// max number of textures loaded
 #define CBTEXTURENAMEMAX	13			// only load first n chars of name
@@ -43,13 +45,18 @@ public:
 	virtual			~CGameMovement( void );
 
 	virtual void	ProcessMovement( CBasePlayer *pPlayer, CMoveData *pMove );
-
+	virtual void	Reset( void );
 	virtual void	StartTrackPredictionErrors( CBasePlayer *pPlayer );
 	virtual void	FinishTrackPredictionErrors( CBasePlayer *pPlayer );
 	virtual void	DiffPrint( PRINTF_FORMAT_STRING char const *fmt, ... );
-	virtual Vector	GetPlayerMins( bool ducked ) const;
-	virtual Vector	GetPlayerMaxs( bool ducked ) const;
-	virtual Vector	GetPlayerViewOffset( bool ducked ) const;
+	virtual Vector 	GetPlayerMins( bool ducked ) const;
+	virtual Vector 	GetPlayerMaxs( bool ducked ) const;
+	virtual Vector 	GetPlayerViewOffset( bool ducked ) const;
+	virtual void SetupMovementBounds( CMoveData *pMove );
+
+	virtual bool		IsMovingPlayerStuck( void ) const;
+	virtual CBasePlayer *GetMovingPlayer( void ) const;
+	virtual void		UnblockPusher( CBasePlayer *pPlayer, CBaseEntity *pPusher );
 
 // For sanity checking getting stuck on CMoveData::SetAbsOrigin
 	virtual void	TracePlayerBBox( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm );
@@ -59,7 +66,7 @@ public:
 
 
 #define BRUSH_ONLY true
-	virtual unsigned int PlayerSolidMask( bool brushOnly = false );	///< returns the solid mask for the given player, so bots can have a more-restrictive set
+	virtual unsigned int PlayerSolidMask( bool brushOnly = false, CBasePlayer *testPlayer = NULL ) const;	///< returns the solid mask for the given player, so bots can have a more-restrictive set
 	CBasePlayer		*player;
 	CMoveData *GetMoveData() { return mv; }
 protected:
@@ -91,10 +98,10 @@ protected:
 
 	virtual void	WaterMove( void );
 
-	void			WaterJump( void );
+	virtual void			WaterJump( void );
 
 	// Handles both ground friction and water friction
-	void			Friction( void );
+	virtual void			Friction( void );
 
 	virtual void	AirAccelerate( Vector& wishdir, float wishspeed, float accel );
 
@@ -108,7 +115,7 @@ protected:
 	virtual void	WalkMove( void );
 
 	// Try to keep a walking player on the ground when running down slopes etc
-	void			StayOnGround( void );
+	virtual void			StayOnGround( void );
 
 	// Handle MOVETYPE_WALK.
 	virtual void	FullWalkMove();
@@ -127,7 +134,8 @@ protected:
 	{
 		GROUND = 0,
 		STUCK,
-		LADDER
+		LADDER,
+		LADDER_WEDGE
 	} IntervalType_t;
 
 	virtual int		GetCheckInterval( IntervalType_t type );
@@ -139,11 +147,11 @@ protected:
 
 
 	// Decompoosed gravity
-	void			StartGravity( void );
-	void			FinishGravity( void );
+	virtual  void			StartGravity( void );
+	virtual  void			FinishGravity( void );
 
 	// Apply normal ( undecomposed ) gravity
-	void			AddGravity( void );
+	virtual  void			AddGravity( void );
 
 	// Handle movement in noclip mode.
 	void			FullNoClipMove( float factor, float maxacceleration );
@@ -180,7 +188,7 @@ protected:
 	// returns the blocked flags:
 	// 0x01 == floor
 	// 0x02 == step / wall
-	int				ClipVelocity( Vector& in, Vector& normal, Vector& out, float overbounce );
+	virtual int				ClipVelocity( Vector& in, Vector& normal, Vector& out, float overbounce );
 
 	// If pmove.origin is in a solid position,
 	// try nudging slightly on all axis to
@@ -191,6 +199,7 @@ protected:
 	// Sets refWaterLevel and refWaterType appropriately.
 	// If in water, applies current to baseVelocity, and returns true.
 	virtual bool			CheckWater( void );
+	virtual void	GetWaterCheckPosition( int waterLevel, Vector *pos );
 	
 	// Determine if player is in water, on ground, etc.
 	virtual void CategorizePosition( void );
@@ -214,18 +223,18 @@ protected:
 	virtual void	FinishUnDuck( void );
 	virtual void	FinishDuck( void );
 	virtual bool	CanUnduck();
-	void			UpdateDuckJumpEyeOffset( void );
-	bool			CanUnDuckJump( trace_t &trace );
-	void			StartUnDuckJump( void );
-	void			FinishUnDuckJump( trace_t &trace );
-	void			SetDuckedEyeOffset( float duckFraction );
-	void			FixPlayerCrouchStuck( bool moveup );
+	virtual void			UpdateDuckJumpEyeOffset( void );
+	virtual bool			CanUnDuckJump( trace_t &trace );
+	virtual void			StartUnDuckJump( void );
+	virtual void			FinishUnDuckJump( trace_t &trace );
+	virtual void			SetDuckedEyeOffset( float duckFraction );
+	virtual void			FixPlayerCrouchStuck( bool moveup );
 
 	float			SplineFraction( float value, float scale );
 
-	void			CategorizeGroundSurface( trace_t &pm );
+	virtual void			CategorizeGroundSurface( trace_t &pm );
 
-	bool			InWater( void );
+	virtual bool			InWater( void );
 
 	// Commander view movement
 	void			IsometricMove( void );
@@ -250,6 +259,8 @@ protected:
 
 
 protected:
+	virtual ITraceFilter *LockTraceFilter( int collisionGroup );
+	virtual void UnlockTraceFilter( ITraceFilter *&pFilter );
 
 	// Performs the collision resolution for fliers.
 	void			PerformFlyCollisionResolution( trace_t &pm, Vector &move );
@@ -274,6 +285,9 @@ protected:
 //private:
 	int				m_iSpeedCropped;
 
+	bool			m_bProcessingMovement;
+	bool			m_bInStuckTest;
+
 	float			m_flStuckCheckTime[MAX_PLAYERS+1][2]; // Last time we did a full test
 
 	// special function for teleport-with-duck for episodic
@@ -282,6 +296,9 @@ public:
 	void			ForceDuck( void );
 
 #endif
+	CTraceListData	*m_pTraceListData;
+
+	int				m_nTraceCount;
 };
 
 

@@ -17,6 +17,7 @@
 
 class CMoveData;
 class CUserCmd;
+class CPDumpPanel;
 
 //-----------------------------------------------------------------------------
 // Purpose: Implements prediction in the client .dll
@@ -53,9 +54,7 @@ public:
 	virtual bool	InPrediction( void ) const;
 	virtual bool	IsFirstTimePredicted( void ) const;
 
-#if !defined( NO_ENTITY_PREDICTION )
 	virtual int		GetIncomingPacketNumber( void ) const;
-#endif
 
 	float			GetIdealPitch( void ) const 
 	{
@@ -71,7 +70,10 @@ public:
 	virtual void	GetLocalViewAngles( QAngle& ang );
 	virtual void	SetLocalViewAngles( QAngle& ang );
 
+	virtual void	CheckMovingGround( C_BasePlayer *player, double frametime );
 	virtual void	RunCommand( C_BasePlayer *player, CUserCmd *ucmd, IMoveHelper *moveHelper );
+
+	float			GetSavedTime() const;
 
 // Internal
 protected:
@@ -79,7 +81,7 @@ protected:
 	virtual void	FinishMove( C_BasePlayer *player, CUserCmd *ucmd, CMoveData *move );
 	virtual void	SetIdealPitch ( C_BasePlayer *player, const Vector& origin, const QAngle& angles, const Vector& viewheight );
 
-	void			CheckError( int commands_acknowledged );
+	virtual void			CheckError( C_BasePlayer *player, int commands_acknowledged );
 
 	// Called before and after any movement processing
 	void			StartCommand( C_BasePlayer *player, CUserCmd *cmd );
@@ -119,8 +121,11 @@ private:
 	bool			ShouldDumpEntity( C_BaseEntity *ent );
 
 	void			SmoothViewOnMovingPlatform( C_BasePlayer *pPlayer, Vector& offset );
+	void			ResetSimulationTick();
+	void			ShowPredictionListEntry( int listRow, int showlist, C_BaseEntity *ent, int &totalsize, int &totalsize_intermediate );
+	void			FinishPredictionList( int listRow, int showlist, int totalsize, int totalsize_intermediate );
+	void			CheckPredictConvar();
 
-#if !defined( NO_ENTITY_PREDICTION )
 // Data
 protected:
 	// Last object the player was standing on
@@ -131,6 +136,8 @@ private:
 	bool			m_bOldCLPredictValue;
 	bool			m_bEnginePaused;
 
+	float			m_flLastServerWorldTimeStamp;
+
 	// Last network origin for local player
 	int				m_nPreviousStartFrame;
 
@@ -139,8 +146,14 @@ private:
 	int				m_bPreviousAckHadErrors;
 	int				m_nIncomingPacketNumber;
 
-#endif
 	float			m_flIdealPitch;
+
+	CGlobalVarsBase	m_SavedVars;
+
+	bool			m_bPlayerOriginTypedescriptionSearched;
+	CUtlVector< const typedescription_t * >	m_PlayerOriginTypeDescription; // A vector in cases where the .x, .y, and .z are separately listed
+
+	CPDumpPanel		*m_pPDumpPanel;
 
 };
  

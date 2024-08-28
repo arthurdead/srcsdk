@@ -8,9 +8,7 @@
 #ifndef IMATCHEXTENSIONS_H
 #define IMATCHEXTENSIONS_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 abstract_class IMatchExtensions
 {

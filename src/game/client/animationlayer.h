@@ -13,6 +13,9 @@
 #include "lerp_functions.h"
 #include "networkvar.h"
 #include "client_class.h"
+#include "baseentity_shared.h"
+
+class C_BaseAnimatingOverlay;
 
 class C_AnimationLayer
 {
@@ -24,11 +27,32 @@ public:
 	C_AnimationLayer();
 	void Reset();
 
+	void SetOwner( C_BaseAnimatingOverlay *pOverlay );
+	C_BaseAnimatingOverlay *GetOwner() const;
+
 	void SetOrder( int order );
 
 public:
 
 	bool IsActive( void );
+
+	void SetSequence( int nSequence );
+	void SetCycle( float flCycle );
+	void SetPrevCycle( float flCycle );
+	void SetPlaybackRate( float flPlaybackRate );
+	void SetWeight( float flWeight );
+
+	int   GetOrder() const;
+	int   GetSequence( ) const;
+	float GetCycle( ) const;
+	float GetPrevCycle( ) const;
+	float GetPlaybackRate( ) const;
+	float GetWeight( ) const;
+
+	// If the weights, cycle or sequence #s changed due to interpolation then 
+	//  we'll need to recompute the bbox
+	int GetInvalidatePhysicsBits() const;
+	void SetInvalidatePhysicsBits( int iBit ) { m_nInvalidatePhysicsBits = iBit; }
 
 	CRangeCheckedVar<int, -1, 65535, 0>	m_nSequence;
 	CRangeCheckedVar<float, -2, 2, 0>	m_flPrevCycle;
@@ -38,6 +62,9 @@ public:
 	// used for automatic crossfades between sequence changes
 	CRangeCheckedVar<float, -50, 50, 1>		m_flPlaybackRate;
 	CRangeCheckedVar<float, -2, 2, 0>		m_flCycle;
+
+	C_BaseAnimatingOverlay	*m_pOwner;
+	int					m_nInvalidatePhysicsBits;
 
 	float GetFadeout( float flCurTime );
 
@@ -50,41 +77,69 @@ public:
 	float   m_flBlendOut;
 
 	bool    m_bClientBlend;
+
+	friend class C_BaseAnimatingOverlay;
+	friend C_AnimationLayer LoopingLerp( float flPercent, C_AnimationLayer& from, C_AnimationLayer& to );
+	friend C_AnimationLayer Lerp( float flPercent, const C_AnimationLayer& from, const C_AnimationLayer& to );
+	friend C_AnimationLayer LoopingLerp_Hermite( const C_AnimationLayer& current, float flPercent, C_AnimationLayer& prev, C_AnimationLayer& from, C_AnimationLayer& to );
+	friend C_AnimationLayer Lerp_Hermite( const C_AnimationLayer& current, float flPercent, const C_AnimationLayer& prev, const C_AnimationLayer& from, const C_AnimationLayer& to );
+	friend void Lerp_Clamp( C_AnimationLayer &val );
+	friend int CheckForSequenceBoxChanges( const C_AnimationLayer& newLayer, const C_AnimationLayer& oldLayer );
 };
-#ifdef CLIENT_DLL
-	#define CAnimationLayer C_AnimationLayer
-#endif
 
 inline C_AnimationLayer::C_AnimationLayer()
 {
+	m_pOwner = NULL;
+	m_nInvalidatePhysicsBits = 0;
+
 	Reset();
 }
 
-inline void C_AnimationLayer::Reset()
+FORCEINLINE void C_AnimationLayer::SetPrevCycle( float flPrevCycle )
 {
-	m_nSequence = 0;
-	m_flPrevCycle = 0;
-	m_flWeight = 0;
-	m_flPlaybackRate = 0;
-	m_flCycle = 0;
-	m_flLayerAnimtime = 0;
-	m_flLayerFadeOuttime = 0;
-	m_flBlendIn = 0;
-	m_flBlendOut = 0;
-	m_bClientBlend = false;
+	m_flPrevCycle = flPrevCycle;
 }
 
-
-inline void C_AnimationLayer::SetOrder( int order )
+FORCEINLINE void C_AnimationLayer::SetPlaybackRate( float flPlaybackRate )
 {
-	m_nOrder = order;
+	m_flPlaybackRate = flPlaybackRate;
+}
+
+FORCEINLINE int	C_AnimationLayer::GetSequence( ) const
+{
+	return m_nSequence;
+}
+
+FORCEINLINE float C_AnimationLayer::GetCycle( ) const
+{
+	return m_flCycle;
+}
+
+FORCEINLINE float C_AnimationLayer::GetPrevCycle( ) const
+{
+	return m_flPrevCycle;
+}
+
+FORCEINLINE float C_AnimationLayer::GetPlaybackRate( ) const
+{
+	return m_flPlaybackRate;
+}
+
+FORCEINLINE float C_AnimationLayer::GetWeight( ) const
+{
+	return m_flWeight;
+}
+
+FORCEINLINE int C_AnimationLayer::GetOrder() const
+{
+	return m_nOrder;
 }
 
 inline float C_AnimationLayer::GetFadeout( float flCurTime )
 {
 	float s;
 
-    if (m_flLayerFadeOuttime <= 0.0f)
+	if (m_flLayerFadeOuttime <= 0.0f)
 	{
 		s = 0;
 	}
@@ -106,6 +161,10 @@ inline float C_AnimationLayer::GetFadeout( float flCurTime )
 	return s;
 }
 
+FORCEINLINE int C_AnimationLayer::GetInvalidatePhysicsBits() const
+{
+	return m_nInvalidatePhysicsBits;
+}
 
 inline C_AnimationLayer LoopingLerp( float flPercent, C_AnimationLayer& from, C_AnimationLayer& to )
 {
@@ -124,6 +183,8 @@ inline C_AnimationLayer LoopingLerp( float flPercent, C_AnimationLayer& from, C_
 
 inline C_AnimationLayer Lerp( float flPercent, const C_AnimationLayer& from, const C_AnimationLayer& to )
 {
+	Assert( from.GetOwner() == to.GetOwner() );
+
 	C_AnimationLayer output;
 
 	output.m_nSequence = to.m_nSequence;
@@ -134,37 +195,100 @@ inline C_AnimationLayer Lerp( float flPercent, const C_AnimationLayer& from, con
 
 	output.m_flLayerAnimtime = to.m_flLayerAnimtime;
 	output.m_flLayerFadeOuttime = to.m_flLayerFadeOuttime;
+
+	output.SetOwner( to.GetOwner() );
+
 	return output;
 }
 
-inline C_AnimationLayer LoopingLerp_Hermite( float flPercent, C_AnimationLayer& prev, C_AnimationLayer& from, C_AnimationLayer& to )
+inline C_AnimationLayer LoopingLerp_Hermite( const C_AnimationLayer& current, float flPercent, C_AnimationLayer& prev, C_AnimationLayer& from, C_AnimationLayer& to )
 {
+	Assert( from.GetOwner() == to.GetOwner() );
+
 	C_AnimationLayer output;
 
 	output.m_nSequence = to.m_nSequence;
-	output.m_flCycle = LoopingLerp_Hermite( flPercent, (float)prev.m_flCycle, (float)from.m_flCycle, (float)to.m_flCycle );
+	output.m_flCycle = LoopingLerp_Hermite<float>( output.m_flCycle, flPercent, (float)prev.m_flCycle, (float)from.m_flCycle, (float)to.m_flCycle );
 	output.m_flPrevCycle = to.m_flPrevCycle;
 	output.m_flWeight = Lerp( flPercent, from.m_flWeight, to.m_flWeight );
 	output.m_nOrder = to.m_nOrder;
 
 	output.m_flLayerAnimtime = to.m_flLayerAnimtime;
 	output.m_flLayerFadeOuttime = to.m_flLayerFadeOuttime;
+
+	output.SetOwner( to.GetOwner() );
+
 	return output;
+}
+
+inline int CheckForSequenceBoxChanges( const C_AnimationLayer& newLayer, const C_AnimationLayer& oldLayer )
+{
+	int nChangeFlags = 0;
+
+	bool bOldIsZero = ( oldLayer.GetWeight() == 0.0f );
+	bool bNewIsZero = ( newLayer.GetWeight() == 0.0f );
+
+	if ( ( newLayer.GetSequence() != oldLayer.GetSequence() ) ||
+		 ( bNewIsZero != bOldIsZero ) ) 
+	{
+		nChangeFlags |= SEQUENCE_CHANGED | BOUNDS_CHANGED;
+	}
+
+	if ( newLayer.GetCycle() != oldLayer.GetCycle() )
+	{
+		nChangeFlags |= ANIMATION_CHANGED;
+	}
+
+	if ( newLayer.GetOrder() != oldLayer.GetOrder() )
+	{
+		nChangeFlags |= BOUNDS_CHANGED;
+	}
+
+	return nChangeFlags;
 }
 
 // YWB:  Specialization for interpolating euler angles via quaternions...
-inline C_AnimationLayer Lerp_Hermite( float flPercent, const C_AnimationLayer& prev, const C_AnimationLayer& from, const C_AnimationLayer& to )
+inline C_AnimationLayer LoopingLerp_Hermite( const C_AnimationLayer& current, float flPercent, const C_AnimationLayer& prev, const C_AnimationLayer& from, const C_AnimationLayer& to )
 {
+	Assert( prev.GetOwner() == from.GetOwner() );
+	Assert( from.GetOwner() == to.GetOwner() );
+
 	C_AnimationLayer output;
 
 	output.m_nSequence = to.m_nSequence;
-	output.m_flCycle = Lerp_Hermite( flPercent, prev.m_flCycle, from.m_flCycle, to.m_flCycle );
+	output.m_flCycle = LoopingLerp_Hermite<float>( output.m_flCycle, flPercent, prev.m_flCycle, from.m_flCycle, to.m_flCycle );
 	output.m_flPrevCycle = to.m_flPrevCycle;
 	output.m_flWeight = Lerp( flPercent, from.m_flWeight, to.m_flWeight );
 	output.m_nOrder = to.m_nOrder;
 
 	output.m_flLayerAnimtime = to.m_flLayerAnimtime;
 	output.m_flLayerFadeOuttime = to.m_flLayerFadeOuttime;
+
+	output.SetOwner( to.GetOwner() );
+	output.m_nInvalidatePhysicsBits = CheckForSequenceBoxChanges( output, current );
+
+	return output;
+}
+
+inline C_AnimationLayer Lerp_Hermite( const C_AnimationLayer& current, float flPercent, const C_AnimationLayer& prev, const C_AnimationLayer& from, const C_AnimationLayer& to )
+{
+	Assert( prev.GetOwner() == from.GetOwner() );
+	Assert( from.GetOwner() == to.GetOwner() );
+
+	C_AnimationLayer output;
+
+	output.m_nSequence = to.m_nSequence;
+	output.m_flCycle = Lerp_Hermite<float>( output.m_flCycle, flPercent, prev.m_flCycle, from.m_flCycle, to.m_flCycle );
+	output.m_flPrevCycle = to.m_flPrevCycle;
+	output.m_flWeight = Lerp( flPercent, from.m_flWeight, to.m_flWeight );
+	output.m_nOrder = to.m_nOrder;
+
+	output.m_flLayerAnimtime = to.m_flLayerAnimtime;
+	output.m_flLayerFadeOuttime = to.m_flLayerFadeOuttime;
+
+	output.SetOwner( to.GetOwner() );
+	output.m_nInvalidatePhysicsBits = CheckForSequenceBoxChanges( output, current );
+
 	return output;
 }
 

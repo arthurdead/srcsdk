@@ -25,7 +25,7 @@ DECLARE_HUDELEMENT( CHudVehicle );
 CHudVehicle::CHudVehicle( const char *pElementName ) :
   CHudElement( pElementName ), BaseClass( NULL, "HudVehicle" )
 {
-	vgui::Panel *pParent = g_pClientMode->GetViewport();
+	vgui::Panel *pParent = GetClientMode()->GetViewport();
 	SetParent( pParent );
 
 	SetHiddenBits( HIDEHUD_PLAYERDEAD | HIDEHUD_VEHICLE_CROSSHAIR );

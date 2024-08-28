@@ -9,6 +9,9 @@
 #define IINPUT_H
 #pragma once
 
+#include "mathlib/vector.h"
+#include "inputsystem/ButtonCode.h"
+
 class bf_write;
 class bf_read;
 class CUserCmd;
@@ -25,6 +28,15 @@ struct CameraThirdData_t
 	Vector	m_vecHullMax;
 };
 
+enum
+{
+	CAM_FIRSTPERSON = 0,
+	CAM_THIRDPERSON = 1,
+	CAM_THIRDPERSONSHOULDER = 2,
+	CAM_MAYAMODE = 3,
+	CAM_ORTHOGRAPHIC = 4
+};
+
 abstract_class IInput
 {
 public:
@@ -32,7 +44,7 @@ public:
 	virtual	void		Init_All( void ) = 0;
 	virtual void		Shutdown_All( void ) = 0;
 	// Latching button states
-	virtual int			GetButtonBits( int ) = 0;
+	virtual int			GetButtonBits( bool bResetState ) = 0;
 	// Create movement command
 	virtual void		CreateMove ( int sequence_number, float input_sample_frametime, bool active ) = 0;
 	virtual void		ExtraMouseSample( float frametime, bool active ) = 0;
@@ -54,7 +66,7 @@ public:
 	// Issue commands from controllers
 	virtual void		ControllerCommands( void ) = 0;
 	// Extra initialization for some joysticks
-	virtual void		Joystick_Advanced( void ) = 0;
+	virtual void		Joystick_Advanced( bool bSilent ) = 0;
 	virtual void		Joystick_SetSampleTime( float frametime ) = 0;
 	virtual void		IN_SetSampleTime( float frametime ) = 0;
 
@@ -81,9 +93,14 @@ public:
 
 	// Third Person camera ( TODO/FIXME:  Move this to a separate interface? )
 	virtual void		CAM_Think( void ) = 0;
-	virtual int			CAM_IsThirdPerson( void ) = 0;
-	virtual void		CAM_ToThirdPerson(void) = 0;
-	virtual void		CAM_ToFirstPerson(void) = 0;
+	virtual void		CAM_GetCameraOffset( Vector& ofs ) = 0;
+
+	virtual int			CAM_Get() = 0;
+	virtual void		CAM_Set(int mode) = 0;
+
+	bool CAM_IsThirdPerson()
+	{ return (CAM_Get() != CAM_FIRSTPERSON); }
+
 	virtual void		CAM_StartMouseMove(void) = 0;
 	virtual void		CAM_EndMouseMove(void) = 0;
 	virtual void		CAM_StartDistance(void) = 0;
@@ -91,14 +108,7 @@ public:
 	virtual int			CAM_InterceptingMouse( void ) = 0;
 
 	// orthographic camera info	( TODO/FIXME:  Move this to a separate interface? )
-	virtual void		CAM_ToOrthographic() = 0;
-	virtual	bool		CAM_IsOrthographic() const = 0;
 	virtual	void		CAM_OrthographicSize( float& w, float& h ) const = 0;
-
-#if defined( HL2_CLIENT_DLL )
-	// IK back channel info
-	virtual void		AddIKGroundContactInfo( int entindex, float minheight, float maxheight ) = 0;
-#endif
 
 	virtual void		LevelInit( void ) = 0;
 

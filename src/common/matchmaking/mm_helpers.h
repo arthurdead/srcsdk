@@ -7,9 +7,7 @@
 
 #ifndef __COMMON__MM_HELPERS_H_
 #define __COMMON__MM_HELPERS_H_
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/keyvalues.h"
 #include "tier1/fmtstr.h"

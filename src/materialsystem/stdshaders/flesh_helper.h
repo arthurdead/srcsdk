@@ -2,9 +2,7 @@
 
 #ifndef FLESH_HELPER_H
 #define FLESH_HELPER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <string.h>
 

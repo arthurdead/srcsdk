@@ -1,9 +1,7 @@
 #ifndef TIER0_CACHE_HINTS_HDR
 #define TIER0_CACHE_HINTS_HDR
 
-#if defined(_X360)
-#define PREFETCH_CACHE_LINE(POINTER,OFFSET) {__dcbt((OFFSET), (POINTER));}
-#elif defined(WIN32)
+#if defined(WIN32)
 #define PREFETCH_CACHE_LINE(POINTER,OFFSET) {_mm_prefetch((const char*)(POINTER),(OFFSET));}
 #else
 #define PREFETCH_CACHE_LINE(POINTER,OFFSET) {}

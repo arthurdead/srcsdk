@@ -28,8 +28,6 @@ public:
 	void OnDataChanged(DataUpdateType_t updateType);
 	bool ShouldDraw();
 
-	void ClientThink();
-
 	virtual void Update(C_BasePlayer *pPlayer, float ccScale);
 	
 	bool IsMaster() const { return m_bMaster; }

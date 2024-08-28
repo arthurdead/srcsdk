@@ -9,7 +9,13 @@
 
 #include "convar.h"
 #include "basecombatweapon_shared.h"
-#include "iplayeranimstate.h"
+
+typedef enum
+{
+	LEGANIM_9WAY,		// Legs use a 9-way blend, with "move_x" and "move_y" pose parameters.
+	LEGANIM_8WAY,		// Legs use an 8-way blend with "move_yaw" pose param.
+	LEGANIM_GOLDSRC	// Legs always point in the direction he's running and the torso rotates.
+} LegAnimType_t;
 
 #if defined( CLIENT_DLL )
 class C_BasePlayer;
@@ -274,7 +280,7 @@ protected:
 
 	virtual bool ShouldUpdateAnimState();
 
-	void				DebugShowAnimStateForPlayer( bool bIsServer );
+	void				DebugShowAnimStateForPlayer();
 	void				DebugShowEyeYaw( void );
 
 // Client specific.

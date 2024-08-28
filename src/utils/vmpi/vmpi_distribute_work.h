@@ -6,9 +6,7 @@
 
 #ifndef VMPI_DISTRIBUTE_WORK_H
 #define VMPI_DISTRIBUTE_WORK_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "messbuf.h"

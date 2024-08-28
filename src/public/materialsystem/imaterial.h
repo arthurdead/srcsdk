@@ -385,6 +385,7 @@ enum MaterialVarFlags_t
 
 	//ASW: potentially unused
 	MATERIAL_VAR_VERTEXFOG				  = (1 << 31),
+	MATERIAL_VAR_ALPHA_MODIFIED_BY_PROXY  = MATERIAL_VAR_IGNORE_ALPHA_MODULATION,
 
 	// NOTE: Only add flags here that either should be read from
 	// .vmts or can be set directly from client code. Other, internal

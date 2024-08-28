@@ -31,13 +31,9 @@ class C_GameInstructor : public CAutoGameSystemPerFrame, public CGameEventListen
 public:
 	C_GameInstructor() : CAutoGameSystemPerFrame( "C_GameInstructor" )
 	{
-		m_nSplitScreenSlot = -1;
-
 		m_bHasLoadedSaveData = false;
 		m_bDirtySaveData = false;
 	}
-
-	void SetSlot( int nSlot ) { m_nSplitScreenSlot = nSlot; }
 
 	// Methods of IGameSystem
 	virtual bool Init( void );
@@ -106,7 +102,6 @@ private:
 
 	char	m_szPreviousStartSound[ 128 ];
 	float	m_fNextStartSoundTime;
-	int		m_nSplitScreenSlot;
 
 	bool	m_bHasLoadedSaveData;
 	bool	m_bDirtySaveData;

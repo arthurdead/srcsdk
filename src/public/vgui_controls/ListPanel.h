@@ -212,9 +212,6 @@ public:
 
 	MESSAGE_FUNC_INT( ResizeColumnToContents, "ResizeColumnToContents", column );
 
-#ifdef _X360
-	virtual void NavigateTo();
-#endif
 	/// Version number for file format of user config.  This defaults to 1,
 	/// and if you rearrange columns you can increment it to cause any old
 	/// user configs (which will be screwed up) to be discarded.
@@ -233,11 +230,9 @@ protected:
 	virtual void ApplySchemeSettings(IScheme *pScheme);
 	virtual void OnMousePressed( MouseCode code );
 	virtual void OnMouseDoublePressed( MouseCode code );
-#ifdef _X360
-	virtual void OnKeyCodePressed(KeyCode code);
-#else
+
 	virtual void OnKeyCodePressed( KeyCode code );
-#endif
+
 	MESSAGE_FUNC( OnSliderMoved, "ScrollBarSliderMoved" );
 	MESSAGE_FUNC_INT_INT( OnColumnResized, "ColumnResized", column, delta );
 	MESSAGE_FUNC_INT( OnSetSortColumn, "SetSortColumn", column );

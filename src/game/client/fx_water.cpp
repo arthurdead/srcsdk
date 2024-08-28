@@ -94,6 +94,7 @@ void FX_WaterRipple( const Vector &origin, float scale, Vector *pColor, float fl
 	
 	if ( tr.fraction < 1.0f )
 	{
+	#if 0
 		//Add a ripple quad to the surface
 		FX_AddQuad( tr.endpos + ( tr.plane.normal * 0.5f ), 
 					tr.plane.normal, 
@@ -109,6 +110,13 @@ void FX_WaterRipple( const Vector &origin, float scale, Vector *pColor, float fl
 					flLifetime, 
 					"effects/splashwake1", 
 					(FXQUAD_BIAS_SCALE|FXQUAD_BIAS_ALPHA) );
+	#else
+		QAngle vecAngles;
+		// we flip the z and the x to match the orientation of how the impact particles are authored
+		// all impact particles are authored with the effect going "up" (0, 0, 1)
+		VectorAngles( Vector( tr.plane.normal.z, tr.plane.normal.y, tr.plane.normal.x ), vecAngles );
+		DispatchParticleEffect( "water_splash_02_surface2", tr.endpos, vecAngles, NULL );
+	#endif
 	}
 }
 
@@ -117,13 +125,9 @@ void FX_WaterRipple( const Vector &origin, float scale, Vector *pColor, float fl
 // Input  : &origin - 
 //			&normal - 
 //-----------------------------------------------------------------------------
-void FX_GunshotSplash( const Vector &origin, const Vector &normal, float scale )
+void FX_GunshotSplashVisuals( const Vector &origin, const Vector &normal, float scale )
 {
-	VPROF_BUDGET( "FX_GunshotSplash", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
-	
-	if ( cl_show_splashes.GetBool() == false )
-		return;
-
+#if 0
 	Vector	color;
 	float	luminosity;
 	
@@ -233,7 +237,28 @@ void FX_GunshotSplash( const Vector &origin, const Vector &normal, float scale )
 
 	// Do a ripple
 	FX_WaterRipple( origin, flScale, &color, 1.5f, luminosity );
+#else
+	QAngle vecAngles;
+	// we flip the z and the x to match the orientation of how the impact particles are authored
+	// all impact particles are authored with the effect going "up" (0, 0, 1)
+	VectorAngles( Vector( normal.z, normal.y, normal.x ), vecAngles );
+	if ( scale < 4.0f )
+	{
+		DispatchParticleEffect( "water_splash_01", origin, vecAngles );
+	}
+	else if ( scale < 8.0f )
+	{
+		DispatchParticleEffect( "water_splash_02", origin, vecAngles );
+	}
+	else
+	{
+		DispatchParticleEffect( "water_splash_03", origin, vecAngles );
+	}
+#endif
+}
 
+void FX_GunshotSplashSound( const Vector &origin, const Vector &normal, float scale )
+{
 	//Play a sound
 	CLocalPlayerFilter filter;
 
@@ -246,6 +271,17 @@ void FX_GunshotSplash( const Vector &origin, const Vector &normal, float scale )
 
 
 	C_BaseEntity::EmitSound( filter, SOUND_FROM_WORLD, ep );
+}
+
+void FX_GunshotSplash( const Vector &origin, const Vector &normal, float scale )
+{
+	VPROF_BUDGET( "FX_GunshotSplash", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
+
+	if ( cl_show_splashes.GetBool() == false )
+		return;
+
+	FX_GunshotSplashVisuals( origin, normal, scale );
+	FX_GunshotSplashSound( origin, normal, scale );
 }
 
 //-----------------------------------------------------------------------------
@@ -290,10 +326,6 @@ void FX_GunshotSlimeSplash( const Vector &origin, const Vector &normal, float sc
 	sparkEmitter->m_ParticleCollision.SetGravity( 800.0f );
 	sparkEmitter->SetFlag( bitsPARTICLE_TRAIL_VELOCITY_DAMPEN );
 	sparkEmitter->SetVelocityDampen( 2.0f );
-	if ( IsXbox() )
-	{
-		sparkEmitter->GetBinding().SetBBox( origin - Vector( 32, 32, 64 ), origin + Vector( 32, 32, 64 ) );
-	}
 
 	//Dump out drops
 	for ( int i = 0; i < 24; i++ )
@@ -331,11 +363,6 @@ void FX_GunshotSlimeSplash( const Vector &origin, const Vector &normal, float sc
 	pSimple->SetSortOrigin( origin );
 	pSimple->SetClipHeight( origin.z );
 	pSimple->SetParticleCullRadius( scale * 2.0f );
-
-	if ( IsXbox() )
-	{
-		pSimple->GetBinding().SetBBox( origin - Vector( 32, 32, 64 ), origin + Vector( 32, 32, 64 ) );
-	}
 
 	SimpleParticle	*pParticle;
 
@@ -380,7 +407,9 @@ void FX_GunshotSlimeSplash( const Vector &origin, const Vector &normal, float sc
 #else
 	
 	QAngle vecAngles;
-	VectorAngles( normal, vecAngles );
+	// we flip the z and the x to match the orientation of how the impact particles are authored
+	// all impact particles are authored with the effect going "up" (0, 0, 1)
+	VectorAngles( Vector( normal.z, normal.y, normal.x ), vecAngles );
 	if ( scale < 2.0f )
 	{
 		DispatchParticleEffect( "slime_splash_01", origin, vecAngles );
@@ -451,8 +480,25 @@ void SplashCallback( const CEffectData &data )
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "watersplash", SplashCallback );
+DECLARE_CLIENT_EFFECT( watersplash, SplashCallback );
 
+void SplashQuietCallback( const CEffectData &data )
+{
+	Vector	normal;
+
+	AngleVectors( data.m_vAngles, &normal );
+
+	if ( data.m_fFlags & FX_WATER_IN_SLIME )
+	{
+		FX_GunshotSlimeSplash( data.m_vOrigin, Vector(0,0,1), data.m_flScale );
+	}
+	else
+	{
+		FX_GunshotSplashVisuals( data.m_vOrigin, Vector(0,0,1), data.m_flScale );
+	}
+}
+
+DECLARE_CLIENT_EFFECT( watersplashquiet, SplashQuietCallback );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -470,7 +516,7 @@ void GunshotSplashCallback( const CEffectData &data )
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "gunshotsplash", GunshotSplashCallback );
+DECLARE_CLIENT_EFFECT( gunshotsplash, GunshotSplashCallback );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -489,7 +535,7 @@ void RippleCallback( const CEffectData &data )
 	FX_WaterRipple( data.m_vOrigin, flScale, &color, 1.5f, luminosity );
 }
 
-DECLARE_CLIENT_EFFECT( "waterripple", RippleCallback );
+DECLARE_CLIENT_EFFECT( waterripple, RippleCallback );
 
 //-----------------------------------------------------------------------------
 // Purpose: 

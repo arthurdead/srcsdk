@@ -36,7 +36,8 @@
 											// find the weapon).
 #define ROPE_NO_GRAVITY			(1<<8)		// Disable gravity on this rope.
 #define ROPE_USE_WIND			(1<<9)		// Wind simulation on this rope.
-#define ROPE_NUMFLAGS			10
+#define ROPE_TONGUE_ATTACH		(1<<10)		// Use the special rules unique to a tongue rope, without cutting open the class to inherit one function.
+#define ROPE_NUMFLAGS			11
 
 
 // This is added to all rope slacks so when a level designer enters a 

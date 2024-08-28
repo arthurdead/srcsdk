@@ -29,9 +29,6 @@
 #include "tier0/memdbgon.h"
 
 extern ConVar think_limit;
-#ifdef _XBOX
-ConVar vprof_think_limit( "vprof_think_limit", "0" );
-#endif
 
 ConVar vprof_scope_entity_thinks( "vprof_scope_entity_thinks", "0" );
 ConVar vprof_scope_entity_gamephys( "vprof_scope_entity_gamephys", "0" );
@@ -938,13 +935,6 @@ void CBaseEntity::PhysicsDispatchThink( BASEPTR thinkFunc )
 		float ftime = ( engine->Time() - startTime ) * 1000.0f;
 		if ( ftime > thinkLimit )
 		{
-#if defined( _XBOX ) && !defined( _RETAIL )
-			if ( vprof_think_limit.GetBool() )
-			{
-				extern bool g_VProfSignalSpike;
-				g_VProfSignalSpike = true;
-			}
-#endif
 			// If its an NPC print out the shedule/task that took so long
 			CAI_BaseNPC *pNPC = MyNPCPointer();
 			if (pNPC && pNPC->GetCurSchedule())
@@ -1944,7 +1934,6 @@ void Physics_SimulateEntity( CBaseEntity *pEntity )
 
 	if ( pEntity->edict() )
 	{
-#if !defined( NO_ENTITY_PREDICTION )
 		// Player drives simulation of this entity
 		if ( pEntity->IsPlayerSimulated() )
 		{
@@ -1960,11 +1949,9 @@ void Physics_SimulateEntity( CBaseEntity *pEntity )
 
 			pEntity->UnsetPlayerSimulated();
 		}
-#endif
 
 		MDLCACHE_CRITICAL_SECTION();
 
-#if !defined( NO_ENTITY_PREDICTION )
 		// If an object was at one point player simulated, but had that status revoked (as just
 		//  above when no packets have arrived in a while ), then we still will assume that the
 		//  owner/player will be predicting the entity locally (even if the game is playing like butt)
@@ -1999,7 +1986,6 @@ void Physics_SimulateEntity( CBaseEntity *pEntity )
 			IPredictionSystem::SuppressHostEvents( NULL );
 		}
 		else
-#endif
 		{
 			// Run entity physics
 			pEntity->PhysicsSimulate();

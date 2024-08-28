@@ -30,9 +30,6 @@ const float MAX_GLOW_PROXY_SIZE = 64.0f;
 
 LINK_ENTITY_TO_CLASS( env_sprite, CSprite );
 LINK_ENTITY_TO_CLASS( env_sprite_oriented, CSpriteOriented );
-#if !defined( CLIENT_DLL )
-LINK_ENTITY_TO_CLASS( env_glow, CSprite ); // For backwards compatibility, remove when no longer needed.
-#endif
 
 #if !defined( CLIENT_DLL )
 BEGIN_DATADESC( CSprite )
@@ -174,7 +171,12 @@ BEGIN_NETWORK_TABLE( CSprite, DT_Sprite )
 END_NETWORK_TABLE()
 
 
+#if defined( CLIENT_DLL )
+CSprite::CSprite(bool bClientOnly)
+	: CBaseEntity(bClientOnly), C_SpriteRenderer()
+#else
 CSprite::CSprite()
+#endif
 {
 	m_flGlowProxySize = 2.0f;
 	m_flHDRColorScale = 1.0f;
@@ -184,6 +186,14 @@ CSprite::CSprite()
 	m_bDrawInPortalRender = true;
 #endif
 }
+
+#if defined( CLIENT_DLL )
+CSprite::CSprite()
+	: CSprite(false)
+{
+}
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -201,10 +211,17 @@ void CSprite::Spawn( void )
 	AddEffects( EF_NOSHADOW | EF_NORECEIVESHADOW );
 
 #if defined( CLIENT_DLL )
-	SetNextClientThink( CLIENT_THINK_ALWAYS );
+	SetContextThink( &CSprite::BrightnessThink, TICK_ALWAYS_THINK, "BrightnessThink" );
 #endif
 
 #if !defined( CLIENT_DLL )
+	if ( m_flGlowProxySize > MAX_GLOW_PROXY_SIZE )
+	{
+		// Clamp on Spawn to prevent per-frame spew
+		DevWarning( "env_sprite at setpos %0.0f %0.0f %0.0f has invalid glow size %f - clamping to %f\n",
+			GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z, m_flGlowProxySize.Get(), MAX_GLOW_PROXY_SIZE );
+		m_flGlowProxySize = MAX_GLOW_PROXY_SIZE;
+	}
 	if ( GetEntityName() != NULL_STRING && !(m_spawnflags & SF_SPRITE_STARTON) )
 	{
 		TurnOff();
@@ -238,7 +255,7 @@ void CSprite::Spawn( void )
 	}
 
 	//Set our state
-	SetBrightness( m_clrRender->a );
+	SetBrightness( GetRenderAlpha() );
 	SetScale( scale );
 
 #if defined( CLIENT_DLL )
@@ -346,7 +363,7 @@ int CSprite::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 	
 	if ( GetMoveParent() )
 	{
-		CBaseViewModel *pViewModel = dynamic_cast<CBaseViewModel *>( GetMoveParent() );
+		CBaseViewModel *pViewModel = ToBaseViewModel( GetMoveParent() );
 
 		if ( pViewModel )
 		{
@@ -407,7 +424,7 @@ CSprite *CSprite::SpriteCreate( const char *pSpriteName, const Vector &origin, b
 //-----------------------------------------------------------------------------
 CSprite *CSprite::SpriteCreatePredictable( const char *module, int line, const char *pSpriteName, const Vector &origin, bool animate )
 {
-	CSprite *pSprite = ( CSprite * )CREATE_PREDICTED_ENTITY_AT( module, line, "env_sprite", origin, vec3_angle );
+	CSprite *pSprite = ( CSprite * )CBaseEntity::CreatePredicted( module, line, "env_sprite", origin, vec3_angle );
 	if ( pSprite )
 	{
 		pSprite->SetModelName( MAKE_STRING(pSpriteName) );
@@ -439,7 +456,7 @@ void CSprite::AnimateUntilDead( void )
 {
 	if ( gpGlobals->curtime > m_flDieTime )
 	{
-		Remove( );
+		UTIL_Remove( this );
 	}
 	else
 	{
@@ -472,14 +489,14 @@ void CSprite::ExpandThink( void )
 	SetSpriteScale( m_flSpriteScale + m_flSpeed * frametime );
 
 	int sub = (int)(m_iHealth * frametime);
-	if ( sub > m_clrRender->a )
+	if ( sub > GetRenderAlpha() )
 	{
-		SetRenderColorA( 0 );
-		Remove( );
+		SetRenderAlpha( 0 );
+		UTIL_Remove( this );
 	}
 	else
 	{
-		SetRenderColorA( m_clrRender->a - sub );
+		SetRenderAlpha( GetRenderAlpha() - sub );
 		SetNextThink( gpGlobals->curtime );
 		m_flLastTime		= gpGlobals->curtime;
 	}
@@ -708,8 +725,6 @@ void CSprite::OnDataChanged( DataUpdateType_t updateType )
 {
 	BaseClass::OnDataChanged( updateType );
 
-	// Only think when sapping
-	SetNextClientThink( CLIENT_THINK_ALWAYS );
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
 		m_flStartScale = m_flDestScale = m_flSpriteScale;
@@ -717,11 +732,20 @@ void CSprite::OnDataChanged( DataUpdateType_t updateType )
 	}
 
 	UpdateVisibility();
+
+	if ( m_flSpriteScale != m_flDestScale || m_nBrightness != m_nDestBrightness )
+	{
+		SetContextThink( &CSprite::BrightnessThink, TICK_ALWAYS_THINK, "BrightnessThink" );
+	}
+	else
+	{
+		SetNextThink( TICK_NEVER_THINK, "BrightnessThink" );
+	}
 }
 
-void CSprite::ClientThink( void )
+void CSprite::BrightnessThink( void )
 {
-	BaseClass::ClientThink();
+	bool bDisableThink = true;
 
 	// Module render colors over time
 	if ( m_flSpriteScale != m_flDestScale )
@@ -729,6 +753,7 @@ void CSprite::ClientThink( void )
 		m_flStartScale		= m_flDestScale;
 		m_flDestScale		= m_flSpriteScale;
 		m_flScaleTimeStart	= gpGlobals->curtime;
+		bDisableThink = false;
 	}
 
 	if ( m_nBrightness != m_nDestBrightness )
@@ -736,6 +761,12 @@ void CSprite::ClientThink( void )
 		m_nStartBrightness		= m_nDestBrightness;
 		m_nDestBrightness		= m_nBrightness;
 		m_flBrightnessTimeStart = gpGlobals->curtime;
+		bDisableThink = false;
+	}
+
+	if ( bDisableThink )
+	{
+		SetNextThink( TICK_NEVER_THINK, "BrightnessThink" );
 	}
 }
 
@@ -747,11 +778,11 @@ extern ConVar r_drawviewmodel;
 // Input  : flags - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CSprite::DrawModel( int flags )
+int CSprite::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 	VPROF_BUDGET( "CSprite::DrawModel", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	//See if we should draw
-	if ( !IsVisible() || ( m_bReadyToDraw == false ) )
+	if ( !IsVisible() || ( ReadyToDraw() == false ) )
 		return 0;
 
 #ifdef PORTAL
@@ -766,7 +797,7 @@ int CSprite::DrawModel( int flags )
 	//   who have viewmodels as their moveparent
 	if ( g_bRenderingScreenshot || !r_drawviewmodel.GetBool() )
 	{
-		C_BaseViewModel *vm = dynamic_cast< C_BaseViewModel * >( GetMoveParent() );
+		C_BaseViewModel *vm = ToBaseViewModel( GetMoveParent() );
 		if ( vm )
 		{
 			return 0;
@@ -776,7 +807,11 @@ int CSprite::DrawModel( int flags )
 	//Must be a sprite
 	if ( modelinfo->GetModelType( GetModel() ) != mod_sprite )
 	{
-		Assert( 0 );
+		const char *modelName = modelinfo->GetModelName( GetModel() );
+		char msg[256];
+		V_snprintf( msg, 256, "Sprite %d has non-mod_sprite model %s (type %d)\n",
+			entindex(), modelName, modelinfo->GetModelType( GetModel() ) );
+		AssertMsgOnce( 0, msg );
 		return 0;
 	}
 
@@ -798,11 +833,11 @@ int CSprite::DrawModel( int flags )
 		m_hAttachedToEntity,	// attach to
 		m_nAttachment,			// attachment point
 		GetRenderMode(),		// rendermode
-		m_nRenderFX,
-		GetRenderBrightness(),	// alpha
-		m_clrRender->r,
-		m_clrRender->g,
-		m_clrRender->b,
+		GetRenderFX(),
+		(float)( GetRenderBrightness() * instance.m_nAlpha ) * ( 1.0f / 255.0f ) + 0.5f,	// alpha
+		GetRenderColorR(),
+		GetRenderColorG(),
+		GetRenderColorB(),
 		renderscale,			// sprite scale
 		GetHDRColorScale()		// HDR Color Scale
 		);
@@ -860,9 +895,9 @@ void CSpriteOriented::Spawn( void )
 
 #else
 
-bool CSpriteOriented::IsTransparent( void )
+RenderableTranslucencyType_t CSpriteOriented::ComputeTranslucencyType()
 {
-	return true;
+	return RENDERABLE_IS_TRANSLUCENT;
 }
 
 #endif

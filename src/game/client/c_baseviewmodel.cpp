@@ -18,9 +18,7 @@
 #include "tools/bonelist.h"
 #include <KeyValues.h>
 #include "hltvcamera.h"
-#ifdef TF_CLIENT_DLL
-	#include "tf_weaponbase.h"
-#endif
+#include "iinput.h"
 
 #if defined( REPLAY_ENABLED )
 #include "replay/replaycamera.h"
@@ -28,29 +26,24 @@
 #include "replay/ienginereplay.h"
 #endif
 
-// NVNT haptics system interface
-#include "haptics/ihaptics.h"
-
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#ifdef CSTRIKE_DLL
-	ConVar cl_righthand( "cl_righthand", "1", FCVAR_ARCHIVE, "Use right-handed view models." );
-#endif
+ConVar cl_righthand( "cl_righthand", "1", FCVAR_ARCHIVE, "Use right-handed view models." );
+ConVar cl_flipviewmodels( "cl_flipviewmodels", "0", FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_NOT_CONNECTED, "Flip view models." );
 
-#ifdef TF_CLIENT_DLL
-	ConVar cl_flipviewmodels( "cl_flipviewmodels", "0", FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_NOT_CONNECTED, "Flip view models." );
-#endif
+ConVar vm_debug( "vm_debug", "0", FCVAR_CHEAT );
+ConVar vm_draw_always( "vm_draw_always", "0" );
 
 ConVar r_flashlight_viewmodel("r_flashlight_viewmodel", "1");
 
 void PostToolMessage( HTOOLHANDLE hEntity, KeyValues *msg );
+extern float g_flMuzzleFlashScale;
 
-void FormatViewModelAttachment( Vector &vOrigin, bool bInverse )
+void FormatViewModelAttachment( C_BasePlayer *pPlayer, Vector &vOrigin, bool bInverse )
 {
 	// Presumably, SetUpView has been called so we know our FOV and render origin.
-	const CViewSetup *pViewSetup = view->GetPlayerViewSetup();
+	const CViewSetup *pViewSetup = GetViewRenderInstance()->GetPlayerViewSetup();
 	
 	float worldx = tan( pViewSetup->fov * M_PI/360.0 );
 	float viewx = tan( pViewSetup->fovViewmodel * M_PI/360.0 );
@@ -96,9 +89,10 @@ void FormatViewModelAttachment( Vector &vOrigin, bool bInverse )
 
 void C_BaseViewModel::FormatViewModelAttachment( int nAttachment, matrix3x4_t &attachmentToWorld )
 {
+	C_BasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 	Vector vecOrigin;
 	MatrixPosition( attachmentToWorld, vecOrigin );
-	::FormatViewModelAttachment( vecOrigin, false );
+	::FormatViewModelAttachment( pPlayer, vecOrigin, false );
 	PositionMatrix( vecOrigin, attachmentToWorld );
 }
 
@@ -110,8 +104,9 @@ bool C_BaseViewModel::IsViewModel() const
 
 void C_BaseViewModel::UncorrectViewModelAttachment( Vector &vOrigin )
 {
+	C_BasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 	// Unformat the attachment.
-	::FormatViewModelAttachment( vOrigin, true );
+	::FormatViewModelAttachment( pPlayer, vOrigin, true );
 }
 
 
@@ -132,17 +127,20 @@ void C_BaseViewModel::FireEvent( const Vector& origin, const QAngle& angles, int
 		}
 	}
 
+	C_BasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	if ( !pOwner )
+		return;
+
 	// Otherwise pass the event to our associated weapon
-	C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
+	C_BaseCombatWeapon *pWeapon = pOwner->GetActiveWeapon();
 	if ( pWeapon )
 	{
-		// NVNT notify the haptics system of our viewmodel's event
-		if ( haptics )
-			haptics->ProcessHapticEvent(4,"Weapons",pWeapon->GetName(),"AnimationEvents",VarArgs("%i",event));
-
-		bool bResult = pWeapon->OnFireEvent( this, origin, angles, event, options );
+		bool bResult = pWeapon->ViewModel_FireEvent( this, origin, angles, event, options );
 		if ( !bResult )
 		{
+			if ( event == AE_CLIENT_EFFECT_ATTACH && ::input->CAM_IsThirdPerson() )
+				return;
+
 			BaseClass::FireEvent( origin, angles, event, options );
 		}
 	}
@@ -157,15 +155,15 @@ bool C_BaseViewModel::Interpolate( float currentTime )
 	bool bret = BaseClass::Interpolate( currentTime );
 
 	// Hack to extrapolate cycle counter for view model
-	float elapsed_time = currentTime - m_flAnimTime;
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	float elapsed_time = currentTime - GetAnimTime();
+	C_BasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 
 	// Predicted viewmodels have fixed up interval
 	if ( GetPredictable() || IsClientCreated() )
 	{
 		Assert( pPlayer );
 		float curtime = pPlayer ? pPlayer->GetFinalPredictedTime() : gpGlobals->curtime;
-		elapsed_time = curtime - m_flAnimTime;
+		elapsed_time = curtime - GetAnimTime();
 		// Adjust for interpolated partial frame
 		if ( !engine->IsPaused() )
 		{
@@ -199,23 +197,13 @@ bool C_BaseViewModel::Interpolate( float currentTime )
 
 bool C_BaseViewModel::ShouldFlipViewModel()
 {
-#ifdef CSTRIKE_DLL
 	// If cl_righthand is set, then we want them all right-handed.
 	CBaseCombatWeapon *pWeapon = m_hWeapon.Get();
 	if ( pWeapon )
 	{
 		const FileWeaponInfo_t *pInfo = &pWeapon->GetWpnData();
-		return pInfo->m_bAllowFlipping && pInfo->m_bBuiltRightHanded != cl_righthand.GetBool();
+		return (pInfo->m_bAllowFlipping && pInfo->m_bBuiltRightHanded != cl_righthand.GetBool()) || (pWeapon->m_bFlipViewModel != cl_flipviewmodels.GetBool());
 	}
-#endif
-
-#ifdef TF_CLIENT_DLL
-	CBaseCombatWeapon *pWeapon = m_hWeapon.Get();
-	if ( pWeapon )
-	{
-		return pWeapon->m_bFlipViewModel != cl_flipviewmodels.GetBool();
-	}
-#endif
 
 	return false;
 }
@@ -229,7 +217,7 @@ void C_BaseViewModel::ApplyBoneMatrixTransform( matrix3x4_t& transform )
 
 		// We could get MATERIAL_VIEW here, but this is called sometimes before the renderer
 		// has set that matrix. Luckily, this is called AFTER the CViewSetup has been initialized.
-		const CViewSetup *pSetup = view->GetPlayerViewSetup();
+		const CViewSetup *pSetup = GetViewRenderInstance()->GetPlayerViewSetup();
 		AngleMatrix( pSetup->angles, pSetup->origin, viewMatrixInverse );
 		MatrixInvert( viewMatrixInverse, viewMatrix );
 
@@ -275,6 +263,14 @@ bool C_BaseViewModel::ShouldDraw()
 #endif
 	else
 	{
+		Assert( !IsEffectActive( EF_NODRAW ) );
+		Assert(	GetRenderMode() != kRenderNone );
+
+		if ( vm_draw_always.GetBool() )
+			return true;
+		if ( GetOwner() != C_BasePlayer::GetLocalPlayer() )
+			return false;
+
 		return BaseClass::ShouldDraw();
 	}
 }
@@ -283,15 +279,15 @@ bool C_BaseViewModel::ShouldDraw()
 // Purpose: Render the weapon. Draw the Viewmodel if the weapon's being carried
 //			by this player, otherwise draw the worldmodel.
 //-----------------------------------------------------------------------------
-int C_BaseViewModel::DrawModel( int flags )
+int C_BaseViewModel::DrawModel( int flags, const RenderableInstance_t &instance )
 {
-	if ( !m_bReadyToDraw )
+	if ( !ReadyToDraw() )
 		return 0;
 
 	if ( flags & STUDIO_RENDER )
 	{
 		// Determine blending amount and tell engine
-		float blend = (float)( GetFxBlend() / 255.0f );
+		float blend = (float)( instance.m_nAlpha / 255.0f );
 
 		// Totally gone
 		if ( blend <= 0.0f )
@@ -311,15 +307,15 @@ int C_BaseViewModel::DrawModel( int flags )
 	// If the local player's overriding the viewmodel rendering, let him do it
 	if ( pPlayer && pPlayer->IsOverridingViewmodel() )
 	{
-		ret = pPlayer->DrawOverriddenViewmodel( this, flags );
+		ret = pPlayer->ViewModel_DrawModel( this, flags, instance );
 	}
 	else if ( pWeapon && pWeapon->IsOverridingViewmodel() )
 	{
-		ret = pWeapon->DrawOverriddenViewmodel( this, flags );
+		ret = pWeapon->ViewModel_DrawModel( this, flags, instance );
 	}
 	else
 	{
-		ret = BaseClass::DrawModel( flags );
+		ret = BaseClass::DrawModel( flags, instance );
 	}
 
 	// Now that we've rendered, reset the animation restart flag
@@ -333,6 +329,51 @@ int C_BaseViewModel::DrawModel( int flags )
 		if ( pWeapon )
 		{
 			pWeapon->ViewModelDrawn( this );
+		}
+
+		if ( vm_debug.GetBool() )
+		{
+			MDLCACHE_CRITICAL_SECTION();
+
+			int line = 16;
+			CStudioHdr *hdr = GetModelPtr();
+			engine->Con_NPrintf( line++, "%s: %s(%d), cycle: %.2f cyclerate: %.2f playbackrate: %.2f\n", 
+				(hdr)?hdr->pszName():"(null)",
+				GetSequenceName( GetSequence() ),
+				GetSequence(),
+				GetCycle(), 
+				GetSequenceCycleRate( hdr, GetSequence() ),
+				GetPlaybackRate()
+				);
+			if ( hdr )
+			{
+				for( int i=0; i < hdr->GetNumPoseParameters(); ++i )
+				{
+					const mstudioposeparamdesc_t &Pose = hdr->pPoseParameter( i );
+					engine->Con_NPrintf( line++, "pose_param %s: %f",
+						Pose.pszName(), GetPoseParameter( i ) );
+				}
+			}
+
+			// Determine blending amount and tell engine
+			float blend = (float)( instance.m_nAlpha / 255.0f );
+			float color[3];
+			GetColorModulation( color );
+			engine->Con_NPrintf( line++, "blend=%f, color=%f,%f,%f", blend, color[0], color[1], color[2] );
+			engine->Con_NPrintf( line++, "GetRenderMode()=%d", GetRenderMode() );
+			engine->Con_NPrintf( line++, "m_nRenderFX=0x%8.8X", GetRenderFX() );
+
+			color24 c = GetRenderColor();
+			unsigned char a = GetRenderAlpha();
+			engine->Con_NPrintf( line++, "rendercolor=%d,%d,%d,%d", c.r, c.g, c.b, a );
+
+			engine->Con_NPrintf( line++, "origin=%f, %f, %f", GetRenderOrigin().x, GetRenderOrigin().y, GetRenderOrigin().z );
+			engine->Con_NPrintf( line++, "angles=%f, %f, %f", GetRenderAngles()[0], GetRenderAngles()[1], GetRenderAngles()[2] );
+
+			if ( IsEffectActive( EF_NODRAW ) )
+			{
+				engine->Con_NPrintf( line++, "EF_NODRAW" );
+			}
 		}
 	}
 
@@ -352,13 +393,13 @@ int C_BaseViewModel::DrawModel( int flags )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int C_BaseViewModel::InternalDrawModel( int flags )
+int C_BaseViewModel::InternalDrawModel( int flags, const RenderableInstance_t &instance )
 {
 	CMatRenderContextPtr pRenderContext( materials );
 	if ( ShouldFlipViewModel() )
 		pRenderContext->CullMode( MATERIAL_CULLMODE_CW );
 
-	int ret = BaseClass::InternalDrawModel( flags );
+	int ret = BaseClass::InternalDrawModel( flags, instance );
 
 	pRenderContext->CullMode( MATERIAL_CULLMODE_CCW );
 
@@ -368,74 +409,66 @@ int C_BaseViewModel::InternalDrawModel( int flags )
 //-----------------------------------------------------------------------------
 // Purpose: Called by the player when the player's overriding the viewmodel drawing. Avoids infinite recursion.
 //-----------------------------------------------------------------------------
-int C_BaseViewModel::DrawOverriddenViewmodel( int flags )
+int C_BaseViewModel::DrawOverriddenViewmodel( int flags, const RenderableInstance_t &instance )
 {
-	return BaseClass::DrawModel( flags );
+	return BaseClass::DrawModel( flags, instance );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int C_BaseViewModel::GetFxBlend( void )
+uint8 C_BaseViewModel::OverrideRenderAlpha( uint8 nAlpha )
 {
 	// See if the local player wants to override the viewmodel's rendering
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 	if ( pPlayer && pPlayer->IsOverridingViewmodel() )
-	{
-		pPlayer->ComputeFxBlend();
-		return pPlayer->GetFxBlend();
-	}
-
+		return pPlayer->ViewModel_OverrideRenderAlpha( nAlpha );
+	
 	C_BaseCombatWeapon *pWeapon = GetOwningWeapon();
 	if ( pWeapon && pWeapon->IsOverridingViewmodel() )
-	{
-		pWeapon->ComputeFxBlend();
-		return pWeapon->GetFxBlend();
-	}
+		return pWeapon->ViewModel_OverrideRenderAlpha( nAlpha );
 
-	return BaseClass::GetFxBlend();
+	return nAlpha;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool C_BaseViewModel::IsTransparent( void )
+RenderableTranslucencyType_t C_BaseViewModel::ComputeTranslucencyType( void )
 {
 	// See if the local player wants to override the viewmodel's rendering
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 	if ( pPlayer && pPlayer->IsOverridingViewmodel() )
-	{
-		return pPlayer->ViewModel_IsTransparent();
-	}
+		return pPlayer->ViewModel_ComputeTranslucencyType();
 
 	C_BaseCombatWeapon *pWeapon = GetOwningWeapon();
 	if ( pWeapon && pWeapon->IsOverridingViewmodel() )
-		return pWeapon->ViewModel_IsTransparent();
+		return pWeapon->ViewModel_ComputeTranslucencyType();
 
-	return BaseClass::IsTransparent();
+	return BaseClass::ComputeTranslucencyType();
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool C_BaseViewModel::UsesPowerOfTwoFrameBufferTexture( void )
+int C_BaseViewModel::GetRenderFlags( void )
 {
 	// See if the local player wants to override the viewmodel's rendering
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 	if ( pPlayer && pPlayer->IsOverridingViewmodel() )
 	{
-		return pPlayer->ViewModel_IsUsingFBTexture();
+		return pPlayer->ViewModel_GetRenderFlags();
 	}
 
 	C_BaseCombatWeapon *pWeapon = GetOwningWeapon();
 	if ( pWeapon && pWeapon->IsOverridingViewmodel() )
 	{
-		return pWeapon->ViewModel_IsUsingFBTexture();
+		return pWeapon->ViewModel_GetRenderFlags();
 	}
 
-	return BaseClass::UsesPowerOfTwoFrameBufferTexture();
+	return BaseClass::GetRenderFlags();
 }
 
 bool C_BaseViewModel::ShouldReceiveProjectedTextures( int flags )
@@ -452,7 +485,7 @@ bool C_BaseViewModel::ShouldReceiveProjectedTextures( int flags )
 //-----------------------------------------------------------------------------
 void C_BaseViewModel::UpdateAnimationParity( void )
 {
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	C_BasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 	
 	// If we're predicting, then we don't use animation parity because we change the animations on the clientside
 	// while predicting. When not predicting, only the server changes the animations, so a parity mismatch
@@ -464,7 +497,7 @@ void C_BaseViewModel::UpdateAnimationParity( void )
 		// Simulate a networked m_flAnimTime and m_flCycle
 		// FIXME:  Do we need the magic 0.1?
 		SetCycle( 0.0f ); // GetSequenceCycleRate( GetSequence() ) * 0.1;
-		m_flAnimTime = curtime;
+		SetAnimTime( curtime );
 	}
 }
 
@@ -474,6 +507,11 @@ void C_BaseViewModel::UpdateAnimationParity( void )
 //-----------------------------------------------------------------------------
 void C_BaseViewModel::OnDataChanged( DataUpdateType_t updateType )
 {
+	if ( updateType == DATA_UPDATE_CREATED )
+	{
+		AlphaProp()->EnableRenderAlphaOverride( true );
+	}
+
 	SetPredictionEligible( true );
 	BaseClass::OnDataChanged(updateType);
 }
@@ -484,17 +522,23 @@ void C_BaseViewModel::PostDataUpdate( DataUpdateType_t updateType )
 	OnLatchInterpolatedVariables( LATCH_ANIMATION_VAR );
 }
 
+CBasePlayer *C_BaseViewModel::GetPredictionOwner()
+{
+	return ToBasePlayer( GetOwner() );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Add entity to visible view models list
 //-----------------------------------------------------------------------------
-void C_BaseViewModel::AddEntity( void )
+bool C_BaseViewModel::Simulate( void )
 {
 	// Server says don't interpolate this frame, so set previous info to new info.
 	if ( IsNoInterpolationFrame() )
 	{
 		ResetLatched();
 	}
+	BaseClass::Simulate();
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -505,18 +549,13 @@ void C_BaseViewModel::GetBoneControllers(float controllers[MAXSTUDIOBONECTRLS])
 	BaseClass::GetBoneControllers( controllers );
 
 	// Tell the weapon itself that we've rendered, in case it wants to do something
-	C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
+	C_BasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+	if ( !pPlayer )
+		return;
+
+	C_BaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();
 	if ( pWeapon )
 	{
 		pWeapon->GetViewmodelBoneControllers( this, controllers );
 	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : RenderGroup_t
-//-----------------------------------------------------------------------------
-RenderGroup_t C_BaseViewModel::GetRenderGroup()
-{
-	return RENDER_GROUP_VIEW_MODEL_OPAQUE;
 }

@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "iinput.h"
+
 #ifdef CLIENT_DLL
 	#include "c_baseplayer.h"
 #else
@@ -35,11 +37,21 @@
 #define CAMERA_OFFSET_LERP_TIME 0.5f
 #define CAMERA_UP_OFFSET_LERP_TIME 0.25f
 
+enum
+{
+	FORCED_CAM_DISABLED = -1,
+	FORCED_CAM_FIRSTPERSON = CAM_FIRSTPERSON,
+	FORCED_CAM_THIRDPERSON = CAM_THIRDPERSON,
+	FORCED_CAM_THIRDPERSONSHOULDER = CAM_THIRDPERSONSHOULDER,
+	FORCED_CAM_MAYAMODE = CAM_MAYAMODE,
+	FORCED_CAM_ORTHOGRAPHIC = CAM_ORTHOGRAPHIC
+};
+
 class CThirdPersonManager
 {
 public:
-
 	CThirdPersonManager();
+
 	void	SetCameraOffsetAngles( const Vector& vecOffset ) { m_vecCameraOffset = vecOffset; }
 	const Vector&	GetCameraOffsetAngles( void ) const { return m_vecCameraOffset; }
 	
@@ -62,15 +74,10 @@ public:
 
 	Vector	GetDistanceFraction( void );
 
-	bool	WantToUseGameThirdPerson( void );
-
-	void	SetOverridingThirdPerson( bool bOverride ) { m_bOverrideThirdPerson = bOverride; }
-	bool	IsOverridingThirdPerson( void ) { return m_bOverrideThirdPerson; }
-
 	void	Init( void );
 
-	void	SetForcedThirdPerson( bool bForced ) { m_bForced = bForced; }
-	bool	GetForcedThirdPerson() const { return m_bForced; }
+	void	SetForcedCamera( int iForced ) { m_iForced = iForced; }
+	int	GetForcedCamera() const { return m_iForced; }
 
 private:
 
@@ -91,9 +98,7 @@ private:
 	float	m_flTargetFraction;
 	float	m_flTargetUpFraction;
 
-	bool	m_bOverrideThirdPerson;
-
-	bool	m_bForced;
+	int	m_iForced;
 
 	float	m_flUpOffset;
 

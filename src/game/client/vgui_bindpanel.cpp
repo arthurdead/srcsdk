@@ -103,28 +103,8 @@ void CBindPanel::UpdateBackgroundImage()
 
 	if ( m_szKey[0] == '\0' )
 	{
-		if ( IsX360() )
-		{
-			Q_strcpy( m_szBackgroundTextureName, "icon_blank" );
-		}
-		else
-		{
-			Q_strcpy( m_szBackgroundTextureName, "icon_key_generic" );
-		}
-	}
-	else if ( IsX360() )
-	{
-		// Use a blank background for the button icons
-		Q_strcpy( m_szBackgroundTextureName, "icon_blank" );
-		m_bController = true;
-
-		if ( Q_strcmp( m_szKey, "L_SHOULDER" ) == 0 || 
-			Q_strcmp( m_szKey, "R_SHOULDER" ) == 0 )
-		{
-			m_fWidthScale = 2.0f;
-		}
-	}
-	else if ( in_joystick.GetInt() && 
+		Q_strcpy( m_szBackgroundTextureName, "icon_key_generic" );
+	} else if ( in_joystick.GetInt() && 
 		( Q_strcmp( m_szKey, "A_BUTTON" ) == 0 || 
 		Q_strcmp( m_szKey, "B_BUTTON" ) == 0 || 
 		Q_strcmp( m_szKey, "X_BUTTON" ) == 0 || 

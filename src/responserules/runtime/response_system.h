@@ -8,11 +8,14 @@
 
 #ifndef RESPONSE_SYSTEM_H
 #define RESPONSE_SYSTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utldict.h"
+#include "tier1/utlvector.h"
+#include "responserules/response_types.h"
+#include "response_types_internal.h"
+#include "tier1/stringpool.h"
+#include "tier1/utllinkedlist.h"
 
 namespace ResponseRules
 {

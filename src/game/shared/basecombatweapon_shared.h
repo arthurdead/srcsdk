@@ -8,7 +8,6 @@
 #define COMBATWEAPON_SHARED_H
 #pragma once
 
-#include "sharedInterface.h"
 #include "vphysics_interface.h"
 #include "predictable_entity.h"
 #include "soundflags.h"
@@ -16,15 +15,11 @@
 #include "baseviewmodel_shared.h"
 #include "weapon_proficiency.h"
 #include "utlmap.h"
+#include "sharedInterface.h"
 
 #if defined( CLIENT_DLL )
 #define CBaseCombatWeapon C_BaseCombatWeapon
 #endif
-
-// Hacky
-#if defined ( TF_CLIENT_DLL ) || defined ( TF_DLL )
-#include "econ_entity.h"
-#endif // TF_CLIENT_DLL || TF_DLL
 
 #if !defined( CLIENT_DLL )
 extern void OnBaseCombatWeaponCreated( CBaseCombatWeapon * );
@@ -53,7 +48,8 @@ class CUserCmd;
 // Put this in your derived class definition to declare it's activity table
 // UNDONE: Cascade these?
 #define DECLARE_ACTTABLE()		static acttable_t m_acttable[];\
-	virtual acttable_t *ActivityList( int &iActivityCount ) OVERRIDE;
+	acttable_t *ActivityList( void );\
+	int ActivityListCount( void );
 
 // You also need to include the activity table itself in your class' implementation:
 // e.g.
@@ -70,7 +66,8 @@ class CUserCmd;
 // activity table.
 // UNDONE: Cascade these?
 #define IMPLEMENT_ACTTABLE(className) \
-	acttable_t *className::ActivityList( int &iActivityCount ) { iActivityCount = ARRAYSIZE(m_acttable); return m_acttable; }
+	acttable_t *className::ActivityList( void ) { return m_acttable; } \
+	int className::ActivityListCount( void ) { return ARRAYSIZE(m_acttable); }
 
 typedef struct
 {
@@ -110,6 +107,9 @@ namespace vgui2
 	typedef unsigned long HFont;
 }
 
+#define MWHEEL_UP		 1
+#define MWHEEL_DOWN		-1
+
 // -----------------------------------------
 //	Vector cones
 // -----------------------------------------
@@ -133,16 +133,6 @@ namespace vgui2
 #define VECTOR_CONE_10DEGREES		Vector( 0.08716, 0.08716, 0.08716 )
 #define VECTOR_CONE_15DEGREES		Vector( 0.13053, 0.13053, 0.13053 )
 #define VECTOR_CONE_20DEGREES		Vector( 0.17365, 0.17365, 0.17365 )
-
-//-----------------------------------------------------------------------------
-// Purpose: Base weapon class, shared on client and server
-//-----------------------------------------------------------------------------
-
-#if defined USES_ECON_ITEMS
-#define BASECOMBATWEAPON_DERIVED_FROM		CEconEntity
-#else 
-#define BASECOMBATWEAPON_DERIVED_FROM		CBaseAnimating
-#endif 
 
 //-----------------------------------------------------------------------------
 // Collect trace attacks for weapons that fire multiple projectiles per attack that also penetrate
@@ -172,15 +162,20 @@ private:
 // Purpose: Client side rep of CBaseTFCombatWeapon 
 //-----------------------------------------------------------------------------
 // Hacky
-class CBaseCombatWeapon : public BASECOMBATWEAPON_DERIVED_FROM
+class CBaseCombatWeapon : public CBaseAnimating
 {
 public:
-	DECLARE_CLASS( CBaseCombatWeapon, BASECOMBATWEAPON_DERIVED_FROM );
+	DECLARE_CLASS( CBaseCombatWeapon, CBaseAnimating );
 	DECLARE_NETWORKCLASS();
 	DECLARE_PREDICTABLE();
 
 							CBaseCombatWeapon();
 	virtual 				~CBaseCombatWeapon();
+
+	// Get unique weapon ID
+	// FIXMEL4DTOMAINMERGE
+	// We might have to disable this code in main until we refactor all weapons to use this system, as it's a pretty good perf boost
+	virtual int GetWeaponID( void ) const		{ return 0; }
 
 	virtual bool			IsBaseCombatWeapon( void ) const { return true; }
 	virtual CBaseCombatWeapon *MyCombatWeaponPointer( void ) { return this; }
@@ -291,6 +286,7 @@ public:
 	// Weapon firing
 	virtual void			PrimaryAttack( void );						// do "+ATTACK"
 	virtual void			SecondaryAttack( void ) { return; }			// do "+ATTACK2"
+	virtual void			BaseForceFire( CBaseCombatCharacter *pOperator, CBaseEntity *pTarget = NULL );
 
 	// Firing animations
 	virtual Activity		GetPrimaryAttackActivity( void );
@@ -379,6 +375,8 @@ public:
 	virtual bool			UsesClipsForAmmo2( void ) const;
 	bool					IsMeleeWeapon() const;
 
+	virtual	void			OnMouseWheel( int nDirection ) {}
+
 	// derive this function if you mod uses encrypted weapon info files
 	virtual const unsigned char *GetEncryptionKey( void );
 
@@ -406,10 +404,12 @@ public:
 	virtual CHudTexture const	*GetSpriteZoomedAutoaim( void ) const;
 
 	virtual Activity		ActivityOverride( Activity baseAct, bool *pRequired );
-	virtual	acttable_t*		ActivityList( int &iActivityCount ) { return NULL; }
+	virtual	acttable_t*		ActivityList( void ) { return NULL; }
+	virtual	int				ActivityListCount( void ) { return 0; }
 
 	virtual void			PoseParameterOverride( bool bReset );
-	virtual poseparamtable_t* PoseParamList( int &iPoseParamCount ) { return NULL; }
+	virtual	poseparamtable_t*		PoseParamList( void ) { return NULL; }
+	virtual	int				PoseParamListCount( void ) { return 0; }
 
 	virtual void			Activate( void );
 
@@ -453,7 +453,7 @@ public:
 
 	virtual void			Operator_FrameUpdate( CBaseCombatCharacter  *pOperator );
 	virtual void			Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
-	virtual void			Operator_ForceNPCFire( CBaseCombatCharacter  *pOperator, bool bSecondary ) { return; }
+	virtual void			Operator_ForceNPCFire( CBaseCombatCharacter  *pOperator, bool bSecondary, CBaseEntity *pTarget = NULL ) { return; }
 	// NOTE: This should never be called when a character is operating the weapon.  Animation events should be
 	// routed through the character, and then back into CharacterAnimEvent() 
 	void					HandleAnimEvent( animevent_t *pEvent );
@@ -463,6 +463,8 @@ public:
 	void					InputHideWeapon( inputdata_t &inputdata );
 	void					Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
+	virtual void			MakeWeaponNameFromEntity( CBaseEntity *pOther );
+
 	virtual CDmgAccumulator	*GetDmgAccumulator( void ) { return NULL; }
 
 // Client only methods
@@ -470,20 +472,15 @@ public:
 
 	virtual void			BoneMergeFastCullBloat( Vector &localMins, Vector &localMaxs, const Vector &thisEntityMins, const Vector &thisEntityMaxs  ) const;
 
-	virtual bool			OnFireEvent( C_BaseViewModel *pViewModel, const Vector& origin, const QAngle& angles, int event, const char *options ) 
+	virtual bool			ViewModel_FireEvent( C_BaseViewModel *pViewModel, const Vector& origin, const QAngle& angles, int event, const char *options ) 
 	{ 
-#if defined USES_ECON_ITEMS
-		return BaseClass::OnFireEvent( pViewModel, origin, angles, event, options );
-#else
-		return false; 
-#endif
+		return false;
 	}
 
 	// Should this object cast shadows?
 	virtual ShadowType_t	ShadowCastType();
 	virtual void			SetDormant( bool bDormant );
 	virtual void			OnDataChanged( DataUpdateType_t updateType );
-	virtual void			OnRestore();
 
 	virtual void			RestartParticleEffect( void ) {}
 
@@ -502,11 +499,8 @@ public:
 
 	bool					IsBeingCarried() const;
 
-	// Is the carrier alive?
-	bool					IsCarrierAlive() const;
-
 	// Returns the aiment render origin + angles
-	virtual int				DrawModel( int flags );
+	virtual int				DrawModel( int flags, const RenderableInstance_t &instance );
 	virtual bool			ShouldDraw( void );
 	virtual bool			ShouldDrawPickup( void );
 	virtual void			HandleInput( void ) { return; };
@@ -522,22 +516,31 @@ public:
 	virtual int				GetWorldModelIndex( void );
 
 	virtual void			GetToolRecordingState( KeyValues *msg );
+	void					EnsureCorrectRenderingModel();
+	virtual void			GetToolViewModelState( KeyValues *msg ) {} // this is just a stub for viewmodels to request recording of weapon-specific effects, etc
+
 
 	virtual void			GetWeaponCrosshairScale( float &flScale ) { flScale = 1.f; }
 
-#if !defined USES_ECON_ITEMS
 	// Viewmodel overriding
-	virtual bool			ViewModel_IsTransparent( void ) { return IsTransparent(); }
-	virtual bool			ViewModel_IsUsingFBTexture( void ) { return UsesPowerOfTwoFrameBufferTexture(); }
+	virtual RenderableTranslucencyType_t ViewModel_ComputeTranslucencyType( void ) { return ComputeTranslucencyType(); }
+	virtual int ViewModel_GetRenderFlags( void ) { return GetRenderFlags(); }
+	virtual uint8 ViewModel_OverrideRenderAlpha( uint8 nAlpha ) { return AlphaProp()->ComputeRenderAlpha(); }
 	virtual bool			IsOverridingViewmodel( void ) { return false; };
-	virtual int				DrawOverriddenViewmodel( C_BaseViewModel *pViewmodel, int flags ) { return 0; };
+	virtual int				ViewModel_DrawModel( C_BaseViewModel *pViewmodel, int flags, const RenderableInstance_t &instance ) { return 0; };
 	bool					WantsToOverrideViewmodelAttachments( void ) { return false; }
-#endif
+
+	virtual IClientModelRenderable*	GetClientModelRenderable();
+	static CUtlLinkedList< CBaseCombatWeapon * >& GetWeaponList( void );
+	virtual int				LookupAttachment( const char *pAttachmentName );
 
 	//Tony; notifications of any third person switches.
 	virtual void			ThirdPersonSwitch( bool bThirdPerson ) {};
 
 #endif // End client-only methods
+
+	// Is the carrier alive?
+	bool					IsCarrierAlive() const;
 
 	virtual bool			CanLower( void ) { return false; }
 	virtual bool			Ready( void ) { return false; }
@@ -551,7 +554,6 @@ private:
 	CNetworkVar( CBaseCombatCharacterHandle, m_hOwner );				// Player carrying this weapon
 
 protected:
-#if defined ( TF_CLIENT_DLL ) || defined ( TF_DLL )
 	// Regulate crit frequency to reduce client-side seed hacking
 	void					AddToCritBucket( float flAmount );
 	void					RemoveFromCritBucket( float flAmount ) { m_flCritTokenBucket -= flAmount; }
@@ -560,7 +562,6 @@ protected:
 	float					m_flCritTokenBucket;
 	int						m_nCritChecks;
 	int						m_nCritSeedRequests;
-#endif // TF
 
 public:
 
@@ -652,7 +653,6 @@ protected:
 	COutputEvent			m_OnCacheInteraction;	// For awarding lambda cache achievements in HL2 on 360. See .FGD file for details 
 
 #else // Client .dll only
-	bool					m_bJustRestored;
 
 	// Allow weapons resource to access m_hWeaponFileInfo directly
 	friend class			WeaponsResource;
@@ -662,5 +662,15 @@ protected:
 
 #endif // End Client .dll only
 };
+
+//-----------------------------------------------------------------------------
+// Inline methods
+//-----------------------------------------------------------------------------
+inline CBaseCombatWeapon *ToBaseCombatWeapon( CBaseEntity *pEntity )
+{
+	if ( !pEntity )
+		return NULL;
+	return pEntity->MyCombatWeaponPointer();
+}
 
 #endif // COMBATWEAPON_SHARED_H

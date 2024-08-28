@@ -10,6 +10,7 @@
 #include "cdll_client_int.h"
 #include "materialsystem/MaterialSystemUtil.h"
 #include "colorcorrectionmgr.h"
+#include "c_triggers.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -22,10 +23,10 @@
 //------------------------------------------------------------------------------
 // Purpose : Shadow control entity
 //------------------------------------------------------------------------------
-class C_ColorCorrectionVolume : public C_BaseEntity
+class C_ColorCorrectionVolume : public C_BaseTrigger
 {
 public:
-	DECLARE_CLASS( C_ColorCorrectionVolume, C_BaseEntity );
+	DECLARE_CLASS( C_ColorCorrectionVolume, C_BaseTrigger );
 
 	DECLARE_CLIENTCLASS();
 	DECLARE_PREDICTABLE();
@@ -35,8 +36,6 @@ public:
 
 	void OnDataChanged(DataUpdateType_t updateType);
 	bool ShouldDraw();
-
-	void ClientThink();
 
 	void Update( C_BasePlayer *pPlayer, float ccScale );
 
@@ -105,7 +104,9 @@ void C_ColorCorrectionVolume::OnDataChanged(DataUpdateType_t updateType)
 			Q_snprintf( name, MAX_PATH, "%s_%d", cleanName, entindex() );
 
 			m_CCHandle = g_pColorCorrectionMgr->AddColorCorrectionVolume( this, name, m_lookupFilename );
-			SetNextClientThink( ( m_CCHandle != INVALID_CLIENT_CCHANDLE ) ? CLIENT_THINK_ALWAYS : CLIENT_THINK_NEVER );
+
+			SetSolid( SOLID_BSP );
+			SetSolidFlags( FSOLID_TRIGGER | FSOLID_NOT_SOLID );
 		}
 	}
 }
@@ -118,19 +119,12 @@ bool C_ColorCorrectionVolume::ShouldDraw()
 	return false;
 }
 
-void C_ColorCorrectionVolume::ClientThink()
-{
-	
-}
-
 //--------------------------------------------------------------------------------------------------------
 void C_ColorCorrectionVolume::StartTouch( CBaseEntity *pEntity )
 {
 	m_LastEnterTime = gpGlobals->curtime;
 	m_LastEnterWeight = m_Weight;
 }
-
-
 
 void C_ColorCorrectionVolume::EndTouch( CBaseEntity *pEntity )
 {
@@ -163,8 +157,6 @@ void C_ColorCorrectionVolume::Update( C_BasePlayer *pPlayer, float ccScale )
 	{
 		if( m_LastEnterTime > m_LastExitTime )
 		{
-
-
 			if( m_Weight < 1.0f )
 			{
 				float dt = gpGlobals->curtime - m_LastEnterTime;
@@ -177,8 +169,6 @@ void C_ColorCorrectionVolume::Update( C_BasePlayer *pPlayer, float ccScale )
 		}
 		else
 		{
-
-
 			if( m_Weight > 0.0f )
 			{
 				float dt = gpGlobals->curtime - m_LastExitTime;

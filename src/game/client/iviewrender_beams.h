@@ -13,6 +13,8 @@
 // common to server, too
 #include "beam_flags.h"
 #include "tempentity.h"
+#include "engine/IEngineTrace.h"
+#include "iclientrenderable.h"
 
 extern void SetBeamCreationAllowed( bool state );
 extern bool BeamCreationAllowed( void );
@@ -24,6 +26,7 @@ extern bool BeamCreationAllowed( void );
 
 class C_Beam;
 class Beam_t;
+class C_BaseEntity;
 
 //-----------------------------------------------------------------------------
 // Purpose: Popcorn trail for Beam Follow rendering...
@@ -116,10 +119,10 @@ public:
 	// Updates the state of the temp ent beams
 	virtual void	UpdateTempEntBeams() = 0;
 
-	virtual void	DrawBeam( C_Beam* pbeam, ITraceFilter *pEntityBeamTraceFilter = NULL ) = 0;
+	virtual void	DrawBeam( C_Beam* pbeam, const RenderableInstance_t &instance, ITraceFilter *pEntityBeamTraceFilter = NULL ) = 0;
 	virtual void	DrawBeam( Beam_t *pbeam ) = 0;
 
-	virtual void	KillDeadBeams( CBaseEntity *pEnt ) = 0;
+	virtual void	KillDeadBeams( C_BaseEntity *pEnt ) = 0;
 
 	// New interfaces!
 	virtual Beam_t	*CreateBeamEnts( BeamInfo_t &beamInfo ) = 0;

@@ -1,9 +1,7 @@
 #ifndef IV_SHADEREDITOR_MRENDER
 #define IV_SHADEREDITOR_MRENDER
 
-#ifdef _WIN32
-#pragma once
-#endif // _WIN32
+#pragma once // _WIN32
 
 #ifdef SHADER_EDITOR_DLL
 #include "../public/tier1/interface.h"

@@ -11,13 +11,17 @@
 
 #include "interface.h"
 
+namespace vgui
+{
+	class Panel;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Exports a set of functions for the GameUI interface to interact with the game client
 //-----------------------------------------------------------------------------
 abstract_class IGameClientExports : public IBaseInterface
 {
 public:
-#ifndef _XBOX
 	// ingame voice manipulation
 	virtual bool IsPlayerGameVoiceMuted(int playerIndex) = 0;
 	virtual void MutePlayerGameVoice(int playerIndex) = 0;
@@ -26,7 +30,6 @@ public:
 	// notification of gameui state changes
 	virtual void OnGameUIActivated() = 0;
 	virtual void OnGameUIHidden() = 0;
-#endif
 
     //=============================================================================
     // HPE_BEGIN
@@ -43,6 +46,13 @@ public:
     //=============================================================================
 
 	virtual const char *GetHolidayString() = 0;
+};
+
+abstract_class IGameClientExportsEx : public IGameClientExports
+{
+public:
+	// if true, the gameui applies the blur effect
+	virtual bool ClientWantsBlurEffect( void ) = 0;
 };
 
 #define GAMECLIENTEXPORTS_INTERFACE_VERSION "GameClientExports001"

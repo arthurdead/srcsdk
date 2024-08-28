@@ -2,9 +2,7 @@
 
 #ifndef PROTOTYPE_HELPER_H
 #define PROTOTYPE_HELPER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <string.h>
 

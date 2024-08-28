@@ -14,9 +14,9 @@
 #include "tier0/memdbgon.h"
 
 //Global singelton accessor
+static CClientEffectPrecacheSystem	s_ClientEffectPrecacheSystem;
 CClientEffectPrecacheSystem	*ClientEffectPrecacheSystem( void )
 {
-	static CClientEffectPrecacheSystem	s_ClientEffectPrecacheSystem;
 	return &s_ClientEffectPrecacheSystem;
 }
 
@@ -26,9 +26,9 @@ CClientEffectPrecacheSystem	*ClientEffectPrecacheSystem( void )
 void CClientEffectPrecacheSystem::LevelInitPreEntity( void )
 {
 	//Precache all known effects
-	for ( int i = 0; i < m_Effects.Size(); i++ )
+	for ( int i = 0; i < m_Effects.Count(); i++ )
 	{
-		m_Effects[i]->Cache();
+		m_Effects[i]->Precache();
 	}
 	
 	//FIXME: Double check this
@@ -52,9 +52,9 @@ void CClientEffectPrecacheSystem::LevelShutdownPreEntity( void )
 void CClientEffectPrecacheSystem::LevelShutdownPostEntity( void )
 {
 	// mark all known effects as free
-	for ( int i = 0; i < m_Effects.Size(); i++ )
+	for ( int i = 0; i < m_Effects.Count(); i++ )
 	{
-		m_Effects[i]->Cache( false );
+		m_Effects[i]->Shutdown();
 	}
 }
 
@@ -63,6 +63,13 @@ void CClientEffectPrecacheSystem::LevelShutdownPostEntity( void )
 //-----------------------------------------------------------------------------
 void CClientEffectPrecacheSystem::Shutdown( void )
 {
+	// mark all known effects as free
+	for ( int i = 0; i < m_Effects.Count(); i++ )
+	{
+		m_Effects[i]->Shutdown();
+		m_Effects[i]->Release();
+	}
+
 	//Release all effects
 	m_Effects.Purge();
 }
@@ -71,8 +78,83 @@ void CClientEffectPrecacheSystem::Shutdown( void )
 // Purpose: Adds the effect to the list to be precached
 // Input  : *effect - system to precache
 //-----------------------------------------------------------------------------
-void CClientEffectPrecacheSystem::Register( IClientEffect *effect )
+void CClientEffectPrecacheSystem::Register( IClientEffect *effect, const char *pName )
 {
 	//Hold onto this effect for precaching later
-	m_Effects.AddToTail( effect );
+	m_Effects.Insert( pName, effect );
+}
+
+IClientEffect *CClientEffectPrecacheSystem::Find( const char *pName )
+{
+	int i = m_Effects.Find( pName );
+	if(i == m_Effects.InvalidIndex())
+		return NULL;
+
+	return m_Effects[i];
+}
+
+CClientEffect::CClientEffect( const char *pName )
+{
+	m_bPrecached = false;
+
+	//Register with the main effect system
+	ClientEffectPrecacheSystem()->Register( this, pName );
+}
+
+CClientEffect::~CClientEffect()
+{
+	for(int i = 0; i < m_Materials.Count(); ++i)
+	{
+		if(m_Materials[i]) {
+			m_Materials[i]->DeleteIfUnreferenced();
+		}
+	}
+}
+
+void CClientEffect::AddMaterial( const char *materialName )
+{
+	IMaterial	*material = materials->FindMaterial( materialName, TEXTURE_GROUP_CLIENT_EFFECTS );
+	if ( !IsErrorMaterial( material ) )
+	{
+		m_Materials.AddToTail( material );
+	}
+}
+
+void CClientEffect::Release()
+{
+	for(int i = 0; i < m_Materials.Count(); ++i)
+	{
+		if(m_Materials[i]) {
+			m_Materials[i]->DeleteIfUnreferenced();
+		}
+	}
+}
+
+void CClientEffect::Precache()
+{
+	if(m_bPrecached)
+		return;
+
+	for(int i = 0; i < m_Materials.Count(); ++i)
+	{
+		if(m_Materials[i])
+			m_Materials[i]->IncrementReferenceCount();
+	}
+
+	m_bPrecached = true;
+}
+
+void CClientEffect::Shutdown()
+{
+	if(!m_bPrecached)
+		return;
+
+	for(int i = 0; i < m_Materials.Count(); ++i)
+	{
+		if(m_Materials[i]) {
+			m_Materials[i]->DecrementReferenceCount();
+		}
+	}
+
+	m_bPrecached = false;
 }

@@ -7,7 +7,8 @@ source_base = subproject('source_base')
 
 tier1_lib = static_library('tier1',
 	cpp_args: [
-		'-DTIER1_STATIC_LIB'
+		'-DTIER1_STATIC_LIB',
+		'-DLIBNAME=tier1'
 	],
 	sources: files(
 		join_paths(tier1_src_dir,'utlbinaryblock.cpp'),

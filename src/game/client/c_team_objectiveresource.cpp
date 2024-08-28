@@ -336,7 +336,7 @@ void C_BaseTeamObjectiveResource::SetCappingTeam( int index, int team )
 	m_bWarnedOnFinalCap[index] = false;
 
 	m_flCapLastThinkTime[index] = gpGlobals->curtime;
-	SetNextClientThink( gpGlobals->curtime + RESOURCE_THINK_TIME );
+	SetContextThink( &C_BaseTeamObjectiveResource::ResourceThink, gpGlobals->curtime + RESOURCE_THINK_TIME, "ResourceThink" );
 	UpdateControlPoint( "controlpoint_updatecapping", index );
 }
 
@@ -370,10 +370,8 @@ bool C_BaseTeamObjectiveResource::CapIsBlocked( int index )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_BaseTeamObjectiveResource::ClientThink()
+void C_BaseTeamObjectiveResource::ResourceThink()
 {
-	BaseClass::ClientThink();
-
 	for ( int i = 0; i < MAX_CONTROL_POINTS; i++ )
 	{
 		if ( m_flCapTimeLeft[i] )
@@ -460,5 +458,5 @@ void C_BaseTeamObjectiveResource::ClientThink()
 	}
 
 
-	SetNextClientThink( gpGlobals->curtime + RESOURCE_THINK_TIME );
+	SetNextThink( gpGlobals->curtime + RESOURCE_THINK_TIME, "ResourceThink" );
 }

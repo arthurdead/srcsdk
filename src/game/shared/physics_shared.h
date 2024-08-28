@@ -8,6 +8,18 @@
 #define PHYSICS_SHARED_H
 #pragma once
 
+#include "vphysics_interface.h"
+#include "ehandle.h"
+#include "shareddefs.h"
+#include "vcollide_parse.h"
+
+#ifdef GAME_DLL
+class CBaseEntity;
+#else
+#define CBaseEntity C_BaseEntity
+class C_BaseEntity;
+#endif
+
 class IPhysics;
 class IPhysicsEnvironment;
 class IPhysicsSurfaceProps;
@@ -15,6 +27,7 @@ class IPhysicsCollision;
 class IPhysicsObject;
 class IPhysicsObjectPairHash;
 class CSoundPatch;
+class IGameSystem;
 
 
 extern IPhysicsObject		*g_PhysWorldObject;

@@ -2,9 +2,7 @@
 
 #ifndef PORTALREFRACT_HELPER_H
 #define PORTALREFRACT_HELPER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <string.h>
 

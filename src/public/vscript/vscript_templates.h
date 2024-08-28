@@ -9,9 +9,7 @@
 
 #include "tier0/basetypes.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #define	FUNC_APPEND_PARAMS_0	
 #define	FUNC_APPEND_PARAMS_1	pDesc->m_Parameters.SetGrowSize( 1 ); pDesc->m_Parameters.EnsureCapacity( 1 ); pDesc->m_Parameters.AddToTail( ScriptDeduceType( FUNC_ARG_TYPE_1 ) );

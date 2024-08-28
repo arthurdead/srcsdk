@@ -139,12 +139,12 @@ CSpectatorMenu::CSpectatorMenu( IViewPort *pViewPort ) : Frame( NULL, PANEL_SPEC
 	m_pConfigSettings->SetOpenDirection( Menu::UP );
 
 	// create view config menu
-	CommandMenu * menu = new CommandMenu(m_pConfigSettings, "spectatormenu", gViewPortInterface);
+	CommandMenu * menu = new CommandMenu(m_pConfigSettings, "spectatormenu", GetViewPortInterface());
 	menu->LoadFromFile( "Resource/spectatormenu.res" );
 	m_pConfigSettings->SetMenu( menu );	// attach menu to combo box
 
 	// create view mode menu
-	menu = new CommandMenu(m_pViewOptions, "spectatormodes", gViewPortInterface);
+	menu = new CommandMenu(m_pViewOptions, "spectatormodes", GetViewPortInterface());
 	menu->LoadFromFile("Resource/spectatormodes.res");
 	m_pViewOptions->SetMenu( menu );	// attach menu to combo box
 
@@ -517,10 +517,10 @@ void CSpectatorGUI::OnThink()
 	{
 		if ( m_bSpecScoreboard != spec_scoreboard.GetBool() )
 		{
-			if ( !spec_scoreboard.GetBool() || !gViewPortInterface->GetActivePanel() )
+			if ( !spec_scoreboard.GetBool() || !GetViewPortInterface()->GetActivePanel() )
 			{
 				m_bSpecScoreboard = spec_scoreboard.GetBool();
-				gViewPortInterface->ShowPanel( PANEL_SCOREBOARD, m_bSpecScoreboard );
+				GetViewPortInterface()->ShowPanel( PANEL_SCOREBOARD, m_bSpecScoreboard );
 			}
 		}
 	}
@@ -585,7 +585,7 @@ void CSpectatorGUI::ShowPanel(bool bShow)
 	SetVisible( bShow );
 	if ( !bShow && m_bSpecScoreboard )
 	{
-		gViewPortInterface->ShowPanel( PANEL_SCOREBOARD, false );
+		GetViewPortInterface()->ShowPanel( PANEL_SCOREBOARD, false );
 	}
 }
 
@@ -608,7 +608,7 @@ void CSpectatorGUI::Update()
 	int specmode = GetSpectatorMode();
 	int playernum = GetSpectatorTarget();
 
-	IViewPortPanel *overview = gViewPortInterface->FindPanelByName( PANEL_OVERVIEW );
+	IViewPortPanel *overview = GetViewPortInterface()->FindPanelByName( PANEL_OVERVIEW );
 
 	if ( overview && overview->IsVisible() )
 	{

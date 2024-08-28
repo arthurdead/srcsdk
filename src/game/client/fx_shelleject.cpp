@@ -20,11 +20,11 @@ void ShellEjectCallback( const CEffectData &data )
 	IClientRenderable *pRenderable = data.GetRenderable();
 	if ( pRenderable )
 	{
-		tempents->EjectBrass( data.m_vOrigin, data.m_vAngles, pRenderable->GetRenderAngles(), 0 );
+		tempents->EjectBrass( data.m_vOrigin, data.m_vAngles, pRenderable->GetRenderAngles(), SHELL_GENERIC, NULL );
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "ShellEject", ShellEjectCallback );
+DECLARE_CLIENT_EFFECT( ShellEject, ShellEjectCallback );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -35,11 +35,11 @@ void RifleShellEjectCallback( const CEffectData &data )
 	IClientRenderable *pRenderable = data.GetRenderable();
 	if ( pRenderable )
 	{
-		tempents->EjectBrass( data.m_vOrigin, data.m_vAngles, pRenderable->GetRenderAngles(), 1 );
+		tempents->EjectBrass( data.m_vOrigin, data.m_vAngles, pRenderable->GetRenderAngles(), SHELL_RIFLE, NULL );
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "RifleShellEject", RifleShellEjectCallback );
+DECLARE_CLIENT_EFFECT( RifleShellEject, RifleShellEjectCallback );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -50,10 +50,10 @@ void ShotgunShellEjectCallback( const CEffectData &data )
 	IClientRenderable *pRenderable = data.GetRenderable();
 	if ( pRenderable )
 	{
-		tempents->EjectBrass( data.m_vOrigin, data.m_vAngles, pRenderable->GetRenderAngles(), 2 );
+		tempents->EjectBrass( data.m_vOrigin, data.m_vAngles, pRenderable->GetRenderAngles(), SHELL_SHOTGUN, NULL );
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "ShotgunShellEject", ShotgunShellEjectCallback );
+DECLARE_CLIENT_EFFECT( ShotgunShellEject, ShotgunShellEjectCallback );
 
 

@@ -18,9 +18,6 @@
 #include "clientmode_shared.h"
 #include "c_baseplayer.h"
 #include "c_team.h"
-#include "tf_shareddefs.h"
-#include "tf_shareddefs.h"
-#include "tf_gamerules.h"
 
 #include "hud_basedeathnotice.h"
 
@@ -65,7 +62,6 @@ void CHudBaseDeathNotice::Init( void )
 	ListenForGameEvent( "teamplay_point_captured" );
 	ListenForGameEvent( "teamplay_capture_blocked" );
 	ListenForGameEvent( "teamplay_flag_event" );
-	ListenForGameEvent( "rd_robot_killed" );
 }
 
 //-----------------------------------------------------------------------------

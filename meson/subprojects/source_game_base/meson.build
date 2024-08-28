@@ -9,6 +9,7 @@ vstdlib = subproject('vstdlib')
 mathlib = subproject('mathlib')
 raytrace = subproject('raytrace')
 choreoobjects = subproject('choreoobjects')
+responserules = subproject('responserules')
 dmxloader = subproject('dmxloader')
 particles = subproject('particles')
 tier2 = subproject('tier2')
@@ -24,7 +25,6 @@ public_dir = join_paths(src_root_dir,'public')
 common_dir = join_paths(src_root_dir,'common')
 
 server_src_dir = join_paths(src_root_dir,'game','server')
-server_navmesh_src_dir = join_paths(server_src_dir,'navmesh')
 
 game_ctrls_src_dir = join_paths(src_root_dir,'vgui2','game_controls')
 
@@ -32,26 +32,19 @@ client_src_dir = join_paths(src_root_dir,'game','client')
 client_game_ctrls_src_dir = join_paths(client_src_dir,'game_controls')
 
 shared_src_dir = join_paths(src_root_dir,'game','shared')
+shared_navmesh_src_dir = join_paths(shared_src_dir,'navmesh')
 
 stdshaders_src_dir = join_paths(src_root_dir,'materialsystem','stdshaders')
 
 source_game_shared_dep = declare_dependency(
 	compile_args: [
-		'-DUSES_SAVERESTORE',
-		'-DVGUI_CONTROL_PANELS',
-		'-DSecobMod__SAVERESTORE',
-		'-DSecobMod__MULTIPLAYER_LEVEL_TRANSITIONS',
-		'-DSecobMod__MULTIPLAYER_VIEWCONTROL_CAMERAS',
-		'-DSecobMod__ENABLE_DYNAMIC_PLAYER_RESPAWN_CODE',
-		'-DSecobMod__ENABLE_FAKE_PASSENGER_SEATS',
-		'-DSecobMod__ALLOW_PLAYER_MODELS_IN_VEHICLES',
-		'-DSM_SP_FIXES',
-		'-DSM_AI_FIXES',
-		'-DSM_IMPROVEMENTS',
-		'-DNO_USERCMDS_DURING_PAUSE'
+		
 	],
 	sources: files(
-		join_paths(shared_src_dir,'achievement_saverestore.cpp'),
+		#join_paths(shared_src_dir,'default','weapon_parse_default.cpp'),
+		join_paths(shared_src_dir,'default','gamemovement_default.cpp'),
+		join_paths(shared_src_dir,'default','movedata_default.cpp'),
+
 		join_paths(shared_src_dir,'achievementmgr.cpp'),
 		join_paths(shared_src_dir,'activitylist.cpp'),
 		join_paths(shared_src_dir,'ammodef.cpp'),
@@ -94,9 +87,7 @@ source_game_shared_dep = declare_dependency(
 		join_paths(shared_src_dir,'particle_parse.cpp'),
 		join_paths(shared_src_dir,'particlesystemquery.cpp'),
 		join_paths(shared_src_dir,'physics_main_shared.cpp'),
-		join_paths(shared_src_dir,'physics_saverestore.cpp'),
 		join_paths(shared_src_dir,'physics_shared.cpp'),
-		join_paths(shared_src_dir,'point_bonusmaps_accessor.cpp'),
 		join_paths(shared_src_dir,'point_posecontroller.cpp'),
 		join_paths(shared_src_dir,'precache_register.cpp'),
 		join_paths(shared_src_dir,'predictableid.cpp'),
@@ -104,11 +95,9 @@ source_game_shared_dep = declare_dependency(
 		join_paths(shared_src_dir,'querycache.cpp'),
 		join_paths(shared_src_dir,'ragdoll_shared.cpp'),
 		join_paths(shared_src_dir,'rope_helpers.cpp'),
-		join_paths(shared_src_dir,'saverestore.cpp'),
 		join_paths(shared_src_dir,'sceneentity_shared.cpp'),
 		join_paths(shared_src_dir,'sequence_Transitioner.cpp'),
 		join_paths(shared_src_dir,'simtimer.cpp'),
-		join_paths(shared_src_dir,'singleplay_gamerules.cpp'),
 		join_paths(shared_src_dir,'SoundEmitterSystem.cpp'),
 		join_paths(shared_src_dir,'soundenvelope.cpp'),
 		join_paths(shared_src_dir,'Sprite.cpp'),
@@ -125,16 +114,14 @@ source_game_shared_dep = declare_dependency(
 		join_paths(shared_src_dir,'sheetsimulator.cpp'),
 		join_paths(shared_src_dir,'usermessages.cpp'),
 		join_paths(shared_src_dir,'SpriteTrail.cpp'),
-		#join_paths(shared_src_dir,'weapon_parse_default.cpp'),
 		join_paths(shared_src_dir,'predictioncopy.cpp'),
 		join_paths(shared_src_dir,'teamplayroundbased_gamerules.cpp'),
 		join_paths(shared_src_dir,'predicted_viewmodel.cpp'),
 		join_paths(shared_src_dir,'teamplay_round_timer.cpp'),
 		join_paths(shared_src_dir,'script_intro_shared.cpp'),
 		join_paths(shared_src_dir,'Multiplayer','multiplayer_animstate.cpp'),
-		join_paths(shared_src_dir,'dlloverride.cpp'),
+		join_paths(shared_src_dir,'ai_criteria.cpp'),
 		join_paths(public_dir,'SoundParametersInternal.cpp'),
-		join_paths(public_dir,'haptics','haptic_msgs.cpp'),
 		join_paths(public_dir,'bone_setup.cpp'),
 		join_paths(public_dir,'bone_accessor.cpp'),
 		join_paths(public_dir,'collisionutils.cpp'),
@@ -162,6 +149,7 @@ source_game_shared_dep = declare_dependency(
 		join_paths(public_dir,'dt_recv.cpp'),
 		join_paths(public_dir,'dt_utlvector_recv.cpp'),
 		join_paths(public_dir,'sentence.cpp'),
+		join_paths(public_dir,'phonemeconverter.cpp'),
 		join_paths(public_dir,'vallocator.cpp'),
 		join_paths(public_dir,'renamed_recvtable_compat.cpp'),
 		join_paths(common_dir,'language.cpp'),
@@ -181,6 +169,7 @@ source_game_shared_dep = declare_dependency(
 		raytrace.get_variable('raytrace_dep'),
 		vstdlib.get_variable('vstdlib_dep'),
 		choreoobjects.get_variable('choreoobjects_dep'),
+		responserules.get_variable('responserules_runtime_dep'),
 		dmxloader.get_variable('dmxloader_dep'),
 		particles.get_variable('particles_dep'),
 		tier2.get_variable('tier2_dep'),
@@ -189,7 +178,7 @@ source_game_shared_dep = declare_dependency(
 	]
 )
 
-source_linux_server_lib_dep = declare_dependency(
+source_linux_base_server_lib_dep = declare_dependency(
 	compile_args: [
 		'-DGAME_DLL',
 		'-DSERVER_DLL',
@@ -237,7 +226,6 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_playerally.cpp'),
 		join_paths(server_src_dir,'AI_ResponseSystem.cpp'),
 		join_paths(server_src_dir,'ai_route.cpp'),
-		join_paths(server_src_dir,'ai_saverestore.cpp'),
 		join_paths(server_src_dir,'ai_schedule.cpp'),
 		join_paths(server_src_dir,'ai_scriptconditions.cpp'),
 		join_paths(server_src_dir,'ai_senses.cpp'),
@@ -253,18 +241,18 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_waypoint.cpp'),
 		join_paths(server_src_dir,'ai_waypoint.h'),
 		join_paths(server_src_dir,'wcedit.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_area.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_colors.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_edit.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_entities.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_file.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_generate.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_ladder.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_merge.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_mesh.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_mesh_factory.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_node.cpp'),
-		join_paths(server_navmesh_src_dir,'nav_simplify.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_area.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_colors.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_edit.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_entities.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_file.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_generate.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_ladder.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_merge.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_mesh.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_mesh_factory.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_node.cpp'),
+		join_paths(shared_navmesh_src_dir,'nav_simplify.cpp'),
 		join_paths(server_src_dir,'base_transmit_proxy.cpp'),
 		join_paths(server_src_dir,'baseanimating.cpp'),
 		join_paths(server_src_dir,'BaseAnimatingOverlay.cpp'),
@@ -281,7 +269,6 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'client.cpp'),
 		join_paths(server_src_dir,'colorcorrection.cpp'),
 		join_paths(server_src_dir,'colorcorrectionvolume.cpp'),
-		join_paths(server_src_dir,'CommentarySystem.cpp'),
 		join_paths(server_src_dir,'controlentities.cpp'),
 		join_paths(server_src_dir,'cplane.cpp'),
 		join_paths(server_src_dir,'CRagdollMagnet.cpp'),
@@ -400,7 +387,6 @@ source_linux_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'RagdollBoogie.cpp'),
 		join_paths(server_src_dir,'recipientfilter.cpp'),
 		join_paths(server_src_dir,'rope.cpp'),
-		join_paths(server_src_dir,'saverestore_gamedll.cpp'),
 		join_paths(server_src_dir,'sceneentity.cpp'),
 		join_paths(server_src_dir,'scratchpad_gamedll_helpers.cpp'),
 		join_paths(server_src_dir,'scripted.cpp'),
@@ -514,35 +500,47 @@ source_linux_server_lib_dep = declare_dependency(
 	),
 	include_directories: include_directories(
 		server_src_dir,
-		server_navmesh_src_dir
+		shared_navmesh_src_dir
 	),
 	dependencies: [
 		source_game_shared_dep
 	]
 )
 
+source_linux_server_lib_dep = declare_dependency(
+	compile_args: [
+		'-DDLLNAME=server',
+	],
+	dependencies: [
+		source_linux_base_server_lib_dep
+	]
+)
+
 source_linux_dedicated_server_lib_dep = declare_dependency(
 	compile_args: [
+		'-DDLLNAME=server_srv',
 		'-DDEDICATED',
 		'-DSWDS'
 	],
 	dependencies: [
-		source_linux_server_lib_dep
+		source_linux_base_server_lib_dep
 	]
 )
 
 source_linux_client_lib_dep = declare_dependency(
 	compile_args: [
+		'-DDLLNAME=client',
 		'-DCLIENT_DLL',
 		'-DNO_STRING_T',
-		'-DUSE_MONITORS'
 	],
 	sources: files(
+		join_paths(client_src_dir,'default','clientmode_default.cpp'),
+		join_paths(client_src_dir,'default','prediction_default.cpp'),
+		join_paths(client_src_dir,'default','input_default.cpp'),
+
 		join_paths(client_src_dir,'C_Func_Monitor.cpp'),
-		join_paths(client_src_dir,'geiger.cpp'),
 		join_paths(client_src_dir,'history_resource.cpp'),
 		join_paths(client_src_dir,'hud_weapon.cpp'),
-		join_paths(client_src_dir,'train.cpp'),
 		join_paths(client_src_dir,'achievement_notification_panel.cpp'),
 		join_paths(client_src_dir,'alphamaterialproxy.cpp'),
 		join_paths(client_src_dir,'animatedentitytextureproxy.cpp'),
@@ -560,6 +558,8 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'c_basecombatcharacter.cpp'),
 		join_paths(client_src_dir,'c_basecombatweapon.cpp'),
 		join_paths(client_src_dir,'c_basedoor.cpp'),
+		join_paths(client_src_dir,'c_basetoggle.cpp'),
+		join_paths(client_src_dir,'c_triggers.cpp'),
 		join_paths(client_src_dir,'c_baseentity.cpp'),
 		join_paths(client_src_dir,'c_baseflex.cpp'),
 		join_paths(client_src_dir,'c_baseplayer.cpp'),
@@ -588,7 +588,6 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'c_func_smokevolume.cpp'),
 		join_paths(client_src_dir,'c_func_tracktrain.cpp'),
 		join_paths(client_src_dir,'c_gib.cpp'),
-		join_paths(client_src_dir,'c_hairball.cpp'),
 		join_paths(client_src_dir,'c_info_overlay_accessor.cpp'),
 		join_paths(client_src_dir,'c_lightglow.cpp'),
 		join_paths(client_src_dir,'C_MaterialModifyControl.cpp'),
@@ -600,7 +599,6 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'c_plasma.cpp'),
 		join_paths(client_src_dir,'c_playerresource.cpp'),
 		join_paths(client_src_dir,'c_point_camera.cpp'),
-		join_paths(client_src_dir,'c_point_commentary_node.cpp'),
 		join_paths(client_src_dir,'c_props.cpp'),
 		join_paths(client_src_dir,'c_ragdoll_manager.cpp'),
 		join_paths(client_src_dir,'c_rope.cpp'),
@@ -630,19 +628,17 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'classmap.cpp'),
 		join_paths(client_src_dir,'client_factorylist.cpp'),
 		join_paths(client_src_dir,'client_thinklist.cpp'),
-		join_paths(client_src_dir,'client_virtualreality.cpp'),
 		join_paths(client_src_dir,'clienteffectprecachesystem.cpp'),
 		join_paths(client_src_dir,'cliententitylist.cpp'),
+		join_paths(client_src_dir,'clientalphaproperty.cpp'),
 		join_paths(client_src_dir,'clientleafsystem.cpp'),
 		join_paths(client_src_dir,'clientmode_shared.cpp'),
-		join_paths(client_src_dir,'clientshadowmgr.cpp'),
+		#join_paths(client_src_dir,'clientshadowmgr.cpp'),
 		join_paths(client_src_dir,'clientsideeffects.cpp'),
 		join_paths(client_src_dir,'clientsideeffects_test.cpp'),
 		join_paths(client_src_dir,'clientsteamcontext.cpp'),
 		join_paths(client_src_dir,'colorcorrectionmgr.cpp'),
-		join_paths(client_src_dir,'commentary_modelviewer.cpp'),
 		join_paths(client_src_dir,'detailobjectsystem.cpp'),
-		join_paths(client_src_dir,'dummyproxy.cpp'),
 		join_paths(client_src_dir,'EffectsClient.cpp'),
 		join_paths(client_src_dir,'entityoriginmaterialproxy.cpp'),
 		join_paths(client_src_dir,'flashlighteffect.cpp'),
@@ -748,7 +744,7 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'ViewConeImage.cpp'),
 		join_paths(client_src_dir,'viewdebug.cpp'),
 		join_paths(client_src_dir,'viewpostprocess.cpp'),
-		join_paths(client_src_dir,'viewrender.cpp'),
+		#join_paths(client_src_dir,'viewrender.cpp'),
 		join_paths(client_src_dir,'warp_overlay.cpp'),
 		join_paths(client_src_dir,'WaterLODMaterialProxy.cpp'),
 		join_paths(client_src_dir,'weapon_selection.cpp'),
@@ -760,7 +756,6 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'hltvcamera.cpp'),
 		join_paths(client_src_dir,'hud_lcd.cpp'),
 		join_paths(client_src_dir,'in_mouse.cpp'),
-		join_paths(client_src_dir,'mumble.cpp'),
 		join_paths(client_src_dir,'rendertexture.cpp'),
 		join_paths(client_src_dir,'c_basetempentity.cpp'),
 		join_paths(client_src_dir,'c_effects.cpp'),
@@ -824,7 +819,6 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'fx_sparks.cpp'),
 		join_paths(client_src_dir,'particlesphererenderer.cpp'),
 		join_paths(client_src_dir,'smoke_fog_overlay.cpp'),
-		join_paths(client_src_dir,'mp3player.cpp'),
 		join_paths(client_src_dir,'entity_client_tools.cpp'),
 		join_paths(client_src_dir,'toolframework_client.cpp'),
 		join_paths(client_src_dir,'c_team_objectiveresource.cpp'),
@@ -835,9 +829,10 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'worldlight.cpp'),
 		join_paths(client_src_dir,'vis_tester.cpp'),
 		join_paths(client_src_dir,'c_postprocesscontroller.cpp'),
+		join_paths(client_src_dir,'materialproxydict.cpp'),
 		join_paths(client_game_ctrls_src_dir,'baseviewport.cpp'),
-		join_paths(client_game_ctrls_src_dir,'basemodelpanel.cpp'),
-		join_paths(client_game_ctrls_src_dir,'basemodel_panel.cpp'),
+		join_paths(client_game_ctrls_src_dir,'basemodelpanel_matsys.cpp'),
+		join_paths(client_game_ctrls_src_dir,'basemodelpanel_game.cpp'),
 		join_paths(client_game_ctrls_src_dir,'ClientScoreBoardDialog.cpp'),
 		join_paths(client_game_ctrls_src_dir,'commandmenu.cpp'),
 		join_paths(client_game_ctrls_src_dir,'intromenu.cpp'),
@@ -870,6 +865,7 @@ source_linux_client_lib_dep = declare_dependency(
 
 source_linux_game_shader_lib_dep = declare_dependency(
 	compile_args: [
+		'-DDLLNAME=game_shader_dx9',
 		'-DSTDSHADER_DX9_DLL_EXPORT',
 		'-DFAST_MATERIALVAR_ACCESS',
 		'-DGAME_SHADER_DLL'

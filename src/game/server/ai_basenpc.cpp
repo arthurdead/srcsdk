@@ -157,7 +157,7 @@ ConVar  ai_debug_enemies( "ai_debug_enemies", "0" );
 ConVar	ai_rebalance_thinks( "ai_rebalance_thinks", "1" );
 ConVar	ai_use_efficiency( "ai_use_efficiency", "1" );
 ConVar	ai_use_frame_think_limits( "ai_use_frame_think_limits", "1" );
-ConVar	ai_default_efficient( "ai_default_efficient", ( IsX360() ) ? "1" : "0" );
+ConVar	ai_default_efficient( "ai_default_efficient", "0" );
 ConVar	ai_efficiency_override( "ai_efficiency_override", "0" );
 ConVar	ai_debug_efficiency( "ai_debug_efficiency", "0" );
 ConVar	ai_debug_dyninteractions( "ai_debug_dyninteractions", "0", FCVAR_NONE, "Debug the NPC dynamic interaction system." );
@@ -220,7 +220,7 @@ ConVar	ai_spread_pattern_focus_time( "ai_spread_pattern_focus_time","0.8" );
 ConVar	ai_reaction_delay_idle( "ai_reaction_delay_idle","0.3" );
 ConVar	ai_reaction_delay_alert( "ai_reaction_delay_alert", "0.1" );
 
-ConVar ai_strong_optimizations( "ai_strong_optimizations", ( IsX360() ) ? "1" : "0" );
+ConVar ai_strong_optimizations( "ai_strong_optimizations", "0" );
 bool AIStrongOpt( void )
 {
 	return ai_strong_optimizations.GetBool();
@@ -3734,7 +3734,7 @@ bool CAI_BaseNPC::PreNPCThink()
 #ifdef _DEBUG
 	const float NPC_THINK_LIMIT = 30.0 / 1000.0;
 #else
-	const float NPC_THINK_LIMIT = ( !IsXbox() ) ? (10.0 / 1000.0) : (12.5 / 1000.0);
+	const float NPC_THINK_LIMIT = (12.5 / 1000.0);
 #endif
 
 	g_StartTimeCurThink = 0;

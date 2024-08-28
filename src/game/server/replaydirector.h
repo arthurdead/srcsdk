@@ -7,9 +7,7 @@
 #ifndef REPLAYDIRECTOR_H
 #define REPLAYDIRECTOR_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "GameEventListener.h"
 #include <igamesystem.h>

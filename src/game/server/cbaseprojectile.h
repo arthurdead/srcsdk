@@ -7,9 +7,7 @@
 
 #ifndef CBASEPROJECTILE_H
 #define CBASEPROJECTILE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 enum MoveType_t;
 enum MoveCollide_t;

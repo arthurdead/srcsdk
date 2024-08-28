@@ -68,7 +68,8 @@ public:
 	int					GetAmmoCount( int iAmmoIndex ) const;
 	int					GetAmmoCount( char *szName ) const;
 
-	C_BaseCombatWeapon*	Weapon_OwnsThisType( const char *pszWeapon, int iSubType = 0 ) const;  // True if already owns a weapon of this class
+	virtual C_BaseCombatWeapon*	Weapon_OwnsThisType( const char *pszWeapon, int iSubType = 0 ) const;  // True if already owns a weapon of this class
+	virtual int			Weapon_GetSlot( const char *pszWeapon, int iSubType = 0 ) const;  // Returns -1 if they don't have one
 	virtual	bool		Weapon_Switch( C_BaseCombatWeapon *pWeapon, int viewmodelindex = 0 );
 	virtual bool		Weapon_CanSwitchTo(C_BaseCombatWeapon *pWeapon);
 	
@@ -77,7 +78,7 @@ public:
 
 	virtual C_BaseCombatWeapon	*GetActiveWeapon( void ) const;
 	int					WeaponCount() const;
-	C_BaseCombatWeapon	*GetWeapon( int i ) const;
+	virtual C_BaseCombatWeapon	*GetWeapon( int i ) const;
 
 	// This is a sort of hack back-door only used by physgun!
 	void SetAmmoCount( int iCount, int iAmmoIndex );

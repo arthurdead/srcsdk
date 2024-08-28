@@ -42,7 +42,7 @@ public:
 						ServerClass *p2 = p1->m_pNext;
 
 						// use _stricmp because Q_stricmp isn't hooked up properly yet
-						if ( _stricmp( p1->GetName(), pNetworkName ) > 0)
+						if ( V_stricmp( p1->GetName(), pNetworkName ) > 0)
 						{
 							m_pNext = g_pServerClassHead;
 							g_pServerClassHead = this;
@@ -51,7 +51,7 @@ public:
 
 						while( p1 )
 						{
-							if ( p2 == NULL || _stricmp( p2->GetName(), pNetworkName ) > 0)
+							if ( p2 == NULL || V_stricmp( p2->GetName(), pNetworkName ) > 0)
 							{
 								m_pNext = p2;
 								p1->m_pNext = this;

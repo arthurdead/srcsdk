@@ -32,6 +32,9 @@ extern INetworkStringTable *g_pStringTableInfoPanel;
 
 #define TEMP_HTML_FILE	"textwindow_temp.html"
 
+#define MINI_MOTD_FADE_TIME 2.5f
+#define MINI_MOTD_HOLD_TIME 5.0f
+
 ConVar cl_disablehtmlmotd( "cl_disablehtmlmotd", "0", FCVAR_ARCHIVE, "Disable HTML motds." );
 
 //=============================================================================
@@ -42,13 +45,13 @@ ConVar cl_disablehtmlmotd( "cl_disablehtmlmotd", "0", FCVAR_ARCHIVE, "Disable HT
 //=============================================================================
 CON_COMMAND( showinfo, "Shows a info panel: <type> <title> <message> [<command number>]" )
 {
-	if ( !gViewPortInterface )
+	if ( !GetViewPortInterface() )
 		return;
 	
 	if ( args.ArgC() < 4 )
 		return;
 		
-	IViewPortPanel * panel = gViewPortInterface->FindPanelByName( PANEL_INFO );
+	IViewPortPanel * panel = GetViewPortInterface()->FindPanelByName( PANEL_INFO );
 
 	 if ( panel )
 	 {
@@ -62,7 +65,7 @@ CON_COMMAND( showinfo, "Shows a info panel: <type> <title> <message> [<command n
 
 		 panel->SetData( kv );
 
-		 gViewPortInterface->ShowPanel( panel, true );
+		 GetViewPortInterface()->ShowPanel( panel, true );
 
 		 kv->deleteThis();
 	 }
@@ -78,7 +81,7 @@ CON_COMMAND( showinfo, "Shows a info panel: <type> <title> <message> [<command n
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-CTextWindow::CTextWindow(IViewPort *pViewPort) : Frame(NULL, PANEL_INFO	)
+CTextWindow::CTextWindow(IViewPort *pViewPort) : BaseClass(NULL, PANEL_INFO	)
 {
 	// initialize dialog
 	m_pViewPort = pViewPort;
@@ -102,13 +105,20 @@ CTextWindow::CTextWindow(IViewPort *pViewPort) : Frame(NULL, PANEL_INFO	)
 	SetTitleBarVisible( false );
 
 	m_pTextMessage = new TextEntry( this, "TextMessage" );
+#if defined( ENABLE_HTMLWINDOW )
 	m_pHTMLMessage = new CMOTDHTML( this,"HTMLMessage" );
+#endif
 	m_pTitleLabel  = new Label( this, "MessageTitle", "Message Title" );
 	m_pOK		   = new Button(this, "ok", "#PropertyDialog_OK");
 
 	m_pOK->SetCommand("okay");
 	m_pTextMessage->SetMultiline( true );
 	m_nContentType = TYPE_TEXT;
+	m_iFadeStatus = FADE_STATUS_IN;
+
+	m_bMiniMode = false;
+
+	ListenForGameEvent( "game_newmap" );
 }
 
 //-----------------------------------------------------------------------------
@@ -118,7 +128,14 @@ void CTextWindow::ApplySchemeSettings( IScheme *pScheme )
 {
 	BaseClass::ApplySchemeSettings( pScheme );
 
-	LoadControlSettings("Resource/UI/TextWindow.res");
+	if ( !m_bMiniMode )
+	{
+		LoadControlSettings("Resource/UI/TextWindow.res");
+	}
+	else
+	{
+		LoadControlSettings("Resource/UI/MiniMOTD.res");
+	}
 
 	Reset();
 }
@@ -149,7 +166,18 @@ void CTextWindow::Reset( void )
 	m_nContentType = TYPE_TEXT;
 	m_bShownURL = false;
 	m_bUnloadOnDismissal = false;
-	Update();
+
+	if ( m_bMiniMode )
+	{
+		m_iFadeStatus = FADE_STATUS_OFF;
+		SetAlpha( 0 );
+	}
+	else
+	{
+		SetAlpha( 255 );
+	}
+
+	UpdateContents();
 }
 
 void CTextWindow::ShowText( const char *text )
@@ -166,9 +194,13 @@ void CTextWindow::ShowURL( const char *URL, bool bAllowUserToDisable )
 	#endif
 
 	ClientModeShared *mode = ( ClientModeShared * )GetClientModeNormal();
+#if defined( ENABLE_HTMLWINDOW )
 	if ( ( bAllowUserToDisable && cl_disablehtmlmotd.GetBool() ) || !mode->IsHTMLInfoPanelAllowed() )
+#endif
 	{
+	#if defined( ENABLE_HTMLWINDOW )
 		Warning( "Blocking HTML info panel '%s'; Using plaintext instead.\n", URL );
+	#endif
 
 		// User has disabled HTML TextWindows. Show the fallback as text only.
 		if ( g_pStringTableInfoPanel )
@@ -180,7 +212,9 @@ void CTextWindow::ShowURL( const char *URL, bool bAllowUserToDisable )
 				const char *data = (const char *)g_pStringTableInfoPanel->GetStringUserData( index, &length );
 				if ( data && data[0] )
 				{
-					m_pHTMLMessage->SetVisible( false );
+					if(m_pHTMLMessage) {
+						m_pHTMLMessage->SetVisible( false );
+					}
 					ShowText( data );
 				}
 			}
@@ -188,9 +222,11 @@ void CTextWindow::ShowURL( const char *URL, bool bAllowUserToDisable )
 		return;
 	} 
 
+#if defined( ENABLE_HTMLWINDOW )
 	m_pHTMLMessage->SetVisible( true );
 	m_pHTMLMessage->OpenURL( URL, NULL );
 	m_bShownURL = true;
+#endif
 }
 
 void CTextWindow::ShowIndex( const char *entry )
@@ -250,6 +286,9 @@ void CTextWindow::ShowFile( const char *filename )
 		g_pFullFileSystem->GetLocalPath( filename, pPathData, sizeof(pPathData) );
 		Q_strncat( localURL, pPathData, sizeof( localURL ), COPY_ALL_CHARACTERS );
 
+		// force steam to dump a local copy
+		filesystem->GetLocalCopy( pPathData );
+
 		ShowURL( localURL );
 	}
 	else
@@ -275,41 +314,42 @@ void CTextWindow::ShowFile( const char *filename )
 
 void CTextWindow::Update( void )
 {
-	SetTitle( m_szTitle, false );
-
-	m_pTitleLabel->SetText( m_szTitle );
-
-	if ( m_pHTMLMessage )
-		m_pHTMLMessage->SetVisible( false );
-	m_pTextMessage->SetVisible( false );
-
-	if ( m_nContentType == TYPE_INDEX )
+	if ( m_bMiniMode )
 	{
-		ShowIndex( m_szMessage );
-	}
-	else if ( m_nContentType == TYPE_URL )
-	{
-		if ( !Q_strncmp( m_szMessage, "http://", 7 ) || !Q_strncmp( m_szMessage, "https://", 8 ) || !Q_stricmp( m_szMessage, "about:blank" ) )
+		if ( m_iFadeStatus == FADE_STATUS_IN )
 		{
-			ShowURL( m_szMessage );
+			float flDeltaTime = ( m_flNextFadeTime - gpGlobals->curtime );
+
+			SetAlpha ( MAX( 0, RemapValClamped( flDeltaTime, MINI_MOTD_FADE_TIME, 0, -128, 255 ) ) );
+
+			if ( flDeltaTime <= 0.0f )
+			{
+				m_iFadeStatus = FADE_STATUS_HOLD;
+				m_flNextFadeTime = gpGlobals->curtime + MINI_MOTD_HOLD_TIME;
+			}
 		}
-		else
+		else if ( m_iFadeStatus == FADE_STATUS_HOLD )
 		{
-			// We should have trapped this at a higher level
-			Assert( !"URL protocol is missing or blocked" );
+			float flDeltaTime = ( m_flNextFadeTime - gpGlobals->curtime );
+
+			if ( flDeltaTime <= 0.0f )
+			{
+				m_iFadeStatus = FADE_STATUS_OUT;
+				m_flNextFadeTime = gpGlobals->curtime + MINI_MOTD_FADE_TIME;
+			}
 		}
-	}
-	else if ( m_nContentType == TYPE_FILE )
-	{
-		ShowFile( m_szMessage );
-	}
-	else if ( m_nContentType == TYPE_TEXT )
-	{
-		ShowText( m_szMessage );
-	}
-	else
-	{
-		DevMsg("CTextWindow::Update: unknown content type %i\n", m_nContentType );
+		else if ( m_iFadeStatus == FADE_STATUS_OUT )
+		{
+			float flDeltaTime = ( m_flNextFadeTime - gpGlobals->curtime );
+
+			SetAlpha ( RemapValClamped( flDeltaTime, 0.0f, MINI_MOTD_FADE_TIME, 0, 255 ) );
+
+			if ( flDeltaTime <= 0.0f )
+			{
+				m_iFadeStatus = FADE_STATUS_OFF;
+				SetVisible( false );
+			}
+		}
 	}
 }
 
@@ -399,7 +439,61 @@ void CTextWindow::SetData( int type, const char *title, const char *message, con
 	m_nContentType = type;
 	m_bUnloadOnDismissal = bUnload;
 
-	Update();
+	UpdateContents();
+}
+
+void CTextWindow::UpdateContents( void )
+{
+	SetTitle( m_szTitle, false );
+
+	if ( m_pTitleLabel )
+	{
+		m_pTitleLabel->SetText( m_szTitle );
+	}
+
+#if defined( ENABLE_HTMLWINDOW )
+	if ( m_pHTMLMessage )
+	{
+		m_pHTMLMessage->SetVisible( false );
+	}
+#endif
+
+	if ( m_pTextMessage )
+	{
+		m_pTextMessage->SetVisible( false );
+	}
+
+	if ( m_bMiniMode )
+		return;
+
+	if ( m_nContentType == TYPE_INDEX )
+	{
+		ShowIndex( m_szMessage );
+	}
+	else if ( m_nContentType == TYPE_URL )
+	{
+		if ( !Q_strncmp( m_szMessage, "http://", 7 ) || !Q_strncmp( m_szMessage, "https://", 8 ) || !Q_stricmp( m_szMessage, "about:blank" ) )
+		{
+			ShowURL( m_szMessage );
+		}
+		else
+		{
+			// We should have trapped this at a higher level
+			Assert( !"URL protocol is missing or blocked" );
+		}
+	}
+	else if ( m_nContentType == TYPE_FILE )
+	{
+		ShowFile( m_szMessage );
+	}
+	else if ( m_nContentType == TYPE_TEXT )
+	{
+		ShowText( m_szMessage );
+	}
+	else
+	{
+		DevMsg("CTextWindow::Update: unknown content type %i\n", m_nContentType );
+	}
 }
 
 void CTextWindow::ShowPanel( bool bShow )
@@ -409,19 +503,58 @@ void CTextWindow::ShowPanel( bool bShow )
 
 	m_pViewPort->ShowBackGround( bShow );
 
+	m_bMiniMode = false;
+	if ( m_szMessage && m_szMessage[0] )
+	{
+		if ( !Q_strncmp( m_szMessage, "hostfile", 8 ) )
+		{
+			m_bMiniMode = true;
+		}
+	}
+
+	if ( bShow )
+	{
+		InvalidateLayout( true, true );
+	}
+
+	UpdateContents();
+
 	if ( bShow )
 	{
 		Activate();
-		SetMouseInputEnabled( true );
+
+		if ( !m_bMiniMode )
+		{
+			SetVisible( true );
+			SetMouseInputEnabled( true );
+			SetKeyBoardInputEnabled( true );
+			SetAlpha( 255 );
+		}
+		else
+		{
+			m_iFadeStatus = FADE_STATUS_IN;
+			m_flNextFadeTime = gpGlobals->curtime + MINI_MOTD_FADE_TIME;
+			SetAlpha( 0 );
+
+			SetMouseInputEnabled( false );
+			SetKeyBoardInputEnabled( false );
+		}
 	}
 	else
 	{
 		SetVisible( false );
-		SetMouseInputEnabled( false );
-
-		if ( m_bUnloadOnDismissal && m_bShownURL && m_pHTMLMessage )
+		if ( !m_bMiniMode )
 		{
-			m_pHTMLMessage->OpenURL( "about:blank", NULL );
+			SetMouseInputEnabled( false );
+		}
+
+	#if defined( ENABLE_HTMLWINDOW )
+		if ( m_bUnloadOnDismissal && m_bShownURL && m_pHTMLMessage )
+	#endif
+		{
+			if(m_pHTMLMessage) {
+				m_pHTMLMessage->OpenURL( "about:blank", NULL );
+			}
 			m_bShownURL = false;
 		}
 	}
@@ -433,4 +566,18 @@ bool CTextWindow::CMOTDHTML::OnStartRequest( const char *url, const char *target
 		return false;
 
 	return BaseClass::OnStartRequest( url, target, pchPostData, bIsRedirect );
+}
+
+void CTextWindow::FireGameEvent( IGameEvent *event )
+{
+	const char *name = event->GetName();
+	if ( Q_strcmp( name, "game_newmap" ) == 0 )
+	{
+		m_bIgnoreMultipleShowRequests = false;
+	}
+}
+
+bool CTextWindow::WantsBackgroundBlurred( void )
+{
+	return (!m_bMiniMode);
 }

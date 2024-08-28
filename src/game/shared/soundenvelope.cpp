@@ -11,8 +11,6 @@
 #include "soundenvelope.h"
 #include "engine/IEngineSound.h"
 #include "IEffects.h"
-#include "isaverestore.h"
-#include "saverestore_utlvector.h"
 #include "gamestringpool.h"
 #include "igamesystem.h"
 #include "utlpriorityqueue.h"
@@ -222,7 +220,7 @@ private:
 BEGIN_SIMPLE_DATADESC( CCopyRecipientFilter )
 
 	DEFINE_FIELD( m_Flags, FIELD_INTEGER ),	
-	DEFINE_UTLVECTOR( m_Recipients, FIELD_INTEGER ),
+	//DEFINE_UTLVECTOR( m_Recipients, FIELD_INTEGER ),
 		
 END_DATADESC()
 
@@ -707,8 +705,6 @@ public:
 
 	void ProcessCommand( SoundCommand_t *pCmd );
 	void RemoveFromList( CSoundPatch *pSound );
-	void SaveSoundPatch( CSoundPatch *pSound, ISave *pSave );
-	void RestoreSoundPatch( CSoundPatch **ppSound, IRestore *pRestore );
 
 	virtual void	OnRestore();
 
@@ -945,92 +941,6 @@ void CSoundControllerImp::CommandClear( CSoundPatch *pSound )
 
 
 //-----------------------------------------------------------------------------
-// Saves the sound patch + associated commands
-//-----------------------------------------------------------------------------
-void CSoundControllerImp::SaveSoundPatch( CSoundPatch *pSoundPatch, ISave *pSave )
-{
-	int i;
-
-	// Write out the sound patch
-	pSave->StartBlock();
-	pSave->WriteAll( pSoundPatch );
-	pSave->EndBlock();
-
-	// Count the number of commands that refer to the sound patch
-	int nCount = 0;
-	for ( i = m_commandList.Count()-1; i >= 0; i-- )
-	{
-		SoundCommand_t *pCmd = m_commandList.Element( i );
-		if ( pCmd->m_pPatch == pSoundPatch )
-		{
-			nCount++;
-		}
-	}
-
-	// Write out the number of commands, followed by each command itself
-	pSave->StartBlock();
-	pSave->WriteInt( &nCount );
-
-	for ( i = m_commandList.Count()-1; i >= 0; i-- )
-	{
-		SoundCommand_t *pCmd = m_commandList.Element( i );
-		if ( pCmd->m_pPatch == pSoundPatch )
-		{
-			pSave->StartBlock();
-			pSave->WriteAll( pCmd );
-			pSave->EndBlock();
-		}
-	}
-
-	pSave->EndBlock();
-}
-
-//-----------------------------------------------------------------------------
-// Restores the sound patch	+ associated commands
-//-----------------------------------------------------------------------------
-void CSoundControllerImp::RestoreSoundPatch( CSoundPatch **ppSoundPatch, IRestore *pRestore )
-{
-	CSoundPatch *pPatch = new CSoundPatch;
-
-	// read the sound patch data from the memory block
-	pRestore->StartBlock();
-	bool bOk = ( pRestore->ReadAll( pPatch ) != 0 );
-	pRestore->EndBlock();
-	bOk = (bOk && pPatch->IsPlaying()) ? true : false;
-
-	if (bOk)
-	{
-		m_soundList.AddToTail( pPatch );
-	}
-
-	// Count the number of commands that refer to the sound patch
-	pRestore->StartBlock();
-
-	if ( bOk )
-	{
-		int nCount;
-		pRestore->ReadInt( &nCount );
-		while ( --nCount >= 0 )
-		{
-			SoundCommand_t *pCommand = new SoundCommand_t;
-
-			pRestore->StartBlock();
-			if ( pRestore->ReadAll( pCommand ) )
-			{
-				pCommand->m_pPatch = pPatch;
-				CommandInsert( pCommand );
-			}
-
-			pRestore->EndBlock();
-		}
-	}
-
-	pRestore->EndBlock();
-	*ppSoundPatch = pPatch;
-}
-
-
-//-----------------------------------------------------------------------------
 // Purpose: immediately stop playing this sound 
 // Input  : *pSound - Patch to shut down
 //-----------------------------------------------------------------------------
@@ -1263,50 +1173,4 @@ static CSoundControllerImp g_Controller;
 CSoundEnvelopeController &CSoundEnvelopeController::GetController( void )
 {
 	return g_Controller;
-}
-
-
-//-----------------------------------------------------------------------------
-// Queues up sound patches to save/load
-//-----------------------------------------------------------------------------
-class CSoundPatchSaveRestoreOps : public CClassPtrSaveRestoreOps
-{
-public:
-	virtual void Save( const SaveRestoreFieldInfo_t &fieldInfo, ISave *pSave )
-	{
-		pSave->StartBlock();
-
-		int nSoundPatchCount = fieldInfo.pTypeDesc->fieldSize;
-		CSoundPatch **ppSoundPatch = (CSoundPatch**)fieldInfo.pField;
-		while ( --nSoundPatchCount >= 0 )
-		{
-			// Write out commands associated with this sound patch
-			g_Controller.SaveSoundPatch( *ppSoundPatch, pSave );
-			++ppSoundPatch;
-		}
-
-		pSave->EndBlock();
-	}
-	
-	virtual void Restore( const SaveRestoreFieldInfo_t &fieldInfo, IRestore *pRestore )
-	{
-		pRestore->StartBlock();
-
-		int nSoundPatchCount = fieldInfo.pTypeDesc->fieldSize;
-		CSoundPatch **ppSoundPatch = (CSoundPatch**)fieldInfo.pField;
-		while ( --nSoundPatchCount >= 0 )
-		{
-			// Write out commands associated with this sound patch
-			g_Controller.RestoreSoundPatch( ppSoundPatch, pRestore );
-			++ppSoundPatch;
-		}
-
-		pRestore->EndBlock();
-	}
-};
-
-static CSoundPatchSaveRestoreOps s_SoundPatchSaveRestoreOps;
-ISaveRestoreOps *GetSoundSaveRestoreOps( )
-{
-	return &s_SoundPatchSaveRestoreOps;
 }

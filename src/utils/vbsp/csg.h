@@ -6,9 +6,7 @@
 
 #ifndef CSG_H
 #define CSG_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // Print a CONTENTS_ mask to a string.

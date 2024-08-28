@@ -16,6 +16,21 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#define PLAYER_DEBUG_NAME "WWWWWWWWWWWWWWW"
+
+ConVar cl_names_debug( "cl_names_debug", "0", FCVAR_DEVELOPMENTONLY );
+
+void RecvProxy_ChangedTeam( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	// Have the regular proxy store the data.
+	RecvProxy_Int32ToInt32( pData, pStruct, pOut );
+
+	if ( g_PR )
+	{
+		g_PR->TeamChanged();
+	}
+}
+
 const float PLAYER_RESOURCE_THINK_INTERVAL = 0.2f;
 
 IMPLEMENT_CLIENTCLASS_DT_NOBASE(C_PlayerResource, DT_PlayerResource, CPlayerResource)
@@ -23,7 +38,7 @@ IMPLEMENT_CLIENTCLASS_DT_NOBASE(C_PlayerResource, DT_PlayerResource, CPlayerReso
 	RecvPropArray3( RECVINFO_ARRAY(m_iScore), RecvPropInt( RECVINFO(m_iScore[0]))),
 	RecvPropArray3( RECVINFO_ARRAY(m_iDeaths), RecvPropInt( RECVINFO(m_iDeaths[0]))),
 	RecvPropArray3( RECVINFO_ARRAY(m_bConnected), RecvPropInt( RECVINFO(m_bConnected[0]))),
-	RecvPropArray3( RECVINFO_ARRAY(m_iTeam), RecvPropInt( RECVINFO(m_iTeam[0]))),
+	RecvPropArray3( RECVINFO_ARRAY(m_iTeam), RecvPropInt( RECVINFO(m_iTeam[0]), 0, RecvProxy_ChangedTeam)),
 	RecvPropArray3( RECVINFO_ARRAY(m_bAlive), RecvPropInt( RECVINFO(m_bAlive[0]))),
 	RecvPropArray3( RECVINFO_ARRAY(m_iHealth), RecvPropInt( RECVINFO(m_iHealth[0]))),
 END_RECV_TABLE()
@@ -87,7 +102,7 @@ void C_PlayerResource::OnDataChanged(DataUpdateType_t updateType)
 	BaseClass::OnDataChanged( updateType );
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
-		SetNextClientThink( gpGlobals->curtime + PLAYER_RESOURCE_THINK_INTERVAL );
+		SetContextThink( &C_PlayerResource::PlayerNameThink, gpGlobals->curtime + PLAYER_RESOURCE_THINK_INTERVAL, "PlayerNameThink" );
 	}
 }
 
@@ -112,16 +127,14 @@ void C_PlayerResource::UpdatePlayerName( int slot )
 	}
 }
 
-void C_PlayerResource::ClientThink()
+void C_PlayerResource::PlayerNameThink()
 {
-	BaseClass::ClientThink();
-
 	for ( int i = 1; i <= gpGlobals->maxClients; ++i )
 	{
 		UpdatePlayerName( i );
 	}
 
-	SetNextClientThink( gpGlobals->curtime + PLAYER_RESOURCE_THINK_INTERVAL );
+	SetNextThink( gpGlobals->curtime + PLAYER_RESOURCE_THINK_INTERVAL, "PlayerNameThink" );
 }
 
 //-----------------------------------------------------------------------------
@@ -129,6 +142,9 @@ void C_PlayerResource::ClientThink()
 //-----------------------------------------------------------------------------
 const char *C_PlayerResource::GetPlayerName( int iIndex )
 {
+	if ( cl_names_debug.GetInt() )
+		return PLAYER_DEBUG_NAME;
+
 	if ( iIndex < 1 || iIndex > MAX_PLAYERS )
 	{
 		Assert( false );

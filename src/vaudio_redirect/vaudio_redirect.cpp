@@ -7,7 +7,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#ifndef LIBNAME
+#ifndef DLLNAME
 	#error
 #endif
 
@@ -54,7 +54,7 @@ bool CVAudioRedirect::Init()
 		V_strcat(szTargetPath, "bin" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
 	}
 
-	if(strcmp(V_STRINGIFY(LIBNAME), "vaudio_miles") == 0) {
+	if(strcmp(V_STRINGIFY(DLLNAME), "vaudio_miles") == 0) {
 		V_strcat(szTargetPath, "vaudio_minimp3", sizeof(szTargetPath));
 	} else {
 		return false;

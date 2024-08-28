@@ -1796,6 +1796,7 @@ public:
 
 	virtual Activity	GetFlinchActivity( bool bHeavyDamage, bool bGesture );
 	
+	virtual bool		ShouldGib( const CTakeDamageInfo &info ) { return false; }	// Always ragdoll, unless specified by the leaf class
 	virtual bool		Event_Gibbed( const CTakeDamageInfo &info );
 	virtual void		Event_Killed( const CTakeDamageInfo &info );
 
@@ -2331,11 +2332,7 @@ inline void	CAI_BaseNPC::ClearForceCrouch( void )
 
 inline bool	CAI_BaseNPC::HaveSequenceForActivity( Activity activity )				
 {
-#if STUDIO_SEQUENCE_ACTIVITY_LOOKUPS_ARE_SLOW
-	return ( (GetModelPtr()) ? (SelectWeightedSequence( activity ) != ACTIVITY_NOT_AVAILABLE) : false ); 
-#else
 	return ( (GetModelPtr()) ? GetModelPtr()->HaveSequenceForActivity(activity) : false ); 
-#endif
 }
 
 typedef CHandle<CAI_BaseNPC> AIHANDLE;

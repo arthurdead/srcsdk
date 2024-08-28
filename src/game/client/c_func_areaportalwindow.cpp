@@ -26,9 +26,8 @@ public:
 // Overrides.
 public:
 
-	virtual void	ComputeFxBlend();
-	virtual bool	IsTransparent();
-	virtual int		DrawModel( int flags );
+	RenderableTranslucencyType_t ComputeTranslucencyType( void );
+	virtual int		DrawModel( int flags, const RenderableInstance_t &instance );
 	virtual bool	ShouldReceiveProjectedTextures( int flags );
 
 private:
@@ -47,8 +46,6 @@ public:
 	int				m_iBackgroundModelIndex;
 };
 
-
-
 IMPLEMENT_CLIENTCLASS_DT( C_FuncAreaPortalWindow, DT_FuncAreaPortalWindow, CFuncAreaPortalWindow )
 	RecvPropFloat( RECVINFO( m_flFadeStartDist ) ),
 	RecvPropFloat( RECVINFO( m_flFadeDist ) ),
@@ -56,29 +53,14 @@ IMPLEMENT_CLIENTCLASS_DT( C_FuncAreaPortalWindow, DT_FuncAreaPortalWindow, CFunc
 	RecvPropInt( RECVINFO( m_iBackgroundModelIndex ) )
 END_RECV_TABLE()
 
-
-
-void C_FuncAreaPortalWindow::ComputeFxBlend()
+RenderableTranslucencyType_t C_FuncAreaPortalWindow::ComputeTranslucencyType( void )
 {
-	// We reset our blend down below so pass anything except 0 to the renderer.
-	m_nRenderFXBlend = 255;
-
-#ifdef _DEBUG
-	m_nFXComputeFrame = gpGlobals->framecount;
-#endif
-
+	return RENDERABLE_IS_TRANSLUCENT;
 }
 
-
-bool C_FuncAreaPortalWindow::IsTransparent()
+int C_FuncAreaPortalWindow::DrawModel( int flags, const RenderableInstance_t &instance )
 {
-	return true;
-}
-
-
-int C_FuncAreaPortalWindow::DrawModel( int flags )
-{
-	if ( !m_bReadyToDraw )
+	if ( !ReadyToDraw() )
 		return 0;
 
 	if( !GetModel() )
@@ -89,8 +71,12 @@ int C_FuncAreaPortalWindow::DrawModel( int flags )
 	if( modelType != mod_brush )
 		return 0;
 
+	float flBlendAlpha = GetDistanceBlend(); 
+	if ( flBlendAlpha == 0.0f )
+		return 0;
+
 	// Draw the fading version.
-	render->SetBlend( GetDistanceBlend() );
+	render->SetBlend( flBlendAlpha );
 
 	DrawBrushModelMode_t mode = DBM_DRAW_ALL;
 	if ( flags & STUDIO_TWOPASS )

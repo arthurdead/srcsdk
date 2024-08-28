@@ -7,9 +7,7 @@
 
 #ifndef DISP_VRAD_H
 #define DISP_VRAD_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "builddisp.h"

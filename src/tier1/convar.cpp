@@ -19,9 +19,6 @@
 #include "icvar.h"
 #include "tier0/dbg.h"
 #include "Color.h"
-#if defined( _X360 )
-#include "xbox/xbox_console.h"
-#endif
 #include "tier0/memdbgon.h"
 
 #ifndef NDEBUG
@@ -1151,12 +1148,6 @@ void ConVar_PrintFlags( const ConCommandBase *var )
 	if ( var->IsFlagSet( FCVAR_NOTIFY ) )
 	{
 		ConMsg( " notify" );
-		any = true;
-	}
-
-	if ( var->IsFlagSet( FCVAR_SPONLY ) )
-	{
-		ConMsg( " singleplayer" );
 		any = true;
 	}
 

@@ -6,9 +6,7 @@
 
 #ifndef WRITEBSP_H
 #define WRITEBSP_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "bspfile.h"
 #include "utlmap.h"

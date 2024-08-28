@@ -31,8 +31,6 @@ CLIENTEFFECT_MATERIAL( "sprites/rico1" )
 CLIENTEFFECT_MATERIAL( "sprites/rico1_noz" )
 CLIENTEFFECT_MATERIAL( "sprites/blueflare1" )
 CLIENTEFFECT_MATERIAL( "effects/yellowflare" )
-CLIENTEFFECT_MATERIAL( "effects/combinemuzzle1_nocull" )
-CLIENTEFFECT_MATERIAL( "effects/combinemuzzle2_nocull" )
 CLIENTEFFECT_MATERIAL( "effects/yellowflare_noz" )
 CLIENTEFFECT_REGISTER_END()
 
@@ -362,34 +360,6 @@ void FX_ElectricSpark( const Vector &pos, int nMagnitude, int nTrailLength, cons
 		Color32Init( pParticle->m_color, 255, 255, 255, 255 );
 	}
 
-#ifdef _XBOX
-
-	//
-	// Cap
-	//
-
-	SimpleParticle sParticle;
-
-	sParticle.m_Pos = pos;
-	sParticle.m_flLifetime		= 0.0f;
-	sParticle.m_flDieTime		= 0.2f;
-
-	sParticle.m_vecVelocity.Init();
-
-	sParticle.m_uchColor[0]	= 255;
-	sParticle.m_uchColor[1]	= 255;
-	sParticle.m_uchColor[2]	= 255;
-	sParticle.m_uchStartAlpha	= 255;
-	sParticle.m_uchEndAlpha	= 255;
-	sParticle.m_uchStartSize	= nMagnitude * random->RandomInt( 4, 8 );
-	sParticle.m_uchEndSize		= 0;
-	sParticle.m_flRoll			= random->RandomInt( 0, 360 );
-	sParticle.m_flRollDelta	= 0.0f;
-
-	AddSimpleParticle( &sParticle, ParticleMgr()->GetPMaterial( "effects/yellowflare" ) );
-
-#else
-
 	//
 	// Little sparks
 	//
@@ -535,8 +505,6 @@ void FX_ElectricSpark( const Vector &pos, int nMagnitude, int nTrailLength, cons
 		dl->radius = randomgaussian->RandomFloat(100.f * flHalfMag, 5.f * flHalfMag);
 		dl->die = gpGlobals->curtime + 0.05;
 	}
-
-#endif	// !_XBOX
 }
 
 //-----------------------------------------------------------------------------
@@ -919,7 +887,7 @@ void FX_EnergySplash( const Vector &pos, const Vector &normal, int nFlags )
 		if ( sParticle == NULL )
 			return;
 
-		sParticle->m_vecVelocity = Vector( Helper_RandomFloat( -4.0f, 4.0f ), Helper_RandomFloat( -4.0f, 4.0f ), Helper_RandomFloat( 16.0f, 64.0f ) );
+		sParticle->m_vecVelocity = Vector( random->RandomFloat( -4.0f, 4.0f ), random->RandomFloat( -4.0f, 4.0f ), random->RandomFloat( 16.0f, 64.0f ) );
 		
 		sParticle->m_uchStartSize	= random->RandomFloat( 2, 4 );
 
@@ -927,11 +895,11 @@ void FX_EnergySplash( const Vector &pos, const Vector &normal, int nFlags )
 		
 		sParticle->m_flLifetime		= 0.0f;
 
-		sParticle->m_flRoll			= Helper_RandomInt( 0, 360 );
+		sParticle->m_flRoll			= random->RandomInt( 0, 360 );
 
 		float alpha = 255;
 
-		sParticle->m_flRollDelta	= Helper_RandomFloat( -4.0f, 4.0f );
+		sParticle->m_flRollDelta	= random->RandomFloat( -4.0f, 4.0f );
 		sParticle->m_uchColor[0]	= alpha;
 		sParticle->m_uchColor[1]	= alpha;
 		sParticle->m_uchColor[2]	= alpha;
@@ -1538,4 +1506,4 @@ void ManhackSparkCallback( const CEffectData & data )
 	FX_SparkFan( vecPosition, vecNormal );
 }
 
-DECLARE_CLIENT_EFFECT( "ManhackSparks", ManhackSparkCallback );
+DECLARE_CLIENT_EFFECT( ManhackSparks, ManhackSparkCallback );

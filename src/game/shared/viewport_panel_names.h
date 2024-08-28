@@ -31,6 +31,4 @@
 #define PANEL_INTRO			"intro"
 
 
-#define PANEL_COMMENTARY_MODELVIEWER	"commentary_modelviewer"
-
 #endif // VIEWPORT_PANEL_NAMES_H

@@ -6,9 +6,7 @@
 
 #ifndef IVP_H
 #define IVP_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlvector.h"
 

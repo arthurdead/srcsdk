@@ -8,6 +8,9 @@ public_dir = join_paths(src_root_dir,'public')
 shared_src_dir = join_paths(src_root_dir,'game','shared')
 
 choreoobjects_lib = static_library('choreoobjects',
+	cpp_args: [
+		'-DLIBNAME=choreoobjects'
+	],
 	sources: files(
 		join_paths(shared_src_dir,'choreoactor.cpp'),
 		join_paths(shared_src_dir,'choreochannel.cpp'),

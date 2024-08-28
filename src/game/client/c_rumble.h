@@ -13,6 +13,7 @@ extern void RumbleEffect( unsigned char effectIndex, unsigned char rumbleData, u
 extern void UpdateRumbleEffects();
 extern void UpdateScreenShakeRumble( float shake, float balance = 0 );
 extern void EnableRumbleOutput( bool bEnable );
+extern void StopAllRumbleEffects( );
 
 #endif//C_RUMBLE_H
 

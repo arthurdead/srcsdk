@@ -8,9 +8,7 @@
 #ifndef IMATCHTITLE_H
 #define IMATCHTITLE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 struct TitleDataFieldsDescription_t
 {

@@ -2,9 +2,7 @@
 
 #ifndef EYE_REFRACT_HELPER_H
 #define EYE_REFRACT_HELPER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <string.h>
 

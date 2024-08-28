@@ -108,10 +108,6 @@ enum PhysInterfaceId_t
 };
 
 
-class ISave;
-class IRestore;
-
-
 #define VPHYSICS_DEBUG_OVERLAY_INTERFACE_VERSION	"VPhysicsDebugOverlay001"
 
 abstract_class IVPhysicsDebugOverlay
@@ -678,6 +674,12 @@ enum callbackflags
 	CALLBACK_MARKED_FOR_TEST	= 0x8000,	// debug -- marked object is being debugged
 };
 
+enum collisionhints
+{
+	COLLISION_HINT_DEBRIS		= 0x0001,
+	COLLISION_HINT_STATICSOLID	= 0x0002,
+};
+
 abstract_class IPhysicsObject
 {
 public:
@@ -1091,41 +1093,6 @@ struct convertconvexparams_t
 // Physics interface IDs
 //
 // Note that right now the order of the enum also defines the order of save/load
-
-
-//-----------------------------------------------------------------------------
-// Purpose: parameter blocks for save and load operations
-//-----------------------------------------------------------------------------
-struct physsaveparams_t
-{
-	ISave 				*pSave;
-	void 				*pObject;
-	PhysInterfaceId_t 	type;
-};
-
-struct physrestoreparams_t
-{
-	IRestore 			*pRestore;
-	void 				**ppObject;
-	PhysInterfaceId_t 	type;
-	void 				*pGameData;
-	const char			*pName;				// used only for debugging
-	const CPhysCollide 	*pCollisionModel;
-	IPhysicsEnvironment *pEnvironment;
-	IPhysicsGameTrace	*pGameTrace;
-};
-
-struct physrecreateparams_t
-{
-	void *pOldObject;
-	void *pNewObject;
-};
-
-struct physprerestoreparams_t
-{
-	int recreatedObjectCount;
-	physrecreateparams_t recreatedObjectList[1];
-};
 
 //-------------------------------------
 

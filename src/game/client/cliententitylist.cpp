@@ -70,7 +70,23 @@ void CClientEntityList::Release( void )
 		IClientNetworkable *pNet = GetClientNetworkableFromHandle( iter );
 		if ( pNet )
 		{
-			pNet->Release();
+			IClientUnknown *pUnk = pNet->GetIClientUnknown();
+			if( pUnk )
+			{
+				C_BaseEntity *pEnt = pUnk->GetBaseEntity();
+				if( pEnt )
+				{
+					UTIL_RemoveImmediate( pEnt );
+				}
+				else
+				{
+					pNet->DO_NOT_USE_Release();
+				}
+			}
+			else
+			{
+				pNet->DO_NOT_USE_Release();
+			}
 		}
 		else
 		{
@@ -78,7 +94,23 @@ void CClientEntityList::Release( void )
 			IClientThinkable *pThinkable = GetClientThinkableFromHandle( iter );
 			if ( pThinkable )
 			{
-				pThinkable->Release();
+				IClientUnknown *pUnk = pThinkable->GetIClientUnknown();
+				if( pUnk )
+				{
+					C_BaseEntity *pEnt = pUnk->GetBaseEntity();
+					if( pEnt )
+					{
+						UTIL_RemoveImmediate( pEnt );
+					}
+					else
+					{
+						pThinkable->DO_NOT_USE_Release();
+					}
+				}
+				else
+				{
+					pThinkable->DO_NOT_USE_Release();
+				}
 			}
 		}
 		RemoveEntity( iter );
@@ -99,6 +131,17 @@ IClientNetworkable* CClientEntityList::GetClientNetworkable( int entnum )
 	return m_EntityCacheInfo[entnum].m_pNetworkable;
 }
 
+EntityCacheInfo_t *CClientEntityList::GetClientNetworkableArray()
+{
+	return m_EntityCacheInfo;
+}
+
+void CClientEntityList::SetDormant( int entityIndex, bool bDormant )
+{
+	Assert( entityIndex >= 0 );
+	Assert( entityIndex < MAX_EDICTS );
+	m_EntityCacheInfo[entityIndex].m_bDormant = bDormant;
+}
 
 IClientEntity* CClientEntityList::GetClientEntity( int entnum )
 {
@@ -322,6 +365,7 @@ void CClientEntityList::OnAddEntity( IHandleEntity *pEnt, CBaseHandle handle )
 		Assert( dynamic_cast< IClientUnknown* >( pEnt ) );
 		Assert( ((IClientUnknown*)pEnt)->GetClientNetworkable() ); // Server entities should all be networkable.
 		pCache->m_pNetworkable = ((IClientUnknown*)pEnt)->GetClientNetworkable();
+		pCache->m_bDormant = true;
 	}
 
 	IClientUnknown *pUnknown = (IClientUnknown*)pEnt;
@@ -335,7 +379,7 @@ void CClientEntityList::OnAddEntity( IHandleEntity *pEnt, CBaseHandle handle )
 	{
 		pCache->m_BaseEntitiesIndex = m_BaseEntities.AddToTail( pBaseEntity );
 
-		if ( pBaseEntity->ObjectCaps() & FCAP_SAVE_NON_NETWORKABLE  )
+		if ( !pBaseEntity->IsServerEntity() )
 		{
 			 m_iNumClientNonNetworkable++;
 		}
@@ -450,7 +494,7 @@ void CClientEntityList::OnRemoveEntity( IHandleEntity *pEnt, CBaseHandle handle 
 
 	if ( pBaseEntity )
 	{
-		if ( pBaseEntity->ObjectCaps() & FCAP_SAVE_NON_NETWORKABLE )
+		if ( !pBaseEntity->IsServerEntity() )
 		{
 			 m_iNumClientNonNetworkable--;
 		}

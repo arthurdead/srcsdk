@@ -331,7 +331,7 @@ void CBaseGrenade::DangerSoundThink( void )
 {
 	if (!IsInWorld())
 	{
-		Remove( );
+		UTIL_Remove( this );
 		return;
 	}
 
@@ -410,12 +410,12 @@ void CBaseGrenade::BounceTouch( CBaseEntity *pOther )
 		// play bounce sound
 		BounceSound();
 	}
-	m_flPlaybackRate = GetAbsVelocity().Length() / 200.0;
-	if (m_flPlaybackRate > 1.0)
-		m_flPlaybackRate = 1;
-	else if (m_flPlaybackRate < 0.5)
-		m_flPlaybackRate = 0;
-
+	float playbackrate = GetAbsVelocity().Length() / 200.0;
+	if (playbackrate > 1.0)
+		playbackrate = 1;
+	else if (playbackrate < 0.5)
+		playbackrate = 0;
+	SetPlaybackRate(playbackrate);
 }
 
 
@@ -453,7 +453,7 @@ void CBaseGrenade ::TumbleThink( void )
 {
 	if (!IsInWorld())
 	{
-		Remove( );
+		UTIL_Remove( this );
 		return;
 	}
 
@@ -478,7 +478,7 @@ void CBaseGrenade ::TumbleThink( void )
 	if (GetWaterLevel() != 0)
 	{
 		SetAbsVelocity( GetAbsVelocity() * 0.5 );
-		m_flPlaybackRate = 0.2;
+		SetPlaybackRate(0.2);
 	}
 }
 

@@ -164,7 +164,6 @@ BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_AnimTimeMustBeFirst )
 	SendPropInt	(SENDINFO(m_flAnimTime), 8, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_AnimTime),
 END_SEND_TABLE()
 
-#if !defined( NO_ENTITY_PREDICTION )
 BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_PredictableId )
 	SendPropPredictableId( SENDINFO( m_PredictableID ) ),
 	SendPropInt( SENDINFO( m_bIsPlayerSimulated ), 1, SPROP_UNSIGNED ),
@@ -183,7 +182,6 @@ static void* SendProxy_SendPredictableId( const SendProp *pProp, const void *pSt
 	return ( void * )pVarData;
 }
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableId );
-#endif
 
 void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
@@ -294,9 +292,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 
 	SendPropInt		( SENDINFO( m_iTextureFrameIndex ),		8, SPROP_UNSIGNED ),
 
-#if !defined( NO_ENTITY_PREDICTION )
 	SendPropDataTable( "predictable_id", 0, &REFERENCE_SEND_TABLE( DT_PredictableId ), SendProxy_SendPredictableId ),
-#endif
 
 	// FIXME: Collapse into another flag field?
 	SendPropInt		(SENDINFO(m_bSimulatedEveryTick),		1, SPROP_UNSIGNED ),
@@ -412,9 +408,7 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	}
 	NetworkProp()->MarkPVSInformationDirty();
 
-#ifndef _XBOX
 	AddEFlags( EFL_USE_PARTITION_WHEN_NOT_SOLID );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1798,9 +1792,9 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_KEYFIELD( m_fEffects, FIELD_INTEGER, "effects" ),
 	DEFINE_KEYFIELD( m_clrRender, FIELD_COLOR32, "rendercolor" ),
 	DEFINE_GLOBAL_KEYFIELD( m_nModelIndex, FIELD_SHORT, "modelindex" ),
-#if !defined( NO_ENTITY_PREDICTION )
+
 	// DEFINE_FIELD( m_PredictableID, CPredictableId ),
-#endif
+
 	DEFINE_FIELD( touchStamp, FIELD_INTEGER ),
 	DEFINE_CUSTOM_FIELD( m_aThinkFunctions, thinkcontextFuncs ),
 	//								m_iCurrentThinkContext (not saved, debug field only, and think transient to boot)
@@ -1892,10 +1886,10 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_KEYFIELD( m_vecViewOffset, FIELD_VECTOR, "view_ofs" ),
 
 	DEFINE_FIELD( m_fFlags, FIELD_INTEGER ),
-#if !defined( NO_ENTITY_PREDICTION )
+
 //	DEFINE_FIELD( m_bIsPlayerSimulated, FIELD_INTEGER ),
 //	DEFINE_FIELD( m_hPlayerSimulationOwner, FIELD_EHANDLE ),
-#endif
+
 	// DEFINE_FIELD( m_pTimedOverlay, TimedOverlay_t* ),
 	DEFINE_FIELD( m_nSimulationTick, FIELD_TICK ),
 	// DEFINE_FIELD( m_RefEHandle, CBaseHandle ),
@@ -2803,7 +2797,7 @@ bool CBaseEntity::FVisible( CBaseEntity *pEntity, int traceMask, CBaseEntity **p
 	Vector vecTargetOrigin = pEntity->EyePosition();
 
 	trace_t tr;
-	if ( !IsXbox() && ai_LOS_mode.GetBool() )
+	if ( ai_LOS_mode.GetBool() )
 	{
 		UTIL_TraceLine(vecLookerOrigin, vecTargetOrigin, traceMask, this, COLLISION_GROUP_NONE, &tr);
 	}
@@ -3160,7 +3154,6 @@ CBaseEntity * CBaseEntity::CreateNoSpawn( const char *szName, const Vector &vecO
 	return pEntity;
 }
 
-#if !defined( NO_ENTITY_PREDICTION )
 void CBaseEntity::__SetupAsPredicted( CBaseEntity *pEntity, const char *szName, const char *module, int line )
 {
 	CBasePlayer *player = CBaseEntity::GetPredictionPlayer();
@@ -3175,7 +3168,6 @@ void CBaseEntity::__SetupAsPredicted( CBaseEntity *pEntity, const char *szName, 
 	// Set up "shared" id number
 	pEntity->m_PredictableID.GetForModify().SetRaw( testId.GetRaw() );
 }
-#endif
 
 Vector CBaseEntity::GetSoundEmissionOrigin() const
 {
@@ -4625,11 +4617,6 @@ static CUtlCachedFileData< CModelSoundsCache > g_ModelSoundsCache( "modelsounds.
 
 void ClearModelSoundsCache()
 {
-	if ( IsX360() )
-	{
-		return;
-	}
-
 	g_ModelSoundsCache.Reload();
 }
 
@@ -4639,11 +4626,6 @@ void ClearModelSoundsCache()
 //-----------------------------------------------------------------------------
 bool ModelSoundsCacheInit()
 {
-	if ( IsX360() )
-	{
-		return true;
-	}
-
 	return g_ModelSoundsCache.Init();
 }
 
@@ -4652,11 +4634,6 @@ bool ModelSoundsCacheInit()
 //-----------------------------------------------------------------------------
 void ModelSoundsCacheShutdown()
 {
-	if ( IsX360() )
-	{
-		return;
-	}
-
 	g_ModelSoundsCache.Shutdown();
 }
 
@@ -4669,11 +4646,6 @@ public:
 	}
 	virtual void LevelInitPostEntity()
 	{
-		if ( IsX360() )
-		{
-			return;
-		}
-
 		if ( g_ModelSoundsCache.IsDirty() )
 		{
 			g_ModelSoundsCache.Save();
@@ -4681,15 +4653,6 @@ public:
 	}
 	virtual void LevelShutdownPostEntity()
 	{
-		if ( IsX360() )
-		{
-			// Unforunate that this table must persist through duration of level.
-			// It is the common case that PrecacheModel() still gets called (and needs this table),
-			// after LevelInitPostEntity, as PrecacheModel() redundantly precaches.
-			g_ModelSoundsSymbolHelper.RemoveAll();
-			return;
-		}
-
 		if ( g_ModelSoundsCache.IsDirty() )
 		{
 			g_ModelSoundsCache.Save();
@@ -4741,33 +4704,6 @@ static CWatchForModelAccess g_WatchForModels;
 #define CL_EVENT_FOOTSTEP_RIGHT		6005
 #define CL_EVENT_MFOOTSTEP_LEFT		6006
 #define CL_EVENT_MFOOTSTEP_RIGHT	6007
-
-//-----------------------------------------------------------------------------
-// Precache model sound. Requires a local symbol table to prevent
-// a very expensive call to PrecacheScriptSound().
-//-----------------------------------------------------------------------------
-void CBaseEntity::PrecacheSoundHelper( const char *pName )
-{
-	if ( !IsX360() )
-	{
-		// 360 only
-		Assert( 0 );
-		return;
-	}
-
-	if ( !pName || !pName[0] )
-	{
-		return;
-	}
-
-	if ( !g_ModelSoundsSymbolHelper.Find( pName ).IsValid() )
-	{
-		g_ModelSoundsSymbolHelper.AddString( pName );
-
-		// very expensive, only call when required
-		PrecacheScriptSound( pName );
-	}
-}
 
 //-----------------------------------------------------------------------------
 // Precache model components
@@ -4866,68 +4802,6 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 								PrecacheParticleSystem( token );
 							}
 							continue;
-						}
-					}
-
-					// 360 precaches the model sounds now at init time, the cost is now ~250 msecs worst case.
-					// The disk based solution was not needed. Now at runtime partly due to already crawling the sequences
-					// for the particles and the expensive part was redundant PrecacheScriptSound(), which is now prevented
-					// by a local symbol table.
-					if ( IsX360() )
-					{
-						switch ( pEvent->event )
-						{
-						default:
-							{
-								if ( ( pEvent->type & AE_TYPE_NEWEVENTSYSTEM ) && ( pEvent->event == AE_SV_PLAYSOUND ) )
-								{
-									PrecacheSoundHelper( pEvent->pszOptions() );
-								}
-							}
-							break;
-						case CL_EVENT_FOOTSTEP_LEFT:
-						case CL_EVENT_FOOTSTEP_RIGHT:
-							{
-								char soundname[256];
-								char const *options = pEvent->pszOptions();
-								if ( !options || !options[0] )
-								{
-									options = "NPC_CombineS";
-								}
-
-								Q_snprintf( soundname, sizeof( soundname ), "%s.RunFootstepLeft", options );
-								PrecacheSoundHelper( soundname );
-								Q_snprintf( soundname, sizeof( soundname ), "%s.RunFootstepRight", options );
-								PrecacheSoundHelper( soundname );
-								Q_snprintf( soundname, sizeof( soundname ), "%s.FootstepLeft", options );
-								PrecacheSoundHelper( soundname );
-								Q_snprintf( soundname, sizeof( soundname ), "%s.FootstepRight", options );
-								PrecacheSoundHelper( soundname );
-							}
-							break;
-						case AE_CL_PLAYSOUND:
-							{
-								if ( !( pEvent->type & AE_TYPE_CLIENT ) )
-									break;
-
-								if ( pEvent->pszOptions()[0] )
-								{
-									PrecacheSoundHelper( pEvent->pszOptions() );
-								}
-								else
-								{
-									Warning( "-- Error --:  empty soundname, .qc error on AE_CL_PLAYSOUND in model %s, sequence %s, animevent # %i\n", 
-										studioHdr.GetRenderHdr()->pszName(), seq.pszLabel(), j+1 );
-								}
-							}
-							break;
-						case CL_EVENT_SOUND:
-						case SCRIPT_EVENT_SOUND:
-						case SCRIPT_EVENT_SOUND_VOICE:
-							{
-								PrecacheSoundHelper( pEvent->pszOptions() );
-							}
-							break;
 						}
 					}
 				}
@@ -6975,26 +6849,13 @@ void CBaseEntity::RemoveRecipientsIfNotCloseCaptioning( CRecipientFilter& filter
 		CBasePlayer *player = static_cast< CBasePlayer * >( CBaseEntity::Instance( playerIndex ) );
 		if ( !player )
 			continue;
-#if !defined( _XBOX )
 		const char *cvarvalue = engine->GetClientConVarValue( playerIndex, "closecaption" );
 		Assert( cvarvalue );
 		if ( !cvarvalue[ 0 ] )
 			continue;
 
 		int value = atoi( cvarvalue );
-#else
-		static ConVar *s_pCloseCaption = NULL;
-		if ( !s_pCloseCaption )
-		{
-			s_pCloseCaption = cvar->FindVar( "closecaption" );
-			if ( !s_pCloseCaption )
-			{
-				Error( "XBOX couldn't find closecaption convar!!!" );
-			}
-		}
 
-		int value = s_pCloseCaption->GetInt();
-#endif
 		// No close captions?
 		if ( value == 0 )
 		{
@@ -7179,13 +7040,11 @@ bool CBaseEntity::SUB_AllowedToFade( void )
 			return false;
 	}
 
-	// on Xbox, allow these to fade out
-#ifndef _XBOX
+
 	CBasePlayer *pPlayer = UTIL_GetNearestVisiblePlayer(this); 
 
 	if ( pPlayer && pPlayer->FInViewCone( this ) )
 		return false;
-#endif
 
 	return true;
 }
@@ -7248,6 +7107,8 @@ bool CBaseEntity::DoesHavePlayerChild()
 //------------------------------------------------------------------------------
 void CBaseEntity::IncrementInterpolationFrame()
 {
+	gEntList.AddPostClientMessageEntity( this );
+
 	m_ubInterpolationFrame = (m_ubInterpolationFrame + 1) % NOINTERP_PARITY_MAX;
 }
 

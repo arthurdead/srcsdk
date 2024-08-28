@@ -15,8 +15,9 @@
 #include "hud_macros.h"
 #include "spectatorgui.h"
 #include "c_team.h"
-#include "tf_hud_freezepanel.h"
-#include "tf_hud_objectivestatus.h"
+
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -724,9 +725,11 @@ void CHudControlPointIcons::Init( void )
 
 	for( int i = FIRST_GAME_TEAM; i < MAX_TEAMS; i++ )
 	{
-		if ( m_iTeamBaseTextures[i] == -1 )
+		m_iTeamBaseTextures[i].m_nMaterialIndex = INT_MAX;
+
+		if ( m_iTeamBaseTextures[i].m_nTextureId == -1 )
 		{
-			m_iTeamBaseTextures[i] = vgui::surface()->CreateNewTextureID();
+			m_iTeamBaseTextures[i].m_nTextureId = vgui::surface()->CreateNewTextureID();
 		}
 	}
 
@@ -1314,10 +1317,17 @@ bool CHudControlPointIcons::PaintTeamBaseIcon( int index, float flXPos, float fl
 			int iTeamBaseIcon = ObjectiveResource()->GetBaseIconForTeam(i);
 			if ( iTeamBaseIcon )
 			{
-				// Draw the Team's Base texture
-				const char *szMatName = GetMaterialNameFromIndex( iTeamBaseIcon );
+				TeamBaseTexture_t &tbt = m_iTeamBaseTextures[ i ];
+				
+				if ( tbt.m_nMaterialIndex != iTeamBaseIcon )
+				{
+					tbt.m_nMaterialIndex = iTeamBaseIcon;
+					// Draw the Team's Base texture
+					const char *szMatName = GetMaterialNameFromIndex( iTeamBaseIcon );
+					vgui::surface()->DrawSetTextureFile( tbt.m_nTextureId, szMatName, true, false );
+				}
 
-				vgui::surface()->DrawSetTextureFile( m_iTeamBaseTextures[i], szMatName, true, false );
+				vgui::surface()->DrawSetTexture( tbt.m_nTextureId );
 
 				Vector2D uv11( uv1, uv1 );
 				Vector2D uv21( uv2, uv1 );
@@ -1730,25 +1740,27 @@ void CControlPointIconCapArrow::Paint( void )
 	CMeshBuilder meshBuilder;
 	meshBuilder.Begin( pMesh, MATERIAL_QUADS, 1 );
 
-	meshBuilder.Position3f( x, y, 0.0f );
+	float zpos = vgui::surface()->GetZPos();
+
+	meshBuilder.Position3f( x, y, zpos );
 	meshBuilder.TexCoord2f( 0, flXa, flYa );
 	meshBuilder.TexCoord2f( 1, 0.0f, 0.0f );
 	meshBuilder.Color4ub( 255, 255, 255, 255 );
 	meshBuilder.AdvanceVertex();
 
-	meshBuilder.Position3f( x + iWidth, y, 0.0f );
+	meshBuilder.Position3f( x + iWidth, y, zpos );
 	meshBuilder.TexCoord2f( 0, flXb, flYa );
 	meshBuilder.TexCoord2f( 1, 1.0f, 0.0f );
 	meshBuilder.Color4ub( 255, 255, 255, 255 );
 	meshBuilder.AdvanceVertex();
 
-	meshBuilder.Position3f( x + iWidth, y + iHeight, 0.0f );
+	meshBuilder.Position3f( x + iWidth, y + iHeight, zpos );
 	meshBuilder.TexCoord2f( 0, flXb, flYb );
 	meshBuilder.TexCoord2f( 1, 1.0f, 1.0f );
 	meshBuilder.Color4ub( 255, 255, 255, 255 );
 	meshBuilder.AdvanceVertex();
 
-	meshBuilder.Position3f( x, y + iHeight, 0.0f );
+	meshBuilder.Position3f( x, y + iHeight, zpos );
 	meshBuilder.TexCoord2f( 0, flXa, flYb );
 	meshBuilder.TexCoord2f( 1, 0.0f, 1.0f );
 	meshBuilder.Color4ub( 255, 255, 255, 255 );

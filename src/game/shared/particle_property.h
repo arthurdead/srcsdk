@@ -12,6 +12,7 @@
 #include "globalvars_base.h"
 #include "particles_new.h"
 #include "particle_parse.h"
+#include "predictable_entity.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -34,12 +35,14 @@ struct ParticleControlPoint_t
 		iAttachType = PATTACH_ABSORIGIN_FOLLOW;
 		iAttachmentPoint = 0;
 		vecOriginOffset = vec3_origin;
+		matOffset.Invalidate();
 	}
 
 	int								iControlPoint;
 	ParticleAttachment_t			iAttachType;
 	int								iAttachmentPoint;
 	Vector							vecOriginOffset;
+	matrix3x4_t						matOffset;
 	EHANDLE							hEntity;
 };
 
@@ -72,22 +75,23 @@ public:
 
 	void				Init( CBaseEntity *pEntity );
 	CBaseEntity			*GetOuter( void ) { return m_pOuter; }
+	int					GetAllParticleEffectRenderables( IClientRenderable **pOutput, int iMaxOutput ); //gets a list of all renderables used by this particle property
 
 	// Effect Creation
 	CNewParticleEffect *Create( const char *pszParticleName, ParticleAttachment_t iAttachType, const char *pszAttachmentName );
-	CNewParticleEffect *Create( const char *pszParticleName, ParticleAttachment_t iAttachType, int iAttachmentPoint = INVALID_PARTICLE_ATTACHMENT, Vector vecOriginOffset = vec3_origin );
-	void				AddControlPoint( CNewParticleEffect *pEffect, int iPoint, C_BaseEntity *pEntity, ParticleAttachment_t iAttachType, const char *pszAttachmentName = NULL, Vector vecOriginOffset = vec3_origin );
-	void				AddControlPoint( int iEffectIndex, int iPoint, C_BaseEntity *pEntity, ParticleAttachment_t iAttachType, int iAttachmentPoint = INVALID_PARTICLE_ATTACHMENT, Vector vecOriginOffset = vec3_origin );
+	CNewParticleEffect *Create( const char *pszParticleName, ParticleAttachment_t iAttachType, int iAttachmentPoint = INVALID_PARTICLE_ATTACHMENT, Vector vecOriginOffset = vec3_origin, matrix3x4_t *vecOffsetMatrix = NULL );
+	void				AddControlPoint( CNewParticleEffect *pEffect, int iPoint, C_BaseEntity *pEntity, ParticleAttachment_t iAttachType, const char *pszAttachmentName = NULL, Vector vecOriginOffset = vec3_origin, matrix3x4_t *vecOffsetMatrix = NULL );
+	void				AddControlPoint( int iEffectIndex, int iPoint, C_BaseEntity *pEntity, ParticleAttachment_t iAttachType, int iAttachmentPoint = INVALID_PARTICLE_ATTACHMENT, Vector vecOriginOffset = vec3_origin, matrix3x4_t *vecOffsetMatrix = NULL );
 
 	inline void			SetControlPointParent( CNewParticleEffect *pEffect, int whichControlPoint, int parentIdx );
 	void				SetControlPointParent( int iEffectIndex, int whichControlPoint, int parentIdx );
 
 	// Commands
-	void				StopEmission( CNewParticleEffect *pEffect = NULL, bool bWakeOnStop = false, bool bDestroyAsleepSystems = false );
+	void				StopEmission( CNewParticleEffect *pEffect = NULL, bool bWakeOnStop = false, bool bDestroyAsleepSystems = false, bool bForceRemoveInstantly = false, bool bPlayEndCap = false );
 	void				StopEmissionAndDestroyImmediately( CNewParticleEffect *pEffect = NULL );
 
 	// kill all particle systems involving a given entity for their control points
-	void				StopParticlesInvolving( CBaseEntity *pEntity );
+	void				StopParticlesInvolving( CBaseEntity *pEntity, bool bForceRemoveInstantly = false );
 	void				StopParticlesNamed( const char *pszEffectName, bool bForceRemoveInstantly = false, bool bInverse = false ); ///< kills all particles using the given definition name
 	void				StopParticlesWithNameAndAttachment( const char *pszEffectName, int iAttachmentPoint, bool bForceRemoveInstantly = false ); ///< kills all particles using the given definition name
 
@@ -105,10 +109,13 @@ public:
 	// Debugging
 	void				DebugPrintEffects( void );
 
+	bool				IsValidEffect( const CNewParticleEffect *pEffect ); //is this effect still alive?
+
 	int					FindEffect( const char *pEffectName, int nStart = 0 );
 	inline CNewParticleEffect *GetParticleEffectFromIdx( int idx );
 
 private:
+	CNewParticleEffect *Create( CParticleSystemDefinition *pDef, ParticleAttachment_t iAttachType, int iAttachmentPoint, Vector vecOriginOffset, matrix3x4_t *matOffset = NULL );
 	int					GetParticleAttachment( C_BaseEntity *pEntity, const char *pszAttachmentName, const char *pszParticleName );
 	int					FindEffect( CNewParticleEffect *pEffect );
 	void				UpdateParticleEffect( ParticleEffectList_t *pEffect, bool bInitializing = false, int iOnlyThisControlPoint = -1 );

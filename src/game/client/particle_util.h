@@ -419,16 +419,6 @@ inline float GetAlphaDistanceFade(
 	}
 }
 
-
-inline Vector WorldGetLightForPoint(const Vector &vPos, bool bClamp)
-{
-	#if defined(PARTICLEPROTOTYPE_APP)
-		return Vector(1,1,1);
-	#else
-		return engine->GetLightForPoint(vPos, bClamp);
-	#endif
-}
-
 #endif
 
 

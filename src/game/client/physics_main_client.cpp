@@ -265,8 +265,11 @@ void C_BaseEntity::SetCheckUntouch( bool check )
 	// Invalidate touchstamp
 	if ( check )
 	{
-		touchStamp++;
-		AddEFlags( EFL_CHECK_UNTOUCH );
+		m_nTouchStamp++;
+		if ( !IsEFlagSet( EFL_CHECK_UNTOUCH ) )
+		{
+			AddEFlags( EFL_CHECK_UNTOUCH );
+		}
 	}
 	else
 	{

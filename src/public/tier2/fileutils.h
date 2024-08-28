@@ -52,15 +52,9 @@ bool GenerateFullPath( const char *pFileName, char const *pPathID, char *pBuf, i
 typedef bool ( *CreateCallback_t )( const char *pSourceName, const char *pTargetName, const char *pPathID, void *pExtraData );
 int UpdateOrCreate( const char *pSourceName, char *pTargetName, int targetLen, const char *pPathID, CreateCallback_t pfnCreate, bool bForce = false, void *pExtraData = NULL );
 
-char *CreateX360Filename( const char *pSourceName, char *pTargetName, int targetLen );
-
 FORCEINLINE const char *AdjustFileExtensionForPlatform( const char *pSourceName, char *pTargetName, int targetLen )
 {
-#ifdef PLATFORM_X360
-	return CreateX360Filename( pSourceName, pTargetName, targetLen );
-#else
 	return pSourceName;
-#endif
 }
 
 // simple file classes. File I/O mode (text/binary, read/write) is based upon the subclass chosen.

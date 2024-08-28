@@ -6,9 +6,7 @@
 
 #ifndef CONFIGMANAGER_H
 #define CONFIGMANAGER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "KeyValues.h"
 #include "utlvector.h"

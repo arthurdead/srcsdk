@@ -230,8 +230,8 @@ void CWeaponHeistBase::FireBullets(const FireBulletsInfo_t &info)
 }
 
 #ifdef CLIENT_DLL
-bool CWeaponHeistBase::OnFireEvent(C_BaseViewModel *pViewModel, const Vector& origin, const QAngle& angles, int event, const char *options)
+bool CWeaponHeistBase::ViewModel_FireEvent(C_BaseViewModel *pViewModel, const Vector& origin, const QAngle& angles, int event, const char *options)
 {
-	return BaseClass::OnFireEvent(pViewModel, origin, angles, event, options);
+	return BaseClass::ViewModel_FireEvent(pViewModel, origin, angles, event, options);
 }
 #endif

@@ -24,6 +24,7 @@ webm = cmake.subproject('webm', options: webm_opts)
 
 video_services_lib = shared_library('video_services',name_prefix:'',
 	cpp_args: [
+		'-DDLLNAME=video_services',
 		'-DMPI',
 		'-DPROTECTED_THINGS_DISABLE'
 	],

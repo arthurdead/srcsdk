@@ -97,13 +97,12 @@ static char *CopyString( const char *in )
 }
 
 #ifdef STAGING_ONLY
-ConVar tf_strict_mouse_up_events( "tf_strict_mouse_up_events", "0", FCVAR_ARCHIVE, "Only allow Mouse-Release events to happens on panels we also Mouse-Downed in" );
+ConVar vgui_strict_mouse_up_events( "vgui_strict_mouse_up_events", "0", FCVAR_ARCHIVE, "Only allow Mouse-Release events to happens on panels we also Mouse-Downed in" );
 #endif
 
 // Temporary convar to help debug why the MvMVictoryMannUpPanel TabContainer is sometimes way off to the left.
-ConVar tf_debug_tabcontainer( "tf_debug_tabcontainer", "0", FCVAR_HIDDEN, "Spew TabContainer dimensions." );
+ConVar vgui_debug_tabcontainer( "vgui_debug_tabcontainer", "0", FCVAR_HIDDEN, "Spew TabContainer dimensions." );
 
-#if defined( VGUI_USEDRAGDROP )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -178,9 +177,6 @@ private:
 };
 
 vgui::DHANDLE< CDragDropHelperPanel >	s_DragDropHelper;
-#endif
-
-#if defined( VGUI_USEKEYBINDINGMAPS )
 
 BoundKey_t::BoundKey_t():
 	isbuiltin( true ),
@@ -628,7 +624,6 @@ void Panel::ReloadKeyBindings( KeyBindingContextHandle_t handle )
 	}
 	kv->deleteThis();
 }
-#endif // VGUI_USEKEYBINDINGMAPS
 
 DECLARE_BUILD_FACTORY( Panel );
 
@@ -692,9 +687,9 @@ void Panel::Init( int x, int y, int wide, int tall )
 	SetSize(wide, tall);
 	_flags.SetFlag( NEEDS_LAYOUT | NEEDS_SCHEME_UPDATE | NEEDS_DEFAULT_SETTINGS_APPLIED );
 	_flags.SetFlag( AUTODELETE_ENABLED | PAINT_BORDER_ENABLED | PAINT_BACKGROUND_ENABLED | PAINT_ENABLED );
-#if defined( VGUI_USEKEYBINDINGMAPS )
+
 	_flags.SetFlag( ALLOW_CHAIN_KEYBINDING_TO_PARENT );
-#endif
+
 	m_nPinDeltaX = m_nPinDeltaY = 0;
 	m_nResizeDeltaX = m_nResizeDeltaY = 0;
 	_autoResizeDirection = AUTORESIZE_NO;
@@ -728,21 +723,15 @@ void Panel::Init( int x, int y, int wide, int tall )
 	m_nBgTextureId2 = -1;
 	m_nBgTextureId3 = -1;
 	m_nBgTextureId4 = -1;
-#if defined( VGUI_USEDRAGDROP )
 	m_pDragDrop = new DragDrop_t;
-
-#endif
 
 	m_lLastDoublePressTime = 0L;
 
-#if defined( VGUI_USEKEYBINDINGMAPS )
 	m_hKeyBindingsContext = INVALID_KEYBINDINGCONTEXT_HANDLE;
-#endif
 
 	REGISTER_COLOR_AS_OVERRIDABLE( _fgColor, "fgcolor_override" );
 	REGISTER_COLOR_AS_OVERRIDABLE( _bgColor, "bgcolor_override" );
 
-	m_bIsConsoleStylePanel = false;
 	m_NavUp = NULL;
 	m_NavDown = NULL;
 	m_NavLeft = NULL;
@@ -777,18 +766,15 @@ Panel::~Panel()
 			delete m_pTooltips;
 		}
 	}
-#if defined( VGUI_USEKEYBINDINGMAPS )
 	if ( IsValidKeyBindingsContext() )
 	{
 		g_KBMgr.OnPanelDeleted( m_hKeyBindingsContext, this );
 	}
-#endif // VGUI_USEKEYBINDINGMAPS
-#if defined( VGUI_USEDRAGDROP )
+
 	if ( m_pDragDrop->m_bDragging )
 	{
 		OnFinishDragging( false, (MouseCode)-1 );
 	}
-#endif // VGUI_USEDRAGDROP
 
 	_flags.ClearFlag( AUTODELETE_ENABLED );
 	_flags.SetFlag( MARKED_FOR_DELETION );
@@ -823,9 +809,8 @@ Panel::~Panel()
 	delete [] _pinToSibling;
 
 	_vpanel = NULL;
-#if defined( VGUI_USEDRAGDROP )
+
 	delete m_pDragDrop;
-#endif // VGUI_USEDRAGDROP
 
 #if defined( VGUI_PANEL_VERIFY_DELETES )
 	// Zero out our vtbl pointer. This should hopefully help us catch bad guys using
@@ -1157,14 +1142,6 @@ void Panel::PaintTraverse( bool repaint, bool allowForce )
 
 	float oldAlphaMultiplier = surface()->DrawGetAlphaMultiplier();
 	float newAlphaMultiplier = oldAlphaMultiplier * m_flAlpha * 1.0f/255.0f;
-
-	if ( IsXbox() && !newAlphaMultiplier )
-	{
-		// xbox optimization not suitable for pc
-		// xbox panels are compliant and can early out and not traverse their children
-		// when they have no opacity
-		return;
-	}
 
 	if ( !repaint &&
 		 allowForce &&
@@ -1735,13 +1712,10 @@ Panel *Panel::HasHotkey(wchar_t key)
 	return NULL;
 }
 
-#if defined( VGUI_USEDRAGDROP )
 static vgui::PHandle	g_DragDropCapture;
-#endif // VGUI_USEDRAGDROP
 
 void Panel::InternalCursorMoved(int x, int y)
 {
-#if defined( VGUI_USEDRAGDROP )
 	if ( g_DragDropCapture.Get() )
 	{
 		bool started = g_DragDropCapture->GetDragDropInfo()->m_bDragStarted;
@@ -1758,7 +1732,6 @@ void Panel::InternalCursorMoved(int x, int y)
 			return;
 		}
 	}
-#endif // VGUI_USEDRAGDROP
 
 	if ( !ShouldHandleInputMessage() )
 		return;
@@ -1920,9 +1893,7 @@ void Panel::InternalMousePressed(int code)
 	
 	if ( !IsMouseInputEnabled())
 	{
-#if defined( VGUI_USEDRAGDROP )
 		DragDropStartDragging();
-#endif
 		return;
 	}
 	
@@ -1964,9 +1935,7 @@ void Panel::InternalMousePressed(int code)
 		OnMousePressed( (MouseCode)code );
 	}
 
-#if defined( VGUI_USEDRAGDROP )
 	DragDropStartDragging();
-#endif
 }
 
 void Panel::InternalMouseDoublePressed(int code)
@@ -2003,7 +1972,6 @@ void Panel::InternalMouseDoublePressed(int code)
 	}
 }
 
-#if defined( VGUI_USEDRAGDROP )
 void Panel::SetStartDragWhenMouseExitsPanel( bool state )
 {
 	_flags.SetFlag( DRAG_REQUIRES_PANEL_EXIT, state );
@@ -2013,7 +1981,6 @@ bool Panel::IsStartDragWhenMouseExitsPanel() const
 {
 	return 	_flags.IsFlagSet( DRAG_REQUIRES_PANEL_EXIT );
 }
-#endif // VGUI_USEDRAGDROP
 
 void Panel::SetTriplePressAllowed( bool state )
 {
@@ -2038,9 +2005,7 @@ void Panel::InternalMouseTriplePressed( int code )
 	
 	if ( !IsMouseInputEnabled())
 	{
-#if defined( VGUI_USEDRAGDROP )
 		DragDropStartDragging();
-#endif
 		return;
 	}
 	
@@ -2050,14 +2015,12 @@ void Panel::InternalMouseTriplePressed( int code )
 	}
 
 	OnMouseTriplePressed((MouseCode)code);
-#if defined( VGUI_USEDRAGDROP )
+
 	DragDropStartDragging();
-#endif
 }
 
 void Panel::InternalMouseReleased(int code)
 {
-#if defined( VGUI_USEDRAGDROP )
 	if ( g_DragDropCapture.Get() )
 	{
 		bool started = g_DragDropCapture->GetDragDropInfo()->m_bDragStarted;
@@ -2067,7 +2030,6 @@ void Panel::InternalMouseReleased(int code)
 			return;
 		}
 	}
-#endif
 
 	if ( !ShouldHandleInputMessage() )
 		return;
@@ -2089,8 +2051,7 @@ void Panel::InternalMouseReleased(int code)
 	}
 
 #ifdef STAGING_ONLY
-	const char *pGameDir = COM_GetModDirectory();
-	if ( Q_stristr( pGameDir, "tf" ) && tf_strict_mouse_up_events.GetBool() )
+	if ( vgui_strict_mouse_up_events.GetBool() )
 	{
 		// Only allow mouse release events to go to panels that we also
 		// first clicked into
@@ -2139,7 +2100,6 @@ void Panel::InternalKeyCodePressed(int code)
 	}
 }
 
-#if defined( VGUI_USEKEYBINDINGMAPS )
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *bindingName - 
@@ -2765,7 +2725,6 @@ bool Panel::IsKeyRebound( KeyCode code, int modifiers )
 }
 
 static bool s_bSuppressRebindChecks = false;
-#endif // VGUI_USEKEYBINDINGMAPS
 
 void Panel::InternalKeyCodeTyped( int code )
 {
@@ -2900,12 +2859,11 @@ void Panel::InternalSetCursor()
 
 	if (visible)
 	{
-#if defined( VGUI_USEDRAGDROP )
 		// Drag drop is overriding cursor?
 		if ( m_pDragDrop->m_bDragging ||
 			g_DragDropCapture.Get() != NULL )
 			return;
-#endif
+
 		// chain up and make sure all our parents are also visible
 		VPANEL p = GetVParent();
 		while (p)
@@ -2939,9 +2897,7 @@ void Panel::InternalSetCursor()
 //-----------------------------------------------------------------------------
 void Panel::OnThink()
 {
-#if defined( VGUI_USEDRAGDROP )
-	if ( IsPC() && 
-		m_pDragDrop->m_bDragEnabled &&
+	if ( m_pDragDrop->m_bDragEnabled &&
 		m_pDragDrop->m_bDragging &&
 		m_pDragDrop->m_bDragStarted )
 	{
@@ -3019,7 +2975,6 @@ void Panel::OnThink()
 			}
 		}
 	}
-#endif
 }
 
 // input messages handlers (designed for override)
@@ -3139,85 +3094,18 @@ void Panel::OnKeyCodeTyped(KeyCode keycode)
 {
 	vgui::KeyCode code = GetBaseButtonCode( keycode );
 
-	// handle focus change
-	if ( IsX360() || IsConsoleStylePanel() )
-	{
-		// eat these typed codes, will get handled in OnKeyCodePressed
-		switch ( code )
-		{
-		case KEY_XBUTTON_UP:
-		case KEY_XSTICK1_UP:
-		case KEY_XSTICK2_UP:
-		case KEY_XBUTTON_DOWN:
-		case KEY_XSTICK1_DOWN:
-		case KEY_XSTICK2_DOWN:
-		case KEY_XBUTTON_LEFT:
-		case KEY_XSTICK1_LEFT:
-		case KEY_XSTICK2_LEFT:
-		case KEY_XBUTTON_RIGHT:
-		case KEY_XSTICK1_RIGHT:
-		case KEY_XSTICK2_RIGHT:
-		case KEY_XBUTTON_A:
-		case KEY_XBUTTON_B:
-		case KEY_XBUTTON_X:
-		case KEY_XBUTTON_Y:
-		case KEY_XBUTTON_LEFT_SHOULDER:
-		case KEY_XBUTTON_RIGHT_SHOULDER:
-		case KEY_XBUTTON_BACK:
-		case KEY_XBUTTON_START:
-		case KEY_XBUTTON_STICK1:
-		case KEY_XBUTTON_STICK2:
-		case KEY_XBUTTON_LTRIGGER:
-		case KEY_XBUTTON_RTRIGGER:
-
-		case KEY_UP:
-		case KEY_DOWN:
-		case KEY_LEFT:
-		case KEY_RIGHT:
-			return;
-		}
-
-		// legacy handling - need to re-enable for older apps?
-		/*
-		if ( code == KEY_XSTICK1_RIGHT || code == KEY_XBUTTON_RIGHT )
-		{
-		RequestFocusNext();
-		return;
-		}
-		else if ( code == KEY_XSTICK1_LEFT || code == KEY_XBUTTON_LEFT )
-		{
-		RequestFocusPrev();
-		return;
-		}
-		*/
-	}
-
 	if (code == KEY_TAB)
 	{
 		bool bShiftDown = input()->IsKeyDown(KEY_LSHIFT) || input()->IsKeyDown(KEY_RSHIFT);
 
-		if ( IsConsoleStylePanel() )
+		// if shift is down goto previous tab position, otherwise goto next
+		if ( bShiftDown )
 		{
-			if ( bShiftDown )
-			{
-				NavigateUp();
-			}
-			else
-			{
-				NavigateDown();
-			}
+			RequestFocusPrev();
 		}
 		else
 		{
-			// if shift is down goto previous tab position, otherwise goto next
-			if ( bShiftDown )
-			{
-				RequestFocusPrev();
-			}
-			else
-			{
-				RequestFocusNext();
-			}
+			RequestFocusNext();
 		}
 	}
 	else
@@ -3539,7 +3427,7 @@ bool Panel::RequestFocusNext(VPANEL panel)
 void Panel::RequestFocus(int direction)
 {
 	// NOTE: This doesn't make any sense if we don't have keyboard input enabled
-	Assert( ( IsX360() || IsConsoleStylePanel() ) || IsKeyBoardInputEnabled() );
+	Assert( IsKeyBoardInputEnabled() );
 	//	ivgui()->DPrintf2("RequestFocus(%s, %s)\n", GetName(), GetClassName());
 	OnRequestFocus(GetVPanel(), NULL);
 }
@@ -4088,12 +3976,11 @@ void Panel::ApplySchemeSettings(IScheme *pScheme)
 	SetFgColor(GetSchemeColor("Panel.FgColor", pScheme));
 	SetBgColor(GetSchemeColor("Panel.BgColor", pScheme));
 
-#if defined( VGUI_USEDRAGDROP )
 	m_clrDragFrame = pScheme->GetColor("DragDrop.DragFrame", Color(255, 255, 255, 192));
 	m_clrDropFrame = pScheme->GetColor("DragDrop.DropFrame", Color(150, 255, 150, 255));
 
 	m_infoFont = pScheme->GetFont( "DefaultVerySmall" );
-#endif
+
 	// mark us as no longer needing scheme settings applied
 	_flags.ClearFlag( NEEDS_SCHEME_UPDATE );
 
@@ -4459,7 +4346,7 @@ int Panel::ComputePos( const char *pszInput, int &nPos, const int& nSize, const 
 		}
 	}
 
-	if ( tf_debug_tabcontainer.GetBool() && !Q_stricmp( "TabContainer", GetName() ) )
+	if ( vgui_debug_tabcontainer.GetBool() && !Q_stricmp( "TabContainer", GetName() ) )
 	{
 		Msg( "TabContainer nFlags:%x nPos:%d nParentSize:%d nPosDelta:%d nSize:%d GetParent:%p (%s) pszInput:'%s'\n",
 				nFlags, nPos, nParentSize, nPosDelta, nSize, GetParent(), GetParent() ? GetParent()->GetName() : "??",
@@ -4577,7 +4464,7 @@ void Panel::ApplySettings(KeyValues *inResourceData)
 	excludeEdgeFromTitleSafe.width = 0;
 	excludeEdgeFromTitleSafe.height = 0;
 
-	if ( IsX360() || panel_test_title_safe.GetBool() )
+	if ( panel_test_title_safe.GetBool() )
 	{
 		// "usetitlesafe" "1" - required inner 90%
 		// "usetitlesafe" "2" - suggested inner 85%
@@ -5692,11 +5579,11 @@ void Panel::PreparePanelMap( PanelMap_t *panelMap )
 void Panel::OnDelete()
 {
 #ifdef WIN32
-	Assert( IsX360() || ( IsPC() && _heapchk() == _HEAPOK ) );
+	Assert( ( _heapchk() == _HEAPOK ) );
 #endif
 	delete this;
 #ifdef WIN32
-	Assert( IsX360() || ( IsPC() && _heapchk() == _HEAPOK ) );
+	Assert( ( _heapchk() == _HEAPOK ) );
 #endif
 }
 
@@ -5781,11 +5668,6 @@ BaseTooltip *Panel::GetTooltip()
 	{
 		m_pTooltips = new TextTooltip(this, NULL);
 		m_bToolTipOverridden = false;
-		
-		if ( IsConsoleStylePanel() )
-		{
-			m_pTooltips->SetEnabled( false );
-		}
 	}
 
 	return m_pTooltips;
@@ -6742,7 +6624,6 @@ void Panel::DrawTexturedBox(int x, int y, int wide, int tall, Color color, float
 //-----------------------------------------------------------------------------
 void Panel::SetDragEnabled( bool enabled )
 {
-#if defined( VGUI_USEDRAGDROP )
 	// If turning it off, quit dragging if mid-drag
 	if ( !enabled && 
 		m_pDragDrop->m_bDragging )
@@ -6750,7 +6631,6 @@ void Panel::SetDragEnabled( bool enabled )
 		OnFinishDragging( false, (MouseCode)-1 );
 	}
 	m_pDragDrop->m_bDragEnabled = enabled;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -6760,26 +6640,19 @@ void Panel::SetDragEnabled( bool enabled )
 //-----------------------------------------------------------------------------
 bool Panel::IsDragEnabled() const
 {
-#if defined( VGUI_USEDRAGDROP )
 	return m_pDragDrop->m_bDragEnabled;
-#endif
-	return false;
 }
 
 void Panel::SetShowDragHelper( bool enabled )
 {
-#if defined( VGUI_USEDRAGDROP )
 	m_pDragDrop->m_bShowDragHelper = enabled;
-#endif
 }
 
 // Use this to prevent chaining up from a parent which can mess with mouse functionality if you don't want to chain up from a child panel to the best
 //  draggable parent.
 void Panel::SetBlockDragChaining( bool block )
 {
-#if defined( VGUI_USEDRAGDROP )
 	m_pDragDrop->m_bPreventChaining = block;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -6789,10 +6662,7 @@ void Panel::SetBlockDragChaining( bool block )
 //-----------------------------------------------------------------------------
 bool Panel::IsBlockingDragChaining() const
 {
-#if defined( VGUI_USEDRAGDROP )
 	return m_pDragDrop->m_bPreventChaining;
-#endif
-	return true;
 }
 
 
@@ -6801,17 +6671,12 @@ bool Panel::IsBlockingDragChaining() const
 //-----------------------------------------------------------------------------
 int Panel::GetDragStartTolerance() const
 {
-#if defined( VGUI_USEDRAGDROP )
 	return m_pDragDrop->m_nDragStartTolerance;
-#endif
-	return 0;
 }
 
 void Panel::SetDragSTartTolerance( int nTolerance )
 {
-#if defined( VGUI_USEDRAGDROP )
 	m_pDragDrop->m_nDragStartTolerance = nTolerance;
-#endif
 }
 
 
@@ -6821,10 +6686,8 @@ void Panel::SetDragSTartTolerance( int nTolerance )
 //-----------------------------------------------------------------------------
 void Panel::SetDropEnabled( bool enabled, float flHoverContextTime /* = 0.0f */ )
 {
-#if defined( VGUI_USEDRAGDROP )
 	m_pDragDrop->m_bDropEnabled = enabled;
 	m_pDragDrop->m_flHoverContextTime = flHoverContextTime;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -6834,10 +6697,7 @@ void Panel::SetDropEnabled( bool enabled, float flHoverContextTime /* = 0.0f */ 
 //-----------------------------------------------------------------------------
 bool Panel::IsDropEnabled() const
 {
-#if defined( VGUI_USEDRAGDROP )
 	return m_pDragDrop->m_bDropEnabled;
-#endif
-	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -6849,7 +6709,6 @@ bool Panel::IsDropEnabled() const
 //-----------------------------------------------------------------------------
 Panel *Panel::GetDropTarget( CUtlVector< KeyValues * >& msglist )
 {
-#if defined( VGUI_USEDRAGDROP )
 	// Found one
 	if ( m_pDragDrop->m_bDropEnabled && 
 		IsDroppable( msglist ) )
@@ -6862,7 +6721,7 @@ Panel *Panel::GetDropTarget( CUtlVector< KeyValues * >& msglist )
 	{
 		return GetParent()->GetDropTarget( msglist );
 	}
-#endif
+
 	// No luck
 	return NULL;
 }
@@ -6874,7 +6733,6 @@ Panel *Panel::GetDropTarget( CUtlVector< KeyValues * >& msglist )
 //-----------------------------------------------------------------------------
 Panel *Panel::GetDragPanel()
 {
-#if defined( VGUI_USEDRAGDROP )
 	// If we encounter a blocker, stop chaining
 	if ( m_pDragDrop->m_bPreventChaining )
 		return NULL;
@@ -6887,7 +6745,7 @@ Panel *Panel::GetDragPanel()
 	{
 		return GetParent()->GetDragPanel();
 	}
-#endif
+
 	// No luck
 	return NULL;
 }
@@ -6898,7 +6756,6 @@ Panel *Panel::GetDragPanel()
 //-----------------------------------------------------------------------------
 void Panel::OnStartDragging()
 {
-#if defined( VGUI_USEDRAGDROP )
 	// Only left mouse initiates drag/drop.
 	// FIXME: Revisit?
 	if ( !input()->IsMouseDown( MOUSE_LEFT ) )
@@ -6919,7 +6776,6 @@ void Panel::OnStartDragging()
 	m_pDragDrop->m_nLastPos[ 1 ] = m_pDragDrop->m_nStartPos[ 1 ];
 
 	OnContinueDragging();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -6936,7 +6792,6 @@ void Panel::OnDragFailed( CUtlVector< KeyValues * >& msglist )
 //-----------------------------------------------------------------------------
 void Panel::OnFinishDragging( bool mousereleased, MouseCode code, bool abort /*= false*/ )
 {
-#if defined( VGUI_USEDRAGDROP )
 	g_DragDropCapture = NULL;
 
 	if ( !m_pDragDrop->m_bDragEnabled )
@@ -7064,7 +6919,6 @@ void Panel::OnFinishDragging( bool mousereleased, MouseCode code, bool abort /*=
 	{
         temp[ i ]->deleteThis();
 	}
-#endif
 }
 
 void Panel::OnDropContextHoverShow( CUtlVector< KeyValues * >& msglist )
@@ -7095,7 +6949,6 @@ bool Panel::IsDroppable( CUtlVector< KeyValues * >& msglist )
 //-----------------------------------------------------------------------------
 bool Panel::CanStartDragging( int startx, int starty, int mx, int my )
 {
-#if defined( VGUI_USEDRAGDROP )
 	if ( IsStartDragWhenMouseExitsPanel() )
 	{
 		ScreenToLocal( mx, my );
@@ -7114,7 +6967,7 @@ bool Panel::CanStartDragging( int startx, int starty, int mx, int my )
 	{
 		return true;
 	}
-#endif
+
 	return false;
 }
 
@@ -7141,7 +6994,6 @@ bool IsSelfDroppable( CUtlVector< KeyValues * > &dragData )
 //-----------------------------------------------------------------------------
 void Panel::OnContinueDragging()
 {
-#if defined( VGUI_USEDRAGDROP )
 	if ( !m_pDragDrop->m_bDragEnabled )
 		return;
 
@@ -7260,10 +7112,8 @@ void Panel::OnContinueDragging()
 			menu->ClearCurrentlyHighlightedItem();
 		}
 	}
-#endif
 }
 
-#if defined( VGUI_USEDRAGDROP )
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  :  - 
@@ -7274,7 +7124,6 @@ DragDrop_t *Panel::GetDragDropInfo()
 	Assert( m_pDragDrop );
 	return m_pDragDrop;
 }
-#endif
 
 void Panel::OnGetAdditionalDragPanels( CUtlVector< Panel * >& dragabbles )
 {
@@ -7301,7 +7150,6 @@ bool Panel::GetDropContextMenu( Menu *menu, CUtlVector< KeyValues * >& msglist )
 
 void Panel::CreateDragData()
 {
-#if defined( VGUI_USEDRAGDROP )
 	int i, c;
 
 	if ( m_pDragDrop->m_DragData.Count() )
@@ -7338,7 +7186,6 @@ void Panel::CreateDragData()
 
 		m_pDragDrop->m_DragData.AddToTail( msg );
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -7348,7 +7195,6 @@ void Panel::CreateDragData()
 //-----------------------------------------------------------------------------
 void Panel::GetDragData( CUtlVector< KeyValues * >& list )
 {
-#if defined( VGUI_USEDRAGDROP )
 	int i, c;
 
 	list.RemoveAll();
@@ -7358,10 +7204,8 @@ void Panel::GetDragData( CUtlVector< KeyValues * >& list )
 	{
 		list.AddToTail( m_pDragDrop->m_DragData[ i ] );
 	}
-#endif
 }
 
-#if defined( VGUI_USEDRAGDROP )
 CDragDropHelperPanel::CDragDropHelperPanel() : BaseClass( NULL, "DragDropHelper" )
 {
 	SetVisible( true );
@@ -7474,7 +7318,7 @@ void CDragDropHelperPanel::RemovePanel( Panel *search )
 		}
 	}
 }
-#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: Enumerates panels under mouse x,y
 // Input  : panelList - 
@@ -7484,7 +7328,6 @@ void CDragDropHelperPanel::RemovePanel( Panel *search )
 //-----------------------------------------------------------------------------
 void Panel::FindDropTargetPanel_R( CUtlVector< VPANEL >& panelList, int x, int y, VPANEL check )
 {
-#if defined( VGUI_USEDRAGDROP )
 	if ( !ipanel()->IsFullyVisible( check ) )
 		return;
 
@@ -7500,7 +7343,6 @@ void Panel::FindDropTargetPanel_R( CUtlVector< VPANEL >& panelList, int x, int y
 		VPANEL child = children[ i ];
 		FindDropTargetPanel_R( panelList, x, y, child );
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -7510,7 +7352,6 @@ void Panel::FindDropTargetPanel_R( CUtlVector< VPANEL >& panelList, int x, int y
 //-----------------------------------------------------------------------------
 Panel *Panel::FindDropTargetPanel()
 {
-#if defined( VGUI_USEDRAGDROP )
 	if ( !s_DragDropHelper.Get() )
 		return NULL;
 
@@ -7563,7 +7404,7 @@ Panel *Panel::FindDropTargetPanel()
 		if ( panel )
 			return panel;
 	}
-#endif
+
 	return NULL;
 }
 
@@ -7573,7 +7414,6 @@ Panel *Panel::FindDropTargetPanel()
 //-----------------------------------------------------------------------------
 void Panel::OnDraggablePanelPaint()
 {
-#if defined( VGUI_USEDRAGDROP )
 	int sw, sh;
 	GetSize( sw, sh );
 
@@ -7600,7 +7440,6 @@ void Panel::OnDraggablePanelPaint()
 
 		surface()->DrawPrintText( sz, wcslen( sz ) );
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -7609,7 +7448,6 @@ void Panel::OnDraggablePanelPaint()
 //-----------------------------------------------------------------------------
 void Panel::OnDroppablePanelPaint( CUtlVector< KeyValues * >& msglist, CUtlVector< Panel * >& dragPanels )
 {
-#if defined( VGUI_USEDRAGDROP )
 	if ( !dragPanels.Count() )
 		return;
 
@@ -7625,7 +7463,6 @@ void Panel::OnDroppablePanelPaint( CUtlVector< KeyValues * >& msglist, CUtlVecto
 	// Draw 2 pixel frame
 	surface()->DrawOutlinedRect( x, y, x + w, y + h );
 	surface()->DrawOutlinedRect( x+1, y+1, x + w-1, y + h-1 );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -7635,10 +7472,7 @@ void Panel::OnDroppablePanelPaint( CUtlVector< KeyValues * >& msglist, CUtlVecto
 //-----------------------------------------------------------------------------
 Color Panel::GetDropFrameColor()
 {
-#if defined( VGUI_USEDRAGDROP )
 	return m_clrDropFrame;
-#endif
-	return Color(0, 0, 0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -7648,10 +7482,7 @@ Color Panel::GetDropFrameColor()
 //-----------------------------------------------------------------------------
 Color Panel::GetDragFrameColor()
 {
-#if defined( VGUI_USEDRAGDROP )
 	return m_clrDragFrame;
-#endif
-	return Color(0, 0, 0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -7685,7 +7516,6 @@ void Panel::OnPanelExitedDroppablePanel ( CUtlVector< KeyValues * >& msglist )
 //-----------------------------------------------------------------------------
 void Panel::DragDropStartDragging()
 {
-#if defined( VGUI_USEDRAGDROP )
 	// We somehow missed a mouse release, cancel the previous drag
 	if ( g_DragDropCapture.Get() )
 	{
@@ -7716,7 +7546,6 @@ void Panel::DragDropStartDragging()
 		return;
 
 	panel->OnStartDragging();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -7726,7 +7555,6 @@ void Panel::DragDropStartDragging()
 //-----------------------------------------------------------------------------
 bool Panel::IsBeingDragged()
 {
-#if defined( VGUI_USEDRAGDROP )
 	if ( !g_DragDropCapture.Get() )
 		return false;
 
@@ -7742,7 +7570,7 @@ bool Panel::IsBeingDragged()
 	{
 		return GetParent()->IsBeingDragged();
 	}
-#endif
+
 	// No luck
 	return false;
 }
@@ -7931,11 +7759,6 @@ Panel* Panel::NavigateBack()
 //-----------------------------------------------------------------------------
 void Panel::NavigateTo()
 {
-	if ( IsX360() )
-	{
-		RequestFocus( 0 );
-	}
-
 	CallParentFunction( new KeyValues( "OnNavigateTo", "panelName", GetName() ) );
 
 	Panel *target = GetNavToRelay();
@@ -8442,16 +8265,6 @@ vgui::Panel* Panel::GetNavBackPanel()
 	return m_NavBack;
 }
 
-void Panel::SetConsoleStylePanel( bool bConsoleStyle )
-{
-	m_bIsConsoleStylePanel = bConsoleStyle;
-}
-
-bool Panel::IsConsoleStylePanel() const
-{
-	return m_bIsConsoleStylePanel;
-}
-
 //-----------------------------------------------------------------------------
 // Purpose: Utility class for handling message map allocation
 //-----------------------------------------------------------------------------
@@ -8520,7 +8333,6 @@ PanelMessageMap *CPanelMessageMapDictionary::FindOrAddPanelMessageMap( char cons
 }
 #include <tier0/memdbgon.h>
 
-#if defined( VGUI_USEKEYBINDINGMAPS )
 //-----------------------------------------------------------------------------
 // Purpose: Utility class for handling keybinding map allocation
 //-----------------------------------------------------------------------------
@@ -8596,8 +8408,6 @@ CPanelKeyBindingMapDictionary& GetPanelKeyBindingMapDictionary()
 	return dictionary;
 }
 
-#endif // VGUI_USEKEYBINDINGMAPS
-
 CPanelMessageMapDictionary& GetPanelMessageMapDictionary()
 {
 	static CPanelMessageMapDictionary dictionary;
@@ -8623,7 +8433,6 @@ namespace vgui
 		return GetPanelMessageMapDictionary().FindPanelMessageMap( className );
 	}
 
-#if defined( VGUI_USEKEYBINDINGMAPS )
 	CPanelKeyBindingMapDictionary& GetPanelKeyBindingMapDictionary()
 	{
 		static CPanelKeyBindingMapDictionary dictionary;
@@ -8644,7 +8453,6 @@ namespace vgui
 	{
 		return GetPanelKeyBindingMapDictionary().FindPanelKeyBindingMap( className );
 	}
-#endif // VGUI_USEKEYBINDINGMAPS
 
 SortedPanel_t::SortedPanel_t( Panel *panel )
 {

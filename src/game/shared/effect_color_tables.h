@@ -8,6 +8,8 @@
 #define EFFECT_COLOR_TABLES_H
 #pragma once
 
+#include "shareddefs.h"
+
 struct colorentry_t
 {
 	unsigned char	index;

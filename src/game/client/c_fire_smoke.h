@@ -13,6 +13,8 @@
 #include "glow_overlay.h"
 #include "view.h"
 #include "particle_litsmokeemitter.h"
+#include "sharedInterface.h"
+#include "c_baseplayer.h"
 
 class CFireOverlay;
 
@@ -21,7 +23,7 @@ class C_FireSprite : public C_Sprite
 	DECLARE_CLASS( C_FireSprite, C_Sprite );
 
 private:
-	virtual int DrawModel( int flags )
+	virtual int DrawModel( int flags, const RenderableInstance_t &instance )
 	{
 		if ( m_bFadeFromAbove )
 		{
@@ -45,7 +47,7 @@ private:
 			SetColor( iAlpha, iAlpha, iAlpha );
 		}
 
-		return BaseClass::DrawModel( flags );
+		return BaseClass::DrawModel( flags, instance );
 	}
 
 public:
@@ -57,7 +59,7 @@ class C_FireFromAboveSprite : public C_Sprite
 {
 	DECLARE_CLASS( C_FireFromAboveSprite, C_Sprite );
 
-	virtual int DrawModel( int flags )
+	virtual int DrawModel( int flags, const RenderableInstance_t &instance )
 	{
 		// The sprites become more visible the more you look down or up at them
 		Vector vToPos = GetLocalOrigin() - CurrentViewOrigin();
@@ -78,16 +80,11 @@ class C_FireFromAboveSprite : public C_Sprite
 
 		SetColor( iAlpha, iAlpha, iAlpha );
 
-		return BaseClass::DrawModel( flags );
+		return BaseClass::DrawModel( flags, instance );
 	}
 };
 
-#ifdef _XBOX
-// XBox reduces the flame count
-#define	NUM_CHILD_FLAMES	1
-#else
 #define	NUM_CHILD_FLAMES	4
-#endif
 
 #define	SMOKE_RISE_RATE		92.0f
 #define	SMOKE_LIFETIME		2.0f
@@ -122,7 +119,7 @@ public:
 	~C_FireSmoke();
 
 	void	Start( void );
-	void	Simulate( void );
+	bool	Simulate( void );
 
 	void	StartClientOnly( void );
 	void	RemoveClientOnly( void );
@@ -184,7 +181,7 @@ protected:
 	CFireOverlay		*m_pFireOverlay;
 
 	// New Particle Fire Effect
-	CNewParticleEffect *m_hEffect;
+	CUtlReference<CNewParticleEffect> m_hEffect;
 private:
 	C_FireSmoke( const C_FireSmoke & );
 };
@@ -210,7 +207,7 @@ public:
 	{
 		float	result = 0.0f;
 
-		float	time = Helper_GetTime() + m_nGUID;
+		float	time = gpGlobals->curtime + m_nGUID;
 
 		result = sin( time * 1000.0f );
 		result += 0.5f * sin( time * 2000.0f );
@@ -284,10 +281,10 @@ public:
 	C_EntityFlame( void );
 	~C_EntityFlame( void );
 
-	virtual void	Simulate( void );
+	virtual bool	Simulate( void );
 	virtual void	UpdateOnRemove( void );
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
-	virtual void	ClientThink( void );
+	virtual void	RemoveThink( void );
 
 	CNewParticleEffect *m_hEffect;
 	EHANDLE				m_hEntAttached;		// The entity that we are burning (attached to).

@@ -7,9 +7,7 @@
 
 #ifndef MPIVRAD_H
 #define MPIVRAD_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #define VMPI_VRAD_PACKET_ID						1

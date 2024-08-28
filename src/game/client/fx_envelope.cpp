@@ -45,7 +45,7 @@ void C_EnvelopeFX::Update( void )
 	{
 		if ( m_hRenderHandle == INVALID_CLIENT_RENDER_HANDLE )
 		{
-			ClientLeafSystem()->AddRenderable( this, RENDER_GROUP_TRANSLUCENT_ENTITY );
+			ClientLeafSystem()->AddRenderable( this, false, RENDERABLE_IS_TRANSLUCENT, RENDERABLE_MODEL_ENTITY );
 		}
 		else
 		{

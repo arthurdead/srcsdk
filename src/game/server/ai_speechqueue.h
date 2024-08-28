@@ -8,9 +8,7 @@
 #ifndef AI_SPEECHQUEUE_H
 #define AI_SPEECHQUEUE_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "ai_speech.h"
 

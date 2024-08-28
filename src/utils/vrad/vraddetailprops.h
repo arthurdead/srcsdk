@@ -6,9 +6,7 @@
 
 #ifndef VRADDETAILPROPS_H
 #define VRADDETAILPROPS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "bspfile.h"

@@ -58,7 +58,7 @@ C_TeamTrainWatcher::~C_TeamTrainWatcher()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_TeamTrainWatcher::ClientThink()
+void C_TeamTrainWatcher::GlowThink()
 {
 #ifdef GLOWS_ENABLE
 	if ( IsDormant() || ( m_hGlowEnt.Get() == NULL ) )
@@ -126,7 +126,7 @@ void C_TeamTrainWatcher::OnDataChanged( DataUpdateType_t updateType )
 
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
-		SetNextClientThink( CLIENT_THINK_ALWAYS );
+		SetContextThink( &C_TeamTrainWatcher::GlowThink, TICK_ALWAYS_THINK, "GlowThink");
 	}
 
 	if ( m_iOldTrainSpeedLevel != m_iTrainSpeedLevel || m_nOldNumCappers != m_nNumCappers )

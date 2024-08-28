@@ -25,9 +25,8 @@ static CNonModifiedPointerProxy *s_pNonModifiedPointerProxyHead = NULL;
 void SendProxy_UInt8ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
 void SendProxy_UInt16ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
 void SendProxy_UInt32ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-#ifdef SUPPORTS_INT64
 void SendProxy_UInt64ToInt64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
-#endif
+
 const char *s_ElementNames[MAX_ARRAY_ELEMENTS] =
 {
 	"000", "001", "002", "003", "004", "005", "006", "007", "008", "009", 
@@ -150,19 +149,18 @@ CStandardSendProxiesV1::CStandardSendProxiesV1()
 	m_Int8ToInt32 = SendProxy_Int8ToInt32;
 	m_Int16ToInt32 = SendProxy_Int16ToInt32;
 	m_Int32ToInt32 = SendProxy_Int32ToInt32;
-#ifdef SUPPORTS_INT64
-	m_Int64ToInt64 = SendProxy_Int64ToInt64;
-#endif
 
 	m_UInt8ToInt32 = SendProxy_UInt8ToInt32;
 	m_UInt16ToInt32 = SendProxy_UInt16ToInt32;
 	m_UInt32ToInt32 = SendProxy_UInt32ToInt32;
-#ifdef SUPPORTS_INT64
-	m_UInt64ToInt64 = SendProxy_UInt64ToInt64;
-#endif
 	
 	m_FloatToFloat = SendProxy_FloatToFloat;
 	m_VectorToVector = SendProxy_VectorToVector;
+
+#ifdef SUPPORTS_INT64
+	m_Int64ToInt64 = SendProxy_Int64ToInt64;
+	m_UInt64ToInt64 = SendProxy_UInt64ToInt64;
+#endif
 }
 
 CStandardSendProxies::CStandardSendProxies()
@@ -246,12 +244,10 @@ void SendProxy_Int32ToInt32( const SendProp *pProp, const void *pStruct, const v
 	pOut->m_Int = *((int*)pData);
 }
 
-#ifdef SUPPORTS_INT64
 void SendProxy_Int64ToInt64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_Int64 = *((int64*)pData);
 }
-#endif
 
 void SendProxy_UInt8ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
@@ -267,12 +263,17 @@ void SendProxy_UInt32ToInt32( const SendProp *pProp, const void *pStruct, const 
 {
 	*((unsigned long*)&pOut->m_Int) = *((unsigned long*)pData);
 }
-#ifdef SUPPORTS_INT64
+
 void SendProxy_UInt64ToInt64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	*((int64*)&pOut->m_Int64) = *((uint64*)pData);
 }
-#endif
+
+void SendProxy_Color32ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+{
+	//Always send/receive as little endian to preserve byte order across network byte swaps
+	pOut->m_Int = LittleDWord( *((uint32 *)pData) );
+}
 
 void SendProxy_StringToString( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
@@ -370,7 +371,8 @@ SendProp SendPropFloat(
 	int flags,
 	float fLowValue,		// For floating point, low and high values.
 	float fHighValue,		// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy
+	SendVarProxyFn varProxy,
+	byte priority
 	)
 {
 	SendProp ret;
@@ -420,7 +422,8 @@ SendProp SendPropVector(
 	int flags,
 	float fLowValue,			// For floating point, low and high values.
 	float fHighValue,			// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy
+	SendVarProxyFn varProxy,
+	byte priority
 	)
 {
 	SendProp ret;
@@ -456,7 +459,8 @@ SendProp SendPropVectorXY(
 	int flags,
 	float fLowValue,			// For floating point, low and high values.
 	float fHighValue,			// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy
+	SendVarProxyFn varProxy,
+	byte priority
 	)
 {
 	SendProp ret;
@@ -528,7 +532,8 @@ SendProp SendPropAngle(
 	int sizeofVar,
 	int nBits,
 	int flags,
-	SendVarProxyFn varProxy
+	SendVarProxyFn varProxy,
+	byte priority
 	)
 {
 	SendProp ret;
@@ -561,7 +566,8 @@ SendProp SendPropQAngles(
 	int sizeofVar,
 	int nBits,
 	int flags,
-	SendVarProxyFn varProxy
+	SendVarProxyFn varProxy,
+	byte priority
 	)
 {
 	SendProp ret;
@@ -594,7 +600,8 @@ SendProp SendPropInt(
 	int sizeofVar,
 	int nBits,
 	int flags,
-	SendVarProxyFn varProxy
+	SendVarProxyFn varProxy,
+	byte priority
 	)
 {
 	SendProp ret;
@@ -613,12 +620,10 @@ SendProp SendPropInt(
 		{
 			varProxy = SendProxy_Int32ToInt32;
 		}
-#ifdef SUPPORTS_INT64
 		else if ( sizeofVar == 8 )
 		{
 			varProxy = SendProxy_Int64ToInt64;
 		}
-#endif
 		else
 		{
 			Assert(!"SendPropInt var has invalid size");
@@ -658,11 +663,8 @@ SendProp SendPropInt(
 
 		else if( varProxy == SendProxy_Int32ToInt32 )
 			ret.SetProxyFn( SendProxy_UInt32ToInt32 );
-			
-#ifdef SUPPORTS_INT64
 		else if( varProxy == SendProxy_Int64ToInt64 )
 			ret.SetProxyFn( SendProxy_UInt64ToInt64 );
-#endif
 	}
 
 	return ret;
@@ -673,7 +675,8 @@ SendProp SendPropString(
 	int offset,
 	int bufferLen,
 	int flags,
-	SendVarProxyFn varProxy)
+	SendVarProxyFn varProxy,
+	byte priority)
 {
 	SendProp ret;
 
@@ -694,7 +697,8 @@ SendProp SendPropArray3(
 	int sizeofVar,
 	int elements,
 	SendProp pArrayProp,
-	SendTableProxyFn varProxy
+	SendTableProxyFn varProxy,
+	byte priority
 	)
 {
 	SendProp ret;
@@ -737,7 +741,8 @@ SendProp SendPropDataTable(
 	const char *pVarName,
 	int offset,
 	SendTable *pTable,
-	SendTableProxyFn varProxy
+	SendTableProxyFn varProxy,
+	byte priority
 	)
 {
 	SendProp ret;
@@ -767,7 +772,8 @@ SendProp InternalSendPropArray(
 	const int elementCount,
 	const int elementStride,
 	const char *pName,
-	ArrayLengthSendProxyFn arrayLengthFn
+	ArrayLengthSendProxyFn arrayLengthFn,
+	byte priority
 	)
 {
 	SendProp ret;
@@ -835,14 +841,8 @@ SendProp::~SendProp()
 int SendProp::GetNumArrayLengthBits() const
 {
 	Assert( GetType() == DPT_Array );
-#if _X360
-	int elemCount = GetNumElements();
-	if ( !elemCount )
-		return 1;
-	return (32 - _CountLeadingZeros(GetNumElements()));
-#else
+
 	return Q_log2( GetNumElements() ) + 1;
-#endif
 }
 
 

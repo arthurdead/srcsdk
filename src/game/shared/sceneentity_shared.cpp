@@ -27,14 +27,17 @@ void Scene_Printf( const char *pFormat, ... )
 
 	if ( val >= 2 )
 	{
-		if ( CBaseEntity::IsServer() && val != 2 )
+	#ifdef GAME_DLL
+		if ( val != 2 )
 		{
 			return;
 		}
-        else if ( !CBaseEntity::IsServer() && val != 3 )
+	#else
+		if ( val != 3 )
 		{
 			return;
 		}
+	#endif
 	}
 
 	va_list marker;
@@ -43,8 +46,12 @@ void Scene_Printf( const char *pFormat, ... )
 	va_start(marker, pFormat);
 	Q_vsnprintf(msg, sizeof(msg), pFormat, marker);
 	va_end(marker);	
-	
-	Msg( "%8.3f[%d] %s:  %s", gpGlobals->curtime, gpGlobals->tickcount, CBaseEntity::IsServer() ? "sv" : "cl", msg );
+
+#ifdef GAME_DLL
+	Msg( "%8.3f[%d] sv:  %s", gpGlobals->curtime, gpGlobals->tickcount, msg );
+#else
+	Msg( "%8.3f[%d] cl:  %s", gpGlobals->curtime, gpGlobals->tickcount, msg );
+#endif
 }
 
 //-----------------------------------------------------------------------------

@@ -1289,8 +1289,10 @@ void CCollisionProperty::WorldSpaceSurroundingBounds( Vector *pVecMins, Vector *
 void CCollisionProperty::CreatePartitionHandle()
 {
 	// Put the entity into the spatial partition.
-	Assert( m_Partition == PARTITION_INVALID_HANDLE );
-	m_Partition = partition->CreateHandle( GetEntityHandle() );
+	if ( m_Partition == PARTITION_INVALID_HANDLE )
+	{
+		m_Partition = partition->CreateHandle( GetEntityHandle() );
+	}
 }
 
 void CCollisionProperty::DestroyPartitionHandle()

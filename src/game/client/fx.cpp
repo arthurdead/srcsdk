@@ -30,26 +30,12 @@
 #include "tier0/memdbgon.h"
 
 //Precahce the effects
-#ifndef TF_CLIENT_DLL
 CLIENTEFFECT_REGISTER_BEGIN( PrecacheMuzzleFlash )
 CLIENTEFFECT_MATERIAL( "effects/muzzleflash1" )
 CLIENTEFFECT_MATERIAL( "effects/muzzleflash2" )
 CLIENTEFFECT_MATERIAL( "effects/muzzleflash3" )
 CLIENTEFFECT_MATERIAL( "effects/muzzleflash4" )
-#ifndef CSTRIKE_DLL
-CLIENTEFFECT_MATERIAL( "effects/bluemuzzle" )
-CLIENTEFFECT_MATERIAL( "effects/gunshipmuzzle" )
-CLIENTEFFECT_MATERIAL( "effects/gunshiptracer" )
-#ifndef HL2MP
-CLIENTEFFECT_MATERIAL( "effects/huntertracer" )
-#endif
-CLIENTEFFECT_MATERIAL( "sprites/physcannon_bluelight2" )
-CLIENTEFFECT_MATERIAL( "effects/combinemuzzle1" )
-CLIENTEFFECT_MATERIAL( "effects/combinemuzzle2" )
-CLIENTEFFECT_MATERIAL( "effects/combinemuzzle2_nocull" )
-#endif
 CLIENTEFFECT_REGISTER_END()
-#endif
 
 //Whether or not we should emit a dynamic light
 ConVar muzzleflash_light( "muzzleflash_light", "1", FCVAR_ARCHIVE );
@@ -305,7 +291,7 @@ void FX_MuzzleEffectAttached(
 	VPROF_BUDGET( "FX_MuzzleEffect", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 
 	// If the material isn't available, let's not do anything.
-	if ( g_Mat_SMG_Muzzleflash[0] == NULL )
+	if ( g_Mat_Muzzleflash[0] == NULL )
 	{
 		return;
 	}
@@ -341,7 +327,7 @@ void FX_MuzzleEffectAttached(
 	{
 		offset = (forward * (i*2.0f*scale));
 
-		pParticle = (SimpleParticle *) pSimple->AddParticle( sizeof( SimpleParticle ), g_Mat_SMG_Muzzleflash[random->RandomInt(0,3)], offset );
+		pParticle = (SimpleParticle *) pSimple->AddParticle( sizeof( SimpleParticle ), g_Mat_Muzzleflash[random->RandomInt(0,3)], offset );
 			
 		if ( pParticle == NULL )
 			return;
@@ -487,7 +473,7 @@ void MuzzleFlashCallback( const CEffectData &data )
 	tempents->MuzzleFlash( vecOrigin, vecAngles, data.m_fFlags & (~MUZZLEFLASH_FIRSTPERSON), data.m_hEntity, (data.m_fFlags & MUZZLEFLASH_FIRSTPERSON) != 0 );	
 }
 
-DECLARE_CLIENT_EFFECT( "MuzzleFlash", MuzzleFlashCallback );
+DECLARE_CLIENT_EFFECT( MuzzleFlash, MuzzleFlashCallback );
  
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -752,7 +738,7 @@ void SmokeCallback( const CEffectData &data )
 	FX_BuildSmoke( vecOrigin, vecAngles, data.m_hEntity, data.m_nAttachmentIndex, 100.0, color ); 
 }
 
-DECLARE_CLIENT_EFFECT( "Smoke", SmokeCallback );
+DECLARE_CLIENT_EFFECT( Smoke, SmokeCallback );
 
 
 //-----------------------------------------------------------------------------
@@ -791,7 +777,7 @@ void GunshipImpactCallback( const CEffectData & data )
 
 	FX_GunshipImpact( vecPosition, Vector( 0, 0, 1 ), 100, 0, 200 );
 }
-DECLARE_CLIENT_EFFECT( "GunshipImpact", GunshipImpactCallback );
+DECLARE_CLIENT_EFFECT( GunshipImpact, GunshipImpactCallback );
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -809,7 +795,7 @@ void CommandPointerCallback( const CEffectData & data )
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "CommandPointer", CommandPointerCallback );
+DECLARE_CLIENT_EFFECT( CommandPointer, CommandPointerCallback );
 
 
 //-----------------------------------------------------------------------------
@@ -856,39 +842,6 @@ void FX_GunshipMuzzleEffect( const Vector &origin, const QAngle &angles, float s
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : start - 
-//			end - 
-//			velocity - 
-//			makeWhiz - 
-//-----------------------------------------------------------------------------
-void FX_GunshipTracer( const Vector& start, const Vector& end, int velocity, bool makeWhiz )
-{
-	VPROF_BUDGET( "FX_GunshipTracer", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
-	Vector	vNear, dStart, dEnd, shotDir;
-	float	totalDist;
-
-	//Get out shot direction and length
-	VectorSubtract( end, start, shotDir );
-	totalDist = VectorNormalize( shotDir );
-
-	//Don't make small tracers
-	if ( totalDist <= 256 )
-		return;
-
-	float length = random->RandomFloat( 128.0f, 256.0f );
-	float life = ( totalDist + length ) / velocity;	//NOTENOTE: We want the tail to finish its run as well
-	
-	//Add it
-	FX_AddDiscreetLine( start, shotDir, velocity, length, totalDist, 5.0f, life, "effects/gunshiptracer" );
-
-	if( makeWhiz )
-	{
-		FX_TracerSound( start, end, TRACER_TYPE_GUNSHIP );
-	}
-}
-
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void FX_StriderMuzzleEffect( const Vector &origin, const QAngle &angles, float scale, ClientEntityHandle_t hEntity, unsigned char *pFlashColor )
 {
@@ -902,73 +855,6 @@ void FX_StriderMuzzleEffect( const Vector &origin, const QAngle &angles, float s
 	{
 		FX_AddDiscreetLine( origin, vecDir, speed, 32, speed * life, 5.0f, life, "effects/bluespark" );
 		speed *= 1.5f;
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : start - 
-//			end - 
-//			velocity - 
-//			makeWhiz - 
-//-----------------------------------------------------------------------------
-void FX_StriderTracer( const Vector& start, const Vector& end, int velocity, bool makeWhiz )
-{
-	VPROF_BUDGET( "FX_StriderTracer", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
-	Vector	vNear, dStart, dEnd, shotDir;
-	float	totalDist;
-
-	//Get out shot direction and length
-	VectorSubtract( end, start, shotDir );
-	totalDist = VectorNormalize( shotDir );
-
-	//Don't make small tracers
-	if ( totalDist <= 256 )
-		return;
-
-	float length = random->RandomFloat( 64.0f, 128.0f );
-	float life = ( totalDist + length ) / velocity;	//NOTENOTE: We want the tail to finish its run as well
-	
-	//Add it
-	FX_AddDiscreetLine( start, shotDir, velocity, length, totalDist, 2.5f, life, "effects/gunshiptracer" );
-
-	if( makeWhiz )
-	{
-		FX_TracerSound( start, end, TRACER_TYPE_STRIDER );
-	}
-}
-
-	
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : start - 
-//			end - 
-//			velocity - 
-//			makeWhiz - 
-//-----------------------------------------------------------------------------
-void FX_HunterTracer( const Vector& start, const Vector& end, int velocity, bool makeWhiz )
-{
-	VPROF_BUDGET( "FX_HunterTracer", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
-	Vector	vNear, dStart, dEnd, shotDir;
-	float	totalDist;
-
-	// Get out shot direction and length
-	VectorSubtract( end, start, shotDir );
-	totalDist = VectorNormalize( shotDir );
-
-	// Make short tracers in close quarters
-	// float flMinLength = MIN( totalDist, 128.0f );
-	// float flMaxLength = MIN( totalDist, 128.0f );
-
-	float length = 128.0f;//random->RandomFloat( flMinLength, flMaxLength );
-	float life = ( totalDist + length ) / velocity;	// NOTENOTE: We want the tail to finish its run as well
-	
-	// Add it
-	FX_AddDiscreetLine( start, shotDir, velocity*0.5f, length, totalDist, 2.0f, life, "effects/huntertracer" );
-
-	if( makeWhiz ) 
-	{
-		FX_TracerSound( start, end, TRACER_TYPE_STRIDER );
 	}
 }
 
@@ -1282,7 +1168,7 @@ void FX_BuildTeslaHitbox( const CEffectData &data )
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "TeslaHitboxes", FX_BuildTeslaHitbox );
+DECLARE_CLIENT_EFFECT( TeslaHitboxes, FX_BuildTeslaHitbox );
 
 
 //-----------------------------------------------------------------------------
@@ -1324,5 +1210,5 @@ void FX_BuildTeslaZap( const CEffectData &data )
 	beams->CreateBeamEntPoint( beamInfo );
 }
 
-DECLARE_CLIENT_EFFECT( "TeslaZap", FX_BuildTeslaZap );
+DECLARE_CLIENT_EFFECT( TeslaZap, FX_BuildTeslaZap );
 

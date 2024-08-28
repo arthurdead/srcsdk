@@ -646,7 +646,7 @@ void CBaseEntity::PhysicsCheckForEntityUntouch( void )
 			else
 			{    
 				// check to see if the touch stamp is up to date
-				if ( link->touchStamp != touchStamp )
+				if ( link->touchStamp != m_nTouchStamp )
 				{
 					// stamp is out of data, so entities are no longer touching
 					// remove self from other entities touch list
@@ -768,7 +768,7 @@ void CBaseEntity::PhysicsRemoveTouchedList( CBaseEntity *ent )
 		ent->DestroyDataObject( TOUCHLINK );
 	}
 
-	ent->touchStamp = 0;
+	ent->m_nTouchStamp = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -1008,7 +1008,7 @@ touchlink_t *CBaseEntity::PhysicsMarkEntityAsTouched( CBaseEntity *other )
 			if ( link->entityTouched == other )
 			{
 				// update stamp
-				link->touchStamp = touchStamp;
+				link->touchStamp = m_nTouchStamp;
 				
 				if ( !CBaseEntity::sm_bDisableTouchFuncs )
 				{
@@ -1037,7 +1037,7 @@ touchlink_t *CBaseEntity::PhysicsMarkEntityAsTouched( CBaseEntity *other )
 	if ( !link )
 		return NULL;
 
-	link->touchStamp = touchStamp;
+	link->touchStamp = m_nTouchStamp;
 	link->entityTouched = other;
 	link->flags = 0;
 	// add it to the list
@@ -1901,17 +1901,19 @@ void CBaseEntity::PhysicsSimulate( void )
 //  Returns false if the entity removed itself.
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBaseEntity::PhysicsRunThink( thinkmethods_t thinkMethod )
+bool CBaseEntity::PhysicsRunThink( thinkmethods_t thinkMethod, bool bForce )
 {
-	if ( IsEFlagSet( EFL_NO_THINK_FUNCTION ) )
-		return true;
+	if(!bForce) {
+		if ( IsEFlagSet( EFL_NO_THINK_FUNCTION ) )
+			return true;
+	}
 	
 	bool bAlive = true;
 
 	// Don't fire the base if we're avoiding it
 	if ( thinkMethod != THINK_FIRE_ALL_BUT_BASE )
 	{
-		bAlive = PhysicsRunSpecificThink( -1, &CBaseEntity::Think );
+		bAlive = PhysicsRunSpecificThink( -1, &CBaseEntity::Think, bForce );
 		if ( !bAlive )
 			return false;
 	}
@@ -1928,7 +1930,7 @@ bool CBaseEntity::PhysicsRunThink( thinkmethods_t thinkMethod )
 		m_iCurrentThinkContext = i;
 #endif
 
-		bAlive = PhysicsRunSpecificThink( i, m_aThinkFunctions[i].m_pfnThink );
+		bAlive = PhysicsRunSpecificThink( i, m_aThinkFunctions[i].m_pfnThink, bForce );
 
 #ifdef _DEBUG
 		// Clear our context
@@ -2090,12 +2092,14 @@ static CThinkSyncTester g_ThinkChecker;
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CBaseEntity::PhysicsRunSpecificThink( int nContextIndex, BASEPTR thinkFunc )
+bool CBaseEntity::PhysicsRunSpecificThink( int nContextIndex, BASEPTR thinkFunc, bool bForce )
 {
 	int thinktick = GetNextThinkTick( nContextIndex );
 
-	if ( thinktick <= 0 || thinktick > gpGlobals->tickcount )
-		return true;
+	if(!bForce) {
+		if ( !AlwaysThink(nContextIndex) && (NeverThink(nContextIndex) || thinktick <= 0 || thinktick > gpGlobals->tickcount) )
+			return true;
+	}
 	
 	float thinktime = thinktick * TICK_INTERVAL;
 
@@ -2112,7 +2116,9 @@ bool CBaseEntity::PhysicsRunSpecificThink( int nContextIndex, BASEPTR thinkFunc 
 	g_ThinkChecker.EntityThinking( gpGlobals->tickcount, this, thinktime, m_nNextThinkTick );
 #endif
 
-	SetNextThink( nContextIndex, TICK_NEVER_THINK );
+	if(!AlwaysThink(nContextIndex)) {
+		SetNextThink( nContextIndex, TICK_NEVER_THINK );
+	}
 
 	PhysicsDispatchThink( thinkFunc );
 

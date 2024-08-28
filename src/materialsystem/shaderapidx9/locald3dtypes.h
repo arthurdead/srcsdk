@@ -8,9 +8,7 @@
 #ifndef LOCALD3DTYPES_H
 #define LOCALD3DTYPES_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #if defined( DX10 ) && !defined( DX_TO_GL_ABSTRACTION )
 

@@ -45,7 +45,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_TriggerPlayerMovement, DT_TriggerPlayerMovement, CTr
 END_RECV_TABLE()
 
 C_EntityClassList< C_TriggerPlayerMovement > g_TriggerPlayerMovementList;
-C_TriggerPlayerMovement *C_EntityClassList<C_TriggerPlayerMovement>::m_pClassList = NULL;
+template<> C_TriggerPlayerMovement *C_EntityClassList<C_TriggerPlayerMovement>::m_pClassList = NULL;
 
 C_TriggerPlayerMovement::C_TriggerPlayerMovement()
 {

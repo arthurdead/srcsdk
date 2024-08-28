@@ -6,9 +6,7 @@
 
 #ifndef GAMESTATS_H
 #define GAMESTATS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utldict.h"
 #include "tier1/utlbuffer.h"

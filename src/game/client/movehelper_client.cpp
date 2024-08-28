@@ -34,7 +34,6 @@ public:
 	virtual void	Con_NPrintf( int idx, char const* fmt, ... );
 		
 	virtual bool	PlayerFallingDamage(void);
-	virtual void	PlayerSetAnimation( PLAYER_ANIM eAnim );
 
 	// These have separate server vs client impementations
 	virtual void	StartSound( const Vector& origin, int channel, char const* sample, float volume, soundlevel_t soundlevel, int fFlags, int pitch );
@@ -43,6 +42,8 @@ public:
 	virtual IPhysicsSurfaceProps *GetSurfaceProps( void );
 
 	virtual bool IsWorldEntity( const CBaseHandle &handle );
+
+	void			SetHost( CBaseEntity *host );
 
 private:
 	// results, tallied on client and server, but only used by server to run SV_Impact.
@@ -60,6 +61,8 @@ private:
 	};
 
 	CUtlVector<touchlist_t>			m_TouchList;
+
+	CBaseEntity*	m_pHost;
 };	
 
 //-----------------------------------------------------------------------------
@@ -76,12 +79,25 @@ static CMoveHelperClient s_MoveHelperClient;
 //-----------------------------------------------------------------------------
 CMoveHelperClient::CMoveHelperClient( void )
 {
+	m_pHost = NULL;
 	SetSingleton( this );
 }
 
 CMoveHelperClient::~CMoveHelperClient( void )
 {
-	SetSingleton( 0 );
+	SetSingleton( NULL );
+}
+
+//-----------------------------------------------------------------------------
+// Indicates which entity we're going to move
+//-----------------------------------------------------------------------------
+
+void CMoveHelperClient::SetHost( CBaseEntity *host )
+{
+	m_pHost = host;
+
+	// In case any stuff is ever left over, sigh...
+	ResetTouchList();
 }
 
 //-----------------------------------------------------------------------------
@@ -128,22 +144,18 @@ bool CMoveHelperClient::AddToTouched( const trace_t& tr, const Vector& impactvel
 
 void CMoveHelperClient::ProcessImpacts( void )
 {
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
-	if ( !pPlayer )
-		return;
-
 	// Relink in order to build absorigin and absmin/max to reflect any changes
 	//  from prediction.  Relink will early out on SOLID_NOT
 
 	// TODO: Touch triggers on the client
-	//pPlayer->PhysicsTouchTriggers();
+	m_pHost->PhysicsTouchTriggers();
 
 	// Don't bother if the player ain't solid
-	if ( pPlayer->IsSolidFlagSet( FSOLID_NOT_SOLID ) )
+	if ( m_pHost->IsSolidFlagSet( FSOLID_NOT_SOLID ) )
 		return;
 
 	// Save off the velocity, cause we need to temporarily reset it
-	Vector vel = pPlayer->GetAbsVelocity();
+	Vector vel = m_pHost->GetAbsVelocity();
 
 	// Touch other objects that were intersected during the movement.
 	for (int i = 0 ; i < m_TouchList.Size(); i++)
@@ -153,22 +165,22 @@ void CMoveHelperClient::ProcessImpacts( void )
 		if ( !entity )
 			continue;
 
-		Assert( entity != pPlayer );
+		Assert( entity != m_pHost );
 		// Don't ever collide with self!!!!
-		if ( entity == pPlayer )
+		if ( entity == m_pHost )
 			continue;
 
 		// Reconstruct trace results.
 		m_TouchList[i].trace.m_pEnt = entity;
 
 		// Use the velocity we had when we collided, so boxes will move, etc.
-		pPlayer->SetAbsVelocity( m_TouchList[i].deltavelocity );
+		m_pHost->SetAbsVelocity( m_TouchList[i].deltavelocity );
 
-		entity->PhysicsImpact( pPlayer, m_TouchList[i].trace );
+		entity->PhysicsImpact( m_pHost, m_TouchList[i].trace );
 	}
 
 	// Restore the velocity
-	pPlayer->SetAbsVelocity( vel );
+	m_pHost->SetAbsVelocity( vel );
 
 	// So no stuff is ever left over, sigh...
 	ResetTouchList();
@@ -181,7 +193,7 @@ void CMoveHelperClient::StartSound( const Vector& origin, const char *soundname 
 
 	CLocalPlayerFilter filter;
 	filter.UsePredictionRules();
-	C_BaseEntity::EmitSound( filter, SOUND_FROM_LOCAL_PLAYER, soundname, &origin );
+	C_BaseEntity::EmitSound( filter, m_pHost->entindex(), soundname, &origin );
 }
 
 
@@ -206,7 +218,7 @@ void CMoveHelperClient::StartSound( const Vector& origin, int channel,
 		ep.m_nPitch = pitch;
 		ep.m_pOrigin = &origin;
 
-		C_BaseEntity::EmitSound( filter, SOUND_FROM_LOCAL_PLAYER, ep );
+		C_BaseEntity::EmitSound( filter, m_pHost->entindex(), ep );
 	}
 }
 
@@ -247,11 +259,7 @@ void CMoveHelperClient::Con_NPrintf( int idx, char const* pFormat, ...)
 	Q_vsnprintf(msg, sizeof( msg ), pFormat, marker);
 	va_end(marker);
 	
-#if defined( CSTRIKE_DLL ) || defined( DOD_DLL ) // reltodo
 	engine->Con_NPrintf( idx, "%s", msg );
-#else
-	engine->Con_NPrintf( idx, msg );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -263,16 +271,6 @@ bool CMoveHelperClient::PlayerFallingDamage(void)
 {
 	// Do nothing; falling damage is applied in MoveHelper_Server::PlayerFallingDamage.
 	return(true);
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Sets an animation in the player.
-// Input  : eAnim - Animation to set.
-//-----------------------------------------------------------------------------
-void CMoveHelperClient::PlayerSetAnimation( PLAYER_ANIM eAnim )
-{
-	 // Do nothing on the client. Animations are set on the server.
 }
 
 bool CMoveHelperClient::IsWorldEntity( const CBaseHandle &handle )

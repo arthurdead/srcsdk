@@ -41,7 +41,8 @@ class CClassMap : public IClassMap
 {
 public:
 	virtual void			Add( const char *mapname, const char *classname, int size, DISPATCHFUNCTION factory /*= 0*/ );
-	virtual const char		*Lookup( const char *classname );
+	virtual const char		*ClassnameToMapName( const char *classname );
+	virtual const char		*MapNameToClassname( const char *mapname );
 	virtual C_BaseEntity	*CreateEntity( const char *mapname );
 	virtual int				GetClassSize( const char *classname );
 
@@ -49,15 +50,15 @@ private:
 	CUtlDict< classentry_t, unsigned short > m_ClassDict;
 };
 
+static CClassMap g_Classmap;
 IClassMap& GetClassMap( void )
 {
-	static CClassMap g_Classmap;
 	return g_Classmap;
 }
 
 void CClassMap::Add( const char *mapname, const char *classname, int size, DISPATCHFUNCTION factory = 0 )
 {
-	const char *map = Lookup( classname );
+	const char *map = ClassnameToMapName( classname );
 	if ( map && !Q_strcasecmp( mapname, map ) )
 		return;
 
@@ -75,7 +76,7 @@ void CClassMap::Add( const char *mapname, const char *classname, int size, DISPA
 	m_ClassDict.Insert( classname, element );
 }
 
-const char *CClassMap::Lookup( const char *classname )
+const char *CClassMap::ClassnameToMapName( const char *classname )
 {
 	unsigned short index;
 	static classentry_t lookup; 
@@ -86,6 +87,26 @@ const char *CClassMap::Lookup( const char *classname )
 
 	lookup = m_ClassDict.Element( index );
 	return lookup.GetMapName();
+}
+
+const char *CClassMap::MapNameToClassname( const char *mapname )
+{
+	int c = m_ClassDict.Count();
+	int i;
+
+	for ( i = 0; i < c; i++ )
+	{
+		classentry_t *lookup = &m_ClassDict[ i ];
+		if ( !lookup )
+			continue;
+
+		if ( Q_stricmp( lookup->GetMapName(), mapname ) )
+			continue;
+
+		return m_ClassDict.GetElementName( i );
+	}
+
+	return NULL;
 }
 
 C_BaseEntity *CClassMap::CreateEntity( const char *mapname )

@@ -6,7 +6,6 @@
 //=============================================================================//
 
 #include "cbase.h"
-#include "particle_prototype.h"
 #include "particle_util.h"
 #include "baseparticleentity.h"
 
@@ -34,7 +33,7 @@ public:
 };
 
 
-class C_MovieExplosion : public C_BaseParticleEntity, public IPrototypeAppEffect
+class C_MovieExplosion : public C_BaseParticleEntity
 {
 public:
 	DECLARE_CLASS( C_MovieExplosion, C_BaseParticleEntity );
@@ -49,7 +48,7 @@ public:
 
 // IPrototypeAppEffect.
 public:
-	virtual void	Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs);
+	virtual void	Start(CParticleMgr *pParticleMgr);
 
 // IParticleEffect.
 public:
@@ -72,9 +71,6 @@ private:
 					C_MovieExplosion( const C_MovieExplosion & );
 
 };
-
-// Expose to the particle app.
-EXPOSE_PROTOTYPE_EFFECT(MovieExplosion, C_MovieExplosion);
 
 IMPLEMENT_CLIENTCLASS_DT(C_MovieExplosion, DT_MovieExplosion, MovieExplosion)
 END_RECV_TABLE()
@@ -103,12 +99,12 @@ void C_MovieExplosion::OnDataChanged(DataUpdateType_t updateType)
 
 	if(updateType == DATA_UPDATE_CREATED)
 	{
-		Start( ParticleMgr(), NULL );
+		Start( ParticleMgr() );
 	}
 }
 
 
-void C_MovieExplosion::Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs)
+void C_MovieExplosion::Start(CParticleMgr *pParticleMgr)
 {
 	if(!pParticleMgr->AddEffect(&m_ParticleEffect, this))
 		return;

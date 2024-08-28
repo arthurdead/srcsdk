@@ -9,9 +9,7 @@
 
 #ifndef GENERIC_GCMESSAGES_H
 #define GENERIC_GCMESSAGES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 enum EGCMsg

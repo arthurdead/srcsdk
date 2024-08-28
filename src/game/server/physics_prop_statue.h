@@ -6,9 +6,7 @@
 
 #ifndef PHYSICS_PROP_STATUE_H
 #define PHYSICS_PROP_STATUE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "props.h"
 

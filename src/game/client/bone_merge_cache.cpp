@@ -46,7 +46,7 @@ void CBoneMergeCache::UpdateCache()
 		{
 			// Owner's model got swapped out
 			m_MergedBones.Purge();
-			m_BoneMergeBits.Purge();
+			m_BoneMergeBits.ClearAll();
 			m_pFollow = NULL;
 			m_pFollowHdr = NULL;
 			m_pFollowRenderHdr = NULL;
@@ -62,7 +62,7 @@ void CBoneMergeCache::UpdateCache()
 	if ( pTestFollow != m_pFollow || pTestHdr != m_pFollowHdr || pTestStudioHDR != m_pFollowRenderHdr || pOwnerHdr != m_pOwnerHdr )
 	{
 		m_MergedBones.Purge();
-		m_BoneMergeBits.Purge();
+		m_BoneMergeBits.ClearAll();
 	
 		// Update the cache.
 		if ( pTestFollow && pTestHdr && pOwnerHdr )
@@ -72,12 +72,13 @@ void CBoneMergeCache::UpdateCache()
 			m_pFollowRenderHdr = pTestStudioHDR;
 			m_pOwnerHdr = pOwnerHdr;
 
-			m_BoneMergeBits.SetSize( pOwnerHdr->numbones() / 8 + 1 );
-			memset( m_BoneMergeBits.Base(), 0, m_BoneMergeBits.Count() );
+			m_BoneMergeBits.Resize(  pOwnerHdr->numbones() );
+			m_BoneMergeBits.ClearAll();
 
 			mstudiobone_t *pOwnerBones = m_pOwnerHdr->pBone( 0 );
 			
 			m_nFollowBoneSetupMask = BONE_USED_BY_BONE_MERGE;
+			const bool bDeveloperDebugPrints = developer.GetBool();
 			for ( int i = 0; i < m_pOwnerHdr->numbones(); i++ )
 			{
 				int parentBoneIndex = Studio_BoneIndexByName( m_pFollowHdr, pOwnerBones[i].pszName() );
@@ -89,14 +90,28 @@ void CBoneMergeCache::UpdateCache()
 				mergedBone.m_iMyBone = i;
 				mergedBone.m_iParentBone = parentBoneIndex;
 				m_MergedBones.AddToTail( mergedBone );
-
-				m_BoneMergeBits[i>>3] |= ( 1 << ( i & 7 ) );
+				m_BoneMergeBits.Set( i );
 
 				if ( ( m_pFollowHdr->boneFlags( parentBoneIndex ) & BONE_USED_BY_BONE_MERGE ) == 0 )
 				{
 					m_nFollowBoneSetupMask = BONE_USED_BY_ANYTHING;
 //					Warning("Performance warning: Merge with '%s'. Mark bone '%s' in model '%s' as being used by bone merge in the .qc!\n",
 //						pOwnerHdr->pszName(), m_pFollowHdr->pBone( parentBoneIndex )->pszName(), m_pFollowHdr->pszName() ); 
+
+					// dump out a warning
+					if ( bDeveloperDebugPrints )
+					{
+						char sz[ 256 ];
+						Q_snprintf( sz, sizeof( sz ), "Performance warning: Add $bonemerge \"%s\" to QC that builds \"%s\"\n",
+							m_pFollowHdr->pBone( parentBoneIndex )->pszName(), m_pFollowHdr->pszName() ); 
+
+						static CUtlSymbolTableMT s_FollowerWarnings;
+						if ( UTL_INVAL_SYMBOL == s_FollowerWarnings.Find( sz )  )
+						{
+							s_FollowerWarnings.AddString( sz );
+							Warning( "%s", sz );
+						}
+					}
 				}
 			}
 
@@ -117,12 +132,7 @@ void CBoneMergeCache::UpdateCache()
 	}
 }
 
-
-#ifdef STAGING_ONLY
-ConVar r_captain_canteen_is_angry ( "r_captain_canteen_is_angry", "1" );
-#endif
-
-void CBoneMergeCache::MergeMatchingBones( int boneMask )
+void CBoneMergeCache::MergeMatchingBones( int boneMask, CBoneBitList &boneComputed )
 {
 	UpdateCache();
 
@@ -143,16 +153,6 @@ void CBoneMergeCache::MergeMatchingBones( int boneMask )
 		matrix3x4_t NewBone;
 		MatrixScaleByZero ( NewBone );
 		MatrixSetTranslation ( Vector ( 0.0f, 0.0f, 0.0f ), NewBone );
-#ifdef STAGING_ONLY
-		if ( r_captain_canteen_is_angry.GetBool() )
-		{
-			// We actually want to see when Captain Canteen happened, and make it really obvious that (a) he was here and (b) this code would have fixed him.
-			float HowAngry = 20.0f;		// Leon's getting larger!
-			MatrixSetColumn ( Vector ( HowAngry, 0.0f, 0.0f ), 0, NewBone );
-			MatrixSetColumn ( Vector ( 0.0f, HowAngry, 0.0f ), 1, NewBone );
-			MatrixSetColumn ( Vector ( 0.0f, 0.0f, HowAngry ), 2, NewBone );
-		}
-#endif
 
 		for ( int i=0; i < m_MergedBones.Count(); i++ )
 		{
@@ -178,6 +178,8 @@ void CBoneMergeCache::MergeMatchingBones( int boneMask )
 				continue;
 
 			MatrixCopy( m_pFollow->GetBone( iParentBone ), m_pOwner->GetBoneForWrite( iOwnerBone ) );
+
+			boneComputed.Set( i );
 		}
 	}
 }

@@ -16,7 +16,9 @@
 #include "utlmultilist.h"
 #include "vprof.h"
 #include "icommandline.h"
-#include "sourcevr/isourcevirtualreality.h"
+
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
 
 static void PixelvisDrawChanged( IConVar *pPixelvisVar, const char *pOld, float flOldValue );
 
@@ -33,21 +35,41 @@ ConVar r_pixelvisibility_spew( "r_pixelvisibility_spew", "0" );
 	{
 		return gl_can_query_fast.GetBool();
 	}
-#else
-	// non OSX path
-	static bool	HasFastQueries( void )
-	{
-		return true;
-	}
 #endif
 
 extern ConVar building_cubemaps;
 
-#ifndef _X360
 const float MIN_PROXY_PIXELS = 5.0f;
-#else
-const float MIN_PROXY_PIXELS = 25.0f;
-#endif
+
+extern view_id_t CurrentViewID();
+
+struct OcclusionHandleViewIDPair_t
+{
+	OcclusionQueryObjectHandle_t hOcclusionHandle;
+	int iViewID;
+	int iLastFrameRendered;
+};
+
+struct OcclusionQueryHiddenData_t
+{
+	COcclusionQuerySet *pOwner;
+	CUtlVector<OcclusionHandleViewIDPair_t> occlusionHandles;
+};
+
+static CUtlVector<OcclusionQueryHiddenData_t> s_OcclusionQueries;
+static inline int FindQueryHandlePairIndex( OcclusionQueryHiddenData_t *pData, int iViewID )
+{
+	int iPairCount = pData->occlusionHandles.Size();
+	OcclusionHandleViewIDPair_t *pPairs = pData->occlusionHandles.Base();
+	
+	for( int i = 0; i != iPairCount; ++i )
+	{
+		if( pPairs[i].iViewID == iViewID )
+			return i;
+	}
+
+	return pData->occlusionHandles.InvalidIndex();
+}
 
 float PixelVisibility_DrawProxy( IMatRenderContext *pRenderContext, OcclusionQueryObjectHandle_t queryHandle, Vector origin, float scale, float proxyAspect, IMaterial *pMaterial, bool screenspace )
 {
@@ -430,7 +452,7 @@ void CPixelVisibilityQuery::IssueQuery( IMatRenderContext *pRenderContext, float
 		}
 	}
 #ifndef PORTAL // FIXME: In portal we query visibility multiple times per frame because of portal renders!
-	Assert ( ( m_frameIssued != gpGlobals->framecount ) || UseVR() );
+	Assert ( ( m_frameIssued != gpGlobals->framecount ) );
 #endif
 
 	m_frameIssued = gpGlobals->framecount;
@@ -520,10 +542,11 @@ CPixelVisibilitySystem::CPixelVisibilitySystem() : CAutoGameSystem( "CPixelVisib
 // Level init, shutdown
 void CPixelVisibilitySystem::LevelInitPreEntity()
 {
-	bool fastqueries = HasFastQueries();
-	// printf("\n ** fast queries: %s **", fastqueries?"true":"false" );
-	
-	m_hwCanTestGlows = r_dopixelvisibility.GetBool() && fastqueries && engine->GetDXSupportLevel() >= 80;
+#ifdef _OSX
+	m_hwCanTestGlows = r_dopixelvisibility.GetBool() && HasFastQueries() && engine->GetDXSupportLevel() >= 80;
+#else
+	m_hwCanTestGlows = r_dopixelvisibility.GetBool() && engine->GetDXSupportLevel() >= 80;
+#endif
 	if ( m_hwCanTestGlows )
 	{
 		CMatRenderContextPtr pRenderContext( materials );
@@ -836,8 +859,11 @@ float PixelVisibility_FractionVisible( const pixelvis_queryparams_t &params, pix
 
 bool PixelVisibility_IsAvailable()
 {
-	bool fastqueries = HasFastQueries();
-	return r_dopixelvisibility.GetBool() && fastqueries && g_PixelVisibilitySystem.SupportsOcclusion();
+#ifdef _OSX
+	return r_dopixelvisibility.GetBool() && HasFastQueries() && g_PixelVisibilitySystem.SupportsOcclusion();
+#else
+	return r_dopixelvisibility.GetBool() && g_PixelVisibilitySystem.SupportsOcclusion();
+#endif
 }
 
 //this originally called a class function of CPixelVisibiltySystem to keep the work clean, but that function needed friend access to CPixelVisibilityQuery 
@@ -873,6 +899,217 @@ void PixelVisibility_ShiftVisibilityViews( int iSourceViewID, int iDestViewID )
 
 		node = next;
 	}
+
+	for( int i = 0; i != s_OcclusionQueries.Count(); ++i )
+	{
+		int iPairCount = s_OcclusionQueries[i].occlusionHandles.Count();
+		OcclusionHandleViewIDPair_t *pPairs = s_OcclusionQueries[i].occlusionHandles.Base();
+		int iSourceIndex, iDestIndex, iInvalidIndex;
+		iDestIndex = iSourceIndex = iInvalidIndex = s_OcclusionQueries[i].occlusionHandles.InvalidIndex();
+		for( int j = 0; j != iPairCount; ++j )
+		{
+			if( pPairs[j].iViewID == iSourceViewID )
+			{
+				iSourceIndex = j;
+				if( iDestIndex != iInvalidIndex )
+					break;
+			}
+
+			if( pPairs[j].iViewID == iDestViewID )
+			{
+				iDestIndex = j;
+				if( iSourceIndex != iInvalidIndex )
+					break;
+			}
+		}
+
+		if( iSourceIndex != iInvalidIndex )
+		{
+			//change view id on source
+			pPairs[iSourceIndex].iViewID = iDestViewID;
+		}
+		
+		if( iDestIndex != iInvalidIndex )
+		{
+			//destroy dest
+			materials->GetRenderContext()->DestroyOcclusionQueryObject( pPairs[iDestIndex].hOcclusionHandle );
+			s_OcclusionQueries[i].occlusionHandles.FastRemove( iDestIndex );
+		}
+	}
+}
+
+COcclusionQuerySet::COcclusionQuerySet( void )
+{	
+	OcclusionQueryHiddenData_t &data = s_OcclusionQueries[s_OcclusionQueries.AddToTail()];
+	data.pOwner = this;
+	m_pManagedData = &data;
+
+	//handle base address shifting
+	if( s_OcclusionQueries.Count() > 1 )
+	{
+		OcclusionQueryHiddenData_t &baseData = s_OcclusionQueries[0];
+		if( baseData.pOwner->m_pManagedData != &baseData )
+		{
+			for( int i = 0; i != s_OcclusionQueries.Count(); ++i )
+			{
+				s_OcclusionQueries[i].pOwner->m_pManagedData = &s_OcclusionQueries[i];
+			}
+		}
+	}
+}
+
+COcclusionQuerySet::~COcclusionQuerySet( void )
+{
+	int iIndex;
+	for( iIndex = 0; iIndex != s_OcclusionQueries.Count(); ++iIndex )
+	{
+		if( &s_OcclusionQueries[iIndex] == m_pManagedData )
+			break;
+	}
+	if( iIndex != s_OcclusionQueries.Count() )
+	{
+		//destroy query handles
+		{
+			CMatRenderContextPtr pRenderContext( materials );
+			OcclusionQueryHiddenData_t &data = s_OcclusionQueries[iIndex];
+			for( int j = 0; j != data.occlusionHandles.Count(); ++j )
+			{
+				pRenderContext->DestroyOcclusionQueryObject( data.occlusionHandles.Element(j).hOcclusionHandle );
+			}
+		}
+
+		s_OcclusionQueries.FastRemove( iIndex );
+		if( s_OcclusionQueries.Count() != 0 )
+		{
+			s_OcclusionQueries[iIndex].pOwner->m_pManagedData = &s_OcclusionQueries[iIndex];
+			//handle base address shifting
+			if( s_OcclusionQueries.Count() > 1 )
+			{
+				OcclusionQueryHiddenData_t &baseData = s_OcclusionQueries[iIndex == 0 ? 1 : 0];
+				if( baseData.pOwner->m_pManagedData != &baseData )
+				{
+					for( int i = 0; i != s_OcclusionQueries.Count(); ++i )
+					{
+						s_OcclusionQueries[i].pOwner->m_pManagedData = &s_OcclusionQueries[i];
+					}
+				}
+			}
+		}
+	}
+}
+
+void COcclusionQuerySet::BeginQueryDrawing( int iViewID )
+{
+	OcclusionQueryHiddenData_t *pData = (OcclusionQueryHiddenData_t *)m_pManagedData;
+
+	int iIndex = FindQueryHandlePairIndex( pData, iViewID );
+	if( iIndex == pData->occlusionHandles.InvalidIndex() )
+	{
+		//create a new one
+		iIndex = pData->occlusionHandles.AddToTail();
+		OcclusionHandleViewIDPair_t &Entry = pData->occlusionHandles.Element(iIndex);
+		Entry.iViewID = iViewID;
+		Entry.hOcclusionHandle = materials->GetRenderContext()->CreateOcclusionQueryObject();	
+		materials->GetRenderContext()->ResetOcclusionQueryObject( Entry.hOcclusionHandle );
+	}
+
+	materials->GetRenderContext()->BeginOcclusionQueryDrawing( pData->occlusionHandles.Element(iIndex).hOcclusionHandle );
+	pData->occlusionHandles.Element(iIndex).iLastFrameRendered = gpGlobals->framecount;
+}
+
+void COcclusionQuerySet::BeginQueryDrawing( void )
+{
+	return BeginQueryDrawing( CurrentViewID() );
+}
+
+void COcclusionQuerySet::EndQueryDrawing( int iViewID )
+{
+	OcclusionQueryHiddenData_t *pData = (OcclusionQueryHiddenData_t *)m_pManagedData;
+
+	int iIndex = FindQueryHandlePairIndex( pData, iViewID );
+	if( iIndex != pData->occlusionHandles.InvalidIndex() )
+	{
+		materials->GetRenderContext()->EndOcclusionQueryDrawing( pData->occlusionHandles.Element(iIndex).hOcclusionHandle );
+	}
+}
+
+void COcclusionQuerySet::EndQueryDrawing( void )
+{
+	return EndQueryDrawing( CurrentViewID() );
+}
+
+int COcclusionQuerySet::QueryNumPixelsRendered( int iViewID )
+{
+	OcclusionQueryHiddenData_t *pData = (OcclusionQueryHiddenData_t *)m_pManagedData;
+
+	int iIndex = FindQueryHandlePairIndex( pData, iViewID );
+	if( iIndex != pData->occlusionHandles.InvalidIndex() )
+	{
+		return materials->GetRenderContext()->OcclusionQuery_GetNumPixelsRendered( pData->occlusionHandles.Element(iIndex).hOcclusionHandle );
+	}
+
+	return 0;
+}
+
+int COcclusionQuerySet::QueryNumPixelsRendered( void )
+{
+	return QueryNumPixelsRendered( CurrentViewID() );
+}
+
+float COcclusionQuerySet::QueryPercentageOfScreenRendered( int iViewID )
+{
+	OcclusionQueryHiddenData_t *pData = (OcclusionQueryHiddenData_t *)m_pManagedData;
+
+	int iIndex = FindQueryHandlePairIndex( pData, iViewID );
+	if( iIndex != pData->occlusionHandles.InvalidIndex() )
+	{
+		int iX, iY, iWidth, iHeight;
+		materials->GetRenderContext()->GetViewport( iX, iY, iWidth, iHeight );
+		return ((float)materials->GetRenderContext()->OcclusionQuery_GetNumPixelsRendered( pData->occlusionHandles.Element(iIndex).hOcclusionHandle )) / ((float)(iWidth * iHeight));
+	}
+
+	return 0.0f;
+}
+
+float COcclusionQuerySet::QueryPercentageOfScreenRendered( void )
+{
+	return QueryPercentageOfScreenRendered( CurrentViewID() );
+}
+
+int COcclusionQuerySet::QueryNumPixelsRenderedForAllViewsLastFrame( )
+{
+	OcclusionQueryHiddenData_t *pData = (OcclusionQueryHiddenData_t *)m_pManagedData;
+	int iMatchFrame = gpGlobals->framecount - 1;
+	int iResult = 0;
+	CMatRenderContextPtr pRenderContext( materials );
+	
+	for( int i = 0; i != pData->occlusionHandles.Count(); ++i )
+	{
+		if( pData->occlusionHandles.Element(i).iLastFrameRendered == iMatchFrame )
+		{
+			iResult += pRenderContext->OcclusionQuery_GetNumPixelsRendered( pData->occlusionHandles.Element(i).hOcclusionHandle );
+		}
+	}
+
+	return iResult;
+}
+
+int COcclusionQuerySet::GetLastFrameDrawn( int iViewID )
+{
+	OcclusionQueryHiddenData_t *pData = (OcclusionQueryHiddenData_t *)m_pManagedData;
+
+	int iIndex = FindQueryHandlePairIndex( pData, iViewID );
+	if( iIndex != pData->occlusionHandles.InvalidIndex() )
+	{
+		return pData->occlusionHandles.Element(iIndex).iLastFrameRendered;
+	}
+
+	return -1;
+}
+
+int COcclusionQuerySet::GetLastFrameDrawn( void )
+{
+	return GetLastFrameDrawn( CurrentViewID() );
 }
 
 CON_COMMAND( pixelvis_debug, "Dump debug info" )

@@ -59,6 +59,7 @@ bool CLampHaloProxy::Init( IMaterial *pMaterial, KeyValues *pKeyValues )
 	// Need to get the color variable.
 	bool found;
 	m_pFadeValue = pMaterial->FindVar( "$alpha", &found );
+	pMaterial->SetMaterialVarFlag( MATERIAL_VAR_ALPHA_MODIFIED_BY_PROXY, true );
 	return found;
 }
 
@@ -100,4 +101,4 @@ IMaterial *CLampHaloProxy::GetMaterial()
 	return m_pFadeValue->GetOwningMaterial();
 }
 
-EXPOSE_INTERFACE( CLampHaloProxy, IMaterialProxy, "lamphalo" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CLampHaloProxy, lamphalo );

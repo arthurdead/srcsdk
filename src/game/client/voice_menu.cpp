@@ -10,6 +10,9 @@
 #include "KeyValues.h"
 #include "multiplay_gamerules.h"
 
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 static int g_ActiveVoiceMenu = 0;
 
 void OpenVoiceMenu( int index )
@@ -22,7 +25,7 @@ void OpenVoiceMenu( int index )
 	if ( !pPlayer->IsAlive() || pPlayer->IsObserver() )
 		return;
 
-	CHudMenu *pMenu = (CHudMenu *) gHUD.FindElement( "CHudMenu" );
+	CHudMenu *pMenu = (CHudMenu *) GetHud().FindElement( "CHudMenu" );
 	if ( !pMenu )
 		return;
 

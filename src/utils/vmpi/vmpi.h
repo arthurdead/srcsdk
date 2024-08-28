@@ -7,9 +7,7 @@
 
 #ifndef VMPI_H
 #define VMPI_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "vmpi_defs.h"

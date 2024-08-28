@@ -9,9 +9,7 @@
 
 #ifndef ISTEAMUNIFIEDMESSAGES_H
 #define ISTEAMUNIFIEDMESSAGES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 typedef uint64 ClientUnifiedMessageHandle;
 

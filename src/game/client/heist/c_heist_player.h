@@ -21,10 +21,9 @@ public:
 
 	static C_HeistPlayer *GetLocalHeistPlayer();
 
-	void ClientThink() override;
+	void ThinkIDTarget();
 
-	int DrawModel(int flags) override;
-	void AddEntity() override;
+	int DrawModel(int flags, const RenderableInstance_t &instance) override;
 
 	Vector GetAttackSpread(CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget = NULL);
 
@@ -41,8 +40,9 @@ public:
 	Vector GetAutoaimVector(float flDelta) override;
 	void NotifyShouldTransmit(ShouldTransmitState_t state) override;
 
-	void CreateLightEffects() override
+	bool CreateLightEffects() override
 	{
+		return true;
 	}
 
 	bool ShouldReceiveProjectedTextures(int flags) override;

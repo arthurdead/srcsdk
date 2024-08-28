@@ -15,9 +15,7 @@
 #ifndef IMAGEPACKER_H
 #define IMAGEPACKER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define MAX_MAX_LIGHTMAP_WIDTH 2048
 

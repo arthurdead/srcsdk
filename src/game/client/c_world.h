@@ -24,8 +24,8 @@ public:
 	~C_World( void );
 	
 	// Override the factory create/delete functions since the world is a singleton.
-	virtual bool Init( int entnum, int iSerialNum );
-	virtual void Release();
+	virtual bool InitializeAsServerEntity( int entnum, int iSerialNum );
+	virtual void UpdateOnRemove();
 
 	virtual void Precache();
 	virtual void Spawn();
@@ -54,6 +54,7 @@ public:
 	float	m_flMinPropScreenSpaceWidth;
 	float	m_flMaxPropScreenSpaceWidth;
 	bool	m_bColdWorld;
+	int		m_iTimeOfDay;
 
 private:
 	void	RegisterSharedActivities( void );

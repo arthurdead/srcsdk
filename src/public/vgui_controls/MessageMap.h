@@ -126,12 +126,6 @@ struct MessageMapItem_t
 		return s_pMap;																	\
 	}
 
-#if !defined( _XBOX )
-#define VGUI_USEKEYBINDINGMAPS	1
-#endif
-
-#if defined( VGUI_USEKEYBINDINGMAPS )
-
 #define DECLARE_CLASS_SIMPLE( className, baseClassName ) \
 	typedef baseClassName BaseClass; \
 	typedef className ThisClass;	\
@@ -150,27 +144,6 @@ public:							\
 	DECLARE_KEYBINDINGMAP( className ); \
 	static char const *GetPanelClassName() { return #className; } \
 	static char const *GetPanelBaseClassName() { return NULL; }
-
-#else // no keybinding maps
-
-#define DECLARE_CLASS_SIMPLE( className, baseClassName ) \
-	typedef baseClassName BaseClass; \
-	typedef className ThisClass;	\
-public:								\
-	DECLARE_PANELMESSAGEMAP( className ); \
-	DECLARE_PANELANIMATION( className ); \
-	static char const *GetPanelClassName() { return #className; } \
-	static char const *GetPanelBaseClassName() { return #baseClassName; }
-
-#define DECLARE_CLASS_SIMPLE_NOBASE( className ) \
-	typedef className ThisClass;	\
-public:							\
-	DECLARE_PANELMESSAGEMAP( className ); \
-	DECLARE_PANELANIMATION( className ); \
-	static char const *GetPanelClassName() { return #className; } \
-	static char const *GetPanelBaseClassName() { return NULL; }
-
-#endif // !VGUI_USEKEYBINDINGMAPS
 
 #define _MessageFuncCommon( name, scriptname, paramCount, p1type, p1name, p2type, p2name )	\
 	class PanelMessageFunc_##name; \

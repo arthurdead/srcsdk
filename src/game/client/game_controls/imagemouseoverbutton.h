@@ -8,9 +8,12 @@
 #ifndef IMAGE_MOUSE_OVER_BUTTON_H
 #define IMAGE_MOUSE_OVER_BUTTON_H
 
+#pragma once
+
 #include "vgui/ISurface.h"
 #include "vgui/IScheme.h"
 #include "mouseoverpanelbutton.h"
+#include "tier1/KeyValues.h"
 
 //===============================================
 // CImageMouseOverButton - used for class images
@@ -64,7 +67,7 @@ CImageMouseOverButton<T>::CImageMouseOverButton( vgui::Panel *parent, const char
 template <class T>
 void CImageMouseOverButton<T>::ApplySettings( KeyValues *inResourceData )
 {
-	m_bScaleImage = inResourceData->GetInt( "scaleImage", 0 );
+	m_bScaleImage = inResourceData->GetBool( "scaleImage", false );
 
 	// Active Image
 	delete [] m_pszActiveImageName;

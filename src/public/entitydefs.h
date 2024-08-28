@@ -6,9 +6,7 @@
 
 #ifndef ENTITYDEFS_H
 #define ENTITYDEFS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #define MAX_ENTITY_NAME_LEN			   256

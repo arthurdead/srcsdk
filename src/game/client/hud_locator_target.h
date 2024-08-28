@@ -7,9 +7,7 @@
 
 #ifndef L4D_HUD_LOCATOR_H
 #define L4D_HUD_LOCATOR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "vgui_controls/PHandle.h"
@@ -34,7 +32,7 @@
 #define LOCATOR_ICON_FX_FADE_OUT		0x00000800	// Set when deactivated so it can smoothly vanish
 #define LOCATOR_ICON_FX_FADE_IN			0x00001000	// Set when activated so it can smoothly appear
 
-#include "tier1/UtlSymbol.h"
+#include "tier1/utlsymbol.h"
 
 // See comments in UtlSymbol on why this is useful
 DECLARE_PRIVATE_SYMBOLTYPE( CGameInstructorSymbol );

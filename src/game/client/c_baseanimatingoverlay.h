@@ -25,6 +25,7 @@ public:
 	DECLARE_INTERPOLATION();
 
 
+	C_BaseAnimatingOverlay(bool bClientSide);
 	C_BaseAnimatingOverlay();
 
 	virtual CStudioHdr *OnNewModel();
@@ -32,10 +33,15 @@ public:
 	C_AnimationLayer* GetAnimOverlay( int i );
 	void SetNumAnimOverlays( int num );	// This makes sure there is space for this # of layers.
 	int GetNumAnimOverlays() const;
+	void			SetOverlayPrevEventCycle( int nSlot, float flValue );
+
+	virtual bool	Interpolate( float flCurrentTime );
 
 	virtual void	GetRenderBounds( Vector& theMins, Vector& theMaxs );
 
 	void			CheckForLayerChanges( CStudioHdr *hdr, float currentTime );
+	void			CheckInterpChanges( void );
+	void			CheckForLayerPhysicsInvalidate( void );
 
 	// model specific
 	virtual void	AccumulateLayers( IBoneSetup &boneSetup, Vector pos[], Quaternion q[], float currentTime );
@@ -54,11 +60,17 @@ public:
 
 private:
 	C_BaseAnimatingOverlay( const C_BaseAnimatingOverlay & ); // not defined, not accessible
+
+	friend void ResizeAnimationLayerCallback( void *pStruct, int offsetToUtlVector, int len );
 };
 
 
 EXTERN_RECV_TABLE(DT_BaseAnimatingOverlay);
 
+inline void C_BaseAnimatingOverlay::SetOverlayPrevEventCycle( int nSlot, float flValue )
+{
+	m_flOverlayPrevEventCycle[nSlot] = flValue;
+}
 
 #endif // C_BASEANIMATINGOVERLAY_H
 

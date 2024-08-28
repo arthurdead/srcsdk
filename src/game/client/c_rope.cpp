@@ -74,7 +74,7 @@ END_RECV_TABLE()
 #define ROPE_IMPULSE_DECAY	0.95
 
 static ConVar rope_shake( "rope_shake", "0" );
-static ConVar rope_subdiv( "rope_subdiv", "2", 0, "Rope subdivision amount", true, 0, true, MAX_ROPE_SUBDIVS );
+static ConVar rope_subdiv( "rope_subdiv", "2", FCVAR_MATERIAL_SYSTEM_THREAD, "Rope subdivision amount", true, 0, true, MAX_ROPE_SUBDIVS );
 static ConVar rope_collide( "rope_collide", "1", 0, "Collide rope with the world" );
 
 static ConVar rope_smooth( "rope_smooth", "1", 0, "Do an antialiasing effect on ropes" );
@@ -879,7 +879,7 @@ void ShakeRopesCallback( const CEffectData &data )
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "ShakeRopes", ShakeRopesCallback );
+DECLARE_CLIENT_EFFECT( ShakeRopes, ShakeRopesCallback );
 
 
 
@@ -908,7 +908,7 @@ void C_RopeKeyframe::CPhysicsDelegate::GetNodeForces( CSimplePhysics::CNode *pNo
 		}
 		else
 		{
-			if (m_pKeyframe->m_flCurrentGustTimer < m_pKeyframe->m_flCurrentGustLifetime )
+			if ( ( m_pKeyframe->m_flCurrentGustLifetime != 0.0f ) && ( m_pKeyframe->m_flCurrentGustTimer < m_pKeyframe->m_flCurrentGustLifetime ) )
 			{
 				float div = m_pKeyframe->m_flCurrentGustTimer / m_pKeyframe->m_flCurrentGustLifetime;
 				float scale = 1 - cos( div * M_PI );
@@ -928,6 +928,10 @@ void C_RopeKeyframe::CPhysicsDelegate::GetNodeForces( CSimplePhysics::CNode *pNo
 	// Apply any instananeous forces and reset
 	*pAccel += ROPE_IMPULSE_SCALE * m_pKeyframe->m_vecImpulse;
 	m_pKeyframe->m_vecImpulse *= ROPE_IMPULSE_DECAY;
+	if ( m_pKeyframe->m_vecImpulse.LengthSqr() < 0.1f )
+	{
+		m_pKeyframe->m_vecImpulse = vec3_origin;
+	}
 }
 
 
@@ -1060,7 +1064,9 @@ C_RopeKeyframe::C_RopeKeyframe()
 	m_vColorMod.Init( 1, 1, 1 );
 	m_nLinksTouchingSomething = 0;
 	m_Subdiv = 255; // default to using the cvar
-	
+	m_flCurrentGustLifetime = 0.0f;
+	m_flCurrentGustTimer = 0.0f;
+
 	m_fLockedPoints = 0;
 	m_fPrevLockedPoints = 0;
 	
@@ -1099,7 +1105,10 @@ C_RopeKeyframe* C_RopeKeyframe::Create(
 {
 	C_RopeKeyframe *pRope = new C_RopeKeyframe;
 
-	pRope->InitializeAsClientEntity( NULL, RENDER_GROUP_OPAQUE_ENTITY );
+	if(!pRope->InitializeAsClientEntity()) {
+		UTIL_Remove( pRope );
+		return NULL;
+	}
 	
 	if ( pStartEnt )
 	{
@@ -1272,6 +1281,7 @@ void C_RopeKeyframe::RecomputeSprings()
 void C_RopeKeyframe::ShakeRope( const Vector &vCenter, float flRadius, float flMagnitude )
 {
 	// Sum up whatever it would apply to all of our points.
+	bool bWantsThink = false;
 	for ( int i=0; i < m_nSegments; i++ )
 	{
 		CSimplePhysics::CNode *pNode = m_RopePhysics.GetNode( i );
@@ -1282,7 +1292,13 @@ void C_RopeKeyframe::ShakeRope( const Vector &vCenter, float flRadius, float flM
 		if ( flShakeAmount >= 0 )
 		{
 			m_vecImpulse.z += flShakeAmount * flMagnitude;
+			bWantsThink = true;
 		}
+	}
+
+	if ( bWantsThink )
+	{
+		SetContextThink( &C_RopeKeyframe::PhysicsThink, TICK_ALWAYS_THINK, "PhysicsThink" );
 	}
 }
 
@@ -1292,6 +1308,7 @@ void C_RopeKeyframe::OnDataChanged( DataUpdateType_t updateType )
 	BaseClass::OnDataChanged( updateType );
 
 	m_bNewDataThisFrame = true;
+	SetContextThink( &C_RopeKeyframe::PhysicsThink, TICK_ALWAYS_THINK, "PhysicsThink" );
 
 	if( updateType != DATA_UPDATE_CREATED )
 		return;
@@ -1310,7 +1327,7 @@ void C_RopeKeyframe::OnDataChanged( DataUpdateType_t updateType )
 	}
 	else
 	{
-		Q_strncpy( str, "asdf", sizeof( str ) );
+		Q_strncpy( str, "missing_rope_material", sizeof( str ) );
 	}
 	
 	FinishInit( str );
@@ -1319,6 +1336,11 @@ void C_RopeKeyframe::OnDataChanged( DataUpdateType_t updateType )
 
 void C_RopeKeyframe::FinishInit( const char *pMaterialName )
 {
+	if ( !g_pSplineCableShadowdepth )
+	{
+		g_pSplineCableShadowdepth.Init( g_pMaterialSystem->FindMaterial( "cable/rope_shadowdepth", TEXTURE_GROUP_OTHER ) );
+	}
+
 	// Get the material from the material system.	
 	m_pMaterial = materials->FindMaterial( pMaterialName, TEXTURE_GROUP_OTHER );
 	if( m_pMaterial )
@@ -1346,7 +1368,7 @@ void C_RopeKeyframe::FinishInit( const char *pMaterialName )
 	SetCollisionBounds( Vector( -10, -10, -10 ), Vector( 10, 10, 10 ) );
 
 	// We want to think every frame.
-	SetNextClientThink( CLIENT_THINK_ALWAYS );
+	SetContextThink( &C_RopeKeyframe::PhysicsThink, TICK_ALWAYS_THINK, "PhysicsThink" );
 }
 
 void C_RopeKeyframe::RunRopeSimulation( float flSeconds )
@@ -1404,7 +1426,7 @@ void C_RopeKeyframe::ConstrainNodesBetweenEndpoints( void )
 	}
 }
 
-void C_RopeKeyframe::ClientThink()
+void C_RopeKeyframe::PhysicsThink()
 {
 	// Only recalculate the endpoint attachments once per frame.
 	m_bEndPointAttachmentPositionsDirty = true;
@@ -1427,36 +1449,47 @@ void C_RopeKeyframe::ClientThink()
 
 		m_bNewDataThisFrame = false;
 
-		// Setup a new wind gust?
-		m_flCurrentGustTimer += gpGlobals->frametime;
-		m_flTimeToNextGust -= gpGlobals->frametime;
-		if( m_flTimeToNextGust <= 0 )
+		if ( m_bApplyWind )
 		{
-			m_vWindDir = RandomVector( -1, 1 );
-			VectorNormalize( m_vWindDir );
+			// Setup a new wind gust?
+			m_flCurrentGustTimer += gpGlobals->frametime;
+			m_flTimeToNextGust -= gpGlobals->frametime;
+			if( m_flTimeToNextGust <= 0 )
+			{
+				m_vWindDir = RandomVector( -1, 1 );
+				VectorNormalize( m_vWindDir );
 
-			static float basicScale = 50;
-			m_vWindDir *= basicScale;
-			m_vWindDir *= RandomFloat( -1.0f, 1.0f );
-			
-			m_flCurrentGustTimer = 0;
-			m_flCurrentGustLifetime = RandomFloat( 2.0f, 3.0f );
+				static float basicScale = 50;
+				m_vWindDir *= basicScale;
+				m_vWindDir *= RandomFloat( -1.0f, 1.0f );
+				
+				m_flCurrentGustTimer = 0;
+				m_flCurrentGustLifetime = RandomFloat( 2.0f, 3.0f );
 
-			m_flTimeToNextGust = RandomFloat( 3.0f, 4.0f );
+				m_flTimeToNextGust = RandomFloat( 3.0f, 4.0f );
+			}
 		}
 
 		UpdateBBox();
 	}
+	else
+	{
+		if ( !WindEnabled() )
+		{
+			SetNextThink( TICK_NEVER_THINK, "PhysicsThink" );
+		}
+		return;
+	}
 }
 
 
-int C_RopeKeyframe::DrawModel( int flags )
+int C_RopeKeyframe::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 	VPROF_BUDGET( "C_RopeKeyframe::DrawModel", VPROF_BUDGETGROUP_ROPES );
 	if( !InitRopePhysics() )
 		return 0;
 
-	if ( !m_bReadyToDraw )
+	if ( !ReadyToDraw() )
 		return 0;
 
 	// Resize the rope
@@ -1485,6 +1518,18 @@ bool C_RopeKeyframe::ShouldDraw()
 		return false;
 
 	if( !(m_RopeFlags & ROPE_SIMULATE) )
+		return false;
+
+	CPULevel_t nCPULevel = GetCPULevel();
+	bool bNoDraw = ( GetMinCPULevel() && GetMinCPULevel()-1 > nCPULevel );
+	bNoDraw = bNoDraw || ( GetMaxCPULevel() && GetMaxCPULevel()-1 < nCPULevel );
+	if ( bNoDraw )
+		return false;
+
+	GPULevel_t nGPULevel = GetGPULevel();
+	bNoDraw = ( GetMinGPULevel() && GetMinGPULevel()-1 > nGPULevel );
+	bNoDraw = bNoDraw || ( GetMaxGPULevel() && GetMaxGPULevel()-1 < nGPULevel );
+	if ( bNoDraw )
 		return false;
 
 	return true;
@@ -1569,16 +1614,26 @@ bool C_RopeKeyframe::GetAttachment( int number, Vector &origin, QAngle &angles )
 
 bool C_RopeKeyframe::AnyPointsMoved()
 {
-	for( int i=0; i < m_RopePhysics.NumNodes(); i++ )
+	int nNodeCount = m_RopePhysics.NumNodes();
+	for( int i=0; i < nNodeCount; i++ )
 	{
 		CSimplePhysics::CNode *pNode = m_RopePhysics.GetNode( i );
-		float flMoveDistSqr = (pNode->m_vPos - pNode->m_vPrevPos).LengthSqr();
+		float flMoveDistSqr = pNode->m_vPos.DistToSqr( pNode->m_vPrevPos );
 		if( flMoveDistSqr > 0.03f )
+		{
+			if ( m_iForcePointMoveCounter < 5 )
+			{
+				m_iForcePointMoveCounter = 5;
+			}
 			return true;
+		}
 	}
 
-	if( --m_iForcePointMoveCounter > 0 )
+	if( m_iForcePointMoveCounter > 0 )
+	{
+		--m_iForcePointMoveCounter;
 		return true;
+	}
 
 	return false;
 }

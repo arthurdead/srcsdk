@@ -24,18 +24,7 @@
 #include "filesystem.h"
 #include "matsys_controls/matsyscontrols.h"
 
-#ifdef SIXENSE
-#include "sixense/in_sixense.h"
-#endif
-
-#if defined( TF_CLIENT_DLL )
-#include "tf_gamerules.h"
-#endif
-
 using namespace vgui;
-
-void MP3Player_Create( vgui::VPANEL parent );
-void MP3Player_Destroy();
 
 #include <vgui/IInputInternal.h>
 vgui::IInputInternal *g_InputInternal = NULL;
@@ -44,6 +33,8 @@ vgui::IInputInternal *g_InputInternal = NULL;
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+bool IsWidescreen( void );
 
 void GetVGUICursorPos( int& x, int& y )
 {
@@ -86,7 +77,7 @@ public:
 		const char *texturename = kv->GetString( entry->name() );
 		if ( texturename && texturename[ 0 ] )
 		{
-			CHudTexture *currentTexture = gHUD.GetIcon( texturename );
+			CHudTexture *currentTexture = HudIcons().GetIcon( texturename );
 			pHandle->Set( currentTexture );
 		}
 		else
@@ -104,7 +95,7 @@ public:
 		const char *texturename = entry->defaultvalue();
 		if ( texturename && texturename[ 0 ] )
 		{
-			CHudTexture *currentTexture = gHUD.GetIcon( texturename );
+			CHudTexture *currentTexture = HudIcons().GetIcon( texturename );
 			pHandle->Set( currentTexture );
 		}
 		else
@@ -115,6 +106,17 @@ public:
 };
 
 static CHudTextureHandleProperty textureHandleConverter;
+
+bool IsWidescreen( void )
+{
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+	int screenWidth, screenHeight;
+	g_pMaterialSystem->GetBackBufferDimensions( screenWidth, screenHeight );
+	float aspectRatio = ( float )screenWidth / ( float )screenHeight;
+	// Has to be nearly 16:10 or higher to be considered widescreen.  We do this elsewhere in the code.
+	bool bIsWidescreen = ( aspectRatio >= 1.59f ); 
+	return bIsWidescreen;
+}
 
 static void VGui_VideoMode_AdjustForModeChange( void )
 {
@@ -187,6 +189,7 @@ bool VGui_Startup( CreateInterfaceFn appSystemFactory )
 	{
 		return false;
 	}
+
 	return true;
 }
 
@@ -201,7 +204,7 @@ void VGui_CreateGlobalPanels( void )
 	VPANEL gameDLLPanel = enginevgui->GetPanel( PANEL_GAMEDLL );
 #endif
 	// Part of game
-	internalCenterPrint->Create( gameToolParent );
+	GetCenterPrint()->Create( gameToolParent );
 	loadingdisc->Create( gameToolParent );
 	messagechars->Create( gameToolParent );
 
@@ -212,24 +215,10 @@ void VGui_CreateGlobalPanels( void )
 #endif
 	netgraphpanel->Create( toolParent );
 	debugoverlaypanel->Create( gameToolParent );
-
-#ifndef _X360
-	// Create mp3 player off of tool parent panel
-	MP3Player_Create( toolParent );
-#endif
-#ifdef SIXENSE
-	g_pSixenseInput->CreateGUI( gameToolParent );
-#endif
 }
 
 void VGui_Shutdown()
 {
-	VGUI_DestroyClientDLLRootPanel();
-
-#ifndef _X360
-	MP3Player_Destroy();
-#endif
-
 	netgraphpanel->Destroy();
 	debugoverlaypanel->Destroy();
 #if defined( TRACK_BLOCKING_IO )
@@ -239,12 +228,14 @@ void VGui_Shutdown()
 
 	messagechars->Destroy();
 	loadingdisc->Destroy();
-	internalCenterPrint->Destroy();
+	GetCenterPrint()->Destroy();
 
-	if ( g_pClientMode )
+	if ( GetFullscreenClientMode() )
 	{
-		g_pClientMode->VGui_Shutdown();
+		GetFullscreenClientMode()->VGui_Shutdown();
 	}
+
+	VGUI_DestroyClientDLLRootPanel();
 
 	// Make sure anything "marked for deletion"
 	//  actually gets deleted before this dll goes away
@@ -261,17 +252,8 @@ void VGui_PreRender()
 	VPROF( "VGui_PreRender" );
 	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
 
-	// 360 does not use these plaques
-	if ( IsPC() )
-	{
-		loadingdisc->SetLoadingVisible( engine->IsDrawingLoadingImage() && !engine->IsPlayingDemo() );
-#if !defined( TF_CLIENT_DLL )
-		loadingdisc->SetPausedVisible( !enginevgui->IsGameUIVisible() && cl_showpausedimage.GetBool() && engine->IsPaused() && !engine->IsTakingScreenshot() && !engine->IsPlayingDemo() );
-#else
-		bool bShowPausedImage = cl_showpausedimage.GetBool() && ( TFGameRules() && !TFGameRules()->IsInTraining() );
-		loadingdisc->SetPausedVisible( !enginevgui->IsGameUIVisible() && bShowPausedImage && engine->IsPaused() && !engine->IsTakingScreenshot() && !engine->IsPlayingDemo() );
-#endif
-	}
+	loadingdisc->SetLoadingVisible( engine->IsDrawingLoadingImage() && !engine->IsPlayingDemo() );
+	loadingdisc->SetPausedVisible( !enginevgui->IsGameUIVisible() && cl_showpausedimage.GetBool() && engine->IsPaused() && !engine->IsTakingScreenshot() && !engine->IsPlayingDemo() );
 }
 
 void VGui_PostRender()
@@ -303,4 +285,74 @@ void GetHudSize( int& w, int &h )
 	{
 		vgui::ipanel()->GetSize( hudParent, w, h );
 	}
+}
+
+static vrect_t g_TrueScreenSize;
+static vrect_t g_ScreenSpaceBounds;
+
+void VGui_GetTrueScreenSize( int &w, int &h )
+{
+	w = g_TrueScreenSize.width;
+	h = g_TrueScreenSize.height;
+}
+
+void VGUI_SetScreenSpaceBounds( int x, int y, int w, int h )
+{
+	vrect_t &r = g_ScreenSpaceBounds;
+	r.x = x;
+	r.y = y;
+	r.width = w;
+	r.height = h;
+}
+
+void VGUI_UpdateScreenSpaceBounds( int sx, int sy, int sw, int sh )
+{
+	g_TrueScreenSize.x = sx;
+	g_TrueScreenSize.y = sy;
+	g_TrueScreenSize.width = sw;
+	g_TrueScreenSize.height = sh;
+
+	VGUI_SetScreenSpaceBounds( sx, sy, sw, sh );
+}
+
+static int g_nCachedScreenSize[ 2 ] = { -1, -1 };
+
+void VGui_OnScreenSizeChanged()
+{
+	vgui::surface()->GetScreenSize( g_nCachedScreenSize[ 0 ], g_nCachedScreenSize[ 1 ] );
+}
+
+void VGui_GetPanelBounds( int &x, int &y, int &w, int &h )
+{
+	x = y = 0;
+	vgui::surface()->GetScreenSize( w, h );
+}
+
+void VGui_GetEngineRenderBounds( int &x, int &y, int &w, int &h, int &insetX, int &insetY )
+{
+	insetX = insetY = 0;
+
+	x = y = 0;
+	vgui::surface()->GetScreenSize( w, h );
+}
+
+void VGui_GetHudBounds( int &x, int &y, int &w, int &h )
+{
+	x = y = 0;
+	vgui::surface()->GetScreenSize( w, h );
+}
+
+int VGUI_FindSlotForRootPanel( vgui::Panel *pRoot )
+{
+	CUtlVector< Panel * > list;
+	VGui_GetPanelList( list );
+	int slot =  list.Find( pRoot ) ;
+	if ( slot == list.InvalidIndex() )
+		return 0;
+	return slot;
+}
+
+vgui::VPANEL VGui_GetFullscreenRootVPANEL( void )
+{
+	return VGui_GetFullscreenRootPanel()->GetVPanel();
 }

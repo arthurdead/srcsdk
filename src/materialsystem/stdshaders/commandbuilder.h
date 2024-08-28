@@ -16,9 +16,7 @@
 #include "BaseVSShader.h"
 #include "shaderapi/ishaderapi.h"
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 extern ConVar	my_mat_fullbright;
 

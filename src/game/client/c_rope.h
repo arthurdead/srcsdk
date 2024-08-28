@@ -123,8 +123,9 @@ public:
 public:
 
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
-	virtual void	ClientThink();
-	virtual int		DrawModel( int flags );
+	virtual void	PhysicsThink();
+	virtual int		DrawModel( int flags, const RenderableInstance_t &instance );
+	virtual RenderableTranslucencyType_t ComputeTranslucencyType() { return RENDERABLE_IS_OPAQUE; }
 	virtual bool	ShouldDraw();
 	virtual const Vector& WorldSpaceCenter() const;
 

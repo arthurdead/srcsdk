@@ -54,6 +54,7 @@ CClientScoreBoardDialog::CClientScoreBoardDialog(IViewPort *pViewPort) : Editabl
 	//memset(s_VoiceImage, 0x0, sizeof( s_VoiceImage ));
 	TrackerImage = 0;
 	m_pViewPort = pViewPort;
+	m_alignment = vgui::Label::a_center;
 
 	// initialize dialog
 	SetProportional(true);
@@ -75,6 +76,7 @@ CClientScoreBoardDialog::CClientScoreBoardDialog(IViewPort *pViewPort) : Editabl
 	
 	// update scoreboard instantly if on of these events occure
 	ListenForGameEvent( "hltv_status" );
+	ListenForGameEvent( "replay_status" );
 	ListenForGameEvent( "server_spawn" );
 
 	m_pImageList = NULL;
@@ -122,9 +124,57 @@ void CClientScoreBoardDialog::OnThink()
 		if ( !g_pInputSystem->IsButtonDown( m_nCloseKey ) )
 		{
 			m_nCloseKey = BUTTON_CODE_INVALID;
-			gViewPortInterface->ShowPanel( PANEL_SCOREBOARD, false );
+			GetViewPortInterface()->ShowPanel( PANEL_SCOREBOARD, false );
 			GetClientVoiceMgr()->StopSquelchMode();
 		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CClientScoreBoardDialog::ApplySettings( KeyValues *inResourceData )
+{
+	BaseClass::ApplySettings( inResourceData );
+
+	const char *alignmentString = inResourceData->GetString( "scoreboard_position", "" );
+	m_alignment = vgui::Label::a_center;
+
+	if ( !stricmp(alignmentString, "north-west") )
+	{
+		m_alignment = vgui::Label::a_northwest;
+	}
+	else if ( !stricmp(alignmentString, "north") )
+	{
+		m_alignment = vgui::Label::a_north;
+	}
+	else if ( !stricmp(alignmentString, "north-east") )
+	{
+		m_alignment = vgui::Label::a_northeast;
+	}
+	else if ( !stricmp(alignmentString, "west") )
+	{
+		m_alignment = vgui::Label::a_west;
+	}
+	else if ( !stricmp(alignmentString, "center") )
+	{
+		m_alignment = vgui::Label::a_center;
+	}
+	else if ( !stricmp(alignmentString, "east") )
+	{
+		m_alignment = vgui::Label::a_east;
+	}
+	else if ( !stricmp(alignmentString, "south-west") )
+	{
+		m_alignment = vgui::Label::a_southwest;
+	}
+	else if ( !stricmp(alignmentString, "south") )
+	{
+		m_alignment = vgui::Label::a_south;
+	}
+	else if ( !stricmp(alignmentString, "south-east") )
+	{
+		m_alignment = vgui::Label::a_southeast;
 	}
 }
 
@@ -239,6 +289,12 @@ void CClientScoreBoardDialog::FireGameEvent( IGameEvent *event )
 		m_HLTVSpectators = event->GetInt( "clients" );
 		m_HLTVSpectators -= event->GetInt( "proxies" );
 	}
+	else if ( Q_strcmp(type, "replay_status") == 0 )
+	{
+		// spectators = clients - proxies
+		m_ReplaySpectators = event->GetInt( "clients" );
+		m_ReplaySpectators -= event->GetInt( "proxies" );
+	}
 	else if ( Q_strcmp(type, "server_spawn") == 0 )
 	{
 		// We'll post the message ourselves instead of using SetControlString()
@@ -290,7 +346,7 @@ void CClientScoreBoardDialog::Update( void )
 		m_pPlayerList->SetSize(wide, m_iDesiredHeight);
 	}
 
-	MoveToCenterOfScreen();
+	PositionScoreboard();
 
 	// update every second
 	m_fNextUpdateTime = gpGlobals->curtime + 1.0f; 
@@ -577,4 +633,51 @@ void CClientScoreBoardDialog::MoveToCenterOfScreen()
 	int wx, wy, ww, wt;
 	surface()->GetWorkspaceBounds(wx, wy, ww, wt);
 	SetPos((ww - GetWide()) / 2, (wt - GetTall()) / 2);
+}
+
+void CClientScoreBoardDialog::PositionScoreboard()
+{
+	int wide, tall;
+	GetSize( wide, tall );
+	int hudWide, hudTall;
+	GetHudSize( hudWide, hudTall );
+
+	switch ( m_alignment )
+	{
+	case vgui::Label::a_northwest:
+		SetPos( 0, 0 );
+		break;
+
+	case vgui::Label::a_north:
+		SetPos( (hudWide - wide)/2, 0 );
+		break;
+
+	case vgui::Label::a_northeast:
+		SetPos( hudWide - wide, 0 );
+		break;
+
+	case vgui::Label::a_west:
+		SetPos( 0, (hudTall - tall)/2 );
+		break;
+
+	case vgui::Label::a_center:
+		SetPos( (hudWide - wide)/2, (hudTall - tall)/2 );
+		break;
+
+	case vgui::Label::a_east:
+		SetPos( hudWide - wide, (hudTall - tall)/2 );
+		break;
+
+	case vgui::Label::a_southwest:
+		SetPos( 0, hudTall - tall );
+		break;
+
+	case vgui::Label::a_south:
+		SetPos( (hudWide - wide)/2, hudTall - tall );
+		break;
+
+	case vgui::Label::a_southeast:
+		SetPos( hudWide - wide, hudTall - tall );
+		break;
+	}
 }

@@ -11,11 +11,10 @@
 #include "tier1/utllinkedlist.h"
 #include "rangecheckedvar.h"
 #include "lerp_functions.h"
-#include "animationlayer.h"
 #include "convar.h"
 
-
 #include "tier0/memdbgon.h"
+
 
 #define COMPARE_HISTORY(a,b) \
 	( memcmp( m_VarHistory[a].GetValue(), m_VarHistory[b].GetValue(), sizeof(Type)*GetMaxCount() ) == 0 ) 			
@@ -157,8 +156,8 @@ public:
 	
 	// Returns true if the new value is different from the prior most recent value.
 	virtual void NoteLastNetworkedValue() = 0;
-	virtual bool NoteChanged( float changetime, bool bUpdateLastNetworkedValue ) = 0;
-	virtual void Reset() = 0;
+	virtual bool NoteChanged( float currentTime, float changetime, bool bUpdateLastNetworkedValue ) = 0;
+	virtual void Reset( float currentTime ) = 0;
 	
 	// Returns 1 if the value will always be the same if currentTime is always increasing.
 	virtual int Interpolate( float currentTime ) = 0;
@@ -446,8 +445,8 @@ public:
 	virtual void Setup( void *pValue, int type );
 	virtual void SetInterpolationAmount( float seconds );
 	virtual void NoteLastNetworkedValue();
-	virtual bool NoteChanged( float changetime, bool bUpdateLastNetworkedValue );
-	virtual void Reset();
+	virtual bool NoteChanged( float currentTime, float changetime, bool bUpdateLastNetworkedValue );
+	virtual void Reset( float currentTime );
 	virtual int Interpolate( float currentTime );
 	virtual int GetType() const;
 	virtual void RestoreToLastNetworked();
@@ -458,7 +457,7 @@ public:
 public:
 
 	// Just like the IInterpolatedVar functions, but you can specify an interpolation amount.
-	bool NoteChanged( float changetime, float interpolation_amount, bool bUpdateLastNetworkedValue );
+	bool NoteChanged( float currentTime, float changetime, float interpolation_amount, bool bUpdateLastNetworkedValue );
 	int Interpolate( float currentTime, float interpolation_amount );
 
 	void DebugInterpolate( Type *pOut, float currentTime );
@@ -487,7 +486,7 @@ public:
 	void SetHistoryValuesForItem( int item, Type& value );
 	void	SetLooping( bool looping, int iArrayIndex=0 );
 	
-	void SetMaxCount( int newmax );
+	void SetMaxCount( float currentTime, int newmax );
 	int GetMaxCount() const;
 
 	// Get the time of the oldest entry.
@@ -622,7 +621,7 @@ void CInterpolatedVarArrayBase<Type, IS_ARRAY>::NoteLastNetworkedValue()
 }
 
 template< typename Type, bool IS_ARRAY >
-inline bool CInterpolatedVarArrayBase<Type, IS_ARRAY>::NoteChanged( float changetime, float interpolation_amount, bool bUpdateLastNetworkedValue )
+inline bool CInterpolatedVarArrayBase<Type, IS_ARRAY>::NoteChanged( float currentTime, float changetime, float interpolation_amount, bool bUpdateLastNetworkedValue )
 {
 	Assert( m_pValue );
 
@@ -641,7 +640,7 @@ inline bool CInterpolatedVarArrayBase<Type, IS_ARRAY>::NoteChanged( float change
 	{
 		char const *pDiffString = bRet ? "differs" : "identical";
 
-		Msg( "%s LatchChanged at %f changetime %f:  %s\n", GetDebugName(), gpGlobals->curtime, changetime, pDiffString );
+		Msg( "%s LatchChanged at %f changetime %f:  %s\n", GetDebugName(), currentTime, changetime, pDiffString );
 	}
 
 	AddToHead( changetime, m_pValue, true );
@@ -662,7 +661,7 @@ inline bool CInterpolatedVarArrayBase<Type, IS_ARRAY>::NoteChanged( float change
 	// changing over to the method in Interpolate() means that we always have a 3-sample neighborhood around
 	// any data we're going to need.  Unless gpGlobals->curtime is different when samples are added vs. when
 	// they are interpolated I can't see this having any ill effects.  
-	RemoveEntriesPreviousTo( gpGlobals->curtime - interpolation_amount - EXTRA_INTERPOLATION_HISTORY_STORED );
+	RemoveEntriesPreviousTo( currentTime - interpolation_amount - EXTRA_INTERPOLATION_HISTORY_STORED );
 #endif
 	
 	return bRet;
@@ -670,9 +669,9 @@ inline bool CInterpolatedVarArrayBase<Type, IS_ARRAY>::NoteChanged( float change
 
 
 template< typename Type, bool IS_ARRAY >
-inline bool CInterpolatedVarArrayBase<Type, IS_ARRAY>::NoteChanged( float changetime, bool bUpdateLastNetworkedValue )
+inline bool CInterpolatedVarArrayBase<Type, IS_ARRAY>::NoteChanged( float currentTime, float changetime, bool bUpdateLastNetworkedValue )
 {
-	return NoteChanged( changetime, m_InterpolationAmount, bUpdateLastNetworkedValue );
+	return NoteChanged( currentTime, changetime, m_InterpolationAmount, bUpdateLastNetworkedValue );
 }
 
 
@@ -735,15 +734,15 @@ inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::AddToHead( float changeTi
 }
 
 template< typename Type, bool IS_ARRAY >
-inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::Reset()
+inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::Reset( float currentTime )
 {
 	ClearHistory();
 
 	if ( m_pValue )
 	{
-		AddToHead( gpGlobals->curtime, m_pValue, false );
-		AddToHead( gpGlobals->curtime, m_pValue, false );
-		AddToHead( gpGlobals->curtime, m_pValue, false );
+		AddToHead( currentTime, m_pValue, false );
+		AddToHead( currentTime, m_pValue, false );
+		AddToHead( currentTime, m_pValue, false );
 
 		memcpy( m_LastNetworkedValue, m_pValue, m_nMaxCount * sizeof( Type ) );
 	}
@@ -1274,7 +1273,7 @@ inline void	CInterpolatedVarArrayBase<Type, IS_ARRAY>::SetLooping( bool looping,
 }
 
 template< typename Type, bool IS_ARRAY >
-inline void	CInterpolatedVarArrayBase<Type, IS_ARRAY>::SetMaxCount( int newmax )
+inline void	CInterpolatedVarArrayBase<Type, IS_ARRAY>::SetMaxCount( float currentTime, int newmax )
 {
 	bool changed = ( newmax != m_nMaxCount ) ? true : false;
 
@@ -1292,7 +1291,7 @@ inline void	CInterpolatedVarArrayBase<Type, IS_ARRAY>::SetMaxCount( int newmax )
 		memset( m_bLooping, 0, sizeof(byte) * m_nMaxCount);
 		memset( m_LastNetworkedValue, 0, sizeof(Type) * m_nMaxCount);
 
-		Reset();
+		Reset( currentTime );
 	}
 }
 
@@ -1440,11 +1439,11 @@ inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::_Interpolate_Hermite(
 		// Note that QAngle has a specialization that will do quaternion interpolation here...
 		if ( m_bLooping[ i ] )
 		{
-			out[ i ] = LoopingLerp_Hermite( frac, prev->GetValue()[i], start->GetValue()[i], end->GetValue()[i] );
+			out[ i ] = LoopingLerp_Hermite( out[ i ], frac, prev->GetValue()[i], start->GetValue()[i], end->GetValue()[i] );
 		}
 		else
 		{
-			out[ i ] = Lerp_Hermite( frac, prev->GetValue()[i], start->GetValue()[i], end->GetValue()[i] );
+			out[ i ] = Lerp_Hermite( out[ i ], frac, prev->GetValue()[i], start->GetValue()[i], end->GetValue()[i] );
 		}
 
 		// Clamp the output from interpolation. There are edge cases where something like m_flCycle
@@ -1564,7 +1563,7 @@ public:
 	CInterpolatedVarArray( const char *pDebugName = "no debug name" )
 		: CInterpolatedVarArrayBase<Type, true>( pDebugName )
 	{
-		this->SetMaxCount( COUNT );
+		this->SetMaxCount( 0.0f, COUNT );
 	}
 };
 
@@ -1580,7 +1579,7 @@ public:
 	CInterpolatedVar( const char *pDebugName = NULL )
 		: CInterpolatedVarArrayBase< Type, false >(pDebugName) 
 	{
-		this->SetMaxCount( 1 );
+		this->SetMaxCount( 0.0f, 1 );
 	}
 };
 

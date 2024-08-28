@@ -7,6 +7,9 @@
 #include "cbase.h"
 #include "fx_trail.h"
 
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 C_ParticleTrail::C_ParticleTrail( void )
 {
 }
@@ -61,14 +64,14 @@ void C_ParticleTrail::OnDataChanged(DataUpdateType_t updateType)
 
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
-		Start( ParticleMgr(), NULL );
+		Start( ParticleMgr() );
 	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_ParticleTrail::Start( CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs )
+void C_ParticleTrail::Start( CParticleMgr *pParticleMgr )
 {
 	if( pParticleMgr->AddEffect( &m_ParticleEffect, this ) == false )
 		return;

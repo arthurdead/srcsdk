@@ -31,6 +31,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#define CROSSBOW_BOLT_MODEL "models/crossbow_bolt.mdl"
+
 extern IPhysicsSurfaceProps *physprops;
 IPhysicsObject *GetWorldPhysObject( void );
 
@@ -128,7 +130,7 @@ private:
 
 void CreateCrossbowBolt( const Vector &vecOrigin, const Vector &vecDirection )
 {
-	model_t *pModel = (model_t *)engine->LoadModel( "models/crossbow_bolt.mdl" );
+	model_t *pModel = (model_t *)engine->LoadModel( CROSSBOW_BOLT_MODEL );
 
 	QAngle vAngles;
 
@@ -173,4 +175,4 @@ void StickyBoltCallback( const CEffectData &data )
 	 StickRagdollNow( data.m_vOrigin, data.m_vNormal );
 }
 
-DECLARE_CLIENT_EFFECT( "BoltImpact", StickyBoltCallback );
+DECLARE_CLIENT_EFFECT( BoltImpact, StickyBoltCallback );

@@ -6,9 +6,7 @@
 
 #ifndef STEAMWORKS_GAMESTATS_H
 #define STEAMWORKS_GAMESTATS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #endif // STEAMWORKS_GAMESTATS_H

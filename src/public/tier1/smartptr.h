@@ -9,6 +9,8 @@
 #define SMARTPTR_H
 #pragma once
 
+#include "tier0/platform.h"
+
 
 class CRefCountAccessor
 {

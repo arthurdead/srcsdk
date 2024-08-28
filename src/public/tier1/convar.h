@@ -55,14 +55,6 @@ public:
 
 
 //-----------------------------------------------------------------------------
-// Helper method for console development
-//-----------------------------------------------------------------------------
-#if defined( _X360 ) && !defined( _RETAIL )
-void ConVar_PublishToVXConsole();
-#endif
-
-
-//-----------------------------------------------------------------------------
 // Called when a ConCommand needs to execute
 //-----------------------------------------------------------------------------
 typedef void ( *FnCommandCallbackVoid_t )( void );
@@ -659,19 +651,19 @@ private:
 // Purpose: Utility macros to quicky generate a simple console command
 //-----------------------------------------------------------------------------
 #define CON_COMMAND( name, description ) \
-   static void name( const CCommand &args ); \
-   static ConCommand name##_command( #name, name, description ); \
-   static void name( const CCommand &args )
+   static void name##_callback( const CCommand &args ); \
+   static ConCommand name##_command( #name, name##_callback, description ); \
+   static void name##_callback( const CCommand &args )
 
 #define CON_COMMAND_F( name, description, flags ) \
-   static void name( const CCommand &args ); \
-   static ConCommand name##_command( #name, name, description, flags ); \
-   static void name( const CCommand &args )
+   static void name##_callback( const CCommand &args ); \
+   static ConCommand name##_command( #name, name##_callback, description, flags ); \
+   static void name##_callback( const CCommand &args )
 
 #define CON_COMMAND_F_COMPLETION( name, description, flags, completion ) \
-	static void name( const CCommand &args ); \
-	static ConCommand name##_command( #name, name, description, flags, completion ); \
-	static void name( const CCommand &args )
+	static void name##_callback( const CCommand &args ); \
+	static ConCommand name##_command( #name, name##_callback, description, flags, completion ); \
+	static void name##_callback( const CCommand &args )
 
 #define CON_COMMAND_EXTERN( name, _funcname, description ) \
 	void _funcname( const CCommand &args ); \

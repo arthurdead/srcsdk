@@ -45,6 +45,7 @@ struct JiggleData
 	}
 
 	int bone;
+	int id;
 
 	float lastUpdate;	// based on gpGlobals->realtime
 

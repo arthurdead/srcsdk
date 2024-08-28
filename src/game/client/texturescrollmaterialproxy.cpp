@@ -124,4 +124,4 @@ IMaterial *CTextureScrollMaterialProxy::GetMaterial()
 	return m_pTextureScrollVar->GetOwningMaterial();
 }
 
-EXPOSE_INTERFACE( CTextureScrollMaterialProxy, IMaterialProxy, "TextureScroll" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CTextureScrollMaterialProxy, TextureScroll );

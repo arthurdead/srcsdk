@@ -11,6 +11,9 @@ tier1 = subproject('tier1')
 tier0 = subproject('tier0')
 
 vaudio_minimp3_lib = shared_library('vaudio_minimp3',name_prefix:'',
+	cpp_args: [
+		'-DDLLNAME=vaudio_minimp3'
+	],
 	sources: files(
 		join_paths(src_root_dir,'vaudio_minimp3','vaudio_minimp3.cpp')
 	),

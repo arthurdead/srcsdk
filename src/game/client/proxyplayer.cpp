@@ -65,7 +65,7 @@ void CPlayerProximityProxy::OnBind( void *pC_BaseEntity )
 	}
 }
 
-EXPOSE_INTERFACE( CPlayerProximityProxy, IMaterialProxy, "PlayerProximity" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CPlayerProximityProxy, PlayerProximity );
 
 
 //-----------------------------------------------------------------------------
@@ -109,7 +109,7 @@ void CPlayerTeamMatchProxy::OnBind( void *pC_BaseEntity )
 	}
 }
 
-EXPOSE_INTERFACE( CPlayerTeamMatchProxy, IMaterialProxy, "PlayerTeamMatch" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CPlayerTeamMatchProxy, PlayerTeamMatch );
 
 
 //-----------------------------------------------------------------------------
@@ -161,7 +161,7 @@ void CPlayerViewProxy::OnBind( void *pC_BaseEntity )
 	}
 }
 
-EXPOSE_INTERFACE( CPlayerViewProxy, IMaterialProxy, "PlayerView" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CPlayerViewProxy, PlayerView );
 
 
 //-----------------------------------------------------------------------------
@@ -202,7 +202,7 @@ void CPlayerSpeedProxy::OnBind( void *pC_BaseEntity )
 	}
 }
 
-EXPOSE_INTERFACE( CPlayerSpeedProxy, IMaterialProxy, "PlayerSpeed" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CPlayerSpeedProxy, PlayerSpeed );
 
 
 //-----------------------------------------------------------------------------
@@ -246,7 +246,7 @@ void CPlayerPositionProxy::OnBind( void *pC_BaseEntity )
 	}
 }
 
-EXPOSE_INTERFACE( CPlayerPositionProxy, IMaterialProxy, "PlayerPosition" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CPlayerPositionProxy, PlayerPosition );
 
 
 //-----------------------------------------------------------------------------
@@ -276,7 +276,7 @@ void CEntitySpeedProxy::OnBind( void *pC_BaseEntity )
 	}
 }
 
-EXPOSE_INTERFACE( CEntitySpeedProxy, IMaterialProxy, "EntitySpeed" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CEntitySpeedProxy, EntitySpeed );
 
 
 //-----------------------------------------------------------------------------
@@ -321,7 +321,7 @@ void CEntityRandomProxy::OnBind( void *pC_BaseEntity )
 	}
 }
 
-EXPOSE_INTERFACE( CEntityRandomProxy, IMaterialProxy, "EntityRandom" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CEntityRandomProxy, EntityRandom );
 
 #include "utlrbtree.h"
 
@@ -448,7 +448,7 @@ void CPlayerLogoProxy::OnLogoBindInternal( int playerindex )
 		char logohex[ 16 ];
 		Q_binarytohex( (byte *)&info.customFiles[0], sizeof( info.customFiles[0] ), logohex, sizeof( logohex ) );
 
-		Q_snprintf( crcfilename, sizeof( crcfilename ), "temp/%s", logohex );
+		Q_snprintf( crcfilename, sizeof( crcfilename ), "user_custom/%s", logohex );
 
 		texture = materials->FindTexture( crcfilename, TEXTURE_GROUP_DECAL, false );
 		if ( texture )
@@ -485,9 +485,8 @@ IMaterial *CPlayerLogoProxy::GetMaterial()
 	return m_pBaseTextureVar->GetOwningMaterial();
 }
 
-EXPOSE_INTERFACE( CPlayerLogoProxy, IMaterialProxy, "PlayerLogo" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CPlayerLogoProxy, PlayerLogo );
 
-/* @note Tom Bui: This is here for reference, but we don't want people to use it!
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
@@ -520,5 +519,4 @@ void CPlayerLogoOnModelProxy::OnBind( void *pC_BaseEntity )
 	}
 }
 
-EXPOSE_INTERFACE( CPlayerLogoOnModelProxy, IMaterialProxy, "PlayerLogoOnModel" IMATERIAL_PROXY_INTERFACE_VERSION );
-*/
+EXPOSE_MATERIAL_PROXY( CPlayerLogoOnModelProxy, PlayerLogoOnModel );

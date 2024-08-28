@@ -9,9 +9,7 @@
 #ifndef BASEVSSHADER_H
 #define BASEVSSHADER_H
 
-#ifdef _WIN32		   
 #pragma once
-#endif
 
 #include "shaderlib/cshader.h"
 #include "shaderlib/BaseShader.h"

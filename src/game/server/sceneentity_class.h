@@ -6,9 +6,7 @@
 //=============================================================================//
 #ifndef SCENEENTITY_CLASS_H
 #define SCENEENTITY_CLASS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ichoreoeventcallback.h"
 #include "baseentity.h"

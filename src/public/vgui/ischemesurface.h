@@ -8,9 +8,7 @@
 #ifndef ISCHEMESURFACE_H
 #define ISCHEMESURFACE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "vgui_surfacelib/ifontsurface.h"
 #include "appframework/IAppSystem.h"

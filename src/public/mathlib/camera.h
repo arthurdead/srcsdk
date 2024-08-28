@@ -9,9 +9,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <math.h>
 #include <float.h>
@@ -152,14 +150,10 @@ public:
 			fltx4 zTotalBack = MulSIMD( m_frustum.planes[i].nZ, MaskedAssign( m_frustum.planes[i].zSign, minz, maxz ) );
 			fltx4 dotBack = AddSIMD( xTotalBack, AddSIMD(yTotalBack, zTotalBack) );
 			// if plane of the farthest corner is behind the plane, then the box is completely outside this plane
-#if _X360
-			if  ( !XMVector3GreaterOrEqual( dotBack, m_frustum.planes[i].dist ) )
-				return false;
-#else
+
 			fltx4 isOut = CmpLtSIMD( dotBack, m_frustum.planes[i].dist );
 			if ( IsAnyNegative(isOut) )
 				return false;
-#endif
 		}
 		return true;
 	}

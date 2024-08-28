@@ -31,44 +31,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-CRagdollLowViolenceManager g_RagdollLVManager;
-
-void CRagdollLowViolenceManager::SetLowViolence( const char *pMapName )
-{
-	// set the value using the engine's low violence settings
-	m_bLowViolence = UTIL_IsLowViolence();
-
-#if !defined( CLIENT_DLL )
-	// the server doesn't worry about low violence during multiplayer games
-	if ( g_pGameRules && g_pGameRules->IsMultiplayer() )
-	{
-		m_bLowViolence = false;
-	}
-#endif
-
-	// Turn the low violence ragdoll stuff off if we're in the HL2 Citadel maps because
-	// the player has the super gravity gun and fading ragdolls will break things.
-	if( hl2_episodic.GetBool() )
-	{
-		if ( Q_stricmp( pMapName, "ep1_citadel_02" ) == 0 ||
-			Q_stricmp( pMapName, "ep1_citadel_02b" ) == 0 ||
-			Q_stricmp( pMapName, "ep1_citadel_03" ) == 0 )
-		{
-			m_bLowViolence = false;
-		}
-	}
-	else
-	{
-		if ( Q_stricmp( pMapName, "d3_citadel_03" ) == 0 ||
-			Q_stricmp( pMapName, "d3_citadel_04" ) == 0 ||
-			Q_stricmp( pMapName, "d3_citadel_05" ) == 0 ||
-			Q_stricmp( pMapName, "d3_breen_01" ) == 0 )
-		{
-			m_bLowViolence = false;
-		}
-	}
-}
-
 class CRagdollCollisionRules : public IVPhysicsKeyHandler
 {
 public:
@@ -726,8 +688,6 @@ void RagdollSolveSeparation( ragdoll_t &ragdoll, CBaseEntity *pEntity )
 			Vector dir = target-start;
 			if ( dir.LengthSqr() > 1.0f )
 			{
-				// this fixes a bug in ep2 with antlion grubs, but causes problems in TF2 - revisit, but disable for TF now
-#if !defined(TF_CLIENT_DLL)
 				// heuristic: guess that anything separated and small mass ratio is in some state that's 
 				// keeping the solver from fixing it
 				float mass = element.pObject->GetMass();
@@ -741,7 +701,6 @@ void RagdollSolveSeparation( ragdoll_t &ragdoll, CBaseEntity *pEntity )
 					++fixCount;
 					continue;
 				}
-#endif
 
 				if ( PhysHasContactWithOtherInDirection(element.pObject, dir) )
 				{
@@ -806,11 +765,6 @@ void CRagdollLRURetirement::LevelInitPreEntity( void )
 
 bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 {
-	if ( g_RagdollLVManager.IsLowViolence() )
-	{
-		return true;
-	}
-
 #ifdef CLIENT_DLL
 
 	/* we no longer ignore enemies just because they are on fire -- a ragdoll in front of me
@@ -869,13 +823,6 @@ bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 
 
 
-
-//-----------------------------------------------------------------------------
-// Cull stale ragdolls. There is an ifdef here: one version for episodic, 
-// one for everything else.
-//-----------------------------------------------------------------------------
-#ifdef HL2_EPISODIC
-
 void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 {
 	VPROF( "CRagdollLRURetirement::Update" );
@@ -889,11 +836,6 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 		iMaxRagdollCount = g_ragdoll_maxcount.GetInt();
 	}
 
-	// fade them all for the low violence version
-	if ( g_RagdollLVManager.IsLowViolence() )
-	{
-		iMaxRagdollCount = 0;
-	}
 	m_iRagdollCount = 0;
 	m_iSimulatedRagdollCount = 0;
 
@@ -914,12 +856,12 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 			if ( m_LRU.Count() > iMaxRagdollCount )
 			{
 				//Found one, we're done.
-				if ( ShouldRemoveThisRagdoll( m_LRU[i] ) == true )
+				if ( ShouldRemoveThisRagdoll( pRagdoll ) == true )
 				{
 #ifdef CLIENT_DLL
-					m_LRU[ i ]->SUB_Remove();
+					pRagdoll->SUB_Remove();
 #else
-					m_LRU[ i ]->SUB_StartFadeOut( 0 );
+					pRagdoll->SUB_StartFadeOut( 0 );
 #endif
 
 					m_LRU.Remove(i);
@@ -942,9 +884,6 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 	float furthestDistSq = 0;
 #ifdef CLIENT_DLL
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
-#else
-	CBasePlayer  *pPlayer = UTIL_GetLocalPlayer();
-#endif
 
 	if (pPlayer && m_LRU.Count() > iMaxRagdollCount) // find the furthest one algorithm
 	{
@@ -978,14 +917,16 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 			}
 		}
 
-#ifdef CLIENT_DLL
-		m_LRU[ furthestOne ]->SUB_Remove();
-#else
-		m_LRU[ furthestOne ]->SUB_StartFadeOut( 0 );
-#endif
+		CBaseAnimating *pRemoveRagdoll = m_LRU[ furthestOne ].Get();
 
+#ifdef CLIENT_DLL
+		pRemoveRagdoll->SUB_Remove();
+#else
+		pRemoveRagdoll->SUB_StartFadeOut( 0 );
+#endif
 	}
 	else // fall back on old-style pick the oldest one algorithm
+#endif
 	{
 		for ( i = m_LRU.Head(); i < m_LRU.InvalidIndex(); i = next )
 		{
@@ -1002,101 +943,14 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 				continue;
 
 	#ifdef CLIENT_DLL
-			m_LRU[ i ]->SUB_Remove();
+			pRagdoll->SUB_Remove();
 	#else
-			m_LRU[ i ]->SUB_StartFadeOut( 0 );
+			pRagdoll->SUB_StartFadeOut( 0 );
 	#endif
 			m_LRU.Remove(i);
 		}
 	}
 }
-
-#else
-
-void CRagdollLRURetirement::Update( float frametime ) // Non-episodic version
-{
-	VPROF( "CRagdollLRURetirement::Update" );
-	// Compress out dead items
-	int i, next;
-
-	int iMaxRagdollCount = m_iMaxRagdolls;
-
-	if ( iMaxRagdollCount == -1 )
-	{
-		iMaxRagdollCount = g_ragdoll_maxcount.GetInt();
-	}
-
-	// fade them all for the low violence version
-	if ( g_RagdollLVManager.IsLowViolence() )
-	{
-		iMaxRagdollCount = 0;
-	}
-	m_iRagdollCount = 0;
-	m_iSimulatedRagdollCount = 0;
-
-	for ( i = m_LRU.Head(); i < m_LRU.InvalidIndex(); i = next )
-	{
-		next = m_LRU.Next(i);
-		CBaseAnimating *pRagdoll = m_LRU[i].Get();
-		if ( pRagdoll )
-		{
-			m_iRagdollCount++;
-			IPhysicsObject *pObject = pRagdoll->VPhysicsGetObject();
-			if (pObject && !pObject->IsAsleep())
-			{
-				m_iSimulatedRagdollCount++;
-			}
-			if ( m_LRU.Count() > iMaxRagdollCount )
-			{
-				//Found one, we're done.
-				if ( ShouldRemoveThisRagdoll( m_LRU[i] ) == true )
-				{
-#ifdef CLIENT_DLL
-					m_LRU[ i ]->SUB_Remove();
-#else
-					m_LRU[ i ]->SUB_StartFadeOut( 0 );
-#endif
-
-					m_LRU.Remove(i);
-					return;
-				}
-			}
-		}
-		else 
-		{
-			m_LRU.Remove(i);
-		}
-	}
-
-
-	//////////////////////////////
-	///   ORIGINAL ALGORITHM   ///
-	//////////////////////////////
-	// not episodic -- this is the original mechanism
-
-	for ( i = m_LRU.Head(); i < m_LRU.InvalidIndex(); i = next )
-	{
-		if ( m_LRU.Count() <=  iMaxRagdollCount )
-			break;
-
-		next = m_LRU.Next(i);
-
-		CBaseAnimating *pRagdoll = m_LRU[i].Get();
-
-		//Just ignore it until we're done burning/dissolving.
-		if ( pRagdoll && pRagdoll->GetEffectEntity() )
-			continue;
-
-#ifdef CLIENT_DLL
-		m_LRU[ i ]->SUB_Remove();
-#else
-		m_LRU[ i ]->SUB_StartFadeOut( 0 );
-#endif
-		m_LRU.Remove(i);
-	}
-}
-
-#endif // HL2_EPISODIC
 
 //This is pretty hacky, it's only called on the server so it just calls the update method.
 void CRagdollLRURetirement::FrameUpdatePostEntityThink( void )
@@ -1109,11 +963,11 @@ ConVar g_ragdoll_important_maxcount( "g_ragdoll_important_maxcount", "2", FCVAR_
 //-----------------------------------------------------------------------------
 // Move it to the top of the LRU
 //-----------------------------------------------------------------------------
-void CRagdollLRURetirement::MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImportant )
+void CRagdollLRURetirement::MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImportant, float flForcedRetireTime )
 {
 	if ( bImportant )
 	{
-		m_LRUImportantRagdolls.AddToTail( pRagdoll );
+		m_LRUImportantRagdolls.AddToTail( CRagdollEntry( pRagdoll, flForcedRetireTime ) );
 
 		if ( m_LRUImportantRagdolls.Count() > g_ragdoll_important_maxcount.GetInt() )
 		{
@@ -1143,7 +997,7 @@ void CRagdollLRURetirement::MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImpo
 		}
 	}
 
-	m_LRU.AddToTail( pRagdoll );
+	m_LRU.AddToTail( CRagdollEntry( pRagdoll, flForcedRetireTime ) );
 }
 
 
@@ -1163,34 +1017,33 @@ C_EntityDissolve *DissolveEffect( C_BaseEntity *pTarget, float flTime )
 {
 	C_EntityDissolve *pDissolve = new C_EntityDissolve;
 
-	if ( pDissolve->InitializeAsClientEntity( "sprites/blueglow1.vmt", RENDER_GROUP_TRANSLUCENT_ENTITY ) == false )
+	if ( pDissolve->InitializeAsClientEntity() == false )
 	{
-		pDissolve->Release();
+		UTIL_Remove( pDissolve );
 		return NULL;
 	}
 
-	if ( pDissolve != NULL )
-	{
-		pTarget->AddFlag( FL_DISSOLVING );
-		pDissolve->SetParent( pTarget );
-		pDissolve->OnDataChanged( DATA_UPDATE_CREATED );
-		pDissolve->SetAbsOrigin( pTarget->GetAbsOrigin() );
+	pDissolve->SetModel( "sprites/blueglow1.vmt" );
 
-		pDissolve->m_flStartTime = flTime;
-		pDissolve->m_flFadeOutStart = DEFAULT_FADE_START;
-		pDissolve->m_flFadeOutModelStart = DEFAULT_MODEL_FADE_START;
-		pDissolve->m_flFadeOutModelLength = DEFAULT_MODEL_FADE_LENGTH;
-		pDissolve->m_flFadeInLength = DEFAULT_FADEIN_LENGTH;
-		
-		pDissolve->m_nDissolveType = 0;
-		pDissolve->m_flNextSparkTime = 0.0f;
-		pDissolve->m_flFadeOutLength = 0.0f;
-		pDissolve->m_flFadeInStart = 0.0f;
+	pTarget->AddFlag( FL_DISSOLVING );
+	pDissolve->SetParent( pTarget );
+	pDissolve->OnDataChanged( DATA_UPDATE_CREATED );
+	pDissolve->SetAbsOrigin( pTarget->GetAbsOrigin() );
 
-		// Let this entity know it needs to delete itself when it's done
-		pDissolve->SetServerLinkState( false );
-		pTarget->SetEffectEntity( pDissolve );
-	}
+	pDissolve->m_flStartTime = flTime;
+	pDissolve->m_flFadeOutStart = DEFAULT_FADE_START;
+	pDissolve->m_flFadeOutModelStart = DEFAULT_MODEL_FADE_START;
+	pDissolve->m_flFadeOutModelLength = DEFAULT_MODEL_FADE_LENGTH;
+	pDissolve->m_flFadeInLength = DEFAULT_FADEIN_LENGTH;
+	
+	pDissolve->m_nDissolveType = 0;
+	pDissolve->m_flNextSparkTime = 0.0f;
+	pDissolve->m_flFadeOutLength = 0.0f;
+	pDissolve->m_flFadeInStart = 0.0f;
+
+	// Let this entity know it needs to delete itself when it's done
+	pDissolve->SetServerLinkState( false );
+	pTarget->SetEffectEntity( pDissolve );
 
 	return pDissolve;
 
@@ -1200,43 +1053,38 @@ C_EntityFlame *FireEffect( C_BaseAnimating *pTarget, C_BaseEntity *pServerFire, 
 {
 	C_EntityFlame *pFire = new C_EntityFlame;
 
-	if ( pFire->InitializeAsClientEntity( NULL, RENDER_GROUP_TRANSLUCENT_ENTITY ) == false )
+	if ( pFire->InitializeAsClientEntity() == false )
 	{
-		pFire->Release();
+		UTIL_Remove( pFire );
 		return NULL;
 	}
 
-	if ( pFire != NULL )
+	pFire->RemoveFromLeafSystem();
+	
+	pTarget->AddFlag( FL_ONFIRE );
+	pFire->SetParent( pTarget );
+	pFire->m_hEntAttached = (C_BaseEntity *) pTarget;
+
+	pFire->OnDataChanged( DATA_UPDATE_CREATED );
+	pFire->SetAbsOrigin( pTarget->GetAbsOrigin() );
+
+	if ( pServerFire )
 	{
-		pFire->RemoveFromLeafSystem();
-		
-		pTarget->AddFlag( FL_ONFIRE );
-		pFire->SetParent( pTarget );
-		pFire->m_hEntAttached = (C_BaseEntity *) pTarget;
-
-		pFire->OnDataChanged( DATA_UPDATE_CREATED );
-		pFire->SetAbsOrigin( pTarget->GetAbsOrigin() );
-
-#ifdef HL2_EPISODIC
-		if ( pServerFire )
+		if ( pServerFire->IsEffectActive(EF_DIMLIGHT) )
 		{
-			if ( pServerFire->IsEffectActive(EF_DIMLIGHT) )
-			{
-				pFire->AddEffects( EF_DIMLIGHT );
-			}
-			if ( pServerFire->IsEffectActive(EF_BRIGHTLIGHT) )
-			{
-				pFire->AddEffects( EF_BRIGHTLIGHT );
-			}
+			pFire->AddEffects( EF_DIMLIGHT );
 		}
-#endif
-
-		//Play a sound
-		CPASAttenuationFilter filter( pTarget );
-		pTarget->EmitSound( filter, pTarget->GetSoundSourceIndex(), "General.BurningFlesh" );
-
-		pFire->SetNextClientThink( gpGlobals->curtime + 7.0f );
+		if ( pServerFire->IsEffectActive(EF_BRIGHTLIGHT) )
+		{
+			pFire->AddEffects( EF_BRIGHTLIGHT );
+		}
 	}
+
+	//Play a sound
+	CPASAttenuationFilter filter( pTarget );
+	pTarget->EmitSound( filter, pTarget->GetSoundSourceIndex(), "General.BurningFlesh" );
+
+	pFire->SetContextThink( &C_EntityFlame::RemoveThink, gpGlobals->curtime + 7.0f, "RemoveThink" );
 
 	return pFire;
 }
@@ -1280,9 +1128,10 @@ void C_BaseAnimating::TransferDissolveFrom( C_BaseAnimating *pSource )
 				if ( pDissolve )
 				{
 					pDissolve->SetRenderMode( pDissolveChild->GetRenderMode() );
-					pDissolve->m_nRenderFX = pDissolveChild->m_nRenderFX;
-					pDissolve->SetRenderColor( 255, 255, 255, 255 );
-					pDissolveChild->SetRenderColorA( 0 );
+					pDissolve->SetRenderFX( pDissolveChild->GetRenderFX() );
+					pDissolve->SetRenderColor( 255, 255, 255 );
+					pDissolve->SetRenderAlpha( 255 );
+					pDissolveChild->SetRenderAlpha( 0 );
 
 					pDissolve->m_vDissolverOrigin = pDissolveChild->m_vDissolverOrigin;
 					pDissolve->m_nDissolveType = pDissolveChild->m_nDissolveType;

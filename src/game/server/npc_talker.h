@@ -15,13 +15,11 @@
 #include <time.h>
 #endif
 
-#ifndef _XBOX
 #undef min
 #undef max
 #pragma warning(push)
 #include <set>
 #pragma warning(pop)
-#endif
 
 #pragma once
 

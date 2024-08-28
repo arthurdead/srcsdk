@@ -8,9 +8,7 @@
 
 #ifndef MATERIALSUB_H
 #define MATERIALSUB_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 extern bool g_ReplaceMaterials;
 

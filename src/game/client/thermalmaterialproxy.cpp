@@ -9,6 +9,9 @@
 #include "materialsystem/imaterial.h"
 #include "materialsystem/imaterialvar.h"
 
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 void HueToRGB( float frac, Vector& color );
 
 // $ThermalVar : name of variable to run Thermal wave on (can either be a color or a float)
@@ -102,4 +105,4 @@ return;
 	m_ThermalVar->SetVecValue( color[0], color[1], color[2] );
 }
 
-EXPOSE_INTERFACE( CThermalMaterialProxy, IMaterialProxy, "Thermal" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CThermalMaterialProxy, Thermal );

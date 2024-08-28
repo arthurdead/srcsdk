@@ -28,17 +28,6 @@
 
 #define STUDIO_ENABLE_PERF_COUNTERS
 
-#define STUDIO_SEQUENCE_ACTIVITY_LOOKUPS_ARE_SLOW 0 
-// If this is set to 1, then the activity->sequence mapping inside
-// the CStudioHdr will not be initialized until the first call to 
-// SelectWeightedSequence() or HaveSequenceForActivity(). If set 
-// to zero, the mapping will be initialized from CStudioHdr::Init()
-// (itself called from the constructor). 
-// As of June 4 2007, this was set to 1 because physics, among other
-// systems, extemporaneously declares CStudioHdrs inside local function
-// scopes without querying their activity/sequence mapping at all.
-#define STUDIO_SEQUENCE_ACTIVITY_LAZY_INITIALIZE 1
-
 //-----------------------------------------------------------------------------
 // forward declarations
 //-----------------------------------------------------------------------------
@@ -67,15 +56,9 @@ Studio models are position independent, so the cache manager can move them.
 
 #define STUDIO_VERSION		48
 
-#ifndef _XBOX
 #define MAXSTUDIOTRIANGLES	65536	// TODO: tune this
 #define MAXSTUDIOVERTS		65536	// TODO: tune this
 #define	MAXSTUDIOFLEXVERTS	10000	// max number of verts that can be flexed per mesh.  TODO: tune this
-#else
-#define MAXSTUDIOTRIANGLES	25000
-#define MAXSTUDIOVERTS		10000
-#define	MAXSTUDIOFLEXVERTS	1000
-#endif
 #define MAXSTUDIOSKINS		32		// total textures
 #define MAXSTUDIOBONES		128		// total bones actually used
 #define MAXSTUDIOFLEXDESC	1024	// maximum number of low level flexes (actual morph targets)
@@ -103,6 +86,8 @@ struct mstudiodata_t
 #define STUDIO_PROC_AIMATBONE	3
 #define STUDIO_PROC_AIMATATTACH 4
 #define STUDIO_PROC_JIGGLE 5
+#define STUDIO_PROC_TWIST_MASTER 6
+#define STUDIO_PROC_TWIST_SLAVE 7	// Multiple twist bones are computed at once for the same parent/child combo so TWIST_NULL do nothing
 
 struct mstudioaxisinterpbone_t
 {
@@ -232,6 +217,48 @@ private:
 	mstudioaimatbone_t(const mstudioaimatbone_t& vOther);
 };
 
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+struct mstudiotwistbonetarget_t
+{
+	DECLARE_BYTESWAP_DATADESC();
+
+	int				m_nBone;
+	float			m_flWeight;
+	Vector			m_vBaseTranslate;
+	Quaternion		m_qBaseRotation;
+
+	mstudiotwistbonetarget_t() {}
+private:
+	// No copy constructors allowed
+	mstudiotwistbonetarget_t( const mstudiotwistbonetarget_t &vOther );
+};
+
+
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+struct mstudiotwistbone_t
+{
+	DECLARE_BYTESWAP_DATADESC();
+
+	bool			m_bInverse;				// False: Apply child rotation to twist targets True: Apply parent rotation to twist targets
+	Vector			m_vUpVector;			// In parent space, projected into plane defined by vector between parent & child
+	int				m_nParentBone;
+	Quaternion		m_qBaseInv;	// The base rotation of the parent, used if m_bInverse is true
+	int				m_nChildBone;
+
+	int				m_nTargetCount;
+	int				m_nTargetIndex;
+	inline mstudiotwistbonetarget_t *pTarget( int i ) const { return ( mstudiotwistbonetarget_t * )( ( ( byte * )this) + m_nTargetIndex ) + i; }
+
+	mstudiotwistbone_t() {}
+private:
+	// No copy constructors allowed
+	mstudiotwistbone_t( const mstudiotwistbone_t &vOther );
+};
+
 // bones
 struct mstudiobone_t
 {
@@ -282,25 +309,25 @@ struct mstudiolinearbone_t
 	inline int parent( int i ) const { Assert( i >= 0 && i < numbones); return *((int *)(((byte *)this) + parentindex) + i); };
 
 	int	posindex;
-	inline Vector pos( int i ) const { Assert( i >= 0 && i < numbones); return *((Vector *)(((byte *)this) + posindex) + i); };
+	inline const Vector &pos( int i ) const { Assert( i >= 0 && i < numbones); return *((Vector *)(((byte *)this) + posindex) + i); };
 
 	int quatindex;
-	inline Quaternion quat( int i ) const { Assert( i >= 0 && i < numbones); return *((Quaternion *)(((byte *)this) + quatindex) + i); };
+	inline const Quaternion &quat( int i ) const { Assert( i >= 0 && i < numbones); return *((Quaternion *)(((byte *)this) + quatindex) + i); };
 
 	int rotindex;
-	inline RadianEuler rot( int i ) const { Assert( i >= 0 && i < numbones); return *((RadianEuler *)(((byte *)this) + rotindex) + i); };
+	inline const RadianEuler &rot( int i ) const { Assert( i >= 0 && i < numbones); return *((RadianEuler *)(((byte *)this) + rotindex) + i); };
 
 	int posetoboneindex;
-	inline matrix3x4_t poseToBone( int i ) const { Assert( i >= 0 && i < numbones); return *((matrix3x4_t *)(((byte *)this) + posetoboneindex) + i); };
+	inline const matrix3x4_t &poseToBone( int i ) const { Assert( i >= 0 && i < numbones); return *((matrix3x4_t *)(((byte *)this) + posetoboneindex) + i); };
 
 	int	posscaleindex;
-	inline Vector posscale( int i ) const { Assert( i >= 0 && i < numbones); return *((Vector *)(((byte *)this) + posscaleindex) + i); };
+	inline const Vector &posscale( int i ) const { Assert( i >= 0 && i < numbones); return *((Vector *)(((byte *)this) + posscaleindex) + i); };
 
 	int	rotscaleindex;
-	inline Vector rotscale( int i ) const { Assert( i >= 0 && i < numbones); return *((Vector *)(((byte *)this) + rotscaleindex) + i); };
+	inline const Vector &rotscale( int i ) const { Assert( i >= 0 && i < numbones); return *((Vector *)(((byte *)this) + rotscaleindex) + i); };
 
 	int	qalignmentindex;
-	inline Quaternion qalignment( int i ) const { Assert( i >= 0 && i < numbones); return *((Quaternion *)(((byte *)this) + qalignmentindex) + i); };
+	inline const Quaternion &qalignment( int i ) const { Assert( i >= 0 && i < numbones); return *((Quaternion *)(((byte *)this) + qalignmentindex) + i); };
 
 	int unused[6];
 
@@ -399,7 +426,8 @@ private:
 #define BONE_FIXED_ALIGNMENT		0x00100000	// bone can't spin 360 degrees, all interpolation is normalized around a fixed orientation
 
 #define BONE_HAS_SAVEFRAME_POS		0x00200000	// Vector48
-#define BONE_HAS_SAVEFRAME_ROT		0x00400000	// Quaternion64
+#define BONE_HAS_SAVEFRAME_ROT64	0x00400000	// Quaternion64
+#define BONE_HAS_SAVEFRAME_ROT32	0x00800000	// Quaternion32
 
 // bone controllers
 struct mstudiobonecontroller_t
@@ -425,7 +453,7 @@ struct mstudiobbox_t
 	int					szhitboxnameindex;	// offset to the name of the hitbox.
 	int					unused[8];
 
-	const char* pszHitboxName()
+	const char* pszHitboxName() const
 	{
 		if( szhitboxnameindex == 0 )
 			return "";
@@ -456,18 +484,61 @@ struct mstudiomodelgrouplookup_t
 	int					indexwithingroup;
 };
 
+#define AE_TYPE_NEWEVENTSYSTEM  ( 1 << 10 ) //Temporary flag.
+
 // events
 struct mstudioevent_t
 {
 	DECLARE_BYTESWAP_DATADESC();
 	float				cycle;
-	int					event;
+
+#ifdef CLIENT_DLL
+	union
+	{
+		// Client shares with the high word
+		unsigned short	_event_highword;
+		unsigned short	event_newsystem;
+	};
+	unsigned short	_event_lowword;		// Placeholder for the low word
+#else
+	unsigned short	_event_highword;	// Placeholder for the high word
+	union
+	{
+		// Server shares with the low word
+		unsigned short	_event_lowword;
+		unsigned short	event_newsystem;
+	};
+#endif
+
 	int					type;
 	inline const char * pszOptions( void ) const { return options; }
 	char				options[64];
 
 	int					szeventindex;
 	inline char * const pszEventName( void ) const { return ((char *)this) + szeventindex; }
+
+	// For setting and getting through Event, check the AE_TYPE_NEWEVENTSYSTEM flag to decide
+	// if we should set/get just the short used by the client/server or use the whole int.
+	int Event_OldSystem( void ) const { return *static_cast< const int* >( static_cast< const void* >( &_event_highword ) ); }
+	void Event_OldSystem( int nEvent ) { *static_cast< int* >( static_cast< void* >( &_event_highword ) ) = nEvent; }
+	int Event( void ) const
+	{
+		if ( type & AE_TYPE_NEWEVENTSYSTEM )
+			return event_newsystem;
+
+		return Event_OldSystem();
+	}
+	void Event( int nEvent )
+	{
+		if ( type & AE_TYPE_NEWEVENTSYSTEM )
+		{
+			event_newsystem = nEvent;
+		}
+		else
+		{
+			Event_OldSystem( nEvent );
+		}
+	}
 };
 
 #define	ATTACHMENT_FLAG_WORLD_ALIGN 0x10000
@@ -570,6 +641,15 @@ private:
 	mstudioikrule_t(const mstudioikrule_t& vOther);
 };
 
+struct mstudioikrulezeroframe_t
+{
+	short		chain;
+	short		slot;
+	float16		start;	// beginning of influence
+	float16		peak;	// start of full influence
+	float16		tail;	// end of full influence
+	float16		end;	// end of all influence
+};
 
 struct mstudioiklock_t
 {
@@ -649,6 +729,28 @@ struct mstudioanim_t
 
 	short				nextoffset;
 	inline mstudioanim_t	*pNext( void ) const { if (nextoffset != 0) return  (mstudioanim_t *)(((byte *)this) + nextoffset); else return NULL; };
+};
+
+#define STUDIO_FRAME_RAWPOS		0x01 // Vector48 in constants
+#define STUDIO_FRAME_RAWROT		0x02 // Quaternion48 in constants
+#define STUDIO_FRAME_ANIMPOS	0x04 // Vector48 in framedata
+#define STUDIO_FRAME_ANIMROT	0x08 // Quaternion48 in framedata
+#define STUDIO_FRAME_FULLANIMPOS	0x10 // Vector in framedata
+
+struct mstudio_frame_anim_t
+{
+	DECLARE_BYTESWAP_DATADESC();
+
+	inline byte		*pBoneFlags( void ) const { return (((byte *)this) + sizeof( struct mstudio_frame_anim_t )); };
+	
+	int				constantsoffset;
+	inline byte		*pConstantData( void ) const { return (((byte *)this) + constantsoffset); };
+
+	int				frameoffset;
+	int 			framelength;
+	inline byte		*pFrameData( int iFrame  ) const { return (((byte *)this) + frameoffset + iFrame * framelength); };
+
+	int				unused[3];
 };
 
 struct mstudiomovement_t
@@ -1262,6 +1364,11 @@ struct mstudioikchain_t
 
 struct mstudioiface_t
 {
+	mstudioiface_t()
+	{
+		a = b = c = 0xFFFF;
+	}
+
 	unsigned short a, b, c;		// Indices to vertices
 };
 
@@ -1669,28 +1776,16 @@ public:
 
 struct virtualsequence_t
 {
-#ifdef _XBOX
-	short flags;
-	short activity;
-	short group;
-	short index;
-#else
 	int	flags;
 	int activity;
 	int group;
 	int index;
-#endif
 };
 
 struct virtualgeneric_t
 {
-#ifdef _XBOX
-	short group;
-	short index;
-#else
 	int group;
 	int index;
-#endif
 };
 
 
@@ -1834,24 +1929,39 @@ private:
 		UnpackNormal_UBYTE4( &packedNormal, pNormal->Base() );
 	}
 
-	void GetBoneWeights( int vertIndex, mstudioboneweight_t *pBoneWeights ) const
+	void GetBoneWeights( int vertIndex, mstudioboneweight_t * RESTRICT pBoneWeights ) const
 	{
 		Assert( pBoneWeights );
 		Assert( ( m_numBoneInfluences <= 1 ) || ( m_boneWeights != NULL ) );
 		Assert( ( m_numBoneInfluences <= 0 ) || ( m_boneIndices != NULL ) );
 		int    numStoredWeights = max( 0, ( m_numBoneInfluences - 1 ) );
-		float *pBaseWeight	= m_boneWeights + vertIndex*numStoredWeights;
-		char  *pBaseIndex	= m_boneIndices + vertIndex*m_numBoneInfluences;
+		float * RESTRICT pBaseWeight	= m_boneWeights + vertIndex*numStoredWeights;
+		char  * RESTRICT pBaseIndex	= m_boneIndices + vertIndex*m_numBoneInfluences;
 		float  sum			= 0.0f;
 		for (int i = 0;i < MAX_NUM_BONES_PER_VERT;i++)
 		{
+			float weight;
 			if ( i < ( m_numBoneInfluences - 1 ) )
+			{
+				weight = pBaseWeight[i];
+				sum += weight;
+			}
+			else
+			{
+				weight = 1.0f - sum;
+				sum = 1.0f;
+			}
+
+			pBoneWeights->weight[i] = weight;
+			pBoneWeights->bone[i] = ( i < m_numBoneInfluences ) ? pBaseIndex[i] : 0;
+
+			/*if ( i < ( m_numBoneInfluences - 1 ) )
 				pBoneWeights->weight[i] = pBaseWeight[i];
 			else
 				pBoneWeights->weight[i] = 1.0f - sum;
 			sum += pBoneWeights->weight[i];
 
-			pBoneWeights->bone[i] = ( i < m_numBoneInfluences ) ? pBaseIndex[i] : 0;
+			pBoneWeights->bone[i] = ( i < m_numBoneInfluences ) ? pBaseIndex[i] : 0;*/
 		}
 
 		// Treat 'zero weights' as '100% binding to bone zero':
@@ -1870,11 +1980,45 @@ private:
 // Position independent flat data for cache manager
 // ----------------------------------------------------------
 
+// ----------------------------------------------------------
+// Studio Model Stream Data File
+// ----------------------------------------------------------
+
+// little-endian "IDSS"
+#define MODEL_STREAM_FILE_ID		(('S'<<24)+('S'<<16)+('D'<<8)+'I')
+#define MODEL_STREAM_FILE_VERSION	1
+
+struct vertexStreamFileHeader_t
+{
+	DECLARE_BYTESWAP_DATADESC();
+	int		id;								// MODEL_STREAM_FILE_ID
+	int		version;						// MODEL_STREAM_FILE_VERSION
+	long	checksum;						// same as studiohdr_t, ensures sync
+	long	flags;							// flags
+	int		numVerts;						// number of vertices
+	int		uv2StreamStart;					// offset from base to uv2 stream
+	int		uv2ElementSize;					// size of each uv2 element
+	int		pad;							// pad
+
+public:
+
+	// Accessor to uv2 stream
+	const void *GetStreamUv2() const
+	{
+		if ( ( id == MODEL_STREAM_FILE_ID ) && ( uv2StreamStart != 0 ) )
+			return ( void * ) ( uv2StreamStart + (byte *)this );
+		else
+			return NULL;
+	}
+};
+
 // little-endian "IDSV"
 #define MODEL_VERTEX_FILE_ID		(('V'<<24)+('S'<<16)+('D'<<8)+'I')
 #define MODEL_VERTEX_FILE_VERSION	4
 // this id (IDCV) is used once the vertex data has been compressed (see CMDLCache::CreateThinVertexes)
 #define MODEL_VERTEX_FILE_THIN_ID	(('V'<<24)+('C'<<16)+('D'<<8)+'I')
+// this id (IDDV) is used once the vertex data has been discarded (see CMDLCache::CreateNullVertexes)
+#define MODEL_VERTEX_FILE_NULL_ID	(('V'<<24)+('D'<<16)+('D'<<8)+'I')
 
 struct vertexFileHeader_t
 {
@@ -1957,75 +2101,81 @@ struct vertexFileFixup_t
 };
 
 // This flag is set if no hitbox information was specified
-#define STUDIOHDR_FLAGS_AUTOGENERATED_HITBOX				0x00000001
+#define STUDIOHDR_FLAGS_AUTOGENERATED_HITBOX				( 1 << 0 )
 
 // NOTE:  This flag is set at loadtime, not mdl build time so that we don't have to rebuild
 // models when we change materials.
-#define STUDIOHDR_FLAGS_USES_ENV_CUBEMAP					0x00000002
+#define STUDIOHDR_FLAGS_USES_ENV_CUBEMAP					( 1 << 1 )
 
 // Use this when there are translucent parts to the model but we're not going to sort it 
-#define STUDIOHDR_FLAGS_FORCE_OPAQUE						0x00000004
+#define STUDIOHDR_FLAGS_FORCE_OPAQUE						( 1 << 2 )
 
 // Use this when we want to render the opaque parts during the opaque pass
 // and the translucent parts during the translucent pass
-#define STUDIOHDR_FLAGS_TRANSLUCENT_TWOPASS					0x00000008
+#define STUDIOHDR_FLAGS_TRANSLUCENT_TWOPASS					( 1 << 3 )
 
 // This is set any time the .qc files has $staticprop in it
 // Means there's no bones and no transforms
-#define STUDIOHDR_FLAGS_STATIC_PROP							0x00000010
+#define STUDIOHDR_FLAGS_STATIC_PROP							( 1 << 4 )
 
 // NOTE:  This flag is set at loadtime, not mdl build time so that we don't have to rebuild
 // models when we change materials.
-#define STUDIOHDR_FLAGS_USES_FB_TEXTURE						0x00000020
+#define STUDIOHDR_FLAGS_USES_FB_TEXTURE						( 1 << 5 )
 
 // This flag is set by studiomdl.exe if a separate "$shadowlod" entry was present
 //  for the .mdl (the shadow lod is the last entry in the lod list if present)
-#define STUDIOHDR_FLAGS_HASSHADOWLOD						0x00000040
+#define STUDIOHDR_FLAGS_HASSHADOWLOD						( 1 << 6 )
 
 // NOTE:  This flag is set at loadtime, not mdl build time so that we don't have to rebuild
 // models when we change materials.
-#define STUDIOHDR_FLAGS_USES_BUMPMAPPING					0x00000080
+#define STUDIOHDR_FLAGS_USES_BUMPMAPPING					( 1 << 7 )
 
 // NOTE:  This flag is set when we should use the actual materials on the shadow LOD
 // instead of overriding them with the default one (necessary for translucent shadows)
-#define STUDIOHDR_FLAGS_USE_SHADOWLOD_MATERIALS				0x00000100
+#define STUDIOHDR_FLAGS_USE_SHADOWLOD_MATERIALS				( 1 << 8 )
 
 // NOTE:  This flag is set when we should use the actual materials on the shadow LOD
 // instead of overriding them with the default one (necessary for translucent shadows)
-#define STUDIOHDR_FLAGS_OBSOLETE							0x00000200
+#define STUDIOHDR_FLAGS_OBSOLETE							( 1 << 9 )
 
-#define STUDIOHDR_FLAGS_UNUSED								0x00000400
+#define STUDIOHDR_FLAGS_UNUSED								( 1 << 10 )
 
 // NOTE:  This flag is set at mdl build time
-#define STUDIOHDR_FLAGS_NO_FORCED_FADE						0x00000800
+#define STUDIOHDR_FLAGS_NO_FORCED_FADE						( 1 << 11 )
 
 // NOTE:  The npc will lengthen the viseme check to always include two phonemes
-#define STUDIOHDR_FLAGS_FORCE_PHONEME_CROSSFADE				0x00001000
+#define STUDIOHDR_FLAGS_FORCE_PHONEME_CROSSFADE				( 1 << 12 )
 
 // This flag is set when the .qc has $constantdirectionallight in it
 // If set, we use constantdirectionallightdot to calculate light intensity
 // rather than the normal directional dot product
 // only valid if STUDIOHDR_FLAGS_STATIC_PROP is also set
-#define STUDIOHDR_FLAGS_CONSTANT_DIRECTIONAL_LIGHT_DOT		0x00002000
+#define STUDIOHDR_FLAGS_CONSTANT_DIRECTIONAL_LIGHT_DOT		( 1 << 13 )
 
 // Flag to mark delta flexes as already converted from disk format to memory format
-#define STUDIOHDR_FLAGS_FLEXES_CONVERTED					0x00004000
+#define STUDIOHDR_FLAGS_FLEXES_CONVERTED					( 1 << 14 )
 
 // Indicates the studiomdl was built in preview mode
-#define STUDIOHDR_FLAGS_BUILT_IN_PREVIEW_MODE				0x00008000
+#define STUDIOHDR_FLAGS_BUILT_IN_PREVIEW_MODE				( 1 << 15 )
 
 // Ambient boost (runtime flag)
-#define STUDIOHDR_FLAGS_AMBIENT_BOOST						0x00010000
+#define STUDIOHDR_FLAGS_AMBIENT_BOOST						( 1 << 16 )
 
 // Don't cast shadows from this model (useful on first-person models)
-#define STUDIOHDR_FLAGS_DO_NOT_CAST_SHADOWS					0x00020000
+#define STUDIOHDR_FLAGS_DO_NOT_CAST_SHADOWS					( 1 << 17 )
 
 // alpha textures should cast shadows in vrad on this model (ONLY prop_static!)
-#define STUDIOHDR_FLAGS_CAST_TEXTURE_SHADOWS				0x00040000
+#define STUDIOHDR_FLAGS_CAST_TEXTURE_SHADOWS				( 1 << 18 )
 
+
+// If flag is set then studiohdr_t.flVertAnimFixedPointScale contains the
+// scale value for fixed point vert anim data, if not set then the
+// scale value is the default of 1.0 / 4096.0.  Regardless use
+// studiohdr_t::VertAnimFixedPointScale() to always retrieve the scale value
+#define STUDIOHDR_FLAGS_VERT_ANIM_FIXED_POINT_SCALE			( 1 << 19 )
 
 // flagged on load to indicate no animation events on this model
-#define STUDIOHDR_FLAGS_VERT_ANIM_FIXED_POINT_SCALE			0x00200000
+#define STUDIOHDR_FLAGS_NO_ANIM_EVENTS			( 1 << 19 )
 
 // NOTE! Next time we up the .mdl file format, remove studiohdr2_t
 // and insert all fields in this structure into studiohdr_t.
@@ -2492,10 +2642,14 @@ public:
 	float GetSequenceCycleRate( int iSequence );
 
 	void				RunFlexRules( const float *src, float *dest );
+	void				RunFlexRulesOld( const float *src, float *dest );
+	void				RunFlexRulesNew( const float *src, float *dest );
 
 
 public:
 	inline int boneFlags( int iBone ) const { return m_boneFlags[ iBone ]; }
+	inline void setBoneFlags( int iBone, int flags ) { m_boneFlags[ iBone ] |= flags; }
+	inline void clearBoneFlags( int iBone, int flags ) { m_boneFlags[ iBone ] &= ~flags; }
 	inline int boneParent( int iBone ) const { return m_boneParent[ iBone ]; }
 
 private:
@@ -2585,9 +2739,7 @@ public:
 		// ctor
 		CActivityToSequenceMapping( void ) 
 			: m_pSequenceTuples(NULL), m_iSequenceTuplesCount(0), m_ActToSeqHash(8,0,0), m_expectedPStudioHdr(NULL), m_expectedVModel(NULL) 
-#if STUDIO_SEQUENCE_ACTIVITY_LAZY_INITIALIZE
 			, m_bIsInitialized(false) 
-#endif
 		{};
 
 		// dtor -- not virtual because this class has no inheritors
@@ -2613,9 +2765,7 @@ public:
 		/// The number of sequences available for an activity.
 		int NumSequencesForActivity( int forActivity );
 
-#if STUDIO_SEQUENCE_ACTIVITY_LAZY_INITIALIZE
 		inline bool IsInitialized( void ) { return m_bIsInitialized; }
-#endif
 
 	private:
 
@@ -2635,9 +2785,7 @@ public:
 		// Actually a big array, into which the hash values index.
 		SequenceTuple *m_pSequenceTuples;
 		unsigned int m_iSequenceTuplesCount; // (size of the whole array)
-#if STUDIO_SEQUENCE_ACTIVITY_LAZY_INITIALIZE
 		bool m_bIsInitialized;
-#endif
 
 		// we don't store an outer pointer because we can't initialize it at construction time
 		// (warning c4355) -- there are ways around this but it's easier to just pass in a 
@@ -2665,39 +2813,33 @@ public:
 	/// Returns -1 on failure to find a sequence
 	inline int SelectWeightedSequence( int activity, int curSequence )
 	{
-#if STUDIO_SEQUENCE_ACTIVITY_LAZY_INITIALIZE
 		// We lazy-initialize the header on demand here, because CStudioHdr::Init() is
 		// called from the constructor, at which time the this pointer is illegitimate.
 		if ( !m_ActivityToSequence.IsInitialized() )
 		{
 			m_ActivityToSequence.Initialize(this);
 		}
-#endif
 		return m_ActivityToSequence.SelectWeightedSequence( this, activity, curSequence );
 	}
 
 	inline int SelectWeightedSequenceFromModifiers( int activity, CUtlSymbol *pActivityModifiers, int iModifierCount )
 	{
-#if STUDIO_SEQUENCE_ACTIVITY_LAZY_INITIALIZE
 		// We lazy-initialize the header on demand here, because CStudioHdr::Init() is
 		// called from the constructor, at which time the this pointer is illegitimate.
 		if ( !m_ActivityToSequence.IsInitialized() )
 		{
 			m_ActivityToSequence.Initialize( this );
 		}
-#endif
 		return m_ActivityToSequence.SelectWeightedSequenceFromModifiers( this, activity, pActivityModifiers, iModifierCount );
 	}
 
 	/// True iff there is at least one sequence for the given activity.
 	inline bool HaveSequenceForActivity( int activity )	
 	{
-#if STUDIO_SEQUENCE_ACTIVITY_LAZY_INITIALIZE
 		if ( !m_ActivityToSequence.IsInitialized() )
 		{
 			m_ActivityToSequence.Initialize(this);
 		}
-#endif
 		return (m_ActivityToSequence.NumSequencesForActivity( activity ) > 0);
 	}
 
@@ -2998,7 +3140,8 @@ inline const mstudioflexcontroller_t *mstudioflexcontrollerui_t::pController( in
 #define STUDIO_AL_LOCAL		0x1000		// layer is a local context sequence
 //							0x2000
 #define STUDIO_AL_POSE		0x4000		// layer blends using a pose parameter instead of parent cycle
-
+#define STUDIO_NOFORCELOOP 0x8000	// do not force the animation loop
+#define STUDIO_EVENT_CLIENT 0x10000	// Has been updated at runtime to event index on client
 
 // Insert this code anywhere that you need to allow for conversion from an old STUDIO_VERSION
 // to a new one.

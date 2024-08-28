@@ -6,9 +6,7 @@
 
 #ifndef MACRO_TEXTURE_H
 #define MACRO_TEXTURE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "mathlib/vector.h"

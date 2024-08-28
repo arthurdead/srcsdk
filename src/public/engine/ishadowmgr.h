@@ -26,6 +26,8 @@ struct model_t;
 typedef unsigned short ModelInstanceHandle_t;
 class IClientRenderable;
 class ITexture;
+struct FlashlightInstance_t;
+struct FlashlightState_t;
 
 // change this when the new version is incompatable with the old
 #define ENGINE_SHADOWMGR_INTERFACE_VERSION	"VEngineShadowMgr002"
@@ -39,11 +41,12 @@ enum ShadowFlags_t
 	SHADOW_FLAGS_FLASHLIGHT				= (1 << 0),
 	SHADOW_FLAGS_SHADOW					= (1 << 1),
 	SHADOW_FLAGS_PLAYER_FLASHLIGHT		= (1 << 2),
+	SHADOW_FLAGS_SIMPLE_PROJECTION		= (1 << 3),
 	// Update this if you add flags
-	SHADOW_FLAGS_LAST_FLAG				= SHADOW_FLAGS_SHADOW
+	SHADOW_FLAGS_LAST_FLAG				= SHADOW_FLAGS_SIMPLE_PROJECTION
 };
 
-#define SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SHADOW )
+#define SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SHADOW | SHADOW_FLAGS_PLAYER_FLASHLIGHT | SHADOW_FLAGS_SIMPLE_PROJECTION )
 
 
 //-----------------------------------------------------------------------------
@@ -71,8 +74,9 @@ enum ShadowCreateFlags_t
 {
 	SHADOW_CACHE_VERTS =  ( 1 << 0 ),
 	SHADOW_FLASHLIGHT =   ( 1 << 1 ),
+	SHADOW_SIMPLE_PROJECTION	= ( 1 << 2 ),
 
-	SHADOW_LAST_FLAG = SHADOW_FLASHLIGHT,
+	SHADOW_LAST_FLAG = SHADOW_SIMPLE_PROJECTION,
 };
 
 
@@ -93,6 +97,8 @@ struct ShadowInfo_t
 	Vector2D		m_TexSize;
 	unsigned char	m_FalloffBias;
 };
+
+typedef void (*ShadowDrawCallbackFn_t)( void * );
 
 struct FlashlightState_t;
 

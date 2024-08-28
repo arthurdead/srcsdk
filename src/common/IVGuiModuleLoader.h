@@ -7,9 +7,7 @@
 
 #ifndef IVGUIMODULELOADER_H
 #define IVGUIMODULELOADER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 

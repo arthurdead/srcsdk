@@ -15,6 +15,8 @@
 #include "replay/ireplayscreenshotsystem.h"
 #include "networkvar.h"
 #include "tier1/mempool.h"
+#include "clientleafsystem.h"
+#include "cdll_client_int.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -31,6 +33,7 @@ struct ClientWorldListInfo_t;
 class C_BaseEntity;
 struct WriteReplayScreenshotParams_t;
 class CReplayScreenshotTaker;
+class C_BasePlayer;
 
 #ifdef HL2_EPISODIC
 	class CStunEffect;
@@ -93,7 +96,14 @@ public:
 	double		laststop;
 };
 
-
+struct FadeData_t
+{
+	float	m_flPercentMin;
+	float	m_flPercentMax;
+	float	m_flPixelMin;
+	float	m_flPixelMax;
+	float	m_flWidth;
+};
 
 //-----------------------------------------------------------------------------
 // 
@@ -185,6 +195,22 @@ private:
 	bool m_bPooledAlloc;
 	static CObjectPool<ClientWorldListInfo_t> gm_Pool;
 };
+
+// Frustum cache.
+struct FrustumCache_t
+{
+	int			m_nFrameCount;
+	Frustum_t	m_Frustums;
+
+	FrustumCache_t() { m_nFrameCount = 0; }
+
+	bool IsValid( void ) { return ( m_nFrameCount == gpGlobals->framecount ); }
+	void SetUpdated( void ) { m_nFrameCount = gpGlobals->framecount; }
+
+	void Add( const CViewSetup *pView );
+};
+
+FrustumCache_t *FrustumCache( void );
 
 //-----------------------------------------------------------------------------
 // 
@@ -342,9 +368,14 @@ public:
 	virtual void	OnRenderStart();
 	void			DriftPitch (void);
 
-	static CViewRender *	GetMainView() { return assert_cast<CViewRender *>( view ); }
+	static CViewRender *	GetMainView() { return assert_cast<CViewRender *>( GetViewRenderInstance() ); }
 
 	void			AddViewToScene( CRendering3dView *pView ) { m_SimpleExecutor.AddView( pView ); }
+
+	CMaterialReference &GetWhite();
+
+	virtual void	InitFadeData( void );
+
 protected:
 	// Sets up the view parameters for all views (left, middle and right eyes).
     void            SetUpViews();
@@ -352,30 +383,27 @@ protected:
 	// Sets up the view parameters of map overview mode (cl_leveloverview)
 	void			SetUpOverView();
 
-	// generates a low-res screenshot for save games
-	virtual void	WriteSaveGameScreenshotOfSize( const char *pFilename, int width, int height, bool bCreatePowerOf2Padded = false, bool bWriteVTF = false );
-	void			WriteSaveGameScreenshot( const char *filename );
-
 	virtual IReplayScreenshotSystem *GetReplayScreenshotSystem() { return this; }
 
 	// IReplayScreenshot implementation
 	virtual void	WriteReplayScreenshot( WriteReplayScreenshotParams_t &params );
 	virtual void	UpdateReplayScreenshotCache();
 
-    StereoEye_t		GetFirstEye() const;
-    StereoEye_t		GetLastEye() const;
-    CViewSetup &    GetView(StereoEye_t eEye);
-    const CViewSetup &    GetView(StereoEye_t eEye) const ;
+    CViewSetup &    GetView();
+    const CViewSetup &    GetView() const ;
 
 
 	// This stores all of the view setup parameters that the engine needs to know about.
     // Best way to pick the right one is with ::GetView(), rather than directly.
 	CViewSetup		m_View;         // mono <- in stereo mode, this will be between the two eyes and is the "main" view.
-	CViewSetup		m_ViewLeft;     // left (unused for mono)
-	CViewSetup		m_ViewRight;    // right (unused for mono)
+	bool			m_bAllowViewAccess;
 
 	// Pitch drifting data
 	CPitchDrift		m_PitchDrift;
+
+	virtual void	RenderPreScene( const CViewSetup &view ) { }
+	virtual void	PreViewDrawScene( const CViewSetup &view ) {}
+	virtual void	PostViewDrawScene( const CViewSetup &view ) {}
 
 public:
 					CViewRender();
@@ -389,7 +417,7 @@ public:
 
 	// Render functions
 	virtual	void	Render( vrect_t *rect );
-	virtual void	RenderView( const CViewSetup &view, int nClearFlags, int whatToDraw );
+	virtual void	RenderView( const CViewSetup &view, const CViewSetup &hudViewSetup, int nClearFlags, int whatToDraw );
 	virtual void	RenderPlayerSprites();
 	virtual void	Render2DEffectsPreHUD( const CViewSetup &view );
 	virtual void	Render2DEffectsPostHUD( const CViewSetup &view );
@@ -424,6 +452,7 @@ public:
 	virtual void	QueueOverlayRenderView( const CViewSetup &view, int nClearFlags, int whatToDraw );
 
 	virtual void	GetScreenFadeDistances( float *min, float *max );
+	virtual bool	AllowScreenspaceFade( void ) { return true; }
 
 	virtual C_BaseEntity *GetCurrentlyDrawingEntity();
 	virtual void		  SetCurrentlyDrawingEntity( C_BaseEntity *pEnt );
@@ -495,11 +524,11 @@ private:
 	// Determines what kind of water we're going to use
 	void			DetermineWaterRenderInfo( const VisibleFogVolumeInfo_t &fogVolumeInfo, WaterRenderInfo_t &info );
 
-	bool			UpdateRefractIfNeededByList( CUtlVector< IClientRenderable * > &list );
-	void			DrawRenderablesInList( CUtlVector< IClientRenderable * > &list, int flags = 0 );
+	bool			UpdateRefractIfNeededByList( CViewModelRenderablesList::RenderGroups_t &list );
+	void			DrawRenderablesInList( CViewModelRenderablesList::RenderGroups_t &list, int flags = 0 );
 
 	// Sets up, cleans up the main 3D view
-	void			SetupMain3DView( const CViewSetup &view, int &nClearFlags );
+	void			SetupMain3DView( const CViewSetup &view, const CViewSetup &hudViewSetup, int &nClearFlags, ITexture *pRenderTarget );
 	void			CleanupMain3DView( const CViewSetup &view );
 
 	void			UpdateCascadedShadow( const CViewSetup &view );
@@ -533,9 +562,7 @@ private:
 	int					m_BaseDrawFlags;	// Set in ViewDrawScene and OR'd into m_DrawFlags as it goes.
 	C_BaseEntity		*m_pCurrentlyDrawingEntity;
 
-#if defined( CSTRIKE_DLL )
 	float				m_flLastFOV;
-#endif
 
 #ifdef PORTAL
 	friend class CPortalRender; //portal drawing needs muck with views in weird ways
@@ -550,12 +577,19 @@ private:
 	CBase3dView *m_pActiveRenderer;
 	CSimpleRenderExecutor m_SimpleExecutor;
 
-	bool			m_rbTakeFreezeFrame[ STEREO_EYE_MAX ];
+	bool			m_rbTakeFreezeFrame;
 	float			m_flFreezeFrameUntil;
 
 #if defined( REPLAY_ENABLED )
 	CReplayScreenshotTaker	*m_pReplayScreenshotTaker;
 #endif
+
+	FadeData_t			m_FadeData;
+
+	CMaterialReference	m_WhiteMaterial;
+
+	CON_COMMAND_MEMBER_F( CViewRender, "screenfademinsize", OnScreenFadeMinSize, "Modify global screen fade min size in pixels", FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY );
+	CON_COMMAND_MEMBER_F( CViewRender, "screenfademaxsize", OnScreenFadeMaxSize, "Modify global screen fade max size in pixels", FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY );
 };
 
 #endif // VIEWRENDER_H

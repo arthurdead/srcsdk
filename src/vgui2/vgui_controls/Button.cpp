@@ -319,10 +319,7 @@ void Button::NavigateTo()
 
 	SetArmed( true );
 
-	if ( IsPC() )
-	{
-		RequestFocus( 0 );
-	}
+	RequestFocus( 0 );
 }
 
 //-----------------------------------------------------------------------------

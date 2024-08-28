@@ -16,8 +16,6 @@
 #define AE_TYPE_CLIENT			( 1 << 4 )
 #define AE_TYPE_FACEPOSER		( 1 << 5 )
 
-#define AE_TYPE_NEWEVENTSYSTEM  ( 1 << 10 ) //Temporary flag.
-
 #define AE_NOT_AVAILABLE		-1
 
 typedef enum
@@ -67,6 +65,9 @@ typedef enum
 	AE_SV_DUSTTRAIL,
 
 	AE_CL_CREATE_PARTICLE_EFFECT,
+	AE_CL_STOP_PARTICLE_EFFECT,
+	AE_CL_ADD_PARTICLE_EFFECT_CP,
+	AE_CL_CREATE_PARTICLE_BRASS,
 
 	AE_RAGDOLL,
 

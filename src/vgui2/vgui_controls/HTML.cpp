@@ -758,8 +758,12 @@ void HTML::OnKeyCodeTyped(KeyCode code)
 	}
 	case KEY_F:
 	{
+	#ifdef _OSX
 		if ((input()->IsKeyDown(KEY_LCONTROL) || input()->IsKeyDown(KEY_RCONTROL))
-			|| (IsOSX() && (input()->IsKeyDown(KEY_LWIN) || input()->IsKeyDown(KEY_RWIN))))
+			|| ((input()->IsKeyDown(KEY_LWIN) || input()->IsKeyDown(KEY_RWIN))))
+	#else
+		if ((input()->IsKeyDown(KEY_LCONTROL) || input()->IsKeyDown(KEY_RCONTROL)))
+	#endif
 		{
 			if (!FindDialogVisible())
 			{

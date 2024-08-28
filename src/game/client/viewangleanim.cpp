@@ -23,7 +23,7 @@ CON_COMMAND( viewanim_create, "viewanim_create" )
 {
 	if ( g_pTestAnimation )
 	{
-		delete g_pTestAnimation;
+		UTIL_Remove( g_pTestAnimation );
 		g_pTestAnimation = NULL;
 	}
 
@@ -34,11 +34,15 @@ CON_COMMAND( viewanim_create, "viewanim_create" )
 	}
 
 	g_pTestAnimation = CREATE_ENTITY( CViewAngleAnimation, "viewangleanim" );
-
-	if ( g_pTestAnimation )
-	{
-		g_pTestAnimation->Spawn();
-	}	
+	if(!g_pTestAnimation->InitializeAsClientEntity()) {
+		UTIL_Remove( g_pTestAnimation );
+		g_pTestAnimation = NULL;
+	} else {
+		if(DispatchSpawn( g_pTestAnimation ) != 0) {
+			UTIL_Remove( g_pTestAnimation );
+			g_pTestAnimation = NULL;
+		}
+	}
 }
 
 // run the test animation
@@ -156,7 +160,7 @@ void CViewAngleAnimation::Spawn( void )
 	m_bFinished = true;	// don't run right away
 
 	ClientEntityList().AddNonNetworkableEntity(	this );
-	SetNextClientThink( CLIENT_THINK_ALWAYS );
+	SetContextThink( &CViewAngleAnimation::AnimThink, TICK_ALWAYS_THINK, "AnimThink" );
 }
 
 void CViewAngleAnimation::DeleteKeyFrames()
@@ -271,7 +275,7 @@ void CViewAngleAnimation::RunAnimation( QAngle angles )
 	}
 }
 
-void CViewAngleAnimation::ClientThink()
+void CViewAngleAnimation::AnimThink()
 {
 	if ( IsFinished() )
 		return;

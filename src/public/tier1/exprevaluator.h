@@ -8,9 +8,7 @@
 #ifndef EXPREVALUATOR_H
 #define EXPREVALUATOR_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 static const char OR_OP   = '|';
 static const char AND_OP  = '&';

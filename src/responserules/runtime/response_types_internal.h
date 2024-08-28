@@ -7,9 +7,7 @@
 
 #ifndef RESPONSE_TYPES_INTERNAL_H
 #define RESPONSE_TYPES_INTERNAL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "responserules/response_types.h"
 #include "utldict.h"
@@ -17,6 +15,7 @@
 
 namespace ResponseRules
 {
+	extern const char *ResponseCopyString( const char *in );
 
 	inline unsigned FASTCALL HashStringConventional( const char *pszKey )
 	{
@@ -375,7 +374,7 @@ namespace ResponseRules
 
 		const char *GetElementName( I i )
 		{
-			int k = Key( i );
+			int k = this->Key( i );
 			int slot = m_ReverseMap.Find( k );
 			if ( slot == m_ReverseMap.InvalidIndex() )
 				return "";
@@ -384,7 +383,7 @@ namespace ResponseRules
 
 		const char *GetElementName( I i ) const
 		{
-			int k = Key( i );
+			int k = this->Key( i );
 			int slot = m_ReverseMap.Find( k );
 			if ( slot == m_ReverseMap.InvalidIndex() )
 				return "";

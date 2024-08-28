@@ -12,15 +12,15 @@
 #pragma once
 
 //Animation event codes
-#define CL_EVENT_MUZZLEFLASH0		5001	// Muzzleflash on attachment 0
-#define CL_EVENT_MUZZLEFLASH1		5011	// Muzzleflash on attachment 1
-#define CL_EVENT_MUZZLEFLASH2		5021	// Muzzleflash on attachment 2
-#define CL_EVENT_MUZZLEFLASH3		5031	// Muzzleflash on attachment 3
+#define CL_EVENT_FIRSTPERSON_MUZZLEFLASH0		5001	// Muzzleflash on attachment 0
+#define CL_EVENT_FIRSTPERSON_MUZZLEFLASH1		5011	// Muzzleflash on attachment 1
+#define CL_EVENT_FIRSTPERSON_MUZZLEFLASH2		5021	// Muzzleflash on attachment 2
+#define CL_EVENT_FIRSTPERSON_MUZZLEFLASH3		5031	// Muzzleflash on attachment 3
 #define CL_EVENT_SPARK0				5002	// Spark on attachment 0
-#define CL_EVENT_NPC_MUZZLEFLASH0	5003	// Muzzleflash on attachment 0 for third person views
-#define CL_EVENT_NPC_MUZZLEFLASH1	5013	// Muzzleflash on attachment 1 for third person views
-#define CL_EVENT_NPC_MUZZLEFLASH2	5023	// Muzzleflash on attachment 2 for third person views
-#define CL_EVENT_NPC_MUZZLEFLASH3	5033	// Muzzleflash on attachment 3 for third person views
+#define CL_EVENT_THIRDPERSON_MUZZLEFLASH0	5003	// Muzzleflash on attachment 0 for third person views
+#define CL_EVENT_THIRDPERSON_MUZZLEFLASH1	5013	// Muzzleflash on attachment 1 for third person views
+#define CL_EVENT_THIRDPERSON_MUZZLEFLASH2	5023	// Muzzleflash on attachment 2 for third person views
+#define CL_EVENT_THIRDPERSON_MUZZLEFLASH3	5033	// Muzzleflash on attachment 3 for third person views
 #define CL_EVENT_SOUND				5004	// Emit a sound // NOTE THIS MUST MATCH THE DEFINE AT CBaseEntity::PrecacheModel on the server!!!!!
 #define CL_EVENT_EJECTBRASS1		6001	// Eject a brass shell from attachment 1
 

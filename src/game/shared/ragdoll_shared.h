@@ -8,6 +8,10 @@
 #define RAGDOLL_SHARED_H
 #pragma once
 
+#include "igamesystem.h"
+#include "ehandle.h"
+#include "vcollide_parse.h"
+
 class IPhysicsObject;
 class IPhysicsConstraint;
 class IPhysicsConstraintGroup;
@@ -24,6 +28,13 @@ class CBoneAccessor;
 #include "mathlib/vector.h"
 #include "bone_accessor.h"
 
+#ifdef GAME_DLL
+class CBaseAnimating;
+#else
+#define CBaseAnimating C_BaseAnimating
+class C_BaseAnimating;
+#endif
+
 // UNDONE: Remove and make dynamic?
 #define RAGDOLL_MAX_ELEMENTS	128
 #define RAGDOLL_INDEX_BITS		7			// NOTE 1<<RAGDOLL_INDEX_BITS >= RAGDOLL_MAX_ELEMENTS
@@ -39,15 +50,6 @@ struct ragdollelement_t
 	IPhysicsObject		*pObject;		// all valid elements have an object
 	IPhysicsConstraint	*pConstraint;	// all valid elements have a constraint (except the root)
 	int					parentIndex;
-};
-
-struct ragdollanimatedfriction_t
-{
-	float					flFrictionTimeIn;
-	float					flFrictionTimeOut;
-	float					flFrictionTimeHold;
-	int						iMinAnimatedFriction;
-	int						iMaxAnimatedFriction;
 };
 
 struct ragdoll_t
@@ -77,6 +79,22 @@ struct ragdollparams_t
 	bool		fixedConstraints;
 };
 
+typedef CHandle<CBaseAnimating> CRagdollHandle;
+
+class CRagdollEntry
+{
+public:
+	CRagdollEntry( CBaseAnimating *pRagdoll, float flForcedRetireTime ) : m_hRagdoll( pRagdoll ), m_flForcedRetireTime( flForcedRetireTime )
+	{
+	}
+	CBaseAnimating* Get() { return m_hRagdoll.Get(); }
+	float GetForcedRetireTime() { return m_flForcedRetireTime; }
+
+private:
+	CRagdollHandle m_hRagdoll;
+	float m_flForcedRetireTime;
+};
+
 //-----------------------------------------------------------------------------
 // This hooks the main game systems callbacks to allow the AI system to manage memory
 //-----------------------------------------------------------------------------
@@ -92,16 +110,15 @@ public:
 	virtual void FrameUpdatePostEntityThink( void );
 
 	// Move it to the top of the LRU
-	void MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImportant = false );
+	void MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImportant = false, float flForcedRetireTime = 0.0f );
 	void SetMaxRagdollCount( int iMaxCount ){ m_iMaxRagdolls = iMaxCount; }
 
 	virtual void LevelInitPreEntity( void );
 	int CountRagdolls( bool bOnlySimulatingRagdolls ) { return bOnlySimulatingRagdolls ? m_iSimulatedRagdollCount : m_iRagdollCount; }
 
 private:
-	typedef CHandle<CBaseAnimating> CRagdollHandle;
-	CUtlLinkedList< CRagdollHandle > m_LRU; 
-	CUtlLinkedList< CRagdollHandle > m_LRUImportantRagdolls; 
+	CUtlLinkedList< CRagdollEntry > m_LRU; 
+	CUtlLinkedList< CRagdollEntry > m_LRUImportantRagdolls; 
 
 	int m_iMaxRagdolls;
 	int m_iSimulatedRagdollCount;
@@ -109,22 +126,6 @@ private:
 };
 
 extern CRagdollLRURetirement s_RagdollLRU;
-
-// Manages ragdolls fading for the low violence versions
-class CRagdollLowViolenceManager
-{
-public:
-	CRagdollLowViolenceManager(){ m_bLowViolence = false; }
-	// Turn the low violence ragdoll stuff off if we're in the HL2 Citadel maps because
-	// the player has the super gravity gun and fading ragdolls will break things.
-	void SetLowViolence( const char *pMapName );
-	bool IsLowViolence( void ){ return m_bLowViolence; }
-
-private:
-	bool m_bLowViolence;
-};
-
-extern CRagdollLowViolenceManager g_RagdollLVManager;
 
 
 bool RagdollCreate( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsEnvironment *pPhysEnv );
@@ -146,6 +147,7 @@ int RagdollExtractBoneIndices( int *boneIndexOut, CStudioHdr *pStudioHdr, vcolli
 
 // computes an exact bbox of the ragdoll's physics objects
 void RagdollComputeExactBbox( const ragdoll_t &ragdoll, const Vector &origin, Vector &outMins, Vector &outMaxs );
+void RagdollComputeApproximateBbox( const ragdoll_t &ragdoll, const Vector &origin, Vector &outMins, Vector &outMaxs );
 bool RagdollIsAsleep( const ragdoll_t &ragdoll );
 void RagdollSetupAnimatedFriction( IPhysicsEnvironment *pPhysEnv, ragdoll_t *ragdoll, int iModelIndex );
 

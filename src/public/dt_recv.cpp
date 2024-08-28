@@ -127,11 +127,13 @@ CStandardRecvProxies::CStandardRecvProxies()
 	m_Int32ToInt8 = RecvProxy_Int32ToInt8;
 	m_Int32ToInt16 = RecvProxy_Int32ToInt16;
 	m_Int32ToInt32 = RecvProxy_Int32ToInt32;
+
+	m_FloatToFloat = RecvProxy_FloatToFloat;
+	m_VectorToVector = RecvProxy_VectorToVector;
+
 #ifdef SUPPORTS_INT64
 	m_Int64ToInt64 = RecvProxy_Int64ToInt64;
 #endif
-	m_FloatToFloat = RecvProxy_FloatToFloat;
-	m_VectorToVector = RecvProxy_VectorToVector;
 }
 
 CStandardRecvProxies g_StandardRecvProxies;
@@ -321,12 +323,10 @@ RecvProp RecvPropInt(
 		{
 			varProxy = RecvProxy_Int32ToInt32;
 		}
-#ifdef SUPPORTS_INT64		
 		else if (sizeofVar == 8)
 		{
 			varProxy = RecvProxy_Int64ToInt64;
 		}
-#endif
 		else
 		{
 			Assert(!"RecvPropInt var has invalid size");
@@ -496,12 +496,22 @@ void RecvProxy_Int32ToInt32( const CRecvProxyData *pData, void *pStruct, void *p
 	*((unsigned long*)pOut) = (unsigned long)pData->m_Value.m_Int;
 }
 
-#ifdef SUPPORTS_INT64
 void RecvProxy_Int64ToInt64( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	*((int64*)pOut) = (int64)pData->m_Value.m_Int64;
 }
-#endif
+
+void RecvProxy_Int32ToColor32( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	//Always send/receive as little endian to preserve byte order across network byte swaps
+	color32 *pOutColor = (color32*)pOut;
+	uint32 inColor = LittleDWord((uint32)pData->m_Value.m_Int);
+
+	pOutColor->r = (unsigned char)(inColor >> 24);
+	pOutColor->g = (unsigned char)((inColor >> 16) & 0xFF);
+	pOutColor->b = (unsigned char)((inColor >> 8) & 0xFF);
+	pOutColor->a = (unsigned char)(inColor & 0xFF);
+}
 
 void RecvProxy_StringToString( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {

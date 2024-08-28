@@ -35,7 +35,7 @@ public:
 public:
 
 	virtual void SetRefEHandle( const CBaseHandle &handle )	{ Assert( false ); }
-	virtual const CBaseHandle& GetRefEHandle() const		{ return *((CBaseHandle*)0); }
+	virtual const CBaseHandle& GetRefEHandle() const		{ return NULL_HANDLE; }
 
 	virtual IClientUnknown*		GetIClientUnknown()		{ return this; }
 	virtual ICollideable*		GetCollideable()		{ return 0; }
@@ -44,12 +44,16 @@ public:
 	virtual IClientEntity*		GetIClientEntity()		{ return 0; }
 	virtual C_BaseEntity*		GetBaseEntity()			{ return 0; }
 	virtual IClientThinkable*	GetClientThinkable()	{ return 0; }
+	virtual IClientModelRenderable*	GetClientModelRenderable()	{ return 0; }
+	virtual IClientAlphaProperty*	GetClientAlphaProperty()	{ return 0; }
 
 
 // IClientNetworkable overrides.
-public:
+private:
 
-	virtual void					Release();	
+	virtual void					DO_NOT_USE_Release();	
+
+public:
 	virtual void					NotifyShouldTransmit( ShouldTransmitState_t state );
 	virtual void					PreDataUpdate( DataUpdateType_t updateType );
 	virtual void					PostDataUpdate( DataUpdateType_t updateType );
@@ -69,12 +73,12 @@ public:
 	void NetworkStateChanged() {}
 	void NetworkStateChanged( void *pVar ) {}
 
-	virtual bool					Init(int entnum, int iSerialNum);
+	virtual bool					InitializeAsServerEntity(int entnum, int iSerialNum);
 
 	virtual void					Precache( void );
 
 	// For dynamic entities, return true to allow destruction
-	virtual bool					ShouldDestroy( void ) { return false; };
+	virtual bool					ShouldDestroy( void ) { return m_bShouldDelete; };
 
 	C_BaseTempEntity				*GetNext( void );
 
@@ -111,10 +115,15 @@ private:
 	C_BaseTempEntity		*m_pNext;
 	C_BaseTempEntity		*m_pNextDynamic;
 
+	bool m_bShouldDelete;
+
 	// TEs add themselves to this list for the executable.
 	static C_BaseTempEntity	*s_pTempEntities;
 	static C_BaseTempEntity *s_pDynamicEntities;
 };
+
+void UTIL_Remove( C_BaseTempEntity *pEntity );
+void UTIL_RemoveImmediate( C_BaseTempEntity *pEntity );
 
 
 #endif // C_BASETEMPENTITY_H

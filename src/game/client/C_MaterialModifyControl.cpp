@@ -793,6 +793,5 @@ void CMaterialModifyAnimatedProxy::AnimationWrapped( void* pArg )
 	}
 }
 
-
-EXPOSE_INTERFACE( CMaterialModifyProxy, IMaterialProxy, "MaterialModify" IMATERIAL_PROXY_INTERFACE_VERSION );
-EXPOSE_INTERFACE( CMaterialModifyAnimatedProxy, IMaterialProxy, "MaterialModifyAnimated" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CMaterialModifyProxy, MaterialModify );
+EXPOSE_MATERIAL_PROXY( CMaterialModifyAnimatedProxy, MaterialModifyAnimated );

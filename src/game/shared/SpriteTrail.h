@@ -55,7 +55,7 @@ public:
 
 #if defined( CLIENT_DLL ) 
 	// Client only code
-	virtual int DrawModel( int flags );
+	virtual int DrawModel( int flags, const RenderableInstance_t &instance );
 	virtual const Vector &GetRenderOrigin( void );
 	virtual const QAngle &GetRenderAngles( void );
 
@@ -63,7 +63,7 @@ public:
 	virtual void OnPreDataChanged( DataUpdateType_t updateType );
 	virtual void OnDataChanged( DataUpdateType_t updateType );
 	virtual void GetRenderBounds( Vector& mins, Vector& maxs );
-	virtual void ClientThink();
+	virtual void UpdateThink();
 
 	virtual bool ValidateEntityAttachedToPlayer( bool &bShouldRetry );
 

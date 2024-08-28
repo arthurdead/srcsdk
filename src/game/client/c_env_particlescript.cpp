@@ -41,8 +41,7 @@ public:
 	// NOTE: Ths enclosed particle effect binding will do all the drawing
 	// But we have to return true, unlike other particle systems, for the animation events to work
 	virtual bool ShouldDraw() { return true; }
-	virtual int	DrawModel( int flags ) { return 0; }
-	virtual int	GetFxBlend( void ) { return 0; }
+	virtual int	DrawModel( int flags, const RenderableInstance_t &instance ) { return 0; }
 
 	virtual void FireEvent( const Vector& origin, const QAngle& angles, int event, const char *options );
 	virtual void OnPreDataChanged( DataUpdateType_t updateType );
@@ -110,6 +109,7 @@ void C_EnvParticleScript::OnDataChanged( DataUpdateType_t updateType )
 	if(updateType == DATA_UPDATE_CREATED)
 	{
 		ParticleMgr()->AddEffect( &m_ParticleEffect, this );
+		ClientLeafSystem()->EnableRendering( RenderHandle(), false );
 	}
 
 	if ( m_nOldSequence != GetSequence() )

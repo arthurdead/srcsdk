@@ -7,9 +7,7 @@
 
 #ifndef VMPI_DEFS_H
 #define VMPI_DEFS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // This goes in front of all packets.

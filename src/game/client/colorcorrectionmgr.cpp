@@ -191,14 +191,14 @@ void CColorCorrectionMgr::UpdateColorCorrection()
 	ResetColorCorrectionWeights();
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 
-	Assert( g_pClientMode );
-	if ( !pPlayer || !g_pClientMode )
+	Assert( GetClientMode() );
+	if ( !pPlayer || !GetClientMode() )
 	{
 		return;
 	}
 
-	g_pClientMode->OnColorCorrectionWeightsReset();
-	float ccScale = g_pClientMode->GetColorCorrectionScale();
+	GetClientMode()->OnColorCorrectionWeightsReset();
+	float ccScale = GetClientMode()->GetColorCorrectionScale();
 
 	UpdateColorCorrectionEntities( pPlayer, ccScale, g_ColorCorrectionList.Base(), g_ColorCorrectionList.Count() );
 	UpdateColorCorrectionVolumes( pPlayer, ccScale, g_ColorCorrectionVolumeList.Base(), g_ColorCorrectionVolumeList.Count() );

@@ -9,6 +9,7 @@
 #define BASEANIMATEDTEXTUREPROXY
 
 #include "materialsystem/imaterialproxy.h"
+#include "imaterialproxydict.h"
 
 class IMaterial;
 class IMaterialVar;

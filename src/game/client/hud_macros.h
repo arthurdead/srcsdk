@@ -18,10 +18,11 @@
 	{											\
 		y.MsgFunc_##x( msg );	\
 	}
+#define DECLARE_MESSAGE_MANUAL(y, x) void __MsgFunc_##y##_##x(bf_read &msg)
 // Message declaration for CHudElement classes that use the hud element factory for creation
 #define DECLARE_HUD_MESSAGE(y, x) void __MsgFunc_##y##_##x(bf_read &msg) \
 	{																\
-		CHudElement *pElement = gHUD.FindElement( #y );				\
+		CHudElement *pElement = GetHud().FindElement( #y );				\
 		if ( pElement )												\
 		{															\
 			((y *)pElement)->MsgFunc_##x( msg );	\
@@ -30,7 +31,7 @@
 
 #define DECLARE_HUD_MESSAGE_BASECLASS(name, basename, msgname) void __MsgFunc_##msgname(const char *pszName, int iSize, void *pbuf) \
 	{																\
-		CHudElement *pElement = gHUD.FindElement( #name );				\
+		CHudElement *pElement = GetHud().FindElement( #name );				\
 		if ( pElement )												\
 		{															\
 			((basename *)pElement)->MsgFunc_##msgname(pszName, iSize, pbuf );	\
@@ -47,7 +48,8 @@
 // Command declaration for CHudElement classes that use the hud element factory for creation
 #define DECLARE_HUD_COMMAND(y, x) void __CmdFunc_##x( void )									\
 	{																\
-		CHudElement *pElement = gHUD.FindElement( #y );				\
+		CHudElement *pElement = GetHud().FindElement( #y );				\
+		if ( pElement )												\
 		{															\
 			((y *)pElement)->UserCmd_##x( );						\
 		}															\
@@ -55,7 +57,8 @@
 
 #define DECLARE_HUD_COMMAND_NAME(y, x, name) void __CmdFunc_##x( void )									\
 	{																\
-		CHudElement *pElement = gHUD.FindElement( name );			\
+		CHudElement *pElement = GetHud().FindElement( name );			\
+		if ( pElement )												\
 		{															\
 			((y *)pElement)->UserCmd_##x( );						\
 		}															\

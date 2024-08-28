@@ -8,6 +8,8 @@
 #define CLIENTSIDEEFFECTS_H
 #pragma once
 
+#include "tier0/platform.h"
+
 class	Vector;
 struct	FXQuadData_t;
 struct	FXLineData_t;

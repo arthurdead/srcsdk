@@ -7,15 +7,15 @@
 
 #ifndef ICLIENTALPHAPROPERTY_H
 #define ICLIENTALPHAPROPERTY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
+#include "mathlib/mathlib.h"
 #include "interface.h"
-#include "iclientunknown.h"
 #include "appframework/IAppSystem.h"
 #include "const.h"
 
+class IClientUnknown;
+class IClientUnknownMod;
 
 enum ClientAlphaDistanceFadeMode_t
 {
@@ -56,17 +56,36 @@ public:
 	// Allows the owner to override alpha.
 	// The method IClientRenderable::OverrideAlphaModulation will be called
 	// to allow the owner to optionally return a different alpha modulation
-	virtual void EnableAlphaModulationOverride( bool bEnable ) = 0;
+	virtual void EnableRenderAlphaOverride( bool bEnable ) = 0;
 
 	// Allows the owner to override projected shadow alpha.
 	// The method IClientRenderable::OverrideShadowAlphaModulation will be called
 	// to allow the owner to optionally return a different alpha modulation for the shadow
-	virtual void EnableShadowAlphaModulationOverride( bool bEnable ) = 0;
+	virtual void EnableShadowRenderAlphaOverride( bool bEnable ) = 0;
 
 	// Sets the distance fade mode
 	virtual void SetDistanceFadeMode( ClientAlphaDistanceFadeMode_t nFadeMode ) = 0;
 };
 
+abstract_class IClientAlphaPropertyMod
+{
+public:
+	virtual IClientUnknown*	GetIClientUnknown() = 0;
+	virtual IClientUnknownMod*	GetIClientUnknownMod();
+
+	virtual void ComputeAlphaBlend( ) = 0;
+	virtual uint8 GetAlphaBlend() const = 0;
+	virtual bool IgnoresZBuffer( void ) const = 0;
+};
+
+abstract_class IClientAlphaPropertyEx : public IClientAlphaProperty, public IClientAlphaPropertyMod
+{
+public:
+	virtual IClientAlphaPropertyMod*	GetClientAlphaPropertyMod() { return this; }
+
+	virtual IClientUnknown*	GetIClientUnknown() = 0;
+	virtual IClientUnknownMod*	GetIClientUnknownMod();
+};
 
 //-----------------------------------------------------------------------------
 // Manager used to deal with client translucency

@@ -14,9 +14,7 @@
 #include "vgui/VGUI.h"
 #include "vgui/Dar.h"
 #include "vgui_controls/MessageMap.h"
-#if defined( VGUI_USEKEYBINDINGMAPS )
 #include "vgui_controls/KeyBindingMap.h"
-#endif
 #include "vgui/IClientPanel.h"
 #include "vgui/IScheme.h"
 #include "vgui_controls/Controls.h"
@@ -41,13 +39,8 @@ class CUtlBuffer;
 namespace vgui
 {
 
-#if !defined( _X360 )
-#define VGUI_USEDRAGDROP 1
-#endif
-
-#if defined( VGUI_USEKEYBINDINGMAPS )
 struct PanelKeyBindingMap;
-#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: Helper functions to construct vgui panels
 //
@@ -70,10 +63,8 @@ inline T *SETUP_PANEL(T *panel)
 //-----------------------------------------------------------------------------
 // Purpose: Drag/drop support context info (could defined within Panel...)
 //-----------------------------------------------------------------------------
-#if defined( VGUI_USEDRAGDROP )
 struct DragDrop_t;
 class Menu;
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Macro to handle Colors that can be overridden in .res files
@@ -104,12 +95,10 @@ public:
 	virtual void InitFromDefault( Panel *panel, PanelAnimationMapEntry *entry ) = 0;
 };
 
-#if defined( VGUI_USEKEYBINDINGMAPS )
 enum KeyBindingContextHandle_t
 {
 	INVALID_KEYBINDINGCONTEXT_HANDLE = 0xffffffff,
 };
-#endif
 
 class IForceVirtualInheritancePanel
 {
@@ -417,7 +406,7 @@ public:
 	static wchar_t const *KeyCodeModifiersToDisplayString( KeyCode code, int modifiers ); // L"Ctrl+Alt+Shift+Backspace"
 
 	static KeyCode		StringToKeyCode( char const *str );
-#if defined( VGUI_USEKEYBINDINGMAPS )
+
 	static KeyBindingContextHandle_t   CreateKeyBindingsContext( char const *filename, char const *pathID = 0 );
 	virtual void		SetKeyBindingsContext( KeyBindingContextHandle_t handle );
 	virtual KeyBindingContextHandle_t	GetKeyBindingsContext() const;
@@ -466,7 +455,6 @@ public:
 	// Set this to false to disallow IsKeyRebound chaining to GetParent() Panels...
 	void			SetAllowKeyBindingChainToParent( bool state );
 	bool			IsKeyBindingChainToParentAllowed() const;
-#endif // VGUI_USEKEYBINDINGMAPS
 
 	// base implementation forwards Key messages to the Panel's parent 
 	// - override to 'swallow' the input
@@ -564,9 +552,8 @@ public:
 	virtual void OnDropContextHoverShow( CUtlVector< KeyValues * >& msglist );
 	virtual void OnDropContextHoverHide( CUtlVector< KeyValues * >& msglist );
 
-#if defined( VGUI_USEDRAGDROP )
 	virtual DragDrop_t *GetDragDropInfo();
-#endif
+
 	// For handling multiple selections...
 	virtual void OnGetAdditionalDragPanels( CUtlVector< Panel * >& dragabbles );
 
@@ -624,9 +611,6 @@ public:
 	void		PostMessageToAllSiblings( KeyValues *msg, float delaySeconds = 0.0f );
 	template< class S >
 	void		PostMessageToAllSiblingsOfType( KeyValues *msg, float delaySeconds = 0.0f );
-
-	void		SetConsoleStylePanel( bool bConsoleStyle );
-	bool		IsConsoleStylePanel() const;
 
 	void		SetParentNeedsCursorMoveEvents( bool bNeedsEvents ) { m_bParentNeedsCursorMoveEvents = bNeedsEvents; }
 	bool		ParentNeedsCursorMoveEvents() const { return m_bParentNeedsCursorMoveEvents; }
@@ -767,9 +751,7 @@ private:
 		NEEDS_LAYOUT						= 0x0080,
 		NEEDS_SCHEME_UPDATE					= 0x0100,
 		NEEDS_DEFAULT_SETTINGS_APPLIED		= 0x0200,
-#if defined( VGUI_USEKEYBINDINGMAPS )
 		ALLOW_CHAIN_KEYBINDING_TO_PARENT	= 0x0400,
-#endif
 		IN_PERFORM_LAYOUT					= 0x0800,
 		IS_PROPORTIONAL						= 0x1000,
 		TRIPLE_PRESS_ALLOWED				= 0x2000,
@@ -833,11 +815,9 @@ private:
 
 	int GetProportionalScaledValue( int rootTall, int normalizedValue );
 
-#if defined( VGUI_USEDRAGDROP )
 	DragDrop_t		*m_pDragDrop;
 	Color			m_clrDragFrame;
 	Color			m_clrDropFrame;
-#endif
 
 	BaseTooltip		*m_pTooltips;
 	bool			m_bToolTipOverridden;
@@ -846,9 +826,7 @@ private:
 	long			m_lLastDoublePressTime;
 	HFont			m_infoFont;
 
-#if defined( VGUI_USEKEYBINDINGMAPS )
 	KeyBindingContextHandle_t m_hKeyBindingsContext;
-#endif
 
 	// data
 	VPANEL			_vpanel;	// handle to a vgui panel
@@ -882,7 +860,6 @@ private:
 	bool			m_bIsDMXSerialized : 1; // Is this a DMX panel?
 	bool			m_bUseSchemeColors : 1; // Should we use colors from the scheme?
 	bool			m_bIsSilent : 1; // should this panel PostActionSignals?
-	bool			m_bIsConsoleStylePanel : 1;
 	bool			m_bParentNeedsCursorMoveEvents : 1;
 
 	// Sibling pinning

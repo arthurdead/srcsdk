@@ -10,7 +10,6 @@
 #include "c_baselesson.h"
 #include "filesystem.h"
 #include "vprof.h"
-#include "ixboxsystem.h"
 #include "tier0/icommandline.h"
 #include "iclientmode.h"
 
@@ -30,11 +29,10 @@ PRECACHE_REGISTER_END()
 
 
 // Game instructor auto game system instantiation
-C_GameInstructor g_GameInstructor[ MAX_SPLITSCREEN_PLAYERS ];
+C_GameInstructor g_GameInstructor;
 C_GameInstructor &GetGameInstructor()
 {
-	ASSERT_LOCAL_PLAYER_RESOLVABLE();
-	return g_GameInstructor[ GET_ACTIVE_SPLITSCREEN_SLOT() ];
+	return g_GameInstructor;
 }
 
 ConVar gameinstructor_verbose( "gameinstructor_verbose", "0", FCVAR_CHEAT, "Set to 1 for standard debugging or 2 (in combo with gameinstructor_verbose_lesson) to show update actions." );
@@ -67,13 +65,9 @@ void EnableDisableInstructor( void )
 
 void GameInstructorEnable_ChangeCallback( IConVar *var, const char *pOldValue, float flOldValue )
 {
-	for ( int i = 0 ; i < MAX_SPLITSCREEN_PLAYERS; ++i )
+	if ( ( flOldValue != 0.0f ) != gameinstructor_enable.GetBool() )
 	{
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( i );
-		if ( ( flOldValue != 0.0f ) != gameinstructor_enable.GetBool() )
-		{
-			EnableDisableInstructor();
-		}
+		EnableDisableInstructor();
 	}
 }
 
@@ -84,11 +78,7 @@ void SVGameInstructorDisable_ChangeCallback( IConVar *var, const char *pOldValue
 	if ( !engine )
 		return;
 
-	for ( int i = 0 ; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-	{
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( i );
-		EnableDisableInstructor();
-	}
+	EnableDisableInstructor();
 }
 
 
@@ -101,19 +91,6 @@ void SVGameInstructorDisable_ChangeCallback( IConVar *var, const char *pOldValue
 
 bool C_GameInstructor::Init( void )
 {
-	// Make sure split slot is up to date
-	for ( int i = 0 ; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-	{
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( i );
-		if ( &GetGameInstructor() == this )
-		{
-			SetSlot( i );
-			break;
-		}
-	}
-
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
-
 	if ( !gameinstructor_enable.GetBool() || sv_gameinstructor_disable.GetBool() )
 	{
 		// Don't init if it's disabled
@@ -165,8 +142,6 @@ bool C_GameInstructor::Init( void )
 
 void C_GameInstructor::Shutdown( void )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
-
 	if ( gameinstructor_verbose.GetInt() > 0 )
 	{
 		ConColorMsg( CBaseLesson::m_rgbaVerboseHeader, "GAME INSTRUCTOR: " );
@@ -209,8 +184,6 @@ void C_GameInstructor::UpdateHiddenByOtherElements( void )
 
 void C_GameInstructor::Update( float frametime )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
-
 	VPROF_BUDGET( "C_GameInstructor::Update", "GameInstructor" );
 
 	UpdateHiddenByOtherElements();
@@ -226,25 +199,6 @@ void C_GameInstructor::Update( float frametime )
 		FindErrors();
 
 		gameinstructor_find_errors.SetValue( 0 );
-	}
-
-	if ( IsConsole() )
-	{
-		// On X360 we want to save when they're not connected
-		if ( !engine->IsInGame() )
-		{
-			// They aren't in game
-			WriteSaveData();
-		}
-		else
-		{
-			const char *levelName = engine->GetLevelName();
-			if ( levelName && levelName[0] && engine->IsLevelMainMenuBackground() )
-			{
-				// The are in game, but it's a background map
-				WriteSaveData();
-			}
-		}
 	}
 
 	if ( m_bSpectatedPlayerChanged )
@@ -341,8 +295,6 @@ void C_GameInstructor::Update( float frametime )
 
 void C_GameInstructor::FireGameEvent( IGameEvent *event )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
-
 	VPROF_BUDGET( "C_GameInstructor::FireGameEvent", "GameInstructor" );
 
 	const char *name = event->GetName();
@@ -528,8 +480,6 @@ void C_GameInstructor::FireGameEvent( IGameEvent *event )
 
 void C_GameInstructor::DefineLesson( CBaseLesson *pLesson )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
-
 	if ( gameinstructor_verbose.GetInt() > 0 )
 	{
 		ConColorMsg( CBaseLesson::m_rgbaVerboseHeader, "GAME INSTRUCTOR: " );
@@ -543,7 +493,6 @@ void C_GameInstructor::DefineLesson( CBaseLesson *pLesson )
 
 const CBaseLesson * C_GameInstructor::GetLesson( const char *pchLessonName )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
 	return GetLesson_Internal( pchLessonName );
 }
 
@@ -577,39 +526,8 @@ bool C_GameInstructor::ReadSaveData( void )
 
 	m_bHasLoadedSaveData = true;
 
-#ifdef _X360
-	DevMsg( "Read Game Instructor for splitscreen slot %d\n", m_nSplitScreenSlot );
-
-	if ( m_nSplitScreenSlot < 0 )
-		return false;
-
-	if ( m_nSplitScreenSlot >= (int) XBX_GetNumGameUsers() )
-		return false;
-
-	int iController = XBX_GetUserId( m_nSplitScreenSlot );
-
-	if ( iController < 0 || XBX_GetUserIsGuest( iController ) )
-	{
-		// Can't read data for guests
-		return false;
-	}
-
-	DWORD nStorageDevice = XBX_GetStorageDeviceId( iController );
-	if ( !XBX_DescribeStorageDevice( nStorageDevice ) )
-		return false;
-#endif
-
 	char szFilename[_MAX_PATH];
 
-#ifdef _X360
-	if ( IsX360() )
-	{
-		XBX_MakeStorageContainerRoot( iController, XBX_USER_SETTINGS_CONTAINER_DRIVE, szFilename, sizeof( szFilename ) );
-		int nLen = strlen( szFilename );
-		Q_snprintf( szFilename + nLen, sizeof( szFilename ) - nLen, ":\\game_instructor_counts.txt" );
-	}
-	else
-#endif
 	{
 		Q_snprintf( szFilename, sizeof( szFilename ), "save/game_instructor_counts.txt" );
 	}
@@ -661,49 +579,10 @@ bool C_GameInstructor::WriteSaveData( void )
 	if ( !m_bDirtySaveData )
 		return true;
 
-#ifdef _X360
-	float flPlatTime = Plat_FloatTime();
-
-	static ConVarRef host_write_last_time( "host_write_last_time" );
-	if ( host_write_last_time.IsValid() )
-	{
-		float flTimeSinceLastWrite = flPlatTime - host_write_last_time.GetFloat();
-		if ( flTimeSinceLastWrite < 3.5f )
-		{
-			// Prevent writing to the same storage device twice in less than 3 second succession for TCR success!
-			// This happens after leaving a game in splitscreen.
-			//DevMsg( "Waiting to write Game Instructor for splitscreen slot %d... (%.1f seconds remain)\n", m_nSplitScreenSlot, 3.5f - flTimeSinceLastWrite );
-			return false;
-		}
-	}
-#endif
-
 	// Always mark as clean state to avoid re-entry on
 	// subsequent frames when storage device might be
 	// in a yet-unmounted state.
 	m_bDirtySaveData = false;
-
-#ifdef _X360
-	DevMsg( "Write Game Instructor for splitscreen slot %d at time: %.1f\n", m_nSplitScreenSlot, flPlatTime );
-
-	if ( m_nSplitScreenSlot < 0 )
-		return false;
-
-	if ( m_nSplitScreenSlot >= (int) XBX_GetNumGameUsers() )
-		return false;
-
-	int iController = XBX_GetUserId( m_nSplitScreenSlot );
-
-	if ( iController < 0 || XBX_GetUserIsGuest( iController ) )
-	{
-		// Can't save data for guests
-		return false;
-	}
-
-	DWORD nStorageDevice = XBX_GetStorageDeviceId( iController );
-	if ( !XBX_DescribeStorageDevice( nStorageDevice ) )
-		return false;
-#endif
 
 	// Build key value data to save
 	KeyValues *data = new KeyValues( "Game Instructor Counts" );
@@ -742,28 +621,12 @@ bool C_GameInstructor::WriteSaveData( void )
 
 	char	szFilename[_MAX_PATH];
 
-#ifdef _X360
-	if ( IsX360() )
-	{
-		XBX_MakeStorageContainerRoot( iController, XBX_USER_SETTINGS_CONTAINER_DRIVE, szFilename, sizeof( szFilename ) );
-		int nLen = strlen( szFilename );
-		Q_snprintf( szFilename + nLen, sizeof( szFilename ) - nLen, ":\\game_instructor_counts.txt" );
-	}
-	else
-#endif
 	{
 		Q_snprintf( szFilename, sizeof( szFilename ), "save/game_instructor_counts.txt" );
 		filesystem->CreateDirHierarchy( "save", "MOD" );
 	}
 
 	bool bWriteSuccess = filesystem->WriteFile( szFilename, MOD_DIR, buf );
-
-#ifdef _X360
-	if ( xboxsystem )
-	{
-		xboxsystem->FinishContainerWrites( iController );
-	}
-#endif
 
 	return bWriteSuccess;
 }
@@ -776,7 +639,6 @@ void C_GameInstructor::RefreshDisplaysAndSuccesses( void )
 
 void C_GameInstructor::ResetDisplaysAndSuccesses( void )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
 	if ( gameinstructor_verbose.GetInt() > 0 )
 	{
 		ConColorMsg( CBaseLesson::m_rgbaVerboseHeader, "GAME INSTRUCTOR: " );
@@ -793,7 +655,6 @@ void C_GameInstructor::ResetDisplaysAndSuccesses( void )
 
 void C_GameInstructor::MarkDisplayed( const char *pchLessonName )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
 	CBaseLesson *pLesson = GetLesson_Internal( pchLessonName );
 	if ( !pLesson )
 		return;
@@ -814,7 +675,6 @@ void C_GameInstructor::MarkDisplayed( const char *pchLessonName )
 
 void C_GameInstructor::MarkSucceeded( const char *pchLessonName )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
 	CBaseLesson *pLesson = GetLesson_Internal( pchLessonName );
 	if ( !pLesson )
 		return;
@@ -857,7 +717,6 @@ void C_GameInstructor::PlaySound( const char *pchSoundName )
 
 bool C_GameInstructor::OpenOpportunity( CBaseLesson *pLesson )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
 	// Get the root lesson
 	CBaseLesson *pRootLesson = pLesson->GetRoot();
 	if ( !pRootLesson )
@@ -1133,8 +992,6 @@ void C_GameInstructor::FindErrors( void )
 
 bool C_GameInstructor::UpdateActiveLesson( CBaseLesson *pLesson, const CBaseLesson *pRootLesson )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
-
 	VPROF_BUDGET( "C_GameInstructor::UpdateActiveLesson", "GameInstructor" );
 
 	bool bIsOpen = pLesson->IsInstructing();
@@ -1180,8 +1037,6 @@ bool C_GameInstructor::UpdateActiveLesson( CBaseLesson *pLesson, const CBaseLess
 
 void C_GameInstructor::UpdateInactiveLesson( CBaseLesson *pLesson )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
-
 	VPROF_BUDGET( "C_GameInstructor::UpdateInactiveLesson", "GameInstructor" );
 
 	if ( pLesson->IsInstructing() )
@@ -1219,7 +1074,6 @@ CBaseLesson * C_GameInstructor::GetLesson_Internal( const char *pchLessonName )
 
 void C_GameInstructor::StopAllLessons( void )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
 	// Stop all the current lessons
 	for ( int i = m_OpenOpportunities.Count() - 1; i >= 0; --i )
 	{
@@ -1230,7 +1084,6 @@ void C_GameInstructor::StopAllLessons( void )
 
 void C_GameInstructor::CloseAllOpenOpportunities( void )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
 	// Clear out all the open opportunities
 	for ( int i = m_OpenOpportunities.Count() - 1; i >= 0; --i )
 	{
@@ -1243,7 +1096,6 @@ void C_GameInstructor::CloseAllOpenOpportunities( void )
 
 void C_GameInstructor::CloseOpportunity( CBaseLesson *pLesson )
 {
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
 	UpdateInactiveLesson( pLesson );
 
 	if ( pLesson->WasDisplayed() )
@@ -1273,7 +1125,6 @@ void C_GameInstructor::ReadLessonsFromFile( const char *pchFileName )
 
 	MEM_ALLOC_CREDIT();
 	
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( m_nSplitScreenSlot );
 	KeyValues *pLessonKeys = new KeyValues( "instructor_lessons" );
 	KeyValues::AutoDelete autoDelete(pLessonKeys);
 	pLessonKeys->LoadFromFile( g_pFullFileSystem, pchFileName, NULL );
@@ -1297,7 +1148,7 @@ void C_GameInstructor::ReadLessonsFromFile( const char *pchFileName )
 			continue;
 		}
 
-		CScriptedIconLesson *pNewLesson = new CScriptedIconLesson( m_pScriptKeys->GetName(), false, false, m_nSplitScreenSlot );
+		CScriptedIconLesson *pNewLesson = new CScriptedIconLesson( m_pScriptKeys->GetName(), false, false );
 		GetGameInstructor().DefineLesson( pNewLesson );
 	}
 
@@ -1315,28 +1166,16 @@ void C_GameInstructor::InitLessonPrerequisites( void )
 
 CON_COMMAND_F( gameinstructor_reload_lessons, "Shuts down all open lessons and reloads them from the script file.", FCVAR_CHEAT )
 {
-	for ( int i = 0 ; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-	{
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( i );
-		GetGameInstructor().Shutdown();
-		GetGameInstructor().Init();
-	}
+	GetGameInstructor().Shutdown();
+	GetGameInstructor().Init();
 }
 
 CON_COMMAND_F( gameinstructor_reset_counts, "Resets all display and success counts to zero.", FCVAR_NONE )
 {
-	for ( int i = 0 ; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-	{
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( i );
-		GetGameInstructor().ResetDisplaysAndSuccesses();
-	}
+	GetGameInstructor().ResetDisplaysAndSuccesses();
 }
 
 CON_COMMAND_F( gameinstructor_dump_open_lessons, "Gives a list of all currently open lessons.", FCVAR_CHEAT )
 {
-	for ( int i = 0 ; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-	{
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( i );
-		GetGameInstructor().DumpOpenOpportunities();
-	}
+	GetGameInstructor().DumpOpenOpportunities();
 }

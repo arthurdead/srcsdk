@@ -26,6 +26,12 @@ enum
 	SF_TRIG_TOUCH_DEBRIS 					= 0x400,	// Will touch physics debris objects
 	SF_TRIGGER_ONLY_NPCS_IN_VEHICLES		= 0X800,	// *if* NPCs can fire this trigger, only NPCs in vehicles do so (respects player ally flag too)
 	SF_TRIGGER_DISALLOW_BOTS                = 0x1000,   // Bots are not allowed to fire this trigger
+	SF_TRIGGER_PUSH_USE_MASS				= 0x2000,	// Correctly account for an entity's mass (CTriggerPush::Touch used to assume 100Kg)
+	// and multiple component physobjs (car, blob...)
 };
+
+// Spawnflags for CTriggerPlayerMovement
+const int SF_TRIGGER_MOVE_AUTODISABLE				= 0x080;	// Disable auto movement
+const int SF_TRIGGER_AUTO_DUCK						= 0x800;	// Duck automatically
 
 #endif // TRIGGERS_SHARED_H

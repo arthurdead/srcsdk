@@ -273,10 +273,13 @@ void C_PointCommentaryNode::OnDataChanged( DataUpdateType_t updateType )
 			(CSoundEnvelopeController::GetController()).Play( m_sndCommentary, 1.0f, 100, m_flStartTime );
 		}
 
-		// Get the duration so we know when it finishes
-		float flDuration = enginesound->GetSoundDuration( STRING( CSoundEnvelopeController::GetController().SoundGetName( m_sndCommentary ) ) ) ;
+		// Strip the #off of the commentary file path if there is one
+		char *pcCommentaryWAVPath = V_stristr( (char*)STRING( CSoundEnvelopeController::GetController().SoundGetName( m_sndCommentary ) ) , "commentary" );
 
-		CHudCloseCaption *pHudCloseCaption = (CHudCloseCaption *)GET_HUDELEMENT( CHudCloseCaption );
+		// Get the duration so we know when it finishes
+		float flDuration = enginesound->GetSoundDuration( pcCommentaryWAVPath ) ;
+
+		CHudCloseCaption *pHudCloseCaption = (CHudCloseCaption *)GET_FULLSCREEN_HUDELEMENT( CHudCloseCaption );
 		if ( pHudCloseCaption )
 		{
 			// This is where we play the commentary close caption (and lock the other captions out).
@@ -353,7 +356,7 @@ bool IsNodeUnderCrosshair( C_BasePlayer *pPlayer )
 	if ( !tr.m_pEnt )
 		return false;
 
-	return dynamic_cast<C_PointCommentaryNode*>(tr.m_pEnt);
+	return dynamic_cast<C_PointCommentaryNode*>(tr.m_pEnt) ? true : false;
 }
 
 //===================================================================================================================
@@ -401,7 +404,7 @@ void CHudCommentary::Paint()
 			m_bHiding = true;
 			g_pClientMode->GetViewportAnimationController()->StartAnimationSequence( "HideCommentary" );
 
-			CHudCloseCaption *pHudCloseCaption = (CHudCloseCaption *)GET_HUDELEMENT( CHudCloseCaption );
+			CHudCloseCaption *pHudCloseCaption = (CHudCloseCaption *)GET_FULLSCREEN_HUDELEMENT( CHudCloseCaption );
 			if ( pHudCloseCaption )
 			{
 				pHudCloseCaption->Reset();

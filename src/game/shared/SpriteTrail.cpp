@@ -261,7 +261,7 @@ void CSpriteTrail::OnDataChanged( DataUpdateType_t updateType )
 	BaseClass::OnDataChanged( updateType );
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
-		SetNextClientThink( CLIENT_THINK_ALWAYS );
+		SetContextThink( &CSpriteTrail::UpdateThink, TICK_ALWAYS_THINK, "UpdateThink" );
 	}
 	else
 	{
@@ -276,7 +276,7 @@ void CSpriteTrail::OnDataChanged( DataUpdateType_t updateType )
 //-----------------------------------------------------------------------------
 // Compute position	+ bounding box
 //-----------------------------------------------------------------------------
-void CSpriteTrail::ClientThink()
+void CSpriteTrail::UpdateThink()
 {
 	// Update the trail + bounding box
 	UpdateTrail();
@@ -419,7 +419,7 @@ void CSpriteTrail::UpdateTrail( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CSpriteTrail::DrawModel( int flags )
+int CSpriteTrail::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 	VPROF_BUDGET( "CSpriteTrail::DrawModel", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	
@@ -428,7 +428,7 @@ int CSpriteTrail::DrawModel( int flags )
 		return 1;
 
 	//See if we should draw
-	if ( !IsVisible() || ( m_bReadyToDraw == false ) )
+	if ( !IsVisible() || ( ReadyToDraw() == false ) )
 		return 0;
 
 	CEngineSprite *pSprite = Draw_SetSpriteTexture( GetModel(), m_flFrame, GetRenderMode() );
@@ -464,10 +464,11 @@ int CSpriteTrail::DrawModel( int flags )
 		float flLifePerc = (pPoint->m_flDieTime - gpGlobals->curtime) / m_flLifeTime;
 		flLifePerc = clamp( flLifePerc, 0.0f, 1.0f );
 
+		color24 c = GetRenderColor();
 		BeamSeg_t curSeg;
-		curSeg.m_vColor.x = (float) m_clrRender->r / 255.0f;
-		curSeg.m_vColor.y = (float) m_clrRender->g / 255.0f;
-		curSeg.m_vColor.z = (float) m_clrRender->b / 255.0f;
+		curSeg.m_vColor.x = (float) c.r / 255.0f;
+		curSeg.m_vColor.y = (float) c.g / 255.0f;
+		curSeg.m_vColor.z = (float) c.b / 255.0f;
 
 		float flAlphaFade = flLifePerc;
 		if ( flTailAlphaDist > 0.0f )

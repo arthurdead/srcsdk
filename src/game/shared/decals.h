@@ -8,13 +8,15 @@
 #define DECALS_H
 #pragma once
 
+#include "tier0/platform.h"
+
 // NOTE: If you add a tex type, be sure to modify the s_pImpactEffect
 // array in fx_impact.cpp to get an effect when that surface is shot.
-#define CHAR_TEX_ANTLION		'A'
+#define CHAR_TEX_ALIENINSECT	'A'
 #define CHAR_TEX_BLOODYFLESH	'B'
 #define	CHAR_TEX_CONCRETE		'C'
 #define CHAR_TEX_DIRT			'D'
-#define CHAR_TEX_EGGSHELL		'E' ///< the egg sacs in the tunnels in ep2.
+//#define CHAR_TEX_UNUSED		'E' ///< the egg sacs in the tunnels in ep2.
 #define CHAR_TEX_FLESH			'F'
 #define CHAR_TEX_GRATE			'G'
 #define CHAR_TEX_ALIENFLESH		'H'
@@ -35,7 +37,11 @@
 #define CHAR_TEX_WOOD			'W'
 //#define CHAR_TEX_UNUSED		'X'
 #define CHAR_TEX_GLASS			'Y'
-#define CHAR_TEX_WARPSHIELD		'Z' ///< wierd-looking jello effect for advisor shield.
+//#define CHAR_TEX_UNUSED	'Z' ///< wierd-looking jello effect for advisor shield.
+
+//#define CHAR_TEX_UNUSED		11
+
+bool IsTexFlesh( unsigned short tex );
 
 abstract_class IDecalEmitterSystem
 {

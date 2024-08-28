@@ -9,6 +9,12 @@
 #define HUD_BASEDEATHNOTICE_H
 #pragma once
 
+#include "shareddefs.h"
+#include "const.h"
+#include "hud.h"
+#include "hudelement.h"
+#include "vgui_controls/Panel.h"
+
 // Player entries in a death notice
 struct DeathNoticePlayer
 {

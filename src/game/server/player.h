@@ -20,11 +20,6 @@
 #include "colorcorrection.h"
 #include "env_tonemap_controller.h"
 
-#if defined USES_ECON_ITEMS
-#include "game_item_schema.h"
-#include "econ_item_view.h"
-#endif
-
 // For queuing and processing usercmds
 class CCommandContext
 {

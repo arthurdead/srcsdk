@@ -11,21 +11,23 @@
 
 #include "mathlib/vector.h"
 #include "tier1/utlvector.h"
+#include "tier1/convar.h"
 
 #define TICK_INTERVAL			(gpGlobals->interval_per_tick)
-
 
 #define TIME_TO_TICKS( dt )		( (int)( 0.5f + (float)(dt) / TICK_INTERVAL ) )
 #define TICKS_TO_TIME( t )		( TICK_INTERVAL *( t ) )
 #define ROUND_TO_TICKS( t )		( TICK_INTERVAL * TIME_TO_TICKS( t ) )
+
+#define TICK_ALWAYS_THINK	(-1293)
 #define TICK_NEVER_THINK		(-1)
 
-#if defined( TF_DLL )
-#define ANIMATION_CYCLE_BITS		10
-#else
 #define ANIMATION_CYCLE_BITS		15
-#endif
 #define ANIMATION_CYCLE_MINFRAC		(1.0f / (1<<ANIMATION_CYCLE_BITS))
+
+// Matching the high level concept is significantly better than other criteria
+// FIXME:  Could do this in the script file by making it required and bumping up weighting there instead...
+#define CONCEPT_WEIGHT 5.0f
 
 // Each mod defines these for itself.
 class CViewVectors
@@ -103,15 +105,21 @@ public:
 
 #define MAX_CLIMB_SPEED		200
 
-#if defined(TF_DLL) || defined(TF_CLIENT_DLL)
-	#define TIME_TO_DUCK		0.2
-	#define TIME_TO_DUCK_MS		200.0f
-#else
-	#define TIME_TO_DUCK		0.4
-	#define TIME_TO_DUCK_MS		400.0f
-#endif 
+#define TIME_TO_DUCK		0.4
+#define TIME_TO_DUCK_MS		400
+
 #define TIME_TO_UNDUCK		0.2
-#define TIME_TO_UNDUCK_MS	200.0f
+#define TIME_TO_UNDUCK_MS	200
+
+inline float FractionDucked( int msecs )
+{
+	return clamp( (float)msecs / (float)TIME_TO_DUCK_MS, 0.0f, 1.0f );
+}
+
+inline float FractionUnDucked( int msecs )
+{
+	return clamp( (float)msecs / (float)TIME_TO_UNDUCK_MS, 0.0f, 1.0f );
+}
 
 #define MAX_WEAPON_SLOTS		6	// hud item selection slots
 #define MAX_WEAPON_POSITIONS	20	// max number of items within a slot
@@ -229,12 +237,16 @@ enum CastVote
 //This is ok since MAX_PLAYERS is used for code specific things like arrays and loops, but it doesn't really means that this is the max number of players allowed
 //Since this is decided by the gamerules (and it can be whatever number as long as its less than MAX_PLAYERS).
 #ifdef HEIST_DLL
-//4 heisters + replay + hltv + 1 spec
-#define MAX_PLAYERS (4 + 3)
-#elif defined( CSTRIKE_DLL )
-	#define MAX_PLAYERS				65  // Absolute max players supported
+	//4 heisters + replay + hltv + 1 spec
+	#define MAX_PLAYERS (4 + 3)
 #else
-	#define MAX_PLAYERS				33  // Absolute max players supported
+	#define MAX_PLAYERS				65  // Absolute max players supported
+#endif
+
+#if MAX_PLAYERS > 32
+#define CGamePlayerBitVec CBitVec<MAX_PLAYERS>
+#else
+#define CGamePlayerBitVec CDWordBitVec
 #endif
 
 #define MAX_PLACE_NAME_LENGTH		18
@@ -293,27 +305,17 @@ enum CastVote
 #define MAX_BEAM_ENTS			10
 
 #define TRACER_TYPE_DEFAULT		0x00000001
-#define TRACER_TYPE_GUNSHIP		0x00000002
-#define TRACER_TYPE_STRIDER		0x00000004 // Here ya go, Jay!
-#define TRACER_TYPE_GAUSS		0x00000008
-#define TRACER_TYPE_WATERBULLET	0x00000010
+#define TRACER_TYPE_WATERBULLET	0x00000002
 
 #define MUZZLEFLASH_TYPE_DEFAULT	0x00000001
-#define MUZZLEFLASH_TYPE_GUNSHIP	0x00000002
-#define MUZZLEFLASH_TYPE_STRIDER	0x00000004
 
 // Muzzle flash definitions (for the flags field of the "MuzzleFlash" DispatchEffect)
 enum
 {
-	MUZZLEFLASH_AR2				= 0,
 	MUZZLEFLASH_SHOTGUN,
-	MUZZLEFLASH_SMG1,
-	MUZZLEFLASH_SMG2,
 	MUZZLEFLASH_PISTOL,
-	MUZZLEFLASH_COMBINE,
 	MUZZLEFLASH_357,
 	MUZZLEFLASH_RPG,
-	MUZZLEFLASH_COMBINE_TURRET,
 
 	MUZZLEFLASH_FIRSTPERSON		= 0x100,
 };
@@ -349,41 +351,11 @@ enum
 #define HITGROUP_RIGHTLEG	7
 #define HITGROUP_GEAR		10			// alerts NPC, but doesn't do damage or bleed (1/100th damage)
 
-//
-// Enumerations for setting player animation.
-//
-enum PLAYER_ANIM
-{
-	PLAYER_IDLE,
-	PLAYER_WALK,
-	PLAYER_JUMP,
-	PLAYER_SUPERJUMP,
-	PLAYER_DIE,
-	PLAYER_ATTACK1,
-	PLAYER_IN_VEHICLE,
-
-	// TF Player animations
-	PLAYER_RELOAD,
-	PLAYER_START_AIMING,
-	PLAYER_LEAVE_AIMING,
-};
-
-#ifdef HL2_DLL
-// HL2 has 600 gravity by default
-// NOTE: The discrete ticks can have quantization error, so these numbers are biased a little to
-// make the heights more exact
-#define PLAYER_FATAL_FALL_SPEED		922.5f // approx 60 feet sqrt( 2 * gravity * 60 * 12 )
-#define PLAYER_MAX_SAFE_FALL_SPEED	526.5f // approx 20 feet sqrt( 2 * gravity * 20 * 12 )
-#define PLAYER_LAND_ON_FLOATING_OBJECT	173 // Can fall another 173 in/sec without getting hurt
-#define PLAYER_MIN_BOUNCE_SPEED		173
-#define PLAYER_FALL_PUNCH_THRESHOLD 303.0f // won't punch player's screen/make scrape noise unless player falling at least this fast - at least a 76" fall (sqrt( 2 * g * 76))
-#else
 #define PLAYER_FATAL_FALL_SPEED		1024 // approx 60 feet
 #define PLAYER_MAX_SAFE_FALL_SPEED	580 // approx 20 feet
 #define PLAYER_LAND_ON_FLOATING_OBJECT	200 // Can go another 200 units without getting hurt
 #define PLAYER_MIN_BOUNCE_SPEED		200
-#define PLAYER_FALL_PUNCH_THRESHOLD (float)350 // won't punch player's screen/make scrape noise unless player falling at least this fast.
-#endif
+#define PLAYER_FALL_PUNCH_THRESHOLD 350 // won't punch player's screen/make scrape noise unless player falling at least this fast.
 #define DAMAGE_FOR_FALL_SPEED		100.0f / ( PLAYER_FATAL_FALL_SPEED - PLAYER_MAX_SAFE_FALL_SPEED ) // damage per unit per second.
 
 
@@ -446,7 +418,7 @@ enum PLAYER_ANIM
 // TODO: keep this up to date so all the mod-specific flags don't overlap anything.
 #define DMG_LASTGENERICFLAG	DMG_BUCKSHOT
 
-
+#define DAMAGE_CRIT_MULTIPLIER 3.0f
 
 // settings for m_takedamage
 #define	DAMAGE_NO				0
@@ -537,20 +509,21 @@ typedef enum
 #define COLOR_BLACK		Color(0, 0, 0, 255)
 
 // All NPCs need this data
-enum
+enum : unsigned char
 {
-	DONT_BLEED = -1,
+	DONT_BLEED = (unsigned char)-1,
 
 	BLOOD_COLOR_RED = 0,
 	BLOOD_COLOR_YELLOW,
 	BLOOD_COLOR_GREEN,
-	BLOOD_COLOR_MECH,
+	BLOOD_COLOR_BRIGHTGREEN,
 
-#if defined( HL2_EPISODIC )
-	BLOOD_COLOR_ANTLION,		// FIXME: Move to Base HL2
-	BLOOD_COLOR_ZOMBIE,			// FIXME: Move to Base HL2
-	BLOOD_COLOR_ANTLION_WORKER,
-#endif // HL2_EPISODIC
+	BLOOD_COLOR_SLIME,
+	BLOOD_COLOR_FROZEN,
+
+	BLOOD_COLOR_MECH,
+	BLOOD_COLOR_ALIENINSECT,
+	BLOOD_COLOR_UNDEAD,
 };
 
 //-----------------------------------------------------------------------------
@@ -672,6 +645,9 @@ enum FireBulletsFlags_t
 	FIRE_BULLETS_DONT_HIT_UNDERWATER = 0x2,		// If the shot hits its target underwater, don't damage it
 	FIRE_BULLETS_ALLOW_WATER_SURFACE_IMPACTS = 0x4,	// If the shot hits water surface, still call DoImpactEffect
 	FIRE_BULLETS_TEMPORARY_DANGER_SOUND = 0x8,		// Danger sounds added from this impact can be stomped immediately if another is queued
+	FIRE_BULLETS_NO_PIERCING_SPARK = 0x16,	// do a piercing spark effect when a bullet penetrates an alien
+	FIRE_BULLETS_HULL = 0x32,	// bullet trace is a hull rather than a line
+	FIRE_BULLETS_ANGULAR_SPREAD = 0x64,	// bullet spread is based on uniform random change to angles rather than gaussian search
 };
 
 
@@ -683,8 +659,8 @@ struct FireBulletsInfo_t
 		m_vecSpread.Init( 0, 0, 0 );
 		m_flDistance = 8192;
 		m_iTracerFreq = 4;
-		m_flDamage = 0;
-		m_iPlayerDamage = 0;
+		m_flDamage = 0.0f;
+		m_flPlayerDamage = 0.0f;
 		m_pAttacker = NULL;
 		m_nFlags = 0;
 		m_pAdditionalIgnoreEnt = NULL;
@@ -709,7 +685,7 @@ struct FireBulletsInfo_t
 		m_iAmmoType = nAmmoType;
 		m_iTracerFreq = 4;
 		m_flDamage = 0;
-		m_iPlayerDamage = 0;
+		m_flPlayerDamage = 0;
 		m_pAttacker = NULL;
 		m_nFlags = 0;
 		m_pAdditionalIgnoreEnt = NULL;
@@ -726,7 +702,7 @@ struct FireBulletsInfo_t
 	int m_iAmmoType;
 	int m_iTracerFreq;
 	float m_flDamage;
-	int m_iPlayerDamage;	// Damage to be used instead of m_flDamage if we hit a player
+	float m_flPlayerDamage;	// Damage to be used instead of m_flDamage if we hit a player
 	int m_nFlags;			// See FireBulletsFlags_t
 	float m_flDamageForceScale;
 	CBaseEntity *m_pAttacker;
@@ -773,6 +749,8 @@ struct StepSimulationData
 	// The computed/interpolated network origin/angles to use
 	Vector		m_vecNetworkOrigin;
 	QAngle		m_angNetworkAngles;
+
+	int			m_networkCell[3];
 };
 
 //-----------------------------------------------------------------------------
@@ -875,6 +853,9 @@ enum
 // NOTE:  This stuff only works on a listen server since it punches a hole from the client .dll to server .dll!!!
 #define PREDICTION_ERROR_CHECK_LEVEL 0
 
+// Set to 1 to spew a call stack in DiffPrint() for the existing side when the other side is missing
+#define PREDICTION_ERROR_CHECK_STACKS_FOR_MISSING 0
+
 //-----------------------------------------------------------------------------
 // Round timer states
 //-----------------------------------------------------------------------------
@@ -884,6 +865,13 @@ enum
 	RT_STATE_NORMAL,	// Timer is in normal mode
 };
 
+//-----------------------------------------------------------------------------
+// Cell origin values
+//-----------------------------------------------------------------------------
+#define CELL_COUNT( bits ) ( (MAX_COORD_INTEGER*2) / (1 << (bits)) ) // How many cells on an axis based on the bit size of the cell
+#define CELL_COUNT_BITS( bits ) MINIMUM_BITS_NEEDED( CELL_COUNT( bits ) ) // How many bits are necessary to respresent that cell
+#define CELL_BASEENTITY_ORIGIN_CELL_BITS 5 // default amount of entropy bits for base entity
+
 enum
 {
 	SIMULATION_TIME_WINDOW_BITS = 8,
@@ -892,28 +880,44 @@ enum
 //-----------------------------------------------------------------------------
 // Commentary Mode
 //-----------------------------------------------------------------------------
-#if defined(TF_DLL) || defined(TF_CLIENT_DLL)
-#define GAME_HAS_NO_USE_KEY
-
-#if defined( SPROP_COORD )
-#undef SPROP_COORD
-#endif
-
-#define SPROP_COORD SPROP_COORD_MP
-
-#endif
 
 // The player's method of starting / stopping commentary
-#ifdef GAME_HAS_NO_USE_KEY
-#define COMMENTARY_BUTTONS		(IN_ATTACK | IN_ATTACK2 | IN_USE)
-#else
 #define COMMENTARY_BUTTONS		(IN_USE)
-#endif
 
 #define TEAM_TRAIN_MAX_TEAMS			4
 #define TEAM_TRAIN_MAX_HILLS			5
 #define TEAM_TRAIN_FLOATS_PER_HILL		2
 #define TEAM_TRAIN_HILLS_ARRAY_SIZE		TEAM_TRAIN_MAX_TEAMS * TEAM_TRAIN_MAX_HILLS * TEAM_TRAIN_FLOATS_PER_HILL
+
+enum
+{
+	CLASS_NONE = 0,
+	CLASS_PLAYER,
+
+	NUM_SHARED_ENTITY_CLASSES,
+	LAST_SHARED_ENTITY_CLASS = CLASS_PLAYER,
+};
+
+typedef int Class_T;
+
+#if defined( HEIST_DLL )
+enum
+{
+	CLASS_HEISTER = LAST_SHARED_ENTITY_CLASS,
+	CLASS_HEISTER_DISGUISED,
+
+	CLASS_CIVILIAN,
+	CLASS_POLICE,
+
+	NUM_HEIST_ENTITY_CLASSES,
+};
+#endif
+
+// Factions
+#define FACTION_NONE				0					// Not assigned a faction.  Entities not assigned a faction will not do faction tests.
+
+#define LAST_SHARED_FACTION			(FACTION_NONE)
+#define NUM_SHARED_FACTIONS			(FACTION_NONE + 1)
 
 enum
 {
@@ -926,6 +930,19 @@ enum
 #define NOINTERP_PARITY_MAX_BITS	2
 
 //-----------------------------------------------------------------------------
+// For invalidate physics recursive
+//-----------------------------------------------------------------------------
+enum InvalidatePhysicsBits_t
+{
+	POSITION_CHANGED	= 0x1,
+	ANGLES_CHANGED		= 0x2,
+	VELOCITY_CHANGED	= 0x4,
+	ANIMATION_CHANGED	= 0x8,		// Means cycle has changed, or any other event which would cause render-to-texture shadows to need to be rerendeded
+	BOUNDS_CHANGED		= 0x10,		// Means render bounds have changed, so shadow decal projection is required, etc.
+	SEQUENCE_CHANGED	= 0x20,		// Means sequence has changed, only interesting when surrounding bounds depends on sequence																				
+};
+
+//-----------------------------------------------------------------------------
 // Generic activity lookup support
 //-----------------------------------------------------------------------------
 enum
@@ -934,26 +951,65 @@ enum
 	kActivityLookup_Missing = -1,			// has been searched for but wasn't found
 };
 
-#if defined(TF_DLL) || defined(TF_CLIENT_DLL)
 //-----------------------------------------------------------------------------
 // Vision Filters.
 //-----------------------------------------------------------------------------
-// Also used in the item schema to define vision filter or vision mode opt in
-#define TF_VISION_FILTER_NONE			0
-#define TF_VISION_FILTER_PYRO			(1<<0)		// 1
-#define TF_VISION_FILTER_HALLOWEEN		(1<<1)		// 2
-#define TF_VISION_FILTER_ROME			(1<<2)		// 4
+#define MAX_HOLIDAY_STRING 64
 
-// THIS ENUM SHOULD MATCH THE ORDER OF THE FLAGS ABOVE
 enum
 {
-	VISION_MODE_NONE = 0,
-	VISION_MODE_PYRO,
-	VISION_MODE_HALLOWEEN,
-	VISION_MODE_ROME,
+	HOLIDAY_NONE =                 0,
+	HOLIDAY_GAME_RELEASE =   (1 << 0),
+	HOLIDAY_HALLOWEEN =      (1 << 1),
+	HOLIDAY_CHRISTMAS =      (1 << 2),
+	HOLIDAY_SPECIAL_UPDATE = (1 << 3),
+	HOLIDAY_VALENTINES =     (1 << 4),
+	HOLIDAY_FULL_MOON =      (1 << 5),
+	HOLIDAY_APRIL_FOOLS =    (1 << 6),
 
-	MAX_VISION_MODES
+	HOLIDAY_HALLOWEEN_OR_FULL_MOON = (HOLIDAY_HALLOWEEN|HOLIDAY_FULL_MOON),
+	HOLIDAY_HALLOWEEN_OR_FULL_MOON_OR_VALENTINES = (HOLIDAY_HALLOWEEN_OR_FULL_MOON|HOLIDAY_VALENTINES),
+
+	LAST_SHARED_HOLIDAY_FLAG = 6,
+	NUM_SHARED_HOLIDAYS = 7,
+
+	MAX_SUPPORTED_HOLIDAYS = 32
 };
-#endif // TF_DLL || TF_CLIENT_DLL
+
+typedef int EHolidayFlags;
+typedef int EHolidayFlag;
+typedef int EHolidayIndex;
+
+#ifdef CLIENT_DLL
+//the engine checks this cvar for 0x01
+extern ConVar localplayer_visionflags;
+
+enum
+{
+	VISION_FILTER_NONE = 0,
+
+	VISION_FILTER_ENGINE_MAT_REPLACEMENT = 0x01,
+
+	VISION_FILTER_GAME_RELEASE =   (HOLIDAY_GAME_RELEASE << 1),
+	VISION_FILTER_HALLOWEEN =      (HOLIDAY_HALLOWEEN << 1),
+	VISION_FILTER_CHRISTMAS =      (HOLIDAY_CHRISTMAS << 1),
+	VISION_FILTER_SPECIAL_UPDATE = (HOLIDAY_SPECIAL_UPDATE << 1),
+	VISION_FILTER_VALENTINES =     (HOLIDAY_VALENTINES << 1),
+	VISION_FILTER_FULL_MOON =      (HOLIDAY_FULL_MOON << 1),
+	VISION_FILTER_APRIL_FOOLS =    (HOLIDAY_APRIL_FOOLS << 1),
+
+	VISION_FILTER_HALLOWEEN_OR_FULL_MOON = (VISION_FILTER_HALLOWEEN|VISION_FILTER_FULL_MOON),
+	VISION_FILTER_HALLOWEEN_OR_FULL_MOON_OR_VALENTINES = (VISION_FILTER_HALLOWEEN_OR_FULL_MOON|VISION_FILTER_VALENTINES),
+
+	VISION_FILTER_LAST_HOLIDAY_FLAG = (LAST_SHARED_HOLIDAY_FLAG+1),
+
+	VISION_FILTER_LOW_VIOLENCE = (1 << (VISION_FILTER_LAST_HOLIDAY_FLAG+1)),
+
+	LAST_SHARED_VISION_FILTER_FLAG = (VISION_FILTER_LAST_HOLIDAY_FLAG+1),
+	NUM_SHARED_VISION_FILTERS = (NUM_SHARED_HOLIDAYS+2),
+
+	MAX_SUPPORTED_VISION_FILTERS = 32
+};
+#endif
 
 #endif // SHAREDDEFS_H

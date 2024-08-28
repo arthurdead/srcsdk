@@ -234,6 +234,7 @@ CHudTexture::~CHudTexture()
 //-----------------------------------------------------------------------------
 CHudElement::CHudElement( const char *pElementName )
 {
+	m_pHud = NULL;
 	m_bActive = false;
 	m_iHiddenBits = 0;
 	m_pElementName = pElementName;
@@ -241,9 +242,7 @@ CHudElement::CHudElement( const char *pElementName )
 	m_bIsParentedToClientDLLRootPanel = false;
 
 	// Make this for all hud elements, but when its a bit safer
-#if defined( TF_CLIENT_DLL ) || defined( DOD_DLL )
 	RegisterForRenderGroup( "global" );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -253,8 +252,13 @@ CHudElement::~CHudElement()
 {
 	if ( m_bNeedsRemove )
 	{
-		gHUD.RemoveHudElement( this );
+		GetHud().RemoveHudElement( this );
 	}
+}
+
+void CHudElement::SetHud( CHud *pHud )
+{
+	m_pHud = pHud;
 }
 
 //-----------------------------------------------------------------------------
@@ -287,7 +291,7 @@ void CHudElement::SetHiddenBits( int iBits )
 //-----------------------------------------------------------------------------
 bool CHudElement::ShouldDraw( void )
 {
-	bool bShouldDraw = ( !gHUD.IsHidden( m_iHiddenBits ) );
+	bool bShouldDraw = m_pHud && !m_pHud->IsHidden( m_iHiddenBits );
 
 	if ( bShouldDraw )
 	{
@@ -295,7 +299,7 @@ bool CHudElement::ShouldDraw( void )
 		int iNumGroups = m_HudRenderGroups.Count();
 		for ( int iGroupIndex = 0; iGroupIndex < iNumGroups; iGroupIndex++ )
 		{
-			if ( gHUD.IsRenderGroupLockedFor( this, m_HudRenderGroups.Element(iGroupIndex ) ) )
+			if ( GetHud().IsRenderGroupLockedFor( this, m_HudRenderGroups.Element(iGroupIndex ) ) )
 				return false;
 		}
 	}
@@ -326,7 +330,7 @@ void CHudElement::SetParentedToClientDLLRootPanel( bool parented )
 //-----------------------------------------------------------------------------
 void CHudElement::RegisterForRenderGroup( const char *pszGroupName )
 {
-	int iGroupIndex = gHUD.RegisterForRenderGroup( pszGroupName );
+	int iGroupIndex = GetHud().RegisterForRenderGroup( pszGroupName );
 
 	// add group index to our list of registered groups
 	if ( m_HudRenderGroups.Find( iGroupIndex ) == m_HudRenderGroups.InvalidIndex() )
@@ -337,7 +341,7 @@ void CHudElement::RegisterForRenderGroup( const char *pszGroupName )
 
 void CHudElement::UnregisterForRenderGroup( const char *pszGroupName )
 {
-	int iGroupIndex = gHUD.RegisterForRenderGroup( pszGroupName );
+	int iGroupIndex = GetHud().RegisterForRenderGroup( pszGroupName );
 
 	m_HudRenderGroups.FindAndRemove( iGroupIndex );
 }
@@ -348,10 +352,10 @@ void CHudElement::UnregisterForRenderGroup( const char *pszGroupName )
 void CHudElement::HideLowerPriorityHudElementsInGroup( const char *pszGroupName )
 {
 	// look up the render group
-	int iGroupIndex = gHUD.LookupRenderGroupIndexByName( pszGroupName );
+	int iGroupIndex = GetHud().LookupRenderGroupIndexByName( pszGroupName );
 
 	// lock the group
-	gHUD.LockRenderGroup( iGroupIndex, this );
+	GetHud().LockRenderGroup( iGroupIndex, this );
 }
 
 //-----------------------------------------------------------------------------
@@ -360,10 +364,10 @@ void CHudElement::HideLowerPriorityHudElementsInGroup( const char *pszGroupName 
 void CHudElement::UnhideLowerPriorityHudElementsInGroup( const char *pszGroupName )
 {	
 	// look up the render group
-	int iGroupIndex = gHUD.LookupRenderGroupIndexByName( pszGroupName );
+	int iGroupIndex = GetHud().LookupRenderGroupIndexByName( pszGroupName );
 
 	// unlock the group
-	gHUD.UnlockRenderGroup( iGroupIndex, this );
+	GetHud().UnlockRenderGroup( iGroupIndex, this );
 }
 
 //-----------------------------------------------------------------------------
@@ -374,19 +378,54 @@ int	CHudElement::GetRenderGroupPriority( void )
 	return 0;
 }
 
-CHud gHUD;  // global HUD object
+static CHud s_HUD;  // global HUD object
+CHud &GetHud()
+{
+	return s_HUD;
+}
 
-DECLARE_MESSAGE(gHUD, ResetHUD);
+static CHudIcons s_HudIcons;
+CHudIcons &HudIcons()
+{
+	return s_HudIcons;
+}
 
-#ifdef CSTRIKE_DLL
-DECLARE_MESSAGE(gHUD, SendAudio);
-#endif
+DECLARE_MESSAGE_MANUAL(gHUD, ResetHUD)
+{
+	GetHud().MsgFunc_ResetHUD(msg);
+}
+
+DECLARE_MESSAGE_MANUAL(gHUD, SendAudio)
+{
+	GetHud().MsgFunc_SendAudio(msg);
+}
 
 CHud::CHud()
 {
 	SetDefLessFunc( m_RenderGroups );
 
 	m_flScreenShotTime = -1;
+	m_bEngineIsInGame = false;
+}
+
+CUtlVector< CHudElement * > &CHud::GetHudList()
+{
+	return m_HudList;
+}
+
+const CUtlVector< CHudElement * > &CHud::GetHudList() const
+{
+	return m_HudList;
+}
+
+CUtlVector< vgui::Panel * > &CHud::GetHudPanelList()
+{
+	return m_HudPanelList;
+}
+
+const CUtlVector< vgui::Panel * > &CHud::GetHudPanelList() const
+{
+	return m_HudPanelList;
 }
 
 //-----------------------------------------------------------------------------
@@ -395,10 +434,7 @@ CHud::CHud()
 void CHud::Init( void )
 {
 	HOOK_HUD_MESSAGE( gHUD, ResetHUD );
-	
-#ifdef CSTRIKE_DLL
 	HOOK_HUD_MESSAGE( gHUD, SendAudio );
-#endif
 
 	InitFonts();
 
@@ -413,8 +449,6 @@ void CHud::Init( void )
 		m_HudList[i]->Init();
 	}
 
-	m_bHudTexturesLoaded = false;
-
 	KeyValues *kv = new KeyValues( "layout" );
 	if ( kv )
 	{
@@ -426,7 +460,7 @@ void CHud::Init( void )
 			{
 				CHudElement *element = m_HudList[i];
 
-				vgui::Panel *pPanel = dynamic_cast<vgui::Panel*>(element);
+				vgui::Panel *pPanel = m_HudPanelList[i];
 				if ( !pPanel )
 				{
 					Msg( "Non-vgui hud element %s\n", m_HudList[i]->GetName() );
@@ -451,6 +485,11 @@ void CHud::Init( void )
 		kv->deleteThis();
 	}
 
+	HudIcons().Init();
+}
+
+void CHudIcons::Init()
+{
 	if ( m_bHudTexturesLoaded )
 		return;
 
@@ -507,7 +546,13 @@ void CHud::Shutdown( void )
 	}
 
 	m_HudList.Purge();
+	m_HudPanelList.Purge();
 
+	HudIcons().Shutdown();
+}
+
+void CHudIcons::Shutdown()
+{
 	int c = m_Icons.Count();
 	for ( int i = c - 1; i >= 0; i-- )
 	{
@@ -518,7 +563,6 @@ void CHud::Shutdown( void )
 
 	m_bHudTexturesLoaded = false;
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose: LevelInit's called whenever a new level is starting
@@ -570,7 +614,7 @@ CHud::~CHud()
 void CHudTexture::Precache( void )
 {
 	// costly function, used selectively on specific hud elements to get font pages built out at load time
-	if ( IsX360() && bRenderUsingFont && !bPrecached && hFont != vgui::INVALID_FONT )
+	if ( bRenderUsingFont && !bPrecached && hFont != vgui::INVALID_FONT )
 	{
 		wchar_t wideChars[2];
 		wideChars[0] = (wchar_t)cCharacterInFont;
@@ -668,6 +712,93 @@ void CHudTexture::DrawSelfCropped( int x, int y, int cropx, int cropy, int cropw
 	DrawSelfCropped( x, y, cropx, cropy, cropw, croph, cropw, croph, clr );
 }
 
+void CHudTexture::DrawSelfScalableCorners( int drawX, int drawY, int w, int h, int iSrcCornerW, int iSrcCornerH, int iDrawCornerW, int iDrawCornerH, Color clr ) const
+{
+	if ( bRenderUsingFont )
+	{
+		Assert( !"DrawSelfScalableCorners does not support drawing a font" );
+		return;
+	}
+
+	if ( textureId == -1 )
+		return;
+
+	float fw = (float)Width();
+	float fh = (float)Height();
+
+	float flCornerWidthPercent = ( fw > 0 ) ? ( (float)iSrcCornerW / fw ) : 0;
+	float flCornerHeightPercent = ( fh > 0 ) ? ( (float)iSrcCornerH / fh ) : 0;
+
+	vgui::surface()->DrawSetColor( clr );
+	vgui::surface()->DrawSetTexture( textureId );
+
+	float uvx = 0;
+	float uvy = 0;
+	float uvw, uvh;
+
+	float drawW, drawH;
+
+	int x = drawX;
+	int y = drawY;
+
+	int row, col;
+	for ( row=0;row<3;row++ )
+	{
+		x = drawX;
+		uvx = 0;
+
+		if ( row == 0 || row == 2 )
+		{
+			//uvh - row 0 or 2, is src_corner_height
+			uvh = flCornerHeightPercent;
+			drawH = iDrawCornerH;
+		}
+		else
+		{
+			//uvh - row 1, is tall - ( 2 * src_corner_height ) ( min 0 )
+			uvh = MAX( 1.0 - 2 * flCornerHeightPercent, 0.0f );
+			drawH = MAX( 0, ( h - 2 * iDrawCornerH ) );
+		}
+
+		for ( col=0;col<3;col++ )
+		{
+			if ( col == 0 || col == 2 )
+			{
+				//uvw - col 0 or 2, is src_corner_width
+				uvw = flCornerWidthPercent;
+				drawW = iDrawCornerW;
+			}
+			else
+			{
+				//uvw - col 1, is wide - ( 2 * src_corner_width ) ( min 0 )
+				uvw = MAX( 1.0 - 2 * flCornerWidthPercent, 0.0f );
+				drawW = MAX( 0, ( w - 2 * iDrawCornerW ) );
+			}
+
+			Vector2D uv11( uvx, uvy );
+			Vector2D uv21( uvx+uvw, uvy );
+			Vector2D uv22( uvx+uvw, uvy+uvh );
+			Vector2D uv12( uvx, uvy+uvh );
+
+			vgui::Vertex_t verts[4];
+			verts[0].Init( Vector2D( x, y ), uv11 );
+			verts[1].Init( Vector2D( x+drawW, y ), uv21 );
+			verts[2].Init( Vector2D( x+drawW, y+drawH ), uv22 );
+			verts[3].Init( Vector2D( x, y+drawH ), uv12  );
+
+			vgui::surface()->DrawTexturedPolygon( 4, verts, false );	
+
+			x += drawW;
+			uvx += uvw;
+		}
+
+		y += drawH;
+		uvy += uvh;
+	}
+
+	vgui::surface()->DrawSetTexture(0);
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: returns width of texture with scale factor applied.  (If rendered
 //			using font, scale factor is ignored.)
@@ -703,7 +834,7 @@ int CHudTexture::EffectiveHeight( float flScale ) const
 //-----------------------------------------------------------------------------
 // Purpose: Gets texture handles for the hud icon
 //-----------------------------------------------------------------------------
-void CHud::SetupNewHudTexture( CHudTexture *t )
+void CHudIcons::SetupNewHudTexture( CHudTexture *t )
 {
 	if ( t->bRenderUsingFont )
 	{
@@ -733,7 +864,7 @@ void CHud::SetupNewHudTexture( CHudTexture *t )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CHudTexture *CHud::AddUnsearchableHudIconToList( CHudTexture& texture )
+CHudTexture *CHudIcons::AddUnsearchableHudIconToList( CHudTexture& texture )
 {
 	// These names are composed based on the texture file name
 	char composedName[ 512 ];
@@ -767,7 +898,7 @@ CHudTexture *CHud::AddUnsearchableHudIconToList( CHudTexture& texture )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CHudTexture *CHud::AddSearchableHudIconToList( CHudTexture& texture )
+CHudTexture *CHudIcons::AddSearchableHudIconToList( CHudTexture& texture )
 {
 	CHudTexture *icon = GetIcon( texture.szShortName );
 	if ( icon )
@@ -787,7 +918,7 @@ CHudTexture *CHud::AddSearchableHudIconToList( CHudTexture& texture )
 //-----------------------------------------------------------------------------
 // Purpose: returns a pointer to an icon in the list
 //-----------------------------------------------------------------------------
-CHudTexture *CHud::GetIcon( const char *szIcon )
+CHudTexture *CHudIcons::GetIcon( const char *szIcon )
 {
 	int i = m_Icons.Find( szIcon );
 	if ( i == m_Icons.InvalidIndex() )
@@ -799,7 +930,7 @@ CHudTexture *CHud::GetIcon( const char *szIcon )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CHud::RefreshHudTextures()
+void CHudIcons::RefreshHudTextures()
 {
 	if ( !m_bHudTexturesLoaded )
 	{
@@ -915,6 +1046,15 @@ void CHud::AddHudElement( CHudElement *pHudElement )
 	// Add the hud element to the end of the array
 	m_HudList.AddToTail( pHudElement );
 
+	vgui::Panel *pPanel = dynamic_cast< vgui::Panel * >( pHudElement );
+	if ( !pPanel )
+	{
+		Error( "All hud elements must derive from vgui::Panel * (%s)\n", pHudElement->GetName() );
+	}
+
+	m_HudPanelList.AddToTail( pPanel );
+
+	pHudElement->SetHud( this );
 	pHudElement->SetNeedsRemove( true );
 }
 
@@ -924,6 +1064,7 @@ void CHud::AddHudElement( CHudElement *pHudElement )
 void CHud::RemoveHudElement( CHudElement *pHudElement ) 
 {
 	m_HudList.FindAndRemove( pHudElement );
+	m_HudPanelList.FindAndRemove( dynamic_cast< vgui::Panel * >( pHudElement ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -932,11 +1073,7 @@ void CHud::RemoveHudElement( CHudElement *pHudElement )
 //-----------------------------------------------------------------------------
 float CHud::GetSensitivity( void )
 {
-#ifndef _X360
 	return m_flMouseSensitivity;
-#else
-	return 1.0f;
-#endif
 }
 
 float CHud::GetFOVSensitivityAdjust()
@@ -952,6 +1089,9 @@ bool CHud::IsHidden( int iHudFlags )
 	if ( engine->IsLevelMainMenuBackground() )
 		return true;
 	if ( !engine->IsInGame() )
+		return true;
+	// Hide all hud elements if we're blurring the background, since they don't blur properly
+	if ( GetClientMode()->GetBlurFade() )
 		return true;
 
 	// No local player yet?
@@ -979,13 +1119,11 @@ bool CHud::IsHidden( int iHudFlags )
 		return true;
 
 	// Hide all HUD elements during screenshot if the user's set hud_freezecamhide ( TF2 )
-#if defined( TF_CLIENT_DLL )
 	extern bool IsTakingAFreezecamScreenshot();
 	extern ConVar hud_freezecamhide;
 
 	if ( IsTakingAFreezecamScreenshot() && hud_freezecamhide.GetBool() )
 		return true;
-#endif
 
 	return ( ( iHudFlags & iHideHud ) != 0);
 }
@@ -1000,7 +1138,7 @@ void CHud::ProcessInput( bool bActive )
 		m_iKeyBits = input->GetButtonBits( 0 );
 
 		// Weaponbits need to be sent down as a UserMsg now.
-		gHUD.Think();
+		Think();
 	}
 }
 
@@ -1179,9 +1317,9 @@ bool CHud::DoesRenderGroupExist( int iGroupIndex )
 void CHud::UpdateHud( bool bActive )
 {
 	// clear the weapon bits.
-	gHUD.m_iKeyBits &= (~(IN_WEAPON1|IN_WEAPON2));
+	m_iKeyBits &= (~(IN_WEAPON1|IN_WEAPON2));
 
-	g_pClientMode->Update();
+	GetClientMode()->Update();
 
 	gLCD.Update();
 }
@@ -1197,6 +1335,5 @@ CON_COMMAND_F( testhudanim, "Test a hud element animation.\n\tArguments: <anim n
 		return;
 	}
 
-	g_pClientMode->GetViewportAnimationController()->StartAnimationSequence( args[1] );
+	GetClientMode()->GetViewportAnimationController()->StartAnimationSequence( args[1] );
 }
-

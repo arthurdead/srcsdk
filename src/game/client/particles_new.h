@@ -16,7 +16,7 @@
 #include "smartptr.h"
 #include "particles_simple.h"
 #include "tier1/utlobjectreference.h"
-
+#include "ehandle.h"
 
 //-----------------------------------------------------------------------------
 // Particle effect
@@ -29,6 +29,7 @@ public:
 
 public:
 	friend class CRefCountAccessor;
+	friend class CParticleSystemQuery;
 
 	// list management
 	CNewParticleEffect *m_pNext;
@@ -38,10 +39,8 @@ public:
 	// your particles are for sorting amongst other translucent entities.
 	void SetSortOrigin( const Vector &vSortOrigin );
 	bool ShouldDraw( void );
-	virtual bool IsTransparent( void );
-	virtual bool IsTwoPass( void );
-	virtual bool UsesPowerOfTwoFrameBufferTexture( void );
-	virtual bool UsesFullFrameBufferTexture( void );
+	virtual RenderableTranslucencyType_t ComputeTranslucencyType();
+	virtual int GetRenderFlags( void );
 	const QAngle& GetRenderAngles( void );
 	const matrix3x4_t& RenderableToWorldTransform();
 	void GetRenderBounds( Vector& mins, Vector& maxs );
@@ -73,13 +72,16 @@ public:
 												 const char *pDebugName = NULL );
 	static CSmartPtr<CNewParticleEffect> Create( CBaseEntity *pOwner, CParticleSystemDefinition *pDef,
 												 const char *pDebugName = NULL );
-	virtual int DrawModel( int flags );
+
+	virtual int DrawModel( int flags, const RenderableInstance_t &instance );
+
+	bool SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, int boneMask, float currentTime );
 
 	void DebugDrawBbox ( bool bCulled );
 
 	// CParticleCollection overrides
 public:
-	void StopEmission( bool bInfiniteOnly = false, bool bRemoveAllParticles = false, bool bWakeOnStop = false );
+	void StopEmission( bool bInfiniteOnly = false, bool bRemoveAllParticles = false, bool bWakeOnStop = false, bool bPlayEndCap = false );
 	void SetDormant( bool bDormant );
 	void SetControlPoint( int nWhichPoint, const Vector &v );
 	void SetControlPointEntity( int nWhichPoint, CBaseEntity *pEntity );
@@ -122,13 +124,16 @@ public:
 	virtual bool				ShouldSimulate() const { return m_bSimulate; }
 	virtual void				SetShouldSimulate( bool bSim ) { m_bSimulate = bSim; }
 
+	void SetToolRecording( bool bRecord );
+
 	int AllocateToolParticleEffectId();
 	int GetToolParticleEffectId() const;
-	CNewParticleEffect( CBaseEntity *pOwner, const char *pEffectName );
-	CNewParticleEffect( CBaseEntity *pOwner, CParticleSystemDefinition *pEffect );
 	virtual ~CNewParticleEffect();
 
 protected:
+	CNewParticleEffect( CBaseEntity *pOwner, const char *pEffectName );
+	CNewParticleEffect( CBaseEntity *pOwner, CParticleSystemDefinition *pEffect );
+
 	// Returns nonzero if Release() has been called.
 	int		IsReleased();
 	
@@ -143,7 +148,11 @@ protected:
 	bool		m_bAutoUpdateBBox : 1;
 	bool		m_bAllocated : 1;
 	bool		m_bSimulate : 1;
+	bool		m_bRecord : 1;
 	bool		m_bShouldPerformCullCheck : 1;
+
+	// if a particle system is created through the non-aggregation entry point, we can't aggregate into it
+	bool        m_bDisableAggregation : 1;
 
 	int			m_nToolParticleEffectId;
 	Vector		m_vSortOrigin;
@@ -154,6 +163,8 @@ protected:
 	Vector		m_LastMin;
 	Vector		m_LastMax;
 
+	Vector m_vecAggregationCenter;							// origin for aggregation if aggregation enabled
+
 	bool		m_bViewModelEffect;
 
 private:
@@ -162,9 +173,12 @@ private:
 	void		Release();
 	void		RecordControlPointOrientation( int nWhichPoint );
 	void		Construct();
+	void		RecordCreation();
 	
 	int			m_RefCount;		// When this goes to zero and the effect has no more active
 								// particles, (and it's dynamically allocated), it will delete itself.
+
+	matrix3x4_t m_DrawModelMatrix;
 
 	CNewParticleEffect( const CNewParticleEffect & ); // not defined, not accessible
 };
@@ -198,12 +212,7 @@ inline const Vector &CNewParticleEffect::GetSortOrigin( void )
 
 inline bool CNewParticleEffect::ShouldDraw( void )
 {
-	return true;
-}
-
-inline bool CNewParticleEffect::IsTransparent( void )
-{
-	return CParticleCollection::IsTranslucent();
+	return m_bDrawn;
 }
 
 inline const QAngle& CNewParticleEffect::GetRenderAngles( void )

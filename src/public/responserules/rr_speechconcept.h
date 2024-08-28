@@ -8,9 +8,7 @@
 #ifndef RR_SPEECHCONCEPT_H
 #define RR_SPEECHCONCEPT_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "utlsymbol.h"
 

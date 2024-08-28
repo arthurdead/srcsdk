@@ -8,13 +8,14 @@
 #define BONE_MERGE_CACHE_H
 #pragma once
 
+#include "mathlib/vector.h"
+#include "mathlib/mathlib.h"
+#include "studio.h"
+#include "bitvec.h"
+#include "bone_setup.h"
 
 class C_BaseAnimating;
 class CStudioHdr;
-
-
-#include "mathlib/vector.h"
-
 
 class CBoneMergeCache
 {
@@ -29,7 +30,7 @@ public:
 	
 	// This copies the transform from all bones in the followed entity that have 
 	// names that match our bones.
-	void MergeMatchingBones( int boneMask );
+	virtual void MergeMatchingBones( int boneMask, CBoneBitList &boneComputed );
 
 	// copy bones instead of matrices
 	void CopyParentToChild( const Vector parentPos[], const Quaternion parentQ[], Vector childPos[], Quaternion childQ[], int boneMask );
@@ -67,14 +68,14 @@ private:
 	};
 
 	CUtlVector<CMergedBone> m_MergedBones;
-	CUtlVector<unsigned char> m_BoneMergeBits;	// One bit for each bone. The bit is set if the bone gets merged.
+	CVarBitVec m_BoneMergeBits;	// One bit for each bone. The bit is set if the bone gets merged.
 };
 
 
 inline int CBoneMergeCache::IsBoneMerged( int iBone ) const
 {
 	if ( m_pOwnerHdr )
-		return m_BoneMergeBits[iBone >> 3] & ( 1 << ( iBone & 7 ) );
+		return m_BoneMergeBits.Get( iBone );
 	else
 		return 0;
 }

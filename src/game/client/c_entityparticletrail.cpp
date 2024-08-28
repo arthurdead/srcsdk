@@ -137,8 +137,8 @@ void C_EntityParticleTrail::AddParticle( float flInitialDeltaTime, const Vector 
 		return;
 
 	pParticle->m_Pos			= vecWorldPosition;
-	pParticle->m_flRoll			= Helper_RandomInt( 0, 360 );
-	pParticle->m_flRollDelta	= Helper_RandomFloat( -2.0f, 2.0f );
+	pParticle->m_flRoll			= random->RandomInt( 0, 360 );
+	pParticle->m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
 
 	pParticle->m_flLifetime		= flInitialDeltaTime;
 	pParticle->m_flDieTime		= m_Info.m_flLifetime;
@@ -146,7 +146,7 @@ void C_EntityParticleTrail::AddParticle( float flInitialDeltaTime, const Vector 
 	pParticle->m_uchColor[0]	= 64;
 	pParticle->m_uchColor[1]	= 140;
 	pParticle->m_uchColor[2]	= 225;
-	pParticle->m_uchStartAlpha	= Helper_RandomInt( 64, 64 );
+	pParticle->m_uchStartAlpha	= random->RandomInt( 64, 64 );
 	pParticle->m_uchEndAlpha	= 0;
 
 	pParticle->m_uchStartSize	= m_Info.m_flStartSize;

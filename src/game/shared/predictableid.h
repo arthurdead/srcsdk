@@ -9,7 +9,8 @@
 #define PREDICTABLEID_H
 #pragma once
 
-#if !defined( NO_ENTITY_PREDICTION )
+#include "tier0/platform.h"
+
 //-----------------------------------------------------------------------------
 // Purpose: Wraps 32bit predictID to allow access and creation
 //-----------------------------------------------------------------------------
@@ -71,6 +72,5 @@ private:
 // This can be empty, the class has a proper constructor
 FORCEINLINE void NetworkVarConstruct( CPredictableId &x ) {}
 
-#endif
 
 #endif // PREDICTABLEID_H

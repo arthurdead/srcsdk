@@ -57,6 +57,7 @@
 		RecvPropInt( RECVINFO( m_nHitBox ) ),
 
 		RecvPropInt( "entindex", 0, SIZEOF_IGNORE, 0, RecvProxy_EntIndex ),
+		RecvPropInt( RECVINFO( m_nOtherEntIndex ) ),
 
 		RecvPropInt( RECVINFO( m_nColor ) ),
 
@@ -119,6 +120,7 @@
 		SendPropInt( SENDINFO_NOCHECK( m_nHitBox ), 12, SPROP_UNSIGNED ),
 
 		SendPropInt( SENDINFO_NAME( m_nEntIndex, entindex ), MAX_EDICT_BITS, SPROP_UNSIGNED ),
+		SendPropInt( SENDINFO_NOCHECK( m_nOtherEntIndex ), MAX_EDICT_BITS, SPROP_UNSIGNED ),
 
 		SendPropInt( SENDINFO_NOCHECK( m_nColor ), 8, SPROP_UNSIGNED ),
 

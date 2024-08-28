@@ -11,6 +11,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+static ConVar  report_clientthinklist( "report_clientthinklist", "0", FCVAR_CHEAT, "List all clientside entities thinking and time - will report and turn itself off." );
+
 CClientThinkList g_ClientThinkList;
 
 
@@ -83,7 +85,7 @@ void CClientThinkList::SetNextClientThink( ClientThinkHandle_t hThink, float flN
 		return;
 	}
 
-	if ( flNextTime == CLIENT_THINK_NEVER )
+	if ( flNextTime == TICK_NEVER_THINK )
 	{
 		RemoveThinkable( hThink );
 	}
@@ -95,7 +97,7 @@ void CClientThinkList::SetNextClientThink( ClientThinkHandle_t hThink, float flN
 
 void CClientThinkList::SetNextClientThink( ClientEntityHandle_t hEnt, float flNextTime )
 {
-	if ( flNextTime == CLIENT_THINK_NEVER )
+	if ( flNextTime == TICK_NEVER_THINK )
 	{
 		RemoveThinkable( hEnt );
 		return;
@@ -148,7 +150,7 @@ void CClientThinkList::RemoveThinkable( ClientThinkHandle_t hThink )
 		int i = m_aChangeList.AddToTail();
 		m_aChangeList[i].m_hEnt = INVALID_CLIENTENTITY_HANDLE;
 		m_aChangeList[i].m_hThink = hThink;
-		m_aChangeList[i].m_flNextTime = CLIENT_THINK_NEVER;
+		m_aChangeList[i].m_flNextTime = TICK_NEVER_THINK;
 		return;
 	}
 
@@ -192,11 +194,18 @@ void CClientThinkList::PerformThinkFunction( ThinkEntry_t *pEntry, float flCurti
 		return;
 	}
 
-	if ( pEntry->m_flNextClientThink == CLIENT_THINK_ALWAYS )
+	IClientUnknown *pUnk = pThink->GetIClientUnknown();
+	C_BaseEntity *pEnt = pUnk ? pUnk->GetBaseEntity() : NULL;
+
+	if ( pEntry->m_flNextClientThink == TICK_ALWAYS_THINK )
 	{
 		// NOTE: The Think function here could call SetNextClientThink
 		// which would cause it to be removed + readded into the list
-		pThink->ClientThink();
+		if(pEnt) {
+			pEnt->PhysicsRunThink( C_BaseEntity::THINK_FIRE_ALL_FUNCTIONS, true );
+		} else {
+			pThink->Think();
+		}
 	}
 	else if ( pEntry->m_flNextClientThink == FLT_MAX )
 	{
@@ -212,7 +221,11 @@ void CClientThinkList::PerformThinkFunction( ThinkEntry_t *pEntry, float flCurti
 
 		// NOTE: The Think function here could call SetNextClientThink
 		// which would cause it to be readded into the list
-		pThink->ClientThink();
+		if(pEnt) {
+			pEnt->PhysicsRunThink( C_BaseEntity::THINK_FIRE_ALL_FUNCTIONS, true );
+		} else {
+			pThink->Think();
+		}
 	}
 
 	// Set this after the Think calls in case they look at LastClientThink
@@ -230,7 +243,7 @@ void CClientThinkList::AddEntityToFrameThinkList( ThinkEntry_t *pEntry, bool bAl
 		return;
 
 	// If we're not thinking this frame, we don't have to worry about thinking after our parents
-	bool bThinkThisInterval = ( pEntry->m_flNextClientThink == CLIENT_THINK_ALWAYS ) ||
+	bool bThinkThisInterval = ( pEntry->m_flNextClientThink == TICK_ALWAYS_THINK ) ||
 								( pEntry->m_flNextClientThink <= gpGlobals->curtime );
 
 	// This logic makes it so that if a child thinks,
@@ -288,17 +301,39 @@ void CClientThinkList::PerformThinkFunctions()
 	m_bInThinkLoop = true;
 
 	// Perform thinks on all entities that need it
-	int i;
-	for ( i = 0; i < nThinkCount; ++i )
+	if( !report_clientthinklist.GetBool() )
 	{
-		PerformThinkFunction( ppThinkEntryList[i], gpGlobals->curtime );		
+		for ( int i = 0; i < nThinkCount; ++i )
+		{
+			PerformThinkFunction( ppThinkEntryList[i], gpGlobals->curtime );		
+		}
 	}
+	else
+	{
+		CFastTimer fastTimer;
+
+		for ( int i = 0; i < nThinkCount; ++i )
+		{
+			fastTimer.Start();
+			PerformThinkFunction( ppThinkEntryList[i], gpGlobals->curtime );		
+			fastTimer.End();
+
+			C_BaseEntity *pEntity = ClientEntityList().GetBaseEntityFromHandle( ppThinkEntryList[i]->m_hEnt );
+			if ( pEntity )
+			{
+				Msg( "Entity(%d): %s - %f\n", pEntity->entindex(), pEntity->GetDebugName(), fastTimer.GetDuration().GetMillisecondsF() );
+			}
+		}
+
+		report_clientthinklist.SetValue( 0 );
+	}
+
 
 	m_bInThinkLoop = false;
 
 	// Apply changes to the think list
 	int nCount = m_aChangeList.Count();
-	for ( i = 0; i < nCount; ++i )
+	for ( int i = 0; i < nCount; ++i )
 	{
 		ClientThinkHandle_t hThink = m_aChangeList[i].m_hThink;
 		if ( hThink != INVALID_THINK_HANDLE )
@@ -390,9 +425,11 @@ void CClientThinkList::CleanUpDeleteList()
 			}
 
 			IClientThinkable *pThink = ClientEntityList().GetClientThinkableFromHandle( handle );
-			if ( pThink )
-			{
-				pThink->Release();
+
+			if( pEntity && (!pThink || (pEntity->GetClientThinkable() == pThink))) {
+				UTIL_RemoveImmediate( pEntity );
+			} else if( pThink ) {
+				pThink->DO_NOT_USE_Release();
 			}
 		}
 	}

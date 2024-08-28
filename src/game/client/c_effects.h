@@ -29,7 +29,16 @@ public:
 	float	m_flCurLifetime;
 	float	m_flMaxLifetime;
 };
-						  
+
+class CClient_Precipitation;
+
+//===========
+// Snow fall
+//===========
+class CSnowFallManager;
+extern CSnowFallManager *s_pSnowFallMgr;
+extern bool SnowFallManagerCreate( CClient_Precipitation *pSnowEntity );
+extern void SnowFallManagerDestroy( void );
 
 class AshDebrisEffect : public CSimpleEmitter
 {
@@ -76,8 +85,7 @@ public:
 
 	// Inherited from C_BaseEntity
 	virtual void Precache( );
-	virtual bool IsTransparent() { return true; }
-	virtual bool IsTwoPass() { return true; }
+	virtual RenderableTranslucencyType_t ComputeTranslucencyType() { return RENDERABLE_IS_TRANSLUCENT; }
 
 	void Render();
 
@@ -87,7 +95,7 @@ private:
 	CPrecipitationParticle* CreateParticle();
 
 	virtual void OnDataChanged( DataUpdateType_t updateType );
-	virtual void ClientThink();
+	virtual void Think();
 
 	void Simulate( float dt );
 
@@ -197,7 +205,7 @@ public:
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
 	virtual bool	ShouldDraw( void ) { return false; }
 
-	virtual void	ClientThink( );
+	virtual void	WindThink( );
 
 	const CEnvWindShared& WindShared() const { return m_EnvWindShared; }
 

@@ -18,6 +18,9 @@
 #include "view.h"
 #include "teamplay_gamerules.h"
 
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 #define INTRO_NUM_FAKE_PLAYERS		3
 
 extern ConVar mp_capstyle;

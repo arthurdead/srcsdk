@@ -42,6 +42,8 @@ enum
 	DRAWWORLDLISTS_DRAW_SHADOWDEPTH				= 0x040,
 	DRAWWORLDLISTS_DRAW_REFRACTION				= 0x080,
 	DRAWWORLDLISTS_DRAW_REFLECTION				= 0x100,
+	DRAWWORLDLISTS_DRAW_WORLD_GEOMETRY			= 0x200,
+	DRAWWORLDLISTS_DRAW_DECALS_AND_OVERLAYS		= 0x400,
 	DRAWWORLDLISTS_DRAW_SSAO					= 0x800,
 };
 
@@ -76,6 +78,14 @@ typedef short LeafFogVolume_t;
 enum
 {
 	INVALID_LEAF_INDEX = (LeafIndex_t)~0
+};
+
+struct WorldListLeafData_t
+{
+	LeafIndex_t	leafIndex;	// 16 bits
+	int16	waterData;
+	uint16 	firstTranslucentSurface;	// engine-internal list index
+	uint16	translucentSurfaceCount;	// count of translucent surfaces+disps
 };
 
 

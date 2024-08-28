@@ -686,19 +686,6 @@ void CBaseWorldViewDeferred::PopView()
 	pRenderContext->SetHeightClipMode( MATERIAL_HEIGHTCLIPMODE_DISABLE );
 	if( m_DrawFlags & (DF_RENDER_REFRACTION | DF_RENDER_REFLECTION) )
 	{
-		if ( IsX360() )
-		{
-			// these renders paths used their surfaces, so blit their results
-			if ( m_DrawFlags & DF_RENDER_REFRACTION )
-			{
-				pRenderContext->CopyRenderTargetToTextureEx( GetWaterRefractionTexture(), NULL, NULL );
-			}
-			if ( m_DrawFlags & DF_RENDER_REFLECTION )
-			{
-				pRenderContext->CopyRenderTargetToTextureEx( GetWaterReflectionTexture(), NULL, NULL );
-			}
-		}
-
 		render->PopView( GetFrustum() );
 	}
 }
@@ -839,10 +826,6 @@ void CGBufferView::Draw()
 	CMatRenderContextPtr pRenderContext( materials );
 	PIXEVENT( pRenderContext, "CSimpleWorldViewDeferred::Draw" );
 
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 32 ); //lean toward pixel shader threads
-#endif
-
 	SetupCurrentView( origin, angles, VIEW_DEFERRED_GBUFFER );
 
 	DrawSetup( 0, m_DrawFlags, 0 );
@@ -852,10 +835,6 @@ void CGBufferView::Draw()
 
 	pRenderContext.GetFrom( materials );
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
-
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 }
 
 void CGBufferView::PushView( float waterHeight )
@@ -1067,12 +1046,6 @@ void CSkyboxViewDeferred::DrawInternal( view_id_t iSkyBoxViewID, bool bInvokePre
 	// Store off view origin and angles
 	SetupCurrentView( origin, angles, iSkyBoxViewID );
 
-#if defined( _X360 )
-	CMatRenderContextPtr pRenderContext( materials );
-	pRenderContext->PushVertexShaderGPRAllocation( 32 );
-	pRenderContext.SafeRelease();
-#endif
-
 	// Invoke pre-render methods
 	if ( bInvokePreAndPostRender )
 	{
@@ -1120,11 +1093,6 @@ void CSkyboxViewDeferred::DrawInternal( view_id_t iSkyBoxViewID, bool bInvokePre
 		PopComposite();
 
 	render->PopView( GetFrustum() );
-
-#if defined( _X360 )
-	pRenderContext.GetFrom( materials );
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 }
 
 bool CSkyboxViewDeferred::Setup( const CViewSetup &view, bool bGBuffer, SkyboxVisibility_t *pSkyboxVisible )
@@ -1190,10 +1158,6 @@ void CPostLightingView::Draw()
 	CMatRenderContextPtr pRenderContext( materials );
 	PIXEVENT( pRenderContext, "CSimpleWorldViewDeferred::Draw" );
 
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 32 ); //lean toward pixel shader threads
-#endif
-
 	ITexture *pTexAlbedo = GetDefRT_Albedo();
 	pRenderContext->CopyRenderTargetToTexture( pTexAlbedo );
 	pRenderContext->PushRenderTargetAndViewport( pTexAlbedo );
@@ -1210,10 +1174,6 @@ void CPostLightingView::Draw()
 
 	pRenderContext.GetFrom( materials );
 	pRenderContext->PopRenderTargetAndViewport();
-
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 }
 
 void CPostLightingView::PushView( float waterHeight )

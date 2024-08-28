@@ -13,8 +13,6 @@
 #include "ivieweffects.h"
 #include "shake.h"
 #include "eventlist.h"
-// NVNT haptic include for notification of world precache
-#include "haptics/haptic_utils.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -29,11 +27,12 @@ static C_World *g_pClientWorld;
 void ClientWorldFactoryInit()
 {
 	g_pClientWorld = new C_World;
+	g_pClientWorld->SetClassname("worldspawn");
 }
 
 void ClientWorldFactoryShutdown()
 {
-	delete g_pClientWorld;
+	UTIL_Remove( g_pClientWorld );
 	g_pClientWorld = NULL;
 }
 
@@ -41,7 +40,7 @@ static IClientNetworkable* ClientWorldFactory( int entnum, int serialNum )
 {
 	Assert( g_pClientWorld != NULL );
 
-	g_pClientWorld->Init( entnum, serialNum );
+	g_pClientWorld->InitializeAsServerEntity( entnum, serialNum );
 	return g_pClientWorld;
 }
 
@@ -59,6 +58,7 @@ BEGIN_RECV_TABLE( C_World, DT_World )
 	RecvPropFloat(RECVINFO(m_flMinPropScreenSpaceWidth)),
 	RecvPropString(RECVINFO(m_iszDetailSpriteMaterial)),
 	RecvPropInt(RECVINFO(m_bColdWorld)),
+	RecvPropInt(RECVINFO(m_iTimeOfDay)),
 END_RECV_TABLE()
 
 
@@ -70,19 +70,19 @@ C_World::~C_World( void )
 {
 }
 
-bool C_World::Init( int entnum, int iSerialNum )
+bool C_World::InitializeAsServerEntity( int entnum, int iSerialNum )
 {
 	m_flWaveHeight = 0.0f;
 	ActivityList_Init();
 	EventList_Init();
 
-	return BaseClass::Init( entnum, iSerialNum );
+	return BaseClass::InitializeAsServerEntity( entnum, iSerialNum );
 }
 
-void C_World::Release()
+void C_World::UpdateOnRemove()
 {
 	ActivityList_Free();
-	Term();
+	BaseClass::UpdateOnRemove();
 }
 
 void C_World::PreDataUpdate( DataUpdateType_t updateType )
@@ -110,7 +110,7 @@ void C_World::OnDataChanged( DataUpdateType_t updateType )
 			sf.duration = (float)(1<<SCREENFADE_FRACBITS) * 5.0f;
 			sf.holdTime = (float)(1<<SCREENFADE_FRACBITS) * 1.0f;
 			sf.fadeFlags = FFADE_IN | FFADE_PURGE;
-			vieweffects->Fade( sf );
+			GetViewEffects()->Fade( sf );
 		}
 
 		OcclusionParams_t params;
@@ -131,15 +131,14 @@ void C_World::RegisterSharedActivities( void )
 // -----------------------------------------
 //	Sprite Index info
 // -----------------------------------------
-short		g_sModelIndexLaser;			// holds the index for the laser beam
-const char	*g_pModelNameLaser = "sprites/laserbeam.vmt";
-short		g_sModelIndexLaserDot;		// holds the index for the laser beam dot
-short		g_sModelIndexFireball;		// holds the index for the fireball
-short		g_sModelIndexSmoke;			// holds the index for the smoke cloud
-short		g_sModelIndexWExplosion;	// holds the index for the underwater explosion
-short		g_sModelIndexBubbles;		// holds the index for the bubbles model
-short		g_sModelIndexBloodDrop;		// holds the sprite index for the initial blood
-short		g_sModelIndexBloodSpray;	// holds the sprite index for splattered blood
+int		g_sModelIndexLaser;			// holds the index for the laser beam
+int		g_sModelIndexLaserDot;		// holds the index for the laser beam dot
+int		g_sModelIndexFireball;		// holds the index for the fireball
+int		g_sModelIndexSmoke;			// holds the index for the smoke cloud
+int		g_sModelIndexWExplosion;	// holds the index for the underwater explosion
+int		g_sModelIndexBubbles;		// holds the index for the bubbles model
+int		g_sModelIndexBloodDrop;		// holds the sprite index for the initial blood
+int		g_sModelIndexBloodSpray;	// holds the sprite index for splattered blood
 
 //-----------------------------------------------------------------------------
 // Purpose: Precache global weapon sounds
@@ -154,7 +153,7 @@ void W_Precache(void)
 	g_sModelIndexBubbles = modelinfo->GetModelIndex ("sprites/bubble.vmt");//bubbles
 	g_sModelIndexBloodSpray = modelinfo->GetModelIndex ("sprites/bloodspray.vmt"); // initial blood
 	g_sModelIndexBloodDrop = modelinfo->GetModelIndex ("sprites/blood.vmt"); // splattered blood 
-	g_sModelIndexLaser = modelinfo->GetModelIndex( (char *)g_pModelNameLaser );
+	g_sModelIndexLaser = modelinfo->GetModelIndex( "sprites/laserbeam.vmt" );
 	g_sModelIndexLaserDot = modelinfo->GetModelIndex("sprites/laserdot.vmt");
 }
 
@@ -174,9 +173,6 @@ void C_World::Precache( void )
 
 	// Call all registered precachers.
 	CPrecacheRegister::Precache();
-	// NVNT notify system of precache
-	if (haptics)
-		haptics->WorldPrecache();
 }
 
 void C_World::Spawn( void )

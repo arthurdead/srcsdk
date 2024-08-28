@@ -35,7 +35,7 @@ public:
 	int						GetSpeedModifyRadius( void ) { return m_iSpeedModRadius; }
 	int						GetSpeedModifySpeed( void ) { return m_iSpeedModSpeed;	}
 
-	void					ClientThink( void );
+	void					SpeedModThink( void );
 	void					OnDataChanged( DataUpdateType_t type );
 	bool					ImportantRagdoll( void ) { return m_bImportanRagdoll;	}
 

@@ -66,13 +66,13 @@ void RecvProxy_ScaleTime( const CRecvProxyData *pData, void *pStruct, void *pOut
 	{
 		if ( time == -1.0f )
 		{
-			pFireSmoke->m_flScaleTimeStart	= Helper_GetTime()-1.0f;
+			pFireSmoke->m_flScaleTimeStart	= gpGlobals->curtime-1.0f;
 			pFireSmoke->m_flScaleTimeEnd	= pFireSmoke->m_flScaleTimeStart;
 		}
 		else
 		{
-			pFireSmoke->m_flScaleTimeStart	= Helper_GetTime();
-			pFireSmoke->m_flScaleTimeEnd	= Helper_GetTime() + time;
+			pFireSmoke->m_flScaleTimeStart	= gpGlobals->curtime;
+			pFireSmoke->m_flScaleTimeEnd	= gpGlobals->curtime + time;
 		}
 	}
 
@@ -112,8 +112,9 @@ C_FireSmoke::~C_FireSmoke()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_FireSmoke::Simulate( void )
+bool C_FireSmoke::Simulate( void )
 {
+	return false;
 }
 
 #define	FLAME_ALPHA_START	0.9f
@@ -332,11 +333,7 @@ void C_EntityFlame::CreateEffect( void )
 		m_hEffect = NULL;
 	}
 
-#ifdef TF_CLIENT_DLL
-	m_hEffect = ParticleProp()->Create( "burningplayer_red", PATTACH_ABSORIGIN_FOLLOW );
-#else
 	m_hEffect = ParticleProp()->Create( "burning_character", PATTACH_ABSORIGIN_FOLLOW );
-#endif
 
 	if ( m_hEffect )
 	{
@@ -377,16 +374,14 @@ void C_EntityFlame::OnDataChanged( DataUpdateType_t updateType )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_EntityFlame::Simulate( void )
+bool C_EntityFlame::Simulate( void )
 {
 	if ( gpGlobals->frametime <= 0.0f )
-		return;
-
-#ifdef HL2_EPISODIC 
+		return true;
 
 	if ( IsEffectActive(EF_BRIGHTLIGHT) || IsEffectActive(EF_DIMLIGHT) )
 	{
-		dlight_t *dl = effects->CL_AllocDlight ( index );
+		dlight_t *dl = effects->CL_AllocDlight ( entindex() );
 		dl->origin = GetAbsOrigin();
  		dl->origin[2] += 16;
 		dl->color.r = 254;
@@ -394,16 +389,18 @@ void C_EntityFlame::Simulate( void )
 		dl->color.b = 10;
 		dl->radius = random->RandomFloat(400,431);
 		dl->die = gpGlobals->curtime + 0.001;
+
+		return false;
 	}
 
-#endif // HL2_EPISODIC 
+	return true;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_EntityFlame::ClientThink( void )
+void C_EntityFlame::RemoveThink( void )
 {
 	StopEffect();
-	Release();
+	UTIL_Remove(this);
 }

@@ -73,7 +73,7 @@ void CBaseParticleEntity::Activate()
 
 void CBaseParticleEntity::Think()
 {
-	Remove( );
+	UTIL_Remove( this );
 }
 
 

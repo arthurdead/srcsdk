@@ -48,18 +48,18 @@ void C_Tesla::ReceiveMessage( int classID, bf_read &msg )
 	EmitSound( m_SoundName );
 
 	m_QueuedCommands.AddToTail( teslaInfo );
-	SetNextClientThink( CLIENT_THINK_ALWAYS );
+	SetContextThink( &C_Tesla::TeslaThink, TICK_ALWAYS_THINK, "TeslaThink" );
 }
 
 
-void C_Tesla::ClientThink()
+void C_Tesla::TeslaThink()
 {
 	FOR_EACH_LL( m_QueuedCommands, i )
 	{
 		FX_Tesla( m_QueuedCommands[i] );
 	}
 	m_QueuedCommands.Purge();
-	SetNextClientThink( CLIENT_THINK_NEVER );
+	SetNextThink( TICK_NEVER_THINK, "TeslaThink" );
 }
 
 

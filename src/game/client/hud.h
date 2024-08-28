@@ -19,6 +19,7 @@
 namespace vgui
 {
 	class IScheme;
+	class Panel;
 }
 
 // basic rectangle struct used for drawing
@@ -62,6 +63,7 @@ public:
 	void DrawSelfCropped( int x, int y, int cropx, int cropy, int cropw, int croph, Color clr ) const;
 	// new version to scale the texture over a finalWidth and finalHeight passed in
 	void DrawSelfCropped( int x, int y, int cropx, int cropy, int cropw, int croph, int finalWidth, int finalHeight, Color clr ) const;
+	void DrawSelfScalableCorners( int x, int y, int w, int h, int iSrcCornerW, int iSrcCornerH, int iDrawCornerW, int iDrawCornerH, Color clr ) const;
 
 	char		szShortName[ 64 ];
 	char		szTextureFile[ 64 ];
@@ -137,14 +139,6 @@ public:
 	void						DrawProgressBar( int x, int y, int width, int height, float percentage, Color& clr, unsigned char type );
 	void						DrawIconProgressBar( int x, int y, CHudTexture *icon, CHudTexture *icon2, float percentage, Color& clr, int type );
 
-	CHudTexture					*GetIcon( const char *szIcon );
-
-	// loads a new icon into the list, without duplicates
-	CHudTexture					*AddUnsearchableHudIconToList( CHudTexture& texture );
-	CHudTexture					*AddSearchableHudIconToList( CHudTexture& texture );
-
-	void						RefreshHudTextures();
-
 	// User messages
 	void						MsgFunc_ResetHUD(bf_read &msg);
 	void 						MsgFunc_SendAudio(bf_read &msg);
@@ -160,38 +154,69 @@ public:
 
 	void						SetScreenShotTime( float flTime ){ m_flScreenShotTime = flTime; }
 
+	CUtlVector< CHudElement * > &GetHudList();
+	const CUtlVector< CHudElement * > &GetHudList() const;
+	CUtlVector< vgui::Panel * > &GetHudPanelList();
+	const CUtlVector< vgui::Panel * > &GetHudPanelList() const;
+
 public:
 
 	int							m_iKeyBits;
-#ifndef _XBOX
+
 	float						m_flMouseSensitivity;
 	float						m_flMouseSensitivityFactor;
-#endif
+
 	float						m_flFOVSensitivityAdjust;
 
 	Color						m_clrNormal;
 	Color						m_clrCaution;
 	Color						m_clrYellowish;
 
+private:
 	CUtlVector< CHudElement * >	m_HudList;
+	// Same list as above, but with vgui::Panel dynamic_cast precomputed.  These should all be non-NULL!!!
+	CUtlVector< vgui::Panel * >	m_HudPanelList; 
 
 private:
 	void						InitFonts();
-
-	void						SetupNewHudTexture( CHudTexture *t );
-
-	bool						m_bHudTexturesLoaded;
-
-	// Global list of known icons
-	CUtlDict< CHudTexture *, int >		m_Icons;
 
 	CUtlVector< const char * >				m_RenderGroupNames;
 	CUtlMap< int, CHudRenderGroup * >		m_RenderGroups;
 
 	float						m_flScreenShotTime; // used to take end-game screenshots
+
+	bool						m_bEngineIsInGame;
 };
 
-extern CHud gHUD;
+extern CHud &GetHud();
+
+class CHudIcons
+{
+public:
+	CHudIcons();
+	~CHudIcons();
+
+	void						Init();
+	void						Shutdown();
+
+	CHudTexture					*GetIcon( const char *szIcon );
+
+	// loads a new icon into the list, without duplicates
+	CHudTexture					*AddUnsearchableHudIconToList( CHudTexture& texture );
+	CHudTexture					*AddSearchableHudIconToList( CHudTexture& texture );
+
+	void						RefreshHudTextures();
+
+private:
+
+	void						SetupNewHudTexture( CHudTexture *t );
+	bool						m_bHudTexturesLoaded;
+	// Global list of known icons
+	CUtlDict< CHudTexture *, int >		m_Icons;
+
+};
+
+CHudIcons &HudIcons();
 
 //-----------------------------------------------------------------------------
 // Global fonts used in the client DLL

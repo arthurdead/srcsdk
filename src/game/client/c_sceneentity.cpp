@@ -77,16 +77,26 @@ void C_SceneEntity::OnResetClientTime()
 
 char const *C_SceneEntity::GetSceneFileName()
 {
-	return g_pStringTableClientSideChoreoScenes->GetString( m_nSceneStringIndex );
+	char const *pStr = g_pStringTableClientSideChoreoScenes->GetString( m_nSceneStringIndex );
+	if ( pStr )
+		return pStr;
+
+	static bool bFirst = true;
+	if ( bFirst )
+	{
+		bFirst = false;
+		Assert( 0 );
+		Warning( "GetSceneFilename() failed for scene index %d\n", m_nSceneStringIndex );
+	}
+	return "";
 }
 
 ConVar mp_usehwmvcds( "mp_usehwmvcds", "0", NULL, "Enable the use of the hw morph vcd(s). (-1 = never, 1 = always, 0 = based upon GPU)" ); // -1 = never, 0 = if hasfastvertextextures, 1 = always
 bool UseHWMorphVCDs()
 {
-// 	if ( mp_usehwmvcds.GetInt() == 0 )
-// 		return g_pMaterialSystemHardwareConfig->HasFastVertexTextures();
-// 	return mp_usehwmvcds.GetInt() > 0;
-	return false;
+	if ( mp_usehwmvcds.GetInt() == 0 )
+		return g_pMaterialSystemHardwareConfig->HasFastVertexTextures();
+	return mp_usehwmvcds.GetInt() > 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -174,7 +184,7 @@ void C_SceneEntity::ResetActorFlexesForScene()
 		}
 
 		// Reset the prediction interpolation values.
-		pFlexActor->m_iv_flexWeight.Reset();
+		pFlexActor->m_iv_flexWeight.Reset( gpGlobals->curtime );
 	}
 }
 
@@ -252,7 +262,7 @@ void C_SceneEntity::SetupClientOnlyScene( const char *pszFilename, C_BaseFlex *p
 			}
 		}
 
-		SetNextClientThink( CLIENT_THINK_ALWAYS );
+		SetContextThink( &C_SceneEntity::SceneThink, TICK_ALWAYS_THINK, "SceneThink" );
 	}
 
 	if ( m_hOwner.Get() )
@@ -371,7 +381,7 @@ void C_SceneEntity::PostDataUpdate( DataUpdateType_t updateType )
 				}
 			}
 
-			SetNextClientThink( CLIENT_THINK_ALWAYS );
+			SetContextThink( &C_SceneEntity::SceneThink, TICK_ALWAYS_THINK, "SceneThink" );
 		}
 
 		m_bWasPlaying = !m_bIsPlayingBack; // force it to be "changed"
@@ -676,7 +686,7 @@ void C_SceneEntity::DispatchStartSpeak( CChoreoScene *scene, C_BaseFlex *actor, 
 		es.m_pSoundName = event->GetParameters();
 
 		EmitSound( filter, actor->entindex(), es );
-		actor->AddSceneEvent( scene, event, NULL, IsClientOnly() );
+		actor->AddSceneEvent( scene, event, NULL, IsClientOnly(), this );
 
 		// Close captioning only on master token no matter what...
 		if ( event->GetCloseCaptionType() == CChoreoEvent::CC_MASTER )
@@ -700,7 +710,7 @@ void C_SceneEntity::DispatchStartSpeak( CChoreoScene *scene, C_BaseFlex *actor, 
 				float durationLong = endtime - event->GetStartTime();
 				float duration = MAX( durationShort, durationLong );
 
-				CHudCloseCaption *hudCloseCaption = GET_HUDELEMENT( CHudCloseCaption );
+				CHudCloseCaption *hudCloseCaption = GET_FULLSCREEN_HUDELEMENT( CHudCloseCaption );
 				if ( hudCloseCaption )
 				{
 					hudCloseCaption->ProcessCaption( lowercase, duration );
@@ -880,6 +890,7 @@ void C_SceneEntity::ClearSceneEvents( CChoreoScene *scene, bool canceled )
 	}
 
 	WipeQueuedEvents();
+	OnResetClientTime();
 }
 
 //-----------------------------------------------------------------------------
@@ -913,7 +924,7 @@ void C_SceneEntity::UnloadScene( void )
 //-----------------------------------------------------------------------------
 void C_SceneEntity::DispatchStartFlexAnimation( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event )
 {
-	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() );
+	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() || IsMultiplayer(), this );
 }
 
 //-----------------------------------------------------------------------------
@@ -933,7 +944,7 @@ void C_SceneEntity::DispatchEndFlexAnimation( CChoreoScene *scene, C_BaseFlex *a
 //-----------------------------------------------------------------------------
 void C_SceneEntity::DispatchStartExpression( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event )
 {
-	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() );
+	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() || IsMultiplayer(), this);
 }
 
 //-----------------------------------------------------------------------------
@@ -957,7 +968,7 @@ void C_SceneEntity::DispatchStartGesture( CChoreoScene *scene, C_BaseFlex *actor
 	if ( !Q_stricmp( event->GetName(), "NULL" ) )
 		return;
 
-	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() ); 
+	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() || IsMultiplayer(), this ); 
 }
 
 //-----------------------------------------------------------------------------
@@ -972,7 +983,7 @@ void C_SceneEntity::DispatchProcessGesture( CChoreoScene *scene, C_BaseFlex *act
 		return;
 
 	actor->RemoveSceneEvent( scene, event, false );
-	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() ); 
+	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() || IsMultiplayer(), this ); 
 }
 
 //-----------------------------------------------------------------------------
@@ -995,7 +1006,7 @@ void C_SceneEntity::DispatchEndGesture( CChoreoScene *scene, C_BaseFlex *actor, 
 //-----------------------------------------------------------------------------
 void C_SceneEntity::DispatchStartSequence( CChoreoScene *scene, CBaseFlex *actor, CChoreoEvent *event )
 {
-	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() );
+	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() || IsMultiplayer(), this );
 }
 
 //-----------------------------------------------------------------------------
@@ -1046,7 +1057,7 @@ void C_SceneEntity::DoThink( float frametime )
 	m_flCurrentTime += gpGlobals->frametime;
 }
 
-void C_SceneEntity::ClientThink()
+void C_SceneEntity::SceneThink()
 {
 	DoThink( gpGlobals->frametime );
 }

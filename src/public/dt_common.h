@@ -80,6 +80,10 @@
 
 #define SPROP_VARINT					SPROP_NORMAL	// reuse existing flag so we don't break demo. note you want to include SPROP_UNSIGNED if needed, its more efficient
 
+#define SPROP_CELL_COORD				(1<<17) // Like SPROP_COORD, but special encoding for cell coordinates that can't be negative, bit count indicate maximum value
+#define SPROP_CELL_COORD_LOWPRECISION 	(1<<18) // Like SPROP_CELL_COORD, but special handling where the fractional component only gets a 3 bits instead of 5
+#define SPROP_CELL_COORD_INTEGRAL		(1<<19) // SPROP_CELL_COORD, but coordinates are rounded to integral boundaries
+
 #define SPROP_NUMFLAGBITS_NETWORKED		16
 
 // This is server side only, it's used to mark properties whose SendProxy_* functions encode against gpGlobals->tickcount (the only ones that currently do this are
@@ -197,9 +201,7 @@ public:
 		float	m_Vector[3];
 #endif
 
-#ifdef SUPPORTS_INT64
 		int64	m_Int64;
-#endif
 	};
 	SendPropType	m_Type;
 };

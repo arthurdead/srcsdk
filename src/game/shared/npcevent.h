@@ -9,17 +9,60 @@
 #define NPCEVENT_H
 #pragma once
 
+#include "eventlist.h"
+#include "studio.h"
+
 class CBaseAnimating;
 
 struct animevent_t
 {
-	int				event;
+#ifdef CLIENT_DLL
+	// see mstudioevent_for_client_server_t comment below
+	union
+	{
+		unsigned short	_event_highword;
+		unsigned short	event_newsystem;
+	};
+	unsigned short	_event_lowword;
+#else
+	// see mstudioevent_for_client_server_t comment below
+	unsigned short	_event_highword;
+	union
+	{
+		unsigned short	_event_lowword;
+		unsigned short	event_newsystem;
+	};
+#endif
+
 	const char		*options;
 	float			cycle;
 	float			eventtime;
 	int				type;
 	CBaseAnimating	*pSource;
+
+	// see mstudioevent_for_client_server_t comment below
+	int Event_OldSystem( void ) const { return *static_cast< const int* >( static_cast< const void* >( &_event_highword ) ); }
+	void Event_OldSystem( int nEvent ) { *static_cast< int* >( static_cast< void* >( &_event_highword ) ) = nEvent; }
+	int Event( void ) const
+	{
+		if ( type & AE_TYPE_NEWEVENTSYSTEM )
+			return event_newsystem;
+
+		return Event_OldSystem();
+	}
+	void Event( int nEvent )
+	{
+		if ( type & AE_TYPE_NEWEVENTSYSTEM )
+		{
+			event_newsystem = nEvent;
+		}
+		else
+		{
+			Event_OldSystem( nEvent );
+		}
+	}
 };
+
 #define EVENT_SPECIFIC			0
 #define EVENT_SCRIPTED			1000		// see scriptevent.h
 #define EVENT_SHARED			2000

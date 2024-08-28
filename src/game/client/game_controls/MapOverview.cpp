@@ -32,7 +32,17 @@ ConVar overview_tracks( "overview_tracks", "1", FCVAR_ARCHIVE | FCVAR_CLIENTCMD_
 ConVar overview_locked( "overview_locked", "1", FCVAR_ARCHIVE | FCVAR_CLIENTCMD_CAN_EXECUTE, "Locks map angle, doesn't follow view angle.\n" );
 ConVar overview_alpha( "overview_alpha",  "1.0", FCVAR_ARCHIVE | FCVAR_CLIENTCMD_CAN_EXECUTE, "Overview map translucency.\n" );
 
-IMapOverviewPanel *g_pMapOverview = NULL; // we assume only one overview is created
+static IMapOverviewPanel *g_pMapOverview;
+
+void SetMapOverView( IMapOverviewPanel *pPanel )
+{
+	g_pMapOverview = pPanel;
+}
+
+IMapOverviewPanel *GetMapOverView()
+{
+	return g_pMapOverview;
+}
 
 static int AdjustValue( int curValue, int targetValue, int amount )
 {
@@ -84,7 +94,7 @@ CON_COMMAND( overview_zoom, "Sets overview map zoom: <zoom> [<time>] [rel]" )
 			return;// In the death cam spiral counts as alive
 	}
 
-	g_pClientMode->GetViewportAnimationController()->RunAnimationCommand( g_pMapOverview->GetAsPanel(), "zoom", zoom, 0.0, time, vgui::AnimationController::INTERPOLATOR_LINEAR );
+	GetClientMode()->GetViewportAnimationController()->RunAnimationCommand( g_pMapOverview->GetAsPanel(), "zoom", zoom, 0.0, time, vgui::AnimationController::INTERPOLATOR_LINEAR );
 }
 
 CON_COMMAND( overview_mode, "Sets overview map mode off,small,large: <0|1|2>" )
@@ -132,7 +142,7 @@ using namespace vgui;
 
 CMapOverview::CMapOverview( const char *pElementName ) : BaseClass( NULL, pElementName ), CHudElement( pElementName )
 {
-	SetParent( g_pClientMode->GetViewport()->GetVPanel() );
+	SetParent( GetClientMode()->GetViewport()->GetVPanel() );
 
 	SetBounds( 0,0, 256, 256 );
 	SetBgColor( Color( 0,0,0,100 ) );
@@ -182,6 +192,7 @@ void CMapOverview::Init( void )
 	ListenForGameEvent( "game_newmap" );
 	ListenForGameEvent( "round_start" );
 	ListenForGameEvent( "player_connect_client" );
+	ListenForGameEvent( "player_connect" );
 	ListenForGameEvent( "player_info" );
 	ListenForGameEvent( "player_team" );
 	ListenForGameEvent( "player_spawn" );
@@ -594,6 +605,9 @@ void CMapOverview::DrawObjects( )
 	{
 		MapObject_t *obj = &m_Objects[i];
 
+		if ( obj->flags & MAP_OBJECT_DONT_DRAW )
+			continue;
+
 		const char *text = NULL;
 
 		if ( Q_strlen(obj->name) > 0 )
@@ -663,7 +677,7 @@ bool CMapOverview::DrawIcon( MapObject_t *obj )
 		Vertex_t( MapToPanel ( pos4 ), Vector2D(0,1) )
 	};
 
-	surface()->DrawSetColor( 255, 255, 255, 255 );
+	surface()->DrawSetColor( obj->iconColor );
 	surface()->DrawSetTexture( textureID );
 	surface()->DrawTexturedPolygon( 4, points );
 
@@ -933,7 +947,7 @@ void CMapOverview::FireGameEvent( IGameEvent *event )
 		ResetRound();
 	}
 
-	else if ( Q_strcmp(type,"player_connect_client") == 0 )
+	else if ( Q_strcmp(type,"player_connect_client") == 0 || Q_strcmp(type,"player_connect") == 0 )
 	{
 		int index = event->GetInt("index"); // = entity index - 1 
 
@@ -1019,7 +1033,7 @@ void CMapOverview::SetMode(int mode)
 	{
 		ShowPanel( false );
 
-		g_pClientMode->GetViewportAnimationController()->StartAnimationSequence( "MapOff" );
+		GetClientMode()->GetViewportAnimationController()->StartAnimationSequence( "MapOff" );
 	}
 	else if ( mode == MAP_MODE_INSET )
 	{
@@ -1041,7 +1055,7 @@ void CMapOverview::SetMode(int mode)
 
 		if ( mode != m_nMode && RunHudAnimations() )
 		{
-			g_pClientMode->GetViewportAnimationController()->StartAnimationSequence( "MapZoomToSmall" );
+			GetClientMode()->GetViewportAnimationController()->StartAnimationSequence( "MapZoomToSmall" );
 		}
 	}
 	else if ( mode == MAP_MODE_FULL )
@@ -1061,7 +1075,7 @@ void CMapOverview::SetMode(int mode)
 
 		if ( mode != m_nMode && RunHudAnimations() )
 		{
-			g_pClientMode->GetViewportAnimationController()->StartAnimationSequence( "MapZoomToLarge" );
+			GetClientMode()->GetViewportAnimationController()->StartAnimationSequence( "MapZoomToLarge" );
 		}
 	}
 
@@ -1186,7 +1200,7 @@ bool CMapOverview::SetTeamColor(int team, Color color)
 	return true;
 }
 
-CMapOverview::MapObject_t* CMapOverview::FindObjectByID(int objectID)
+MapObject_t* CMapOverview::FindObjectByID(int objectID)
 {
 	for ( int i = 0; i < m_Objects.Count(); i++ )
 	{
@@ -1197,8 +1211,24 @@ CMapOverview::MapObject_t* CMapOverview::FindObjectByID(int objectID)
 	return NULL;
 }
 
+MapObject_t* CMapOverview::FindObjectByIndex(int objectIndex)
+{
+	for ( int i = 0; i < m_Objects.Count(); i++ )
+	{
+		if ( m_Objects[i].index == objectIndex )
+			return &m_Objects[i];
+	}
+
+	return NULL;
+}
+
 int	CMapOverview::AddObject( const char *icon, int entity, float timeToLive )
 {
+	MapObject_t *pOldObject = FindObjectByIndex( entity );
+
+	if ( pOldObject )
+		return pOldObject->objectID;
+
 	MapObject_t obj; Q_memset( &obj, 0, sizeof(obj) );
 
 	obj.objectID = m_ObjectCounterID++;
@@ -1206,6 +1236,7 @@ int	CMapOverview::AddObject( const char *icon, int entity, float timeToLive )
 	obj.icon = AddIconTexture( icon );
 	obj.size = m_flIconSize;
 	obj.status = -1;
+	obj.iconColor = Color( 255, 255, 255, 255 );
 	
 	if ( timeToLive > 0 )
 		obj.endtime = gpGlobals->curtime + timeToLive;
@@ -1256,6 +1287,16 @@ void CMapOverview::SetObjectIcon( int objectID, const char *icon, float size )
 
 	obj->icon = AddIconTexture( icon );
 	obj->size = size;
+}
+
+void CMapOverview::SetObjectIconColor( int objectID, Color color )
+{
+	MapObject_t* obj = FindObjectByID( objectID );
+
+	if ( !obj )
+		return;
+
+	obj->iconColor = color;
 }
 
 void CMapOverview::SetObjectPosition( int objectID, const Vector &position, const QAngle &angle )

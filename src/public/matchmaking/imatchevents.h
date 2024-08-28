@@ -6,9 +6,7 @@
 
 #ifndef IMATCHEVENTS_H
 #define IMATCHEVENTS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 abstract_class IMatchEventsSink

@@ -41,13 +41,16 @@ enum DataUpdateType_t
 
 abstract_class IClientNetworkable
 {
+	friend class CClientEntityList;
 public:
 	// Gets at the containing class...
 	virtual IClientUnknown*	GetIClientUnknown() = 0;
 
+private:
 	// Called by the engine when the server deletes the entity.
-	virtual void			Release() = 0;
+	virtual void			DO_NOT_USE_Release() = 0;
 
+public:
 	// Supplied automatically by the IMPLEMENT_CLIENTCLASS macros.
 	virtual ClientClass*	GetClientClass() = 0;
 

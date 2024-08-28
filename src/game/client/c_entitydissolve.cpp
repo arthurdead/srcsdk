@@ -47,7 +47,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_EntityDissolve, DT_EntityDissolve, CEntityDissolve )
 END_RECV_TABLE()
 
 extern PMaterialHandle g_Material_Spark;
-PMaterialHandle g_Material_AR2Glow = NULL;
+PMaterialHandle g_Material_Glow = NULL;
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -85,7 +85,7 @@ void C_EntityDissolve::OnDataChanged( DataUpdateType_t updateType )
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
 		m_flNextSparkTime = m_flStartTime;
-		SetNextClientThink( CLIENT_THINK_ALWAYS );
+		SetContextThink( &C_EntityDissolve::DissolveThink, TICK_ALWAYS_THINK, "DissolveThink" );
 	}
 }
 
@@ -501,21 +501,17 @@ float C_EntityDissolve::GetModelFadeOutPercentage( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_EntityDissolve::ClientThink( void )
+void C_EntityDissolve::DissolveThink( void )
 {
 	C_BaseEntity *pEnt = GetMoveParent();
 	if ( !pEnt )
 		return;
 
 	bool bIsRagdoll;
-#ifdef TF_CLIENT_DLL
-	bIsRagdoll = true;
-#else
 	C_BaseAnimating *pAnimating = GetMoveParent() ? GetMoveParent()->GetBaseAnimating() : NULL;
 	if (!pAnimating)
 		return;
 	bIsRagdoll = pAnimating->IsRagdoll();
-#endif
 
 	// NOTE: IsRagdoll means *client-side* ragdoll. We shouldn't be trying to fight
 	// the server ragdoll (or any server physics) on the client
@@ -542,7 +538,8 @@ void C_EntityDissolve::ClientThink( void )
 
 	// Setup the entity fade
 	pEnt->SetRenderMode( kRenderTransColor );
-	pEnt->SetRenderColor( color.r, color.g, color.b, color.a );
+	pEnt->SetRenderColor( color.r, color.g, color.b );
+	pEnt->SetRenderAlpha( color.a );
 
 	if ( GetModelFadeOutPercentage() <= 0.2f )
 	{
@@ -564,15 +561,12 @@ void C_EntityDissolve::ClientThink( void )
 		//Adrian: I'll assume we don't need the ragdoll either so I'll remove that too.
 		if ( m_bLinkedToServerEnt == false )
 		{
-			Release();
-
 			C_ClientRagdoll *pRagdoll = dynamic_cast <C_ClientRagdoll *> ( pEnt );
 
 			if ( pRagdoll )
 			{
 				pRagdoll->ReleaseRagdoll();
 			}
-#ifdef TF_CLIENT_DLL
 			else
 			{
 				// Hide the ragdoll -- don't actually delete it or else things get unhappy when
@@ -580,7 +574,8 @@ void C_EntityDissolve::ClientThink( void )
 				pEnt->AddEffects( EF_NODRAW );
 				pEnt->ParticleProp()->StopEmission();
 			}
-#endif
+
+			UTIL_Remove( this );
 		}
 	}
 }
@@ -590,10 +585,10 @@ void C_EntityDissolve::ClientThink( void )
 // Input  : flags - 
 // Output : int
 //-----------------------------------------------------------------------------
-int C_EntityDissolve::DrawModel( int flags )
+int C_EntityDissolve::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 	// See if we should draw
-	if ( gpGlobals->frametime == 0 || m_bReadyToDraw == false )
+	if ( gpGlobals->frametime == 0 || ReadyToDraw() == false )
 		return 0;
 
 	C_BaseAnimating *pAnimating = GetMoveParent() ? GetMoveParent()->GetBaseAnimating() : NULL;
@@ -641,9 +636,9 @@ int C_EntityDissolve::DrawModel( int flags )
 		g_Material_Spark = ParticleMgr()->GetPMaterial( "effects/spark" );
 	}
 
-	if ( g_Material_AR2Glow == NULL )
+	if ( g_Material_Glow == NULL )
 	{
-		g_Material_AR2Glow = ParticleMgr()->GetPMaterial( "effects/combinemuzzle2" );
+		g_Material_Glow = ParticleMgr()->GetPMaterial( "effects/glow" );
 	}
 
 	SimpleParticle *sParticle;
@@ -679,7 +674,7 @@ int C_EntityDissolve::DrawModel( int flags )
 		for ( int j = 0; j < iTempParts; j++ )
 		{
 			// Skew the origin
-			offset = xDir * Helper_RandomFloat( -xScale*0.5f, xScale*0.5f ) + yDir * Helper_RandomFloat( -yScale*0.5f, yScale*0.5f );
+			offset = xDir * random->RandomFloat( -xScale*0.5f, xScale*0.5f ) + yDir * random->RandomFloat( -yScale*0.5f, yScale*0.5f );
 			offset += vecSkew;
 
 			if ( random->RandomInt( 0, 2 ) != 0 )
@@ -690,7 +685,7 @@ int C_EntityDissolve::DrawModel( int flags )
 			if ( sParticle == NULL )
 				return 1;
 
-			sParticle->m_vecVelocity	= Vector( Helper_RandomFloat( -4.0f, 4.0f ), Helper_RandomFloat( -4.0f, 4.0f ), Helper_RandomFloat( 16.0f, 64.0f ) );
+			sParticle->m_vecVelocity	= Vector( random->RandomFloat( -4.0f, 4.0f ), random->RandomFloat( -4.0f, 4.0f ), random->RandomFloat( 16.0f, 64.0f ) );
 			
 			if ( m_nDissolveType == ENTITY_DISSOLVE_CORE )
 			{
@@ -718,25 +713,25 @@ int C_EntityDissolve::DrawModel( int flags )
 			{
 				sParticle->m_flDieTime *= 2.0f;
 				sParticle->m_uchStartSize = 2 * spriteScale;
-				sParticle->m_flRollDelta	= Helper_RandomFloat( -4.0f, 4.0f );
+				sParticle->m_flRollDelta	= random->RandomFloat( -4.0f, 4.0f );
 
 				if ( m_nDissolveType == ENTITY_DISSOLVE_CORE )
 				{
 					if ( m_bCoreExplode == true )
 					{
 						sParticle->m_flDieTime *= 2.0f;
-						sParticle->m_flRollDelta	= Helper_RandomFloat( -1.0f, 1.0f );
+						sParticle->m_flRollDelta	= random->RandomFloat( -1.0f, 1.0f );
 					}
 				}
 			}
 			else
 			{
-				sParticle->m_flRollDelta	= Helper_RandomFloat( -8.0f, 8.0f );
+				sParticle->m_flRollDelta	= random->RandomFloat( -8.0f, 8.0f );
 			}
 			
 			sParticle->m_flLifetime		= 0.0f;
 
-			sParticle->m_flRoll			= Helper_RandomInt( 0, 360 );
+			sParticle->m_flRoll			= random->RandomInt( 0, 360 );
 
 			float alpha = 255;
 
@@ -750,21 +745,21 @@ int C_EntityDissolve::DrawModel( int flags )
 			
 		for ( int j = 0; j < numParticles; j++ )
 		{
-			offset = xDir * Helper_RandomFloat( -xScale*0.5f, xScale*0.5f ) + yDir * Helper_RandomFloat( -yScale*0.5f, yScale*0.5f );
+			offset = xDir * random->RandomFloat( -xScale*0.5f, xScale*0.5f ) + yDir * random->RandomFloat( -yScale*0.5f, yScale*0.5f );
 			offset += vecSkew;
 
-			sParticle = (SimpleParticle *) m_pEmitter->AddParticle( sizeof(SimpleParticle), g_Material_AR2Glow, vecAbsOrigin + offset );
+			sParticle = (SimpleParticle *) m_pEmitter->AddParticle( sizeof(SimpleParticle), g_Material_Glow, vecAbsOrigin + offset );
 
 			if ( sParticle == NULL )
 				return 1;
 			
-			sParticle->m_vecVelocity	= Vector( Helper_RandomFloat( -4.0f, 4.0f ), Helper_RandomFloat( -4.0f, 4.0f ), Helper_RandomFloat( -64.0f, 128.0f ) );
+			sParticle->m_vecVelocity	= Vector( random->RandomFloat( -4.0f, 4.0f ), random->RandomFloat( -4.0f, 4.0f ), random->RandomFloat( -64.0f, 128.0f ) );
 			sParticle->m_uchStartSize	= random->RandomFloat( 8, 12 ) * spriteScale;
 			sParticle->m_flDieTime		= 0.1f;
 			sParticle->m_flLifetime		= 0.0f;
 
-			sParticle->m_flRoll			= Helper_RandomInt( 0, 360 );
-			sParticle->m_flRollDelta	= Helper_RandomFloat( -2.0f, 2.0f );
+			sParticle->m_flRoll			= random->RandomInt( 0, 360 );
+			sParticle->m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
 
 			float alpha = 255;
 

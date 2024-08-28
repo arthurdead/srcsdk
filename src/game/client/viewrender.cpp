@@ -51,8 +51,6 @@
 #include "studio_stats.h"
 #include "con_nprint.h"
 #include "clientmode_shared.h"
-#include "sourcevr/isourcevirtualreality.h"
-#include "client_virtualreality.h"
 
 #ifdef PORTAL
 //#include "C_Portal_Player.h"
@@ -71,7 +69,7 @@
 #include "c_point_camera.h"
 
 // Projective textures
-#include "C_Env_Projected_Texture.h"
+#include "c_env_projectedtexture.h"
 
 #include "c_lights.h"
 
@@ -96,7 +94,7 @@ static Vector ConvertLightmapGammaToLinear( int *iColor4 )
 
 static void testfreezeframe_f( void )
 {
-	view->FreezeFrame( 3.0 );
+	GetViewRenderInstance()->FreezeFrame( 3.0 );
 }
 static ConCommand test_freezeframe( "test_freezeframe", testfreezeframe_f, "Test the freeze frame code.", FCVAR_CHEAT );
 
@@ -198,9 +196,7 @@ static void FogOverrideCallback( IConVar *pConVar, char const *, float )
 // Water-related convars
 //-----------------------------------------------------------------------------
 static ConVar r_debugcheapwater( "r_debugcheapwater", "0", FCVAR_CHEAT );
-#ifndef _X360
 static ConVar r_waterforceexpensive( "r_waterforceexpensive", "0", FCVAR_ARCHIVE );
-#endif
 static ConVar r_waterforcereflectentities( "r_waterforcereflectentities", "0" );
 static ConVar r_WaterDrawRefraction( "r_WaterDrawRefraction", "1", 0, "Enable water refraction" );
 static ConVar r_WaterDrawReflection( "r_WaterDrawReflection", "1", 0, "Enable water reflection" );
@@ -249,12 +245,12 @@ CON_COMMAND( r_cheapwaterstart,  "" )
 	if( args.ArgC() == 2 )
 	{
 		float dist = atof( args[ 1 ] );
-		view->SetCheapWaterStartDistance( dist );
+		GetViewRenderInstance()->SetCheapWaterStartDistance( dist );
 	}
 	else
 	{
 		float start, end;
-		view->GetWaterLODParams( start, end );
+		GetViewRenderInstance()->GetWaterLODParams( start, end );
 		Warning( "r_cheapwaterstart: %f\n", start );
 	}
 }
@@ -264,12 +260,12 @@ CON_COMMAND( r_cheapwaterend,  "" )
 	if( args.ArgC() == 2 )
 	{
 		float dist = atof( args[ 1 ] );
-		view->SetCheapWaterEndDistance( dist );
+		GetViewRenderInstance()->SetCheapWaterEndDistance( dist );
 	}
 	else
 	{
 		float start, end;
-		view->GetWaterLODParams( start, end );
+		GetViewRenderInstance()->GetWaterLODParams( start, end );
 		Warning( "r_cheapwaterend: %f\n", end );
 	}
 }
@@ -903,7 +899,7 @@ void SetupCurrentView( const Vector &vecOrigin, const QAngle &angles, view_id_t 
 
 	// Cache off fade distances
 	float flScreenFadeMinSize, flScreenFadeMaxSize;
-	view->GetScreenFadeDistances( &flScreenFadeMinSize, &flScreenFadeMaxSize );
+	GetViewRenderInstance()->GetScreenFadeDistances( &flScreenFadeMinSize, &flScreenFadeMaxSize );
 	modelinfo->SetViewScreenFadeRange( flScreenFadeMinSize, flScreenFadeMaxSize );
 
 	CMatRenderContextPtr pRenderContext( materials );
@@ -1084,11 +1080,6 @@ void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel )
 
 	ITexture *pRTColor = NULL;
 	ITexture *pRTDepth = NULL;
-	if( view.m_eStereoEye != STEREO_EYE_MONO )
-	{
-		pRTColor = g_pSourceVR->GetRenderTarget( (ISourceVirtualReality::VREye)(view.m_eStereoEye-1), ISourceVirtualReality::RT_Color );
-		pRTDepth = g_pSourceVR->GetRenderTarget( (ISourceVirtualReality::VREye)(view.m_eStereoEye-1), ISourceVirtualReality::RT_Depth );
-	}
 
 	render->Push3DView( viewModelSetup, 0, pRTColor, GetFrustum(), pRTDepth );
 
@@ -1647,7 +1638,7 @@ static bool GetFogEnable( fogparams_t *pFogParams, bool ignoreOverride )
 		return false;
 
 	// Ask the clientmode
-	if ( g_pClientMode->ShouldDrawFog() == false )
+	if ( GetClientMode()->ShouldDrawFog() == false )
 		return false;
 
 	if( fog_override.GetInt() && !ignoreOverride )
@@ -1680,7 +1671,7 @@ static float GetFogMaxDensity( fogparams_t *pFogParams, bool ignoreOverride )
 		return 1.0f;
 
 	// Ask the clientmode
-	if ( !g_pClientMode->ShouldDrawFog() )
+	if ( !GetClientMode()->ShouldDrawFog() )
 		return 1.0f;
 
 	if ( fog_override.GetInt() && !ignoreOverride )
@@ -1850,7 +1841,7 @@ float GetSkyboxFogMaxDensity( bool ignoreOverride )
 		return 1.0f;
 
 	// Ask the clientmode
-	if ( !g_pClientMode->ShouldDrawFog() )
+	if ( !GetClientMode()->ShouldDrawFog() )
 		return 1.0f;
 
 	if ( fog_override.GetInt() && !ignoreOverride )
@@ -1932,11 +1923,6 @@ void CViewRender::SetupMain3DView( const CViewSetup &view, int &nClearFlags )
 	{
 		ITexture *pRTColor = NULL;
 		ITexture *pRTDepth = NULL;
-		if( view.m_eStereoEye != STEREO_EYE_MONO )
-		{
-			pRTColor = g_pSourceVR->GetRenderTarget( (ISourceVirtualReality::VREye)(view.m_eStereoEye-1), ISourceVirtualReality::RT_Color );
-			pRTDepth = g_pSourceVR->GetRenderTarget( (ISourceVirtualReality::VREye)(view.m_eStereoEye-1), ISourceVirtualReality::RT_Depth );
-		}
 
 		render->Push3DView( view, nClearFlags, pRTColor, GetFrustum(), pRTDepth );
 	}
@@ -1998,13 +1984,13 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 
 	Vector vecAmbientDelta = vecLight - vecAmbient;
 	vecAmbientDelta.NormalizeInPlace();
-	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_AMBIENT_MIN, vecAmbient );
-	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_AMBIENT_DELTA, vecAmbientDelta );
+	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_CASCADED_AMBIENT_MIN, vecAmbient );
+	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_CASCADED_AMBIENT_DELTA, vecAmbientDelta );
 
 	Vector vecFwd, vecRight, vecUp;
 	AngleVectors( angCascadedAngles, &vecFwd, &vecRight, &vecUp );
 
-	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD, vecFwd );
+	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_CASCADED_FORWARD, vecFwd );
 
 	Vector vecMainViewFwd;
 	AngleVectors( view.angles, &vecMainViewFwd );
@@ -2118,7 +2104,7 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 			vecCascadedOffset.y = vecCascadedOffset.y + 0.5f - flCascadedScale * 0.5f;
 
 			vecOffsetShadowMapSpace.Init( flCascadedScale, vecCascadedOffset.x, vecCascadedOffset.y );
-			pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_STEP, vecOffsetShadowMapSpace );
+			pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_CASCADED_STEP, vecOffsetShadowMapSpace );
 		}
 
 		cascadedShadowView.origin = vecOrigin;
@@ -2167,10 +2153,7 @@ void CViewRender::FreezeFrame( float flFreezeTime )
 	if ( flFreezeTime == 0 )
 	{
 		m_flFreezeFrameUntil = 0;
-		for( int i=0; i < STEREO_EYE_MAX; i++ )
-		{
-			m_rbTakeFreezeFrame[ i ] = false;
-		}
+		m_rbTakeFreezeFrame = false;
 	}
 	else
 	{
@@ -2181,10 +2164,7 @@ void CViewRender::FreezeFrame( float flFreezeTime )
 		else
 		{
 			m_flFreezeFrameUntil = gpGlobals->curtime + flFreezeTime;
-			for( int i=GetFirstEye(); i <= GetLastEye(); i++ )
-			{
-				m_rbTakeFreezeFrame[ i ] = true;
-			}
+			m_rbTakeFreezeFrame = true;
 		}
 	}
 }
@@ -2226,7 +2206,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 	ITexture *saveRenderTarget = pRenderContext->GetRenderTarget();
 	pRenderContext.SafeRelease(); // don't want to hold for long periods in case in a locking active share thread mode
 
-	if ( !m_rbTakeFreezeFrame[ view.m_eStereoEye ] && m_flFreezeFrameUntil > gpGlobals->curtime )
+	if ( !m_rbTakeFreezeFrame && m_flFreezeFrameUntil > gpGlobals->curtime )
 	{
 		CRefPtr<CFreezeFrameView> pFreezeFrameView = new CFreezeFrameView( this );
 		pFreezeFrameView->Setup( view );
@@ -2245,7 +2225,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 			( g_pMaterialSystemHardwareConfig->GetDXSupportLevel() >= 70 ) &&
 			( ( whatToDraw & RENDERVIEW_SUPPRESSMONITORRENDERING ) == 0 ) )
 		{
-			CViewSetup viewMiddle = GetView( STEREO_EYE_MONO );
+			const CViewSetup &viewMiddle = GetView();
 			DrawMonitors( viewMiddle );	
 		}
 
@@ -2338,7 +2318,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		// Draw fade over entire screen if needed
 		byte color[4];
 		bool blend;
-		vieweffects->GetFadeParams( &color[0], &color[1], &color[2], &color[3], &blend );
+		GetViewEffects()->GetFadeParams( &color[0], &color[1], &color[2], &color[3], &blend );
 
 		// Draw an overlay to make it even harder to see inside smoke particle systems.
 		DrawSmokeFogOverlay();
@@ -2377,19 +2357,16 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 
 		// And here are the screen-space effects
 
-		if ( IsPC() )
-		{
-			tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "GrabPreColorCorrectedFrame" );
+		tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "GrabPreColorCorrectedFrame" );
 
-			// Grab the pre-color corrected frame for editing purposes
-			engine->GrabPreColorCorrectedFrame( view.x, view.y, view.width, view.height );
-		}
+		// Grab the pre-color corrected frame for editing purposes
+		engine->GrabPreColorCorrectedFrame( view.x, view.y, view.width, view.height );
 
 		PerformScreenSpaceEffects( 0, 0, view.width, view.height );
 
 		CleanupMain3DView( view );
 
-		if ( m_rbTakeFreezeFrame[ view.m_eStereoEye ] )
+		if ( m_rbTakeFreezeFrame )
 		{
 			Rect_t rect;
 			rect.x = view.x;
@@ -2398,17 +2375,11 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 			rect.height = view.height;
 
 			pRenderContext = materials->GetRenderContext();
-			if ( IsX360() )
-			{
-				// 360 doesn't create the Fullscreen texture
-				pRenderContext->CopyRenderTargetToTextureEx( GetFullFrameFrameBufferTexture( 1 ), 0, &rect, &rect );
-			}
-			else
-			{
-				pRenderContext->CopyRenderTargetToTextureEx( GetFullscreenTexture(), 0, &rect, &rect );
-			}
+
+			pRenderContext->CopyRenderTargetToTextureEx( GetFullscreenTexture(), 0, &rect, &rect );
+
 			pRenderContext.SafeRelease();
-			m_rbTakeFreezeFrame[ view.m_eStereoEye ] = false;
+			m_rbTakeFreezeFrame = false;
 		}
 
 		pRenderContext = materials->GetRenderContext();
@@ -2460,12 +2431,6 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		pCopyMaterial->DecrementReferenceCount();
 	}
 
-	// if we're in VR mode we might need to override the render target
-	if( UseVR() )
-	{
-		saveRenderTarget = g_pSourceVR->GetRenderTarget( (ISourceVirtualReality::VREye)(view.m_eStereoEye - 1), ISourceVirtualReality::RT_Color );
-	}
-
 	// Draw the 2D graphics
 	render->Push2DView( view, 0, saveRenderTarget, GetFrustum() );
 
@@ -2487,34 +2452,6 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		bool bClear = false;
 		bool bPaintMainMenu = false;
 		ITexture *pTexture = NULL;
-		if( UseVR() )
-		{
-			if( g_ClientVirtualReality.ShouldRenderHUDInWorld() )
-			{
-				pTexture = materials->FindTexture( "_rt_gui", NULL, false );
-				if( pTexture )
-				{
-					bPaintMainMenu = true;
-					bClear = true;
-					viewX = 0;
-					viewY = 0;
-					viewActualWidth = pTexture->GetActualWidth();
-					viewActualHeight = pTexture->GetActualHeight();
-
-					vgui::surface()->GetScreenSize( viewWidth, viewHeight );
-
-					viewFramebufferX = 0;
-					if( view.m_eStereoEye == STEREO_EYE_RIGHT && !saveRenderTarget )
-						viewFramebufferX = viewFramebufferWidth;
-					viewFramebufferY = 0;
-				}
-			}
-			else
-			{
-				viewFramebufferX = view.m_eStereoEye == STEREO_EYE_RIGHT ? viewWidth : 0;
-				viewFramebufferY = 0;
-			}
-		}
 
 		// Get the render context out of materials to avoid some debug stuff.
 		// WARNING THIS REQUIRES THE .SafeRelease below or it'll never release the ref
@@ -2532,12 +2469,6 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		if (pTexture)
 		{
 			pRenderContext->OverrideAlphaWriteEnable( true, true );
-		}
-
-		// let vgui know where to render stuff for the forced-to-framebuffer panels
-		if( UseVR() )
-		{
-			g_pMatSystemSurface->SetFullscreenViewportAndRenderTarget( viewFramebufferX, viewFramebufferY, viewFramebufferWidth, viewFramebufferHeight, saveRenderTarget );
 		}
 
 		// clear the render target if we need to
@@ -2580,34 +2511,13 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 
 		VGui_PostRender();
 
-		g_pClientMode->PostRenderVGui();
+		GetClientMode()->PostRenderVGui();
 		pRenderContext = materials->GetRenderContext();
 		if (pTexture)
 		{
 			pRenderContext->OverrideAlphaWriteEnable( false, true );
 		}
 		pRenderContext->PopRenderTargetAndViewport();
-
-		if ( UseVR() )
-		{
-			// figure out if we really want to draw the HUD based on freeze cam
-			C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
-			bool bInFreezeCam = ( pPlayer && pPlayer->GetObserverMode() == OBS_MODE_FREEZECAM );
-
-			// draw the HUD after the view model so its "I'm closer" depth queues work right.
-			if( !bInFreezeCam && g_ClientVirtualReality.ShouldRenderHUDInWorld() )
-			{
-				// Now we've rendered the HUD to its texture, actually get it on the screen.
-				// Since we're drawing it as a 3D object, we need correctly set up frustum, etc.
-				int ClearFlags = 0;
-				SetupMain3DView( view, ClearFlags );
-
-				// TODO - a bit of a shonky test - basically trying to catch the main menu, the briefing screen, the loadout screen, etc.
-				bool bTranslucent = !g_pMatSystemSurface->IsCursorVisible();
-				g_ClientVirtualReality.RenderHUDQuad( g_pClientMode->ShouldBlackoutAroundHUD(), bTranslucent );
-				CleanupMain3DView( view );
-			}
-		}
 
 		pRenderContext->Flush();
 		pRenderContext.SafeRelease();
@@ -2622,10 +2532,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 	// We can no longer use the 'current view' stuff set up in ViewDrawScene
 	s_bCanAccessCurrentView = false;
 
-	if ( IsPC() )
-	{
-		CDebugViewRender::GenerateOverdrawForTesting();
-	}
+	CDebugViewRender::GenerateOverdrawForTesting();
 
 	render->PopView( GetFrustum() );
 	g_WorldListCache.Flush();
@@ -2684,11 +2591,7 @@ void CViewRender::DetermineWaterRenderInfo( const VisibleFogVolumeInfo_t &fogVol
 		return;
 	}
 
-#ifdef _X360
-	bool bForceExpensive = false;
-#else
 	bool bForceExpensive = r_waterforceexpensive.GetBool();
-#endif
 	bool bForceReflectEntities = r_waterforcereflectentities.GetBool();
 
 #ifdef PORTAL
@@ -2744,11 +2647,7 @@ void CViewRender::DetermineWaterRenderInfo( const VisibleFogVolumeInfo_t &fogVol
 
 	// Unless expensive water is active, reflections are off.
 	bool bLocalReflection;
-#ifdef _X360
-	if( !r_WaterDrawReflection.GetBool() )
-#else
 	if( !bForceExpensive || !r_WaterDrawReflection.GetBool() )
-#endif
 	{
 		bLocalReflection = false;
 	}
@@ -2769,15 +2668,9 @@ void CViewRender::DetermineWaterRenderInfo( const VisibleFogVolumeInfo_t &fogVol
 	// Gary says: I'm reverting this change so that water LOD works on dx9 for ep2.
 
 	// Check if the water is out of the cheap water LOD range; if so, use cheap water
-#ifdef _X360
-	if ( !bForceExpensive && ( bForceCheap || ( fogVolumeInfo.m_flDistanceToWater >= m_flCheapWaterEndDistance ) ) )
-	{
-		return;
-	}
-#else
 	if ( ( (fogVolumeInfo.m_flDistanceToWater >= m_flCheapWaterEndDistance) && !bLocalReflection ) || bForceCheap )
  		return;
-#endif
+
 	// Get the material that is for the water surface that is visible and check to see
 	// what render targets need to be rendered, if any.
 	if ( !r_WaterDrawRefraction.GetBool() )
@@ -3443,16 +3336,6 @@ void CViewRender::DrawMonitors( const CViewSetup &cameraView )
 		++cameraNum;
 	}
 
-	if ( IsX360() && cameraNum > 0 )
-	{
-		// resolve render target to system memory texture
-		// resolving *after* all monitors drawn to ensure a single blit using fastest resolve path
-		CMatRenderContextPtr pRenderContext( materials );
-		pRenderContext->PushRenderTargetAndViewport( pCameraTarget );
-		pRenderContext->CopyRenderTargetToTextureEx( pCameraTarget, 0, NULL, NULL );
-		pRenderContext->PopRenderTargetAndViewport();
-	}
-
 #ifdef _DEBUG
 	g_bRenderingCameraView = false;
 #endif
@@ -3592,7 +3475,7 @@ void CRendering3dView::SetupRenderablesList( int viewID )
 		setupInfo.m_nRenderFrame = m_pMainView->BuildRenderablesListsNumber();	// only one incremented?
 		setupInfo.m_nDetailBuildFrame = m_pMainView->BuildWorldListsNumber();	//
 		setupInfo.m_pRenderList = m_pRenderablesList;
-		setupInfo.m_bDrawDetailObjects = g_pClientMode->ShouldDrawDetailObjects() && r_DrawDetailProps.GetInt();
+		setupInfo.m_bDrawDetailObjects = GetClientMode()->ShouldDrawDetailObjects() && r_DrawDetailProps.GetInt();
 		setupInfo.m_bDrawTranslucentObjects = (viewID != VIEW_SHADOW_DEPTH_TEXTURE);
 
 		setupInfo.m_vecRenderOrigin = origin;
@@ -4674,10 +4557,6 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 		switch ( g_CurrentViewID )
 		{				 
 		case VIEW_MAIN:
-#ifdef _X360
-		case VIEW_INTRO_CAMERA:
-		case VIEW_INTRO_PLAYER:
-#endif
 			UpdateFullScreenDepthTexture();
 			break;
 
@@ -5052,12 +4931,6 @@ void CSkyboxView::DrawInternal( view_id_t iSkyBoxViewID, bool bInvokePreAndPostR
 	// Store off view origin and angles
 	SetupCurrentView( origin, angles, iSkyBoxViewID );
 
-#if defined( _X360 )
-	CMatRenderContextPtr pRenderContext( materials );
-	pRenderContext->PushVertexShaderGPRAllocation( 32 );
-	pRenderContext.SafeRelease();
-#endif
-
 	// Invoke pre-render methods
 	if ( bInvokePreAndPostRender )
 	{
@@ -5097,11 +4970,6 @@ void CSkyboxView::DrawInternal( view_id_t iSkyBoxViewID, bool bInvokePreAndPostR
 	}
 
 	render->PopView( GetFrustum() );
-
-#if defined( _X360 )
-	pRenderContext.GetFrom( materials );
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5250,10 +5118,6 @@ void CShadowDepthView::Draw()
 
 	pRenderContext->ClearColor3ub(0xFF, 0xFF, 0xFF);
 
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 112 ); //almost all work is done in vertex shaders for depth rendering, max out their threads
-#endif
-
 	pRenderContext.SafeRelease();
 
 	render->Push3DView( (*this), VIEW_CLEAR_DEPTH, m_pRenderTarget, GetFrustum(), m_pDepthTexture );
@@ -5303,10 +5167,6 @@ void CShadowDepthView::Draw()
 	pRenderContext->PopRenderTargetAndViewport();
 
 	render->PopView( GetFrustum() );
-
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 }
 
 
@@ -5335,10 +5195,6 @@ void CFreezeFrameView::Setup( const CViewSetup &shadowViewIn )
 void CFreezeFrameView::Draw( void )
 {
 	CMatRenderContextPtr pRenderContext( materials );
-
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 16 ); //max out pixel shader threads
-#endif
 
 	// we might only need half of the texture if we're rendering in stereo
 	int nTexX0 = 0, nTexY0 = 0;
@@ -5379,10 +5235,6 @@ void CFreezeFrameView::Draw( void )
 
 		pRenderContext->DrawScreenSpaceRectangle( pMaterial, x, y, width, height, 0, 0, width-1, height-1, width, height );
 	}
-
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5522,19 +5374,6 @@ void CBaseWorldView::PopView()
 	pRenderContext->SetHeightClipMode( MATERIAL_HEIGHTCLIPMODE_DISABLE );
 	if( m_DrawFlags & (DF_RENDER_REFRACTION | DF_RENDER_REFLECTION) )
 	{
-		if ( IsX360() )
-		{
-			// these renders paths used their surfaces, so blit their results
-			if ( m_DrawFlags & DF_RENDER_REFRACTION )
-			{
-				pRenderContext->CopyRenderTargetToTextureEx( GetWaterRefractionTexture(), NULL, NULL );
-			}
-			if ( m_DrawFlags & DF_RENDER_REFLECTION )
-			{
-				pRenderContext->CopyRenderTargetToTextureEx( GetWaterReflectionTexture(), NULL, NULL );
-			}
-		}
-
 		render->PopView( GetFrustum() );
 		if (SavedLinearLightMapScale.x>=0)
 		{
@@ -5647,10 +5486,6 @@ void CBaseWorldView::DrawExecute( float waterHeight, view_id_t viewID, float wat
 
 	CMatRenderContextPtr pRenderContext( materials );
 
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 32 );
-#endif
-
 	ITexture *pSaveFrameBufferCopyTexture = pRenderContext->GetFrameBufferCopyTexture( 0 );
 	if ( engine->GetDXSupportLevel() >= 80 )
 	{
@@ -5706,10 +5541,6 @@ void CBaseWorldView::DrawExecute( float waterHeight, view_id_t viewID, float wat
 	m_DrawFlags = iDrawFlagsBackup;
 
 	g_CurrentViewID = savedViewID;
-
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 }
 
 
@@ -5731,11 +5562,6 @@ void CBaseWorldView::SSAO_DepthPass()
 	CMatRenderContextPtr pRenderContext( materials );
 
 	pRenderContext->ClearColor4ub( 255, 255, 255, 255 );
-
-#if defined( _X360 )
-	Assert(0); // rebalance this if we ever use this on 360
-	pRenderContext->PushVertexShaderGPRAllocation( 112 ); //almost all work is done in vertex shaders for depth rendering, max out their threads
-#endif
 
 	pRenderContext.SafeRelease();
 
@@ -5775,17 +5601,7 @@ void CBaseWorldView::SSAO_DepthPass()
 
 	pRenderContext.GetFrom( materials );
 
-	if( IsX360() )
-	{
-		//Resolve() the depth texture here. Before the pop so the copy will recognize that the resolutions are the same
-		pRenderContext->CopyRenderTargetToTextureEx( NULL, -1, NULL, NULL );
-	}
-
 	render->PopView( GetFrustum() );
-
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 
 	pRenderContext.SafeRelease();
 
@@ -5888,10 +5704,6 @@ void CSimpleWorldView::Draw()
 	CMatRenderContextPtr pRenderContext( materials );
 	PIXEVENT( pRenderContext, "CSimpleWorldView::Draw" );
 
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 32 ); //lean toward pixel shader threads
-#endif
-
 	pRenderContext.SafeRelease();
 
 	DrawSetup( 0, m_DrawFlags, 0 );
@@ -5919,10 +5731,6 @@ void CSimpleWorldView::Draw()
 
 	pRenderContext.GetFrom( materials );
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
-
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 }
 
 

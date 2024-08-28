@@ -39,7 +39,7 @@ typedef int	string_t;
 
 //-----------------------------------------------------------------------------
 
-#define IDENT_STRINGS( s1, s2 )	*((void **)&(s1)) == *((void **)&(s2))
+#define IDENT_STRINGS( s1, s2 )	( *((void **)&(s1)) == *((void **)&(s2)) )
 
 //-----------------------------------------------------------------------------
 
@@ -90,7 +90,7 @@ struct castable_string_t : public string_t // string_t is used in unions, hence,
 
 //-----------------------------------------------------------------------------
 
-#define IDENT_STRINGS( s1, s2 )	*((void **)&(s1)) == *((void **)&(s2))
+#define IDENT_STRINGS( s1, s2 )	( *((void **)&(s1)) == *((void **)&(s2)) )
 
 //-----------------------------------------------------------------------------
 
@@ -104,7 +104,7 @@ typedef const char *string_t;
 #define NULL_STRING				0
 #define STRING( c_str )			( c_str )
 #define MAKE_STRING( c_str )	( c_str )
-#define IDENT_STRINGS( s1, s2 )	*((void **)&(s1)) == *((void **)&(s2))
+#define IDENT_STRINGS( s1, s2 )	( *((void **)&(s1)) == *((void **)&(s2)) )
 
 #endif	// NO_STRING_T
 

@@ -117,7 +117,7 @@ public:
 	virtual void	Spawn( void );
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
 
-	virtual void	ClientThink( void );
+	virtual void	UpdateThink( void );
 
 private:
 

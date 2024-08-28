@@ -52,7 +52,7 @@
 
 class C_LocalTempEntity;
 
-typedef int (*pfnDrawHelper)( C_LocalTempEntity *entity, int flags );
+typedef int (*pfnDrawHelper)( C_LocalTempEntity *entity, int flags, const RenderableInstance_t &instance );
 
 //-----------------------------------------------------------------------------
 // Purpose: Should this derive from some other class
@@ -70,7 +70,7 @@ public:
 	virtual bool					Frame( float frametime, int framenumber );
 
 	// C_BaseAnimating , etc. override
-	virtual int						DrawModel( int flags );
+	virtual int						DrawModel( int flags, const RenderableInstance_t &instance );
 
 	// Sets the velocity
 	void SetVelocity( const Vector &vecVelocity );
@@ -121,8 +121,7 @@ public:
 	float							m_flFrameRate;
 	float							m_flFrame;
 
-	RenderGroup_t					m_RenderGroup;
-
+public:
 	const char						*m_pszImpactEffect;
 	const char						*m_pszParticleEffect;
 	bool							m_bParticleCollision;
@@ -139,7 +138,7 @@ private:
 	Vector							m_vecTempEntAcceleration;
 
 	// Draw tempent as a studio model
-	int								DrawStudioModel( int flags );
+	int								DrawStudioModel( int flags, const RenderableInstance_t &instance );
 
 };
 

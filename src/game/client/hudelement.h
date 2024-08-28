@@ -15,6 +15,8 @@
 #include "tier0/memdbgon.h"
 #undef new
 
+class CHud;
+
 //-----------------------------------------------------------------------------
 // Purpose: Base class for all hud elements
 //-----------------------------------------------------------------------------
@@ -27,6 +29,8 @@ public:
 								CHudElement( const char *pElementName );
 	// destructor - removes object from the global list
 	virtual						~CHudElement();
+
+	virtual void				SetHud( CHud *pHud );
 
 	// called when the Hud is initialised (whenever the DLL is loaded)
 	virtual void				Init( void ) { return; }
@@ -59,6 +63,9 @@ public:
 
 	bool						IsParentedToClientDLLRootPanel() const;
 	void						SetParentedToClientDLLRootPanel( bool parented );
+
+	// Return true if this HUD element expects an entry in  HudLayout.res
+	virtual bool				WantsHudLayoutEntry( void ) const { return true; }
 
 	// memory handling, uses calloc so members are zero'd out on instantiation
     void *operator new( size_t stAllocateBlock )	
@@ -120,6 +127,7 @@ private:
 	bool						m_bIsParentedToClientDLLRootPanel;
 
 	CUtlVector< int >			m_HudRenderGroups;
+	CHud						*m_pHud;
 };
 
 #include "utlpriorityqueue.h"

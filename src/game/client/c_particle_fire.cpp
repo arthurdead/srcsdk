@@ -6,7 +6,6 @@
 //=============================================================================//
 
 #include "cbase.h"
-#include "particle_prototype.h"
 #include "particle_util.h"
 #include "baseparticleentity.h"
 #include "engine/IEngineTrace.h"
@@ -70,7 +69,7 @@ inline int GetOppositeOffset(int offset)
 // Classes.
 // ------------------------------------------------------------------------- //
 
-class C_ParticleFire : public C_BaseParticleEntity, public IPrototypeAppEffect
+class C_ParticleFire : public C_BaseParticleEntity
 {
 public:
 	DECLARE_CLASS( C_ParticleFire, C_BaseParticleEntity );
@@ -108,7 +107,7 @@ public:
 
 // IPrototypeAppEffect.
 public:
-	virtual void	Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs);
+	virtual void	Start(CParticleMgr *pParticleMgr);
 
 
 // IParticleEffect.
@@ -138,10 +137,6 @@ private:
 // ------------------------------------------------------------------------- //
 // Tables.
 // ------------------------------------------------------------------------- //
-
-// Expose to the particle app.
-EXPOSE_PROTOTYPE_EFFECT(ParticleFire, C_ParticleFire);
-
 
 // Datatable..
 IMPLEMENT_CLIENTCLASS_DT_NOBASE(C_ParticleFire, DT_ParticleFire, CParticleFire)
@@ -174,12 +169,12 @@ void C_ParticleFire::OnDataChanged(DataUpdateType_t updateType)
 
 	if(updateType == DATA_UPDATE_CREATED)
 	{
-		Start(ParticleMgr(), NULL);
+		Start(ParticleMgr());
 	}
 }
 
 
-void C_ParticleFire::Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs)
+void C_ParticleFire::Start(CParticleMgr *pParticleMgr)
 {
 	m_pParticleMgr = pParticleMgr;
 	m_pParticleMgr->AddEffect( &m_ParticleEffect, this );

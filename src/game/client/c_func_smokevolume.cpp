@@ -8,6 +8,7 @@
 #include "c_smoke_trail.h"
 #include "smoke_fog_overlay.h"
 #include "engine/IEngineTrace.h"
+#include "view.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -32,7 +33,7 @@ static Vector s_FadePlaneDirections[] =
 // ------------------------------------------------------------------------- //
 // Classes
 // ------------------------------------------------------------------------- //
-class C_FuncSmokeVolume : public C_BaseParticleEntity, public IPrototypeAppEffect
+class C_FuncSmokeVolume : public C_BaseParticleEntity
 {
 public:
 	DECLARE_CLASS( C_FuncSmokeVolume, C_BaseParticleEntity );
@@ -60,7 +61,7 @@ public:
 	
 // IPrototypeAppEffect.
 public:
-	virtual void	Start( CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs );
+	virtual void	Start( CParticleMgr *pParticleMgr );
 
 // IParticleEffect.
 public:
@@ -139,6 +140,7 @@ private:
 	float m_RotationSpeed;
 	float m_MovementSpeed;
 	float m_Density;
+	float m_maxDrawDistance;
 	int	  m_spawnflags;
 
 private:
@@ -163,8 +165,8 @@ private:
 };
 
 IMPLEMENT_CLIENTCLASS_DT( C_FuncSmokeVolume, DT_FuncSmokeVolume, CFuncSmokeVolume )
-	RecvPropInt( RECVINFO( m_Color1 ), 0, RecvProxy_IntToColor32 ),
-	RecvPropInt( RECVINFO( m_Color2 ), 0, RecvProxy_IntToColor32 ),
+	RecvPropInt( RECVINFO( m_Color1 ), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropInt( RECVINFO( m_Color2 ), 0, RecvProxy_Int32ToColor32 ),
 	RecvPropString( RECVINFO( m_MaterialName ) ),
 	RecvPropFloat( RECVINFO( m_ParticleDrawWidth ) ),
 	RecvPropFloat( RECVINFO( m_ParticleSpacingDistance ) ),
@@ -172,6 +174,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_FuncSmokeVolume, DT_FuncSmokeVolume, CFuncSmokeVolum
 	RecvPropFloat( RECVINFO( m_RotationSpeed ) ),
 	RecvPropFloat( RECVINFO( m_MovementSpeed ) ),
 	RecvPropFloat( RECVINFO( m_Density ) ),
+	RecvPropFloat( RECVINFO( m_maxDrawDistance ) ),
 	RecvPropInt( RECVINFO( m_spawnflags ) ),
 	RecvPropDataTable( RECVINFO_DT( m_Collision ), 0, &REFERENCE_RECV_TABLE(DT_CollisionProperty) ),
 END_RECV_TABLE()
@@ -184,64 +187,6 @@ static inline void InterpColor(unsigned char dest[4], unsigned char src1[4], uns
 	dest[0] = (unsigned char)(src1[0] + (src2[0] - src1[0]) * percent);
 	dest[1] = (unsigned char)(src1[1] + (src2[1] - src1[1]) * percent);
 	dest[2] = (unsigned char)(src1[2] + (src2[2] - src1[2]) * percent);
-}
-
-
-static inline int GetWorldPointContents(const Vector &vPos)
-{
-#if defined(PARTICLEPROTOTYPE_APP)
-	return 0;
-#else
-	return enginetrace->GetPointContents( vPos );
-#endif
-}
-
-static inline void WorldTraceLine( const Vector &start, const Vector &end, int contentsMask, trace_t *trace )
-{
-#if defined(PARTICLEPROTOTYPE_APP)
-	trace->fraction = 1;
-#else
-	UTIL_TraceLine(start, end, contentsMask, NULL, COLLISION_GROUP_NONE, trace);
-#endif
-}
-
-static inline Vector EngineGetLightForPoint(const Vector &vPos)
-{
-#if defined(PARTICLEPROTOTYPE_APP)
-	return Vector(1,1,1);
-#else
-	return engine->GetLightForPoint(vPos, true);
-#endif
-}
-
-static inline Vector& EngineGetVecRenderOrigin()
-{
-#if defined(PARTICLEPROTOTYPE_APP)
-	static Vector dummy(0,0,0);
-	return dummy;
-#else
-	extern Vector g_vecRenderOrigin;
-	return g_vecRenderOrigin;
-#endif
-}
-
-static inline float& EngineGetSmokeFogOverlayAlpha()
-{
-#if defined(PARTICLEPROTOTYPE_APP)
-	static float dummy;
-	return dummy;
-#else
-	return g_SmokeFogOverlayAlpha;
-#endif
-}
-
-static inline C_BaseEntity* ParticleGetEntity( int index )
-{
-#if defined(PARTICLEPROTOTYPE_APP)
-	return NULL;
-#else
-	return cl_entitylist->GetEnt( index );
-#endif
 }
 
 // ------------------------------------------------------------------------- //
@@ -301,12 +246,12 @@ void C_FuncSmokeVolume::OnDataChanged( DataUpdateType_t updateType )
 
 		delete [] m_pSmokeParticleInfos;
 		m_pSmokeParticleInfos = new SmokeParticleInfo[m_xCount * m_yCount * m_zCount];
-		Start( ParticleMgr(), NULL );
+		Start( ParticleMgr() );
 	}
 	BaseClass::OnDataChanged( updateType );
 }
 
-void C_FuncSmokeVolume::Start( CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs )
+void C_FuncSmokeVolume::Start( CParticleMgr *pParticleMgr )
 {
 	if( !pParticleMgr->AddEffect( &m_ParticleEffect, this ) )
 		return;
@@ -342,22 +287,30 @@ void C_FuncSmokeVolume::Update( float fTimeDelta )
 
 		m_ParticleEffect.SetBBox( vWorldMins, vWorldMaxs );
 	}
-		
+
+	float minViewOrigingDistance = CollisionProp()->CalcDistanceFromPoint( MainViewOrigin() );
+
+	float targetDensity = m_Density;
+	if ( m_maxDrawDistance > 0 && minViewOrigingDistance > m_maxDrawDistance )
+	{
+		targetDensity = 0.0f;
+	}
+
 	// lerp m_CurrentDensity towards m_Density at a rate of m_DensityRampSpeed
-	if( m_CurrentDensity < m_Density )
+	if( m_CurrentDensity < targetDensity )
 	{
 		m_CurrentDensity += m_DensityRampSpeed * fTimeDelta;
-		if( m_CurrentDensity > m_Density )
+		if( m_CurrentDensity > targetDensity )
 		{
-			m_CurrentDensity = m_Density;
+			m_CurrentDensity = targetDensity;
 		}
 	}
-	else if( m_CurrentDensity > m_Density )
+	else if( m_CurrentDensity > targetDensity )
 	{
 		m_CurrentDensity -= m_DensityRampSpeed * fTimeDelta;
-		if( m_CurrentDensity < m_Density )
+		if( m_CurrentDensity < targetDensity )
 		{
-			m_CurrentDensity = m_Density;
+			m_CurrentDensity = targetDensity;
 		}
 	}
 
@@ -575,7 +528,7 @@ void C_FuncSmokeVolume::FillVolume()
 				vPos = GetSmokeParticlePos( x, y, z );
 				if(SmokeParticleInfo *pInfo = GetSmokeParticleInfo(x,y,z))
 				{
-					int contents = GetWorldPointContents(vPos);
+					int contents = UTIL_PointContents(vPos);
 					if(contents & CONTENTS_SOLID)
 					{
 						pInfo->m_pParticle = NULL;
@@ -600,7 +553,7 @@ void C_FuncSmokeVolume::FillVolume()
 						assert(testX == x && testY == y && testZ == z);
 #endif
 
-						Vector vColor = EngineGetLightForPoint(vPos);
+						Vector vColor = engine->GetLightForPoint(vPos, true);
 						pInfo->m_Color[0] = LinearToTexture( vColor.x );
 						pInfo->m_Color[1] = LinearToTexture( vColor.y );
 						pInfo->m_Color[2] = LinearToTexture( vColor.z );
@@ -611,7 +564,7 @@ void C_FuncSmokeVolume::FillVolume()
 						for(int i=0; i < NUM_FADE_PLANES; i++)
 						{
 							trace_t trace;
-							WorldTraceLine(vPos, vPos + s_FadePlaneDirections[i] * 100, MASK_SOLID_BRUSHONLY, &trace);
+							UTIL_TraceLine(vPos, vPos + s_FadePlaneDirections[i] * 100, MASK_SOLID_BRUSHONLY, NULL, COLLISION_GROUP_NONE, &trace);
 							if(trace.fraction < 1.0f)
 							{
 								float dist = DotProduct(trace.plane.normal, vPos) - trace.plane.dist;

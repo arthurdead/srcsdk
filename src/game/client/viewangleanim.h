@@ -5,6 +5,7 @@
 //=============================================================================//
 
 #include "utlvector.h"
+#include "c_baseentity.h"
 
 #define VIEWANIM_RELATIVE (1<<0)	// angles in keyframe are relative, add anim to current angles
 #define VIEWANIM_IGNORE_X (1<<1)	// ignore the x component of this animation
@@ -52,7 +53,7 @@ public:
 	void AddKeyFrame( CViewAngleKeyFrame *pKeyFrame );
 	bool IsFinished( void );
 	void RunAnimation( QAngle angles );
-	void ClientThink();
+	void AnimThink();
 
 	void SetAnimCompleteCallback( ViewAnimCompleteCallback pFunc )
 	{

@@ -12,7 +12,7 @@
 
 #include "tier0/platform.h"
 
-#if (defined( PLATFORM_WINDOWS ) || defined( PLATFORM_X360 )) && !defined( STEAM ) && !defined( _CERT ) && defined( TCHAR_IS_CHAR ) //designed for windows/x360, not built/tested with wide characters, not intended for release builds (but probably wouldn't damage anything)
+#if (defined( PLATFORM_WINDOWS )) && !defined( STEAM ) && !defined( _CERT ) && defined( TCHAR_IS_CHAR ) //designed for windows/x360, not built/tested with wide characters, not intended for release builds (but probably wouldn't damage anything)
 #	define ENABLE_RUNTIME_STACK_TRANSLATION //uncomment to enable runtime stack translation tools. All of which use on-demand loading of necessary dll's and pdb's
 #endif
 

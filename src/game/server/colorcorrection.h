@@ -7,9 +7,7 @@
 
 #ifndef COLOR_CORRECTION_H
 #define COLOR_CORRECTION_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <string.h>
 #include "cbase.h"

@@ -480,11 +480,8 @@ void CLocatorTarget::SetBinding( const char *pszBinding )
 
 	int iAllowJoystick = -1;
 
-	if ( !IsX360() )
-	{
-		// Only show joystick binds if it's enabled and non-joystick if it's disabled
-		iAllowJoystick = input->ControllerModeActive();
-	}
+	// Only show joystick binds if it's enabled and non-joystick if it's disabled
+	iAllowJoystick = input->ControllerModeActive();
 
 	bool bIsControllerNow = ( iAllowJoystick != 0 );
 
@@ -544,17 +541,8 @@ const char *CLocatorTarget::UseBindingImage( char *pchIconTextureName, size_t bu
 {
 	if ( m_iBindingChoicesCount <= 0 )
 	{
-		if ( IsX360() )
-		{
-			Q_strncpy( pchIconTextureName, "icon_blank", bufSize );
-		}
-		else
-		{
-			Q_strncpy( pchIconTextureName, "icon_key_wide", bufSize );
-			return "#GameUI_Icons_NONE";
-		}
-
-		return NULL;
+		Q_strncpy( pchIconTextureName, "icon_key_wide", bufSize );
+		return "#GameUI_Icons_NONE";
 	}
 
 	// Cycle through the list of binds at a rate of 2 per second
@@ -562,13 +550,6 @@ const char *CLocatorTarget::UseBindingImage( char *pchIconTextureName, size_t bu
 
 	// We counted at least one binding... this should not be NULL!
 	Assert( pchBinding );
-
-	if ( IsX360() )
-	{
-		// Use a blank background for the button icons
-		Q_strncpy( pchIconTextureName, "icon_blank", bufSize );
-		return pchBinding;
-	}
 
 	if ( input->ControllerModeActive() && 
 		 ( Q_strcmp( pchBinding, "A_BUTTON" ) == 0 || 

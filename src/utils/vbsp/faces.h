@@ -7,9 +7,7 @@
 
 #ifndef FACES_H
 #define FACES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 void GetEdge2_InitOptimizedList();	// Call this before calling GetEdge2() on a bunch of edges.

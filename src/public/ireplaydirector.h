@@ -6,9 +6,7 @@
 
 #ifndef IREPLAYDIRECTOR_H
 #define IREPLAYDIRECTOR_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class IReplayServer;
 class KeyValues;

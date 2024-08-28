@@ -35,7 +35,7 @@ public:
 
 #define	BUBBLES_PER_INCH	0.2
 
-	void AddEntity( void )
+	bool Simulate( void )
 	{
 		Vector	direction = GetAbsOrigin() - m_vecLastOrigin;
 		float	flDist = VectorNormalize( direction );
@@ -104,7 +104,8 @@ public:
 		// Save our last position
 		m_vecLastOrigin = GetAbsOrigin();
 
-		BaseClass::AddEntity();
+		BaseClass::Simulate();
+		return true;
 	}
 
 	bool ShouldDraw( void ) { return true; }

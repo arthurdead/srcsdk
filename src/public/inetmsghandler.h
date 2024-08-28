@@ -101,6 +101,7 @@ class CLC_FileCRCCheck;
 class CLC_FileMD5Check;
 class CLC_SaveReplay;
 class CLC_CmdKeyValues;
+class CLC_LoadingProgress;
 
 class IClientMessageHandler : public INetMessageHandler
 {

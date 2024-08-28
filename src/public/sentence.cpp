@@ -18,6 +18,7 @@
 #include "mathlib/mathlib.h"
 #include <ctype.h>
 #include "checksum_crc.h"
+#include "phonemeconverter.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -360,7 +361,7 @@ static CCLanguage g_CCLanguageLookup[] =
 	{ CC_FRENCH,	"french",		150,	0,		0 },
 	{ CC_GERMAN,	"german",		0,		150,	0 },
 	{ CC_ITALIAN,	"italian",		0,		150,	150 },
-	{ CC_KOREAN,	"koreana",		150,	0,		150 },
+	{ CC_KOREAN,	"korean",		150,	0,		150 },
 	{ CC_SCHINESE,	"schinese",		150,	0,		150 },
 	{ CC_SPANISH,	"spanish",		0,		0,		150 },
 	{ CC_TCHINESE,	"tchinese",		150,	0,		150 },
@@ -737,7 +738,26 @@ void CSentence::CacheSaveToBuffer( CUtlBuffer& buf, int version )
 	}
 
 	// phoneme
-	if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
+	if ( version == CACHED_SENTENCE_VERSION_PACKED )
+	{
+		for ( i = 0; i < pcount; ++i )
+		{
+			const CBasePhonemeTag *phoneme = GetRuntimePhoneme( i );
+			Assert( phoneme );
+			buf.PutUnsignedChar( CodeToByteCode( phoneme->GetPhonemeCode() ) );
+
+			float start = phoneme->GetStartTime() * 1000.0f/5.0f;
+			Assert( start >= -32768.0f && start <= 32767.0f );
+			start = clamp( start, -32768.0f, 32767.0f );
+			buf.PutShort( (short)start );
+
+			float end = phoneme->GetEndTime() * 1000.0f/5.0f;
+			Assert( end >= -32768.0f && end <= 32767.0f );
+			end = clamp( end, -32768.0f, 32767.0f );
+			buf.PutShort( (short)end );
+		}
+	}
+	else if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
 	{
 		for ( i = 0; i < pcount; ++i )
 		{
@@ -764,7 +784,25 @@ void CSentence::CacheSaveToBuffer( CUtlBuffer& buf, int version )
 	int c = m_EmphasisSamples.Count();
 	Assert( c <= 32767 );
 
-	if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
+	if ( version == CACHED_SENTENCE_VERSION_PACKED )
+	{
+		buf.PutShort( c );
+		for ( i = 0; i < c; i++ )
+		{
+			CEmphasisSample *sample = &m_EmphasisSamples[i];
+			Assert( sample );
+
+			float scaledTime = sample->time * 1000.0f/5.0f;
+			Assert( scaledTime >= -32768.0f && scaledTime <= 32767.0f );
+			scaledTime = clamp( scaledTime, -32768.0f, 32767.0f );
+			buf.PutShort( scaledTime );
+
+			short scaledValue = (short)clamp( sample->value * 32767.0f, 0.0f, 32767.0f );
+			buf.PutShort( scaledValue );
+		}
+		buf.PutChar( GetVoiceDuck() ? 1 : 0 );
+	}
+	else if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
 	{
 		buf.PutInt( c );
 		for ( i = 0; i < c; i++ )
@@ -805,7 +843,9 @@ void CSentence::CacheRestoreFromBuffer( CUtlBuffer& buf )
 
 	// determine format
 	int version = buf.GetChar();
-	if ( version != CACHED_SENTENCE_VERSION && version != CACHED_SENTENCE_VERSION_ALIGNED )
+	if ( version != CACHED_SENTENCE_VERSION && 
+		version != CACHED_SENTENCE_VERSION_ALIGNED &&
+		version != CACHED_SENTENCE_VERSION_PACKED )
 	{
 		// Uh oh, version changed...
 		m_bIsValid = false;
@@ -828,7 +868,21 @@ void CSentence::CacheRestoreFromBuffer( CUtlBuffer& buf )
 	// phonemes
 	CPhonemeTag pt;
 	int i;
-	if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
+	if ( version == CACHED_SENTENCE_VERSION_PACKED )
+	{
+		for ( i = 0; i < pcount; ++i )
+		{
+			unsigned char code = buf.GetUnsignedChar();
+			float st = (float)buf.GetShort() * 5.0f/1000.0f;
+			float et = (float)buf.GetShort() * 5.0f/1000.0f;
+
+			pt.SetPhonemeCode( ByteCodeToCode( code ) );
+			pt.SetStartTime( st );
+			pt.SetEndTime( et );
+			AddRuntimePhoneme( &pt );
+		}
+	}
+	else if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
 	{
 		for ( i = 0; i < pcount; ++i )
 		{
@@ -859,7 +913,20 @@ void CSentence::CacheRestoreFromBuffer( CUtlBuffer& buf )
 
 	// emphasis samples and voice duck
 	int c;
-	if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
+	if ( version == CACHED_SENTENCE_VERSION_PACKED )
+	{
+		c = buf.GetShort();
+		for ( i = 0; i < c; i++ )
+		{
+			CEmphasisSample sample;
+			sample.SetSelected( false );
+			sample.time = (float)buf.GetShort() * 5.0f/1000.0f;
+			sample.value = (float)buf.GetShort() * 1.0f/32767.0f;
+			m_EmphasisSamples.AddToTail( sample );
+		}
+		SetVoiceDuck( buf.GetChar() == 0 ? false : true );
+	}
+	else if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
 	{
 		c = buf.GetInt();
 		for ( i = 0; i < c; i++ )

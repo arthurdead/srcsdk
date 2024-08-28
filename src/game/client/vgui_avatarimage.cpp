@@ -9,9 +9,6 @@
 #include <vgui_controls/Panel.h>
 #include <vgui/ISurface.h>
 #include "vgui_avatarimage.h"
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 #include "steam/steam_api.h"
 
 DECLARE_BUILD_FACTORY( CAvatarImagePanel );
@@ -47,7 +44,7 @@ CAvatarImage::CAvatarImage( void )
 	m_iTextureID = -1;
 
 	// set up friend icon
-	m_pFriendIcon = gHUD.GetIcon( "ico_friend_indicator_avatar" );
+	m_pFriendIcon = HudIcons().GetIcon( "ico_friend_indicator_avatar" );
 
 	m_pDefaultImage = NULL;
 

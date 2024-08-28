@@ -119,7 +119,7 @@ void CTextureTransformProxy::OnBind( void *pC_BaseEntity )
 
 
 
-EXPOSE_INTERFACE( CTextureTransformProxy, IMaterialProxy, "TextureTransform" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CTextureTransformProxy, TextureTransform );
 
 
 //-----------------------------------------------------------------------------
@@ -178,5 +178,5 @@ void CMatrixRotateProxy::OnBind( void *pC_BaseEntity )
 
 
 
-EXPOSE_INTERFACE( CMatrixRotateProxy, IMaterialProxy, "MatrixRotate" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CMatrixRotateProxy, MatrixRotate );
 

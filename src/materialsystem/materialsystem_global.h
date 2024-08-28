@@ -10,9 +10,7 @@
 #ifndef MATERIALSYSTEM_GLOBAL_H
 #define MATERIALSYSTEM_GLOBAL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "imaterialsysteminternal.h"
 #include "tier0/dbg.h"

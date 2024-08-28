@@ -7,9 +7,7 @@
 
 #ifndef PORTALS_H
 #define PORTALS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 // Sets up the g_ClipPortalIndices array.

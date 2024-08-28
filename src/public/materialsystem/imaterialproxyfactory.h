@@ -11,7 +11,7 @@
 
 #include "interface.h"
 
-#define IMATERIAL_PROXY_FACTOR_INTERFACE_VERSION "IMaterialProxyFactory001"
+#define IMATERIAL_PROXY_FACTORY_INTERFACE_VERSION "IMaterialProxyFactory001"
 
 class IMaterialProxy;
 

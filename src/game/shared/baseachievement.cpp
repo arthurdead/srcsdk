@@ -29,6 +29,7 @@
 
 CBaseAchievementHelper *CBaseAchievementHelper::s_pFirst = NULL;
 
+#ifdef GAME_DLL
 BEGIN_DATADESC_NO_BASE( CBaseAchievement )
 DEFINE_FIELD( m_iCount,						FIELD_INTEGER ),
 END_DATADESC()
@@ -37,6 +38,7 @@ BEGIN_DATADESC( CFailableAchievement )
 DEFINE_FIELD( m_bActivated,					FIELD_BOOLEAN ),
 DEFINE_FIELD( m_bFailed,					FIELD_BOOLEAN ),
 END_DATADESC()
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: constructor
@@ -231,7 +233,6 @@ void CBaseAchievement::IncrementCount( int iOptIncrement )
 			Msg( "Achievement count increased for %s: %d/%d\n", GetName(), m_iCount, m_iGoal );
 		}
 
-#ifndef NO_STEAM
 		// if this achievement's progress should be stored in Steam, set the steam stat for it
 		if ( StoreProgressInSteam() && steamapicontext->SteamUserStats() )
 		{
@@ -246,7 +247,7 @@ void CBaseAchievement::IncrementCount( int iOptIncrement )
 
 			m_pAchievementMgr->SetDirty( true );
 		}
-#endif
+
 		// if we've hit goal, award the achievement
 		if ( m_iGoal > 0 )
 		{

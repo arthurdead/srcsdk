@@ -9,7 +9,6 @@
 #include "ai_activity.h"
 #include "activitylist.h"
 #include "stringregistry.h"
-#include "isaverestore.h"
 
 #include "filesystem.h"
 #include <KeyValues.h>
@@ -2353,76 +2352,6 @@ void ActivityList_RegisterSharedActivities( void )
 
 	AssertMsg( g_HighestActivity == LAST_SHARED_ACTIVITY - 1, "Not all activities from ai_activity.h registered in activitylist.cpp" ); 
 } 
-
-// HACKHACK: Keep backwards compatibility on broken activities temporarily
-#define ACTIVITY_FILE_TAG 0x80800000
-
-class CActivityDataOps : public CDefSaveRestoreOps
-{
-public:
-	// save data type interface
-	virtual void Save( const SaveRestoreFieldInfo_t &fieldInfo, ISave *pSave ) 
-	{
-		int activityIndex = *((int *)fieldInfo.pField);
-		const char *pActivityName = ActivityList_NameForIndex( activityIndex );
-		if ( !pActivityName )
-		{
-			AssertOnce( activityIndex == -1 ); // FIXME: whatever activity this was, it's now being saved out as ACT_RESET
-			pActivityName = ActivityList_NameForIndex( 0 );
-		}
-		int len = strlen(pActivityName) + 1;
-		
-		// Use the high 16-bits of this int to signify this file format
-		// this makes this backwards compatible.
-		// UNDONE: Remove after playtest save files are no longer needed
-		len |= ACTIVITY_FILE_TAG;
-		pSave->WriteInt( &len );
-		pSave->WriteString( pActivityName );
-	}
-
-	virtual void Restore( const SaveRestoreFieldInfo_t &fieldInfo, IRestore *pRestore ) 
-	{
-		char nameBuf[1024];
-
-		int *pActivityIndex = (int *)fieldInfo.pField;
-
-		int nameLen = pRestore->ReadInt();
-		if ( (nameLen & 0xFFFF0000) != ACTIVITY_FILE_TAG )
-		{
-			// old save file, this is an index, not a name
-			*pActivityIndex = nameLen;
-			return;
-		}
-		nameLen &= 0xFFFF;
-		pRestore->ReadString( nameBuf, sizeof(nameBuf), nameLen );
-		*pActivityIndex = ActivityList_IndexForName( nameBuf );
-		if ( *pActivityIndex < 0 )
-		{
-			*pActivityIndex = 0;
-		}
-	}
-
-	virtual bool IsEmpty( const SaveRestoreFieldInfo_t &fieldInfo ) 
-	{ 
-		int *pActivityIndex = (int *)fieldInfo.pField;
-		return (*pActivityIndex == 0);
-	}
-
-	virtual void MakeEmpty( const SaveRestoreFieldInfo_t &fieldInfo ) 
-	{
-		int *pActivityIndex = (int *)fieldInfo.pField;
-		*pActivityIndex = 0;
-	}
-};
-
-static CActivityDataOps g_ActivityDataOps;
-
-ISaveRestoreOps* ActivityDataOps()
-{
-	return &g_ActivityDataOps;
-}
-
-
 
 
 void UTIL_LoadActivityRemapFile( const char *filename, const char *section, CUtlVector <CActivityRemap> &entries )

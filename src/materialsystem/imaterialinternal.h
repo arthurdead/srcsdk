@@ -9,9 +9,7 @@
 #ifndef IMATERIALINTERNAL_H
 #define IMATERIALINTERNAL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // identifier was truncated to '255' characters in the debug information
 #pragma warning(disable: 4786)

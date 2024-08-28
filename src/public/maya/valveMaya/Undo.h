@@ -52,9 +52,7 @@
 
 #ifndef VALVEMAYA_UNDO_H
 #define VALVEMAYA_UNDO_H
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 
 // Standard includes

@@ -106,11 +106,8 @@ END_SEND_TABLE()
 
 CSunlightShadowControl::CSunlightShadowControl()
 {
-#if defined( _X360 )
-	Q_strcpy( m_TextureName.GetForModify(), "effects/flashlight_border" );
-#else
 	Q_strcpy( m_TextureName.GetForModify(), "effects/flashlight001" );
-#endif
+
 	m_LightColor.Init( 255, 255, 255, 1 );
 	m_flColorTransitionTime = 0.5f;
 	m_flSunDistance = 10000.0f;
@@ -156,19 +153,7 @@ bool CSunlightShadowControl::KeyValue( const char *szKeyName, const char *szValu
 	}
 	else if ( FStrEq( szKeyName, "texturename" ) )
 	{
-#if defined( _X360 )
-		if ( Q_strcmp( szValue, "effects/flashlight001" ) == 0 )
-		{
-			// Use this as the default for Xbox
-			Q_strcpy( m_TextureName.GetForModify(), "effects/flashlight_border" );
-		}
-		else
-		{
-			Q_strcpy( m_TextureName.GetForModify(), szValue );
-		}
-#else
 		Q_strcpy( m_TextureName.GetForModify(), szValue );
-#endif
 	}
 
 	return BaseClass::KeyValue( szKeyName, szValue );

@@ -3,9 +3,7 @@
 
 #ifndef GAMECONTROLS_MISCUTILS_H
 #define GAMECONTROLS_MISCUTILS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 

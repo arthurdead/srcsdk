@@ -10,8 +10,8 @@
 #define ICLIENTMODE_H
 
 #include <vgui/VGUI.h>
-#include "client_virtualreality.h"
 #include "inputsystem/ButtonCode.h"
+#include "cdll_int.h"
 
 class CViewSetup;
 class C_BaseEntity;
@@ -55,16 +55,20 @@ public:
 	// This can re-layout the view and such.
 	// Note that Enable and Disable are called when the DLL initializes and shuts down.
 	virtual void	Enable()=0;
+	virtual void	EnableWithRootPanel( vgui::VPANEL pRoot )=0;
 
 	// Called when it's about to go into another client mode.
 	virtual void	Disable()=0;
 
 	// Called when initializing or when the view changes.
 	// This should move the viewport into the correct position.
-	virtual void	Layout()=0;
+	virtual void	Layout(bool bForce = false)=0;
 
 	// Gets at the viewport, if there is one...
 	virtual vgui::Panel *GetViewport() = 0;
+
+	// Gets a panel hierarchically below the viewport by name like so "ASWHudInventoryMode/SuitAbilityPanel/ItemPanel1"...
+	virtual vgui::Panel *GetPanelFromViewport( const char *pchNamePath ) = 0;
 
 	// Gets at the viewports vgui panel animation controller, if there is one...
 	virtual vgui::AnimationController *GetViewportAnimationController() = 0;
@@ -83,6 +87,7 @@ public:
 	virtual bool	ShouldDrawFog( void ) = 0;
 
 	virtual void	OverrideView( CViewSetup *pSetup ) = 0;
+	virtual void	OverrideAudioState( AudioState_t *pAudioState ) = 0;
 	virtual int		KeyInput( int down, ButtonCode_t keynum, const char *pszCurrentBinding ) = 0;
 	virtual void	StartMessageMode( int iMessageModeType ) = 0;
 	virtual vgui::Panel *GetMessagePanel() = 0;
@@ -118,6 +123,8 @@ public:
 
 	virtual void	ComputeVguiResConditions( KeyValues *pkvConditions ) = 0;
 
+	virtual int		HudElementKeyInput( int down, ButtonCode_t keynum, const char *pszCurrentBinding ) = 0;
+
 	//=============================================================================
 	// HPE_BEGIN:
 	// [menglish] Save server information shown to the client in a persistent place
@@ -143,17 +150,18 @@ public:
 	// Called every frame.
 	virtual void	Update()=0;	
 
-	// Returns true if VR mode should black out everything around the UI
-	virtual bool	ShouldBlackoutAroundHUD() = 0;
+	virtual void	SetBlurFade( float scale ) = 0;
+	virtual float	GetBlurFade( void ) = 0;
 
 	// Returns true if VR mode should black out everything around the UI
-	virtual HeadtrackMovementMode_t ShouldOverrideHeadtrackControl() = 0;
+	virtual bool	ShouldBlackoutAroundHUD() = 0;
 
 	virtual bool	IsInfoPanelAllowed() = 0;
 	virtual void	InfoPanelDisplayed() = 0;
 	virtual bool	IsHTMLInfoPanelAllowed() = 0;
 };	
 
-extern IClientMode *g_pClientMode;
+extern IClientMode *GetClientMode();
+extern IClientMode *GetFullscreenClientMode();
 
 #endif

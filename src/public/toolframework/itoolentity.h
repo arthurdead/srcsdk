@@ -14,7 +14,8 @@
 #include "basehandle.h"
 #include "iclientrenderable.h"
 #include "engine/ishadowmgr.h"
-
+#include "engine/ivmodelinfo.h"
+#include "engine/IClientLeafSystem.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -53,8 +54,9 @@ enum ClientShadowFlags_t
 	SHADOW_FLAGS_USE_RENDER_TO_TEXTURE	= (SHADOW_FLAGS_LAST_FLAG<<1),
 	SHADOW_FLAGS_ANIMATING_SOURCE		= (SHADOW_FLAGS_LAST_FLAG<<2),
 	SHADOW_FLAGS_USE_DEPTH_TEXTURE		= (SHADOW_FLAGS_LAST_FLAG<<3),
+	SHADOW_FLAGS_CUSTOM_DRAW			= (SHADOW_FLAGS_LAST_FLAG<<4),
 	// Update this if you add flags
-	CLIENT_SHADOW_FLAGS_LAST_FLAG		= SHADOW_FLAGS_USE_DEPTH_TEXTURE
+	CLIENT_SHADOW_FLAGS_LAST_FLAG		= SHADOW_FLAGS_CUSTOM_DRAW
 };
 
 
@@ -63,7 +65,7 @@ enum ClientShadowFlags_t
 // Attach it to a tool entity or discard after searching
 //-----------------------------------------------------------------------------
 typedef void *EntitySearchResult;
-
+typedef void *ParticleSystemSearchResult;
 
 //-----------------------------------------------------------------------------
 // Purpose: Client side tool interace (right now just handles IClientRenderables).
@@ -100,7 +102,9 @@ public:
 	virtual const char*		GetModelName ( HTOOLHANDLE handle ) = 0;
 	virtual const char*		GetClassname ( HTOOLHANDLE handle ) = 0;
 
-	virtual void			AddClientRenderable( IClientRenderable *pRenderable, int renderGroup ) = 0;
+private:
+	virtual void			DO_NOT_USE_AddClientRenderable( IClientRenderable *pRenderable, int renderGroup ) = 0;
+public:
 	virtual void			RemoveClientRenderable( IClientRenderable *pRenderable ) = 0;
 	virtual void			SetRenderGroup( IClientRenderable *pRenderable, int renderGroup ) = 0;
 	virtual void			MarkClientRenderableDirty( IClientRenderable *pRenderable ) = 0;
@@ -162,8 +166,93 @@ public:
 	virtual bool			IsRenderingThirdPerson() const = 0;
 };
 
+class IClientToolsEx : public IClientTools
+{
+private:
+	virtual void			DO_NOT_USE_AddClientRenderable( IClientRenderable *pRenderable, int renderGroup ) override final
+	{
+		bool bDrawWithViewModels = false;
+		RenderableTranslucencyType_t nType = RENDERABLE_IS_OPAQUE;
+		RenderableModelType_t nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE;
+
+		switch(renderGroup) {
+		case ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE:
+		case ENGINE_RENDER_GROUP_OPAQUE_STATIC:
+			nType = RENDERABLE_IS_OPAQUE;
+			nModelType = RENDERABLE_MODEL_STATIC_PROP;
+			break;
+		case ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY:
+			nType = RENDERABLE_IS_TRANSLUCENT;
+			nModelType = RENDERABLE_MODEL_ENTITY;
+			break;
+		case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE:
+		case ENGINE_RENDER_GROUP_OPAQUE_ENTITY:
+			nType = RENDERABLE_IS_OPAQUE;
+			nModelType = RENDERABLE_MODEL_ENTITY;
+			break;
+		case ENGINE_RENDER_GROUP_OPAQUE_BRUSH:
+			nType = RENDERABLE_IS_OPAQUE;
+			nModelType = RENDERABLE_MODEL_BRUSH;
+			break;
+		case ENGINE_RENDER_GROUP_VIEW_MODEL_TRANSLUCENT:
+			nType = RENDERABLE_IS_TRANSLUCENT;
+			nModelType = RENDERABLE_MODEL_ENTITY;
+			bDrawWithViewModels = true;
+			break;
+		case ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE:
+			nType = RENDERABLE_IS_OPAQUE;
+			nModelType = RENDERABLE_MODEL_ENTITY;
+			bDrawWithViewModels = true;
+			break;
+		case ENGINE_RENDER_GROUP_TWOPASS:
+			nType = RENDERABLE_IS_TWO_PASS;
+			nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE;
+			break;
+		case ENGINE_RENDER_GROUP_OTHER:
+			nType = RENDERABLE_IS_OPAQUE;
+			nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE;
+			break;
+		}
+		AddClientRenderable( pRenderable, bDrawWithViewModels, nType, nModelType );
+	}
+
+private:
+	virtual void			AddClientRenderable( IClientRenderable *pRenderable, int renderGroup ) final
+	{
+		DebuggerBreak();
+	}
+
+public:
+	virtual void			AddClientRenderable( IClientRenderable *pRenderable, bool bDrawWithViewModels, RenderableTranslucencyType_t nType, RenderableModelType_t nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE ) = 0;
+	virtual void			SetTranslucencyType( IClientRenderable *pRenderable, RenderableTranslucencyType_t nType ) = 0;
+
+	bool			IsCombatCharacter	( EntitySearchResult currentEnt )
+	{ return IsBaseCombatCharacter( currentEnt ); }
+
+	virtual EntitySearchResult	GetEntity( HTOOLHANDLE handle ) = 0;
+	virtual void			DrawSprite( const Vector &vecOrigin, float flWidth, float flHeight, color32 color ) = 0;
+	virtual bool			IsRagdoll			( EntitySearchResult currentEnt ) = 0;
+	virtual bool			IsViewModel			( EntitySearchResult currentEnt ) = 0;
+	virtual bool			IsViewModelOrAttachment( EntitySearchResult currentEnt ) = 0;
+	virtual bool			IsWeapon			( EntitySearchResult currentEnt ) = 0;
+	virtual bool			IsSprite			( EntitySearchResult currentEnt ) = 0;
+	virtual bool			IsProp				( EntitySearchResult currentEnt ) = 0;
+	virtual bool			IsBrush				( EntitySearchResult currentEnt ) = 0;
+
+	// ParticleSystem iteration, query, modification
+	virtual ParticleSystemSearchResult	FirstParticleSystem() { return NextParticleSystem( NULL ); }
+	virtual ParticleSystemSearchResult	NextParticleSystem( ParticleSystemSearchResult sr ) = 0;
+	virtual void						SetRecording( ParticleSystemSearchResult sr, bool bRecord ) = 0;
+};
+
 #define VCLIENTTOOLS_INTERFACE_VERSION "VCLIENTTOOLS001"
 
+class CEntityRespawnInfo
+{
+public:
+	int m_nHammerID;
+	const char *m_pEntText;
+};
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface from engine to tools for manipulating entities
@@ -238,6 +327,17 @@ public:
 	virtual CBaseEntity *FindEntityNearestFacing( const Vector &origin, const Vector &facing, float threshold ) = 0;
 	virtual CBaseEntity *FindEntityClassNearestFacing( const Vector &origin, const Vector &facing, float threshold, char *classname ) = 0;
 	virtual CBaseEntity *FindEntityProcedural( const char *szName, CBaseEntity *pSearchingEntity = NULL, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL ) = 0;
+};
+
+class IServerToolsEx : public IServerTools
+{
+public:
+	// This function respawns the entity into the same entindex slot AND tricks the EHANDLE system into thinking it's the same
+	// entity version so anyone holding an EHANDLE to the entity points at the newly-respawned entity.
+	virtual bool RespawnEntitiesWithEdits( CEntityRespawnInfo *pInfos, int nInfos ) = 0;
+
+	// Call UTIL_Remove on the entity.
+	virtual void RemoveEntity( int nHammerID ) = 0;
 };
 
 typedef IServerTools IServerTools001;

@@ -23,6 +23,7 @@
 #include "fx_water.h"
 #include "positionwatcher.h"
 #include "vphysics/constraints.h"
+#include "vphysics/friction.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -30,11 +31,24 @@
 extern IFileSystem *filesystem;
 
 ConVar	cl_phys_timescale( "cl_phys_timescale", "1.0", FCVAR_CHEAT, "Sets the scale of time for client-side physics (ragdolls)" );
+static ConVar	cl_phys_maxticks( "cl_phys_maxticks", "0", FCVAR_NONE, "Sets the max number of physics ticks allowed for client-side physics (ragdolls)" );
+ConVar	cl_ragdoll_gravity( "cl_ragdoll_gravity", "386", FCVAR_CHEAT, "Sets the gravity client-side ragdolls" );
+
+// blocked entity detecting
+static ConVar cl_phys_block_fraction("cl_phys_block_fraction", "0.1");
+static ConVar cl_phys_block_dist("cl_phys_block_dist","1.0");
 
 void PrecachePhysicsSounds( void );
 
 //FIXME: Replicated from server end, consolidate?
 
+struct penetrateevent_t
+{
+	C_BaseEntity *pEntity0;
+	C_BaseEntity *pEntity1;
+	float		startTime;
+	float		timeStamp;
+};
 
 extern IVEngineClient *engine;
 
@@ -65,6 +79,9 @@ public:
 
 	void	UpdateFluidEvents( void );
 	void	UpdateTouchEvents( void );
+	void	UpdatePenetrateEvents();
+
+	void	LevelShutdown();
 
 	// IPhysicsCollisionSolver
 	int		ShouldCollide( IPhysicsObject *pObj0, IPhysicsObject *pObj1, void *pGameData0, void *pGameData1 );
@@ -73,7 +90,14 @@ public:
 #endif
 	// debugging collision problem in TF2
 	int		ShouldSolvePenetration( IPhysicsObject *pObj0, IPhysicsObject *pObj1, void *pGameData0, void *pGameData1, float dt );
-	bool	ShouldFreezeObject( IPhysicsObject *pObject ) { return true; }
+	bool	ShouldFreezeObject( IPhysicsObject *pObject )
+	{
+		// shadow controlled objects are probably server side.
+		// UNDONE: Explicitly flag server side objects?
+		if ( pObject->GetShadowController() )
+			return false;
+		return true;
+	}
 	int		AdditionalCollisionChecksThisTick( int currentChecksDone ) { return 0; }
 	bool ShouldFreezeContacts( IPhysicsObject **pObjectList, int objectCount )  { return true; }
 
@@ -123,12 +147,16 @@ private:
 	void	AddTouchEvent( C_BaseEntity *pEntity0, C_BaseEntity *pEntity1, int touchType, const Vector &point, const Vector &normal );
 	void	DispatchStartTouch( C_BaseEntity *pEntity0, C_BaseEntity *pEntity1, const Vector &point, const Vector &normal );
 	void	DispatchEndTouch( C_BaseEntity *pEntity0, C_BaseEntity *pEntity1 );
+	void	FindOrAddPenetrateEvent( C_BaseEntity *pEntity0, C_BaseEntity *pEntity1 );
 
 	friction_t					m_current[8];
 	CUtlVector<fluidevent_t>	m_fluidEvents;
 	CUtlVector<touchevent_t>	m_touchEvents;
+	CUtlVector<penetrateevent_t> m_penetrateEvents;
 	int							m_inCallback;
 	bool						m_bBufferTouchEvents;
+
+	float						m_flLastSplashTime;
 };
 
 CCollisionEvent g_Collisions;
@@ -150,16 +178,10 @@ bool PhysicsDLLInit( CreateInterfaceFn physicsFactory )
 		return false;
 	}
 
-	if ( IsX360() )
-	{
-		// Reduce timescale to save perf on 360
-		cl_phys_timescale.SetValue(0.9f);
-	}
 	PhysParseSurfaceData( physprops, filesystem );
 	return true;
 }
 
-#define DEFAULT_XBOX_CLIENT_VPHYSICS_TICK	0.025		// 25ms ticks on xbox ragdolls
 void PhysicsLevelInit( void )
 {
 	physenv = physics->CreateEnvironment();
@@ -175,15 +197,17 @@ void PhysicsLevelInit( void )
 	// TODO: need to get the right factory function here
 	//physenv->SetDebugOverlay( appSystemFactory );
 	physenv->SetGravity( Vector(0, 0, -GetCurrentGravity() ) );
+
 	// 15 ms per tick
 	// NOTE: Always run client physics at this rate - helps keep ragdolls stable
-	physenv->SetSimulationTimestep( IsXbox() ? DEFAULT_XBOX_CLIENT_VPHYSICS_TICK : DEFAULT_TICK_INTERVAL );
+	physenv->SetSimulationTimestep( DEFAULT_TICK_INTERVAL );
 	physenv->SetCollisionEventHandler( &g_Collisions );
 	physenv->SetCollisionSolver( &g_Collisions );
 
-	g_PhysWorldObject = PhysCreateWorld_Shared( GetClientWorldEntity(), modelinfo->GetVCollide(1), g_PhysDefaultObjectParams );
+	C_World *pWorld = GetClientWorldEntity();
+	g_PhysWorldObject = PhysCreateWorld_Shared( pWorld, modelinfo->GetVCollide(1), g_PhysDefaultObjectParams );
 
-	staticpropmgr->CreateVPhysicsRepresentations( physenv, &g_SolidSetup, NULL );
+	staticpropmgr->CreateVPhysicsRepresentations( physenv, &g_SolidSetup, pWorld );
 }
 
 void PhysicsReset()
@@ -194,6 +218,35 @@ void PhysicsReset()
 	physenv->ResetSimulationClock();
 }
 
+static CBaseEntity *FindPhysicsBlocker( IPhysicsObject *pPhysics )
+{
+	IPhysicsFrictionSnapshot *pSnapshot = pPhysics->CreateFrictionSnapshot();
+	CBaseEntity *pBlocker = NULL;
+	float maxVel = 10.0f;
+	while ( pSnapshot->IsValid() )
+	{
+		IPhysicsObject *pOther = pSnapshot->GetObject(1);
+		if ( pOther->IsMoveable() )
+		{
+			CBaseEntity *pOtherEntity = static_cast<CBaseEntity *>(pOther->GetGameData());
+			// dot with this if you have a direction
+			//Vector normal;
+			//pSnapshot->GetSurfaceNormal(normal);
+			float force = pSnapshot->GetNormalForce();
+			float vel = force * pOther->GetInvMass();
+			if ( vel > maxVel )
+			{
+				pBlocker = pOtherEntity;
+				maxVel = vel;
+			}
+
+		}
+		pSnapshot->NextFrictionData();
+	}
+	pPhysics->DestroyFrictionSnapshot( pSnapshot );
+
+	return pBlocker;
+}
 
 ConVar cl_ragdoll_collide( "cl_ragdoll_collide", "0" );
 
@@ -270,6 +323,15 @@ int CCollisionEvent::ShouldCollide_2( IPhysicsObject *pObj0, IPhysicsObject *pOb
 	// physics forces on the rest of the system.
 	bool aiMove0 = (movetype0==MOVETYPE_PUSH) ? true : false;
 	bool aiMove1 = (movetype1==MOVETYPE_PUSH) ? true : false;
+	// Anything with custom movement and a shadow controller is assumed to do its own world/AI collisions
+	if ( movetype0 == MOVETYPE_CUSTOM && pObj0->GetShadowController() )
+	{
+		aiMove0 = true;
+	}
+	if ( movetype1 == MOVETYPE_CUSTOM && pObj1->GetShadowController() )
+	{
+		aiMove1 = true;
+	}
 
 	if ( pEntity0->GetMoveParent() )
 	{
@@ -304,10 +366,31 @@ int CCollisionEvent::ShouldCollide_2( IPhysicsObject *pObj0, IPhysicsObject *pOb
 int CCollisionEvent::ShouldSolvePenetration( IPhysicsObject *pObj0, IPhysicsObject *pObj1, void *pGameData0, void *pGameData1, float dt )
 {
 	CallbackContext callback(this);
+	C_BaseEntity *pEntity0 = static_cast<C_BaseEntity *>(pGameData0);
+	C_BaseEntity *pEntity1 = static_cast<C_BaseEntity *>(pGameData1);
+
+	// solve it yourself here and return 0, or have the default implementation do it
+	if ( pEntity0 > pEntity1 )
+	{
+		// swap sort
+		CBaseEntity *pTmp = pEntity0;
+		pEntity0 = pEntity1;
+		pEntity1 = pTmp;
+		IPhysicsObject *pTmpObj = pObj0;
+		pObj0 = pObj1;
+		pObj1 = pTmpObj;
+	}
+
+	if ( !pEntity0 || !pEntity1 )
+		return 1;
+
+	unsigned short gameFlags0 = pObj0->GetGameFlags();
+	unsigned short gameFlags1 = pObj1->GetGameFlags();
+
 	// solve it yourself here and return 0, or have the default implementation do it
 	if ( pGameData0 == pGameData1 )
 	{
-		if ( pObj0->GetGameFlags() & FVPHYSICS_PART_OF_RAGDOLL )
+		if ( gameFlags0 & FVPHYSICS_PART_OF_RAGDOLL )
 		{
 			// this is a ragdoll, self penetrating
 			C_BaseEntity *pEnt = reinterpret_cast<C_BaseEntity *>(pGameData0);
@@ -323,6 +406,16 @@ int CCollisionEvent::ShouldSolvePenetration( IPhysicsObject *pObj0, IPhysicsObje
 				}
 			}
 		}
+	}
+	else if ( (gameFlags0|gameFlags1) & FVPHYSICS_PART_OF_RAGDOLL )
+	{
+		// ragdoll penetrating shadow object, just give up for now
+		if ( pObj0->GetShadowController() || pObj1->GetShadowController() )
+		{
+			FindOrAddPenetrateEvent( pEntity0, pEntity1 );
+			return true;
+		}
+
 	}
 
 	return true;
@@ -403,6 +496,7 @@ void CPhysicsSystem::LevelShutdownPreEntity()
 
 void CPhysicsSystem::LevelShutdownPostEntity()
 {
+	g_Collisions.LevelShutdown();
 	if ( physenv )
 	{
 		// environment destroys all objects
@@ -430,6 +524,46 @@ void CPhysicsSystem::Update( float frametime )
 	//PhysicsSimulate();
 }
 
+//ConVar cl_visualize_physics_shadows("cl_visualize_physics_shadows","0");
+
+struct blocklist_t
+{
+	C_BaseEntity *pEntity;
+	int firstBlockFrame;
+	int lastBlockFrame;
+};
+static blocklist_t g_BlockList[4];
+
+bool IsBlockedShouldDisableCollisions( C_BaseEntity *pEntity )
+{
+	int listCount = ARRAYSIZE(g_BlockList);
+	int available = -1;
+	for ( int i = 0; i < listCount; i++ )
+	{
+		if ( gpGlobals->framecount - g_BlockList[i].lastBlockFrame > 4 )
+		{
+			available = i;
+			g_BlockList[i].pEntity = NULL;
+		}
+		if ( g_BlockList[i].pEntity == pEntity )
+		{
+			available = i;
+			break;
+		}
+	}
+	if ( available )
+	{
+		if ( g_BlockList[available].pEntity != pEntity )
+		{
+			g_BlockList[available].pEntity = pEntity;
+			g_BlockList[available].firstBlockFrame = gpGlobals->framecount;
+		}
+		g_BlockList[available].lastBlockFrame = gpGlobals->framecount;
+		if ( g_BlockList[available].lastBlockFrame - g_BlockList[available].firstBlockFrame > 2 )
+			return true;
+	}
+	return false;
+}
 
 void CPhysicsSystem::PhysicsSimulate()
 {
@@ -444,7 +578,10 @@ void CPhysicsSystem::PhysicsSimulate()
 #ifdef _DEBUG
 		physenv->DebugCheckContacts();
 #endif
-		physenv->Simulate( frametime * cl_phys_timescale.GetFloat() );
+
+		frametime *= cl_phys_timescale.GetFloat();
+
+		physenv->Simulate( frametime );
 
 		int activeCount = physenv->GetActiveObjectCount();
 		IPhysicsObject **pActiveList = NULL;
@@ -463,6 +600,58 @@ void CPhysicsSystem::PhysicsSimulate()
 						pEntity->CollisionProp()->MarkSurroundingBoundsDirty();
 					}
 					pEntity->VPhysicsUpdate( pActiveList[i] );
+					IPhysicsShadowController *pShadow = pActiveList[i]->GetShadowController();
+					if ( pShadow )
+					{
+						// active shadow object, check for error
+						Vector pos, targetPos;
+						QAngle rot, targetAngles;
+						pShadow->GetTargetPosition( &targetPos, &targetAngles );
+						pActiveList[i]->GetPosition( &pos, &rot );
+						Vector delta = targetPos - pos;
+						float dist = VectorNormalize(delta);
+						bool bBlocked = false;
+						if ( dist > cl_phys_block_dist.GetFloat() )
+						{
+							Vector vel;
+							pActiveList[i]->GetImplicitVelocity( &vel, NULL );
+							float proj = DotProduct(vel, delta);
+							if ( proj < dist * cl_phys_block_fraction.GetFloat() )
+							{
+								bBlocked = true;
+								//Msg("%s was blocked %.3f (%.3f proj)!\n", pEntity->GetClassname(), dist, proj );
+							}
+						}
+						Vector targetAxis;
+						float deltaTargetAngle;
+						RotationDeltaAxisAngle( rot, targetAngles, targetAxis, deltaTargetAngle );
+						if ( fabsf(deltaTargetAngle) > 0.5f )
+						{
+							AngularImpulse angVel;
+							pActiveList[i]->GetImplicitVelocity( NULL, &angVel );
+							float proj = DotProduct( angVel, targetAxis ) * Sign(deltaTargetAngle);
+							if ( proj < (fabsf(deltaTargetAngle) * cl_phys_block_fraction.GetFloat()) )
+							{
+								bBlocked = true;
+								//Msg("%s was rot blocked %.3f proj %.3f!\n", pEntity->GetClassname(), deltaTargetAngle, proj );
+							}
+						}
+					
+						if ( bBlocked )
+						{
+							C_BaseEntity *pBlocker = FindPhysicsBlocker( pActiveList[i] );
+							if ( pBlocker )
+							{
+								if ( IsBlockedShouldDisableCollisions( pEntity ) )
+								{
+									PhysDisableEntityCollisions( pEntity, pBlocker );
+									pActiveList[i]->RecheckContactPoints();
+									// GetClassname returns a pointer to the same buffer always!
+									//Msg("%s blocked !", pEntity->GetClassname() ); Msg("by %s\n", pBlocker->GetClassname() );
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -483,6 +672,7 @@ void PhysicsSimulate()
 
 CCollisionEvent::CCollisionEvent( void ) 
 { 
+	m_flLastSplashTime = 0.0f;
 }
 
 void CCollisionEvent::ObjectSound( int index, vcollisionevent_t *pEvent )
@@ -528,6 +718,13 @@ void CCollisionEvent::FrameUpdate( void )
 	UpdateFrictionSounds();
 	UpdateTouchEvents();
 	UpdateFluidEvents();
+	UpdatePenetrateEvents();
+}
+
+void CCollisionEvent::LevelShutdown()
+{
+	m_penetrateEvents.RemoveAll();
+	m_flLastSplashTime = 0.0f;
 }
 
 //-----------------------------------------------------------------------------
@@ -658,6 +855,49 @@ void CCollisionEvent::DispatchEndTouch( C_BaseEntity *pEntity0, C_BaseEntity *pE
 	pEntity1->PhysicsNotifyOtherOfUntouch( pEntity1, pEntity0 );
 }
 
+// NOTE: This assumes entity pointers are sorted to simplify search!
+void CCollisionEvent::FindOrAddPenetrateEvent( C_BaseEntity *pEntity0, C_BaseEntity *pEntity1 )
+{
+	int count = m_penetrateEvents.Count();
+	for ( int i = 0; i < count; i++ )
+	{
+		if ( m_penetrateEvents[i].pEntity0 == pEntity0 && m_penetrateEvents[i].pEntity1 == pEntity1 )
+		{
+			m_penetrateEvents[i].timeStamp = gpGlobals->curtime;
+			return;
+		}
+	}
+	int index = m_penetrateEvents.AddToTail();
+	m_penetrateEvents[index].pEntity0 = pEntity0;
+	m_penetrateEvents[index].pEntity1 = pEntity1;
+	m_penetrateEvents[index].startTime = gpGlobals->curtime;
+	m_penetrateEvents[index].timeStamp = gpGlobals->curtime;
+}
+
+// NOTE: This assumes entity pointers are sorted to simplify search!
+void CCollisionEvent::UpdatePenetrateEvents()
+{
+	const float MAX_PENETRATION_TIME = 3.0f;
+
+	for ( int i = m_penetrateEvents.Count()-1; i >= 0; --i )
+	{
+		float timeSincePenetration = gpGlobals->curtime - m_penetrateEvents[i].timeStamp;
+		if ( timeSincePenetration > 0.1f )
+		{
+			m_penetrateEvents.FastRemove(i);
+			continue;
+		}
+		float timeInPenetration = m_penetrateEvents[i].timeStamp - m_penetrateEvents[i].startTime;
+		// it's been too long, just give up and disable collisions
+		if ( timeInPenetration > MAX_PENETRATION_TIME )
+		{
+			PhysDisableEntityCollisions( m_penetrateEvents[i].pEntity0, m_penetrateEvents[i].pEntity1 );
+			m_penetrateEvents.FastRemove(i);
+			continue;
+		}
+	}
+}
+
 void CCollisionEvent::Friction( IPhysicsObject *pObject, float energy, int surfaceProps, int surfacePropsHit, IPhysicsCollisionData *pData )
 {
 	CallbackContext callback(this);
@@ -673,6 +913,9 @@ void CCollisionEvent::Friction( IPhysicsObject *pObject, float energy, int surfa
 		
 	if ( pEntity  )
 	{
+		if ( pEntity->ClientSideRagdoll() )
+			return;
+
 		friction_t *pFriction = g_Collisions.FindFriction( pEntity );
 
 		if ( (gpGlobals->maxClients > 1) && pFriction && pFriction->pObject) 
@@ -841,7 +1084,7 @@ void PhysicsSplash( IPhysicsFluidController *pFluid, IPhysicsObject *pObject, CB
 	corner[2] = centerPoint + axes[0] + axes[1];
 	corner[3] = centerPoint - axes[0] + axes[1];
 
-	int contents = enginetrace->GetPointContents( centerPoint-Vector(0,0,2) );
+	int contents = UTIL_PointContents( centerPoint-Vector(0,0,2) );
 
 	bool bInSlime = ( contents & CONTENTS_SLIME ) ? true : false;
 
@@ -953,7 +1196,14 @@ void CCollisionEvent::FluidStartTouch( IPhysicsObject *pObject, IPhysicsFluidCon
 		if ( timeSinceLastCollision < 0.5f )
 			return;
 
+		// prevent too many splashes spawning at once across different entities
+		float flGlobalTimeSinceLastSplash = gpGlobals->curtime - m_flLastSplashTime;
+		if ( flGlobalTimeSinceLastSplash < 0.1f )
+			return;
+
 		PhysicsSplash( pFluid, pObject, pEntity );
+
+		m_flLastSplashTime = gpGlobals->curtime;
 	}
 }
 
@@ -1059,11 +1309,11 @@ void VPhysicsShadowDataChanged( bool bCreate, C_BaseEntity *pEntity )
 		{
 			pEntity->SetSolid( SOLID_VPHYSICS );
 		}
-		/*if ( pEntity->GetSolidFlags() & FSOLID_NOT_MOVEABLE )
+		if ( pEntity->GetSolidFlags() & FSOLID_NOT_MOVEABLE )
 		{
 			pEntity->VPhysicsInitStatic();
 		}
-		else*/
+		else
 		{
 			pEntity->VPhysicsInitShadow( false, false );
 		}
@@ -1072,7 +1322,7 @@ void VPhysicsShadowDataChanged( bool bCreate, C_BaseEntity *pEntity )
 	{
 		float interpTime = pEntity->GetInterpolationAmount( LATCH_SIMULATION_VAR );
 		// this is the client time the network origin will become the entity's render origin
-		float schedTime = pEntity->m_flSimulationTime + interpTime;
+		float schedTime = pEntity->GetSimulationTime() + interpTime;
 		// how far is that from now
 		float deltaTime = schedTime - gpGlobals->curtime;
 		// Compute that time on the client vphysics clock
@@ -1084,3 +1334,4 @@ void VPhysicsShadowDataChanged( bool bCreate, C_BaseEntity *pEntity )
 		pEntity->VPhysicsGetObject()->UpdateShadow( pEntity->GetNetworkOrigin(), pEntity->GetNetworkAngles(), false, arrivalTime );
 	}
 }
+

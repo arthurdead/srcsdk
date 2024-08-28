@@ -15,7 +15,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-void ReleaseRenderTargets( void );
+void ReleaseRenderTargets( int nChangeFlags );
 
 void AddReleaseFunc( void )
 {
@@ -33,11 +33,6 @@ void AddReleaseFunc( void )
 static CTextureReference s_pPowerOfTwoFrameBufferTexture;
 ITexture *GetPowerOfTwoFrameBufferTexture( void )
 {
-	if ( IsX360() )
-	{
-		return GetFullFrameFrameBufferTexture( 1 );
-	}
-
 	if ( !s_pPowerOfTwoFrameBufferTexture )
 	{
 		s_pPowerOfTwoFrameBufferTexture.Init( materials->FindTexture( "_rt_PowerOfTwoFB", TEXTURE_GROUP_RENDER_TARGET ) );
@@ -224,12 +219,6 @@ ITexture *GetSmallBuffer1( void )
 static CTextureReference s_TeenyTextures[MAX_TEENY_TEXTURES];
 ITexture *GetTeenyTexture( int which )
 {
-	if ( IsX360() )
-	{
-		Assert( 0 );
-		return NULL;
-	}
-
 	Assert( which < MAX_TEENY_TEXTURES );
 
 	if ( !s_TeenyTextures[which] )
@@ -243,8 +232,11 @@ ITexture *GetTeenyTexture( int which )
 	return s_TeenyTextures[which];
 }
 
-void ReleaseRenderTargets( void )
+void ReleaseRenderTargets( int nChangeFlags )
 {
+	if ( nChangeFlags & MATERIAL_RESTORE_VERTEX_FORMAT_CHANGED )
+		return;
+
 	s_pPowerOfTwoFrameBufferTexture.Shutdown();
 	s_pCameraTexture.Shutdown();
 	s_pWaterReflectionTexture.Shutdown();
@@ -254,5 +246,7 @@ void ReleaseRenderTargets( void )
 	s_pFullFrameDepthTexture.Shutdown();
 
 	for (int i=0; i<MAX_FB_TEXTURES; ++i)
+	{
 		s_pFullFrameFrameBufferTexture[i].Shutdown();
+	}
 }

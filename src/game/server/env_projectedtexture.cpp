@@ -119,12 +119,7 @@ CEnvProjectedTexture::CEnvProjectedTexture( void )
 	m_bCameraSpace = false;
 	m_bUberlight = false;
 
-// if ( g_pHardwareConfig->SupportsBorderColor() )
-#if defined( _X360 )
-		Q_strcpy( m_SpotlightTextureName.GetForModify(), "effects/flashlight_border" );
-#else
-		Q_strcpy( m_SpotlightTextureName.GetForModify(), "effects/flashlight001" );
-#endif
+	Q_strcpy( m_SpotlightTextureName.GetForModify(), "effects/flashlight001" );
 
 	m_nSpotlightTextureFrame = 0;
 	m_LightColor.Init( 255, 255, 255, 255 );

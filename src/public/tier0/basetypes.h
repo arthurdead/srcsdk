@@ -8,12 +8,12 @@
 #ifndef BASETYPES_H
 #define BASETYPES_H
 
+#pragma once
+
 #include "commonmacros.h"
 #include "wchartypes.h"
 
 #include "tier0/valve_off.h"
-
-#pragma once
 
 
 // This is a trick to get the DLL extension off the -D option on the command line.
@@ -23,17 +23,6 @@
 
 
 #include "protected_things.h"
-
-// There's a different version of this file in the xbox codeline
-// so the PC version built in the xbox branch includes things like 
-// tickrate changes.
-#include "xbox_codeline_defines.h"
-
-#ifdef IN_XBOX_CODELINE
-#define XBOX_CODELINE_ONLY()
-#else
-#define XBOX_CODELINE_ONLY() Error_Compiling_Code_Only_Valid_in_Xbox_Codeline
-#endif
 
 // stdio.h
 #ifndef NULL
@@ -157,7 +146,7 @@ typedef float vec_t;
 #if defined(__GNUC__)
 #define fpmin __builtin_fminf
 #define fpmax __builtin_fmaxf
-#elif !defined(_X360)
+#else
 #define fpmin min
 #define fpmax max
 #endif
@@ -228,10 +217,17 @@ inline float FloatNegate( vec_t f )
 
 
 // FIXME: why are these here?  Hardly anyone actually needs them.
-struct color24
+typedef struct color24_s
 {
+	bool operator!=( const struct color24_s &other ) const;
+
 	byte r, g, b;
-};
+} color24;
+
+inline bool color24::operator!=( const color24 &other ) const
+{
+	return r != other.r || g != other.g || b != other.b;
+}
 
 typedef struct color32_s
 {

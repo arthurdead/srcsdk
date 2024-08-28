@@ -17,6 +17,9 @@
 #include "vprof.h"
 #include "input.h"
 
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 extern ConVar cl_particleeffect_aabb_buffer;
 
 //extern ConVar cl_particle_show_bbox;
@@ -42,6 +45,8 @@ CNewParticleEffect::CNewParticleEffect( CBaseEntity *pOwner, const char* pEffect
 	Construct();
 }
 
+static ConVar cl_aggregate_particles( "cl_aggregate_particles", "1" );
+
 void CNewParticleEffect::Construct()
 {
 	m_vSortOrigin.Init();
@@ -54,7 +59,9 @@ void CNewParticleEffect::Construct()
 	m_bAutoUpdateBBox = false;
 	m_bAllocated = true;
 	m_bSimulate = true;
+	m_bRecord = false;
 	m_bShouldPerformCullCheck = false;
+	m_bDisableAggregation = true;							// will be reset when someone creates it via CreateOrAggregate
 
 	m_nToolParticleEffectId = TOOLPARTICLESYSTEMID_INVALID;
 	m_RefCount = 0;
@@ -67,28 +74,15 @@ void CNewParticleEffect::Construct()
 
 	m_bViewModelEffect = m_pDef ? m_pDef->IsViewModelEffect() : false;
 
-	if ( IsValid() && clienttools->IsInRecordingMode() )
-	{
-		int nId = AllocateToolParticleEffectId();	
-
-		static ParticleSystemCreatedState_t state;
-		state.m_nParticleSystemId = nId;
-		state.m_flTime = gpGlobals->curtime;
-		state.m_pName = GetName();
-		state.m_nOwner = m_hOwner.Get() ? m_hOwner->entindex() : -1;
-
-		KeyValues *msg = new KeyValues( "ParticleSystem_Create" );
-		msg->SetPtr( "state", &state );
-		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, msg );
-	}
+	RecordCreation();
 }
 
 CNewParticleEffect::~CNewParticleEffect(void)
 {
-	if ( m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID && clienttools->IsInRecordingMode() )
+	if ( m_bRecord && m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID && clienttools->IsInRecordingMode() )
 	{
 		static ParticleSystemDestroyedState_t state;
-		state.m_nParticleSystemId = gpGlobals->curtime;
+		state.m_nParticleSystemId = GetToolParticleEffectId();
 		state.m_flTime = gpGlobals->curtime;
 
 		KeyValues *msg = new KeyValues( "ParticleSystem_Destroy" );
@@ -151,31 +145,36 @@ int CNewParticleEffect::IsReleased()
 //-----------------------------------------------------------------------------
 // Refraction and soft particle support
 //-----------------------------------------------------------------------------
-bool CNewParticleEffect::UsesPowerOfTwoFrameBufferTexture( void )
+RenderableTranslucencyType_t CNewParticleEffect::ComputeTranslucencyType( void )
 {
-	// NOTE: Need to do this because CParticleCollection's version is non-virtual
-	return CParticleCollection::UsesPowerOfTwoFrameBufferTexture( true );
+	if( CParticleCollection::IsTwoPass() )
+		return RENDERABLE_IS_TWO_PASS;
+
+	if( CParticleCollection::IsTranslucent() )
+		return RENDERABLE_IS_TRANSLUCENT;
+
+	return RENDERABLE_IS_OPAQUE;
 }
 
-bool CNewParticleEffect::UsesFullFrameBufferTexture( void )
+int CNewParticleEffect::GetRenderFlags( void )
 {
-	// NOTE: Need to do this because CParticleCollection's version is non-virtual
-	return CParticleCollection::UsesFullFrameBufferTexture( true );
-}
+	int nFlags = 0;
 
-bool CNewParticleEffect::IsTwoPass( void )
-{
-	// NOTE: Need to do this because CParticleCollection's version is non-virtual
-	return CParticleCollection::IsTwoPass();
-}
+	if( CParticleCollection::UsesPowerOfTwoFrameBufferTexture( true ) )
+		nFlags |= ERENDERFLAGS_NEEDS_POWER_OF_TWO_FB;
 
+	if( CParticleCollection::UsesFullFrameBufferTexture( true ) )
+		nFlags |= ERENDERFLAGS_NEEDS_FULL_FB;
+
+	return nFlags;
+}
 
 //-----------------------------------------------------------------------------
 // Overrides for recording
 //-----------------------------------------------------------------------------
-void CNewParticleEffect::StopEmission( bool bInfiniteOnly, bool bRemoveAllParticles, bool bWakeOnStop )
+void CNewParticleEffect::StopEmission( bool bInfiniteOnly, bool bRemoveAllParticles, bool bWakeOnStop, bool bPlayEndCap )
 {
-	if ( m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID && clienttools->IsInRecordingMode() )
+	if ( m_bRecord && m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID && clienttools->IsInRecordingMode() )
 	{
 		KeyValues *msg = new KeyValues( "ParticleSystem_StopEmission" );
 
@@ -201,7 +200,7 @@ void CNewParticleEffect::SetDormant( bool bDormant )
 
 void CNewParticleEffect::SetControlPointEntity( int nWhichPoint, CBaseEntity *pEntity )
 {
-	if ( m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID && clienttools->IsInRecordingMode() )
+	if ( m_bRecord && m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID && clienttools->IsInRecordingMode() )
 	{
 		static ParticleSystemSetControlPointObjectState_t state;
 		state.m_nParticleSystemId = GetToolParticleEffectId();
@@ -226,7 +225,7 @@ void CNewParticleEffect::SetControlPointEntity( int nWhichPoint, CBaseEntity *pE
 
 void CNewParticleEffect::SetControlPoint( int nWhichPoint, const Vector &v )
 {
-	if ( m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID && clienttools->IsInRecordingMode() )
+	if ( m_bRecord && m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID && clienttools->IsInRecordingMode() )
 	{
 		static ParticleSystemSetControlPointPositionState_t state;
 		state.m_nParticleSystemId = GetToolParticleEffectId();
@@ -245,7 +244,7 @@ void CNewParticleEffect::SetControlPoint( int nWhichPoint, const Vector &v )
 
 void CNewParticleEffect::RecordControlPointOrientation( int nWhichPoint )
 {
-	if ( m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID && clienttools->IsInRecordingMode() )
+	if ( m_bRecord && m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID && clienttools->IsInRecordingMode() )
 	{
 		// FIXME: Make a more direct way of getting 
 		QAngle angles;
@@ -258,6 +257,39 @@ void CNewParticleEffect::RecordControlPointOrientation( int nWhichPoint )
 		AngleQuaternion( angles, state.m_qOrientation );
 
 		KeyValues *msg = new KeyValues( "ParticleSystem_SetControlPointOrientation" );
+		msg->SetPtr( "state", &state );
+		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, msg );
+	}
+}
+
+void CNewParticleEffect::SetToolRecording( bool bRecord )
+{
+	if ( bRecord == m_bRecord )
+		return;
+
+	m_bRecord = bRecord;
+
+	if ( m_bRecord )
+	{
+		RecordCreation();
+	}
+}
+
+void CNewParticleEffect::RecordCreation()
+{
+	if ( IsValid() && clienttools->IsInRecordingMode() )
+	{
+		m_bRecord = true;
+
+		int nId = AllocateToolParticleEffectId();	
+
+		static ParticleSystemCreatedState_t state;
+		state.m_nParticleSystemId = nId;
+		state.m_flTime = gpGlobals->curtime;
+		state.m_pName = m_pDef->GetName();
+		state.m_nOwner = m_hOwner ? m_hOwner->entindex() : -1;
+
+		KeyValues *msg = new KeyValues( "ParticleSystem_Create" );
 		msg->SetPtr( "state", &state );
 		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, msg );
 	}
@@ -318,7 +350,7 @@ CNewParticleEffect* CNewParticleEffect::ReplaceWith( const char *pParticleSystem
 
 	CSmartPtr< CNewParticleEffect > pNewEffect = CNewParticleEffect::Create( GetOwner(), pParticleSystemName, pParticleSystemName );
 	if ( !pNewEffect->IsValid() )
-		return pNewEffect.GetObject();
+		return NULL;
 
 	// Copy over the control point data
 	for ( int i = 0; i < MAX_PARTICLE_CONTROL_POINTS; ++i )
@@ -333,10 +365,24 @@ CNewParticleEffect* CNewParticleEffect::ReplaceWith( const char *pParticleSystem
 		pNewEffect->SetControlPointParent( i, GetControlPointParent( i ) );
 	}
 
-	if ( !m_hOwner )
-		return pNewEffect.GetObject();
+	if ( m_hOwner )
+	{
+		m_hOwner->ParticleProp()->ReplaceParticleEffect( this, pNewEffect.GetObject() );
+	}
 
-	m_hOwner->ParticleProp()->ReplaceParticleEffect( this, pNewEffect.GetObject() );
+	// fixup any other references to the old system, to point to the new system
+	while( m_References.m_pHead )
+	{
+		// this will remove the reference from m_References
+		m_References.m_pHead->Set( pNewEffect.GetObject() );
+	}
+
+	// At this point any references should have been redirected,
+	// but we may still be running with some stray particles, so we
+	// might not be flagged for removal - force the issue!
+	Assert( m_RefCount == 0 );
+	SetRemoveFlag();
+
 	return pNewEffect.GetObject();
 }
 
@@ -351,9 +397,9 @@ void CNewParticleEffect::SetParticleCullRadius( float radius )
 bool CNewParticleEffect::RecalculateBoundingBox()
 {
 	BloatBoundsUsingControlPoint();
-	if ( m_MaxBounds.x < m_MinBounds.x )
+	if ( !m_bBoundsValid )
 	{
-		m_MaxBounds = m_MinBounds = GetSortOrigin();
+		m_MaxBounds = m_MinBounds = GetRenderOrigin();
 		return false;
 	}
 
@@ -363,6 +409,12 @@ bool CNewParticleEffect::RecalculateBoundingBox()
 
 void CNewParticleEffect::GetRenderBounds( Vector& mins, Vector& maxs )
 {
+	if ( !m_bBoundsValid )
+	{
+		mins = vec3_origin;
+		maxs = mins;
+		return;
+	}
 	VectorSubtract( m_MinBounds, GetRenderOrigin(), mins );
 	VectorSubtract( m_MaxBounds, GetRenderOrigin(), maxs );
 }
@@ -372,6 +424,16 @@ void CNewParticleEffect::DetectChanges()
 	// if we have no render handle, return
 	if ( m_hRenderHandle == INVALID_CLIENT_RENDER_HANDLE )
 		return;
+
+	// Turn off rendering if the bounds aren't valid
+	ClientLeafSystem()->EnableRendering( m_hRenderHandle, m_bBoundsValid );
+
+	if ( !m_bBoundsValid )
+	{
+		m_LastMin.Init( FLT_MAX, FLT_MAX, FLT_MAX );
+		m_LastMin.Init( -FLT_MAX, -FLT_MAX, -FLT_MAX );
+		return;
+	}
 
 	float flBuffer = cl_particleeffect_aabb_buffer.GetFloat();
 	float flExtraBuffer = flBuffer * 1.3f;
@@ -503,39 +565,48 @@ void CNewParticleEffect::DebugDrawBbox ( bool bCulled )
 //-----------------------------------------------------------------------------
 // Rendering
 //-----------------------------------------------------------------------------
-int CNewParticleEffect::DrawModel( int flags )
+int CNewParticleEffect::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 	VPROF_BUDGET( "CNewParticleEffect::DrawModel", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	if ( r_DrawParticles.GetBool() == false )
 		return 0;
 
-	if ( !g_pClientMode->ShouldDrawParticles() || !ParticleMgr()->ShouldRenderParticleSystems() )
+	if ( !GetClientMode()->ShouldDrawParticles() || !ParticleMgr()->ShouldRenderParticleSystems() )
 		return 0;
 	
 	if ( ( flags & ( STUDIO_SHADOWDEPTHTEXTURE | STUDIO_SSAODEPTHTEXTURE ) ) != 0 )
 	{
 		return 0;
 	}
+
+	if ( m_hOwner && m_hOwner->IsDormant() )
+		return 0;
 	
 	// do distance cull check here. We do it here instead of in particles so we can easily only do
 	// it for root objects, not bothering to cull children individually
 	CMatRenderContextPtr pRenderContext( materials );
-	Vector vecCamera;
-	pRenderContext->GetWorldSpaceCameraPosition( &vecCamera );
-	if ( CalcSqrDistanceToAABB( m_MinBounds, m_MaxBounds, vecCamera ) > ( m_pDef->m_flMaxDrawDistance * m_pDef->m_flMaxDrawDistance ) )
+
+	if ( !m_pDef->IsViewModelEffect() )
 	{
-		if ( !IsRetail() && ( g_cl_particle_show_bbox || ( g_cl_particle_show_bbox_cost != 0 ) ) )
+		Vector vecCamera;
+		pRenderContext->GetWorldSpaceCameraPosition( &vecCamera );
+		if ( CalcSqrDistanceToAABB( m_MinBounds, m_MaxBounds, vecCamera ) > ( m_pDef->m_flMaxDrawDistance * m_pDef->m_flMaxDrawDistance ) )
 		{
-			DebugDrawBbox ( true );
+		#ifndef _RETAIL
+			if ( g_cl_particle_show_bbox || ( g_cl_particle_show_bbox_cost != 0 ) )
+			{
+				DebugDrawBbox ( true );
+			}
+		#endif
+
+			// Still need to make sure we set this or they won't follow their attachemnt points.
+			m_flNextSleepTime = Max ( m_flNextSleepTime, ( g_pParticleSystemMgr->GetLastSimulationTime() + m_pDef->m_flNoDrawTimeToGoToSleep ));
+
+			return 0;
 		}
-
-		// Still need to make sure we set this or they won't follow their attachemnt points.
-		m_flNextSleepTime = Max ( m_flNextSleepTime, ( g_pParticleSystemMgr->GetLastSimulationTime() + m_pDef->m_flNoDrawTimeToGoToSleep ));
-
-		return 0;
 	}
 
-	if ( flags & STUDIO_TRANSPARENCY )
+	if ( ( flags & STUDIO_TRANSPARENCY ) || !IsBatchable() )
 	{
 		int viewentity = render->GetViewEntity();
 		C_BaseEntity *pCameraObject = cl_entitylist->GetEnt( viewentity );
@@ -571,7 +642,7 @@ int CNewParticleEffect::DrawModel( int flags )
 		pRenderContext->MatrixMode( MATERIAL_MODEL );
 		pRenderContext->PushMatrix();
 		pRenderContext->LoadIdentity();
-		Render( pRenderContext, IsTwoPass(), pCameraObject );
+		Render( pRenderContext, ( flags & STUDIO_TRANSPARENCY ) ? CParticleCollection::IsTwoPass() : false, pCameraObject );
 		pRenderContext->MatrixMode( MATERIAL_MODEL );
 		pRenderContext->PopMatrix();
 	}
@@ -580,21 +651,28 @@ int CNewParticleEffect::DrawModel( int flags )
 		g_pParticleSystemMgr->AddToRenderCache( this );
 	}
 
-	if ( !IsRetail() )
+#ifndef _RETAIL
+	CParticleMgr *pMgr = ParticleMgr();
+	if ( pMgr->m_bStatsRunning )
 	{
-		CParticleMgr *pMgr = ParticleMgr();
-		if ( pMgr->m_bStatsRunning )
-		{
-			pMgr->StatsNewParticleEffectDrawn ( this );
-		}
-
-		if ( g_cl_particle_show_bbox || ( g_cl_particle_show_bbox_cost != 0 ) )
-		{
-			DebugDrawBbox ( false );
-		}
+		pMgr->StatsNewParticleEffectDrawn ( this );
 	}
 
+	if ( g_cl_particle_show_bbox || ( g_cl_particle_show_bbox_cost != 0 ) )
+	{
+		DebugDrawBbox ( false );
+	}
+#endif
+
 	return 1;
+}
+
+bool CNewParticleEffect::SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, int boneMask, float currentTime )
+{
+	matrix3x4_t mat;
+	mat.Init( Vector( 0, -1, 0), Vector( 1, 0, 0), Vector( 0, 0, 1 ), vec3_origin );
+	MatrixMultiply( m_DrawModelMatrix, mat, pBoneToWorldOut[0] );
+	return true;
 }
 
 static void DumpParticleStats_f( void )

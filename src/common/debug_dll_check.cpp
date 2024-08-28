@@ -9,8 +9,13 @@
 #if defined(DEBUG) || defined(_DEBUG)
 #include "tier0/platform.h"
 
+#ifndef DLLNAME
+	#error
+#endif
+
 #define _DEBUGONLYSTRING(x) #x
 #define DEBUGONLYSTRING(x) _DEBUGONLYSTRING(x) 
-DLL_GLOBAL_EXPORT char const *pDebugString = DEBUGONLYSTRING(DLLNAME) ".dll is built debug!";
+DLL_GLOBAL_EXPORT char const *pDebugString;
+char const *pDebugString = DEBUGONLYSTRING(DLLNAME) ".dll is built debug!";
 
 #endif

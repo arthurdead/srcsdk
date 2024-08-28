@@ -8,9 +8,7 @@
 
 #ifndef WARS_MATERIALSYSTEM_PASSTHRU_H
 #define WARS_MATERIALSYSTEM_PASSTHRU_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "materialsystem/imaterialsystem.h"
 

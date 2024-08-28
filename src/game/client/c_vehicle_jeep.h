@@ -41,7 +41,7 @@ public:
 	void DampenEyePosition( Vector &vecVehicleEyePos, QAngle &vecVehicleEyeAngles );
 
 	void OnEnteredVehicle( C_BasePlayer *pPlayer );
-	void Simulate( void );
+	bool Simulate( void );
 
 private:
 

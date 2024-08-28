@@ -30,7 +30,7 @@ public:
 	virtual			~C_BaseTeamObjectiveResource();
 
 public:
-	virtual void	ClientThink();
+	virtual void	ResourceThink();
 	virtual void	OnPreDataChanged( DataUpdateType_t updateType );
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
 

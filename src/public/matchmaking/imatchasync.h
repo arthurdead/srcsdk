@@ -8,9 +8,7 @@
 #ifndef IMATCHASYNC_H
 #define IMATCHASYNC_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 //
 // Describes possible states of an async operation

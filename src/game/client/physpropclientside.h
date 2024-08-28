@@ -26,11 +26,12 @@ public:
 			void			Spawn();
 			int				ParsePropData( void );
 	virtual bool			IsDormant( void ) { return false; } // we could add a PVS check here
-	virtual void			ClientThink( void );
+	virtual void			FadeThink( void );
 	virtual CollideType_t	GetCollideType( void ) { return ENTITY_SHOULD_RESPOND; }
 	virtual void			StartTouch( C_BaseEntity *pOther );
 	virtual	void			HitSurface( C_BaseEntity *pOther );
 	virtual	void			ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName );
+	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
 	virtual	bool			IsClientCreated( void ) const { return true; }
 	virtual int				GetMultiplayerPhysicsMode() { return m_iPhysicsMode; }
 	virtual float			GetMass();
@@ -146,7 +147,7 @@ public:
 	void PropDestroyed( C_PhysPropClientside *pProp );
 	bool CanMovePropAt( Vector vecOrigin, const Vector &vecMins, const Vector &vecMaxs );
 	void RespawnProps( void );
-	void ClientThink( void );
+	void RespawnThink( void );
 
 private:
 	struct clientsideproprespawn_t

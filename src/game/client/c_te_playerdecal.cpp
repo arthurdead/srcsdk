@@ -18,16 +18,15 @@
 #include "materialsystem/imaterialvar.h"
 #include "clienteffectprecachesystem.h"
 #include "tier0/vprof.h"
+#include "steam/steamclientpublic.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 static ConVar cl_playerspraydisable( "cl_playerspraydisable", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Disable player sprays." );
 
-#ifndef _XBOX
 CLIENTEFFECT_REGISTER_BEGIN( PrecachePlayerDecal )
 CLIENTEFFECT_MATERIAL( "decals/playerlogo01" )
-#if !defined(HL2_DLL) || defined(HL2MP)
 CLIENTEFFECT_MATERIAL( "decals/playerlogo02" )
 CLIENTEFFECT_MATERIAL( "decals/playerlogo03" )
 CLIENTEFFECT_MATERIAL( "decals/playerlogo04" )
@@ -101,9 +100,7 @@ CLIENTEFFECT_MATERIAL( "decals/playerlogo61" )
 CLIENTEFFECT_MATERIAL( "decals/playerlogo62" )
 CLIENTEFFECT_MATERIAL( "decals/playerlogo63" )
 CLIENTEFFECT_MATERIAL( "decals/playerlogo64" )
-#endif
 CLIENTEFFECT_REGISTER_END()
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Player Decal TE
@@ -168,9 +165,9 @@ IMaterial *CreateTempMaterialForPlayerLogo( int iPlayerIndex, player_info_t *inf
 	Q_binarytohex( (byte *)&info->customFiles[0], sizeof( info->customFiles[0] ), logohex, sizeof( logohex ) );
 
 	// See if logo has been downloaded.
-	Q_snprintf( texname, nchars, "temp/%s", logohex );
+	Q_snprintf( texname, nchars, "user_custom/%s", logohex );
 	char fulltexname[ 512 ];
-	Q_snprintf( fulltexname, sizeof( fulltexname ), "materials/temp/%s.vtf", logohex );
+	Q_snprintf( fulltexname, sizeof( fulltexname ), "materials/user_custom/%s.vtf", logohex );
 
 	if ( !filesystem->FileExists( fulltexname ) )
 	{
@@ -192,7 +189,7 @@ IMaterial *CreateTempMaterialForPlayerLogo( int iPlayerIndex, player_info_t *inf
 		}
 
 		char custname[ 512 ];
-		V_sprintf_safe( custname, "%suser_custom/%c%c/%s.dat", searchPaths, logohex[0], logohex[1], logohex );
+		V_sprintf_safe( custname, "%smaterials/user_custom/%s.dat", searchPaths, logohex );
 
 		// it may have been downloaded but not copied under materials folder
 		if ( !filesystem->FileExists( custname ) )
@@ -275,7 +272,6 @@ void TE_PlayerDecal( IRecipientFilter& filter, float delay,
 //-----------------------------------------------------------------------------
 void C_TEPlayerDecal::PostDataUpdate( DataUpdateType_t updateType )
 {
-#ifndef _XBOX
 	VPROF( "C_TEPlayerDecal::PostDataUpdate" );
 
 	// Decals disabled?
@@ -284,7 +280,6 @@ void C_TEPlayerDecal::PostDataUpdate( DataUpdateType_t updateType )
 
 	CLocalPlayerFilter filter;
 	TE_PlayerDecal(  filter, 0.0f, &m_vecOrigin, m_nPlayer, m_nEntity );
-#endif
 }
 
 IMPLEMENT_CLIENTCLASS_EVENT_DT(C_TEPlayerDecal, DT_TEPlayerDecal, CTEPlayerDecal)

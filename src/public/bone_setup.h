@@ -442,6 +442,8 @@ void QuaternionMA( const Quaternion &p, float s, const Quaternion &q, Quaternion
 
 bool Studio_PrefetchSequence( const CStudioHdr *pStudioHdr, int iSequence );
 
+float Studio_SeqMovementAndDuration( const CStudioHdr *pStudioHdr, int iSequence, float flCycleFrom, float flCycleTo, const float poseParameter[], Vector &deltaPos );
+
 void Studio_RunBoneFlexDrivers( float *pFlexController, const CStudioHdr *pStudioHdr, const Vector *pPositions, const matrix3x4_t *pBoneToWorld, const matrix3x4_t &mRootToWorld );
 
 #endif // BONE_SETUP_H

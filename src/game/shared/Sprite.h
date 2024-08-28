@@ -89,7 +89,17 @@ public:
 	DECLARE_NETWORKCLASS();
 
 	CSprite();
+#if defined( CLIENT_DLL )
+	CSprite(bool bClientOnly);
+#endif
 	virtual void SetModel( const char *szModelName );
+
+#if defined( CLIENT_DLL )
+	virtual bool IsSprite( void ) const
+	{
+		return true;
+	}
+#endif
 
 	void Spawn( void );
 	void Precache( void );
@@ -157,10 +167,10 @@ public:
 		SetRenderMode( (RenderMode_t)rendermode );
 		SetColor( r, g, b );
 		SetBrightness( a );
-		m_nRenderFX = fx;
+		SetRenderFX( (RenderFx_t)fx );
 	}
 	inline void SetTexture( int spriteIndex ) { SetModelIndex( spriteIndex ); }
-	inline void SetColor( int r, int g, int b ) { SetRenderColor( r, g, b, GetRenderColor().a ); }
+	inline void SetColor( int r, int g, int b ) { SetRenderColor( r, g, b ); }
 	
 	void SetBrightness( int brightness, float duration = 0.0f );
 	void SetScale( float scale, float duration = 0.0f );
@@ -220,7 +230,7 @@ public:
 	virtual float	GetRenderScale( void );
 	virtual int		GetRenderBrightness( void );
 
-	virtual int		DrawModel( int flags );
+	virtual int		DrawModel( int flags, const RenderableInstance_t &instance );
 	virtual const	Vector& GetRenderOrigin();
 	virtual void	GetRenderBounds( Vector &vecMins, Vector &vecMaxs );
 	virtual float	GlowBlend( CEngineSprite *psprite, const Vector& entorigin, int rendermode, int renderfx, int alpha, float *scale );
@@ -234,7 +244,7 @@ public:
 	}
 #endif
 
-	virtual void	ClientThink( void );
+	virtual void	BrightnessThink( void );
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
 
 #endif
@@ -282,7 +292,7 @@ public:
 	void Spawn( void );
 #else
 	DECLARE_CLIENTCLASS();
-	virtual bool IsTransparent( void );
+	virtual RenderableTranslucencyType_t ComputeTranslucencyType();
 #endif
 };
 
@@ -292,7 +302,5 @@ public:
 #define SPRITE_CREATE_PREDICTABLE( ... ) \
 	CSprite::SpriteCreatePredictable( __FILE__, __LINE__ __VA_OPT__(, __VA_ARGS__) )
 
-#define SPRITE_CREATE_PREDICTABLE_AT( file, line, ... ) \
-	CSprite::SpriteCreatePredictable( file, line, __VA_OPT__(, __VA_ARGS__) )
 
 #endif // SPRITE_H

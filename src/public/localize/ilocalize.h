@@ -8,9 +8,7 @@
 #ifndef LOCALIZE_ILOCALIZE_H
 #define LOCALIZE_ILOCALIZE_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "appframework/IAppSystem.h"
 #include <tier1/KeyValues.h>
@@ -111,8 +109,9 @@ public:
 
 	template <size_t len> FORCEINLINE wchar_t* FindSafe( const char(& token)[len] )
 	{
-		if ( wchar_t find = Find( token ) )
-			return token;
+		wchar_t *pIT = Find( token );
+		if ( pIT )
+			return pIT;
 		static wchar_t fallback[len];
 		ConvertANSIToUnicode( token, fallback, sizeof( fallback ) );
 		return fallback;

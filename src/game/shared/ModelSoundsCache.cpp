@@ -10,6 +10,9 @@
 #include "eventlist.h"
 #include "scriptevent.h"
 
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 extern ISoundEmitterSystemBase *soundemitterbase;
 
 CStudioHdr *ModelSoundsCache_LoadModel( char const *filename );
@@ -68,7 +71,7 @@ void CModelSoundsCache::Restore( CUtlBuffer& buf  )
 	{
 		char soundname[ 512 ];
 
-		buf.GetString( soundname );
+		buf.GetString( soundname, sizeof( soundname ) );
 
 		int idx = soundemitterbase->GetSoundIndex( soundname );
 		if ( idx != -1 )
@@ -144,14 +147,16 @@ void CModelSoundsCache::BuildAnimationEventSoundList( CStudioHdr *hdr, CUtlVecto
 		for ( int iEvent=0; iEvent < (int)pSeq->numevents; iEvent++ )
 		{
 			mstudioevent_t *pEvent = pSeq->pEvent( iEvent );
+
+			int nEvent = pEvent->Event();
 			
-			switch ( pEvent->event )
+			switch ( nEvent )
 			{
 			default:
 				{
 					if ( pEvent->type & AE_TYPE_NEWEVENTSYSTEM )
 					{
-						if ( pEvent->event == AE_SV_PLAYSOUND )
+						if ( nEvent == AE_SV_PLAYSOUND )
 						{
 							FindOrAddScriptSound( sounds, pEvent->pszOptions() );
 						}

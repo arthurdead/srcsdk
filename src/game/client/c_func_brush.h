@@ -5,9 +5,7 @@
 
 #ifndef C_FUNC_BRUSH_H
 #define C_FUNC_BRUSH_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 class C_FuncBrush : public C_BaseEntity
 {

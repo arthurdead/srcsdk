@@ -46,6 +46,13 @@ PMaterialHandle g_Blood_Drops = NULL;
 //-----------------------------------------------------------------------------
 void GetBloodColor( int bloodtype, colorentry_t &color )
 {
+#ifdef _DEBUG
+	if(bloodtype == DONT_BLEED)
+	{
+		Assert(0);
+	}
+#endif
+
 	int i;
 
 	for( i = 0 ; i < COLOR_TABLE_SIZE( bloodcolors ) ; i++ )
@@ -57,6 +64,7 @@ void GetBloodColor( int bloodtype, colorentry_t &color )
 		}
 	}
 
+	Assert(0);
 	// build a ridiculous default color
 	color.r = 255;
 	color.g = 0;
@@ -75,16 +83,13 @@ void GetBloodColor( int bloodtype, colorentry_t &color )
 //-----------------------------------------------------------------------------
 void FX_BloodSpray( const Vector &origin, const Vector &normal, float scale, unsigned char r, unsigned char g, unsigned char b, int flags )
 {
-	if ( UTIL_IsLowViolence() )
-		return;
-
 	//debugoverlay->AddLineOverlay( origin, origin + normal * 72, 255, 255, 255, true, 10 ); 
 
 	Vector offset;
 	float spread	= 0.2f;
 	
 	//Find area ambient light color and use it to tint smoke
-	Vector worldLight = WorldGetLightForPoint( origin, true );
+	Vector worldLight = engine->GetLightForPoint( origin, true );
 	Vector color = Vector( (float)(worldLight[0] * r) / 255.0f, (float)(worldLight[1] * g) / 255.0f, (float)(worldLight[2] * b) / 255.0f );
 	float colorRamp;
 
@@ -304,13 +309,10 @@ void FX_BloodSpray( const Vector &origin, const Vector &normal, float scale, uns
 //-----------------------------------------------------------------------------
 void FX_BloodBulletImpact( const Vector &origin, const Vector &normal, float scale /*NOTE: Unused!*/, unsigned char r, unsigned char g, unsigned char b )
 {
-	if ( UTIL_IsLowViolence() )
-		return;
-
 	Vector offset;
 	
 	//Find area ambient light color and use it to tint smoke
-	Vector worldLight = WorldGetLightForPoint( origin, true );
+	Vector worldLight = engine->GetLightForPoint( origin, true );
 	
 	if ( gpGlobals->maxClients > 1 )
 	{
@@ -477,11 +479,8 @@ ParticleForBlood_t	bloodCallbacks[] =
 	{ BLOOD_COLOR_RED,		"blood_impact_red_01" },
 	{ BLOOD_COLOR_GREEN,	"blood_impact_green_01" },
 	{ BLOOD_COLOR_YELLOW,	"blood_impact_yellow_01" },
-#if defined( HL2_EPISODIC )
-	{ BLOOD_COLOR_ANTLION,			"blood_impact_antlion_01" },		// FIXME: Move to Base HL2
-	{ BLOOD_COLOR_ZOMBIE,			"blood_impact_zombie_01" },			// FIXME: Move to Base HL2
-	{ BLOOD_COLOR_ANTLION_WORKER,	"blood_impact_antlion_worker_01" },
-#endif // HL2_EPISODIC
+	{ BLOOD_COLOR_ALIENINSECT,	"blood_impact_alieninsect_01" },
+	{ BLOOD_COLOR_UNDEAD,	"blood_impact_undead_01" },
 };
 
 //-----------------------------------------------------------------------------
@@ -489,18 +488,25 @@ ParticleForBlood_t	bloodCallbacks[] =
 //-----------------------------------------------------------------------------
 void BloodSprayCallback( const CEffectData &data )
 {
-	colorentry_t color;
+	if(data.m_nColor == DONT_BLEED) {
+		return;
+	}
 
+	colorentry_t color;
 	GetBloodColor( data.m_nColor, color );
 	FX_BloodSpray( data.m_vOrigin, data.m_vNormal, data.m_flScale, color.r, color.g, color.b, data.m_fFlags );
 }
 
-DECLARE_CLIENT_EFFECT( "bloodspray", BloodSprayCallback );
+DECLARE_CLIENT_EFFECT( bloodspray, BloodSprayCallback );
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void BloodImpactCallback( const CEffectData & data )
 {
+	if(data.m_nColor == DONT_BLEED) {
+		return;
+	}
+
 	bool bFoundBlood = false;
 
 	// Find which sort of blood we are
@@ -529,7 +535,7 @@ void BloodImpactCallback( const CEffectData & data )
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "BloodImpact", BloodImpactCallback );
+DECLARE_CLIENT_EFFECT( BloodImpact, BloodImpactCallback );
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -588,4 +594,4 @@ void HunterDamageCallback( const CEffectData &data )
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "HunterDamage", HunterDamageCallback );
+DECLARE_CLIENT_EFFECT( HunterDamage, HunterDamageCallback );

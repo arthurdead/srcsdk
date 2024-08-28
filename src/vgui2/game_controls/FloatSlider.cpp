@@ -280,10 +280,6 @@ void FloatSlider::ApplySchemeSettings(IScheme *pScheme)
 	m_TickColor = pScheme->GetColor( "FloatSlider.TextColor", GetFgColor() );
 	m_TrackColor = pScheme->GetColor( "FloatSlider.TrackColor", GetFgColor() );
 
-#ifdef _X360
-	m_DepressedBgColor = GetSchemeColor("FloatSlider.NobFocusColor", pScheme);
-#endif
-
 	m_DisabledTextColor1 = pScheme->GetColor( "FloatSlider.DisabledTextColor1", GetFgColor() );
 	m_DisabledTextColor2 = pScheme->GetColor( "FloatSlider.DisabledTextColor2", GetFgColor() );
 
@@ -517,12 +513,7 @@ void FloatSlider::DrawNob()
 	int wide,tall;
 	GetTrackRect( x, y, wide, tall );
 	Color col = GetFgColor();
-#ifdef _X360
-	if(HasFocus())
-	{
-		col = m_DepressedBgColor;
-	}
-#endif
+
 	surface()->DrawSetColor(col);
 
 	int nobheight = 16;
@@ -818,31 +809,6 @@ void FloatSlider::OnMouseDoublePressed(MouseCode code)
 {
 	OnMousePressed(code);
 }
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-#ifdef _X360
-void FloatSlider::OnKeyCodePressed(KeyCode code)
-{
-	switch ( GetBaseButtonCode( code ) )
-	{
-	case KEY_XBUTTON_LEFT:
-	case KEY_XSTICK1_LEFT:
-	case KEY_XSTICK2_LEFT:
-		SetValue(GetValue() - 1);
-		break;
-	case KEY_XBUTTON_RIGHT:
-	case KEY_XSTICK1_RIGHT:
-	case KEY_XSTICK2_RIGHT:
-		SetValue(GetValue() + 1);
-		break;
-	default:
-		BaseClass::OnKeyCodePressed(code);
-		break;
-	}
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Handle key presses

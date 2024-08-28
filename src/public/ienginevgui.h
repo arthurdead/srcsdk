@@ -28,7 +28,8 @@ enum VGuiPanel_t
 	PANEL_TOOLS,
 	PANEL_INGAMESCREENS,
 	PANEL_GAMEDLL,
-	PANEL_CLIENTDLL_TOOLS
+	PANEL_CLIENTDLL_TOOLS,
+	PANEL_GAMEUIBACKGROUND, // the console background, shows under all other stuff in 3d engine view
 };
 
 // In-game panels are cropped to the current engine viewport size

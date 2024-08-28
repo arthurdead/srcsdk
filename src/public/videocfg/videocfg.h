@@ -6,9 +6,7 @@
 #ifndef VIDEOCFG_H
 #define VIDEOCFG_H
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #include "tier1/utlvector.h"
 #include "shaderapi/IShaderDevice.h"

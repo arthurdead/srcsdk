@@ -7,9 +7,7 @@
 #ifndef AI_AGENT_H
 #define AI_AGENT_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ai_debug.h"
 #include "ai_default.h"

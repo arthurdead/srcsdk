@@ -7,8 +7,6 @@
 //=============================================================================//
 #include "cbase.h"
 
-#if !defined( NO_ENTITY_PREDICTION )
-
 #include "IGameSystem.h"
 #include <typeinfo.h>
 #include "cdll_int.h"
@@ -243,5 +241,3 @@ CON_COMMAND_F( cl_pred_track, "<entindex> <fieldname>:  Track changes to entity 
 
 	g_pChangeTracker->SetupTracking( ent, args[2] );
 }
-
-#endif // NO_ENTITY_PREDICTION

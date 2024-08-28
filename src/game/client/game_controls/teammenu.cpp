@@ -67,7 +67,7 @@ const char *GetStringTeamColor( int i )
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-CTeamMenu::CTeamMenu(IViewPort *pViewPort) : Frame(NULL, PANEL_TEAM )
+CTeamMenu::CTeamMenu(IViewPort *pViewPort) : BaseClass(NULL, PANEL_TEAM )
 {
 	m_pViewPort = pViewPort;
 	m_iJumpKey = BUTTON_CODE_INVALID; // this is looked up in Activate()
@@ -90,6 +90,8 @@ CTeamMenu::CTeamMenu(IViewPort *pViewPort) : Frame(NULL, PANEL_TEAM )
 
 #if defined( ENABLE_HTML_WINDOW )
 	m_pMapInfoHTML = new HTML( this, "MapInfoHTML");
+#else
+	m_pMapInfoHTML = NULL;
 #endif
 
 	LoadControlSettings("Resource/UI/TeamMenu.res");
@@ -424,8 +426,8 @@ void CTeamMenu::OnKeyCodePressed(KeyCode code)
 
 	if ( m_iScoreBoardKey != BUTTON_CODE_INVALID && m_iScoreBoardKey == code )
 	{
-		gViewPortInterface->ShowPanel( PANEL_SCOREBOARD, true );
-		gViewPortInterface->PostMessageToPanel( PANEL_SCOREBOARD, new KeyValues( "PollHideCode", "code", code ) );
+		GetViewPortInterface()->ShowPanel( PANEL_SCOREBOARD, true );
+		GetViewPortInterface()->PostMessageToPanel( PANEL_SCOREBOARD, new KeyValues( "PollHideCode", "code", code ) );
 	}
 	else if ( nDir != 0 )
 	{

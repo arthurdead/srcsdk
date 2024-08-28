@@ -1,8 +1,6 @@
 #ifndef HUD_ACHIEVEMENT_TRACKER_H
 #define HUD_ACHIEVEMENT_TRACKER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "hudelement.h"
 #include <vgui_controls/EditablePanel.h>

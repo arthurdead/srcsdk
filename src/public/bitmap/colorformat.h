@@ -7,9 +7,7 @@
 #ifndef COLORFORMAT_H
 #define COLORFORMAT_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <stdio.h>
 #include "mathlib/vector.h"

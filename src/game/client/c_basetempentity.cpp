@@ -51,6 +51,8 @@ C_BaseTempEntity::C_BaseTempEntity( void )
 	s_pTempEntities = this;
 	
 	m_pNextDynamic = NULL;
+
+	m_bShouldDelete = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -149,7 +151,7 @@ void C_BaseTempEntity::CheckDynamicTempEnts( void )
 // Input  : *pEnt - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool C_BaseTempEntity::Init( int entnum, int iSerialNum )
+bool C_BaseTempEntity::InitializeAsServerEntity( int entnum, int iSerialNum )
 {
 	if ( entnum != -1 )
 	{
@@ -164,9 +166,10 @@ bool C_BaseTempEntity::Init( int entnum, int iSerialNum )
 }
 
 
-void C_BaseTempEntity::Release()
+void C_BaseTempEntity::DO_NOT_USE_Release()
 {
 	Assert( !"C_BaseTempEntity::Release should never be called" );
+	DebuggerBreak();
 }
 
 
@@ -199,3 +202,12 @@ void* C_BaseTempEntity::GetDataTableBasePtr()
 	return this;
 }
 
+void UTIL_Remove( C_BaseTempEntity *pEntity )
+{
+	delete pEntity;
+}
+
+void UTIL_RemoveImmediate( C_BaseTempEntity *pEntity )
+{
+	delete pEntity;
+}

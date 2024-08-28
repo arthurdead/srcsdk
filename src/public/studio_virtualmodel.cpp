@@ -348,6 +348,15 @@ void virtualmodel_t::AppendBonemap( int group, const studiohdr_t *pStudioHdr )
 				{
 					Warning( "%s/%s : missmatched parent bones on \"%s\"\n", pBaseStudioHdr->pszName(), pStudioHdr->pszName(), pStudioHdr->pBone( j )->pszName() );
 				}
+
+				// merge the bone use flags and pass up the chain
+				int flags = (pStudioHdr->pBone( j )->flags | pBaseStudioHdr->pBone( k )->flags) & BONE_USED_MASK;
+				int n = k;
+				while (n != -1 && flags != pBaseStudioHdr->pBone( n )->flags)
+				{
+					pBaseStudioHdr->pBone( n )->flags |= flags;
+					n = pBaseStudioHdr->pBone( n )->parent;
+				}
 			}
 			else
 			{

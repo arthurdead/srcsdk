@@ -13,6 +13,12 @@
 
 #include "debugoverlay_shared.h"
 #include "vprof.h"
+#include "shareddefs.h"
+#ifdef GAME_DLL
+#include "basecombatcharacter.h"
+#else
+#include "c_basecombatcharacter.h"
+#endif
 
 //--------------------------------------------------------------------------------------------------------
 /**

@@ -1636,7 +1636,7 @@ void TextEntry::OnKeyCodePressed(KeyCode code)
 	}
 	
 	// Pass on the joystick and mouse codes
-	if ( IsMouseCode(code) || IsNovintButtonCode(code) || IsJoystickCode(code) || IsJoystickButtonCode(code) ||
+	if ( IsMouseCode(code) || IsJoystickCode(code) || IsJoystickButtonCode(code) ||
 	     IsJoystickPOVCode(code) || IsJoystickAxisCode(code) )
 	{
 		Panel::OnKeyCodePressed( code );
@@ -1661,7 +1661,11 @@ void TextEntry::OnKeyCodeTyped(KeyCode code)
 	bool winkey = (input()->IsKeyDown(KEY_LWIN) || input()->IsKeyDown(KEY_RWIN));
 	bool fallThrough = false;
 	
-	if ( ( ctrl || ( winkey && IsOSX() ) ) && !alt)
+#ifdef _OSX
+	if ( ( ctrl || ( winkey ) ) && !alt)
+#else
+	if ( ( ctrl ) && !alt)
+#endif
 	{
 		switch(code)
 		{

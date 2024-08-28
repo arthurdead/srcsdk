@@ -226,11 +226,11 @@ void C_HLTVCamera::CalcChaseCamView( Vector& eyeOrigin, QAngle& eyeAngles, float
 	// grow distance by 32 unit a second
   	m_flLastDistance += gpGlobals->frametime * 32.0f; 
 
-  	if ( dist > m_flLastDistance )
+	if ( dist > m_flLastDistance )
 	{
 		VectorMA(targetOrigin1, -m_flLastDistance, forward, cameraOrigin );
 	}
- 	else
+	else
 	{
 		cameraOrigin = trace.endpos;
 		m_flLastDistance = dist;
@@ -680,20 +680,20 @@ void C_HLTVCamera::FireGameEvent( IGameEvent * event)
 		Reset();	// reset all camera settings
 
 		// show spectator UI
-		if ( !gViewPortInterface )
+		if ( !GetViewPortInterface() )
 			return;
 
 		if ( engine->IsPlayingDemo() )
         {
 			// for demo playback show full menu
-			gViewPortInterface->ShowPanel( PANEL_SPECMENU, true );
+			GetViewPortInterface()->ShowPanel( PANEL_SPECMENU, true );
 
 			SetMode( OBS_MODE_ROAMING );
 		}
 		else
 		{
 			// during live broadcast only show black bars
-			gViewPortInterface->ShowPanel( PANEL_SPECGUI, true );
+			GetViewPortInterface()->ShowPanel( PANEL_SPECGUI, true );
 		}
 
 		return;
@@ -718,7 +718,7 @@ void C_HLTVCamera::FireGameEvent( IGameEvent * event)
 			g_pVGuiLocalize->ConvertANSIToUnicode( tmpStr, outputBuf, sizeof(outputBuf) );
 		}
 
-		internalCenterPrint->Print( ConvertCRtoNL( outputBuf ) );
+		GetCenterPrint()->Print( ConvertCRtoNL( outputBuf ) );
 		return ;
 	}
 
@@ -782,7 +782,7 @@ void C_HLTVCamera::FireGameEvent( IGameEvent * event)
 
 	if ( Q_strcmp( "hltv_chase", type ) == 0 )
 	{
-		bool bInEye	= event->GetInt( "ineye" );
+		bool bInEye	= event->GetBool( "ineye" );
 
 		// check if we are already in a player chase mode
 		bool bIsInChaseMode = (m_nCameraMode==OBS_MODE_IN_EYE)|| (m_nCameraMode==OBS_MODE_CHASE);

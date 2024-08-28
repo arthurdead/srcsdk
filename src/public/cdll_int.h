@@ -17,14 +17,15 @@
 #include "tier1/bitbuf.h"
 #include "inputsystem/ButtonCode.h"
 #include "modes.h"
-
-#if !defined( _X360 )
-#include "xbox/xboxstubs.h"
-#endif
+#include "string_t.h"
+#include "toolframework/itoolentity.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
 //-----------------------------------------------------------------------------
+FORWARD_DECLARE_HANDLE( InputContextHandle_t );
+class CSteamAPIContext;
+struct adsp_auto_params_t;
 class ClientClass;
 struct model_t;
 class CSentence;
@@ -44,7 +45,6 @@ class CViewSetup;
 class CEngineSprite;
 class CGlobalVarsBase;
 class CPhysCollide;
-class CSaveRestoreData;
 class INetChannelInfo;
 struct datamap_t;
 struct typedescription_t;
@@ -57,6 +57,21 @@ class IFileList;
 class CRenamedRecvTableInfo;
 class CMouthInfo;
 class IConVar;
+class ISPSharedMemory;
+class IDemoRecorder;
+struct AudioState_t;
+class IMaterialProxy;
+struct InputEvent_t;
+
+namespace vgui
+{
+	// handle to an internal vgui panel
+	// this is the only handle to a panel that is valid across dll boundaries
+	typedef unsigned int VPANEL;
+}
+
+typedef void * XUSER_CONTEXT;
+typedef void * XUSER_PROPERTY;
 
 //-----------------------------------------------------------------------------
 // Purpose: This data structure is filled in by the engine when the client .dll requests information about
@@ -104,6 +119,11 @@ struct AudioState_t
 	bool m_bIsUnderwater;
 };
 
+enum EngineInputContextId_t
+{
+	ENGINE_INPUT_CONTEXT_GAME = 0,
+	ENGINE_INPUT_CONTEXT_GAMEUI,
+};
 
 //-----------------------------------------------------------------------------
 // Skybox visibility
@@ -159,6 +179,21 @@ enum RenderViewInfo_t
 	RENDERVIEW_SUPPRESSMONITORRENDERING = (1<<2),
 };
 
+// Spectator Movement modes (mods define these i
+enum ClientDLLObserverMode_t
+{
+	CLIENT_DLL_OBSERVER_NONE = 0,	// not in spectator mode
+
+	CLIENT_DLL_OBSERVER_DEATHCAM,	// special mode for death cam animation
+	CLIENT_DLL_OBSERVER_FREEZECAM,	// zooms to a target, and freeze-frames on them
+	CLIENT_DLL_OBSERVER_FIXED,		// view from a fixed camera position
+	CLIENT_DLL_OBSERVER_IN_EYE,	// follow a player in first person view
+	CLIENT_DLL_OBSERVER_CHASE,		// follow a player in third person view
+	CLIENT_DLL_OBSERVER_ROAMING,	// free roaming
+
+	CLIENT_DLL_OBSERVER_OTHER,
+};
+
 //-----------------------------------------------------------------------------
 // Lightcache entry handle
 //-----------------------------------------------------------------------------
@@ -174,6 +209,11 @@ struct OcclusionParams_t
 	float	m_flMinOccluderArea;
 };
 
+
+//-----------------------------------------------------------------------------
+// Demo custom data callback type
+//-----------------------------------------------------------------------------
+typedef void (*pfnDemoCustomDataCallback)( uint8 *pData, size_t iSize );
 
 //-----------------------------------------------------------------------------
 // Just an interface version name for the random number interface
@@ -353,10 +393,10 @@ public:
 	virtual void GetChapterName( char *pchBuff, int iMaxLength ) = 0;
 	virtual char const	*GetLevelName( void ) = 0;
 	virtual int	GetLevelVersion( void ) = 0;
-#if !defined( NO_VOICE )
+
 	// Obtain access to the voice tweaking API
 	virtual struct IVoiceTweak_s *GetVoiceTweakAPI( void ) = 0;
-#endif
+
 	// Tell engine stats gathering system that the rendering frame is beginning/ending
 	virtual void		EngineStats_BeginFrame( void ) = 0;
 	virtual void		EngineStats_EndFrame( void ) = 0;
@@ -395,9 +435,16 @@ public:
 
 	// The save restore system allocates memory from a shared memory pool, use this allocator to allocate/free saverestore 
 	//  memory.
-	virtual void		*SaveAllocMemory( size_t num, size_t size ) = 0;
-	virtual void		SaveFreeMemory( void *pSaveMem ) = 0;
+private:
+	virtual void		*DO_NOT_USE_SaveAllocMemory( size_t num, size_t size ) final
+	{
+		return NULL;
+	}
+	virtual void		DO_NOT_USE_SaveFreeMemory( void *pSaveMem ) final
+	{
+	}
 
+public:
 	// returns info interface for client netchannel
 	virtual INetChannelInfo	*GetNetChannelInfo( void ) = 0;
 
@@ -509,11 +556,26 @@ public:
 	virtual void			SetMapLoadFailed( bool bState ) = 0;
 	
 	virtual bool			IsLowViolence() = 0;
-	virtual const char		*GetMostRecentSaveGame( void ) = 0;
-	virtual void			SetMostRecentSaveGame( const char *lpszFilename ) = 0;
 
+private:
+	virtual const char		*DO_NOT_USE_GetMostRecentSaveGame( void ) final
+	{
+		return NULL;
+	}
+	virtual void			DO_NOT_USE_SetMostRecentSaveGame( const char *lpszFilename ) final
+	{
+	}
+
+public:
 	virtual void			StartXboxExitingProcess() = 0;
-	virtual bool			IsSaveInProgress() = 0;
+
+private:
+	virtual bool			DO_NOT_USE_IsSaveInProgress() final
+	{
+		return false;
+	}
+
+public:
 	virtual uint			OnStorageDeviceAttached( void ) = 0;
 	virtual void			OnStorageDeviceDetached( void ) = 0;
 
@@ -689,22 +751,57 @@ public:
 	virtual bool			DispatchUserMessage( int msg_type, bf_read &msg_data ) = 0;
 
 	// Save/restore system hooks
-	virtual CSaveRestoreData  *SaveInit( int size ) = 0;
-	virtual void			SaveWriteFields( CSaveRestoreData *, const char *, void *, datamap_t *, typedescription_t *, int ) = 0;
-	virtual void			SaveReadFields( CSaveRestoreData *, const char *, void *, datamap_t *, typedescription_t *, int ) = 0;
-	virtual void			PreSave( CSaveRestoreData * ) = 0;
-	virtual void			Save( CSaveRestoreData * ) = 0;
-	virtual void			WriteSaveHeaders( CSaveRestoreData * ) = 0;
-	virtual void			ReadRestoreHeaders( CSaveRestoreData * ) = 0;
-	virtual void			Restore( CSaveRestoreData *, bool ) = 0;
-	virtual void			DispatchOnRestore() = 0;
+private:
+	virtual void  *SaveInit( int size ) final
+	{
+		DebuggerBreak();
+		return NULL;
+	}
+	virtual void			SaveWriteFields( void *, const char *, void *, datamap_t *, typedescription_t *, int ) final
+	{
+		DebuggerBreak();
+	}
+	virtual void			SaveReadFields( void *, const char *, void *, datamap_t *, typedescription_t *, int ) final
+	{
+		DebuggerBreak();
+	}
+	virtual void			PreSave( void * ) final
+	{
+		DebuggerBreak();
+	}
+	virtual void			Save( void * ) final
+	{
+		DebuggerBreak();
+	}
+	virtual void			WriteSaveHeaders( void * ) final
+	{
+		DebuggerBreak();
+	}
+	virtual void			ReadRestoreHeaders( void * ) final
+	{
+		DebuggerBreak();
+	}
+	virtual void			Restore( void *, bool ) final
+	{
+		DebuggerBreak();
+	}
+	virtual void			DispatchOnRestore() final
+	{
+		DebuggerBreak();
+	}
 
+public:
 	// Hand over the StandardRecvProxies in the client DLL's module.
 	virtual CStandardRecvProxies* GetStandardRecvProxies() = 0;
 
 	// save game screenshot writing
-	virtual void			WriteSaveGameScreenshot( const char *pFilename ) = 0;
+private:
+	virtual void			WriteSaveGameScreenshot( const char *pFilename ) final
+	{
+		DebuggerBreak();
+	}
 
+public:
 	// Given a list of "S(wavname) S(wavname2)" tokens, look up the localized text and emit
 	//  the appropriate close caption if running with closecaption = 1
 	virtual void			EmitSentenceCloseCaption( char const *tokenstream ) = 0;
@@ -731,8 +828,13 @@ public:
 	// Added interface
 
 	// save game screenshot writing
-	virtual void			WriteSaveGameScreenshotOfSize( const char *pFilename, int width, int height, bool bCreatePowerOf2Padded = false, bool bWriteVTF = false ) = 0;
+private:
+	virtual void			WriteSaveGameScreenshotOfSize( const char *pFilename, int width, int height, bool bCreatePowerOf2Padded = false, bool bWriteVTF = false ) final
+	{
+		DebuggerBreak();
+	}
 
+public:
 	// Gets the current view
 	virtual bool			GetPlayerView( CViewSetup &playerView ) = 0;
 
@@ -772,7 +874,11 @@ public:
 
 	// Notify the client that a file has been received from the game server
 	virtual void			FileReceived( const char * fileName, unsigned int transferID ) = 0;
-	
+
+	#define EFFECT_TRANSLATE_SOUNDSAMPLE "sounds"
+	#define EFFECT_TRANSLATE_WEAPONMODEL "weapons"
+	#define EFFECT_TRANSLATE_PARTICLENAME "particles"
+
 	virtual const char* TranslateEffectForVisionFilter( const char *pchEffectType, const char *pchEffectName ) = 0;
 
 	// Give the client a chance to modify sound settings however they want before the sound plays. This is used for
@@ -799,5 +905,17 @@ public:
 };
 
 #define CLIENT_DLL_SHARED_APPSYSTEMS		"VClientDllSharedAppSystems001"
+
+//-----------------------------------------------------------------------------
+// Purpose: Interface exposed from client back to materialsystem, currently just for recording into tools
+//-----------------------------------------------------------------------------
+abstract_class IClientMaterialSystem
+{
+public:
+	virtual HTOOLHANDLE GetCurrentRecordingEntity() = 0;
+	virtual void PostToolMessage( HTOOLHANDLE hEntity, KeyValues *pMsg ) = 0;
+};
+
+#define VCLIENTMATERIALSYSTEM_INTERFACE_VERSION "VCLIENTMATERIALSYSTEM001"
 
 #endif // CDLL_INT_H

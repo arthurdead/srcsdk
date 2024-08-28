@@ -71,7 +71,7 @@ private:
 	{
 		ModelRenderSystemData_t m_Entry;
 		ModelInstanceHandle_t m_hInstance;
-		matrix3x4a_t* m_pBoneToWorld;
+		matrix3x4_t* m_pBoneToWorld;
 		uint32 m_nInitialListIndex : 24;
 		uint32 m_bSetupBonesOnly : 1;
 		uint32 m_bBoneMerge : 1;
@@ -1257,26 +1257,10 @@ void CModelRenderSystem::RenderModels( StudioModelArrayInfo2_t *pInfo, int nMode
 			}
 #endif
 		}
-		if ( IsX360() && r_fastzreject.GetBool() && ( nNonStencilModelTypeCount != nModelTypeCount ) )
-		{
-			// Render all models without stencil
-			g_pStudioRender->DrawModelArray( *pInfo, nNonStencilModelTypeCount, rdArray.Base(), sizeof(RenderModelInfo_t), nFlags );
 
-			#ifdef _X360
-				// end z prepass here
-				CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
-				pRenderContext->End360ZPass();
-			#endif
+		// PC renders all models in one go regardless of stencil state
+		g_pStudioRender->DrawModelArray( *pInfo, nModelTypeCount, rdArray.Base(), sizeof(RenderModelInfo_t), nFlags );
 
-			// Render all models with stencil
-			g_pStudioRender->DrawModelArray( *pInfo, nModelTypeCount - nNonStencilModelTypeCount, rdArray.Base() + nNonStencilModelTypeCount,
-				sizeof(RenderModelInfo_t), nFlags );
-		}
-		else
-		{
-			// PC renders all models in one go regardless of stencil state
-			g_pStudioRender->DrawModelArray( *pInfo, nModelTypeCount, rdArray.Base(), sizeof(RenderModelInfo_t), nFlags );
-		}
 		g_pStudioRender->ForcedMaterialOverride( NULL );
 	}
 	else if ( renderMode == MODEL_RENDER_MODE_SHADOW_DEPTH )
@@ -1510,12 +1494,6 @@ void CModelRenderSystem::DrawModels( ModelRenderSystemData_t *pEntities, int nCo
 
 	// Setup per-instance wound data
 	//SetupInfectedWoundRenderData( nModelTypeCount, pModelList, nCount, renderMode );
-
-	if ( IsX360() && ( renderMode == MODEL_RENDER_MODE_NORMAL ) && ( nModelsRenderingStencilCount > 0) )
-	{
-		// resort here to make sure all models rendering stencil come last
-		std::sort( pModelList, pModelList + nModelTypeCount, StencilSortLessFunc );
-	}
 
 	// Draw models
 	RenderModels( &info, nModelTypeCount, pModelList, nCount, renderMode );

@@ -20,11 +20,21 @@ public:
 	DECLARE_CLIENTCLASS();
 
 	C_BreakableProp();
+	C_BreakableProp(bool bClientSide);
+
+	virtual bool IsProp( void ) const
+	{
+		return true;
+	}
 	
 	virtual void SetFadeMinMax( float fademin, float fademax );
 
 	// Copy fade from another breakable prop
 	void CopyFadeFrom( C_BreakableProp *pSource );
+	virtual void OnDataChanged( DataUpdateType_t type );
+
+private:
+	bool m_bClientPhysics;
 };
 
 #endif // C_BREAKABLEPROP_H

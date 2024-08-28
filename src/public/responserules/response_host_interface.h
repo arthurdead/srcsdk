@@ -7,9 +7,7 @@
 
 #ifndef RESPONSE_HOST_INTERFACE_H
 #define RESPONSE_HOST_INTERFACE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "filesystem.h"
 class IUniformRandomStream;

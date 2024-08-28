@@ -124,4 +124,4 @@ IMaterial *CPupilProxy::GetMaterial()
 	return m_pAnimatedTextureVar->GetOwningMaterial();
 }
 
-EXPOSE_INTERFACE( CPupilProxy, IMaterialProxy, "Pupil" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CPupilProxy, Pupil );

@@ -21,19 +21,6 @@
 #include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
-// Purpose: Gets the local client's active weapon, if any.
-//-----------------------------------------------------------------------------
-C_BaseCombatWeapon *GetActiveWeapon( void )
-{
-	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
-
-	if ( !player )
-		return NULL;
-
-	return player->GetActiveWeapon();
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void C_BaseCombatWeapon::SetDormant( bool bDormant )
@@ -74,6 +61,11 @@ void C_BaseCombatWeapon::NotifyShouldTransmit( ShouldTransmitState_t state )
 	}
 }
 
+static inline bool ShouldDrawLocalPlayer( C_BasePlayer *pl )
+{
+	Assert( pl );
+	return pl->ShouldDrawLocalPlayer();
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: To wrap PORTAL mod specific functionality into one place
@@ -90,17 +82,6 @@ static inline bool ShouldDrawLocalPlayerViewModel( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_BaseCombatWeapon::OnRestore()
-{
-	BaseClass::OnRestore();
-
-	// if the player is holding this weapon, 
-	// mark it as just restored so it won't show as a new pickup
-	if (GetOwner() == C_BasePlayer::GetLocalPlayer())
-	{
-		m_bJustRestored = true;
-	}
-}
 
 int C_BaseCombatWeapon::GetWorldModelIndex( void )
 {
@@ -131,11 +112,11 @@ void C_BaseCombatWeapon::OnDataChanged( DataUpdateType_t updateType )
 	// If it's being carried by the *local* player, on the first update,
 	// find the registered weapon for this ID
 
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 	C_BaseCombatCharacter *pOwner = GetOwner();
+	C_BasePlayer *pPlayer = ToBasePlayer( pOwner );
 
 	// check if weapon is carried by local player
-	bool bIsLocalPlayer = pPlayer && pPlayer == pOwner;
+	bool bIsLocalPlayer = C_BasePlayer::IsLocalPlayer( pPlayer );
 	if ( bIsLocalPlayer && ShouldDrawLocalPlayerViewModel() )		// TODO: figure out the purpose of the ShouldDrawLocalPlayer() test.
 	{
 		// If I was just picked up, or created & immediately carried, add myself to this client's list of weapons
@@ -169,8 +150,6 @@ void C_BaseCombatWeapon::OnDataChanged( DataUpdateType_t updateType )
 	}
 
 	m_iOldState = m_iState;
-
-	m_bJustRestored = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -211,7 +190,7 @@ ShadowType_t C_BaseCombatWeapon::ShadowCastType()
 	if (IsCarriedByLocalPlayer() && !C_BasePlayer::ShouldDrawLocalPlayer())
 		return SHADOWS_NONE;
 
-	return SHADOWS_RENDER_TO_TEXTURE;
+	return (m_iState != WEAPON_IS_CARRIED_BY_PLAYER) ? SHADOWS_RENDER_TO_TEXTURE : SHADOWS_NONE;
 }
 
 //-----------------------------------------------------------------------------
@@ -220,7 +199,7 @@ ShadowType_t C_BaseCombatWeapon::ShadowCastType()
 //-----------------------------------------------------------------------------
 void C_BaseCombatWeapon::Redraw()
 {
-	if ( g_pClientMode->ShouldDrawCrosshair() )
+	if ( GetClientMode()->ShouldDrawCrosshair() )
 	{
 		DrawCrosshair();
 	}
@@ -237,7 +216,7 @@ void C_BaseCombatWeapon::DrawCrosshair()
 	if ( !player )
 		return;
 
-	Color clr = gHUD.m_clrNormal;
+	Color clr = GetHud().m_clrNormal;
 /*
 
 	// TEST: if the thing under your crosshair is on a different team, light the crosshair with a different color.
@@ -321,7 +300,7 @@ bool C_BaseCombatWeapon::IsCarriedByLocalPlayer( void )
 	if ( !GetOwner() )
 		return false;
 
-	return ( GetOwner() == C_BasePlayer::GetLocalPlayer() );
+	return ( C_BasePlayer::IsLocalPlayer( GetOwner() ) );
 }
 
 
@@ -464,20 +443,45 @@ bool C_BaseCombatWeapon::ShouldDrawPickup( void )
 	if ( GetWeaponFlags() & ITEM_FLAG_NOITEMPICKUP )
 		return false;
 
-	if ( m_bJustRestored )
-		return false;
-
 	return true;
 }
+
+//----------------------------------------------------------------------------
+// Hooks into the fast path render system
+//----------------------------------------------------------------------------
+IClientModelRenderable*	C_BaseCombatWeapon::GetClientModelRenderable()
+{
+	if ( !ReadyToDraw() )
+		return 0;
+
+	// check if local player chases owner of this weapon in first person
+	C_BasePlayer *localplayer = C_BasePlayer::GetLocalPlayer();
+	if ( localplayer && localplayer->IsObserver() && GetOwner() )
+	{
+		// don't draw weapon if chasing this guy as spectator
+		// we don't check that in ShouldDraw() since this may change
+		// without notification 
+		if ( localplayer->GetObserverMode() == OBS_MODE_IN_EYE &&
+			localplayer->GetObserverTarget() == GetOwner() ) 
+			return NULL;
+	}
+
+	if ( !BaseClass::GetClientModelRenderable() )
+		return NULL;
+
+	EnsureCorrectRenderingModel();
+	return this;
+}
+
 		   
 //-----------------------------------------------------------------------------
 // Purpose: Render the weapon. Draw the Viewmodel if the weapon's being carried
 //			by this player, otherwise draw the worldmodel.
 //-----------------------------------------------------------------------------
-int C_BaseCombatWeapon::DrawModel( int flags )
+int C_BaseCombatWeapon::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 	VPROF_BUDGET( "C_BaseCombatWeapon::DrawModel", VPROF_BUDGETGROUP_MODEL_RENDERING );
-	if ( !m_bReadyToDraw )
+	if ( !ReadyToDraw() )
 		return 0;
 
 	if ( !IsVisible() )
@@ -497,9 +501,37 @@ int C_BaseCombatWeapon::DrawModel( int flags )
 			return false;
 	}
 
-	return BaseClass::DrawModel( flags );
+	EnsureCorrectRenderingModel();
+	return BaseClass::DrawModel( flags, instance );
 }
 
+// If the local player is visible (thirdperson mode, tf2 taunts, etc., then make sure that we are using the 
+//  w_ (world) model not the v_ (view) model or else the model can flicker, etc.
+// Otherwise, if we're not the local player, always use the world model
+void C_BaseCombatWeapon::EnsureCorrectRenderingModel()
+{
+	C_BasePlayer *localplayer = C_BasePlayer::GetLocalPlayer();
+	if ( localplayer && 
+		localplayer == GetOwner() &&
+		!localplayer->ShouldDrawLocalPlayer() )
+	{
+		return;
+	}
+
+	// BRJ 10/14/02
+	// FIXME: Remove when Yahn's client-side prediction is done
+	// It's a hacky workaround for the model indices fighting
+	// (GetRenderBounds uses the model index, which is for the view model)
+	SetModelIndex( GetWorldModelIndex() );
+
+	// Validate our current sequence just in case ( in theory the view and weapon models should have the same sequences for sequences that overlap at least )
+	CStudioHdr *pStudioHdr = GetModelPtr();
+	if ( pStudioHdr && 
+		GetSequence() >= pStudioHdr->GetNumSeq() )
+	{
+		SetSequence( 0 );
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Allows the client-side entity to override what the network tells it to use for

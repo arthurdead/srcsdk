@@ -8,6 +8,9 @@ public_dir = join_paths(src_root_dir,'public')
 vgui_controls_src_dir = join_paths(src_root_dir,'vgui2','vgui_controls')
 
 vgui_controls_lib = static_library('vgui_controls',
+	cpp_args: [
+		'-DLIBNAME=vgui_controls'
+	],
 	sources: files(
 		join_paths(vgui_controls_src_dir,'AnalogBar.cpp'),
 		join_paths(vgui_controls_src_dir,'AnimatingImagePanel.cpp'),
@@ -41,7 +44,6 @@ vgui_controls_lib = static_library('vgui_controls',
 		join_paths(vgui_controls_src_dir,'InputDialog.cpp'),
 		join_paths(vgui_controls_src_dir,'KeyBindingHelpDialog.cpp'),
 		join_paths(vgui_controls_src_dir,'KeyBoardEditorDialog.cpp'),
-		join_paths(vgui_controls_src_dir,'KeyRepeat.cpp'),
 		join_paths(vgui_controls_src_dir,'Label.cpp'),
 		join_paths(vgui_controls_src_dir,'ListPanel.cpp'),
 		join_paths(vgui_controls_src_dir,'ListViewPanel.cpp'),

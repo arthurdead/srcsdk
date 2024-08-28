@@ -35,10 +35,10 @@
 
 ConVar r_vehicleBrakeRate( "r_vehicleBrakeRate", "1.5", FCVAR_CHEAT );
 
-ConVar xbox_throttlebias("xbox_throttlebias", "100", FCVAR_ARCHIVE );
-ConVar xbox_throttlespoof("xbox_throttlespoof", "200", FCVAR_ARCHIVE );
-ConVar xbox_autothrottle("xbox_autothrottle", "1", FCVAR_ARCHIVE );
-ConVar xbox_steering_deadzone( "xbox_steering_deadzone", "0.0" );
+ConVar vehicle_throttlebias("vehicle_throttlebias", "100", FCVAR_ARCHIVE );
+ConVar vehicle_throttlespoof("vehicle_throttlespoof", "200", FCVAR_ARCHIVE );
+ConVar vehicle_autothrottle("vehicle_autothrottle", "1", FCVAR_ARCHIVE );
+ConVar vehicle_steering_deadzone( "vehicle_steering_deadzone", "0.0" );
 
 // remaps an angular variable to a 3 band function:
 // 0 <= t < start :		f(t) = 0
@@ -1037,7 +1037,7 @@ void CFourWheelVehiclePhysics::SteeringTurnAnalog( float carSpeed, const vehicle
 	float steering = ( sidemove / STICK_EXTENTS );
 
 	float flSign = ( steering > 0 ) ? 1.0f : -1.0f;
-	float flSteerAdj = RemapValClamped( fabs( steering ), xbox_steering_deadzone.GetFloat(), 1.0f, 0.0f, 1.0f );
+	float flSteerAdj = RemapValClamped( fabs( steering ), vehicle_steering_deadzone.GetFloat(), 1.0f, 0.0f, 1.0f );
 
 	float flSteeringRate = RemapValClamped( carSpeed, vehicleData.steering.speedSlow, vehicleData.steering.speedFast, 
 		vehicleData.steering.steeringRateSlow, vehicleData.steering.steeringRateFast );
@@ -1073,7 +1073,7 @@ void CFourWheelVehiclePhysics::UpdateDriverControls( CUserCmd *cmd, float flFram
 	float carSpeed = fabs(INS2MPH(carState.speed));
 
 	// If going forward and turning hard, keep the throttle applied.
-	if( xbox_autothrottle.GetBool() && cmd->forwardmove > 0.0f )
+	if( vehicle_autothrottle.GetBool() && cmd->forwardmove > 0.0f )
 	{
 		if( carSpeed > GetMaxSpeed() * 0.75 )
 		{
@@ -1120,7 +1120,7 @@ void CFourWheelVehiclePhysics::UpdateDriverControls( CUserCmd *cmd, float flFram
 	//-------------------------------------------------------------------------
 	CBaseEntity *pDriver = m_pOuterServerVehicle->GetDriver();
 	CBasePlayer *pPlayerDriver;
-	float flBiasThreshold = xbox_throttlebias.GetFloat();
+	float flBiasThreshold = vehicle_throttlebias.GetFloat();
 
 	if( pDriver && pDriver->IsPlayer() )
 	{
@@ -1141,7 +1141,7 @@ void CFourWheelVehiclePhysics::UpdateDriverControls( CUserCmd *cmd, float flFram
 				// to keep the car moving in the direction the player probably expects.
 				if( cmd->forwardmove < flBiasThreshold )
 				{
-					cmd->forwardmove = -xbox_throttlespoof.GetFloat();
+					cmd->forwardmove = -vehicle_throttlespoof.GetFloat();
 				}
 				else
 				{
@@ -1161,7 +1161,7 @@ void CFourWheelVehiclePhysics::UpdateDriverControls( CUserCmd *cmd, float flFram
 				// Inverse of above logic
 				if( cmd->forwardmove > -flBiasThreshold )
 				{
-					cmd->forwardmove = xbox_throttlespoof.GetFloat();
+					cmd->forwardmove = vehicle_throttlespoof.GetFloat();
 				}
 				else
 				{

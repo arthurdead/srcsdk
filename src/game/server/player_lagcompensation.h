@@ -9,9 +9,7 @@
 #ifndef _PLAYER_LAG_COMPENSATION_H_
 #define _PLAYER_LAG_COMPENSATION_H_
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "igamesystem.h"
 #include "ilagcompensationmanager.h"

@@ -6,14 +6,15 @@
 // $Date:         $
 // $NoKeywords: $
 //=============================================================================//
-#if !defined( UTIL_H )
-#define UTIL_H
+#if !defined( CDLL_UTIL_H )
+#define CDLL_UTIL_H
 
 #pragma once
 
-#include <soundflags.h>
+#include "soundflags.h"
 #include "mathlib/vector.h"
-#include <shareddefs.h>
+#include "shareddefs.h"
+#include "Color.h"
 
 #include "shake.h"
 #include "bitmap/imageformat.h"
@@ -28,6 +29,7 @@ class IClientEntity;
 class CHudTexture;
 class CGameTrace;
 class C_BaseEntity;
+class C_BasePlayer;
 
 struct Ray_t;
 struct client_textmessage_t;
@@ -36,6 +38,7 @@ typedef CGameTrace trace_t;
 namespace vgui
 {
 	typedef unsigned long HFont;
+	class EditablePanel;
 };
 
 
@@ -65,6 +68,9 @@ void	UTIL_FreeFile( byte *buffer );
 void	UTIL_MakeSafeName( const char *oldName, OUT_Z_CAP(newNameBufSize) char *newName, int newNameBufSize );	///< Cleans up player names for putting in vgui controls (cleaned names can be up to original*2+1 in length)
 const char *UTIL_SafeName( const char *oldName );	///< Wraps UTIL_MakeSafeName, and returns a static buffer
 void	UTIL_ReplaceKeyBindings( const wchar_t *inbuf, int inbufsizebytes, OUT_Z_BYTECAP(outbufsizebytes) wchar_t *outbuf, int outbufsizebytes );
+void	UTIL_SetControlStringWithKeybindings( vgui::EditablePanel *panel, const char *controlName, const char *str );
+
+void	UTIL_MessageText( C_BasePlayer *player, const char *text, Color color = Color( 0, 0, 0, 0 ) );
 
 // Fade out an entity based on distance fades
 unsigned char UTIL_ComputeEntityFade( C_BaseEntity *pEntity, float flMinDist, float flMaxDist, float flFadeScale );
@@ -72,15 +78,15 @@ unsigned char UTIL_ComputeEntityFade( C_BaseEntity *pEntity, float flMinDist, fl
 client_textmessage_t	*TextMessageGet( const char *pName );
 
 const char	*VarArgs( PRINTF_FORMAT_STRING const char *format, ... );
-	
+#define UTIL_VarArgs VarArgs
 
 // Get the entity the local player is spectating (can be a player or a ragdoll entity).
 int		GetSpectatorTarget();
 int		GetSpectatorMode( void );
 bool	IsPlayerIndex( int index );
 int		GetLocalPlayerIndex( void );
-int		GetLocalPlayerVisionFilterFlags( bool bWeaponsCheck = false );
-bool	IsLocalPlayerUsingVisionFilterFlags( int nFlags, bool bWeaponsCheck = false );
+int		GetLocalPlayerVisionFilterFlags();
+bool	IsLocalPlayerUsingVisionFilterFlags( int nFlags );
 int		GetLocalPlayerTeam( void );
 bool	IsLocalPlayerSpectator( void );
 void	NormalizeAngles( QAngle& angles );
@@ -88,17 +94,6 @@ void	InterpolateAngles( const QAngle& start, const QAngle& end, QAngle& output, 
 void	InterpolateVector( float frac, const Vector& src, const Vector& dest, Vector& output );
 
 const char *nexttoken(char *token, const char *str, char sep, size_t tokenLen);
-
-//-----------------------------------------------------------------------------
-// Base light indices to avoid index collision
-//-----------------------------------------------------------------------------
-
-enum
-{
-	LIGHT_INDEX_TE_DYNAMIC = 0x10000000,
-	LIGHT_INDEX_PLAYER_BRIGHT = 0x20000000,
-	LIGHT_INDEX_MUZZLEFLASH = 0x40000000,
-};
 
 void UTIL_PrecacheOther( const char *szClassname );
 
@@ -112,6 +107,10 @@ bool GetTargetInHudSpace( C_BaseEntity *pTargetEntity, int& iX, int& iY, Vector 
 // prints messages through the HUD (stub in client .dll right now )
 class C_BasePlayer;
 void ClientPrint( C_BasePlayer *player, int msg_dest, const char *msg_name, const char *param1 = NULL, const char *param2 = NULL, const char *param3 = NULL, const char *param4 = NULL );
+
+C_BasePlayer* UTIL_PlayerByUserId( int userID );
+
+C_BaseEntity* UTIL_EntityFromUserMessageEHandle( long nEncodedEHandle );
 
 // Pass in an array of pointers and an array size, it fills the array and returns the number inserted
 int			UTIL_EntitiesInBox( C_BaseEntity **pList, int listMax, const Vector &mins, const Vector &maxs, int flagMask, int partitionMask = PARTITION_CLIENT_NON_STATIC_EDICTS );
@@ -137,6 +136,8 @@ private:
 };
 
 C_BaseEntity *CreateEntityByName( const char *className );
+// calls the spawn functions for an entity
+int DispatchSpawn( C_BaseEntity *pEntity );
 // creates an entity by name, and ensure it's correctness
 // does not spawn the entity
 // use the CREATE_ENTITY() macro which wraps this, instead of using it directly
@@ -165,6 +166,9 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 // Given a vector, clamps the scalar axes to MAX_COORD_FLOAT ranges from worldsize.h
 void UTIL_BoundToWorldSize( Vector *pVecPos );
 
+void UTIL_ApproachTarget( float target, float increaseSpeed, float decreaseSpeed, float *val );
+void UTIL_ApproachTarget( const Vector &target, float increaseSpeed, float decreaseSpeed, Vector *val );
+
 // Increments the passed key for the current map, eg "viewed" if TF holds the number of times the player has
 // viewed the intro movie for this map
 void UTIL_IncrementMapKey( const char *pszCustomKey );
@@ -172,6 +176,12 @@ void UTIL_IncrementMapKey( const char *pszCustomKey );
 // Gets the value of the passed key for the current map, eg "viewed" for number of times the player has viewed
 // the intro movie for this map
 int UTIL_GetMapKeyCount( const char *pszCustomKey );
+
+wchar_t *UTIL_GetLocalizedKeyString( const char *command, const char *fmt, const wchar_t *arg1 = NULL, const wchar_t *arg2 = NULL, const wchar_t *arg3 = NULL );
+
+class CGameTrace;
+typedef CGameTrace trace_t;
+void		UTIL_ClearTrace			( trace_t &trace );
 
 // Returns true if the user has loaded any maps, false otherwise.
 bool UTIL_HasLoadedAnyMap();

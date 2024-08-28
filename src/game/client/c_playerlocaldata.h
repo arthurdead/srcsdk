@@ -16,6 +16,14 @@
 #include "predictable_entity.h"
 #include "interpolatedvar.h"
 
+#ifdef CLIENT_DLL
+#define CPostProcessController C_PostProcessController
+#define CColorCorrection C_ColorCorrection
+#endif
+
+class CPostProcessController;
+class CColorCorrection;
+
 //-----------------------------------------------------------------------------
 // Purpose: Player specific data ( sent only to local player, too )
 //-----------------------------------------------------------------------------
@@ -74,6 +82,11 @@ public:
 	audioparams_t			m_audio;
 
 	bool					m_bSlowMovement;
+
+	bool					m_bInLanding;
+	float					m_flLandingTime;
+
+	bool					m_bAutoAimTarget;
 
 	//Tony; added so tonemap controller can work in multiplayer with inputs.
 	tonemap_params_t		m_TonemapParams;

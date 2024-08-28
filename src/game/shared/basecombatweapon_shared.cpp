@@ -9,19 +9,11 @@
 #include "engine/IEngineSound.h"
 #include "ammodef.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
-#include "physics_saverestore.h"
 #include "datacache/imdlcache.h"
 #include "activitylist.h"
 
-// NVNT start extra includes
-#include "haptics/haptic_utils.h"
 #ifdef CLIENT_DLL
 	#include "prediction.h"
-#endif
-// NVNT end extra includes
-
-#if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
-#include "tf_shareddefs.h"
 #endif
 
 #if !defined( CLIENT_DLL )
@@ -31,10 +23,6 @@
 #include "eventqueue.h"
 #include "fmtstr.h"
 #include "gameweaponmanager.h"
-
-#ifdef HL2MP
-	#include "hl2mp_gamerules.h"
-#endif
 
 #endif
 
@@ -53,14 +41,12 @@
 
 extern bool UTIL_ItemCanBeTouchedByPlayer( CBaseEntity *pItem, CBasePlayer *pPlayer );
 
-#if defined ( TF_CLIENT_DLL ) || defined ( TF_DLL )
 #ifdef _DEBUG
-ConVar tf_weapon_criticals_force_random( "tf_weapon_criticals_force_random", "0", FCVAR_REPLICATED | FCVAR_CHEAT );
+ConVar weapon_criticals_force_random( "weapon_criticals_force_random", "0", FCVAR_REPLICATED | FCVAR_CHEAT );
 #endif // _DEBUG
-ConVar tf_weapon_criticals_bucket_cap( "tf_weapon_criticals_bucket_cap", "1000.0", FCVAR_REPLICATED | FCVAR_CHEAT );
-ConVar tf_weapon_criticals_bucket_bottom( "tf_weapon_criticals_bucket_bottom", "-250.0", FCVAR_REPLICATED | FCVAR_CHEAT );
-ConVar tf_weapon_criticals_bucket_default( "tf_weapon_criticals_bucket_default", "300.0", FCVAR_REPLICATED | FCVAR_CHEAT );
-#endif // TF
+ConVar weapon_criticals_bucket_cap( "weapon_criticals_bucket_cap", "1000.0", FCVAR_REPLICATED | FCVAR_CHEAT );
+ConVar weapon_criticals_bucket_bottom( "weapon_criticals_bucket_bottom", "-250.0", FCVAR_REPLICATED | FCVAR_CHEAT );
+ConVar weapon_criticals_bucket_default( "weapon_criticals_bucket_default", "300.0", FCVAR_REPLICATED | FCVAR_CHEAT );
 
 CBaseCombatWeapon::CBaseCombatWeapon()
 {
@@ -95,15 +81,11 @@ CBaseCombatWeapon::CBaseCombatWeapon()
 
 	m_hWeaponFileInfo = GetInvalidWeaponInfoHandle();
 
-#if defined( TF_DLL )
 	UseClientSideAnimation();
-#endif
 
-#if defined ( TF_CLIENT_DLL ) || defined ( TF_DLL )
-	m_flCritTokenBucket = tf_weapon_criticals_bucket_default.GetFloat();
+	m_flCritTokenBucket = weapon_criticals_bucket_default.GetFloat();
 	m_nCritChecks = 1;
 	m_nCritSeedRequests = 0;
-#endif // TF
 }
 
 //-----------------------------------------------------------------------------
@@ -200,11 +182,6 @@ void CBaseCombatWeapon::Spawn( void )
 	}
 
 #if !defined( CLIENT_DLL )
-	if( IsX360() )
-	{
-		AddEffects( EF_ITEM_BLINK );
-	}
-
 	FallInit();
 	SetCollisionGroup( COLLISION_GROUP_WEAPON );
 	m_takedamage = DAMAGE_EVENTS_ONLY;
@@ -262,15 +239,6 @@ void CBaseCombatWeapon::Precache( void )
 			{
 				Msg("ERROR: Weapon (%s) using undefined primary ammo type (%s)\n",GetClassname(), GetWpnData().szAmmo1);
 			}
- #if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
-			// Ammo override
-			int iModUseMetalOverride = 0;
-			CALL_ATTRIB_HOOK_INT( iModUseMetalOverride, mod_use_metal_ammo_type );
-			if ( iModUseMetalOverride )
-			{
-				m_iPrimaryAmmoType = (int)TF_AMMO_METAL;
-			}
-#endif
  		}
 		if ( GetWpnData().szAmmo2[0] )
 		{
@@ -360,13 +328,6 @@ const char *CBaseCombatWeapon::GetPrintName( void ) const
 //-----------------------------------------------------------------------------
 int CBaseCombatWeapon::GetMaxClip1( void ) const
 {
-#if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
-	int iModMaxClipOverride = 0;
-	CALL_ATTRIB_HOOK_INT( iModMaxClipOverride, mod_max_primary_clip_override );
-	if ( iModMaxClipOverride != 0 )
-		return iModMaxClipOverride;
-#endif
-
 	return GetWpnData().iMaxClip1;
 }
 
@@ -1048,16 +1009,13 @@ void CBaseCombatWeapon::SetActivity( Activity act, float duration )
 		if ( duration > 0 )
 		{
 			// FIXME: does this even make sense in non-shoot animations?
-			m_flPlaybackRate = SequenceDuration( sequence ) / duration;
-		#ifdef CLIENT_DLL
-			m_flPlaybackRate = MIN( m_flPlaybackRate, 12.f );  // FIXME; magic number!, network encoding range
-		#else
-			m_flPlaybackRate = MIN( m_flPlaybackRate.Get(), 12.f );  // FIXME; magic number!, network encoding range
-		#endif
+			float playbackrate = SequenceDuration( sequence ) / duration;
+			playbackrate = MIN( playbackrate, 12.f );  // FIXME; magic number!, network encoding range
+			SetPlaybackRate(playbackrate);
 		}
 		else
 		{
-			m_flPlaybackRate = 1.0;
+			SetPlaybackRate(1.0);
 		}
 	}
 }
@@ -1201,15 +1159,7 @@ bool CBaseCombatWeapon::SendWeaponAnim( int iActivity )
 #ifdef USES_ECON_ITEMS
 	iActivity = TranslateViewmodelHandActivity( (Activity)iActivity );
 #endif		
-	// NVNT notify the haptics system of this weapons new activity
-#ifdef WIN32
-#ifdef CLIENT_DLL
-	if ( prediction->InPrediction() && prediction->IsFirstTimePredicted() )
-#endif
-#ifndef _X360
-		HapticSendWeaponAnim(this,iActivity);
-#endif
-#endif
+
 	//For now, just set the ideal activity and be done with it
 	return SetIdealActivity( (Activity) iActivity );
 }
@@ -1578,13 +1528,12 @@ bool CBaseCombatWeapon::CanReload( void )
 	return true;
 }
 
-#if defined ( TF_CLIENT_DLL ) || defined ( TF_DLL )
 //-----------------------------------------------------------------------------
 // Purpose: Anti-hack
 //-----------------------------------------------------------------------------
 void CBaseCombatWeapon::AddToCritBucket( float flAmount )
 {
-	float flCap = tf_weapon_criticals_bucket_cap.GetFloat();
+	float flCap = weapon_criticals_bucket_cap.GetFloat();
 
 	// Regulate crit frequency to reduce client-side seed hacking
 	if ( m_flCritTokenBucket < flCap )
@@ -1613,20 +1562,19 @@ bool CBaseCombatWeapon::IsAllowedToWithdrawFromCritBucket( float flDamage )
 	float flMult = ( IsMeleeWeapon() ) ? 0.5f : RemapValClamped( ( (float)m_nCritSeedRequests / (float)m_nCritChecks ), 0.1f, 1.f, 1.f, 3.f );
 
 	// Would this take us below our limit?
-	float flCost = ( flDamage * TF_DAMAGE_CRIT_MULTIPLIER ) * flMult;
+	float flCost = ( flDamage * DAMAGE_CRIT_MULTIPLIER ) * flMult;
 	if ( flCost > m_flCritTokenBucket )
 		return false;
 
 	// Withdraw
 	RemoveFromCritBucket( flCost );
 
-	float flBottom = tf_weapon_criticals_bucket_bottom.GetFloat();
+	float flBottom = weapon_criticals_bucket_bottom.GetFloat();
 	if ( m_flCritTokenBucket < flBottom )
 		m_flCritTokenBucket = flBottom;
 
 	return true;
 }
-#endif // TF_DLL
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1634,40 +1582,6 @@ bool CBaseCombatWeapon::IsAllowedToWithdrawFromCritBucket( float flDamage )
 void CBaseCombatWeapon::ItemPreFrame( void )
 {
 	MaintainIdealActivity();
-
-#ifndef CLIENT_DLL
-#ifndef HL2_EPISODIC
-	if ( IsX360() )
-#endif
-	{
-		// If we haven't displayed the hint enough times yet, it's time to try to 
-		// display the hint, and the player is not standing still, try to show a hud hint.
-		// If the player IS standing still, assume they could change away from this weapon at
-		// any second.
-		if( (!m_bAltFireHudHintDisplayed || !m_bReloadHudHintDisplayed) && gpGlobals->curtime > m_flHudHintMinDisplayTime && gpGlobals->curtime > m_flHudHintPollTime && GetOwner() && GetOwner()->IsPlayer() )
-		{
-			CBasePlayer *pPlayer = (CBasePlayer*)(GetOwner());
-
-			if( pPlayer && pPlayer->GetStickDist() > 0.0f )
-			{
-				// If the player is moving, they're unlikely to switch away from the current weapon
-				// the moment this weapon displays its HUD hint.
-				if( ShouldDisplayReloadHUDHint() )
-				{
-					DisplayReloadHudHint();
-				}
-				else if( ShouldDisplayAltFireHUDHint() )
-				{
-					DisplayAltFireHudHint();
-				}
-			}
-			else
-			{
-				m_flHudHintPollTime = gpGlobals->curtime + 2.0f;
-			}
-		}
-	}
-#endif
 }
 
 bool CBaseCombatWeapon::CanPerformSecondaryAttack() const
@@ -1718,16 +1632,7 @@ void CBaseCombatWeapon::ItemPostFrame( void )
 		}
 		else
 		{
-			// FIXME: This isn't necessarily true if the weapon doesn't have a secondary fire!
-			// For instance, the crossbow doesn't have a 'real' secondary fire, but it still 
-			// stops the crossbow from firing on the 360 if the player chooses to hold down their
-			// zoom button. (sjb) Orange Box 7/25/2007
-#if !defined(CLIENT_DLL)
-			if( !IsX360() || !ClassMatches("weapon_crossbow") )
-#endif
-			{
-				bFired = ShouldBlockPrimaryFire();
-			}
+			bFired = ShouldBlockPrimaryFire();
 
 			SecondaryAttack();
 
@@ -2030,12 +1935,6 @@ bool CBaseCombatWeapon::DefaultReload( int iClipSize1, int iClipSize2, int iActi
 #endif
 	SendWeaponAnim( iActivity );
 
-	// Play the player's reload animation
-	if ( pOwner->IsPlayer() )
-	{
-		( ( CBasePlayer * )pOwner)->SetAnimation( PLAYER_RELOAD );
-	}
-
 	MDLCACHE_CRITICAL_SECTION();
 	float flSequenceEndTime = gpGlobals->curtime + SequenceDuration();
 	pOwner->SetNextAttack( flSequenceEndTime );
@@ -2048,22 +1947,6 @@ bool CBaseCombatWeapon::DefaultReload( int iClipSize1, int iClipSize2, int iActi
 
 bool CBaseCombatWeapon::ReloadsSingly( void ) const
 {
-#if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
-	float fHasReload = 1.0f;
-	CALL_ATTRIB_HOOK_FLOAT( fHasReload, mod_no_reload_display_only );
-	if ( fHasReload != 1.0f )
-	{
-		return false;
-	}
-
-	int iWeaponMod = 0;
-	CALL_ATTRIB_HOOK_INT( iWeaponMod, set_scattergun_no_reload_single );
-	if ( iWeaponMod == 1 )
-	{
-		return false;
-	}
-#endif // TF_DLL || TF_CLIENT_DLL
-
 	return m_bReloadsSingly;
 }
 
@@ -2290,9 +2173,6 @@ void CBaseCombatWeapon::PrimaryAttack( void )
 
 	SendWeaponAnim( GetPrimaryAttackActivity() );
 
-	// player "shoot" animation
-	pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 	FireBulletsInfo_t info;
 	info.m_vecSrc	 = pPlayer->Weapon_ShootPosition( );
 	
@@ -2334,7 +2214,7 @@ void CBaseCombatWeapon::PrimaryAttack( void )
 	info.m_vecSpread = pPlayer->GetAttackSpread( this );
 #else
 	//!!!HACKHACK - what does the client want this function for? 
-	info.m_vecSpread = GetActiveWeapon()->GetBulletSpread();
+	info.m_vecSpread = GetBulletSpread();
 #endif // CLIENT_DLL
 
 	pPlayer->FireBullets( info );
@@ -2453,8 +2333,8 @@ bool CBaseCombatWeapon::IsLocked( CBaseEntity *pAsker )
 //-----------------------------------------------------------------------------
 Activity CBaseCombatWeapon::ActivityOverride( Activity baseAct, bool *pRequired )
 {
-	int actCount = 0;
-	acttable_t *pTable = ActivityList( actCount );
+	int actCount = ActivityListCount();
+	acttable_t *pTable = ActivityList();
 
 	for ( int i = 0; i < actCount; i++ )
 	{
@@ -2485,8 +2365,8 @@ void CBaseCombatWeapon::PoseParameterOverride( bool bReset )
 	if ( !pStudioHdr )
 		return;
 	
-	int iCount = 0;
-	poseparamtable_t *pPoseParamList = PoseParamList( iCount );
+	int iCount = PoseParamListCount();
+	poseparamtable_t *pPoseParamList = PoseParamList();
 	if ( pPoseParamList )
 	{
 		for ( int i=0; i<iCount; ++i )
@@ -2809,9 +2689,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CBaseCombatWeapon, DT_LocalActiveWeaponData )
 	SendPropInt( SENDINFO( m_nNextThinkTick ) ),
 	SendPropTime( SENDINFO( m_flTimeWeaponIdle ) ),
 
-#if defined( TF_DLL )
 	SendPropExclude( "DT_AnimTimeMustBeFirst" , "m_flAnimTime" ),
-#endif
 
 #else
 	RecvPropTime( RECVINFO( m_flNextPrimaryAttack ) ),
@@ -2835,9 +2713,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CBaseCombatWeapon, DT_LocalWeaponData )
 
 	SendPropInt( SENDINFO( m_bFlipViewModel ) ),
 
-#if defined( TF_DLL )
 	SendPropExclude( "DT_AnimTimeMustBeFirst" , "m_flAnimTime" ),
-#endif
 
 #else
 	RecvPropIntWithMinusOneFlag( RECVINFO(m_iClip1 )),

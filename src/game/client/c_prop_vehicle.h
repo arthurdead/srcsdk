@@ -71,7 +71,7 @@ public:
 	virtual ShadowType_t ShadowCastType();
 
 	// Mark the shadow as dirty while the vehicle is being driven
-	virtual void ClientThink( void );
+	virtual void ShadowThink( void );
 
 // C_PropVehicleDriveable
 public:

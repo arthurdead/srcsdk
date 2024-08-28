@@ -25,18 +25,35 @@ public:
 
 	C_ParticleSystem();
 
-	void PreDataUpdate( DataUpdateType_t updateType );
-	void PostDataUpdate( DataUpdateType_t updateType );
-	void ClientThink( void );
+	virtual void PreDataUpdate( DataUpdateType_t updateType );
+	virtual void PostDataUpdate( DataUpdateType_t updateType );
+	virtual void ParticleThink( void );
 
 protected:
+	~C_ParticleSystem( void );
+
 	int			m_iEffectIndex;
+	int			m_nStopType;
 	bool		m_bActive;
 	bool		m_bOldActive;
 	float		m_flStartTime;	// Time at which the effect started
 
+	//server controlled control points (variables in particle effects instead of literal follow points)
+	Vector		m_vServerControlPoints[4];
+	uint8		m_iServerControlPointAssignments[4];
+
+	CUtlReference< CNewParticleEffect > m_pEffect;
+
 	enum { kMAXCONTROLPOINTS = 63 }; ///< actually one less than the total number of cpoints since 0 is assumed to be me
 
+	// stop types
+	enum 
+	{
+		STOP_NORMAL = 0,
+		STOP_DESTROY_IMMEDIATELY,
+		STOP_PLAY_ENDCAP,
+		NUM_STOP_TYPES
+	};
 	
 	EHANDLE		m_hControlPointEnts[kMAXCONTROLPOINTS];
 	//	SendPropArray3( SENDINFO_ARRAY3(m_iControlPointParents), SendPropInt( SENDINFO_ARRAY(m_iControlPointParents), 3, SPROP_UNSIGNED ) ),
@@ -56,7 +73,10 @@ BEGIN_RECV_TABLE_NOBASE( C_ParticleSystem, DT_ParticleSystem )
 
 	RecvPropInt( RECVINFO( m_iEffectIndex ) ),
 	RecvPropBool( RECVINFO( m_bActive ) ),
+	RecvPropInt( RECVINFO( m_nStopType ) ),
 	RecvPropFloat( RECVINFO( m_flStartTime ) ),
+	RecvPropArray3( RECVINFO_ARRAY(m_vServerControlPoints), RecvPropVector( RECVINFO( m_vServerControlPoints[0] ) ) ),
+	RecvPropArray3( RECVINFO_ARRAY(m_iServerControlPointAssignments), RecvPropInt( RECVINFO(m_iServerControlPointAssignments[0]))), 
 
 	RecvPropArray3( RECVINFO_ARRAY(m_hControlPointEnts), RecvPropEHandle( RECVINFO( m_hControlPointEnts[0] ) ) ),
 	RecvPropArray3( RECVINFO_ARRAY(m_iControlPointParents), RecvPropInt( RECVINFO(m_iControlPointParents[0]))), 
@@ -69,6 +89,11 @@ END_RECV_TABLE();
 C_ParticleSystem::C_ParticleSystem()
 {
 	m_bWeatherEffect = false;
+}
+
+C_ParticleSystem::~C_ParticleSystem()
+{
+
 }
 
 //-----------------------------------------------------------------------------
@@ -95,7 +120,7 @@ void C_ParticleSystem::PostDataUpdate( DataUpdateType_t updateType )
 		if ( m_bActive )
 		{
 			// Delayed here so that we don't get invalid abs queries on level init with active particle systems
-			SetNextClientThink( gpGlobals->curtime );
+			SetContextThink( &C_ParticleSystem::ParticleThink, gpGlobals->curtime, "ParticleThink" );
 		}
 	}
 	else
@@ -105,12 +130,45 @@ void C_ParticleSystem::PostDataUpdate( DataUpdateType_t updateType )
 			if ( m_bActive )
 			{
 				// Delayed here so that we don't get invalid abs queries on level init with active particle systems
-				SetNextClientThink( gpGlobals->curtime );
+				SetContextThink( &C_ParticleSystem::ParticleThink, gpGlobals->curtime, "ParticleThink" );
 			}
 			else
 			{
+				switch( m_nStopType )
+				{
+				case STOP_NORMAL:
+					{
 						ParticleProp()->StopEmission();
 					}
+					break;
+				case STOP_DESTROY_IMMEDIATELY:
+					{
+						ParticleProp()->StopEmissionAndDestroyImmediately();
+					}
+					break;
+				case STOP_PLAY_ENDCAP:
+					{
+						ParticleProp()->StopEmission( NULL, false, false );
+					}
+					break;
+				}
+			}
+		}
+
+		if( m_bActive && ParticleProp()->IsValidEffect( m_pEffect ) )
+		{
+			//server controlled control points (variables in particle effects instead of literal follow points)
+			for( int i = 0; i != ARRAYSIZE( m_iServerControlPointAssignments ); ++i )
+			{
+				if( m_iServerControlPointAssignments[i] != 255 )
+				{
+					m_pEffect->SetControlPoint( m_iServerControlPointAssignments[i], m_vServerControlPoints[i] );
+				}
+				else
+				{
+					break;
+				}
+			}
 		}
 	}
 }
@@ -118,7 +176,7 @@ void C_ParticleSystem::PostDataUpdate( DataUpdateType_t updateType )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_ParticleSystem::ClientThink( void )
+void C_ParticleSystem::ParticleThink( void )
 {
 	if ( m_bActive )
 	{
@@ -133,6 +191,7 @@ void C_ParticleSystem::ClientThink( void )
 
 			CNewParticleEffect *pEffect = ParticleProp()->Create( pszName, PATTACH_ABSORIGIN_FOLLOW );
 			AssertMsg1( pEffect, "Particle system couldn't make %s", pszName );
+			m_pEffect = pEffect;
 			if (pEffect)
 			{
 				for ( int i = 0 ; i < kMAXCONTROLPOINTS ; ++i )
@@ -150,6 +209,19 @@ void C_ParticleSystem::ClientThink( void )
 					if (m_iControlPointParents[i] != 0)
 					{
 						pEffect->SetControlPointParent(i+1, m_iControlPointParents[i]);
+					}
+				}
+
+				//server controlled control points (variables in particle effects instead of literal follow points)
+				for( int i = 0; i != ARRAYSIZE( m_iServerControlPointAssignments ); ++i )
+				{
+					if( m_iServerControlPointAssignments[i] != 255 )
+					{
+						pEffect->SetControlPoint( m_iServerControlPointAssignments[i], m_vServerControlPoints[i] );
+					}
+					else
+					{
+						break;
 					}
 				}
 
@@ -183,6 +255,10 @@ void ParticleEffectCallback( const CEffectData &data )
 	if ( SuppressingParticleEffects() )
 		return; // this needs to be before using data.m_nHitBox, since that may be a serialized value that's past the end of the current particle system string table
 
+	// Don't crash if we're passed an invalid particle system
+	if ( data.m_nHitBox == 0 )
+		return;
+
 	const char *pszName = GetParticleSystemNameFromIndex( data.m_nHitBox );
 
 	CSmartPtr<CNewParticleEffect> pEffect = NULL;
@@ -210,14 +286,37 @@ void ParticleEffectCallback( const CEffectData &data )
 					C_BaseEntity::Instance( data.m_hEntity )->GetDebugName(), pszName );
 				if ( pEffect.IsValid() && pEffect->IsValid() )
 				{
-					if ( iAttachType == PATTACH_CUSTOMORIGIN )
+					if ( iAttachType == PATTACH_CUSTOMORIGIN || iAttachType == PATTACH_CUSTOMORIGIN_FOLLOW )
 					{
 						pEffect->SetSortOrigin( data.m_vOrigin );
-						pEffect->SetControlPoint( 0, data.m_vOrigin );
-						pEffect->SetControlPoint( 1, data.m_vStart );
-						Vector vecForward, vecRight, vecUp;
-						AngleVectors( data.m_vAngles, &vecForward, &vecRight, &vecUp );
-						pEffect->SetControlPointOrientation( 0, vecForward, vecRight, vecUp );
+
+						if(iAttachType == PATTACH_CUSTOMORIGIN_FOLLOW)
+						{
+							Vector vecCtrl1 = (data.m_vStart - pEnt->GetAbsOrigin() );
+							pEffect->SetControlPoint( 1, vecCtrl1 );
+							pEffect->SetControlPointEntity( 1, pEnt );
+							Vector vecCtrl0 = (data.m_vOrigin - pEnt->GetAbsOrigin() );
+							matrix3x4_t mat;
+							AngleMatrix( data.m_vAngles, mat );
+							pEnt->ParticleProp()->AddControlPoint( pEffect.GetObject(), 0, pEnt, PATTACH_CUSTOMORIGIN_FOLLOW, NULL, vecCtrl0, &mat );
+						}
+						else
+						{
+							pEffect->SetControlPoint( 0, data.m_vOrigin );
+							pEffect->SetControlPoint( 1, data.m_vStart );
+							Vector vecForward, vecRight, vecUp;
+							AngleVectors( data.m_vAngles, &vecForward, &vecRight, &vecUp );
+							pEffect->SetControlPointOrientation( 0, vecForward, vecRight, vecUp );
+						}
+					}
+					else if ( data.m_nOtherEntIndex > 0 )
+					{
+						C_BaseEntity *pOtherEnt = ClientEntityList().GetEnt( data.m_nOtherEntIndex );
+					
+						if ( pOtherEnt )
+						{
+							pEnt->ParticleProp()->AddControlPoint( pEffect.GetObject(), 1, pOtherEnt, PATTACH_ABSORIGIN_FOLLOW, NULL, Vector( 0, 0, 50 ) );
+						}
 					}
 				}
 			}
@@ -257,7 +356,7 @@ void ParticleEffectCallback( const CEffectData &data )
 	}
 }
 
-DECLARE_CLIENT_EFFECT( "ParticleEffect", ParticleEffectCallback );
+DECLARE_CLIENT_EFFECT( ParticleEffect, ParticleEffectCallback );
 
 
 //======================================================================================================================
@@ -273,9 +372,9 @@ void ParticleEffectStopCallback( const CEffectData &data )
 		C_BaseEntity *pEnt = C_BaseEntity::Instance( data.m_hEntity );
 		if ( pEnt )
 		{
-				pEnt->ParticleProp()->StopEmission();
-			}
+			pEnt->ParticleProp()->StopEmission();
 		}
 	}
+}
 
-DECLARE_CLIENT_EFFECT( "ParticleEffectStop", ParticleEffectStopCallback );
+DECLARE_CLIENT_EFFECT( ParticleEffectStop, ParticleEffectStopCallback );

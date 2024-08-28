@@ -1,9 +1,7 @@
 #ifndef IV_SHADEREDITOR
 #define IV_SHADEREDITOR
 
-#ifdef _WIN32
-#pragma once
-#endif // _WIN32
+#pragma once // _WIN32
 
 #define pFnClCallback( x ) void(* x )( float *pfl4 )
 #define pFnClCallback_Declare( x ) void x( float *pfl4 )

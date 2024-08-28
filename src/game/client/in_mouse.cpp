@@ -6,7 +6,7 @@
 // $Date:         $
 // $NoKeywords: $
 //===========================================================================//
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 #define _WIN32_WINNT 0x0502
 #include <windows.h>
 #endif
@@ -28,10 +28,6 @@
 #include "tier1/convar_serverbounded.h"
 #include "cam_thirdperson.h"
 #include "inputsystem/iinputsystem.h"
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -110,7 +106,7 @@ ConVar cl_mouselook( "cl_mouselook", "1", FCVAR_ARCHIVE, "Set to 1 to use mouse 
 ConVar cl_mouselook( "cl_mouselook", "1", FCVAR_ARCHIVE | FCVAR_NOT_CONNECTED, "Set to 1 to use mouse for look, 0 for keyboard look. Cannot be set while connected to a server." );
 #endif
 
-ConVar cl_mouseenable( "cl_mouseenable", "1" );
+ConVar cl_mouseenable( "cl_mouseenable", "1", FCVAR_RELEASE );
 
 // From other modules...
 void GetVGUICursorPos( int& x, int& y );
@@ -286,7 +282,7 @@ void CInput::Init_Mouse (void)
 			}
 			else
 			{
-				m_rgCheckMouseParam[ MOUSE_SPEED_FACTOR ] = 1;
+				m_rgCheckMouseParam[ MOUSE_SPEED_FACTOR ] = true;
 			}
 
 			if ( CommandLine()->FindParm ("-noforcemaccel" ) ) 
@@ -398,8 +394,8 @@ void CInput::ScaleMouse( float *x, float *y )
 	float mx = *x;
 	float my = *y;
 
-	float mouse_sensitivity = ( gHUD.GetSensitivity() != 0 ) 
-		?  gHUD.GetSensitivity() : sensitivity.GetFloat();
+	float mouse_sensitivity = ( GetHud().GetSensitivity() != 0 ) 
+		?  GetHud().GetSensitivity() : sensitivity.GetFloat();
 
 	if ( m_customaccel.GetInt() == 1 ||  m_customaccel.GetInt() == 2 ) 
 	{ 
@@ -556,6 +552,8 @@ void CInput::ApplyMouse( QAngle& viewangles, CUserCmd *cmd, float mouse_x, float
 	cmd->mousedy = (int)mouse_y;
 }
 
+extern bool UsingMouselook();
+
 //-----------------------------------------------------------------------------
 // Purpose: AccumulateMouse
 //-----------------------------------------------------------------------------
@@ -657,7 +655,7 @@ void CInput::MouseMove( CUserCmd *cmd )
 	CheckMouseAcclerationVars();
 
 	// Don't drift pitch at all while mouselooking.
-	view->StopPitchDrift ();
+	GetViewRenderInstance()->StopPitchDrift ();
 
 	//jjb - this disables normal mouse control if the user is trying to 
 	//      move the camera, or if the mouse cursor is visible 
@@ -677,7 +675,7 @@ void CInput::MouseMove( CUserCmd *cmd )
 		ScaleMouse( &mouse_x, &mouse_y );
 
 		// Let the client mode at the mouse input before it's used
-		g_pClientMode->OverrideMouseInput( &mouse_x, &mouse_y );
+		GetClientMode()->OverrideMouseInput( &mouse_x, &mouse_y );
 
 		// Add mouse X/Y movement to cmd
 		ApplyMouse( viewangles, cmd, mouse_x, mouse_y );

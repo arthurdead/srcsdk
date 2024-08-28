@@ -7,6 +7,9 @@
 #include "cbase.h"
 #include "fx_interpvalue.h"
 
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 CInterpolatedValue::CInterpolatedValue( void ) :  m_flStartTime( 0.0f ), m_flEndTime( 0.0f ), m_flStartValue( 0.0f ), m_flEndValue( 0.0f ), m_nInterpType( INTERP_LINEAR ) 
 {
 }

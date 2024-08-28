@@ -22,110 +22,89 @@
 
 //-------------------------------------------------- Global Variables
 
-static ConVar cam_command( "cam_command", "0", FCVAR_CHEAT | FCVAR_CHEAT);	 // tells camera to go to thirdperson
-static ConVar cam_snapto( "cam_snapto", "0", FCVAR_ARCHIVE | FCVAR_CHEAT);	 // snap to thirdperson view
-static ConVar cam_ideallag( "cam_ideallag", "4.0", FCVAR_ARCHIVE| FCVAR_CHEAT, "Amount of lag used when matching offset to ideal angles in thirdperson view" );
-static ConVar cam_idealdelta( "cam_idealdelta", "4.0", FCVAR_ARCHIVE| FCVAR_CHEAT, "Controls the speed when matching offset to ideal angles in thirdperson view" );
-ConVar cam_idealyaw( "cam_idealyaw", "0", FCVAR_ARCHIVE| FCVAR_CHEAT );	 // thirdperson yaw
-ConVar cam_idealpitch( "cam_idealpitch", "0", FCVAR_ARCHIVE | FCVAR_CHEAT  );	 // thirperson pitch
-ConVar cam_idealdist( "cam_idealdist", "150", FCVAR_ARCHIVE | FCVAR_CHEAT );	 // thirdperson distance
-ConVar cam_idealdistright( "cam_idealdistright", "0", FCVAR_ARCHIVE | FCVAR_CHEAT );	 // thirdperson distance
-ConVar cam_idealdistup( "cam_idealdistup", "0", FCVAR_ARCHIVE | FCVAR_CHEAT );	 // thirdperson distance
-static ConVar cam_collision( "cam_collision", "1", FCVAR_ARCHIVE | FCVAR_CHEAT, "When in thirdperson and cam_collision is set to 1, an attempt is made to keep the camera from passing though walls." );
+void CamModeChange( IConVar *pConVar, const char *pOldValue, float flOldValue )
+{
+	ConVarRef var( pConVar );
+
+	int mode = var.GetInt();
+	if(mode == input->CAM_Get()) {
+		return;
+	}
+
+	C_BasePlayer *localPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( mode == CAM_FIRSTPERSON && localPlayer && !localPlayer->CanUseFirstPersonCommand() )
+	{
+		int oldmode = V_atoi(pOldValue);
+		if(oldmode != CAM_FIRSTPERSON) {
+			pConVar->SetValue( pOldValue );
+		}
+		return;
+	}
+
+	input->CAM_Set( mode );
+}
+
+static ConVar cam_mode( "cam_mode", "0", FCVAR_NOT_CONNECTED | FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_CHEAT, "", CamModeChange );	 // tells camera to go to thirdperson
+static ConVar cam_snapto( "cam_snapto", "0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT);	 // snap to thirdperson view
+static ConVar cam_ideallag( "cam_ideallag", "4.0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE| FCVAR_CHEAT, "Amount of lag used when matching offset to ideal angles in thirdperson view" );
+static ConVar cam_idealdelta( "cam_idealdelta", "4.0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE| FCVAR_CHEAT, "Controls the speed when matching offset to ideal angles in thirdperson view" );
+ConVar cam_idealyaw( "cam_idealyaw", "0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE| FCVAR_CHEAT );	 // thirdperson yaw
+ConVar cam_idealpitch( "cam_idealpitch", "0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT  );	 // thirperson pitch
+ConVar cam_idealdist( "cam_idealdist", "150", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT );	 // thirdperson distance
+ConVar cam_idealdistright( "cam_idealdistright", "0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT );	 // thirdperson distance
+ConVar cam_idealdistup( "cam_idealdistup", "0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT );	 // thirdperson distance
+static ConVar cam_collision( "cam_collision", "1", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT, "When in thirdperson and cam_collision is set to 1, an attempt is made to keep the camera from passing though walls." );
 static ConVar cam_showangles( "cam_showangles", "0", FCVAR_CHEAT, "When in thirdperson, print viewangles/idealangles/cameraoffsets to the console." );
-static ConVar c_maxpitch( "c_maxpitch", "90", FCVAR_ARCHIVE| FCVAR_CHEAT );
-static ConVar c_minpitch( "c_minpitch", "0", FCVAR_ARCHIVE| FCVAR_CHEAT );
-static ConVar c_maxyaw( "c_maxyaw",   "135", FCVAR_ARCHIVE | FCVAR_CHEAT);
-static ConVar c_minyaw( "c_minyaw",   "-135", FCVAR_ARCHIVE| FCVAR_CHEAT );
-static ConVar c_maxdistance( "c_maxdistance",   "200", FCVAR_ARCHIVE| FCVAR_CHEAT );
-static ConVar c_mindistance( "c_mindistance",   "30", FCVAR_ARCHIVE| FCVAR_CHEAT );
-static ConVar c_orthowidth( "c_orthowidth",   "100", FCVAR_ARCHIVE| FCVAR_CHEAT );
-static ConVar c_orthoheight( "c_orthoheight",   "100", FCVAR_ARCHIVE | FCVAR_CHEAT );
+static ConVar c_maxpitch( "c_maxpitch", "90", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE| FCVAR_CHEAT );
+static ConVar c_minpitch( "c_minpitch", "0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE| FCVAR_CHEAT );
+static ConVar c_maxyaw( "c_maxyaw",   "135", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT);
+static ConVar c_minyaw( "c_minyaw",   "-135", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE| FCVAR_CHEAT );
+static ConVar c_maxdistance( "c_maxdistance",   "200", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE| FCVAR_CHEAT );
+static ConVar c_mindistance( "c_mindistance",   "30", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE| FCVAR_CHEAT );
+static ConVar c_orthowidth( "c_orthowidth",   "100", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE| FCVAR_CHEAT );
+static ConVar c_orthoheight( "c_orthoheight",   "100", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT );
+static ConVar c_thirdpersonshoulderoffset( "c_thirdpersonshoulderoffset", "20.0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT ); // camera right offset for thirdperson-shoulder
+static ConVar c_thirdpersonshoulderdist( "c_thirdpersonshoulderdist", "40.0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT ); // camera distance from the player when in thirdperson-shoulder
+static ConVar c_thirdpersonshoulderheight( "c_thirdpersonshoulderheight", "5.0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT ); // camera height above the player
+static ConVar c_thirdpersonshoulderaimdist( "c_thirdpersonshoulderaimdist", "120.0", FCVAR_NOT_CONNECTED | FCVAR_ARCHIVE | FCVAR_CHEAT ); // the distance in front of the player to focus the camera
 
 static kbutton_t cam_pitchup, cam_pitchdown, cam_yawleft, cam_yawright;
 static kbutton_t cam_in, cam_out; // -- "cam_move" is unused
 
-extern ConVar cl_thirdperson;
-
-
-// API Wrappers
-
-/*
-==============================
-CAM_ToThirdPerson
-
-==============================
-*/
-void CAM_ToThirdPerson(void)
+void CInput::CAM_Set( int mode )
 {
-	if ( cl_thirdperson.GetBool() == false )
-	{
-		g_ThirdPersonManager.SetDesiredCameraOffset( Vector( cam_idealdist.GetFloat(), cam_idealdistright.GetFloat(), cam_idealdistup.GetFloat() ) );
-		g_ThirdPersonManager.SetOverridingThirdPerson( true );
-	}
-
-	input->CAM_ToThirdPerson();
-
-	// Let the local player know
-	C_BasePlayer *localPlayer = C_BasePlayer::GetLocalPlayer();
-	if ( localPlayer )
-	{
-		localPlayer->ThirdPersonSwitch( true );
-	}
-}
-
-/*
-==============================
-CAM_ToThirdPerson_MayaMode
-
-==============================
-*/
-static bool & Is_CAM_ThirdPerson_MayaMode(void)
-{
-	static bool s_b_CAM_ThirdPerson_MayaMode = false;
-	return s_b_CAM_ThirdPerson_MayaMode;
-}
-void CAM_ToThirdPerson_MayaMode(void)
-{
-	bool &rb = Is_CAM_ThirdPerson_MayaMode();
-	rb = !rb;
-}
-
-/*
-==============================
-CAM_ToFirstPerson
-
-==============================
-*/
-void CAM_ToFirstPerson(void) 
-{ 
-	C_BasePlayer *localPlayer = C_BasePlayer::GetLocalPlayer();
-	if ( localPlayer && !localPlayer->CanUseFirstPersonCommand() )
+	if(m_nCamMode == mode) {
 		return;
-
-	if ( cl_thirdperson.GetBool() == false )
-	{
-		g_ThirdPersonManager.SetOverridingThirdPerson( false );
 	}
 
-	input->CAM_ToFirstPerson();
+	bool thirdperson = (mode != CAM_FIRSTPERSON);
 
-	// Let the local player know
-	if ( localPlayer )
-	{
-		localPlayer->ThirdPersonSwitch( false );
+	switch (mode) {
+	case CAM_THIRDPERSONSHOULDER:
+		g_ThirdPersonManager.SetDesiredCameraOffset( Vector( c_thirdpersonshoulderdist.GetFloat(), c_thirdpersonshoulderoffset.GetFloat(), c_thirdpersonshoulderheight.GetFloat() ) );
+		break;
+	default:
+	case CAM_THIRDPERSON:
+		g_ThirdPersonManager.SetDesiredCameraOffset( Vector( cam_idealdist.GetFloat(), cam_idealdistright.GetFloat(), cam_idealdistup.GetFloat() ) );
+		break;
 	}
-}
 
-/*
-==============================
-CAM_ToOrthographic
+	QAngle viewangles;
+	engine->GetViewAngles( viewangles );
 
-==============================
-*/
-void CAM_ToOrthographic(void) 
-{ 
-	input->CAM_ToOrthographic();
+	g_ThirdPersonManager.SetCameraOffsetAngles( Vector( viewangles[ YAW ], viewangles[ PITCH ], CAM_MIN_DIST ) );
+
+	if(m_fCameraInThirdPerson != thirdperson) {
+		// Let the local player know
+		C_BasePlayer *localPlayer = C_BasePlayer::GetLocalPlayer();
+		if ( localPlayer )
+		{
+			localPlayer->ThirdPersonSwitch( thirdperson );
+		}
+	}
+
+	m_nCamMode = mode;
+	m_fCameraInThirdPerson = thirdperson;
 }
 
 /*
@@ -247,21 +226,6 @@ void CInput::CAM_Think( void )
 	Vector camOffset;
 	float flSensitivity;
 	QAngle viewangles;
-	
-	switch( cam_command.GetInt() )
-	{
-	case CAM_COMMAND_TOTHIRDPERSON:
-		CAM_ToThirdPerson();
-		break;
-		
-	case CAM_COMMAND_TOFIRSTPERSON:
-		CAM_ToFirstPerson();
-		break;
-		
-	case CAM_COMMAND_NONE:
-	default:
-		break;
-	}
 
 	g_ThirdPersonManager.Update();
 
@@ -269,7 +233,7 @@ void CInput::CAM_Think( void )
 		return;
 
 	// In Maya-mode
-	if ( Is_CAM_ThirdPerson_MayaMode() )
+	if ( m_nCamMode == CAM_MAYAMODE )
 	{
 		// Unless explicitly moving the camera, don't move it
 		m_fCameraInterceptingMouse = m_fCameraMovingWithMouse =
@@ -286,7 +250,6 @@ void CInput::CAM_Think( void )
 		memset( &cam_out, 0, sizeof( cam_out ) );
 
 		// Unless left or right mouse button is down, don't do anything
-#ifndef _XBOX
 		if ( /* Left+Middle Button Down */ vgui::input()->IsMouseDown( MOUSE_LEFT ) && vgui::input()->IsMouseDown( MOUSE_MIDDLE ) )
 		{
 			// Do only zoom in/out camera adjustment
@@ -308,7 +271,6 @@ void CInput::CAM_Think( void )
 			ResetMouse();
 			return;
 		}
-#endif
 	}
 	
 	idealAngles[ PITCH ] = cam_idealpitch.GetFloat();
@@ -321,13 +283,8 @@ void CInput::CAM_Think( void )
 	if ( m_fCameraMovingWithMouse )
 	{
 		int cpx, cpy;
-#ifndef _XBOX		
 		//get windows cursor position
 		GetMousePos (cpx, cpy);
-#else
-		//xboxfixme
-		cpx = cpy = 0;
-#endif
 		
 		m_nCameraX = cpx;
 		m_nCameraY = cpy;
@@ -398,7 +355,7 @@ void CInput::CAM_Think( void )
 			//set old mouse coordinates to current mouse coordinates
 			//since we are done with the mouse
 			
-			if ( ( flSensitivity = gHUD.GetSensitivity() ) != 0 )
+			if ( ( flSensitivity = GetHud().GetSensitivity() ) != 0 )
 			{
 				m_nCameraOldX=m_nCameraX*flSensitivity;
 				m_nCameraOldY=m_nCameraY*flSensitivity;
@@ -408,9 +365,7 @@ void CInput::CAM_Think( void )
 				m_nCameraOldX=m_nCameraX;
 				m_nCameraOldY=m_nCameraY;
 			}
-#ifndef _XBOX
 			ResetMouse();
-#endif
 		}
 	}
 	
@@ -469,18 +424,16 @@ void CInput::CAM_Think( void )
 		}
 		//set old mouse coordinates to current mouse coordinates
 		//since we are done with the mouse
-		m_nCameraOldX=m_nCameraX*gHUD.GetSensitivity();
-		m_nCameraOldY=m_nCameraY*gHUD.GetSensitivity();
-#ifndef _XBOX
+		m_nCameraOldX=m_nCameraX*GetHud().GetSensitivity();
+		m_nCameraOldY=m_nCameraY*GetHud().GetSensitivity();
 		ResetMouse();
-#endif
 	}
 
 	// Obtain engine view angles and if they popped while the camera was static,
 	// fix the camera angles as well
 	engine->GetViewAngles( viewangles );
 	static QAngle s_oldAngles = viewangles;
-	if ( Is_CAM_ThirdPerson_MayaMode() && ( s_oldAngles != viewangles ) )
+	if ( m_nCamMode == CAM_MAYAMODE && ( s_oldAngles != viewangles ) )
 	{
 		idealAngles[ PITCH ] += s_oldAngles[ PITCH ] - viewangles[ PITCH ];
 		idealAngles[  YAW  ] += s_oldAngles[  YAW  ] - viewangles[  YAW  ];
@@ -531,7 +484,7 @@ void CInput::CAM_Think( void )
 		float lag = MAX( 1, 1 + cam_ideallag.GetFloat() );
 
 		if( camOffset[ YAW ] - viewangles[ YAW ] != cam_idealyaw.GetFloat() )
-			camOffset[ YAW ] = MoveToward( camOffset[ YAW ], cam_idealyaw.GetFloat() + viewangles[ YAW ], lag );
+			camOffset[ YAW ] = MoveToward( AngleNormalizePositive( camOffset[ YAW ] ), AngleNormalizePositive( cam_idealyaw.GetFloat() + viewangles[ YAW ] ), lag );
 		
 		if( camOffset[ PITCH ] - viewangles[ PITCH ] != cam_idealpitch.GetFloat() )
 			camOffset[ PITCH ] = MoveToward( camOffset[ PITCH ], cam_idealpitch.GetFloat() + viewangles[ PITCH ], lag );
@@ -546,11 +499,6 @@ void CInput::CAM_Think( void )
 	if ( cam_collision.GetInt() )
 	{
 		QAngle desiredCamAngles = QAngle( camOffset[ PITCH ], camOffset[ YAW ], camOffset[ DIST ] );
-
-		if ( g_ThirdPersonManager.IsOverridingThirdPerson() == false )
-		{
-			desiredCamAngles = viewangles;
-		}
 
 		g_ThirdPersonManager.PositionCamera( C_BasePlayer::GetLocalPlayer(), desiredCamAngles );
     }
@@ -669,61 +617,6 @@ void CAM_OutUp( const CCommand &args ) { KeyUp( &cam_out, args[1] ); }
 
 /*
 ==============================
-CAM_ToThirdPerson
-
-==============================
-*/
-void CInput::CAM_ToThirdPerson(void)
-{ 
-	QAngle viewangles;
-
-	engine->GetViewAngles( viewangles );
-
-	if( !m_fCameraInThirdPerson )
-	{
-		m_fCameraInThirdPerson = true; 
-	
-		g_ThirdPersonManager.SetCameraOffsetAngles( Vector( viewangles[ YAW ], viewangles[ PITCH ], CAM_MIN_DIST ) );
-	}
-
-	cam_command.SetValue( 0 );
-}
-
-/*
-==============================
-CAM_ToFirstPerson
-
-==============================
-*/
-void CInput::CAM_ToFirstPerson(void)
-{
-	g_ThirdPersonManager.SetDesiredCameraOffset( vec3_origin );
-
-	m_fCameraInThirdPerson = false;
-	cam_command.SetValue( 0 );
-
-	// Let the local player know
-	C_BasePlayer *localPlayer = C_BasePlayer::GetLocalPlayer();
-	if ( localPlayer )
-	{
-		localPlayer->ThirdPersonSwitch( false );
-	}
-}
-
-/*
-==============================
-CAM_ToFirstPerson
-
-==============================
-*/
-bool CInput::CAM_IsOrthographic(void) const
-{
-	return m_CameraIsOrthographic;
-}
-
-
-/*
-==============================
 CAM_ToFirstPerson
 
 ==============================
@@ -733,19 +626,6 @@ void CInput::CAM_OrthographicSize(float& w, float& h) const
 	w = c_orthowidth.GetFloat(); h = c_orthoheight.GetFloat();
 }
 
-
-/*
-==============================
-CAM_ToFirstPerson
-
-==============================
-*/
-void CInput::CAM_ToOrthographic(void)
-{
-	m_fCameraInThirdPerson = false;
-	m_CameraIsOrthographic = true;
-	cam_command.SetValue( 0 );
-}
 
 /*
 ==============================
@@ -768,16 +648,11 @@ void CInput::CAM_StartMouseMove(void)
 
 			m_fCameraMovingWithMouse=true;
 			m_fCameraInterceptingMouse=true;
-#ifndef _XBOX			
 			GetMousePos(cpx, cpy);
-#else
-			// xboxfixme
-			cpx = cpy = 0;
-#endif
 			m_nCameraX = cpx;
 			m_nCameraY = cpy;
 
-			if ( ( flSensitivity = gHUD.GetSensitivity() ) != 0 )
+			if ( ( flSensitivity = GetHud().GetSensitivity() ) != 0 )
 			{
 				m_nCameraOldX=m_nCameraX*flSensitivity;
 				m_nCameraOldY=m_nCameraY*flSensitivity;
@@ -833,18 +708,13 @@ void CInput::CAM_StartDistance(void)
 		  m_fCameraDistanceMove=true;
 		  m_fCameraMovingWithMouse=true;
 		  m_fCameraInterceptingMouse=true;
-#ifndef _XBOX
 		  GetMousePos(cpx, cpy);
-#else
-		  // xboxfixme
-		  cpx = cpy = 0;
-#endif
 
 		  m_nCameraX = cpx;
 		  m_nCameraY = cpy;
 
-		  m_nCameraOldX=m_nCameraX*gHUD.GetSensitivity();
-		  m_nCameraOldY=m_nCameraY*gHUD.GetSensitivity();
+		  m_nCameraOldX=m_nCameraX*GetHud().GetSensitivity();
+		  m_nCameraOldY=m_nCameraY*GetHud().GetSensitivity();
 	  }
 	}
 	//we are not in 3rd person view..therefore do not allow camera movement
@@ -873,13 +743,13 @@ void CInput::CAM_EndDistance(void)
 
 /*
 ==============================
-CAM_IsThirdPerson
+CAM_GetCameraOffset
 
 ==============================
 */
-int CInput::CAM_IsThirdPerson( void )
+void CInput::CAM_GetCameraOffset( Vector& ofs )
 {
-	return m_fCameraInThirdPerson;
+	VectorCopy( m_vecCameraOffset, ofs );
 }
 
 /*
@@ -905,17 +775,7 @@ static ConCommand startcamin( "+camin", CAM_InDown );
 static ConCommand endcamin( "-camin", CAM_InUp );
 static ConCommand startcamout( "+camout", CAM_OutDown );
 static ConCommand camout( "-camout", CAM_OutUp );
-static ConCommand thirdperson_mayamode( "thirdperson_mayamode", ::CAM_ToThirdPerson_MayaMode, "Switch to thirdperson Maya-like camera controls.", FCVAR_CHEAT );
 
-// TF allows servers to push people into first/thirdperson, for mods
-#ifdef TF_CLIENT_DLL
-static ConCommand thirdperson( "thirdperson", ::CAM_ToThirdPerson, "Switch to thirdperson camera.", FCVAR_CHEAT | FCVAR_SERVER_CAN_EXECUTE );
-static ConCommand firstperson( "firstperson", ::CAM_ToFirstPerson, "Switch to firstperson camera.", FCVAR_SERVER_CAN_EXECUTE );
-#else
-static ConCommand thirdperson( "thirdperson", ::CAM_ToThirdPerson, "Switch to thirdperson camera.", FCVAR_CHEAT );
-static ConCommand firstperson( "firstperson", ::CAM_ToFirstPerson, "Switch to firstperson camera." );
-#endif
-static ConCommand camortho( "camortho", ::CAM_ToOrthographic, "Switch to orthographic camera.", FCVAR_CHEAT );
 static ConCommand startcammousemove( "+cammousemove",::CAM_StartMouseMove);
 static ConCommand endcammousemove( "-cammousemove",::CAM_EndMouseMove);
 static ConCommand startcamdistance( "+camdistance", ::CAM_StartDistance );
@@ -929,5 +789,5 @@ Init_Camera
 */
 void CInput::Init_Camera( void )
 {
-	m_CameraIsOrthographic = false;
+	m_nCamMode = CAM_FIRSTPERSON;
 }

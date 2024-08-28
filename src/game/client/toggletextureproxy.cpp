@@ -19,7 +19,7 @@
 // forward declarations
 void ToolFramework_RecordMaterialParams( IMaterial *pMaterial );
 
-EXPOSE_INTERFACE( CBaseToggleTextureProxy, IMaterialProxy, "ToggleTexture" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CBaseToggleTextureProxy, ToggleTexture );
 
 //-----------------------------------------------------------------------------
 // Constructor, destructor: 

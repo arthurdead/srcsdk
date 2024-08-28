@@ -8,9 +8,7 @@
 #ifndef SPATIALENTITY_H
 #define SPATIALENTITY_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 //------------------------------------------------------------------------------
 // Purpose : Spatial entity

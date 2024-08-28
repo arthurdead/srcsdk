@@ -183,7 +183,7 @@ ITextMessage *textmessage = NULL;
 CHudMessage::CHudMessage( const char *pElementName ) :
 	CHudElement( pElementName ), BaseClass( NULL, "HudMessage" )
 {
-	vgui::Panel *pParent = g_pClientMode->GetViewport();
+	vgui::Panel *pParent = GetClientMode()->GetViewport();
 	SetParent( pParent );
 	textmessage = this;
 	m_hFont = g_hFontTrebuchet24;
@@ -221,8 +221,8 @@ void CHudMessage::Init(void)
 //-----------------------------------------------------------------------------
 void CHudMessage::VidInit( void )
 {
-	m_iconTitleHalf = gHUD.GetIcon( "title_half" );
-	m_iconTitleLife = gHUD.GetIcon( "title_life" );
+	m_iconTitleHalf = HudIcons().GetIcon( "title_half" );
+	m_iconTitleLife = HudIcons().GetIcon( "title_life" );
 };
 
 
@@ -807,7 +807,7 @@ void CHudMessage::MsgFunc_GameTitle( bf_read &msg )
 		sf.duration = (float)(1<<SCREENFADE_FRACBITS) * 5.0f;
 		sf.holdTime = (float)(1<<SCREENFADE_FRACBITS) * 1.0f;
 		sf.fadeFlags = FFADE_IN | FFADE_PURGE;
-		vieweffects->Fade( sf );
+		GetViewEffects()->Fade( sf );
 
 		Msg( "%i gametitle fade\n", gpGlobals->framecount );
 	}

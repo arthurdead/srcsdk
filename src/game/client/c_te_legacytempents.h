@@ -16,18 +16,23 @@ struct model_t;
 
 #include "mempool.h"
 #include "utllinkedlist.h"
+#include "icliententityinternal.h"
 
-#if defined( CSTRIKE_DLL ) || defined( SDK_DLL )
+class C_BasePlayer;
+
 enum
 {
-	CS_SHELL_9MM = 0,
-	CS_SHELL_57,
-	CS_SHELL_12GAUGE,
-	CS_SHELL_556,
-	CS_SHELL_762NATO,
-	CS_SHELL_338MAG
+	SHELL_GENERIC = 0,
+	SHELL_SHOTGUN,
+	SHELL_RIFLE,
+
+	SHELL_9MM,
+	SHELL_57,
+	SHELL_12GAUGE,
+	SHELL_556,
+	SHELL_762NATO,
+	SHELL_338MAG
 };
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface for lecacy temp entities
@@ -51,7 +56,7 @@ public:
 	virtual void				RicochetSprite( const Vector &pos, model_t *pmodel, float duration, float scale ) = 0;
 	virtual void				MuzzleFlash( int type, ClientEntityHandle_t hEntity, int attachmentIndex, bool firstPerson ) = 0;
 	virtual void				MuzzleFlash( const Vector &pos1, const QAngle &angles, int type, ClientEntityHandle_t hEntity, bool firstPerson ) = 0;
-	virtual void				EjectBrass( const Vector& pos1, const QAngle& angles, const QAngle& gunAngles, int type ) = 0;
+	virtual void				EjectBrass( const Vector& pos1, const QAngle& angles, const QAngle& gunAngles, int type, C_BasePlayer *pShooter ) = 0;
 	virtual C_LocalTempEntity   *SpawnTempModel( const model_t *pModel, const Vector &vecOrigin, const QAngle &vecAngles, const Vector &vecVelocity, float flLifeTime, int iFlags ) = 0;
 	virtual void				BreakModel( const Vector &pos, const QAngle &angles, const Vector &size, const Vector &dir, float random, float life, int count, int modelIndex, char flags) = 0;
 	virtual void				Bubbles( const Vector &mins, const Vector &maxs, float height, int modelIndex, int count, float speed ) = 0;
@@ -66,8 +71,6 @@ public:
 	virtual void				Sprite_Spray( const Vector &pos, const Vector &dir, int modelIndex, int count, int speed, int iRand ) = 0;
 	virtual void				Sprite_Trail( const Vector &vecStart, const Vector &vecEnd, int modelIndex, int nCount, float flLife, float flSize, float flAmplitude, int nRenderamt, float flSpeed ) = 0;
 	virtual void				RocketFlare( const Vector& pos ) = 0;
-	virtual void				HL1EjectBrass( const Vector &vecPosition, const QAngle &angAngles, const Vector &vecVelocity, int nType ) = 0;
-	virtual void				CSEjectBrass( const Vector &vecPosition, const QAngle &angVelocity, int nType, int nShellType, CBasePlayer *pShooter ) = 0;
 	
 	virtual void				PlaySound ( C_LocalTempEntity *pTemp, float damp ) = 0;
 	virtual void				PhysicsProp( int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects = 0 ) = 0;
@@ -103,7 +106,7 @@ public:
 	virtual void			RicochetSprite( const Vector &pos, model_t *pmodel, float duration, float scale );
 
 	virtual void			MuzzleFlash( int type, ClientEntityHandle_t hEntity, int attachmentIndex, bool firstPerson );
-	virtual void			MuzzleFlash( const Vector &pos1, const QAngle &angles, int type, ClientEntityHandle_t hEntity, bool firstPerson = false );
+	virtual void			MuzzleFlash( const Vector &pos, const QAngle &angles, int type, ClientEntityHandle_t hEntity, bool firstPerson = false );
 	
 	virtual void			BreakModel(const Vector &pos, const QAngle &angles, const Vector &size, const Vector &dir, float random, float life, int count, int modelIndex, char flags);
 	virtual void			Bubbles( const Vector &mins, const Vector &maxs, float height, int modelIndex, int count, float speed );
@@ -119,11 +122,9 @@ public:
 	void					Sprite_Trail( const Vector &vecStart, const Vector &vecEnd, int modelIndex, int nCount, float flLife, float flSize, float flAmplitude, int nRenderamt, float flSpeed );
 
 	virtual void			PlaySound ( C_LocalTempEntity *pTemp, float damp );
-	virtual void			EjectBrass( const Vector &pos1, const QAngle &angles, const QAngle &gunAngles, int type );
+	virtual void			EjectBrass( const Vector &pos1, const QAngle &angles, const QAngle &gunAngles, int type, C_BasePlayer *pShooter );
 	virtual C_LocalTempEntity		*SpawnTempModel( const model_t *pModel, const Vector &vecOrigin, const QAngle &vecAngles, const Vector &vecVelocity, float flLifeTime, int iFlags );
 	void					RocketFlare( const Vector& pos );
-	void					HL1EjectBrass( const Vector &vecPosition, const QAngle &angAngles, const Vector &vecVelocity, int nType );
-	void					CSEjectBrass( const Vector &vecPosition, const QAngle &angAngles, int nType, int nShellType, CBasePlayer *pShooter );
 	void					PhysicsProp( int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects = 0 );
 	C_LocalTempEntity		*ClientProjectile( const Vector& vecOrigin, const Vector& vecVelocity, const Vector& vecAcceleration, int modelindex, int lifetime, CBaseEntity *pOwner, const char *pszImpactEffect = NULL, const char *pszParticleEffect = NULL );
 
@@ -142,24 +143,9 @@ private:
 	CUtlLinkedList< C_LocalTempEntity *, unsigned short >	m_TempEnts;
 
 	// Muzzle flash sprites
-	struct model_t			*m_pSpriteMuzzleFlash[10];
-	struct model_t			*m_pSpriteAR2Flash[4];
-	struct model_t			*m_pShells[3];
-	struct model_t			*m_pSpriteCombineFlash[2];
+	struct model_t			*m_pSpriteMuzzleFlash;
 
-#if defined( HL1_CLIENT_DLL )
-	struct model_t			*m_pHL1Shell;
-	struct model_t			*m_pHL1ShotgunShell;
-#endif
-
-#if defined( CSTRIKE_DLL ) || defined ( SDK_DLL )
-	struct model_t			*m_pCS_9MMShell;
-	struct model_t			*m_pCS_57Shell;
-	struct model_t			*m_pCS_12GaugeShell;
-	struct model_t			*m_pCS_556Shell;
-	struct model_t			*m_pCS_762NATOShell;
-	struct model_t			*m_pCS_338MAGShell;
-#endif
+	struct model_t			*m_pShells[9];
 
 // Internal methods also available to children
 protected:
@@ -170,10 +156,7 @@ protected:
 private:
 
 	inline void				CacheMuzzleFlashes( void );
-	PMaterialHandle			m_Material_MuzzleFlash_Player[4];
-	PMaterialHandle			m_Material_MuzzleFlash_NPC[4];
-	PMaterialHandle			m_Material_Combine_MuzzleFlash_Player[2];
-	PMaterialHandle			m_Material_Combine_MuzzleFlash_NPC[2];
+	PMaterialHandle			m_Material_MuzzleFlash[4][2];
 
 // Internal methods
 private:
@@ -185,31 +168,10 @@ private:
 
 	int						AddVisibleTempEntity( C_LocalTempEntity *pEntity );
 
-	// AR2
-	void					MuzzleFlash_AR2_Player( const Vector &origin, const QAngle &angles, ClientEntityHandle_t hEntity );
-	void					MuzzleFlash_AR2_NPC( const Vector &origin, const QAngle &angles, ClientEntityHandle_t hEntity );
-							
-	// SMG1					
-	void					MuzzleFlash_SMG1_Player( ClientEntityHandle_t hEntity, int attachmentIndex );
-	void					MuzzleFlash_SMG1_NPC( ClientEntityHandle_t hEntity, int attachmentIndex );
-							
-	// Shotgun				
-	void					MuzzleFlash_Shotgun_Player( ClientEntityHandle_t hEntity, int attachmentIndex );
-	void					MuzzleFlash_Shotgun_NPC( ClientEntityHandle_t hEntity, int attachmentIndex );
-							
-	// Pistol				
-	void					MuzzleFlash_Pistol_Player( ClientEntityHandle_t hEntity, int attachmentIndex );
-	void					MuzzleFlash_Pistol_NPC( ClientEntityHandle_t hEntity, int attachmentIndex );
-							
-	// Combine				
-	void					MuzzleFlash_Combine_Player( ClientEntityHandle_t hEntity, int attachmentIndex );
-	void					MuzzleFlash_Combine_NPC( ClientEntityHandle_t hEntity, int attachmentIndex );
-
-	// 357
-	void					MuzzleFlash_357_Player( ClientEntityHandle_t hEntity, int attachmentIndex );
-
-	// RPG
-	void					MuzzleFlash_RPG_NPC( ClientEntityHandle_t hEntity, int attachmentIndex );
+	void					MuzzleFlash_Shotgun( ClientEntityHandle_t hEntity, int attachmentIndex, bool firstperson );
+	void					MuzzleFlash_Pistol( ClientEntityHandle_t hEntity, int attachmentIndex, bool firstperson );
+	void					MuzzleFlash_357( ClientEntityHandle_t hEntity, int attachmentIndex, bool firstperson );
+	void					MuzzleFlash_RPG( ClientEntityHandle_t hEntity, int attachmentIndex, bool firstperson );
 };
 
 

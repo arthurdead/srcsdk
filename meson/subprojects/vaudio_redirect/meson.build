@@ -28,7 +28,7 @@ vaudio_redirect_lib = declare_dependency(
 
 vaudio_redirect_miles_lib = shared_library('vaudio_miles',name_prefix:'',
 	cpp_args: [
-		'-DLIBNAME=vaudio_miles'
+		'-DDLLNAME=vaudio_miles'
 	],
 	dependencies: [
 		vaudio_redirect_lib

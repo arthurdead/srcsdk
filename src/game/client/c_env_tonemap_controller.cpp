@@ -39,6 +39,8 @@ private:
 	float m_flCustomAutoExposureMax;
 	float m_flCustomBloomScale;
 	float m_flCustomBloomScaleMinimum;
+	float m_flBloomExponent;
+	float m_flBloomSaturation;
 private:
 	C_EnvTonemapController( const C_EnvTonemapController & );
 
@@ -53,6 +55,8 @@ IMPLEMENT_CLIENTCLASS_DT( C_EnvTonemapController, DT_EnvTonemapController, CEnvT
 	RecvPropFloat( RECVINFO(m_flCustomAutoExposureMax) ),
 	RecvPropFloat( RECVINFO(m_flCustomBloomScale) ),
 	RecvPropFloat( RECVINFO(m_flCustomBloomScaleMinimum) ),
+	RecvPropFloat( RECVINFO(m_flBloomExponent) ),
+	RecvPropFloat( RECVINFO(m_flBloomSaturation) ),
 END_RECV_TABLE()
 
 //-----------------------------------------------------------------------------
@@ -67,6 +71,8 @@ C_EnvTonemapController::C_EnvTonemapController( void )
 	m_flCustomAutoExposureMax = 0;
 	m_flCustomBloomScale = 0.0f;
 	m_flCustomBloomScaleMinimum = 0.0f;
+	m_flBloomExponent = 2.5f;
+	m_flBloomSaturation = 1.0f;
 }
 
 //-----------------------------------------------------------------------------

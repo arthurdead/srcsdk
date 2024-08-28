@@ -20,5 +20,7 @@ const char *NameForPhonemeByIndex( int index );
 int CodeForPhonemeByIndex( int index );
 const char *DescForPhonemeByIndex( int index );
 bool IsStandardPhoneme( int index );
+unsigned char CodeToByteCode( int code );
+int ByteCodeToCode( unsigned char byteCode );
 
 #endif // PHONEMECONVERTER_H

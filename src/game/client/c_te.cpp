@@ -12,6 +12,7 @@
 #include "IEffects.h"
 #include "toolframework_client.h"
 #include "cdll_client_int.h"
+#include "c_te_effect_dispatch.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -122,7 +123,7 @@ void TE_DispatchEffect( IRecipientFilter& filter, float delay,
 			 const Vector &pos, const char *pName, const CEffectData &data );
 void TE_DispatchEffect( IRecipientFilter& filter, float delay, KeyValues *pKeyValues );
 void TE_PhysicsProp( IRecipientFilter& filter, float delay,
-	int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, bool breakmodel, int effects );
+	int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects );
 void TE_PhysicsProp( IRecipientFilter& filter, float delay, KeyValues *pKeyValues );
 void TE_ConcussiveExplosion( IRecipientFilter& filter, float delay, KeyValues *pKeyValues );
 void TE_ClientProjectile( IRecipientFilter& filter, float delay,
@@ -667,12 +668,9 @@ public:
 		case TE_EXPLOSION:
 			TE_Explosion( filter, 0.0f, pKeyValues );
 			break;
-
-#ifdef HL2_DLL
 		case TE_CONCUSSIVE_EXPLOSION:
 			TE_ConcussiveExplosion( filter, 0.0f, pKeyValues );
 			break;
-#endif
 		}
 
 		SuppressParticleEffects( false );

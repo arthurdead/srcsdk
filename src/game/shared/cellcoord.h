@@ -8,9 +8,7 @@
 
 #ifndef CELLCOORD_H
 #define CELLCOORD_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "worldsize.h"
 

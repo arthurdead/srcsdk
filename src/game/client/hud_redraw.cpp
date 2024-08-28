@@ -53,20 +53,30 @@ void CHud::Think(void)
 	const bool bPlayingReplay = g_pEngineClientReplay && g_pEngineClientReplay->IsPlayingReplayDemo();
 #endif
 
+	CUtlVector< CHudElement * > & list = GetHudList();
+	CUtlVector< vgui::Panel * > & hudPanelList = GetHudPanelList();
+
+	int c = list.Count();
+	Assert( c == hudPanelList.Count() );
+
+	m_bEngineIsInGame = engine->IsInGame() && ( engine->IsLevelMainMenuBackground() == false );
+
 	// Determine the visibility of all hud elements
 	for ( int i = 0; i < m_HudList.Size(); i++ )
 	{
+		CHudElement *element = list[i];
+		vgui::Panel *pPanel = hudPanelList[ i ];
+
 		// Visible?
-		bool visible = m_HudList[i]->ShouldDraw();
+		bool visible = element->ShouldDraw();
 
 #if defined( REPLAY_ENABLED )
 		visible = visible && !bPlayingReplay;
 #endif
 
-		m_HudList[i]->SetActive( visible );
+		element->SetActive( visible );
 
 		// If it's a vgui panel, hide/show as appropriate
-		vgui::Panel *pPanel = dynamic_cast<vgui::Panel*>(m_HudList[i]);
 		if ( pPanel && pPanel->IsVisible() != visible )
 		{
 			pPanel->SetVisible( visible );
@@ -79,23 +89,24 @@ void CHud::Think(void)
 
 		if ( visible )
 		{
-			m_HudList[i]->ProcessInput();
+			element->ProcessInput();
 		}
 	}
 
 	// Let the active weapon at the keybits
-	C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
-	if ( pWeapon )
+	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( pPlayer )
 	{
-		pWeapon->HandleInput();
+		C_BaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();
+		if ( pWeapon )
+		{
+			pWeapon->HandleInput();
+		}
 	}
 
 	if ( ( m_flScreenShotTime > 0 ) && ( m_flScreenShotTime < gpGlobals->curtime ) )
 	{
-		if ( !IsX360() )
-		{
-			engine->ClientCmd( "screenshot" );
-		}
+		engine->ClientCmd( "screenshot" );
 
 		m_flScreenShotTime = -1;
 	}

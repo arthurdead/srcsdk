@@ -7,20 +7,15 @@
 #ifndef GLOW_OUTLINE_EFFECT_H
 #define GLOW_OUTLINE_EFFECT_H
 
-#if defined( COMPILER_MSVC )
 #pragma once
-#endif
 
 #include "utlvector.h"
 #include "mathlib/vector.h"
-
-#ifdef GLOWS_ENABLE
+#include "c_baseentity.h"
 
 class C_BaseEntity;
 class CViewSetup;
 class CMatRenderContextPtr;
-
-static const int GLOW_FOR_ALL_SPLIT_SCREEN_SLOTS = -1;
 
 class CGlowObjectManager
 {
@@ -30,7 +25,7 @@ public:
 	{
 	}
 
-	int RegisterGlowObject( C_BaseEntity *pEntity, const Vector &vGlowColor, float flGlowAlpha, bool bRenderWhenOccluded, bool bRenderWhenUnoccluded, int nSplitScreenSlot )
+	int RegisterGlowObject( C_BaseEntity *pEntity, const Vector &vGlowColor, float flGlowAlpha, bool bRenderWhenOccluded, bool bRenderWhenUnoccluded )
 	{
 		int nIndex;
 		if ( m_nFirstFreeSlot == GlowObjectDefinition_t::END_OF_FREE_LIST )
@@ -48,7 +43,8 @@ public:
 		m_GlowObjectDefinitions[nIndex].m_flGlowAlpha = flGlowAlpha;
 		m_GlowObjectDefinitions[nIndex].m_bRenderWhenOccluded = bRenderWhenOccluded;
 		m_GlowObjectDefinitions[nIndex].m_bRenderWhenUnoccluded = bRenderWhenUnoccluded;
-		m_GlowObjectDefinitions[nIndex].m_nSplitScreenSlot = nSplitScreenSlot;
+		m_GlowObjectDefinitions[nIndex].m_bFullBloomRender = false;
+		m_GlowObjectDefinitions[nIndex].m_nFullBloomStencilTestValue = 0;
 		m_GlowObjectDefinitions[nIndex].m_nNextFreeSlot = GlowObjectDefinition_t::ENTRY_IN_USE;
 
 		return nIndex;
@@ -88,6 +84,13 @@ public:
 		m_GlowObjectDefinitions[nGlowObjectHandle].m_bRenderWhenUnoccluded = bRenderWhenUnoccluded;
 	}
 
+	void SetFullBloomRender( int nGlowObjectHandle, bool bFullBloomRender, int nStencilTestValue )
+	{
+		Assert( !m_GlowObjectDefinitions[nGlowObjectHandle].IsUnused() );
+		m_GlowObjectDefinitions[nGlowObjectHandle].m_bFullBloomRender = bFullBloomRender;
+		m_GlowObjectDefinitions[nGlowObjectHandle].m_nFullBloomStencilTestValue = nStencilTestValue;
+	}
+
 	bool IsRenderingWhenOccluded( int nGlowObjectHandle ) const
 	{
 		Assert( !m_GlowObjectDefinitions[nGlowObjectHandle].IsUnused() );
@@ -113,19 +116,18 @@ public:
 		return false;
 	}
 
-	void RenderGlowEffects( const CViewSetup *pSetup, int nSplitScreenSlot );
+	void RenderGlowEffects( const CViewSetup *pSetup );
 
 private:
 
-	void RenderGlowModels( const CViewSetup *pSetup, int nSplitScreenSlot, CMatRenderContextPtr &pRenderContext );
-	void ApplyEntityGlowEffects( const CViewSetup *pSetup, int nSplitScreenSlot, CMatRenderContextPtr &pRenderContext, float flBloomScale, int x, int y, int w, int h );
+	void RenderGlowModels( const CViewSetup *pSetup, CMatRenderContextPtr &pRenderContext );
+	void ApplyEntityGlowEffects( const CViewSetup *pSetup, CMatRenderContextPtr &pRenderContext, float flBloomScale, int x, int y, int w, int h );
 
 	struct GlowObjectDefinition_t
 	{
-		bool ShouldDraw( int nSlot ) const
+		bool ShouldDraw( ) const
 		{
 			return m_hEntity.Get() && 
-				   ( m_nSplitScreenSlot == GLOW_FOR_ALL_SPLIT_SCREEN_SLOTS || m_nSplitScreenSlot == nSlot ) && 
 				   ( m_bRenderWhenOccluded || m_bRenderWhenUnoccluded ) && 
 				   m_hEntity->ShouldDraw() && 
 				   !m_hEntity->IsDormant();
@@ -140,7 +142,8 @@ private:
 
 		bool m_bRenderWhenOccluded;
 		bool m_bRenderWhenUnoccluded;
-		int m_nSplitScreenSlot;
+		bool m_bFullBloomRender;
+		int m_nFullBloomStencilTestValue; // only render full bloom objects if stencil is equal to this value (value of -1 implies no stencil test)
 
 		// Linked list of free slots
 		int m_nNextFreeSlot;
@@ -159,9 +162,9 @@ extern CGlowObjectManager g_GlowObjectManager;
 class CGlowObject
 {
 public:
-	CGlowObject( C_BaseEntity *pEntity, const Vector &vGlowColor = Vector( 1.0f, 1.0f, 1.0f ), float flGlowAlpha = 1.0f, bool bRenderWhenOccluded = false, bool bRenderWhenUnoccluded = false, int nSplitScreenSlot = GLOW_FOR_ALL_SPLIT_SCREEN_SLOTS )
+	CGlowObject( C_BaseEntity *pEntity, const Vector &vGlowColor = Vector( 1.0f, 1.0f, 1.0f ), float flGlowAlpha = 1.0f, bool bRenderWhenOccluded = false, bool bRenderWhenUnoccluded = false )
 	{
-		m_nGlowObjectHandle = g_GlowObjectManager.RegisterGlowObject( pEntity, vGlowColor, flGlowAlpha, bRenderWhenOccluded, bRenderWhenUnoccluded, nSplitScreenSlot );
+		m_nGlowObjectHandle = g_GlowObjectManager.RegisterGlowObject( pEntity, vGlowColor, flGlowAlpha, bRenderWhenOccluded, bRenderWhenUnoccluded );
 	}
 
 	~CGlowObject()
@@ -189,6 +192,11 @@ public:
 		g_GlowObjectManager.SetRenderFlags( m_nGlowObjectHandle, bRenderWhenOccluded, bRenderWhenUnoccluded );
 	}
 
+	void SetFullBloomRender( bool bFullBloomRender, int nStencilTestValue = -1 )
+	{
+		return g_GlowObjectManager.SetFullBloomRender( m_nGlowObjectHandle, bFullBloomRender, nStencilTestValue );
+	}
+
 	bool IsRenderingWhenOccluded() const
 	{
 		return g_GlowObjectManager.IsRenderingWhenOccluded( m_nGlowObjectHandle );
@@ -213,7 +221,5 @@ private:
 	CGlowObject( const CGlowObject &other );
 	CGlowObject& operator=( const CGlowObject &other );
 };
-
-#endif // GLOWS_ENABLE
 
 #endif // GLOW_OUTLINE_EFFECT_H

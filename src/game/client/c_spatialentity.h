@@ -8,9 +8,7 @@
 #ifndef C_SPATIALENTITY_H
 #define C_SPATIALENTITY_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #define SPATIAL_ENTITY_FORCED_VALUE_BLEND_DISTANCE 128.0f
 

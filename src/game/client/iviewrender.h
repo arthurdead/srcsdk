@@ -36,16 +36,22 @@ enum DrawFlags_t
 	DF_FUDGE_UP				= 0x1000,
 
 	DF_DRAW_ENTITITES		= 0x2000,
-	DF_UNUSED3				= 0x4000,
 
-	DF_UNUSED4				= 0x8000,
+	DF_SKIP_WORLD			= 0x4000,
+	DF_SKIP_WORLD_DECALS_AND_OVERLAYS	= 0x8000,
 
 	DF_UNUSED5				= 0x10000,
 	DF_SAVEGAMESCREENSHOT	= 0x20000,
 	DF_CLIP_SKYBOX			= 0x40000,
 
-	DF_SHADOW_DEPTH_MAP		= 0x100000	// Currently rendering a shadow depth map
+	DF_SHADOW_DEPTH_MAP		= 0x100000,	// Currently rendering a shadow depth map
 };
+
+#define MAX_DEPTH_TEXTURE_SHADOWS 1
+#define MAX_DEPTH_TEXTURE_HIGHRES_SHADOWS 0
+
+#define MAX_DEPTH_TEXTURE_SHADOWS_TOOLS 8
+#define MAX_DEPTH_TEXTURE_HIGHRES_SHADOWS_TOOLS 0
 
 
 //-----------------------------------------------------------------------------
@@ -83,7 +89,7 @@ public:
 	virtual	void		Render( vrect_t *rect ) = 0;
 
 	// Called to render just a particular setup ( for timerefresh and envmap creation )
-	virtual void		RenderView( const CViewSetup &view, int nClearFlags, int whatToDraw ) = 0;
+	virtual void		RenderView( const CViewSetup &view, const CViewSetup &hudViewSetup, int nClearFlags, int whatToDraw ) = 0;
 
 	// What are we currently rendering? Returns a combination of DF_ flags.
 	virtual int GetDrawFlags() = 0;
@@ -115,9 +121,6 @@ public:
 	virtual void		SetScreenOverlayMaterial( IMaterial *pMaterial ) = 0;
 	virtual IMaterial	*GetScreenOverlayMaterial( ) = 0;
 
-	virtual void		WriteSaveGameScreenshot( const char *pFilename ) = 0;
-	virtual void		WriteSaveGameScreenshotOfSize( const char *pFilename, int width, int height, bool bCreatePowerOf2Padded = false, bool bWriteVTF = false ) = 0;
-
 	virtual void		WriteReplayScreenshot( WriteReplayScreenshotParams_t &params ) = 0;
 	virtual void		UpdateReplayScreenshotCache() = 0;
 
@@ -129,6 +132,7 @@ public:
 	virtual float		GetZFar() = 0;
 
 	virtual void		GetScreenFadeDistances( float *min, float *max ) = 0;
+	virtual bool		AllowScreenspaceFade( void ) = 0;
 
 	virtual C_BaseEntity *GetCurrentlyDrawingEntity() = 0;
 	virtual void		SetCurrentlyDrawingEntity( C_BaseEntity *pEnt ) = 0;
@@ -138,8 +142,10 @@ public:
 	virtual void		FreezeFrame( float flFreezeTime ) = 0;
 
 	virtual IReplayScreenshotSystem *GetReplayScreenshotSystem() = 0;
+
+	virtual void		InitFadeData( void ) = 0;
 };
 
-extern IViewRender *view;
+extern IViewRender *GetViewRenderInstance();
 
 #endif // IVIEWRENDER_H

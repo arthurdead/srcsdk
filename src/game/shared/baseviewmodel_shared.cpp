@@ -11,21 +11,9 @@
 #if defined( CLIENT_DLL )
 #include "iprediction.h"
 #include "prediction.h"
-#include "client_virtualreality.h"
-#include "sourcevr/isourcevirtualreality.h"
 #include "c_vguiscreen.h"
 #else
 #include "vguiscreen.h"
-#endif
-
-#if defined( CLIENT_DLL ) && defined( SIXENSE )
-#include "sixense/in_sixense.h"
-#include "sixense/sixense_convars_extern.h"
-#endif
-
-#ifdef SIXENSE
-extern ConVar in_forceuser;
-#include "iclientmode.h"
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -42,9 +30,10 @@ CBaseViewModel::CBaseViewModel()
 #if defined( CLIENT_DLL )
 	// NOTE: We do this here because the color is never transmitted for the view model.
 	m_nOldAnimationParity = 0;
-	m_EntClientFlags |= ENTCLIENTFLAG_ALWAYS_INTERPOLATE;
+	AddClientFlags( ENTCLIENTFLAG_ALWAYS_INTERPOLATE );
 #endif
-	SetRenderColor( 255, 255, 255, 255 );
+	SetRenderColor( 255, 255, 255 );
+	SetRenderAlpha( 255 );
 
 	// View model of this weapon
 	m_sVMName			= NULL_STRING;		
@@ -348,7 +337,7 @@ void CBaseViewModel::SendViewModelMatchingSequence( int sequence )
 	m_nOldAnimationParity = m_nAnimationParity;
 
 	// Force frame interpolation to start at exactly frame zero
-	m_flAnimTime			= gpGlobals->curtime;
+	SetAnimTime( gpGlobals->curtime );
 #else
 	CBaseCombatWeapon *weapon = m_hWeapon.Get();
 	bool showControlPanels = weapon && weapon->ShouldShowControlPanels();
@@ -399,44 +388,12 @@ void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePos
 	if ( !prediction->InPrediction() )
 	{
 		// Let the viewmodel shake at about 10% of the amplitude of the player's view
-		vieweffects->ApplyShake( vmorigin, vmangles, 0.1 );	
+		GetViewEffects()->ApplyShake( vmorigin, vmangles, 0.1 );	
 	}
 #endif
-
-	if( UseVR() )
-	{
-		g_ClientVirtualReality.OverrideViewModelTransform( vmorigin, vmangles, pWeapon && pWeapon->ShouldUseLargeViewModelVROverride() );
-	}
 
 	SetLocalOrigin( vmorigin );
 	SetLocalAngles( vmangles );
-
-#ifdef SIXENSE
-	if( g_pSixenseInput->IsEnabled() && (owner->GetObserverMode()==OBS_MODE_NONE) && !UseVR() )
-	{
-		const float max_gun_pitch = 20.0f;
-
-		float viewmodel_fov_ratio = g_pClientMode->GetViewModelFOV()/owner->GetFOV();
-		QAngle gun_angles = g_pSixenseInput->GetViewAngleOffset() * -viewmodel_fov_ratio;
-
-		// Clamp pitch a bit to minimize seeing back of viewmodel
-		if( gun_angles[PITCH] < -max_gun_pitch )
-		{ 
-			gun_angles[PITCH] = -max_gun_pitch; 
-		}
-
-#ifdef WIN32 // ShouldFlipViewModel comes up unresolved on osx? Mabye because it's defined inline? fixme
-		if( ShouldFlipViewModel() ) 
-		{
-			gun_angles[YAW] *= -1.0f;
-		}
-#endif
-
-		vmangles = EyeAngles() +  gun_angles;
-
-		SetLocalAngles( vmangles );
-	}
-#endif
 #endif
 
 }
@@ -527,7 +484,7 @@ static void RecvProxy_Weapon( const CRecvProxyData *pData, void *pStruct, void *
 	{
 		// Restart animation at frame 0
 		pViewModel->SetCycle( 0 );
-		pViewModel->m_flAnimTime = gpGlobals->curtime;
+		pViewModel->SetAnimTime(gpGlobals->curtime);
 	}
 }
 #endif
@@ -610,7 +567,7 @@ void RecvProxy_SequenceNum( const CRecvProxyData *pData, void *pStruct, void *pO
 		MDLCACHE_CRITICAL_SECTION();
 
 		model->SetSequence(pData->m_Value.m_Int);
-		model->m_flAnimTime = gpGlobals->curtime;
+		model->SetAnimTime( gpGlobals->curtime );
 		model->SetCycle(0);
 	}
 }

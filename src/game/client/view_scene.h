@@ -15,7 +15,8 @@
 #include "view_shared.h"
 #include "rendertexture.h"
 #include "materialsystem/itexture.h"
-
+#include "materialsystem/imaterial.h"
+#include "cdll_client_int.h"
 
 extern ConVar mat_wireframe;
 extern ConVar building_cubemaps;
@@ -40,12 +41,12 @@ inline void UpdateRefractTexture( int x, int y, int w, int h, bool bForceUpdate 
 {
 	Assert( !DrawingShadowDepthView() );
 
-	if ( !IsRetail() && !r_updaterefracttexture.GetBool() )
+	if ( !r_updaterefracttexture.GetBool() )
 		return;
 
 	CMatRenderContextPtr pRenderContext( materials );
 	ITexture *pTexture = GetPowerOfTwoFrameBufferTexture();
-	if ( IsPC() || bForceUpdate || g_bAllowMultipleRefractUpdatesPerScenePerFrame || (gpGlobals->framecount != g_viewscene_refractUpdateFrame) )
+	if ( bForceUpdate || g_bAllowMultipleRefractUpdatesPerScenePerFrame || (gpGlobals->framecount != g_viewscene_refractUpdateFrame) )
 	{
 		// forced or only once per frame 
 		Rect_t rect;
@@ -143,7 +144,7 @@ inline void UpdateFrontBufferTexturesForMaterial( IMaterial *pMaterial, bool bFo
 	}
 	else if( pMaterial->NeedsFullFrameBufferTexture() )
 	{
-		const CViewSetup *pView = view->GetViewSetup();
+		const CViewSetup *pView = GetViewRenderInstance()->GetViewSetup();
 		UpdateScreenEffectTexture( 0, pView->x, pView->y, pView->width, pView->height );
 	}
 }
@@ -152,7 +153,7 @@ inline void UpdateScreenEffectTexture( void )
 {
 	Assert( !DrawingShadowDepthView() );
 
-	const CViewSetup *pViewSetup = view->GetViewSetup();
+	const CViewSetup *pViewSetup = GetViewRenderInstance()->GetViewSetup();
 	UpdateScreenEffectTexture( 0, pViewSetup->x, pViewSetup->y, pViewSetup->width, pViewSetup->height);
 }
 

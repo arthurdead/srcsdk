@@ -97,7 +97,7 @@ typedef int (*ThreadedLoadLibraryFunc_t)();
 PLATFORM_INTERFACE void SetThreadedLoadLibraryFunc( ThreadedLoadLibraryFunc_t func );
 PLATFORM_INTERFACE ThreadedLoadLibraryFunc_t GetThreadedLoadLibraryFunc();
 
-#if defined( _WIN32 ) && !defined( _WIN64 ) && !defined( _X360 )
+#if defined( _WIN32 ) && !defined( _WIN64 )
 extern "C" unsigned long __declspec(dllimport) __stdcall GetCurrentThreadId();
 #define ThreadGetCurrentId GetCurrentThreadId
 #endif
@@ -109,7 +109,6 @@ inline void ThreadPause()
 	_mm_pause();
 #elif POSIX
 	__asm __volatile( "pause" );
-#elif defined( _X360 )
 #else
 #error "implement me"
 #endif
@@ -157,10 +156,7 @@ inline int ThreadWaitForObject( HANDLE handle, bool bWaitAll = true, unsigned ti
 // read-acquire and write-release barriers. It is not a full barrier and it does
 // not prevent reads from moving past writes -- that would require a full __sync()
 // on PPC and is significantly more expensive.
-#if defined( _X360 ) || defined( _PS3 )
-	#define ThreadMemoryBarrier() __lwsync()
-
-#elif defined(_MSC_VER)
+#if defined(_MSC_VER)
 	// Prevent compiler reordering across this barrier. This is
 	// sufficient for most purposes on x86/x64.
 
@@ -179,7 +175,7 @@ inline int ThreadWaitForObject( HANDLE handle, bool bWaitAll = true, unsigned ti
 	#error Every platform needs to define ThreadMemoryBarrier to at least prevent compiler reordering
 #endif
 
-#if defined(_WIN32) && !defined(_X360)
+#if defined(_WIN32)
 	#if ( _MSC_VER >= 1310 )
 		#define USE_INTRINSIC_INTERLOCKED
 	#endif
@@ -627,11 +623,7 @@ private:
 #ifdef _WIN64
 	#define TT_SIZEOF_CRITICALSECTION 40	
 #else
-#ifndef _X360
 	#define TT_SIZEOF_CRITICALSECTION 24
-#else
-	#define TT_SIZEOF_CRITICALSECTION 28
-#endif // !_XBOX
 #endif // _WIN64
 	byte m_CriticalSection[TT_SIZEOF_CRITICALSECTION];
 #elif defined(POSIX)
@@ -1518,7 +1510,6 @@ public:
 typedef struct _RTL_CRITICAL_SECTION RTL_CRITICAL_SECTION;
 typedef RTL_CRITICAL_SECTION CRITICAL_SECTION;
 
-#ifndef _X360
 extern "C"
 {
 	void __declspec(dllimport) __stdcall InitializeCriticalSection(CRITICAL_SECTION *);
@@ -1526,7 +1517,6 @@ extern "C"
 	void __declspec(dllimport) __stdcall LeaveCriticalSection(CRITICAL_SECTION *);
 	void __declspec(dllimport) __stdcall DeleteCriticalSection(CRITICAL_SECTION *);
 };
-#endif
 
 //---------------------------------------------------------
 
@@ -1699,12 +1689,6 @@ inline bool CThreadSpinRWLock::TryLockForWrite( const uint32 threadId )
 	static const LockInfo_t oldValue = { 0, 0 };
 	LockInfo_t newValue = { threadId, 0 };
 	const bool bSuccess = AssignIf( newValue, oldValue );
-#if defined(_X360)
-	if ( bSuccess )
-	{
-		// X360TBD: Serious perf implications. Not Yet. __sync();
-	}
-#endif
 	return bSuccess;
 }
 
@@ -1735,12 +1719,6 @@ inline bool CThreadSpinRWLock::TryLockForRead()
 		newValue.m_writerId = 0;
 
 	const bool bSuccess = AssignIf( newValue, oldValue );
-#if defined(_X360)
-	if ( bSuccess )
-	{
-		// X360TBD: Serious perf implications. Not Yet. __sync();
-	}
-#endif
 	return bSuccess;
 }
 

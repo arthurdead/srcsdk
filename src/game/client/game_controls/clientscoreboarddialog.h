@@ -12,6 +12,9 @@
 #include <vgui_controls/EditablePanel.h>
 #include <game/client/iviewport.h>
 #include "GameEventListener.h"
+#include "steam/steamclientpublic.h"
+#include "tier1/utlmap.h"
+#include "vgui_controls/Label.h"
 
 #define TYPE_NOTEAM			0	// NOTEAM must be zero :)
 #define TYPE_TEAM			1	// a section for a single team	
@@ -47,16 +50,14 @@ public:
 
 	virtual bool ShowAvatars() 
 	{ 
-#ifdef CSS_PERF_TEST
-		return false;
-#endif
-		return IsPC(); 
+		return true; 
 	}
 
 	// both vgui::Frame and IViewPortPanel define these, so explicitly define them here as passthroughs to vgui
 	vgui::VPANEL GetVPanel( void ) { return BaseClass::GetVPanel(); }
   	virtual bool IsVisible() { return BaseClass::IsVisible(); }
   	virtual void SetParent( vgui::VPANEL parent ) { BaseClass::SetParent( parent ); }
+  	virtual bool WantsBackgroundBlurred( void ) { return false; }
  	
 	// IGameEventListener interface:
 	virtual void FireGameEvent( IGameEvent *event);
@@ -82,6 +83,7 @@ protected:
 	virtual void ApplySchemeSettings(vgui::IScheme *pScheme);
 
 	virtual void PostApplySchemeSettings( vgui::IScheme *pScheme );
+	virtual void ApplySettings(KeyValues *inResourceData);
 
 	// finds the player in the scoreboard
 	int FindItemIDForPlayerIndex(int playerIndex);
@@ -99,6 +101,7 @@ protected:
 
 	void MoveLabelToFront(const char *textEntryName);
 	void MoveToCenterOfScreen();
+	void PositionScoreboard();
 
 	vgui::ImageList				*m_pImageList;
 	CUtlMap<CSteamID,int>		m_mapAvatarsToImageList;
@@ -116,6 +119,7 @@ private:
 	IViewPort	*m_pViewPort;
 	ButtonCode_t m_nCloseKey;
 
+	vgui::Label::Alignment m_alignment;
 
 	// methods
 	void FillScoreBoard();

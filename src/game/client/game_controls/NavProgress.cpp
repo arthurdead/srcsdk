@@ -25,7 +25,7 @@
 using namespace vgui;
 
 //--------------------------------------------------------------------------------------------------------------
-CNavProgress::CNavProgress( IViewPort *pViewPort ) : Frame( NULL, PANEL_NAV_PROGRESS )
+CNavProgress::CNavProgress( IViewPort *pViewPort ) : BaseClass( NULL, PANEL_NAV_PROGRESS )
 {
 	// initialize dialog
 	m_pViewPort = pViewPort;

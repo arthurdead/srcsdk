@@ -11,6 +11,7 @@
 
 #include <vgui_controls/EditablePanel.h>
 #include "hudelement.h"
+#include "tier1/utllinkedlist.h"
 
 using namespace vgui;
 

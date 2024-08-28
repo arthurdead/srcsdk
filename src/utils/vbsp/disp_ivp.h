@@ -6,9 +6,7 @@
 
 #ifndef DISP_IVP_H
 #define DISP_IVP_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "utlvector.h"
 #include "../../public/disp_tesselate.h"

@@ -9,6 +9,8 @@
 #define ISCENETOKENPROCESSOR_H
 #pragma once
 
+#include "tier0/platform.h"
+
 abstract_class ISceneTokenProcessor
 {
 public:

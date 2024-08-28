@@ -8,6 +8,8 @@
 #define C_GIB_H
 #pragma once
 
+#include "c_baseanimating.h"
+
 #define	DEFAULT_GIB_LIFETIME	4.0f
 
 // Base client gibs
@@ -22,7 +24,7 @@ public:
 	static C_Gib	*CreateClientsideGib( const char *pszModelName, Vector vecOrigin, Vector vecForceDir, AngularImpulse vecAngularImp, float flLifetime = DEFAULT_GIB_LIFETIME );
 	
 	bool	InitializeGib( const char *pszModelName, Vector vecOrigin, Vector vecForceDir, AngularImpulse vecAngularImp, float flLifetime = DEFAULT_GIB_LIFETIME );
-	void	ClientThink( void );
+	void	FadeThink( void );
 	void	StartTouch( C_BaseEntity *pOther );
 
 	virtual	void HitSurface( C_BaseEntity *pOther );

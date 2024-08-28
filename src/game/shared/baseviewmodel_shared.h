@@ -13,7 +13,6 @@
 #include "utlvector.h"
 #include "baseplayer_shared.h"
 #include "shared_classnames.h"
-#include "econ/ihasowner.h"
 
 class CBaseCombatWeapon;
 class CBaseCombatCharacter;
@@ -32,7 +31,7 @@ class C_VGuiScreen;
 
 #define VIEWMODEL_INDEX_BITS 1
 
-class CBaseViewModel : public CBaseAnimating, public IHasOwner
+class CBaseViewModel : public CBaseAnimating
 {
 	DECLARE_CLASS( CBaseViewModel, CBaseAnimating );
 public:
@@ -107,8 +106,6 @@ public:
 	virtual void			SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
 #else
 
-	virtual RenderGroup_t	GetRenderGroup();
-
 // Only supported in TF2 right now
 #if defined( INVASION_CLIENT_DLL )
 
@@ -128,6 +125,8 @@ public:
 	virtual void			OnDataChanged( DataUpdateType_t updateType );
 	virtual void			PostDataUpdate( DataUpdateType_t updateType );
 
+	virtual C_BasePlayer	*GetPredictionOwner( void );
+
 	virtual bool			Interpolate( float currentTime );
 
 	bool					ShouldFlipViewModel();
@@ -136,12 +135,12 @@ public:
 	virtual void			ApplyBoneMatrixTransform( matrix3x4_t& transform );
 
 	virtual bool			ShouldDraw();
-	virtual int				DrawModel( int flags );
-	virtual int				InternalDrawModel( int flags );
-	int						DrawOverriddenViewmodel( int flags );
-	virtual int				GetFxBlend( void );
-	virtual bool			IsTransparent( void );
-	virtual bool			UsesPowerOfTwoFrameBufferTexture( void );
+	virtual int				DrawModel( int flags, const RenderableInstance_t &instance );
+	virtual int				InternalDrawModel( int flags, const RenderableInstance_t &instance );
+	int						DrawOverriddenViewmodel( int flags, const RenderableInstance_t &instance );
+	virtual uint8			OverrideRenderAlpha( uint8 nAlpha );
+	RenderableTranslucencyType_t ComputeTranslucencyType( void );
+	virtual int 					GetRenderFlags( void );
 	
 	// Should this object cast shadows?
 	virtual ShadowType_t	ShadowCastType() { return SHADOWS_NONE; }
@@ -150,7 +149,7 @@ public:
 	virtual bool			ShouldReceiveProjectedTextures( int flags );
 
 	// Add entity to visible view models list?
-	virtual void			AddEntity( void );
+	virtual bool			Simulate( void );
 
 	virtual void			GetBoneControllers(float controllers[MAXSTUDIOBONECTRLS]);
 
@@ -160,6 +159,7 @@ public:
 	// (inherited from C_BaseAnimating)
 	virtual void			FormatViewModelAttachment( int nAttachment, matrix3x4_t &attachmentToWorld );
 	virtual bool			IsViewModel() const;
+	virtual bool			IsViewModelOrAttachment() const { return true; }
 	
 	CBaseCombatWeapon		*GetWeapon() const { return m_hWeapon.Get(); }
 
@@ -207,5 +207,19 @@ private:
 	typedef CHandle<CVGuiScreen>	ScreenHandle_t;
 	CUtlVector<ScreenHandle_t>	m_hScreens;
 };
+
+inline CBaseViewModel *ToBaseViewModel( CBaseAnimating *pAnim )
+{
+	if ( pAnim && pAnim->IsViewModel() )
+		return assert_cast<CBaseViewModel *>(pAnim);
+	return NULL;
+}
+
+inline CBaseViewModel *ToBaseViewModel( CBaseEntity *pEntity )
+{
+	if ( !pEntity )
+		return NULL;
+	return ToBaseViewModel(pEntity->GetBaseAnimating());
+}
 
 #endif // BASEVIEWMODEL_SHARED_H

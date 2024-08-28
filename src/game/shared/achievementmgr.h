@@ -9,11 +9,13 @@
 #pragma once
 #include "baseachievement.h"
 #include "GameEventListener.h"
-#include "hl2orange.spa.h"
 #include "iachievementmgr.h"
 #include "utlmap.h"
-#ifndef NO_STEAM
 #include "steam/steam_api.h"
+#include "igamesystem.h"
+
+#ifdef CLIENT_DLL
+#include "cdll_client_int.h"
 #endif
 
 #define THINK_CLEAR		-1
@@ -98,20 +100,14 @@ public:
 	bool CheckAchievementsEnabled();
 	bool LoggedIntoSteam() 
 	{ 
-#if !defined(NO_STEAM)
 		return ( steamapicontext->SteamUser() && steamapicontext->SteamUserStats() && steamapicontext->SteamUser()->BLoggedOn() ); 
-#else
-		return false;
-#endif
 	}
 	float GetTimeLastUpload() { return m_flTimeLastSaved; }			// time we last uploaded to Steam
 
 	bool WereCheatsEverOn( void ) { return m_bCheatsEverOn; }
 
-#if !defined(NO_STEAM)
 	STEAM_CALLBACK( CAchievementMgr, Steam_OnUserStatsReceived, UserStatsReceived_t, m_CallbackUserStatsReceived );
 	STEAM_CALLBACK( CAchievementMgr, Steam_OnUserStatsStored, UserStatsStored_t, m_CallbackUserStatsStored );
-#endif
 
 	void SetAchievementThink( CBaseAchievement *pAchievement, float flThinkTime );
 

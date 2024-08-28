@@ -107,22 +107,7 @@ void C_TEWorldDecal::PostDataUpdate( DataUpdateType_t updateType )
 		C_BaseEntity *ent = cl_entitylist->GetEnt( 0 );
 		if ( ent )
 		{
-			bool bNoBlood = UTIL_IsLowViolence();
-			bool bIsBlood = false;
-
-			if ( bNoBlood )
-			{
-				const char *pchDecalName = decalsystem->GetDecalNameForIndex( m_nIndex );
-				if ( pchDecalName && V_stristr( pchDecalName, "blood" ) )
-				{
-					bIsBlood = true;
-				}
-			}
-
-			if ( !( bNoBlood && bIsBlood ) )
-			{
-				effects->DecalShoot( m_nIndex, 0, ent->GetModel(), ent->GetAbsOrigin(), ent->GetAbsAngles(), m_vecOrigin, 0, 0 );
-			}
+			effects->DecalShoot( m_nIndex, 0, ent->GetModel(), ent->GetAbsOrigin(), ent->GetAbsAngles(), m_vecOrigin, 0, 0 );
 		}
 	}
 	RecordWorldDecal( &m_vecOrigin, m_nIndex );

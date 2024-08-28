@@ -7,9 +7,7 @@
 #ifndef PLAYER_VOICE_LISTENER_H
 #define PLAYER_VOICE_LISTENER_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "igamesystem.h"
 

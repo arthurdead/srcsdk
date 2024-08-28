@@ -7,7 +7,8 @@ source_base = subproject('source_base')
 
 mathlib_lib = static_library('mathlib',
 	cpp_args: [
-		'-DMATHLIB_LIB'
+		'-DMATHLIB_LIB',
+		'-DLIBNAME=mathlib'
 	],
 	sources: files(
 		join_paths(mathlib_src_dir,'sse.cpp'),

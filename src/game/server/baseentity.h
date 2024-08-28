@@ -92,138 +92,6 @@ class IHasAttributes;
 
 typedef CUtlVector< CBaseEntity* > EntityList_t;
 
-#if defined( HEIST_DLL )
-
-enum Class_T
-{
-	CLASS_NONE = 0,
-
-	//NOT USED!!!
-	CLASS_PLAYER,
-
-	CLASS_HEISTER,
-	CLASS_HEISTER_DISGUISED,
-
-	CLASS_CIVILIAN,
-	CLASS_POLICE,
-
-	NUM_AI_CLASSES
-};
-
-#elif defined( HL2_DLL )
-
-// For CLASSIFY
-enum Class_T
-{
-	CLASS_NONE=0,				
-	CLASS_PLAYER,			
-	CLASS_PLAYER_ALLY,
-	CLASS_PLAYER_ALLY_VITAL,
-	CLASS_ANTLION,
-	CLASS_BARNACLE,
-	CLASS_BULLSEYE,
-	//CLASS_BULLSQUID,	
-	CLASS_CITIZEN_PASSIVE,	
-	CLASS_CITIZEN_REBEL,
-	CLASS_COMBINE,
-	CLASS_COMBINE_GUNSHIP,
-	CLASS_CONSCRIPT,
-	CLASS_HEADCRAB,
-	//CLASS_HOUNDEYE,
-	CLASS_MANHACK,
-	CLASS_METROPOLICE,		
-	CLASS_MILITARY,		
-	CLASS_SCANNER,		
-	CLASS_STALKER,		
-	CLASS_VORTIGAUNT,
-	CLASS_ZOMBIE,
-	CLASS_PROTOSNIPER,
-	CLASS_MISSILE,
-	CLASS_FLARE,
-	CLASS_EARTH_FAUNA,
-	CLASS_HACKED_ROLLERMINE,
-	CLASS_COMBINE_HUNTER,
-
-	NUM_AI_CLASSES
-};
-
-#elif defined( HL1_DLL )
-
-enum Class_T
-{
-	CLASS_NONE = 0,
-	CLASS_MACHINE,
-	CLASS_PLAYER,
-	CLASS_HUMAN_PASSIVE,
-	CLASS_HUMAN_MILITARY,
-	CLASS_ALIEN_MILITARY,
-	CLASS_ALIEN_MONSTER,
-	CLASS_ALIEN_PREY,
-	CLASS_ALIEN_PREDATOR,
-	CLASS_INSECT,
-	CLASS_PLAYER_ALLY,
-	CLASS_PLAYER_BIOWEAPON,
-	CLASS_ALIEN_BIOWEAPON,
-
-	NUM_AI_CLASSES
-};
-
-#elif defined( INVASION_DLL )
-
-enum Class_T
-{
-	CLASS_NONE = 0,
-	CLASS_PLAYER,			
-	CLASS_PLAYER_ALLY,
-	CLASS_PLAYER_ALLY_VITAL,
-	CLASS_ANTLION,
-	CLASS_BARNACLE,
-	CLASS_BULLSEYE,
-	//CLASS_BULLSQUID,	
-	CLASS_CITIZEN_PASSIVE,	
-	CLASS_CITIZEN_REBEL,
-	CLASS_COMBINE,
-	CLASS_COMBINE_GUNSHIP,
-	CLASS_CONSCRIPT,
-	CLASS_HEADCRAB,
-	//CLASS_HOUNDEYE,
-	CLASS_MANHACK,
-	CLASS_METROPOLICE,		
-	CLASS_MILITARY,		
-	CLASS_SCANNER,		
-	CLASS_STALKER,		
-	CLASS_VORTIGAUNT,
-	CLASS_ZOMBIE,
-	CLASS_PROTOSNIPER,
-	CLASS_MISSILE,
-	CLASS_FLARE,
-	CLASS_EARTH_FAUNA,
-	NUM_AI_CLASSES
-};
-
-#elif defined( CSTRIKE_DLL )
-
-enum Class_T
-{
-	CLASS_NONE = 0,
-	CLASS_PLAYER,
-	CLASS_PLAYER_ALLY,
-	NUM_AI_CLASSES
-};
-
-#else
-
-enum Class_T
-{
-	CLASS_NONE = 0,
-	CLASS_PLAYER,
-	CLASS_PLAYER_ALLY,
-	CLASS_PLAYER_ALLY_VITAL,
-	NUM_AI_CLASSES
-};
-
-#endif
-
 //
 // Structure passed to input handlers.
 //
@@ -845,10 +713,8 @@ public:
 
 	int				m_nLastThinkTick;
 
-#if !defined( NO_ENTITY_PREDICTION )
 	// Certain entities (projectiles) can be created on the client and thus need a matching id number
 	CNetworkVar( CPredictableId, m_PredictableID );
-#endif
 
 	// used so we know when things are no longer touching
 	int			touchStamp;			
@@ -1477,13 +1343,12 @@ public:
 	// --------------------------------------------------------------------
 
 public:
-#if !defined( NO_ENTITY_PREDICTION )
 	// The player drives simulation of this entity
 	void					SetPlayerSimulated( CBasePlayer *pOwner );
 	void					UnsetPlayerSimulated( void );
 	bool					IsPlayerSimulated( void ) const;
 	CBasePlayer				*GetSimulatingPlayer( void );
-#endif
+
 	// FIXME: Make these private!
 	void					PhysicsCheckForEntityUntouch( void );
  	bool					PhysicsRunThink( thinkmethods_t thinkMethod = THINK_FIRE_ALL_FUNCTIONS );
@@ -1590,7 +1455,7 @@ private:
 	virtual	QAngle			GetStepAngles( void ) const;
 	
 	// These set entity flags (EFL_*) to help optimize queries
-	void					CheckHasThinkFunction( bool isThinkingHint = false );
+	void					CheckHasThinkFunction( int thinkTick, bool isThinkingHint = false );
 	void					CheckHasGamePhysicsSimulation();
 	bool					WillThink();
 	bool					WillSimulateGamePhysics();
@@ -1628,7 +1493,6 @@ private:
 
 	// Precache model sounds + particles
 	static void PrecacheModelComponents( int nModelIndex );
-	static void PrecacheSoundHelper( const char *pName );
 
 protected:
 	// Which frame did I simulate?
@@ -1765,11 +1629,9 @@ public:
 	bool IsDynamicModelLoading() const { return m_bDynamicModelPending; } 
 	void SetCollisionBoundsFromModel();
 
-#if !defined( NO_ENTITY_PREDICTION )
 	CNetworkVar( bool, m_bIsPlayerSimulated );
 	// Player who is driving my simulation
 	CHandle< CBasePlayer >			m_hPlayerSimulationOwner;
-#endif
 
 	int								m_fDataObjectTypes;
 

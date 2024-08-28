@@ -34,8 +34,6 @@ game_shared_dep = declare_dependency(
 		join_paths(shared_game_src_dir,'heist_gamerules.cpp'),
 		join_paths(shared_game_src_dir,'heist_playeranimstate.cpp'),
 		join_paths(shared_game_weapons_src_dir,'weapon_heistbase.cpp'),
-		join_paths(shared_game_src_dir,'heist_usermessages.cpp'),
-		join_paths(shared_game_src_dir,'heist_gamemovement.cpp'),
 		join_paths(shared_game_weapons_src_dir,'heist_weapon_parse.cpp'),
 		join_paths(shared_game_src_dir,'heist_player_shared.cpp'),
 		join_paths(shared_game_npcs_src_dir,'suspicioner.cpp'),
@@ -73,7 +71,7 @@ server_lib_dep = declare_dependency(
 	]
 )
 
-if true
+if false
 shared_library('server',name_prefix:'',
 	cpp_pch: [
 		#join_paths(server_src_dir,'pch','cbase_pch.h'),
@@ -114,16 +112,8 @@ shared_library('client',name_prefix:'',
 	],
 	sources: files(
 		join_paths(client_game_src_dir,'c_heist_player.cpp'),
-		join_paths(client_game_src_dir,'heist_in_main.cpp'),
-		join_paths(client_game_src_dir,'heist_prediction.cpp'),
-		join_paths(client_game_src_dir,'clientmode_heist.cpp'),
-		join_paths(client_game_hud_src_dir,'heist_hud_chat.cpp'),
-		join_paths(client_game_hud_src_dir,'heist_hud_weaponselection.cpp'),
 		join_paths(client_game_hud_src_dir,'hud_suspicion.cpp'),
 		join_paths(client_game_npcs_src_dir,'c_npc_humanoidbase.cpp'),
-		join_paths(client_game_entities_src_dir,'c_vgui_text_display.cpp'),
-		join_paths(client_game_vgui_src_dir,'heistviewport.cpp'),
-		join_paths(client_game_vgui_src_dir,'vgui_rootpanel_heist.cpp'),
 	),
 	include_directories: include_directories(
 		client_game_src_dir,

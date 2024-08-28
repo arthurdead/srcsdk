@@ -96,9 +96,10 @@ public:
 	static IClientNetworkable* _##clientClassName##_CreateObject( int entnum, int serialNum ) \
 	{ \
 		clientClassName *pRet = new clientClassName; \
-		if ( !pRet ) \
-			return 0; \
-		pRet->Init( entnum, serialNum ); \
+		if(!pRet->InitializeAsServerEntity( entnum, serialNum )) { \
+			UTIL_Remove( pRet ); \
+			return NULL; \
+		} \
 		return pRet; \
 	} \
 	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
@@ -157,8 +158,10 @@ public:
 	static IClientNetworkable* _##clientClassName##_CreateObject() \
 	{ \
 		clientClassName *p = new clientClassName; \
-		if ( p ) \
-			p->Init( -1, 0 ); \
+		if(!p->InitializeAsEventEntity()) { \
+			UTIL_Remove( p ); \
+			return NULL; \
+		} \
 		return p; \
 	} \
 	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \

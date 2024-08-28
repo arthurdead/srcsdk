@@ -7,8 +7,6 @@
 //=============================================================================//
 #include "cbase.h"
 
-#if !defined( NO_ENTITY_PREDICTION )
-
 #if defined( CLIENT_DLL )
 
 #include "igamesystem.h"
@@ -1956,14 +1954,14 @@ void CValueChangeTracker::SetupTracking( C_BaseEntity *ent, char const *pchField
 	datamap_t *dmap = ent->GetPredDescMap();
 	if ( !dmap )
 	{
-		Msg( "No prediction datamap_t for entity %d/%s\n", ent->index, ent->GetClassname() );
+		Msg( "No prediction datamap_t for entity %d/%s\n", ent->entindex(), ent->GetClassname() );
 		return;
 	}
 
 	bool bFound = FindFieldStackByName_R( pchFieldName, dmap, m_FieldStack );
 	if ( !bFound || !m_FieldStack.Count() )
 	{
-		Msg( "No field '%s' in datamap_t for entity %d/%s\n", pchFieldName, ent->index, ent->GetClassname() );
+		Msg( "No field '%s' in datamap_t for entity %d/%s\n", pchFieldName, ent->entindex(), ent->GetClassname() );
 		return;
 	}
 
@@ -2239,4 +2237,3 @@ void CPredictionCopyTester::RunTests( void )
 }
 
 #endif // CLIENT_DLL
-#endif // !NO_ENTITY_PREDICTION )

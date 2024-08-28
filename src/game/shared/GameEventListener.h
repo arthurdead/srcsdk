@@ -21,10 +21,12 @@ class CGameEventListener : public IGameEventListener2
 public:
 	CGameEventListener() : m_bRegisteredForEvents(false)
 	{
+		m_nDebugID = EVENT_DEBUG_ID_INIT;
 	}
 
 	virtual ~CGameEventListener()
 	{
+		m_nDebugID = EVENT_DEBUG_ID_SHUTDOWN;
 		StopListeningForAllEvents();
 	}
 
@@ -54,6 +56,8 @@ public:
 
 	// Intentionally abstract
 	virtual void FireGameEvent( IGameEvent *event ) = 0;
+	int m_nDebugID;
+	virtual int GetEventDebugID( void )			{ return m_nDebugID; }
 
 private:
 

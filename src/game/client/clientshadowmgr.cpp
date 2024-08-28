@@ -174,11 +174,9 @@ private:
 		INVALID_FRAGMENT_HANDLE = (FragmentHandle_t)~0,
 		TEXTURE_PAGE_SIZE	    = 1024,
 		MAX_TEXTURE_POWER    	= 8,
-#if !defined( _X360 )
+
 		MIN_TEXTURE_POWER	    = 4,
-#else
-		MIN_TEXTURE_POWER	    = 5,	// per resolve requirements to ensure 32x32 aligned offsets
-#endif
+
 		MAX_TEXTURE_SIZE	    = (1 << MAX_TEXTURE_POWER),
 		MIN_TEXTURE_SIZE	    = (1 << MIN_TEXTURE_POWER),
 		BLOCK_SIZE			    = MAX_TEXTURE_SIZE,
@@ -252,22 +250,8 @@ void CTextureAllocator::Init()
 		m_Cache[i].m_List = m_Fragments.InvalidIndex();
 	}
 
-#if !defined( _X360 )
 	// don't need depth buffer for shadows
 	m_TexturePage.InitRenderTarget( TEXTURE_PAGE_SIZE, TEXTURE_PAGE_SIZE, RT_SIZE_NO_CHANGE, IMAGE_FORMAT_ARGB8888, MATERIAL_RT_DEPTH_NONE, false, "_rt_Shadows" );
-#else
-	// unfortunate explicit management required for this render target
-	// 32bpp edram is only largest shadow fragment, but resolved to actual shadow atlas
-	// because full-res 1024x1024 shadow buffer is too large for EDRAM
-	m_TexturePage.InitRenderTargetTexture( TEXTURE_PAGE_SIZE, TEXTURE_PAGE_SIZE, RT_SIZE_NO_CHANGE, IMAGE_FORMAT_ARGB8888, MATERIAL_RT_DEPTH_NONE, false, "_rt_Shadows" );
-
-	// edram footprint is only 256x256x4 = 256K
-	m_TexturePage.InitRenderTargetSurface( MAX_TEXTURE_SIZE, MAX_TEXTURE_SIZE, IMAGE_FORMAT_ARGB8888, false );
-
-	// due to texture/surface size mismatch, ensure texture page is entirely cleared translucent
-	// otherwise border artifacts at edge of shadows due to pixel shader averaging of unwanted bits
-	m_TexturePage->ClearTexture( 0, 0, 0, 0 );
-#endif
 }
 
 void CTextureAllocator::Shutdown()
@@ -288,11 +272,9 @@ void CTextureAllocator::Reset()
 
 	// Set up the block sizes....
 	// FIXME: Improve heuristic?!?
-#if !defined( _X360 )
+
 	m_Blocks[0].m_FragmentPower  = MAX_TEXTURE_POWER-4;	// 128 cells at ExE resolution
-#else
-	m_Blocks[0].m_FragmentPower  = MAX_TEXTURE_POWER-3;	// 64 cells at DxD resolution
-#endif
+
 	m_Blocks[1].m_FragmentPower  = MAX_TEXTURE_POWER-3;	// 64 cells at DxD resolution
 	m_Blocks[2].m_FragmentPower  = MAX_TEXTURE_POWER-2;	// 32 cells at CxC resolution
 	m_Blocks[3].m_FragmentPower  = MAX_TEXTURE_POWER-2;		 
@@ -1417,9 +1399,9 @@ void CClientShadowMgr::InitDepthTextureShadows()
 		m_bDepthTextureActive = true;
 
 		ImageFormat dstFormat  = materials->GetShadowDepthTextureFormat();	// Vendor-dependent depth texture format
-#if !defined( _X360 )
+
 		ImageFormat nullFormat = materials->GetNullTextureFormat();			// Vendor-dependent null texture format (takes as little memory as possible)
-#endif
+
 		materials->BeginRenderTargetAllocation();
 
 		m_DummyColorTexture.InitRenderTarget( m_nDepthTextureResolution, m_nDepthTextureResolution, RT_SIZE_NO_CHANGE, nullFormat, MATERIAL_RT_DEPTH_NONE, false, "_rt_ShadowDummy" );
@@ -2716,7 +2698,7 @@ void CClientShadowMgr::BuildFlashlight( ClientShadowHandle_t handle )
 	// For the 360, we just draw flashlights with the main geometry
 	// and bypass the entire shadow casting system.
 	ClientShadow_t &shadow = m_Shadows[handle];
-	if ( IsX360() || r_flashlight_version2.GetInt() )
+	if ( r_flashlight_version2.GetInt() )
 	{
 		// This will update the matrices, but not do work to add the flashlight to surfaces
 		shadowmgr->ProjectFlashlight( shadow.m_ShadowHandle, shadow.m_WorldToShadow, 0, NULL );
@@ -3878,7 +3860,7 @@ bool CClientShadowMgr::DrawRenderToTextureShadow( unsigned short clientShadowHan
 		// Sets the viewport state
 		int x, y, w, h;
 		m_ShadowAllocator.GetTextureRect( shadow.m_ShadowTexture, x, y, w, h );
-		pRenderContext->Viewport( IsX360() ? 0 : x, IsX360() ? 0 : y, w, h ); 
+		pRenderContext->Viewport( x, y, w, h ); 
 
 		// Clear the selected viewport only (don't need to clear depth)
 		pRenderContext->ClearBuffers( true, false );
@@ -3889,13 +3871,6 @@ bool CClientShadowMgr::DrawRenderToTextureShadow( unsigned short clientShadowHan
 		if ( DrawShadowHierarchy( pRenderable, shadow ) )
 		{
 			bDrewTexture = true;
-			if ( IsX360() )
-			{
-				// resolve render target to system memory texture
-				Rect_t srcRect = { 0, 0, w, h };
-				Rect_t dstRect = { x, y, w, h };
-				pRenderContext->CopyRenderTargetToTextureEx( m_ShadowAllocator.GetTexture(), 0, &srcRect, &dstRect );
-			}
 		}
 		else
 		{
@@ -4018,7 +3993,7 @@ void CClientShadowMgr::SetViewFlashlightState( int nActiveFlashlightCount, Clien
 	// NOTE: On the 360, we render the entire scene with the flashlight state
 	// set and don't render flashlights additively in the shadow mgr at a far later time
 	// because the CPU costs are prohibitive
-	if ( !IsX360() && !r_flashlight_version2.GetInt() )
+	if ( !r_flashlight_version2.GetInt() )
 		return;
 
 	Assert( nActiveFlashlightCount<= 1 ); 
@@ -4185,7 +4160,7 @@ void CClientShadowMgr::ComputeShadowTextures( const CViewSetup &view, int leafCo
 
 	pRenderContext->PushRenderTargetAndViewport( m_ShadowAllocator.GetTexture() );
 
-	if ( !IsX360() && m_bRenderTargetNeedsClear )
+	if ( m_bRenderTargetNeedsClear )
 	{
 		// don't need to clear absent depth buffer
 		pRenderContext->ClearBuffers( true, false );

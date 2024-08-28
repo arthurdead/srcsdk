@@ -10,6 +10,8 @@
 #include "convar_serverbounded.h"
 #include "tier0/icommandline.h"
 
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
 
 bool g_bForceCLPredictOff = false;
 
@@ -23,11 +25,7 @@ public:
 	CBoundedCvar_Predict() :
 	  ConVar_ServerBounded( "cl_predict", 
 		  "1.0", 
-#if defined(DOD_DLL) || defined(CSTRIKE_DLL)
-		  FCVAR_USERINFO | FCVAR_CHEAT, 
-#else
-		  FCVAR_USERINFO | FCVAR_NOT_CONNECTED, 
-#endif
+		  FCVAR_USERINFO | FCVAR_CHEAT | FCVAR_NOT_CONNECTED, 
 		  "Perform client side prediction." )
 	  {
 	  }

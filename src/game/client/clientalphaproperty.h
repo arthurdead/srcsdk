@@ -7,35 +7,55 @@
 
 #ifndef CLIENTALPHAPROPERTY_H
 #define CLIENTALPHAPROPERTY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "iclientalphaproperty.h"
-
+#include "iclientrenderable.h"
+#include "iclientunknown.h"
 
 #define CLIENT_ALPHA_DISTANCE_FADE_MODE_BIT_COUNT 1
+
+enum
+{
+	ALPHAPROP_FLAGS_NONE = 0,
+	ALPHAPROP_FLAGS_ALWAYS_IGNORE_Z = (1 << 0),
+};
 
 //-----------------------------------------------------------------------------
 // Implementation class
 //-----------------------------------------------------------------------------
-class CClientAlphaProperty : public IClientAlphaProperty
+class CClientAlphaProperty : public IClientAlphaPropertyEx
 {
 	// Inherited from IClientAlphaProperty
 public:
+	virtual IClientAlphaPropertyMod*	GetClientAlphaPropertyMod() { return this; }
 	virtual IClientUnknown*	GetIClientUnknown();
+	virtual IClientUnknownMod*	GetIClientUnknownMod();
 	virtual void SetAlphaModulation( uint8 a );
 	virtual void SetRenderFX( RenderFx_t nRenderFx, RenderMode_t nRenderMode, float flStartTime = FLT_MAX, float flDuration = 0.0f );
 	virtual void SetFade( float flGlobalFadeScale, float flDistFadeMinDist, float flDistFadeMaxDist );	
 	virtual void SetDesyncOffset( int nOffset );
-	virtual void EnableAlphaModulationOverride( bool bEnable );
-	virtual void EnableShadowAlphaModulationOverride( bool bEnable );
+	virtual void EnableRenderAlphaOverride( bool bEnable );
+	virtual void EnableShadowRenderAlphaOverride( bool bEnable );
 	virtual void SetDistanceFadeMode( ClientAlphaDistanceFadeMode_t nFadeMode );
 
 	// Other public methods
 public:
 	CClientAlphaProperty( );
 	void Init( IClientUnknown *pUnk );
+	void Init( IClientUnknownEx *pUnk );
+
+	void SetRenderFX( RenderFx_t nRenderFx, float flStartTime = FLT_MAX, float flDuration = 0.0f )
+	{ SetRenderFX(nRenderFx, GetRenderMode(), flStartTime, flDuration); }
+
+	void SetRenderMode( RenderMode_t nRenderMode )
+	{ SetRenderFX(GetRenderFX(), nRenderMode, FLT_MAX, 0.0f); }
+
+	void SetFade( float flDistFadeMinDist, float flDistFadeMaxDist )
+	{ SetFade(GetGlobalFadeScale(), flDistFadeMinDist, flDistFadeMaxDist); }
+
+	void SetFade( float flGlobalFadeScale )
+	{ SetFade(flGlobalFadeScale, GetMinFadeDist(), GetMaxFadeDist()); }
 
 	// NOTE: Only the client shadow manager should ever call this method!
 	void SetShadowHandle( ClientShadowHandle_t hShadowHandle );
@@ -43,8 +63,12 @@ public:
 	// Returns the current alpha modulation (no fades or render FX taken into account)
 	uint8 GetAlphaModulation() const;
 
+	uint8 GetAlphaBlend() const;
+
+	void ComputeAlphaBlend();
+
 	// Compute the render alpha (after fades + render FX are applied)
-	uint8 ComputeRenderAlpha( ) const;
+	uint8 ComputeRenderAlpha( bool bShadow = false );
 
 	// Returns alpha fade
 	float GetMinFadeDist() const;
@@ -53,6 +77,10 @@ public:
 
 	// Should this ignore the Z buffer?
 	bool IgnoresZBuffer( void ) const;
+
+	RenderMode_t GetRenderMode( void ) const;
+
+	RenderFx_t GetRenderFX( void ) const;
 
 private:
 	// NOTE: Be careful if you add data to this class.
@@ -67,11 +95,11 @@ private:
 	uint16 m_bAlphaOverride : 1;
 	uint16 m_bShadowAlphaOverride : 1;
 	uint16 m_nDistanceFadeMode : CLIENT_ALPHA_DISTANCE_FADE_MODE_BIT_COUNT;
-	uint16 m_nReserved : 4;
+	uint16 m_nFlags : 4;
 
 	uint16 m_nDesyncOffset;
-	uint8 m_nAlpha;
-	uint8 m_nReserved2;
+	uint8 m_nAlphaModulation;
+	uint8 m_nAlphaBlend;
 
 	uint16 m_nDistFadeStart;
 	uint16 m_nDistFadeEnd;
@@ -80,13 +108,23 @@ private:
 	float m_flRenderFxStartTime;
 	float m_flRenderFxDuration;
 
+	IClientUnknownMod *m_pOuterMod;
+	IClientRenderableMod *m_pRenderMod;
+
 	friend class CClientLeafSystem;
 };
+
+//COMPILE_TIME_ASSERT(sizeof(CClientAlphaProperty) == 32);
 
 // Returns the current alpha modulation
 inline uint8 CClientAlphaProperty::GetAlphaModulation() const
 {
-	return m_nAlpha;
+	return m_nAlphaModulation;
+}
+
+inline uint8 CClientAlphaProperty::GetAlphaBlend() const
+{
+	return m_nAlphaBlend;
 }
 
 inline float CClientAlphaProperty::GetMinFadeDist() const
@@ -104,10 +142,14 @@ inline float CClientAlphaProperty::GetGlobalFadeScale() const
 	return m_flFadeScale;
 }
 
-inline bool CClientAlphaProperty::IgnoresZBuffer( void ) const
+inline RenderMode_t CClientAlphaProperty::GetRenderMode( void ) const
 {
-	return m_nRenderMode == kRenderGlow || m_nRenderMode == kRenderWorldGlow;
+	return (RenderMode_t)m_nRenderMode;
 }
 
+inline RenderFx_t CClientAlphaProperty::GetRenderFX( void ) const
+{
+	return (RenderFx_t)m_nRenderFX;
+}
 
 #endif // CLIENTALPHAPROPERTY_H

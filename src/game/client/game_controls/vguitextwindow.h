@@ -16,6 +16,8 @@
 #include <game/client/iviewport.h>
 #include "shareddefs.h"
 
+#include "GameEventListener.h"
+
 namespace vgui
 {
 	class TextEntry;
@@ -25,7 +27,15 @@ namespace vgui
 // Purpose: displays the MOTD
 //-----------------------------------------------------------------------------
 
-class CTextWindow : public vgui::Frame, public IViewPortPanel
+enum
+{
+	FADE_STATUS_IN = 0,
+	FADE_STATUS_HOLD, 
+	FADE_STATUS_OUT,
+	FADE_STATUS_OFF
+};
+
+class CTextWindow : public vgui::Frame, public IViewPortPanel, public CGameEventListener
 {
 private:
 	DECLARE_CLASS_SIMPLE( CTextWindow, vgui::Frame );
@@ -38,7 +48,8 @@ public:
 	virtual void SetData(KeyValues *data);
 	virtual void Reset();
 	virtual void Update();
-	virtual bool NeedsUpdate( void ) { return false; }
+	virtual void UpdateContents( void );
+	virtual bool NeedsUpdate( void ) { return true; }
 	virtual bool HasInputElements( void ) { return true; }
 	virtual void ShowPanel( bool bShow );
 
@@ -46,6 +57,9 @@ public:
 	vgui::VPANEL GetVPanel( void ) { return BaseClass::GetVPanel(); }
   	virtual bool IsVisible() { return BaseClass::IsVisible(); }
   	virtual void SetParent( vgui::VPANEL parent ) { BaseClass::SetParent( parent ); }
+
+  	virtual void FireGameEvent( IGameEvent *event );
+	virtual bool WantsBackgroundBlurred( void );
 
 public:
 
@@ -96,6 +110,11 @@ protected:
 	
 	vgui::Button	*m_pOK;
 	vgui::Label		*m_pTitleLabel;
+
+	float m_flNextFadeTime;
+	int m_iFadeStatus;
+	bool m_bMiniMode;
+	bool m_bIgnoreMultipleShowRequests;
 };
 
 

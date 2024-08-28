@@ -1,8 +1,6 @@
 #ifndef	C_WEAPONCUSTOMPARSE_H
 #define	C_WEAPONCUSTOMPARSE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "weapon_parse.h"
 

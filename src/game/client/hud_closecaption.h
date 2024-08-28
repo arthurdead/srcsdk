@@ -14,6 +14,7 @@
 #include "captioncompiler.h"
 #include "tier1/UtlSortVector.h"
 #include "tier1/utlsymbol.h"
+#include "datamanager.h"
 
 class CSentence;
 class C_BaseFlex;
@@ -97,18 +98,20 @@ public:
 	virtual void	Paint();
 
 	void MsgFunc_CloseCaption(bf_read &msg);
+	void MsgFunc_CloseCaptionDirect(bf_read &msg);
 
 	// Clear all CC data
 	void			Reset( void );
 	void			Process( const wchar_t *stream, float duration, char const *tokenstream, bool fromplayer, bool direct = false );
 	
 	bool			ProcessCaption( char const *tokenname, float duration, bool fromplayer = false, bool direct = false );
+	bool			ProcessCaptionByHash( unsigned int hash, float duration, bool fromplayer, bool direct = false );
 	void			ProcessCaptionDirect( char const *tokenname, float duration, bool fromplayer = false );
 
 	void			ProcessSentenceCaptionStream( char const *tokenstream );
 	void			PlayRandomCaption();
 
-	void				InitCaptionDictionary( char const *dbfile );
+	void				InitCaptionDictionary( char const *dbfile, bool bForce = false );
 	void				OnFinishAsyncLoad( int nFileIndex, int nBlockNum, AsyncCaptionData_t *pData );
 
 	void			Flush();
@@ -153,9 +156,10 @@ private:
 	void ClearAsyncWork();
 	void ProcessAsyncWork();
 	bool AddAsyncWork( char const *tokenstream, bool bIsStream, float duration, bool fromplayer, bool direct = false );
+	bool AddAsyncWorkByHash( unsigned int hash, float duration, bool fromplayer, bool direct = false );
 
 	void _ProcessSentenceCaptionStream( int wordCount, char const *tokenstream, const wchar_t *caption_full );
-	void _ProcessCaption( const wchar_t *caption, char const *tokenname, float duration, bool fromplayer, bool direct = false );
+	void _ProcessCaption( const wchar_t *caption, unsigned int hash, char const *tokenname, float duration, bool fromplayer, bool direct = false );
 
 	CUtlLinkedList< CAsyncCaption *, unsigned short >	m_AsyncWork;
 
@@ -197,6 +201,7 @@ private:
 	float		m_flCurrentAlpha;
 	float		m_flGoalHeightStartTime;
 	float		m_flGoalHeightFinishTime;
+	bool		m_bMouseOverFade;
 
 	CPanelAnimationVar( float, m_flBackgroundAlpha, "BgAlpha", "192" );
 	CPanelAnimationVar( float, m_flGrowTime, "GrowTime", "0.25" );

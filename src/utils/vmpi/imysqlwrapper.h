@@ -7,9 +7,7 @@
 
 #ifndef MYSQL_WRAPPER_H
 #define MYSQL_WRAPPER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "utlvector.h"

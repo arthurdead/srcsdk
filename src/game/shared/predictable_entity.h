@@ -14,12 +14,6 @@
 #include "predictioncopy.h"
 #include "shared_classnames.h"
 
-#ifndef NO_ENTITY_PREDICTION
-#define UsePrediction() 1
-#else
-#define UsePrediction() 0
-#endif
-
 // CLIENT DLL includes
 #if defined( CLIENT_DLL )
 
@@ -55,18 +49,13 @@ class SendTable;
 
 #if defined( CLIENT_DLL )
 
-#ifndef NO_ENTITY_PREDICTION
 #define DECLARE_PREDICTABLE()											\
 	public:																\
 		static typedescription_t m_PredDesc[];							\
 		static datamap_t m_PredMap;										\
 		virtual datamap_t *GetPredDescMap( void );						\
 		template <typename T> friend datamap_t *PredMapInit(T *)
-#else
-#define DECLARE_PREDICTABLE()	template <typename T> friend datamap_t *PredMapInit(T *)
-#endif
 
-#ifndef NO_ENTITY_PREDICTION
 #define BEGIN_PREDICTION_DATA( className ) \
 	datamap_t className::m_PredMap = { 0, 0, #className, &BaseClass::m_PredMap }; \
 	datamap_t *className::GetPredDescMap( void ) { return &m_PredMap; } \
@@ -107,25 +96,6 @@ class SendTable;
 		} \
 		return &classNameTypedef::m_PredMap; \
 	}
-#else
-#define BEGIN_PREDICTION_DATA( className ) \
-	template <> inline datamap_t *PredMapInit<className>( className * ) \
-	{ \
-		if ( 0 ) \
-		{ \
-			typedef className classNameTypedef; \
-			typedescription_t predDesc[] = \
-			{ \
-				{ FIELD_VOID,0, {0,0},0,0,0,0,0,0},
-
-#define BEGIN_PREDICTION_DATA_NO_BASE( className ) BEGIN_PREDICTION_DATA( className )
-
-#define END_PREDICTION_DATA() \
-			}; \
-			predDesc[0].flags = 0; /* avoid compiler warning of unused data */ \
-		} \
-	}
-#endif
 
 #else
 
@@ -144,7 +114,9 @@ class SendTable;
 #define LINK_ENTITY_TO_CLASS( localName, className )						\
 	static C_BaseEntity *C##localName##Factory( void )						\
 	{																		\
-		return static_cast< C_BaseEntity * >( new className );				\
+		C_BaseEntity *pEnt = static_cast< C_BaseEntity * >( new className ); \
+		pEnt->SetClassname( #localName ); \
+		return pEnt;				\
 	};																		\
 	class C##localName##Foo													\
 	{																		\
@@ -192,7 +164,7 @@ public:
 	// Get predictables by index
 	virtual CBaseEntity		*GetPredictable( int slot ) = 0;
 	// Get count of predictables
-	virtual int				GetPredictableCount( void ) = 0;
+	virtual int				GetPredictableCount( void ) const = 0;
 };
 
 // Expose interface to rest of .dll

@@ -744,20 +744,9 @@ void CStudioHdr::Init( const studiohdr_t *pStudioHdr, IMDLCache *mdlcache )
 		m_nFrameUnlockCounter = *m_pFrameUnlockCounter - 1;
 	}
 
-	if (m_pStudioHdr->numincludemodels == 0)
-	{
-#if STUDIO_SEQUENCE_ACTIVITY_LAZY_INITIALIZE
-#else
-		m_ActivityToSequence.Initialize(this);
-#endif
-	}
-	else
+	if (m_pStudioHdr->numincludemodels != 0)
 	{
 		ResetVModel( m_pStudioHdr->GetVirtualModel() );
-#if STUDIO_SEQUENCE_ACTIVITY_LAZY_INITIALIZE
-#else
-		m_ActivityToSequence.Initialize(this);
-#endif
 	}
 
 	m_boneFlags.EnsureCount( numbones() );
@@ -1634,9 +1623,7 @@ void CStudioHdr::CActivityToSequenceMapping::Initialize( CStudioHdr * __restrict
 	if ( ! pstudiohdr->SequencesAvailable() )
 		return; // nothing to do.
 
-#if STUDIO_SEQUENCE_ACTIVITY_LAZY_INITIALIZE
 	m_bIsInitialized = true;
-#endif
 	
 	// Some studio headers have no activities at all. In those
 	// cases we can avoid a lot of this effort.

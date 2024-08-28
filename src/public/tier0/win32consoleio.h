@@ -6,9 +6,7 @@
 #ifndef WIN32_CONSOLE_IO_H
 #define WIN32_CONSOLE_IO_H
 
-#if defined( COMPILER_MSVC )
 #pragma once
-#endif
 
 // Function to attach a console for I/O to a Win32 GUI application in a reasonably smart fashion.
 PLATFORM_INTERFACE bool SetupWin32ConsoleIO();

@@ -28,7 +28,7 @@
 
 #include "igamesystem.h"
 #include "gamerules_register.h"
-
+#include "baseentity_shared.h"
 
 //#include "items.h"
 class CBaseCombatWeapon;
@@ -192,7 +192,7 @@ public:
 
 	virtual bool AllowWeatherParticles( void ) { return true; }
 
-	virtual bool AllowMapVisionFilterShaders( void ) { return false; }
+	virtual bool AllowMapVisionFilterShaders( void ) { return true; }
 	virtual const char* TranslateEffectForVisionFilter( const char *pchEffectType, const char *pchEffectName ) { return pchEffectName; }
 
 	virtual bool IsLocalPlayer( int nEntIndex );
@@ -414,9 +414,17 @@ public:
 
 	virtual void OnFileReceived( const char * fileName, unsigned int transferID ) { return; }
 
-	virtual bool IsHolidayActive( /*EHoliday*/ int eHoliday ) const { return false; }
+	virtual int GetNumHolidays() const { return NUM_SHARED_HOLIDAYS; }
+	virtual bool IsHolidayActive( EHolidayFlag eHoliday ) const { return false; }
+	virtual bool GetHolidayString( EHolidayFlag eHoliday, char *str, int maxlen ) const { return false; }
 
 	virtual bool IsManualMapChangeOkay( const char **pszReason ){ return true; }
+
+	float GetGravityMultiplier(  void ){ return m_flGravityMultiplier; }
+	void			SetGravityMultiplier( float flValue ){ m_flGravityMultiplier.Set( flValue ); }
+
+private:
+	CNetworkVar( float, m_flGravityMultiplier );
 
 #ifndef CLIENT_DLL
 private:

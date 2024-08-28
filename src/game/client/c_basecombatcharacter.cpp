@@ -169,6 +169,7 @@ IMPLEMENT_CLIENTCLASS(C_BaseCombatCharacter, DT_BaseCombatCharacter, CBaseCombat
 // Only send active weapon index to local player
 BEGIN_RECV_TABLE_NOBASE( C_BaseCombatCharacter, DT_BCCLocalPlayerExclusive )
 	RecvPropTime( RECVINFO( m_flNextAttack ) ),
+	RecvPropArray3( RECVINFO_ARRAY(m_hMyWeapons), RecvPropEHandle( RECVINFO( m_hMyWeapons[0] ) ) ),
 END_RECV_TABLE();
 
 

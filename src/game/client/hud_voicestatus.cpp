@@ -15,8 +15,14 @@
 #include "c_playerresource.h"
 #include "voice_common.h"
 #include "vgui_avatarimage.h"
+#include "bitvec.h"
+
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
 
 ConVar *sv_alltalk = NULL;
+
+extern vgui::IImage* GetDefaultAvatarImage( C_BasePlayer *pPlayer );
 
 //=============================================================================
 // Icon for the local player using voice
@@ -46,11 +52,11 @@ DECLARE_HUDELEMENT( CHudVoiceSelfStatus );
 CHudVoiceSelfStatus::CHudVoiceSelfStatus( const char *pName ) :
 	vgui::Panel( NULL, "HudVoiceSelfStatus" ), CHudElement( pName )
 {
-	SetParent( g_pClientMode->GetViewport() );
+	SetParent( GetClientMode()->GetViewport() );
 
 	m_pVoiceIcon = NULL;
 
-	SetHiddenBits( 0 );
+	SetHiddenBits( HIDEHUD_MISCSTATUS );
 
 	m_clrIcon = Color(255,255,255,255);
 }
@@ -58,26 +64,38 @@ CHudVoiceSelfStatus::CHudVoiceSelfStatus( const char *pName ) :
 void CHudVoiceSelfStatus::ApplySchemeSettings(vgui::IScheme *pScheme)
 {
 	BaseClass::ApplySchemeSettings( pScheme );
-
-#ifdef HL2MP
-	SetBgColor( Color( 0, 0, 0, 0 ) );
-#endif
 }
 
 void CHudVoiceSelfStatus::VidInit( void )
 {
-	m_pVoiceIcon = gHUD.GetIcon( "voice_self" );
+	m_pVoiceIcon = HudIcons().GetIcon( "voice_self" );
 }
 
 bool CHudVoiceSelfStatus::ShouldDraw()
 {
-	return GetClientVoiceMgr()->IsLocalPlayerSpeaking();
+	if ( GetClientVoiceMgr()->IsLocalPlayerSpeaking() == false )
+		return false;
+
+	return CHudElement::ShouldDraw();
 }
 
 void CHudVoiceSelfStatus::Paint()
 {
    if( !m_pVoiceIcon )
 		return;
+
+	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
+
+	if ( player &&
+		GetClientVoiceMgr()->IsLocalPlayerSpeakingAboveThreshold() )
+	{
+		m_clrIcon[3] = 255;
+	}
+	else
+	{
+		// NOTE: Merge issue. This number should either be 0 or 255, dunno!
+		m_clrIcon[3] = 0;
+	}
 	
 	int x, y, w, h;
 	GetBounds( x, y, w, h );
@@ -150,6 +168,7 @@ private:
 	CPanelAnimationVarAliasType( float, dead_icon_tall, "dead_tall", "16", "proportional_float" );
 	CPanelAnimationVarAliasType( float, dead_icon_wide, "dead_wide", "16", "proportional_float" );
 
+	CPanelAnimationVarAliasType( float, text_ypos, "text_ypos", "4", "proportional_float" );
 	CPanelAnimationVarAliasType( float, text_xpos, "text_xpos", "40", "proportional_float" );
 
 	CPanelAnimationVarAliasType( float, fade_in_time, "fade_in_time", "0.0", "float" );
@@ -163,11 +182,11 @@ DECLARE_HUDELEMENT( CHudVoiceStatus );
 CHudVoiceStatus::CHudVoiceStatus( const char *pName ) :
 	vgui::Panel( NULL, "HudVoiceStatus" ), CHudElement( pName )
 {
-	SetParent( g_pClientMode->GetViewport() );
+	SetParent( GetClientMode()->GetViewport() );
 
 	m_pVoiceIcon = NULL;
 
-	SetHiddenBits( 0 );
+	SetHiddenBits( HIDEHUD_MISCSTATUS );
 
 	m_clrIcon = Color(255,255,255,255);
 
@@ -187,10 +206,6 @@ CHudVoiceStatus::~CHudVoiceStatus()
 void CHudVoiceStatus::ApplySchemeSettings(vgui::IScheme *pScheme)
 {
 	BaseClass::ApplySchemeSettings( pScheme );
-
-#ifdef HL2MP
-	SetBgColor( Color( 0, 0, 0, 0 ) );
-#endif
 }
 
 void CHudVoiceStatus::Init( void )
@@ -200,7 +215,7 @@ void CHudVoiceStatus::Init( void )
 
 void CHudVoiceStatus::VidInit( void )
 {
-	m_pVoiceIcon = gHUD.GetIcon( "voice_player" );
+	m_pVoiceIcon = HudIcons().GetIcon( "voice_player" );
 }
 
 void CHudVoiceStatus::OnThink( void )
@@ -238,12 +253,11 @@ void CHudVoiceStatus::OnThink( void )
 				//=============================================================================
 
 				activeSpeaker.pAvatar = new CAvatarImage();
-#ifdef CSTRIKE_DLL
+
 				// [jpaquin] this allows counter strike to display default avatars for bots.  It can't be a virtual function on
 				// C_BasePlayer because there would be no way to get a game specific default image if the player is null.
-				extern vgui::IImage* GetDefaultAvatarImage( C_BasePlayer *pPlayer );
 				activeSpeaker.pAvatar->SetDefaultImage( GetDefaultAvatarImage( UTIL_PlayerByIndex( activeSpeaker.playerId ) ) );
-#endif
+
 				activeSpeaker.pAvatar->SetDrawFriend(show_friend);
 				player_info_t pi;
 				if ( engine->GetPlayerInfo( iPlayerIndex, &pi ) )

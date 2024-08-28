@@ -16,15 +16,20 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+ConVar JiggleBoneDebug( "jiggle_bone_debug", "0", FCVAR_CHEAT, "Display physics-based 'jiggle bone' debugging information" );
+ConVar JiggleBoneDebugYawConstraints( "jiggle_bone_debug_yaw_constraints", "0", FCVAR_CHEAT, "Display physics-based 'jiggle bone' debugging information" );
+ConVar JiggleBoneDebugPitchConstraints( "jiggle_bone_debug_pitch_constraints", "0", FCVAR_CHEAT, "Display physics-based 'jiggle bone' debugging information" );
+ConVar JiggleBoneInvert( "jiggle_bone_invert", "0", FCVAR_CHEAT );
+ConVar JiggleBoneSanity( "jiggle_bone_sanity", "1", 0, "Prevent jiggle bones from pointing directly away from their target in case of numerical instability." );
+ConVar JiggleBoneFramerateCutoff( "jiggle_bone_framerate_cutoff", "20", 0, "Skip jiggle bone simulation if framerate drops below this value (frames/second)" );
+
+static int s_id = 2;
+
 #ifdef CLIENT_DLL
-//-----------------------------------------------------------------------------
-ConVar cl_jiggle_bone_debug( "cl_jiggle_bone_debug", "0", FCVAR_CHEAT, "Display physics-based 'jiggle bone' debugging information" );
-ConVar cl_jiggle_bone_debug_yaw_constraints( "cl_jiggle_bone_debug_yaw_constraints", "0", FCVAR_CHEAT, "Display physics-based 'jiggle bone' debugging information" );
-ConVar cl_jiggle_bone_debug_pitch_constraints( "cl_jiggle_bone_debug_pitch_constraints", "0", FCVAR_CHEAT, "Display physics-based 'jiggle bone' debugging information" );
-#endif // CLIENT_DLL
-
-ConVar cl_jiggle_bone_framerate_cutoff( "cl_jiggle_bone_framerate_cutoff", "20", 0, "Skip jiggle bone simulation if framerate drops below this value (frames/second)" );
-
+extern const char *VarArgs( PRINTF_FORMAT_STRING const char *format, ... );
+#else
+extern const char *UTIL_VarArgs( PRINTF_FORMAT_STRING const char *format, ... ) FMTFUNCTION( 1, 2 );
+#endif
 
 //-----------------------------------------------------------------------------
 JiggleData * CJiggleBones::GetJiggleData( int bone, float currenttime, const Vector &initBasePos, const Vector &initTipPos )
@@ -33,12 +38,46 @@ JiggleData * CJiggleBones::GetJiggleData( int bone, float currenttime, const Vec
 	{
 		if ( m_jiggleBoneState[it].bone == bone )
 		{
+			JiggleData *data = &m_jiggleBoneState[it];
+			if ( !IsFinite( data->lastUpdate ) )
+			{
+				Warning( "lastUpdate NaN\n" );
+			}
+			if ( !data->basePos.IsValid() )
+			{
+				Warning( "basePos NaN\n" );
+			}
+			if ( !data->baseLastPos.IsValid() )
+			{
+				Warning( "baseLastPos NaN\n" );
+			}
+			if ( !data->baseVel.IsValid() )
+			{
+				Warning( "baseVel NaN\n" );
+			}
+			if ( !data->baseAccel.IsValid() )
+			{
+				Warning( "baseAccel NaN\n" );
+			}
+			if ( !data->tipPos.IsValid() )
+			{
+				Warning( "tipPos NaN\n" );
+			}
+			if ( !data->tipVel.IsValid() )
+			{
+				Warning( "tipVel NaN\n" );
+			}
+			if ( !data->tipAccel.IsValid() )
+			{
+				Warning( "tipAccel NaN\n" );
+			}
 			return &m_jiggleBoneState[it];
 		}
 	}
 
 	JiggleData data;
 	data.Init( bone, currenttime, initBasePos, initTipPos );
+	data.id = s_id++;
 
 	// Start out using jiggle bones for at least 16 frames.
 	data.useGoalMatrixCount = 0;
@@ -89,6 +128,17 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 		data->Init( boneIndex, currenttime, goalBasePosition, goalTip );
 	}
 
+	if ( JiggleBoneInvert.GetBool() )
+	{
+		data->basePos = -data->basePos;
+		data->baseLastPos = -data->baseLastPos;
+		data->baseVel = -data->baseVel;
+		data->baseAccel = -data->baseAccel;
+		data->tipPos = -data->tipPos;
+		data->tipVel = -data->tipVel;
+		data->tipAccel = -data->tipAccel;
+	}
+
 	if ( data->lastLeft.IsZero() )
 	{
 		data->lastLeft = goalLeft;
@@ -101,7 +151,7 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 
 	const float thousandHZ = 0.001f;
 	bool bMaxDeltaT = deltaT < thousandHZ;
-	bool bUseGoalMatrix = cl_jiggle_bone_framerate_cutoff.GetFloat() <= 0.0f || deltaT > ( 1.0f / cl_jiggle_bone_framerate_cutoff.GetFloat() );
+	bool bUseGoalMatrix = JiggleBoneFramerateCutoff.GetFloat() <= 0.0f || deltaT > ( 1.0f / JiggleBoneFramerateCutoff.GetFloat() );
 
 	if ( bUseGoalMatrix )
 	{
@@ -140,6 +190,34 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 		return;
 	}
 
+#ifdef CLIENT_DLL
+	if ( data->id == JiggleBoneDebug.GetInt() )
+	{
+		int line = 20;
+		engine->Con_NPrintf( line++, "basePos %f %f %f", data->basePos.x, data->basePos.y, data->basePos.z );
+		engine->Con_NPrintf( line++, "baseLastPos %f %f %f", data->baseLastPos.x, data->baseLastPos.y, data->baseLastPos.z );
+		engine->Con_NPrintf( line++, "baseVel %f %f %f", data->baseVel.x, data->baseVel.y, data->baseVel.z );
+		engine->Con_NPrintf( line++, "baseAccel %f %f %f", data->baseAccel.x, data->baseAccel.y, data->baseAccel.z );
+		engine->Con_NPrintf( line++, "tipPos %f %f %f", data->tipPos.x, data->tipPos.y, data->tipPos.z );
+		engine->Con_NPrintf( line++, "tipVel %f %f %f", data->tipVel.x, data->tipVel.y, data->tipVel.z );
+		engine->Con_NPrintf( line++, "tipAccel %f %f %f", data->tipAccel.x, data->tipAccel.y, data->tipAccel.z );
+	}
+#endif
+
+	if ( JiggleBoneSanity.GetBool() )
+	{
+		Vector goalDir = goalTip - goalBasePosition;
+		goalDir.NormalizeInPlace();
+		Vector dataDir = data->tipPos - goalBasePosition;
+		dataDir.NormalizeInPlace();
+
+		float dot = goalDir.Dot( dataDir );
+		if ( dot < -0.9f ) // if we end up pointing almost completely away, just reset
+		{
+			data->Init( boneIndex, currenttime, goalBasePosition, goalTip );
+		}
+	}
+
 	// we want lastUpdate here, so if jigglebones were skipped they get reinitialized if they turn back on
 	data->lastUpdate = currenttime;
 
@@ -164,6 +242,7 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 			Vector localVel;
 			localVel.x = DotProduct( goalLeft, data->tipVel );
 			localVel.y = DotProduct( goalUp, data->tipVel );
+			localVel.z = 0.0f; // TODO: this was uninitialized, but is being used
 
 			// yaw spring
 			float yawAccel = jiggleInfo->yawStiffness * localError.x - jiggleInfo->yawDamping * localVel.x;
@@ -276,7 +355,7 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 										 limitMatrix.m_flMatVal[2][2] );
 
 #ifdef CLIENT_DLL
-					if ( cl_jiggle_bone_debug_yaw_constraints.GetBool() )
+					if ( JiggleBoneDebugYawConstraints.GetBool() )
 					{
 						float dT = 0.01f;
 						const float axisSize = 10.0f;
@@ -293,8 +372,16 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 					// clip to limit plane
 					data->tipPos = goalBasePosition + limitAlong.y * limitUp + limitAlong.z * limitForward;
 
-					// removed friction and velocity clipping against constraint - was causing simulation blowups (MSB 12/9/2010)
-					data->tipVel.Zero();
+					// yaw friction - rubbing along limit plane
+					Vector limitVel;
+					limitVel.x = 0.0f; // TODO: this was uninitialized, and is used when yawBounce is non-zero!
+					limitVel.y = DotProduct( limitUp, data->tipVel );
+					limitVel.z = DotProduct( limitForward, data->tipVel );
+
+					data->tipAccel -= jiggleInfo->yawFriction * (limitVel.y * limitUp + limitVel.z * limitForward);
+
+					// update velocity reaction to hitting constraint
+					data->tipVel = -jiggleInfo->yawBounce * limitVel.x * limitLeft + limitVel.y * limitUp + limitVel.z * limitForward;
 
 					// update along vectors for use by pitch constraint
 					along = data->tipPos - goalBasePosition;
@@ -371,7 +458,7 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 										 limitMatrix.m_flMatVal[2][2] );
 
 #ifdef CLIENT_DLL
-					if (cl_jiggle_bone_debug_pitch_constraints.GetBool())
+					if (JiggleBoneDebugPitchConstraints.GetBool())
 					{
 						float dT = 0.01f;
 						const float axisSize = 10.0f;
@@ -388,8 +475,16 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 					// clip to limit plane
 					data->tipPos = goalBasePosition + limitAlong.x * limitLeft + limitAlong.z * limitForward;
 
-					// removed friction and velocity clipping against constraint - was causing simulation blowups (MSB 12/9/2010)
-					data->tipVel.Zero();
+					// pitch friction - rubbing along limit plane
+					Vector limitVel;
+					limitVel.x = 0.0f; // TODO: this was uninitialized, but is being used
+					limitVel.y = DotProduct( limitUp, data->tipVel );
+					limitVel.z = DotProduct( limitForward, data->tipVel );
+
+					data->tipAccel -= jiggleInfo->pitchFriction * (limitVel.x * limitLeft + limitVel.z * limitForward);
+
+					// update velocity reaction to hitting constraint
+					data->tipVel = limitVel.x * limitLeft - jiggleInfo->pitchBounce * limitVel.y * limitUp + limitVel.z * limitForward;
 				}
 			}
 		}
@@ -449,7 +544,7 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 		data->lastLeft = left;
 
 #ifdef CLIENT_DLL
-		if ( cl_jiggle_bone_debug.GetBool() )
+		if ( JiggleBoneDebug.GetInt() == data->id )
 		{
 			debugoverlay->AddLineOverlay( goalBasePosition, goalBasePosition + 10.0f * data->lastLeft, 255, 0, 255, true, 0.01f );
 		}
@@ -572,7 +667,7 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 		Vector vel = goalBasePosition - data->lastBoingPos;
 
 #ifdef CLIENT_DLL
-		if ( cl_jiggle_bone_debug.GetBool() )
+		if ( JiggleBoneDebug.GetInt() == data->id )
 		{
 			debugoverlay->AddLineOverlay( data->lastBoingPos, goalBasePosition, 0, 128, ( gpGlobals->framecount & 0x1 ) ? 0 : 200, true, 999.9f );
 		}
@@ -604,7 +699,7 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 				data->boingDir = -vel;
 
 #ifdef CLIENT_DLL
-				if ( cl_jiggle_bone_debug.GetBool() )
+				if ( JiggleBoneDebug.GetInt() == 1 || JiggleBoneDebug.GetInt() == data->id )
 				{
 					debugoverlay->AddLineOverlay( goalBasePosition, goalBasePosition + 5.0f * data->boingDir, 255, 255, 0, true, 999.9f );
 					debugoverlay->AddLineOverlay( goalBasePosition, goalBasePosition + Vector( 0.1, 0, 0 ), 128, 128, 0, true, 999.9f );
@@ -728,7 +823,7 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 			MatrixMultiply( boneMX, xfrmMX, boneMX );
 
 #ifdef CLIENT_DLL
-			if ( cl_jiggle_bone_debug.GetBool() )
+			if ( JiggleBoneDebug.GetInt() == 1 || JiggleBoneDebug.GetInt() == data->id )
 			{
 				float dT = 0.01f;
 				debugoverlay->AddLineOverlay( goalBasePosition, goalBasePosition + 50.0f * data->boingDir, 255, 255, 0, true, dT );
@@ -750,7 +845,7 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 
 #ifdef CLIENT_DLL
 	// debug display for client only so server doesn't try to also draw it
-	if ( cl_jiggle_bone_debug.GetBool() )
+	if ( JiggleBoneDebug.GetInt() == 1 || JiggleBoneDebug.GetInt() == data->id )
 	{
 		float dT = 0.01f;
 		const float axisSize = 5.0f;
@@ -758,7 +853,7 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 		debugoverlay->AddLineOverlay( goalBasePosition, goalBasePosition + axisSize * goalUp, 0, 255, 0, true, dT );
 		debugoverlay->AddLineOverlay( goalBasePosition, goalBasePosition + axisSize * goalForward, 0, 0, 255, true, dT );
 
-		if ( cl_jiggle_bone_debug.GetInt() > 1 )
+		if ( JiggleBoneDebug.GetInt() == 1 || JiggleBoneDebug.GetInt() == data->id )
 		{
 			DevMsg( "Jiggle bone #%d, basePos( %3.2f, %3.2f, %3.2f ), tipPos( %3.2f, %3.2f, %3.2f ), left( %3.2f, %3.2f, %3.2f ), up( %3.2f, %3.2f, %3.2f ), forward( %3.2f, %3.2f, %3.2f )\n", 
 						data->bone,
@@ -797,7 +892,7 @@ void CJiggleBones::BuildJiggleTransformations( int boneIndex, float currenttime,
 
 		if ( jiggleInfo->flags & JIGGLE_IS_BOING )
 		{
-			if ( cl_jiggle_bone_debug.GetInt() > 2 )
+			if ( JiggleBoneDebug.GetInt() == 1 || JiggleBoneDebug.GetInt() == data->id )
 			{
 				DevMsg( "  boingSpeed = %3.2f, boingVelDir( %3.2f, %3.2f, %3.2f )\n", data->boingVelDir.Length() / deltaT, data->boingVelDir.x, data->boingVelDir.y, data->boingVelDir.z );
 			}

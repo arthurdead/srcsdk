@@ -6,9 +6,7 @@
 
 #ifndef ISPSHAREDMEMORY_H
 #define ISPSHAREDMEMORY_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basetypes.h"
 #include "platform.h"

@@ -418,9 +418,7 @@ BEGIN_DATADESC( CBasePlayer )
 	DEFINE_FIELD( m_fLastPlayerTalkTime, FIELD_FLOAT ),
 	DEFINE_FIELD( m_hLastWeapon, FIELD_EHANDLE ),
 
-#if !defined( NO_ENTITY_PREDICTION )
 	// DEFINE_FIELD( m_SimulatedByThisPlayer, CUtlVector < CHandle < CBaseEntity > > ),
-#endif
 
 	DEFINE_FIELD( m_flOldPlayerZ, FIELD_FLOAT ),
 	DEFINE_FIELD( m_flOldPlayerViewOffsetZ, FIELD_FLOAT ),
@@ -1213,13 +1211,6 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 		info.SetDamage( flNew );
 	}
 
-
-#if defined( WIN32 ) && !defined( _X360 )
-	// NVNT if player's client has a haptic device send them a user message with the damage.
-	if(HasHaptics())
-		HapticsDamage(this,info);
-#endif
-
 	// this cast to INT is critical!!! If a player ends up with 0.5 health, the engine will get that
 	// as an int (zero) and think the player is dead! (this will incite a clientside screentilt, etc)
 	
@@ -1686,10 +1677,6 @@ void CBasePlayer::Event_Killed( const CTakeDamageInfo &info )
 
 	RumbleEffect( RUMBLE_STOP_ALL, 0, RUMBLE_FLAGS_NONE );
 
-#if defined( WIN32 ) && !defined( _X360 )
-	// NVNT set the drag to zero in the case of underwater death.
-	HapticSetDrag(this,0);
-#endif
 	ClearUseEntity();
 	
 	// this client isn't going to be thinking for a while, so reset the sound until they respawn
@@ -2571,7 +2558,6 @@ CBaseEntity * CBasePlayer::GetObserverTarget()
 
 void CBasePlayer::ObserverUse( bool bIsPressed )
 {
-#ifndef _XBOX
 	if ( !HLTVDirector()->IsActive() )
 		return;
 
@@ -2630,7 +2616,6 @@ void CBasePlayer::ObserverUse( bool bIsPressed )
 		return;
 
 	SetAbsOrigin( tr.endpos ); */
-#endif
 }
 
 void CBasePlayer::JumptoPosition(const Vector &origin, const QAngle &angles)
@@ -4656,10 +4641,8 @@ void CBasePlayer::PostThink()
 		VPROF_SCOPE_END();
 	}
 
-#if !defined( NO_ENTITY_PREDICTION )
 	// Even if dead simulate entities
 	SimulatePlayerSimulatedEntities();
-#endif
 
 }
 
@@ -6603,14 +6586,6 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon )
 		else
 		{
 #ifdef HL2_DLL
-
-			if ( IsX360() )
-			{
-				CFmtStr hint;
-				hint.sprintf( "#valve_hint_select_%s", pWeapon->GetClassname() );
-				UTIL_HudHintText( this, hint.Access() );
-			}
-
 			// Always switch to a newly-picked up weapon
 			if ( !PlayerHasMegaPhysCannon() )
 			{
@@ -6873,7 +6848,7 @@ bool CBasePlayer::ShouldAutoaim( void )
 		return false;
 
 	// autoaiming is only for easy and medium skill
-	return ( IsX360() || !g_pGameRules->IsSkillLevel(SKILL_HARD) );
+	return ( !g_pGameRules->IsSkillLevel(SKILL_HARD) );
 }
 
 //-----------------------------------------------------------------------------

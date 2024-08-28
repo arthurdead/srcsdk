@@ -6,16 +6,14 @@
 
 #ifndef KEYBINDINGLISTENER_H
 #define KEYBINDINGLISTENER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 enum ButtonCode_t;
 
 class IKeyBindingListener
 {
 public:
-	virtual void OnKeyBindingChanged( int nSplitScreenSlot, ButtonCode_t buttonCode, char const *pchKeyName, char const *pchNewBinding ) = 0;
+	virtual void OnKeyBindingChanged( ButtonCode_t buttonCode, char const *pchKeyName, char const *pchNewBinding ) = 0;
 };
 
 class IKeyBindingListenerMgr

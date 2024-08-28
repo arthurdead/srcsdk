@@ -13,7 +13,8 @@
 #include "iviewrender.h"
 #include "materialsystem/imaterialvar.h"
 
-extern IViewRender *view;
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
 
 class CToolFrameworkClient : public CBaseGameSystemPerFrame
 {
@@ -44,14 +45,10 @@ public:
 //-----------------------------------------------------------------------------
 static CToolFrameworkClient g_ToolFrameworkClient;
 
-#ifndef NO_TOOLFRAMEWORK
-
 bool ToolsEnabled()
 {
 	return g_ToolFrameworkClient.m_pTools && g_ToolFrameworkClient.m_pTools->InToolMode();
 }
-
-#endif
 
 IGameSystem *ToolFrameworkClientSystem()
 {
@@ -257,7 +254,7 @@ void ToolFramework_RecordMaterialParams( IMaterial *pMaterial )
 	if ( !clienttools->IsInRecordingMode() )
 		return;
 
-	C_BaseEntity *pEnt = view->GetCurrentlyDrawingEntity();
+	C_BaseEntity *pEnt = GetViewRenderInstance()->GetCurrentlyDrawingEntity();
 	if ( !pEnt || !pEnt->IsToolRecording() )
 		return;
 

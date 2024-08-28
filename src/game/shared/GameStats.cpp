@@ -23,27 +23,19 @@
 #include "vehicle_base.h"
 #endif 
 
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
 #ifdef CLIENT_DLL
 #include "materialsystem/materialsystem_config.h"
 #include "vgui_int.h"
 #include "igameresources.h"
 #include "voice_status.h"
 extern const ConVar *sv_cheats;
-#if !defined(NO_STEAM)
 #include "steam/steam_api.h"
 #endif
-#endif
 
 
-#if !defined(NO_STEAM) && defined(CLIENT_DLL)
-#if defined(TF_CLIENT_DLL) ||  defined(CSTRIKE_DLL)
-#define STEAMWORKS_GAMESTATS_ACTIVE
+#if defined(CLIENT_DLL)
+//#define STEAMWORKS_GAMESTATS_ACTIVE
 #include "steamworks_gamestats.h"
-#endif
 #endif
 
 #ifdef CLIENT_DLL
@@ -1209,7 +1201,7 @@ void CBaseGameStats_Driver::ResetData()
 	m_bDidVoiceChat = false;
 	m_pGamestatsData = new CGamestatsData();
 	KeyValues *pKV = m_pGamestatsData->m_pKVData;
-	pKV->SetInt( "IsPc", IsPC() );
+	pKV->SetBool( "IsPc", true );
 	pKV->SetInt( "version", GAMESTATS_VERSION );
 	pKV->SetString( "srcid", s_szPseudoUniqueID );
 
@@ -1249,7 +1241,7 @@ void CBaseGameStats_Driver::ResetData()
 	engine->SetGamestatsData( m_pGamestatsData );
 #endif
 
-#if defined(CSTRIKE_DLL) && defined(CLIENT_DLL)
+#if defined(CLIENT_DLL)
 	// reset perf buffer for next map
 	for( int i = 0; i < STATS_WINDOW_SIZE; i++ )
 	{

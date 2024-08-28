@@ -8,6 +8,14 @@
 #define SEQUENCE_TRANSITIONER_H
 #pragma once
 
+#include "studio.h"
+
+#ifdef GAME_DLL
+class CAnimationLayer;
+#else
+#define CAnimationLayer C_AnimationLayer
+class C_AnimationLayer;
+#endif
 
 // ------------------------------------------------------------------------------------------------ //
 // CSequenceTransitioner declaration.

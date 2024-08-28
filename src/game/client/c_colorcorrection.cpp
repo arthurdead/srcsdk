@@ -54,6 +54,8 @@ C_ColorCorrection::C_ColorCorrection()
 	m_bMaster = false;
 	m_bExclusive = false;
 	m_CCHandle = INVALID_CLIENT_CCHANDLE;
+	m_bEnabledOnClient = false;
+	m_flCurWeightOnClient = 0.0f;
 	m_bFadingIn = false;
 	m_flFadeStartWeight = 0.0f;
 	m_flFadeStartTime = 0.0f;
@@ -91,8 +93,6 @@ void C_ColorCorrection::OnDataChanged(DataUpdateType_t updateType)
 
 			m_CCHandle = g_pColorCorrectionMgr->AddColorCorrectionEntity( this, name, m_netLookupFilename );
 
-			SetNextClientThink( ( m_CCHandle != INVALID_CLIENT_CCHANDLE ) ? CLIENT_THINK_ALWAYS : CLIENT_THINK_NEVER );
-
 			SetSolid( SOLID_BSP );
 			SetSolidFlags( FSOLID_TRIGGER | FSOLID_NOT_SOLID );
 		}
@@ -119,7 +119,17 @@ void C_ColorCorrection::Update( C_BasePlayer *pPlayer, float ccScale )
 		return;
 	}
 
-	if( !m_bEnabled && m_flCurWeight == 0.0f )
+	bool bEnabled = IsClientSide() ? m_bEnabledOnClient : m_bEnabled;
+
+	// fade weight on client
+	if ( IsClientSide() )
+	{
+		m_flCurWeightOnClient = Lerp( GetFadeRatio(), m_flFadeStartWeight, m_bFadingIn ? m_flMaxWeight : 0.0f );
+	}
+
+	float flCurWeight = IsClientSide() ? m_flCurWeightOnClient : m_flCurWeight;
+
+	if( !bEnabled && flCurWeight == 0.0f )
 	{
 		g_pColorCorrectionMgr->SetColorCorrectionWeight( m_CCHandle, 0.0f, m_bExclusive );
 		return;
@@ -139,12 +149,46 @@ void C_ColorCorrection::Update( C_BasePlayer *pPlayer, float ccScale )
 		if ( weight>1.0f ) weight = 1.0f;	
 	}
 
-	g_pColorCorrectionMgr->SetColorCorrectionWeight(m_CCHandle, (m_flCurWeight * (1.0 - weight)) * ccScale, m_bExclusive);
+	g_pColorCorrectionMgr->SetColorCorrectionWeight(m_CCHandle, (flCurWeight * (1.0 - weight)) * ccScale, m_bExclusive);
 }
 
-void C_ColorCorrection::ClientThink()
+void C_ColorCorrection::EnableOnClient( bool bEnable, bool bSkipFade )
 {
-	BaseClass::ClientThink();
+	if ( !IsClientSide() )
+	{
+		return;
+	}
+
+	if( m_bEnabledOnClient == bEnable )
+	{
+		return;
+	}
+
+	m_bFadingIn = bEnable;
+	m_bEnabledOnClient = bEnable;
+
+	// initialize countdown timer
+	m_flFadeStartWeight = m_flCurWeightOnClient;
+	float flFadeTimeScale = 1.0f;
+	if ( m_flMaxWeight != 0.0f )
+	{
+		flFadeTimeScale = m_flCurWeightOnClient / m_flMaxWeight;
+	}
+
+	if ( m_bFadingIn )
+	{
+		flFadeTimeScale = 1.0f - flFadeTimeScale;
+	}
+
+	if ( bSkipFade )
+	{
+		flFadeTimeScale = 0.0f;
+	}
+
+	StartFade( flFadeTimeScale * ( m_bFadingIn ? m_flFadeInDuration : m_flFadeOutDuration ) );
+
+	// update the clientside weight once here, in case the fade duration is 0
+	m_flCurWeightOnClient = Lerp( GetFadeRatio( ), m_flFadeStartWeight, m_bFadingIn ? m_flMaxWeight : 0.0f );
 }
 
 Vector C_ColorCorrection::GetOrigin()
@@ -189,32 +233,6 @@ bool C_ColorCorrection::IsFadeTimeElapsed() const
 {
 	return	( ( gpGlobals->curtime - m_flFadeStartTime ) > m_flFadeDuration ) ||
 			( ( gpGlobals->curtime - m_flFadeStartTime ) < 0.0f );
-}
-
-void C_ColorCorrection::EnableOnClient( bool bEnable, bool bSkipFade )
-{
-	if ( !IsClientSide() || m_bEnabledOnClient == bEnable )
-		return;
-	
-	m_bFadingIn = bEnable;
-	m_bEnabledOnClient = bEnable;
-
-	// initialize countdown timer
-	m_flFadeStartWeight = m_flCurWeightOnClient;
-	float flFadeTimeScale = 1.0f;
-	if ( m_flMaxWeight != 0.0f )
-		flFadeTimeScale = m_flCurWeightOnClient / m_flMaxWeight;
-
-	if ( m_bFadingIn )
-		flFadeTimeScale = 1.0f - flFadeTimeScale;
-
-	if ( bSkipFade )
-		flFadeTimeScale = 0.0f;
-
-	StartFade( flFadeTimeScale * ( m_bFadingIn ? m_flFadeInDuration : m_flFadeOutDuration ) );
-
-	// update the clientside weight once here, in case the fade duration is 0
-	m_flCurWeightOnClient = Lerp( GetFadeRatio(), m_flFadeStartWeight, m_bFadingIn ? m_flMaxWeight : 0.0f );
 }
 
 void UpdateColorCorrectionEntities( C_BasePlayer *pPlayer, float ccScale, C_ColorCorrection **pList, int listCount )

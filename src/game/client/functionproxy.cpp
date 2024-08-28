@@ -138,6 +138,11 @@ bool CResultProxy::Init( IMaterial *pMaterial, KeyValues *pKeyValues )
 	if( !foundVar )
 		return false;
 
+	if ( !Q_stricmp( pResult, "$alpha" ) )
+	{
+		pMaterial->SetMaterialVarFlag( MATERIAL_VAR_ALPHA_MODIFIED_BY_PROXY, true );
+	}
+
 	return true;
 }
 
@@ -167,6 +172,20 @@ void CResultProxy::SetFloatResult( float result )
 	else
 	{
 		m_pResult->SetFloatValue( result );
+	}
+}
+
+void CResultProxy::SetVecResult( float x, float y, float z, float w )
+{
+	if (m_pResult->GetType() == MATERIAL_VAR_TYPE_VECTOR)
+	{		
+		float v[4] = { x, y, z, w };
+		int vecSize = m_pResult->VectorSize();
+		m_pResult->SetVecValue( v, vecSize );
+	}
+	else
+	{
+		m_pResult->SetFloatValue( x );
 	}
 }
 

@@ -9,15 +9,16 @@
 #pragma once
 
 #include "c_baseentity.h"
+#include "c_basetoggle.h"
 
 #if defined( CLIENT_DLL )
 #define CBaseDoor C_BaseDoor
 #endif
 
-class C_BaseDoor : public C_BaseEntity
+class C_BaseDoor : public C_BaseToggle
 {
 public:
-	DECLARE_CLASS( C_BaseDoor, C_BaseEntity );
+	DECLARE_CLASS( C_BaseDoor, C_BaseToggle );
 	DECLARE_CLIENTCLASS();
 
 	C_BaseDoor( void );

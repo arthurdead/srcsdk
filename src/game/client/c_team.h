@@ -48,13 +48,6 @@ public:
 
 	void	RemoveAllPlayers();
 
-
-// IClientThinkable overrides.
-public:
-
-	virtual	void				ClientThink();
-
-
 public:
 
 	// Data received from the server

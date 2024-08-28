@@ -7,9 +7,7 @@
 
 #ifndef RESPONSE_TYPES_H
 #define RESPONSE_TYPES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "tier1/utlrbtree.h"
 #include "tier1/utlsymbol.h"

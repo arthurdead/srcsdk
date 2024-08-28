@@ -6,9 +6,7 @@
 
 #ifndef TIMEUTILS_H
 #define TIMEUTILS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <limits.h>
 #include <math.h>

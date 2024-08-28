@@ -14,6 +14,8 @@
 static Vector CAM_HULL_MIN(-CAM_HULL_OFFSET,-CAM_HULL_OFFSET,-CAM_HULL_OFFSET);
 static Vector CAM_HULL_MAX( CAM_HULL_OFFSET, CAM_HULL_OFFSET, CAM_HULL_OFFSET);
 
+CThirdPersonManager g_ThirdPersonManager;
+
 #ifdef CLIENT_DLL
 
 #include "input.h"
@@ -21,29 +23,7 @@ static Vector CAM_HULL_MAX( CAM_HULL_OFFSET, CAM_HULL_OFFSET, CAM_HULL_OFFSET);
 
 extern const ConVar *sv_cheats;
 
-void CAM_ToThirdPerson(void);
-void CAM_ToFirstPerson(void);
 
-void ToggleThirdPerson( bool bValue )
-{
-	if ( bValue == true )
-	{
-		CAM_ToThirdPerson();
-	}
-	else
-	{
-		CAM_ToFirstPerson();
-	}
-}
-
-void ThirdPersonChange( IConVar *pConVar, const char *pOldValue, float flOldValue )
-{
-	ConVarRef var( pConVar );
-
-	ToggleThirdPerson( var.GetBool() );
-}
-
-ConVar cl_thirdperson( "cl_thirdperson", "0", FCVAR_NOT_CONNECTED | FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_DEVELOPMENTONLY, "Enables/Disables third person", ThirdPersonChange  );
 
 #endif
 
@@ -53,8 +33,7 @@ CThirdPersonManager::CThirdPersonManager( void )
 
 void CThirdPersonManager::Init( void )
 {
-	m_bOverrideThirdPerson = false;
-	m_bForced = false;
+	m_iForced = FORCED_CAM_DISABLED;
 	m_flUpFraction = 0.0f;
 	m_flFraction = 1.0f;
 
@@ -67,36 +46,36 @@ void CThirdPersonManager::Init( void )
 	{
 		input->CAM_SetCameraThirdData( NULL, vec3_angle );
 	}
-}
 
-void CThirdPersonManager::Update( void )
-{
-
-#ifdef CLIENT_DLL
 	if ( !sv_cheats )
 	{
 		sv_cheats = cvar->FindVar( "sv_cheats" );
 	}
+}
+
+void CThirdPersonManager::Update( void )
+{
+#ifdef CLIENT_DLL
+	bool thirdperson_allowed = (
+		(!sv_cheats || sv_cheats->GetBool()) &&
+		(!GameRules() || GameRules()->AllowThirdPersonCamera())
+	);
 
 	// If cheats have been disabled, pull us back out of third-person view.
-	if ( sv_cheats && !sv_cheats->GetBool() && GameRules() && GameRules()->AllowThirdPersonCamera() == false )
+	if ( (m_iForced == FORCED_CAM_DISABLED) && !thirdperson_allowed && input->CAM_IsThirdPerson())
 	{
-		if ( (bool)input->CAM_IsThirdPerson() == true )
-		{
-			input->CAM_ToFirstPerson();
-		}
+		input->CAM_Set( CAM_FIRSTPERSON );
 		return;
 	}
 
-	if ( IsOverridingThirdPerson() == false )
+	if ( m_iForced != FORCED_CAM_DISABLED )
 	{
-		if ( (bool)input->CAM_IsThirdPerson() != ( cl_thirdperson.GetBool() || m_bForced ) && GameRules() && GameRules()->AllowThirdPersonCamera() == true )
+		if ( input->CAM_Get() != m_iForced )
 		{
-			ToggleThirdPerson( m_bForced || cl_thirdperson.GetBool() );
+			input->CAM_Set( m_iForced );
 		}
 	}
 #endif
-
 }
 
 Vector CThirdPersonManager::GetFinalCameraOffset( void )
@@ -114,11 +93,6 @@ Vector CThirdPersonManager::GetFinalCameraOffset( void )
 
 Vector CThirdPersonManager::GetDistanceFraction( void )
 {
-	if ( IsOverridingThirdPerson() == true )
-	{
-		return Vector( m_flTargetFraction, m_flTargetFraction, m_flTargetFraction );
-	}
-
 	float flFraction = m_flFraction;
 	float flUpFraction = m_flUpFraction;
 
@@ -180,7 +154,6 @@ void CThirdPersonManager::PositionCamera( CBasePlayer *pPlayer, const QAngle& an
 			m_flLerpTime = gpGlobals->curtime;
 		}
 	
-
 		// move the camera closer if it hit something
 		if( trace.fraction < 1.0  )
 		{
@@ -206,11 +179,3 @@ void CThirdPersonManager::PositionCamera( CBasePlayer *pPlayer, const QAngle& an
 		}
 	}
 }
-
-bool CThirdPersonManager::WantToUseGameThirdPerson( void )
-{
-	return cl_thirdperson.GetBool() && GameRules() && GameRules()->AllowThirdPersonCamera() && IsOverridingThirdPerson() == false;
-}
-
-
-CThirdPersonManager g_ThirdPersonManager;

@@ -19,7 +19,7 @@
 #include "tier0/memdbgon.h"
 
 IMPLEMENT_CLIENTCLASS_DT_NOBASE( C_Func_Dust, DT_Func_Dust, CFunc_Dust )
-	RecvPropInt( RECVINFO(m_Color) ),
+	RecvPropInt( RECVINFO(m_Color), 0, RecvProxy_Int32ToColor32 ),
 	RecvPropInt( RECVINFO(m_SpawnRate) ),
 	RecvPropFloat( RECVINFO(m_flSizeMin) ),
 	RecvPropFloat( RECVINFO(m_flSizeMax) ),
@@ -161,7 +161,7 @@ void C_Func_Dust::OnDataChanged( DataUpdateType_t updateType )
 		m_Effect.SetSortOrigin( WorldSpaceCenter( ) );
 
 		// Let us think each frame.
-		SetNextClientThink( CLIENT_THINK_ALWAYS );
+		SetContextThink( &C_Func_Dust::DustThink, TICK_ALWAYS_THINK, "DustThink" );
 		
 		// If we're setup to be frozen, just make a bunch of particles initially.
 		if( m_DustFlags & DUSTFLAGS_FROZEN )
@@ -177,7 +177,7 @@ void C_Func_Dust::OnDataChanged( DataUpdateType_t updateType )
 }
 
 
-void C_Func_Dust::ClientThink()
+void C_Func_Dust::DustThink()
 {
 	// If frozen, don't make new particles.
 	if( m_DustFlags & DUSTFLAGS_FROZEN )
@@ -272,7 +272,7 @@ void FX_Dust( const Vector &vecOrigin, const Vector &vecDirection, float flSize,
 	Vector offset = vecOrigin + ( vecDirection * flSize );
 
 	//Find area ambient light color and use it to tint smoke
-	Vector	worldLight = WorldGetLightForPoint( offset, true );
+	Vector	worldLight = engine->GetLightForPoint( offset, true );
 
 	// Throw puffs
 	SimpleParticle particle;

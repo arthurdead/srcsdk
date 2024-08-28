@@ -61,7 +61,7 @@ public:
 						C_Func_Dust();
 	virtual				~C_Func_Dust();
 	virtual void		OnDataChanged( DataUpdateType_t updateType );
-	virtual void		ClientThink();
+	virtual void		DustThink();
 	virtual bool		ShouldDraw();
 
 

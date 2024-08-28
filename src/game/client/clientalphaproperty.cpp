@@ -11,6 +11,7 @@
 #include "iclientshadowmgr.h"
 #include "iclientunknown.h"
 #include "iclientrenderable.h"
+#include "view.h"
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
@@ -21,27 +22,48 @@
 //-----------------------------------------------------------------------------
 CClientAlphaProperty::CClientAlphaProperty( )
 {
+	m_pOuter = NULL;
+	m_pOuterMod = NULL;
 	m_nRenderFX = kRenderFxNone;
 	m_nRenderMode = kRenderNormal;
 	m_nDesyncOffset = 0;
 	m_hShadowHandle = CLIENTSHADOW_INVALID_HANDLE;
-	m_nAlpha = 255;
+	m_nAlphaModulation = 255;
+	m_nAlphaBlend = 255;
 	m_flFadeScale = 0.0f;	// By default, things don't fade out automagically
 	m_nDistFadeStart = 0;
 	m_nDistFadeEnd = 0;
 	m_bAlphaOverride = false;
 	m_bShadowAlphaOverride = false;
 	m_nDistanceFadeMode = CLIENT_ALPHA_DISTANCE_FADE_USE_CENTER;
+	m_nFlags = ALPHAPROP_FLAGS_NONE;
+}
+
+void CClientAlphaProperty::Init( IClientUnknownEx *pUnk )
+{
+	m_pOuter = pUnk;
+	m_pOuterMod = pUnk;
+	m_pRenderMod = m_pOuterMod->GetClientRenderableMod();
 }
 
 void CClientAlphaProperty::Init( IClientUnknown *pUnk )
 {
 	m_pOuter = pUnk;
+	m_pOuterMod = dynamic_cast<IClientUnknownMod *>(pUnk);
+	if(m_pOuterMod)
+		m_pRenderMod = m_pOuterMod->GetClientRenderableMod();
+	else
+		m_pRenderMod = dynamic_cast<IClientRenderableMod *>(pUnk->GetClientRenderable());
 }
 
 IClientUnknown*	CClientAlphaProperty::GetIClientUnknown()
 {
 	return m_pOuter;
+}
+
+IClientUnknownMod*	CClientAlphaProperty::GetIClientUnknownMod()
+{
+	return m_pOuterMod;
 }
 
 void CClientAlphaProperty::SetShadowHandle( ClientShadowHandle_t hShadowHandle )
@@ -51,15 +73,16 @@ void CClientAlphaProperty::SetShadowHandle( ClientShadowHandle_t hShadowHandle )
 
 void CClientAlphaProperty::SetAlphaModulation( uint8 a )
 {
-	m_nAlpha = a;
+	m_nAlphaModulation = a;
+
 }
 
-void CClientAlphaProperty::EnableAlphaModulationOverride( bool bEnable )
+void CClientAlphaProperty::EnableRenderAlphaOverride( bool bEnable )
 {
 	m_bAlphaOverride = bEnable;
 }
 
-void CClientAlphaProperty::EnableShadowAlphaModulationOverride( bool bEnable )
+void CClientAlphaProperty::EnableShadowRenderAlphaOverride( bool bEnable )
 {
 	m_bShadowAlphaOverride = bEnable;
 }
@@ -113,6 +136,9 @@ void CClientAlphaProperty::SetRenderFX( RenderFx_t nRenderFx, RenderMode_t nRend
 
 void CClientAlphaProperty::SetDesyncOffset( int nOffset )
 {
+	if(nOffset == -1)
+		nOffset = rand() % 1024;
+
 	m_nDesyncOffset = nOffset;
 }
 
@@ -154,34 +180,36 @@ void CClientAlphaProperty::SetFade( float flGlobalFadeScale, float flDistFadeSta
 //-----------------------------------------------------------------------------
 // Computes alpha value based on render fx
 //-----------------------------------------------------------------------------
-uint8 CClientAlphaProperty::ComputeRenderAlpha( ) const
+void CClientAlphaProperty::ComputeAlphaBlend( )
 {
 	if ( m_nRenderMode == kRenderNone || m_nRenderMode == kRenderEnvironmental )
-		return 0;
+	{
+		m_nAlphaBlend = 0;
+		return;
+	}
 
-	int blend = 0;
 	float flOffset = ((int)m_nDesyncOffset) * 363.0;// Use ent index to de-sync these fx
 
 	switch( m_nRenderFX ) 
 	{
 	case kRenderFxPulseSlowWide:
-		blend = m_nAlpha + 0x40 * sin( gpGlobals->curtime * 2 + flOffset );	
+		m_nAlphaBlend = m_nAlphaModulation + 0x40 * sin( gpGlobals->curtime * 2 + flOffset );	
 		break;
 
 	case kRenderFxPulseFastWide:
-		blend = m_nAlpha + 0x40 * sin( gpGlobals->curtime * 8 + flOffset );
+		m_nAlphaBlend = m_nAlphaModulation + 0x40 * sin( gpGlobals->curtime * 8 + flOffset );
 		break;
 
 	case kRenderFxPulseFastWider:
-		blend = ( 0xff * fabs(sin( gpGlobals->curtime * 12 + flOffset ) ) );
+		m_nAlphaBlend = ( 0xff * fabs(sin( gpGlobals->curtime * 12 + flOffset ) ) );
 		break;
 
 	case kRenderFxPulseSlow:
-		blend = m_nAlpha + 0x10 * sin( gpGlobals->curtime * 2 + flOffset );
+		m_nAlphaBlend = m_nAlphaModulation + 0x10 * sin( gpGlobals->curtime * 2 + flOffset );
 		break;
 
 	case kRenderFxPulseFast:
-		blend = m_nAlpha + 0x10 * sin( gpGlobals->curtime * 8 + flOffset );
+		m_nAlphaBlend = m_nAlphaModulation + 0x10 * sin( gpGlobals->curtime * 8 + flOffset );
 		break;
 
 	case kRenderFxFadeOut:
@@ -189,9 +217,9 @@ uint8 CClientAlphaProperty::ComputeRenderAlpha( ) const
 	case kRenderFxFadeSlow:
 		{
 			float flElapsed = gpGlobals->curtime - m_flRenderFxStartTime;
-			float flVal = RemapValClamped( flElapsed, 0, m_flRenderFxDuration, m_nAlpha, 0 );
+			float flVal = RemapValClamped( flElapsed, 0, m_flRenderFxDuration, m_nAlphaModulation, 0 );
 			flVal = clamp( flVal, 0, 255 );
-			blend = (int)flVal;
+			m_nAlphaBlend = (int)flVal;
 		}
 		break;
 
@@ -200,50 +228,101 @@ uint8 CClientAlphaProperty::ComputeRenderAlpha( ) const
 	case kRenderFxSolidSlow:
 		{
 			float flElapsed = gpGlobals->curtime - m_flRenderFxStartTime;
-			float flVal = RemapValClamped( flElapsed, 0, m_flRenderFxDuration, 0, m_nAlpha );
+			float flVal = RemapValClamped( flElapsed, 0, m_flRenderFxDuration, 0, m_nAlphaModulation );
 			flVal = clamp( flVal, 0, 255 );
-			blend = (int)flVal;
+			m_nAlphaBlend = (int)flVal;
 		}
 		break;
 
 	case kRenderFxStrobeSlow:
-		blend = 20 * sin( gpGlobals->curtime * 4 + flOffset );
-		blend = ( blend < 0 ) ? 0 : m_nAlpha;
+		m_nAlphaBlend = 20 * sin( gpGlobals->curtime * 4 + flOffset );
+		m_nAlphaBlend = ( m_nAlphaBlend < 0 ) ? 0 : m_nAlphaModulation;
 		break;
 
 	case kRenderFxStrobeFast:
-		blend = 20 * sin( gpGlobals->curtime * 16 + flOffset );
-		blend = ( blend < 0 ) ? 0 : m_nAlpha;
+		m_nAlphaBlend = 20 * sin( gpGlobals->curtime * 16 + flOffset );
+		m_nAlphaBlend = ( m_nAlphaBlend < 0 ) ? 0 : m_nAlphaModulation;
 		break;
 
 	case kRenderFxStrobeFaster:
-		blend = 20 * sin( gpGlobals->curtime * 36 + flOffset );
-		blend = ( blend < 0 ) ? 0 : m_nAlpha;
+		m_nAlphaBlend = 20 * sin( gpGlobals->curtime * 36 + flOffset );
+		m_nAlphaBlend = ( m_nAlphaBlend < 0 ) ? 0 : m_nAlphaModulation;
 		break;
 
 	case kRenderFxFlickerSlow:
-		blend = 20 * (sin( gpGlobals->curtime * 2 ) + sin( gpGlobals->curtime * 17 + flOffset ));
-		blend = ( blend < 0 ) ? 0 : m_nAlpha;
+		m_nAlphaBlend = 20 * (sin( gpGlobals->curtime * 2 ) + sin( gpGlobals->curtime * 17 + flOffset ));
+		m_nAlphaBlend = ( m_nAlphaBlend < 0 ) ? 0 : m_nAlphaModulation;
 		break;
 
 	case kRenderFxFlickerFast:
-		blend = 20 * (sin( gpGlobals->curtime * 16 ) + sin( gpGlobals->curtime * 23 + flOffset ));
-		blend = ( blend < 0 ) ? 0 : m_nAlpha;
+		m_nAlphaBlend = 20 * (sin( gpGlobals->curtime * 16 ) + sin( gpGlobals->curtime * 23 + flOffset ));
+		m_nAlphaBlend = ( m_nAlphaBlend < 0 ) ? 0 : m_nAlphaModulation;
+		break;
+
+	case kRenderFxHologram:
+	case kRenderFxDistort:
+		{
+			Vector	tmp;
+			float	dist;
+
+			VectorCopy( m_pOuter->GetClientRenderable()->GetRenderOrigin(), tmp );
+			VectorSubtract( tmp, CurrentViewOrigin(), tmp );
+			dist = DotProduct( tmp, CurrentViewForward() );
+			
+			// Turn off distance fade
+			if ( m_nRenderFX == kRenderFxDistort )
+			{
+				dist = 1;
+			}
+			if ( dist <= 0 )
+			{
+				m_nAlphaBlend = 0;
+			}
+			else 
+			{
+				uint8 tmpAlpha = 180;
+				if ( dist <= 100 )
+					m_nAlphaBlend = tmpAlpha;
+				else
+					m_nAlphaBlend = (int) ((1.0 - (dist - 100) * (1.0 / 400.0)) * tmpAlpha);
+				m_nAlphaBlend += random->RandomInt(-32,31);
+			}
+		}
 		break;
 
 	case kRenderFxNone:
 	default:
-		blend = ( m_nRenderMode == kRenderNormal ) ? 255 : m_nAlpha;
+		m_nAlphaBlend = ( m_nRenderMode == kRenderNormal ) ? 255 : m_nAlphaModulation;
 		break;	
 	}
 
-	blend = clamp( blend, 0, 255 );
+	m_nAlphaBlend = clamp( m_nAlphaBlend, 0, 255 );
+}
 
-	if ( m_bAlphaOverride )
+uint8 CClientAlphaProperty::ComputeRenderAlpha( bool bShadow )
+{
+	ComputeAlphaBlend();
+
+	uint8 nRenderAlpha = m_nAlphaBlend;
+
+	if( (bShadow && m_bShadowAlphaOverride) && m_pRenderMod )
 	{
-		blend = m_pOuter->GetClientRenderable()->OverrideAlphaModulation( m_nAlpha );
-		blend = clamp( blend, 0, 255 );
+		nRenderAlpha = m_pRenderMod->OverrideShadowRenderAlpha( nRenderAlpha );
+		nRenderAlpha = clamp( nRenderAlpha, 0, 255 );
+	}
+	else if( (!bShadow && m_bAlphaOverride) && m_pRenderMod )
+	{
+		nRenderAlpha = m_pRenderMod->OverrideRenderAlpha( nRenderAlpha );
+		nRenderAlpha = clamp( nRenderAlpha, 0, 255 );
 	}
 
-	return blend;
+	return nRenderAlpha;
+}
+
+bool CClientAlphaProperty::IgnoresZBuffer( void ) const
+{
+	return (
+		(m_nRenderMode == kRenderGlow || m_nRenderMode == kRenderWorldGlow) ||
+		((m_nFlags & ALPHAPROP_FLAGS_ALWAYS_IGNORE_Z) != 0)
+	);
 }

@@ -169,11 +169,6 @@ bool C_Team::ContainsPlayer( int iPlayerIndex )
 }
 
 
-void C_Team::ClientThink()
-{
-}
-
-
 //=================================================================================================
 // GLOBAL CLIENT TEAM HANDLING
 //=================================================================================================
@@ -186,7 +181,7 @@ C_Team *GetLocalTeam( void )
 	if ( !player )
 		return NULL;
 	
-	return GetPlayersTeam( player->index );
+	return GetPlayersTeam( player->entindex() );
 }
 
 //-----------------------------------------------------------------------------

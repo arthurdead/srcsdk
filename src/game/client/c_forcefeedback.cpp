@@ -4,6 +4,9 @@
 #include "hud_macros.h"
 #include "input.h"
 
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 #define FF_CLIENT_FLAG	0x8000
 
 class FFParams

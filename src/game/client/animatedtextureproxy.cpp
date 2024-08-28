@@ -18,7 +18,7 @@ public:
 	virtual float GetAnimationStartTime( void* pBaseEntity );
 };
 
-EXPOSE_INTERFACE( CAnimatedTextureProxy, IMaterialProxy, "AnimatedTexture" IMATERIAL_PROXY_INTERFACE_VERSION );
+EXPOSE_MATERIAL_PROXY( CAnimatedTextureProxy, AnimatedTexture );
 
 #pragma warning (disable : 4100)
 

@@ -7,9 +7,7 @@
 
 #ifndef ISERVERBROWSER_H
 #define ISERVERBROWSER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "interface.h"
 

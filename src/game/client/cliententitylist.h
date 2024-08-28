@@ -90,7 +90,7 @@ public:
 //	  given ClientEntityHandle_t's, and the handlers for spatial partition callbacks can
 //    use the client entity list to look them up and check for supported interfaces.
 //
-class CClientEntityList : public CBaseEntityList, public IClientEntityList
+class CClientEntityList : public CBaseEntityList, public IClientEntityListEx
 {
 friend class C_BaseEntityIterator;
 friend class C_AllBaseEntityIterator;
@@ -107,6 +107,7 @@ public:
 public:
 
 	virtual IClientNetworkable*	GetClientNetworkable( int entnum );
+	virtual EntityCacheInfo_t	*GetClientNetworkableArray();
 	virtual IClientEntity*		GetClientEntity( int entnum );
 
 	virtual int					NumberOfEntities( bool bIncludeNonNetworkable = false );
@@ -180,16 +181,8 @@ public:
 
 	void NotifyCreateEntity( C_BaseEntity *pEnt );
 	void NotifyRemoveEntity( C_BaseEntity *pEnt );
-
+	void SetDormant( int entityIndex, bool bDormant );
 private:
-
-	// Cached info for networked entities.
-	struct EntityCacheInfo_t
-	{
-		// Cached off because GetClientNetworkable is called a *lot*
-		IClientNetworkable *m_pNetworkable;
-		unsigned short m_BaseEntitiesIndex;	// Index into m_BaseEntities (or m_BaseEntities.InvalidIndex() if none).
-	};
 
 	// Current count
 	int					m_iNumServerEnts;

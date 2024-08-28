@@ -40,9 +40,10 @@ class CCommand;
 #define FCVAR_CLIENTDLL			(1<<3)  // defined by the client DLL
 #define FCVAR_HIDDEN			(1<<4)	// Hidden. Doesn't appear in find or autocomplete. Like DEVELOPMENTONLY, but can't be compiled out.
 
+#define FCVAR_RELEASE			(1<<15) // Cvars tagged with this are the only cvars avaliable to customers
+
 // ConVar only
 #define FCVAR_PROTECTED			(1<<5)  // It's a server cvar, but we don't send the data since it's a password, etc.  Sends 1 if it's not bland/zero, 0 otherwise as value
-#define FCVAR_SPONLY			(1<<6)  // This cvar cannot be changed by clients connected to a multiplayer server.
 #define	FCVAR_ARCHIVE			(1<<7)	// set to cause it to be saved to vars.rc
 #define	FCVAR_NOTIFY			(1<<8)	// notifies players when changed
 #define	FCVAR_USERINFO			(1<<9)	// changes the client's info string
@@ -65,7 +66,6 @@ class CCommand;
 
 #define FCVAR_NOT_CONNECTED		(1<<22)	// cvar cannot be changed by a client that is connected to a server
 #define FCVAR_MATERIAL_SYSTEM_THREAD (1<<23)	// Indicates this cvar is read from the material system thread
-#define FCVAR_ARCHIVE_XBOX		(1<<24) // cvar written to config.cfg on the Xbox
 
 #define FCVAR_ACCESSIBLE_FROM_THREADS	(1<<25)	// used as a debugging tool necessary to check material system thread convars
 
@@ -74,12 +74,13 @@ class CCommand;
 #define FCVAR_CLIENTCMD_CAN_EXECUTE	(1<<30)	// IVEngineClient::ClientCmd is allowed to execute this command. 
 											// Note: IVEngineClient::ClientCmd_Unrestricted can run any client command.
 
-// #define FCVAR_AVAILABLE			(1<<15)
+// #define FCVAR_AVAILABLE			(1<<6)
 // #define FCVAR_AVAILABLE			(1<<18)
 // #define FCVAR_AVAILABLE			(1<<19)
 // #define FCVAR_AVAILABLE			(1<<20)
 // #define FCVAR_AVAILABLE			(1<<21)
 // #define FCVAR_AVAILABLE			(1<<23)
+// #define FCVAR_AVAILABLE			(1<<24)
 // #define FCVAR_AVAILABLE			(1<<26)
 // #define FCVAR_AVAILABLE			(1<<27)
 // #define FCVAR_AVAILABLE			(1<<31)

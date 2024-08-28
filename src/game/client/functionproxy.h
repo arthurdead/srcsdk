@@ -11,6 +11,7 @@
 
 #include "materialsystem/imaterialproxy.h"
 #include "materialsystem/imaterialvar.h"
+#include "imaterialproxydict.h"
 
 class IMaterialVar;
 class C_BaseEntity;
@@ -47,6 +48,7 @@ public:
 protected:
 	C_BaseEntity *BindArgToEntity( void *pArg );
 	void SetFloatResult( float result );
+	void SetVecResult( float x, float y, float z, float w );
 
 	IMaterialVar* m_pResult;
 	int m_ResultVecComp;

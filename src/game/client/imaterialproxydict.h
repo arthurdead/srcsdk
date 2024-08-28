@@ -6,9 +6,9 @@
 
 #ifndef IMATERIALPROXYDICT_H
 #define IMATERIALPROXYDICT_H
-#ifdef _WIN32
 #pragma once
-#endif
+
+#include "tier0/platform.h"
 
 class IMaterialProxy;
 

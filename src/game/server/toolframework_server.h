@@ -15,11 +15,7 @@
 //-----------------------------------------------------------------------------
 // Are tools enabled? 
 //-----------------------------------------------------------------------------
-#ifndef NO_TOOLFRAMEWORK
 bool ToolsEnabled();
-#else
-#define ToolsEnabled() 0
-#endif
 
 
 #endif // TOOLFRAMEWORK_SERVER_H 

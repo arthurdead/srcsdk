@@ -9,6 +9,9 @@
 #define C_SCENEENTITY_H
 #pragma once
 
+#include "c_baseentity.h"
+#include "c_baseflex.h"
+
 #include "ichoreoeventcallback.h"
 #include "choreoscene.h"
 
@@ -36,7 +39,7 @@ public:
 	virtual void StopClientOnlyScene();
 	virtual void SetupClientOnlyScene( const char *pszFilename, C_BaseFlex *pOwner = NULL , bool bMultiplayer = false );
 
-	virtual void ClientThink();
+	virtual void SceneThink();
 
 	void					OnResetClientTime();
 
@@ -46,6 +49,7 @@ public:
 	virtual void			DispatchEndSpeak( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event );
 
 	bool IsClientOnly( void ){ return m_bClientOnly; }
+	bool IsMultiplayer() const	{ return m_bMultiplayer; }
 
 private:
 

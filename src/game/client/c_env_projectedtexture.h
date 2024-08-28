@@ -7,9 +7,7 @@
 
 #ifndef C_ENVPROJECTED_TEXTURE_H
 #define C_ENVPROJECTED_TEXTURE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "c_baseentity.h"
 #include "basetypes.h"
@@ -32,7 +30,7 @@ public:
 	virtual void OnDataChanged( DataUpdateType_t updateType );
 	void	ShutDownLightHandle( void );
 
-	virtual void Simulate();
+	virtual bool Simulate();
 
 	void	UpdateLight( bool bForceUpdate );
 
@@ -48,8 +46,7 @@ public:
 		BaseClass::UpdateOnRemove();
 	}
 
-	virtual bool					IsTransparent() { return true; }
-	virtual bool					IsTwoPass() { return false; }
+	virtual RenderableTranslucencyType_t ComputeTranslucencyType() { return RENDERABLE_IS_TRANSLUCENT; }
 
 	virtual void GetRenderBoundsWorldspace( Vector& mins, Vector& maxs )
 	{
@@ -64,7 +61,7 @@ public:
 		}
 	}
 	virtual bool ShouldDraw() { return true; }
-	virtual int DrawModel( int flags );
+	virtual int DrawModel( int flags, const RenderableInstance_t &instance );
 
 	virtual bool ShouldReceiveProjectedTextures( int flags ) { return false; }
 

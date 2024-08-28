@@ -126,6 +126,9 @@ public:
 	// Clear all recipients and set only the specified one.
 	void	SetOnly( int iClient );
 
+	// Set all recipients, save for the specified on
+	void    ExcludeOnly( int iClient );
+
 public:
 	// Make sure we have enough room for the max possible player count
 	CBitVec< ABSOLUTE_PLAYER_LIMIT >	m_Bits;
@@ -180,6 +183,9 @@ class CSendTablePrecalc;
 // the data to all clients, so we don't need to store the results.
 #define DATATABLE_PROXY_INDEX_NOPROXY	255
 #define DATATABLE_PROXY_INDEX_INVALID	254
+
+#define SENDPROP_DEFAULT_PRIORITY ((byte)128)
+#define SENDPROP_CHANGES_OFTEN_PRIORITY ((byte)64)
 
 class SendProp
 {
@@ -619,10 +625,9 @@ void SendProxy_QuaternionToQuaternion( const SendProp *pProp, const void *pStruc
 void SendProxy_Int8ToInt32		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_Int16ToInt32		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_Int32ToInt32		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-#ifdef SUPPORTS_INT64
 void SendProxy_Int64ToInt64		( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-#endif
 void SendProxy_StringToString	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+void SendProxy_Color32ToInt32	( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 
 // pData is the address of a data table.
 void* SendProxy_DataTableToDataTable( const SendProp *pProp, const void *pStructBase, const void *pData, CSendProxyRecipients *pRecipients, int objectID );
@@ -645,7 +650,8 @@ SendProp SendPropFloat(
 	int flags=0,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT,	// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy=SendProxy_FloatToFloat
+	SendVarProxyFn varProxy=SendProxy_FloatToFloat,
+	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
 SendProp SendPropVector(
@@ -656,7 +662,8 @@ SendProp SendPropVector(
 	int flags=SPROP_NOSCALE,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT,	// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy=SendProxy_VectorToVector
+	SendVarProxyFn varProxy=SendProxy_VectorToVector,
+	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
 SendProp SendPropVectorXY(
@@ -667,7 +674,8 @@ SendProp SendPropVectorXY(
 	int flags=SPROP_NOSCALE,
 	float fLowValue=0.0f,			// For floating point, low and high values.
 	float fHighValue=HIGH_DEFAULT,	// High value. If HIGH_DEFAULT, it's (1<<nBits).
-	SendVarProxyFn varProxy=SendProxy_VectorXYToVectorXY
+	SendVarProxyFn varProxy=SendProxy_VectorXYToVectorXY,
+	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
 #if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
@@ -689,7 +697,8 @@ SendProp SendPropAngle(
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,
 	int flags=0,
-	SendVarProxyFn varProxy=SendProxy_AngleToFloat
+	SendVarProxyFn varProxy=SendProxy_AngleToFloat,
+	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
 SendProp SendPropQAngles(
@@ -698,7 +707,8 @@ SendProp SendPropQAngles(
 	int sizeofVar=SIZEOF_IGNORE,
 	int nBits=32,
 	int flags=0,
-	SendVarProxyFn varProxy=SendProxy_QAngles
+	SendVarProxyFn varProxy=SendProxy_QAngles,
+	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
 SendProp SendPropInt(
@@ -707,12 +717,13 @@ SendProp SendPropInt(
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by SENDINFO macro.
 	int nBits=-1,					// Set to -1 to automatically pick (max) number of bits based on size of element.
 	int flags=0,
-	SendVarProxyFn varProxy=0
+	SendVarProxyFn varProxy=0,
+	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
-inline SendProp SendPropModelIndex( const char *pVarName, int offset, int sizeofVar=SIZEOF_IGNORE )
+inline SendProp SendPropModelIndex( const char *pVarName, int offset, int sizeofVar=SIZEOF_IGNORE, byte priority = SENDPROP_DEFAULT_PRIORITY )
 {
-	return SendPropInt( pVarName, offset, sizeofVar, SP_MODEL_INDEX_BITS, 0 );
+	return SendPropInt( pVarName, offset, sizeofVar, SP_MODEL_INDEX_BITS, 0, NULL, priority );
 }
 
 SendProp SendPropString(
@@ -720,14 +731,16 @@ SendProp SendPropString(
 	int offset,
 	int bufferLen,
 	int flags=0,
-	SendVarProxyFn varProxy=SendProxy_StringToString);
+	SendVarProxyFn varProxy=SendProxy_StringToString,
+	byte priority = SENDPROP_DEFAULT_PRIORITY);
 
 // The data table encoder looks at DVariant::m_pData.
 SendProp SendPropDataTable(
 	const char *pVarName,
 	int offset,
 	SendTable *pTable, 
-	SendTableProxyFn varProxy=SendProxy_DataTableToDataTable
+	SendTableProxyFn varProxy=SendProxy_DataTableToDataTable,
+	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
 SendProp SendPropArray3(
@@ -736,10 +749,34 @@ SendProp SendPropArray3(
 	int sizeofVar,
 	int elements,
 	SendProp pArrayProp,
-	SendTableProxyFn varProxy=SendProxy_DataTableToDataTable
+	SendTableProxyFn varProxy=SendProxy_DataTableToDataTable,
+	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
+//
+// Only use this if you change the array infrequently and you usually change all the elements
+// when you do change it.
+//
+// The array data is all sent together, so even if you only change one element,
+// it'll send all the elements.
+//
+// The upside is that it doesn't need extra bits to encode indices of all the variables.
+//
+#define SendPropArray_AllAtOnce( arrayName, propDefinition ) \
+	SendPropArray( propDefinition, arrayName )
 
+
+//
+// This is what you should use for most arrays. It will generate a separate SendProp for each array element
+// in your array. That way, if you change one element of the array, it will only transmit that array element
+// and not the whole array.
+//
+// Example: 
+//
+//     GenerateSendPropsForArrayElements( m_Array, SendPropInt( SENDINFO_ARRAY( m_Array ) )
+//
+#define SendPropArray_UniqueElements( arrayName, propDefinition ) \
+	SendPropArray3( SENDINFO_ARRAY3( arrayName ), propDefinition )
 
 // Use the macro to let it automatically generate a table name. You shouldn't 
 // ever need to reference the table name. If you want to exclude this array, then
@@ -748,7 +785,8 @@ SendProp InternalSendPropArray(
 	const int elementCount,
 	const int elementStride,
 	const char *pName,
-	ArrayLengthSendProxyFn proxy
+	ArrayLengthSendProxyFn proxy,
+	byte priority = SENDPROP_DEFAULT_PRIORITY
 	);
 
 

@@ -11,6 +11,8 @@
 
 class CHudElement;
 
+#define HUDELEMENT_DEFAULT		0	// default, hud elements present in all split contexts
+
 //-----------------------------------------------------------------------------
 // Purpose: Used by DECLARE_HUDELEMENT macro to create a linked list of
 //  instancing functions
@@ -25,7 +27,7 @@ public:
 
 public:
 	// Construction
-	CHudElementHelper( CHudElement *( *pfnCreate )( void ), int depth );
+	CHudElementHelper( CHudElement *( *pfnCreate )( void ), int depth, int flags = HUDELEMENT_DEFAULT );
 
 	// Accessors
 	CHudElementHelper *GetNext( void );
@@ -38,6 +40,9 @@ private:
 
 	//Depth used to determine hud panel ordering
 	int					m_iDepth;
+
+	// Flags for visibility of hud elements in splitscreen
+	int					m_iFlags;
 };
 
 // This is the macro which implements creation of each hud element
@@ -65,13 +70,37 @@ private:
 		};																		\
 	static CHudElementHelper g_##panelName##_Helper( Create_##panelName, 50 );
 
+// Versions with flags
+#define DECLARE_HUDELEMENT_FLAGS( className, flags )							\
+	static CHudElement *Create_##className( void )							\
+		{																		\
+			return new className( #className );									\
+		};																		\
+	static CHudElementHelper g_##className##_Helper( Create_##className, 50, flags );
+
+#define DECLARE_HUDELEMENT_DEPTH_FLAGS( className, depth, flags )				\
+	static CHudElement *Create_##className( void )							\
+{																		\
+	return new className( #className );									\
+};																		\
+	static CHudElementHelper g_##className##_Helper( Create_##className, depth );
+
+#define DECLARE_NAMED_HUDELEMENT_FLAGS( className, panelName, flags )			\
+	static CHudElement *Create_##panelName( void )							\
+{																		\
+	return new className( #panelName );									\
+};																		\
+	static CHudElementHelper g_##panelName##_Helper( Create_##panelName, 50 );
+
 // This macro can be used to get a pointer to a specific hud element
 #define GET_HUDELEMENT( className )												\
-	( className *)gHUD.FindElement( #className )
+	( className *)GetHud().FindElement( #className )
 
 #define GET_NAMED_HUDELEMENT( className, panelName )							\
-	( className *)gHUD.FindElement( #panelName )
+	( className *)GetHud().FindElement( #panelName )
 
+#define GET_FULLSCREEN_HUDELEMENT( className )										\
+	((className*)GetHud().FindElement( #className ))
 
 // Things that inherit from vgui::Panel, too, will have ambiguous new operators
 //  so this should disambiguate them

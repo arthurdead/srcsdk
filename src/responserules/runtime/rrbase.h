@@ -7,9 +7,7 @@
 
 #ifndef RRBASE_H
 #define RRBASE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #ifdef _WIN32
 // Silence certain warnings
@@ -45,11 +43,6 @@
 // Shared engine/DLL constants
 #include "const.h"
 #include "edict.h"
-
-// app
-#if defined(_X360)
-#define DISABLE_DEBUG_HISTORY 1
-#endif
 
 #include "responserules/response_types.h"
 #include "response_types_internal.h"

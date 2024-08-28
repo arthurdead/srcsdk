@@ -7,9 +7,7 @@
 
 #ifndef AI_BEHAVIOR_ADDONHOST_H
 #define AI_BEHAVIOR_ADDONHOST_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "ai_behavior.h"
 

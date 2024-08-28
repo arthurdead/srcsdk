@@ -7,7 +7,8 @@ source_base = subproject('source_base')
 
 shaderlib_lib = static_library('shaderlib',
 	cpp_args: [
-		'-DFAST_MATERIALVAR_ACCESS'
+		'-DFAST_MATERIALVAR_ACCESS',
+		'-DLIBNAME=shaderlib'
 	],
 	sources: files(
 		join_paths(shaderlib_src_dir,'BaseShader.cpp'),

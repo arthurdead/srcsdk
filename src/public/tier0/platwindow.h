@@ -9,9 +9,7 @@
 #ifndef PLATWINDOW_H
 #define PLATWINDOW_H
 
-#ifdef COMPILER_MSVC32
 #pragma once
-#endif
 
 #include "tier0/platform.h"
 #include "tier0/basetypes.h"

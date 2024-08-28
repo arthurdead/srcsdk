@@ -59,6 +59,7 @@ public:
 	virtual bool IsVisible() { return BaseClass::IsVisible(); }
 	virtual void SetParent(vgui::VPANEL parent) { BaseClass::SetParent(parent); }
 	virtual void OnThink();
+	virtual bool WantsBackgroundBlurred( void ) { return false; }
 
 	virtual int GetTopBarHeight() { return m_pTopBar->GetTall(); }
 	virtual int GetBottomBarHeight() { return m_pBottomBarBlank->GetTall(); }
@@ -132,6 +133,7 @@ private:
 	virtual void OnKeyCodePressed(vgui::KeyCode code);
 	virtual void ApplySchemeSettings(vgui::IScheme *pScheme);
 	virtual void PerformLayout();
+	virtual bool WantsBackgroundBlurred( void ) { return false; }
 
 	void SetViewModeText( const char *text ) { m_pViewOptions->SetText( text ); }
 	void SetPlayerFgColor( Color c1 ) { m_pPlayerList->SetFgColor(c1); }

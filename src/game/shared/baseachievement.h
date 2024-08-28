@@ -9,8 +9,11 @@
 #pragma once
 
 #include "GameEventListener.h"
-#include "hl2orange.spa.h"
 #include "iachievementmgr.h"
+#include "networkvar.h"
+#ifdef GAME_DLL
+#include "datamap.h"
+#endif
 
 class CAchievementMgr;
 
@@ -156,7 +159,9 @@ protected:
 
 	friend class CAchievementMgr;
 public:
+#ifdef GAME_DLL
 	DECLARE_DATADESC();
+#endif
 };
 
 class CFailableAchievement : public CBaseAchievement
@@ -186,7 +191,9 @@ protected:
 	bool	m_bFailed;			// has this achievement failed
 	
 public:
+#ifdef GAME_DLL
 	DECLARE_DATADESC();
+#endif
 };
 
 class CMapAchievement : public CBaseAchievement

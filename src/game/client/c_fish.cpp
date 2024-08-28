@@ -33,7 +33,7 @@ public:
 	DECLARE_CLIENTCLASS();
 
 	virtual void Spawn( void );
-	virtual void ClientThink();
+	virtual void FishThink();
 
 	virtual void OnDataChanged( DataUpdateType_t type );
 
@@ -125,12 +125,12 @@ void C_Fish::Spawn( void )
 	m_errorHistoryCount = 0;
 	m_averageError = 0.0f;
 
-	SetNextClientThink( CLIENT_THINK_ALWAYS );
+	SetContextThink( &C_Fish::FishThink, TICK_ALWAYS_THINK, "FishThink" );
 }
 
 
 //-----------------------------------------------------------------------------
-void C_Fish::ClientThink()
+void C_Fish::FishThink()
 {
 	if (FishDebug.GetBool())
 	{

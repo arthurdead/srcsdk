@@ -18,7 +18,7 @@
 #pragma warning( disable : 4700 )
 #endif
 
-#if defined( USE_NATIVE_SLIST ) && !defined( _X360 )
+#if defined( USE_NATIVE_SLIST )
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -27,10 +27,6 @@
 #include "tier0/threadtools.h"
 #include "tier0/memalloc.h"
 #include "tier0/memdbgoff.h"
-
-#if defined( _X360 )
-#define USE_NATIVE_SLIST
-#endif
 
 //-----------------------------------------------------------------------------
 
@@ -194,19 +190,10 @@ public:
 #endif
 
 #ifdef USE_NATIVE_SLIST
-#ifdef _X360
-		// integrated write-release barrier
-		return (TSLNodeBase_t *)InterlockedPushEntrySListRelease( &m_Head, pNode );
-#else
 		return (TSLNodeBase_t *)InterlockedPushEntrySList( &m_Head, pNode );
-#endif
 #else
 		TSLHead_t oldHead;
 		TSLHead_t newHead;
-
-		#if defined( PLATFORM_PS3 ) || defined( PLATFORM_X360 )
-		__lwsync(); // write-release barrier
-		#endif
 
 #ifdef PLATFORM_64BITS
 		newHead.value.Padding = 0;
@@ -234,12 +221,7 @@ public:
 	TSLNodeBase_t *Pop()
 	{
 #ifdef USE_NATIVE_SLIST
-#ifdef _X360
-		// integrated read-acquire barrier
-		TSLNodeBase_t *pNode = (TSLNodeBase_t *)InterlockedPopEntrySListAcquire( &m_Head );
-#else
 		TSLNodeBase_t *pNode = (TSLNodeBase_t *)InterlockedPopEntrySList( &m_Head );
-#endif
 		return pNode;
 #else
 		TSLHead_t oldHead;
@@ -260,9 +242,6 @@ public:
 
 			if ( ThreadInterlockedAssignIf64x128( &m_Head.value64x128, newHead.value64x128, oldHead.value64x128 ) )
 			{
-				#if defined( PLATFORM_PS3 ) || defined( PLATFORM_X360 )
-					__lwsync(); // read-acquire barrier
-				#endif
 				break;
 			}
 			ThreadPause();
@@ -276,9 +255,6 @@ public:
 	{
 #ifdef USE_NATIVE_SLIST
 		TSLNodeBase_t *pBase = (TSLNodeBase_t *)InterlockedFlushSList( &m_Head );
-#if defined( _X360 ) || defined( _PS3 )
-		__lwsync(); // read-acquire barrier
-#endif
 		return pBase;
 #else
 		TSLHead_t oldHead;
@@ -734,10 +710,9 @@ public:
 	// Note: Purge, RemoveAll, and Validate are *not* threadsafe
 	void Purge()
 	{
-		if ( IsDebug() )
-		{
-			ValidateQueue();
-		}
+#ifdef _DEBUG
+		ValidateQueue();
+#endif
 
 		Node_t *pNode;
 		while ( ( pNode = Pop() ) != NULL )
@@ -759,10 +734,9 @@ public:
 
 	void RemoveAll()
 	{
-		if ( IsDebug() )
-		{
-			ValidateQueue();
-		}
+#ifdef _DEBUG
+		ValidateQueue();
+#endif
 
 		Node_t *pNode;
 		while ( ( pNode = Pop() ) != NULL )
@@ -773,51 +747,48 @@ public:
 
 	bool ValidateQueue()
 	{
-		if ( IsDebug() )
+	#ifdef _DEBUG
+		bool bResult = true;
+		int nNodes = 0;
+		if ( m_Tail.value.pNode->pNext != End() )
 		{
-			bool bResult = true;
-			int nNodes = 0;
-			if ( m_Tail.value.pNode->pNext != End() )
+			DebuggerBreakIfDebugging();
+			bResult = false;
+		}
+
+		if ( m_Count == 0 )
+		{
+			if ( m_Head.value.pNode != m_Tail.value.pNode )
 			{
 				DebuggerBreakIfDebugging();
 				bResult = false;
 			}
-
-			if ( m_Count == 0 )
-			{
-				if ( m_Head.value.pNode != m_Tail.value.pNode )
-				{
-					DebuggerBreakIfDebugging();
-					bResult = false;
-				}
-			}
-
-			Node_t *pNode = m_Head.value.pNode;
-			while ( pNode != End() )
-			{
-				nNodes++;
-				pNode = pNode->pNext;
-			}
-
-			nNodes--;// skip dummy node
-
-			if ( nNodes != m_Count )
-			{
-				DebuggerBreakIfDebugging();
-				bResult = false;
-			}
-
-			if ( !bResult )
-			{
-				Msg( "Corrupt CTSQueueDetected" );
-			}
-
-			return bResult;
 		}
-		else
+
+		Node_t *pNode = m_Head.value.pNode;
+		while ( pNode != End() )
 		{
-			return true;
+			nNodes++;
+			pNode = pNode->pNext;
 		}
+
+		nNodes--;// skip dummy node
+
+		if ( nNodes != m_Count )
+		{
+			DebuggerBreakIfDebugging();
+			bResult = false;
+		}
+
+		if ( !bResult )
+		{
+			Msg( "Corrupt CTSQueueDetected" );
+		}
+
+		return bResult;
+	#else
+		return true;
+	#endif
 	}
 
 	void FinishPush( Node_t *pNode, const NodeLink_t &oldTail )

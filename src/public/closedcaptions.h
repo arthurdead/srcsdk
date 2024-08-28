@@ -6,9 +6,7 @@
 
 #ifndef CLOSEDCAPTIONS_H
 #define CLOSEDCAPTIONS_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "captioncompiler.h"
 #include "tier1/utlsymbol.h"

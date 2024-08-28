@@ -46,7 +46,6 @@ float GUST_LIFETIME_MAX = 3;
 
 float MIN_SCREENSPACE_RAIN_WIDTH = 1;
 
-#ifndef _XBOX
 ConVar r_RainHack( "r_RainHack", "0", FCVAR_CHEAT );
 ConVar r_RainRadius( "r_RainRadius", "1500", FCVAR_CHEAT );
 ConVar r_RainSideVel( "r_RainSideVel", "130", FCVAR_CHEAT, "How much sideways velocity rain gets." );
@@ -87,7 +86,7 @@ CUtlVector< RayTracingEnvironment* > g_RayTraceEnvironments;
 // Snow fall
 //===========
 class CSnowFallManager;
-static CSnowFallManager *s_pSnowFallMgr = NULL;
+CSnowFallManager *s_pSnowFallMgr = NULL;
 bool SnowFallManagerCreate( CClient_Precipitation *pSnowEntity );
 void SnowFallManagerDestroy( void );
 
@@ -99,6 +98,8 @@ END_RECV_TABLE()
 
 IMPLEMENT_CLIENTCLASS_DT(C_PrecipitationBlocker, DT_PrecipitationBlocker, CPrecipitationBlocker)
 END_RECV_TABLE()
+
+LINK_ENTITY_TO_CLASS( func_precipitation, CClient_Precipitation );
 
 static ConVar r_SnowEnable( "r_SnowEnable", "1", FCVAR_CHEAT, "Snow Enable" );
 static ConVar r_SnowParticles( "r_SnowParticles", "500", FCVAR_CHEAT, "Snow." );
@@ -186,20 +187,20 @@ void CClient_Precipitation::OnDataChanged( DataUpdateType_t updateType )
 	// Simulate every frame.
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
-		SetNextClientThink( CLIENT_THINK_ALWAYS );
+		SetNextThink( TICK_ALWAYS_THINK );
 		if ( m_nPrecipType == PRECIPITATION_TYPE_SNOWFALL )
 		{
 			SnowFallManagerCreate( this );
 		}
 	}
 
-	m_flDensity = RemapVal( m_clrRender->a, 0, 255, 0, 0.001 );
+	m_flDensity = RemapVal( GetRenderAlpha(), 0, 255, 0, 0.001 );
 
 	BaseClass::OnDataChanged( updateType );
 }
 
 
-void CClient_Precipitation::ClientThink()
+void CClient_Precipitation::Think()
 {
 	Simulate( gpGlobals->frametime );
 }
@@ -402,6 +403,10 @@ void CClient_Precipitation::RenderParticle( CPrecipitationParticle* pParticle, C
 	float scale;
 	Vector start, delta;
 
+	if ( m_nPrecipType == PRECIPITATION_TYPE_PARTICLERAIN || m_nPrecipType == PRECIPITATION_TYPE_PARTICLEASH
+		|| m_nPrecipType == PRECIPITATION_TYPE_PARTICLERAINSTORM || PRECIPITATION_TYPE_PARTICLESNOW )
+		return;
+
 	if ( m_nPrecipType >= PRECIPITATION_TYPE_ASH )
 		 return;
 
@@ -488,11 +493,15 @@ void CClient_Precipitation::Render()
 	if ( !r_DrawRain.GetInt() )
 		return;
 
+	if ( m_nPrecipType == PRECIPITATION_TYPE_PARTICLERAIN || m_nPrecipType == PRECIPITATION_TYPE_PARTICLEASH 
+		|| m_nPrecipType == PRECIPITATION_TYPE_PARTICLERAINSTORM || PRECIPITATION_TYPE_PARTICLESNOW )
+		return;
+
 	// Don't render in monitors or in reflections or refractions.
 	if ( CurrentViewID() == VIEW_MONITOR )
 		return;
 
-	if ( view->GetDrawFlags() & (DF_RENDER_REFLECTION | DF_RENDER_REFRACTION) )
+	if ( GetViewRenderInstance()->GetDrawFlags() & (DF_RENDER_REFLECTION | DF_RENDER_REFRACTION) )
 		return;
 
 	if ( m_nPrecipType >= PRECIPITATION_TYPE_ASH )
@@ -554,6 +563,11 @@ CClient_Precipitation::CClient_Precipitation() : m_Remainder(0.0f)
 	m_nPrecipType = PRECIPITATION_TYPE_RAIN;
 	m_MatHandle = INVALID_MATERIAL_HANDLE;
 	m_flHalfScreenWidth = 1;
+
+	m_pParticlePrecipInnerNear = NULL;
+	m_pParticlePrecipInnerFar = NULL;
+	m_pParticlePrecipOuter = NULL;
+	m_bActiveParticlePrecipEmitter = false;
 	
 	g_Precipitations.AddToTail( this );
 }
@@ -1378,7 +1392,11 @@ public:
 		if ( r_RainHack.GetInt() )
 		{
 			CClient_Precipitation *pPrecipHackEnt = new CClient_Precipitation;
-			pPrecipHackEnt->InitializeAsClientEntity( NULL, RENDER_GROUP_TRANSLUCENT_ENTITY );
+			pPrecipHackEnt->SetClassname("func_precipitation");
+			if(!pPrecipHackEnt->InitializeAsClientEntity()) {
+				UTIL_Remove( pPrecipHackEnt );
+				pPrecipHackEnt = NULL;
+			}
 			g_pPrecipHackEnt = pPrecipHackEnt;
 		}
 		m_bLevelInitted = true;
@@ -1388,7 +1406,7 @@ public:
 	{
 		if ( r_RainHack.GetInt() && g_pPrecipHackEnt )
 		{
-			g_pPrecipHackEnt->Release();
+			UTIL_Remove( g_pPrecipHackEnt );
 		}
 		m_bLevelInitted = false;
 	}
@@ -1408,14 +1426,6 @@ public:
 	bool m_bLevelInitted;
 };
 CPrecipHack g_PrecipHack( "CPrecipHack" );
-
-#else
-
-void DrawPrecipitation()
-{
-}
-
-#endif	// _XBOX
 
 // Receive datatables
 BEGIN_RECV_TABLE_NOBASE(CEnvWindShared, DT_EnvWindShared)
@@ -1455,16 +1465,16 @@ void C_EnvWind::OnDataChanged( DataUpdateType_t updateType )
 		m_EnvWindShared.m_flStartTime, m_EnvWindShared.m_iInitialWindDir,
 		m_EnvWindShared.m_flInitialWindSpeed );
 
-	SetNextClientThink(0.0f);
+	SetContextThink( &C_EnvWind::WindThink, 0.0f, "WindThink" );
 
 	BaseClass::OnDataChanged( updateType );
 }
 
-void C_EnvWind::ClientThink( )
+void C_EnvWind::WindThink( )
 {
 	// Update the wind speed
 	float flNextThink = m_EnvWindShared.WindThink( gpGlobals->curtime );
-	SetNextClientThink(flNextThink);
+	SetNextThink( flNextThink, "WindThink" );
 }
 
 
@@ -1554,8 +1564,7 @@ public:
 
 	virtual void	OnDataChanged( DataUpdateType_t updateType ) OVERRIDE;
 	virtual bool	ShouldDraw( void ) OVERRIDE;
-	virtual void	AddEntity( void ) OVERRIDE;
-	virtual void	Simulate( void ) OVERRIDE;
+	virtual bool	Simulate( void ) OVERRIDE;
 
 	//Server-side
 	int		m_nDensity;
@@ -1588,6 +1597,7 @@ END_RECV_TABLE()
 C_Embers::C_Embers()
 {
 	m_pEmitter = CEmberEmitter::Create( "C_Embers" );
+	AddToEntityList(ENTITY_LIST_SIMULATE);
 }
 
 C_Embers::~C_Embers()
@@ -1603,6 +1613,11 @@ void C_Embers::OnDataChanged( DataUpdateType_t updateType )
 		m_pEmitter->SetSortOrigin( GetAbsOrigin() );
 
 		Start();
+	}
+
+	if ( m_bEmit )
+	{
+		AddToEntityList(ENTITY_LIST_SIMULATE);
 	}
 }
 
@@ -1629,17 +1644,10 @@ void C_Embers::Start( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_Embers::AddEntity( void ) 
+bool C_Embers::Simulate( void ) 
 {
-
-}
-
-void C_Embers::Simulate( void ) 
-{
-	BaseClass::Simulate();
-
 	if ( m_bEmit == false )
-		return;
+		return false;
 
 	float tempDelta = gpGlobals->frametime;
 
@@ -1647,6 +1655,8 @@ void C_Embers::Simulate( void )
 	{
 		SpawnEmber();
 	}
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -1675,9 +1685,9 @@ void C_Embers::SpawnEmber( void )
 	sParticle->m_flLifetime = 0.0f;
 	sParticle->m_flDieTime	= m_nLifetime;
 
-	sParticle->m_uchColor[0]	= m_clrRender->r * cScale;
-	sParticle->m_uchColor[1]	= m_clrRender->g * cScale;
-	sParticle->m_uchColor[2]	= m_clrRender->b * cScale;
+	sParticle->m_uchColor[0]	= GetRenderColorR() * cScale;
+	sParticle->m_uchColor[1]	= GetRenderColorG() * cScale;
+	sParticle->m_uchColor[2]	= GetRenderColorB() * cScale;
 	sParticle->m_uchStartAlpha	= 255;
 	sParticle->m_uchEndAlpha	= 0;
 	sParticle->m_uchStartSize	= 1;
@@ -1712,7 +1722,7 @@ public:
 
 	//virtual void	OnDataChanged( DataUpdateType_t updateType );
 	virtual bool	ShouldDraw( void ) OVERRIDE { return true; }
-	virtual int		DrawModel( int ) OVERRIDE;
+	virtual int		DrawModel( int, const RenderableInstance_t &instance ) OVERRIDE;
 
 	virtual void	GetRenderBounds( Vector& mins, Vector& maxs ) OVERRIDE
 	{
@@ -1745,10 +1755,15 @@ FORCEINLINE Vector Color32ToVector( const color32 &color )
 	return Vector( color.r * (1.0/255.0f), color.g * (1.0/255.0f), color.b * (1.0/255.0f) );
 }
 
-int	C_QuadraticBeam::DrawModel( int )
+FORCEINLINE Vector Color24ToVector( const color24 &color )
+{
+	return Vector( color.r * (1.0/255.0f), color.g * (1.0/255.0f), color.b * (1.0/255.0f) );
+}
+
+int	C_QuadraticBeam::DrawModel( int, const RenderableInstance_t & )
 {
 	Draw_SetSpriteTexture( GetModel(), 0, GetRenderMode() );
-	const Vector color = Color32ToVector( GetRenderColor() );
+	const Vector color = Color24ToVector( GetRenderColor() );
 	DrawBeamQuadratic( GetRenderOrigin(), m_controlPosition, m_targetPosition, m_flWidth, color, gpGlobals->curtime*m_scrollRate );
 	return 1;
 }
@@ -1821,7 +1836,7 @@ public:
 		GetBinding().SetBBox( vecMin, vecMax, true );
 	}
 
-	bool IsTransparent( void )		{ return false; }
+	RenderableTranslucencyType_t ComputeTranslucencyType( void ) { return RENDERABLE_IS_OPAQUE; }
 
 private:
 
@@ -1839,8 +1854,8 @@ public:
 
 	bool CreateEmitter( void );
 
-	void SpawnClientEntity( void ) OVERRIDE;
-	void ClientThink() OVERRIDE;
+	void Spawn( void ) OVERRIDE;
+	void Think() OVERRIDE;
 
 	void AddSnowFallEntity( CClient_Precipitation *pSnowEntity );
 
@@ -1852,7 +1867,7 @@ public:
 		SNOWFALL_IN_ENTITY,
 	};
 
-	bool IsTransparent( void ) OVERRIDE		{ return false; }
+	RenderableTranslucencyType_t ComputeTranslucencyType( void ) { return RENDERABLE_IS_OPAQUE; }
 
 private:
 
@@ -1907,6 +1922,7 @@ private:
 // Purpose: 
 //-----------------------------------------------------------------------------
 CSnowFallManager::CSnowFallManager( void )
+	: C_BaseEntity(true)
 {
 	m_iSnowFallArea = SNOWFALL_NONE;
 	m_pSnowFallEmitter = NULL;
@@ -1938,14 +1954,16 @@ bool CSnowFallManager::CreateEmitter( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSnowFallManager::SpawnClientEntity( void )
+void CSnowFallManager::Spawn( void )
 {
+	C_BaseEntity::Spawn();
+
 	m_tSnowFallParticleTimer.Init( 500 );
 	m_tSnowFallParticleTraceTimer.Init( 6 );
 	m_iSnowFallArea = SNOWFALL_NONE;
 
 	// Have the Snow Fall Manager think for all the snow fall entities.
-	SetNextClientThink( CLIENT_THINK_ALWAYS );
+	SetNextThink( TICK_ALWAYS_THINK );
 }
 
 //-----------------------------------------------------------------------------
@@ -1964,7 +1982,7 @@ bool CSnowFallManager::CreateSnowFallEmitter( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSnowFallManager::ClientThink( void )
+void CSnowFallManager::Think( void )
 {
 	if ( !r_SnowEnable.GetBool() )
 		return;
@@ -1973,7 +1991,10 @@ void CSnowFallManager::ClientThink( void )
 	if ( !m_pSnowFallEmitter )
 	{
 		if ( !CreateSnowFallEmitter() )
+		{
+			UTIL_Remove( this );
 			return;
+		}
 	}
 
 	CreateSnowFall();
@@ -2068,7 +2089,7 @@ void CSnowFallManager::FindSnowVolumes( const Vector &vecCenter, float flRadius,
 	for ( iSnow = 0; iSnow < nSnowCount; ++iSnow )
 	{
 		// Check to see if the volume is in the PVS.
-		const bool bInPVS = g_pClientLeafSystem->IsRenderableInPVS( m_aSnow[iSnow].m_pEntity->GetClientRenderable() );
+		const bool bInPVS = ClientLeafSystem()->IsRenderableInPVS( m_aSnow[iSnow].m_pEntity->GetClientRenderable() );
 		if ( !bInPVS )
 			continue;
 
@@ -2226,7 +2247,7 @@ void CSnowFallManager::CreateSnowFallParticles( float flCurrentTime, float flRad
 	if ( m_nActiveSnowCount > 0 )
 	{
 		C_BaseEntity *pEntity = m_aSnow[m_aActiveSnow[0]].m_pEntity;
-		int density = pEntity->m_clrRender.GetA();
+		int density = pEntity->GetRenderAlpha();
 		density = clamp( density, 0, 100 );
 		if ( pEntity && density > 0 )
 		{
@@ -2455,8 +2476,17 @@ bool SnowFallManagerCreate( CClient_Precipitation *pSnowEntity )
 	if ( !s_pSnowFallMgr )
 	{
 		s_pSnowFallMgr = new CSnowFallManager();
-		s_pSnowFallMgr->CreateEmitter();
-		s_pSnowFallMgr->InitializeAsClientEntity( NULL, RENDER_GROUP_OTHER );
+		if(!s_pSnowFallMgr->CreateEmitter()) {
+			UTIL_Remove( s_pSnowFallMgr );
+			s_pSnowFallMgr = NULL;
+			return false;
+		}
+		if(!s_pSnowFallMgr->InitializeAsClientEntity()) {
+			UTIL_Remove( s_pSnowFallMgr );
+			s_pSnowFallMgr = NULL;
+			return false;
+		}
+		ClientLeafSystem()->EnableRendering( s_pSnowFallMgr->RenderHandle(), false );
 	}
 
 	s_pSnowFallMgr->AddSnowFallEntity( pSnowEntity );
@@ -2470,7 +2500,7 @@ void SnowFallManagerDestroy( void )
 {
 	if ( s_pSnowFallMgr )
 	{
-		delete s_pSnowFallMgr;
+		UTIL_Remove( s_pSnowFallMgr );
 		s_pSnowFallMgr = NULL;
 	}
 }

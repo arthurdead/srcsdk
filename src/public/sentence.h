@@ -19,6 +19,7 @@ class CUtlBuffer;
 
 #define CACHED_SENTENCE_VERSION			1
 #define CACHED_SENTENCE_VERSION_ALIGNED	4
+#define CACHED_SENTENCE_VERSION_PACKED	5
 
 //-----------------------------------------------------------------------------
 // Purpose: A sample point

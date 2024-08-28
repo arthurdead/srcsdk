@@ -63,16 +63,13 @@ CReplayScreenshotTaker::CReplayScreenshotTaker( IViewRender *pViewRender, CViewS
 	V_memset( m_pPaddedPixels, 255, nPaddedSize );
 
 	// Create the VTF
-#ifndef _X360
+
 	IVTFTexture *pVTFTexture = CreateVTFTexture();
 	const int nFlags = TEXTUREFLAGS_NOMIP | TEXTUREFLAGS_NOLOD | TEXTUREFLAGS_SRGB;
 	if ( !pVTFTexture->Init( m_aPaddedDims[ 0 ], m_aPaddedDims[ 1 ], 1, IMAGE_FORMAT_RGB888, nFlags, 1, 1 ) )
 		return;
 
 	m_pVTFTexture = pVTFTexture;
-#else
-	m_pVTFTexture = NULL;
-#endif // _X360
 
 	// Allocate pixels for the output buffer
 	int nVTFSize = 1024 + ( 3 * m_aPaddedDims[ 0 ] * m_aPaddedDims[ 1 ] );
@@ -89,9 +86,7 @@ CReplayScreenshotTaker::~CReplayScreenshotTaker()
 	delete [] m_pPaddedPixels;
 	delete [] m_pVTFPixels;
 
-#ifndef _X360
 	DestroyVTFTexture( m_pVTFTexture );
-#endif // _X360
 
 	delete m_pBuffer;
 }

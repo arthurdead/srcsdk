@@ -29,7 +29,7 @@ if [[ ! -d "$builddir_linux" ]]; then
 	exit 1
 fi
 
-meson compile -j 8 -C "$builddir_linux"
+meson compile -j 8 -C "$builddir_linux" --ninja-args '-k 0'
 if [[ $? != 0 ]]; then
 	exit 1
 fi

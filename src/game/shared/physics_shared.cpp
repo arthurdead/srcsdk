@@ -20,8 +20,6 @@
 #include "IEffects.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 
-#include "physics_saverestore.h"
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -89,8 +87,6 @@ CPhysCollide *PhysCreateBbox( const Vector &minsIn, const Vector &maxsIn )
 	// VPHYSICS caches/cleans up these
 	CPhysCollide *pResult = physcollision->BBoxToCollide( mins, maxs );
 
-	g_pPhysSaveRestoreManager->NoteBBox( mins, maxs, pResult );
-	
 	return pResult;
 }
 
@@ -344,8 +340,6 @@ IPhysicsObject *PhysModelCreate( CBaseEntity *pEntity, int modelIndex, const Vec
 				pObject->RecheckCollisionFilter();
 			}
 		}
-
-		g_pPhysSaveRestoreManager->AssociateModel( pObject, modelIndex);
 	}
 
 	return pObject;
@@ -398,7 +392,6 @@ IPhysicsObject *PhysModelCreateUnmoveable( CBaseEntity *pEntity, int modelIndex,
 				pObject->RecheckCollisionFilter();
 			}
 		}
-		g_pPhysSaveRestoreManager->AssociateModel( pObject, modelIndex);
 	}
 
 	return pObject;
@@ -439,9 +432,6 @@ IPhysicsObject *PhysModelCreateCustom( CBaseEntity *pEntity, const CPhysCollide 
 	{
 		pObject = physenv->CreatePolyObject( pModel, surfaceProp, origin, angles, &pSolid->params );
 	}
-
-	if ( pObject )
-		g_pPhysSaveRestoreManager->AssociateModel( pObject, pModel);
 
 	return pObject;
 }
@@ -488,9 +478,6 @@ void PhysGetDefaultAABBSolid( solid_t &solid )
 //-----------------------------------------------------------------------------
 void PhysDestroyObject( IPhysicsObject *pObject, CBaseEntity *pEntity )
 {
-	g_pPhysSaveRestoreManager->ForgetModel( pObject );
-
-	
 	if ( pObject )
 		pObject->SetGameData( NULL );
 
@@ -517,10 +504,7 @@ void AddSurfacepropFile( const char *pFileName, IPhysicsSurfaceProps *pProps, IF
 
 		// read the file
 		int nBufSize = len+1;
-		if ( IsXbox() )
-		{
-			nBufSize = AlignValue( nBufSize , 512 );
-		}
+
 		char *buffer = (char *)stackalloc( nBufSize );
 		pFileSystem->ReadEx( buffer, nBufSize, len, file );
 		pFileSystem->Close( file );

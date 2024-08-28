@@ -18,15 +18,27 @@ class C_PhysicsProp : public C_BreakableProp
 public:
 	DECLARE_CLIENTCLASS();
 
-	C_PhysicsProp();
-	~C_PhysicsProp();
+	// Inherited from IClientUnknown
+public:
+	virtual IClientModelRenderable*	GetClientModelRenderable();
 
+	// Inherited from IClientModelRenderable
+public:
+	virtual bool GetRenderData( void *pData, ModelDataCategory_t nCategory );
+
+	// Other public methods
+public:
+	C_PhysicsProp();
+	virtual ~C_PhysicsProp();
+
+	virtual void OnDataChanged( DataUpdateType_t type );
 	virtual bool OnInternalDrawModel( ClientModelRenderInfo_t *pInfo );
 
 protected:
 	// Networked vars.
 	bool m_bAwake;
 	bool m_bAwakeLastTime;
+	bool m_bCanUseStaticLighting;
 };
 
 #endif // C_PHYSICSPROP_H 

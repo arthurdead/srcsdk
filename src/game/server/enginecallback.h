@@ -8,9 +8,9 @@
 #ifndef ENGINECALLBACK_H
 #define ENGINECALLBACK_H
 
-#ifndef EIFACE_H
+#pragma once
+
 #include "eiface.h"
-#endif
 
 class IFileSystem;				// include filesystem.h
 class IEngineSound;				// include engine/IEngineSound.h
@@ -25,7 +25,6 @@ class IVDebugOverlay;
 class IDataCache;
 class IMDLCache;
 class IServerEngineTools;
-class IXboxSystem;
 class CSteamAPIContext;
 class CSteamGameServerAPIContext;
 
@@ -42,7 +41,6 @@ extern IVDebugOverlay			*debugoverlay;
 extern IDataCache				*datacache;
 extern IMDLCache				*mdlcache;
 extern IServerEngineTools		*serverenginetools;
-extern IXboxSystem				*xboxsystem; // 360 only
 extern CSteamAPIContext			*steamapicontext; // available on game clients
 extern CSteamGameServerAPIContext *steamgameserverapicontext; //available on game servers
 
@@ -101,13 +99,9 @@ void MessageWriteUBitLong( unsigned int data, int numbits );
 void MessageWriteSBitLong( int data, int numbits );
 void MessageWriteBits( const void *pIn, int nBits );
 
-#ifndef NO_STEAM
-
 /// Returns Steam ID, given player index.   Returns an invalid SteamID upon
 /// failure
 extern CSteamID GetSteamIDForPlayerIndex( int iPlayerIndex );
-
-#endif
 
 
 // Bytewise

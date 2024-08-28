@@ -26,7 +26,8 @@
 #include <vgui/ISurface.h>
 #include <vgui/ILocalize.h>
 #include "view.h"
-#include "ixboxsystem.h"
+#include "vgui_int.h"
+#include "vgui_controls/EditablePanel.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -82,36 +83,22 @@ int GetLocalPlayerIndex( void )
 		return 0;	// game not started yet
 }
 
-int GetLocalPlayerVisionFilterFlags( bool bWeaponsCheck /*= false */ )
+int GetLocalPlayerVisionFilterFlags()
 {
 	C_BasePlayer * player = C_BasePlayer::GetLocalPlayer();
-
 	if ( player )
-		return player->GetVisionFilterFlags( bWeaponsCheck );
+		return player->GetVisionFilterFlags();
 	else
-		return 0;
+		return VISION_FILTER_NONE;
 }
 
-bool IsLocalPlayerUsingVisionFilterFlags( int nFlags, bool bWeaponsCheck /* = false */ )
+bool IsLocalPlayerUsingVisionFilterFlags( int nFlags)
 {
-	int nLocalPlayerFlags = GetLocalPlayerVisionFilterFlags( bWeaponsCheck );
-
-	if ( !bWeaponsCheck )
-	{
-		// We can only modify the RJ flags with normal checks that won't take the forced kill cam flags that can happen in weapon checks
-		int nRJShaderFlags = nLocalPlayerFlags;
-		if ( nRJShaderFlags != 0 && GameRules() && !GameRules()->AllowMapVisionFilterShaders() )
-		{
-			nRJShaderFlags = 0;
-		}
-
-		if ( nRJShaderFlags != localplayer_visionflags.GetInt() )
-		{
-			localplayer_visionflags.SetValue( nRJShaderFlags );
-		}
-	}
-
-	return ( nLocalPlayerFlags & nFlags ) == nFlags;
+	C_BasePlayer * player = C_BasePlayer::GetLocalPlayer();
+	if ( player )
+		return player->HasVisionFilterFlags( nFlags );
+	else
+		return false;
 }
 
 bool IsLocalPlayerSpectator( void )
@@ -402,7 +389,7 @@ int UTIL_PrecacheDecal( const char *name, bool preload )
 	return effects->Draw_DecalIndexFromName( (char*)name );
 }
 
-extern short g_sModelIndexSmoke;
+extern int g_sModelIndexSmoke;
 
 void UTIL_Smoke( const Vector &origin, const float scale, const float framerate )
 {
@@ -415,7 +402,7 @@ void UTIL_SetOrigin( C_BaseEntity *entity, const Vector &vecOrigin )
 	entity->SetLocalOrigin( vecOrigin );
 }
 
-//#define PRECACHE_OTHER_ONCE
+#define PRECACHE_OTHER_ONCE 0
 // UNDONE: Do we need this to avoid doing too much of this?  Measure startup times and see
 #if PRECACHE_OTHER_ONCE
 
@@ -484,7 +471,7 @@ void UTIL_PrecacheOther( const char *szClassname )
 	}
 
 	// Bye bye
-	pEntity->Release();
+	UTIL_Remove( pEntity );
 }
 
 static csurface_t	g_NullSurface = { "**empty**", 0 };
@@ -518,9 +505,16 @@ bool GetVectorInScreenSpace( Vector pos, int& iX, int& iY, Vector *vecOffset )
 		pos += *vecOffset;
 
 	// Transform to screen space
+	int x, y, screenWidth, screenHeight;
+	int insetX, insetY;
+	VGui_GetEngineRenderBounds( x, y, screenWidth, screenHeight, insetX, insetY );
+
 	int iFacing = ScreenTransform( pos, screen );
-	iX = 0.5f * ( 1.0f + screen[0] ) * ScreenWidth();
-	iY = 0.5f * ( 1.0f - screen[1] ) * ScreenHeight();
+	iX = 0.5f * ( 1.0f + screen[0] ) * screenWidth;
+	iY = 0.5f * ( 1.0f - screen[1] ) * screenHeight;
+
+	iX += insetX;
+	iY += insetY;
 
 	// Make sure the player's facing it
 	if ( iFacing )
@@ -594,61 +588,6 @@ bool GetTargetInHudSpace( C_BaseEntity *pTargetEntity, int& iX, int& iY, Vector 
 //-----------------------------------------------------------------------------
 void ClientPrint( C_BasePlayer *player, int msg_dest, const char *msg_name, const char *param1 /*= NULL*/, const char *param2 /*= NULL*/, const char *param3 /*= NULL*/, const char *param4 /*= NULL*/ )
 {
-}
-
-//-----------------------------------------------------------------------------
-// class CFlaggedEntitiesEnum
-//-----------------------------------------------------------------------------
-// enumerate entities that match a set of edict flags into a static array
-class CFlaggedEntitiesEnum : public IPartitionEnumerator
-{
-public:
-	CFlaggedEntitiesEnum( C_BaseEntity **pList, int listMax, int flagMask );
-	// This gets called	by the enumeration methods with each element
-	// that passes the test.
-	virtual IterationRetval_t EnumElement( IHandleEntity *pHandleEntity );
-	
-	int GetCount() { return m_count; }
-	bool AddToList( C_BaseEntity *pEntity );
-	
-private:
-	C_BaseEntity		**m_pList;
-	int				m_listMax;
-	int				m_flagMask;
-	int				m_count;
-};
-
-CFlaggedEntitiesEnum::CFlaggedEntitiesEnum( C_BaseEntity **pList, int listMax, int flagMask )
-{
-	m_pList = pList;
-	m_listMax = listMax;
-	m_flagMask = flagMask;
-	m_count = 0;
-}
-
-bool CFlaggedEntitiesEnum::AddToList( C_BaseEntity *pEntity )
-{
-	if ( m_count >= m_listMax )
-		return false;
-	m_pList[m_count] = pEntity;
-	m_count++;
-	return true;
-}
-
-IterationRetval_t CFlaggedEntitiesEnum::EnumElement( IHandleEntity *pHandleEntity )
-{
-	IClientEntity *pClientEntity = cl_entitylist->GetClientEntityFromHandle( pHandleEntity->GetRefEHandle() );
-	C_BaseEntity *pEntity = pClientEntity ? pClientEntity->GetBaseEntity() : NULL;
-	if ( pEntity )
-	{
-		if ( m_flagMask && !(pEntity->GetFlags() & m_flagMask) )	// Does it meet the criteria?
-			return ITERATION_CONTINUE;
-
-		if ( !AddToList( pEntity ) )
-			return ITERATION_STOP;
-	}
-
-	return ITERATION_CONTINUE;
 }
 
 //-----------------------------------------------------------------------------
@@ -946,28 +885,15 @@ void UTIL_ReplaceKeyBindings( const wchar_t *inbuf, int inbufsizebytes, OUT_Z_BY
 				const char *key = engine->Key_LookupBinding( *binding == '+' ? binding + 1 : binding );
 				if ( !key )
 				{
-					key = IsX360() ? "" : "< not bound >";
+					key = "< not bound >";
 				}
 
 				//!! change some key names into better names
 				char friendlyName[64];
 				bool bAddBrackets = false;
-				if ( IsX360() )
-				{
-					if ( !key || !key[0] )
-					{
-						Q_snprintf( friendlyName, sizeof(friendlyName), "#GameUI_None" );
-						bAddBrackets = true;
-					}
-					else
-					{
-						Q_snprintf( friendlyName, sizeof(friendlyName), "#GameUI_KeyNames_%s", key );
-					}
-				}
-				else
-				{
-					Q_snprintf( friendlyName, sizeof(friendlyName), "%s", key );
-				}
+
+				Q_snprintf( friendlyName, sizeof(friendlyName), "%s", key );
+
 				Q_strupr( friendlyName );
 
 				wchar_t *locName = g_pVGuiLocalize->Find( friendlyName );
@@ -1012,6 +938,27 @@ void UTIL_ReplaceKeyBindings( const wchar_t *inbuf, int inbufsizebytes, OUT_Z_BY
 	}
 
 	outbuf[pos] = '\0';
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void UTIL_SetControlStringWithKeybindings( vgui::EditablePanel *panel, const char *controlName, const char *str )
+{
+	if ( !panel || !controlName || !str )
+		return;
+
+	const wchar_t *unicodeStr = g_pVGuiLocalize->Find( str );
+	if ( unicodeStr )
+	{
+		wchar_t buf[512];
+		UTIL_ReplaceKeyBindings( unicodeStr, 0, buf, sizeof( buf ) );
+		panel->SetControlString( controlName, buf );
+	}
+	else
+	{
+		panel->SetControlString( controlName, str );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1150,7 +1097,7 @@ unsigned char UTIL_ComputeEntityFade( C_BaseEntity *pEntity, float flMinDist, fl
 			vecAbsCenter = pEntity->GetRenderOrigin();
 		}
 
-		unsigned char nGlobalAlpha = IsXbox() ? 255 : modelinfo->ComputeLevelScreenFade( vecAbsCenter, flRadius, flFadeScale );
+		unsigned char nGlobalAlpha = modelinfo->ComputeLevelScreenFade( vecAbsCenter, flRadius, flFadeScale );
 		unsigned char nDistAlpha;
 
 		if ( !engine->IsLevelMainMenuBackground() )
@@ -1190,35 +1137,77 @@ void UTIL_BoundToWorldSize( Vector *pVecPos )
 	}
 }
 
-#ifdef _X360
-#define MAP_KEY_FILE_DIR	"cfg"
-#else
 #define MAP_KEY_FILE_DIR	"media"
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns the filename to count map loads in
 //-----------------------------------------------------------------------------
 bool UTIL_GetMapLoadCountFileName( const char *pszFilePrependName, char *pszBuffer, int iBuflen )
 {
-	if ( IsX360() )
-	{
-#ifdef _X360
-		if ( XBX_GetStorageDeviceId() == XBX_INVALID_STORAGE_ID || XBX_GetStorageDeviceId() == XBX_STORAGE_DECLINED )
-			return false;
-#endif
-	}
-
-	if ( IsX360() )
-	{
-		Q_snprintf( pszBuffer, iBuflen, "%s:/%s", MAP_KEY_FILE_DIR, pszFilePrependName );
-	}
-	else
-	{
-		Q_snprintf( pszBuffer, iBuflen, "%s/%s", MAP_KEY_FILE_DIR, pszFilePrependName );
-	}
+	Q_snprintf( pszBuffer, iBuflen, "%s/%s", MAP_KEY_FILE_DIR, pszFilePrependName );
 
 	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+C_BasePlayer* UTIL_PlayerByUserId( int userID )
+{
+	for (int i = 1; i<=gpGlobals->maxClients; i++ )
+	{
+		C_BasePlayer *pPlayer = UTIL_PlayerByIndex( i );
+
+		if ( !pPlayer )
+			continue;
+
+		if ( pPlayer->GetUserID() == userID )
+		{
+			return pPlayer;
+		}
+	}
+
+	return NULL;
+}
+
+C_BaseEntity* UTIL_EntityFromUserMessageEHandle( long nEncodedEHandle )
+{
+	int nEntity, nSerialNum;
+	if( nEncodedEHandle == INVALID_NETWORKED_EHANDLE_VALUE )
+		return NULL;
+
+	nEntity = nEncodedEHandle & ((1 << MAX_EDICT_BITS) - 1);
+	nSerialNum = nEncodedEHandle >> MAX_EDICT_BITS;
+
+	EHANDLE hEntity( nEntity, nSerialNum );
+	return hEntity.Get();
+}
+
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+void UTIL_ApproachTarget( float target, float increaseSpeed, float decreaseSpeed, float *val )
+{
+	if ( *val < target )
+	{
+		*val += gpGlobals->frametime*increaseSpeed;
+		*val = MIN( *val, target );
+	}
+	else if ( *val > target )
+	{
+		*val -= gpGlobals->frametime*decreaseSpeed;
+		*val = MAX( *val, target );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+void UTIL_ApproachTarget( const Vector &target, float increaseSpeed, float decreaseSpeed, Vector *val )
+{
+	UTIL_ApproachTarget( target.x, increaseSpeed, decreaseSpeed, &val->x );
+	UTIL_ApproachTarget( target.y, increaseSpeed, decreaseSpeed, &val->y );
+	UTIL_ApproachTarget( target.z, increaseSpeed, decreaseSpeed, &val->z );
 }
 
 #ifdef TF_CLIENT_DLL
@@ -1275,13 +1264,6 @@ void UTIL_IncrementMapKey( const char *pszCustomKey )
 
 		kvMapLoadFile->deleteThis();
 	}
-
-	if ( IsX360() )
-	{
-#ifdef _X360
-		xboxsystem->FinishContainerWrites();
-#endif
-	}
 }
 
 int UTIL_GetMapKeyCount( const char *pszCustomKey )
@@ -1333,4 +1315,55 @@ bool UTIL_HasLoadedAnyMap()
 		return false;
 
 	return g_pFullFileSystem->FileExists( szFilename, "MOD" );
+}
+
+wchar_t *UTIL_GetLocalizedKeyString( const char *command, const char *fmt, const wchar_t *arg1, const wchar_t *arg2, const wchar_t *arg3 )
+{
+	static wchar_t useString[4][256];
+	static int index = 0;
+
+	index = index + 1;
+	if ( index > 3 )
+		index = 0;
+
+	const char *lowercaseKey = engine->Key_LookupBinding( command );
+	if ( !lowercaseKey )
+	{
+		lowercaseKey = "<NOT BOUND>";
+	}
+
+	char szKey[64];
+	V_strncpy( szKey, lowercaseKey, sizeof( szKey ) );
+	for ( char *tmp = szKey; *tmp; ++tmp )
+	{
+		*tmp = toupper( *tmp );
+	}
+
+	wchar_t wszKey[64];
+	g_pVGuiLocalize->ConvertANSIToUnicode( szKey,  wszKey, sizeof(wszKey) );
+
+	int argCount = 1;
+	if ( arg1 )
+	{
+		++argCount;
+		if ( arg2 )
+		{
+			++argCount;
+			if ( arg3 )
+			{
+				++argCount;
+			}
+		}
+	}
+
+	g_pVGuiLocalize->ConstructString( useString[index], sizeof( useString[index] ), g_pVGuiLocalize->Find( fmt ), argCount, wszKey, arg1, arg2, arg3 );
+	return useString[index];
+}
+
+void UTIL_ClearTrace( trace_t &trace )
+{
+	memset( &trace, 0, sizeof(trace));
+	trace.fraction = 1.f;
+	trace.fractionleftsolid = 0;
+	trace.surface = g_NullSurface;
 }

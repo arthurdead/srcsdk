@@ -29,7 +29,7 @@ public:
 public:
 	void	OnDataChanged(DataUpdateType_t updateType);
 	bool	ShouldDraw();
-	void	ClientThink( void );
+	void	SpotlightThink( void );
 
 	virtual bool ShouldInterpolate();
 
@@ -64,7 +64,7 @@ void C_SpotlightEnd::OnDataChanged(DataUpdateType_t updateType)
 {
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
-		SetNextClientThink(CLIENT_THINK_ALWAYS);
+		SetContextThink( &C_SpotlightEnd::SpotlightThink, TICK_ALWAYS_THINK, "SpotlightThink" );
 	}
 }
 
@@ -94,24 +94,26 @@ bool C_SpotlightEnd::ShouldInterpolate()
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-void C_SpotlightEnd::ClientThink(void)
+void C_SpotlightEnd::SpotlightThink(void)
 {
 	// If light scale is zero, don't draw light
 	if ( m_flLightScale <= 0 )
 		return;
 
+	color24 c = GetRenderColor();
+	float a = GetRenderAlpha() / 255.0f;
 	ColorRGBExp32 color;
-	color.r	= m_clrRender->r * m_clrRender->a;
-	color.g	= m_clrRender->g * m_clrRender->a;
-	color.b	= m_clrRender->b * m_clrRender->a;
+	color.r	= c.r * a;
+	color.g	= c.g * a;
+	color.b	= c.b * a;
 	color.exponent = 0;
 	if ( color.r == 0 && color.g == 0 && color.b == 0 )
 		return;
 
 	// Deal with the environment light
-	if ( !m_pDynamicLight || (m_pDynamicLight->key != index) )
+	if ( !m_pDynamicLight || (m_pDynamicLight->key != entindex()) )
 	{
-		m_pDynamicLight = effects->CL_AllocDlight( index );
+		m_pDynamicLight = effects->CL_AllocDlight( entindex() );
 		assert (m_pDynamicLight);
 	}
 
@@ -144,8 +146,6 @@ void C_SpotlightEnd::ClientThink(void)
 	m_pModelLight->die = gpGlobals->curtime + 0.05;
 	VectorCopy( m_vSpotlightDir, m_pModelLight->m_Direction );
 	*/
-
-	SetNextClientThink( CLIENT_THINK_ALWAYS );
 }
 
 IMPLEMENT_CLIENTCLASS_DT(C_SpotlightEnd, DT_SpotlightEnd, CSpotlightEnd)

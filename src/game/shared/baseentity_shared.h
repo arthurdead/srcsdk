@@ -9,9 +9,6 @@
 #define BASEENTITY_SHARED_H
 #pragma once
 
-
-extern ConVar hl2_episodic;
-
 // Simple shared header file for common base entities
 
 // entity capabilities
@@ -29,12 +26,9 @@ extern ConVar hl2_episodic;
 // NOTE: Normally +USE only works in direct line of sight.  Add these caps for additional searches
 #define		FCAP_USE_ONGROUND			0x00000100
 #define		FCAP_USE_IN_RADIUS			0x00000200
-#define		FCAP_SAVE_NON_NETWORKABLE	0x00000400
 
 #define		FCAP_MASTER					0x10000000		// Can be used to "master" other entities (like multisource)
 #define		FCAP_WCEDIT_POSITION		0x40000000		// Can change position and update Hammer in edit mode
-#define		FCAP_DONT_SAVE				0x80000000		// Don't save this
-
 
 // How many bits are used to transmit parent attachment indices?
 #define NUM_PARENTATTACHMENT_BITS	6
@@ -42,33 +36,15 @@ extern ConVar hl2_episodic;
 // Maximum number of vphysics objects per entity
 #define VPHYSICS_MAX_OBJECT_LIST_COUNT	1024
 
-//-----------------------------------------------------------------------------
-// For invalidate physics recursive
-//-----------------------------------------------------------------------------
-enum InvalidatePhysicsBits_t
-{
-	POSITION_CHANGED	= 0x1,
-	ANGLES_CHANGED		= 0x2,
-	VELOCITY_CHANGED	= 0x4,
-	ANIMATION_CHANGED	= 0x8,
-	BOUNDS_CHANGED		= 0x10,		// Means render bounds have changed, so shadow decal projection is required, etc.
-	SEQUENCE_CHANGED	= 0x20,		// Means sequence has changed, only interesting when surrounding bounds depends on sequence
-};
-
 
 #if defined( CLIENT_DLL )
 #include "c_baseentity.h"
 #include "c_baseanimating.h"
+#define CBaseEntity C_BaseEntity
 #else
 #include "baseentity.h"
-
-#ifdef HL2_EPISODIC
-	#include "info_darknessmode_lightsource.h"
-#endif // HL2_EPISODIC
-
 #endif
 
-#if !defined( NO_ENTITY_PREDICTION )
 // CBaseEntity inlines
 inline bool CBaseEntity::IsPlayerSimulated( void ) const
 {
@@ -77,9 +53,8 @@ inline bool CBaseEntity::IsPlayerSimulated( void ) const
 
 inline CBasePlayer *CBaseEntity::GetSimulatingPlayer( void )
 {
-	return m_hPlayerSimulationOwner;
+	return m_hPlayerSimulationOwner.Get();
 }
-#endif
 
 inline MoveType_t CBaseEntity::GetMoveType() const
 {
@@ -181,6 +156,11 @@ inline float CBaseEntity::GetSimulationTime() const
 	return m_flSimulationTime;
 }
 
+inline float CBaseEntity::GetOldSimulationTime() const
+{
+	return m_flOldSimulationTime;
+}
+
 inline void CBaseEntity::SetAnimTime( float at )
 {
 	m_flAnimTime = at;
@@ -253,6 +233,27 @@ inline bool CBaseEntity::IsEffectActive( int nEffects ) const
 
 // Shared EntityMessage between game and client .dlls
 #define BASEENTITY_MSG_REMOVE_DECALS	1
+
+// convenience functions for fishing out the vectors of this object
+// equivalent to GetVectors(), but doesn't need an intermediate stack 
+// variable (which might cause an LHS anyway)
+inline Vector	CBaseEntity::Forward() const RESTRICT  ///< get my forward (+x) vector
+{
+	const matrix3x4_t &mat = EntityToWorldTransform();
+	return Vector( mat[0][0], mat[1][0], mat[2][0] );
+}
+
+inline Vector	CBaseEntity::Left() const RESTRICT     ///< get my left    (+y) vector
+{
+	const matrix3x4_t &mat = EntityToWorldTransform();
+	return Vector( mat[0][1], mat[1][1], mat[2][1] );
+}
+
+inline Vector	CBaseEntity::Up() const  RESTRICT      ///< get my up      (+z) vector
+{
+	const matrix3x4_t &mat = EntityToWorldTransform();
+	return Vector( mat[0][2], mat[1][2], mat[2][2] );
+}
 
 extern float k_flMaxEntityPosCoord;
 extern float k_flMaxEntityEulerAngle;

@@ -1,9 +1,7 @@
 #ifndef BINDING_PANEL_H
 #define BINDING_PANEL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <vgui_controls/panel.h>
 

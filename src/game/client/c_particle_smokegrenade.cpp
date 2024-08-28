@@ -16,10 +16,6 @@
 #include "toolframework_client.h"
 #include "engine/ivdebugoverlay.h"
 
-#if CSTRIKE_DLL
-#include "c_cs_player.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -45,7 +41,7 @@ int g_OffsetLookup[3] = {-1,0,1};
 // ------------------------------------------------------------------------- //
 // Classes
 // ------------------------------------------------------------------------- //
-class C_ParticleSmokeGrenade : public C_BaseParticleEntity, public IPrototypeAppEffect
+class C_ParticleSmokeGrenade : public C_BaseParticleEntity
 {
 public:
 	DECLARE_CLASS( C_ParticleSmokeGrenade, C_BaseParticleEntity );
@@ -85,7 +81,7 @@ public:
 
 // IPrototypeAppEffect.
 public:
-	virtual void	Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs);
+	virtual void	Start(CParticleMgr *pParticleMgr);
 
 
 // IParticleEffect.
@@ -95,7 +91,7 @@ public:
 	virtual void	SimulateParticles( CParticleSimulateIterator *pIterator );
 	virtual void	NotifyRemove();
 	virtual void	GetParticlePosition( Particle *pParticle, Vector& worldpos );
-	virtual void	ClientThink();
+	virtual void	AlphaThink();
 
 
 // Proxies.
@@ -210,10 +206,6 @@ private:
 };
 
 
-// Expose to the particle app.
-EXPOSE_PROTOTYPE_EFFECT(SmokeGrenade, C_ParticleSmokeGrenade);
-
-
 // Datatable..
 IMPLEMENT_CLIENTCLASS_DT(C_ParticleSmokeGrenade, DT_ParticleSmokeGrenade, ParticleSmokeGrenade)
 	RecvPropTime(RECVINFO(m_flSpawnTime)),
@@ -233,65 +225,6 @@ static inline void InterpColor(unsigned char dest[4], unsigned char src1[4], uns
 	dest[1] = (unsigned char)(src1[1] + (src2[1] - src1[1]) * percent);
 	dest[2] = (unsigned char)(src1[2] + (src2[2] - src1[2]) * percent);
 }
-
-
-static inline int GetWorldPointContents(const Vector &vPos)
-{
-	#if defined(PARTICLEPROTOTYPE_APP)
-		return 0;
-	#else
-		return enginetrace->GetPointContents( vPos );
-	#endif
-}
-
-static inline void WorldTraceLine( const Vector &start, const Vector &end, int contentsMask, trace_t *trace )
-{
-	#if defined(PARTICLEPROTOTYPE_APP)
-		trace->fraction = 1;
-	#else
-		UTIL_TraceLine(start, end, contentsMask, NULL, COLLISION_GROUP_NONE, trace);
-	#endif
-}
-
-static inline Vector EngineGetLightForPoint(const Vector &vPos)
-{
-	#if defined(PARTICLEPROTOTYPE_APP)
-		return Vector(1,1,1);
-	#else
-		return engine->GetLightForPoint(vPos, true);
-	#endif
-}
-
-static inline const Vector& EngineGetVecRenderOrigin()
-{
-	#if defined(PARTICLEPROTOTYPE_APP)
-		static Vector dummy(0,0,0);
-		return dummy;
-	#else
-		return CurrentViewOrigin();
-	#endif
-}
-
-static inline float& EngineGetSmokeFogOverlayAlpha()
-{
-	#if defined(PARTICLEPROTOTYPE_APP)
-		static float dummy;
-		return dummy;
-	#else
-		return g_SmokeFogOverlayAlpha;
-	#endif
-}
-
-static inline C_BaseEntity* ParticleGetEntity(int index)
-{
-	#if defined(PARTICLEPROTOTYPE_APP)
-		return NULL;
-	#else
-		return cl_entitylist->GetEnt(index);
-	#endif
-}
-
-
 
 // ------------------------------------------------------------------------- //
 // ParticleMovieExplosion
@@ -334,17 +267,17 @@ void C_ParticleSmokeGrenade::OnDataChanged( DataUpdateType_t updateType )
 
 	if(updateType == DATA_UPDATE_CREATED )
 	{
-		Start(ParticleMgr(), NULL);
+		Start(ParticleMgr());
 	}
 }
 
 
-void C_ParticleSmokeGrenade::Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs)
+void C_ParticleSmokeGrenade::Start(CParticleMgr *pParticleMgr)
 {
 	if(!pParticleMgr->AddEffect( &m_ParticleEffect, this ))
 		return;
 	
-	m_SmokeTrail.Start(pParticleMgr, pArgs);
+	m_SmokeTrail.Start(pParticleMgr);
 
 	m_SmokeTrail.m_ParticleLifetime = 0.5;
 	m_SmokeTrail.SetSpawnRate(40);
@@ -368,30 +301,11 @@ void C_ParticleSmokeGrenade::Start(CParticleMgr *pParticleMgr, IPrototypeArgAcce
 		FillVolume();
 	}
 
-	// Go straight into "fill volume" mode if they want.
-	if(pArgs)
-	{
-		if(pArgs->FindArg("-FillVolume"))
-		{
-			FillVolume();
-		}
-	}
-
 	m_bStarted = true;
-	SetNextClientThink( CLIENT_THINK_ALWAYS );
-
-#if CSTRIKE_DLL
-	C_CSPlayer *pPlayer = C_CSPlayer::GetLocalCSPlayer();
-
-	if ( pPlayer )
-	{
-		 pPlayer->m_SmokeGrenades.AddToTail( this );
-	}
-#endif
-		 
+	SetContextThink( &C_ParticleSmokeGrenade::AlphaThink, TICK_ALWAYS_THINK, "AlphaThink" );
 }
 
-void C_ParticleSmokeGrenade::ClientThink()
+void C_ParticleSmokeGrenade::AlphaThink()
 {
 	if ( m_CurrentStage == 1 )
 	{
@@ -408,11 +322,11 @@ void C_ParticleSmokeGrenade::ClientThink()
 		{			
 			if( testDist < flCoreDistance )
 			{
-				EngineGetSmokeFogOverlayAlpha() += m_FadeAlpha;
+				g_SmokeFogOverlayAlpha += m_FadeAlpha;
 			}
 			else
 			{
-				EngineGetSmokeFogOverlayAlpha() += (1 - ( testDist - flCoreDistance ) / ( fadeEnd - flCoreDistance ) ) * m_FadeAlpha;
+				g_SmokeFogOverlayAlpha += (1 - ( testDist - flCoreDistance ) / ( fadeEnd - flCoreDistance ) ) * m_FadeAlpha;
 			}
 		}	
 	}
@@ -429,7 +343,7 @@ void C_ParticleSmokeGrenade::UpdateSmokeTrail( float fTimeDelta )
 		// Update the smoke particle color.
 		if(m_CurrentStage == 0)
 		{
-			m_SmokeTrail.m_StartColor = EngineGetLightForPoint(GetAbsOrigin()) * 0.5f;
+			m_SmokeTrail.m_StartColor = engine->GetLightForPoint(GetAbsOrigin(), true) * 0.5f;
 			m_SmokeTrail.m_EndColor = m_SmokeTrail.m_StartColor;
 		}
 
@@ -773,16 +687,6 @@ void C_ParticleSmokeGrenade::SimulateParticles( CParticleSimulateIterator *pIter
 void C_ParticleSmokeGrenade::NotifyRemove()
 {
 	m_xCount = m_yCount = m_zCount = 0;
-
-#if CSTRIKE_DLL
-	C_CSPlayer *pPlayer = C_CSPlayer::GetLocalCSPlayer();
-
-	if ( pPlayer )
-	{
-		 pPlayer->m_SmokeGrenades.FindAndRemove( this );
-	}
-#endif
-
 }
 
 
@@ -880,7 +784,7 @@ void C_ParticleSmokeGrenade::FillVolume()
 							assert(testX == x && testY == y && testZ == z);
 						#endif
 
-						Vector vColor = EngineGetLightForPoint(vPos);
+						Vector vColor = engine->GetLightForPoint(vPos, true);
 						pInfo->m_Color[0] = (unsigned char)(vColor.x * 255.9f);
 						pInfo->m_Color[1] = (unsigned char)(vColor.y * 255.9f);
 						pInfo->m_Color[2] = (unsigned char)(vColor.z * 255.9f);

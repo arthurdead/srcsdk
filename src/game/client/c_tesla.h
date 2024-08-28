@@ -24,7 +24,7 @@ public:
 	C_Tesla();
 
 	virtual void ReceiveMessage( int classID, bf_read &msg );
-	virtual void ClientThink();
+	virtual void TeslaThink();
 
 
 public:

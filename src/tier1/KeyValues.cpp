@@ -647,7 +647,7 @@ bool KeyValues::LoadFromFile( IBaseFileSystem *filesystem, const char *resourceN
 {
 	Assert(filesystem);
 #ifdef WIN32
-	Assert( IsX360() || ( IsPC() && _heapchk() == _HEAPOK ) );
+	Assert( ( _heapchk() == _HEAPOK ) );
 #endif
 
 #ifdef STAGING_ONLY
@@ -2193,22 +2193,46 @@ bool EvaluateConditional( const char *str )
 		bNot = true;
 
 	if ( Q_stristr( str, "$X360" ) )
-		return IsX360() ^ bNot;
+	{
+		//if this hits change the file
+		DebuggerBreak();
+		return false ^ bNot;
+	}
 	
 	if ( Q_stristr( str, "$WIN32" ) )
-		return IsPC() ^ bNot; // hack hack - for now WIN32 really means IsPC
+	{
+		//if this hits change the file
+		DebuggerBreak();
+		return true ^ bNot; // hack hack - for now WIN32 really means IsPC
+	}
 
 	if ( Q_stristr( str, "$WINDOWS" ) )
-		return IsWindows() ^ bNot;
+#ifdef _WIN32
+		return true ^ bNot;
+#else
+		return false ^ bNot;
+#endif
 	
 	if ( Q_stristr( str, "$OSX" ) )
-		return IsOSX() ^ bNot;
+#ifdef _OSX
+		return true ^ bNot;
+#else
+		return false ^ bNot;
+#endif
 	
 	if ( Q_stristr( str, "$LINUX" ) )
-		return IsLinux() ^ bNot;
+#ifdef _LINUX
+		return true ^ bNot;
+#else
+		return false ^ bNot;
+#endif
 
 	if ( Q_stristr( str, "$POSIX" ) )
-		return IsPosix() ^ bNot;
+#ifdef _POSIX
+		return true ^ bNot;
+#else
+		return false ^ bNot;
+#endif
 	
 	return false;
 }

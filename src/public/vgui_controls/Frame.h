@@ -206,7 +206,6 @@ private:
 	Color		m_OutOfFocusBgColor;
 	TextImage	*_title;
 
-#if !defined( _X360 )
 	Panel		*_topGrip;
 	Panel		*_bottomGrip;
 	Panel		*_leftGrip;
@@ -222,7 +221,6 @@ private:
 	FrameButton	*_closeButton;
 	FrameSystemButton *_menuButton;
 	Menu		*_sysMenu;
-#endif
 
 	float	m_flTransitionEffectTime;
 	float	 m_flFocusTransitionEffectTime;

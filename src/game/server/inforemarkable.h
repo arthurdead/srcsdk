@@ -13,9 +13,7 @@
 
 #ifndef INFOREMARKABLE_H
 #define INFOREMARKABLE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "baseentity.h"
 #include "utllinkedlist.h"

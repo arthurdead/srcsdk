@@ -19,6 +19,15 @@ class IClientNetworkable;
 class CBaseHandle;
 class IClientUnknown;
 
+// Cached info for networked entities.
+// NOTE: Changing this changes the interface between engine & client
+struct EntityCacheInfo_t
+{
+	// Cached off because GetClientNetworkable is called a *lot*
+	IClientNetworkable *m_pNetworkable;
+	unsigned short m_BaseEntitiesIndex;	// Index into m_BaseEntities (or m_BaseEntities.InvalidIndex() if none).
+	unsigned short m_bDormant;	// cached dormant state - this is only a bit
+};
 
 //-----------------------------------------------------------------------------
 // Purpose: Exposes IClientEntity's to engine
@@ -47,7 +56,13 @@ public:
 	virtual int					GetMaxEntities( ) = 0;
 };
 
-extern IClientEntityList *entitylist;
+abstract_class IClientEntityListEx : public IClientEntityList
+{
+public:
+	virtual EntityCacheInfo_t	*GetClientNetworkableArray() = 0;
+};
+
+extern IClientEntityListEx *entitylist;
 
 #define VCLIENTENTITYLIST_INTERFACE_VERSION	"VClientEntityList003"
 

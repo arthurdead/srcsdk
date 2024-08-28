@@ -6,9 +6,7 @@
 
 #ifndef SENDPROP_PRIORITIES_H
 #define SENDPROP_PRIORITIES_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #define SENDPROP_SIMULATION_TIME_PRIORITY		0

@@ -35,6 +35,26 @@ struct fluid_t
 	}
 };
 
+struct ragdollcollisionrules_t
+{
+	void Defaults( IPhysics *pPhysics, IPhysicsCollisionSet *pSetIn )
+	{
+		pCollisionSet = pSetIn;
+		bSelfCollisions = true;
+	}
+	int	   bSelfCollisions;
+	IPhysicsCollisionSet *pCollisionSet;
+};
+
+struct ragdollanimatedfriction_t
+{
+	float					flFrictionTimeIn;
+	float					flFrictionTimeOut;
+	float					flFrictionTimeHold;
+	int						iMinAnimatedFriction;
+	int						iMaxAnimatedFriction;
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Pass this into the parser to handle the keys that vphysics does not
 // parse.

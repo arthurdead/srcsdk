@@ -542,12 +542,6 @@ bool IsPointInBox( const Vector& pt, const Vector& boxMin, const Vector& boxMax 
 	Assert( boxMin[1] <= boxMax[1] );
 	Assert( boxMin[2] <= boxMax[2] );
 
-	// on x360, force use of SIMD version.
-	if (IsX360())
-	{
-		return IsPointInBox( LoadUnaligned3SIMD(pt.Base()), LoadUnaligned3SIMD(boxMin.Base()), LoadUnaligned3SIMD(boxMax.Base()) ) ;
-	}
-
 	if ( (pt[0] > boxMax[0]) || (pt[0] < boxMin[0]) )
 		return false;
 	if ( (pt[1] > boxMax[1]) || (pt[1] < boxMin[1]) )
@@ -695,17 +689,7 @@ bool FASTCALL IsBoxIntersectingRay( const Vector& boxMin, const Vector& boxMax,
 	return IsAllZeros(separation);
 #else
 	// On the x360, we force use of the SIMD functions.
-#if defined(_X360) 
-	if (IsX360())
-	{
-		fltx4 delta = LoadUnaligned3SIMD(vecDelta.Base());
-		return IsBoxIntersectingRay( 
-			LoadUnaligned3SIMD(boxMin.Base()), LoadUnaligned3SIMD(boxMax.Base()),
-			LoadUnaligned3SIMD(origin.Base()), delta, ReciprocalSIMD(delta), // ray parameters
-			ReplicateX4(flTolerance) ///< eg from ReplicateX4(flTolerance)
-			);
-	}
-#endif
+
 	Assert( boxMin[0] <= boxMax[0] );
 	Assert( boxMin[1] <= boxMax[1] );
 	Assert( boxMin[2] <= boxMax[2] );
@@ -820,16 +804,6 @@ bool FASTCALL IsBoxIntersectingRay( const Vector& boxMin, const Vector& boxMax,
 	return IsAllZeros(separation);
 #else
 	// On the x360, we force use of the SIMD functions.
-#if defined(_X360) && !defined(PARANOID_SIMD_ASSERTING)
-	if (IsX360())
-	{
-		return IsBoxIntersectingRay( 
-			LoadUnaligned3SIMD(boxMin.Base()), LoadUnaligned3SIMD(boxMax.Base()),
-			LoadUnaligned3SIMD(origin.Base()), LoadUnaligned3SIMD(vecDelta.Base()), LoadUnaligned3SIMD(vecInvDelta.Base()), // ray parameters
-			ReplicateX4(flTolerance) ///< eg from ReplicateX4(flTolerance)
-			);
-	}
-#endif
 
 	Assert( boxMin[0] <= boxMax[0] );
 	Assert( boxMin[1] <= boxMax[1] );
@@ -893,14 +867,6 @@ bool FASTCALL IsBoxIntersectingRay( const Vector& boxMin, const Vector& boxMax,
 bool FASTCALL IsBoxIntersectingRay( const Vector& vecBoxMin, const Vector& vecBoxMax, const Ray_t& ray, float flTolerance )
 {
 	// On the x360, we force use of the SIMD functions.
-#if defined(_X360) 
-	if (IsX360())
-	{
-		return IsBoxIntersectingRay( 
-			LoadUnaligned3SIMD(vecBoxMin.Base()), LoadUnaligned3SIMD(vecBoxMax.Base()),
-			ray, flTolerance);
-	}
-#endif
 
 	if ( !ray.m_IsSwept )
 	{
@@ -927,29 +893,17 @@ bool FASTCALL IsBoxIntersectingRay( const Vector& vecBoxMin, const Vector& vecBo
 //-----------------------------------------------------------------------------
 
 
-#ifdef _X360
-bool FASTCALL IsBoxIntersectingRay( fltx4 boxMin, fltx4 boxMax, 
-								    fltx4 origin, fltx4 delta, fltx4 invDelta, // ray parameters
-									fltx4 vTolerance ///< eg from ReplicateX4(flTolerance)
-									)
-#else
 bool FASTCALL IsBoxIntersectingRay( const fltx4 &inBoxMin, const fltx4 & inBoxMax, 
 								   const fltx4 & origin, const fltx4 & delta, const fltx4 & invDelta, // ray parameters
 								   const fltx4 & vTolerance ///< eg from ReplicateX4(flTolerance)
 								   )
-#endif
 {
 	// Load the unaligned ray/box parameters into SIMD registers
 	// compute the mins/maxs of the box expanded by the ray extents
 	// relocate the problem so that the ray start is at the origin.
 
-#ifdef _X360
-	boxMin = SubSIMD(boxMin, origin);
-	boxMax = SubSIMD(boxMax, origin);
-#else
 	fltx4 boxMin = SubSIMD(inBoxMin, origin);
 	fltx4 boxMax = SubSIMD(inBoxMax, origin);
-#endif
 
 	// Check to see if the origin (start point) and the end point (delta) are on the same side
 	// of any of the box sides - if so there can be no intersection
@@ -3257,6 +3211,150 @@ bool RayHasFullyContainedIntersectionWithQuad( const Ray_t &ray,
 	}
 
 	return true; //there were lines crossing the quad plane, and every line crossing that plane had its intersection with the plane within the quad's boundaries
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: override how single player rays hit the player
+//-----------------------------------------------------------------------------
+
+bool LineCircleIntersection(const Vector2D &center,
+							const float radius,
+							const Vector2D &vLinePt,
+							const Vector2D &vLineDir,
+							float *fIntersection1,
+							float *fIntersection2)
+{
+	// Line = P + Vt
+	// Sphere = r (assume we've translated to origin)
+	// (P + Vt)^2 = r^2
+	// VVt^2 + 2PVt + (PP - r^2)
+	// Solve as quadratic:  (-b  +/-  sqrt(b^2 - 4ac)) / 2a
+	// If (b^2 - 4ac) is < 0 there is no solution.
+	// If (b^2 - 4ac) is = 0 there is one solution
+	// If (b^2 - 4ac) is > 0 there are two solutions.
+
+	// Translate circle to origin.
+	const Vector2D P( vLinePt - center );
+
+	const float a = vLineDir.Dot(vLineDir);
+	const float b = 2.0f * P.Dot(vLineDir);
+	const float c = P.Dot(P) - (radius * radius);
+
+	const float insideSqr = b*b - 4*a*c;
+
+	// No solution - (b^2 - 4ac) is < 0
+	if( insideSqr < -1.0e-6f )
+	{
+		return false;
+	}
+	else
+	{
+		const float sqr = (float)FastSqrt(insideSqr);
+		const float denom = 1.0 / (2.0f * a);
+		const float t0 = (-b - sqr) * denom;
+		const float t1 = (-b + sqr) * denom;
+
+		// One solution - (b^2 - 4ac) is = 0
+		if( insideSqr < 1.0e-6f )
+		{
+			// a = 0 if the line direction is the zero vector, in which case,
+			// the line starts inside the circle but will never exit. We fudge
+			// it for this case and say it intersects at the origin of the line.
+			// Otherwise, the result is the smallest positive result
+			*fIntersection1 = *fIntersection2 = ( a == 0.0f ) ? 0.0f : ( t0 < 0 ? t1 : t0 );
+			Assert( !IS_NAN(*fIntersection1) );
+
+			// Started inside of the sphere (the only way we get one solution, unless
+			// the ray direction is the zero vector)
+			return c < 0;
+		}
+		// Two solutions - (b^2 - 4ac) is > 0
+		else
+		{
+			*fIntersection1 = t0;
+			*fIntersection2 = t1;
+		}
+
+		return true;
+	}
+}
+
+bool IntersectRayWithAACylinder( const Ray_t &ray, 
+								const Vector &center, float radius, float height, CBaseTrace *pTrace )
+{
+	Assert( ray.m_IsRay );
+	Collision_ClearTrace( ray.m_Start, ray.m_Delta, pTrace );
+
+	// First intersect the ray with the top + bottom planes
+	float halfHeight = height * 0.5;
+
+	// Handle parallel case
+	Vector vStart = ray.m_Start - center;
+	Vector vEnd = vStart + ray.m_Delta;
+
+	float flEnterFrac, flLeaveFrac;
+	if (FloatMakePositive(ray.m_Delta.z) < 1e-8)
+	{
+		if ( (vStart.z < -halfHeight) || (vStart.z > halfHeight) )
+		{
+			return false; // no hit
+		}
+		flEnterFrac = 0.0f; flLeaveFrac = 1.0f;
+	}
+	else
+	{
+		// Clip the ray to the top and bottom of box
+		flEnterFrac = IntersectRayWithAAPlane( vStart, vEnd, 2, 1, halfHeight);
+		flLeaveFrac = IntersectRayWithAAPlane( vStart, vEnd, 2, 1, -halfHeight);
+
+		if ( flLeaveFrac < flEnterFrac )
+		{
+			float temp = flLeaveFrac;
+			flLeaveFrac = flEnterFrac;
+			flEnterFrac = temp;
+		}
+
+		if ( flLeaveFrac < 0 || flEnterFrac > 1)
+		{
+			return false;
+		}
+	}
+
+	// Intersect with circle
+	float flCircleEnterFrac, flCircleLeaveFrac;
+	if ( !LineCircleIntersection( vec3_origin.AsVector2D(), radius,
+		vStart.AsVector2D(), ray.m_Delta.AsVector2D(), &flCircleEnterFrac, &flCircleLeaveFrac ) )
+	{
+		return false; // no hit
+	}
+
+	Assert( flCircleEnterFrac <= flCircleLeaveFrac );
+	if ( flCircleLeaveFrac < 0 || flCircleEnterFrac > 1)
+	{
+		return false;
+	}
+
+	if ( flEnterFrac < flCircleEnterFrac )
+		flEnterFrac = flCircleEnterFrac;
+	if ( flLeaveFrac > flCircleLeaveFrac )
+		flLeaveFrac = flCircleLeaveFrac;
+
+	if ( flLeaveFrac < flEnterFrac )
+		return false;
+
+	VectorMA( ray.m_Start, flEnterFrac , ray.m_Delta, pTrace->endpos );
+	pTrace->fraction = flEnterFrac;
+	pTrace->contents = CONTENTS_SOLID;
+
+	// Calculate the point on our center line where we're nearest the intersection point
+	Vector collisionCenter;
+	CalcClosestPointOnLineSegment( pTrace->endpos, center + Vector( 0, 0, halfHeight ), center - Vector( 0, 0, halfHeight ), collisionCenter );
+
+	// Our normal is the direction from that center point to the intersection point
+	pTrace->plane.normal = pTrace->endpos - collisionCenter;
+	VectorNormalize( pTrace->plane.normal );
+
+	return true;
 }
 
 #endif // !_STATIC_LINKED || _SHARED_LIB

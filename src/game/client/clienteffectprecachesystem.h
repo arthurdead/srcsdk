@@ -15,6 +15,8 @@
 #include "utlvector.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imaterial.h"
+#include "tier1/utldict.h"
+#include "materialsystem/MaterialSystemUtil.h"
 
 //-----------------------------------------------------------------------------
 // Interface to automated system for precaching materials
@@ -22,7 +24,10 @@
 class IClientEffect
 {
 public:
-	virtual void Cache( bool precache = true )	= 0;
+	virtual ~IClientEffect() {}
+	virtual void Precache()	= 0;
+	virtual void Shutdown()	= 0;
+	virtual void Release()	= 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -55,11 +60,12 @@ public:
 	virtual void OnRestore() {}
 	virtual void SafeRemoveIfDesired() {}
 
-	void Register( IClientEffect *effect );
+	void Register( IClientEffect *effect, const char *pName );
+	IClientEffect *Find( const char *pName );
 
 protected:
 
-	CUtlVector< IClientEffect * >	m_Effects;
+	CUtlDict< IClientEffect * >	m_Effects;
 };
 
 //Singleton accessor
@@ -73,11 +79,8 @@ class CClientEffect : public IClientEffect
 {
 public:
 
-	CClientEffect( void )
-	{
-		//Register with the main effect system
-		ClientEffectPrecacheSystem()->Register( this );
-	}
+	CClientEffect( const char *pName );
+	~CClientEffect();
 
 //-----------------------------------------------------------------------------
 // Purpose: Precache a material by artificially incrementing its reference counter
@@ -85,21 +88,15 @@ public:
 //		  : increment - whether to increment or decrement the reference counter
 //-----------------------------------------------------------------------------
 
-	inline void ReferenceMaterial( const char *materialName, bool increment = true )
-	{
-		IMaterial	*material = materials->FindMaterial( materialName, TEXTURE_GROUP_CLIENT_EFFECTS );
-		if ( !IsErrorMaterial( material ) )
-		{
-			if ( increment )
-			{
-				material->IncrementReferenceCount();
-			}
-			else
-			{
-				material->DecrementReferenceCount();
-			}
-		}
-	}
+	void AddMaterial( const char *materialName );
+
+	void Precache();
+	void Shutdown();
+	void Release();
+
+private:
+	bool m_bPrecached;
+	CUtlVector< IMaterial	* > m_Materials;
 };
 
 //Automatic precache macros
@@ -109,40 +106,17 @@ public:
 namespace className {									\
 class ClientEffectRegister : public CClientEffect		\
 {														\
-private:												\
-	static const char *m_pszMaterials[];				\
 public:													\
-	void Cache( bool precache = true );					\
+	ClientEffectRegister(); \
 };														\
-const char *ClientEffectRegister::m_pszMaterials[] = {
+ClientEffectRegister::ClientEffectRegister() : CClientEffect(#className) {
 
 //Material definitions
-#define	CLIENTEFFECT_MATERIAL( materialName )	materialName,
+#define	CLIENTEFFECT_MATERIAL( materialName )	AddMaterial(materialName);
 
 //End
-#define	CLIENTEFFECT_REGISTER_END( )	};					\
-void ClientEffectRegister::Cache( bool precache )			\
-{															\
-	for ( int i = 0; i < ARRAYSIZE( m_pszMaterials ); i++ )	\
-	{														\
-		ReferenceMaterial( m_pszMaterials[i], precache );	\
-	}														\
-}															\
+#define	CLIENTEFFECT_REGISTER_END( )	}					\
 ClientEffectRegister	register_ClientEffectRegister;		\
-}
-
-#define	CLIENTEFFECT_REGISTER_END_CONDITIONAL(condition )	};	\
-void ClientEffectRegister::Cache( bool precache )				\
-{																\
-	if ( condition)												\
-	{															\
-		for ( int i = 0; i < ARRAYSIZE( m_pszMaterials ); i++ )	\
-		{														\
-			ReferenceMaterial( m_pszMaterials[i], precache );	\
-		}														\
-	}															\
-}																\
-ClientEffectRegister	register_ClientEffectRegister;			\
 }
 
 #endif	//CLIENTEFFECTPRECACHESYSTEM_H

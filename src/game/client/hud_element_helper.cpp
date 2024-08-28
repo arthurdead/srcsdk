@@ -20,7 +20,7 @@ CHudElementHelper *CHudElementHelper::m_sHelpers = NULL;
 //					0 is nearest, default is 50
 //
 //-----------------------------------------------------------------------------
-CHudElementHelper::CHudElementHelper( CHudElement *( *pfnCreate )( void ), int depth )
+CHudElementHelper::CHudElementHelper( CHudElement *( *pfnCreate )( void ), int depth, int flags /* = 0 */ )
 {
 	//Insert into the list based on depth
 
@@ -47,6 +47,7 @@ CHudElementHelper::CHudElementHelper( CHudElement *( *pfnCreate )( void ), int d
 	}
 
 	m_iDepth		= depth;
+	m_iFlags = flags;
 
 	// Set attributes
 	assert( pfnCreate );
@@ -80,7 +81,7 @@ void CHudElementHelper::CreateAllElements( void )
 		CHudElement *newElement = (fCreate)();
 		if ( newElement )
 		{
-			gHUD.AddHudElement( newElement );
+			GetHud().AddHudElement( newElement );
 		}
 
 		p = p->GetNext();

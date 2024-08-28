@@ -13,7 +13,7 @@
 #include "utllinkedlist.h"
 #include "cdll_int.h"
 #include "eiface.h"
-
+#include "videocfg/videocfg.h"
 
 class IVModelRender;
 class IVEngineClient;
@@ -47,7 +47,6 @@ class C_BaseAnimating;
 class IColorCorrectionSystem;
 class IInputSystem;
 class ISceneFileCache;
-class IXboxSystem;	// Xbox 360 only
 class IMatchmaking;
 class IVideoServices;
 class CSteamAPIContext;
@@ -98,7 +97,6 @@ extern CGlobalVarsBase *gpGlobals;
 extern IClientTools *clienttools;
 extern IInputSystem *inputsystem;
 extern ISceneFileCache *scenefilecache;
-extern IXboxSystem *xboxsystem;	// Xbox 360 only
 extern IMatchmaking *matchmaking;
 extern IVideoServices *g_pVideo;
 extern IUploadGameStats *gamestatsuploader;
@@ -110,6 +108,13 @@ extern IReplayScreenshotManager *g_pReplayScreenshotManager;
 extern IEngineReplay *g_pEngineReplay;
 extern IEngineClientReplay *g_pEngineClientReplay;
 extern IShaderExtension* g_pShaderExtension;
+
+// Returns the CPU/GPU level
+CPULevel_t GetCPULevel();
+// Returns the actual value of the CPU level convar, even on the 360
+CPULevel_t GetActualCPULevel();
+GPULevel_t GetGPULevel();
+void ConfigureCurrentSystemLevel();
 
 //=============================================================================
 // HPE_BEGIN
@@ -157,9 +162,10 @@ const char *GetMaterialNameFromIndex( int nIndex );
 //-----------------------------------------------------------------------------
 // Precache-related methods for particle systems
 //-----------------------------------------------------------------------------
-void PrecacheParticleSystem( const char *pParticleSystemName );
+int PrecacheParticleSystem( const char *pParticleSystemName );
 int GetParticleSystemIndex( const char *pParticleSystemName );
 const char *GetParticleSystemNameFromIndex( int nIndex );
+void PrecacheEffect( const char *pEffectName );
 
 
 //-----------------------------------------------------------------------------
@@ -169,12 +175,8 @@ void TrackBoneSetupEnt( C_BaseAnimating *pEnt );
 
 bool IsEngineThreaded();
 
-#ifndef NO_STEAM
-
 /// Returns Steam ID, given player index.   Returns an invalid SteamID upon
 /// failure
-extern CSteamID GetSteamIDForPlayerIndex( int iPlayerIndex );
-
-#endif
+extern bool GetSteamIDForPlayerIndex( int iPlayerIndex, CSteamID &steamid );
 
 #endif // CDLL_CLIENT_INT_H

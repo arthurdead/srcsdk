@@ -7,9 +7,7 @@
 
 #ifndef COERCIBLEVARIANT_T_H
 #define COERCIBLEVARIANT_T_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "ehandle.h"

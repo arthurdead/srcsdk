@@ -69,12 +69,12 @@ public:
 
 	virtual void PreDataUpdate( DataUpdateType_t updateType );
 	virtual void OnDataChanged( DataUpdateType_t type );
-	virtual int DrawModel( int flags );
+	virtual int DrawModel( int flags, const RenderableInstance_t &instance );
 	virtual bool ShouldDraw( void );
-	virtual void ClientThink( );
+	virtual void InputThink( );
 	virtual void GetAimEntOrigin( IClientEntity *pAttachedTo, Vector *pOrigin, QAngle *pAngles );
 	virtual bool IsVisibleToPlayer( C_BasePlayer *pViewingPlayer );
-	virtual bool IsTransparent( void );
+	virtual RenderableTranslucencyType_t ComputeTranslucencyType();
 
 	const char *PanelName() const;
 
@@ -107,8 +107,6 @@ public:
 
 	void SetAttachedToViewModel( bool bAttached );
 	bool IsAttachedToViewModel() const;
-
-	virtual RenderGroup_t GetRenderGroup();
 
 	bool AcceptsInput() const;
 	void SetAcceptsInput( bool acceptsinput );
@@ -166,13 +164,11 @@ private:
 	CHandle<C_BasePlayer> m_hPlayerOwner;
 
 	friend C_VGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex );
-
-	//DO NOT USE DIRECTLY!!!!
-	friend C_VGuiScreen *__CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex );
+	friend C_VGuiScreen *CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex );
 };
 
 #define CREATE_PREDICTED_VGUISCREEN(...) \
-	__CreatePredictedVGuiScreen( __FILE__, __LINE__, __VA_ARGS__ )
+	CreatePredictedVGuiScreen( __FILE__, __LINE__, __VA_ARGS__ )
 
 //-----------------------------------------------------------------------------
 // Returns an entity that is the nearby vgui screen; NULL if there isn't one
@@ -180,9 +176,7 @@ private:
 C_BaseEntity *FindNearbyVguiScreen( const Vector &viewPosition, const QAngle &viewAngle, int nTeam = -1 );
 
 C_VGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex );
-
-//DO NOT USE DIRECTLY!!!!
-C_VGuiScreen *__CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex );
+C_VGuiScreen *CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex );
 
 void DestroyVGuiScreen( C_VGuiScreen *pVGuiScreen );
 

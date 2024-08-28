@@ -42,6 +42,7 @@ public:
 	DECLARE_CLASS( CInfoTarget, CPointEntity );
 
 	void	Spawn( void );
+	virtual int UpdateTransmitState();
 };
 
 //info targets are like point entities except you can force them to spawn on the client
@@ -53,6 +54,17 @@ void CInfoTarget::Spawn( void )
 	{
 		SetEFlags( EFL_FORCE_CHECK_TRANSMIT );
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Always transmitted to clients
+//-----------------------------------------------------------------------------
+int CInfoTarget::UpdateTransmitState()
+{
+	// Spawn flags 2 means we always transmit
+	if ( HasSpawnFlags(0x02) )
+		return SetTransmitState( FL_EDICT_ALWAYS );
+	return BaseClass::UpdateTransmitState();
 }
 
 LINK_ENTITY_TO_CLASS( info_target, CInfoTarget );
@@ -95,8 +107,7 @@ void RecvProxy_Beam_ScrollSpeed( const CRecvProxyData *pData, void *pStruct, voi
 	beam->m_fSpeed = val;
 }
 #else
-#if !defined( NO_ENTITY_PREDICTION )
-static void* SendProxy_SendPredictableId( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+void* SendProxy_SendPredictableId( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)pStruct;
 	if ( !pEntity || !pEntity->m_PredictableID->IsActive() )
@@ -125,14 +136,12 @@ static void* SendProxy_SendPredictableId( const SendProp *pProp, const void *pSt
 }
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableId );
 #endif
-#endif
 
 LINK_ENTITY_TO_CLASS( beam, CBeam );
 
 // This table encodes the CBeam data.
 IMPLEMENT_NETWORKCLASS_ALIASED( Beam, DT_Beam )
 
-#if !defined( NO_ENTITY_PREDICTION )
 BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_BeamPredictableId )
 #if !defined( CLIENT_DLL )
 	SendPropPredictableId( SENDINFO( m_PredictableID ) ),
@@ -142,7 +151,6 @@ BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_BeamPredictableId )
 	RecvPropInt( RECVINFO( m_bIsPlayerSimulated ) ),
 #endif
 END_NETWORK_TABLE()
-#endif
 
 BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_Beam )
 #if !defined( CLIENT_DLL )
@@ -173,6 +181,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_Beam )
 	SendPropFloat	(SENDINFO(m_flHDRColorScale),	0, SPROP_NOSCALE, 0.0f, 100.0f ),
 	SendPropFloat	(SENDINFO(m_flFrame),		20, SPROP_ROUNDDOWN | SPROP_CHANGES_OFTEN,	0.0f,   256.0f),
 	SendPropInt		(SENDINFO(m_clrRender),		32,	SPROP_UNSIGNED | SPROP_CHANGES_OFTEN ),
+	SendPropInt		(SENDINFO(m_nClipStyle), CBeam::kBEAMCLIPSTYLE_NUMBITS+1, SPROP_UNSIGNED ),
 	SendPropVector	(SENDINFO(m_vecEndPos),		-1,	SPROP_COORD ),
 #ifdef PORTAL
 	SendPropBool	(SENDINFO(m_bDrawInMainRender) ),
@@ -182,9 +191,8 @@ BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_Beam )
 	SendPropVector (SENDINFO(m_vecOrigin), 19, SPROP_CHANGES_OFTEN,	MIN_COORD_INTEGER, MAX_COORD_INTEGER),
 	SendPropEHandle(SENDINFO_NAME(m_hMoveParent, moveparent) ),
 	SendPropInt		(SENDINFO(m_nMinDXLevel),	8,	SPROP_UNSIGNED ),
-#if !defined( NO_ENTITY_PREDICTION )
+
 	SendPropDataTable( "beampredictable_id", 0, &REFERENCE_SEND_TABLE( DT_BeamPredictableId ), SendProxy_SendPredictableId ),
-#endif
 
 #else
 	RecvPropInt		(RECVINFO(m_nBeamType)),
@@ -210,10 +218,8 @@ BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_Beam )
 	RecvPropFloat	(RECVINFO(m_fSpeed), 0, RecvProxy_Beam_ScrollSpeed ),
 	RecvPropFloat(RECVINFO(m_flFrameRate)),
 	RecvPropFloat(RECVINFO(m_flHDRColorScale)),
-	RecvPropInt(RECVINFO(m_clrRender)),
-	RecvPropInt(RECVINFO(m_nRenderFX)),
-	RecvPropInt(RECVINFO(m_nRenderMode)),
 	RecvPropFloat(RECVINFO(m_flFrame)),
+	RecvPropInt(RECVINFO(m_nClipStyle)),
 	RecvPropVector(RECVINFO(m_vecEndPos)),
 #ifdef PORTAL
 	RecvPropBool(RECVINFO(m_bDrawInMainRender) ),
@@ -224,9 +230,8 @@ BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_Beam )
 
 	RecvPropVector(RECVINFO_NAME(m_vecNetworkOrigin, m_vecOrigin)),
 	RecvPropInt( RECVINFO_NAME(m_hNetworkMoveParent, moveparent), 0, RecvProxy_IntToMoveParent ),
-#if !defined( NO_ENTITY_PREDICTION )
+
 	RecvPropDataTable( "beampredictable_id", 0, 0, &REFERENCE_RECV_TABLE( DT_BeamPredictableId ) ),
-#endif
 
 #endif
 END_NETWORK_TABLE()
@@ -297,11 +302,13 @@ BEGIN_PREDICTION_DATA( CBeam )
 	DEFINE_PRED_FIELD( m_fAmplitude, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_fStartFrame, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_fSpeed, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_nRenderFX, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_nRenderMode, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+
+	//TODO!!!! Arthurdead
+	//DEFINE_PRED_FIELD( m_nRenderFX, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	//DEFINE_PRED_FIELD( m_nRenderMode, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+
 	DEFINE_PRED_FIELD( m_flFrameRate, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_flFrame, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_clrRender, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_nMinDXLevel, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD_TOL( m_vecEndPos, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.125f ),
 #ifdef PORTAL
@@ -340,6 +347,10 @@ CBeam::CBeam( void )
 #ifdef PORTAL
 	m_bDrawInMainRender = true;
 	m_bDrawInPortalRender = true;
+#endif
+
+#ifdef CLIENT_DLL
+	AddToEntityList(ENTITY_LIST_SIMULATE);
 #endif
 }
 
@@ -423,7 +434,8 @@ void CBeam::SetStartEntity( CBaseEntity *pEntity )
 	m_hAttachEntity.Set( 0, pEntity );
 	SetOwnerEntity( pEntity );
 	RelinkBeam();
-	pEntity->AddEFlags( EFL_FORCE_CHECK_TRANSMIT );
+	if(pEntity)
+		pEntity->AddEFlags( EFL_FORCE_CHECK_TRANSMIT );
 }
 
 void CBeam::SetEndEntity( CBaseEntity *pEntity ) 
@@ -432,7 +444,8 @@ void CBeam::SetEndEntity( CBaseEntity *pEntity )
 	m_hAttachEntity.Set( m_nNumBeamEnts-1, pEntity );
 	m_hEndEntity = pEntity;
 	RelinkBeam();
-	pEntity->AddEFlags( EFL_FORCE_CHECK_TRANSMIT );
+	if(pEntity)
+		pEntity->AddEFlags( EFL_FORCE_CHECK_TRANSMIT );
 }
 
 
@@ -561,7 +574,7 @@ CBeam *CBeam::BeamCreate( const char *pSpriteName, float width )
 //-----------------------------------------------------------------------------
 CBeam *CBeam::BeamCreatePredictable( const char *module, int line, const char *pSpriteName, float width, CBasePlayer *pOwner )
 {
-	CBeam *pBeam = ( CBeam * )CREATE_PREDICTED_ENTITY_AT( module, line, "beam", vec3_origin, vec3_angle, pOwner );
+	CBeam *pBeam = ( CBeam * )CBaseEntity::CreatePredicted( module, line, "beam", vec3_origin, vec3_angle, pOwner );
 	if ( pBeam )
 	{
 		pBeam->BeamInit( pSpriteName, width );
@@ -775,7 +788,6 @@ void CBeam::BeamDamage( trace_t *ptr )
 			VectorNormalize( dir );
 			int nDamageType = DMG_ENERGYBEAM;
 
-#ifndef HL1_DLL
 			if (m_nDissolveType == 0)
 			{
 				nDamageType = DMG_DISSOLVE;
@@ -784,7 +796,6 @@ void CBeam::BeamDamage( trace_t *ptr )
 			{
 				nDamageType = DMG_DISSOLVE | DMG_SHOCK; 
 			}
-#endif
 
 			CTakeDamageInfo info( this, this, m_flDamage * (gpGlobals->curtime - m_flFireTime), nDamageType );
 			CalculateMeleeDamageForce( &info, dir, ptr->endpos );
@@ -958,9 +969,9 @@ bool CBeam::OnPredictedEntityRemove( bool isbeingremoved, C_BaseEntity *predicte
 extern bool g_bRenderingScreenshot;
 extern ConVar r_drawviewmodel;
 
-int CBeam::DrawModel( int flags )
+int CBeam::DrawModel( int flags, const RenderableInstance_t &instance )
 {
-	if ( !m_bReadyToDraw )
+	if ( !ReadyToDraw() )
 		return 0;
 
 	if ( IsMarkedForDeletion() )
@@ -984,7 +995,7 @@ int CBeam::DrawModel( int flags )
 		// If the beam is attached
 		for (int i=0;i<MAX_BEAM_ENTS;i++)
 		{
-			C_BaseViewModel *vm = dynamic_cast<C_BaseViewModel *>(m_hAttachEntity[i].Get());
+			C_BaseViewModel *vm = ToBaseViewModel(m_hAttachEntity[i].Get());
 			if ( vm )
 			{
 				return 0;
@@ -992,7 +1003,7 @@ int CBeam::DrawModel( int flags )
 		}
 	}
 
-	beams->DrawBeam( this );
+	beams->DrawBeam( this, instance );
 	return 0;
 }
 
@@ -1009,7 +1020,7 @@ void CBeam::OnDataChanged( DataUpdateType_t updateType )
 		C_BaseEntity *pEnt = m_hAttachEntity[i].Get();
 		if ( pEnt )
 		{
-			C_BaseCombatWeapon *pWpn = dynamic_cast<C_BaseCombatWeapon *>(pEnt);
+			C_BaseCombatWeapon *pWpn = pEnt->MyCombatWeaponPointer();
 			if ( pWpn && pWpn->ShouldDrawUsingViewModel() )
 			{
 				C_BasePlayer *player = ToBasePlayer( pWpn->GetOwner() );
@@ -1029,11 +1040,12 @@ void CBeam::OnDataChanged( DataUpdateType_t updateType )
 	Vector mins, maxs;
 	ComputeBounds( mins, maxs );
 	SetCollisionBounds( mins, maxs );
+	AddToEntityList( ENTITY_LIST_SIMULATE );
 }
 
-bool CBeam::IsTransparent( void )
-{
-	return true;
+RenderableTranslucencyType_t CBeam::ComputeTranslucencyType() 
+{ 
+	return RENDERABLE_IS_TRANSLUCENT; 
 }
 
 bool CBeam::ShouldDraw()
@@ -1049,25 +1061,28 @@ bool CBeam::ShouldDraw()
 //-----------------------------------------------------------------------------
 // Purpose: Adds to beam entity list
 //-----------------------------------------------------------------------------
-void CBeam::AddEntity( void )
+bool CBeam::Simulate( void )
 {
+	bool bRet = false;
 	// If set to invisible, skip. Do this before resetting the entity pointer so it has 
 	// valid data to decide whether it's visible.
-	if ( !ShouldDraw() )
+	if ( ShouldDraw() )
 	{
-		return;
+		//FIXME: If we're hooked up to an attachment point, then recompute our bounds every frame
+		if ( m_hAttachEntity[0].Get() || m_hAttachEntity[1].Get() )
+		{
+			// Compute the bounds here...
+			Vector mins, maxs;
+			ComputeBounds( mins, maxs );
+			SetCollisionBounds( mins, maxs );
+			bRet = true;
+		}
+
+		MoveToLastReceivedPosition();
 	}
 
-	//FIXME: If we're hooked up to an attachment point, then recompute our bounds every frame
-	if ( m_hAttachEntity[0].Get() || m_hAttachEntity[1].Get() )
-	{
-		// Compute the bounds here...
-		Vector mins, maxs;
-		ComputeBounds( mins, maxs );
-		SetCollisionBounds( mins, maxs );
-	}
-
-	MoveToLastReceivedPosition();
+	BaseClass::Simulate();
+	return bRet;
 }
 
 //-----------------------------------------------------------------------------

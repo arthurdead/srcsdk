@@ -101,9 +101,7 @@
 #include "tier1/functors.h"
 #include "tier0/memdbgon.h"
 
-#if defined( _WIN32 )
 #pragma once
-#endif
 
 #ifdef VSCRIPT_DLL_EXPORT
 #define VSCRIPT_INTERFACE	DLL_EXPORT

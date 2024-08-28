@@ -44,6 +44,10 @@ extern int cam_thirdperson;
 
 ConVar voice_modenable( "voice_modenable", "1", FCVAR_ARCHIVE | FCVAR_CLIENTCMD_CAN_EXECUTE, "Enable/disable voice in this mod." );
 ConVar voice_clientdebug( "voice_clientdebug", "0" );
+ConVar voice_head_icon_size( "voice_head_icon_size", "6", FCVAR_NONE, "Size of voice icon over player heads in inches" );
+ConVar voice_head_icon_height( "voice_head_icon_height", "20", FCVAR_NONE, "Voice icons are this many inches over player eye positions" );
+ConVar voice_local_icon( "voice_local_icon", "0", FCVAR_NONE, "Draw local player's voice icon" );
+ConVar voice_all_icons( "voice_all_icons", "0", FCVAR_NONE, "Draw all players' voice icons" );
 
 // ---------------------------------------------------------------------- //
 // The voice manager for the client.
@@ -66,6 +70,22 @@ void ClientVoiceMgr_Init()
 		return;
 
 	g_VoiceStatus = new CVoiceStatus();
+}
+
+void ClientVoiceMgr_LevelInit()
+{
+	if ( g_VoiceStatus )
+	{
+		g_VoiceStatus->LevelInit();
+	}
+}
+
+void ClientVoiceMgr_LevelShutdown()
+{
+	if ( g_VoiceStatus )
+	{
+		g_VoiceStatus->LevelShutdown();
+	}
 }
 
 void ClientVoiceMgr_Shutdown()
@@ -105,9 +125,8 @@ CVoiceStatus::CVoiceStatus()
 
 	m_bTalking = m_bServerAcked = false;
 
-#ifdef VOICE_VOX_ENABLE
+	m_bAboveThreshold = false;
 	m_bAboveThresholdTimer.Invalidate();
-#endif // VOICE_VOX_ENABLE
 
 	m_bServerModEnable = -1;
 
@@ -176,6 +195,21 @@ void CVoiceStatus::VidInit()
 {
 }
 
+void CVoiceStatus::LevelInit( void )
+{
+	m_bTalking = false;
+	m_bAboveThreshold = false;
+	m_bAboveThresholdTimer.Invalidate();
+}
+
+
+void CVoiceStatus::LevelShutdown( void )
+{
+	m_bTalking = false;
+	m_bAboveThreshold = false;
+	m_bAboveThresholdTimer.Invalidate();
+}
+
 
 void CVoiceStatus::Frame(double frametime)
 {
@@ -213,6 +247,25 @@ void CVoiceStatus::DrawHeadLabels()
 	if( !m_pHeadLabelMaterial )
 		return;
 
+	if ( voice_all_icons.GetBool() )
+	{
+		for(int i=0; i < VOICE_MAX_PLAYERS; i++)
+		{
+			IClientNetworkable *pClient = cl_entitylist->GetClientEntity( i+1 );
+
+			// Don't show an icon if the player is not in our PVS.
+			if ( !pClient || pClient->IsDormant() )
+				continue;
+
+			m_VoicePlayers[i] = voice_all_icons.GetInt() > 0;
+		}
+	}
+	else if ( voice_local_icon.GetBool() )
+	{
+		C_BasePlayer *localPlayer = C_BasePlayer::GetLocalPlayer();
+		m_VoicePlayers[ localPlayer->entindex() - 1 ] = IsLocalPlayerSpeakingAboveThreshold();
+	}
+
 	CMatRenderContextPtr pRenderContext( materials );
 
 	for(int i=0; i < VOICE_MAX_PLAYERS; i++)
@@ -235,8 +288,8 @@ void CVoiceStatus::DrawHeadLabels()
 			continue;
 
 		// Place it 20 units above his head.
-		Vector vOrigin = pPlayer->WorldSpaceCenter();
-		vOrigin.z += g_flHeadOffset;
+		Vector vOrigin = pPlayer->EyePosition( );
+		vOrigin.z += voice_head_icon_height.GetFloat();
 
 		
 		// Align it so it never points up or down.
@@ -249,7 +302,7 @@ void CVoiceStatus::DrawHeadLabels()
 		VectorNormalize( vRight );
 
 
-		float flSize = g_flHeadIconSize;
+		float flSize = voice_head_icon_size.GetFloat();
 
 		pRenderContext->Bind( pPlayer->GetHeadLabelMaterial() );
 		IMesh *pMesh = pRenderContext->GetDynamicMesh();
@@ -305,16 +358,16 @@ void CVoiceStatus::UpdateSpeakerStatus(int entindex, bool bTalking)
 	{
 		m_bServerAcked = !!bTalking;
 	}
-#ifdef VOICE_VOX_ENABLE
 	else if( entindex == -3 )
 	{
+		m_bAboveThreshold = !!bTalking;
+
 		if ( bTalking )
 		{
 			const float AboveThresholdMinDuration = 0.5f;
 			m_bAboveThresholdTimer.Start( AboveThresholdMinDuration );
 		}
 	}
-#endif // VOICE_VOX_ENABLE
 	else if(entindex > 0 && entindex <= VOICE_MAX_PLAYERS)
 	{
 		int iClient = entindex - 1;
@@ -530,17 +583,15 @@ bool CVoiceStatus::IsPlayerSpeaking(int iPlayerIndex)
 //-----------------------------------------------------------------------------
 bool CVoiceStatus::IsLocalPlayerSpeaking( void )
 {
-#ifdef VOICE_VOX_ENABLE
-	if ( voice_vox.GetBool() )
-	{
-		if ( m_bAboveThresholdTimer.IsElapsed() == true )
-		{
-			return false;
-		}
-	}
-#endif // VOICE_VOX_ENABLE
-
 	return m_bTalking;
+}
+
+//-----------------------------------------------------------------------------
+// returns true if the local player is attempting to speak, and is above the volume threshold
+//-----------------------------------------------------------------------------
+bool CVoiceStatus::IsLocalPlayerSpeakingAboveThreshold()
+{
+	return m_bTalking && !m_bAboveThresholdTimer.IsElapsed();
 }
 
 

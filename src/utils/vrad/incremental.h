@@ -7,9 +7,7 @@
 
 #ifndef INCREMENTAL_H
 #define INCREMENTAL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 

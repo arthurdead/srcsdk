@@ -6,9 +6,7 @@
 
 #ifndef CBASE_H
 #define CBASE_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "basetypes.h"
 

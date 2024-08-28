@@ -1,3 +1,4 @@
+#include "c_baseentity.h"
 #include "cbase.h"
 #include "c_heist_player.h"
 #include "view.h"
@@ -204,7 +205,7 @@ void C_HeistPlayer::UpdateLookAt()
 	SetPoseParameter(m_headPitchPoseParam, m_flCurrentHeadPitch);
 }
 
-void C_HeistPlayer::ClientThink()
+void C_HeistPlayer::ThinkIDTarget()
 {
 	bool bFoundViewTarget = false;
 
@@ -248,13 +249,13 @@ void C_HeistPlayer::ClientThink()
 	UpdateIDTarget();
 }
 
-int C_HeistPlayer::DrawModel(int flags)
+int C_HeistPlayer::DrawModel(int flags, const RenderableInstance_t &instance)
 {
-	if(!m_bReadyToDraw) {
+	if(!ReadyToDraw()) {
 		return 0;
 	}
 
-    return BaseClass::DrawModel(flags);
+	return BaseClass::DrawModel(flags, instance);
 }
 
 bool C_HeistPlayer::ShouldReceiveProjectedTextures(int flags)
@@ -296,6 +297,7 @@ const QAngle &C_HeistPlayer::EyeAngles()
 	}
 }
 
+#if 0
 void C_HeistPlayer::AddEntity()
 {
 	BaseClass::AddEntity();
@@ -367,6 +369,7 @@ void C_HeistPlayer::AddEntity()
 		}
 	}
 }
+#endif
 
 ShadowType_t C_HeistPlayer::ShadowCastType()
 {
@@ -422,7 +425,7 @@ void C_HeistPlayer::OnDataChanged(DataUpdateType_t type)
 	BaseClass::OnDataChanged(type);
 
 	if(type == DATA_UPDATE_CREATED) {
-		SetNextClientThink(CLIENT_THINK_ALWAYS);
+		SetContextThink( &C_HeistPlayer::ThinkIDTarget, TICK_ALWAYS_THINK, "ThinkIDTarget" );
 	}
 
 	UpdateVisibility();

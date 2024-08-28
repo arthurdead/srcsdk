@@ -31,6 +31,7 @@ namespace vgui
 #define CHATLINE_FLASH_TIME 5.0f
 #define CHATLINE_FADE_TIME 1.0f
 
+#define CHAT_HISTORY_ONE_OVER_FADE_TIME 4.0f;
 #define CHAT_HISTORY_FADE_TIME 0.25f
 #define CHAT_HISTORY_IDLE_TIME 15.0f
 #define CHAT_HISTORY_IDLE_FADE_TIME 2.5f
@@ -74,9 +75,10 @@ enum TextColor
 	COLOR_PLAYERNAME = 3,
 	COLOR_LOCATION = 4,
 	COLOR_ACHIEVEMENT = 5,
-	COLOR_CUSTOM = 6,		// Will use the most recently SetCustomColor()
-	COLOR_HEXCODE = 7,		// Reads the color from the next six characters
-	COLOR_HEXCODE_ALPHA = 8,// Reads the color and alpha from the next eight characters
+	COLOR_MOD_CUSTOM = 6,		// Will use the most recently SetCustomColor()
+	COLOR_MOD_CUSTOM2 = 7,		// Will use the most recently SetCustomColor()
+	COLOR_HEXCODE = 8,		// Reads the color from the next six characters
+	COLOR_HEXCODE_ALPHA = 9,// Reads the color and alpha from the next eight characters
 	COLOR_MAX
 };
 
@@ -91,7 +93,7 @@ struct TextRange
 };
 
 wchar_t* ReadLocalizedString( bf_read &msg, OUT_Z_BYTECAP(outSizeInBytes) wchar_t *pOut, int outSizeInBytes, bool bStripNewline, OUT_Z_CAP(originalSize) char *originalString = NULL, int originalSize = 0 );
-wchar_t* ReadChatTextString( bf_read &msg, OUT_Z_BYTECAP(outSizeInBytes) wchar_t *pOut, int outSizeInBytes );
+wchar_t* ReadChatTextString( bf_read &msg, OUT_Z_BYTECAP(outSizeInBytes) wchar_t *pOut, int outSizeInBytes, bool stripBugData = false );
 char* RemoveColorMarkup( char *str );
 
 //--------------------------------------------------------------------------------------------------------
@@ -179,6 +181,7 @@ public:
 	CHudChatHistory( vgui::Panel *pParent, const char *panelName );
 
 	virtual void	ApplySchemeSettings(vgui::IScheme *pScheme);
+	virtual void Paint();
 };
 
 class CHudChatFilterButton : public vgui::Button
@@ -224,6 +227,9 @@ public:
 	};
 
 	CBaseHudChat( const char *pElementName );
+	~CBaseHudChat();
+
+	static CBaseHudChat *GetHudChat( void );
 
 	virtual void	CreateChatInputLine( void );
 	virtual void	CreateChatLines( void );
@@ -239,7 +245,7 @@ public:
 	virtual void	ChatPrintf( int iPlayerIndex, int iFilter, PRINTF_FORMAT_STRING const char *fmt, ... ) FMTFUNCTION( 4, 5 );
 	
 	virtual void	StartMessageMode( int iMessageModeType );
-	virtual void	StopMessageMode( void );
+	virtual void	StopMessageMode( bool bFade = true );
 	void			Send( void );
 
 	MESSAGE_FUNC( OnChatEntrySend, "ChatEntrySend" );
@@ -249,9 +255,6 @@ public:
 	virtual void	Paint( void );
 	virtual void	OnTick( void );
 	virtual void	Reset();
-#ifdef _XBOX
-	virtual bool	ShouldDraw();
-#endif
 	vgui::Panel		*GetInputPanel( void );
 
 	static int		m_nLineCounter;
@@ -263,7 +266,7 @@ public:
 
 	CHudChatHistory			*GetChatHistory();
 
-	void					FadeChatHistory();
+	virtual void					FadeChatHistory();
 	float					m_flHistoryFadeTime;
 	float					m_flHistoryIdleTime;
 
@@ -278,6 +281,8 @@ public:
 
 	virtual int				GetFilterFlags( void ) { return m_iFilterFlags; }
 	void					SetFilterFlag( int iFilter );
+
+	virtual void		SetChatPrompt( int iMessageModeType );
 
 	//-----------------------------------------------------------------------------
 	virtual Color	GetDefaultTextColor( void );

@@ -113,9 +113,9 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 	if ( !tempList.Count() )
 	{
 		// no sprite description file for weapon, use default small blocks
-		pWeaponInfo->iconActive = gHUD.GetIcon( "selection" );
-		pWeaponInfo->iconInactive = gHUD.GetIcon( "selection" );
-		pWeaponInfo->iconAmmo = gHUD.GetIcon( "bucket1" );
+		pWeaponInfo->iconActive = HudIcons().GetIcon( "selection" );
+		pWeaponInfo->iconInactive = HudIcons().GetIcon( "selection" );
+		pWeaponInfo->iconAmmo = HudIcons().GetIcon( "bucket1" );
 		return;
 	}
 
@@ -123,19 +123,19 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 	p = FindHudTextureInDict( tempList, "crosshair" );
 	if ( p )
 	{
-		pWeaponInfo->iconCrosshair = gHUD.AddUnsearchableHudIconToList( *p );
+		pWeaponInfo->iconCrosshair = HudIcons().AddUnsearchableHudIconToList( *p );
 	}
 
 	p = FindHudTextureInDict( tempList, "autoaim" );
 	if ( p )
 	{
-		pWeaponInfo->iconAutoaim = gHUD.AddUnsearchableHudIconToList( *p );
+		pWeaponInfo->iconAutoaim = HudIcons().AddUnsearchableHudIconToList( *p );
 	}
 
 	p = FindHudTextureInDict( tempList, "zoom" );
 	if ( p )
 	{
-		pWeaponInfo->iconZoomedCrosshair = gHUD.AddUnsearchableHudIconToList( *p );
+		pWeaponInfo->iconZoomedCrosshair = HudIcons().AddUnsearchableHudIconToList( *p );
 	}
 	else
 	{
@@ -145,7 +145,7 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 	p = FindHudTextureInDict( tempList, "zoom_autoaim" );
 	if ( p )
 	{
-		pWeaponInfo->iconZoomedAutoaim = gHUD.AddUnsearchableHudIconToList( *p );
+		pWeaponInfo->iconZoomedAutoaim = HudIcons().AddUnsearchableHudIconToList( *p );
 	}
 	else
 	{
@@ -158,7 +158,7 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 		p = FindHudTextureInDict( tempList, "weapon" );
 		if ( p )
 		{
-			pWeaponInfo->iconInactive = gHUD.AddUnsearchableHudIconToList( *p );
+			pWeaponInfo->iconInactive = HudIcons().AddUnsearchableHudIconToList( *p );
 			if ( pWeaponInfo->iconInactive )
 			{
 				pWeaponInfo->iconInactive->Precache();
@@ -169,7 +169,7 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 		p = FindHudTextureInDict( tempList, "weapon_s" );
 		if ( p )
 		{
-			pWeaponInfo->iconActive = gHUD.AddUnsearchableHudIconToList( *p );
+			pWeaponInfo->iconActive = HudIcons().AddUnsearchableHudIconToList( *p );
 			if ( pWeaponInfo->iconActive )
 			{
 				pWeaponInfo->iconActive->Precache();
@@ -179,7 +179,7 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 		p = FindHudTextureInDict( tempList, "weapon_small" );
 		if ( p )
 		{
-			pWeaponInfo->iconSmall = gHUD.AddUnsearchableHudIconToList( *p );
+			pWeaponInfo->iconSmall = HudIcons().AddUnsearchableHudIconToList( *p );
 			if ( pWeaponInfo->iconSmall )
 			{
 				pWeaponInfo->iconSmall->Precache();
@@ -189,7 +189,7 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 		p = FindHudTextureInDict( tempList, "ammo" );
 		if ( p )
 		{
-			pWeaponInfo->iconAmmo = gHUD.AddUnsearchableHudIconToList( *p );
+			pWeaponInfo->iconAmmo = HudIcons().AddUnsearchableHudIconToList( *p );
 			if ( pWeaponInfo->iconAmmo )
 			{
 				pWeaponInfo->iconAmmo->Precache();
@@ -200,7 +200,7 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 		p = FindHudTextureInDict( tempList, "ammo2" );
 		if ( p )
 		{
-			pWeaponInfo->iconAmmo2 = gHUD.AddUnsearchableHudIconToList( *p );
+			pWeaponInfo->iconAmmo2 = HudIcons().AddUnsearchableHudIconToList( *p );
 			if ( pWeaponInfo->iconAmmo2 )
 			{
 				pWeaponInfo->iconAmmo2->Precache();

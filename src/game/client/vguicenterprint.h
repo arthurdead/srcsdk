@@ -41,6 +41,6 @@ public:
 	virtual void		Clear( void );
 };
 
-extern CCenterPrint *internalCenterPrint;
+extern CCenterPrint *GetCenterPrint();
 
 #endif // VGUICENTERPRINT_H

@@ -11,6 +11,7 @@
 #include "tier2/interval.h"
 #include "fmtstr.h"
 #include "generichash.h"
+#include "tier1/convar.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

@@ -9,9 +9,7 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
-#ifdef _WIN32
 #pragma once
-#endif
 
 // Used to classify entity update types in DeltaPacketEntities.
 enum UpdateType

@@ -140,8 +140,6 @@ SendProp SendPropTime(
 	return SendPropFloat( pVarName, offset, sizeofVar, -1, SPROP_NOSCALE );
 }
 
-#if !defined( NO_ENTITY_PREDICTION )
-
 #define PREDICTABLE_ID_BITS 31
 
 //-----------------------------------------------------------------------------
@@ -180,8 +178,6 @@ SendProp SendPropPredictableId(
 {
 	return SendPropInt( pVarName, offset, sizeofVar, PREDICTABLE_ID_BITS, SPROP_UNSIGNED, SendProxy_PredictableIdToInt );
 }
-
-#endif
 
 void SendProxy_StringT_To_String( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
 {

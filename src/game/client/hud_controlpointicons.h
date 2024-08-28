@@ -17,7 +17,6 @@
 #include "vgui_controls/AnimationController.h"
 #include "vgui_controls/CircularProgressBar.h"
 #include <vgui/ISurface.h>
-#include "tf_controls.h"
 #include "IconPanel.h"
 
 #define PULSE_TIME_PER_ICON		1.5f
@@ -400,7 +399,13 @@ public:
 private:
 	int m_iCPTextures[CP_TEXTURE_COUNT];
 	int m_iCPCappingTextures[CP_TEXTURE_COUNT];
-	int m_iTeamBaseTextures[MAX_TEAMS];
+	struct TeamBaseTexture_t 
+	{
+		TeamBaseTexture_t() : m_nMaterialIndex( INT_MAX ), m_nTextureId( -1 ) {}
+		int m_nMaterialIndex;
+		int	m_nTextureId;
+	};
+	TeamBaseTexture_t m_iTeamBaseTextures[MAX_TEAMS];
 
 	int m_iBackgroundTexture;
 	Color m_clrBackground;

@@ -20,9 +20,7 @@
 	#include "c_basedoor.h"
 	#include "c_world.h"
 	#include "view.h"
-	#include "client_virtualreality.h"
 	#define CRecipientFilter C_RecipientFilter
-	#include "sourcevr/isourcevirtualreality.h"
 
 #else
 
@@ -47,16 +45,11 @@
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "decals.h"
 #include "obstacle_pushaway.h"
-#ifdef SIXENSE
-#include "sixense/in_sixense.h"
-#endif
 
-// NVNT haptic utils
-#include "haptics/haptic_utils.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#if defined(GAME_DLL) && !defined(_XBOX)
+#if defined(GAME_DLL)
 	extern ConVar sv_pushaway_max_force;
 	extern ConVar sv_pushaway_force;
 	extern ConVar sv_turbophysics;
@@ -421,23 +414,6 @@ void CBasePlayer::CacheVehicleView( void )
 		// Get our view for this frame
 		pVehicle->GetVehicleViewPosition( nRole, &m_vecVehicleViewOrigin, &m_vecVehicleViewAngles, &m_flVehicleViewFOV );
 		m_nVehicleViewSavedFrame = gpGlobals->framecount;
-
-#ifdef CLIENT_DLL
-		if( UseVR() )
-		{
-			C_BaseAnimating *pVehicleAnimating = dynamic_cast<C_BaseAnimating *>( pVehicle );
-			if( pVehicleAnimating )
-			{
-				int eyeAttachmentIndex = pVehicleAnimating->LookupAttachment( "vehicle_driver_eyes" );
-
-				Vector vehicleEyeOrigin;
-				QAngle vehicleEyeAngles;
-				pVehicleAnimating->GetAttachment( eyeAttachmentIndex, vehicleEyeOrigin, vehicleEyeAngles );
-
-				g_ClientVirtualReality.OverrideTorsoTransform( vehicleEyeOrigin, vehicleEyeAngles );
-			}
-		}
-#endif
 	}
 }
 
@@ -575,11 +551,7 @@ void CBasePlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOri
 
 		SetStepSoundTime( STEPSOUNDTIME_ON_LADDER, bWalking );
 	}
-#ifdef CSTRIKE_DLL
 	else if ( enginetrace->GetPointContents( knee ) & MASK_WATER )  // we want to use the knee for Cstrike, not the waist
-#else
-	else if ( GetWaterLevel() == WL_Waist )
-#endif // CSTRIKE_DLL
 	{
 		static int iSkipStep = 0;
 
@@ -722,18 +694,7 @@ void CBasePlayer::PlayStepSound( const Vector &vecOrigin, surfacedata_t *psurfac
 	EmitSound_t ep;
 	ep.m_nChannel = CHAN_BODY;
 	ep.m_pSoundName = params.soundname;
-#if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
-	if( TFGameRules()->IsMannVsMachineMode() )
-	{
-		ep.m_flVolume = params.volume;
-	}
-	else
-	{
-		ep.m_flVolume = fvol;
-	}
-#else
 	ep.m_flVolume = fvol;
-#endif
 	ep.m_SoundLevel = params.soundlevel;
 	ep.m_nFlags = 0;
 	ep.m_nPitch = params.pitch;
@@ -878,7 +839,6 @@ void CBasePlayer::AbortReload( void )
 	}
 }
 
-#if !defined( NO_ENTITY_PREDICTION )
 void CBasePlayer::AddToPlayerSimulationList( CBaseEntity *other )
 {
 	CHandle< CBaseEntity > h;
@@ -997,7 +957,6 @@ void CBasePlayer::ClearPlayerSimulationList( void )
 
 	m_SimulatedByThisPlayer.RemoveAll();
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Return true if we should allow selection of the specified item
@@ -1073,13 +1032,6 @@ CBaseEntity *CBasePlayer::FindUseEntity()
 	// A button, etc. can be made out of clip brushes, make sure it's +useable via a traceline, too.
 	int useableContents = MASK_SOLID | CONTENTS_DEBRIS | CONTENTS_PLAYERCLIP;
 
-#ifdef CSTRIKE_DLL
-	useableContents = MASK_NPCSOLID_BRUSHONLY | MASK_OPAQUE_AND_NPCS;
-#endif
-
-#ifdef HL1_DLL
-	useableContents = MASK_SOLID;
-#endif
 #ifndef CLIENT_DLL
 	CBaseEntity *pFoundByTrace = NULL;
 #endif
@@ -1285,7 +1237,6 @@ void CBasePlayer::PlayerUse ( void )
 		return;
 	}
 
-#if !defined(_XBOX)
 	// push objects in turbo physics mode
 	if ( (m_nButtons & IN_USE) && sv_turbophysics.GetBool() )
 	{
@@ -1322,7 +1273,6 @@ void CBasePlayer::PlayerUse ( void )
 			}
 		}
 	}
-#endif
 
 	if ( m_afButtonPressed & IN_USE )
 	{
@@ -1537,11 +1487,6 @@ void CBasePlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, 
 
 	if ( !pVehicle )
 	{
-#if defined( CLIENT_DLL )
-		if( UseVR() )
-			g_ClientVirtualReality.CancelTorsoTransformOverride();
-#endif
-
 		if ( IsObserver() )
 		{
 			CalcObserverView( eyeOrigin, eyeAngles, fov );
@@ -1555,11 +1500,6 @@ void CBasePlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, 
 	{
 		CalcVehicleView( pVehicle, eyeOrigin, eyeAngles, zNear, zFar, fov );
 	}
-	// NVNT update fov on the haptics dll for input scaling.
-#if defined( CLIENT_DLL )
-	if(IsLocalPlayer() && haptics)
-		haptics->UpdatePlayerFOV(fov);
-#endif
 }
 
 
@@ -1581,7 +1521,7 @@ void CBasePlayer::CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& f
 	if ( !prediction->InPrediction() )
 	{
 		// FIXME: Move into prediction
-		view->DriftPitch();
+		GetViewRenderInstance()->DriftPitch();
 	}
 #endif
 
@@ -1618,8 +1558,8 @@ void CBasePlayer::CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& f
 	if ( !prediction->InPrediction() )
 	{
 		// Shake it up baby!
-		vieweffects->CalcShake();
-		vieweffects->ApplyShake( eyeOrigin, eyeAngles, 1.0 );
+		GetViewEffects()->CalcShake();
+		GetViewEffects()->ApplyShake( eyeOrigin, eyeAngles, 1.0 );
 	}
 #endif
 
@@ -1674,8 +1614,8 @@ void CBasePlayer::CalcVehicleView(
 	if ( !prediction->InPrediction() )
 	{
 		// Shake it up baby!
-		vieweffects->CalcShake();
-		vieweffects->ApplyShake( eyeOrigin, eyeAngles, 1.0 );
+		GetViewEffects()->CalcShake();
+		GetViewEffects()->ApplyShake( eyeOrigin, eyeAngles, 1.0 );
 	}
 #endif
 
@@ -1829,7 +1769,7 @@ void CBasePlayer::SharedSpawn()
 	m_Local.m_flStepSize = sv_stepsize.GetFloat();
 	m_Local.m_bAllowAutoMovement = true;
 
-	m_nRenderFX = kRenderFxNone;
+	SetRenderFX( kRenderFxNone );
 	m_flNextAttack	= gpGlobals->curtime;
 	m_flMaxspeed		= 0.0f;
 
@@ -1845,11 +1785,6 @@ void CBasePlayer::SharedSpawn()
 	m_Local.m_flFallVelocity = 0;
 
 	SetBloodColor( BLOOD_COLOR_RED );
-	// NVNT inform haptic dll we have just spawned local player
-#ifdef CLIENT_DLL
-	if(IsLocalPlayer() &&haptics)
-		haptics->LocalPlayerReset();
-#endif
 }
 
 
@@ -1880,7 +1815,6 @@ int CBasePlayer::GetDefaultFOV( void ) const
 
 void CBasePlayer::AvoidPhysicsProps( CUserCmd *pCmd )
 {
-#ifndef _XBOX
 	// Don't avoid if noclipping or in movetype none
 	switch ( GetMoveType() )
 	{
@@ -1896,7 +1830,6 @@ void CBasePlayer::AvoidPhysicsProps( CUserCmd *pCmd )
 		return;
 
 	AvoidPushawayProps( this, pCmd );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2027,13 +1960,6 @@ void CBasePlayer::SetPlayerUnderwater( bool state )
 {
 	if ( m_bPlayerUnderwater != state )
 	{
-#if defined( WIN32 ) && !defined( _X360 ) 
-		// NVNT turn on haptic drag when underwater
-		if(state)
-			HapticSetDrag(this,1);
-		else
-			HapticSetDrag(this,0);
-#endif
 		m_bPlayerUnderwater = state;
 
 #ifdef CLIENT_DLL

@@ -12,7 +12,8 @@
 #include "hud_basechat.h"
 #include <vgui/ILocalize.h>
 
-
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
 
 DECLARE_HUDELEMENT( CHudChat );
 
@@ -44,7 +45,7 @@ void CHudChat::Init( void )
 void CHudChat::MsgFunc_SayText2( bf_read &msg )
 {
 	int client = msg.ReadByte();
-	bool bWantsToChat = msg.ReadByte();
+	bool bWantsToChat = msg.ReadByte() ? true : false;
 
 	wchar_t szBuf[6][256];
 	char untranslated_msg_text[256];

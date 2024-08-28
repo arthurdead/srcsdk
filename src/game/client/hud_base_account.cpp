@@ -10,6 +10,9 @@
 #include <vgui_controls/AnimationController.h>
 #include "hud_base_account.h"
 
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 using namespace vgui;
 
 CHudBaseAccount::CHudBaseAccount( const char *pName ) :

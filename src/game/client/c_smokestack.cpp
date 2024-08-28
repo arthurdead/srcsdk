@@ -5,7 +5,6 @@
 // $NoKeywords: $
 //=============================================================================//
 #include "cbase.h"
-#include "particle_prototype.h"
 #include "baseparticleentity.h"
 #include "particles_simple.h"
 #include "filesystem.h"
@@ -13,17 +12,13 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#ifdef HL2_EPISODIC
-	#define SMOKESTACK_MAX_MATERIALS 8
-#else
-	#define SMOKESTACK_MAX_MATERIALS 1
-#endif
+#define SMOKESTACK_MAX_MATERIALS 8
 
 //==================================================
 // C_SmokeStack
 //==================================================
 
-class C_SmokeStack : public C_BaseParticleEntity, public IPrototypeAppEffect
+class C_SmokeStack : public C_BaseParticleEntity
 {
 public:
 	DECLARE_CLIENTCLASS();
@@ -46,11 +41,11 @@ public:
 //C_BaseEntity
 public:
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
-	virtual void	ClientThink();
+	virtual void	SmokeThink();
 
 //IPrototypeAppEffect
 public:
-	virtual void	Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs);
+	virtual void	Start(CParticleMgr *pParticleMgr);
 	virtual bool	GetPropEditInfo(RecvTable **ppTable, void **ppObj);
 
 
@@ -127,10 +122,6 @@ private:
 // Tables.
 // ------------------------------------------------------------------------- //
 
-// Expose to the particle app.
-EXPOSE_PROTOTYPE_EFFECT(SmokeStack, C_SmokeStack);
-
-
 IMPLEMENT_CLIENTCLASS_DT(C_SmokeStack, DT_SmokeStack, CSmokeStack)
 	RecvPropFloat(RECVINFO(m_SpreadSpeed), 0),
 	RecvPropFloat(RECVINFO(m_Speed), 0),
@@ -179,7 +170,8 @@ C_SmokeStack::C_SmokeStack()
 
 	// Lighting is (base color) + (ambient / dist^2) + bump(directional / dist^2)
 	// By default, we use bottom-up lighting for the directional.
-	SetRenderColor( 0, 0, 0, 255 );
+	SetRenderColor( 0, 0, 0 );
+	SetRenderAlpha( 255 );
 
 	m_AmbientLight.m_vPos.Init(0,0,-100);
 	m_AmbientLight.m_vColor.Init( 40, 40, 40 );
@@ -210,7 +202,7 @@ void C_SmokeStack::OnDataChanged(DataUpdateType_t updateType)
 
 	if(updateType == DATA_UPDATE_CREATED)
 	{
-		Start(ParticleMgr(), NULL);
+		Start(ParticleMgr());
 	}
 
 	// Recalulate lifetime in case length or speed changed.
@@ -225,7 +217,7 @@ static ConVar mat_reduceparticles( "mat_reduceparticles", "0" );
 // Input  : *pParticleMgr - 
 //			*pArgs - 
 //-----------------------------------------------------------------------------
-void C_SmokeStack::Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs)
+void C_SmokeStack::Start(CParticleMgr *pParticleMgr)
 {
 	pParticleMgr->AddEffect( &m_ParticleEffect, this );
 	
@@ -244,7 +236,6 @@ void C_SmokeStack::Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs)
 
 	m_MaterialHandle[0] = m_ParticleEffect.FindOrAddMaterial( str );
 
-#ifdef HL2_EPISODIC
 	int iCount = 1;
 	char szNames[512];
 
@@ -266,9 +257,6 @@ void C_SmokeStack::Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs)
 	m_iMaxFrames = iCount-1;
 
 	m_ParticleSpawn.Init( mat_reduceparticles.GetBool() ? m_Rate / 4 : m_Rate ); // Obey mat_reduceparticles in episodic
-#else
-	m_ParticleSpawn.Init( m_Rate );
-#endif
 
 	m_InvLifetime = m_Speed / m_JetLength;
 
@@ -286,11 +274,11 @@ void C_SmokeStack::Start(CParticleMgr *pParticleMgr, IPrototypeArgAccess *pArgs)
 	// For the first N seconds, always simulate so it can build up the smokestack.
 	// Afterwards, we set it to freeze when it's not being rendered.
 	m_ParticleEffect.SetAlwaysSimulate( true );
-	SetNextClientThink( gpGlobals->curtime + 5 );
+	SetContextThink( &C_SmokeStack::SmokeThink, gpGlobals->curtime + 5, "SmokeThink" );
 }
 
 
-void C_SmokeStack::ClientThink()
+void C_SmokeStack::SmokeThink()
 {
 	m_ParticleEffect.SetAlwaysSimulate( false );
 }
@@ -333,10 +321,6 @@ void C_SmokeStack::Update(float fTimeDelta)
 		{
 			int iRandomFrame = random->RandomInt( 0, m_iMaxFrames );
 
-#ifndef HL2_EPISODIC
-			iRandomFrame = 0;
-#endif
-	
 			// Make a new particle.
 			if(SmokeStackParticle *pParticle = (SmokeStackParticle*)m_ParticleEffect.AddParticle(sizeof(SmokeStackParticle), m_MaterialHandle[iRandomFrame]))
 			{
@@ -353,11 +337,8 @@ void C_SmokeStack::Update(float fTimeDelta)
 
 				pParticle->m_vAccel = m_vWind;
 				pParticle->m_Lifetime = 0;
-				pParticle->m_flAngle = 0.0f;
-
-#ifdef HL2_EPISODIC
 				pParticle->m_flAngle = RandomFloat( 0, 360 );
-#endif
+
 				pParticle->m_flRollDelta = random->RandomFloat( -m_flRollSpeed, m_flRollSpeed );
 				pParticle->m_flSortPos = pParticle->m_Pos.z;
 			}
@@ -365,7 +346,7 @@ void C_SmokeStack::Update(float fTimeDelta)
 	}
 
 	// Setup the twist matrix.
-	float flTwist = (m_flTwist * (M_PI_F * 2.f) / 360.0f) * Helper_GetFrameTime();
+	float flTwist = (m_flTwist * (M_PI_F * 2.f) / 360.0f) * gpGlobals->frametime;
 	if( ( m_bTwist = !!flTwist ) )
 	{
 		m_TwistMat[0][0] =  cos(flTwist);
@@ -386,10 +367,10 @@ void C_SmokeStack::StartRender( VMatrix &effectMatrix )
 
 void C_SmokeStack::QueueLightParametersInRenderer()
 {
-	m_Renderer.SetBaseColor( Vector( m_clrRender->r / 255.0f, m_clrRender->g / 255.0f, m_clrRender->b / 255.0f ) );
+	m_Renderer.SetBaseColor( Vector( GetRenderColorR() / 255.0f, GetRenderColorG() / 255.0f, GetRenderColorB() / 255.0f ) );
 	m_Renderer.SetAmbientLight( m_AmbientLight );
 	m_Renderer.SetDirectionalLight( m_DirLight );
-	m_flAlphaScale = (float)m_clrRender->a;
+	m_flAlphaScale = (float)GetRenderAlpha();
 } 
 
 
@@ -441,11 +422,6 @@ void C_SmokeStack::SimulateParticles( CParticleSimulateIterator *pIterator )
 		bQuickTest = true;
 	}
 
-#ifndef HL2_EPISODIC
-	bQuickTest = false;
-	bSortNow = true;
-#endif
-
 	if( bQuickTest == false && m_bEmit && (!m_ParticleEffect.WasDrawnPrevFrame() && !m_ParticleEffect.GetAlwaysSimulate()) )
 		return;
 
@@ -475,15 +451,11 @@ void C_SmokeStack::SimulateParticles( CParticleSimulateIterator *pIterator )
 				pParticle->m_Pos.y = vTwist.x * m_TwistMat[1][0] + vTwist.y * m_TwistMat[1][1] + GetAbsOrigin().y;
 			}
 
-#ifndef HL2_EPISODIC
 			pParticle->m_Pos = pParticle->m_Pos + 
 				pParticle->m_Velocity * pIterator->GetTimeDelta() + 
 				pParticle->m_vAccel * (0.5f * pIterator->GetTimeDelta() * pIterator->GetTimeDelta());
 
 			pParticle->m_Velocity += pParticle->m_vAccel * pIterator->GetTimeDelta();
-#else
-			pParticle->m_Pos = pParticle->m_Pos + pParticle->m_Velocity * pIterator->GetTimeDelta() + pParticle->m_vAccel * pIterator->GetTimeDelta();
-#endif
 
 			pParticle->m_flAngle += pParticle->m_flRollDelta * pIterator->GetTimeDelta();
 

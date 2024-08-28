@@ -82,6 +82,7 @@ public:
 	void	SetInitialBonePosition( CStudioHdr *pstudiohdr, const CBoneAccessor &pDesiredBonePosition );
 
 	bool IsValid() { return m_ragdoll.listCount > 0; }
+	bool IsAsleep( void ) const { return m_allAsleep; }
 
 	void ResetRagdollSleepAfterTime( void );
 	float GetLastVPhysicsUpdateTime() const { return m_lastUpdate; }
@@ -99,6 +100,7 @@ private:
 	bool		m_allAsleep;
 	Vector		m_vecLastOrigin;
 	float		m_flLastOriginChangeTime;
+	float		m_flAwakeTime;
 
 #if RAGDOLL_VISUALIZE
 	matrix3x4_t			m_savedBone1[MAXSTUDIOBONES];

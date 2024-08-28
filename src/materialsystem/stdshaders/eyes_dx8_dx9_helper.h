@@ -6,9 +6,7 @@
 
 #ifndef EYES_DX8_DX9_HELPER_H
 #define EYES_DX8_DX9_HELPER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include <string.h>
 

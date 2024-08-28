@@ -7,9 +7,7 @@
 
 #ifndef VRADDLL_H
 #define VRADDLL_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "ivraddll.h"

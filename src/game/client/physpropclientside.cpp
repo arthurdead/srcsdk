@@ -54,6 +54,7 @@ C_PhysPropClientside *C_PhysPropClientside::CreateNew( bool bForce )
 }
 
 C_PhysPropClientside::C_PhysPropClientside()
+	: C_BreakableProp(true)
 {
 	m_fDeathTime = -1;
 	m_impactEnergyScale = 1.0f;
@@ -107,15 +108,15 @@ bool C_PhysPropClientside::KeyValue( const char *szKeyName, const char *szValue 
 	}
 	else if (FStrEq(szKeyName, "fademaxdist"))
 	{
-		m_fadeMaxDist = Q_atof(szValue);
+		SetDistanceFade( GetMinFadeDist(), Q_atof(szValue) );
 	}
 	else if (FStrEq(szKeyName, "fademindist"))
 	{
-		m_fadeMinDist = Q_atof(szValue);
+		SetDistanceFade( Q_atof(szValue), GetMaxFadeDist() );
 	}
 	else if (FStrEq(szKeyName, "fadescale"))
 	{
-		m_flFadeScale = Q_atof(szValue);
+		SetGlobalFadeScale( Q_atof(szValue) );
 	}
 	else if (FStrEq(szKeyName, "inertiaScale"))
 	{
@@ -123,7 +124,7 @@ bool C_PhysPropClientside::KeyValue( const char *szKeyName, const char *szValue 
 	}
 	else if (FStrEq(szKeyName, "skin"))
 	{
-		m_nSkin  = Q_atoi(szValue);
+		SetSkin( Q_atoi(szValue) );
 	}
 	else if (FStrEq(szKeyName, "physicsmode"))
 	{
@@ -190,12 +191,12 @@ void C_PhysPropClientside::DestroyAll()
 	while (s_PhysPropList.Count() > 0 )
 	{
 		C_PhysPropClientside *p = s_PhysPropList[0];
-		p->Release();
+		UTIL_Remove( p );
 	}
 	while (s_RespawnZoneList.Count() > 0)
 	{
 		C_FuncPhysicsRespawnZone *p = s_RespawnZoneList[0];
-		p->Release();
+		UTIL_Remove( p );
 	}
 }
 
@@ -232,10 +233,12 @@ int C_PhysPropClientside::ParsePropData( void )
 
 bool C_PhysPropClientside::Initialize()
 {
-	if ( InitializeAsClientEntity( STRING(GetModelName()), RENDER_GROUP_OPAQUE_ENTITY ) == false )
+	if ( InitializeAsClientEntity() == false )
 	{
 		return false;
 	}
+
+	SetModel( STRING(GetModelName()) );
 
 	const model_t *mod = GetModel();
 	if ( mod )
@@ -305,11 +308,10 @@ bool C_PhysPropClientside::Initialize()
 		}
 	}
 
-	if ( m_fadeMinDist < 0 )
+	if ( GetMinFadeDist() < 0 )
 	{
 		// start fading out at 75% of r_propsmaxdist
-		m_fadeMaxDist = r_propsmaxdist.GetFloat();
-		m_fadeMinDist = r_propsmaxdist.GetFloat() * 0.75f;
+		SetFadeMinMax( r_propsmaxdist.GetFloat(), r_propsmaxdist.GetFloat() * 0.75f );
 	}
 
 	// player can push it away
@@ -326,7 +328,7 @@ bool C_PhysPropClientside::Initialize()
 
 	UpdateVisibility();
 
-	SetNextClientThink( CLIENT_THINK_NEVER );
+	SetNextThink( TICK_NEVER_THINK );
 
 	return true;
 }
@@ -401,17 +403,17 @@ bool C_PhysPropClientside::IsAsleep()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_PhysPropClientside::ClientThink( void )
+void C_PhysPropClientside::FadeThink( void )
 {
 	if ( m_fDeathTime < 0 )
 	{
-		SetNextClientThink( CLIENT_THINK_NEVER );
+		SetNextThink( TICK_NEVER_THINK, "FadeThink" );
 		return;
 	}
 
 	if ( m_fDeathTime <= gpGlobals->curtime )
 	{
-		Release(); // Die
+		UTIL_Remove( this );
 		return;
 	}
 
@@ -421,16 +423,16 @@ void C_PhysPropClientside::ClientThink( void )
 
 	SetRenderMode( kRenderTransTexture );
 
-	SetRenderColorA( alpha * 256 );
+	SetRenderAlpha( alpha * 255 );
 
-	SetNextClientThink( CLIENT_THINK_ALWAYS );
+	SetNextThink( TICK_ALWAYS_THINK, "FadeThink" );
 }
 
 void C_PhysPropClientside::StartFadeOut( float fDelay )
 {
 	m_fDeathTime = gpGlobals->curtime + fDelay + FADEOUT_TIME;
 
-	SetNextClientThink( gpGlobals->curtime + fDelay );
+	SetContextThink( &C_PhysPropClientside::FadeThink, gpGlobals->curtime + fDelay, "FadeThink" );
 }
 
 
@@ -476,7 +478,7 @@ void C_PhysPropClientside::Break()
 	// spwan break chunks
 	PropBreakableCreateAll( GetModelIndex(), pPhysics, params, this, -1, false );
 
-	Release(); // destroy object
+	UTIL_Remove( this );
 }
 
 void C_PhysPropClientside::Clone( Vector &velocity )
@@ -503,11 +505,11 @@ void C_PhysPropClientside::Clone( Vector &velocity )
 
 	if ( !pEntity->Initialize() )
 	{
-		pEntity->Release();
+		UTIL_Remove( pEntity );
 		return;
 	}
 
-	pEntity->m_nSkin = m_nSkin;
+	pEntity->SetSkin( GetSkin() );
 	pEntity->m_iHealth = m_iHealth;
 
 	if ( pEntity->m_iHealth == 0 )
@@ -530,7 +532,7 @@ void C_PhysPropClientside::Clone( Vector &velocity )
 	else
 	{
 		// failed to create a physics object
-		pEntity->Release();
+		UTIL_Remove( pEntity );
 	}
 }
 
@@ -622,7 +624,7 @@ const char *C_PhysPropClientside::ParseEntity( const char *pEntData )
 			pEntity->ParseMapData(&entData);
 			
 			if ( !pEntity->Initialize() )
-				pEntity->Release();
+				UTIL_Remove( pEntity );
 		
 			return entData.CurrentBufferPosition();
 		}
@@ -638,7 +640,7 @@ const char *C_PhysPropClientside::ParseEntity( const char *pEntData )
 			pEntity->ParseMapData(&entData);
 
 			if ( !pEntity->Initialize() )
-				pEntity->Release();
+				UTIL_Remove( pEntity );
 
 			return entData.CurrentBufferPosition();
 		}
@@ -742,20 +744,14 @@ CBaseEntity *BreakModelCreateSingle( CBaseEntity *pOwner, breakmodel_t *pModel, 
 
 	if ( !pEntity->Initialize() )
 	{
-		pEntity->Release();
+		UTIL_Remove( pEntity );
 		return NULL;
 	}
 
-	pEntity->m_nSkin = nSkin;
+	pEntity->SetSkin( nSkin );
 	pEntity->m_iHealth = pModel->health;
 
-#ifdef TF_CLIENT_DLL
 	pEntity->SetCollisionGroup( COLLISION_GROUP_DEBRIS );
-#endif
-
-#ifdef DOD_DLL
-	pEntity->SetCollisionGroup( COLLISION_GROUP_DEBRIS );
-#endif
 
 	if ( pModel->health == 0 )
 	{
@@ -797,7 +793,7 @@ CBaseEntity *BreakModelCreateSingle( CBaseEntity *pOwner, breakmodel_t *pModel, 
 	else
 	{
 		// failed to create a physics object
-		pEntity->Release();
+		UTIL_Remove( pEntity );
 		return NULL;
 	}
 
@@ -845,8 +841,10 @@ bool C_FuncPhysicsRespawnZone::KeyValue( const char *szKeyName, const char *szVa
 //-----------------------------------------------------------------------------
 bool C_FuncPhysicsRespawnZone::Initialize( void )
 {
-	if ( InitializeAsClientEntity( STRING(GetModelName()), RENDER_GROUP_OPAQUE_ENTITY ) == false )
+	if ( InitializeAsClientEntity() == false )
 		return false;
+
+	SetModel(STRING(GetModelName()));
 
 	SetSolid( SOLID_BSP );	
 	AddSolidFlags( FSOLID_NOT_SOLID );
@@ -871,7 +869,7 @@ bool C_FuncPhysicsRespawnZone::Initialize( void )
 
 	UpdateVisibility();
 
-	SetNextClientThink( gpGlobals->curtime + (cl_phys_props_respawnrate.GetFloat() * RandomFloat(1.0,1.1)) );
+	SetContextThink( &C_FuncPhysicsRespawnZone::RespawnThink, gpGlobals->curtime + (cl_phys_props_respawnrate.GetFloat() * RandomFloat(1.0,1.1)), "RespawnThink" );
 
 	return true;
 }
@@ -906,8 +904,8 @@ void C_FuncPhysicsRespawnZone::InitializePropsWithin( void )
 			m_PropList[index].iszModelName = pProp->GetModelName();
 			m_PropList[index].vecOrigin = pProp->GetAbsOrigin();
 			m_PropList[index].vecAngles = pProp->GetAbsAngles();
-			m_PropList[index].iSkin = pProp->m_nSkin;
-			m_PropList[index].iHealth = pProp->m_iHealth;
+			m_PropList[index].iSkin = pProp->GetSkin();
+			m_PropList[index].iHealth = pProp->GetHealth();
 			m_PropList[index].iSpawnFlags = pProp->m_spawnflags;
 			m_PropList[index].hClientEntity = pProp->GetClientHandle();
 		}
@@ -974,7 +972,7 @@ void C_FuncPhysicsRespawnZone::RespawnProps( void )
 				pEntity->SetAbsOrigin( m_PropList[i].vecOrigin );
 				pEntity->SetAbsAngles( m_PropList[i].vecAngles );
 				pEntity->SetPhysicsMode( PHYSICS_MULTIPLAYER_CLIENTSIDE );
-				pEntity->m_nSkin = m_PropList[i].iSkin;
+				pEntity->SetSkin( m_PropList[i].iSkin );
 				pEntity->m_iHealth = m_PropList[i].iHealth;
 				if ( pEntity->m_iHealth == 0 )
 				{
@@ -983,7 +981,7 @@ void C_FuncPhysicsRespawnZone::RespawnProps( void )
 
 				if ( !pEntity->Initialize() )
 				{
-					pEntity->Release();
+					UTIL_Remove( pEntity );
 				}
 				else
 				{
@@ -1023,9 +1021,9 @@ void C_FuncPhysicsRespawnZone::RespawnProps( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_FuncPhysicsRespawnZone::ClientThink( void )
+void C_FuncPhysicsRespawnZone::RespawnThink( void )
 {
 	RespawnProps();
 
-	SetNextClientThink( gpGlobals->curtime + (cl_phys_props_respawnrate.GetFloat() * RandomFloat(1.0,1.1)) );
+	SetNextThink( gpGlobals->curtime + (cl_phys_props_respawnrate.GetFloat() * RandomFloat(1.0,1.1)), "RespawnThink" );
 }

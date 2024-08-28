@@ -7,9 +7,7 @@
 
 #ifndef FLEXCYCLER_H
 #define FLEXCYCLER_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "baseflex.h"
 

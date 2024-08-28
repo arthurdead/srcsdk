@@ -47,7 +47,7 @@ CEngineSprite *Draw_SetSpriteTexture( const model_t *pSpriteModel, int frame, in
 	if ( ShouldDrawInWireFrameMode() || r_DrawBeams.GetInt() == 2 )
 	{
 		if ( !g_pBeamWireframeMaterial )
-			g_pBeamWireframeMaterial = materials->FindMaterial( "shadertest/wireframevertexcolor", TEXTURE_GROUP_OTHER );
+			g_pBeamWireframeMaterial = materials->FindMaterial( "debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER );
 		pRenderContext->Bind( g_pBeamWireframeMaterial, NULL );
 		return psprite;
 	}
@@ -450,9 +450,9 @@ void CalcSegOrigin( Vector *vecOut, int iPoint, int noise_divisions, float *prgN
 		{
 			float	s, c;
 			SinCos( fraction*M_PI*length + freq, &s, &c );
-			VectorMA( *vecOut, factor * s, MainViewUp(), *vecOut );
+			VectorMA( *vecOut, factor * s, CurrentViewUp(), *vecOut );
 			// Rotate the noise along the perpendicular axis a bit to keep the bolt from looking diagonal
-			VectorMA( *vecOut, factor * c, MainViewRight(), *vecOut );
+			VectorMA( *vecOut, factor * c, CurrentViewRight(), *vecOut );
 		}
 		else
 		{
@@ -614,7 +614,7 @@ void DrawTeslaSegs( int noise_divisions, float *prgNoise, const model_t* spritem
 
 				// Get an endpoint for the new branch
 				vecStart = curSeg.m_vPos;
-				vecEnd = source + delta + (MainViewUp() * 32) + (MainViewRight() * 32);
+				vecEnd = source + delta + (CurrentViewUp() * 32) + (CurrentViewRight() * 32);
 				vecEnd -= vecStart;
 
 				// Reduce the end width by the current number of branches we've had

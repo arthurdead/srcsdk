@@ -5,8 +5,8 @@
 // $NoKeywords: $
 //=============================================================================//
 
-#ifndef TEAMFORTRESSVIEWPORT_H
-#define TEAMFORTRESSVIEWPORT_H
+#ifndef BASEVIEWPORT_H
+#define BASEVIEWPORT_H
 
 // viewport interface for the rest of the dll
 #include <game/client/iviewport.h>
@@ -17,6 +17,8 @@
 #include "vgui/ISurface.h"
 #include "commandmenu.h"
 #include <igameevents.h>
+#include "vgui_int.h"
+#include "tier1/utldict.h"
 
 using namespace vgui;
 
@@ -37,7 +39,9 @@ public:
 	virtual IViewPortPanel* FindPanelByName(const char *szPanelName);
 	virtual IViewPortPanel* GetActivePanel( void );
 	virtual void RemoveAllPanels( void);
+	virtual void RecreatePanel( const char *szPanelName );
 
+	virtual void ShowPanel( const char *pName, bool state, KeyValues *data, bool autoDeleteData );
 	virtual void ShowPanel( const char *pName, bool state );
 	virtual void ShowPanel( IViewPortPanel* pPanel, bool state );
 	virtual bool AddNewPanel( IViewPortPanel* pPanel, char const *pchDebugName );
@@ -52,18 +56,19 @@ public:
 	virtual void ActivateClientUI();
 	virtual void HideClientUI();
 	virtual bool AllowedToPrintText( void );
+
+	void LoadHudLayout( void );
+
+	virtual vgui::VPANEL GetSchemeSizingVPanel( void );
 	
-#ifndef _XBOX
 	virtual int GetViewPortScheme() { return m_pBackGround->GetScheme(); }
 	virtual VPANEL GetViewPortPanel() { return m_pBackGround->GetVParent(); }
-#endif
+
 	virtual AnimationController *GetAnimationController() { return m_pAnimController; }
 
 	virtual void ShowBackGround(bool bShow) 
 	{ 
-#ifndef _XBOX
 		m_pBackGround->SetVisible( bShow ); 
-#endif
 	}
 
 	virtual int GetDeathMessageStartHeight( void );	
@@ -78,7 +83,6 @@ protected:
 
 	bool LoadHudAnimations( void );
 
-#ifndef _XBOX
 	class CBackGroundPanel : public vgui::Frame
 	{
 	private:
@@ -119,7 +123,7 @@ protected:
 		}
 
 	};
-#endif
+
 protected:
 
 	virtual void Paint();
@@ -127,21 +131,29 @@ protected:
 	virtual void OnScreenSizeChanged(int iOldWide, int iOldTall);
 	void PostMessageToPanel( IViewPortPanel* pPanel, KeyValues *pKeyValues );
 
+	void SetAsFullscreenViewportInterface( void );
+	bool IsFullscreenViewport() const;
+
 protected:
 	IGameUIFuncs*		m_GameuiFuncs; // for key binding details
 	IGameEventManager2*	m_GameEventManager;
-#ifndef _XBOX
+
 	CBackGroundPanel	*m_pBackGround;
-#endif
-	CUtlVector<IViewPortPanel*> m_Panels;
+
+	CUtlDict<IViewPortPanel*,int>	m_Panels;
+	CUtlVector< IViewPortPanel* >	m_UnorderedPanels;
 	
 	bool				m_bHasParent; // Used to track if child windows have parents or not.
 	bool				m_bInitialized;
+	bool				m_bFullscreenViewport;
 	IViewPortPanel		*m_pActivePanel;
 	IViewPortPanel		*m_pLastActivePanel;
 	vgui::HCursor		m_hCursorNone;
 	vgui::AnimationController *m_pAnimController;
 	int					m_OldSize[2];
+
+private:
+	virtual void InitViewportSingletons( void );
 };
 
 

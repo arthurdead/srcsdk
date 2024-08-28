@@ -87,7 +87,7 @@ IMPLEMENT_CLIENTCLASS_DT(C_VGuiScreen, DT_VGuiScreen, CVGuiScreen)
 	RecvPropFloat( RECVINFO(m_flHeight) ),
 	RecvPropInt( RECVINFO(m_fScreenFlags) ),
 	RecvPropInt( RECVINFO(m_nPanelName) ),
-	RecvPropInt( RECVINFO(m_nAttachmentIndex) ),
+	RecvPropIntWithMinusOneFlag( RECVINFO(m_nAttachmentIndex) ),
 	RecvPropInt( RECVINFO(m_nOverlayMaterial) ),
 	RecvPropEHandle( RECVINFO(m_hPlayerOwner) ),
 END_RECV_TABLE()
@@ -134,6 +134,9 @@ void C_VGuiScreen::OnDataChanged( DataUpdateType_t type )
 		m_nButtonState = 0;
 	}
 
+	RenderWithViewModels( IsAttachedToViewModel() );
+	OnTranslucencyTypeChanged();
+
 	// Set up the overlay material
 	if (m_nOldOverlayMaterial != m_nOverlayMaterial)
 	{
@@ -151,7 +154,7 @@ void C_VGuiScreen::OnDataChanged( DataUpdateType_t type )
 	}
 }
 
-void FormatViewModelAttachment( Vector &vOrigin, bool bInverse );
+extern void FormatViewModelAttachment( C_BasePlayer *pPlayer, Vector &vOrigin, bool bInverse );
 
 //-----------------------------------------------------------------------------
 // Returns the attachment render origin + origin
@@ -168,7 +171,9 @@ void C_VGuiScreen::GetAimEntOrigin( IClientEntity *pAttachedTo, Vector *pOrigin,
 		
 		if ( IsAttachedToViewModel() )
 		{
-			FormatViewModelAttachment( *pOrigin, true );
+			C_BasePlayer *pOwner = ToBasePlayer( ((C_BaseViewModel *)pEnt)->GetOwner() );
+			Assert( pOwner );
+			FormatViewModelAttachment( pOwner, *pOrigin, true );
 		}
 	}
 	else
@@ -280,18 +285,6 @@ void C_VGuiScreen::SetAcceptsInput( bool acceptsinput )
 }
 
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : RenderGroup_t
-//-----------------------------------------------------------------------------
-RenderGroup_t C_VGuiScreen::GetRenderGroup()
-{
-	if ( IsAttachedToViewModel() )
-		return RENDER_GROUP_VIEW_MODEL_TRANSLUCENT;
-
-	return BaseClass::GetRenderGroup();
-}
-
 void C_VGuiScreen::SetActualSize( float flWidth, float flHeight )
 {
 	m_flWidth = flWidth;
@@ -359,7 +352,7 @@ bool C_VGuiScreen::IsVisibleToTeam( int nTeam )
 //-----------------------------------------------------------------------------
 void C_VGuiScreen::GainFocus( )
 {
-	SetNextClientThink( CLIENT_THINK_ALWAYS );
+	SetContextThink( &C_VGuiScreen::InputThink, TICK_ALWAYS_THINK, "InputThink" );
 	m_bLoseThinkNextFrame = false;
 	m_nOldButtonState = 0;
 }
@@ -438,7 +431,7 @@ void ScreenToWorld( int mousex, int mousey, float fov,
 //-----------------------------------------------------------------------------
 // Purpose: Deal with input
 //-----------------------------------------------------------------------------
-void C_VGuiScreen::ClientThink( void )
+void C_VGuiScreen::InputThink( void )
 {
 	int nButtonsChanged = m_nOldButtonState ^ m_nButtonState;
 
@@ -448,8 +441,6 @@ void C_VGuiScreen::ClientThink( void )
 	// UNDONE: Do we need auto-repeat?
 	m_nButtonPressed =  nButtonsChanged & m_nButtonState;		// The changed ones still down are "pressed"
 	m_nButtonReleased = nButtonsChanged & (~m_nButtonState);	// The ones not down are "released"
-
-	BaseClass::ClientThink();
 
 	// FIXME: We should really be taking bob, shake, and roll into account
 	// but if we did, then all the inputs would be generated multiple times
@@ -488,7 +479,7 @@ void C_VGuiScreen::ClientThink( void )
 		return;
 
 	// This will cause our panel to grab all input!
-	g_pClientMode->ActivateInGameVGuiContext( pPanel );
+	GetClientMode()->ActivateInGameVGuiContext( pPanel );
 
 	// Convert (u,v) into (px,py)
 	int px = (int)(u * m_nPixelWidth + 0.5f);
@@ -526,10 +517,10 @@ void C_VGuiScreen::ClientThink( void )
 	if ( m_bLoseThinkNextFrame == true )
 	{
 		m_bLoseThinkNextFrame = false;
-		SetNextClientThink( CLIENT_THINK_NEVER );
+		SetNextThink( TICK_NEVER_THINK, "InputThink" );
 	}
 
-	g_pClientMode->DeactivateInGameVGuiContext( );
+	GetClientMode()->DeactivateInGameVGuiContext( );
 }
 
 
@@ -640,7 +631,7 @@ void C_VGuiScreen::DrawScreenOverlay()
 //-----------------------------------------------------------------------------
 // Draws the panel using a 3D transform...
 //-----------------------------------------------------------------------------
-int	C_VGuiScreen::DrawModel( int flags )
+int	C_VGuiScreen::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 	vgui::Panel *pPanel = m_PanelWrapper.GetPanel();
 	if (!pPanel || !IsActive())
@@ -687,9 +678,9 @@ bool C_VGuiScreen::IsVisibleToPlayer( C_BasePlayer *pViewingPlayer )
 	return true;
 }
 
-bool C_VGuiScreen::IsTransparent( void )
+RenderableTranslucencyType_t C_VGuiScreen::ComputeTranslucencyType( void )
 {
-	return (m_fScreenFlags & VGUI_SCREEN_TRANSPARENT) != 0;
+	return ( (m_fScreenFlags & VGUI_SCREEN_TRANSPARENT) != 0 ) ? RENDERABLE_IS_TRANSLUCENT : RENDERABLE_IS_OPAQUE;
 }
 
 //-----------------------------------------------------------------------------
@@ -758,12 +749,6 @@ C_VGuiScreen *CVGuiScreenEnumerator::GetVGuiScreen( int index )
 //-----------------------------------------------------------------------------
 C_BaseEntity *FindNearbyVguiScreen( const Vector &viewPosition, const QAngle &viewAngle, int nTeam )
 {
-	if ( IsX360() )
-	{
-		// X360TBD: Turn this on if feature actually used
-		return NULL;
-	}
-
 	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
 
 	Assert( pLocalPlayer );
@@ -913,7 +898,7 @@ bool CVGuiScreenPanel::Init( KeyValues* pKeyValues, VGuiScreenInitData_t* pInitD
 		C_VGuiScreen *screen = dynamic_cast< C_VGuiScreen * >( pInitData->m_pEntity );
 		if ( screen )
 		{
-			bool acceptsInput = pKeyValues->GetInt( "acceptsinput", 1 ) ? true : false;
+			bool acceptsInput = pKeyValues->GetBool( "acceptsinput", true );
 			screen->SetAcceptsInput( acceptsInput );
 		}
 	}
@@ -971,10 +956,10 @@ C_VGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScree
 	return pScreen;
 }
 
-C_VGuiScreen *__CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex )
+C_VGuiScreen *CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, C_BaseEntity *pAttachedTo, C_BaseEntity *pOwner, int nAttachmentIndex )
 {
 	Assert( pAttachedTo );
-	C_VGuiScreen *pScreen = (C_VGuiScreen *)CREATE_PREDICTED_ENTITY_AT( module, line, pScreenClassname, vec3_origin, vec3_angle, pAttachedTo );
+	C_VGuiScreen *pScreen = (C_VGuiScreen *)C_BaseEntity::CreatePredicted( module, line, pScreenClassname, vec3_origin, vec3_angle, pAttachedTo );
 
 	pScreen->SetPanelName( pScreenType );
 	pScreen->FollowEntity( pAttachedTo );
@@ -988,6 +973,6 @@ void DestroyVGuiScreen( C_VGuiScreen *pVGuiScreen )
 {
 	if (pVGuiScreen)
 	{
-		pVGuiScreen->Release();
+		UTIL_Remove( pVGuiScreen );
 	}
 }

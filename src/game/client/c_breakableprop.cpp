@@ -18,14 +18,20 @@
 #include "tier0/memdbgon.h"
 
 IMPLEMENT_CLIENTCLASS_DT(C_BreakableProp, DT_BreakableProp, CBreakableProp)
+	RecvPropBool( RECVINFO( m_bClientPhysics ) ),
 END_RECV_TABLE()
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-C_BreakableProp::C_BreakableProp( void )
+C_BreakableProp::C_BreakableProp( bool bClientSide )
+	: C_BaseAnimating(bClientSide)
 {
 	m_takedamage = DAMAGE_YES;
+}
+
+C_BreakableProp::C_BreakableProp( void ) : C_BreakableProp(false)
+{
 }
 
 //-----------------------------------------------------------------------------
@@ -33,8 +39,7 @@ C_BreakableProp::C_BreakableProp( void )
 //-----------------------------------------------------------------------------
 void C_BreakableProp::SetFadeMinMax( float fademin, float fademax )
 {
-	m_fadeMinDist = fademin;
-	m_fadeMaxDist = fademax;
+	SetDistanceFade( fademin, fademax );
 }
 
 //-----------------------------------------------------------------------------
@@ -42,5 +47,17 @@ void C_BreakableProp::SetFadeMinMax( float fademin, float fademax )
 //-----------------------------------------------------------------------------
 void C_BreakableProp::CopyFadeFrom( C_BreakableProp *pSource )
 {
-	m_flFadeScale = pSource->m_flFadeScale;
+	SetGlobalFadeScale( pSource->GetGlobalFadeScale() );
+	SetDistanceFade( pSource->GetMinFadeDist(), pSource->GetMaxFadeDist() );
 }
+
+void C_BreakableProp::OnDataChanged( DataUpdateType_t type )
+{
+	BaseClass::OnDataChanged( type );
+	if ( m_bClientPhysics )
+	{
+		bool bCreate = (type == DATA_UPDATE_CREATED) ? true : false;
+		VPhysicsShadowDataChanged(bCreate, this);
+	}
+}
+

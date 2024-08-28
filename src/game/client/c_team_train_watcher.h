@@ -34,7 +34,7 @@ public:
 
 	// IClientThinkable overrides.
 public:
-	virtual	void ClientThink();
+	virtual	void GlowThink();
 
 #ifdef GLOWS_ENABLE
 private:

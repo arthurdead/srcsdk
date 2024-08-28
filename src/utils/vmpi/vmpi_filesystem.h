@@ -7,9 +7,7 @@
 
 #ifndef VMPI_FILESYSTEM_H
 #define VMPI_FILESYSTEM_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 #include "interface.h"

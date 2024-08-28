@@ -10,6 +10,7 @@
 #pragma once
 
 #include <KeyValues.h>
+#include "ai_activity.h"
 
 typedef struct activityentry_s activityentry_t;
 
@@ -91,8 +92,5 @@ extern int ActivityList_HighestIndex();
 
 // Implemented in shared code
 extern void ActivityList_RegisterSharedActivities( void );
-
-class ISaveRestoreOps;
-extern ISaveRestoreOps* ActivityDataOps();
 
 #endif // ACTIVITYLIST_H

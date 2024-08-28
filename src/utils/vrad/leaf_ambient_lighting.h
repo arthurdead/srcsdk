@@ -6,9 +6,7 @@
 
 #ifndef LEAF_AMBIENT_LIGHTING_H
 #define LEAF_AMBIENT_LIGHTING_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 
 void ComputePerLeafAmbientLighting();

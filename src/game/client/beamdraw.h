@@ -13,6 +13,9 @@
 #include "mathlib/vector.h"
 #include "tier2/beamsegdraw.h"
 #include "c_pixel_visibility.h"
+#include "iclientrenderable.h"
+#include "shareddefs.h"
+#include "ehandle.h"
 
 #define NOISE_DIVISIONS		128
 
@@ -39,10 +42,8 @@ public:
 	virtual const matrix3x4_t &RenderableToWorldTransform();
 	virtual void			GetRenderBounds( Vector& mins, Vector& maxs );
 	virtual bool			ShouldDraw( void );
-	virtual bool			IsTransparent( void );
-	virtual int				DrawModel( int flags );
-	virtual void			ComputeFxBlend( );
-	virtual int				GetFxBlend( );
+	virtual RenderableTranslucencyType_t ComputeTranslucencyType();
+	virtual int				DrawModel( int flags, const RenderableInstance_t &instance );
 
 	// Resets the beam state
 	void			Reset();

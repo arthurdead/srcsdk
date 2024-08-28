@@ -14,6 +14,8 @@
 #endif
 
 #include "iscenetokenprocessor.h"
+#include "ehandle.h"
+#include "tier1/convar.h"
 
 class CBaseFlex;
 
@@ -21,6 +23,7 @@ class CChoreoEvent;
 class CChoreoScene;
 class CChoreoActor;
 class CSceneEntity;
+struct flexsettinghdr_t;
 
 //-----------------------------------------------------------------------------
 // Purpose: One of a number of currently playing scene events for this actor
@@ -34,6 +37,7 @@ public:
 	m_pEvent( 0 ),
 	m_pScene( 0 ),
 	m_pActor( 0 ),
+	m_hSceneEntity( 0 ),
 	m_bStarted( false ),
 	m_iLayer( -1 ),
 	m_iPriority( 0 ),
@@ -48,7 +52,8 @@ public:
 	m_flFacingYaw( 0.0f ),
 	m_nType( 0 ),
 	m_flNext( 0.0f ),
-	m_bClientSide( false )
+	m_bClientSide( false ),
+	m_pExpHdr( NULL )
 	{
 	}
 
@@ -60,6 +65,8 @@ public:
 
 	// Current actor
 	CChoreoActor	*m_pActor;
+
+	CHandle< CSceneEntity >	m_hSceneEntity;
 
 	// Set after the first time the event has been configured ( allows
 	//  bumping markov index only at start of event playback, not every frame )
@@ -89,6 +96,9 @@ public:
 
 	// is this event only client side?
 	bool					m_bClientSide; 
+
+	// cached flex file
+	const flexsettinghdr_t *m_pExpHdr; 
 
 	void					InitWeight( CBaseFlex *pActor );
 	float					UpdateWeight( CBaseFlex *pActor );

@@ -32,7 +32,7 @@ public:
 #ifdef CLIENT_DLL
 	bool ShouldPredict() override;
 	void OnDataChanged(DataUpdateType_t type) override;
-	bool OnFireEvent(C_BaseViewModel *pViewModel, const Vector& origin, const QAngle& angles, int event, const char *options) override;
+	bool ViewModel_FireEvent(C_BaseViewModel *pViewModel, const Vector& origin, const QAngle& angles, int event, const char *options) override;
 #else
 	void Spawn() override;
 #endif

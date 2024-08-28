@@ -6,6 +6,9 @@ raytrace_src_dir = join_paths(src_root_dir,'raytrace')
 source_base = subproject('source_base')
 
 raytrace_lib = static_library('raytrace',
+	cpp_args: [
+		'-DLIBNAME=raytrace'
+	],
 	sources: files(
 		join_paths(raytrace_src_dir,'raytrace.cpp'),
 		join_paths(raytrace_src_dir,'trace2.cpp'),

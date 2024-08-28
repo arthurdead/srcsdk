@@ -16,11 +16,7 @@
 #include "movevars_shared.h"
 #include "iviewrender.h"
 #include "vgui/ISurface.h"
-#include "client_virtualreality.h"
 #include "../hud_crosshair.h"
-#include "sourcevr/isourcevirtualreality.h"
-// NVNT haptic utils
-#include "haptics/haptic_utils.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -148,8 +144,7 @@ void C_PropVehicleDriveable::OnDataChanged( DataUpdateType_t updateType )
 	if ( m_hPlayer && !m_hPrevPlayer )
 	{
 		OnEnteredVehicle( m_hPlayer );
-		SetNextClientThink( CLIENT_THINK_ALWAYS );
-		g_ClientVirtualReality.AlignTorsoAndViewToWeapon();
+		SetContextThink( &C_PropVehicleDriveable::ShadowThink, TICK_ALWAYS_THINK, "ShadowThink" );
 	}
 	else if ( !m_hPlayer && m_hPrevPlayer )
 	{
@@ -160,7 +155,7 @@ void C_PropVehicleDriveable::OnDataChanged( DataUpdateType_t updateType )
 		// animation doesn't have fadeout 0 specified in the QC, so we fail to
 		// catch it in VehicleViewSmoothing. Catch it here instead.
 		m_ViewSmoothingData.bWasRunningAnim = false;
-		SetNextClientThink( CLIENT_THINK_NEVER );
+		SetNextThink( TICK_NEVER_THINK, "ShadowThink" );
 	}
 }
 
@@ -184,7 +179,7 @@ ShadowType_t C_PropVehicleDriveable::ShadowCastType()
 //-----------------------------------------------------------------------------
 // Mark the shadow as dirty while the vehicle is being driven
 //-----------------------------------------------------------------------------
-void C_PropVehicleDriveable::ClientThink( void )
+void C_PropVehicleDriveable::ShadowThink( void )
 {
 	// The vehicle is always dirty owing to pose parameters while it's being driven.
 	g_pClientShadowMgr->MarkRenderToTextureShadowDirty( GetShadowHandle() );
@@ -247,61 +242,34 @@ void C_PropVehicleDriveable::DrawHudElements( )
 	if (m_bHasGun)
 	{
 		// draw crosshairs for vehicle gun
-		pIcon = gHUD.GetIcon( "gunhair" );
+		pIcon = HudIcons().GetIcon( "gunhair" );
 
 		if ( pIcon != NULL )
 		{
 			float x, y;
 
-			if( UseVR() )
-			{
-				C_BasePlayer *pPlayer = (C_BasePlayer *)GetPassenger( VEHICLE_ROLE_DRIVER );
-				Vector vecStart, vecDirection;
-				pPlayer->EyePositionAndVectors( &vecStart, &vecDirection, NULL, NULL );
-				Vector vecEnd = vecStart + vecDirection * MAX_TRACE_LENGTH;
+			Vector screen;
 
-				trace_t tr;
-				UTIL_TraceLine( vecStart, vecEnd, MASK_SHOT, this, COLLISION_GROUP_NONE, &tr );
-
-				Vector screen;
-				screen.Init();
-				ScreenTransform(tr.endpos, screen);
-
-				int vx, vy, vw, vh;
-				vgui::surface()->GetFullscreenViewport( vx, vy, vw, vh );
-
-				float screenWidth = vw;
-				float screenHeight = vh;
-
-				x = 0.5f * ( 1.0f + screen[0] ) * screenWidth + 0.5f;
-				y = 0.5f * ( 1.0f - screen[1] ) * screenHeight + 0.5f;
-			}
-			else
-			{
-				Vector screen;
-
-				x = ScreenWidth()/2;
-				y = ScreenHeight()/2;
+			x = ScreenWidth()/2;
+			y = ScreenHeight()/2;
 
 #if TRIANGULATED_CROSSHAIR
-				ScreenTransform( m_vecGunCrosshair, screen );
-				x += 0.5 * screen[0] * ScreenWidth() + 0.5;
-				y -= 0.5 * screen[1] * ScreenHeight() + 0.5;
+			ScreenTransform( m_vecGunCrosshair, screen );
+			x += 0.5 * screen[0] * ScreenWidth() + 0.5;
+			y -= 0.5 * screen[1] * ScreenHeight() + 0.5;
 #endif
-			}
-
 
 			x -= pIcon->Width() / 2; 
 			y -= pIcon->Height() / 2; 
 			
-			Color	clr = ( m_bUnableToFire ) ? gHUD.m_clrCaution : gHUD.m_clrNormal;
+			Color	clr = ( m_bUnableToFire ) ? GetHud().m_clrCaution : GetHud().m_clrNormal;
 			pIcon->DrawSelf( x, y, clr );
 		}
 
 		if ( m_nScannerDisabledWeapons )
 		{
 			// Draw icons for scanners "weps disabled"  
-			pIcon = gHUD.GetIcon( "dmg_bio" );
+			pIcon = HudIcons().GetIcon( "dmg_bio" );
 			if ( pIcon )
 			{
 				iIconY = 467 - pIcon->Height() / 2;
@@ -328,7 +296,7 @@ void C_PropVehicleDriveable::DrawHudElements( )
 	if ( m_nScannerDisabledVehicle )
 	{
 		// Draw icons for scanners "vehicle disabled"  
-		pIcon = gHUD.GetIcon( "dmg_bio" );
+		pIcon = HudIcons().GetIcon( "dmg_bio" );
 		if ( pIcon )
 		{
 			iIconY = 467 - pIcon->Height() / 2;
@@ -405,18 +373,12 @@ void C_PropVehicleDriveable::UpdateViewAngles( C_BasePlayer *pLocalPlayer, CUser
 //-----------------------------------------------------------------------------
 void C_PropVehicleDriveable::OnEnteredVehicle( C_BaseCombatCharacter *pPassenger )
 {
-#if defined( WIN32 ) && !defined( _X360 )
-	// NVNT notify haptics system of navigation change
-	HapticsEnteredVehicle(this,pPassenger);
-#endif
+
 }
 
 // NVNT - added function
 void C_PropVehicleDriveable::OnExitedVehicle( C_BaseCombatCharacter *pPassenger )
 {
-#if defined( WIN32 ) && !defined( _X360 )
-	// NVNT notify haptics system of navigation exit
-	HapticsExitedVehicle(this,pPassenger);
-#endif
+
 }
 

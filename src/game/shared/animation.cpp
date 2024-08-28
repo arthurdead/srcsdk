@@ -62,7 +62,11 @@ void SetEventIndexForSequence( mstudioseqdesc_t &seqdesc )
 	if ( &seqdesc == NULL )
 		 return;
 
+#ifndef CLIENT_DLL
 	seqdesc.flags |= STUDIO_EVENT;
+#else
+	seqdesc.flags |= STUDIO_EVENT_CLIENT;
+#endif
 
 	if ( seqdesc.numevents == 0 )
 		 return;
@@ -82,11 +86,11 @@ void SetEventIndexForSequence( mstudioseqdesc_t &seqdesc )
 				
 			if ( iEventIndex == -1 )
 			{
-				pevent->event = EventList_RegisterPrivateEvent( pEventName );
+				pevent->event_newsystem = EventList_RegisterPrivateEvent( pEventName );
 			}
 			else
 			{
-				pevent->event = iEventIndex;
+				pevent->event_newsystem = iEventIndex;
 				pevent->type |= EventList_GetEventType( iEventIndex );
 			}
 		}
@@ -95,7 +99,11 @@ void SetEventIndexForSequence( mstudioseqdesc_t &seqdesc )
 
 mstudioevent_t *GetEventIndexForSequence( mstudioseqdesc_t &seqdesc )
 {
-	if (!(seqdesc.flags & STUDIO_EVENT))
+#ifndef CLIENT_DLL
+	if ( !(seqdesc.flags & STUDIO_EVENT) )
+#else
+	if ( !(seqdesc.flags & STUDIO_EVENT_CLIENT) )
+#endif
 	{
 		SetEventIndexForSequence( seqdesc );
 	}
@@ -229,6 +237,11 @@ bool IsInPrediction()
 int SelectWeightedSequence( CStudioHdr *pstudiohdr, int activity, int curSequence )
 {
 	VPROF( "SelectWeightedSequence" );
+#ifdef CLIENT_DLL
+	VPROF_INCREMENT_COUNTER( "Client SelectWeightedSequence", 1 );
+#else // ifdef GAME_DLL
+	VPROF_INCREMENT_COUNTER( "Server SelectWeightedSequence", 1 );
+#endif
 
 	if (! pstudiohdr)
 		return 0;
@@ -238,38 +251,13 @@ int SelectWeightedSequence( CStudioHdr *pstudiohdr, int activity, int curSequenc
 
 	VerifySequenceIndex( pstudiohdr );
 
-#if STUDIO_SEQUENCE_ACTIVITY_LOOKUPS_ARE_SLOW
-	int weighttotal = 0;
-	int seq = ACTIVITY_NOT_AVAILABLE;
-	int weight = 0;
-	for (int i = 0; i < pstudiohdr->GetNumSeq(); i++)
+	int numSeq = pstudiohdr->GetNumSeq();
+	if ( numSeq == 1 )
 	{
-		int curActivity = GetSequenceActivity( pstudiohdr, i, &weight );
-		if (curActivity == activity)
-		{
-			if ( curSequence == i && weight < 0 )
-			{
-				seq = i;
-				break;
-			}
-			weighttotal += iabs(weight);
-			
-			int randomValue;
-
-			if ( IsInPrediction() )
-				randomValue = SharedRandomInt( "SelectWeightedSequence", 0, weighttotal - 1, i );
-			else
-				randomValue = RandomInt( 0, weighttotal - 1 );
-			
-			if (!weighttotal || randomValue < iabs(weight))
-				seq = i;
-		}
+		return ( GetSequenceActivity( pstudiohdr, 0, NULL ) == activity ) ? 0 : ACTIVITY_NOT_AVAILABLE;
 	}
 
-	return seq;
-#else
 	return pstudiohdr->SelectWeightedSequence( activity, curSequence );
-#endif
 }
 
 
@@ -279,6 +267,26 @@ int SelectWeightedSequence( CStudioHdr *pstudiohdr, int activity, int curSequenc
 // sequence having a number of spaces corresponding to its weight.
 int CStudioHdr::CActivityToSequenceMapping::SelectWeightedSequence( CStudioHdr *pstudiohdr, int activity, int curSequence )
 {
+	// is the current sequence appropriate?
+	if (curSequence >= 0)
+	{
+		mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( curSequence );
+
+		if (seqdesc.activity == activity && seqdesc.actweight < 0)
+			return curSequence;
+	}
+
+	if ( !pstudiohdr->SequencesAvailable() )
+	{
+		return ACTIVITY_NOT_AVAILABLE;
+	}
+
+	if ( pstudiohdr->GetNumSeq() == 1 )
+	{
+		AssertMsg( 0, "Expected single sequence case to be handled in ::SelectWeightedSequence()" );
+		return ACTIVITY_NOT_AVAILABLE;
+	}
+
 	if (!ValidateAgainst(pstudiohdr))
 	{
 		AssertMsg1(false, "CStudioHdr %s has changed its vmodel pointer without reinitializing its activity mapping! Now performing emergency reinitialization.", pstudiohdr->pszName());
@@ -308,16 +316,33 @@ int CStudioHdr::CActivityToSequenceMapping::SelectWeightedSequence( CStudioHdr *
 	}
 	const HashValueType * __restrict actData = &m_ActToSeqHash[handle];
 
+	AssertMsg2( actData->totalWeight > 0, "Activity %i has total weight of %d!",
+		activity, actData->totalWeight );
 	int weighttotal = actData->totalWeight;
-	// generate a random number from 0 to the total weight
-	int randomValue;
-	if ( IsInPrediction() )
+	// failsafe if the weight is 0: assume the artist screwed up and that the first sequence
+	// for this activity should be returned.
+	int randomValue = 0;
+	if ( actData->totalWeight <= 0 )
 	{
-		randomValue = SharedRandomInt( "SelectWeightedSequence", 0, weighttotal - 1 );
+		Warning( "Activity %s has %d sequences with a total weight of %d!", ActivityList_NameForIndex(activity), actData->count, actData->totalWeight );
+		return (m_pSequenceTuples + actData->startingIdx)->seqnum;
+	}
+	else if ( actData->totalWeight == 1 )
+	{
+		randomValue = 0;
 	}
 	else
 	{
-		randomValue = RandomInt( 0, weighttotal - 1 );
+		// generate a random number from 0 to the total weight
+		int randomValue;
+		if ( IsInPrediction() )
+		{
+			randomValue = SharedRandomInt( "SelectWeightedSequence", 0, weighttotal - 1 );
+		}
+		else
+		{
+			randomValue = RandomInt( 0, weighttotal - 1 );
+		}
 	}
 
 	// chug through the entries in the list (they are sequential therefore cache-coherent)
@@ -540,6 +565,35 @@ void GetSequenceLinearMotion( CStudioHdr *pstudiohdr, int iSequence, const float
 	QAngle vecAngles;
 	Studio_SeqMovement( pstudiohdr, iSequence, 0, 1.0, poseParameter, (*pVec), vecAngles );
 }
+
+float GetSequenceLinearMotionAndDuration( CStudioHdr *pstudiohdr, int iSequence, const float poseParameter[], Vector *pVec )
+{
+	pVec->Init();
+	if ( !pstudiohdr )
+	{
+		Msg( "Bad pstudiohdr in GetSequenceLinearMotion()!\n" );
+		return 0.0f;
+	}
+
+	if ( !pstudiohdr->SequencesAvailable() )
+		return 0.0f;
+
+	if ( iSequence < 0 || iSequence >= pstudiohdr->GetNumSeq() )
+	{
+		// Don't spam on bogus model
+		if ( pstudiohdr->GetNumSeq() > 0 )
+		{
+			static int msgCount = 0;
+			while ( ++msgCount < 10 )
+			{
+				Msg( "Bad sequence (%i out of %i max) in GetSequenceLinearMotion() for model '%s'!\n", iSequence, pstudiohdr->GetNumSeq(), pstudiohdr->pszName() );
+			}
+		}
+		return 0.0f;
+	}
+
+	return Studio_SeqMovementAndDuration( pstudiohdr, iSequence, 0, 1.0, poseParameter, (*pVec) );
+}
 #endif
 
 const char *GetSequenceName( CStudioHdr *pstudiohdr, int iSequence )
@@ -613,7 +667,7 @@ bool HasAnimationEventOfType( CStudioHdr *pstudiohdr, int sequence, int type )
 	int index;
 	for ( index = 0; index < (int)seqdesc.numevents; index++ )
 	{
-		if ( pevent[ index ].event == type )
+		if ( pevent[ index ].Event() == type )
 		{
 			return true;
 		}
@@ -641,7 +695,7 @@ int GetAnimationEvent( CStudioHdr *pstudiohdr, int sequence, animevent_t *pNPCEv
 			if ( !(pevent[index].type & AE_TYPE_SERVER) )
 				 continue;
 		}
-		else if ( pevent[index].event >= EVENT_CLIENT ) //Adrian - Support the old event system
+		else if ( pevent[index].Event_OldSystem() >= EVENT_CLIENT ) //Adrian - Support the old event system
 			continue;
 	
 		bool bOverlapEvent = false;
@@ -668,7 +722,7 @@ int GetAnimationEvent( CStudioHdr *pstudiohdr, int sequence, animevent_t *pNPCEv
 #else
 			pNPCEvent->eventtime = 0.0f;
 #endif
-			pNPCEvent->event = pevent[index].event;
+			pNPCEvent->Event( pevent[index].Event() );
 			pNPCEvent->options = pevent[index].pszOptions();
 			pNPCEvent->type	= pevent[index].type;
 			return index + 1;
@@ -976,6 +1030,7 @@ int GetSequenceActivity( CStudioHdr *pstudiohdr, int sequence, int *pweight )
 		return 0;
 	}
 
+	Assert(sequence >= 0 && sequence < pstudiohdr->GetNumSeq());
 	mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( sequence );
 
 	if (!(seqdesc.flags & STUDIO_ACTIVITY))

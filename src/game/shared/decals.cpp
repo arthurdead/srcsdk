@@ -198,11 +198,7 @@ void CDecalEmitterSystem::LoadDecalsFromScript( char const *filename )
 	if ( kv )
 	{
 		KeyValues *translation = NULL;
-#ifndef _XBOX
-		if ( kv->LoadFromFile( filesystem, filename ) )
-#else
 		if ( kv->LoadFromFile( filesystem, filename, "GAME" ) )
-#endif
 		{
 			KeyValues *p = kv;
 			while ( p )
@@ -265,7 +261,21 @@ void CDecalEmitterSystem::LoadDecalsFromScript( char const *filename )
 				int idx = m_Decals.Find( sub->GetString() );
 				if ( idx != m_Decals.InvalidIndex() )
 				{
-					m_GameMaterialTranslation.Insert( sub->GetName(), idx );
+					const char *value = sub->GetName();
+					int gameMaterial;
+					if ( !isdigit( value[0]) )
+					{
+						gameMaterial = toupper( value[0] );
+					}
+					else
+					{
+						gameMaterial = atoi( value );
+					}
+
+					char gm[ 2 ];
+					gm[0] = gameMaterial;
+					gm[1] = 0;
+					m_GameMaterialTranslation.Insert( gm, idx );
 				}
 				else
 				{
@@ -342,4 +352,15 @@ char const *CDecalEmitterSystem::TranslateDecalForGameMaterial( char const *deca
 	return decalName;
 }
 
-
+bool IsTexFlesh( unsigned short tex )
+{
+	switch (tex) {
+	case CHAR_TEX_ALIENINSECT:
+	case CHAR_TEX_FLESH:
+	case CHAR_TEX_BLOODYFLESH:
+	case CHAR_TEX_ALIENFLESH:
+		return true;
+	default:
+		return false;
+	}
+}

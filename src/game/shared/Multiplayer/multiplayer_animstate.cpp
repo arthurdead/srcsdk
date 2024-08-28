@@ -474,13 +474,13 @@ void CMultiPlayerAnimState::RunGestureSlotAnimEventsToCompletion( GestureSlot_t 
 				if ( !( pevent[i].type & AE_TYPE_CLIENT ) )
 					continue;
 			}
-			else if ( pevent[i].event < 5000 ) //Adrian - Support the old event system
+			else if ( pevent[i].Event_OldSystem() < EVENT_CLIENT ) //Adrian - Support the old event system
 				continue;
 
 			if ( pevent[i].cycle > pGesture->m_pAnimLayer->m_flPrevCycle &&
 				pevent[i].cycle <= pGesture->m_pAnimLayer->m_flCycle )
 			{
-				pPlayer->FireEvent( pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles(), pevent[ i ].event, pevent[ i ].pszOptions() );
+				pPlayer->FireEvent( pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles(), pevent[ i ].Event(), pevent[ i ].pszOptions() );
 			}
 		}
 	}
@@ -745,7 +745,7 @@ void CMultiPlayerAnimState::ShowDebugInfo( void )
 {
 	if ( anim_showstate.GetInt() == GetBasePlayer()->entindex() )
 	{
-		DebugShowAnimStateForPlayer( GetBasePlayer()->IsServer() );
+		DebugShowAnimStateForPlayer();
 	}
 }
 
@@ -757,7 +757,7 @@ void CMultiPlayerAnimState::RestartMainSequence( void )
 	CBaseAnimatingOverlay *pPlayer = GetBasePlayer();
 	if ( pPlayer )
 	{
-		pPlayer->m_flAnimTime = gpGlobals->curtime;
+		pPlayer->SetAnimTime( gpGlobals->curtime );
 		pPlayer->SetCycle( 0 );
 	}
 }
@@ -1170,7 +1170,7 @@ void CMultiPlayerAnimState::ResetGroundSpeed( void )
 {
 #ifdef CLIENT_DLL
 		m_flMaxGroundSpeed = GetCurrentMaxGroundSpeed();
-		m_iv_flMaxGroundSpeed.Reset();
+		m_iv_flMaxGroundSpeed.Reset( gpGlobals->curtime );
 		m_iv_flMaxGroundSpeed.NoteChanged( gpGlobals->curtime, 0, false );
 #endif
 }
@@ -1879,20 +1879,24 @@ void Anim_StatePrintf( int iLine, const char *pMsg, ... )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CMultiPlayerAnimState::DebugShowAnimStateForPlayer( bool bIsServer )
+void CMultiPlayerAnimState::DebugShowAnimStateForPlayer()
 {
 	// Get the player's velocity.
 	Vector vecVelocity;
 	GetOuterAbsVelocity( vecVelocity );
 
 	// Start animation state logging.
+#ifdef GAME_DLL
+	int iLine = 12;
+#else
 	int iLine = 5;
-	if ( bIsServer )
-	{
-		iLine = 12;
-	}
+#endif
 //	Anim_StateLog( "-------------%s: frame %d -----------------\n", bIsServer ? "Server" : "Client", gpGlobals->framecount );
-	Anim_StatePrintf( iLine++, "-------------%s: frame %d -----------------\n", bIsServer ? "Server" : "Client", gpGlobals->framecount );
+#ifdef GAME_DLL
+	Anim_StatePrintf( iLine++, "-------------%s: frame %d -----------------\n", "Server", gpGlobals->framecount );
+#else
+	Anim_StatePrintf( iLine++, "-------------%s: frame %d -----------------\n", "Client", gpGlobals->framecount );
+#endif
 
 	// Write out the main sequence and its data.
 	Anim_StatePrintf( iLine++, "Main: %s, Cycle: %.2f\n", GetSequenceName( GetBasePlayer()->GetModelPtr(), GetBasePlayer()->GetSequence() ), GetBasePlayer()->GetCycle() );
@@ -2075,9 +2079,15 @@ void CMultiPlayerAnimState::DebugGestureInfo( void )
 	if ( !pPlayer )
 		return;
 
-	int iLine = ( pPlayer->IsServer() ? 12 : ( 14 + GESTURE_SLOT_COUNT ) );
+#ifdef GAME_DLL
+	int iLine = 12;
 
-	Anim_StatePrintf( iLine++, "%s\n", ( pPlayer->IsServer() ? "Server" : "Client" ) );
+	Anim_StatePrintf( iLine++, "Server\n" );
+#else
+	int iLine = ( 14 + GESTURE_SLOT_COUNT );
+
+	Anim_StatePrintf( iLine++, "Client\n" );
+#endif
 
 	for ( int iGesture = 0; iGesture < GESTURE_SLOT_COUNT; ++iGesture )
 	{

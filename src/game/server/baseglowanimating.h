@@ -6,9 +6,7 @@
 
 #ifndef BASEGLOWANIMATING_H
 #define BASEGLOWANIMATING_H
-#ifdef _WIN32
 #pragma once
-#endif
 
 #include "cbase.h"
 #include "baseanimating.h"
