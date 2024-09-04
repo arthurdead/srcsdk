@@ -118,7 +118,7 @@ CSaveDocumentQuery::~CSaveDocumentQuery()
 void CSaveDocumentQuery::PostCommand( const char *pCommand )
 {
 	KeyValues *kv = new KeyValues( pCommand );
-	vgui::ivgui()->PostMessage( m_pActionSignalTarget->GetVPanel(), kv, 0 );
+	vgui::ivgui()->PostMessage( m_pActionSignalTarget->GetVPanel(), kv, INVALID_VPANEL );
 }
 
 
@@ -138,7 +138,7 @@ void CSaveDocumentQuery::OnCommand( char const *cmd )
 		{
 			kv->AddSubKey( m_pPostSaveKeyValues->MakeCopy() );
 		}
-		vgui::ivgui()->PostMessage( m_pActionSignalTarget->GetVPanel(), kv, 0 );
+		vgui::ivgui()->PostMessage( m_pActionSignalTarget->GetVPanel(), kv, INVALID_VPANEL );
 		MarkForDeletion();
 	}
 	else if ( !Q_stricmp( cmd, "no" ) )
@@ -146,7 +146,7 @@ void CSaveDocumentQuery::OnCommand( char const *cmd )
 		PostCommand( "OnMarkNotDirty" );
 		if ( m_pPostSaveKeyValues )
 		{
-			vgui::ivgui()->PostMessage( m_pActionSignalTarget->GetVPanel(), m_pPostSaveKeyValues->MakeCopy(), 0 );
+			vgui::ivgui()->PostMessage( m_pActionSignalTarget->GetVPanel(), m_pPostSaveKeyValues->MakeCopy(), INVALID_VPANEL );
 		}
 		MarkForDeletion();
 	}

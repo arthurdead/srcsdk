@@ -30,7 +30,7 @@ class CFlexExpresser : public CAI_ExpresserHost<CFlexExpresserShim>
 	DECLARE_CLASS( CFlexExpresser, CAI_ExpresserHost<CFlexExpresserShim> );
 
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	CFlexExpresser();
 	~CFlexExpresser();
 

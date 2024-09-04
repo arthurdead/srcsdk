@@ -260,41 +260,11 @@ END_PREDICTION_DATA()
 
 LINK_ENTITY_TO_CLASS( client_ragdoll, C_ClientRagdoll );
 
-BEGIN_DATADESC( C_ClientRagdoll )
-	DEFINE_FIELD( m_bFadeOut, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bImportant, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_iCurrentFriction, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iMinFriction, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iMaxFriction, FIELD_INTEGER ),
-	DEFINE_FIELD( m_flFrictionModTime, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flFrictionTime, FIELD_TIME ),
-	DEFINE_FIELD( m_iFrictionAnimState, FIELD_INTEGER ),
-	DEFINE_FIELD( m_bReleaseRagdoll, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_nBody, FIELD_INTEGER ),
-	DEFINE_FIELD( m_nSkin, FIELD_INTEGER ),
-
-	//TODO!!!!! Arthurdead
-	//DEFINE_FIELD( m_nRenderFX, FIELD_CHARACTER ),
-	//DEFINE_FIELD( m_nRenderMode, FIELD_CHARACTER ),
-
-	DEFINE_FIELD( m_flEffectTime, FIELD_TIME ),
-	DEFINE_FIELD( m_bFadingOut, FIELD_BOOLEAN ),
-
-	DEFINE_AUTO_ARRAY( m_flScaleEnd, FIELD_FLOAT ),
-	DEFINE_AUTO_ARRAY( m_flScaleTimeStart, FIELD_FLOAT ),
-	DEFINE_AUTO_ARRAY( m_flScaleTimeEnd, FIELD_FLOAT ),
-	DEFINE_EMBEDDEDBYREF( m_pRagdoll ),
-
-	DEFINE_AUTO_ARRAY( m_flScaleEnd, FIELD_FLOAT ),
-	DEFINE_AUTO_ARRAY( m_flScaleTimeStart, FIELD_FLOAT ),
-	DEFINE_AUTO_ARRAY( m_flScaleTimeEnd, FIELD_FLOAT ),
-	//DEFINE_EMBEDDEDBYREF( m_pRagdoll ), // TODO: FIX: This is dynamically-typed
-
-END_DATADESC()
-
 C_ClientRagdoll::C_ClientRagdoll()
-	: C_BaseAnimating(true)
+	: C_BaseAnimating()
 {
+	AddEFlags(EFL_NOT_NETWORKED);
+
 	m_iCurrentFriction = 0;
 	m_iFrictionAnimState = RAGDOLL_FRICTION_NONE;
 	m_bReleaseRagdoll = false;
@@ -619,8 +589,8 @@ class C_BaseAnimatingGameSystem : public CAutoGameSystem
 //-----------------------------------------------------------------------------
 // Purpose: convert axis rotations to a quaternion
 //-----------------------------------------------------------------------------
-C_BaseAnimating::C_BaseAnimating(bool bClientOnly) :
-	C_BaseEntity(bClientOnly),
+C_BaseAnimating::C_BaseAnimating() :
+	C_BaseEntity(),
 	m_iv_flCycle( "C_BaseAnimating::m_iv_flCycle" ),
 	m_iv_flPoseParameter( "C_BaseAnimating::m_iv_flPoseParameter" ),
 	m_iv_flEncodedController("C_BaseAnimating::m_iv_flEncodedController")
@@ -709,11 +679,6 @@ C_BaseAnimating::C_BaseAnimating(bool bClientOnly) :
 
 	InvalidateMdlCache();
 	m_AutoRefModelIndex.Clear();
-}
-
-C_BaseAnimating::C_BaseAnimating()
-	: C_BaseAnimating(false)
-{
 }
 
 //-----------------------------------------------------------------------------
@@ -4614,10 +4579,9 @@ void C_BaseAnimating::FireObsoleteEvent( const Vector& origin, const QAngle& ang
 
 			if ( iAttachment != -1 && m_Attachments.Count() > iAttachment )
 			{
-				GetAttachment( iAttachment+1, attachOrigin, attachAngles );
 				int entId = render->GetViewEntity();
 				ClientEntityHandle_t hEntity = ClientEntityList().EntIndexToHandle( entId );
-				tempents->MuzzleFlash( attachOrigin, attachAngles, atoi( options ), hEntity, bFirstPerson );
+				tempents->MuzzleFlash( atoi( options ), hEntity, iAttachment+1, bFirstPerson );
 			}
 		}
 		break;

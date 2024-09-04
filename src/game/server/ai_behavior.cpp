@@ -7,22 +7,20 @@
 
 #include "cbase.h"
 
-#include "isaverestore.h"
 #include "ai_behavior.h"
 #include "scripted.h"
+#include "env_debughistory.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 bool g_bBehaviorHost_PreventBaseClassGatherConditions;
 
+CGenericClassmap< CAI_BehaviorBase >	CAI_BehaviorBase::m_BehaviorClasses;
+
 //-----------------------------------------------------------------------------
 // CAI_BehaviorBase
 //-----------------------------------------------------------------------------
-
-BEGIN_DATADESC_NO_BASE( CAI_BehaviorBase )
-
-END_DATADESC()
 
 //-------------------------------------
 
@@ -39,16 +37,47 @@ CAI_ClassScheduleIdSpace *CAI_BehaviorBase::GetClassScheduleIdSpace()
 int CAI_BehaviorBase::DrawDebugTextOverlays( int text_offset )
 {
 	char	tempstr[ 512 ];
-	int		offset = text_offset;
 
 	if ( GetOuter()->m_debugOverlays & OVERLAY_TEXT_BIT )
 	{
 		Q_snprintf( tempstr, sizeof( tempstr ), "Behv: %s, ", GetName() );
-		GetOuter()->EntityText( offset, tempstr, 0 );
-		offset++;
+		GetOuter()->EntityText( text_offset, tempstr, 0 );
+		text_offset++;
+
+		for ( int i = 0; i < m_ScheduleChannels.Count(); i++ )
+		{
+			AIChannelScheduleState_t *pScheduleState = &m_ScheduleChannels[i];
+
+			if ( pScheduleState->bActive && pScheduleState->pSchedule )
+			{
+				const char *pName = NULL;
+				pName = pScheduleState->pSchedule->GetName();
+				if ( !pName )
+				{
+					pName = "Unknown";
+				}
+				Q_snprintf(tempstr,sizeof(tempstr),"    Schd [%d]: %s, ", i, pName );
+				GetOuter()->EntityText(text_offset,tempstr,0);
+				text_offset++;
+
+				const Task_t *pTask = GetCurTask( i );
+				if ( pTask )
+				{
+					Q_snprintf(tempstr,sizeof(tempstr),"    Task [%d]: %s (#%d), ", i, GetSchedulingSymbols()->TaskIdToSymbol( GetClassScheduleIdSpace()->TaskLocalToGlobal( pTask->iTask ) ), pScheduleState->iCurTask );
+				}
+				else
+				{
+					Q_snprintf(tempstr,sizeof(tempstr),"    Task [%d]: None",i);
+				}
+				GetOuter()->EntityText(text_offset,tempstr,0);
+				text_offset++;
+
+			}
+
+		}
 	}
 
-	return offset;
+	return text_offset;
 }
 
 //-------------------------------------
@@ -57,19 +86,7 @@ void CAI_BehaviorBase::GatherConditions()
 {
 	Assert( m_pBackBridge != NULL );
 	
-	m_pBackBridge->BackBridge_GatherConditions();
-}
-
-//-------------------------------------
-
-void CAI_BehaviorBase::PrescheduleThink()
-{
-}
-
-//-------------------------------------
-
-void CAI_BehaviorBase::OnScheduleChange()
-{
+	m_pBackBridge->BehaviorBridge_GatherConditions();
 }
 
 //-------------------------------------
@@ -84,7 +101,7 @@ int CAI_BehaviorBase::SelectSchedule()
 {
 	Assert( m_pBackBridge != NULL );
 	
-	return m_pBackBridge->BackBridge_SelectSchedule();
+	return m_pBackBridge->BehaviorBridge_SelectSchedule();
 }
 
 //-------------------------------------
@@ -111,18 +128,60 @@ void CAI_BehaviorBase::RunTask( const Task_t *pTask )
 
 //-------------------------------------
 
-void CAI_BehaviorBase::AimGun( void )
-{
-	m_fOverrode = false;
-}
-
-//-------------------------------------
-
 int CAI_BehaviorBase::TranslateSchedule( int scheduleType )
 {
 	Assert( m_pBackBridge != NULL );
 	
-	return m_pBackBridge->BackBridge_TranslateSchedule( scheduleType );
+	return m_pBackBridge->BehaviorBridge_TranslateSchedule( scheduleType );
+}
+
+//-------------------------------------
+
+CAI_Schedule *CAI_BehaviorBase::GetNewSchedule( int channel )
+{
+	if ( !m_ScheduleChannels.IsValidIndex( channel ) )
+	{
+		AssertMsg( 0, "Bad schedule channel" );
+		return NULL;
+	}
+
+	int scheduleType;
+
+	//
+	// Schedule selection code here overrides all leaf schedule selection.
+	//
+	scheduleType = SelectSchedule( channel );
+	CAI_Schedule *pSchedule = GetSchedule( scheduleType );
+
+	if( pSchedule != NULL )
+		m_ScheduleChannels[channel].idealSchedule = pSchedule->GetId();
+
+	return pSchedule;
+}
+
+//-------------------------------------
+
+CAI_Schedule *CAI_BehaviorBase::GetFailSchedule( AIChannelScheduleState_t *pScheduleState )
+{
+	int prevSchedule;
+	int failedTask;
+
+	if ( pScheduleState->pSchedule )
+		prevSchedule = GetClassScheduleIdSpace()->ScheduleGlobalToLocal( pScheduleState->pSchedule->GetId() );
+	else
+		prevSchedule = SCHED_NONE;
+
+	const Task_t *pTask = GetTask( pScheduleState );
+	if ( pTask )
+		failedTask = pTask->iTask;
+	else
+		failedTask = TASK_INVALID;
+
+	Assert( AI_IdIsLocal( prevSchedule ) );
+	Assert( AI_IdIsLocal( failedTask ) );
+
+	int scheduleType = SelectFailSchedule( prevSchedule, failedTask, pScheduleState->taskFailureCode );
+	return GetSchedule( scheduleType );
 }
 
 //-------------------------------------
@@ -134,6 +193,10 @@ CAI_Schedule *CAI_BehaviorBase::GetSchedule(int schedule)
 		Warning("ERROR: %s missing schedule!\n", GetSchedulingErrorName());
 		return g_AI_SchedulesManager.GetScheduleFromID(SCHED_IDLE_STAND);
 	}
+
+	if( schedule == SCHED_NONE )
+		return NULL;
+
 	if ( AI_IdIsLocal( schedule ) )
 	{
 		schedule = GetClassScheduleIdSpace()->ScheduleLocalToGlobal(schedule);
@@ -143,6 +206,18 @@ CAI_Schedule *CAI_BehaviorBase::GetSchedule(int schedule)
 		return NULL;
 
 	return g_AI_SchedulesManager.GetScheduleFromID( schedule );
+}
+
+//-------------------------------------
+
+const Task_t *CAI_BehaviorBase::GetTask( AIChannelScheduleState_t *pScheduleState ) 
+{
+	int iScheduleIndex = pScheduleState->iCurTask;
+	if ( !pScheduleState->pSchedule || iScheduleIndex < 0 || iScheduleIndex >= pScheduleState->pSchedule->NumTasks() )
+		// iScheduleIndex is not within valid range for the NPC's current schedule.
+		return NULL;
+
+	return &pScheduleState->pSchedule->GetTaskList()[ iScheduleIndex ];
 }
 
 //-------------------------------------
@@ -164,273 +239,489 @@ const char *CAI_BehaviorBase::GetSchedulingErrorName()
 
 //-------------------------------------
 
-Activity CAI_BehaviorBase::NPC_TranslateActivity( Activity activity )
+void CAI_BehaviorBase::StartChannel( int channel )
 {
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_NPC_TranslateActivity( activity );
+	if ( channel < 0 )
+	{
+		AssertMsg( 0, "Bad schedule channel" );
+		return;
+	}
+
+	m_ScheduleChannels.EnsureCount( channel + 1 );
+	m_ScheduleChannels[channel].bActive = true;
+}
+
+
+//-------------------------------------
+void CAI_BehaviorBase::StopChannel( int channel )
+{
+	if ( !m_ScheduleChannels.IsValidIndex( channel ) )
+	{
+		AssertMsg( 0, "Bad schedule channel" );
+		return;
+	}
+
+	m_ScheduleChannels[channel].bActive = false;
+}
+
+
+//-------------------------------------
+
+void CAI_BehaviorBase::MaintainChannelSchedules()
+{
+	for ( int i = 0; i < m_ScheduleChannels.Count(); i++ )
+	{
+		MaintainSchedule( i );
+	}
 }
 
 //-------------------------------------
 
-bool CAI_BehaviorBase::IsCurTaskContinuousMove()
+#define MAX_TASKS_RUN 10
+
+void CAI_BehaviorBase::MaintainSchedule( int channel )
 {
-	m_fOverrode = false;
+	CAI_Schedule *pNewSchedule;
+	bool		runTask = true;
+
+	AssertMsg( m_ScheduleChannels.IsValidIndex( channel ), "Bad schedule channel" );
+
+	AIChannelScheduleState_t *pScheduleState = &m_ScheduleChannels[channel];
+
+	if ( !pScheduleState->bActive )
+	{
+		return;
+	}
+
+	int i;
+
+	bool bStopProcessing = false;
+	for ( i = 0; i < MAX_TASKS_RUN && !bStopProcessing; i++ )
+	{
+		if ( pScheduleState->pSchedule != NULL && pScheduleState->fTaskStatus == TASKSTATUS_COMPLETE )
+		{
+			// Schedule is valid, so advance to the next task if the current is complete.
+			pScheduleState->fTaskStatus = TASKSTATUS_NEW;
+			pScheduleState->iCurTask++;
+		}
+
+		// validate existing schedule 
+		if ( !IsScheduleValid( pScheduleState ) )
+		{
+			// Notify the NPC that his schedule is changing
+			pScheduleState->bScheduleWasInterrupted = true;
+			OnScheduleChange( channel );
+
+// 			if ( !m_bConditionsGathered )
+// 			{
+// 				// occurs if a schedule is exhausted within one think
+// 				GatherConditions();
+// 			}
+
+			if ( pScheduleState->taskFailureCode != NO_TASK_FAILURE )
+			{
+				// Get a fail schedule if the previous schedule failed during execution and 
+				// the NPC is still in its ideal state. Otherwise, the NPC would immediately
+				// select the same schedule again and fail again.
+
+				if ( GetOuter()->m_debugOverlays & OVERLAY_TASK_TEXT_BIT )
+				{
+					DevMsg( GetOuter(), AIMF_IGNORE_SELECTED, "      Behavior %s channel %d (failed)\n", GetName(), channel );
+				}
+
+				ADD_DEBUG_HISTORY( HISTORY_AI_DECISIONS, UTIL_VarArgs("%s(%d):      Behavior %s channel %d (failed)\n", GetOuter()->GetDebugName(), GetOuter()->entindex(), GetName(), channel ) );
+
+				pNewSchedule = GetFailSchedule( pScheduleState );
+				pScheduleState->idealSchedule = pNewSchedule->GetId();
+				DevWarning( 2, "(%s) Schedule (%s) Failed at %d!\n", STRING( GetOuter()->GetEntityName() ), pScheduleState->pSchedule ? pScheduleState->pSchedule->GetName() : "GetCurSchedule() == NULL", pScheduleState->iCurTask );
+				SetSchedule( channel, pNewSchedule );
+			}
+			else
+			{
+				pNewSchedule = GetNewSchedule( channel );
+
+				SetSchedule( channel, pNewSchedule );
+			}
+		}
+
+		if ( !pScheduleState->pSchedule )
+		{
+			pNewSchedule = GetNewSchedule( channel );
+
+			if (pNewSchedule)
+			{
+				SetSchedule( channel, pNewSchedule );
+			}
+		}
+
+		if ( !pScheduleState->pSchedule || pScheduleState->pSchedule->NumTasks() == 0 )
+		{
+			return;
+		}
+
+		if ( pScheduleState->fTaskStatus == TASKSTATUS_NEW )
+		{	
+			if ( pScheduleState->iCurTask == 0 )
+			{
+				int globalId = pScheduleState->pSchedule->GetId();
+				int localId = GetClassScheduleIdSpace()->ScheduleGlobalToLocal( globalId );
+				OnStartSchedule( channel, (localId != -1)? localId : globalId );
+			}
+
+			const Task_t *pTask = GetCurTask( channel );
+			Assert( pTask != NULL );
+
+			if ( GetOuter()->m_debugOverlays & OVERLAY_TASK_TEXT_BIT )
+			{
+				DevMsg( GetOuter(), AIMF_IGNORE_SELECTED, "  Behavior %s channel %d Task: %s\n", GetName(), channel, GetSchedulingSymbols()->TaskIdToSymbol( GetClassScheduleIdSpace()->TaskLocalToGlobal( pTask->iTask ) ) );
+			}
+
+			ADD_DEBUG_HISTORY( HISTORY_AI_DECISIONS, UTIL_VarArgs("%s(%d):  Behavior %s channel %d Task: %s\n", GetOuter()->GetDebugName(), GetOuter()->entindex(), GetName(), channel, GetSchedulingSymbols()->TaskIdToSymbol( GetClassScheduleIdSpace()->TaskLocalToGlobal( pTask->iTask ) ) ) );
+
+			pScheduleState->fTaskStatus = TASKSTATUS_RUN_MOVE_AND_TASK;
+			pScheduleState->taskFailureCode    = NO_TASK_FAILURE;
+			pScheduleState->timeCurTaskStarted = gpGlobals->curtime;
+
+			StartTask( channel, pTask );
+		}
+
+		if ( !TaskIsComplete( channel ) && pScheduleState->fTaskStatus != TASKSTATUS_NEW )
+		{
+			if ( pScheduleState->fTaskStatus != TASKSTATUS_COMPLETE && pScheduleState->fTaskStatus != TASKSTATUS_RUN_MOVE && pScheduleState->taskFailureCode == NO_TASK_FAILURE && runTask )
+			{
+				const Task_t *pTask = GetCurTask( channel );
+				Assert( pTask != NULL );
+
+				RunTask( channel, pTask );
+
+				if ( !TaskIsComplete( channel ) )
+				{
+					bStopProcessing = true;
+				}
+			}
+			else
+			{
+				bStopProcessing = true;
+			}
+		}
+	}
+}
+
+//-------------------------------------
+
+bool CAI_BehaviorBase::IsScheduleValid( AIChannelScheduleState_t *pScheduleState )
+{
+	CAI_Schedule *pSchedule = pScheduleState->pSchedule;
+	if ( !pSchedule || pSchedule->NumTasks() == 0 )
+	{
+		return false;
+	}
+
+	if ( pScheduleState->iCurTask == pSchedule->NumTasks() )
+	{
+		return false;
+	}
+
+	if ( pScheduleState->taskFailureCode != NO_TASK_FAILURE )
+	{
+		return false;
+	}
+
+	//Start out with the base schedule's set interrupt conditions
+	CAI_ScheduleBits testBits;
+	pSchedule->GetInterruptMask( &testBits );
+	testBits.And( GetOuter()->AccessConditionBits(), &testBits  );
+
+	if (!testBits.IsAllClear()) 
+	{
+		// If in developer mode save the interrupt text for debug output
+		if (developer.GetInt()) 
+		{
+			// Find the first non-zero bit
+			for (int i=0;i<MAX_CONDITIONS;i++)
+			{
+				if (testBits.IsBitSet(i))
+				{
+					int channel = pScheduleState - m_ScheduleChannels.Base();
+					const char *pszInterruptText = GetOuter()->ConditionName( AI_RemapToGlobal( i ) );
+					if (!pszInterruptText)
+					{
+						pszInterruptText = "(UNKNOWN CONDITION)";
+					}
+
+					if (GetOuter()->m_debugOverlays & OVERLAY_TASK_TEXT_BIT)
+					{
+						DevMsg(GetOuter(), AIMF_IGNORE_SELECTED, "      Behavior %s channel %d Break condition -> %s\n", GetName(), channel, pszInterruptText );
+					}
+
+					ADD_DEBUG_HISTORY( HISTORY_AI_DECISIONS, UTIL_VarArgs("%s(%d):      Behavior %s channel %d Break condition -> %s\n",  GetOuter()->GetDebugName(), GetOuter()->entindex(), GetName(), channel, pszInterruptText ) );
+
+					break;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	return true;
+}
+
+//-------------------------------------
+
+void CAI_BehaviorBase::SetSchedule( int channel, CAI_Schedule *pNewSchedule )
+{
+	if ( !m_ScheduleChannels.IsValidIndex( channel ) )
+	{
+		AssertMsg( 0, "Bad schedule channel" );
+		return;
+	}
+
+	//Assert( pNewSchedule != NULL );
+	AIChannelScheduleState_t *pScheduleState = &m_ScheduleChannels[channel];
+
+	pScheduleState->timeCurTaskStarted = pScheduleState->timeStarted = gpGlobals->curtime;
+	pScheduleState->bScheduleWasInterrupted = false;
+
+	pScheduleState->pSchedule = pNewSchedule ;
+	pScheduleState->iCurTask = 0;
+	pScheduleState->fTaskStatus = TASKSTATUS_NEW;
+	pScheduleState->failSchedule = SCHED_NONE;
+
+	// this is very useful code if you can isolate a test case in a level with a single NPC. It will notify
+	// you of every schedule selection the NPC makes.
+
+	if( pNewSchedule )
+	{
+		if (GetOuter()->m_debugOverlays & OVERLAY_TASK_TEXT_BIT)
+		{
+			DevMsg(GetOuter(), AIMF_IGNORE_SELECTED, "Behavior %s channel %d Schedule: %s (time: %.2f)\n", GetName(), channel, pNewSchedule->GetName(), gpGlobals->curtime );
+		}
+
+		ADD_DEBUG_HISTORY( HISTORY_AI_DECISIONS, UTIL_VarArgs("%s(%d): Behavior %s channel %d Schedule: %s (time: %.2f)\n", GetOuter()->GetDebugName(), GetOuter()->entindex(), GetName(), channel, pNewSchedule->GetName(), gpGlobals->curtime ) );
+	}
+}
+
+//-------------------------------------
+
+bool CAI_BehaviorBase::SetSchedule( int channel, int localScheduleID )
+{
+	if ( !m_ScheduleChannels.IsValidIndex( channel ) )
+	{
+		AssertMsg( 0, "Bad schedule channel" );
+		return false;
+	}
+
+	int translatedSchedule = TranslateSchedule( channel, localScheduleID );
+	CAI_Schedule *pNewSchedule = GetSchedule( translatedSchedule );
+	if ( pNewSchedule )
+	{
+		AIChannelScheduleState_t *pScheduleState = &m_ScheduleChannels[channel];
+
+		if ( AI_IdIsLocal( localScheduleID ) )
+		{
+			pScheduleState->idealSchedule = GetClassScheduleIdSpace()->ScheduleLocalToGlobal( localScheduleID );
+		}
+		else
+		{
+			pScheduleState->idealSchedule = localScheduleID;
+		}
+		SetSchedule( channel, pNewSchedule ); 
+		return true;
+	}
 	return false;
 }
 
 //-------------------------------------
 
-float CAI_BehaviorBase::GetDefaultNavGoalTolerance()
+void CAI_BehaviorBase::ClearSchedule( int channel, const char *szReason )
 {
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_GetDefaultNavGoalTolerance();
+	if ( !m_ScheduleChannels.IsValidIndex( channel ) )
+	{
+		AssertMsg( 0, "Bad schedule channel" );
+		return;
+	}
+
+	if (szReason && GetOuter()->m_debugOverlays & OVERLAY_TASK_TEXT_BIT)
+	{
+		DevMsg( GetOuter(), AIMF_IGNORE_SELECTED, "  Behavior %s channel %d Schedule cleared: %s\n", GetName(), channel, szReason );
+	}
+
+	if ( szReason )
+	{
+		ADD_DEBUG_HISTORY( HISTORY_AI_DECISIONS, UTIL_VarArgs( "%s(%d):  Behavior %s channel %d Schedule cleared: %s\n", GetOuter()->GetDebugName(), GetOuter()->entindex(), GetName(), channel, szReason ) );
+	}
+
+	AIChannelScheduleState_t *pScheduleState = &m_ScheduleChannels[channel];
+
+	pScheduleState->timeCurTaskStarted = pScheduleState->timeStarted = 0;
+	pScheduleState->bScheduleWasInterrupted = true;
+	pScheduleState->fTaskStatus = TASKSTATUS_NEW;
+	pScheduleState->idealSchedule = AI_RemapToGlobal( SCHED_NONE );
+	pScheduleState->pSchedule = NULL;
+	pScheduleState->iCurTask = 0;
 }
 
 //-------------------------------------
 
-#ifndef AI_USES_NAV_MESH
-bool CAI_BehaviorBase::FValidateHintType( CAI_Hint *pHint )
-#else
-bool CAI_BehaviorBase::FValidateArea( CNavArea *pArea )
-#endif
+CAI_Schedule *CAI_BehaviorBase::GetCurSchedule( int channel )
 {
-	m_fOverrode = false;
-	return false;
+	if ( !m_ScheduleChannels.IsValidIndex( channel ) )
+	{
+		AssertMsg( 0, "Bad schedule channel" );
+		return NULL;
+	}
+
+	return m_ScheduleChannels[channel].pSchedule;
 }
 
 //-------------------------------------
 
-bool CAI_BehaviorBase::IsValidEnemy( CBaseEntity *pEnemy )
+bool CAI_BehaviorBase::IsCurSchedule( int channel, int schedId, bool fIdeal )
 {
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_IsValidEnemy( pEnemy );
+	if ( !m_ScheduleChannels.IsValidIndex( channel ) )
+	{
+		AssertMsg( 0, "Bad schedule channel" );
+		return false;
+	}
+
+	AIChannelScheduleState_t *pScheduleState = &m_ScheduleChannels[channel];
+
+	if ( !pScheduleState->pSchedule )
+		return ( schedId == SCHED_NONE || schedId == AI_RemapToGlobal(SCHED_NONE) );
+
+	schedId = ( AI_IdIsLocal( schedId ) ) ? GetClassScheduleIdSpace()->ScheduleLocalToGlobal(schedId) : schedId;
+
+	if ( fIdeal )
+		return ( schedId == pScheduleState->idealSchedule );
+
+	return ( pScheduleState->pSchedule->GetId() == schedId ); 
 }
 
 //-------------------------------------
 
-CBaseEntity *CAI_BehaviorBase::BestEnemy( void )
+void CAI_BehaviorBase::OnScheduleChange( int channel )
 {
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_BestEnemy();
 }
 
 //-------------------------------------
 
-#ifndef AI_USES_NAV_MESH
-bool CAI_BehaviorBase::IsValidCover( const Vector &vLocation, CAI_Hint const *pHint )
+void CAI_BehaviorBase::OnStartSchedule( int channel, int scheduleType )
 {
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_IsValidCover( vLocation, pHint );
 }
 
 //-------------------------------------
 
-bool CAI_BehaviorBase::IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint )
+int CAI_BehaviorBase::SelectSchedule( int channel )
 {
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_IsValidShootPosition( vLocation, pNode, pHint );
-}
-#else
-bool CAI_BehaviorBase::IsValidCover( const Vector &vLocation, CNavArea const *pArea )
-{
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_IsValidCover( vLocation, pArea );
+	return SCHED_NONE;
 }
 
 //-------------------------------------
 
-bool CAI_BehaviorBase::IsValidShootPosition( const Vector &vLocation, CNavArea *pArea )
+int CAI_BehaviorBase::SelectFailSchedule(  int channel, int failedSchedule, int failedTask, AI_TaskFailureCode_t taskFailCode )
 {
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_IsValidShootPosition( vLocation, pArea );
-}
-#endif
-
-//-------------------------------------
-
-float CAI_BehaviorBase::GetMaxTacticalLateralMovement( void )
-{
-	Assert( m_pBackBridge != NULL );
-
-	return m_pBackBridge->BackBridge_GetMaxTacticalLateralMovement();
+	return SCHED_NONE;
 }
 
 //-------------------------------------
 
-bool CAI_BehaviorBase::ShouldIgnoreSound( CSound *pSound )
+void CAI_BehaviorBase::TaskComplete( int channel, bool fIgnoreSetFailedCondition )
 {
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_ShouldIgnoreSound( pSound );
+	if ( !m_ScheduleChannels.IsValidIndex( channel ) )
+	{
+		AssertMsg( 0, "Bad schedule channel" );
+		return;
+	}
+
+	if ( fIgnoreSetFailedCondition || m_ScheduleChannels[channel].taskFailureCode == NO_TASK_FAILURE )
+	{
+		m_ScheduleChannels[channel].taskFailureCode = NO_TASK_FAILURE;
+		m_ScheduleChannels[channel].fTaskStatus = TASKSTATUS_COMPLETE;
+	}
 }
 
 //-------------------------------------
 
-void CAI_BehaviorBase::OnSeeEntity( CBaseEntity *pEntity )
+void CAI_BehaviorBase::TaskFail( int channel, AI_TaskFailureCode_t code )
 {
-	Assert( m_pBackBridge != NULL );
+	if ( !m_ScheduleChannels.IsValidIndex( channel ) )
+	{
+		AssertMsg( 0, "Bad schedule channel" );
+		return;
+	}
 
-	m_pBackBridge->BackBridge_OnSeeEntity( pEntity );
+	AIChannelScheduleState_t *pScheduleState = &m_ScheduleChannels[channel];
+
+	if ( GetOuter()->m_debugOverlays & OVERLAY_TASK_TEXT_BIT)
+	{
+		DevMsg( GetOuter(), AIMF_IGNORE_SELECTED, "      Behavior %s channel %d: TaskFail -> %s\n", GetName(), channel, TaskFailureToString( code ) );
+	}
+
+	ADD_DEBUG_HISTORY( HISTORY_AI_DECISIONS, UTIL_VarArgs("%s(%d):       Behavior %s channel %d: TaskFail -> %s\n", GetOuter()->GetDebugName(), GetOuter()->entindex(), GetName(), channel, TaskFailureToString( code ) ) );
+
+	pScheduleState->taskFailureCode = code;
 }
 
 //-------------------------------------
 
-void CAI_BehaviorBase::OnFriendDamaged( CBaseCombatCharacter *pSquadmate, CBaseEntity *pAttacker )
+const Task_t *CAI_BehaviorBase::GetCurTask( int channel ) 
 {
-	Assert( m_pBackBridge != NULL );
+	if ( !m_ScheduleChannels.IsValidIndex( channel ) )
+	{
+		AssertMsg( 0, "Bad schedule channel" );
+		return NULL;
+	}
 
-	m_pBackBridge->BackBridge_OnFriendDamaged( pSquadmate, pAttacker );
+	AIChannelScheduleState_t *pScheduleState = &m_ScheduleChannels[channel];
+
+	int iScheduleIndex = pScheduleState->iCurTask;
+	if ( !pScheduleState->pSchedule || iScheduleIndex < 0 || iScheduleIndex >= pScheduleState->pSchedule->NumTasks() )
+		// iScheduleIndex is not within valid range for the NPC's current schedule.
+		return NULL;
+
+	return &pScheduleState->pSchedule->GetTaskList()[ iScheduleIndex ];
 }
 
 //-------------------------------------
 
-bool CAI_BehaviorBase::IsInterruptable( void )
+void CAI_BehaviorBase::StartTask( int channel, const Task_t *pTask )
 {
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_IsInterruptable();
+	Assert( 0 );
 }
 
 //-------------------------------------
 
-bool CAI_BehaviorBase::IsNavigationUrgent( void )
+void CAI_BehaviorBase::RunTask( int channel, const Task_t *pTask )
 {
-	Assert( m_pBackBridge != NULL );
-
-	return m_pBackBridge->BackBridge_IsNavigationUrgent();
+	Assert( 0 );
 }
 
 //-------------------------------------
 
-bool CAI_BehaviorBase::CanFlinch( void )
+float CAI_BehaviorBase::GetJumpGravity() const
 {
 	Assert( m_pBackBridge != NULL );
 
-	return m_pBackBridge->BackBridge_CanFlinch();
+	return m_pBackBridge->BehaviorBridge_GetJumpGravity();
 }
 
 //-------------------------------------
 
-bool CAI_BehaviorBase::IsCrouching( void )
+bool CAI_BehaviorBase::IsJumpLegal( const Vector &startPos, const Vector &apex, const Vector &endPos, float maxUp, float maxDown, float maxDist ) const
 {
 	Assert( m_pBackBridge != NULL );
 
-	return m_pBackBridge->BackBridge_IsCrouching();
+	return m_pBackBridge->BehaviorBridge_IsJumpLegal( startPos, apex, endPos, maxUp, maxDown, maxDist );
 }
 
 //-------------------------------------
 
-bool CAI_BehaviorBase::IsCrouchedActivity( Activity activity )
+bool CAI_BehaviorBase::MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost )
 {
 	Assert( m_pBackBridge != NULL );
 
-	return m_pBackBridge->BackBridge_IsCrouchedActivity( activity );
-}
-
-//-------------------------------------
-
-bool CAI_BehaviorBase::QueryHearSound( CSound *pSound )
-{
-	Assert( m_pBackBridge != NULL );
-
-	return m_pBackBridge->BackBridge_QueryHearSound( pSound );
-}
-
-//-------------------------------------
-
-bool CAI_BehaviorBase::CanRunAScriptedNPCInteraction( bool bForced )
-{
-	Assert( m_pBackBridge != NULL );
-
-	return m_pBackBridge->BackBridge_CanRunAScriptedNPCInteraction( bForced );
-}
-
-//-------------------------------------
-
-bool CAI_BehaviorBase::ShouldPlayerAvoid( void )
-{
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_ShouldPlayerAvoid();
-}
-
-//-------------------------------------
-
-int CAI_BehaviorBase::OnTakeDamage_Alive( const CTakeDamageInfo &info )
-{
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_OnTakeDamage_Alive( info );
-}
-
-//-------------------------------------
-
-float CAI_BehaviorBase::GetReasonableFacingDist( void )
-{
-	Assert( m_pBackBridge != NULL );
-	
-	return m_pBackBridge->BackBridge_GetReasonableFacingDist();
-}
-
-//-------------------------------------
-
-bool CAI_BehaviorBase::ShouldAlwaysThink()
-{
-	m_fOverrode = false;
-	return false;
-}
-
-//-------------------------------------
-
-Activity CAI_BehaviorBase::GetFlinchActivity( bool bHeavyDamage, bool bGesture )
-{
-	Assert( m_pBackBridge != NULL );
-
-	return m_pBackBridge->BackBridge_GetFlinchActivity( bHeavyDamage, bGesture );
-}
-
-//-------------------------------------
-
-bool CAI_BehaviorBase::OnCalcBaseMove( AILocalMoveGoal_t *pMoveGoal, float distClear, AIMoveResult_t *pResult )
-{
-	Assert( m_pBackBridge != NULL );
-
-	return m_pBackBridge->BackBridge_OnCalcBaseMove( pMoveGoal, distClear, pResult );
-}
-
-//-------------------------------------
-
-void CAI_BehaviorBase::ModifyOrAppendCriteria( AI_CriteriaSet& criteriaSet )
-{
-	Assert( m_pBackBridge != NULL );
-
-	return m_pBackBridge->BackBridge_ModifyOrAppendCriteria( criteriaSet );
-}
-
-//-------------------------------------
-
-void CAI_BehaviorBase::Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity )
-{
-	Assert( m_pBackBridge != NULL );
-
-	return m_pBackBridge->BackBridge_Teleport( newPosition, newAngles, newVelocity );
-}
-
-//-------------------------------------
-
-void CAI_BehaviorBase::HandleAnimEvent( animevent_t *pEvent )
-{
-	Assert( m_pBackBridge != NULL );
-
-	m_pBackBridge->BackBridge_HandleAnimEvent( pEvent );
+	return m_pBackBridge->BehaviorBridge_MovementCost( moveType, vecStart, vecEnd, pCost );
 }
 
 //-------------------------------------
@@ -465,91 +756,3 @@ bool CAI_BehaviorBase::NotifyChangeBehaviorStatus( bool fCanFinishSchedule )
 
 	return fInterrupt;
 }
-
-//-------------------------------------
-
-int	CAI_BehaviorBase::Save( ISave &save )				
-{ 
-	return save.WriteAll( this, GetDataDescMap() );	
-}
-
-//-------------------------------------
-
-int	CAI_BehaviorBase::Restore( IRestore &restore )
-{ 
-	return restore.ReadAll( this, GetDataDescMap() );	
-}
-
-//-------------------------------------
-
-#define BEHAVIOR_SAVE_BLOCKNAME "AI_Behaviors"
-#define BEHAVIOR_SAVE_VERSION	2
-
-void CAI_BehaviorBase::SaveBehaviors(ISave &save, CAI_BehaviorBase *pCurrentBehavior, CAI_BehaviorBase **ppBehavior, int nBehaviors )		
-{ 
-	save.StartBlock( BEHAVIOR_SAVE_BLOCKNAME );
-	short temp = BEHAVIOR_SAVE_VERSION;
-	save.WriteShort( &temp );
-	temp = (short)nBehaviors;
-	save.WriteShort( &temp );
-
-	for ( int i = 0; i < nBehaviors; i++ )
-	{
-		if ( strcmp( ppBehavior[i]->GetDataDescMap()->dataClassName, CAI_BehaviorBase::m_DataMap.dataClassName ) != 0 )
-		{
-			save.StartBlock();
-			save.WriteString( ppBehavior[i]->GetDataDescMap()->dataClassName );
-			bool bIsCurrent = ( pCurrentBehavior == ppBehavior[i] );
-			save.WriteBool( &bIsCurrent );
-			ppBehavior[i]->Save( save );
-			save.EndBlock();
-		}
-	}
-
-	save.EndBlock();
-}
-
-//-------------------------------------
-
-int CAI_BehaviorBase::RestoreBehaviors(IRestore &restore, CAI_BehaviorBase **ppBehavior, int nBehaviors )	
-{ 
-	int iCurrent = -1;
-	char szBlockName[SIZE_BLOCK_NAME_BUF];
-	restore.StartBlock( szBlockName );
-	if ( strcmp( szBlockName, BEHAVIOR_SAVE_BLOCKNAME ) == 0 )
-	{
-		short version;
-		restore.ReadShort( &version );
-		if ( version == BEHAVIOR_SAVE_VERSION )
-		{
-			short nToRestore;
-			char szClassNameCurrent[256];
-			restore.ReadShort( &nToRestore );
-			for ( int i = 0; i < nToRestore; i++ )
-			{
-				restore.StartBlock();
-				restore.ReadString( szClassNameCurrent, sizeof( szClassNameCurrent ), 0 );
-				bool bIsCurrent;
-				restore.ReadBool( &bIsCurrent );
-
-				for ( int j = 0; j < nBehaviors; j++ )
-				{
-					if ( strcmp( ppBehavior[j]->GetDataDescMap()->dataClassName, szClassNameCurrent ) == 0 )
-					{
-						if ( bIsCurrent )
-							iCurrent = j;
-						ppBehavior[j]->Restore( restore );
-					}
-				}
-
-				restore.EndBlock();
-
-			}
-		}
-	}
-	restore.EndBlock();
-	return iCurrent; 
-}
-
-
-//-----------------------------------------------------------------------------

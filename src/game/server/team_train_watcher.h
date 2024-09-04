@@ -39,7 +39,7 @@ class CTeamTrainWatcher : public CBaseEntity, public CGameEventListener, public 
 	DECLARE_CLASS( CTeamTrainWatcher, CBaseEntity );
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CTeamTrainWatcher();
 	~CTeamTrainWatcher();
@@ -89,7 +89,7 @@ public:
 	float GetTrainDistanceAlongTrack( void ) const;
 	Vector GetNextCheckpointPosition( void ) const;	// return world space location of next checkpoint along the path
 
-#if defined( STAGING_ONLY ) && defined( TF_DLL )
+#if defined( STAGING_ONLY )
 	void DumpStats( void );
 #endif // STAGING_ONLY && TF_DLL
 
@@ -101,9 +101,6 @@ private:
 	void PlayCaptureAlert( CTeamControlPoint *pPoint, bool bFinalPointInMap );
 	void InternalSetNumTrainCappers( int iNumCappers, CBaseEntity *pTrigger );
 	void InternalSetSpeedForwardModifier( float flModifier );
-#ifdef GLOWS_ENABLE
-	void FindGlowEntity( void );
-#endif // GLOWS_ENABLE
 	void HandleTrainMovement( bool bStartReceding = false );
 	void HandleSparks( bool bSparks );
 
@@ -182,10 +179,6 @@ private:
 	bool m_bReceding;
 
 	int m_nTrainRecedeTime;
-
-#ifdef GLOWS_ENABLE
-	CNetworkVar( EHANDLE, m_hGlowEnt );
-#endif // GLOWS_ENABLE
 };
 
 
@@ -200,7 +193,6 @@ inline int CTeamTrainWatcher::GetCapturerCount( void ) const
 }
 
 
-/*
 class CTeamTrainWatcherMaster : public CBaseEntity, public CGameEventListener
 {
 	DECLARE_CLASS( CTeamTrainWatcherMaster, CBaseEntity );
@@ -226,6 +218,5 @@ private:
 };
 
 extern EHANDLE g_hTeamTrainWatcherMaster;
-*/
 
 #endif //TEAM_TRAIN_WATCHER_H

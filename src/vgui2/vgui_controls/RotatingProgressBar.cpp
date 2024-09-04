@@ -35,7 +35,7 @@ RotatingProgressBar::RotatingProgressBar(Panel *parent, const char *panelName) :
 	m_flEndRadians = 0;
 	m_flLastAngle = 0;
 
-	m_nTextureId = -1;
+	m_nTextureId = INVALID_TEXTURE;
 	m_pszImageName = NULL;
 
 	m_flTickDelay = 30;
@@ -50,10 +50,10 @@ RotatingProgressBar::RotatingProgressBar(Panel *parent, const char *panelName) :
 //-----------------------------------------------------------------------------
 RotatingProgressBar::~RotatingProgressBar()
 {
-	if ( vgui::surface() && m_nTextureId != -1 )
+	if ( vgui::surface() && m_nTextureId != INVALID_TEXTURE )
 	{
 		vgui::surface()->DestroyTextureID( m_nTextureId );
-		m_nTextureId = -1;
+		m_nTextureId = INVALID_TEXTURE;
 	}
 
 	delete [] m_pszImageName;
@@ -102,7 +102,7 @@ void RotatingProgressBar::ApplySchemeSettings(IScheme *pScheme)
 
 	if ( m_pszImageName && strlen( m_pszImageName ) > 0 )
 	{
-		if ( m_nTextureId == -1 )
+		if ( m_nTextureId == INVALID_TEXTURE )
 		{
 			m_nTextureId = surface()->CreateNewTextureID();
 		}

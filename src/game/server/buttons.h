@@ -8,12 +8,15 @@
 #define BUTTONS_H
 #pragma once
 
+#include "basetoggle.h"
+#include "locksounds.h"
 
 class CBaseButton : public CBaseToggle
 {
 public:
 
 	DECLARE_CLASS( CBaseButton, CBaseToggle );
+	DECLARE_SERVERCLASS();
 
 	void Spawn( void );
 	virtual void Precache( void );
@@ -53,7 +56,7 @@ protected:
 	BUTTON_CODE	ButtonResponseToTouch( void );
 	void Press( CBaseEntity *pActivator, BUTTON_CODE eCode );
 	
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual int	ObjectCaps(void);
 
@@ -124,7 +127,7 @@ public:
 
 	float GetPos(const QAngle &vecAngles);
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void Lock();
 	virtual void Unlock();

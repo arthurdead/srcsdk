@@ -8,7 +8,9 @@
 #define VEHICLE_SOUNDS_H
 #pragma once
 
+#include "datamap.h"
 #include "vcollide_parse.h"
+#include "string_t.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -39,8 +41,6 @@ extern vehiclesound g_iSoundsToStopOnExit[NUM_SOUNDS_TO_STOP_ON_EXIT];
 //-----------------------------------------------------------------------------
 struct vehicle_gear_t
 {
-	DECLARE_DATADESC();
-
 	float		flMinSpeed;
 	float		flMaxSpeed;
 	float		flSpeedApproachFactor;
@@ -48,8 +48,6 @@ struct vehicle_gear_t
 
 struct vehicle_crashsound_t
 {
-	DECLARE_DATADESC();
-
 	float		flMinSpeed;
 	float		flMinDeltaSpeed;
 	int			gearLimit;
@@ -104,8 +102,6 @@ struct vehiclesounds_t
 			minStateTime[i] = 0.0f;
 		}
 	}
-
-	DECLARE_DATADESC();
 
 	CUtlVector<vehicle_gear_t>	pGears;
 	CUtlVector<vehicle_crashsound_t> crashSounds;

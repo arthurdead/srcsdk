@@ -8,15 +8,18 @@
 #include "cbase.h"
 #include "point_posecontroller.h"
 
+#ifndef CLIENT_DLL
+	#include "baseanimating.h"
+	#include "props.h"
+#endif
+
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
 
 #ifndef CLIENT_DLL
 //-----------------------------------------------------------------------------
 // SERVER CLASS
 //-----------------------------------------------------------------------------
-
-#include "baseanimating.h"
-#include "props.h"
-
 
 #define MAX_POSE_INTERPOLATION_TIME 10.0f
 #define MAX_POSE_CYCLE_FREQUENCY 10.0f
@@ -27,11 +30,8 @@
 LINK_ENTITY_TO_CLASS( point_posecontroller, CPoseController );	
 
 
-BEGIN_DATADESC( CPoseController )
-	DEFINE_AUTO_ARRAY( m_hProps, FIELD_EHANDLE ),
-	DEFINE_AUTO_ARRAY( m_chPoseIndex, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_bDisablePropLookup, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bPoseValueParity, FIELD_BOOLEAN ),
+BEGIN_MAPENTITY( CPoseController )
+
 	// Keys
 	DEFINE_KEYFIELD( m_iszPropName, FIELD_STRING, "PropName" ),
 	DEFINE_KEYFIELD( m_iszPoseParameterName, FIELD_STRING, "PoseParameterName" ),
@@ -43,8 +43,7 @@ BEGIN_DATADESC( CPoseController )
 	DEFINE_KEYFIELD( m_fFModTimeOffset, FIELD_FLOAT, "FModTimeOffset" ),
 	DEFINE_KEYFIELD( m_fFModRate, FIELD_FLOAT, "FModRate" ),
 	DEFINE_KEYFIELD( m_fFModAmplitude, FIELD_FLOAT, "FModAmplitude" ),
-	// Functions
-	DEFINE_FUNCTION( Think ),
+
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING,	"SetPoseParameterName", InputSetPoseParameterName ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetPoseValue", InputSetPoseValue ),
@@ -56,7 +55,7 @@ BEGIN_DATADESC( CPoseController )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFModAmplitude", InputSetFModAmplitude ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "RandomizeFMod", InputRandomizeFMod ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "GetFMod", InputGetFMod ),
-END_DATADESC()
+END_MAPENTITY()
 
 
 IMPLEMENT_SERVERCLASS_ST(CPoseController, DT_PoseController)

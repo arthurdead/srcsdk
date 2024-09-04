@@ -59,7 +59,7 @@ public:
 	void	InputSetDensity( inputdata_t &inputdata );
 	void	InputSetFrequency( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 
@@ -75,18 +75,11 @@ private:
 
 LINK_ENTITY_TO_CLASS( env_bubbles, CBubbling );
 
-BEGIN_DATADESC( CBubbling )
+BEGIN_MAPENTITY( CBubbling )
 
 	DEFINE_KEYFIELD( m_flSpeed, FIELD_FLOAT, "current" ),
 	DEFINE_KEYFIELD( m_density, FIELD_INTEGER, "density" ),
 	DEFINE_KEYFIELD( m_frequency, FIELD_INTEGER, "frequency" ),
-
-	DEFINE_FIELD( m_state, FIELD_INTEGER ),
-	// Let spawn restore this!
-	//	DEFINE_FIELD( m_bubbleModel, FIELD_INTEGER ),
-
-	// Function Pointers
-	DEFINE_FUNCTION( FizzThink ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Deactivate", InputDeactivate ),
@@ -95,7 +88,7 @@ BEGIN_DATADESC( CBubbling )
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetDensity", InputSetDensity ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetFrequency", InputSetFrequency ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -107,7 +100,7 @@ void CBubbling::Spawn( void )
 	SetModel( STRING( GetModelName() ) );		// Set size
 
 	// Make it invisible to client
-	SetRenderColorA( 0 );
+	SetRenderAlpha( 0 );
 
 	SetSolid( SOLID_NONE );						// Remove model & collisions
 
@@ -248,7 +241,7 @@ public:
 	void TracerThink( void );
 	void Activate( void );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	Vector m_vecEnd;
 	float  m_flDelay;
@@ -256,16 +249,11 @@ public:
 
 LINK_ENTITY_TO_CLASS( env_tracer, CEnvTracer );
 
-BEGIN_DATADESC( CEnvTracer )
+BEGIN_MAPENTITY( CEnvTracer )
 
 	DEFINE_KEYFIELD( m_flDelay, FIELD_FLOAT, "delay" ),
 
-	DEFINE_FIELD( m_vecEnd, FIELD_POSITION_VECTOR ),
-
-	// Function Pointers
-	DEFINE_FUNCTION( TracerThink ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -336,7 +324,7 @@ protected:
 	// Purpose:
 	CBaseEntity *SpawnGib( const Vector &vecShootDir, float flSpeed );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 private:
 	void InitPointGib( CGib *pGib, const Vector &vecShootDir, float flSpeed );
 	void ShootThink( void );
@@ -366,7 +354,7 @@ protected:
 	void InputShoot( inputdata_t &inputdata );
 };
 
-BEGIN_DATADESC( CGibShooter )
+BEGIN_MAPENTITY( CGibShooter )
 
 	DEFINE_KEYFIELD( m_iGibs, FIELD_INTEGER, "m_iGibs" ),
 	DEFINE_KEYFIELD( m_flGibVelocity, FIELD_FLOAT, "m_flVelocity" ),
@@ -376,12 +364,6 @@ BEGIN_DATADESC( CGibShooter )
 	DEFINE_KEYFIELD( m_flDelay, FIELD_FLOAT, "delay" ),
 	DEFINE_KEYFIELD( m_angGibRotation, FIELD_VECTOR, "gibangles" ),
 	DEFINE_KEYFIELD( m_flGibAngVelocity, FIELD_FLOAT, "gibanglevelocity"),
-	DEFINE_FIELD( m_bIsSprite, FIELD_BOOLEAN ),
-
-	DEFINE_FIELD( m_iGibCapacity, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iGibMaterial, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iGibModelIndex, FIELD_INTEGER ),
-	DEFINE_FIELD( m_nMaxGibModelFrame, FIELD_INTEGER ),
 
 	DEFINE_KEYFIELD( m_iszLightingOrigin, FIELD_STRING, "LightingOrigin" ),
 	DEFINE_KEYFIELD( m_bNoGibShadows, FIELD_BOOLEAN, "nogibshadows" ),
@@ -389,10 +371,7 @@ BEGIN_DATADESC( CGibShooter )
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,	"Shoot", InputShoot ),
 
-	// Function Pointers
-	DEFINE_FUNCTION( ShootThink ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( gibshooter, CGibShooter );
 
@@ -464,7 +443,7 @@ CGib *CGibShooter::CreateGib ( void )
 		DevWarning( 2, "GibShooter Body is <= 1!\n" );
 	}
 
-	pGib->m_nBody = random->RandomInt ( 1, m_nMaxGibModelFrame - 1 );// avoid throwing random amounts of the 0th gib. (skull).
+	pGib->SetBody( random->RandomInt ( 1, m_nMaxGibModelFrame - 1 ) );// avoid throwing random amounts of the 0th gib. (skull).
 
 	if ( m_iszLightingOrigin != NULL_STRING )
 	{
@@ -491,9 +470,7 @@ void CGibShooter::InitPointGib( CGib *pGib, const Vector &vecShootDir, float flS
 		pGib->m_lifeTime = (m_flGibLife * random->RandomFloat( 0.95, 1.05 ));	// +/- 5%
 
 		// HL1 gibs always die after a certain time, other games have to opt-in
-#ifndef HL1_DLL
 		if( HasSpawnFlags( SF_SHOOTER_STRICT_REMOVE ) )
-#endif
 		{
 			pGib->SetNextThink( gpGlobals->curtime + pGib->m_lifeTime );
 			pGib->SetThink ( &CGib::DieThink );
@@ -517,7 +494,7 @@ void CGibShooter::InitPointGib( CGib *pGib, const Vector &vecShootDir, float flS
 				pSprite->SetOwnerEntity( pGib );
 
 				pSprite->SetScale( 1 );
-				pSprite->SetTransparency( m_nRenderMode, m_clrRender->r, m_clrRender->g, m_clrRender->b, m_clrRender->a, m_nRenderFX );
+				pSprite->SetTransparency( GetRenderMode(), GetRenderColorR(), GetRenderColorG(), GetRenderColorB(), GetRenderAlpha(), GetRenderFX() );
 				pSprite->AnimateForTime( 5, m_flGibLife + 1 ); //This framerate is totally wrong
 			}
 		}
@@ -568,9 +545,7 @@ CBaseEntity *CGibShooter::SpawnGib( const Vector &vecShootDir, float flSpeed )
 
 					pPhysicsObject->ApplyTorqueCenter( torque );
 
-#ifndef HL1_DLL
 					if( HasSpawnFlags( SF_SHOOTER_STRICT_REMOVE ) )
-#endif
 					{
 						pGib->m_bForceRemove = true;
 						pGib->SetNextThink( gpGlobals->curtime + pGib->m_lifeTime );
@@ -649,7 +624,7 @@ public:
 
 	CGib		*CreateGib( void );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 
@@ -657,22 +632,18 @@ public:
 	float m_flGibScale;
 	float m_flGibGravityScale;
 
-#ifdef HL2_EPISODIC
 	float m_flMassOverride;	// allow designer to force a mass for gibs in some cases
-#endif
 };
 
-BEGIN_DATADESC( CEnvShooter )
+BEGIN_MAPENTITY( CEnvShooter )
 
 	DEFINE_KEYFIELD( m_nSkin, FIELD_INTEGER, "skin" ),
 	DEFINE_KEYFIELD( m_flGibScale, FIELD_FLOAT ,"scale" ),
 	DEFINE_KEYFIELD( m_flGibGravityScale, FIELD_FLOAT, "gibgravityscale" ),
 
-#ifdef HL2_EPISODIC
 	DEFINE_KEYFIELD( m_flMassOverride, FIELD_FLOAT, "massoverride" ),
-#endif
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( env_shooter, CEnvShooter );
@@ -752,14 +723,14 @@ CGib *CEnvShooter::CreateGib ( void )
 		bodyPart = random->RandomInt( 0, m_nMaxGibModelFrame-1 );
 	}
 
-	pGib->m_nBody = bodyPart;
+	pGib->SetBody( bodyPart );
 	pGib->SetBloodColor( DONT_BLEED );
 	pGib->m_material = m_iGibMaterial;
 
-	pGib->m_nRenderMode = m_nRenderMode;
-	pGib->m_clrRender = m_clrRender;
-	pGib->m_nRenderFX = m_nRenderFX;
-	pGib->m_nSkin = m_nSkin;
+	pGib->SetRenderMode( GetRenderMode() );
+	pGib->SetRenderColor( GetRenderColorR(), GetRenderColorG(), GetRenderColorB() );
+	pGib->SetRenderFX( GetRenderFX() );
+	pGib->SetSkin( m_nSkin );
 	pGib->m_lifeTime = gpGlobals->curtime + m_flGibLife;
 
 	pGib->SetGravity( m_flGibGravityScale );
@@ -768,10 +739,9 @@ CGib *CEnvShooter::CreateGib ( void )
 	if ( HasSpawnFlags( SF_SHOOTER_FLAMING ) )
 	{
 		// Tag an entity flame along with us
-		CEntityFlame *pFlame = CEntityFlame::Create( pGib, false );
+		CEntityFlame *pFlame = CEntityFlame::Create( pGib, pGib->m_lifeTime, false );
 		if ( pFlame != NULL )
 		{
-			pFlame->SetLifetime( pGib->m_lifeTime );
 			pGib->SetFlame( pFlame );
 		}
 	}
@@ -787,7 +757,6 @@ CGib *CEnvShooter::CreateGib ( void )
 		pGib->AddEffects( EF_NOSHADOW );
 	}
 
-#ifdef HL2_EPISODIC
 	// if a mass override is set, apply it to the gib
 	if (m_flMassOverride != 0)
 	{
@@ -797,7 +766,6 @@ CGib *CEnvShooter::CreateGib ( void )
 			pPhys->SetMass( m_flMassOverride );
 		}
 	}
-#endif
 
 	return pGib;
 }
@@ -810,7 +778,7 @@ class CRotorWashShooter : public CEnvShooter, public IRotorWashShooter
 {
 public:
 	DECLARE_CLASS( CRotorWashShooter, CEnvShooter );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void Spawn();
 
@@ -835,14 +803,12 @@ LINK_ENTITY_TO_CLASS( env_rotorshooter, CRotorWashShooter );
 //-----------------------------------------------------------------------------
 // Save/load
 //-----------------------------------------------------------------------------
-BEGIN_DATADESC( CRotorWashShooter )
+BEGIN_MAPENTITY( CRotorWashShooter )
 
 	DEFINE_KEYFIELD( m_flTimeUnderRotor,	FIELD_FLOAT ,"rotortime" ),
 	DEFINE_KEYFIELD( m_flTimeUnderRotorVariance,	FIELD_FLOAT ,"rotortimevariance" ),
-	DEFINE_FIELD( m_flLastWashStartTime,	FIELD_TIME ),
-	DEFINE_FIELD( m_flNextGibTime, FIELD_TIME ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -915,111 +881,13 @@ CBaseEntity *CRotorWashShooter::DoWashPush( float flWashStartTime, const Vector 
 }
 
 
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-class CTestEffect : public CBaseEntity
-{
-public:
-	DECLARE_CLASS( CTestEffect, CBaseEntity );
-
-	void	Spawn( void );
-	void	Precache( void );
-	// bool	KeyValue( const char *szKeyName, const char *szValue );
-	void Think( void );
-	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-
-	int		m_iLoop;
-	int		m_iBeam;
-	CBeam	*m_pBeam[24];
-	float	m_flBeamTime[24];
-	float	m_flStartTime;
-};
-
-
-LINK_ENTITY_TO_CLASS( test_effect, CTestEffect );
-
-void CTestEffect::Spawn( void )
-{
-	Precache( );
-}
-
-void CTestEffect::Precache( void )
-{
-	PrecacheModel( "sprites/lgtning.vmt" );
-}
-
-void CTestEffect::Think( void )
-{
-	int i;
-	float t = (gpGlobals->curtime - m_flStartTime);
-
-	if (m_iBeam < 24)
-	{
-		CBeam *pbeam = CBeam::BeamCreate( "sprites/lgtning.vmt", 10 );
-
-		trace_t	tr;
-
-		Vector vecSrc = GetAbsOrigin();
-		Vector vecDir = Vector( random->RandomFloat( -1.0, 1.0 ), random->RandomFloat( -1.0, 1.0 ),random->RandomFloat( -1.0, 1.0 ) );
-		VectorNormalize( vecDir );
-		UTIL_TraceLine( vecSrc, vecSrc + vecDir * 128, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr);
-
-		pbeam->PointsInit( vecSrc, tr.endpos );
-		// pbeam->SetColor( 80, 100, 255 );
-		pbeam->SetColor( 255, 180, 100 );
-		pbeam->SetWidth( 10.0 );
-		pbeam->SetScrollRate( 12 );
-
-		m_flBeamTime[m_iBeam] = gpGlobals->curtime;
-		m_pBeam[m_iBeam] = pbeam;
-		m_iBeam++;
-
-#if 0
-		Vector vecMid = (vecSrc + tr.endpos) * 0.5;
-		CBroadcastRecipientFilter filter;
-		TE_DynamicLight( filter, 0.0,
-			vecMid, 255, 180, 100, 3, 2.0, 0.0 );
-#endif
-	}
-
-	if (t < 3.0)
-	{
-		for (i = 0; i < m_iBeam; i++)
-		{
-			t = (gpGlobals->curtime - m_flBeamTime[i]) / ( 3 + m_flStartTime - m_flBeamTime[i]);
-			m_pBeam[i]->SetBrightness( 255 * t );
-			// m_pBeam[i]->SetScrollRate( 20 * t );
-		}
-		SetNextThink( gpGlobals->curtime + 0.1f );
-	}
-	else
-	{
-		for (i = 0; i < m_iBeam; i++)
-		{
-			UTIL_Remove( m_pBeam[i] );
-		}
-		m_flStartTime = gpGlobals->curtime;
-		m_iBeam = 0;
-		SetNextThink( TICK_NEVER_THINK );
-	}
-}
-
-
-void CTestEffect::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
-{
-	SetNextThink( gpGlobals->curtime + 0.1f );
-	m_flStartTime = gpGlobals->curtime;
-}
-
-
-
 // Blood effects
 class CBlood : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CBlood, CPointEntity );
 
+	void	Precache();
 	void	Spawn( void );
 	bool	KeyValue( const char *szKeyName, const char *szValue );
 
@@ -1034,7 +902,7 @@ public:
 	Vector	Direction( void );
 	Vector	BloodPosition( CBaseEntity *pActivator );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	Vector m_vecSprayDir;
 	float m_flAmount;
@@ -1045,15 +913,14 @@ private:
 
 LINK_ENTITY_TO_CLASS( env_blood, CBlood );
 
-BEGIN_DATADESC( CBlood )
+BEGIN_MAPENTITY( CBlood )
 
 	DEFINE_KEYFIELD( m_vecSprayDir, FIELD_VECTOR, "spraydir" ),
 	DEFINE_KEYFIELD( m_flAmount, FIELD_FLOAT, "amount" ),
-	DEFINE_FIELD( m_Color, FIELD_INTEGER ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "EmitBlood", InputEmitBlood ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 #define SF_BLOOD_RANDOM		0x0001
@@ -1064,12 +931,22 @@ END_DATADESC()
 #define SF_BLOOD_DROPS		0x0020
 #define SF_BLOOD_GORE		0x0040
 
+//-----------------------------------------------------------------------------
+// Precache
+//-----------------------------------------------------------------------------
+void CBlood::Precache()
+{
+	BaseClass::Precache();
+	UTIL_BloodSprayPrecache();
+}
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
 void CBlood::Spawn( void )
 {
+	Precache();
+
 	// Convert spraydir from angles to a vector
 	QAngle angSprayDir = QAngle( m_vecSprayDir.x, m_vecSprayDir.y, m_vecSprayDir.z );
 	AngleVectors( angSprayDir, &m_vecSprayDir );
@@ -1142,6 +1019,13 @@ Vector CBlood::BloodPosition( CBaseEntity *pActivator )
 	return GetLocalOrigin();
 }
 
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void UTIL_BloodSprayPrecache()
+{
+	PrecacheEffect( "bloodspray" );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose:
@@ -1237,7 +1121,6 @@ static ConCommand bloodspray( "bloodspray", CC_BloodSpray, "blood", FCVAR_CHEAT 
 //-----------------------------------------------------------------------------
 class CEnvFunnel : public CBaseEntity
 {
-	DECLARE_DATADESC();
 public:
 	DECLARE_CLASS( CEnvFunnel, CBaseEntity );
 
@@ -1249,16 +1132,6 @@ public:
 };
 
 LINK_ENTITY_TO_CLASS( env_funnel, CEnvFunnel );
-
-//---------------------------------------------------------
-// Save/Restore
-//---------------------------------------------------------
-BEGIN_DATADESC( CEnvFunnel )
-
-//	DEFINE_FIELD( m_iSprite,	FIELD_INTEGER ),
-
-END_DATADESC()
-
 
 
 void CEnvFunnel::Precache ( void )
@@ -1300,7 +1173,7 @@ public:
 	// Input handlers.
 	void	InputActivate( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 	bool	m_CanInDispenser;
@@ -1312,12 +1185,9 @@ void CEnvBeverage::Precache ( void )
 	PrecacheModel( "models/can.mdl" );
 }
 
-BEGIN_DATADESC( CEnvBeverage )
-	DEFINE_FIELD( m_CanInDispenser, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_nBeverageType, FIELD_INTEGER ),
-
+BEGIN_MAPENTITY( CEnvBeverage )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( env_beverage, CEnvBeverage );
 
@@ -1338,7 +1208,7 @@ bool CEnvBeverage::KeyValue( const char *szKeyName, const char *szValue )
 
 void CEnvBeverage::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
-	if ( m_CanInDispenser || m_iHealth <= 0 )
+	if ( m_CanInDispenser || GetHealth() <= 0 )
 	{
 		// no more cans while one is waiting in the dispenser, or if I'm out of cans.
 		return;
@@ -1349,15 +1219,15 @@ void CEnvBeverage::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 	if ( m_nBeverageType == 6 )
 	{
 		// random
-		pCan->m_nSkin = random->RandomInt( 0, 5 );
+		pCan->SetSkin( random->RandomInt( 0, 5 ) );
 	}
 	else
 	{
-		pCan->m_nSkin = m_nBeverageType;
+		pCan->SetSkin( m_nBeverageType );
 	}
 
 	m_CanInDispenser = true;
-	m_iHealth -= 1;
+	SetHealth( GetHealth() - 1 );
 
 	//SetThink (SUB_Remove);
 	//SetNextThink( gpGlobals->curtime );
@@ -1375,9 +1245,9 @@ void CEnvBeverage::Spawn( void )
 	AddEffects( EF_NODRAW );
 	m_CanInDispenser = false;
 
-	if ( m_iHealth == 0 )
+	if ( GetHealth() == 0 )
 	{
-		m_iHealth = 10;
+		SetHealth( 10 );
 	}
 }
 
@@ -1394,17 +1264,8 @@ public:
 	void	CanThink ( void );
 	void	CanTouch ( CBaseEntity *pOther );
 
-	DECLARE_DATADESC();
 };
 
-
-BEGIN_DATADESC( CItemSoda )
-
-	// Function Pointers
-	DEFINE_FUNCTION( CanThink ),
-	DEFINE_FUNCTION( CanTouch ),
-
-END_DATADESC()
 
 LINK_ENTITY_TO_CLASS( item_sodacan, CItemSoda );
 
@@ -1475,7 +1336,7 @@ class CPrecipitation : public CBaseEntity
 {
 public:
 	DECLARE_CLASS( CPrecipitation, CBaseEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	CPrecipitation();
@@ -1488,10 +1349,10 @@ public:
 
 LINK_ENTITY_TO_CLASS( func_precipitation, CPrecipitation );
 
-BEGIN_DATADESC( CPrecipitation )
+BEGIN_MAPENTITY( CPrecipitation )
 	DEFINE_KEYFIELD( m_nPrecipType, FIELD_INTEGER, "preciptype" ),
 	DEFINE_KEYFIELD( m_nSnowDustAmount, FIELD_INTEGER, "snowDustAmt" ),
-END_DATADESC()
+END_MAPENTITY()
 
 // Just send the normal entity crap
 IMPLEMENT_SERVERCLASS_ST( CPrecipitation, DT_Precipitation)
@@ -1542,7 +1403,7 @@ void CPrecipitation::Spawn( void )
 	if ( m_nPrecipType < 0 || m_nPrecipType > NUM_PRECIPITATION_TYPES )
 		m_nPrecipType = PRECIPITATION_TYPE_RAIN;
 
-	m_nRenderMode = kRenderEnvironmental;
+	SetRenderMode( kRenderEnvironmental );
 }
 
 //=========================================================
@@ -1553,7 +1414,6 @@ class CPrecipitationBlocker : public CBaseEntity
 {
 public:
 	DECLARE_CLASS( CPrecipitationBlocker, CBaseEntity );
-	DECLARE_DATADESC();
 	DECLARE_SERVERCLASS();
 
 	CPrecipitationBlocker();
@@ -1562,9 +1422,6 @@ public:
 };
 
 LINK_ENTITY_TO_CLASS( func_precipitation_blocker, CPrecipitationBlocker );
-
-BEGIN_DATADESC( CPrecipitationBlocker )
-END_DATADESC()
 
 // Just send the normal entity crap
 IMPLEMENT_SERVERCLASS_ST( CPrecipitationBlocker, DT_PrecipitationBlocker )
@@ -1589,8 +1446,20 @@ void CPrecipitationBlocker::Spawn( void )
 	SetMoveType( MOVETYPE_NONE );
 	SetModel( STRING( GetModelName() ) );		// Set size
 
-	m_nRenderMode = kRenderEnvironmental;
+	SetRenderMode( kRenderEnvironmental );
 }
+
+//--------------------------------------------------------------------------------------------------------
+class CDetailBlocker : public CServerOnlyEntity
+{
+	DECLARE_CLASS( CDetailBlocker, CServerOnlyEntity );
+public:
+
+	CDetailBlocker() : CServerOnlyEntity() {}
+	virtual ~CDetailBlocker() {}
+};
+
+LINK_ENTITY_TO_CLASS( func_detail_blocker, CDetailBlocker );
 
 //-----------------------------------------------------------------------------
 // EnvWind - global wind info
@@ -1605,7 +1474,7 @@ public:
 	void	WindThink( void );
 	int		UpdateTransmitState( void );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 private:
@@ -1614,7 +1483,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( env_wind, CEnvWind );
 
-BEGIN_DATADESC( CEnvWind )
+BEGIN_MAPENTITY( CEnvWind )
 
 	DEFINE_KEYFIELD( m_EnvWindShared.m_iMinWind, FIELD_INTEGER, "minwind" ),
 	DEFINE_KEYFIELD( m_EnvWindShared.m_iMaxWind, FIELD_INTEGER, "maxwind" ),
@@ -1624,21 +1493,12 @@ BEGIN_DATADESC( CEnvWind )
 	DEFINE_KEYFIELD( m_EnvWindShared.m_flMaxGustDelay, FIELD_FLOAT, "maxgustdelay" ),
 	DEFINE_KEYFIELD( m_EnvWindShared.m_iGustDirChange, FIELD_INTEGER, "gustdirchange" ),
 	DEFINE_KEYFIELD( m_EnvWindShared.m_flGustDuration, FIELD_FLOAT, "gustduration" ),
-//	DEFINE_KEYFIELD( m_EnvWindShared.m_iszGustSound, FIELD_STRING, "gustsound" ),
-
-// Just here to quiet down classcheck
-	// DEFINE_FIELD( m_EnvWindShared, CEnvWindShared ),
-
-	DEFINE_FIELD( m_EnvWindShared.m_iWindDir, FIELD_INTEGER ),
-	DEFINE_FIELD( m_EnvWindShared.m_flWindSpeed, FIELD_FLOAT ),
+	DEFINE_KEYFIELD( m_EnvWindShared.m_iszGustSound, FIELD_STRING, "gustsound" ),
 
 	DEFINE_OUTPUT( m_EnvWindShared.m_OnGustStart, "OnGustStart" ),
 	DEFINE_OUTPUT( m_EnvWindShared.m_OnGustEnd,	"OnGustEnd" ),
 
-	// Function Pointers
-	DEFINE_FUNCTION( WindThink ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 
 BEGIN_SEND_TABLE_NOBASE(CEnvWindShared, DT_EnvWindShared)
@@ -1724,25 +1584,20 @@ public:
 
 	CNetworkVar( bool, m_bEmit );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 };
 
 LINK_ENTITY_TO_CLASS( env_embers, CEmbers );
 
 //Data description
-BEGIN_DATADESC( CEmbers )
+BEGIN_MAPENTITY( CEmbers )
 
 	DEFINE_KEYFIELD( m_nDensity,	FIELD_INTEGER, "density" ),
 	DEFINE_KEYFIELD( m_nLifetime,	FIELD_INTEGER, "lifetime" ),
 	DEFINE_KEYFIELD( m_nSpeed,		FIELD_INTEGER, "speed" ),
 
-	DEFINE_FIELD( m_bEmit,	FIELD_BOOLEAN ),
-
-	//Function pointers
-	DEFINE_FUNCTION( EmberUse ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 
 //Data table
@@ -1762,8 +1617,8 @@ void CEmbers::Spawn( void )
 	SetModel( STRING( GetModelName() ) );
 
 	SetSolid( SOLID_NONE );
-	SetRenderColorA( 0 );
-	m_nRenderMode	= kRenderTransTexture;
+	SetRenderAlpha( 0 );
+	SetRenderMode( kRenderTransTexture );
 
 	SetUse( &CEmbers::EmberUse );
 
@@ -1827,7 +1682,7 @@ public:
 	void	Spawn( void );
 	void	Precache( void );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 protected:
 
@@ -1838,17 +1693,12 @@ protected:
 
 LINK_ENTITY_TO_CLASS( env_physwire, CPhysicsWire );
 
-BEGIN_DATADESC( CPhysicsWire )
+BEGIN_MAPENTITY( CPhysicsWire )
 
 	DEFINE_KEYFIELD( m_nDensity,	FIELD_INTEGER, "Density" ),
 //	DEFINE_KEYFIELD( m_frequency, FIELD_INTEGER, "frequency" ),
 
-//	DEFINE_FIELD( m_flFoo, FIELD_FLOAT ),
-
-	// Function Pointers
-//	DEFINE_FUNCTION( WireThink ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -1936,20 +1786,20 @@ public:
 	// Input handlers
 	void	InputFire( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	float	m_flScale;
 	string_t m_iszParentAttachment;
 };
 
-BEGIN_DATADESC( CEnvMuzzleFlash )
+BEGIN_MAPENTITY( CEnvMuzzleFlash )
 
 	DEFINE_KEYFIELD( m_flScale, FIELD_FLOAT, "scale" ),
 	DEFINE_KEYFIELD( m_iszParentAttachment, FIELD_STRING, "parentattachment" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Fire", InputFire ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( env_muzzleflash, CEnvMuzzleFlash );
@@ -2003,14 +1853,14 @@ protected:
 
 	float	m_flScale;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
-BEGIN_DATADESC( CEnvSplash )
+BEGIN_MAPENTITY( CEnvSplash )
 	DEFINE_KEYFIELD( m_flScale, FIELD_FLOAT, "scale" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Splash", InputSplash ),
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( env_splash, CEnvSplash );
 
@@ -2144,10 +1994,10 @@ public:
 	EHANDLE m_hTarget;
 
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
-BEGIN_DATADESC( CEnvGunfire )
+BEGIN_MAPENTITY( CEnvGunfire )
 	DEFINE_KEYFIELD( m_iMinBurstSize, FIELD_INTEGER, "minburstsize" ),
 	DEFINE_KEYFIELD( m_iMaxBurstSize, FIELD_INTEGER, "maxburstsize" ),
 	DEFINE_KEYFIELD( m_flMinBurstDelay, FIELD_TIME, "minburstdelay" ),
@@ -2160,18 +2010,9 @@ BEGIN_DATADESC( CEnvGunfire )
 	DEFINE_KEYFIELD( m_flBias, FIELD_FLOAT, "bias" ),
 	DEFINE_KEYFIELD( m_bCollide, FIELD_BOOLEAN, "collisions" ),
 
-	DEFINE_FIELD( m_iShotsRemaining, FIELD_INTEGER ),
-	DEFINE_FIELD( m_vecSpread, FIELD_VECTOR ),
-	DEFINE_FIELD( m_vecTargetPosition, FIELD_VECTOR ),
-	DEFINE_FIELD( m_flTargetDist, FIELD_FLOAT ),
-
-	DEFINE_FIELD( m_hTarget, FIELD_EHANDLE ),
-
-	DEFINE_THINKFUNC( ShootThink ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
-END_DATADESC()
+END_MAPENTITY()
 LINK_ENTITY_TO_CLASS( env_gunfire, CEnvGunfire );
 
 //-----------------------------------------------------------------------------
@@ -2338,16 +2179,6 @@ void CEnvGunfire::InputDisable( inputdata_t &inputdata )
 	SetThink( NULL );
 }
 
-//-----------------------------------------------------------------------------
-// Quadratic spline beam effect
-//-----------------------------------------------------------------------------
-BEGIN_DATADESC( CEnvQuadraticBeam )
-	DEFINE_FIELD( m_targetPosition, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_controlPosition, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_scrollRate, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flWidth, FIELD_FLOAT ),
-END_DATADESC()
-
 LINK_ENTITY_TO_CLASS( env_quadraticbeam, CEnvQuadraticBeam );
 
 IMPLEMENT_SERVERCLASS_ST( CEnvQuadraticBeam, DT_QuadraticBeam )
@@ -2360,7 +2191,7 @@ END_SEND_TABLE()
 void CEnvQuadraticBeam::Spawn()
 {
 	BaseClass::Spawn();
-	m_nRenderMode = kRenderTransAdd;
+	SetRenderMode( kRenderTransAdd );
 	SetRenderColor( 255, 255, 255 );
 }
 
@@ -2384,10 +2215,7 @@ void EffectsPrecache( void *pUser )
 	CBaseEntity::PrecacheScriptSound( "BaseExplosionEffect.Sound" );
 	CBaseEntity::PrecacheScriptSound( "Splash.SplashSound" );
 
-	if ( gpGlobals->maxClients > 1 )
-	{
-		CBaseEntity::PrecacheScriptSound( "HudChat.Message" );
-	}
+	CBaseEntity::PrecacheScriptSound( "HudChat.Message" );
 }
 
 PRECACHE_REGISTER_FN( EffectsPrecache );
@@ -2411,19 +2239,19 @@ private:
 
 	void DoViewPunch();
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS( env_viewpunch, CEnvViewPunch );
 
-BEGIN_DATADESC( CEnvViewPunch )
+BEGIN_MAPENTITY( CEnvViewPunch )
 
 	DEFINE_KEYFIELD( m_angViewPunch, FIELD_VECTOR, "punchangle" ),
 	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "radius" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "ViewPunch", InputViewPunch ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 #define SF_PUNCH_EVERYONE	0x0001		// Don't check radius
 #define SF_PUNCH_IN_AIR		0x0002		// Punch players in air

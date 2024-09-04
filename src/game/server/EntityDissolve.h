@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "baseentity.h"
+
 class CEntityDissolve : public CBaseEntity 
 {
 public:
@@ -38,7 +40,7 @@ public:
 	int		GetMagnitude( void ) { return m_nMagnitude;	}
 	int		GetDissolveType( void ) { return m_nDissolveType;	}
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CNetworkVar( float, m_flStartTime );
 	CNetworkVar( float, m_flFadeInStart );

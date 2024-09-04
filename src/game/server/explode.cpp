@@ -28,7 +28,7 @@ public:
 	void Spawn( void );
 	void Think( void );
 	void Touch( CBaseEntity *pOther );
-	int ObjectCaps( void ) { return FCAP_DONT_SAVE; }
+	int ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
 };
 
 LINK_ENTITY_TO_CLASS( spark_shower, CShower );
@@ -112,7 +112,7 @@ public:
 	// Input handlers
 	void InputExplode( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	int m_iMagnitude;// how large is the fireball? how much damage?
 	int m_iRadiusOverride;// For use when m_iMagnitude results in larger radius than designer desires.
@@ -131,27 +131,20 @@ public:
 
 LINK_ENTITY_TO_CLASS( env_explosion, CEnvExplosion );
 
-BEGIN_DATADESC( CEnvExplosion )
+BEGIN_MAPENTITY( CEnvExplosion )
 
 	DEFINE_KEYFIELD( m_iMagnitude, FIELD_INTEGER, "iMagnitude" ),
 	DEFINE_KEYFIELD( m_iRadiusOverride, FIELD_INTEGER, "iRadiusOverride" ),
-	DEFINE_FIELD( m_spriteScale, FIELD_INTEGER ),
+
 	DEFINE_KEYFIELD( m_flDamageForce, FIELD_FLOAT, "DamageForce" ),
-	DEFINE_FIELD( m_iszFireballSprite, FIELD_STRING ),
-	DEFINE_FIELD( m_sFireballSprite, FIELD_SHORT ),
-	DEFINE_FIELD( m_hInflictor, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_iCustomDamageType, FIELD_INTEGER ),
 
-	DEFINE_FIELD( m_iClassIgnore, FIELD_INTEGER ),
+	DEFINE_KEYFIELD( m_iClassIgnore, FIELD_INTEGER, "ignoredClass" ),
 	DEFINE_KEYFIELD( m_hEntityIgnore, FIELD_EHANDLE, "ignoredEntity" ),
-
-	// Function Pointers
-	DEFINE_THINKFUNC( Smoke ),
 
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "Explode", InputExplode),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 bool CEnvExplosion::KeyValue( const char *szKeyName, const char *szValue )
@@ -174,6 +167,9 @@ void CEnvExplosion::Precache( void )
 	{
 		m_sFireballSprite = PrecacheModel( STRING( m_iszFireballSprite ) );
 	}
+
+	PrecacheParticleSystem( "freeze_explosion" ) ;
+	PrecacheScriptSound( "explode_3" );
 }
 
 void CEnvExplosion::Spawn( void )
@@ -258,7 +254,10 @@ void CEnvExplosion::InputExplode( inputdata_t &inputdata )
 	// draw decal
 	if (! ( m_spawnflags & SF_ENVEXPLOSION_NODECAL))
 	{
-		UTIL_DecalTrace( &tr, "Scorch" );
+		if ( ! ( m_spawnflags & SF_ENVEXPLOSION_ICE ))
+			UTIL_DecalTrace( &tr, "Scorch" );
+		else
+			UTIL_DecalTrace( &tr, "Ice_Explosion_Decal" );
 	}
 
 	// It's stupid that this entity's spawnflags and the flags for the
@@ -282,11 +281,11 @@ void CEnvExplosion::InputExplode( inputdata_t &inputdata )
 		nFlags |= TE_EXPLFLAG_ROTATE;
 	}
 
-	if ( m_nRenderMode == kRenderTransAlpha )
+	if ( GetRenderMode() == kRenderTransAlpha )
 	{
 		nFlags |= TE_EXPLFLAG_DRAWALPHA;
 	}
-	else if ( m_nRenderMode != kRenderTransAdd )
+	else if ( GetRenderMode() != kRenderTransAdd )
 	{
 		nFlags |= TE_EXPLFLAG_NOADDITIVE;
 	}
@@ -300,10 +299,19 @@ void CEnvExplosion::InputExplode( inputdata_t &inputdata )
 	{
 		nFlags |= TE_EXPLFLAG_NODLIGHTS;
 	}
+	else
+	{
+		nFlags |= TE_EXPLFLAG_DLIGHT;
+	}
 
 	if ( m_spawnflags & SF_ENVEXPLOSION_NOFIREBALLSMOKE )
 	{
 		nFlags |= TE_EXPLFLAG_NOFIREBALLSMOKE;
+	}
+
+	if ( m_spawnflags & SF_ENVEXPLOSION_ICE )
+	{
+		nFlags |= TE_EXPLFLAG_ICE;
 	}
 
 	//Get the damage override if specified
@@ -407,7 +415,7 @@ void ExplosionCreate( const Vector &center, const QAngle &angles,
 	}
 
 	variant_t emptyVariant;
-	pExplosion->m_nRenderMode = kRenderTransAdd;
+	pExplosion->SetRenderMode( kRenderTransAdd );
 	pExplosion->SetOwnerEntity( pOwner );
 	pExplosion->Spawn();
 	pExplosion->m_hInflictor = pInflictor;

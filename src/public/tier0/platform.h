@@ -403,6 +403,8 @@ typedef void * HINSTANCE;
 	#define mallocsize( _p )	( malloc_usable_size( _p ) )
 #elif defined(OSX)
 	#define mallocsize( _p )	( malloc_size( _p ) )
+#elif defined _WIN32
+	#define mallocsize( _p )		( _msize( _p ) )
 #else
 #error
 #endif
@@ -625,7 +627,7 @@ typedef void * HINSTANCE;
 #define _wtoi(arg) wcstol(arg, NULL, 10)
 #define _wtoi64(arg) wcstoll(arg, NULL, 10)
 
-typedef uint32 HMODULE;
+typedef void * HMODULE;
 typedef void *HANDLE;
 #endif
 
@@ -944,7 +946,7 @@ inline uint64 Plat_Rdtsc()
 {
 #if defined( _WIN64 )
 	return ( uint64 )__rdtsc();
-#elif defined( _WIN32 )
+#elif defined( _WIN32 ) && !defined GNUC
   #if defined( _MSC_VER ) && ( _MSC_VER >= 1400 )
 	return ( uint64 )__rdtsc();
   #else
@@ -1363,5 +1365,9 @@ extern "C" int V_tier0_stricmp(const char *s1, const char *s2 );
 #define strcmpi(s1,s2) V_tier0_stricmp( s1, s2 )
 #endif
 
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL nullptr
 
 #endif /* PLATFORM_H */

@@ -50,10 +50,10 @@ public:
 	// Touch list...
 	virtual void	ResetTouchList( void );
 	virtual bool	AddToTouched( const trace_t &tr, const Vector& impactvelocity );
+	virtual void	SetGroundNormal( const Vector& groundNormal );
  	virtual void	ProcessImpacts( void );
 
 	virtual bool	PlayerFallingDamage( void );
-	virtual void	PlayerSetAnimation( PLAYER_ANIM eAnim );
 
 	// Numbered line printf
 	virtual void	Con_NPrintf( int idx, char const* fmt, ... );
@@ -82,6 +82,9 @@ private:
 	};
 
 	CUtlVector<touchlist_t>	m_TouchList;
+
+	Vector m_collisionNormal;
+	Vector m_groundNormal;
 };
 
 
@@ -91,9 +94,9 @@ private:
 
 IMPLEMENT_MOVEHELPER();
 
+static CMoveHelperServer s_MoveHelperServer;
 IMoveHelperServer* MoveHelperServer()
 {
-	static CMoveHelperServer s_MoveHelperServer;
 	return &s_MoveHelperServer;
 }
 
@@ -168,6 +171,10 @@ char const* CMoveHelperServer::GetName( EntityHandle_t handle ) const
 void CMoveHelperServer::ResetTouchList( void )
 {
 	m_TouchList.RemoveAll();
+
+	// Track collision normal
+	m_collisionNormal.Init();
+	m_groundNormal.Init();
 }
 
 
@@ -189,6 +196,9 @@ bool CMoveHelperServer::AddToTouched( const trace_t &tr, const Vector& impactvel
 		return false;
 	}
 
+	// Track collision normal
+	m_collisionNormal += tr.plane.normal;
+
 	// Check for duplicate entities
 	for ( int j = m_TouchList.Size(); --j >= 0; )
 	{
@@ -205,6 +215,14 @@ bool CMoveHelperServer::AddToTouched( const trace_t &tr, const Vector& impactvel
 	return true;
 }
 
+//-----------------------------------------------------------------------------
+// When the ground is hit, update the normal
+//-----------------------------------------------------------------------------
+
+void CMoveHelperServer::SetGroundNormal( const Vector& groundNormal )
+{
+	m_groundNormal = groundNormal;
+}
 
 //-----------------------------------------------------------------------------
 // After we built the touch list, deal with all the impacts...
@@ -257,6 +275,18 @@ void CMoveHelperServer::ProcessImpacts( void )
 
 	// Restore the velocity
 	m_pHostPlayer->SetAbsVelocity( vel );
+
+	// Track collision normal
+	if ( !m_collisionNormal.IsZero() )
+	{
+		m_collisionNormal.NormalizeInPlace();
+		m_pHostPlayer->m_movementCollisionNormal = m_collisionNormal;
+	}		  
+
+	if ( !m_groundNormal.IsZero() )
+	{
+		m_pHostPlayer->m_groundNormal = m_groundNormal;
+	}
 
 	// So no stuff is ever left over, sigh...
 	ResetTouchList();
@@ -387,7 +417,7 @@ bool CMoveHelperServer::PlayerFallingDamage( void )
 
     }
 
-	if ( m_pHostPlayer->m_iHealth <= 0 )
+	if ( m_pHostPlayer->GetHealth() <= 0 )
 	{
 		if ( g_pGameRules->FlPlayerFallDeathDoesScreenFade( m_pHostPlayer ) )
 		{
@@ -398,16 +428,6 @@ bool CMoveHelperServer::PlayerFallingDamage( void )
 	}
 
 	return(true);
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Sets an animation in the player.
-// Input  : eAnim - Animation to set.
-//-----------------------------------------------------------------------------
-void CMoveHelperServer::PlayerSetAnimation( PLAYER_ANIM eAnim )
-{
-	m_pHostPlayer->SetAnimation( eAnim );
 }
 
 bool CMoveHelperServer::IsWorldEntity( const CBaseHandle &handle )

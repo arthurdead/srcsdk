@@ -39,7 +39,7 @@ void CDamageModifier::RemoveModifier()
 	if ( m_hEnt.Get() )
 	{
 		m_hEnt->m_DamageModifiers.FindAndRemove( this );
-		m_hEnt = 0;
+		m_hEnt = NULL;
 	}
 }
 

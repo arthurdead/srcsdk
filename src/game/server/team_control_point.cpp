@@ -15,14 +15,9 @@
 #include "engine/IEngineSound.h"
 #include "soundenvelope.h"
 
-#ifdef TF_DLL
-#include "tf_shareddefs.h"
-#include "tf_gamerules.h"
-#endif
-
 #define CONTROL_POINT_UNLOCK_THINK			"UnlockThink"
 
-BEGIN_DATADESC(CTeamControlPoint)
+BEGIN_MAPENTITY(CTeamControlPoint)
 	DEFINE_KEYFIELD( m_iszPrintName,			FIELD_STRING,	"point_printname" ),
 	DEFINE_KEYFIELD( m_iCPGroup,				FIELD_INTEGER,	"point_group" ),
 	DEFINE_KEYFIELD( m_iDefaultOwner,			FIELD_INTEGER,	"point_default_owner" ),
@@ -36,18 +31,6 @@ BEGIN_DATADESC(CTeamControlPoint)
 	DEFINE_KEYFIELD( m_iszCaptureInterrupted,	FIELD_STRING,	"point_capture_interrupted_sound" ),
 	DEFINE_KEYFIELD( m_bRandomOwnerOnRestart,	FIELD_BOOLEAN,	"random_owner_on_restart" ),
 	DEFINE_KEYFIELD( m_bLocked,					FIELD_BOOLEAN,	"point_start_locked" ),
-
-	DEFINE_FUNCTION( UnlockThink ),
-
-//	DEFINE_FIELD( m_iTeam, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_iIndex, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_TeamData, CUtlVector < perteamdata_t > ),
-//	DEFINE_FIELD( m_bPointVisible, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_bActive, FIELD_BOOLEAN ),
-//	DEFINE_FIELD( m_iszName, FIELD_STRING ),
-//	DEFINE_FIELD( m_bStartDisabled, FIELD_BOOLEAN ),
-//	DEFINE_FIELD( m_flLastContestedAt, FIELD_FLOAT ),
-//	DEFINE_FIELD( m_pCaptureInProgressSound, CSoundPatch ),
 
 	DEFINE_INPUTFUNC( FIELD_INTEGER,	"SetOwner",			InputSetOwner ),
 	DEFINE_INPUTFUNC( FIELD_VOID,		"ShowModel",		InputShowModel ),
@@ -68,8 +51,7 @@ BEGIN_DATADESC(CTeamControlPoint)
 
 	DEFINE_OUTPUT(	m_OnUnlocked, "OnUnlocked" ),
 
-	DEFINE_THINKFUNC( AnimThink ),
-END_DATADESC();
+END_MAPENTITY();
 
 LINK_ENTITY_TO_CLASS( team_control_point, CTeamControlPoint );
 
@@ -84,9 +66,7 @@ CTeamControlPoint::CTeamControlPoint()
 	m_bLocked = false;
 	m_flUnlockTime = -1;
 
-#ifdef  TF_DLL
 	UseClientSideAnimation();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -101,7 +81,6 @@ void CTeamControlPoint::Spawn( void )
 		m_iDefaultOwner = TEAM_UNASSIGNED;
 	}
 
-#ifdef TF_DLL
 	if ( m_iszCaptureStartSound == NULL_STRING )
 	{
 		m_iszCaptureStartSound = AllocPooledString( "Hologram.Start" );
@@ -118,7 +97,6 @@ void CTeamControlPoint::Spawn( void )
 	{
 		m_iszCaptureInterrupted = AllocPooledString( "Hologram.Interrupted" );
 	}
-#endif
 
 	Precache();
 
@@ -268,10 +246,8 @@ void CTeamControlPoint::Precache( void )
 		PrecacheScriptSound( STRING( m_iszWarnSound ) );
 	}
 
-#ifdef TF_DLL
 	PrecacheScriptSound( "Announcer.ControlPointContested" );
 	PrecacheScriptSound( "Announcer.ControlPointContested_Neutral" );
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -308,14 +284,12 @@ void CTeamControlPoint::HandleScoring( int iTeam )
 		CTeamControlPointMaster *pMaster = g_hControlPointMasters.Count() ? g_hControlPointMasters[0] : NULL;
 		if ( pMaster && !pMaster->WouldNewCPOwnerWinGame( this, iTeam ) )
 		{
-#ifdef TF_DLL
 			if ( TeamplayRoundBasedRules()->GetGameType() == TF_GAMETYPE_ESCORT )
 			{
 				CBroadcastRecipientFilter filter;
 				EmitSound( filter, entindex(), "Hud.EndRoundScored" );
 			}
 			else
-#endif
 			{
 				CTeamRecipientFilter filter( iTeam );
 				EmitSound( filter, entindex(), "Hud.EndRoundScored" );
@@ -639,7 +613,7 @@ void CTeamControlPoint::InternalSetOwner( int iCapTeam, bool bMakeSound, int iNu
 			// Make the members of our old team say something
 			for ( int i = 1; i <= gpGlobals->maxClients; i++ )
 			{
-				CBaseMultiplayerPlayer *pPlayer = ToBaseMultiplayerPlayer( UTIL_PlayerByIndex( i ) );
+				CBaseExpresserPlayer *pPlayer = ToBaseExpresserPlayer( UTIL_PlayerByIndex( i ) );
 				if ( !pPlayer )
 					continue;
 				if ( pPlayer->GetTeamNumber() == iOldTeam )
@@ -655,15 +629,8 @@ void CTeamControlPoint::InternalSetOwner( int iCapTeam, bool bMakeSound, int iNu
 
 			Assert( playerIndex > 0 && playerIndex <= gpGlobals->maxClients );
 
-			CBaseMultiplayerPlayer *pPlayer = ToBaseMultiplayerPlayer( UTIL_PlayerByIndex( playerIndex ) );
+			CBasePlayer *pPlayer = ToBasePlayer( UTIL_PlayerByIndex( playerIndex ) );
 			PlayerCapped( pPlayer );
-
-#ifdef TF_DLL
-			if ( TFGameRules() && TFGameRules()->IsHolidayActive( kHoliday_EOTL ) )
-			{
-				TFGameRules()->DropBonusDuck( pPlayer->GetAbsOrigin(), ToTFPlayer( pPlayer ), NULL, NULL, false, true );
-			}
-#endif
 		}
 
 		// Remap team to get first game team = 1
@@ -743,7 +710,7 @@ void CTeamControlPoint::SendCapString( int iCapTeam, int iNumCappingPlayers, int
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTeamControlPoint::CaptureBlocked( CBaseMultiplayerPlayer *pPlayer, CBaseMultiplayerPlayer *pVictim )
+void CTeamControlPoint::CaptureBlocked( CBasePlayer *pPlayer, CBasePlayer *pVictim )
 {
 	if( strlen( STRING(m_iszPrintName) ) <= 0 )
 		return;

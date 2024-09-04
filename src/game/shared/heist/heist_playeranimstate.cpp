@@ -22,7 +22,7 @@ CHeistPlayerAnimState* CreateHeistPlayerAnimState(CHeistPlayer *pPlayer)
 {
 	MDLCACHE_CRITICAL_SECTION();
 
-	MultiPlayerMovementData_t movementData;
+	PlayerMovementData_t movementData;
 	movementData.m_flBodyYawRate = 720.0f;
 	movementData.m_flRunSpeed = HEIST_RUN_SPEED;
 	movementData.m_flWalkSpeed = HEIST_WALK_SPEED;
@@ -38,8 +38,8 @@ CHeistPlayerAnimState::CHeistPlayerAnimState()
 	m_pHeistPlayer = NULL;
 }
 
-CHeistPlayerAnimState::CHeistPlayerAnimState(CBasePlayer *pPlayer, MultiPlayerMovementData_t &movementData)
-	: CMultiPlayerAnimState( pPlayer, movementData )
+CHeistPlayerAnimState::CHeistPlayerAnimState(CBasePlayer *pPlayer, PlayerMovementData_t &movementData)
+	: CPlayerAnimState( pPlayer, movementData )
 {
 	m_pHeistPlayer = NULL;
 }

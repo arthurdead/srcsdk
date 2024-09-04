@@ -10,6 +10,8 @@
 
 #include "tier0/platform.h"
 #include "mathlib/vector.h"
+#include "ehandle.h"
+#include "util_shared.h"
 
 // this system provides several piece of functionality to ai or other systems which wish to do
 // traces and other trace-like queries. 

@@ -32,6 +32,7 @@
 #include "toolframework/itoolentity.h"
 #include "tier0/threadtools.h"
 #include "clientalphaproperty.h"
+#include "map_entity.h"
 
 class C_Team;
 class IPhysicsObject;
@@ -71,7 +72,6 @@ using ResponseRules::IResponseSystem;
 
 #define		INVALID_AIMENTS_LIST_HANDLE		(AimEntsListHandle_t)~0
 
-extern void RecvProxy_IntToColor32( const CRecvProxyData *pData, void *pStruct, void *pOut );
 extern void RecvProxy_LocalVelocity( const CRecvProxyData *pData, void *pStruct, void *pOut );
 
 enum CollideType_t
@@ -166,10 +166,9 @@ struct thinkfunc_t
 	C_BaseEntity::CreatePredicted( __FILE__, __LINE__, className __VA_OPT__(, __VA_ARGS__) );
 
 // Entity flags that only exist on the client.
-#define ENTCLIENTFLAG_CLIENTONLY				0x0001
-#define ENTCLIENTFLAG_GETTINGSHADOWRENDERBOUNDS	0x0002		// Tells us if we're getting the real ent render bounds or the shadow render bounds.
-#define ENTCLIENTFLAG_DONTUSEIK					0x0004		// Don't use IK on this entity even if its model has IK.
-#define ENTCLIENTFLAG_ALWAYS_INTERPOLATE		0x0008		// Used by view models.
+#define ENTCLIENTFLAG_GETTINGSHADOWRENDERBOUNDS	0x0001		// Tells us if we're getting the real ent render bounds or the shadow render bounds.
+#define ENTCLIENTFLAG_DONTUSEIK					0x0002		// Don't use IK on this entity even if its model has IK.
+#define ENTCLIENTFLAG_ALWAYS_INTERPOLATE		0x0004		// Used by view models.
 
 enum entity_list_ids_t
 {
@@ -194,12 +193,11 @@ class C_BaseEntity : public IClientEntityEx
 	friend void cc_cl_interp_all_changed( IConVar *pConVar, const char *pOldString, float flOldValue );
 
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLIENTCLASS();
 	DECLARE_PREDICTABLE();
 
 	C_BaseEntity();
-	C_BaseEntity( bool bClientOnly );
 
 protected:
 	// Use UTIL_Remove to delete!
@@ -312,6 +310,8 @@ protected:
 public:
 	virtual bool InitializeAsClientEntity();
 
+	virtual void PostConstructor( const char *szClassname );
+
 public:
 	// memory handling, uses calloc so members are zero'd out on instantiation
     void							*operator new( size_t stAllocateBlock );
@@ -336,7 +336,7 @@ public:
 public:
 
 	virtual void SetRefEHandle( const CBaseHandle &handle );
-	virtual const CBaseHandle& GetRefEHandle() const;
+	virtual const EHANDLE& GetRefEHandle() const;
 
 	void					SetToolHandle( HTOOLHANDLE handle );
 	HTOOLHANDLE				GetToolHandle() const;
@@ -926,6 +926,11 @@ public:
 
 	int								SaveData( const char *context, int slot, int type );
 	virtual int						RestoreData( const char *context, int slot, int type );
+
+	// Called after restoring data into prediction slots. This function is used in place of proxies
+	// on the variables, so if some variable like m_nModelIndex needs to update other state (like 
+	// the model pointer), it is done here.
+	void OnPostRestoreData();
 
 	virtual char const *			DamageDecal( int bitsDamageType, int gameMaterial );
 	virtual void					DecalTrace( trace_t *pTrace, char const *decalName );
@@ -1577,10 +1582,11 @@ public:
 protected:
 	int								m_nFXComputeFrame;
 
+private:
 	// FIXME: Should I move the functions handling these out of C_ClientEntity
 	// and into C_BaseEntity? Then we could make these private.
 	// Client handle
-	CBaseHandle m_RefEHandle;	// Reference ehandle. Used to generate ehandles off this entity.
+	EHANDLE m_RefEHandle;	// Reference ehandle. Used to generate ehandles off this entity.
 
 private:
 	// Set by tools if this entity should route "info" to various tools listening to HTOOLENTITIES
@@ -2264,6 +2270,11 @@ inline RenderFx_t CBaseEntity::GetRenderFX() const
 	return m_pClientAlphaProperty->GetRenderFX();
 }
 
+inline float CBaseEntity::GetOldSimulationTime() const
+{
+	return m_flOldSimulationTime;
+}
+
 //-----------------------------------------------------------------------------
 // checks to see if the entity is marked for deletion
 //-----------------------------------------------------------------------------
@@ -2503,7 +2514,7 @@ FORCEINLINE int CPredictableList::GetPredictableCount( void ) const
 	return m_Predictables.Count();
 }
 
-extern CPredictableList *GetPredictables( int nSlot );
+extern CPredictableList *GetPredictables( );
 
 // To temporarily muck with gpGlobals->curtime
 class CCurTimeScopeGuard

@@ -113,7 +113,7 @@ class CNPC_VehicleDriver : public CAI_BaseNPC
 {
 	DECLARE_CLASS( CNPC_VehicleDriver, CAI_BaseNPC );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DEFINE_CUSTOM_AI;
 
 	CNPC_VehicleDriver( void );

@@ -8,6 +8,12 @@
 #define FUNC_LADDER_H
 #pragma once
 
+#ifdef GAME_DLL
+#include "baseentity.h"
+#else
+#include "c_baseentity.h"
+#endif
+
 #if defined( CLIENT_DLL )
 #define CFuncLadder C_FuncLadder
 #define CInfoLadderDismount C_InfoLadderDismount
@@ -36,7 +42,7 @@ public:
 
 	DECLARE_CLASS( CFuncLadder, CBaseEntity );
 	DECLARE_NETWORKCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CFuncLadder();
 	~CFuncLadder();

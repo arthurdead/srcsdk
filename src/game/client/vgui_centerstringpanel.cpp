@@ -20,12 +20,14 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-
-#ifdef TF_CLIENT_DLL
 static ConVar		scr_centertime( "scr_centertime", "5" );
-#else
-static ConVar		scr_centertime( "scr_centertime", "2" );
-#endif
+
+static CCenterPrint g_CenterString;
+CCenterPrint *GetCenterPrint()
+{
+	return &g_CenterString;
+}
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CCenterPrint, ICenterPrint, VCENTERPRINT_INTERFACE_VERSION, g_CenterString );
 
 //-----------------------------------------------------------------------------
 // Purpose: Implements Center String printing
@@ -303,8 +305,3 @@ void CCenterPrint::Destroy( void )
 		vguiCenterString = NULL;
 	}
 }
-
-static CCenterPrint g_CenterString;
-CCenterPrint *internalCenterPrint = &g_CenterString;
-
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CCenterPrint, ICenterPrint, VCENTERPRINT_INTERFACE_VERSION, g_CenterString );

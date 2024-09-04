@@ -14,18 +14,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-BEGIN_DATADESC( CAI_BaseFlyingBot )
-
-	DEFINE_FIELD( m_vCurrentVelocity,			FIELD_VECTOR),
-	DEFINE_FIELD( m_vCurrentAngularVelocity, FIELD_VECTOR ),
-	DEFINE_FIELD( m_vCurrentBanking,			FIELD_VECTOR),
-	DEFINE_FIELD( m_vNoiseMod,				FIELD_VECTOR),
-	DEFINE_FIELD( m_fHeadYaw,					FIELD_FLOAT),
-	DEFINE_FIELD( m_vLastPatrolDir,			FIELD_VECTOR),
-
-END_DATADESC()
-
-
 //------------------------------------------------------------------------------
 // Purpose : Override to return correct velocity
 // Input   :
@@ -97,7 +85,7 @@ Vector CAI_BaseFlyingBot::VelocityToAvoidObstacles(float flInterval)
 	trace_t tr;
 	Vector vTravelDir = m_vCurrentVelocity*flInterval;
 	Vector endPos = GetAbsOrigin() + vTravelDir;
-	AI_TraceEntity( this, GetAbsOrigin(), endPos, MASK_NPCSOLID|CONTENTS_WATER, &tr );
+	AI_TraceEntity( this, GetAbsOrigin(), endPos, GetAITraceMask()|CONTENTS_WATER, &tr );
 	if (tr.fraction != 1.0)
 	{	
 		// Bounce off in normal 
@@ -110,7 +98,7 @@ Vector CAI_BaseFlyingBot::VelocityToAvoidObstacles(float flInterval)
 	// --------------------------------
 	float flMinGroundDist = MinGroundDist();
 	AI_TraceLine(GetAbsOrigin(), GetAbsOrigin() + Vector(0, 0, -flMinGroundDist), 
-		MASK_NPCSOLID_BRUSHONLY|CONTENTS_WATER, this, COLLISION_GROUP_NONE, &tr);
+		GetAITraceMask_BrushOnly()|CONTENTS_WATER, this, COLLISION_GROUP_NONE, &tr);
 	if (tr.fraction < 1)
 	{
 		// Clamp veloctiy

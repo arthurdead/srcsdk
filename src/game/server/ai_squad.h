@@ -10,8 +10,12 @@
 #include "ai_memory.h"
 #include "ai_squadslot.h"
 #include "bitstring.h"
+#include "string_t.h"
+#include "sharedInterface.h"
 
+class CAI_BaseNPC;
 class CAI_Squad;
+class CBaseCombatCharacter;
 typedef CHandle<CAI_BaseNPC> AIHANDLE;
 
 #define PER_ENEMY_SQUADSLOTS 1
@@ -70,8 +74,6 @@ struct AISquadEnemyInfo_t
 {
 	EHANDLE 						hEnemy;
 	CBitVec<MAX_SQUADSLOTS>	slots;									// What squad slots are filled?
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 #endif
@@ -111,6 +113,8 @@ public:
 	bool					SquadIsMember( CBaseEntity *pMember );
 	bool					IsLeader( CAI_BaseNPC *pLeader );
 	CAI_BaseNPC				*GetLeader( void );
+
+	Vector					ComputeSquadCentroid( bool bIncludeSilentMembers, CBaseCombatCharacter *pExcludeMember );
 
 	int						BroadcastInteraction( int interactionType, void *data, CBaseCombatCharacter *sender = NULL );
 
@@ -191,10 +195,6 @@ private:
 	CVarBitVec	m_squadSlotsUsed;							// What squad slots are filled?
 
 #endif
-
-	//---------------------------------
-public:
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //-----------------------------------------------------------------------------
@@ -254,7 +254,7 @@ inline CAI_Squad *CAI_SquadManager::FindCreateSquad(string_t squadName)
 inline CAI_BaseNPC *CAI_Squad::GetAnyMember()
 {
 	if ( m_SquadMembers.Count() )
-		return m_SquadMembers[random->RandomInt( 0, m_SquadMembers.Count()-1 )];
+		return m_SquadMembers[random->RandomInt( 0, m_SquadMembers.Count()-1 )].Get();
 	return NULL;
 }
 

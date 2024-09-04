@@ -68,6 +68,8 @@ ConVar hud_takesshots( "hud_takesshots", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "
 ConVar hud_freezecamhide( "hud_freezecamhide", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Hide the HUD during freeze-cam" );
 ConVar cl_show_num_particle_systems( "cl_show_num_particle_systems", "0", FCVAR_CLIENTDLL, "Display the number of active particle systems." );
 
+ConVar default_fov( "default_fov", "90", FCVAR_CHEAT );
+
 extern ConVar v_viewmodel_fov;
 extern ConVar voice_modenable;
 
@@ -128,15 +130,16 @@ static CVoxManager s_VoxManager;
 CON_COMMAND( hud_reloadscheme, "Reloads hud layout and animation scripts." )
 {
 	ClientModeShared *mode = ( ClientModeShared * )GetClientModeNormal();
-	if ( mode )
+	ClientModeShared *fullscreenmode = ( ClientModeShared * )GetFullscreenClientMode();
+
+	if ( mode && (!fullscreenmode || mode != fullscreenmode) )
 	{
 		mode->ReloadScheme( true );
 	}
 
-	mode = ( ClientModeShared * )GetFullscreenClientMode();
-	if ( mode )
+	if ( fullscreenmode )
 	{
-		mode->ReloadSchemeWithRoot( VGui_GetFullscreenRootVPANEL(), true );
+		fullscreenmode->ReloadSchemeWithRoot( VGui_GetFullscreenRootVPANEL(), true );
 	}
 }
 
@@ -782,7 +785,7 @@ int ClientModeShared::HandleSpectatorKeyInput( int down, ButtonCode_t keynum, co
 //-----------------------------------------------------------------------------
 int ClientModeShared::HudElementKeyInput( int down, ButtonCode_t keynum, const char *pszCurrentBinding )
 {
-	if ( GetFullscreenClientMode() && GetFullscreenClientMode() != this &&
+	if ( this != GetFullscreenClientMode() &&
 		!GetFullscreenClientMode()->HudElementKeyInput( down, keynum, pszCurrentBinding ) )
 		return 0;
 
@@ -1117,8 +1120,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 
 	if ( Q_strcmp( "player_connect_client", eventname ) == 0 || Q_strcmp( "player_connect", eventname ) == 0 )
 	{
-		if ( this == GetFullscreenClientMode() )
-			return;
 		if ( !hudChat )
 			return;
 		if ( PlayerNameNotSetYet(event->GetString("name")) )
@@ -1136,8 +1137,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 	}
 	else if ( Q_strcmp( "player_disconnect", eventname ) == 0 )
 	{
-		if ( this == GetFullscreenClientMode() )
-			return;
 		C_BasePlayer *pPlayer = USERID2PLAYER( event->GetInt("userid") );
 
 		if ( !hudChat || !pPlayer )
@@ -1169,8 +1168,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 	}
 	else if ( Q_strcmp( "player_team", eventname ) == 0 )
 	{
-		if ( this == GetFullscreenClientMode() )
-			return;
 		C_BasePlayer *pPlayer = USERID2PLAYER( event->GetInt("userid") );
 		if ( !pPlayer )
 			return;
@@ -1228,8 +1225,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 	}
 	else if ( Q_strcmp( "player_fullyjoined", eventname ) == 0 )
 	{
-		if ( this == GetFullscreenClientMode() )
-			return;
 		if ( !hudChat )
 			return;
 		if ( PlayerNameNotSetYet(event->GetString("name")) )
@@ -1247,8 +1242,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 	}
 	else if ( Q_strcmp( "player_changename", eventname ) == 0 )
 	{
-		if ( this == GetFullscreenClientMode() )
-			return;
 		if ( !hudChat )
 			return;
 
@@ -1272,8 +1265,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 	}
 	else if (Q_strcmp( "teamplay_broadcast_audio", eventname ) == 0 )
 	{
-		if ( this == GetFullscreenClientMode() )
-			return;
 		int team = event->GetInt( "team" );
 
 		bool bValidTeam = false;
@@ -1319,8 +1310,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 	}
 	else if ( Q_strcmp( "server_cvar", eventname ) == 0 )
 	{
-		if ( this == GetFullscreenClientMode() )
-			return;
 		wchar_t wszCvarName[64];
 		g_pVGuiLocalize->ConvertANSIToUnicode( event->GetString("cvarname"), wszCvarName, sizeof(wszCvarName) );
 
@@ -1337,8 +1326,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 	}
 	else if ( Q_strcmp( "achievement_earned", eventname ) == 0 )
 	{
-		if ( this == GetFullscreenClientMode() )
-			return;
 		int iPlayerIndex = event->GetInt( "player" );
 		C_BasePlayer *pPlayer = UTIL_PlayerByIndex( iPlayerIndex );
 		int iAchievement = event->GetInt( "achievement" );
@@ -1548,7 +1535,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 		CReplayMessagePanel::RemoveAll();
 	}
 #endif
-
 	else
 	{
 		DevMsg( 2, "Unhandled GameEvent in ClientModeShared::FireGameEvent - %s\n", event->GetName()  );
@@ -1704,4 +1690,16 @@ void ClientModeShared::OnColorCorrectionWeightsReset()
 		}
 		m_pCurrentColorCorrection = pNewColorCorrection;
 	}
+}
+
+bool IsTakingAFreezecamScreenshot( void )
+{
+	// Don't draw in freezecam, or when the game's not running
+	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	bool bInFreezeCam = ( pPlayer && pPlayer->GetObserverMode() == OBS_MODE_FREEZECAM );
+
+	if ( bInFreezeCam == true && engine->IsTakingScreenshot() )
+		return true;
+
+	return false;
 }

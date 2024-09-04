@@ -8,6 +8,8 @@
 #define C_IMPACT_EFFECTS_H
 #pragma once
 
+#include "particles_simple.h"
+
 #include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------

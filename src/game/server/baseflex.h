@@ -14,10 +14,12 @@
 #include "utlvector.h"
 #include "utlrbtree.h"
 #include "sceneentity_shared.h"
+#include "ai_criteria.h"
 
 struct flexsettinghdr_t;
 struct flexsetting_t;
-class AI_Response;
+namespace ResponseRules {class CRR_Response;};
+typedef ResponseRules::CRR_Response		AI_Response;
 
 //-----------------------------------------------------------------------------
 // Purpose:  A .vfe referenced by a scene during .vcd playback
@@ -42,7 +44,6 @@ class CBaseFlex : public CBaseAnimatingOverlay
 	DECLARE_CLASS( CBaseFlex, CBaseAnimatingOverlay );
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
 	DECLARE_PREDICTABLE();
 
 	// Construction
@@ -89,7 +90,7 @@ public:
 	virtual	bool		ClearSceneEvent( CSceneEventInfo *info, bool fastKill, bool canceled );
 
 	// Add the event to the queue for this actor
-	void				AddSceneEvent( CChoreoScene *scene, CChoreoEvent *event, CBaseEntity *pTarget = NULL );
+	void				AddSceneEvent( CChoreoScene *scene, CChoreoEvent *event, CBaseEntity *pTarget = NULL, CSceneEntity* pSceneEntity = NULL );
 
 	// Remove the event from the queue for this actor
 	void				RemoveSceneEvent( CChoreoScene *scene, CChoreoEvent *event, bool fastKill );
@@ -248,13 +249,10 @@ public:
 
 	virtual void Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity );
 
-
-#ifdef HL2_DLL
 	Vector m_vecPrevOrigin;
 	Vector m_vecPrevVelocity;
 	CNetworkVector( m_vecLean );
 	CNetworkVector( m_vecShift );
-#endif
 };
 
 

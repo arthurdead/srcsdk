@@ -61,43 +61,16 @@ IMPLEMENT_SERVERCLASS_ST(CBaseFlex, DT_BaseFlex)
 	SendPropArray3	(SENDINFO_ARRAY3(m_flexWeight), SendPropFloat(SENDINFO_ARRAY(m_flexWeight), 12, SPROP_ROUNDDOWN, 0.0f, 1.0f ) /*, SendProxy_FlexWeights*/ ),
 	SendPropBool		(SENDINFO(m_blinktoggle)),
 	SendPropVector	(SENDINFO(m_viewtarget), -1, SPROP_COORD),
-#ifdef HL2_DLL
+
 	SendPropFloat	( SENDINFO_VECTORELEM(m_vecViewOffset, 0), 0, SPROP_NOSCALE ),
 	SendPropFloat	( SENDINFO_VECTORELEM(m_vecViewOffset, 1), 0, SPROP_NOSCALE ),
 	SendPropFloat	( SENDINFO_VECTORELEM(m_vecViewOffset, 2), 0, SPROP_NOSCALE ),
 
 	SendPropVector	( SENDINFO(m_vecLean), -1, SPROP_COORD ),
 	SendPropVector	( SENDINFO(m_vecShift), -1, SPROP_COORD ),
-#endif
 
 END_SEND_TABLE()
 
-
-BEGIN_DATADESC( CBaseFlex )
-
-	//						m_blinktoggle
-	DEFINE_ARRAY( m_flexWeight, FIELD_FLOAT, MAXSTUDIOFLEXCTRL ),
-	DEFINE_FIELD( m_viewtarget, FIELD_POSITION_VECTOR ),
-	//						m_SceneEvents
-	//						m_FileList
-	DEFINE_FIELD( m_flAllowResponsesEndTime, FIELD_TIME ),
-	//						m_ActiveChoreoScenes
-	// DEFINE_FIELD( m_LocalToGlobal, CUtlRBTree < FS_LocalToGlobal_t , unsigned short > ),
-	//						m_bUpdateLayerPriorities
-	DEFINE_FIELD( m_flLastFlexAnimationTime, FIELD_TIME ),
-
-#ifdef HL2_DLL
-	//DEFINE_FIELD( m_vecPrevOrigin, FIELD_POSITION_VECTOR ),
-	//DEFINE_FIELD( m_vecPrevVelocity, FIELD_VECTOR ),
-	DEFINE_FIELD( m_vecLean, FIELD_VECTOR ),
-	DEFINE_FIELD( m_vecShift, FIELD_VECTOR ),
-#endif
-
-END_DATADESC()
-
-
-
-LINK_ENTITY_TO_CLASS( funCBaseFlex, CBaseFlex ); // meaningless independant class!!
 
 CBaseFlex::CBaseFlex( void ) : 
 	m_LocalToGlobal( 0, 0, FlexSettingLessFunc )
@@ -113,7 +86,10 @@ CBaseFlex::CBaseFlex( void ) :
 CBaseFlex::~CBaseFlex( void )
 {
 	m_LocalToGlobal.RemoveAll();
-	AssertMsg( m_SceneEvents.Count() == 0, "m_ScenesEvent.Count != 0: %d", m_SceneEvents.Count() );
+	// If a player is forcibly removed while speaking a response .vcd we can get into here w/ some events waiting to
+	//  be closed out.  It's benign and we just discard the events.  The CSceneEntity uses EHANDLEs so it'll wipe the
+	//  scene out on next think anyway.  
+	m_SceneEvents.RemoveAll();
 }
 
 void CBaseFlex::SetModel( const char *szModelName )
@@ -361,6 +337,7 @@ bool CBaseFlex::ClearSceneEvent( CSceneEventInfo *info, bool fastKill, bool canc
 	case CChoreoEvent::EXPRESSION:
 	case CChoreoEvent::LOOKAT:
 	case CChoreoEvent::GENERIC:
+	case CChoreoEvent::CAMERA:
 		{
 			// no special rules
 		}
@@ -372,14 +349,12 @@ bool CBaseFlex::ClearSceneEvent( CSceneEventInfo *info, bool fastKill, bool canc
 			{
 				StopSound( info->m_pEvent->GetParameters() );
 
-#ifdef HL2_EPISODIC
 				// If we were holding the semaphore because of this speech, release it
 				CAI_BaseActor *pBaseActor = dynamic_cast<CAI_BaseActor*>(this);
 				if ( pBaseActor )
 				{
 					pBaseActor->GetExpresser()->ForceNotSpeaking();
 				}
-#endif
 			}
 		}
 		return true;
@@ -394,7 +369,7 @@ bool CBaseFlex::ClearSceneEvent( CSceneEventInfo *info, bool fastKill, bool canc
 //			expression - 
 //			duration - 
 //-----------------------------------------------------------------------------
-void CBaseFlex::AddSceneEvent( CChoreoScene *scene, CChoreoEvent *event, CBaseEntity *pTarget )
+void CBaseFlex::AddSceneEvent( CChoreoScene *scene, CChoreoEvent *event, CBaseEntity *pTarget /*= NULL*/, CSceneEntity* pSceneEntity /*= NULL*/ )
 {
 	if ( !scene || !event )
 	{
@@ -418,6 +393,7 @@ void CBaseFlex::AddSceneEvent( CChoreoScene *scene, CChoreoEvent *event, CBaseEn
 	info.m_pScene		= scene;
 	info.m_hTarget		= pTarget;
 	info.m_bStarted	= false;
+	info.m_hSceneEntity = pSceneEntity;
 
 	if (StartSceneEvent( &info, scene, event, actor, pTarget ))
 	{
@@ -497,7 +473,6 @@ bool CBaseFlex::HandleStartSequenceSceneEvent( CSceneEventInfo *info, CChoreoSce
 
 	info->m_iPriority = actor->FindChannelIndex( event->GetChannel() );
 	info->m_iLayer = AddLayeredSequence( info->m_nSequence, info->m_iPriority + GetScenePriority( scene ) );
-	SetLayerNoRestore( info->m_iLayer, true );
 	SetLayerWeight( info->m_iLayer, 0.0 );
 
 	bool looping = ((GetSequenceFlags( GetModelPtr(), info->m_nSequence ) & STUDIO_LOOPING) != 0);
@@ -661,7 +636,6 @@ bool CBaseFlex::HandleStartGestureSceneEvent( CSceneEventInfo *info, CChoreoScen
 	// this happens before StudioFrameAdvance()
 	info->m_iPriority = actor->FindChannelIndex( event->GetChannel() );
 	info->m_iLayer = AddLayeredSequence( info->m_nSequence, info->m_iPriority + GetScenePriority( scene ) );
-	SetLayerNoRestore( info->m_iLayer, true );
 	SetLayerDuration( info->m_iLayer, event->GetDuration() );
 	SetLayerWeight( info->m_iLayer, 0.0 );
 
@@ -954,16 +928,66 @@ public:
 	{
 	}
 
+	virtual bool InitRecursive( const char *pFolder )
+	{
+		if ( pFolder == NULL )
+		{
+			pFolder = "expressions";
+		}
+
+		char directory[ MAX_PATH ];
+		Q_snprintf( directory, sizeof( directory ), "%s/*.*", pFolder );
+
+		FileFindHandle_t fh;
+		const char *fn;
+		
+		for (fn = g_pFullFileSystem->FindFirst( directory, &fh ); fn; fn = g_pFullFileSystem->FindNext( fh ) )
+		{
+			if ( !stricmp( fn, ".") || !stricmp( fn, "..") )
+			{
+				continue;
+			}
+
+			if ( g_pFullFileSystem->FindIsDirectory( fh ) )
+			{
+				char folderpath[MAX_PATH];
+				Q_snprintf( folderpath, sizeof( folderpath ), "%s/%s", pFolder, fn );
+
+				InitRecursive( folderpath );
+				continue;
+			}
+
+			const char *pExt = Q_GetFileExtension( fn );
+			if ( pExt && Q_stricmp( pExt, "vfe" ) )
+			{
+				continue;
+			}
+
+			char fullFileName[MAX_PATH];
+			Q_snprintf( fullFileName, sizeof(fullFileName), "%s/%s", pFolder, fn );
+
+			// strip default folder and extension
+			int index = V_strlen( "expressions/" );
+			char vfeName[ MAX_PATH ];
+			V_StripExtension( &fullFileName[index], vfeName, sizeof( vfeName ) );
+			V_FixSlashes( vfeName );
+
+			FindSceneFile( NULL, vfeName, true );
+		}
+		return true;
+	}
+
 	virtual bool Init()
 	{
 		// Trakcer 16692:  Preload these at startup to avoid hitch first time we try to load them during actual gameplay
 		FindSceneFile( NULL, "phonemes", true );
 		FindSceneFile( NULL, "phonemes_weak", true );
 		FindSceneFile( NULL, "phonemes_strong", true );
-#if defined( HL2_DLL )
+
 		FindSceneFile( NULL, "random", true );
 		FindSceneFile( NULL, "randomAlert", true );
-#endif
+
+		InitRecursive( NULL );
 		return true;
 	}
 
@@ -992,12 +1016,18 @@ public:
 
 	const void *FindSceneFile( CBaseFlex *instance, const char *filename, bool allowBlockingIO )
 	{
+		char szFilename[MAX_PATH];
+		Assert( V_strlen( filename ) < MAX_PATH );
+		V_strcpy( szFilename, filename );
+		
+		Q_FixSlashes( szFilename );
+
 		// See if it's already loaded
 		int i;
 		for ( i = 0; i < m_FileList.Size(); i++ )
 		{
 			CFlexSceneFile *file = m_FileList[ i ];
-			if ( file && !stricmp( file->filename, filename ) )
+			if ( file && !V_stricmp( file->filename, szFilename ) )
 			{
 				// Make sure translations (local to global flex controller) are set up for this instance
 				EnsureTranslations( instance, ( const flexsettinghdr_t * )file->buffer );
@@ -1012,7 +1042,7 @@ public:
 
 		// Load file into memory
 		void *buffer = NULL;
-		int len = filesystem->ReadFileEx( UTIL_VarArgs( "expressions/%s.vfe", filename ), "GAME", &buffer, false, true );
+		int len = filesystem->ReadFileEx( UTIL_VarArgs( "expressions/%s.vfe", szFilename ), "GAME", &buffer, false, true );
 
 		if ( !len )
 			return NULL;
@@ -1020,7 +1050,7 @@ public:
 		// Create scene entry
 		CFlexSceneFile *pfile = new CFlexSceneFile;
 		// Remember filename
-		Q_strncpy( pfile->filename, filename, sizeof( pfile->filename ) );
+		Q_strncpy( pfile->filename, szFilename, sizeof( pfile->filename ) );
 		// Remember data pointer
 		pfile->buffer = buffer;
 		// Add to list
@@ -1127,7 +1157,44 @@ LocalFlexController_t CBaseFlex::FlexControllerLocalToGlobal( const flexsettingh
 const void *CBaseFlex::FindSceneFile( const char *filename )
 {
 	// Ask manager to get the globally cached scene instead.
-	return g_FlexSceneFileManager.FindSceneFile( this, filename, false );
+
+	// hunt up the tree for the filename starting with our model name prepended as the path
+	static char szExtendedPath[MAX_PATH];
+	if ( StringHasPrefix( STRING( GetModelName() ), "models" ) )
+	{
+		strcpy( szExtendedPath, StringAfterPrefix( STRING( GetModelName() ), "models" ) + 1 );
+	}
+	else
+	{
+		strcpy( szExtendedPath, STRING( GetModelName() ) );
+	}
+	V_StripExtension( szExtendedPath, szExtendedPath, sizeof( szExtendedPath ) );
+	V_FixupPathName( szExtendedPath, sizeof( szExtendedPath ), szExtendedPath );
+
+	const void *pSceneFile = NULL;
+	// FIXME: V_StripLastDir returns "./" path when it strips out the last one.  That don't resolve on FindSceneFile 
+	while ( V_strlen( szExtendedPath ) > 2 )
+	{
+		static char szExtendedName[MAX_PATH];
+
+		V_ComposeFileName( szExtendedPath, filename, szExtendedName, sizeof( szExtendedName ) );
+
+		pSceneFile = g_FlexSceneFileManager.FindSceneFile( this, szExtendedName, false );
+
+		if ( pSceneFile )
+			break;
+
+		if ( !V_StripLastDir( szExtendedPath, sizeof( szExtendedPath ) ) )
+			break;
+	}
+
+	if ( !pSceneFile )
+	{
+		// just ask for it by name
+		pSceneFile = g_FlexSceneFileManager.FindSceneFile( this, filename, false );
+	}
+
+	return pSceneFile;
 }
 
 ConVar	ai_expression_optimization( "ai_expression_optimization", "0", FCVAR_NONE, "Disable npc background expressions when you can't see them." );
@@ -1199,16 +1266,19 @@ bool CBaseFlex::ProcessFlexSettingSceneEvent( CSceneEventInfo *info, CChoreoScen
 	// Have to find both strings
 	if ( scenefile && name )
 	{
-		// Find the scene file
-		const flexsettinghdr_t *pExpHdr = ( const flexsettinghdr_t * )FindSceneFile( scenefile );
-		if ( pExpHdr )
+		if ( info->m_pExpHdr == NULL) 
+		{
+			info->m_pExpHdr = ( const flexsettinghdr_t * )FindSceneFile( scenefile );
+		}
+
+		if ( info->m_pExpHdr )
 		{
 			float scenetime = scene->GetTime();
 			
 			float scale = event->GetIntensity( scenetime );
 			
 			// Add the named expression
-			AddFlexSetting( name, scale, pExpHdr, !info->m_bStarted );
+			AddFlexSetting( name, scale, info->m_pExpHdr, !info->m_bStarted );
 		}
 	}
 
@@ -1406,7 +1476,7 @@ bool CBaseFlex::ProcessMoveToSceneEvent( CSceneEventInfo *info, CChoreoScene *sc
 					if (developer.GetInt() > 0 && scene_showmoveto.GetBool())
 					{
 						Vector vTestPoint;
-						myNpc->GetMoveProbe()->FloorPoint( info->m_hTarget->EyePosition(), MASK_NPCSOLID, 0, -64, &vTestPoint );
+						myNpc->GetMoveProbe()->FloorPoint( info->m_hTarget->EyePosition(), myNpc->GetAITraceMask(), 0, -64, &vTestPoint );
 						NDebugOverlay::HorzArrow( GetAbsOrigin() + Vector( 0, 0, 1 ), vTestPoint + Vector( 0, 0, 1 ), 4, 255, 0, 255, 0, false, 0.12 );
 						NDebugOverlay::Box( vTestPoint, myNpc->GetHullMins(), myNpc->GetHullMaxs(), 255, 0, 255, 0, 0.12 );
 					}
@@ -1440,13 +1510,13 @@ bool CBaseFlex::ProcessMoveToSceneEvent( CSceneEventInfo *info, CChoreoScene *sc
 		Vector vecStart, vTestPoint;
 		vecStart = myNpc->GetNavigator()->GetGoalPos();
 
-		myNpc->GetMoveProbe()->FloorPoint( vecStart, MASK_NPCSOLID, 0, -64, &vTestPoint );
+		myNpc->GetMoveProbe()->FloorPoint( vecStart, myNpc->GetAITraceMask(), 0, -64, &vTestPoint );
 
 		int r, g, b;
 		r = b = g = 0;
-		if ( myNpc->GetNavigator()->CanFitAtPosition( vTestPoint, MASK_NPCSOLID ) )
+		if ( myNpc->GetNavigator()->CanFitAtPosition( vTestPoint, myNpc->GetAITraceMask() ) )
 		{
-			if ( myNpc->GetMoveProbe()->CheckStandPosition( vTestPoint, MASK_NPCSOLID ) )
+			if ( myNpc->GetMoveProbe()->CheckStandPosition( vTestPoint, myNpc->GetAITraceMask() ) )
 			{
 				if (event->IsResumeCondition())
 				{
@@ -2062,12 +2132,9 @@ bool CBaseFlex::IsSuppressedFlexAnimation( CSceneEventInfo *info )
 void CBaseFlex::Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity )
 {
 	BaseClass::Teleport( newPosition, newAngles, newVelocity );
-#ifdef HL2_DLL
 
 	// clear out Body Lean
 	m_vecPrevOrigin = vec3_origin;
-
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2076,7 +2143,6 @@ void CBaseFlex::Teleport( const Vector *newPosition, const QAngle *newAngles, co
 
 void CBaseFlex::DoBodyLean( void )
 {
-#ifdef HL2_DLL
 	CAI_BaseNPC *myNpc = MyNPCPointer( );
 
 	if (myNpc)
@@ -2134,7 +2200,6 @@ void CBaseFlex::DoBodyLean( void )
 			vecDelta.x, vecDelta.y, vecDelta.z );
 		*/
 	}
-#endif
 }
 
 
@@ -2187,7 +2252,7 @@ class CFlexCycler : public CBaseFlex
 private:
 	DECLARE_CLASS( CFlexCycler, CBaseFlex );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CFlexCycler() { m_iszSentence = NULL_STRING; m_sentence = 0; }
 	void GenericCyclerSpawn(char *szModel, Vector vecMin, Vector vecMax);
@@ -2218,21 +2283,11 @@ public:
 	LocalFlexController_t LookupFlex( const char *szTarget );
 };
 
-BEGIN_DATADESC( CFlexCycler )
+BEGIN_MAPENTITY( CFlexCycler )
 
-	DEFINE_FIELD( m_flextime, FIELD_TIME ),
-	DEFINE_FIELD( m_flexnum, FIELD_INTEGER ),
-	DEFINE_ARRAY( m_flextarget, FIELD_FLOAT, 64 ),
-	DEFINE_FIELD( m_blinktime, FIELD_TIME ),
-	DEFINE_FIELD( m_looktime, FIELD_TIME ),
-	DEFINE_FIELD( m_lookTarget, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_speaktime, FIELD_TIME ),
-	DEFINE_FIELD( m_istalking, FIELD_INTEGER ),
-	DEFINE_FIELD( m_phoneme, FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_iszSentence, FIELD_STRING, "Sentence" ),
-	DEFINE_FIELD( m_sentence, FIELD_INTEGER ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //
@@ -2300,7 +2355,7 @@ void CFlexCycler::Spawn( )
 
 	SetMoveType( MOVETYPE_NONE );
 	m_takedamage		= DAMAGE_YES;
-	m_iHealth			= 80000;// no cycler should die
+	SetHealth( 80000 );// no cycler should die
 	
 	m_flPlaybackRate	= 1.0f;
 	m_flGroundSpeed		= 0;
@@ -2728,35 +2783,4 @@ void CFlexCycler::ProcessSceneEvents( void )
 {
 	// Don't do anything since we handle facial stuff in Think()
 }
-
-
-BEGIN_BYTESWAP_DATADESC( flexsettinghdr_t )
-	DEFINE_FIELD( id, FIELD_INTEGER ),
-	DEFINE_FIELD( version, FIELD_INTEGER ),
-	DEFINE_ARRAY( name, FIELD_CHARACTER, 64 ),
-	DEFINE_FIELD( length, FIELD_INTEGER ),
-	DEFINE_FIELD( numflexsettings, FIELD_INTEGER ),
-	DEFINE_FIELD( flexsettingindex, FIELD_INTEGER ),
-	DEFINE_FIELD( nameindex, FIELD_INTEGER ),
-	DEFINE_FIELD( numindexes, FIELD_INTEGER ),
-	DEFINE_FIELD( indexindex, FIELD_INTEGER ),
-	DEFINE_FIELD( numkeys, FIELD_INTEGER ),
-	DEFINE_FIELD( keynameindex, FIELD_INTEGER ),
-	DEFINE_FIELD( keymappingindex, FIELD_INTEGER ),
-END_BYTESWAP_DATADESC()
-
-BEGIN_BYTESWAP_DATADESC( flexsetting_t )
-	DEFINE_FIELD( nameindex, FIELD_INTEGER ),
-	DEFINE_FIELD( obsolete1, FIELD_INTEGER ),
-	DEFINE_FIELD( numsettings, FIELD_INTEGER ),
-	DEFINE_FIELD( index, FIELD_INTEGER ),
-	DEFINE_FIELD( obsolete2, FIELD_INTEGER ),
-	DEFINE_FIELD( settingindex, FIELD_INTEGER ),
-END_BYTESWAP_DATADESC()
-
-BEGIN_BYTESWAP_DATADESC( flexweight_t )
-	DEFINE_FIELD( key, FIELD_INTEGER ),
-	DEFINE_FIELD( weight, FIELD_FLOAT ),
-	DEFINE_FIELD( influence, FIELD_FLOAT ),
-END_BYTESWAP_DATADESC()
 

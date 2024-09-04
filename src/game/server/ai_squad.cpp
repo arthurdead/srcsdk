@@ -8,8 +8,6 @@
 #include "ai_squad.h"
 #include "ai_squadslot.h"
 #include "ai_basenpc.h"
-#include "saverestore_bitstring.h"
-#include "saverestore_utlvector.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -120,36 +118,6 @@ void CAI_SquadManager::DeleteAllSquads(void)
 // Purpose: Tracks enemies, squad slots, squad members
 //
 //-----------------------------------------------------------------------------
-
-#ifdef PER_ENEMY_SQUADSLOTS
-BEGIN_SIMPLE_DATADESC( AISquadEnemyInfo_t )
-
-	DEFINE_FIELD( hEnemy,	FIELD_EHANDLE ),
-	DEFINE_BITSTRING( slots),
-
-END_DATADESC()
-#endif
-
-BEGIN_SIMPLE_DATADESC( CAI_Squad )
-
-	// 							m_pNextSquad		(rebuilt)
-	// 							m_Name				(rebuilt)
-	// 							m_SquadMembers		(rebuilt)
-  	// 			 				m_SquadMembers.Count()		(rebuilt)
- 	DEFINE_FIELD( m_flSquadSoundWaitTime,		FIELD_TIME ),
- 	DEFINE_FIELD( m_nSquadSoundPriority,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_hSquadInflictor,			FIELD_EHANDLE ),
-	DEFINE_AUTO_ARRAY( m_SquadData,				FIELD_INTEGER ),
- 	//							m_pLastFoundEnemyInfo  (think transient)
-
-#ifdef PER_ENEMY_SQUADSLOTS
-	DEFINE_UTLVECTOR(m_EnemyInfos,				FIELD_EMBEDDED ),
-	DEFINE_FIELD( m_flEnemyInfoCleanupTime,	FIELD_TIME ),
-#else
-	DEFINE_EMBEDDED( m_squadSlotsUsed ),
-#endif
-
-END_DATADESC()
 
 //-------------------------------------
 
@@ -273,6 +241,7 @@ void CAI_Squad::AddToSquad(CAI_BaseNPC *pNPC)
 	if ( m_SquadMembers.Count() > 1 )
 	{
 		CAI_BaseNPC *pCopyFrom = m_SquadMembers[0];
+		Assert( pCopyFrom != NULL );
 		CAI_Enemies *pEnemies = pCopyFrom->GetEnemies();
 		AIEnemiesIter_t iter;
 		AI_EnemyInfo_t *pInfo = pEnemies->GetFirst( &iter );
@@ -460,6 +429,29 @@ CAI_BaseNPC *CAI_Squad::GetNextMember( AISquadIter_t *pIter, bool bIgnoreSilentM
 }
 
 //-------------------------------------
+// Purpose: Returns the average of the
+// positions of all squad members. 
+// Optionally, you may exclude one
+// member.
+//-------------------------------------
+Vector CAI_Squad::ComputeSquadCentroid( bool bIncludeSilentMembers, CBaseCombatCharacter *pExcludeMember )
+{
+	int count = 0;
+	Vector vecSumOfOrigins = Vector( 0, 0, 0 );
+
+	for ( int i = 0; i < m_SquadMembers.Count(); i++ )
+	{
+		if ( (m_SquadMembers[i].Get() != pExcludeMember) && (bIncludeSilentMembers||!IsSilentMember(m_SquadMembers[i]) ) )
+		{
+			count++;
+			vecSumOfOrigins+= m_SquadMembers[i]->GetAbsOrigin();
+		}
+	}
+
+	return vecSumOfOrigins / count;
+}
+
+//-------------------------------------
 // Purpose: Alert everyone in the squad to the presence of a new enmey
 //-------------------------------------
 
@@ -501,7 +493,7 @@ void CAI_Squad::SquadNewEnemy( CBaseEntity *pEnemy )
 				   gpGlobals->curtime - pMember->GetEnemyLastTimeSeen() > 3.0 ) )
 			{
 				// give them a new enemy
-				if( !hl2_episodic.GetBool() || pMember->IsValidEnemy(pEnemy) )
+				if( pMember->IsValidEnemy(pEnemy) )
 				{
 					pMember->SetEnemy( pEnemy );
 				}

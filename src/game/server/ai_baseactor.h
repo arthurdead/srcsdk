@@ -7,14 +7,12 @@
 
 #ifndef AI_BASEACTOR_H
 #define AI_BASEACTOR_H
+#pragma once
 
 #include "ai_basehumanoid.h"
 #include "ai_speech.h"
 #include "AI_Interest_Target.h"
 #include <limits.h>
-
-
-#pragma once
 
 //-----------------------------------------------------------------------------
 // CAI_BaseActor
@@ -24,6 +22,7 @@
 //-----------------------------------------------------------------------------
 enum PoseParameter_t { POSE_END=INT_MAX };
 enum FlexWeight_t { FLEX_END=INT_MAX };
+class CInfoRemarkable;
 
 struct AILookTargetArgs_t
 {
@@ -83,7 +82,8 @@ public:
 		m_iszAlertExpression( NULL_STRING ),
 		m_iszCombatExpression( NULL_STRING ),
 		m_iszDeathExpression( NULL_STRING ),
-		m_iszExpressionOverride( NULL_STRING )
+		m_iszExpressionOverride( NULL_STRING ),
+		m_bRemarkablePolling( false )
 	{
 		memset( m_flextarget, 0, 64 * sizeof( m_flextarget[0] ) );
 	}
@@ -145,6 +145,8 @@ public:
 
 	virtual bool			ShouldBruteForceFailedNav()	{ return true; }
 
+	virtual void			GatherConditions( void );
+
 	void					AccumulateIdealYaw( float flYaw, float flIntensity );
 	bool					SetAccumulatedYawAndUpdate( void );
 
@@ -154,6 +156,26 @@ public:
 	//---------------------------------
 
 	virtual	void 			OnStateChange( NPC_STATE OldState, NPC_STATE NewState );
+
+	// INFO_REMARKABLEs are objects in the world for which AIs poll and
+	// potentially say context-sensitive things.
+	// The code is here because for the moment only AI_BaseActors do this.
+	// However any other ExpresserHost theoretically could; if you want this
+	// on, say, a player, we'd need to create some new common base class or
+	// some such.
+
+	// called from GatherConditions() for now because can't think of a better
+	// place to poll it from. Returns true if speaking was tried.
+	bool UpdateRemarkableSpeech();
+
+	inline void EnableRemarkables( bool bEnabled ) { m_bRemarkablePolling = bEnabled; }
+
+	/// true iff the character is allowed to poll for remarkables at all (eg, 
+	/// rate limiting). You can make it virtual if you need to.
+	bool CanPollRemarkables();
+
+	/// Test to see if a particular remarkable can be commented upon. 
+	virtual bool TestRemarkingUpon( CInfoRemarkable * pRemarkable );
 
 	//---------------------------------
 
@@ -177,8 +199,11 @@ public:
 		SCENE_AI_DISABLEAI
 	};
 
+	//---------------------------------
+	virtual void			Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity );
+	void					InvalidateBoneCache( void );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 private:
 	enum
 	{
@@ -234,6 +259,10 @@ protected:
 	string_t				m_iszAlertExpression;
 	string_t				m_iszCombatExpression;
 	string_t				m_iszDeathExpression;
+
+	bool m_bRemarkablePolling;
+	float m_fNextIdleVocalizeTime;  ///< Not a CoundownTimer because it doesn't need to be networked
+	float m_fNextRemarkPollTime;	///< we only poll for TLK_REMARK once per second or so
 
 private:
 	//---------------------------------

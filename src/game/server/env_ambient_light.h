@@ -12,7 +12,7 @@ class CEnvAmbientLight : public CSpatialEntity
 
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void Spawn( void );
 

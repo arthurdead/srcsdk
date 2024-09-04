@@ -448,14 +448,10 @@ LINK_ENTITY_TO_CLASS( func_useableladder, CFuncLadder );
 //---------------------------------------------------------
 // Save/Restore
 //---------------------------------------------------------
-BEGIN_DATADESC( CFuncLadder )
+BEGIN_MAPENTITY( CFuncLadder )
 	DEFINE_KEYFIELD( m_vecPlayerMountPositionTop,	FIELD_VECTOR, "point0" ),
 	DEFINE_KEYFIELD( m_vecPlayerMountPositionBottom,	FIELD_VECTOR, "point1" ),
 
-	DEFINE_FIELD( m_vecLadderDir, FIELD_VECTOR ),
-	// DEFINE_FIELD( m_Dismounts, FIELD_UTLVECTOR ),
-
-	DEFINE_FIELD( m_bFakeLadder, FIELD_BOOLEAN ),
 	DEFINE_KEYFIELD( m_bDisabled,	FIELD_BOOLEAN,	"StartDisabled" ),
 
 #if !defined( CLIENT_DLL )
@@ -467,7 +463,7 @@ BEGIN_DATADESC( CFuncLadder )
 	DEFINE_OUTPUT(	m_OnPlayerGotOffLadder,	"OnPlayerGotOffLadder" ),
 #endif
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: 

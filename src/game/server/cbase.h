@@ -43,6 +43,10 @@
 // tier 3
 #include "vphysics_interface.h"
 
+#ifndef SWDS
+#define SERVER_USES_VGUI 1
+#endif
+
 // Shared engine/DLL constants
 #include "const.h"
 #include "edict.h"
@@ -72,10 +76,6 @@
 #include "baseentity_shared.h"
 #include "basetoggle.h"
 #include "igameevents.h"
-
-// saverestore.h declarations
-class ISave;
-class IRestore;
 
 // maximum number of targets a single multi_manager entity may be assigned.
 #define MAX_MULTI_TARGETS	16 

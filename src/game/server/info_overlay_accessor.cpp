@@ -23,7 +23,7 @@ public:
 	int  	UpdateTransmitState();
 
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 
@@ -39,9 +39,9 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( info_overlay_accessor, CInfoOverlayAccessor );
 
-BEGIN_DATADESC( CInfoOverlayAccessor )
+BEGIN_MAPENTITY( CInfoOverlayAccessor )
 	DEFINE_KEYFIELD( m_iOverlayID,	FIELD_INTEGER, "OverlayID" ),
-END_DATADESC()
+END_MAPENTITY()
 
 
 int CInfoOverlayAccessor::UpdateTransmitState()

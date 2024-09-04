@@ -20,7 +20,6 @@ abstract_class CAI_BasePhysicsFlyingBot : public CAI_BaseNPC, public IMotionEven
 {
 	DECLARE_CLASS( CAI_BasePhysicsFlyingBot, CAI_BaseNPC );
 public:
-	DECLARE_DATADESC();
 
 	void			StartTask( const Task_t *pTask );
 	void			GetVelocity(Vector *vVelocity, AngularImpulse *vAngVelocity);

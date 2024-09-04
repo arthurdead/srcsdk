@@ -107,11 +107,6 @@ void CAI_BaseNPC::ClearSchedule( const char *szReason )
 		DevMsg( this, AIMF_IGNORE_SELECTED, "  Schedule cleared: %s\n", szReason );
 	}
 
-	if ( szReason )
-	{
-		ADD_DEBUG_HISTORY( HISTORY_AI_DECISIONS, UTIL_VarArgs( "%s(%d):  Schedule cleared: %s\n", GetDebugName(), entindex(), szReason ) );
-	}
-
 	m_ScheduleState.timeCurTaskStarted = m_ScheduleState.timeStarted = 0;
 	m_ScheduleState.bScheduleWasInterrupted = true;
 	SetTaskStatus( TASKSTATUS_NEW );
@@ -171,6 +166,8 @@ bool CAI_BaseNPC::SetSchedule( int localScheduleID )
 void CAI_BaseNPC::SetSchedule( CAI_Schedule *pNewSchedule )
 {
 	Assert( pNewSchedule != NULL );
+
+	OnSetSchedule();
 	
 	m_ScheduleState.timeCurTaskStarted = m_ScheduleState.timeStarted = gpGlobals->curtime;
 	m_ScheduleState.bScheduleWasInterrupted = false;
@@ -202,6 +199,17 @@ void CAI_BaseNPC::SetSchedule( CAI_Schedule *pNewSchedule )
 	if (m_debugOverlays & OVERLAY_TASK_TEXT_BIT)
 	{
 		DevMsg(this, AIMF_IGNORE_SELECTED, "Schedule: %s (time: %.2f)\n", pNewSchedule->GetName(), gpGlobals->curtime );
+	}
+
+	if ( m_pEvent != NULL )
+	{
+		if ( m_pScheduleEvent != NULL )
+		{
+			GlobalEventLog.RemoveEvent( m_pScheduleEvent );
+		}
+		m_pScheduleEvent = GlobalEventLog.CreateEvent( "Schedule", false, m_pEvent );
+
+		GlobalEventLog.AddKeyValue( m_pScheduleEvent, false, "Schedule", pNewSchedule->GetName() );
 	}
 
 	ADD_DEBUG_HISTORY( HISTORY_AI_DECISIONS, UTIL_VarArgs("%s(%d): Schedule: %s (time: %.2f)\n", GetDebugName(), entindex(), pNewSchedule->GetName(), gpGlobals->curtime ) );
@@ -594,8 +602,12 @@ void CAI_BaseNPC::MaintainSchedule ( void )
 	memset( g_AITaskTimings, 0, sizeof(g_AITaskTimings) );
 	
 	g_nAITasksRun = 0;
-	
-	const int timeLimit = ( IsDebug() ) ? 16 : 8;
+
+#ifdef _DEBUG
+	const int timeLimit = 16;
+#else
+	const int timeLimit = 8;
+#endif
 	int taskTime = Plat_MSTime();
 
 	// Reset this at the beginning of the frame
@@ -708,7 +720,7 @@ void CAI_BaseNPC::MaintainSchedule ( void )
 			return;
 		}
 		
-		AI_PROFILE_SCOPE_BEGIN_( CAI_BaseNPC::GetSchedulingSymbols()->ScheduleIdToSymbol( GetCurSchedule()->GetId() ) );
+		AI_PROFILE_SCOPE_BEGIN_( GetCurSchedule() ? CAI_BaseNPC::GetSchedulingSymbols()->ScheduleIdToSymbol( GetCurSchedule()->GetId() ) : "NULL SCHEDULE" );
 
 		if ( GetTaskStatus() == TASKSTATUS_NEW )
 		{	
@@ -728,6 +740,13 @@ void CAI_BaseNPC::MaintainSchedule ( void )
 			if (m_debugOverlays & OVERLAY_TASK_TEXT_BIT)
 			{
 				DevMsg(this, AIMF_IGNORE_SELECTED, "  Task: %s\n", pszTaskName );
+			}
+
+			if ( m_pScheduleEvent != NULL )
+			{
+				CGlobalEvent	*pEvent = GlobalEventLog.CreateTempEvent( "New Task", m_pScheduleEvent );
+
+				GlobalEventLog.AddKeyValue( pEvent, false, "Task", pszTaskName );
 			}
 
 			ADD_DEBUG_HISTORY( HISTORY_AI_DECISIONS, UTIL_VarArgs("%s(%d):  Task: %s\n", GetDebugName(), entindex(), pszTaskName ) );
@@ -757,7 +776,7 @@ void CAI_BaseNPC::MaintainSchedule ( void )
 		// UNDONE: Twice?!!!
 		MaintainActivity();
 		
-		AI_PROFILE_SCOPE_BEGIN_( CAI_BaseNPC::GetSchedulingSymbols()->ScheduleIdToSymbol( GetCurSchedule()->GetId() ) );
+		AI_PROFILE_SCOPE_BEGIN_( GetCurSchedule() ? CAI_BaseNPC::GetSchedulingSymbols()->ScheduleIdToSymbol( GetCurSchedule()->GetId() ) : "NULL SCHEDULE" );
 
 		if ( !TaskIsComplete() && GetTaskStatus() != TASKSTATUS_NEW )
 		{
@@ -823,6 +842,11 @@ void CAI_BaseNPC::MaintainSchedule ( void )
 			bStopProcessing = true;
 	}
 
+	for ( i = 0; i < m_Behaviors.Count(); i++ )
+	{
+		m_Behaviors[i]->MaintainChannelSchedules();
+	}
+
 	// UNDONE: We have to do this so that we have an animation set to blend to if RunTask changes the animation
 	// RunTask() will always change animations at the end of a script!
 	// Don't do this twice
@@ -837,7 +861,7 @@ void CAI_BaseNPC::MaintainSchedule ( void )
 		if (!GetNavigator()->IsGoalActive() && 
 			m_nDebugCurIndex >= CAI_BaseNPC::m_nDebugPauseIndex)
 		{
-			m_flPlaybackRate = 0;
+			SetPlaybackRate( 0 );
 		}
 	}
 }
@@ -1379,7 +1403,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			if ( pBestSound )
 			{
 				m_vSavePosition = pBestSound->GetSoundOrigin();
-				CBaseEntity *pSoundEnt = pBestSound->m_hOwner;
+				CBaseEntity *pSoundEnt = pBestSound->m_hOwner.Get();
 				if ( pSoundEnt )
 				{
 					Vector vel;
@@ -1927,7 +1951,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 
 	case TASK_GET_PATH_TO_INTERACTION_PARTNER:
 		{
-			if ( !m_hForcedInteractionPartner || IsUnreachable(m_hForcedInteractionPartner) )
+			if ( !m_hForcedInteractionPartner || IsUnreachable(m_hForcedInteractionPartner.Get()) )
 			{
 				TaskFail(FAIL_NO_ROUTE);
 				return;
@@ -1937,7 +1961,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			CalculateForcedInteractionPosition();
 
 			AI_NavGoal_t goal( m_vecForcedWorldPosition );
-			TranslateNavGoal( m_hForcedInteractionPartner, goal.dest );
+			TranslateNavGoal( m_hForcedInteractionPartner.Get(), goal.dest );
 
 			if ( GetNavigator()->SetGoal( goal, AIN_CLEAR_TARGET ) )
 			{
@@ -1946,7 +1970,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			else
 			{
 				DevWarning( 2, "GetPathToInteractionPartner failed!!\n" );
-				RememberUnreachable(m_hForcedInteractionPartner);
+				RememberUnreachable(m_hForcedInteractionPartner.Get());
 				TaskFail(FAIL_NO_ROUTE);
 			}
 			break;
@@ -2156,7 +2180,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 							   AIN_DEF_ACTIVITY, 
 							   AIN_HULL_TOLERANCE,
 							   AIN_DEF_FLAGS,
-							   m_hStoredPathTarget );
+							   m_hStoredPathTarget.Get() );
 			
 			bool	foundPath = false;
 
@@ -2212,7 +2236,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 
 			case PATH_COVER:	//Get a path to cover FROM our goal
 				{
-					CBaseEntity *pEntity = ( m_hStoredPathTarget == NULL ) ? this : m_hStoredPathTarget;
+					CBaseEntity *pEntity = ( m_hStoredPathTarget == NULL ) ? this : m_hStoredPathTarget.Get();
 
 					//Find later cover first
 					Vector coverPos;
@@ -2238,7 +2262,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 													ACT_RUN,
 													AIN_HULL_TOLERANCE,
 													AIN_DEF_FLAGS,
-													m_hStoredPathTarget );
+													m_hStoredPathTarget.Get() );
 							
 							foundPath = GetNavigator()->SetGoal( goal );
 
@@ -2385,7 +2409,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 					break;
 				}
 			#else
-				CNavArea *pArea = TheNavMesh->GetNearestNavArea( m_hTargetEnt );
+				CNavArea *pArea = TheNavMesh->GetNearestNavArea( m_hTargetEnt.Get() );
 				if( !pArea )
 				{
 					TaskFail( FAIL_NO_ROUTE );
@@ -2437,14 +2461,14 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 					}
 
 					AI_NavGoal_t goal( vecNodePos );
-					goal.pTarget = m_hTargetEnt;
+					goal.pTarget = m_hTargetEnt.Get();
 					bHasPath = GetNavigator()->SetGoal( goal );
 				}
 				else
 				{
 					// The gun is likely just lying on the floor. Just pick it up.
 					AI_NavGoal_t goal( m_hTargetEnt->GetAbsOrigin() );
-					goal.pTarget = m_hTargetEnt;
+					goal.pTarget = m_hTargetEnt.Get();
 					bHasPath = GetNavigator()->SetGoal( goal );
 				}
 
@@ -2461,6 +2485,14 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		}
 		break;
 
+	case TASK_GET_PATH_OFF_OF_NPC:
+		{
+			Assert( ( GetGroundEntity() && ( GetGroundEntity()->IsPlayer() || ( GetGroundEntity()->IsNPC() && IRelationType( GetGroundEntity() ) == D_LI ) ) ) );
+			GetNavigator()->SetAllowBigStep( GetGroundEntity() );
+			ChainStartTask( TASK_MOVE_AWAY_PATH, 48 );
+		}
+		break;
+
 	case TASK_GET_PATH_TO_TARGET:
 		{
 			if (m_hTargetEnt == NULL)
@@ -2470,7 +2502,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			else 
 			{
 				AI_NavGoal_t goal( static_cast<const Vector&>(m_hTargetEnt->EyePosition()) );
-				goal.pTarget = m_hTargetEnt;
+				goal.pTarget = m_hTargetEnt.Get();
 				GetNavigator()->SetGoal( goal );
 			}
 			break;
@@ -2768,6 +2800,12 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 
 	case TASK_WAIT_FOR_MOVEMENT_STEP:
 		{
+			if ( IsMovementFrozen() )
+			{
+				TaskFail(FAIL_FROZEN);
+				break;
+			}
+
 			if(!GetNavigator()->IsGoalActive())
 			{
 				TaskComplete();
@@ -2785,6 +2823,12 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 
 	case TASK_WAIT_FOR_MOVEMENT:
 		{
+			if ( IsMovementFrozen() )
+			{
+				TaskFail(FAIL_FROZEN);
+				break;
+			}
+
 			if (GetNavigator()->GetGoalType() == GOALTYPE_NONE)
 			{
 				TaskComplete();
@@ -3005,7 +3049,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 				m_hCine->StartSequence( ( CAI_BaseNPC * )this, m_hCine->m_iszPreIdle, false );
 				if ( FStrEq( STRING( m_hCine->m_iszPreIdle ), STRING( m_hCine->m_iszPlay ) ) )
 				{
-					m_flPlaybackRate = 0;
+					SetPlaybackRate( 0 );
 				}
 			}
 			else if ( m_scriptState != SCRIPT_CUSTOM_MOVE_TO_MARK )
@@ -3208,7 +3252,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		break;
 
 	case TASK_FREEZE:
-		m_flPlaybackRate = 0;
+		SetPlaybackRate( 0 );
 		break;
 
 	case TASK_GATHER_CONDITIONS:
@@ -3372,7 +3416,7 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 			CBaseEntity *pTarget;
 
 			if ( pTask->iTask == TASK_PLAY_SEQUENCE_FACE_TARGET )
-				pTarget = m_hTargetEnt;
+				pTarget = m_hTargetEnt.Get();
 			else
 				pTarget = GetEnemy();
 			if ( pTarget )
@@ -3524,7 +3568,7 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 
 			GetMotor()->UpdateYaw();
 			
-			if ( FacingIdeal() )
+			if ( FacingIdeal( m_flFaceEnemyTolerance ) )
 			{
 				TaskComplete();
 			}
@@ -3810,6 +3854,16 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 		break;
 	}	
 
+	case TASK_GET_PATH_OFF_OF_NPC:
+		{
+			if ( AI_IsSinglePlayer() )
+			{
+				GetNavigator()->SetAllowBigStep( UTIL_GetLocalPlayer() );
+			}
+			ChainRunTask( TASK_MOVE_AWAY_PATH, 48 );
+		}
+		break;
+
 	case TASK_MOVE_AWAY_PATH:
 		{
 			QAngle ang = GetLocalAngles();
@@ -3954,7 +4008,7 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 	case TASK_WEAPON_RUN_PATH:
 	case TASK_ITEM_RUN_PATH:
 		{
-			CBaseEntity *pTarget = m_hTargetEnt;
+			CBaseEntity *pTarget = m_hTargetEnt.Get();
 			if ( pTarget )
 			{
 				if ( pTarget->GetOwnerEntity() )
@@ -3976,6 +4030,12 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 	case TASK_WAIT_FOR_MOVEMENT_STEP:
 	case TASK_WAIT_FOR_MOVEMENT:
 		{
+			if ( IsMovementFrozen() )
+			{
+				TaskFail(FAIL_FROZEN);
+				break;
+			}
+
 			bool fTimeExpired = ( pTask->flTaskData != 0 && pTask->flTaskData < gpGlobals->curtime - GetTimeTaskStarted() );
 			
 			if (fTimeExpired || GetNavigator()->GetGoalType() == GOALTYPE_NONE)
@@ -4075,7 +4135,7 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 					ClearSchedule( "Waiting for script, but lost script!" );
 				}
 
-				m_flPlaybackRate = 1.0;
+				SetPlaybackRate( 1.0 );
 				//DevMsg( 2, "Script %s has begun for %s\n", STRING( m_hCine->m_iszPlay ), GetClassname() );
 			}
 			else if (!m_hCine)
@@ -4287,7 +4347,7 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 				vecDown.z -= 0.2;
 
 				trace_t trace;
-				m_pMoveProbe->TraceHull( vecStart, vecDown, mins, maxs, MASK_NPCSOLID, &trace );
+				m_pMoveProbe->TraceHull( vecStart, vecDown, mins, maxs, GetAITraceMask(), &trace );
 
 				if( trace.m_pEnt )
 				{
@@ -4308,6 +4368,10 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 		break;
 
 	case TASK_FREEZE:
+		if ( m_flFrozen < 1.0f )
+		{
+			Unfreeze();
+		}
 		break;
 
 	default:
@@ -4521,6 +4585,51 @@ const Task_t *CAI_BaseNPC::GetTask( void )
 }
 
 
+void CAI_BaseNPC::TranslateAddOnAttachment( char *pchAttachmentName, int iCount )
+{
+#ifdef HL2_DLL
+	if( Classify() == CLASS_ZOMBIE || ClassMatches( "npc_combine*" ) )
+	{
+		if ( Q_strcmp( pchAttachmentName, "addon_rear" ) == 0 || 
+			 Q_strcmp( pchAttachmentName, "addon_front" ) == 0 || 
+			 Q_strcmp( pchAttachmentName, "addon_rear_or_front" ) == 0 )
+		{
+			if ( iCount == 0 )
+			{
+				Q_strcpy( pchAttachmentName, "eyes" );
+			}
+			else
+			{
+				Q_strcpy( pchAttachmentName, "" );
+			}
+
+			return;
+		}
+	}
+#endif
+
+	if( Q_strcmp( pchAttachmentName, "addon_baseshooter" ) == 0 )
+	{
+		switch ( iCount )
+		{
+		case 0:
+			Q_strcpy( pchAttachmentName, "anim_attachment_lh" );
+			break;
+
+		case 1:
+			Q_strcpy( pchAttachmentName, "anim_attachment_rh" );
+			break;
+
+		default:
+			Q_strcpy( pchAttachmentName, "" );
+		}
+
+		return;
+	}
+
+	Q_strcpy( pchAttachmentName, "" );
+}
+
 //-----------------------------------------------------------------------------
 bool CAI_BaseNPC::IsInterruptable()
 {
@@ -4547,7 +4656,7 @@ bool CAI_BaseNPC::IsInterruptable()
 //-----------------------------------------------------------------------------
 int CAI_BaseNPC::SelectInteractionSchedule( void )
 {
-	SetTarget( m_hForcedInteractionPartner );
+	SetTarget( m_hForcedInteractionPartner.Get() );
 
 	// If we have an interaction, we're the initiator. Move to our interaction point.
 	if ( m_iInteractionPlaying != NPCINT_NONE )

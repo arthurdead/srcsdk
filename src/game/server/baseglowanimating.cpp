@@ -19,26 +19,18 @@ IMPLEMENT_SERVERCLASS_ST(CBaseGlowAnimating, DT_BaseGlowAnimating)
 	SendPropFloat( SENDINFO( m_flBlueGlowColor ) ),
 END_SEND_TABLE()
 
-BEGIN_DATADESC( CBaseGlowAnimating )
+BEGIN_MAPENTITY( CBaseGlowAnimating )
 
 	DEFINE_KEYFIELD(m_bGlowEnabled, FIELD_BOOLEAN, "glowstate"),
 	//DEFINE_KEYFIELD(m_bRenderWhenOccluded, FIELD_BOOLEAN, "glowrenderwhenoccluded"),
 	//DEFINE_KEYFIELD(m_bRenderWhenUnOccluded, FIELD_BOOLEAN, "glowrenderwhenunoccluded"),
 	DEFINE_KEYFIELD(m_clrGlow, FIELD_COLOR32, "glowcolor"),
 
-	//Save/load
-	//DEFINE_FIELD( m_bGlowEnabled, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flRedGlowColor, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flGreenGlowColor, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flBlueGlowColor, FIELD_FLOAT ),
-	DEFINE_FIELD (m_flAlphaGlowColor, FIELD_FLOAT),
-
-
 	// I/O
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartGlowing", InputStartGlow ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopGlowing", InputEndGlow ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: 

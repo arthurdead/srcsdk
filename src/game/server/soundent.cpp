@@ -27,24 +27,6 @@ LINK_ENTITY_TO_CLASS( soundent, CSoundEnt );
 
 static CSoundEnt *g_pSoundEnt = NULL;
 
-BEGIN_SIMPLE_DATADESC( CSound )
-
-	DEFINE_FIELD( m_hOwner,				FIELD_EHANDLE ),
-	DEFINE_FIELD( m_iVolume,			FIELD_INTEGER ),
-	DEFINE_FIELD( m_flOcclusionScale,	FIELD_FLOAT ),
-	DEFINE_FIELD( m_iType,				FIELD_INTEGER ),
-//	DEFINE_FIELD( m_iNextAudible,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_bNoExpirationTime,	FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flExpireTime,		FIELD_TIME ),
-	DEFINE_FIELD( m_iNext,				FIELD_SHORT ),
-	DEFINE_FIELD( m_ownerChannelIndex,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_vecOrigin,			FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_bHasOwner,			FIELD_BOOLEAN ),
-//	DEFINE_FIELD( m_iMyIndex,			FIELD_INTEGER ),
-	DEFINE_FIELD( m_hTarget,			FIELD_EHANDLE ),
-
-END_DATADESC()
-
 
 //=========================================================
 // CSound - Clear - zeros all fields for a sound
@@ -58,7 +40,7 @@ void CSound::Clear ( void )
 	m_flExpireTime		= 0;
 	m_bNoExpirationTime = false;
 	m_iNext				= SOUNDLIST_EMPTY;
-	m_iNextAudible		= 0;
+	m_iNextAudible		= SOUNDLIST_EMPTY;
 }
 
 //=========================================================
@@ -117,6 +99,18 @@ bool CSound::FIsScent ( void )
 	}
 }
 
+//---------------------------------------------------------
+// Returns the sound origin
+//---------------------------------------------------------
+const Vector& CSound::GetSoundOrigin( void )
+{
+	if ( ( m_iType & SOUND_CONTEXT_FOLLOW_OWNER ) != 0 )
+	{
+		if( m_hOwner.Get() != NULL )
+			return m_hOwner->GetAbsOrigin();
+	}
+	return m_vecOrigin;
+}
 
 //---------------------------------------------------------
 // This function returns the spot the listener should be
@@ -179,20 +173,6 @@ const Vector &CSound::GetSoundReactOrigin( void )
 }
 
 
-
-//-----------------------------------------------------------------------------
-// Save/load
-//-----------------------------------------------------------------------------
-BEGIN_DATADESC( CSoundEnt )
-
-	DEFINE_FIELD( m_iFreeSound,			FIELD_INTEGER ),
-	DEFINE_FIELD( m_iActiveSound,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_cLastActiveSounds,	FIELD_INTEGER ),
-	DEFINE_EMBEDDED_ARRAY( m_SoundPool, MAX_WORLD_SOUNDS_SP ),
-
-END_DATADESC()
-
-
 //-----------------------------------------------------------------------------
 // Class factory methods
 //-----------------------------------------------------------------------------
@@ -240,19 +220,6 @@ void CSoundEnt::Spawn( void )
 	Initialize();
 
 	SetNextThink( gpGlobals->curtime + 1 );
-}
-
-void CSoundEnt::OnRestore()
-{
-	BaseClass::OnRestore();
-
-	// Make sure the singleton points to the restored version of this.
-	if ( g_pSoundEnt )
-	{
-		Assert( g_pSoundEnt != this );
-		UTIL_Remove( g_pSoundEnt );
-	}
-	g_pSoundEnt = this;
 }
 
 
@@ -387,6 +354,25 @@ void CSoundEnt::FreeSound ( int iSound, int iPrevious )
 	g_pSoundEnt->m_iFreeSound = iSound;
 }
 
+void CSoundEnt::FreeSound( int iSound )
+{
+	// no sound ent!
+	if ( !g_pSoundEnt || ( iSound == SOUNDLIST_EMPTY ) )
+		return;
+
+	int iPrevious = SOUNDLIST_EMPTY;
+	for ( int i = g_pSoundEnt->m_iActiveSound; i != SOUNDLIST_EMPTY; iPrevious = i, i = g_pSoundEnt->m_SoundPool[ i ].m_iNext )
+	{
+		if ( i == iSound )
+		{
+			FreeSound( iSound, iPrevious );
+			return;
+		}
+	}
+
+	Warning( "Attempted to free unknown sound %d!\n", iSound );
+}
+
 //=========================================================
 // IAllocSound - moves a sound from the Free list to the 
 // Active list returns the index of the alloc'd sound
@@ -426,12 +412,12 @@ int CSoundEnt::IAllocSound( void )
 // InsertSound - Allocates a free sound and fills it with 
 // sound info.
 //=========================================================
-void CSoundEnt::InsertSound ( int iType, const Vector &vecOrigin, int iVolume, float flDuration, CBaseEntity *pOwner, int soundChannelIndex, CBaseEntity *pSoundTarget )
+int CSoundEnt::InsertSound ( int iType, const Vector &vecOrigin, int iVolume, float flDuration, CBaseEntity *pOwner, int soundChannelIndex, CBaseEntity *pSoundTarget )
 {
 	int	iThisSound;
 
 	if ( !g_pSoundEnt )
-		return;
+		return SOUNDLIST_EMPTY;
 
 	if( soundChannelIndex == SOUNDENT_CHANNEL_UNSPECIFIED )
 	{
@@ -448,7 +434,7 @@ void CSoundEnt::InsertSound ( int iType, const Vector &vecOrigin, int iVolume, f
 	if ( iThisSound == SOUNDLIST_EMPTY )
 	{
 		DevMsg( "Could not AllocSound() for InsertSound() (Game DLL)\n" );
-		return;
+		return SOUNDLIST_EMPTY;
 	}
 
 	CSound *pSound;
@@ -459,8 +445,16 @@ void CSoundEnt::InsertSound ( int iType, const Vector &vecOrigin, int iVolume, f
 	pSound->m_iType = iType;
 	pSound->m_iVolume = iVolume;
 	pSound->m_flOcclusionScale = 0.5;
-	pSound->m_flExpireTime = gpGlobals->curtime + flDuration;
-	pSound->m_bNoExpirationTime = false;
+	if ( flDuration != FLT_MAX )
+	{
+		pSound->m_flExpireTime = gpGlobals->curtime + flDuration;
+		pSound->m_bNoExpirationTime = false;
+	}
+	else
+	{
+		pSound->m_flExpireTime = FLT_MAX;
+		pSound->m_bNoExpirationTime = true;
+	}
 	pSound->m_hOwner.Set( pOwner );
 	pSound->m_hTarget.Set( pSoundTarget );
 	pSound->m_ownerChannelIndex = soundChannelIndex;
@@ -485,6 +479,8 @@ void CSoundEnt::InsertSound ( int iType, const Vector &vecOrigin, int iVolume, f
 	{
 		Msg("  Added Danger Sound! Duration:%f (Time:%f)\n", flDuration, gpGlobals->curtime );
 	}
+
+	return iThisSound;
 }
 
 //---------------------------------------------------------
@@ -523,9 +519,7 @@ void CSoundEnt::Initialize ( void )
 
 	// In SP, we should only use the first 64 slots so save/load works right.
 	// In MP, have one for each player and 32 extras.
-	int nTotalSoundsInPool = MAX_WORLD_SOUNDS_SP;
-	if ( gpGlobals->maxClients > 1 )
-		nTotalSoundsInPool = MIN( MAX_WORLD_SOUNDS_MP, gpGlobals->maxClients + 32 );
+	int nTotalSoundsInPool = MIN( MAX_WORLD_SOUNDS_MP, gpGlobals->maxClients + 32 );
 
 	if ( gpGlobals->maxClients+16 > nTotalSoundsInPool )
 	{
@@ -727,7 +721,7 @@ public:
 
 	DECLARE_CLASS( CAISound, CPointEntity );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	// data
 	int			m_iSoundType;
@@ -743,7 +737,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( ai_sound, CAISound );
 
-BEGIN_DATADESC( CAISound )
+BEGIN_MAPENTITY( CAISound )
 
 	DEFINE_KEYFIELD( m_iSoundType, FIELD_INTEGER, "soundtype" ),
 	DEFINE_KEYFIELD( m_iSoundContext, FIELD_INTEGER, "soundcontext" ),
@@ -754,7 +748,7 @@ BEGIN_DATADESC( CAISound )
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "InsertSound", InputInsertSound ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "EmitAISound", InputEmitAISound ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: *** OBSOLETE **** Here for legacy support only!

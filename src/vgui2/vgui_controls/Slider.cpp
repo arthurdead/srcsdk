@@ -26,20 +26,18 @@
 
 using namespace vgui;
 
-DECLARE_BUILD_FACTORY( Slider );
+DECLARE_BUILD_FACTORY( IntSlider );
+DECLARE_BUILD_FACTORY( FloatSlider );
 
 static const float NOB_SIZE = 8.0f;
 
 //-----------------------------------------------------------------------------
 // Purpose: Create a slider bar with ticks underneath it
 //-----------------------------------------------------------------------------
-Slider::Slider(Panel *parent, const char *panelName ) : BaseClass(parent, panelName)
+BaseSlider::BaseSlider(Panel *parent, const char *panelName ) : BaseClass(parent, panelName)
 {
 	m_bIsDragOnRepositionNob = false;
 	_dragging = false;
-	_value = 0;
-	_range[0] = 0;
-	_range[1] = 0;
 	_buttonOffset = 0;
 	_sliderBorder = NULL;
 	_insetBorder = NULL;
@@ -47,15 +45,34 @@ Slider::Slider(Panel *parent, const char *panelName ) : BaseClass(parent, panelN
 	_leftCaption = NULL;
 	_rightCaption = NULL;
 
-	_subrange[ 0 ] = 0;
-	_subrange[ 1 ] = 0;
 	m_bUseSubRange = false;
 	m_bInverted = false;
 
 	SetThumbWidth( 8 );
-	RecomputeNobPosFromValue();
 	AddActionSignalTarget(this);
 	SetBlockDragChaining( true );
+}
+
+IntSlider::IntSlider(Panel *parent, const char *panelName ) : BaseClass(parent, panelName)
+{
+	_range[0] = 0;
+	_range[1] = 0;
+	_subrange[ 0 ] = 0;
+	_subrange[ 1 ] = 0;
+	_value = 0;
+
+	RecomputeNobPosFromValue();
+}
+
+FloatSlider::FloatSlider(Panel *parent, const char *panelName ) : BaseClass(parent, panelName)
+{
+	_range[0] = 0;
+	_range[1] = 0;
+	_subrange[ 0 ] = 0;
+	_subrange[ 1 ] = 0;
+	_value = 0;
+
+	RecomputeNobPosFromValue();
 }
 
 // This allows the slider to behave like it's larger than what's actually being drawn
@@ -65,7 +82,14 @@ Slider::Slider(Panel *parent, const char *panelName ) : BaseClass(parent, panelN
 //			0 - 
 //			100 - 
 //-----------------------------------------------------------------------------
-void Slider::SetSliderThumbSubRange( bool bEnable, int nMin /*= 0*/, int nMax /*= 100*/ )
+void IntSlider::SetSliderThumbSubRange( bool bEnable, int nMin /*= 0*/, int nMax /*= 100*/ )
+{
+	m_bUseSubRange = bEnable;
+	_subrange[ 0 ] = nMin;
+	_subrange[ 1 ] = nMax;
+}
+
+void FloatSlider::SetSliderThumbSubRange( bool bEnable, float nMin /*= 0*/, float nMax /*= 100*/ )
 {
 	m_bUseSubRange = bEnable;
 	_subrange[ 0 ] = nMin;
@@ -76,7 +100,7 @@ void Slider::SetSliderThumbSubRange( bool bEnable, int nMin /*= 0*/, int nMax /*
 // Purpose: Set the size of the slider bar.
 //			Warning less than 30 pixels tall and everything probably won't fit.
 //-----------------------------------------------------------------------------
-void Slider::OnSizeChanged(int wide,int tall)
+void BaseSlider::OnSizeChanged(int wide,int tall)
 {
 	BaseClass::OnSizeChanged(wide,tall);
 
@@ -86,9 +110,46 @@ void Slider::OnSizeChanged(int wide,int tall)
 //-----------------------------------------------------------------------------
 // Purpose: Set the value of the slider to one of the ticks.
 //-----------------------------------------------------------------------------
-void Slider::SetValue(int value, bool bTriggerChangeMessage)
+void IntSlider::SetValue(int value, bool bTriggerChangeMessage)
 {
 	int oldValue=_value;
+
+	if ( _range[0] < _range[1] )
+	{
+		if(value<_range[0])
+		{
+			value=_range[0];
+		}
+		if(value>_range[1])
+		{
+			value=_range[1];	
+		}
+	}
+	else
+	{
+		if(value<_range[1])
+		{
+			value=_range[1];
+		}
+		if(value>_range[0])
+		{
+			value=_range[0];	
+		}
+	}
+
+	_value = value;
+	
+	RecomputeNobPosFromValue();
+
+	if (_value != oldValue && bTriggerChangeMessage)
+	{
+		SendSliderMovedMessage();
+	}
+}
+
+void FloatSlider::SetValue(float value, bool bTriggerChangeMessage)
+{
+	float oldValue=_value;
 
 	if ( _range[0] < _range[1] )
 	{
@@ -126,7 +187,12 @@ void Slider::SetValue(int value, bool bTriggerChangeMessage)
 //-----------------------------------------------------------------------------
 // Purpose: Return the value of the slider
 //-----------------------------------------------------------------------------
-int Slider::GetValue()
+int IntSlider::GetValue()
+{
+	return _value;
+}
+
+float FloatSlider::GetValue()
 {
 	return _value;
 }
@@ -134,7 +200,7 @@ int Slider::GetValue()
 //-----------------------------------------------------------------------------
 // Purpose: Layout the slider before drawing it on screen.
 //-----------------------------------------------------------------------------
-void Slider::PerformLayout()
+void BaseSlider::PerformLayout()
 {
 	BaseClass::PerformLayout();
 	RecomputeNobPosFromValue();
@@ -152,7 +218,7 @@ void Slider::PerformLayout()
 //-----------------------------------------------------------------------------
 // Purpose: Move the nob on the slider in response to changing its value.
 //-----------------------------------------------------------------------------
-void Slider::RecomputeNobPosFromValue()
+void IntSlider::RecomputeNobPosFromValue()
 {
 	//int wide,tall;
 	//GetPaintSize(wide,tall);
@@ -194,16 +260,64 @@ void Slider::RecomputeNobPosFromValue()
 	Repaint();
 }
 
+void FloatSlider::RecomputeNobPosFromValue()
+{
+	//int wide,tall;
+	//GetPaintSize(wide,tall);
+	int x, y, wide, tall;
+	GetTrackRect( x, y, wide, tall );
+
+	float usevalue = _value;
+	float *userange = &_range[ 0 ];
+	if ( m_bUseSubRange )
+	{
+		userange = &_subrange[ 0 ];
+		usevalue = clamp( _value, _subrange[ 0 ], _subrange[ 1 ] );
+	}
+
+	float fwide=(float)wide;
+	float frange=(float)(userange[1] -userange[0]);
+	float fvalue=(float)(usevalue -userange[0]);
+	float fper = (frange != 0.0f) ? fvalue / frange : 0.0f;
+
+	if ( m_bInverted )
+		fper = 1.0f - fper;
+
+	float freepixels = fwide - _nobSize;
+	float leftpixel = (float)x;
+	float firstpixel = leftpixel + freepixels * fper + 0.5f;
+
+	_nobPos[0]=(float)( firstpixel );
+	_nobPos[1]=(float)( firstpixel + _nobSize );
+
+
+	float rightEdge = x + wide;
+
+	if(_nobPos[1]> rightEdge )
+	{
+		_nobPos[0]=rightEdge-((float)_nobSize);
+		_nobPos[1]=rightEdge;
+	}
+	
+	Repaint();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Sync the slider's value up with the nob's position.
 //-----------------------------------------------------------------------------
-void Slider::RecomputeValueFromNobPos()
+void IntSlider::RecomputeValueFromNobPos()
 {
 	int value = EstimateValueAtPos( _nobPos[ 0 ], 0 );
 	SetValue( value );
 }
 
-int Slider::EstimateValueAtPos( int localMouseX, int /*localMouseY*/ )
+void FloatSlider::RecomputeValueFromNobPos()
+{
+	float value = EstimateValueAtPos( _nobPos[ 0 ], 0 );
+	SetValue( value );
+}
+
+int IntSlider::EstimateValueAtPos( int localMouseX, int /*localMouseY*/ )
 {
 	int x, y, wide, tall;
 	GetTrackRect( x, y, wide, tall );
@@ -225,7 +339,29 @@ int Slider::EstimateValueAtPos( int localMouseX, int /*localMouseY*/ )
 	return (int) (RemapVal( fvalue, 0.0, 1.0, userange[0], userange[1] ));
 }
 
-void Slider::SetInverted( bool bInverted )
+float FloatSlider::EstimateValueAtPos( int localMouseX, int /*localMouseY*/ )
+{
+	int x, y, wide, tall;
+	GetTrackRect( x, y, wide, tall );
+
+	float *userange = &_range[ 0 ];
+	if ( m_bUseSubRange )
+	{
+		userange = &_subrange[ 0 ];
+	}
+
+	float fwide = (float)wide;
+	float fvalue = (float)( _value - userange[0] );
+	float fnob = (float)( localMouseX - x );
+	float freepixels = fwide - _nobSize;
+
+	// Map into reduced range
+	fvalue = freepixels != 0.0f ? fnob / freepixels : 0.0f;
+
+	return (float) (RemapVal( fvalue, 0.0, 1.0, userange[0], userange[1] ));
+}
+
+void BaseSlider::SetInverted( bool bInverted )
 {
 	m_bInverted = bInverted;
 }
@@ -234,7 +370,15 @@ void Slider::SetInverted( bool bInverted )
 //-----------------------------------------------------------------------------
 // Purpose: Send a message to interested parties when the slider moves
 //-----------------------------------------------------------------------------
-void Slider::SendSliderMovedMessage()
+void IntSlider::SendSliderMovedMessage()
+{	
+	// send a changed message
+	KeyValues *pParams = new KeyValues("SliderMoved", "position", _value);
+	pParams->SetPtr( "panel", this );
+	PostActionSignal( pParams );
+}
+
+void FloatSlider::SendSliderMovedMessage()
 {	
 	// send a changed message
 	KeyValues *pParams = new KeyValues("SliderMoved", "position", _value);
@@ -245,7 +389,15 @@ void Slider::SendSliderMovedMessage()
 //-----------------------------------------------------------------------------
 // Purpose: Send a message to interested parties when the user begins dragging the slider
 //-----------------------------------------------------------------------------
-void Slider::SendSliderDragStartMessage()
+void IntSlider::SendSliderDragStartMessage()
+{	
+	// send a message
+	KeyValues *pParams = new KeyValues("SliderDragStart", "position", _value);
+	pParams->SetPtr( "panel", this );
+	PostActionSignal( pParams );
+}
+
+void FloatSlider::SendSliderDragStartMessage()
 {	
 	// send a message
 	KeyValues *pParams = new KeyValues("SliderDragStart", "position", _value);
@@ -256,7 +408,7 @@ void Slider::SendSliderDragStartMessage()
 //-----------------------------------------------------------------------------
 // Purpose: Send a message to interested parties when the user ends dragging the slider
 //-----------------------------------------------------------------------------
-void Slider::SendSliderDragEndMessage()
+void IntSlider::SendSliderDragEndMessage()
 {	
 	// send a message
 	KeyValues *pParams = new KeyValues("SliderDragEnd", "position", _value);
@@ -264,11 +416,18 @@ void Slider::SendSliderDragEndMessage()
 	PostActionSignal( pParams );
 }
 
+void FloatSlider::SendSliderDragEndMessage()
+{	
+	// send a message
+	KeyValues *pParams = new KeyValues("SliderDragEnd", "position", _value);
+	pParams->SetPtr( "panel", this );
+	PostActionSignal( pParams );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void Slider::ApplySchemeSettings(IScheme *pScheme)
+void BaseSlider::ApplySchemeSettings(IScheme *pScheme)
 {
 	BaseClass::ApplySchemeSettings(pScheme);
 
@@ -299,7 +458,7 @@ void Slider::ApplySchemeSettings(IScheme *pScheme)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void Slider::GetSettings(KeyValues *outResourceData)
+void BaseSlider::GetSettings(KeyValues *outResourceData)
 {
 	BaseClass::GetSettings(outResourceData);
 	
@@ -320,7 +479,7 @@ void Slider::GetSettings(KeyValues *outResourceData)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void Slider::ApplySettings(KeyValues *inResourceData)
+void BaseSlider::ApplySettings(KeyValues *inResourceData)
 {
 	BaseClass::ApplySettings(inResourceData);
 
@@ -340,6 +499,11 @@ void Slider::ApplySettings(KeyValues *inResourceData)
 	{
 		SetNumTicks( nNumTicks );
 	}
+}
+
+void IntSlider::ApplySettings(KeyValues *inResourceData)
+{
+	BaseClass::ApplySettings(inResourceData);
 
 	int nCurrentRange[2];
 	GetRange( nCurrentRange[0], nCurrentRange[1] );
@@ -363,10 +527,36 @@ void Slider::ApplySettings(KeyValues *inResourceData)
 	}
 }
 
+void FloatSlider::ApplySettings(KeyValues *inResourceData)
+{
+	BaseClass::ApplySettings(inResourceData);
+
+	float nCurrentRange[2];
+	GetRange( nCurrentRange[0], nCurrentRange[1] );
+	KeyValues *pRangeMin = inResourceData->FindKey( "rangeMin", false );
+	KeyValues *pRangeMax = inResourceData->FindKey( "rangeMax", false );
+	bool bDoClamp = false;
+	if ( pRangeMin )
+	{
+		_range[0] = inResourceData->GetFloat( "rangeMin" );
+		bDoClamp = true;
+	}
+	if ( pRangeMax )
+	{
+		_range[1] = inResourceData->GetFloat( "rangeMax" );
+		bDoClamp = true;
+	}
+
+	if ( bDoClamp )
+	{
+		ClampRange();
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-const char *Slider::GetDescription()
+const char *BaseSlider::GetDescription()
 {
 	static char buf[1024];
 	Q_snprintf(buf, sizeof(buf), "%s, string leftText, string rightText", BaseClass::GetDescription());
@@ -376,7 +566,7 @@ const char *Slider::GetDescription()
 //-----------------------------------------------------------------------------
 // Purpose: Get the rectangle to draw the slider track in.
 //-----------------------------------------------------------------------------
-void Slider::GetTrackRect( int& x, int& y, int& w, int& h )
+void BaseSlider::GetTrackRect( int& x, int& y, int& w, int& h )
 {
 	int wide, tall;
 	GetPaintSize( wide, tall );
@@ -390,7 +580,7 @@ void Slider::GetTrackRect( int& x, int& y, int& w, int& h )
 //-----------------------------------------------------------------------------
 // Purpose: Draw everything on screen
 //-----------------------------------------------------------------------------
-void Slider::Paint()
+void BaseSlider::Paint()
 {
 	DrawTicks();
 
@@ -403,7 +593,7 @@ void Slider::Paint()
 //-----------------------------------------------------------------------------
 // Purpose: Draw the ticks below the slider.
 //-----------------------------------------------------------------------------
-void Slider::DrawTicks()
+void BaseSlider::DrawTicks()
 {
 	int x, y;
 	int wide,tall;
@@ -452,7 +642,7 @@ void Slider::DrawTicks()
 //-----------------------------------------------------------------------------
 // Purpose: Draw Tick labels under the ticks.
 //-----------------------------------------------------------------------------
-void Slider::DrawTickLabels()
+void BaseSlider::DrawTickLabels()
 {
 	int x, y;
 	int wide,tall;
@@ -505,7 +695,35 @@ void Slider::DrawTickLabels()
 //-----------------------------------------------------------------------------
 // Purpose: Draw the nob part of the slider.
 //-----------------------------------------------------------------------------
-void Slider::DrawNob()
+void IntSlider::DrawNob()
+{
+	// horizontal nob
+	int x, y;
+	int wide,tall;
+	GetTrackRect( x, y, wide, tall );
+	Color col = GetFgColor();
+
+	surface()->DrawSetColor(col);
+
+	int nobheight = 16;
+
+	surface()->DrawFilledRect(
+		_nobPos[0], 
+		y + tall / 2 - nobheight / 2, 
+		_nobPos[1], 
+		y + tall / 2 + nobheight / 2);
+	// border
+	if (_sliderBorder)
+	{
+		_sliderBorder->Paint(
+			_nobPos[0], 
+			y + tall / 2 - nobheight / 2, 
+			_nobPos[1], 
+			y + tall / 2 + nobheight / 2);
+	}
+}
+
+void FloatSlider::DrawNob()
 {
 	// horizontal nob
 	int x, y;
@@ -536,7 +754,7 @@ void Slider::DrawNob()
 //-----------------------------------------------------------------------------
 // Purpose: Set the text labels of the Start and end ticks.
 //-----------------------------------------------------------------------------
-void Slider::SetTickCaptions( const char *left, const char *right )
+void BaseSlider::SetTickCaptions( const char *left, const char *right )
 {
 	if (left)
 	{
@@ -566,7 +784,7 @@ void Slider::SetTickCaptions( const char *left, const char *right )
 //-----------------------------------------------------------------------------
 // Purpose: Set the text labels of the Start and end ticks.
 //-----------------------------------------------------------------------------
-void Slider::SetTickCaptions( const wchar_t *left, const wchar_t *right )
+void BaseSlider::SetTickCaptions( const wchar_t *left, const wchar_t *right )
 {
 	if (left)
 	{
@@ -596,7 +814,7 @@ void Slider::SetTickCaptions( const wchar_t *left, const wchar_t *right )
 //-----------------------------------------------------------------------------
 // Purpose: Draw the slider track
 //-----------------------------------------------------------------------------
-void Slider::PaintBackground()
+void BaseSlider::PaintBackground()
 {
 	BaseClass::PaintBackground();
 	
@@ -616,7 +834,15 @@ void Slider::PaintBackground()
 //-----------------------------------------------------------------------------
 // Purpose: Set the range of the slider.
 //-----------------------------------------------------------------------------
-void Slider::SetRange(int min,int max)
+void IntSlider::SetRange(int min,int max)
+{
+	_range[0]=min;
+	_range[1]=max;
+
+	ClampRange();
+}
+
+void FloatSlider::SetRange(float min,float max)
 {
 	_range[0]=min;
 	_range[1]=max;
@@ -627,7 +853,33 @@ void Slider::SetRange(int min,int max)
 //-----------------------------------------------------------------------------
 // Purpose: Sanity check and clamp the range if necessary.
 //-----------------------------------------------------------------------------
-void Slider::ClampRange()
+void IntSlider::ClampRange()
+{
+	if ( _range[0] < _range[1] )
+	{
+		if(_value<_range[0])
+		{
+			SetValue( _range[0], false );
+		}
+		else if( _value>_range[1])
+		{
+			SetValue( _range[1], false );
+		}
+	}
+	else
+	{
+		if(_value<_range[1])
+		{
+			SetValue( _range[1], false );
+		}
+		else if( _value>_range[0])
+		{
+			SetValue( _range[0], false );
+		}
+	}
+}
+
+void FloatSlider::ClampRange()
 {
 	if ( _range[0] < _range[1] )
 	{
@@ -656,7 +908,13 @@ void Slider::ClampRange()
 //-----------------------------------------------------------------------------
 // Purpose: Get the max and min values of the slider
 //-----------------------------------------------------------------------------
-void Slider::GetRange(int& min,int& max)
+void IntSlider::GetRange(int& min,int& max)
+{
+	min=_range[0];
+	max=_range[1];
+}
+
+void FloatSlider::GetRange(float& min,float& max)
 {
 	min=_range[0];
 	max=_range[1];
@@ -666,7 +924,7 @@ void Slider::GetRange(int& min,int& max)
 // Purpose: Respond when the cursor is moved in our window if we are clicking
 // and dragging.
 //-----------------------------------------------------------------------------
-void Slider::OnCursorMoved(int x,int y)
+void IntSlider::OnCursorMoved(int x,int y)
 {
 	if(!_dragging)
 	{
@@ -709,23 +967,66 @@ void Slider::OnCursorMoved(int x,int y)
 	SendSliderMovedMessage();
 }
 
+void FloatSlider::OnCursorMoved(int x,int y)
+{
+	if(!_dragging)
+	{
+		return;
+	}
+
+//	input()->GetCursorPos(x,y);
+	input()->GetCursorPosition( x, y );
+	ScreenToLocal(x,y);
+
+//	int wide,tall;
+//	GetPaintSize(wide,tall);
+	int _x, _y, wide, tall;
+	GetTrackRect( _x, _y, wide, tall );
+
+	_nobPos[0]=_nobDragStartPos[0]+(x-_dragStartPos[0]);
+	_nobPos[1]=_nobDragStartPos[1]+(x-_dragStartPos[0]);
+
+	float rightEdge = _x +wide;
+	float unclamped = _nobPos[ 0 ];
+
+	if(_nobPos[1]>rightEdge)
+	{
+		_nobPos[0]=rightEdge-(_nobPos[1]-_nobPos[0]);
+		_nobPos[1]=rightEdge;
+	}
+		
+	if(_nobPos[0]<_x)
+	{
+		float offset = _x - _nobPos[0];
+		_nobPos[1]=_nobPos[1]-offset;
+		_nobPos[0]=0;
+	}
+
+	float value = EstimateValueAtPos( unclamped, 0 );
+	SetValue( value );
+
+	// RecomputeValueFromNobPos();
+	Repaint();
+	SendSliderMovedMessage();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: If you click on the slider outside of the nob, the nob jumps
 // to the click position, and if this setting is enabled, the nob
 // is then draggable from the new position until the mouse is released
 // Input  : state - 
 //-----------------------------------------------------------------------------
-void Slider::SetDragOnRepositionNob( bool state )
+void BaseSlider::SetDragOnRepositionNob( bool state )
 {
 	m_bIsDragOnRepositionNob = state;
 }
 
-bool Slider::IsDragOnRepositionNob() const
+bool BaseSlider::IsDragOnRepositionNob() const
 {
 	return m_bIsDragOnRepositionNob;
 }
 
-bool Slider::IsDragged( void ) const
+bool BaseSlider::IsDragged( void ) const
 {
 	return _dragging;
 }
@@ -733,7 +1034,7 @@ bool Slider::IsDragged( void ) const
 //-----------------------------------------------------------------------------
 // Purpose: Respond to mouse presses. Trigger Record staring positon.
 //-----------------------------------------------------------------------------
-void Slider::OnMousePressed(MouseCode code)
+void IntSlider::OnMousePressed(MouseCode code)
 {
 	int x,y;
 
@@ -801,10 +1102,78 @@ void Slider::OnMousePressed(MouseCode code)
 		SendSliderDragStartMessage();
 }
 
+void FloatSlider::OnMousePressed(MouseCode code)
+{
+	int x,y;
+
+    if (!IsEnabled())
+        return;
+
+//	input()->GetCursorPos(x,y);
+	input()->GetCursorPosition( x, y );
+
+	ScreenToLocal(x,y);
+    RequestFocus();
+
+	bool startdragging = false, bPostDragStartSignal = false;
+
+	if ((x >= _nobPos[0]) && (x < _nobPos[1]))
+	{
+		startdragging = true;
+		bPostDragStartSignal = true;
+	}
+	else
+	{
+		// we clicked elsewhere on the slider; move the nob to that position
+		float min, max;
+		GetRange(min, max);
+		if ( m_bUseSubRange )
+		{
+			min = _subrange[ 0 ];
+			max = _subrange[ 1 ];
+		}
+
+//		int wide = GetWide();
+		int _x, _y, wide, tall;
+		GetTrackRect( _x, _y, wide, tall );
+		if ( wide > 0 )
+		{
+			float frange = ( float )( max - min );
+			float clickFrac = clamp( ( float )( x - _x ) / (float)( wide - 1 ), 0.0f, 1.0f );
+
+			float value = (float)min + clickFrac * frange;
+
+			startdragging = IsDragOnRepositionNob();
+
+			if ( startdragging )
+			{
+				_dragging = true; // Required when as
+				SendSliderDragStartMessage();
+			}
+
+			SetValue( ( int )( value + 0.5f ) );
+		}
+	}
+
+	if ( startdragging )
+	{
+		// drag the nob
+		_dragging = true;
+		input()->SetMouseCapture(GetVPanel());
+		_nobDragStartPos[0] = _nobPos[0];
+		_nobDragStartPos[1] = _nobPos[1];
+		_dragStartPos[0] = x;
+		_dragStartPos[1] = y;
+	}
+
+	if ( bPostDragStartSignal )
+		SendSliderDragStartMessage();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Just handle double presses like mouse presses
 //-----------------------------------------------------------------------------
-void Slider::OnMouseDoublePressed(MouseCode code)
+void BaseSlider::OnMouseDoublePressed(MouseCode code)
 {
 	OnMousePressed(code);
 }
@@ -812,7 +1181,7 @@ void Slider::OnMouseDoublePressed(MouseCode code)
 //-----------------------------------------------------------------------------
 // Purpose: Handle key presses
 //-----------------------------------------------------------------------------
-void Slider::OnKeyCodeTyped(KeyCode code)
+void IntSlider::OnKeyCodeTyped(KeyCode code)
 {
 	switch (code)
 	{
@@ -871,15 +1240,74 @@ void Slider::OnKeyCodeTyped(KeyCode code)
 	}
 }
 
+void FloatSlider::OnKeyCodeTyped(KeyCode code)
+{
+	switch (code)
+	{
+		// for now left and right arrows just open or close submenus if they are there.
+        case KEY_LEFT:
+        case KEY_DOWN:
+            {
+                float val = GetValue();
+                SetValue(val-1);
+                break;
+            }
+    	case KEY_RIGHT:
+        case KEY_UP:
+    		{
+                int val = GetValue();
+                SetValue(val+1);
+    			break;
+    		}
+        case KEY_PAGEDOWN:
+            {
+                float min, max;
+                GetRange(min, max);
+                float range = (float) max-min;
+                float pertick = range/m_nNumTicks;
+                int val = GetValue();
+                SetValue(val - (int) pertick);
+                break;
+            }
+        case KEY_PAGEUP:
+            {
+                float min, max;
+                GetRange(min, max);
+                float range = (float) max-min;
+                float pertick = range/m_nNumTicks;
+                int val = GetValue();
+                SetValue(val + (int) pertick);
+                break;
+            }
+        case KEY_HOME:
+            {
+                float min, max;
+                GetRange(min, max);
+                SetValue(min);
+    			break;
+            }
+        case KEY_END:
+            {
+                float min, max;
+                GetRange(min, max);
+                SetValue(max);
+    			break;
+            }
+    	default:
+    		BaseClass::OnKeyCodeTyped(code);
+    		break;
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Stop dragging when the mouse is released.
 //-----------------------------------------------------------------------------
-void Slider::OnMouseReleased(MouseCode code)
+void BaseSlider::OnMouseReleased(MouseCode code)
 {
 	if ( _dragging )
 	{
 		_dragging=false;
-		input()->SetMouseCapture(null);
+		input()->SetMouseCapture(INVALID_VPANEL);
 	}
 
 	if ( IsEnabled() )
@@ -891,7 +1319,13 @@ void Slider::OnMouseReleased(MouseCode code)
 //-----------------------------------------------------------------------------
 // Purpose: Get the nob's position (the ends of each side of the nob)
 //-----------------------------------------------------------------------------
-void Slider::GetNobPos(int& min, int& max)
+void IntSlider::GetNobPos(int& min, int& max)
+{
+	min=_nobPos[0];
+	max=_nobPos[1];
+}
+
+void FloatSlider::GetNobPos(float& min, float& max)
 {
 	min=_nobPos[0];
 	max=_nobPos[1];
@@ -900,12 +1334,12 @@ void Slider::GetNobPos(int& min, int& max)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void Slider::SetButtonOffset(int buttonOffset)
+void BaseSlider::SetButtonOffset(int buttonOffset)
 {
 	_buttonOffset=buttonOffset;
 }
 
-void Slider::SetThumbWidth( int width )
+void BaseSlider::SetThumbWidth( int width )
 {
 	_nobSize = (float)width;
 }
@@ -914,7 +1348,7 @@ void Slider::SetThumbWidth( int width )
 //-----------------------------------------------------------------------------
 // Purpose: Set the number of ticks that appear under the slider.
 //-----------------------------------------------------------------------------
-void Slider::SetNumTicks( int ticks )
+void BaseSlider::SetNumTicks( int ticks )
 {
 	m_nNumTicks = ticks;
 }

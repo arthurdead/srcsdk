@@ -20,7 +20,7 @@ class CPathTrack;
 class CAI_TrackPather : public CAI_BaseNPC
 {
 	DECLARE_CLASS( CAI_TrackPather, CAI_BaseNPC );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 public:
 
 	bool			IsOnPathTrack()							{ return (m_pCurrentPathTarget != NULL); }
@@ -45,9 +45,6 @@ protected:
 	void			ClearForcedMove()						{ m_bForcedMove = false;		}
 
 	float			GetPathMaxSpeed() const					{ return m_flPathMaxSpeed;		}
-
-	void			OnSave( IEntitySaveUtils *pUtils );
-	void			OnRestore( void );
 
 protected:
 	enum PauseState_t

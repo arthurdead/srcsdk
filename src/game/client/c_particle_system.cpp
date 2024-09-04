@@ -356,6 +356,11 @@ void ParticleEffectCallback( const CEffectData &data )
 	}
 }
 
+void StartParticleEffect( const CEffectData &data )
+{
+	ParticleEffectCallback(data);
+}
+
 DECLARE_CLIENT_EFFECT( ParticleEffect, ParticleEffectCallback );
 
 

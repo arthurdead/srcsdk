@@ -34,6 +34,7 @@ public:
 	CTeamControlPointMaster();
 
 	// Used to find game specific entities
+	virtual const char *GetTriggerAreaCaptureName( void ) { return "trigger_capture_area"; }
 	virtual const char *GetControlPointName( void ) { return "team_control_point"; }
 	virtual const char *GetControlPointRoundName( void ) { return "team_control_point_round"; }
 
@@ -55,6 +56,7 @@ public:
 
 	void FireTeamWinOutput( int iWinningTeam );
 
+	bool PointCanBeCapped( CTeamControlPoint *pPoint );
 	bool IsInRound( CTeamControlPoint *pPoint );
 	void CheckWinConditions( void );
 
@@ -119,6 +121,7 @@ public:
 	bool ShouldScorePerCapture( void ){ return m_bScorePerCapture; }
 	bool ShouldPlayAllControlPointRounds( void ){ return m_bPlayAllRounds; }
 	int NumPlayableControlPointRounds( void ); // checks to see if there are any more rounds to play (but doesn't actually "get" one to play)
+	bool FindControlPointRoundToPlay( void ); // checks to see if there are any more rounds to play (but doesn't actually "get" one to play)
 
 #ifdef STAGING_ONLY
 	void ListRounds( void );
@@ -173,7 +176,7 @@ private:
 	CUtlVector<CTeamControlPointRound *> m_ControlPointRounds;
 	int m_iCurrentRoundIndex;
 	
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	bool m_bDisabled;
 	void InputEnable( inputdata_t &inputdata );

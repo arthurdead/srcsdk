@@ -30,7 +30,7 @@ CPostProcessSystem *PostProcessSystem( void )
 
 LINK_ENTITY_TO_CLASS( postprocess_controller, CPostProcessController );
 
-BEGIN_DATADESC( CPostProcessController )
+BEGIN_MAPENTITY( CPostProcessController )
 	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_FADE_TIME ], FIELD_FLOAT,	"fadetime" ),
 	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_LOCAL_CONTRAST_STRENGTH ], FIELD_FLOAT,	"localcontraststrength" ),
 	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_LOCAL_CONTRAST_EDGE_STRENGTH ], FIELD_FLOAT,	"localcontrastedgestrength" ),
@@ -55,7 +55,7 @@ BEGIN_DATADESC( CPostProcessController )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetDepthBlurStrength", InputSetDepthBlurStrength ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetScreenBlurStrength", InputSetScreenBlurStrength ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFilmGrainStrength", InputSetFilmGrainStrength ),
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST( CPostProcessController, DT_PostProcessController )
 	SendPropArray3( SENDINFO_ARRAY3( m_flPostProcessParameters ), SendPropFloat( SENDINFO_ARRAY( m_flPostProcessParameters ) ) ),

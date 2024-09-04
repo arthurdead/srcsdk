@@ -6,12 +6,11 @@
 
 #ifndef AI_UTILS_H
 #define AI_UTILS_H
+#pragma once
 
 #include "simtimer.h"
 #include "ai_component.h"
-
-#pragma once
-
+#include "baseentity.h"
 
 //-----------------------------------------------------------------------------
 //
@@ -28,6 +27,12 @@ public:
 	 : m_vMark( 0, 0, 0 ),
 	   m_flMarkTolerance( NO_MARK )
 	{
+	}
+
+	void SetMark( const Vector &v, float tolerance )
+	{
+		m_vMark = v;
+		m_flMarkTolerance = tolerance;
 	}
 	
 	void SetMark( CBaseEntity *pEntity, float tolerance )
@@ -49,26 +54,44 @@ public:
 		return ( m_flMarkTolerance != NO_MARK );
 	}
 
-	bool TargetMoved( CBaseEntity *pEntity )
+	bool TargetMoved( const Vector &v )
 	{
-		if ( IsMarkSet() && pEntity != NULL )
+		if ( IsMarkSet() )
 		{
-			float distance = ( m_vMark - pEntity->GetAbsOrigin() ).Length();
+			float distance = ( m_vMark - v ).Length();
 			if ( distance > m_flMarkTolerance )
 				return true;
 		}
 		return false;
 	}
 
-	bool TargetMoved2D( CBaseEntity *pEntity )
+	bool TargetMoved2D( const Vector2D &v )
 	{
-		if ( IsMarkSet() && pEntity != NULL )
+		if ( IsMarkSet() )
 		{
-			float distance = ( m_vMark.AsVector2D() - pEntity->GetAbsOrigin().AsVector2D() ).Length();
+			float distance = ( m_vMark.AsVector2D() - v ).Length();
 			if ( distance > m_flMarkTolerance )
 				return true;
 		}
 		return false;
+	}
+
+	bool TargetMoved( CBaseEntity *pEntity )
+	{
+		if ( pEntity == NULL )
+		{
+			return false;
+		}
+		return TargetMoved( pEntity->GetAbsOrigin() );
+	}
+
+	bool TargetMoved2D( CBaseEntity *pEntity )
+	{
+		if ( pEntity == NULL )
+		{
+			return false;
+		}
+		return TargetMoved2D( pEntity->GetAbsOrigin().AsVector2D() );
 	}
 
 	Vector GetMarkPos() { return m_vMark; }
@@ -81,8 +104,6 @@ private:
 	
 	Vector			   m_vMark;
 	float			   m_flMarkTolerance;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 
@@ -152,8 +173,6 @@ private:
 	float	m_flMinRestInterval, m_flMaxRestInterval;
 	float	m_flMinBurstInterval, m_flMaxBurstInterval;
 	bool	m_bDisabled;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 
@@ -184,8 +203,6 @@ private:
 	float	m_invDecay; //	0.8	// maintain X percent of velocity when slowing down
 	float	m_decayTime;//	0.4161	// Sum( 1..cycle, HEIGHTINVDECAY^cycle ) 
 	float	m_accel;	//	0.5		// accel toward maxVelocity by X percent each cycle
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 
@@ -209,7 +226,7 @@ struct AI_FreePassParams_t
 	float peekEyeDist;			// how far spaced out the eyes are
 	float peekEyeDistZ;			// how far below eye position to test eyes (handles peek up)
 
-	DECLARE_SIMPLE_DATADESC();
+	DECLARE_SIMPLE_MAPEMBEDDED();
 };
 
 //-------------------------------------
@@ -225,7 +242,7 @@ public:
 	void			Reset( float passTime = -1, float moveTolerance = -1 );
 
 	void			SetPassTarget( CBaseEntity *pTarget )		{ m_hTarget = pTarget; m_FreePassTimeRemaining = 0; }
-	CBaseEntity *	GetPassTarget()								{ return m_hTarget; }
+	CBaseEntity *	GetPassTarget()								{ return m_hTarget.Get(); }
 	
 	void			SetParams( const AI_FreePassParams_t &params )	{ m_Params = params; }
 	const AI_FreePassParams_t &GetParams() const					{ return m_Params; }
@@ -250,8 +267,6 @@ private:
 	CAI_MoveMonitor m_FreePassMoveMonitor;
 	
 	AI_FreePassParams_t m_Params;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //-----------------------------------------------------------------------------

@@ -40,14 +40,12 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS(env_smoketrail, SmokeTrail);
 
-BEGIN_DATADESC( SmokeTrail )
+BEGIN_MAPENTITY( SmokeTrail )
 
-	DEFINE_FIELD( m_StartColor, FIELD_VECTOR ),
-	DEFINE_FIELD( m_EndColor, FIELD_VECTOR ),
 	DEFINE_KEYFIELD( m_Opacity, FIELD_FLOAT, "opacity" ),
 	DEFINE_KEYFIELD( m_SpawnRate, FIELD_FLOAT, "spawnrate" ),
 	DEFINE_KEYFIELD( m_ParticleLifetime, FIELD_FLOAT, "lifetime" ),
-	DEFINE_FIELD( m_StopEmitTime, FIELD_TIME ),
+
 	DEFINE_KEYFIELD( m_MinSpeed, FIELD_FLOAT, "minspeed" ),
 	DEFINE_KEYFIELD( m_MaxSpeed, FIELD_FLOAT, "maxspeed" ),
 	DEFINE_KEYFIELD( m_MinDirectedSpeed, FIELD_FLOAT, "mindirectedspeed" ),
@@ -55,10 +53,8 @@ BEGIN_DATADESC( SmokeTrail )
 	DEFINE_KEYFIELD( m_StartSize, FIELD_FLOAT, "startsize" ),
 	DEFINE_KEYFIELD( m_EndSize, FIELD_FLOAT, "endsize" ),
 	DEFINE_KEYFIELD( m_SpawnRadius, FIELD_FLOAT, "spawnradius" ),
-	DEFINE_FIELD( m_bEmit, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_nAttachment, FIELD_INTEGER ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -196,26 +192,6 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( env_rockettrail, RocketTrail );
 
-BEGIN_DATADESC( RocketTrail )
-
-	DEFINE_FIELD( m_StartColor, FIELD_VECTOR ),
-	DEFINE_FIELD( m_EndColor, FIELD_VECTOR ),
-	DEFINE_FIELD( m_Opacity, FIELD_FLOAT ),
-	DEFINE_FIELD( m_SpawnRate, FIELD_FLOAT ),
-	DEFINE_FIELD( m_ParticleLifetime, FIELD_FLOAT ),
-	DEFINE_FIELD( m_StopEmitTime, FIELD_TIME ),
-	DEFINE_FIELD( m_MinSpeed, FIELD_FLOAT ),
-	DEFINE_FIELD( m_MaxSpeed, FIELD_FLOAT ),
-	DEFINE_FIELD( m_StartSize, FIELD_FLOAT ),
-	DEFINE_FIELD( m_EndSize, FIELD_FLOAT ),
-	DEFINE_FIELD( m_SpawnRadius, FIELD_FLOAT ),
-	DEFINE_FIELD( m_bEmit, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_nAttachment, FIELD_INTEGER ),
-	DEFINE_FIELD( m_bDamaged, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flFlareScale, FIELD_FLOAT ),
-
-END_DATADESC()
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : 
@@ -310,18 +286,6 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS(env_sporetrail, SporeTrail);
 
-BEGIN_DATADESC( SporeTrail )
-
-	DEFINE_FIELD( m_vecEndColor, FIELD_VECTOR ),
-	DEFINE_FIELD( m_flSpawnRate, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flParticleLifetime, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flStartSize, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flEndSize, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flSpawnRadius, FIELD_FLOAT ),
-	DEFINE_FIELD( m_bEmit, FIELD_BOOLEAN ),
-
-END_DATADESC()
-
 SporeTrail::SporeTrail( void )
 {
 	m_vecEndColor.GetForModify().Init();
@@ -331,7 +295,8 @@ SporeTrail::SporeTrail( void )
 	m_flStartSize			= 1.0f;
 	m_flEndSize				= 0.0f;
 	m_flSpawnRadius			= 16.0f;
-	SetRenderColor( 255, 255, 255, 255 );
+	SetRenderColor( 255, 255, 255 );
+	SetRenderAlpha( 255 );
 }
 
 //-----------------------------------------------------------------------------
@@ -376,21 +341,15 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( env_sporeexplosion, SporeExplosion );
 
-BEGIN_DATADESC( SporeExplosion )
+BEGIN_MAPENTITY( SporeExplosion )
 
 	DEFINE_KEYFIELD( m_flSpawnRate, FIELD_FLOAT, "spawnrate" ),
-	DEFINE_FIELD( m_flParticleLifetime, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flStartSize, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flEndSize, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flSpawnRadius, FIELD_FLOAT ),
-	DEFINE_FIELD( m_bEmit, FIELD_BOOLEAN ),
 	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "startdisabled" ),
-	DEFINE_FIELD( m_bDontRemove, FIELD_BOOLEAN ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 SporeExplosion::SporeExplosion( void )
 {
@@ -452,13 +411,6 @@ void SporeExplosion::InputDisable( inputdata_t &inputdata )
 	m_bDisabled = true;
 	m_bEmit = false;
 }
-
-BEGIN_DATADESC( CFireTrail )
-
-	DEFINE_FIELD( m_flLifetime, FIELD_FLOAT ),
-	DEFINE_FIELD( m_nAttachment, FIELD_INTEGER ),
-
-END_DATADESC()
 
 IMPLEMENT_SERVERCLASS_ST( CFireTrail, DT_FireTrail )
 	SendPropInt( SENDINFO( m_nAttachment ), 32 ),
@@ -545,13 +497,12 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( env_dusttrail, DustTrail);
 
-BEGIN_DATADESC( DustTrail )
+BEGIN_MAPENTITY( DustTrail )
 
-	DEFINE_FIELD( m_Color, FIELD_VECTOR ),
 	DEFINE_KEYFIELD( m_Opacity, FIELD_FLOAT, "opacity" ),
 	DEFINE_KEYFIELD( m_SpawnRate, FIELD_FLOAT, "spawnrate" ),
 	DEFINE_KEYFIELD( m_ParticleLifetime, FIELD_FLOAT, "lifetime" ),
-	DEFINE_FIELD( m_StopEmitTime, FIELD_TIME ),
+
 	DEFINE_KEYFIELD( m_MinSpeed, FIELD_FLOAT, "minspeed" ),
 	DEFINE_KEYFIELD( m_MaxSpeed, FIELD_FLOAT, "maxspeed" ),
 	DEFINE_KEYFIELD( m_MinDirectedSpeed, FIELD_FLOAT, "mindirectedspeed" ),
@@ -559,10 +510,8 @@ BEGIN_DATADESC( DustTrail )
 	DEFINE_KEYFIELD( m_StartSize, FIELD_FLOAT, "startsize" ),
 	DEFINE_KEYFIELD( m_EndSize, FIELD_FLOAT, "endsize" ),
 	DEFINE_KEYFIELD( m_SpawnRadius, FIELD_FLOAT, "spawnradius" ),
-	DEFINE_FIELD( m_bEmit, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_nAttachment, FIELD_INTEGER ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------

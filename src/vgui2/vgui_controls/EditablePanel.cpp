@@ -122,7 +122,7 @@ void EditablePanel::OnKeyCodePressed( KeyCode code )
 
 		// check for a default button
 		VPANEL panel = GetFocusNavGroup().GetCurrentDefaultButton();
-		if ( panel )
+		if ( panel != INVALID_VPANEL )
 		{
 			switch ( nButtonCode )
 			{
@@ -258,10 +258,10 @@ void EditablePanel::OnCurrentDefaultButtonSet( VPANEL defaultButton )
 	m_NavGroup.SetCurrentDefaultButton( defaultButton, false );
 
 	// forward the message up
-	if (GetVParent())
+	if (GetVParent() != INVALID_VPANEL)
 	{
 		KeyValues *msg = new KeyValues("CurrentDefaultButtonSet");
-		msg->SetInt("button", ivgui()->PanelToHandle( defaultButton ) );
+		msg->SetInt("button", (uintp)ivgui()->PanelToHandle( defaultButton ) );
 		PostMessage(GetVParent(), msg);
 	}
 }
@@ -281,13 +281,13 @@ void EditablePanel::OnDefaultButtonSet( VPANEL defaultButton )
 //-----------------------------------------------------------------------------
 void EditablePanel::OnFindDefaultButton()
 {
-    if (m_NavGroup.GetDefaultButton())
+    if (m_NavGroup.GetDefaultButton() != INVALID_VPANEL)
     {
         m_NavGroup.SetCurrentDefaultButton(m_NavGroup.GetDefaultButton());
     }
     else
     {
-        if (GetVParent())
+        if (GetVParent() != INVALID_VPANEL)
         {
             PostMessage(GetVParent(), new KeyValues("FindDefaultButton"));
         }
@@ -750,11 +750,11 @@ void EditablePanel::RequestFocus(int direction)
 	// delegate focus
 	if (direction == 1)
 	{
-		RequestFocusNext(NULL);
+		RequestFocusNext(INVALID_VPANEL);
 	}
 	else if (direction == -1)
 	{
-		RequestFocusPrev(NULL);
+		RequestFocusPrev(INVALID_VPANEL);
 	}
 	else
 	{
@@ -818,7 +818,7 @@ VPANEL EditablePanel::GetCurrentKeyFocus()
 {
 	Panel *focus = m_NavGroup.GetCurrentFocus();
 	if (focus == this)
-		return NULL;
+		return INVALID_VPANEL;
 
 	if (focus)
 	{
@@ -827,7 +827,7 @@ VPANEL EditablePanel::GetCurrentKeyFocus()
 
 		// chain down the editpanel hierarchy
 		VPANEL subFocus = focus->GetCurrentKeyFocus();
-		if (subFocus)
+		if (subFocus != INVALID_VPANEL)
 			return subFocus;
 
 		// hit a leaf panel, return that

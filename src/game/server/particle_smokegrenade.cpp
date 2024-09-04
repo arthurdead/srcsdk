@@ -21,16 +21,6 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( env_particlesmokegrenade, ParticleSmokeGrenade );
 
-BEGIN_DATADESC( ParticleSmokeGrenade )
-
-	DEFINE_FIELD( m_CurrentStage, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_FadeStartTime, FIELD_TIME ),
-	DEFINE_FIELD( m_FadeEndTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flSpawnTime, FIELD_TIME ),
-
-END_DATADESC()
-
-
 ParticleSmokeGrenade::ParticleSmokeGrenade()
 {
 	m_CurrentStage = 0;
@@ -40,6 +30,27 @@ ParticleSmokeGrenade::ParticleSmokeGrenade()
 	m_flSpawnTime = gpGlobals->curtime;
 }
 
+ParticleSmokeGrenade::~ParticleSmokeGrenade()
+{
+}
+
+void ParticleSmokeGrenade::Spawn()
+{
+	BaseClass::Spawn();
+
+	SetNextThink( gpGlobals->curtime );
+	m_creatorPlayer = NULL;
+}
+
+void ParticleSmokeGrenade::SetCreator(CBasePlayer *creator)
+{
+	m_creatorPlayer = creator;
+}
+
+CBasePlayer* ParticleSmokeGrenade::GetCreator()
+{
+	return (CBasePlayer*)m_creatorPlayer.Get();
+}
 
 // Smoke grenade particles should always transmitted to clients.  If not, a client who
 // enters the PVS late will see the smoke start billowing from then, allowing better vision.
@@ -72,4 +83,20 @@ void ParticleSmokeGrenade::SetRelativeFadeTime(float startTime, float endTime)
 
 	m_FadeStartTime = flCurrentTime + startTime;
 	m_FadeEndTime = flCurrentTime + endTime;
+}
+
+void ParticleSmokeGrenade::Think()
+{
+	// Override, don't extend.  (Baseclass's Think just deletes.)
+
+	float now = gpGlobals->curtime;
+	if( now >= (m_flSpawnTime + m_FadeEndTime) )
+	{
+		// We are done
+		UTIL_Remove(this);
+		return;
+	}
+
+	const float PSG_THINK_DELAY = 1.0f;
+	SetNextThink(now + PSG_THINK_DELAY);
 }

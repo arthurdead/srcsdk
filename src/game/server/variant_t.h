@@ -12,6 +12,8 @@
 
 #include "ehandle.h"
 #include "mathlib/vmatrix.h"
+#include "string_t.h"
+#include "datamap.h"
 
 class CBaseEntity;
 
@@ -30,7 +32,7 @@ class variant_t
 		float vecVal[3];
 		color32 rgbaVal;
 	};
-	CHandle<CBaseEntity> eVal; // this can't be in the union because it has a constructor.
+	EHANDLE eVal; // this can't be in the union because it has a constructor.
 
 	fieldtype_t fieldType;
 
@@ -44,7 +46,7 @@ public:
 	inline string_t StringID( void ) const				{ return( fieldType == FIELD_STRING ) ? iszVal : NULL_STRING; }
 	inline int Int( void ) const						{ return( fieldType == FIELD_INTEGER ) ? iVal : 0; }
 	inline float Float( void ) const					{ return( fieldType == FIELD_FLOAT ) ? flVal : 0; }
-	inline const CHandle<CBaseEntity> &Entity(void) const;
+	inline const EHANDLE &Entity(void) const;
 	inline color32 Color32(void) const					{ return rgbaVal; }
 	inline void Vector3D(Vector &vec) const;
 
@@ -106,14 +108,12 @@ inline void variant_t::Vector3D(Vector &vec) const
 //-----------------------------------------------------------------------------
 // Purpose: Returns this variant as an EHANDLE.
 //-----------------------------------------------------------------------------
-inline const CHandle<CBaseEntity> &variant_t::Entity(void) const
+inline const EHANDLE &variant_t::Entity(void) const
 {
 	if ( fieldType == FIELD_EHANDLE )
 		return eVal;
 
-	static CHandle<CBaseEntity> hNull;
-	hNull.Set(NULL);
-	return(hNull);
+	return NULL_EHANDLE;
 }
 
 

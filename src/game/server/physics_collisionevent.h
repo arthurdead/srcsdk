@@ -80,23 +80,22 @@ public:
 	virtual void AddDamageEvent( CBaseEntity *pEntity, const CTakeDamageInfo &info, IPhysicsObject *pInflictorPhysics, bool bRestoreVelocity, const Vector &savedVel, const AngularImpulse &savedAngVel );
 	void AddImpulseEvent( IPhysicsObject *pPhysicsObject, const Vector &vecCenterForce, const AngularImpulse &vecCenterTorque );
 	void AddSetVelocityEvent( IPhysicsObject *pPhysicsObject, const Vector &vecVelocity );
-	void AddRemoveObject(IServerNetworkable *pRemove);
+	void AddRemoveObject(CBaseEntity *pRemove);
 	void FlushQueuedOperations();
 
 	// IPhysicsCollisionSolver
 	int		ShouldCollide( IPhysicsObject *pObj0, IPhysicsObject *pObj1, void *pGameData0, void *pGameData1 );
 	int		ShouldSolvePenetration( IPhysicsObject *pObj0, IPhysicsObject *pObj1, void *pGameData0, void *pGameData1, float dt );
 	bool	ShouldFreezeObject( IPhysicsObject *pObject );
-	static const char *ModuleName() { return CBaseEntity::IsServer() ? "SERVER" : "CLIENT"; }
 	int		AdditionalCollisionChecksThisTick( int currentChecksDone ) 
 	{
 		//CallbackContext check(this);
 		if ( currentChecksDone < 1200 )
 		{
-			DevMsg(1,"%s: VPhysics Collision detection getting expensive, check for too many convex pieces!\n", ModuleName());
+			DevMsg(1,"VPhysics Collision detection getting expensive, check for too many convex pieces!\n");
 			return 1200 - currentChecksDone;
 		}
-		DevMsg(1,"%s: VPhysics exceeded collision check limit (%d)!!!\nInterpenetration may result!\n", ModuleName(), currentChecksDone );
+		DevMsg(1,"VPhysics exceeded collision check limit (%d)!!!\nInterpenetration may result!\n", currentChecksDone );
 		return 0; 
 	}
 	bool ShouldFreezeContacts( IPhysicsObject **pObjectList, int objectCount );
@@ -165,7 +164,7 @@ private:
 	CUtlVector<inflictorstate_t>	m_damageInflictors;
 	CUtlVector<penetrateevent_t> m_penetrateEvents;
 	CUtlVector<fluidevent_t>	m_fluidEvents;
-	CUtlVector<IServerNetworkable *> m_removeObjects;
+	CUtlVector<CBaseEntity *> m_removeObjects;
 	int							m_inCallback;
 	int							m_lastTickFrictionError;	// counter to control printing of the dev warning for large contact systems
 	bool						m_bBufferTouchEvents;

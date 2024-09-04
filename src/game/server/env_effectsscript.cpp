@@ -93,7 +93,7 @@ class CEnvEffectsScript : public CBaseAnimating
 {
 public:
 	DECLARE_CLASS( CEnvEffectsScript, CBaseAnimating );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void Precache();
 	virtual void Spawn();
@@ -178,15 +178,12 @@ inline bool TokenWaiting( void )
 //-----------------------------------------------------------------------------
 // Save/load 
 //-----------------------------------------------------------------------------
-BEGIN_DATADESC( CEnvEffectsScript )
+BEGIN_MAPENTITY( CEnvEffectsScript )
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetSequence", InputSetSequence ),
 	DEFINE_KEYFIELD( m_iszScriptName, FIELD_STRING, "scriptfile" ),
-	// DEFINE_FIELD( m_ScriptElements, CUtlVector < CEffectScriptElement > ),
 
-	DEFINE_FUNCTION( Think ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( env_effectscript, CEnvEffectsScript );
 
@@ -286,7 +283,9 @@ void CEnvEffectsScript::SpriteEffectEvent( CEffectScriptElement *pEffect )
 
 void CEnvEffectsScript::HandleAnimEvent ( animevent_t *pEvent ) 
 {
-	if ( pEvent->event == AE_START_SCRIPTED_EFFECT )
+	int nEvent = pEvent->Event();
+
+	if ( nEvent == AE_START_SCRIPTED_EFFECT )
 	{
 		CEffectScriptElement *pCurrent = GetScriptElementByName( pEvent->options );
 
@@ -301,7 +300,7 @@ void CEnvEffectsScript::HandleAnimEvent ( animevent_t *pEvent )
 		return;
 	}
 
-	if ( pEvent->event == AE_STOP_SCRIPTED_EFFECT )
+	if ( nEvent == AE_STOP_SCRIPTED_EFFECT )
 	{
 		CEffectScriptElement *pCurrent = GetScriptElementByName( pEvent->options );
 
@@ -365,7 +364,7 @@ void CEnvEffectsScript::InputSetSequence( inputdata_t &inputdata )
 			SetSequence( nSequence );
 			ResetSequenceInfo();
 			SetCycle( 0.0f );
-			m_flPlaybackRate = 1.0f;
+			SetPlaybackRate( 1.0f );
 		}
 	}
 }

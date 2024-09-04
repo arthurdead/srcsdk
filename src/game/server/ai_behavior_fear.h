@@ -100,8 +100,6 @@ private:
 	CNavArea *	m_pSafePlaceArea;
 	CNavArea *	m_pMovingToArea;
 #endif
-
-	DECLARE_DATADESC();
 };
 
 #endif // AI_BEHAVIOR_FEAR_H

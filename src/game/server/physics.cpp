@@ -27,14 +27,11 @@
 #include "vphysics/vehicles.h"
 #include "vehicle_sounds.h"
 #include "movevars_shared.h"
-#include "physics_saverestore.h"
 #include "solidsetdefaults.h"
 #include "tier0/vprof.h"
 #include "engine/IStaticPropMgr.h"
 #include "physics_prop_ragdoll.h"
-#ifdef HL2_EPISODIC
 #include "particle_parse.h"
-#endif
 #include "vphysics/object_hash.h"
 #include "vphysics/collision_set.h"
 #include "vphysics/friction.h"
@@ -278,8 +275,6 @@ void CPhysicsHook::LevelShutdownPostEntity()
 {
 	if ( !physenv )
 		return;
-
-	g_pPhysSaveRestoreManager->ForgetAllModels();
 
 	g_Collisions.LevelShutdown();
 
@@ -553,6 +548,15 @@ int CCollisionEvent::ShouldCollide_2( IPhysicsObject *pObj0, IPhysicsObject *pOb
 	// physics forces on the rest of the system.
 	bool aiMove0 = (movetype0==MOVETYPE_PUSH) ? true : false;
 	bool aiMove1 = (movetype1==MOVETYPE_PUSH) ? true : false;
+	// Anything with custom movement and a shadow controller is assumed to do its own world/AI collisions
+	if ( movetype0 == MOVETYPE_CUSTOM && pObj0->GetShadowController() )
+	{
+		aiMove0 = true;
+	}
+	if ( movetype1 == MOVETYPE_CUSTOM && pObj1->GetShadowController() )
+	{
+		aiMove1 = true;
+	}
 
 	if ( pEntity0->GetMoveParent() )
 	{
@@ -680,7 +684,7 @@ bool CCollisionEvent::ShouldFreezeObject( IPhysicsObject *pObject )
 	// After doing the experiment of constraining the dynamic range of mass while solving friction
 	// contacts, I like the results of this tradeoff better.  So damage or remove the debris object
 	// wherever possible once we hit this case:
-	if ( IsDebris( pEntity->GetCollisionGroup()) && !pEntity->IsNPC() )
+	if ( pEntity && IsDebris( pEntity->GetCollisionGroup()) && !pEntity->IsNPC() )
 	{
 		IPhysicsObject *pOtherObject = NULL;
 		Vector contactPos;
@@ -701,7 +705,7 @@ bool CCollisionEvent::ShouldFreezeObject( IPhysicsObject *pObject )
 				if ( PropIsGib(pEntity) )
 				{
 					// it's always safe to delete gibs, so kill this one to avoid simulation problems
-					PhysCallbackRemove( pEntity->NetworkProp() );
+					PhysCallbackRemove( pEntity );
 				}
 				else
 				{
@@ -1711,12 +1715,18 @@ void PhysFrame( float deltaTime )
 	g_Collisions.BufferTouchEvents( true );
 #endif
 
-	physenv->Simulate( deltaTime );
+	{
+		//CMiniProfilerGuard mpg3(&g_mp_ServerPhysicsSimulate);
+		VPROF( "physenv->Simulate()" );
+		physenv->Simulate( deltaTime );
+	}
 
 	int activeCount = physenv->GetActiveObjectCount();
 	IPhysicsObject **pActiveList = NULL;
 	if ( activeCount )
 	{
+		VPROF( "physenv->GetActiveObjects->VPhysicsUpdate" );
+
 		pActiveList = (IPhysicsObject **)stackalloc( sizeof(IPhysicsObject *)*activeCount );
 		physenv->GetActiveObjects( pActiveList );
 
@@ -1735,20 +1745,23 @@ void PhysFrame( float deltaTime )
 		stackfree( pActiveList );
 	}
 
-	for ( pItem = g_pShadowEntities->m_pItemList; pItem; pItem = pItem->pNext )
 	{
-		CBaseEntity *pEntity = pItem->hEnt.Get();
-		if ( !pEntity )
+		VPROF( "PhysFrame VPhysicsShadowUpdate" );
+		for ( pItem = g_pShadowEntities->m_pItemList; pItem; pItem = pItem->pNext )
 		{
-			Msg( "Dangling pointer to physics entity!!!\n" );
-			continue;
-		}
+			CBaseEntity *pEntity = pItem->hEnt.Get();
+			if ( !pEntity )
+			{
+				Msg( "Dangling pointer to physics entity!!!\n" );
+				continue;
+			}
 
-		IPhysicsObject *pPhysics = pEntity->VPhysicsGetObject();
-		// apply updates
-		if ( pPhysics && !pPhysics->IsAsleep() )
-		{
-			pEntity->VPhysicsShadowUpdate( pPhysics );
+			IPhysicsObject *pPhysics = pEntity->VPhysicsGetObject();
+			// apply updates
+			if ( pPhysics && !pPhysics->IsAsleep() )
+			{
+				pEntity->VPhysicsShadowUpdate( pPhysics );
+			}
 		}
 	}
 
@@ -2346,7 +2359,7 @@ void PostSimulation_SetVelocityEvent( IPhysicsObject *pPhysicsObject, const Vect
 	pPhysicsObject->SetVelocity( &vecVelocity, NULL );
 }
 
-void CCollisionEvent::AddRemoveObject(IServerNetworkable *pRemove)
+void CCollisionEvent::AddRemoveObject(CBaseEntity *pRemove)
 {
 	if ( pRemove && m_removeObjects.Find(pRemove) == -1 )
 	{
@@ -2677,14 +2690,15 @@ void PhysCollisionDust( gamevcollisionevent_t *pEvent, surfacedata_t *phit )
 	}
 
 	//Kick up dust
-	Vector	vecPos, vecVel;
+	Vector	vecPos, vecVel, vecNormal;
+	QAngle angNormal;
 
 	pEvent->pInternalData->GetContactPoint( vecPos );
+	pEvent->pInternalData->GetSurfaceNormal( vecNormal );
+	VectorAngles( vecNormal, angNormal );
+	vecVel = Vector ( pEvent->collisionSpeed, pEvent->collisionSpeed, pEvent->collisionSpeed );
 
-	vecVel.Random( -1.0f, 1.0f );
-	vecVel.z = random->RandomFloat( 0.3f, 1.0f );
-	VectorNormalize( vecVel );
-	g_pEffects->Dust( vecPos, vecVel, 8.0f, pEvent->collisionSpeed );
+	DispatchParticleEffect( "impact_physics_dust", vecPos, vecVel, angNormal );
 }
 
 void PhysFrictionSound( CBaseEntity *pEntity, IPhysicsObject *pObject, const char *pSoundName, HSOUNDSCRIPTHANDLE& handle, float flVolume )
@@ -2779,7 +2793,7 @@ void PhysCallbackDamage( CBaseEntity *pEntity, const CTakeDamageInfo &info )
 	}
 }
 
-void PhysCallbackRemove(IServerNetworkable *pRemove)
+void PhysCallbackRemove(CBaseEntity *pRemove)
 {
 	if ( PhysIsInCallback() )
 	{

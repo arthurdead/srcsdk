@@ -49,15 +49,15 @@ public:
 
 	string_t			m_strHullName;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 LINK_ENTITY_TO_CLASS( generic_actor, CGenericActor );
 
-BEGIN_DATADESC( CGenericActor )
+BEGIN_MAPENTITY( CGenericActor )
 
 	DEFINE_KEYFIELD(m_strHullName,			FIELD_STRING, "hull_name" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //=========================================================
@@ -186,7 +186,7 @@ class CFlextalkActor : public CGenericActor
 private:
 	DECLARE_CLASS( CFlextalkActor, CGenericActor );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CFlextalkActor() { m_iszSentence = NULL_STRING; m_sentence = 0; }
 	//void GenericCyclerSpawn(char *szModel, Vector vecMin, Vector vecMax);
@@ -218,21 +218,11 @@ public:
 	LocalFlexController_t LookupFlex( const char *szTarget );
 };
 
-BEGIN_DATADESC( CFlextalkActor )
+BEGIN_MAPENTITY( CFlextalkActor )
 
-	DEFINE_FIELD( m_flextime, FIELD_TIME ),
-	DEFINE_FIELD( m_flexnum, FIELD_INTEGER ),
-	DEFINE_ARRAY( m_flextarget, FIELD_FLOAT, 64 ),
-	DEFINE_FIELD( m_blinktime, FIELD_TIME ),
-	DEFINE_FIELD( m_looktime, FIELD_TIME ),
-	DEFINE_FIELD( m_lookTarget, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_speaktime, FIELD_TIME ),
-	DEFINE_FIELD( m_istalking, FIELD_INTEGER ),
-	DEFINE_FIELD( m_phoneme, FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_iszSentence, FIELD_STRING, "Sentence" ),
-	DEFINE_FIELD( m_sentence, FIELD_INTEGER ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

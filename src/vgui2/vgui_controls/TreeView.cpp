@@ -643,8 +643,8 @@ void TreeNode::EditLabel()
 
 void TreeNode::SetFont(HFont font)
 {
-    Assert( font );
-    if ( !font )
+    Assert( font != INVALID_FONT );
+    if ( font == INVALID_FONT )
         return;
 
     m_pText->SetFont(font);
@@ -1424,7 +1424,7 @@ void TreeNode::OnMouseReleased(MouseCode code)
 
 	if ( input()->GetMouseCapture() == GetVPanel() )
 	{
-		input()->SetMouseCapture( NULL );
+		input()->SetMouseCapture( INVALID_VPANEL );
 		return;
 	}
 	int x, y;
@@ -1712,7 +1712,7 @@ TreeView::TreeView(Panel *parent, const char *panelName) : Panel(parent, panelNa
     m_pRootNode = NULL;
     m_pImageList = NULL;
     m_pSortFunc = NULL;
-    m_Font = 0;
+    m_Font = INVALID_FONT;
 
     m_pSubPanel = new TreeViewSubPanel(this);
     m_pSubPanel->SetVisible(true);
@@ -1781,8 +1781,8 @@ HFont TreeView::GetFont()
 //-----------------------------------------------------------------------------
 void TreeView::SetFont(HFont font)
 {
-	Assert( font );
-	if ( !font )
+	Assert( font != INVALID_FONT );
+	if ( font == INVALID_FONT )
 		return;
 
     m_Font = font;
@@ -2807,7 +2807,7 @@ bool TreeView::GetItemDropContextMenu( int itemIndex, Menu *menu, CUtlVector< Ke
 
 HCursor TreeView::GetItemDropCursor( int itemIndex, CUtlVector< KeyValues * >& msglist )
 {
-	return dc_arrow;
+	return CursorCodeToCursor(dc_arrow);
 }
 
 void TreeView::RemoveChildrenOfNode( int itemIndex )

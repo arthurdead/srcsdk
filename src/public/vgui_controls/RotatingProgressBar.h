@@ -39,7 +39,7 @@ namespace vgui
 		virtual void OnTick();
 
 	private:
-		int m_nTextureId;
+		HTexture m_nTextureId;
 		char *m_pszImageName;
 
 		float m_flStartRadians;

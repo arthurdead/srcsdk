@@ -55,19 +55,6 @@ END_PREDICTION_DATA()
 #endif
 
 
-#ifdef GAME_DLL
-
-BEGIN_DATADESC( CWeaponIFMBaseCamera )
-	DEFINE_FIELD( m_flRenderAspectRatio, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flRenderFOV, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flRenderArmLength, FIELD_FLOAT ),
-	DEFINE_FIELD( m_vecRenderPosition, FIELD_VECTOR ),
-	DEFINE_FIELD( m_angRenderAngles, FIELD_VECTOR ),
-END_DATADESC()
-
-#endif
-
-
 //-----------------------------------------------------------------------------
 // CWeaponIFMBaseCamera implementation. 
 //-----------------------------------------------------------------------------

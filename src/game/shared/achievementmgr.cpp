@@ -432,14 +432,6 @@ void CAchievementMgr::LevelInitPreEntity()
 	// load global state if we haven't already; X360 users may not have had a storage device available or selected at boot time
 	EnsureGlobalStateLoaded();
 
-#ifdef GAME_DLL
-	// For single-player games, achievement mgr must live on the server.  (Only the server has detailed knowledge of game state.)
-	Assert( !GameRules()->IsMultiplayer() );	
-#else
-	// For multiplayer games, achievement mgr must live on the client.  (Only the client can read/write player state from Steam/XBox Live.)
-	Assert( GameRules()->IsMultiplayer() );
-#endif 
-
 	// clear list of achievements listening for events
 	m_vecKillEventListeners.RemoveAll();
 	m_vecMapEventListeners.RemoveAll();
@@ -864,7 +856,6 @@ void CAchievementMgr::PostRestoreSavedGame()
 	}
 }
 
-extern bool IsInCommentaryMode( void );
 //-----------------------------------------------------------------------------
 // Purpose: checks if achievements are enabled
 //-----------------------------------------------------------------------------
@@ -874,13 +865,6 @@ bool CAchievementMgr::CheckAchievementsEnabled()
 	if ( !LoggedIntoSteam() )
 	{
 		Msg( "Achievements disabled: Steam not running.\n" );
-		return false;
-	}
-
-	// can't be in commentary mode, user is invincible
-	if ( IsInCommentaryMode() )
-	{
-		Msg( "Achievements disabled: in commentary mode.\n" );
 		return false;
 	}
 

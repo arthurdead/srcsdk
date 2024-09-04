@@ -49,10 +49,7 @@ class CStaticProp;
 //-----------------------------------------------------------------------------
 // Handle to an renderables in the client leaf system
 //-----------------------------------------------------------------------------
-enum
-{
-	DETAIL_PROP_RENDER_HANDLE = (ClientRenderHandle_t)0xfffe
-};
+inline const ClientRenderHandle_t DETAIL_PROP_RENDER_HANDLE = (ClientRenderHandle_t)0xfffe;
 
 //-----------------------------------------------------------------------------
 // Distance fade information
@@ -79,6 +76,7 @@ public:
 	struct CEntry
 	{
 		IClientRenderable	*m_pRenderable;
+		IClientRenderableMod	*m_pRenderableMod;
 		unsigned short		m_iWorldListInfoLeaf; // NOTE: this indexes WorldListInfo_t's leaf list.
 		RenderableInstance_t m_InstanceData;
 		uint8		m_TwoPass : 1;
@@ -110,6 +108,7 @@ public:
 	struct CEntry
 	{
 		IClientRenderable	*m_pRenderable;
+		IClientRenderableMod	*m_pRenderableMod;
 		RenderableInstance_t m_InstanceData;
 	};
 
@@ -158,11 +157,10 @@ float ComputeScreenSize( const Vector &vecOrigin, float flRadius, const ScreenSi
 //-----------------------------------------------------------------------------
 // A handle associated with shadows managed by the client leaf system
 //-----------------------------------------------------------------------------
-typedef unsigned short ClientLeafShadowHandle_t;
-enum
+enum class ClientLeafShadowHandle_t : unsigned short
 {
-	CLIENT_LEAF_SHADOW_INVALID_HANDLE = (ClientLeafShadowHandle_t)~0 
 };
+inline const ClientLeafShadowHandle_t CLIENT_LEAF_SHADOW_INVALID_HANDLE = (ClientLeafShadowHandle_t)~0;
 
 
 //-----------------------------------------------------------------------------
@@ -247,7 +245,7 @@ public:
 	virtual void ProjectFlashlight( ClientLeafShadowHandle_t handle, int nLeafCount, const int *pLeafList ) = 0;
 
 	// Find all shadow casters in a set of leaves
-	virtual void EnumerateShadowsInLeaves( int leafCount, WorldListLeafData_t* pLeaves, IClientLeafShadowEnum* pEnum ) = 0;
+	virtual void EnumerateShadowsInLeaves( int leafCount, LeafIndex_t* pLeaves, IClientLeafShadowEnum* pEnum ) = 0;
 
 	// Fill in a list of the leaves this renderable is in.
 	// Returns -1 if the handle is invalid.
@@ -267,7 +265,6 @@ public:
 	virtual void SetTranslucencyType( ClientRenderHandle_t handle, RenderableTranslucencyType_t nType ) = 0;
 	virtual RenderableTranslucencyType_t GetTranslucencyType( ClientRenderHandle_t handle ) const = 0;
 	virtual void SetModelType( ClientRenderHandle_t handle, RenderableModelType_t nType = RENDERABLE_MODEL_UNKNOWN_TYPE ) = 0;
-	virtual void EnableSplitscreenRendering( ClientRenderHandle_t handle, uint32 nFlags ) = 0;
 
 	// Suppress rendering of this renderable
 	virtual void EnableRendering( ClientRenderHandle_t handle, bool bEnable ) = 0;

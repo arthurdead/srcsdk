@@ -10,16 +10,16 @@
 #pragma once
 
 #include "shareddefs.h"
+#include "baseentity.h"
 
 class CPlayerResource : public CBaseEntity
 {
 	DECLARE_CLASS( CPlayerResource, CBaseEntity );
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
 
 	virtual void Spawn( void );
-	virtual	int	 ObjectCaps( void ) { return BaseClass::ObjectCaps() | FCAP_DONT_SAVE; }
+	virtual	int	 ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
 	virtual void ResourceThink( void );
 	virtual void UpdatePlayerData( void );
 	virtual int  UpdateTransmitState(void);

@@ -52,10 +52,10 @@ ScalableImagePanel::~ScalableImagePanel()
 	delete [] m_pszImageName;
 	delete [] m_pszDrawColorName;
 
-	if ( vgui::surface() && m_iTextureID != -1 )
+	if ( vgui::surface() && m_iTextureID != INVALID_TEXTURE )
 	{
 		vgui::surface()->DestroyTextureID( m_iTextureID );
-		m_iTextureID = -1;
+		m_iTextureID = INVALID_TEXTURE;
 	}
 }
 
@@ -164,7 +164,7 @@ void ScalableImagePanel::PaintBackground()
 		uvy += uvh;
 	}
 
-	vgui::surface()->DrawSetTexture(0);
+	vgui::surface()->DrawSetTexture(INVALID_TEXTURE);
 }
 
 //-----------------------------------------------------------------------------

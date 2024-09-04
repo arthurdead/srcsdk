@@ -18,14 +18,6 @@
 
 #define WATERBULLET_DECAY	( WATERBULLET_INITIAL_SPEED / WATERBULLET_STOP_TIME )
 
-BEGIN_DATADESC( CWaterBullet )
-
-	// Function Pointers
-	DEFINE_FUNCTION( Touch ),
-	DEFINE_FUNCTION( BulletThink ),
-
-END_DATADESC()
-
 LINK_ENTITY_TO_CLASS( waterbullet, CWaterBullet );
 
 IMPLEMENT_SERVERCLASS_ST( CWaterBullet, DT_WaterBullet )

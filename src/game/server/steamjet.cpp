@@ -30,7 +30,7 @@ LINK_ENTITY_TO_CLASS( env_steam, CSteamJet );
 LINK_ENTITY_TO_CLASS( env_steamjet, CSteamJet ); // For support of legacy env_steamjet, which faced left instead of forward.
 
 //Save/restore
-BEGIN_DATADESC( CSteamJet )
+BEGIN_MAPENTITY( CSteamJet )
 
 	//Keyvalue fields
 	DEFINE_KEYFIELD( m_StartSize,	FIELD_FLOAT,	"StartSize" ),
@@ -38,10 +38,6 @@ BEGIN_DATADESC( CSteamJet )
 	DEFINE_KEYFIELD( m_InitialState,	FIELD_BOOLEAN,	"InitialState" ),
 	DEFINE_KEYFIELD( m_nType,		FIELD_INTEGER,	"Type" ),
 	DEFINE_KEYFIELD( m_flRollSpeed, FIELD_FLOAT, "RollSpeed" ),
-
-	//Regular fields
-	DEFINE_FIELD( m_bEmit, FIELD_INTEGER ),
-	DEFINE_FIELD( m_bFaceLeft, FIELD_BOOLEAN ),
 
 	// Inputs
 	DEFINE_INPUT( m_JetLength, FIELD_FLOAT, "JetLength" ),
@@ -53,7 +49,7 @@ BEGIN_DATADESC( CSteamJet )
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 CSteamJet::CSteamJet( void )

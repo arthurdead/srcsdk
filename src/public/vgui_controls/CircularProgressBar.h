@@ -62,7 +62,7 @@ private:
 	int m_iProgressDirection;
 	int m_iStartSegment;
 
-	int m_nTextureId[NUM_PROGRESS_TEXTURES];
+	HTexture m_nTextureId[NUM_PROGRESS_TEXTURES];
 	char *m_pszImageName[NUM_PROGRESS_TEXTURES];
 	int   m_lenImageName[NUM_PROGRESS_TEXTURES];
 };

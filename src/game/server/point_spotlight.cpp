@@ -23,7 +23,7 @@ class CPointSpotlight : public CPointEntity
 {
 	DECLARE_CLASS( CPointSpotlight, CPointEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CPointSpotlight();
 
@@ -76,20 +76,7 @@ public:
 	COutputEvent m_OnOn, m_OnOff;     ///< output fires when turned on, off
 };
 
-BEGIN_DATADESC( CPointSpotlight )
-	DEFINE_FIELD( m_flSpotlightCurLength, FIELD_FLOAT ),
-
-	DEFINE_FIELD( m_bSpotlightOn,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bEfficientSpotlight,	FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_vSpotlightTargetPos,	FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vSpotlightCurrentPos,	FIELD_POSITION_VECTOR ),
-
-	// Robin: Don't Save, recreated after restore/transition
-	//DEFINE_FIELD( m_hSpotlight,			FIELD_EHANDLE ),
-	//DEFINE_FIELD( m_hSpotlightTarget,		FIELD_EHANDLE ),
-
-	DEFINE_FIELD( m_vSpotlightDir,			FIELD_VECTOR ),
-	DEFINE_FIELD( m_nHaloSprite,			FIELD_INTEGER ),
+BEGIN_MAPENTITY( CPointSpotlight )
 
 	DEFINE_KEYFIELD( m_bIgnoreSolid, FIELD_BOOLEAN, "IgnoreSolid" ),
 	DEFINE_KEYFIELD( m_flSpotlightMaxLength,FIELD_FLOAT, "SpotlightLength"),
@@ -105,9 +92,7 @@ BEGIN_DATADESC( CPointSpotlight )
 	DEFINE_INPUTFUNC( FIELD_COLOR32,	"SetColor",		InputSetColor ),
 	DEFINE_INPUTFUNC( FIELD_VOID,		"ForceUpdate",	InputForceUpdate ),
 
-	DEFINE_THINKFUNC( SpotlightThink ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS(point_spotlight, CPointSpotlight);
@@ -196,17 +181,17 @@ void CPointSpotlight::ComputeRenderInfo()
 	// Fade out spotlight end if past max length.  
 	if ( m_flSpotlightCurLength > 2*m_flSpotlightMaxLength )
 	{
-		m_hSpotlightTarget->SetRenderColorA( 0 );
+		m_hSpotlightTarget->SetRenderAlpha( 0 );
 		m_hSpotlight->SetFadeLength( m_flSpotlightMaxLength );
 	}
 	else if ( m_flSpotlightCurLength > m_flSpotlightMaxLength )		
 	{
-		m_hSpotlightTarget->SetRenderColorA( (1-((m_flSpotlightCurLength-m_flSpotlightMaxLength)/m_flSpotlightMaxLength)) );
+		m_hSpotlightTarget->SetRenderAlpha( (1-((m_flSpotlightCurLength-m_flSpotlightMaxLength)/m_flSpotlightMaxLength)) );
 		m_hSpotlight->SetFadeLength( m_flSpotlightMaxLength );
 	}
 	else
 	{
-		m_hSpotlightTarget->SetRenderColorA( 1.0 );
+		m_hSpotlightTarget->SetRenderAlpha( 1.0 );
 		m_hSpotlight->SetFadeLength( m_flSpotlightCurLength );
 	}
 
@@ -355,7 +340,7 @@ void CPointSpotlight::SpotlightCreate(void)
 	m_hSpotlightTarget->Spawn();
 	m_hSpotlightTarget->SetAbsOrigin( vTargetPos );
 	m_hSpotlightTarget->SetOwnerEntity( this );
-	m_hSpotlightTarget->m_clrRender = m_clrRender;
+	m_hSpotlightTarget->SetRenderColor( GetRenderColor() );
 	m_hSpotlightTarget->m_Radius = m_flSpotlightMaxLength;
 
 	if ( FBitSet (m_spawnflags, SF_SPOTLIGHT_NO_DYNAMIC_LIGHT) )
@@ -368,7 +353,7 @@ void CPointSpotlight::SpotlightCreate(void)
 	// Set the temporary spawnflag on the beam so it doesn't save (we'll recreate it on restore)
 	m_hSpotlight->SetHDRColorScale( m_flHDRColorScale );
 	m_hSpotlight->AddSpawnFlags( SF_BEAM_TEMPORARY );
-	m_hSpotlight->SetColor( m_clrRender->r, m_clrRender->g, m_clrRender->b ); 
+	m_hSpotlight->SetColor( GetRenderColorR(), GetRenderColorG(), GetRenderColorB() ); 
 	m_hSpotlight->SetHaloTexture(m_nHaloSprite);
 	m_hSpotlight->SetHaloScale(60);
 	m_hSpotlight->SetEndWidth(m_flSpotlightGoalWidth);

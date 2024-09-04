@@ -20,6 +20,7 @@
 #include "bitmap/imageformat.h"
 #include "ispatialpartition.h"
 #include "materialsystem/MaterialSystemUtil.h"
+#include "vgui/VGUI.h"
 
 class Vector;
 class QAngle;
@@ -37,7 +38,6 @@ typedef CGameTrace trace_t;
 
 namespace vgui
 {
-	typedef unsigned long HFont;
 	class EditablePanel;
 };
 

@@ -8,6 +8,8 @@
 #define AI_SPEECHFILTER_H
 #pragma once
 
+#include "baseentity.h"
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -15,7 +17,7 @@ class CAI_SpeechFilter : public CBaseEntity, public IEntityListener
 {
 	DECLARE_CLASS( CAI_SpeechFilter, CBaseEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void	Spawn( void );
 	void	Activate( void );

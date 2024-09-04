@@ -117,8 +117,8 @@ bool GetHWMExpressionFileName( const char *pFilename, char *pHWMFilename )
 	return true;
 }
 
-C_BaseFlex::C_BaseFlex(bool bClientSide) : 
-	C_BaseAnimatingOverlay(bClientSide),
+C_BaseFlex::C_BaseFlex() : 
+	C_BaseAnimatingOverlay(),
 	m_iv_viewtarget( "C_BaseFlex::m_iv_viewtarget" ), 
 	m_iv_flexWeight("C_BaseFlex:m_iv_flexWeight" ),
 	m_iv_vecLean("C_BaseFlex:m_iv_vecLean" ),
@@ -146,11 +146,6 @@ C_BaseFlex::C_BaseFlex(bool bClientSide) :
 	// Get general lean vector
 	AddVar( &m_vecLean, &m_iv_vecLean, LATCH_ANIMATION_VAR );
 	AddVar( &m_vecShift, &m_iv_vecShift, LATCH_ANIMATION_VAR );
-}
-
-C_BaseFlex::C_BaseFlex() : 
-	C_BaseFlex(false)
-{
 }
 
 C_BaseFlex::~C_BaseFlex()
@@ -2150,34 +2145,3 @@ float CSceneEventInfo::UpdateWeight( C_BaseFlex *pActor )
 	m_flWeight = MIN( m_flWeight + 0.1, 1.0 );
 	return m_flWeight;
 }
-
-BEGIN_BYTESWAP_DATADESC( flexsettinghdr_t )
-	DEFINE_FIELD( id, FIELD_INTEGER ),
-	DEFINE_FIELD( version, FIELD_INTEGER ),
-	DEFINE_ARRAY( name, FIELD_CHARACTER, 64 ),
-	DEFINE_FIELD( length, FIELD_INTEGER ),
-	DEFINE_FIELD( numflexsettings, FIELD_INTEGER ),
-	DEFINE_FIELD( flexsettingindex, FIELD_INTEGER ),
-	DEFINE_FIELD( nameindex, FIELD_INTEGER ),
-	DEFINE_FIELD( numindexes, FIELD_INTEGER ),
-	DEFINE_FIELD( indexindex, FIELD_INTEGER ),
-	DEFINE_FIELD( numkeys, FIELD_INTEGER ),
-	DEFINE_FIELD( keynameindex, FIELD_INTEGER ),
-	DEFINE_FIELD( keymappingindex, FIELD_INTEGER ),
-END_BYTESWAP_DATADESC()
-
-BEGIN_BYTESWAP_DATADESC( flexsetting_t )
-	DEFINE_FIELD( nameindex, FIELD_INTEGER ),
-	DEFINE_FIELD( obsolete1, FIELD_INTEGER ),
-	DEFINE_FIELD( numsettings, FIELD_INTEGER ),
-	DEFINE_FIELD( index, FIELD_INTEGER ),
-	DEFINE_FIELD( obsolete2, FIELD_INTEGER ),
-	DEFINE_FIELD( settingindex, FIELD_INTEGER ),
-END_BYTESWAP_DATADESC()
-
-BEGIN_BYTESWAP_DATADESC( flexweight_t )
-	DEFINE_FIELD( key, FIELD_INTEGER ),
-	DEFINE_FIELD( weight, FIELD_FLOAT ),
-	DEFINE_FIELD( influence, FIELD_FLOAT ),
-END_BYTESWAP_DATADESC()
-

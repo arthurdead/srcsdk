@@ -58,8 +58,8 @@ public:
 	virtual			~VControlsListPanel();
 
 	// Start/end capturing
-	virtual void	StartCaptureMode(vgui::HCursor hCursor = NULL);
-	virtual void	EndCaptureMode(vgui::HCursor hCursor = NULL);
+	virtual void	StartCaptureMode(vgui::HCursor hCursor = INVALID_CURSOR);
+	virtual void	EndCaptureMode(vgui::HCursor hCursor = INVALID_CURSOR);
 	virtual bool	IsCapturing();
 
 	// Set which item should be associated with the prompt
@@ -174,7 +174,7 @@ void VControlsListPanel::StartCaptureMode( HCursor hCursor )
 	input()->SetMouseFocus(m_pInlineEditPanel->GetVPanel());
 	input()->SetMouseCapture(m_pInlineEditPanel->GetVPanel());
 
-	if (hCursor)
+	if (hCursor != INVALID_CURSOR)
 	{
 		m_pInlineEditPanel->SetCursor(hCursor);
 
@@ -200,15 +200,15 @@ void VControlsListPanel::OnClearBinding()
 void VControlsListPanel::EndCaptureMode( HCursor hCursor )
 {
 	m_bCaptureMode = false;
-	input()->SetMouseCapture(NULL);
+	input()->SetMouseCapture(INVALID_VPANEL);
 	LeaveEditMode();
 	RequestFocus();
 	input()->SetMouseFocus(GetVPanel());
-	if (hCursor)
+	if (hCursor != INVALID_CURSOR)
 	{
 		m_pInlineEditPanel->SetCursor(hCursor);
 		surface()->SetCursor(hCursor);	
-		if ( hCursor != dc_none )
+		if ( hCursor != CursorCodeToCursor(dc_none) )
 		{
 			vgui::input()->SetCursorPos ( m_iMouseX, m_iMouseY );	
 		}
@@ -413,7 +413,7 @@ void CKeyBoardEditorPage::BindKey( KeyCode code )
 	int r = m_pList->GetItemOfInterest();
 
 	// Retrieve clicked row and column
-	m_pList->EndCaptureMode(dc_arrow);
+	m_pList->EndCaptureMode(CursorCodeToCursor(dc_arrow));
 
 	// Find item for this row
 	KeyValues *item = m_pList->GetItem(r);
@@ -462,7 +462,7 @@ void CKeyBoardEditorPage::OnPageHide()
 	if ( m_pList->IsCapturing() )
 	{
 		// Cancel capturing
-		m_pList->EndCaptureMode(dc_arrow);
+		m_pList->EndCaptureMode(CursorCodeToCursor(dc_arrow));
 	}
 }
 
@@ -514,7 +514,7 @@ void CKeyBoardEditorPage::OnCommand( char const *cmd )
 {
 	if ( !m_pList->IsCapturing() && !Q_stricmp( cmd, "ChangeKey" ) )
 	{
-		m_pList->StartCaptureMode(dc_blank);
+		m_pList->StartCaptureMode(CursorCodeToCursor(dc_blank));
 	}
 	else
 	{

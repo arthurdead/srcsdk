@@ -33,21 +33,18 @@ static CUtlVector< CHandle<CEnvMicrophone> > s_Microphones;
 
 LINK_ENTITY_TO_CLASS(env_microphone, CEnvMicrophone);
 
-BEGIN_DATADESC( CEnvMicrophone )
+BEGIN_MAPENTITY( CEnvMicrophone )
 
 	DEFINE_KEYFIELD(m_bDisabled, FIELD_BOOLEAN, "StartDisabled"),
-	DEFINE_FIELD(m_hMeasureTarget, FIELD_EHANDLE),
+
 	DEFINE_KEYFIELD(m_nSoundMask, FIELD_INTEGER, "SoundMask"),
 	DEFINE_KEYFIELD(m_flSensitivity, FIELD_FLOAT, "Sensitivity"),
 	DEFINE_KEYFIELD(m_flSmoothFactor, FIELD_FLOAT, "SmoothFactor"),
 	DEFINE_KEYFIELD(m_iszSpeakerName, FIELD_STRING, "SpeakerName"),
 	DEFINE_KEYFIELD(m_iszListenFilter, FIELD_STRING, "ListenFilter"),
-	DEFINE_FIELD(m_hListenFilter, FIELD_EHANDLE),
-	DEFINE_FIELD(m_hSpeaker, FIELD_EHANDLE),
-	// DEFINE_FIELD(m_bAvoidFeedback, FIELD_BOOLEAN),	// DONT SAVE
+
 	DEFINE_KEYFIELD(m_iSpeakerDSPPreset, FIELD_INTEGER, "speaker_dsp_preset" ),
 	DEFINE_KEYFIELD(m_flMaxRange, FIELD_FLOAT, "MaxRange"),
-	DEFINE_AUTO_ARRAY(m_szLastSound, FIELD_CHARACTER),
 
 	DEFINE_INPUTFUNC(FIELD_VOID, "Enable", InputEnable),
 	DEFINE_INPUTFUNC(FIELD_VOID, "Disable", InputDisable),
@@ -57,7 +54,7 @@ BEGIN_DATADESC( CEnvMicrophone )
 	DEFINE_OUTPUT(m_OnRoutedSound, "OnRoutedSound" ),
 	DEFINE_OUTPUT(m_OnHeardSound, "OnHeardSound" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -145,16 +142,6 @@ void CEnvMicrophone::Activate(void)
 	{
 		m_hMeasureTarget = this;
 	}
-
-	ActivateSpeaker();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CEnvMicrophone::OnRestore( void )
-{
-	BaseClass::OnRestore();
 
 	ActivateSpeaker();
 }
@@ -366,12 +353,27 @@ void CEnvMicrophone::SetSensitivity( float flSensitivity )
 	m_flSensitivity = flSensitivity;
 }
 
+void CEnvMicrophone::SetMaxRange( float flMaxRange )
+{
+	m_flMaxRange = flMaxRange;
+}
+
 void CEnvMicrophone::SetSpeakerName( string_t iszSpeakerName )
 {
 	m_iszSpeakerName = iszSpeakerName;
 
 	// Set the speaker to null. This will force it to find the speaker next time a sound is routed.
 	m_hSpeaker = NULL;
+	ActivateSpeaker();
+}
+
+//--------------------------------------------------------------------------------------------------
+// Same as above, but skips the speaker name lookup
+//--------------------------------------------------------------------------------------------------
+void CEnvMicrophone::SetSpeaker( string_t iszSpeakerName, EHANDLE hSpeaker )
+{
+	m_iszSpeakerName = iszSpeakerName;
+	m_hSpeaker = hSpeaker;
 	ActivateSpeaker();
 }
 
@@ -512,6 +514,13 @@ MicrophoneResult_t CEnvMicrophone::SoundPlayed( int entindex, const char *soundn
 	return MicrophoneResult_Ok;
 }
 
+void CEnvMicrophone::SoundStopped( const char *soundname )
+{
+	if ( m_hSpeaker )
+	{
+		CBaseEntity::StopSound( m_hSpeaker->entindex(), CHAN_STATIC, soundname, true );
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Called by the sound system whenever a sound is played so that
@@ -557,4 +566,20 @@ bool CEnvMicrophone::OnSoundPlayed( int entindex, const char *soundname, soundle
 	}
 
 	return bSwallowed;
+}
+
+void CEnvMicrophone::OnSoundStopped( const char *soundname )
+{
+	// Loop through all registered microphones and tell them which sound to stop
+	int iCount = s_Microphones.Count();
+	if ( iCount > 0 )
+	{
+		for ( int i = iCount - 1; i >= 0; i-- )
+		{
+			if ( s_Microphones[i] )
+			{
+				s_Microphones[i]->SoundStopped( soundname );
+			}
+		}
+	}
 }

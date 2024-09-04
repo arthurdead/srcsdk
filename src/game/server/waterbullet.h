@@ -8,6 +8,8 @@
 #define WEAPON_WATERBULLET_H
 #pragma once
 
+#include "baseanimating.h"
+
 #define WATER_BULLET_BUBBLES_PER_INCH 0.05f
 
 //=========================================================
@@ -22,7 +24,6 @@ public:
 	void Touch( CBaseEntity *pOther );
 	void BulletThink();
 
-	DECLARE_DATADESC();
 	DECLARE_SERVERCLASS();
 };
 

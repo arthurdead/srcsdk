@@ -57,13 +57,6 @@
 // func_breakable - bmodel that breaks into pieces after taking damage
 //
 LINK_ENTITY_TO_CLASS( window_pane, CWindowPane );
-BEGIN_DATADESC( CWindowPane )
-
-	// Function Pointers
-	DEFINE_FUNCTION( Die ),
-	DEFINE_FUNCTION( PaneTouch ),
-
-END_DATADESC()
 
 
 //------------------------------------------------------------------------------
@@ -151,7 +144,7 @@ CWindowPane* CWindowPane::CreateWindowPane( const Vector &vecOrigin, const QAngl
 //####################################################################################
 LINK_ENTITY_TO_CLASS( func_breakable_surf, CBreakableSurface );
 
-BEGIN_DATADESC( CBreakableSurface )
+BEGIN_MAPENTITY( CBreakableSurface )
 
 	DEFINE_KEYFIELD( m_nSurfaceType,		FIELD_INTEGER,	"surfacetype"),
 	DEFINE_KEYFIELD( m_nFragility,		FIELD_INTEGER,	"fragility"),
@@ -161,29 +154,9 @@ BEGIN_DATADESC( CBreakableSurface )
 	DEFINE_KEYFIELD( m_vURVertex,		FIELD_VECTOR,  "upperright" ),
 	DEFINE_KEYFIELD( m_nQuadError,		FIELD_INTEGER, "error" ),
 
-	DEFINE_FIELD( m_nNumWide,			FIELD_INTEGER),	
-	DEFINE_FIELD( m_nNumHigh,			FIELD_INTEGER),	
-	DEFINE_FIELD( m_flPanelWidth,		FIELD_FLOAT),	
-	DEFINE_FIELD( m_flPanelHeight,	FIELD_FLOAT),	
-	DEFINE_FIELD( m_vNormal,			FIELD_VECTOR),	
-	DEFINE_FIELD( m_vCorner,			FIELD_POSITION_VECTOR),	
-	DEFINE_FIELD( m_bIsBroken,		FIELD_BOOLEAN),	
-	DEFINE_FIELD( m_nNumBrokenPanes,	FIELD_INTEGER),	
-	
-	// UNDONE: How to load save this?  Need a way to update
-	//		   the client about the state of the window upon load...
-	//			We should use client-side save/load to fix this problem.
-	DEFINE_AUTO_ARRAY2D( m_flSupport,	FIELD_FLOAT),	
-	DEFINE_ARRAY( m_RawPanelBitVec, FIELD_BOOLEAN, MAX_NUM_PANELS*MAX_NUM_PANELS ),
-
-	// Function Pointers
-	DEFINE_THINKFUNC( BreakThink ),
-	DEFINE_ENTITYFUNC( SurfaceTouch ),
-
 	DEFINE_INPUTFUNC( FIELD_VECTOR,	"Shatter", InputShatter ),
 
-	// DEFINE_FIELD( m_ForceUpdateClientData, CBitVec < MAX_PLAYERS > ),  // No need to save/restore this, it's just a temporary flag field
-END_DATADESC()
+END_MAPENTITY()
 
 
 IMPLEMENT_SERVERCLASS_ST(CBreakableSurface, DT_BreakableSurface)
@@ -240,6 +213,9 @@ void CBreakableSurface::Precache(void)
 		PrecacheMaterial( "models/brokenglass/glassbroken_03c" );
 		PrecacheMaterial( "models/brokenglass/glassbroken_03d" );
 	}
+
+	PrecacheEffect( "GlassImpact" );
+	PrecacheEffect( "Impact" );
 
 	BaseClass::Precache();
 }
@@ -348,6 +324,11 @@ int CBreakableSurface::OnTakeDamage( const CTakeDamageInfo &info )
 		return 0;
 	}
 	
+	if ( m_nSurfaceType == SHATTERSURFACE_GLASS && (info.GetDamageType() & DMG_CLUB) )
+	{
+		Die( info.GetAttacker(), info.GetDamageForce() );
+		return 0;
+	}
 
 	return 0;
 }
@@ -371,8 +352,8 @@ void CBreakableSurface::TraceAttack( const CTakeDamageInfo &info, const Vector &
     //=============================================================================
 
 	// Decrease health
-	m_iHealth -= info.GetDamage();
-	m_OnHealthChanged.Set( m_iHealth, info.GetAttacker(), this );
+	SetHealth( GetHealth() - info.GetDamage() );
+	m_OnHealthChanged.Set( GetHealth(), info.GetAttacker(), this );
 
 	// If I'm not broken yet, break me
 	if (!m_bIsBroken )
@@ -1216,7 +1197,7 @@ void CBreakableSurface::Spawn(void)
 	// The material should point to a cracked version of itself
 	bool foundVar;
 	IMaterialVar* pCrackName = pMaterial->FindVar( "$crackmaterial", &foundVar, false );
-	if (foundVar)
+	if (foundVar && IsPrecacheAllowed())
 	{
 		PrecacheMaterial( pCrackName->GetStringValue() );
 	}

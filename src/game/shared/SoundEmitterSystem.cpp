@@ -306,15 +306,6 @@ public:
 
 		m_ServerCaptions.Purge();
 
-		if ( IsX360() )
-		{
-			char fullpath[MAX_PATH];
-			char fullpath360[MAX_PATH];
-			filesystem->RelativePathToFullPath( dbfile, "GAME", fullpath, sizeof(fullpath) );
-			UpdateOrCreateCaptionFile( fullpath, fullpath360, sizeof( fullpath360 ) );
-			Q_strncpy( fullpath, fullpath360, sizeof( fullpath ) );
-		}
-
 		int idx = m_ServerCaptions.AddToTail();
 		AsyncCaption_t& entry = m_ServerCaptions[ idx ];
 		if ( !entry.LoadFromFile( dbfile ) )

@@ -29,7 +29,12 @@ class SendTable;
 
 #endif  // !CLIENT_DLL
 
-#if defined( CLIENT_DLL )
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL nullptr
+
+#if defined( CLIENT_DLL ) || defined( TOOL_DLL )
 
 #define DECLARE_NETWORKCLASS()											\
 		DECLARE_CLIENTCLASS()
@@ -115,7 +120,7 @@ class SendTable;
 	static C_BaseEntity *C##localName##Factory( void )						\
 	{																		\
 		C_BaseEntity *pEnt = static_cast< C_BaseEntity * >( new className ); \
-		pEnt->SetClassname( #localName ); \
+		pEnt->PostConstructor( #localName ); \
 		return pEnt;				\
 	};																		\
 	class C##localName##Foo													\

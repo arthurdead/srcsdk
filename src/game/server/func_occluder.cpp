@@ -29,7 +29,7 @@ public:
 	void InputDeactivate( inputdata_t &inputdata );
 	void InputToggle( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 private:
@@ -45,7 +45,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE(CFuncOccluder, DT_FuncOccluder)
 END_SEND_TABLE()
 
 
-BEGIN_DATADESC( CFuncOccluder )
+BEGIN_MAPENTITY( CFuncOccluder )
 
 	DEFINE_KEYFIELD( m_bActive, FIELD_BOOLEAN, "StartActive" ),
 
@@ -57,7 +57,7 @@ BEGIN_DATADESC( CFuncOccluder )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle",  InputToggle ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //------------------------------------------------------------------------------

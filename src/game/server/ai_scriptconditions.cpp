@@ -12,7 +12,6 @@
 
 #include "ai_basenpc.h"
 #include "ai_scriptconditions.h"
-#include "saverestore_utlvector.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -40,9 +39,7 @@ ConVar debugscriptconditions( "ai_debugscriptconditions", "0" );
 
 LINK_ENTITY_TO_CLASS(ai_script_conditions, CAI_ScriptConditions);
 
-BEGIN_DATADESC( CAI_ScriptConditions )
-
-	DEFINE_THINKFUNC( EvaluationThink ),
+BEGIN_MAPENTITY( CAI_ScriptConditions )
 
 	DEFINE_OUTPUT( m_OnConditionsSatisfied, "OnConditionsSatisfied" ),
 	DEFINE_OUTPUT( m_OnConditionsTimeout, "OnConditionsTimeout" ),
@@ -63,12 +60,6 @@ BEGIN_DATADESC( CAI_ScriptConditions )
 
 	DEFINE_KEYFIELD(m_flRequiredTime, 				FIELD_FLOAT, 	"RequiredTime" 				),
 
-#ifndef HL2_EPISODIC
-	DEFINE_FIELD( m_hActor, FIELD_EHANDLE ),
-	DEFINE_EMBEDDED(m_Timer ),
-	DEFINE_EMBEDDED(m_Timeout ),
-#endif
-
 	DEFINE_KEYFIELD(m_fMinState, 					FIELD_INTEGER,	"MinimumState" 				),
 	DEFINE_KEYFIELD(m_fMaxState, 					FIELD_INTEGER,	"MaximumState" 				),
 
@@ -77,7 +68,6 @@ BEGIN_DATADESC( CAI_ScriptConditions )
 
 
 	DEFINE_KEYFIELD(m_flPlayerActorProximity,		FIELD_FLOAT, 	"PlayerActorProximity" 		),
-	DEFINE_EMBEDDED(m_PlayerActorProxTester),
 
 	DEFINE_KEYFIELD(m_flPlayerActorFOV, 			FIELD_FLOAT, 	"PlayerActorFOV" 			),
 	DEFINE_KEYFIELD(m_bPlayerActorFOVTrueCone,		FIELD_BOOLEAN,	"PlayerActorFOVTrueCone"	),
@@ -86,10 +76,8 @@ BEGIN_DATADESC( CAI_ScriptConditions )
 	DEFINE_KEYFIELD(m_fActorSeeTarget,				FIELD_INTEGER,	"ActorSeeTarget" 			),
 
 	DEFINE_KEYFIELD(m_flActorTargetProximity,		FIELD_FLOAT, 	"ActorTargetProximity" 		),
-	DEFINE_EMBEDDED(m_ActorTargetProxTester),
 
 	DEFINE_KEYFIELD(m_flPlayerTargetProximity, 		FIELD_FLOAT, 	"PlayerTargetProximity"		),
-	DEFINE_EMBEDDED(m_PlayerTargetProxTester),
 
 	DEFINE_KEYFIELD(m_flPlayerTargetFOV, 			FIELD_FLOAT,	"PlayerTargetFOV"			),
 	DEFINE_KEYFIELD(m_bPlayerTargetFOVTrueCone,		FIELD_BOOLEAN,	"PlayerTargetFOVTrueCone"	),
@@ -105,22 +93,7 @@ BEGIN_DATADESC( CAI_ScriptConditions )
 	DEFINE_KEYFIELD(m_fActorInVehicle,				FIELD_INTEGER,	 "ActorInVehicle" ),
 	DEFINE_KEYFIELD(m_fPlayerInVehicle,				FIELD_INTEGER,	 "PlayerInVehicle" ),
 
-	DEFINE_UTLVECTOR( m_ElementList,				FIELD_EMBEDDED ),
-	DEFINE_FIELD( m_bLeaveAsleep,					FIELD_BOOLEAN ),
-
-END_DATADESC()
-
-BEGIN_SIMPLE_DATADESC( CAI_ProxTester )
-	DEFINE_FIELD( m_distSq, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fInside, FIELD_BOOLEAN ),
-END_DATADESC()
-
-BEGIN_SIMPLE_DATADESC( CAI_ScriptConditionsElement )
-	DEFINE_FIELD( m_hActor, FIELD_EHANDLE ),
-	DEFINE_EMBEDDED(m_Timer ),
-	DEFINE_EMBEDDED(m_Timeout ),
-END_DATADESC()
-
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 
@@ -140,39 +113,10 @@ CAI_ScriptConditions::EvaluatorInfo_t CAI_ScriptConditions::gm_Evaluators[] =
 		EVALUATOR( PlayerActorLOS ),
 		EVALUATOR( PlayerTargetLOS ),
 
-#ifdef HL2_EPISODIC
 		EVALUATOR( ActorInPVS ),
 		EVALUATOR( PlayerInVehicle ),
 		EVALUATOR( ActorInVehicle ),
-#endif
-
 };
-
-void CAI_ScriptConditions::OnRestore( void )
-{
-	BaseClass::OnRestore();
-
-#ifndef HL2_EPISODIC
-	//Old HL2 save game! Fix up to new system.
-	if ( m_hActor )
-	{
-		CAI_ScriptConditionsElement conditionactor;
-
-		conditionactor.SetActor( m_hActor );
-		conditionactor.SetTimeOut( m_Timeout );
-		conditionactor.SetTimer( m_Timer );
- 
-		m_ElementList.AddToTail( conditionactor );
-
-		m_hActor = NULL;
-	}
-
-	if ( m_ElementList.Count() == 0 && m_Actor == NULL_STRING && m_fDisabled == false )
-	{
-		AddNewElement( NULL );
-	}
-#endif
-}
 
 //-----------------------------------------------------------------------------
 
@@ -254,14 +198,9 @@ bool CAI_ScriptConditions::EvalActorSeeTarget( const EvalArgs_t &args )
 
 		CAI_BaseNPC *pNPCActor = args.pActor->MyNPCPointer();
 
-#ifdef HL2_EPISODIC
 		// This is the code we want to have written for HL2, but HL2 shipped without the QuerySeeEntity() call. This #ifdef really wants to be
 		// something like #ifndef HL2_RETAIL, since this change does want to be in any products that are built henceforth. (sjb)
 		bool fSee = pNPCActor->FInViewCone( args.pTarget ) && pNPCActor->FVisible( args.pTarget ) && pNPCActor->QuerySeeEntity( args.pTarget );
-#else
-		bool fSee = pNPCActor->FInViewCone( args.pTarget ) && pNPCActor->FVisible( args.pTarget );
-#endif//HL2_EPISODIC
-
 		if( fSee )
 		{
 			if( m_fActorSeeTarget == TRS_TRUE )
@@ -449,9 +388,7 @@ void CAI_ScriptConditions::Activate()
 	if( !m_fDisabled )
 		Enable();
 
-#ifdef HL2_EPISODIC
 	gEntList.AddListenerEntity( this );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -496,12 +433,10 @@ void CAI_ScriptConditions::EvaluationThink()
 		CBaseEntity *pActor = pConditionElement->GetActor();
 		CBaseEntity *pActivator = this;
 
-#ifdef HL2_EPISODIC
 		if ( pActor && HasSpawnFlags( SF_ACTOR_AS_ACTIVATOR ) )
 		{
 			pActivator = pActor;
 		}
-#endif
 
 		AssertMsg( !m_fDisabled, ("Violated invariant between CAI_ScriptConditions disabled state and think func setting") );
 

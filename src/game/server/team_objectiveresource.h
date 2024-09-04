@@ -9,6 +9,7 @@
 #pragma once
 
 #include "shareddefs.h"
+#include "baseentity.h"
 
 #define TEAM_ARRAY( index, team )		(index + (team * MAX_CONTROL_POINTS))
 
@@ -22,7 +23,6 @@ class CBaseTeamObjectiveResource : public CBaseEntity
 	DECLARE_CLASS( CBaseTeamObjectiveResource, CBaseEntity );
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
 
 	CBaseTeamObjectiveResource();
 	~CBaseTeamObjectiveResource();

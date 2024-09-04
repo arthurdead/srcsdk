@@ -14,20 +14,17 @@
 
 LINK_ENTITY_TO_CLASS( logic_playerproxy, CLogicPlayerProxy);
 
-BEGIN_DATADESC( CLogicPlayerProxy )
+BEGIN_MAPENTITY( CLogicPlayerProxy )
 
 // Base
 DEFINE_OUTPUT( m_RequestedPlayerHealth,		"PlayerHealth" ),
 DEFINE_OUTPUT( m_PlayerDied,				"PlayerDied" ),
-DEFINE_FIELD( m_hPlayer, FIELD_EHANDLE ),
 
 
 
 // HL2 / Episodic
-#if defined HL2_EPISODIC
 DEFINE_OUTPUT( m_OnFlashlightOn,			"OnFlashlightOn" ),
 DEFINE_OUTPUT( m_OnFlashlightOff,			"OnFlashlightOff" ),
-DEFINE_OUTPUT( m_PlayerMissedAR2AltFire,	"PlayerMissedAR2AltFire" ),
 DEFINE_OUTPUT( m_PlayerHasAmmo,				"PlayerHasAmmo" ),
 DEFINE_OUTPUT( m_PlayerHasNoAmmo,			"PlayerHasNoAmmo" ),
 
@@ -40,9 +37,8 @@ DEFINE_INPUTFUNC( FIELD_INTEGER,			"SetPlayerHealth",	InputSetPlayerHealth ),
 DEFINE_INPUTFUNC( FIELD_VOID,				"RequestAmmoState", InputRequestAmmoState ),
 DEFINE_INPUTFUNC( FIELD_VOID,				"EnableCappedPhysicsDamage", InputEnableCappedPhysicsDamage ),
 DEFINE_INPUTFUNC( FIELD_VOID,				"DisableCappedPhysicsDamage", InputDisableCappedPhysicsDamage ),
-#endif // HL2_EPISODIC
 
-END_DATADESC()
+END_MAPENTITY()
 
 void CLogicPlayerProxy::Activate( void )
 {
@@ -81,8 +77,6 @@ void CLogicPlayerProxy::InputRequestPlayerHealth( inputdata_t &inputdata )
 
 	m_RequestedPlayerHealth.Set( m_hPlayer->GetHealth(), inputdata.pActivator, inputdata.pCaller );
 }
-
-#if defined HL2_EPISODIC
 
 extern ConVar hl2_darkness_flashlight_factor;
 
@@ -176,5 +170,3 @@ void CLogicPlayerProxy::InputDisableCappedPhysicsDamage( inputdata_t &inputdata 
 	CHL2_Player *pPlayer = dynamic_cast<CHL2_Player*>(m_hPlayer.Get());
 	pPlayer->DisableCappedPhysicsDamage();
 }
-
-#endif // HL2_EPISODIC

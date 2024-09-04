@@ -235,7 +235,7 @@ namespace vgui
 		};
 		CUtlVector<CustomURLHandler_t> m_CustomURLHandlers;
 
-		int m_iHTMLTextureID; // vgui texture id
+		HTexture m_iHTMLTextureID; // vgui texture id
 		// Track the texture width and height requested so we can tell
 		// when the size has changed and reallocate the texture.
 		int m_allocedTextureWidth;

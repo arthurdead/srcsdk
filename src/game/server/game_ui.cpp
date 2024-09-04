@@ -33,7 +33,7 @@ class CGameUI : public CBaseEntity
 public:
 	DECLARE_CLASS( CGameUI, CBaseEntity );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	// Input handlers
 	void InputDeactivate( inputdata_t &inputdata );
@@ -74,13 +74,9 @@ public:
 };
 
 
-BEGIN_DATADESC( CGameUI )
+BEGIN_MAPENTITY( CGameUI )
 
 	DEFINE_KEYFIELD( m_flFieldOfView, FIELD_FLOAT, "FieldOfView" ),
-	DEFINE_FIELD( m_hSaveWeapon, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_bForceUpdate, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_player, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_nLastButtonState, FIELD_INTEGER ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Deactivate", InputDeactivate ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "Activate", InputActivate ),
@@ -107,7 +103,7 @@ BEGIN_DATADESC( CGameUI )
 	DEFINE_OUTPUT( m_attackaxis, "AttackAxis" ),
 	DEFINE_OUTPUT( m_attack2axis, "Attack2Axis" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( game_ui, CGameUI );

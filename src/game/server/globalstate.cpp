@@ -7,9 +7,6 @@
 //=============================================================================//
 #include "cbase.h"
 #include "basetypes.h"
-#include "saverestore.h"
-#include "saverestore_utlvector.h"
-#include "saverestore_utlsymbol.h"
 #include "globalstate.h"
 #include "igamesystem.h"
 
@@ -18,8 +15,6 @@
 
 struct globalentity_t
 {
-	DECLARE_SIMPLE_DATADESC();
-
 	CUtlSymbol	name;
 	CUtlSymbol	levelName;
 	GLOBALESTATE	state;
@@ -145,9 +140,6 @@ public:
 	}
 
 	void			Reset( void );
-	int				Save( ISave &save );
-	int				Restore( IRestore &restore );
-	DECLARE_SIMPLE_DATADESC();
 
 //#ifdef _DEBUG
 	void			DumpGlobals( void );
@@ -161,8 +153,6 @@ private:
 };
 
 static CGlobalState gGlobalState( "CGlobalState" );
-
-static CUtlSymbolDataOps g_GlobalSymbolDataOps( gGlobalState.m_nameList );
 
 
 void GlobalEntity_SetState( int globalIndex, GLOBALESTATE state )
@@ -249,57 +239,12 @@ void CGlobalState::DumpGlobals( void )
 //#endif
 
 
-// Global state Savedata 
-BEGIN_SIMPLE_DATADESC( CGlobalState )
-	DEFINE_UTLVECTOR( m_list, FIELD_EMBEDDED ),
-	// DEFINE_FIELD( m_nameList, CUtlSymbolTable ),
-	// DEFINE_FIELD( m_disableStateUpdates, FIELD_BOOLEAN ),
-END_DATADESC()
-
-BEGIN_SIMPLE_DATADESC( globalentity_t )
-	DEFINE_CUSTOM_FIELD( name, &g_GlobalSymbolDataOps ),
-	DEFINE_CUSTOM_FIELD( levelName, &g_GlobalSymbolDataOps ),
-	DEFINE_FIELD( state, FIELD_INTEGER ),
-	DEFINE_FIELD( counter, FIELD_INTEGER ),
-END_DATADESC()
-
-
-int CGlobalState::Save( ISave &save )
-{
-	if ( !save.WriteFields( "GLOBAL", this, NULL, m_DataMap.dataDesc, m_DataMap.dataNumFields ) )
-		return 0;
-	
-	return 1;
-}
-
-int CGlobalState::Restore( IRestore &restore )
-{
-	Reset();
-	if ( !restore.ReadFields( "GLOBAL", this, NULL, m_DataMap.dataDesc, m_DataMap.dataNumFields ) )
-		return 0;
-	
-	return 1;
-}
-
 void CGlobalState::Reset( void )
 {
 	m_list.Purge();
 	m_nameList.RemoveAll();
 }
 
-
-void SaveGlobalState( CSaveRestoreData *pSaveData )
-{
-	CSave saveHelper( pSaveData );
-	gGlobalState.Save( saveHelper );
-}
-
-
-void RestoreGlobalState( CSaveRestoreData *pSaveData )
-{
-	CRestore restoreHelper( pSaveData );
-	gGlobalState.Restore( restoreHelper );
-}
 
 
 //-----------------------------------------------------------------------------

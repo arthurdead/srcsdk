@@ -45,7 +45,7 @@ public:
 	void	InputEnable( inputdata_t &inputdata );
 	void	InputDisable( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 protected:
 	int				m_radius;
@@ -57,19 +57,17 @@ protected:
 
 LINK_ENTITY_TO_CLASS( point_message, CMessageEntity );
 
-BEGIN_DATADESC( CMessageEntity )
+BEGIN_MAPENTITY( CMessageEntity )
 
 	DEFINE_KEYFIELD( m_radius, FIELD_INTEGER, "radius" ),
 	DEFINE_KEYFIELD( m_messageText, FIELD_STRING, "message" ),
 	DEFINE_KEYFIELD( m_bDeveloperOnly, FIELD_BOOLEAN, "developeronly" ),
-	DEFINE_FIELD( m_drawText, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,	 "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	 "Disable", InputDisable ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 static CUtlVector< CHandle< CMessageEntity > >	g_MessageEntities;
 

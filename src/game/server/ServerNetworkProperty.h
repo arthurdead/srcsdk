@@ -26,7 +26,6 @@ class CServerNetworkProperty : public IServerNetworkable, public IEventRegisterC
 {
 public:
 	DECLARE_CLASS_NOBASE( CServerNetworkProperty );
-	DECLARE_DATADESC();
 
 public:
 	CServerNetworkProperty();
@@ -66,14 +65,6 @@ public:
 
 	// Marks the PVS information dirty
 	void MarkPVSInformationDirty();
-
-	// Marks for deletion
-	void MarkForDeletion();
-	bool IsMarkedForDeletion() const;
-
-	// Sets the network parent
-	void SetNetworkParent( EHANDLE hParent );
-	CServerNetworkProperty* GetNetworkParent();
 
 	// This is useful for entities that don't change frequently or that the client
 	// doesn't need updates on very often. If you use this mode, the server will only try to
@@ -121,10 +112,6 @@ private:
 	PVSInfo_t m_PVSInfo;
 	ServerClass *m_pServerClass;
 
-	// NOTE: This state is 'owned' by the entity. It's only copied here
-	// also to help improve cache performance in networking code.
-	EHANDLE m_hParent;
-
 	// Counters for SetUpdateInterval.
 	CEventRegister	m_TimerEvent;
 	bool m_bPendingStateChange : 1;
@@ -166,15 +153,6 @@ inline void CServerNetworkProperty::MarkPVSInformationDirty()
 	{
 		m_pPev->m_fStateFlags |= FL_EDICT_DIRTY_PVS_INFORMATION;
 	}
-}
-
-
-//-----------------------------------------------------------------------------
-// Sets/gets the network parent
-//-----------------------------------------------------------------------------
-inline void CServerNetworkProperty::SetNetworkParent( EHANDLE hParent )
-{
-	m_hParent = hParent;
 }
 
 

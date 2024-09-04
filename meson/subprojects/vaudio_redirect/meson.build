@@ -1,5 +1,7 @@
 project('vaudio_redirect', 'cpp')
 
+assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+
 src_root_dir = get_option('src_root_dir')
 game_dir = get_option('game_dir')
 
@@ -9,6 +11,7 @@ public_dir = join_paths(src_root_dir,'public')
 
 tier1 = subproject('tier1')
 tier0 = subproject('tier0')
+hackmgr = subproject('hackmgr')
 
 vaudio_redirect_lib = declare_dependency(
 	sources: files(
@@ -22,7 +25,7 @@ vaudio_redirect_lib = declare_dependency(
 	dependencies: [
 		tier1.get_variable('tier1_dep'),
 		tier0.get_variable('tier0_dep'),
-		source_base.get_variable('source_linux_shared_lib_dep')
+		source_base.get_variable('source_os_shared_lib_dep')
 	]
 )
 
@@ -31,7 +34,8 @@ vaudio_redirect_miles_lib = shared_library('vaudio_miles',name_prefix:'',
 		'-DDLLNAME=vaudio_miles'
 	],
 	dependencies: [
-		vaudio_redirect_lib
+		vaudio_redirect_lib,
+		hackmgr.get_variable('hackmgr_dep'),
 	],
 	install: true,
 	install_dir: join_paths(game_dir,'bin')

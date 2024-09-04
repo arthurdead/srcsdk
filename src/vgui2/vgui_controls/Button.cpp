@@ -608,7 +608,7 @@ void Button::SetAsCurrentDefaultButton(int state)
 		{
 			// post a message up notifying our nav group that we're now the default button
 			KeyValues *msg = new KeyValues( "CurrentDefaultButtonSet" );
-			msg->SetInt( "button", ToHandle() );
+			msg->SetInt( "button", (int)ToHandle() );
 			CallParentFunction( msg );
 		}
 
@@ -630,7 +630,7 @@ void Button::SetAsDefaultButton(int state)
 		{
 			// post a message up notifying our nav group that we're now the default button
 			KeyValues *msg = new KeyValues( "DefaultButtonSet" );
-			msg->SetInt( "button", ToHandle() );
+			msg->SetInt( "button", (int)ToHandle() );
 			CallParentFunction( msg );
 		}
 
@@ -975,7 +975,7 @@ void Button::OnMouseReleased(MouseCode code)
 	// ensure mouse capture gets released
 	if (IsUseCaptureMouseEnabled())
 	{
-		input()->SetMouseCapture(NULL);
+		input()->SetMouseCapture(INVALID_VPANEL);
 	}
 
 	if (_activationType == ACTIVATE_ONPRESSED)
@@ -1024,7 +1024,7 @@ void Button::OnKeyCodePressed(KeyCode code)
 		OnMousePressed(MOUSE_LEFT);
 		if (IsUseCaptureMouseEnabled()) // undo the mouse capture since its a fake mouse click!
 		{
-			input()->SetMouseCapture(NULL);
+			input()->SetMouseCapture(INVALID_VPANEL);
 		}
 	}
 	else

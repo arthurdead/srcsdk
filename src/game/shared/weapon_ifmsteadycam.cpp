@@ -50,15 +50,6 @@ END_PREDICTION_DATA()
 #endif
 
 
-#ifdef GAME_DLL
-
-BEGIN_DATADESC( CWeaponIFMSteadyCam )
-	DEFINE_FIELD( m_hLockTarget, FIELD_EHANDLE ),
-END_DATADESC()
-
-#endif
-
-
 //-----------------------------------------------------------------------------
 // CWeaponIFMSteadyCam implementation. 
 //-----------------------------------------------------------------------------

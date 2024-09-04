@@ -8,6 +8,12 @@
 #ifndef EXPLODE_H
 #define EXPLODE_H
 
+#include "mathlib/vector.h"
+#include "ehandle.h"
+#include "shareddefs.h"
+
+class CBaseEntity;
+
 #define	SF_ENVEXPLOSION_NODAMAGE	0x00000001 // when set, ENV_EXPLOSION will not actually inflict damage
 #define	SF_ENVEXPLOSION_REPEATABLE	0x00000002 // can this entity be refired?
 #define SF_ENVEXPLOSION_NOFIREBALL	0x00000004 // don't draw the fireball
@@ -23,9 +29,10 @@
 #define SF_ENVEXPLOSION_NOCLAMPMAX	0x00001000 // don't clamp the maximum size of the fireball sprite
 #define SF_ENVEXPLOSION_SURFACEONLY	0x00002000 // don't damage the player if he's underwater.
 #define SF_ENVEXPLOSION_GENERIC_DAMAGE	0x00004000 // don't do BLAST damage
+#define SF_ENVEXPLOSION_ICE			0x00008000 // freeze stuff and do ice type effects
 
-extern short	g_sModelIndexFireball;
-extern short	g_sModelIndexSmoke;
+extern int	g_sModelIndexFireball;
+extern int	g_sModelIndexSmoke;
 
 void ExplosionCreate( const Vector &center, const QAngle &angles, 
 	CBaseEntity *pOwner, int magnitude, int radius, bool doDamage, float flExplosionForce = 0.0f, bool bSurfaceOnly = false, bool bSilent = false, int iCustomDamageType = -1 );

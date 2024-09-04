@@ -392,69 +392,6 @@ struct MaterialVideoMode_t
 	int m_RefreshRate;		// 0 == default (ignored for windowed mode)
 };
 
-// fixme: should move this into something else.
-struct FlashlightState_t
-{
-	FlashlightState_t()
-	{
-		m_bEnableShadows = false;						// Provide reasonable defaults for shadow depth mapping parameters
-		m_bDrawShadowFrustum = false;
-		m_flShadowMapResolution = 1024.0f;
-		m_flShadowFilterSize = 3.0f;
-		m_flShadowSlopeScaleDepthBias = 16.0f;
-		m_flShadowDepthBias = 0.0005f;
-		m_flShadowJitterSeed = 0.0f;
-		m_flShadowAtten = 0.0f;
-		m_bScissor = false; 
-		m_nLeft = -1;
-		m_nTop = -1;
-		m_nRight = -1;
-		m_nBottom = -1;
-		m_nShadowQuality = 0;
-	}
-
-	Vector m_vecLightOrigin;
-	Quaternion m_quatOrientation;
-	float m_NearZ;
-	float m_FarZ;
-	float m_fHorizontalFOVDegrees;
-	float m_fVerticalFOVDegrees;
-	float m_fQuadraticAtten;
-	float m_fLinearAtten;
-	float m_fConstantAtten;
-	float m_Color[4];
-	ITexture *m_pSpotlightTexture;
-	int m_nSpotlightTextureFrame;
-
-	// Shadow depth mapping parameters
-	bool  m_bEnableShadows;
-	bool  m_bDrawShadowFrustum;
-	float m_flShadowMapResolution;
-	float m_flShadowFilterSize;
-	float m_flShadowSlopeScaleDepthBias;
-	float m_flShadowDepthBias;
-	float m_flShadowJitterSeed;
-	float m_flShadowAtten;
-	int   m_nShadowQuality;
-
-	// Getters for scissor members
-	bool DoScissor() { return m_bScissor; }
-	int GetLeft()	 { return m_nLeft; }
-	int GetTop()	 { return m_nTop; }
-	int GetRight()	 { return m_nRight; }
-	int GetBottom()	 { return m_nBottom; }
-
-private:
-
-	friend class CShadowMgr;
-
-	bool m_bScissor; 
-	int m_nLeft;
-	int m_nTop;
-	int m_nRight;
-	int m_nBottom;
-};
-
 struct UberlightState_t
 {
 	UberlightState_t()
@@ -487,6 +424,162 @@ struct UberlightState_t
 	float m_fRoundness;
 
 	IMPLEMENT_OPERATOR_EQUAL( UberlightState_t );
+};
+
+// fixme: should move this into something else.
+struct FlashlightState_t
+{
+	FlashlightState_t()
+	{
+		m_bEnableShadows = false;						// Provide reasonable defaults for shadow depth mapping parameters
+		m_bDrawShadowFrustum = false;
+		m_flShadowMapResolution = 1024.0f;
+		m_flShadowFilterSize = 3.0f;
+		m_flShadowSlopeScaleDepthBias = 16.0f;
+		m_flShadowDepthBias = 0.0005f;
+		m_flShadowJitterSeed = 0.0f;
+		m_flShadowAtten = 0.0f;
+		m_bScissor = false; 
+		m_nLeft = -1;
+		m_nTop = -1;
+		m_nRight = -1;
+		m_nBottom = -1;
+		m_nShadowQuality = 0;
+		m_Reserved = 0;
+	}
+
+	Vector m_vecLightOrigin;
+	Quaternion m_quatOrientation;
+	float m_NearZ;
+	float m_FarZ;
+	float m_fHorizontalFOVDegrees;
+	float m_fVerticalFOVDegrees;
+	float m_fQuadraticAtten;
+	float m_fLinearAtten;
+	float m_fConstantAtten;
+	float m_Color[4];
+	ITexture *m_pSpotlightTexture;
+	int m_nSpotlightTextureFrame;
+
+	// Shadow depth mapping parameters
+	bool  m_bEnableShadows;
+	bool  m_bDrawShadowFrustum;
+	float m_flShadowMapResolution;
+	float m_flShadowFilterSize;
+	float m_flShadowSlopeScaleDepthBias;
+	float m_flShadowDepthBias;
+	float m_flShadowJitterSeed;
+	float m_flShadowAtten;
+	int   m_nShadowQuality : 24;
+	unsigned char m_Reserved : 8;
+
+	// Getters for scissor members
+	bool DoScissor() { return m_bScissor; }
+	int GetLeft()	 { return m_nLeft; }
+	int GetTop()	 { return m_nTop; }
+	int GetRight()	 { return m_nRight; }
+	int GetBottom()	 { return m_nBottom; }
+
+	IMPLEMENT_OPERATOR_EQUAL( FlashlightState_t );
+
+protected:
+
+	friend class CShadowMgr;
+
+	bool m_bScissor; 
+	int m_nLeft;
+	int m_nTop;
+	int m_nRight;
+	int m_nBottom;
+};
+
+struct FlashlightStateMod_t
+{
+	FlashlightStateMod_t()
+	{
+		m_flAmbientOcclusion = 0.0f;
+		m_bShadowHighRes = false;
+
+		m_bUberlight = false;
+
+		m_bVolumetric = false;
+		m_flNoiseStrength = 0.8f;
+		m_flFlashlightTime = 0.0f;
+		m_nNumPlanes = 64;
+		m_flPlaneOffset = 0.0f;
+		m_flVolumetricIntensity = 1.0f;
+
+		m_bOrtho = false;
+		m_fOrthoLeft = -1.0f;
+		m_fOrthoRight = 1.0f;
+		m_fOrthoTop = -1.0f;
+		m_fOrthoBottom = 1.0f;
+
+		m_fBrightnessScale = 1.0f;
+		m_pSpotlightTexture = NULL;
+		m_pProjectedMaterial = NULL;
+		m_bGlobalLight = false;
+
+		m_bSimpleProjection = false;
+		m_flProjectionSize = 500.0f;
+		m_flProjectionRotation = 0.0f;
+	}
+
+	bool  m_bOrtho;
+	float m_fOrthoLeft;
+	float m_fOrthoRight;
+	float m_fOrthoTop;
+	float m_fOrthoBottom;
+
+	float m_FarZAtten;
+	float m_fBrightnessScale;
+	ITexture *m_pSpotlightTexture;
+	IMaterial *m_pProjectedMaterial;
+	bool m_bGlobalLight;
+
+	// Shadow depth mapping parameters
+	float m_flAmbientOcclusion;
+	bool  m_bShadowHighRes;
+
+	// simple projection
+	bool	m_bSimpleProjection;
+	float	m_flProjectionSize;
+	float	m_flProjectionRotation;
+
+	// Uberlight parameters
+	bool m_bUberlight;
+	UberlightState_t m_uberlightState;
+
+	bool m_bVolumetric;
+	float m_flNoiseStrength;
+	float m_flFlashlightTime;
+	int m_nNumPlanes;
+	float m_flPlaneOffset;
+	float m_flVolumetricIntensity;
+
+	int m_nUnused;
+
+	IMPLEMENT_OPERATOR_EQUAL( FlashlightStateMod_t );
+};
+
+struct FlashlightStateEx_t : public FlashlightState_t, public FlashlightStateMod_t
+{
+	FlashlightStateEx_t()
+		: FlashlightState_t(), FlashlightStateMod_t()
+	{
+	}
+
+	FlashlightStateEx_t &operator=(const FlashlightState_t &other)
+	{
+		FlashlightState_t::operator=(other);
+		new (static_cast<FlashlightStateMod_t *>(this)) FlashlightStateMod_t();
+		return *this;
+	}
+
+	FlashlightStateEx_t(const FlashlightState_t &other)
+	{ operator=(other); }
+
+	IMPLEMENT_OPERATOR_EQUAL( FlashlightStateEx_t );
 };
 
 // Passed as the callback object to Async functions in the material system

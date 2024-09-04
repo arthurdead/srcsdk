@@ -44,11 +44,6 @@ IMPLEMENT_CLIENTCLASS_DT(C_PropVehicleDriveable, DT_PropVehicleDriveable, CPropV
 	RecvPropVector( RECVINFO( m_vecGunCrosshair ) ),
 END_RECV_TABLE()
 
-
-BEGIN_DATADESC( C_PropVehicleDriveable )
-	DEFINE_EMBEDDED( m_ViewSmoothingData ),
-END_DATADESC()
-
 ConVar r_VehicleViewClamp( "r_VehicleViewClamp", "1", FCVAR_CHEAT );
 
 #define ROLL_CURVE_ZERO		20		// roll less than this is clamped to zero

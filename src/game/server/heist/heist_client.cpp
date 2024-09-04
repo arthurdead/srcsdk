@@ -105,7 +105,7 @@ void FinishClientPutInServer(CHeistPlayer *pPlayer)
 
 				const char *pkvActiveWep_Value = pkvActiveWep->GetString();
 
-				pPlayer->m_iHealth = PlayerHealthValue;
+				pPlayer->SetHealth( PlayerHealthValue );
 				pPlayer->m_iMaxHealth = 125;
 				pPlayer->SetArmorValue(PlayerArmourValue);
 				pPlayer->SetModel("models/sdk/Humans/Group03/male_06_sdk.mdl");
@@ -175,7 +175,7 @@ void FinishClientPutInServer(CHeistPlayer *pPlayer)
 
 void ClientPutInServer( edict_t *pEdict, const char *playername )
 {
-	CHeistPlayer *pPlayer = CHeistPlayer::CreatePlayer("player", pEdict);
+	CBasePlayer *pPlayer = CBasePlayer::CreatePlayer("player", pEdict);
 	pPlayer->SetPlayerName(playername);
 }
 

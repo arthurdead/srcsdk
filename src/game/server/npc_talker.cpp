@@ -15,27 +15,6 @@
 #include "tier0/memdbgon.h"
 
 
-	
-BEGIN_SIMPLE_DATADESC( CNPCSimpleTalkerExpresser )
-	//									m_pSink		(reconnected on load)
-	DEFINE_AUTO_ARRAY(	m_szMonologSentence,	FIELD_CHARACTER	),
-	DEFINE_FIELD(		m_iMonologIndex,		FIELD_INTEGER	),
-	DEFINE_FIELD(		m_fMonologSuspended,	FIELD_BOOLEAN	),
-	DEFINE_FIELD(		m_hMonologTalkTarget,	FIELD_EHANDLE	),
-END_DATADESC()
-
-BEGIN_DATADESC( CNPCSimpleTalker )
-	DEFINE_FIELD( m_useTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flNextIdleSpeechTime, FIELD_TIME ),
-	DEFINE_FIELD( m_nSpeak, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iszUse, FIELD_STRING ),
-	DEFINE_FIELD( m_iszUnUse, FIELD_STRING ),
-	// 							m_FollowBehavior (auto saved by AI)
-	// Function Pointers
-	DEFINE_USEFUNC( FollowerUse ),
-
-END_DATADESC()
-
 // array of friend names
 const char *CNPCSimpleTalker::m_szFriends[TLK_CFRIENDS] = 
 {

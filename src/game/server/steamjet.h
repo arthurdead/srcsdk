@@ -24,7 +24,7 @@ class CSteamJet : public CBaseParticleEntity
 public:
 	CSteamJet();
 	DECLARE_CLASS( CSteamJet, CBaseParticleEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	virtual void	Spawn( void );

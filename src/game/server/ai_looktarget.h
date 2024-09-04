@@ -7,6 +7,8 @@
 #ifndef AI_LOOKTARGET_H
 #define AI_LOOKTARGET_H
 
+#include "baseentity.h"
+
 #define SF_LOOKTARGET_ONLYONCE	0x00000001
 
 //=============================================================================
@@ -15,7 +17,7 @@ class CAI_LookTarget : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CAI_LookTarget, CPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CAI_LookTarget() { m_flTimeNextAvailable = -1; }
 

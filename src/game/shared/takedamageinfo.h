@@ -11,6 +11,7 @@
 
 
 #include "networkvar.h" // todo: change this when DECLARE_CLASS is moved into a better location.
+#include "ehandle.h"
 
 // Used to initialize m_flBaseDamage to something that we know pretty much for sure
 // hasn't been modified by a user. 
@@ -85,6 +86,9 @@ public:
 	void			SetAmmoType( int iAmmoType );
 	const char *	GetAmmoName() const;
 
+	float			GetRadius() const;
+	void			SetRadius( float fRadius );
+
 	int				GetPlayerPenetrationCount() const { return m_iPlayerPenetrationCount; }
 	void			SetPlayerPenetrationCount( int iPlayerPenetrationCount ) { m_iPlayerPenetrationCount = iPlayerPenetrationCount; }
 	
@@ -128,10 +132,9 @@ protected:
 	float			m_flDamageBonus;		// Anything that increases damage (crit) - store the delta
 	EHANDLE			m_hDamageBonusProvider;	// Who gave us the ability to do extra damage?
 	bool			m_bForceFriendlyFire;	// Ideally this would be a dmg type, but we can't add more
+	float			m_flRadius;
 
 	float			m_flDamageForForce;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //-----------------------------------------------------------------------------
@@ -151,8 +154,6 @@ public:
 
 protected:
 	EHANDLE			m_hTarget;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 extern CMultiDamage g_MultiDamage;
@@ -178,7 +179,7 @@ void GuessDamageForce( CTakeDamageInfo *info, const Vector &vecForceDir, const V
 
 inline CBaseEntity* CTakeDamageInfo::GetInflictor() const
 {
-	return m_hInflictor;
+	return m_hInflictor.Get();
 }
 
 
@@ -190,7 +191,7 @@ inline void CTakeDamageInfo::SetInflictor( CBaseEntity *pInflictor )
 
 inline CBaseEntity* CTakeDamageInfo::GetAttacker() const
 {
-	return m_hAttacker;
+	return m_hAttacker.Get();
 }
 
 
@@ -201,7 +202,7 @@ inline void CTakeDamageInfo::SetAttacker( CBaseEntity *pAttacker )
 
 inline CBaseEntity* CTakeDamageInfo::GetWeapon() const
 {
-	return m_hWeapon;
+	return m_hWeapon.Get();
 }
 
 
@@ -253,7 +254,7 @@ inline float CTakeDamageInfo::GetDamageBonus() const
 
 inline CBaseEntity *CTakeDamageInfo::GetDamageBonusProvider() const
 {
-	return m_hDamageBonusProvider;
+	return m_hDamageBonusProvider.Get();
 }
 
 inline void CTakeDamageInfo::SetDamageBonus( float flBonus, CBaseEntity *pProvider /*= NULL*/ )
@@ -374,13 +375,22 @@ inline void CTakeDamageInfo::CopyDamageToBaseDamage()
 	m_flBaseDamage = m_flDamage;
 }
 
+inline float CTakeDamageInfo::GetRadius() const
+{
+	return m_flRadius;
+}
+
+inline void CTakeDamageInfo::SetRadius( float flRadius )
+{
+	m_flRadius = flRadius;
+}
 
 // -------------------------------------------------------------------------------------------------- //
 // Inlines.
 // -------------------------------------------------------------------------------------------------- //
 inline CBaseEntity *CMultiDamage::GetTarget() const
 {
-	return m_hTarget;
+	return m_hTarget.Get();
 }
 
 inline void CMultiDamage::SetTarget( CBaseEntity *pTarget )

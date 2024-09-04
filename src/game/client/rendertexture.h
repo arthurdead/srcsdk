@@ -9,6 +9,8 @@
 #ifndef RENDERTARGETS_H
 #define RENDERTARGETS_H
 
+#include "materialsystem/itexture.h"
+
 ITexture *GetPowerOfTwoFrameBufferTexture( void );
 ITexture *GetFullFrameFrameBufferTexture( int textureIndex );
 ITexture *GetWaterReflectionTexture( void );
@@ -28,6 +30,6 @@ ITexture *GetSmallBuffer1( void );							// quarter-sized texture, same fmt as s
 
 ITexture *GetTeenyTexture(int which);						// tiny 32x32 texture, always 8888
 
-void ReleaseRenderTargets( void );
+void ReleaseRenderTargets( int nChangeFlags );
 
 #endif // RENDERTARGETS_H

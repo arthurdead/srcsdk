@@ -1149,27 +1149,6 @@ bool UTIL_GetMapLoadCountFileName( const char *pszFilePrependName, char *pszBuff
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-C_BasePlayer* UTIL_PlayerByUserId( int userID )
-{
-	for (int i = 1; i<=gpGlobals->maxClients; i++ )
-	{
-		C_BasePlayer *pPlayer = UTIL_PlayerByIndex( i );
-
-		if ( !pPlayer )
-			continue;
-
-		if ( pPlayer->GetUserID() == userID )
-		{
-			return pPlayer;
-		}
-	}
-
-	return NULL;
-}
-
 C_BaseEntity* UTIL_EntityFromUserMessageEHandle( long nEncodedEHandle )
 {
 	int nEntity, nSerialNum;

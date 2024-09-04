@@ -139,5 +139,6 @@ public:
 
 };
 
+extern IGameMovement *g_pGameMovement;
 
 #endif // IGAMEMOVEMENT_H

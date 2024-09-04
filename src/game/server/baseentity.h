@@ -24,15 +24,22 @@
 #include "touchlink.h"
 #include "groundlink.h"
 #include "irecipientfilter.h"
+#include "map_entity.h"
 
 class CDamageModifier;
 class CDmgAccumulator;
 
 struct CSoundParameters;
 
-class AI_CriteriaSet;
-class IResponseSystem;
-class IEntitySaveUtils;
+#ifndef AI_CriteriaSet
+#define AI_CriteriaSet ResponseRules::CriteriaSet 
+#endif
+namespace ResponseRules 
+{ 
+	class CriteriaSet; 
+	class IResponseSystem;
+};
+using ResponseRules::IResponseSystem;
 class CRecipientFilter;
 class CStudioHdr;
 
@@ -59,10 +66,7 @@ typedef CHandle<CBaseEntity> EHANDLE;
 
 
 // saverestore.h declarations
-class CSaveRestoreData;
 struct typedescription_t;
-class ISave;
-class IRestore;
 class CBaseEntity;
 class CEntityMapData;
 class CBaseCombatWeapon;
@@ -87,8 +91,9 @@ typedef struct KeyValueData_s KeyValueData;
 class CUserCmd;
 class CSkyCamera;
 class CEntityMapData;
-class INextBot;
-class IHasAttributes;
+class CWorld;
+typedef unsigned int UtlHashHandle_t;
+class CGlobalEvent;
 
 typedef CUtlVector< CBaseEntity* > EntityList_t;
 
@@ -107,8 +112,6 @@ struct inputdata_t
 //  speech state, et al.
 struct ResponseContext_t
 {
-	DECLARE_SIMPLE_DATADESC();
-
 	string_t		m_iszName;
 	string_t		m_iszValue;
 	float			m_fExpirationTime;		// when to expire context (0 == never)
@@ -220,8 +223,6 @@ struct thinkfunc_t
 	string_t	m_iszContext;
 	int			m_nNextThinkTick;
 	int			m_nLastThinkTick;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 struct EmitSound_t;
@@ -265,7 +266,7 @@ public:
 public:
 	// If bServerOnly is true, then the ent never goes to the client. This is used
 	// by logical entities.
-	CBaseEntity( bool bServerOnly=false );
+	CBaseEntity();
 	virtual ~CBaseEntity();
 
 	// prediction system
@@ -273,7 +274,9 @@ public:
 	// network data
 	DECLARE_SERVERCLASS();
 	// data description
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
+
+	bool IsNetworked() const { return !IsEFlagSet(EFL_NOT_NETWORKED); }
 	
 	// memory handling
     void *operator new( size_t stAllocateBlock );
@@ -284,7 +287,7 @@ public:
 // IHandleEntity overrides.
 public:
 	virtual void			SetRefEHandle( const CBaseHandle &handle );
-	virtual const			CBaseHandle& GetRefEHandle() const;
+	virtual const			EHANDLE& GetRefEHandle() const;
 
 // IServerUnknown overrides
 	virtual ICollideable	*GetCollideable();
@@ -296,6 +299,8 @@ public:
 	virtual void			SetModelIndex( int index );
 	virtual int				GetModelIndex( void ) const;
  	virtual string_t		GetModelName( void ) const;
+
+ 	virtual string_t		GetAIAddOn( void ) const;
 
 	void					ClearModelIndexOverrides( void );
 	virtual void			SetModelIndexOverride( int index, int nValue );
@@ -317,6 +322,9 @@ public:
 	bool					IsCurrentlyTouching( void ) const;
 	const Vector&			GetAbsOrigin( void ) const;
 	const QAngle&			GetAbsAngles( void ) const;
+	inline Vector			Forward() const; ///< get my forward (+x) vector
+	inline Vector			Left() const;    ///< get my left    (+y) vector
+	inline Vector			Up() const;      ///< get my up      (+z) vector
 
 	SolidType_t				GetSolid() const;
 	int			 			GetSolidFlags( void ) const;
@@ -425,10 +433,14 @@ public:
 	virtual const char	*GetTracerType( void );
 
 	// returns a pointer to the entities edict, if it has one.  should be removed!
-	inline edict_t			*edict( void )			{ return NetworkProp()->edict(); }
-	inline const edict_t	*edict( void ) const	{ return NetworkProp()->edict(); }
-	inline int				entindex( ) const		{ return m_Network.entindex(); };
-	inline int				GetSoundSourceIndex() const		{ return entindex(); }
+	edict_t			*edict( void );
+	const edict_t	*edict( void ) const;
+	int				entindex( ) const;
+	int				GetSoundSourceIndex() const;
+
+	void	SetFadeDistance( float minFadeDist, float maxFadeDist );
+	void	SetGlobalFadeScale( float flFadeScale );
+	float	GetGlobalFadeScale() const;
 
 	// These methods encapsulate MOVETYPE_FOLLOW, which became obsolete
 	void FollowEntity( CBaseEntity *pBaseEntity, bool bBoneMerge = true );
@@ -451,16 +463,28 @@ public:
 	virtual void PostConstructor( const char *szClassname );
 	virtual void PostClientActive( void );
 	virtual void ParseMapData( CEntityMapData *mapData );
+	virtual void OnParseMapDataFinished();
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 	virtual bool KeyValue( const char *szKeyName, float flValue );
+	virtual bool KeyValue( const char *szKeyName, int nValue );
 	virtual bool KeyValue( const char *szKeyName, const Vector &vecValue );
 	virtual bool GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen );
+	bool KeyValueFromString( const char *szKeyName, const char *szValue )		{ return KeyValue( szKeyName, szValue ); }
+	bool KeyValueFromFloat( const char *szKeyName, float flValue )				{ return KeyValue( szKeyName, flValue ); }
+	bool KeyValueFromInt( const char *szKeyName, int nValue )					{ return KeyValue( szKeyName, nValue ); }
+	bool KeyValueFromVector( const char *szKeyName, const Vector &vecValue )	{ return KeyValue( szKeyName, vecValue ); }
 
 	void ValidateEntityConnections();
 	void FireNamedOutput( const char *pszOutput, variant_t variant, CBaseEntity *pActivator, CBaseEntity *pCaller, float flDelay = 0.0f );
+	CBaseEntityOutput *FindNamedOutput( const char *pszOutput );
 
 	// Activate - called for each entity after each load game and level load
 	virtual void Activate( void );
+
+	// Called once per frame after the server frame loop has finished and after all messages being
+	//  sent to clients have been sent.
+	// NOTE: This will not be called unless the entity requests it via gEntList.AddPostClientMessageEntity
+	void PostClientMessagesSent( void );
 
 	// Hierarchy traversal
 	CBaseEntity *GetMoveParent( void );
@@ -480,6 +504,8 @@ public:
 	int			GetParentAttachment();
 
 	string_t	GetEntityName();
+	const char *GetEntityNameAsCStr();	// This method is temporary for VSCRIPT functionality until we figure out what to do with string_t (sjb)
+	const char *GetPreTemplateName(); // Not threadsafe. Get the name stripped of template unique decoration
 
 	bool		NameMatches( const char *pszNameOrWildcard );
 	bool		ClassMatches( const char *pszClassOrWildcard );
@@ -521,6 +547,7 @@ public:
 
 	// checks to see if the entity is marked for deletion
 	bool		IsMarkedForDeletion( void );
+	void MarkForDeletion();
 
 	// capabilities
 	virtual int	ObjectCaps( void );
@@ -575,9 +602,12 @@ public:
 	void		SetClassname( const char *className );
 	const char* GetClassname();
 
+	virtual const char *GetPlayerName() const { return NULL; }
+
 	// Debug Overlays
 	void		 EntityText( int text_offset, const char *text, float flDuration, int r = 255, int g = 255, int b = 255, int a = 255 );
 	const char	*GetDebugName(void); // do not make this virtual -- designed to handle NULL this
+	void         DrawVPhysicsObjectCenterAndContactPoints(IPhysicsObject *obj);
 	virtual	void DrawDebugGeometryOverlays(void);					
 	virtual int  DrawDebugTextOverlays(void);
 	void		 DrawTimedOverlays( void );
@@ -592,22 +622,6 @@ public:
 
 	void		SetSolid( SolidType_t val );
 
-	// save/restore
-	// only overload these if you have special data to serialize
-	virtual int	Save( ISave &save );
-	virtual int	Restore( IRestore &restore );
-	virtual bool ShouldSavePhysics();
-
-	// handler to reset stuff before you are restored
-	// NOTE: Always chain to base class when implementing this!
-	virtual void OnSave( IEntitySaveUtils *pSaveUtils );
-
-	// handler to reset stuff after you are restored
-	// called after all entities have been loaded from all affected levels
-	// called before activate
-	// NOTE: Always chain to base class when implementing this!
-	virtual void OnRestore();
-
 	int			 GetTextureFrameIndex( void );
 	void		 SetTextureFrameIndex( int iIndex );
 
@@ -619,9 +633,10 @@ public:
 
 	void		 SetAIWalkable( bool bBlocksLOS );
 	bool		 IsAIWalkable( void );
-private:
-	int SaveDataDescBlock( ISave &save, datamap_t *dmap );
-	int RestoreDataDescBlock( IRestore &restore, datamap_t *dmap );
+
+	// This comes from the "id" key/value that Hammer adds to entities.
+	// It is used by Foundry to match up live (engine) entities with Hammer entities.
+	inline int		GetHammerID() const { return m_iHammerID; }
 
 public:
 	// Networking related methods
@@ -662,14 +677,21 @@ public:
 	void				SetAnimTime( float at );
 
 	float				GetSimulationTime() const;
+	float				GetOldSimulationTime() const;
 	void				SetSimulationTime( float st );
+
+	float				GetCreateTime()										{ return m_flCreateTime; }
+	void				SetCreateTime( float flCreateTime )					{ m_flCreateTime = flCreateTime; }
 
 	void				SetRenderMode( RenderMode_t nRenderMode );
 	RenderMode_t		GetRenderMode() const;
 
+	void				SetRenderFX( RenderFx_t nRenderFX );
+	RenderFx_t			GetRenderFX() const;
+
 private:
 	// NOTE: Keep this near vtable so it's in cache with vtable.
-	CServerNetworkProperty m_Network;
+	CServerNetworkProperty *m_Network;
 
 public:
 	// members
@@ -677,11 +699,15 @@ public:
 	string_t m_iGlobalname; // identifier for carrying entity across level transitions
 	string_t m_iParent;	// the name of the entities parent; linked into m_pParent during Activate()
 
+	// This comes from the "id" key/value that Hammer adds to entities.
+	// It is used by Foundry to match up live (engine) entities with Hammer entities.
 	int		m_iHammerID; // Hammer unique edit id number
 
 public:
 	// was pev->speed
 	float		m_flSpeed;
+
+private:
 	// was pev->renderfx
 	CNetworkVar( unsigned char, m_nRenderFX );
 	// was pev->rendermode
@@ -692,20 +718,27 @@ public:
 	CNetworkArray( int, m_nModelIndexOverrides, MAX_VISION_MODES ); // used to override the base model index on the client if necessary
 #endif
 
+private:
 	// was pev->rendercolor
 	CNetworkColor32( m_clrRender );
-	const color32 GetRenderColor() const;
+public:
+	const color24 GetRenderColor() const;
+	byte GetRenderColorR() const;
+	byte GetRenderColorG() const;
+	byte GetRenderColorB() const;
+	byte GetRenderAlpha() const;
 	void SetRenderColor( byte r, byte g, byte b );
-	void SetRenderColor( byte r, byte g, byte b, byte a );
+	void SetRenderColor( color24 clr );
 	void SetRenderColorR( byte r );
 	void SetRenderColorG( byte g );
 	void SetRenderColorB( byte b );
-	void SetRenderColorA( byte a );
+	void SetRenderAlpha( byte a );
 
 	// was pev->animtime:  consider moving to CBaseAnimating
 	float		m_flPrevAnimTime;
 	CNetworkVar( float, m_flAnimTime );  // this is the point in time that the client will interpolate to position,angle,frame,etc.
 	CNetworkVar( float, m_flSimulationTime );
+	CNetworkVar( float, m_flCreateTime );
 
 	void IncrementInterpolationFrame(); // Call this to cause a discontinuity (teleport)
 
@@ -717,7 +750,7 @@ public:
 	CNetworkVar( CPredictableId, m_PredictableID );
 
 	// used so we know when things are no longer touching
-	int			touchStamp;			
+	int			m_nTouchStamp;			
 
 protected:
 
@@ -735,14 +768,18 @@ protected:
 	int							m_iCurrentThinkContext;
 #endif
 
+public:
 	void RemoveExpiredConcepts( void );
 	int	GetContextCount() const;						// Call RemoveExpiredConcepts to clean out expired concepts
 	const char *GetContextName( int index ) const;		// note: context may be expired
 	const char *GetContextValue( int index ) const; 	// note: context may be expired
 	bool ContextExpired( int index ) const;
 	int FindContextByName( const char *name ) const;
-public:
 	void	AddContext( const char *nameandvalue );
+	void		AddContext( const char *pName, const char *pValue, float duration );
+	inline const ResponseContext_t	*GetContextData( int index ) const; // note: context may be expired
+	void		ClearAllContexts( void );
+
 
 protected:
 	CUtlVector< ResponseContext_t > m_ResponseContexts;
@@ -771,7 +808,7 @@ public:
 	virtual CBaseAnimating*	GetBaseAnimating() { return NULL; }
 	virtual CBaseAnimatingOverlay *	GetBaseAnimatingOverlay() { return NULL; }
 
-	virtual IResponseSystem *GetResponseSystem();
+	virtual ResponseRules::IResponseSystem *GetResponseSystem();
 	virtual void	DispatchResponse( const char *conceptName );
 
 // Classify - returns the type of group (i.e, "houndeye", or "human military" so that NPCs with different classnames
@@ -820,12 +857,11 @@ public:
 	void					TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, int bitsDamageType );
 	virtual bool			IsTriggered( CBaseEntity *pActivator ) {return true;}
 	virtual bool			IsNPC( void ) const { return false; }
-	CAI_BaseNPC				*MyNPCPointer( void ); 
+	virtual CAI_BaseNPC				*MyNPCPointer( void ); 
 	virtual CBaseCombatCharacter *MyCombatCharacterPointer( void ) { return NULL; }
-	virtual INextBot		*MyNextBotPointer( void ) { return NULL; }
 	virtual float			GetDelay( void ) { return 0; }
 	virtual bool			IsMoving( void );
-	bool					IsWorld() { return entindex() == 0; }
+	bool					IsWorld() const { extern CWorld *g_WorldEntity; return (void *)this == (void *)g_WorldEntity; }
 	virtual char const		*DamageDecal( int bitsDamageType, int gameMaterial );
 	virtual void			DecalTrace( trace_t *pTrace, char const *decalName );
 	virtual void			ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName = NULL );
@@ -909,6 +945,7 @@ public:
  	void					PhysicsMarkEntitiesAsTouching( CBaseEntity *other, trace_t &trace );
 	void					PhysicsMarkEntitiesAsTouchingEventDriven( CBaseEntity *other, trace_t &trace );
 	void					PhysicsTouchTriggers( const Vector *pPrevAbsOrigin = NULL );
+	virtual void			PhysicsLandedOnGround( float flFallingSpeed ) { return; }
 
 	// Physics helper
 	static void				PhysicsRemoveTouchedList( CBaseEntity *ent );
@@ -960,11 +997,6 @@ public:
 	virtual void FireBullets( const FireBulletsInfo_t &info );
 	virtual void DoImpactEffect( trace_t &tr, int nDamageType ); // give shooter a chance to do a custom impact.
 
-	// OLD VERSION! Use the struct version
-	void FireBullets( int cShots, const Vector &vecSrc, const Vector &vecDirShooting, 
-		const Vector &vecSpread, float flDistance, int iAmmoType, int iTracerFreq = 4, 
-		int firingEntID = -1, int attachmentID = -1, int iDamage = 0, 
-		CBaseEntity *pAttacker = NULL, bool bFirstShotAccurate = false, bool bPrimaryAttack = true );
 	virtual void ModifyFireBulletsDamage( CTakeDamageInfo* dmgInfo ) {}
 
 	virtual CBaseEntity *Respawn( void ) { return NULL; }
@@ -981,7 +1013,7 @@ public:
 	void	SetMaxHealth( int amt )	{ m_iMaxHealth = amt; }
 
 	int		GetHealth() const		{ return m_iHealth; }
-	void	SetHealth( int amt )	{ m_iHealth = amt; }
+	virtual void	SetHealth( int amt )	{ m_iHealth = amt; }
 
 	float HealthFraction() const;
 
@@ -1022,17 +1054,10 @@ public:
 	virtual void	ModifyOrAppendCriteria( AI_CriteriaSet& set );
 	void			AppendContextToCriteria( AI_CriteriaSet& set, const char *prefix = "" );
 	void			DumpResponseCriteria( void );
-
-	// Return the IHasAttributes interface for this base entity. Removes the need for:
-	//	dynamic_cast< IHasAttributes * >( pEntity );
-	// Which is remarkably slow.
-	// GetAttribInterface( CBaseEntity *pEntity ) in attribute_manager.h uses
-	//  this function, tests for NULL, and Asserts m_pAttributes == dynamic_cast.
-	inline IHasAttributes *GetHasAttributesInterfacePtr() const { return m_pAttributes; }
-
-protected:
-	// NOTE: m_pAttributes needs to be set in the leaf class constructor.
-	IHasAttributes *m_pAttributes;
+	// this computes criteria that depend on the other criteria having been set. 
+	// needs to be done in a second pass because we may have multiple overrids for
+	// a context before it all settles out.
+	virtual void	ModifyOrAppendDerivedCriteria( AI_CriteriaSet& set ) {};
 
 private:
 	friend class CAI_Senses;
@@ -1042,8 +1067,10 @@ public:
 	// variables promoted from edict_t
 	string_t	m_target;
 	CNetworkVarForDerived( int, m_iMaxHealth ); // CBaseEntity doesn't care about changes to this variable, but there are derived classes that do.
+private:
 	CNetworkVarForDerived( int, m_iHealth );
 
+public:
 	CNetworkVarForDerived( char, m_lifeState );
 	CNetworkVarForDerived( char , m_takedamage );
 
@@ -1089,6 +1116,9 @@ public:
 	virtual const QAngle &EyeAngles( void );		// Direction of eyes in world space
 	virtual const QAngle &LocalEyeAngles( void );	// Direction of eyes
 	virtual Vector	EarPosition( void );			// position of ears
+	void	EyePositionZOnly( Vector *pPosition );	// position of eyes, ignoring X and Y
+
+	float GetDistanceToEntity( const CBaseEntity *other ) const; // Distance between GetAbsOrigins.
 
 	Vector	EyePosition( void ) const;			// position of eyes
 	const QAngle &EyeAngles( void ) const;		// Direction of eyes in world space
@@ -1133,8 +1163,11 @@ public:
 
 	float			GetGravity( void ) const;
 	void			SetGravity( float gravity );
-	float			GetFriction( void ) const;
+	virtual float			GetFriction( void ) const;
 	void			SetFriction( float flFriction );
+
+	// Mechanism for overriding friction for a short duration
+	void			OverrideFriction( float duration, float friction );
 
 	virtual	bool FVisible ( CBaseEntity *pEntity, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
 	virtual bool FVisible( const Vector &vecTarget, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
@@ -1154,6 +1187,7 @@ public:
 	void					SetGroundEntity( CBaseEntity *ground );
 	CBaseEntity				*GetGroundEntity( void );
 	CBaseEntity				*GetGroundEntity( void ) const { return const_cast<CBaseEntity *>(this)->GetGroundEntity(); }
+	virtual void			OnGroundChanged( CBaseEntity *oldGround, CBaseEntity *newGround ) {}
 
 	// Gets the velocity we impart to a player standing on us
 	virtual void			GetGroundVelocityToApply( Vector &vecGroundVel ) { vecGroundVel = vec3_origin; }
@@ -1176,6 +1210,8 @@ public:
 	void					SetModelName( string_t name );
 
 	model_t					*GetModel( void );
+
+	void					SetAIAddOn( string_t name );
 
 	// These methods return a *world-aligned* box relative to the absorigin of the entity.
 	// This is used for collision purposes and is *not* guaranteed
@@ -1221,6 +1257,21 @@ public:
 	void					IncrementLocalTime( float flTimeDelta );
 	float					GetMoveDoneTime( ) const;
 	void					SetMoveDoneTime( float flTime );
+
+	// Cell position
+	void					SetCellBits( int cellbits = CELL_BASEENTITY_ORIGIN_CELL_BITS );
+	void					UpdateCell();
+	
+	static void SendProxy_CellX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+	static void SendProxy_CellY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+	static void SendProxy_CellZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+	static void SendProxy_CellOrigin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+	static void SendProxy_CellOriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+	static void SendProxy_CellOriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+	static void SendProxy_AnglesX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+	static void SendProxy_AnglesY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+	static void SendProxy_AnglesZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+		
 	
 	// Used by the PAS filters to ask the entity where in world space the sounds it emits come from.
 	// This is used right now because if you have something sitting on an incline, using our axis-aligned 
@@ -1262,7 +1313,7 @@ public:
 	static void EmitSound( IRecipientFilter& filter, int iEntIndex, const EmitSound_t & params );
 	static void EmitSound( IRecipientFilter& filter, int iEntIndex, const EmitSound_t & params, HSOUNDSCRIPTHANDLE& handle );
 
-	static void StopSound( int iEntIndex, int iChannel, const char *pSample );
+	static void StopSound( int iEntIndex, int iChannel, const char *pSample, bool bIsStoppingSpeakerSound = false );
 
 	static void EmitAmbientSound( int entindex, const Vector& origin, const char *soundname, int flags = 0, float soundtime = 0.0f, float *duration = NULL );
 
@@ -1327,6 +1378,7 @@ public:
 	inline IPhysicsObject *VPhysicsGetObject( void ) const { return m_pPhysicsObject; }
 	virtual void	VPhysicsUpdate( IPhysicsObject *pPhysics );
 	void			VPhysicsUpdatePusher( IPhysicsObject *pPhysics );
+	float			VPhysicsGetNonShadowMass( void ) const { return m_flNonShadowMass; }
 	
 	// react physically to damage (called from CBaseEntity::OnTakeDamage() by default)
 	virtual int		VPhysicsTakeDamage( const CTakeDamageInfo &info );
@@ -1361,6 +1413,7 @@ public:
 	// Computes the water level + type
 	void					UpdateWaterState();
 	bool					IsEdictFree() const { return edict()->IsFree(); }
+	virtual bool			CanPushEntity( CBaseEntity *other ) const {return true;}	//Any special reason we can't push this other thing while moving?
 
 	// Callbacks for the physgun/cannon picking up an entity
 	virtual	CBasePlayer		*HasPhysicsAttacker( float dt ) { return NULL; }
@@ -1373,6 +1426,10 @@ public:
 
 	// Computes the abs position of a direction specified in local space
 	void					ComputeAbsDirection( const Vector &vecLocalDirection, Vector *pAbsDirection );
+
+	// Precache model sounds + particles
+	static void PrecacheModelComponents( int nModelIndex );
+	static void PrecacheSoundHelper( const char *pName );
 
 protected:
 	// Invalidates the abs state of all children
@@ -1442,13 +1499,15 @@ private:
 	void					ComputeStepSimulationNetwork( StepSimulationData *step );
 
 public:
-	bool					UseStepSimulationNetworkOrigin( const Vector **out_v );
+	bool					UseStepSimulationNetworkOrigin( const Vector **out_v, int cell[3] = NULL ); // cell should be a 3 int array
 	bool					UseStepSimulationNetworkAngles( const QAngle **out_a );
 
 public:
 	// Add a discontinuity to a step
 	bool					AddStepDiscontinuity( float flTime, const Vector &vecOrigin, const QAngle &vecAngles );
 	int						GetFirstThinkTick();	// get first tick thinking on any context
+	void					RebaseThinkTicks( bool bMakeDeltas );	// Rebase all the think times as deltas or from deltas to current ticks
+
 private:
 	// origin and angles to use in step calculations
 	virtual	Vector			GetStepOrigin( void ) const;
@@ -1491,9 +1550,6 @@ private:
 	// Changes shadow cast distance over time
 	void ShadowCastDistThink( );
 
-	// Precache model sounds + particles
-	static void PrecacheModelComponents( int nModelIndex );
-
 protected:
 	// Which frame did I simulate?
 	int						m_nSimulationTick;
@@ -1506,13 +1562,14 @@ private:
 	// was pev->flags
 	CNetworkVarForDerived( int, m_fFlags );
 
-	string_t m_iName;	// name used to identify this entity
+	CNetworkVar( string_t, m_iName ); // name used to identify this entity
 
 	// Damage modifiers
 	friend class CDamageModifier;
 	CUtlLinkedList<CDamageModifier*,int>	m_DamageModifiers;
 
 	EHANDLE m_pParent;  // for movement hierarchy
+
 	byte	m_nTransmitStateOwnedCounter;
 	CNetworkVar( unsigned char,  m_iParentAttachment ); // 0 if we're relative to the parent's absorigin and absangles.
 	CNetworkVar( unsigned char, m_MoveType );		// One of the MOVETYPE_ defines.
@@ -1532,9 +1589,13 @@ private:
 
 	CNetworkHandle( CBaseEntity, m_hOwnerEntity );	// only used to point to an edict it won't collide with
 	CNetworkHandle( CBaseEntity, m_hEffectEntity );	// Fire/Dissolve entity.
+	CNetworkVar( float, m_fadeMinDist );	// Point at which fading is absolute
+	CNetworkVar( float, m_fadeMaxDist );	// Point at which fading is inactive
+	CNetworkVar( float, m_flFadeScale );	// Scale applied to min / max
 
 	CNetworkVar( int, m_CollisionGroup );		// used to cull collision tests
 	IPhysicsObject	*m_pPhysicsObject;	// pointer to the entity's physics object (vphysics.dll)
+	float m_flNonShadowMass;	// cached mass (shadow controllers set mass to VPHYSICS_MAX_MASS, or 50000)
 
 	CNetworkVar( float, m_flShadowCastDistance );
 	float		m_flDesiredShadowCastDistance;
@@ -1554,6 +1615,7 @@ private:
 	float			m_flGroundChangeTime; // Time that the ground entity changed
 	
 	string_t		m_ModelName;
+	string_t		m_AIAddOn;
 
 	// Velocity of the thing we're standing on (world space)
 	CNetworkVarForDerived( Vector, m_vecBaseVelocity );
@@ -1578,6 +1640,8 @@ private:
 	// was pev->friction
 	CNetworkVarForDerived( float, m_flFriction );
 	CNetworkVar( float, m_flElasticity );
+	float m_flOverriddenFriction;
+	void FrictionRevertThink( void );
 
 	// was pev->ltime
 	float			m_flLocalTime;
@@ -1599,17 +1663,42 @@ private:
 	CNetworkVar( bool, m_bAnimatedEveryTick );
 	CNetworkVar( bool, m_bAlternateSorting );
 
+	CNetworkVar( unsigned char, m_nMinCPULevel );
+	CNetworkVar( unsigned char, m_nMaxCPULevel );
+	CNetworkVar( unsigned char, m_nMinGPULevel );
+	CNetworkVar( unsigned char, m_nMaxGPULevel );
+
+public:
+	CNetworkVarForDerived( bool, m_bClientSideRagdoll );
+
+private:
 	// User outputs. Fired when the "FireInputX" input is triggered.
 	COutputEvent m_OnUser1;
 	COutputEvent m_OnUser2;
 	COutputEvent m_OnUser3;
 	COutputEvent m_OnUser4;
 
+	COutputEvent m_OnKilled;
+
 	QAngle			m_angAbsRotation;
 
 	CNetworkVector( m_vecOrigin );
 	CNetworkQAngle( m_angRotation );
-	CBaseHandle m_RefEHandle;
+
+private:
+	EHANDLE m_RefEHandle;
+
+private:
+	// We cache the cell width for convience
+	int m_cellwidth;
+
+	CNetworkVar( int, m_cellbits );
+
+	// Cell of the current origin
+//	CNetworkArray( int, m_cellXY, 2 );
+	CNetworkVar( int, m_cellX );
+	CNetworkVar( int, m_cellY );
+	CNetworkVar( int, m_cellZ );
 
 	// was pev->view_ofs ( FIXME:  Move somewhere up the hierarch, CBaseAnimating, etc. )
 	CNetworkVectorForDerived( m_vecViewOffset );
@@ -1631,9 +1720,13 @@ public:
 
 	CNetworkVar( bool, m_bIsPlayerSimulated );
 	// Player who is driving my simulation
-	CHandle< CBasePlayer >			m_hPlayerSimulationOwner;
+	CNetworkHandle( CBasePlayer, m_hPlayerSimulationOwner );
 
 	int								m_fDataObjectTypes;
+
+	UtlHashHandle_t		m_ListByClass;
+	CBaseEntity	*		m_pPrevByClass;
+	CBaseEntity	*		m_pNextByClass;
 
 	// So it can get at the physics methods
 	friend class CCollisionEvent;
@@ -1644,7 +1737,17 @@ public:
 	static int						PrecacheModel( const char *name, bool bPreload = true ); 
 	static bool						PrecacheSound( const char *name );
 	static void						PrefetchSound( const char *name );
+
+private:
 	void							Remove( ); // UTIL_Remove( this );
+
+public:
+	void							SetNetworkQuantizeOriginAngAngles( bool bQuantize );
+
+	// Default implementation, assumes SPROP_COORD precision and default CBaseEntity SendPropQAngles!!!
+	void							NetworkQuantize( Vector &org, QAngle &angles );
+
+	bool							ShouldLagCompensate() const;
 
 private:
 
@@ -1663,6 +1766,11 @@ private:
 	friend void UnlinkAllChildren( CBaseEntity *pParent );
 	friend void UnlinkFromParent( CBaseEntity *pRemove );
 	friend void TransferChildren( CBaseEntity *pOldParent, CBaseEntity *pNewParent );
+
+	bool m_bNetworkQuantizeOriginAndAngles;
+	bool m_bLagCompensate; // Special flag for certain l4d2 props to use
+
+	CGlobalEvent	*m_pEvent;
 	
 public:
 	// Accessors for above
@@ -1671,23 +1779,6 @@ public:
 	static CBasePlayer				*GetPredictionPlayer( void );
 	static void						SetPredictionPlayer( CBasePlayer *player );
 
-
-	// For debugging shared code
-	static bool						IsServer( void )
-	{
-		return true;
-	}
-
-	static bool						IsClient( void )
-	{
-		return false;
-	}
-
-	static char const				*GetDLLType( void )
-	{
-		return "server";
-	}
-	
 	// Used to access m_vecAbsOrigin during restore when it's unsafe to call GetAbsOrigin.
 	friend class CPlayerRestoreHelper;
 	
@@ -1834,6 +1925,21 @@ inline string_t CBaseEntity::GetEntityName()
 	return m_iName; 
 }
 
+inline const char *CBaseEntity::GetEntityNameAsCStr()
+{
+	return STRING(m_iName.Get());
+}
+
+inline const char *CBaseEntity::GetPreTemplateName()
+{
+	const char *pszDelimiter = V_strrchr( STRING(m_iName.Get()), '&' );
+	if ( !pszDelimiter )
+		return STRING( m_iName.Get() );
+	static char szStrippedName[128];
+	V_strncpy( szStrippedName, STRING( m_iName.Get() ), MIN( ARRAYSIZE(szStrippedName), pszDelimiter - STRING( m_iName.Get() ) + 1 ) );
+	return szStrippedName;
+}
+
 inline void CBaseEntity::SetName( string_t newName )
 {
 	m_iName = newName;
@@ -1926,6 +2032,11 @@ inline bool CBaseEntity::HasSpawnFlags( int nFlags ) const
 inline bool CBaseEntity::IsMarkedForDeletion( void ) 
 { 
 	return (m_iEFlags & EFL_KILLME); 
+}
+
+inline void CBaseEntity::MarkForDeletion()
+{
+	AddEFlags( EFL_KILLME );
 }
 
 //-----------------------------------------------------------------------------
@@ -2164,11 +2275,6 @@ inline float CBaseEntity::GetFriction( void ) const
 	return m_flFriction; 
 }
 
-inline void CBaseEntity::SetFriction( float flFriction )
-{ 
-	m_flFriction = flFriction; 
-}
-
 inline void	CBaseEntity::SetElasticity( float flElasticity )
 { 
 	m_flElasticity = flElasticity; 
@@ -2233,9 +2339,35 @@ inline void CBaseEntity::SetWaterLevel( int nLevel )
 	m_nWaterLevel = nLevel;
 }
 
-inline const color32 CBaseEntity::GetRenderColor() const
+inline const color24 CBaseEntity::GetRenderColor() const
 {
-	return m_clrRender.Get();
+	color24 c = { m_clrRender->r, m_clrRender->g, m_clrRender->b };
+	return c;
+}
+
+inline byte CBaseEntity::GetRenderColorR() const
+{
+	return m_clrRender->r;
+}
+
+inline byte CBaseEntity::GetRenderColorG() const
+{
+	return m_clrRender->g;
+}
+
+inline byte CBaseEntity::GetRenderColorB() const
+{
+	return m_clrRender->b;
+}
+
+inline void CBaseEntity::SetRenderAlpha( byte a )
+{
+	m_clrRender.SetA( a );
+}
+
+inline byte CBaseEntity::GetRenderAlpha( ) const
+{
+	return m_clrRender->a;
 }
 
 inline void CBaseEntity::SetRenderColor( byte r, byte g, byte b )
@@ -2243,39 +2375,14 @@ inline void CBaseEntity::SetRenderColor( byte r, byte g, byte b )
 	m_clrRender.Init( r, g, b );
 }
 
-inline void CBaseEntity::SetRenderColor( byte r, byte g, byte b, byte a )
+inline void CBaseEntity::SetRenderColor( color24 clr )
 {
-	m_clrRender.Init( r, g, b, a );
-}
-
-inline void CBaseEntity::SetRenderColorR( byte r )
-{
-	m_clrRender.SetR( r );
-}
-
-inline void CBaseEntity::SetRenderColorG( byte g )
-{
-	m_clrRender.SetG( g );
-}
-
-inline void CBaseEntity::SetRenderColorB( byte b )
-{
-	m_clrRender.SetB( b );
-}
-
-inline void CBaseEntity::SetRenderColorA( byte a )
-{
-	m_clrRender.SetA( a );
+	m_clrRender.Init( clr.r, clr.g, clr.b );
 }
 
 inline void CBaseEntity::SetMoveCollide( MoveCollide_t val )
 { 
 	m_MoveCollide = val; 
-}
-
-inline bool CBaseEntity::IsTransparent() const
-{
-	return m_nRenderMode != kRenderNormal;
 }
 
 inline int	CBaseEntity::GetTextureFrameIndex( void )
@@ -2286,6 +2393,14 @@ inline int	CBaseEntity::GetTextureFrameIndex( void )
 inline void CBaseEntity::SetTextureFrameIndex( int iIndex )
 {
 	m_iTextureFrameIndex = iIndex;
+}
+
+inline void	CBaseEntity::EyePositionZOnly( Vector *pPosition )
+{
+	*pPosition = EyePosition();
+	Vector vecAbsOrigin = GetAbsOrigin();
+	pPosition->x = vecAbsOrigin.x;
+	pPosition->y = vecAbsOrigin.y;
 }
 
 //-----------------------------------------------------------------------------
@@ -2299,16 +2414,6 @@ inline CCollisionProperty *CBaseEntity::CollisionProp()
 inline const CCollisionProperty *CBaseEntity::CollisionProp() const
 {
 	return &m_Collision;
-}
-
-inline CServerNetworkProperty *CBaseEntity::NetworkProp()
-{
-	return &m_Network;
-}
-
-inline const CServerNetworkProperty *CBaseEntity::NetworkProp() const
-{
-	return &m_Network;
 }
 
 inline void CBaseEntity::ClearSolidFlags( void )
@@ -2365,11 +2470,6 @@ inline ICollideable *CBaseEntity::GetCollideable()
 	return &m_Collision;
 }
 
-inline IServerNetworkable *CBaseEntity::GetNetworkable()
-{
-	return &m_Network;
-}
-
 inline CBaseEntity *CBaseEntity::GetBaseEntity()
 {
 	return this;
@@ -2395,7 +2495,19 @@ inline int CBaseEntity::GetModelIndex( void ) const
 	return m_nModelIndex;
 }
 
+//-----------------------------------------------------------------------------
+// AddOn related methods
+//-----------------------------------------------------------------------------
 
+inline void CBaseEntity::SetAIAddOn( string_t addonName )
+{
+	m_AIAddOn = addonName;
+}
+
+inline string_t CBaseEntity::GetAIAddOn( void ) const
+{
+	return m_AIAddOn;
+}
 
 //-----------------------------------------------------------------------------
 // Methods relating to bounds
@@ -2443,6 +2555,23 @@ inline RenderMode_t CBaseEntity::GetRenderMode() const
 	return (RenderMode_t)m_nRenderMode.Get();
 }
 
+inline void CBaseEntity::SetRenderFX( RenderFx_t nRenderFX )
+{
+	m_nRenderFX = nRenderFX;
+}
+
+inline RenderFx_t CBaseEntity::GetRenderFX() const
+{
+	return (RenderFx_t)m_nRenderFX.Get();
+}
+
+inline float CBaseEntity::GetDistanceToEntity( const CBaseEntity *other ) const
+{
+	if( other == NULL )
+		return -1.0f;
+
+	return ( GetAbsOrigin() - other->GetAbsOrigin() ).Length();
+}
 
 //-----------------------------------------------------------------------------
 // Methods to cast away const
@@ -2492,7 +2621,7 @@ inline void	CBaseEntity::NetworkStateChanged( void *pVar )
 //-----------------------------------------------------------------------------
 // IHandleEntity overrides.
 //-----------------------------------------------------------------------------
-inline const CBaseHandle& CBaseEntity::GetRefEHandle() const
+inline const EHANDLE& CBaseEntity::GetRefEHandle() const
 {
 	return m_RefEHandle;
 }
@@ -2509,29 +2638,9 @@ inline void CBaseEntity::DecrementTransmitStateOwnedCounter()
 	m_nTransmitStateOwnedCounter--;
 }
 
-
-//-----------------------------------------------------------------------------
-// Bullet firing (legacy)...
-//-----------------------------------------------------------------------------
-inline void CBaseEntity::FireBullets( int cShots, const Vector &vecSrc, 
-	const Vector &vecDirShooting, const Vector &vecSpread, float flDistance, 
-	int iAmmoType, int iTracerFreq, int firingEntID, int attachmentID,
-	int iDamage, CBaseEntity *pAttacker, bool bFirstShotAccurate, bool bPrimaryAttack )
+inline const ResponseContext_t	*CBaseEntity::GetContextData( int index ) const
 {
-	FireBulletsInfo_t info;
-	info.m_iShots = cShots;
-	info.m_vecSrc = vecSrc;
-	info.m_vecDirShooting = vecDirShooting;
-	info.m_vecSpread = vecSpread;
-	info.m_flDistance = flDistance;
-	info.m_iAmmoType = iAmmoType;
-	info.m_iTracerFreq = iTracerFreq;
-	info.m_flDamage = iDamage;
-	info.m_pAttacker = pAttacker;
-	info.m_nFlags = bFirstShotAccurate ? FIRE_BULLETS_FIRST_SHOT_ACCURATE : 0;
-	info.m_bPrimaryAttack = bPrimaryAttack;
-
-	FireBullets( info );
+	return &m_ResponseContexts[index];
 }
 
 // Ugly technique to override base member functions
@@ -2577,7 +2686,7 @@ class CServerOnlyEntity : public CBaseEntity
 {
 	DECLARE_CLASS( CServerOnlyEntity, CBaseEntity );
 public:
-	CServerOnlyEntity() : CBaseEntity( true ) {}
+	CServerOnlyEntity();
 	
 	virtual int ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
 };
@@ -2607,5 +2716,24 @@ void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *p
 void SendProxy_OriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_OriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 
+class CAbsQueryScopeGuard
+{
+public:
+	CAbsQueryScopeGuard( bool state )
+	{
+		m_bSavedState = CBaseEntity::IsAbsQueriesValid();
+		CBaseEntity::SetAbsQueriesValid( state );
+	}
+	~CAbsQueryScopeGuard()
+	{
+		CBaseEntity::SetAbsQueriesValid( m_bSavedState );
+	}
+private:
+	bool	m_bSavedState;
+};
+
+#define ABS_QUERY_GUARD( state ) CAbsQueryScopeGuard s_AbsQueryGuard( state );
+
+bool EntityNamesMatch( const char *pszQuery, string_t nameToMatch );
 
 #endif // BASEENTITY_H

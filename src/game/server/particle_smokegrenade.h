@@ -18,14 +18,19 @@
 
 class ParticleSmokeGrenade : public CBaseParticleEntity
 {
-	DECLARE_DATADESC();
 public:
 	DECLARE_CLASS( ParticleSmokeGrenade, CBaseParticleEntity );
 	DECLARE_SERVERCLASS();
 
 						ParticleSmokeGrenade();
 
+	virtual				~ParticleSmokeGrenade();
+
+	virtual void		Spawn( void );
+
 	virtual int			UpdateTransmitState( void );
+	void				SetCreator(CBasePlayer *creator);
+	CBasePlayer*		GetCreator();
 
 public:
 
@@ -38,6 +43,7 @@ public:
 	// Set time to fade out relative to current time
 	void				SetRelativeFadeTime(float startTime, float endTime);
 
+	void				Think( void );
 
 public:
 	
@@ -50,6 +56,10 @@ public:
 	// When to fade in and out.
 	CNetworkVar( float, m_FadeStartTime );
 	CNetworkVar( float, m_FadeEndTime );
+
+protected:
+    
+	EHANDLE m_creatorPlayer;
 };
 
 

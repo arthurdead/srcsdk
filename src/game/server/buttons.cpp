@@ -31,33 +31,11 @@ string_t MakeButtonSound( int sound );				// get string of button sound number
 #define	SF_BUTTON_SPARK_IF_OFF			4096	// button sparks in OFF state
 #define	SF_BUTTON_JIGGLE_ON_USE_LOCKED	8192	// whether to jiggle if someone uses us when we're locked
 
-BEGIN_DATADESC( CBaseButton )
+BEGIN_MAPENTITY( CBaseButton )
 
 	DEFINE_KEYFIELD( m_vecMoveDir, FIELD_VECTOR, "movedir" ),
-	DEFINE_FIELD( m_fStayPushed, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_fRotating, FIELD_BOOLEAN ),
-
-	DEFINE_FIELD( m_bLockedSound, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_bLockedSentence, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_bUnlockedSound, FIELD_CHARACTER ),	
-	DEFINE_FIELD( m_bUnlockedSentence, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_bLocked, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_sNoise, FIELD_SOUNDNAME ),
-	DEFINE_FIELD( m_flUseLockedTime, FIELD_TIME ),
-	DEFINE_FIELD( m_bSolidBsp, FIELD_BOOLEAN ),
 	
 	DEFINE_KEYFIELD( m_sounds, FIELD_INTEGER, "sounds" ),
-	
-//	DEFINE_FIELD( m_ls, FIELD_SOUNDNAME ),   // This is restored in Precache()
-//  DEFINE_FIELD( m_nState, FIELD_INTEGER ),
-
-	// Function Pointers
-	DEFINE_FUNCTION( ButtonTouch ),
-	DEFINE_FUNCTION( ButtonSpark ),
-	DEFINE_FUNCTION( TriggerAndWait ),
-	DEFINE_FUNCTION( ButtonReturn ),
-	DEFINE_FUNCTION( ButtonBackHome ),
-	DEFINE_FUNCTION( ButtonUse ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Lock", InputLock ),
@@ -73,12 +51,13 @@ BEGIN_DATADESC( CBaseButton )
 	DEFINE_OUTPUT( m_OnIn, "OnIn" ),
 	DEFINE_OUTPUT( m_OnOut, "OnOut" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( func_button, CBaseButton );
 
-
+IMPLEMENT_SERVERCLASS_ST( CBaseButton, DT_BaseButton )
+END_SEND_TABLE()
 
 void CBaseButton::Precache( void )
 {
@@ -303,7 +282,7 @@ int CBaseButton::OnTakeDamage( const CTakeDamageInfo &info )
 	m_OnDamaged.FireOutput(m_hActivator, this);
 
 	// dvsents2: remove obselete health keyvalue from func_button
-	if (!HasSpawnFlags(SF_BUTTON_DAMAGE_ACTIVATES) && (m_iHealth == 0))
+	if (!HasSpawnFlags(SF_BUTTON_DAMAGE_ACTIVATES) && (GetHealth() == 0))
 	{
 		return(0);
 	}
@@ -883,7 +862,7 @@ void CRotButton::Spawn( void )
 	if (m_flWait == 0)
 		m_flWait = 1;
 
-	if (m_iHealth > 0)
+	if (GetHealth() > 0)
 	{
 		m_takedamage = DAMAGE_YES;
 	}
@@ -929,25 +908,12 @@ bool CRotButton::CreateVPhysics( void )
 #define SF_MOMENTARY_AUTO_RETURN	16
 
 
-BEGIN_DATADESC( CMomentaryRotButton )
-
-	DEFINE_FIELD( m_lastUsed, FIELD_INTEGER ),
-	DEFINE_FIELD( m_start, FIELD_VECTOR ),
-	DEFINE_FIELD( m_end, FIELD_VECTOR ),
-	DEFINE_FIELD( m_IdealYaw, FIELD_FLOAT ),
-	DEFINE_FIELD( m_sNoise, FIELD_SOUNDNAME ),
-	DEFINE_FIELD( m_bUpdateTarget, FIELD_BOOLEAN ),
+BEGIN_MAPENTITY( CMomentaryRotButton )
 
 	DEFINE_KEYFIELD( m_direction, FIELD_INTEGER, "StartDirection" ),
 	DEFINE_KEYFIELD( m_returnSpeed, FIELD_FLOAT, "returnspeed" ),
 	DEFINE_KEYFIELD( m_flStartPosition, FIELD_FLOAT, "StartPosition"),
 	DEFINE_KEYFIELD( m_bSolidBsp, FIELD_BOOLEAN, "solidbsp" ),
-
-	// Function Pointers
-	DEFINE_FUNCTION( UseMoveDone ),
-	DEFINE_FUNCTION( ReturnMoveDone ),
-	DEFINE_FUNCTION( SetPositionMoveDone ),
-	DEFINE_FUNCTION( UpdateThink ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetPosition", InputSetPosition ),
@@ -964,9 +930,8 @@ BEGIN_DATADESC( CMomentaryRotButton )
 
 	DEFINE_INPUTFUNC( FIELD_VOID,	"Enable",	InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"Disable",	InputDisable ),
-	DEFINE_FIELD( m_bDisabled, FIELD_BOOLEAN )
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( momentary_rot_button, CMomentaryRotButton );
@@ -1041,11 +1006,8 @@ void CMomentaryRotButton::Spawn( void )
 		UpdateTarget(0,this);
 	}
 
-#ifdef HL1_DLL
-	SetSolid( SOLID_BSP );
-#else
 	SetSolid( SOLID_VPHYSICS );
-#endif
+
 	if (HasSpawnFlags(SF_ROTBUTTON_NOTSOLID))
 	{
 		AddEFlags( EFL_USE_PARTITION_WHEN_NOT_SOLID );

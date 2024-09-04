@@ -70,7 +70,7 @@ LINK_ENTITY_TO_CLASS( info_remarkable, CInfoRemarkable );
 
 
 //--------------------------------------------------------------------------------------------------------
-BEGIN_DATADESC( CInfoRemarkable )
+BEGIN_MAPENTITY( CInfoRemarkable )
 DEFINE_KEYFIELD( m_szRemarkContext,	FIELD_STRING, "contextsubject" ),
 
-END_DATADESC()
+END_MAPENTITY()

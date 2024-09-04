@@ -21,6 +21,10 @@ class CFuncMoveLinear : public CBaseToggle
 {
 public:
 	DECLARE_CLASS( CFuncMoveLinear, CBaseToggle );
+	DECLARE_SERVERCLASS();
+
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_vecVelocity );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_fFlags );
 
 	void		Spawn( void );
 	void		Precache( void );
@@ -42,7 +46,7 @@ public:
 	void InputSetPosition( inputdata_t &inputdata );
 	void InputSetSpeed( inputdata_t &inputdata );
 	
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	Vector		m_vecMoveDir;			// Move direction.
 

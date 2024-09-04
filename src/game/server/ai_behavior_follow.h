@@ -34,6 +34,7 @@ enum AI_Formations_t
 	AIF_SIDEKICK,
 	AIF_HUNTER,
 	AIF_VORTIGAUNT,
+	AIF_TOPDOWN_TIGHT,
 };
 
 enum AI_FollowFormationFlags_t
@@ -60,13 +61,11 @@ public:
 
 	virtual void EnableGoal( CAI_BaseNPC *pAI );
 	virtual void DisableGoal( CAI_BaseNPC *pAI  );
-#ifdef HL2_EPISODIC
 	virtual void InputOutsideTransition( inputdata_t &inputdata );
-#endif
 
 	int m_iFormation;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 //-----------------------------------------------------------------------------
@@ -89,8 +88,6 @@ struct AI_FollowNavInfo_t
 	float	coverTolerance;
 	float	enemyLOSTolerance;
 	float	chaseEnemyTolerance;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 struct AI_FollowGroup_t;
@@ -113,8 +110,6 @@ struct AI_FollowParams_t
 	
 	AI_Formations_t formation;
 	bool			bNormalMemoryDiscard;
-	
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //-------------------------------------
@@ -143,7 +138,7 @@ public:
 	CBaseEntity *	GetFollowTarget();
 	void			SetFollowTarget( CBaseEntity *pLeader, bool fFinishCurSchedule = false );
 
-	CAI_FollowGoal *GetFollowGoal()	{ return m_hFollowGoalEnt; } // if any
+	CAI_FollowGoal *GetFollowGoal()	{ return m_hFollowGoalEnt.Get(); } // if any
 	bool			SetFollowGoal( CAI_FollowGoal *pGoal, bool fFinishCurSchedule = false );
 	void			ClearFollowGoal( CAI_FollowGoal *pGoal );
 	void			SetFollowGoalDirect( CAI_FollowGoal *pGoal );
@@ -347,10 +342,6 @@ protected:
 	//---------------------------------
 	
 	CHandle<CAI_FollowGoal>			m_hFollowGoalEnt;
-	
-	//---------------------------------
-	
-	DECLARE_DATADESC();
 };
 
 //-------------------------------------

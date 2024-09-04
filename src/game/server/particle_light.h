@@ -23,7 +23,7 @@ class CParticleLight : public CServerOnlyPointEntity
 {
 public:
 	DECLARE_CLASS( CParticleLight, CServerOnlyPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 					CParticleLight();
 

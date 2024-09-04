@@ -133,7 +133,11 @@ class CBaseNetworkable;
 		&sendTable::g_SendTable\
 	); \
 	\
-	ServerClass* DLLClassName::GetServerClass() {return &g_##DLLClassName##_ClassReg;} \
+	ServerClass* DLLClassName::GetServerClass() { \
+		if(!IsNetworked()) \
+			return NULL; \
+		return &g_##DLLClassName##_ClassReg; \
+	} \
 	SendTable *DLLClassName::m_pClassSendTable = &sendTable::g_SendTable;\
 	int DLLClassName::YouForgotToImplementOrDeclareServerClass() {return 0;}
 

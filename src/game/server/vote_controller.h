@@ -11,6 +11,7 @@
 #pragma once
 
 #include "shareddefs.h"
+#include "baseentity.h"
 
 #define MAX_COMMAND_LENGTH 64
 #define MAX_CREATE_ERROR_STRING 96
@@ -69,7 +70,6 @@ class CVoteController : public CBaseEntity
 	
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
 
 	virtual ~CVoteController();
 

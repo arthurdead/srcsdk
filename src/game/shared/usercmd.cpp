@@ -17,6 +17,105 @@
 #define WEAPON_SUBTYPE_BITS	6
 
 //-----------------------------------------------------------------------------
+#ifdef CLIENT_DLL
+ConVar net_showusercmd( "net_showusercmd", "0", 0, "Show user command encoding" );
+#define LogUserCmd( msg, ... ) if ( net_showusercmd.GetInt() ) { ConDMsg( msg, __VA_ARGS__ ); }
+#else
+#define LogUserCmd( msg, ... ) NULL;
+#endif
+
+//-----------------------------------------------------------------------------
+static bool WriteUserCmdDeltaInt( bf_write *buf, char *what, int from, int to, int bits = 32 )
+{
+	if ( from != to )
+	{
+		LogUserCmd( "\t%s %d -> %d\n", what, from, to );
+
+		buf->WriteOneBit( 1 );
+		buf->WriteUBitLong( to, bits );
+		return true;
+	}
+
+	buf->WriteOneBit( 0 );
+	return false;
+}
+
+static bool WriteUserCmdDeltaShort( bf_write *buf, char *what, int from, int to )
+{
+	if ( from != to )
+	{
+		LogUserCmd( "\t%s %d -> %d\n", what, from, to );
+
+		buf->WriteOneBit( 1 );
+		buf->WriteShort( to );
+		return true;
+	}
+
+	buf->WriteOneBit( 0 );
+	return false;
+}
+
+static bool WriteUserCmdDeltaFloat( bf_write *buf, char *what, float from, float to )
+{
+	if ( from != to )
+	{
+		LogUserCmd( "\t%s %2.2f -> %2.2f\n", what, from, to );
+
+		buf->WriteOneBit( 1 );
+		buf->WriteFloat( to );
+		return true;
+	}
+
+	buf->WriteOneBit( 0 );
+	return false;
+}
+
+static bool WriteUserCmdDeltaCoord( bf_write *buf, char *what, float from, float to )
+{
+	if ( from != to )
+	{
+		LogUserCmd( "\t%s %2.2f -> %2.2f\n", what, from, to );
+
+		buf->WriteOneBit( 1 );
+		buf->WriteBitCoord( to );
+		return true;
+	}
+
+	buf->WriteOneBit( 0 );
+	return false;
+}
+
+static bool WriteUserCmdDeltaAngle( bf_write *buf, char *what, float from, float to, int bits )
+{
+	if ( from != to )
+	{
+		LogUserCmd( "\t%s %2.2f -> %2.2f\n", what, from, to );
+
+		buf->WriteOneBit( 1 );
+		buf->WriteBitAngle( to, bits );
+		return true;
+	}
+
+	buf->WriteOneBit( 0 );
+	return false;
+}
+
+static bool WriteUserCmdDeltaVec3Coord( bf_write *buf, char *what, const Vector &from, const Vector &to )
+{
+	if ( from != to )
+	{
+		LogUserCmd( "\t%s %2.2f -> %2.2f\n", what, from, to );
+
+		buf->WriteOneBit( 1 );
+		buf->WriteBitVec3Coord( to );
+		return true;
+	}
+
+	buf->WriteOneBit( 0 );
+	return false;
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Write a delta compressed user command.
 // Input  : *buf - 
 //			*to - 
@@ -25,149 +124,31 @@
 //-----------------------------------------------------------------------------
 void WriteUsercmd( bf_write *buf, const CUserCmd *to, const CUserCmd *from )
 {
-	if ( to->command_number != ( from->command_number + 1 ) )
-	{
-		buf->WriteOneBit( 1 );
-		buf->WriteUBitLong( to->command_number, 32 );
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
+	LogUserCmd("WriteUsercmd: from=%d to=%d\n", from->command_number, to->command_number );
 
-	if ( to->tick_count != ( from->tick_count + 1 ) )
-	{
-		buf->WriteOneBit( 1 );
-		buf->WriteUBitLong( to->tick_count, 32 );
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
+	WriteUserCmdDeltaInt( buf, "command_number", from->command_number + 1, to->command_number, 32 );
+	WriteUserCmdDeltaInt( buf, "tick_count", from->tick_count + 1, to->tick_count, 32 );
+
+	WriteUserCmdDeltaFloat( buf, "viewangles[0]", from->viewangles[0], to->viewangles[0] );
+	WriteUserCmdDeltaFloat( buf, "viewangles[1]", from->viewangles[1], to->viewangles[1] );
+	WriteUserCmdDeltaFloat( buf, "viewangles[2]", from->viewangles[2], to->viewangles[2] );
+
+	WriteUserCmdDeltaFloat( buf, "forwardmove", from->forwardmove, to->forwardmove );
+	WriteUserCmdDeltaFloat( buf, "sidemove", from->sidemove, to->sidemove );
+	WriteUserCmdDeltaFloat( buf, "upmove", from->upmove, to->upmove );
+	WriteUserCmdDeltaInt( buf, "buttons", from->buttons, to->buttons, 32 );
+	WriteUserCmdDeltaInt( buf, "impulse", from->impulse, to->impulse, 8 );
 
 
-	if ( to->viewangles[ 0 ] != from->viewangles[ 0 ] )
+	if ( WriteUserCmdDeltaInt( buf, "weaponselect", from->weaponselect, to->weaponselect, MAX_EDICT_BITS ) )
 	{
-		buf->WriteOneBit( 1 );
-		buf->WriteFloat( to->viewangles[ 0 ] );
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
-
-	if ( to->viewangles[ 1 ] != from->viewangles[ 1 ] )
-	{
-		buf->WriteOneBit( 1 );
-		buf->WriteFloat( to->viewangles[ 1 ] );
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
-
-	if ( to->viewangles[ 2 ] != from->viewangles[ 2 ] )
-	{
-		buf->WriteOneBit( 1 );
-		buf->WriteFloat( to->viewangles[ 2 ] );
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
-
-	if ( to->forwardmove != from->forwardmove )
-	{
-		buf->WriteOneBit( 1 );
-		buf->WriteFloat( to->forwardmove );
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
-
-	if ( to->sidemove != from->sidemove )
-	{
-		buf->WriteOneBit( 1 );
-		buf->WriteFloat( to->sidemove );
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
-
-	if ( to->upmove != from->upmove )
-	{
-		buf->WriteOneBit( 1 );
-		buf->WriteFloat( to->upmove );
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
-
-	if ( to->buttons != from->buttons )
-	{
-		buf->WriteOneBit( 1 );
-	  	buf->WriteUBitLong( to->buttons, 32 );
- 	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
-
-	if ( to->impulse != from->impulse )
-	{
-		buf->WriteOneBit( 1 );
-	    buf->WriteUBitLong( to->impulse, 8 );
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
-
-
-	if ( to->weaponselect != from->weaponselect )
-	{
-		buf->WriteOneBit( 1 );
-		buf->WriteUBitLong( to->weaponselect, MAX_EDICT_BITS );
-
-		if ( to->weaponsubtype != from->weaponsubtype )
-		{
-			buf->WriteOneBit( 1 );
-			buf->WriteUBitLong( to->weaponsubtype, WEAPON_SUBTYPE_BITS );
-		}
-		else
-		{
-			buf->WriteOneBit( 0 );
-		}
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
+		WriteUserCmdDeltaInt( buf, "weaponsubtype", from->weaponsubtype, to->weaponsubtype, WEAPON_SUBTYPE_BITS );
 	}
 
 
 	// TODO: Can probably get away with fewer bits.
-	if ( to->mousedx != from->mousedx )
-	{
-		buf->WriteOneBit( 1 );
-		buf->WriteShort( to->mousedx );
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
-
-	if ( to->mousedy != from->mousedy )
-	{
-		buf->WriteOneBit( 1 );
-		buf->WriteShort( to->mousedy );
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
+	WriteUserCmdDeltaShort( buf, "mousedx", from->mousedx, to->mousedx );
+	WriteUserCmdDeltaShort( buf, "mousedy", from->mousedy, to->mousedy );
 
 #if defined( HL2_CLIENT_DLL )
 	if ( to->entitygroundcontact.Count() != 0 )

@@ -12,7 +12,6 @@
 #include "soundent.h"
 #include "team.h"
 #include "ai_basenpc.h"
-#include "saverestore_utlvector.h"
 
 #ifdef PORTAL
 	#include "portal_util_shared.h"
@@ -59,25 +58,6 @@ struct AISightIterVal_t
 // CAI_Senses
 //
 //=============================================================================
-
-BEGIN_SIMPLE_DATADESC( CAI_Senses )
-
-	DEFINE_FIELD( m_LookDist,			FIELD_FLOAT	),
-	DEFINE_FIELD( m_LastLookDist, 	FIELD_FLOAT	),
-	DEFINE_FIELD( m_TimeLastLook, 	FIELD_TIME	),
-	DEFINE_FIELD( m_iSensingFlags, FIELD_INTEGER ),
-	//								m_iAudibleList		(no way to save?)
-	DEFINE_UTLVECTOR(m_SeenHighPriority, FIELD_EHANDLE ),
-	DEFINE_UTLVECTOR(m_SeenNPCs, 		FIELD_EHANDLE ),
-	DEFINE_UTLVECTOR(m_SeenMisc, 		FIELD_EHANDLE ),
-	//								m_SeenArrays		(not saved, rebuilt)
-
-	// Could fold these three and above timer into one concept, but would invalidate savegames
-	DEFINE_FIELD( m_TimeLastLookHighPriority, 	FIELD_TIME	),
-	DEFINE_FIELD( m_TimeLastLookNPCs, 	FIELD_TIME	),
-	DEFINE_FIELD( m_TimeLastLookMisc, 	FIELD_TIME	),
-
-END_DATADESC()
 
 //-----------------------------------------------------------------------------
 
@@ -144,7 +124,10 @@ void CAI_Senses::Listen( void )
 
 bool CAI_Senses::ShouldSeeEntity( CBaseEntity *pSightEnt )
 {
-	if ( pSightEnt == GetOuter() || !pSightEnt->IsAlive() )
+	if ( pSightEnt == GetOuter() )
+		return false;
+		
+	if ( GetOuter()->OnlySeeAliveEntities() && !pSightEnt->IsAlive() )
 		return false;
 
 	if ( pSightEnt->IsPlayer() && ( pSightEnt->GetFlags() & FL_NOTARGET ) )
@@ -260,7 +243,7 @@ CBaseEntity *CAI_Senses::GetFirstSeenEntity( AISightIter_t *pIter, seentype_t iS
 		{
 			pIterVal->array = i;
 			pIterVal->iNext = 1;
-			return (*m_SeenArrays[i])[0];
+			return (*m_SeenArrays[i])[0].Get();
 		}
 	}
 	
@@ -284,7 +267,7 @@ CBaseEntity *CAI_Senses::GetNextSeenEntity( AISightIter_t *pIter ) const
 				{
 					pIterVal->array = i;
 					pIterVal->iNext = j+1;
-					return (*m_SeenArrays[i])[j];
+					return (*m_SeenArrays[i])[j].Get();
 				}
 			}
 			pIterVal->iNext = 0;
@@ -405,7 +388,7 @@ int CAI_Senses::LookForHighPriorityEntities( int iDistance )
 
 			if ( pPlayer )
 			{
-				if ( origin.DistToSqr(pPlayer->GetAbsOrigin()) < distSq && Look( pPlayer ) )
+				if ( IsWithinSenseDistance( pPlayer->GetAbsOrigin(), origin, iDistance ) && Look( pPlayer ) )
 				{
 					nSeen++;
 				}
@@ -462,7 +445,7 @@ int CAI_Senses::LookForNPCs( int iDistance )
 			
 			for ( i = 0; i < g_AI_Manager.NumAIs(); i++ )
 			{
-				if ( ppAIs[i] != GetOuter() && ( ppAIs[i]->ShouldNotDistanceCull() || origin.DistToSqr(ppAIs[i]->GetAbsOrigin()) < distSq ) )
+				if ( ppAIs[i] != GetOuter() && ( ppAIs[i]->ShouldNotDistanceCull() || IsWithinSenseDistance( origin, ppAIs[i]->GetAbsOrigin(), iDistance ) ) )
 				{
 					if ( Look( ppAIs[i] ) )
 					{
@@ -489,8 +472,8 @@ int CAI_Senses::LookForNPCs( int iDistance )
 		else if ( bRemoveStaleFromCache )
 		{
 			if ( ( !((CAI_BaseNPC *)m_SeenNPCs[i].Get())->ShouldNotDistanceCull() && 
-				   origin.DistToSqr(m_SeenNPCs[i]->GetAbsOrigin()) > distSq ) ||
-				 !Look( m_SeenNPCs[i] ) )
+				   !IsWithinSenseDistance( origin, m_SeenNPCs[i]->GetAbsOrigin(), iDistance ) ) ||
+				 !Look( m_SeenNPCs[i].Get() ) )
 			{
 	    		m_SeenNPCs.FastRemove( i );
 			}
@@ -522,7 +505,7 @@ int CAI_Senses::LookForObjects( int iDistance )
 		{
 			if ( pEnt->GetFlags() & BOX_QUERY_MASK )
 			{
-				if ( origin.DistToSqr(pEnt->GetAbsOrigin()) < distSq && Look( pEnt) )
+				if ( IsWithinSenseDistance( origin, pEnt->GetAbsOrigin(), iDistance ) && Look( pEnt) )
 				{
 					nSeen++;
 				}
@@ -566,7 +549,7 @@ CSound* CAI_Senses::GetFirstHeardSound( AISoundIter_t *pIter )
 
 	if ( iFirst == SOUNDLIST_EMPTY )
 	{
-		*pIter = NULL;
+		*pIter = (AISoundIter_t)SOUNDLIST_EMPTY;
 		return NULL;
 	}
 	
@@ -586,14 +569,14 @@ CSound* CAI_Senses::GetNextHeardSound( AISoundIter_t *pIter )
 	Assert( iCurrent != SOUNDLIST_EMPTY );
 	if ( iCurrent == SOUNDLIST_EMPTY )
 	{
-		*pIter = NULL;
+		*pIter = (AISoundIter_t)SOUNDLIST_EMPTY;
 		return NULL;
 	}
 	
 	iCurrent = CSoundEnt::SoundPointerForIndex( iCurrent )->m_iNextAudible;
 	if ( iCurrent == SOUNDLIST_EMPTY )
 	{
-		*pIter = NULL;
+		*pIter = (AISoundIter_t)SOUNDLIST_EMPTY;
 		return NULL;
 	}
 	

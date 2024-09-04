@@ -9,7 +9,6 @@
 
 #include "cbase.h"
 #include "shake.h"
-#include "physics_saverestore.h"
 #include "rope.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -35,10 +34,6 @@ public:
 	Vector  m_force;
 };
 
-BEGIN_SIMPLE_DATADESC( CPhysicsShake )
-	DEFINE_FIELD( m_force, FIELD_VECTOR ),
-END_DATADESC()
-
 
 class CEnvShake : public CPointEntity
 {
@@ -56,14 +51,14 @@ private:
 	IPhysicsMotionController	*m_pShakeController;
 	CPhysicsShake				m_shakeCallback;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 	DECLARE_CLASS( CEnvShake, CPointEntity );
 
-			~CEnvShake( void );
+	virtual ~CEnvShake( void );
+	virtual void	Precache( void );
 	virtual void	Spawn( void );
-	virtual void	OnRestore( void );
 
 	inline	float	Amplitude( void ) { return m_Amplitude; }
 	inline	float	Frequency( void ) { return m_Frequency; }
@@ -89,25 +84,19 @@ public:
 
 LINK_ENTITY_TO_CLASS( env_shake, CEnvShake );
 
-BEGIN_DATADESC( CEnvShake )
+BEGIN_MAPENTITY( CEnvShake )
 
 	DEFINE_KEYFIELD( m_Amplitude,	FIELD_FLOAT, "amplitude" ),
 	DEFINE_KEYFIELD( m_Frequency,	FIELD_FLOAT, "frequency" ),
 	DEFINE_KEYFIELD( m_Duration,		FIELD_FLOAT, "duration" ),
 	DEFINE_KEYFIELD( m_Radius,		FIELD_FLOAT, "radius" ),
-	DEFINE_FIELD( m_stopTime,		FIELD_TIME ),
-	DEFINE_FIELD( m_nextShake,	FIELD_TIME ),
-	DEFINE_FIELD( m_currentAmp,	FIELD_FLOAT ),
-	DEFINE_FIELD( m_maxForce,		FIELD_VECTOR ),
-	DEFINE_PHYSPTR( m_pShakeController ),
-	DEFINE_EMBEDDED( m_shakeCallback ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartShake", InputStartShake ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopShake", InputStopShake ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "Amplitude", InputAmplitude ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "Frequency", InputFrequency ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -117,7 +106,7 @@ END_DATADESC()
 #define SF_SHAKE_ROPES		0x0010		// Shake ropes too.
 #define SF_SHAKE_NO_VIEW	0x0020		// DON'T shake the view (only ropes and/or physics objects)
 #define SF_SHAKE_NO_RUMBLE	0x0040		// DON'T Rumble the XBox Controller
-
+#define SF_TILT_EASE_INOUT	0x0080		// Ease in and out of the tilt
 
 //-----------------------------------------------------------------------------
 // Purpose: Destructor.
@@ -143,8 +132,15 @@ float CEnvShake::Radius(bool bPlayers)
 //-----------------------------------------------------------------------------
 // Purpose: Sets default member values when spawning.
 //-----------------------------------------------------------------------------
+void CEnvShake::Precache()
+{
+	BaseClass::Precache();
+	CRopeKeyframe::PrecacheShakeRopes();
+}
+
 void CEnvShake::Spawn( void )
 {
+	Precache();
 	SetSolid( SOLID_NONE );
 	SetMoveType( MOVETYPE_NONE );
 	
@@ -156,20 +152,6 @@ void CEnvShake::Spawn( void )
 	if ( HasSpawnFlags( SF_SHAKE_NO_VIEW ) && !HasSpawnFlags( SF_SHAKE_PHYSICS ) && !HasSpawnFlags( SF_SHAKE_ROPES ) )
 	{
 		DevWarning( "env_shake %s with \"Don't shake view\" spawnflag set without \"Shake physics\" or \"Shake ropes\" spawnflags set.", GetDebugName() );
-	}
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Restore the motion controller
-//-----------------------------------------------------------------------------
-void CEnvShake::OnRestore( void )
-{
-	BaseClass::OnRestore();
-
-	if ( m_pShakeController )
-	{
-		m_pShakeController->SetEventHandler( &m_shakeCallback );
 	}
 }
 
@@ -411,3 +393,162 @@ int CEnvShake::DrawDebugTextOverlays( void )
 static ConCommand shake("shake", CC_Shake, "Shake the screen.", FCVAR_CHEAT );
 
 
+// Tilt effect
+
+class CEnvTilt : public CPointEntity
+{
+private:
+	float m_Duration;
+	float m_Radius;			// radius of 0 means all players
+	float m_TiltTime;
+	float m_stopTime;
+
+	DECLARE_MAPENTITY();
+
+public:
+	DECLARE_CLASS( CEnvShake, CPointEntity );
+
+	virtual void	Precache( void );
+	virtual void	Spawn( void );
+
+	QAngle			TiltAngle( void );
+	inline	float	Duration( void ) { return m_Duration; }
+	float			Radius( bool bPlayers = true );
+	inline	float	TiltTime( void ) { return m_TiltTime; }
+	inline	void	SetDuration( float duration ) { m_Duration = duration; }
+	inline	void	SetRadius( float radius ) { m_Radius = radius; }
+
+	int DrawDebugTextOverlays(void);
+
+	// Input handlers
+	void InputStartTilt( inputdata_t &inputdata );
+	void InputStopTilt( inputdata_t &inputdata );
+
+	// Causes the camera/physics shakes to happen:
+	void ApplyTilt( ShakeCommand_t command ); 
+};
+
+LINK_ENTITY_TO_CLASS( env_tilt, CEnvTilt );
+
+BEGIN_MAPENTITY( CEnvTilt )
+
+	DEFINE_KEYFIELD( m_Duration,	FIELD_FLOAT, "duration" ),
+	DEFINE_KEYFIELD( m_Radius,		FIELD_FLOAT, "radius" ),
+	DEFINE_KEYFIELD( m_TiltTime,	FIELD_TIME, "tilttime" ),
+	DEFINE_FIELD( m_stopTime,		FIELD_TIME ),
+
+	DEFINE_INPUTFUNC( FIELD_VOID, "StartTilt", InputStartTilt ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "StopTilt", InputStopTilt ),
+
+END_MAPENTITY()
+
+
+QAngle CEnvTilt::TiltAngle( void )
+{
+	QAngle qTiltAngles = GetAbsAngles();
+	qTiltAngles.y = 0.0f;	// Tilting around the up axis makes no sense
+	return qTiltAngles;
+}
+
+
+float CEnvTilt::Radius(bool bPlayers)
+{
+	// The radius for players is zero if SF_SHAKE_EVERYONE is set
+	if ( bPlayers && HasSpawnFlags(SF_SHAKE_EVERYONE))
+		return 0;
+	return m_Radius;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Sets default member values when spawning.
+//-----------------------------------------------------------------------------
+void CEnvTilt::Precache()
+{
+	BaseClass::Precache();
+	CRopeKeyframe::PrecacheShakeRopes();
+}
+
+void CEnvTilt::Spawn( void )
+{
+	Precache();
+	SetSolid( SOLID_NONE );
+	SetMoveType( MOVETYPE_NONE );
+
+	if ( GetSpawnFlags() & SF_SHAKE_EVERYONE )
+	{
+		m_Radius = 0;
+	}
+
+	if ( HasSpawnFlags( SF_SHAKE_NO_VIEW ) && !HasSpawnFlags( SF_SHAKE_PHYSICS ) && !HasSpawnFlags( SF_SHAKE_ROPES ) )
+	{
+		DevWarning( "env_shake %s with \"Don't shake view\" spawnflag set without \"Shake physics\" or \"Shake ropes\" spawnflags set.", GetDebugName() );
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CEnvTilt::ApplyTilt( ShakeCommand_t command )
+{
+	if ( !HasSpawnFlags( SF_SHAKE_NO_VIEW ) || !HasSpawnFlags( SF_SHAKE_NO_RUMBLE ) )
+	{
+		UTIL_ScreenTilt( GetAbsOrigin(), TiltAngle(), Duration(), Radius(), TiltTime(), command, (GetSpawnFlags() & SF_TILT_EASE_INOUT) != 0 );
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Input handler that starts the screen shake.
+//-----------------------------------------------------------------------------
+void CEnvTilt::InputStartTilt( inputdata_t &inputdata )
+{
+	if ( HasSpawnFlags( SF_SHAKE_NO_RUMBLE ) )
+	{
+		ApplyTilt( SHAKE_START_NORUMBLE );
+	}
+	else if ( HasSpawnFlags( SF_SHAKE_NO_VIEW ) )
+	{
+		ApplyTilt( SHAKE_START_RUMBLEONLY );
+	}
+	else
+	{
+		ApplyTilt( SHAKE_START );
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Input handler that stops the screen shake.
+//-----------------------------------------------------------------------------
+void CEnvTilt::InputStopTilt( inputdata_t &inputdata )
+{
+	ApplyTilt( SHAKE_STOP );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Draw any debug text overlays
+// Returns current text offset from the top
+//-----------------------------------------------------------------------------
+int CEnvTilt::DrawDebugTextOverlays( void ) 
+{
+	int text_offset = BaseClass::DrawDebugTextOverlays();
+
+	if (m_debugOverlays & OVERLAY_TEXT_BIT)
+	{
+		char tempstr[512];
+
+		// print duration
+		Q_snprintf(tempstr,sizeof(tempstr),"    duration: %f", m_Duration);
+		EntityText(text_offset,tempstr,0);
+		text_offset++;
+
+		// print radius
+		Q_snprintf(tempstr,sizeof(tempstr),"    radius: %f", m_Radius);
+		EntityText(text_offset,tempstr,0);
+		text_offset++;
+
+	}
+	return text_offset;
+}

@@ -29,19 +29,18 @@ IMPLEMENT_SERVERCLASS_ST( CFuncAreaPortalWindow, DT_FuncAreaPortalWindow )
 END_SEND_TABLE()
 
 
-BEGIN_DATADESC( CFuncAreaPortalWindow )
+BEGIN_MAPENTITY( CFuncAreaPortalWindow )
 
 	DEFINE_KEYFIELD( m_portalNumber, FIELD_INTEGER,	"portalnumber" ),
 	DEFINE_KEYFIELD( m_flFadeStartDist,	FIELD_FLOAT,	"FadeStartDist" ),
 	DEFINE_KEYFIELD( m_flFadeDist,	FIELD_FLOAT,	"FadeDist" ),
 	DEFINE_KEYFIELD( m_flTranslucencyLimit,	FIELD_FLOAT,	"TranslucencyLimit" ),
 	DEFINE_KEYFIELD( m_iBackgroundBModelName,FIELD_STRING,	"BackgroundBModel" ),
-//	DEFINE_KEYFIELD( m_iBackgroundModelIndex,FIELD_INTEGER ),
 	
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFadeStartDistance", InputSetFadeStartDistance ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFadeEndDistance", InputSetFadeEndDistance ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

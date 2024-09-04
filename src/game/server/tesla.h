@@ -16,7 +16,7 @@ class CTesla : public CBaseEntity
 {
 public:
 	DECLARE_CLASS( CTesla, CBaseEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	CTesla();

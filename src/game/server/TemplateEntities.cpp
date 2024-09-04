@@ -22,6 +22,7 @@
 #include "eventqueue.h"
 #include "TemplateEntities.h"
 #include "utldict.h"
+#include "entitydefs.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -41,19 +42,8 @@ struct TemplateEntityData_t
 	int			iMapDataLength;
 	bool		bNeedsEntityIOFixup;	// If true, this template has entity I/O in its mapdata that needs fixup before spawning.
 	char		*pszFixedMapData;		// A single copy of this template that we used to fix up the Entity I/O whenever someone wants a fixed version of this template
-
-	DECLARE_SIMPLE_DATADESC();
+	int			m_nHammerID;			// Used to update the template in Foundry
 };
-
-BEGIN_SIMPLE_DATADESC( TemplateEntityData_t )
-	//DEFINE_FIELD( pszName,			FIELD_STRING	),		// Saved custom, see below
-	//DEFINE_FIELD( pszMapData,			FIELD_STRING	),		// Saved custom, see below
-	DEFINE_FIELD( iszMapData,				FIELD_STRING	),
-	DEFINE_FIELD( iMapDataLength,			FIELD_INTEGER	),
-	DEFINE_FIELD( bNeedsEntityIOFixup,	FIELD_BOOLEAN	),
-
-	//DEFINE_FIELD( pszFixedMapData,	FIELD_STRING	),		// Not saved at all
-END_DATADESC()
 
 struct grouptemplate_t
 {
@@ -71,7 +61,7 @@ int	g_iCurrentTemplateInstance;
 // Purpose: Saves the given entity's keyvalue data for later use by a spawner.
 //			Returns the index into the templates.
 //-----------------------------------------------------------------------------
-int Templates_Add(CBaseEntity *pEntity, const char *pszMapData, int nLen)
+int Templates_Add(CBaseEntity *pEntity, const char *pszMapData, int nLen, int nHammerID)
 {
 	const char *pszName = STRING(pEntity->GetEntityName());
 	if ((!pszName) || (!strlen(pszName)))
@@ -81,6 +71,7 @@ int Templates_Add(CBaseEntity *pEntity, const char *pszMapData, int nLen)
 	}
 
 	TemplateEntityData_t *pEntData = (TemplateEntityData_t *)malloc(sizeof(TemplateEntityData_t));
+	pEntData->m_nHammerID = nHammerID;
 	pEntData->pszName = strdup( pszName );
 
 	// We may modify the values of the keys in this mapdata chunk later on to fix Entity I/O
@@ -225,7 +216,13 @@ void Templates_ReconnectIOForGroup( CPointTemplate *pGroup )
 				// Entity I/O values are stored as "Targetname,<data>", so we need to see if there's a ',' in the string
 				char *sValue = value;
 				// FIXME: This is very brittle. Any key with a , will not be found.
-				char *s = strchr( value, ',' );
+				char delimiter = VMF_IOPARAM_STRING_DELIMITER;
+				if( strchr( value, delimiter ) == NULL )
+				{
+					delimiter = ',';
+				}
+
+				char *s = strchr( value, delimiter );
 				if ( s )
 				{
 					// Grab just the targetname of the receiver
@@ -368,7 +365,32 @@ const char *Templates_GetEntityIOFixedMapData( int iIndex )
 		c++;
 	} while (*c);
 
+	delete[] sOurFixup;
 	return g_Templates[iIndex]->pszFixedMapData;
+}
+
+void Templates_FreeTemplate( TemplateEntityData_t *pTemplate )
+{
+	free((void *)pTemplate->pszName);
+	free(pTemplate->pszMapData);
+	if ( pTemplate->pszFixedMapData )
+	{
+		free(pTemplate->pszFixedMapData);
+	}
+
+	free(pTemplate);
+}
+
+void Templates_RemoveByHammerID( int nHammerID )
+{
+	for ( int i=g_Templates.Count()-1; i >= 0; i-- )
+	{
+		if ( g_Templates[i]->m_nHammerID == nHammerID )
+		{
+			Templates_FreeTemplate( g_Templates[i] );
+			g_Templates.Remove( i );
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -381,14 +403,7 @@ void Templates_RemoveAll(void)
 	{
 		TemplateEntityData_t *pTemplate = g_Templates.Element(i);
 
-		free((void *)pTemplate->pszName);
-		free(pTemplate->pszMapData);
-		if ( pTemplate->pszFixedMapData )
-		{
-			free(pTemplate->pszFixedMapData);
-		}
-
-		free(pTemplate);
+		Templates_FreeTemplate(pTemplate);
 	}
 
 	g_Templates.RemoveAll();
@@ -413,98 +428,3 @@ public:
 
 CTemplatesHook g_TemplateEntityHook( "CTemplatesHook" );
 
-
-//-----------------------------------------------------------------------------
-// TEMPLATE SAVE / RESTORE
-//-----------------------------------------------------------------------------
-static short TEMPLATE_SAVE_RESTORE_VERSION = 1;
-
-class CTemplate_SaveRestoreBlockHandler : public CDefSaveRestoreBlockHandler
-{
-public:
-	const char *GetBlockName()
-	{
-		return "Templates";
-	}
-
-	//---------------------------------
-
-	void Save( ISave *pSave )
-	{
-		pSave->WriteInt( &g_iCurrentTemplateInstance );
-
-		short nCount = g_Templates.Count();
-		pSave->WriteShort( &nCount );
-		for ( int i = 0; i < nCount; i++ )
-		{
-			TemplateEntityData_t *pTemplate = g_Templates[i];
-			pSave->WriteAll( pTemplate );
-			pSave->WriteString( pTemplate->pszName );
-			pSave->WriteString( pTemplate->pszMapData );
-		}
-	}
-
-	//---------------------------------
-
-	void WriteSaveHeaders( ISave *pSave )
-	{
-		pSave->WriteShort( &TEMPLATE_SAVE_RESTORE_VERSION );
-	}
-	
-	//---------------------------------
-
-	void ReadRestoreHeaders( IRestore *pRestore )
-	{
-		// No reason why any future version shouldn't try to retain backward compatability. The default here is to not do so.
-		short version;
-		pRestore->ReadShort( &version );
-		m_fDoLoad = ( version == TEMPLATE_SAVE_RESTORE_VERSION );
-	}
-
-	//---------------------------------
-
-	void Restore( IRestore *pRestore, bool createPlayers )
-	{
-		if ( m_fDoLoad )
-		{
-			Templates_RemoveAll();
-			g_Templates.Purge();
-			g_iCurrentTemplateInstance = pRestore->ReadInt();
-
-			int iTemplates = pRestore->ReadShort();
-			while ( iTemplates-- )
-			{
-				TemplateEntityData_t *pNewTemplate = (TemplateEntityData_t *)malloc(sizeof(TemplateEntityData_t));
-				pRestore->ReadAll( pNewTemplate );
-
-				int sizeData = 0;//pRestore->SkipHeader();
-				char szName[MAPKEY_MAXLENGTH];
-				pRestore->ReadString( szName, MAPKEY_MAXLENGTH, sizeData );
-				pNewTemplate->pszName = strdup( szName );
-				//sizeData = pRestore->SkipHeader();
-				pNewTemplate->pszMapData = (char *)malloc( pNewTemplate->iMapDataLength );
-				pRestore->ReadString( pNewTemplate->pszMapData, pNewTemplate->iMapDataLength, sizeData );
-
-				// Set this to NULL so it'll be created the first time it gets used
-				pNewTemplate->pszFixedMapData = NULL;
-
-				g_Templates.AddToTail( pNewTemplate );
-			}
-		}
-		
-	}
-
-private:
-	bool m_fDoLoad;
-};
-
-//-----------------------------------------------------------------------------
-
-CTemplate_SaveRestoreBlockHandler g_Template_SaveRestoreBlockHandler;
-
-//-------------------------------------
-
-ISaveRestoreBlockHandler *GetTemplateSaveRestoreBlockHandler()
-{
-	return &g_Template_SaveRestoreBlockHandler;
-}

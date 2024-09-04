@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "baseentity.h"
+
 //------------------------------------------------------------------------------
 // Purpose : Spatial entity
 //------------------------------------------------------------------------------
@@ -18,7 +20,7 @@ class CSpatialEntity : public CBaseEntity
 	DECLARE_CLASS( CSpatialEntity, CBaseEntity );
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CSpatialEntity();
 

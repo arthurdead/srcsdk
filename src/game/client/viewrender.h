@@ -189,6 +189,8 @@ struct ClientWorldListInfo_t : public CRefCounted1<WorldListInfo_t>
 	// using m_pActualLeafMap[ remapped leaf index ] == actual leaf index
 	LeafIndex_t *m_pActualLeafIndex;
 
+	bool	m_bHasWater;
+
 private:
 	virtual bool OnFinalRelease();
 
@@ -216,7 +218,7 @@ FrustumCache_t *FrustumCache( void );
 // 
 //-----------------------------------------------------------------------------
 class CBase3dView : public CRefCounted<>,
-					protected CViewSetup
+					protected CViewSetupEx
 {
 	DECLARE_CLASS_NOBASE( CBase3dView );
 public:
@@ -357,7 +359,7 @@ public:
 
 	virtual void    PostSimulate();
 
-	const CViewSetup *GetPlayerViewSetup( ) const;
+	const CViewSetupEx *GetPlayerViewSetup( ) const;
 
 	virtual void	StartPitchDrift( void );
 	virtual void	StopPitchDrift( void );
@@ -389,13 +391,13 @@ protected:
 	virtual void	WriteReplayScreenshot( WriteReplayScreenshotParams_t &params );
 	virtual void	UpdateReplayScreenshotCache();
 
-    CViewSetup &    GetView();
-    const CViewSetup &    GetView() const ;
+    CViewSetupEx &    GetView();
+    const CViewSetupEx &    GetView() const ;
 
 
 	// This stores all of the view setup parameters that the engine needs to know about.
     // Best way to pick the right one is with ::GetView(), rather than directly.
-	CViewSetup		m_View;         // mono <- in stereo mode, this will be between the two eyes and is the "main" view.
+	CViewSetupEx		m_View;         // mono <- in stereo mode, this will be between the two eyes and is the "main" view.
 	bool			m_bAllowViewAccess;
 
 	// Pitch drifting data
@@ -417,7 +419,7 @@ public:
 
 	// Render functions
 	virtual	void	Render( vrect_t *rect );
-	virtual void	RenderView( const CViewSetup &view, const CViewSetup &hudViewSetup, int nClearFlags, int whatToDraw );
+	virtual void	RenderView( const CViewSetupEx &view, const CViewSetupEx &hudViewSetup, int nClearFlags, int whatToDraw );
 	virtual void	RenderPlayerSprites();
 	virtual void	Render2DEffectsPreHUD( const CViewSetup &view );
 	virtual void	Render2DEffectsPostHUD( const CViewSetup &view );
@@ -434,7 +436,7 @@ public:
 	bool			ShouldDrawEntities( void );
 	bool			ShouldDrawBrushModels( void );
 
-	const CViewSetup *GetViewSetup( ) const;
+	const CViewSetupEx *GetViewSetup( ) const;
 	
 	void			DisableVis( void );
 
@@ -487,14 +489,14 @@ private:
 
 	// General draw methods
 	// baseDrawFlags is a combination of DF_ defines. DF_MONITOR is passed into here while drawing a monitor.
-	void			ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxVisible, const CViewSetup &view, int nClearFlags, view_id_t viewID, bool bDrawViewModel = false, int baseDrawFlags = 0, ViewCustomVisibility_t *pCustomVisibility = NULL );
+	void			ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxVisible, const CViewSetupEx &view, int nClearFlags, view_id_t viewID, bool bDrawViewModel = false, int baseDrawFlags = 0, ViewCustomVisibility_t *pCustomVisibility = NULL );
 
 	void			DrawMonitors( const CViewSetup &cameraView );
 
 	void			SSAO_DepthPass( const CViewSetup &viewSet );
 	void			SSAO_DrawResults();
 
-	bool			DrawOneMonitor( ITexture *pRenderTarget, int cameraNum, C_PointCamera *pCameraEnt, const CViewSetup &cameraView, C_BasePlayer *localPlayer, 
+	bool			DrawOneMonitor( ITexture *pRenderTarget, int cameraNum, C_PointCamera *pCameraEnt, const CViewSetupEx &cameraView, C_BasePlayer *localPlayer, 
 						int x, int y, int width, int height );
 
 	// Drawing primitives
@@ -528,13 +530,13 @@ private:
 	void			DrawRenderablesInList( CViewModelRenderablesList::RenderGroups_t &list, int flags = 0 );
 
 	// Sets up, cleans up the main 3D view
-	void			SetupMain3DView( const CViewSetup &view, const CViewSetup &hudViewSetup, int &nClearFlags, ITexture *pRenderTarget );
+	void			SetupMain3DView( const CViewSetupEx &view, const CViewSetupEx &hudViewSetup, int &nClearFlags, ITexture *pRenderTarget );
 	void			CleanupMain3DView( const CViewSetup &view );
 
 	void			UpdateCascadedShadow( const CViewSetup &view );
 
 	// This stores the current view
- 	CViewSetup		m_CurrentView;
+ 	CViewSetupEx		m_CurrentView;
 
 	// VIS Overrides
 	// Set to true to turn off client side vis ( !!!! rendering will be slow since everything will draw )
@@ -554,7 +556,7 @@ private:
 	float			m_flCheapWaterStartDistance;
 	float			m_flCheapWaterEndDistance;
 
-	CViewSetup			m_OverlayViewSetup;
+	CViewSetupEx			m_OverlayViewSetup;
 	int					m_OverlayClearFlags;
 	int					m_OverlayDrawFlags;
 	bool				m_bDrawOverlay;

@@ -125,24 +125,23 @@ public:
 // CBaseEntityList overrides.
 protected:
 
-	virtual void OnAddEntity( IHandleEntity *pEnt, CBaseHandle handle );
-	virtual void OnRemoveEntity( IHandleEntity *pEnt, CBaseHandle handle );
+	virtual void OnAddEntity( CBaseEntity *pEnt, CBaseHandle handle );
+	virtual void OnRemoveEntity( CBaseEntity *pEnt, CBaseHandle handle );
 
 
 // Internal to client DLL.
 public:
-
 	// All methods of accessing specialized IClientUnknown's go through here.
-	IClientUnknown*			GetListedEntity( int entnum );
+	C_BaseEntity*			GetListedEntity( int entnum );
 	
 	// Simple wrappers for convenience..
 	C_BaseEntity*			GetBaseEntity( int entnum );
 	ICollideable*			GetCollideable( int entnum );
 
-	IClientRenderable*		GetClientRenderableFromHandle( ClientEntityHandle_t hEnt );
+	C_BaseEntity*		GetClientRenderableFromHandle( ClientEntityHandle_t hEnt );
 	C_BaseEntity*			GetBaseEntityFromHandle( ClientEntityHandle_t hEnt );
-	ICollideable*			GetCollideableFromHandle( ClientEntityHandle_t hEnt );
-	IClientThinkable*		GetClientThinkableFromHandle( ClientEntityHandle_t hEnt );
+	ICollideable *			GetCollideableFromHandle( ClientEntityHandle_t hEnt );
+	C_BaseEntity*		GetClientThinkableFromHandle( ClientEntityHandle_t hEnt );
 
 	// Convenience methods to convert between entindex + ClientEntityHandle_t
 	ClientEntityHandle_t	EntIndexToHandle( int entnum );
@@ -165,7 +164,7 @@ public:
 	{
 	public:
 		IPVSNotify *m_pNotify;
-		IClientRenderable *m_pRenderable;
+		C_BaseEntity *m_pRenderable;
 		unsigned char m_InPVSStatus;				// Combination of the INPVS_ flags.
 		unsigned short m_PVSNotifiersLink;			// Into m_PVSNotifyInfos.
 	};
@@ -183,7 +182,6 @@ public:
 	void NotifyRemoveEntity( C_BaseEntity *pEnt );
 	void SetDormant( int entityIndex, bool bDormant );
 private:
-
 	// Current count
 	int					m_iNumServerEnts;
 	// Max allowed
@@ -203,14 +201,14 @@ private:
 
 private:
 
-	void AddPVSNotifier( IClientUnknown *pUnknown );
-	void RemovePVSNotifier( IClientUnknown *pUnknown );
+	void AddPVSNotifier( C_BaseEntity *pUnknown );
+	void RemovePVSNotifier( C_BaseEntity *pUnknown );
 	
 	// These entities want to know when they enter and leave the PVS (server entities
 	// already can get the equivalent notification with NotifyShouldTransmit, but client
 	// entities have to get it this way).
 	CUtlLinkedList<CPVSNotifyInfo,unsigned short> m_PVSNotifyInfos;
-	CUtlMap<IClientUnknown*,unsigned short,unsigned short> m_PVSNotifierMap;	// Maps IClientUnknowns to indices into m_PVSNotifyInfos.
+	CUtlMap<C_BaseEntity*,unsigned short,unsigned short> m_PVSNotifierMap;	// Maps IClientUnknowns to indices into m_PVSNotifyInfos.
 };
 
 
@@ -247,33 +245,10 @@ inline bool	CClientEntityList::IsHandleValid( ClientEntityHandle_t handle ) cons
 	return handle.Get() != 0;
 }
 
-inline IClientUnknown* CClientEntityList::GetListedEntity( int entnum )
-{
-	return (IClientUnknown*)LookupEntityByNetworkIndex( entnum );
-}
-
-inline IClientUnknown* CClientEntityList::GetClientUnknownFromHandle( ClientEntityHandle_t hEnt )
-{
-	return (IClientUnknown*)LookupEntity( hEnt );
-}
-
 inline CUtlLinkedList<CClientEntityList::CPVSNotifyInfo,unsigned short>& CClientEntityList::GetPVSNotifiers()
 {
 	return m_PVSNotifyInfos;
 }
-
-
-//-----------------------------------------------------------------------------
-// Convenience methods to convert between entindex + ClientEntityHandle_t
-//-----------------------------------------------------------------------------
-inline ClientEntityHandle_t CClientEntityList::EntIndexToHandle( int entnum )
-{
-	if ( entnum < -1 )
-		return INVALID_EHANDLE_INDEX;
-	IClientUnknown *pUnk = GetListedEntity( entnum );
-	return pUnk ? pUnk->GetRefEHandle() : INVALID_EHANDLE_INDEX; 
-}
-
 
 //-----------------------------------------------------------------------------
 // Returns the client entity list

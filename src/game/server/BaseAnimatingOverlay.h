@@ -17,7 +17,7 @@
 
 class CBaseAnimatingOverlay;
 
-class CAnimationLayer
+class CAnimationLayer : public CMemZeroOnNew
 {
 public:	
 	DECLARE_CLASS_NOBASE( CAnimationLayer );
@@ -41,7 +41,6 @@ public:
 #define ANIM_LAYER_ACTIVE		0x0001
 #define ANIM_LAYER_AUTOKILL		0x0002
 #define ANIM_LAYER_KILLME		0x0004
-#define ANIM_LAYER_DONTRESTORE	0x0008
 #define ANIM_LAYER_CHECKACCESS	0x0010
 #define ANIM_LAYER_DYING		0x0020
 #define ANIM_LAYER_NOEVENTS		0x0040
@@ -105,8 +104,6 @@ public:
 
 	// Network state changes get forwarded here.
 	CBaseAnimatingOverlay *m_pOwnerEntity;
-	
-	DECLARE_SIMPLE_DATADESC();
 };
 
 FORCEINLINE void CAnimationLayer::SetSequence( int nSequence )
@@ -206,7 +203,6 @@ public:
 	
 	virtual CBaseAnimatingOverlay *	GetBaseAnimatingOverlay() { return this; }
 
-	virtual void	OnRestore();
 	virtual void	SetModel( const char *szModelName );
 
 	virtual void	StudioFrameAdvance();
@@ -243,7 +239,6 @@ public:
 	void	SetLayerBlendOut( int iLayer, float flBlendOut );
 	void	SetLayerAutokill( int iLayer, bool bAutokill );
 	void	SetLayerLooping( int iLayer, bool bLooping );
-	void	SetLayerNoRestore( int iLayer, bool bNoRestore );
 	void	SetLayerNoEvents( int iLayer, bool bNoEvents );
 
 	Activity	GetLayerActivity( int iLayer );
@@ -266,7 +261,6 @@ private:
 	int		AllocateLayer( int iPriority = 0 ); // lower priorities are processed first
 
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
 	DECLARE_PREDICTABLE();
 };
 

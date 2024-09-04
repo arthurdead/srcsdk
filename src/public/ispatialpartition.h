@@ -68,12 +68,16 @@ enum IterationRetval_t
 };
 
 
-typedef unsigned short SpatialPartitionHandle_t;
+enum class SpatialPartitionHandle_t : unsigned short
+{
+};
 
 // A combination of the PARTITION_ flags above.
 typedef int SpatialPartitionListMask_t;	
 
-typedef int SpatialTempHandle_t;
+enum class SpatialTempHandle_t : int
+{
+};
 
 
 //-----------------------------------------------------------------------------
@@ -107,10 +111,7 @@ public:
 //-----------------------------------------------------------------------------
 // This is the spatial partition manager, groups objects into buckets
 //-----------------------------------------------------------------------------
-enum
-{
-	PARTITION_INVALID_HANDLE = (SpatialPartitionHandle_t)~0
-};
+inline const SpatialPartitionHandle_t PARTITION_INVALID_HANDLE = (SpatialPartitionHandle_t)~0;
 
 
 abstract_class ISpatialPartition

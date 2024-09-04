@@ -101,7 +101,7 @@ IMPLEMENT_SERVERCLASS_ST(CTEExplosion, DT_TEExplosion)
 	SendPropModelIndex( SENDINFO(m_nModelIndex) ),
 	SendPropFloat( SENDINFO(m_fScale ), 9, 0, 0.0, 51.2 ),
 	SendPropInt( SENDINFO(m_nFrameRate), 8, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(m_nFlags), 8, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO(m_nFlags), 10, SPROP_UNSIGNED ),
 	SendPropVector( SENDINFO(m_vecNormal), -1, SPROP_COORD),
 	SendPropInt( SENDINFO(m_chMaterialType), 8, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nRadius), 32, SPROP_UNSIGNED ),

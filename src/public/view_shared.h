@@ -125,6 +125,8 @@ public:
 	// This does NOT override the Z range - that will be set up as normal (i.e. the values in this matrix will be ignored).
     bool        m_bViewToProjectionOverride;
     VMatrix     m_ViewToProjection;
+
+    IMPLEMENT_OPERATOR_EQUAL( CViewSetup );
 };
 
 class CViewSetupEx : public CViewSetup
@@ -150,6 +152,32 @@ public:
 		m_bCustomViewMatrix = false;
 		m_bRenderFlashlightDepthTranslucents = false;
 	}
+
+	CViewSetupEx &operator=(const CViewSetup &other)
+	{
+		memcpy(this, &other, sizeof(CViewSetup));
+
+		m_flNearBlurDepth = 20.0;
+		m_flNearFocusDepth = 100.0;
+		m_flFarFocusDepth = 250.0;
+		m_flFarBlurDepth = 1000.0;
+		m_flNearBlurRadius = 10.0;
+		m_flFarBlurRadius = 5.0;
+		m_nDoFQuality = 0;
+
+		m_nMotionBlurMode = MOTION_BLUR_GAME;
+		m_bDoDepthOfField = false;
+		m_bHDRTarget = false;
+		m_bDrawWorldNormal = false;
+		m_bCullFrontFaces = false;
+		m_bCustomViewMatrix = false;
+		m_bRenderFlashlightDepthTranslucents = false;
+
+		return *this;
+	}
+
+	CViewSetupEx(const CViewSetup &other)
+	{ operator=(other); }
 
 	bool		m_bCustomViewMatrix;
 	matrix3x4_t	m_matCustomViewMatrix;
@@ -177,6 +205,8 @@ public:
 	bool		m_bCullFrontFaces:1;
 
 	bool		m_bRenderFlashlightDepthTranslucents:1;
+
+	IMPLEMENT_OPERATOR_EQUAL( CViewSetupEx );
 };
 
 

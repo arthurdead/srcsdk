@@ -19,7 +19,7 @@
 #include "appframework/IAppSystem.h"
 #include "datacache/imdlcache.h"
 #include "studio.h"
-
+//#include "engine/ivmodelrender.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -40,6 +40,9 @@ struct FlashlightState_t;
 class VMatrix;
 namespace OptimizedModel { struct FileHeader_t; }
 class IPooledVBAllocator;
+struct MeshInstanceData_t;
+struct ShaderStencilState_t;
+struct MaterialLightingState_t;
 
 // undone: what's the standard for function type naming?
 typedef void (*StudioRender_Printf_t)( PRINTF_FORMAT_STRING const char *fmt, ... );
@@ -112,6 +115,10 @@ enum
 	STUDIORENDER_DRAW_ITEM_BLINK		= 0x100,
 
 	STUDIORENDER_SHADOWDEPTHTEXTURE		= 0x200,
+
+	STUDIORENDER_NO_SKIN				= 0x400,
+
+	STUDIORENDER_SKIP_DECALS			= 0x800,
 
 	STUDIORENDER_SSAODEPTHTEXTURE				= 0x1000,
 
@@ -213,6 +220,65 @@ struct DrawModelInfo_t
 	Vector			m_vecAmbientCube[6];		// ambient, and lights that aren't in locallight[]
 	int				m_nLocalLightCount;
 	LightDesc_t		m_LocalLightDescs[4];
+
+	IMPLEMENT_OPERATOR_EQUAL( DrawModelInfo_t );
+};
+
+enum
+{
+	// This is because we store which flashlights are on which model 
+	// in a 32-bit field (see ModelArrayInstanceData_t::m_nFlashlightUsage)
+	MAX_FLASHLIGHTS_PER_INSTANCE_DRAW_CALL = 32
+};
+
+struct FlashlightInstance_t
+{
+	IMaterial *m_pDebugMaterial;
+	FlashlightState_t m_FlashlightState;
+	VMatrix m_WorldToTexture;
+	ITexture *m_pFlashlightDepthTexture;
+};
+
+struct StudioModelArrayInfo2_t
+{
+	int						m_nFlashlightCount;
+	FlashlightInstance_t	*m_pFlashlights;	// NOTE: Can have at most MAX_FLASHLIGHTS_PER_INSTANCE_DRAW_CALL of these
+};
+
+struct StudioModelArrayInfo_t  : public StudioModelArrayInfo2_t
+{
+	studiohdr_t				*m_pStudioHdr;
+	studiohwdata_t			*m_pHardwareData;
+};
+
+struct StudioArrayData_t
+{
+	studiohdr_t				*m_pStudioHdr;
+	studiohwdata_t			*m_pHardwareData;
+	void					*m_pInstanceData; // See StudioShadowArrayInstanceData_t or StudioArrayInstanceData_t
+	int						m_nCount;
+};
+
+struct StudioShadowArrayInstanceData_t 
+{
+	int m_nLOD;
+	int m_nBody;
+	int m_nSkin;
+	matrix3x4_t *m_pPoseToWorld;
+	float *m_pFlexWeights;
+	float *m_pDelayedFlexWeights;
+};
+
+struct StudioArrayInstanceData_t : public StudioShadowArrayInstanceData_t 
+{
+	MaterialLightingState_t *m_pLightingState;
+	MaterialLightingState_t *m_pDecalLightingState;
+	ITexture *m_pEnvCubemapTexture;
+	StudioDecalHandle_t m_Decals;
+	uint32 m_nFlashlightUsage;	// Mask indicating which flashlights to use.
+	ShaderStencilState_t *m_pStencilState;
+	ColorMeshInfo_t *m_pColorMeshInfo;
+	Vector4D m_DiffuseModulation;
 };
 
 struct GetTriangles_Vertex_t
@@ -224,6 +290,8 @@ struct GetTriangles_Vertex_t
 	Vector4D m_BoneWeight;
 	int m_BoneIndex[4];
 	int m_NumBones;
+
+	IMPLEMENT_OPERATOR_EQUAL( GetTriangles_Vertex_t );
 };
 
 struct GetTriangles_MaterialBatch_t
@@ -237,6 +305,8 @@ struct GetTriangles_Output_t
 {
 	CUtlVector<GetTriangles_MaterialBatch_t> m_MaterialBatches;
 	matrix3x4_t m_PoseToWorld[MAXSTUDIOBONES];
+
+	DISALLOW_OPERATOR_EQUAL( GetTriangles_Output_t );
 };
 
 

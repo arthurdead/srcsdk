@@ -49,9 +49,11 @@ public:
 	// Server only
 	void	Register( const char *name, int size );
 
+#if defined( CLIENT_DLL )
 	// Client only
 	void	HookMessage( const char *name, pfnUserMsgHook hook );
 	bool	DispatchUserMessage( int msg_type, bf_read &msg_data );
+#endif
 
 private:
 

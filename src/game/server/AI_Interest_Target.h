@@ -49,8 +49,6 @@ public:
 	float		m_flEndTime;
 	float		m_flRamp;
 	float		m_flInterest;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 
@@ -65,7 +63,7 @@ public:
 		int i;
 		for ( i = 0; i < Count(); i++)
 		{
-			if (pTarget == (*this)[i].m_hTarget)
+			if (pTarget == (*this)[i].m_hTarget.Get())
 				return i;
 		}
 		return InvalidIndex();

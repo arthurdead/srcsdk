@@ -42,6 +42,9 @@ public:
 	virtual void	Spawn();
 	virtual void	OnRestore();
 	virtual int		DrawDebugTextOverlays();
+
+	virtual void OnActivate() {}
+	virtual void OnDeactivate() {}
 	
 	virtual void 	InputActivate( inputdata_t &inputdata );
 	virtual void 	InputUpdateActors( inputdata_t &inputdata );
@@ -95,7 +98,7 @@ private:
 
 	void DelayedRefresh();
 	void PruneActors();
-	void ResolveNames();
+	virtual void ResolveNames();
 	
 	// From Worldcraft
 	string_t				m_iszActor;
@@ -110,7 +113,7 @@ private:
 	
 	
 protected:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 //-------------------------------------
@@ -153,7 +156,7 @@ inline CAI_BaseNPC *CAI_GoalEntity::GetActor( int iActor )
 {
 	UpdateActors();
 	if (  m_actors.Count() > iActor )
-		return m_actors[iActor];
+		return m_actors[iActor].Get();
 	return NULL;
 }
 
@@ -170,7 +173,7 @@ inline void CAI_GoalEntity::SetGoalEntity( CBaseEntity *pGoalEntity )
 inline CBaseEntity *CAI_GoalEntity::GetGoalEntity()
 {
 	UpdateActors();
-	return m_hGoalEntity;
+	return m_hGoalEntity.Get();
 }
 
 //-------------------------------------

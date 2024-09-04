@@ -33,13 +33,12 @@ ConVar ai_inhibit_spawners( "ai_inhibit_spawners", "0", FCVAR_CHEAT );
 
 LINK_ENTITY_TO_CLASS( info_npc_spawn_destination, CNPCSpawnDestination );
 
-BEGIN_DATADESC( CNPCSpawnDestination )
+BEGIN_MAPENTITY( CNPCSpawnDestination )
 	DEFINE_KEYFIELD( m_ReuseDelay, FIELD_FLOAT, "ReuseDelay" ),
 	DEFINE_KEYFIELD( m_RenameNPC,FIELD_STRING, "RenameNPC" ),
-	DEFINE_FIELD( m_TimeNextAvailable, FIELD_TIME ),
 
 	DEFINE_OUTPUT( m_OnSpawnNPC,	"OnSpawnNPC" ),
-END_DATADESC()
+END_MAPENTITY()
 
 //---------------------------------------------------------
 //---------------------------------------------------------
@@ -76,14 +75,13 @@ void CNPCSpawnDestination::OnSpawnedNPC( CAI_BaseNPC *pNPC )
 }
 
 //-------------------------------------
-BEGIN_DATADESC( CBaseNPCMaker )
+BEGIN_MAPENTITY( CBaseNPCMaker )
 
 	DEFINE_KEYFIELD( m_nMaxNumNPCs,			FIELD_INTEGER,	"MaxNPCCount" ),
 	DEFINE_KEYFIELD( m_nMaxLiveChildren,		FIELD_INTEGER,	"MaxLiveChildren" ),
 	DEFINE_KEYFIELD( m_flSpawnFrequency,		FIELD_FLOAT,	"SpawnFrequency" ),
 	DEFINE_KEYFIELD( m_bDisabled,			FIELD_BOOLEAN,	"StartDisabled" ),
-
-	DEFINE_FIELD(	m_nLiveChildren,		FIELD_INTEGER ),
+	DEFINE_KEYFIELD( m_nHullCheckMode,		FIELD_INTEGER,	"HullCheckMode" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,	"Spawn",	InputSpawnNPC ),
@@ -101,12 +99,8 @@ BEGIN_DATADESC( CBaseNPCMaker )
 	DEFINE_OUTPUT( m_OnAllLiveChildrenDead,	"OnAllLiveChildrenDead" ),
 	DEFINE_OUTPUT( m_OnSpawnNPC,		"OnSpawnNPC" ),
 
-	// Function Pointers
-	DEFINE_THINKFUNC( MakerThink ),
-
-	DEFINE_FIELD( m_hIgnoreEntity, FIELD_EHANDLE ),
 	DEFINE_KEYFIELD( m_iszIngoreEnt, FIELD_STRING, "IgnoreEntity" ), 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -143,6 +137,10 @@ void CBaseNPCMaker::Spawn( void )
 //-----------------------------------------------------------------------------
 bool CBaseNPCMaker::HumanHullFits( const Vector &vecLocation )
 {
+	if ( m_nHullCheckMode == HULLCHECK_NONE )
+		// Pretend like hull always fits when hull checking is disabled
+		return true;
+
 	trace_t tr;
 	UTIL_TraceHull( vecLocation,
 					vecLocation + Vector( 0, 0, 1 ),
@@ -366,7 +364,7 @@ void CBaseNPCMaker::InputSetSpawnFrequency( inputdata_t &inputdata )
 
 LINK_ENTITY_TO_CLASS( npc_maker, CNPCMaker );
 
-BEGIN_DATADESC( CNPCMaker )
+BEGIN_MAPENTITY( CNPCMaker )
 
 	DEFINE_KEYFIELD( m_iszNPCClassname,		FIELD_STRING,	"NPCType" ),
 	DEFINE_KEYFIELD( m_ChildTargetName,		FIELD_STRING,	"NPCTargetname" ),
@@ -375,7 +373,7 @@ BEGIN_DATADESC( CNPCMaker )
 	DEFINE_KEYFIELD( m_strHintGroup,			FIELD_STRING,	"NPCHintGroup" ),
 	DEFINE_KEYFIELD( m_RelationshipString,	FIELD_STRING,	"Relationship" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -446,7 +444,6 @@ void CNPCMaker::MakeNPC( void )
 
 	pent->m_spawnEquipment	= m_spawnEquipment;
 	pent->SetSquadName( m_SquadName );
-	pent->SetHintGroup( m_strHintGroup );
 
 	ChildPreSpawn( pent );
 
@@ -555,11 +552,10 @@ void CBaseNPCMaker::DeathNotice( CBaseEntity *pVictim )
 
 LINK_ENTITY_TO_CLASS( npc_template_maker, CTemplateNPCMaker );
 
-BEGIN_DATADESC( CTemplateNPCMaker )
+BEGIN_MAPENTITY( CTemplateNPCMaker )
 
 	DEFINE_KEYFIELD( m_iszTemplateName, FIELD_STRING, "TemplateName" ),
 	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "radius" ),
-	DEFINE_FIELD( m_iszTemplateData, FIELD_STRING ),
 	DEFINE_KEYFIELD( m_iszDestinationGroup, FIELD_STRING, "DestinationGroup" ),
 	DEFINE_KEYFIELD( m_CriterionVisibility, FIELD_INTEGER, "CriterionVisibility" ),
 	DEFINE_KEYFIELD( m_CriterionDistance, FIELD_INTEGER, "CriterionDistance" ),
@@ -571,7 +567,7 @@ BEGIN_DATADESC( CTemplateNPCMaker )
 	DEFINE_INPUTFUNC( FIELD_STRING, "ChangeDestinationGroup", InputChangeDestinationGroup ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMinimumSpawnDistance", InputSetMinimumSpawnDistance ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -632,13 +628,8 @@ CNPCSpawnDestination *CTemplateNPCMaker::FindSpawnDestination()
 {
 	CNPCSpawnDestination *pDestinations[ MAX_DESTINATION_ENTS ];
 	CBaseEntity *pEnt = NULL;
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
+	CBasePlayer *pPlayer = NULL;
 	int	count = 0;
-
-	if( !pPlayer )
-	{
-		return NULL;
-	}
 
 	// Collect all the qualifiying destination ents
 	pEnt = gEntList.FindEntityByName( NULL, m_iszDestinationGroup );
@@ -784,8 +775,16 @@ void CTemplateNPCMaker::MakeNPC( void )
 		return;
 	}
 
+	MakeNPCFromTemplate();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+CAI_BaseNPC *CTemplateNPCMaker::MakeNPCFromTemplate( void )
+{
 	if (!CanMakeNPC( ( m_iszDestinationGroup != NULL_STRING ) ))
-		return;
+		return NULL;
 
 	CNPCSpawnDestination *pDestination = NULL;
 	if ( m_iszDestinationGroup != NULL_STRING )
@@ -794,7 +793,7 @@ void CTemplateNPCMaker::MakeNPC( void )
 		if ( !pDestination )
 		{
 			DevMsg( 2, "%s '%s' failed to find a valid spawnpoint in destination group: '%s'\n", GetClassname(), STRING(GetEntityName()), STRING(m_iszDestinationGroup) );
-			return;
+			return NULL;
 		}
 	}
 
@@ -809,7 +808,7 @@ void CTemplateNPCMaker::MakeNPC( void )
 	if ( !pent )
 	{
 		Warning("NULL Ent in NPCMaker!\n" );
-		return;
+		return NULL;
 	}
 	
 	if ( pDestination )
@@ -872,6 +871,8 @@ void CTemplateNPCMaker::MakeNPC( void )
 			SetUse( NULL );
 		}
 	}
+
+	return pent;
 }
 
 //-----------------------------------------------------------------------------

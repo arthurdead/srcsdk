@@ -11,11 +11,9 @@
 #include "in_buttons.h"
 #include "soundenvelope.h"
 #include "soundent.h"
-#include "physics_saverestore.h"
 #include "vphysics/constraints.h"
 #include "vcollide_parse.h"
 #include "ndebugoverlay.h"
-#include "hl2_player.h"
 #include "props.h"
 #include "vehicle_choreo_generic_shared.h"
 #include "ai_utils.h"
@@ -30,19 +28,6 @@
 #define CHOREO_VEHICLE_VIEW_YAW_MAX	60
 #define CHOREO_VEHICLE_VIEW_PITCH_MIN	-90
 #define CHOREO_VEHICLE_VIEW_PITCH_MAX	38	
-
-BEGIN_DATADESC_NO_BASE( vehicleview_t )
-	DEFINE_FIELD( bClampEyeAngles, FIELD_BOOLEAN ),
-	DEFINE_FIELD( flPitchCurveZero, FIELD_FLOAT ),
-	DEFINE_FIELD( flPitchCurveLinear, FIELD_FLOAT ),
-	DEFINE_FIELD( flRollCurveZero, FIELD_FLOAT ),
-	DEFINE_FIELD( flRollCurveLinear, FIELD_FLOAT ),
-	DEFINE_FIELD( flFOV, FIELD_FLOAT ),
-	DEFINE_FIELD( flYawMin, FIELD_FLOAT ),
-	DEFINE_FIELD( flYawMax, FIELD_FLOAT ),
-	DEFINE_FIELD( flPitchMin, FIELD_FLOAT ),
-	DEFINE_FIELD( flPitchMax, FIELD_FLOAT ),
-END_DATADESC()
 
 //
 // Anim events.
@@ -104,7 +89,7 @@ class CPropVehicleChoreoGeneric : public CDynamicProp, public IDrivableVehicle
 	DECLARE_CLASS( CPropVehicleChoreoGeneric, CDynamicProp );
 
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	CPropVehicleChoreoGeneric( void )
@@ -228,7 +213,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( prop_vehicle_choreo_generic, CPropVehicleChoreoGeneric );
 
-BEGIN_DATADESC( CPropVehicleChoreoGeneric )
+BEGIN_MAPENTITY( CPropVehicleChoreoGeneric )
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Lock",	InputLock ),
@@ -239,15 +224,6 @@ BEGIN_DATADESC( CPropVehicleChoreoGeneric )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Open", InputOpen ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Close", InputClose ),
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "Viewlock", InputViewlock ),
-
-	// Keys
-	DEFINE_EMBEDDED( m_ServerVehicle ),
-
-	DEFINE_FIELD( m_hPlayer, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_bEnterAnimOn, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bExitAnimOn, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bForcedExit, FIELD_BOOLEAN ),
- 	DEFINE_FIELD( m_vecEyeExitEndpoint, FIELD_POSITION_VECTOR ),
 
 	DEFINE_KEYFIELD( m_vehicleScript, FIELD_STRING, "vehiclescript" ),
 	DEFINE_KEYFIELD( m_bLocked, FIELD_BOOLEAN, "vehiclelocked" ),
@@ -261,10 +237,7 @@ BEGIN_DATADESC( CPropVehicleChoreoGeneric )
 	DEFINE_OUTPUT( m_OnOpen, "OnOpen" ),
 	DEFINE_OUTPUT( m_OnClose, "OnClose" ),
 
-	DEFINE_EMBEDDED( m_vehicleView ),
-	DEFINE_EMBEDDED( m_savedVehicleView ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST(CPropVehicleChoreoGeneric, DT_PropVehicleChoreoGeneric)
 	SendPropEHandle(SENDINFO(m_hPlayer)),

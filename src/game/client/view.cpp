@@ -102,7 +102,7 @@ ConVar cl_leveloverview( "cl_leveloverview", "0", FCVAR_CHEAT );
 static ConVar cl_camera_follow_bone_index( "cl_camera_follow_bone_index"  , "-2", FCVAR_CHEAT, "Index of the bone to follow.  -2 == disabled.  -1 == root bone.  0+ is bone index." );
 Vector g_cameraFollowPos;
 
-static ConVar r_mapextents( "r_mapextents", "16384", FCVAR_CHEAT, 
+ConVar r_mapextents( "r_mapextents", "16384", FCVAR_CHEAT, 
 						   "Set the max dimension for the map.  This determines the far clipping plane" );
 
 // UNDONE: Delete this or move to the material system?
@@ -153,12 +153,12 @@ static void CalcDemoViewOverride( Vector &origin, QAngle &angles )
 // Selects the relevant member variable to update. You could do it manually, but...
 // We always set up the MONO eye, even when doing stereo, and it's set up to be mid-way between the left and right,
 // so if you don't really care about L/R (e.g. culling, sound, etc), just use MONO.
-CViewSetup &CViewRender::GetView()
+CViewSetupEx &CViewRender::GetView()
 {
 	return m_View;
 }
 
-const CViewSetup &CViewRender::GetView() const
+const CViewSetupEx &CViewRender::GetView() const
 {
     return (const_cast<CViewRender*>(this))->GetView();
 }
@@ -529,7 +529,7 @@ void CViewRender::OnRenderStart()
 // Purpose: 
 // Output : const CViewSetup
 //-----------------------------------------------------------------------------
-const CViewSetup *CViewRender::GetViewSetup( void ) const
+const CViewSetupEx *CViewRender::GetViewSetup( void ) const
 {
 	return &m_CurrentView;
 }
@@ -539,9 +539,9 @@ const CViewSetup *CViewRender::GetViewSetup( void ) const
 // Purpose: 
 // Output : const CViewSetup
 //-----------------------------------------------------------------------------
-const CViewSetup *CViewRender::GetPlayerViewSetup( void ) const
+const CViewSetupEx *CViewRender::GetPlayerViewSetup( void ) const
 {   
-    const CViewSetup &view = GetView();
+    const CViewSetupEx &view = GetView();
     return &view;
 }
 

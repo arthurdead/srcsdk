@@ -155,26 +155,23 @@ private:
 
 	CAI_MoveMonitor m_SelfMoveMonitor;
 	
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 //-------------------------------------
 
 LINK_ENTITY_TO_CLASS( ai_battle_line, CAI_BattleLine );
 
-BEGIN_DATADESC( CAI_BattleLine )
+BEGIN_MAPENTITY( CAI_BattleLine )
 	DEFINE_KEYFIELD(	m_iszActor,				FIELD_STRING, 	"Actor"					),
 	DEFINE_KEYFIELD(	m_fActive,				FIELD_BOOLEAN,  "Active"				),
 	DEFINE_KEYFIELD(	m_fStrict,				FIELD_BOOLEAN,  "Strict"				),
-	DEFINE_EMBEDDED( 	m_SelfMoveMonitor ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", 		InputActivate ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Deactivate",		InputDeactivate ),
-	
-	DEFINE_THINKFUNC( MovementThink ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -182,46 +179,6 @@ END_DATADESC()
 // CAI_StandoffBehavior
 //
 //-----------------------------------------------------------------------------
-
-BEGIN_SIMPLE_DATADESC( AI_StandoffParams_t )
-	DEFINE_FIELD( tactChangeReaction,	FIELD_INTEGER ),
-	DEFINE_FIELD( fPlayerIsBattleline,	FIELD_BOOLEAN ),
-	DEFINE_FIELD( fCoverOnReload,		FIELD_BOOLEAN ),
-	DEFINE_FIELD( minTimeShots,			FIELD_FLOAT ),
-	DEFINE_FIELD( maxTimeShots,			FIELD_FLOAT ),
-	DEFINE_FIELD( minShots,				FIELD_INTEGER ),
-	DEFINE_FIELD( maxShots,				FIELD_INTEGER ),
-	DEFINE_FIELD( oddsCover,			FIELD_INTEGER ),
-	DEFINE_FIELD( fStayAtCover,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( flAbandonTimeLimit,	FIELD_FLOAT ),
-END_DATADESC();
-
-BEGIN_DATADESC( CAI_StandoffBehavior )
-	DEFINE_FIELD( 		m_fActive, 						FIELD_BOOLEAN ),
-	DEFINE_FIELD(		m_fTestNoDamage,				FIELD_BOOLEAN ),
-	DEFINE_FIELD( 		m_vecStandoffGoalPosition, 		FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( 		m_posture, 						FIELD_INTEGER ),
-	DEFINE_EMBEDDED(	m_params ),
-	DEFINE_FIELD(		m_hStandoffGoal,				FIELD_EHANDLE ),
-	DEFINE_FIELD( 		m_fTakeCover, 					FIELD_BOOLEAN ),
-	DEFINE_FIELD( 		m_SavedDistTooFar, 				FIELD_FLOAT ),
-	DEFINE_FIELD( 		m_fForceNewEnemy, 				FIELD_BOOLEAN ),
-	DEFINE_EMBEDDED( 	m_PlayerMoveMonitor ),
-	DEFINE_EMBEDDED( 	m_TimeForceCover ),
-	DEFINE_EMBEDDED( 	m_TimePreventForceNewEnemy ),
-	DEFINE_EMBEDDED( 	m_RandomCoverChangeTimer ),
-	// 											m_UpdateBattleLinesSemaphore 	(not saved, only an in-think item)
-	// 											m_BattleLines 					(not saved, rebuilt)
-	DEFINE_FIELD( 		m_fIgnoreFronts, 				FIELD_BOOLEAN ),
-	//											m_ActivityMap 					(not saved, rebuilt)
-	//											m_bHasLowCoverActivity			(not saved, rebuilt)
-
-	DEFINE_FIELD( 		m_nSavedMinShots, 				FIELD_INTEGER ),
-	DEFINE_FIELD( 		m_nSavedMaxShots, 				FIELD_INTEGER ),
-	DEFINE_FIELD( 		m_flSavedMinRest, 				FIELD_FLOAT ),
-	DEFINE_FIELD( 		m_flSavedMaxRest, 				FIELD_FLOAT ),
-
-END_DATADESC();
 
 //-------------------------------------
 
@@ -394,6 +351,7 @@ void CAI_StandoffBehavior::GatherConditions()
 	{
 		m_TimePreventForceNewEnemy.Reset();
 		GetOuter()->SetEnemy( NULL );
+		DevMsg(2, "Forcing lose enemy from standoff\n");
 	}
 	BaseClass::GatherConditions();
 	m_fForceNewEnemy = false;
@@ -1297,7 +1255,7 @@ public:
 		const CUtlVector<AIHANDLE> &actors = AccessActors();
 		for ( int i = 0; i < actors.Count(); i++ )
 		{
-			CAI_BaseNPC *pAI = actors[i];
+			CAI_BaseNPC *pAI = actors[i].Get();
 			CAI_StandoffBehavior *pBehavior;
 			if ( !pAI->GetBehavior( &pBehavior ) )
 				continue;
@@ -1345,7 +1303,7 @@ public:
 private:
 	//---------------------------------
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	enum Aggressiveness_t
 	{
@@ -1370,9 +1328,9 @@ private:
 
 LINK_ENTITY_TO_CLASS( ai_goal_standoff, CAI_StandoffGoal );
 
-BEGIN_DATADESC( CAI_StandoffGoal )
+BEGIN_MAPENTITY( CAI_StandoffGoal )
 	DEFINE_KEYFIELD( m_aggressiveness,				FIELD_INTEGER, 	"Aggressiveness" ),
-	//								   m_customParams  (individually)
+
 	DEFINE_KEYFIELD( m_TactChangeReaction,			FIELD_INTEGER, 	"TactChangeReaction" ),
 	DEFINE_KEYFIELD( m_fPlayerIsBattleline,			FIELD_BOOLEAN,	"PlayerBattleline" ),
 	DEFINE_KEYFIELD( m_fStayAtCover,				FIELD_BOOLEAN,	"StayAtCover" ),
@@ -1386,6 +1344,6 @@ BEGIN_DATADESC( CAI_StandoffGoal )
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetAggressiveness", InputSetAggressiveness ),
-END_DATADESC()
+END_MAPENTITY()
 
 ///-----------------------------------------------------------------------------

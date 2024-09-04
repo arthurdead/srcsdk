@@ -8,31 +8,20 @@
 #define WEAPON_IFMBASE_H
 #pragma once
 
+#include "basecombatweapon_shared.h"
 
 #if defined( CLIENT_DLL )
 	#define CWeaponIFMBase C_WeaponIFMBase
 #endif
 
-#if defined ( DOD_DLL )
-	#include "weapon_dodbase.h"
-	#define CWeaponModBaseClass CWeaponDODBase
-#elif defined ( TF_CLIENT_DLL )	|| defined ( TF_DLL )
-	#include "tf_weaponbase.h"
-	#define CWeaponModBaseClass CTFWeaponBase
-#endif
-
-class CWeaponIFMBase : public CWeaponModBaseClass
+class CWeaponIFMBase : public CBaseCombatWeapon
 {
 public:
-	DECLARE_CLASS( CWeaponIFMBase, CWeaponModBaseClass );
+	DECLARE_CLASS( CWeaponIFMBase, CBaseCombatWeapon );
 	DECLARE_NETWORKCLASS(); 
 	DECLARE_PREDICTABLE();
 
 	CWeaponIFMBase();
-
-#ifdef GAME_DLL
-	DECLARE_DATADESC();
-#endif
 
 	// All predicted weapons need to implement and return true
 	virtual bool	IsPredicted() const;

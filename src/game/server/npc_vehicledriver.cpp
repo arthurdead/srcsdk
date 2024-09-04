@@ -5,11 +5,9 @@
 // $NoKeywords: $
 //=============================================================================//
 #include "cbase.h"
-#include "ai_network.h"
 #include "ai_default.h"
 #include "ai_schedule.h"
 #include "ai_hull.h"
-#include "ai_node.h"
 #include "ai_task.h"
 #include "ai_senses.h"
 #include "ai_navigator.h"
@@ -35,27 +33,11 @@
 //------------------------------------
 ConVar g_debug_vehicledriver( "g_debug_vehicledriver", "0", FCVAR_CHEAT );
 
-BEGIN_DATADESC( CNPC_VehicleDriver )
+BEGIN_MAPENTITY( CNPC_VehicleDriver )
 	DEFINE_KEYFIELD( m_iszVehicleName, FIELD_STRING, "vehicle" ),
-//	DEFINE_FIELD( m_hVehicle,			FIELD_EHANDLE ),
-	// DEFINE_FIELD( m_pVehicleInterface, FIELD_POINTER ),
-	DEFINE_FIELD( m_hVehicleEntity,		FIELD_EHANDLE ),
-	// DEFINE_FIELD( m_Waypoints,		FIELD_???? ),
-	// DEFINE_FIELD( m_pCurrentWaypoint, FIELD_POINTER ),
-	// DEFINE_FIELD( m_pNextWaypoint,	FIELD_POINTER ),
-	DEFINE_FIELD( m_vecDesiredVelocity, FIELD_VECTOR ),
-	DEFINE_FIELD( m_vecDesiredPosition, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vecPrevPoint,		FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vecPrevPrevPoint,	FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vecPostPoint,		FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vecPostPostPoint,	FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_flDistanceAlongSpline, FIELD_FLOAT ),
+
 	DEFINE_KEYFIELD( m_flDriversMaxSpeed, FIELD_FLOAT, "drivermaxspeed" ),
 	DEFINE_KEYFIELD( m_flDriversMinSpeed, FIELD_FLOAT, "driverminspeed" ),
-	DEFINE_FIELD( m_flMaxSpeed,			FIELD_FLOAT ),
-	DEFINE_FIELD( m_flGoalSpeed,		FIELD_FLOAT ),
-	//DEFINE_KEYFIELD( m_flInitialSpeed,	FIELD_FLOAT ),
-	DEFINE_FIELD( m_flSteering,			FIELD_FLOAT ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetDriversMaxSpeed", InputSetDriversMaxSpeed ),
@@ -67,7 +49,7 @@ BEGIN_DATADESC( CNPC_VehicleDriver )
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopFiring", InputStopFiring ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "GotoPathCorner", InputGotoPathCorner ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( npc_vehicledriver, CNPC_VehicleDriver );
 

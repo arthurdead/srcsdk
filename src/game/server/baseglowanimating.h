@@ -24,7 +24,7 @@ class CBaseGlowAnimating : public CBaseAnimating
 	DECLARE_CLASS( CBaseGlowAnimating, CBaseAnimating );
 public:
 	
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 	DECLARE_PREDICTABLE();
 

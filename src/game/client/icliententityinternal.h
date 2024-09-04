@@ -22,8 +22,7 @@ class ClientClass;
 // represents a handle used only by the client DLL
 //-----------------------------------------------------------------------------
 
-typedef CBaseHandle ClientEntityHandle_t;
-typedef unsigned short SpatialPartitionHandle_t;
+typedef EHANDLE ClientEntityHandle_t;
 
 
 

@@ -31,12 +31,12 @@ private:
 	float	m_flSpeed;
 	int		m_nFOV;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS( env_zoom, CEnvZoom );
 
-BEGIN_DATADESC( CEnvZoom )
+BEGIN_MAPENTITY( CEnvZoom )
 
 	DEFINE_KEYFIELD( m_flSpeed, FIELD_FLOAT, "Rate" ),
 	DEFINE_KEYFIELD( m_nFOV, FIELD_INTEGER, "FOV" ),
@@ -44,7 +44,7 @@ BEGIN_DATADESC( CEnvZoom )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Zoom", InputZoom ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "UnZoom", InputUnZoom ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 bool CanOverrideEnvZoomOwner( CBaseEntity *pZoomOwner )
 {

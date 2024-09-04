@@ -6,11 +6,11 @@
 
 
 #include "cbase.h"
-#include "soundemittersystem/isoundemittersystembase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "ai_responsesystem.h"
 #include "igamesystem.h"
 #include "ai_criteria.h"
-#include <keyvalues.h>
+#include "tier1/KeyValues.h"
 #include "filesystem.h"
 #include "utldict.h"
 #ifdef GAME_DLL
@@ -18,11 +18,9 @@
 #endif
 #include "tier0/icommandline.h"
 #include <ctype.h>
-#include "isaverestore.h"
 #include "utlbuffer.h"
 #include "stringpool.h"
 #include "fmtstr.h"
-#include "multiplay_gamerules.h"
 #include "characterset.h"
 #include "responserules/response_host_interface.h"
 #include "../../responserules/runtime/response_types_internal.h"
@@ -189,31 +187,6 @@ class CResponseRulesToEngineInterface : public ResponseRules::IEngineEmulator
 CResponseRulesToEngineInterface g_ResponseRulesEngineWrapper;
 IEngineEmulator *IEngineEmulator::s_pSingleton = &g_ResponseRulesEngineWrapper;
 
-
-BEGIN_SIMPLE_DATADESC( ParserResponse )
-	// DEFINE_FIELD( type, FIELD_INTEGER ),
-	// DEFINE_ARRAY( value, FIELD_CHARACTER ),
-	// DEFINE_FIELD( weight, FIELD_FLOAT ),
-	DEFINE_FIELD( depletioncount, FIELD_CHARACTER ),
-	// DEFINE_FIELD( first, FIELD_BOOLEAN ),
-	// DEFINE_FIELD( last, FIELD_BOOLEAN ),
-END_DATADESC()
-
-
-BEGIN_SIMPLE_DATADESC( ResponseGroup )
-	// DEFINE_FIELD( group, FIELD_UTLVECTOR ),
-	// DEFINE_FIELD( rp, FIELD_EMBEDDED ),
-	// DEFINE_FIELD( m_bDepleteBeforeRepeat, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_nDepletionCount, FIELD_CHARACTER ),
-	// DEFINE_FIELD( m_bHasFirst, FIELD_BOOLEAN ),
-	// DEFINE_FIELD( m_bHasLast, FIELD_BOOLEAN ),
-	// DEFINE_FIELD( m_bSequential, FIELD_BOOLEAN ),
-	// DEFINE_FIELD( m_bNoRepeat, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_nCurrentIndex, FIELD_CHARACTER ),
-END_DATADESC()
-
-
 /// Add some game-specific code to the basic response system
 /// (eg, the scene precacher, which requires the client and server
 ///  to work)
@@ -313,7 +286,11 @@ void PrecacheInstancedScene( char const *pszScene )
 		}
 	}
 
-	g_pStringTableClientSideChoreoScenes->AddString( CBaseEntity::IsServer(), pszScene );
+#ifdef GAME_DLL
+	g_pStringTableClientSideChoreoScenes->AddString( true, pszScene );
+#else
+	g_pStringTableClientSideChoreoScenes->AddString( false, pszScene );
+#endif
 }
 
 static void TouchFile( char const *pchFileName )
@@ -638,243 +615,6 @@ CON_COMMAND( rr_reloadresponsesystems, "Reload all response system scripts." )
 	defaultresponsesytem.ReloadAllResponseSystems();
 }
 
-static short RESPONSESYSTEM_SAVE_RESTORE_VERSION = 1;
-
-// note:  this won't save/restore settings from instanced response systems.  Could add that with a CDefSaveRestoreOps implementation if needed
-// 
-class CDefaultResponseSystemSaveRestoreBlockHandler : public CDefSaveRestoreBlockHandler
-{
-public:
-	const char *GetBlockName()
-	{
-		return "ResponseSystem";
-	}
-
-	void WriteSaveHeaders( ISave *pSave )
-	{
-		pSave->WriteShort( &RESPONSESYSTEM_SAVE_RESTORE_VERSION );
-	}
-
-	void ReadRestoreHeaders( IRestore *pRestore )
-	{
-		// No reason why any future version shouldn't try to retain backward compatability. The default here is to not do so.
-		short version;
-		pRestore->ReadShort( &version );
-		m_fDoLoad = ( version == RESPONSESYSTEM_SAVE_RESTORE_VERSION );
-	}
-
-	void Save( ISave *pSave )
-	{
-		CDefaultResponseSystem& rs = defaultresponsesytem;
-
-		int count = rs.m_Responses.Count();
-		pSave->WriteInt( &count );
-		for ( int i = 0; i < count; ++i )
-		{
-			pSave->StartBlock( "ResponseGroup" );
-
-			pSave->WriteString( rs.m_Responses.GetElementName( i ) );
-			const ResponseGroup *group = &rs.m_Responses[ i ];
-			pSave->WriteAll( group );
-
-			short groupCount = group->group.Count();
-			pSave->WriteShort( &groupCount );
-			for ( int j = 0; j < groupCount; ++j )
-			{
-				const ParserResponse *response = &group->group[ j ];
-				pSave->StartBlock( "Response" );
-				pSave->WriteString( response->value );
-				pSave->WriteAll( response );
-				pSave->EndBlock();
-			}
-
-			pSave->EndBlock();
-		}
-	}
-
-	void Restore( IRestore *pRestore, bool createPlayers )
-	{
-		if ( !m_fDoLoad )
-			return;
-
-		CDefaultResponseSystem& rs = defaultresponsesytem;
-
-		int count = pRestore->ReadInt();
-		for ( int i = 0; i < count; ++i )
-		{
-			char szResponseGroupBlockName[SIZE_BLOCK_NAME_BUF];
-			pRestore->StartBlock( szResponseGroupBlockName );
-			if ( !Q_stricmp( szResponseGroupBlockName, "ResponseGroup" ) )
-			{
-
-				char groupname[ 256 ];
-				pRestore->ReadString( groupname, sizeof( groupname ), 0 );
-
-				// Try and find it
-				int idx = rs.m_Responses.Find( groupname );
-				if ( idx != rs.m_Responses.InvalidIndex() )
-				{
-					ResponseGroup *group = &rs.m_Responses[ idx ];
-					pRestore->ReadAll( group );
-
-					short groupCount = pRestore->ReadShort();
-					for ( int j = 0; j < groupCount; ++j )
-					{
-						char szResponseBlockName[SIZE_BLOCK_NAME_BUF];
-
-						char responsename[ 256 ];
-						pRestore->StartBlock( szResponseBlockName );
-						if ( !Q_stricmp( szResponseBlockName, "Response" ) )
-						{
-							pRestore->ReadString( responsename, sizeof( responsename ), 0 );
-
-							// Find it by name
-							int ri;
-							for ( ri = 0; ri < group->group.Count(); ++ri )
-							{
-								ParserResponse *response = &group->group[ ri ];
-								if ( !Q_stricmp( response->value, responsename ) )
-								{
-									break;
-								}
-							}
-
-							if ( ri < group->group.Count() )
-							{
-								ParserResponse *response = &group->group[ ri ];
-								pRestore->ReadAll( response );
-							}
-						}
-
-						pRestore->EndBlock();
-					}
-				}
-			}
-
-			pRestore->EndBlock();
-		}
-	}
-private:
-
-	bool		m_fDoLoad;
-
-} g_DefaultResponseSystemSaveRestoreBlockHandler;
-
-ISaveRestoreBlockHandler *GetDefaultResponseSystemSaveRestoreBlockHandler()
-{
-	return &g_DefaultResponseSystemSaveRestoreBlockHandler;
-}
-
-//-----------------------------------------------------------------------------
-// CResponseSystemSaveRestoreOps
-//
-// Purpose: Handles save and load for instanced response systems...
-//
-// BUGBUG:  This will save the same response system to file multiple times for "shared" response systems and 
-//  therefore it'll restore the same data onto the same pointer N times on reload (probably benign for now, but we could
-//  write code to save/restore the instanced ones by filename in the block handler above maybe?
-//-----------------------------------------------------------------------------
-
-class CResponseSystemSaveRestoreOps : public CDefSaveRestoreOps
-{
-public:
-
-	virtual void Save( const SaveRestoreFieldInfo_t &fieldInfo, ISave *pSave )
-	{
-		CResponseSystem *pRS = *(CResponseSystem **)fieldInfo.pField;
-		if ( !pRS || pRS == &defaultresponsesytem )
-			return;
-
-		int count = pRS->m_Responses.Count();
-		pSave->WriteInt( &count );
-		for ( int i = 0; i < count; ++i )
-		{
-			pSave->StartBlock( "ResponseGroup" );
-
-			pSave->WriteString( pRS->m_Responses.GetElementName( i ) );
-			const ResponseGroup *group = &pRS->m_Responses[ i ];
-			pSave->WriteAll( group );
-
-			short groupCount = group->group.Count();
-			pSave->WriteShort( &groupCount );
-			for ( int j = 0; j < groupCount; ++j )
-			{
-				const ParserResponse *response = &group->group[ j ];
-				pSave->StartBlock( "Response" );
-				pSave->WriteString( response->value );
-				pSave->WriteAll( response );
-				pSave->EndBlock();
-			}
-
-			pSave->EndBlock();
-		}
-	}
-
-	virtual void Restore( const SaveRestoreFieldInfo_t &fieldInfo, IRestore *pRestore )
-	{
-		CResponseSystem *pRS = *(CResponseSystem **)fieldInfo.pField;
-		if ( !pRS || pRS == &defaultresponsesytem )
-			return;
-
-		int count = pRestore->ReadInt();
-		for ( int i = 0; i < count; ++i )
-		{
-			char szResponseGroupBlockName[SIZE_BLOCK_NAME_BUF];
-			pRestore->StartBlock( szResponseGroupBlockName );
-			if ( !Q_stricmp( szResponseGroupBlockName, "ResponseGroup" ) )
-			{
-
-				char groupname[ 256 ];
-				pRestore->ReadString( groupname, sizeof( groupname ), 0 );
-
-				// Try and find it
-				int idx = pRS->m_Responses.Find( groupname );
-				if ( idx != pRS->m_Responses.InvalidIndex() )
-				{
-					ResponseGroup *group = &pRS->m_Responses[ idx ];
-					pRestore->ReadAll( group );
-
-					short groupCount = pRestore->ReadShort();
-					for ( int j = 0; j < groupCount; ++j )
-					{
-						char szResponseBlockName[SIZE_BLOCK_NAME_BUF];
-
-						char responsename[ 256 ];
-						pRestore->StartBlock( szResponseBlockName );
-						if ( !Q_stricmp( szResponseBlockName, "Response" ) )
-						{
-							pRestore->ReadString( responsename, sizeof( responsename ), 0 );
-
-							// Find it by name
-							int ri;
-							for ( ri = 0; ri < group->group.Count(); ++ri )
-							{
-								ParserResponse *response = &group->group[ ri ];
-								if ( !Q_stricmp( response->value, responsename ) )
-								{
-									break;
-								}
-							}
-
-							if ( ri < group->group.Count() )
-							{
-								ParserResponse *response = &group->group[ ri ];
-								pRestore->ReadAll( response );
-							}
-						}
-
-						pRestore->EndBlock();
-					}
-				}
-			}
-
-			pRestore->EndBlock();
-		}
-	}
-
-} g_ResponseSystemSaveRestoreOps;
-
-ISaveRestoreOps *responseSystemSaveRestoreOps = &g_ResponseSystemSaveRestoreOps;
 
 //-----------------------------------------------------------------------------
 // Purpose: 

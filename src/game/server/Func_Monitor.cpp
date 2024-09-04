@@ -14,7 +14,7 @@
 
 class CFuncMonitor : public CFuncBrush
 {
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CFuncMonitor, CFuncBrush );
 	DECLARE_SERVERCLASS();
 
@@ -31,14 +31,11 @@ private:
 };
 
 // automatically hooks in the system's callbacks
-BEGIN_DATADESC( CFuncMonitor )
-
-	DEFINE_FIELD( m_hInfoCameraLink, FIELD_EHANDLE ),
-
+BEGIN_MAPENTITY( CFuncMonitor )
 	// Outputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetCamera", InputSetCamera ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( func_monitor, CFuncMonitor );

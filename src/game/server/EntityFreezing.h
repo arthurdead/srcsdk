@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "baseentity.h"
 
 class CEntityFreezing : public CBaseEntity 
 {
@@ -27,7 +28,7 @@ public:
 	int		GetFrozen( void ) { return m_flFrozen; }
 	void	FinishFreezing( void ) { m_bFinishFreezing = true; }
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 protected:
 	void	InputFreeze( inputdata_t &inputdata );

@@ -65,16 +65,6 @@ CON_COMMAND( ai_set_move_height_epsilon, "Set how high AI bumps up ground walker
 }
 
 //-----------------------------------------------------------------------------
-
-BEGIN_SIMPLE_DATADESC(CAI_MoveProbe)
-	//					m_pTraceListData (not saved, a cached item)
-	DEFINE_FIELD( m_bIgnoreTransientEntities,		FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_hLastBlockingEnt,				FIELD_EHANDLE ),
-
-END_DATADESC();
-
-
-//-----------------------------------------------------------------------------
 // Categorizes the blocker and sets the appropriate bits
 //-----------------------------------------------------------------------------
 AIMoveResult_t AIComputeBlockerMoveResult( CBaseEntity *pBlocker )
@@ -93,12 +83,11 @@ bool CAI_MoveProbe::ShouldBrushBeIgnored( CBaseEntity *pEntity )
 	{
 		CFuncBrush *pFuncBrush = assert_cast<CFuncBrush *>(pEntity);
 
+		if ( pFuncBrush->m_iszExcludedClass == NULL_STRING )
+			return false;
+
 		// this is true if my class or entity name matches the exclusion name on the func brush
-#ifdef HL2_EPISODIC
 		bool nameMatches = ( pFuncBrush->m_iszExcludedClass == GetOuter()->m_iClassname ) || GetOuter()->NameMatches(pFuncBrush->m_iszExcludedClass);
-#else	// do not match against entity name in base HL2 (just in case there is some case somewhere that might be broken by this)
-		bool nameMatches = ( pFuncBrush->m_iszExcludedClass == GetOuter()->m_iClassname );
-#endif
 
 		// return true (ignore brush) if the name matches, or, if exclusion is inverted, if the name does not match
 		return ( pFuncBrush->m_bInvertExclusion ? !nameMatches : nameMatches );
@@ -234,6 +223,53 @@ void CAI_MoveProbe::SetupCheckStepTraceListData( const CheckStepArgs_t &args ) c
 //-----------------------------------------------------------------------------
 bool g_bAIDebugStep = false;
 
+//-----------------------------------------------------------------------------
+// Try to step over an obstacle when doing a large crawl
+//-----------------------------------------------------------------------------
+void CAI_MoveProbe::CheckStepOverLargeCrawl( CheckStepResult_t *pResult, 
+	const CheckStepArgs_t &args, const Vector &vecStart, const Vector &vecEnd, const trace_t &blockedTrace ) const
+{
+	trace_t stepTrace, upTrace;
+	Vector vecStepStart = blockedTrace.endpos;
+	Vector vecStepEnd = vecEnd;
+	while ( true )
+	{
+		// First, try to crawl upward.
+		// Trace up to locate the maximum step up in the space
+		Vector vecStepUp( vecStepStart );
+		vecStepUp.z += args.stepHeight;
+		TraceHull( vecStepStart, vecStepUp, args.collisionMask, &upTrace );
+		bool bHitCeiling = ( upTrace.fraction < 1.0f );
+
+		// Advance forward
+		vecStepStart = upTrace.endpos;
+		vecStepEnd.z = vecStepStart.z;
+		TraceHull( vecStepStart, vecStepEnd, args.collisionMask, &stepTrace );
+		if ( stepTrace.fraction == 1.0f )
+		{
+			// It's clear; we're done
+			pResult->bCrawling = true;
+			pResult->endPoint = vecStepEnd;
+			pResult->pBlocker = NULL;
+			pResult->fStartSolid = blockedTrace.startsolid;
+			break;
+		}
+
+		// FIXME: if we hit a func_breakable, we want to ignore it for the purposes of nav
+
+		if ( bHitCeiling || ( stepTrace.startsolid && blockedTrace.startsolid ) )
+		{
+			// Hit the ceiling, or started in solid and never escaped; we're done
+			pResult->bCrawling = false;
+			pResult->endPoint = blockedTrace.endpos;
+			pResult->hitNormal = blockedTrace.plane.normal;
+			pResult->pBlocker = blockedTrace.m_pEnt;
+			pResult->fStartSolid = blockedTrace.startsolid;
+			break;
+		}
+	}
+}
+
 bool CAI_MoveProbe::CheckStep( const CheckStepArgs_t &args, CheckStepResult_t *pResult ) const
 {
 	AI_PROFILE_SCOPE( CAI_MoveProbe_CheckStep );
@@ -246,6 +282,7 @@ bool CAI_MoveProbe::CheckStep( const CheckStepArgs_t &args, CheckStepResult_t *p
 	pResult->fStartSolid = false;
 	pResult->hitNormal = vec3_origin;
 	pResult->pBlocker = NULL;
+	pResult->bCrawling = false;
 
 	// This is fundamentally a 2D operation; we just want the end
 	// position in Z to be no more than a step height from the start position
@@ -266,6 +303,12 @@ bool CAI_MoveProbe::CheckStep( const CheckStepArgs_t &args, CheckStepResult_t *p
 
 	if (trace.startsolid || (trace.fraction < 1))
 	{
+		if ( args.flags & AITGM_CRAWL_LARGE_STEPS )
+		{
+			CheckStepOverLargeCrawl( pResult, args, stepStart, stepEnd, trace );
+			return ( pResult->pBlocker == NULL );
+		}
+
 		// Either the entity is starting embedded in the world, or it hit something.
 		// Raise the box by the step height and try again
 		trace_t stepTrace;
@@ -364,86 +407,113 @@ bool CAI_MoveProbe::CheckStep( const CheckStepArgs_t &args, CheckStepResult_t *p
 
 	AI_PROFILE_SCOPE_END();
 
-	AI_PROFILE_SCOPE_BEGIN( CAI_Motor_CheckStep_Down );
-	// seems okay, now find the ground
-	// The ground is only valid if it's within a step height of the original position
-	Assert( VectorsAreEqual( trace.endpos, stepEnd, 1e-3 ) );
-	stepStart = stepEnd; 
-	stepEnd.z = args.vecStart.z - args.stepHeight * args.stepDownMultiplier - MOVE_HEIGHT_EPSILON;
-
-	TraceHull( stepStart, stepEnd, collisionMask, &trace );
-
-	// in empty space, lie and say we hit the world
-	if (trace.fraction == 1.0f)
+	if ( !pResult->bCrawling )
 	{
-		if ( g_bAIDebugStep )
-			NDebugOverlay::Box( trace.endpos, WorldAlignMins(), WorldAlignMaxs(), 255, 0, 0, 0, 5 );
+		AI_PROFILE_SCOPE_BEGIN( CAI_Motor_CheckStep_Down );
+		// seems okay, now find the ground
+		// The ground is only valid if it's within a step height of the original position
+		Assert( VectorsAreEqual( trace.endpos, stepEnd, 1e-3 ) );
+		stepStart = stepEnd; 
+		stepEnd.z = args.vecStart.z - args.stepHeight * args.stepDownMultiplier - MOVE_HEIGHT_EPSILON;
 
-		Assert( pResult->endPoint == args.vecStart );
-		if ( const_cast<CAI_MoveProbe *>(this)->GetOuter()->GetGroundEntity() )
+		TraceHull( stepStart, stepEnd, collisionMask, &trace );
+
+		if ( (args.flags & AITGM_CRAWL_LARGE_STEPS) && trace.fraction >= 1.0f )
 		{
-			pResult->pBlocker = const_cast<CAI_MoveProbe *>(this)->GetOuter()->GetGroundEntity();
+			// Now move backward... since we're crawling we don't need to test for the floor
+			trace_t stepTrace;
+
+			stepStart = trace.endpos;
+			stepEnd = args.vecStart;
+		
+			stepEnd.z = stepStart.z;
+
+			TraceHull( stepStart, stepEnd, collisionMask, &stepTrace );
+
+			trace.endpos = stepTrace.endpos;
+
+			pResult->bCrawling = true;
 		}
-		else
+
+		// If we're not crawling we can't allow stepping into empty space
+		if ( !(args.flags & AITGM_CRAWL_LARGE_STEPS) )
 		{
-			pResult->pBlocker = GetContainingEntity( INDEXENT(0) );
-		}
-		return false;
-	}
+			// in empty space, lie and say we hit the world
+			if (trace.fraction == 1.0f)
+			{
+				if ( g_bAIDebugStep )
+					NDebugOverlay::Box( trace.endpos, WorldAlignMins(), WorldAlignMaxs(), 255, 0, 0, 0, 5 );
 
-	if ( g_bAIDebugStep )
-		NDebugOverlay::Box( trace.endpos, WorldAlignMins(), WorldAlignMaxs(), 160, 160, 160, 0, 5 );
-
-	AI_PROFILE_SCOPE_END();
-
-	// Checks to see if the thing we're on is a *type* of thing we
-	// are capable of standing on. Always true ffor our current ground ent
-	// otherwise we'll be stuck forever
-	CBaseEntity *pFloor = trace.m_pEnt;
-	if ( pFloor != GetOuter()->GetGroundEntity() && !CanStandOn( pFloor ) )
-	{
-		if ( g_bAIDebugStep )
-			NDebugOverlay::Cross3D( trace.endpos, 32, 255, 0, 0, true, 5 );
-
-		Assert( pResult->endPoint == args.vecStart );
-		pResult->pBlocker = pFloor;
-		return false;
-	}
-
-	// Don't step up onto an odd slope
-	if ( trace.endpos.z - args.vecStart.z > args.stepHeight * 0.5 &&
-		 ( ( pFloor->IsWorld() && trace.hitbox > 0 ) ||
-		   dynamic_cast<CPhysicsProp *>( pFloor ) ) )
-	{
-		if ( fabsf( trace.plane.normal.Dot( Vector(1, 0, 0) ) ) > .4 )
-		{
-			Assert( pResult->endPoint == args.vecStart );
-			pResult->pBlocker = pFloor;
+				Assert( pResult->endPoint == args.vecStart );
+				if ( const_cast<CAI_MoveProbe *>(this)->GetOuter()->GetGroundEntity() )
+				{
+					pResult->pBlocker = const_cast<CAI_MoveProbe *>(this)->GetOuter()->GetGroundEntity();
+				}
+				else
+				{
+					pResult->pBlocker = GetContainingEntity( INDEXENT(0) );
+				}
+				return false;
+			}
 
 			if ( g_bAIDebugStep )
-				NDebugOverlay::Cross3D( trace.endpos, 32, 0, 0, 255, true, 5 );
-			return false;
+				NDebugOverlay::Box( trace.endpos, WorldAlignMins(), WorldAlignMaxs(), 160, 160, 160, 0, 5 );
 		}
-	}
 
-	if (args.groundTest != STEP_DONT_CHECK_GROUND)
-	{
-		AI_PROFILE_SCOPE( CAI_Motor_CheckStep_Stand );
-		// Next, check to see if we can *geometrically* stand on the floor
-		bool bIsFloorFlat = CheckStandPosition( trace.endpos, collisionMask );
-		if (args.groundTest != STEP_ON_INVALID_GROUND && !bIsFloorFlat)
+		AI_PROFILE_SCOPE_END();
+
+		if ( !(args.flags & AITGM_CRAWL_LARGE_STEPS) )
 		{
-			pResult->pBlocker = pFloor;
+			// Checks to see if the thing we're on is a *type* of thing we
+			// are capable of standing on. Always true ffor our current ground ent
+			// otherwise we'll be stuck forever
+			CBaseEntity *pFloor = trace.m_pEnt;
+			if ( pFloor != GetOuter()->GetGroundEntity() && !CanStandOn( pFloor ) )
+			{
+				if ( g_bAIDebugStep )
+					NDebugOverlay::Cross3D( trace.endpos, 32, 255, 0, 0, true, 5 );
 
-			if ( g_bAIDebugStep )
-				NDebugOverlay::Cross3D( trace.endpos, 32, 255, 0, 255, true, 5 );
-			return false;
+				Assert( pResult->endPoint == args.vecStart );
+				pResult->pBlocker = pFloor;
+				return false;
+			}
+
+			// Don't step up onto an odd slope
+			if ( trace.endpos.z - args.vecStart.z > args.stepHeight * 0.5 &&
+				 ( ( pFloor->IsWorld() && trace.hitbox > 0 ) ||
+				   dynamic_cast<CPhysicsProp *>( pFloor ) ) )
+			{
+				if ( fabsf( trace.plane.normal.Dot( Vector(1, 0, 0) ) ) > .4 )
+				{
+					Assert( pResult->endPoint == args.vecStart );
+					pResult->pBlocker = pFloor;
+
+					if ( g_bAIDebugStep )
+						NDebugOverlay::Cross3D( trace.endpos, 32, 0, 0, 255, true, 5 );
+					return false;
+				}
+			}
+
+			if (args.groundTest != STEP_DONT_CHECK_GROUND)
+			{
+				AI_PROFILE_SCOPE( CAI_Motor_CheckStep_Stand );
+				// Next, check to see if we can *geometrically* stand on the floor
+				bool bIsFloorFlat = CheckStandPosition( trace.endpos, collisionMask );
+				if (args.groundTest != STEP_ON_INVALID_GROUND && !bIsFloorFlat)
+				{
+					pResult->pBlocker = pFloor;
+
+					if ( g_bAIDebugStep )
+						NDebugOverlay::Cross3D( trace.endpos, 32, 255, 0, 255, true, 5 );
+					return false;
+				}
+				// If we started on shaky ground (namely, it's not geometrically ok),
+				// then we can continue going even if we remain on shaky ground.
+				// This allows NPCs who have been blown into an invalid area to get out
+				// of that invalid area and into a valid area. As soon as we're in
+				// a valid area, though, we're not allowed to leave it.
+			}
 		}
-		// If we started on shaky ground (namely, it's not geometrically ok),
-		// then we can continue going even if we remain on shaky ground.
-		// This allows NPCs who have been blown into an invalid area to get out
-		// of that invalid area and into a valid area. As soon as we're in
-		// a valid area, though, we're not allowed to leave it.
 	}
 
 	// Return a point that is *on the ground*
@@ -456,6 +526,40 @@ bool CAI_MoveProbe::CheckStep( const CheckStepArgs_t &args, CheckStepResult_t *p
 
 	return ( pResult->pBlocker == NULL ); // totally clear if pBlocker is NULL, partial blockage otherwise
 }
+
+//-----------------------------------------------------------------------------
+// Confirm 3D connectivity between 2 nodes
+//-----------------------------------------------------------------------------
+bool CAI_MoveProbe::Confirm3DConnectivity( AIMoveTrace_t *pMoveTrace, unsigned flags, const Vector &vecDesiredEnd )	const
+{
+	// FIXME: If you started on a ledge and ended on a ledge, 
+	// should it return an error condition (that you hit the world)?
+	// Certainly not for Step(), but maybe for GroundMoveLimit()?
+
+	// Make sure we actually made it to the target position 
+	// and not a ledge above or below the target.
+	if ( flags & AITGM_2D )
+		return true;
+
+	float threshold = MAX( 0.5f * GetHullHeight(), StepHeight() + 0.1 );
+	if ( fabs( pMoveTrace->vEndPosition.z - vecDesiredEnd.z ) > threshold )
+	{
+#if 0
+		NDebugOverlay::Cross3D( vecDesiredEnd, 8, 0, 255, 0, false, 0.1 );
+		NDebugOverlay::Cross3D( pMoveTrace->vEndPosition, 8, 255, 0, 0, false, 0.1 );
+#endif
+		// Ok, we ended up on a ledge above or below the desired destination
+		pMoveTrace->pObstruction = GetContainingEntity( INDEXENT(0) );
+		pMoveTrace->vHitNormal	 = vec3_origin;
+		pMoveTrace->fStatus = AIMR_BLOCKED_WORLD;
+		pMoveTrace->flDistObstructed = ComputePathDistance( NAV_GROUND, pMoveTrace->vEndPosition, vecDesiredEnd );
+		return false;
+	}
+
+	return true;
+}
+
+
 
 //-----------------------------------------------------------------------------
 // Checks a ground-based movement
@@ -482,7 +586,7 @@ bool CAI_MoveProbe::TestGroundMove( const Vector &vecActualStart, const Vector &
 	pMoveTrace->flTotalDist = ComputePathDirection( NAV_GROUND, vecActualStart, vecDesiredEnd, &vecMoveDir );
 	if (pMoveTrace->flTotalDist == 0.0f)
 	{
-		return true;
+		return Confirm3DConnectivity( pMoveTrace, flags, vecDesiredEnd );
 	}
 	
 	// If it starts hanging over an edge, tough it out until it's not
@@ -524,6 +628,7 @@ bool CAI_MoveProbe::TestGroundMove( const Vector &vecActualStart, const Vector &
 	checkStepArgs.minStepLanding		= GetHullWidth() * 0.3333333;
 	checkStepArgs.collisionMask			= collisionMask;
 	checkStepArgs.groundTest			= groundTest;
+	checkStepArgs.flags					= flags;
 
 	checkStepResult.endPoint = vecActualStart;
 	checkStepResult.hitNormal = vec3_origin;
@@ -607,6 +712,13 @@ bool CAI_MoveProbe::TestGroundMove( const Vector &vecActualStart, const Vector &
 		if ( checkStepResult.pBlocker )
 		{
 			distClear += ( checkStepResult.endPoint - checkStepArgs.vecStart ).Length2D();
+
+			if ( checkStepResult.bCrawling )
+			{
+				// Weren't not really blocked when crawling up, but need to do it in steps
+				checkStepResult.pBlocker = NULL;
+			}
+
 			break;
 		}
 		
@@ -643,31 +755,7 @@ bool CAI_MoveProbe::TestGroundMove( const Vector &vecActualStart, const Vector &
 		return false;
 	}
 
-	// FIXME: If you started on a ledge and ended on a ledge, 
-	// should it return an error condition (that you hit the world)?
-	// Certainly not for Step(), but maybe for GroundMoveLimit()?
-	
-	// Make sure we actually made it to the target position 
-	// and not a ledge above or below the target.
-	if (!(flags & AITGM_2D))
-	{
-		float threshold = MAX(  0.5f * GetHullHeight(), StepHeight() + 0.1 );
-		if (fabs(pMoveTrace->vEndPosition.z - vecDesiredEnd.z) > threshold)
-		{
-#if 0
-			NDebugOverlay::Cross3D( vecDesiredEnd, 8, 0, 255, 0, false, 0.1 );
-			NDebugOverlay::Cross3D( pMoveTrace->vEndPosition, 8, 255, 0, 0, false, 0.1 );
-#endif
-			// Ok, we ended up on a ledge above or below the desired destination
-			pMoveTrace->pObstruction = GetContainingEntity( INDEXENT(0) );
-			pMoveTrace->vHitNormal	 = vec3_origin;
-			pMoveTrace->fStatus = AIMR_BLOCKED_WORLD;
-			pMoveTrace->flDistObstructed = ComputePathDistance( NAV_GROUND, pMoveTrace->vEndPosition, vecDesiredEnd );
-			return false;
-		}
-	}
-
-	return true;
+	return Confirm3DConnectivity( pMoveTrace, flags, vecDesiredEnd );
 }
 
 //-----------------------------------------------------------------------------
@@ -853,6 +941,13 @@ void CAI_MoveProbe::JumpMoveLimit( const Vector &vecStart, const Vector &vecEnd,
 	// initial jump, sets baseline for minJumpHeight
 	Vector vecApex;
 	Vector rawJumpVel = CalcJumpLaunchVelocity(vecFrom, vecTo, gravity.z, &minJumpHeight, maxHorzVel, &vecApex );
+
+	float flNPCMinJumpHeight = GetOuter()->GetMinJumpHeight();
+	if ( flNPCMinJumpHeight && minJumpHeight < flNPCMinJumpHeight )
+	{
+		minJumpHeight = flNPCMinJumpHeight;
+	}
+
 	float baselineJumpHeight = minJumpHeight;
 
 	// FIXME: this is a binary search, which really isn't the right thing to do.  If there's a gap 
@@ -972,7 +1067,7 @@ void CAI_MoveProbe::ClimbMoveLimit( const Vector &vecStart, const Vector &vecEnd
 	const CBaseEntity *pTarget, AIMoveTrace_t *pMoveTrace ) const
 {
 	trace_t tr;
-	TraceHull( vecStart, vecEnd, MASK_NPCSOLID, &tr );
+	TraceHull( vecStart, vecEnd, GetOuter()->GetAITraceMask(), &tr );
 
 	if (tr.fraction < 1.0)
 	{
@@ -1022,6 +1117,7 @@ bool CAI_MoveProbe::MoveLimit( Navigation_t navType, const Vector &vecStart,
 
 	switch (navType)
 	{
+	case NAV_CRAWL:
 	case NAV_GROUND:	
 	{
 		unsigned testGroundMoveFlags = AITGM_DEFAULT;
@@ -1042,6 +1138,11 @@ bool CAI_MoveProbe::MoveLimit( Navigation_t navType, const Vector &vecStart,
 			trace_t tr;
 			TraceLine(const_cast<CAI_MoveProbe *>(this)->GetOuter()->EyePosition(), vecEnd, collisionMask, true, &tr);
 			bDoIt = ( tr.fraction > 0.99 );
+		}
+
+		if ( navType == NAV_CRAWL )
+		{
+			testGroundMoveFlags |= AITGM_CRAWL_LARGE_STEPS;
 		}
 
 		if ( bDoIt  )

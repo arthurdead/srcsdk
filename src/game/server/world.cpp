@@ -14,7 +14,6 @@
 #include "gamerules.h"
 #include "teamplay_gamerules.h"
 #include "physics.h"
-#include "isaverestore.h"
 #include "activitylist.h"
 #include "eventlist.h"
 #include "eventqueue.h"
@@ -45,6 +44,103 @@ extern void W_Precache(void);
 extern void ActivityList_Free( void );
 extern CUtlMemoryPool g_EntityListPool;
 
+#if !defined( CLIENT_DLL )
+#define SF_GAME_EVENT_PROXY_AUTO_VISIBILITY		1
+
+//=========================================================
+// Allows level designers to generate certain game events 
+// from entity i/o.
+//=========================================================
+class CInfoGameEventProxy : public CPointEntity
+{
+private:
+	string_t	m_iszEventName;
+	float		m_flRange;
+
+public:
+	DECLARE_CLASS( CInfoGameEventProxy, CPointEntity );
+
+	void Spawn();
+	int UpdateTransmitState();
+	void InputGenerateGameEvent( inputdata_t &inputdata );
+
+	static bool GameEventProxyCallback( CBaseEntity *pProxy, CBasePlayer *pViewingPlayer );
+
+	DECLARE_MAPENTITY();
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CInfoGameEventProxy::Spawn()
+{
+	BaseClass::Spawn();
+
+	m_flRange *= 12.0f; // Convert feet to inches
+
+	if( GetSpawnFlags() & SF_GAME_EVENT_PROXY_AUTO_VISIBILITY )
+	{
+		VisibilityMonitor_AddEntity( this, m_flRange, &CInfoGameEventProxy::GameEventProxyCallback, NULL );
+	}
+
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Always transmitted to clients
+//-----------------------------------------------------------------------------
+int CInfoGameEventProxy::UpdateTransmitState()
+{
+	return SetTransmitState( FL_EDICT_ALWAYS );
+}
+
+//---------------------------------------------------------
+//---------------------------------------------------------
+void CInfoGameEventProxy::InputGenerateGameEvent( inputdata_t &inputdata )
+{
+	CBasePlayer *pActivator = ToBasePlayer( inputdata.pActivator );
+
+	IGameEvent *event = gameeventmanager->CreateEvent( m_iszEventName.ToCStr() );
+	if ( event )
+	{
+		if ( pActivator )
+		{
+			event->SetInt( "userid", pActivator->GetUserID() );
+		}
+		event->SetInt( "subject", entindex() );
+		gameeventmanager->FireEvent( event );
+	}
+}
+
+//---------------------------------------------------------
+// Callback for the visibility monitor.
+//---------------------------------------------------------
+bool CInfoGameEventProxy::GameEventProxyCallback( CBaseEntity *pProxy, CBasePlayer *pViewingPlayer )
+{
+	CInfoGameEventProxy *pProxyPtr = dynamic_cast <CInfoGameEventProxy *>(pProxy);
+
+	if( !pProxyPtr )
+		return true;
+
+	IGameEvent * event = gameeventmanager->CreateEvent( pProxyPtr->m_iszEventName.ToCStr() );
+	if ( event )
+	{
+		event->SetInt( "userid", pViewingPlayer->GetUserID() );
+		event->SetInt( "subject", pProxyPtr->entindex() );
+		gameeventmanager->FireEvent( event );
+	}
+
+	return false;
+}
+
+
+LINK_ENTITY_TO_CLASS( info_game_event_proxy, CInfoGameEventProxy );
+
+BEGIN_MAPENTITY( CInfoGameEventProxy )
+	DEFINE_KEYFIELD( m_iszEventName, FIELD_STRING, "event_name" ),
+	DEFINE_KEYFIELD( m_flRange, FIELD_FLOAT, "range" ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "GenerateGameEvent", InputGenerateGameEvent ),
+END_MAPENTITY()
+#endif
+
 #define SF_DECAL_NOTINDEATHMATCH		2048
 
 class CDecal : public CPointEntity
@@ -63,29 +159,29 @@ public:
 	// Input handlers.
 	void	InputActivate( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	CBaseEntity *GetDecalEntityAndPosition( Vector *pPosition, bool bStatic );
+
+
+	DECLARE_MAPENTITY();
 
 public:
 	int		m_nTexture;
 	bool	m_bLowPriority;
+	string_t m_entityName;
 
 private:
 
 	void	StaticDecal( void );
 };
 
-BEGIN_DATADESC( CDecal )
+BEGIN_MAPENTITY( CDecal )
 
-	DEFINE_FIELD( m_nTexture, FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_bLowPriority, FIELD_BOOLEAN, "LowPriority" ), // Don't mark as FDECAL_PERMANENT so not save/restored and will be reused on the client preferentially
-
-	// Function pointers
-	DEFINE_FUNCTION( StaticDecal ),
-	DEFINE_FUNCTION( TriggerDecal ),
+	DEFINE_KEYFIELD( m_entityName, FIELD_STRING, "ApplyEntity" ), // Force apply to this entity instead of tracing
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( infodecal, CDecal );
 
@@ -116,6 +212,46 @@ void CDecal::Activate()
 	}
 }
 
+class CTraceFilterValidForDecal : public CTraceFilterSimple
+{
+public:
+	CTraceFilterValidForDecal(const IHandleEntity *passentity, int collisionGroup )
+	 :	CTraceFilterSimple( passentity, collisionGroup )
+	{
+	}
+
+	virtual bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
+	{
+		static const char *ppszIgnoredClasses[] = 
+		{
+			"weapon_*",
+			"item_*",
+			"prop_ragdoll",
+			"prop_dynamic",
+			"prop_static",
+			"prop_physics",
+			"npc_bullseye",  // Tracker 15335
+		};
+
+		CBaseEntity *pEntity = EntityFromEntityHandle( pServerEntity );
+
+		// Tracker 15335:  Never impact decals against entities which are not rendering, either.
+		if ( pEntity->IsEffectActive( EF_NODRAW ) )
+			return false;
+
+		for ( int i = 0; i < ARRAYSIZE(ppszIgnoredClasses); i++ )
+		{
+			if ( pEntity->ClassMatches( ppszIgnoredClasses[i] ) )
+				return false;
+		}
+
+		if ( modelinfo->GetModelType( pEntity->GetModel() ) != mod_brush )
+			return false;
+
+		return CTraceFilterSimple::ShouldHitEntity( pServerEntity, contentsMask );
+	}
+};
+
 void CDecal::TriggerDecal ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
 	// this is set up as a USE function for info_decals that have targetnames, so that the
@@ -123,14 +259,13 @@ void CDecal::TriggerDecal ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_T
 	trace_t		trace;
 	int			entityIndex;
 
-	UTIL_TraceLine( GetAbsOrigin() - Vector(5,5,5), GetAbsOrigin() + Vector(5,5,5), MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &trace );
-
-	entityIndex = trace.m_pEnt ? trace.m_pEnt->entindex() : 0;
+	Vector position;
+	CBaseEntity *pEntity = GetDecalEntityAndPosition(&position, false);
+	entityIndex = pEntity ? pEntity->entindex() : 0;
 
 	CBroadcastRecipientFilter filter;
 
-	te->BSPDecal( filter, 0.0, 
-		&GetAbsOrigin(), entityIndex, m_nTexture );
+	te->BSPDecal( filter, 0.0, &position, entityIndex, m_nTexture );
 
 	SetThink( &CDecal::SUB_Remove );
 	SetNextThink( gpGlobals->curtime + 0.1f );
@@ -145,79 +280,67 @@ void CDecal::InputActivate( inputdata_t &inputdata )
 
 void CDecal::StaticDecal( void )
 {
-	class CTraceFilterValidForDecal : public CTraceFilterSimple
+	Vector position;
+	CBaseEntity *pEntity = GetDecalEntityAndPosition(&position, true);
+	int entityIndex = 0;
+	int modelIndex = 0;
+
+	if ( pEntity )
 	{
-	public:
-		CTraceFilterValidForDecal(const IHandleEntity *passentity, int collisionGroup )
-		 :	CTraceFilterSimple( passentity, collisionGroup )
-		{
-		}
-
-		virtual bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
-		{
-			static const char *ppszIgnoredClasses[] = 
-			{
-				"weapon_*",
-				"item_*",
-				"prop_ragdoll",
-				"prop_dynamic",
-				"prop_static",
-				"prop_physics",
-				"npc_bullseye",  // Tracker 15335
-			};
-
-			CBaseEntity *pEntity = EntityFromEntityHandle( pServerEntity );
-
-			// Tracker 15335:  Never impact decals against entities which are not rendering, either.
-			if ( pEntity->IsEffectActive( EF_NODRAW ) )
-				return false;
-
-			for ( int i = 0; i < ARRAYSIZE(ppszIgnoredClasses); i++ )
-			{
-				if ( pEntity->ClassMatches( ppszIgnoredClasses[i] ) )
-					return false;
-			}
-
-
-			return CTraceFilterSimple::ShouldHitEntity( pServerEntity, contentsMask );
-		}
-	};
-
-	trace_t trace;
-	CTraceFilterValidForDecal traceFilter( this, COLLISION_GROUP_NONE );
-	int entityIndex, modelIndex = 0;
-
-	Vector position = GetAbsOrigin();
-	UTIL_TraceLine( position - Vector(5,5,5), position + Vector(5,5,5),  MASK_SOLID, &traceFilter, &trace );
-
-	bool canDraw = true;
-
-	entityIndex = trace.m_pEnt ? (short)trace.m_pEnt->entindex() : 0;
-	if ( entityIndex )
+		entityIndex = pEntity->entindex();
+		modelIndex = pEntity->GetModelIndex();
+		Vector worldspace = position;
+		VectorITransform( worldspace, pEntity->EntityToWorldTransform(), position );
+	}
+	else
 	{
-		CBaseEntity *ent = trace.m_pEnt;
-		if ( ent )
-		{
-			modelIndex = ent->GetModelIndex();
-			VectorITransform( GetAbsOrigin(), ent->EntityToWorldTransform(), position );
-
-			canDraw = ( modelIndex != 0 );
-			if ( !canDraw )
-			{
-				Warning( "Suppressed StaticDecal which would have hit entity %i (class:%s, name:%s) with modelindex = 0\n",
-					ent->entindex(),
-					ent->GetClassname(),
-					STRING( ent->GetEntityName() ) );
-			}
-		}
+		position = GetAbsOrigin();
 	}
 
-	if ( canDraw )
-	{
-		engine->StaticDecal( position, m_nTexture, entityIndex, modelIndex, m_bLowPriority );
-	}
+	engine->StaticDecal( position, m_nTexture, entityIndex, modelIndex, m_bLowPriority );
 
 	SUB_Remove();
+}
+
+CBaseEntity *CDecal::GetDecalEntityAndPosition( Vector *pPosition, bool bStatic )
+{
+	CBaseEntity *pEntity = NULL;
+	if ( !m_entityName )
+	{
+		trace_t trace;
+		Vector start = GetAbsOrigin();
+		Vector direction(1,1,1);
+		if ( GetAbsAngles() == vec3_angle )
+		{
+			start -= direction * 5;
+		}
+		else
+		{
+			GetVectors( &direction, NULL, NULL );
+		}
+		Vector end = start + direction * 10;
+		if ( bStatic )
+		{
+			CTraceFilterValidForDecal traceFilter( this, COLLISION_GROUP_NONE );
+			UTIL_TraceLine( start, end, MASK_SOLID, &traceFilter, &trace );
+		}
+		else
+		{
+			UTIL_TraceLine( start, end, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &trace );
+		}
+		if ( trace.DidHitNonWorldEntity() )
+		{
+			*pPosition = trace.endpos;
+			return trace.m_pEnt;
+		}
+	}
+	else
+	{
+		pEntity = gEntList.FindEntityByName( NULL, m_entityName );
+	}
+
+	*pPosition = GetAbsOrigin();
+	return pEntity;
 }
 
 
@@ -260,7 +383,7 @@ public:
 	// Input handlers.
 	void	InputActivate( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 	int		m_nTexture;
@@ -272,19 +395,13 @@ private:
 	void	StaticDecal( void );
 };
 
-BEGIN_DATADESC( CProjectedDecal )
-
-	DEFINE_FIELD( m_nTexture, FIELD_INTEGER ),
+BEGIN_MAPENTITY( CProjectedDecal )
 
 	DEFINE_KEYFIELD( m_flDistance, FIELD_FLOAT, "Distance" ),
 
-	// Function pointers
-	DEFINE_FUNCTION( StaticDecal ),
-	DEFINE_FUNCTION( TriggerDecal ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( info_projecteddecal, CProjectedDecal );
 
@@ -374,16 +491,12 @@ bool CProjectedDecal::KeyValue( const char *szKeyName, const char *szValue )
 //=======================
 LINK_ENTITY_TO_CLASS( worldspawn, CWorld );
 
-BEGIN_DATADESC( CWorld )
-
-	DEFINE_FIELD( m_flWaveHeight, FIELD_FLOAT ),
+BEGIN_MAPENTITY( CWorld )
 
 	// keyvalues are parsed from map, but not saved/loaded
 	DEFINE_KEYFIELD( m_iszChapterTitle, FIELD_STRING, "chaptertitle" ),
 	DEFINE_KEYFIELD( m_bStartDark,		FIELD_BOOLEAN, "startdark" ),
 	DEFINE_KEYFIELD( m_bDisplayTitle,	FIELD_BOOLEAN, "gametitle" ),
-	DEFINE_FIELD( m_WorldMins, FIELD_VECTOR ),
-	DEFINE_FIELD( m_WorldMaxs, FIELD_VECTOR ),
 
 	DEFINE_KEYFIELD( m_flMaxOccludeeArea, FIELD_FLOAT, "maxoccludeearea" ),
 	DEFINE_KEYFIELD( m_flMinOccluderArea, FIELD_FLOAT, "minoccluderarea" ),
@@ -393,7 +506,7 @@ BEGIN_DATADESC( CWorld )
 	DEFINE_KEYFIELD( m_iszDetailSpriteMaterial, FIELD_STRING, "detailmaterial" ),
 	DEFINE_KEYFIELD( m_bColdWorld,		FIELD_BOOLEAN, "coldworld" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 // SendTable stuff.
@@ -442,6 +555,10 @@ bool CWorld::KeyValue( const char *szKeyName, const char *szValue )
 		sscanf(	szValue, "%f %f %f", &vec.x, &vec.y, &vec.z ); 
 		m_WorldMaxs = vec;
 	}
+	else if ( FStrEq(szKeyName, "timeofday" ) )
+	{
+		SetTimeOfDay( atoi( szValue ) );
+	}
 	else
 		return BaseClass::KeyValue( szKeyName, szValue );
 
@@ -450,7 +567,7 @@ bool CWorld::KeyValue( const char *szKeyName, const char *szValue )
 
 
 extern bool		g_fGameOver;
-static CWorld *g_WorldEntity = NULL;
+CWorld *g_WorldEntity = NULL;
 
 CWorld* GetWorldEntity()
 {
@@ -468,10 +585,19 @@ CWorld::CWorld( )
 	SetMoveType( MOVETYPE_NONE );
 
 	m_bColdWorld = false;
+
+	// Set this in the constructor for legacy maps (sjb)
+	m_iTimeOfDay = TIME_MIDNIGHT;
 }
 
 CWorld::~CWorld( )
 {
+	// If in edit mode tell Hammer I'm ending my session. This re-enables
+	// the Hammer UI so they can continue editing the map.
+#ifdef _WIN32
+	Editor_EndSession(false);
+#endif
+
 	EventList_Free();
 	ActivityList_Free();
 	if ( g_pGameRules )
@@ -529,8 +655,6 @@ void CWorld::Spawn( void )
 
 	g_EventQueue.Init();
 	Precache( );
-	GlobalEntity_Add( "is_console", STRING(gpGlobals->mapname), ( IsConsole() ) ? GLOBAL_ON : GLOBAL_OFF );
-	GlobalEntity_Add( "is_pc", STRING(gpGlobals->mapname), ( !IsConsole() ) ? GLOBAL_ON : GLOBAL_OFF );
 }
 
 static const char *g_DefaultLightstyles[] =
@@ -577,9 +701,12 @@ const char *GetDefaultLightstyleString( int styleIndex )
 
 void CWorld::Precache( void )
 {
+	COM_TimestampedLog( "CWorld::Precache - Start" );
+
 	g_WorldEntity = this;
 	g_fGameOver = false;
 	g_pLastSpawn = NULL;
+	g_Language.SetValue( LANGUAGE_ENGLISH );	// TODO use VGUI to get current language
 
 	ConVarRef stepsize( "sv_stepsize" );
 	stepsize.SetValue( 18 );
@@ -602,8 +729,11 @@ void CWorld::Precache( void )
 
 	// Only allow precaching between LevelInitPreEntity and PostEntity
 	CBaseEntity::SetAllowPrecache( true );
+
+	COM_TimestampedLog( "IGameSystem::LevelInitPreEntityAllSystems" );
 	IGameSystem::LevelInitPreEntityAllSystems( STRING( GetModelName() ) );
 
+	COM_TimestampedLog( "g_pGameRules->CreateStandardEntities()" );
 	// Create the player resource
 	g_pGameRules->CreateStandardEntities();
 
@@ -617,41 +747,35 @@ void CWorld::Precache( void )
 	EventList_Free();
 	RegisterSharedEvents();
 
+	COM_TimestampedLog( "InitBodyQue()" );
 	InitBodyQue();
 // init sentence group playback stuff from sentences.txt.
 // ok to call this multiple times, calls after first are ignored.
 
+	COM_TimestampedLog( "SENTENCEG_Init()" );
 	SENTENCEG_Init();
 
+	COM_TimestampedLog( "PrecacheStandardParticleSystems()" );
 	// Precache standard particle systems
 	PrecacheStandardParticleSystems( );
 
 // the area based ambient sounds MUST be the first precache_sounds
 
+	COM_TimestampedLog( "W_Precache()" );
 // player precaches     
 	W_Precache ();									// get weapon precaches
+	
+	COM_TimestampedLog( "ClientPrecache()" );
 	ClientPrecache();
-	g_pGameRules->Precache();
+
+	COM_TimestampedLog( "PrecacheTempEnts()" );
 	// precache all temp ent stuff
 	CBaseTempEntity::PrecacheTempEnts();
-
-	g_Language.SetValue( LANGUAGE_ENGLISH );	// TODO use VGUI to get current language
-
-	if ( g_Language.GetInt() == LANGUAGE_GERMAN )
-	{
-		PrecacheModel( "models/germangibs.mdl" );
-	}
-	else
-	{
-		PrecacheModel( "models/gibs/hgibs.mdl" );
-	}
-
-	PrecacheScriptSound( "BaseEntity.EnterWater" );
-	PrecacheScriptSound( "BaseEntity.ExitWater" );
 
 //
 // Setup light animation tables. 'a' is total darkness, 'z' is maxbright.
 //
+	COM_TimestampedLog( "LightStyles" );
 	for ( int i = 0; i < ARRAYSIZE(g_DefaultLightstyles); i++ )
 	{
 		engine->LightStyle( i, GetDefaultLightstyleString(i) );
@@ -671,12 +795,16 @@ void CWorld::Precache( void )
 	// =================================================
 	//	Load and Init AI Schedules
 	// =================================================
+	COM_TimestampedLog( "LoadAllSchedules" );
 	g_AI_SchedulesManager.LoadAllSchedules();
 	// =================================================
 	//	Initialize NPC Relationships
 	// =================================================
 	g_pGameRules->InitDefaultAIRelationships();
 	CBaseCombatCharacter::InitInteractionSystem();
+
+	COM_TimestampedLog( "g_pGameRules->Precache" );
+	g_pGameRules->Precache();
 
 	// Call all registered precachers.
 	CPrecacheRegister::Precache();	
@@ -698,6 +826,20 @@ void CWorld::Precache( void )
 	}
 
 	g_iszFuncBrushClassname = AllocPooledString("func_brush");
+
+	if ( m_iszDetailSpriteMaterial.Get() != NULL_STRING )
+	{
+		PrecacheMaterial( STRING( m_iszDetailSpriteMaterial.Get() ) );
+	}
+
+	COM_TimestampedLog( "CWorld::Precache - Finish" );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CWorld::UpdateOnRemove( void )
+{
+	BaseClass::UpdateOnRemove();
 }
 
 //-----------------------------------------------------------------------------
@@ -733,4 +875,14 @@ void CWorld::SetStartDark( bool startdark )
 bool CWorld::IsColdWorld( void )
 {
 	return m_bColdWorld;
+}
+
+int CWorld::GetTimeOfDay() const
+{
+	return m_iTimeOfDay;
+}
+
+void CWorld::SetTimeOfDay( int iTimeOfDay )
+{
+	m_iTimeOfDay = iTimeOfDay;
 }

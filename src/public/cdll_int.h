@@ -19,6 +19,7 @@
 #include "modes.h"
 #include "string_t.h"
 #include "toolframework/itoolentity.h"
+#include "vgui/VGUI.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -62,13 +63,6 @@ class IDemoRecorder;
 struct AudioState_t;
 class IMaterialProxy;
 struct InputEvent_t;
-
-namespace vgui
-{
-	// handle to an internal vgui panel
-	// this is the only handle to a panel that is valid across dll boundaries
-	typedef unsigned int VPANEL;
-}
 
 typedef void * XUSER_CONTEXT;
 typedef void * XUSER_PROPERTY;

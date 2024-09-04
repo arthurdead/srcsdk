@@ -30,7 +30,7 @@ class CColorCorrection : public CBaseEntity
 	DECLARE_CLASS( CColorCorrection, CBaseEntity );
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CColorCorrection();
 
@@ -106,7 +106,7 @@ public:
 	virtual void LevelInitPreEntity();
 	virtual void LevelInitPostEntity();
 	virtual void FireGameEvent( IGameEvent *pEvent );
-	CColorCorrection *GetMasterColorCorrection( void )			{ return m_hMasterController; }
+	CColorCorrection *GetMasterColorCorrection( void )			{ return m_hMasterController.Get(); }
 
 private:
 

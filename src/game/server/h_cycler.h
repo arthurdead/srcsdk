@@ -8,6 +8,8 @@
 #define H_CYCLER_H
 #pragma once
 
+#include "ai_basenpc.h"
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -31,7 +33,7 @@ public:
 	// Inputs
 	void	InputSetSequence( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	int			m_animate;
 };

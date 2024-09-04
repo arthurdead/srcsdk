@@ -12,9 +12,24 @@
 #include "const.h"
 #include "tier0/dbg.h"
 
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL nullptr
+
+namespace std
+{
+	using nullptr_t = decltype(nullptr);
+}
 
 class IHandleEntity;
 
+#ifdef GAME_DLL
+class CBaseEntity;
+#else
+class C_BaseEntity;
+#define CBaseEntity C_BaseEntity
+#endif
 
 // -------------------------------------------------------------------------------------------------- //
 // CBaseHandle.
@@ -28,8 +43,11 @@ public:
 
 	CBaseHandle();
 	CBaseHandle( const CBaseHandle &other );
-	CBaseHandle( unsigned long value );
+	explicit CBaseHandle( unsigned long value );
 	CBaseHandle( int iEntry, int iSerialNumber );
+	explicit CBaseHandle( const IHandleEntity *pVal );
+	explicit CBaseHandle( const CBaseEntity *pVal );
+	explicit CBaseHandle( std::nullptr_t );
 
 	void Init( int iEntry, int iSerialNumber );
 	void Term();
@@ -46,17 +64,40 @@ public:
 	bool operator ==( const CBaseHandle &other ) const;
 	bool operator ==( const IHandleEntity* pEnt ) const;
 	bool operator !=( const IHandleEntity* pEnt ) const;
-	bool operator <( const CBaseHandle &other ) const;
-	bool operator <( const IHandleEntity* pEnt ) const;
+	bool operator ==( const CBaseEntity* pEnt ) const;
+	bool operator !=( const CBaseEntity* pEnt ) const;
+	bool operator ==( IHandleEntity* pEnt ) const;
+	bool operator !=( IHandleEntity* pEnt ) const;
+	bool operator ==( CBaseEntity* pEnt ) const;
+	bool operator !=( CBaseEntity* pEnt ) const;
+	bool operator ==( std::nullptr_t ) const;
+	bool operator !=( std::nullptr_t ) const;
 
 	// Assign a value to the handle.
-	const CBaseHandle& operator=( const IHandleEntity *pEntity );
-	const CBaseHandle& Set( const IHandleEntity *pEntity );
+	CBaseHandle& operator=( const IHandleEntity *pEntity );
+	CBaseHandle& operator=( const CBaseEntity *pEntity );
+	CBaseHandle& operator=( const CBaseHandle &pEntity );
+	CBaseHandle& operator=( std::nullptr_t );
+
+	void Set( const CBaseHandle &pEntity );
+	void Set( const IHandleEntity *pEntity );
+	void Set( const CBaseEntity *pEntity );
+	void Set( std::nullptr_t );
 
 	// Use this to dereference the handle.
 	// Note: this is implemented in game code (ehandle.h)
 	IHandleEntity* Get() const;
 
+	bool operator!() const
+	{ return Get() == NULL; }
+
+	explicit operator bool() const
+	{ return Get() != NULL; }
+
+	explicit operator IHandleEntity *() const
+	{ return Get(); }
+	explicit operator const IHandleEntity *() const
+	{ return Get(); }
 
 protected:
 	// The low NUM_SERIAL_BITS hold the index. If this value is less than MAX_EDICTS, then the entity is networkable.
@@ -64,7 +105,7 @@ protected:
 	unsigned long	m_Index;
 };
 
-inline const CBaseHandle NULL_HANDLE;
+inline const CBaseHandle NULL_BASEHANDLE;
 
 
 #include "ihandleentity.h"
@@ -83,6 +124,21 @@ inline CBaseHandle::CBaseHandle( const CBaseHandle &other )
 inline CBaseHandle::CBaseHandle( unsigned long value )
 {
 	m_Index = value;
+}
+
+inline CBaseHandle::CBaseHandle( std::nullptr_t )
+{
+	m_Index = INVALID_EHANDLE_INDEX;
+}
+
+inline CBaseHandle::CBaseHandle( const IHandleEntity *pObj )
+{
+	m_Index = pObj->GetRefEHandle().m_Index;
+}
+
+inline CBaseHandle::CBaseHandle( const CBaseEntity *pObj )
+	: CBaseHandle((const IHandleEntity *)pObj)
+{
 }
 
 inline CBaseHandle::CBaseHandle( int iEntry, int iSerialNumber )
@@ -143,35 +199,95 @@ inline bool CBaseHandle::operator !=( const IHandleEntity* pEnt ) const
 	return Get() != pEnt;
 }
 
-inline bool CBaseHandle::operator <( const CBaseHandle &other ) const
+inline bool CBaseHandle::operator ==( const CBaseEntity* pEnt ) const
 {
-	return m_Index < other.m_Index;
+	return (const CBaseEntity*)Get() == pEnt;
 }
 
-inline bool CBaseHandle::operator <( const IHandleEntity *pEntity ) const
+inline bool CBaseHandle::operator !=( const CBaseEntity* pEnt ) const
 {
-	unsigned long otherIndex = (pEntity) ? pEntity->GetRefEHandle().m_Index : INVALID_EHANDLE_INDEX;
-	return m_Index < otherIndex;
+	return (const CBaseEntity*)Get() != pEnt;
 }
 
-inline const CBaseHandle& CBaseHandle::operator=( const IHandleEntity *pEntity )
+inline bool CBaseHandle::operator ==( IHandleEntity* pEnt ) const
 {
-	return Set( pEntity );
+	return Get() == pEnt;
 }
 
-inline const CBaseHandle& CBaseHandle::Set( const IHandleEntity *pEntity ) 
+inline bool CBaseHandle::operator !=( IHandleEntity* pEnt ) const
+{
+	return Get() != pEnt;
+}
+
+inline bool CBaseHandle::operator ==( CBaseEntity* pEnt ) const
+{
+	return (const CBaseEntity*)Get() == pEnt;
+}
+
+inline bool CBaseHandle::operator !=( CBaseEntity* pEnt ) const
+{
+	return (const CBaseEntity*)Get() != pEnt;
+}
+
+inline bool CBaseHandle::operator ==( std::nullptr_t ) const
+{
+	return Get() == NULL;
+}
+
+inline bool CBaseHandle::operator !=( std::nullptr_t ) const
+{
+	return Get() != NULL;
+}
+
+inline CBaseHandle& CBaseHandle::operator=( const IHandleEntity *pEntity )
+{
+	Set( pEntity );
+	return *this;
+}
+
+inline CBaseHandle& CBaseHandle::operator=( const CBaseEntity *pEntity )
+{
+	Set( pEntity );
+	return *this;
+}
+
+inline CBaseHandle& CBaseHandle::operator=( const CBaseHandle &other )
+{
+	m_Index = other.m_Index;
+	return *this;
+}
+
+inline CBaseHandle& CBaseHandle::operator=( std::nullptr_t )
+{
+	m_Index = INVALID_EHANDLE_INDEX;
+	return *this;
+}
+
+inline void CBaseHandle::Set( const CBaseEntity *pEntity ) 
+{ 
+	Set( (const IHandleEntity *)pEntity );
+}
+
+inline void CBaseHandle::Set( const IHandleEntity *pEntity ) 
 { 
 	if ( pEntity )
 	{
-		*this = pEntity->GetRefEHandle();
+		m_Index = pEntity->GetRefEHandle().m_Index;
 	}
 	else
 	{
 		m_Index = INVALID_EHANDLE_INDEX;
 	}
-	
-	return *this;
 }
 
+inline void CBaseHandle::Set( const CBaseHandle &other ) 
+{ 
+	m_Index = other.m_Index;
+}
+
+inline void CBaseHandle::Set( std::nullptr_t ) 
+{ 
+	m_Index = INVALID_EHANDLE_INDEX;
+}
 
 #endif // BASEHANDLE_H

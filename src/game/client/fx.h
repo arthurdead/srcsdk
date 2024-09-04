@@ -39,7 +39,7 @@ bool FX_GetAttachmentTransform( ClientEntityHandle_t hEntity, int attachmentInde
 
 void FX_RicochetSound( const Vector& pos );
 
-void FX_AntlionImpact( const Vector &pos, trace_t *tr );
+void FX_AlienInsectImpact( const Vector &pos, trace_t *tr );
 void FX_DebrisFlecks( const Vector& origin, trace_t *trace, char materialType, int iScale, bool bNoFlecks = false );
 void FX_Tracer( const Vector& start, const Vector& end, int velocity, bool makeWhiz = true );
 void FX_GunshipTracer( const Vector& start, const Vector& end, int velocity, bool makeWhiz = true );
@@ -98,7 +98,7 @@ extern void FX_CacheMaterialHandles( void );
 
 extern PMaterialHandle g_Mat_Fleck_Wood[2];
 extern PMaterialHandle g_Mat_Fleck_Cement[2];
-extern PMaterialHandle g_Mat_Fleck_Antlion[2];
+extern PMaterialHandle g_Mat_Fleck_AlienInsect[2];
 extern PMaterialHandle g_Mat_Fleck_Tile[2];
 extern PMaterialHandle g_Mat_DustPuff[2];
 extern PMaterialHandle g_Mat_BloodPuff[2];

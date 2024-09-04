@@ -13,8 +13,6 @@
 #include "soundenvelope.h"
 #include "in_buttons.h"
 #include "npc_vehicledriver.h"
-#include "physics_saverestore.h"
-#include "saverestore_utlvector.h"
 #include "func_break.h"
 #include "physics_impact_damage.h"
 #include "entityblocker.h"
@@ -27,35 +25,11 @@
 ConVar g_debug_vehiclebase( "g_debug_vehiclebase", "0", FCVAR_CHEAT );
 extern ConVar g_debug_vehicledriver;
 
-// CFourWheelServerVehicle
-BEGIN_SIMPLE_DATADESC_( CFourWheelServerVehicle, CBaseServerVehicle )
-
-	DEFINE_EMBEDDED( m_ViewSmoothing ),
-
-END_DATADESC()
-
 // CPropVehicle
-BEGIN_DATADESC( CPropVehicle )
-
-	DEFINE_EMBEDDED( m_VehiclePhysics ),
-
-	// These are necessary to save here because the 'owner' of these fields must be the prop_vehicle
-	DEFINE_PHYSPTR( m_VehiclePhysics.m_pVehicle ),
-	DEFINE_PHYSPTR_ARRAY( m_VehiclePhysics.m_pWheels ),
-
-	DEFINE_FIELD( m_nVehicleType, FIELD_INTEGER ),
-
-	// Physics Influence
-	DEFINE_FIELD( m_hPhysicsAttacker, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_flLastPhysicsInfluenceTime, FIELD_TIME ),
-
-#ifdef HL2_EPISODIC
-	DEFINE_UTLVECTOR( m_hPhysicsChildren, FIELD_EHANDLE ),
-#endif // HL2_EPISODIC
+BEGIN_MAPENTITY( CPropVehicle )
 
 	// Keys
 	DEFINE_KEYFIELD( m_vehicleScript, FIELD_STRING, "VehicleScript" ),
-	DEFINE_FIELD( m_vecSmoothedVelocity, FIELD_VECTOR ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "Throttle", InputThrottle ),
@@ -64,7 +38,7 @@ BEGIN_DATADESC( CPropVehicle )
 	DEFINE_INPUTFUNC( FIELD_VOID, "HandBrakeOn", InputHandBrakeOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "HandBrakeOff", InputHandBrakeOff ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( prop_vehicle, CPropVehicle );
 
@@ -83,6 +57,15 @@ CPropVehicle::CPropVehicle() : m_VehiclePhysics( this )
 //-----------------------------------------------------------------------------
 CPropVehicle::~CPropVehicle ()
 {
+}
+
+//-----------------------------------------------------------------------------
+// Precache 
+//-----------------------------------------------------------------------------
+void CPropVehicle::Precache()
+{
+	BaseClass::Precache();
+	GetPhysics()->Precache();
 }
 
 //-----------------------------------------------------------------------------
@@ -119,16 +102,6 @@ CON_COMMAND(vehicle_flushscript, "Flush and reload all vehicle scripts")
 		}
 	}
 }
-//-----------------------------------------------------------------------------
-// Purpose: Restore
-//-----------------------------------------------------------------------------
-int CPropVehicle::Restore( IRestore &restore )
-{
-	CFourWheelServerVehicle *pServerVehicle = dynamic_cast<CFourWheelServerVehicle*>(GetServerVehicle());
-	m_VehiclePhysics.SetOuter( this, pServerVehicle );
-	return BaseClass::Restore( restore );
-}
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Tell the vehicle physics system whenever we teleport, so it can fixup the wheels.
@@ -461,50 +434,6 @@ void CPropVehicleDriveable::Spawn( void )
 	m_flMinimumSpeedToEnterExit = 0;
 	m_takedamage = DAMAGE_EVENTS_ONLY;
 	m_bEngineLocked = false;
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-int CPropVehicleDriveable::Restore( IRestore &restore )
-{
-	// Has to be created before	we can restore
-	// and we can't create it in the constructor because it could be
-	// overridden by a derived class.
-	DestroyServerVehicle();
-	CreateServerVehicle();
-
-	int nRetVal = BaseClass::Restore( restore );
-	 
-	return nRetVal;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Do extra fix-up after restore
-//-----------------------------------------------------------------------------
-void CPropVehicleDriveable::OnRestore( void )
-{
-	BaseClass::OnRestore();
-
-	// NOTE: This is necessary to prevent overflow of datatables on level transition
-	// since the last exit eyepoint in the last level will have been fixed up
-	// based on the level landmarks, resulting in a position that lies outside
-	// typical map coordinates. If we're not in the middle of an exit anim, the
-	// eye exit endpoint field isn't being used at all.
-	if ( !m_bExitAnimOn )
-	{
-		m_vecEyeExitEndpoint = GetAbsOrigin();
-	}
-
-	m_flNoImpactDamageTime = gpGlobals->curtime + 5.0f;
-
-	IServerVehicle *pServerVehicle = GetServerVehicle();
-	if ( pServerVehicle != NULL )
-	{
-		// Restore the passenger information we're holding on to
-		pServerVehicle->RestorePassengerInfo();
-	}
 }
 
 

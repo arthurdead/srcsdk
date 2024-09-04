@@ -10,15 +10,15 @@
 
 #pragma once
 
-#define null 0L
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL    nullptr
 
-#ifndef NULL
-#ifdef __cplusplus
-#define NULL    0
-#else
-#define NULL    ((void *)0)
-#endif
-#endif
+namespace std
+{
+	using nullptr_t = decltype(nullptr);
+}
 
 #pragma warning( disable: 4800 )	// disables 'performance warning converting int to bool'
 #pragma warning( disable: 4786 )	// disables 'identifier truncated in browser information' warning
@@ -48,19 +48,89 @@ namespace vgui
 {
 // handle to an internal vgui panel
 // this is the only handle to a panel that is valid across dll boundaries
-typedef unsigned int VPANEL;
+enum class VPANEL: unsigned int
+{
+};
+const VPANEL INVALID_VPANEL = (VPANEL)0;
 
 // handles to vgui objects
 // NULL values signify an invalid value
-typedef unsigned long HScheme;
+enum class HScheme : unsigned long
+{
+};
+const HScheme INVALID_SCHEME = (HScheme)0;
 // Both -1 and 0 are used for invalid textures. Be careful.
-typedef unsigned long HTexture;
-typedef unsigned long HCursor;
-typedef unsigned long HPanel;
-const HPanel INVALID_PANEL = 0xffffffff;
-typedef unsigned long HFont;
-const HFont INVALID_FONT = 0; // the value of an invalid font handle
+enum class HTexture : unsigned long
+{
+};
+const HTexture INVALID_TEXTURE = (HTexture)0;
+enum class HCursor: unsigned long
+{
+};
+const HCursor INVALID_CURSOR = (HCursor)0;
+enum class HPanel: unsigned long
+{
+};
+const HPanel INVALID_PANEL = (HPanel)0xffffffff;
+enum class HFont: unsigned long
+{
+};
+const HFont INVALID_FONT = (HFont)0; // the value of an invalid font handle
 }
+
+inline bool operator==(vgui::VPANEL rhs, std::nullptr_t)
+{ return rhs == vgui::INVALID_VPANEL; }
+inline bool operator!=(vgui::VPANEL rhs, std::nullptr_t)
+{ return rhs != vgui::INVALID_VPANEL; }
+inline bool operator==(std::nullptr_t, vgui::VPANEL rhs)
+{ return vgui::INVALID_VPANEL == rhs; }
+inline bool operator!=(std::nullptr_t, vgui::VPANEL rhs)
+{ return vgui::INVALID_VPANEL != rhs; }
+
+inline bool operator==(vgui::HScheme rhs, std::nullptr_t)
+{ return rhs == vgui::INVALID_SCHEME; }
+inline bool operator!=(vgui::HScheme rhs, std::nullptr_t)
+{ return rhs != vgui::INVALID_SCHEME; }
+inline bool operator==(std::nullptr_t, vgui::HScheme rhs)
+{ return vgui::INVALID_SCHEME == rhs; }
+inline bool operator!=(std::nullptr_t, vgui::HScheme rhs)
+{ return vgui::INVALID_SCHEME != rhs; }
+
+inline bool operator==(vgui::HPanel rhs, std::nullptr_t)
+{ return rhs == vgui::INVALID_PANEL; }
+inline bool operator!=(vgui::HPanel rhs, std::nullptr_t)
+{ return rhs != vgui::INVALID_PANEL; }
+inline bool operator==(std::nullptr_t, vgui::HPanel rhs)
+{ return vgui::INVALID_PANEL == rhs; }
+inline bool operator!=(std::nullptr_t, vgui::HPanel rhs)
+{ return vgui::INVALID_PANEL != rhs; }
+
+inline bool operator==(vgui::HCursor rhs, std::nullptr_t)
+{ return rhs == vgui::INVALID_CURSOR; }
+inline bool operator!=(vgui::HCursor rhs, std::nullptr_t)
+{ return rhs != vgui::INVALID_CURSOR; }
+inline bool operator==(std::nullptr_t, vgui::HCursor rhs)
+{ return vgui::INVALID_CURSOR == rhs; }
+inline bool operator!=(std::nullptr_t, vgui::HCursor rhs)
+{ return vgui::INVALID_CURSOR != rhs; }
+
+inline bool operator==(vgui::HFont rhs, std::nullptr_t)
+{ return rhs == vgui::INVALID_FONT; }
+inline bool operator!=(vgui::HFont rhs, std::nullptr_t)
+{ return rhs != vgui::INVALID_FONT; }
+inline bool operator==(std::nullptr_t, vgui::HFont rhs)
+{ return vgui::INVALID_FONT == rhs; }
+inline bool operator!=(std::nullptr_t, vgui::HFont rhs)
+{ return vgui::INVALID_FONT != rhs; }
+
+inline bool operator==(vgui::HTexture rhs, std::nullptr_t)
+{ return rhs == vgui::INVALID_TEXTURE; }
+inline bool operator!=(vgui::HTexture rhs, std::nullptr_t)
+{ return rhs != vgui::INVALID_TEXTURE; }
+inline bool operator==(std::nullptr_t, vgui::HTexture rhs)
+{ return vgui::INVALID_TEXTURE == rhs; }
+inline bool operator!=(std::nullptr_t, vgui::HTexture rhs)
+{ return vgui::INVALID_TEXTURE != rhs; }
 
 #include "tier1/strtools.h"
 

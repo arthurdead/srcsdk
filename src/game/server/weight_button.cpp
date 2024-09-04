@@ -11,7 +11,7 @@ class CWeightButton : public CBaseEntity
 {
 public:
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CWeightButton, CBaseEntity ); 
 
 	void Spawn( void );
@@ -30,17 +30,15 @@ public:
 
 LINK_ENTITY_TO_CLASS( func_weight_button, CWeightButton );
 
-BEGIN_DATADESC( CWeightButton )
+BEGIN_MAPENTITY( CWeightButton )
 
 	DEFINE_KEYFIELD( m_fStressToActivate, FIELD_FLOAT, "WeightToActivate" ),
 	DEFINE_FIELD( m_bHasBeenPressed, FIELD_BOOLEAN ),
 
 	DEFINE_OUTPUT( m_OnPressed, "OnPressed" ),
 	DEFINE_OUTPUT( m_OnReleased, "OnReleased" ),
-	
-	DEFINE_THINKFUNC( TriggerThink ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 void CWeightButton::Spawn()

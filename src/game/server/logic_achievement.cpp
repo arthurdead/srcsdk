@@ -95,14 +95,14 @@ protected:
 
 	COutputEvent	m_OnFired;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 
 LINK_ENTITY_TO_CLASS( logic_achievement, CLogicAchievement );
 
 
-BEGIN_DATADESC( CLogicAchievement )
+BEGIN_MAPENTITY( CLogicAchievement )
 
 	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
 	DEFINE_KEYFIELD( m_iszAchievementEventID, FIELD_STRING, "AchievementEvent" ),
@@ -116,7 +116,7 @@ BEGIN_DATADESC( CLogicAchievement )
 	// Outputs
 	DEFINE_OUTPUT( m_OnFired, "OnFired" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

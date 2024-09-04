@@ -10,11 +10,7 @@
 #include "team_control_point_master.h"
 #include "teamplayroundbased_gamerules.h"
 
-#if defined ( TF_DLL )
-#include "tf_gamerules.h"
-#endif
-
-BEGIN_DATADESC( CTeamControlPointMaster )
+BEGIN_MAPENTITY( CTeamControlPointMaster )
 	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
 	DEFINE_KEYFIELD( m_iszCapLayoutInHUD, FIELD_STRING, "caplayout" ),
 	DEFINE_KEYFIELD( m_iInvalidCapWinner, FIELD_INTEGER, "cpm_restrict_team_cap_win" ),
@@ -27,14 +23,6 @@ BEGIN_DATADESC( CTeamControlPointMaster )
 	DEFINE_KEYFIELD( m_flCustomPositionX, FIELD_FLOAT, "custom_position_x" ),
 	DEFINE_KEYFIELD( m_flCustomPositionY, FIELD_FLOAT, "custom_position_y" ),
 
-//	DEFINE_FIELD( m_ControlPoints, CUtlMap < int , CTeamControlPoint * > ),
-//	DEFINE_FIELD( m_bFoundPoints, FIELD_BOOLEAN ),
-//	DEFINE_FIELD( m_ControlPointRounds, CUtlVector < CTeamControlPointRound * > ),
-//	DEFINE_FIELD( m_iCurrentRoundIndex, FIELD_INTEGER ),
-//	DEFINE_ARRAY( m_iszTeamBaseIcons, FIELD_STRING, MAX_TEAMS ),
-//	DEFINE_ARRAY( m_iTeamBaseIcons, FIELD_INTEGER, MAX_TEAMS ),
-//	DEFINE_FIELD( m_bFirstRoundAfterRestart, FIELD_BOOLEAN ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
@@ -46,12 +34,10 @@ BEGIN_DATADESC( CTeamControlPointMaster )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetCapLayoutCustomPositionX", InputSetCapLayoutCustomPositionX ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetCapLayoutCustomPositionY", InputSetCapLayoutCustomPositionY ),
 
-	DEFINE_FUNCTION( CPMThink ),
-
 	DEFINE_OUTPUT( m_OnWonByTeam1,	"OnWonByTeam1" ),
 	DEFINE_OUTPUT( m_OnWonByTeam2,	"OnWonByTeam2" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( team_control_point_master, CTeamControlPointMaster );
 
@@ -359,6 +345,14 @@ bool CTeamControlPointMaster::IsInRound( CTeamControlPoint *pPoint )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+bool CTeamControlPointMaster::PointCanBeCapped( CTeamControlPoint *pPoint )
+{
+	return IsInRound(pPoint);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
 int CTeamControlPointMaster::NumPlayableControlPointRounds( void )
 {
 	int nRetVal = 0;
@@ -379,6 +373,15 @@ int CTeamControlPointMaster::NumPlayableControlPointRounds( void )
 
 	return nRetVal;
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool CTeamControlPointMaster::FindControlPointRoundToPlay( void )
+{
+	return NumPlayableControlPointRounds() > 0;
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -841,6 +844,20 @@ void CTeamControlPointMaster::InputRoundSpawn( inputdata_t &input )
 	FindControlPointRounds();
 
 	SetBaseControlPoints();
+
+	// init the ClientAreas
+	int index = 0;
+	
+	CBaseEntity *pEnt = gEntList.FindEntityByClassname( NULL, GetTriggerAreaCaptureName() );
+	while( pEnt )
+	{
+		CTriggerAreaCapture *pArea = (CTriggerAreaCapture *)pEnt;
+		Assert( pArea );
+		pArea->SetAreaIndex( index );
+		index++;
+
+		pEnt = gEntList.FindEntityByClassname( pEnt, GetTriggerAreaCaptureName() );
+	}
 	
 	ObjectiveResource()->ResetControlPoints();
 }

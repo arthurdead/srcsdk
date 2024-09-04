@@ -13,7 +13,6 @@ enum debughistorycategories_t
 	HISTORY_ENTITY_IO,
 	HISTORY_AI_DECISIONS,
 	HISTORY_SCENE_PRINT,
-	HISTORY_ALYX_BLIND,		// TEMP: until we find and fix this bug
 	HISTORY_PLAYER_DAMAGE,  // record all damage done to the player
 
 	// Add new categories here
@@ -29,5 +28,7 @@ enum debughistorycategories_t
 #define ADD_DEBUG_HISTORY( category, line )		AddDebugHistoryLine( category, line )
 void AddDebugHistoryLine( int iCategory, const char *pszLine );
 #endif
+
+void ClearDebugHistory();
 
 #endif // ENV_DEBUGHISTORY_H

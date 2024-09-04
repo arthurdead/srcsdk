@@ -13,12 +13,19 @@
 #include "basehandle.h"
 #include "utllinkedlist.h"
 #include "ihandleentity.h"
+#include "ehandle.h"
 
+#ifdef GAME_DLL
+class CBaseEntity;
+#else
+#define CBaseEntity C_BaseEntity
+class C_BaseEntity;
+#endif
 
 class CEntInfo
 {
 public:
-	IHandleEntity	*m_pEntity;
+	CBaseEntity *m_pBaseEnt;
 	int				m_SerialNumber;
 	CEntInfo		*m_pPrev;
 	CEntInfo		*m_pNext;
@@ -36,42 +43,46 @@ public:
 	// Add and remove entities. iForcedSerialNum should only be used on the client. The server
 	// gets to dictate what the networkable serial numbers are on the client so it can send
 	// ehandles over and they work.
-	CBaseHandle AddNetworkableEntity( IHandleEntity *pEnt, int index, int iForcedSerialNum = -1 );
-	CBaseHandle AddNonNetworkableEntity( IHandleEntity *pEnt );
+	EHANDLE AddNetworkableEntity( CBaseEntity *pEnt, int index, int iForcedSerialNum = -1 );
+	EHANDLE AddNonNetworkableEntity( CBaseEntity *pEnt );
 	void RemoveEntity( CBaseHandle handle );
 
 	// Get an ehandle from a networkable entity's index (note: if there is no entity in that slot,
 	// then the ehandle will be invalid and produce NULL).
-	CBaseHandle GetNetworkableHandle( int iEntity ) const;
+	EHANDLE GetNetworkableHandle( int iEntity ) const;
 
 	// ehandles use this in their Get() function to produce a pointer to the entity.
-	IHandleEntity* LookupEntity( const CBaseHandle &handle ) const;
-	IHandleEntity* LookupEntityByNetworkIndex( int edictIndex ) const;
+	CBaseEntity* LookupEntity( const CBaseHandle &handle ) const;
+	CBaseEntity* LookupEntityByNetworkIndex( int edictIndex ) const;
 
 	// Use these to iterate over all the entities.
-	CBaseHandle FirstHandle() const;
-	CBaseHandle NextHandle( CBaseHandle hEnt ) const;
-	static CBaseHandle InvalidHandle();
+	EHANDLE FirstHandle() const;
+	EHANDLE NextHandle( CBaseHandle hEnt ) const;
+	static EHANDLE InvalidHandle();
 
 	const CEntInfo *FirstEntInfo() const;
 	const CEntInfo *NextEntInfo( const CEntInfo *pInfo ) const;
 	const CEntInfo *GetEntInfoPtr( const CBaseHandle &hEnt ) const;
 	const CEntInfo *GetEntInfoPtrByIndex( int index ) const;
 
+	// Used by Foundry when an entity is respawned/edited.
+	// We force the new entity's ehandle to be the same so anyone pointing at it still gets a valid CBaseEntity out of their ehandle.
+	void ForceEntSerialNumber( int iEntIndex, int iSerialNumber );
+
 // Overridables.
 protected:
 
 	// These are notifications to the derived class. It can cache info here if it wants.
-	virtual void OnAddEntity( IHandleEntity *pEnt, CBaseHandle handle );
+	virtual void OnAddEntity( CBaseEntity *pEnt, EHANDLE handle );
 	
 	// It is safe to delete the entity here. We won't be accessing the pointer after
 	// calling OnRemoveEntity.
-	virtual void OnRemoveEntity( IHandleEntity *pEnt, CBaseHandle handle );
+	virtual void OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle );
 
 
 private:
 
-	CBaseHandle AddEntityAtSlot( IHandleEntity *pEnt, int iSlot, int iForcedSerialNum );
+	EHANDLE AddEntityAtSlot( CBaseEntity *pEnt, int iSlot, int iForcedSerialNum );
 	void RemoveEntityAtSlot( int iSlot );
 
 	
@@ -121,64 +132,63 @@ inline int CBaseEntityList::GetEntInfoIndex( const CEntInfo *pEntInfo ) const
 	return index;
 }
 
-inline CBaseHandle CBaseEntityList::GetNetworkableHandle( int iEntity ) const
+inline EHANDLE CBaseEntityList::GetNetworkableHandle( int iEntity ) const
 {
 	Assert( iEntity >= 0 && iEntity < MAX_EDICTS );
-	if ( m_EntPtrArray[iEntity].m_pEntity )
-		return CBaseHandle( iEntity, m_EntPtrArray[iEntity].m_SerialNumber );
+	if ( m_EntPtrArray[iEntity].m_pBaseEnt != NULL )
+		return EHANDLE( iEntity, m_EntPtrArray[iEntity].m_SerialNumber );
 	else
-		return CBaseHandle();
+		return NULL_EHANDLE;
 }
 
 
-inline IHandleEntity* CBaseEntityList::LookupEntity( const CBaseHandle &handle ) const
+inline CBaseEntity* CBaseEntityList::LookupEntity( const CBaseHandle &handle ) const
 {
 	if ( handle.m_Index == INVALID_EHANDLE_INDEX )
 		return NULL;
 
 	const CEntInfo *pInfo = &m_EntPtrArray[ handle.GetEntryIndex() ];
 	if ( pInfo->m_SerialNumber == handle.GetSerialNumber() )
-		return (IHandleEntity*)pInfo->m_pEntity;
+		return pInfo->m_pBaseEnt;
 	else
 		return NULL;
 }
 
 
-inline IHandleEntity* CBaseEntityList::LookupEntityByNetworkIndex( int edictIndex ) const
+inline CBaseEntity* CBaseEntityList::LookupEntityByNetworkIndex( int edictIndex ) const
 {
 	// (Legacy support).
 	if ( edictIndex < 0 )
 		return NULL;
 
 	Assert( edictIndex < NUM_ENT_ENTRIES );
-	return (IHandleEntity*)m_EntPtrArray[edictIndex].m_pEntity;
+	return m_EntPtrArray[edictIndex].m_pBaseEnt;
 }
 
-
-inline CBaseHandle CBaseEntityList::FirstHandle() const
+inline EHANDLE CBaseEntityList::FirstHandle() const
 {
 	if ( !m_activeList.Head() )
-		return INVALID_EHANDLE_INDEX;
+		return NULL_EHANDLE;
 
 	int index = GetEntInfoIndex( m_activeList.Head() );
-	return CBaseHandle( index, m_EntPtrArray[index].m_SerialNumber );
+	return EHANDLE( index, m_EntPtrArray[index].m_SerialNumber );
 }
 
-inline CBaseHandle CBaseEntityList::NextHandle( CBaseHandle hEnt ) const
+inline EHANDLE CBaseEntityList::NextHandle( CBaseHandle hEnt ) const
 {
 	int iSlot = hEnt.GetEntryIndex();
 	CEntInfo *pNext = m_EntPtrArray[iSlot].m_pNext;
 	if ( !pNext )
-		return INVALID_EHANDLE_INDEX;
+		return NULL_EHANDLE;
 
 	int index = GetEntInfoIndex( pNext );
 
-	return CBaseHandle( index, m_EntPtrArray[index].m_SerialNumber );
+	return EHANDLE( index, m_EntPtrArray[index].m_SerialNumber );
 }
 	
-inline CBaseHandle CBaseEntityList::InvalidHandle()
+inline EHANDLE CBaseEntityList::InvalidHandle()
 {
-	return INVALID_EHANDLE_INDEX;
+	return NULL_EHANDLE;
 }
 
 inline const CEntInfo *CBaseEntityList::FirstEntInfo() const
@@ -200,6 +210,11 @@ inline const CEntInfo *CBaseEntityList::GetEntInfoPtr( const CBaseHandle &hEnt )
 inline const CEntInfo *CBaseEntityList::GetEntInfoPtrByIndex( int index ) const
 {
 	return &m_EntPtrArray[index];
+}
+
+inline void CBaseEntityList::ForceEntSerialNumber( int iEntIndex, int iSerialNumber )
+{
+	m_EntPtrArray[iEntIndex].m_SerialNumber = iSerialNumber;
 }
 
 extern CBaseEntityList *g_pEntityList;

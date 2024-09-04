@@ -21,12 +21,9 @@ const int SF_ALLOW_FAST_RETRIGGER		= 0x002;	// Unless set, entity will disable i
 LINK_ENTITY_TO_CLASS(logic_random_outputs, CLogicRandomOutputs);
 
 
-BEGIN_DATADESC( CLogicRandomOutputs )
+BEGIN_MAPENTITY( CLogicRandomOutputs )
 
-	DEFINE_FIELD(m_bWaitForRefire, FIELD_BOOLEAN),
 	DEFINE_KEYFIELD(m_bDisabled, FIELD_BOOLEAN, "StartDisabled"),
-
-	DEFINE_AUTO_ARRAY( m_flOnTriggerChance, FIELD_FLOAT ),
 
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "Enable", InputEnable),
@@ -47,7 +44,7 @@ BEGIN_DATADESC( CLogicRandomOutputs )
 	DEFINE_OUTPUT(m_Output[6], "OnTrigger7"),
 	DEFINE_OUTPUT(m_Output[7], "OnTrigger8"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

@@ -26,7 +26,7 @@ class CColorCorrectionVolume : public CBaseTrigger
 	DECLARE_CLASS( CColorCorrectionVolume, CBaseTrigger );
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CColorCorrectionVolume();
 
@@ -66,9 +66,7 @@ private:
 
 LINK_ENTITY_TO_CLASS(color_correction_volume, CColorCorrectionVolume);
 
-BEGIN_DATADESC( CColorCorrectionVolume )
-
-	DEFINE_THINKFUNC( ThinkFunc ),
+BEGIN_MAPENTITY( CColorCorrectionVolume )
 
 	DEFINE_KEYFIELD( m_FadeDuration, FIELD_FLOAT, "fadeDuration" ),
 	DEFINE_KEYFIELD( m_MaxWeight,         FIELD_FLOAT,   "maxweight" ),
@@ -77,16 +75,10 @@ BEGIN_DATADESC( CColorCorrectionVolume )
 	DEFINE_KEYFIELD( m_bEnabled,		  FIELD_BOOLEAN, "enabled" ),
 	DEFINE_KEYFIELD( m_bStartDisabled,    FIELD_BOOLEAN, "StartDisabled" ),
 
-	DEFINE_FIELD( m_Weight,          FIELD_FLOAT ),
-	DEFINE_FIELD( m_LastEnterWeight, FIELD_FLOAT ),
-	DEFINE_FIELD( m_LastEnterTime,   FIELD_FLOAT ),
-	DEFINE_FIELD( m_LastExitWeight,  FIELD_FLOAT ),
-	DEFINE_FIELD( m_LastExitTime,    FIELD_FLOAT ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 IMPLEMENT_SERVERCLASS_ST_NOBASE(CColorCorrectionVolume, DT_ColorCorrectionVolume)

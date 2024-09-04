@@ -35,7 +35,7 @@ class CPoseController : public CBaseEntity
 public:
 	DECLARE_CLASS( CPoseController, CBaseEntity );
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void Spawn( void );
 

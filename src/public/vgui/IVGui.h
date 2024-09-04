@@ -20,17 +20,12 @@ class KeyValues;
 namespace vgui
 {
 
-// safe handle to a panel - can be converted to and from a VPANEL
-typedef unsigned long HPanel;
-typedef int HContext;
-
-enum
+enum class HContext: int
 {
-	DEFAULT_VGUI_CONTEXT = ((vgui::HContext)~0)
+
 };
 
-// safe handle to a panel - can be converted to and from a VPANEL
-typedef unsigned long HPanel;
+inline const HContext DEFAULT_VGUI_CONTEXT = ((HContext)~0);
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface to core vgui components

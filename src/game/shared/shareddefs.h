@@ -12,6 +12,7 @@
 #include "mathlib/vector.h"
 #include "tier1/utlvector.h"
 #include "tier1/convar.h"
+#include "bittools.h"
 
 #define TICK_INTERVAL			(gpGlobals->interval_per_tick)
 
@@ -264,6 +265,7 @@ enum CastVote
 
 // The first team that's game specific (i.e. not unassigned / spectator)
 #define FIRST_GAME_TEAM			(LAST_SHARED_TEAM+1)
+#define SECOND_GAME_TEAM		(LAST_SHARED_TEAM+2)
 
 #define MAX_TEAMS				32	// Max number of teams in a game
 #define MAX_TEAM_NAME_LENGTH	32	// Max length of a team's name
@@ -573,7 +575,7 @@ enum
 	EFL_FORCE_CHECK_TRANSMIT =	(1<<7),
 
 	EFL_BOT_FROZEN =			(1<<8),	// This is set on bots that are frozen.
-	EFL_SERVER_ONLY =			(1<<9),	// Non-networked entity.
+	EFL_NOT_NETWORKED =			(1<<9),	// Non-networked entity.
 	EFL_NO_AUTO_EDICT_ATTACH =	(1<<10), // Don't attach the edict; we're doing it explicitly
 	
 	// Some dirty bits with respect to abs computations
@@ -876,13 +878,6 @@ enum
 {
 	SIMULATION_TIME_WINDOW_BITS = 8,
 };
-
-//-----------------------------------------------------------------------------
-// Commentary Mode
-//-----------------------------------------------------------------------------
-
-// The player's method of starting / stopping commentary
-#define COMMENTARY_BUTTONS		(IN_USE)
 
 #define TEAM_TRAIN_MAX_TEAMS			4
 #define TEAM_TRAIN_MAX_HILLS			5

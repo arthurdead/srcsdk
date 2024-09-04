@@ -58,8 +58,8 @@ public:
 	bool			IgnorePredictionCull( void ) const;
 	void			SetIgnorePredictionCull( bool ignore );
 
-	void			AddPlayersFromBitMask( CBitVec< ABSOLUTE_PLAYER_LIMIT >& playerbits );
-	void			RemovePlayersFromBitMask( CBitVec< ABSOLUTE_PLAYER_LIMIT >& playerbits );
+	void			AddPlayersFromBitMask( CEnginePlayerBitVec& playerbits );
+	void			RemovePlayersFromBitMask( CEnginePlayerBitVec& playerbits );
 
 private:
 

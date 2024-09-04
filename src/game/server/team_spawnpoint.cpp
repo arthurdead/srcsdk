@@ -18,7 +18,7 @@
 
 LINK_ENTITY_TO_CLASS( info_player_teamspawn, CTeamSpawnPoint );
 
-BEGIN_DATADESC( CTeamSpawnPoint )
+BEGIN_MAPENTITY( CTeamSpawnPoint )
 
 	// keys
 	DEFINE_KEYFIELD( m_iDisabled, FIELD_INTEGER, "StartDisabled" ),
@@ -30,7 +30,7 @@ BEGIN_DATADESC( CTeamSpawnPoint )
 	// outputs
 	DEFINE_OUTPUT( m_OnPlayerSpawn, "OnPlayerSpawn" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -90,12 +90,12 @@ void CTeamSpawnPoint::InputDisable( inputdata_t &inputdata )
 //===========================================================================================================
 LINK_ENTITY_TO_CLASS( info_vehicle_groundspawn, CTeamVehicleSpawnPoint );
 
-BEGIN_DATADESC( CTeamVehicleSpawnPoint )
+BEGIN_MAPENTITY( CTeamVehicleSpawnPoint )
 
 	// outputs
 	DEFINE_OUTPUT( m_OnVehicleSpawn, "OnVehicleSpawn" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------

@@ -24,16 +24,7 @@ static const char *s_pFadeOutContextThink = "ColorCorrectionFadeOutThink";
 
 LINK_ENTITY_TO_CLASS(color_correction, CColorCorrection);
 
-BEGIN_DATADESC( CColorCorrection )
-
-	DEFINE_THINKFUNC( FadeInThink ),
-	DEFINE_THINKFUNC( FadeOutThink ),
-
-	DEFINE_FIELD( m_flCurWeight,	      FIELD_FLOAT ),
-	DEFINE_FIELD( m_flTimeStartFadeIn,	  FIELD_FLOAT ),
-	DEFINE_FIELD( m_flTimeStartFadeOut,	  FIELD_FLOAT ),
-	DEFINE_FIELD( m_flStartFadeInWeight,  FIELD_FLOAT ),
-	DEFINE_FIELD( m_flStartFadeOutWeight, FIELD_FLOAT ),
+BEGIN_MAPENTITY( CColorCorrection )
 
 	DEFINE_KEYFIELD( m_MinFalloff,		  FIELD_FLOAT,   "minfalloff" ),
 	DEFINE_KEYFIELD( m_MaxFalloff,		  FIELD_FLOAT,   "maxfalloff" ),
@@ -45,14 +36,13 @@ BEGIN_DATADESC( CColorCorrection )
 	DEFINE_KEYFIELD( m_bEnabled,		  FIELD_BOOLEAN, "enabled" ),
 	DEFINE_KEYFIELD( m_bStartDisabled,    FIELD_BOOLEAN, "StartDisabled" ),
 	DEFINE_KEYFIELD( m_bExclusive,		  FIELD_BOOLEAN, "exclusive" ),
-//	DEFINE_ARRAY( m_netlookupFilename, FIELD_CHARACTER, MAX_PATH ), 
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFadeInDuration", InputSetFadeInDuration ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFadeOutDuration", InputSetFadeOutDuration ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 extern void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 IMPLEMENT_SERVERCLASS_ST_NOBASE(CColorCorrection, DT_ColorCorrection)
@@ -66,6 +56,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE(CColorCorrection, DT_ColorCorrection)
 	SendPropString( SENDINFO(m_netlookupFilename) ),
 	SendPropBool( SENDINFO(m_bEnabled) ),
 	SendPropBool( SENDINFO(m_bMaster) ),
+	SendPropBool( SENDINFO(m_bClientSide) ),
 	SendPropBool( SENDINFO(m_bExclusive) ),
 END_SEND_TABLE()
 
@@ -85,6 +76,7 @@ CColorCorrection::CColorCorrection() : BaseClass()
 	m_flTimeStartFadeOut = 0.0f;
 	m_netlookupFilename.GetForModify()[0] = 0;
 	m_bMaster = false;
+	m_bClientSide = false;
 	m_bExclusive = false;
 	m_lookupFilename = NULL_STRING;
 }
@@ -124,6 +116,7 @@ void CColorCorrection::Spawn( void )
 	}
 
 	m_bMaster = IsMaster();
+	m_bClientSide = IsClientSide();
 
 	BaseClass::Spawn();
 }
@@ -140,7 +133,7 @@ void CColorCorrection::Activate( void )
 //-----------------------------------------------------------------------------
 void CColorCorrection::FadeIn ( void )
 {
-	if ( m_bEnabled && m_flCurWeight >= m_flMaxWeight )
+	if ( m_bClientSide || ( m_bEnabled && m_flCurWeight >= m_flMaxWeight ) )
 		return;
 
 	m_bEnabled = true;
@@ -154,7 +147,7 @@ void CColorCorrection::FadeIn ( void )
 //-----------------------------------------------------------------------------
 void CColorCorrection::FadeOut ( void )
 {
-	if ( !m_bEnabled && m_flCurWeight <= 0.0f )
+	if ( m_bClientSide || ( !m_bEnabled && m_flCurWeight <= 0.0f ) )
 		return;
 
 	m_bEnabled = false;

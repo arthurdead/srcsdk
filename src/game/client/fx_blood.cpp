@@ -566,7 +566,7 @@ void HunterDamageCallback( const CEffectData &data )
 	for ( int i = 0; i < numFlecks; i++ )
 	{
 		spawnOffset = data.m_vOrigin + RandomVector( -32.0f, 32.0f );
-		pFleckParticle = (Particle3D *) pGlassEmitter->AddParticle( sizeof(Particle3D), g_Mat_Fleck_Antlion[random->RandomInt(0,1)], spawnOffset );
+		pFleckParticle = (Particle3D *) pGlassEmitter->AddParticle( sizeof(Particle3D), g_Mat_Fleck_AlienInsect[random->RandomInt(0,1)], spawnOffset );
 
 		if ( pFleckParticle == NULL )
 			break;

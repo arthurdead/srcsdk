@@ -13,6 +13,11 @@
 #include "iclientrenderable.h"
 #include "iclientnetworkable.h"
 #include "iclientthinkable.h"
+#if defined GAME_DLL || defined CLIENT_DLL
+#include "ehandle.h"
+#else
+typedef CBaseHandle EHANDLE;
+#endif
 
 struct Ray_t;
 class CGameTrace;
@@ -54,11 +59,17 @@ abstract_class IClientEntityMod
 {
 public:
 	virtual bool			IsBlurred( void ) = 0;
+
+	virtual const EHANDLE& GetRefEHandle() const = 0;
 };
 
 abstract_class IClientEntityEx : public IClientEntity, public IClientEntityMod, public IClientUnknownMod, public IClientRenderableMod
 {
 public:
+	virtual IClientNetworkable*	GetClientNetworkable() { return this; }
+	virtual IClientThinkable*	GetClientThinkable() { return this; }
+
+	virtual IClientEntity*		GetIClientEntity() { return this; }
 	virtual IClientEntityMod*		GetIClientEntityMod() { return this; }
 
 	virtual IClientRenderable*	GetClientRenderable() { return this; }
@@ -75,6 +86,8 @@ public:
 			return dynamic_cast<IClientAlphaPropertyMod *>(pAlphaProp);
 		return NULL;
 	}
+
+	virtual const EHANDLE& GetRefEHandle() const = 0;
 
 private:
 #ifdef _DEBUG

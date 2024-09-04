@@ -6,10 +6,9 @@
 
 #ifndef AI_RESPONSESYSTEM_H
 #define AI_RESPONSESYSTEM_H
+#pragma once
 
 #include "utlvector.h"
-
-#pragma once
 
 #include "ai_criteria.h"
 #include "../../public/responserules/response_types.h"
@@ -20,8 +19,5 @@
 ResponseRules::IResponseSystem *PrecacheCustomResponseSystem( const char *scriptfile );
 ResponseRules::IResponseSystem *BuildCustomResponseSystemGivenCriteria( const char *pszBaseFile, const char *pszCustomName, AI_CriteriaSet &criteriaSet, float flCriteriaScore );
 void DestroyCustomResponseSystems();
-
-class ISaveRestoreBlockHandler *GetDefaultResponseSystemSaveRestoreBlockHandler();
-class ISaveRestoreOps *GetResponseSystemSaveRestoreOps();
 
 #endif // AI_RESPONSESYSTEM_H

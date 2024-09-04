@@ -17,7 +17,7 @@ class CFuncSmokeVolume : public CBaseParticleEntity
 public:
 	DECLARE_CLASS( CFuncSmokeVolume, CBaseParticleEntity );
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CFuncSmokeVolume();
 	void Spawn();
@@ -37,14 +37,15 @@ private:
 	CNetworkVar( float, m_RotationSpeed );
 	CNetworkVar( float, m_MovementSpeed );
 	CNetworkVar( float, m_Density );
+	CNetworkVar( float, m_maxDrawDistance );
 };
 
-BEGIN_DATADESC( CFuncSmokeVolume )
+BEGIN_MAPENTITY( CFuncSmokeVolume )
 
 	// Save/restore Keyvalue fields
 	DEFINE_KEYFIELD( m_Color1, FIELD_COLOR32, "Color1" ),
 	DEFINE_KEYFIELD( m_Color2, FIELD_COLOR32, "Color2" ),
-//	DEFINE_ARRAY( m_MaterialName, FIELD_STRING, 255 ),
+
 	DEFINE_KEYFIELD( m_String_tMaterialName, FIELD_STRING, "Material" ),
 	DEFINE_KEYFIELD( m_ParticleDrawWidth, FIELD_FLOAT, "ParticleDrawWidth" ),
 	DEFINE_KEYFIELD( m_ParticleSpacingDistance, FIELD_FLOAT, "ParticleSpacingDistance" ),
@@ -52,19 +53,20 @@ BEGIN_DATADESC( CFuncSmokeVolume )
 	DEFINE_KEYFIELD( m_RotationSpeed, FIELD_FLOAT, "RotationSpeed" ),
 	DEFINE_KEYFIELD( m_MovementSpeed, FIELD_FLOAT, "MovementSpeed" ),
 	DEFINE_KEYFIELD( m_Density, FIELD_FLOAT, "Density" ),
+	DEFINE_KEYFIELD( m_maxDrawDistance, FIELD_FLOAT, "MaxDrawDistance" ),
 	// inputs
 	DEFINE_INPUT( m_RotationSpeed, FIELD_FLOAT, "SetRotationSpeed"),
 	DEFINE_INPUT( m_MovementSpeed, FIELD_FLOAT, "SetMovementSpeed"),
 	DEFINE_INPUT( m_Density, FIELD_FLOAT, "SetDensity"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
 
 IMPLEMENT_SERVERCLASS_ST( CFuncSmokeVolume, DT_FuncSmokeVolume )
-	SendPropInt( SENDINFO( m_Color1 ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt ),
-	SendPropInt( SENDINFO( m_Color2 ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt ),
+	SendPropInt( SENDINFO( m_Color1 ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
+	SendPropInt( SENDINFO( m_Color2 ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
 	SendPropString( SENDINFO( m_MaterialName ) ),
 	SendPropFloat( SENDINFO( m_ParticleDrawWidth ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO( m_ParticleSpacingDistance ), 0, SPROP_NOSCALE ),
@@ -72,6 +74,7 @@ IMPLEMENT_SERVERCLASS_ST( CFuncSmokeVolume, DT_FuncSmokeVolume )
 	SendPropFloat( SENDINFO( m_RotationSpeed ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO( m_MovementSpeed ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO( m_Density ), 0, SPROP_NOSCALE ),
+	SendPropFloat( SENDINFO( m_maxDrawDistance ), 0, SPROP_NOSCALE ),
 	SendPropInt( SENDINFO(m_spawnflags), 8, SPROP_UNSIGNED )
 END_SEND_TABLE()
 
@@ -80,6 +83,7 @@ LINK_ENTITY_TO_CLASS( func_smokevolume, CFuncSmokeVolume );
 CFuncSmokeVolume::CFuncSmokeVolume()
 {
 	m_Density = 1.0f;
+	m_maxDrawDistance = 0.0f;
 }
 
 void CFuncSmokeVolume::SetDensity( float density )

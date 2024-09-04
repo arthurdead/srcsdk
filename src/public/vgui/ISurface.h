@@ -38,12 +38,6 @@ class IImage;
 class Image;
 class Point;
 
-// handles
-typedef unsigned long HCursor;
-typedef unsigned long HTexture;
-typedef unsigned long HFont;
-
-
 //SRC only defines
 
 
@@ -163,17 +157,17 @@ public:
 		eTextureFormat_BGRA_Opaque, // bgra format but alpha is always 255, CEF does this, we can use this fact for better perf on win32 gdi
 	};
 
-	virtual int	 DrawGetTextureId( char const *filename ) = 0;
-	virtual bool DrawGetTextureFile(int id, char *filename, int maxlen ) = 0;
-	virtual void DrawSetTextureFile(int id, const char *filename, int hardwareFilter, bool forceReload) = 0;
-	virtual void DrawSetTextureRGBA(int id, const unsigned char *rgba, int wide, int tall, int hardwareFilter, bool forceReload)=0;
-	virtual void DrawSetTexture(int id) = 0;
-	virtual void DrawGetTextureSize(int id, int &wide, int &tall) = 0;
+	virtual HTexture	 DrawGetTextureId( char const *filename ) = 0;
+	virtual bool DrawGetTextureFile(HTexture id, char *filename, int maxlen ) = 0;
+	virtual void DrawSetTextureFile(HTexture id, const char *filename, int hardwareFilter, bool forceReload) = 0;
+	virtual void DrawSetTextureRGBA(HTexture id, const unsigned char *rgba, int wide, int tall, int hardwareFilter, bool forceReload)=0;
+	virtual void DrawSetTexture(HTexture id) = 0;
+	virtual void DrawGetTextureSize(HTexture id, int &wide, int &tall) = 0;
 	virtual void DrawTexturedRect(int x0, int y0, int x1, int y1) = 0;
-	virtual bool IsTextureIDValid(int id) = 0;
-	virtual bool DeleteTextureByID(int id) = 0;
+	virtual bool IsTextureIDValid(HTexture id) = 0;
+	virtual bool DeleteTextureByID(HTexture id) = 0;
 
-	virtual int CreateNewTextureID( bool procedural = false ) = 0;
+	virtual HTexture CreateNewTextureID( bool procedural = false ) = 0;
 
 	virtual void GetScreenSize(int &wide, int &tall) = 0;
 	virtual void SetAsTopMost(VPANEL panel, bool state) = 0;
@@ -191,6 +185,8 @@ public:
 	virtual void SwapBuffers(VPANEL panel) = 0;
 	virtual void Invalidate(VPANEL panel) = 0;
 	virtual void SetCursor(HCursor cursor) = 0;
+	void SetCursor(CursorCode cursor)
+	{ SetCursor(CursorCodeToCursor(cursor)); }
 	virtual void SetCursorAlwaysVisible( bool visible ) = 0;
 	virtual bool IsCursorVisible() = 0;
 	virtual void ApplyChanges() = 0;
@@ -339,7 +335,7 @@ public:
 	virtual void SetPanelForInput( VPANEL vpanel ) = 0;
 	virtual void DrawFilledRectFastFade( int x0, int y0, int x1, int y1, int fadeStartPt, int fadeEndPt, unsigned int alpha0, unsigned int alpha1, bool bHorizontal ) = 0;
 	virtual void DrawFilledRectFade( int x0, int y0, int x1, int y1, unsigned int alpha0, unsigned int alpha1, bool bHorizontal ) = 0;
-	virtual void DrawSetTextureRGBAEx(int id, const unsigned char *rgba, int wide, int tall, ImageFormat imageFormat ) = 0;
+	virtual void DrawSetTextureRGBAEx(HTexture id, const unsigned char *rgba, int wide, int tall, ImageFormat imageFormat ) = 0;
 	virtual void DrawSetTextScale(float sx, float sy) = 0;
 	virtual bool SetBitmapFontGlyphSet(HFont font, const char *windowsFontName, float scalex, float scaley, int flags) = 0;
 	// adds a bitmap font file
@@ -369,14 +365,14 @@ public:
 	// Causes fonts to get reloaded, etc.
 	virtual void ResetFontCaches() = 0;
 
-	virtual int GetTextureNumFrames( int id ) = 0;
-	virtual void DrawSetTextureFrame( int id, int nFrame, unsigned int *pFrameCache ) = 0;
+	virtual int GetTextureNumFrames( HTexture id ) = 0;
+	virtual void DrawSetTextureFrame( HTexture id, int nFrame, unsigned int *pFrameCache ) = 0;
 	virtual bool IsScreenSizeOverrideActive( void ) = 0;
 	virtual bool IsScreenPosOverrideActive( void ) = 0;
 
-	virtual void DestroyTextureID( int id ) = 0;
+	virtual void DestroyTextureID( HTexture id ) = 0;
 
-	virtual void DrawUpdateRegionTextureRGBA( int nTextureID, int x, int y, const unsigned char *pchData, int wide, int tall, ImageFormat imageFormat ) = 0;
+	virtual void DrawUpdateRegionTextureRGBA( HTexture nTextureID, int x, int y, const unsigned char *pchData, int wide, int tall, ImageFormat imageFormat ) = 0;
 	virtual bool BHTMLWindowNeedsPaint(IHTML *htmlwin) = 0 ;
 
 	virtual const char *GetWebkitHTMLUserAgentString() = 0;

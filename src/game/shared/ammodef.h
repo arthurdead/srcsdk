@@ -12,6 +12,13 @@
 
 #pragma once
 
+#ifdef GAME_DLL
+class CBaseCombatCharacter;
+#else
+#define CBaseCombatCharacter C_BaseCombatCharacter
+class C_BaseCombatCharacter;
+#endif
+
 class ConVar;
 
 struct Ammo_t 

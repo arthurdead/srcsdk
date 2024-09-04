@@ -8,6 +8,9 @@
 #define SOUNDSCAPE_H
 #pragma once
 
+#include "baseentity.h"
+#include "playernet_vars.h"
+
 class CEnvSoundscape;
 
 struct ss_update_t
@@ -24,7 +27,7 @@ class CEnvSoundscape : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CEnvSoundscape, CPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CEnvSoundscape();
 	~CEnvSoundscape();
@@ -75,7 +78,7 @@ class CEnvSoundscapeProxy : public CEnvSoundscape
 {
 public:
 	DECLARE_CLASS( CEnvSoundscapeProxy, CEnvSoundscape );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CEnvSoundscapeProxy();
 	virtual void Activate();
@@ -95,7 +98,6 @@ friend class CTriggerSoundscape;
 
 public:
 	DECLARE_CLASS( CEnvSoundscapeTriggerable, CEnvSoundscape );
-	DECLARE_DATADESC();
 
 	CEnvSoundscapeTriggerable();
 	

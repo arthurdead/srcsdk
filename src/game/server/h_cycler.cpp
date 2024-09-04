@@ -18,17 +18,14 @@
 
 #define FCYCLER_NOTSOLID		0x0001
 
-extern short		g_sModelIndexSmoke; // (in combatweapon.cpp) holds the index for the smoke cloud
+extern int		g_sModelIndexSmoke; // (in combatweapon.cpp) holds the index for the smoke cloud
 
-BEGIN_DATADESC( CCycler )
-
-	// Fields
-	DEFINE_FIELD( m_animate, FIELD_INTEGER ),
+BEGIN_MAPENTITY( CCycler )
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetSequence", InputSetSequence ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //
 // we should get rid of all the other cyclers and replace them with this.

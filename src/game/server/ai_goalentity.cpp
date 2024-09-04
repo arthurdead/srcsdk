@@ -7,7 +7,6 @@
 #include "cbase.h"
 
 #include "utlrbtree.h"
-#include "saverestore_utlvector.h"
 #include "ai_goalentity.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -18,47 +17,29 @@
 // CAI_GoalEntity implementation
 //
 
-BEGIN_DATADESC( CAI_GoalEntity )
+BEGIN_MAPENTITY( CAI_GoalEntity )
 
 	DEFINE_KEYFIELD(	m_iszActor,				FIELD_STRING, 	"Actor"					),
 	DEFINE_KEYFIELD(	m_iszGoal,				FIELD_STRING, 	"Goal"					),
 	DEFINE_KEYFIELD(	m_fStartActive,			FIELD_BOOLEAN,  "StartActive"			),
 	DEFINE_KEYFIELD(	m_iszConceptModifiers,	FIELD_STRING, 	"BaseConceptModifiers"	),
 	DEFINE_KEYFIELD(	m_SearchType,			FIELD_INTEGER, 	"SearchType"			),
-	DEFINE_UTLVECTOR(	m_actors, 				FIELD_EHANDLE 							),
-	DEFINE_FIELD(		m_hGoalEntity, 			FIELD_EHANDLE 							),
-	DEFINE_FIELD(		m_flags, 				FIELD_INTEGER 							),
-
-	DEFINE_THINKFUNC( DelayedRefresh ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", 		InputActivate ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "UpdateActors",	InputUpdateActors ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Deactivate",		InputDeactivate ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-------------------------------------
 
 void CAI_GoalEntity::Spawn()
 {
-	SetThink( &CAI_GoalEntity::DelayedRefresh );
-	SetNextThink( gpGlobals->curtime + 0.1f );
+	SetContextThink( &CAI_GoalEntity::DelayedRefresh, gpGlobals->curtime + 0.1f, "Refresh" );
 }
 
-
-//-------------------------------------
-
-void CAI_GoalEntity::OnRestore()
-{
-	BaseClass::OnRestore();
-
-	ExitDormant();
-
-	if ( ( m_flags & ACTIVE ) )
-		gEntList.AddListenerEntity( this );
-}
 
 //-------------------------------------
 
@@ -74,7 +55,7 @@ void CAI_GoalEntity::DelayedRefresh()
 	else
 		InputUpdateActors( ignored );
 	
-	SetThink( NULL );
+	SetContextThink( NULL, 0, "Refresh" );
 }
 
 //-------------------------------------
@@ -134,6 +115,8 @@ void CAI_GoalEntity::InputActivate( inputdata_t &inputdata )
 {
 	if ( !( m_flags & ACTIVE ) )
 	{
+		OnActivate();
+
 		gEntList.AddListenerEntity( this );
 		
 		UpdateActors();
@@ -141,7 +124,7 @@ void CAI_GoalEntity::InputActivate( inputdata_t &inputdata )
 		
 		for ( int i = 0; i < m_actors.Count(); i++ )
 		{
-			EnableGoal( m_actors[i] );
+			EnableGoal( m_actors[i].Get() );
 		}
 	}
 }
@@ -160,21 +143,21 @@ void CAI_GoalEntity::InputUpdateActors( inputdata_t &inputdata )
 	
 	for ( i = 0; i < m_actors.Count(); i++ )
 	{
-		prevActors.Insert( m_actors[i] );
+		prevActors.Insert( m_actors[i].Get() );
 	}
 	
 	ResolveNames();
 	
 	for ( i = 0; i < m_actors.Count(); i++ )
 	{
-		index = prevActors.Find( m_actors[i] );
+		index = prevActors.Find( m_actors[i].Get() );
 		if ( index == prevActors.InvalidIndex() )
 		{
 			if ( m_flags & ACTIVE )
-				EnableGoal( m_actors[i] );
+				EnableGoal( m_actors[i].Get() );
 		}
 		else
-			prevActors.Remove( m_actors[i] );
+			prevActors.Remove( m_actors[i].Get() );
 	}
 	
 	for ( index = prevActors.FirstInorder(); index != prevActors.InvalidIndex(); index = prevActors.NextInorder( index ) )
@@ -190,13 +173,15 @@ void CAI_GoalEntity::InputDeactivate( inputdata_t &inputdata )
 {
 	if ( m_flags & ACTIVE )
 	{
+		OnDeactivate();
+
 		gEntList.RemoveListenerEntity( this );
 		UpdateActors();
 		m_flags &= ~ACTIVE;
 
 		for ( int i = 0; i < m_actors.Count(); i++ )
 		{
-			DisableGoal( m_actors[i] );
+			DisableGoal( m_actors[i].Get() );
 		}		
 	}
 }
@@ -210,7 +195,7 @@ void CAI_GoalEntity::EnterDormant( void )
 		m_flags |= DORMANT;
 		for ( int i = 0; i < m_actors.Count(); i++ )
 		{
-			DisableGoal( m_actors[i] );
+			DisableGoal( m_actors[i].Get() );
 		}
 	}
 }
@@ -248,8 +233,7 @@ void CAI_GoalEntity::OnEntityCreated( CBaseEntity *pEntity )
 	
 	if ( pEntity->MyNPCPointer() )
 	{
-		SetThink( &CAI_GoalEntity::DelayedRefresh );
-		SetNextThink( gpGlobals->curtime + 0.1f );
+		SetContextThink( &CAI_GoalEntity::DelayedRefresh, gpGlobals->curtime + 0.1f, "Refresh" );
 	}
 	
 }

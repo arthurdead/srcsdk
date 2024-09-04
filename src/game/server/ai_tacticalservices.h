@@ -92,8 +92,6 @@ private:
 	CAI_Pathfinder *m_pPathfinder;
 
 	bool	m_bAllowFindLateralLos;	// Allows us to turn Lateral LOS checking on/off. 
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //-----------------------------------------------------------------------------

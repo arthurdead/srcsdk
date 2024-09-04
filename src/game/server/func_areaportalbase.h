@@ -19,7 +19,7 @@ class CFuncAreaPortalBase : public CBaseEntity
 {
 	DECLARE_CLASS( CFuncAreaPortalBase, CBaseEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 					CFuncAreaPortalBase();
 	virtual			~CFuncAreaPortalBase();

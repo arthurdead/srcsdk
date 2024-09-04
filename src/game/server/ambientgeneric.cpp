@@ -8,6 +8,9 @@
 #include "cbase.h"
 #include "ambientgeneric.h"
 #include "engine/IEngineSound.h"
+#ifdef PORTAL
+#include "portal_gamerules.h"
+#endif // PORTAL
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -22,12 +25,8 @@
 #define AMBIENT_GENERIC_UPDATE_RATE	5	// update at 5hz
 #define AMBIENT_GENERIC_THINK_DELAY ( 1.0f / float( AMBIENT_GENERIC_UPDATE_RATE ) )
 
-#ifdef HL1_DLL
-ConVar hl1_ref_db_distance( "hl1_ref_db_distance", "18.0" );
-#define	REFERENCE_dB_DISTANCE	hl1_ref_db_distance.GetFloat()
-#else
-#define REFERENCE_dB_DISTANCE	36.0
-#endif//HL1_DLL
+ConVar snd_ref_db_distance( "snd_ref_db_distance", "36.0" );
+#define	REFERENCE_dB_DISTANCE	snd_ref_db_distance.GetFloat()
 
 static soundlevel_t ComputeSoundlevel( float radius, bool playEverywhere )
 {
@@ -84,33 +83,13 @@ dynpitchvol_t rgdpvpreset[CDPVPRESETMAX] =
 	{27,128,	 90,	10,		10,		10,		1,		20,		40,		1,		5,		10,		20,		0,		0,0,0,0,0,0,0,0,0,0}
 };
 
-#ifndef INFESTED_DLL
 LINK_ENTITY_TO_CLASS( ambient_generic, CAmbientGeneric );
-#endif
 
-BEGIN_DATADESC( CAmbientGeneric )
+BEGIN_MAPENTITY( CAmbientGeneric )
 
 DEFINE_KEYFIELD( m_iszSound, FIELD_SOUNDNAME, "message" ),
 DEFINE_KEYFIELD( m_radius,			FIELD_FLOAT, "radius" ),
 DEFINE_KEYFIELD( m_sSourceEntName,	FIELD_STRING, "SourceEntityName" ),
-// recomputed in Activate()
-// DEFINE_FIELD( m_hSoundSource, EHANDLE ),
-// DEFINE_FIELD( m_nSoundSourceEntIndex, FIELD_INTERGER ),
-
-DEFINE_FIELD( m_flMaxRadius, FIELD_FLOAT ),
-DEFINE_FIELD( m_fActive, FIELD_BOOLEAN ),
-DEFINE_FIELD( m_fLooping, FIELD_BOOLEAN ),
-DEFINE_FIELD( m_iSoundLevel, FIELD_INTEGER ),
-
-// HACKHACK - This is not really in the spirit of the save/restore design, but save this
-// out as a binary data block.  If the dynpitchvol_t is changed, old saved games will NOT
-// load these correctly, so bump the save/restore version if you change the size of the struct
-// The right way to do this is to split the input parms (read in keyvalue) into members and re-init this
-// struct in Precache(), but it's unlikely that the struct will change, so it's not worth the time right now.
-DEFINE_ARRAY( m_dpv, FIELD_CHARACTER, sizeof(dynpitchvol_t) ),
-
-// Function Pointers
-DEFINE_FUNCTION( RampThink ),
 
 // Inputs
 DEFINE_INPUTFUNC(FIELD_VOID, "PlaySound", InputPlaySound ),
@@ -121,7 +100,7 @@ DEFINE_INPUTFUNC(FIELD_FLOAT, "Volume", InputVolume ),
 DEFINE_INPUTFUNC(FIELD_FLOAT, "FadeIn", InputFadeIn ),
 DEFINE_INPUTFUNC(FIELD_FLOAT, "FadeOut", InputFadeOut ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Spawn
@@ -354,6 +333,23 @@ void CAmbientGeneric::Activate( void )
 			}
 		}
 	}
+
+#ifdef PORTAL
+		// This is the only way we can silence the radio sound from the first room without touching them map -- jdw
+		if ( PortalGameRules() && PortalGameRules()->ShouldRemoveRadio() )
+		{		
+			if ( V_strcmp( STRING( gpGlobals->mapname ), "testchmb_a_00" ) == 0 || 
+			    V_strcmp( STRING( gpGlobals->mapname ), "testchmb_a_11" ) == 0 || 
+			    V_strcmp( STRING( gpGlobals->mapname ), "testchmb_a_14" ) == 0 )
+			{
+				if ( V_strcmp( STRING( GetEntityName() ), "radio_sound" ) == 0 )
+				{
+					UTIL_Remove( this );
+					return;
+				}
+			}
+		}
+#endif // PORTAL
 
 	// If active start the sound
 	if ( m_fActive )

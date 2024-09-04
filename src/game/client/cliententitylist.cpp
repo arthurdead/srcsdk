@@ -31,9 +31,20 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CClientEntityList, IClientEntityList, VCLIENT
 CClientEntityList *cl_entitylist = &s_EntityList; 
 
 
-bool PVSNotifierMap_LessFunc( IClientUnknown* const &a, IClientUnknown* const &b )
+bool PVSNotifierMap_LessFunc( C_BaseEntity* const &a, C_BaseEntity* const &b )
 {
 	return a < b;
+}
+
+//-----------------------------------------------------------------------------
+// Convenience methods to convert between entindex + ClientEntityHandle_t
+//-----------------------------------------------------------------------------
+ClientEntityHandle_t CClientEntityList::EntIndexToHandle( int entnum )
+{
+	if ( entnum < -1 )
+		return INVALID_EHANDLE_INDEX;
+	C_BaseEntity *pUnk = GetListedEntity( entnum );
+	return pUnk ? pUnk->GetRefEHandle() : INVALID_EHANDLE_INDEX; 
 }
 
 								 
@@ -66,55 +77,13 @@ void CClientEntityList::Release( void )
 	ClientEntityHandle_t iter = FirstHandle();
 	while( iter != InvalidHandle() )
 	{
-		// Try to call release on anything we can.
-		IClientNetworkable *pNet = GetClientNetworkableFromHandle( iter );
-		if ( pNet )
+		C_BaseEntity *pEnt = GetBaseEntityFromHandle( iter );
+		if( pEnt )
 		{
-			IClientUnknown *pUnk = pNet->GetIClientUnknown();
-			if( pUnk )
-			{
-				C_BaseEntity *pEnt = pUnk->GetBaseEntity();
-				if( pEnt )
-				{
-					UTIL_RemoveImmediate( pEnt );
-				}
-				else
-				{
-					pNet->DO_NOT_USE_Release();
-				}
-			}
-			else
-			{
-				pNet->DO_NOT_USE_Release();
-			}
+			UTIL_RemoveImmediate( pEnt );
 		}
-		else
-		{
-			// Try to call release on anything we can.
-			IClientThinkable *pThinkable = GetClientThinkableFromHandle( iter );
-			if ( pThinkable )
-			{
-				IClientUnknown *pUnk = pThinkable->GetIClientUnknown();
-				if( pUnk )
-				{
-					C_BaseEntity *pEnt = pUnk->GetBaseEntity();
-					if( pEnt )
-					{
-						UTIL_RemoveImmediate( pEnt );
-					}
-					else
-					{
-						pThinkable->DO_NOT_USE_Release();
-					}
-				}
-				else
-				{
-					pThinkable->DO_NOT_USE_Release();
-				}
-			}
-		}
-		RemoveEntity( iter );
 
+		RemoveEntity( iter );
 		iter = FirstHandle();
 	}
 
@@ -141,12 +110,6 @@ void CClientEntityList::SetDormant( int entityIndex, bool bDormant )
 	Assert( entityIndex >= 0 );
 	Assert( entityIndex < MAX_EDICTS );
 	m_EntityCacheInfo[entityIndex].m_bDormant = bDormant;
-}
-
-IClientEntity* CClientEntityList::GetClientEntity( int entnum )
-{
-	IClientUnknown *pEnt = GetListedEntity( entnum );
-	return pEnt ? pEnt->GetIClientEntity() : 0;
 }
 
 
@@ -221,106 +184,105 @@ void CClientEntityList::RecomputeHighestEntityUsed( void )
 
 C_BaseEntity* CClientEntityList::GetBaseEntity( int entnum )
 {
-	IClientUnknown *pEnt = GetListedEntity( entnum );
-	return pEnt ? pEnt->GetBaseEntity() : 0;
+	return LookupEntityByNetworkIndex( entnum );
 }
 
+C_BaseEntity* CClientEntityList::GetListedEntity( int entnum )
+{
+	return LookupEntityByNetworkIndex( entnum );
+}
 
 ICollideable* CClientEntityList::GetCollideable( int entnum )
 {
-	IClientUnknown *pEnt = GetListedEntity( entnum );
-	return pEnt ? pEnt->GetCollideable() : 0;
+	C_BaseEntity *pEnt = LookupEntityByNetworkIndex( entnum );
+	return pEnt ? pEnt->GetCollideable() : NULL;
 }
 
+IClientUnknown* CClientEntityList::GetClientUnknownFromHandle( ClientEntityHandle_t hEnt )
+{
+	return LookupEntity( hEnt );
+}
+
+IClientEntity* CClientEntityList::GetClientEntity( int entnum )
+{
+	return LookupEntityByNetworkIndex( entnum );
+}
 
 IClientNetworkable* CClientEntityList::GetClientNetworkableFromHandle( ClientEntityHandle_t hEnt )
 {
-	IClientUnknown *pEnt = GetClientUnknownFromHandle( hEnt );
-	return pEnt ? pEnt->GetClientNetworkable() : 0;
+	return LookupEntity( hEnt );
 }
 
 
 IClientEntity* CClientEntityList::GetClientEntityFromHandle( ClientEntityHandle_t hEnt )
 {
-	IClientUnknown *pEnt = GetClientUnknownFromHandle( hEnt );
-	return pEnt ? pEnt->GetIClientEntity() : 0;
+	return LookupEntity( hEnt );
 }
 
 
-IClientRenderable* CClientEntityList::GetClientRenderableFromHandle( ClientEntityHandle_t hEnt )
+C_BaseEntity* CClientEntityList::GetClientRenderableFromHandle( ClientEntityHandle_t hEnt )
 {
-	IClientUnknown *pEnt = GetClientUnknownFromHandle( hEnt );
-	return pEnt ? pEnt->GetClientRenderable() : 0;
+	return LookupEntity( hEnt );
 }
 
 
 C_BaseEntity* CClientEntityList::GetBaseEntityFromHandle( ClientEntityHandle_t hEnt )
 {
-	IClientUnknown *pEnt = GetClientUnknownFromHandle( hEnt );
-	return pEnt ? pEnt->GetBaseEntity() : 0;
+	return LookupEntity( hEnt );
 }
 
 
 ICollideable* CClientEntityList::GetCollideableFromHandle( ClientEntityHandle_t hEnt )
 {
-	IClientUnknown *pEnt = GetClientUnknownFromHandle( hEnt );
-	return pEnt ? pEnt->GetCollideable() : 0;
+	C_BaseEntity *pEnt = LookupEntity( hEnt );
+	return pEnt ? pEnt->GetCollideable() : NULL;
 }
 
 
-IClientThinkable* CClientEntityList::GetClientThinkableFromHandle( ClientEntityHandle_t hEnt )
+C_BaseEntity* CClientEntityList::GetClientThinkableFromHandle( ClientEntityHandle_t hEnt )
 {
-	IClientUnknown *pEnt = GetClientUnknownFromHandle( hEnt );
-	return pEnt ? pEnt->GetClientThinkable() : 0;
+	return LookupEntity( hEnt );
 }
 
 
-void CClientEntityList::AddPVSNotifier( IClientUnknown *pUnknown )
+void CClientEntityList::AddPVSNotifier( C_BaseEntity *pUnknown )
 {
-	IClientRenderable *pRen = pUnknown->GetClientRenderable();
-	if ( pRen )
+	IPVSNotify *pNotify = pUnknown->GetPVSNotifyInterface();
+	if ( pNotify )
 	{
-		IPVSNotify *pNotify = pRen->GetPVSNotifyInterface();
-		if ( pNotify )
-		{
-			unsigned short index = m_PVSNotifyInfos.AddToTail();
-			CPVSNotifyInfo *pInfo = &m_PVSNotifyInfos[index];
-			pInfo->m_pNotify = pNotify;
-			pInfo->m_pRenderable = pRen;
-			pInfo->m_InPVSStatus = 0;
-			pInfo->m_PVSNotifiersLink = index;
+		unsigned short index = m_PVSNotifyInfos.AddToTail();
+		CPVSNotifyInfo *pInfo = &m_PVSNotifyInfos[index];
+		pInfo->m_pNotify = pNotify;
+		pInfo->m_pRenderable = pUnknown;
+		pInfo->m_InPVSStatus = 0;
+		pInfo->m_PVSNotifiersLink = index;
 
-			m_PVSNotifierMap.Insert( pUnknown, index );
-		}
+		m_PVSNotifierMap.Insert( pUnknown, index );
 	}
 }
 
 
-void CClientEntityList::RemovePVSNotifier( IClientUnknown *pUnknown )
+void CClientEntityList::RemovePVSNotifier( C_BaseEntity *pUnknown )
 {
-	IClientRenderable *pRenderable = pUnknown->GetClientRenderable();
-	if ( pRenderable )
+	IPVSNotify *pNotify = pUnknown->GetPVSNotifyInterface();
+	if ( pNotify )
 	{
-		IPVSNotify *pNotify = pRenderable->GetPVSNotifyInterface();
-		if ( pNotify )
+		unsigned short index = m_PVSNotifierMap.Find( pUnknown );
+		if ( !m_PVSNotifierMap.IsValidIndex( index ) )
 		{
-			unsigned short index = m_PVSNotifierMap.Find( pUnknown );
-			if ( !m_PVSNotifierMap.IsValidIndex( index ) )
-			{
-				Warning( "PVS notifier not in m_PVSNotifierMap\n" );
-				Assert( false );
-				return;
-			}
-
-			unsigned short indexIntoPVSNotifyInfos = m_PVSNotifierMap[index];
-			
-			Assert( m_PVSNotifyInfos[indexIntoPVSNotifyInfos].m_pNotify == pNotify );
-			Assert( m_PVSNotifyInfos[indexIntoPVSNotifyInfos].m_pRenderable == pRenderable );
-			
-			m_PVSNotifyInfos.Remove( indexIntoPVSNotifyInfos );
-			m_PVSNotifierMap.RemoveAt( index );
+			Warning( "PVS notifier not in m_PVSNotifierMap\n" );
+			Assert( false );
 			return;
 		}
+
+		unsigned short indexIntoPVSNotifyInfos = m_PVSNotifierMap[index];
+		
+		Assert( m_PVSNotifyInfos[indexIntoPVSNotifyInfos].m_pNotify == pNotify );
+		Assert( m_PVSNotifyInfos[indexIntoPVSNotifyInfos].m_pRenderable == pUnknown );
+		
+		m_PVSNotifyInfos.Remove( indexIntoPVSNotifyInfos );
+		m_PVSNotifierMap.RemoveAt( index );
+		return;
 	}
 
 	// If it didn't report itself as a notifier, let's hope it's not in the notifier list now
@@ -346,7 +308,7 @@ void CClientEntityList::RemoveListenerEntity( IClientEntityListener *pListener )
 	m_entityListeners.FindAndRemove( pListener );
 }
 
-void CClientEntityList::OnAddEntity( IHandleEntity *pEnt, CBaseHandle handle )
+void CClientEntityList::OnAddEntity( CBaseEntity *pEnt, CBaseHandle handle )
 {
 	int entnum = handle.GetEntryIndex();
 	EntityCacheInfo_t *pCache = &m_EntityCacheInfo[entnum];
@@ -364,38 +326,26 @@ void CClientEntityList::OnAddEntity( IHandleEntity *pEnt, CBaseHandle handle )
 		// Cache its networkable pointer.
 		Assert( dynamic_cast< IClientUnknown* >( pEnt ) );
 		Assert( ((IClientUnknown*)pEnt)->GetClientNetworkable() ); // Server entities should all be networkable.
-		pCache->m_pNetworkable = ((IClientUnknown*)pEnt)->GetClientNetworkable();
+		pCache->m_pNetworkable = pEnt;
 		pCache->m_bDormant = true;
 	}
 
-	IClientUnknown *pUnknown = (IClientUnknown*)pEnt;
-
 	// If this thing wants PVS notifications, hook it up.
-	AddPVSNotifier( pUnknown );
+	AddPVSNotifier( pEnt );
 
 	// Store it in a special list for fast iteration if it's a C_BaseEntity.
-	C_BaseEntity *pBaseEntity = pUnknown->GetBaseEntity();
-	if ( pBaseEntity )
-	{
-		pCache->m_BaseEntitiesIndex = m_BaseEntities.AddToTail( pBaseEntity );
+	pCache->m_BaseEntitiesIndex = m_BaseEntities.AddToTail( pEnt );
 
-		if ( !pBaseEntity->IsServerEntity() )
-		{
-			 m_iNumClientNonNetworkable++;
-		}
-
-		//DevMsg(2,"Created %s\n", pBaseEnt->GetClassname() );
-		for ( int i = m_entityListeners.Count()-1; i >= 0; i-- )
-		{
-			m_entityListeners[i]->OnEntityCreated( pBaseEntity );
-		}
-	}
-	else
+	if ( entnum > MAX_EDICTS )
 	{
-		pCache->m_BaseEntitiesIndex = m_BaseEntities.InvalidIndex();
+		 m_iNumClientNonNetworkable++;
 	}
 
-
+	//DevMsg(2,"Created %s\n", pBaseEnt->GetClassname() );
+	for ( int i = m_entityListeners.Count()-1; i >= 0; i-- )
+	{
+		m_entityListeners[i]->OnEntityCreated( pEnt );
+	}
 }
 
 #if defined( STAGING_ONLY )
@@ -460,7 +410,7 @@ CON_COMMAND( cl_removeentity_backtrace_dump, "Dump backtraces for client OnRemov
 
 #endif // STAGING_ONLY
 
-void CClientEntityList::OnRemoveEntity( IHandleEntity *pEnt, CBaseHandle handle )
+void CClientEntityList::OnRemoveEntity( CBaseEntity *pEnt, CBaseHandle handle )
 {
 	int entnum = handle.GetEntryIndex();
 	EntityCacheInfo_t *pCache = &m_EntityCacheInfo[entnum];
@@ -477,33 +427,25 @@ void CClientEntityList::OnRemoveEntity( IHandleEntity *pEnt, CBaseHandle handle 
 		}
 	}
 
-
-	IClientUnknown *pUnknown = (IClientUnknown*)pEnt;
-
 	// If this is a PVS notifier, remove it.
-	RemovePVSNotifier( pUnknown );
-
-	C_BaseEntity *pBaseEntity = pUnknown->GetBaseEntity();
+	RemovePVSNotifier( pEnt );
 
 #if defined( STAGING_ONLY )
 	if ( cl_removeentity_backtrace_capture.GetBool() )
 	{
-		OnRemoveEntityBacktraceHook( entnum, pBaseEntity );
+		OnRemoveEntityBacktraceHook( entnum, pEnt );
 	}
 #endif // STAGING_ONLY
 
-	if ( pBaseEntity )
+	if ( entnum > MAX_EDICTS )
 	{
-		if ( !pBaseEntity->IsServerEntity() )
-		{
-			 m_iNumClientNonNetworkable--;
-		}
+		 m_iNumClientNonNetworkable--;
+	}
 
-		//DevMsg(2,"Deleted %s\n", pBaseEnt->GetClassname() );
-		for ( int i = m_entityListeners.Count()-1; i >= 0; i-- )
-		{
-			m_entityListeners[i]->OnEntityDeleted( pBaseEntity );
-		}
+	//DevMsg(2,"Deleted %s\n", pBaseEnt->GetClassname() );
+	for ( int i = m_entityListeners.Count()-1; i >= 0; i-- )
+	{
+		m_entityListeners[i]->OnEntityDeleted( pEnt );
 	}
 
 	if ( pCache->m_BaseEntitiesIndex != m_BaseEntities.InvalidIndex() )
@@ -519,12 +461,9 @@ C_BaseEntity* CClientEntityList::FirstBaseEntity() const
 	const CEntInfo *pList = FirstEntInfo();
 	while ( pList )
 	{
-		if ( pList->m_pEntity )
+		if ( pList->m_pBaseEnt )
 		{
-			IClientUnknown *pUnk = static_cast<IClientUnknown*>( pList->m_pEntity );
-			C_BaseEntity *pRet = pUnk->GetBaseEntity();
-			if ( pRet )
-				return pRet;
+			return pList->m_pBaseEnt;
 		}
 		pList = pList->m_pNext;
 	}
@@ -547,12 +486,9 @@ C_BaseEntity* CClientEntityList::NextBaseEntity( C_BaseEntity *pEnt ) const
 
 	while ( pList )
 	{
-		if ( pList->m_pEntity )
+		if ( pList->m_pBaseEnt )
 		{
-			IClientUnknown *pUnk = static_cast<IClientUnknown*>( pList->m_pEntity );
-			C_BaseEntity *pRet = pUnk->GetBaseEntity();
-			if ( pRet )
-				return pRet;
+			return pList->m_pBaseEnt;
 		}
 		pList = pList->m_pNext;
 	}

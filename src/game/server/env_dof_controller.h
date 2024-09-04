@@ -3,6 +3,8 @@
 #define ENV_DOF_CONTROLLER_H
 #pragma once
 
+#include "baseentity.h"
+
 struct DOFControlSettings_t
 {
 	// Near plane
@@ -22,7 +24,7 @@ class CEnvDOFController : public CPointEntity
 {
 	DECLARE_CLASS( CEnvDOFController, CPointEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	virtual void	Spawn( void );

@@ -23,7 +23,6 @@
 #include "entitylist.h"
 #include "shake.h"
 #include "globalstate.h"
-#include "event_tempentity_tester.h"
 #include "ndebugoverlay.h"
 #include "engine/IEngineSound.h"
 #include <ctype.h>
@@ -33,17 +32,9 @@
 #include "nav_mesh.h"
 #include "team.h"
 #include "datacache/imdlcache.h"
-#include "basemultiplayerplayer.h"
 #include "voice_gamemgr.h"
-
-#ifdef TF_DLL
-#include "tf_player.h"
-#include "tf_gamerules.h"
-#endif
-
-#ifdef HL2_DLL
-#include "weapon_physcannon.h"
-#endif
+#include "videocfg/videocfg.h"
+#include "tier1/fmtstr.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -53,8 +44,6 @@ extern int giPrecacheGrunt;
 // For not just using one big ai net
 extern CBaseEntity*	FindPickerEntity( CBasePlayer* pPlayer );
 
-extern bool IsInCommentaryMode( void );
-
 ConVar  *sv_cheats = NULL;
 
 enum eAllowPointServerCommand {
@@ -63,12 +52,8 @@ enum eAllowPointServerCommand {
 	eAllowAlways
 };
 
-#ifdef TF_DLL
 // The default value here should match the default of the convar
 eAllowPointServerCommand sAllowPointServerCommand = eAllowOfficial;
-#else
-eAllowPointServerCommand sAllowPointServerCommand = eAllowAlways;
-#endif // TF_DLL
 
 void sv_allow_point_servercommand_changed( IConVar *pConVar, const char *pOldString, float flOldValue )
 {
@@ -83,12 +68,10 @@ void sv_allow_point_servercommand_changed( IConVar *pConVar, const char *pOldStr
 	{
 		sAllowPointServerCommand = eAllowAlways;
 	}
-#ifdef TF_DLL
 	else if ( V_strcasecmp ( pNewValue, "official" ) == 0 )
 	{
 		sAllowPointServerCommand = eAllowOfficial;
 	}
-#endif // TF_DLL
 	else
 	{
 		sAllowPointServerCommand = eAllowNever;
@@ -96,19 +79,12 @@ void sv_allow_point_servercommand_changed( IConVar *pConVar, const char *pOldStr
 }
 
 ConVar sv_allow_point_servercommand ( "sv_allow_point_servercommand",
-#ifdef TF_DLL
                                       // The default value here should match the default of the convar
                                       "official",
-#else
-                                      // Other games may use this in their official maps, and only TF exposes IsValveMap() currently
-                                      "always",
-#endif // TF_DLL
                                       FCVAR_NONE,
                                       "Allow use of point_servercommand entities in map. Potentially dangerous for untrusted maps.\n"
                                       "  disallow : Always disallow\n"
-#ifdef TF_DLL
                                       "  official : Allowed for valve maps only\n"
-#endif // TF_DLL
                                       "  always   : Allow for all maps", sv_allow_point_servercommand_changed );
 
 void ClientKill( edict_t *pEdict, const Vector &vecForce, bool bExplode = false )
@@ -214,6 +190,12 @@ void Host_Say( edict_t *pEdict, const CCommand &args, bool teamonly )
 		pPlayer->CheckChatText( p, 127 );	// though the buffer szTemp that p points to is 256, 
 											// chat text is capped to 127 in CheckChatText above
 
+		// make sure the text has valid content
+		p = CheckChatText( pPlayer, p );
+
+		if ( !p )
+			return;
+
 		Assert( strlen( pPlayer->GetPlayerName() ) > 0 );
 
 		bSenderDead = ( pPlayer->m_lifeState != LIFE_ALIVE );
@@ -266,7 +248,7 @@ void Host_Say( edict_t *pEdict, const CCommand &args, bool teamonly )
 	client = NULL;
 	for ( int i = 1; i <= gpGlobals->maxClients; i++ )
 	{
-		client = ToBaseMultiplayerPlayer( UTIL_PlayerByIndex( i ) );
+		client = ToBasePlayer( UTIL_PlayerByIndex( i ) );
 		if ( !client || !client->edict() )
 			continue;
 		
@@ -276,7 +258,7 @@ void Host_Say( edict_t *pEdict, const CCommand &args, bool teamonly )
 		if ( !(client->IsNetClient()) )	// Not a client ? (should never be true)
 			continue;
 
-		if ( teamonly && g_pGameRules->PlayerCanHearChat( client, pPlayer ) != GR_TEAMMATE )
+		if ( teamonly && !g_pGameRules->PlayerCanHearChat( client, pPlayer ) )
 			continue;
 
 		if ( pPlayer && !client->CanHearAndReadChatFrom( pPlayer ) )
@@ -365,9 +347,8 @@ void ClientPrecache( void )
 	CBaseEntity::PrecacheModel( "sprites/purpleglow1.vmt" );	
 	CBaseEntity::PrecacheModel( "sprites/purplelaser1.vmt" );	
 	
-#ifndef HL2MP
 	CBaseEntity::PrecacheScriptSound( "Hud.Hint" );
-#endif // HL2MP
+
 	CBaseEntity::PrecacheScriptSound( "Player.FallDamage" );
 	CBaseEntity::PrecacheScriptSound( "Player.Swim" );
 
@@ -388,7 +369,45 @@ void ClientPrecache( void )
 	CBaseEntity::PrecacheScriptSound( "Bounce.Shell" );
 	CBaseEntity::PrecacheScriptSound( "Bounce.Concrete" );
 
+	CBaseEntity::PrecacheScriptSound( "BaseEntity.EnterWater" );
+	CBaseEntity::PrecacheScriptSound( "BaseEntity.ExitWater" );
+
+	CBaseEntity::PrecacheScriptSound( "Instructor.LessonStart" );
+	CBaseEntity::PrecacheScriptSound( "Instructor.ImportantLessonStart" );
+
 	ClientGamePrecache();
+
+	// Force levels
+	char pBuf[MAX_PATH];
+	for ( int i = 0; i < CPU_LEVEL_PC_COUNT; ++i )
+	{
+		Q_snprintf( pBuf, sizeof(pBuf), "cfg/cpu_level_%d_pc.ekv", i );
+		engine->ForceExactFile( pBuf );
+		Q_snprintf( pBuf, sizeof(pBuf), "cfg/cpu_level_%d_pc_ss.ekv", i );
+		engine->ForceExactFile( pBuf );
+	}
+
+	for ( int i = 0; i < GPU_LEVEL_PC_COUNT; ++i )
+	{
+		Q_snprintf( pBuf, sizeof(pBuf), "cfg/gpu_level_%d_pc.ekv", i );
+		engine->ForceExactFile( pBuf );
+	}
+
+	for ( int i = 0; i < MEM_LEVEL_PC_COUNT; ++i )
+	{
+		Q_snprintf( pBuf, sizeof(pBuf), "cfg/mem_level_%d_pc.ekv", i );
+		engine->ForceExactFile( pBuf );
+	}
+
+	for ( int i = 0; i < GPU_MEM_LEVEL_PC_COUNT; ++i )
+	{
+		Q_snprintf( pBuf, sizeof(pBuf), "cfg/gpu_mem_level_%d_pc.ekv", i );
+		engine->ForceExactFile( pBuf );
+	}
+
+	// Game Instructor lessons - don't want people making simple scripted wall hacks
+	engine->ForceExactFile( "scripts/instructor_lessons.txt" );
+	engine->ForceExactFile( "scripts/mod_lessons.txt" );
 }
 
 CON_COMMAND_F( cast_ray, "Tests collision detection", FCVAR_CHEAT )
@@ -560,7 +579,7 @@ class CPointClientCommand : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CPointClientCommand, CPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void InputCommand( inputdata_t& inputdata );
 };
@@ -583,12 +602,6 @@ void CPointClientCommand::InputCommand( inputdata_t& inputdata )
 		{
 			pClient = player->edict();
 		}
-
-		if ( IsInCommentaryMode() && !pClient )
-		{
-			// Commentary is stuffing a command in. We'll pretend it came from the first player.
-			pClient = engine->PEntityOfEntIndex( 1 );
-		}
 	}
 
 	if ( !pClient || !pClient->GetUnknown() )
@@ -597,9 +610,9 @@ void CPointClientCommand::InputCommand( inputdata_t& inputdata )
 	engine->ClientCommand( pClient, "%s\n", inputdata.value.String() );
 }
 
-BEGIN_DATADESC( CPointClientCommand )
+BEGIN_MAPENTITY( CPointClientCommand )
 	DEFINE_INPUTFUNC( FIELD_STRING, "Command", InputCommand ),
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( point_clientcommand, CPointClientCommand );
 
@@ -610,7 +623,7 @@ class CPointServerCommand : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CPointServerCommand, CPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	void InputCommand( inputdata_t& inputdata );
 };
 
@@ -624,12 +637,10 @@ void CPointServerCommand::InputCommand( inputdata_t& inputdata )
 		return;
 
 	bool bAllowed = ( sAllowPointServerCommand == eAllowAlways );
-#ifdef TF_DLL
 	if ( sAllowPointServerCommand == eAllowOfficial )
 	{
-		bAllowed = TFGameRules() && TFGameRules()->IsValveMap();
+		bAllowed = GameRules() && GameRules()->IsOfficialMap();
 	}
-#endif // TF_DLL
 
 	if ( bAllowed )
 	{
@@ -641,11 +652,51 @@ void CPointServerCommand::InputCommand( inputdata_t& inputdata )
 	}
 }
 
-BEGIN_DATADESC( CPointServerCommand )
+BEGIN_MAPENTITY( CPointServerCommand )
 	DEFINE_INPUTFUNC( FIELD_STRING, "Command", InputCommand ),
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( point_servercommand, CPointServerCommand );
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+class CPointBroadcastClientCommand : public CPointEntity
+{
+public:
+	DECLARE_CLASS( CPointBroadcastClientCommand, CPointEntity );
+	DECLARE_MAPENTITY();
+	void InputCommand( inputdata_t& inputdata );
+};
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : inputdata - 
+//-----------------------------------------------------------------------------
+void CPointBroadcastClientCommand::InputCommand( inputdata_t& inputdata )
+{
+	if ( !inputdata.value.String()[0] )
+		return;
+
+	for ( int i = 1; i <= gpGlobals->maxClients; ++i )
+	{
+		CBasePlayer *pl = UTIL_PlayerByIndex( i );
+		if ( !pl )
+			continue;
+
+		edict_t *pClient = pl->edict();
+		if ( !pClient || !pClient->GetUnknown() )
+			continue;
+
+		engine->ClientCommand( pClient, UTIL_VarArgs( "%s\n", inputdata.value.String() ) );
+	}
+}
+
+BEGIN_MAPENTITY( CPointBroadcastClientCommand )
+DEFINE_INPUTFUNC( FIELD_STRING, "Command", InputCommand ),
+END_MAPENTITY()
+
+LINK_ENTITY_TO_CLASS( point_broadcastclientcommand, CPointBroadcastClientCommand );
 
 //------------------------------------------------------------------------------
 // Purpose : Draw a line betwen two points.  White if no world collisions, red if collisions
@@ -1008,75 +1059,11 @@ void CC_Player_TestDispatchEffect( const CCommand &args )
 	data.m_fFlags = flags;
 	data.m_flMagnitude = magnitude;
 	data.m_flScale = scale;
+	PrecacheEffect( (char *)args[1] );
 	DispatchEffect( (char *)args[1], data );
 }
 
 static ConCommand test_dispatcheffect("test_dispatcheffect", CC_Player_TestDispatchEffect, "Test a clientside dispatch effect.\n\tUsage: test_dispatcheffect <effect name> <distance away> <flags> <magnitude> <scale>\n\tDefaults are: <distance 1024> <flags 0> <magnitude 0> <scale 0>\n", FCVAR_CHEAT);
-
-#ifdef HL2_DLL
-//-----------------------------------------------------------------------------
-// Purpose: Quickly switch to the physics cannon, or back to previous item
-//-----------------------------------------------------------------------------
-void CC_Player_PhysSwap( void )
-{
-	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() );
-	
-	if ( pPlayer )
-	{
-		CBaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();
-
-		if ( pWeapon )
-		{
-			// Tell the client to stop selecting weapons
-			engine->ClientCommand( UTIL_GetCommandClient()->edict(), "cancelselect" );
-
-			const char *strWeaponName = pWeapon->GetName();
-
-			if ( !Q_stricmp( strWeaponName, "weapon_physcannon" ) )
-			{
-				PhysCannonForceDrop( pWeapon, NULL );
-				pPlayer->SelectLastItem();
-			}
-			else
-			{
-				pPlayer->SelectItem( "weapon_physcannon" );
-			}
-		}
-	}
-}
-static ConCommand physswap("phys_swap", CC_Player_PhysSwap, "Automatically swaps the current weapon for the physcannon and back again." );
-#endif
-
-//-----------------------------------------------------------------------------
-// Purpose: Quickly switch to the bug bait, or back to previous item
-//-----------------------------------------------------------------------------
-void CC_Player_BugBaitSwap( void )
-{
-	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() );
-	
-	if ( pPlayer )
-	{
-		CBaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();
-
-		if ( pWeapon )
-		{
-			// Tell the client to stop selecting weapons
-			engine->ClientCommand( UTIL_GetCommandClient()->edict(), "cancelselect" );
-
-			const char *strWeaponName = pWeapon->GetName();
-
-			if ( !Q_stricmp( strWeaponName, "weapon_bugbait" ) )
-			{
-				pPlayer->SelectLastItem();
-			}
-			else
-			{
-				pPlayer->SelectItem( "weapon_bugbait" );
-			}
-		}
-	}
-}
-static ConCommand bugswap("bug_swap", CC_Player_BugBaitSwap, "Automatically swaps the current weapon for the bug bait and back again.", FCVAR_CHEAT );
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -1091,13 +1078,62 @@ void CC_Player_Use( const CCommand &args )
 static ConCommand use("use", CC_Player_Use, "Use a particular weapon\t\nArguments: <weapon_name>");
 
 
+class SimplePhysicsTraceFilter : public IPhysicsTraceFilter
+{
+	CBaseEntity *m_pEntity;
+	int m_mask;
+
+public:
+	SimplePhysicsTraceFilter( CBaseEntity *pEntity, int mask )
+	{
+		m_pEntity = pEntity;
+		m_mask = mask;
+	}
+
+	virtual bool ShouldHitObject( IPhysicsObject *pObject, int contentsMask )
+	{
+		if ( m_pEntity->VPhysicsGetObject() == pObject )
+			return false;
+
+		if ( (m_mask & contentsMask) == 0 )
+			return false;
+
+		return true;
+	}
+
+	virtual PhysicsTraceType_t	GetTraceType() const
+	{
+		return VPHYSICS_TRACE_STATIC_AND_MOVING;
+	}
+};
+
 //------------------------------------------------------------------------------
 // A small wrapper around SV_Move that never clips against the supplied entity.
 //------------------------------------------------------------------------------
-static bool TestEntityPosition ( CBasePlayer *pPlayer )
-{	
+bool TestEntityPosition ( CBaseEntity *pEntity, unsigned int mask )
+{
 	trace_t	trace;
-	UTIL_TraceEntity( pPlayer, pPlayer->GetAbsOrigin(), pPlayer->GetAbsOrigin(), MASK_PLAYERSOLID, &trace );
+	IPhysicsObject *physObject = pEntity->VPhysicsGetObject();
+	const Vector &origin = pEntity->GetAbsOrigin();
+	if ( physObject )
+	{
+		QAngle angles = pEntity->GetAbsAngles();
+
+		//Vector obbMins, obbMaxs;
+		Vector mins, maxs;
+		//obbMins = pEntity->CollisionProp()->OBBMins();
+		//obbMaxs = pEntity->CollisionProp()->OBBMaxs();
+		//pEntity->CollisionProp()->CollisionAABBToWorldAABB( obbMins, obbMaxs, &mins, &maxs );
+		pEntity->CollisionProp()->WorldSpaceSurroundingBounds( &mins, &maxs );
+
+		UTIL_TraceHull( vec3_origin, vec3_origin, mins, maxs, mask, pEntity, COLLISION_GROUP_NONE, &trace );
+		//SimplePhysicsTraceFilter filter( pEntity, (int)mask );
+		//physenv->SweepCollideable( physObject->GetCollide(), origin, origin, angles, mask, &filter, &trace );
+	}
+	else
+	{
+		UTIL_TraceEntity( pEntity, origin, origin, mask, &trace );
+	}
 	return (trace.startsolid == 0);
 }
 
@@ -1107,17 +1143,17 @@ static bool TestEntityPosition ( CBasePlayer *pPlayer )
 // the entity position is passible.
 // Used for putting the player in valid space when toggling off noclip mode.
 //------------------------------------------------------------------------------
-static int FindPassableSpace( CBasePlayer *pPlayer, const Vector& direction, float step, Vector& oldorigin )
+static int FindPassableSpace( CBaseEntity *pEntity, unsigned int mask, const Vector& direction, float step, Vector& oldorigin )
 {
 	int i;
 	for ( i = 0; i < 100; i++ )
 	{
-		Vector origin = pPlayer->GetAbsOrigin();
+		Vector origin = pEntity->GetAbsOrigin();
 		VectorMA( origin, step, direction, origin );
-		pPlayer->SetAbsOrigin( origin );
-		if ( TestEntityPosition( pPlayer ) )
+		pEntity->SetAbsOrigin( origin );
+		if ( TestEntityPosition( pEntity, mask ) )
 		{
-			VectorCopy( pPlayer->GetAbsOrigin(), oldorigin );
+			VectorCopy( pEntity->GetAbsOrigin(), oldorigin );
 			return 1;
 		}
 	}
@@ -1126,8 +1162,24 @@ static int FindPassableSpace( CBasePlayer *pPlayer, const Vector& direction, flo
 
 
 //------------------------------------------------------------------------------
+// Test various directions for empty space -- for debugging only; this is slow and
+// meant for finding a place to put a noclipped player who goes solid again.
+//------------------------------------------------------------------------------
+bool FindEmptySpace( CBaseEntity *pEntity, unsigned int mask, const Vector &forward, const Vector &right, const Vector &up, Vector *testOrigin )
+{
+	return	FindPassableSpace( pEntity, mask, forward, 1, *testOrigin )	||  // forward
+			FindPassableSpace( pEntity, mask, right, 1, *testOrigin )	||  // right
+			FindPassableSpace( pEntity, mask, right, -1, *testOrigin )	||  // left
+			FindPassableSpace( pEntity, mask, up, 1, *testOrigin )		||  // up
+			FindPassableSpace( pEntity, mask, up, -1, *testOrigin )		||  // down
+			FindPassableSpace( pEntity, mask, forward, -1, *testOrigin ) ;  // back
+}
+
+
+//------------------------------------------------------------------------------
 // Noclip
 //------------------------------------------------------------------------------
+ConVar noclip_fixup( "noclip_fixup", "1", FCVAR_CHEAT );
 void EnableNoClip( CBasePlayer *pPlayer )
 {
 	// Disengage from hierarchy
@@ -1135,9 +1187,42 @@ void EnableNoClip( CBasePlayer *pPlayer )
 	pPlayer->SetMoveType( MOVETYPE_NOCLIP );
 	ClientPrint( pPlayer, HUD_PRINTCONSOLE, "noclip ON\n");
 	pPlayer->AddEFlags( EFL_NOCLIP_ACTIVE );
+	pPlayer->NoClipStateChanged();
+
+	UTIL_LogPrintf( "%s entered NOCLIP mode\n", GameLogSystem()->FormatPlayer( pPlayer ) );
 }
 
-void CC_Player_NoClip( void )
+void DisableNoClip( CBasePlayer *pPlayer )
+{
+	CPlayerState *pl = pPlayer->PlayerData();
+	Assert( pl );
+
+	pPlayer->RemoveEFlags( EFL_NOCLIP_ACTIVE );
+	pPlayer->SetMoveType( MOVETYPE_WALK );
+
+	ClientPrint( pPlayer, HUD_PRINTCONSOLE, "noclip OFF\n");
+	Vector oldorigin = pPlayer->GetAbsOrigin();
+	unsigned int mask = MASK_PLAYERSOLID;
+	if ( noclip_fixup.GetBool() && !TestEntityPosition( pPlayer, mask ) )
+	{
+		Vector forward, right, up;
+
+		AngleVectors ( pl->v_angle, &forward, &right, &up);
+
+		if ( !FindEmptySpace( pPlayer, mask, forward, right, up, &oldorigin ) )
+		{
+			Msg( "Can't find the world\n" );
+		}
+
+		pPlayer->SetAbsOrigin( oldorigin );
+	}
+
+	pPlayer->NoClipStateChanged();
+
+	UTIL_LogPrintf( "%s left NOCLIP mode\n", GameLogSystem()->FormatPlayer( pPlayer ) );
+}
+
+CON_COMMAND_F( noclip, "Toggle. Player becomes non-solid and flies.  Optional argument of 0 or 1 to force enable/disable", FCVAR_CHEAT )
 {
 	if ( !sv_cheats->GetBool() )
 		return;
@@ -1146,52 +1231,31 @@ void CC_Player_NoClip( void )
 	if ( !pPlayer )
 		return;
 
-	CPlayerState *pl = pPlayer->PlayerData();
-	Assert( pl );
-
-	if (pPlayer->GetMoveType() != MOVETYPE_NOCLIP)
+	if ( args.ArgC() >= 2 )
 	{
-		EnableNoClip( pPlayer );
-		return;
-	}
-
-	pPlayer->RemoveEFlags( EFL_NOCLIP_ACTIVE );
-	pPlayer->SetMoveType( MOVETYPE_WALK );
-
-	Vector oldorigin = pPlayer->GetAbsOrigin();
-	ClientPrint( pPlayer, HUD_PRINTCONSOLE, "noclip OFF\n");
-	if ( !TestEntityPosition( pPlayer ) )
-	{
-		Vector forward, right, up;
-
-		AngleVectors ( pl->v_angle, &forward, &right, &up);
-		
-		// Try to move into the world
-		if ( !FindPassableSpace( pPlayer, forward, 1, oldorigin ) )
+		bool bEnable = Q_atoi( args.Arg( 1 ) ) ? true : false;
+		if ( bEnable && pPlayer->GetMoveType() != MOVETYPE_NOCLIP )
 		{
-			if ( !FindPassableSpace( pPlayer, right, 1, oldorigin ) )
-			{
-				if ( !FindPassableSpace( pPlayer, right, -1, oldorigin ) )		// left
-				{
-					if ( !FindPassableSpace( pPlayer, up, 1, oldorigin ) )	// up
-					{
-						if ( !FindPassableSpace( pPlayer, up, -1, oldorigin ) )	// down
-						{
-							if ( !FindPassableSpace( pPlayer, forward, -1, oldorigin ) )	// back
-							{
-								Msg( "Can't find the world\n" );
-							}
-						}
-					}
-				}
-			}
+			EnableNoClip( pPlayer );
 		}
-
-		pPlayer->SetAbsOrigin( oldorigin );
+		else if ( !bEnable && pPlayer->GetMoveType() == MOVETYPE_NOCLIP )
+		{
+			DisableNoClip( pPlayer );
+		}
+	}
+	else
+	{
+		// Toggle the noclip state if there aren't any arguments.
+		if ( pPlayer->GetMoveType() != MOVETYPE_NOCLIP )
+		{
+			EnableNoClip( pPlayer );
+		}
+		else
+		{
+			DisableNoClip( pPlayer );
+		}
 	}
 }
-
-static ConCommand noclip("noclip", CC_Player_NoClip, "Toggle. Player becomes non-solid and flies.", FCVAR_CHEAT);
 
 
 //------------------------------------------------------------------------------
@@ -1205,17 +1269,6 @@ void CC_God_f (void)
 	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() ); 
 	if ( !pPlayer )
 		return;
-
-#ifdef TF_DLL
-   if ( TFGameRules() && ( TFGameRules()->IsPVEModeActive() == false ) )
-   {
-	   if ( gpGlobals->deathmatch )
-		   return;
-   }
-#else
-	if ( gpGlobals->deathmatch )
-		return;
-#endif
 
 	pPlayer->ToggleFlag( FL_GODMODE );
 	if (!(pPlayer->GetFlags() & FL_GODMODE ) )
@@ -1254,12 +1307,45 @@ CON_COMMAND_F( setpos, "Move player to specified origin (must have sv_cheats).",
 
 	pPlayer->SetAbsOrigin( newpos );
 
-	if ( !TestEntityPosition( pPlayer ) )
+	if ( !TestEntityPosition( pPlayer, MASK_PLAYERSOLID ) )
 	{
 		ClientPrint( pPlayer, HUD_PRINTCONSOLE, "setpos into world, use noclip to unstick yourself!\n");
 	}
 }
 
+CON_COMMAND_F( setpos_player, "Move specified player to specified origin (must have sv_cheats).", FCVAR_CHEAT )
+{
+	if ( !sv_cheats->GetBool() )
+		return;
+
+	CBasePlayer *pCommandPlayer = ToBasePlayer( UTIL_GetCommandClient() ); 
+	if ( !pCommandPlayer )
+		return;
+
+	if ( args.ArgC() < 4 )
+	{
+		ClientPrint( pCommandPlayer, HUD_PRINTCONSOLE, "Usage:  setpos player_index x y <z optional>\n");
+		return;
+	}
+
+	CBasePlayer *pPlayer = ToBasePlayer( UTIL_PlayerByIndex( atoi( args[1] ) ) ); 
+	if ( !pPlayer )
+		return;
+
+	Vector oldorigin = pPlayer->GetAbsOrigin();
+
+	Vector newpos;
+	newpos.x = atof( args[2] );
+	newpos.y = atof( args[3] );
+	newpos.z = args.ArgC() == 5 ? atof( args[4] ) : oldorigin.z;
+
+	pPlayer->SetAbsOrigin( newpos );
+
+	if ( !TestEntityPosition( pPlayer, MASK_PLAYERSOLID ) )
+	{
+		ClientPrint( pPlayer, HUD_PRINTCONSOLE, "setpos into world, use noclip to unstick yourself!\n");
+	}
+}
 
 //------------------------------------------------------------------------------
 // Sets client to godmode
@@ -1290,6 +1376,72 @@ void CC_setang_f (const CCommand &args)
 }
 
 static ConCommand setang("setang", CC_setang_f, "Snap player eyes to specified pitch yaw <roll:optional> (must have sv_cheats).", FCVAR_CHEAT );
+
+CON_COMMAND_F( ent_setpos, "Move entity to position", FCVAR_CHEAT )
+{
+	if ( !sv_cheats->GetBool() )
+		return;
+
+	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() ); 
+	if ( !pPlayer )
+		return;
+
+	if ( args.ArgC() < 4 )
+	{
+		ClientPrint( pPlayer, HUD_PRINTCONSOLE, "Usage:  ent_setpos index x y <optional z>\n");
+		return;
+	}
+
+	int nIndex = Q_atoi( args[ 1 ] );
+	CBaseEntity *ent = CBaseEntity::Instance( nIndex );
+	if ( !ent )
+	{
+		ClientPrint( pPlayer, HUD_PRINTCONSOLE, UTIL_VarArgs( "ent_setpos no entity %d\n", nIndex ) );
+		return;
+	}
+
+	Vector oldorigin = ent->GetAbsOrigin();
+
+	Vector newpos;
+	newpos.x = atof( args[2] );
+	newpos.y = atof( args[3] );
+	newpos.z = args.ArgC() == 5 ? atof( args[4] ) : oldorigin.z;
+
+	ent->SetAbsOrigin( newpos );
+}
+
+CON_COMMAND_F( ent_setang, "Set entity angles", FCVAR_CHEAT )
+{
+	if ( !sv_cheats->GetBool() )
+		return;
+
+	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() ); 
+	if ( !pPlayer )
+		return;
+
+	if ( args.ArgC() < 4 )
+	{
+		ClientPrint( pPlayer, HUD_PRINTCONSOLE, "Usage:  ent_setang index pitch yaw <optional roll>\n");
+		return;
+	}
+
+	int nIndex = Q_atoi( args[ 1 ] );
+	CBaseEntity *ent = CBaseEntity::Instance( nIndex );
+	if ( !ent )
+	{
+		ClientPrint( pPlayer, HUD_PRINTCONSOLE, UTIL_VarArgs( "ent_setang no entity %d\n", nIndex ) );
+		return;
+	}
+
+	QAngle old = ent->GetAbsAngles();
+
+	QAngle newAng;
+	newAng.x = atof( args[2] );
+	newAng.y = atof( args[3] );
+	newAng.z = args.ArgC() == 5 ? atof( args[4] ) : old.z;
+
+	ent->SetAbsAngles( newAng );
+}
 
 static float GetHexFloat( const char *pStr )
 {
@@ -1329,7 +1481,7 @@ CON_COMMAND_F( setpos_exact, "Move player to an exact specified origin (must hav
 
 	pPlayer->Teleport( &newpos, NULL, NULL );
 
-	if ( !TestEntityPosition( pPlayer ) )
+	if ( !TestEntityPosition( pPlayer, MASK_PLAYERSOLID ) )
 	{
 		if ( pPlayer->GetMoveType() != MOVETYPE_NOCLIP )
 		{
@@ -1364,9 +1516,7 @@ CON_COMMAND_F( setang_exact, "Snap player eyes and orientation to specified pitc
 	pPlayer->Teleport( NULL, &newang, NULL );
 	pPlayer->SnapEyeAngles( newang );
 
-#ifdef TF_DLL
-	static_cast<CTFPlayer*>( pPlayer )->DoAnimationEvent( PLAYERANIMEVENT_SNAP_YAW );
-#endif
+	pPlayer->DoAnimationEvent( PLAYERANIMEVENT_SNAP_YAW );
 }
 
 
@@ -1582,9 +1732,22 @@ void ClientCommand( CBasePlayer *pPlayer, const CCommand &args )
 			}
 			else
 			{
-				CTempEntTester::Create( pPlayer->WorldSpaceCenter(), pPlayer->EyeAngles(), args[1], args[2] );
+				Assert(0);
+				//CTempEntTester::Create( pPlayer->WorldSpaceCenter(), pPlayer->EyeAngles(), args[1], args[2] );
 			}
 		}
+	}
+	else if ( FStrEq( pCmd, "bugpause" ) )
+	{
+		// bug reporter opening, pause all connected clients
+		CFmtStr str;
+		UTIL_ClientPrintAll( HUD_PRINTTALK, str.sprintf( "BUG REPORTER ACTIVATED BY: %s\n", pPlayer->GetPlayerName() ) );
+		
+	}
+	else if ( FStrEq( pCmd, "bugunpause" ) )
+	{
+		// bug reporter closing, unpause all connected clients
+		
 	}
 	else 
 	{

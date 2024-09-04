@@ -20,16 +20,6 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( env_particlefire, CParticleFire );
 
-//---------------------------------------------------------
-// Save/Restore
-//---------------------------------------------------------
-BEGIN_DATADESC( CParticleFire )
-
-	DEFINE_FIELD( m_vOrigin,		FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vDirection,	FIELD_VECTOR ),
-
-END_DATADESC()
-
 
 CParticleFire::CParticleFire()
 {

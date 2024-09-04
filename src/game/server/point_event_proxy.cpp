@@ -9,11 +9,6 @@
 #include "baseentity.h"
 #include "world.h"
 
-#ifdef INFESTED_DLL
-	#include "asw_marine.h"
-	#include "asw_player.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -24,7 +19,7 @@ class CPointEventProxy : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CPointEventProxy, CPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	void InputGenerateEvent( inputdata_t &inputdata );
@@ -36,14 +31,14 @@ private:
 
 LINK_ENTITY_TO_CLASS( point_event_proxy, CPointEventProxy );
 
-BEGIN_DATADESC( CPointEventProxy )
+BEGIN_MAPENTITY( CPointEventProxy )
 
 	DEFINE_KEYFIELD( m_iszEventName, FIELD_STRING, "EventName" ),
 	DEFINE_KEYFIELD( m_bActivatorAsUserID, FIELD_BOOLEAN, "ActivatorAsUserID" ),
 	
 	DEFINE_INPUTFUNC( FIELD_VOID, "GenerateEvent", InputGenerateEvent ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -54,17 +49,7 @@ void CPointEventProxy::InputGenerateEvent( inputdata_t &inputdata )
 	IGameEvent * event = gameeventmanager->CreateEvent( m_iszEventName.ToCStr() );
 	if ( event )
 	{
-		CBasePlayer *pActivator = NULL;
-
-#ifdef INFESTED_DLL
-		CASW_Marine *pMarine = dynamic_cast< CASW_Marine* >( inputdata.pActivator );
-		if ( pMarine )
-		{
-			pActivator = pMarine->GetCommander();
-		}
-#else
-		pActivator = dynamic_cast< CBasePlayer* >( inputdata.pActivator );
-#endif
+		CBasePlayer *pActivator = ToBasePlayer( inputdata.pActivator );
 
 		if ( m_bActivatorAsUserID )
 		{

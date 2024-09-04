@@ -17,11 +17,10 @@
 
 LINK_ENTITY_TO_CLASS(env_ambient_light, CEnvAmbientLight);
 
-BEGIN_DATADESC( CEnvAmbientLight )
+BEGIN_MAPENTITY( CEnvAmbientLight )
 	DEFINE_KEYFIELD(	m_Color,	FIELD_COLOR32,	"Color" ),
-	DEFINE_FIELD(		m_vecColor, FIELD_VECTOR ),
 	DEFINE_INPUTFUNC( FIELD_COLOR32, "SetColor",  InputSetColor ),
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST(CEnvAmbientLight, DT_EnvAmbientLight)
 	SendPropVector( SENDINFO(m_vecColor), 0, SPROP_NOSCALE),

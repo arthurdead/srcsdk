@@ -9,6 +9,8 @@
 #define GLOBALSTATE_H
 #pragma once
 
+#include "string_t.h"
+
 typedef enum { GLOBAL_OFF = 0, GLOBAL_ON = 1, GLOBAL_DEAD = 2 } GLOBALESTATE;
 
 void		GlobalEntity_SetState( int globalIndex, GLOBALESTATE state );

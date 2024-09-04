@@ -13,8 +13,6 @@
 #include "animation.h"		// for NOMOTION
 #include "collisionutils.h"
 #include "ndebugoverlay.h"
-#include "isaverestore.h"
-#include "saverestore_utlvector.h"
 
 #include "ai_navigator.h"
 #ifndef AI_USES_NAV_MESH
@@ -134,55 +132,6 @@ const Vector AIN_NO_DEST( FLT_MAX, FLT_MAX, FLT_MAX );
 // class CAI_Navigator
 //-----------------------------------------------------------------------------
 
-BEGIN_SIMPLE_DATADESC( CAI_Navigator )
-
-	DEFINE_FIELD( m_navType,					FIELD_INTEGER ),
-	//								m_pMotor
-	//								m_pMoveProbe
-	//								m_pLocalNavigator
-	//								m_pAINetwork
-	DEFINE_EMBEDDEDBYREF( m_pPath ),
-	//								m_pClippedWaypoints	(not saved)
-	//								m_flTimeClipped		(not saved)
-	//								m_PreviousMoveActivity (not saved)
-	//								m_PreviousArrivalActivity (not saved)
-	DEFINE_FIELD( m_bValidateActivitySpeed,		FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bCalledStartMove,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_fNavComplete,				FIELD_BOOLEAN ),
-#ifndef AI_USES_NAV_MESH
-	DEFINE_FIELD( m_bNotOnNetwork,				FIELD_BOOLEAN ),
-#else
-	DEFINE_FIELD( m_bNotOnNavMesh,				FIELD_BOOLEAN ),
-#endif
-	DEFINE_FIELD( m_bLastNavFailed,				FIELD_BOOLEAN ),
-  	DEFINE_FIELD( m_flNextSimplifyTime,			FIELD_TIME ),
-	DEFINE_FIELD( m_bForcedSimplify,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flLastSuccessfulSimplifyTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flTimeLastAvoidanceTriangulate, FIELD_TIME ),
-  	DEFINE_FIELD( m_timePathRebuildMax,			FIELD_FLOAT ),
-  	DEFINE_FIELD( m_timePathRebuildDelay,		FIELD_FLOAT ),
-  	DEFINE_FIELD( m_timePathRebuildFail,		FIELD_TIME ),
-  	DEFINE_FIELD( m_timePathRebuildNext,		FIELD_TIME ),
-#ifndef AI_USES_NAV_MESH
-	DEFINE_FIELD( m_fRememberStaleNodes,		FIELD_BOOLEAN ),
-#endif
-	DEFINE_FIELD( m_bNoPathcornerPathfinds,		FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bLocalSucceedOnWithinTolerance, FIELD_BOOLEAN ),
-	// 								m_fPeerMoveWait		(think transient)
-	//								m_hPeerWaitingOn	(peer move fields do not need to be saved, tied to current schedule and path, which are not saved)
-	//								m_PeerWaitMoveTimer	(ibid)
-	//								m_PeerWaitClearTimer(ibid)
-	//								m_NextSidestepTimer	(ibid)
-	DEFINE_FIELD( m_hBigStepGroundEnt,			FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hLastBlockingEnt,			FIELD_EHANDLE ),
-	//								m_vPosBeginFailedSteer (reset on load)
-	//								m_timeBeginFailedSteer (reset on load)
-	//								m_nNavFailCounter  (reset on load)
-	//								m_flLastNavFailTime  (reset on load)
-
-END_DATADESC()
-
-
 //-----------------------------------------------------------------------------
 
 CAI_Navigator::CAI_Navigator(CAI_BaseNPC *pOuter)
@@ -262,61 +211,6 @@ CAI_Navigator::~CAI_Navigator()
 	delete m_pPath;
 	m_pClippedWaypoints->RemoveAll();
 	delete m_pClippedWaypoints;
-}
-
-//-----------------------------------------------------------------------------
-
-const short AI_NAVIGATOR_SAVE_VERSION = 1;
-
-void CAI_Navigator::Save( ISave &save )
-{
-	save.WriteShort( &AI_NAVIGATOR_SAVE_VERSION );
-
-	CUtlVector<AI_Waypoint_t> minPathArray;
-
-	AI_Waypoint_t *pCurWaypoint = GetPath()->GetCurWaypoint();
-	if ( pCurWaypoint )
-	{
-		if ( ( pCurWaypoint->NavType() == NAV_CLIMB || pCurWaypoint->NavType() == NAV_JUMP ) )
-		{	
-			CAI_WaypointList minCompletionPath;
-			if ( GetStoppingPath( &minCompletionPath ) && !minCompletionPath.IsEmpty() )
-			{
-				AI_Waypoint_t *pCurrent = minCompletionPath.GetLast();
-				while ( pCurrent )
-				{
-					minPathArray.AddToTail( *pCurrent );
-					pCurrent = pCurrent->GetPrev();
-				}
-				minCompletionPath.RemoveAll();
-			}
-		}
-	}
-
-	SaveUtlVector( &save, &minPathArray, FIELD_EMBEDDED );
-}
-
-//-----------------------------------------------------------------------------
-
-void CAI_Navigator::Restore( IRestore &restore )
-{
-	short version = restore.ReadShort();
-
-	if ( version != AI_NAVIGATOR_SAVE_VERSION )
-		return;
-
-	CUtlVector<AI_Waypoint_t> minPathArray;
-	RestoreUtlVector( &restore, &minPathArray, FIELD_EMBEDDED );
-
-	if ( minPathArray.Count() )
-	{
-		for ( int i = 0; i < minPathArray.Count(); i++ )
-		{
-			m_pClippedWaypoints->PrependWaypoint( minPathArray[i].GetPos(), minPathArray[i].NavType(), ( minPathArray[i].Flags() & ~bits_WP_TO_PATHCORNER ), minPathArray[i].flYaw );
-		}
-		m_flTimeClipped = gpGlobals->curtime + 1000; // time passes between restore and onrestore
-	}
-
 }
 
 //-----------------------------------------------------------------------------
@@ -759,7 +653,7 @@ bool CAI_Navigator::FindVectorGoal( Vector *pResult, const Vector &dir, float ta
 	MARK_TASK_EXPENSIVE();
 
 	Vector testLoc = GetLocalOrigin() + ( dir * targetDist );
-	GetMoveProbe()->MoveLimit( GetNavType(), GetLocalOrigin(), testLoc, MASK_NPCSOLID, NULL, &moveTrace );
+	GetMoveProbe()->MoveLimit( GetNavType(), GetLocalOrigin(), testLoc, GetOuter()->GetAITraceMask(), NULL, &moveTrace );
 	
 	if ( moveTrace.fStatus != AIMR_OK )
 	{
@@ -776,7 +670,7 @@ bool CAI_Navigator::FindVectorGoal( Vector *pResult, const Vector &dir, float ta
 			testLoc = moveTrace.vEndPosition + ( vecDeflect * ( targetDist - distAchieved ) );
 	
 			Vector temp = moveTrace.vEndPosition;
-			GetMoveProbe()->MoveLimit( GetNavType(), temp, testLoc, MASK_NPCSOLID, NULL, &moveTrace );
+			GetMoveProbe()->MoveLimit( GetNavType(), temp, testLoc, GetOuter()->GetAITraceMask(), NULL, &moveTrace );
 
 			distAchieved += ( targetDist - distAchieved ) - moveTrace.flDistObstructed;
 		}
@@ -828,7 +722,7 @@ bool CAI_Navigator::PrependLocalAvoidance( float distObstacle, const AIMoveTrace
 		int flags = ( GetNavType() == NAV_GROUND ) ? AIMLF_2D : AIMLF_DEFAULT;
 
 		if ( GetMoveProbe()->MoveLimit( GetNavType(), GetLocalOrigin(), vTestBackaway, 
-													 MASK_NPCSOLID, GetNavTargetEntity(), 
+													 GetOuter()->GetAITraceMask(), GetNavTargetEntity(), 
 													 100.0, 
 													 flags, &backawayTrace ) )
 		{
@@ -885,7 +779,7 @@ bool CAI_Navigator::PrependLocalAvoidance( float distObstacle, const AIMoveTrace
 	int flags = ( GetNavType() == NAV_GROUND ) ? AIMLF_2D : AIMLF_DEFAULT;
 
 	if ( !GetMoveProbe()->MoveLimit( GetNavType(), GetLocalOrigin(), testPos, 
-												 MASK_NPCSOLID, GetNavTargetEntity(), 
+												 GetOuter()->GetAITraceMask(), GetNavTargetEntity(), 
 												 100.0, 
 												 flags ) )
 	{
@@ -1222,6 +1116,11 @@ bool CAI_Navigator::CurWaypointIsGoal() const
 	return GetPath()->CurWaypointIsGoal();
 }
 
+bool CAI_Navigator::CurWaypointRequiresPreciseMovement() const
+{
+	return ( GetPath()->CurWaypointFlags() & bits_WP_PRECISE_MOVEMENT ) != 0;
+}
+
 //-----------------------------------------------------------------------------
 
 bool CAI_Navigator::IsGoalSet() const
@@ -1395,6 +1294,7 @@ void CAI_Navigator::OnNavFailed( AI_TaskFailureCode_t code, bool bMovement )
 	if ( GetOuter()->ShouldFailNav( bMovement ) )
 	{
 		OnNavFailed( bMovement );
+		DbgNavMsg( GetOuter(), "CAI_Navigator::OnNavFailed calling SetActivity(GetStoppedActivity)");
 		SetActivity( GetOuter()->GetStoppedActivity() );
 		TaskFail(code);
 	}
@@ -1486,11 +1386,11 @@ bool CAI_Navigator::TeleportAlongPath()
 		vecStart = GetPath()->CurWaypointPos();
 		AdvancePath();
 
-		GetOuter()->GetMoveProbe()->FloorPoint( vecStart, MASK_NPCSOLID, GetOuter()->StepHeight(), -64, &vTestPoint );
+		GetOuter()->GetMoveProbe()->FloorPoint( vecStart, GetOuter()->GetAITraceMask(), GetOuter()->StepHeight(), -64, &vTestPoint );
 
-		if ( CanFitAtPosition( vTestPoint, MASK_NPCSOLID, false, false ) )
+		if ( CanFitAtPosition( vTestPoint, GetOuter()->GetAITraceMask(), false, false ) )
 		{
-			if ( GetOuter()->GetMoveProbe()->CheckStandPosition( vTestPoint, MASK_NPCSOLID ) )
+			if ( GetOuter()->GetMoveProbe()->CheckStandPosition( vTestPoint, GetOuter()->GetAITraceMask() ) )
 			{
 				GetOuter()->Teleport( &vTestPoint, NULL, NULL );
 				// clear ground entity, let normal fall code reestablish what the npc is now standing on
@@ -1542,6 +1442,77 @@ void CAI_Navigator::SetNavType( Navigation_t navType )
 	m_navType = navType;
 }
 
+//-----------------------------------------------------------------------------
+
+AIMoveResult_t CAI_Navigator::MoveCrawl()
+{
+	if (!PreMove())
+		return AIMR_ILLEGAL;
+
+	if ( ShouldTestFailMove() )
+		return AIMR_ILLEGAL;
+
+	// --------------------------------
+
+	AIMoveResult_t result = AIMR_ILLEGAL;
+
+	if ( MoveUpdateWaypoint( &result ) )
+		return result;
+
+	// --------------------------------
+
+	// Set activity to be the Navigation activity
+	float		preMoveSpeed		= GetIdealSpeed();
+	Activity	preMoveActivity		= GetActivity();
+	int			nPreMoveSequence	= GetOuter()->GetSequence(); // this is an unfortunate necessity to ensure setting back the activity picks the right one if it had been sticky
+	Vector		vStart				= GetAbsOrigin();
+
+	// --------------------------------
+
+	// FIXME: only need since IdealSpeed isn't based on movement activity but immediate activity!
+	SetActivity( GetMovementActivity() );
+
+	if ( m_bValidateActivitySpeed && GetIdealSpeed() <= 0.0f )
+	{
+		if ( GetActivity() == ACT_TRANSITION )
+			return AIMR_OK;
+		DevMsg( "%s moving with speed <= 0 (%s)\n", GetEntClassname(), GetOuter()->GetSequenceName( GetSequence() ) );
+	}
+
+	// --------------------------------
+
+	if ( GetNavType() != NAV_CRAWL )
+	{
+		DbgNavMsg( GetOuter(), "Crawl start\n" );
+	}
+
+	SetNavType( NAV_CRAWL );
+
+	AILocalMoveGoal_t move;
+
+	MoveCalcBaseGoal( &move );
+
+	result = MoveEnact( move );
+
+	// --------------------------------
+	// If we didn't actually move, but it was a success (i.e., blocked but within tolerance), make sure no visual artifact
+
+	// FIXME: only needed because of the above slamming of SetActivity(), which is only needed 
+	// because GetIdealSpeed() looks at the current activity instead of the movement activity.
+
+	if ( result == AIMR_OK && preMoveSpeed < 0.01 )
+	{
+		if ( ( GetAbsOrigin() - vStart ).Length() < 0.01 )
+		{
+			GetOuter()->SetSequence( nPreMoveSequence );
+			SetActivity( preMoveActivity );
+		}
+	}
+
+	// --------------------------------
+
+	return result;
+}
 
 //-----------------------------------------------------------------------------
 
@@ -1565,7 +1536,7 @@ AIMoveResult_t CAI_Navigator::MoveClimb()
 	// Look for a block by another NPC, and attempt to recover
 	AIMoveTrace_t moveTrace;
 	if ( climbDist > 0.01 &&
-		 !GetMoveProbe()->MoveLimit( NAV_CLIMB, GetLocalOrigin(), GetLocalOrigin() + ( climbDir * MIN(0.1,climbDist - 0.005) ), MASK_NPCSOLID, GetNavTargetEntity(), &moveTrace ) )
+		 !GetMoveProbe()->MoveLimit( NAV_CLIMB, GetLocalOrigin(), GetLocalOrigin() + ( climbDir * MIN(0.1,climbDist - 0.005) ), GetOuter()->GetAITraceMask(), GetNavTargetEntity(), &moveTrace ) )
 	{
 		CAI_BaseNPC *pOther = ( moveTrace.pObstruction ) ? moveTrace.pObstruction->MyNPCPointer() : NULL;
 		if ( pOther )
@@ -1658,7 +1629,7 @@ AIMoveResult_t CAI_Navigator::MoveJump()
 		// --------------------------------------------------
 		AIMoveTrace_t moveTrace;
 		GetMoveProbe()->MoveLimit( NAV_JUMP, GetLocalOrigin(), GetPath()->CurWaypointPos(), 
-			MASK_NPCSOLID, GetNavTargetEntity(), &moveTrace );
+			GetOuter()->GetAITraceMask(), GetNavTargetEntity(), &moveTrace );
 		if ( IsMoveBlocked( moveTrace ) )
 		{
 			return moveTrace.fStatus;
@@ -1937,11 +1908,11 @@ bool CAI_Navigator::OnInsufficientStopDist( AILocalMoveGoal_t *pMoveGoal, float 
 			for ( int i = 1; i > -2; i -= 2 )
 			{
 				Vector testLoc = GetLocalOrigin() + ( vDeflection * GetHullWidth() * 2.0) * i;
-				GetMoveProbe()->MoveLimit( GetNavType(), GetLocalOrigin(), testLoc, MASK_NPCSOLID, NULL, &moveTrace );
+				GetMoveProbe()->MoveLimit( GetNavType(), GetLocalOrigin(), testLoc, GetOuter()->GetAITraceMask(), NULL, &moveTrace );
 				if ( moveTrace.fStatus == AIMR_OK )
 				{
 					Vector vNewWaypoint = moveTrace.vEndPosition;
-					GetMoveProbe()->MoveLimit( GetNavType(), vNewWaypoint, pMoveGoal->target, MASK_NPCSOLID_BRUSHONLY, NULL, &moveTrace );
+					GetMoveProbe()->MoveLimit( GetNavType(), vNewWaypoint, pMoveGoal->target, GetOuter()->GetAITraceMask_BrushOnly(), NULL, &moveTrace );
 					if ( moveTrace.fStatus == AIMR_OK )
 					{
 						PrependWaypoint( vNewWaypoint, GetNavType(), bits_WP_TO_DETOUR );
@@ -2040,7 +2011,7 @@ bool CAI_Navigator::OnFailedSteer( AILocalMoveGoal_t *pMoveGoal, float distClear
 		if ( pMoveGoal->dir.AsVector2D().Dot( vDeflection.AsVector2D() ) > 0.7 )
 		{
 			Vector testLoc = GetLocalOrigin() + ( vDeflection * pMoveGoal->curExpectedDist );
-			GetMoveProbe()->MoveLimit( GetNavType(), GetLocalOrigin(), testLoc, MASK_NPCSOLID, NULL, &moveTrace );
+			GetMoveProbe()->MoveLimit( GetNavType(), GetLocalOrigin(), testLoc, GetOuter()->GetAITraceMask(), NULL, &moveTrace );
 			if ( moveTrace.fStatus == AIMR_OK )
 			{
 				pMoveGoal->dir = vDeflection;
@@ -2133,7 +2104,7 @@ bool CAI_Navigator::DelayNavigationFailure( const AIMoveTrace_t &trace )
 					trace_t bumpTrace;
 					pBlocker->GetMoveProbe()->TraceHull( pBlocker->GetAbsOrigin(), 
 														 pBlocker->GetAbsOrigin() + Vector(0,0,2.0), 
-														 MASK_NPCSOLID, 
+														 GetOuter()->GetAITraceMask(), 
 														 &bumpTrace );
 					if ( bumpTrace.fraction == 1.0  )
 					{
@@ -2210,6 +2181,7 @@ bool CAI_Navigator::MoveUpdateWaypoint( AIMoveResult_t *pResult )
 
 bool CAI_Navigator::OnMoveStalled( const AILocalMoveGoal_t &move )
 {
+	DbgNavMsg(GetOuter(), "CAI_Navigator::OnMoveStalled calling SetActivity(GetStoppedActivity)");
 	SetActivity( GetOuter()->GetStoppedActivity() );
 	return true;
 }
@@ -2284,6 +2256,7 @@ bool CAI_Navigator::OnMoveBlocked( AIMoveResult_t *pResult )
 		}
 	}
 
+	DbgNavMsg(GetOuter(), "CAI_Navigator::OnMoveBlocked calling SetActivity(GetStoppedActivity)");
 	SetActivity( GetOuter()->GetStoppedActivity() );
 
 	const float EPS = 0.1;
@@ -2390,6 +2363,7 @@ AIMoveResult_t CAI_Navigator::MoveNormal()
 	{
 		if ( ( GetAbsOrigin() - vStart ).Length() < 0.01 )
 		{
+			DbgNavMsg2(GetOuter(), "CAI_Navigator::MoveNormal calling SetSequence(%s) and SetActivity(%s)", GetOuter()->GetSequenceName(nPreMoveSequence), GetOuter()->GetActivityName(preMoveActivity));
 			GetOuter()->SetSequence( nPreMoveSequence );
 			SetActivity( preMoveActivity );
 		}
@@ -2411,7 +2385,8 @@ bool CAI_Navigator::PreMove()
 	
 	if ( goalType == NAV_GROUND && curType != NAV_GROUND )
 	{
-		DevMsg( "Warning: %s(%s) appears to have wrong nav type in CAI_Navigator::MoveGround()\n", GetOuter()->GetClassname(), STRING( GetOuter()->GetEntityName() ) );
+		if ( curType != NAV_CRAWL )
+			DevMsg( "Warning: %s(%s) appears to have wrong nav type in CAI_Navigator::MoveGround()\n", GetOuter()->GetClassname(), STRING( GetOuter()->GetEntityName() ) );
 		switch ( curType )
 		{
 			case NAV_CLIMB:
@@ -2483,6 +2458,14 @@ bool CAI_Navigator::IsMovingOutOfWay( const AILocalMoveGoal_t &moveGoal, float d
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Return true if the navigator should apply movement to the NPC
+//-----------------------------------------------------------------------------
+bool CAI_Navigator::ShouldMove( bool bHasAGoal )
+{
+	return ( bHasAGoal && ActivityIsLocomotive( GetMovementActivity() ) );
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Move towards the next waypoint on my route
 // Input  :
 // Output :
@@ -2510,203 +2493,203 @@ bool CAI_Navigator::Move( float flInterval )
 	GetOuter()->UpdateLastKnownArea();
 #endif
 
-	if ( !GetOuter()->OverrideMove( flInterval ) )
+	if ( GetOuter()->OverrideMove( flInterval ) )
+		return true;
+
+	// UNDONE: Figure out how much of the timestep was consumed by movement
+	// this frame and restart the movement/schedule engine if necessary
+	bool bHasGoal = GetGoalType() != GOALTYPE_NONE;
+	bool bIsTurning = HasMemory( bits_MEMORY_TURNING );
+	if ( bHasGoal )
 	{
-		// UNDONE: Figure out how much of the timestep was consumed by movement
-		// this frame and restart the movement/schedule engine if necessary
-		bool bHasGoal = GetGoalType() != GOALTYPE_NONE;
-		bool bIsTurning = HasMemory( bits_MEMORY_TURNING );
-		if ( bHasGoal )
+		if ( bIsTurning )
 		{
-			if ( bIsTurning )
+			if ( gpGlobals->curtime - GetPath()->GetStartTime() > 5 )
 			{
-				if ( gpGlobals->curtime - GetPath()->GetStartTime() > 5 )
-				{
-					Forget( bits_MEMORY_TURNING );
-					bIsTurning = false;
-					DbgNavMsg( GetOuter(), "NPC appears stuck turning. Proceeding.\n" );
-				}
-			}
-
-			if ( ActivityIsLocomotive( m_PreviousMoveActivity ) && !ActivityIsLocomotive( GetMovementActivity() ) )
-			{
-				SetMovementActivity( GetOuter()->TranslateActivity( m_PreviousMoveActivity ) );
+				Forget( bits_MEMORY_TURNING );
+				bIsTurning = false;
+				DbgNavMsg( GetOuter(), "NPC appears stuck turning. Proceeding.\n" );
 			}
 		}
-		else
+
+		if ( ActivityIsLocomotive( m_PreviousMoveActivity ) && !ActivityIsLocomotive( GetMovementActivity() ) )
 		{
-			m_PreviousMoveActivity = ACT_RESET;
-			m_PreviousArrivalActivity = ACT_RESET;
+			SetMovementActivity( GetOuter()->TranslateActivity( m_PreviousMoveActivity ) );
 		}
+	}
+	else
+	{
+		m_PreviousMoveActivity = ACT_RESET;
+		m_PreviousArrivalActivity = ACT_RESET;
+	}
 
-		bool fShouldMove = ( bHasGoal && 
-							 // !bIsTurning &&
-							 ActivityIsLocomotive( GetMovementActivity() ) );
-		if ( fShouldMove )
+	bool fShouldMove = ShouldMove( bHasGoal );
+	if ( !fShouldMove )
+	{
+		// @TODO (toml 10-30-02): the climb part of this is unacceptable, but needed until navigation can handle commencing
+		// 						  a navigation while in the middle of a climb
+
+		if ( GetNavType() == NAV_CLIMB )
 		{
-			AINavResult_t result = AINR_OK;
-			
-			GetMotor()->SetMoveInterval( flInterval );
-			
-			// ---------------------------------------------------------------------
-			// Move should never happen if I don't have a movement goal or route
-			// ---------------------------------------------------------------------
-			if ( GetPath()->GoalType() == GOALTYPE_NONE )
-			{
-				DevWarning( "Move requested with no route!\n" );
-				result = AINR_NO_GOAL;
-			}
-			else if (!GetPath()->GetCurWaypoint())
-			{
-				DevWarning( "Move goal with no route!\n" );
-				GetPath()->Clear();
-				result = AINR_NO_ROUTE;
-			}
-
-			if ( result == AINR_OK )
-			{
-				// ---------------------------------------------------------------------
-				// If I've been asked to wait, let's wait
-				// ---------------------------------------------------------------------
-				if ( GetOuter()->ShouldMoveWait() )
-				{
-					GetMotor()->MovePaused();
-					return false;
-				}
-				
-				int nLoopCount = 0;
-
-				bool bMoved = false;
-				AIMoveResult_t moveResult = AIMR_CHANGE_TYPE;
-				m_fNavComplete = false;
-
-				while ( moveResult >= AIMR_OK && !m_fNavComplete )
-				{
-					if ( GetMotor()->GetMoveInterval() <= 0 )
-					{
-						moveResult = AIMR_OK;
-						break;
-					}
-
-					// TODO: move higher up the call chain?
-					if ( !m_bCalledStartMove )
-					{
-						GetMotor()->MoveStart();
-						m_bCalledStartMove = true;
-					}
-
-					if ( m_hBigStepGroundEnt && m_hBigStepGroundEnt != GetOuter()->GetGroundEntity() )
-						m_hBigStepGroundEnt = NULL;
-					
-					switch (GetPath()->CurWaypointNavType())
-					{
-					case NAV_CLIMB:
-						moveResult = MoveClimb();
-						break;
-
-					case NAV_JUMP:
-						moveResult = MoveJump();
-						break;
-
-					case NAV_GROUND:
-					case NAV_FLY:
-						moveResult = MoveNormal();
-						break;
-
-					default:
-						DevMsg( "Bogus route move type!");
-						moveResult = AIMR_ILLEGAL;
-						break;
-					}
-
-					if ( moveResult == AIMR_OK )
-						bMoved = true;
-
-					++nLoopCount;
-					if ( nLoopCount > 16 )
-					{
-						DevMsg( "ERROR: %s navigation not terminating. Possibly bad cyclical solving?\n", GetOuter()->GetDebugName() );
-						moveResult = AIMR_ILLEGAL;
-
-						switch (GetPath()->CurWaypointNavType())
-						{
-						case NAV_GROUND:
-						case NAV_FLY:
-							OnMoveBlocked( &moveResult );
-							break;
-						}
-						break;
-					}
-
-				}
-
-				// --------------------------------------------
-				//  Update move status
-				// --------------------------------------------
-				if ( IsMoveBlocked( moveResult ) )
-				{
-					bool bRecovered = false;
-					if (moveResult != AIMR_BLOCKED_NPC || GetNavType() == NAV_CLIMB || GetNavType() == NAV_JUMP || GetPath()->CurWaypointNavType() == NAV_JUMP )
-					{
-					#ifndef AI_USES_NAV_MESH
-						if ( MarkCurWaypointFailedLink() )
-					#else
-						if ( MarkCurWaypointFailed() )
-					#endif
-						{
-							AI_Waypoint_t *pSavedWaypoints = GetPath()->GetCurWaypoint();
-							if ( pSavedWaypoints )
-							{
-								GetPath()->SetWaypoints( NULL );
-								if ( RefindPathToGoal( false, true ) )
-								{
-									DeleteAll( pSavedWaypoints );
-									bRecovered = true;
-								}
-								else
-									GetPath()->SetWaypoints( pSavedWaypoints );
-
-							}
-						}
-
-					}
-
-					if ( !bRecovered )
-					{
-						OnNavFailed( ( moveResult == AIMR_ILLEGAL ) ? FAIL_NO_ROUTE_ILLEGAL : FAIL_NO_ROUTE_BLOCKED, true );
-					}
-				}
-				return bMoved;
-			}
-			
-			static AI_TaskFailureCode_t failures[] =
-			{
-				NO_TASK_FAILURE,				// AINR_OK (never should happen)
-				FAIL_NO_ROUTE_GOAL,				// AINR_NO_GOAL
-				FAIL_NO_ROUTE,					// AINR_NO_ROUTE
-				FAIL_NO_ROUTE_BLOCKED,			// AINR_BLOCKED
-				FAIL_NO_ROUTE_ILLEGAL			// AINR_ILLEGAL
-			};
-			
-			OnNavFailed( failures[result], false );
+			GetMotor()->MoveClimbStop();
+			SetNavType( NAV_GROUND );
 		}
-		else 
-		{
-			// @TODO (toml 10-30-02): the climb part of this is unacceptable, but needed until navigation can handle commencing
-			// 						  a navigation while in the middle of a climb
-
-			if ( GetNavType() == NAV_CLIMB )
-			{
-				GetMotor()->MoveClimbStop();
-				SetNavType( NAV_GROUND );
-			}
-			GetMotor()->MoveStop();
-			AssertMsg( TaskIsRunning() || TaskIsComplete(), ("Schedule stalled!!\n") );
-		}
+		GetMotor()->MoveStop();
+		AssertMsg( TaskIsRunning() || TaskIsComplete(), ("Schedule stalled!!\n") );
 		return false;
 	}
 
-	return true; // assume override move handles stopping issues
+	AINavResult_t result = AINR_OK;
+	
+	GetMotor()->SetMoveInterval( flInterval );
+	
+	// ---------------------------------------------------------------------
+	// Move should never happen if I don't have a movement goal or route
+	// ---------------------------------------------------------------------
+	if ( GetPath()->GoalType() == GOALTYPE_NONE )
+	{
+		DevWarning( "Move requested with no route!\n" );
+		result = AINR_NO_GOAL;
+	}
+	else if (!GetPath()->GetCurWaypoint())
+	{
+		DevWarning( "Move goal with no route!\n" );
+		GetPath()->Clear();
+		result = AINR_NO_ROUTE;
+	}
+
+	if ( result == AINR_OK )
+	{
+		// ---------------------------------------------------------------------
+		// If I've been asked to wait, let's wait
+		// ---------------------------------------------------------------------
+		if ( GetOuter()->ShouldMoveWait() )
+		{
+			GetMotor()->MovePaused();
+			return false;
+		}
+		
+		int nLoopCount = 0;
+
+		bool bMoved = false;
+		AIMoveResult_t moveResult = AIMR_CHANGE_TYPE;
+		m_fNavComplete = false;
+
+		while ( moveResult >= AIMR_OK && !m_fNavComplete )
+		{
+			if ( GetMotor()->GetMoveInterval() <= 0 )
+			{
+				moveResult = AIMR_OK;
+				break;
+			}
+
+			// TODO: move higher up the call chain?
+			if ( !m_bCalledStartMove )
+			{
+				GetMotor()->MoveStart();
+				m_bCalledStartMove = true;
+			}
+
+			if ( m_hBigStepGroundEnt && m_hBigStepGroundEnt != GetOuter()->GetGroundEntity() )
+				m_hBigStepGroundEnt = NULL;
+			
+			switch (GetPath()->CurWaypointNavType())
+			{
+			case NAV_CRAWL:
+				moveResult = MoveCrawl();
+				break;
+
+			case NAV_CLIMB:
+				moveResult = MoveClimb();
+				break;
+
+			case NAV_JUMP:
+				moveResult = MoveJump();
+				break;
+
+			case NAV_GROUND:
+			case NAV_FLY:
+				moveResult = MoveNormal();
+				break;
+
+			default:
+				DevMsg( "Bogus route move type!");
+				moveResult = AIMR_ILLEGAL;
+				break;
+			}
+
+			if ( moveResult == AIMR_OK )
+				bMoved = true;
+
+			++nLoopCount;
+			if ( nLoopCount > 16 )
+			{
+				DevMsg( "ERROR: %s navigation not terminating. Possibly bad cyclical solving?\n", GetOuter()->GetDebugName() );
+				moveResult = AIMR_ILLEGAL;
+
+				switch (GetPath()->CurWaypointNavType())
+				{
+				case NAV_GROUND:
+				case NAV_FLY:
+				case NAV_CRAWL:
+					OnMoveBlocked( &moveResult );
+					break;
+				}
+				break;
+			}
+
+		}
+
+		// --------------------------------------------
+		//  Update move status
+		// --------------------------------------------
+		if ( IsMoveBlocked( moveResult ) )
+		{
+			bool bRecovered = false;
+			if (moveResult != AIMR_BLOCKED_NPC || GetNavType() == NAV_CLIMB || GetNavType() == NAV_JUMP || GetPath()->CurWaypointNavType() == NAV_JUMP )
+			{
+			#ifndef AI_USES_NAV_MESH
+				if ( MarkCurWaypointFailedLink() )
+			#else
+				if ( MarkCurWaypointFailed() )
+			#endif
+				{
+					AI_Waypoint_t *pSavedWaypoints = GetPath()->GetCurWaypoint();
+					if ( pSavedWaypoints )
+					{
+						GetPath()->SetWaypoints( NULL );
+						if ( RefindPathToGoal( false, true ) )
+						{
+							DeleteAll( pSavedWaypoints );
+							bRecovered = true;
+						}
+						else
+							GetPath()->SetWaypoints( pSavedWaypoints );
+
+					}
+				}
+
+			}
+
+			if ( !bRecovered )
+			{
+				OnNavFailed( ( moveResult == AIMR_ILLEGAL ) ? FAIL_NO_ROUTE_ILLEGAL : FAIL_NO_ROUTE_BLOCKED, true );
+			}
+		}
+		return bMoved;
+	}
+	
+	static AI_TaskFailureCode_t failures[] =
+	{
+		NO_TASK_FAILURE,				// AINR_OK (never should happen)
+		FAIL_NO_ROUTE_GOAL,				// AINR_NO_GOAL
+		FAIL_NO_ROUTE,					// AINR_NO_ROUTE
+		FAIL_NO_ROUTE_BLOCKED,			// AINR_BLOCKED
+		FAIL_NO_ROUTE_ILLEGAL			// AINR_ILLEGAL
+	};
+	
+	OnNavFailed( failures[result], false );
+	return false;
 }
 
 
@@ -2784,7 +2767,7 @@ void CAI_Navigator::AdvancePath()
 	if ( bPassingPathcorner )
 	{
 		Assert( !pCurWaypoint->GetNext() || (pCurWaypoint->GetNext()->Flags() & (bits_WP_TO_PATHCORNER | bits_WP_TO_GOAL )) == (bits_WP_TO_PATHCORNER | bits_WP_TO_GOAL ));
-		CBaseEntity *pEntity = pCurWaypoint->hPathCorner;
+		CBaseEntity *pEntity = pCurWaypoint->hPathCorner.Get();
 		if ( pEntity )
 		{
 			variant_t emptyVariant;
@@ -2797,7 +2780,7 @@ void CAI_Navigator::AdvancePath()
 
 	if ( pCurWaypoint->Flags() & bits_WP_TO_DOOR )
 	{
-		CBasePropDoor *pDoor = (CBasePropDoor *)(CBaseEntity *)pCurWaypoint->GetEHandleData();
+		CBasePropDoor *pDoor = static_cast<CBasePropDoor *>( pCurWaypoint->GetEHandleData().Get() );
 		if (pDoor != NULL)
 		{
 			GetOuter()->OpenPropDoorBegin(pDoor);
@@ -2819,8 +2802,8 @@ void CAI_Navigator::AdvancePath()
 		{
 			Assert( (pCurWaypoint->Flags() & (bits_WP_TO_PATHCORNER | bits_WP_TO_GOAL )) == (bits_WP_TO_PATHCORNER | bits_WP_TO_GOAL ));
 
-			SetGoalEnt( pCurWaypoint->hPathCorner );
-			DoFindPathToPathcorner( pCurWaypoint->hPathCorner );
+			SetGoalEnt( pCurWaypoint->hPathCorner.Get() );
+			DoFindPathToPathcorner( pCurWaypoint->hPathCorner.Get() );
 		}
 	}
 }
@@ -2869,7 +2852,7 @@ bool CAI_Navigator::ShouldSimplifyTo( bool passedDetour, const Vector &pos )
 
 	AIMoveTrace_t moveTrace;
 	GetMoveProbe()->MoveLimit( GetNavType(), 
-		GetLocalOrigin(), pos, MASK_NPCSOLID, 
+		GetLocalOrigin(), pos, GetOuter()->GetAITraceMask(), 
 		GetPath()->GetTarget(), 100, flags, &moveTrace );
 
 	return !IsMoveBlocked(moveTrace);
@@ -3253,7 +3236,7 @@ AI_NavPathProgress_t CAI_Navigator::ProgressFlyPath( const AI_ProgressFlyPathPar
 			if ( waypointDist <= tolerance )
 			{
 				trace_t tr;
-				AI_TraceLine( GetAbsOrigin(), GetPath()->GetCurWaypoint()->GetNext()->GetPos(), MASK_NPCSOLID, GetOuter(), COLLISION_GROUP_NONE, &tr );
+				AI_TraceLine( GetAbsOrigin(), GetPath()->GetCurWaypoint()->GetNext()->GetPos(), GetOuter()->GetAITraceMask(), GetOuter(), COLLISION_GROUP_NONE, &tr );
 				if ( tr.fraction == 1.0f )
 				{
 					AdvancePath();	
@@ -3338,19 +3321,16 @@ bool CAI_Navigator::SimplifyFlyPath(  const AI_ProgressFlyPathParams_t &params )
 //-----------------------------------------------------------------------------
 float CAI_Navigator::MovementCost( int moveType, Vector &vecStart, Vector &vecEnd )
 {
-	float cost;
-	
-	cost = (vecStart - vecEnd).Length();
-
+	float flCost = vecStart.DistTo( vecEnd );
 	if ( moveType == bits_CAP_MOVE_JUMP || moveType == bits_CAP_MOVE_CLIMB )
 	{
-		cost *= 2.0;
+		flCost *= 2.0;
 	}
 
 	// Allow the NPC to override the movement cost
-	GetOuter()->MovementCost( moveType, vecStart, vecEnd, &cost );
+	GetOuter()->MovementCost( moveType, vecStart, vecEnd, &flCost );
 	
-	return cost;
+	return flCost;
 }
 
 //-----------------------------------------------------------------------------
@@ -3744,7 +3724,20 @@ bool CAI_Navigator::DoFindPathToPos(void)
 
 	pPath->ClearWaypoints();
 
-	AI_Waypoint_t *pFirstWaypoint = pPathfinder->BuildRoute( origin, actualGoalPos, pTarget, tolerance, GetNavType(), m_bLocalSucceedOnWithinTolerance );
+	int nBuildFlags = 0;
+	if ( GetGoalFlags() & AIN_LOCAL_SUCCEEED_ON_WITHIN_TOLERANCE )
+	{
+		nBuildFlags |= bits_BUILD_GET_CLOSE;
+	}
+	if ( GetGoalFlags() & AIN_NO_LOCAL_NAVIGATION )
+	{
+		nBuildFlags |= bits_BUILD_NO_LOCAL_NAV;
+	}
+	if ( GetGoalFlags() & AIN_UNLIMITED_DISTANCE )
+	{
+		nBuildFlags |= bits_BUILD_UNLIMITED_DISTANCE;
+	}
+	AI_Waypoint_t *pFirstWaypoint = pPathfinder->BuildRoute( origin, actualGoalPos, pTarget, tolerance, GetNavType(), m_bLocalSucceedOnWithinTolerance, nBuildFlags );
 
 	if (!pFirstWaypoint)
 	{
@@ -4153,7 +4146,7 @@ bool CAI_Navigator::GetStoppingPath( CAI_WaypointList *	pClippedWaypoints )
 				}
 
 #if PARANOID_NAV_CHECK_ON_MOMENTUM
-				if ( !CanFitAtPosition( pNextPoint->GetPos(), MASK_NPCSOLID ) )
+				if ( !CanFitAtPosition( pNextPoint->GetPos(), GetAITraceMask() ) )
 				{
 					break;
 				}
@@ -4205,7 +4198,7 @@ bool CAI_Navigator::GetStoppingPath( CAI_WaypointList *	pClippedWaypoints )
 					remainder += vPosPrev;
 
 					AIMoveTrace_t trace;
-					if ( GetMoveProbe()->MoveLimit( pNextPoint->NavType(), vPosPrev, remainder, MASK_NPCSOLID, NULL, 100, AIMLF_DEFAULT | AIMLF_2D, &trace ) )
+					if ( GetMoveProbe()->MoveLimit( pNextPoint->NavType(), vPosPrev, remainder, GetOuter()->GetAITraceMask(), NULL, 100, AIMLF_DEFAULT | AIMLF_2D, &trace ) )
 					{
 						pNewWaypoint = new AI_Waypoint_t( trace.vEndPosition, yaw, pNextPoint->NavType(), bits_WP_TO_GOAL, 0);
 
@@ -4370,6 +4363,9 @@ static Color GetWaypointColor(Navigation_t navType)
 	case NAV_FLY:
 		return Color(90,90,255);
 
+	case NAV_CRAWL:
+		return Color(255,255,0);
+
 	default:
 		return Color(255,0,0);
 	}
@@ -4467,6 +4463,16 @@ void CAI_Navigator::DrawDebugRouteOverlay(void)
 		case GO_ELEVATOR_DOWN:
 			V_sprintf_safe(szInfo, "Area how: Elevator down");
 			break;
+		}
+
+		if ( waypoint->Flags() & bits_WP_PRECISE_MOVEMENT )
+		{
+			NDebugOverlay::Box(waypoint->GetPos(), Vector(-6,-6,-6),Vector(6,6,6), 255, 0, 0, true,0);
+		}
+
+		if ( waypoint->Flags() & bits_WP_DONT_SIMPLIFY )
+		{
+			NDebugOverlay::Box(waypoint->GetPos(), Vector(-9,-9,-9),Vector(9,9,9), 255, 0, 255, true,0);
 		}
 
 		NDebugOverlay::Text(waypoint->GetPos() + Vector(0.0f, 0.0f, 15.0f), szInfo, true, 0);

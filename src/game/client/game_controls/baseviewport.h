@@ -61,7 +61,7 @@ public:
 
 	virtual vgui::VPANEL GetSchemeSizingVPanel( void );
 	
-	virtual int GetViewPortScheme() { return m_pBackGround->GetScheme(); }
+	virtual HScheme GetViewPortScheme() { return m_pBackGround->GetScheme(); }
 	virtual VPANEL GetViewPortPanel() { return m_pBackGround->GetVParent(); }
 
 	virtual AnimationController *GetAnimationController() { return m_pAnimController; }

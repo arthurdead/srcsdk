@@ -27,32 +27,6 @@ extern short	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for 
 
 #if !defined( CLIENT_DLL )
 
-// Global Savedata for friction modifier
-BEGIN_DATADESC( CBaseGrenade )
-	//					nextGrenade
-	DEFINE_FIELD( m_hThrower, FIELD_EHANDLE ),
-	//					m_fRegisteredSound ???
-	DEFINE_FIELD( m_bIsLive, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_DmgRadius, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flDetonateTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flWarnAITime, FIELD_TIME ),
-	DEFINE_FIELD( m_flDamage, FIELD_FLOAT ),
-	DEFINE_FIELD( m_iszBounceSound, FIELD_STRING ),
-	DEFINE_FIELD( m_bHasWarnedAI,	FIELD_BOOLEAN ),
-
-	// Function Pointers
-	DEFINE_THINKFUNC( Smoke ),
-	DEFINE_ENTITYFUNC( BounceTouch ),
-	DEFINE_ENTITYFUNC( SlideTouch ),
-	DEFINE_ENTITYFUNC( ExplodeTouch ),
-	DEFINE_USEFUNC( DetonateUse ),
-	DEFINE_THINKFUNC( DangerSoundThink ),
-	DEFINE_THINKFUNC( PreDetonate ),
-	DEFINE_THINKFUNC( Detonate ),
-	DEFINE_THINKFUNC( TumbleThink ),
-
-END_DATADESC()
-
 void SendProxy_CropFlagsToPlayerFlagBitsLength( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID);
 
 #endif
@@ -128,11 +102,9 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 	Vector vecAbsOrigin = GetAbsOrigin();
 	int contents = UTIL_PointContents ( vecAbsOrigin );
 
-#if defined( TF_DLL )
 	// Since this code only runs on the server, make sure it shows the tempents it creates.
 	// This solves a problem with remote detonating the pipebombs (client wasn't seeing the explosion effect)
 	CDisablePredictionFiltering disabler;
-#endif
 
 	if ( pTrace->fraction != 1.0 )
 	{
@@ -186,7 +158,6 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 	AddEffects( EF_NODRAW );
 	SetAbsVelocity( vec3_origin );
 
-#ifdef HL2_EPISODIC
 	// Because the grenade is zipped out of the world instantly, the EXPLOSION sound that it makes for
 	// the AI is also immediately destroyed. For this reason, we now make the grenade entity inert and
 	// throw it away in 1/10th of a second instead of right away. Removing the grenade instantly causes
@@ -194,9 +165,6 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 	// hear explosion sounds when the grenade is removed and the SoundEnt thinks (and removes the sound)
 	// before the env_microphone thinks and hears the sound.
 	SetNextThink( gpGlobals->curtime + 0.1 );
-#else
-	SetNextThink( gpGlobals->curtime );
-#endif//HL2_EPISODIC
 
 #if defined( HL2_DLL )
 	CBasePlayer *pPlayer = ToBasePlayer( m_hThrower.Get() );

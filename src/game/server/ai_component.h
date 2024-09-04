@@ -49,6 +49,7 @@ public:
 	float 				GetHullHeight() const;
 	const Vector &		GetHullMins() const;
 	const Vector &		GetHullMaxs() const;
+	int					GetHullTraceMask() const;
 
 protected:
 	//

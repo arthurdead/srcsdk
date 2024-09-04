@@ -8,7 +8,6 @@
 #include "cbase.h"
 #include "vguiscreen.h"
 #include "networkstringtable_gamedll.h"
-#include "saverestore_stringtable.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -20,7 +19,7 @@
 IMPLEMENT_SERVERCLASS_ST(CVGuiScreen, DT_VGuiScreen)
 	SendPropFloat(SENDINFO(m_flWidth),	0, SPROP_NOSCALE ),
 	SendPropFloat(SENDINFO(m_flHeight),	0, SPROP_NOSCALE ),
-	SendPropInt(SENDINFO(m_nAttachmentIndex), 5, SPROP_UNSIGNED ),
+	SendPropIntWithMinusOneFlag(SENDINFO(m_nAttachmentIndex), 6 ),
 	SendPropInt(SENDINFO(m_nPanelName), MAX_VGUI_SCREEN_STRING_BITS, SPROP_UNSIGNED ),
 	SendPropInt(SENDINFO(m_fScreenFlags), VGUI_SCREEN_MAX_BITS, SPROP_UNSIGNED ),
 	SendPropInt(SENDINFO(m_nOverlayMaterial), MAX_MATERIAL_STRING_BITS, SPROP_UNSIGNED ),
@@ -35,21 +34,16 @@ PRECACHE_REGISTER( vgui_screen );
 //-----------------------------------------------------------------------------
 // Save/load
 //-----------------------------------------------------------------------------
-BEGIN_DATADESC( CVGuiScreen )
+BEGIN_MAPENTITY( CVGuiScreen )
 
-	DEFINE_CUSTOM_FIELD( m_nPanelName, &g_VguiScreenStringOps ),
-	DEFINE_FIELD( m_nAttachmentIndex, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_nOverlayMaterial, FIELD_INTEGER ),
-	DEFINE_FIELD( m_fScreenFlags, FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_flWidth, FIELD_FLOAT, "width" ),
 	DEFINE_KEYFIELD( m_flHeight, FIELD_FLOAT, "height" ),
 	DEFINE_KEYFIELD( m_strOverlayMaterial, FIELD_STRING, "overlaymaterial" ),
-	DEFINE_FIELD( m_hPlayerOwner, FIELD_EHANDLE ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "SetActive", InputSetActive ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "SetInactive", InputSetInactive ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -149,13 +143,6 @@ void CVGuiScreen::Activate()
 	{
 		SetOverlayMaterial( STRING(m_strOverlayMaterial) );
 	}
-}
-
-void CVGuiScreen::OnRestore()
-{
-	UpdateTransmitState();
-
-	BaseClass::OnRestore();
 }
 
 void CVGuiScreen::SetAttachmentIndex( int nIndex )
@@ -339,7 +326,7 @@ int CVGuiScreen::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 //-----------------------------------------------------------------------------
 void CVGuiScreen::SetPanelName( const char *pPanelName )
 {
-	m_nPanelName = g_pStringTableVguiScreen->AddString( CBaseEntity::IsServer(), pPanelName );
+	m_nPanelName = g_pStringTableVguiScreen->AddString( true, pPanelName );
 }
 
 const char *CVGuiScreen::GetPanelName() const
@@ -390,7 +377,7 @@ void CVGuiScreen::SetPlayerOwner( CBasePlayer *pPlayer, bool bOwnerOnlyInput /* 
 //-----------------------------------------------------------------------------
 void PrecacheVGuiScreen( const char *pScreenType )
 {
-	g_pStringTableVguiScreen->AddString( CBaseEntity::IsServer(), pScreenType );
+	g_pStringTableVguiScreen->AddString( true, pScreenType );
 }
 
 

@@ -23,7 +23,7 @@ public:
 
 	void	Spawn( void );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void	SetMaster( string_t iszMaster ) { m_iszMaster = iszMaster; }
 
@@ -34,11 +34,11 @@ private:
 	string_t	m_iszMaster;
 };
 
-BEGIN_DATADESC( CRuleEntity )
+BEGIN_MAPENTITY( CRuleEntity )
 
 	DEFINE_KEYFIELD( m_iszMaster, FIELD_STRING, "master" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -69,22 +69,11 @@ bool CRuleEntity::CanFireForActivator( CBaseEntity *pActivator )
 class CRulePointEntity : public CRuleEntity
 {
 public:
-	DECLARE_DATADESC();
 	DECLARE_CLASS( CRulePointEntity, CRuleEntity );
 
 	int		m_Score;
 	void		Spawn( void );
 };
-
-//---------------------------------------------------------
-// Save/Restore
-//---------------------------------------------------------
-BEGIN_DATADESC( CRulePointEntity )
-
-	DEFINE_FIELD( m_Score,	FIELD_INTEGER ),
-
-END_DATADESC()
-
 
 void CRulePointEntity::Spawn( void )
 {
@@ -126,7 +115,7 @@ class CGameScore : public CRulePointEntity
 {
 public:
 	DECLARE_CLASS( CGameScore, CRulePointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void	Spawn( void );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
@@ -145,10 +134,10 @@ private:
 
 LINK_ENTITY_TO_CLASS( game_score, CGameScore );
 
-BEGIN_DATADESC( CGameScore )
+BEGIN_MAPENTITY( CGameScore )
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "ApplyScore", InputApplyScore ),
-END_DATADESC()
+END_MAPENTITY()
 
 void CGameScore::Spawn( void )
 {
@@ -221,19 +210,19 @@ class CGameEnd : public CRulePointEntity
 	DECLARE_CLASS( CGameEnd, CRulePointEntity );
 
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void	InputGameEnd( inputdata_t &inputdata );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 private:
 };
 
-BEGIN_DATADESC( CGameEnd )
+BEGIN_MAPENTITY( CGameEnd )
 
 	// inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "EndGame", InputGameEnd ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( game_end, CGameEnd );
 
@@ -266,7 +255,7 @@ public:
 
 	bool	KeyValue( const char *szKeyName, const char *szValue );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	inline	bool	MessageToAll( void ) { return (m_spawnflags & SF_ENVTEXT_ALLPLAYERS); }
 	inline	void	MessageSet( const char *pMessage ) { m_iszMessage = AllocPooledString(pMessage); }
@@ -292,7 +281,7 @@ LINK_ENTITY_TO_CLASS( game_text, CGameText );
 
 // Save parms as a block.  Will break save/restore if the structure changes, but this entity didn't ship with Half-Life, so
 // it can't impact saved Half-Life games.
-BEGIN_DATADESC( CGameText )
+BEGIN_MAPENTITY( CGameText )
 
 	DEFINE_KEYFIELD( m_iszMessage, FIELD_STRING, "message" ),
 
@@ -305,13 +294,11 @@ BEGIN_DATADESC( CGameText )
 	DEFINE_KEYFIELD( m_textParms.holdTime, FIELD_FLOAT, "holdtime" ),
 	DEFINE_KEYFIELD( m_textParms.fxTime, FIELD_FLOAT, "fxtime" ),
 
-	DEFINE_ARRAY( m_textParms, FIELD_CHARACTER, sizeof(hudtextparms_t) ),
-
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Display", InputDisplay ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetText", InputSetText ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -373,7 +360,6 @@ void CGameText::SetText( const char* pszStr )
 	m_iszMessage = AllocPooledString( pszStr );
 }
 
-/* TODO: Replace with an entity I/O version
 //
 // CGameTeamSet / game_team_set	-- Changes the team of the entity it targets to the activator's team
 // Flag: Fire once
@@ -412,14 +398,13 @@ void CGameTeamSet::InputTrigger( inputdata_t &inputdata )
 		// set the team of our target to our activator's team
 	}
 
-	m_OnTrigger.FireOutput(pActivator, this);
+	m_OnTrigger.FireOutput(inputdata.pActivator, this);
 
 	if ( RemoveOnFire() )
 	{
 		UTIL_Remove( this );
 	}
 }
-*/
 
 
 //
@@ -432,7 +417,7 @@ public:
 	DECLARE_CLASS( CGamePlayerZone, CRuleBrushEntity );
 	void InputCountPlayersInZone( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 
@@ -444,7 +429,7 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS( game_zone_player, CGamePlayerZone );
-BEGIN_DATADESC( CGamePlayerZone )
+BEGIN_MAPENTITY( CGamePlayerZone )
 
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "CountPlayersInZone", InputCountPlayersInZone),
@@ -455,7 +440,7 @@ BEGIN_DATADESC( CGamePlayerZone )
 	DEFINE_OUTPUT(m_PlayersInCount, "PlayersInCount"),
 	DEFINE_OUTPUT(m_PlayersOutCount, "PlayersOutCount"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -508,8 +493,6 @@ void CGamePlayerZone::InputCountPlayersInZone( inputdata_t &inputdata )
 }
 
 
-/*
-// Disable.  Eventually will be replace by new activator filter entities.  (LHL)
 //
 // CGamePlayerHurt / game_player_hurt	-- Damages the player who fires it
 // Flag: Fire once
@@ -523,7 +506,7 @@ public:
 	void		Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	inline bool RemoveOnFire( void ) { return (m_spawnflags & SF_PKILL_FIREONCE) ? true : false; }
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	
@@ -535,11 +518,11 @@ private:
 LINK_ENTITY_TO_CLASS( game_player_hurt, CGamePlayerHurt );
 
 
-BEGIN_DATADESC( CGamePlayerHurt )
+BEGIN_MAPENTITY( CGamePlayerHurt )
 
 	DEFINE_KEYFIELD( m_flDamage, FIELD_FLOAT, "dmg" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -556,11 +539,11 @@ void CGamePlayerHurt::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TY
 		}
 		else
 		{
-			pActivator->TakeDamage( this, this, m_flDamage, DMG_GENERIC );
+			pActivator->TakeDamage( CTakeDamageInfo(this, this, m_flDamage, DMG_GENERIC) );
 		}
 	}
 	
-	SUB_UseTargets( pActivator, useType, value );
+	//Use( pActivator, this, useType, value );
 	m_OnUse.FireOutput(pActivator, this); // dvsents2: handle useType and value here - they are passed through
 
 	if ( RemoveOnFire() )
@@ -568,7 +551,6 @@ void CGamePlayerHurt::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TY
 		UTIL_Remove( this );
 	}
 }
-*/
 
 //
 // CGamePlayerEquip / game_playerequip	-- Sets the default player equipment
@@ -579,8 +561,6 @@ void CGamePlayerHurt::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TY
 
 class CGamePlayerEquip : public CRulePointEntity
 {
-	DECLARE_DATADESC();
-
 public:
 	DECLARE_CLASS( CGamePlayerEquip, CRulePointEntity );
 
@@ -599,18 +579,6 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS( game_player_equip, CGamePlayerEquip );
-
-//---------------------------------------------------------
-// Save/Restore
-//---------------------------------------------------------
-BEGIN_DATADESC( CGamePlayerEquip )
-
-	DEFINE_AUTO_ARRAY( m_weaponNames,		FIELD_STRING ),
-	DEFINE_AUTO_ARRAY( m_weaponCount,		FIELD_INTEGER ),
-
-END_DATADESC()
-
-
 
 
 bool CGamePlayerEquip::KeyValue( const char *szKeyName, const char *szValue )

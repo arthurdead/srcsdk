@@ -32,7 +32,6 @@ class CStatueProp : public CPhysicsProp
 {
 	DECLARE_CLASS( CStatueProp, CPhysicsProp );
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
 
 public:
 	CStatueProp( void );

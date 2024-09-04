@@ -26,7 +26,6 @@ class CFish : public CBaseAnimating
 public:
 	DECLARE_CLASS( CFish, CBaseAnimating );
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
 
 	CFish( void );
 	virtual ~CFish();
@@ -94,7 +93,6 @@ class CFishPool : public CBaseEntity, public CGameEventListener
 {
 public:
 	DECLARE_CLASS( CFishPool, CBaseEntity );
-	DECLARE_DATADESC();
 
 	CFishPool( void );
 

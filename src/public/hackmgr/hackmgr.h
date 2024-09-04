@@ -1,0 +1,68 @@
+#ifndef HACKMGR_H
+#define HACKMGR_H
+
+#pragma once
+
+#include "tier0/platform.h"
+
+#ifdef BUILDING_HACKMGR
+	#define HACKMGR_API DLL_EXPORT
+	#define HACKMGR_CLASS_API DLL_CLASS_EXPORT
+#else
+	#define HACKMGR_API DLL_IMPORT
+	#define HACKMGR_CLASS_API DLL_CLASS_IMPORT
+#endif
+
+#define HACKMGR_OPEN_PARENTHESIS (
+#define HACKMGR_CLOSE_PARENTHESIS )
+
+#define HACKMGR_CONCAT5_IMPL(a1,a2,a3,a4,a5) a1##a2##a3##a4##a5
+#define HACKMGR_CONCAT5(a1,a2,a3,a4,a5) HACKMGR_CONCAT5_IMPL(a1,a2,a3,a4,a5)
+
+HACKMGR_API void DependOnHackMgr();
+
+#ifdef __GNUC__
+#define HACKMGR_INIT_PRIO(...) __attribute__((__init_priority__((__VA_ARGS__))))
+#else
+#define HACKMGR_INIT_PRIO(...) 
+#endif
+
+#ifdef __GNUC__
+#define HACKMGR_EXECUTE_ON_LOAD_BEGIN(...) \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wprio-ctor-dtor\"") \
+	[[using __gnu__: __constructor__ __VA_OPT__(HACKMGR_OPEN_PARENTHESIS HACKMGR_OPEN_PARENTHESIS __VA_ARGS__ HACKMGR_CLOSE_PARENTHESIS HACKMGR_CLOSE_PARENTHESIS)]] inline void HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _)() {
+#define HACKMGR_EXECUTE_ON_LOAD_END \
+	} \
+	_Pragma("GCC diagnostic pop")
+
+#define HACKMGR_EXECUTE_ON_UNLOAD_BEGIN(...) \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wprio-ctor-dtor\"") \
+	[[using __gnu__: __deconstructor__ __VA_OPT__(HACKMGR_OPEN_PARENTHESIS HACKMGR_OPEN_PARENTHESIS __VA_ARGS__ HACKMGR_CLOSE_PARENTHESIS HACKMGR_CLOSE_PARENTHESIS)]] inline void HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _)() {
+#define HACKMGR_EXECUTE_ON_UNLOAD_END \
+	} \
+	_Pragma("GCC diagnostic pop")
+#else
+#define HACKMGR_EXECUTE_ON_LOAD_BEGIN(...) \
+namespace HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _) { \
+	__VA_OPT__(HACKMGR_INIT_PRIO(__VA_ARGS__)) inline struct _ { \
+	public: \
+		_() {
+#define HACKMGR_EXECUTE_ON_LOAD_END \
+		} \
+	} _; \
+}
+
+#define HACKMGR_EXECUTE_ON_UNLOAD_BEGIN(...) \
+namespace HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _) { \
+	inline struct _ { \
+	public: \
+		~_() {
+#define HACKMGR_EXECUTE_ON_UNLOAD_END \
+		} \
+	} _; \
+}
+#endif
+
+#endif

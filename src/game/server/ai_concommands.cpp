@@ -16,6 +16,7 @@
 #endif
 #include "ndebugoverlay.h"
 #include "datacache/imdlcache.h"
+#include "ai_addon.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -32,23 +33,50 @@ bool g_bAIDisabledByUser = false;
 //------------------------------------------------------------------------------
 // Purpose: Disables all NPCs
 //------------------------------------------------------------------------------
+void EnableAI()
+{
+	CAI_BaseNPC::m_nDebugBits &= ~bits_debugDisableAI;
+	DevMsg("AI Enabled.\n");
+	g_bAIDisabledByUser = false;
+}
+
+void DisableAI()
+{
+	CAI_BaseNPC::m_nDebugBits |= bits_debugDisableAI;
+	DevMsg("AI Disabled.\n");
+	g_bAIDisabledByUser = true;
+}
+
 void CC_AI_Disable( void )
 {
 	if (CAI_BaseNPC::m_nDebugBits & bits_debugDisableAI)
 	{
-		CAI_BaseNPC::m_nDebugBits &= ~bits_debugDisableAI;
-		DevMsg("AI Enabled.\n");
+		EnableAI();
 	}
 	else
 	{
-		CAI_BaseNPC::m_nDebugBits |= bits_debugDisableAI;
-		DevMsg("AI Disabled.\n");
-		g_bAIDisabledByUser = true;
+		DisableAI();
 	}
 
 	CBaseEntity::m_nDebugPlayer = UTIL_GetCommandClientIndex();
 }
 static ConCommand ai_disable("ai_disable", CC_AI_Disable, "Bi-passes all AI logic routines and puts all NPCs into their idle animations.  Can be used to get NPCs out of your way and to test effect of AI logic routines on frame rate", FCVAR_CHEAT);
+
+CON_COMMAND_F( ai_setenabled, "Like ai_disable but you manually specify the state (with a 0 or 1) instead of toggling it.", FCVAR_CHEAT )
+{
+	if ( args.ArgC() < 2 )
+	{
+		Warning( "ai_setenabled <0 or 1>\n" );
+		return;
+	}
+
+	if ( args[1][0] == '0' )
+		DisableAI();
+	else
+		EnableAI();
+
+	CBaseEntity::m_nDebugPlayer = UTIL_GetCommandClientIndex();
+}
 
 #ifndef AI_USES_NAV_MESH
 //------------------------------------------------------------------------------
@@ -407,6 +435,7 @@ void CC_NPC_Create( const CCommand &args )
 
 	bool allowPrecache = CBaseEntity::IsPrecacheAllowed();
 	CBaseEntity::SetAllowPrecache( true );
+	Vector vecAddonSpawn; // coordinates of the NPC, which is the position to spawn the addon
 
 	// Try to create entity
 	CAI_BaseNPC *baseNPC = dynamic_cast< CAI_BaseNPC * >( CreateEntityByName(args[1]) );
@@ -441,7 +470,7 @@ void CC_NPC_Create( const CCommand &args )
 				// Raise the end position a little up off the floor, place the npc and drop him down
 				tr.endpos.z += 12;
 				baseNPC->Teleport( &tr.endpos, NULL, NULL );
-				UTIL_DropToFloor( baseNPC, MASK_NPCSOLID );
+				UTIL_DropToFloor( baseNPC, baseNPC->GetAITraceMask() );
 			}
 
 			// Now check that this is a valid location for the new npc to be
@@ -449,7 +478,7 @@ void CC_NPC_Create( const CCommand &args )
 			vUpBit.z += 1;
 
 			AI_TraceHull( baseNPC->GetAbsOrigin(), vUpBit, baseNPC->GetHullMins(), baseNPC->GetHullMaxs(), 
-				MASK_NPCSOLID, baseNPC, COLLISION_GROUP_NONE, &tr );
+				baseNPC->GetAITraceMask(), baseNPC, COLLISION_GROUP_NONE, &tr );
 			if ( tr.startsolid || (tr.fraction < 1.0) )
 			{
 				baseNPC->SUB_Remove();
@@ -459,6 +488,27 @@ void CC_NPC_Create( const CCommand &args )
 		}
 
 		baseNPC->Activate();
+
+		// since the NPC was successfully spawned lets see if we need to attach an addon
+		if ( args.ArgC() >= 4 )
+		{
+			CBaseEntity *pItem = (CBaseEntity *)CreateEntityByName( args[3] );
+			if ( pItem )
+			{
+				pItem->SetAbsOrigin( vecAddonSpawn );
+
+				//  name the addon if the user specified a fourth parameter
+				if ( args.ArgC() >= 5 )
+				{
+					pItem->KeyValue( "targetname", args[4] );
+				};
+
+				pItem->Spawn();
+
+				// install the addon
+				assert_cast< CAI_AddOn *>( pItem )->Install( baseNPC );
+			}
+		}
 	}
 	CBaseEntity::SetAllowPrecache( allowPrecache );
 }
@@ -508,7 +558,7 @@ void CC_NPC_Create_Aimed( const CCommand &args )
 				// Raise the end position a little up off the floor, place the npc and drop him down
 				tr.endpos.z += 12;
 				baseNPC->Teleport( &tr.endpos, &angles, NULL );
-				UTIL_DropToFloor( baseNPC, MASK_NPCSOLID );
+				UTIL_DropToFloor( baseNPC, baseNPC->GetAITraceMask() );
 			}
 
 			// Now check that this is a valid location for the new npc to be
@@ -516,7 +566,7 @@ void CC_NPC_Create_Aimed( const CCommand &args )
 			vUpBit.z += 1;
 
 			AI_TraceHull( baseNPC->GetAbsOrigin(), vUpBit, baseNPC->GetHullMins(), baseNPC->GetHullMaxs(), 
-				MASK_NPCSOLID, baseNPC, COLLISION_GROUP_NONE, &tr );
+				baseNPC->GetAITraceMask(), baseNPC, COLLISION_GROUP_NONE, &tr );
 			if ( tr.startsolid || (tr.fraction < 1.0) )
 			{
 				baseNPC->SUB_Remove();
@@ -600,6 +650,81 @@ void CC_NPC_Freeze( const CCommand &args )
 }
 static ConCommand npc_freeze("npc_freeze", CC_NPC_Freeze, "Selected NPC(s) will freeze in place (or unfreeze). If there are no selected NPCs, uses the NPC under the crosshair.\n\tArguments:	-none-", FCVAR_CHEAT);
 
+//------------------------------------------------------------------------------
+// Purpose: Freeze or unfreeze the selected NPCs. If no NPCs are selected, the
+//			NPC under the crosshair is frozen/unfrozen.
+//------------------------------------------------------------------------------
+void CC_NPC_Set_Freeze( const CCommand &args )
+{
+	//	
+	// No NPC was specified, try to freeze selected NPCs.
+	//
+	bool bFound = false;
+	bool bFreeze = ( atoi( args[1] ) != 0 );
+	
+	CAI_BaseNPC *npc = gEntList.NextEntByClass( (CAI_BaseNPC *)NULL );
+	while (npc)
+	{
+		if (npc->m_debugOverlays & OVERLAY_NPC_SELECTED_BIT) 
+		{
+			bFound = true;
+			if ( bFreeze )
+			{
+				npc->Freeze();
+			}
+			else
+			{
+				npc->Unfreeze();
+			}
+		}
+		npc = gEntList.NextEntByClass(npc);
+	}
+
+	if (!bFound)
+	{
+		//	
+		// No selected NPCs, look for the NPC under the crosshair.
+		//
+		CBaseEntity *pEntity = FindPickerEntity( UTIL_GetCommandClient() );
+		if ( pEntity )
+		{
+			CAI_BaseNPC *pNPC = pEntity->MyNPCPointer();
+			if (pNPC)
+			{
+				if ( bFreeze )
+				{
+					npc->Freeze();
+				}
+				else
+				{
+					npc->Unfreeze();
+				}
+			}
+		}
+	}
+}
+static ConCommand npc_set_freeze("npc_set_freeze", CC_NPC_Set_Freeze, "Selected NPC(s) will freeze in place (or unfreeze). If there are no selected NPCs, uses the NPC under the crosshair.\n\tArguments:	-none-", FCVAR_CHEAT);
+
+CON_COMMAND( npc_set_freeze_unselected, "Freeze all NPCs not selected" )
+{
+	CAI_BaseNPC *pNPC = gEntList.NextEntByClass( (CAI_BaseNPC *)NULL );
+
+	while (pNPC)
+	{
+		if (!(pNPC->m_debugOverlays & OVERLAY_NPC_SELECTED_BIT))
+		{
+			if ( atoi( args[1] ) != 0 )
+			{
+				pNPC->Freeze();
+			}
+			else
+			{
+				pNPC->Unfreeze();
+			}
+		}
+		pNPC = gEntList.NextEntByClass(pNPC);
+	}
+}
 
 CON_COMMAND( npc_freeze_unselected, "Freeze all NPCs not selected" )
 {

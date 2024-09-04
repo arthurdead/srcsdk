@@ -171,6 +171,8 @@ void CBaseCombatWeapon::Spawn( void )
 	RemoveEFlags( EFL_USE_PARTITION_WHEN_NOT_SOLID );
 
 	m_iState = WEAPON_NOT_CARRIED;
+	SetGlobalFadeScale( 0.0f );
+
 	// Assume 
 	m_nViewModelIndex = 0;
 
@@ -182,6 +184,11 @@ void CBaseCombatWeapon::Spawn( void )
 	}
 
 #if !defined( CLIENT_DLL )
+	if ( GetWpnData().szAIAddOn[ 0 ] != '\0' )
+	{
+		SetAIAddOn( AllocPooledString( GetWpnData().szAIAddOn ) );
+	}
+
 	FallInit();
 	SetCollisionGroup( COLLISION_GROUP_WEAPON );
 	m_takedamage = DAMAGE_EVENTS_ONLY;
@@ -280,6 +287,15 @@ void CBaseCombatWeapon::Precache( void )
 		Warning( "Error reading weapon data file for: %s\n", GetClassname() );
 	//	Remove( );	//don't remove, this gets released soon!
 	}
+
+	const char *pszTracerName = GetTracerType();
+	if ( pszTracerName )
+	{
+		PrecacheEffect( pszTracerName );
+	}
+
+	PrecacheEffect( "ParticleTracer" );
+	PrecacheParticleSystem( "weapon_tracers" );
 }
 
 //-----------------------------------------------------------------------------
@@ -654,10 +670,7 @@ void CBaseCombatWeapon::Drop( const Vector &vecVelocity )
 	SetThink( &CBaseCombatWeapon::SetPickupTouch );
 	SetTouch(NULL);
 
-	if( hl2_episodic.GetBool() )
-	{
-		RemoveSpawnFlags( SF_WEAPON_NO_PLAYER_PICKUP );
-	}
+	RemoveSpawnFlags( SF_WEAPON_NO_PLAYER_PICKUP );
 
 	IPhysicsObject *pObj = VPhysicsGetObject();
 	if ( pObj != NULL )
@@ -754,27 +767,29 @@ void CBaseCombatWeapon::MakeTracer( const Vector &vecTracerSrc, const trace_t &t
 	}
 
 	const char *pszTracerName = GetTracerType();
+	if ( !pszTracerName )
+	{
+		 pszTracerName = "weapon_tracers";
+	}
 
 	Vector vNewSrc = vecTracerSrc;
-	int iEntIndex = pOwner->entindex();
+	int iEntIndex = entindex();
 
-	if ( g_pGameRules->IsMultiplayer() )
+#ifdef CLIENT_DLL
+	C_BasePlayer *player = ToBasePlayer( pOwner );
+	if ( C_BasePlayer::IsLocalPlayer( player ) )
 	{
-		iEntIndex = entindex();
+		CBaseEntity *vm = player->GetViewModel();
+		if ( vm )
+		{
+			iEntIndex = vm->entindex();
+		}
 	}
+#endif
 
 	int iAttachment = GetTracerAttachment();
 
-	switch ( iTracerType )
-	{
-	case TRACER_LINE:
-		UTIL_Tracer( vNewSrc, tr.endpos, iEntIndex, iAttachment, 0.0f, true, pszTracerName );
-		break;
-
-	case TRACER_LINE_AND_WHIZ:
-		UTIL_Tracer( vNewSrc, tr.endpos, iEntIndex, iAttachment, 0.0f, true, pszTracerName );
-		break;
-	}
+	UTIL_Tracer( vNewSrc, tr.endpos, iEntIndex, iAttachment, 0.0f, true, pszTracerName );
 }
 
 void CBaseCombatWeapon::GiveTo( CBaseEntity *pOther )
@@ -983,7 +998,7 @@ void CBaseCombatWeapon::Equip( CBaseCombatCharacter *pOwner )
 void CBaseCombatWeapon::SetActivity( Activity act, float duration ) 
 { 
 	//Adrian: Oh man...
-#if !defined( CLIENT_DLL ) && (defined( HL2MP ) || defined( PORTAL ))
+#if !defined( CLIENT_DLL )
 	SetModel( GetWorldModel() );
 #endif
 	
@@ -994,7 +1009,7 @@ void CBaseCombatWeapon::SetActivity( Activity act, float duration )
 		sequence = SelectWeightedSequence( ACT_VM_IDLE );
 
 	//Adrian: Oh man again...
-#if !defined( CLIENT_DLL ) && (defined( HL2MP ) || defined( PORTAL ) || defined( SDK_DLL ) )
+#if !defined( CLIENT_DLL )
 	if ( GetOwner()->IsPlayer() ) 
 		SetModel( GetViewModel() );
 #endif
@@ -1156,9 +1171,7 @@ void CBaseCombatWeapon::SetViewModel()
 //-----------------------------------------------------------------------------
 bool CBaseCombatWeapon::SendWeaponAnim( int iActivity )
 {
-#ifdef USES_ECON_ITEMS
-	iActivity = TranslateViewmodelHandActivity( (Activity)iActivity );
-#endif		
+	//iActivity = TranslateViewmodelHandActivity( (Activity)iActivity );
 
 	//For now, just set the ideal activity and be done with it
 	return SetIdealActivity( (Activity) iActivity );
@@ -1299,7 +1312,13 @@ bool CBaseCombatWeapon::IsWeaponVisible( void )
 	{
 		vm = pOwner->GetViewModel( m_nViewModelIndex );
 		if ( vm )
+		{
+#ifdef CLIENT_DLL
+			return !vm->IsDormant() && !vm->IsEffectActive(EF_NODRAW);
+#else
 			return ( !vm->IsEffectActive(EF_NODRAW) );
+#endif
+		}
 	}
 
 	return false;
@@ -2229,6 +2248,82 @@ void CBaseCombatWeapon::PrimaryAttack( void )
 	AddViewKick();
 }
 
+void CBaseCombatWeapon::BaseForceFire( CBaseCombatCharacter *pOperator, CBaseEntity *pTarget )
+{
+	// Ensure we have enough rounds in the clip
+	m_iClip1++;
+
+	// If my clip is empty (and I use clips) start reload
+	if ( UsesClipsForAmmo1() && !m_iClip1 ) 
+	{
+		Reload();
+		return;
+	}
+
+	pOperator->DoMuzzleFlash();
+
+	SendWeaponAnim( GetPrimaryAttackActivity() );
+
+	// player "shoot" animation
+	//pOperator->SetAnimation( PLAYER_ATTACK1 );
+
+	FireBulletsInfo_t info;
+
+	QAngle	angShootDir;
+	GetAttachment( LookupAttachment( "muzzle" ), info.m_vecSrc, angShootDir );
+
+	if ( pTarget )
+	{
+		info.m_vecDirShooting = pTarget->WorldSpaceCenter() - info.m_vecSrc;
+		VectorNormalize( info.m_vecDirShooting );
+	}
+	else
+	{
+		AngleVectors( angShootDir, &info.m_vecDirShooting );
+	}
+
+	// To make the firing framerate independent, we may have to fire more than one bullet here on low-framerate systems, 
+	// especially if the weapon we're firing has a really fast rate of fire.
+	info.m_iShots = 0;
+	float fireRate = GetFireRate();
+
+	while ( m_flNextPrimaryAttack <= gpGlobals->curtime )
+	{
+		// MUST call sound before removing a round from the clip of a CMachineGun
+		WeaponSound(SINGLE, m_flNextPrimaryAttack);
+		m_flNextPrimaryAttack = m_flNextPrimaryAttack + fireRate;
+		info.m_iShots++;
+		if ( !fireRate )
+			break;
+	}
+
+	// Make sure we don't fire more than the amount in the clip
+	if ( UsesClipsForAmmo1() )
+	{
+		info.m_iShots = MIN( info.m_iShots, m_iClip1 );
+		m_iClip1 -= info.m_iShots;
+	}
+	else
+	{
+		info.m_iShots = MIN( info.m_iShots, pOperator->GetAmmoCount( m_iPrimaryAmmoType ) );
+		pOperator->RemoveAmmo( info.m_iShots, m_iPrimaryAmmoType );
+	}
+
+	info.m_flDistance = MAX_TRACE_LENGTH;
+	info.m_iAmmoType = m_iPrimaryAmmoType;
+	info.m_iTracerFreq = 2;
+
+#if !defined( CLIENT_DLL )
+	// Fire the bullets
+	info.m_vecSpread = pOperator->GetAttackSpread( this );
+#else
+	//!!!HACKHACK - what does the client want this function for? 
+	info.m_vecSpread = GetBulletSpread();
+#endif // CLIENT_DLL
+
+	pOperator->FireBullets( info );
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Called every frame to check if the weapon is going through transition animations
 //-----------------------------------------------------------------------------
@@ -2515,75 +2610,8 @@ IMPLEMENT_NETWORKCLASS_ALIASED( BaseCombatWeapon, DT_BaseCombatWeapon )
 //-----------------------------------------------------------------------------
 // Purpose: Save Data for Base Weapon object
 //-----------------------------------------------------------------------------// 
-BEGIN_DATADESC( CBaseCombatWeapon )
+BEGIN_MAPENTITY( CBaseCombatWeapon )
 
-	DEFINE_FIELD( m_flNextPrimaryAttack, FIELD_TIME ),
-	DEFINE_FIELD( m_flNextSecondaryAttack, FIELD_TIME ),
-	DEFINE_FIELD( m_flTimeWeaponIdle, FIELD_TIME ),
-
-	DEFINE_FIELD( m_bInReload, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bFireOnEmpty, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_hOwner, FIELD_EHANDLE ),
-
-	DEFINE_FIELD( m_iState, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iszName, FIELD_STRING ),
-	DEFINE_FIELD( m_iPrimaryAmmoType, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iSecondaryAmmoType, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iClip1, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iClip2, FIELD_INTEGER ),
-	DEFINE_FIELD( m_bFiresUnderwater, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bAltFiresUnderwater, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_fMinRange1, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fMinRange2, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fMaxRange1, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fMaxRange2, FIELD_FLOAT ),
-
-	DEFINE_FIELD( m_iPrimaryAmmoCount, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iSecondaryAmmoCount, FIELD_INTEGER ),
-
-	DEFINE_FIELD( m_nViewModelIndex, FIELD_INTEGER ),
-
-// don't save these, init to 0 and regenerate
-//	DEFINE_FIELD( m_flNextEmptySoundTime, FIELD_TIME ),
-//	DEFINE_FIELD( m_Activity, FIELD_INTEGER ),
- 	DEFINE_FIELD( m_nIdealSequence, FIELD_INTEGER ),
-	DEFINE_FIELD( m_IdealActivity, FIELD_INTEGER ),
-
-	DEFINE_FIELD( m_fFireDuration, FIELD_FLOAT ),
-
-	DEFINE_FIELD( m_bReloadsSingly, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_iSubType, FIELD_INTEGER ),
- 	DEFINE_FIELD( m_bRemoveable, FIELD_BOOLEAN ),
-
-	DEFINE_FIELD( m_flUnlockTime,		FIELD_TIME ),
-	DEFINE_FIELD( m_hLocker,			FIELD_EHANDLE ),
-
-	//	DEFINE_FIELD( m_iViewModelIndex, FIELD_INTEGER ),
-	//	DEFINE_FIELD( m_iWorldModelIndex, FIELD_INTEGER ),
-	//  DEFINE_FIELD( m_hWeaponFileInfo, ???? ),
-
-	DEFINE_PHYSPTR( m_pConstraint ),
-
-	DEFINE_FIELD( m_iReloadHudHintCount,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_iAltFireHudHintCount,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_bReloadHudHintDisplayed, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bAltFireHudHintDisplayed, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flHudHintPollTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flHudHintMinDisplayTime, FIELD_TIME ),
-
-	// Just to quiet classcheck.. this field exists only on the client
-//	DEFINE_FIELD( m_iOldState, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_bJustRestored, FIELD_BOOLEAN ),
-
-	// Function pointers
-	DEFINE_ENTITYFUNC( DefaultTouch ),
-	DEFINE_THINKFUNC( FallThink ),
-	DEFINE_THINKFUNC( Materialize ),
-	DEFINE_THINKFUNC( AttemptToMaterialize ),
-	DEFINE_THINKFUNC( DestroyItem ),
-	DEFINE_THINKFUNC( SetPickupTouch ),
-
-	DEFINE_THINKFUNC( HideThink ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "HideWeapon", InputHideWeapon ),
 
 	// Outputs
@@ -2592,7 +2620,7 @@ BEGIN_DATADESC( CBaseCombatWeapon )
 	DEFINE_OUTPUT( m_OnNPCPickup, "OnNPCPickup"),
 	DEFINE_OUTPUT( m_OnCacheInteraction, "OnCacheInteraction" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: Only send to local player if this weapon is the active weapon
@@ -2745,3 +2773,33 @@ BEGIN_NETWORK_TABLE(CBaseCombatWeapon, DT_BaseCombatWeapon)
 	RecvPropEHandle( RECVINFO(m_hOwner ) ),
 #endif
 END_NETWORK_TABLE()
+
+#if defined( CLIENT_DLL )
+
+int Studio_FindAttachment( const CStudioHdr *pStudioHdr, const char *pAttachmentName );
+
+int CBaseCombatWeapon::LookupAttachment( const char *pAttachmentName )
+{
+	int newIndex = GetWorldModelIndex();
+	if ( newIndex != GetModelIndex() )
+	{
+		const model_t *pWorldModel = modelinfo->GetModel( newIndex );
+		if ( pWorldModel )
+		{
+			MDLHandle_t hStudioHdr = modelinfo->GetCacheHandle( pWorldModel );
+			if ( MDLHANDLE_INVALID != hStudioHdr )
+			{
+				const studiohdr_t *pStudioHdr = mdlcache->GetStudioHdr( hStudioHdr );
+				if ( pStudioHdr )
+				{
+					CStudioHdr studioHdrContainer( pStudioHdr, mdlcache );
+					int iRet = Studio_FindAttachment( &studioHdrContainer, pAttachmentName ) + 1;
+					return iRet;
+				}
+			}
+		}
+	}
+
+	return BaseClass::LookupAttachment( pAttachmentName );
+}
+#endif

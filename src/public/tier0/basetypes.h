@@ -25,9 +25,10 @@
 #include "protected_things.h"
 
 // stdio.h
-#ifndef NULL
-#define NULL 0
+#ifdef NULL
+#undef NULL
 #endif
+#define NULL nullptr
 
 
 #ifdef POSIX
@@ -182,6 +183,9 @@ inline unsigned long FloatAbsBits( vec_t f )
 	return FloatBits(f) & 0x7FFFFFFF;
 }
 
+#undef min
+#undef max
+
 // Given today's processors, I cannot think of any circumstance
 // where bit tricks would be faster than fabs. henryg 8/16/2011
 #ifdef _MSC_VER
@@ -221,6 +225,20 @@ typedef struct color24_s
 {
 	bool operator!=( const struct color24_s &other ) const;
 
+	color24_s()
+	{
+		r = 255;
+		g = 255;
+		b = 255;
+	}
+
+	color24_s(byte r_, byte g_, byte b_)
+	{
+		r = r_;
+		g = g_;
+		b = b_;
+	}
+
 	byte r, g, b;
 } color24;
 
@@ -232,6 +250,30 @@ inline bool color24::operator!=( const color24 &other ) const
 typedef struct color32_s
 {
 	bool operator!=( const struct color32_s &other ) const;
+
+	color32_s()
+	{
+		r = 255;
+		g = 255;
+		b = 255;
+		a = 255;
+	}
+
+	color32_s(byte r_, byte g_, byte b_, byte a_)
+	{
+		r = r_;
+		g = g_;
+		b = b_;
+		a = a_;
+	}
+
+	color32_s(color24 clr, byte alpha)
+	{
+		r = clr.r;
+		g = clr.g;
+		b = clr.b;
+		a = alpha;
+	}
 
 	byte r, g, b, a;
 } color32;

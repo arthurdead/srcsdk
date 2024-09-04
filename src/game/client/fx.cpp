@@ -102,7 +102,7 @@ void FX_RicochetSound( const Vector& pos )
 bool FX_GetAttachmentTransform( ClientEntityHandle_t hEntity, int attachmentIndex, Vector *origin, QAngle *angles )
 {
 	// Validate our input
-	if ( ( hEntity == INVALID_EHANDLE_INDEX ) || ( attachmentIndex < 1 ) )
+	if ( ( !hEntity.IsValid() ) || ( attachmentIndex < 1 ) )
 	{
 		if ( origin != NULL )
 		{
@@ -450,27 +450,7 @@ void FX_MuzzleEffectAttached(
 //-----------------------------------------------------------------------------
 void MuzzleFlashCallback( const CEffectData &data )
 {
-	Vector vecOrigin = data.m_vOrigin;
-	QAngle vecAngles = data.m_vAngles;
-	if ( data.entindex() > 0 )
-	{
-		IClientRenderable *pRenderable = data.GetRenderable();
-		if ( !pRenderable )
-			return;
-
-		if ( data.m_nAttachmentIndex )
-		{
-			//FIXME: We also need to allocate these particles into an attachment space setup
-			pRenderable->GetAttachment( data.m_nAttachmentIndex, vecOrigin, vecAngles );
-		}
-		else
-		{
-			vecOrigin = pRenderable->GetRenderOrigin();
-			vecAngles = pRenderable->GetRenderAngles();
-		}
-	}
-
-	tempents->MuzzleFlash( vecOrigin, vecAngles, data.m_fFlags & (~MUZZLEFLASH_FIRSTPERSON), data.m_hEntity, (data.m_fFlags & MUZZLEFLASH_FIRSTPERSON) != 0 );	
+	tempents->MuzzleFlash( data.m_fFlags & (~MUZZLEFLASH_FIRSTPERSON), data.m_hEntity, data.m_nAttachmentIndex, (data.m_fFlags & MUZZLEFLASH_FIRSTPERSON) != 0 );	
 }
 
 DECLARE_CLIENT_EFFECT( MuzzleFlash, MuzzleFlashCallback );

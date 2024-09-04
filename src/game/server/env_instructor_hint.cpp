@@ -9,11 +9,6 @@
 #include "baseentity.h"
 #include "world.h"
 
-#ifdef INFESTED_DLL
-	#include "asw_marine.h"
-	#include "asw_player.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -24,7 +19,7 @@ class CEnvInstructorHint : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CEnvInstructorHint, CPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	void InputShowHint( inputdata_t &inputdata );
@@ -53,7 +48,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( env_instructor_hint, CEnvInstructorHint );
 
-BEGIN_DATADESC( CEnvInstructorHint )
+BEGIN_MAPENTITY( CEnvInstructorHint )
 
 	DEFINE_KEYFIELD( m_iszReplace_Key, FIELD_STRING, "hint_replace_key" ),
 	DEFINE_KEYFIELD( m_iszHintTargetEntity, FIELD_STRING, "hint_target" ),
@@ -78,7 +73,7 @@ BEGIN_DATADESC( CEnvInstructorHint )
 	DEFINE_INPUTFUNC( FIELD_STRING,	"ShowHint",	InputShowHint ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"EndHint",	InputEndHint ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 #define LOCATOR_ICON_FX_PULSE_SLOW		0x00000001
@@ -91,8 +86,7 @@ END_DATADESC()
 //-----------------------------------------------------------------------------
 void CEnvInstructorHint::InputShowHint( inputdata_t &inputdata )
 {
-	static int s_InstructorServerHintEventCreate = 0;
-	IGameEvent * event = gameeventmanager->CreateEvent( "instructor_server_hint_create", false, &s_InstructorServerHintEventCreate );
+	IGameEvent * event = gameeventmanager->CreateEvent( "instructor_server_hint_create", false );
 	if ( event )
 	{
 		CBaseEntity *pTargetEntity = gEntList.FindEntityByName( NULL, m_iszHintTargetEntity );
@@ -115,13 +109,6 @@ void CEnvInstructorHint::InputShowHint( inputdata_t &inputdata )
 		CBasePlayer *pActivator = NULL;
 		bool bFilterByActivator = m_bLocalPlayerOnly;
 
-#ifdef INFESTED_DLL
-		CASW_Marine *pMarine = dynamic_cast<CASW_Marine*>( inputdata.pActivator );
-		if ( pMarine )
-		{
-			pActivator = pMarine->GetCommander();
-		}
-#else
 		if ( inputdata.value.StringID() != NULL_STRING )
 		{
 			CBaseEntity *pTarget = gEntList.FindEntityByName( NULL, inputdata.value.String() );
@@ -133,17 +120,9 @@ void CEnvInstructorHint::InputShowHint( inputdata_t &inputdata )
 		}
 		else
 		{
-			if ( GameRules()->IsMultiplayer() == false )
-			{
-				pActivator = UTIL_GetLocalPlayer(); 
-			}
-			else
-			{
-				Warning( "Failed to play server side instructor hint: no player specified for hint\n" );
-				Assert( 0 );
-			}
+			Warning( "Failed to play server side instructor hint: no player specified for hint\n" );
+			Assert( 0 );
 		}
-#endif
 
 		const char *pActivatorCaption = m_iszActivatorCaption.ToCStr();
 		if ( !pActivatorCaption || pActivatorCaption[ 0 ] == '\0' )
@@ -178,8 +157,7 @@ void CEnvInstructorHint::InputShowHint( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 void CEnvInstructorHint::InputEndHint( inputdata_t &inputdata )
 {
-	static int s_InstructorServerHintEventStop = 0;
-	IGameEvent * event = gameeventmanager->CreateEvent( "instructor_server_hint_stop", false, &s_InstructorServerHintEventStop );
+	IGameEvent * event = gameeventmanager->CreateEvent( "instructor_server_hint_stop", false );
 	if ( event )
 	{
 		event->SetString( "hint_name", GetEntityName().ToCStr() );
@@ -200,12 +178,6 @@ public:
 	{
 		return SetTransmitState( FL_EDICT_ALWAYS );
 	}
-
-	DECLARE_DATADESC();
 };
 
 LINK_ENTITY_TO_CLASS( info_target_instructor_hint, CInfoInstructorHintTarget );
-
-BEGIN_DATADESC( CInfoInstructorHintTarget )
-
-END_DATADESC()

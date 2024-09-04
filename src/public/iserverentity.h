@@ -12,8 +12,11 @@
 
 #include "iserverunknown.h"
 #include "string_t.h"
-
-
+#if defined GAME_DLL || defined CLIENT_DLL
+#include "ehandle.h"
+#else
+typedef CBaseHandle EHANDLE;
+#endif
 
 struct Ray_t;
 class ServerClass;
@@ -34,6 +37,18 @@ public:
  	virtual string_t		GetModelName( void ) const = 0;
 
 	virtual void			SetModelIndex( int index ) = 0;
+};
+
+class IServerEntityMod
+{
+public:
+	virtual const EHANDLE& GetRefEHandle() const = 0;
+};
+
+class IServerEntityEx	: public IServerEntity, public IServerUnknownMod, public IServerEntityMod
+{
+public:
+	virtual const EHANDLE& GetRefEHandle() const = 0;
 };
 
 

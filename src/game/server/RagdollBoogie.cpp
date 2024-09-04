@@ -25,23 +25,6 @@
 static const char *s_pZapContext = "ZapContext";
 
 
-//-----------------------------------------------------------------------------
-// Save/load 
-//-----------------------------------------------------------------------------
-BEGIN_DATADESC( CRagdollBoogie )
-
-	DEFINE_FIELD( m_flStartTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flBoogieLength, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flMagnitude, FIELD_FLOAT ),
-
-	// Think this should be handled by StartTouch/etc.
-//	DEFINE_FIELD( m_nSuppressionCount, FIELD_INTEGER ),
-
-	DEFINE_FUNCTION( BoogieThink ),
-	DEFINE_FUNCTION( ZapThink ),
-
-END_DATADESC()
-
 LINK_ENTITY_TO_CLASS( env_ragdoll_boogie, CRagdollBoogie );
 
 
@@ -72,8 +55,18 @@ CRagdollBoogie *CRagdollBoogie::Create( CBaseEntity *pTarget, float flMagnitude,
 //-----------------------------------------------------------------------------
 // Spawn
 //-----------------------------------------------------------------------------
+void CRagdollBoogie::Precache()
+{
+	BaseClass::Precache();
+
+	PrecacheEffect( "TeslaHitboxes" );
+
+	PrecacheScriptSound( "RagdollBoogie.Zap" );
+}
+
 void CRagdollBoogie::Spawn()
 {
+	Precache();
 	BaseClass::Spawn();
 
 	SetThink( &CRagdollBoogie::BoogieThink );
@@ -119,9 +112,7 @@ void CRagdollBoogie::ZapThink()
 		DispatchEffect( "TeslaHitboxes", data );	
 	}
 
-#ifdef HL2_EPISODIC
 	EmitSound( "RagdollBoogie.Zap" );
-#endif
 
 	SetContextThink( &CRagdollBoogie::ZapThink, gpGlobals->curtime + random->RandomFloat( 0.1f, 0.3f ), s_pZapContext ); 
 }
@@ -161,7 +152,7 @@ void CRagdollBoogie::DecrementSuppressionCount( CBaseEntity *pTarget )
 			float dt = gpGlobals->curtime - pBoogie->m_flStartTime;
 			if ( dt >= pBoogie->m_flBoogieLength )
 			{
-				PhysCallbackRemove( pBoogie->NetworkProp() );
+				PhysCallbackRemove( pBoogie );
 			}
 		}
 	}

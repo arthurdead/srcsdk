@@ -15,8 +15,6 @@
 
 class CParticleFire : public CBaseParticleEntity
 {
-	DECLARE_DATADESC();
-
 public:
 	CParticleFire();
 

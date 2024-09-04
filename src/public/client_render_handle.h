@@ -18,12 +18,11 @@ class IClientRenderable;
 //-----------------------------------------------------------------------------
 // Handle to an renderable in the client leaf system
 //-----------------------------------------------------------------------------
-typedef unsigned short ClientRenderHandle_t;
-
-enum
+enum class ClientRenderHandle_t : unsigned short
 {
-	INVALID_CLIENT_RENDER_HANDLE = (ClientRenderHandle_t)0xffff,
 };
+
+inline const ClientRenderHandle_t INVALID_CLIENT_RENDER_HANDLE = (ClientRenderHandle_t)0xffff;
 
 
 #endif // CLIENT_RENDER_HANDLE_H

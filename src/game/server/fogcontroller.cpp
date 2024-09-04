@@ -29,7 +29,7 @@ CFogSystem *FogSystem( void )
 
 LINK_ENTITY_TO_CLASS( env_fog_controller, CFogController );
 
-BEGIN_DATADESC( CFogController )
+BEGIN_MAPENTITY( CFogController )
 
 	DEFINE_INPUTFUNC( FIELD_FLOAT,		"SetStartDist",	InputSetStartDist ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT,		"SetEndDist",	InputSetEndDist ),
@@ -45,10 +45,8 @@ BEGIN_DATADESC( CFogController )
 	DEFINE_INPUTFUNC( FIELD_COLOR32,	"SetColorSecondaryLerpTo",	InputSetColorSecondaryLerpTo ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT,		"SetStartDistLerpTo",	InputSetStartDistLerpTo ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT,		"SetEndDistLerpTo",	InputSetEndDistLerpTo ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT,		"SetMaxDensityLerpTo",	InputSetMaxDensityLerpTo ),
 	DEFINE_INPUTFUNC( FIELD_VOID,		"StartFogTransition", InputStartFogTransition ),
-
-	// Quiet classcheck
-	//DEFINE_EMBEDDED( m_fog ),
 
 	DEFINE_KEYFIELD( m_bUseAngles,			FIELD_BOOLEAN,	"use_angles" ),
 	DEFINE_KEYFIELD( m_fog.colorPrimary,	FIELD_COLOR32,	"fogcolor" ),
@@ -63,33 +61,22 @@ BEGIN_DATADESC( CFogController )
 	DEFINE_KEYFIELD( m_fog.duration,		FIELD_FLOAT,	"foglerptime" ),
 	DEFINE_KEYFIELD( m_fog.HDRColorScale,		FIELD_FLOAT,	"HDRColorScale" ),
 
-	DEFINE_THINKFUNC( SetLerpValues ),
-
-	DEFINE_FIELD( m_iChangedVariables, FIELD_INTEGER ),
-
-	DEFINE_FIELD( m_fog.lerptime, FIELD_TIME ),
-	DEFINE_FIELD( m_fog.colorPrimaryLerpTo, FIELD_COLOR32 ),
-	DEFINE_FIELD( m_fog.colorSecondaryLerpTo, FIELD_COLOR32 ),
-	DEFINE_FIELD( m_fog.startLerpTo, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fog.endLerpTo, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fog.maxdensityLerpTo, FIELD_FLOAT ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST_NOBASE( CFogController, DT_FogController )
 // fog data
 	SendPropInt( SENDINFO_STRUCTELEM( m_fog.enable ), 1, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO_STRUCTELEM( m_fog.blend ), 1, SPROP_UNSIGNED ),
 	SendPropVector( SENDINFO_STRUCTELEM(m_fog.dirPrimary), -1, SPROP_COORD),
-	SendPropInt( SENDINFO_STRUCTELEM( m_fog.colorPrimary ), 32, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO_STRUCTELEM( m_fog.colorSecondary ), 32, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO_STRUCTELEM( m_fog.colorPrimary ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
+	SendPropInt( SENDINFO_STRUCTELEM( m_fog.colorSecondary ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
 	SendPropFloat( SENDINFO_STRUCTELEM( m_fog.start ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO_STRUCTELEM( m_fog.end ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO_STRUCTELEM( m_fog.maxdensity ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO_STRUCTELEM( m_fog.farz ), 0, SPROP_NOSCALE ),
 
-	SendPropInt( SENDINFO_STRUCTELEM( m_fog.colorPrimaryLerpTo ), 32, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO_STRUCTELEM( m_fog.colorSecondaryLerpTo ), 32, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO_STRUCTELEM( m_fog.colorPrimaryLerpTo ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
+	SendPropInt( SENDINFO_STRUCTELEM( m_fog.colorSecondaryLerpTo ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
 	SendPropFloat( SENDINFO_STRUCTELEM( m_fog.startLerpTo ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO_STRUCTELEM( m_fog.endLerpTo ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO_STRUCTELEM( m_fog.maxdensityLerpTo ), 0, SPROP_NOSCALE ),
@@ -287,10 +274,11 @@ int CFogController::DrawDebugTextOverlays(void)
 	return text_offset;
 }
 
-#define FOG_CONTROLLER_COLORPRIMARY_LERP 1
-#define FOG_CONTROLLER_COLORSECONDARY_LERP 2
-#define FOG_CONTROLLER_START_LERP 4
-#define FOG_CONTROLLER_END_LERP 8
+#define FOG_CONTROLLER_COLORPRIMARY_LERP		(1 << 0)
+#define FOG_CONTROLLER_COLORSECONDARY_LERP		(1 << 1)
+#define FOG_CONTROLLER_START_LERP				(1 << 2)
+#define FOG_CONTROLLER_END_LERP					(1 << 3)
+#define FOG_CONTROLLER_MAXDENSITY_LERP			(1 << 4)
 
 void CFogController::InputSetColorLerpTo(inputdata_t &data)
 {
@@ -314,6 +302,12 @@ void CFogController::InputSetEndDistLerpTo(inputdata_t &data)
 {
 	m_iChangedVariables |= FOG_CONTROLLER_END_LERP;
 	m_fog.endLerpTo = data.value.Float();
+}
+
+void CFogController::InputSetMaxDensityLerpTo(inputdata_t &data)
+{
+	m_iChangedVariables |= FOG_CONTROLLER_MAXDENSITY_LERP;
+	m_fog.maxdensityLerpTo = data.value.Float();
 }
 
 void CFogController::InputStartFogTransition(inputdata_t &data)
@@ -344,6 +338,11 @@ void CFogController::SetLerpValues( void )
 	if ( m_iChangedVariables & FOG_CONTROLLER_END_LERP )
 	{
 		m_fog.end = m_fog.endLerpTo;
+	}
+
+	if ( m_iChangedVariables & FOG_CONTROLLER_MAXDENSITY_LERP )
+	{
+		m_fog.maxdensity = m_fog.maxdensityLerpTo;
 	}
 
 	m_iChangedVariables = 0;
@@ -400,7 +399,7 @@ class CFogTrigger : public CBaseTrigger
 {
 public:
 	DECLARE_CLASS( CFogTrigger, CBaseTrigger );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void Spawn( void );
 	virtual void StartTouch( CBaseEntity *other );
@@ -417,7 +416,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( trigger_fog, CFogTrigger );
 
-BEGIN_DATADESC( CFogTrigger )
+BEGIN_MAPENTITY( CFogTrigger )
 
 	DEFINE_KEYFIELD( m_fog.colorPrimary,	FIELD_COLOR32,	"fogcolor" ),
 	DEFINE_KEYFIELD( m_fog.colorSecondary,	FIELD_COLOR32,	"fogcolor2" ),
@@ -428,7 +427,7 @@ BEGIN_DATADESC( CFogTrigger )
 	DEFINE_KEYFIELD( m_fog.end,				FIELD_FLOAT,	"fogend" ),
 	DEFINE_KEYFIELD( m_fog.farz,			FIELD_FLOAT,	"farz" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //--------------------------------------------------------------------------------------------------------

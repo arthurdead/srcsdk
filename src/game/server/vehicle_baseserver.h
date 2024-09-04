@@ -10,6 +10,7 @@
 
 #include "vehicle_sounds.h"
 #include "entityblocker.h"
+#include "iservervehicle.h"
 
 class CSoundPatch;
 
@@ -44,8 +45,6 @@ class CPassengerInfo
 {
 public:
 	CPassengerInfo( void ) : m_nRole( -1 ), m_nSeat( -1 ), m_strRoleName( NULL_STRING ), m_strSeatName( NULL_STRING ) {}
-
-	DECLARE_SIMPLE_DATADESC();
 
 	int GetSeat( void ) const { return m_nSeat; }
 	int	GetRole( void ) const { return m_nRole; }
@@ -121,7 +120,6 @@ private:
 class CBaseServerVehicle : public IServerVehicle
 {
 public:
-	DECLARE_SIMPLE_DATADESC();
 	DECLARE_CLASS_NOBASE( CBaseServerVehicle );
 
 	CBaseServerVehicle( void );

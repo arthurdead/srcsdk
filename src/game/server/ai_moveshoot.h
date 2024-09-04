@@ -6,10 +6,10 @@
 
 #ifndef AI_MOVESHOOT_H
 #define AI_MOVESHOOT_H
+#pragma once
 
 #include "ai_component.h"
-
-#pragma once
+#include "util.h"
 
 //-----------------------------------------------------------------------------
 // @TODO (toml 07-09-03): probably want to fold this into base NPC. evaluate when
@@ -43,8 +43,6 @@ private:
 	bool	m_bNoShootWhileMove;
 	float	m_initialDelay;
 	float	m_flSuspendUntilTime;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //-----------------------------------------------------------------------------

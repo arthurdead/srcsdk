@@ -15,17 +15,12 @@
 //-----------------------------------------------------------------------------
 // Save/load
 //-----------------------------------------------------------------------------
-BEGIN_DATADESC( CPathTrack )
-
-	DEFINE_FIELD( m_pnext,			FIELD_CLASSPTR ),
-	DEFINE_FIELD( m_pprevious,		FIELD_CLASSPTR ),
-	DEFINE_FIELD( m_paltpath,		FIELD_CLASSPTR ),
+BEGIN_MAPENTITY( CPathTrack )
 
 	DEFINE_KEYFIELD( m_flRadius,	FIELD_FLOAT, "radius" ),
-	DEFINE_FIELD( m_length,			FIELD_FLOAT ),
+
 	DEFINE_KEYFIELD( m_altName,		FIELD_STRING, "altpath" ),
 	DEFINE_KEYFIELD( m_eOrientationType, FIELD_INTEGER, "orientationtype" ),
-//	DEFINE_FIELD( m_nIterVal,		FIELD_INTEGER ),
 	
 	DEFINE_INPUTFUNC( FIELD_VOID, "InPass", InputPass ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "InTeleport",  InputTeleport ),
@@ -42,7 +37,7 @@ BEGIN_DATADESC( CPathTrack )
 	DEFINE_OUTPUT(m_OnPass, "OnPass"),
 	DEFINE_OUTPUT(m_OnTeleport,  "OnTeleport"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( path_track, CPathTrack );
 
@@ -71,6 +66,9 @@ void CPathTrack::Spawn( void )
 {
 	SetSolid( SOLID_NONE );
 	UTIL_SetSize(this, Vector(-8, -8, -8), Vector(8, 8, 8));
+
+	m_pnext = NULL;
+	m_pprevious = NULL;
 }
 
 
@@ -567,14 +565,12 @@ void CPathTrack::InputPass( inputdata_t &inputdata )
 {
 	m_OnPass.FireOutput( inputdata.pActivator, this );
 
-#ifdef TF_DLL
 	IGameEvent * event = gameeventmanager->CreateEvent( "path_track_passed" );
 	if ( event )
 	{
 		event->SetInt( "index", entindex() );
 		gameeventmanager->FireEvent( event, true );
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------

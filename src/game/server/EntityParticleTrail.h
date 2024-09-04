@@ -18,7 +18,6 @@
 //-----------------------------------------------------------------------------
 class CEntityParticleTrail : public CBaseParticleEntity 
 {
-	DECLARE_DATADESC();
 	DECLARE_CLASS( CEntityParticleTrail, CBaseParticleEntity );
 	DECLARE_SERVERCLASS();
 

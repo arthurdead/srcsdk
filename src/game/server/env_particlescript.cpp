@@ -24,7 +24,7 @@ class CEnvParticleScript : public CBaseAnimating
 public:
 	DECLARE_CLASS( CEnvParticleScript, CBaseAnimating );
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CEnvParticleScript();
 
@@ -46,14 +46,12 @@ private:
 //-----------------------------------------------------------------------------
 // Save/load 
 //-----------------------------------------------------------------------------
-BEGIN_DATADESC( CEnvParticleScript )
+BEGIN_MAPENTITY( CEnvParticleScript )
 
-	DEFINE_FIELD( m_flSequenceScale, FIELD_FLOAT ),
-	
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetSequence", InputSetSequence ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( env_particlescript, CEnvParticleScript );
 
@@ -88,7 +86,7 @@ void CEnvParticleScript::PrecacheAnimationEventMaterials()
 			for ( int j = 0 ; j < ecount; ++j )
 			{
 				const mstudioevent_t* event = seqdesc.pEvent( j );
-				if ( event->event == CL_EVENT_SPRITEGROUP_CREATE )
+				if ( event->Event() == CL_EVENT_SPRITEGROUP_CREATE )
 				{
 					char pAttachmentName[256];
 					char pSpriteName[256];
@@ -155,7 +153,7 @@ void CEnvParticleScript::Activate()
 		m_flSequenceScale = 1.0f;
 	}
 
-	m_flPlaybackRate = 1.0f;
+	SetPlaybackRate( 1.0f );
 }
 
 //-----------------------------------------------------------------------------

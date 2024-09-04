@@ -11,7 +11,7 @@
 
 #include "entityoutput.h"
 #include "shareddefs.h"
-
+#include "baseentity.h"
 
 //-----------------------------------------------------------------------------
 // Spawnflag for CPathTrack
@@ -124,7 +124,7 @@ private:
 	
 	static CPathTrack *Instance( edict_t *pent );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	float		m_flRadius;
 	float		m_length;

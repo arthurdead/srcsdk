@@ -200,7 +200,7 @@ template <class T, class I>
 void CUtlMultiList<T,I>::ConstructList( )
 {
 	m_FirstFree = InvalidIndex();
-	m_TotalElements = 0;
+	m_TotalElements = (I)0;
 	m_MaxElementIndex = 0;
 	ResetDbgInfo();
 }
@@ -242,7 +242,7 @@ typename CUtlMultiList<T,I>::ListHandle_t CUtlMultiList<T,I>::CreateList()
 {
 	ListHandle_t l = m_List.AddToTail();
 	m_List[l].m_Head = m_List[l].m_Tail = InvalidIndex();
-	m_List[l].m_Count = 0;
+	m_List[l].m_Count = (I)0;
 	return l;
 }
 
@@ -267,20 +267,20 @@ bool CUtlMultiList<T,I>::IsValidList( ListHandle_t list ) const
 template <class T, class I>
 inline int CUtlMultiList<T,I>::TotalCount() const      
 { 
-	return m_TotalElements; 
+	return (int)m_TotalElements; 
 }
 
 template <class T, class I>
 inline int CUtlMultiList<T,I>::Count( ListHandle_t list ) const
 {
 	Assert( IsValidList(list) );
-	return m_List[list].m_Count;
+	return (int)m_List[list].m_Count;
 }
 
 template <class T, class I>
 inline I CUtlMultiList<T,I>::MaxElementIndex() const   
 {
-	return m_MaxElementIndex;
+	return (I)m_MaxElementIndex;
 }
 
 
@@ -331,9 +331,9 @@ inline bool CUtlMultiList<T,I>::IndexInRange( int index ) // Static method
 	// Do a couple of static checks here: the invalid index should be (I)~0 given how we use m_MaxElementIndex,
 	// and 'I' should be unsigned (to avoid signed arithmetic errors for plausibly exhaustible ranges).
 	COMPILE_TIME_ASSERT( (I)M::INVALID_INDEX == (I)~0 );
-	COMPILE_TIME_ASSERT( ( sizeof(I) > 2 ) || ( ( (I)-1 ) > 0 ) );
+	COMPILE_TIME_ASSERT( ( sizeof(I) > 2 ) || ( ( (I)-1 ) > (I)0 ) );
 
-	return ( ( (I)index == index ) && ( (I)index != InvalidIndex() ) );
+	return ( (I)index != InvalidIndex() );
 }
 
 template <class T, class I>
@@ -341,9 +341,9 @@ inline bool CUtlMultiList<T,I>::IsValidIndex( I i ) const
 { 
 	// GCC warns if I is an unsigned type and we do a ">= 0" against it (since the comparison is always 0).
 	// We get the warning even if we cast inside the expression. It only goes away if we assign to another variable.
-	long x = i;
+	long x = (long)i;
 
- 	return (i < m_MaxElementIndex) && (x >= 0) &&
+ 	return (i < (I)m_MaxElementIndex) && (x >= 0) &&
 		((m_Memory[i].m_Previous != i) || (m_Memory[i].m_Next == i));
 }
 
@@ -352,8 +352,8 @@ inline bool CUtlMultiList<T,I>::IsInList( I i ) const
 {
 	// GCC warns if I is an unsigned type and we do a ">= 0" against it (since the comparison is always 0).
 	// We get the warning even if we cast inside the expression. It only goes away if we assign to another variable.
-	long x = i;
-	return (i < m_MaxElementIndex) && (x >= 0) && (Previous(i) != i);
+	long x = (long)i;
+	return (i < (I)m_MaxElementIndex) && (x >= 0) && (Previous(i) != i);
 }
 
 
@@ -379,7 +379,7 @@ void  CUtlMultiList<T,I>::Purge()
 	m_Memory.Purge( );
 	m_List.Purge();
 	m_FirstFree = InvalidIndex();
-	m_TotalElements = 0;
+	m_TotalElements = (I)0;
 	m_MaxElementIndex = 0;
 	ResetDbgInfo();
 }
@@ -430,7 +430,7 @@ I CUtlMultiList<T,I>::Alloc( )
 	// Mark the element as not being in a list
 	InternalElement(elem).m_Next = InternalElement(elem).m_Previous = elem;
 
-	++m_TotalElements;
+	m_TotalElements = m_TotalElements + (I)1;
 
 	Construct( &Element(elem) );
 
@@ -444,7 +444,7 @@ void  CUtlMultiList<T,I>::Free( I elem )
 	Destruct( &Element(elem) );
 	InternalElement(elem).m_Next = m_FirstFree;
 	m_FirstFree = elem;
-	--m_TotalElements;
+	m_TotalElements = m_TotalElements - (I)1;
 }
 
 
@@ -500,11 +500,11 @@ void CUtlMultiList<T,I>::LinkBefore( ListHandle_t list, I before, I elem )
 		InternalElement(newElem.m_Previous).m_Next = elem;
 	
 	// one more element baby
-	++m_List[list].m_Count;
+	m_List[list].m_Count = m_List[list].m_Count + (I)1;
 
 	// Store the element into the list
 	if (m_pElementList)
-		m_pElementList[elem] = list;
+		m_pElementList[(uint)elem] = list;
 }
 
 template <class T, class I>
@@ -542,7 +542,7 @@ void  CUtlMultiList<T,I>::LinkAfter( ListHandle_t list, I after, I elem )
 		InternalElement(newElem.m_Next).m_Previous = elem;
 	
 	// one more element baby
-	++m_List[list].m_Count;
+	m_List[list].m_Count = m_List[list].m_Count + (I)1;
 
 	// Store the element into the list
 	if (m_pElementList)
@@ -579,7 +579,7 @@ void  CUtlMultiList<T,I>::Unlink( ListHandle_t list, I elem )
 		oldElem.m_Previous = oldElem.m_Next = elem;
 		
 		// One less puppy
-		--m_List[list].m_Count;
+		m_List[list].m_Count = m_List[list].m_Count - (I)1;
 
 		// Store the element into the list
 		if (m_pElementList)
@@ -735,7 +735,7 @@ void  CUtlMultiList<T,I>::RemoveAll()
 
 	// Put everything into the free list
 	I prev = InvalidIndex();
-	for (int i = (int)m_MaxElementIndex; --i >= 0; )
+	for (int i = m_MaxElementIndex; --i >= 0; )
 	{
 		// Invoke the destructor
 		if (IsValidIndex((I)i))
@@ -750,17 +750,17 @@ void  CUtlMultiList<T,I>::RemoveAll()
 	}
 	
 	// First free points to the first element
-	m_FirstFree = 0;
+	m_FirstFree = (I)0;
 	
 	// Clear everything else out
 	for (I list = m_List.Head(); list != m_List.InvalidIndex(); list = m_List.Next(list) )
 	{
 		m_List[list].m_Head = InvalidIndex(); 
 		m_List[list].m_Tail = InvalidIndex();
-		m_List[list].m_Count = 0;
+		m_List[list].m_Count = (I)0;
 	}
 
-	m_TotalElements = 0;
+	m_TotalElements = (I)0;
 }
 
 

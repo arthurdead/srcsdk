@@ -22,7 +22,27 @@
 
 ConVar *sv_alltalk = NULL;
 
-extern vgui::IImage* GetDefaultAvatarImage( C_BasePlayer *pPlayer );
+vgui::IImage* GetDefaultAvatarImage( C_BasePlayer *pPlayer )
+{
+	vgui::IImage* result = NULL;
+
+	switch ( pPlayer ? pPlayer->GetTeamNumber() : TEAM_UNASSIGNED )
+	{
+		case FIRST_GAME_TEAM: 
+			result = vgui::scheme()->GetImage( "avatar_default_team1_64", true );
+			break;
+
+		case SECOND_GAME_TEAM:		 
+			result = vgui::scheme()->GetImage( "avatar_default_team2_64", true );
+			break;
+
+		default:
+			result = vgui::scheme()->GetImage( "avatar_default_64", true );
+			break;
+	}
+
+	return result;
+}
 
 //=============================================================================
 // Icon for the local player using voice
@@ -128,7 +148,7 @@ protected:
 
 private:
 	CHudTexture *m_pVoiceIcon;
-	int m_iDeadImageID;
+	vgui::HTexture m_iDeadImageID;
 
 	Color	m_clrIcon;
 
@@ -191,7 +211,7 @@ CHudVoiceStatus::CHudVoiceStatus( const char *pName ) :
 	m_clrIcon = Color(255,255,255,255);
 
 	m_iDeadImageID = surface()->DrawGetTextureId( "hud/leaderboard_dead" );
-	if ( m_iDeadImageID == -1 ) // we didn't find it, so create a new one
+	if ( m_iDeadImageID == INVALID_TEXTURE ) // we didn't find it, so create a new one
 	{
 		m_iDeadImageID = surface()->CreateNewTextureID();
 		surface()->DrawSetTextureFile( m_iDeadImageID, "hud/leaderboard_dead", true, false );
@@ -414,7 +434,7 @@ void CHudVoiceStatus::Paint()
 		surface()->DrawSetColor( c );
 		surface()->DrawFilledRect( 0, ypos, item_wide, ypos + item_tall );
 
-		if ( show_dead_icon && bIsAlive == false && m_iDeadImageID != -1 )
+		if ( show_dead_icon && bIsAlive == false && m_iDeadImageID != INVALID_TEXTURE )
 		{
 			// draw background for dead icon
 			// surface()->DrawFilledRect(dead_icon_xpos, ypos, 0, ypos + dead_icon_tall);

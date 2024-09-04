@@ -5,9 +5,17 @@
 //=============================================================================//
 
 #include "cbase.h"
+#include "ehandle.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+extern CBaseEntityList *g_pEntityList;
+
+IHandleEntity* CBaseHandle::Get() const
+{
+	return g_pEntityList->LookupEntity( *this );
+}
 
 #if defined( GAME_DLL )
 	

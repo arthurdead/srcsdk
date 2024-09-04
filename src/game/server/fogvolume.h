@@ -18,7 +18,7 @@ class CColorCorrection;
 class CFogVolume : public CServerOnlyEntity
 {
 	DECLARE_CLASS( CFogVolume, CServerOnlyEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 	CFogVolume();

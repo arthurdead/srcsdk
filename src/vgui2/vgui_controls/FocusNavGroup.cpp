@@ -53,7 +53,7 @@ bool FocusNavGroup::RequestFocusPrev(VPANEL panel)
 
 	_currentFocus = NULL;
 	int newPosition = 9999999;
-	if (panel)
+	if (panel != INVALID_VPANEL)
 	{
 		newPosition = ipanel()->GetTabPosition(panel);
 	}
@@ -110,13 +110,13 @@ bool FocusNavGroup::RequestFocusPrev(VPANEL panel)
 		if (!_topLevelFocus)
 		{
 			// check to see if we should push the focus request up
-			if (_mainPanel->GetVParent() && _mainPanel->GetVParent() != surface()->GetEmbeddedPanel())
+			if (_mainPanel->GetVParent() != INVALID_VPANEL && _mainPanel->GetVParent() != surface()->GetEmbeddedPanel())
 			{
 				// we're not a top level panel, so forward up the request instead of looping
 				if (ipanel()->RequestFocusPrev(_mainPanel->GetVParent(), _mainPanel->GetVPanel()))
 				{
 					bFound = true;
-					SetCurrentDefaultButton(NULL);
+					SetCurrentDefaultButton(INVALID_VPANEL);
 					break;
 				}
 			}
@@ -141,12 +141,12 @@ bool FocusNavGroup::RequestFocusPrev(VPANEL panel)
             }
 			else
 			{
-				SetCurrentDefaultButton(NULL);
+				SetCurrentDefaultButton(INVALID_VPANEL);
 
 				// we need to ask the parent to set its default button
-				if (_mainPanel->GetVParent())
+				if (_mainPanel->GetVParent() != INVALID_VPANEL)
 				{
-					ivgui()->PostMessage(_mainPanel->GetVParent(), new KeyValues("FindDefaultButton"), NULL);
+					ivgui()->PostMessage(_mainPanel->GetVParent(), new KeyValues("FindDefaultButton"), INVALID_VPANEL);
 				}
 			}
         }
@@ -170,7 +170,7 @@ bool FocusNavGroup::RequestFocusNext(VPANEL panel)
 
 	_currentFocus = NULL;
 	int newPosition = 0;
-	if (panel)
+	if (panel != INVALID_VPANEL)
 	{
 		newPosition = ipanel()->GetTabPosition(panel);
 	}
@@ -222,7 +222,7 @@ bool FocusNavGroup::RequestFocusNext(VPANEL panel)
 		// check to see if we should push the focus request up
 		if (!_topLevelFocus)
 		{
-			if (_mainPanel->GetVParent() && _mainPanel->GetVParent() != surface()->GetEmbeddedPanel())
+			if (_mainPanel->GetVParent() != INVALID_VPANEL && _mainPanel->GetVParent() != surface()->GetEmbeddedPanel())
 			{
 				// we're not a top level panel, so forward up the request instead of looping
 				if (stack_depth < 15)
@@ -230,7 +230,7 @@ bool FocusNavGroup::RequestFocusNext(VPANEL panel)
 					if (ipanel()->RequestFocusNext(_mainPanel->GetVParent(), _mainPanel->GetVPanel()))
 					{
 						bFound = true;
-						SetCurrentDefaultButton(NULL);
+						SetCurrentDefaultButton(INVALID_VPANEL);
 						break;
 					}
 
@@ -258,12 +258,12 @@ bool FocusNavGroup::RequestFocusNext(VPANEL panel)
 			}
 			else
 			{
-				SetCurrentDefaultButton(NULL);
+				SetCurrentDefaultButton(INVALID_VPANEL);
 
 				// we need to ask the parent to set its default button
-				if (_mainPanel->GetVParent())
+				if (_mainPanel->GetVParent() != INVALID_VPANEL)
 				{
-					ivgui()->PostMessage(_mainPanel->GetVParent(), new KeyValues("FindDefaultButton"), NULL);
+					ivgui()->PostMessage(_mainPanel->GetVParent(), new KeyValues("FindDefaultButton"), INVALID_VPANEL);
 				}
 			}
         }
@@ -290,7 +290,7 @@ void FocusNavGroup::SetFocusTopLevel(bool state)
 //-----------------------------------------------------------------------------
 void FocusNavGroup::SetDefaultButton(Panel *panel)
 {
-	VPANEL vpanel = panel ? panel->GetVPanel() : NULL;
+	VPANEL vpanel = panel ? panel->GetVPanel() : INVALID_VPANEL;
 	if ( vpanel == _defaultButton.Get() )
 		return;
 
@@ -310,14 +310,14 @@ void FocusNavGroup::SetCurrentDefaultButton(VPANEL panel, bool sendCurrentDefaul
 
 	if ( sendCurrentDefaultButtonMessage && _currentDefaultButton.Get() != 0)
 	{
-		ivgui()->PostMessage(_currentDefaultButton, new KeyValues("SetAsCurrentDefaultButton", "state", 0), NULL);
+		ivgui()->PostMessage(_currentDefaultButton, new KeyValues("SetAsCurrentDefaultButton", "state", 0), INVALID_VPANEL);
 	}
 
 	_currentDefaultButton = panel;
 
 	if ( sendCurrentDefaultButtonMessage && _currentDefaultButton.Get() != 0)
 	{
-		ivgui()->PostMessage(_currentDefaultButton, new KeyValues("SetAsCurrentDefaultButton", "state", 1), NULL);
+		ivgui()->PostMessage(_currentDefaultButton, new KeyValues("SetAsCurrentDefaultButton", "state", 1), INVALID_VPANEL);
 	}
 }
 

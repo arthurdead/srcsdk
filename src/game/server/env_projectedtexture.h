@@ -16,7 +16,7 @@ class CEnvProjectedTexture : public CPointEntity
 {
 	DECLARE_CLASS( CEnvProjectedTexture, CPointEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	CEnvProjectedTexture();

@@ -114,7 +114,7 @@ private:
 //-----------------------------------------------------------------------------
 HTML::HTML(Panel* parent, const char* name, bool allowJavaScript, bool bPopupWindow) : Panel(parent, name)
 {
-	m_iHTMLTextureID = 0;
+	m_iHTMLTextureID = INVALID_TEXTURE;
 	m_bCanGoBack = false;
 	m_bCanGoForward = false;
 	m_bInFind = false;
@@ -237,7 +237,7 @@ void HTML::Paint()
 	//VPROF_BUDGET( "HTML::Paint()", VPROF_BUDGETGROUP_OTHER_VGUI );
 	BaseClass::Paint();
 
-	if (m_iHTMLTextureID != 0)
+	if (m_iHTMLTextureID != INVALID_TEXTURE)
 	{
 		surface()->DrawSetTexture(m_iHTMLTextureID);
 		int tw = 0, tt = 0;
@@ -557,17 +557,17 @@ void HTML::OnMouseReleased(MouseCode code)
 {
 	if (code == MOUSE_LEFT)
 	{
-		input()->SetMouseCapture(NULL);
-		input()->SetCursorOveride(0);
+		input()->SetMouseCapture(INVALID_VPANEL);
+		input()->SetCursorOveride(INVALID_CURSOR);
 
-		if (!m_sDragURL.IsEmpty() && input()->GetMouseOver() != GetVPanel() && input()->GetMouseOver())
+		if (!m_sDragURL.IsEmpty() && input()->GetMouseOver() != GetVPanel() && input()->GetMouseOver() != INVALID_VPANEL)
 		{
 			// post the text as a drag drop to the target panel
 			KeyValuesAD kv("DragDrop");
 			if (ipanel()->RequestInfo(input()->GetMouseOver(), kv)
 				&& kv->GetPtr("AcceptPanel") != NULL)
 			{
-				VPANEL vpanel = (VPANEL)kv->GetPtr("AcceptPanel");
+				VPANEL vpanel = (VPANEL)(uintp)kv->GetPtr("AcceptPanel");
 				ivgui()->PostMessage(vpanel, new KeyValues("DragDrop", "text", m_sDragURL.Get()), GetVPanel());
 			}
 		}
@@ -595,7 +595,7 @@ void HTML::OnCursorMoved(int x, int y)
 	}
 	else if (!m_sDragURL.IsEmpty())
 	{
-		if (!input()->GetMouseOver())
+		if (input()->GetMouseOver() != INVALID_VPANEL)
 		{
 			// we're not over any vgui window, switch to the OS implementation of drag/drop
 			// BR FIXME
@@ -604,7 +604,7 @@ void HTML::OnCursorMoved(int x, int y)
 		}
 	}
 
-	if (!m_sDragURL.IsEmpty() && !input()->GetCursorOveride())
+	if (!m_sDragURL.IsEmpty() && input()->GetCursorOveride() == INVALID_CURSOR)
 	{
 		// if we've dragged far enough (in global coordinates), set to use the drag cursor
 		int gx, gy;
@@ -1210,7 +1210,7 @@ void HTML::CHTMLFindBar::OnCommand(const char* pchCmd)
 void HTML::BrowserNeedsPaint(HTML_NeedsPaint_t* pCallback)
 {
 	int tw = 0, tt = 0;
-	if (m_iHTMLTextureID != 0)
+	if (m_iHTMLTextureID != INVALID_TEXTURE)
 	{
 		tw = m_allocedTextureWidth;
 		tt = m_allocedTextureHeight;
@@ -1226,7 +1226,7 @@ void HTML::BrowserNeedsPaint(HTML_NeedsPaint_t* pCallback)
 	if (m_bNeedsFullTextureUpload || m_iHTMLTextureID == 0 || tw != (int)pCallback->unWide || tt != (int)pCallback->unTall)
 	{
 		m_bNeedsFullTextureUpload = false;
-		if (m_iHTMLTextureID != 0)
+		if (m_iHTMLTextureID != INVALID_TEXTURE)
 			surface()->DeleteTextureByID(m_iHTMLTextureID);
 
 		// if the dimensions changed we also need to re-create the texture ID to support the overlay properly (it won't resize a texture on the fly, this is the only control that needs

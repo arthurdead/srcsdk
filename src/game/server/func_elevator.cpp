@@ -9,19 +9,19 @@
 #include "tier0/memdbgon.h"
 
 
-ConVar ZombieAirborneElevator( "z_elevator_in_air", "0" );
+ConVar AirborneElevator( "elevator_in_air", "0" );
 
 //--------------------------------------------------------------------------------------------------------
 LINK_ENTITY_TO_CLASS( info_elevator_floor, CInfoElevatorFloor );
 
 
 //--------------------------------------------------------------------------------------------------------
-BEGIN_DATADESC( CInfoElevatorFloor )
+BEGIN_MAPENTITY( CInfoElevatorFloor )
 
 	// Outputs
 	DEFINE_OUTPUT( m_OnReachedFloor, "OnReachedFloor" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //--------------------------------------------------------------------------------------------------------
@@ -36,7 +36,7 @@ LINK_ENTITY_TO_CLASS( func_elevator, CFuncElevator );
 
 
 //--------------------------------------------------------------------------------------------------------
-BEGIN_DATADESC( CFuncElevator )
+BEGIN_MAPENTITY( CFuncElevator )
 
 	DEFINE_KEYFIELD( m_topFloorPosition,	FIELD_POSITION_VECTOR, "top" ),
 	DEFINE_KEYFIELD( m_bottomFloorPosition,	FIELD_POSITION_VECTOR, "bottom" ),
@@ -48,7 +48,6 @@ BEGIN_DATADESC( CFuncElevator )
 	DEFINE_KEYFIELD( m_soundStop,		 FIELD_SOUNDNAME, "StopSound" ),
 	DEFINE_KEYFIELD( m_soundDisable,	 FIELD_SOUNDNAME, "DisableSound" ),
 
-	DEFINE_FIELD( m_currentSound, FIELD_SOUNDNAME ),
 	DEFINE_KEYFIELD( m_flBlockDamage,	 FIELD_FLOAT,	"BlockDamage"),
 
 	// Inputs
@@ -59,12 +58,7 @@ BEGIN_DATADESC( CFuncElevator )
 	DEFINE_OUTPUT( m_OnReachedTop, "OnReachedTop" ),
 	DEFINE_OUTPUT( m_OnReachedBottom, "OnReachedBottom" ),
 
-	// Functions
-	DEFINE_FUNCTION( StopMoveSoundThink ),
-	// FIXMEL4DTOMAINMERGE
-	//DEFINE_FUNCTION( AccelerationThink ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 
 void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
@@ -587,7 +581,7 @@ bool CFuncElevator::IsPlayerOnElevator( CBasePlayer *player )
 		}
 	}
 
-	if ( ZombieAirborneElevator.GetBool() )
+	if ( AirborneElevator.GetBool() )
 	{
 		Extent extent;
 		GetCollideable()->WorldSpaceSurroundingBounds( &extent.lo, &extent.hi );

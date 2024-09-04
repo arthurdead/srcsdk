@@ -98,7 +98,7 @@ IMPLEMENT_SERVERCLASS_ST(CTEDecal, DT_TEDecal)
 	SendPropVector( SENDINFO(m_vecOrigin), -1, SPROP_COORD),
 	SendPropVector( SENDINFO(m_vecStart), -1, SPROP_COORD),
 	SendPropInt( SENDINFO(m_nEntity), MAX_EDICT_BITS, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(m_nHitbox), 12, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO(m_nHitbox), 16, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nIndex), 9, SPROP_UNSIGNED ),
 END_SEND_TABLE()
 

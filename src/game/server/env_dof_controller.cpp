@@ -16,7 +16,7 @@
 
 LINK_ENTITY_TO_CLASS( env_dof_controller, CEnvDOFController );
 
-BEGIN_DATADESC( CEnvDOFController )
+BEGIN_MAPENTITY( CEnvDOFController )
 	
 	DEFINE_KEYFIELD( m_bDOFEnabled,			FIELD_BOOLEAN,	"enabled" ),
 	DEFINE_KEYFIELD( m_flNearBlurDepth, 	FIELD_FLOAT,	"near_blur" ),
@@ -27,10 +27,6 @@ BEGIN_DATADESC( CEnvDOFController )
 	DEFINE_KEYFIELD( m_flFarBlurRadius,		FIELD_FLOAT,	"far_radius" ),
 	DEFINE_KEYFIELD( m_strFocusTargetName,	FIELD_STRING,	"focus_target" ),
 	DEFINE_KEYFIELD( m_flFocusTargetRange,	FIELD_FLOAT,	"focus_range" ),
-	
-	DEFINE_FIELD( m_hFocusTarget,		FIELD_EHANDLE ),
-
-	DEFINE_THINKFUNC( UpdateParamBlend ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT,	"SetNearBlurDepth",		InputSetNearBlurDepth ),
@@ -42,7 +38,7 @@ BEGIN_DATADESC( CEnvDOFController )
 	DEFINE_INPUTFUNC( FIELD_STRING,	"SetFocusTarget",		InputSetFocusTarget ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetFocusTargetRange",	InputSetFocusTargetRange ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST( CEnvDOFController, DT_EnvDOFController )
 	SendPropInt( SENDINFO(m_bDOFEnabled), 1, SPROP_UNSIGNED ),

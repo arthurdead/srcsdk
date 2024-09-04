@@ -21,9 +21,7 @@ int	g_interactionScriptedTarget		= 0;
 
 LINK_ENTITY_TO_CLASS( scripted_target, CScriptedTarget );
 
-BEGIN_DATADESC( CScriptedTarget )
-
-	DEFINE_FIELD( m_vLastPosition,	FIELD_POSITION_VECTOR ),
+BEGIN_MAPENTITY( CScriptedTarget )
 
 	DEFINE_KEYFIELD( m_iDisabled,		FIELD_INTEGER,	"StartDisabled" ),
 	DEFINE_KEYFIELD( m_iszEntity,		FIELD_STRING,	"m_iszEntity" ),
@@ -31,11 +29,8 @@ BEGIN_DATADESC( CScriptedTarget )
 
 	DEFINE_KEYFIELD( m_nMoveSpeed,		FIELD_INTEGER,	"MoveSpeed" ),
 	DEFINE_KEYFIELD( m_flPauseDuration,	FIELD_FLOAT,	"PauseDuration" ),
-	DEFINE_FIELD( m_flPauseDoneTime,	FIELD_TIME ),
-	DEFINE_KEYFIELD( m_flEffectDuration,	FIELD_FLOAT,	"EffectDuration" ),
 
-	// Function Pointers
-	DEFINE_THINKFUNC( ScriptThink ),
+	DEFINE_KEYFIELD( m_flEffectDuration,	FIELD_FLOAT,	"EffectDuration" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -45,7 +40,7 @@ BEGIN_DATADESC( CScriptedTarget )
 	DEFINE_OUTPUT(m_AtTarget,			"AtTarget" ),
 	DEFINE_OUTPUT(m_LeaveTarget,		"LeaveTarget" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //------------------------------------------------------------------------------

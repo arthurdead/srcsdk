@@ -14,7 +14,7 @@
 
 bool CAI_InterestTarget_t::IsThis( CBaseEntity *pThis )
 {
-	return (pThis == m_hTarget);
+	return (pThis == m_hTarget.Get());
 };
 
 const Vector &CAI_InterestTarget_t::GetPosition( void )

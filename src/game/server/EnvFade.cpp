@@ -20,7 +20,7 @@ private:
 
 	COutputEvent m_OnBeginFade;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 	DECLARE_CLASS( CEnvFade, CLogicalEntity );
@@ -41,7 +41,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( env_fade, CEnvFade );
 
-BEGIN_DATADESC( CEnvFade )
+BEGIN_MAPENTITY( CEnvFade )
 
 	DEFINE_KEYFIELD( m_Duration, FIELD_FLOAT, "duration" ),
 	DEFINE_KEYFIELD( m_HoldTime, FIELD_FLOAT, "holdtime" ),
@@ -50,7 +50,7 @@ BEGIN_DATADESC( CEnvFade )
 
 	DEFINE_OUTPUT( m_OnBeginFade, "OnBeginFade"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -97,12 +97,14 @@ void CEnvFade::InputFade( inputdata_t &inputdata )
 	{
 		if ( inputdata.pActivator && inputdata.pActivator->IsNetClient() )
 		{
-			UTIL_ScreenFade( inputdata.pActivator, m_clrRender, Duration(), HoldTime(), fadeFlags );
+			color32 clrRender = {GetRenderColor(), GetRenderAlpha()};
+			UTIL_ScreenFade( inputdata.pActivator, clrRender, Duration(), HoldTime(), fadeFlags );
 		}
 	}
 	else
 	{
-		UTIL_ScreenFadeAll( m_clrRender, Duration(), HoldTime(), fadeFlags|FFADE_PURGE );
+		color32 clrRender = {GetRenderColor(), GetRenderAlpha()};
+		UTIL_ScreenFadeAll( clrRender, Duration(), HoldTime(), fadeFlags|FFADE_PURGE );
 	}
 
 	m_OnBeginFade.FireOutput( inputdata.pActivator, this );

@@ -31,7 +31,7 @@ public:
 	void InputToggle(inputdata_t &inputdata);
 	void InputHurt(inputdata_t &inputdata);
 	
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	int			m_nDamage;
 	int			m_bitsDamageType;
@@ -41,7 +41,7 @@ public:
 	EHANDLE		m_pActivator;
 };
 
-BEGIN_DATADESC( CPointHurt )
+BEGIN_MAPENTITY( CPointHurt )
 
 	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "DamageRadius" ),
 	DEFINE_KEYFIELD( m_nDamage, FIELD_INTEGER, "Damage" ),
@@ -49,18 +49,13 @@ BEGIN_DATADESC( CPointHurt )
 	DEFINE_KEYFIELD( m_bitsDamageType, FIELD_INTEGER, "DamageType" ),
 	DEFINE_KEYFIELD( m_strTarget, FIELD_STRING, "DamageTarget" ),
 	
-	// Function Pointers
-	DEFINE_FUNCTION( HurtThink ),
-
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Hurt", InputHurt ),
 
-	DEFINE_FIELD( m_pActivator, FIELD_EHANDLE ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( point_hurt, CPointHurt );
 

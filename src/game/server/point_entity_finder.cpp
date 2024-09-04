@@ -45,18 +45,17 @@ private:
 	// Output handlers
 	COutputEvent m_OnFoundEntity;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS( point_entity_finder, CPointEntityFinder );
 
-BEGIN_DATADESC( CPointEntityFinder )
+BEGIN_MAPENTITY( CPointEntityFinder )
 
 	DEFINE_KEYFIELD(	m_FindMethod,	FIELD_INTEGER,	"method" ),
 	DEFINE_KEYFIELD(	m_iFilterName,	FIELD_STRING,	"filtername" ),
-	DEFINE_FIELD(		m_hFilter,		FIELD_EHANDLE ),
+
 	DEFINE_KEYFIELD(	m_iRefName,		FIELD_STRING,	"referencename" ),
-	DEFINE_FIELD(		m_hReference,	FIELD_EHANDLE ),
 
 	DEFINE_OUTPUT( m_OnFoundEntity, "OnFoundEntity" ),
 
@@ -64,7 +63,7 @@ BEGIN_DATADESC( CPointEntityFinder )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "FindEntity", InputFindEntity ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 void CPointEntityFinder::Activate( void )

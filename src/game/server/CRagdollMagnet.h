@@ -10,13 +10,15 @@
 #ifndef CRAGDOLLMAGNET_H
 #define CRAGDOLLMAGNET_H
 
+#include "baseentity.h"
+
 #define SF_RAGDOLLMAGNET_BAR	0x00000002	// this is a bar magnet.
 
 class CRagdollMagnet : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CRagdollMagnet, CPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	Vector GetForceVector( CBaseEntity *pNPC );
 	float GetRadius( void ) { return m_radius; }

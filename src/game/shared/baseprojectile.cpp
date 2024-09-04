@@ -11,12 +11,6 @@
 
 IMPLEMENT_NETWORKCLASS_ALIASED( BaseProjectile, DT_BaseProjectile )
 
-#ifdef GAME_DLL
-BEGIN_DATADESC(CBaseProjectile)
-	DEFINE_THINKFUNC(CBaseProjectile::CollideWithTeammatesThink)
-END_DATADESC()
-#endif
-
 BEGIN_NETWORK_TABLE( CBaseProjectile, DT_BaseProjectile )
 #if !defined( CLIENT_DLL )
 	SendPropEHandle( SENDINFO( m_hOriginalLauncher ) ),

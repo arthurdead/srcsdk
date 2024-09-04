@@ -20,6 +20,7 @@
 
 class	CStringRegistry;
 class   CAI_ClassScheduleIdSpace;
+class	CAI_GlobalScheduleNamespace;
 class	CAI_BaseNPC;
 
 struct	Task_t;
@@ -78,8 +79,8 @@ public:
 
 	bool LoadAllSchedules(void);
 
-	bool LoadSchedules( const char* prefix, CAI_ClassScheduleIdSpace *pIdSpace  );
-	bool LoadSchedulesFromBuffer( const char *prefix, const char *pfile, CAI_ClassScheduleIdSpace *pIdSpace );
+	bool LoadSchedules( const char* prefix, CAI_ClassScheduleIdSpace *pIdSpace, CAI_GlobalScheduleNamespace *pGlobalNamespace  );
+	bool LoadSchedulesFromBuffer( const char *prefix, const char *pfile, CAI_ClassScheduleIdSpace *pIdSpace, CAI_GlobalScheduleNamespace *pGlobalNamespace );
 
 private:
 	friend class CAI_SystemHook;
@@ -106,6 +107,7 @@ private:
 };
 
 extern CAI_SchedulesManager g_AI_SchedulesManager;
+extern CAI_SchedulesManager g_AI_AgentSchedulesManager;
 
 class CAI_Schedule
 {
@@ -180,7 +182,7 @@ private:
 		extern const char * g_psz##name; \
 		if ( classname::gm_SchedLoadStatus.fValid ) \
 		{ \
-			classname::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedulesFromBuffer( #classname,(char *)g_psz##name,&classname::gm_ClassScheduleIdSpace ); \
+			classname::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedulesFromBuffer( #classname,(char *)g_psz##name,&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() ); \
 		} \
 	} while (false)
 
@@ -190,7 +192,7 @@ private:
 	do \
 	{ \
 		extern const char * g_psz##name; \
-		if (!g_AI_SchedulesManager.LoadSchedulesFromBuffer( #classname,(char *)g_psz##name,&classname::gm_ClassScheduleIdSpace )) \
+		if (!g_AI_SchedulesManager.LoadSchedulesFromBuffer( #classname,(char *)g_psz##name,&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
 			return false; \
 	} while (false)
 

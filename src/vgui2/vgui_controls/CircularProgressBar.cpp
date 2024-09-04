@@ -35,7 +35,7 @@ CircularProgressBar::CircularProgressBar(Panel *parent, const char *panelName) :
 
 	for ( int i = 0; i < NUM_PROGRESS_TEXTURES; i++ )
 	{
-		m_nTextureId[i] = -1;
+		m_nTextureId[i] = INVALID_TEXTURE;
 		m_pszImageName[i] = NULL;
 		m_lenImageName[i] = 0;
 	}
@@ -50,10 +50,10 @@ CircularProgressBar::~CircularProgressBar()
 {
 	for ( int i = 0; i < NUM_PROGRESS_TEXTURES; i++ )
 	{
-		if ( vgui::surface() && m_nTextureId[i] )
+		if ( vgui::surface() && m_nTextureId[i] != INVALID_TEXTURE )
 		{
 			vgui::surface()->DestroyTextureID( m_nTextureId[i] );
-			m_nTextureId[i] = -1;
+			m_nTextureId[i] = INVALID_TEXTURE;
 		}
 
 		delete [] m_pszImageName[i];
@@ -102,7 +102,7 @@ void CircularProgressBar::ApplySchemeSettings(IScheme *pScheme)
 	{
 		if ( m_pszImageName[i] && strlen( m_pszImageName[i] ) > 0 )
 		{
-			if ( m_nTextureId[i] == -1 )
+			if ( m_nTextureId[i] == INVALID_TEXTURE )
 			{
 				m_nTextureId[i] = surface()->CreateNewTextureID();
 			}
@@ -145,7 +145,7 @@ void CircularProgressBar::SetImage(const char *imageName, progress_textures_t iP
 void CircularProgressBar::PaintBackground()
 {
 	// If we don't have a Bg image, use the foreground
-	int iTextureID = m_nTextureId[PROGRESS_TEXTURE_BG] != -1 ? m_nTextureId[PROGRESS_TEXTURE_BG] : m_nTextureId[PROGRESS_TEXTURE_FG];
+	HTexture iTextureID = m_nTextureId[PROGRESS_TEXTURE_BG] != INVALID_TEXTURE ? m_nTextureId[PROGRESS_TEXTURE_BG] : m_nTextureId[PROGRESS_TEXTURE_FG];
 	vgui::surface()->DrawSetTexture( iTextureID );
 	vgui::surface()->DrawSetColor( GetBgColor() );
 
@@ -212,7 +212,7 @@ circular_progress_segment_t Segments[8] =
 // we draw starting from the top ( 0 progress )
 void CircularProgressBar::DrawCircleSegment( Color c, float flEndProgress, bool bClockwise )
 {
-	if ( m_nTextureId[PROGRESS_TEXTURE_FG] == -1 )
+	if ( m_nTextureId[PROGRESS_TEXTURE_FG] == INVALID_TEXTURE )
 		return;
 
 	int wide, tall;

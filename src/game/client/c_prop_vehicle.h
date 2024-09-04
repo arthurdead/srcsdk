@@ -19,7 +19,6 @@ public:
 
 	DECLARE_CLIENTCLASS();
 	DECLARE_INTERPOLATION();
-	DECLARE_DATADESC();
 
 	C_PropVehicleDriveable();
 	~C_PropVehicleDriveable();

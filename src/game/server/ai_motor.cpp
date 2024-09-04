@@ -14,7 +14,6 @@
 #include "ai_basenpc.h"
 #include "ai_localnavigator.h"
 #include "ai_moveprobe.h"
-#include "saverestore_utlvector.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -67,19 +66,6 @@ AIMoveResult_t DbgResult( AIMoveResult_t result )
 // class CAI_Motor
 //
 
-BEGIN_SIMPLE_DATADESC( CAI_Motor )
-	//							m_flMoveInterval	(think transient)
-  	DEFINE_FIELD( m_IdealYaw,			FIELD_FLOAT ),
-  	DEFINE_FIELD( m_YawSpeed,			FIELD_FLOAT ),
-  	DEFINE_FIELD( m_vecVelocity,		FIELD_VECTOR ),
-  	DEFINE_FIELD( m_vecAngularVelocity, FIELD_VECTOR ),
-	DEFINE_FIELD( m_nDismountSequence,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_vecDismount,		FIELD_VECTOR ),
-	DEFINE_UTLVECTOR( m_facingQueue,	FIELD_EMBEDDED ), 
-	DEFINE_FIELD( m_bYawLocked,			FIELD_BOOLEAN ),
-	//							m_pMoveProbe
-END_DATADESC()
-
 //-----------------------------------------------------------------------------
 
 CAI_Motor::CAI_Motor(CAI_BaseNPC *pOuter)
@@ -111,7 +97,7 @@ void CAI_Motor::Init( IAI_MovementSink *pMovementServices )
 //-----------------------------------------------------------------------------
 // Step iteratively toward a destination position
 //-----------------------------------------------------------------------------
-AIMotorMoveResult_t CAI_Motor::MoveGroundStep( const Vector &newPos, CBaseEntity *pMoveTarget, float yaw, bool bAsFarAsCan, bool bTestZ, AIMoveTrace_t *pTraceResult )
+AIMotorMoveResult_t CAI_Motor::MoveGroundStep( const Vector &newPos, CBaseEntity *pMoveTarget, float yaw, bool bAsFarAsCan, int iTestZ, AIMoveTrace_t *pTraceResult )
 {
 	// By definition, this will produce different results than GroundMoveLimit() 
 	// because there's no guarantee that it will step exactly one step 
@@ -122,7 +108,9 @@ AIMotorMoveResult_t CAI_Motor::MoveGroundStep( const Vector &newPos, CBaseEntity
 	AIMoveTrace_t moveTrace;
 	unsigned testFlags = AITGM_IGNORE_FLOOR;
 
-	if ( !bTestZ )
+	if(iTestZ == 2)
+		testFlags |= AITGM_CRAWL_LARGE_STEPS;
+	else if ( !iTestZ )
 		testFlags |= AITGM_2D;
 
 #ifdef DEBUG
@@ -130,7 +118,7 @@ AIMotorMoveResult_t CAI_Motor::MoveGroundStep( const Vector &newPos, CBaseEntity
 		testFlags |= AITGM_DRAW_RESULTS;
 #endif
 
-	GetMoveProbe()->TestGroundMove( GetLocalOrigin(), newPos, MASK_NPCSOLID, testFlags, &moveTrace );
+	GetMoveProbe()->TestGroundMove( GetLocalOrigin(), newPos, GetOuter()->GetAITraceMask(), testFlags, &moveTrace );
 	if ( pTraceResult )
 	{
 		*pTraceResult = moveTrace;
@@ -144,7 +132,7 @@ AIMotorMoveResult_t CAI_Motor::MoveGroundStep( const Vector &newPos, CBaseEntity
 	if ( !bIsBlocked || bAsFarAsCan || bHitTarget )
 	{
 #ifdef DEBUG
-		if ( GetMoveProbe()->CheckStandPosition( GetLocalOrigin(), MASK_NPCSOLID ) && !GetMoveProbe()->CheckStandPosition( moveTrace.vEndPosition, MASK_NPCSOLID ) )
+		if ( GetMoveProbe()->CheckStandPosition( GetLocalOrigin(), GetOuter()->GetAITraceMask() ) && !GetMoveProbe()->CheckStandPosition( moveTrace.vEndPosition, GetOuter()->GetAITraceMask() ) )
 		{
 			DevMsg( 2, "Warning: AI motor probably given invalid instructions\n" );
 		}
@@ -548,8 +536,15 @@ AIMotorMoveResult_t CAI_Motor::MoveGroundExecuteWalk( const AILocalMoveGoal_t &m
 	{
 		Vector vecFrom = GetLocalOrigin();
 		Vector vecTo = vecFrom + move.dir * dist;
+
+		int iTestZ = bReachingLocalGoal;
+
+		if ( move.navType == NAV_CRAWL )
+		{
+			iTestZ = 2;
+		}
 		
-		result = MoveGroundStep( vecTo, move.pMoveTarget, -1, true, bReachingLocalGoal, pTraceResult );
+		result = MoveGroundStep( vecTo, move.pMoveTarget, -1, true, iTestZ, pTraceResult );
 
 		if ( result == AIM_FAILED )
 			MoveStop();
@@ -601,7 +596,7 @@ AIMotorMoveResult_t CAI_Motor::MoveFlyExecute( const AILocalMoveGoal_t &move, AI
 	VectorMA( vecStart, flTotal, move.dir, vecEnd );
 
 	AIMoveTrace_t moveTrace;
-	GetMoveProbe()->MoveLimit( NAV_FLY, vecStart, vecEnd, MASK_NPCSOLID, NULL, &moveTrace );
+	GetMoveProbe()->MoveLimit( NAV_FLY, vecStart, vecEnd, GetOuter()->GetAITraceMask(), NULL, &moveTrace );
 	if ( pTraceResult )
 		*pTraceResult = moveTrace;
 	
@@ -890,7 +885,7 @@ AIMoveResult_t CAI_Motor::MoveNormalExecute( const AILocalMoveGoal_t &move )
 	AIMotorMoveResult_t fMotorResult;
 	AIMoveTrace_t 		moveTrace;
 	
-	if ( move.navType == NAV_GROUND )
+	if ( move.navType == NAV_GROUND || move.navType == NAV_CRAWL )
 	{
 		fMotorResult = MoveGroundExecute( move, &moveTrace );
 	}
@@ -994,7 +989,7 @@ void CAI_Motor::SetPlaybackRate( float flRate )
 	return GetOuter()->SetPlaybackRate( flRate );
 }
 
-float CAI_Motor::GetPlaybackRate()
+float CAI_Motor::GetPlaybackRate() const
 {
 	return GetOuter()->GetPlaybackRate();
 }

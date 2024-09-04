@@ -10,7 +10,9 @@
 
 #include "ragdoll_shared.h"
 #include "player_pickup.h"
+#include "baseanimating.h"
 
+namespace ResponseRules { class IResponseSystem; };
 
 //-----------------------------------------------------------------------------
 // Purpose: entity class for simple ragdoll physics
@@ -51,7 +53,7 @@ public:
 	virtual int DrawDebugTextOverlays(void);
 
 	// Response system stuff
-	virtual IResponseSystem *GetResponseSystem();
+	virtual ResponseRules::IResponseSystem *GetResponseSystem();
 	virtual void ModifyOrAppendCriteria( AI_CriteriaSet& set );
 	void SetSourceClassName( const char *pClassname );
 
@@ -72,8 +74,6 @@ public:
 	// Damage passing
 	virtual void	SetDamageEntity( CBaseEntity *pEntity );
 	virtual int		OnTakeDamage( const CTakeDamageInfo &info );
-	virtual void OnSave( IEntitySaveUtils *pUtils );
-	virtual void OnRestore();
 
 	// Purpose: CDefaultPlayerPickupVPhysics
 	virtual void VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );
@@ -89,7 +89,7 @@ public:
 	void			SetOverlaySequence( Activity activity );
 	void			FadeOut( float flDelay = 0, float fadeTime = -1 );
 	bool			IsFading();
-	CBaseEntity*	GetKiller() { return m_hKiller; }
+	CBaseEntity*	GetKiller() { return m_hKiller.Get(); }
 	void			SetKiller( CBaseEntity *pKiller ) { m_hKiller = pKiller; }
 	void			GetAngleOverrideFromCurrentState( char *pOut, int size );
 
@@ -103,7 +103,7 @@ public:
 	void			InputTurnOff( inputdata_t &inputdata );
 	void			InputFadeAndRemove( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 protected:
 	void CalcRagdollSize( void );
@@ -147,7 +147,7 @@ private:
 	Vector				m_ragdollMaxs[RAGDOLL_MAX_ELEMENTS];
 };
 
-CBaseEntity *CreateServerRagdoll( CBaseAnimating *pAnimating, int forceBone, const CTakeDamageInfo &info, int collisionGroup, bool bUseLRURetirement = false );
+CBaseEntity *CreateServerRagdoll( CBaseAnimating *pAnimating, int forceBone, const CTakeDamageInfo &info, int collisionGroup, bool bUseLRURetirement = false, const char *classname = "prop_ragdoll" );
 CRagdollProp *CreateServerRagdollAttached( CBaseAnimating *pAnimating, const Vector &vecForce, int forceBone, int collisionGroup, IPhysicsObject *pAttached, CBaseAnimating *pParentEntity, int boneAttach, const Vector &originAttached, int parentBoneAttach, const Vector &boneOrigin );
 void DetachAttachedRagdoll( CBaseEntity *pRagdollIn );
 void DetachAttachedRagdollsForEntity( CBaseEntity *pRagdollParent );

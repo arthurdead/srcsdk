@@ -11,7 +11,7 @@
 
 #include "interface.h"
 
-#define IMATERIAL_PROXY_INTERFACE_VERSION "_IMaterialProxy003"
+#define INTERNAL_IMATERIAL_PROXY_INTERFACE_VERSION "_IMaterialProxy003"
 
 class IMaterial;
 class KeyValues;

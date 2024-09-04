@@ -694,11 +694,11 @@ void Panel::Init( int x, int y, int wide, int tall )
 	m_nResizeDeltaX = m_nResizeDeltaY = 0;
 	_autoResizeDirection = AUTORESIZE_NO;
 	_pinCorner = PIN_TOPLEFT;
-	_cursor = dc_arrow;
+	_cursor = CursorCodeToCursor(dc_arrow);
 	_border = NULL;
 	_buildGroup = UTLHANDLE_INVALID;
 	_tabPosition = 0;
-	m_iScheme = 0;
+	m_iScheme = INVALID_SCHEME;
 	m_bIsSilent = false;
 	m_bParentNeedsCursorMoveEvents = false;
 
@@ -719,10 +719,10 @@ void Panel::Init( int x, int y, int wide, int tall )
 	// HPE_END
 	//=============================================================================
 
-	m_nBgTextureId1 = -1;
-	m_nBgTextureId2 = -1;
-	m_nBgTextureId3 = -1;
-	m_nBgTextureId4 = -1;
+	m_nBgTextureId1 = INVALID_TEXTURE;
+	m_nBgTextureId2 = INVALID_TEXTURE;
+	m_nBgTextureId3 = INVALID_TEXTURE;
+	m_nBgTextureId4 = INVALID_TEXTURE;
 	m_pDragDrop = new DragDrop_t;
 
 	m_lLastDoublePressTime = 0L;
@@ -780,7 +780,7 @@ Panel::~Panel()
 	_flags.SetFlag( MARKED_FOR_DELETION );
 
 	// remove panel from any list
-	SetParent((VPANEL)NULL);
+	SetParent(INVALID_VPANEL);
 
 	// Stop our children from pointing at us, and delete them if possible
 	while (ipanel()->GetChildCount(GetVPanel()))
@@ -792,7 +792,7 @@ Panel::~Panel()
 		}
 		else
 		{
-			ipanel()->SetParent(child, NULL);
+			ipanel()->SetParent(child, INVALID_VPANEL);
 		}
 	}
 
@@ -808,7 +808,7 @@ Panel::~Panel()
 
 	delete [] _pinToSibling;
 
-	_vpanel = NULL;
+	_vpanel = INVALID_VPANEL;
 
 	delete m_pDragDrop;
 
@@ -977,7 +977,7 @@ VPANEL Panel::GetVParent()
 	    return ipanel()->GetParent(GetVPanel());
     }
 
-    return 0;
+    return INVALID_VPANEL;
 }
 
 //-----------------------------------------------------------------------------
@@ -991,7 +991,7 @@ Panel *Panel::GetParent()
     if ( ipanel() )
     {
 	    VPANEL parent = ipanel()->GetParent(GetVPanel());
-	    if (parent)
+	    if (parent != INVALID_VPANEL)
 	    {
 		    Panel *pParent = ipanel()->GetPanel(parent, GetControlsModuleName());
 		    Assert(!pParent || !strcmp(pParent->GetModuleName(), GetControlsModuleName()));
@@ -1011,7 +1011,7 @@ void Panel::OnScreenSizeChanged(int nOldWide, int nOldTall)
 	for (int i = 0; i < ipanel()->GetChildCount(GetVPanel()); i++)
 	{
 		VPANEL child = ipanel()->GetChild(GetVPanel(), i);
-		PostMessage(child, new KeyValues("OnScreenSizeChanged", "oldwide", nOldWide, "oldtall", nOldTall), NULL);
+		PostMessage(child, new KeyValues("OnScreenSizeChanged", "oldwide", nOldWide, "oldtall", nOldTall), 0.0f);
 	}
 
 	// make any currently fullsize window stay fullsize
@@ -1177,7 +1177,7 @@ void Panel::PaintTraverse( bool repaint, bool allowForce )
 	bool bBorderPaintFirst = _border ? _border->PaintFirst() : false;
 
 	// draw the border first if requested to
-	if ( bBorderPaintFirst && repaint && _flags.IsFlagSet( PAINT_BORDER_ENABLED ) && ( _border != null ) )
+	if ( bBorderPaintFirst && repaint && _flags.IsFlagSet( PAINT_BORDER_ENABLED ) && ( _border != NULL ) )
 	{
 		// Paint the border over the background with no inset
 		surface()->PushMakeCurrent( vpanel, false );
@@ -1235,7 +1235,7 @@ void Panel::PaintTraverse( bool repaint, bool allowForce )
 	// draw the border last
 	if ( repaint )
 	{
-		if ( !bBorderPaintFirst && _flags.IsFlagSet( PAINT_BORDER_ENABLED ) && ( _border != null ) )
+		if ( !bBorderPaintFirst && _flags.IsFlagSet( PAINT_BORDER_ENABLED ) && ( _border != NULL ) )
 		{
 			// Paint the border over the background with no inset
 			surface()->PushMakeCurrent( vpanel, false );
@@ -1431,7 +1431,7 @@ void Panel::SetParent(Panel *newParent)
 	}
 	else
 	{
-		SetParent((VPANEL)NULL);
+		SetParent(INVALID_VPANEL);
 	}
 }
 
@@ -1440,16 +1440,16 @@ void Panel::SetParent(Panel *newParent)
 //-----------------------------------------------------------------------------
 void Panel::SetParent(VPANEL newParent)
 {
-	if (newParent)
+	if (newParent != INVALID_VPANEL)
 	{
 		ipanel()->SetParent(GetVPanel(), newParent);
 	}
 	else
 	{
-		ipanel()->SetParent(GetVPanel(), NULL);
+		ipanel()->SetParent(GetVPanel(), INVALID_VPANEL);
 	}
 
-	if (GetVParent() && !IsPopup())
+	if (GetVParent() != INVALID_VPANEL && !IsPopup())
 	{
 		SetProportional(ipanel()->IsProportional(GetVParent()));
 
@@ -1537,7 +1537,7 @@ void Panel::MoveToFront(void)
 //-----------------------------------------------------------------------------
 bool Panel::HasParent(VPANEL potentialParent)
 {
-	if (!potentialParent)
+	if (potentialParent == INVALID_VPANEL)
 		return false;
 
 	return ipanel()->HasParent(GetVPanel(), potentialParent);
@@ -1599,7 +1599,7 @@ Panel *Panel::FindChildByName(const char *childName, bool recurseDown)
 //-----------------------------------------------------------------------------
 Panel *Panel::FindSiblingByName(const char *siblingName)
 {
-	if ( !GetVParent() )
+	if ( GetVParent() == INVALID_VPANEL )
 		return NULL;
 
 	int siblingCount = ipanel()->GetChildCount(GetVParent());
@@ -1621,7 +1621,7 @@ Panel *Panel::FindSiblingByName(const char *siblingName)
 //-----------------------------------------------------------------------------
 void Panel::CallParentFunction(KeyValues *message)
 {
-	if (GetVParent())
+	if (GetVParent() != INVALID_VPANEL)
 	{
 		ipanel()->SendMessage(GetVParent(), message, GetVPanel());
 	}
@@ -1665,12 +1665,12 @@ void Panel::DeletePanel()
 //-----------------------------------------------------------------------------
 HScheme Panel::GetScheme()
 {
-	if (m_iScheme)
+	if (m_iScheme != INVALID_SCHEME)
 	{
 		return m_iScheme; // return our internal scheme
 	}
 	
-	if (GetVParent()) // recurse down the heirarchy 
+	if (GetVParent() != INVALID_VPANEL) // recurse down the heirarchy 
 	{
 		return ipanel()->GetScheme(GetVParent());
 	}
@@ -1683,7 +1683,7 @@ HScheme Panel::GetScheme()
 //-----------------------------------------------------------------------------
 void Panel::SetScheme(const char *tag)
 {
-	if (strlen(tag) > 0 && scheme()->GetScheme(tag)) // check the scheme exists
+	if (strlen(tag) > 0 && scheme()->GetScheme(tag) != INVALID_SCHEME) // check the scheme exists
 	{
 		SetScheme(scheme()->GetScheme(tag));
 	}
@@ -1807,7 +1807,7 @@ void Panel::InternalCursorExited()
 bool Panel::IsChildOfSurfaceModalPanel()
 {
 	VPANEL appModalPanel = input()->GetAppModalSurface();
-	if ( !appModalPanel )
+	if ( appModalPanel == INVALID_VPANEL )
 		return true;
 
 	if ( ipanel()->HasParent( GetVPanel(), appModalPanel ) )
@@ -1825,7 +1825,7 @@ bool Panel::IsChildOfSurfaceModalPanel()
 bool Panel::IsChildOfModalSubTree()
 {
 	VPANEL subTree = input()->GetModalSubTree();
-	if ( !subTree )
+	if ( subTree == INVALID_VPANEL )
 		return true;
 
 	if ( HasParent( subTree ) )
@@ -1842,13 +1842,13 @@ bool Panel::IsChildOfModalSubTree()
 static bool ShouldHandleInputMessage( VPANEL p )
 {
 	// If there is not modal subtree, then always handle the msg
-	if ( !input()->GetModalSubTree() )
+	if ( input()->GetModalSubTree() == INVALID_VPANEL )
 		return true;
 
 	// What state are we in?
 	bool bChildOfModal = false;
 	VPANEL subTree = input()->GetModalSubTree();
-	if ( !subTree )
+	if ( subTree == INVALID_VPANEL )
 	{
 		bChildOfModal = true;
 	}
@@ -1915,13 +1915,9 @@ void Panel::InternalMousePressed(int code)
 #endif
 
 #ifdef STAGING_ONLY
-	const char *pGameDir = COM_GetModDirectory();
-	if ( Q_stristr( pGameDir, "tf" ) )
+	if ( code >= MOUSE_LEFT && code <= MOUSE_MIDDLE )
 	{
-		if ( code >= MOUSE_LEFT && code <= MOUSE_MIDDLE )
-		{
-			m_sMousePressedPanels[ code - MOUSE_LEFT ] = this;
-		}
+		m_sMousePressedPanels[ code - MOUSE_LEFT ] = this;
 	}
 #endif
 
@@ -2866,7 +2862,7 @@ void Panel::InternalSetCursor()
 
 		// chain up and make sure all our parents are also visible
 		VPANEL p = GetVParent();
-		while (p)
+		while (p != INVALID_VPANEL)
 		{
 			visible &= ipanel()->IsVisible(p);
 			p = ipanel()->GetParent(p);
@@ -2882,7 +2878,7 @@ void Panel::InternalSetCursor()
 				cursor = _buildGroup->GetCursor(this);
 			}
 			
-			if (input()->GetCursorOveride())
+			if (input()->GetCursorOveride() != INVALID_CURSOR)
 			{
 				cursor = input()->GetCursorOveride();
 			}
@@ -3176,7 +3172,7 @@ VPANEL Panel::IsWithinTraverse(int x, int y, bool traversePopups)
 	// if this one is not visible, its children won't be either
 	// also if it doesn't want mouse input its children can't get it either
 	if (!IsVisible() || !IsMouseInputEnabled())
-		return NULL;
+		return INVALID_VPANEL;
 
 	if (traversePopups)
 	{
@@ -3190,7 +3186,7 @@ VPANEL Panel::IsWithinTraverse(int x, int y, bool traversePopups)
 			if (ipanel()->IsPopup(panel))
 			{
 				panel = ipanel()->IsWithinTraverse(panel, x, y, true);
-				if (panel != null)
+				if (panel != INVALID_VPANEL)
 				{
 					return panel;
 				}
@@ -3207,7 +3203,7 @@ VPANEL Panel::IsWithinTraverse(int x, int y, bool traversePopups)
 			if (!ipanel()->IsPopup(panel))
 			{
 				panel = ipanel()->IsWithinTraverse(panel, x, y, true);
-				if (panel != 0)
+				if (panel != INVALID_VPANEL)
 				{
 					return panel;
 				}
@@ -3237,7 +3233,7 @@ VPANEL Panel::IsWithinTraverse(int x, int y, bool traversePopups)
 				if (!ipanel()->IsPopup(panel))
 				{
 					panel = ipanel()->IsWithinTraverse(panel, x, y, false);
-					if (panel != 0)
+					if (panel != INVALID_VPANEL)
 					{
 						return panel;
 					}
@@ -3250,7 +3246,7 @@ VPANEL Panel::IsWithinTraverse(int x, int y, bool traversePopups)
 		}
 	}
 
-	return NULL;
+	return INVALID_VPANEL;
 }
 
 void Panel::LocalToScreen(int& x,int& y)
@@ -3400,7 +3396,7 @@ CUtlVector< VPANEL > &Panel::GetChildren()
 bool Panel::RequestFocusPrev(VPANEL panel)
 {
 	// chain to parent
-	if (GetVParent())
+	if (GetVParent() != INVALID_VPANEL)
 	{
 		return ipanel()->RequestFocusPrev(GetVParent(), GetVPanel());
 	}
@@ -3413,7 +3409,7 @@ bool Panel::RequestFocusPrev(VPANEL panel)
 bool Panel::RequestFocusNext(VPANEL panel)
 {
 	// chain to parent
-	if (GetVParent())
+	if (GetVParent() != INVALID_VPANEL)
 	{
 		return ipanel()->RequestFocusNext(GetVParent(), GetVPanel());
 	}
@@ -3429,7 +3425,7 @@ void Panel::RequestFocus(int direction)
 	// NOTE: This doesn't make any sense if we don't have keyboard input enabled
 	Assert( IsKeyBoardInputEnabled() );
 	//	ivgui()->DPrintf2("RequestFocus(%s, %s)\n", GetName(), GetClassName());
-	OnRequestFocus(GetVPanel(), NULL);
+	OnRequestFocus(GetVPanel(), INVALID_VPANEL);
 }
 
 //-----------------------------------------------------------------------------
@@ -3437,7 +3433,7 @@ void Panel::RequestFocus(int direction)
 //-----------------------------------------------------------------------------
 void Panel::OnRequestFocus(VPANEL subFocus, VPANEL defaultPanel)
 {
-	CallParentFunction(new KeyValues("OnRequestFocus", "subFocus", subFocus, "defaultPanel", defaultPanel));
+	CallParentFunction(new KeyValues("OnRequestFocus", "subFocus", (int)subFocus, "defaultPanel", (int)defaultPanel));
 }
 
 //-----------------------------------------------------------------------------
@@ -3445,7 +3441,7 @@ void Panel::OnRequestFocus(VPANEL subFocus, VPANEL defaultPanel)
 //-----------------------------------------------------------------------------
 VPANEL Panel::GetCurrentKeyFocus()
 {
-	return NULL;
+	return INVALID_VPANEL;
 }
 
 //-----------------------------------------------------------------------------
@@ -3546,7 +3542,7 @@ void Panel::PostActionSignal( KeyValues *message )
 		for (i = _actionSignalTargetDar.GetCount() - 1; i > 0; i--)
 		{
 			VPANEL panel = ivgui()->HandleToPanel(_actionSignalTargetDar[i]);
-			if (panel)
+			if (panel != INVALID_VPANEL)
 			{
 				ivgui()->PostMessage(panel, message->MakeCopy(), GetVPanel());
 			}
@@ -3556,7 +3552,7 @@ void Panel::PostActionSignal( KeyValues *message )
 		if (i == 0)
 		{
 			VPANEL panel = ivgui()->HandleToPanel(_actionSignalTargetDar[i]);
-			if (panel)
+			if (panel != INVALID_VPANEL)
 			{
 				ivgui()->PostMessage(panel, message, GetVPanel());
 				return;
@@ -3625,7 +3621,7 @@ void Panel::GetInset(int& left,int& top,int& right,int& bottom)
 void Panel::GetPaintSize(int& wide,int& tall)
 {
 	GetSize(wide, tall);
-	if (_border != null)
+	if (_border != NULL)
 	{
 		int left,top,right,bottom;
 		_border->GetInset(left,top,right,bottom);
@@ -3756,7 +3752,7 @@ bool Panel::IsCursorNone()
 {
 	HCursor cursor = GetCursor();
 
-	if (!cursor)
+	if (cursor == CursorCodeToCursor(dc_none))
 	{
 		return true;
 	}
@@ -3946,7 +3942,7 @@ void Panel::UpdateSiblingPin( void )
 {
 	if ( !_pinToSibling )
 	{
-		ipanel()->SetSiblingPin(GetVPanel(), NULL);
+		ipanel()->SetSiblingPin(GetVPanel(), INVALID_VPANEL);
 		return;
 	}
 
@@ -3962,7 +3958,7 @@ void Panel::UpdateSiblingPin( void )
 	}
 	else
 	{
-		ipanel()->SetSiblingPin(GetVPanel(), NULL);
+		ipanel()->SetSiblingPin(GetVPanel(), INVALID_VPANEL);
 	}
 }
 
@@ -5110,7 +5106,7 @@ void Panel::OnMessage(const KeyValues *params, VPANEL ifromPanel)
 						case DATATYPE_HANDLE:
 							{
 								typedef void (Panel::*MessageFunc_VPANEL_t)( VPANEL );
-								VPANEL vpanel = ivgui()->HandleToPanel( param1->GetInt() );
+								VPANEL vpanel = ivgui()->HandleToPanel( (HPanel)param1->GetInt() );
 								(this->*((MessageFunc_VPANEL_t)pMap->func))( vpanel );
 							}
 							break;
@@ -5201,13 +5197,13 @@ void Panel::OnMessage(const KeyValues *params, VPANEL ifromPanel)
 					else if ( (DATATYPE_HANDLE == pMap->firstParamType) && (DATATYPE_CONSTCHARPTR == pMap->secondParamType) )
 					{
 						typedef void (Panel::*MessageFunc_HandleConstCharPtr_t)(VPANEL, const char *);
-						VPANEL vp = ivgui()->HandleToPanel( param1->GetInt() );
+						VPANEL vp = ivgui()->HandleToPanel( (HPanel)param1->GetInt() );
 						(this->*((MessageFunc_HandleConstCharPtr_t)pMap->func))( vp, param2->GetString() );
 					}
 					else if ( (DATATYPE_HANDLE == pMap->firstParamType) && (DATATYPE_CONSTWCHARPTR == pMap->secondParamType) )
 					{
 						typedef void (Panel::*MessageFunc_HandleConstCharPtr_t)(VPANEL, const wchar_t *);
-						VPANEL vp = ivgui()->HandleToPanel( param1->GetInt() );
+						VPANEL vp = ivgui()->HandleToPanel( (HPanel)param1->GetInt() );
 						(this->*((MessageFunc_HandleConstCharPtr_t)pMap->func))( vp, param2->GetWString() );
 					}
 					else
@@ -5299,13 +5295,13 @@ void Panel::OnOldMessage(KeyValues *params, VPANEL ifromPanel)
 					else if ( (DATATYPE_HANDLE == pMessageMap[i].firstParamType) && (DATATYPE_CONSTCHARPTR ==pMessageMap[i].secondParamType) )
 					{
 						typedef void (Panel::*MessageFunc_HandleConstCharPtr_t)(VPANEL, const char *);
-						VPANEL vp = ivgui()->HandleToPanel( params->GetInt( pMessageMap[i].firstParamName ) );
+						VPANEL vp = ivgui()->HandleToPanel( (HPanel)params->GetInt( pMessageMap[i].firstParamName ) );
 						(this->*((MessageFunc_HandleConstCharPtr_t)pMessageMap[i].func))( vp, params->GetString(pMessageMap[i].secondParamName) );
 					}
 					else if ( (DATATYPE_HANDLE == pMessageMap[i].firstParamType) && (DATATYPE_CONSTWCHARPTR == pMessageMap[i].secondParamType) )
 					{
 						typedef void (Panel::*MessageFunc_HandleConstCharPtr_t)(VPANEL, const wchar_t *);
-						VPANEL vp = ivgui()->HandleToPanel( params->GetInt( pMessageMap[i].firstParamName ) );
+						VPANEL vp = ivgui()->HandleToPanel( (HPanel)params->GetInt( pMessageMap[i].firstParamName ) );
 						(this->*((MessageFunc_HandleConstCharPtr_t)pMessageMap[i].func))( vp, params->GetWString(pMessageMap[i].secondParamName) );
 					}
 					else
@@ -5351,7 +5347,7 @@ void Panel::OnOldMessage(KeyValues *params, VPANEL ifromPanel)
 					case DATATYPE_HANDLE:
 						{
 							typedef void (Panel::*MessageFunc_Ptr_t)(void *);
-							VPANEL vp = ivgui()->HandleToPanel( params->GetInt( pMessageMap[i].firstParamName ) );
+							VPANEL vp = ivgui()->HandleToPanel( (HPanel)params->GetInt( pMessageMap[i].firstParamName ) );
 							Panel *panel = ipanel()->GetPanel( vp, GetModuleName() );
 							(this->*((MessageFunc_Ptr_t)pMessageMap[i].func))( (void *)panel );
 						}
@@ -5434,7 +5430,7 @@ void Panel::PostMessage(VPANEL target, KeyValues *message, float delaySeconds)
 void Panel::PostMessageToAllSiblings( KeyValues *msg, float delaySeconds /*= 0.0f*/ )
 {
 	VPANEL parent = GetVParent();
-	if ( parent )
+	if ( parent != INVALID_VPANEL )
 	{
 		VPANEL vpanel = GetVPanel();
 
@@ -5446,7 +5442,7 @@ void Panel::PostMessageToAllSiblings( KeyValues *msg, float delaySeconds /*= 0.0
 			if ( sibling == vpanel )
 				continue;
 
-			if ( sibling )
+			if ( sibling != INVALID_VPANEL )
 			{
 				PostMessage( sibling, msg->MakeCopy(), delaySeconds );
 			}
@@ -5483,7 +5479,7 @@ bool Panel::RequestInfo( KeyValues *outputData )
 		return true;
 	}
 
-	if (GetVParent())
+	if (GetVParent() != INVALID_VPANEL)
 	{
 		return ipanel()->RequestInfo(GetVParent(), outputData);
 	}
@@ -5591,12 +5587,12 @@ void Panel::OnDelete()
 // Purpose: Panel handle implementation
 //			Returns a pointer to a valid panel, NULL if the panel has been deleted
 //-----------------------------------------------------------------------------
-Panel *PHandle::Get() 
+Panel *PHandle::Get() const
 {
 	if (m_iPanelID != INVALID_PANEL)
 	{
 		VPANEL panel = ivgui()->HandleToPanel(m_iPanelID);
-		if (panel)
+		if (panel != INVALID_VPANEL)
 		{
 			Panel *vguiPanel = ipanel()->GetPanel(panel, GetControlsModuleName());
 			return vguiPanel;
@@ -5608,7 +5604,7 @@ Panel *PHandle::Get()
 //-----------------------------------------------------------------------------
 // Purpose: sets the smart pointer
 //-----------------------------------------------------------------------------
-Panel *PHandle::Set(Panel *pent)
+void PHandle::Set(Panel *pent)
 {
 	if (pent)
 	{
@@ -5618,20 +5614,18 @@ Panel *PHandle::Set(Panel *pent)
 	{
 		m_iPanelID = INVALID_PANEL;
 	}
-	return pent; 
 }
 
-Panel *PHandle::Set( HPanel hPanel )
+void PHandle::Set( HPanel hPanel )
 {
 	m_iPanelID = hPanel;
-	return Get();
 }
 
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns a handle to a valid panel, NULL if the panel has been deleted
 //-----------------------------------------------------------------------------
-VPANEL VPanelHandle::Get()
+VPANEL VPanelHandle::Get() const
 {
 	if (m_iPanelID != INVALID_PANEL)
 	{
@@ -5640,15 +5634,15 @@ VPANEL VPanelHandle::Get()
 		    return ivgui()->HandleToPanel(m_iPanelID);
         }
 	}
-	return NULL;
+	return INVALID_VPANEL;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: sets the smart pointer
 //-----------------------------------------------------------------------------
-VPANEL VPanelHandle::Set(VPANEL pent)
+void VPanelHandle::Set(VPANEL pent)
 {
-	if (pent)
+	if (pent != INVALID_VPANEL)
 	{
 		m_iPanelID = ivgui()->PanelToHandle(pent);
 	}
@@ -5656,7 +5650,6 @@ VPANEL VPanelHandle::Set(VPANEL pent)
 	{
 		m_iPanelID = INVALID_PANEL;
 	}
-	return pent; 
 }
 
 //-----------------------------------------------------------------------------
@@ -6096,11 +6089,11 @@ public:
 	virtual void GetData( Panel *panel, KeyValues *kv, PanelAnimationMapEntry *entry )
 	{
 		void *data = ( void * )( (*entry->m_pfnLookup)( panel ) );
-		int currentId = *(int *)data;
+		HTexture currentId = *(HTexture *)data;
 
 		// lookup texture name for id
 		char texturename[ 512 ];
-		if ( currentId != -1 &&
+		if ( currentId != INVALID_TEXTURE &&
 			surface()->DrawGetTextureFile( currentId, texturename, sizeof( texturename ) ) )
 		{
 			kv->SetString( entry->name(), texturename );
@@ -6115,40 +6108,40 @@ public:
 	{
 		void *data = ( void * )( (*entry->m_pfnLookup)( panel ) );
 
-		int currentId = -1;
+		HTexture currentId = INVALID_TEXTURE;
 
 		char const *texturename = kv->GetString( entry->name() );
 		if ( texturename && texturename[ 0 ] )
 		{
 			currentId = surface()->DrawGetTextureId( texturename );
-			if ( currentId == -1 )
+			if ( currentId == INVALID_TEXTURE )
 			{
 				currentId = surface()->CreateNewTextureID();
 			}
 			surface()->DrawSetTextureFile( currentId, texturename, false, true );
 		}
 
-		*(int *)data = currentId;
+		*(HTexture *)data = currentId;
 	}
 
 	virtual void InitFromDefault( Panel *panel, PanelAnimationMapEntry *entry )
 	{
 		void *data = ( void * )( (*entry->m_pfnLookup)( panel ) );
 
-		int currentId = -1;
+		HTexture currentId = INVALID_TEXTURE;
 
 		char const *texturename = entry->defaultvalue();
 		if ( texturename && texturename[ 0 ] )
 		{
 			currentId = surface()->DrawGetTextureId( texturename );
-			if ( currentId == -1 )
+			if ( currentId == INVALID_TEXTURE )
 			{
 				currentId = surface()->CreateNewTextureID();
 			}
 			surface()->DrawSetTextureFile( currentId, texturename, false, true );
 		}
 
-		*(int *)data = currentId;
+		*(HTexture *)data = currentId;
 	}
 };
 
@@ -6359,7 +6352,7 @@ int	Panel::GetPaintBackgroundType()
 //-----------------------------------------------------------------------------
 void Panel::GetCornerTextureSize( int& w, int& h )
 {
-	if ( m_nBgTextureId1 == -1 )
+	if ( m_nBgTextureId1 == INVALID_TEXTURE )
 	{
 		w = h = 0;
 		return;
@@ -6372,10 +6365,10 @@ void Panel::GetCornerTextureSize( int& w, int& h )
 //-----------------------------------------------------------------------------
 void Panel::DrawBox(int x, int y, int wide, int tall, Color color, float normalizedAlpha, bool hollow /*=false*/ )
 {
-	if ( m_nBgTextureId1 == -1 ||
-		 m_nBgTextureId2 == -1 ||
-		 m_nBgTextureId3 == -1 ||
-		 m_nBgTextureId4 == -1 )
+	if ( m_nBgTextureId1 == INVALID_TEXTURE ||
+		 m_nBgTextureId2 == INVALID_TEXTURE ||
+		 m_nBgTextureId3 == INVALID_TEXTURE ||
+		 m_nBgTextureId4 == INVALID_TEXTURE )
 	{
 		return;
 	}
@@ -6459,10 +6452,10 @@ void Panel::DrawBox(int x, int y, int wide, int tall, Color color, float normali
 
 void Panel::DrawBoxFade(int x, int y, int wide, int tall, Color color, float normalizedAlpha, unsigned int alpha0, unsigned int alpha1, bool bHorizontal, bool hollow /*=false*/ )
 {
-	if ( m_nBgTextureId1 == -1 ||
-		m_nBgTextureId2 == -1 ||
-		m_nBgTextureId3 == -1 ||
-		m_nBgTextureId4 == -1 ||
+	if ( m_nBgTextureId1 == INVALID_TEXTURE ||
+		m_nBgTextureId2 == INVALID_TEXTURE ||
+		m_nBgTextureId3 == INVALID_TEXTURE ||
+		m_nBgTextureId4 == INVALID_TEXTURE ||
 		surface()->DrawGetAlphaMultiplier() == 0 )
 	{
 		return;
@@ -6570,10 +6563,10 @@ void Panel::DrawHollowBox(int x, int y, int wide, int tall, Color color, float n
 
 void Panel::DrawHollowBox( int x, int y, int wide, int tall, Color color, float normalizedAlpha, int cornerWide, int cornerTall )
 {
-	if ( m_nBgTextureId1 == -1 ||
-		m_nBgTextureId2 == -1 ||
-		m_nBgTextureId3 == -1 ||
-		m_nBgTextureId4 == -1 )
+	if ( m_nBgTextureId1 == INVALID_TEXTURE ||
+		m_nBgTextureId2 == INVALID_TEXTURE ||
+		m_nBgTextureId3 == INVALID_TEXTURE ||
+		m_nBgTextureId4 == INVALID_TEXTURE )
 	{
 		return;
 	}
@@ -6608,7 +6601,7 @@ void Panel::DrawHollowBox( int x, int y, int wide, int tall, Color color, float 
 //-----------------------------------------------------------------------------
 void Panel::DrawTexturedBox(int x, int y, int wide, int tall, Color color, float normalizedAlpha )
 {
-	if ( m_nBgTextureId1 == -1 )
+	if ( m_nBgTextureId1 == INVALID_TEXTURE )
 		return;
 
 	color[3] *= normalizedAlpha;
@@ -6833,7 +6826,7 @@ void Panel::OnFinishDragging( bool mousereleased, MouseCode code, bool abort /*=
 			Menu *menu = m_pDragDrop->m_hDropContextMenu;
 
 			VPANEL hover = menu->IsWithinTraverse( x, y, false );
-			if ( hover )
+			if ( hover != INVALID_VPANEL )
 			{
 				Panel *pHover = ipanel()->GetPanel( hover, GetModuleName() );
 				if ( pHover )
@@ -6973,7 +6966,7 @@ bool Panel::CanStartDragging( int startx, int starty, int mx, int my )
 
 HCursor Panel::GetDropCursor( CUtlVector< KeyValues * >& msglist )
 {
-	return dc_arrow;
+	return CursorCodeToCursor( dc_arrow );
 }
 
 bool IsSelfDroppable( CUtlVector< KeyValues * > &dragData )
@@ -7089,7 +7082,7 @@ void Panel::OnContinueDragging()
 		Menu *menu = m_pDragDrop->m_hDropContextMenu;
 
 		VPANEL hover = menu->IsWithinTraverse( x, y, false );
-		if ( hover )
+		if ( hover != INVALID_VPANEL )
 		{
 			Panel *pHover = ipanel()->GetPanel( hover, GetModuleName() );
 			if ( pHover )
@@ -7331,7 +7324,7 @@ void Panel::FindDropTargetPanel_R( CUtlVector< VPANEL >& panelList, int x, int y
 	if ( !ipanel()->IsFullyVisible( check ) )
 		return;
 
-	if ( ::ShouldHandleInputMessage( check ) && ipanel()->IsWithinTraverse( check, x, y, false ) )
+	if ( ::ShouldHandleInputMessage( check ) && ipanel()->IsWithinTraverse( check, x, y, false ) != INVALID_VPANEL )
 	{
 		panelList.AddToTail( check );
 	}

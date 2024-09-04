@@ -97,7 +97,7 @@ protected:
 	// dvs: FIXME: make these private
 	virtual void DoorClose();
 
-	CBasePropDoor *GetMaster( void ) { return m_hMaster; }
+	CBasePropDoor *GetMaster( void ) { return m_hMaster.Get(); }
 	bool HasSlaves( void ) { return ( m_hDoorList.Count() > 0 ); }
 
 	inline void SetDoorState( DoorState_t eDoorState );
@@ -202,7 +202,7 @@ private:
 	// dvs: FIXME: can we remove m_flSpeed from CBaseEntity?
 	//float m_flSpeed;			// Rotation speed when opening or closing in degrees per second.
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	string_t m_SlaveName;
 
@@ -260,7 +260,7 @@ inline bool CBasePropDoor::IsDoorLocked()
 
 CBaseEntity *CBasePropDoor::GetActivator()
 {
-	return m_hActivator;
+	return m_hActivator.Get();
 }
 
 bool CBasePropDoor::IsDoorBlocked() const

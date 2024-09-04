@@ -19,45 +19,8 @@ ConVar g_debug_trackpather( "g_debug_trackpather", "0", FCVAR_CHEAT );
 
 //------------------------------------------------------------------------------
 
-BEGIN_DATADESC( CAI_TrackPather )
-	DEFINE_FIELD( m_vecDesiredPosition,		FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vecGoalOrientation,		FIELD_VECTOR ),
-
-	DEFINE_FIELD( m_pCurrentPathTarget,		FIELD_CLASSPTR ),
-	DEFINE_FIELD( m_pDestPathTarget,		FIELD_CLASSPTR ),
-	DEFINE_FIELD( m_pLastPathTarget,		FIELD_CLASSPTR ),
-	DEFINE_FIELD( m_pTargetNearestPath,		FIELD_CLASSPTR ),
+BEGIN_MAPENTITY( CAI_TrackPather )
 	
-	DEFINE_FIELD( m_strCurrentPathName,		FIELD_STRING ),
-	DEFINE_FIELD( m_strDestPathName,		FIELD_STRING ),
-	DEFINE_FIELD( m_strLastPathName,		FIELD_STRING ),
-	DEFINE_FIELD( m_strTargetNearestPathName,	FIELD_STRING ),
-	
-	DEFINE_FIELD( m_vecLastGoalCheckPosition,	FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_flEnemyPathUpdateTime,	FIELD_TIME ),
-	DEFINE_FIELD( m_bForcedMove,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bPatrolling,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bPatrolBreakable,		FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bLeading,				FIELD_BOOLEAN ),
-
-	// Derived class pathing data
-	DEFINE_FIELD( m_flTargetDistanceThreshold,	FIELD_FLOAT ),
-	DEFINE_FIELD( m_flAvoidDistance,		FIELD_FLOAT ),
-
-	DEFINE_FIELD( m_flTargetTolerance,		FIELD_FLOAT ),
-	DEFINE_FIELD( m_vecSegmentStartPoint,	FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vecSegmentStartSplinePoint,	FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_bMovingForward,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bChooseFarthestPoint,	FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flFarthestPathDist,		FIELD_FLOAT ),
-	DEFINE_FIELD( m_flPathMaxSpeed,			FIELD_FLOAT ),
-	DEFINE_FIELD( m_flTargetDistFromPath,	FIELD_FLOAT ),
-	DEFINE_FIELD( m_flLeadDistance,			FIELD_FLOAT ),
-	DEFINE_FIELD( m_vecTargetPathDir,		FIELD_VECTOR ),
-	DEFINE_FIELD( m_vecTargetPathPoint,		FIELD_POSITION_VECTOR ),
-
-	DEFINE_FIELD( m_nPauseState,			FIELD_INTEGER ),
-
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetTrack", InputSetTrack ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "FlyToSpecificTrackViaPath", InputFlyToPathTrack ),
@@ -73,7 +36,7 @@ BEGIN_DATADESC( CAI_TrackPather )
 	// Obsolete, for backwards compatibility	
 	DEFINE_INPUTFUNC( FIELD_VOID,	 "StartPatrolBreakable", InputStartPatrolBreakable ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "FlyToPathTrack", InputFlyToPathTrack ),
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -102,70 +65,6 @@ void CAI_TrackPather::InitPathingData( float flTrackArrivalTolerance, float flTa
 	m_flFarthestPathDist = 1e10;
 	m_flPathMaxSpeed = 0;
 	m_nPauseState = PAUSE_NO_PAUSE; 
-}
-
-	   
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CAI_TrackPather::OnRestore( void )
-{
-	BaseClass::OnRestore();
-
-	// Restore current path
-	if ( m_strCurrentPathName != NULL_STRING )
-	{
-		m_pCurrentPathTarget = (CPathTrack *) gEntList.FindEntityByName( NULL, m_strCurrentPathName );
-	}
-	else
-	{
-		m_pCurrentPathTarget = NULL;
-	}
-
-	// Restore destination path
-	if ( m_strDestPathName != NULL_STRING )
-	{
-		m_pDestPathTarget = (CPathTrack *) gEntList.FindEntityByName( NULL, m_strDestPathName );
-	}
-	else
-	{
-		m_pDestPathTarget = NULL;
-	}
-
-	// Restore last path
-	if ( m_strLastPathName != NULL_STRING )
-	{
-		m_pLastPathTarget = (CPathTrack *) gEntList.FindEntityByName( NULL, m_strLastPathName );
-	}
-	else
-	{
-		m_pLastPathTarget = NULL;
-	}
-
-	// Restore target nearest path
-	if ( m_strTargetNearestPathName != NULL_STRING )
-	{
-		m_pTargetNearestPath = (CPathTrack *) gEntList.FindEntityByName( NULL, m_strTargetNearestPathName );
-	}
-	else
-	{
-		m_pTargetNearestPath = NULL;
-	}
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CAI_TrackPather::OnSave( IEntitySaveUtils *pUtils )
-{
-	BaseClass::OnSave( pUtils );
-
-	// Stash all the paths into strings for restoration later
-	m_strCurrentPathName = ( m_pCurrentPathTarget != NULL ) ? m_pCurrentPathTarget->GetEntityName() : NULL_STRING;
-	m_strDestPathName = ( m_pDestPathTarget != NULL ) ? m_pDestPathTarget->GetEntityName() : NULL_STRING;
-	m_strLastPathName = ( m_pLastPathTarget != NULL ) ? m_pLastPathTarget->GetEntityName() : NULL_STRING;
-	m_strTargetNearestPathName = ( m_pTargetNearestPath != NULL ) ? m_pTargetNearestPath->GetEntityName() : NULL_STRING;
 }
 
 
@@ -1358,6 +1257,9 @@ void CAI_TrackPather::SetupNewCurrentTarget( CPathTrack *pTrack )
 	Assert( pTrack );
 	m_vecSegmentStartPoint = GetAbsOrigin();
 	VectorMA( m_vecSegmentStartPoint, -2.0f, GetAbsVelocity(), m_vecSegmentStartSplinePoint );
+
+	OnNewCurrentTarget( pTrack, m_pCurrentPathTarget );
+
 	m_pCurrentPathTarget = pTrack;
 	SetDesiredPosition( m_pCurrentPathTarget->GetAbsOrigin() );
 }

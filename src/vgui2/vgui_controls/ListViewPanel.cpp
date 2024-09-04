@@ -107,7 +107,7 @@ public:
 		{
 			VPANEL focus = input()->GetFocus();
 			// if one of the children of the SectionedListPanel has focus, then 'we have focus' if we're selected
-			if (HasFocus() || (focus && ipanel()->HasParent(focus, GetVParent())))
+			if (HasFocus() || (focus != INVALID_VPANEL && ipanel()->HasParent(focus, GetVParent())))
 			{
 				textImage->SetColor(m_ArmedFgColor2);
 			}
@@ -133,7 +133,7 @@ public:
 		{
             VPANEL focus = input()->GetFocus();
             // if one of the children of the SectionedListPanel has focus, then 'we have focus' if we're selected
-            if (HasFocus() || (focus && ipanel()->HasParent(focus, GetVParent())))
+            if (HasFocus() || (focus != INVALID_VPANEL && ipanel()->HasParent(focus, GetVParent())))
             {
 			    surface()->DrawSetColor(m_ArmedBgColor);
             }
@@ -228,7 +228,7 @@ ListViewPanel::ListViewPanel(Panel *parent, const char *panelName) : Panel(paren
 {
 	m_iRowHeight = 20;
 	m_bNeedsSort = false;
-	m_hFont = NULL;
+	m_hFont = INVALID_FONT;
 	m_pImageList = NULL;
 	m_bDeleteImageListWhenDone = false;
 	m_pSortFunc = DefaultSortFunc;
@@ -262,7 +262,7 @@ int ListViewPanel::AddItem(const KeyValues *data, bool bScrollToItem, bool bSort
 {
 	ListViewItem *pNewItem = new ListViewItem(this);
 	pNewItem->SetData(data);
-	if (m_hFont)
+	if (m_hFont != INVALID_FONT)
 	{
 		pNewItem->SetFont(m_hFont);
 	}
@@ -493,8 +493,8 @@ void ListViewPanel::SetImageList(ImageList *imageList, bool deleteImageListWhenD
 //-----------------------------------------------------------------------------
 void ListViewPanel::SetFont(HFont font)
 {
-	Assert( font );
-	if ( !font )
+	Assert( font != INVALID_FONT );
+	if ( font == INVALID_FONT )
 		return;
 
 	m_hFont = font;

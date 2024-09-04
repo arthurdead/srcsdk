@@ -25,10 +25,7 @@
 #include <ctype.h> // isalnum()
 #include <voice_status.h>
 #include "cam_thirdperson.h"
-
-#ifdef SIXENSE
-#include "sixense/in_sixense.h"
-#endif
+#include "ivieweffects.h"
 
 #include <vgui/ISurface.h>
 
@@ -44,8 +41,6 @@ extern ConVar cam_idealyaw;
 
 // FIXME, tie to entity state parsing for player!!!
 int g_iAlive = 1;
-
-static int s_ClearInputState = 0;
 
 // Defined in pm_math.c
 float anglemod( float a );
@@ -67,7 +62,11 @@ ConVar cl_backspeed( "cl_backspeed", "450", FCVAR_REPLICATED | FCVAR_CHEAT );
 
 ConVar lookspring( "lookspring", "0", FCVAR_ARCHIVE );
 ConVar lookstrafe( "lookstrafe", "0", FCVAR_ARCHIVE );
-ConVar in_joystick( "joystick","0", FCVAR_ARCHIVE );
+
+void IN_JoystickChangedCallback_f( IConVar *pConVar, const char *pOldString, float flOldValue );
+ConVar in_joystick( "joystick","0", FCVAR_ARCHIVE, "True if the joystick is enabled, false otherwise.", IN_JoystickChangedCallback_f );
+
+static ConVar cl_lagcomp_errorcheck( "cl_lagcomp_errorcheck", "0", 0, "Player index of other player to check for position errors." );
 
 ConVar thirdperson_platformer( "thirdperson_platformer", "0", 0, "Player will aim in the direction they are moving." );
 ConVar thirdperson_screenspace( "thirdperson_screenspace", "0", 0, "Movement will be relative to the camera, eg: left means screen-left" );
@@ -111,6 +110,7 @@ kbutton_t	in_moveright;
 // Display the netgraph
 kbutton_t	in_graph;  
 kbutton_t	in_joyspeed;		// auto-speed key from the joystick (only works for player movement, not vehicles)
+kbutton_t	in_lookspin;
 
 static	kbutton_t	in_klook;
 kbutton_t	in_left;
@@ -160,9 +160,14 @@ void IN_CenterView_f (void)
 IN_Joystick_Advanced_f
 ===========
 */
-void IN_Joystick_Advanced_f (void)
+void IN_Joystick_Advanced_f (const CCommand& args)
 {
-	::input->Joystick_Advanced(true);
+	::input->Joystick_Advanced(args.ArgC() == 2);
+}
+
+void IN_JoystickChangedCallback_f( IConVar *pConVar, const char *pOldString, float flOldValue )
+{
+	::input->Joystick_Advanced( true );
 }
 
 /*
@@ -301,6 +306,44 @@ CInput::CInput( void )
 	m_pCommands = NULL;
 	m_pCameraThirdData = NULL;
 	m_pVerifiedCommands = NULL;
+
+	m_flAccumulatedMouseXMovement = 0;
+	m_flAccumulatedMouseYMovement = 0;
+	m_flPreviousMouseXPosition = 0;
+	m_flPreviousMouseYPosition = 0;
+	m_flRemainingJoystickSampleTime = 0;
+	m_flKeyboardSampleTime = 0;
+
+	m_flSpinFrameTime = 0;
+	m_flSpinRate = 0;
+	m_flLastYawAngle = 0;
+
+	// Is the 3rd person camera using the mouse?
+	m_fCameraInterceptingMouse = 0;
+	// Are we in 3rd person view?
+	m_fCameraInThirdPerson = 0;
+	// Should we move view along with mouse?
+	m_fCameraMovingWithMouse = 0;
+	// What is the current camera offset from the view origin?
+	m_vecCameraOffset.Init();
+	// Is the camera in distance moving mode?
+	m_fCameraDistanceMove = 0;
+	// Old and current mouse position readings.
+	m_nCameraOldX = 0;
+	m_nCameraOldY = 0;
+	m_nCameraX = 0;
+	m_nCameraY = 0;
+
+	m_angPreviousViewAngles.Init();
+	m_angPreviousViewAnglesTilt.Init();
+
+	m_flLastForwardMove = 0;
+
+	m_pCommands = 0;
+	m_pVerifiedCommands = NULL;
+
+	m_nClearInputState = 0;
+	m_pCameraThirdData = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -415,6 +458,15 @@ void KeyUp( kbutton_t *b, const char *c )
 	b->state |= 4; 		// impulse up
 }
 
+void IN_ClearDuckToggle()
+{
+	if ( ::input->KeyState( &in_ducktoggle ) )
+	{
+		KeyUp( &in_ducktoggle, NULL ); 
+	}
+}
+void IN_ForceSpeedDown( ) {KeyDown(&in_speed, NULL );}
+void IN_ForceSpeedUp( ) {KeyUp(&in_speed, NULL );}
 void IN_CommanderMouseMoveDown( const CCommand &args ) {KeyDown(&in_commandermousemove, args[1] );}
 void IN_CommanderMouseMoveUp( const CCommand &args ) {KeyUp(&in_commandermousemove, args[1] );}
 void IN_BreakDown( const CCommand &args ) { KeyDown( &in_break , args[1] );}
@@ -461,8 +513,8 @@ void IN_UseDown ( const CCommand &args ) {KeyDown(&in_use, args[1] );}
 void IN_UseUp ( const CCommand &args ) {KeyUp(&in_use, args[1] );}
 void IN_JumpDown ( const CCommand &args ) {KeyDown(&in_jump, args[1] );}
 void IN_JumpUp ( const CCommand &args ) {KeyUp(&in_jump, args[1] );}
-void IN_DuckDown( const CCommand &args ) {KeyDown(&in_duck, args[1] );}
-void IN_DuckUp( const CCommand &args ) {KeyUp(&in_duck, args[1] );}
+void IN_DuckDown( const CCommand &args ) {KeyDown(&in_duck, args[1] ); IN_ClearDuckToggle();}
+void IN_DuckUp( const CCommand &args ) {KeyUp(&in_duck, args[1] );IN_ClearDuckToggle();}
 void IN_ReloadDown( const CCommand &args ) {KeyDown(&in_reload, args[1] );}
 void IN_ReloadUp( const CCommand &args ) {KeyUp(&in_reload, args[1] );}
 void IN_Alt1Down( const CCommand &args ) {KeyDown(&in_alt1, args[1] );}
@@ -484,7 +536,7 @@ void IN_DuckToggle( const CCommand &args )
 { 
 	if ( ::input->KeyState(&in_ducktoggle) )
 	{
-		KeyUp( &in_ducktoggle, args[1] ); 
+		IN_ClearDuckToggle();
 	}
 	else
 	{
@@ -533,6 +585,9 @@ void IN_ScoreUp( const CCommand &args )
 	}
 }
 
+
+void IN_LookSpinDown( const CCommand &args ) {KeyDown( &in_lookspin, args[1] );}
+void IN_LookSpinUp( const CCommand &args ) {KeyUp( &in_lookspin, args[1] );}
 
 /*
 ============
@@ -767,6 +822,17 @@ void CInput::AdjustAngles ( float frametime )
 	// Retrieve latest view direction from engine
 	engine->GetViewAngles( viewangles );
 
+	// Undo tilting from previous frame
+	viewangles -= m_angPreviousViewAnglesTilt;
+
+	// Apply tilting effects here (it affects aim)
+	QAngle vecAnglesBeforeTilt = viewangles;
+	GetViewEffects()->CalcTilt();
+	GetViewEffects()->ApplyTilt( viewangles, 1.0f );
+
+	// Remember the tilt delta so we can undo it before applying tilt next frame
+	m_angPreviousViewAnglesTilt = viewangles - vecAnglesBeforeTilt;
+
 	// Adjust YAW
 	AdjustYaw( speed, viewangles );
 
@@ -991,7 +1057,7 @@ void CInput::ExtraMouseSample( float frametime, bool active )
 	engine->GetViewAngles( viewangles );
 
 	// Set button and flag bits, don't blow away state
-	cmd->buttons = GetButtonBits( 0 );
+	cmd->buttons = GetButtonBits( false );
 
 	// Use new view angles if alive, otherwise user last angles we stored off.
 	if ( g_iAlive )
@@ -1011,6 +1077,8 @@ void CInput::ExtraMouseSample( float frametime, bool active )
 		engine->SetViewAngles( cmd->viewangles );
 		prediction->SetLocalViewAngles( cmd->viewangles );
 	}
+
+	CheckPaused( cmd );
 }
 
 void CInput::CreateMove ( int sequence_number, float input_sample_frametime, bool active )
@@ -1078,7 +1146,7 @@ void CInput::CreateMove ( int sequence_number, float input_sample_frametime, boo
 	}
 
 	// Set button and flag bits
-	cmd->buttons = GetButtonBits( 1 );
+	cmd->buttons = GetButtonBits( true );
 
 	// Using joystick?
 	if ( in_joystick.GetInt() )
@@ -1111,6 +1179,8 @@ void CInput::CreateMove ( int sequence_number, float input_sample_frametime, boo
 		engine->SetViewAngles( cmd->viewangles );
 	}
 
+	CheckPaused( cmd );
+
 	m_flLastForwardMove = cmd->forwardmove;
 
 	cmd->random_seed = MD5_PseudoRandom( sequence_number ) & 0x7fffffff;
@@ -1132,6 +1202,19 @@ void CInput::CreateMove ( int sequence_number, float input_sample_frametime, boo
 
 	pVerified->m_cmd = *cmd;
 	pVerified->m_crc = cmd->GetChecksum();
+}
+
+void CInput::CheckPaused( CUserCmd *cmd )
+{
+	if ( !engine->IsPaused() )
+		return;
+	cmd->buttons = 0;
+	cmd->forwardmove = 0;
+	cmd->sidemove = 0;
+	cmd->upmove = 0;
+
+	// Don't allow changing weapons while paused
+	cmd->weaponselect = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -1298,27 +1381,28 @@ int CInput::GetButtonBits( bool bResetState )
 {
 	int bits = 0;
 
-	CalcButtonBits( bits, IN_SPEED, s_ClearInputState, &in_speed, bResetState );
-	CalcButtonBits( bits, IN_WALK, s_ClearInputState, &in_walk, bResetState );
-	CalcButtonBits( bits, IN_ATTACK, s_ClearInputState, &in_attack, bResetState );
-	CalcButtonBits( bits, IN_DUCK, s_ClearInputState, &in_duck, bResetState );
-	CalcButtonBits( bits, IN_JUMP, s_ClearInputState, &in_jump, bResetState );
-	CalcButtonBits( bits, IN_FORWARD, s_ClearInputState, &in_forward, bResetState );
-	CalcButtonBits( bits, IN_BACK, s_ClearInputState, &in_back, bResetState );
-	CalcButtonBits( bits, IN_USE, s_ClearInputState, &in_use, bResetState );
-	CalcButtonBits( bits, IN_LEFT, s_ClearInputState, &in_left, bResetState );
-	CalcButtonBits( bits, IN_RIGHT, s_ClearInputState, &in_right, bResetState );
-	CalcButtonBits( bits, IN_MOVELEFT, s_ClearInputState, &in_moveleft, bResetState );
-	CalcButtonBits( bits, IN_MOVERIGHT, s_ClearInputState, &in_moveright, bResetState );
-	CalcButtonBits( bits, IN_ATTACK2, s_ClearInputState, &in_attack2, bResetState );
-	CalcButtonBits( bits, IN_RELOAD, s_ClearInputState, &in_reload, bResetState );
-	CalcButtonBits( bits, IN_ALT1, s_ClearInputState, &in_alt1, bResetState );
-	CalcButtonBits( bits, IN_ALT2, s_ClearInputState, &in_alt2, bResetState );
-	CalcButtonBits( bits, IN_SCORE, s_ClearInputState, &in_score, bResetState );
-	CalcButtonBits( bits, IN_ZOOM, s_ClearInputState, &in_zoom, bResetState );
-	CalcButtonBits( bits, IN_GRENADE1, s_ClearInputState, &in_grenade1, bResetState );
-	CalcButtonBits( bits, IN_GRENADE2, s_ClearInputState, &in_grenade2, bResetState );
-	CalcButtonBits( bits, IN_ATTACK3, s_ClearInputState, &in_attack3, bResetState );
+	CalcButtonBits( bits, IN_SPEED, m_nClearInputState, &in_speed, bResetState );
+	CalcButtonBits( bits, IN_WALK, m_nClearInputState, &in_walk, bResetState );
+	CalcButtonBits( bits, IN_ATTACK, m_nClearInputState, &in_attack, bResetState );
+	CalcButtonBits( bits, IN_DUCK, m_nClearInputState, &in_duck, bResetState );
+	CalcButtonBits( bits, IN_JUMP, m_nClearInputState, &in_jump, bResetState );
+	CalcButtonBits( bits, IN_FORWARD, m_nClearInputState, &in_forward, bResetState );
+	CalcButtonBits( bits, IN_BACK, m_nClearInputState, &in_back, bResetState );
+	CalcButtonBits( bits, IN_USE, m_nClearInputState, &in_use, bResetState );
+	CalcButtonBits( bits, IN_LEFT, m_nClearInputState, &in_left, bResetState );
+	CalcButtonBits( bits, IN_RIGHT, m_nClearInputState, &in_right, bResetState );
+	CalcButtonBits( bits, IN_MOVELEFT, m_nClearInputState, &in_moveleft, bResetState );
+	CalcButtonBits( bits, IN_MOVERIGHT, m_nClearInputState, &in_moveright, bResetState );
+	CalcButtonBits( bits, IN_ATTACK2, m_nClearInputState, &in_attack2, bResetState );
+	CalcButtonBits( bits, IN_RELOAD, m_nClearInputState, &in_reload, bResetState );
+	CalcButtonBits( bits, IN_ALT1, m_nClearInputState, &in_alt1, bResetState );
+	CalcButtonBits( bits, IN_ALT2, m_nClearInputState, &in_alt2, bResetState );
+	CalcButtonBits( bits, IN_SCORE, m_nClearInputState, &in_score, bResetState );
+	CalcButtonBits( bits, IN_ZOOM, m_nClearInputState, &in_zoom, bResetState );
+	CalcButtonBits( bits, IN_GRENADE1, m_nClearInputState, &in_grenade1, bResetState );
+	CalcButtonBits( bits, IN_GRENADE2, m_nClearInputState, &in_grenade2, bResetState );
+	CalcButtonBits( bits, IN_ATTACK3, m_nClearInputState, &in_attack3, bResetState );
+	CalcButtonBits( bits, IN_LOOKSPIN, m_nClearInputState, &in_lookspin, bResetState );
 
 	if ( KeyState(&in_ducktoggle) )
 	{
@@ -1342,11 +1426,11 @@ int CInput::GetButtonBits( bool bResetState )
 	}
 
 	// Clear out any residual
-	bits &= ~s_ClearInputState;
+	bits &= ~m_nClearInputState;
 
 	if ( bResetState )
 	{
-		s_ClearInputState = 0;
+		m_nClearInputState = 0;
 	}
 
 	return bits;
@@ -1358,7 +1442,7 @@ int CInput::GetButtonBits( bool bResetState )
 //-----------------------------------------------------------------------------
 void CInput::ClearInputButton( int bits )
 {
-	s_ClearInputState |= bits;
+	m_nClearInputState |= bits;
 }
 
 
@@ -1441,6 +1525,8 @@ static ConCommand startattack("+attack", IN_AttackDown);
 static ConCommand endattack("-attack", IN_AttackUp);
 static ConCommand startattack2("+attack2", IN_Attack2Down);
 static ConCommand endattack2("-attack2", IN_Attack2Up);
+static ConCommand startsecondary("+secondary", IN_Attack2Down);
+static ConCommand endsecondary("-secondary", IN_Attack2Up);
 static ConCommand startuse("+use", IN_UseDown);
 static ConCommand enduse("-use", IN_UseUp);
 static ConCommand startjump("+jump", IN_JumpDown);
@@ -1477,6 +1563,8 @@ static ConCommand startgrenade2( "+grenade2", IN_Grenade2Down );
 static ConCommand startattack3("+attack3", IN_Attack3Down);
 static ConCommand endattack3("-attack3", IN_Attack3Up);
 static ConCommand toggle_duck( "toggle_duck", IN_DuckToggle );
+static ConCommand startlookspin("+lookspin", IN_LookSpinDown);
+static ConCommand endlookspin("-lookspin", IN_LookSpinUp);
 
 /*
 ============
@@ -1486,6 +1574,7 @@ Init_All
 void CInput::Init_All (void)
 {
 	Assert( !m_pCommands );
+	Assert( !m_pVerifiedCommands );
 	m_pCommands = new CUserCmd[ MULTIPLAYER_BACKUP ];
 	m_pVerifiedCommands = new CVerifiedUserCmd[ MULTIPLAYER_BACKUP ];
 

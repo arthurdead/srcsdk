@@ -42,7 +42,7 @@ public:
 
 	virtual bool	UpdateVisibility( const Vector &vOrigin, float fovDistanceAdjustFactor, bool &bIsOpenOnClient );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	bool	UpdateState( void );
@@ -52,10 +52,9 @@ private:
 
 LINK_ENTITY_TO_CLASS( func_areaportal, CAreaPortal );
 
-BEGIN_DATADESC( CAreaPortal )
+BEGIN_MAPENTITY( CAreaPortal )
 
 	DEFINE_KEYFIELD( m_portalNumber, FIELD_INTEGER, "portalnumber" ),
-	DEFINE_FIELD( m_state, FIELD_INTEGER ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Open",  InputOpen ),
@@ -66,7 +65,7 @@ BEGIN_DATADESC( CAreaPortal )
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn",  InputClose ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputOpen ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

@@ -305,6 +305,9 @@ public:
 		// A string passed to the game code for interpretation
 		GENERIC,
 
+		// Camera control
+		CAMERA,
+
 		// THIS MUST BE LAST!!!
 		NUM_TYPES,
 	} EVENTTYPE;

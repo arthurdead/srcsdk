@@ -4,12 +4,15 @@
 //
 //=============================================================================//
 
-#include "mempool.h"
-#include "utlmap.h"
-
 #ifndef AI_MEMORY_H
 #define AI_MEMORY_H
 #pragma once
+
+#include "mempool.h"
+#include "utlmap.h"
+#include "ehandle.h"
+
+class CBaseEntity;
 
 #ifndef AI_USES_NAV_MESH
 class CAI_Network;
@@ -42,12 +45,11 @@ struct AI_EnemyInfo_t
 	float			timeValidEnemy;		// First time can be selected (reaction delay)
 	float			timeLastReceivedDamageFrom;
 	float			timeAtFirstHand;	// Time at which the enemy was seen firsthand
+	int				nFaction;			// The faction the enemy belongs to
 	bool			bDangerMemory;		// Memory of danger position w/o Enemy pointer
 	bool			bEludedMe;			// True if enemy not at last known location 
 	bool			bUnforgettable;
 	bool			bMobbedMe;			// True if enemy was part of a mob at some point
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //-----------------------------------------------------------------------------
@@ -104,8 +106,6 @@ public:
 	void			SetFreeKnowledgeDuration( float flDuration );
 	void			SetEnemyDiscardTime( float flTime );
 	float			GetEnemyDiscardTime( void ) const { return m_flEnemyDiscardTime; }
-
-	DECLARE_SIMPLE_DATADESC();
 
 	typedef CUtlMap<CBaseEntity *, AI_EnemyInfo_t*, unsigned char> CMemMap;
 

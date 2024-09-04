@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "baseentity.h"
 
 class CBaseEntity;
 class Vector;
@@ -57,7 +58,6 @@ private:
 	CNetworkVar( float, m_scrollRate );
 	CNetworkVar( float, m_flWidth );
 
-	DECLARE_DATADESC();
 	DECLARE_SERVERCLASS();
 };
 CEnvQuadraticBeam *CreateQuadraticBeam( const char *pSpriteName, const Vector &start, const Vector &control, const Vector &end, float width, CBaseEntity *pOwner );

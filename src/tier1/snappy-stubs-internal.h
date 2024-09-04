@@ -37,6 +37,9 @@
 
 #include "tier0/platform.h"
 
+#undef min
+#undef max
+
 #include <string>
 
 #include <assert.h>

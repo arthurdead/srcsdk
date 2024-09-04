@@ -8,6 +8,8 @@
 #define BASEPROJECTILE_H
 #pragma once
 
+#include "baseanimating.h"
+
 // Creation.
 struct baseprojectilecreate_t
 {
@@ -28,7 +30,6 @@ class CBaseProjectile : public CBaseAnimating
 {
 	DECLARE_CLASS( CBaseProjectile, CBaseAnimating );
 public:
-	DECLARE_DATADESC();
 
 	void	Spawn( void );
 	void	Precache( void );

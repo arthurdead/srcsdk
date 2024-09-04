@@ -16,7 +16,7 @@
 
 #include "utlvector.h"
 #include "ai_obstacle_type.h"
-
+#include "ehandle.h"
 
 //-----------------------------------------------------------------------------
 

@@ -19,7 +19,7 @@ class CRopeKeyframe : public CBaseEntity, public IPositionWatcher
 	DECLARE_CLASS( CRopeKeyframe, CBaseEntity );
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 					CRopeKeyframe();
 	virtual			~CRopeKeyframe();
@@ -59,7 +59,7 @@ public:
 	
 	// Shakes all ropes near vCenter. The higher flMagnitude is, the larger the shake will be.
 	static void ShakeRopes( const Vector &vCenter, float flRadius, float flMagnitude );
-
+	static void PrecacheShakeRopes();
 
 // CBaseEntity overrides.
 public:
@@ -68,6 +68,7 @@ public:
 	virtual int		ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 	virtual void	Activate();
 	virtual void	Precache();
+	virtual void	Spawn( void );
 	virtual int		OnTakeDamage( const CTakeDamageInfo &info );
 	virtual bool	KeyValue( const char *szKeyName, const char *szValue );
 
@@ -111,7 +112,7 @@ public:
 	int				GetStartAttachment() { return m_iStartAttachment; };
 
 	CBaseEntity*	GetEndPoint() { return m_hEndPoint.Get(); }
-	int				GetEndAttachment() { return m_iStartAttachment; };
+	int				GetEndAttachment() { return m_iEndAttachment; };
 
 	void			SetStartPoint( CBaseEntity *pStartPoint, int attachment = 0 );
 	void			SetEndPoint( CBaseEntity *pEndPoint, int attachment = 0 );

@@ -104,11 +104,8 @@ void TE_PhysicsProp( IRecipientFilter& filter, float delay,
 	int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects );
 void TE_ClientProjectile( IRecipientFilter& filter, float delay,
 	 const Vector* vecOrigin, const Vector* vecVelocity, int modelindex, int lifetime, CBaseEntity *pOwner );
-
-#ifdef HL2_DLL
 void TE_GaussExplosion( IRecipientFilter& filter, float delayt,
 			 const Vector &pos, const Vector &dir, int type );
-#endif
 
 class CTempEntsSystem : public ITempEntsSystem
 {
@@ -479,12 +476,10 @@ public:
 	virtual void GaussExplosion( IRecipientFilter& filter, float delay,
 				const Vector &pos, const Vector &dir, int type )
 	{
-#ifdef HL2_DLL
 		if ( !SuppressTE( filter ) )
 		{
 			TE_GaussExplosion( filter, delay, pos, dir, type );
 		}
-#endif
 	}
 
 	virtual void DispatchEffect( IRecipientFilter& filter, float delay,

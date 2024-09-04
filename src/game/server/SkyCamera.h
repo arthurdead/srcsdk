@@ -25,7 +25,7 @@ class CSkyCamera : public CLogicalEntity
 
 public:
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	CSkyCamera();
 	~CSkyCamera();
 	virtual void Spawn( void );

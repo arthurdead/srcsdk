@@ -44,7 +44,6 @@ class __virtual_inheritance Panel;
 #else
 class Panel;
 #endif
-typedef unsigned int VPANEL;
 
 typedef void (Panel::*MessageFunc_t)(void);
 

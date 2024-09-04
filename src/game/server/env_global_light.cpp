@@ -41,7 +41,7 @@ public:
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	CNetworkVector( m_shadowDirection );
@@ -61,7 +61,7 @@ private:
 
 LINK_ENTITY_TO_CLASS(env_global_light, CGlobalLight);
 
-BEGIN_DATADESC( CGlobalLight )
+BEGIN_MAPENTITY( CGlobalLight )
 
 	DEFINE_KEYFIELD( m_bEnabled,		FIELD_BOOLEAN, "enabled" ),
 	DEFINE_KEYFIELD( m_bStartDisabled,	FIELD_BOOLEAN, "StartDisabled" ),
@@ -71,7 +71,7 @@ BEGIN_DATADESC( CGlobalLight )
 	DEFINE_KEYFIELD( m_flNearZ,	FIELD_FLOAT, "nearz" ),
 	DEFINE_KEYFIELD( m_flNorthOffset,	FIELD_FLOAT, "northoffset" ),
 	DEFINE_KEYFIELD( m_bEnableShadows, FIELD_BOOLEAN, "enableshadows" ),
-	DEFINE_FIELD( m_LightColor, FIELD_COLOR32 ), 
+
 	DEFINE_KEYFIELD( m_flColorTransitionTime, FIELD_FLOAT, "colortransitiontime" ),
 
 	// Inputs
@@ -87,7 +87,7 @@ BEGIN_DATADESC( CGlobalLight )
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetTexture", InputSetTexture ),
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "EnableShadows", InputSetEnableShadows ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 IMPLEMENT_SERVERCLASS_ST_NOBASE(CGlobalLight, DT_GlobalLight)

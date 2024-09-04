@@ -14,8 +14,18 @@
 
 #if defined( CLIENT_DLL ) || defined( GAME_DLL )
 	#include "basehandle.h"
+	#include "ehandle.h"
 #endif
 
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL nullptr
+
+namespace std
+{
+	using nullptr_t = decltype(nullptr);
+}
 
 #pragma warning( disable : 4284 ) // warning C4284: return type for 'CNetworkVarT<int>::operator ->' is 'int *' (ie; not a UDT or reference to a UDT.  Will produce errors if applied using infix notation)
 
@@ -213,51 +223,51 @@ static inline void DispatchNetworkStateChanged( T *pObj, void *pVar )
 
 template<typename T>
 FORCEINLINE void NetworkVarConstruct( T &x ) { x = T(0); }
-FORCEINLINE void NetworkVarConstruct( color32_s &x ) { x.r = x.g = x.b = x.a = 0; }
-FORCEINLINE void NetworkVarConstruct( color24_s &x ) { x.r = x.g = x.b = 0; }
+FORCEINLINE void NetworkVarConstruct( color32_s &x ) { x.r = x.g = x.b = x.a = 255; }
+FORCEINLINE void NetworkVarConstruct( color24_s &x ) { x.r = x.g = x.b = 255; }
 
 template< class Type, class Changer >
-class CNetworkVarBase
+class CNetworkVarBaseImpl
 {
 public:
-	inline CNetworkVarBase()
+	inline CNetworkVarBaseImpl()
 	{
 		NetworkVarConstruct( m_Value );
 	}
 
-	inline explicit CNetworkVarBase( Type val )
+	inline explicit CNetworkVarBaseImpl( Type val )
 	: m_Value( val )
 	{
 		NetworkStateChanged();
 	}
 
 	template< class C >
-	const Type& operator=( const C &val ) 
+	CNetworkVarBaseImpl& operator=( const C &val ) 
 	{ 
-		return Set( ( const Type )val ); 
+		Set( ( const Type )val ); 
+		return *this;
 	}
 	
 	template< class C >
-	const Type& operator=( const CNetworkVarBase< C, Changer > &val ) 
+	CNetworkVarBaseImpl& operator=( const CNetworkVarBaseImpl< C, Changer > &val ) 
 	{ 
-		return Set( ( const Type )val.m_Value ); 
+		Set( ( const Type )val.m_Value ); 
+		return *this;
 	}
 
-	const Type& SetDirect( const Type &val )
+	void SetDirect( const Type &val )
 	{
 		NetworkStateChanged();
 		m_Value = val;
-		return m_Value;
 	}
 	
-	const Type& Set( const Type &val )
+	void Set( const Type &val )
 	{
 		if ( memcmp( &m_Value, &val, sizeof(Type) ) )
 		{
 			NetworkStateChanged();
 			m_Value = val;
 		}
-		return m_Value;
 	}
 	
 	Type& GetForModify()
@@ -267,49 +277,57 @@ public:
 	}
 
 	template< class C >
-	const Type& operator+=( const C &val ) 
+	CNetworkVarBaseImpl& operator+=( const C &val ) 
 	{
-		return Set( m_Value + ( const Type )val ); 
+		Set( m_Value + ( const Type )val ); 
+		return *this;
 	}
 
 	template< class C >
-	const Type& operator-=( const C &val ) 
+	CNetworkVarBaseImpl& operator-=( const C &val ) 
 	{
-		return Set( m_Value - ( const Type )val ); 
+		Set( m_Value - ( const Type )val ); 
+		return *this;
 	}
 	
 	template< class C >
-	const Type& operator/=( const C &val ) 
+	CNetworkVarBaseImpl& operator/=( const C &val ) 
 	{
-		return Set( m_Value / ( const Type )val ); 
+		Set( m_Value / ( const Type )val ); 
+		return *this;
 	}
 	
 	template< class C >
-	const Type& operator*=( const C &val ) 
+	CNetworkVarBaseImpl& operator*=( const C &val ) 
 	{
-		return Set( m_Value * ( const Type )val ); 
+		Set( m_Value * ( const Type )val ); 
+		return *this;
 	}
 	
 	template< class C >
-	const Type& operator^=( const C &val ) 
+	CNetworkVarBaseImpl& operator^=( const C &val ) 
 	{
-		return Set( m_Value ^ ( const Type )val ); 
+		Set( m_Value ^ ( const Type )val ); 
+		return *this;
 	}
 
 	template< class C >
-	const Type& operator|=( const C &val ) 
+	CNetworkVarBaseImpl& operator|=( const C &val ) 
 	{
-		return Set( m_Value | ( const Type )val ); 
+		Set( m_Value | ( const Type )val ); 
+		return *this;
 	}
 
 	const Type& operator++()
 	{
-		return (*this += 1);
+		(*this += 1);
+		return m_Value;
 	}
 
-	Type operator--()
+	const Type& operator--()
 	{
-		return (*this -= 1);
+		(*this -= 1);
+		return m_Value;
 	}
 	
 	Type operator++( int ) // postfix version..
@@ -330,9 +348,10 @@ public:
 	// CNetworkVarBase<unsigned char> = 0x1
 	// (it warns about converting from an int to an unsigned char).
 	template< class C >
-	const Type& operator&=( const C &val ) 
+	CNetworkVarBaseImpl& operator&=( const C &val ) 
 	{	
-		return Set( m_Value & ( const Type )val ); 
+		Set( m_Value & ( const Type )val ); 
+		return *this;
 	}
 
 	operator const Type&() const 
@@ -359,11 +378,18 @@ protected:
 	}
 };
 
+template< class Type, class Changer >
+class CNetworkVarBase : public CNetworkVarBaseImpl<Type, Changer>
+{
+public:
+	using CNetworkVarBaseImpl<Type, Changer>::CNetworkVarBaseImpl;
+	using CNetworkVarBaseImpl<Type, Changer>::operator=;
+};
 
 template< class Type, class Changer >
-class CNetworkColor32Base : public CNetworkVarBase< Type, Changer >
+class CNetworkColor32Base : public CNetworkVarBaseImpl< Type, Changer >
 {
-	typedef CNetworkVarBase< Type, Changer > base;
+	typedef CNetworkVarBaseImpl< Type, Changer > base;
 
 public:
 	inline void Init( byte rVal, byte gVal, byte bVal )
@@ -380,14 +406,16 @@ public:
 		this->SetA( aVal );
 	}
 
-	const Type& operator=( const Type &val ) 
+	CNetworkColor32Base& operator=( const Type &val ) 
 	{ 
-		return this->Set( val ); 
+		this->Set( val ); 
+		return *this;
 	}
 
-	const Type& operator=( const CNetworkColor32Base<Type,Changer> &val ) 
+	CNetworkColor32Base& operator=( const CNetworkColor32Base<Type,Changer> &val ) 
 	{ 
-		return this->Set( val.m_Value );
+		this->Set( val.m_Value );
+		return *this;
 	}
 	
 	inline byte GetR() const { return this->m_Value.r; }
@@ -411,9 +439,9 @@ protected:
 };
 
 template< class Type, class Changer >
-class CNetworkColor24Base : public CNetworkVarBase< Type, Changer >
+class CNetworkColor24Base : public CNetworkVarBaseImpl< Type, Changer >
 {
-	typedef CNetworkVarBase< Type, Changer > base;
+	typedef CNetworkVarBaseImpl< Type, Changer > base;
 
 public:
 	inline void Init( byte rVal, byte gVal, byte bVal )
@@ -423,14 +451,16 @@ public:
 		this->SetB( bVal );
 	}
 
-	const Type& operator=( const Type &val ) 
+	CNetworkColor24Base& operator=( const Type &val ) 
 	{ 
-		return this->Set( val ); 
+		this->Set( val ); 
+		return *this;
 	}
 
-	const Type& operator=( const CNetworkColor24Base<Type,Changer> &val ) 
+	CNetworkColor24Base& operator=( const CNetworkColor24Base<Type,Changer> &val ) 
 	{ 
-		return this->Set( val.m_Value );
+		this->Set( val.m_Value );
+		return *this;
 	}
 	
 	inline byte GetR() const { return this->m_Value.r; }
@@ -453,9 +483,9 @@ protected:
 
 // Network vector wrapper.
 template< class Type, class Changer >
-class CNetworkVectorBase : public CNetworkVarBase< Type, Changer >
+class CNetworkVectorBase : public CNetworkVarBaseImpl< Type, Changer >
 {
-	typedef CNetworkVarBase< Type, Changer > base;
+	typedef CNetworkVarBaseImpl< Type, Changer > base;
 
 public:
 	inline void Init( float ix=0, float iy=0, float iz=0 ) 
@@ -465,14 +495,16 @@ public:
 		this->SetZ( iz );
 	}
 	
-	const Type& operator=( const Type &val ) 
+	CNetworkVectorBase& operator=( const Type &val ) 
 	{ 
-		return base::Set( val ); 
+		base::Set( val ); 
+		return *this;
 	}
 
-	const Type& operator=( const CNetworkVectorBase<Type,Changer> &val ) 
+	CNetworkVectorBase& operator=( const CNetworkVectorBase<Type,Changer> &val ) 
 	{ 
-		return base::Set( val.m_Value );
+		base::Set( val.m_Value );
+		return *this;
 	}
 
 	inline float GetX() const { return this->m_Value.x; }
@@ -495,32 +527,33 @@ public:
 		return this->m_Value != (Type)val; 
 	}
 
-	const Type operator+( const Type &val ) const 
+	Type operator+( const Type &val ) const 
 	{
 		return this->m_Value + val; 
 	}
 
-	const Type operator-( const Type &val ) const
+	Type operator-( const Type &val ) const
 	{ 
 		return this->m_Value - val; 
 	}
 
-	const Type operator*( const Type &val ) const
+	Type operator*( const Type &val ) const
 	{
 		return this->m_Value * val; 
 	}
 
-	const Type& operator*=( float val )
+	CNetworkVectorBase& operator*=( float val )
 	{
-		return base::Set( this->m_Value * val );
+		base::Set( this->m_Value * val );
+		return *this;
 	}
 
-	const Type operator*( float val ) const
+	Type operator*( float val ) const
 	{
 		return this->m_Value * val; 
 	}
 
-	const Type operator/( const Type &val ) const
+	Type operator/( const Type &val ) const
 	{
 		return this->m_Value / val; 
 	}
@@ -539,9 +572,9 @@ private:
 
 // Network vector wrapper.
 template< class Type, class Changer >
-class CNetworkQuaternionBase : public CNetworkVarBase< Type, Changer >
+class CNetworkQuaternionBase : public CNetworkVarBaseImpl< Type, Changer >
 {
-	typedef CNetworkVarBase< Type, Changer > base;
+	typedef CNetworkVarBaseImpl< Type, Changer > base;
 
 public:
 	inline void Init( float ix=0, float iy=0, float iz=0, float iw = 0 ) 
@@ -552,14 +585,16 @@ public:
 		SetW( iw );
 	}
 	
-	const Type& operator=( const Type &val ) 
+	CNetworkQuaternionBase& operator=( const Type &val ) 
 	{ 
-		return base::Set( val ); 
+		base::Set( val ); 
+		return *this;
 	}
 
-	const Type& operator=( const CNetworkQuaternionBase<Type,Changer> &val ) 
+	CNetworkQuaternionBase& operator=( const CNetworkQuaternionBase<Type,Changer> &val ) 
 	{ 
-		return base::Set( val.m_Value );
+		base::Set( val.m_Value );
+		return *this;
 	}
 
 	inline float GetX() const { return this->m_Value.x; }
@@ -584,32 +619,33 @@ public:
 		return this->m_Value != (Type)val; 
 	}
 
-	const Type operator+( const Type &val ) const 
+	Type operator+( const Type &val ) const 
 	{
 		return this->m_Value + val; 
 	}
 
-	const Type operator-( const Type &val ) const
+	Type operator-( const Type &val ) const
 	{ 
 		return this->m_Value - val; 
 	}
 
-	const Type operator*( const Type &val ) const
+	Type operator*( const Type &val ) const
 	{
 		return this->m_Value * val; 
 	}
 
-	const Type& operator*=( float val )
+	CNetworkQuaternionBase& operator*=( float val )
 	{
-		return base::Set( this->m_Value * val );
+		base::Set( this->m_Value * val );
+		return *this;
 	}
 
-	const Type operator*( float val ) const
+	Type operator*( float val ) const
 	{
 		return this->m_Value * val; 
 	}
 
-	const Type operator/( const Type &val ) const
+	Type operator/( const Type &val ) const
 	{
 		return this->m_Value / val; 
 	}
@@ -628,73 +664,252 @@ private:
 
 // Network ehandle wrapper.
 #if defined( CLIENT_DLL ) || defined( GAME_DLL )
-	inline void NetworkVarConstruct( CBaseHandle &x ) {}
+inline void NetworkVarConstruct( CBaseHandle &x ) { x.Term(); }
 
-	template< class Type, class Changer >
-	class CNetworkHandleBase : public CNetworkVarBase< CBaseHandle, Changer >
+template< class Type >
+inline void NetworkVarConstruct( CHandle<Type> &x ) { x.Term(); }
+
+template< class Type, class Changer >
+class CNetworkHandleBaseImpl : public CNetworkVarBaseImpl< CHandle<Type>, Changer >
+{
+	typedef CNetworkVarBaseImpl< CHandle<Type>, Changer > base;
+
+public:
+	CNetworkHandleBaseImpl &operator=( const Type *val ) 
+	{ 
+		this->Set( val ); 
+		return *this;
+	}
+
+	CNetworkHandleBaseImpl &operator=( Type *val ) 
+	{ 
+		this->Set( val ); 
+		return *this;
+	}
+		
+	CNetworkHandleBaseImpl& operator=( const CNetworkHandleBaseImpl &val ) 
+	{ 
+		this->Set( val.m_Value );
+		return *this;
+	}
+
+	CNetworkHandleBaseImpl& operator=( const CHandle<Type> &val ) 
+	{ 
+		this->Set( val );
+		return *this;
+	}
+
+	CNetworkHandleBaseImpl& operator=( std::nullptr_t ) 
+	{ 
+		this->Term();
+		return *this;
+	}
+
+	bool operator !() const 
+	{ 
+		return ( this->m_Value.Get() == NULL ); 
+	}
+
+	explicit operator bool() const 
+	{ 
+		return ( this->m_Value.Get() != NULL );
+	}
+	
+	operator Type*() const 
+	{ 
+		return static_cast< Type* >( this->m_Value.Get() );
+	}
+
+	explicit operator const Type*() const 
+	{ 
+		return static_cast< const Type* >( this->m_Value.Get() );
+	}
+
+	explicit operator IHandleEntity*() const 
+	{ 
+		return static_cast< IHandleEntity* >( this->m_Value.Get() );
+	}
+
+	explicit operator const IHandleEntity*() const 
+	{ 
+		return static_cast< const IHandleEntity* >( this->m_Value.Get() );
+	}
+
+	void Set( const Type *val )
 	{
-		typedef CNetworkVarBase< CBaseHandle, Changer > base;
-
-	public:
-		const Type* operator=( const Type *val ) 
-		{ 
-			return this->Set( val ); 
-		}
-			
-		const Type& operator=( const CNetworkHandleBase<Type,Changer> &val ) 
-		{ 
-			const CBaseHandle &handle = base::Set( val.m_Value );
-			return *(const Type*)handle.Get();
-		}
-
-		bool operator !() const 
-		{ 
-			return !this->m_Value.Get(); 
-		}
-		
-		operator Type*() const 
-		{ 
-			return static_cast< Type* >( this->m_Value.Get() );
-		}
-
-		const Type* Set( const Type *val )
+		if ( this->m_Value.Get() != val )
 		{
-			if ( this->m_Value != val )
-			{
-				this->NetworkStateChanged();
-				this->m_Value = val;
-			}
-			return val;
+			this->NetworkStateChanged();
+			this->m_Value.Set( val );
 		}
-		
-		Type* Get() const 
-		{ 
-			return static_cast< Type* >( this->m_Value.Get() );
-		}
+	}
 
-		Type* operator->() const 
-		{ 
-			return static_cast< Type* >( this->m_Value.Get() );
-		}
-
-		bool operator==( const Type *val ) const 
+	void Set( Type *val )
+	{
+		if ( this->m_Value.Get() != val )
 		{
-			return this->m_Value == val; 
+			this->NetworkStateChanged();
+			this->m_Value.Set( val );
 		}
+	}
 
-		bool operator!=( const Type *val ) const 
+	void Set( const CHandle<Type> &val )
+	{
+		if ( this->m_Value.operator!=(val) )
 		{
-			return this->m_Value != val;
+			this->NetworkStateChanged();
+			this->m_Value.Set( val );
 		}
-	};
+	}
 
+	void Set( std::nullptr_t )
+	{
+		if ( this->m_Value.Get() != NULL )
+		{
+			this->NetworkStateChanged();
+			this->m_Value.Term();
+		}
+	}
 
+	void Term()
+	{
+		if ( this->m_Value.Get() != NULL )
+		{
+			this->NetworkStateChanged();
+			this->m_Value.Term();
+		}
+	}
+	
+	Type* Get() const 
+	{ 
+		return static_cast< Type* >( this->m_Value.Get() );
+	}
 
-	#define CNetworkHandle( type, name ) CNetworkHandleInternal( type, name, NetworkStateChanged )
+	Type* operator->() const 
+	{ 
+		return static_cast< Type* >( this->m_Value.Get() );
+	}
 
-	#define CNetworkHandleInternal( type, name, stateChangedFn ) \
-		NETWORK_VAR_START( type, name ) \
-		NETWORK_VAR_END( type, name, CNetworkHandleBase, stateChangedFn )
+	bool operator==( const Type *val ) const 
+	{
+		return this->m_Value.Get() == val; 
+	}
+
+	bool operator!=( const Type *val ) const 
+	{
+		return this->m_Value.Get() != val;
+	}
+
+	bool operator==( Type *val ) const 
+	{
+		return this->m_Value.Get() == val; 
+	}
+
+	bool operator!=( Type *val ) const 
+	{
+		return this->m_Value.Get() != val;
+	}
+
+	bool operator==( const IHandleEntity *val ) const 
+	{
+		return this->m_Value.Get() == val; 
+	}
+
+	bool operator!=( const IHandleEntity *val ) const 
+	{
+		return this->m_Value.Get() != val;
+	}
+
+	bool operator==( IHandleEntity *val ) const 
+	{
+		return this->m_Value.Get() == val; 
+	}
+
+	bool operator!=( IHandleEntity *val ) const 
+	{
+		return this->m_Value.Get() != val;
+	}
+
+	bool operator==( std::nullptr_t ) const 
+	{
+		return this->m_Value.Get() == NULL; 
+	}
+
+	bool operator!=( std::nullptr_t ) const 
+	{
+		return this->m_Value.Get() != NULL;
+	}
+};
+
+template< class Type, class Changer >
+class CNetworkHandleBase : public CNetworkHandleBaseImpl<Type, Changer>
+{
+public:
+	using CNetworkHandleBaseImpl<Type, Changer>::CNetworkHandleBaseImpl;
+	using CNetworkHandleBaseImpl<Type, Changer>::operator=;
+	using CNetworkHandleBaseImpl<Type, Changer>::operator==;
+	using CNetworkHandleBaseImpl<Type, Changer>::operator!=;
+	using CNetworkHandleBaseImpl<Type, Changer>::Set;
+
+	bool operator==( const CBaseEntity *val ) const 
+	{
+		return this->m_Value.Get() == val; 
+	}
+
+	bool operator!=( const CBaseEntity *val ) const 
+	{
+		return this->m_Value.Get() != val;
+	}
+
+	bool operator==( CBaseEntity *val ) const 
+	{
+		return this->m_Value.Get() == val; 
+	}
+
+	bool operator!=( CBaseEntity *val ) const 
+	{
+		return this->m_Value.Get() != val;
+	}
+};
+
+template< class Changer >
+class CNetworkHandleBase<CBaseEntity, Changer> : public CNetworkHandleBaseImpl<CBaseEntity, Changer>
+{
+public:
+	using CNetworkHandleBaseImpl<CBaseEntity, Changer>::CNetworkHandleBaseImpl;
+	using CNetworkHandleBaseImpl<CBaseEntity, Changer>::operator=;
+	using CNetworkHandleBaseImpl<CBaseEntity, Changer>::operator==;
+	using CNetworkHandleBaseImpl<CBaseEntity, Changer>::operator!=;
+	using CNetworkHandleBaseImpl<CBaseEntity, Changer>::Set;
+};
+
+template< class Type, class Changer >
+class CNetworkVarBase<CHandle<Type>, Changer> : public CNetworkHandleBase<Type, Changer>
+{
+public:
+	using CNetworkHandleBase<Type, Changer>::CNetworkHandleBase;
+	using CNetworkHandleBase<Type, Changer>::operator=;
+	using CNetworkHandleBase<Type, Changer>::operator==;
+	using CNetworkHandleBase<Type, Changer>::operator!=;
+	using CNetworkHandleBase<Type, Changer>::Set;
+};
+
+template< class Changer >
+class CNetworkVarBase<CBaseHandle, Changer> : public CNetworkHandleBase<CBaseEntity, Changer>
+{
+public:
+	using CNetworkHandleBase<CBaseEntity, Changer>::CNetworkHandleBase;
+	using CNetworkHandleBase<CBaseEntity, Changer>::operator=;
+	using CNetworkHandleBase<CBaseEntity, Changer>::operator==;
+	using CNetworkHandleBase<CBaseEntity, Changer>::operator!=;
+	using CNetworkHandleBase<CBaseEntity, Changer>::Set;
+};
+
+#define CNetworkHandle( type, name ) CNetworkHandleInternal( type, name, NetworkStateChanged )
+
+#define CNetworkHandleInternal( type, name, stateChangedFn ) \
+	NETWORK_VAR_START( type, name ) \
+	NETWORK_VAR_END( type, name, CNetworkHandleBase, stateChangedFn )
 #endif
 
 
@@ -848,6 +1063,7 @@ private:
 		{ \
 			CHECK_USENETWORKVARS ((ThisClass*)(((char*)this) - MyOffsetOf(ThisClass,name)))->stateChangedFn( &m_Value[index] ); \
 		} \
+	public: \
 		type m_Value[count]; \
 	}; \
 	NetworkVar_##name name;

@@ -8,7 +8,8 @@
 #define TRIGGER_AREA_CAPTURE_H
 #pragma once
 
-#include "basemultiplayerplayer.h"
+#include "triggers.h"
+#include "util_shared.h"
 #include "triggers.h"
 #include "team_control_point.h"
 
@@ -49,7 +50,7 @@ public:
 	// Derived, game-specific area triggers must override these functions
 public:
 	// Display a hint about capturing zones to the player
-	virtual void DisplayCapHintTo( CBaseMultiplayerPlayer *pPlayer ) { return; }
+	virtual void DisplayCapHintTo( CBasePlayer *pPlayer ) { return; }
 
 	// A team has finished capturing the zone.
 	virtual void OnEndCapture( int iTeam ) { return; }
@@ -60,8 +61,9 @@ public:
 	virtual void Precache( void );
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 
+	void	SetAreaIndex( int index );
 	bool	IsActive( void );
-	bool	CheckIfDeathCausesBlock( CBaseMultiplayerPlayer *pVictim, CBaseMultiplayerPlayer *pKiller );
+	bool	CheckIfDeathCausesBlock( CBasePlayer *pVictim, CBasePlayer *pKiller );
 
 	void	UpdateNumPlayers( bool bBlocked = false );
 	void	UpdateOwningTeam( void );
@@ -149,7 +151,7 @@ private:
 
 	struct blockers_t
 	{
-		CHandle<CBaseMultiplayerPlayer>	hPlayer;
+		CHandle<CBasePlayer>	hPlayer;
 		int						iCapAttemptNumber;
 		float					flNextBlockTime;
 	};
@@ -171,6 +173,8 @@ private:
 	COutputInt m_OnNumCappersChanged;
 	COutputInt m_OnNumCappersChanged2;
 
+	int		m_iAreaIndex;	//index of this area among all other areas
+
 	CHandle<CTeamControlPoint>	m_hPoint;	//the capture point that we are linked to!
 
 	bool	m_bRequiresObject;
@@ -182,7 +186,7 @@ private:
 
 	CHandle<CTeamTrainWatcher>	m_hTrainWatcher;	// used for train watchers that control train movement
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 #endif // TRIGGER_AREA_CAPTURE_H

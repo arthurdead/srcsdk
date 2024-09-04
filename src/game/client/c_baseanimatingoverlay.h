@@ -25,7 +25,6 @@ public:
 	DECLARE_INTERPOLATION();
 
 
-	C_BaseAnimatingOverlay(bool bClientSide);
 	C_BaseAnimatingOverlay();
 
 	virtual CStudioHdr *OnNewModel();

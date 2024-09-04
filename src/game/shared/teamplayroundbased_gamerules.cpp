@@ -154,10 +154,10 @@ BEGIN_SEND_TABLE( CTeamplayRoundBasedRulesProxy, DT_TeamplayRoundBasedRulesProxy
 	SendPropDataTable( "teamplayroundbased_gamerules_data", 0, &REFERENCE_SEND_TABLE( DT_TeamplayRoundBasedRules ), SendProxy_TeamplayRoundBasedRules )
 END_SEND_TABLE()
 
-BEGIN_DATADESC( CTeamplayRoundBasedRulesProxy )
+BEGIN_MAPENTITY( CTeamplayRoundBasedRulesProxy )
 	// Inputs.
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "SetStalemateOnTimelimit", InputSetStalemateOnTimelimit ),
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: 

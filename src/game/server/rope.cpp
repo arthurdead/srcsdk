@@ -55,39 +55,23 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CRopeKeyframe, DT_RopeKeyframe )
 END_SEND_TABLE()
 
 
-BEGIN_DATADESC( CRopeKeyframe )
-
-	DEFINE_FIELD( m_RopeFlags,		FIELD_INTEGER ),
+BEGIN_MAPENTITY( CRopeKeyframe )
 
 	DEFINE_KEYFIELD( m_iNextLinkName,	FIELD_STRING,	"NextKey" ),
 	DEFINE_KEYFIELD( m_Slack,			FIELD_INTEGER,	"Slack" ),
 	DEFINE_KEYFIELD( m_Width,			FIELD_FLOAT,	"Width" ),
 	DEFINE_KEYFIELD( m_TextureScale,		FIELD_FLOAT,	"TextureScale" ),
-	DEFINE_FIELD( m_nSegments,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_bConstrainBetweenEndpoints,		FIELD_BOOLEAN ),
 
-	DEFINE_FIELD( m_strRopeMaterialModel, FIELD_STRING ),
-	DEFINE_FIELD( m_iRopeMaterialModelIndex, FIELD_MODELINDEX ),
 	DEFINE_KEYFIELD( m_Subdiv,			FIELD_INTEGER,	"Subdiv" ),
-	DEFINE_FIELD( m_RopeLength,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_fLockedPoints,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_bCreatedFromMapFile, FIELD_BOOLEAN ),
+
 	DEFINE_KEYFIELD( m_flScrollSpeed,	FIELD_FLOAT,	"ScrollSpeed" ),
 
-	DEFINE_FIELD( m_bStartPointValid, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bEndPointValid,	FIELD_BOOLEAN ),
-
-	DEFINE_FIELD( m_hStartPoint,		FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hEndPoint,		FIELD_EHANDLE ),
-	DEFINE_FIELD( m_iStartAttachment,	FIELD_SHORT ),
-	DEFINE_FIELD( m_iEndAttachment,	FIELD_SHORT ),
-	
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT,	"SetScrollSpeed",	InputSetScrollSpeed ),
 	DEFINE_INPUTFUNC( FIELD_VECTOR,	"SetForce",			InputSetForce ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"Break",			InputBreak ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -289,6 +273,10 @@ void CRopeKeyframe::ActivateEndDirectionConstraints( bool bEnable )
 	}
 }
 
+void CRopeKeyframe::PrecacheShakeRopes()
+{
+	PrecacheEffect( "ShakeRopes" );
+}
 
 void CRopeKeyframe::ShakeRopes( const Vector &vCenter, float flRadius, float flMagnitude )
 {
@@ -654,9 +642,15 @@ int CRopeKeyframe::OnTakeDamage( const CTakeDamageInfo &info )
 void CRopeKeyframe::Precache()
 {
 	m_iRopeMaterialModelIndex = PrecacheModel( STRING( m_strRopeMaterialModel ) );
+	PrecacheMaterial( "cable/rope_shadowdepth" );
 	BaseClass::Precache();
 }
 
+void CRopeKeyframe::Spawn( void ) 
+{
+	BaseClass::Spawn();
+	Precache();
+}
 
 void CRopeKeyframe::DetachPoint( int iPoint )
 {
@@ -732,16 +726,17 @@ bool CRopeKeyframe::KeyValue( const char *szKeyName, const char *szValue )
 		int iShader = atoi( szValue );
 		if ( iShader == 0 )
 		{
-			m_iRopeMaterialModelIndex = PrecacheModel( "cable/cable.vmt" );
+			m_strRopeMaterialModel = MAKE_STRING( "cable/cable.vmt" );
 		}
 		else if ( iShader == 1 )
 		{
-			m_iRopeMaterialModelIndex = PrecacheModel( "cable/rope.vmt" );
+			m_strRopeMaterialModel = MAKE_STRING( "cable/rope.vmt" );
 		}
 		else
 		{
-			m_iRopeMaterialModelIndex = PrecacheModel( "cable/chain.vmt" );
+			m_strRopeMaterialModel = MAKE_STRING( "cable/chain.vmt" );
 		}
+		m_iRopeMaterialModelIndex = PrecacheModel( STRING( m_strRopeMaterialModel ) );
 	}
 	else if ( stricmp( szKeyName, "RopeMaterial" ) == 0 )
 	{

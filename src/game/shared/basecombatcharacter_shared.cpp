@@ -123,6 +123,16 @@ CBaseCombatWeapon *CBaseCombatCharacter::GetActiveWeapon() const
 
 //-----------------------------------------------------------------------------
 // Purpose: 
+// Input  : i - 
+//-----------------------------------------------------------------------------
+CBaseCombatWeapon *CBaseCombatCharacter::GetWeapon( int i ) const
+{
+	Assert( (i >= 0) && (i < MAX_WEAPONS) );
+	return m_hMyWeapons[i].Get();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
 // Input  : iCount - 
 //			iAmmoIndex - 
 //-----------------------------------------------------------------------------
@@ -131,8 +141,11 @@ void CBaseCombatCharacter::RemoveAmmo( int iCount, int iAmmoIndex )
 	if (iCount <= 0)
 		return;
 
+	if ( iAmmoIndex < 0 )
+		return;
+
 	// Infinite ammo?
-	if ( GetAmmoDef()->MaxCarry( iAmmoIndex, this ) == INFINITE_AMMO )
+	if ( GetAmmoDef()->CanCarryInfiniteAmmo( iAmmoIndex ) )
 		return;
 
 	// Ammo pickup sound
@@ -176,7 +189,7 @@ int CBaseCombatCharacter::GetAmmoCount( int iAmmoIndex ) const
 		return 0;
 
 	// Infinite ammo?
-	if ( GetAmmoDef()->MaxCarry( iAmmoIndex, this ) == INFINITE_AMMO )
+	if ( GetAmmoDef()->CanCarryInfiniteAmmo( iAmmoIndex ) )
 		return 999;
 
 	return m_iAmmo[ iAmmoIndex ];
@@ -208,6 +221,22 @@ CBaseCombatWeapon* CBaseCombatCharacter::Weapon_OwnsThisType( const char *pszWea
 	return NULL;
 }
 
+int CBaseCombatCharacter::Weapon_GetSlot( const char *pszWeapon, int iSubType ) const
+{
+	for ( int i = 0; i < MAX_WEAPONS; i++ ) 
+	{
+		if ( m_hMyWeapons[i].Get() && FClassnameIs( m_hMyWeapons[i], pszWeapon ) )
+		{
+			// Make sure it matches the subtype
+			if ( m_hMyWeapons[i]->GetSubType() == iSubType )
+			{
+				return i;
+			}
+		}
+	}
+
+	return -1;
+}
 
 int CBaseCombatCharacter::BloodColor()
 {
@@ -429,10 +458,10 @@ bool CBaseCombatCharacter::IsAbleToSee( const CBaseEntity *pEntity, FieldOfViewC
 
 static void ComputeSeeTestPosition( Vector *pEyePosition, CBaseCombatCharacter *pBCC )
 {
-#if defined(GAME_DLL) && defined(TERROR)
+#if defined(GAME_DLL) && 0
 	if ( pBCC->IsPlayer() )
 	{
-		CTerrorPlayer *pPlayer = ToTerrorPlayer( pBCC );
+		CBasePlayer *pPlayer = ToBasePlayer( pBCC );
 		*pEyePosition = !pPlayer->IsDead() ? pPlayer->EyePosition() : pPlayer->GetDeathPosition();
 	}
 	else
@@ -448,7 +477,7 @@ bool CBaseCombatCharacter::IsAbleToSee( CBaseCombatCharacter *pBCC, FieldOfViewC
 	ComputeSeeTestPosition( &vecEyePosition, this );
 	ComputeSeeTestPosition( &vecOtherEyePosition, pBCC );
 
-#ifdef GAME_DLL
+#if defined GAME_DLL
 	Vector vecEyeToTarget;
 	VectorSubtract( vecOtherEyePosition, vecEyePosition, vecEyeToTarget );
 	float flDistToOther = VectorNormalize( vecEyeToTarget ); 
@@ -458,7 +487,7 @@ bool CBaseCombatCharacter::IsAbleToSee( CBaseCombatCharacter *pBCC, FieldOfViewC
 	if ( IsHiddenByFog( flDistToOther ) )
 		return false;
 
-#ifdef TERROR
+#if 0
 	// Check this every time also, it's cheap; check to see if the enemy is in an obscured area.
 	bool bIsInNavObscureRange = ( flDistToOther > NavObscureRange.GetFloat() );
 	if ( bIsInNavObscureRange )
@@ -467,7 +496,7 @@ bool CBaseCombatCharacter::IsAbleToSee( CBaseCombatCharacter *pBCC, FieldOfViewC
 		if ( !pOtherNavArea || pOtherNavArea->HasSpawnAttributes( TerrorNavArea::SPAWN_OBSCURED ) )
 			return false;
 	}
-#endif // TERROR
+#endif
 #endif
 
 	// Check if we have a cached-off visibility
@@ -480,7 +509,7 @@ bool CBaseCombatCharacter::IsAbleToSee( CBaseCombatCharacter *pBCC, FieldOfViewC
 		bool bThisCanSeeOther = false, bOtherCanSeeThis = false;
 		if ( ComputeLOS( vecEyePosition, vecOtherEyePosition ) )
 		{
-#if defined(GAME_DLL) && defined(TERROR)
+#if defined(GAME_DLL) && 0
 			if ( !bIsInNavObscureRange )
 			{
 				bThisCanSeeOther = true, bOtherCanSeeThis = true;
@@ -519,7 +548,7 @@ public:
 		{
 			CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 			if ( !pEntity )
-				return NULL;
+				return false;
 
 			if ( pEntity->MyCombatCharacterPointer() || pEntity->MyCombatWeaponPointer() )
 				return false;
@@ -544,7 +573,7 @@ bool CBaseCombatCharacter::ComputeLOS( const Vector &vecEyePosition, const Vecto
 	return ( result.fraction == 1.0f );
 }
 
-#if defined(GAME_DLL) && defined(TERROR)
+#if defined(GAME_DLL) && 0
 bool CBaseCombatCharacter::ComputeTargetIsInDarkness( const Vector &vecEyePosition, CNavArea *pTargetNavArea, const Vector &vecTargetPos ) const
 {
 	if ( GetTeamNumber() != TEAM_SURVIVOR )

@@ -192,6 +192,9 @@ void CPlayerMove::SetupMove( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper *p
 	move->m_flConstraintRadius = player->m_flConstraintRadius;
 	move->m_flConstraintWidth = player->m_flConstraintWidth;
 	move->m_flConstraintSpeedFactor = player->m_flConstraintSpeedFactor;
+	move->m_bConstraintPastRadius = player->m_bConstraintPastRadius;
+	// setup trace optimization
+	g_pGameMovement->SetupMovementBounds( move );
 }
 
 //-----------------------------------------------------------------------------
@@ -206,7 +209,7 @@ void CPlayerMove::FinishMove( CBasePlayer *player, CUserCmd *ucmd, CMoveData *mo
 	VPROF( "CPlayerMove::FinishMove" );
 
 	// NOTE: Don't copy this.  the movement code modifies its local copy but is not expecting to be authoritative
-	//player->m_flMaxspeed			= move->m_flClientMaxSpeed;
+	player->m_flMaxspeed			= move->m_flClientMaxSpeed;
 	player->SetAbsOrigin( move->GetAbsOrigin() );
 	player->SetAbsVelocity( move->m_vecVelocity );
 	player->SetPreviouslyPredictedOrigin( move->GetAbsOrigin() );
@@ -235,6 +238,7 @@ void CPlayerMove::FinishMove( CBasePlayer *player, CUserCmd *ucmd, CMoveData *mo
 	Assert( move->m_flConstraintRadius == player->m_flConstraintRadius );
 	Assert( move->m_flConstraintWidth == player->m_flConstraintWidth );
 	Assert( move->m_flConstraintSpeedFactor == player->m_flConstraintSpeedFactor );
+	Assert( move->m_bConstraintPastRadius == player->m_bConstraintPastRadius );
 }
 
 //-----------------------------------------------------------------------------
@@ -455,6 +459,7 @@ void CPlayerMove::RunCommand ( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 	RunPostThink( player );
 
 	g_pGameMovement->FinishTrackPredictionErrors( player );
+	g_pGameMovement->Reset();
 
 	FinishCommand( player );
 

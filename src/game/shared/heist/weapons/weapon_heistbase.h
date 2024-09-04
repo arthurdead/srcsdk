@@ -17,9 +17,6 @@ public:
 	DECLARE_CLASS(CWeaponHeistBase, CBaseCombatWeapon);
 	DECLARE_NETWORKCLASS(); 
 	DECLARE_PREDICTABLE();
-#ifdef GAME_DLL
-	DECLARE_DATADESC();
-#endif
 
 	CWeaponHeistBase();
 

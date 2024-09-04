@@ -18,11 +18,10 @@ class CEnvPlayerSurfaceTrigger : public CPointEntity
 {
 	DECLARE_CLASS( CEnvPlayerSurfaceTrigger, CPointEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	~CEnvPlayerSurfaceTrigger( void );
 	void	Spawn( void );
-	void	OnRestore( void );
 
 	// Main interface to all surface triggers
 	static void	SetPlayerSurface( CBasePlayer *pPlayer, char gameMaterial );

@@ -25,6 +25,7 @@ struct cmodel_t;
 struct vcollide_t;
 class CGameTrace;
 enum soundlevel_t;
+class CBasePlayer;
 
 //-----------------------------------------------------------------------------
 // Purpose: Identifies how submerged in water a player is.
@@ -62,7 +63,7 @@ public:
 	virtual	char const*		GetName( EntityHandle_t handle ) const = 0;
 
 	// sets the entity being moved
-	virtual void	SetHost( CBaseEntity *host ) = 0;
+	virtual void	SetHost( CBasePlayer *host ) = 0;
 
 	// Adds the trace result to touch list, if contact is not already in list.
 	virtual void	ResetTouchList( void ) = 0;

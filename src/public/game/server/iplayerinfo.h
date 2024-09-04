@@ -9,92 +9,9 @@
 
 #include "mathlib/vector.h"
 
-// helper class for user commands
-class CBotCmd
-{
-public:
-	CBotCmd()
-	{
-		Reset();
-	}
-
-	virtual ~CBotCmd() { };
-
-	void Reset()
-	{
-		command_number = 0;
-		tick_count = 0;
-		viewangles.Init();
-		forwardmove = 0.0f;
-		sidemove = 0.0f;
-		upmove = 0.0f;
-		buttons = 0;
-		impulse = 0;
-		weaponselect = 0;
-		weaponsubtype = 0;
-		random_seed = 0;
-		mousedx = 0;
-		mousedy = 0;
-
-		hasbeenpredicted = false;
-	}
-
-	CBotCmd& operator =( const CBotCmd& src )
-	{
-		if ( this == &src )
-			return *this;
-
-		command_number		= src.command_number;
-		tick_count			= src.tick_count;
-		viewangles			= src.viewangles;
-		forwardmove			= src.forwardmove;
-		sidemove			= src.sidemove;
-		upmove				= src.upmove;
-		buttons				= src.buttons;
-		impulse				= src.impulse;
-		weaponselect		= src.weaponselect;
-		weaponsubtype		= src.weaponsubtype;
-		random_seed			= src.random_seed;
-		mousedx				= src.mousedx;
-		mousedy				= src.mousedy;
-		hasbeenpredicted	= src.hasbeenpredicted;
-		return *this;
-	}
-
-	// For matching server and client commands for debugging
-	int		command_number;
-	
-	// the tick the client created this command
-	int		tick_count;
-	
-	// Player instantaneous view angles.
-	QAngle	viewangles;     
-	// Intended velocities
-	//	forward velocity.
-	float	forwardmove;   
-	//  sideways velocity.
-	float	sidemove;      
-	//  upward velocity.
-	float	upmove;         
-	// Attack button states
-	int		buttons;		
-	// Impulse command issued.
-	byte    impulse;        
-	// Current weapon id
-	int		weaponselect;	
-	int		weaponsubtype;
-
-	int		random_seed;	// For shared random functions
-
-	short	mousedx;		// mouse accum in x from create move
-	short	mousedy;		// mouse accum in y from create move
-
-	// Client only, tracks whether we've predicted this command at least once
-	bool	hasbeenpredicted;
-};
-
-
-
+class CUserCmd;
+struct edict_t;
+class CGlobalVars;
 
 abstract_class IPlayerInfo
 {
@@ -142,7 +59,7 @@ public:
 	// max health value
 	virtual const int GetMaxHealth() = 0;
 	// the last user input from this player
-	virtual CBotCmd GetLastUserCommand() = 0;
+	virtual CUserCmd GetLastUserCommand() = 0;
 
 	virtual bool IsReplay() = 0;
 };
@@ -156,38 +73,5 @@ public:
 	virtual CGlobalVars *GetGlobalVars() = 0;
 };
 
-
-
-
-abstract_class IBotController
-{
-public:
-	// change the bots position
-	virtual void SetAbsOrigin( Vector & vec ) = 0;
-	virtual void SetAbsAngles( QAngle & ang ) = 0;
-	virtual void SetLocalOrigin( const Vector& origin ) = 0;
-	virtual const Vector GetLocalOrigin( void ) = 0;
-	virtual void SetLocalAngles( const QAngle& angles ) = 0;
-	virtual const QAngle GetLocalAngles( void ) = 0;
-
-	// strip them of weapons, etc
-	virtual void RemoveAllItems( bool removeSuit ) = 0;
-	// give them a weapon
-	virtual void SetActiveWeapon( const char *WeaponName ) = 0;
-	// check various effect flags
-	virtual bool IsEFlagSet( int nEFlagMask ) = 0;
-	// fire a virtual move command to the bot
-	virtual void RunPlayerMove( CBotCmd *ucmd ) = 0;
-};
-
-
-#define INTERFACEVERSION_PLAYERBOTMANAGER			"BotManager001"
-abstract_class IBotManager
-{
-public:
-	virtual IBotController *GetBotController( edict_t *pEdict ) = 0;
-	// create a new bot and spawn it into the server
-	virtual edict_t *CreateBot( const char *botname ) = 0;
-};
 
 #endif // IPLAYERINFO_H

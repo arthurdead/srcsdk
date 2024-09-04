@@ -47,17 +47,12 @@ enum DrawFlags_t
 	DF_SHADOW_DEPTH_MAP		= 0x100000,	// Currently rendering a shadow depth map
 };
 
-#define MAX_DEPTH_TEXTURE_SHADOWS 1
-#define MAX_DEPTH_TEXTURE_HIGHRES_SHADOWS 0
-
-#define MAX_DEPTH_TEXTURE_SHADOWS_TOOLS 8
-#define MAX_DEPTH_TEXTURE_HIGHRES_SHADOWS_TOOLS 0
-
 
 //-----------------------------------------------------------------------------
 // Purpose: View setup and rendering
 //-----------------------------------------------------------------------------
 class CViewSetup;
+class CViewSetupEx;
 class C_BaseEntity;
 struct vrect_t;
 class C_BaseViewModel;
@@ -89,7 +84,7 @@ public:
 	virtual	void		Render( vrect_t *rect ) = 0;
 
 	// Called to render just a particular setup ( for timerefresh and envmap creation )
-	virtual void		RenderView( const CViewSetup &view, const CViewSetup &hudViewSetup, int nClearFlags, int whatToDraw ) = 0;
+	virtual void		RenderView( const CViewSetupEx &view, const CViewSetupEx &hudViewSetup, int nClearFlags, int whatToDraw ) = 0;
 
 	// What are we currently rendering? Returns a combination of DF_ flags.
 	virtual int GetDrawFlags() = 0;
@@ -104,8 +99,8 @@ public:
 
 	virtual bool		ShouldDrawBrushModels( void ) = 0;
 
-	virtual const CViewSetup *GetPlayerViewSetup( void ) const = 0;
-	virtual const CViewSetup *GetViewSetup( void ) const = 0;
+	virtual const CViewSetupEx *GetPlayerViewSetup( void ) const = 0;
+	virtual const CViewSetupEx *GetViewSetup( void ) const = 0;
 
 	virtual void		DisableVis( void ) = 0;
 

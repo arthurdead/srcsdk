@@ -100,6 +100,7 @@ static CUtlLinkedList< CEnvWindShared * > s_windControllers;
 CEnvWindShared::CEnvWindShared() : m_WindAveQueue(10), m_WindVariationQueue(10)
 {
 	m_pWindSound = NULL;
+	s_windControllers.AddToTail( this );
 }
 
 CEnvWindShared::~CEnvWindShared()

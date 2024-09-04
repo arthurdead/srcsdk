@@ -36,9 +36,6 @@ class CBaseProjectile : public CBaseAnimating, public IBaseProjectileAutoList
 public:
 	DECLARE_CLASS( CBaseProjectile, CBaseAnimating );
 	DECLARE_NETWORKCLASS();
-#ifdef GAME_DLL
-	DECLARE_DATADESC();
-#endif
 
 	CBaseProjectile();
 
@@ -57,7 +54,7 @@ public:
 	virtual bool IsDestroyable( void ) { return false; }
 	virtual void Destroy( bool bBlinkOut = true, bool bBreakRocket = false ) {}
 	virtual void SetLauncher( CBaseEntity *pLauncher );
-	CBaseEntity *GetOriginalLauncher() const { return m_hOriginalLauncher; }
+	CBaseEntity *GetOriginalLauncher() const { return m_hOriginalLauncher.Get(); }
 
 protected:
 #ifdef GAME_DLL

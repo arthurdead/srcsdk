@@ -25,16 +25,20 @@ class PHandle
 public:
 	PHandle() : m_iPanelID(INVALID_PANEL) {} //m_iSerialNumber(0), m_pListEntry(0) {}
 
-	Panel *Get();
-	Panel *Set( Panel *pPanel );
-	Panel *Set( HPanel hPanel );
+	Panel *Get() const;
+	void Set( Panel *pPanel );
+	void Set( HPanel hPanel );
+	void Set( std::nullptr_t ) { Set(INVALID_PANEL); }
 
-	operator Panel *()						{ return Get(); }
-	Panel * operator ->()					{ return Get(); }
-	Panel * operator = (Panel *pPanel)		{ return Set(pPanel); }
+	operator Panel *() const						{ return Get(); }
+	Panel * operator ->() const					{ return Get(); }
+	PHandle & operator = (Panel *pPanel)		{ Set(pPanel); return *this; }
+	PHandle & operator = (std::nullptr_t)		{ Set(INVALID_PANEL); return *this; }
 
-	bool operator == (Panel *pPanel)		{ return (Get() == pPanel); }
-	operator bool ()						{ return Get() != 0; }
+	bool operator == (Panel *pPanel) const		{ return (Get() == pPanel); }
+	bool operator != (Panel *pPanel) const		{ return (Get() != pPanel); }
+	operator bool () const						{ return Get() != NULL; }
+	bool operator ! () const						{ return Get() == NULL; }
 
 private:
 	HPanel m_iPanelID;
@@ -48,14 +52,18 @@ class VPanelHandle
 public:
 	VPanelHandle() : m_iPanelID(INVALID_PANEL) {}
 
-	VPANEL Get();
-	VPANEL Set( VPANEL pPanel );
+	VPANEL Get() const;
+	void Set( VPANEL pPanel );
+	void Set( std::nullptr_t );
 
-	operator VPANEL ()						{ return Get(); }
-	VPANEL operator = (VPANEL pPanel)		{ return Set(pPanel); }
+	operator VPANEL () const						{ return Get(); }
+	VPanelHandle &operator = (VPANEL pPanel)		{ Set(pPanel); return *this; }
+	VPanelHandle &operator = (std::nullptr_t)		{ Set(INVALID_VPANEL); return *this; }
 
-	bool operator == (VPANEL pPanel)		{ return (Get() == pPanel); }
-	operator bool ()						{ return Get() != 0; }
+	bool operator == (VPANEL pPanel) const		{ return (Get() == pPanel); }
+	bool operator != (VPANEL pPanel) const		{ return (Get() != pPanel); }
+	operator bool () const						{ return Get() != INVALID_VPANEL; }
+	bool operator ! () const						{ return Get() == INVALID_VPANEL; }
 
 private:
 	HPanel m_iPanelID;
@@ -68,15 +76,18 @@ template< class PanelType >
 class DHANDLE : public PHandle
 {
 public:
-	PanelType *Get()					{ return (PanelType *)PHandle::Get(); }
-	PanelType *Set( PanelType *pPanel )	{ return (PanelType *)PHandle::Set(pPanel); }
-	PanelType *Set( HPanel hPanel )		{ return (PanelType *)PHandle::Set(hPanel); }
+	PanelType *Get() const					{ return (PanelType *)PHandle::Get(); }
+	void Set( PanelType *pPanel )	{ PHandle::Set(pPanel); }
+	void Set( std::nullptr_t)		{ PHandle::Set(INVALID_PANEL); }
 
-	operator PanelType *()						{ return (PanelType *)PHandle::Get(); }
-	PanelType * operator ->()					{ return (PanelType *)PHandle::Get(); }
-	PanelType * operator = (PanelType *pPanel)	{ return (PanelType *)PHandle::Set(pPanel); }
-	bool operator == (Panel *pPanel)			{ return (PHandle::Get() == pPanel); }
-	operator bool ()							{ return PHandle::Get() != NULL; }
+	operator PanelType *() const						{ return (PanelType *)PHandle::Get(); }
+	PanelType * operator ->() const					{ return (PanelType *)PHandle::Get(); }
+	DHANDLE & operator = (PanelType *pPanel)	{ PHandle::Set(pPanel); return *this; }
+	DHANDLE & operator = (std::nullptr_t)	{ PHandle::Set(INVALID_PANEL); return *this; }
+	bool operator == (PanelType *pPanel) const			{ return (PHandle::Get() == pPanel); }
+	bool operator != (PanelType *pPanel) const			{ return (PHandle::Get() != pPanel); }
+	operator bool () const							{ return PHandle::Get() != NULL; }
+	bool operator ! () const							{ return PHandle::Get() == NULL; }
 };
 
 };

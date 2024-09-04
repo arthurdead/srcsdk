@@ -20,8 +20,6 @@
 class CPlayerLocalData
 {
 public:
-	// Save/restore
-	DECLARE_SIMPLE_DATADESC();
 	// Prediction data copying
 	DECLARE_CLASS_NOBASE( CPlayerLocalData );
 	DECLARE_EMBEDDED_NETWORKVAR();
@@ -72,6 +70,9 @@ public:
 	CNetworkVar( bool, m_bPoisoned );
 	CNetworkVar( float, m_flStepSize );
 	CNetworkVar( bool, m_bAllowAutoMovement );
+
+	// Autoaim
+	CNetworkVar( bool,	m_bAutoAimTarget );
 
 	// 3d skybox
 	CNetworkVarEmbedded( sky3dparams_t, m_skybox3d );

@@ -24,7 +24,7 @@ class CPostProcessController : public CBaseEntity
 {
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CPostProcessController, CBaseEntity );
 
 	CPostProcessController();

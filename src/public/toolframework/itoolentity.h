@@ -39,11 +39,10 @@ class IEntityFindFilter;
 //-----------------------------------------------------------------------------
 // Safe accessor to an entity
 //-----------------------------------------------------------------------------
-typedef unsigned int HTOOLHANDLE;
-enum
+enum class HTOOLHANDLE : unsigned int
 {
-	HTOOLHANDLE_INVALID = 0
 };
+inline const HTOOLHANDLE HTOOLHANDLE_INVALID = (HTOOLHANDLE)0;
 
 
 //-----------------------------------------------------------------------------
@@ -55,8 +54,9 @@ enum ClientShadowFlags_t
 	SHADOW_FLAGS_ANIMATING_SOURCE		= (SHADOW_FLAGS_LAST_FLAG<<2),
 	SHADOW_FLAGS_USE_DEPTH_TEXTURE		= (SHADOW_FLAGS_LAST_FLAG<<3),
 	SHADOW_FLAGS_CUSTOM_DRAW			= (SHADOW_FLAGS_LAST_FLAG<<4),
-	// Update this if you add flags
 	CLIENT_SHADOW_FLAGS_LAST_FLAG		= SHADOW_FLAGS_CUSTOM_DRAW
+
+	//if you add new flags you must update ShadowFlags_t from public/engine/ishadowmgr.h
 };
 
 
@@ -217,10 +217,12 @@ private:
 	}
 
 private:
+#ifdef _DEBUG
 	virtual void			AddClientRenderable( IClientRenderable *pRenderable, int renderGroup ) final
 	{
 		DebuggerBreak();
 	}
+#endif
 
 public:
 	virtual void			AddClientRenderable( IClientRenderable *pRenderable, bool bDrawWithViewModels, RenderableTranslucencyType_t nType, RenderableModelType_t nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE ) = 0;

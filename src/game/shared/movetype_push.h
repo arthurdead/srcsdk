@@ -8,6 +8,9 @@
 #define MOVETYPE_PUSH_H
 #pragma once
 
+#include "mathlib/vector.h"
+#include "ehandle.h"
+
 const int MAX_PUSHED_ENTITIES = 32;
 struct physicspushlist_t
 {

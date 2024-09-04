@@ -51,7 +51,7 @@ public:
 	{
 		// FIxme, set speed to zero?
 	}
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 
@@ -60,12 +60,12 @@ private:
 
 LINK_ENTITY_TO_CLASS( func_tanktrain, CFuncTankTrain );
 
-BEGIN_DATADESC( CFuncTankTrain )
+BEGIN_MAPENTITY( CFuncTankTrain )
 
 	// Outputs
 	DEFINE_OUTPUT(m_OnDeath, "OnDeath"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 void CFuncTankTrain::Spawn( void )
@@ -111,7 +111,7 @@ public:
 	void Precache( void );
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	variant_t	m_newTarget;
@@ -120,12 +120,11 @@ private:
 
 LINK_ENTITY_TO_CLASS( tanktrain_aitarget, CTankTargetChange );
 
-BEGIN_DATADESC( CTankTargetChange )
+BEGIN_MAPENTITY( CTankTargetChange )
 
-	// DEFINE_FIELD( m_newTarget, variant_t ),
 	DEFINE_KEYFIELD( m_newTargetName, FIELD_STRING, "newtarget" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 void CTankTargetChange::Precache( void )
@@ -170,7 +169,7 @@ public:
 
 	CBaseEntity *FindTarget( string_t target, CBaseEntity *pActivator );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	// INPUTS
 	void InputTargetEntity( inputdata_t &inputdata );
@@ -191,23 +190,16 @@ private:
 
 LINK_ENTITY_TO_CLASS( tanktrain_ai, CTankTrainAI );
 
-BEGIN_DATADESC( CTankTrainAI )
-
-	DEFINE_FIELD( m_hTrain, FIELD_EHANDLE),
-	DEFINE_FIELD( m_hTargetEntity, FIELD_EHANDLE),
-	DEFINE_FIELD( m_soundPlaying, FIELD_INTEGER),
-	DEFINE_SOUNDPATCH( m_soundTreads ),
-	DEFINE_SOUNDPATCH( m_soundEngine ),
+BEGIN_MAPENTITY( CTankTrainAI )
 
 	DEFINE_KEYFIELD( m_startSoundName, FIELD_STRING, "startsound" ),
 	DEFINE_KEYFIELD( m_engineSoundName, FIELD_STRING, "enginesound" ),
 	DEFINE_KEYFIELD( m_movementSoundName, FIELD_STRING, "movementsound" ),
-	DEFINE_FIELD( m_targetEntityName, FIELD_STRING),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "TargetEntity", InputTargetEntity ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

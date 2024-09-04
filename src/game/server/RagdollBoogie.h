@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "baseentity.h"
 
 //-----------------------------------------------------------------------------
 // Set this spawnflag before calling Spawn to get electrical effects
@@ -22,7 +23,6 @@
 //-----------------------------------------------------------------------------
 class CRagdollBoogie : public CBaseEntity 
 {
-	DECLARE_DATADESC();
 	DECLARE_CLASS( CRagdollBoogie, CBaseEntity );
 
 public:
@@ -30,6 +30,7 @@ public:
 	static void IncrementSuppressionCount( CBaseEntity *pTarget );
 	static void DecrementSuppressionCount( CBaseEntity *pTarget );
 
+	virtual void Precache();
 	void Spawn();
 
 private:

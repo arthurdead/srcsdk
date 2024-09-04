@@ -904,21 +904,24 @@ bool InitGameSystems( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	// Load the ClientScheme just once
 	vgui::scheme()->LoadSchemeFromFileEx( VGui_GetFullscreenRootVPANEL(), "resource/ClientScheme.res", "ClientScheme");
 
-	GetClientMode()->InitViewport();
-
+	if(GetClientMode() != GetFullscreenClientMode()) {
+		GetClientMode()->InitViewport();
+	}
 	GetFullscreenClientMode()->InitViewport();
 
 	GetHud().Init();
 
-	GetClientMode()->Init();
-
+	if(GetClientMode() != GetFullscreenClientMode()) {
+		GetClientMode()->Init();
+	}
 	GetFullscreenClientMode()->Init();
 
 	if ( !IGameSystem::InitAllSystems() )
 		return false;
 
-	GetClientMode()->Enable();
-
+	if(GetClientMode() != GetFullscreenClientMode()) {
+		GetClientMode()->Enable();
+	}
 	GetFullscreenClientMode()->EnableWithRootPanel( VGui_GetFullscreenRootVPANEL() );
 
 	GetViewRenderInstance()->Init();
@@ -953,14 +956,14 @@ bool InitGameSystems( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 static void *ClientCreateInterfaceHook(const char *pName, int *pCode)
 {
-	static const int matproxyver_len = V_strlen(IMATERIAL_PROXY_INTERFACE_VERSION);
+	static const int matproxyver_len = V_strlen(INTERNAL_IMATERIAL_PROXY_INTERFACE_VERSION);
 	static char buffer[MAX_PATH];
 
 	int totallen = V_strlen(pName);
 	DebuggerBreak();
 	if(totallen >= matproxyver_len) {
 		const char *nameend = ((pName+totallen)-matproxyver_len);
-		if(V_strnicmp(nameend, IMATERIAL_PROXY_INTERFACE_VERSION, matproxyver_len) == 0) {
+		if(V_strnicmp(nameend, INTERNAL_IMATERIAL_PROXY_INTERFACE_VERSION, matproxyver_len) == 0) {
 			int namelen = (nameend-pName);
 			if(namelen > 0)
 				V_strncpy(buffer, pName, namelen);
@@ -1249,10 +1252,14 @@ void CHLClient::Shutdown( void )
 
 	Initializer::FreeAllObjects();
 
-	GetClientMode()->Disable();
+	if(GetClientMode() != GetFullscreenClientMode()) {
+		GetClientMode()->Disable();
+	}
 	GetFullscreenClientMode()->Disable();
 
-	GetClientMode()->Shutdown();
+	if(GetClientMode() != GetFullscreenClientMode()) {
+		GetClientMode()->Shutdown();
+	}
 	GetFullscreenClientMode()->Shutdown();
 
 	input->Shutdown_All();
@@ -2552,6 +2559,21 @@ int CHLClient::GetScreenHeight()
 	return ScreenHeight();
 }
 
+void CHLClient::RecordDemoPolishUserInput( int nCmdIndex )
+{
+#ifdef DEMOPOLISH_ENABLED
+	Assert( engine->IsRecordingDemo() );
+	Assert( IsDemoPolishEnabled() );	// NOTE: cl_demo_polish_enabled checked in engine.
+	
+	CUserCmd const* pUserCmd = input->GetUserCmd( nCmdIndex );
+	Assert( pUserCmd );
+	if ( pUserCmd )
+	{
+		DemoPolish_GetRecorder().RecordUserInput( pUserCmd );
+	}
+#endif
+}
+
 bool CHLClient::CacheReplayRagdolls( const char* pFilename, int nStartTick )
 {
 #if defined( REPLAY_ENABLED )
@@ -2566,7 +2588,8 @@ bool CHLClient::CacheReplayRagdolls( const char* pFilename, int nStartTick )
 void CHLClient::RenderView( const CViewSetup &setup, int nClearFlags, int whatToDraw )
 {
 	VPROF("RenderView");
-	GetViewRenderInstance()->RenderView( setup, setup, nClearFlags, whatToDraw );
+	CViewSetupEx setupex = setup;
+	GetViewRenderInstance()->RenderView( setupex, setupex, nClearFlags, whatToDraw );
 }
 
 bool CHLClient::ShouldHideLoadingPlaque( void )

@@ -36,7 +36,7 @@ public:
 	void InputTurnOff( inputdata_t &inputdata );
 	void InputToggle( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	string_t m_iszLaserTarget;	// Name of entity or entities to strike at, randomly picked if more than one match.
 	CSprite	*m_pSprite;

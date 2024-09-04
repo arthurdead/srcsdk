@@ -22,11 +22,9 @@
 #include "tier0/memdbgon.h"
 
 ConVar sv_pushaway_clientside_size( "sv_pushaway_clientside_size", "15", FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY, "Minimum size of pushback objects" );
-ConVar props_break_max_pieces( "props_break_max_pieces", "-1", 0, "Maximum prop breakable piece count (-1 = model default)" );
+ConVar props_break_max_pieces( "props_break_max_pieces", "-1", FCVAR_REPLICATED, "Maximum prop breakable piece count (-1 = model default)" );
 ConVar props_break_max_pieces_perframe( "props_break_max_pieces_perframe", "-1", FCVAR_REPLICATED, "Maximum prop breakable piece count per frame (-1 = model default)" );
-#ifdef GAME_DLL
-extern ConVar breakable_multiplayer;
-#else
+#ifdef CLIENT_DLL
 ConVar cl_burninggibs( "cl_burninggibs", "0", 0, "A burning player that gibs has burning gibs." );
 #endif // GAME_DLL
 
@@ -161,6 +159,7 @@ propdata_interaction_s sPropdataInteractionSections[PROPINTER_NUM_INTERACTIONS] 
 	{ "physgun_interactions", "onlaunch", "spin_none" },		// PROPINTER_PHYSGUN_LAUNCH_SPIN_NONE,
 	{ "physgun_interactions", "onlaunch", "spin_zaxis" },		// PROPINTER_PHYSGUN_LAUNCH_SPIN_Z,
 	{ "physgun_interactions", "onbreak", "explode_fire" },		// PROPINTER_PHYSGUN_BREAK_EXPLODE,
+	{ "physgun_interactions", "onbreak", "explode_ice" },		// PROPINTER_PHYSGUN_BREAK_EXPLODE_ICE,
 	{ "physgun_interactions", "damage", "none" },				// PROPINTER_PHYSGUN_DAMAGE_NONE,
 	
 	{ "fire_interactions", "flammable", "yes" },				// PROPINTER_FIRE_FLAMMABLE,
@@ -172,6 +171,8 @@ propdata_interaction_s sPropdataInteractionSections[PROPINTER_NUM_INTERACTIONS] 
 	{ "physgun_interactions", "allow_overhead", "yes" },	// 	PROPINTER_PHYSGUN_ALLOW_OVERHEAD,
 
 	{ "world_interactions", "onworldimpact", "bloodsplat" },	// PROPINTER_WORLD_BLOODSPLAT,
+	{ "physgun_interactions", "physgun_notify_children", "yes" },// PROPINTER_PHYSGUN_NOTIFY_CHILDREN,
+	{ "fire_interactions", "melee_immune", "yes" },				// PROPINTER_MELEE_IMMUNE,	
 };
 #else
 extern propdata_interaction_s sPropdataInteractionSections[PROPINTER_NUM_INTERACTIONS];
@@ -763,7 +764,7 @@ extern const char *GetMassEquivalent(float flMass);
 class CGameGibManager : public CBaseEntity
 {
 	DECLARE_CLASS( CGameGibManager, CBaseEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 
@@ -793,18 +794,15 @@ private:
 	int			m_iLastFrame;
 };
 
-BEGIN_DATADESC( CGameGibManager )
-	// Silence perfidous classcheck!
-	//DEFINE_FIELD( m_iCurrentMaxPieces, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_iLastFrame, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_iDXLevel, FIELD_INTEGER ),
+BEGIN_MAPENTITY( CGameGibManager )
+
 	DEFINE_KEYFIELD( m_iMaxPieces, FIELD_INTEGER, "maxpieces" ),
 	DEFINE_KEYFIELD( m_iMaxPiecesDX8, FIELD_INTEGER, "maxpiecesdx8" ),
 	DEFINE_KEYFIELD( m_bAllowNewGibs, FIELD_BOOLEAN, "allownewgibs" ),
 
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMaxPieces", InputSetMaxPieces ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMaxPiecesDX8", InputSetMaxPiecesDX8 ),
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( game_gib_manager, CGameGibManager );
 
@@ -1015,24 +1013,16 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 				continue;
 			}
 
-			// Skip multiplayer pieces that should be spawning on the other dll
 #ifdef GAME_DLL
-			if ( gpGlobals->maxClients > 1 && breakable_multiplayer.GetBool() )
+			if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_CLIENTSIDE )
+				continue;
 #else
-			if ( gpGlobals->maxClients > 1 )
-#endif
-			{
-#ifdef GAME_DLL
-				if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_CLIENTSIDE )
-					continue;
-#else
-				if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_SERVERSIDE )
-					continue;
+			if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_SERVERSIDE )
+				continue;
 #endif
 
-				if ( !defaultLocation && list[i].mpBreakMode == MULTIPLAYER_BREAK_DEFAULT )
-					continue;
-			}
+			if ( !defaultLocation && list[i].mpBreakMode == MULTIPLAYER_BREAK_DEFAULT )
+				continue;
 
 			if ( ( nPropCount != -1 ) && ( nPropBreakablesPerFrameCount > nPropCount ) )
 				break;
@@ -1090,8 +1080,14 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 				VectorTransform( list[i].offset - placementOrigin, matrix, position );
 			}
 			Vector objectVelocity = params.velocity;
+			float flScale = VectorNormalize( objectVelocity );
+			objectVelocity.x += RandomFloat( -1.f, 1.0f );
+			objectVelocity.y += RandomFloat( -1.0f, 1.0f );
+			objectVelocity.z += RandomFloat( 0.0f, 1.0f );
+			VectorNormalize( objectVelocity );
+			objectVelocity *= flScale;
 
-			if (pPhysics)
+			if (pPhysics && !params.useThisRawVelocity)
 			{
 				pPhysics->GetVelocityAtPoint( position, &objectVelocity );
 			}
@@ -1507,7 +1503,7 @@ CBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex,
 				objectVelocity *= flScale;
 			}
 
-			if (pPhysics)
+			if (pPhysics && !params.useThisRawVelocity)
 			{
 				pPhysics->GetVelocityAtPoint( position, &objectVelocity );
 			}

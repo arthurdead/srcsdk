@@ -7,11 +7,17 @@
 
 #ifndef AI_DEBUG_H
 #define AI_DEBUG_H
+#pragma once
+
+#include "mathlib/vector.h"
 
 #include "fmtstr.h"
 #include "ai_debug_shared.h"
+#include "tier1/convar.h"
+#include "gametrace.h"
 
-#pragma once
+class CAI_BaseNPC;
+class ITraceFilter;
 
 // This dumps a summary result on exit
 //#define PROFILE_AI 1

@@ -23,3 +23,8 @@
 #undef MEM_OVERRIDE_ON
 
 #endif
+
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL nullptr

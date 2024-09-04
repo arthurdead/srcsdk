@@ -206,6 +206,14 @@ void DispatchEffect( const char *pName, const CEffectData &data )
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Clientside version
+//-----------------------------------------------------------------------------
+void TE_DispatchEffect( IRecipientFilter& filter, float delay, const Vector &pos, const char *pName, const CEffectData &data )
+{
+	DispatchEffect(filter, delay, pos, pName, data );
+}
+
+//-----------------------------------------------------------------------------
 // Playback
 //-----------------------------------------------------------------------------
 void DispatchEffect( IRecipientFilter& filter, float delay, KeyValues *pKeyValues )
@@ -238,11 +246,16 @@ void DispatchEffect( IRecipientFilter& filter, float delay, KeyValues *pKeyValue
 
 	// NOTE: Ptrs are our way of indicating it's an entindex
 	ClientEntityHandle_t hWorld = ClientEntityList().EntIndexToHandle( 0 );
-	data.m_hEntity = (int)pKeyValues->GetPtr( "entindex", (void*)hWorld.ToInt() );
+	data.m_hEntity = CBaseHandle((unsigned long)pKeyValues->GetPtr( "entindex", (void*)hWorld.ToInt() ));
 
 	const char *pEffectName = pKeyValues->GetString( "effectname" );
 
 	DispatchEffect( filter, 0.0f, data.m_vOrigin, pEffectName, data );
+}
+
+void TE_DispatchEffect( IRecipientFilter& filter, float delay, KeyValues *pKeyValues )
+{
+	DispatchEffect(filter, delay, pKeyValues);
 }
 
 //-----------------------------------------------------------------------------

@@ -32,11 +32,7 @@ static const char *s_pElectroThinkContext = "ElectroThinkContext";
 //-----------------------------------------------------------------------------
 BEGIN_DATADESC( CEntityFreezing )
 
-	DEFINE_FIELD( m_vFreezingOrigin, FIELD_VECTOR ),
-	DEFINE_AUTO_ARRAY( m_flFrozenPerHitbox, FIELD_FLOAT ),
 	DEFINE_KEYFIELD( m_flFrozen, FIELD_FLOAT, "frozen" ),
-
-	DEFINE_FIELD( m_bFinishFreezing, FIELD_BOOLEAN ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "Freeze", InputFreeze ),
 

@@ -93,7 +93,7 @@ public:
 // IClientUnknown implementation.
 public:
 	virtual void SetRefEHandle( const CBaseHandle &handle )	{ Assert( false ); }
-	virtual const CBaseHandle& GetRefEHandle() const		{ Assert( false ); return NULL_HANDLE; }
+	virtual const CBaseHandle& GetRefEHandle() const		{ Assert( false ); return NULL_BASEHANDLE; }
 
 	virtual IClientUnknown*		GetIClientUnknown()		{ return this; }
 	virtual IClientUnknownMod*	GetIClientUnknownMod() { return this; }

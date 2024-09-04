@@ -7,10 +7,10 @@
 
 #ifndef AI_ROUTEDIST_H
 #define AI_ROUTEDIST_H
+#pragma once
 
 #include "ai_navtype.h"
-
-#pragma once
+#include "mathlib/vector.h"
 
 // ----------------------------------------------------------------------------
 // Computes the route distance + route direction based on nav type
@@ -43,7 +43,7 @@ inline void ComputePathVector( Navigation_t navType, const Vector &start, const 
 
 inline float ComputePathDirection( Navigation_t navType, const Vector &start, const Vector &end, Vector *pDirection )
 {
-	if (navType == NAV_GROUND)
+	if (navType == NAV_GROUND || navType == NAV_CRAWL)
 	{
 		VectorSubtract( end, start, *pDirection );
 		pDirection->z = 0.0f;

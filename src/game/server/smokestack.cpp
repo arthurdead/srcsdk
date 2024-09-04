@@ -44,16 +44,7 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( env_smokestack, CSmokeStack );
 
-
-//Save/restore
-
-BEGIN_SIMPLE_DATADESC( CSmokeStackLightInfo )
-	DEFINE_FIELD( m_vPos,			FIELD_POSITION_VECTOR	),
-	DEFINE_FIELD( m_vColor,		FIELD_VECTOR	),
-	DEFINE_FIELD( m_flIntensity,	FIELD_FLOAT	),
-END_DATADESC()
-
-BEGIN_DATADESC( CSmokeStack )
+BEGIN_MAPENTITY( CSmokeStack )
 
 	//Keyvalue fields
 	DEFINE_KEYFIELD( m_StartSize,		FIELD_FLOAT,	"StartSize" ),
@@ -63,18 +54,8 @@ BEGIN_DATADESC( CSmokeStack )
 	DEFINE_KEYFIELD( m_flTwist,		FIELD_FLOAT,	"Twist" ),
 	DEFINE_KEYFIELD( m_flRollSpeed, FIELD_FLOAT,	"Roll" ),
 
-	DEFINE_FIELD( m_strMaterialModel, FIELD_STRING ),
-	DEFINE_FIELD( m_iMaterialModel,FIELD_INTEGER ),
-
-	DEFINE_EMBEDDED( m_AmbientLight ),
-	DEFINE_EMBEDDED( m_DirLight ),
-
 	DEFINE_KEYFIELD( m_WindAngle, FIELD_INTEGER,	"WindAngle" ),
 	DEFINE_KEYFIELD( m_WindSpeed, FIELD_INTEGER,	"WindSpeed" ),
-
-	//Regular fields
-	DEFINE_FIELD( m_vWind,	FIELD_VECTOR ),
-	DEFINE_FIELD( m_bEmit,	FIELD_INTEGER ),
 
 	// Inputs
 	DEFINE_INPUT( m_JetLength, FIELD_FLOAT, "JetLength" ),
@@ -86,7 +67,7 @@ BEGIN_DATADESC( CSmokeStack )
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -102,7 +83,8 @@ CSmokeStack::CSmokeStack()
 	IMPLEMENT_NETWORKVAR_CHAIN( &m_DirLight );
 
 	m_flTwist = 0;
-	SetRenderColor( 0, 0, 0, 255 );
+	SetRenderColor( 0, 0, 0 );
+	SetRenderAlpha( 255 );
 	m_vWind.GetForModify().Init();
 	m_WindAngle = m_WindSpeed = 0;
 	m_iMaterialModel = -1;

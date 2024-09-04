@@ -8,6 +8,11 @@
 #pragma once
 
 #include "movetype_push.h"
+#include "networkvar.h"
+#include "gametrace.h"
+#include "util_shared.h"
+#include "baseentity.h"
+#include "vphysics_interface.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Keeps track of original positions of any entities that are being possibly pushed
@@ -69,10 +74,10 @@ protected:
 	void	ComputeRotationalPushDirection( CBaseEntity *pBlocker, const RotatingPushMove_t &rotPushMove, Vector *pMove, CBaseEntity *pRoot );
 
 	// Speculatively checks to see if all entities in this list can be pushed
-	bool SpeculativelyCheckPush( PhysicsPushedInfo_t &info, const Vector &vecAbsPush, bool bRotationalPush );
+	bool SpeculativelyCheckPush( PhysicsPushedInfo_t &info, const Vector &vecAbsPush, bool bRotationalPush, CBaseEntity *pRoot );
 
 	// Speculatively checks to see if all entities in this list can be pushed
-	virtual bool SpeculativelyCheckRotPush( const RotatingPushMove_t &rotPushMove, CBaseEntity *pRoot );
+	virtual bool SpeculativelyCheckRotPush( const RotatingPushMove_t &rotPushMove, CBaseEntity *pRoot = NULL );
 
 	// Speculatively checks to see if all entities in this list can be pushed
 	virtual bool	SpeculativelyCheckLinearPush( const Vector &vecAbsPush );

@@ -92,11 +92,10 @@ public:
 
 	virtual		void		CAM_Think( void );
 
-	virtual int			CAM_Get();
+	virtual int			CAM_Get() { return m_nCamMode; }
 	virtual void		CAM_Set(int mode);
 
 	virtual		void		CAM_GetCameraOffset( Vector& ofs );
-	virtual		void		CAM_Command( int command );
 	virtual		void		CAM_StartMouseMove(void);
 	virtual		void		CAM_EndMouseMove(void);
 	virtual		void		CAM_StartDistance(void);
@@ -213,6 +212,10 @@ private:
 	float		m_flPreviousMouseYPosition;
 	float		m_flRemainingJoystickSampleTime;
 	float		m_flKeyboardSampleTime;
+
+	float		m_flSpinFrameTime;
+	float		m_flSpinRate;
+	float		m_flLastYawAngle;
 
 	// Flag to restore systemparameters when exiting
 	bool		m_fRestoreSPI;

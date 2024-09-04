@@ -37,7 +37,7 @@
 #define SF_DOOR_SILENT_TO_NPCS		16384	// Does not alert NPC's when opened.
 #define SF_DOOR_IGNORE_USE			32768	// Completely ignores player +use commands.
 #define SF_DOOR_NEW_USE_RULES		65536	// For func_door entities, behave more like prop_door_rotating with respect to +USE (changelist 242482)
-
+#define SF_DOOR_START_UNBREAKABLE	524288
 
 enum FuncDoorSpawnPos_t
 {
@@ -74,7 +74,7 @@ public:
 		return flags;
 	};
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	// This is ONLY used by the node graph to test movement through a door
 	void InputSetToggleState( inputdata_t &inputdata );
@@ -142,11 +142,11 @@ public:
 	void			StartMovingSound( void );
 	virtual void	StopMovingSound( void );
 	void			MovingSoundThink( void );
-#ifdef HL1_DLL
+
 	bool		PassesBlockTouchFilter(CBaseEntity *pOther);
 	string_t	m_iBlockFilterName;
 	EHANDLE		m_hBlockFilter;
-#endif
+
 	
 	bool		ShouldLoopMoveSound( void ) { return m_bLoopMoveSound; }
 	bool		m_bLoopMoveSound;			// Move sound loops until stopped

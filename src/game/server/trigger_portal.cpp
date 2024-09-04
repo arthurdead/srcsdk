@@ -8,7 +8,6 @@
 #include "baseentity.h"
 #include "triggers.h"
 #include "modelentities.h"
-#include "saverestore_utlvector.h"
 #include "player_pickup.h"
 #include "vphysics/friction.h"
 
@@ -28,7 +27,7 @@ ConVar portal_debug( "portal_debug", "0", FCVAR_CHEAT, "Turn on debugging for po
 class CTriggerPortal : public CBaseTrigger
 {
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CTriggerPortal, CBaseTrigger );
 	DECLARE_SERVERCLASS();
 
@@ -58,21 +57,13 @@ private:
 
 LINK_ENTITY_TO_CLASS( trigger_portal, CTriggerPortal );
 
-BEGIN_DATADESC( CTriggerPortal )
+BEGIN_MAPENTITY( CTriggerPortal )
 	DEFINE_KEYFIELD( m_strRemotePortal, FIELD_STRING, "RemotePortal" ),
-
-	DEFINE_FIELD( m_hRemotePortal, FIELD_EHANDLE ),
-	DEFINE_UTLVECTOR( m_hDisabledForEntities, FIELD_EHANDLE ),
-
-	// TEMP: Only keep this field while portals are still brushes
-	DEFINE_FIELD( m_qFaceAngles, FIELD_VECTOR ),
-
-	DEFINE_THINKFUNC( DisabledThink ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetRemotePortal", InputSetRemotePortal ),
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST( CTriggerPortal, DT_TriggerPortal )
 	SendPropEHandle(SENDINFO(m_hRemotePortal)),

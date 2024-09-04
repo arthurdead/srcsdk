@@ -54,7 +54,7 @@ CBitmapImagePanel::CBitmapImagePanel( Panel *parent, char const *panelName,
 
 	if ( filename && filename[ 0 ] )
 	{
-		m_pImage = scheme()->GetImage( filename, NULL );
+		m_pImage = scheme()->GetImage( filename, false );
 		m_pszImageName = CloneString( filename );
 	}
 

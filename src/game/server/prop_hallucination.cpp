@@ -17,7 +17,7 @@ class CProp_Hallucination : public CBaseAnimating
 public:
 	DECLARE_CLASS( CProp_Hallucination, CBaseAnimating );
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CProp_Hallucination( void );
 	virtual void Precache( void );
@@ -34,8 +34,7 @@ public:
 	CNetworkVar( float, m_fRechargeTime ); //how long in seconds it takes the hallucination to recharge before becoming visible again. 0 to disable
 };
 
-BEGIN_DATADESC( CProp_Hallucination )
-	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
+BEGIN_MAPENTITY( CProp_Hallucination )
 	DEFINE_KEYFIELD( m_fStartEnabledChance, FIELD_FLOAT, "EnabledChance" ),
 	DEFINE_KEYFIELD( m_fVisibleTime, FIELD_FLOAT, "VisibleTime" ),
 	DEFINE_KEYFIELD( m_fRechargeTime, FIELD_FLOAT, "RechargeTime" ),
@@ -43,7 +42,7 @@ BEGIN_DATADESC( CProp_Hallucination )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetVisibleTime", InputSetVisibleTime ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetRechargeTime", InputSetRechargeTime ),
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST( CProp_Hallucination, DT_Prop_Hallucination )
 	SendPropBool( SENDINFO(m_bEnabled) ),

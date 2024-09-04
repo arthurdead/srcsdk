@@ -145,7 +145,7 @@ CBaseEntityList::CBaseEntityList()
 	{
 		m_EntPtrArray[i].ClearLinks();
 		m_EntPtrArray[i].m_SerialNumber = (rand()& SERIAL_MASK); // generate random starting serial number
-		m_EntPtrArray[i].m_pEntity = NULL;
+		m_EntPtrArray[i].m_pBaseEnt = NULL;
 	}
 
 	// make a free list of the non-networkable entities
@@ -171,8 +171,11 @@ CBaseEntityList::~CBaseEntityList()
 }
 
 
-CBaseHandle CBaseEntityList::AddNetworkableEntity( IHandleEntity *pEnt, int index, int iForcedSerialNum )
+EHANDLE CBaseEntityList::AddNetworkableEntity( CBaseEntity *pEnt, int index, int iForcedSerialNum )
 {
+	if(!pEnt)
+		return NULL_EHANDLE;
+
 	if(LookupEntity(pEnt->GetRefEHandle()) != NULL)
 		return pEnt->GetRefEHandle();
 
@@ -181,8 +184,11 @@ CBaseHandle CBaseEntityList::AddNetworkableEntity( IHandleEntity *pEnt, int inde
 }
 
 
-CBaseHandle CBaseEntityList::AddNonNetworkableEntity( IHandleEntity *pEnt )
+EHANDLE CBaseEntityList::AddNonNetworkableEntity( CBaseEntity *pEnt )
 {
+	if(!pEnt)
+		return NULL_EHANDLE;
+
 	if(LookupEntity(pEnt->GetRefEHandle()) != NULL)
 		return pEnt->GetRefEHandle();
 
@@ -192,7 +198,7 @@ CBaseHandle CBaseEntityList::AddNonNetworkableEntity( IHandleEntity *pEnt )
 	{
 		Warning( "CBaseEntityList::AddNonNetworkableEntity: no free slots!\n" );
 		AssertMsg( 0, ( "CBaseEntityList::AddNonNetworkableEntity: no free slots!\n" ) );
-		return CBaseHandle();
+		return NULL_EHANDLE;
 	}
 
 	// Move from the free list into the allocated list.
@@ -209,12 +215,12 @@ void CBaseEntityList::RemoveEntity( CBaseHandle handle )
 }
 
 
-CBaseHandle CBaseEntityList::AddEntityAtSlot( IHandleEntity *pEnt, int iSlot, int iForcedSerialNum )
+EHANDLE CBaseEntityList::AddEntityAtSlot( CBaseEntity *pEnt, int iSlot, int iForcedSerialNum )
 {
 	// Init the CSerialEntity.
 	CEntInfo *pSlot = &m_EntPtrArray[iSlot];
-	Assert( pSlot->m_pEntity == NULL );
-	pSlot->m_pEntity = pEnt;
+	Assert( pSlot->m_pBaseEnt == NULL );
+	pSlot->m_pBaseEnt = pEnt;
 
 	// Force the serial number (client-only)?
 	if ( iForcedSerialNum != -1 )
@@ -229,7 +235,7 @@ CBaseHandle CBaseEntityList::AddEntityAtSlot( IHandleEntity *pEnt, int iSlot, in
 	
 	// Update our list of active entities.
 	m_activeList.AddToTail( pSlot );
-	CBaseHandle retVal( iSlot, pSlot->m_SerialNumber );
+	EHANDLE retVal( iSlot, pSlot->m_SerialNumber );
 
 	// Tell the entity to store its handle.
 	pEnt->SetRefEHandle( retVal );
@@ -246,15 +252,15 @@ void CBaseEntityList::RemoveEntityAtSlot( int iSlot )
 
 	CEntInfo *pInfo = &m_EntPtrArray[iSlot];
 
-	if ( pInfo->m_pEntity )
+	if ( pInfo->m_pBaseEnt != NULL )
 	{
-		pInfo->m_pEntity->SetRefEHandle( INVALID_EHANDLE_INDEX );
+		pInfo->m_pBaseEnt->SetRefEHandle( NULL_EHANDLE );
 
 		// Notify the derived class that we're about to remove this entity.
-		OnRemoveEntity( pInfo->m_pEntity, CBaseHandle( iSlot, pInfo->m_SerialNumber ) );
+		OnRemoveEntity( pInfo->m_pBaseEnt, EHANDLE( iSlot, pInfo->m_SerialNumber ) );
 
 		// Increment the serial # so ehandles go invalid.
-		pInfo->m_pEntity = NULL;
+		pInfo->m_pBaseEnt = NULL;
 		pInfo->m_SerialNumber = ( pInfo->m_SerialNumber+1)& SERIAL_MASK;
 
 		m_activeList.Unlink( pInfo );
@@ -268,12 +274,12 @@ void CBaseEntityList::RemoveEntityAtSlot( int iSlot )
 }
 
 
-void CBaseEntityList::OnAddEntity( IHandleEntity *pEnt, CBaseHandle handle )
+void CBaseEntityList::OnAddEntity( CBaseEntity *pEnt, EHANDLE handle )
 {
 }
 
 
 
-void CBaseEntityList::OnRemoveEntity( IHandleEntity *pEnt, CBaseHandle handle )
+void CBaseEntityList::OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle )
 {
 }

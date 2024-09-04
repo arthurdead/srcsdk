@@ -13,12 +13,8 @@
 
 LINK_ENTITY_TO_CLASS( env_player_surface_trigger, CEnvPlayerSurfaceTrigger );
 
-BEGIN_DATADESC( CEnvPlayerSurfaceTrigger )
+BEGIN_MAPENTITY( CEnvPlayerSurfaceTrigger )
 	DEFINE_KEYFIELD( m_iTargetGameMaterial, FIELD_INTEGER, "gamematerial" ),
-	DEFINE_FIELD( m_iCurrentGameMaterial, FIELD_INTEGER ),
-	DEFINE_FIELD( m_bDisabled, FIELD_BOOLEAN ),
-
-	DEFINE_THINKFUNC( UpdateMaterialThink ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -27,7 +23,7 @@ BEGIN_DATADESC( CEnvPlayerSurfaceTrigger )
 	// Outputs
 	DEFINE_OUTPUT(m_OnSurfaceChangedToTarget, "OnSurfaceChangedToTarget"),
 	DEFINE_OUTPUT(m_OnSurfaceChangedFromTarget, "OnSurfaceChangedFromTarget"),
-END_DATADESC()
+END_MAPENTITY()
 
 // Global list of surface triggers
 CUtlVector< CHandle<CEnvPlayerSurfaceTrigger> >	g_PlayerSurfaceTriggers;
@@ -50,16 +46,6 @@ void CEnvPlayerSurfaceTrigger::Spawn( void )
 
 	m_iCurrentGameMaterial = 0;
 	m_bDisabled = false;
-
-	g_PlayerSurfaceTriggers.AddToTail( this );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CEnvPlayerSurfaceTrigger::OnRestore( void )
-{
-	BaseClass::OnRestore();
 
 	g_PlayerSurfaceTriggers.AddToTail( this );
 }

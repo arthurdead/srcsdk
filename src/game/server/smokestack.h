@@ -19,7 +19,6 @@ class CSmokeStackLightInfo
 {
 public:
 	DECLARE_CLASS_NOBASE( CSmokeStackLightInfo );
-	DECLARE_SIMPLE_DATADESC();
 	DECLARE_NETWORKVAR_CHAIN();
 
 	CNetworkVector( m_vPos );
@@ -31,7 +30,7 @@ class CSmokeStack : public CBaseParticleEntity
 {
 public:
 	DECLARE_CLASS( CSmokeStack, CBaseParticleEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 					CSmokeStack();

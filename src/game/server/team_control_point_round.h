@@ -59,7 +59,7 @@ private:
 	void SetupSpawnPoints( void );
 	int TeamOwnsAllPoints( CTeamControlPoint *pOverridePoint = NULL, int iOverrideNewTeam = TEAM_UNASSIGNED );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	bool m_bDisabled;
 	void InputEnable( inputdata_t &inputdata );

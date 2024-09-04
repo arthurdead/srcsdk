@@ -53,7 +53,7 @@ void QueryCacheKey_t::ComputeHashIndex( void )
 }
 
 
-ConVar	sv_disable_querycache("sv_disable_querycache", "0", FCVAR_CHEAT, "debug - disable trace query cache" );
+ConVar	sv_disable_querycache("sv_disable_querycache", "0", FCVAR_CHEAT| FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY, "debug - disable trace query cache" );
 
 static QueryCacheEntry_t *FindOrAllocateCacheEntry( QueryCacheKey_t const &entry )
 {

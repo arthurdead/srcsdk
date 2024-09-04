@@ -10,17 +10,15 @@
 #include "entityoutput.h"
 #include "engine/IEngineSound.h"
 #include "igamesystem.h"
-#include "physics_saverestore.h"
 #include "vcollide_parse.h"
 #include "positionwatcher.h"
 #include "fmtstr.h"
 #include "physics_prop_ragdoll.h"
 
-////SecobMod__IFDEF_Info: If we don't comment these out, then the code doesn't compile.
-//#define HINGE_NOTIFY HL2_EPISODIC
-//#if HINGE_NOTIFY
+#define HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 #include "physconstraint_sounds.h"
-//#endif
+#endif
 
 #include "physconstraint.h"
 
@@ -105,14 +103,14 @@ public:
 			UTIL_Remove( this );
 		}
 	}
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	float m_massScale;
 };
 
-BEGIN_DATADESC( CConstraintAnchor )
+BEGIN_MAPENTITY( CConstraintAnchor )
 	DEFINE_KEYFIELD( m_massScale, FIELD_FLOAT, "massScale" ),
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( info_constraint_anchor, CConstraintAnchor );
 
@@ -122,19 +120,20 @@ class CPhysConstraintSystem : public CLogicalEntity
 public:
 
 	void Spawn();
+	~CPhysConstraintSystem();
 	IPhysicsConstraintGroup *GetVPhysicsGroup() { return m_pMachine; }
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 private:
 	IPhysicsConstraintGroup *m_pMachine;
 	int						m_additionalIterations;
 };
 
-BEGIN_DATADESC( CPhysConstraintSystem )
-	DEFINE_PHYSPTR( m_pMachine ),
+BEGIN_MAPENTITY( CPhysConstraintSystem )
+
 	DEFINE_KEYFIELD( m_additionalIterations, FIELD_INTEGER, "additionaliterations" ),
 	
-END_DATADESC()
+END_MAPENTITY()
 
 
 void CPhysConstraintSystem::Spawn()
@@ -143,6 +142,11 @@ void CPhysConstraintSystem::Spawn()
 	group.Defaults();
 	group.additionalIterations = m_additionalIterations;
 	m_pMachine = physenv->CreateConstraintGroup( group );
+}
+
+CPhysConstraintSystem::~CPhysConstraintSystem()
+{
+	physenv->DestroyConstraintGroup( m_pMachine );
 }
 
 LINK_ENTITY_TO_CLASS( phys_constraintsystem, CPhysConstraintSystem );
@@ -310,7 +314,7 @@ void CPhysConstraint::OnBreak( void )
 	m_OnBreak.FireOutput( this, this );
 	// queue this up to be deleted at the end of physics 
 	// The Deactivate() call should make sure we don't get more of these callbacks.
-	PhysCallbackRemove( this->NetworkProp() );
+	PhysCallbackRemove( this );
 }
 
 void CPhysConstraint::InputBreak( inputdata_t &inputdata )
@@ -384,9 +388,7 @@ void CPhysConstraint::GetBreakParams( constraint_breakableparams_t &params, cons
 	params.bodyMassScale[1] = info.massScale[1];
 }
 
-BEGIN_DATADESC( CPhysConstraint )
-
-	DEFINE_PHYSPTR( m_pConstraint ),
+BEGIN_MAPENTITY( CPhysConstraint )
 
 	DEFINE_KEYFIELD( m_nameSystem, FIELD_STRING, "constraintsystem" ),
 	DEFINE_KEYFIELD( m_nameAttach1, FIELD_STRING, "attach1" ),
@@ -395,7 +397,6 @@ BEGIN_DATADESC( CPhysConstraint )
 	DEFINE_KEYFIELD( m_forceLimit, FIELD_FLOAT, "forcelimit" ),
 	DEFINE_KEYFIELD( m_torqueLimit, FIELD_FLOAT, "torquelimit" ),
 	DEFINE_KEYFIELD( m_minTeleportDistance, FIELD_FLOAT, "teleportfollowdistance" ),
-//	DEFINE_FIELD( m_teleportTick, FIELD_INTEGER ),
 
 	DEFINE_OUTPUT( m_OnBreak, "OnBreak" ),
 
@@ -405,7 +406,7 @@ BEGIN_DATADESC( CPhysConstraint )
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 CPhysConstraint::CPhysConstraint( void )
@@ -573,20 +574,6 @@ void CPhysConstraint::GetConstraintObjects( hl_constraint_info_t &info )
 		if ( Q_strlen(STRING(m_nameAttach1)) )
 		{
 			Warning("Bogus constraint %s (attaches ENTITY NOT FOUND:%s to %s)\n", GetDebugName(), STRING(m_nameAttach1), STRING(m_nameAttach2));
-#ifdef HL2_EPISODIC
-			//SecobMod__Information: Added in these to prevent hl2/ep1 maps from having NULL physics constraints.
-			if ( !Q_strnicmp( gpGlobals->mapname.ToCStr(), "ep1_", 4 )
-				|| !Q_strnicmp( gpGlobals->mapname.ToCStr(), "d1_", 3 )
-				|| !Q_strnicmp( gpGlobals->mapname.ToCStr(), "d2_", 3 )
-			|| !Q_strnicmp( gpGlobals->mapname.ToCStr(), "d3_", 3 ) )
-			{
-			}
-			else
-			{
-				info.pObjects[0] = info.pObjects[1] = NULL;
-				return;
-			}
-#endif	// HL2_EPISODIC
 		}
 		info.pObjects[0] = g_PhysWorldObject;
 		info.massScale[0] = info.massScale[1] = 1.0f; // no mass scale on world constraint
@@ -596,20 +583,6 @@ void CPhysConstraint::GetConstraintObjects( hl_constraint_info_t &info )
 		if ( Q_strlen(STRING(m_nameAttach2)) )
 		{
 			Warning("Bogus constraint %s (attaches %s to ENTITY NOT FOUND:%s)\n", GetDebugName(), STRING(m_nameAttach1), STRING(m_nameAttach2));
-#ifdef HL2_EPISODIC
-			//SecobMod__Information: Added in these to prevent hl2/ep1 maps from having NULL physics constraints.
-			if ( !Q_strnicmp( gpGlobals->mapname.ToCStr(), "ep1_", 4 )
-			|| !Q_strnicmp( gpGlobals->mapname.ToCStr(), "d1_", 3 )
-			|| !Q_strnicmp( gpGlobals->mapname.ToCStr(), "d2_", 3 )
-			|| !Q_strnicmp( gpGlobals->mapname.ToCStr(), "d3_", 3 ) )
-			{
-			}
-			else
-			{
-				info.pObjects[0] = info.pObjects[1] = NULL;
-				return;
-			}
-#endif	// HL2_EPISODIC
 		}
 		info.pObjects[1] = info.pObjects[0];
 		info.pObjects[0] = g_PhysWorldObject;		// Try to make the world object consistently object0 for ease of implementation
@@ -815,7 +788,7 @@ public:
 	
 	void NotifyVPhysicsStateChanged( IPhysicsObject *pPhysics, CBaseEntity *pEntity, bool bAwake )
 	{
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 		Assert(m_pConstraint);
 		if (!m_pConstraint) 
 			return;
@@ -850,7 +823,7 @@ public:
 	}
 
 
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 	virtual void OnConstraintSetup( hl_constraint_info_t &info )
 	{
 		CBaseEntity *pEntity0 = info.pObjects[0] ? static_cast<CBaseEntity *>(info.pObjects[0]->GetGameData()) : NULL;
@@ -872,10 +845,10 @@ public:
 	void Precache( void );
 #endif
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 protected:
 	ConstraintSoundInfo m_soundInfo;
 #endif
@@ -887,19 +860,16 @@ private:
 	bool IsWorldHinge( const hl_constraint_info_t &info, int *pAxisOut );
 };
 
-BEGIN_DATADESC( CPhysHinge )
-
-// Quiet down classcheck
-//	DEFINE_FIELD( m_hinge, FIELD_??? ),
+BEGIN_MAPENTITY( CPhysHinge )
 
 	DEFINE_KEYFIELD( m_hingeFriction, FIELD_FLOAT, "hingefriction" ),
-	DEFINE_FIELD( m_hinge.worldPosition, FIELD_POSITION_VECTOR ),
+
 	DEFINE_KEYFIELD( m_hinge.worldAxisDirection, FIELD_VECTOR, "hingeaxis" ),
 	DEFINE_KEYFIELD( m_systemLoadScale, FIELD_FLOAT, "systemloadscale" ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAngularVelocity", InputSetVelocity ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetHingeFriction", InputSetHingeFriction ),
 
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 	DEFINE_KEYFIELD( m_soundInfo.m_soundProfile.m_keyPoints[SimpleConstraintSoundProfile::kMIN_THRESHOLD] , FIELD_FLOAT, "minSoundThreshold" ),
 	DEFINE_KEYFIELD( m_soundInfo.m_soundProfile.m_keyPoints[SimpleConstraintSoundProfile::kMIN_FULL] , FIELD_FLOAT, "maxSoundThreshold" ),
 	DEFINE_KEYFIELD( m_soundInfo.m_iszTravelSoundFwd, FIELD_SOUNDNAME, "slidesoundfwd" ),
@@ -912,11 +882,9 @@ BEGIN_DATADESC( CPhysHinge )
 	DEFINE_KEYFIELD( m_soundInfo.m_soundProfile.m_reversalSoundThresholds[0] , FIELD_FLOAT, "reversalsoundthresholdSmall" ),
 	DEFINE_KEYFIELD( m_soundInfo.m_soundProfile.m_reversalSoundThresholds[1], FIELD_FLOAT, "reversalsoundthresholdMedium" ),
 	DEFINE_KEYFIELD( m_soundInfo.m_soundProfile.m_reversalSoundThresholds[2] , FIELD_FLOAT, "reversalsoundthresholdLarge" ),
-
-	DEFINE_THINKFUNC( SoundThink ),
 #endif
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( phys_hinge, CPhysHinge );
@@ -953,7 +921,7 @@ void CPhysHinge::Spawn( void )
 	Precache();
 }
 
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 void CPhysHinge::Activate( void )
 {
 	BaseClass::Activate();
@@ -1022,7 +990,7 @@ bool CPhysHinge::IsWorldHinge( const hl_constraint_info_t &info, int *pAxisOut )
 }
 
 
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 void CPhysHinge::SoundThink( void )
 {
 	Assert(m_pConstraint);
@@ -1074,7 +1042,7 @@ class CPhysSlideConstraint : public CPhysConstraint, public IVPhysicsWatcher
 public:
 	DECLARE_CLASS( CPhysSlideConstraint, CPhysConstraint );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	IPhysicsConstraint *CreateConstraint( IPhysicsConstraintGroup *pGroup, const hl_constraint_info_t &info );
 	void InputSetVelocity( inputdata_t &inputdata )
 	{
@@ -1117,7 +1085,7 @@ public:
 
 	void NotifyVPhysicsStateChanged( IPhysicsObject *pPhysics, CBaseEntity *pEntity, bool bAwake )
 	{
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 		Assert(m_pConstraint);
 		if (!m_pConstraint) 
 			return;
@@ -1155,7 +1123,7 @@ public:
 	}
 
 
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 	virtual void OnConstraintSetup( hl_constraint_info_t &info )
 	{
 		CBaseEntity *pEntity0 = info.pObjects[0] ? static_cast<CBaseEntity *>(info.pObjects[0]->GetGameData()) : NULL;
@@ -1182,7 +1150,7 @@ public:
 	float	m_slideFriction;
 	float	m_systemLoadScale;
 
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 protected:
 	ConstraintSoundInfo m_soundInfo;
 #endif
@@ -1190,13 +1158,13 @@ protected:
 
 LINK_ENTITY_TO_CLASS( phys_slideconstraint, CPhysSlideConstraint );
 
-BEGIN_DATADESC( CPhysSlideConstraint )
+BEGIN_MAPENTITY( CPhysSlideConstraint )
 
 	DEFINE_KEYFIELD( m_axisEnd, FIELD_POSITION_VECTOR, "slideaxis" ),
 	DEFINE_KEYFIELD( m_slideFriction, FIELD_FLOAT, "slidefriction" ),
 	DEFINE_KEYFIELD( m_systemLoadScale, FIELD_FLOAT, "systemloadscale" ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetVelocity", InputSetVelocity ),
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 	DEFINE_KEYFIELD( m_soundInfo.m_soundProfile.m_keyPoints[SimpleConstraintSoundProfile::kMIN_THRESHOLD] , FIELD_FLOAT, "minSoundThreshold" ),
 	DEFINE_KEYFIELD( m_soundInfo.m_soundProfile.m_keyPoints[SimpleConstraintSoundProfile::kMIN_FULL] , FIELD_FLOAT, "maxSoundThreshold" ),
 	DEFINE_KEYFIELD( m_soundInfo.m_iszTravelSoundFwd, FIELD_SOUNDNAME, "slidesoundfwd" ),
@@ -1209,12 +1177,9 @@ BEGIN_DATADESC( CPhysSlideConstraint )
 	DEFINE_KEYFIELD( m_soundInfo.m_soundProfile.m_reversalSoundThresholds[0] , FIELD_FLOAT, "reversalsoundthresholdSmall" ),
 	DEFINE_KEYFIELD( m_soundInfo.m_soundProfile.m_reversalSoundThresholds[1], FIELD_FLOAT, "reversalsoundthresholdMedium" ),
 	DEFINE_KEYFIELD( m_soundInfo.m_soundProfile.m_reversalSoundThresholds[2] , FIELD_FLOAT, "reversalsoundthresholdLarge" ),
-
-
-	DEFINE_THINKFUNC( SoundThink ),
 #endif
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -1262,7 +1227,7 @@ IPhysicsConstraint *CPhysSlideConstraint::CreateConstraint( IPhysicsConstraintGr
 }
 
 
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 void CPhysSlideConstraint::SoundThink( void )
 {
 	Assert(m_pConstraint);
@@ -1295,13 +1260,17 @@ void CPhysSlideConstraint::Activate( void )
 	Vector axisDirection = m_axisEnd - GetAbsOrigin();
 	VectorNormalize( axisDirection );
 	UTIL_SnapDirectionToAxis( axisDirection );
-	m_soundInfo.StartThinking(this, 
-		VelocitySampler::GetRelativeVelocity(m_pConstraint->GetAttachedObject(), m_pConstraint->GetReferenceObject()),
-		axisDirection
-		);
 
-	SetThink(&CPhysSlideConstraint::SoundThink);
-	SetNextThink(gpGlobals->curtime + m_soundInfo.getThinkRate());
+	if ( m_pConstraint )
+	{
+		m_soundInfo.StartThinking(this, 
+			VelocitySampler::GetRelativeVelocity(m_pConstraint->GetAttachedObject(), m_pConstraint->GetReferenceObject()),
+			axisDirection
+			);
+
+		SetThink(&CPhysSlideConstraint::SoundThink);
+		SetNextThink(gpGlobals->curtime + m_soundInfo.getThinkRate());
+	}
 }
 
 void CPhysSlideConstraint::Precache()
@@ -1342,7 +1311,7 @@ class CPhysPulley : public CPhysConstraint
 {
 	DECLARE_CLASS( CPhysPulley, CPhysConstraint );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void DrawDebugGeometryOverlays()
 	{
@@ -1382,14 +1351,14 @@ private:
 	float		m_gearRatio;
 };
 
-BEGIN_DATADESC( CPhysPulley )
+BEGIN_MAPENTITY( CPhysPulley )
 
 	DEFINE_KEYFIELD( m_position2, FIELD_POSITION_VECTOR, "position2" ),
-	DEFINE_AUTO_ARRAY( m_offset, FIELD_VECTOR ),
+
 	DEFINE_KEYFIELD( m_addLength, FIELD_FLOAT, "addlength" ),
 	DEFINE_KEYFIELD( m_gearRatio, FIELD_FLOAT, "gearratio" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( phys_pulleyconstraint, CPhysPulley );
@@ -1443,7 +1412,7 @@ class CPhysLength : public CPhysConstraint
 {
 	DECLARE_CLASS( CPhysLength, CPhysConstraint );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void DrawDebugGeometryOverlays()
 	{
@@ -1492,14 +1461,13 @@ private:
 	float		m_totalLength;
 };
 
-BEGIN_DATADESC( CPhysLength )
+BEGIN_MAPENTITY( CPhysLength )
 
-	DEFINE_AUTO_ARRAY( m_offset, FIELD_VECTOR ),
 	DEFINE_KEYFIELD( m_addLength, FIELD_FLOAT, "addlength" ),
 	DEFINE_KEYFIELD( m_minLength, FIELD_FLOAT, "minlength" ),
 	DEFINE_KEYFIELD( m_vecAttach, FIELD_POSITION_VECTOR, "attachpoint" ),
-	DEFINE_FIELD( m_totalLength, FIELD_FLOAT ),
-END_DATADESC()
+
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( phys_lengthconstraint, CPhysLength );
@@ -1541,7 +1509,7 @@ class CRagdollConstraint : public CPhysConstraint
 {
 	DECLARE_CLASS( CRagdollConstraint, CPhysConstraint );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 #if 0
 	void DrawDebugGeometryOverlays()
 	{
@@ -1568,7 +1536,7 @@ private:
 	float		m_zfriction;
 };
 
-BEGIN_DATADESC( CRagdollConstraint )
+BEGIN_MAPENTITY( CRagdollConstraint )
 
 	DEFINE_KEYFIELD( m_xmin, FIELD_FLOAT, "xmin" ),
 	DEFINE_KEYFIELD( m_xmax, FIELD_FLOAT, "xmax" ),
@@ -1580,7 +1548,7 @@ BEGIN_DATADESC( CRagdollConstraint )
 	DEFINE_KEYFIELD( m_yfriction, FIELD_FLOAT, "yfriction" ),
 	DEFINE_KEYFIELD( m_zfriction, FIELD_FLOAT, "zfriction" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( phys_ragdollconstraint, CRagdollConstraint );
@@ -1648,7 +1616,7 @@ IPhysicsConstraintEvent *g_pConstraintEvents = &constraintevents;
 
 
 
-#if HINGE_NOTIFY
+#ifdef HINGE_NOTIFY
 //-----------------------------------------------------------------------------
 // Code for sampler
 //-----------------------------------------------------------------------------

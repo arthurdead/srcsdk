@@ -166,7 +166,7 @@ private:
 
 	virtual void OnClose()
 	{
-		input()->SetAppModalSurface(NULL);
+		input()->SetAppModalSurface(INVALID_VPANEL);
 		BaseClass::OnClose();
 		//PostActionSignal(new KeyValues("Command"
 	}

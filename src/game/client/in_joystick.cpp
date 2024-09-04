@@ -29,11 +29,6 @@
 #include "tier1/convar_serverbounded.h"
 #include "cam_thirdperson.h"
 
-#ifdef HL2_CLIENT_DLL
-// FIXME: Autoaim support needs to be moved from HL2_DLL to the client dll, so this include should be c_baseplayer.h
-#include "c_basehlplayer.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -691,6 +686,26 @@ float CInput::ScaleAxisValue( const float axisValue, const float axisThreshold )
 	return result;
 }
 
+extern void IN_ForceSpeedUp( );
+extern void IN_ForceSpeedDown( );
+
+
+bool CInput::ControllerModeActive( void )
+{
+	return ( in_joystick.GetInt() != 0 );
+}
+
+//--------------------------------------------------------------------
+// See if we want to use the joystick
+//--------------------------------------------------------------------
+bool CInput::JoyStickActive()
+{
+	// verify joystick is available and that the user wants to use it
+	if ( !in_joystick.GetInt() || 0 == inputsystem->GetJoystickCount() )
+		return false; 
+
+	return true;
+}
 
 void CInput::Joystick_SetSampleTime(float frametime)
 {
@@ -715,6 +730,123 @@ float CInput::Joystick_GetPitch( void )
 float CInput::Joystick_GetYaw( void )
 {
 	return m_flPreviousJoystickYaw;
+}
+
+//--------------------------------------------------------------------
+// Reads joystick values
+//--------------------------------------------------------------------
+void CInput::JoyStickSampleAxes( float &forward, float &side, float &pitch, float &yaw, bool &bAbsoluteYaw, bool &bAbsolutePitch )
+{
+	struct axis_t
+	{
+		float	value;
+		int		controlType;
+	};
+	axis_t gameAxes[ MAX_GAME_AXES ];
+	memset( &gameAxes, 0, sizeof(gameAxes) );
+
+	// Get each joystick axis value, and normalize the range
+	for ( int i = 0; i < MAX_JOYSTICK_AXES; ++i )
+	{
+		if ( GAME_AXIS_NONE == m_rgAxes[i].AxisMap )
+			continue;
+
+		float fAxisValue = inputsystem->GetAnalogValue( (AnalogCode_t)JOYSTICK_AXIS( 0, i ) );
+
+		if ( joy_wwhack2.GetInt() != 0 )
+		{
+			// this is a special formula for the Logitech WingMan Warrior
+			// y=ax^b; where a = 300 and b = 1.3
+			// also x values are in increments of 800 (so this is factored out)
+			// then bounds check result to level out excessively high spin rates
+			float fTemp = 300.0 * pow(abs(fAxisValue) / 800.0, 1.3);
+			if (fTemp > 14000.0)
+				fTemp = 14000.0;
+			// restore direction information
+			fAxisValue = (fAxisValue > 0.0) ? fTemp : -fTemp;
+		}
+
+		unsigned int idx = m_rgAxes[i].AxisMap;
+		gameAxes[idx].value = fAxisValue;
+		gameAxes[idx].controlType = m_rgAxes[i].ControlMap;
+	}
+
+	// Re-map the axis values if necessary, based on the joystick configuration
+	if ( (joy_advanced.GetInt() == 0) && (in_jlook.state & 1) )
+	{
+		// user wants forward control to become pitch control
+		gameAxes[GAME_AXIS_PITCH] = gameAxes[GAME_AXIS_FORWARD];
+		gameAxes[GAME_AXIS_FORWARD].value = 0;
+
+		// if mouse invert is on, invert the joystick pitch value
+		// Note: only absolute control support here - joy_advanced = 0
+		if ( m_pitch->GetFloat() < 0.0 )
+		{
+			gameAxes[GAME_AXIS_PITCH].value *= -1;
+		}
+	}
+
+	if ( (in_strafe.state & 1) || ( lookstrafe.GetFloat() && (in_jlook.state & 1) ) )
+	{
+		// user wants yaw control to become side control
+		gameAxes[GAME_AXIS_SIDE] = gameAxes[GAME_AXIS_YAW];
+		gameAxes[GAME_AXIS_YAW].value = 0;
+	}
+
+	forward	= ScaleAxisValue( gameAxes[GAME_AXIS_FORWARD].value, MAX_BUTTONSAMPLE * joy_forwardthreshold.GetFloat() );
+	side	= ScaleAxisValue( gameAxes[GAME_AXIS_SIDE].value, MAX_BUTTONSAMPLE * joy_sidethreshold.GetFloat()  );
+	pitch	= ScaleAxisValue( gameAxes[GAME_AXIS_PITCH].value, MAX_BUTTONSAMPLE * joy_pitchthreshold.GetFloat()  );
+	yaw		= ScaleAxisValue( gameAxes[GAME_AXIS_YAW].value, MAX_BUTTONSAMPLE * joy_yawthreshold.GetFloat()  );
+
+	bAbsoluteYaw = ( JOY_ABSOLUTE_AXIS == gameAxes[GAME_AXIS_YAW].controlType );
+	bAbsolutePitch = ( JOY_ABSOLUTE_AXIS == gameAxes[GAME_AXIS_PITCH].controlType );
+
+	// If we're inverting our joystick, do so
+	static ConVarRef s_joy_inverty( "joy_inverty" );
+	if ( s_joy_inverty.IsValid() && s_joy_inverty.GetBool( ) )
+	{
+		pitch *= -1.0f;
+	}
+}
+
+
+//--------------------------------------------------------------------
+// drive yaw, pitch and move like a screen relative platformer game
+//--------------------------------------------------------------------
+void CInput::JoyStickThirdPersonPlatformer( CUserCmd *cmd, float &forward, float &side, float &pitch, float &yaw )
+{
+	// Get starting angles
+	QAngle viewangles;
+	engine->GetViewAngles( viewangles );
+
+	if ( forward || side )
+	{
+		// apply turn control [ YAW ]
+		// factor in the camera offset, so that the move direction is relative to the thirdperson camera
+		viewangles[ YAW ] = RAD2DEG(atan2(-side, -forward)) + m_vecCameraOffset[ YAW ];
+		engine->SetViewAngles( viewangles );
+
+		// apply movement
+		Vector2D moveDir( forward, side );
+		cmd->forwardmove += moveDir.Length() * cl_forwardspeed.GetFloat();
+	}
+
+	if ( pitch || yaw )
+	{
+		static ConVarRef s_joy_yawsensitivity( "joy_yawsensitivity" );
+		static ConVarRef s_joy_pitchsensitivity( "joy_pitchsensitivity" );
+
+		// look around with the camera
+		m_vecCameraOffset[ PITCH ] += pitch * s_joy_pitchsensitivity.GetFloat( );
+		m_vecCameraOffset[ YAW ]   += yaw * s_joy_yawsensitivity.GetFloat( );
+	}
+
+	if ( forward || side || pitch || yaw )
+	{
+		// update the ideal pitch and yaw
+		cam_idealpitch.SetValue( m_vecCameraOffset[ PITCH ] - viewangles[ PITCH ] );
+		cam_idealyaw.SetValue( m_vecCameraOffset[ YAW ] - viewangles[ YAW ] );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -964,4 +1096,207 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 	viewangles[PITCH] = clamp( viewangles[ PITCH ], -cl_pitchup.GetFloat(), cl_pitchdown.GetFloat() );
 
 	engine->SetViewAngles( viewangles );
+}
+
+//-----------------------------------------------
+// Turns viewangles based on sampled joystick
+//-----------------------------------------------
+void CInput::JoyStickTurn( CUserCmd *cmd, float &yaw, float &pitch, float frametime, bool bAbsoluteYaw, bool bAbsolutePitch )
+{
+	// Get starting angles
+	QAngle viewangles;
+	engine->GetViewAngles( viewangles );
+
+	static ConVarRef s_joy_yawsensitivity( "joy_yawsensitivity" );
+	static ConVarRef s_joy_pitchsensitivity( "joy_pitchsensitivity" );
+
+	Vector2D move( yaw, pitch );
+	float dist = move.Length();
+	bool	bVariableFrametime = joy_variable_frametime.GetBool();
+	float	lookFrametime = bVariableFrametime ? frametime : gpGlobals->frametime;
+	float   aspeed = lookFrametime * GetHud().GetFOVSensitivityAdjust();
+
+	// apply turn control
+	float angle = 0.f;
+
+	if ( m_flSpinFrameTime )
+	{
+		// apply specified yaw velocity until duration expires
+		float delta = lookFrametime;
+		if ( m_flSpinFrameTime - delta <= 0 )
+		{
+			// effect expired, avoid floating point creep
+			delta = m_flSpinFrameTime;
+			m_flSpinFrameTime = 0;
+		}
+		else
+		{
+			m_flSpinFrameTime -= delta;
+		}
+		angle = m_flSpinRate * delta;
+	}
+	else if ( bVariableFrametime || frametime != gpGlobals->frametime )
+	{
+		if ( bAbsoluteYaw )
+		{
+			float fAxisValue = ResponseCurveLook( joy_response_look.GetInt(), yaw, YAW, pitch, dist, lookFrametime );
+			angle = fAxisValue * s_joy_yawsensitivity.GetFloat( ) * aspeed * cl_yawspeed.GetFloat();
+		}
+		else
+		{
+			angle = yaw * s_joy_yawsensitivity.GetFloat( ) * aspeed * 180.0;
+		}
+	}
+
+	if ( angle )
+	{
+		// track angular direction
+		m_flLastYawAngle = angle;
+	}
+
+	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer( );
+	if ( ( in_lookspin.state & 2 ) && !m_flSpinFrameTime && pLocalPlayer && !pLocalPlayer->IsObserver() )
+	{
+		// user has actuated a new spin boost
+		float spinFrameTime = joy_lookspin_default.GetFloat();
+		m_flSpinFrameTime = spinFrameTime;
+		// yaw velocity is in last known direction
+		if ( m_flLastYawAngle >= 0 )
+		{ 
+			m_flSpinRate = 180.0f/spinFrameTime;
+		}
+		else
+		{
+			m_flSpinRate = -180.0f/spinFrameTime;
+		}
+	}
+
+	viewangles[YAW] += angle;
+	cmd->mousedx = angle;
+
+	// apply look control
+	if ( in_jlook.state & 1 )
+	{
+		float angle = 0;
+		if ( bVariableFrametime || frametime != gpGlobals->frametime )
+		{
+			if ( bAbsolutePitch )
+			{
+				float fAxisValue = ResponseCurveLook( joy_response_look.GetInt(), pitch, PITCH, yaw, dist, lookFrametime );
+				angle = fAxisValue * s_joy_pitchsensitivity.GetFloat( ) * aspeed * cl_pitchspeed.GetFloat();
+			}
+			else
+			{
+				angle = pitch * s_joy_pitchsensitivity.GetFloat( ) * aspeed * 180.0;
+			}
+		}
+		viewangles[PITCH] += angle;
+		cmd->mousedy = angle;
+		GetViewRenderInstance()->StopPitchDrift();
+		if ( pitch == 0.f && lookspring.GetFloat() == 0.f )
+		{
+			// no pitch movement
+			// disable pitch return-to-center unless requested by user
+			// *** this code can be removed when the lookspring bug is fixed
+			// *** the bug always has the lookspring feature on
+			GetViewRenderInstance()->StopPitchDrift();
+		}
+	}
+
+	viewangles[PITCH] = clamp( viewangles[ PITCH ], -cl_pitchup.GetFloat(), cl_pitchdown.GetFloat() );
+	engine->SetViewAngles( viewangles );
+}
+
+//---------------------------------------------------------------------
+// Calculates strafe and forward/back motion based on sampled joystick
+//---------------------------------------------------------------------
+void CInput::JoyStickForwardSideControl( float forward, float side, float &joyForwardMove, float &joySideMove )
+{
+	joyForwardMove = joySideMove = 0.0f;
+
+	// apply forward and side control
+	if ( joy_response_move.GetInt() > 6 && joy_circle_correct.GetBool() )
+	{
+		// ok the 360 controller is scaled to a circular area.  our movement is scaled to the square two axis, 
+		// so diagonal needs to be scaled properly to full speed.
+
+		bool bInWalk = true;
+		float scale = MIN(1.0f,sqrt(forward*forward+side*side));
+		if ( scale > 0.01f )
+		{
+			float val;
+			if ( scale > joy_sensitive_step2.GetFloat() )
+			{
+				bInWalk = false;
+			}
+			float scaledVal = ResponseCurve( joy_response_move.GetInt(), scale, PITCH, joy_forwardsensitivity.GetFloat() );
+			val = scaledVal*(forward/scale);
+			joyForwardMove += val * cl_forwardspeed.GetFloat();
+			val = scaledVal*(side/scale);
+			joySideMove += val * cl_sidespeed.GetFloat();
+		}
+
+		// big hack here, if we are not moving past the joy_sensitive_step2 thresh hold then walk.
+		if ( bInWalk )
+		{
+			IN_ForceSpeedDown();
+		}
+		else
+		{
+			IN_ForceSpeedUp();
+		}
+	}
+	else
+	{
+		// apply forward and side control
+		C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
+
+		int iResponseCurve = 0;
+		if ( pLocalPlayer && pLocalPlayer->IsInAVehicle() )
+		{
+			iResponseCurve = pLocalPlayer->GetVehicle() ? pLocalPlayer->GetVehicle()->GetJoystickResponseCurve() : joy_response_move_vehicle.GetInt();
+		}
+		else
+		{
+			iResponseCurve = joy_response_move.GetInt();
+		}	
+
+		float val = ResponseCurve( iResponseCurve, forward, PITCH, joy_forwardsensitivity.GetFloat() );
+		joyForwardMove	+= val * cl_forwardspeed.GetFloat();
+		val = ResponseCurve( iResponseCurve, side, YAW, joy_sidesensitivity.GetFloat() );
+		joySideMove		+= val * cl_sidespeed.GetFloat();
+	}
+}
+
+//--------------------------------------------------------------
+// Applies the calculated forward/side movement to the UserCmd
+//--------------------------------------------------------------
+void CInput::JoyStickApplyMovement( CUserCmd *cmd, float joyForwardMove, float joySideMove )
+{
+	// apply player motion relative to screen space
+	if ( CAM_IsThirdPerson() && thirdperson_screenspace.GetInt() )
+	{
+		float ideal_yaw = cam_idealyaw.GetFloat();
+		float ideal_sin = sin(DEG2RAD(ideal_yaw));
+		float ideal_cos = cos(DEG2RAD(ideal_yaw));
+		float side_movement = ideal_cos*joySideMove - ideal_sin*joyForwardMove;
+		float forward_movement = ideal_cos*joyForwardMove + ideal_sin*joySideMove;
+		cmd->forwardmove += forward_movement;
+		cmd->sidemove += side_movement;
+	}
+	else
+	{
+		cmd->forwardmove += joyForwardMove;
+		cmd->sidemove += joySideMove;
+	}
+
+	CCommand tmp;
+	if ( FloatMakePositive(joyForwardMove) >= joy_autosprint.GetFloat() || FloatMakePositive(joySideMove) >= joy_autosprint.GetFloat() )
+	{
+		KeyDown( &in_joyspeed, NULL );
+	}
+	else
+	{
+		KeyUp( &in_joyspeed, NULL );
+	}
 }

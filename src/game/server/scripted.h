@@ -85,7 +85,7 @@ public:
 	void ScriptThink( void );
 	void StopThink();
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void Pain( void );
 	void Die( void );
@@ -96,7 +96,7 @@ public:
 	void OnBeginSequence( void );
 
 	void SetTarget( CBaseEntity *pTarget ) { m_hTargetEnt = pTarget; };
-	CBaseEntity *GetTarget( void ) { return m_hTargetEnt; };
+	CBaseEntity *GetTarget( void ) { return m_hTargetEnt.Get(); };
 
 	// Input handlers
 	void InputBeginSequence( inputdata_t &inputdata );

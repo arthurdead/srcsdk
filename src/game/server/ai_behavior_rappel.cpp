@@ -14,13 +14,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-BEGIN_DATADESC( CAI_RappelBehavior )
-	DEFINE_FIELD( m_bWaitingToRappel, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bOnGround, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_hLine, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_vecRopeAnchor, FIELD_POSITION_VECTOR ),
-END_DATADESC();
-
 //=========================================================
 //=========================================================
 class CRopeAnchor : public CPointEntity
@@ -32,16 +25,7 @@ public:
 	void FallThink( void );
 	void RemoveThink( void );
 	EHANDLE m_hRope;
-
-	DECLARE_DATADESC();
 };
-
-BEGIN_DATADESC( CRopeAnchor )
-	DEFINE_FIELD( m_hRope, FIELD_EHANDLE ),
-
-	DEFINE_THINKFUNC( FallThink ),
-	DEFINE_THINKFUNC( RemoveThink ),
-END_DATADESC();
 
 LINK_ENTITY_TO_CLASS( rope_anchor, CRopeAnchor );
 

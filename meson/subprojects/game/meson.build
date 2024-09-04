@@ -1,7 +1,13 @@
 project('game', 'cpp')
 
+assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+
 src_root_dir = get_option('src_root_dir')
 game_dir = get_option('game_dir')
+
+client = get_option('client')
+server = get_option('server')
+dedicated = get_option('dedicated')
 
 client_src_dir = join_paths(src_root_dir,'game','client')
 client_game_src_dir = join_paths(client_src_dir,'heist')
@@ -55,7 +61,6 @@ server_lib_dep = declare_dependency(
 		join_paths(server_game_src_dir,'heist_player.cpp'),
 		join_paths(server_game_src_dir,'heist_playermove.cpp'),
 		join_paths(server_game_src_dir,'heist_eventlog.cpp'),
-		join_paths(server_game_entities_src_dir,'vgui_text_display.cpp'),
 		join_paths(server_game_npcs_src_dir,'npc_dev.cpp'),
 		join_paths(server_game_npcs_src_dir,'npc_humanoidbase.cpp'),
 		join_paths(server_game_npcs_src_dir,'npc_cop.cpp'),
@@ -71,78 +76,82 @@ server_lib_dep = declare_dependency(
 	]
 )
 
-if false
-shared_library('server',name_prefix:'',
-	cpp_pch: [
-		#join_paths(server_src_dir,'pch','cbase_pch.h'),
-		#join_paths(server_src_dir,'pch','stdafx.cpp')
-	],
-	dependencies: [
-		server_lib_dep,
-		source_game_base.get_variable('source_linux_server_lib_dep')
-	],
-	install: true,
-	install_dir: join_paths(game_dir,'bin')
-)
+if server == true
+	shared_library('server',name_prefix:'',
+		cpp_pch: [
+			#join_paths(server_src_dir,'pch','cbase_pch.h'),
+			#join_paths(server_src_dir,'pch','stdafx.cpp')
+		],
+		dependencies: [
+			server_lib_dep,
+			source_game_base.get_variable('source_os_server_lib_dep')
+		],
+		install: true,
+		install_dir: join_paths(game_dir,'bin')
+	)
 endif
 
-if false
-shared_library('server_srv',name_prefix:'',
-	cpp_pch: [
-		#join_paths(server_src_dir,'pch','cbase_pch.h'),
-		#join_paths(server_src_dir,'pch','stdafx.cpp')
-	],
-	dependencies: [
-		server_lib_dep,
-		source_game_base.get_variable('source_linux_dedicated_server_lib_dep')
-	],
-	install: true,
-	install_dir: join_paths(game_dir,'bin')
-)
+if dedicated == true
+	shared_library('server_srv',name_prefix:'',
+		cpp_pch: [
+			#join_paths(server_src_dir,'pch','cbase_pch.h'),
+			#join_paths(server_src_dir,'pch','stdafx.cpp')
+		],
+		dependencies: [
+			server_lib_dep,
+			source_game_base.get_variable('source_os_dedicated_server_lib_dep')
+		],
+		install: true,
+		install_dir: join_paths(game_dir,'bin')
+	)
 endif
 
-shared_library('client',name_prefix:'',
-	cpp_args: [
-		'-DHEIST_CLIENT_DLL',
-		'-DWEBM_VIDEO_SERVICES_MOD'
-	],
-	cpp_pch: [
-		#join_paths(client_src_dir,'pch','cbase_pch.h'),
-		#join_paths(client_src_dir,'pch','stdafx.cpp')
-	],
-	sources: files(
-		join_paths(client_game_src_dir,'c_heist_player.cpp'),
-		join_paths(client_game_hud_src_dir,'hud_suspicion.cpp'),
-		join_paths(client_game_npcs_src_dir,'c_npc_humanoidbase.cpp'),
-	),
-	include_directories: include_directories(
-		client_game_src_dir,
-		client_game_vgui_src_dir,
-		client_game_entities_src_dir,
-		client_game_hud_src_dir
-	),
-	dependencies: [
-		game_shared_dep,
-		source_game_base.get_variable('source_linux_client_lib_dep'),
-		coplay.get_variable('coplay_dep')
-	],
-	install: true,
-	install_dir: join_paths(game_dir,'bin')
-)
+if client == true
+	shared_library('client',name_prefix:'',
+		cpp_args: [
+			'-DHEIST_CLIENT_DLL',
+			'-DWEBM_VIDEO_SERVICES_MOD'
+		],
+		cpp_pch: [
+			#join_paths(client_src_dir,'pch','cbase_pch.h'),
+			#join_paths(client_src_dir,'pch','stdafx.cpp')
+		],
+		sources: files(
+			join_paths(client_game_src_dir,'c_heist_player.cpp'),
+			join_paths(client_game_hud_src_dir,'hud_suspicion.cpp'),
+			join_paths(client_game_npcs_src_dir,'c_npc_humanoidbase.cpp'),
+		),
+		include_directories: include_directories(
+			client_game_src_dir,
+			client_game_vgui_src_dir,
+			client_game_entities_src_dir,
+			client_game_hud_src_dir
+		),
+		dependencies: [
+			game_shared_dep,
+			source_game_base.get_variable('source_os_client_lib_dep'),
+			coplay.get_variable('coplay_dep')
+		],
+		install: true,
+		install_dir: join_paths(game_dir,'bin')
+	)
+endif
 
-shared_library('game_shader_dx9',name_prefix:'',
-	cpp_args: [
-		'-DHEIST_SHADER_DLL',
-	],
-	sources: files(
-		
-	),
-	include_directories: include_directories(
-		
-	),
-	dependencies: [
-		source_game_base.get_variable('source_linux_game_shader_lib_dep')
-	],
-	install: true,
-	install_dir: join_paths(game_dir,'bin')
-)
+if client == true
+	shared_library('game_shader_dx9',name_prefix:'',
+		cpp_args: [
+			'-DHEIST_SHADER_DLL',
+		],
+		sources: files(
+			
+		),
+		include_directories: include_directories(
+			
+		),
+		dependencies: [
+			source_game_base.get_variable('source_os_game_shader_lib_dep')
+		],
+		install: true,
+		install_dir: join_paths(game_dir,'bin')
+	)
+endif

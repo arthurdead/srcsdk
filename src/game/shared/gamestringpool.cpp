@@ -26,7 +26,11 @@ class CGameStringPool : public CBaseGameSystem
 #endif
 {
 	virtual char const *Name() { return "CGameStringPool"; }
-	virtual void LevelShutdownPostEntity() { FreeAll(); }
+	virtual void LevelShutdownPostEntity()
+	{
+		FreeAll();
+		CGameString::IncrementSerialNumber();
+	}
 
 	void FreeAll()
 	{
@@ -121,6 +125,36 @@ string_t AllocPooledString_StaticConstantStringPointer( const char * pszGlobalCo
 string_t FindPooledString( const char *pszValue )
 {
 	return MAKE_STRING( g_GameStringPool.Find( pszValue ) );
+}
+
+int CGameString::gm_iSerialNumber = 1;
+
+CGameString::~CGameString() 
+{ 
+	if ( m_bCopy ) 
+		free( (void *)m_pszString ); 
+}
+
+void CGameString::Set( const char *pszString, bool bCopy )
+{
+	if ( m_bCopy && m_pszString )
+		free( (void *)m_pszString );
+	m_iszString = NULL_STRING;
+	m_pszString = ( !bCopy ) ? pszString : strdup( pszString );
+}
+
+string_t CGameString::Get() const
+{
+	if ( m_iszString == NULL_STRING || m_iSerial != gm_iSerialNumber )
+	{
+		if ( !m_pszString )
+			return NULL_STRING;
+
+		m_iszString = AllocPooledString( m_pszString );
+		m_iSerial = gm_iSerialNumber;
+	}
+
+	return m_iszString;
 }
 
 #if !defined(CLIENT_DLL) && !defined( GC )

@@ -109,7 +109,9 @@ void CGenericNPC::TempGunEffect( void )
 //=========================================================
 void CGenericNPC::HandleAnimEvent( animevent_t *pEvent )
 {
-	switch( pEvent->event )
+	int nEvent = pEvent->Event();
+
+	switch( nEvent )
 	{
 	case 1:
 		// TEMPORARLY. Makes the May 2001 sniper demo work (sjb)
@@ -202,7 +204,7 @@ const int TOO_MUCH_HEALTH_TO_DIE = 1000;
 class CNPC_Furniture : public CAI_BaseActor
 {
 	DECLARE_CLASS( CNPC_Furniture, CAI_BaseActor );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 public:
 	void	Spawn( void );
 	void	Precache( void );
@@ -242,12 +244,12 @@ LINK_ENTITY_TO_CLASS( npc_furniture, CNPC_Furniture );
 // Save/load
 //-----------------------------------------------------------------------------
 
-BEGIN_DATADESC( CNPC_Furniture )
-	DEFINE_EMBEDDED( m_BoneFollowerManager ),
+BEGIN_MAPENTITY( CNPC_Furniture )
+
 	DEFINE_INPUTFUNC( FIELD_VOID,	"DisablePlayerCollision", InputDisablePlayerCollision ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"EnablePlayerCollision", InputEnablePlayerCollision ),
 	
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: This used to have something to do with bees flying, but 
@@ -304,12 +306,7 @@ void CNPC_Furniture::Precache( void )
 //-----------------------------------------------------------------------------
 int	CNPC_Furniture::ObjectCaps( void ) 
 { 
-	// HL2 furniture transitions
-#ifdef HL2_DLL
-	return CAI_BaseNPC::ObjectCaps(); 
-#else
 	return (CAI_BaseNPC::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); 
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -334,10 +331,6 @@ Class_T CNPC_Furniture::Classify ( void )
 //------------------------------------------------------------------------------
 bool CNPC_Furniture::CreateVPhysics( void )
 {
-#ifndef HL2_DLL
-	return false;
-#endif
-
 	if ( !m_BoneFollowerManager.GetNumBoneFollowers() )
 	{
 		KeyValues *modelKeyValues = new KeyValues("");

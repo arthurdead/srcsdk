@@ -50,11 +50,13 @@ static ConVar r_flashlightnearoffsetscale( "r_flashlightnearoffsetscale", "1.0",
 static ConVar r_flashlighttracedistcutoff( "r_flashlighttracedistcutoff", "128" );
 static ConVar r_flashlightbacktraceoffset( "r_flashlightbacktraceoffset", "0.4", FCVAR_CHEAT );
 
+ClientShadowHandle_t g_hFlashlightHandle[MAX_PLAYERS + 1] = { CLIENTSHADOW_INVALID_HANDLE };
+
 //-----------------------------------------------------------------------------
+static CFlashlightEffectManager s_flashlightEffectManager;
 CFlashlightEffectManager & FlashlightEffectManager()
 {
-	static CFlashlightEffectManager s_flashlightEffectManagerArray;
-	return s_flashlightEffectManagerArray;
+	return s_flashlightEffectManager;
 }
 
 
@@ -66,7 +68,8 @@ CFlashlightEffectManager & FlashlightEffectManager()
 //-----------------------------------------------------------------------------
 CFlashlightEffect::CFlashlightEffect(int nEntIndex, const char *pszTextureName, float flFov, float flFarZ, float flLinearAtten )
 {
-	m_FlashlightHandle = CLIENTSHADOW_INVALID_HANDLE;
+	SetFlashlightHandle( CLIENTSHADOW_INVALID_HANDLE );
+
 	m_nEntIndex = nEntIndex;
 
 	m_flCurrentPullBackDist = 1.0f;
@@ -234,7 +237,7 @@ void CFlashlightEffect::UpdateLightTopDown(const Vector &vecPos, const Vector &v
 
 	if( m_FlashlightHandle == CLIENTSHADOW_INVALID_HANDLE )
 	{
-		m_FlashlightHandle = g_pClientShadowMgr->CreateFlashlight( state );
+		SetFlashlightHandle( g_pClientShadowMgr->CreateFlashlight( state ) );
 	}
 	else
 	{
@@ -255,7 +258,7 @@ void CFlashlightEffect::UpdateLightTopDown(const Vector &vecPos, const Vector &v
 		KeyValues *msg = new KeyValues( "FlashlightState" );
 		msg->SetFloat( "time", gpGlobals->curtime );
 		msg->SetInt( "entindex", m_nEntIndex );
-		msg->SetInt( "flashlightHandle", m_FlashlightHandle );
+		msg->SetInt( "flashlightHandle", (uint)m_FlashlightHandle );
 		msg->SetPtr( "flashlightState", &state );
 		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, msg );
 		msg->deleteThis();
@@ -301,7 +304,7 @@ void CFlashlightEffect::UpdateLight(	int nEntIdx, const Vector &vecPos, const Ve
 
 	if( m_FlashlightHandle == CLIENTSHADOW_INVALID_HANDLE )
 	{
-		m_FlashlightHandle = g_pClientShadowMgr->CreateFlashlight( state );
+		SetFlashlightHandle( g_pClientShadowMgr->CreateFlashlight( state ) );
 	}
 	else
 	{
@@ -318,7 +321,7 @@ void CFlashlightEffect::UpdateLight(	int nEntIdx, const Vector &vecPos, const Ve
 		KeyValues *msg = new KeyValues( "FlashlightState" );
 		msg->SetFloat( "time", gpGlobals->curtime );
 		msg->SetInt( "entindex", m_nEntIndex );
-		msg->SetInt( "flashlightHandle", m_FlashlightHandle );
+		msg->SetInt( "flashlightHandle", (uint)m_FlashlightHandle );
 		msg->SetPtr( "flashlightState", &state );
 		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, msg );
 		msg->deleteThis();
@@ -361,7 +364,7 @@ void CFlashlightEffect::UpdateLight(	int nEntIdx, const Vector &vecPos, const Ve
 
 	if( m_FlashlightHandle == CLIENTSHADOW_INVALID_HANDLE )
 	{
-		m_FlashlightHandle = g_pClientShadowMgr->CreateFlashlight( state );
+		SetFlashlightHandle( g_pClientShadowMgr->CreateFlashlight( state ) );
 	}
 	else
 	{
@@ -378,7 +381,7 @@ void CFlashlightEffect::UpdateLight(	int nEntIdx, const Vector &vecPos, const Ve
 		KeyValues *msg = new KeyValues( "FlashlightState" );
 		msg->SetFloat( "time", gpGlobals->curtime );
 		msg->SetInt( "entindex", m_nEntIndex );
-		msg->SetInt( "flashlightHandle", m_FlashlightHandle );
+		msg->SetInt( "flashlightHandle", (uint)m_FlashlightHandle );
 		msg->SetPtr( "flashlightState", &state );
 		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, msg );
 		msg->deleteThis();
@@ -711,7 +714,7 @@ void CFlashlightEffect::LightOff()
 		KeyValues *msg = new KeyValues( "FlashlightState" );
 		msg->SetFloat( "time", gpGlobals->curtime );
 		msg->SetInt( "entindex", m_nEntIndex );
-		msg->SetInt( "flashlightHandle", m_FlashlightHandle );
+		msg->SetInt( "flashlightHandle", (uint)m_FlashlightHandle );
 		msg->SetPtr( "flashlightState", NULL );
 		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, msg );
 		msg->deleteThis();
@@ -721,7 +724,7 @@ void CFlashlightEffect::LightOff()
 	if( m_FlashlightHandle != CLIENTSHADOW_INVALID_HANDLE )
 	{
 		g_pClientShadowMgr->DestroyFlashlight( m_FlashlightHandle );
-		m_FlashlightHandle = CLIENTSHADOW_INVALID_HANDLE;
+		SetFlashlightHandle( CLIENTSHADOW_INVALID_HANDLE );
 	}
 }
 
@@ -779,4 +782,12 @@ void CHeadlightEffect::UpdateLight( const Vector &vecPos, const Vector &vecDir, 
 	}
 	
 	g_pClientShadowMgr->UpdateProjectedTexture( GetFlashlightHandle(), true );
+}
+
+void CFlashlightEffect::SetFlashlightHandle( ClientShadowHandle_t Handle )
+{
+	m_FlashlightHandle = Handle;
+
+	Assert(m_nEntIndex >= 0 && m_nEntIndex < ARRAYSIZE(g_hFlashlightHandle));
+	g_hFlashlightHandle[m_nEntIndex] = Handle;
 }

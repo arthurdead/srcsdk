@@ -19,7 +19,7 @@ extern ConVar	showtriggers;
 
 LINK_ENTITY_TO_CLASS( func_brush, CFuncBrush );
 
-BEGIN_DATADESC( CFuncBrush )
+BEGIN_MAPENTITY( CFuncBrush )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputTurnOff ),
@@ -33,8 +33,10 @@ BEGIN_DATADESC( CFuncBrush )
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetExcluded", InputSetExcluded ),
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "SetInvert", InputSetInvert ),
 
-END_DATADESC()
+END_MAPENTITY()
 
+IMPLEMENT_SERVERCLASS_ST(CFuncBrush, DT_FuncBrush)
+END_SEND_TABLE()
 
 void CFuncBrush::Spawn( void )
 {
@@ -250,12 +252,12 @@ public:
 	int m_iInputFilter;
 	int m_iDontMessageParent;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS( trigger_brush, CTriggerBrush );
 
-BEGIN_DATADESC( CTriggerBrush )
+BEGIN_MAPENTITY( CTriggerBrush )
 
 	DEFINE_KEYFIELD( m_iInputFilter, FIELD_INTEGER, "InputFilter" ),
 	DEFINE_KEYFIELD( m_iDontMessageParent, FIELD_INTEGER, "DontMessageParent" ),
@@ -267,7 +269,7 @@ BEGIN_DATADESC( CTriggerBrush )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 void CTriggerBrush::Spawn( void )

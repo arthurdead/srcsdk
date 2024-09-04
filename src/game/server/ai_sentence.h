@@ -45,7 +45,6 @@ enum SentencePriority_t
 abstract_class CAI_SentenceBase : public CAI_Component 
 {
 	DECLARE_CLASS_NOBASE( CAI_SentenceBase );
-	DECLARE_SIMPLE_DATADESC();
 
 public:
 	CAI_SentenceBase();

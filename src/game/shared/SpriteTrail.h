@@ -20,8 +20,6 @@
 //-----------------------------------------------------------------------------
 struct TrailPoint_t
 {
-	DECLARE_SIMPLE_DATADESC();
-
 	Vector	m_vecScreenPos;
 	float	m_flDieTime;
 	float	m_flTexCoord;
@@ -31,7 +29,7 @@ struct TrailPoint_t
 class CSpriteTrail : public CSprite
 {
 	DECLARE_CLASS( CSpriteTrail, CSprite );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_NETWORKCLASS();
 	DECLARE_PREDICTABLE();
 

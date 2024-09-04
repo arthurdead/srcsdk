@@ -199,7 +199,7 @@ void CRecipientFilter::RemoveRecipientsNotOnTeam( CTeam *team )
 	}
 }
 
-void CRecipientFilter::AddPlayersFromBitMask( CBitVec< ABSOLUTE_PLAYER_LIMIT >& playerbits )
+void CRecipientFilter::AddPlayersFromBitMask( CEnginePlayerBitVec& playerbits )
 {
 	int index = playerbits.FindNextSetBit( 0 );
 
@@ -215,7 +215,7 @@ void CRecipientFilter::AddPlayersFromBitMask( CBitVec< ABSOLUTE_PLAYER_LIMIT >& 
 	}
 }
 
-void CRecipientFilter::RemovePlayersFromBitMask( CBitVec< ABSOLUTE_PLAYER_LIMIT >& playerbits )
+void CRecipientFilter::RemovePlayersFromBitMask( CEnginePlayerBitVec& playerbits )
 {
 	int index = playerbits.FindNextSetBit( 0 );
 
@@ -239,7 +239,7 @@ void CRecipientFilter::AddRecipientsByPVS( const Vector& origin )
 	}
 	else
 	{
-		CBitVec< ABSOLUTE_PLAYER_LIMIT > playerbits;
+		CEnginePlayerBitVec playerbits;
 		engine->Message_DetermineMulticastRecipients( false, origin, playerbits );
 		AddPlayersFromBitMask( playerbits );
 	}
@@ -253,7 +253,7 @@ void CRecipientFilter::RemoveRecipientsByPVS( const Vector& origin )
 	}
 	else
 	{
-		CBitVec< ABSOLUTE_PLAYER_LIMIT > playerbits;
+		CEnginePlayerBitVec playerbits;
 		engine->Message_DetermineMulticastRecipients( false, origin, playerbits );
 		RemovePlayersFromBitMask( playerbits );
 	}
@@ -269,7 +269,7 @@ void CRecipientFilter::AddRecipientsByPAS( const Vector& origin )
 	}
 	else
 	{
-		CBitVec< ABSOLUTE_PLAYER_LIMIT > playerbits;
+		CEnginePlayerBitVec playerbits;
 		engine->Message_DetermineMulticastRecipients( true, origin, playerbits );
 		AddPlayersFromBitMask( playerbits );
 	}
@@ -372,10 +372,14 @@ void CPASAttenuationFilter::Filter( const Vector& origin, float attenuation /*= 
 
 	// CPASFilter adds them by pure PVS in constructor
 	if ( attenuation <= 0 )
+	{
+		AddAllPlayers();
 		return;
+	}
 
 	// Now remove recipients that are outside sound radius
-	float distance, maxAudible;
+	float maxAudible = ( 2 * SOUND_NORMAL_CLIP_DIST ) / attenuation;
+	float distance;
 	Vector vecRelative;
 
 	int c = GetRecipientCount();
@@ -402,10 +406,7 @@ void CPASAttenuationFilter::Filter( const Vector& origin, float attenuation /*= 
 		if ( player->IsHLTV() || player->IsReplay() )
 			continue;
 
-		VectorSubtract( player->EarPosition(), origin, vecRelative );
-		distance = VectorLength( vecRelative );
-		maxAudible = ( 2 * SOUND_NORMAL_CLIP_DIST ) / attenuation;
-		if ( distance <= maxAudible )
+		if ( player->EarPosition().DistTo(origin) <= maxAudible )
 			continue;
 
 		RemoveRecipient( player );

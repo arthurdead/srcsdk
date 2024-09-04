@@ -76,7 +76,6 @@ OUTPUTS:
 #include "cbase.h"
 #include "entitylist.h"
 #include "mapentities_shared.h"
-#include "isaverestore.h"
 #include "eventqueue.h"
 #include "entityinput.h"
 #include "entityoutput.h"
@@ -84,26 +83,12 @@ OUTPUTS:
 #include "tier1/strtools.h"
 #include "datacache/imdlcache.h"
 #include "env_debughistory.h"
+#include "entitydefs.h"
 
 #include "tier0/vprof.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
-extern ISaveRestoreOps *variantFuncs;	// function pointer set for save/restoring variants
-
-BEGIN_SIMPLE_DATADESC( CEventAction )
-	DEFINE_FIELD( m_iTarget, FIELD_STRING ),
-	DEFINE_FIELD( m_iTargetInput, FIELD_STRING ),
-	DEFINE_FIELD( m_iParameter, FIELD_STRING ),
-	DEFINE_FIELD( m_flDelay, FIELD_FLOAT ),
-	DEFINE_FIELD( m_nTimesToFire, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iIDStamp, FIELD_INTEGER ),
-
-	// This is dealt with by the Restore method
-	// DEFINE_FIELD( m_pNext, CEventAction ),
-END_DATADESC()
-
 
 // ID Stamp used to uniquely identify every output
 int CEventAction::s_iNextIDStamp = 0;
@@ -129,10 +114,16 @@ CEventAction::CEventAction( const char *ActionData )
 
 	char szToken[256];
 
+	char chDelim = VMF_IOPARAM_STRING_DELIMITER;
+	if (!strchr(ActionData, VMF_IOPARAM_STRING_DELIMITER))
+	{
+		chDelim = ',';
+	}
+
 	//
 	// Parse the target name.
 	//
-	const char *psz = nexttoken(szToken, ActionData, ',', sizeof(szToken));
+	const char *psz = nexttoken(szToken, ActionData, chDelim, sizeof(szToken));
 	if (szToken[0] != '\0')
 	{
 		m_iTarget = AllocPooledString(szToken);
@@ -141,7 +132,7 @@ CEventAction::CEventAction( const char *ActionData )
 	//
 	// Parse the input name.
 	//
-	psz = nexttoken(szToken, psz, ',', sizeof(szToken));
+	psz = nexttoken(szToken, psz, chDelim, sizeof(szToken));
 	if (szToken[0] != '\0')
 	{
 		m_iTargetInput = AllocPooledString(szToken);
@@ -154,7 +145,7 @@ CEventAction::CEventAction( const char *ActionData )
 	//
 	// Parse the parameter override.
 	//
-	psz = nexttoken(szToken, psz, ',', sizeof(szToken));
+	psz = nexttoken(szToken, psz, chDelim, sizeof(szToken));
 	if (szToken[0] != '\0')
 	{
 		m_iParameter = AllocPooledString(szToken);
@@ -163,7 +154,7 @@ CEventAction::CEventAction( const char *ActionData )
 	//
 	// Parse the delay.
 	//
-	psz = nexttoken(szToken, psz, ',', sizeof(szToken));
+	psz = nexttoken(szToken, psz, chDelim, sizeof(szToken));
 	if (szToken[0] != '\0')
 	{
 		m_flDelay = atof(szToken);
@@ -172,7 +163,7 @@ CEventAction::CEventAction( const char *ActionData )
 	//
 	// Parse the number of times to fire.
 	//
-	psz = nexttoken(szToken, psz, ',', sizeof(szToken));
+	psz = nexttoken(szToken, psz, chDelim, sizeof(szToken));
 	if (szToken[0] != '\0')
 	{
 		m_nTimesToFire = atoi(szToken);
@@ -183,6 +174,17 @@ CEventAction::CEventAction( const char *ActionData )
 	}
 }
 
+CEventAction::CEventAction( const CEventAction &p_EventAction )
+{
+	m_pNext = NULL;
+	m_iIDStamp = ++s_iNextIDStamp;
+
+	m_flDelay = p_EventAction.m_flDelay;
+	m_iTarget = p_EventAction.m_iTarget;
+	m_iParameter = p_EventAction.m_iParameter;
+	m_iTargetInput = p_EventAction.m_iTargetInput;
+	m_nTimesToFire = p_EventAction.m_nTimesToFire;
+}
 
 // this memory pool stores blocks around the size of CEventAction/inputitem_t structs
 // can be used for other blocks; will error if to big a block is tried to be allocated
@@ -387,63 +389,37 @@ void CBaseEntityOutput::AddEventAction( CEventAction *pEventAction )
 	m_ActionList = pEventAction;
 }
 
-
-// save data description for the event queue
-BEGIN_SIMPLE_DATADESC( CBaseEntityOutput )
-
-	DEFINE_CUSTOM_FIELD( m_Value, variantFuncs ),
-
-	// This is saved manually by CBaseEntityOutput::Save
-	// DEFINE_FIELD( m_ActionList, CEventAction ),
-END_DATADESC()
-
-
-int CBaseEntityOutput::Save( ISave &save )
+void CBaseEntityOutput::RemoveEventAction( CEventAction *pEventAction )
 {
-	// save that value out to disk, so we know how many to restore
-	if ( !save.WriteFields( "Value", this, NULL, m_DataMap.dataDesc, m_DataMap.dataNumFields ) )
-		return 0;
-
-	for ( CEventAction *ev = m_ActionList; ev != NULL; ev = ev->m_pNext )
+	CEventAction *pAction = GetFirstAction();
+	CEventAction *pPrevAction = NULL;
+	while ( pAction )
 	{
-		if ( !save.WriteFields( "EntityOutput", ev, NULL, ev->m_DataMap.dataDesc, ev->m_DataMap.dataNumFields ) )
-			return 0;
+		if ( pAction == pEventAction )
+		{
+			if ( !pPrevAction )
+			{
+				m_ActionList = NULL;
+			}
+			else
+			{
+				pPrevAction->m_pNext = pAction->m_pNext;
+			}
+			return;
+		}
+		pAction = pAction->m_pNext;
 	}
-
-	return 1;
 }
 
-int CBaseEntityOutput::Restore( IRestore &restore, int elementCount )
+const CEventAction *CBaseEntityOutput::GetActionForTarget( string_t iSearchTarget ) const
 {
-	// load the number of items saved
-	if ( !restore.ReadFields( "Value", this, NULL, m_DataMap.dataDesc, m_DataMap.dataNumFields ) )
-		return 0;
-
-	m_ActionList = NULL;
-
-	// read in all the fields
-	CEventAction *lastEv = NULL;
-	for ( int i = 0; i < elementCount; i++ )
+	for ( CEventAction *ev = m_ActionList; ev != NULL; ev = ev->m_pNext )
 	{
-		CEventAction *ev = new CEventAction(NULL);
-
-		if ( !restore.ReadFields( "EntityOutput", ev, NULL, ev->m_DataMap.dataDesc, ev->m_DataMap.dataNumFields ) )
-			return 0;
-
-		// add it to the list in the same order it was saved in
-		if ( lastEv )
-		{
-			lastEv->m_pNext = ev;
-		}
-		else
-		{
-			m_ActionList = ev;
-		}
-		ev->m_pNext = NULL;
-		lastEv = ev;
+		if ( ev->m_iTarget == iSearchTarget )
+			return ev;
 	}
 
-	return 1;
+	return NULL;
 }
 
 int CBaseEntityOutput::NumberOfElements( void )
@@ -473,78 +449,6 @@ void CBaseEntityOutput::DeleteAllElements( void )
 	}
 
 }
-
-/// EVENTS save/restore parsing wrapper
-
-class CEventsSaveDataOps : public ISaveRestoreOps
-{
-	virtual void Save( const SaveRestoreFieldInfo_t &fieldInfo, ISave *pSave )
-	{
-		AssertMsg( fieldInfo.pTypeDesc->fieldSize == 1, "CEventsSaveDataOps does not support arrays");
-
-		CBaseEntityOutput *ev = (CBaseEntityOutput*)fieldInfo.pField;
-		const int fieldSize = fieldInfo.pTypeDesc->fieldSize;
- 		for ( int i = 0; i < fieldSize; i++, ev++ )
-		{
-			// save out the number of fields
-			int numElements = ev->NumberOfElements();
-			pSave->WriteInt( &numElements, 1 );
-
-			// save the event data
-			ev->Save( *pSave );
-		}
-	}
-
-	virtual void Restore( const SaveRestoreFieldInfo_t &fieldInfo, IRestore *pRestore )
-	{
-		AssertMsg( fieldInfo.pTypeDesc->fieldSize == 1, "CEventsSaveDataOps does not support arrays");
-
-		CBaseEntityOutput *ev = (CBaseEntityOutput*)fieldInfo.pField;
-		const int fieldSize = fieldInfo.pTypeDesc->fieldSize;
-		for ( int i = 0; i < fieldSize; i++, ev++ )
-		{
-			int nElements = pRestore->ReadInt();
-			
-			Assert( nElements < 100 );
-
-			ev->Restore( *pRestore, nElements );
-		}
-	}
-
-	virtual bool IsEmpty( const SaveRestoreFieldInfo_t &fieldInfo )
-	{
-		AssertMsg( fieldInfo.pTypeDesc->fieldSize == 1, "CEventsSaveDataOps does not support arrays");
-		
-		// check all the elements of the array (usually only 1)
-		CBaseEntityOutput *ev = (CBaseEntityOutput*)fieldInfo.pField;
-		const int fieldSize = fieldInfo.pTypeDesc->fieldSize;
-		for ( int i = 0; i < fieldSize; i++, ev++ )
-		{
-			// It's not empty if it has events or if it has a non-void variant value
-			if (( ev->NumberOfElements() != 0 ) || ( ev->ValueFieldType() != FIELD_VOID ))
-				return 0;
-		}
-
-		// variant has no data
-		return 1;
-	}
-
-	virtual void MakeEmpty( const SaveRestoreFieldInfo_t &fieldInfo )
-	{
-		// Don't no how to. This is okay, since objects of this type
-		// are always born clean before restore, and not reused
-	}
-
-	virtual bool Parse( const SaveRestoreFieldInfo_t &fieldInfo, char const* szValue )
-	{
-		CBaseEntityOutput *ev = (CBaseEntityOutput*)fieldInfo.pField;
-		ev->ParseEventAction( szValue );
-		return true;
-	}
-};
-
-CEventsSaveDataOps g_EventsSaveDataOps;
-ISaveRestoreOps *eventFuncs = &g_EventsSaveDataOps;
 
 //-----------------------------------------------------------------------------
 //			CMultiInputVar implementation
@@ -654,102 +558,6 @@ CEventQueue::~CEventQueue()
 {
 	Clear();
 }
-
-// Robin: Left here for backwards compatability.
-class CEventQueueSaveLoadProxy : public CLogicalEntity
-{
-	DECLARE_CLASS( CEventQueueSaveLoadProxy, CLogicalEntity );
-
-	int Save( ISave &save )
-	{
-		if ( !BaseClass::Save(save) )
-			return 0;
-
-		// save out the message queue
-		return g_EventQueue.Save( save );
-	}
-
-
-	int Restore( IRestore &restore )
-	{
-		if ( !BaseClass::Restore(restore) )
-			return 0;
-
-		// restore the event queue
-		int iReturn = g_EventQueue.Restore( restore );
-
-		// Now remove myself, because the CEventQueue_SaveRestoreBlockHandler
-		// will handle future saves.
-		UTIL_Remove( this );
-
-		return iReturn;
-	}
-};
-
-LINK_ENTITY_TO_CLASS(event_queue_saveload_proxy, CEventQueueSaveLoadProxy);
-
-//-----------------------------------------------------------------------------
-// EVENT QUEUE SAVE / RESTORE
-//-----------------------------------------------------------------------------
-static short EVENTQUEUE_SAVE_RESTORE_VERSION = 1;
-
-class CEventQueue_SaveRestoreBlockHandler : public CDefSaveRestoreBlockHandler
-{
-public:
-	const char *GetBlockName()
-	{
-		return "EventQueue";
-	}
-
-	//---------------------------------
-
-	void Save( ISave *pSave )
-	{
-		g_EventQueue.Save( *pSave );
-	}
-
-	//---------------------------------
-
-	void WriteSaveHeaders( ISave *pSave )
-	{
-		pSave->WriteShort( &EVENTQUEUE_SAVE_RESTORE_VERSION );
-	}
-
-	//---------------------------------
-
-	void ReadRestoreHeaders( IRestore *pRestore )
-	{
-		// No reason why any future version shouldn't try to retain backward compatability. The default here is to not do so.
-		short version;
-		pRestore->ReadShort( &version );
-		m_fDoLoad = ( version == EVENTQUEUE_SAVE_RESTORE_VERSION );
-	}
-
-	//---------------------------------
-
-	void Restore( IRestore *pRestore, bool createPlayers )
-	{
-		if ( m_fDoLoad )
-		{
-			g_EventQueue.Restore( *pRestore );
-		}
-	}
-
-private:
-	bool m_fDoLoad;
-};
-
-//-----------------------------------------------------------------------------
-
-CEventQueue_SaveRestoreBlockHandler g_EventQueue_SaveRestoreBlockHandler;
-
-//-------------------------------------
-
-ISaveRestoreBlockHandler *GetEventQueueSaveRestoreBlockHandler()
-{
-	return &g_EventQueue_SaveRestoreBlockHandler;
-}
-
 
 void CEventQueue::Init( void )
 {
@@ -1128,109 +936,6 @@ void ServiceEventQueue( void )
 	g_EventQueue.ServiceEvents();
 }
 
-
-
-// save data description for the event queue
-BEGIN_SIMPLE_DATADESC( CEventQueue )
-	// These are saved explicitly in CEventQueue::Save below
-	// DEFINE_FIELD( m_Events, EventQueuePrioritizedEvent_t ),
-
-	DEFINE_FIELD( m_iListCount, FIELD_INTEGER ),	// this value is only used during save/restore
-END_DATADESC()
-
-
-// save data for a single event in the queue
-BEGIN_SIMPLE_DATADESC( EventQueuePrioritizedEvent_t )
-	DEFINE_FIELD( m_flFireTime, FIELD_TIME ),
-	DEFINE_FIELD( m_iTarget, FIELD_STRING ),
-	DEFINE_FIELD( m_iTargetInput, FIELD_STRING ),
-	DEFINE_FIELD( m_pActivator, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_pCaller, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_pEntTarget, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_iOutputID, FIELD_INTEGER ),
-	DEFINE_CUSTOM_FIELD( m_VariantValue, variantFuncs ),
-
-//	DEFINE_FIELD( m_pNext, FIELD_??? ),
-//	DEFINE_FIELD( m_pPrev, FIELD_??? ),
-END_DATADESC()
-
-
-int CEventQueue::Save( ISave &save )
-{
-	// count the number of items in the queue
-	EventQueuePrioritizedEvent_t *pe;
-
-	m_iListCount = 0;
-	for ( pe = m_Events.m_pNext; pe != NULL; pe = pe->m_pNext )
-	{
-		m_iListCount++;
-	}
-
-	// save that value out to disk, so we know how many to restore
-	if ( !save.WriteFields( "EventQueue", this, NULL, m_DataMap.dataDesc, m_DataMap.dataNumFields ) )
-		return 0;
-	
-	// cycle through all the events, saving them all
-	for ( pe = m_Events.m_pNext; pe != NULL; pe = pe->m_pNext )
-	{
-		if ( !save.WriteFields( "PEvent", pe, NULL, pe->m_DataMap.dataDesc, pe->m_DataMap.dataNumFields ) )
-			return 0;
-	}
-
-	return 1;
-}
-
-
-int CEventQueue::Restore( IRestore &restore )
-{
-	// clear the event queue
-	Clear();
-
-	// rebuild the event queue by restoring all the queue items
-	EventQueuePrioritizedEvent_t tmpEvent;
-
-	// load the number of items saved
-	if ( !restore.ReadFields( "EventQueue", this, NULL, m_DataMap.dataDesc, m_DataMap.dataNumFields ) )
-		return 0;
-	
-	for ( int i = 0; i < m_iListCount; i++ )
-	{
-		if ( !restore.ReadFields( "PEvent", &tmpEvent, NULL, tmpEvent.m_DataMap.dataDesc, tmpEvent.m_DataMap.dataNumFields ) )
-			return 0;
-
-		// add the restored event into the list
-		if ( tmpEvent.m_pEntTarget )
-		{
-			AddEvent( tmpEvent.m_pEntTarget,
-					  STRING(tmpEvent.m_iTargetInput),
-					  tmpEvent.m_VariantValue,
-#ifdef TF_DLL
-					  tmpEvent.m_flFireTime - engine->GetServerTime(),
-#else
-					  tmpEvent.m_flFireTime - gpGlobals->curtime,
-#endif
-					  tmpEvent.m_pActivator,
-					  tmpEvent.m_pCaller,
-					  tmpEvent.m_iOutputID );
-		}
-		else
-		{
-			AddEvent( STRING(tmpEvent.m_iTarget),
-					  STRING(tmpEvent.m_iTargetInput),
-					  tmpEvent.m_VariantValue,
-#ifdef TF_DLL
-					  tmpEvent.m_flFireTime - engine->GetServerTime(),
-#else
-					  tmpEvent.m_flFireTime - gpGlobals->curtime,
-#endif
-					  tmpEvent.m_pActivator,
-					  tmpEvent.m_pCaller,
-					  tmpEvent.m_iOutputID );
-		}
-	}
-
-	return 1;
-}
 
 ////////////////////////// variant_t implementation //////////////////////////
 
@@ -1636,137 +1341,6 @@ typedescription_t variant_t::m_SaveMatrix3x4Worldspace[] =
 	DEFINE_FIELD( matSave, FIELD_MATRIX3X4_WORLDSPACE ),
 };
 #undef classNameTypedef
-
-class CVariantSaveDataOps : public CDefSaveRestoreOps
-{
-	// saves the entire array of variables
-	virtual void Save( const SaveRestoreFieldInfo_t &fieldInfo, ISave *pSave )
-	{
-		variant_t *var = (variant_t*)fieldInfo.pField;
-
-		int type = var->FieldType();
-		pSave->WriteInt( &type, 1 );
-
-		switch ( var->FieldType() )
-		{
-		case FIELD_VOID:
-			break;
-		case FIELD_BOOLEAN:	
-			pSave->WriteFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveBool, 1 );
-			break;
-		case FIELD_INTEGER:	
-			pSave->WriteFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveInt, 1 );
-			break;
-		case FIELD_FLOAT:
-			pSave->WriteFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveFloat, 1 );
-			break;
-		case FIELD_EHANDLE:
-			pSave->WriteFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveEHandle, 1 );
-			break;
-		case FIELD_STRING:
-			pSave->WriteFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveString, 1 );
-			break;
-		case FIELD_COLOR32:
-			pSave->WriteFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveColor, 1 );
-			break;
-		case FIELD_VECTOR:
-		{
-			variant_savevector_t Temp;
-			var->Vector3D(Temp.vecSave);
-			pSave->WriteFields( fieldInfo.pTypeDesc->fieldName, &Temp, NULL, variant_t::m_SaveVector, 1 );
-			break;
-		}
-
-		case FIELD_POSITION_VECTOR:
-		{
-			variant_savevector_t Temp;
-			var->Vector3D(Temp.vecSave);
-			pSave->WriteFields( fieldInfo.pTypeDesc->fieldName, &Temp, NULL, variant_t::m_SavePositionVector, 1 );
-			break;
-		}
-
-		default:
-			Warning( "Bad type %d in saved variant_t\n", var->FieldType() );
-			Assert(0);
-		}
-	}
-
-	// restores a single instance of the variable
-	virtual void Restore( const SaveRestoreFieldInfo_t &fieldInfo, IRestore *pRestore )
-	{
-		variant_t *var = (variant_t*)fieldInfo.pField;
-
-		*var = variant_t();
-
-		var->fieldType = (_fieldtypes)pRestore->ReadInt();
-
-		switch ( var->fieldType )
-		{
-		case FIELD_VOID:
-			break;
-		case FIELD_BOOLEAN:	
-			pRestore->ReadFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveBool, 1 );
-			break;
-		case FIELD_INTEGER:	
-			pRestore->ReadFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveInt, 1 );
-			break;
-		case FIELD_FLOAT:
-			pRestore->ReadFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveFloat, 1 );
-			break;
-		case FIELD_EHANDLE:
-			pRestore->ReadFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveEHandle, 1 );
-			break;
-		case FIELD_STRING:
-			pRestore->ReadFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveString, 1 );
-			break;
-		case FIELD_COLOR32:
-			pRestore->ReadFields( fieldInfo.pTypeDesc->fieldName, var, NULL, variant_t::m_SaveColor, 1 );
-			break;
-		case FIELD_VECTOR:
-		{
-			variant_savevector_t Temp;
-			pRestore->ReadFields( fieldInfo.pTypeDesc->fieldName, &Temp, NULL, variant_t::m_SaveVector, 1 );
-			var->SetVector3D(Temp.vecSave);
-			break;
-		}
-		case FIELD_POSITION_VECTOR:
-		{
-			variant_savevector_t Temp;
-			pRestore->ReadFields( fieldInfo.pTypeDesc->fieldName, &Temp, NULL, variant_t::m_SavePositionVector, 1 );
-			var->SetPositionVector3D(Temp.vecSave);
-			break;
-		}
-		default:
-			Warning( "Bad type %d in saved variant_t\n", var->FieldType() );
-			Assert(0);
-			break;
-		}
-	}
-
-
-	virtual bool IsEmpty( const SaveRestoreFieldInfo_t &fieldInfo )
-	{
-		// check all the elements of the array (usually only 1)
-		variant_t *var = (variant_t*)fieldInfo.pField;
-		for ( int i = 0; i < fieldInfo.pTypeDesc->fieldSize; i++, var++ )
-		{
-			if ( var->FieldType() != FIELD_VOID )
-				return 0;
-		}
-
-		// variant has no data
-		return 1;
-	}
-
-	virtual void MakeEmpty( const SaveRestoreFieldInfo_t &fieldInfo )
-	{
-		// Don't no how to. This is okay, since objects of this type
-		// are always born clean before restore, and not reused
-	}
-};
-
-CVariantSaveDataOps g_VariantSaveDataOps;
-ISaveRestoreOps *variantFuncs = &g_VariantSaveDataOps;
 
 /////////////////////// entitylist /////////////////////
 

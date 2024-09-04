@@ -34,13 +34,13 @@ public:
 	{
 		m_bRegisteredForEvents = true;
 
-#ifdef CLIENT_DLL
-		bool bServerSide = false;
-#else
-		bool bServerSide = true;
-#endif
-		if ( gameeventmanager )
-			gameeventmanager->AddListener( this, name, bServerSide );
+		if ( gameeventmanager ) {
+		#ifdef CLIENT_DLL
+			gameeventmanager->AddListener( this, name, false );
+		#else
+			gameeventmanager->AddListener( this, name, true );
+		#endif
+		}
 	}
 
 	void StopListeningForAllEvents()

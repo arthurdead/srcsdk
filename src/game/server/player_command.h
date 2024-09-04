@@ -12,7 +12,7 @@
 
 #include "edict.h"
 #include "usercmd.h"
-
+#include "networkvar.h"
 
 class IMoveHelper;
 class CMoveData;
@@ -32,7 +32,7 @@ public:
 
 	// Public interfaces:
 	// Run a movement command from the player
-	void			RunCommand ( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper *moveHelper );
+	virtual void			RunCommand ( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper *moveHelper );
 
 protected:
 	// Prepare for running movement

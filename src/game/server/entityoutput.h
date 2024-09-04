@@ -13,7 +13,7 @@
 
 #include "string_t.h"
 //#include "baseentity.h"
-#include "saverestore.h"
+#include "datamap.h"
 #include "variant_t.h"
 
 #define EVENT_FIRE_ALWAYS	-1
@@ -28,6 +28,7 @@ class CEventAction
 {
 public:
 	CEventAction( const char *ActionData = NULL );
+	CEventAction( const CEventAction &p_EventAction );
 
 	string_t m_iTarget; // name of the entity(s) to cause the action in
 	string_t m_iTargetInput; // the name of the action to fire
@@ -46,8 +47,6 @@ public:
 	static void *operator new( size_t stAllocateBlock, int nBlockUse, const char *pFileName, int nLine );
 	static void operator delete( void *pMem );
 	static void operator delete( void *pMem , int nBlockUse, const char *pFileName, int nLine ) { operator delete(pMem); }
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 
@@ -62,9 +61,7 @@ public:
 
 	void ParseEventAction( const char *EventData );
 	void AddEventAction( CEventAction *pEventAction );
-
-	int Save( ISave &save );
-	int Restore( IRestore &restore, int elementCount );
+	void RemoveEventAction( CEventAction *pEventAction );
 
 	int NumberOfElements( void );
 
@@ -77,10 +74,12 @@ public:
 	/// Delete every single action in the action list. 
 	void DeleteAllElements( void ) ;
 
+	CEventAction *GetFirstAction() { return m_ActionList; }
+
+	const CEventAction *GetActionForTarget( string_t iSearchTarget ) const;
 protected:
 	variant_t m_Value;
 	CEventAction *m_ActionList;
-	DECLARE_SIMPLE_DATADESC();
 
 	CBaseEntityOutput() {} // this class cannot be created, only it's children
 

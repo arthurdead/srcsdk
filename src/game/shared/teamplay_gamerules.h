@@ -16,7 +16,6 @@
 #pragma once
 
 #include "gamerules.h"
-#include "multiplay_gamerules.h"
 
 #ifdef CLIENT_DLL
 
@@ -40,10 +39,10 @@
 #define TEAMPLAY_TEAMLISTLENGTH		MAX_TEAMS*MAX_TEAMNAME_LENGTH
 
 
-class CTeamplayRules : public CMultiplayRules
+class CTeamplayRules : public CGameRules
 {
 public:
-	DECLARE_CLASS( CTeamplayRules, CMultiplayRules );
+	DECLARE_CLASS( CTeamplayRules, CGameRules );
 
 	// Return the value of this player towards capturing a point
 	virtual int	 GetCaptureValueForPlayer( CBasePlayer *pPlayer ) { return 1; }

@@ -24,7 +24,7 @@ class CLightGlow : public CBaseEntity
 public:
 	DECLARE_CLASS( CLightGlow, CBaseEntity );
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 					CLightGlow();
 					
@@ -48,7 +48,7 @@ public:
 extern void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 
 IMPLEMENT_SERVERCLASS_ST_NOBASE( CLightGlow, DT_LightGlow )
-	SendPropInt( SENDINFO(m_clrRender), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt ),
+	SendPropInt( SENDINFO(m_clrRender), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
 	SendPropInt( SENDINFO(m_nHorizontalSize), 16, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nVerticalSize), 16, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nMinDist), 16, SPROP_UNSIGNED ),
@@ -64,7 +64,7 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( env_lightglow, CLightGlow );
 
-BEGIN_DATADESC( CLightGlow )
+BEGIN_MAPENTITY( CLightGlow )
 
 	DEFINE_KEYFIELD( m_nVerticalSize,		FIELD_INTEGER,	"VerticalGlowSize" ),
 	DEFINE_KEYFIELD( m_nHorizontalSize,		FIELD_INTEGER,	"HorizontalGlowSize" ),
@@ -75,7 +75,7 @@ BEGIN_DATADESC( CLightGlow )
 	DEFINE_KEYFIELD( m_flHDRColorScale,		FIELD_FLOAT,	"HDRColorScale" ),
 	DEFINE_INPUTFUNC( FIELD_COLOR32, "Color",  InputColor ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Constructor 
@@ -132,5 +132,7 @@ void CLightGlow::Activate()
 
 void CLightGlow::InputColor(inputdata_t &inputdata)
 {
-	m_clrRender = inputdata.value.Color32();
+	color32 clrRender = inputdata.value.Color32();
+	SetRenderColor( clrRender.r, clrRender.g, clrRender.b );
+	SetRenderAlpha( clrRender.a );
 }

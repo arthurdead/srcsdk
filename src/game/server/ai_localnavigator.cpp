@@ -20,16 +20,6 @@ ConVar ai_debug_directnavprobe("ai_debug_directnavprobe", "0");
 
 const float TIME_DELAY_FULL_DIRECT_PROBE[2] = { 0.25, 0.35 };
 
-//-----------------------------------------------------------------------------
-
-BEGIN_SIMPLE_DATADESC(CAI_LocalNavigator)
-	//						m_fLastWasClear	(not saved)
-	//						m_LastMoveGoal	(not saved)
-	//						m_FullDirectTimer	(not saved)
-	//						m_pPlaneSolver	(not saved)
-	//						m_pMoveProbe	(not saved)
-END_DATADESC();
-
 //-------------------------------------
 
 CAI_LocalNavigator::CAI_LocalNavigator(CAI_BaseNPC *pOuter) : CAI_Component( pOuter ) 
@@ -76,6 +66,27 @@ void CAI_LocalNavigator::AddObstacle( const Vector &pos, float radius, AI_MoveSu
 bool CAI_LocalNavigator::HaveObstacles()
 {
 	return m_pPlaneSolver->HaveObstacles();
+}
+
+Obstacle_t CAI_LocalNavigator::AddGlobalObstacle( const Vector &pos, float radius, AI_MoveSuggType_t type )
+{
+	return CAI_PlaneSolver::AddGlobalObstacle( pos, radius, NULL, type );
+}
+
+void CAI_LocalNavigator::RemoveGlobalObstacle( Obstacle_t hObstacle )
+{
+	CAI_PlaneSolver::RemoveGlobalObstacle( hObstacle );
+}
+
+void CAI_LocalNavigator::RemoveGlobalObstacles( void )
+{
+	CAI_PlaneSolver::RemoveGlobalObstacles();
+}
+
+
+bool CAI_LocalNavigator::IsSegmentBlockedByGlobalObstacles( const Vector &vecStart, const Vector &vecEnd )
+{
+	return CAI_PlaneSolver::IsSegmentBlockedByGlobalObstacles( vecStart, vecEnd );
 }
 
 //-------------------------------------
@@ -133,7 +144,7 @@ bool CAI_LocalNavigator::MoveCalcDirect( AILocalMoveGoal_t *pMoveGoal, bool bOnl
 		{
 			testPos = GetLocalOrigin() + pMoveGoal->dir * moveThisInterval;
 			bTraceClear = GetMoveProbe()->MoveLimit( pMoveGoal->navType, GetLocalOrigin(), testPos, 
-													 MASK_NPCSOLID, pMoveGoal->pMoveTarget, 
+													 GetOuter()->GetAITraceMask(), pMoveGoal->pMoveTarget, 
 													 100.0, 
 													 ( pMoveGoal->navType == NAV_GROUND ) ? AIMLF_2D : AIMLF_DEFAULT, 
 													 &pMoveGoal->directTrace );
@@ -145,7 +156,8 @@ bool CAI_LocalNavigator::MoveCalcDirect( AILocalMoveGoal_t *pMoveGoal, bool bOnl
 
 			}
 
-			if ( !IsRetail() && ai_debug_directnavprobe.GetBool() )
+		#ifndef _RETAIL
+			if ( ai_debug_directnavprobe.GetBool() )
 			{
 				if ( !bTraceClear )
 				{
@@ -160,6 +172,7 @@ bool CAI_LocalNavigator::MoveCalcDirect( AILocalMoveGoal_t *pMoveGoal, bool bOnl
 					NDebugOverlay::Line( WorldSpaceCenter(), Vector( testPos.x, testPos.y, WorldSpaceCenter().z ), 0, 255, 0, false, 0.1 );
 				}
 			}
+		#endif
 
 			pMoveGoal->thinkTrace = pMoveGoal->directTrace;
 		}
@@ -175,7 +188,7 @@ bool CAI_LocalNavigator::MoveCalcDirect( AILocalMoveGoal_t *pMoveGoal, bool bOnl
 					checkStepPct = 100.0;
 				
 				bTraceClear = GetMoveProbe()->MoveLimit( pMoveGoal->navType, GetLocalOrigin(), testPos, 
-														 MASK_NPCSOLID, pMoveGoal->pMoveTarget, 
+														 GetOuter()->GetAITraceMask(), pMoveGoal->pMoveTarget, 
 														 checkStepPct, 
 														 ( pMoveGoal->navType == NAV_GROUND ) ? AIMLF_2D : AIMLF_DEFAULT, 
 														 &pMoveGoal->directTrace );

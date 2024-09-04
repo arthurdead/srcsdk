@@ -18,7 +18,7 @@
 // ###################################################################
 LINK_ENTITY_TO_CLASS(filter_base, CBaseFilter);
 
-BEGIN_DATADESC( CBaseFilter )
+BEGIN_MAPENTITY( CBaseFilter )
 
 	DEFINE_KEYFIELD(m_bNegated, FIELD_BOOLEAN, "Negated"),
 
@@ -29,7 +29,7 @@ BEGIN_DATADESC( CBaseFilter )
 	DEFINE_OUTPUT( m_OnPass, "OnPass"),
 	DEFINE_OUTPUT( m_OnFail, "OnFail"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 
@@ -87,7 +87,7 @@ void CBaseFilter::InputTestActivator( inputdata_t &inputdata )
 //
 //   Allows one to filter through mutiple filters
 // ###################################################################
-#define MAX_FILTERS 5
+#define MAX_FILTERS 10
 enum filter_t
 {
 	FILTER_AND,
@@ -97,7 +97,7 @@ enum filter_t
 class CFilterMultiple : public CBaseFilter
 {
 	DECLARE_CLASS( CFilterMultiple, CBaseFilter );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	filter_t	m_nFilterType;
 	string_t	m_iFilterName[MAX_FILTERS];
@@ -110,23 +110,23 @@ class CFilterMultiple : public CBaseFilter
 
 LINK_ENTITY_TO_CLASS(filter_multi, CFilterMultiple);
 
-BEGIN_DATADESC( CFilterMultiple )
-
+BEGIN_MAPENTITY( CFilterMultiple )
 
 	// Keys
 	DEFINE_KEYFIELD(m_nFilterType, FIELD_INTEGER, "FilterType"),
-
-	// Silence, Classcheck!
-//	DEFINE_ARRAY( m_iFilterName, FIELD_STRING, MAX_FILTERS ),
 
 	DEFINE_KEYFIELD(m_iFilterName[0], FIELD_STRING, "Filter01"),
 	DEFINE_KEYFIELD(m_iFilterName[1], FIELD_STRING, "Filter02"),
 	DEFINE_KEYFIELD(m_iFilterName[2], FIELD_STRING, "Filter03"),
 	DEFINE_KEYFIELD(m_iFilterName[3], FIELD_STRING, "Filter04"),
 	DEFINE_KEYFIELD(m_iFilterName[4], FIELD_STRING, "Filter05"),
-	DEFINE_ARRAY( m_hFilter, FIELD_EHANDLE, MAX_FILTERS ),
+	DEFINE_KEYFIELD(m_iFilterName[5], FIELD_STRING, "Filter06"),
+	DEFINE_KEYFIELD(m_iFilterName[6], FIELD_STRING, "Filter07"),
+	DEFINE_KEYFIELD(m_iFilterName[7], FIELD_STRING, "Filter08"),
+	DEFINE_KEYFIELD(m_iFilterName[8], FIELD_STRING, "Filter09"),
+	DEFINE_KEYFIELD(m_iFilterName[9], FIELD_STRING, "Filter10"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -247,7 +247,7 @@ bool CFilterMultiple::PassesDamageFilterImpl(const CTakeDamageInfo &info)
 class CFilterName : public CBaseFilter
 {
 	DECLARE_CLASS( CFilterName, CBaseFilter );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 	string_t m_iFilterName;
@@ -268,14 +268,66 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_name, CFilterName );
 
-BEGIN_DATADESC( CFilterName )
+BEGIN_MAPENTITY( CFilterName )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterName,	FIELD_STRING,	"filtername" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
+// ###################################################################
+//	> FilterModel
+// ###################################################################
+class CFilterModel : public CBaseFilter
+{
+	DECLARE_CLASS( CFilterModel, CBaseFilter );
+	DECLARE_MAPENTITY();
 
+public:
+	string_t m_iFilterModel;
+
+	bool PassesFilterImpl( CBaseEntity *pCaller, CBaseEntity *pEntity )
+	{
+		return ( FStrEq( STRING( m_iFilterModel ), STRING( pEntity->GetModelName() ) ) );
+
+	}
+};
+
+LINK_ENTITY_TO_CLASS( filter_activator_model, CFilterModel );
+
+BEGIN_MAPENTITY( CFilterModel )
+
+	// Keyfields
+	DEFINE_KEYFIELD( m_iFilterModel,	FIELD_STRING,	"model" ),
+
+END_MAPENTITY()
+
+// ###################################################################
+//	> FilterContext
+// ###################################################################
+class CFilterContext : public CBaseFilter
+{
+	DECLARE_CLASS( CFilterContext, CBaseFilter );
+	DECLARE_MAPENTITY();
+
+public:
+	string_t m_iFilterContext;
+
+	bool PassesFilterImpl( CBaseEntity *pCaller, CBaseEntity *pEntity )
+	{
+		int i = pEntity->FindContextByName( STRING( m_iFilterContext ) );
+		return ( ( i != -1 && atoi( pEntity->GetContextValue( i ) ) > 0 ) );
+	}
+};
+
+LINK_ENTITY_TO_CLASS( filter_activator_context, CFilterContext );
+
+BEGIN_MAPENTITY( CFilterContext )
+
+	// Keyfields
+	DEFINE_KEYFIELD( m_iFilterContext,	FIELD_STRING,	"ResponseContext" ),
+
+END_MAPENTITY()
 
 // ###################################################################
 //	> FilterClass
@@ -283,7 +335,7 @@ END_DATADESC()
 class CFilterClass : public CBaseFilter
 {
 	DECLARE_CLASS( CFilterClass, CBaseFilter );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 	string_t m_iFilterClass;
@@ -296,12 +348,12 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_class, CFilterClass );
 
-BEGIN_DATADESC( CFilterClass )
+BEGIN_MAPENTITY( CFilterClass )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterClass,	FIELD_STRING,	"filterclass" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 // ###################################################################
@@ -310,25 +362,25 @@ END_DATADESC()
 class FilterTeam : public CBaseFilter
 {
 	DECLARE_CLASS( FilterTeam, CBaseFilter );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 	int		m_iFilterTeam;
 
 	bool PassesFilterImpl( CBaseEntity *pCaller, CBaseEntity *pEntity )
 	{
-	 	return ( pEntity->GetTeamNumber() == m_iFilterTeam );
+	 	return ( pEntity != NULL && pEntity->GetTeamNumber() == m_iFilterTeam );
 	}
 };
 
 LINK_ENTITY_TO_CLASS( filter_activator_team, FilterTeam );
 
-BEGIN_DATADESC( FilterTeam )
+BEGIN_MAPENTITY( FilterTeam )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterTeam,	FIELD_INTEGER,	"filterteam" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 // ###################################################################
@@ -337,7 +389,7 @@ END_DATADESC()
 class CFilterMassGreater : public CBaseFilter
 {
 	DECLARE_CLASS( CFilterMassGreater, CBaseFilter );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 	float m_fFilterMass;
@@ -353,12 +405,12 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_mass_greater, CFilterMassGreater );
 
-BEGIN_DATADESC( CFilterMassGreater )
+BEGIN_MAPENTITY( CFilterMassGreater )
 
 // Keyfields
 DEFINE_KEYFIELD( m_fFilterMass,	FIELD_FLOAT,	"filtermass" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 // ###################################################################
@@ -367,7 +419,7 @@ END_DATADESC()
 class FilterDamageType : public CBaseFilter
 {
 	DECLARE_CLASS( FilterDamageType, CBaseFilter );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 protected:
 
@@ -380,7 +432,7 @@ protected:
 	bool PassesDamageFilterImpl(const CTakeDamageInfo &info)
 	{
 		//Tony; these are bitflags. check them as so.
-		return ((info.GetDamageType() & m_iDamageType) == m_iDamageType);
+		return (((info.GetDamageType() & ~DMG_DIRECT) & m_iDamageType) == m_iDamageType);
 	}
 
 	int m_iDamageType;
@@ -388,12 +440,12 @@ protected:
 
 LINK_ENTITY_TO_CLASS( filter_damage_type, FilterDamageType );
 
-BEGIN_DATADESC( FilterDamageType )
+BEGIN_MAPENTITY( FilterDamageType )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iDamageType,	FIELD_INTEGER,	"damagetype" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 // ###################################################################
 //	> CFilterEnemy
@@ -406,7 +458,7 @@ class CFilterEnemy : public CBaseFilter
 	DECLARE_CLASS( CFilterEnemy, CBaseFilter );
 		// NOT SAVED	
 		// m_iszPlayerName
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 
@@ -628,12 +680,11 @@ bool CFilterEnemy::PassesMobbedFilter( CBaseEntity *pCaller, CBaseEntity *pEnemy
 
 LINK_ENTITY_TO_CLASS( filter_enemy, CFilterEnemy );
 
-BEGIN_DATADESC( CFilterEnemy )
+BEGIN_MAPENTITY( CFilterEnemy )
 	
 	DEFINE_KEYFIELD( m_iszEnemyName, FIELD_STRING, "filtername" ),
 	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "filter_radius" ),
 	DEFINE_KEYFIELD( m_flOuterRadius, FIELD_FLOAT, "filter_outer_radius" ),
 	DEFINE_KEYFIELD( m_nMaxSquadmatesPerEnemy, FIELD_INTEGER, "filter_max_per_enemy" ),
-	DEFINE_FIELD( m_iszPlayerName, FIELD_STRING ),
 
-END_DATADESC()
+END_MAPENTITY()

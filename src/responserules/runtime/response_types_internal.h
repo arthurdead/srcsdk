@@ -98,8 +98,6 @@ namespace ResponseRules
 	/// back to queries.
 	struct ParserResponse
 	{
-		DECLARE_SIMPLE_DATADESC_INSIDE_NAMESPACE();
-
 		ParserResponse();
 		ParserResponse( const ParserResponse& src );
 		ParserResponse& operator =( const ParserResponse& src );
@@ -124,8 +122,6 @@ namespace ResponseRules
 #pragma pack(push,1)
 	struct ResponseGroup
 	{
-		DECLARE_SIMPLE_DATADESC_INSIDE_NAMESPACE();
-
 		ResponseGroup()
 		{
 			// By default visit all nodes before repeating

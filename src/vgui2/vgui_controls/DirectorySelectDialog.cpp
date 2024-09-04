@@ -69,13 +69,13 @@ public:
 	
 		// If some other window was hogging the input focus, then we have to hog it or else we'll never get input.
 		m_PrevAppFocusPanel = vgui::input()->GetAppModalSurface();
-		if ( m_PrevAppFocusPanel )
+		if ( m_PrevAppFocusPanel != INVALID_VPANEL )
 			vgui::input()->SetAppModalSurface( GetVPanel() );
 	}
 
 	~CreateDirectoryDialog()
 	{
-		if ( m_PrevAppFocusPanel )
+		if ( m_PrevAppFocusPanel != INVALID_VPANEL )
 			vgui::input()->SetAppModalSurface( m_PrevAppFocusPanel );
 	}
 

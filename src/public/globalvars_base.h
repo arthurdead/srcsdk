@@ -9,8 +9,6 @@
 
 #pragma once
 
-class CSaveRestoreData;
-
 //-----------------------------------------------------------------------------
 // Purpose: Global variables used by shared code
 //-----------------------------------------------------------------------------
@@ -71,7 +69,7 @@ public:
 	int				network_protocol;
 
 	// current saverestore data
-	CSaveRestoreData *pSaveData;
+	void *pSaveData;
 
 private:
 	// Set to true in client code.

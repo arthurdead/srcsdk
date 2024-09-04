@@ -27,37 +27,6 @@ ConVar passenger_impact_response_threshold( "passenger_impact_response_threshold
 #define ORIGIN_KEYNAME "origin"
 #define ANGLES_KEYNAME "angles"
 
-BEGIN_DATADESC( CAI_PassengerBehavior )
-
-	DEFINE_EMBEDDED( m_vehicleState ),
-	DEFINE_FIELD( m_bEnabled,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_PassengerIntent,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_PassengerState,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_hVehicle,			FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hBlocker,			FIELD_EHANDLE ),
-	DEFINE_FIELD( m_vecTargetPosition,	FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vecTargetAngles,	FIELD_VECTOR ),
-	DEFINE_FIELD( m_flOriginStartFrame, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flOriginEndFrame,	FIELD_FLOAT ),
-	DEFINE_FIELD( m_flAnglesStartFrame, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flAnglesEndFrame,	FIELD_FLOAT ),
-	DEFINE_FIELD( m_nTransitionSequence,FIELD_INTEGER ),
-
-END_DATADESC();
-
-BEGIN_SIMPLE_DATADESC( passengerVehicleState_t )
-
-	DEFINE_FIELD( m_bWasBoosting,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bWasOverturned,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_vecLastLocalVelocity,	FIELD_VECTOR ),
-	DEFINE_FIELD( m_vecDeltaVelocity,		FIELD_VECTOR ),
-	DEFINE_FIELD( m_vecLastAngles,			FIELD_VECTOR ),
-	DEFINE_FIELD( m_flNextWarningTime,		FIELD_TIME ),
-	DEFINE_FIELD( m_flLastSpeedSqr,			FIELD_FLOAT ),
-	DEFINE_FIELD( m_bPlayerInVehicle,		FIELD_BOOLEAN ),
-
-END_DATADESC();
-
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
@@ -463,7 +432,7 @@ bool CAI_PassengerBehavior::FindGroundAtPosition( const Vector &in, float flUpDe
 	CTraceFilterVehicleTransition ignoreFilter( m_hVehicle, GetOuter(), COLLISION_GROUP_NONE );
 
 	trace_t tr;
-	UTIL_TraceHull( startPos, endPos, hullMin, hullMax, MASK_NPCSOLID, &ignoreFilter, &tr );
+	UTIL_TraceHull( startPos, endPos, hullMin, hullMax, GetOuter()->GetAITraceMask(), &ignoreFilter, &tr );
 
 	// Must not have ended up in solid space
 	if ( tr.allsolid )
@@ -612,7 +581,7 @@ bool CAI_PassengerBehavior::IsValidTransitionPoint( const Vector &vecStartPos, c
 
 	trace_t tr;
 	CTraceFilterVehicleTransition skipFilter( GetOuter(), m_hVehicle, COLLISION_GROUP_NONE );
-	UTIL_TraceHull( vecStartPos, vecEndPos, vecHullMins, vecHullMaxs, MASK_NPCSOLID, &skipFilter, &tr );
+	UTIL_TraceHull( vecStartPos, vecEndPos, vecHullMins, vecHullMaxs, GetOuter()->GetAITraceMask(), &skipFilter, &tr );
 
 	// If we're blocked, we can't get out there
 	if ( tr.fraction < 1.0f || tr.allsolid )
@@ -1498,6 +1467,8 @@ void CAI_PassengerBehavior::CacheBlendTargets( void )
 {
 	// Get the keyvalues for this sequence
 	KeyValues *seqValues = GetOuter()->GetSequenceKeyValues( m_nTransitionSequence );
+	KeyValues::AutoDelete autodelete_key( seqValues );
+
 	if ( seqValues == NULL )
 	{
 		Assert( 0 );

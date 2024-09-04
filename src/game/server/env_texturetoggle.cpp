@@ -19,17 +19,17 @@ public:
 
 private:
 	
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS( env_texturetoggle, CTextureToggle );
 
-BEGIN_DATADESC( CTextureToggle )
+BEGIN_MAPENTITY( CTextureToggle )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "IncrementTextureIndex", InputIncrementBrushTexIndex ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetTextureIndex", InputSetBrushTexIndex ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: 

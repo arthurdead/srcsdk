@@ -35,7 +35,7 @@ public:
 	bool IsOn( void ) { return m_bIsOn;	}
 
 	ClientShadowHandle_t GetFlashlightHandle( void ) { return m_FlashlightHandle; }
-	void SetFlashlightHandle( ClientShadowHandle_t Handle ) { m_FlashlightHandle = Handle;	}
+	void SetFlashlightHandle( ClientShadowHandle_t Handle );
 
 	const char *GetFlashlightTextureName( void ) const
 	{

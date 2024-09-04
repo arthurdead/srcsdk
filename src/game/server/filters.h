@@ -35,7 +35,7 @@ class CBaseFilter : public CLogicalEntity
 
 public:
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	bool PassesFilter( CBaseEntity *pCaller, CBaseEntity *pEntity );
 	bool PassesDamageFilter( const CTakeDamageInfo &info );

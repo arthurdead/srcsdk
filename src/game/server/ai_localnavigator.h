@@ -16,6 +16,8 @@
 
 class CAI_PlaneSolver;
 class CAI_MoveProbe;
+FORWARD_DECLARE_HANDLE( Obstacle_t );
+#define OBSTACLE_INVALID ( (Obstacle_t)0 )
 
 //-----------------------------------------------------------------------------
 // CAI_LocalNavigator
@@ -43,6 +45,11 @@ public:
 	void 				AddObstacle( const Vector &pos, float radius, AI_MoveSuggType_t type = AIMST_AVOID_OBJECT );
 	bool				HaveObstacles();
 
+	static Obstacle_t	AddGlobalObstacle( const Vector &pos, float radius, AI_MoveSuggType_t type = AIMST_AVOID_OBJECT );
+	static void 		RemoveGlobalObstacle( Obstacle_t hObstacle );
+	static void 		RemoveGlobalObstacles( void );
+	static bool			IsSegmentBlockedByGlobalObstacles( const Vector &vecStart, const Vector &vecEnd );
+
 protected:
 
 	AIMoveResult_t		MoveCalcRaw( AILocalMoveGoal_t *pResult, bool bOnlyCurThink );
@@ -63,8 +70,6 @@ private:
 	
 	CAI_PlaneSolver *	m_pPlaneSolver;
 	CAI_MoveProbe *		m_pMoveProbe;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 #endif // AI_LOCALNAVIGATOR_H

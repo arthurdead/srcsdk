@@ -178,7 +178,7 @@ namespace
 				
 				// if a child doesn't have focus, get it for ourselves
 				VPANEL focus = input()->GetFocus();
-				if (!focus || !ipanel()->HasParent(focus, _frame->GetVPanel()))
+				if (focus == INVALID_VPANEL || !ipanel()->HasParent(focus, _frame->GetVPanel()))
 				{
 					_frame->RequestFocus();
 				}
@@ -220,7 +220,7 @@ namespace
 		void OnMouseReleased(MouseCode code)
 		{
 			_dragging = false;
-			input()->SetMouseCapture(NULL);
+			input()->SetMouseCapture(INVALID_VPANEL);
 		}
 
 		void OnMouseCaptureLost()
@@ -763,9 +763,9 @@ Frame::Frame(Panel *parent, const char *panelName, bool showTaskbarIcon /*=true*
 		MakePopup(showTaskbarIcon);
 	}
 
-	m_hPreviousModal = 0;
+	m_hPreviousModal = INVALID_VPANEL;
 
-	_title=null;
+	_title=NULL;
 	_moveable=true;
 	_sizeable=true;
 	m_bHasFocus=false;
@@ -861,10 +861,10 @@ Frame::~Frame()
 	if ( input()->GetAppModalSurface() == GetVPanel() )
 	{
 		vgui::input()->ReleaseAppModalSurface();
-		if ( m_hPreviousModal != 0 )
+		if ( m_hPreviousModal != INVALID_VPANEL )
 		{
 			vgui::input()->SetAppModalSurface( m_hPreviousModal );
-			m_hPreviousModal = 0;
+			m_hPreviousModal = INVALID_VPANEL;
 		}
 	}
 
@@ -965,10 +965,10 @@ void Frame::DoModal( )
 void Frame::CloseModal()
 {
 	vgui::input()->ReleaseAppModalSurface();
-	if ( m_hPreviousModal != 0 )
+	if ( m_hPreviousModal != INVALID_VPANEL )
 	{
 		vgui::input()->SetAppModalSurface( m_hPreviousModal );
-		m_hPreviousModal = 0;
+		m_hPreviousModal = INVALID_VPANEL;
 	}
 	PostMessage( this, new KeyValues("Close") );
 }
@@ -1074,7 +1074,7 @@ void Frame::OnThink()
     if (input())
     {
 	    VPANEL focus = input()->GetFocus();
-	    if (focus && ipanel()->HasParent(focus, GetVPanel()))
+	    if (focus != INVALID_VPANEL && ipanel()->HasParent(focus, GetVPanel()))
 	    {
 		    if ( input()->GetAppModalSurface() == 0 || 
 			    input()->GetAppModalSurface() == GetVPanel() )
@@ -1651,7 +1651,7 @@ void Frame::ApplySchemeSettings(IScheme *pScheme)
 	}
 
 	HFont titlefont;
-	if ( m_hCustomTitleFont )
+	if ( m_hCustomTitleFont != INVALID_FONT )
 	{
 		titlefont = m_hCustomTitleFont;
 	}
@@ -1802,10 +1802,10 @@ void Frame::OnClose()
 	if (input()->GetAppModalSurface() == GetVPanel())
 	{
 		input()->ReleaseAppModalSurface();
-		if ( m_hPreviousModal != 0 )
+		if ( m_hPreviousModal != INVALID_VPANEL )
 		{
 			vgui::input()->SetAppModalSurface( m_hPreviousModal );
-			m_hPreviousModal = 0;
+			m_hPreviousModal = INVALID_VPANEL;
 		}
 	}
 	
@@ -1980,7 +1980,7 @@ void Frame::OnMousePressed(MouseCode code)
 	{
 		// if a child doesn't have focus, get it for ourselves
 		VPANEL focus = input()->GetFocus();
-		if (!focus || !ipanel()->HasParent(focus, GetVPanel()))
+		if (focus == INVALID_VPANEL || !ipanel()->HasParent(focus, GetVPanel()))
 		{
 			RequestFocus();
 		}
@@ -2133,7 +2133,7 @@ void Frame::OnKeyCodeTyped(KeyCode code)
 	{
 		// reload the scheme
 		VPANEL top = surface()->GetEmbeddedPanel();
-		if (top)
+		if (top != INVALID_VPANEL)
 		{
 			// reload the data file
 			scheme()->ReloadSchemes();
@@ -2155,7 +2155,7 @@ void Frame::OnKeyCodeTyped(KeyCode code)
 	{
 		// check for a default button
 		VPANEL panel = GetFocusNavGroup().GetCurrentDefaultButton();
-		if (panel && ipanel()->IsVisible( panel ) && ipanel()->IsEnabled( panel ))
+		if (panel != INVALID_VPANEL && ipanel()->IsVisible( panel ) && ipanel()->IsEnabled( panel ))
 		{
 			// Activate the button
 			PostMessage(panel, new KeyValues("Hotkey"));

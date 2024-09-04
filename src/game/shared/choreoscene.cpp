@@ -1580,6 +1580,46 @@ float CChoreoScene::FindStopTime( void )
 	return lasttime;
 }
 
+float CChoreoScene::FindLastSpeakTime( void ) const
+{
+	// walk backward from the end of events to the beginning looking for the last speak event
+	const int c = m_Events.Count();
+	int lastSpeakEvent;
+	for ( lastSpeakEvent = c-1 ; lastSpeakEvent >= 0 ; --lastSpeakEvent )
+	{
+		CChoreoEvent * RESTRICT e = m_Events[ lastSpeakEvent ];
+		Assert( e );
+		if ( e->GetType() == CChoreoEvent::SPEAK )
+			break;
+	}
+
+	if ( lastSpeakEvent < 0 ) // we found no speak event
+	{
+		return 0;
+	}
+
+	/*
+	// now walk forward from the beginning to the last event counting the duration of each event
+	float lasttime = 0.0f;
+	for ( int i = 0; i <= lastSpeakEvent ; i++ )
+	{
+		CChoreoEvent * RESTRICT e = m_Events[ i ];
+		Assert( e );
+
+		float checktime = e->HasEndTime() ? e->GetEndTime() : e->GetStartTime();
+		if ( checktime > lasttime )
+		{
+			lasttime = checktime;
+		}
+	}
+
+	return lasttime;
+	*/
+
+	CChoreoEvent * RESTRICT finalSpeechEvent = m_Events[lastSpeakEvent];
+	return finalSpeechEvent->HasEndTime() ? finalSpeechEvent->GetEndTime() : finalSpeechEvent->GetStartTime();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *fp - 
@@ -2343,7 +2383,35 @@ bool CChoreoScene::CheckEventCompletion( void )
 	return bAllCompleted;
 }
 
+//-----------------------------------------------------------------------------
+// Returns true if the last speech event in the scene has triggered,
+// even if other scene events are still running or pending.
+//-----------------------------------------------------------------------------
+bool CChoreoScene::SpeechFinished( void ) const
+{
+	// look through all the events and find the latest end time
+	// for a speech event. (They aren't necessarily stored in order.)
+	float lastEndTime = -1;
 
+	const int c = m_Events.Count();
+	for ( int i = 0 ; i < c ; ++i )
+	{
+		if ( m_Events[i]->GetType() == CChoreoEvent::SPEAK )
+		{
+			float endtime = m_Events[i]->GetEndTime();
+			lastEndTime = MAX( lastEndTime, endtime );
+		}
+	}
+
+	if ( lastEndTime >= 0 )
+	{
+		return m_flCurrentTime >= lastEndTime;
+	}
+	else
+	{
+		return false;
+	}
+}
 
 
 //-----------------------------------------------------------------------------

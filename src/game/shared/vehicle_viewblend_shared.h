@@ -8,6 +8,11 @@
 #define VEHICLE_VIEWBLEND_SHARED_H
 #pragma once
 
+#include "mathlib/vector.h"
+
+class CBasePlayer;
+class CBaseAnimating;
+
 // Definition for how to calculate a point on the remap curve
 enum RemapAngleRange_CurvePart_t
 {
@@ -37,8 +42,6 @@ struct ViewLockData_t
 // inside your GetVehicleViewPosition() function.
 struct ViewSmoothingData_t
 {
-	DECLARE_SIMPLE_DATADESC();
-
 	// Fill these out in your vehicle
 	CBaseAnimating	*pVehicle;
 	bool	bClampEyeAngles;	// Perform eye Z clamping

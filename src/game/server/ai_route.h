@@ -103,7 +103,7 @@ public:
 	void			SetTarget(CBaseEntity * pTarget )	{ m_target = pTarget;				}
 	void			ClearTarget()						{ m_target = NULL; m_vecTargetOffset = vec3_origin;	}
 	void			SetTargetOffset( const Vector &vecOffset)	{ m_vecTargetOffset = vecOffset;	}
-	CBaseEntity *	GetTarget()							{ return m_target;					}
+	CBaseEntity *	GetTarget()							{ return m_target.Get();					}
 
 	void			SetGoalType(GoalType_t goalType);				// Set the goal type
 	void			SetGoalPosition(const Vector &goalPos);			// Set the goal position
@@ -200,8 +200,6 @@ private:
 
 	//---------------------------------
 	static AI_Waypoint_t gm_InvalidWaypoint;
-
-	DECLARE_SIMPLE_DATADESC();
 
 };
 

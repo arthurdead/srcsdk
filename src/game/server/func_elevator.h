@@ -12,7 +12,7 @@ class CInfoElevatorFloor : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CInfoElevatorFloor, CPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void OnReachedFloor( CBaseEntity *elevator );
 
@@ -35,7 +35,7 @@ class CFuncElevator : public CBaseToggle
 public:
 	DECLARE_CLASS( CFuncElevator, CBaseToggle );
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_vecVelocity );
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_fFlags );

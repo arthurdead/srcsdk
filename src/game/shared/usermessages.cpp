@@ -7,6 +7,7 @@
 #include "cbase.h"
 #include "usermessages.h"
 #include <bitbuf.h>
+#include "voice_common.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -19,6 +20,58 @@ void RegisterUserMessages( void );
 //-----------------------------------------------------------------------------
 CUserMessages::CUserMessages()
 {
+	Register( "SayText", -1 );	
+	Register( "SayText2", -1 );
+	Register( "TextMsg", -1 );
+
+	// Voting
+	Register( "CallVoteFailed", -1 );
+	Register( "VoteStart", -1 );
+	Register( "VotePass", -1 );
+	Register( "VoteFailed", 2 );
+	Register( "VoteSetup", -1 );  // Initiates client-side voting UI
+
+	Register( "HudText", -1 );	
+	Register( "GameTitle", 0 );	// show game title
+	Register( "HudMsg", -1 );
+
+	Register( "ResetHUD", 1 );	// called every respawn
+	Register( "SendAudio", -1 );	// play radion command
+	Register( "ShowMenu", -1 );	// show hud menu
+
+	Register( "Shake", 13 );		// shake view
+	Register( "Fade", 10 );	// fade HUD in/out
+	Register( "ShakeDir", -1 ); // directional shake
+	Register( "Tilt", 22 );
+
+	Register( "VGUIMenu", -1 );	// Show VGUI menu
+	Register( "Rumble", 3 );	// Send a rumble to a controller
+
+	Register( "CloseCaption", -1 ); // Show a caption (by string id number)(duration in 10th of a second)
+	Register( "CloseCaptionDirect", -1 ); // Show a forced caption (by string id number)(duration in 10th of a second)
+
+	Register( "VoiceMask", VOICE_MAX_PLAYERS_DW*4 * 2 + 1 );
+	Register( "RequestState", 0 );
+
+	Register( "HintText", -1 );	// Displays hint text display
+	Register( "KeyHintText", -1 );	// Displays hint text display
+
+	Register( "PlayerAnimEvent", -1 );	// jumping, firing, reload, etc.
+
+	Register( "ItemPickup", -1 );	// for item history on screen
+	Register( "AmmoDenied", 2 );
+
+	Register( "SquadMemberDied", 0 );
+
+	Register( "CurrentTimescale", 4 );	// Send one float for the new timescale
+	Register( "DesiredTimescale", 13 );	// Send timescale and some blending vars
+
+	Register( "CreditsMsg", 1 );
+	Register( "LogoTimeMsg", 4 );
+	Register( "AchievementEvent", -1 );
+
+	Register( "Damage", -1 );
+
 	// Game specific registration function;
 	RegisterUserMessages();
 }
@@ -111,6 +164,7 @@ void CUserMessages::Register( const char *name, int size )
 	m_UserMessages.Insert( name, entry );
 }
 
+#if defined( CLIENT_DLL )
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *name - 
@@ -118,7 +172,6 @@ void CUserMessages::Register( const char *name, int size )
 //-----------------------------------------------------------------------------
 void CUserMessages::HookMessage( const char *name, pfnUserMsgHook hook )
 {
-#if defined( CLIENT_DLL )
 	Assert( name );
 	Assert( hook );
 
@@ -132,10 +185,6 @@ void CUserMessages::HookMessage( const char *name, pfnUserMsgHook hook )
 
 	int i = m_UserMessages[ idx ]->clienthooks.AddToTail();
 	m_UserMessages[ idx ]->clienthooks[i] = hook;
-
-#else
-	Error( "CUserMessages::HookMessage called from server code!!!\n" );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -147,7 +196,6 @@ void CUserMessages::HookMessage( const char *name, pfnUserMsgHook hook )
 //-----------------------------------------------------------------------------
 bool CUserMessages::DispatchUserMessage( int msg_type, bf_read &msg_data )
 {
-#if defined( CLIENT_DLL )
 	if ( msg_type < 0 || msg_type >= (int)m_UserMessages.Count() )
 	{
 		DevMsg( "CUserMessages::DispatchUserMessage:  Bogus msg type %i (max == %i)\n", msg_type, m_UserMessages.Count() );
@@ -179,11 +227,8 @@ bool CUserMessages::DispatchUserMessage( int msg_type, bf_read &msg_data )
 		(*hook)( msg_copy );
 	}
 	return true;
-#else
-	Error( "CUserMessages::DispatchUserMessage called from server code!!!\n" );
-	return false;
-#endif
 }
+#endif
 
 // Singleton
 static CUserMessages g_UserMessages;

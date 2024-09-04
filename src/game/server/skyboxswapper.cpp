@@ -17,7 +17,7 @@ class CSkyboxSwapper : public CServerOnlyPointEntity
 {
 	DECLARE_CLASS( CSkyboxSwapper, CServerOnlyPointEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void Spawn( void );
 	virtual void Precache( void );
@@ -30,11 +30,11 @@ protected:
 
 LINK_ENTITY_TO_CLASS(skybox_swapper, CSkyboxSwapper);
 
-BEGIN_DATADESC( CSkyboxSwapper )
+BEGIN_MAPENTITY( CSkyboxSwapper )
 	DEFINE_KEYFIELD( m_iszSkyboxName, FIELD_STRING, "SkyboxName" ),
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "Trigger", InputTrigger),
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------

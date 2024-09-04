@@ -13,6 +13,8 @@
 #pragma once
 
 #include "mempool.h"
+#include "variant_t.h"
+#include "ehandle.h"
 
 struct EventQueuePrioritizedEvent_t
 {
@@ -28,8 +30,6 @@ struct EventQueuePrioritizedEvent_t
 
 	EventQueuePrioritizedEvent_t *m_pNext;
 	EventQueuePrioritizedEvent_t *m_pPrev;
-
-	DECLARE_SIMPLE_DATADESC();
 
 	DECLARE_FIXEDSIZE_ALLOCATOR( PrioritizedEvent_t );
 };
@@ -52,10 +52,6 @@ public:
 	// debugging
 	void ValidateQueue( void );
 
-	// serialization
-	int Save( ISave &save );
-	int Restore( IRestore &restore );
-
 	CEventQueue();
 	~CEventQueue();
 
@@ -69,7 +65,6 @@ private:
 	void AddEvent( EventQueuePrioritizedEvent_t *event );
 	void RemoveEvent( EventQueuePrioritizedEvent_t *pe );
 
-	DECLARE_SIMPLE_DATADESC();
 	EventQueuePrioritizedEvent_t m_Events;
 	int m_iListCount;
 };

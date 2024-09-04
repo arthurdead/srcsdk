@@ -29,5 +29,17 @@ public:
 	virtual CBaseEntity*		GetBaseEntity() = 0;
 };
 
+class IServerUnknownMod
+{
+public:
+	
+};
+
+class IServerUnknownEx : public IServerUnknown, public IServerUnknownMod
+{
+public:
+	
+};
+
 
 #endif // ISERVERUNKNOWN_H

@@ -11,6 +11,8 @@
 
 #ifdef CLIENT_DLL
 #include "c_baseentity.h"
+#else
+#include "baseentity.h"
 #endif
 
 #ifdef CLIENT_DLL
@@ -162,7 +164,7 @@ private:
 	float			m_flNextOvertimeNag;
 	float			m_flLastTime;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	bool			m_bPauseDueToWin;
 	bool			m_bResetTimeOnRoundStart;

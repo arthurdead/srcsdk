@@ -24,7 +24,6 @@
 class CFuncWall : public CBaseEntity
 {
 public:
-	DECLARE_DATADESC();
 	DECLARE_CLASS( CFuncWall, CBaseEntity );
 	void	Spawn( void );
 	bool	CreateVPhysics( void );
@@ -34,15 +33,6 @@ public:
 };
 
 LINK_ENTITY_TO_CLASS( func_wall, CFuncWall );
-
-//---------------------------------------------------------
-// Save/Restore
-//---------------------------------------------------------
-BEGIN_DATADESC( CFuncWall )
-
-	DEFINE_FIELD( m_nState,	FIELD_INTEGER ),
-
-END_DATADESC()
 
 void CFuncWall::Spawn( void )
 {
@@ -93,7 +83,7 @@ class CFuncWallToggle : public CFuncWall
 public:
 	DECLARE_CLASS( CFuncWallToggle, CFuncWall );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void	Spawn( void );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
@@ -105,11 +95,11 @@ public:
 	bool	IsOn( void );
 };
 
-BEGIN_DATADESC( CFuncWallToggle )
+BEGIN_MAPENTITY( CFuncWallToggle )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( func_wall_toggle, CFuncWallToggle );
@@ -187,7 +177,7 @@ class CFuncVehicleClip : public CBaseEntity
 {
 public:
 	DECLARE_CLASS( CFuncVehicleClip, CBaseEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void Spawn();
 	bool CreateVPhysics( void );
@@ -198,12 +188,12 @@ public:
 private:
 };
 
-BEGIN_DATADESC( CFuncVehicleClip )
+BEGIN_MAPENTITY( CFuncVehicleClip )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( func_vehicleclip, CFuncVehicleClip );
 
@@ -261,7 +251,7 @@ class CFuncConveyor : public CFuncWall
 {
 public:
 	DECLARE_CLASS( CFuncConveyor, CFuncWall );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	CFuncConveyor();
@@ -284,15 +274,14 @@ private:
 
 LINK_ENTITY_TO_CLASS( func_conveyor, CFuncConveyor );
 
-BEGIN_DATADESC( CFuncConveyor )
+BEGIN_MAPENTITY( CFuncConveyor )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "ToggleDirection", InputToggleDirection ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "SetSpeed", InputSetSpeed ),
 
 	DEFINE_KEYFIELD( m_vecMoveDir, FIELD_VECTOR, "movedir" ),
-	DEFINE_FIELD( m_flConveyorSpeed, FIELD_FLOAT ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 IMPLEMENT_SERVERCLASS_ST(CFuncConveyor, DT_FuncConveyor)
@@ -417,7 +406,7 @@ public:
 	
 	int	 DrawDebugTextOverlays(void);
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 protected:
@@ -460,28 +449,13 @@ public:
 LINK_ENTITY_TO_CLASS( func_rotating, CFuncRotating );
 
 
-BEGIN_DATADESC( CFuncRotating )
+BEGIN_MAPENTITY( CFuncRotating )
 
-	DEFINE_FIELD( m_vecMoveAng, FIELD_VECTOR ),
-	DEFINE_FIELD( m_flFanFriction, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flAttenuation, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flVolume, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flTargetSpeed, FIELD_FLOAT ),
 	DEFINE_KEYFIELD( m_flMaxSpeed, FIELD_FLOAT, "maxspeed" ),
 	DEFINE_KEYFIELD( m_flBlockDamage, FIELD_FLOAT, "dmg" ),
 	DEFINE_KEYFIELD( m_NoiseRunning, FIELD_SOUNDNAME, "message" ),
-	DEFINE_FIELD( m_bReversed, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_angStart, FIELD_VECTOR ),
-	DEFINE_FIELD( m_bStopAtStartPos, FIELD_BOOLEAN ),
-	DEFINE_KEYFIELD( m_bSolidBsp, FIELD_BOOLEAN, "solidbsp" ),
 
-	// Function Pointers
-	DEFINE_FUNCTION( SpinUpMove ),
-	DEFINE_FUNCTION( SpinDownMove ),
-	DEFINE_FUNCTION( HurtTouch ),
-	DEFINE_FUNCTION( RotatingUse ),
-	DEFINE_FUNCTION( RotateMove ),
-	DEFINE_FUNCTION( ReverseMove ),
+	DEFINE_KEYFIELD( m_bSolidBsp, FIELD_BOOLEAN, "solidbsp" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeed", InputSetSpeed ),
@@ -493,12 +467,11 @@ BEGIN_DATADESC( CFuncRotating )
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartBackward", InputStartBackward ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopAtStartPos", InputStopAtStartPos ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 extern void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_FuncRotatingOrigin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
-#ifdef TF_DLL
 	CFuncRotating *entity = (CFuncRotating*)pStruct;
 	Assert( entity );
 
@@ -510,12 +483,10 @@ void SendProxy_FuncRotatingOrigin( const SendProp *pProp, const void *pStruct, c
 		pOut->m_Vector[ 2 ] = v->z;
 		return;
 	}
-#endif
 
 	SendProxy_Origin( pProp, pStruct, pData, pOut, iElement, objectID );
 }
 
-/*
 extern void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_FuncRotatingAngles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
@@ -532,7 +503,7 @@ void SendProxy_FuncRotatingAngles( const SendProp *pProp, const void *pStruct, c
 
 	SendProxy_Angles( pProp, pStruct, pData, pOut, iElement, objectID );
 }
-*/
+
 void SendProxy_FuncRotatingAngle( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	CFuncRotating *entity = (CFuncRotating*)pStruct;
@@ -545,7 +516,6 @@ void SendProxy_FuncRotatingAngle( const SendProp *pProp, const void *pStruct, co
 
 	Assert( (uintp)qa >= (uintp)ea && (uintp)qa < (uintp)ea + sizeof( QAngle ));
 
-#ifdef TF_DLL
 	if ( entity->HasSpawnFlags(SF_BRUSH_ROTATE_CLIENTSIDE) )
 	{
 		const QAngle *a = &entity->m_vecClientAngles;
@@ -553,7 +523,6 @@ void SendProxy_FuncRotatingAngle( const SendProp *pProp, const void *pStruct, co
 		pOut->m_Float = anglemod( (*a)[ qa - ea ] );
 		return;
 	}
-#endif
 
 	pOut->m_Float = anglemod( *qa );
 
@@ -564,7 +533,6 @@ void SendProxy_FuncRotatingAngle( const SendProp *pProp, const void *pStruct, co
 extern void SendProxy_SimulationTime( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_FuncRotatingSimulationTime( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
 {
-#ifdef TF_DLL
 	CFuncRotating *entity = (CFuncRotating*)pStruct;
 	Assert( entity );
 
@@ -573,7 +541,6 @@ void SendProxy_FuncRotatingSimulationTime( const SendProp *pProp, const void *pS
 		pOut->m_Int = 0;
 		return;
 	}
-#endif
 
 	SendProxy_SimulationTime( pProp, pStruct, pVarData, pOut, iElement, objectID );
 }
@@ -621,9 +588,7 @@ bool CFuncRotating::KeyValue( const char *szKeyName, const char *szValue )
 //-----------------------------------------------------------------------------
 void CFuncRotating::Spawn( )
 {
-#ifdef TF_DLL
 	AddSpawnFlags( SF_BRUSH_ROTATE_CLIENTSIDE );
-#endif
 
 	//
 	// Maintain compatibility with previous maps.
@@ -748,13 +713,11 @@ void CFuncRotating::Spawn( )
 		SetSolid( SOLID_BSP );
 	}
 
-#ifdef TF_DLL
 	if ( HasSpawnFlags(SF_BRUSH_ROTATE_CLIENTSIDE) )
 	{
 		m_vecClientOrigin = GetLocalOrigin();
 		m_vecClientAngles = GetLocalAngles();
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1367,7 +1330,7 @@ int CFuncRotating::DrawDebugTextOverlays(void)
 
 class CFuncVPhysicsClip : public CBaseEntity
 {
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CFuncVPhysicsClip, CBaseEntity );
 
 public:
@@ -1389,17 +1352,15 @@ private:
 };
 
 // Global Savedata for base trigger
-BEGIN_DATADESC( CFuncVPhysicsClip )
+BEGIN_MAPENTITY( CFuncVPhysicsClip )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterName,	FIELD_STRING,	"filtername" ),
-	DEFINE_FIELD( m_hFilter,	FIELD_EHANDLE ),
-	DEFINE_FIELD( m_bDisabled,	FIELD_BOOLEAN ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( func_clip_vphysics, CFuncVPhysicsClip );
@@ -1439,6 +1400,9 @@ bool CFuncVPhysicsClip::EntityPassesFilter( CBaseEntity *pOther )
 
 	if ( pFilter )
 		return pFilter->PassesFilter( this, pOther );
+
+	if ( !pOther->VPhysicsGetObject() )
+		return false;
 
 	if ( pOther->GetMoveType() == MOVETYPE_VPHYSICS && pOther->VPhysicsGetObject()->IsMoveable() )
 		return true;

@@ -40,6 +40,7 @@ enum
 class CBaseTrigger : public CBaseToggle
 {
 	DECLARE_CLASS( CBaseTrigger, CBaseToggle );
+	DECLARE_SERVERCLASS();
 public:
 	CBaseTrigger();
 	
@@ -47,8 +48,8 @@ public:
 	virtual void PostClientActive( void );
 	void InitTrigger( void );
 
-	void Enable( void );
-	void Disable( void );
+	virtual void Enable( void );
+	virtual void Disable( void );
 	void Spawn( void );
 	void UpdateOnRemove( void );
 	void TouchTest(  void );
@@ -66,8 +67,9 @@ public:
 	virtual bool PassesTriggerFilters(CBaseEntity *pOther);
 	virtual void StartTouch(CBaseEntity *pOther);
 	virtual void EndTouch(CBaseEntity *pOther);
-	virtual void StartTouchAll() {}
-	virtual void EndTouchAll() {}
+	virtual void OnStartTouchAll(CBaseEntity *pOther);
+	virtual void OnEndTouchAll(CBaseEntity *pOther);
+
 	bool IsTouching( CBaseEntity *pOther );
 
 	CBaseEntity *GetTouchedEntityOfType( const char *sClassName );
@@ -83,6 +85,11 @@ public:
 	string_t	m_iFilterName;
 	CHandle<class CBaseFilter>	m_hFilter;
 
+	const CUtlVector< EHANDLE > *GetTouchingEntities( void ) const
+	{
+		return &m_hTouchingEntities;
+	}
+
 protected:
 
 	// Outputs
@@ -96,7 +103,10 @@ protected:
 	// Entities currently being touched by this trigger
 	CUtlVector< EHANDLE >	m_hTouchingEntities;
 
-	DECLARE_DATADESC();
+	// True if trigger participates in client side prediction
+	CNetworkVar( bool, m_bClientSidePredicted );
+
+	DECLARE_MAPENTITY();
 };
 
 //-----------------------------------------------------------------------------
@@ -111,9 +121,9 @@ public:
 	void Spawn( void );
 	void MultiTouch( CBaseEntity *pOther );
 	void MultiWaitOver( void );
-	void ActivateMultiTrigger(CBaseEntity *pActivator);
+	virtual void ActivateMultiTrigger(CBaseEntity *pActivator);
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	// Outputs
 	COutputEvent m_OnTrigger;
@@ -135,7 +145,7 @@ class CBaseVPhysicsTrigger : public CBaseEntity
 	DECLARE_CLASS( CBaseVPhysicsTrigger , CBaseEntity );
 
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void Spawn();
 	virtual void UpdateOnRemove();
@@ -197,7 +207,9 @@ public:
 	bool HurtEntity( CBaseEntity *pOther, float damage );
 	int HurtAllTouchers( float dt );
 
-	DECLARE_DATADESC();
+	void NavThink( void );
+
+	DECLARE_MAPENTITY();
 
 	float	m_flOriginalDamage;	// Damage as specified by the level designer.
 	float	m_flDamage;			// Damage per second.
@@ -222,5 +234,118 @@ public:
 };
 
 bool IsTakingTriggerHurtDamageAtPoint( const Vector &vecPoint );
+
+//
+//  Callback trigger
+//
+
+class CTriggerCallback : public CBaseTrigger
+{
+public:
+	DECLARE_CLASS( CTriggerCallback, CBaseTrigger );
+	DECLARE_DATADESC();
+	
+	virtual void Spawn( void );
+	virtual void StartTouch( CBaseEntity *pOther );
+
+	static CTriggerCallback *Create( const Vector &vecOrigin, const QAngle &vecAngles, const Vector &vecMins, const Vector &vecMaxs, CBaseEntity *pOwner, void (CBaseEntity::*pfnCallback)(CBaseEntity *) )
+	{
+		CTriggerCallback *pTrigger = (CTriggerCallback *) CreateEntityByName( "trigger_callback" );
+		if ( pTrigger == NULL )
+			return NULL;
+
+		UTIL_SetOrigin( pTrigger, vecOrigin );
+		pTrigger->SetAbsAngles( vecAngles );
+		UTIL_SetSize( pTrigger, vecMins, vecMaxs );
+
+		DispatchSpawn( pTrigger );
+
+		pTrigger->SetParent( (CBaseEntity *) pOwner );
+
+		// Save our callback function
+		pTrigger->m_pfnCallback = pfnCallback;
+
+		return pTrigger;
+	}
+
+private:
+	void (CBaseEntity::*m_pfnCallback)(CBaseEntity *);
+};
+
+
+#define SF_CAMERA_PLAYER_POSITION		1
+#define SF_CAMERA_PLAYER_TARGET			2
+#define SF_CAMERA_PLAYER_TAKECONTROL	4
+#define SF_CAMERA_PLAYER_INFINITE_WAIT	8
+#define SF_CAMERA_PLAYER_SNAP_TO		16
+#define SF_CAMERA_PLAYER_NOT_SOLID		32
+#define SF_CAMERA_PLAYER_INTERRUPT		64
+#define SF_CAMERA_PLAYER_SETFOV			128
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+class CTriggerCamera : public CBaseEntity
+{
+public:
+	DECLARE_CLASS( CTriggerCamera, CBaseEntity );
+
+	CTriggerCamera();
+
+	void Spawn( void );
+	bool KeyValue( const char *szKeyName, const char *szValue );
+	void Enable( void );
+	void Disable( void );
+	void SetPlayer( CBaseEntity *pPlayer );
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void FollowTarget( void );
+	void Move(void);
+
+	// Always transmit to clients so they know where to move the view to
+	virtual int UpdateTransmitState();
+	
+	DECLARE_MAPENTITY();
+
+	// Input handlers
+	void InputEnable( inputdata_t &inputdata );
+	void InputDisable( inputdata_t &inputdata );
+
+private:
+	EHANDLE m_hPlayer;
+	EHANDLE m_hTarget;
+
+	// used for moving the camera along a path (rail rides)
+	CBaseEntity *m_pPath;
+	string_t m_sPath;
+	float m_flWait;
+	float m_flReturnTime;
+	float m_flStopTime;
+	float m_moveDistance;
+	float m_targetSpeed;
+	float m_initialSpeed;
+	float m_acceleration;
+	float m_deceleration;
+	int	  m_state;
+	Vector m_vecMoveDir;
+
+
+	string_t m_iszTargetAttachment;
+	int	  m_iAttachmentIndex;
+	bool  m_bSnapToGoal;
+
+	bool  m_bInterpolatePosition;
+
+	// these are interpolation vars used for interpolating the camera over time
+	Vector m_vStartPos, m_vEndPos;
+	float m_flInterpStartTime;
+
+	const static float kflPosInterpTime; // seconds
+
+	int   m_nPlayerButtons;
+	int m_nOldTakeDamage;
+
+private:
+	COutputEvent m_OnEndFollow;
+};
 
 #endif // TRIGGERS_H

@@ -32,13 +32,8 @@ public:
 
 	virtual int BloodColor( void ) { return DONT_BLEED; }
 
-#if defined( HL2_DLL )
-	virtual Class_T Classify( void ) { return CLASS_MILITARY; }
-#elif defined( HL1_DLL )
-	virtual Class_T Classify( void ) { return CLASS_MACHINE; }
-#else
 	virtual Class_T Classify( void ) { return CLASS_NONE; }
-#endif
+
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 	virtual Vector BodyTarget( const Vector &posSrc, bool bNoisy = true ) { return GetAbsOrigin(); }
 
@@ -47,7 +42,7 @@ public:
 	void InputStop( inputdata_t &inputdata );
 	void InputToggle( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 protected:
 
@@ -68,15 +63,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( func_guntarget, CGunTarget );
 
-BEGIN_DATADESC( CGunTarget )
-
-	DEFINE_FIELD( m_on, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_hTargetEnt, FIELD_EHANDLE ),
-
-	// Function Pointers
-	DEFINE_FUNCTION( Next ),
-	DEFINE_FUNCTION( Start ),
-	DEFINE_FUNCTION( Wait ),
+BEGIN_MAPENTITY( CGunTarget )
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Start", InputStart ),
@@ -86,7 +73,7 @@ BEGIN_DATADESC( CGunTarget )
 	// Outputs
 	DEFINE_OUTPUT(m_OnDeath, "OnDeath"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -105,7 +92,7 @@ void CGunTarget::Spawn( void )
 	AddFlag( FL_NPC );
 
 	m_on = false;
-	m_iMaxHealth = m_iHealth;
+	m_iMaxHealth = GetHealth();
 
 	if ( HasSpawnFlags(FGUNTARGET_START_ON) )
 	{
@@ -145,7 +132,7 @@ void CGunTarget::Start( void )
 	m_hTargetEnt = GetNextTarget();
 	if ( m_hTargetEnt == NULL )
 		return;
-	m_iHealth = m_iMaxHealth;
+	SetHealth( m_iMaxHealth );
 	Next();
 }
 
@@ -206,12 +193,12 @@ void CGunTarget::Stop( void )
 
 int	CGunTarget::OnTakeDamage( const CTakeDamageInfo &info )
 {
-	if ( m_iHealth > 0 )
+	if ( GetHealth() > 0 )
 	{
-		m_iHealth -= info.GetDamage();
-		if ( m_iHealth <= 0 )
+		SetHealth( GetHealth() - info.GetDamage() );
+		if ( GetHealth() <= 0 )
 		{
-			m_iHealth = 0;
+			SetHealth( 0 );
 			Stop();
 
 			m_OnDeath.FireOutput( info.GetInflictor(), this );

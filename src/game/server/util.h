@@ -61,6 +61,7 @@ void DBG_AssertFunction(bool fExpr, const char* szExpr, const char* szFile, int 
 template< class T >
 T *_CreateEntityTemplate( T *newEnt, const char *className )
 {
+	MEM_ALLOC_CREDIT_("Entities");
 	newEnt = new T; // this is the only place 'new' should be used!
 	newEnt->PostConstructor( className );
 	return newEnt;
@@ -128,6 +129,8 @@ public:
 	IServerNetworkable *Create( const char *pClassName )
 	{
 		T* pEnt = _CreateEntityTemplate((T*)NULL, pClassName);
+		if(!pEnt)
+			return NULL;
 		return pEnt->NetworkProp();
 	}
 
@@ -250,33 +253,12 @@ bool		UTIL_ClientPVSIsExpanded();
 edict_t		*UTIL_FindClientInPVS( edict_t *pEdict );
 edict_t		*UTIL_FindClientInVisibilityPVS( edict_t *pEdict );
 
+edict_t		*UTIL_FindClientInPVSGuts(edict_t *pEdict, unsigned char *pvs, unsigned pvssize );
+
 // This is a version which finds any clients whose PVS intersects the box
 CBaseEntity *UTIL_FindClientInPVS( const Vector &vecBoxMins, const Vector &vecBoxMaxs );
 
 CBaseEntity *UTIL_EntitiesInPVS( CBaseEntity *pPVSEntity, CBaseEntity *pStartingEntity );
-
-//-----------------------------------------------------------------------------
-// class CFlaggedEntitiesEnum
-//-----------------------------------------------------------------------------
-// enumerate entities that match a set of edict flags into a static array
-class CFlaggedEntitiesEnum : public IPartitionEnumerator
-{
-public:
-	CFlaggedEntitiesEnum( CBaseEntity **pList, int listMax, int flagMask );
-
-	// This gets called	by the enumeration methods with each element
-	// that passes the test.
-	virtual IterationRetval_t EnumElement( IHandleEntity *pHandleEntity );
-	
-	int GetCount() { return m_count; }
-	bool AddToList( CBaseEntity *pEntity );
-	
-private:
-	CBaseEntity		**m_pList;
-	int				m_listMax;
-	int				m_flagMask;
-	int				m_count;
-};
 
 // Pass in an array of pointers and an array size, it fills the array and returns the number inserted
 int			UTIL_EntitiesInBox( const Vector &mins, const Vector &maxs, CFlaggedEntitiesEnum *pEnum  );
@@ -289,12 +271,6 @@ inline int UTIL_EntitiesInBox( CBaseEntity **pList, int listMax, const Vector &m
 	return UTIL_EntitiesInBox( mins, maxs, &boxEnum );
 }
 
-inline int UTIL_EntitiesAlongRay( CBaseEntity **pList, int listMax, const Ray_t &ray, int flagMask )
-{
-	CFlaggedEntitiesEnum rayEnum( pList, listMax, flagMask );
-	return UTIL_EntitiesAlongRay( ray, &rayEnum );
-}
-
 inline int UTIL_EntitiesInSphere( CBaseEntity **pList, int listMax, const Vector &center, float radius, int flagMask )
 {
 	CFlaggedEntitiesEnum sphereEnum( pList, listMax, flagMask );
@@ -302,13 +278,96 @@ inline int UTIL_EntitiesInSphere( CBaseEntity **pList, int listMax, const Vector
 }
 
 // marks the entity for deletion so it will get removed next frame
-void UTIL_Remove( IServerNetworkable *oldObj );
 void UTIL_Remove( CBaseEntity *oldObj );
+
+inline void UTIL_Remove( const CBaseEntity *oldObj )
+{
+	UTIL_Remove( const_cast<CBaseEntity *>(oldObj) );
+}
+
+inline void UTIL_Remove( CBaseHandle &oldObj )
+{
+	UTIL_Remove( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+inline void UTIL_Remove( const CBaseHandle &oldObj )
+{
+	UTIL_Remove( const_cast<CBaseHandle &>(oldObj) );
+}
+
+template <class Type>
+inline void UTIL_Remove( CHandle<Type> &oldObj )
+{
+	UTIL_Remove( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+template <class Type>
+inline void UTIL_Remove( const CHandle<Type> &oldObj )
+{
+	UTIL_Remove( const_cast<CHandle<Type> &>(oldObj) );
+}
+
+template <class Type, class Changer>
+inline void UTIL_Remove( CNetworkHandleBase<Type, Changer> &oldObj )
+{
+	UTIL_Remove( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+template <class Type, class Changer>
+inline void UTIL_Remove( const CNetworkHandleBase<Type, Changer> &oldObj )
+{
+	UTIL_Remove( const_cast<CNetworkHandleBase<Type, Changer> &>(oldObj) );
+}
 
 // deletes an entity, without any delay.  Only use this when sure no pointers rely on this entity.
 void UTIL_DisableRemoveImmediate();
 void UTIL_EnableRemoveImmediate();
 void UTIL_RemoveImmediate( CBaseEntity *oldObj );
+
+inline void UTIL_RemoveImmediate( const CBaseEntity *oldObj )
+{
+	UTIL_RemoveImmediate( const_cast<CBaseEntity *>(oldObj) );
+}
+
+inline void UTIL_RemoveImmediate( CBaseHandle &oldObj )
+{
+	UTIL_RemoveImmediate( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+inline void UTIL_RemoveImmediate( const CBaseHandle &oldObj )
+{
+	UTIL_RemoveImmediate( const_cast<CBaseHandle &>(oldObj) );
+}
+
+template <class Type>
+inline void UTIL_RemoveImmediate( CHandle<Type> &oldObj )
+{
+	UTIL_RemoveImmediate( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+template <class Type>
+inline void UTIL_RemoveImmediate( const CHandle<Type> &oldObj )
+{
+	UTIL_RemoveImmediate( const_cast<CHandle<Type> &>(oldObj) );
+}
+
+template <class Type, class Changer>
+inline void UTIL_RemoveImmediate( CNetworkHandleBase<Type, Changer> &oldObj )
+{
+	UTIL_RemoveImmediate( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+template <class Type, class Changer>
+inline void UTIL_RemoveImmediate( const CNetworkHandleBase<Type, Changer> &oldObj )
+{
+	UTIL_RemoveImmediate( const_cast<CNetworkHandleBase<Type, Changer> &>(oldObj) );
+}
 
 // make this a fixed size so it just sits on the stack
 #define MAX_SPHERE_QUERY	512
@@ -340,7 +399,8 @@ void		UTIL_SetOrigin			( CBaseEntity *entity, const Vector &vecOrigin, bool bFir
 void		UTIL_EmitAmbientSound	( int entindex, const Vector &vecOrigin, const char *samp, float vol, soundlevel_t soundlevel, int fFlags, int pitch, float soundtime = 0.0f, float *duration = NULL );
 void		UTIL_ParticleEffect		( const Vector &vecOrigin, const Vector &vecDirection, ULONG ulColor, ULONG ulCount );
 void		UTIL_ScreenShake		( const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake=false );
-void		UTIL_ScreenShakeObject	( CBaseEntity *pEnt, const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake=false );
+void		UTIL_ScreenShakeObject	( CBaseEntity *pEnt, const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake=false, CUtlVector<CBasePlayer *> *ignore = NULL );
+void		UTIL_ScreenTilt			( const Vector &center, const QAngle &tiltAngle, float duration, float radius, float tiltTime, ShakeCommand_t eCommand, bool bEaseInOut );
 void		UTIL_ViewPunch			( const Vector &center, QAngle angPunch, float radius, bool bInAir );
 void		UTIL_ShowMessage		( const char *pString, CBasePlayer *pPlayer );
 void		UTIL_ShowMessageAll		( const char *pString );
@@ -354,6 +414,7 @@ int			UTIL_EntityInSolid( CBaseEntity *ent );
 bool		UTIL_IsMasterTriggered	(string_t sMaster, CBaseEntity *pActivator);
 void		UTIL_BloodStream( const Vector &origin, const Vector &direction, int color, int amount );
 void		UTIL_BloodSpray( const Vector &pos, const Vector &dir, int color, int amount, int flags );
+void		UTIL_BloodSprayPrecache();
 Vector		UTIL_RandomBloodVector( void );
 void		UTIL_ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName = NULL );
 void		UTIL_PlayerDecalTrace( trace_t *pTrace, int playernum );
@@ -618,6 +679,7 @@ void UTIL_GetDebugColorForRelationship( int nRelationship, int &r, int &g, int &
 
 struct datamap_t;
 extern const char	*UTIL_FunctionToName( datamap_t *pMap, inputfunc_t *function );
+extern inputfunc_t			*UTIL_FunctionFromName( datamap_t *pMap, const char *pName );
 
 int UTIL_GetCommandClientIndex( void );
 CBasePlayer *UTIL_GetCommandClient( void );
@@ -633,5 +695,18 @@ bool UTIL_LoadAndSpawnEntitiesFromScript( CUtlVector <CBaseEntity*> &entities, c
 
 // Given a vector, clamps the scalar axes to MAX_COORD_FLOAT ranges from worldsize.h
 void UTIL_BoundToWorldSize( Vector *pVecPos );
+
+// HudMessagePanel helpers
+void UTIL_MessageTextAll( const char *text, Color color = Color( 0, 0, 0, 0 ) );	// Send a HudMessagePanel string to clients
+void UTIL_MessageText( CBasePlayer *player, const char *text, Color color = Color( 0, 0, 0, 0 ) );	// Send a HudMessagePanel string to a client
+void UTIL_ResetMessageTextAll( void );												// Reset clients' HudMessagePanel
+void UTIL_ResetMessageText( CBasePlayer *player );									// Reset a client's HudMessagePanel
+
+//--------------------------------------------------------------------------------------------------------
+/**
+ * Return true if ground is fairly level within the given radius around an entity
+ * Trace 4 vertical hull-quadrants and test their collisions and ground heights and normals
+ */
+bool UTIL_IsGroundLevel( float radius, const Vector &position, float hullHeight, int mask, const CBaseEntity *ignore, bool debugTraces = false );
 
 #endif // UTIL_H

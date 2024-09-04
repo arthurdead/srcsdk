@@ -1,5 +1,7 @@
 project('choreoobjects', 'cpp')
 
+assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+
 src_root_dir = get_option('src_root_dir')
 
 source_base = subproject('source_base')
@@ -23,7 +25,7 @@ choreoobjects_lib = static_library('choreoobjects',
 		join_paths(public_dir,'tier1')
 	),
 	dependencies: [
-		source_base.get_variable('source_linux_static_lib_dep')
+		source_base.get_variable('source_os_static_lib_dep')
 	]
 )
 

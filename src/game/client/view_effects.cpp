@@ -35,20 +35,7 @@ struct screenfade_t
 	float		Reset;		// When to reset to not fading (for fadeout and hold)
 	byte		r, g, b, alpha;	// Fade color
 	int			Flags;		// Fading flags
-
-	DECLARE_SIMPLE_DATADESC();
 };
-
-BEGIN_SIMPLE_DATADESC( screenfade_t )
-	DEFINE_FIELD( Speed,	FIELD_FLOAT ),
-	DEFINE_FIELD( End,		FIELD_TIME ),
-	DEFINE_FIELD( Reset,	FIELD_TIME ),
-	DEFINE_FIELD( r,		FIELD_CHARACTER ),
-	DEFINE_FIELD( g,		FIELD_CHARACTER ),
-	DEFINE_FIELD( b,		FIELD_CHARACTER ),
-	DEFINE_FIELD( alpha,	FIELD_CHARACTER ),
-	DEFINE_FIELD( Flags,	FIELD_INTEGER ),
-END_DATADESC()
 
 
 //-----------------------------------------------------------------------------
@@ -79,21 +66,7 @@ struct screenshake_t
 	uint8 nShakeType; // actually a ShakeType_t, packed into eight bits (the datadesc system doesn't like bitfields)
 
 	screenshake_t() : nShakeType(kSHAKE_BASIC) {};  // nothing else is explicitly initialized
-
-	DECLARE_SIMPLE_DATADESC();
 };
-
-BEGIN_SIMPLE_DATADESC( screenshake_t )
-	DEFINE_FIELD( endtime,		FIELD_TIME ),
-	DEFINE_FIELD( duration,		FIELD_FLOAT ),
-	DEFINE_FIELD( amplitude,	FIELD_FLOAT ),
-	DEFINE_FIELD( frequency,	FIELD_FLOAT ),
-	DEFINE_FIELD( nextShake,	FIELD_TIME ),
-	DEFINE_FIELD( offset,		FIELD_VECTOR ),
-	DEFINE_FIELD( angle,		FIELD_FLOAT ),
-	DEFINE_FIELD( nShakeType,	FIELD_CHARACTER ),
-	DEFINE_FIELD( direction,	FIELD_VECTOR ),
-END_DATADESC()
 
 //-----------------------------------------------------------------------------
 // Purpose: Screen tilt variables
@@ -108,18 +81,7 @@ struct screentilt_t
 	float	tiltTime;
 	Vector	offset;
 	int		command;
-
-	DECLARE_SIMPLE_DATADESC();
 };
-
-BEGIN_SIMPLE_DATADESC( screentilt_t )
-	DEFINE_FIELD( angle,		FIELD_VECTOR ),
-	DEFINE_FIELD( starttime,	FIELD_TIME ),
-	DEFINE_FIELD( endtime,		FIELD_TIME ),
-	DEFINE_FIELD( duration,		FIELD_FLOAT ),
-	DEFINE_FIELD( tiltTime,	FIELD_TIME ),
-	DEFINE_FIELD( offset,		FIELD_VECTOR ),
-END_DATADESC()
 
 void CC_Shake_Stop();
 //-----------------------------------------------------------------------------

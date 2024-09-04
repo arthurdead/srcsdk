@@ -48,7 +48,7 @@ public:
 	DECLARE_NETWORKCLASS();
 	DECLARE_PREDICTABLE();
 #if !defined( CLIENT_DLL )
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 #endif
 
 	CBeam();
@@ -263,10 +263,7 @@ public:
 //-----------------------------------------------------------------------------
 inline int CBeam::ObjectCaps( void )
 { 
-	int flags = 0;
-	if ( HasSpawnFlags( SF_BEAM_TEMPORARY ) )
-		flags = FCAP_DONT_SAVE;
-	return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | flags; 
+	return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); 
 }
 #endif
 

@@ -8,11 +8,16 @@
 #define PLAYER_PICKUP_H
 #pragma once
 
+#include "mathlib/mathlib.h"
+
 #ifdef HL2_DLL
 // Needed for launch velocity
 extern ConVar physcannon_minforce;
 extern ConVar physcannon_maxforce;
 #endif
+
+class CBasePlayer;
+class CBaseEntity;
 
 // Reasons behind a pickup
 enum PhysGunPickup_t

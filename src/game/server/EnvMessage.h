@@ -37,7 +37,7 @@ private:
 	int m_MessageAttenuation;
 	float m_Radius;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	string_t m_sNoise;
 	COutputEvent m_OnShowMessage;

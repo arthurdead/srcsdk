@@ -104,6 +104,11 @@ static bool s_bImmediateRemovesAllowed = true;
 static CPredictableList g_Predictables;
 IPredictableList *predictables = &g_Predictables;
 
+CPredictableList *GetPredictables( )
+{
+	return &g_Predictables;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Add entity to list
 // Input  : add - 
@@ -1091,7 +1096,7 @@ inline int C_BaseEntity::Interp_Interpolate( VarMapping_t *map, float currentTim
 //-----------------------------------------------------------------------------
 // Functions.
 //-----------------------------------------------------------------------------
-C_BaseEntity::C_BaseEntity( bool bClientOnly ) : 
+C_BaseEntity::C_BaseEntity() : 
 	m_iv_vecOrigin( "C_BaseEntity::m_iv_vecOrigin" ),
 	m_iv_angRotation( "C_BaseEntity::m_iv_angRotation" ),
 	m_iv_vecVelocity( "C_BaseEntity::m_iv_vecVelocity" )
@@ -1112,7 +1117,7 @@ C_BaseEntity::C_BaseEntity( bool bClientOnly ) :
 	// AddVar( &m_vecVelocity, &m_iv_vecVelocity, LATCH_SIMULATION_VAR );
 
 	m_DataChangeEventRef = -1;
-	m_EntClientFlags = bClientOnly ? ENTCLIENTFLAG_CLIENTONLY : 0;
+	m_EntClientFlags = 0;
 
 	m_iParentAttachment = 0;
 
@@ -1215,7 +1220,7 @@ C_BaseEntity::C_BaseEntity( bool bClientOnly ) :
 
 	m_bEnabledInToolView = true;
 	m_bToolRecording = false;
-	m_ToolHandle = 0;
+	m_ToolHandle = HTOOLHANDLE_INVALID;
 	m_nLastRecordedFrame = -1;
 	m_bRecordInTools = true;
 
@@ -1235,11 +1240,6 @@ C_BaseEntity::C_BaseEntity( bool bClientOnly ) :
 	m_nModelIndexOverrides = NULL;
 }
 
-C_BaseEntity::C_BaseEntity() : C_BaseEntity(false)
-{
-
-}
-
 IClientNetworkable*C_BaseEntity::GetClientNetworkable()
 {
 	if ( m_pPredictionContext != NULL )
@@ -1249,7 +1249,7 @@ IClientNetworkable*C_BaseEntity::GetClientNetworkable()
 		return this;
 	}
 
-	if( m_EntClientFlags & ENTCLIENTFLAG_CLIENTONLY )
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
 		return NULL;
 
 	if(m_nEntIndex == -1)
@@ -1270,7 +1270,7 @@ bool C_BaseEntity::IsServerEntity( void )
 		return true;
 	}
 
-	if( m_EntClientFlags & ENTCLIENTFLAG_CLIENTONLY )
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
 		return false;
 
 	return m_nEntIndex != -1;
@@ -1289,7 +1289,7 @@ bool C_BaseEntity::IsClientCreated( void ) const
 		return true;
 	}
 
-	if(m_EntClientFlags & ENTCLIENTFLAG_CLIENTONLY)
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
 		return true;
 
 	return m_nEntIndex == -1;
@@ -1415,12 +1415,12 @@ bool C_BaseEntity::InitializeAsServerEntity( int entnum, int iSerialNum )
 {
 	Assert( entnum >= 0 && entnum < NUM_ENT_ENTRIES );
 
-	m_EntClientFlags &= ~ENTCLIENTFLAG_CLIENTONLY;
+	RemoveEFlags( EFL_NOT_NETWORKED );
 
 	m_nEntIndex = entnum;
 	m_pClientAlphaProperty->SetDesyncOffset( m_nEntIndex );
 
-	cl_entitylist->AddNetworkableEntity( GetIClientUnknown(), entnum, iSerialNum );
+	cl_entitylist->AddNetworkableEntity( this, entnum, iSerialNum );
 
 	CollisionProp()->CreatePartitionHandle();
 
@@ -1433,13 +1433,13 @@ bool C_BaseEntity::InitializeAsServerEntity( int entnum, int iSerialNum )
 
 bool C_BaseEntity::InitializeAsPredictedEntity( const char *className, const char *module, int line )
 {
-	m_EntClientFlags &= ~ENTCLIENTFLAG_CLIENTONLY;
+	RemoveEFlags( EFL_NOT_NETWORKED );
 
 	m_nEntIndex = -1;
 	m_pClientAlphaProperty->SetDesyncOffset( rand() % 1024 );
 
 	// Add the client entity to the master entity list.
-	cl_entitylist->AddNonNetworkableEntity( GetIClientUnknown() );
+	cl_entitylist->AddNonNetworkableEntity( this );
 	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
 
 	CollisionProp()->CreatePartitionHandle();
@@ -1491,13 +1491,13 @@ bool C_BaseEntity::InitializeAsPredictedEntity( const char *className, const cha
 
 bool C_BaseEntity::InitializeAsEventEntity()
 {
-	m_EntClientFlags &= ~ENTCLIENTFLAG_CLIENTONLY;
+	RemoveEFlags( EFL_NOT_NETWORKED );
 
 	m_nEntIndex = -1;
 	m_pClientAlphaProperty->SetDesyncOffset( rand() % 1024 );
 
 	// Add the client entity to the master entity list.
-	cl_entitylist->AddNonNetworkableEntity( GetIClientUnknown() );
+	cl_entitylist->AddNonNetworkableEntity( this );
 	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
 
 	CollisionProp()->CreatePartitionHandle();
@@ -1511,13 +1511,13 @@ bool C_BaseEntity::InitializeAsEventEntity()
 
 bool C_BaseEntity::InitializeAsClientEntity()
 {
-	m_EntClientFlags |= ENTCLIENTFLAG_CLIENTONLY;
+	AddEFlags( EFL_NOT_NETWORKED );
 
 	m_nEntIndex = -1;
 	m_pClientAlphaProperty->SetDesyncOffset( rand() % 1024 );
 
 	// Add the client entity to the master entity list.
-	cl_entitylist->AddNonNetworkableEntity( GetIClientUnknown() );
+	cl_entitylist->AddNonNetworkableEntity( this );
 	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
 
 	// Add the client entity to the spatial partition. (Collidable)
@@ -1528,6 +1528,19 @@ bool C_BaseEntity::InitializeAsClientEntity()
 	m_nCreationTick = gpGlobals->tickcount;
 
 	return true;
+}
+
+void C_BaseEntity::PostConstructor( const char *szClassname )
+{
+	if ( szClassname )
+	{
+		SetClassname(szClassname);
+	}
+
+	Assert( m_iClassname != NULL_STRING && STRING(m_iClassname) != NULL );
+
+	CheckHasThinkFunction( false );
+	CheckHasGamePhysicsSimulation();
 }
 
 void C_BaseEntity::TrackAngRotation( bool bTrack )
@@ -1544,7 +1557,7 @@ void C_BaseEntity::SetRefEHandle( const CBaseHandle &handle )
 }
 
 
-const CBaseHandle& C_BaseEntity::GetRefEHandle() const
+const EHANDLE& C_BaseEntity::GetRefEHandle() const
 {
 	return m_RefEHandle;
 }
@@ -3770,239 +3783,6 @@ void C_BaseEntity::SetThinkHandle( ClientThinkHandle_t hThink )
 	m_hThink = hThink;
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: This routine modulates renderamt according to m_nRenderFX's value
-//  This is a client side effect and will not be in-sync on machines across a
-//  network game.
-// Input  : origin - 
-//			alpha - 
-// Output : int
-//-----------------------------------------------------------------------------
-#if 0
-void C_BaseEntity::ComputeFxBlend( void )
-{
-	// Don't recompute if we've already computed this frame
-	if ( m_nFXComputeFrame == gpGlobals->framecount )
-		return;
-
-	MDLCACHE_CRITICAL_SECTION();
-	int blend=0;
-	float offset;
-
-	offset = ((int)index) * 363.0;// Use ent index to de-sync these fx
-
-	switch( m_nRenderFX ) 
-	{
-	case kRenderFxPulseSlowWide:
-		blend = m_clrRender->a + 0x40 * sin( gpGlobals->curtime * 2 + offset );	
-		break;
-		
-	case kRenderFxPulseFastWide:
-		blend = m_clrRender->a + 0x40 * sin( gpGlobals->curtime * 8 + offset );
-		break;
-	
-	case kRenderFxPulseFastWider:
-		blend = ( 0xff * fabs(sin( gpGlobals->curtime * 12 + offset ) ) );
-		break;
-
-	case kRenderFxPulseSlow:
-		blend = m_clrRender->a + 0x10 * sin( gpGlobals->curtime * 2 + offset );
-		break;
-		
-	case kRenderFxPulseFast:
-		blend = m_clrRender->a + 0x10 * sin( gpGlobals->curtime * 8 + offset );
-		break;
-		
-	// JAY: HACK for now -- not time based
-	case kRenderFxFadeSlow:			
-		if ( m_clrRender->a > 0 ) 
-		{
-			SetRenderColorA( m_clrRender->a - 1 );
-		}
-		else
-		{
-			SetRenderColorA( 0 );
-		}
-		blend = m_clrRender->a;
-		break;
-		
-	case kRenderFxFadeFast:
-		if ( m_clrRender->a > 3 ) 
-		{
-			SetRenderColorA( m_clrRender->a - 4 );
-		}
-		else
-		{
-			SetRenderColorA( 0 );
-		}
-		blend = m_clrRender->a;
-		break;
-		
-	case kRenderFxSolidSlow:
-		if ( m_clrRender->a < 255 )
-		{
-			SetRenderColorA( m_clrRender->a + 1 );
-		}
-		else
-		{
-			SetRenderColorA( 255 );
-		}
-		blend = m_clrRender->a;
-		break;
-		
-	case kRenderFxSolidFast:
-		if ( m_clrRender->a < 252 )
-		{
-			SetRenderColorA( m_clrRender->a + 4 );
-		}
-		else
-		{
-			SetRenderColorA( 255 );
-		}
-		blend = m_clrRender->a;
-		break;
-		
-	case kRenderFxStrobeSlow:
-		blend = 20 * sin( gpGlobals->curtime * 4 + offset );
-		if ( blend < 0 )
-		{
-			blend = 0;
-		}
-		else
-		{
-			blend = m_clrRender->a;
-		}
-		break;
-		
-	case kRenderFxStrobeFast:
-		blend = 20 * sin( gpGlobals->curtime * 16 + offset );
-		if ( blend < 0 )
-		{
-			blend = 0;
-		}
-		else
-		{
-			blend = m_clrRender->a;
-		}
-		break;
-		
-	case kRenderFxStrobeFaster:
-		blend = 20 * sin( gpGlobals->curtime * 36 + offset );
-		if ( blend < 0 )
-		{
-			blend = 0;
-		}
-		else
-		{
-			blend = m_clrRender->a;
-		}
-		break;
-		
-	case kRenderFxFlickerSlow:
-		blend = 20 * (sin( gpGlobals->curtime * 2 ) + sin( gpGlobals->curtime * 17 + offset ));
-		if ( blend < 0 )
-		{
-			blend = 0;
-		}
-		else
-		{
-			blend = m_clrRender->a;
-		}
-		break;
-		
-	case kRenderFxFlickerFast:
-		blend = 20 * (sin( gpGlobals->curtime * 16 ) + sin( gpGlobals->curtime * 23 + offset ));
-		if ( blend < 0 )
-		{
-			blend = 0;
-		}
-		else
-		{
-			blend = m_clrRender->a;
-		}
-		break;
-		
-	case kRenderFxHologram:
-	case kRenderFxDistort:
-		{
-			Vector	tmp;
-			float	dist;
-			
-			VectorCopy( GetAbsOrigin(), tmp );
-			VectorSubtract( tmp, CurrentViewOrigin(), tmp );
-			dist = DotProduct( tmp, CurrentViewForward() );
-			
-			// Turn off distance fade
-			if ( m_nRenderFX == kRenderFxDistort )
-			{
-				dist = 1;
-			}
-			if ( dist <= 0 )
-			{
-				blend = 0;
-			}
-			else 
-			{
-				SetRenderColorA( 180 );
-				if ( dist <= 100 )
-					blend = m_clrRender->a;
-				else
-					blend = (int) ((1.0 - (dist - 100) * (1.0 / 400.0)) * m_clrRender->a);
-				blend += random->RandomInt(-32,31);
-			}
-		}
-		break;
-	
-	case kRenderFxNone:
-	case kRenderFxClampMinScale:
-	default:
-		if (m_nRenderMode == kRenderNormal)
-			blend = 255;
-		else
-			blend = m_clrRender->a;
-		break;	
-		
-	}
-
-	blend = clamp( blend, 0, 255 );
-
-	// Look for client-side fades
-	unsigned char nFadeAlpha = GetClientSideFade();
-	if ( nFadeAlpha != 255 )
-	{
-		float flBlend = blend / 255.0f;
-		float flFade = nFadeAlpha / 255.0f;
-		blend = (int)( flBlend * flFade * 255.0f + 0.5f );
-		blend = clamp( blend, 0, 255 );
-	}
-
-	m_nRenderFXBlend = blend;
-	m_nFXComputeFrame = gpGlobals->framecount;
-
-	// Update the render group
-	if ( GetRenderHandle() != INVALID_CLIENT_RENDER_HANDLE )
-	{
-		ClientLeafSystem()->SetRenderGroup( GetRenderHandle(), GetRenderGroup() );
-	}
-
-	// Tell our shadow
-	if ( m_ShadowHandle != CLIENTSHADOW_INVALID_HANDLE )
-	{
-		g_pClientShadowMgr->SetFalloffBias( m_ShadowHandle, (255 - m_nRenderFXBlend) );
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-int C_BaseEntity::GetFxBlend( void )
-{
-	Assert( m_nFXComputeFrame == gpGlobals->framecount );
-	return m_nRenderFXBlend;
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // Determine the color modulation amount
 //-----------------------------------------------------------------------------
@@ -6192,60 +5972,139 @@ void CBaseEntity::SetRenderFX( RenderFx_t nRenderFX, float flStartTime, float fl
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Output : RenderGroup_t
+// Purpose: Copy from this entity into one of the save slots (original or intermediate)
+// Input  : slot - 
+//			type - 
+//			false - 
+//			false - 
+//			true - 
+//			false - 
+//			NULL - 
+// Output : int
 //-----------------------------------------------------------------------------
-#if 0
-RenderGroup_t C_BaseEntity::GetRenderGroup()
+int C_BaseEntity::SaveData( const char *context, int slot, int type )
 {
-	// Don't sort things that don't need rendering
-	if ( m_nRenderMode == kRenderNone )
-		return RENDER_GROUP_OPAQUE_ENTITY;
+	VPROF( "C_BaseEntity::SaveData" );
 
-	// When an entity has a material proxy, we have to recompute
-	// translucency here because the proxy may have changed it.
-	if (modelinfo->ModelHasMaterialProxy( GetModel() ))
+	void *dest = ( slot == SLOT_ORIGINALDATA ) ? GetOriginalNetworkDataObject() : GetPredictedFrame( slot );
+	Assert( dest );
+
+	char sz[ 64 ];
+	sz[0] = 0;
+	// don't build debug strings per entity per frame, unless we are watching the entity
+	static ConVarRef pwatchent( "pwatchent" );
+	if ( pwatchent.GetInt() == entindex() )
 	{
-		modelinfo->RecomputeTranslucency( const_cast<model_t*>(GetModel()), GetSkin(), GetBody(), GetClientRenderable() );
-	}
-
-	// NOTE: Bypassing the GetFXBlend protection logic because we want this to
-	// be able to be called from AddToLeafSystem.
-	int nTempComputeFrame = m_nFXComputeFrame;
-	m_nFXComputeFrame = gpGlobals->framecount;
-
-	int nFXBlend = GetFxBlend();
-
-	m_nFXComputeFrame = nTempComputeFrame;
-
-	// Don't need to sort invisible stuff
-	if ( nFXBlend == 0 )
-		return RENDER_GROUP_OPAQUE_ENTITY;
-
-		// Figure out its RenderGroup.
-	int modelType = modelinfo->GetModelType( model );
-	RenderGroup_t renderGroup = (modelType == mod_brush) ? RENDER_GROUP_OPAQUE_BRUSH : RENDER_GROUP_OPAQUE_ENTITY;
-	if ( ( nFXBlend != 255 ) || IsTransparent() )
-	{
-		if ( m_nRenderMode != kRenderEnvironmental )
+		if ( slot == SLOT_ORIGINALDATA )
 		{
-			renderGroup = RENDER_GROUP_TRANSLUCENT_ENTITY;
+			Q_snprintf( sz, sizeof( sz ), "%s SaveData(original)", context );
 		}
 		else
 		{
-			renderGroup = RENDER_GROUP_OTHER;
+			Q_snprintf( sz, sizeof( sz ), "%s SaveData(slot %02i)", context, slot );
 		}
 	}
 
-	if ( ( renderGroup == RENDER_GROUP_TRANSLUCENT_ENTITY ) &&
-		 ( modelinfo->IsTranslucentTwoPass( model ) ) )
+	if ( slot != SLOT_ORIGINALDATA )
 	{
-		renderGroup = RENDER_GROUP_TWOPASS;
+		// Remember high water mark so that we can detect below if we are reading from a slot not yet predicted into...
+		m_nIntermediateDataCount = slot;
 	}
 
-	return renderGroup;
+	CPredictionCopy copyHelper( type, dest, PC_DATA_PACKED, this, PC_DATA_NORMAL );
+	int error_count = copyHelper.TransferData( sz, entindex(), GetPredDescMap() );
+	return error_count;
 }
-#endif
+
+//-----------------------------------------------------------------------------
+// Purpose: Restore data from specified slot into current entity
+// Input  : slot - 
+//			type - 
+//			false - 
+//			false - 
+//			true - 
+//			false - 
+//			NULL - 
+// Output : int
+//-----------------------------------------------------------------------------
+int C_BaseEntity::RestoreData( const char *context, int slot, int type )
+{
+	VPROF( "C_BaseEntity::RestoreData" );
+
+	const void *src = ( slot == SLOT_ORIGINALDATA ) ? GetOriginalNetworkDataObject() : GetPredictedFrame( slot );
+	Assert( src );
+
+	// This assert will fire if the server ack'd a CUserCmd which we hadn't predicted yet...
+	// In that case, we'd be comparing "old" data from this "unused" slot with the networked data and reporting all kinds of prediction errors possibly.
+	Assert( slot == SLOT_ORIGINALDATA || slot <= m_nIntermediateDataCount );
+
+	char sz[ 64 ];
+	sz[0] = 0;
+	// don't build debug strings per entity per frame, unless we are watching the entity
+	static ConVarRef pwatchent( "pwatchent" );
+	if ( pwatchent.GetInt() == entindex() )
+	{
+		if ( slot == SLOT_ORIGINALDATA )
+		{
+			Q_snprintf( sz, sizeof( sz ), "%s RestoreData(original)", context );
+		}
+		else
+		{
+			Q_snprintf( sz, sizeof( sz ), "%s RestoreData(slot %02i)", context, slot );
+		}
+	}
+
+	// some flags shouldn't be predicted - as we find them, add them to the savedEFlagsMask
+	const int savedEFlagsMask = EFL_DIRTY_SHADOWUPDATE | EFL_DIRTY_SPATIAL_PARTITION;
+	int savedEFlags = GetEFlags() & savedEFlagsMask;
+
+	// model index needs to be set manually for dynamic model refcounting purposes
+	int oldModelIndex = m_nModelIndex;
+
+	CPredictionCopy copyHelper( type, this, PC_DATA_NORMAL, src, PC_DATA_PACKED );
+	int error_count = copyHelper.TransferData( sz, entindex(), GetPredDescMap() );
+
+	// set non-predicting flags back to their prior state
+	RemoveEFlags( savedEFlagsMask );
+	AddEFlags( savedEFlags );
+
+	// restore original model index and change via SetModelIndex
+	int newModelIndex = m_nModelIndex;
+	m_nModelIndex = oldModelIndex;
+	int overrideModelIndex = CalcOverrideModelIndex();
+	if( overrideModelIndex != -1 )
+		newModelIndex = overrideModelIndex;
+	if ( oldModelIndex != newModelIndex )
+	{
+		MDLCACHE_CRITICAL_SECTION(); // ???
+		SetModelIndex( newModelIndex );
+	}
+
+	OnPostRestoreData();
+
+	return error_count;
+}
+
+
+void C_BaseEntity::OnPostRestoreData()
+{
+	// HACK Force recomputation of origin
+	InvalidatePhysicsRecursive( POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED );
+
+	if ( GetMoveParent() )
+	{
+		AddToAimEntsList();
+	}
+
+	// If our model index has changed, then make sure it's reflected in our model pointer.
+	// (Mostly superseded by new modelindex delta check in RestoreData, but I'm leaving it
+	// because it might be band-aiding any other missed calls to SetModelByIndex --henryg)
+	if ( GetModel() != modelinfo->GetModel( GetModelIndex() ) )
+	{
+		MDLCACHE_CRITICAL_SECTION();
+		SetModelByIndex( GetModelIndex() );
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Determine approximate velocity based on updates from server
@@ -6414,13 +6273,8 @@ bool C_BaseEntity::IsFloating()
 }
 
 
-BEGIN_DATADESC_NO_BASE( C_BaseEntity )
-	DEFINE_FIELD( m_ModelName, FIELD_STRING ),
-	DEFINE_FIELD( m_vecAbsOrigin, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_angAbsRotation, FIELD_VECTOR ),
-	DEFINE_ARRAY( m_rgflCoordinateFrame, FIELD_FLOAT, 12 ), // NOTE: MUST BE IN LOCAL SPACE, NOT POSITION_VECTOR!!! (see CBaseEntity::Restore)
-	DEFINE_FIELD( m_fFlags, FIELD_INTEGER ),
-END_DATADESC()
+BEGIN_MAPENTITY_NO_BASE( C_BaseEntity )
+END_MAPENTITY()
 
 void C_BaseEntity::SetClassname( const char *className )
 {

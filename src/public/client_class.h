@@ -100,6 +100,7 @@ public:
 			UTIL_Remove( pRet ); \
 			return NULL; \
 		} \
+		pRet->PostConstructor( #clientClassName ); \
 		return pRet; \
 	} \
 	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \

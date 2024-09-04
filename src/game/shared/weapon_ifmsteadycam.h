@@ -21,10 +21,6 @@ public:
 	DECLARE_NETWORKCLASS(); 
 	DECLARE_PREDICTABLE();
 
-#ifdef GAME_DLL
-	DECLARE_DATADESC();
-#endif
-
 public:
 	// Shared code
 	CWeaponIFMSteadyCam();

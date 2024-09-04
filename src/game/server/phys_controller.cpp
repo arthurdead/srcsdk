@@ -9,7 +9,6 @@
 #include "entitylist.h"
 #include "physics.h"
 #include "vphysics/constraints.h"
-#include "physics_saverestore.h"
 #include "phys_controller.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -30,8 +29,6 @@ class CPhysThruster;
 //-----------------------------------------------------------------------------
 class CConstantForceController : public IMotionEvent
 {
-	DECLARE_SIMPLE_DATADESC();
-
 public:
 	void Init( IMotionEvent::simresult_e controlType ) 
 	{ 
@@ -48,15 +45,6 @@ public:
 	Vector			m_linearSave;
 	AngularImpulse	m_angularSave;
 };
-
-BEGIN_SIMPLE_DATADESC( CConstantForceController )
-	DEFINE_FIELD( m_controlType,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_linear,		FIELD_VECTOR ),
-	DEFINE_FIELD( m_angular,		FIELD_VECTOR ),
-	DEFINE_FIELD( m_linearSave,	FIELD_VECTOR ),
-	DEFINE_FIELD( m_angularSave,	FIELD_VECTOR ),
-END_DATADESC()
-
 
 void CConstantForceController::SetConstantForce( const Vector &linear, const AngularImpulse &angular )
 {
@@ -95,9 +83,8 @@ public:
 	CPhysForce();
 	~CPhysForce();
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
-	virtual void OnRestore( );
 	void Spawn( void );
 	void Activate( void );
 
@@ -131,25 +118,17 @@ protected:
 	CConstantForceController m_integrator;
 };
 
-BEGIN_DATADESC( CPhysForce )
+BEGIN_MAPENTITY( CPhysForce )
 
-	DEFINE_PHYSPTR( m_pController ),
 	DEFINE_KEYFIELD( m_nameAttach, FIELD_STRING, "attach1" ),
 	DEFINE_KEYFIELD( m_force, FIELD_FLOAT, "force" ),
 	DEFINE_KEYFIELD( m_forceTime, FIELD_FLOAT, "forcetime" ),
 
-	DEFINE_FIELD( m_attachedObject, FIELD_EHANDLE ),
-	//DEFINE_FIELD( m_wasRestored, FIELD_BOOLEAN ), // NOTE: DO NOT save/load this - it's used to detect loads
-	DEFINE_EMBEDDED( m_integrator ),
-	
 	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Deactivate", InputDeactivate ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "scale", InputForceScale ),
-	
-	// Function Pointers
-	DEFINE_FUNCTION( ForceOff ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 CPhysForce::CPhysForce( void )
@@ -176,17 +155,6 @@ void CPhysForce::Spawn( void )
 	{
 		m_integrator.Init( IMotionEvent::SIM_GLOBAL_ACCELERATION );
 	}
-}
-
-void CPhysForce::OnRestore( )
-{
-	BaseClass::OnRestore();
-
-	if ( m_pController )
-	{
-		m_pController->SetEventHandler( &m_integrator );
-	}
-	m_wasRestored = true;
 }
 
 void CPhysForce::Activate( void )
@@ -322,7 +290,6 @@ class CPhysThruster : public CPhysForce
 {
 	DECLARE_CLASS( CPhysThruster, CPhysForce );
 public:
-	DECLARE_DATADESC();
 
 	virtual void OnActivate( void );
 	virtual void SetupForces( IPhysicsObject *pPhys, Vector &linear, AngularImpulse &angular );
@@ -332,14 +299,6 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS( phys_thruster, CPhysThruster );
-
-BEGIN_DATADESC( CPhysThruster )
-
-	DEFINE_FIELD( m_localOrigin, FIELD_VECTOR ),
-
-END_DATADESC()
-
-
 
 void CPhysThruster::OnActivate( void )
 {
@@ -419,18 +378,18 @@ class CPhysTorque : public CPhysForce
 {
 	DECLARE_CLASS( CPhysTorque, CPhysForce );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	void Spawn( void );
 	virtual void SetupForces( IPhysicsObject *pPhys, Vector &linear, AngularImpulse &angular );
 private:	
 	Vector m_axis;
 };
 
-BEGIN_DATADESC( CPhysTorque )
+BEGIN_MAPENTITY( CPhysTorque )
 
 	DEFINE_KEYFIELD( m_axis, FIELD_VECTOR, "axis" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( phys_torque, CPhysTorque );
 
@@ -470,7 +429,7 @@ void CPhysTorque::SetupForces( IPhysicsObject *pPhys, Vector &linear, AngularImp
 //-----------------------------------------------------------------------------
 class CMotorController : public IMotionEvent
 {
-	DECLARE_SIMPLE_DATADESC();
+	DECLARE_SIMPLE_MAPEMBEDDED();
 
 public:
 	IMotionEvent::simresult_e Simulate( IPhysicsMotionController *pController, IPhysicsObject *pObject, float deltaTime, Vector &linear, AngularImpulse &angular );
@@ -485,18 +444,12 @@ public:
 	float		m_restistanceDamping;
 };
 
-BEGIN_SIMPLE_DATADESC( CMotorController )
+BEGIN_SIMPLE_MAPEMBEDDED( CMotorController )
 
-	DEFINE_FIELD( m_speed,				FIELD_FLOAT ),
-	DEFINE_FIELD( m_maxTorque,			FIELD_FLOAT ),
 	DEFINE_KEYFIELD( m_axis,				FIELD_VECTOR, "axis" ),
 	DEFINE_KEYFIELD( m_inertiaFactor,		FIELD_FLOAT, "inertiafactor" ),
-	DEFINE_FIELD( m_lastSpeed,			FIELD_FLOAT ),
-	DEFINE_FIELD( m_lastAcceleration,		FIELD_FLOAT ),
-	DEFINE_FIELD( m_lastForce,			FIELD_FLOAT ),
-	DEFINE_FIELD( m_restistanceDamping,	FIELD_FLOAT ),
 
-END_DATADESC()
+END_MAPEMBEDDED()
 
 
 IMotionEvent::simresult_e CMotorController::Simulate( IPhysicsMotionController *pController, IPhysicsObject *pObject, float deltaTime, Vector &linear, AngularImpulse &angular )
@@ -585,14 +538,13 @@ class CPhysMotor : public CLogicalEntity
 	DECLARE_CLASS( CPhysMotor, CLogicalEntity );
 public:
 	~CPhysMotor();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	void Spawn( void );
 	void Activate( void );
 	void Think( void );
 
 	void TurnOn( void );
 	void TargetSpeedChanged( void );
-	void OnRestore();
 
 	void InputSetTargetSpeed( inputdata_t &inputdata );
 	void InputTurnOn( inputdata_t &inputdata );
@@ -614,24 +566,18 @@ public:
 };
 
 
-BEGIN_DATADESC( CPhysMotor )
+BEGIN_MAPENTITY( CPhysMotor )
 
 	DEFINE_KEYFIELD( m_nameAttach, FIELD_STRING, "attach1" ),
-	DEFINE_FIELD( m_attachedObject, FIELD_EHANDLE ),
+
 	DEFINE_KEYFIELD( m_spinUp, FIELD_FLOAT, "spinup" ),
 	DEFINE_KEYFIELD( m_additionalAcceleration, FIELD_FLOAT, "addangaccel" ),
-	DEFINE_FIELD( m_angularAcceleration, FIELD_FLOAT ),
-	DEFINE_FIELD( m_lastTime, FIELD_TIME ),
-	DEFINE_PHYSPTR( m_pHinge ),
-	DEFINE_PHYSPTR( m_pController ),
-	
+
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeed", InputSetTargetSpeed ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 
-	DEFINE_EMBEDDED( m_motor ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( phys_motor, CPhysMotor );
 
@@ -812,16 +758,6 @@ void CPhysMotor::Activate( void )
 	}
 }
 
-void CPhysMotor::OnRestore()
-{
-	BaseClass::OnRestore();
-	// Need to do this on restore since there's no good way to save this
-	if ( m_pController )
-	{
-		m_pController->SetEventHandler( &m_motor );
-	}
-}
-
 void CPhysMotor::Think( void )
 {
 	// angular acceleration is always positive - it should be treated as a magnitude - the controller 
@@ -844,7 +780,7 @@ class CKeepUpright : public CPointEntity, public IMotionEvent
 {
 	DECLARE_CLASS( CKeepUpright, CPointEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CKeepUpright();
 	~CKeepUpright();
@@ -886,22 +822,16 @@ private:
 
 LINK_ENTITY_TO_CLASS( phys_keepupright, CKeepUpright );
 
-BEGIN_DATADESC( CKeepUpright )
+BEGIN_MAPENTITY( CKeepUpright )
 
-	DEFINE_FIELD( m_worldGoalAxis, FIELD_VECTOR ),
-	DEFINE_FIELD( m_localTestAxis, FIELD_VECTOR ),
-	DEFINE_PHYSPTR( m_pController ),
 	DEFINE_KEYFIELD( m_nameAttach, FIELD_STRING, "attach1" ),
-	DEFINE_FIELD( m_attachedObject, FIELD_EHANDLE ),
 	DEFINE_KEYFIELD( m_angularLimit, FIELD_FLOAT, "angularlimit" ),
-	DEFINE_FIELD( m_bActive, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bDampAllRotation, FIELD_BOOLEAN ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAngularLimit", InputSetAngularLimit ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 CKeepUpright::CKeepUpright()
 {
@@ -961,20 +891,6 @@ void CKeepUpright::Activate()
 			UTIL_Remove(this);
 			return;
 		}
-		// HACKHACK: Due to changes in the vehicle simulator the keepupright controller used in coast_01 is unstable
-		// force it to have perfect damping to compensate.
-		// detect it using the hack of angular limit == 150, attached to a vehicle
-		// Fixing it in the code is the simplest course of action presently
-#ifdef HL2_DLL
-		if ( m_angularLimit == 150.0f )
-		{
-			CBaseEntity *pEntity = static_cast<CBaseEntity *>(pPhys->GetGameData());
-			if ( pEntity && pEntity->GetServerVehicle() && Q_stristr( gpGlobals->mapname.ToCStr(), "d2_coast_01" ) )
-			{
-				m_bDampAllRotation = true;
-			}
-		}
-#endif
 
 		m_pController = physenv->CreateMotionController( (IMotionEvent *)this );
 		m_pController->AttachObject( pPhys, false );

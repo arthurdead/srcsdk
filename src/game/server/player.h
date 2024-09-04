@@ -19,6 +19,14 @@
 #include "baseplayer_shared.h"
 #include "colorcorrection.h"
 #include "env_tonemap_controller.h"
+#include "ai_speech.h"
+//#include "playeranimstate.h"
+#include "tier0/vprof.h"
+
+class CLogicPlayerProxy;
+class CPostProcessController;
+enum PlayerAnimEvent_t : int;
+class CPlayerAnimState;
 
 // For queuing and processing usercmds
 class CCommandContext
@@ -83,10 +91,6 @@ class CFuncLadder;
 class CNavArea;
 class CHintSystem;
 class CAI_Expresser;
-
-#if defined USES_ECON_ITEMS
-class CEconWearable;
-#endif // USES_ECON_ITEMS
 
 // for step sounds
 struct surfacedata_t;
@@ -189,8 +193,15 @@ enum PlayerConnectedState
 extern bool gInitHUD;
 extern ConVar *sv_cheats;
 
+enum AimResults
+{
+	AIMRESULTS_NONE,
+	AIMRESULTS_ONTARGET,
+	AIMRESULTS_ASSISTED,
+};
+
 class CBasePlayer;
-class CPlayerInfo : public IBotController, public IPlayerInfo
+class CPlayerInfo : public IPlayerInfo
 {
 public:
 	CPlayerInfo () { m_pParent = NULL; } 
@@ -234,11 +245,12 @@ public:
 	virtual void SetLocalAngles( const QAngle& angles );
 	virtual const QAngle GetLocalAngles( void );
 	virtual bool IsEFlagSet( int nEFlagMask );
+	virtual void PostClientMessagesSent( void );
+	
+	virtual void RunPlayerMove( CUserCmd *ucmd );
+	virtual void SetLastUserCommand( const CUserCmd &cmd );
 
-	virtual void RunPlayerMove( CBotCmd *ucmd );
-	virtual void SetLastUserCommand( const CBotCmd &cmd );
-
-	virtual CBotCmd GetLastUserCommand();
+	virtual CUserCmd GetLastUserCommand();
 
 private:
 	CBasePlayer *m_pParent; 
@@ -254,15 +266,21 @@ protected:
 	friend class CBotManager;
 	static edict_t *s_PlayerEdict; // must be set before calling constructor
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
+
+	void					StartUserMessageThrottling( char const *pchMessageNames[], int nNumMessageNames );
+	void					FinishUserMessageThrottling();
+
+	bool					ShouldThrottleUserMessage( char const *pchMessageName );
 	
 	CBasePlayer();
 	~CBasePlayer();
 
+	virtual void		PostConstructor( const char *szClassname );
+
 	// IPlayerInfo passthrough (because we can't do multiple inheritance)
 	IPlayerInfo *GetPlayerInfo() { return &m_PlayerInfo; }
-	IBotController *GetBotController() { return &m_PlayerInfo; }
 
 	void SafeVehicleExit(CBasePlayer *pPlayer);
 
@@ -318,12 +336,10 @@ public:
 	void					MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
 	void					DoImpactEffect( trace_t &tr, int nDamageType );
 
-#if !defined( NO_ENTITY_PREDICTION )
 	void					AddToPlayerSimulationList( CBaseEntity *other );
 	void					RemoveFromPlayerSimulationList( CBaseEntity *other );
 	void					SimulatePlayerSimulatedEntities( void );
 	void					ClearPlayerSimulationList( void );
-#endif
 
 	// Physics simulation (player executes it's usercmd's here)
 	virtual void			PhysicsSimulate( void );
@@ -337,7 +353,6 @@ public:
 	virtual void			PostThink( void );
 	virtual int				TakeHealth( float flHealth, int bitsDamageType );
 	virtual void			TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
-	bool					ShouldTakeDamageInCommentaryMode( const CTakeDamageInfo &inputInfo );
 	virtual int				OnTakeDamage( const CTakeDamageInfo &info );
 	virtual void			DamageEffect(float flDamage, int fDamageType);
 
@@ -387,11 +402,16 @@ public:
 	const char *			GetPlayerName() { return m_szNetname; }
 	void					SetPlayerName( const char *name );
 
+	virtual const char *	GetCharacterDisplayName() { return GetPlayerName(); }
+
 	int						GetUserID() { return engine->GetPlayerUserId( edict() ); }
 	const char *			GetNetworkIDString(); 
 	virtual const Vector	GetPlayerMins( void ) const; // uses local player
 	virtual const Vector	GetPlayerMaxs( void ) const; // uses local player
 
+	virtual void			UpdateCollisionBounds( void );
+
+	virtual void			NoClipStateChanged( void ) { };
 
 	void					VelocityPunch( const Vector &vecForce );
 	void					ViewPunch( const QAngle &angleOffset );
@@ -406,18 +426,14 @@ public:
 	void					SmoothViewOnStairs( Vector& eyeOrigin );
 	virtual float			CalcRoll (const QAngle& angles, const Vector& velocity, float rollangle, float rollspeed);
 	void					CalcViewRoll( QAngle& eyeAngles );
-
-	virtual int				Save( ISave &save );
-	virtual int				Restore( IRestore &restore );
-	virtual bool			ShouldSavePhysics();
-	virtual void			OnRestore( void );
+	virtual void			CalcViewBob( Vector& eyeOrigin );
 
 	virtual void			PackDeadPlayerItems( void );
 	virtual void			RemoveAllItems( bool removeSuit );
 	bool					IsDead() const;
-#ifdef CSTRIKE_DLL
 	virtual bool			IsRunning( void ) const	{ return false; } // bot support under cstrike (AR)
-#endif
+
+	virtual	CBaseCombatCharacter *ActivePlayerCombatCharacter( void ) { return this; }
 
 	bool					HasPhysicsFlag( unsigned int flag ) { return (m_afPhysicsFlags & flag) != 0; }
 
@@ -432,6 +448,7 @@ public:
 	virtual bool			Weapon_ShouldSelectItem( CBaseCombatWeapon *pWeapon );
 	void					Weapon_DropSlot( int weaponSlot );
 	CBaseCombatWeapon		*GetLastWeapon( void ) { return m_hLastWeapon.Get(); }
+	CBaseCombatWeapon		*Weapon_GetLast( void ) { return m_hLastWeapon.Get(); }
 
 	virtual void			OnMyWeaponFired( CBaseCombatWeapon *weapon );	// call this when this player fires a weapon to allow other systems to react
 	virtual float			GetTimeSinceWeaponFired( void ) const;			// returns the time, in seconds, since this player fired a weapon
@@ -449,11 +466,13 @@ public:
 	bool					IsOnLadder( void );
 	virtual void			ExitLadder() {}
 	virtual surfacedata_t	*GetLadderSurface( const Vector &origin );
+	const Vector &			GetMovementCollisionNormal( void ) const;	// return the normal of the surface we last collided with
+	const Vector &			GetGroundNormal( void ) const;
 
 	virtual void			SetFlashlightEnabled( bool bState ) { };
-	virtual int				FlashlightIsOn( void ) { return false; }
-	virtual void			FlashlightTurnOn( void ) { };
-	virtual void			FlashlightTurnOff( void ) { };
+	virtual int				FlashlightIsOn( void ) { return IsEffectActive(EF_DIMLIGHT); }
+	virtual void			FlashlightTurnOn( bool playSound = true );
+	virtual void			FlashlightTurnOff( bool playSound = true );
 	virtual bool			IsIlluminatedByFlashlight( CBaseEntity *pEntity, float *flReturnDot ) {return false; }
 	
 	void					UpdatePlayerSound ( void );
@@ -467,17 +486,18 @@ public:
 
 	virtual void			OnEmitFootstepSound( const CSoundParameters& params, const Vector& vecOrigin, float fVolume ) {}
 
+	// return the entity used for soundscape radius checks
+	virtual CBaseEntity		*GetSoundscapeListener();
+
 	Class_T					Classify ( void );
-	virtual void			SetAnimation( PLAYER_ANIM playerAnim );
 	void					SetWeaponAnimType( const char *szExtention );
+	virtual void			OnMainActivityComplete( Activity newActivity, Activity oldActivity ) {}
+	virtual void			OnMainActivityInterrupted( Activity newActivity, Activity oldActivity ) {}
 
 	// custom player functions
 	virtual void			ImpulseCommands( void );
 	virtual void			CheatImpulseCommands( int iImpulse );
 	virtual bool			ClientCommand( const CCommand &args );
-
-	void					NotifySinglePlayerGameEnding() { m_bSinglePlayerGameEnding = true; }
-	bool					IsSinglePlayerGameEnding() { return m_bSinglePlayerGameEnding == true; }
 
 	bool					HandleVoteCommands( const CCommand &args );
 	
@@ -492,6 +512,7 @@ public:
 	virtual CBaseEntity		*GetObserverTarget( void ); // returns players targer or NULL
 	virtual CBaseEntity		*FindNextObserverTarget( bool bReverse ); // returns next/prev player to follow or NULL
 	virtual int				GetNextObserverSearchStartPoint( bool bReverse ); // Where we should start looping the player list in a FindNextObserverTarget call
+	virtual bool			PassesObserverFilter( const CBaseEntity *entity );	// returns true if the entity passes the specified filter
 	virtual bool			IsValidObserverTarget(CBaseEntity * target); // true, if player is allowed to see this target
 	virtual void			CheckObserverSettings(); // checks, if target still valid (didn't die etc)
 	virtual void			JumptoPosition(const Vector &origin, const QAngle &angles);
@@ -504,6 +525,9 @@ public:
 	virtual void			StopReplayMode();
 	virtual int				GetDelayTicks();
 	virtual int				GetReplayEntity();
+
+	CLogicPlayerProxy		*GetPlayerProxy( void );
+	void					FirePlayerProxyOutput( const char *pszOutputName, variant_t variant, CBaseEntity *pActivator, CBaseEntity *pCaller );
 
 	virtual void			CreateCorpse( void ) { }
 	virtual CBaseEntity		*EntSelectSpawnPoint( void );
@@ -533,7 +557,7 @@ public:
 	virtual void 			SelectItem( const char *pstr, int iSubType = 0 );
 	void					ItemPreFrame( void );
 	virtual void			ItemPostFrame( void );
-	virtual CBaseEntity		*GiveNamedItem( const char *szName, int iSubType = 0 );
+	virtual CBaseEntity		*GiveNamedItem( const char *szName, int iSubType = 0, bool removeIfNotCarried = true );
 	void					EnableControl(bool fControl);
 	virtual void			CheckTrainUpdate( void );
 	void					AbortReload( void );
@@ -551,6 +575,7 @@ public:
 	bool					IsPlayerUnderwater( void ) { return m_bPlayerUnderwater; }
 
 	virtual bool			CanBreatheUnderwater() const { return false; }
+	virtual bool			CanRecoverCurrentDrowningDamage( void ) const { return true; }// Are we allowed to later recover the drowning damage we are taking right now?  (Not, can we right now recover drowning damage.)
 	virtual void			PlayerUse( void );
 	virtual void			PlayUseDenySound() {}
 
@@ -577,6 +602,7 @@ public:
 	
 	virtual Vector			GetAutoaimVector( float flScale );
 	virtual Vector			GetAutoaimVector( float flScale, float flMaxDist );
+	virtual Vector			GetAutoaimVector( float flScale, float flMaxDist, float flMaxDeflection, AimResults *pAimResults );
 	virtual void			GetAutoaimVector( autoaim_params_t &params );
 
 	float					GetAutoaimScore( const Vector &eyePosition, const Vector &viewDir, const Vector &vecTarget, CBaseEntity *pTarget, float fScale, CBaseCombatWeapon *pActiveWeapon );
@@ -585,7 +611,7 @@ public:
 	void					SetTargetInfo( Vector &vecSrc, float flDist );
 
 	void					SetViewEntity( CBaseEntity *pEntity );
-	CBaseEntity				*GetViewEntity( void ) { return m_hViewEntity; }
+	CBaseEntity				*GetViewEntity( void ) { return m_hViewEntity.Get(); }
 
 	virtual void			ForceClientDllUpdate( void );  // Forces all client .dll specific data to be resent to client.
 
@@ -594,6 +620,7 @@ public:
 	virtual void			ProcessUsercmds( CUserCmd *cmds, int numcmds, int totalcmds,
 								int dropped_packets, bool paused );
 	bool					IsUserCmdDataValid( CUserCmd *pCmd );
+	bool					HasQueuedUsercmds( void ) const;
 
 	void					AvoidPhysicsProps( CUserCmd *pCmd );
 
@@ -609,7 +636,7 @@ public:
 	virtual void			ChangeTeam( int iTeamNum, bool bAutoTeam, bool bSilent );
 
 	// say/sayteam allowed?
-	virtual bool		CanHearAndReadChatFrom( CBasePlayer *pPlayer ) { return true; }
+	virtual bool		CanHearAndReadChatFrom( CBasePlayer *pPlayer );
 	virtual bool		CanSpeak( void ) { return true; }
 
 	audioparams_t			&GetAudioParams() { return m_Local.m_audio; }
@@ -619,25 +646,26 @@ public:
 
 	const QAngle& GetPunchAngle();
 	void SetPunchAngle( const QAngle &punchAngle );
+	void SetPunchAngle( int axis, float value );
 
 	virtual void DoMuzzleFlash();
 
 	const char *GetLastKnownPlaceName( void ) const	{ return m_szLastPlaceName; }	// return the last nav place name the player occupied
 
-	virtual void			CheckChatText( char *p, int bufsize ) {}
+	virtual void			CheckChatText( char *p, int bufsize );
 
 	virtual void			CreateRagdollEntity( void ) { return; }
 
 	virtual void			HandleAnimEvent( animevent_t *pEvent );
 
+	CBaseEntity				*GetTonemapController( void ) const
+	{
+		return m_hTonemapController.Get();
+	}
+
 	virtual bool			ShouldAnnounceAchievement( void );
 
-#if defined USES_ECON_ITEMS
-	// Wearables
-	virtual void			EquipWearable( CEconWearable *pItem );
-	virtual void			RemoveWearable( CEconWearable *pItem );
-	void					PlayWearableAnimsForPlaybackEvent( wearableanimplayback_t iPlayback );
-#endif
+	virtual void			ForceChangeTeam( int iTeamNum );
 
 public:
 	// Player Physics Shadow
@@ -649,6 +677,8 @@ public:
 	virtual bool			IsFollowingPhysics( void ) { return false; }
 	bool					IsRideablePhysics( IPhysicsObject *pPhysics );
 	IPhysicsObject			*GetGroundVPhysics();
+
+	virtual void SetupBones( matrix3x4_t *pBoneToWorld, int boneMask );
 
 	virtual void			Touch( CBaseEntity *pOther );
 	void					SetTouchedPhysics( bool bTouch );
@@ -680,19 +710,20 @@ public:
 	bool	IsConnected() const		{ return m_iConnected != PlayerDisconnected; }
 	bool	IsDisconnecting() const	{ return m_iConnected == PlayerDisconnecting; }
 	bool	IsSuitEquipped() const	{ return m_Local.m_bWearingSuit; }
-	int		ArmorValue() const		{ return m_ArmorValue; }
+	int		ArmorValue() const		{ return m_iArmor; }
 	bool	HUDNeedsRestart() const { return m_fInitHUD; }
 	float	MaxSpeed() const		{ return m_flMaxspeed; }
-	Activity GetActivity( ) const	{ return m_Activity; }
-	inline void SetActivity( Activity eActivity ) { m_Activity = eActivity; }
 	bool	IsPlayerLockedInPlace() const { return m_iPlayerLocked != 0; }
 	bool	IsObserver() const		{ return (m_afPhysicsFlags & PFLAG_OBSERVER) != 0; }
 	bool	IsOnTarget() const		{ return m_fOnTarget; }
 	float	MuzzleFlashTime() const { return m_flFlashTime; }
 	float	PlayerDrownTime() const	{ return m_AirFinished; }
 
+	void	SetPlayerLocked( int nLock )					{ m_iPlayerLocked = nLock; }
+	int		GetPlayerLocked( void )							{ return m_iPlayerLocked; }
+
 	int		GetObserverMode() const	{ return m_iObserverMode; }
-	CBaseEntity *GetObserverTarget() const	{ return m_hObserverTarget; }
+	CBaseEntity *GetObserverTarget() const	{ return m_hObserverTarget.Get(); }
 
 	// Round gamerules
 	virtual bool	IsReadyToPlay( void ) { return true; }
@@ -701,7 +732,7 @@ public:
 	virtual void	ResetPerRoundStats( void ) { return; }
 	void			AllowInstantSpawn( void ) { m_bAllowInstantSpawn = true; }
 
-	virtual void	ResetScores( void ) { ResetFragCount(); ResetDeathCount(); }
+	virtual void	ResetScores( void );
 	void	ResetFragCount();
 	void	IncrementFragCount( int nCount );
 
@@ -724,7 +755,8 @@ public:
 	void	SetCameraPVSOrigin( const Vector &vecOrigin );
 	void	SetMuzzleFlashTime( float flTime );
 	void	SetUseEntity( CBaseEntity *pUseEntity );
-	CBaseEntity *GetUseEntity();
+	virtual CBaseEntity* GetUseEntity( void );
+	virtual CBaseEntity* GetPotentialUseEntity( void );
 
 	virtual float GetPlayerMaxSpeed();
 
@@ -761,14 +793,14 @@ public:
 	int		GetFOVForNetworking( void );										// Get the current FOV used for network computations
 	bool	SetFOV( CBaseEntity *pRequester, int FOV, float zoomRate = 0.0f, int iZoomStart = 0 );	// Alters the base FOV of the player (must have a valid requester)
 	void	SetDefaultFOV( int FOV );											// Sets the base FOV if nothing else is affecting it by zooming
-	CBaseEntity *GetFOVOwner( void ) { return m_hZoomOwner; }
+	CBaseEntity *GetFOVOwner( void ) { return m_hZoomOwner.Get(); }
 	float	GetFOVDistanceAdjustFactor(); // shared between client and server
 	float	GetFOVDistanceAdjustFactorForNetworking();
 
 	int		GetImpulse( void ) const { return m_nImpulse; }
 
 	// Movement constraints
-	void	ActivateMovementConstraint( CBaseEntity *pEntity, const Vector &vecCenter, float flRadius, float flConstraintWidth, float flSpeedFactor );
+	void	ActivateMovementConstraint( CBaseEntity *pEntity, const Vector &vecCenter, float flRadius, float flConstraintWidth, float flSpeedFactor, bool constraintPastRadius = false );
 	void	DeactivateMovementConstraint( );
 
 	// talk control
@@ -789,16 +821,16 @@ public:
 
 	surfacedata_t *GetSurfaceData( void ) { return m_pSurfaceData; }
 	void SetLadderNormal( Vector vecLadderNormal ) { m_vecLadderNormal = vecLadderNormal; }
+	// If a derived class extends ImpulseCommands() and changes an existing impulse, it'll need to clear out the impulse.
+	void ClearImpulse( void ) { m_nImpulse = 0; }
 
 	// Here so that derived classes can use the expresser
 	virtual CAI_Expresser *GetExpresser() { return NULL; };
 
-#if !defined(NO_STEAM)
 	//----------------------------
 	// Steam handling
 	bool		GetSteamID( CSteamID *pID );
 	uint64		GetSteamIDAsUInt64( void );
-#endif
 
 	float GetRemainingMovementTimeForUserCmdProcessing() const { return m_flMovementTimeForUserCmdProcessingRemaining; }
 	float ConsumeMovementTimeForUserCmdProcessing( float flTimeNeeded )
@@ -839,17 +871,8 @@ private:
 	void				AdjustPlayerTimeBase( int simulation_ticks );
 
 	void				UpdateFXVolume();
-	void				UpdateTonemapController();
-
-	CNetworkHandle( CColorCorrection, m_hColorCorrectionCtrl );		// active FXVolume color correction
-	CNetworkHandle( CBaseEntity, m_hTonemapController );
-
-	CUtlVector< CHandle< CTonemapTrigger > > m_hTriggerTonemapList;
 
 public:
-	void OnTonemapTriggerStartTouch( CTonemapTrigger *pTonemapTrigger );
-	void OnTonemapTriggerEndTouch( CTonemapTrigger *pTonemapTrigger );
-
 	// How long since this player last interacted with something the game considers an objective/target/goal
 	float				GetTimeSinceLastObjective( void ) const { return ( m_flLastObjectiveTime == -1.f ) ? 999.f : gpGlobals->curtime - m_flLastObjectiveTime; }
 	void				SetLastObjectiveTime( float flTime ) { m_flLastObjectiveTime = flTime; }
@@ -863,13 +886,19 @@ public:
 	//  the player and not to other players.
 	CNetworkVarEmbedded( CPlayerLocalData, m_Local );
 
-#if defined USES_ECON_ITEMS
-	CNetworkVarEmbedded( CAttributeList,	m_AttributeList );
-#endif
-
 	void InitFogController( void );
-	void InitColorCorrectionController( void );
 	void InputSetFogController( inputdata_t &inputdata );
+
+	void OnTonemapTriggerStartTouch( CTonemapTrigger *pTonemapTrigger );
+	void OnTonemapTriggerEndTouch( CTonemapTrigger *pTonemapTrigger );
+	CUtlVector< CHandle< CTonemapTrigger > > m_hTriggerTonemapList;
+
+	CNetworkHandle( CPostProcessController, m_hPostProcessCtrl );	// active postprocessing controller
+	CNetworkHandle( CColorCorrection, m_hColorCorrectionCtrl );		// active FXVolume color correction
+	void InitPostProcessController( void );
+	void InputSetPostProcessController( inputdata_t &inputdata );
+	void InitColorCorrectionController( void );
+	void InputSetColorCorrectionController( inputdata_t &inputdata );
 
 	// Used by env_soundscape_triggerable to manage when the player is touching multiple
 	// soundscape triggers simultaneously.
@@ -920,20 +949,13 @@ public:
 
 	void		AdjustDrownDmg( int nAmount );
 
-#if defined USES_ECON_ITEMS
-	CEconWearable			*GetWearable( int i ) { return m_hMyWearables[i]; }
-	const CEconWearable		*GetWearable( int i ) const { return m_hMyWearables[i]; }
-	int						GetNumWearables( void ) const { return m_hMyWearables.Count(); }
-#endif
-
 private:
 
-	Activity				m_Activity;
 	float					m_flLastObjectiveTime;				// Last curtime player touched/killed something the gamemode considers an objective
 
 protected:
 
-	void					CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
+	virtual void					CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
 	void					CalcVehicleView( IServerVehicle *pVehicle, Vector& eyeOrigin, QAngle& eyeAngles, 	
 								float& zNear, float& zFar, float& fov );
 	void					CalcObserverView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
@@ -968,6 +990,7 @@ protected:
 	CNetworkVar( int, m_iBonusChallenge );
 
 	int						m_lastDamageAmount;		// Last damage taken
+	float					m_fTimeLastHurt;
 
 	Vector					m_DmgOrigin;
 	float					m_DmgTake;
@@ -1011,6 +1034,9 @@ protected:
 	float					m_fDelay;			// replay delay in seconds
 	float					m_fReplayEnd;		// time to stop replay mode
 	int						m_iReplayEntity;	// follow this entity in replay
+
+	virtual void UpdateTonemapController( void );
+	CNetworkHandle( CBaseEntity, m_hTonemapController );
 
 private:
 	void HandleFuncTrain();
@@ -1075,12 +1101,14 @@ private:
 
 	// from edict_t
 	// CBasePlayer doesn't send this but CCSPlayer does.
-	CNetworkVarForDerived( int, m_ArmorValue );
+	CNetworkVarForDerived( int, m_iArmor );
 	float					m_AirFinished;
 	float					m_PainFinished;
 
 	// player locking
 	int						m_iPlayerLocked;
+
+	CSimpleSimTimer			m_AutoaimTimer;
 		
 protected:
 	// the player's personal view model
@@ -1106,13 +1134,14 @@ private:
 
 // Replicated to all clients
 	CNetworkVar( float, m_flMaxspeed );
+	CNetworkVar( int, m_ladderSurfaceProps );
+	CNetworkVector( m_vecLadderNormal );	// Clients may need this for climbing anims
 	
 // Not transmitted
 	float					m_flWaterJumpTime;  // used to be called teleport_time
 	Vector					m_vecWaterJumpVel;
 	int						m_nImpulse;
 	float					m_flSwimSoundTime;
-	Vector					m_vecLadderNormal;
 
 	float					m_flFlashTime;
 	int						m_nDrownDmgRate;		// Drowning damage in points per second without air.
@@ -1141,18 +1170,16 @@ private:
 	bool					m_bGamePaused;
 	float					m_fLastPlayerTalkTime;
 	
-	CNetworkVar( CBaseCombatWeaponHandle, m_hLastWeapon );
+	CNetworkHandle( CBaseCombatWeapon, m_hLastWeapon );
 
-#if !defined( NO_ENTITY_PREDICTION )
 	CUtlVector< CHandle< CBaseEntity > > m_SimulatedByThisPlayer;
-#endif
 
 	float					m_flOldPlayerZ;
 	float					m_flOldPlayerViewOffsetZ;
 
 	bool					m_bPlayerUnderwater;
 
-	EHANDLE					m_hViewEntity;
+	CNetworkHandle( CBaseEntity, m_hViewEntity );
 
 	// Movement constraints
 	CNetworkHandle( CBaseEntity, m_hConstraintEntity );
@@ -1160,6 +1187,7 @@ private:
 	CNetworkVar( float, m_flConstraintRadius );
 	CNetworkVar( float, m_flConstraintWidth );
 	CNetworkVar( float, m_flConstraintSpeedFactor );
+	CNetworkVar( bool, m_bConstraintPastRadius );
 
 	friend class CPlayerMove;
 	friend class CPlayerClass;
@@ -1201,7 +1229,7 @@ protected:
 	char			m_chTextureType;
 	char			m_chPreviousTextureType;	// Separate from m_chTextureType. This is cleared if the player's not on the ground.
 
-	bool			m_bSinglePlayerGameEnding;
+	EHANDLE			m_hPlayerProxy;	// Handle to a player proxy entity for quicker reference
 
 public:
 
@@ -1212,14 +1240,58 @@ public:
 	inline void DisableAutoKick( bool disabled );
 
 	void	DumpPerfToRecipient( CBasePlayer *pRecipient, int nMaxRecords );
-	// NVNT returns true if user has a haptic device
-	virtual bool HasHaptics(){return m_bhasHaptics;}
-	// NVNT sets weather a user should receive haptic device messages.
-	virtual void SetHaptics(bool has) { m_bhasHaptics = has;}
-private:
-	// NVNT member variable holding if this user is using a haptic device.
-	bool m_bhasHaptics;
 
+	void PrepareForFullUpdate( void );
+
+	// A voice packet from this client was received by the server
+	virtual void OnVoiceTransmit( void ) {}
+
+	// Lag compensate when firing bullets
+	virtual void FireBullets ( const FireBulletsInfo_t &info );
+
+	float GetConnectionTime( void ) { return m_flConnectionTime; }
+
+	// Command rate limiting.
+	bool ShouldRunRateLimitedCommand( const CCommand &args );
+	bool ShouldRunRateLimitedCommand( const char *pszCommand );
+
+	bool HandleCommand_JoinTeam(int team);
+
+	void SetLastForcedChangeTeamTimeToNow( void ) { m_flLastForcedChangeTeamTime = gpGlobals->curtime; }
+	float GetLastForcedChangeTeamTime( void ) { return m_flLastForcedChangeTeamTime; }
+
+	void SetTeamBalanceScore( int iScore ) { m_iBalanceScore = iScore; }
+	int GetTeamBalanceScore( void ) { return m_iBalanceScore; }
+
+	virtual int	CalculateTeamBalanceScore( void );
+
+	void AwardAchievement( int iAchievement, int iCount = 1 );
+	int	GetPerLifeCounterKV( const char *name );
+	void SetPerLifeCounterKV( const char *name, int value );
+	void ResetPerLifeCounters( void );
+
+	KeyValues *GetPerLifeCounterKeys( void ) { return m_pAchievementKV; }
+
+	void EscortScoringThink( void );
+	void StartScoringEscortPoints( float flRate );
+	void StopScoringEscortPoints( void );
+
+	virtual bool		CanBeAutobalanced() { return true; }
+
+	enum
+	{
+		CHAT_IGNORE_NONE = 0,
+		CHAT_IGNORE_ALL,
+		CHAT_IGNORE_TEAM,
+	};
+
+	virtual void OnAchievementEarned( int iAchievement ) {}
+
+	virtual void DoAnimationEvent( PlayerAnimEvent_t event, int nData = 0);
+
+	void NoteWeaponFired();
+
+private:
 	bool m_autoKickDisabled;
 
 	struct StepSoundCache_t
@@ -1234,6 +1306,12 @@ private:
 	CUtlLinkedList< CPlayerSimInfo >  m_vecPlayerSimInfo;
 	CUtlLinkedList< CPlayerCmdInfo >  m_vecPlayerCmdInfo;
 
+	friend class CGameMovement;
+	friend class CMoveHelperServer;
+	Vector m_movementCollisionNormal;
+	Vector m_groundNormal;
+	CHandle< CBaseCombatCharacter > m_stuckCharacter;
+
 	IntervalTimer m_weaponFiredTimer;
 
 	// Store the last time we successfully processed a usercommand
@@ -1241,6 +1319,38 @@ private:
 
 	// used to prevent achievement announcement spam
 	CUtlVector< float >		m_flAchievementTimes;
+
+	float m_flConnectionTime;
+	float m_flLastForcedChangeTeamTime;
+
+	int m_iBalanceScore;	// a score used to determine which players are switched to balance the teams
+
+	KeyValues	*m_pAchievementKV;
+
+	Vector m_vecTotalBulletForce;
+
+	int m_iLastWeaponFireUsercmd;
+
+	// This lets us rate limit the commands the players can execute so they don't overflow things like reliable buffers.
+	CUtlDict<float,int>	m_RateLimitLastCommandTimes;
+
+	float m_flAreaCaptureScoreAccumulator;
+	float m_flCapPointScoreRate;
+
+	int m_iIgnoreGlobalChat;
+
+	CNetworkQAngle( m_angEyeAngles );
+
+	CNetworkVar( int, m_iSpawnInterpCounter );
+
+	virtual CPlayerAnimState *CreateAnimState();
+	CPlayerAnimState* m_PlayerAnimState;
+
+	bool m_bEnterObserver;
+	bool m_bReady;
+
+	CNetworkVar(int, m_cycleLatch);
+	CountdownTimer m_cycleLatchTimer;
 
 public:
 	virtual unsigned int PlayerSolidMask( bool brushOnly = false ) const;	// returns the solid mask for the given player, so bots can have a more-restrictive set
@@ -1267,7 +1377,36 @@ typedef CHandle<CBasePlayer> CBasePlayerHandle;
 
 EXTERN_SEND_TABLE(DT_BasePlayer)
 
+class CBaseExpresserPlayer : public CAI_ExpresserHost<CBasePlayer>
+{
+	DECLARE_CLASS( CBaseExpresserPlayer, CAI_ExpresserHost<CBasePlayer> );
+public:
+	CBaseExpresserPlayer();
 
+	virtual void		PostConstructor( const char *szClassname );
+
+	virtual bool		CanSpeakVoiceCommand( void ) { return true; }
+	virtual bool		ShouldShowVoiceSubtitleToEnemy( void );
+	virtual void		NoteSpokeVoiceCommand( const char *pszScenePlayed ) {}
+
+	virtual void		ModifyOrAppendCriteria( AI_CriteriaSet& criteriaSet );
+
+	virtual void OnSpeak( CBasePlayer *actor, const char *sound, float duration ) {}
+
+	virtual bool			SpeakIfAllowed( AIConcept_t ai_concept, const char *modifiers = NULL, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL );
+	virtual IResponseSystem *GetResponseSystem();
+	bool					FindResponse( AI_Response& response, int iConcept );
+	virtual bool			SpeakConceptIfAllowed( int iConcept, const char *modifiers = NULL, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL );
+
+	virtual CAI_Expresser *GetExpresser() { return m_pExpresser; }
+
+protected:
+	virtual CAI_Expresser *CreateExpresser( void );
+
+	int		m_iCurrentConcept;
+
+	CAI_Expresser		*m_pExpresser;
+};
 
 //-----------------------------------------------------------------------------
 // Inline methods
@@ -1281,6 +1420,16 @@ inline bool CBasePlayer::IsBotOfType( int botType ) const
 inline int CBasePlayer::GetBotType( void ) const
 {
 	return 0;
+}
+
+inline const Vector &CBasePlayer::GetMovementCollisionNormal( void ) const
+{
+	return m_movementCollisionNormal;
+}
+
+inline const Vector &CBasePlayer::GetGroundNormal( void ) const
+{
+	return m_groundNormal;
 }
 
 inline bool CBasePlayer::IsAutoKickDisabled( void ) const
@@ -1313,11 +1462,6 @@ inline void CBasePlayer::SetUseEntity( CBaseEntity *pUseEntity )
 	m_hUseEntity = pUseEntity; 
 }
 
-inline CBaseEntity *CBasePlayer::GetUseEntity() 
-{ 
-	return m_hUseEntity;
-}
-
 // Bot accessors...
 inline void CBasePlayer::SetTimeBase( float flTimeBase ) 
 { 
@@ -1342,6 +1486,8 @@ inline bool CBasePlayer::IsPredictingWeapons( void ) const
 inline int CBasePlayer::CurrentCommandNumber() const
 {
 	Assert( m_pCurrentCommand );
+	if ( !m_pCurrentCommand )
+		return 0;
 	return m_pCurrentCommand->command_number;
 }
 
@@ -1419,6 +1565,28 @@ inline const CBasePlayer *ToBasePlayer( const CBaseEntity *pEntity )
 #endif
 }
 
+inline CBaseExpresserPlayer *ToBaseExpresserPlayer( CBaseEntity *pEntity )
+{
+	if ( !pEntity || !pEntity->IsPlayer() )
+		return NULL;
+#if _DEBUG
+	return dynamic_cast<CBaseExpresserPlayer *>( pEntity );
+#else
+	return static_cast<CBaseExpresserPlayer *>( pEntity );
+#endif
+}
+
+inline const CBaseExpresserPlayer *ToBaseExpresserPlayer( const CBaseEntity *pEntity )
+{
+	if ( !pEntity || !pEntity->IsPlayer() )
+		return NULL;
+#if _DEBUG
+	return dynamic_cast<const CBaseExpresserPlayer *>( pEntity );
+#else
+	return static_cast<const CBaseExpresserPlayer *>( pEntity );
+#endif
+}
+
 
 //--------------------------------------------------------------------------------------------------------------
 /**
@@ -1429,6 +1597,7 @@ inline const CBasePlayer *ToBasePlayer( const CBaseEntity *pEntity )
 template < typename Functor >
 bool ForEachPlayer( Functor &func )
 {
+	VPROF("ForEachPlayer");
 	for( int i=1; i<=gpGlobals->maxClients; ++i )
 	{
 		CBasePlayer *player = static_cast<CBasePlayer *>( UTIL_PlayerByIndex( i ) );
@@ -1476,6 +1645,7 @@ public:
 template <>
 inline bool ForEachPlayer( IPlayerFunctor &func )
 {
+	VPROF("ForEachPlayer");
 	func.OnBeginIteration();
 	
 	bool isComplete = true;
@@ -1595,6 +1765,35 @@ enum
 	VEHICLE_ANALOG_BIAS_NONE = 0,
 	VEHICLE_ANALOG_BIAS_FORWARD,
 	VEHICLE_ANALOG_BIAS_REVERSE,
+};
+
+// Used on player entities - only sends the data to the local player (objectID-1).
+void* SendProxy_SendLocalDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
+void* SendProxy_SendNonLocalDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
+
+// Helper class
+class CAutoUserMessageThrottle
+{
+public:
+	CAutoUserMessageThrottle( CBasePlayer *pPlayer, char const *pchMessages[], int nNumMessage ) :
+	  m_pPlayer( pPlayer )
+	  {
+		  if ( m_pPlayer )
+		  {
+			  m_pPlayer->StartUserMessageThrottling( pchMessages, nNumMessage );
+		  }
+	  }
+
+	  ~CAutoUserMessageThrottle()
+	  {
+		  if ( m_pPlayer )
+		  {
+			  m_pPlayer->FinishUserMessageThrottling();
+		  }
+	  }
+private:
+
+	CBasePlayer	*m_pPlayer;
 };
 
 #endif // PLAYER_H

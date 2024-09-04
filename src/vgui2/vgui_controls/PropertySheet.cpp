@@ -447,7 +447,7 @@ public:
 		// ensure mouse capture gets released
 		if (IsUseCaptureMouseEnabled())
 		{
-			input()->SetMouseCapture(NULL);
+			input()->SetMouseCapture(INVALID_VPANEL);
 		}
 
 		// make sure the button gets unselected
@@ -496,7 +496,7 @@ PropertySheet::PropertySheet(
     _tabFocus = false;
 	m_flPageTransitionEffectTime = 0.0f;
 	m_bSmallTabs = false;
-	m_tabFont = 0;
+	m_tabFont = INVALID_FONT;
 	m_bDraggableTabs = draggableTabs;
 	m_pTabKV = NULL;
 	m_iTabHeight = 0;
@@ -525,7 +525,7 @@ PropertySheet::PropertySheet(Panel *parent, const char *panelName, ComboBox *com
     _tabFocus = false;
 	m_flPageTransitionEffectTime = 0.0f;
 	m_bSmallTabs = false;
-	m_tabFont = 0;
+	m_tabFont = INVALID_FONT;
 	m_bDraggableTabs = false;
 	m_pTabKV = NULL;
 	m_iTabHeight = 0;
@@ -845,7 +845,7 @@ bool PropertySheet::RequestFocusPrev(VPANEL panel)
     }
     else
     {
-        if (GetVParent())
+        if (GetVParent() != INVALID_VPANEL)
         {
             PostMessage(GetVParent(), new KeyValues("FindDefaultButton"));
         }
@@ -1457,7 +1457,7 @@ void PropertySheet::OnTextChanged(Panel *panel,const wchar_t *wszText)
 void PropertySheet::OnCommand(const char *command)
 {
     // propogate the close command to our parent
-	if (!stricmp(command, "Close") && GetVParent())
+	if (!stricmp(command, "Close") && GetVParent() != INVALID_VPANEL)
     {
 		CallParentFunction(new KeyValues("Command", "command", command));
     }
@@ -1478,10 +1478,10 @@ void PropertySheet::OnApplyButtonEnable()
 void PropertySheet::OnCurrentDefaultButtonSet( vgui::VPANEL defaultButton )
 {
 	// forward the message up
-	if (GetVParent())
+	if (GetVParent() != INVALID_VPANEL)
 	{
 		KeyValues *msg = new KeyValues("CurrentDefaultButtonSet");
-		msg->SetInt("button", ivgui()->PanelToHandle( defaultButton ) );
+		msg->SetInt("button", (uintp)ivgui()->PanelToHandle( defaultButton ) );
 		PostMessage(GetVParent(), msg);
 	}
 }
@@ -1492,10 +1492,10 @@ void PropertySheet::OnCurrentDefaultButtonSet( vgui::VPANEL defaultButton )
 void PropertySheet::OnDefaultButtonSet( VPANEL defaultButton )
 {
 	// forward the message up
-	if (GetVParent())
+	if (GetVParent() != INVALID_VPANEL)
 	{
 		KeyValues *msg = new KeyValues("DefaultButtonSet");
-		msg->SetInt("button", ivgui()->PanelToHandle( defaultButton ) );
+		msg->SetInt("button", (uintp)ivgui()->PanelToHandle( defaultButton ) );
 		PostMessage(GetVParent(), msg);
 	}
 }
@@ -1505,7 +1505,7 @@ void PropertySheet::OnDefaultButtonSet( VPANEL defaultButton )
 //-----------------------------------------------------------------------------
 void PropertySheet::OnFindDefaultButton()
 {
-    if (GetVParent())
+    if (GetVParent() != INVALID_VPANEL)
     {
         PostMessage(GetVParent(), new KeyValues("FindDefaultButton"));
     }

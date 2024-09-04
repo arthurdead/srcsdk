@@ -719,7 +719,7 @@ void CHeistGamerules::RestartGame()
 
 		pPlayer->RemoveAllItems(true);
 		respawn(pPlayer, false);
-		pPlayer->Reset();
+		pPlayer->ResetScores();
 	}
 
 	CTeam *pHeisters = GetGlobalTeam( TEAM_HEISTERS );
@@ -913,8 +913,8 @@ void CHeistGamerules::InitDefaultAIRelationships()
 {
 	CBaseCombatCharacter::AllocateDefaultRelationships();
 
-	for(int i = 0; i < NUM_AI_CLASSES; ++i) {
-		for(int j = 0; j < NUM_AI_CLASSES; ++j) {
+	for(int i = 0; i < NUM_SHARED_ENTITY_CLASSES; ++i) {
+		for(int j = 0; j < NUM_SHARED_ENTITY_CLASSES; ++j) {
 			CBaseCombatCharacter::SetDefaultRelationship((Class_T)i, (Class_T)j, D_NU, 0);
 		}
 	}

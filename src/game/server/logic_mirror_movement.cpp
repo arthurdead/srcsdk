@@ -19,7 +19,7 @@
 //////////////////////////////////////////////////////////////////////////
 class CLogicMirrorMovement : public CLogicalEntity
 {
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CLogicMirrorMovement, CLogicalEntity );
 
 private:
@@ -51,25 +51,18 @@ private:
 LINK_ENTITY_TO_CLASS( logic_mirror_movement, CLogicMirrorMovement );
 
 
-BEGIN_DATADESC( CLogicMirrorMovement )
+BEGIN_MAPENTITY( CLogicMirrorMovement )
 
 DEFINE_KEYFIELD( m_strMirrorTarget, FIELD_STRING, "MirrorTarget" ),
 DEFINE_KEYFIELD( m_strRemoteTarget, FIELD_STRING, "RemoteTarget" ),
 DEFINE_KEYFIELD( m_strMirrorRelative, FIELD_STRING, "MirrorRelative" ),
-
-DEFINE_FIELD( m_hMirrorTarget, FIELD_EHANDLE ),
-DEFINE_FIELD( m_hMovementTarget, FIELD_EHANDLE ),
-DEFINE_FIELD( m_hRemoteTarget, FIELD_EHANDLE ),
-DEFINE_FIELD( m_hMirrorRelative, FIELD_EHANDLE ),
 
 DEFINE_INPUTFUNC( FIELD_STRING, "SetMirrorTarget", InputSetMirrorTarget ),
 DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget", InputSetTarget ),
 DEFINE_INPUTFUNC( FIELD_STRING, "SetRemoteTarget", InputSetRemoteTarget ),
 DEFINE_INPUTFUNC( FIELD_STRING, "SetMirrorRelative", InputSetMirrorRelative ),
 
-DEFINE_THINKFUNC( Think ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 
 void CLogicMirrorMovement::Activate()

@@ -31,8 +31,10 @@ class CEnvTonemapController : public CPointEntity
 {
 	DECLARE_CLASS( CEnvTonemapController, CPointEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
+
+	CEnvTonemapController();
 
 	void	Spawn( void );
 	int		UpdateTransmitState( void );
@@ -51,6 +53,8 @@ public:
 	void	InputSetBloomScale( inputdata_t &inputdata );
 	void	InputUseDefaultBloomScale( inputdata_t &inputdata );
 	void	InputSetBloomScaleRange( inputdata_t &inputdata );
+	void	InputSetBloomExponent( inputdata_t &inputdata );
+	void	InputSetBloomSaturation( inputdata_t &inputdata );
 
 private:
 	float	m_flBlendTonemapStart;		// HDR Tonemap at the start of the blend
@@ -65,6 +69,8 @@ private:
 	CNetworkVar( float, m_flCustomAutoExposureMax );
 	CNetworkVar( float, m_flCustomBloomScale);
 	CNetworkVar( float, m_flCustomBloomScaleMinimum);
+	CNetworkVar( float, m_flBloomExponent);
+	CNetworkVar( float, m_flBloomSaturation);
 
 	struct blend_t
 	{
@@ -80,21 +86,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( env_tonemap_controller, CEnvTonemapController );
 
-BEGIN_DATADESC( CEnvTonemapController )
-	DEFINE_FIELD( m_flBlendTonemapStart, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flBlendTonemapEnd, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flBlendEndTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flBlendStartTime, FIELD_TIME ),
-	DEFINE_FIELD( m_bUseCustomAutoExposureMin, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bUseCustomAutoExposureMax, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flCustomAutoExposureMin, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flCustomAutoExposureMax, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flCustomBloomScale, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flCustomBloomScaleMinimum, FIELD_FLOAT ),
-	DEFINE_FIELD( m_bUseCustomBloomScale, FIELD_BOOLEAN ),
-
-	DEFINE_THINKFUNC( UpdateTonemapScaleBlend ),
-	DEFINE_THINKFUNC( UpdateTonemapScaleBlendMultiplayer ),
+BEGIN_MAPENTITY( CEnvTonemapController )
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetTonemapScale", InputSetTonemapScale ),
@@ -106,7 +98,9 @@ BEGIN_DATADESC( CEnvTonemapController )
 	DEFINE_INPUTFUNC( FIELD_VOID, "UseDefaultBloomScale", InputUseDefaultBloomScale ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetBloomScale", InputSetBloomScale ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetBloomScaleRange", InputSetBloomScaleRange ),
-END_DATADESC()
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetBloomExponent", InputSetBloomExponent ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetBloomSaturation", InputSetBloomSaturation ),
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST( CEnvTonemapController, DT_EnvTonemapController )
 	SendPropInt( SENDINFO(m_bUseCustomAutoExposureMin), 1, SPROP_UNSIGNED ),
@@ -116,7 +110,18 @@ IMPLEMENT_SERVERCLASS_ST( CEnvTonemapController, DT_EnvTonemapController )
 	SendPropFloat( SENDINFO(m_flCustomAutoExposureMax), 0, SPROP_NOSCALE),
 	SendPropFloat( SENDINFO(m_flCustomBloomScale), 0, SPROP_NOSCALE),
 	SendPropFloat( SENDINFO(m_flCustomBloomScaleMinimum), 0, SPROP_NOSCALE),
+	SendPropFloat( SENDINFO(m_flBloomExponent), 0, SPROP_NOSCALE),
+	SendPropFloat( SENDINFO(m_flBloomSaturation), 0, SPROP_NOSCALE),
 END_SEND_TABLE()
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+CEnvTonemapController::CEnvTonemapController()
+{
+	m_flBloomExponent = 2.5f;
+	m_flBloomSaturation = 1.0f;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -387,17 +392,14 @@ void CEnvTonemapController::InputSetBloomScale( inputdata_t &inputdata )
 {
 	//Tony; in multiplayer, we check to see if the activator is a player, if they are, we trigger an input on them, and then get out.
 	//if there is no activator, or the activator is not a player; ie: LogicAuto, we set the 'global' values.
-	if ( ( gpGlobals->maxClients > 1 ) )
+	if ( inputdata.pActivator != NULL && inputdata.pActivator->IsPlayer() )
 	{
-		if ( inputdata.pActivator != NULL && inputdata.pActivator->IsPlayer() )
+		//			DevMsg("activator is a player: InputSetBloomScale\n");
+		CBasePlayer *pPlayer = ToBasePlayer( inputdata.pActivator );
+		if ( pPlayer )
 		{
-			//			DevMsg("activator is a player: InputSetBloomScale\n");
-			CBasePlayer *pPlayer = ToBasePlayer( inputdata.pActivator );
-			if ( pPlayer )
-			{
-				pPlayer->GetToneMapParams().m_flBloomScale = inputdata.value.Float();
-				return;
-			}
+			pPlayer->GetToneMapParams().m_flBloomScale = inputdata.value.Float();
+			return;
 		}
 	}
 
@@ -413,29 +415,42 @@ void CEnvTonemapController::InputUseDefaultBloomScale( inputdata_t &inputdata )
 {
 	//Tony; in multiplayer, we check to see if the activator is a player, if they are, we trigger an input on them, and then get out.
 	//if there is no activator, or the activator is not a player; ie: LogicAuto, we set the 'global' values.
-	if ( ( gpGlobals->maxClients > 1 ) )
+	if ( inputdata.pActivator != NULL && inputdata.pActivator->IsPlayer() )
 	{
-		if ( inputdata.pActivator != NULL && inputdata.pActivator->IsPlayer() )
+		//			DevMsg("activator is a player: InputUseDefaultBloomScale\n");
+		CBasePlayer *pPlayer = ToBasePlayer( inputdata.pActivator );
+		if ( pPlayer )
 		{
-			//			DevMsg("activator is a player: InputUseDefaultBloomScale\n");
-			CBasePlayer *pPlayer = ToBasePlayer( inputdata.pActivator );
-			if ( pPlayer )
-			{
-				pPlayer->GetToneMapParams().m_flBloomScale = -1.f;
-				return;
-			}
+			pPlayer->GetToneMapParams().m_flBloomScale = -1.f;
+			return;
 		}
 	}
 
 	m_bUseCustomBloomScale = false;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CEnvTonemapController::InputSetBloomExponent( inputdata_t &inputdata )
+{
+	m_flBloomExponent = inputdata.value.Float();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CEnvTonemapController::InputSetBloomSaturation( inputdata_t &inputdata )
+{
+	m_flBloomSaturation = inputdata.value.Float();
+}
+
 //--------------------------------------------------------------------------------------------------------
 LINK_ENTITY_TO_CLASS( trigger_tonemap, CTonemapTrigger );
 
-BEGIN_DATADESC( CTonemapTrigger )
+BEGIN_MAPENTITY( CTonemapTrigger )
 	DEFINE_KEYFIELD( m_tonemapControllerName,	FIELD_STRING,	"TonemapName" ),
-END_DATADESC()
+END_MAPENTITY()
 
 
 //--------------------------------------------------------------------------------------------------------

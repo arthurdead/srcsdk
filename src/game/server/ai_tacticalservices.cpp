@@ -84,15 +84,6 @@ CNavArea *g_AIDebugFindLosArea = NULL;
 #define ShouldDebugLos( node ) false
 #endif
 
-//-----------------------------------------------------------------------------
-
-BEGIN_SIMPLE_DATADESC(CAI_TacticalServices)
-	//						m_pNetwork	(not saved)
-	//						m_pPathfinder	(not saved)
-	DEFINE_FIELD( m_bAllowFindLateralLos, FIELD_BOOLEAN ),
-
-END_DATADESC();
-
 //-------------------------------------
 
 #ifndef AI_USES_NAV_MESH
@@ -229,7 +220,7 @@ bool CAI_TacticalServices::TestLateralCover( const Vector &vecCheckStart, const 
 			if ( GetOuter()->IsValidCover ( vecCheckEnd, NULL ) )
 			{
 				AIMoveTrace_t moveTrace;
-				GetOuter()->GetMoveProbe()->MoveLimit( NAV_GROUND, GetLocalOrigin(), vecCheckEnd, MASK_NPCSOLID, NULL, &moveTrace );
+				GetOuter()->GetMoveProbe()->MoveLimit( NAV_GROUND, GetLocalOrigin(), vecCheckEnd, GetOuter()->GetAITraceMask(), NULL, &moveTrace );
 				if (moveTrace.fStatus == AIMR_OK)
 				{
 				#ifndef AI_USES_NAV_MESH
@@ -909,7 +900,7 @@ bool CAI_TacticalServices::TestLateralLos( const Vector &vecCheckStart, const Ve
 				if (GetOuter()->TestShootPosition(vecCheckEnd,vecCheckStart))
 				{
 					AIMoveTrace_t moveTrace;
-					GetOuter()->GetMoveProbe()->MoveLimit( NAV_GROUND, GetLocalOrigin(), vecCheckEnd, MASK_NPCSOLID, NULL, &moveTrace );
+					GetOuter()->GetMoveProbe()->MoveLimit( NAV_GROUND, GetLocalOrigin(), vecCheckEnd, GetOuter()->GetAITraceMask(), NULL, &moveTrace );
 					if (moveTrace.fStatus == AIMR_OK)
 					{
 						return true;

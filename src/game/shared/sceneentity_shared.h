@@ -37,7 +37,7 @@ public:
 	m_pEvent( 0 ),
 	m_pScene( 0 ),
 	m_pActor( 0 ),
-	m_hSceneEntity( 0 ),
+	m_hSceneEntity( NULL ),
 	m_bStarted( false ),
 	m_iLayer( -1 ),
 	m_iPriority( 0 ),

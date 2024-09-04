@@ -16,7 +16,7 @@
 
 class SmokeTrail : public CBaseParticleEntity
 {
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 public:
 	DECLARE_CLASS( SmokeTrail, CBaseParticleEntity );
 	DECLARE_SERVERCLASS();
@@ -54,7 +54,6 @@ public:
 
 class RocketTrail : public CBaseParticleEntity
 {
-	DECLARE_DATADESC();
 public:
 	DECLARE_CLASS( RocketTrail, CBaseParticleEntity );
 	DECLARE_SERVERCLASS();
@@ -94,7 +93,6 @@ public:
 
 class SporeTrail : public CBaseParticleEntity
 {
-	DECLARE_DATADESC();
 public:
 	DECLARE_CLASS( SporeTrail, CBaseParticleEntity );
 	DECLARE_SERVERCLASS();
@@ -123,7 +121,7 @@ public:
 
 class SporeExplosion : public CBaseParticleEntity
 {
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 public:
 	DECLARE_CLASS( SporeExplosion, CBaseParticleEntity );
 	DECLARE_SERVERCLASS();
@@ -157,7 +155,6 @@ public:
 
 class CFireTrail : public CBaseParticleEntity
 {
-	DECLARE_DATADESC();
 public:
 	DECLARE_CLASS( CFireTrail, CBaseParticleEntity );
 	DECLARE_SERVERCLASS();
@@ -176,7 +173,7 @@ public:
 
 class DustTrail : public CBaseParticleEntity
 {
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 public:
 	DECLARE_CLASS( DustTrail, CBaseParticleEntity );
 	DECLARE_SERVERCLASS();

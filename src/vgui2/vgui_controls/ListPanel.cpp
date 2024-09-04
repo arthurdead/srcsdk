@@ -185,7 +185,7 @@ void Dragger::OnMouseReleased(MouseCode code)
 {
 	if (m_bMovable)
 	{
-		input()->SetMouseCapture(NULL);
+		input()->SetMouseCapture(INVALID_VPANEL);
 		m_bDragging = false;
 	}
 }
@@ -199,7 +199,7 @@ void Dragger::OnCursorMoved(int x, int y)
 		msg->SetInt("column", m_iDragger);
 		msg->SetInt("delta", x - m_iDragPos);
 		m_iDragPos = x;
-		if (GetVParent())
+		if (GetVParent() != INVALID_VPANEL)
 		{
 			ivgui()->PostMessage(GetVParent(), msg, GetVPanel());
 		}
@@ -1489,7 +1489,7 @@ Panel *ListPanel::GetCellRenderer(int itemID, int col)
 			selected = true;
             VPANEL focus = input()->GetFocus();
             // if one of the children of the SectionedListPanel has focus, then 'we have focus' if we're selected
-            if (HasFocus() || (focus && ipanel()->HasParent(focus, GetVParent())))
+            if (HasFocus() || (focus != INVALID_VPANEL && ipanel()->HasParent(focus, GetVParent())))
             {
                 m_pLabel->SetBgColor(GetSchemeColor("ListPanel.SelectedBgColor", pScheme));
     			// selection
@@ -1565,7 +1565,7 @@ Panel *ListPanel::GetCellRenderer(int itemID, int col)
 		{
             VPANEL focus = input()->GetFocus();
             // if one of the children of the SectionedListPanel has focus, then 'we have focus' if we're selected
-            if (HasFocus() || (focus && ipanel()->HasParent(focus, GetVParent())))
+            if (HasFocus() || (focus != INVALID_VPANEL && ipanel()->HasParent(focus, GetVParent())))
             {
                 m_pLabel->SetBgColor(GetSchemeColor("ListPanel.SelectedBgColor", pScheme));
     			// selection
@@ -2662,8 +2662,8 @@ void ListPanel::SortList( void )
 //-----------------------------------------------------------------------------
 void ListPanel::SetFont(HFont font)
 {
-	Assert( font );
-	if ( !font )
+	Assert( font != INVALID_FONT );
+	if ( font == INVALID_FONT )
 		return;
 
 	m_pTextImage->SetFont(font);

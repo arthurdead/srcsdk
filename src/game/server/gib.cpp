@@ -21,30 +21,6 @@
 
 extern Vector			g_vecAttackDir;		// In globals.cpp
 
-BEGIN_DATADESC( CGib )
-
-	// gibs are not saved/restored
-//	DEFINE_FIELD( m_bloodColor, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_hSprite, FIELD_EHANDLE ),
-//	DEFINE_FIELD( m_cBloodDecals, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_material, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_lifeTime, FIELD_TIME ),
-//	DEFINE_FIELD( m_pSprite, CSprite ),
-//	DEFINE_FIELD( m_hFlame, FIELD_EHANDLE ),
-
-//	DEFINE_FIELD( m_hPhysicsAttacker, FIELD_EHANDLE ),
-//	DEFINE_FIELD( m_flLastPhysicsInfluenceTime, FIELD_TIME ),
-
-//  DEFINE_FIELD( m_bForceRemove, FIELD_BOOLEAN ),
-
-	// Function pointers
-	DEFINE_ENTITYFUNC( BounceGibTouch ),
-	DEFINE_ENTITYFUNC( StickyGibTouch ),
-	DEFINE_THINKFUNC( WaitTillLand ),
-	DEFINE_THINKFUNC( DieThink ),
-
-END_DATADESC()
-
 
 // HACKHACK -- The gib velocity equations don't work
 void CGib::LimitVelocity( void )
@@ -66,18 +42,12 @@ void CGib::SpawnStickyGibs( CBaseEntity *pVictim, Vector vecOrigin, int cGibs )
 {
 	int i;
 
-	if ( g_Language.GetInt() == LANGUAGE_GERMAN )
-	{
-		// no sticky gibs in germany right now!
-		return; 
-	}
-
 	for ( i = 0 ; i < cGibs ; i++ )
 	{
 		CGib *pGib = (CGib *)CreateEntityByName( "gib" );
 
 		pGib->Spawn( "models/stickygib.mdl" );
-		pGib->m_nBody = random->RandomInt(0,2);
+		pGib->SetBody( random->RandomInt(0,2) );
 
 		if ( pVictim )
 		{
@@ -102,7 +72,7 @@ void CGib::SpawnStickyGibs( CBaseEntity *pVictim, Vector vecOrigin, int cGibs )
 			// copy owner's blood color
 			pGib->SetBloodColor( pVictim->BloodColor() );
 		
-			pGib->AdjustVelocityBasedOnHealth( pVictim->m_iHealth, vecNewVelocity );
+			pGib->AdjustVelocityBasedOnHealth( pVictim->GetHealth(), vecNewVelocity );
 			pGib->SetAbsVelocity( vecNewVelocity );
 			
 			pGib->SetMoveType( MOVETYPE_FLYGRAVITY );
@@ -119,16 +89,8 @@ void CGib::SpawnHeadGib( CBaseEntity *pVictim )
 {
 	CGib *pGib = CREATE_ENTITY( CGib, "gib" );
 
-	if ( g_Language.GetInt() == LANGUAGE_GERMAN )
-	{
-		pGib->Spawn( "models/germangibs.mdl" );// throw one head
-		pGib->m_nBody = 0;
-	}
-	else
-	{
-		pGib->Spawn( "models/gibs/hgibs.mdl" );// throw one head
-		pGib->m_nBody = 0;
-	}
+	pGib->Spawn( "models/gibs/hgibs.mdl" );// throw one head
+	pGib->SetBody( 0 );
 
 	if ( pVictim )
 	{
@@ -162,7 +124,7 @@ void CGib::SpawnHeadGib( CBaseEntity *pVictim )
 
 		// copy owner's blood color
 		pGib->SetBloodColor( pVictim->BloodColor() );
-		pGib->AdjustVelocityBasedOnHealth( pVictim->m_iHealth, vecNewVelocity );
+		pGib->AdjustVelocityBasedOnHealth( pVictim->GetHealth(), vecNewVelocity );
 		pGib->SetAbsVelocity( vecNewVelocity );
 	}
 	pGib->LimitVelocity();
@@ -234,7 +196,7 @@ void CGib::InitGib( CBaseEntity *pVictim, float fMinVelocity, float fMaxVelocity
 		// copy owner's blood color
 		SetBloodColor( pVictim->BloodColor() );
 		
-		AdjustVelocityBasedOnHealth( pVictim->m_iHealth, vecNewVelocity );
+		AdjustVelocityBasedOnHealth( pVictim->GetHealth(), vecNewVelocity );
 
 		// Attempt to be physical if we can
 		if ( VPhysicsInitNormal( SOLID_BBOX, 0, false ) )
@@ -277,7 +239,7 @@ void CGib::SpawnSpecificGibs(	CBaseEntity*	pVictim,
 	{
 		CGib *pGib = CREATE_ENTITY( CGib, "gib" );
 		pGib->Spawn( cModelName );
-		pGib->m_nBody = i;
+		pGib->SetBody( i );
 		pGib->InitGib( pVictim, vMinVelocity, vMaxVelocity );
 		pGib->m_lifeTime = flLifetime;
 		
@@ -301,26 +263,18 @@ void CGib::SpawnRandomGibs( CBaseEntity *pVictim, int cGibs, GibType_e eGibType 
 	{
 		CGib *pGib = CREATE_ENTITY( CGib, "gib" );
 
-		if ( g_Language.GetInt() == LANGUAGE_GERMAN )
+		switch (eGibType)
 		{
-			pGib->Spawn( "models/germangibs.mdl" );
-			pGib->m_nBody = random->RandomInt(0,GERMAN_GIB_COUNT-1);
-		}
-		else
-		{
-			switch (eGibType)
-			{
-			case GIB_HUMAN:
-				// human pieces
-				pGib->Spawn( "models/gibs/hgibs.mdl" );
-				pGib->m_nBody = random->RandomInt(1,HUMAN_GIB_COUNT-1);// start at one to avoid throwing random amounts of skulls (0th gib)
-				break;
-			case GIB_ALIEN:
-				// alien pieces
-				pGib->Spawn( "models/gibs/agibs.mdl" );
-				pGib->m_nBody = random->RandomInt(0,ALIEN_GIB_COUNT-1);
-				break;
-			}
+		case GIB_HUMAN:
+			// human pieces
+			pGib->Spawn( "models/gibs/hgibs.mdl" );
+			pGib->SetBody( random->RandomInt(1,HUMAN_GIB_COUNT-1) );// start at one to avoid throwing random amounts of skulls (0th gib)
+			break;
+		case GIB_ALIEN:
+			// alien pieces
+			pGib->Spawn( "models/gibs/agibs.mdl" );
+			pGib->SetBody( random->RandomInt(0,ALIEN_GIB_COUNT-1) );
+			break;
 		}
 		pGib->InitGib( pVictim, 300, 400);
 	}
@@ -342,8 +296,8 @@ void CGib::WaitTillLand ( void )
 
 	if ( GetAbsVelocity() == vec3_origin )
 	{
-		SetRenderColorA( 255 );
-		m_nRenderMode = kRenderTransTexture;
+		SetRenderAlpha( 255 );
+		SetRenderMode( kRenderTransTexture );
 		if ( GetMoveType() != MOVETYPE_VPHYSICS )
 		{
 			AddSolidFlags( FSOLID_NOT_SOLID );
@@ -433,15 +387,8 @@ void CGib::DieThink ( void )
 		}
 	}
 
-	if ( g_pGameRules->IsMultiplayer() )
-	{
-		UTIL_Remove( this );
-	}
-	else
-	{
-		SetThink ( &CGib::SUB_FadeOut );
-		SetNextThink( gpGlobals->curtime );
-	}
+	SetThink ( &CGib::SUB_FadeOut );
+	SetNextThink( gpGlobals->curtime );
 }
 
 //-----------------------------------------------------------------------------
@@ -587,9 +534,9 @@ void CGib::Spawn( const char *szGibModel )
 	
 	// sometimes an entity inherits the edict from a former piece of glass,
 	// and will spawn using the same render FX or m_nRenderMode! bad!
-	SetRenderColorA( 255 );
-	m_nRenderMode = kRenderNormal;
-	m_nRenderFX = kRenderFxNone;
+	SetRenderAlpha( 255 );
+	SetRenderMode( kRenderNormal );
+	SetRenderFX( kRenderFxNone );
 	
 	// hopefully this will fix the VELOCITY TOO LOW crap
 	m_takedamage = DAMAGE_EVENTS_ONLY;

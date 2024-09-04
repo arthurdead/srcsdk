@@ -33,6 +33,7 @@
 
 ConVar func_break_max_pieces( "func_break_max_pieces", "15", FCVAR_ARCHIVE | FCVAR_REPLICATED );
 ConVar func_break_reduction_factor( "func_break_reduction_factor", ".5" );
+extern ConVar breakable_disable_gib_limit;
 
 #ifdef HL1_DLL
 extern void PlayerPickupObject( CBasePlayer *pPlayer, CBaseEntity *pObject );
@@ -44,65 +45,10 @@ extern Vector		g_vecAttackDir;
 // This is done instead of just a classname in the FGD so we can control which entities can
 // be spawned, and still remain fairly flexible
 
-#ifndef HL1_DLL
-	const char *CBreakable::pSpawnObjects[] =
-	{
-		NULL,						// 0
-		"item_battery",				// 1
-		"item_healthkit",			// 2
-		"item_ammo_pistol",			// 3
-		"item_ammo_pistol_large",	// 4
-		"item_ammo_smg1",			// 5
-		"item_ammo_smg1_large",		// 6
-		"item_ammo_ar2",			// 7
-		"item_ammo_ar2_large",		// 8
-		"item_box_buckshot",		// 9
-		"item_flare_round",			// 10
-		"item_box_flare_rounds",	// 11
-		"item_rpg_round",			// 12
-		"unused (item_smg1_grenade) 13",// 13
-		"item_box_sniper_rounds",	// 14
-		"unused (???"") 15",		// 15 - split into two strings to avoid trigraph warning 
-		"weapon_stunstick",			// 16
-		"unused (weapon_ar1) 17",	// 17
-		"weapon_ar2",				// 18
-		"unused (???"") 19",		// 19 - split into two strings to avoid trigraph warning 
-		"weapon_rpg",				// 20
-		"weapon_smg1",				// 21
-		"unused (weapon_smg2) 22",	// 22
-		"unused (weapon_slam) 23",	// 23
-		"weapon_shotgun",			// 24
-		"unused (weapon_molotov) 25",// 25
-		"item_dynamic_resupply",	// 26
-	};
-#else
-	// Half-Life 1 spawn objects!
-	const char *CBreakable::pSpawnObjects[] =
-	{
-		NULL,				// 0
-		"item_battery",		// 1
-		"item_healthkit",	// 2
-		"weapon_glock",		// 3
-		"ammo_9mmclip",		// 4
-		"weapon_mp5",		// 5
-		"ammo_9mmAR",		// 6
-		"ammo_ARgrenades",	// 7
-		"weapon_shotgun",	// 8
-		"ammo_buckshot",	// 9
-		"weapon_crossbow",	// 10
-		"ammo_crossbow",	// 11
-		"weapon_357",		// 12
-		"ammo_357",			// 13
-		"weapon_rpg",		// 14
-		"ammo_rpgclip",		// 15
-		"ammo_gaussclip",	// 16
-		"weapon_handgrenade",// 17
-		"weapon_tripmine",	// 18
-		"weapon_satchel",	// 19
-		"weapon_snark",		// 20
-		"weapon_hornetgun",	// 21
-	};
-#endif
+const char *CBreakable::pSpawnObjects[] =
+{
+	NULL,						// 0
+};
 
 const char *pFGDPropData[] =
 {
@@ -134,23 +80,14 @@ const char *pFGDPropData[] =
 };
 
 LINK_ENTITY_TO_CLASS( func_breakable, CBreakable );
-BEGIN_DATADESC( CBreakable )
+BEGIN_MAPENTITY( CBreakable )
 
-	DEFINE_FIELD( m_Material, FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_Explosion, FIELD_INTEGER, "explosion" ),
 	DEFINE_KEYFIELD( m_GibDir, FIELD_VECTOR, "gibdir" ),
-	DEFINE_FIELD( m_hBreaker, FIELD_EHANDLE ),
 
-	// Don't need to save/restore these because we precache after restore
-	//DEFINE_FIELD( m_idShard, FIELD_INTEGER ),
-	DEFINE_FIELD( m_angle, FIELD_FLOAT ),
-	DEFINE_FIELD( m_iszGibModel, FIELD_STRING ),
-	DEFINE_FIELD( m_iszSpawnObject, FIELD_STRING ),
 	DEFINE_KEYFIELD( m_ExplosionMagnitude, FIELD_INTEGER, "explodemagnitude" ),
 	DEFINE_KEYFIELD( m_flPressureDelay, FIELD_FLOAT, "PressureDelay" ),
 	DEFINE_KEYFIELD( m_iMinHealthDmg, FIELD_INTEGER, "minhealthdmg" ),
-	DEFINE_FIELD( m_bTookPhysicsDamage, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_iszPropData, FIELD_STRING ),
 	DEFINE_INPUT( m_impactEnergyScale, FIELD_FLOAT, "physdamagescale" ),
 	DEFINE_KEYFIELD( m_PerformanceMode, FIELD_INTEGER, "PerformanceMode" ),
 
@@ -160,32 +97,11 @@ BEGIN_DATADESC( CBreakable )
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "RemoveHealth", InputRemoveHealth ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetMass", InputSetMass ),
 
-	// Function Pointers
-	DEFINE_ENTITYFUNC( BreakTouch ),
-	DEFINE_THINKFUNC( Die ),
-
 	// Outputs
 	DEFINE_OUTPUT(m_OnBreak, "OnBreak"),
 	DEFINE_OUTPUT(m_OnHealthChanged, "OnHealthChanged"),
 
-	DEFINE_FIELD( m_flDmgModBullet, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flDmgModClub, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flDmgModExplosive, FIELD_FLOAT ),
-	DEFINE_FIELD( m_iszPhysicsDamageTableName, FIELD_STRING ),
-	DEFINE_FIELD( m_iszBreakableModel, FIELD_STRING ),
-	DEFINE_FIELD( m_iBreakableSkin, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iBreakableCount, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iMaxBreakableSize, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iszBasePropData, FIELD_STRING ),
-	DEFINE_FIELD( m_iInteractions, FIELD_INTEGER ),
-	DEFINE_FIELD( m_explodeRadius, FIELD_FLOAT ),
-	DEFINE_FIELD( m_iszModelName, FIELD_STRING ),
-	
-	// Physics Influence
-	DEFINE_FIELD( m_hPhysicsAttacker, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_flLastPhysicsInfluenceTime, FIELD_TIME ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -254,17 +170,18 @@ void CBreakable::Spawn( void )
 	m_flDmgModBullet = func_breakdmg_bullet.GetFloat();
 	m_flDmgModClub = func_breakdmg_club.GetFloat();
 	m_flDmgModExplosive = func_breakdmg_explosive.GetFloat();
+	m_flDmgModFire = 1.0f;
 
 	ParsePropData();
 
     Precache( );    
 
-	if ( !m_iHealth || FBitSet( m_spawnflags, SF_BREAK_TRIGGER_ONLY ) )
+	if ( !GetHealth() || FBitSet( m_spawnflags, SF_BREAK_TRIGGER_ONLY ) )
 	{
 		// This allows people to shoot at the glass (since it's penetrable)
 		if ( m_Material == matGlass )
 		{
-			m_iHealth = 1;
+			SetHealth( 1 );
 		}
 
 		m_takedamage = DAMAGE_NO;
@@ -274,7 +191,7 @@ void CBreakable::Spawn( void )
 		m_takedamage = DAMAGE_YES;
 	}
 
-	m_iMaxHealth = ( m_iHealth > 0 ) ? m_iHealth : 1;
+	m_iMaxHealth = ( GetHealth() > 0 ) ? GetHealth() : 1;
   
 	SetSolid( SOLID_BSP );
     SetMoveType( MOVETYPE_PUSH );
@@ -292,7 +209,7 @@ void CBreakable::Spawn( void )
 	}
 
 	// Flag unbreakable glass as "worldbrush" so it will block ALL tracelines
-	if ( !IsBreakable() && m_nRenderMode != kRenderNormal )
+	if ( !IsBreakable() && GetRenderMode() != kRenderNormal )
 		AddFlag( FL_WORLDBRUSH );
 
 	if ( m_impactEnergyScale == 0 )
@@ -406,7 +323,6 @@ void CBreakable::Precache( void )
 		pGibName = "ConcreteChunks";
 		break;
 
-#ifdef HL1_DLL
 	case matComputer:
 		pGibName = "ComputerGibs";
 		break;
@@ -419,25 +335,17 @@ void CBreakable::Precache( void )
 		pGibName = "FleshGibs";
 		break;
 
-	case matCinderBlock:
-		pGibName = "CinderBlocks";
-		break;
-
 	case matWeb:
 		pGibName = "WebGibs";
 		break;
-#else
 
 	case matCinderBlock:
 		pGibName = "ConcreteChunks";
 		break;
-#endif
 
-#ifdef HL2_EPISODIC 
 	case matNone:
 		pGibName = "";
 		break;
-#endif
 
 	default:
 		Warning("%s (%s) at (%.3f %.3f %.3f) using obsolete or unknown material type.\n", GetClassname(), GetDebugName(), GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z );
@@ -449,9 +357,7 @@ void CBreakable::Precache( void )
 	{
 		pGibName = STRING(m_iszGibModel);
 
-#ifdef HL1_DLL
 		PrecacheModel( pGibName );
-#endif
 	}
 
 	m_iszModelName = MAKE_STRING( pGibName );
@@ -582,7 +488,7 @@ void CBreakable::BreakTouch( CBaseEntity *pOther )
 	{
 		flDamage = pOther->GetSmoothedVelocity().Length() * 0.01;
 
-		if (flDamage >= m_iHealth)
+		if (flDamage >= GetHealth())
 		{
 			m_takedamage = DAMAGE_YES;
 
@@ -620,7 +526,7 @@ void CBreakable::BreakTouch( CBaseEntity *pOther )
 //-----------------------------------------------------------------------------
 void CBreakable::InputAddHealth( inputdata_t &inputdata )
 {
-	UpdateHealth( m_iHealth + inputdata.value.Int(), inputdata.pActivator );
+	UpdateHealth( GetHealth() + inputdata.value.Int(), inputdata.pActivator );
 }
 
 
@@ -639,7 +545,7 @@ void CBreakable::InputBreak( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 void CBreakable::InputRemoveHealth( inputdata_t &inputdata )
 {
-	UpdateHealth( m_iHealth - inputdata.value.Int(), inputdata.pActivator );
+	UpdateHealth( GetHealth() - inputdata.value.Int(), inputdata.pActivator );
 }
 
 
@@ -679,9 +585,9 @@ void CBreakable::InputSetMass( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 bool CBreakable::UpdateHealth( int iNewHealth, CBaseEntity *pActivator )
 {
-	if ( iNewHealth != m_iHealth )
+	if ( iNewHealth != GetHealth() )
 	{
-		m_iHealth = iNewHealth;
+		SetHealth( iNewHealth );
 
 		if ( m_iMaxHealth == 0 )
 		{
@@ -690,10 +596,10 @@ bool CBreakable::UpdateHealth( int iNewHealth, CBaseEntity *pActivator )
 		}
 
 		// Output the new health as a percentage of max health [0..1]
-		float flRatio = clamp( (float)m_iHealth / (float)m_iMaxHealth, 0.f, 1.f );
+		float flRatio = clamp( (float)GetHealth() / (float)m_iMaxHealth, 0.f, 1.f );
 		m_OnHealthChanged.Set( flRatio, pActivator, this );
 
-		if ( m_iHealth <= 0 )
+		if ( GetHealth() <= 0 )
 		{
 			Break( pActivator );
 			return false;
@@ -932,7 +838,7 @@ void CBreakable::Die( void )
 	// The more negative m_iHealth, the louder
 	// the sound should be.
 
-	fvol = random->RandomFloat(0.85, 1.0) + (abs(m_iHealth) / 100.0);
+	fvol = random->RandomFloat(0.85, 1.0) + (abs(GetHealth()) / 100.0);
 	if (fvol > 1.0)
 	{
 		fvol = 1.0;
@@ -1050,7 +956,6 @@ void CBreakable::Die( void )
 		iCount = func_break_max_pieces.GetInt();
 	}
 
-	ConVarRef breakable_disable_gib_limit( "breakable_disable_gib_limit" );
 	if ( !breakable_disable_gib_limit.GetBool() && iCount )
 	{
 		if ( m_PerformanceMode == PM_NO_GIBS )

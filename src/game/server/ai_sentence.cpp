@@ -14,18 +14,6 @@
 
 ConVar npc_sentences( "npc_sentences", "0" );
 
-
-//-----------------------------------------------------------------------------
-// Save/load
-//-----------------------------------------------------------------------------
-BEGIN_SIMPLE_DATADESC(CAI_SentenceBase)
-	DEFINE_FIELD( m_voicePitch, FIELD_INTEGER ),
-	DEFINE_FIELD( m_nQueuedSentenceIndex, FIELD_INTEGER ),
-	DEFINE_FIELD( m_flQueueTimeout, FIELD_TIME ),
-	DEFINE_FIELD( m_nQueueSoundPriority, FIELD_INTEGER ),
-END_DATADESC();
-
-
 //-----------------------------------------------------------------------------
 // Speech
 //-----------------------------------------------------------------------------

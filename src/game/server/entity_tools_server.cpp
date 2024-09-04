@@ -15,9 +15,25 @@
 #include "particles/particles.h"
 #include "entity_tools_server.h"
 #include "icommandline.h"
+#include "mapentities_shared.h"
+#include "TemplateEntities.h"
+#include "mapentities.h"
+#include "point_template.h"
+#include "tier0/vprof.h"
 
 #include "tier0/memdbgon.h"
 
+class CFoundryEntitySpawnRecord
+{
+public:
+	CUtlVector<char> m_VMFText;
+	int m_iEntityIndex;
+	int m_iHammerID;
+	int m_iSerialNumber;
+	int m_debugOverlays;
+};
+
+static CUtlLinkedList<CFoundryEntitySpawnRecord*,int> g_FoundryEntitySpawnRecords;
 
 //-----------------------------------------------------------------------------
 // Interface from engine to tools for manipulating entities
@@ -78,6 +94,8 @@ public:
 	virtual CBaseEntity *FindEntityNearestFacing( const Vector &origin, const Vector &facing, float threshold );
 	virtual CBaseEntity *FindEntityClassNearestFacing( const Vector &origin, const Vector &facing, float threshold, char *classname );
 	virtual CBaseEntity *FindEntityProcedural( const char *szName, CBaseEntity *pSearchingEntity = NULL, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL );
+	virtual bool RespawnEntitiesWithEdits( CEntityRespawnInfo *pInfos, int nInfos );
+	virtual void RemoveEntity( int nHammerID );
 };
 
 
@@ -85,6 +103,7 @@ public:
 // Singleton
 //-----------------------------------------------------------------------------
 static CServerTools g_ServerTools;
+IServerTools *g_pServerTools = &g_ServerTools;
 
 // VSERVERTOOLS_INTERFACE_VERSION_1 is compatible with the latest since we're only adding things to the end, so expose that as well.
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CServerTools, IServerTools001, VSERVERTOOLS_INTERFACE_VERSION_1, g_ServerTools );
@@ -223,6 +242,111 @@ CBaseEntity *CServerTools::FindEntityByHammerID( int iHammerID )
 		pEntity = gEntList.NextEnt( pEntity );
 	}
 	return NULL;
+}
+
+void HandleFoundryEntitySpawnRecords()
+{
+	if ( g_FoundryEntitySpawnRecords.Count() == 0 )
+		return;
+
+	VPROF("HandleFoundryEntitySpawnRecords");
+
+	// Create all the entities.
+	CUtlVector<CBaseEntity*> newEnts;
+	
+	CMapEntitySpawner spawner;
+	spawner.m_bFoundryMode = true;
+
+	FOR_EACH_LL( g_FoundryEntitySpawnRecords, i )
+	{
+		CFoundryEntitySpawnRecord *pRecord = g_FoundryEntitySpawnRecords[i];
+
+		if ( pRecord->m_iEntityIndex > 0 )
+		{
+			gEntList.ForceEntSerialNumber( pRecord->m_iEntityIndex, pRecord->m_iSerialNumber );
+			engine->ForceFlushEntity( pRecord->m_iEntityIndex );
+		}
+
+		// Figure out the class name.
+		CEntityMapData entData( pRecord->m_VMFText.Base() );
+		char szClassName[MAPKEY_MAXLENGTH];
+		if ( !entData.ExtractValue( "classname", szClassName ) )
+		{
+			Assert( false );
+			continue;
+		}
+
+		// Respawn it in the same slot.
+		int nIndexToSpawn = pRecord->m_iEntityIndex;
+		if ( nIndexToSpawn == 0 )
+			nIndexToSpawn = -1;
+
+		CBaseEntity *pNewEntity = ::CreateEntityByName( szClassName, nIndexToSpawn );
+		if ( !pNewEntity )
+		{
+			Warning( "HandleFoundryEntitySpawnRecords - CreateEntityByName( %s, %d ) failed\n", szClassName, pRecord->m_iEntityIndex );
+			continue;
+		}
+
+		const char *pBaseMapDataForThisEntity = entData.CurrentBufferPosition();
+		pNewEntity->ParseMapData( &entData );
+
+		if ( pRecord->m_debugOverlays != -1 )
+			pNewEntity->m_debugOverlays = pRecord->m_debugOverlays;
+
+		pNewEntity->m_iHammerID = pRecord->m_iHammerID;
+
+		spawner.AddEntity( pNewEntity, pBaseMapDataForThisEntity, (entData.CurrentBufferPosition() - pBaseMapDataForThisEntity) + 2 );
+	}
+
+	spawner.HandleTemplates();
+	spawner.SpawnAndActivate( true );
+
+	// Now that all of the active entities have been loaded in, precache any entities who need point_template parameters
+	//  to be parsed (the above code has loaded all point_template entities)
+	PrecachePointTemplates();
+
+	// Sometimes an ent will Remove() itself during its precache, so RemoveImmediate won't happen.
+	// This makes sure those ents get cleaned up.
+	gEntList.CleanupDeleteList();
+
+	g_FoundryEntitySpawnRecords.PurgeAndDeleteElements();
+}
+
+
+bool CServerTools::RespawnEntitiesWithEdits( CEntityRespawnInfo *pInfos, int nInfos )
+{
+	// Create a spawn record so it'll respawn the entity next frame.
+	for ( int i=0; i < nInfos; i++ )
+	{
+		CFoundryEntitySpawnRecord *pRecord = new CFoundryEntitySpawnRecord;
+		CEntityRespawnInfo *pInfo = &pInfos[i];
+		
+		pRecord->m_VMFText.SetSize( V_strlen( pInfo->m_pEntText ) + 1 );
+		V_strncpy( pRecord->m_VMFText.Base(), pInfo->m_pEntText, pRecord->m_VMFText.Count() );
+		pRecord->m_iHammerID = pInfo->m_nHammerID;
+
+		CBaseEntity *pOldEntity = (CBaseEntity*)FindEntityByHammerID( pInfo->m_nHammerID );
+		if ( pOldEntity )
+		{
+			// This is a respawn.
+			pRecord->m_iEntityIndex = pOldEntity->entindex();
+			pRecord->m_iSerialNumber = pOldEntity->GetRefEHandle().GetSerialNumber();
+			pRecord->m_debugOverlays = pOldEntity->m_debugOverlays;
+			UTIL_Remove( pOldEntity );
+		}
+		else
+		{
+			// This is a new spawn.
+			pRecord->m_iEntityIndex = -1;
+			pRecord->m_iSerialNumber = -1;
+			pRecord->m_debugOverlays = -1;
+		}
+
+		g_FoundryEntitySpawnRecords.AddToTail( pRecord );
+	}
+	
+	return true;
 }
 
 bool CServerTools::GetKeyValue( CBaseEntity *pEntity, const char *szField, char *szValue, int iMaxLen )

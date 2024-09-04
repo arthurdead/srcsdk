@@ -45,18 +45,18 @@ public:
 
 	bool IsTriggered( CBaseEntity *pEntity );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	string_t m_Master;
 
 private:
 };
 
-BEGIN_DATADESC( CBaseDMStart )
+BEGIN_MAPENTITY( CBaseDMStart )
 
 	DEFINE_KEYFIELD( m_Master, FIELD_STRING, "master" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 // These are the new entry points to entities. 
@@ -130,27 +130,8 @@ enum togglemovetypes_t
 	MOVE_TOGGLE_ANGULAR = 2,
 };
 
-// Global Savedata for Toggle
-BEGIN_DATADESC( CBaseToggle )
-
-	DEFINE_FIELD( m_toggle_state, FIELD_INTEGER ),
-	DEFINE_FIELD( m_flMoveDistance, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flWait, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flLip, FIELD_FLOAT ),
-	DEFINE_FIELD( m_vecPosition1, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vecPosition2, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vecMoveAng, FIELD_VECTOR ),		// UNDONE: Position could go through transition, but also angle?
-	DEFINE_FIELD( m_vecAngle1, FIELD_VECTOR ),		// UNDONE: Position could go through transition, but also angle?
-	DEFINE_FIELD( m_vecAngle2, FIELD_VECTOR ),		// UNDONE: Position could go through transition, but also angle?
-	DEFINE_FIELD( m_flHeight, FIELD_FLOAT ),
-	DEFINE_FIELD( m_hActivator, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_vecFinalDest, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vecFinalAngle, FIELD_VECTOR ),
-	DEFINE_FIELD( m_sMaster, FIELD_STRING),
-	DEFINE_FIELD( m_movementType, FIELD_INTEGER ),	// Linear or angular movement? (togglemovetypes_t)
-
-END_DATADESC()
-
+IMPLEMENT_SERVERCLASS_ST(CBaseToggle, DT_BaseToggle)
+END_SEND_TABLE()
 
 CBaseToggle::CBaseToggle()
 {
@@ -163,6 +144,14 @@ CBaseToggle::CBaseToggle()
 	m_vecFinalDest.Init();
 	m_vecFinalAngle.Init();
 #endif
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns the velocity imparted to players standing on us.
+//-----------------------------------------------------------------------------
+void CBaseToggle::GetGroundVelocityToApply( Vector &vecGroundVel )
+{
+	vecGroundVel = GetLocalVelocity();
 }
 
 bool CBaseToggle::KeyValue( const char *szKeyName, const char *szValue )

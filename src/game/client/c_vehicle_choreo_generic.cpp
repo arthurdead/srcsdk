@@ -36,7 +36,6 @@ class C_PropVehicleChoreoGeneric : public C_DynamicProp, public IClientVehicle
 public:
 
 	DECLARE_CLIENTCLASS();
-	DECLARE_DATADESC();
 
 	C_PropVehicleChoreoGeneric();
 	
@@ -106,11 +105,6 @@ IMPLEMENT_CLIENTCLASS_DT(C_PropVehicleChoreoGeneric, DT_PropVehicleChoreoGeneric
 	RecvPropFloat( RECVINFO( m_vehicleView.flPitchMin ) ),
 	RecvPropFloat( RECVINFO( m_vehicleView.flPitchMax ) ),
 END_RECV_TABLE()
-
-
-BEGIN_DATADESC( C_PropVehicleChoreoGeneric )
-	DEFINE_EMBEDDED( m_ViewSmoothingData ),
-END_DATADESC()
 
 //-----------------------------------------------------------------------------
 // Purpose: 

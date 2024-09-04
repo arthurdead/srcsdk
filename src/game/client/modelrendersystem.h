@@ -14,7 +14,7 @@
 #pragma once
 
 #include "clientleafsystem.h"
-
+#include "istudiorender.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations

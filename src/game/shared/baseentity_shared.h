@@ -156,11 +156,6 @@ inline float CBaseEntity::GetSimulationTime() const
 	return m_flSimulationTime;
 }
 
-inline float CBaseEntity::GetOldSimulationTime() const
-{
-	return m_flOldSimulationTime;
-}
-
 inline void CBaseEntity::SetAnimTime( float at )
 {
 	m_flAnimTime = at;

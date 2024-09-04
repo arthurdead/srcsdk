@@ -81,7 +81,6 @@ class C_BreakableSurface : public C_BaseEntity, public IBrushRenderer
 public:
 	DECLARE_CLIENTCLASS();
 	DECLARE_CLASS( C_BreakableSurface, C_BaseEntity );
-	DECLARE_DATADESC();
 
 	int				m_nNumWide;
 	int				m_nNumHigh;
@@ -176,28 +175,6 @@ private:
 
 	void		UpdateEdgeType(int nWidth, int nHeight, int forceStyle = -1 );
 };
-
-BEGIN_DATADESC( C_BreakableSurface )
-
-	DEFINE_ARRAY( m_nPanelBits, FIELD_CHARACTER, MAX_NUM_PANELS * MAX_NUM_PANELS ),
-
-//	DEFINE_FIELD( m_nNumWide, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_nNumHigh, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_flPanelWidth, FIELD_FLOAT ),
-//	DEFINE_FIELD( m_flPanelHeight, FIELD_FLOAT ),
-//	DEFINE_FIELD( m_vNormal, FIELD_VECTOR ),
-//	DEFINE_FIELD( m_vCorner, FIELD_VECTOR ),
-//	DEFINE_FIELD( m_bIsBroken, FIELD_BOOLEAN ),
-//	DEFINE_FIELD( m_nSurfaceType, FIELD_INTEGER ),
-	// DEFINE_FIELD( m_pCurrentDetailTexture, ITexture* ),
-	// DEFINE_FIELD( m_RenderList, CUtlLinkedList < Panel_t , unsigned short > ),
-	// DEFINE_FIELD( m_pMaterialBox, CMaterialReference ),
-	// DEFINE_FIELD( m_pSolid, EdgeTexture_t ),
-	// DEFINE_ARRAY( m_pEdge, EdgeTexture_t, NUM_EDGE_TYPES][NUM_EDGE_STYLES ),
-	// DEFINE_FIELD( m_pCrackedMaterial, CMaterialReference ),
-	// DEFINE_FIELD( m_pMaterialBoxTexture, CTextureReference ),
-
-END_DATADESC()
 
 bool C_BreakableSurface::InLegalRange(int nWidth, int nHeight)
 { 

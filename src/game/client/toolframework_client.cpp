@@ -346,7 +346,7 @@ void ToolFramework_RecordMaterialParams( IMaterial *pMaterial )
 		}
 	}
 
-	Assert( pEnt->GetToolHandle() );
+	Assert( pEnt->GetToolHandle() != HTOOLHANDLE_INVALID );
 	ToolFramework_PostToolMessage( pEnt->GetToolHandle(), msg );
 
 	msg->deleteThis();

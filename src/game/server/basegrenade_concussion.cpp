@@ -14,8 +14,6 @@
 
 class CBaseGrenadeConcussion : public CBaseGrenade
 {
-	DECLARE_DATADESC();
-
 public:
 	DECLARE_CLASS( CBaseGrenadeConcussion, CBaseGrenade );
 
@@ -32,19 +30,11 @@ int CBaseGrenadeConcussion::m_nTrailSprite = 0;
 
 LINK_ENTITY_TO_CLASS( npc_concussiongrenade, CBaseGrenadeConcussion );
 
-BEGIN_DATADESC( CBaseGrenadeConcussion )
-
-	DEFINE_THINKFUNC( FallThink ),
-	DEFINE_ENTITYFUNC( ExplodeConcussion ),
-
-END_DATADESC()
-
-
 void CBaseGrenadeConcussion::FallThink(void)
 {
 	if (!IsInWorld())
 	{
-		Remove( );
+		UTIL_Remove( this );
 		return;
 	}
 	CSoundEnt::InsertSound ( SOUND_DANGER, GetAbsOrigin() + GetAbsVelocity() * 0.5, GetAbsVelocity().Length( ), 0.2 );
@@ -101,8 +91,9 @@ void CBaseGrenadeConcussion::Spawn( void )
 	VectorAngles(GetAbsVelocity(), angles );
 	SetLocalAngles( angles );
 
-	m_nRenderFX = kRenderFxGlowShell;
-	SetRenderColor( 200, 200, 20, 255 );
+	SetRenderFX( kRenderFxGlowShell );
+	SetRenderColor( 200, 200, 20 );
+	SetRenderAlpha( 255 );
 	
 	// make NPCs afaid of it while in the air
 	SetThink( &CBaseGrenadeConcussion::FallThink );

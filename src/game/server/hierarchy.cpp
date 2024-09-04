@@ -36,7 +36,7 @@ void UnlinkChild( CBaseEntity *pParent, CBaseEntity *pChild )
 			// Clear hierarchy bits for this guy
 			pList->m_hMoveParent.Set( NULL );
 			pList->m_hMovePeer.Set( NULL );
-			pList->NetworkProp()->SetNetworkParent( CBaseHandle() );
+			pList->m_pParent = NULL_EHANDLE;
 			pList->DispatchUpdateTransmitState();	
 			pList->OnEntityEvent( ENTITY_EVENT_PARENT_CHANGED, NULL );
 			
@@ -61,7 +61,7 @@ void LinkChild( CBaseEntity *pParent, CBaseEntity *pChild )
 	pChild->m_hMovePeer.Set( pParent->FirstMoveChild() );
 	pParent->m_hMoveChild.Set( pChild );
 	pChild->m_hMoveParent = hParent;
-	pChild->NetworkProp()->SetNetworkParent( hParent );
+	pChild->m_pParent = hParent;
 	pChild->DispatchUpdateTransmitState();
 	pChild->OnEntityEvent( ENTITY_EVENT_PARENT_CHANGED, NULL );
 	pParent->RecalcHasPlayerChildBit();
@@ -111,7 +111,10 @@ void UnlinkFromParent( CBaseEntity *pRemove )
 		pRemove->SetLocalAngles(angAbsRotation);
 		pRemove->SetLocalVelocity(vecAbsVelocity);
 //		pRemove->SetLocalAngularVelocity(vecAbsAngVelocity);
-		pRemove->UpdateWaterState();
+		if ( pRemove->GetMoveType() != MOVETYPE_NONE && pRemove->GetMoveType() != MOVETYPE_VPHYSICS )
+		{
+			pRemove->UpdateWaterState();
+		}
 	}
 }
 

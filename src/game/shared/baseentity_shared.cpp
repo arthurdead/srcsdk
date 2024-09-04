@@ -184,7 +184,7 @@ void CBaseEntity::SetEffects( int nEffects )
 {
 	if ( nEffects != m_fEffects )
 	{
-#if !defined( CLIENT_DLL )
+#if !defined( CLIENT_DLL ) && 0
 		// Hack for now, to avoid player emitting radius with his flashlight
 		if ( !IsPlayer() )
 		{
@@ -211,7 +211,7 @@ void CBaseEntity::SetEffects( int nEffects )
 
 void CBaseEntity::AddEffects( int nEffects ) 
 { 
-#if !defined( CLIENT_DLL )
+#if !defined( CLIENT_DLL ) && 0
 	if ( (nEffects & (EF_BRIGHTLIGHT|EF_DIMLIGHT)) && !(m_fEffects & (EF_BRIGHTLIGHT|EF_DIMLIGHT)) )
 	{
 		// Hack for now, to avoid player emitting radius with his flashlight
@@ -453,7 +453,7 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 	// loop through the data description, and try and place the keys in
 	if ( !*ent_debugkeys.GetString() )
 	{
-		for ( datamap_t *dmap = GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap )
+		for ( datamap_t *dmap = GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
 		{
 			if ( ::ParseKeyvalue(this, dmap->dataDesc, dmap->dataNumFields, szKeyName, szValue) )
 				return true;
@@ -473,7 +473,7 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 		}
 
 		// loop through the data description, and try and place the keys in
-		for ( datamap_t *dmap = GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap )
+		for ( datamap_t *dmap = GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
 		{
 			if ( !printKeyHits && *ent_debugkeys.GetString() && !Q_stricmp(dmap->dataClassName, ent_debugkeys.GetString()) )
 			{
@@ -655,7 +655,7 @@ bool CBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen
 		return true;
 	}
 
-	for ( datamap_t *dmap = GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap )
+	for ( datamap_t *dmap = GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
 	{
 		if ( ::ExtractKeyvalue( this, dmap->dataDesc, dmap->dataNumFields, szKeyName, szValue, iMaxLen ) )
 			return true;
@@ -2566,11 +2566,6 @@ int CBaseEntity::GetTracerAttachment( void )
 {
 	int iAttachment = TRACER_DONT_USE_ATTACHMENT;
 
-	if ( g_pGameRules->IsMultiplayer() )
-	{
-		iAttachment = 1;
-	}
-
 	return iAttachment;
 }
 
@@ -2881,11 +2876,6 @@ ConVar	sv_alternateticks( "sv_alternateticks", "0", FCVAR_NONE, "If set, server 
 //-----------------------------------------------------------------------------
 bool CBaseEntity::IsSimulatingOnAlternateTicks()
 {
-	if ( gpGlobals->maxClients != 1 )
-	{
-		return false;
-	}
-	
 	return sv_alternateticks.GetBool();
 }
 

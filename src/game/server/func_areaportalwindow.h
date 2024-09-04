@@ -21,7 +21,7 @@ public:
 	DECLARE_CLASS( CFuncAreaPortalWindow, CFuncAreaPortalBase );	
 	
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 					CFuncAreaPortalWindow();
 					~CFuncAreaPortalWindow();

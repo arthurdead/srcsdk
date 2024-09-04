@@ -2968,20 +2968,9 @@ void CDetailObjectSystem::BuildRenderingData( DetailRenderableList_t &list, cons
 	ISpatialQuery* pQuery = engine->GetBSPTreeQuery();
 
 	int nLeafCount = info.m_pWorldListInfo->m_LeafCount;
-	DebuggerBreak();
-	//TODO!!!!!! Arthurdead
-#if 0
-	const WorldListLeafData_t *pLeafData = info.m_pWorldListInfo->m_pLeafDataList;
+	const LeafIndex_t *pLeafData = info.m_pWorldListInfo->m_pLeafList;
 	int *pValidLeafIndex = (int*)stackalloc( nLeafCount * sizeof(int) );
-	int nValidLeafs = pQuery->ListLeavesInSphereWithFlagSet(
-		pValidLeafIndex, info.m_vecRenderOrigin, flDetailDist, nLeafCount, 
-		(const uint16*)pLeafData, sizeof(WorldListLeafData_t), LEAF_FLAGS_CONTAINS_DETAILOBJECTS );
-#else
-	const WorldListLeafData_t *pLeafData = NULL;
-	int *pValidLeafIndex = NULL;
-	int nValidLeafs = 0;
-#endif
-
+	int nValidLeafs = nLeafCount;
 	if ( nValidLeafs == 0 )
 		return;
 
@@ -2991,7 +2980,7 @@ void CDetailObjectSystem::BuildRenderingData( DetailRenderableList_t &list, cons
 	for ( int i = 0; i < nValidLeafs; ++i )
 	{
 		int nListLeafIndex = pValidLeafIndex[ i ];
-		int nLeaf = pLeafData[ nListLeafIndex ].leafIndex;
+		int nLeaf = pLeafData[ nListLeafIndex ];
 
 		// FIXME: Inherently not threadsafe ( use of nBuildWorldListNumber )
 		ClientLeafSystem()->DrawDetailObjectsInLeaf( nLeaf, info.m_nDetailBuildFrame, 
@@ -3008,7 +2997,7 @@ void CDetailObjectSystem::BuildRenderingData( DetailRenderableList_t &list, cons
 	for ( int i = 0; i < nValidLeafs; ++i )
 	{
 		int nListLeafIndex = pValidLeafIndex[ i ];
-		int nLeaf = pLeafData[ nListLeafIndex ].leafIndex;
+		int nLeaf = pLeafData[ nListLeafIndex ];
 
 		// FIXME: Inherently not threadsafe ( use of nBuildWorldListNumber )
 		ClientLeafSystem()->GetDetailObjectsInLeaf( nLeaf, nFirstDetailObject, nDetailObjectCount );
@@ -3031,6 +3020,7 @@ void CDetailObjectSystem::BuildRenderingData( DetailRenderableList_t &list, cons
 			int d = list.AddToTail();
 			DetailRenderableInfo_t &info = list[d];
 			info.m_pRenderable = &model;
+			info.m_pRenderableMod = &model;
 			info.m_InstanceData.m_nAlpha = nAlpha;
 			info.m_nEngineRenderGroup = ( ( nAlpha != 255 ) || model.ComputeTranslucencyType() == RENDERABLE_IS_TRANSLUCENT ) ? ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY : ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
 			info.m_nLeafIndex = nListLeafIndex;

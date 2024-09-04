@@ -30,7 +30,7 @@
 CBaseEntity *FindPickerEntity( CBasePlayer *pPlayer );
 void SceneManager_ClientActive( CBasePlayer *player );
 
-static CUtlVector<IServerNetworkable*> g_DeleteList;
+static CUtlVector<CBaseEntity*> g_DeleteList;
 
 CGlobalEntityList gEntList;
 CBaseEntityList *g_pEntityList = &gEntList;
@@ -77,6 +77,14 @@ public:
 
 	// IEntityListener
 	virtual void OnEntityCreated( CBaseEntity *pEntity ) {}
+	virtual void OnEntitySpawned( CBaseEntity *pEntity )
+	{
+		if ( ShouldAddEntity( pEntity ) )
+		{
+			RemoveEntity( pEntity );
+			AddEntity( pEntity );
+		}
+	}
 	virtual void OnEntityDeleted( CBaseEntity *pEntity )
 	{
 		if ( !(pEntity->GetFlags() & FL_AIMTARGET) )
@@ -104,6 +112,10 @@ public:
 		memcpy( pList, m_targetList.Base(), sizeof(CBaseEntity *) * count );
 		return count;
 	}
+	CBaseEntity *ListElement( int iIndex )
+	{
+		return m_targetList[iIndex];
+	}
 
 private:
 	CUtlVector<CBaseEntity *>	m_targetList;
@@ -118,6 +130,10 @@ int AimTarget_ListCount()
 int AimTarget_ListCopy( CBaseEntity *pList[], int listMax )
 {
 	return g_AimManager.ListCopy( pList, listMax );
+}
+CBaseEntity *AimTarget_ListElement( int iIndex )
+{
+	return g_AimManager.ListElement( iIndex );
 }
 void AimTarget_ForceRepopulateList()
 {
@@ -204,7 +220,7 @@ public:
 				Assert(m_simThinkList[i].nextThinkTick>=0);
 				int entinfoIndex = m_simThinkList[i].entEntry;
 				const CEntInfo *pInfo = gEntList.GetEntInfoPtrByIndex( entinfoIndex );
-				pList[out] = (CBaseEntity *)pInfo->m_pEntity;
+				pList[out] = (CBaseEntity *)pInfo->m_pBaseEnt;
 				Assert(m_simThinkList[i].nextThinkTick==0 || pList[out]->GetFirstThinkTick()==m_simThinkList[i].nextThinkTick);
 				Assert( gEntList.IsEntityPtr( pList[out] ) );
 				out++;
@@ -246,6 +262,7 @@ public:
 			}
 			else
 			{
+				Assert( m_simThinkList[m_entinfoIndex[index]].entEntry == index );
 				// updating existing entry - if no sim, reset think time
 				if ( pEntity->IsEFlagSet(EFL_NO_GAME_PHYSICS_SIMULATION) )
 				{
@@ -282,6 +299,72 @@ void SimThink_EntityChanged( CBaseEntity *pEntity )
 	g_SimThinkManager.EntityChanged( pEntity );
 }
 
+// This manages a list of entities queued up to receive PostClientMessages callbacks
+class CPostClientMessageManager
+{
+public:
+	void LevelShutdownPostEntity()
+	{
+		m_list.Purge();
+	}
+	void AddEntity( CBaseEntity *pEntity )
+	{
+		MEM_ALLOC_CREDIT();
+		m_list.AddToTail( (unsigned short)pEntity->GetRefEHandle().GetEntryIndex() );
+	}
+	void PostClientMessagesSent()
+	{
+		for ( int i = m_list.Count()-1; i >= 0; --i )
+		{
+			CBaseEntity *pEntity = (CBaseEntity *)gEntList.GetEntInfoPtrByIndex( m_list[i] )->m_pBaseEnt;
+
+			if ( pEntity )
+			{
+				pEntity->PostClientMessagesSent();
+			}
+		}
+		m_list.RemoveAll();
+	}
+private:
+	// UNDONE: Need to use ehandles instead?
+	CUtlVector<unsigned short>	m_list;
+};
+
+static CPostClientMessageManager g_PostClientManager;
+
+//-----------------------------------------------------------------------------
+// Entity hash tables
+//-----------------------------------------------------------------------------
+
+struct EntsByStringList_t
+{
+	string_t iszStr;
+	CBaseEntity *pHead;
+};
+
+class CEntsByStringHashFuncs
+{
+public:
+	CEntsByStringHashFuncs( int ) {}
+
+	bool operator()( const EntsByStringList_t &lhs, const EntsByStringList_t &rhs ) const
+	{
+		return lhs.iszStr == rhs.iszStr;
+	}
+
+	unsigned int operator()( const EntsByStringList_t &item ) const
+	{
+		COMPILE_TIME_ASSERT( sizeof(char *) == sizeof(int) );
+		return HashInt( (int)item.iszStr.ToCStr() );
+	}
+};
+
+typedef CUtlHash<EntsByStringList_t	, CEntsByStringHashFuncs, CEntsByStringHashFuncs > CEntsByStringTable;
+
+//-------------------------------------
+
+CEntsByStringTable g_EntsByClassname( 512 );
+
 static CBaseEntityClassList *s_pClassLists = NULL;
 CBaseEntityClassList::CBaseEntityClassList()
 {
@@ -305,9 +388,9 @@ static bool g_fInCleanupDelete;
 
 
 // mark an entity as deleted
-void CGlobalEntityList::AddToDeleteList( IServerNetworkable *ent )
+void CGlobalEntityList::AddToDeleteList( CBaseEntity *ent )
 {
-	if ( ent && ent->GetEntityHandle()->GetRefEHandle() != INVALID_EHANDLE_INDEX )
+	if ( ent && ent->GetRefEHandle().IsValid() )
 	{
 		g_DeleteList.AddToTail( ent );
 	}
@@ -325,7 +408,7 @@ void CGlobalEntityList::CleanupDeleteList( void )
 	g_bDisableEhandleAccess = true;
 	for ( int i = 0; i < g_DeleteList.Count(); i++ )
 	{
-		g_DeleteList[i]->Release();
+		delete g_DeleteList[i];
 	}
 	g_bDisableEhandleAccess = false;
 	g_DeleteList.RemoveAll();
@@ -365,7 +448,7 @@ void CGlobalEntityList::Clear( void )
 	CBaseHandle hCur = FirstHandle();
 	while ( hCur != InvalidHandle() )
 	{
-		IServerNetworkable *ent = GetServerNetworkable( hCur );
+		CBaseEntity *ent = GetBaseEntity( hCur );
 		if ( ent )
 		{
 			MDLCACHE_CRITICAL_SECTION();
@@ -378,6 +461,16 @@ void CGlobalEntityList::Clear( void )
 	CleanupDeleteList();
 	// free the memory
 	g_DeleteList.Purge();
+
+#ifdef _DEBUG
+	for ( UtlHashHandle_t handle = g_EntsByClassname.GetFirstHandle(); g_EntsByClassname.IsValidHandle(handle);	handle = g_EntsByClassname.GetNextHandle(handle) )
+	{
+		EntsByStringList_t &element = g_EntsByClassname[handle];
+		Assert( element.pHead == NULL );
+	}
+#endif
+
+	g_EntsByClassname.RemoveAll();
 
 	CBaseEntity::m_nDebugPlayer = -1;
 	CBaseEntity::m_bInDebugSelect = false; 
@@ -406,7 +499,7 @@ CBaseEntity *CGlobalEntityList::NextEnt( CBaseEntity *pCurrentEnt )
 		if ( !pInfo )
 			return NULL;
 
-		return (CBaseEntity *)pInfo->m_pEntity;
+		return (CBaseEntity *)pInfo->m_pBaseEnt;
 	}
 
 	// Run through the list until we get a CBaseEntity.
@@ -425,7 +518,7 @@ CBaseEntity *CGlobalEntityList::NextEnt( CBaseEntity *pCurrentEnt )
 				return pRet;
 		}
 #else
-		return (CBaseEntity *)pList->m_pEntity;
+		return (CBaseEntity *)pList->m_pBaseEnt;
 #endif
 		pList = pList->m_pNext;
 	}
@@ -457,6 +550,73 @@ void CGlobalEntityList::ReportEntityFlagsChanged( CBaseEntity *pEntity, unsigned
 	}
 }
 
+void CGlobalEntityList::AddPostClientMessageEntity( CBaseEntity *pEntity )
+{
+	g_PostClientManager.AddEntity( pEntity );
+}
+void CGlobalEntityList::PostClientMessagesSent()
+{
+	g_PostClientManager.PostClientMessagesSent();
+}
+
+edict_t* CGlobalEntityList::GetEdict( CBaseHandle hEnt ) const
+{
+	CBaseEntity *pUnk = static_cast<CBaseEntity*>(LookupEntity( hEnt ));
+	if ( pUnk && pUnk->GetNetworkable() )
+		return pUnk->GetNetworkable()->GetEdict();
+	else
+		return NULL;
+}
+
+CBaseNetworkable* CGlobalEntityList::GetBaseNetworkable( CBaseHandle hEnt ) const
+{
+	CBaseEntity *pUnk = static_cast<CBaseEntity*>(LookupEntity( hEnt ));
+	if ( pUnk && pUnk->GetNetworkable() )
+		return pUnk->GetNetworkable()->GetBaseNetworkable();
+	else
+		return NULL;
+}
+
+IServerNetworkable* CGlobalEntityList::GetServerNetworkable( CBaseHandle hEnt ) const
+{
+	CBaseEntity *pUnk = static_cast<CBaseEntity*>(LookupEntity( hEnt ));
+	if ( pUnk )
+		return pUnk->GetNetworkable();
+	else
+		return NULL;
+}
+
+CBaseEntity* CGlobalEntityList::GetBaseEntity( CBaseHandle hEnt ) const
+{
+	return LookupEntity( hEnt );
+}
+
+edict_t* CGlobalEntityList::GetEdict( CBaseEntity *pEnt ) const
+{
+	if(!pEnt->GetNetworkable())
+		return NULL;
+
+	return pEnt->GetNetworkable()->GetEdict();
+}
+
+CBaseNetworkable* CGlobalEntityList::GetBaseNetworkable( CBaseEntity *pEnt ) const
+{
+	if(!pEnt->GetNetworkable())
+		return NULL;
+
+	return pEnt->GetNetworkable()->GetBaseNetworkable();
+}
+
+IServerNetworkable* CGlobalEntityList::GetServerNetworkable( CBaseEntity *pEnt ) const
+{
+	return pEnt->GetNetworkable();
+}
+
+CBaseEntity* CGlobalEntityList::GetBaseEntity( CBaseEntity *pEnt ) const
+{
+	return pEnt;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Used to confirm a pointer is a pointer to an entity, useful for
 //			asserts.
@@ -468,7 +628,7 @@ bool CGlobalEntityList::IsEntityPtr( void *pTest )
 		const CEntInfo *pInfo = FirstEntInfo();
 		for ( ;pInfo; pInfo = pInfo->m_pNext )
 		{
-			if ( pTest == (void *)pInfo->m_pEntity )
+			if ( pTest == (void *)pInfo->m_pBaseEnt )
 				return true;
 		}
 	}
@@ -487,7 +647,7 @@ CBaseEntity *CGlobalEntityList::FindEntityByClassname( CBaseEntity *pStartEntity
 
 	for ( ;pInfo; pInfo = pInfo->m_pNext )
 	{
-		CBaseEntity *pEntity = (CBaseEntity *)pInfo->m_pEntity;
+		CBaseEntity *pEntity = (CBaseEntity *)pInfo->m_pBaseEnt;
 		if ( !pEntity )
 		{
 			DevWarning( "NULL entity in global entity list!\n" );
@@ -501,6 +661,22 @@ CBaseEntity *CGlobalEntityList::FindEntityByClassname( CBaseEntity *pStartEntity
 	return NULL;
 }
 
+CBaseEntity *CGlobalEntityList::FindEntityByClassnameFast( CBaseEntity *pStartEntity, string_t iszClassname )
+{
+	if ( pStartEntity )
+	{
+		return pStartEntity->m_pNextByClass;
+	}
+
+	EntsByStringList_t key = { iszClassname };
+	UtlHashHandle_t hEntry = g_EntsByClassname.Find( key );
+	if ( hEntry != g_EntsByClassname.InvalidHandle() )
+	{
+		return g_EntsByClassname[hEntry].pHead;
+	}
+
+	return NULL;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Finds an entity given a procedural name.
@@ -597,14 +773,14 @@ CBaseEntity *CGlobalEntityList::FindEntityByName( CBaseEntity *pStartEntity, con
 
 	for ( ;pInfo; pInfo = pInfo->m_pNext )
 	{
-		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pEntity;
+		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pBaseEnt;
 		if ( !ent )
 		{
 			DevWarning( "NULL entity in global entity list!\n" );
 			continue;
 		}
 
-		if ( !ent->m_iName )
+		if ( !ent->m_iName.Get() )
 			continue;
 
 		if ( ent->NameMatches( szName ) )
@@ -612,6 +788,34 @@ CBaseEntity *CGlobalEntityList::FindEntityByName( CBaseEntity *pStartEntity, con
 			if ( pFilter && !pFilter->ShouldFindEntity(ent) )
 				continue;
 
+			return ent;
+		}
+	}
+
+	return NULL;
+}
+
+CBaseEntity *CGlobalEntityList::FindEntityByNameFast( CBaseEntity *pStartEntity, string_t iszName )
+{
+	if ( iszName == NULL_STRING || STRING(iszName)[0] == 0 )
+		return NULL;
+
+	const CEntInfo *pInfo = pStartEntity ? GetEntInfoPtr( pStartEntity->GetRefEHandle() )->m_pNext : FirstEntInfo();
+
+	for ( ;pInfo; pInfo = pInfo->m_pNext )
+	{
+		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pBaseEnt;
+		if ( !ent )
+		{
+			DevWarning( "NULL entity in global entity list!\n" );
+			continue;
+		}
+
+		if ( !ent->m_iName.Get() )
+			continue;
+
+		if ( ent->m_iName.Get() == iszName )
+		{
 			return ent;
 		}
 	}
@@ -630,7 +834,7 @@ CBaseEntity *CGlobalEntityList::FindEntityByModel( CBaseEntity *pStartEntity, co
 
 	for ( ;pInfo; pInfo = pInfo->m_pNext )
 	{
-		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pEntity;
+		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pBaseEnt;
 		if ( !ent )
 		{
 			DevWarning( "NULL entity in global entity list!\n" );
@@ -654,13 +858,47 @@ CBaseEntity *CGlobalEntityList::FindEntityByModel( CBaseEntity *pStartEntity, co
 //			szName - 
 //-----------------------------------------------------------------------------
 // FIXME: obsolete, remove
+CBaseEntity	*CGlobalEntityList::FindEntityByOutputTarget( CBaseEntity *pStartEntity, string_t iTarget )
+{
+	const CEntInfo *pInfo = pStartEntity ? GetEntInfoPtr( pStartEntity->GetRefEHandle() )->m_pNext : FirstEntInfo();
+
+	for ( ;pInfo; pInfo = pInfo->m_pNext )
+	{
+		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pBaseEnt;
+		if ( !ent )
+		{
+			DevWarning( "NULL entity in global entity list!\n" );
+			continue;
+		}
+
+		datamap_t *dmap = ent->GetMapDataDesc();
+		while ( dmap )
+		{
+			int fields = dmap->dataNumFields;
+			for ( int i = 0; i < fields; i++ )
+			{
+				typedescription_t *dataDesc = &dmap->dataDesc[i];
+				if ( ( dataDesc->fieldType == FIELD_CUSTOM ) && ( dataDesc->flags & FTYPEDESC_OUTPUT ) )
+				{
+					CBaseEntityOutput *pOutput = (CBaseEntityOutput *)((int)ent + (int)dataDesc->fieldOffset);
+					if ( pOutput->GetActionForTarget( iTarget ) )
+						return ent;
+				}
+			}
+
+			dmap = dmap->baseMap;
+		}
+	}
+
+	return NULL;
+}
 CBaseEntity	*CGlobalEntityList::FindEntityByTarget( CBaseEntity *pStartEntity, const char *szName )
 {
 	const CEntInfo *pInfo = pStartEntity ? GetEntInfoPtr( pStartEntity->GetRefEHandle() )->m_pNext : FirstEntInfo();
 
 	for ( ;pInfo; pInfo = pInfo->m_pNext )
 	{
-		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pEntity;
+		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pBaseEnt;
 		if ( !ent )
 		{
 			DevWarning( "NULL entity in global entity list!\n" );
@@ -690,7 +928,7 @@ CBaseEntity *CGlobalEntityList::FindEntityInSphere( CBaseEntity *pStartEntity, c
 
 	for ( ;pInfo; pInfo = pInfo->m_pNext )
 	{
-		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pEntity;
+		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pBaseEnt;
 		if ( !ent )
 		{
 			DevWarning( "NULL entity in global entity list!\n" );
@@ -835,7 +1073,76 @@ CBaseEntity *CGlobalEntityList::FindEntityByClassnameNearest( const char *szName
 	return pEntity;
 }
 
+CBaseEntity *CGlobalEntityList::FindEntityByClassnameNearestFast( string_t iszName, const Vector &vecSrc, float flRadius )
+{
+	CBaseEntity *pEntity = NULL;
 
+	//
+	// Check for matching class names within the search radius.
+	//
+	float flMaxDist2 = flRadius * flRadius;
+	if (flMaxDist2 == 0)
+	{
+		flMaxDist2 = MAX_TRACE_LENGTH * MAX_TRACE_LENGTH;
+	}
+
+	CBaseEntity *pSearch = NULL;
+	while ((pSearch = gEntList.FindEntityByClassnameFast( pSearch, iszName )) != NULL)
+	{
+		if ( !pSearch->edict() )
+			continue;
+
+		float flDist2 = (pSearch->GetAbsOrigin() - vecSrc).LengthSqr();
+
+		if (flMaxDist2 > flDist2)
+		{
+			pEntity = pSearch;
+			flMaxDist2 = flDist2;
+		}
+	}
+
+	return pEntity;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Finds the nearest entity by class name withing given search radius.
+// Input  : szName - Entity name to search for. Treated as a target name first,
+//				then as an entity class name, ie "info_target".
+//			vecSrc - Center of search radius.
+//			flRadius - Search radius for classname search, 0 to search everywhere.
+// Output : Returns a pointer to the found entity, NULL if none.
+//-----------------------------------------------------------------------------
+CBaseEntity *CGlobalEntityList::FindEntityByClassnameNearest2D( const char *szName, const Vector &vecSrc, float flRadius )
+{
+	CBaseEntity *pEntity = NULL;
+
+	//
+	// Check for matching class names within the search radius.
+	//
+	float flMaxDist2 = flRadius * flRadius;
+	if (flMaxDist2 == 0)
+	{
+		flMaxDist2 = MAX_TRACE_LENGTH * MAX_TRACE_LENGTH;
+	}
+
+	CBaseEntity *pSearch = NULL;
+	while ((pSearch = gEntList.FindEntityByClassname( pSearch, szName )) != NULL)
+	{
+		if ( !pSearch->edict() )
+			continue;
+
+		float flDist2 = (pSearch->GetAbsOrigin().AsVector2D() - vecSrc.AsVector2D()).LengthSqr();
+
+		if (flMaxDist2 > flDist2)
+		{
+			pEntity = pSearch;
+			flMaxDist2 = flDist2;
+		}
+	}
+
+	return pEntity;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Finds the first entity within radius distance by class name.
@@ -859,12 +1166,12 @@ CBaseEntity *CGlobalEntityList::FindEntityByClassnameWithin( CBaseEntity *pStart
 
 	while ((pEntity = gEntList.FindEntityByClassname( pEntity, szName )) != NULL)
 	{
-		if ( !pEntity->edict() )
+		if ( !pEntity->edict() && !pEntity->IsEFlagSet( EFL_NOT_NETWORKED ))
 			continue;
 
-		float flDist2 = (pEntity->GetAbsOrigin() - vecSrc).LengthSqr();
-
-		if (flMaxDist2 > flDist2)
+		Vector vecRelativeCenter;
+		pEntity->CollisionProp()->WorldToCollisionSpace( vecSrc, &vecRelativeCenter );
+		if ( IsBoxIntersectingSphere( pEntity->CollisionProp()->OBBMins(),	pEntity->CollisionProp()->OBBMaxs(), vecRelativeCenter, flRadius ) )
 		{
 			return pEntity;
 		}
@@ -891,7 +1198,7 @@ CBaseEntity *CGlobalEntityList::FindEntityByClassnameWithin( CBaseEntity *pStart
 
 	while ((pEntity = gEntList.FindEntityByClassname( pEntity, szName )) != NULL)
 	{
-		if ( !pEntity->edict() && !pEntity->IsEFlagSet( EFL_SERVER_ONLY ) )
+		if ( !pEntity->edict() && !pEntity->IsEFlagSet( EFL_NOT_NETWORKED ) )
 			continue;
 
 		// check if the aabb intersects the search aabb.
@@ -1002,7 +1309,7 @@ CBaseEntity *CGlobalEntityList::FindEntityClassNearestFacing( const Vector &orig
 
 	for ( ;pInfo; pInfo = pInfo->m_pNext )
 	{
-		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pEntity;
+		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pBaseEnt;
 		if ( !ent )
 		{
 			DevWarning( "NULL entity in global entity list!\n" );
@@ -1051,7 +1358,7 @@ CBaseEntity *CGlobalEntityList::FindEntityNearestFacing( const Vector &origin, c
 
 	for ( ;pInfo; pInfo = pInfo->m_pNext )
 	{
-		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pEntity;
+		CBaseEntity *ent = (CBaseEntity *)pInfo->m_pBaseEnt;
 		if ( !ent )
 		{
 			DevWarning( "NULL entity in global entity list!\n" );
@@ -1081,7 +1388,7 @@ CBaseEntity *CGlobalEntityList::FindEntityNearestFacing( const Vector &origin, c
 }
 
 
-void CGlobalEntityList::OnAddEntity( IHandleEntity *pEnt, CBaseHandle handle )
+void CGlobalEntityList::OnAddEntity( CBaseEntity *pEnt, EHANDLE handle )
 {
 	int i = handle.GetEntryIndex();
 
@@ -1091,21 +1398,20 @@ void CGlobalEntityList::OnAddEntity( IHandleEntity *pEnt, CBaseHandle handle )
 		m_iHighestEnt = i;
 
 	// If it's a CBaseEntity, notify the listeners.
-	CBaseEntity *pBaseEnt = static_cast<IServerUnknown*>(pEnt)->GetBaseEntity();
-	if ( pBaseEnt->edict() )
+	if ( pEnt->edict() )
 		m_iNumEdicts++;
 	
 	// NOTE: Must be a CBaseEntity on server
-	Assert( pBaseEnt );
+	Assert( pEnt );
 	//DevMsg(2,"Created %s\n", pBaseEnt->GetClassname() );
 	for ( i = m_entityListeners.Count()-1; i >= 0; i-- )
 	{
-		m_entityListeners[i]->OnEntityCreated( pBaseEnt );
+		m_entityListeners[i]->OnEntityCreated( pEnt );
 	}
 }
 
 
-void CGlobalEntityList::OnRemoveEntity( IHandleEntity *pEnt, CBaseHandle handle )
+void CGlobalEntityList::OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle )
 {
 #ifdef DBGFLAG_ASSERT
 	if ( !g_fInCleanupDelete )
@@ -1113,7 +1419,7 @@ void CGlobalEntityList::OnRemoveEntity( IHandleEntity *pEnt, CBaseHandle handle 
 		int i;
 		for ( i = 0; i < g_DeleteList.Count(); i++ )
 		{
-			if ( g_DeleteList[i]->GetEntityHandle() == pEnt )
+			if ( g_DeleteList[i] == pEnt )
 			{
 				g_DeleteList.FastRemove( i );
 				Msg( "ERROR: Entity being destroyed but previously threaded on g_DeleteList\n" );
@@ -1123,8 +1429,7 @@ void CGlobalEntityList::OnRemoveEntity( IHandleEntity *pEnt, CBaseHandle handle 
 	}
 #endif
 
-	CBaseEntity *pBaseEnt = static_cast<IServerUnknown*>(pEnt)->GetBaseEntity();
-	if ( pBaseEnt->edict() )
+	if ( pEnt->edict() )
 		m_iNumEdicts--;
 
 	m_iNumEnts--;
@@ -1134,6 +1439,25 @@ void CGlobalEntityList::NotifyCreateEntity( CBaseEntity *pEnt )
 {
 	if ( !pEnt )
 		return;
+
+	// Make sure no one is trying to build an entity without game strings.
+	Assert( MAKE_STRING( pEnt->GetClassname() ) == FindPooledString( pEnt->GetClassname() ) && 
+		( pEnt->GetEntityName() == NULL_STRING || pEnt->GetEntityName() == FindPooledString( pEnt->GetEntityName().ToCStr() ) ) );
+
+	Assert( pEnt->m_pPrevByClass == NULL && pEnt->m_pNextByClass == NULL && pEnt->m_ListByClass == g_EntsByClassname.InvalidHandle() );
+
+	EntsByStringList_t dummyEntry = { MAKE_STRING( pEnt->GetClassname() ), 0 };
+	UtlHashHandle_t hEntry = g_EntsByClassname.Insert( dummyEntry );
+
+	EntsByStringList_t *pEntry = &g_EntsByClassname[hEntry];
+	pEnt->m_ListByClass = hEntry;
+	if ( pEntry->pHead )
+	{
+		pEntry->pHead->m_pPrevByClass = pEnt;
+		pEnt->m_pNextByClass = pEntry->pHead;
+		Assert( pEnt->m_pPrevByClass == NULL );
+	}
+	pEntry->pHead = pEnt;
 
 	//DevMsg(2,"Deleted %s\n", pBaseEnt->GetClassname() );
 	for ( int i = m_entityListeners.Count()-1; i >= 0; i-- )
@@ -1157,9 +1481,8 @@ void CGlobalEntityList::NotifySpawn( CBaseEntity *pEnt )
 // NOTE: This doesn't happen in OnRemoveEntity() specifically because 
 // listeners may want to reference the object as it's being deleted
 // OnRemoveEntity isn't called until the destructor and all data is invalid.
-void CGlobalEntityList::NotifyRemoveEntity( CBaseHandle hEnt )
+void CGlobalEntityList::NotifyRemoveEntity( CBaseEntity *pBaseEnt )
 {
-	CBaseEntity *pBaseEnt = GetBaseEntity( hEnt );
 	if ( !pBaseEnt )
 		return;
 
@@ -1167,6 +1490,31 @@ void CGlobalEntityList::NotifyRemoveEntity( CBaseHandle hEnt )
 	for ( int i = m_entityListeners.Count()-1; i >= 0; i-- )
 	{
 		m_entityListeners[i]->OnEntityDeleted( pBaseEnt );
+	}
+
+	if ( pBaseEnt->m_ListByClass != g_EntsByClassname.InvalidHandle() )
+	{
+		EntsByStringList_t *pEntry = &g_EntsByClassname[pBaseEnt->m_ListByClass];
+		if ( pEntry->pHead == pBaseEnt )
+		{
+			pEntry->pHead = pBaseEnt->m_pNextByClass;
+			// Don't remove empty list, on the assumption that the number of classes that are not referenced again is small
+			// Plus during map load we get a lot of precache others that hit this [8/8/2008 tom]
+		}
+
+		Assert( g_EntsByClassname[pBaseEnt->m_ListByClass].pHead != pBaseEnt );
+		if ( pBaseEnt->m_pNextByClass )
+		{
+			pBaseEnt->m_pNextByClass->m_pPrevByClass = pBaseEnt->m_pPrevByClass;
+		}
+
+		if ( pBaseEnt->m_pPrevByClass )
+		{
+			pBaseEnt->m_pPrevByClass->m_pNextByClass = pBaseEnt->m_pNextByClass;
+		}
+
+		pBaseEnt->m_pPrevByClass = pBaseEnt->m_pNextByClass = NULL;
+		pBaseEnt->m_ListByClass = g_EntsByClassname.InvalidHandle();
 	}
 }
 
@@ -1415,6 +1763,7 @@ public:
 	{
 		g_TouchManager.LevelShutdownPostEntity();
 		g_AimManager.LevelShutdownPostEntity();
+		g_PostClientManager.LevelShutdownPostEntity();
 		g_SimThinkManager.LevelShutdownPostEntity();
 #ifdef HL2_DLL
 		OverrideMoveCache_LevelShutdownPostEntity();
@@ -1496,7 +1845,7 @@ void RespawnEntities()
 	g_EntityListSystem.m_bRespawnAllEntities = true;
 }
 
-static ConCommand restart_entities( "respawn_entities", RespawnEntities, "Respawn all the entities in the map.", FCVAR_CHEAT | FCVAR_SPONLY );
+static ConCommand restart_entities( "respawn_entities", RespawnEntities, "Respawn all the entities in the map.", FCVAR_CHEAT );
 
 class CSortedEntityList
 {
@@ -1609,7 +1958,7 @@ CON_COMMAND(report_touchlinks, "Lists all touchlinks")
 				touchlink_t *link = root->nextLink;
 				while ( link != root )
 				{
-					list.AddEntityToList( link->entityTouched );
+					list.AddEntityToList( link->entityTouched.Get() );
 					link = link->nextLink;
 				}
 			}

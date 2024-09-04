@@ -85,7 +85,7 @@ CKeyBindingHelpDialog::~CKeyBindingHelpDialog()
 {
 	if ( input()->GetAppModalSurface() == GetVPanel() )
 	{
-		input()->SetAppModalSurface( 0 );
+		input()->SetAppModalSurface( INVALID_VPANEL );
 	}
 }
 

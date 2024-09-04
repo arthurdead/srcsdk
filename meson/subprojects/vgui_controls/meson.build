@@ -1,5 +1,7 @@
 project('vgui_controls', 'cpp')
 
+assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+
 src_root_dir = get_option('src_root_dir')
 
 source_base = subproject('source_base')
@@ -55,9 +57,6 @@ vgui_controls_lib = static_library('vgui_controls',
 		join_paths(vgui_controls_src_dir,'MessageDialog.cpp'),
 		join_paths(vgui_controls_src_dir,'Panel.cpp'),
 		join_paths(vgui_controls_src_dir,'PanelListPanel.cpp'),
-		join_paths(vgui_controls_src_dir,'PerforceFileExplorer.cpp'),
-		join_paths(vgui_controls_src_dir,'PerforceFileList.cpp'),
-		join_paths(vgui_controls_src_dir,'perforcefilelistframe.cpp'),
 		join_paths(vgui_controls_src_dir,'ProgressBar.cpp'),
 		join_paths(vgui_controls_src_dir,'ProgressBox.cpp'),
 		join_paths(vgui_controls_src_dir,'PropertyDialog.cpp'),
@@ -95,7 +94,7 @@ vgui_controls_lib = static_library('vgui_controls',
 		join_paths(public_dir,'vgui_controls')
 	),
 	dependencies: [
-		source_base.get_variable('source_linux_static_lib_dep')
+		source_base.get_variable('source_os_static_lib_dep')
 	]
 )
 

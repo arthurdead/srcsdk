@@ -19,7 +19,6 @@ namespace vgui
 {
 
 class Cursor;
-typedef unsigned long HCursor;
 
 #define VGUI_GCS_COMPREADSTR                 0x0001
 #define VGUI_GCS_COMPREADATTR                0x0002

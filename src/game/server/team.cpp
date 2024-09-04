@@ -73,6 +73,18 @@ int GetNumberOfTeams( void )
 	return g_Teams.Size();
 }
 
+const char* GetTeamName( int iTeam )
+{
+	CTeam *pTeam = GetGlobalTeam( iTeam );
+	if ( pTeam )
+	{
+		return pTeam->GetName();
+	}
+	else
+	{
+		return "UNKNOWN TEAM";
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Needed because this is an entity, but should never be used

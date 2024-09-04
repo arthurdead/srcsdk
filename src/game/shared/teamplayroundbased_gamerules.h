@@ -146,7 +146,7 @@ public:
 	DECLARE_NETWORKCLASS();
 
 #ifdef GAME_DLL
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	void	InputSetStalemateOnTimelimit( inputdata_t &inputdata );
 #endif
 

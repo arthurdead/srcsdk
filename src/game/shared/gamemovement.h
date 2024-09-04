@@ -240,7 +240,7 @@ protected:
 	void			IsometricMove( void );
 
 	// Traces the player bbox as it is swept from start to end
-	virtual CBaseHandle		TestPlayerPosition( const Vector& pos, int collisionGroup, trace_t& pm );
+	virtual EHANDLE		TestPlayerPosition( const Vector& pos, int collisionGroup, trace_t& pm );
 
 	// Checks to see if we should actually jump 
 	void			PlaySwimSound();
@@ -301,6 +301,6 @@ public:
 	int				m_nTraceCount;
 };
 
-
+extern IGameMovement *g_pGameMovement;
 
 #endif // GAMEMOVEMENT_H

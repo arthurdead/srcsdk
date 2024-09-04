@@ -41,7 +41,7 @@ public:
 		NUM_BONECTRLS = 4
 	};
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	virtual void SetModel( const char *szModelName );
@@ -49,9 +49,6 @@ public:
 	virtual void Spawn();
 	virtual void Precache();
 	virtual void SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
-
-	virtual int	 Restore( IRestore &restore );
-	virtual void OnRestore();
 
 	CStudioHdr *GetModelPtr( void );
 	void InvalidateMdlCache();
@@ -132,10 +129,13 @@ public:
 	virtual bool IsRagdoll();
 	virtual bool CanBecomeRagdoll( void ); //Check if this entity will ragdoll when dead.
 
+	virtual const char *OverrideRagdollClassname() const { return "prop_ragdoll"; }
+
 	virtual	void GetSkeleton( CStudioHdr *pStudioHdr, Vector pos[], Quaternion q[], int boneMask );
 
 	virtual void GetBoneTransform( int iBone, matrix3x4_t &pBoneToWorld );
 	virtual void SetupBones( matrix3x4_t *pBoneToWorld, int boneMask );
+	void SetupBonesGuts( const QAngle &angles, matrix3x4_t *pBoneToWorld, int boneMask );
 	virtual void CalculateIKLocks( float currentTime );
 	virtual void Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity );
 
@@ -201,6 +201,12 @@ public:
 
 	void SetBodygroup( int iGroup, int iValue );
 	int GetBodygroup( int iGroup );
+
+	void SetBody(int body) { m_nBody = body; }
+	void SetSkin(int skin) { m_nSkin = skin; }
+
+	int GetBody() { return m_nBody; }
+	int GetSkin() { return m_nSkin; }
 
 	const char *GetBodygroupName( int iGroup );
 	int FindBodygroupByName( const char *name );
@@ -270,13 +276,14 @@ public:
 	virtual void InvalidateBoneCache();
 	void InvalidateBoneCacheIfOlderThan( float deltaTime );
 	virtual int DrawDebugTextOverlays( void );
+	virtual bool IsViewModel() const { return false; }
 	
 	// See note in code re: bandwidth usage!!!
 	void				DrawServerHitboxes( float duration = 0.0f, bool monocolor = false );
 	void				DrawRawSkeleton( matrix3x4_t boneToWorld[], int boneMask, bool noDepthTest = true, float duration = 0.0f, bool monocolor = false );
 
 	void				SetModelScale( float scale, float change_duration = 0.0f );
-	float				GetModelScale() const { return m_flModelScale; }
+	float				GetModelScale() const;
 
 	void				UpdateModelScale();
 	virtual	void		RefreshCollisionBounds( void );
@@ -300,6 +307,7 @@ public:
 	virtual void IgniteLifetime( float flFlameLifetime );
 	virtual void IgniteNumHitboxFires( int iNumHitBoxFires );
 	virtual void IgniteHitboxFireScale( float flHitboxFireScale );
+	virtual void IgniteUseCheapEffect( bool bUseCheapEffect );
 	virtual void Extinguish() { RemoveFlag( FL_ONFIRE ); }
 	bool IsOnFire() { return ( (GetFlags() & FL_ONFIRE) != 0 ); }
 	void Scorch( int rate, int floor );
@@ -309,8 +317,17 @@ public:
 	void InputIgniteHitboxFireScale( inputdata_t &inputdata );
 	void InputBecomeRagdoll( inputdata_t &inputdata );
 
+	// Ice
+	virtual bool	IsFrozen( void ) { return m_flFrozen >= 1.0f; }
+	float			GetFrozenAmount( void ) const { return m_flFrozen; }
+	float			GetFrozenThawRate( void ) { return m_flFrozenThawRate; }
+	void			Thaw( float flThawAmount );
+	void			ToggleFreeze(void);
+	virtual void	Freeze( float flFreezeAmount = -1.0f, CBaseEntity *pFreezer = NULL, Ray_t *pFreezeRay = NULL );
+	virtual void	Unfreeze();
+
 	// Dissolve, returns true if the ragdoll has been created
-	bool Dissolve( const char *pMaterialName, float flStartTime, bool bNPCOnly = true, int nDissolveType = 0, Vector vDissolverOrigin = vec3_origin, int iMagnitude = 0 );
+	virtual bool Dissolve( const char *pMaterialName, float flStartTime, bool bNPCOnly = true, int nDissolveType = 0, Vector vDissolverOrigin = vec3_origin, int iMagnitude = 0 );
 	bool IsDissolving() { return ( (GetFlags() & FL_DISSOLVING) != 0 ); }
 	void TransferDissolveFrom( CBaseAnimating *pAnim );
 
@@ -333,8 +350,6 @@ public:
 		const Vector& origin, const Vector pos[MAXSTUDIOBONES],
 		const Quaternion q[MAXSTUDIOBONES], matrix3x4_t bonetoworld[MAXSTUDIOBONES],
 		CBaseAnimating *pParent, CBoneCache *pParentCache );
-
-	void	SetFadeDistance( float minFadeDist, float maxFadeDist );
 
 	int		GetBoneCacheFlags( void ) { return m_fBoneCacheFlags; }
 	inline void	SetBoneCacheFlags( unsigned short fFlag ) { m_fBoneCacheFlags |= fFlag; }
@@ -359,10 +374,14 @@ public:
 	CNetworkVar( int, m_nForceBone );
 	CNetworkVector( m_vecForce );
 
+private:
 	CNetworkVar( int, m_nSkin );
 	CNetworkVar( int, m_nBody );
+
+public:
 	CNetworkVar( int, m_nHitboxSet );
 
+private:
 	// For making things thin during barnacle swallowing, e.g.
 	CNetworkVar( float, m_flModelScale );
 
@@ -422,9 +441,11 @@ private:
 	unsigned short	m_fBoneCacheFlags;		// Used for bone cache state on model
 
 protected:
-	CNetworkVar( float, m_fadeMinDist );	// Point at which fading is absolute
-	CNetworkVar( float, m_fadeMaxDist );	// Point at which fading is inactive
-	CNetworkVar( float, m_flFadeScale );	// Scale applied to min / max
+	CNetworkVar( float, m_flFrozen );		// 0 - 1 amount that the model is frozen
+	float				m_flMovementFrozen;	// How frozen are the movement parts
+	float				m_flAttackFrozen;	// How frozen are the attacking parts
+	float				m_flFrozenThawRate;	// amount it unfreezes per second
+	float				m_flFrozenMax;		// maximum amount this entitiy is allowed to freeze
 
 public:
 	COutputEvent m_OnIgnite;
@@ -476,21 +497,9 @@ inline void CBaseAnimating::InvalidateMdlCache()
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Serves the 90% case of calling SetSequence / ResetSequenceInfo.
-//-----------------------------------------------------------------------------
-
-/*
-inline void CBaseAnimating::ResetSequence(int nSequence)
-{
-	m_nSequence = nSequence;
-	ResetSequenceInfo();
-}
-*/
-
 inline float CBaseAnimating::GetPlaybackRate() const
 {
-	return m_flPlaybackRate;
+	return m_flPlaybackRate * clamp( 1.0f - m_flFrozen, 0.0f, 1.0f );
 }
 
 inline void CBaseAnimating::SetPlaybackRate( float rate )
@@ -505,7 +514,7 @@ inline void CBaseAnimating::SetLightingOrigin( CBaseEntity *pLightingOrigin )
 
 inline CBaseEntity *CBaseAnimating::GetLightingOrigin()
 {
-	return m_hLightingOrigin;
+	return m_hLightingOrigin.Get();
 }
 
 inline void CBaseAnimating::SetLightingOriginRelative( CBaseEntity *pLightingOriginRelative )
@@ -515,7 +524,7 @@ inline void CBaseAnimating::SetLightingOriginRelative( CBaseEntity *pLightingOri
 
 inline CBaseEntity *CBaseAnimating::GetLightingOriginRelative()
 {
-	return m_hLightingOriginRelative;
+	return m_hLightingOriginRelative.Get();
 }
 
 //-----------------------------------------------------------------------------
@@ -540,11 +549,7 @@ EXTERN_SEND_TABLE(DT_BaseAnimating);
 #define ANIMATION_SKIN_BITS				10	// 1024 body skin selections FIXME: this seems way high
 #define ANIMATION_BODY_BITS				32	// body combinations
 #define ANIMATION_HITBOXSET_BITS		2	// hit box sets 
-#if defined( TF_DLL )
-#define ANIMATION_POSEPARAMETER_BITS	8	// pose parameter resolution
-#else
 #define ANIMATION_POSEPARAMETER_BITS	11	// pose parameter resolution
-#endif
 #define ANIMATION_PLAYBACKRATE_BITS		8	// default playback rate, only used on leading edge detect sequence changes
 
 #endif // BASEANIMATING_H

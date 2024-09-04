@@ -33,15 +33,11 @@ const int SF_SPARK_GLOW				= 128;
 const int SF_SPARK_SILENT			= 256;
 const int SF_SPARK_DIRECTIONAL		= 512;
 
-BEGIN_DATADESC( CEnvSpark )
+BEGIN_MAPENTITY( CEnvSpark )
 
 	DEFINE_KEYFIELD( m_flDelay, FIELD_FLOAT, "MaxDelay" ),
-	DEFINE_FIELD( m_nGlowSpriteIndex, FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_nMagnitude, FIELD_INTEGER, "Magnitude" ),
 	DEFINE_KEYFIELD( m_nTrailLength, FIELD_INTEGER, "TrailLength" ),
-
-	// Function Pointers
-	DEFINE_FUNCTION( SparkThink ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartSpark", InputStartSpark ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopSpark", InputStopSpark ),
@@ -50,7 +46,7 @@ BEGIN_DATADESC( CEnvSpark )
 
 	DEFINE_OUTPUT( m_OnSpark, "OnSpark" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( env_spark, CEnvSpark );
@@ -104,9 +100,14 @@ void CEnvSpark::Spawn(void)
 //-----------------------------------------------------------------------------
 void CEnvSpark::Precache(void)
 {
+	bool oldLock = engine->LockNetworkStringTables( false );
 	m_nGlowSpriteIndex = PrecacheModel( "sprites/glow01.vmt" );
+	engine->LockNetworkStringTables( oldLock );
 
-	PrecacheScriptSound( "DoSpark" );
+	if ( IsPrecacheAllowed() )
+	{
+		PrecacheScriptSound( "DoSpark" );
+	}
 }
 
 extern ConVar phys_pushscale;

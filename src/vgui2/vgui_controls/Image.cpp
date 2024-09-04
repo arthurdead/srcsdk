@@ -223,7 +223,7 @@ void Image::DrawPrintChar(int x, int y, wchar_t ch)
 //-----------------------------------------------------------------------------
 // Purpose: Set a texture
 //-----------------------------------------------------------------------------
-void Image::DrawSetTexture(int id)
+void Image::DrawSetTexture(HTexture id)
 {
 	surface()->DrawSetTexture(id);
 }
@@ -277,6 +277,6 @@ void Image::SetFrame( int nFrame )
 
 HTexture Image::GetID()
 {
-	return 0;
+	return INVALID_TEXTURE;
 }
 

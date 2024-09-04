@@ -8,6 +8,8 @@
 #define AMBIENTGENERIC_H
 #pragma once
 
+#include "baseentity.h"
+
 // runtime pitch shift and volume fadein/out structure
 
 // NOTE: IF YOU CHANGE THIS STRUCT YOU MUST CHANGE THE SAVE/RESTORE VERSION NUMBER
@@ -89,7 +91,7 @@ public:
 	void InputFadeIn( inputdata_t &inputdata );
 	void InputFadeOut( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	float m_radius;
 	float m_flMaxRadius;

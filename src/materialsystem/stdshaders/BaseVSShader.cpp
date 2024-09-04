@@ -2256,56 +2256,23 @@ public:
 	void SetUberlightParamsForFlashlightState( FlashlightState_t& flashlightState, const UberlightState_t& uberlightState ) OVERRIDE
 	{
 		AUTO_LOCK( mutex );
-		const int index = flashlightState.m_nShadowQuality >> 24;
-		if ( index == 0 )
-		{
-			int emptySlot = -1;
-			for ( int i = 0; i < 32; ++i )
-			{
-				if ( !m_usedSlots.IsBitSet( i ) )
-				{
-					emptySlot = i;
-					break;
-				}
-			}
-
-			if ( emptySlot == -1 )
-				return Warning( "Could not set uberlight state for flashlight. Tell developer." );
-
-			flashlightState.m_nShadowQuality |= ( emptySlot + 1 ) << 24;
-			m_dataTable[emptySlot] = uberlightState;
-			m_usedSlots.Set( emptySlot );
-			return;
-		}
-		//if ( memcmp( &m_dataTable[index], &uberlightState, sizeof( UberlightState_t ) ) )
-			m_dataTable[index - 1] = uberlightState;
+		//TODO!!!!! Arthurdead
 	}
 
 	void OnFlashlightStateDestroyed( const FlashlightState_t& flashlightState ) OVERRIDE
 	{
-		AUTO_LOCK( mutex );
-		const int index = flashlightState.m_nShadowQuality >> 24;
-		if ( index != 0 )
-		{
-			m_usedSlots.Clear( index - 1 );
-		}
+		//TODO!!!!! Arthurdead
 	}
 
 	const UberlightState_t* GetState( const FlashlightState_t& flashlightState ) const
 	{
 		AUTO_LOCK( mutex );
-		const int index = flashlightState.m_nShadowQuality >> 24;
-		if ( index != 0 )
-		{
-			return &m_dataTable[index - 1];
-		}
+		//TODO!!!!! Arthurdead
 		return NULL;
 	}
 
 private:
 	CThreadMutex mutex;
-	UberlightState_t m_dataTable[32];
-	CBitVec<32> m_usedSlots;
 };
 
 static CShaderExtension s_shaderExtension;

@@ -19,7 +19,7 @@ class CScriptedTarget : public CAI_BaseNPC
 {
 	DECLARE_CLASS( CScriptedTarget, CAI_BaseNPC );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void				Spawn( void );
 	virtual int			ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }

@@ -13,6 +13,7 @@
 #define MAX_NUM_PANELS 16	//Must match client
 
 #include "func_break.h"
+#include "shattersurfacetypes.h"
 
 //#############################################################################
 //  > CWindowPane
@@ -30,7 +31,6 @@ public:
 	void			Precache( void );
 	void			PaneTouch( CBaseEntity *pOther );
 	void			Die( void );
-	DECLARE_DATADESC();
 };
 
 //#############################################################################
@@ -41,7 +41,7 @@ public:
 class CBreakableSurface : public CBreakable
 {
 	DECLARE_CLASS( CBreakableSurface, CBreakable );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 public:

@@ -26,7 +26,7 @@ public:
 	void InputSetNextPathCorner( inputdata_t &inputdata );
 	void InputInPass( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	float			m_flWait;
@@ -44,7 +44,7 @@ class CPathCornerCrash : public CPathCorner
 LINK_ENTITY_TO_CLASS( path_corner_crash, CPathCornerCrash );
 
 
-BEGIN_DATADESC( CPathCorner )
+BEGIN_MAPENTITY( CPathCorner )
 
 	DEFINE_KEYFIELD( m_flWait, FIELD_FLOAT, "wait" ),
 
@@ -57,7 +57,7 @@ BEGIN_DATADESC( CPathCorner )
 	// Outputs
 	DEFINE_OUTPUT( m_OnPass, "OnPass"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------

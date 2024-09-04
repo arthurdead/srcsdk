@@ -23,19 +23,6 @@ IMPLEMENT_SERVERCLASS_ST(CSpotlightEnd, DT_SpotlightEnd)
 END_SEND_TABLE()
 
 
-//---------------------------------------------------------
-// Save/Restore
-//---------------------------------------------------------
-BEGIN_DATADESC( CSpotlightEnd )
-
-	DEFINE_FIELD( m_flLightScale, FIELD_FLOAT ),
-	DEFINE_FIELD( m_Radius, FIELD_FLOAT ),
-	DEFINE_FIELD( m_vSpotlightDir, FIELD_VECTOR ),
-	DEFINE_FIELD( m_vSpotlightOrg, FIELD_POSITION_VECTOR ),
-
-END_DATADESC()
-
-
 //------------------------------------------------------------------------------
 // Purpose :
 // Input   :
@@ -46,7 +33,7 @@ void CSpotlightEnd::Spawn( void )
 	Precache();
 	m_flLightScale  = 100;
 	SetSolid( SOLID_NONE );
-	SetMoveType( MOVETYPE_FLY );
+	SetMoveType( MOVETYPE_NONE );
 	UTIL_SetSize( this, vec3_origin, vec3_origin );
 	AddEFlags( EFL_FORCE_CHECK_TRANSMIT );
 }

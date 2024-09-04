@@ -1,5 +1,8 @@
 project('tier1', 'cpp', 'c')
 
+assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+assert(meson.get_compiler('c').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+
 src_root_dir = get_option('src_root_dir')
 tier1_src_dir = join_paths(src_root_dir,'tier1')
 
@@ -17,7 +20,7 @@ tier1_lib = static_library('tier1',
 		join_paths(tier1_src_dir,'strtools.cpp'),
 		join_paths(tier1_src_dir,'stringpool.cpp'),
 		join_paths(tier1_src_dir,'snappy.cpp'),
-		join_paths(tier1_src_dir,'processor_detect.cpp'),
+		join_paths(tier1_src_dir,'processor_detect_linux.cpp'),
 		join_paths(tier1_src_dir,'tokenreader.cpp'),
 		join_paths(tier1_src_dir,'strtools_unicode.cpp'),
 		join_paths(tier1_src_dir,'snappy-stubs-internal.cpp'),
@@ -37,7 +40,6 @@ tier1_lib = static_library('tier1',
 		join_paths(tier1_src_dir,'utlstring.cpp'),
 		join_paths(tier1_src_dir,'qsort_s.cpp'),
 		join_paths(tier1_src_dir,'KeyValues.cpp'),
-		join_paths(tier1_src_dir,'processor_detect_linux.cpp'),
 		join_paths(tier1_src_dir,'utlbufferutil.cpp'),
 		join_paths(tier1_src_dir,'uniqueid.cpp'),
 		join_paths(tier1_src_dir,'utlbuffer.cpp'),
@@ -63,7 +65,7 @@ tier1_lib = static_library('tier1',
 		join_paths(src_root_dir,'public','tier1')
 	),
 	dependencies: [
-		source_base.get_variable('source_linux_static_lib_dep')
+		source_base.get_variable('source_os_static_lib_dep')
 	]
 )
 

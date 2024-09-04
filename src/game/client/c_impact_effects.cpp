@@ -39,11 +39,12 @@ CLIENTEFFECT_REGISTER_END()
 // Cached handles to commonly used materials
 PMaterialHandle g_Mat_Fleck_Wood[2] = { NULL, NULL };
 PMaterialHandle g_Mat_Fleck_Cement[2] = { NULL, NULL };
-PMaterialHandle g_Mat_Fleck_Antlion[2] = { NULL, NULL };
+PMaterialHandle g_Mat_Fleck_AlienInsect[2] = { NULL, NULL };
 PMaterialHandle g_Mat_Fleck_Glass[2] = { NULL, NULL };
 PMaterialHandle g_Mat_Fleck_Tile[2] = { NULL, NULL };
 PMaterialHandle g_Mat_DustPuff[2] = { NULL, NULL };
 PMaterialHandle g_Mat_BloodPuff[2] = { NULL, NULL };
+PMaterialHandle g_Mat_Muzzleflash[4] = { NULL, NULL, NULL, NULL };
 
 static ConVar fx_drawimpactdebris( "fx_drawimpactdebris", "1", FCVAR_DEVELOPMENTONLY, "Draw impact debris effects." );
 static ConVar fx_drawimpactdust( "fx_drawimpactdust", "1", FCVAR_DEVELOPMENTONLY, "Draw impact dust effects." );
@@ -56,8 +57,8 @@ void FX_CacheMaterialHandles( void )
 	g_Mat_Fleck_Cement[0] = ParticleMgr()->GetPMaterial( "effects/fleck_cement1");
 	g_Mat_Fleck_Cement[1] = ParticleMgr()->GetPMaterial( "effects/fleck_cement2" );
 
-	g_Mat_Fleck_Antlion[0] = ParticleMgr()->GetPMaterial( "effects/fleck_antlion1" );
-	g_Mat_Fleck_Antlion[1] = ParticleMgr()->GetPMaterial( "effects/fleck_antlion2" );
+	g_Mat_Fleck_AlienInsect[0] = ParticleMgr()->GetPMaterial( "effects/fleck_alieninsect1" );
+	g_Mat_Fleck_AlienInsect[1] = ParticleMgr()->GetPMaterial( "effects/fleck_alieninsect2" );
 
 	g_Mat_Fleck_Glass[0] = ParticleMgr()->GetPMaterial( "effects/fleck_glass1" );
 	g_Mat_Fleck_Glass[1] = ParticleMgr()->GetPMaterial( "effects/fleck_glass2" );
@@ -501,9 +502,9 @@ DECLARE_CLIENT_EFFECT( GlassImpact, GlassImpactCallback );
 // Input  : &pos - 
 //			*tr - 
 //-----------------------------------------------------------------------------
-void FX_AntlionImpact( const Vector &pos, trace_t *trace )
+void FX_AlienInsectImpact( const Vector &pos, trace_t *trace )
 {
-	VPROF_BUDGET( "FX_AntlionImpact", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
+	VPROF_BUDGET( "FX_AlienInsectImpact", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 
 	CSmartPtr<CSimple3DEmitter> fleckEmitter = CSimple3DEmitter::Create( "FX_DebrisFlecks" );
 	if ( fleckEmitter == NULL )
@@ -552,7 +553,7 @@ void FX_AntlionImpact( const Vector &pos, trace_t *trace )
 	int i;
 	for ( i = 0; i < numFlecks; i++ )
 	{
-		pFleckParticle = (Particle3D *) fleckEmitter->AddParticle( sizeof(Particle3D), g_Mat_Fleck_Antlion[random->RandomInt(0,1)], spawnOffset );
+		pFleckParticle = (Particle3D *) fleckEmitter->AddParticle( sizeof(Particle3D), g_Mat_Fleck_AlienInsect[random->RandomInt(0,1)], spawnOffset );
 		if ( pFleckParticle == NULL )
 			break;
 
@@ -626,7 +627,7 @@ void FX_AntlionImpact( const Vector &pos, trace_t *trace )
 
 
 	CLocalPlayerFilter filter;
-	C_BaseEntity::EmitSound( filter, 0, "FX_AntlionImpact.ShellImpact", &trace->endpos );
+	C_BaseEntity::EmitSound( filter, 0, "FX_AlienInsectImpact.ShellImpact", &trace->endpos );
 }
 
 //-----------------------------------------------------------------------------

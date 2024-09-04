@@ -1,5 +1,7 @@
 project('mathlib', 'cpp')
 
+assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+
 src_root_dir = get_option('src_root_dir')
 mathlib_src_dir = join_paths(src_root_dir,'mathlib')
 
@@ -40,7 +42,7 @@ mathlib_lib = static_library('mathlib',
 		join_paths(src_root_dir,'public','tier0')
 	),
 	dependencies: [
-		source_base.get_variable('source_linux_static_lib_dep')
+		source_base.get_variable('source_os_static_lib_dep')
 	]
 )
 

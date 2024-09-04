@@ -80,6 +80,7 @@ enum
 	INVALID_LEAF_INDEX = (LeafIndex_t)~0
 };
 
+#if 0
 struct WorldListLeafData_t
 {
 	LeafIndex_t	leafIndex;	// 16 bits
@@ -87,6 +88,7 @@ struct WorldListLeafData_t
 	uint16 	firstTranslucentSurface;	// engine-internal list index
 	uint16	translucentSurfaceCount;	// count of translucent surfaces+disps
 };
+#endif
 
 
 //-----------------------------------------------------------------------------

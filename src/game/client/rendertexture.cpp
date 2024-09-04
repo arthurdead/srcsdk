@@ -17,6 +17,11 @@
 
 void ReleaseRenderTargets( int nChangeFlags );
 
+void ReleaseRenderTargets( void )
+{
+	ReleaseRenderTargets( 0 );
+}
+
 void AddReleaseFunc( void )
 {
 	static bool bAdded = false;

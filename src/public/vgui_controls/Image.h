@@ -63,7 +63,7 @@ protected:
 	virtual void DrawPrintText(int x, int y, const wchar_t *str, int strlen);
 	virtual void DrawPrintChar(wchar_t ch);
 	virtual void DrawPrintChar(int x, int y, wchar_t ch);
-	virtual void DrawSetTexture(int id);
+	virtual void DrawSetTexture(HTexture id);
 	virtual void DrawTexturedRect(int x0, int y0, int x1, int y1);
 	virtual void Paint() = 0;
 

@@ -8,15 +8,17 @@
 #define POINT_TEMPLATE_H
 #pragma once
 
+#include "baseentity.h"
+
 #define MAX_NUM_TEMPLATES		16
 
 struct template_t
 {
 	int			iTemplateIndex;
 	VMatrix		matEntityToTemplate;
-
-	DECLARE_SIMPLE_DATADESC();
 };
+
+void PrecachePointTemplates();
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -25,7 +27,7 @@ class CPointTemplate : public CLogicalEntity
 {
 	DECLARE_CLASS( CPointTemplate, CLogicalEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void	Spawn( void );
 	virtual void	Precache();
@@ -46,7 +48,8 @@ public:
 	int				GetTemplateIndexForTemplate( int iTemplate );
 
 	// Template instancing
-	bool			CreateInstance( const Vector &vecOrigin, const QAngle &vecAngles, CUtlVector<CBaseEntity*> *pEntities );
+	bool			CreateInstance( const Vector &vecOrigin, const QAngle &vecAngles, CUtlVector<CBaseEntity*> *pEntities, CBaseEntity *pEntityMaker = NULL, bool bCreateTime = false );
+	void			CreationComplete( const CUtlVector<CBaseEntity*> &entities );
 
 	// Inputs
 	void			InputForceSpawn( inputdata_t &inputdata );

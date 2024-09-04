@@ -87,7 +87,7 @@ public:
 	// Raw ground step forward to the specifed position
 	//
 
-	AIMotorMoveResult_t MoveGroundStep( const Vector &newPos, CBaseEntity *pMoveTarget = NULL, float yaw = -1, bool bAsFarAsCan = true, bool bTestZ = true, AIMoveTrace_t *pTraceResult = NULL );
+	AIMotorMoveResult_t MoveGroundStep( const Vector &newPos, CBaseEntity *pMoveTarget = NULL, float yaw = -1, bool bAsFarAsCan = true, int iTestZ = 1, AIMoveTrace_t *pTraceResult = NULL );
 	
 	// ----------------------------------------------------
 	// Rotational movement (yaw); goal and speed
@@ -163,7 +163,7 @@ protected:
 	float				SetBoneController ( int iController, float flValue );
 	float 				GetSequenceMoveYaw( int iSequence );
 	void				SetPlaybackRate( float flRate );
-	float				GetPlaybackRate(); //get
+	float				GetPlaybackRate() const; //get
 	float				SetPoseParameter( const char *szName, float flValue );
 	float				SetPoseParameter( int iParameter, float flValue );
 	float				GetPoseParameter( const char *szName );
@@ -182,7 +182,7 @@ protected:
 	virtual AIMotorMoveResult_t MoveGroundExecute( const AILocalMoveGoal_t &move, AIMoveTrace_t *pTraceResult );
 	AIMotorMoveResult_t			MoveGroundExecuteWalk( const AILocalMoveGoal_t &move, float speed, float dist, AIMoveTrace_t *pTraceResult );
 	virtual AIMotorMoveResult_t MoveFlyExecute( const AILocalMoveGoal_t &move, AIMoveTrace_t *pTraceResult );
-	
+
 protected: // made protected while animation transition details worked out, private:
 
 	// --------------------------------
@@ -212,10 +212,6 @@ protected: // made protected while animation transition details worked out, priv
 	CAI_MoveProbe *		m_pMoveProbe;
 
 	bool				m_bYawLocked;
-
-	//---------------------------------
-public:
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //=============================================================================

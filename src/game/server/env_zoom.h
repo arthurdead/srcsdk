@@ -7,6 +7,8 @@
 #ifndef ENV_ZOOM_H
 #define ENV_ZOOM_H
 
+class CBaseEntity;
+
 bool CanOverrideEnvZoomOwner( CBaseEntity *pZoomOwner );
 float GetZoomOwnerDesiredFOV( CBaseEntity *pZoomOwner );
 

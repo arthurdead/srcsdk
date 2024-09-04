@@ -43,11 +43,6 @@ public:
 	DECLARE_PREDICTABLE();
 	DECLARE_NETWORKCLASS();
 
-
-#if !defined( CLIENT_DLL )
-	DECLARE_DATADESC();
-#endif
-
 	virtual void		Precache( void );
 
 	virtual void		Explode( trace_t *pTrace, int bitsDamageType );
@@ -99,7 +94,7 @@ public:
 
 	CBaseCombatCharacter *GetThrower( void );
 	void				  SetThrower( CBaseCombatCharacter *pThrower );
-	CBaseEntity *GetOriginalThrower() { return m_hOriginalThrower; }
+	CBaseEntity *GetOriginalThrower() { return m_hOriginalThrower.Get(); }
 
 #if !defined( CLIENT_DLL )
 	// Allow +USE pickup

@@ -28,10 +28,21 @@ extern void OnBaseCombatWeaponDestroyed( CBaseCombatWeapon * );
 void *SendProxy_SendLocalWeaponDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
 #endif
 
+#ifdef GAME_DLL
 class CBasePlayer;
 class CBaseCombatCharacter;
+class CBaseViewModel;
+#else
+#define CBasePlayer C_BasePlayer
+#define CBaseCombatCharacter C_BaseCombatCharacter
+#define CBaseViewModel C_BaseViewModel
+class C_BasePlayer;
+class C_BaseCombatCharacter;
+class C_BaseViewModel;
+#endif
 class IPhysicsConstraint;
 class CUserCmd;
+
 
 // How many times to display altfire hud hints (per weapon)
 #define WEAPON_ALTFIRE_HUD_HINT_COUNT	1
@@ -418,7 +429,7 @@ public:
 // Server Only Methods
 #if !defined( CLIENT_DLL )
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	virtual void			FallInit( void );						// prepare to fall to the ground
 	virtual void			FallThink( void );						// make the weapon fall to the ground after spawning
 

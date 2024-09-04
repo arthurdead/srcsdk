@@ -11,6 +11,7 @@
 #include "ai_behavior.h"
 #include "player_pickup.h"
 #include "IEffects.h"
+#include "player.h"
 
 class CAI_BaseNPC;
 
@@ -50,28 +51,6 @@ public:
 	bool SUB_AllowedToFade( void )
 	{
 		return true;
-	}
-
-	int Save( ISave &save )
-	{
-		int result = CBaseAnimating::Save( save );
-		if ( result )
-		{
-			result = CAI_Agent::Save( save );
-		}
-		return result;
-	}
-
-	//-------------------------------------
-
-	int Restore( IRestore &restore )
-	{
-		int result = CBaseAnimating::Restore( restore );
-		if ( result )
-		{
-			result = CAI_Agent::Restore( restore );
-		}
-		return result;
 	}
 
 	//---------------------------------
@@ -286,51 +265,6 @@ class CAI_AddOnBehaviorConnector : public ADDON
 				}
 			}
 		}
-	}
-
-	//-------------------------------------
-
-	int Save( ISave &save )
-	{
-		int result = BaseClass::Save( save );
-		if ( result )
-		{
-			bool bSaved = false;
-			BEHAVIOR *pBehavior;
-			if ( this->m_hNPCHost && this->m_hNPCHost->GetBehavior( &pBehavior ) )
-			{
-				bSaved = true;
-				CAI_BehaviorBase::SaveBehaviors( save, pBehavior, (CAI_BehaviorBase **)&pBehavior, 1, false );
-			}
-
-			if ( !bSaved )
-			{
-				CAI_BehaviorBase::SaveBehaviors( save, NULL, NULL, 0 );
-			}
-		}
-
-		return result;
-	}
-
-	//-------------------------------------
-
-	int Restore( IRestore &restore )
-	{
-		int result = BaseClass::Restore( restore );
-		if ( result )
-		{
-			Bind();
-			BEHAVIOR *pBehavior;
-			if ( this->m_hNPCHost && this->m_hNPCHost->GetBehavior( &pBehavior ) )
-			{
-				CAI_BehaviorBase::RestoreBehaviors( restore, (CAI_BehaviorBase **)&pBehavior, 1, false );
-			}
-			else
-			{
-				CAI_BehaviorBase::RestoreBehaviors( restore, NULL, 0,false );
-			}
-		}
-		return result;
 	}
 
 };

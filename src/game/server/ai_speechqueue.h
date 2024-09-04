@@ -10,7 +10,15 @@
 
 #pragma once
 
-#include "ai_speech.h"
+#include "igamesystem.h"
+#include "ehandle.h"
+//#include "ai_speech.h"
+#include "ai_criteria.h"
+#include "ai_speechconcept.h"
+#include "util.h"
+#include "utllinkedlist.h"
+
+typedef CAI_Concept AIConcept_t;
 
 #define AI_RESPONSE_QUEUE_SIZE 64
 
@@ -158,7 +166,7 @@ int CResponseQueue::GetNumExpresserTargets() const
 
 CBaseEntity *CResponseQueue::GetExpresserHost(int which) const
 {
-	return m_ExpresserTargets[which];
+	return m_ExpresserTargets[which].Get();
 }
 
 

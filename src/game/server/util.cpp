@@ -6,7 +6,6 @@
 //=============================================================================//
 
 #include "cbase.h"
-#include "saverestore.h"
 #include "globalstate.h"
 #include <stdarg.h>
 #include "shake.h"
@@ -21,7 +20,6 @@
 #include "soundflags.h"
 #include "ispatialpartition.h"
 #include "igamesystem.h"
-#include "saverestoretypes.h"
 #include "checksum_crc.h"
 #include "hierarchy.h"
 #include "iservervehicle.h"
@@ -36,6 +34,7 @@
 #include "datacache/imdlcache.h"
 #include "util.h"
 #include "cdll_int.h"
+#include "filesystem.h"
 
 #ifdef PORTAL
 #include "PortalSimulation.h"
@@ -454,10 +453,9 @@ bool g_bReceivedChainedUpdateOnRemove = false;
 //			until the next frame, so there can be no pointer errors.
 // Input  : *oldObj - object to delete
 //-----------------------------------------------------------------------------
-void UTIL_Remove( IServerNetworkable *oldObj )
+void UTIL_Remove( CBaseEntity *oldObj )
 {
-	CServerNetworkProperty* pProp = static_cast<CServerNetworkProperty*>( oldObj );
-	if ( !pProp || pProp->IsMarkedForDeletion() )
+	if ( !oldObj || oldObj->IsMarkedForDeletion() )
 		return;
 
 	if ( PhysIsInCallback() )
@@ -474,35 +472,24 @@ void UTIL_Remove( IServerNetworkable *oldObj )
 	}
 
 	// mark it for deletion	
-	pProp->MarkForDeletion( );
+	oldObj->MarkForDeletion( );
 
-	CBaseEntity *pBaseEnt = oldObj->GetBaseEntity();
-	if ( pBaseEnt )
-	{
 #ifdef PORTAL //make sure entities are in the primary physics environment for the portal mod, this code should be safe even if the entity is in neither extra environment
-		CPortalSimulator::Pre_UTIL_Remove( pBaseEnt );
+	CPortalSimulator::Pre_UTIL_Remove( pBaseEnt );
 #endif
-		g_bReceivedChainedUpdateOnRemove = false;
-		pBaseEnt->UpdateOnRemove();
+	g_bReceivedChainedUpdateOnRemove = false;
+	oldObj->UpdateOnRemove();
 
-		Assert( g_bReceivedChainedUpdateOnRemove );
+	Assert( g_bReceivedChainedUpdateOnRemove );
 
-		// clear oldObj targetname / other flags now
-		pBaseEnt->SetName( NULL_STRING );
+	// clear oldObj targetname / other flags now
+	oldObj->SetName( NULL_STRING );
 
 #ifdef PORTAL
-		CPortalSimulator::Post_UTIL_Remove( pBaseEnt );
+	CPortalSimulator::Post_UTIL_Remove( pBaseEnt );
 #endif
-	}
 
 	gEntList.AddToDeleteList( oldObj );
-}
-
-void UTIL_Remove( CBaseEntity *oldObj )
-{
-	if ( !oldObj )
-		return;
-	UTIL_Remove( oldObj->NetworkProp() );
 }
 
 static int s_RemoveImmediateSemaphore = 0;
@@ -959,7 +946,7 @@ inline void TransmitShakeEvent( CBasePlayer *pPlayer, float localAmplitude, floa
 //			bAirShake - if this is false, then it will only shake players standing on the ground.
 //-----------------------------------------------------------------------------
 const float MAX_SHAKE_AMPLITUDE = 16.0f;
-void UTIL_ScreenShake( const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake )
+void UTIL_ScreenShake( const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake, CUtlVector<CBasePlayer *> *ignore )
 {
 	int			i;
 	float		localAmplitude;
@@ -970,12 +957,17 @@ void UTIL_ScreenShake( const Vector &center, float amplitude, float frequency, f
 	}
 	for ( i = 1; i <= gpGlobals->maxClients; i++ )
 	{
-		CBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
+		CBasePlayer *pPlayer = UTIL_PlayerByIndex( i );
 
 		//
 		// Only start shakes for players that are on the ground unless doing an air shake.
 		//
 		if ( !pPlayer || (!bAirShake && (eCommand == SHAKE_START) && !(pPlayer->GetFlags() & FL_ONGROUND)) )
+		{
+			continue;
+		}
+
+		if ( ignore && ignore->HasElement( pPlayer ) )
 		{
 			continue;
 		}
@@ -1013,7 +1005,7 @@ void UTIL_ScreenShakeObject( CBaseEntity *pEnt, const Vector &center, float ampl
 		{
 			localAmplitude = amplitude;
 		}
-		else if ((pPlayer->GetFlags() & FL_ONGROUND) && (pPlayer->GetGroundEntity()->GetRootMoveParent() == pHighestParent))
+		else if ((pPlayer->GetFlags() & FL_ONGROUND) && (pPlayer->GetGroundEntity() && pPlayer->GetGroundEntity()->GetRootMoveParent() == pHighestParent))
 		{
 			// If the player is standing on the object, use maximum amplitude
 			localAmplitude = amplitude;
@@ -1046,6 +1038,65 @@ void UTIL_ScreenShakeObject( CBaseEntity *pEnt, const Vector &center, float ampl
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Transmits the actual tilt event
+//-----------------------------------------------------------------------------
+inline void TransmitTiltEvent( CBasePlayer *pPlayer, QAngle tiltAngle, float duration, float tiltTime, ShakeCommand_t eCommand, bool bEaseInOut )
+{
+	CSingleUserRecipientFilter user( pPlayer );
+	user.MakeReliable();
+	UserMessageBegin( user, "Tilt" );
+	WRITE_BYTE( eCommand );				// tilt command (SHAKE_START, STOP, FREQUENCY, AMPLITUDE)
+	WRITE_BYTE( bEaseInOut );			// tilt ease in/out
+	WRITE_FLOAT( tiltAngle.x );			// tilt angle
+	WRITE_FLOAT( tiltAngle.y );
+	WRITE_FLOAT( tiltAngle.z );
+	WRITE_FLOAT( duration );			// tilt lasts this long
+	WRITE_FLOAT( tiltTime );			// tilt time
+	MessageEnd();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Tilt the screen of all clients within radius.
+//			radius == 0, shake all clients
+// Input  : center - Center of screen tilt, radius is measured from here.
+//			tiltAngle - Angle that the world is pretending to tilt
+//			duration - duration of tilt in seconds.
+//			radius - Radius of effect, 0 shakes all clients.
+//			tiltTime - how long it takes to reach full tilt
+//			command - One of the following values:
+//				SHAKE_START - starts the screen tilt for all players within the radius
+//				SHAKE_STOP - stops the screen tilt for all players within the radius
+//				SHAKE_AMPLITUDE - modifies the amplitude of the screen tilt
+//									for all players within the radius
+//				SHAKE_FREQUENCY - modifies the frequency of the screen tilt
+//									for all players within the radius
+//			bAirShake - if this is false, then it will only tilt players standing on the ground.
+//-----------------------------------------------------------------------------
+void UTIL_ScreenTilt( const Vector &center, const QAngle &tiltAngle, float duration, float radius, float tiltTime, ShakeCommand_t eCommand, bool bEaseInOut )
+{
+	int			i;
+
+	for ( i = 1; i <= gpGlobals->maxClients; i++ )
+	{
+		CBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
+
+		//
+		// Only start shakes for players that are on the ground unless doing an air shake.
+		//
+		if ( !pPlayer )
+		{
+			continue;
+		}
+
+		// This happens if the player is outside the radius, in which case we should ignore 
+		// all commands
+		if ( radius != 0.0f && pPlayer->WorldSpaceCenter().DistTo( center ) > radius )
+			continue;
+
+		TransmitTiltEvent( (CBasePlayer *)pPlayer, tiltAngle, duration, tiltTime, eCommand, bEaseInOut );
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Punches the view of all clients within radius.
@@ -1109,7 +1160,14 @@ void UTIL_ScreenFadeWrite( const ScreenFade_t &fade, CBaseEntity *pEntity )
 	if ( !pEntity || !pEntity->IsNetClient() )
 		return;
 
-	CSingleUserRecipientFilter user( (CBasePlayer *)pEntity );
+	CBasePlayer *pRecipient = static_cast< CBasePlayer * >( pEntity );
+
+	if ( pRecipient->ShouldThrottleUserMessage( "Fade" ) )
+	{
+		return;
+	}
+
+	CSingleUserRecipientFilter user( pRecipient );
 	user.MakeReliable();
 
 	UserMessageBegin( user, "Fade" );		// use the magic #1 for "one client"
@@ -2427,7 +2485,7 @@ CBaseEntity *UTIL_FindClientInPVS( const Vector &vecBoxMins, const Vector &vecBo
 //-----------------------------------------------------------------------------
 ConVar sv_strict_notarget( "sv_strict_notarget", "0", 0, "If set, notarget will cause entities to never think they are in the pvs" );
 
-static edict_t *UTIL_FindClientInPVSGuts(edict_t *pEdict, unsigned char *pvs, unsigned pvssize )
+edict_t *UTIL_FindClientInPVSGuts(edict_t *pEdict, unsigned char *pvs, unsigned pvssize )
 {
 	Vector	view;
 
@@ -2466,7 +2524,7 @@ static edict_t *UTIL_FindClientInPVSGuts(edict_t *pEdict, unsigned char *pvs, un
 
 edict_t *UTIL_FindClientInPVS(edict_t *pEdict)
 {
-	return UTIL_FindClientInPVSGuts( pEdict, g_CheckClient.m_checkPVS, sizeof( g_CheckClient.m_checkPVS ) );
+	return g_pGameRules->DoFindClientInPVSGuts( pEdict, g_CheckClient.m_checkPVS, sizeof( g_CheckClient.m_checkPVS ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -2474,7 +2532,7 @@ edict_t *UTIL_FindClientInPVS(edict_t *pEdict)
 //-----------------------------------------------------------------------------
 edict_t *UTIL_FindClientInVisibilityPVS( edict_t *pEdict )
 {
-	return UTIL_FindClientInPVSGuts( pEdict, g_CheckClient.m_checkVisibilityPVS, sizeof( g_CheckClient.m_checkVisibilityPVS ) );
+	return g_pGameRules->DoFindClientInPVSGuts( pEdict, g_CheckClient.m_checkVisibilityPVS, sizeof( g_CheckClient.m_checkVisibilityPVS ) );
 }
 
 
@@ -3461,5 +3519,130 @@ void CC_CollisionTest( const CCommand &args )
 static ConCommand collision_test("collision_test", CC_CollisionTest, "Tests collision system", FCVAR_CHEAT );
 
 
+//--------------------------------------------------------------------------------------------------------
+/**
+ * Return true if ground is fairly level within the given radius around an entity
+ * Trace 4 vertical hull-quadrants and test their collisions and ground heights and normals
+ */
+bool UTIL_IsGroundLevel( float radius, const Vector &position, float hullHeight, int mask, const CBaseEntity *ignore, bool debugTraces )
+{
+	const int subdivisions = 3;
+	const int samples = subdivisions * subdivisions;
+	
+	// trace down below floor level to detect ledges and overhangs
+	trace_t result[ samples ];
+	float size = 2.0f * radius / subdivisions;
+
+	int i, j, s = 0;
+	float x, y = -radius;
+	for( j=0; j<subdivisions; ++j )
+	{
+		x = -radius;
+		for( int i=0; i<subdivisions; ++i )
+		{
+			UTIL_TraceHull( position + Vector( 0, 0, hullHeight ), 
+							position + Vector( 0, 0, -100 ), 
+							Vector( x, y, 0 ), 
+							Vector( x + size, y + size, 10.0f ), 
+							mask, ignore, COLLISION_GROUP_PLAYER_MOVEMENT, 
+							&result[ s ] );
+
+			if ( debugTraces )
+			{
+				NDebugOverlay::SweptBox( position + Vector( 0, 0, hullHeight ), 
+										 result[ s ].endpos, 
+										 Vector( x, y, 0 ), 
+										 Vector( x + size, y + size, 10.0f ), 
+										 vec3_angle, 255, 255, 0, 255, 5.0f );
+			}
+
+			++s;
+			x += size;
+		}
+
+		y += size;
+	}
+
+// 	UTIL_TraceHull( GetPosition() + Vector( 0, 0, body->GetCrouchHullHeight() ), GetPosition() + Vector( 0, 0, -100 ), Vector( -radius, -radius, 0 ), Vector(      0,      0, 10.0f ), MASK_ZOMBIESOLID, this, COLLISION_GROUP_PLAYER_MOVEMENT, &result[0] );
+// 	UTIL_TraceHull( GetPosition() + Vector( 0, 0, body->GetCrouchHullHeight() ), GetPosition() + Vector( 0, 0, -100 ), Vector( -radius,       0, 0 ), Vector(      0, radius, 10.0f ), MASK_ZOMBIESOLID, this, COLLISION_GROUP_PLAYER_MOVEMENT, &result[1] );
+// 	UTIL_TraceHull( GetPosition() + Vector( 0, 0, body->GetCrouchHullHeight() ), GetPosition() + Vector( 0, 0, -100 ), Vector(       0,       0, 0 ), Vector( radius, radius, 10.0f ), MASK_ZOMBIESOLID, this, COLLISION_GROUP_PLAYER_MOVEMENT, &result[2] );
+// 	UTIL_TraceHull( GetPosition() + Vector( 0, 0, body->GetCrouchHullHeight() ), GetPosition() + Vector( 0, 0, -100 ), Vector(       0, -radius, 0 ), Vector( radius,      0, 10.0f ), MASK_ZOMBIESOLID, this, COLLISION_GROUP_PLAYER_MOVEMENT, &result[3] );
+
+	for( i=0; i<samples; ++i )
+	{
+		if ( result[i].startsolid )
+		{
+			return false;
+		}
+
+		if ( result[i].DidHit() )
+		{
+			const float flat = 0.9f;
+			if ( result[i].plane.normal.z < flat )
+			{
+				// too steep to sit here
+				return false;
+			}
+
+			const float maxZDelta = 10.0f;
+			for( j = 0; j<samples; ++j )
+			{
+				if ( i != j && abs( result[i].endpos.z - result[j].endpos.z ) > maxZDelta )
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
+//-------------------------------------------------------------------------------------------------
+// HudMessagePanel helper
+void UTIL_MessageTextAll( const char *text, Color color )
+{
+	CReliableBroadcastRecipientFilter filter;
+	UserMessageBegin( filter, "MessageText" );
+		WRITE_BYTE( color.r() );
+		WRITE_BYTE( color.g() );
+		WRITE_BYTE( color.b() );
+		WRITE_STRING( text );
+	MessageEnd();
+}
 
 
+//-------------------------------------------------------------------------------------------------
+// HudMessagePanel helper
+void UTIL_MessageText( CBasePlayer *player, const char *text, Color color )
+{
+	CSingleUserRecipientFilter filter( player );
+	filter.MakeReliable();
+	UserMessageBegin( filter, "MessageText" );
+		WRITE_BYTE( color.r() );
+		WRITE_BYTE( color.g() );
+		WRITE_BYTE( color.b() );
+		WRITE_STRING( text );
+	MessageEnd();
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// HudMessagePanel helper
+void UTIL_ResetMessageTextAll( void )
+{
+	CReliableBroadcastRecipientFilter filter;
+	UserMessageBegin( filter, "MessageText" );
+	MessageEnd();
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// HudMessagePanel helper
+void UTIL_ResetMessageText( CBasePlayer *player )
+{
+	CSingleUserRecipientFilter filter( player );
+	filter.MakeReliable();
+	UserMessageBegin( filter, "MessageText" );
+	MessageEnd();
+}

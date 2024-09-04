@@ -56,7 +56,7 @@ public:
 		CapabilitiesAdd(bits_CAP_MOVE_GROUND|bits_CAP_DUCK|bits_CAP_MOVE_JUMP|bits_CAP_OPEN_DOORS);
 
 		m_NPCState = NPC_STATE_NONE;
-		m_iHealth = 10;
+		SetHealth( 10 );
 		m_flFieldOfView = 0.5f;
 		NPCInit();
 

@@ -41,7 +41,7 @@
 
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
-BEGIN_DATADESC( CFuncNavCost )
+BEGIN_MAPENTITY( CFuncNavCost )
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -50,9 +50,7 @@ BEGIN_DATADESC( CFuncNavCost )
 	DEFINE_KEYFIELD( m_team, FIELD_INTEGER, "team" ),
 	DEFINE_KEYFIELD( m_isDisabled, FIELD_BOOLEAN, "start_disabled" ),
 
-	DEFINE_THINKFUNC( CostThink ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( func_nav_avoid, CFuncNavAvoid );
 LINK_ENTITY_TO_CLASS( func_nav_prefer, CFuncNavPrefer );
@@ -344,7 +342,7 @@ float CFuncNavPrefer::GetCostMultiplier( CBaseCombatCharacter *who ) const
 
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
-BEGIN_DATADESC( CFuncNavBlocker )
+BEGIN_MAPENTITY( CFuncNavBlocker )
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "BlockNav", InputBlockNav ),
@@ -352,7 +350,7 @@ BEGIN_DATADESC( CFuncNavBlocker )
 	DEFINE_KEYFIELD( m_blockedTeamNumber, FIELD_INTEGER, "teamToBlock" ),
 	DEFINE_KEYFIELD( m_bDisabled,	FIELD_BOOLEAN,	"StartDisabled" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( func_nav_blocker, CFuncNavBlocker );
@@ -579,7 +577,7 @@ bool CFuncNavBlocker::CalculateBlocked( bool *pResultByTeam, const Vector &vecMi
   */
 class CFuncNavObstruction : public CBaseEntity, public INavAvoidanceObstacle
 {
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CFuncNavObstruction, CBaseEntity );
 
 public:
@@ -614,9 +612,9 @@ private:
 
 
 //--------------------------------------------------------------------------------------------------------
-BEGIN_DATADESC( CFuncNavObstruction )
+BEGIN_MAPENTITY( CFuncNavObstruction )
 	DEFINE_KEYFIELD( m_bDisabled,	FIELD_BOOLEAN,	"StartDisabled" ),
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( func_nav_avoidance_obstacle, CFuncNavObstruction );

@@ -128,10 +128,14 @@ public:
 
 	// Has simulation finished
 	bool			SimulationFinished( void );
+	// Has the last speech event in the scene already fired
+	bool			SpeechFinished( void ) const;
 	// Reset simulation
 	void			ResetSimulation( bool forward = true, float starttime = 0.0f, float endtime = 0.0f );
 	// Find time at which last simulation event is triggered
 	float			FindStopTime( void );
+	// Find time at which last SPEAK event is complete
+	float			FindLastSpeakTime( void ) const;
 
 	void			ResumeSimulation( void );
 

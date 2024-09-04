@@ -11,7 +11,6 @@
 #include "mathlib/mathlib.h"
 #include "globalstate.h"
 #include "ndebugoverlay.h"
-#include "saverestore_utlvector.h"
 #include "vstdlib/random.h"
 #include "gameinterface.h"
 
@@ -39,7 +38,7 @@ public:
 	int m_iIntegerValue;
 	int m_iShouldCompareToValue;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CMultiInputVar m_AllIntCompares;
 
@@ -52,7 +51,7 @@ public:
 LINK_ENTITY_TO_CLASS( logic_multicompare, CLogicCompareInteger );
 
 
-BEGIN_DATADESC( CLogicCompareInteger )
+BEGIN_MAPENTITY( CLogicCompareInteger )
 
 	DEFINE_OUTPUT( m_OnEqual, "OnEqual" ),
 	DEFINE_OUTPUT( m_OnNotEqual, "OnNotEqual" ),
@@ -60,12 +59,10 @@ BEGIN_DATADESC( CLogicCompareInteger )
 	DEFINE_KEYFIELD( m_iIntegerValue, FIELD_INTEGER, "IntegerValue" ),
 	DEFINE_KEYFIELD( m_iShouldCompareToValue, FIELD_INTEGER, "ShouldComparetoValue" ),
 
-	DEFINE_FIELD( m_AllIntCompares, FIELD_INPUT ),
-
 	DEFINE_INPUTFUNC( FIELD_INPUT, "InputValue", InputValue ),
 	DEFINE_INPUTFUNC( FIELD_INPUT, "CompareValues", InputCompareValues ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -175,19 +172,17 @@ public:
 	// methods
 	void ResetTimer( void );
 	
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS( logic_timer, CTimerEntity );
 
 
-BEGIN_DATADESC( CTimerEntity )
+BEGIN_MAPENTITY( CTimerEntity )
 
 	// Keys
 	DEFINE_KEYFIELD( m_iDisabled, FIELD_INTEGER, "StartDisabled" ),
 	DEFINE_KEYFIELD( m_flRefireTime, FIELD_FLOAT, "RefireTime" ),
-
-	DEFINE_FIELD( m_bUpDownState, FIELD_BOOLEAN ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "RefireTime", InputRefireTime ),
@@ -209,7 +204,7 @@ BEGIN_DATADESC( CTimerEntity )
 	DEFINE_OUTPUT( m_OnTimerHigh, "OnTimerHigh" ),
 	DEFINE_OUTPUT( m_OnTimerLow, "OnTimerLow" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -479,7 +474,7 @@ public:
 	// outputs
 	COutputVector m_Line;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	string_t m_SourceName;
@@ -490,18 +485,16 @@ private:
 LINK_ENTITY_TO_CLASS( logic_lineto, CLogicLineToEntity );
 
 
-BEGIN_DATADESC( CLogicLineToEntity )
+BEGIN_MAPENTITY( CLogicLineToEntity )
 
 	// Keys
 	// target is handled in the base class, stored in field m_target
 	DEFINE_KEYFIELD( m_SourceName, FIELD_STRING, "source" ),
- 	DEFINE_FIELD( m_StartEntity, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_EndEntity, FIELD_EHANDLE ),
 
 	// Outputs
 	DEFINE_OUTPUT( m_Line, "Line" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -612,13 +605,13 @@ public:
 	// Outputs
 	COutputFloat m_OutValue;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS(math_remap, CMathRemap);
 
 
-BEGIN_DATADESC( CMathRemap )
+BEGIN_MAPENTITY( CMathRemap )
 
 	DEFINE_INPUTFUNC(FIELD_FLOAT, "InValue", InputValue ),
 
@@ -629,12 +622,10 @@ BEGIN_DATADESC( CMathRemap )
 	DEFINE_KEYFIELD(m_flOut1, FIELD_FLOAT, "out1"),
 	DEFINE_KEYFIELD(m_flOut2, FIELD_FLOAT, "out2"),
 
-	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -739,13 +730,13 @@ public:
 	// Outputs
 	COutputColor32 m_OutValue;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS(math_colorblend, CMathColorBlend);
 
 
-BEGIN_DATADESC( CMathColorBlend )
+BEGIN_MAPENTITY( CMathColorBlend )
 
 	DEFINE_INPUTFUNC(FIELD_FLOAT, "InValue", InputValue ),
 
@@ -756,7 +747,7 @@ BEGIN_DATADESC( CMathColorBlend )
 	DEFINE_KEYFIELD(m_OutColor1, FIELD_COLOR32, "colormin"),
 	DEFINE_KEYFIELD(m_OutColor2, FIELD_COLOR32, "colormax"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -869,7 +860,7 @@ public:
 
 	int DrawDebugTextOverlays(void);
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	COutputInt m_outCounter;
 		
@@ -880,10 +871,9 @@ public:
 };
 
 
-BEGIN_DATADESC( CEnvGlobal )
+BEGIN_MAPENTITY( CEnvGlobal )
 
 	DEFINE_KEYFIELD( m_globalstate, FIELD_STRING, "globalstate" ),
-	DEFINE_FIELD( m_triggermode, FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_initialstate, FIELD_INTEGER, "initialstate" ),
 	DEFINE_KEYFIELD( m_counter, FIELD_INTEGER, "counter" ),
 
@@ -899,7 +889,7 @@ BEGIN_DATADESC( CEnvGlobal )
 	
 	DEFINE_OUTPUT( m_outCounter, "Counter" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( env_global, CEnvGlobal );
@@ -915,14 +905,6 @@ void CEnvGlobal::Spawn( void )
 		UTIL_Remove( this );
 		return;
 	}
-
-#ifdef HL2_EPISODIC
-	// if we modify the state of the physics cannon, make sure we precache the ragdoll boogie zap sound
-	if ( ( m_globalstate != NULL_STRING ) && ( stricmp( STRING( m_globalstate ), "super_phys_gun" ) == 0 ) )
-	{
-		PrecacheScriptSound( "RagdollBoogie.Zap" );
-	}
-#endif
 
 	if ( FBitSet( m_spawnflags, SF_GLOBAL_SET ) )
 	{
@@ -1116,7 +1098,7 @@ public:
 	bool IsTriggered( ::CBaseEntity *pActivator );
 	void Register( void );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	EHANDLE		m_rgEntities[MS_MAX_TARGETS];
 	int			m_rgTriggered[MS_MAX_TARGETS];
@@ -1127,22 +1109,14 @@ public:
 	string_t	m_globalstate;
 };
 
-BEGIN_DATADESC( CMultiSource )
-
-	//!!!BUGBUG FIX
-	DEFINE_ARRAY( m_rgEntities, FIELD_EHANDLE, MS_MAX_TARGETS ),
-	DEFINE_ARRAY( m_rgTriggered, FIELD_INTEGER, MS_MAX_TARGETS ),
-	DEFINE_FIELD( m_iTotal, FIELD_INTEGER ),
+BEGIN_MAPENTITY( CMultiSource )
 
 	DEFINE_KEYFIELD( m_globalstate, FIELD_STRING, "globalstate" ),
-
-	// Function pointers
-	DEFINE_FUNCTION( Register ),
 
 	// Outputs
 	DEFINE_OUTPUT(m_OnTrigger, "OnTrigger"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( multisource, CMultiSource );
@@ -1333,16 +1307,13 @@ private:
 	COutputEvent m_OnChangedFromMin;
 	COutputEvent m_OnChangedFromMax;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS(math_counter, CMathCounter);
 
 
-BEGIN_DATADESC( CMathCounter )
-
-	DEFINE_FIELD(m_bHitMax, FIELD_BOOLEAN),
-	DEFINE_FIELD(m_bHitMin, FIELD_BOOLEAN),
+BEGIN_MAPENTITY( CMathCounter )
 
 	// Keys
 	DEFINE_KEYFIELD(m_flMin, FIELD_FLOAT, "min"),
@@ -1371,7 +1342,7 @@ BEGIN_DATADESC( CMathCounter )
 	DEFINE_OUTPUT(m_OnChangedFromMin, "OnChangedFromMin"),
 	DEFINE_OUTPUT(m_OnChangedFromMax, "OnChangedFromMax"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -1710,16 +1681,13 @@ private:
 	COutputEvent m_OnCase[MAX_LOGIC_CASES];		// Fired when the input value matches one of the case values.
 	COutputVariant m_OnDefault;					// Fired when no match was found.
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS(logic_case, CLogicCase);
 
 
-BEGIN_DATADESC( CLogicCase )
-
-// Silence, Classcheck!
-//	DEFINE_ARRAY( m_nCase, FIELD_STRING, MAX_LOGIC_CASES ),
+BEGIN_MAPENTITY( CLogicCase )
 
 	// Keys
 	DEFINE_KEYFIELD(m_nCase[0], FIELD_STRING, "Case01"),
@@ -1739,10 +1707,6 @@ BEGIN_DATADESC( CLogicCase )
 	DEFINE_KEYFIELD(m_nCase[14], FIELD_STRING, "Case15"),
 	DEFINE_KEYFIELD(m_nCase[15], FIELD_STRING, "Case16"),
 	
-	DEFINE_FIELD( m_nShuffleCases, FIELD_INTEGER ),
-	DEFINE_FIELD( m_nLastShuffleCase, FIELD_INTEGER ),
-	DEFINE_ARRAY( m_uchShuffleCaseMap, FIELD_CHARACTER, MAX_LOGIC_CASES ),
-
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_INPUT, "InValue", InputValue),
 	DEFINE_INPUTFUNC(FIELD_VOID, "PickRandom", InputPickRandom),
@@ -1768,7 +1732,7 @@ BEGIN_DATADESC( CLogicCase )
 
 	DEFINE_OUTPUT(m_OnDefault, "OnDefault"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -1949,13 +1913,13 @@ private:
 	COutputFloat m_OnNotEqualTo;		// Fired when the input value is not equal to the compare value.
 	COutputFloat m_OnGreaterThan;		// Fired when the input value is greater than the compare value.
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS(logic_compare, CLogicCompare);
 
 
-BEGIN_DATADESC( CLogicCompare )
+BEGIN_MAPENTITY( CLogicCompare )
 
 	// Keys
 	DEFINE_KEYFIELD(m_flCompareValue, FIELD_FLOAT, "CompareValue"),
@@ -1973,7 +1937,7 @@ BEGIN_DATADESC( CLogicCompare )
 	DEFINE_OUTPUT(m_OnGreaterThan, "OnGreaterThan"),
 	DEFINE_OUTPUT(m_OnLessThan, "OnLessThan"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -2105,18 +2069,16 @@ private:
 	COutputEvent m_OnTrue;				// Fired when the value is true.
 	COutputEvent m_OnFalse;				// Fired when the value is false.
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS(logic_branch, CLogicBranch);
 
 
-BEGIN_DATADESC( CLogicBranch )
+BEGIN_MAPENTITY( CLogicBranch )
 
 	// Keys
 	DEFINE_KEYFIELD(m_bInValue, FIELD_BOOLEAN, "InitialValue"),
-
-	DEFINE_UTLVECTOR( m_Listeners, FIELD_EHANDLE ),
 
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_BOOLEAN, "SetValue", InputSetValue),
@@ -2129,7 +2091,7 @@ BEGIN_DATADESC( CLogicBranch )
 	DEFINE_OUTPUT(m_OnTrue, "OnTrue"),
 	DEFINE_OUTPUT(m_OnFalse, "OnFalse"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -2341,7 +2303,7 @@ public:
 	// If Activate() becomes PostSpawn()
 	//void OnRestore() { Activate(); }
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	string_t		m_nameAttach1;
@@ -2350,16 +2312,15 @@ private:
 	bool			m_succeeded;
 };
 
-BEGIN_DATADESC( CLogicCollisionPair )
+BEGIN_MAPENTITY( CLogicCollisionPair )
 	DEFINE_KEYFIELD( m_nameAttach1, FIELD_STRING, "attach1" ),
 	DEFINE_KEYFIELD( m_nameAttach2, FIELD_STRING, "attach2" ),
 	DEFINE_KEYFIELD( m_disabled, FIELD_BOOLEAN, "startdisabled" ),
-	DEFINE_FIELD( m_succeeded, FIELD_BOOLEAN ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableCollisions", InputDisableCollisions ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableCollisions", InputEnableCollisions ),
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( logic_collision_pair, CLogicCollisionPair );
 
@@ -2402,16 +2363,13 @@ private:
 	COutputEvent m_OnAllFalse;			// Fired when all the registered logic_branches become false.
 	COutputEvent m_OnMixed;				// Fired when one of the registered logic branches changes, but not all are true or false.
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS(logic_branch_listener, CLogicBranchList);
 
 
-BEGIN_DATADESC( CLogicBranchList )
-
-	// Silence, classcheck!
-	//DEFINE_ARRAY( m_nLogicBranchNames, FIELD_STRING, MAX_LOGIC_BRANCH_NAMES ),
+BEGIN_MAPENTITY( CLogicBranchList )
 
 	// Keys
 	DEFINE_KEYFIELD( m_nLogicBranchNames[0], FIELD_STRING, "Branch01" ),
@@ -2430,10 +2388,6 @@ BEGIN_DATADESC( CLogicBranchList )
 	DEFINE_KEYFIELD( m_nLogicBranchNames[13], FIELD_STRING, "Branch14" ),
 	DEFINE_KEYFIELD( m_nLogicBranchNames[14], FIELD_STRING, "Branch15" ),
 	DEFINE_KEYFIELD( m_nLogicBranchNames[15], FIELD_STRING, "Branch16" ),
-	
-	DEFINE_UTLVECTOR( m_LogicBranchList, FIELD_EHANDLE ),
-	
-	DEFINE_FIELD( m_eLastState, FIELD_INTEGER ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_INPUT, "Test", InputTest ),
@@ -2445,7 +2399,7 @@ BEGIN_DATADESC( CLogicBranchList )
 	DEFINE_OUTPUT( m_OnAllFalse, "OnAllFalse" ),
 	DEFINE_OUTPUT( m_OnMixed, "OnMixed" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------

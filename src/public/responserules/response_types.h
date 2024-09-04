@@ -102,8 +102,6 @@ namespace ResponseRules
 #pragma pack(push,1)
 	struct ResponseParams
 	{
-		DECLARE_SIMPLE_DATADESC_INSIDE_NAMESPACE();
-
 		enum
 		{
 			RG_DELAYAFTERSPEAK =	(1<<0),
@@ -287,8 +285,6 @@ namespace ResponseRules
 	class CRR_Response
 	{
 	public:
-		DECLARE_SIMPLE_DATADESC_INSIDE_NAMESPACE();
-
 		CRR_Response();
 		CRR_Response( const CRR_Response &from );
 		CRR_Response &operator=( const CRR_Response &from );
@@ -365,6 +361,7 @@ namespace ResponseRules
 	abstract_class IResponseFilter
 	{
 	public:
+		virtual ~IResponseFilter(){}
 		virtual bool IsValidResponse( ResponseType_t type, const char *pszValue ) = 0;
 	};
 

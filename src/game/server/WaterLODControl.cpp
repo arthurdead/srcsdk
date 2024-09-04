@@ -34,7 +34,7 @@ public:
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	CNetworkVar( float, m_flCheapWaterStartDistance );
@@ -43,7 +43,7 @@ private:
 
 LINK_ENTITY_TO_CLASS(water_lod_control, CWaterLODControl);
 
-BEGIN_DATADESC( CWaterLODControl )
+BEGIN_MAPENTITY( CWaterLODControl )
 
 	DEFINE_KEYFIELD( m_flCheapWaterStartDistance, FIELD_FLOAT, "cheapwaterstartdistance" ),
 	DEFINE_KEYFIELD( m_flCheapWaterEndDistance, FIELD_FLOAT, "cheapwaterenddistance" ),
@@ -52,7 +52,7 @@ BEGIN_DATADESC( CWaterLODControl )
 	DEFINE_INPUT( m_flCheapWaterStartDistance,	FIELD_FLOAT, "SetCheapWaterStartDistance" ),
 	DEFINE_INPUT( m_flCheapWaterEndDistance,	FIELD_FLOAT, "SetCheapWaterEndDistance" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 IMPLEMENT_SERVERCLASS_ST_NOBASE(CWaterLODControl, DT_WaterLODControl)

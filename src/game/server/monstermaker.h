@@ -40,7 +40,7 @@ public:
 
 	COutputEvent	m_OnSpawnNPC;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 abstract_class CBaseNPCMaker : public CBaseEntity
@@ -79,10 +79,17 @@ public:
 
 	virtual bool IsDepleted( void );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	
 	int			m_nMaxNumNPCs;			// max number of NPCs this ent can create
 	float		m_flSpawnFrequency;		// delay (in secs) between spawns 
+
+	enum HullCheckMode_t
+	{
+		HULLCHECK_DEFAULT = 0,
+		HULLCHECK_NONE = 1,
+	};
+	int			m_nHullCheckMode;
 
 	COutputEHANDLE m_OnSpawnNPC;
 	COutputEvent m_OnAllSpawned;
@@ -110,11 +117,10 @@ public:
 
 	virtual void MakeNPC( void );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	
 	string_t m_iszNPCClassname;			// classname of the NPC(s) that will be created.
 	string_t m_SquadName;
-	string_t m_strHintGroup;
 	string_t m_spawnEquipment;
 	string_t m_RelationshipString;		// Used to load up relationship keyvalues
 	string_t m_ChildTargetName;
@@ -134,6 +140,7 @@ public:
 
 	virtual CNPCSpawnDestination *FindSpawnDestination();
 	virtual void MakeNPC( void );
+	CAI_BaseNPC *MakeNPCFromTemplate( void );
 	void MakeNPCInRadius( void );
 	void MakeNPCInLine( void );
 	virtual void MakeMultipleNPCS( int nNPCs );
@@ -153,7 +160,7 @@ protected:
 	
 	float	m_flRadius;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	string_t m_iszTemplateName;		// The name of the NPC that will be used as the template.
 	string_t m_iszTemplateData;		// The keyvalue data blob from the template NPC that will be used to spawn new ones.

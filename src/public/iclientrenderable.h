@@ -27,12 +27,12 @@ class IClientAlphaProperty;
 //-----------------------------------------------------------------------------
 // Handles to a client shadow
 //-----------------------------------------------------------------------------
-typedef unsigned short ClientShadowHandle_t;
-
-enum
+//typedef unsigned short ClientShadowHandle_t;
+enum class ClientShadowHandle_t : unsigned short
 {
-	CLIENTSHADOW_INVALID_HANDLE = (ClientShadowHandle_t)~0
 };
+
+inline const ClientShadowHandle_t CLIENTSHADOW_INVALID_HANDLE = (ClientShadowHandle_t)~0;
 
 //-----------------------------------------------------------------------------
 // What kind of shadows to render?
@@ -112,6 +112,7 @@ public:
 	// Render baby!
 	virtual const model_t*			GetModel( ) const = 0;
 private:
+	friend class CClientShadowMgr;
 	virtual int						DO_NOT_USE_DrawModel( int flags ) = 0;
 public:
 	// Get the body parameter
@@ -219,6 +220,8 @@ public:
 
 	virtual ~IClientRenderableMod() {}
 
+	virtual IClientUnknownMod*	GetIClientUnknownMod() = 0;
+
 	virtual RenderableTranslucencyType_t ComputeTranslucencyType() = 0;
 
 	virtual int					    GetRenderFlags( void ) = 0; // ERENDERFLAGS_xxx
@@ -254,6 +257,8 @@ abstract_class IClientRenderableEx : public IClientRenderable, public IClientRen
 {
 public:
 	virtual IClientRenderableMod*	GetClientRenderableMod() { return this; }
+
+	virtual IClientUnknownMod*	GetIClientUnknownMod() = 0;
 
 private:
 #ifdef _DEBUG

@@ -12,7 +12,6 @@
 #include "engine/IEngineSound.h"
 #include "soundenvelope.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
-#include "saverestore_utlvector.h"
 #include "KeyValues.h"
 #include "studio.h"
 #include "bone_setup.h"
@@ -20,10 +19,6 @@
 #include "animation.h"
 #include "env_player_surface_trigger.h"
 #include "rumble_shared.h"
-
-#ifdef HL2_DLL
-	#include "hl2_player.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -36,83 +31,6 @@ ConVar sv_vehicle_autoaim_scale("sv_vehicle_autoaim_scale", "8");
 bool ShouldVehicleIgnoreEntity( CBaseEntity *pVehicle, CBaseEntity *pCollide );
 
 #define HITBOX_SET	2
-
-//-----------------------------------------------------------------------------
-// Save/load
-//-----------------------------------------------------------------------------
-BEGIN_DATADESC_NO_BASE( vehicle_gear_t )
-
-	DEFINE_FIELD( flMinSpeed,			FIELD_FLOAT ),
-	DEFINE_FIELD( flMaxSpeed,			FIELD_FLOAT ),
-	DEFINE_FIELD( flSpeedApproachFactor,FIELD_FLOAT ),
-
-END_DATADESC()
-
-BEGIN_DATADESC_NO_BASE( vehicle_crashsound_t )
-	DEFINE_FIELD( flMinSpeed,			FIELD_FLOAT ),
-	DEFINE_FIELD( flMinDeltaSpeed,		FIELD_FLOAT ),
-	DEFINE_FIELD( iszCrashSound,		FIELD_STRING ),
-	DEFINE_FIELD( gearLimit,			FIELD_INTEGER ),
-END_DATADESC()
-
-BEGIN_DATADESC_NO_BASE( vehiclesounds_t )
-
-	DEFINE_AUTO_ARRAY( iszSound,		FIELD_STRING ),
-	DEFINE_UTLVECTOR( pGears,			FIELD_EMBEDDED ),
-	DEFINE_UTLVECTOR( crashSounds,		FIELD_EMBEDDED ),
-	DEFINE_AUTO_ARRAY( iszStateSounds,	FIELD_STRING ),
-	DEFINE_AUTO_ARRAY( minStateTime,	FIELD_FLOAT ),
-
-END_DATADESC()
-
-BEGIN_SIMPLE_DATADESC( CPassengerInfo )
-	DEFINE_FIELD( m_hPassenger,		FIELD_EHANDLE ),
-	DEFINE_FIELD( m_strRoleName,	FIELD_STRING ),
-	DEFINE_FIELD( m_strSeatName,	FIELD_STRING ),
-	// NOT SAVED
-	// DEFINE_FIELD( m_nRole,	FIELD_INTEGER ),
-	// DEFINE_FIELD( m_nSeat,	FIELD_INTEGER ),
-END_DATADESC()
-
-BEGIN_SIMPLE_DATADESC( CBaseServerVehicle )
-
-// These are reset every time by the constructor of the owning class 
-//	DEFINE_FIELD( m_pVehicle, FIELD_CLASSPTR ),
-//	DEFINE_FIELD( m_pDrivableVehicle; ??? ),
-
-	// Controls
-	DEFINE_FIELD( m_nNPCButtons,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_nPrevNPCButtons,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_flTurnDegrees,		FIELD_FLOAT ),
-	DEFINE_FIELD( m_flVehicleVolume,	FIELD_FLOAT ),
-
-	// We're going to reparse this data from file in Precache
-	DEFINE_EMBEDDED( m_vehicleSounds ),
-
-	DEFINE_FIELD( m_iSoundGear,			FIELD_INTEGER ),
-	DEFINE_FIELD( m_flSpeedPercentage,	FIELD_FLOAT ),
-	DEFINE_SOUNDPATCH( m_pStateSound ),
-	DEFINE_SOUNDPATCH( m_pStateSoundFade ),
-	DEFINE_FIELD( m_soundState,			FIELD_INTEGER ),
-	DEFINE_FIELD( m_soundStateStartTime, FIELD_TIME ),
-	DEFINE_FIELD( m_lastSpeed, FIELD_FLOAT ),
-	
-// NOT SAVED
-//	DEFINE_FIELD( m_EntryAnimations, CUtlVector ),
-//	DEFINE_FIELD( m_ExitAnimations, CUtlVector ),
-//	DEFINE_FIELD( m_bParsedAnimations,	FIELD_BOOLEAN ),
-//  DEFINE_UTLVECTOR( m_PassengerRoles, FIELD_EMBEDDED ),
-
-	DEFINE_FIELD( m_iCurrentExitAnim,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_vecCurrentExitEndPoint, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_chPreviousTextureType, FIELD_CHARACTER ),
-
-	DEFINE_FIELD( m_savedViewOffset, FIELD_VECTOR ),
-	DEFINE_FIELD( m_hExitBlocker, FIELD_EHANDLE ),
-	
-	DEFINE_UTLVECTOR( m_PassengerInfo, FIELD_EMBEDDED ),
-
-END_DATADESC()
 
 //-----------------------------------------------------------------------------
 // Purpose: Base class for drivable vehicle handling. Contain it in your 

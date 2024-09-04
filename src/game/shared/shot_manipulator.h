@@ -10,7 +10,8 @@
 
 
 #include "mathlib/vector.h"
-
+#include "tier1/convar.h"
+#include "sharedInterface.h"
 
 extern ConVar ai_shot_bias_min;
 extern ConVar ai_shot_bias_max;
@@ -36,6 +37,7 @@ public:
 	}
 
 	const Vector &ApplySpread( const Vector &vecSpread, float bias = 1.0 );
+	const Vector &ApplyAngularSpread( const Vector &vecSpread, float bias = 1.0 );
 
 	const Vector &GetShotDirection()	{ return m_vecShotDirection; }
 	const Vector &GetResult()			{ return m_vecResult; }
@@ -89,5 +91,18 @@ inline const Vector &CShotManipulator::ApplySpread( const Vector &vecSpread, flo
 	return m_vecResult;
 }
 
+inline const Vector &CShotManipulator::ApplyAngularSpread( const Vector &vecSpread, float bias )
+{
+	float x, y, z;
+	x = vecSpread[0] * random->RandomFloat(-0.5f, 0.5f);
+	y = vecSpread[1] * random->RandomFloat(-0.5f, 0.5f);
+	z = vecSpread[2] * random->RandomFloat(-0.5f, 0.5f);
+
+	matrix3x4_t matrix;
+	QAngle qa(x,y,z);
+	AngleMatrix( qa, matrix );
+	VectorTransform(m_vecShotDirection, matrix, m_vecResult);
+	return m_vecResult;
+}
 
 #endif // SHOT_MANIPULATOR_H

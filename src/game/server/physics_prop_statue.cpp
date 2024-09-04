@@ -29,16 +29,6 @@ IMPLEMENT_SERVERCLASS_ST( CStatueProp, DT_StatueProp )
 	SendPropVector( SENDINFO( m_vShatterForce ) ),
 END_SEND_TABLE()
 
-BEGIN_DATADESC( CStatueProp )
-	DEFINE_FIELD( m_hInitBaseAnimating,	FIELD_EHANDLE ),
-	DEFINE_FIELD( m_bShatter,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_nShatterFlags,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_vShatterPosition,	FIELD_VECTOR ),
-	DEFINE_FIELD( m_vShatterForce,		FIELD_VECTOR ),
-
-	DEFINE_THINKFUNC( CollisionPartnerThink ),
-END_DATADESC()
-
 ConVarRef *s_vcollide_wireframe = NULL;
 
 

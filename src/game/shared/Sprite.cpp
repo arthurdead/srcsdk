@@ -32,42 +32,15 @@ LINK_ENTITY_TO_CLASS( env_sprite, CSprite );
 LINK_ENTITY_TO_CLASS( env_sprite_oriented, CSpriteOriented );
 
 #if !defined( CLIENT_DLL )
-BEGIN_DATADESC( CSprite )
-
-	DEFINE_FIELD( m_flLastTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flMaxFrame, FIELD_FLOAT ),
-	DEFINE_FIELD( m_hAttachedToEntity, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_nAttachment, FIELD_INTEGER ),
-	DEFINE_FIELD( m_flDieTime, FIELD_TIME ),
-
-	DEFINE_FIELD( m_nBrightness,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_flBrightnessTime,	FIELD_FLOAT ),
+BEGIN_MAPENTITY( CSprite )
 
 	DEFINE_KEYFIELD( m_flSpriteScale, FIELD_FLOAT, "scale" ),
 	DEFINE_KEYFIELD( m_flSpriteFramerate, FIELD_FLOAT, "framerate" ),
 	DEFINE_KEYFIELD( m_flFrame, FIELD_FLOAT, "frame" ),
-#ifdef PORTAL
-	DEFINE_FIELD( m_bDrawInMainRender, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bDrawInPortalRender, FIELD_BOOLEAN ),
-#endif
+
 	DEFINE_KEYFIELD( m_flHDRColorScale, FIELD_FLOAT, "HDRColorScale" ),
 
 	DEFINE_KEYFIELD( m_flGlowProxySize,	FIELD_FLOAT, "GlowProxySize" ),
-	
-	DEFINE_FIELD( m_flScaleTime,		FIELD_FLOAT ),
-	DEFINE_FIELD( m_flStartScale,		FIELD_FLOAT ),
-	DEFINE_FIELD( m_flDestScale,		FIELD_FLOAT ),
-	DEFINE_FIELD( m_flScaleTimeStart,	FIELD_TIME ),
-	DEFINE_FIELD( m_nStartBrightness,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_nDestBrightness,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_flBrightnessTimeStart, FIELD_TIME ),
-	DEFINE_FIELD( m_bWorldSpaceScale,	FIELD_BOOLEAN ),
-
-	// Function Pointers
-	DEFINE_FUNCTION( AnimateThink ),
-	DEFINE_FUNCTION( ExpandThink ),
-	DEFINE_FUNCTION( AnimateUntilDead ),
-	DEFINE_FUNCTION( BeginFadeOutThink ),
 
 	// Inputs
 	DEFINE_INPUT( m_flSpriteScale, FIELD_FLOAT, "SetScale" ),
@@ -78,7 +51,7 @@ BEGIN_DATADESC( CSprite )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "ColorGreenValue", InputColorGreenValue ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "ColorBlueValue", InputColorBlueValue ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 #else
 
@@ -131,11 +104,8 @@ BEGIN_NETWORK_TABLE( CSprite, DT_Sprite )
 	SendPropInt( SENDINFO(m_nAttachment ), 8 ),
 	SendPropFloat( SENDINFO(m_flScaleTime ), 0,	SPROP_NOSCALE ),
 
-#ifdef HL2_DLL
-	SendPropFloat( SENDINFO(m_flSpriteScale ), 0,	SPROP_NOSCALE),
-#else
 	SendPropFloat( SENDINFO(m_flSpriteScale ), 8,	SPROP_ROUNDUP,	0.0f,	MAX_SPRITE_SCALE),
-#endif
+
 	SendPropFloat( SENDINFO(m_flGlowProxySize ), 6,	SPROP_ROUNDUP,	0.0f,	MAX_GLOW_PROXY_SIZE),
 
 	SendPropFloat( SENDINFO(m_flHDRColorScale ), 0,	SPROP_NOSCALE,	0.0f,	100.0f),
@@ -171,11 +141,10 @@ BEGIN_NETWORK_TABLE( CSprite, DT_Sprite )
 END_NETWORK_TABLE()
 
 
-#if defined( CLIENT_DLL )
-CSprite::CSprite(bool bClientOnly)
-	: CBaseEntity(bClientOnly), C_SpriteRenderer()
-#else
 CSprite::CSprite()
+	: CBaseEntity()
+#if defined( CLIENT_DLL )
+	, C_SpriteRenderer()
 #endif
 {
 	m_flGlowProxySize = 2.0f;
@@ -186,13 +155,6 @@ CSprite::CSprite()
 	m_bDrawInPortalRender = true;
 #endif
 }
-
-#if defined( CLIENT_DLL )
-CSprite::CSprite()
-	: CSprite(false)
-{
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -374,26 +336,6 @@ int CSprite::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 	return FL_EDICT_ALWAYS;
 }
  
-//-----------------------------------------------------------------------------
-// Purpose: Fixup parent after restore
-//-----------------------------------------------------------------------------
-void CSprite::OnRestore()
-{
-	BaseClass::OnRestore();
-
-	// Reset attachment after save/restore
-	if ( GetFollowedEntity() )
-	{
-		SetAttachment( GetFollowedEntity(), m_nAttachment );
-	}
-	else
-	{
-		// Clear attachment
-		m_hAttachedToEntity = NULL;
-		m_nAttachment = 0;
-	}
-}
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *pSpriteName - 

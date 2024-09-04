@@ -11,6 +11,10 @@
 
 #ifndef NAV_ENTITIES_H
 #define NAV_ENTITIES_H
+#pragma once
+
+#include "baseentity.h"
+#include "nav_area.h"
 
 //-----------------------------------------------------------------------------------------------------
 /**
@@ -20,7 +24,7 @@
 class CFuncNavCost : public CBaseEntity
 {
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CFuncNavCost, CBaseEntity );
 
 	virtual void Spawn( void );
@@ -79,7 +83,7 @@ public:
   */
 class CFuncNavBlocker : public CBaseEntity
 {
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CFuncNavBlocker, CBaseEntity );
 
 public:

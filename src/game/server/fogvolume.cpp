@@ -17,7 +17,7 @@ ConVar fog_volume_debug( "fog_volume_debug", "0", 0, "If enabled, prints diagnos
 //--------------------------------------------------------------------------------------------------------
 LINK_ENTITY_TO_CLASS(fog_volume, CFogVolume);
 
-BEGIN_DATADESC( CFogVolume )
+BEGIN_MAPENTITY( CFogVolume )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -27,11 +27,7 @@ BEGIN_DATADESC( CFogVolume )
 	DEFINE_KEYFIELD( m_colorCorrectionName, FIELD_STRING, "ColorCorrectionName" ),
 	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN,	"StartDisabled" ),
 
-	DEFINE_FIELD( m_hFogController, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hPostProcessController, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hColorCorrectionController, FIELD_EHANDLE ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 
 //--------------------------------------------------------------------------------------------------------

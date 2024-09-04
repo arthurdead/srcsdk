@@ -4,7 +4,6 @@
 //
 //=============================================================================
 #include "cbase.h"
-#include "isaverestore.h"
 #include "env_debughistory.h"
 #include "tier0/vprof.h"
 
@@ -24,25 +23,16 @@ class CDebugHistory : public CBaseEntity
 {
 	DECLARE_CLASS( CDebugHistory, CBaseEntity );
 public:
-	DECLARE_DATADESC();
 
 	void	Spawn();
 	void	AddDebugHistoryLine( int iCategory, const char *szLine );
 	void	ClearHistories( void );
 	void	DumpDebugHistory( int iCategory );
 
-	int		Save( ISave &save );
-	int		Restore( IRestore &restore );
-
 private:
 	char m_DebugLines[MAX_HISTORY_CATEGORIES][MAX_DEBUG_HISTORY_LENGTH];
 	char *m_DebugLineEnd[MAX_HISTORY_CATEGORIES];
 };
-
-BEGIN_DATADESC( CDebugHistory )
-	//DEFINE_FIELD( m_DebugLines, FIELD_CHARACTER ),		// Not saved because we write it out manually
-	//DEFINE_FIELD( m_DebugLineEnd, FIELD_CHARACTER ),
-END_DATADESC()
 
 LINK_ENTITY_TO_CLASS( env_debughistory, CDebugHistory );
 
@@ -60,14 +50,7 @@ void CDebugHistory::Spawn()
 #ifdef DISABLE_DEBUG_HISTORY
 	UTIL_Remove( this );
 #else
-	if ( g_pGameRules && g_pGameRules->IsMultiplayer() )
-	{
-		UTIL_Remove( this );
-	}
-	else
-	{
-		Warning( "DEBUG HISTORY IS ENABLED. Disable before release (in env_debughistory.h).\n" );
-	}
+	Warning( "DEBUG HISTORY IS ENABLED. Disable before release (in env_debughistory.h).\n" );
 #endif
 
 	ClearHistories();
@@ -207,58 +190,6 @@ void CDebugHistory::ClearHistories( void )
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-int CDebugHistory::Save( ISave &save )
-{
-	int iVersion = DEBUG_HISTORY_VERSION;
-	save.WriteInt( &iVersion );
-	int iMaxCategorys = MAX_HISTORY_CATEGORIES;
-	save.WriteInt( &iMaxCategorys );
-	for ( int iCategory = 0; iCategory < MAX_HISTORY_CATEGORIES; iCategory++ )
-	{
-		int iEnd = m_DebugLineEnd[iCategory] - m_DebugLines[iCategory];
-		save.WriteInt( &iEnd );
-		save.WriteData( m_DebugLines[iCategory], MAX_DEBUG_HISTORY_LENGTH );
-	}
-
-	return BaseClass::Save(save);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-int CDebugHistory::Restore( IRestore &restore )
-{
-	ClearHistories();
-
-	int iVersion = restore.ReadInt();
-
-	if ( iVersion >= DEBUG_HISTORY_FIRST_VERSIONED )
-	{
-		int iMaxCategorys = restore.ReadInt();
-		for ( int iCategory = 0; iCategory < MIN(iMaxCategorys,MAX_HISTORY_CATEGORIES); iCategory++ )
-		{
-			int iEnd = restore.ReadInt();
-			m_DebugLineEnd[iCategory] = m_DebugLines[iCategory] + iEnd;
-			restore.ReadData( m_DebugLines[iCategory], sizeof(m_DebugLines[iCategory]), 0 );
-		}
-	}
-	else
-	{
-		int iMaxCategorys = iVersion;
-		for ( int iCategory = 0; iCategory < MIN(iMaxCategorys,MAX_HISTORY_CATEGORIES); iCategory++ )
-		{
-			int iEnd = restore.ReadInt();
-			m_DebugLineEnd[iCategory] = m_DebugLines[iCategory] + iEnd;
-			restore.ReadData( m_DebugLines[iCategory], sizeof(m_DebugLines[iCategory]), 0 );
-		}
-	}
-
-	return BaseClass::Restore(restore);
-}
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Singleton debug history.  Created by first usage.
@@ -267,11 +198,7 @@ CDebugHistory *GetDebugHistory()
 {
 #ifdef DISABLE_DEBUG_HISTORY
 	return NULL;
-#endif
-
-	if ( g_pGameRules && g_pGameRules->IsMultiplayer() )
-		return NULL;
-
+#else
 	if ( s_DebugHistory == NULL )
 	{
 		CBaseEntity *pEnt = gEntList.FindEntityByClassname( NULL, "env_debughistory" );
@@ -291,6 +218,16 @@ CDebugHistory *GetDebugHistory()
 
 	Assert( s_DebugHistory );
 	return s_DebugHistory;
+#endif
+}
+
+void ClearDebugHistory()
+{
+	if(s_DebugHistory.Get()) {
+		UTIL_Remove(s_DebugHistory.Get());
+	}
+
+	s_DebugHistory = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -301,9 +238,6 @@ void AddDebugHistoryLine( int iCategory, const char *pszLine )
 #ifdef DISABLE_DEBUG_HISTORY
 	return;
 #else
-	if ( g_pGameRules && g_pGameRules->IsMultiplayer() )
-		return;
-
 	if ( !GetDebugHistory() )
 	{
 		Warning("Failed to find or create an env_debughistory.\n" );

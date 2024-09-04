@@ -1,5 +1,7 @@
 project('vaudio_minimp3', 'cpp')
 
+assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+
 src_root_dir = get_option('src_root_dir')
 game_dir = get_option('game_dir')
 
@@ -25,7 +27,7 @@ vaudio_minimp3_lib = shared_library('vaudio_minimp3',name_prefix:'',
 	dependencies: [
 		tier1.get_variable('tier1_dep'),
 		tier0.get_variable('tier0_dep'),
-		source_base.get_variable('source_linux_shared_lib_dep')
+		source_base.get_variable('source_os_shared_lib_dep')
 	],
 	install: true,
 	install_dir: join_paths(game_dir,'bin')

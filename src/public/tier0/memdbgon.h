@@ -69,6 +69,11 @@
 
 #include "tier0/memdbgoff.h"
 
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL nullptr
+
 // --------------------------------------------------------
 // Debug/non-debug agnostic elements
 
@@ -244,5 +249,10 @@ inline wchar_t *MemAlloc_WcStrDup(const wchar_t *pString)
 
 // Needed for MEM_ALLOC_CREDIT(), MemAlloc_Alloc(), etc.
 #include "memalloc.h"
+
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL nullptr
 
 #endif // !STEAM && !NO_MALLOC_OVERRIDE

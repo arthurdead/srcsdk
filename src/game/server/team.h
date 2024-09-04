@@ -11,6 +11,7 @@
 
 #include "shareddefs.h"
 #include "utlvector.h"
+#include "baseentity.h"
 
 class CBasePlayer;
 class CTeamSpawnPoint;
@@ -95,5 +96,6 @@ public:
 extern CUtlVector< CTeam * > g_Teams;
 extern CTeam *GetGlobalTeam( int iIndex );
 extern int GetNumberOfTeams( void );
+extern const char* GetTeamName( int iTeam );
 
 #endif // TEAM_H

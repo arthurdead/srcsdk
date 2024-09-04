@@ -18,7 +18,7 @@ class CFunc_Dust : public CBaseEntity
 public:
 	DECLARE_CLASS( CFunc_Dust, CBaseEntity );
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 					CFunc_Dust();
 	virtual 		~CFunc_Dust();
@@ -83,7 +83,7 @@ public:
 };
 
 IMPLEMENT_SERVERCLASS_ST_NOBASE( CFunc_Dust, DT_Func_Dust )
-	SendPropInt( SENDINFO(m_Color),	32, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO(m_Color),	32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
 	SendPropInt( SENDINFO(m_SpawnRate),	12, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_SpeedMax),	12, SPROP_UNSIGNED ),
 	SendPropFloat( SENDINFO(m_flSizeMin), 0, SPROP_NOSCALE ),
@@ -99,9 +99,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CFunc_Dust, DT_Func_Dust )
 END_SEND_TABLE()
 
 
-BEGIN_DATADESC( CFunc_Dust )
-
-	DEFINE_FIELD( m_DustFlags,FIELD_INTEGER ),
+BEGIN_MAPENTITY( CFunc_Dust )
 
 	DEFINE_KEYFIELD( m_Color,		FIELD_COLOR32,	"Color" ),
 	DEFINE_KEYFIELD( m_SpawnRate,	FIELD_INTEGER,	"SpawnRate" ),
@@ -111,14 +109,14 @@ BEGIN_DATADESC( CFunc_Dust )
 	DEFINE_KEYFIELD( m_LifetimeMin,	FIELD_INTEGER,	"LifetimeMin" ),
 	DEFINE_KEYFIELD( m_LifetimeMax,	FIELD_INTEGER,	"LifetimeMax" ),
 	DEFINE_KEYFIELD( m_DistMax,		FIELD_INTEGER,	"DistMax" ),
-	DEFINE_FIELD( m_iAlpha,			FIELD_INTEGER ),
+
 	DEFINE_KEYFIELD( m_FallSpeed,	FIELD_FLOAT,	"FallSpeed" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn",  InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff )
 
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( func_dustmotes, CFunc_DustMotes );
 LINK_ENTITY_TO_CLASS( func_dustcloud, CFunc_DustCloud );
@@ -293,7 +291,7 @@ class CEnvDustPuff : public CPointEntity
 
 public:
 	
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 protected:
 
@@ -306,7 +304,7 @@ protected:
 
 LINK_ENTITY_TO_CLASS( env_dustpuff, CEnvDustPuff );
 
-BEGIN_DATADESC( CEnvDustPuff )
+BEGIN_MAPENTITY( CEnvDustPuff )
 
 	DEFINE_KEYFIELD( m_flScale, FIELD_FLOAT, "scale" ),
 	DEFINE_KEYFIELD( m_rgbaColor, FIELD_COLOR32, "color" ),
@@ -314,7 +312,7 @@ BEGIN_DATADESC( CEnvDustPuff )
 	// Function Pointers
 	DEFINE_INPUTFUNC( FIELD_VOID, "SpawnDust", InputSpawnDust ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------

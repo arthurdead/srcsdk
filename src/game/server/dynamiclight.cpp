@@ -27,7 +27,7 @@ public:
 	bool KeyValue( const char *szKeyName, const char *szValue );
 
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	// Turn on and off the light
 	void InputTurnOn( inputdata_t &inputdata );
@@ -48,13 +48,7 @@ public:
 
 LINK_ENTITY_TO_CLASS(light_dynamic, CDynamicLight);
 
-BEGIN_DATADESC( CDynamicLight )
-
-	DEFINE_FIELD( m_ActualFlags, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_Flags, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_On, FIELD_BOOLEAN ),
-
-	DEFINE_THINKFUNC( DynamicLightThink ),
+BEGIN_MAPENTITY( CDynamicLight )
 
 	// Inputs
 	DEFINE_INPUT( m_Radius,		FIELD_FLOAT,	"distance" ),
@@ -69,7 +63,7 @@ BEGIN_DATADESC( CDynamicLight )
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 IMPLEMENT_SERVERCLASS_ST(CDynamicLight, DT_DynamicLight)

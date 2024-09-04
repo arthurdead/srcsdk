@@ -7,7 +7,6 @@
 #include "cbase.h"
 
 #include "gameweaponmanager.h"
-#include "saverestore_utlvector.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -23,7 +22,7 @@ static CUtlVector<CGameWeaponManager *> g_Managers;
 class CGameWeaponManager : public CBaseEntity
 {
 	DECLARE_CLASS( CGameWeaponManager, CBaseEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 public:
 	void Spawn();
@@ -52,22 +51,17 @@ public:
 
 };
 
-BEGIN_DATADESC( CGameWeaponManager )
+BEGIN_MAPENTITY( CGameWeaponManager )
 
 //fields	
 	DEFINE_KEYFIELD( m_iszWeaponName, FIELD_STRING, "weaponname" ),
 	DEFINE_KEYFIELD( m_iMaxPieces, FIELD_INTEGER, "maxpieces" ),
 	DEFINE_KEYFIELD( m_flAmmoMod, FIELD_FLOAT, "ammomod" ),
-	DEFINE_FIELD( m_bExpectingWeapon, FIELD_BOOLEAN ),
-// funcs
-	DEFINE_FUNCTION( Think ),
-// inputs
+
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMaxPieces", InputSetMaxPieces ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAmmoModifier", InputSetAmmoModifier ),
 
-	DEFINE_UTLVECTOR( m_ManagedNonWeapons, FIELD_EHANDLE ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( game_weapon_manager, CGameWeaponManager );
 

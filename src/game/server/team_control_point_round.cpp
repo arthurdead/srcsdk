@@ -10,18 +10,13 @@
 #include "teamplayroundbased_gamerules.h"
 #include "team_control_point_round.h"
 
-#if defined ( TF_DLL )
-#include "tf_gamerules.h"
-#endif
-
-BEGIN_DATADESC( CTeamControlPointRound )
+BEGIN_MAPENTITY( CTeamControlPointRound )
 	DEFINE_KEYFIELD( m_bDisabled,			FIELD_BOOLEAN,	"StartDisabled" ),
 
 	DEFINE_KEYFIELD( m_iszCPNames,			FIELD_STRING,	"cpr_cp_names" ),
 	DEFINE_KEYFIELD( m_nPriority,			FIELD_INTEGER,	"cpr_priority" ),
 	DEFINE_KEYFIELD( m_iInvalidCapWinner,	FIELD_INTEGER,	"cpr_restrict_team_cap_win" ),
 	DEFINE_KEYFIELD( m_iszPrintName,		FIELD_STRING,	"cpr_printname" ),
-//	DEFINE_FIELD( m_ControlPoints, CUtlVector < CHandle < CTeamControlPoint > > ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -32,7 +27,7 @@ BEGIN_DATADESC( CTeamControlPointRound )
 	DEFINE_OUTPUT( m_OnEnd,			"OnEnd" ),
 	DEFINE_OUTPUT( m_OnWonByTeam1,	"OnWonByTeam1" ),
 	DEFINE_OUTPUT( m_OnWonByTeam2,	"OnWonByTeam2" ),
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( team_control_point_round, CTeamControlPointRound );
 

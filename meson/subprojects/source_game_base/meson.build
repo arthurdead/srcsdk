@@ -1,4 +1,6 @@
-project('source_game')
+project('source_game','cpp')
+
+assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 
 src_root_dir = get_option('src_root_dir')
 
@@ -20,6 +22,7 @@ vtf = subproject('vtf')
 matsys_controls = subproject('matsys_controls')
 bitmap = subproject('bitmap')
 shaderlib = subproject('shaderlib')
+hackmgr = subproject('hackmgr')
 
 public_dir = join_paths(src_root_dir,'public')
 common_dir = join_paths(src_root_dir,'common')
@@ -44,6 +47,7 @@ source_game_shared_dep = declare_dependency(
 		#join_paths(shared_src_dir,'default','weapon_parse_default.cpp'),
 		join_paths(shared_src_dir,'default','gamemovement_default.cpp'),
 		join_paths(shared_src_dir,'default','movedata_default.cpp'),
+		join_paths(shared_src_dir,'default','usermessages_default.cpp'),
 
 		join_paths(shared_src_dir,'achievementmgr.cpp'),
 		join_paths(shared_src_dir,'activitylist.cpp'),
@@ -82,7 +86,6 @@ source_game_shared_dep = declare_dependency(
 		join_paths(shared_src_dir,'igamesystem.cpp'),
 		join_paths(shared_src_dir,'mapentities_shared.cpp'),
 		join_paths(shared_src_dir,'movevars_shared.cpp'),
-		join_paths(shared_src_dir,'multiplay_gamerules.cpp'),
 		join_paths(shared_src_dir,'obstacle_pushaway.cpp'),
 		join_paths(shared_src_dir,'particle_parse.cpp'),
 		join_paths(shared_src_dir,'particlesystemquery.cpp'),
@@ -116,11 +119,12 @@ source_game_shared_dep = declare_dependency(
 		join_paths(shared_src_dir,'SpriteTrail.cpp'),
 		join_paths(shared_src_dir,'predictioncopy.cpp'),
 		join_paths(shared_src_dir,'teamplayroundbased_gamerules.cpp'),
-		join_paths(shared_src_dir,'predicted_viewmodel.cpp'),
 		join_paths(shared_src_dir,'teamplay_round_timer.cpp'),
 		join_paths(shared_src_dir,'script_intro_shared.cpp'),
-		join_paths(shared_src_dir,'Multiplayer','multiplayer_animstate.cpp'),
+		join_paths(shared_src_dir,'playeranimstate.cpp'),
 		join_paths(shared_src_dir,'ai_criteria.cpp'),
+		join_paths(shared_src_dir,'ai_responsesystem.cpp'),
+		join_paths(shared_src_dir,'ai_speechconcept.cpp'),
 		join_paths(public_dir,'SoundParametersInternal.cpp'),
 		join_paths(public_dir,'bone_setup.cpp'),
 		join_paths(public_dir,'bone_accessor.cpp'),
@@ -158,11 +162,10 @@ source_game_shared_dep = declare_dependency(
 	),
 	include_directories: include_directories(
 		shared_src_dir,
-		join_paths(shared_src_dir,'Multiplayer')
 	),
 	dependencies: [
 		source_base.get_variable('source_slop_dep'),
-		source_base.get_variable('source_linux_shared_lib_dep'),
+		source_base.get_variable('source_os_shared_lib_dep'),
 		tier0.get_variable('tier0_dep'),
 		tier1.get_variable('tier1_dep'),
 		mathlib.get_variable('mathlib_dep'),
@@ -174,11 +177,12 @@ source_game_shared_dep = declare_dependency(
 		particles.get_variable('particles_dep'),
 		tier2.get_variable('tier2_dep'),
 		tier3.get_variable('tier3_dep'),
-		steamworks.get_variable('steamworks_dep')
+		steamworks.get_variable('steamworks_dep'),
+		hackmgr.get_variable('hackmgr_dep'),
 	]
 )
 
-source_linux_base_server_lib_dep = declare_dependency(
+source_os_base_server_lib_dep = declare_dependency(
 	compile_args: [
 		'-DGAME_DLL',
 		'-DSERVER_DLL',
@@ -206,7 +210,6 @@ source_linux_base_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_blended_movement.cpp'),
 		join_paths(server_src_dir,'ai_concommands.cpp'),
 		join_paths(server_src_dir,'ai_condition.cpp'),
-		join_paths(server_src_dir,'AI_Criteria.cpp'),
 		join_paths(server_src_dir,'ai_default.cpp'),
 		join_paths(server_src_dir,'ai_event.cpp'),
 		join_paths(server_src_dir,'ai_goalentity.cpp'),
@@ -224,7 +227,6 @@ source_linux_base_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_pathfinder.cpp'),
 		join_paths(server_src_dir,'ai_planesolver.cpp'),
 		join_paths(server_src_dir,'ai_playerally.cpp'),
-		join_paths(server_src_dir,'AI_ResponseSystem.cpp'),
 		join_paths(server_src_dir,'ai_route.cpp'),
 		join_paths(server_src_dir,'ai_schedule.cpp'),
 		join_paths(server_src_dir,'ai_scriptconditions.cpp'),
@@ -260,7 +262,6 @@ source_linux_base_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'basecombatweapon.cpp'),
 		join_paths(server_src_dir,'baseentity.cpp'),
 		join_paths(server_src_dir,'baseflex.cpp'),
-		join_paths(server_src_dir,'basemultiplayerplayer.cpp'),
 		join_paths(server_src_dir,'baseviewmodel.cpp'),
 		join_paths(server_src_dir,'bitstring.cpp'),
 		join_paths(server_src_dir,'bmodels.cpp'),
@@ -282,7 +283,6 @@ source_linux_base_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'EntityFlame.cpp'),
 		join_paths(server_src_dir,'entitylist.cpp'),
 		join_paths(server_src_dir,'EntityParticleTrail.cpp'),
-		join_paths(server_src_dir,'env_debughistory.cpp'),
 		join_paths(server_src_dir,'env_effectsscript.cpp'),
 		join_paths(server_src_dir,'env_entity_maker.cpp'),
 		join_paths(server_src_dir,'env_particlescript.cpp'),
@@ -400,7 +400,6 @@ source_linux_base_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'soundscape.cpp'),
 		join_paths(server_src_dir,'soundscape_system.cpp'),
 		join_paths(server_src_dir,'spotlightend.cpp'),
-		join_paths(server_src_dir,'sprite_perfmonitor.cpp'),
 		join_paths(server_src_dir,'subs.cpp'),
 		join_paths(server_src_dir,'sun.cpp'),
 		join_paths(server_src_dir,'tactical_mission.cpp'),
@@ -430,7 +429,6 @@ source_linux_base_server_lib_dep = declare_dependency(
 		join_paths(server_src_dir,'entity_tools_server.cpp'),
 		join_paths(server_src_dir,'toolframework_server.cpp'),
 		join_paths(server_src_dir,'basetempentity.cpp'),
-		join_paths(server_src_dir,'event_tempentity_tester.cpp'),
 		join_paths(server_src_dir,'movie_explosion.cpp'),
 		join_paths(server_src_dir,'particle_fire.cpp'),
 		join_paths(server_src_dir,'particle_smokegrenade.cpp'),
@@ -507,27 +505,31 @@ source_linux_base_server_lib_dep = declare_dependency(
 	]
 )
 
-source_linux_server_lib_dep = declare_dependency(
+source_os_server_lib_dep = declare_dependency(
 	compile_args: [
 		'-DDLLNAME=server',
 	],
 	dependencies: [
-		source_linux_base_server_lib_dep
+		source_os_base_server_lib_dep,
+		vgui_controls.get_variable('vgui_controls_dep'),
+		matsys_controls.get_variable('matsys_controls_dep'),
+		vtf.get_variable('vtf_dep'),
+		bitmap.get_variable('bitmap_dep')
 	]
 )
 
-source_linux_dedicated_server_lib_dep = declare_dependency(
+source_os_dedicated_server_lib_dep = declare_dependency(
 	compile_args: [
 		'-DDLLNAME=server_srv',
 		'-DDEDICATED',
 		'-DSWDS'
 	],
 	dependencies: [
-		source_linux_base_server_lib_dep
+		source_os_base_server_lib_dep
 	]
 )
 
-source_linux_client_lib_dep = declare_dependency(
+source_os_client_lib_dep = declare_dependency(
 	compile_args: [
 		'-DDLLNAME=client',
 		'-DCLIENT_DLL',
@@ -537,6 +539,10 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'default','clientmode_default.cpp'),
 		join_paths(client_src_dir,'default','prediction_default.cpp'),
 		join_paths(client_src_dir,'default','input_default.cpp'),
+		join_paths(client_src_dir,'default','viewrender_default.cpp'),
+		join_paths(client_src_dir,'default','disconnect_default.cpp'),
+		join_paths(client_src_dir,'default','modemanager_default.cpp'),
+		join_paths(client_src_dir,'default','vgui_int_default.cpp'),
 
 		join_paths(client_src_dir,'C_Func_Monitor.cpp'),
 		join_paths(client_src_dir,'history_resource.cpp'),
@@ -582,6 +588,7 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'c_func_conveyor.cpp'),
 		join_paths(client_src_dir,'c_func_dust.cpp'),
 		join_paths(client_src_dir,'c_func_lod.cpp'),
+		join_paths(client_src_dir,'c_func_brush.cpp'),
 		join_paths(client_src_dir,'c_func_occluder.cpp'),
 		join_paths(client_src_dir,'c_func_reflective_glass.cpp'),
 		join_paths(client_src_dir,'c_func_rotating.cpp'),
@@ -633,7 +640,7 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'clientalphaproperty.cpp'),
 		join_paths(client_src_dir,'clientleafsystem.cpp'),
 		join_paths(client_src_dir,'clientmode_shared.cpp'),
-		#join_paths(client_src_dir,'clientshadowmgr.cpp'),
+		join_paths(client_src_dir,'clientshadowmgr.cpp'),
 		join_paths(client_src_dir,'clientsideeffects.cpp'),
 		join_paths(client_src_dir,'clientsideeffects_test.cpp'),
 		join_paths(client_src_dir,'clientsteamcontext.cpp'),
@@ -744,7 +751,7 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'ViewConeImage.cpp'),
 		join_paths(client_src_dir,'viewdebug.cpp'),
 		join_paths(client_src_dir,'viewpostprocess.cpp'),
-		#join_paths(client_src_dir,'viewrender.cpp'),
+		join_paths(client_src_dir,'viewrender.cpp'),
 		join_paths(client_src_dir,'warp_overlay.cpp'),
 		join_paths(client_src_dir,'WaterLODMaterialProxy.cpp'),
 		join_paths(client_src_dir,'weapon_selection.cpp'),
@@ -811,6 +818,7 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_src_dir,'c_te_sprite.cpp'),
 		join_paths(client_src_dir,'c_te_spritespray.cpp'),
 		join_paths(client_src_dir,'c_te_worlddecal.cpp'),
+		join_paths(client_src_dir,'c_te_concussiveexplosion.cpp'),
 		join_paths(client_src_dir,'c_tracer.cpp'),
 		join_paths(client_src_dir,'fx.cpp'),
 		join_paths(client_src_dir,'fx_discreetline.cpp'),
@@ -842,7 +850,6 @@ source_linux_client_lib_dep = declare_dependency(
 		join_paths(client_game_ctrls_src_dir,'teammenu.cpp'),
 		join_paths(client_game_ctrls_src_dir,'vguitextwindow.cpp'),
 		join_paths(client_game_ctrls_src_dir,'IconPanel.cpp'),
-		join_paths(game_ctrls_src_dir,'FloatSlider.cpp'),
 		join_paths(shared_src_dir,'voice_status.cpp'),
 		join_paths(shared_src_dir,'voice_banmgr.cpp'),
 		join_paths(shared_src_dir,'cam_thirdperson.cpp'),
@@ -863,7 +870,7 @@ source_linux_client_lib_dep = declare_dependency(
 	]
 )
 
-source_linux_game_shader_lib_dep = declare_dependency(
+source_os_game_shader_lib_dep = declare_dependency(
 	compile_args: [
 		'-DDLLNAME=game_shader_dx9',
 		'-DSTDSHADER_DX9_DLL_EXPORT',
@@ -877,11 +884,12 @@ source_linux_game_shader_lib_dep = declare_dependency(
 		stdshaders_src_dir
 	),
 	dependencies: [
-		source_base.get_variable('source_linux_shared_lib_dep'),
+		source_base.get_variable('source_os_shared_lib_dep'),
 		tier0.get_variable('tier0_dep'),
 		tier1.get_variable('tier1_dep'),
 		mathlib.get_variable('mathlib_dep'),
 		vstdlib.get_variable('vstdlib_dep'),
-		shaderlib.get_variable('shaderlib_dep')
+		shaderlib.get_variable('shaderlib_dep'),
+		hackmgr.get_variable('hackmgr_dep'),
 	]
 )

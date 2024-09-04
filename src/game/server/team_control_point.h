@@ -8,7 +8,8 @@
 #define TEAM_CONTROL_POINT_H
 #pragma once
 
-#include "basemultiplayerplayer.h"
+#include "baseanimating.h"
+#include "soundenvelope.h"
 
 // Spawnflags
 #define SF_CAP_POINT_HIDEFLAG		(1<<0)
@@ -24,7 +25,7 @@ class CTeamControlPoint : public CBaseAnimating
 {
 	DECLARE_CLASS( CTeamControlPoint, CBaseAnimating );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CTeamControlPoint();
 
@@ -80,7 +81,7 @@ public:
 
 	void		SetCappersRequiredForTeam( int iGameTeam, int iCappers );
 
-	void		CaptureBlocked( CBaseMultiplayerPlayer *pPlayer, CBaseMultiplayerPlayer *pVictim );
+	void		CaptureBlocked( CBasePlayer *pPlayer, CBasePlayer *pVictim );
 
 	int			PointValue( void );
 
@@ -92,10 +93,10 @@ public:
 	float		GetTeamCapPercentage( int iTeam );
 
 	// The specified player took part in capping this point.
-	virtual void PlayerCapped( CBaseMultiplayerPlayer *pPlayer );
+	virtual void PlayerCapped( CBasePlayer *pPlayer );
 
 	// The specified player blocked the enemy team from capping this point.
-	virtual void PlayerBlocked( CBaseMultiplayerPlayer *pPlayer );
+	virtual void PlayerBlocked( CBasePlayer *pPlayer );
 
 	void		CaptureEnd( void );
 	void		CaptureStart( int iCapTeam, int iNumCappingPlayers, int *pCappingPlayers );

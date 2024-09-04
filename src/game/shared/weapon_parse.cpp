@@ -34,7 +34,8 @@ const char *pWeaponSoundCategories[ NUM_SHOOT_SOUND_TYPES ] =
 	"special2",
 	"special3",
 	"taunt",
-	"deploy"
+	"deploy",
+	"fastreload"
 };
 #else
 extern const char *pWeaponSoundCategories[ NUM_SHOOT_SOUND_TYPES ];
@@ -166,6 +167,7 @@ void PrecacheFileWeaponInfoDatabase( IFileSystem *filesystem, const unsigned cha
 		return;
 
 	KeyValues *manifest = new KeyValues( "weaponscripts" );
+	manifest->UsesEscapeSequences( true );
 	if ( manifest->LoadFromFile( filesystem, "scripts/weapon_manifest.txt", "GAME" ) )
 	{
 		for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL ; sub = sub->GetNextKey() )
@@ -207,6 +209,7 @@ KeyValues* ReadEncryptedKVFile( IFileSystem *filesystem, const char *szFilenameW
 
 	// Open the weapon data file, and abort if we can't
 	KeyValues *pKV = new KeyValues( "WeaponDatafile" );
+	pKV->UsesEscapeSequences( true );
 
 	Q_snprintf(szFullName,sizeof(szFullName), "%s.txt", szFilenameWithoutExtension);
 
@@ -326,6 +329,7 @@ FileWeaponInfo_t::FileWeaponInfo_t()
 	iFlags = 0;
 	szAmmo1[0] = 0;
 	szAmmo2[0] = 0;
+	szAIAddOn[0] = 0;
 	memset( aShootSounds, 0, sizeof( aShootSounds ) );
 	iAmmoType = 0;
 	iAmmo2Type = 0;
@@ -422,6 +426,13 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	else
 		Q_strncpy( szAmmo1, pAmmo, sizeof( szAmmo1 )  );
 	iAmmoType = GetAmmoDef()->Index( szAmmo1 );
+
+	// AI AddOn
+	const char *pAIAddOn = pKeyValuesData->GetString( "ai_addon", "ai_addon_basecombatweapon" );
+	if ( strcmp("None", pAIAddOn) == 0)
+		Q_strncpy( szAIAddOn, "", sizeof( szAIAddOn ) );
+	else
+		Q_strncpy( szAIAddOn, pAIAddOn, sizeof( szAIAddOn )  );
 	
 	// Secondary ammo used
 	pAmmo = pKeyValuesData->GetString( "secondary_ammo", "None" );

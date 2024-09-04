@@ -20,6 +20,7 @@ enum Navigation_t
 	NAV_JUMP,		// jump/leap
 	NAV_FLY,		// can fly, move all around
 	NAV_CLIMB,		// climb ladders
+	NAV_CRAWL,		// crawl
 };
 
 

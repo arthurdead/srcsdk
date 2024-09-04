@@ -17,6 +17,7 @@
 #include "ispatialpartition.h"
 #include "collisionutils.h"
 #include "tier0/vprof.h"
+#include "nav_mesh.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -175,6 +176,7 @@ protected:
 	float	m_flDamageTime;
 	float	m_lastDamage;
 	float	m_flFireSize;	// size of the fire in world units
+	float	m_flLastNavUpdateTime;	// last time we told the nav mesh about ourselves
 
 	float	m_flHeatLevel;	// Used as a "health" for the fire.  > 0 means the fire is burning
 	float	m_flHeatAbsorb;	// This much heat must be "absorbed" before it gets transferred to the flame size
@@ -194,7 +196,7 @@ protected:
 	COutputEvent	m_OnIgnited;
 	COutputEvent	m_OnExtinguished;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 class CFireSphere : public IPartitionEnumerator
@@ -528,32 +530,17 @@ bool FireSystem_GetFireDamageDimensions( CBaseEntity *pEntity, Vector *pFireMins
 //==================================================
 // CFire
 //==================================================
-BEGIN_DATADESC( CFire )
+BEGIN_MAPENTITY( CFire )
 
-	DEFINE_FIELD( m_hEffect, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hOwner, FIELD_EHANDLE ),
 	DEFINE_KEYFIELD( m_nFireType,	FIELD_INTEGER, "firetype" ),
 
-	DEFINE_FIELD( m_flFuel, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flDamageTime, FIELD_TIME ),
-	DEFINE_FIELD( m_lastDamage, FIELD_TIME ),
 	DEFINE_KEYFIELD( m_flFireSize,	FIELD_FLOAT, "firesize" ),
 
 	DEFINE_KEYFIELD( m_flHeatLevel,	FIELD_FLOAT,	"ignitionpoint" ),
- 	DEFINE_FIELD( m_flHeatAbsorb, FIELD_FLOAT ),
  	DEFINE_KEYFIELD( m_flDamageScale,FIELD_FLOAT,	"damagescale" ),
 
-	DEFINE_FIELD( m_flMaxHeat, FIELD_FLOAT ),
-	//DEFINE_FIELD( m_flLastHeatLevel,	FIELD_FLOAT  ),
-
 	DEFINE_KEYFIELD( m_flAttackTime, FIELD_FLOAT, "fireattack" ),
-	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
 	DEFINE_KEYFIELD( m_bStartDisabled, FIELD_BOOLEAN, "StartDisabled" ),
-	DEFINE_FIELD( m_bDidActivate, FIELD_BOOLEAN ),
-
-	DEFINE_FUNCTION( BurnThink ),
-	DEFINE_FUNCTION( GoOutThink ),
-
 
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartFire", InputStartFire ),
@@ -566,7 +553,7 @@ BEGIN_DATADESC( CFire )
 	DEFINE_OUTPUT( m_OnIgnited, "OnIgnited" ),
 	DEFINE_OUTPUT( m_OnExtinguished, "OnExtinguished" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( env_fire, CFire );
 
@@ -867,6 +854,7 @@ void CFire::Start()
 	SpawnEffect( (fireType_e)m_nFireType, FIRE_SCALE_FROM_SIZE(m_flFireSize) );
 	m_OnIgnited.FireOutput( this, this );
 	SetThink( &CFire::BurnThink );
+	m_flLastNavUpdateTime = 0.0f;
 	m_flDamageTime = 0;
 	// think right now
 	BurnThink();
@@ -1012,7 +1000,7 @@ void CFire::Update( float simTime )
 		{
 			bool bDoDamage;
 
-			if ( FIRE_SPREAD_DAMAGE_MULTIPLIER != 1.0 && !pOther->IsPlayer() ) // if set to 1.0, optimizer will remove this code
+			if ( FIRE_SPREAD_DAMAGE_MULTIPLIER != 1.0 || ( pOther->CollisionProp()->GetSurroundingBoundsType() == USE_ROTATION_EXPANDED_SEQUENCE_BOUNDS ) ) // if set to 1.0, optimizer will remove this code
 			{
 				Vector otherMins, otherMaxs;
 				pOther->CollisionProp()->WorldSpaceAABB( &otherMins, &otherMaxs );
@@ -1068,6 +1056,34 @@ void CFire::BurnThink( void )
 	SetNextThink( gpGlobals->curtime + FIRE_THINK_INTERVAL );
 
 	Update( FIRE_THINK_INTERVAL );
+
+	// only need to update the nav mesh infrequently
+	const float NavUpdateDelta = 5.0f;
+	if ( gpGlobals->curtime > m_flLastNavUpdateTime + NavUpdateDelta )
+	{
+		m_flLastNavUpdateTime = gpGlobals->curtime;
+
+		// mark overlapping nav areas as "damaging"
+		NavAreaCollector overlap;
+		Extent extent;
+		CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
+		extent.lo.z -= HumanHeight;
+
+		// bloat extents enough to ensure any non-damaging area is actually safe
+		// bloat in Z as well to catch nav areas that may be slightly above/below ground
+		const float DangerBloat = 32.0f;
+		Vector dangerBloat( DangerBloat, DangerBloat, DangerBloat );
+		extent.lo -= dangerBloat;
+		extent.hi += dangerBloat;
+
+		TheNavMesh->ForAllAreasOverlappingExtent( overlap, extent );
+
+		FOR_EACH_VEC( overlap.m_area, it )
+		{
+			CNavArea *area = overlap.m_area[ it ];
+			area->MarkAsDamaging( NavUpdateDelta + 1.0f );
+		}
+	}
 }
 
 void CFire::GoOutThink()
@@ -1228,7 +1244,7 @@ public:
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	bool		m_bEnabled;
@@ -1236,9 +1252,8 @@ private:
 	float		m_damage;
 };
 
-BEGIN_DATADESC( CEnvFireSource )
+BEGIN_MAPENTITY( CEnvFireSource )
 
-	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
 	DEFINE_KEYFIELD( m_radius,	FIELD_FLOAT, "fireradius" ),
 	DEFINE_KEYFIELD( m_damage,FIELD_FLOAT, "firedamage" ),
 
@@ -1246,7 +1261,7 @@ BEGIN_DATADESC( CEnvFireSource )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( env_firesource, CEnvFireSource );
 
@@ -1319,7 +1334,7 @@ public:
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	bool			m_bEnabled;
@@ -1333,23 +1348,19 @@ private:
 	COutputEvent	m_OnHeatLevelEnd;
 };
 
-BEGIN_DATADESC( CEnvFireSensor )
+BEGIN_MAPENTITY( CEnvFireSensor )
 
 	DEFINE_KEYFIELD( m_radius,	FIELD_FLOAT, "fireradius" ),
 	DEFINE_KEYFIELD( m_targetLevel, FIELD_FLOAT, "heatlevel" ),
 	DEFINE_KEYFIELD( m_targetTime, FIELD_FLOAT, "heattime" ),
 
-	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bHeatAtLevel, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_levelTime, FIELD_FLOAT ),
-	
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
 	DEFINE_OUTPUT( m_OnHeatLevelStart, "OnHeatLevelStart"),
 	DEFINE_OUTPUT( m_OnHeatLevelEnd, "OnHeatLevelEnd"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( env_firesensor, CEnvFireSensor );
 

@@ -40,23 +40,20 @@ private:
 	Vector m_vSaveOrigin;
 	QAngle m_vSaveAngles;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 
 LINK_ENTITY_TO_CLASS( point_teleport, CPointTeleport );
 
 
-BEGIN_DATADESC( CPointTeleport )
-
-	DEFINE_FIELD( m_vSaveOrigin, FIELD_VECTOR ),
-	DEFINE_FIELD( m_vSaveAngles, FIELD_VECTOR ),
+BEGIN_MAPENTITY( CPointTeleport )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Teleport", InputTeleport ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "TeleportEntity", InputTeleportEntity ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TeleportToCurrentPos", InputTeleportToCurrentPos ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -179,7 +176,6 @@ void CPointTeleport::DoTeleport( inputdata_t &inputdata, const Vector &vecOrigin
 	}
 
 	// in episodic, we have a special spawn flag that forces Gordon into a duck
-#ifdef HL2_EPISODIC
 	if ( (m_spawnflags & SF_TELEPORT_INTO_DUCK) && pTarget->IsPlayer() ) 
 	{
 		CBasePlayer *pPlayer = ToBasePlayer( pTarget );
@@ -193,8 +189,7 @@ void CPointTeleport::DoTeleport( inputdata_t &inputdata, const Vector &vecOrigin
 			pPlayer->SetViewOffset( VEC_DUCK_VIEW_SCALED( pPlayer ) );
 			pPlayer->SetCollisionBounds( VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX );
 		}
-	}		
-#endif
+	}
 
-	pTarget->Teleport( &m_vSaveOrigin, &m_vSaveAngles, NULL );
+	pTarget->Teleport( &vecOrigin, &angRotation, NULL );
 }

@@ -592,7 +592,7 @@ void Menu::PositionRelativeToPanel( Panel *relative, MenuDirection_e direction, 
 		input()->GetCursorPos(rx, ry);
 		rw = rh = 0;
 	}
-	else if ( direction == ALIGN_WITH_PARENT && relative->GetVParent() )
+	else if ( direction == ALIGN_WITH_PARENT && relative->GetVParent() != INVALID_VPANEL )
 	{
 	   rx = 0, ry = 0;
 	   relative->ParentLocalToScreen(rx, ry);
@@ -999,7 +999,7 @@ void Menu::LayoutScrollBar()
 //-----------------------------------------------------------------------------
 void Menu::PositionCascadingMenu()
 {
-	Assert(GetVParent());
+	Assert(GetVParent() != INVALID_VPANEL);
 	int parentX, parentY, parentWide, parentTall;
 	// move the menu to the correct place below the menuItem
 	ipanel()->GetSize(GetVParent(), parentWide, parentTall);
@@ -1616,10 +1616,10 @@ void Menu::OnMouseWheeled(int delta)
 void Menu::OnKillFocus()
 {
 	// check to see if it's a child taking it
-	if (!input()->GetFocus() || !ipanel()->HasParent(input()->GetFocus(), GetVPanel()))
+	if (input()->GetFocus() == INVALID_VPANEL || !ipanel()->HasParent(input()->GetFocus(), GetVPanel()))
 	{
 		// if we don't accept keyboard input, then we have to ignore the killfocus if it's not actually being stolen
-		if (!IsKeyBoardInputEnabled() && !input()->GetFocus())
+		if (!IsKeyBoardInputEnabled() && input()->GetFocus() == INVALID_VPANEL)
 			return;
 
 		// get the parent of this menu. 
@@ -1745,7 +1745,7 @@ public:
 	bool IsWithinMenuOrRelative( Panel *panel, int x, int y )
 	{
 		VPANEL topMost = panel->IsWithinTraverse( x, y, true );
-		if ( topMost )
+		if ( topMost != INVALID_VPANEL )
 		{
 			// It's over the menu
 			if ( topMost == panel->GetVPanel() )
@@ -1766,7 +1766,7 @@ public:
 
 			topMost = parent->IsWithinTraverse( x, y, true );
 
-			if ( topMost )
+			if ( topMost != INVALID_VPANEL )
 			{
 				if ( topMost == parent->GetVPanel() )
 				{
@@ -1992,7 +1992,7 @@ void Menu::OnMenuItemSelected(Panel *panel)
 	}
 
 	// also pass it to the parent so they can respond if they like
-	if (GetVParent())
+	if (GetVParent() != INVALID_VPANEL)
 	{
 		KeyValues *kv = new KeyValues("MenuItemSelected");
 		kv->SetPtr("panel", panel);
@@ -2248,7 +2248,7 @@ void Menu::OnKeyCodePressed(KeyCode code)
 {
 	m_iInputMode = KEYBOARD;
 	// send the message to this parent in case this is a cascading menu
-	if (GetVParent())
+	if (GetVParent() != INVALID_VPANEL)
 	{
 		ivgui()->PostMessage(GetVParent(), new KeyValues("KeyModeSet"), GetVPanel());
 	}
@@ -2596,7 +2596,7 @@ void Menu::MoveMenuItem( int itemID, int moveBeforeThisItemID )
 void Menu::SetFont( HFont font )
 {
 	m_hItemFont = font;
-	if ( font )
+	if ( font != INVALID_FONT )
 	{
 		m_iMenuItemHeight = surface()->GetFontTall( font ) + 2;
 	}

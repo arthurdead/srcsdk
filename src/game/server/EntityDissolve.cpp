@@ -39,25 +39,14 @@ static const char *s_pElectroThinkContext = "ElectroThinkContext";
 //-----------------------------------------------------------------------------
 // Save/load 
 //-----------------------------------------------------------------------------
-BEGIN_DATADESC( CEntityDissolve )
+BEGIN_MAPENTITY( CEntityDissolve )
 
-	DEFINE_FIELD( m_flStartTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flFadeInStart, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flFadeInLength, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flFadeOutModelStart, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flFadeOutModelLength, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flFadeOutStart, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flFadeOutLength, FIELD_FLOAT ),
 	DEFINE_KEYFIELD( m_nDissolveType, FIELD_INTEGER, "dissolvetype" ),
-	DEFINE_FIELD( m_vDissolverOrigin, FIELD_VECTOR ),
 	DEFINE_KEYFIELD( m_nMagnitude, FIELD_INTEGER, "magnitude" ),
-
-	DEFINE_FUNCTION( DissolveThink ),
-	DEFINE_FUNCTION( ElectrocuteThink ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "Dissolve", InputDissolve ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -145,9 +134,10 @@ void CEntityDissolve::Spawn()
 		m_flFadeInLength = CORE_DISSOLVE_FADEIN_LENGTH;
 	}
 
-	m_nRenderMode = kRenderTransColor;
-	SetRenderColor( 255, 255, 255, 255 );
-	m_nRenderFX = kRenderFxNone;
+	SetRenderMode( kRenderTransColor );
+	SetRenderColor( 255, 255, 255 );
+	SetRenderAlpha( 255 );
+	SetRenderFX( kRenderFxNone );
 
 	SetThink( &CEntityDissolve::DissolveThink );
 	if ( gpGlobals->curtime > m_flStartTime )
@@ -329,7 +319,7 @@ void CEntityDissolve::DissolveThink( void )
 
 	if ( pTarget && pTarget->GetFlags() & FL_TRANSRAGDOLL )
 	{
-		SetRenderColorA( 0 );
+		SetRenderAlpha( 0 );
 	}
 
 	float dt = gpGlobals->curtime - m_flStartTime;

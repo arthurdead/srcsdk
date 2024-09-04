@@ -17,7 +17,9 @@
 #include "ivrenderview.h"
 
 struct model_t;
+#if 0
 struct WorldListLeafData_t;	
+#endif
 struct DistanceFadeInfo_t;
 
 
@@ -27,6 +29,7 @@ struct DistanceFadeInfo_t;
 struct DetailRenderableInfo_t
 {
 	IClientRenderable *m_pRenderable;
+	IClientRenderableMod *m_pRenderableMod;
 	int m_nLeafIndex;
 	EngineRenderGroup_t m_nEngineRenderGroup;
 	RenderableInstance_t m_InstanceData;

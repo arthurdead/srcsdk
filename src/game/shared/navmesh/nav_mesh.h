@@ -22,6 +22,7 @@
 #include "utlbuffer.h"
 #include "filesystem.h"
 #include "GameEventListener.h"
+#include "basecombatcharacter.h"
 
 #include "nav.h"
 #include "nav_area.h"

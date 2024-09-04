@@ -89,9 +89,7 @@ public:
 	DECLARE_NETWORKCLASS();
 
 	CSprite();
-#if defined( CLIENT_DLL )
-	CSprite(bool bClientOnly);
-#endif
+
 	virtual void SetModel( const char *szModelName );
 
 #if defined( CLIENT_DLL )
@@ -117,17 +115,8 @@ public:
 	
 	int	ObjectCaps( void )
 	{ 
-		int flags = 0;
-		
-		if ( IsTemporary() )
-		{
-			flags = FCAP_DONT_SAVE;
-		}
-		
-		return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | flags; 
+		return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); 
 	}
-
-	void OnRestore();
 #endif
 
 	void AnimateThink( void );
@@ -162,7 +151,7 @@ public:
 	bool IsOn() { return !IsEffectActive( EF_NODRAW ); }
 
 	inline float Frames( void ) { return m_flMaxFrame; }
-	inline void SetTransparency( int rendermode, int r, int g, int b, int a, int fx )
+	inline void SetTransparency( RenderMode_t rendermode, byte r, byte g, byte b, byte a, RenderFx_t fx )
 	{
 		SetRenderMode( (RenderMode_t)rendermode );
 		SetColor( r, g, b );
@@ -170,7 +159,7 @@ public:
 		SetRenderFX( (RenderFx_t)fx );
 	}
 	inline void SetTexture( int spriteIndex ) { SetModelIndex( spriteIndex ); }
-	inline void SetColor( int r, int g, int b ) { SetRenderColor( r, g, b ); }
+	inline void SetColor( byte r, byte g, byte b ) { SetRenderColor( r, g, b ); }
 	
 	void SetBrightness( int brightness, float duration = 0.0f );
 	void SetScale( float scale, float duration = 0.0f );
@@ -220,7 +209,7 @@ public:
 
 	void AnimateUntilDead( void );
 #if !defined( CLIENT_DLL )
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	static CSprite *SpriteCreate( const char *pSpriteName, const Vector &origin, bool animate );
 #endif

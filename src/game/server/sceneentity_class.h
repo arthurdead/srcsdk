@@ -11,6 +11,7 @@
 #include "ichoreoeventcallback.h"
 #include "baseentity.h"
 #include "networkvar.h"
+#include "tier1/utlsymbol.h"
 
 class CSceneListManager;
 class CBaseFlex;
@@ -65,12 +66,11 @@ public:
 	virtual void			Spawn( void );
 	virtual void			UpdateOnRemove( void );
 
-	virtual void			OnRestore();
 	virtual void			OnLoaded();
 
-	//virtual int				DrawDebugTextOverlays();
+	virtual int				DrawDebugTextOverlays();
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void			OnSceneFinished( bool canceled, bool fireoutput );
 
@@ -191,6 +191,9 @@ public:
 	void					SetCurrentTime( float t, bool forceClientSync );
 
 	void					InputScriptPlayerDeath( inputdata_t &inputdata );
+
+	void					AddBroadcastTeamTarget( int nTeamIndex );
+	void					RemoveBroadcastTeamTarget( int nTeamIndex );
 
 	// Data
 public:

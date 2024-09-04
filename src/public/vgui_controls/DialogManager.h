@@ -70,7 +70,7 @@ template <class TDialog, class I>
 inline DialogManager<TDialog, I>::DialogManager(CreateNewDialogFunc_t createDialogFunc)
 {
 	m_CreateFunc = createDialogFunc;
-	m_pVGUIParentPanel = NULL;
+	m_pVGUIParentPanel = INVALID_VPANEL;
 }
 
 // finds the dialog; creating it if necessary
@@ -96,7 +96,7 @@ inline TDialog *DialogManager<TDialog, I>::FindDialog(I dialogID, bool bCreate)
 		{
 			m_Dialogs[newIndex].dlg = new TDialog(NULL, dialogID);
 		}
-		Assert(m_pVGUIParentPanel);
+		Assert(m_pVGUIParentPanel != INVALID_VPANEL);
 		m_Dialogs[newIndex].dlg->SetParent( m_pVGUIParentPanel );
 
 		m_Dialogs[newIndex].id = dialogID;

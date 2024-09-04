@@ -11,6 +11,7 @@
 
 #include "datamap.h"
 
+class IPhysicsObject;
 
 #define VEHICLE_TYPE_CAR_WHEELS			(1<<0)
 #define VEHICLE_TYPE_CAR_RAYCAST		(1<<1)

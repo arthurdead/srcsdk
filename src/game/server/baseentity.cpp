@@ -6,7 +6,6 @@
 
 #include "cbase.h"
 #include "globalstate.h"
-#include "isaverestore.h"
 #include "client.h"
 #include "decals.h"
 #include "gamerules.h"
@@ -30,17 +29,14 @@
 #include "animation.h"
 #include "tier1/strtools.h"
 #include "engine/IEngineSound.h"
-#include "physics_saverestore.h"
-#include "saverestore_utlvector.h"
 #include "bone_setup.h"
 #include "vcollide_parse.h"
 #include "filters.h"
 #include "te_effect_dispatch.h"
-#include "AI_Criteria.h"
-#include "AI_ResponseSystem.h"
+#include "ai_criteria.h"
+#include "ai_responsesystem.h"
 #include "world.h"
 #include "globals.h"
-#include "saverestoretypes.h"
 #include "SkyCamera.h"
 #include "sceneentity.h"
 #include "game.h"
@@ -62,10 +58,12 @@
 #include "env_debughistory.h"
 #include "tier1/utlstring.h"
 #include "utlhashtable.h"
-
-#if defined( TF_DLL )
-#include "tf_gamerules.h"
-#endif
+#include "cellcoord.h"
+#include "sendprop_priorities.h"
+#include "shareddefs.h"
+#include "videocfg/videocfg.h"
+#include "player_lagcompensation.h"
+#include "ai_speech.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -97,6 +95,7 @@ bool CBaseEntity::s_bAbsQueriesValid = true;
 
 
 ConVar sv_netvisdist( "sv_netvisdist", "10000", FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY, "Test networking visibility distance" );
+ConVar ent_show_contexts( "ent_show_contexts", "0", 0, "Show entity contexts in ent_text display" );
 
 // This table encodes edict data.
 void SendProxy_AnimTime( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
@@ -237,6 +236,158 @@ void SendProxy_OriginZ( const SendProp *pProp, const void *pStruct, const void *
 	pOut->m_Float = v->z;
 }
 
+static float const cellEpsilon = 0.001f;
+
+void CBaseEntity::SendProxy_CellX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+{
+	CBaseEntity *entity = (CBaseEntity*)pStruct;
+	Assert( entity );
+
+	const Vector *v;
+	int cell[3];
+
+	if ( entity->UseStepSimulationNetworkOrigin( &v, cell ) )
+	{
+		pOut->m_Int = cell[0];
+	}
+	else
+	{
+		pOut->m_Int = *((int*)pData);
+	}
+}
+
+void CBaseEntity::SendProxy_CellY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+{
+	CBaseEntity *entity = (CBaseEntity*)pStruct;
+	Assert( entity );
+
+	const Vector *v;
+	int cell[3];
+
+	if ( entity->UseStepSimulationNetworkOrigin( &v, cell ) )
+	{
+		pOut->m_Int = cell[1];
+	}
+	else
+	{
+		pOut->m_Int = *((int*)pData);
+	}
+}
+
+void CBaseEntity::SendProxy_CellZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+{
+	CBaseEntity *entity = (CBaseEntity*)pStruct;
+	Assert( entity );
+
+	const Vector *v;
+	int cell[3];
+
+	if ( entity->UseStepSimulationNetworkOrigin( &v, cell ) )
+	{
+		pOut->m_Int = cell[2];
+	}
+	else
+	{
+		pOut->m_Int = *((int*)pData);
+	}
+}
+
+//--------------------------------------------------------------------------------------------------------
+// The origin is adjusted to be relative to current cell
+//--------------------------------------------------------------------------------------------------------
+void CBaseEntity::SendProxy_CellOrigin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+{
+	CBaseEntity *entity = (CBaseEntity*)pStruct;
+	Assert( entity );
+
+	const Vector *v;
+	int cell[3];
+
+	if ( !entity->UseStepSimulationNetworkOrigin( &v, cell ) )
+	{
+		v = &entity->GetLocalOrigin();
+		cell[0] = entity->m_cellX;
+		cell[1] = entity->m_cellY;
+		cell[2] = entity->m_cellZ;
+	}
+
+	register int const cellwidth = entity->m_cellwidth; // Load it into a register
+
+	Assert( cell[0] == CellFromCoord( cellwidth, v->x ) );
+	Assert( cell[1] == CellFromCoord( cellwidth, v->y ) );
+	Assert( cell[2] == CellFromCoord( cellwidth, v->z ) );
+
+	// Adjust based on cell size
+	pOut->m_Vector[ 0 ] = CellInCoord( cellwidth, cell[0], v->x );
+	pOut->m_Vector[ 1 ] = CellInCoord( cellwidth, cell[1], v->y );
+	pOut->m_Vector[ 2 ] = CellInCoord( cellwidth, cell[2], v->z );
+
+	Assert( pOut->m_Vector[ 0 ] >= 0.0f );
+	Assert( pOut->m_Vector[ 1 ] >= 0.0f );
+	Assert( pOut->m_Vector[ 2 ] >= 0.0f );
+	Assert( fabs( CoordFromCell( cellwidth, cell[0], pOut->m_Vector[ 0 ] ) - v->x ) < cellEpsilon );
+	Assert( fabs( CoordFromCell( cellwidth, cell[1], pOut->m_Vector[ 1 ] ) - v->y ) < cellEpsilon );
+	Assert( fabs( CoordFromCell( cellwidth, cell[2], pOut->m_Vector[ 2 ] ) - v->z ) < cellEpsilon );
+}
+
+//--------------------------------------------------------------------------------------------------------
+// The origin is adjusted to be relative to current cell
+//--------------------------------------------------------------------------------------------------------
+void CBaseEntity::SendProxy_CellOriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+{
+	CBaseEntity *entity = (CBaseEntity*)pStruct;
+	Assert( entity );
+
+	const Vector *v;
+	int cell[3];
+
+	if ( !entity->UseStepSimulationNetworkOrigin( &v, cell ) )
+	{
+		v = &entity->GetLocalOrigin();
+		cell[0] = entity->m_cellX;
+		cell[1] = entity->m_cellY;
+	}
+
+	register int const cellwidth = entity->m_cellwidth; // Load it into a register
+
+	Assert( cell[0] == CellFromCoord( cellwidth, v->x ) );
+	Assert( cell[1] == CellFromCoord( cellwidth, v->y ) );
+
+	pOut->m_Vector[ 0 ] = CellInCoord( cellwidth, cell[0], v->x );
+	pOut->m_Vector[ 1 ] = CellInCoord( cellwidth, cell[1], v->y );
+
+	Assert( pOut->m_Vector[ 0 ] >= 0.0f );
+	Assert( pOut->m_Vector[ 1 ] >= 0.0f );
+	Assert( fabs( CoordFromCell( cellwidth, cell[0], pOut->m_Vector[ 0 ] ) - v->x ) < cellEpsilon );
+	Assert( fabs( CoordFromCell( cellwidth, cell[1], pOut->m_Vector[ 1 ] ) - v->y ) < cellEpsilon );
+}
+
+//--------------------------------------------------------------------------------------------------------
+// The origin is adjusted to be relative to current cell
+//--------------------------------------------------------------------------------------------------------
+void CBaseEntity::SendProxy_CellOriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+{
+	CBaseEntity *entity = (CBaseEntity*)pStruct;
+	Assert( entity );
+
+	const Vector *v;
+	int cell[3];
+
+	if ( !entity->UseStepSimulationNetworkOrigin( &v, cell ) )
+	{
+		v = &entity->GetLocalOrigin();
+		cell[2] = entity->m_cellZ;
+	}
+
+	register int const cellwidth = entity->m_cellwidth; // Load it into a register
+
+	Assert( cell[2] == CellFromCoord( cellwidth, v->z ) );
+
+	pOut->m_Float = CellInCoord( cellwidth, cell[2], v->z );
+
+	Assert( pOut->m_Float >= 0.0f );
+	Assert( fabs( CoordFromCell( cellwidth, cell[2], pOut->m_Float ) - v->z ) < cellEpsilon );
+}
 
 void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
@@ -255,16 +406,73 @@ void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const void *p
 	pOut->m_Vector[ 2 ] = anglemod( a->z );
 }
 
+void CBaseEntity::SendProxy_AnglesX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+{
+	CBaseEntity *entity = (CBaseEntity*)pStruct;
+	Assert( entity );
+
+	const QAngle *a;
+
+	if ( !entity->UseStepSimulationNetworkAngles( &a ) )
+	{
+		a = &entity->GetLocalAngles();
+	}
+
+	pOut->m_Float = anglemod( a->x );
+}
+
+void CBaseEntity::SendProxy_AnglesY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+{
+	CBaseEntity *entity = (CBaseEntity*)pStruct;
+	Assert( entity );
+
+	const QAngle *a;
+
+	if ( !entity->UseStepSimulationNetworkAngles( &a ) )
+	{
+		a = &entity->GetLocalAngles();
+	}
+
+	pOut->m_Float = anglemod( a->y );
+}
+
+void CBaseEntity::SendProxy_AnglesZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+{
+	CBaseEntity *entity = (CBaseEntity*)pStruct;
+	Assert( entity );
+
+	const QAngle *a;
+
+	if ( !entity->UseStepSimulationNetworkAngles( &a ) )
+	{
+		a = &entity->GetLocalAngles();
+	}
+
+	pOut->m_Float = anglemod( a->z );
+}
+
+#if PREDICTION_ERROR_CHECK_LEVEL > 1 
+const int SENDPROP_ANGROTATION_DEFAULT_BITS = -1;
+const int SENDPROP_VECORIGIN_FLAGS = SPROP_NOSCALE|SPROP_CHANGES_OFTEN;
+#else
+const int SENDPROP_ANGROTATION_DEFAULT_BITS = 13;
+const int SENDPROP_VECORIGIN_FLAGS = SPROP_CELL_COORD|SPROP_CHANGES_OFTEN;
+#endif
+
 // This table encodes the CBaseEntity data.
 IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropDataTable( "AnimTimeMustBeFirst", 0, &REFERENCE_SEND_TABLE(DT_AnimTimeMustBeFirst), SendProxy_ClientSideAnimation ),
-	SendPropInt			(SENDINFO(m_flSimulationTime),	SIMULATION_TIME_WINDOW_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_SimulationTime),
+	SendPropInt			(SENDINFO(m_flSimulationTime),	SIMULATION_TIME_WINDOW_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_SimulationTime, SENDPROP_SIMULATION_TIME_PRIORITY),
 
-#if PREDICTION_ERROR_CHECK_LEVEL > 1 
-	SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin ),
-#else
-	SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin ),
-#endif
+	SendPropFloat		(SENDINFO( m_flCreateTime ) ),
+
+	SendPropInt			(SENDINFO(m_cellbits), MINIMUM_BITS_NEEDED( 32 ), SPROP_UNSIGNED, 0, SENDPROP_CELL_INFO_PRIORITY ),
+//	SendPropArray       (SendPropInt(SENDINFO_ARRAY(m_cellXY), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_CHANGES_OFTEN ), m_cellXY),
+	SendPropInt			(SENDINFO(m_cellX), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED, CBaseEntity::SendProxy_CellX, SENDPROP_CELL_INFO_PRIORITY ), // 32 priority in the send table
+	SendPropInt			(SENDINFO(m_cellY), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED, CBaseEntity::SendProxy_CellY, SENDPROP_CELL_INFO_PRIORITY ),
+	SendPropInt			(SENDINFO(m_cellZ), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED, CBaseEntity::SendProxy_CellZ, SENDPROP_CELL_INFO_PRIORITY ),
+
+	SendPropVector		(SENDINFO(m_vecOrigin), CELL_BASEENTITY_ORIGIN_CELL_BITS, SENDPROP_VECORIGIN_FLAGS, 0.0f, HIGH_DEFAULT, CBaseEntity::SendProxy_CellOrigin ),
 
 	SendPropInt		(SENDINFO( m_ubInterpolationFrame ), NOINTERP_PARITY_MAX_BITS, SPROP_UNSIGNED ),
 	SendPropModelIndex(SENDINFO(m_nModelIndex)),
@@ -272,15 +480,17 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropInt		(SENDINFO(m_nRenderFX),		8, SPROP_UNSIGNED ),
 	SendPropInt		(SENDINFO(m_nRenderMode),	8, SPROP_UNSIGNED ),
 	SendPropInt		(SENDINFO(m_fEffects),		EF_MAX_BITS, SPROP_UNSIGNED),
-	SendPropInt		(SENDINFO(m_clrRender),	32, SPROP_UNSIGNED),
+	SendPropInt		(SENDINFO(m_clrRender),	32, SPROP_UNSIGNED, SendProxy_Color32ToInt32),
 	SendPropInt		(SENDINFO(m_iTeamNum),		TEAMNUM_NUM_BITS, 0),
-	SendPropInt		(SENDINFO(m_CollisionGroup), 5, SPROP_UNSIGNED),
+	SendPropInt		(SENDINFO(m_CollisionGroup), 6, SPROP_UNSIGNED),
 	SendPropFloat	(SENDINFO(m_flElasticity), 0, SPROP_COORD),
 	SendPropFloat	(SENDINFO(m_flShadowCastDistance), 12, SPROP_UNSIGNED ),
 	SendPropEHandle (SENDINFO(m_hOwnerEntity)),
 	SendPropEHandle (SENDINFO(m_hEffectEntity)),
 	SendPropEHandle (SENDINFO_NAME(m_hMoveParent, moveparent)),
 	SendPropInt		(SENDINFO(m_iParentAttachment), NUM_PARENTATTACHMENT_BITS, SPROP_UNSIGNED),
+
+	SendPropStringT( SENDINFO( m_iName ) ),
 
 	SendPropInt		(SENDINFO_NAME( m_MoveType, movetype ), MOVETYPE_MAX_BITS, SPROP_UNSIGNED ),
 	SendPropInt		(SENDINFO_NAME( m_MoveCollide, movecollide ), MOVECOLLIDE_MAX_BITS, SPROP_UNSIGNED ),
@@ -292,6 +502,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 
 	SendPropInt		( SENDINFO( m_iTextureFrameIndex ),		8, SPROP_UNSIGNED ),
 
+	SendPropEHandle (SENDINFO(m_hPlayerSimulationOwner)),
 	SendPropDataTable( "predictable_id", 0, &REFERENCE_SEND_TABLE( DT_PredictableId ), SendProxy_SendPredictableId ),
 
 	// FIXME: Collapse into another flag field?
@@ -302,6 +513,16 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 #ifdef TF_DLL
 	SendPropArray3( SENDINFO_ARRAY3(m_nModelIndexOverrides), SendPropInt( SENDINFO_ARRAY(m_nModelIndexOverrides), SP_MODEL_INDEX_BITS, 0 ) ),
 #endif
+
+	// Fading
+	SendPropFloat( SENDINFO( m_fadeMinDist ),			0, SPROP_NOSCALE ),
+	SendPropFloat( SENDINFO( m_fadeMaxDist ),			0, SPROP_NOSCALE ),
+	SendPropFloat( SENDINFO( m_flFadeScale ),			0, SPROP_NOSCALE ),
+
+	SendPropInt( SENDINFO(m_nMinCPULevel),				CPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO(m_nMaxCPULevel),				CPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO(m_nMinGPULevel),				GPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO(m_nMaxGPULevel),				GPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
 
 END_SEND_TABLE()
 
@@ -339,12 +560,16 @@ void CBaseEntityModelLoadProxy::Handler::OnModelLoadComplete( const model_t *pMo
 }
 
 
-CBaseEntity::CBaseEntity( bool bServerOnly )
+CBaseEntity::CBaseEntity()
 {
-	m_pAttributes = NULL;
+	m_Network = NULL;
 
 	COMPILE_TIME_ASSERT( MOVETYPE_LAST < (1 << MOVETYPE_MAX_BITS) );
 	COMPILE_TIME_ASSERT( MOVECOLLIDE_COUNT < (1 << MOVECOLLIDE_MAX_BITS) );
+
+	// Fix CPU_LEVEL_BIT_COUNT/GPU_LEVEL_BIT_COUNT here if necessary
+	COMPILE_TIME_ASSERT( CPU_LEVEL_PC_COUNT+1 <= (1 << CPU_LEVEL_BIT_COUNT) );
+	COMPILE_TIME_ASSERT( GPU_LEVEL_PC_COUNT+1 <= (1 << GPU_LEVEL_BIT_COUNT) );
 
 #ifdef _DEBUG
 	// necessary since in debug, we initialize vectors to NAN for debugging
@@ -356,11 +581,17 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	m_vecAbsVelocity.Init();
 #endif
 
+	SetCellBits();
+	UpdateCell();
+
 	m_bAlternateSorting = false;
 	m_CollisionGroup = COLLISION_GROUP_NONE;
 	m_iParentAttachment = 0;
 	CollisionProp()->Init( this );
-	NetworkProp()->Init( this );
+
+	m_fadeMinDist = 0;
+	m_fadeMaxDist = 0;
+	m_flFadeScale = 0.0f;
 
 	// NOTE: THIS MUST APPEAR BEFORE ANY SetMoveType() or SetNextThink() calls
 	AddEFlags( EFL_NO_THINK_FUNCTION | EFL_NO_GAME_PHYSICS_SIMULATION | EFL_USE_PARTITION_WHEN_NOT_SOLID );
@@ -371,7 +602,8 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	m_pPhysicsObject = NULL;
 	m_flElasticity   = 1.0f;
 	m_flShadowCastDistance = m_flDesiredShadowCastDistance = 0;
-	SetRenderColor( 255, 255, 255, 255 );
+	SetRenderColor( 255, 255, 255 );
+	SetRenderAlpha( 255 );
 	m_iTeamNum = m_iInitialTeamNum = TEAM_UNASSIGNED;
 	m_nLastThinkTick = gpGlobals->tickcount;
 	m_nSimulationTick = -1;
@@ -402,13 +634,15 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 
 	SetFriction( 1.0f );
 
-	if ( bServerOnly )
-	{
-		AddEFlags( EFL_SERVER_ONLY );
-	}
-	NetworkProp()->MarkPVSInformationDirty();
-
 	AddEFlags( EFL_USE_PARTITION_WHEN_NOT_SOLID );
+
+	m_pPrevByClass = m_pNextByClass = NULL;
+	m_ListByClass = (UtlHashHandle_t)~0;
+	SetNetworkQuantizeOriginAngAngles( false );
+
+	m_flCreateTime = 0.0f;
+
+	m_pEvent = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -463,6 +697,9 @@ CBaseEntity::~CBaseEntity( )
 		// Remove this entity from the ent list (NOTE:  This Makes EHANDLES go NULL)
 		gEntList.RemoveEntity( GetRefEHandle() );
 	}
+
+	if(m_Network)
+		delete m_Network;
 }
 
 void CBaseEntity::PostConstructor( const char *szClassname )
@@ -475,12 +712,16 @@ void CBaseEntity::PostConstructor( const char *szClassname )
 	Assert( m_iClassname != NULL_STRING && STRING(m_iClassname) != NULL );
 
 	// Possibly get an edict, and add self to global list of entites.
-	if ( IsEFlagSet( EFL_SERVER_ONLY ) )
+	if ( IsEFlagSet( EFL_NOT_NETWORKED ) )
 	{
 		gEntList.AddNonNetworkableEntity( this );
 	}
 	else
 	{
+		m_Network = new CServerNetworkProperty;
+
+		NetworkProp()->Init( this );
+
 		// Certain entities set up their edicts in the constructor
 		if ( !IsEFlagSet( EFL_NO_AUTO_EDICT_ATTACH ) )
 		{
@@ -499,10 +740,73 @@ void CBaseEntity::PostConstructor( const char *szClassname )
 			if ( edict() )
 				edict()->m_pNetworkable = NetworkProp();
 		}
+
+		NetworkProp()->MarkPVSInformationDirty();
 	}
 
 	CheckHasThinkFunction( false );
 	CheckHasGamePhysicsSimulation();
+}
+
+CServerOnlyEntity::CServerOnlyEntity()
+ : CBaseEntity()
+{
+	AddEFlags( EFL_NOT_NETWORKED );
+}
+
+edict_t *CBaseEntity::edict( void )
+{
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
+		return NULL;
+
+	return NetworkProp()->edict();
+}
+const edict_t *CBaseEntity::edict( void ) const
+{
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
+		return NULL;
+
+	return NetworkProp()->edict();
+}
+
+int CBaseEntity::GetSoundSourceIndex() const
+{
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
+		return SOUND_FROM_WORLD;
+
+	return entindex();
+}
+
+int CBaseEntity::entindex( ) const
+{
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
+		return -1;
+
+	return m_Network->entindex();
+}
+
+IServerNetworkable *CBaseEntity::GetNetworkable()
+{
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
+		return NULL;
+
+	return m_Network;
+}
+
+CServerNetworkProperty *CBaseEntity::NetworkProp()
+{
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
+		return NULL;
+
+	return m_Network;
+}
+
+const CServerNetworkProperty *CBaseEntity::NetworkProp() const
+{
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
+		return NULL;
+
+	return m_Network;
 }
 
 //-----------------------------------------------------------------------------
@@ -532,7 +836,13 @@ static void AddDataMapFieldNamesToList( KeyValueNameList_t &list, datamap_t *pDa
 				continue;
 			}
 
-			if (pField->flags & FTYPEDESC_KEY)
+			if ((pField->flags & (FTYPEDESC_KEY|FTYPEDESC_INPUT|FTYPEDESC_OUTPUT)) == 0)
+			{
+				DevMsg( "%s has non map data description\n", pDataMap->dataClassName);
+				continue;
+			}
+
+			if ((pField->flags & FTYPEDESC_KEY) != 0)
 			{
 				list.AddToTail( pField->externalName );
 			}
@@ -546,7 +856,7 @@ void CBaseEntity::ValidateDataDescription(void)
 {
 	// Multiple key fields that have the same name are not allowed - it creates an
 	// ambiguity when trying to parse keyvalues and outputs.
-	datamap_t *pDataMap = GetDataDescMap();
+	datamap_t *pDataMap = GetMapDataDesc();
 	if ((pDataMap == NULL) || pDataMap->bValidityChecked)
 		return;
 
@@ -566,6 +876,8 @@ void CBaseEntity::ValidateDataDescription(void)
 				break;
 			}
 		}
+
+
 	}
 }
 #endif // _DEBUG
@@ -584,7 +896,7 @@ void CBaseEntity::StopFollowingEntity( )
 {
 	if( !IsFollowingEntity() )
 	{
-//		Assert( IsEffectActive( EF_BONEMERGE ) == 0 );
+		Assert( IsEffectActive( EF_BONEMERGE ) == 0 );
 		return;
 	}
 
@@ -682,6 +994,24 @@ Vector CBaseEntity::HeadTarget( const Vector &posSrc )
 	return EyePosition();
 }
 
+//-----------------------------------------------------------------------------
+// Methods related to fade distance
+//-----------------------------------------------------------------------------
+void CBaseEntity::SetFadeDistance( float minFadeDist, float maxFadeDist )
+{
+	m_fadeMinDist = minFadeDist;
+	m_fadeMaxDist = maxFadeDist;
+}
+
+void CBaseEntity::SetGlobalFadeScale( float flFadeScale )
+{
+	m_flFadeScale = flFadeScale;
+}
+
+float CBaseEntity::GetGlobalFadeScale() const
+{
+	return m_flFadeScale;
+}
 
 struct TimedOverlay_t
 {
@@ -867,12 +1197,50 @@ void CBaseEntity::DrawTimedOverlays(void)
 	}
 }
 
+void CBaseEntity::DrawVPhysicsObjectCenterAndContactPoints(IPhysicsObject *obj)
+{
+	if ( obj == NULL ) return;
+
+	Vector massCenter = obj->GetMassCenterLocalSpace();
+	Vector worldPos;
+	obj->LocalToWorld( &worldPos, massCenter );
+	NDebugOverlay::Cross3D( worldPos, 12, 255, 0, 0, false, 0 );
+	DebugDrawContactPoints(obj);
+	if ( GetMoveType() != MOVETYPE_VPHYSICS )
+	{
+		Vector pos;
+		QAngle angles;
+		obj->GetPosition( &pos, &angles );
+		float dist = (pos - GetAbsOrigin()).Length();
+
+		Vector axis;
+		float deltaAngle;
+		RotationDeltaAxisAngle( angles, GetAbsAngles(), axis, deltaAngle );
+		if ( dist > 2 || fabsf(deltaAngle) > 2 )
+		{
+			Vector mins, maxs;
+
+			if ( obj->GetCollide() )
+			{
+				physcollision->CollideGetAABB( &mins, &maxs, obj->GetCollide(), vec3_origin, vec3_angle );
+			}
+			else
+			{
+				mins = WorldAlignMins();
+				maxs = WorldAlignMins();
+			}
+			NDebugOverlay::BoxAngles( pos, mins, maxs, angles, 255, 255, 0, 16, 0 );
+		}
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Draw all overlays (should be implemented by subclass to add
 //			any additional non-text overlays)
 // Input  :
 // Output : Current text offset from the top
 //-----------------------------------------------------------------------------
+ConVar autoaim_viewing_client("autoaim_viewing_client", "1", FCVAR_DEVELOPMENTONLY ); 
 void CBaseEntity::DrawDebugGeometryOverlays(void) 
 {
 	DrawTimedOverlays();
@@ -900,31 +1268,14 @@ void CBaseEntity::DrawDebugGeometryOverlays(void)
 	}
 	if ( m_debugOverlays & (OVERLAY_BBOX_BIT|OVERLAY_PIVOT_BIT) )
 	{
-		// draw mass center
-		if ( VPhysicsGetObject() )
-		{
-			Vector massCenter = VPhysicsGetObject()->GetMassCenterLocalSpace();
-			Vector worldPos;
-			VPhysicsGetObject()->LocalToWorld( &worldPos, massCenter );
-			NDebugOverlay::Cross3D( worldPos, 12, 255, 0, 0, false, 0 );
-			DebugDrawContactPoints(VPhysicsGetObject());
-			if ( GetMoveType() != MOVETYPE_VPHYSICS )
-			{
-				Vector pos;
-				QAngle angles;
-				VPhysicsGetObject()->GetPosition( &pos, &angles );
-				float dist = (pos - GetAbsOrigin()).Length();
+		// draw mass center and contact points
+		DrawVPhysicsObjectCenterAndContactPoints(VPhysicsGetObject());
 
-				Vector axis;
-				float deltaAngle;
-				RotationDeltaAxisAngle( angles, GetAbsAngles(), axis, deltaAngle );
-				if ( dist > 2 || fabsf(deltaAngle) > 2 )
-				{
-					Vector mins, maxs;
-					physcollision->CollideGetAABB( &mins, &maxs, VPhysicsGetObject()->GetCollide(), vec3_origin, vec3_angle );
-					NDebugOverlay::BoxAngles( pos, mins, maxs, angles, 255, 255, 0, 16, 0 );
-				}
-			}
+		IPhysicsObject *pList[VPHYSICS_MAX_OBJECT_LIST_COUNT];
+		int count = VPhysicsGetObjectList( pList, ARRAYSIZE(pList) );
+		for ( int i = 0; i < count; i++ )
+		{
+			DrawVPhysicsObjectCenterAndContactPoints(pList[i]);
 		}
 	}
 	if ( m_debugOverlays & OVERLAY_SHOW_BLOCKSLOS )
@@ -935,7 +1286,7 @@ void CBaseEntity::DrawDebugGeometryOverlays(void)
 		}
 	}
 	CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
-	if ( m_debugOverlays & OVERLAY_AUTOAIM_BIT && (GetFlags()&FL_AIMTARGET) && pPlayer != NULL ) 
+	if ( (m_debugOverlays & OVERLAY_AUTOAIM_BIT) && (GetFlags()&FL_AIMTARGET) && pPlayer != NULL ) 
 	{
 		// Crude, but it gets the point across.
 		Vector vecCenter = GetAutoAimCenter();
@@ -987,6 +1338,14 @@ void CBaseEntity::DrawDebugGeometryOverlays(void)
 	}
 }
 
+static ConVar debug_overlay_fullposition( "debug_overlay_fullposition", 
+#if defined( _DEBUG )
+	"1"
+#else
+	"0"
+#endif
+	);
+
 //-----------------------------------------------------------------------------
 // Purpose: Draw any text overlays (override in subclass to add additional text)
 // Output : Current text offset from the top
@@ -996,9 +1355,13 @@ int CBaseEntity::DrawDebugTextOverlays(void)
 	int offset = 1;
 	if (m_debugOverlays & OVERLAY_TEXT_BIT) 
 	{
+		int r = 0;
+		int g = 255;
+		int b = 0;
+
 		char tempstr[512];
 		Q_snprintf( tempstr, sizeof(tempstr), "(%d) Name: %s (%s)", entindex(), GetDebugName(), GetClassname() );
-		EntityText(offset,tempstr, 0);
+		EntityText(offset,tempstr, 0,r,g,b);
 		offset++;
 
 		if( m_iGlobalname != NULL_STRING )
@@ -1008,24 +1371,81 @@ int CBaseEntity::DrawDebugTextOverlays(void)
 			offset++;
 		}
 
-		Vector vecOrigin = GetAbsOrigin();
-		Q_snprintf( tempstr, sizeof(tempstr), "Position: %0.1f, %0.1f, %0.1f\n", vecOrigin.x, vecOrigin.y, vecOrigin.z );
-		EntityText( offset, tempstr, 0 );
-		offset++;
+		if (debug_overlay_fullposition.GetBool() )
+		{
+			Vector vecOrigin = GetAbsOrigin();
+			Q_snprintf( tempstr, sizeof(tempstr), "pos: (%f, %f, %f)\n", vecOrigin.x, vecOrigin.y, vecOrigin.z );
+			EntityText( offset, tempstr, 0 );
+			offset++;
+
+			QAngle angOrientation = GetAbsAngles();
+			Q_snprintf( tempstr, sizeof(tempstr), "ang: (%f, %f, %f)\n", angOrientation.x, angOrientation.y, angOrientation.z );
+			EntityText( offset, tempstr, 0 );
+			offset++;
+
+			Q_snprintf( tempstr, sizeof(tempstr), "cell: (%d, %d, %d)\n", m_cellX.Get(), m_cellY.Get(), m_cellZ.Get() );
+			EntityText( offset, tempstr, 0 );
+			offset++;
+
+			register int const cellwidth = m_cellwidth; // Load it into a register
+			Vector cellOrigin;
+			cellOrigin.x = CellInCoord( cellwidth, m_cellX, m_vecOrigin->x );
+			cellOrigin.y = CellInCoord( cellwidth, m_cellY, m_vecOrigin->y );
+			cellOrigin.z = CellInCoord( cellwidth, m_cellZ, m_vecOrigin->z );
+
+			Q_snprintf( tempstr, sizeof(tempstr), "celloffset: (%f, %f, %f)\n", cellOrigin.x, cellOrigin.y, cellOrigin.z );
+			EntityText( offset, tempstr, 0 );
+			offset++;
+		}
+		else
+		{
+			Vector vecOrigin = GetAbsOrigin();
+			Q_snprintf( tempstr, sizeof(tempstr), "Position: %0.3f, %0.3f, %0.3f\n", vecOrigin.x, vecOrigin.y, vecOrigin.z );
+			EntityText( offset, tempstr, 0 );
+			offset++;
+		}
+
+		if ( !BlocksLOS() )
+		{
+			EntityText(offset,"Doesn't block LOS",0);
+			offset++;
+		}
 
 		if( GetModelName() != NULL_STRING || GetBaseAnimating() )
 		{
 			Q_snprintf(tempstr, sizeof(tempstr), "Model:%s", STRING(GetModelName()) );
-			EntityText(offset,tempstr,0);
+			EntityText(offset,tempstr,0,255,255,0);
 			offset++;
 		}
 
 		if( m_hDamageFilter.Get() != NULL )
 		{
 			Q_snprintf( tempstr, sizeof(tempstr), "DAMAGE FILTER:%s", m_hDamageFilter->GetDebugName() );
-			EntityText( offset,tempstr,0 );
+			EntityText( offset,tempstr,0,r,g,b );
 			offset++;
 		}
+
+		if ( ent_show_contexts.GetBool() )
+		{
+			int count = GetContextCount();
+			if ( count )
+			{
+				for ( int i = 0; i < count; ++i )
+				{
+					Q_snprintf(tempstr, sizeof(tempstr),"Context: %s:%s", GetContextName( i ), GetContextValue( i ) );
+					EntityText( offset, tempstr, 0,r,g,b);
+					offset++;
+				}
+			}
+		}
+
+		Q_snprintf(tempstr, sizeof(tempstr), "Flags :%d", GetFlags() );
+		EntityText(offset,tempstr,0);
+		offset++;
+
+		Q_snprintf(tempstr, sizeof(tempstr), "Effects :%d (EF_NODRAW=%d)", GetEffects(), GetEffects() & EF_NODRAW );
+		EntityText(offset,tempstr,0);
+		offset++;
 	}
 
 	if (m_debugOverlays & OVERLAY_VIEWOFFSET)
@@ -1247,7 +1667,7 @@ void CBaseEntity::ValidateEntityConnections()
 		 ClassMatches( "xen_plant*" ) )
 		return;
 
-	datamap_t *dmap = GetDataDescMap();
+	datamap_t *dmap = GetMapDataDesc();
 	while ( dmap )
 	{
 		int fields = dmap->dataNumFields;
@@ -1280,7 +1700,20 @@ void CBaseEntity::FireNamedOutput( const char *pszOutput, variant_t variant, CBa
 	if ( pszOutput == NULL )
 		return;
 
-	datamap_t *dmap = GetDataDescMap();
+	CBaseEntityOutput *pOutput = FindNamedOutput( pszOutput );
+	if ( pOutput )
+	{
+		pOutput->FireOutput( variant, pActivator, pCaller, flDelay );
+		return;
+	}
+}
+
+CBaseEntityOutput *CBaseEntity::FindNamedOutput( const char *pszOutput )
+{
+	if ( pszOutput == NULL )
+		return NULL;
+
+	datamap_t *dmap = GetMapDataDesc();
 	while ( dmap )
 	{
 		int fields = dmap->dataNumFields;
@@ -1292,14 +1725,15 @@ void CBaseEntity::FireNamedOutput( const char *pszOutput, variant_t variant, CBa
 				CBaseEntityOutput *pOutput = ( CBaseEntityOutput * )( ( int )this + ( int )dataDesc->fieldOffset[0] );
 				if ( !Q_stricmp( dataDesc->externalName, pszOutput ) )
 				{
-					pOutput->FireOutput( variant, pActivator, pCaller, flDelay );
-					return;
+					return pOutput;
 				}
 			}
 		}
 
 		dmap = dmap->baseMap;
 	}
+
+	return NULL;
 }
 
 void CBaseEntity::Activate( void )
@@ -1334,9 +1768,9 @@ void CBaseEntity::Activate( void )
 		AddContext( m_iszResponseContext.ToCStr() );
 	}
 
-#ifdef HL1_DLL
+#ifdef DEBUG
 	ValidateEntityConnections();
-#endif //HL1_DLL
+#endif
 }
 
 ////////////////////////////  old CBaseEntity stuff ///////////////////////////////////
@@ -1545,6 +1979,10 @@ int CBaseEntity::VPhysicsTakeDamage( const CTakeDamageInfo &info )
 	if ( bNoPhysicsForceDamage || info.GetDamageType() == DMG_GENERIC )
 		return 1;
 
+	// Bash/Shooting wants to set 0 force to not shove heavy physics props at all
+	if ( (info.GetDamageType() & (DMG_BULLET | DMG_CLUB)) && info.GetDamageForce().IsZero() )
+		return 1;
+
 	Assert(VPhysicsGetObject() != NULL);
 	if ( VPhysicsGetObject() )
 	{
@@ -1557,15 +1995,7 @@ int CBaseEntity::VPhysicsTakeDamage( const CTakeDamageInfo &info )
 		// setup the damage force & position inside the CTakeDamageInfo (Utility functions for this are in
 		// takedamageinfo.cpp. If you think the damage shouldn't cause force (unlikely!) then you can set the 
 		// damage type to DMG_GENERIC, or | DMG_CRUSH if you need to preserve the damage type for purposes of HUD display.
-#if !defined( TF_DLL )
 		Assert( force != vec3_origin && offset != vec3_origin );
-#else
-		// this was spamming the console for Payload maps in TF (trigger_hurt entity on the front of the cart)
-		if ( !TFGameRules() || TFGameRules()->GetGameType() != TF_GAMETYPE_ESCORT )
-		{
-			Assert( force != vec3_origin && offset != vec3_origin );
-		}
-#endif
 
 		unsigned short gameFlags = VPhysicsGetObject()->GetGameFlags();
 		if ( gameFlags & FVPHYSICS_PLAYER_HELD )
@@ -1669,112 +2099,16 @@ CBaseEntity *CBaseEntity::GetNextTarget( void )
 	return gEntList.FindEntityByName( NULL, m_target );
 }
 
-class CThinkContextsSaveDataOps : public CDefSaveRestoreOps
-{
-	virtual void Save( const SaveRestoreFieldInfo_t &fieldInfo, ISave *pSave )
-	{
-		AssertMsg( fieldInfo.pTypeDesc->fieldSize == 1, "CThinkContextsSaveDataOps does not support arrays");
-
-		// Write out the vector
-		CUtlVector< thinkfunc_t > *pUtlVector = (CUtlVector< thinkfunc_t > *)fieldInfo.pField;
-		SaveUtlVector( pSave, pUtlVector, FIELD_EMBEDDED );
-
-		// Get our owner
-		CBaseEntity *pOwner = (CBaseEntity*)fieldInfo.pOwner;
-
-		pSave->StartBlock();
-		// Now write out all the functions
-		for ( int i = 0; i < pUtlVector->Size(); i++ )
-		{
-#ifdef WIN32
-			void **ppV = (void**)&((*pUtlVector)[i].m_pfnThink);
-#else
-			BASEPTR *ppV = &((*pUtlVector)[i].m_pfnThink);
-#endif
-			bool bHasFunc = (*ppV != NULL);
-			pSave->WriteBool( &bHasFunc, 1 );
-			if ( bHasFunc )
-			{
-				pSave->WriteFunction( pOwner->GetDataDescMap(), "m_pfnThink", (inputfunc_t **)ppV, 1 );
-			}
-		}
-		pSave->EndBlock();
-	}
-
-	virtual void Restore( const SaveRestoreFieldInfo_t &fieldInfo, IRestore *pRestore )
-	{
-		AssertMsg( fieldInfo.pTypeDesc->fieldSize == 1, "CThinkContextsSaveDataOps does not support arrays");
-
-		// Read in the vector
-		CUtlVector< thinkfunc_t > *pUtlVector = (CUtlVector< thinkfunc_t > *)fieldInfo.pField;
-		RestoreUtlVector( pRestore, pUtlVector, FIELD_EMBEDDED );
-
-		// Get our owner
-		CBaseEntity *pOwner = (CBaseEntity*)fieldInfo.pOwner;
-
-		pRestore->StartBlock();
-		// Now read in all the functions
-		for ( int i = 0; i < pUtlVector->Size(); i++ )
-		{
-			bool bHasFunc;
-			pRestore->ReadBool( &bHasFunc, 1 );
-#ifdef WIN32
-			void **ppV = (void**)&((*pUtlVector)[i].m_pfnThink);
-#else
-			BASEPTR *ppV = &((*pUtlVector)[i].m_pfnThink);
-			Q_memset( (void *)ppV, 0x0, sizeof(inputfunc_t) );
-#endif
-			if ( bHasFunc )
-			{
-				SaveRestoreRecordHeader_t header;
-				pRestore->ReadHeader( &header );
-				pRestore->ReadFunction( pOwner->GetDataDescMap(), (inputfunc_t **)ppV, 1, header.size );
-			}
-			else
-			{
-				*ppV = NULL;
-			}
-		}
-		pRestore->EndBlock();
-	}
-
-	virtual bool IsEmpty( const SaveRestoreFieldInfo_t &fieldInfo )
-	{
-		CUtlVector< thinkfunc_t > *pUtlVector = (CUtlVector< thinkfunc_t > *)fieldInfo.pField;
-		return ( pUtlVector->Count() == 0 );
-	}
-
-	virtual void MakeEmpty( const SaveRestoreFieldInfo_t &fieldInfo )
-	{
-		BASEPTR pFunc = *((BASEPTR*)fieldInfo.pField);
-		pFunc = NULL;
-	}
-};
-CThinkContextsSaveDataOps g_ThinkContextsSaveDataOps;
-ISaveRestoreOps *thinkcontextFuncs = &g_ThinkContextsSaveDataOps;
-
-BEGIN_SIMPLE_DATADESC( thinkfunc_t )
-
-	DEFINE_FIELD( m_iszContext,	FIELD_STRING ),
-	// DEFINE_FIELD( m_pfnThink,		FIELD_FUNCTION ),		// Manually written
-	DEFINE_FIELD( m_nNextThinkTick,	FIELD_TICK	),
-	DEFINE_FIELD( m_nLastThinkTick,	FIELD_TICK	),
-
-END_DATADESC()
-
-BEGIN_SIMPLE_DATADESC( ResponseContext_t )
-
-	DEFINE_FIELD( m_iszName,			FIELD_STRING ),
-	DEFINE_FIELD( m_iszValue,			FIELD_STRING ),
-	DEFINE_FIELD( m_fExpirationTime,	FIELD_TIME ),
-
-END_DATADESC()
-
-BEGIN_DATADESC_NO_BASE( CBaseEntity )
+BEGIN_MAPENTITY_NO_BASE( CBaseEntity )
 
 	DEFINE_KEYFIELD( m_iClassname, FIELD_STRING, "classname" ),
-	DEFINE_GLOBAL_KEYFIELD( m_iGlobalname, FIELD_STRING, "globalname" ),
+	DEFINE_KEYFIELD( m_iGlobalname, FIELD_STRING, "globalname" ),
 	DEFINE_KEYFIELD( m_iParent, FIELD_STRING, "parentname" ),
+
+	DEFINE_KEYFIELD( m_nMinCPULevel, FIELD_CHARACTER, "mincpulevel" ),
+	DEFINE_KEYFIELD( m_nMaxCPULevel, FIELD_CHARACTER, "maxcpulevel" ),
+	DEFINE_KEYFIELD( m_nMinGPULevel, FIELD_CHARACTER, "mingpulevel" ),
+	DEFINE_KEYFIELD( m_nMaxGPULevel, FIELD_CHARACTER, "maxgpulevel" ),
 
 	DEFINE_KEYFIELD( m_iHammerID, FIELD_INTEGER, "hammerid" ), // save ID numbers so that entities can be tracked between save/restore and vmf
 
@@ -1782,83 +2116,38 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_KEYFIELD( m_nRenderFX, FIELD_CHARACTER, "renderfx" ),
 	DEFINE_KEYFIELD( m_nRenderMode, FIELD_CHARACTER, "rendermode" ),
 
-	// Consider moving to CBaseAnimating?
-	DEFINE_FIELD( m_flPrevAnimTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flAnimTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flSimulationTime, FIELD_TIME ),
-	DEFINE_FIELD( m_nLastThinkTick, FIELD_TICK ),
-
 	DEFINE_KEYFIELD( m_nNextThinkTick, FIELD_TICK, "nextthink" ),
 	DEFINE_KEYFIELD( m_fEffects, FIELD_INTEGER, "effects" ),
 	DEFINE_KEYFIELD( m_clrRender, FIELD_COLOR32, "rendercolor" ),
-	DEFINE_GLOBAL_KEYFIELD( m_nModelIndex, FIELD_SHORT, "modelindex" ),
+	DEFINE_KEYFIELD( m_nModelIndex, FIELD_SHORT, "modelindex" ),
 
-	// DEFINE_FIELD( m_PredictableID, CPredictableId ),
-
-	DEFINE_FIELD( touchStamp, FIELD_INTEGER ),
-	DEFINE_CUSTOM_FIELD( m_aThinkFunctions, thinkcontextFuncs ),
-	//								m_iCurrentThinkContext (not saved, debug field only, and think transient to boot)
-
-	DEFINE_UTLVECTOR(m_ResponseContexts,		FIELD_EMBEDDED),
 	DEFINE_KEYFIELD( m_iszResponseContext, FIELD_STRING, "ResponseContext" ),
 
-	DEFINE_FIELD( m_pfnThink, FIELD_FUNCTION ),
-	DEFINE_FIELD( m_pfnTouch, FIELD_FUNCTION ),
-	DEFINE_FIELD( m_pfnUse, FIELD_FUNCTION ),
-	DEFINE_FIELD( m_pfnBlocked, FIELD_FUNCTION ),
-	DEFINE_FIELD( m_pfnMoveDone, FIELD_FUNCTION ),
-
-	DEFINE_FIELD( m_lifeState, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_takedamage, FIELD_CHARACTER ),
 	DEFINE_KEYFIELD( m_iMaxHealth, FIELD_INTEGER, "max_health" ),
 	DEFINE_KEYFIELD( m_iHealth, FIELD_INTEGER, "health" ),
-	// DEFINE_FIELD( m_pLink, FIELD_CLASSPTR ),
+
 	DEFINE_KEYFIELD( m_target, FIELD_STRING, "target" ),
 
 	DEFINE_KEYFIELD( m_iszDamageFilterName, FIELD_STRING, "damagefilter" ),
-	DEFINE_FIELD( m_hDamageFilter, FIELD_EHANDLE ),
-	
-	DEFINE_FIELD( m_debugOverlays, FIELD_INTEGER ),
 
-	DEFINE_GLOBAL_FIELD( m_pParent, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_iParentAttachment, FIELD_CHARACTER ),
-	DEFINE_GLOBAL_FIELD( m_hMoveParent, FIELD_EHANDLE ),
-	DEFINE_GLOBAL_FIELD( m_hMoveChild, FIELD_EHANDLE ),
-	DEFINE_GLOBAL_FIELD( m_hMovePeer, FIELD_EHANDLE ),
-	
-	DEFINE_FIELD( m_iEFlags, FIELD_INTEGER ),
-
-	DEFINE_FIELD( m_iName, FIELD_STRING ),
-	DEFINE_EMBEDDED( m_Collision ),
-	DEFINE_EMBEDDED( m_Network ),
-
-	DEFINE_FIELD( m_MoveType, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_MoveCollide, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_hOwnerEntity, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_CollisionGroup, FIELD_INTEGER ),
-	DEFINE_PHYSPTR( m_pPhysicsObject),
-	DEFINE_FIELD( m_flElasticity, FIELD_FLOAT ),
 	DEFINE_KEYFIELD( m_flShadowCastDistance, FIELD_FLOAT, "shadowcastdist" ),
-	DEFINE_FIELD( m_flDesiredShadowCastDistance, FIELD_FLOAT ),
+
+	DEFINE_KEYFIELD( m_MoveType, FIELD_CHARACTER, "MoveType" ),
+
+	DEFINE_KEYFIELD( m_CollisionGroup, FIELD_INTEGER, "CollisionGroup" ),
 
 	DEFINE_INPUT( m_iInitialTeamNum, FIELD_INTEGER, "TeamNum" ),
-	DEFINE_FIELD( m_iTeamNum, FIELD_INTEGER ),
+	DEFINE_KEYFIELD( m_iTeamNum, FIELD_INTEGER, "teamnumber" ),
 
-//	DEFINE_FIELD( m_bSentLastFrame, FIELD_INTEGER ),
+	DEFINE_KEYFIELD( m_ModelName, FIELD_MODELNAME, "model" ),
 
-	DEFINE_FIELD( m_hGroundEntity, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_flGroundChangeTime, FIELD_TIME ),
-	DEFINE_GLOBAL_KEYFIELD( m_ModelName, FIELD_MODELNAME, "model" ),
+	DEFINE_KEYFIELD( m_AIAddOn, FIELD_STRING, "addon" ),
 	
 	DEFINE_KEYFIELD( m_vecBaseVelocity, FIELD_VECTOR, "basevelocity" ),
-	DEFINE_FIELD( m_vecAbsVelocity, FIELD_VECTOR ),
+
 	DEFINE_KEYFIELD( m_vecAngVelocity, FIELD_VECTOR, "avelocity" ),
-//	DEFINE_FIELD( m_vecAbsAngVelocity, FIELD_VECTOR ),
-	DEFINE_ARRAY( m_rgflCoordinateFrame, FIELD_FLOAT, 12 ), // NOTE: MUST BE IN LOCAL SPACE, NOT POSITION_VECTOR!!! (see CBaseEntity::Restore)
 
 	DEFINE_KEYFIELD( m_nWaterLevel, FIELD_CHARACTER, "waterlevel" ),
-	DEFINE_FIELD( m_nWaterType, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_pBlocker, FIELD_EHANDLE ),
 
 	DEFINE_KEYFIELD( m_flGravity, FIELD_FLOAT, "gravity" ),
 	DEFINE_KEYFIELD( m_flFriction, FIELD_FLOAT, "friction" ),
@@ -1866,46 +2155,23 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	// Local time is local to each object.  It doesn't need to be re-based if the clock
 	// changes.  Therefore it is saved as a FIELD_FLOAT, not a FIELD_TIME
 	DEFINE_KEYFIELD( m_flLocalTime, FIELD_FLOAT, "ltime" ),
-	DEFINE_FIELD( m_flVPhysicsUpdateLocalTime, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flMoveDoneTime, FIELD_FLOAT ),
 
-//	DEFINE_FIELD( m_nPushEnumCount, FIELD_INTEGER ),
-
-	DEFINE_FIELD( m_vecAbsOrigin, FIELD_POSITION_VECTOR ),
 	DEFINE_KEYFIELD( m_vecVelocity, FIELD_VECTOR, "velocity" ),
 	DEFINE_KEYFIELD( m_iTextureFrameIndex, FIELD_CHARACTER, "texframeindex" ),
-	DEFINE_FIELD( m_bSimulatedEveryTick, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bAnimatedEveryTick, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bAlternateSorting, FIELD_BOOLEAN ),
+
 	DEFINE_KEYFIELD( m_spawnflags, FIELD_INTEGER, "spawnflags" ),
-	DEFINE_FIELD( m_nTransmitStateOwnedCounter, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_angAbsRotation, FIELD_VECTOR ),
-	DEFINE_FIELD( m_vecOrigin, FIELD_VECTOR ),			// NOTE: MUST BE IN LOCAL SPACE, NOT POSITION_VECTOR!!! (see CBaseEntity::Restore)
-	DEFINE_FIELD( m_angRotation, FIELD_VECTOR ),
 
 	DEFINE_KEYFIELD( m_vecViewOffset, FIELD_VECTOR, "view_ofs" ),
-
-	DEFINE_FIELD( m_fFlags, FIELD_INTEGER ),
-
-//	DEFINE_FIELD( m_bIsPlayerSimulated, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_hPlayerSimulationOwner, FIELD_EHANDLE ),
-
-	// DEFINE_FIELD( m_pTimedOverlay, TimedOverlay_t* ),
-	DEFINE_FIELD( m_nSimulationTick, FIELD_TICK ),
-	// DEFINE_FIELD( m_RefEHandle, CBaseHandle ),
-
-//	DEFINE_FIELD( m_nWaterTouch,		FIELD_INTEGER ),
-//	DEFINE_FIELD( m_nSlimeTouch,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_flNavIgnoreUntilTime,	FIELD_TIME ),
-
-//	DEFINE_FIELD( m_bToolRecording,		FIELD_BOOLEAN ),
-//	DEFINE_FIELD( m_ToolHandle,		FIELD_INTEGER ),
 
 	// NOTE: This is tricky. TeamNum must be saved, but we can't directly
 	// read it in, because we can only set it after the team entity has been read in,
 	// which may or may not actually occur before the entity is parsed.
 	// Therefore, we set the TeamNum from the InitialTeamNum in Activate
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetTeam", InputSetTeam ),
+
+	DEFINE_INPUT( m_fadeMinDist, FIELD_FLOAT, "fademindist" ),
+	DEFINE_INPUT( m_fadeMaxDist, FIELD_FLOAT, "fademaxdist" ),
+	DEFINE_KEYFIELD( m_flFadeScale, FIELD_FLOAT, "fadescale" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Kill", InputKill ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "KillHierarchy", InputKillHierarchy ),
@@ -1945,26 +2211,9 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_OUTPUT( m_OnUser3, "OnUser3" ),
 	DEFINE_OUTPUT( m_OnUser4, "OnUser4" ),
 
-	// Function Pointers
-	DEFINE_FUNCTION( SUB_Remove ),
-	DEFINE_FUNCTION( SUB_DoNothing ),
-	DEFINE_FUNCTION( SUB_StartFadeOut ),
-	DEFINE_FUNCTION( SUB_StartFadeOutInstant ),
-	DEFINE_FUNCTION( SUB_FadeOut ),
-	DEFINE_FUNCTION( SUB_Vanish ),
-	DEFINE_FUNCTION( SUB_CallUseToggle ),
-	DEFINE_THINKFUNC( ShadowCastDistThink ),
+	DEFINE_KEYFIELD( m_bLagCompensate, FIELD_BOOLEAN, "LagCompensate" ),
 
-	DEFINE_FIELD( m_hEffectEntity, FIELD_EHANDLE ),
-
-	//DEFINE_FIELD( m_DamageModifiers, FIELD_?? ), // can't save?
-	// DEFINE_FIELD( m_fDataObjectTypes, FIELD_INTEGER ),
-
-#ifdef TF_DLL
-	DEFINE_ARRAY( m_nModelIndexOverrides, FIELD_INTEGER, MAX_VISION_MODES ),
-#endif
-
-END_DATADESC()
+END_MAPENTITY()
 
 // For code error checking
 extern bool g_bReceivedChainedUpdateOnRemove;
@@ -2000,27 +2249,18 @@ void CBaseEntity::UpdateOnRemove( void )
 	// Virtual call to shut down any looping sounds.
 	StopLoopingSounds();
 
+	// Remove from lag compensation 'extra' list
+	if ( ShouldLagCompensate() )
+	{
+		lagcompensation->RemoveAdditionalEntity( this );		
+	}
+
 	// Notifies entity listeners, etc
-	gEntList.NotifyRemoveEntity( GetRefEHandle() );
+	gEntList.NotifyRemoveEntity( this );
 
 	if ( edict() )
 	{
 		AddFlag( FL_KILLME );
-		if ( GetFlags() & FL_GRAPHED )
-		{
-			/*	<<TODO>>
-			// this entity was a LinkEnt in the world node graph, so we must remove it from
-			// the graph since we are removing it from the world.
-			for ( int i = 0 ; i < WorldGraph.m_cLinks ; i++ )
-			{
-				if ( WorldGraph.m_pLinkPool [ i ].m_pLinkEnt == pev )
-				{
-					// if this link has a link ent which is the same ent that is removing itself, remove it!
-					WorldGraph.m_pLinkPool [ i ].m_pLinkEnt = NULL;
-				}
-			}
-			*/
-		}
 	}
 
 	if ( m_iGlobalname != NULL_STRING )
@@ -2753,7 +2993,7 @@ bool CBaseEntity::VPhysicsIsFlesh( void )
 		int material = pList[i]->GetMaterialIndex();
 		const surfacedata_t *pSurfaceData = physprops->GetSurfaceData( material );
 		// Is flesh ?, don't allow pickup
-		if ( pSurfaceData->game.material == CHAR_TEX_ANTLION || pSurfaceData->game.material == CHAR_TEX_FLESH || pSurfaceData->game.material == CHAR_TEX_BLOODYFLESH || pSurfaceData->game.material == CHAR_TEX_ALIENFLESH )
+		if ( IsTexFlesh(pSurfaceData->game.material) )
 			return true;
 	}
 	return false;
@@ -2935,7 +3175,7 @@ Class_T CBaseEntity::Classify ( void )
 
 float CBaseEntity::GetAutoAimRadius()
 {
-	if( g_pGameRules->GetAutoAimMode() == AUTOAIM_ON_CONSOLE )
+	if( g_pGameRules->GetAutoAimMode() == AUTOAIM_EXTRA )
 		return 48.0f;
 	else
 		return 24.0f;
@@ -2980,10 +3220,10 @@ bool CBaseEntity::PassesDamageFilter( const CTakeDamageInfo &info )
 	return true;
 }
 
-FORCEINLINE bool NamesMatch( const char *pszQuery, string_t nameToMatch )
+bool EntityNamesMatch( const char *pszQuery, string_t nameToMatch )
 {
 	if ( nameToMatch == NULL_STRING )
-		return (!pszQuery || *pszQuery == 0 || *pszQuery == '*');
+		return (*pszQuery == 0 || *pszQuery == '*');
 
 	const char *pszNameToMatch = STRING(nameToMatch);
 
@@ -2993,16 +3233,9 @@ FORCEINLINE bool NamesMatch( const char *pszQuery, string_t nameToMatch )
 
 	while ( *pszNameToMatch && *pszQuery )
 	{
-		unsigned char cName = *pszNameToMatch;
-		unsigned char cQuery = *pszQuery;
-		// simple ascii case conversion
-		if ( cName == cQuery )
-			;
-		else if ( cName - 'A' <= (unsigned char)'Z' - 'A' && cName - 'A' + 'a' == cQuery )
-			;
-		else if ( cName - 'a' <= (unsigned char)'z' - 'a' && cName - 'a' + 'A' == cQuery )
-			;
-		else
+		char cName = *pszNameToMatch;
+		char cQuery = *pszQuery;
+		if ( cName != cQuery && tolower(cName) != tolower(cQuery) ) // people almost always use lowercase, so assume that first
 			break;
 		++pszNameToMatch;
 		++pszQuery;
@@ -3023,12 +3256,12 @@ bool CBaseEntity::NameMatchesComplex( const char *pszNameOrWildcard )
 	if ( !Q_stricmp( "!player", pszNameOrWildcard) )
 		return IsPlayer();
 
-	return NamesMatch( pszNameOrWildcard, m_iName );
+	return EntityNamesMatch( pszNameOrWildcard, m_iName );
 }
 
 bool CBaseEntity::ClassMatchesComplex( const char *pszClassOrWildcard )
 {
-	return NamesMatch( pszClassOrWildcard, m_iClassname );
+	return EntityNamesMatch( pszClassOrWildcard, m_iClassname );
 }
 
 void CBaseEntity::MakeDormant( void )
@@ -3138,7 +3371,7 @@ CBaseEntity *CBaseEntity::Create( const char *szName, const Vector &vecOrigin, c
 // will keep a pointer to it after this call.
 CBaseEntity * CBaseEntity::CreateNoSpawn( const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner )
 {
-	CBaseEntity *pEntity = CreateEntityByName( szName );
+	CBaseEntity *pEntity = CreateEntityByName( szName, -1 );
 	if ( !pEntity )
 	{
 		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
@@ -3174,188 +3407,6 @@ Vector CBaseEntity::GetSoundEmissionOrigin() const
 	return WorldSpaceCenter();
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: Saves the current object out to disk, by iterating through the objects
-//			data description hierarchy
-// Input  : &save - save buffer which the class data is written to
-// Output : int	- 0 if the save failed, 1 on success
-//-----------------------------------------------------------------------------
-int CBaseEntity::Save( ISave &save )
-{
-	// loop through the data description list, saving each data desc block
-	int status = SaveDataDescBlock( save, GetDataDescMap() );
-
-	return status;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Recursively saves all the classes in an object, in reverse order (top down)
-// Output : int 0 on failure, 1 on success
-//-----------------------------------------------------------------------------
-int CBaseEntity::SaveDataDescBlock( ISave &save, datamap_t *dmap )
-{
-	return save.WriteAll( this, dmap );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Restores the current object from disk, by iterating through the objects
-//			data description hierarchy
-// Input  : &restore - restore buffer which the class data is read from
-// Output : int	- 0 if the restore failed, 1 on success
-//-----------------------------------------------------------------------------
-int CBaseEntity::Restore( IRestore &restore )
-{
-	// This is essential to getting the spatial partition info correct
-	CollisionProp()->DestroyPartitionHandle();
-
-	// loops through the data description list, restoring each data desc block in order
-	int status = RestoreDataDescBlock( restore, GetDataDescMap() );
-
-	// ---------------------------------------------------------------
-	// HACKHACK: We don't know the space of these vectors until now
-	// if they are worldspace, fix them up.
-	// ---------------------------------------------------------------
-	{
-		CGameSaveRestoreInfo *pGameInfo = restore.GetGameSaveRestoreInfo();
-		Vector parentSpaceOffset = pGameInfo->modelSpaceOffset;
-		if ( !GetParent() )
-		{
-			// parent is the world, so parent space is worldspace
-			// so update with the worldspace leveltransition transform
-			parentSpaceOffset += pGameInfo->GetLandmark();
-		}
-		
-		// NOTE: Do *not* use GetAbsOrigin() here because it will
-		// try to recompute m_rgflCoordinateFrame!
-		MatrixSetColumn( m_vecAbsOrigin, 3, m_rgflCoordinateFrame );
-
-		m_vecOrigin += parentSpaceOffset;
-	}
-
-	// Gotta do this after the coordframe is set up as it depends on it.
-
-	// By definition, the surrounding bounds are dirty
-	// Also, twiddling with the flags here ensures it gets added to the KD tree dirty list
-	// (We don't want to use the saved version of this flag)
-	RemoveEFlags( EFL_DIRTY_SPATIAL_PARTITION );
-	CollisionProp()->MarkSurroundingBoundsDirty();
-
-	if ( edict() && GetModelIndex() != 0 && GetModelName() != NULL_STRING && restore.GetPrecacheMode() )
-	{
-		PrecacheModel( STRING( GetModelName() ) );
-
-		//Adrian: We should only need to do this after we precache. No point in setting the model again.
-		SetModelIndex( modelinfo->GetModelIndex( STRING(GetModelName() ) ) );
-	}
-
-	// Restablish ground entity
-	if ( m_hGroundEntity != NULL )
-	{
-		m_hGroundEntity->AddEntityToGroundList( this );
-	}
-
-	return status;
-}
-
-
-//-----------------------------------------------------------------------------
-// handler to do stuff before you are saved
-//-----------------------------------------------------------------------------
-void CBaseEntity::OnSave( IEntitySaveUtils *pUtils )
-{
-	// Here, we must force recomputation of all abs data so it gets saved correctly
-	// We can't leave the dirty bits set because the loader can't cope with it.
-	CalcAbsolutePosition();
-	CalcAbsoluteVelocity();
-}
-
-//-----------------------------------------------------------------------------
-// handler to do stuff after you are restored
-//-----------------------------------------------------------------------------
-void CBaseEntity::OnRestore()
-{
-#if defined( PORTAL ) || defined( HL2_EPISODIC ) || defined ( HL2_DLL ) || defined( HL2_LOSTCOAST )
-	// We had a short period during the 2013 beta where the FL_* flags had a bogus value near the top, so detect
-	// these bad saves and just give up. Only saves from the short beta period should have been effected.
-	if ( GetFlags() & FL_FAKECLIENT )
-	{
-		char szMsg[256];
-		V_snprintf( szMsg, sizeof(szMsg), "\nInvalid save, unable to load. Please run \"map %s\" to restart this level manually\n\n", gpGlobals->mapname.ToCStr() );
-		Msg( "%s", szMsg );
-		
-		engine->ServerCommand("wait;wait;disconnect;showconsole\n");
-	}
-#endif
-
-	SimThink_EntityChanged( this );
-
-	// touchlinks get recomputed
-	if ( IsEFlagSet( EFL_CHECK_UNTOUCH ) )
-	{
-		RemoveEFlags( EFL_CHECK_UNTOUCH );
-		SetCheckUntouch( true );
-	}
-
-	// disable touch functions while we recreate the touch links between entities
-	// NOTE: We don't do this on transitions, because we'd miss the OnStartTouch call!
-#if !defined(HL2_DLL) || ( defined(HL2_DLL) && defined(HL2_EPISODIC) )
-	CBaseEntity::sm_bDisableTouchFuncs = ( gpGlobals->eLoadType != MapLoad_Transition );
-	PhysicsTouchTriggers();
-	CBaseEntity::sm_bDisableTouchFuncs = false;
-#endif // HL2_EPISODIC
-
-	//Adrian: If I'm restoring with these fields it means I've become a client side ragdoll.
-	//Don't create another one, just wait until is my time of being removed.
-	if ( GetFlags() & FL_TRANSRAGDOLL )
-	{
-		m_nRenderFX = kRenderFxNone;
-		AddEffects( EF_NODRAW );
-		RemoveFlag( FL_DISSOLVING | FL_ONFIRE );
-	}
-
-	if ( m_pParent )
-	{
-		CBaseEntity *pChild = m_pParent->FirstMoveChild();
-		while ( pChild )
-		{
-			if ( pChild == this )
-				break;
-			pChild = pChild->NextMovePeer();
-		}
-		if ( pChild != this )
-		{
-#if _DEBUG
-			// generally this means you've got something marked FCAP_DONT_SAVE
-			// in a hierarchy.  That's probably ok given this fixup, but the hierarhcy
-			// linked list is just saved/loaded in-place
-			Warning("Fixing up parent on %s\n", GetClassname() );
-#endif
-			// We only need to be back in the parent's list because we're already in the right place and with the right data
-			LinkChild( m_pParent, this );
-		}
-	}
-
-	// We're not save/loading the PVS dirty state. Assume everything is dirty after a restore
-	NetworkProp()->MarkPVSInformationDirty();
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Recursively restores all the classes in an object, in reverse order (top down)
-// Output : int 0 on failure, 1 on success
-//-----------------------------------------------------------------------------
-int CBaseEntity::RestoreDataDescBlock( IRestore &restore, datamap_t *dmap )
-{
-	return restore.ReadAll( this, dmap );
-}
-
-//-----------------------------------------------------------------------------
-
-bool CBaseEntity::ShouldSavePhysics()
-{
-	return true;
-}
 
 //-----------------------------------------------------------------------------
 
@@ -3458,6 +3509,11 @@ void CBaseEntity::SetMoveType( MoveType_t val, MoveCollide_t moveCollide )
 		return;
 	}
 
+	if ( m_MoveType == MOVETYPE_NOCLIP && val != m_MoveType )
+	{
+		RemoveEFlags( EFL_NOCLIP_ACTIVE );
+	}
+
 	// This is needed to the removal of MOVETYPE_FOLLOW:
 	// We can't transition from follow to a different movetype directly
 	// or the leaf code will break.
@@ -3503,6 +3559,16 @@ void CBaseEntity::SetMoveType( MoveType_t val, MoveCollide_t moveCollide )
 
 void CBaseEntity::Spawn( void ) 
 {
+}
+
+// Post KeyValues/Map data parsing hook
+void CBaseEntity::OnParseMapDataFinished()
+{
+	// Add to lag compensation list
+	if ( ShouldLagCompensate() )
+	{
+		lagcompensation->AddAdditionalEntity( this );		
+	}
 }
 
 
@@ -3679,7 +3745,7 @@ void CBaseEntity::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways )
 		{
 			// HLTV/Replay will PVS cull this entity, so update the 
 			// node/cluster infos if necessary
-			m_Network.RecomputePVSInformation();
+			m_Network->RecomputePVSInformation();
 		}
 	}
 
@@ -3745,12 +3811,17 @@ const char *CBaseEntity::GetDebugName(void)
 	if ( this == NULL )
 		return "<<null>>";
 
-	if ( m_iName != NULL_STRING ) 
+	if ( m_iName.Get() != NULL_STRING ) 
 	{
-		return STRING(m_iName);
+		return STRING(m_iName.Get());
 	}
 	else
 	{
+		if ( ToBasePlayer( this ) )
+		{
+			return ToBasePlayer( this )->GetPlayerName();
+		}
+
 		return STRING(m_iClassname);
 	}
 }
@@ -3913,7 +3984,7 @@ bool CBaseEntity::AcceptInput( const char *szInputName, CBaseEntity *pActivator,
 	}
 
 	// loop through the data description list, restoring each data desc block
-	for ( datamap_t *dmap = GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap )
+	for ( datamap_t *dmap = GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
 	{
 		// search through all the actions in the data description, looking for a match
 		for ( int i = 0; i < dmap->dataNumFields; i++ )
@@ -3928,7 +3999,7 @@ bool CBaseEntity::AcceptInput( const char *szInputName, CBaseEntity *pActivator,
 					// mapper debug message
 					if (pCaller != NULL)
 					{
-						Q_snprintf( szBuffer, sizeof(szBuffer), "(%0.2f) input %s: %s.%s(%s)\n", gpGlobals->curtime, STRING(pCaller->m_iName), GetDebugName(), szInputName, Value.String() );
+						Q_snprintf( szBuffer, sizeof(szBuffer), "(%0.2f) input %s: %s.%s(%s)\n", gpGlobals->curtime, STRING(pCaller->m_iName.Get()), GetDebugName(), szInputName, Value.String() );
 					}
 					else
 					{
@@ -3953,7 +4024,7 @@ bool CBaseEntity::AcceptInput( const char *szInputName, CBaseEntity *pActivator,
 								Warning( "!! ERROR: bad input/output link:\n!! %s(%s,%s) doesn't match type from %s(%s)\n", 
 									STRING(m_iClassname), GetDebugName(), szInputName, 
 									( pCaller != NULL ) ? STRING(pCaller->m_iClassname) : "<null>",
-									( pCaller != NULL ) ? STRING(pCaller->m_iName) : "<null>" );
+									( pCaller != NULL ) ? STRING(pCaller->m_iName.Get()) : "<null>" );
 								return false;
 							}
 						}
@@ -4004,7 +4075,7 @@ bool CBaseEntity::AcceptInput( const char *szInputName, CBaseEntity *pActivator,
 //-----------------------------------------------------------------------------
 void CBaseEntity::InputAlpha( inputdata_t &inputdata )
 {
-	SetRenderColorA( clamp( inputdata.value.Int(), 0, 255 ) );
+	SetRenderAlpha( clamp( inputdata.value.Int(), 0, 255 ) );
 }
 
 
@@ -4052,7 +4123,7 @@ bool CBaseEntity::ReadKeyField( const char *varName, variant_t *var )
 		return false;
 
 	// loop through the data description list, restoring each data desc block
-	for ( datamap_t *dmap = GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap )
+	for ( datamap_t *dmap = GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
 	{
 		// search through all the readable fields in the data description, looking for a match
 		for ( int i = 0; i < dmap->dataNumFields; i++ )
@@ -4148,7 +4219,15 @@ void CBaseEntity::InputKill( inputdata_t &inputdata )
 		SetOwnerEntity( NULL );
 	}
 
-	UTIL_Remove( this );
+	if( IsPlayer() )
+	{
+		//never just delete players
+		engine->ServerCommand( UTIL_VarArgs( "kickid %d CBaseEntity::InputKill()\n", engine->GetPlayerUserId( edict() ) ) );
+	}
+	else
+	{
+		UTIL_Remove( this );
+	}
 }
 
 void CBaseEntity::InputKillHierarchy( inputdata_t &inputdata )
@@ -4336,6 +4415,14 @@ CStudioHdr *CBaseEntity::OnNewModel()
 	return NULL;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Called once per frame after the server frame loop has finished and after all messages being
+//  sent to clients have been sent.  NOTE: Only called if scheduled via AddPostClientMessageEntity() !
+//-----------------------------------------------------------------------------
+void CBaseEntity::PostClientMessagesSent( void )
+{
+	
+}
 
 //================================================================================
 // TEAM HANDLING
@@ -4698,6 +4785,39 @@ static CWatchForModelAccess g_WatchForModels;
 
 #endif
 
+class CModelPrecacheSystem : public CAutoGameSystem
+{
+public:
+	CModelPrecacheSystem() : CAutoGameSystem( "CModelPrecacheSystem" ), m_RepeatCounts( 0, 0, DefLessFunc( int ) )
+	{
+	}
+
+	// Level init, shutdown
+	virtual void LevelShutdownPreEntity()
+	{
+		m_RepeatCounts.Purge();
+	}
+
+	bool ShouldPrecache( int nModelIndex )
+	{
+		int slot = m_RepeatCounts.Find( nModelIndex );
+		if ( slot != m_RepeatCounts.InvalidIndex() )
+		{
+			m_RepeatCounts[ slot ]++;
+			return false;
+		}
+
+		m_RepeatCounts.Insert( nModelIndex, 0 );
+		return true;
+	}
+
+private:
+
+	CUtlMap< int, int > m_RepeatCounts;
+};
+
+static CModelPrecacheSystem g_ModelPrecacheSystem;
+
 // HACK:  This must match the #define in cl_animevent.h in the client .dll code!!!
 #define CL_EVENT_SOUND				5004
 #define CL_EVENT_FOOTSTEP_LEFT		6004
@@ -4710,6 +4830,8 @@ static CWatchForModelAccess g_WatchForModels;
 //-----------------------------------------------------------------------------
 void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 {
+	if ( !g_ModelPrecacheSystem.ShouldPrecache( nModelIndex ) )
+		return;
 
 	model_t *pModel = (model_t *)modelinfo->GetModel( nModelIndex );
 	if ( !pModel || modelinfo->GetModelType( pModel ) != mod_studio )
@@ -4718,7 +4840,6 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 	}
 
 	// sounds
-	if ( IsPC() )
 	{
 		const char *name = modelinfo->GetModelName( pModel );
 		if ( !g_ModelSoundsCache.EntryExists( name ) )
@@ -4790,9 +4911,11 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 				{
 					mstudioevent_t *pEvent = seq.pEvent( j );
 
+					int nEvent = pEvent->Event();
+
 					if ( !( pEvent->type & AE_TYPE_NEWEVENTSYSTEM ) || ( pEvent->type & AE_TYPE_CLIENT ) )
 					{
-						if ( pEvent->event == AE_CL_CREATE_PARTICLE_EFFECT )
+						if ( nEvent == AE_CL_CREATE_PARTICLE_EFFECT )
 						{
 							char token[256];
 							const char *pOptions = pEvent->pszOptions();
@@ -5142,6 +5265,55 @@ static ConCommand find_ent_index("find_ent_index", CC_Find_Ent_Index, "Display d
 
 // Purpose : 
 //------------------------------------------------------------------------------
+void DumpEntity( CBasePlayer *pPlayer, CBaseEntity *ent )
+{
+	for ( datamap_t *dmap = ent->GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
+	{
+		// search through all the actions in the data description, printing out details
+		for ( int i = 0; i < dmap->dataNumFields; i++ )
+		{
+			variant_t var;
+			if ( ent->ReadKeyField( dmap->dataDesc[i].externalName, &var) )
+			{
+				char buf[256];
+				buf[0] = 0;
+				switch( var.FieldType() )
+				{
+				case FIELD_STRING:
+					Q_strncpy( buf, var.String() ,sizeof(buf));
+					break;
+				case FIELD_INTEGER:
+					if ( var.Int() )
+						Q_snprintf( buf,sizeof(buf), "%d", var.Int() );
+					break;
+				case FIELD_FLOAT:
+					if ( var.Float() )
+						Q_snprintf( buf,sizeof(buf), "%.2f", var.Float() );
+					break;
+				case FIELD_EHANDLE:
+					{
+						// get the entities name
+						if ( var.Entity() )
+						{
+							Q_snprintf( buf,sizeof(buf), "%s", STRING(var.Entity()->GetEntityName()) );
+						}
+					}
+					break;
+				}
+
+				// don't print out the duplicate keys
+				if ( !Q_stricmp("parentname",dmap->dataDesc[i].externalName) || !Q_stricmp("targetname",dmap->dataDesc[i].externalName) )
+					continue;
+
+				// don't print out empty keys
+				if ( buf[0] )
+				{
+					ClientPrint( pPlayer, HUD_PRINTCONSOLE, UTIL_VarArgs("  %s: %s\n", dmap->dataDesc[i].externalName, buf) );
+				}
+			}
+		}
+	}
+}
 void CC_Ent_Dump( const CCommand& args )
 {
 	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() );
@@ -5162,52 +5334,7 @@ void CC_Ent_Dump( const CCommand& args )
 		while ( ( ent = gEntList.FindEntityByName(ent, args[1] ) ) != NULL )
 		{
 			bFound = true;
-			for ( datamap_t *dmap = ent->GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap )
-			{
-				// search through all the actions in the data description, printing out details
-				for ( int i = 0; i < dmap->dataNumFields; i++ )
-				{
-					variant_t var;
-					if ( ent->ReadKeyField( dmap->dataDesc[i].externalName, &var) )
-					{
-						char buf[256];
-						buf[0] = 0;
-						switch( var.FieldType() )
-						{
-						case FIELD_STRING:
-							Q_strncpy( buf, var.String() ,sizeof(buf));
-							break;
-						case FIELD_INTEGER:
-							if ( var.Int() )
-								Q_snprintf( buf,sizeof(buf), "%d", var.Int() );
-							break;
-						case FIELD_FLOAT:
-							if ( var.Float() )
-								Q_snprintf( buf,sizeof(buf), "%.2f", var.Float() );
-							break;
-						case FIELD_EHANDLE:
-							{
-								// get the entities name
-								if ( var.Entity() )
-								{
-									Q_snprintf( buf,sizeof(buf), "%s", STRING(var.Entity()->GetEntityName()) );
-								}
-							}
-							break;
-						}
-
-						// don't print out the duplicate keys
-						if ( !Q_stricmp("parentname",dmap->dataDesc[i].externalName) || !Q_stricmp("targetname",dmap->dataDesc[i].externalName) )
-							continue;
-
-						// don't print out empty keys
-						if ( buf[0] )
-						{
-							ClientPrint( pPlayer, HUD_PRINTCONSOLE, UTIL_VarArgs("  %s: %s\n", dmap->dataDesc[i].externalName, buf) );
-						}
-					}
-				}
-			}
+			DumpEntity( pPlayer, ent );
 		}
 
 		if ( !bFound )
@@ -5399,7 +5526,7 @@ private:
 		// Starting past the last space, this is the remainder of the string
 		char *inputPartial = ( checklen > nEntityNameLength ) ? (space+1) : NULL;
 
-		for ( datamap_t *dmap = target->GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap )
+		for ( datamap_t *dmap = target->GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
 		{
 			// Make sure we don't keep adding things in if the satisfied the limit
 			if ( symbols.Count() >= COMMAND_COMPLETION_MAXITEMS )
@@ -5412,10 +5539,6 @@ private:
 
 				// Only want inputs
 				if ( !( field->flags & FTYPEDESC_INPUT ) )
-					continue;
-
-				// Only want input functions
-				if ( field->flags & FTYPEDESC_SAVE )
 					continue;
 
 				// See if we've got a partial string for the input name already
@@ -5498,7 +5621,7 @@ void CC_Ent_Info( const CCommand& args )
 		if ( ent )
 		{
 			datamap_t *dmap;
-			for ( dmap = ent->GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap )
+			for ( dmap = ent->GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
 			{
 				// search through all the actions in the data description, printing out details
 				for ( int i = 0; i < dmap->dataNumFields; i++ )
@@ -5510,7 +5633,7 @@ void CC_Ent_Info( const CCommand& args )
 				}
 			}
 
-			for ( dmap = ent->GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap )
+			for ( dmap = ent->GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
 			{
 				// search through all the actions in the data description, printing out details
 				for ( int i = 0; i < dmap->dataNumFields; i++ )
@@ -5613,7 +5736,7 @@ void CBaseEntity::SetCheckUntouch( bool check )
 	// Invalidate touchstamp
 	if ( check )
 	{
-		touchStamp++;
+		m_nTouchStamp++;
 		if ( !IsEFlagSet( EFL_CHECK_UNTOUCH ) )
 		{
 			AddEFlags( EFL_CHECK_UNTOUCH );
@@ -5827,8 +5950,14 @@ void CBaseEntity::SetAbsOrigin( const Vector& absOrigin )
 
 	if (m_vecOrigin != vecNewOrigin)
 	{
-		m_vecOrigin = vecNewOrigin;
+		m_vecOrigin.SetDirect( vecNewOrigin );
 		SetSimulationTime( gpGlobals->curtime );
+		UpdateCell();
+	}
+
+	if ( HasDataObjectType( POSITIONWATCHER ) )
+	{	
+		ReportPositionChanged( this );
 	}
 }
 
@@ -5977,8 +6106,9 @@ void CBaseEntity::SetLocalOrigin( const Vector& origin )
 #endif
 		
 		InvalidatePhysicsRecursive( POSITION_CHANGED );
-		m_vecOrigin = origin;
+		m_vecOrigin.SetDirect( origin );
 		SetSimulationTime( gpGlobals->curtime );
+		UpdateCell();
 	}
 }
 
@@ -6072,6 +6202,27 @@ void CBaseEntity::SetLocalTransform( const matrix3x4_t &localTransform )
 	SetLocalAngles( vecLocalAngles );
 }
 
+//-----------------------------------------------------------------------------
+// Adjust the number of cell bits
+//-----------------------------------------------------------------------------
+void CBaseEntity::SetCellBits( int cellbits )
+{
+	m_cellbits = cellbits;
+	m_cellwidth = ( 1 << cellbits );
+	UpdateCell();
+}
+
+//-----------------------------------------------------------------------------
+// Called when the origin changes and recomputes cell
+//-----------------------------------------------------------------------------
+void CBaseEntity::UpdateCell()
+{
+	register int const cellwidth = m_cellwidth; // Load it into a register
+
+	m_cellX = CellFromCoord( cellwidth, m_vecOrigin.GetX() );
+	m_cellY = CellFromCoord( cellwidth, m_vecOrigin.GetY() );
+	m_cellZ	= CellFromCoord( cellwidth, m_vecOrigin.GetZ() );
+}
 
 //-----------------------------------------------------------------------------
 // Is the entity floating?
@@ -6190,11 +6341,6 @@ void CBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 	// Append anything from I/O or keyvalues pairs
 	AppendContextToCriteria( set );
 
-	if( hl2_episodic.GetBool() )
-	{
-		set.AppendCriteria( "episodic", "1" );
-	}
-
 	// Append anything from world I/O/keyvalues with "world" as prefix
 	CWorld *world = dynamic_cast< CWorld * >( CBaseEntity::Instance( engine->PEntityOfEntIndex( 0 ) ) );
 	if ( world )
@@ -6287,6 +6433,14 @@ const char *CBaseEntity::GetContextValue( int index ) const
 	}
 
 	return  m_ResponseContexts[ index ].m_iszValue.ToCStr();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: remove all contexts set on this entity
+//-----------------------------------------------------------------------------
+void CBaseEntity::ClearAllContexts( )
+{
+	m_ResponseContexts.RemoveAll();
 }
 
 //-----------------------------------------------------------------------------
@@ -6387,24 +6541,58 @@ void CBaseEntity::AddContext( const char *contextName )
 	while ( p )
 	{
 		duration = 0.0f;
-		p = SplitContext( p, key, sizeof( key ), value, sizeof( value ), &duration );
+		p = SplitContext( p, key, sizeof( key ), value, sizeof( value ), &duration, contextName );
 		if ( duration )
 		{
 			duration += gpGlobals->curtime;
 		}
 
-		int iIndex = FindContextByName( key );
-		if ( iIndex != -1 )
+		AddContext( key, value, duration );
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: add exactly one context key,value pair to this object
+// Input  : inputdata - 
+//-----------------------------------------------------------------------------
+void CBaseEntity::AddContext( const char *pKey, const char *pValue, float duration )
+{
+	int iIndex = FindContextByName( pKey );
+	if ( iIndex != -1 )
+	{
+		// Set the existing context to the new value
+		char buf[64];
+		if ( RR::CApplyContextOperator::FindOperator( pValue )->Apply( 
+			m_ResponseContexts[iIndex].m_iszValue.ToCStr(), pValue, buf, sizeof(buf) ) )
 		{
-			// Set the existing context to the new value
-			m_ResponseContexts[iIndex].m_iszValue = AllocPooledString( value );
-			m_ResponseContexts[iIndex].m_fExpirationTime = duration;
-			continue;
+			m_ResponseContexts[iIndex].m_iszValue = AllocPooledString( buf );
+		}
+		else
+		{
+			Warning( "RR: could not apply operator %s to prior value %s\n", 
+				pValue, m_ResponseContexts[iIndex].m_iszValue.ToCStr() );
+		m_ResponseContexts[iIndex].m_iszValue = AllocPooledString( pValue );
 		}
 
+		m_ResponseContexts[iIndex].m_fExpirationTime = duration;
+	}
+	else
+	{
 		ResponseContext_t newContext;
-		newContext.m_iszName = AllocPooledString( key );
-		newContext.m_iszValue = AllocPooledString( value );
+		newContext.m_iszName = AllocPooledString( pKey );
+
+		// Create a new context with the appropriate value ( some operators assume 0 on nonexistent prior )
+		char buf[64];
+		if ( RR::CApplyContextOperator::FindOperator( pValue )->Apply( 
+			NULL, pValue, buf, sizeof(buf) ) )
+		{
+			newContext.m_iszValue = AllocPooledString( buf );
+		}
+		else
+		{
+		newContext.m_iszValue = AllocPooledString( pValue );
+		}
 		newContext.m_fExpirationTime = duration;
 
 		m_ResponseContexts.AddToTail( newContext );
@@ -6440,7 +6628,8 @@ void CBaseEntity::InputClearContext( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 IResponseSystem *CBaseEntity::GetResponseSystem()
 {
-	return NULL;
+	extern IResponseSystem *g_pResponseSystem;
+	return g_pResponseSystem;
 }
 
 //-----------------------------------------------------------------------------
@@ -6522,14 +6711,15 @@ void CBaseEntity::DispatchResponse( const char *conceptName )
 		return;
 
 	// Handle the response here...
-	const char *szResponse = result.GetResponsePtr();
+	char szResponse[ 256 ];
+	result.GetResponse( szResponse, sizeof( szResponse ) );
 	switch ( result.GetType() )
 	{
-	case RESPONSE_SPEAK:
+	case ResponseRules::RESPONSE_SPEAK:
 		EmitSound( szResponse );
 		break;
 
-	case RESPONSE_SENTENCE:
+	case ResponseRules::RESPONSE_SENTENCE:
 		{
 			int sentenceIndex = SENTENCEG_Lookup( szResponse );
 			if( sentenceIndex == -1 )
@@ -6544,13 +6734,19 @@ void CBaseEntity::DispatchResponse( const char *conceptName )
 		}
 		break;
 
-	case RESPONSE_SCENE:
+	case ResponseRules::RESPONSE_SCENE:
 		// Try to fire scene w/o an actor
 		InstancedScriptedScene( NULL, szResponse );
 		break;
 
-	case RESPONSE_PRINT:
+	case ResponseRules::RESPONSE_PRINT:
 		break;
+
+	case ResponseRules::RESPONSE_ENTITYIO:
+		{
+			CAI_Expresser::FireEntIOFromResponse( szResponse, this );
+			break;
+		}
 	default:
 		// Don't know how to handle .vcds!!!
 		break;
@@ -6657,6 +6853,7 @@ void CBaseEntity::ComputeStepSimulationNetwork( StepSimulationData *step )
 			{
 				Vector delta = step->m_Next.vecOrigin - step->m_Previous.vecOrigin;
 				VectorMA( step->m_Previous.vecOrigin, frac, delta, step->m_vecNetworkOrigin );
+				NetworkStateChanged();
 			}
 			else if (!step_spline.GetBool())
 			{
@@ -6684,11 +6881,19 @@ void CBaseEntity::ComputeStepSimulationNetwork( StepSimulationData *step )
 		
 				Vector delta = pNewer->vecOrigin - pOlder->vecOrigin;
 				VectorMA( pOlder->vecOrigin, frac, delta, step->m_vecNetworkOrigin );
+				NetworkStateChanged();
 			}
 			else
 			{
 				Hermite_Spline( step->m_Previous2.vecOrigin, step->m_Previous.vecOrigin, step->m_Next.vecOrigin, frac, step->m_vecNetworkOrigin );
+				NetworkStateChanged();
 			}
+
+			// Calculate the cell of this origin
+			register int const cellwidth = m_cellwidth; // Load it into a register
+			step->m_networkCell[0] = CellFromCoord( cellwidth, step->m_vecNetworkOrigin[0] );
+			step->m_networkCell[1] = CellFromCoord( cellwidth, step->m_vecNetworkOrigin[1] );
+			step->m_networkCell[2] = CellFromCoord( cellwidth, step->m_vecNetworkOrigin[2] );
 		}
 	}
 
@@ -6761,7 +6966,7 @@ void CBaseEntity::ComputeStepSimulationNetwork( StepSimulationData *step )
 
 
 //-----------------------------------------------------------------------------
-bool CBaseEntity::UseStepSimulationNetworkOrigin( const Vector **out_v )
+bool CBaseEntity::UseStepSimulationNetworkOrigin( const Vector **out_v, int cell[3] )
 {
 	Assert( out_v );
 
@@ -6773,6 +6978,12 @@ bool CBaseEntity::UseStepSimulationNetworkOrigin( const Vector **out_v )
 		StepSimulationData *step = ( StepSimulationData * )GetDataObject( STEPSIMULATION );
 		ComputeStepSimulationNetwork( step );
 		*out_v = &step->m_vecNetworkOrigin;
+		if ( cell )
+		{
+			cell[0] = step->m_networkCell[0];
+			cell[1] = step->m_networkCell[1];
+			cell[2] = step->m_networkCell[2];
+		}
 
 		return step->m_bOriginActive;
 	}
@@ -6961,7 +7172,7 @@ void CBaseEntity::SUB_StartFadeOut( float delay, bool notSolid )
 {
 	SetThink( &CBaseEntity::SUB_FadeOut );
 	SetNextThink( gpGlobals->curtime + delay );
-	SetRenderColorA( 255 );
+	SetRenderAlpha( 255 );
 	m_nRenderMode = kRenderNormal;
 
 	if ( notSolid )
@@ -7029,7 +7240,7 @@ void CBaseEntity::SUB_PerformFadeOut( void )
 	}
 	m_nRenderMode = kRenderTransTexture;
 	int speed = MAX(1,256*dt); // fade out over 1 second
-	SetRenderColorA( UTIL_Approach( 0, m_clrRender->a, speed ) );
+	SetRenderAlpha( UTIL_Approach( 0, m_clrRender->a, speed ) );
 }
 
 bool CBaseEntity::SUB_AllowedToFade( void )
@@ -7057,7 +7268,7 @@ void CBaseEntity::SUB_FadeOut( void  )
 	if ( SUB_AllowedToFade() == false )
 	{
 		SetNextThink( gpGlobals->curtime + 1 );
-		SetRenderColorA( 255 );
+		SetRenderAlpha( 255 );
 		return;
 	}
     
@@ -7107,8 +7318,6 @@ bool CBaseEntity::DoesHavePlayerChild()
 //------------------------------------------------------------------------------
 void CBaseEntity::IncrementInterpolationFrame()
 {
-	gEntList.AddPostClientMessageEntity( this );
-
 	m_ubInterpolationFrame = (m_ubInterpolationFrame + 1) % NOINTERP_PARITY_MAX;
 }
 
@@ -7146,6 +7355,82 @@ void CBaseEntity::SetCollisionBoundsFromModel()
 		modelinfo->GetModelBounds( pModel, mns, mxs );
 		UTIL_SetSize( this, mns, mxs );
 	}
+}
+
+void CBaseEntity::FrictionRevertThink( void )
+{
+	SetFriction( m_flOverriddenFriction );
+}
+
+void CBaseEntity::SetFriction( float flFriction )
+{ 
+	m_flFriction = flFriction;
+	if ( GetIndexForThinkContext( "FrictionRevertThink" ) != NO_THINK_CONTEXT )
+	{
+		SetContextThink( NULL, TICK_NEVER_THINK, "FrictionRevertThink" );
+	}
+}
+
+void CBaseEntity::OverrideFriction( float duration, float friction )
+{
+	if ( GetIndexForThinkContext( "FrictionRevertThink" ) == NO_THINK_CONTEXT || GetNextThinkTick( "FrictionRevertThink" ) == TICK_NEVER_THINK )
+	{
+		// not already overriding friction.  this is what we'll restore to.
+		m_flOverriddenFriction = m_flFriction;
+	}
+	m_flFriction = friction;
+	SetContextThink( &CBaseEntity::FrictionRevertThink, gpGlobals->curtime + duration, "FrictionRevertThink" );
+}
+
+void CBaseEntity::SetNetworkQuantizeOriginAngAngles( bool bQuantize )
+{
+	m_bNetworkQuantizeOriginAndAngles = bQuantize;
+}
+
+// NOTE:  This only quantizes to the default entity precision currently used by CBaseEntity!!!
+void CBaseEntity::NetworkQuantize( Vector &org, QAngle &angles )
+{
+#if PREDICTION_ERROR_CHECK_LEVEL < 2
+	// Angles are sent with 13 (SENDPROP_ANGROTATION_DEFAULT_BITS)bits to represent 0 -> 359.??? (SPROP_ROUNDDOWN)
+	const float QUANTIZE_MIN_ANGLE = 0.0f;
+	const float QUANTIZE_MAX_ANGLE = 360.0f - 360.0f / (float)( 1 << SENDPROP_ANGROTATION_DEFAULT_BITS );
+	const unsigned long QUANTIZE_HIGH_VALUE = ((1 << (unsigned long)SENDPROP_ANGROTATION_DEFAULT_BITS) - 1);
+	const double QUANTIZE_RANGE = QUANTIZE_MAX_ANGLE - QUANTIZE_MIN_ANGLE;
+	const float QUANTIZE_HIGHLOWMULTIPLIER = QUANTIZE_HIGH_VALUE / QUANTIZE_RANGE;
+
+	if ( !m_bNetworkQuantizeOriginAndAngles )
+		return;
+
+	if ( !( SENDPROP_VECORIGIN_FLAGS & SPROP_NOSCALE ) )
+	{
+		COMPILE_TIME_ASSERT( SENDPROP_VECORIGIN_FLAGS & ( SPROP_COORD | SPROP_CELL_COORD ) );
+		COMPILE_TIME_ASSERT( !(SENDPROP_VECORIGIN_FLAGS & ( SPROP_COORD_MP_LOWPRECISION | SPROP_COORD_MP_INTEGRAL ) ) );
+
+		for ( int i = 0 ; i < 3; ++i )
+		{
+			// Crop to exact bit precision
+			int tmp = RoundFloatToInt( org[ i ] * COORD_DENOMINATOR );
+			org[ i ] = (float)tmp * COORD_RESOLUTION;
+		}
+	}
+
+	if ( SENDPROP_ANGROTATION_DEFAULT_BITS != -1 )
+	{
+		for ( int i = 0 ; i < 3; ++i )
+		{
+			float flAngNormalized = anglemod( angles[ i ] );
+			float flAngle = ( flAngNormalized - QUANTIZE_MIN_ANGLE ) * QUANTIZE_HIGHLOWMULTIPLIER;
+			unsigned int uiAngle = RoundFloatToUnsignedLong( flAngle );
+			angles[ i ] = QUANTIZE_MIN_ANGLE + (float)uiAngle / QUANTIZE_HIGHLOWMULTIPLIER;
+		}
+	}
+#endif
+}
+
+//------------------------------------------------------------------------------
+bool CBaseEntity::ShouldLagCompensate() const
+{
+	return m_bLagCompensate;
 }
 
 
@@ -7186,34 +7471,43 @@ void CC_Ent_Create( const CCommand& args )
 	CBaseEntity *entity = dynamic_cast< CBaseEntity * >( CreateEntityByName(args[1]) );
 	if (entity)
 	{
-		entity->Precache();
-
-		// Pass in any additional parameters.
-		for ( int i = 2; i + 1 < args.ArgC(); i += 2 )
+		if ( entity->IsPlayer() )
 		{
-			const char *pKeyName = args[i];
-			const char *pValue = args[i+1];
-			entity->KeyValue( pKeyName, pValue );
+			AssertMsg( false, "Cannot ent_create players!" );
+			Warning( "Cannot ent_create players!\n" );
+			UTIL_Remove( entity );
 		}
-
-		DispatchSpawn(entity);
-
-		// Now attempt to drop into the world
-		trace_t tr;
-		Vector forward;
-		pPlayer->EyeVectors( &forward );
-		UTIL_TraceLine(pPlayer->EyePosition(),
-			pPlayer->EyePosition() + forward * MAX_TRACE_LENGTH,MASK_SOLID, 
-			pPlayer, COLLISION_GROUP_NONE, &tr );
-		if ( tr.fraction != 1.0 )
+		else
 		{
-			// Raise the end position a little up off the floor, place the npc and drop him down
-			tr.endpos.z += 12;
-			entity->Teleport( &tr.endpos, NULL, NULL );
-			UTIL_DropToFloor( entity, MASK_SOLID );
-		}
+			entity->Precache();
 
-		entity->Activate();
+			// Pass in any additional parameters.
+			for ( int i = 2; i + 1 < args.ArgC(); i += 2 )
+			{
+				const char *pKeyName = args[i];
+				const char *pValue = args[i+1];
+				entity->KeyValue( pKeyName, pValue );
+			}
+
+			DispatchSpawn(entity);
+
+			// Now attempt to drop into the world
+			trace_t tr;
+			Vector forward;
+			pPlayer->EyeVectors( &forward );
+			UTIL_TraceLine(pPlayer->EyePosition(),
+				pPlayer->EyePosition() + forward * MAX_TRACE_LENGTH,MASK_SOLID, 
+				pPlayer, COLLISION_GROUP_NONE, &tr );
+			if ( tr.fraction != 1.0 )
+			{
+				// Raise the end position a little up off the floor, place the npc and drop him down
+				tr.endpos.z += 12;
+				entity->Teleport( &tr.endpos, NULL, NULL );
+				UTIL_DropToFloor( entity, MASK_SOLID );
+			}
+
+			entity->Activate();
+		}
 	}
 	CBaseEntity::SetAllowPrecache( allowPrecache );
 }

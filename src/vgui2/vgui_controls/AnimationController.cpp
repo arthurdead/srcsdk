@@ -46,7 +46,7 @@ AnimationController *GetAnimationController()
 //-----------------------------------------------------------------------------
 AnimationController::AnimationController(Panel *parent) : BaseClass(parent, NULL)
 {
-	m_hSizePanel = 0;
+	m_hSizePanel = INVALID_VPANEL;
 	m_nScreenBounds[ 0 ] = m_nScreenBounds[ 1 ] = -1;
 	m_nScreenBounds[ 2 ] = m_nScreenBounds[ 3 ] = -1;
 
@@ -814,7 +814,7 @@ bool AnimationController::UpdateScreenSize()
 	// get our screen size (for left/right/center alignment)
 	int screenWide, screenTall;
 	int sx = 0, sy = 0;
-	if ( m_hSizePanel != 0 )
+	if ( m_hSizePanel != INVALID_VPANEL )
 	{
 		ipanel()->GetSize( m_hSizePanel, screenWide, screenTall );
 		ipanel()->GetPos( m_hSizePanel, sx, sy );

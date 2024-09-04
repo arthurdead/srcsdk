@@ -92,8 +92,6 @@ public:
 	int			m_iMonologIndex;						// Which sentence from the group I should be speaking.
 	bool		m_fMonologSuspended;
 	EHANDLE		m_hMonologTalkTarget;					// Who I'm trying to deliver my monolog to. 
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //-------------------------------------
@@ -235,14 +233,7 @@ protected:
 
 	//---------------------------------
 
-	DECLARE_DATADESC();
-#ifndef _XBOX
 	DEFINE_CUSTOM_AI;
-#else
-public:
-	DEFINE_CUSTOM_AI;
-private:
-#endif
 };
 
 #include "tier0/memdbgoff.h"

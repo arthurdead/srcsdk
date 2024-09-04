@@ -55,7 +55,8 @@ public:
 	string_t m_iszExcludedClass;
 	bool m_bInvertExclusion;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
+	DECLARE_SERVERCLASS();
 
 	virtual bool IsOn( void ) const;
 };

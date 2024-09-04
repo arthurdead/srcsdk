@@ -12,7 +12,12 @@
 
 #include "eiface.h"
 
+#ifdef POSIX
+#define random random_valve// stdlib.h defined random()..., and so does vstdlib/random.h
+#endif
+
 class IFileSystem;				// include filesystem.h
+class IUniformRandomStream;		// include vstdlib/random.h
 class IEngineSound;				// include engine/IEngineSound.h
 class IVEngineServer;			
 class IVoiceServer;
@@ -24,6 +29,7 @@ class IGameEventManager2;
 class IVDebugOverlay;
 class IDataCache;
 class IMDLCache;
+class IServerFoundry;
 class IServerEngineTools;
 class CSteamAPIContext;
 class CSteamGameServerAPIContext;
@@ -41,6 +47,7 @@ extern IVDebugOverlay			*debugoverlay;
 extern IDataCache				*datacache;
 extern IMDLCache				*mdlcache;
 extern IServerEngineTools		*serverenginetools;
+extern IServerFoundry			*serverfoundry;
 extern CSteamAPIContext			*steamapicontext; // available on game clients
 extern CSteamGameServerAPIContext *steamgameserverapicontext; //available on game servers
 
@@ -65,10 +72,16 @@ const char *GetMaterialNameFromIndex( int nMaterialIndex );
 //-----------------------------------------------------------------------------
 // Precache-related methods for particle systems
 //-----------------------------------------------------------------------------
-void PrecacheParticleSystem( const char *pParticleSystemName );
+int PrecacheParticleSystem( const char *pParticleSystemName );
 int GetParticleSystemIndex( const char *pParticleSystemName );
 const char *GetParticleSystemNameFromIndex( int nIndex );
 
+//-----------------------------------------------------------------------------
+// Precache-related methods for effects (used by DispatchEffect)
+//-----------------------------------------------------------------------------
+void PrecacheEffect( const char *pParticleSystemName );
+int GetEffectIndex( const char *pParticleSystemName );
+const char *GetEffectNameFromIndex( int nIndex );
 
 class IRecipientFilter;
 void EntityMessageBegin( CBaseEntity * entity, bool reliable = false );
@@ -91,7 +104,7 @@ void MessageWriteAngles( const QAngle& rgflValue);
 void MessageWriteString( const char *sz );
 void MessageWriteEntity( int iValue);
 void MessageWriteEHandle( CBaseEntity *pEntity ); //encoded as a long
-
+void MessageWriteBitVecIntegral( const Vector& vecValue );
 
 // bitwise
 void MessageWriteBool( bool bValue );
@@ -101,7 +114,7 @@ void MessageWriteBits( const void *pIn, int nBits );
 
 /// Returns Steam ID, given player index.   Returns an invalid SteamID upon
 /// failure
-extern CSteamID GetSteamIDForPlayerIndex( int iPlayerIndex );
+extern bool GetSteamIDForPlayerIndex( int iPlayerIndex, CSteamID &steamid );
 
 
 // Bytewise
@@ -126,5 +139,6 @@ extern CSteamID GetSteamIDForPlayerIndex( int iPlayerIndex );
 #define WRITE_UBITLONG	(MessageWriteUBitLong)
 #define WRITE_SBITLONG	(MessageWriteSBitLong)
 #define WRITE_BITS		(MessageWriteBits)
+#define WRITE_VEC3_INTEGRAL  (MessageWriteBitVecIntegral)
 
 #endif		//ENGINECALLBACK_H

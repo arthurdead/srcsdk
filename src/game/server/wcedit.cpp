@@ -714,16 +714,13 @@ protected:
 	string_t m_nIgnoredEntityNames[MAX_IGNORELIST_NAMES]; 
 
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 
 LINK_ENTITY_TO_CLASS( hammer_updateignorelist, CWC_UpdateIgnoreList );
 
-BEGIN_DATADESC( CWC_UpdateIgnoreList )
-
-	// Be still, classcheck!
-	//DEFINE_FIELD( m_nIgnoredEntityNames, FIELD_STRING, MAX_IGNORELIST_NAMES ),
+BEGIN_MAPENTITY( CWC_UpdateIgnoreList )
 
 	DEFINE_KEYFIELD( m_nIgnoredEntityNames[0], FIELD_STRING, "IgnoredName01" ),
 	DEFINE_KEYFIELD( m_nIgnoredEntityNames[1], FIELD_STRING, "IgnoredName02" ),
@@ -742,7 +739,7 @@ BEGIN_DATADESC( CWC_UpdateIgnoreList )
 	DEFINE_KEYFIELD( m_nIgnoredEntityNames[14], FIELD_STRING, "IgnoredName15" ),
 	DEFINE_KEYFIELD( m_nIgnoredEntityNames[15], FIELD_STRING, "IgnoredName16" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

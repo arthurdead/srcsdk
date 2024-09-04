@@ -83,7 +83,7 @@ public:
 
 		m_fFlags = 0;
 #ifdef CLIENT_DLL
-		m_hEntity = INVALID_EHANDLE_INDEX;
+		m_hEntity = NULL;
 #else
 		m_nEntIndex = 0;
 #endif

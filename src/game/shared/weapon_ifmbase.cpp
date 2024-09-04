@@ -30,21 +30,14 @@ END_PREDICTION_DATA()
 
 LINK_ENTITY_TO_CLASS( weapon_ifm_base, CWeaponIFMBase );
 
-
-#ifdef GAME_DLL
-
-BEGIN_DATADESC( CWeaponIFMBase )
-
-END_DATADESC()
-
-#endif
-
 //-----------------------------------------------------------------------------
 // CWeaponIFMBase implementation. 
 //-----------------------------------------------------------------------------
 CWeaponIFMBase::CWeaponIFMBase()
 {
+#if defined( CLIENT_DLL )
 	SetPredictionEligible( true );
+#endif
 	AddSolidFlags( FSOLID_TRIGGER ); // Nothing collides with these but it gets touches.
 }
 

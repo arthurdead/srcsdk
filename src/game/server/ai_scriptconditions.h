@@ -47,8 +47,6 @@ public:
 		return true;
 	}
 
-	DECLARE_SIMPLE_DATADESC();
-
 private:
 
 	float m_distSq;
@@ -59,8 +57,6 @@ private:
 class CAI_ScriptConditionsElement
 {
 public:
-
-	DECLARE_SIMPLE_DATADESC();
 
 	void			SetActor( CBaseEntity *pEntity ) { m_hActor = pEntity; }
 	CBaseEntity		*GetActor( void ){ return m_hActor.Get(); }
@@ -111,9 +107,7 @@ public:
 		m_fActorInVehicle( TRS_NONE ),
 		m_fPlayerInVehicle( TRS_NONE )
 	{
-#ifndef HL2_EPISODIC
 		m_hActor = NULL;
-#endif
 	}
 
 private:
@@ -168,9 +162,7 @@ private:
 
 	//---------------------------------
 
-#ifndef HL2_EPISODIC
 	CBaseEntity *GetActor()		{ return m_hActor.Get();			}
-#endif
 	CBasePlayer *GetPlayer()	{ return UTIL_GetNearestPlayer(GetAbsOrigin());	}
 
 	//---------------------------------
@@ -194,8 +186,6 @@ private:
 	static bool PlayerHasLineOfSight( CBaseEntity *pViewer, CBaseEntity *pViewed, bool fNot );
 	static bool ActorInPlayersPVS( CBaseEntity *pActor, bool bNot );
 
-	virtual void OnRestore( void );
-
 	//---------------------------------
 	// General conditions info
 
@@ -205,11 +195,9 @@ private:
 
 	float			m_flRequiredTime;	// How long should the conditions me true
 
-#ifndef HL2_EPISODIC
 	EHANDLE 		m_hActor;
 	CSimTimer		m_Timer; 			// @TODO (toml 07-16-02): save/load of timer once Jay has save/load of contained objects
 	CSimTimer		m_Timeout;
-#endif
 
 	//---------------------------------
 	// Specific conditions data
@@ -247,9 +235,8 @@ private:
 
 	CUtlVector< CAI_ScriptConditionsElement > m_ElementList;
 
-	//---------------------------------
-
-	DECLARE_DATADESC();
+public:
+	DECLARE_MAPENTITY();
 };
 
 //=============================================================================

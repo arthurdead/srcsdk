@@ -30,7 +30,7 @@ public:
 
 	int ObjectCaps(void) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 
@@ -51,7 +51,7 @@ private:
 LINK_ENTITY_TO_CLASS(logic_auto, CLogicAuto);
 
 
-BEGIN_DATADESC( CLogicAuto )
+BEGIN_MAPENTITY( CLogicAuto )
 
 	DEFINE_KEYFIELD(m_globalstate, FIELD_STRING, "globalstate"),
 
@@ -64,7 +64,7 @@ BEGIN_DATADESC( CLogicAuto )
 	DEFINE_OUTPUT(m_OnMultiNewMap, "OnMultiNewMap" ),
 	DEFINE_OUTPUT(m_OnMultiNewRound, "OnMultiNewRound" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //------------------------------------------------------------------------------
@@ -105,17 +105,14 @@ void CLogicAuto::Think(void)
 
 		m_OnMapSpawn.FireOutput(NULL, this);
 
-		if ( g_pGameRules->IsMultiplayer() )
+		// In multiplayer, fire the new map / round events.
+		if ( g_pGameRules->InRoundRestart() )
 		{
-			// In multiplayer, fire the new map / round events.
-			if ( g_pGameRules->InRoundRestart() )
-			{
-				m_OnMultiNewRound.FireOutput(NULL, this);
-			}
-			else
-			{
-				m_OnMultiNewMap.FireOutput(NULL, this);
-			}
+			m_OnMultiNewRound.FireOutput(NULL, this);
+		}
+		else
+		{
+			m_OnMultiNewMap.FireOutput(NULL, this);
 		}
 
 		if (m_spawnflags & SF_AUTO_FIREONCE)

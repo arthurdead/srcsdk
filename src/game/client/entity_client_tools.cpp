@@ -142,8 +142,8 @@ public:
 private:
 	struct HToolEntry_t
 	{
-		HToolEntry_t() : m_Handle( 0 ) {}
-		HToolEntry_t( int handle, C_BaseEntity *pEntity = NULL )
+		HToolEntry_t() : m_Handle( HTOOLHANDLE_INVALID ) {}
+		HToolEntry_t( HTOOLHANDLE handle, C_BaseEntity *pEntity = NULL )
 			: m_Handle( handle ), m_hEntity( pEntity )
 		{
 			if ( pEntity )
@@ -152,7 +152,7 @@ private:
 			}
 		}
 
-		int					m_Handle;
+		HTOOLHANDLE					m_Handle;
 		EHANDLE				m_hEntity;
 	};
 
@@ -164,7 +164,7 @@ private:
 	}
 
 	CUtlRBTree< HToolEntry_t >	m_Handles;
-	CUtlVector< int > m_ActiveHandles;
+	CUtlVector< HTOOLHANDLE > m_ActiveHandles;
 	bool m_bInRecordingMode;
 };
 
@@ -245,7 +245,7 @@ void CClientTools::AddClientRenderable( IClientRenderable *pRenderable, bool bRe
 {
 	Assert( pRenderable );
 
-	cl_entitylist->AddNonNetworkableEntity( pRenderable->GetIClientUnknown() );
+	cl_entitylist->AddNonNetworkableEntity( pRenderable->GetIClientUnknown()->GetBaseEntity() );
 
 	ClientRenderHandle_t handle = pRenderable->RenderHandle();
 	if ( INVALID_CLIENT_RENDER_HANDLE == handle )
@@ -261,6 +261,36 @@ void CClientTools::AddClientRenderable( IClientRenderable *pRenderable, bool bRe
 		ClientLeafSystem()->RenderWithViewModels( pRenderable->RenderHandle(), bRenderWithViewModels );
 		ClientLeafSystem()->RenderableChanged( pRenderable->RenderHandle() );
 	}
+}
+
+void CClientTools::SetRenderGroup( IClientRenderable *pRenderable, int renderGroup )
+{
+	ClientRenderHandle_t handle = pRenderable->RenderHandle();
+
+	bool bRenderWithViewModels = IsEngineRenderGroupViewModel( (EngineRenderGroup_t)renderGroup );
+
+	RenderableTranslucencyType_t nType = RENDERABLE_IS_OPAQUE;
+	if((EngineRenderGroup_t)renderGroup == ENGINE_RENDER_GROUP_TWOPASS) {
+		nType = RENDERABLE_IS_TWO_PASS;
+	} else if(IsEngineRenderGroupTranslucent( (EngineRenderGroup_t)renderGroup )) {
+		nType = RENDERABLE_IS_TRANSLUCENT;
+	}
+
+	RenderableModelType_t nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE;
+
+	if((EngineRenderGroup_t)renderGroup == ENGINE_RENDER_GROUP_OPAQUE_BRUSH) {
+		nModelType = RENDERABLE_MODEL_BRUSH;
+	} else if(IsEngineRenderGroupStatic( (EngineRenderGroup_t)renderGroup )) {
+		nModelType = RENDERABLE_MODEL_STATIC_PROP;
+	} else if(IsEngineRenderGroupEntity( (EngineRenderGroup_t)renderGroup )) {
+		nModelType = RENDERABLE_MODEL_ENTITY;
+	}
+
+	// handle already exists, just update group & origin
+	ClientLeafSystem()->SetTranslucencyType( pRenderable->RenderHandle(), nType );
+	ClientLeafSystem()->SetModelType( pRenderable->RenderHandle(), nModelType );
+	ClientLeafSystem()->RenderWithViewModels( pRenderable->RenderHandle(), bRenderWithViewModels );
+	ClientLeafSystem()->RenderableChanged( pRenderable->RenderHandle() );
 }
 
 void CClientTools::RemoveClientRenderable( IClientRenderable *pRenderable )
@@ -356,13 +386,13 @@ HTOOLHANDLE CClientTools::AttachToEntity( EntitySearchResult entityToAttach )
 	C_BaseEntity *ent = reinterpret_cast< C_BaseEntity * >( entityToAttach );
 	Assert( ent );
 	if ( !ent )
-		return (HTOOLHANDLE)0;
+		return HTOOLHANDLE_INVALID;
 
 	HTOOLHANDLE curHandle = ent->GetToolHandle();
-	if ( curHandle != 0 )
+	if ( curHandle != HTOOLHANDLE_INVALID )
 		return curHandle; // Already attaached
 
-	HToolEntry_t newHandle( s_nNextHandle++, ent );
+	HToolEntry_t newHandle( (HTOOLHANDLE)s_nNextHandle++, ent );
 
 	m_Handles.Insert( newHandle );
 	m_ActiveHandles.AddToTail( newHandle.m_Handle );
@@ -422,7 +452,7 @@ HTOOLHANDLE CClientTools::GetRecordable( int index )
 	if ( index < 0 || index >= m_ActiveHandles.Count() )
 	{
 		Assert( 0 );
-		return (HTOOLHANDLE)0;
+		return HTOOLHANDLE_INVALID;
 	}
 
 	return m_ActiveHandles[ index ];
@@ -611,7 +641,7 @@ HTOOLHANDLE CClientTools::GetToolHandleForEntityByIndex( int entindex )
 {
 	C_BaseEntity *ent = C_BaseEntity::Instance(	entindex );
 	if ( !ent )
-		return (HTOOLHANDLE)0;
+		return HTOOLHANDLE_INVALID;
 
 	return ent->GetToolHandle();
 }

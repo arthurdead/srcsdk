@@ -20,32 +20,11 @@ extern ConVar mp_capdeteriorate_time;
 
 IMPLEMENT_AUTO_LIST( ITriggerAreaCaptureAutoList );
 
-BEGIN_DATADESC(CTriggerAreaCapture)
-
-	// Touch functions
-	DEFINE_FUNCTION( CTriggerAreaCaptureShim::Touch ),
-
-	// Think functions
-	DEFINE_THINKFUNC( CaptureThink ),
+BEGIN_MAPENTITY(CTriggerAreaCapture)
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iszCapPointName,	FIELD_STRING,	"area_cap_point" ),
 	DEFINE_KEYFIELD( m_flCapTime,		FIELD_FLOAT,	"area_time_to_cap" ),
-
-//	DEFINE_FIELD( m_iCapMode, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_bCapturing, FIELD_BOOLEAN ),
-//	DEFINE_FIELD( m_nCapturingTeam, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_nOwningTeam, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_nTeamInZone, FIELD_INTEGER ),
-//	DEFINE_FIELD( m_fTimeRemaining, FIELD_FLOAT ),
-//	DEFINE_FIELD( m_flLastReductionTime, FIELD_FLOAT ),
-//	DEFINE_FIELD( m_bBlocked, FIELD_BOOLEAN ),
-//	DEFINE_FIELD( m_TeamData, CUtlVector < perteamdata_t > ),
-//	DEFINE_FIELD( m_Blockers, CUtlVector < blockers_t > ),
-//	DEFINE_FIELD( m_bActive, FIELD_BOOLEAN ),
-//	DEFINE_FIELD( m_hPoint, CHandle < CTeamControlPoint > ),
-//	DEFINE_FIELD( m_bRequiresObject, FIELD_BOOLEAN ),
-//	DEFINE_FIELD( m_iCapAttemptNumber, FIELD_INTEGER ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "RoundSpawn", InputRoundSpawn ),
@@ -68,7 +47,7 @@ BEGIN_DATADESC(CTriggerAreaCapture)
 	DEFINE_OUTPUT( m_OnNumCappersChanged, "OnNumCappersChanged" ),
 	DEFINE_OUTPUT( m_OnNumCappersChanged2, "OnNumCappersChanged2" ),
 
-END_DATADESC();
+END_MAPENTITY();
 
 LINK_ENTITY_TO_CLASS( trigger_capture_area, CTriggerAreaCapture );
 
@@ -94,6 +73,8 @@ void CTriggerAreaCapture::Spawn( void )
 	InitTrigger();
 	
 	Precache();
+
+	m_iAreaIndex = -1;
 
 	SetTouch ( &CTriggerAreaCaptureShim::Touch );		
 	SetThink( &CTriggerAreaCapture::CaptureThink );
@@ -164,6 +145,14 @@ void CTriggerAreaCapture::Precache( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+void CTriggerAreaCapture::SetAreaIndex( int index )
+{
+	m_iAreaIndex = index;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
 bool CTriggerAreaCapture::IsActive( void )
 {
 	return !m_bDisabled;
@@ -220,7 +209,7 @@ void CTriggerAreaCapture::StartTouch(CBaseEntity *pOther)
 //-----------------------------------------------------------------------------
 void CTriggerAreaCapture::EndTouch(CBaseEntity *pOther)
 {
-	if ( IsTouching( pOther ) && m_hPoint )
+	if ( IsTouching( pOther ) && PassesTriggerFilters(pOther) && m_hPoint )
 	{
 		IGameEvent *event = gameeventmanager->CreateEvent( "controlpoint_endtouch" );
 		if ( event )
@@ -263,6 +252,8 @@ void CTriggerAreaCapture::AreaTouch( CBaseEntity *pOther )
 	if ( !TeamplayGameRules()->PointsMayBeCaptured() )
 		return;
 
+	Assert( m_iAreaIndex != -1 );
+
 	// dont touch for non-alive or non-players
 	if( !pOther->IsPlayer() || !pOther->IsAlive() )
 		return;
@@ -271,7 +262,7 @@ void CTriggerAreaCapture::AreaTouch( CBaseEntity *pOther )
 	CTeamControlPointMaster *pMaster = g_hControlPointMasters.Count() ? g_hControlPointMasters[0] : NULL;
 	if ( pMaster && m_hPoint )
 	{
-		if ( !pMaster->IsInRound( m_hPoint ) )
+		if ( !pMaster->PointCanBeCapped( m_hPoint ) )
 		{
 			return;
 		}
@@ -309,7 +300,7 @@ void CTriggerAreaCapture::CaptureThink( void )
 	CTeamControlPointMaster *pMaster = g_hControlPointMasters.Count() ? g_hControlPointMasters[0] : NULL;
 	if ( pMaster && m_hPoint )
 	{
-		if ( !pMaster->IsInRound( m_hPoint ) )
+		if ( !pMaster->PointCanBeCapped( m_hPoint ) )
 		{
 			return;
 		}

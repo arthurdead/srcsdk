@@ -13,7 +13,8 @@
 
 #include "interface.h"
 #include "mathlib/vmatrix.h"
-
+#include "hackmgr/hackmgr.h"
+#include "engine/ivmodelrender.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -23,7 +24,6 @@ class IMaterial;
 class Vector;
 class Vector2D;
 struct model_t;
-typedef unsigned short ModelInstanceHandle_t;
 class IClientRenderable;
 class ITexture;
 struct FlashlightInstance_t;
@@ -40,13 +40,22 @@ enum ShadowFlags_t
 {
 	SHADOW_FLAGS_FLASHLIGHT				= (1 << 0),
 	SHADOW_FLAGS_SHADOW					= (1 << 1),
-	SHADOW_FLAGS_PLAYER_FLASHLIGHT		= (1 << 2),
-	SHADOW_FLAGS_SIMPLE_PROJECTION		= (1 << 3),
-	// Update this if you add flags
-	SHADOW_FLAGS_LAST_FLAG				= SHADOW_FLAGS_SIMPLE_PROJECTION
+	SHADOW_FLAGS_LAST_FLAG				= SHADOW_FLAGS_SHADOW,
+
+	//all new flags must come after the flags from game/client/clientshadowmgr.cpp
+	//which in turn come after all the flags from toolframework/itoolentity.h
+	NUM_CLIENT_SHADOW_FLAGS = 4, //number of flags in toolframework/itoolentity.h
+	NUM_CLIENTSHADOWMGR_FLAGS = 4, //number of flags in game/client/clientshadowmgr.cpp
+
+	NEW_SHADOW_FLAGS_BEGIN_BIT = (SHADOW_FLAGS_LAST_FLAG << (NUM_CLIENT_SHADOW_FLAGS + NUM_CLIENTSHADOWMGR_FLAGS)),
+
+	SHADOW_FLAGS_SIMPLE_PROJECTION		= (NEW_SHADOW_FLAGS_BEGIN_BIT << 1),
+	SHADOW_FLAGS_PLAYER_FLASHLIGHT		= (NEW_SHADOW_FLAGS_BEGIN_BIT << 2),
+
+	SHADOW_FLAGS_ACTUAL_LAST_FLAG = SHADOW_FLAGS_PLAYER_FLASHLIGHT,
 };
 
-#define SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SHADOW | SHADOW_FLAGS_PLAYER_FLASHLIGHT | SHADOW_FLAGS_SIMPLE_PROJECTION )
+#define SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SHADOW | SHADOW_FLAGS_SIMPLE_PROJECTION )
 
 
 //-----------------------------------------------------------------------------
@@ -59,12 +68,11 @@ enum ShadowFlags_t
 //-----------------------------------------------------------------------------
 // This is a handle	to shadows, clients can create as many as they want
 //-----------------------------------------------------------------------------
-typedef unsigned short ShadowHandle_t;
-
-enum
+enum class ShadowHandle_t : unsigned short
 {
-	SHADOW_HANDLE_INVALID = (ShadowHandle_t)~0
 };
+
+inline const ShadowHandle_t SHADOW_HANDLE_INVALID = (ShadowHandle_t)~0;
 
 
 //-----------------------------------------------------------------------------
@@ -74,9 +82,10 @@ enum ShadowCreateFlags_t
 {
 	SHADOW_CACHE_VERTS =  ( 1 << 0 ),
 	SHADOW_FLASHLIGHT =   ( 1 << 1 ),
-	SHADOW_SIMPLE_PROJECTION	= ( 1 << 2 ),
+	SHADOW_LAST_FLAG = SHADOW_FLASHLIGHT,
 
-	SHADOW_LAST_FLAG = SHADOW_SIMPLE_PROJECTION,
+	//(SHADOW_LAST_FLAG << 1) is used by the engine
+	SHADOW_SIMPLE_PROJECTION	= ( SHADOW_LAST_FLAG << 2 ),
 };
 
 
@@ -101,6 +110,8 @@ struct ShadowInfo_t
 typedef void (*ShadowDrawCallbackFn_t)( void * );
 
 struct FlashlightState_t;
+struct FlashlightStateMod_t;
+struct FlashlightStateEx_t;
 
 //-----------------------------------------------------------------------------
 // The engine's interface to the shadow manager
@@ -177,6 +188,7 @@ public:
 
 	// Update the state for a flashlight.
 	virtual void UpdateFlashlightState( ShadowHandle_t shadowHandle, const FlashlightState_t &lightState ) = 0;
+	HACKMGR_CLASS_API void UpdateFlashlightState( ShadowHandle_t shadowHandle, const FlashlightStateEx_t &lightState );
 
 	virtual void DrawFlashlightDepthTexture( ) = 0;
 
@@ -186,8 +198,11 @@ public:
 	virtual void SetFlashlightDepthTexture( ShadowHandle_t shadowHandle, ITexture *pFlashlightDepthTexture, unsigned char ucShadowStencilBit ) = 0;
 
 	virtual const FlashlightState_t &GetFlashlightState( ShadowHandle_t handle ) = 0;
+	HACKMGR_CLASS_API const FlashlightStateMod_t &GetFlashlightStateMod( ShadowHandle_t handle );
 
 	virtual void SetFlashlightRenderState( ShadowHandle_t handle ) = 0;
+
+	HACKMGR_CLASS_API void RemoveAllDecalsFromShadow( ShadowHandle_t handle );
 };
 
 

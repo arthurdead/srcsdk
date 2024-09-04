@@ -15,21 +15,6 @@
 
 extern CTimedEventMgr g_NetworkPropertyEventMgr;
 
-
-//-----------------------------------------------------------------------------
-// Save/load
-//-----------------------------------------------------------------------------
-BEGIN_DATADESC_NO_BASE( CServerNetworkProperty )
-//	DEFINE_FIELD( m_pOuter, FIELD_CLASSPTR ),
-//	DEFINE_FIELD( m_pPev, FIELD_CLASSPTR ),
-//	DEFINE_FIELD( m_PVSInfo, PVSInfo_t ),
-//	DEFINE_FIELD( m_pServerClass, FIELD_CLASSPTR ),
-	DEFINE_GLOBAL_FIELD( m_hParent, FIELD_EHANDLE ),
-//	DEFINE_FIELD( m_TimerEvent, CEventRegister ),
-//	DEFINE_FIELD( m_bPendingStateChange, FIELD_BOOLEAN ),
-END_DATADESC()
-
-
 //-----------------------------------------------------------------------------
 // Constructor, destructor
 //-----------------------------------------------------------------------------
@@ -108,10 +93,7 @@ IHandleEntity *CServerNetworkProperty::GetEntityHandle( )
 
 void CServerNetworkProperty::Release()
 {
-	delete m_pOuter;
-	// Don't zero m_pOuter or reference any member variables after
-	// the delete call because the object may be deleted.
-	//m_pOuter = NULL;
+	UTIL_Remove( m_pOuter );
 }
 
 
@@ -122,20 +104,6 @@ CServerNetworkProperty* CServerNetworkProperty::GetNetworkParent()
 {
 	CBaseEntity *pParent = m_hParent.Get();
 	return pParent ? pParent->NetworkProp() : NULL;
-}
-
-
-//-----------------------------------------------------------------------------
-// Marks for deletion
-//-----------------------------------------------------------------------------
-void CServerNetworkProperty::MarkForDeletion()
-{
-	m_pOuter->AddEFlags( EFL_KILLME );
-}
-
-bool CServerNetworkProperty::IsMarkedForDeletion() const
-{
-	return ( m_pOuter->GetEFlags() & EFL_KILLME ) != 0;
 }
 
 

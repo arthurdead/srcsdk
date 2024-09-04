@@ -15,23 +15,18 @@
 
 LINK_ENTITY_TO_CLASS( env_laser, CEnvLaser );
 
-BEGIN_DATADESC( CEnvLaser )
+BEGIN_MAPENTITY( CEnvLaser )
 
 	DEFINE_KEYFIELD( m_iszLaserTarget, FIELD_STRING, "LaserTarget" ),
-	DEFINE_FIELD( m_pSprite, FIELD_CLASSPTR ),
 	DEFINE_KEYFIELD( m_iszSpriteName, FIELD_STRING, "EndSprite" ),
-	DEFINE_FIELD( m_firePosition, FIELD_VECTOR ),
 	DEFINE_KEYFIELD( m_flStartFrame, FIELD_FLOAT, "framestart" ),
-
-	// Function Pointers
-	DEFINE_FUNCTION( StrikeThink ),
 
 	// Input functions
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -66,7 +61,7 @@ void CEnvLaser::Spawn( void )
 	if ( m_pSprite )
 	{
 		m_pSprite->SetParent( GetMoveParent() );
-		m_pSprite->SetTransparency( kRenderGlow, m_clrRender->r, m_clrRender->g, m_clrRender->b, m_clrRender->a, m_nRenderFX );
+		m_pSprite->SetTransparency( kRenderGlow, GetRenderColorR(), GetRenderColorG(), GetRenderColorB(), GetRenderAlpha(), GetRenderFX() );
 	}
 
 	if ( GetEntityName() != NULL_STRING && !(m_spawnflags & SF_BEAM_STARTON) )

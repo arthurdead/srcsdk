@@ -303,13 +303,14 @@ public:
 	virtual Color GetFgColor();
 
 	virtual void SetCursor(HCursor cursor);
+	void SetCursor(CursorCode code) { SetCursor(CursorCodeToCursor(code)); }
 	virtual HCursor GetCursor();
 	virtual void SetCursorAlwaysVisible( bool visible );
 	virtual void RequestFocus(int direction = 0);
 	virtual bool HasFocus();
 	virtual void InvalidateLayout(bool layoutNow = false, bool reloadScheme = false);
-	virtual bool RequestFocusPrev(VPANEL panel = NULL);
-	virtual bool RequestFocusNext(VPANEL panel = NULL);
+	virtual bool RequestFocusPrev(VPANEL panel = INVALID_VPANEL);
+	virtual bool RequestFocusNext(VPANEL panel = INVALID_VPANEL);
 	// tab positioning
 	virtual void   SetTabPosition(int position);
 	virtual int    GetTabPosition();
@@ -906,10 +907,10 @@ private:
 	// 1 == Textured (TextureId1 only)
 	// 2 == Rounded Corner Box
 	CPanelAnimationVar( int, m_nPaintBackgroundType, "PaintBackgroundType", "0" );
-	CPanelAnimationVarAliasType( int, m_nBgTextureId1, "Texture1", "vgui/hud/800corner1", "textureid" );
-	CPanelAnimationVarAliasType( int, m_nBgTextureId2, "Texture2", "vgui/hud/800corner2", "textureid" );
-	CPanelAnimationVarAliasType( int, m_nBgTextureId3, "Texture3", "vgui/hud/800corner3", "textureid" );
-	CPanelAnimationVarAliasType( int, m_nBgTextureId4, "Texture4", "vgui/hud/800corner4", "textureid" );
+	CPanelAnimationVarAliasType( HTexture, m_nBgTextureId1, "Texture1", "vgui/hud/800corner1", "textureid" );
+	CPanelAnimationVarAliasType( HTexture, m_nBgTextureId2, "Texture2", "vgui/hud/800corner2", "textureid" );
+	CPanelAnimationVarAliasType( HTexture, m_nBgTextureId3, "Texture3", "vgui/hud/800corner3", "textureid" );
+	CPanelAnimationVarAliasType( HTexture, m_nBgTextureId4, "Texture4", "vgui/hud/800corner4", "textureid" );
 
 	//=============================================================================
 	// HPE_BEGIN:

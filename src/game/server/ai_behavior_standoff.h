@@ -40,8 +40,6 @@ struct AI_StandoffParams_t
 	int 					oddsCover;
 	bool					fStayAtCover;
 	float					flAbandonTimeLimit;
-	
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //-------------------------------------
@@ -218,10 +216,6 @@ private:
 	//---------------------------------
 	
 	bool						m_bHasLowCoverActivity;
-
-	//---------------------------------
-	
-	DECLARE_DATADESC();
 };
 
 //-------------------------------------

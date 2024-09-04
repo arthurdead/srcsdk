@@ -8,7 +8,6 @@
 #include "baseanimating.h"
 #include "studio.h"
 #include "physics.h"
-#include "physics_saverestore.h"
 #include "ai_basenpc.h"
 #include "vphysics/constraints.h"
 #include "datacache/imdlcache.h"
@@ -17,7 +16,7 @@
 #include "KeyValues.h"
 #include "props.h"
 #include "RagdollBoogie.h"
-#include "AI_Criteria.h"
+#include "ai_criteria.h"
 #include "ragdoll_shared.h"
 #include "hierarchy.h"
 #include "particle_parse.h"
@@ -79,16 +78,9 @@ END_SEND_TABLE()
 	DEFINE_PHYSPTR( m_ragdoll.list[i].pConstraint ), \
 	DEFINE_FIELD( m_ragdoll.list[i].parentIndex, FIELD_INTEGER )
 
-BEGIN_DATADESC(CRagdollProp)
-//					m_ragdoll (custom handling)
-	DEFINE_AUTO_ARRAY	( m_ragdoll.boneIndex,	FIELD_INTEGER	),
-	DEFINE_AUTO_ARRAY	( m_ragPos,		FIELD_POSITION_VECTOR	),
-	DEFINE_AUTO_ARRAY	( m_ragAngles,	FIELD_VECTOR	),
+BEGIN_MAPENTITY(CRagdollProp)
+
 	DEFINE_KEYFIELD(m_anglesOverrideString,	FIELD_STRING, "angleOverride" ),
-	DEFINE_FIELD( m_lastUpdateTickCount, FIELD_INTEGER ),
-	DEFINE_FIELD( m_allAsleep, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_hDamageEntity, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hKiller, FIELD_EHANDLE ),
 
 	DEFINE_KEYFIELD( m_bStartDisabled, FIELD_BOOLEAN, "StartDisabled" ),
 
@@ -99,168 +91,14 @@ BEGIN_DATADESC(CRagdollProp)
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable",	InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "FadeAndRemove", InputFadeAndRemove ),
 
-	DEFINE_FIELD( m_hUnragdoll, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_bFirstCollisionAfterLaunch, FIELD_BOOLEAN ),
-
-	DEFINE_FIELD( m_flBlendWeight, FIELD_FLOAT ),
-	DEFINE_FIELD( m_nOverlaySequence, FIELD_INTEGER ),
-	DEFINE_AUTO_ARRAY( m_ragdollMins, FIELD_VECTOR ),
-	DEFINE_AUTO_ARRAY( m_ragdollMaxs, FIELD_VECTOR ),
-
-	// Physics Influence
-	DEFINE_FIELD( m_hPhysicsAttacker, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_flLastPhysicsInfluenceTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flFadeOutStartTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flFadeTime,	FIELD_FLOAT),
-	DEFINE_FIELD( m_strSourceClassName, FIELD_STRING ),
-	DEFINE_FIELD( m_bHasBeenPhysgunned, FIELD_BOOLEAN ),
-
-	// think functions
-	DEFINE_THINKFUNC( SetDebrisThink ),
-	DEFINE_THINKFUNC( ClearFlagsThink ),
-	DEFINE_THINKFUNC( FadeOutThink ),
-
-	DEFINE_FIELD( m_ragdoll.listCount, FIELD_INTEGER ),
-	DEFINE_FIELD( m_ragdoll.allowStretch, FIELD_BOOLEAN ),
-	DEFINE_PHYSPTR( m_ragdoll.pGroup ),
-	DEFINE_FIELD( m_flDefaultFadeScale, FIELD_FLOAT ),
-
-	//DEFINE_RAGDOLL_ELEMENT( 0 ),
-	DEFINE_RAGDOLL_ELEMENT( 1 ),
-	DEFINE_RAGDOLL_ELEMENT( 2 ),
-	DEFINE_RAGDOLL_ELEMENT( 3 ),
-	DEFINE_RAGDOLL_ELEMENT( 4 ),
-	DEFINE_RAGDOLL_ELEMENT( 5 ),
-	DEFINE_RAGDOLL_ELEMENT( 6 ),
-	DEFINE_RAGDOLL_ELEMENT( 7 ),
-	DEFINE_RAGDOLL_ELEMENT( 8 ),
-	DEFINE_RAGDOLL_ELEMENT( 9 ),
-	DEFINE_RAGDOLL_ELEMENT( 10 ),
-	DEFINE_RAGDOLL_ELEMENT( 11 ),
-	DEFINE_RAGDOLL_ELEMENT( 12 ),
-	DEFINE_RAGDOLL_ELEMENT( 13 ),
-	DEFINE_RAGDOLL_ELEMENT( 14 ),
-	DEFINE_RAGDOLL_ELEMENT( 15 ),
-	DEFINE_RAGDOLL_ELEMENT( 16 ),
-	DEFINE_RAGDOLL_ELEMENT( 17 ),
-	DEFINE_RAGDOLL_ELEMENT( 18 ),
-	DEFINE_RAGDOLL_ELEMENT( 19 ),
-	DEFINE_RAGDOLL_ELEMENT( 20 ),
-	DEFINE_RAGDOLL_ELEMENT( 21 ),
-	DEFINE_RAGDOLL_ELEMENT( 22 ),
-	DEFINE_RAGDOLL_ELEMENT( 23 ),
-	DEFINE_RAGDOLL_ELEMENT( 24 ),
-	DEFINE_RAGDOLL_ELEMENT( 25 ),
-	DEFINE_RAGDOLL_ELEMENT( 26 ),
-	DEFINE_RAGDOLL_ELEMENT( 27 ),
-	DEFINE_RAGDOLL_ELEMENT( 28 ),
-	DEFINE_RAGDOLL_ELEMENT( 29 ),
-	DEFINE_RAGDOLL_ELEMENT( 30 ),
-	DEFINE_RAGDOLL_ELEMENT( 31 ),
-	DEFINE_RAGDOLL_ELEMENT( 32 ),
-	DEFINE_RAGDOLL_ELEMENT( 33 ),
-	DEFINE_RAGDOLL_ELEMENT( 34 ),
-	DEFINE_RAGDOLL_ELEMENT( 35 ),
-	DEFINE_RAGDOLL_ELEMENT( 36 ),
-	DEFINE_RAGDOLL_ELEMENT( 37 ),
-	DEFINE_RAGDOLL_ELEMENT( 38 ),
-	DEFINE_RAGDOLL_ELEMENT( 39 ),
-	DEFINE_RAGDOLL_ELEMENT( 41 ),
-	DEFINE_RAGDOLL_ELEMENT( 42 ),
-	DEFINE_RAGDOLL_ELEMENT( 43 ),
-	DEFINE_RAGDOLL_ELEMENT( 44 ),
-	DEFINE_RAGDOLL_ELEMENT( 45 ),
-	DEFINE_RAGDOLL_ELEMENT( 46 ),
-	DEFINE_RAGDOLL_ELEMENT( 47 ),
-	DEFINE_RAGDOLL_ELEMENT( 48 ),
-	DEFINE_RAGDOLL_ELEMENT( 49 ),
-	DEFINE_RAGDOLL_ELEMENT( 50 ),
-	DEFINE_RAGDOLL_ELEMENT( 51 ),
-	DEFINE_RAGDOLL_ELEMENT( 52 ),
-	DEFINE_RAGDOLL_ELEMENT( 53 ),
-	DEFINE_RAGDOLL_ELEMENT( 54 ),
-	DEFINE_RAGDOLL_ELEMENT( 55 ),
-	DEFINE_RAGDOLL_ELEMENT( 56 ),
-	DEFINE_RAGDOLL_ELEMENT( 57 ),
-	DEFINE_RAGDOLL_ELEMENT( 58 ),
-	DEFINE_RAGDOLL_ELEMENT( 59 ),
-	DEFINE_RAGDOLL_ELEMENT( 60 ),
-	DEFINE_RAGDOLL_ELEMENT( 61 ),
-	DEFINE_RAGDOLL_ELEMENT( 62 ),
-	DEFINE_RAGDOLL_ELEMENT( 63 ),
-	DEFINE_RAGDOLL_ELEMENT( 64 ),
-	DEFINE_RAGDOLL_ELEMENT( 65 ),
-	DEFINE_RAGDOLL_ELEMENT( 66 ),
-	DEFINE_RAGDOLL_ELEMENT( 67 ),
-	DEFINE_RAGDOLL_ELEMENT( 68 ),
-	DEFINE_RAGDOLL_ELEMENT( 69 ),
-	DEFINE_RAGDOLL_ELEMENT( 70 ),
-	DEFINE_RAGDOLL_ELEMENT( 71 ),
-	DEFINE_RAGDOLL_ELEMENT( 72 ),
-	DEFINE_RAGDOLL_ELEMENT( 73 ),
-	DEFINE_RAGDOLL_ELEMENT( 74 ),
-	DEFINE_RAGDOLL_ELEMENT( 75 ),
-	DEFINE_RAGDOLL_ELEMENT( 76 ),
-	DEFINE_RAGDOLL_ELEMENT( 77 ),
-	DEFINE_RAGDOLL_ELEMENT( 78 ),
-	DEFINE_RAGDOLL_ELEMENT( 79 ),
-	DEFINE_RAGDOLL_ELEMENT( 80 ),
-	DEFINE_RAGDOLL_ELEMENT( 81 ),
-	DEFINE_RAGDOLL_ELEMENT( 82 ),
-	DEFINE_RAGDOLL_ELEMENT( 83 ),
-	DEFINE_RAGDOLL_ELEMENT( 84 ),
-	DEFINE_RAGDOLL_ELEMENT( 85 ),
-	DEFINE_RAGDOLL_ELEMENT( 86 ),
-	DEFINE_RAGDOLL_ELEMENT( 87 ),
-	DEFINE_RAGDOLL_ELEMENT( 88 ),
-	DEFINE_RAGDOLL_ELEMENT( 89 ),
-	DEFINE_RAGDOLL_ELEMENT( 90 ),
-	DEFINE_RAGDOLL_ELEMENT( 91 ),
-	DEFINE_RAGDOLL_ELEMENT( 92 ),
-	DEFINE_RAGDOLL_ELEMENT( 93 ),
-	DEFINE_RAGDOLL_ELEMENT( 94 ),
-	DEFINE_RAGDOLL_ELEMENT( 95 ),
-	DEFINE_RAGDOLL_ELEMENT( 96 ),
-	DEFINE_RAGDOLL_ELEMENT( 97 ),
-	DEFINE_RAGDOLL_ELEMENT( 98 ),
-	DEFINE_RAGDOLL_ELEMENT( 99 ),
-	DEFINE_RAGDOLL_ELEMENT( 100 ),
-	DEFINE_RAGDOLL_ELEMENT( 101 ),
-	DEFINE_RAGDOLL_ELEMENT( 102 ),
-	DEFINE_RAGDOLL_ELEMENT( 103 ),
-	DEFINE_RAGDOLL_ELEMENT( 104 ),
-	DEFINE_RAGDOLL_ELEMENT( 105 ),
-	DEFINE_RAGDOLL_ELEMENT( 106 ),
-	DEFINE_RAGDOLL_ELEMENT( 107 ),
-	DEFINE_RAGDOLL_ELEMENT( 108 ),
-	DEFINE_RAGDOLL_ELEMENT( 109 ),
-	DEFINE_RAGDOLL_ELEMENT( 110 ),
-	DEFINE_RAGDOLL_ELEMENT( 111 ),
-	DEFINE_RAGDOLL_ELEMENT( 112 ),
-	DEFINE_RAGDOLL_ELEMENT( 113 ),
-	DEFINE_RAGDOLL_ELEMENT( 114 ),
-	DEFINE_RAGDOLL_ELEMENT( 115 ),
-	DEFINE_RAGDOLL_ELEMENT( 116 ),
-	DEFINE_RAGDOLL_ELEMENT( 117 ),
-	DEFINE_RAGDOLL_ELEMENT( 118 ),
-	DEFINE_RAGDOLL_ELEMENT( 119 ),
-	DEFINE_RAGDOLL_ELEMENT( 120 ),
-	DEFINE_RAGDOLL_ELEMENT( 121 ),
-	DEFINE_RAGDOLL_ELEMENT( 122 ),
-	DEFINE_RAGDOLL_ELEMENT( 123 ),
-	DEFINE_RAGDOLL_ELEMENT( 124 ),
-	DEFINE_RAGDOLL_ELEMENT( 125 ),
-	DEFINE_RAGDOLL_ELEMENT( 126 ),
-	DEFINE_RAGDOLL_ELEMENT( 127 ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Disable auto fading under dx7 or when level fades are specified
 //-----------------------------------------------------------------------------
 void CRagdollProp::DisableAutoFade()
 {
-	m_flFadeScale = 0;
+	SetGlobalFadeScale( 0.0f );
 	m_flDefaultFadeScale = 0;
 }
 
@@ -268,7 +106,7 @@ void CRagdollProp::DisableAutoFade()
 void CRagdollProp::Spawn( void )
 {
 	// Starts out as the default fade scale value
-	m_flDefaultFadeScale = m_flFadeScale;
+	m_flDefaultFadeScale = GetGlobalFadeScale();
 
 	// NOTE: If this fires, then the assert or the datadesc is wrong!  (see DEFINE_RAGDOLL_ELEMENT above)
 	Assert( RAGDOLL_MAX_ELEMENTS == 128 );
@@ -282,7 +120,7 @@ void CRagdollProp::Spawn( void )
 	}
 	else
 	{
-		m_flFadeScale = m_flDefaultFadeScale;
+		SetGlobalFadeScale( m_flDefaultFadeScale );
 	}
 
 	matrix3x4_t pBoneToWorld[MAXSTUDIOBONES];
@@ -367,39 +205,6 @@ void CRagdollProp::SetSourceClassName( const char *pClassname )
 }
 
 
-void CRagdollProp::OnSave( IEntitySaveUtils *pUtils )
-{
-	if ( !m_ragdoll.listCount )
-		return;
-
-	// Don't save ragdoll element 0, base class saves the pointer in 
-	// m_pPhysicsObject
-	Assert( m_ragdoll.list[0].parentIndex == -1 );
-	Assert( m_ragdoll.list[0].pConstraint == NULL );
-	Assert( m_ragdoll.list[0].originParentSpace == vec3_origin );
-	Assert( m_ragdoll.list[0].pObject != NULL );
-	VPhysicsSetObject( NULL );	// squelch a warning message
-	VPhysicsSetObject( m_ragdoll.list[0].pObject );	// make sure object zero is saved by CBaseEntity
-	BaseClass::OnSave( pUtils );
-}
-
-void CRagdollProp::OnRestore()
-{
-	// rebuild element 0 since it isn't saved
-	// NOTE: This breaks the rules - the pointer needs to get fixed in Restore()
-	m_ragdoll.list[0].pObject = VPhysicsGetObject();
-	m_ragdoll.list[0].parentIndex = -1;
-	m_ragdoll.list[0].originParentSpace.Init();
-
-	BaseClass::OnRestore();
-	if ( !m_ragdoll.listCount )
-		return;
-
-	// JAY: Reset collision relationships
-	RagdollSetupCollisions( m_ragdoll, modelinfo->GetVCollide( GetModelIndex() ), GetModelIndex() );
-	VPhysicsUpdate( VPhysicsGetObject() );
-}
-
 void CRagdollProp::CalcRagdollSize( void )
 {
 	CollisionProp()->SetSurroundingBoundsType( USE_HITBOXES );
@@ -408,14 +213,6 @@ void CRagdollProp::CalcRagdollSize( void )
 
 void CRagdollProp::UpdateOnRemove( void )
 {
-	for ( int i = 0; i < m_ragdoll.listCount; i++ )
-	{
-		if ( m_ragdoll.list[i].pObject )
-		{
-			g_pPhysSaveRestoreManager->ForgetModel( m_ragdoll.list[i].pObject );
-		}
-	}
-
 	// Set to null so that the destructor's call to DestroyObject won't destroy
 	//  m_pObjects[ 0 ] twice since that's the physics object for the prop
 	VPhysicsSetObject( NULL );
@@ -433,8 +230,8 @@ CRagdollProp::CRagdollProp( void )
 	m_ragdoll.listCount = 0;
 	Assert( (1<<RAGDOLL_INDEX_BITS) >=RAGDOLL_MAX_ELEMENTS );
 	m_allAsleep = false;
-	m_flFadeScale = 1;
-	m_flDefaultFadeScale = 1;
+	SetGlobalFadeScale( 1.0f );
+	m_flDefaultFadeScale = 1.0f;
 }
 
 CRagdollProp::~CRagdollProp( void )
@@ -1293,7 +1090,7 @@ void CRagdollProp::FadeOut( float flDelay, float fadeTime )
 	m_flFadeTime = ( fadeTime == -1 ) ? FADE_OUT_LENGTH : fadeTime;
 
 	m_flFadeOutStartTime = gpGlobals->curtime + flDelay;
-	m_flFadeScale = 0;
+	SetGlobalFadeScale( 0 );
 	SetContextThink( &CRagdollProp::FadeOutThink, gpGlobals->curtime + flDelay + 0.01f, s_pFadeOutContext );
 }
 
@@ -1313,8 +1110,8 @@ void CRagdollProp::FadeOutThink(void)
 	{
 		float alpha = 1.0f - dt / m_flFadeTime;
 		int nFade = (int)(alpha * 255.0f);
-		m_nRenderMode = kRenderTransTexture;
-		SetRenderColorA( nFade );
+		SetRenderMode( kRenderTransTexture );
+		SetRenderAlpha( nFade );
 		NetworkStateChanged();
 		SetContextThink( &CRagdollProp::FadeOutThink, gpGlobals->curtime + TICK_INTERVAL, s_pFadeOutContext );
 	}
@@ -1417,7 +1214,6 @@ public:
 	void VPhysicsUpdate( IPhysicsObject *pPhysics );
 
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
 
 private:
 	void Detach();
@@ -1438,16 +1234,6 @@ IMPLEMENT_SERVERCLASS_ST(CRagdollPropAttached, DT_Ragdoll_Attached)
 	SendPropVector(SENDINFO(m_attachmentPointBoneSpace), -1,  SPROP_COORD ),
 	SendPropVector(SENDINFO(m_attachmentPointRagdollSpace), -1,  SPROP_COORD ),
 END_SEND_TABLE()
-
-BEGIN_DATADESC(CRagdollPropAttached)
-	DEFINE_FIELD( m_boneIndexAttached,	FIELD_INTEGER ),
-	DEFINE_FIELD( m_ragdollAttachedObjectIndex, FIELD_INTEGER ),
-	DEFINE_FIELD( m_attachmentPointBoneSpace,	FIELD_VECTOR ),
-	DEFINE_FIELD( m_attachmentPointRagdollSpace, FIELD_VECTOR ),
-	DEFINE_FIELD( m_bShouldDetach, FIELD_BOOLEAN ),
-	DEFINE_PHYSPTR( m_pAttachConstraint ),
-END_DATADESC()
-
 
 static void SyncAnimatingWithPhysics( CBaseAnimating *pAnimating )
 {
@@ -1482,14 +1268,14 @@ CBaseAnimating *CreateServerRagdollSubmodel( CBaseAnimating *pOwner, const char 
 }
 
 
-CBaseEntity *CreateServerRagdoll( CBaseAnimating *pAnimating, int forceBone, const CTakeDamageInfo &info, int collisionGroup, bool bUseLRURetirement )
+CBaseEntity *CreateServerRagdoll( CBaseAnimating *pAnimating, int forceBone, const CTakeDamageInfo &info, int collisionGroup, bool bUseLRURetirement, const char *classname )
 {
 	if ( info.GetDamageType() & (DMG_VEHICLE|DMG_CRUSH) )
 	{
 		// if the entity was killed by physics or a vehicle, move to the vphysics shadow position before creating the ragdoll.
 		SyncAnimatingWithPhysics( pAnimating );
 	}
-	CRagdollProp *pRagdoll = (CRagdollProp *)CBaseEntity::CreateNoSpawn( "prop_ragdoll", pAnimating->GetAbsOrigin(), vec3_angle, NULL );
+	CRagdollProp *pRagdoll = (CRagdollProp *)CBaseEntity::CreateNoSpawn( classname, pAnimating->GetAbsOrigin(), vec3_angle, NULL );
 	pRagdoll->CopyAnimationDataFrom( pAnimating );
 	pRagdoll->SetOwnerEntity( pAnimating );
 

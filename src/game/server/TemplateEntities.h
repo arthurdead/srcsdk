@@ -11,12 +11,12 @@
 #define TEMPLATEENTITIES_H
 #pragma once
 
-#include "isaverestore.h"
+#include "string_t.h"
 
 class CBaseEntity;
 class CPointTemplate;
 
-int			Templates_Add(CBaseEntity *pEntity, const char *pszMapData, int nLen);
+int			Templates_Add(CBaseEntity *pEntity, const char *pszMapData, int nLen, int nHammerID=-1);
 string_t	Templates_FindByIndex( int iIndex );
 int			Templates_GetStringSize( int iIndex );
 string_t	Templates_FindByTargetName(const char *pszName);
@@ -28,7 +28,7 @@ void		Templates_StartUniqueInstance( void );
 bool		Templates_IndexRequiresEntityIOFixup( int iIndex );
 const char		*Templates_GetEntityIOFixedMapData( int iIndex );
 
-// Save / Restore
-ISaveRestoreBlockHandler *GetTemplateSaveRestoreBlockHandler( void );
+// Used by Foundry.
+void		Templates_RemoveByHammerID( int nHammerID );
 
 #endif // TEMPLATEENTITIES_H

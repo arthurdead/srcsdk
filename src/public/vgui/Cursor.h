@@ -38,8 +38,20 @@ enum CursorCode
 	dc_alwaysvisible_pop,
 };
 
-typedef unsigned long HCursor;
+inline HCursor CursorCodeToCursor(CursorCode code)
+{
+	return (HCursor)code;
+}
 
 }
+
+inline bool operator==(vgui::HCursor rhs, vgui::CursorCode lhs)
+{ return rhs == vgui::CursorCodeToCursor(lhs); }
+inline bool operator!=(vgui::HCursor rhs, vgui::CursorCode lhs)
+{ return rhs != vgui::CursorCodeToCursor(lhs); }
+inline bool operator==(vgui::CursorCode lhs, vgui::HCursor rhs)
+{ return vgui::CursorCodeToCursor(lhs) == rhs; }
+inline bool operator!=(vgui::CursorCode lhs, vgui::HCursor rhs)
+{ return vgui::CursorCodeToCursor(lhs)!= rhs; }
 
 #endif // CURSOR_H

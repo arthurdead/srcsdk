@@ -15,6 +15,9 @@
 #pragma once
 
 #include "edict.h"
+#include "networkvar.h"
+#include "server_class.h"
+#include "irecipientfilter.h"
 
 // This is the base class for TEMP ENTITIES that use the 
 //  event system to propagate
@@ -26,6 +29,8 @@ public:
 
 						CBaseTempEntity( const char *name );
 	virtual				~CBaseTempEntity( void );
+
+	bool IsNetworked() const { return true; }
 
 	const char			*GetName( void );
 

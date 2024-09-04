@@ -18,7 +18,7 @@
 #include "tier1/memstack.h"
 #include "engine/ivdebugoverlay.h"
 #include "shaderapi/ishaderapi.h"
-#include "materialsystem/materialsystemutil.h"
+#include "materialsystem/MaterialSystemUtil.h"
 #include "tier0/vprof.h"
 
 // NOTE: This has to be the last file included!
@@ -610,7 +610,7 @@ void CModelRenderSystem::SetupBones( int nModelTypeCount, ModelListByType_t *pMo
 {
 	// FIXME: Can we make parallel bone setup faster? Yes, we can!
 	const float flCurTime = gpGlobals->curtime;
-	matrix3x4a_t pPoseToBone[MAXSTUDIOBONES];
+	matrix3x4_t pPoseToBone[MAXSTUDIOBONES];
 
 	for ( int i = 0; i < nModelTypeCount; ++i )
 	{
@@ -623,7 +623,7 @@ void CModelRenderSystem::SetupBones( int nModelTypeCount, ModelListByType_t *pMo
 		{
 			RenderModelInfo_t *pModel = &list.m_pRenderModels[j];
 			const int nBoneMask = BONE_USED_BY_VERTEX_AT_LOD( pModel->m_nLOD ) | nAttachmentMask;
-			pModel->m_pBoneToWorld = (matrix3x4a_t*)m_BoneToWorld.Alloc( nBoneCount * sizeof(matrix3x4a_t) );
+			pModel->m_pBoneToWorld = (matrix3x4_t*)m_BoneToWorld.Alloc( nBoneCount * sizeof(matrix3x4_t) );
 			const bool bOk = pModel->m_Entry.m_pRenderable->SetupBones( pModel->m_pBoneToWorld, nBoneCount, nBoneMask, flCurTime );
 			if ( !bOk )
 			{
@@ -664,11 +664,11 @@ void CModelRenderSystem::SetupBones( int nModelTypeCount, ModelListByType_t *pMo
 		for ( int j = 0; j < list.m_nCount; ++j )
 		{
 			RenderModelInfo_t *pModel = &list.m_pRenderModels[j];
-			CMatRenderData< matrix3x4a_t > rdPoseToWorld( m_pRenderContext, nBoneCount );
+			CMatRenderData< matrix3x4_t > rdPoseToWorld( m_pRenderContext, nBoneCount );
 			pModel->m_pPoseToWorld = rdPoseToWorld.Base();
 			for ( int b = 0; b < nBoneCount; b++ )
 			{
-				ConcatTransforms_Aligned( pModel->m_pBoneToWorld[b], pPoseToBone[b], pModel->m_pPoseToWorld[b] );
+				ConcatTransforms( pModel->m_pBoneToWorld[b], pPoseToBone[b], pModel->m_pPoseToWorld[b] );
 			}
 		}
 	}

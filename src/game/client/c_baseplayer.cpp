@@ -50,6 +50,7 @@
 #include "cellcoord.h"
 #include "debugoverlay_shared.h"
 #include "ammodef.h"
+#include "c_basetempentity.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -72,8 +73,6 @@ extern ConVar r_mapextents;
 
 static Vector WALL_MIN(-WALL_OFFSET,-WALL_OFFSET,-WALL_OFFSET);
 static Vector WALL_MAX(WALL_OFFSET,WALL_OFFSET,WALL_OFFSET);
-
-bool CommentaryModeShouldSwallowInput( C_BasePlayer *pPlayer );
 
 extern ConVar default_fov;
 extern ConVar sensitivity;
@@ -209,6 +208,9 @@ END_RECV_TABLE()
 
 	BEGIN_RECV_TABLE_NOBASE( C_BasePlayer, DT_LocalPlayerExclusive )
 
+		RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ) ), // RECVINFO_NAME redirects the received var to m_vecNetworkOrigin for interpolation purposes
+		RecvPropFloat( RECVINFO( m_angEyeAngles[0] ) ),
+
 		RecvPropDataTable	( RECVINFO_DT(m_Local),0, &REFERENCE_RECV_TABLE(DT_Local) ),
 
 		RecvPropFloat		( RECVINFO(m_vecViewOffset[0]) ),
@@ -247,6 +249,11 @@ END_RECV_TABLE()
 		RecvPropEHandle		( RECVINFO(m_hTonemapController) ),
 	END_RECV_TABLE()
 
+	BEGIN_RECV_TABLE_NOBASE( C_BasePlayer, DT_NonLocalPlayerExclusive )
+		RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin), 0, C_BaseEntity::RecvProxy_CellOrigin ), // RECVINFO_NAME again
+		RecvPropFloat( RECVINFO( m_angEyeAngles[0] ) ),
+		RecvPropFloat( RECVINFO( m_angEyeAngles[1] ) ),
+	END_RECV_TABLE()
 	
 // -------------------------------------------------------------------------------- //
 // DT_BasePlayer datatable.
@@ -256,6 +263,9 @@ END_RECV_TABLE()
 		// We have both the local and nonlocal data in here, but the server proxies
 		// only send one.
 		RecvPropDataTable( "localdata", 0, 0, &REFERENCE_RECV_TABLE(DT_LocalPlayerExclusive) ),
+		RecvPropDataTable( "nonlocaldata", 0, 0, &REFERENCE_RECV_TABLE(DT_NonLocalPlayerExclusive) ),
+
+		RecvPropBool( RECVINFO( m_bSpawnInterpCounter ) ),
 
 		RecvPropDataTable(RECVINFO_DT(pl), 0, &REFERENCE_RECV_TABLE(DT_PlayerState), DataTableRecvProxy_StaticDataTable),
 
@@ -391,6 +401,12 @@ BEGIN_PREDICTION_DATA( C_BasePlayer )
 
 	DEFINE_FIELD( m_surfaceFriction, FIELD_FLOAT ),
 
+	DEFINE_PRED_FIELD( m_flCycle, FIELD_FLOAT, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_PRED_FIELD( m_nSequence, FIELD_INTEGER, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_PRED_FIELD( m_flPlaybackRate, FIELD_FLOAT, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_PRED_ARRAY_TOL( m_flEncodedController, FIELD_FLOAT, MAXSTUDIOBONECTRLS, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE, 0.02f ),
+	DEFINE_PRED_FIELD( m_nNewSequenceParity, FIELD_INTEGER, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
+
 END_PREDICTION_DATA()
 
 LINK_ENTITY_TO_CLASS( player, C_BasePlayer );
@@ -398,9 +414,15 @@ LINK_ENTITY_TO_CLASS( player, C_BasePlayer );
 // -------------------------------------------------------------------------------- //
 // Functions.
 // -------------------------------------------------------------------------------- //
-C_BasePlayer::C_BasePlayer() : m_iv_vecViewOffset( "C_BasePlayer::m_iv_vecViewOffset" )
+C_BasePlayer::C_BasePlayer() : m_iv_vecViewOffset( "C_BasePlayer::m_iv_vecViewOffset" ), m_iv_angEyeAngles( "C_BaseNetworkedPlayer::m_iv_angEyeAngles" )
 {
 	AddVar( &m_vecViewOffset, &m_iv_vecViewOffset, LATCH_SIMULATION_VAR );
+
+	m_angEyeAngles.Init();
+	AddVar( &m_angEyeAngles, &m_iv_angEyeAngles, LATCH_SIMULATION_VAR );
+
+	m_bSpawnInterpCounterCache = false;
+	m_bSpawnInterpCounter = false;
 	
 #ifdef _DEBUG																
 	m_vecLadderNormal.Init();
@@ -440,6 +462,8 @@ C_BasePlayer::C_BasePlayer() : m_iv_vecViewOffset( "C_BasePlayer::m_iv_vecViewOf
 	m_bIsLocalPlayer = false;
 	m_afButtonForced = 0;
 
+	SetPredictionEligible(true);
+
 	ListenForGameEvent( "base_player_teleported" );
 }
 
@@ -454,11 +478,20 @@ C_BasePlayer::~C_BasePlayer()
 		s_pLocalPlayer = NULL;
 	}
 
+	m_PlayerAnimState->Release();
+
 	if ( m_bFlashlightEnabled )
 	{
 		FlashlightEffectManager().TurnOffFlashlight( true );
 		m_bFlashlightEnabled = false;
 	}
+}
+
+void C_BasePlayer::PostConstructor( const char *szClassname )
+{
+	BaseClass::PostConstructor( szClassname );
+
+	m_PlayerAnimState = CreateAnimState();
 }
 
 
@@ -792,6 +825,10 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 		}
 	}
 
+	// C_BaseEntity assumes we're networking the entity's angles, so pretend that it
+	// networked the same value we already have.
+	SetNetworkAngles( GetLocalAngles() );
+
 	BaseClass::PostDataUpdate( updateType );
 			 
 	// Only care about this for local player
@@ -875,6 +912,96 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 	{
 		ResetLatched();
 	}
+
+	// Did we just respawn?
+	if ( m_bSpawnInterpCounter != m_bSpawnInterpCounterCache )
+		Respawn();
+}
+
+const QAngle& C_BasePlayer::EyeAngles()
+{
+	if( IsLocalPlayer() )
+		return BaseClass::EyeAngles();
+	else
+		return m_angEyeAngles;
+}
+
+const QAngle& C_BasePlayer::GetRenderAngles()
+{
+	if ( IsRagdoll() )
+		return vec3_angle;
+	else
+		return m_PlayerAnimState->GetRenderAngles();
+}
+
+void C_BasePlayer::Respawn()
+{
+	// fix up interp
+	MoveToLastReceivedPosition( true );
+	ResetLatched();
+	m_bSpawnInterpCounterCache = m_bSpawnInterpCounter;
+
+	RemoveAllDecals();
+
+	m_PlayerAnimState->ResetGestureSlots();
+	
+	// reset HDR
+	if ( IsLocalPlayer() )
+		ResetToneMapping(1.0);
+
+	if(m_pClientsideRagdoll)
+		UTIL_Remove(m_pClientsideRagdoll);
+}
+
+class C_TEPlayerAnimEvent : public C_BaseTempEntity
+{
+public:
+	DECLARE_CLASS( C_TEPlayerAnimEvent, C_BaseTempEntity );
+	DECLARE_CLIENTCLASS();
+
+	virtual void PostDataUpdate( DataUpdateType_t updateType );
+
+public:
+	CNetworkHandle( C_BasePlayer, m_hPlayer );
+	CNetworkVar( int, m_iEvent );
+	CNetworkVar( int, m_nData );
+};
+
+IMPLEMENT_CLIENTCLASS_EVENT( C_TEPlayerAnimEvent, DT_TEPlayerAnimEvent, CTEPlayerAnimEvent );
+
+BEGIN_RECV_TABLE_NOBASE( C_TEPlayerAnimEvent, DT_TEPlayerAnimEvent )
+	RecvPropEHandle( RECVINFO( m_hPlayer ) ),
+	RecvPropInt( RECVINFO( m_iEvent ) ),
+	RecvPropInt( RECVINFO( m_nData ) ),
+END_RECV_TABLE()
+
+void C_TEPlayerAnimEvent::PostDataUpdate( DataUpdateType_t updateType )
+{
+	C_BasePlayer *pPlayer = (C_BasePlayer*)m_hPlayer.Get();
+
+	if ( pPlayer && !pPlayer->IsDormant() )
+		pPlayer->DoAnimationEvent( (PlayerAnimEvent_t)m_iEvent.Get(), m_nData );
+}
+
+void C_BasePlayer::DoAnimationEvent( PlayerAnimEvent_t event, int nData )
+{
+	if ( IsLocalPlayer() && prediction->InPrediction() && !prediction->IsFirstTimePredicted() )
+			return;
+
+	MDLCACHE_CRITICAL_SECTION();
+	m_PlayerAnimState->DoAnimationEvent( event, nData );
+}
+
+void C_BasePlayer::UpdateClientSideAnimation()
+{
+	// Keep the model upright; pose params will handle pitch aiming.
+	QAngle angles = GetLocalAngles();
+	angles[PITCH] = 0;
+	SetLocalAngles( angles );
+
+	m_PlayerAnimState->Update( EyeAngles()[YAW], EyeAngles()[PITCH] );
+
+	BaseClass::UpdateClientSideAnimation();
 }
 
 int C_BasePlayer::GetVisionFilterFlags()
@@ -2060,11 +2187,8 @@ void C_BasePlayer::PostThink( void )
 		// Need to do this on the client to avoid prediction errors
 		UpdateCollisionBounds();
 		
-		if ( !CommentaryModeShouldSwallowInput( this ) )
-		{
-			// do weapon stuff
-			ItemPostFrame();
-		}
+		// do weapon stuff
+		ItemPostFrame();
 
 		if ( GetFlags() & FL_ONGROUND )
 		{		

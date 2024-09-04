@@ -39,7 +39,7 @@ enum RenderableModelType_t
 
 COMPILE_TIME_ASSERT(RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS == 4);
 
-enum
+enum RenderGroupBucket_t
 {
 	RENDER_GROUP_BUCKET_HUGE = 0,
 	RENDER_GROUP_BUCKET_MEDIUM = 1,

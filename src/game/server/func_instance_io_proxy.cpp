@@ -33,7 +33,7 @@ public:
 	void InputProxyRelay15( inputdata_t &inputdata );
 	void InputProxyRelay16( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 
@@ -58,7 +58,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( func_instance_io_proxy, CFuncInstanceIoProxy );
 
-BEGIN_DATADESC( CFuncInstanceIoProxy )
+BEGIN_MAPENTITY( CFuncInstanceIoProxy )
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "OnProxyRelay1",  InputProxyRelay1 ),
@@ -96,7 +96,7 @@ BEGIN_DATADESC( CFuncInstanceIoProxy )
 	DEFINE_OUTPUT( m_OnProxyRelay15, "OnProxyRelay15" ),
 	DEFINE_OUTPUT( m_OnProxyRelay16, "OnProxyRelay16" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //------------------------------------------------------------------------------
 // Purpose : Route the incomming to the outgoing proxy messages. 

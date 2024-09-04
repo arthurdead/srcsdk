@@ -46,7 +46,7 @@ ConVar ai_task_pre_script(  "ai_task_pre_script", "0", FCVAR_NONE );
 // spawnflags - (stop if blocked, stop if player seen)
 //
 
-BEGIN_DATADESC( CAI_ScriptedSequence )
+BEGIN_MAPENTITY( CAI_ScriptedSequence )
 
 	DEFINE_KEYFIELD( m_iszEntry, FIELD_STRING, "m_iszEntry" ),
 	DEFINE_KEYFIELD( m_iszPreIdle, FIELD_STRING, "m_iszIdle" ),
@@ -59,42 +59,10 @@ BEGIN_DATADESC( CAI_ScriptedSequence )
 	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "m_flRadius" ),
 	DEFINE_KEYFIELD( m_flRepeat, FIELD_FLOAT, "m_flRepeat" ),
 
-	DEFINE_FIELD( m_bIsPlayingEntry, FIELD_BOOLEAN ),
 	DEFINE_KEYFIELD( m_bLoopActionSequence, FIELD_BOOLEAN, "m_bLoopActionSequence" ),
 	DEFINE_KEYFIELD( m_bSynchPostIdles, FIELD_BOOLEAN, "m_bSynchPostIdles" ),
 	DEFINE_KEYFIELD( m_bIgnoreGravity, FIELD_BOOLEAN, "m_bIgnoreGravity" ),
 	DEFINE_KEYFIELD( m_bDisableNPCCollisions, FIELD_BOOLEAN, "m_bDisableNPCCollisions" ),
-
-	DEFINE_FIELD( m_iDelay, FIELD_INTEGER ),
-	DEFINE_FIELD( m_bDelayed, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_startTime, FIELD_TIME ),
-	DEFINE_FIELD( m_bWaitForBeginSequence, FIELD_BOOLEAN ),
-
-	DEFINE_FIELD( m_saved_effects, FIELD_INTEGER ),
-	DEFINE_FIELD( m_savedFlags, FIELD_INTEGER ),
-	DEFINE_FIELD( m_savedCollisionGroup, FIELD_INTEGER ),
-	
-	DEFINE_FIELD( m_interruptable, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_sequenceStarted, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_hTargetEnt, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hNextCine, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hLastFoundEntity, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hForcedTarget, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_bDontCancelOtherSequences, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bForceSynch, FIELD_BOOLEAN ),
-	
-	DEFINE_FIELD( m_bThinking, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bInitiatedSelfDelete, FIELD_BOOLEAN ),
-
-	DEFINE_FIELD( m_bIsTeleportingDueToMoveTo, FIELD_BOOLEAN ),
-
-	DEFINE_FIELD( m_matInteractionPosition, FIELD_VMATRIX ),
-	DEFINE_FIELD( m_hInteractionRelativeEntity, FIELD_EHANDLE ),
-
-	DEFINE_FIELD( m_bTargetWasAsleep, FIELD_BOOLEAN ),
-
-	// Function Pointers
-	DEFINE_THINKFUNC( ScriptThink ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "MoveToPosition", InputMoveToPosition ),
@@ -119,7 +87,7 @@ BEGIN_DATADESC( CAI_ScriptedSequence )
 	DEFINE_OUTPUT(m_OnScriptEvent[6], "OnScriptEvent07"),
 	DEFINE_OUTPUT(m_OnScriptEvent[7], "OnScriptEvent08"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( scripted_sequence, CAI_ScriptedSequence );
@@ -153,13 +121,12 @@ void CAI_ScriptedSequence::ScriptEntityCancel( CBaseEntity *pentCine, bool bPret
 				// We have to save off the flags here, because the NPC's m_hCine is cleared in CineCleanup()
 				int iSavedFlags = (pTarget->m_hCine ? pTarget->m_hCine->m_savedFlags : 0);
 
-#ifdef HL1_DLL
 				//if we didn't have FL_FLY before the script, remove it
 				// for some reason hl2 doesn't have to do this *before* 
 				// restoring the position ( which checks FL_FLY ) in CineCleanup
 				// Let's not risk breaking anything at this stage and just remove it.
 				pCineTarget->FixFlyFlag( pTarget, iSavedFlags );
-#endif
+
 				// do it now				
 				pTarget->CineCleanup( );
 				pCineTarget->FixScriptNPCSchedule( pTarget, iSavedFlags );
@@ -1620,13 +1587,12 @@ private:
 	
 	//---------------------------------
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 };
 
-BEGIN_DATADESC( CAI_ScriptedSchedule )
+BEGIN_MAPENTITY( CAI_ScriptedSchedule )
 
-	DEFINE_FIELD( m_hLastFoundEntity, FIELD_EHANDLE ),
 	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "m_flRadius" ),
 	
 	DEFINE_KEYFIELD( m_iszEntity, FIELD_STRING, "m_iszEntity" ),
@@ -1636,15 +1602,10 @@ BEGIN_DATADESC( CAI_ScriptedSchedule )
 	DEFINE_KEYFIELD( m_bGrabAll, FIELD_BOOLEAN, "graball" ),
 	DEFINE_KEYFIELD( m_Interruptability, FIELD_INTEGER, "interruptability"),
 
-	DEFINE_FIELD( m_bDidFireOnce, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_hActivator, FIELD_EHANDLE ),
-
-	DEFINE_THINKFUNC( ScriptThink ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartSchedule", InputStartSchedule ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopSchedule", InputStopSchedule ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( aiscripted_schedule, CAI_ScriptedSchedule );
@@ -1937,7 +1898,7 @@ public:
 	// Input handlers
 	void InputBeginSentence( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CAI_BaseNPC *FindEntity( void );
 	bool AcceptableSpeaker( CAI_BaseNPC *pNPC );
@@ -1967,7 +1928,7 @@ private:
 #define SF_SENTENCE_CONCURRENT			0x0008	// allow other people to keep talking
 #define SF_SENTENCE_SPEAKTOACTIVATOR	0x0010
 
-BEGIN_DATADESC( CAI_ScriptedSentence )
+BEGIN_MAPENTITY( CAI_ScriptedSentence )
 
 	DEFINE_KEYFIELD( m_iszSentence, FIELD_STRING, "sentence" ),
 	DEFINE_KEYFIELD( m_iszEntity, FIELD_STRING, "entity" ),
@@ -1978,15 +1939,6 @@ BEGIN_DATADESC( CAI_ScriptedSentence )
 
 	DEFINE_KEYFIELD( m_TempAttenuation, FIELD_INTEGER, "attenuation" ),
 
-	DEFINE_FIELD( m_iSoundLevel, FIELD_INTEGER ),
-	DEFINE_FIELD( m_flVolume, FIELD_FLOAT ),
-	DEFINE_FIELD( m_active, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_pActivator, FIELD_EHANDLE ),
-
-	// Function Pointers
-	DEFINE_FUNCTION( FindThink ),
-	DEFINE_FUNCTION( DelayThink ),
-
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "BeginSentence", InputBeginSentence),
 
@@ -1994,7 +1946,7 @@ BEGIN_DATADESC( CAI_ScriptedSentence )
 	DEFINE_OUTPUT(m_OnBeginSentence, "OnBeginSentence"),
 	DEFINE_OUTPUT(m_OnEndSentence, "OnEndSentence"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

@@ -408,6 +408,22 @@ CHud::CHud()
 	m_bEngineIsInGame = false;
 }
 
+CHudIcons::CHudIcons() :
+	m_bHudTexturesLoaded( false )
+{
+}
+
+CHudIcons::~CHudIcons()
+{
+	int c = m_Icons.Count();
+	for ( int i = c - 1; i >= 0; i-- )
+	{
+		CHudTexture *tex = m_Icons[ i ];
+		g_HudTextureMemoryPool.Free( tex );
+	}
+	m_Icons.Purge();
+}
+
 CUtlVector< CHudElement * > &CHud::GetHudList()
 {
 	return m_HudList;
@@ -1080,6 +1096,11 @@ float CHud::GetFOVSensitivityAdjust()
 {
 	return m_flFOVSensitivityAdjust;
 }
+
+// Hide all HUD elements during screenshot if the user's set hud_freezecamhide ( TF2 )
+extern bool IsTakingAFreezecamScreenshot();
+extern ConVar hud_freezecamhide;
+
 //-----------------------------------------------------------------------------
 // Purpose: Return true if the passed in sections of the HUD shouldn't be drawn
 //-----------------------------------------------------------------------------
@@ -1117,10 +1138,6 @@ bool CHud::IsHidden( int iHudFlags )
 	// Need the HEV suit ( HL2 )
 	if ( ( iHudFlags & HIDEHUD_NEEDSUIT ) && ( !pPlayer->IsSuitEquipped() ) )
 		return true;
-
-	// Hide all HUD elements during screenshot if the user's set hud_freezecamhide ( TF2 )
-	extern bool IsTakingAFreezecamScreenshot();
-	extern ConVar hud_freezecamhide;
 
 	if ( IsTakingAFreezecamScreenshot() && hud_freezecamhide.GetBool() )
 		return true;

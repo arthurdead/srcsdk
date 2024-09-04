@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "multiplayer_animstate.h"
+#include "playeranimstate.h"
 
 #if defined( CLIENT_DLL )
 class C_HeistPlayer;
@@ -12,13 +12,13 @@ class C_HeistPlayer;
 class CHeistPlayer;
 #endif
 
-class CHeistPlayerAnimState : public CMultiPlayerAnimState
+class CHeistPlayerAnimState : public CPlayerAnimState
 {
 public:
-	DECLARE_CLASS(CHeistPlayerAnimState, CMultiPlayerAnimState);
+	DECLARE_CLASS(CHeistPlayerAnimState, CPlayerAnimState);
 
 	CHeistPlayerAnimState();
-	CHeistPlayerAnimState(CBasePlayer *pPlayer, MultiPlayerMovementData_t &movementData);
+	CHeistPlayerAnimState(CBasePlayer *pPlayer, PlayerMovementData_t &movementData);
 	~CHeistPlayerAnimState();
 
 	void InitHeistAnimState(CHeistPlayer *pPlayer);

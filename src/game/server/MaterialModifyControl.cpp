@@ -48,7 +48,7 @@ public:
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	CNetworkString( m_szMaterialName, MATERIAL_MODIFY_STRING_SIZE );
@@ -67,26 +67,14 @@ private:
 
 LINK_ENTITY_TO_CLASS(material_modify_control, CMaterialModifyControl);
 
-BEGIN_DATADESC( CMaterialModifyControl )
-	// Variables.
-	DEFINE_AUTO_ARRAY( m_szMaterialName, FIELD_CHARACTER ),
-	DEFINE_AUTO_ARRAY( m_szMaterialVar, FIELD_CHARACTER ),
-	DEFINE_AUTO_ARRAY( m_szMaterialVarValue, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_iFrameStart, FIELD_INTEGER ),
-	DEFINE_FIELD( m_iFrameEnd, FIELD_INTEGER ),
-	DEFINE_FIELD( m_bWrap, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flFramerate, FIELD_FLOAT ),
-	DEFINE_FIELD( m_bNewAnimCommandsSemaphore, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flFloatLerpStartValue, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flFloatLerpEndValue, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flFloatLerpTransitionTime, FIELD_FLOAT ),
-	DEFINE_FIELD( m_nModifyMode, FIELD_INTEGER ),
+BEGIN_MAPENTITY( CMaterialModifyControl )
+
 	// Inputs.
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetMaterialVar", SetMaterialVar ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "SetMaterialVarToCurrentTime", SetMaterialVarToCurrentTime ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "StartAnimSequence", InputStartAnimSequence ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "StartFloatLerp", InputStartFloatLerp ),
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST(CMaterialModifyControl, DT_MaterialModifyControl)
 	SendPropString( SENDINFO( m_szMaterialName ) ),

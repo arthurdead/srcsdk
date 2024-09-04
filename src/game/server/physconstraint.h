@@ -10,6 +10,7 @@
 #pragma once
 
 #include "vphysics/constraints.h"
+#include "baseentity.h"
 
 struct hl_constraint_info_t
 {
@@ -37,7 +38,7 @@ public:
 	CPhysConstraint();
 	~CPhysConstraint();
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void Spawn( void );
 	void Precache( void );

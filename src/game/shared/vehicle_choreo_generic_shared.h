@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "networkvar.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -17,10 +18,6 @@ struct vehicleview_t
 {
 	DECLARE_CLASS_NOBASE( vehicleview_t );
 	DECLARE_EMBEDDED_NETWORKVAR();
-
-#ifndef CLIENT_DLL
-	DECLARE_DATADESC();
-#endif
 
 	CNetworkVar( bool,	bClampEyeAngles );	// Perform eye Z clamping
 

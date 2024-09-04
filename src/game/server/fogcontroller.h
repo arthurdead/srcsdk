@@ -13,6 +13,8 @@
 #include "baseentity.h"
 #include "GameEventListener.h"
 
+bool GetWorldFogParams( CBaseCombatCharacter *character, fogparams_t &fog );
+
 // Spawn Flags
 #define SF_FOG_MASTER		0x0001
 
@@ -26,7 +28,7 @@ class CFogController : public CBaseEntity
 {
 public:
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CFogController, CBaseEntity );
 
 	CFogController();
@@ -51,6 +53,7 @@ public:
 	void InputSetColorSecondaryLerpTo(inputdata_t &data);
 	void InputSetStartDistLerpTo(inputdata_t &data);
 	void InputSetEndDistLerpTo(inputdata_t &data);
+	void InputSetMaxDensityLerpTo(inputdata_t &data);
 
 	void InputStartFogTransition(inputdata_t &data);
 
@@ -90,7 +93,7 @@ public:
 	virtual void LevelInitPreEntity();
 	virtual void LevelInitPostEntity();
 	virtual void FireGameEvent( IGameEvent *pEvent ) { InitMasterController(); }
-	CFogController *GetMasterFogController( void )			{ return m_hMasterController; }
+	CFogController *GetMasterFogController( void )			{ return m_hMasterController.Get(); }
 
 private:
 

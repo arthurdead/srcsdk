@@ -17,7 +17,7 @@ class CEnvScreenOverlay : public CPointEntity
 {
 	DECLARE_CLASS( CEnvScreenOverlay, CPointEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	CEnvScreenOverlay();
@@ -43,11 +43,7 @@ protected:
 
 LINK_ENTITY_TO_CLASS( env_screenoverlay, CEnvScreenOverlay );
 
-BEGIN_DATADESC( CEnvScreenOverlay )
-
-// Silence, Classcheck!
-//	DEFINE_ARRAY( m_iszOverlayNames, FIELD_STRING, MAX_SCREEN_OVERLAYS ),
-//	DEFINE_ARRAY( m_flOverlayTimes, FIELD_FLOAT, MAX_SCREEN_OVERLAYS ),
+BEGIN_MAPENTITY( CEnvScreenOverlay )
 
 	DEFINE_KEYFIELD( m_iszOverlayNames[0], FIELD_STRING, "OverlayName1" ),
 	DEFINE_KEYFIELD( m_iszOverlayNames[1], FIELD_STRING, "OverlayName2" ),
@@ -69,17 +65,12 @@ BEGIN_DATADESC( CEnvScreenOverlay )
 	DEFINE_KEYFIELD( m_flOverlayTimes[7], FIELD_FLOAT, "OverlayTime8" ),
 	DEFINE_KEYFIELD( m_flOverlayTimes[8], FIELD_FLOAT, "OverlayTime9" ),
 	DEFINE_KEYFIELD( m_flOverlayTimes[9], FIELD_FLOAT, "OverlayTime10" ),
-	
-	// Class CEnvScreenOverlay:
-	DEFINE_FIELD( m_iDesiredOverlay, FIELD_INTEGER ),
-	DEFINE_FIELD( m_flStartTime, FIELD_TIME ),
-	DEFINE_FIELD( m_bIsActive, FIELD_BOOLEAN ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartOverlays", InputStartOverlay ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopOverlays", InputStopOverlay ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SwitchOverlay", InputSwitchOverlay ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 void SendProxy_String_tToString( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
@@ -197,7 +188,7 @@ class CEnvScreenEffect : public CPointEntity
 {
 	DECLARE_CLASS( CEnvScreenEffect, CPointEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	// We always want to be sent to the client
@@ -218,13 +209,12 @@ private:
 LINK_ENTITY_TO_CLASS( env_screeneffect, CEnvScreenEffect );
 
 // CEnvScreenEffect
-BEGIN_DATADESC( CEnvScreenEffect )
-	DEFINE_FIELD( m_flDuration, FIELD_FLOAT ),
+BEGIN_MAPENTITY( CEnvScreenEffect )
 	DEFINE_KEYFIELD( m_nType, FIELD_INTEGER, "type" ),
-	DEFINE_FIELD( m_flDuration, FIELD_FLOAT ),
+
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "StartEffect", InputStartEffect ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "StopEffect", InputStopEffect ),
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST( CEnvScreenEffect, DT_EnvScreenEffect )
 	SendPropFloat( SENDINFO( m_flDuration ), 0, SPROP_NOSCALE ),

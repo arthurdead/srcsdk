@@ -18,30 +18,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-BEGIN_SIMPLE_DATADESC(CAI_Path)
-	//					m_Waypoints	(reconsititute on load)
-	DEFINE_FIELD( m_goalTolerance,	FIELD_FLOAT ),
-	DEFINE_CUSTOM_FIELD( m_activity,	ActivityDataOps() ),
-	DEFINE_FIELD( m_target,			FIELD_EHANDLE ),
-	DEFINE_FIELD( m_sequence,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_vecTargetOffset,	FIELD_VECTOR ),
-	DEFINE_FIELD( m_waypointTolerance, FIELD_FLOAT ),
-	DEFINE_CUSTOM_FIELD( m_arrivalActivity,	ActivityDataOps() ),
-	DEFINE_FIELD( m_arrivalSequence,		FIELD_INTEGER ),
-	//					m_iLastNodeReached
-	DEFINE_FIELD( m_bGoalPosSet,		FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_goalPos,			FIELD_POSITION_VECTOR),
-	DEFINE_FIELD( m_bGoalTypeSet,		FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_goalType,			FIELD_INTEGER ),
-	DEFINE_FIELD( m_goalFlags,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_routeStartTime, FIELD_TIME ),
-	DEFINE_FIELD( m_goalDirection,	FIELD_VECTOR ),
-	DEFINE_FIELD( m_goalDirectionTarget, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_goalSpeed,	FIELD_FLOAT ),
-	DEFINE_FIELD( m_goalSpeedTarget, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_goalStoppingDistance, FIELD_FLOAT ),
-END_DATADESC()
-
 //-----------------------------------------------------------------------------
 AI_Waypoint_t CAI_Path::gm_InvalidWaypoint( Vector(0,0,0), 0, NAV_NONE, 0, 0 );
 

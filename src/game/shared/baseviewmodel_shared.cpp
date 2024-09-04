@@ -22,10 +22,18 @@
 #define VIEWMODEL_ANIMATION_PARITY_BITS 3
 #define SCREEN_OVERLAY_MATERIAL "vgui/screens/vgui_overlay"
 
+#ifdef CLIENT_DLL
+ConVar cl_wpn_sway_interp( "cl_wpn_sway_interp", "0.1", FCVAR_CLIENTDLL );
+ConVar cl_wpn_sway_scale( "cl_wpn_sway_scale", "1.0", FCVAR_CLIENTDLL|FCVAR_CHEAT );
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 CBaseViewModel::CBaseViewModel()
+#ifdef CLIENT_DLL
+  : m_LagAnglesHistory("CBaseViewModel::m_LagAnglesHistory")
+#endif
 {
 #if defined( CLIENT_DLL )
 	// NOTE: We do this here because the color is never transmitted for the view model.
@@ -43,6 +51,11 @@ CBaseViewModel::CBaseViewModel()
 	m_nViewModelIndex	= 0;
 
 	m_nAnimationParity	= 0;
+
+#ifdef CLIENT_DLL
+	m_vLagAngles.Init();
+	m_LagAnglesHistory.Setup( &m_vLagAngles, 0 );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -456,6 +469,10 @@ void CBaseViewModel::CalcViewModelLag( Vector& origin, QAngle& angles, QAngle& o
 	VectorMA( origin, -pitch * 0.035f,	forward,	origin );
 	VectorMA( origin, -pitch * 0.03f,		right,	origin );
 	VectorMA( origin, -pitch * 0.02f,		up,		origin);
+
+#ifdef CLIENT_DLL
+	
+#endif
 }
 
 //-----------------------------------------------------------------------------

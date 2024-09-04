@@ -439,7 +439,7 @@ int Q_log2(int val);
 // Math routines done in optimized assembly math package routines
 void inline SinCos( float radians, float *sine, float *cosine )
 {
-#if defined( PLATFORM_WINDOWS_PC32 )
+#if defined( PLATFORM_WINDOWS_PC32 ) && !defined GNUC
 	_asm
 	{
 		fld		DWORD PTR [radians]
@@ -454,7 +454,7 @@ void inline SinCos( float radians, float *sine, float *cosine )
 #elif defined( PLATFORM_WINDOWS_PC64 )
 	*sine = sin( radians );
 	*cosine = cos( radians );
-#elif defined( POSIX )
+#elif defined( POSIX ) || defined GNUC
 	double __cosr, __sinr;
 	__asm ("fsincos" : "=t" (__cosr), "=u" (__sinr) : "0" (radians));
 
@@ -1239,13 +1239,13 @@ FORCEINLINE unsigned long RoundFloatToUnsignedLong(float f)
 #else // PLATFORM_WINDOWS_PC64
 	unsigned char nResult[8];
 
-	#if defined( _WIN32 )
+	#if defined( _WIN32 ) && !defined GNUC
 		__asm
 		{
 			fld f
 			fistp       qword ptr nResult
 		}
-	#elif POSIX
+	#elif defined POSIX || defined GNUC
 		__asm __volatile__ (
 			"fistpl %0;": "=m" (nResult): "t" (f) : "st"
 		);

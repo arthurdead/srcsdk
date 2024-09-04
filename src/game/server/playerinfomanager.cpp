@@ -11,7 +11,6 @@
 
 extern CGlobalVars *gpGlobals;
 static CPlayerInfoManager s_PlayerInfoManager;
-static CPluginBotManager s_BotManager;
 
 namespace
 {
@@ -94,41 +93,4 @@ CGlobalVars *CPlayerInfoManager::GetGlobalVars()
 
 
 
-IBotController *CPluginBotManager::GetBotController( edict_t *pEdict )
-{
-	CBasePlayer *pPlayer = ( ( CBasePlayer * )CBaseEntity::Instance( pEdict ));
-	if ( pPlayer && pPlayer->IsBot() )
-	{
-		return pPlayer->GetBotController();
-	}
-	else
-	{
-		return NULL;
-	}
-}
-
-edict_t *CPluginBotManager::CreateBot( const char *botname )
-{	
-	edict_t *pEdict = engine->CreateFakeClient( botname );
-	if (!pEdict)
-	{
-		Msg( "Failed to create Bot.\n");
-		return NULL;
-	}
-
-	// Allocate a player entity for the bot, and call spawn
-	CBasePlayer *pPlayer = ((CBasePlayer*)CBaseEntity::Instance( pEdict ));
-
-	pPlayer->ClearFlags();
-	pPlayer->AddFlag( FL_CLIENT | FL_FAKECLIENT );
-
-	pPlayer->ChangeTeam( TEAM_UNASSIGNED );
-	pPlayer->RemoveAllItems( true );
-	pPlayer->Spawn();
-
-	return pEdict;
-}
-
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CPlayerInfoManager, IPlayerInfoManager, INTERFACEVERSION_PLAYERINFOMANAGER, s_PlayerInfoManager);
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CPluginBotManager, IBotManager, INTERFACEVERSION_PLAYERBOTMANAGER, s_BotManager);
-

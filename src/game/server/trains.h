@@ -112,18 +112,15 @@ public:
 
 	static CFuncTrackTrain *Instance( edict_t *pent );
 
-#ifdef TF_DLL
 	int UpdateTransmitState()
 	{
 		return SetTransmitState( FL_EDICT_ALWAYS );
 	}
-#endif
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() | FCAP_DIRECTIONAL_USE | FCAP_USE_ONGROUND; }
 
-	virtual void	OnRestore( void );
 
 	float GetMaxSpeed() const { return m_maxSpeed; }
 	float GetCurrentSpeed() const { return m_flSpeed; }
@@ -146,10 +143,8 @@ public:
 	CPathTrack	*m_ppath;
 	float		m_length;
 	
-#ifdef HL1_DLL	
 	bool		m_bOnTrackChange;		// we don't want to find a new node if we restore while 
 										// riding on a func_trackchange
-#endif
 
 private:
 

@@ -97,7 +97,7 @@ void C_World::OnDataChanged( DataUpdateType_t updateType )
 	// Always force reset to normal mode upon receipt of world in new map
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
-		modemanager->SwitchMode( false, true );
+		modemanager->SwitchMode( CLIENTMODE_NORMAL, true );
 
 		if ( m_bStartDark )
 		{

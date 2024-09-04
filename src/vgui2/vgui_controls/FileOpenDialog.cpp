@@ -800,7 +800,7 @@ void FileOpenDialog::OnClose()
 
 	if ( vgui::input()->GetAppModalSurface() == GetVPanel() )
 	{
-		input()->SetAppModalSurface(NULL);
+		input()->SetAppModalSurface(INVALID_VPANEL);
 	}
 
 	BaseClass::OnClose();
@@ -820,7 +820,7 @@ void FileOpenDialog::OnInputCompleted( KeyValues *data )
 	}
 
 	input()->SetAppModalSurface( m_SaveModal );
-	m_SaveModal = 0;
+	m_SaveModal = INVALID_VPANEL;
 
 	NewFolder( data->GetString( "text" ) );
 	OnOpen();
@@ -829,7 +829,7 @@ void FileOpenDialog::OnInputCompleted( KeyValues *data )
 void FileOpenDialog::OnInputCanceled()
 {
 	input()->SetAppModalSurface( m_SaveModal );
-	m_SaveModal = 0;
+	m_SaveModal = INVALID_VPANEL;
 }
 
 void FileOpenDialog::OnNewFolder()

@@ -129,7 +129,7 @@ bool CAI_BaseNPC::IsValidCover( const Vector &vecCoverLocation, CNavArea const *
 	Vector endPos	= startPos;
 	endPos.z += 0.01;
 	trace_t tr;
-	AI_TraceEntity( this, vecCoverLocation, endPos, MASK_NPCSOLID, &tr );
+	AI_TraceEntity( this, vecCoverLocation, endPos, GetAITraceMask(), &tr );
 	if (tr.startsolid)
 	{
 		return false;

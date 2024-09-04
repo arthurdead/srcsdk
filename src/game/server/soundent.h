@@ -14,6 +14,10 @@
 
 #pragma once
 
+#include "mathlib/vector.h"
+#include "ehandle.h"
+#include "baseentity.h"
+
 enum
 {
 	MAX_WORLD_SOUNDS_SP	= 64,	// Maximum number of sounds handled by the world at one time in single player.
@@ -54,6 +58,8 @@ enum
 	SOUND_CONTEXT_DANGER_APPROACH   = 0x08000000, // Treat as a normal danger sound if you see the source, otherwise turn to face source.
 	SOUND_CONTEXT_ALLIES_ONLY		= 0x10000000, // Only player allies can hear this sound
 	SOUND_CONTEXT_PLAYER_VEHICLE	= 0x20000000, // HACK: need this because we're not treating the SOUND_xxx values as true bit values! See switch in OnListened.
+	SOUND_CONTEXT_FROM_FIRE			= 0x40000000,	// A fire is nearby
+	SOUND_CONTEXT_FOLLOW_OWNER		= 0x80000000,	// The sound origin is at the owner
 
 	ALL_CONTEXTS			= 0xFFF00000,
 
@@ -103,13 +109,11 @@ enum
 //=========================================================
 class CSound
 {
-	DECLARE_SIMPLE_DATADESC();
-
 public:
 	bool	DoesSoundExpire() const;
 	float	SoundExpirationTime() const;
 	void	SetSoundOrigin( const Vector &vecOrigin ) { m_vecOrigin = vecOrigin; }
-	const	Vector& GetSoundOrigin( void ) { return m_vecOrigin; }
+	const	Vector& GetSoundOrigin( void );
 	const	Vector& GetSoundReactOrigin( void );
 	bool	FIsSound( void );
 	bool	FIsScent( void );
@@ -210,8 +214,6 @@ inline bool CSound::ValidateOwner( void ) const
 //=========================================================
 class CSoundEnt : public CPointEntity
 {
-	DECLARE_DATADESC();
-
 public:
 	DECLARE_CLASS( CSoundEnt, CPointEntity );
 
@@ -222,20 +224,20 @@ public:
 	CSoundEnt();
 	virtual ~CSoundEnt();
 
-	virtual void OnRestore();
 	void Precache ( void );
 	void Spawn( void );
 	void Think( void );
 	void Initialize ( void );
 	int ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
-	static void		InsertSound ( int iType, const Vector &vecOrigin, int iVolume, float flDuration, CBaseEntity *pOwner = NULL, int soundChannelIndex = SOUNDENT_CHANNEL_UNSPECIFIED, CBaseEntity *pSoundTarget = NULL );
+	static int		InsertSound ( int iType, const Vector &vecOrigin, int iVolume, float flDuration, CBaseEntity *pOwner = NULL, int soundChannelIndex = SOUNDENT_CHANNEL_UNSPECIFIED, CBaseEntity *pSoundTarget = NULL );
 	static void		FreeSound ( int iSound, int iPrevious );
 	static int		ActiveList( void );// return the head of the active list
 	static int		FreeList( void );// return the head of the free list
 	static CSound*	SoundPointerForIndex( int iIndex );// return a pointer for this index in the sound list
 	static CSound*	GetLoudestSoundOfType( int iType, const Vector &vecEarPosition );
 	static int		ClientSoundIndex ( edict_t *pClient );
+	static void		FreeSound( int iSound );
 
 	bool	IsEmpty( void );
 	int		ISoundsInList ( int iListType );

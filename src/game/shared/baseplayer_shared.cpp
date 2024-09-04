@@ -9,9 +9,7 @@
 #include "movevars_shared.h"
 #include "util_shared.h"
 #include "datacache/imdlcache.h"
-#if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
-#include "tf_gamerules.h"
-#endif
+#include "playeranimstate.h"
 
 #if defined( CLIENT_DLL )
 
@@ -30,14 +28,11 @@
 	#include "doors.h"
 	#include "ai_basenpc.h"
 	#include "env_zoom.h"
+	#include "ammodef.h"
 
 	extern int TrainSpeed(int iSpeed, int iMax);
 	
 #endif
-
-#if defined( CSTRIKE_DLL )
-#include "weapon_c4.h"
-#endif // CSTRIKE_DLL
 
 #include "in_buttons.h"
 #include "engine/IEngineSound.h"
@@ -50,6 +45,8 @@
 #include "tier0/memdbgon.h"
 
 #if defined(GAME_DLL)
+	ConVar sv_infinite_ammo( "sv_infinite_ammo", "0", FCVAR_CHEAT, "Player's active weapon will never run out of ammo" );
+	
 	extern ConVar sv_pushaway_max_force;
 	extern ConVar sv_pushaway_force;
 	extern ConVar sv_turbophysics;
@@ -81,7 +78,7 @@
 #endif
 
 #ifdef CLIENT_DLL
-ConVar mp_usehwmmodels( "mp_usehwmmodels", "0", NULL, "Enable the use of the hw morph models. (-1 = never, 1 = always, 0 = based upon GPU)" ); // -1 = never, 0 = if hasfastvertextextures, 1 = always
+ConVar mp_usehwmmodels( "mp_usehwmmodels", "0", FCVAR_ARCHIVE, "Enable the use of the hw morph models. (-1 = never, 1 = always, 0 = based upon GPU)" ); // -1 = never, 0 = if hasfastvertextextures, 1 = always
 
 bool UseHWMorphModels()
 {
@@ -277,6 +274,22 @@ void CBasePlayer::ItemPostFrame()
 
 #if !defined( CLIENT_DLL )
 	ImpulseCommands();
+
+	extern ConVar sv_infinite_ammo;
+	if( sv_infinite_ammo.GetBool() && (GetActiveWeapon() != NULL) )
+	{
+		CBaseCombatWeapon *pWeapon = GetActiveWeapon();
+		
+		pWeapon->m_iClip1 = pWeapon->GetMaxClip1();
+		int iPrimaryAmmoType = pWeapon->GetPrimaryAmmoType();
+		if( iPrimaryAmmoType >= 0 )
+			SetAmmoCount( GetAmmoDef()->MaxCarry( iPrimaryAmmoType, this ), iPrimaryAmmoType );
+		
+		pWeapon->m_iClip2 = pWeapon->GetMaxClip2();
+		int iSecondaryAmmoType = pWeapon->GetSecondaryAmmoType();
+		if( iSecondaryAmmoType >= 0 )
+			SetAmmoCount( GetAmmoDef()->MaxCarry( iSecondaryAmmoType, this ), iSecondaryAmmoType );
+	}
 #else
 	// NOTE: If we ever support full impulse commands on the client,
 	// remove this line and call ImpulseCommands instead.
@@ -295,6 +308,11 @@ const QAngle &CBasePlayer::EyeAngles( )
 
 	if ( !pMoveParent )
 	{
+		// if in camera mode, use that
+		if ( GetViewEntity() != NULL )
+		{
+			return GetViewEntity()->EyeAngles();
+		}
 		return pl.v_angle;
 	}
 
@@ -339,6 +357,12 @@ Vector CBasePlayer::EyePosition( )
 			}
 		}
 #endif
+		// if in camera mode, use that
+		if ( GetViewEntity() != NULL )
+		{
+			return GetViewEntity()->EyePosition();
+		}
+
 		return BaseClass::EyePosition();
 	}
 }
@@ -389,6 +413,21 @@ const Vector CBasePlayer::GetPlayerMaxs( void ) const
 		{
 			return VEC_HULL_MAX_SCALED( this );
 		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBasePlayer::UpdateCollisionBounds( void )
+{
+	if ( GetFlags() & FL_DUCKING )
+	{
+		SetCollisionBounds( VEC_DUCK_HULL_MIN_SCALED( this ), VEC_DUCK_HULL_MAX_SCALED( this ) );
+	}
+	else
+	{
+		SetCollisionBounds( VEC_HULL_MIN_SCALED( this ), VEC_HULL_MAX_SCALED( this ) );
 	}
 }
 
@@ -453,7 +492,7 @@ void CBasePlayer::EyePositionAndVectors( Vector *pPosition, Vector *pForward,
 	}
 	else
 	{
-		VectorCopy( BaseClass::EyePosition(), *pPosition );
+		VectorCopy( EyePosition(), *pPosition );
 		AngleVectors( EyeAngles(), pForward, pRight, pUp );
 	}
 }
@@ -484,7 +523,7 @@ void CBasePlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOri
 	float speed;
 	float velrun;
 	float velwalk;
-	int	fLadder;
+	bool	fLadder;
 
 	if ( m_flStepSoundTime > 0 )
 	{
@@ -774,6 +813,11 @@ void CBasePlayer::SetStepSoundTime( stepsoundtimes_t iStepSoundTime, bool bWalki
 Vector CBasePlayer::Weapon_ShootPosition( )
 {
 	return EyePosition();
+}
+
+bool CBasePlayer::Weapon_CanUse( CBaseCombatWeapon *pWeapon )
+{
+	return true;
 }
 
 void CBasePlayer::SetAnimationExtension( const char *pExtension )
@@ -1458,7 +1502,7 @@ static bool IsWaterContents( int contents )
 void CBasePlayer::ResetObserverMode()
 {
 
-	m_hObserverTarget.Set( 0 );
+	m_hObserverTarget.Set( NULL );
 	m_iObserverMode = (int)OBS_MODE_NONE;
 
 #ifndef CLIENT_DLL
@@ -1500,6 +1544,32 @@ void CBasePlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, 
 	{
 		CalcVehicleView( pVehicle, eyeOrigin, eyeAngles, zNear, zFar, fov );
 	}
+
+#if defined( CLIENT_DLL )
+// Set the follow bone if necessary
+	static ConVarRef cvFollowBoneIndexVar( "cl_camera_follow_bone_index" );
+
+	CStudioHdr const* pHdr = GetModelPtr();
+
+	if ( pHdr &&
+		 cvFollowBoneIndexVar.IsValid() && 
+		 C_BasePlayer::GetLocalPlayer() == this )
+	{
+		int boneIdx = cvFollowBoneIndexVar.GetInt();
+		if ( boneIdx >= -1 && boneIdx <	pHdr->numbones() )
+		{
+			extern Vector g_cameraFollowPos;
+			if ( boneIdx == -1 )
+			{
+				VectorCopy( GetRenderOrigin(), g_cameraFollowPos );
+			}
+			else if ( pHdr->pBone( boneIdx )->flags & BONE_USED_BY_ANYTHING )
+			{
+				MatrixPosition( m_BoneAccessor.GetBone( boneIdx ), g_cameraFollowPos );
+			}
+		}
+	}
+#endif
 }
 
 
@@ -1526,18 +1596,7 @@ void CBasePlayer::CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& f
 #endif
 
 	VectorCopy( EyePosition(), eyeOrigin );
-#ifdef SIXENSE
-	if ( g_pSixenseInput->IsEnabled() )
-	{
-		VectorCopy( EyeAngles() + GetEyeAngleOffset(), eyeAngles );
-	}
-	else
-	{
-		VectorCopy( EyeAngles(), eyeAngles );
-	}
-#else
 	VectorCopy( EyeAngles(), eyeAngles );
-#endif
 
 #if defined( CLIENT_DLL )
 	if ( !prediction->InPrediction() )
@@ -1548,7 +1607,9 @@ void CBasePlayer::CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& f
 
 	// Snack off the origin before bob + water offset are applied
 	Vector vecBaseEyePosition = eyeOrigin;
+	QAngle baseEyeAngles = eyeAngles;
 
+	CalcViewBob( eyeOrigin );
 	CalcViewRoll( eyeAngles );
 
 	// Apply punch angle
@@ -1703,6 +1764,9 @@ void CBasePlayer::CalcViewRoll( QAngle& eyeAngles )
 	eyeAngles[ROLL] += side;
 }
 
+void CBasePlayer::CalcViewBob( Vector& eyeOrigin )
+{
+}
 
 void CBasePlayer::DoMuzzleFlash()
 {
@@ -1762,7 +1826,7 @@ void CBasePlayer::SharedSpawn()
 
 	pl.deadflag	= false;
 	m_lifeState	= LIFE_ALIVE;
-	m_iHealth = 100;
+	SetHealth( 100 );
 	m_takedamage		= DAMAGE_YES;
 
 	m_Local.m_bDrawViewmodel = true;
@@ -1797,7 +1861,7 @@ int CBasePlayer::GetDefaultFOV( void ) const
 #if defined( CLIENT_DLL )
 	if ( GetObserverMode() == OBS_MODE_IN_EYE )
 	{
-		C_BasePlayer *pTargetPlayer = dynamic_cast<C_BasePlayer*>( GetObserverTarget() );
+		C_BasePlayer *pTargetPlayer = ToBasePlayer( GetObserverTarget() );
 
 		if ( pTargetPlayer && !pTargetPlayer->IsObserver() )
 		{
@@ -1996,11 +2060,43 @@ bool fogparams_t::operator !=( const fogparams_t& other ) const
 		this->colorPrimaryLerpTo.Get() != other.colorPrimaryLerpTo.Get() ||
 		this->colorSecondaryLerpTo.Get() != other.colorSecondaryLerpTo.Get() ||
 		this->startLerpTo != other.startLerpTo ||
+		this->maxdensityLerpTo != other.maxdensityLerpTo ||
 		this->endLerpTo != other.endLerpTo ||
 		this->lerptime != other.lerptime ||
-		this->duration != other.duration )
+		this->duration != other.duration ||
+		this->HDRColorScale != other.HDRColorScale)
 		return true;
 
 	return false;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Strips off IN_xxx flags from the player's input
+//-----------------------------------------------------------------------------
+void CBasePlayer::ForceButtons( int nButtons )
+{
+	m_afButtonForced |= nButtons;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Re-enables stripped IN_xxx flags to the player's input
+//-----------------------------------------------------------------------------
+void CBasePlayer::UnforceButtons( int nButtons )
+{
+	m_afButtonForced &= ~nButtons;
+}
+
+CBaseEntity* CBasePlayer::GetSoundscapeListener()
+{
+	return this;
+}
+
+CPlayerAnimState *CBasePlayer::CreateAnimState()
+{
+	PlayerMovementData_t movementData;
+	movementData.m_flBodyYawRate = 720.0f;
+	movementData.m_flRunSpeed = 320.0f;
+	movementData.m_flWalkSpeed = 75.0f;
+	movementData.m_flSprintSpeed = -1.0f;
+	return new CPlayerAnimState(this, movementData);
+}

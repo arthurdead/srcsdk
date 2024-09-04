@@ -1483,7 +1483,7 @@ class CPointGamestatsCounter : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CPointGamestatsCounter, CPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CPointGamestatsCounter();
 
@@ -1500,11 +1500,9 @@ private:
 	bool			m_bDisabled;
 };
 
-BEGIN_DATADESC( CPointGamestatsCounter )
+BEGIN_MAPENTITY( CPointGamestatsCounter )
 
 	DEFINE_KEYFIELD( m_strStatisticName, FIELD_STRING, "Name" ),
-	DEFINE_FIELD( m_bDisabled, FIELD_BOOLEAN ),
-
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetName", InputSetName ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "Increment", InputIncrement ),
@@ -1512,7 +1510,7 @@ BEGIN_DATADESC( CPointGamestatsCounter )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( point_gamestats_counter, CPointGamestatsCounter )
 

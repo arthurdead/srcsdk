@@ -25,9 +25,8 @@ const int SF_ALLOW_FAST_RETRIGGER		= 0x002;	// Unless set, relay will disable it
 LINK_ENTITY_TO_CLASS(logic_relay, CLogicRelay);
 
 
-BEGIN_DATADESC( CLogicRelay )
+BEGIN_MAPENTITY( CLogicRelay )
 
-	DEFINE_FIELD(m_bWaitForRefire, FIELD_BOOLEAN),
 	DEFINE_KEYFIELD(m_bDisabled, FIELD_BOOLEAN, "StartDisabled"),
 
 	// Inputs
@@ -42,7 +41,7 @@ BEGIN_DATADESC( CLogicRelay )
 	DEFINE_OUTPUT(m_OnTrigger, "OnTrigger"),
 	DEFINE_OUTPUT(m_OnSpawn, "OnSpawn"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

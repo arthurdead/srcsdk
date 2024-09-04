@@ -33,71 +33,7 @@
 //
 //-----------------------------------------------------------------------------
 
-BEGIN_SIMPLE_DATADESC( AI_LeadArgs_t )
-	// Only the flags needs saving
-	DEFINE_FIELD(		flags,			FIELD_INTEGER ),
-
-	//DEFINE_FIELD(		pszGoal,		FIELD_STRING ),
-	//DEFINE_FIELD(		pszWaitPoint,	FIELD_STRING ),
-	//DEFINE_FIELD(		flWaitDistance,	FIELD_FLOAT ),
-	//DEFINE_FIELD(		flLeadDistance,	FIELD_FLOAT ),
-	//DEFINE_FIELD(		flRetrieveDistance,	FIELD_FLOAT ),
-	//DEFINE_FIELD(		flSuccessDistance,	FIELD_FLOAT ),
-	//DEFINE_FIELD(		bRun,			FIELD_BOOLEAN ),
-	//DEFINE_FIELD(		bDontSpeakStart,			FIELD_BOOLEAN ),
-	//DEFINE_FIELD(		bGagLeader,			FIELD_BOOLEAN ),
-
-	DEFINE_FIELD(		iRetrievePlayer,			FIELD_INTEGER ),
-	DEFINE_FIELD(		iRetrieveWaitForSpeak,		FIELD_INTEGER ),
-	DEFINE_FIELD(		iComingBackWaitForSpeak,	FIELD_INTEGER ),
-	DEFINE_FIELD(		bStopScenesWhenPlayerLost,	FIELD_BOOLEAN ),
-	DEFINE_FIELD(		bLeadDuringCombat,			FIELD_BOOLEAN ),
-
-END_DATADESC();
-
-
-BEGIN_DATADESC( CAI_LeadBehavior )
-	DEFINE_EMBEDDED(	m_args ),
-	//					m_pSink		(reconnected on load)
-	DEFINE_FIELD(		m_hSinkImplementor, FIELD_EHANDLE ),
-	DEFINE_FIELD(		m_goal,			FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD(		m_goalyaw, 		FIELD_FLOAT ),
-	DEFINE_FIELD(		m_waitpoint, 	FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD(		m_waitdistance, FIELD_FLOAT ),
-	DEFINE_FIELD(		m_leaddistance, FIELD_FLOAT ),
-	DEFINE_FIELD(		m_retrievedistance, FIELD_FLOAT ),
-	DEFINE_FIELD(		m_successdistance, FIELD_FLOAT ),
-	DEFINE_FIELD(		m_weaponname,	FIELD_STRING ),
-	DEFINE_FIELD(		m_run,			FIELD_BOOLEAN ),
-	DEFINE_FIELD(		m_gagleader, FIELD_BOOLEAN ),
-	DEFINE_FIELD(		m_hasspokenstart, FIELD_BOOLEAN ),
-	DEFINE_FIELD(		m_hasspokenarrival, FIELD_BOOLEAN ),
-	DEFINE_FIELD(		m_hasPausedScenes, FIELD_BOOLEAN ),
-	DEFINE_FIELD(		m_flSpeakNextNagTime, FIELD_TIME ),
-	DEFINE_FIELD(		m_flWeaponSafetyTimeOut, FIELD_TIME ),
-	DEFINE_FIELD(		m_flNextLeadIdle, FIELD_TIME ),
-	DEFINE_FIELD(		m_bInitialAheadTest, FIELD_BOOLEAN ),
-	DEFINE_EMBEDDED(	m_MoveMonitor ),
-	DEFINE_EMBEDDED(	m_LostTimer ),
-	DEFINE_EMBEDDED(	m_LostLOSTimer ),
-END_DATADESC();
-
 //-----------------------------------------------------------------------------
-
-
-void CAI_LeadBehavior::OnRestore()
-{
-	CBaseEntity *pSinkImplementor = m_hSinkImplementor;
-	if ( pSinkImplementor )
-	{
-		m_pSink = dynamic_cast<CAI_LeadBehaviorHandler *>(pSinkImplementor);
-		if ( !m_pSink )
-		{
-			DevMsg( "Failed to reconnect to CAI_LeadBehaviorHandler\n" );
-			m_hSinkImplementor = NULL;
-		}
-	}
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: Draw any text overlays
@@ -259,7 +195,7 @@ bool CAI_LeadBehavior::GetClosestPointOnRoute( const Vector &targetPos, Vector *
 			return true;
 
 		// Build a temp route to the gold and use that
-		builtwaypoints = GetOuter()->GetPathfinder()->BuildRoute( GetOuter()->GetAbsOrigin(), m_goal, NULL, GetOuter()->GetDefaultNavGoalTolerance(), GetOuter()->GetNavType(), true );
+		builtwaypoints = GetOuter()->GetPathfinder()->BuildRoute( GetOuter()->GetAbsOrigin(), m_goal, NULL, GetOuter()->GetDefaultNavGoalTolerance(), GetOuter()->GetNavType(), true, bits_BUILD_GET_CLOSE );
 		if ( !builtwaypoints )
 			return false;
 
@@ -1019,15 +955,12 @@ bool CAI_LeadBehavior::Speak( AIConcept_t ai_concept )
 	if ( !m_hasspokenstart && bNag )
 		return false;
 
-	if ( hl2_episodic.GetBool() )
-	{
-		// If we're a player ally, only speak the concept if we're allowed to.
-		// This allows the response rules to control it better (i.e. handles respeakdelay)
-		// We ignore nag timers for this, because the response rules will control refire rates.
-		CAI_PlayerAlly *pAlly = dynamic_cast<CAI_PlayerAlly*>(GetOuter());
-		if ( pAlly )
- 			return pAlly->SpeakIfAllowed( ai_concept, GetConceptModifiers( ai_concept ) );
-	}
+	// If we're a player ally, only speak the concept if we're allowed to.
+	// This allows the response rules to control it better (i.e. handles respeakdelay)
+	// We ignore nag timers for this, because the response rules will control refire rates.
+	CAI_PlayerAlly *pAlly = dynamic_cast<CAI_PlayerAlly*>(GetOuter());
+	if ( pAlly )
+		return pAlly->SpeakIfAllowed( ai_concept, GetConceptModifiers( ai_concept ) );
 
 	// Don't spam Nags
 	if ( bNag )
@@ -1394,7 +1327,7 @@ public:
 	virtual void InputActivate( inputdata_t &inputdata );
 	virtual void InputDeactivate( inputdata_t &inputdata );
 	
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 private:
 
 	virtual void OnEvent( int event );
@@ -1442,9 +1375,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( ai_goal_lead, CAI_LeadGoal );
 
-BEGIN_DATADESC( CAI_LeadGoal )
-
-	DEFINE_FIELD( m_fArrived, FIELD_BOOLEAN ),
+BEGIN_MAPENTITY( CAI_LeadGoal )
 
 	DEFINE_KEYFIELD(m_flWaitDistance, 		FIELD_FLOAT, 	"WaitDistance"),
 	DEFINE_KEYFIELD(m_iszWaitPointName, 	FIELD_STRING, 	"WaitPointName"),
@@ -1480,7 +1411,7 @@ BEGIN_DATADESC( CAI_LeadGoal )
 	DEFINE_INPUTFUNC( FIELD_VOID, "SetSuccess", InputSetSuccess ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "SetFailure", InputSetFailure ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -1659,7 +1590,7 @@ private:
 	string_t	m_iszWeaponName;
 	string_t	m_iszMissingWeaponConceptModifier;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 //-----------------------------------------------------------------------------
@@ -1669,12 +1600,12 @@ private:
 
 LINK_ENTITY_TO_CLASS( ai_goal_lead_weapon, CAI_LeadGoal_Weapon );
 
-BEGIN_DATADESC( CAI_LeadGoal_Weapon )
+BEGIN_MAPENTITY( CAI_LeadGoal_Weapon )
 
 	DEFINE_KEYFIELD( m_iszWeaponName, 		FIELD_STRING, 	"WeaponName"),
 	DEFINE_KEYFIELD( m_iszMissingWeaponConceptModifier, FIELD_STRING, 	"MissingWeaponConceptModifier"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 

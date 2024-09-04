@@ -14,7 +14,7 @@
 #include "soundflags.h"
 #include "mathlib/compressed_vector.h"
 #include "appframework/IAppSystem.h"
-
+#include "hackmgr/hackmgr.h"
 
 #define SOUNDEMITTERSYSTEM_INTERFACE_VERSION	"VSoundEmitter002"
 
@@ -261,10 +261,18 @@ public:
 	virtual bool			GetParametersForSoundEx( const char *soundname, HSOUNDSCRIPTHANDLE& handle, CSoundParameters& params, gender_t gender, bool isbeingemitted = false ) = 0;
 	virtual soundlevel_t	LookupSoundLevelByHandle( char const *soundname, HSOUNDSCRIPTHANDLE& handle ) = 0;
 
+	HACKMGR_CLASS_API char const		*GetSoundNameForHash( unsigned int hash ); // Returns NULL if hash not found!!!
+	HACKMGR_CLASS_API unsigned int	HashSoundName( char const *pchSndName );
+	HACKMGR_CLASS_API bool			IsValidHash( unsigned int hash );
+
+	HACKMGR_CLASS_API void			DescribeSound( char const *soundname );
+
 	virtual void			ReloadSoundEntriesInList( IFileList *pFilesToReload ) = 0;
 
 	// Called by either client or server to force ModShutdown and ModInit
 	virtual void			Flush() = 0;
+
+	HACKMGR_CLASS_API void			AddSoundsFromFile( const char *filename, bool bPreload, bool bIsOverride = false );
 };
 
 #endif // ISOUNDEMITTERSYSTEMBASE_H

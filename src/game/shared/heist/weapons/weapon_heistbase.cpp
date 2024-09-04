@@ -34,11 +34,6 @@ END_NETWORK_TABLE()
 BEGIN_PREDICTION_DATA(CWeaponHeistBase)
 END_PREDICTION_DATA()
 
-#ifdef GAME_DLL
-BEGIN_DATADESC(CWeaponHeistBase)
-END_DATADESC()
-#endif
-
 CWeaponHeistBase::CWeaponHeistBase()
 {
 #ifdef CLIENT_DLL

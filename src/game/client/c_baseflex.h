@@ -132,7 +132,6 @@ public:
 	DECLARE_INTERPOLATION();
 
 	C_BaseFlex();
-	C_BaseFlex(bool bClientSide);
 	virtual			~C_BaseFlex();
 
 	virtual void Spawn();

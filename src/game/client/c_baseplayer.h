@@ -27,6 +27,7 @@
 #include "baseplayer_shared.h"
 #include "c_colorcorrection.h"
 #include "c_postprocesscontroller.h"
+#include "playeranimstate.h"
 
 class C_BaseCombatWeapon;
 class C_BaseViewModel;
@@ -79,6 +80,8 @@ public:
 
 	C_BasePlayer();
 	virtual			~C_BasePlayer();
+
+	virtual void		PostConstructor( const char *szClassname );
 
 	virtual void	Spawn( void );
 	virtual void	SharedSpawn(); // Shared between client and server.
@@ -167,7 +170,12 @@ public:
 	virtual const QAngle &EyeAngles();		// Direction of eyes
 	void				 EyePositionAndVectors( Vector *pPosition, Vector *pForward, Vector *pRight, Vector *pUp );
 	virtual const QAngle &LocalEyeAngles();		// Direction of eyes
-	
+
+	virtual const QAngle& GetRenderAngles();
+
+	virtual void DoAnimationEvent( PlayerAnimEvent_t event, int nData = 0 );
+	virtual void UpdateClientSideAnimation();
+
 	// This can be overridden to return something other than m_pRagdoll if the mod uses separate 
 	// entities for ragdolls.
 	virtual IRagdoll* GetRepresentativeRagdoll() const;
@@ -649,6 +657,16 @@ protected:
 	int				m_nLocalPlayerVisionFlags;
 
 	bool					m_bIsLocalPlayer;
+
+	virtual CPlayerAnimState *CreateAnimState();
+	CPlayerAnimState* m_PlayerAnimState;
+
+	QAngle	m_angEyeAngles;
+	CInterpolatedVar<QAngle>	m_iv_angEyeAngles;
+
+	void Respawn();
+	bool	m_bSpawnInterpCounter;
+	bool	m_bSpawnInterpCounterCache;
 
 	CNetworkHandle( C_ColorCorrection, m_hColorCorrectionCtrl );		// active FXVolume color correction
 	CNetworkHandle( C_BaseEntity, m_hTonemapController );

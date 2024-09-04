@@ -139,7 +139,6 @@ public:
 	virtual void SetTranslucencyType( ClientRenderHandle_t handle, RenderableTranslucencyType_t nType );
 	virtual RenderableTranslucencyType_t GetTranslucencyType( ClientRenderHandle_t handle ) const;
 	virtual void SetModelType( ClientRenderHandle_t handle, RenderableModelType_t nType );
-	virtual void EnableSplitscreenRendering( ClientRenderHandle_t handle, uint32 nFlags );
 	virtual void EnableRendering( ClientRenderHandle_t handle, bool bEnable );
 	virtual void EnableBloatedBounds( ClientRenderHandle_t handle, bool bEnable );
 	virtual void DisableCachedRenderBounds( ClientRenderHandle_t handle, bool bDisable );
@@ -156,7 +155,7 @@ public:
 	virtual void ProjectFlashlight( ClientLeafShadowHandle_t handle, int nLeafCount, const int *pLeafList );
 
 	// Find all shadow casters in a set of leaves
-	virtual void EnumerateShadowsInLeaves( int leafCount, WorldListLeafData_t* pLeaves, IClientLeafShadowEnum* pEnum );
+	virtual void EnumerateShadowsInLeaves( int leafCount, LeafIndex_t* pLeaves, IClientLeafShadowEnum* pEnum );
 	virtual void RecomputeRenderableLeaves();
 	virtual void DisableLeafReinsertion( bool bDisable );
 
@@ -204,8 +203,6 @@ public:
 		IClientRenderableMod*	m_pRenderableMod;
 		CClientAlphaProperty *m_pAlphaProperty;
 		int					m_nRenderFrame;	// which frame did I render it in?
-		int					m_RenderFrame;	// which frame did I render it in?
-		int					m_RenderFrame2;
 		int					m_EnumCount;	// Have I been added to a particular shadow yet?
 		int					m_TranslucencyCalculated;
 		unsigned int		m_LeafList;		// What leafs is it in?
@@ -283,6 +280,7 @@ private:
 	{
 		EnumResult_t *pHead;
 		ClientRenderHandle_t handle;
+		bool bReceiveShadows;
 	};
 
 	struct BuildRenderListInfo_t
@@ -306,9 +304,6 @@ private:
 	};
 
 	void AddRenderableToLeaf( int leaf, ClientRenderHandle_t handle, bool bReceiveShadows );
-
-	// Adds a renderable to the list of renderables
-	void AddRenderableToLeaf( int leaf, ClientRenderHandle_t handle );
 
 	void SortEntities(  const Vector &vecRenderOrigin, const Vector &vecRenderForward, CClientRenderablesList::CEntry *pEntities, int nEntities );
 
@@ -373,9 +368,9 @@ private:
 		return s_ClientLeafSystem.m_Leaf[leaf].m_FirstElement;
 	}
 
-	static unsigned int& FirstLeafInRenderable( unsigned short renderable ) 
+	static unsigned int& FirstLeafInRenderable( ClientRenderHandle_t renderable ) 
 	{ 
-		return s_ClientLeafSystem.m_Renderables[renderable].m_LeafList;
+		return s_ClientLeafSystem.m_Renderables[(uint)renderable].m_LeafList;
 	}
 
 	static unsigned short& FirstShadowInLeaf( int leaf ) 
@@ -385,17 +380,17 @@ private:
 
 	static unsigned short& FirstLeafInShadow( ClientLeafShadowHandle_t shadow ) 
 	{ 
-		return s_ClientLeafSystem.m_Shadows[shadow].m_FirstLeaf;
+		return s_ClientLeafSystem.m_Shadows[(uint)shadow].m_FirstLeaf;
 	}
 
-	static unsigned short& FirstShadowOnRenderable( unsigned short renderable ) 
+	static unsigned short& FirstShadowOnRenderable( ClientRenderHandle_t renderable ) 
 	{ 
-		return s_ClientLeafSystem.m_Renderables[renderable].m_FirstShadow;
+		return s_ClientLeafSystem.m_Renderables[(uint)renderable].m_FirstShadow;
 	}
 
 	static unsigned short& FirstRenderableInShadow( ClientLeafShadowHandle_t shadow ) 
 	{ 
-		return s_ClientLeafSystem.m_Shadows[shadow].m_FirstRenderable;
+		return s_ClientLeafSystem.m_Shadows[(uint)shadow].m_FirstRenderable;
 	}
 
 	void FrameLock()
@@ -975,8 +970,8 @@ void CClientLeafSystem::RecomputeRenderableLeaves()
 		for ( i = nDirty; --i >= 0; )
 		{
 			ClientRenderHandle_t handle = m_DirtyRenderables[i];
-			Assert( m_Renderables[ handle ].m_Flags & RENDER_FLAGS_HASCHANGED );
-			RenderableInfo_t &info = m_Renderables[ handle ];
+			Assert( m_Renderables[ (uint)handle ].m_Flags & RENDER_FLAGS_HASCHANGED );
+			RenderableInfo_t &info = m_Renderables[ (uint)handle ];
 
 			Assert( info.m_Flags & RENDER_FLAGS_HASCHANGED );
 
@@ -1032,7 +1027,7 @@ void CClientLeafSystem::RecomputeRenderableLeaves()
 				{
 					EnumResult_t *p = enumResultList.pHead;
 					enumResultList.pHead = p->pNext;
-					AddRenderableToLeaf( p->leaf, enumResultList.handle );
+					AddRenderableToLeaf( p->leaf, enumResultList.handle, enumResultList.bReceiveShadows );
 					delete p;
 				}
 			}
@@ -1042,10 +1037,10 @@ void CClientLeafSystem::RecomputeRenderableLeaves()
 		{
 			// Cache off the area it's sitting in.
 			ClientRenderHandle_t handle = m_DirtyRenderables[i];
-			RenderableInfo_t& renderable = m_Renderables[ handle ];
+			RenderableInfo_t& renderable = m_Renderables[ (uint)handle ];
 
 			renderable.m_Flags &= ~RENDER_FLAGS_HASCHANGED;
-			m_Renderables[handle].m_Area = GetRenderableArea( handle );
+			m_Renderables[(uint)handle].m_Area = GetRenderableArea( handle );
 		}
 
 		m_DirtyRenderables.RemoveMultiple( 0, nDirty );
@@ -1061,8 +1056,8 @@ void CClientLeafSystem::CreateRenderableHandle( IClientRenderable* pRenderable, 
 	Assert( pRenderable );
 	Assert( pRenderable->RenderHandle() == INVALID_CLIENT_RENDER_HANDLE );
 
-	ClientRenderHandle_t handle = m_Renderables.AddToTail();
-	RenderableInfo_t &info = m_Renderables[handle];
+	ClientRenderHandle_t handle = (ClientRenderHandle_t)m_Renderables.AddToTail();
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
 
 	int modelType = modelinfo->GetModelType( pRenderable->GetModel() );
 
@@ -1170,8 +1165,6 @@ void CClientLeafSystem::CreateRenderableHandle( IClientRenderable* pRenderable, 
 	info.m_pRenderableMod = dynamic_cast<IClientRenderableMod *>( pRenderable );
 	info.m_pAlphaProperty = pAlphaProp;
 	info.m_nRenderFrame = -1;
-	info.m_RenderFrame = -1;
-	info.m_RenderFrame2 = -1;
 	info.m_TranslucencyCalculated = -1;
 	info.m_TranslucencyCalculatedView = VIEW_ILLEGAL;
 	info.m_FirstShadow = m_ShadowsOnRenderable.InvalidIndex();
@@ -1201,7 +1194,7 @@ void CClientLeafSystem::SetTranslucencyType( ClientRenderHandle_t handle, Render
 	if ( handle == INVALID_CLIENT_RENDER_HANDLE )
 		return;
 
-	RenderableInfo_t &info = m_Renderables[handle];
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
 
 	if(info.m_nTranslucencyType != nType)
 	{
@@ -1272,7 +1265,7 @@ RenderableTranslucencyType_t CClientLeafSystem::GetTranslucencyType( ClientRende
 	if ( handle == INVALID_CLIENT_RENDER_HANDLE )
 		return RENDERABLE_IS_OPAQUE;
 
-	const RenderableInfo_t &info = m_Renderables[handle];
+	const RenderableInfo_t &info = m_Renderables[(uint)handle];
 	return (RenderableTranslucencyType_t)info.m_nTranslucencyType;
 }
 
@@ -1281,7 +1274,7 @@ RenderableTranslucencyType_t CClientLeafSystem::GetTranslucencyType( ClientRende
 //-----------------------------------------------------------------------------
 void CClientLeafSystem::DO_NOT_USE_ChangeRenderableRenderGroup( ClientRenderHandle_t handle, EngineRenderGroup_t group )
 {
-	RenderableInfo_t &info = m_Renderables[handle];
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
 
 	if(info.m_EngineRenderGroup != group)
 	{
@@ -1383,7 +1376,7 @@ void CClientLeafSystem::SetModelType( ClientRenderHandle_t handle, RenderableMod
 	if ( handle == INVALID_CLIENT_RENDER_HANDLE )
 		return;
 
-	RenderableInfo_t &info = m_Renderables[handle];
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
 	if ( nModelType == RENDERABLE_MODEL_UNKNOWN_TYPE )
 	{
 		int nType = modelinfo->GetModelType( info.m_pRenderable->GetModel() );
@@ -1468,7 +1461,7 @@ void CClientLeafSystem::EnableRendering( ClientRenderHandle_t handle, bool bEnab
 	if ( handle == INVALID_CLIENT_RENDER_HANDLE )
 		return;
 
-	RenderableInfo_t &info = m_Renderables[handle];
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
 	if ( bEnable )
 	{
 		if((info.m_Flags & RENDER_FLAGS_DISABLE_RENDERING) != 0) {
@@ -1529,7 +1522,7 @@ void CClientLeafSystem::EnableBloatedBounds( ClientRenderHandle_t handle, bool b
 	if ( handle == INVALID_CLIENT_RENDER_HANDLE )
 		return;
 
-	RenderableInfo_t &info = m_Renderables[handle];
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
 	if ( bEnable )
 	{
 		if((info.m_Flags & RENDER_FLAGS_BLOAT_BOUNDS) == 0) {
@@ -1554,7 +1547,7 @@ void CClientLeafSystem::DisableCachedRenderBounds( ClientRenderHandle_t handle, 
 	if ( handle == INVALID_CLIENT_RENDER_HANDLE )
 		return;
 
-	RenderableInfo_t &info = m_Renderables[handle];
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
 	if ( bDisable )
 	{
 		if((info.m_Flags & RENDER_FLAGS_BOUNDS_ALWAYS_RECOMPUTE) == 0) {
@@ -1579,7 +1572,7 @@ void CClientLeafSystem::DisableCachedRenderBounds( ClientRenderHandle_t handle, 
 //-----------------------------------------------------------------------------
 void CClientLeafSystem::EnableAlternateSorting( ClientRenderHandle_t handle, bool bEnable )
 {
-	RenderableInfo_t &info = m_Renderables[handle];
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
 	if ( bEnable )
 	{
 		if ( ( info.m_Flags & RENDER_FLAGS_ALTERNATE_SORTING ) == 0 )
@@ -1610,7 +1603,7 @@ void CClientLeafSystem::RenderWithViewModels( ClientRenderHandle_t handle, bool 
 	if ( handle == INVALID_CLIENT_RENDER_HANDLE )
 		return;
 
-	RenderableInfo_t &info = m_Renderables[handle];
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
 	if ( bEnable )
 	{
 		if((info.m_Flags & RENDER_FLAGS_RENDER_WITH_VIEWMODELS) == 0)
@@ -1674,7 +1667,7 @@ bool CClientLeafSystem::IsRenderingWithViewModels( ClientRenderHandle_t handle )
 	if ( handle == INVALID_CLIENT_RENDER_HANDLE )
 		return false;
 
-	const RenderableInfo_t &info = m_Renderables[handle];
+	const RenderableInfo_t &info = m_Renderables[(uint)handle];
 	return info.RendersWithViewmodels();
 }
 
@@ -1687,7 +1680,7 @@ void CClientLeafSystem::AddRenderable( IClientRenderable* pRenderable, bool bRen
 
 	ClientRenderHandle_t handle = pRenderable->RenderHandle();
 
-	RenderableInfo_t &info = m_Renderables[handle];
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
 	info.m_Flags |= RENDER_FLAGS_HASCHANGED;
 
 	m_DirtyRenderables.AddToTail( handle );
@@ -1696,15 +1689,15 @@ void CClientLeafSystem::AddRenderable( IClientRenderable* pRenderable, bool bRen
 void CClientLeafSystem::RemoveRenderable( ClientRenderHandle_t handle )
 {
 	// This can happen upon level shutdown
-	if (!m_Renderables.IsValidIndex(handle))
+	if (!m_Renderables.IsValidIndex((uint)handle))
 		return;
 
 	// Reset the render handle in the entity.
-	IClientRenderable *pRenderable = m_Renderables[handle].m_pRenderable;
+	IClientRenderable *pRenderable = m_Renderables[(uint)handle].m_pRenderable;
 	Assert( handle == pRenderable->RenderHandle() );
 	pRenderable->RenderHandle() = INVALID_CLIENT_RENDER_HANDLE;
 
-	int nFlags = m_Renderables[handle].m_Flags;
+	int nFlags = m_Renderables[(uint)handle].m_Flags;
 	if ( nFlags & RENDER_FLAGS_ALTERNATE_SORTING )
 	{
 		--m_nAlternateSortCount;
@@ -1728,16 +1721,16 @@ void CClientLeafSystem::RemoveRenderable( ClientRenderHandle_t handle )
 	}
 
 	RemoveFromTree( handle );
-	m_Renderables.Remove( handle );
+	m_Renderables.Remove( (uint)handle );
 }
 
 
 int CClientLeafSystem::GetRenderableLeaves( ClientRenderHandle_t handle, int leaves[128] )
 {
-	if ( !m_Renderables.IsValidIndex( handle ) )
+	if ( !m_Renderables.IsValidIndex( (uint)handle ) )
 		return -1;
 
-	RenderableInfo_t *pRenderable = &m_Renderables[handle];
+	RenderableInfo_t *pRenderable = &m_Renderables[(uint)handle];
 	if ( pRenderable->m_LeafList == m_RenderablesInLeaf.InvalidIndex() )
 		return -1;
 
@@ -1765,7 +1758,7 @@ int CClientLeafSystem::GetRenderableLeaves( ClientRenderHandle_t handle, int lea
 bool CClientLeafSystem::GetRenderableLeaf(ClientRenderHandle_t handle, int* pOutLeaf, const int* pInIterator /* = 0 */, int* pOutIterator /* = 0  */)
 {
 	// bail on invalid handle
-	if ( !m_Renderables.IsValidIndex( handle ) )
+	if ( !m_Renderables.IsValidIndex( (uint)handle ) )
 		return false;
 
 	// bail on no output value pointer
@@ -1882,23 +1875,26 @@ void CClientLeafSystem::GetDetailObjectsInLeaf( int leaf, int& firstDetailObject
 //-----------------------------------------------------------------------------
 ClientLeafShadowHandle_t CClientLeafSystem::AddShadow( ClientShadowHandle_t userId, unsigned short flags )
 {
-	ClientLeafShadowHandle_t idx = m_Shadows.AddToTail();
-	m_Shadows[idx].m_Shadow = userId;
-	m_Shadows[idx].m_FirstLeaf = m_ShadowsInLeaf.InvalidIndex();
-	m_Shadows[idx].m_FirstRenderable = m_ShadowsOnRenderable.InvalidIndex();
-	m_Shadows[idx].m_EnumCount = 0;
-	m_Shadows[idx].m_Flags = flags;
+	ClientLeafShadowHandle_t idx = (ClientLeafShadowHandle_t)m_Shadows.AddToTail();
+	m_Shadows[(uint)idx].m_Shadow = userId;
+	m_Shadows[(uint)idx].m_FirstLeaf = m_ShadowsInLeaf.InvalidIndex();
+	m_Shadows[(uint)idx].m_FirstRenderable = m_ShadowsOnRenderable.InvalidIndex();
+	m_Shadows[(uint)idx].m_EnumCount = 0;
+	m_Shadows[(uint)idx].m_Flags = flags;
 	return idx;
 }
 
 void CClientLeafSystem::RemoveShadow( ClientLeafShadowHandle_t handle )
 {
+	if(handle == CLIENT_LEAF_SHADOW_INVALID_HANDLE)
+		return;
+
 	// Remove the shadow from all leaves + renderables...
 	RemoveShadowFromLeaves( handle );
 	RemoveShadowFromRenderables( handle );
 
 	// Blow away the handle
-	m_Shadows.Remove( handle );
+	m_Shadows.Remove( (uint)handle );
 }
 
 
@@ -1907,7 +1903,7 @@ void CClientLeafSystem::RemoveShadow( ClientLeafShadowHandle_t handle )
 //-----------------------------------------------------------------------------
 inline bool CClientLeafSystem::ShouldRenderableReceiveShadow( ClientRenderHandle_t renderHandle, int nShadowFlags )
 {
-	RenderableInfo_t &renderable = m_Renderables[renderHandle];
+	RenderableInfo_t &renderable = m_Renderables[(uint)renderHandle];
 	if( !renderable.IsBrushModel() && !renderable.IsStaticProp() && !renderable.IsStudioModel() )
 		return false;
 
@@ -1922,7 +1918,7 @@ void CClientLeafSystem::AddShadowToRenderable( ClientRenderHandle_t renderHandle
 										ClientLeafShadowHandle_t shadowHandle )
 {
 	// Check if this renderable receives the type of projected texture that shadowHandle refers to.
-	int nShadowFlags = m_Shadows[shadowHandle].m_Flags;
+	int nShadowFlags = m_Shadows[(uint)shadowHandle].m_Flags;
 	if ( !ShouldRenderableReceiveShadow( renderHandle, nShadowFlags ) )
 		return;
 
@@ -1940,11 +1936,11 @@ void CClientLeafSystem::AddShadowToRenderable( ClientRenderHandle_t renderHandle
 	COMPILE_TIME_ASSERT( RENDERABLE_MODEL_STATIC_PROP == 2 );
 	COMPILE_TIME_ASSERT( RENDERABLE_MODEL_BRUSH == 3 );
 
-	RenderableInfo_t const &ri = m_Renderables[renderHandle];
+	RenderableInfo_t const &ri = m_Renderables[(uint)renderHandle];
 	if ( ri.GetModelType() < ARRAYSIZE( arrRecvType ) )
 	{
 		g_pClientShadowMgr->AddShadowToReceiver(
-			m_Shadows[shadowHandle].m_Shadow,
+			m_Shadows[(uint)shadowHandle].m_Shadow,
 			ri.m_pRenderable,
 			( ShadowReceiver_t ) arrRecvType[ ri.GetModelType() ] );
 	}
@@ -1973,7 +1969,7 @@ void CClientLeafSystem::AddShadowToLeaf( int leaf, ClientLeafShadowHandle_t shad
 	while ( i != m_RenderablesInLeaf.InvalidIndex() )
 	{
 		ClientRenderHandle_t renderable = m_RenderablesInLeaf.Element(i);
-		RenderableInfo_t& info = m_Renderables[renderable];
+		RenderableInfo_t& info = m_Renderables[(uint)renderable];
 
 		// Add each shadow exactly once to each renderable
 		if (info.m_EnumCount != m_ShadowEnum)
@@ -2003,7 +1999,7 @@ void CClientLeafSystem::ProjectShadow( ClientLeafShadowHandle_t handle, int nLea
 	RemoveShadowFromLeaves( handle );
 	RemoveShadowFromRenderables( handle );
 
-	Assert( ( m_Shadows[handle].m_Flags & SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ) == SHADOW_FLAGS_SHADOW );
+	Assert( ( m_Shadows[(uint)handle].m_Flags & SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ) == SHADOW_FLAGS_SHADOW );
 
 	// This will help us to avoid adding the shadow multiple times to a renderable
 	++m_ShadowEnum;
@@ -2022,7 +2018,7 @@ void CClientLeafSystem::ProjectFlashlight( ClientLeafShadowHandle_t handle, int 
 	RemoveShadowFromLeaves( handle );
 	RemoveShadowFromRenderables( handle );
 
-	Assert( ( m_Shadows[handle].m_Flags & SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ) == SHADOW_FLAGS_FLASHLIGHT );
+	Assert( ( m_Shadows[(uint)handle].m_Flags & SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ) == SHADOW_FLAGS_FLASHLIGHT );
 	
 	// This will help us to avoid adding the shadow multiple times to a renderable
 	++m_ShadowEnum;
@@ -2037,7 +2033,7 @@ void CClientLeafSystem::ProjectFlashlight( ClientLeafShadowHandle_t handle, int 
 //-----------------------------------------------------------------------------
 // Find all shadow casters in a set of leaves
 //-----------------------------------------------------------------------------
-void CClientLeafSystem::EnumerateShadowsInLeaves( int leafCount, WorldListLeafData_t* pLeaves, IClientLeafShadowEnum* pEnum )
+void CClientLeafSystem::EnumerateShadowsInLeaves( int leafCount, LeafIndex_t* pLeaves, IClientLeafShadowEnum* pEnum )
 {
 	if (leafCount == 0)
 		return;
@@ -2047,13 +2043,13 @@ void CClientLeafSystem::EnumerateShadowsInLeaves( int leafCount, WorldListLeafDa
 
 	for (int i = 0; i < leafCount; ++i)
 	{
-		int leaf = pLeaves[i].leafIndex;
+		int leaf = pLeaves[i];
 
 		unsigned short j = m_ShadowsInLeaf.FirstElement( leaf );
 		while ( j != m_ShadowsInLeaf.InvalidIndex() )
 		{
 			ClientLeafShadowHandle_t shadow = m_ShadowsInLeaf.Element(j);
-			ShadowInfo_t& info = m_Shadows[shadow];
+			ShadowInfo_t& info = m_Shadows[(uint)shadow];
 
 			if (info.m_EnumCount != m_ShadowEnum)
 			{
@@ -2140,7 +2136,7 @@ void CClientLeafSystem::AddRenderableToLeaf( int leaf, ClientRenderHandle_t rend
 		while ( i != m_ShadowsInLeaf.InvalidIndex() )
 		{
 			ClientLeafShadowHandle_t shadow = m_ShadowsInLeaf.Element(i);
-			ShadowInfo_t& info = m_Shadows[shadow];
+			ShadowInfo_t& info = m_Shadows[(uint)shadow];
 
 			// Add each shadow exactly once to each renderable
 			if ( info.m_EnumCount != m_ShadowEnum )
@@ -2161,7 +2157,7 @@ void CClientLeafSystem::AddRenderableToLeaf( int leaf, ClientRenderHandle_t rend
 		while ( i != m_ShadowsInLeaf.InvalidIndex() )
 		{
 			ClientLeafShadowHandle_t shadow = m_ShadowsInLeaf.Element(i);
-			ShadowInfo_t& info = m_Shadows[shadow];
+			ShadowInfo_t& info = m_Shadows[(uint)shadow];
 
 			// Add each flashlight exactly once to each renderable
 			if ( ( info.m_Flags & ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SIMPLE_PROJECTION ) ) && ( info.m_EnumCount != m_ShadowEnum ) )
@@ -2185,7 +2181,7 @@ void CClientLeafSystem::AddRenderableToLeaves( ClientRenderHandle_t handle, int 
 	{
 		AddRenderableToLeaf( pLeaves[j], handle, bReceiveShadows ); 
 	}
-	m_Renderables[handle].m_Area = GetRenderableArea( handle );
+	m_Renderables[(uint)handle].m_Area = GetRenderableArea( handle );
 }
 
 void CClientLeafSystem::AddRenderableToLeaves( ClientRenderHandle_t handle, int nLeafCount, unsigned short *pLeaves )
@@ -2202,8 +2198,7 @@ bool CClientLeafSystem::EnumerateLeaf( int leaf, int context )
 	EnumResultList_t *pList = (EnumResultList_t *)context;
 	if ( ThreadInMainThread() )
 	{
-		bool bReceiveShadows = ShouldRenderableReceiveShadow( pList->handle, SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK );
-		AddRenderableToLeaf( leaf, pList->handle, bReceiveShadows );
+		AddRenderableToLeaf( leaf, pList->handle, pList->bReceiveShadows );
 	}
 	else
 	{
@@ -2224,15 +2219,15 @@ void CClientLeafSystem::InsertIntoTree( ClientRenderHandle_t handle, const Vecto
 		m_ShadowEnum++;
 	}
 
-	EnumResultList_t list = { NULL, handle };
+	EnumResultList_t list = { NULL, handle, ShouldRenderableReceiveShadow( handle, SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ) };
 
 	// NOTE: The render bounds here are relative to the renderable's coordinate system
-	IClientRenderable* pRenderable = m_Renderables[handle].m_pRenderable;
+	IClientRenderable* pRenderable = m_Renderables[(uint)handle].m_pRenderable;
 
 	Assert( absMins.IsValid() && absMaxs.IsValid() );
 
-	m_Renderables[handle].m_vecBloatedAbsMins = absMins;
-	m_Renderables[handle].m_vecBloatedAbsMaxs = absMaxs;
+	m_Renderables[(uint)handle].m_vecBloatedAbsMins = absMins;
+	m_Renderables[(uint)handle].m_vecBloatedAbsMaxs = absMaxs;
 
 	ISpatialQuery* pQuery = engine->GetBSPTreeQuery();
 	pQuery->EnumerateLeavesInBox( absMins, absMaxs, this, (int)&list );
@@ -2254,21 +2249,21 @@ void CClientLeafSystem::RemoveFromTree( ClientRenderHandle_t handle )
 	m_ShadowsOnRenderable.RemoveBucket( handle );
 
 	// If the renderable is a brush model, then remove all shadows from it
-	switch( m_Renderables[handle].GetModelType() )
+	switch( m_Renderables[(uint)handle].GetModelType() )
 	{
 	case RENDERABLE_MODEL_BRUSH:
 		g_pClientShadowMgr->RemoveAllShadowsFromReceiver( 
-			m_Renderables[handle].m_pRenderable, SHADOW_RECEIVER_BRUSH_MODEL );
+			m_Renderables[(uint)handle].m_pRenderable, SHADOW_RECEIVER_BRUSH_MODEL );
 		break;
 
 	case RENDERABLE_MODEL_STATIC_PROP:
 		g_pClientShadowMgr->RemoveAllShadowsFromReceiver( 
-			m_Renderables[handle].m_pRenderable, SHADOW_RECEIVER_STATIC_PROP );
+			m_Renderables[(uint)handle].m_pRenderable, SHADOW_RECEIVER_STATIC_PROP );
 		break;
 
 	case RENDERABLE_MODEL_STUDIOMDL:
 		g_pClientShadowMgr->RemoveAllShadowsFromReceiver( 
-			m_Renderables[handle].m_pRenderable, SHADOW_RECEIVER_STUDIO_MODEL );
+			m_Renderables[(uint)handle].m_pRenderable, SHADOW_RECEIVER_STUDIO_MODEL );
 		break;
 	}
 }
@@ -2280,15 +2275,15 @@ void CClientLeafSystem::RemoveFromTree( ClientRenderHandle_t handle )
 void CClientLeafSystem::RenderableChanged( ClientRenderHandle_t handle )
 {
 	Assert ( handle != INVALID_CLIENT_RENDER_HANDLE );
-	Assert( m_Renderables.IsValidIndex( handle ) );
-	if ( !m_Renderables.IsValidIndex( handle ) )
+	Assert( m_Renderables.IsValidIndex( (uint)handle ) );
+	if ( !m_Renderables.IsValidIndex( (uint)handle ) )
 		return;
 
-	m_Renderables[handle].m_Flags &= ~RENDER_FLAGS_BOUNDS_VALID;
+	m_Renderables[(uint)handle].m_Flags &= ~RENDER_FLAGS_BOUNDS_VALID;
 
-	if ( (m_Renderables[handle].m_Flags & RENDER_FLAGS_HASCHANGED ) == 0 )
+	if ( (m_Renderables[(uint)handle].m_Flags & RENDER_FLAGS_HASCHANGED ) == 0 )
 	{
-		m_Renderables[handle].m_Flags |= RENDER_FLAGS_HASCHANGED;
+		m_Renderables[(uint)handle].m_Flags |= RENDER_FLAGS_HASCHANGED;
 		m_DirtyRenderables.AddToTail( handle );
 	}
 #if _DEBUG
@@ -2385,7 +2380,7 @@ void CClientLeafSystem::ComputeTranslucentRenderLeaf( int count, const LeafIndex
 		unsigned int idx = m_RenderablesInLeaf.FirstElement(leaf);
 		while (idx != m_RenderablesInLeaf.InvalidIndex())
 		{
-			RenderableInfo_t& info = m_Renderables[m_RenderablesInLeaf.Element(idx)];
+			RenderableInfo_t& info = m_Renderables[(uint)m_RenderablesInLeaf.Element(idx)];
 			if ( info.m_TranslucencyCalculated != globalFrameCount || info.m_TranslucencyCalculatedView != viewID )
 			{ 
 				// Compute translucency
@@ -2416,13 +2411,13 @@ void CClientLeafSystem::ComputeTranslucentRenderLeaf( int count, const LeafIndex
 		RenderableInfo_t *pInfo = orderedList[i];
 		if ( !IsLeafMarker( pInfo ) )
 		{
-			if( pInfo->m_RenderFrame != frameNumber )
+			if( pInfo->m_nRenderFrame != frameNumber )
 			{   
 				if( pInfo->IsTranslucent() )
 				{
 					pInfo->m_RenderLeaf = leaf;
 				}
-				pInfo->m_RenderFrame = frameNumber;
+				pInfo->m_nRenderFrame = frameNumber;
 			}
 			else if ( pInfo->m_Flags & RENDER_FLAGS_ALTERNATE_SORTING )
 			{
@@ -2446,7 +2441,7 @@ void CClientLeafSystem::ComputeTranslucentRenderLeaf( int count, const LeafIndex
 //-----------------------------------------------------------------------------
 // Adds a renderable to the list of renderables to render this frame
 //-----------------------------------------------------------------------------
-inline void AddRenderableToRenderList( CClientRenderablesList &renderList, IClientRenderable *pRenderable, 
+inline void AddRenderableToRenderList( CClientRenderablesList &renderList, IClientRenderable *pRenderable, IClientRenderableMod *pRenderableMod, 
 	int iLeaf, EngineRenderGroup_t group,	int nModelType, uint8 nAlphaModulation, ClientRenderHandle_t renderHandle, bool bTwoPass = false )
 {
 #ifdef _DEBUG
@@ -2466,6 +2461,7 @@ inline void AddRenderableToRenderList( CClientRenderablesList &renderList, IClie
 
 		CClientRenderablesList::CEntry *pEntry = &renderList.m_RenderGroups[group][curCount];
 		pEntry->m_pRenderable = pRenderable;
+		pEntry->m_pRenderableMod = pRenderableMod;
 		pEntry->m_iWorldListInfoLeaf = iLeaf;
 		pEntry->m_TwoPass = bTwoPass;
 		pEntry->m_RenderHandle = renderHandle;
@@ -2493,7 +2489,7 @@ void CClientLeafSystem::CollateViewModelRenderables( CViewModelRenderablesList *
 	for ( int i = m_ViewModels.Count()-1; i >= 0; --i )
 	{
 		ClientRenderHandle_t handle = m_ViewModels[i];
-		RenderableInfo_t& renderable = m_Renderables[handle];
+		RenderableInfo_t& renderable = m_Renderables[(uint)handle];
 
 		int nAlpha = renderable.m_pAlphaProperty ? renderable.m_pAlphaProperty->ComputeRenderAlpha( false ) : 255;
 		bool bIsTransparent = ( nAlpha != 255 ) || ( !renderable.IsOpaque() );
@@ -2504,6 +2500,7 @@ void CClientLeafSystem::CollateViewModelRenderables( CViewModelRenderablesList *
 			int i = opaqueList.AddToTail();
 			CViewModelRenderablesList::CEntry *pEntry = &opaqueList[i];
 			pEntry->m_pRenderable = renderable.m_pRenderable;
+			pEntry->m_pRenderableMod = renderable.m_pRenderableMod;
 			pEntry->m_InstanceData.m_nAlpha = 255;
 		}
 		else
@@ -2511,6 +2508,7 @@ void CClientLeafSystem::CollateViewModelRenderables( CViewModelRenderablesList *
 			int i = translucentList.AddToTail();
 			CViewModelRenderablesList::CEntry *pEntry = &translucentList[i];
 			pEntry->m_pRenderable = renderable.m_pRenderable;
+			pEntry->m_pRenderableMod = renderable.m_pRenderableMod;
 			pEntry->m_InstanceData.m_nAlpha = nAlpha;
 
 			if ( renderable.IsTwoPass() )
@@ -2518,6 +2516,7 @@ void CClientLeafSystem::CollateViewModelRenderables( CViewModelRenderablesList *
 				int i = opaqueList.AddToTail();
 				CViewModelRenderablesList::CEntry *pEntry = &opaqueList[i];
 				pEntry->m_pRenderable = renderable.m_pRenderable;
+				pEntry->m_pRenderableMod = renderable.m_pRenderableMod;
 				pEntry->m_InstanceData.m_nAlpha = 255;
 			}
 		}
@@ -3243,7 +3242,7 @@ void CClientLeafSystem::AddDependentRenderables( const SetupRenderInfo_t &info )
 				Assert( hParent != INVALID_CLIENT_RENDER_HANDLE );
 				if ( hParent == INVALID_CLIENT_RENDER_HANDLE )
 					continue;
-				RenderableInfo_t &parentInfo = m_Renderables[hParent];
+				RenderableInfo_t &parentInfo = m_Renderables[(uint)hParent];
 				if ( parentInfo.m_nRenderFrame != info.m_nRenderFrame )
 				{
 					parentInfo.m_nRenderFrame = info.m_nRenderFrame;
@@ -3276,7 +3275,7 @@ void CClientLeafSystem::AddRenderablesToRenderLists( const SetupRenderInfo_t &in
 				if ( detailInfo.m_nLeafIndex > nWorldListLeafIndex )
 					break;
 				Assert( detailInfo.m_nLeafIndex == nWorldListLeafIndex );
-				AddRenderableToRenderList( *info.m_pRenderList, detailInfo.m_pRenderable, 
+				AddRenderableToRenderList( *info.m_pRenderList, detailInfo.m_pRenderable, detailInfo.m_pRenderableMod, 
 					nWorldListLeafIndex, detailInfo.m_nEngineRenderGroup, RENDERABLE_MODEL_ENTITY, detailInfo.m_InstanceData.m_nAlpha, INVALID_CLIENT_RENDER_HANDLE );
 			}
 
@@ -3294,7 +3293,7 @@ void CClientLeafSystem::AddRenderablesToRenderLists( const SetupRenderInfo_t &in
 		bool bIsTranslucent = ( pRLInfo[i].m_nAlpha != 255 ) || ( !pInfo->IsOpaque() ); 
 		if ( !bIsTranslucent )
 		{
-			AddRenderableToRenderList( *info.m_pRenderList, pInfo->m_pRenderable, 
+			AddRenderableToRenderList( *info.m_pRenderList, pInfo->m_pRenderable, pInfo->m_pRenderableMod, 
 				nWorldListLeafIndex, pInfo->m_EngineRenderGroup, pInfo->GetModelType(), pRLInfo[i].m_nAlpha, INVALID_CLIENT_RENDER_HANDLE );
 			continue;
 		}
@@ -3305,14 +3304,14 @@ void CClientLeafSystem::AddRenderablesToRenderLists( const SetupRenderInfo_t &in
 		// Add to appropriate list if drawing translucent objects (shadow depth mapping will skip this)
 		if ( info.m_bDrawTranslucentObjects ) 
 		{
-			AddRenderableToRenderList( *info.m_pRenderList, pInfo->m_pRenderable, 
-				nWorldListLeafIndex, pInfo->m_EngineRenderGroup, pInfo->m_nModelType, pRLInfo[i].m_nAlpha, bIsTwoPass );
+			AddRenderableToRenderList( *info.m_pRenderList, pInfo->m_pRenderable, pInfo->m_pRenderableMod, 
+				nWorldListLeafIndex, pInfo->m_EngineRenderGroup, pInfo->m_nModelType, pRLInfo[i].m_nAlpha, INVALID_CLIENT_RENDER_HANDLE, bIsTwoPass );
 		}
 
 		if ( bIsTwoPass )	// Also add to opaque list if it's a two-pass model... 
 		{
-			AddRenderableToRenderList( *info.m_pRenderList, pInfo->m_pRenderable, 
-				nWorldListLeafIndex, pInfo->m_EngineRenderGroupOpaque, pInfo->GetModelType(), 255, bIsTwoPass );
+			AddRenderableToRenderList( *info.m_pRenderList, pInfo->m_pRenderable, pInfo->m_pRenderableMod, 
+				nWorldListLeafIndex, pInfo->m_EngineRenderGroupOpaque, pInfo->GetModelType(), 255, INVALID_CLIENT_RENDER_HANDLE, bIsTwoPass );
 		}
 	}
 
@@ -3323,7 +3322,7 @@ void CClientLeafSystem::AddRenderablesToRenderLists( const SetupRenderInfo_t &in
 		if ( detailInfo.m_nLeafIndex > nWorldListLeafIndex )
 			break;
 		Assert( detailInfo.m_nLeafIndex == nWorldListLeafIndex );
-		AddRenderableToRenderList( *info.m_pRenderList, detailInfo.m_pRenderable, 
+		AddRenderableToRenderList( *info.m_pRenderList, detailInfo.m_pRenderable, detailInfo.m_pRenderableMod, 
 			nWorldListLeafIndex, detailInfo.m_nEngineRenderGroup, RENDERABLE_MODEL_ENTITY, detailInfo.m_InstanceData.m_nAlpha, INVALID_CLIENT_RENDER_HANDLE );
 	}
 
@@ -3359,7 +3358,7 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 		int leaf = info.m_pWorldListInfo->m_pLeafList[ 0 ];
 		orderedList.AddToTail( LeafToMarker( leaf ) );
 
-		for ( int i = m_Renderables.Head(); i != m_Renderables.InvalidIndex(); i = m_Renderables.Next( i ) )
+		for ( int i = m_Renderables.Head(); i != (uint)m_Renderables.InvalidIndex(); i = m_Renderables.Next( i ) )
 		{
 			orderedList.AddToTail( &m_Renderables[ i ] );
 		}
@@ -3376,7 +3375,7 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 			unsigned short idx = m_RenderablesInLeaf.FirstElement(leaf);
 			for ( ; idx != m_RenderablesInLeaf.InvalidIndex(); idx = m_RenderablesInLeaf.NextElement( idx ) )
 			{
-				orderedList.AddToTail( &m_Renderables[ m_RenderablesInLeaf.Element(idx) ] );
+				orderedList.AddToTail( &m_Renderables[ (uint)m_RenderablesInLeaf.Element(idx) ] );
 			}
 		}
 	}
@@ -3410,16 +3409,17 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 
 EngineRenderGroup_t CClientLeafSystem::GenerateRenderListEntry( IClientRenderable *pRenderable, CClientRenderablesList::CEntry &entryOut )
 {
-	ClientRenderHandle_t iter = m_Renderables.Head();
-	while( m_Renderables.IsValidIndex( iter ) )
+	ClientRenderHandle_t iter = (ClientRenderHandle_t)m_Renderables.Head();
+	while( m_Renderables.IsValidIndex( (uint)iter ) )
 	{
-		RenderableInfo_t &info = m_Renderables.Element( iter );
+		RenderableInfo_t &info = m_Renderables.Element( (uint)iter );
 		if( info.m_pRenderable == pRenderable )
 		{			
 			int nAlpha = info.m_pAlphaProperty ? info.m_pAlphaProperty->ComputeRenderAlpha( false ) : 255;
 			bool bIsTranslucent = ( nAlpha != 255 ) || ( !info.IsOpaque() ); 
 
 			entryOut.m_pRenderable = pRenderable;
+			entryOut.m_pRenderableMod = NULL;
 			entryOut.m_iWorldListInfoLeaf = 0; //info.m_RenderLeaf;			
 			entryOut.m_TwoPass = ( info.m_nTranslucencyType == RENDERABLE_IS_TWO_PASS );
 			entryOut.m_nModelType = info.m_nModelType;
@@ -3428,10 +3428,11 @@ EngineRenderGroup_t CClientLeafSystem::GenerateRenderListEntry( IClientRenderabl
 				return info.m_EngineRenderGroupOpaque;
 			return info.m_EngineRenderGroup;
 		}
-		iter = m_Renderables.Next( iter );
+		iter = (ClientRenderHandle_t)m_Renderables.Next( (uint)iter );
 	}
 
 	entryOut.m_pRenderable = NULL;
+	entryOut.m_pRenderableMod = NULL;
 	entryOut.m_iWorldListInfoLeaf = 0;
 	entryOut.m_TwoPass = false;
 	entryOut.m_nModelType = RENDERABLE_MODEL_ENTITY;

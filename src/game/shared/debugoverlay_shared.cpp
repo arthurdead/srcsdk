@@ -647,3 +647,71 @@ void NDebugOverlay::Sphere( const Vector &position, const QAngle &angles, float 
 	Circle( position, yAxis, zAxis, radius, r, g, b, a, bNoDepthTest, flDuration );	// yz plane
 	Circle( position, xAxis, zAxis, radius, r, g, b, a, bNoDepthTest, flDuration );	// xz plane
 }
+
+
+#define NUM_CONE_LINES 8
+#define NUM_CONE_CIRCLES 3
+void NDebugOverlay::Cone( const Vector & position, const Vector & axis, float angleRadians, float length, int r, int g, int b, int a, bool bNoDepthTest, float flDuration )
+{
+	//draw lines down the length of the cone.
+	float radiusStep = ( M_PI * 2.0f ) / NUM_CONE_LINES;
+	float sinHalfAngle = sinf( angleRadians * 0.5f ); 
+	float finalRadius = sinHalfAngle * length;
+
+	QAngle vecAngles;
+	VectorAngles( axis, vecAngles );
+
+	matrix3x4_t xform;
+	AngleMatrix( vecAngles, position, xform );
+	Vector sideAxis, upAxis;
+	// default draws circle in the y/z plane
+	MatrixGetColumn( xform, 2, sideAxis );
+	MatrixGetColumn( xform, 1, upAxis );
+
+	Vector coneEnd = position + ( axis * length );
+
+	for( int lineNum = 0; lineNum < NUM_CONE_LINES; ++lineNum )
+	{
+		float flSin, flCos;
+		SinCos( radiusStep * lineNum, & flSin, & flCos );
+		Vector circlePos = coneEnd + ( sideAxis * flCos * finalRadius ) + ( upAxis * flSin * finalRadius );
+		Line( position, circlePos, r, g, b, bNoDepthTest, flDuration );
+	}
+
+	// draw three cicles around the cone.
+	float lengthStep = length / NUM_CONE_CIRCLES;
+
+	for( int circNum = 0; circNum < NUM_CONE_CIRCLES; ++circNum )
+	{
+		float segLength = lengthStep * ( circNum + 1 );
+		Vector circPos = position + ( axis * segLength );
+		float circRad = sinHalfAngle * segLength;
+		Circle( circPos, sideAxis, upAxis, circRad, r, g, b, 0, bNoDepthTest, flDuration );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Draw a cross whose center is at a position, facing the camera
+//-----------------------------------------------------------------------------
+void NDebugOverlay::Cross( const Vector &position, float radius, int r, int g, int b, bool bNoDepthTest, float flDuration )
+{
+	CBasePlayer *player = GetDebugPlayer();
+	if ( player == NULL )
+		return;
+
+	Vector clientForward;
+	Vector clientRight;
+	Vector clientUp;
+	player->EyeVectors( &clientForward, &clientRight, &clientUp );
+
+	Line( position - radius * clientRight, position + radius * clientRight, r, g, b, bNoDepthTest, flDuration );
+	Line( position - radius * clientUp, position + radius * clientUp, r, g, b, bNoDepthTest, flDuration );
+}
+
+void NDebugOverlay::PurgeTextOverlays()
+{
+	if ( debugoverlay )
+	{
+		debugoverlay->PurgeTextOverlays();
+	}
+}

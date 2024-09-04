@@ -7,16 +7,14 @@
 
 #include "cbase.h"
 #include "ai_speechfilter.h"
-#ifndef CSTRIKE_DLL
 #include "ai_playerally.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 LINK_ENTITY_TO_CLASS( ai_speechfilter, CAI_SpeechFilter );
 
-BEGIN_DATADESC( CAI_SpeechFilter )
+BEGIN_MAPENTITY( CAI_SpeechFilter )
 	DEFINE_KEYFIELD( m_iszSubject,		FIELD_STRING, "subject" ),
 	DEFINE_KEYFIELD( m_flIdleModifier,	FIELD_FLOAT, "IdleModifier" ),
 	DEFINE_KEYFIELD( m_bNeverSayHello,	FIELD_BOOLEAN, "NeverSayHello" ),
@@ -26,7 +24,7 @@ BEGIN_DATADESC( CAI_SpeechFilter )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetIdleModifier", InputSetIdleModifier ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -99,7 +97,6 @@ void CAI_SpeechFilter::PopulateSubjectList( bool purge )
 		pSearch = gEntList.FindEntityByName( pSearch, m_iszSubject );
 		if ( pSearch )
 		{
-#ifndef CSTRIKE_DLL
 			CAI_PlayerAlly *pAlly = dynamic_cast<CAI_PlayerAlly *>(pSearch);
 			if ( pAlly )
 			{
@@ -121,7 +118,6 @@ void CAI_SpeechFilter::PopulateSubjectList( bool purge )
 			{
 				DevWarning("ai_speechfilter %s tries to use %s as a subject, but it's not a talking NPC.\n", STRING(GetEntityName()), STRING(pSearch->GetEntityName()) );
 			}
-#endif
 			iNumSubjects++;
 		}
 	} while( pSearch );
@@ -134,7 +130,6 @@ void CAI_SpeechFilter::PopulateSubjectList( bool purge )
 			pSearch = gEntList.FindEntityByClassname( pSearch, STRING(m_iszSubject) );
 			if( pSearch )
 			{
-#ifndef CSTRIKE_DLL
 				CAI_PlayerAlly *pAlly = dynamic_cast<CAI_PlayerAlly *>(pSearch);
 				if ( pAlly )
 				{
@@ -156,7 +151,6 @@ void CAI_SpeechFilter::PopulateSubjectList( bool purge )
 				{
 					DevWarning("ai_speechfilter %s tries to use %s as a subject, but it's not a talking NPC.\n", STRING(GetEntityName()), STRING(pSearch->GetEntityName()) );
 				}
-#endif
 				iNumSubjects++;
 			}
 		} while( pSearch );
@@ -177,7 +171,6 @@ void CAI_SpeechFilter::OnEntityCreated( CBaseEntity *pEntity )
 {
 	if ( !m_bDisabled && ( pEntity->NameMatches( m_iszSubject ) || pEntity->ClassMatches( m_iszSubject ) ) )
 	{
-#ifndef CSTRIKE_DLL
 		CAI_PlayerAlly *pAlly = dynamic_cast<CAI_PlayerAlly *>(pEntity);
 		if ( pAlly )
 		{
@@ -187,7 +180,6 @@ void CAI_SpeechFilter::OnEntityCreated( CBaseEntity *pEntity )
 		{
 			DevWarning("ai_speechfilter %s tries to use %s as a subject, but it's not a talking NPC.\n", STRING(GetEntityName()), STRING(pEntity->GetEntityName()) );
 		}
-#endif
 	}
 }
 

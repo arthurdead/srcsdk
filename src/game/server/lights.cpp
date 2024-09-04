@@ -14,17 +14,11 @@
 
 LINK_ENTITY_TO_CLASS( light, CLight );
 
-BEGIN_DATADESC( CLight )
-
-	DEFINE_FIELD( m_iCurrentFade, FIELD_CHARACTER),
-	DEFINE_FIELD( m_iTargetFade, FIELD_CHARACTER),
+BEGIN_MAPENTITY( CLight )
 
 	DEFINE_KEYFIELD( m_iStyle, FIELD_INTEGER, "style" ),
 	DEFINE_KEYFIELD( m_iDefaultStyle, FIELD_INTEGER, "defaultstyle" ),
 	DEFINE_KEYFIELD( m_iszPattern, FIELD_STRING, "pattern" ),
-
-	// Fuctions
-	DEFINE_FUNCTION( FadeThink ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetPattern", InputSetPattern ),
@@ -33,7 +27,7 @@ BEGIN_DATADESC( CLight )
 	DEFINE_INPUTFUNC( FIELD_VOID,	"TurnOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"TurnOff", InputTurnOff ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -231,6 +225,7 @@ void CLight::FadeThink(void)
 //
 LINK_ENTITY_TO_CLASS( light_spot, CLight );
 LINK_ENTITY_TO_CLASS( light_glspot, CLight );
+LINK_ENTITY_TO_CLASS( light_directional, CLight );
 
 #define EnvLightBase CBaseEntity
 

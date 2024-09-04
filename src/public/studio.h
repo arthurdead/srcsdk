@@ -2896,7 +2896,6 @@ private:
 
 struct flexweight_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					key;
 	float				weight;
 	float				influence;
@@ -2904,7 +2903,6 @@ struct flexweight_t
 
 struct flexsetting_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					nameindex;
 
 	inline char *pszName( void ) const
@@ -2941,7 +2939,6 @@ struct flexsetting_t
 
 struct flexsettinghdr_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	int					id;
 	int					version;
 

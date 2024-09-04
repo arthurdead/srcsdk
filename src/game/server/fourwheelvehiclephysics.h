@@ -14,6 +14,7 @@
 #include "vcollide_parse.h"
 #include "datamap.h"
 #include "vehicle_sounds.h"
+#include "map_entity.h"
 
 // in/sec to miles/hour
 #define INS2MPH_SCALE	( 3600 * (1/5280.0f) * (1/12.0f) )
@@ -23,6 +24,7 @@
 class CBaseAnimating;
 class CFourWheelServerVehicle;
 
+struct CUserCmd;
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -30,12 +32,13 @@ class CFourWheelServerVehicle;
 class CFourWheelVehiclePhysics
 {
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPEMBEDDED();
 
 	CFourWheelVehiclePhysics( CBaseAnimating *pOuter );
 	~CFourWheelVehiclePhysics ();
 
 	// Call Precache + Spawn from the containing entity's Precache + Spawn methods
+	void Precache();
 	void Spawn();
 	void SetOuter( CBaseAnimating *pOuter, CFourWheelServerVehicle *pServerVehicle ); 
 	

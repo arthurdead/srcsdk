@@ -34,7 +34,7 @@ protected:
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 //-----------------------------------------------------------------------------
@@ -49,7 +49,7 @@ public:
 
 	COutputEvent m_OnVehicleSpawn;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 

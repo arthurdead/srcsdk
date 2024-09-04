@@ -46,6 +46,7 @@ enum Capability_t
 	bits_CAP_MOVE_SHOOT				= 0x00000040, // tries to shoot weapon while moving
 	bits_CAP_SKIP_NAV_GROUND_CHECK	= 0x00000080, // optimization - skips ground tests while computing navigation
 	bits_CAP_USE					= 0x00000100, // open doors/push buttons/pull levers
+	bits_CAP_NO_LOCAL_NAV_CRAWL		= 0x00000200, // Don't try to crawl when doing local navigation
 	//bits_CAP_HEAR					= 0x00000200, // can hear forced sounds
 	bits_CAP_AUTO_DOORS				= 0x00000400, // can trigger auto doors
 	bits_CAP_OPEN_DOORS				= 0x00000800, // can open manual doors
@@ -74,7 +75,7 @@ enum Capability_t
 #define bits_CAP_DOORS_GROUP    (bits_CAP_AUTO_DOORS | bits_CAP_OPEN_DOORS)
 #define bits_CAP_RANGE_ATTACK_GROUP	(bits_CAP_WEAPON_RANGE_ATTACK1 | bits_CAP_WEAPON_RANGE_ATTACK2)
 #define bits_CAP_MELEE_ATTACK_GROUP	(bits_CAP_WEAPON_MELEE_ATTACK1 | bits_CAP_WEAPON_MELEE_ATTACK2)
-
+#define bits_CAP_MOVE_GROUP    (bits_CAP_MOVE_GROUND | bits_CAP_MOVE_JUMP | bits_CAP_MOVE_FLY | bits_CAP_MOVE_CLIMB | bits_CAP_MOVE_CRAWL | bits_CAP_MOVE_SWIM)
 
 class CBaseCombatWeapon;
 
@@ -86,7 +87,14 @@ enum Disposition_t
 	D_HT,		// Hate
 	D_FR,		// Fear
 	D_LI,		// Like
-	D_NU		// Neutral
+	D_NU,		// Neutral
+
+	// The following are duplicates of the above, only with friendlier names
+	D_ERROR = D_ER,		// Undefined - error
+	D_HATE = D_HT,		// Hate
+	D_FEAR = D_FR,		// Fear
+	D_LIKE = D_LI,		// Like
+	D_NEUTRAL = D_NU,	// Neutral
 };
 
 const int DEF_RELATIONSHIP_PRIORITY = INT_MIN;
@@ -95,10 +103,9 @@ struct Relationship_t
 {
 	EHANDLE			entity;			// Relationship to a particular entity
 	Class_T			classType;		// Relationship to a class  CLASS_NONE = not class based (Def. in baseentity.h)
+	int				faction;		// Relationship to a faction FACTION_NONE = not faction based
 	Disposition_t	disposition;	// D_HT (Hate), D_FR (Fear), D_LI (Like), D_NT (Neutral)
 	int				priority;		// Relative importance of this relationship (higher numbers mean more important)
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //-----------------------------------------------------------------------------
@@ -114,15 +121,13 @@ public:
 	~CBaseCombatCharacter(void);
 
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_PREDICTABLE();
 
 public:
 
 	virtual void		Spawn( void );
 	virtual void		Precache();
-
-	virtual int			Restore( IRestore &restore );
 
 	virtual const impactdamagetable_t	&GetPhysicsImpactDamageTable( void );
 
@@ -204,6 +209,12 @@ public:
 	virtual bool IsLineOfSightClear( const Vector &pos, LineOfSightCheckType checkType = IGNORE_NOTHING, CBaseEntity *entityToIgnore = NULL ) const;
 
 	// -----------------------
+	// Footsteps
+	// -----------------------
+	void PlayFootstepSound( const Vector& origin, bool leftFoot, bool feetInWater, bool kneesInWater, bool jumping = false );
+	virtual void OnFootstep( const Vector& origin, bool leftFoot, bool feetInWater, bool kneesInWater, bool jumping ) {}
+
+	// -----------------------
 	// Ammo
 	// -----------------------
 	virtual int			GiveAmmo( int iCount, int iAmmoIndex, bool bSuppressSound = false );
@@ -224,7 +235,8 @@ public:
 	void				Weapon_SetActivity( Activity newActivity, float duration );
 	virtual void		Weapon_FrameUpdate( void );
 	virtual void		Weapon_HandleAnimEvent( animevent_t *pEvent );
-	CBaseCombatWeapon*	Weapon_OwnsThisType( const char *pszWeapon, int iSubType = 0 ) const;  // True if already owns a weapon of this class
+	virtual CBaseCombatWeapon*	Weapon_OwnsThisType( const char *pszWeapon, int iSubType = 0 ) const;  // True if already owns a weapon of this class
+	virtual int			Weapon_GetSlot( const char *pszWeapon, int iSubType = 0 ) const;  // Returns -1 if they don't have one
 	virtual bool		Weapon_CanUse( CBaseCombatWeapon *pWeapon );		// True is allowed to use this class of weapon
 	virtual void		Weapon_Equip( CBaseCombatWeapon *pWeapon );			// Adds weapon to player
 	virtual bool		Weapon_EquipAmmoOnly( CBaseCombatWeapon *pWeapon );	// Adds weapon ammo to player, leaves weapon
@@ -270,7 +282,7 @@ public:
 	virtual void			OnPlayerKilledOther( CBaseEntity *pVictim, const CTakeDamageInfo &info ) {}
 
 		// utility function to calc damage force
-	Vector					CalcDamageForceVector( const CTakeDamageInfo &info );
+	virtual Vector					CalcDamageForceVector( const CTakeDamageInfo &info );
 
 	virtual int				BloodColor();
 	virtual Activity		GetDeathActivity( void );
@@ -286,6 +298,7 @@ public:
 
 	// Character killed (only fired once)
 	virtual void			Event_Killed( const CTakeDamageInfo &info );
+	virtual bool			ShouldDropActiveWeaponWhenKilled() { return true; }
 
 	// Killed a character
 	void InputKilledNPC( inputdata_t &inputdata );
@@ -308,8 +321,8 @@ public:
 	CBaseEntity				*FindHealthItem( const Vector &vecPosition, const Vector &range );
 
 
-	virtual CBaseEntity		*CheckTraceHullAttack( float flDist, const Vector &mins, const Vector &maxs, int iDamage, int iDmgType, float forceScale = 1.0f, bool bDamageAnyNPC = false );
-	virtual CBaseEntity		*CheckTraceHullAttack( const Vector &vStart, const Vector &vEnd, const Vector &mins, const Vector &maxs, int iDamage, int iDmgType, float flForceScale = 1.0f, bool bDamageAnyNPC = false );
+	virtual CBaseEntity		*CheckTraceHullAttack( float flDist, const Vector &mins, const Vector &maxs, float flDamage, int iDmgType, float forceScale = 1.0f, bool bDamageAnyNPC = false );
+	virtual CBaseEntity		*CheckTraceHullAttack( const Vector &vStart, const Vector &vEnd, const Vector &mins, const Vector &maxs, float flDamage, int iDmgType, float flForceScale = 1.0f, bool bDamageAnyNPC = false );
 
 	virtual CBaseCombatCharacter *MyCombatCharacterPointer( void ) { return this; }
 
@@ -361,12 +374,22 @@ public:
 	static void			InitInteractionSystem();
 
 	// Relationships
+	static void			SetDefaultFactionRelationship(int nFaction, int nFactionTarget, Disposition_t nDisposition, int nPriority);
+	Disposition_t		GetFactionRelationshipDisposition( int nFaction );
+	static void			AllocateDefaultFactionRelationships( );
 	static void			AllocateDefaultRelationships( );
 	static void			SetDefaultRelationship( Class_T nClass, Class_T nClassTarget,  Disposition_t nDisposition, int nPriority );
 	Disposition_t		GetDefaultRelationshipDisposition( Class_T nClassTarget );
 	virtual void		AddEntityRelationship( CBaseEntity *pEntity, Disposition_t nDisposition, int nPriority );
 	virtual bool		RemoveEntityRelationship( CBaseEntity *pEntity );
 	virtual void		AddClassRelationship( Class_T nClass, Disposition_t nDisposition, int nPriority );
+	virtual void		AddFactionRelationship(int nFaction, Disposition_t nDisposition, int nPriority);
+
+	// Factions
+	static int			GetNumFactions( void );
+	static CUtlVector<EHANDLE> *GetEntitiesInFaction( int nFaction );
+	int					GetFaction( void ) const { return m_nFaction; }
+	virtual void		ChangeFaction( int nNewFaction );
 
 	virtual void		ChangeTeam( int iTeamNum );
 
@@ -408,18 +431,6 @@ public:
 	virtual void OnNavAreaChanged( CNavArea *enteredArea, CNavArea *leftArea ) { }	// invoked (by UpdateLastKnownArea) when we enter a new nav area (or it is reset to NULL)
 	virtual void OnNavAreaRemoved( CNavArea *removedArea );
 
-	// -----------------------
-	// Notification from INextBots.
-	// -----------------------
-	virtual void		OnPursuedBy( INextBot * RESTRICT pPursuer ){} // called every frame while pursued by a bot in DirectChase.
-
-#ifdef GLOWS_ENABLE
-	// Glows
-	void				AddGlowEffect( void );
-	void				RemoveGlowEffect( void );
-	bool				IsGlowEffectActive( void );
-#endif // GLOWS_ENABLE
-
 #ifdef INVASION_DLL
 public:
 
@@ -457,11 +468,6 @@ protected:
 public:
 	CNetworkVar( float, m_flNextAttack );			// cannot attack again until this time
 
-#ifdef GLOWS_ENABLE
-protected:
-	CNetworkVar( bool, m_bGlowEnabled );
-#endif // GLOWS_ENABLE
-
 private:
 	Hull_t		m_eHull;
 
@@ -479,12 +485,16 @@ protected:
 	string_t	m_RelationshipString;	// Used to load up relationship keyvalues
 	float		m_impactEnergyScale;// scale the amount of energy used to calculate damage this ent takes due to physics
 
+	byte		m_weaponIDToIndex[MAX_WEAPONS];
+
 public:
 	static int					GetInteractionID();	// Returns the next interaction #
 
 protected:
 	// Visibility-related stuff
 	bool ComputeLOS( const Vector &vecEyePosition, const Vector &vecTarget ) const;
+	bool ComputeTargetIsInDarkness( const Vector &vecEyePosition, CNavArea *pTargetNavArea, const Vector &vecTargetPos ) const;
+
 private:
 	// For weapon strip
 	void ThrowDirForWeaponStrip( CBaseCombatWeapon *pWeapon, const Vector &vecForward, Vector *pVecThrowDir );
@@ -494,6 +504,8 @@ private:
 	
 	static int					m_lastInteraction;	// Last registered interaction #
 	static Relationship_t**		m_DefaultRelationship;
+	static Relationship_t**		m_FactionRelationship;
+	static CUtlVector< CUtlVector< EHANDLE> > m_aFactions;
 
 	// attack/damage
 	int					m_LastHitGroup;			// the last body region that took damage
@@ -508,6 +520,7 @@ private:
 	//  Relationships
 	// ---------------
 	CUtlVector<Relationship_t>		m_Relationship;						// Array of relationships
+	int								m_nFaction;
 
 	// Used by trigger_fog to manage when the character is touching multiple fog triggers simultaneously.
 	// The one at the HEAD of the list is always the current fog trigger for the character.
@@ -516,12 +529,15 @@ private:
 
 protected:
 	// shared ammo slots
-	CNetworkArrayForDerived( int, m_iAmmo, MAX_AMMO_SLOTS );
+	CNetworkArrayForDerived( int, m_iAmmo, MAX_AMMO_TYPES );
 
 	// Usable character items 
 	CNetworkArray( CBaseCombatWeaponHandle, m_hMyWeapons, MAX_WEAPONS );
 
 	CNetworkHandle( CBaseCombatWeapon, m_hActiveWeapon );
+
+	void RemoveRagdoll();
+	CNetworkHandle( CBaseEntity, m_hRagdoll );
 
 	friend class CCleanupDefaultRelationShips;
 	
@@ -542,6 +558,8 @@ protected:
 	CNavArea *m_lastNavArea;
 	CAI_MoveMonitor m_NavAreaUpdateMonitor;
 	int m_registeredNavTeam;	// ugly, but needed to clean up player team counts in nav mesh
+
+	friend class CCleanupDefaultRelationShips;
 };
 
 
@@ -556,16 +574,6 @@ inline float CBaseCombatCharacter::GetAliveDuration( void ) const
 inline int	CBaseCombatCharacter::WeaponCount() const
 {
 	return MAX_WEAPONS;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : i - 
-//-----------------------------------------------------------------------------
-inline CBaseCombatWeapon *CBaseCombatCharacter::GetWeapon( int i ) const
-{
-	Assert( (i >= 0) && (i < MAX_WEAPONS) );
-	return m_hMyWeapons[i].Get();
 }
 
 #ifdef INVASION_DLL

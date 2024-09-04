@@ -148,6 +148,13 @@ typedef enum
 	ACT_FLINCH_LEFTLEG,
 	ACT_FLINCH_RIGHTLEG,
 	ACT_FLINCH_PHYSICS,
+	ACT_FLINCH_HEAD_BACK,
+	ACT_FLINCH_CHEST_BACK,
+	ACT_FLINCH_STOMACH_BACK,
+	ACT_FLINCH_CROUCH_FRONT,
+	ACT_FLINCH_CROUCH_BACK,
+	ACT_FLINCH_CROUCH_LEFT,
+	ACT_FLINCH_CROUCH_RIGHT,
 
 	ACT_IDLE_ON_FIRE,		// ON FIRE animations
 	ACT_WALK_ON_FIRE,
@@ -211,6 +218,8 @@ typedef enum
 	// is, though. So if you set ideal activity to DO_NOT_DISTURB, the AI will not interfere
 	// with the NPC's current sequence. (SJB)
 	ACT_DO_NOT_DISTURB,
+
+	ACT_SPECIFIC_SEQUENCE,
 
 	// viewmodel (weapon) activities
 	// FIXME: move these to the specific viewmodels, no need to make global
@@ -639,6 +648,11 @@ typedef enum
 	ACT_VM_DRAW_SILENCED,
 	ACT_VM_IDLE_EMPTY_LEFT,
 	ACT_VM_DRYFIRE_LEFT,
+
+	ACT_VM_IS_DRAW,
+	ACT_VM_IS_HOLSTER,
+	ACT_VM_IS_IDLE,
+	ACT_VM_IS_PRIMARYATTACK,
 
 	ACT_PLAYER_IDLE_FIRE,
 	ACT_PLAYER_CROUCH_FIRE,

@@ -8,7 +8,6 @@
 
 #include "sceneentity.h"
 #include "ai_playerally.h"
-#include "saverestore_utlmap.h"
 #include "eventqueue.h"
 #include "ai_behavior_lead.h"
 #include "gameinterface.h"
@@ -136,6 +135,8 @@ bool ConceptStringLessFunc( const string_t &lhs, const string_t &rhs )
 
 //-----------------------------------------------------------------------------
 
+#if AI_CONCEPTS_ARE_STRINGS
+
 class CConceptInfoMap : public CUtlMap<AIConcept_t, ConceptInfo_t *> {
 public:
 	CConceptInfoMap() :
@@ -147,6 +148,27 @@ public:
 		  }
 	  }
 };
+
+#else
+
+bool ConceptIDLessFunc( const AIConcept_t::tGenericId &lhs, const AIConcept_t::tGenericId &rhs )	
+{ 
+	return CaselessStringLessThan( CAI_Concept::GetStringForGenericId(lhs), CAI_Concept::GetStringForGenericId(rhs) ); 
+}
+
+class CConceptInfoMap : public CUtlMap<AIConcept_t::tGenericId, ConceptInfo_t *> {
+public:
+	CConceptInfoMap() :
+	  CUtlMap<AIConcept_t::tGenericId, ConceptInfo_t *>( ConceptIDLessFunc )
+	  {
+		  for ( int i = 0; i < ARRAYSIZE(g_ConceptInfos); i++ )
+		  {
+			  Insert( g_ConceptInfos[i].ai_concept, &g_ConceptInfos[i] );
+		  }
+	  }
+};
+
+#endif
 
 static CConceptInfoMap g_ConceptInfoMap;
 
@@ -281,13 +303,6 @@ bool CAI_AllySpeechManager::ConceptDelayExpired( AIConcept_t ai_concept )
 
 LINK_ENTITY_TO_CLASS( ai_ally_speech_manager, CAI_AllySpeechManager );
 
-BEGIN_DATADESC( CAI_AllySpeechManager )
-
-	DEFINE_EMBEDDED_AUTO_ARRAY(m_ConceptCategoryTimers),
-	DEFINE_UTLMAP( m_ConceptTimers, FIELD_STRING, FIELD_EMBEDDED ),
-
-END_DATADESC()
-
 //-----------------------------------------------------------------------------
 
 CAI_AllySpeechManager *CAI_AllySpeechManager::gm_pSpeechManager;
@@ -313,25 +328,9 @@ CAI_AllySpeechManager *GetAllySpeechManager()
 //
 //-----------------------------------------------------------------------------
 
-BEGIN_DATADESC( CAI_PlayerAlly )
-
-	DEFINE_EMBEDDED( m_PendingResponse ),
-	DEFINE_STDSTRING( m_PendingConcept ),
-	DEFINE_FIELD( m_TimePendingSet, FIELD_TIME ),
-	DEFINE_FIELD( m_hTalkTarget, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_flNextRegenTime, FIELD_TIME ),
-	DEFINE_FIELD( m_flTimePlayerStartStare, FIELD_TIME ),
-	DEFINE_FIELD( m_hPotentialSpeechTarget, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_flNextIdleSpeechTime, FIELD_TIME ),
-	DEFINE_FIELD( m_iQARandomNumber, FIELD_INTEGER ),
-	DEFINE_FIELD( m_hSpeechFilter, FIELD_EHANDLE ),
-	DEFINE_EMBEDDED_AUTO_ARRAY(m_ConceptCategoryTimers),
+BEGIN_MAPENTITY( CAI_PlayerAlly )
 
 	DEFINE_KEYFIELD( m_bGameEndAlly, FIELD_BOOLEAN, "GameEndAlly" ),
-	DEFINE_FIELD( m_bCanSpeakWhileScripting, FIELD_BOOLEAN ),
-
-	DEFINE_FIELD( m_flHealthAccumulator, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flTimeLastRegen, FIELD_TIME ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "IdleRespond", InputIdleRespond ),
@@ -343,7 +342,7 @@ BEGIN_DATADESC( CAI_PlayerAlly )
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableSpeakWhileScripting", InputEnableSpeakWhileScripting ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableSpeakWhileScripting", InputDisableSpeakWhileScripting ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 ConVar npc_ally_deathmessage( "npc_ally_deathmessage", "1", FCVAR_CHEAT );
 
@@ -506,7 +505,6 @@ void CAI_PlayerAlly::PrescheduleThink( void )
 {
 	BaseClass::PrescheduleThink();
 
-#ifdef HL2_DLL
 	// Vital allies regenerate
 	if( GetHealth() >= GetMaxHealth() )
 	{
@@ -530,7 +528,6 @@ void CAI_PlayerAlly::PrescheduleThink( void )
 		TakeHealth( flHealthRegen, DMG_GENERIC );
 	}
 
-#ifdef HL2_EPISODIC
 	if ( (GetState() == NPC_STATE_IDLE || GetState() == NPC_STATE_ALERT) 
 		 && !HasCondition(COND_RECEIVED_ORDERS) && !IsInAScript() )
 	{
@@ -540,8 +537,8 @@ void CAI_PlayerAlly::PrescheduleThink( void )
 
 			if ( SelectNonCombatSpeech( &selection ) )
 			{
-				SetSpeechTarget( selection.hSpeechTarget );
-				SpeakDispatchResponse( selection.ai_concept.c_str(), selection.Response );
+				SetSpeechTarget( selection.hSpeechTarget.Get() );
+				SpeakDispatchResponse( selection.ai_concept.c_str(), &selection.response );
 				m_flNextIdleSpeechTime = gpGlobals->curtime + RandomFloat( 20,30 );
 			}
 			else
@@ -550,9 +547,6 @@ void CAI_PlayerAlly::PrescheduleThink( void )
 			}
 		}
 	}
-#endif // HL2_EPISODIC
-
-#endif // HL2_DLL
 }
 
 //-----------------------------------------------------------------------------
@@ -562,13 +556,13 @@ int CAI_PlayerAlly::SelectSchedule( void )
 	if ( !HasCondition(COND_RECEIVED_ORDERS) )
 	{
 		// sustained light wounds?
-		if ( m_iHealth <= m_iMaxHealth * 0.75 && IsAllowedToSpeak( TLK_WOUND ) && !GetExpresser()->SpokeConcept(TLK_WOUND) )
+		if ( GetHealth() <= m_iMaxHealth * 0.75 && IsAllowedToSpeak( TLK_WOUND ) && !GetExpresser()->SpokeConcept(TLK_WOUND) )
 		{
 			CTakeDamageInfo info;
 			PainSound( info );
 		}
 		// sustained heavy wounds?
-		else if ( m_iHealth <= m_iMaxHealth * 0.5 && IsAllowedToSpeak( TLK_MORTAL) )
+		else if ( GetHealth() <= m_iMaxHealth * 0.5 && IsAllowedToSpeak( TLK_MORTAL) )
 		{
 			Speak( TLK_MORTAL );
 		}
@@ -583,11 +577,12 @@ bool CAI_PlayerAlly::SelectSpeechResponse( AIConcept_t ai_concept, const char *p
 {
 	if ( IsAllowedToSpeak( ai_concept ) )
 	{
-		bool result = SpeakFindResponse( pSelection->Response, ai_concept, pszModifiers );
-		if ( result )
+		AI_CriteriaSet criteria;
+		GatherCriteria(&criteria, ai_concept, pszModifiers);
+
+		if ( FindResponse(pSelection->response, ai_concept, &criteria) )
 		{
-			pSelection->ai_concept = ai_concept;
-			pSelection->hSpeechTarget = pTarget;
+			pSelection->Set(ai_concept, pTarget);
 			return true;
 		}
 	}
@@ -597,9 +592,9 @@ bool CAI_PlayerAlly::SelectSpeechResponse( AIConcept_t ai_concept, const char *p
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CAI_PlayerAlly::SetPendingSpeech( AIConcept_t ai_concept, AI_Response &Response )
+void CAI_PlayerAlly::SetPendingSpeech( AIConcept_t ai_concept, AI_Response *pResponse )
 {
-	m_PendingResponse = Response;
+	m_PendingResponse = *pResponse;
 	m_PendingConcept = ai_concept;
 	m_TimePendingSet = gpGlobals->curtime;
 }
@@ -681,7 +676,7 @@ bool CAI_PlayerAlly::SelectInterjection()
 		if ( SelectIdleSpeech( &selection ) )
 		{
 			SetSpeechTarget( selection.hSpeechTarget );
-			SpeakDispatchResponse( selection.ai_concept.c_str(), selection.Response );
+			SpeakDispatchResponse( selection.ai_concept.c_str(), &selection.response );
 			return true;
 		}
 	}
@@ -880,8 +875,9 @@ void CAI_PlayerAlly::AnswerQuestion( CAI_PlayerAlly *pQuestioner, int iQARandomN
 			}
 		}
 
+		Assert( !selection.response.IsEmpty() );
 		SetSpeechTarget( selection.hSpeechTarget );
-		SpeakDispatchResponse( selection.ai_concept.c_str(), selection.Response );
+		SpeakDispatchResponse( selection.ai_concept.c_str(), &selection.response );
 
 		// Prevent idle speech for a while
 		DeferAllIdleSpeech( random->RandomFloat( TALKER_DEFER_IDLE_SPEAK_MIN, TALKER_DEFER_IDLE_SPEAK_MAX ), GetSpeechTarget()->MyNPCPointer() );
@@ -899,13 +895,11 @@ int CAI_PlayerAlly::SelectNonCombatSpeech( AISpeechSelection_t *pSelection )
 {
 	bool bResult = false;
 
-	#ifdef HL2_EPISODIC
 	// See if we can Q&A first
 	if ( GetState() == NPC_STATE_IDLE || GetState() == NPC_STATE_ALERT )
 	{
 		bResult = SelectQuestionAndAnswerSpeech( pSelection );
 	}
-	#endif // HL2_EPISODIC
 
 	if ( !bResult )
 	{
@@ -932,8 +926,9 @@ int CAI_PlayerAlly::SelectNonCombatSpeechSchedule()
 
 		if ( SelectNonCombatSpeech( &selection ) )
 		{
+			Assert( !selection.response.IsEmpty() );
 			SetSpeechTarget( selection.hSpeechTarget );
-			SetPendingSpeech( selection.ai_concept.c_str(), selection.Response );
+			SetPendingSpeech( selection.ai_concept.c_str(), &selection.response );
 		}
 	}
 	
@@ -1008,7 +1003,8 @@ void CAI_PlayerAlly::StartTask( const Task_t *pTask )
 	case TASK_TALKER_SPEAK_PENDING:
 		if ( !m_PendingConcept.empty() )
 		{
-			SpeakDispatchResponse( m_PendingConcept.c_str(), m_PendingResponse );
+			AI_Response response(m_PendingResponse);
+			SpeakDispatchResponse( m_PendingConcept.c_str(), &response );
 			m_PendingConcept.erase();
 			TaskComplete();
 		}
@@ -1682,15 +1678,16 @@ bool CAI_PlayerAlly::RespondedTo( const char *ResponseConcept, bool bForce, bool
 	{
 		// We're being forced to respond to the event, probably because it's the
 		// player dying or something equally important. 
-		AI_Response response; 
-		bool result = SpeakFindResponse( response, ResponseConcept, NULL );
-		if ( result )
+		AI_Response result;
+		AIConcept_t tempConcept( ResponseConcept );
+		if ( FindResponse( result, tempConcept ) )
 		{
 			// We've got something to say. Stop any scenes we're in, and speak the response.
 			if ( bCancelScene )
 				RemoveActorFromScriptedScenes( this, false );
 
-			return SpeakDispatchResponse( ResponseConcept, response );
+			bool spoke = SpeakDispatchResponse( tempConcept, &result );
+			return spoke;
 		}
 
 		return false;

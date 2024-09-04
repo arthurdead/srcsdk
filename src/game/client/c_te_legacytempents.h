@@ -17,6 +17,7 @@ struct model_t;
 #include "mempool.h"
 #include "utllinkedlist.h"
 #include "icliententityinternal.h"
+#include "particlemgr.h"
 
 class C_BasePlayer;
 
@@ -55,7 +56,6 @@ public:
 	virtual void				BloodSprite( const Vector &org, int r, int g, int b, int a, int modelIndex, int modelIndex2, float size ) = 0;
 	virtual void				RicochetSprite( const Vector &pos, model_t *pmodel, float duration, float scale ) = 0;
 	virtual void				MuzzleFlash( int type, ClientEntityHandle_t hEntity, int attachmentIndex, bool firstPerson ) = 0;
-	virtual void				MuzzleFlash( const Vector &pos1, const QAngle &angles, int type, ClientEntityHandle_t hEntity, bool firstPerson ) = 0;
 	virtual void				EjectBrass( const Vector& pos1, const QAngle& angles, const QAngle& gunAngles, int type, C_BasePlayer *pShooter ) = 0;
 	virtual C_LocalTempEntity   *SpawnTempModel( const model_t *pModel, const Vector &vecOrigin, const QAngle &vecAngles, const Vector &vecVelocity, float flLifeTime, int iFlags ) = 0;
 	virtual void				BreakModel( const Vector &pos, const QAngle &angles, const Vector &size, const Vector &dir, float random, float life, int count, int modelIndex, char flags) = 0;
@@ -106,7 +106,6 @@ public:
 	virtual void			RicochetSprite( const Vector &pos, model_t *pmodel, float duration, float scale );
 
 	virtual void			MuzzleFlash( int type, ClientEntityHandle_t hEntity, int attachmentIndex, bool firstPerson );
-	virtual void			MuzzleFlash( const Vector &pos, const QAngle &angles, int type, ClientEntityHandle_t hEntity, bool firstPerson = false );
 	
 	virtual void			BreakModel(const Vector &pos, const QAngle &angles, const Vector &size, const Vector &dir, float random, float life, int count, int modelIndex, char flags);
 	virtual void			Bubbles( const Vector &mins, const Vector &maxs, float height, int modelIndex, int count, float speed );
@@ -168,10 +167,15 @@ private:
 
 	int						AddVisibleTempEntity( C_LocalTempEntity *pEntity );
 
-	void					MuzzleFlash_Shotgun( ClientEntityHandle_t hEntity, int attachmentIndex, bool firstperson );
-	void					MuzzleFlash_Pistol( ClientEntityHandle_t hEntity, int attachmentIndex, bool firstperson );
-	void					MuzzleFlash_357( ClientEntityHandle_t hEntity, int attachmentIndex, bool firstperson );
-	void					MuzzleFlash_RPG( ClientEntityHandle_t hEntity, int attachmentIndex, bool firstperson );
+	void					MuzzleFlash_Shotgun_Firstperson( ClientEntityHandle_t hEntity, int attachmentIndex );
+	void					MuzzleFlash_Shotgun_Thirdperson( ClientEntityHandle_t hEntity, int attachmentIndex );
+
+	void					MuzzleFlash_Pistol_Firstperson( ClientEntityHandle_t hEntity, int attachmentIndex );
+	void					MuzzleFlash_Pistol_Thirdperson( ClientEntityHandle_t hEntity, int attachmentIndex );
+
+	void					MuzzleFlash_357_Firstperson( ClientEntityHandle_t hEntity, int attachmentIndex );
+
+	void					MuzzleFlash_RPG_Thirdperson( ClientEntityHandle_t hEntity, int attachmentIndex );
 };
 
 

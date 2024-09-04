@@ -15,7 +15,7 @@
 #include "ai_navgoaltype.h"
 #include "ai_navtype.h"
 #include "ai_motor.h"
-#include "isaverestore.h"
+#include "baseentity.h"
 
 class CAI_BaseNPC;
 class CAI_Motor;
@@ -110,6 +110,15 @@ enum AI_NavGoalFlags_t
 
 	// If navigating on a designer placed path, don't use pathfinder between waypoints, just do it
 	AIN_NO_PATHCORNER_PATHFINDING = 0x04,
+
+	// Succeed if we can arrive within tolerance
+	AIN_LOCAL_SUCCEEED_ON_WITHIN_TOLERANCE = 0x08,
+
+	// Skip local navigation
+	AIN_NO_LOCAL_NAVIGATION	= 0x10,
+
+	// Path can be an unlimited distance away
+	AIN_UNLIMITED_DISTANCE = 0x20,
 
 	AIN_DEF_FLAGS			= 0,
 };
@@ -324,11 +333,6 @@ public:
 	void SetLocalSucceedOnWithinTolerance( bool fNewVal )			{ m_bLocalSucceedOnWithinTolerance = fNewVal; }
 
 	// --------------------------------
-
-	void Save( ISave &save );
-	void Restore( IRestore &restore );
-	
-	// --------------------------------
 	// Methods to issue movement directives
 	// --------------------------------
 
@@ -393,6 +397,7 @@ public:
 	int 				GetCurWaypointFlags() const;
 
 	bool				CurWaypointIsGoal() const;
+	bool				CurWaypointRequiresPreciseMovement() const;
 
 	bool				GetPointAlongPath( Vector *pResult, float distance, bool fReducibleOnly = false );
 
@@ -417,7 +422,11 @@ public:
 
 	// --------------------------------
 
-	void				SetAllowBigStep( CBaseEntity *pEntToStepOff )	{ if ( !pEntToStepOff || !pEntToStepOff->IsWorld() ) m_hBigStepGroundEnt = pEntToStepOff; }
+	void				SetAllowBigStep( CBaseEntity *pEntToStepOff )
+	{
+		if ( pEntToStepOff && !pEntToStepOff->IsWorld() )
+			m_hBigStepGroundEnt = pEntToStepOff;
+	}
 
 	// --------------------------------
 	bool				SetGoalFromStoppingPath();
@@ -496,10 +505,11 @@ public:
 	
 	// See comments at CAI_BaseNPC::Move()
 	virtual bool		Move( float flInterval = 0.1 );
+	virtual bool		ShouldMove( bool bHasAGoal );
 
 	// --------------------------------
 
-	CBaseEntity *		GetBlockingEntity()	{ return m_hLastBlockingEnt; }
+	CBaseEntity *		GetBlockingEntity()	{ return m_hLastBlockingEnt.Get(); }
 	
 protected:
 	// --------------------------------
@@ -540,6 +550,7 @@ protected:
  	virtual AIMoveResult_t MoveNormal();
 
 	// Navigation execution
+	virtual AIMoveResult_t MoveCrawl();
 	virtual AIMoveResult_t MoveClimb();
 	virtual AIMoveResult_t MoveJump();
 
@@ -608,7 +619,7 @@ private:
 #ifndef AI_USES_NAV_MESH
 	bool				MarkCurWaypointFailedLink( void );			// Call when route fails
 #else
-	bool				MarkCurWaypointFailed( void );			// Call when route fails
+	virtual bool				MarkCurWaypointFailed( void );			// Call when route fails
 #endif
 
 	struct SimplifyForwardScanParams
@@ -709,8 +720,6 @@ private:
 
 	int					m_nNavFailCounter;
 	float				m_flLastNavFailTime;
-public:
-	DECLARE_SIMPLE_DATADESC();
 };
 
 

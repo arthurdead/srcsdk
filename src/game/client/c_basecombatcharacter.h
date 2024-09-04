@@ -183,16 +183,6 @@ inline int	C_BaseCombatCharacter::WeaponCount() const
 	return MAX_WEAPONS;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : i - 
-//-----------------------------------------------------------------------------
-inline C_BaseCombatWeapon *C_BaseCombatCharacter::GetWeapon( int i ) const
-{
-	Assert( (i >= 0) && (i < MAX_WEAPONS) );
-	return m_hMyWeapons[i].Get();
-}
-
 EXTERN_RECV_TABLE(DT_BaseCombatCharacter);
 
 #endif // C_BASECOMBATCHARACTER_H

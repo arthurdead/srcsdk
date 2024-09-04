@@ -194,7 +194,7 @@ void RadioButton::InternalSetSelected(bool state, bool bFireEvents)
 			// send a message to all other panels on the same level as heirarchy, 
 			// so that other radio buttons know to shut off
 			VPANEL radioParent = GetVParent();
-			if (radioParent)
+			if (radioParent != INVALID_VPANEL)
 			{
 				for (int i = 0; i < ipanel()->GetChildCount(radioParent); i++)
 				{

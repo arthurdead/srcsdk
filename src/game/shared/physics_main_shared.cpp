@@ -783,6 +783,11 @@ groundlink_t *CBaseEntity::AddEntityToGroundList( CBaseEntity *other )
 	if ( this == other )
 		return NULL;
 
+	if ( other->IsMarkedForDeletion() )
+	{
+		return NULL;
+	}
+
 	// check if the edict is already in the list
 	groundlink_t *root = ( groundlink_t * )GetDataObject( GROUNDLINK );
 	if ( root )
@@ -1074,8 +1079,17 @@ const trace_t &CBaseEntity::GetTouchTrace( void )
 void CBaseEntity::PhysicsMarkEntitiesAsTouching( CBaseEntity *other, trace_t &trace )
 {
 	g_TouchTrace = trace;
-	PhysicsMarkEntityAsTouched( other );
-	other->PhysicsMarkEntityAsTouched( this );
+	touchlink_t *pLink0 = PhysicsMarkEntityAsTouched( other );
+	touchlink_t *pLInk1 = other->PhysicsMarkEntityAsTouched( this );
+	if ( pLink0 && !pLInk1 )
+	{
+		PhysicsNotifyOtherOfUntouch( other, this );
+	}
+	if ( pLInk1 && !pLink0 )
+	{
+		PhysicsNotifyOtherOfUntouch( this, other );
+	}
+	UTIL_ClearTrace( g_TouchTrace );
 }
 
 void CBaseEntity::PhysicsMarkEntitiesAsTouchingEventDriven( CBaseEntity *other, trace_t &trace )
@@ -1097,6 +1111,7 @@ void CBaseEntity::PhysicsMarkEntitiesAsTouchingEventDriven( CBaseEntity *other, 
 	{
 		link->touchStamp = TOUCHSTAMP_EVENT_DRIVEN;
 	}
+	UTIL_ClearTrace( g_TouchTrace );
 }
 
 //-----------------------------------------------------------------------------
@@ -1790,7 +1805,7 @@ void CBaseEntity::PhysicsSimulate( void )
 	// NOTE:  Players override PhysicsSimulate and drive through their CUserCmds at that point instead of
 	//  processng through this function call!!!  They shouldn't chain to here ever.
 	// Make sure not to simulate this guy twice per frame
-	if (m_nSimulationTick == gpGlobals->tickcount)
+	if (!IsPlayerSimulated() && m_nSimulationTick == gpGlobals->tickcount)
 		return;
 
 	m_nSimulationTick = gpGlobals->tickcount;

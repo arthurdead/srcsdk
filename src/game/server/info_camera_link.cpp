@@ -20,7 +20,7 @@
 class CInfoCameraLink : public CLogicalEntity
 {
 	DECLARE_CLASS( CInfoCameraLink, CLogicalEntity );
- 	DECLARE_DATADESC();
+ 	DECLARE_MAPENTITY();
 
 public:
 	CInfoCameraLink();
@@ -51,17 +51,14 @@ CUtlFixedLinkedList<CInfoCameraLink *> g_InfoCameraLinkList;
 //-----------------------------------------------------------------------------
 // Save/load
 //-----------------------------------------------------------------------------
-BEGIN_DATADESC( CInfoCameraLink )
+BEGIN_MAPENTITY( CInfoCameraLink )
 
 	DEFINE_KEYFIELD( m_strPointCamera, FIELD_STRING, "PointCamera" ),
-
-	DEFINE_FIELD( m_hCamera,		FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hTargetEntity,	FIELD_EHANDLE ),
 
 	// Outputs
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetCamera", InputSetCamera ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( info_camera_link, CInfoCameraLink );

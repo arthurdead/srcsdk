@@ -29,7 +29,7 @@ class CEnvEntityMaker : public CPointEntity
 {
 	DECLARE_CLASS( CEnvEntityMaker, CPointEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void Spawn( void );
 	virtual void Activate( void );
@@ -64,12 +64,8 @@ private:
 	COutputEvent	m_pOutputOnFailedSpawn;
 };
 
-BEGIN_DATADESC( CEnvEntityMaker )
-	// DEFINE_FIELD( m_vecEntityMins, FIELD_VECTOR ),
-	// DEFINE_FIELD( m_vecEntityMaxs, FIELD_VECTOR ),
-	DEFINE_FIELD( m_hCurrentInstance, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hCurrentBlocker, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_vecBlockerOrigin, FIELD_VECTOR ),
+BEGIN_MAPENTITY( CEnvEntityMaker )
+
 	DEFINE_KEYFIELD( m_iszTemplate, FIELD_STRING, "EntityTemplate" ),
 	DEFINE_KEYFIELD( m_angPostSpawnDirection, FIELD_VECTOR, "PostSpawnDirection" ),
 	DEFINE_KEYFIELD( m_flPostSpawnDirectionVariance, FIELD_FLOAT, "PostSpawnDirectionVariance" ),
@@ -84,9 +80,7 @@ BEGIN_DATADESC( CEnvEntityMaker )
 	DEFINE_INPUTFUNC( FIELD_VOID, "ForceSpawn", InputForceSpawn ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "ForceSpawnAtEntityOrigin", InputForceSpawnAtEntityOrigin ),
 
-	// Functions
-	DEFINE_THINKFUNC( CheckSpawnThink ),
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( env_entity_maker, CEnvEntityMaker );
 
@@ -164,7 +158,7 @@ void CEnvEntityMaker::SpawnEntity( Vector vecAlternateOrigin, QAngle vecAlternat
 	}
 
 	CUtlVector<CBaseEntity*> hNewEntities;
-	if ( !pTemplate->CreateInstance( vecSpawnOrigin, vecSpawnAngles, &hNewEntities ) )
+	if ( !pTemplate->CreateInstance( vecSpawnOrigin, vecSpawnAngles, &hNewEntities, this ) )
 		return;
 	
 	//Adrian: oops we couldn't spawn the entity (or entities) for some reason!
@@ -238,6 +232,8 @@ void CEnvEntityMaker::SpawnEntity( Vector vecAlternateOrigin, QAngle vecAlternat
 			}
 		}
 	}
+
+	pTemplate->CreationComplete( hNewEntities );
 }
 
 

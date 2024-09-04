@@ -70,11 +70,14 @@ enum RouteBuildFlags_e
 	bits_BUILD_JUMP			=			0x00000002, //
 	bits_BUILD_FLY			=			0x00000004, // 
 	bits_BUILD_CLIMB		=			0x00000008, //
-	bits_BUILD_GIVEWAY		=			0x00000010, //
-	bits_BUILD_TRIANG		=			0x00000020, //
-	bits_BUILD_IGNORE_NPCS	=			0x00000040, // Ignore collisions with NPCs
-	bits_BUILD_COLLIDE_NPCS	=			0x00000080, // Use    collisions with NPCs (redundant for argument clarity)
-	bits_BUILD_GET_CLOSE	=			0x00000100, // the route will be built even if it can't reach the destination
+	bits_BUILD_CRAWL		=			0x00000010, //
+	bits_BUILD_GIVEWAY		=			0x00000020, //
+	bits_BUILD_TRIANG		=			0x00000040, //
+	bits_BUILD_IGNORE_NPCS	=			0x00000080, // Ignore collisions with NPCs
+	bits_BUILD_COLLIDE_NPCS	=			0x00000100, // Use    collisions with NPCs (redundant for argument clarity)
+	bits_BUILD_GET_CLOSE	=			0x00000200, // the route will be built even if it can't reach the destination
+	bits_BUILD_NO_LOCAL_NAV	=			0x00000400, // No local navigation
+	bits_BUILD_UNLIMITED_DISTANCE =		0x00000800, // Path can be an unlimited distance away
 };
 
 //-----------------------------------------------------------------------------
@@ -116,7 +119,7 @@ public:
 	AI_Waypoint_t*	FindBestPath		(int startID, int endID);
 	AI_Waypoint_t*	FindShortRandomPath	(int startID, float minPathLength, const Vector &vDirection = vec3_origin);
 #else
-	AI_Waypoint_t*	FindBestPath		(CNavArea * startArea, CNavArea * endArea);
+	virtual AI_Waypoint_t*	FindBestPath		(CNavArea * startArea, CNavArea * endArea);
 	AI_Waypoint_t*	FindShortRandomPath	(CNavArea * startArea, float minPathLength, const Vector &vDirection = vec3_origin);
 #endif
 
@@ -130,7 +133,7 @@ public:
 
 	// --------------------------------
 	
-	AI_Waypoint_t *BuildRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity *pTarget, float goalTolerance, Navigation_t curNavType = NAV_NONE, bool bLocalSucceedOnWithinTolerance = false );
+	AI_Waypoint_t *BuildRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity *pTarget, float goalTolerance, Navigation_t curNavType = NAV_NONE, bool bLocalSucceedOnWithinTolerance = false, int nBuildFlags = 0 );
 #ifndef AI_USES_NAV_MESH
 	void UnlockRouteNodes( AI_Waypoint_t * );
 #endif
@@ -244,6 +247,7 @@ private:
 
 	AI_Waypoint_t	*BuildGroundRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, int endFlags, CNavArea * area, int buildFlags, float flYaw, float goalTolerance );
 	AI_Waypoint_t	*BuildFlyRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, int endFlags, CNavArea * area, int buildFlags, float flYaw, float goalTolerance );
+	AI_Waypoint_t	*BuildCrawlRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, int endFlags, CNavArea * area, int buildFlags, float flYaw, float goalTolerance );
 	AI_Waypoint_t	*BuildJumpRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, int endFlags, CNavArea * area, int buildFlags, float flYaw );
 	AI_Waypoint_t	*BuildClimbRoute( const Vector &vStart, const Vector &vEnd, CBaseEntity const *pTarget, int endFlags, CNavArea * area, int buildFlags, float flYaw );
 #endif
@@ -252,7 +256,7 @@ private:
 	// Computes the link type
 	Navigation_t ComputeWaypointType( CAI_Node **ppNodes, int parentID, int destID );
 #else
-	Navigation_t ComputeWaypointType( CNavArea *parentArea, CNavArea *destArea );
+	Navigation_t ComputeWaypointType( bool *pWantsPreciseMovement, CNavArea *parentArea, CNavArea *destArea );
 #endif
 
 	// --------------------------------
@@ -311,9 +315,6 @@ private:
 	
 	CAI_Network *m_pNetwork;
 #endif
-
-public:
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //-----------------------------------------------------------------------------

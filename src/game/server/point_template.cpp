@@ -9,7 +9,6 @@
 #include "entityoutput.h"
 #include "TemplateEntities.h"
 #include "point_template.h"
-#include "saverestore_utlvector.h"
 #include "mapentities.h"
 #include "tier0/icommandline.h"
 #include "mapentities_shared.h"
@@ -27,16 +26,8 @@
 
 LINK_ENTITY_TO_CLASS(point_template, CPointTemplate);
 
-BEGIN_SIMPLE_DATADESC( template_t )
-	DEFINE_FIELD( iTemplateIndex,	FIELD_INTEGER ),
-	DEFINE_FIELD( matEntityToTemplate, FIELD_VMATRIX ),
-END_DATADESC()
-
-BEGIN_DATADESC( CPointTemplate )
+BEGIN_MAPENTITY( CPointTemplate )
 	// Keys
-
-	// Silence, Classcheck!
-	// DEFINE_ARRAY( m_iszTemplateEntityNames, FIELD_STRING, MAX_NUM_TEMPLATES ),
 
 	DEFINE_KEYFIELD( m_iszTemplateEntityNames[0], FIELD_STRING, "Template01"),
 	DEFINE_KEYFIELD( m_iszTemplateEntityNames[1], FIELD_STRING, "Template02"),
@@ -54,9 +45,6 @@ BEGIN_DATADESC( CPointTemplate )
 	DEFINE_KEYFIELD( m_iszTemplateEntityNames[13], FIELD_STRING, "Template14"),
 	DEFINE_KEYFIELD( m_iszTemplateEntityNames[14], FIELD_STRING, "Template15"),
 	DEFINE_KEYFIELD( m_iszTemplateEntityNames[15], FIELD_STRING, "Template16"),
-	DEFINE_UTLVECTOR( m_hTemplateEntities, FIELD_CLASSPTR ),
-
-	DEFINE_UTLVECTOR( m_hTemplates, FIELD_EMBEDDED ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "ForceSpawn", InputForceSpawn ),
@@ -64,7 +52,7 @@ BEGIN_DATADESC( CPointTemplate )
 	// Outputs
 	DEFINE_OUTPUT( m_pOutputOnSpawned, "OnEntitySpawned" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: A simple system to help precache point_template entities ... ywb
@@ -315,7 +303,7 @@ void CPointTemplate::PerformPrecache()
 //			pEntities - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CPointTemplate::CreateInstance( const Vector &vecOrigin, const QAngle &vecAngles, CUtlVector<CBaseEntity*> *pEntities )
+bool CPointTemplate::CreateInstance( const Vector &vecOrigin, const QAngle &vecAngles, CUtlVector<CBaseEntity*> *pEntities, CBaseEntity *pEntityMaker, bool bCreateTime )
 {
 	// Go through all our templated map data and spawn all the entities in it
 	int iTemplates = m_hTemplates.Count();
@@ -382,6 +370,19 @@ bool CPointTemplate::CreateInstance( const Vector &vecOrigin, const QAngle &vecA
 
 	SpawnHierarchicalList( iTemplates, pSpawnList, true );
 
+	// Set the time of creation for these entities.
+	if ( bCreateTime )
+	{
+		float flCreateTime = gpGlobals->curtime;
+		for ( i = 0; i < iTemplates; ++i )
+		{
+			if ( pSpawnList[i].m_pEntity )
+			{
+				pSpawnList[i].m_pEntity->SetCreateTime( flCreateTime );
+			}
+		}
+	}
+
 	for ( i = 0; i < iTemplates; ++i )
 	{
 		if ( pSpawnList[i].m_pEntity )
@@ -394,6 +395,17 @@ bool CPointTemplate::CreateInstance( const Vector &vecOrigin, const QAngle &vecA
 }
 
 //-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+void CPointTemplate::CreationComplete( const CUtlVector<CBaseEntity*> &entities )
+{
+	if ( !entities.Count() )
+		return;
+
+	
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
@@ -403,6 +415,8 @@ void CPointTemplate::InputForceSpawn( inputdata_t &inputdata )
 	CUtlVector<CBaseEntity*> hNewEntities;
 	if ( !CreateInstance( GetAbsOrigin(), GetAbsAngles(), &hNewEntities ) )
 		return;
+
+	CreationComplete( hNewEntities );
 	
 	// Fire our output
 	m_pOutputOnSpawned.FireOutput( this, this );

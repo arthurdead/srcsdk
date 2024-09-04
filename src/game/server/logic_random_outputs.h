@@ -34,7 +34,7 @@ public:
 	void InputTrigger( inputdata_t &inputdata );
 	void InputCancelPending( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	// Outputs
 	COutputEvent m_Output[ NUM_RANDOM_OUTPUTS ];

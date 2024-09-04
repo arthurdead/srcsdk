@@ -80,6 +80,7 @@ class CClientEffect : public IClientEffect
 public:
 
 	CClientEffect( const char *pName );
+	CClientEffect( const char *pName, bool (*pCondFunc)() );
 	~CClientEffect();
 
 //-----------------------------------------------------------------------------
@@ -97,6 +98,7 @@ public:
 private:
 	bool m_bPrecached;
 	CUtlVector< IMaterial	* > m_Materials;
+	bool (*m_pCondFunc)();
 };
 
 //Automatic precache macros
@@ -104,19 +106,25 @@ private:
 //Beginning
 #define	CLIENTEFFECT_REGISTER_BEGIN( className )		\
 namespace className {									\
+static const char *EffectName = #className; \
 class ClientEffectRegister : public CClientEffect		\
 {														\
-public:													\
-	ClientEffectRegister(); \
+public: \
+	ClientEffectRegister(bool(*pCondFunc)()); \
 };														\
-ClientEffectRegister::ClientEffectRegister() : CClientEffect(#className) {
+ClientEffectRegister::ClientEffectRegister(bool(*pCondFunc)()) : CClientEffect(EffectName, pCondFunc) {
 
 //Material definitions
 #define	CLIENTEFFECT_MATERIAL( materialName )	AddMaterial(materialName);
 
 //End
 #define	CLIENTEFFECT_REGISTER_END( )	}					\
-ClientEffectRegister	register_ClientEffectRegister;		\
+ClientEffectRegister	register_ClientEffectRegister(NULL);		\
+}
+
+#define	CLIENTEFFECT_REGISTER_END_CONDITIONAL( ... )	}					\
+static bool EffectCond() { return (__VA_ARGS__); } \
+static ClientEffectRegister	register_ClientEffectRegister(EffectCond);		\
 }
 
 #endif	//CLIENTEFFECTPRECACHESYSTEM_H

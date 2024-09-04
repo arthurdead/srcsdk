@@ -28,7 +28,7 @@
 	static void RecvProxy_EntIndex( const CRecvProxyData *pData, void *pStruct, void *pOut )
 	{
 		int nEntIndex = pData->m_Value.m_Int;
-		((CEffectData*)pStruct)->m_hEntity = (nEntIndex < 0) ? INVALID_EHANDLE_INDEX : ClientEntityList().EntIndexToHandle( nEntIndex );
+		((CEffectData*)pStruct)->m_hEntity = (nEntIndex < 0) ? NULL_EHANDLE : ClientEntityList().EntIndexToHandle( nEntIndex );
 	}
 
 	BEGIN_RECV_TABLE_NOBASE( CEffectData, DT_EffectData )

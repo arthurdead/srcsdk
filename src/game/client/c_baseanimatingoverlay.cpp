@@ -112,8 +112,8 @@ void C_AnimationLayer::SetWeight( float flWeight )
 	m_flWeight = flWeight;
 }
 
-C_BaseAnimatingOverlay::C_BaseAnimatingOverlay(bool bClientSide)
-	: C_BaseAnimating(bClientSide)
+C_BaseAnimatingOverlay::C_BaseAnimatingOverlay()
+	: C_BaseAnimating()
 {
 	// FIXME: where does this initialization go now?
 	//for ( int i=0; i < MAX_OVERLAYS; i++ )
@@ -124,11 +124,6 @@ C_BaseAnimatingOverlay::C_BaseAnimatingOverlay(bool bClientSide)
 
 	// FIXME: where does this initialization go now?
 	// AddVar( m_Layer, &m_iv_AnimOverlay, LATCH_ANIMATION_VAR );
-}
-
-C_BaseAnimatingOverlay::C_BaseAnimatingOverlay()
-	: C_BaseAnimatingOverlay(false)
-{
 }
 
 #undef CBaseAnimatingOverlay

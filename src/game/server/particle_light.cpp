@@ -15,7 +15,7 @@ LINK_ENTITY_TO_CLASS( env_particlelight, CParticleLight );
 
 
 //Save/restore
-BEGIN_DATADESC( CParticleLight )
+BEGIN_MAPENTITY( CParticleLight )
 
 	//Keyvalue fields
 	DEFINE_KEYFIELD( m_flIntensity,		FIELD_FLOAT,	"Intensity" ),
@@ -23,7 +23,7 @@ BEGIN_DATADESC( CParticleLight )
 	DEFINE_KEYFIELD( m_PSName,			FIELD_STRING,	"PSName" ),
 	DEFINE_KEYFIELD( m_bDirectional,	FIELD_BOOLEAN,	"Directional" )
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

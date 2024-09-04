@@ -13,7 +13,7 @@ class CLogicPlayMovie : public CLogicalEntity
 {
 public:
 	DECLARE_CLASS( CLogicPlayMovie, CLogicalEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	CLogicPlayMovie( void ) { }
 	~CLogicPlayMovie( void ) { }
@@ -34,7 +34,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( logic_playmovie, CLogicPlayMovie );
 
-BEGIN_DATADESC( CLogicPlayMovie )
+BEGIN_MAPENTITY( CLogicPlayMovie )
 
 	DEFINE_KEYFIELD( m_strMovieFilename, FIELD_STRING, "MovieFilename" ),
 	DEFINE_KEYFIELD( m_bAllowUserSkip, FIELD_BOOLEAN, "allowskip" ),
@@ -44,7 +44,7 @@ BEGIN_DATADESC( CLogicPlayMovie )
 
 	DEFINE_OUTPUT( m_OnPlaybackFinished, "OnPlaybackFinished" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: 

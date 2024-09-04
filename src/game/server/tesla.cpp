@@ -15,7 +15,7 @@
 
 LINK_ENTITY_TO_CLASS( point_tesla, CTesla );
 
-BEGIN_DATADESC( CTesla )
+BEGIN_MAPENTITY( CTesla )
 
 	DEFINE_KEYFIELD( m_SourceEntityName,FIELD_STRING,	"m_SourceEntityName" ),
 	DEFINE_KEYFIELD( m_SoundName,		FIELD_STRING,	"m_SoundName" ),
@@ -24,19 +24,15 @@ BEGIN_DATADESC( CTesla )
 	DEFINE_KEYFIELD( m_Color,			FIELD_COLOR32,	"m_Color" ),
 	DEFINE_KEYFIELD( m_flRadius,		FIELD_FLOAT,	"m_flRadius" ),
 
-	//DEFINE_ARRAY( m_flThickness, FIELD_FLOAT, 2 ),
 	DEFINE_KEYFIELD( m_flThickness[0],	FIELD_FLOAT,	"thick_min" ),
 	DEFINE_KEYFIELD( m_flThickness[1],	FIELD_FLOAT,	"thick_max" ),
 	
-	//DEFINE_ARRAY( m_flTimeVisible, FIELD_FLOAT, 2 ),
 	DEFINE_KEYFIELD( m_flTimeVisible[0],FIELD_FLOAT,	"lifetime_min" ),
 	DEFINE_KEYFIELD( m_flTimeVisible[1],FIELD_FLOAT,	"lifetime_max" ),
 
-	//DEFINE_ARRAY( m_flArcInterval, FIELD_FLOAT, 2 ),
 	DEFINE_KEYFIELD( m_flArcInterval[0],FIELD_FLOAT,	"interval_min" ),
 	DEFINE_KEYFIELD( m_flArcInterval[1],FIELD_FLOAT,	"interval_max" ),
 	
-	//DEFINE_ARRAY( m_NumBeams, FIELD_INTEGER, 2 ),
 	DEFINE_KEYFIELD( m_NumBeams[0],		FIELD_INTEGER,	"beamcount_min" ),
 	DEFINE_KEYFIELD( m_NumBeams[1],		FIELD_INTEGER,	"beamcount_max" ),
 
@@ -46,9 +42,7 @@ BEGIN_DATADESC( CTesla )
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DoSpark", InputDoSpark ),
 
-	DEFINE_FUNCTION( ShootArcThink )
-
-END_DATADESC()
+END_MAPENTITY()
 
 
 IMPLEMENT_SERVERCLASS_ST( CTesla, DT_Tesla )

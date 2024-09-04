@@ -26,13 +26,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-//-----------------------------------------------------------------------------
-// Save/load
-//-----------------------------------------------------------------------------
-BEGIN_DATADESC_NO_BASE( CParticleProperty )
-	//		DEFINE_FIELD( m_pOuter, FIELD_CLASSPTR ),
-END_DATADESC()
-
 #ifdef CLIENT_DLL
 //-----------------------------------------------------------------------------
 // Prediction

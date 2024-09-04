@@ -432,7 +432,7 @@ CUtlLinkedList<T,S,ML,I,M>::CUtlLinkedList( int growSize, int initSize ) :
 	m_Memory( growSize, initSize ), m_LastAlloc( m_Memory.InvalidIterator() )
 {
 	// Prevent signed non-int datatypes
-	COMPILE_TIME_ASSERT( sizeof(S) == 4 || ( ( (S)-1 ) > 0 ) );
+	COMPILE_TIME_ASSERT( sizeof(S) == 4 || ( ( (S)-1 ) > (S)0 ) );
 	ConstructList();
 	ResetDbgInfo();
 }
@@ -446,11 +446,11 @@ CUtlLinkedList<T,S,ML,I,M>::~CUtlLinkedList( )
 template <class T, class S, bool ML, class I, class M>
 void CUtlLinkedList<T,S,ML,I,M>::ConstructList()
 {
-	m_Head = InvalidIndex(); 
-	m_Tail = InvalidIndex();
-	m_FirstFree = InvalidIndex();
-	m_ElementCount = 0;
-	m_NumAlloced = 0;
+	m_Head = (I)InvalidIndex(); 
+	m_Tail = (I)InvalidIndex();
+	m_FirstFree = (I)InvalidIndex();
+	m_ElementCount = (I)0;
+	m_NumAlloced = (I)0;
 }
 
 
@@ -492,7 +492,7 @@ inline int CUtlLinkedList<T,S,ML,I,M>::Count() const
 #ifdef MULTILIST_PEDANTIC_ASSERTS
 	AssertMsg( !ML, "CUtlLinkedList::Count() is meaningless for linked lists." );
 #endif
-	return m_ElementCount; 
+	return (int)m_ElementCount; 
 }
 
 template <class T, class S, bool ML, class I, class M>
@@ -522,20 +522,20 @@ template <class T, class S, bool ML, class I, class M>
 inline I  CUtlLinkedList<T,S,ML,I,M>::Previous( I i ) const  
 { 
 	Assert( IsValidIndex(i) ); 
-	return InternalElement(i).m_Previous; 
+	return (I)InternalElement(i).m_Previous; 
 }
 
 template <class T, class S, bool ML, class I, class M>
 inline I  CUtlLinkedList<T,S,ML,I,M>::Next( I i ) const  
 { 
 	Assert( IsValidIndex(i) ); 
-	return InternalElement(i).m_Next; 
+	return (I)InternalElement(i).m_Next; 
 }
 
 template <class T, class S, bool ML, class I, class M>
 inline I  CUtlLinkedList<T,S,ML,I,M>::PrivateNext( I i ) const  
 { 
-	return InternalElement(i).m_Next; 
+	return (I)InternalElement(i).m_Next; 
 }
 
 
@@ -557,11 +557,9 @@ inline bool CUtlLinkedList<T,S,ML,I,M>::IndexInRange( I index ) // Static method
 	//  'I' needs to be able to store 'S'
 	COMPILE_TIME_ASSERT( sizeof(I) >= sizeof(S) );
 	//  'S' should be unsigned (to avoid signed arithmetic errors for plausibly exhaustible ranges)
-	COMPILE_TIME_ASSERT( ( sizeof(S) > 2 ) || ( ( (S)-1 ) > 0 ) );
-	//  M::INVALID_INDEX should be storable in S to avoid ambiguities (e.g. with 65536)
-	COMPILE_TIME_ASSERT( ( M::INVALID_INDEX == -1 ) || ( M::INVALID_INDEX == (S)M::INVALID_INDEX ) );
+	COMPILE_TIME_ASSERT( ( sizeof(S) > 2 ) || ( ( (S)-1 ) > (S)0 ) );
 
-	return ( ( (S)index == index ) && ( (S)index != InvalidIndex() ) );
+	return ( index != (I)InvalidIndex() );
 }
 #pragma warning(pop)
 
@@ -574,7 +572,7 @@ inline bool CUtlLinkedList<T,S,ML,I,M>::IsValidIndex( I i ) const
 	if ( m_Memory.IsIdxAfter( i, m_LastAlloc ) )
 		return false; // don't read values that have been allocated, but not constructed
 
-	return ( m_Memory[ i ].m_Previous != i ) || ( m_Memory[ i ].m_Next == i );
+	return ( m_Memory[ i ].m_Previous != (S)i ) || ( m_Memory[ i ].m_Next == (S)i );
 }
 
 template <class T, class S, bool ML, class I, class M>
@@ -625,8 +623,8 @@ void  CUtlLinkedList<T,S,ML,I,M>::Purge()
 	RemoveAll();
 
 	m_Memory.Purge();
-	m_FirstFree = InvalidIndex();
-	m_NumAlloced = 0;
+	m_FirstFree = (I)InvalidIndex();
+	m_NumAlloced = (I)0;
 
 	//Routing "m_LastAlloc = m_Memory.InvalidIterator();" through a local const to sidestep an internal compiler error on 360 builds
 	const typename M::Iterator_t scInvalidIterator = m_Memory.InvalidIterator();
@@ -639,7 +637,7 @@ template<class T, class S, bool ML, class I, class M>
 void CUtlLinkedList<T,S,ML,I,M>::PurgeAndDeleteElements()
 {
 	I iNext;
-	for( I i=Head(); i != InvalidIndex(); i=iNext )
+	for( I i=Head(); i != (I)InvalidIndex(); i=iNext )
 	{
 		iNext = Next(i);
 		delete Element(i);
@@ -660,9 +658,9 @@ I CUtlLinkedList<T,S,ML,I,M>::AllocInternal( bool multilist )
 	Assert( multilist == ML );
 #endif
 	I elem;
-	if ( m_FirstFree == InvalidIndex() )
+	if ( m_FirstFree == (I)InvalidIndex() )
 	{
-		Assert( m_Memory.IsValidIterator( m_LastAlloc ) || m_ElementCount == 0 );
+		Assert( m_Memory.IsValidIterator( m_LastAlloc ) || m_ElementCount == (I)0 );
 
 		typename M::Iterator_t it = m_Memory.IsValidIterator( m_LastAlloc ) ? m_Memory.Next( m_LastAlloc ) : m_Memory.First();
 
@@ -679,7 +677,7 @@ I CUtlLinkedList<T,S,ML,I,M>::AllocInternal( bool multilist )
 			{
 				// We rarely if ever handle alloc failure. Continuing leads to corruption.
 				Error( "CUtlLinkedList overflow! (exhausted memory allocator)\n" );
-				return InvalidIndex();
+				return (I)InvalidIndex();
 			}
 		}
 
@@ -688,23 +686,23 @@ I CUtlLinkedList<T,S,ML,I,M>::AllocInternal( bool multilist )
 		{
 			// We rarely if ever handle alloc failure. Continuing leads to corruption.
 			Error( "CUtlLinkedList overflow! (exhausted index range)\n" );
-			return InvalidIndex();
+			return (I)InvalidIndex();
 		}
 
 		m_LastAlloc = it;
 		elem = m_Memory.GetIndex( m_LastAlloc );
-		m_NumAlloced++;
+		m_NumAlloced = m_NumAlloced + (I)1;
 	} 
 	else
 	{
 		elem = m_FirstFree;
-		m_FirstFree = InternalElement( m_FirstFree ).m_Next;
+		m_FirstFree = (I)InternalElement( m_FirstFree ).m_Next;
 	}
 
 	if ( !multilist )
 	{
-		InternalElement( elem ).m_Next = elem;
-		InternalElement( elem ).m_Previous = elem;
+		InternalElement( elem ).m_Next = (S)elem;
+		InternalElement( elem ).m_Previous = (S)elem;
 	}
 	else
 	{
@@ -719,7 +717,7 @@ template <class T, class S, bool ML, class I, class M>
 I CUtlLinkedList<T,S,ML,I,M>::Alloc( bool multilist )
 {
 	I elem = AllocInternal( multilist );
-	if ( elem == InvalidIndex() )
+	if ( elem == (I)InvalidIndex() )
 		return elem;
 
 	Construct( &Element(elem) );
@@ -735,7 +733,7 @@ void  CUtlLinkedList<T,S,ML,I,M>::Free( I elem )
 
 	ListElem_t &internalElem = InternalElement(elem);
 	Destruct( &internalElem.m_Element );
-	internalElem.m_Next = m_FirstFree;
+	internalElem.m_Next = (S)m_FirstFree;
 	m_FirstFree = elem;
 }
 
@@ -748,7 +746,7 @@ I CUtlLinkedList<T,S,ML,I,M>::InsertBefore( I before )
 {
 	// Make a new node
 	I   newNode = AllocInternal();
-	if ( newNode == InvalidIndex() )
+	if ( newNode == (I)InvalidIndex() )
 		return newNode;
 
 	// Link it in
@@ -765,7 +763,7 @@ I CUtlLinkedList<T,S,ML,I,M>::InsertAfter( I after )
 {
 	// Make a new node
 	I   newNode = AllocInternal();
-	if ( newNode == InvalidIndex() )
+	if ( newNode == (I)InvalidIndex() )
 		return newNode;
 
 	// Link it in
@@ -780,13 +778,13 @@ I CUtlLinkedList<T,S,ML,I,M>::InsertAfter( I after )
 template <class T, class S, bool ML, class I, class M>
 inline I CUtlLinkedList<T,S,ML,I,M>::AddToHead( ) 
 { 
-	return InsertAfter( InvalidIndex() ); 
+	return InsertAfter( (I)InvalidIndex() ); 
 }
 
 template <class T, class S, bool ML, class I, class M>
 inline I CUtlLinkedList<T,S,ML,I,M>::AddToTail( ) 
 { 
-	return InsertBefore( InvalidIndex() ); 
+	return InsertBefore( (I)InvalidIndex() ); 
 }
 
 
@@ -799,7 +797,7 @@ I CUtlLinkedList<T,S,ML,I,M>::InsertBefore( I before, T const& src )
 {
 	// Make a new node
 	I   newNode = AllocInternal();
-	if ( newNode == InvalidIndex() )
+	if ( newNode == (I)InvalidIndex() )
 		return newNode;
 
 	// Link it in
@@ -816,7 +814,7 @@ I CUtlLinkedList<T,S,ML,I,M>::InsertAfter( I after, T const& src )
 {
 	// Make a new node
 	I   newNode = AllocInternal();
-	if ( newNode == InvalidIndex() )
+	if ( newNode == (I)InvalidIndex() )
 		return newNode;
 
 	// Link it in
@@ -831,13 +829,13 @@ I CUtlLinkedList<T,S,ML,I,M>::InsertAfter( I after, T const& src )
 template <class T, class S, bool ML, class I, class M>
 inline I CUtlLinkedList<T,S,ML,I,M>::AddToHead( T const& src ) 
 { 
-	return InsertAfter( InvalidIndex(), src ); 
+	return InsertAfter( (I)InvalidIndex(), src ); 
 }
 
 template <class T, class S, bool ML, class I, class M>
 inline I CUtlLinkedList<T,S,ML,I,M>::AddToTail( T const& src ) 
 { 
-	return InsertBefore( InvalidIndex(), src ); 
+	return InsertBefore( (I)InvalidIndex(), src ); 
 }
 
 
@@ -849,7 +847,7 @@ template<class T, class S, bool ML, class I, class M>
 I CUtlLinkedList<T,S,ML,I,M>::Find( const T &src ) const
 {
 	// Cache the invalidIndex to avoid two levels of function calls on each iteration.
-	I invalidIndex = InvalidIndex();
+	I invalidIndex = (I)InvalidIndex();
 	for ( I i=Head(); i != invalidIndex; i = PrivateNext( i ) )
 	{
 		if ( Element( i ) == src )
@@ -863,7 +861,7 @@ template<class T, class S, bool ML, class I, class M>
 bool CUtlLinkedList<T,S,ML,I,M>::FindAndRemove( const T &src )
 {
 	I i = Find( src );
-	if ( i == InvalidIndex() )
+	if ( i == (I)InvalidIndex() )
 	{
 		return false;
 	}
@@ -890,10 +888,10 @@ void  CUtlLinkedList<T,S,ML,I,M>::RemoveAll()
 
 	if ( m_LastAlloc == m_Memory.InvalidIterator() )
 	{
-		Assert( m_Head == InvalidIndex() );
-		Assert( m_Tail == InvalidIndex() );
-		Assert( m_FirstFree == InvalidIndex() );
-		Assert( m_ElementCount == 0 );
+		Assert( m_Head == (I)InvalidIndex() );
+		Assert( m_Tail == (I)InvalidIndex() );
+		Assert( m_FirstFree == (I)InvalidIndex() );
+		Assert( m_ElementCount == (I)0 );
 		return;
 	}
 
@@ -906,8 +904,8 @@ void  CUtlLinkedList<T,S,ML,I,M>::RemoveAll()
 			{
 				ListElem_t &internalElem = InternalElement( i );
 				Destruct( &internalElem.m_Element );
-				internalElem.m_Previous = i;
-				internalElem.m_Next = m_FirstFree;
+				internalElem.m_Previous = (S)i;
+				internalElem.m_Next = (S)m_FirstFree;
 				m_FirstFree = i;
 			}
 
@@ -919,25 +917,25 @@ void  CUtlLinkedList<T,S,ML,I,M>::RemoveAll()
 	{
 		I i = Head();
 		I next;
-		while ( i != InvalidIndex() )
+		while ( i != (I)InvalidIndex() )
 		{
 			next = Next( i );
 			ListElem_t &internalElem = InternalElement( i );
 			Destruct( &internalElem.m_Element );
-			internalElem.m_Previous = i;
-			internalElem.m_Next = next == InvalidIndex() ? m_FirstFree : next;
+			internalElem.m_Previous = (S)i;
+			internalElem.m_Next = (next == (I)InvalidIndex()) ? (S)m_FirstFree : (S)next;
 			i = next;
 		}
-		if ( Head() != InvalidIndex() )
+		if ( Head() != (I)InvalidIndex() )
 		{
 			m_FirstFree = Head();
 		}
 	}
 
 	// Clear everything else out
-	m_Head = InvalidIndex(); 
-	m_Tail = InvalidIndex();
-	m_ElementCount = 0;
+	m_Head = (I)InvalidIndex(); 
+	m_Tail = (I)InvalidIndex();
+	m_ElementCount = (I)0;
 }
 
 
@@ -956,16 +954,16 @@ void  CUtlLinkedList<T,S,ML,I,M>::LinkBefore( I before, I elem )
 	ListElem_t * RESTRICT pNewElem = &InternalElement(elem);
 	
 	// The element *after* our newly linked one is the one we linked before.
-	pNewElem->m_Next = before;
+	pNewElem->m_Next = (S)before;
 	
 	S newElem_mPrevious; // we need to hang on to this for the compairson against InvalidIndex()
 					// below; otherwise we get a a load-hit-store on pNewElem->m_Previous, even
 					// with RESTRICT
-	if (before == InvalidIndex())
+	if (before == (I)InvalidIndex())
 	{
 		// In this case, we're linking to the end of the list, so reset the tail
-		newElem_mPrevious = m_Tail;
-		pNewElem->m_Previous = m_Tail;
+		newElem_mPrevious = (S)m_Tail;
+		pNewElem->m_Previous = (S)m_Tail;
 		m_Tail = elem;
 	}
 	else
@@ -975,17 +973,17 @@ void  CUtlLinkedList<T,S,ML,I,M>::LinkBefore( I before, I elem )
 		Assert( IsInList(before) );
 		ListElem_t * RESTRICT beforeElem = &InternalElement(before);
 		pNewElem->m_Previous = newElem_mPrevious = beforeElem->m_Previous;
-		beforeElem->m_Previous = elem;
+		beforeElem->m_Previous = (S)elem;
 	}
 	
 	// Reset the head if we linked to the head of the list
 	if (newElem_mPrevious == InvalidIndex())
 		m_Head = elem;
 	else
-		InternalElement(newElem_mPrevious).m_Next = elem;
+		InternalElement((I)newElem_mPrevious).m_Next = (S)elem;
 	
 	// one more element baby
-	++m_ElementCount;
+	m_ElementCount = m_ElementCount + (I)1;
 }
 
 template <class T, class S, bool ML, class I, class M>
@@ -1000,11 +998,11 @@ void  CUtlLinkedList<T,S,ML,I,M>::LinkAfter( I after, I elem )
 	ListElem_t& newElem = InternalElement(elem);
 	
 	// The element *before* our newly linked one is the one we linked after
-	newElem.m_Previous = after;
-	if (after == InvalidIndex())
+	newElem.m_Previous = (S)after;
+	if (after == (I)InvalidIndex())
 	{
 		// In this case, we're linking to the head of the list, reset the head
-		newElem.m_Next = m_Head;
+		newElem.m_Next = (S)m_Head;
 		m_Head = elem;
 	}
 	else
@@ -1014,14 +1012,14 @@ void  CUtlLinkedList<T,S,ML,I,M>::LinkAfter( I after, I elem )
 		Assert( IsInList(after) );
 		ListElem_t& afterElem = InternalElement(after);
 		newElem.m_Next = afterElem.m_Next;
-		afterElem.m_Next = elem;
+		afterElem.m_Next = (S)elem;
 	}
 	
 	// Reset the tail if we linked to the tail of the list
 	if (newElem.m_Next == InvalidIndex())
 		m_Tail = elem;
 	else
-		InternalElement(newElem.m_Next).m_Previous = elem;
+		InternalElement((I)newElem.m_Next).m_Previous = (S)elem;
 	
 	// one more element baby
 	++m_ElementCount;
@@ -1039,43 +1037,43 @@ void  CUtlLinkedList<T,S,ML,I,M>::Unlink( I elem )
 		// otherwise, make our previous node's next pointer = our next
 		if ( pOldElem->m_Previous != InvalidIndex() )
 		{
-			m_Memory[ pOldElem->m_Previous ].m_Next = pOldElem->m_Next;
+			m_Memory[ (I)pOldElem->m_Previous ].m_Next = pOldElem->m_Next;
 		}
 		else
 		{
-			m_Head = pOldElem->m_Next;
+			m_Head = (I)pOldElem->m_Next;
 		}
 
 		// If we're the last guy, reset the tail
 		// otherwise, make our next node's prev pointer = our prev
 		if ( pOldElem->m_Next != InvalidIndex() )
 		{
-			m_Memory[ pOldElem->m_Next ].m_Previous = pOldElem->m_Previous;
+			m_Memory[ (I)pOldElem->m_Next ].m_Previous = pOldElem->m_Previous;
 		}
 		else
 		{
-			m_Tail = pOldElem->m_Previous;
+			m_Tail = (I)pOldElem->m_Previous;
 		}
 
 		// This marks this node as not in the list, 
 		// but not in the free list either
-		pOldElem->m_Previous = pOldElem->m_Next = elem;
+		pOldElem->m_Previous = pOldElem->m_Next = (S)elem;
 
 		// One less puppy
-		--m_ElementCount;
+		m_ElementCount = m_ElementCount - (I)1;
 	}
 }
 
 template <class T, class S, bool ML, class I, class M>
 inline void CUtlLinkedList<T,S,ML,I,M>::LinkToHead( I elem ) 
 {
-	LinkAfter( InvalidIndex(), elem ); 
+	LinkAfter( (I)InvalidIndex(), elem ); 
 }
 
 template <class T, class S, bool ML, class I, class M>
 inline void CUtlLinkedList<T,S,ML,I,M>::LinkToTail( I elem ) 
 {
-	LinkBefore( InvalidIndex(), elem ); 
+	LinkBefore( (I)InvalidIndex(), elem ); 
 }
 
 

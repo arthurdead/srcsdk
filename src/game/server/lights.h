@@ -8,6 +8,8 @@
 #define LIGHTS_H
 #pragma once
 
+#include "baseentity.h"
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -33,7 +35,7 @@ public:
 	void	InputTurnOn( inputdata_t &inputdata );
 	void	InputTurnOff( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	int		m_iStyle;

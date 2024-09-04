@@ -96,7 +96,6 @@ public:
 	DECLARE_CLIENTCLASS();
 	DECLARE_PREDICTABLE();
 	DECLARE_INTERPOLATION();
-	DECLARE_FRIEND_DATADESC_ACCESS();
 
 	enum
 	{
@@ -109,7 +108,6 @@ public:
 	virtual bool GetRenderData( void *pData, ModelDataCategory_t nCategory );
 
 	C_BaseAnimating();
-	C_BaseAnimating(bool bClientOnly);
 	~C_BaseAnimating();
 
 	virtual C_BaseAnimating*		GetBaseAnimating() { return this; }
@@ -710,8 +708,9 @@ class C_ClientAnimating : public C_BaseAnimating
 {
 public:
 	C_ClientAnimating()
-		: C_BaseAnimating(true)
+		: C_BaseAnimating()
 	{
+		AddEFlags(EFL_NOT_NETWORKED);
 	}
 	DECLARE_CLASS( C_ClientAnimating, C_BaseAnimating );
 
@@ -735,7 +734,6 @@ class C_ClientRagdoll : public C_BaseAnimating, public IPVSNotify
 public:
 	C_ClientRagdoll();
 	DECLARE_CLASS( C_ClientRagdoll, C_BaseAnimating );
-	DECLARE_DATADESC();
 
 	// inherited from IClientUnknown
 	virtual IClientModelRenderable*	GetClientModelRenderable();

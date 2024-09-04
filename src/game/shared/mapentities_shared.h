@@ -10,7 +10,6 @@
 
 #define MAPKEY_MAXLENGTH	2048
 
-
 //-----------------------------------------------------------------------------
 // Purpose: encapsulates the data string in the map file 
 //			that is used to initialise entities.  The data

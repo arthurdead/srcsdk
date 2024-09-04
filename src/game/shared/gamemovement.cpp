@@ -14,6 +14,7 @@
 #include "decals.h"
 #include "coordsize.h"
 #include "rumble_shared.h"
+#include "playeranimstate.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -819,7 +820,7 @@ inline void CGameMovement::TracePlayerBBox( const Vector& start, const Vector& e
 }
 #endif
 
-CBaseHandle CGameMovement::TestPlayerPosition( const Vector& pos, int collisionGroup, trace_t& pm )
+EHANDLE CGameMovement::TestPlayerPosition( const Vector& pos, int collisionGroup, trace_t& pm )
 {
 	++m_nTraceCount;
 	Ray_t ray;
@@ -833,7 +834,7 @@ CBaseHandle CGameMovement::TestPlayerPosition( const Vector& pos, int collisionG
 	}
 	else
 	{	
-		return INVALID_EHANDLE_INDEX;
+		return NULL_EHANDLE;
 	}
 }
 
@@ -2483,10 +2484,8 @@ bool CGameMovement::CheckJumpButton( void )
 	}
 
 	// Don't allow jumping when the player is in a stasis field.
-#ifndef HL2_EPISODIC
 	if ( player->m_Local.m_bSlowMovement )
 		return false;
-#endif
 
 	if ( mv->m_nOldButtons & IN_JUMP )
 		return false;		// don't pogo stick
@@ -2585,6 +2584,7 @@ bool CGameMovement::CheckJumpButton( void )
 	mv->m_outStepHeight += 0.15f;
 
 	OnJump(mv->m_outJumpVel.z);
+	player->DoAnimationEvent(PLAYERANIMEVENT_JUMP);
 
 	// Set jump time.
 	if ( gpGlobals->maxClients == 1 )
@@ -3506,7 +3506,7 @@ int CGameMovement::CheckStuck( void )
 	m_bInStuckTest = true;
 	hitent = TestPlayerPosition( mv->GetAbsOrigin(), COLLISION_GROUP_PLAYER_MOVEMENT, traceresult );
 	m_bInStuckTest = false;
-	if ( hitent == INVALID_ENTITY_HANDLE )
+	if ( !hitent.IsValid() )
 	{
 		ResetStuckOffsets( player );
 		return 0;
@@ -3542,7 +3542,7 @@ int CGameMovement::CheckStuck( void )
 			GetRandomStuckOffsets( player, offset );
 			VectorAdd( base, offset, test );
 			
-			if ( TestPlayerPosition( test, COLLISION_GROUP_PLAYER_MOVEMENT, traceresult ) == INVALID_ENTITY_HANDLE )
+			if ( !TestPlayerPosition( test, COLLISION_GROUP_PLAYER_MOVEMENT, traceresult ).IsValid() )
 			{
 				ResetStuckOffsets( player );
 				mv->SetAbsOrigin( test );
@@ -3572,7 +3572,7 @@ int CGameMovement::CheckStuck( void )
 	GetRandomStuckOffsets( player, offset );
 	VectorAdd( base, offset, test );
 
-	if ( TestPlayerPosition( test, COLLISION_GROUP_PLAYER_MOVEMENT, traceresult ) == INVALID_ENTITY_HANDLE)
+	if ( !TestPlayerPosition( test, COLLISION_GROUP_PLAYER_MOVEMENT, traceresult ).IsValid() )
 	{
 		ResetStuckOffsets( player );
 		mv->SetAbsOrigin( test );
@@ -4219,7 +4219,7 @@ void CGameMovement::FixPlayerCrouchStuck( bool upward )
 	int direction = upward ? 1 : 0;
 
 	hitent = TestPlayerPosition( mv->GetAbsOrigin(), COLLISION_GROUP_PLAYER_MOVEMENT, dummy );
-	if (hitent == INVALID_ENTITY_HANDLE )
+	if (!hitent.IsValid() )
 		return;
 	
 	VectorCopy( mv->GetAbsOrigin(), test );	
@@ -4229,7 +4229,7 @@ void CGameMovement::FixPlayerCrouchStuck( bool upward )
 		org.z += direction;
 		mv->SetAbsOrigin( org );
 		hitent = TestPlayerPosition( mv->GetAbsOrigin(), COLLISION_GROUP_PLAYER_MOVEMENT, dummy );
-		if (hitent == INVALID_ENTITY_HANDLE )
+		if (!hitent.IsValid() )
 			return;
 	}
 

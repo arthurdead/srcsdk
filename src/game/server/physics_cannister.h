@@ -9,12 +9,15 @@
 #pragma once
 
 #include "player_pickup.h"
+#include "basecombatcharacter.h"
+#include "vphysics_interface.h"
+#include "player.h"
 
 class CSteamJet;
 
 class CThrustController : public IMotionEvent
 {
-	DECLARE_SIMPLE_DATADESC();
+	DECLARE_SIMPLE_MAPEMBEDDED();
 
 public:
 	IMotionEvent::simresult_e Simulate( IPhysicsMotionController *pController, IPhysicsObject *pObject, float deltaTime, Vector &linear, AngularImpulse &angular )
@@ -46,10 +49,9 @@ public:
 
 	void Spawn( void );
 	void Precache( void );
-	virtual void OnRestore();
 	bool CreateVPhysics();
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics );
 
 	virtual QAngle PreferredCarryAngles( void ) { return QAngle( -90, 0, 0 ); }

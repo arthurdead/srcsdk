@@ -1,4 +1,6 @@
-project('source_game')
+project('source_game','cpp')
+
+assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 
 src_root_dir = get_option('src_root_dir')
 src_engine_dir = get_option('src_engine_dir')
@@ -95,8 +97,7 @@ source_shared_lib_dep = declare_dependency(
 		source_dep
 	],
 	sources: files(
-		join_paths(common_dir,'debug_dll_check.cpp'),
-		join_paths(common_dir,'dlloverride.cpp'),
+		join_paths(common_dir,'debug_dll_check.cpp')
 	)
 )
 
@@ -118,16 +119,36 @@ source_linux_dep = declare_dependency(
 	]
 )
 
-source_linux_static_lib_dep = declare_dependency(
+source_windows_dep = declare_dependency(
+	compile_args: [
+		'-DGNUC',
+		'-DCOMPILER_GCC',
+		'-DWIN32',
+		'-D_WIN32',
+		'-D_DLL_EXT=.dll',
+		'-DBINK_VIDEO',
+	]
+)
+
+target_system = target_machine.system()
+if target_system == 'linux' or target_system == 'gnu'
+	os_dep = source_linux_dep
+elif target_system == 'windows'
+	os_dep = source_windows_dep
+else
+	error('unsupported system')
+endif
+
+source_os_static_lib_dep = declare_dependency(
 	dependencies: [
 		source_static_lib_dep,
-		source_linux_dep
+		os_dep
 	],
 )
 
-source_linux_shared_lib_dep = declare_dependency(
+source_os_shared_lib_dep = declare_dependency(
 	dependencies: [
 		source_shared_lib_dep,
-		source_linux_dep
+		os_dep
 	],
 )

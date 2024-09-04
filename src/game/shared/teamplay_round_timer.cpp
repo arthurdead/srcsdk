@@ -37,14 +37,6 @@
 #define ROUND_SETUP_2SECS	"Announcer.RoundBegins2Seconds"
 #define ROUND_SETUP_1SECS	"Announcer.RoundBegins1Seconds"
 
-#ifdef TF_CLIENT_DLL
-#define MERASMUS_SETUP_5SECS	"Merasmus.RoundBegins5Seconds"
-#define MERASMUS_SETUP_4SECS	"Merasmus.RoundBegins4Seconds"
-#define MERASMUS_SETUP_3SECS	"Merasmus.RoundBegins3Seconds"
-#define MERASMUS_SETUP_2SECS	"Merasmus.RoundBegins2Seconds"
-#define MERASMUS_SETUP_1SECS	"Merasmus.RoundBegins1Seconds"
-#endif
-
 #define ROUND_START_BELL	"Ambient.Siren"
 
 #define ROUND_TIMER_TIME_ADDED			"Announcer.TimeAdded"
@@ -72,8 +64,6 @@ enum
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
-extern bool IsInCommentaryMode();
 
 #if defined( GAME_DLL )
 ConVar mp_overtime_nag( "mp_overtime_nag", "0", FCVAR_NOTIFY, "Announcer overtime nag." );
@@ -151,7 +141,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CTeamRoundTimer, DT_TeamRoundTimer )
 END_NETWORK_TABLE()
 
 #ifndef CLIENT_DLL
-BEGIN_DATADESC(CTeamRoundTimer)
+BEGIN_MAPENTITY(CTeamRoundTimer)
 	DEFINE_KEYFIELD( m_nTimerInitialLength,		FIELD_INTEGER,	"timer_length" ),
 	DEFINE_KEYFIELD( m_nTimerMaxLength,			FIELD_INTEGER,	"max_length" ),
 	DEFINE_KEYFIELD( m_bShowInHUD,				FIELD_BOOLEAN,	"show_in_hud" ),
@@ -161,9 +151,6 @@ BEGIN_DATADESC(CTeamRoundTimer)
 	DEFINE_KEYFIELD( m_bResetTimeOnRoundStart,	FIELD_BOOLEAN,	"reset_time" ),
 	DEFINE_KEYFIELD( m_bStartPaused,			FIELD_BOOLEAN,	"start_paused" ),
 	DEFINE_KEYFIELD( m_bShowTimeRemaining,			FIELD_BOOLEAN,	"show_time_remaining" ),
-
-	DEFINE_FUNCTION( RoundTimerSetupThink ),
-	DEFINE_FUNCTION( RoundTimerThink ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID,		"Enable",			InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID,		"Disable",			InputDisable ),
@@ -196,7 +183,7 @@ BEGIN_DATADESC(CTeamRoundTimer)
 	DEFINE_OUTPUT(	m_OnSetupStart,		"OnSetupStart" ),
 	DEFINE_OUTPUT(	m_OnSetupFinished,	"OnSetupFinished" ),
 
-END_DATADESC();
+END_MAPENTITY();
 #endif
 
 #ifndef CLIENT_DLL
@@ -451,7 +438,7 @@ void CTeamRoundTimer::CalculateOutputMessages( void )
 //-----------------------------------------------------------------------------
 void CTeamRoundTimer::WarningThink()
 {
-	if ( IsDisabled() || m_bTimerPaused || IsInCommentaryMode() )
+	if ( IsDisabled() || m_bTimerPaused )
 		return;
 
 	if ( IsStopWatchTimer() == true && IsWatchingTimeStamps() == true )
@@ -883,7 +870,7 @@ void CTeamRoundTimer::RoundTimerThink( void )
 		InputDisable( data );
 	}
 
-	if ( IsDisabled() || m_bTimerPaused || IsInCommentaryMode() || gpGlobals->eLoadType == MapLoad_Background )
+	if ( IsDisabled() || m_bTimerPaused || gpGlobals->eLoadType == MapLoad_Background )
 	{
 		SetContextThink( &CTeamRoundTimer::RoundTimerThink, gpGlobals->curtime + 0.05, ROUND_TIMER_THINK );
 		return;
@@ -950,7 +937,7 @@ void CTeamRoundTimer::RoundTimerThink( void )
 				}
 			}
 
-			SetContextThink( &CTeamRoundTimer::RoundTimerThink, gpGlobals->curtime + 0.05, ROUND_TIMER_THINK );
+			SetContextThink( &CTeamRoundTimer::RoundTimerThink, gpGlobals->curtime + 1.0, ROUND_TIMER_THINK );
 			return;
 		}
 

@@ -35,7 +35,7 @@ public:
 public:
 
 	virtual void SetRefEHandle( const CBaseHandle &handle )	{ Assert( false ); }
-	virtual const CBaseHandle& GetRefEHandle() const		{ return NULL_HANDLE; }
+	virtual const CBaseHandle& GetRefEHandle() const		{ return NULL_BASEHANDLE; }
 
 	virtual IClientUnknown*		GetIClientUnknown()		{ return this; }
 	virtual ICollideable*		GetCollideable()		{ return 0; }

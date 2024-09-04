@@ -9,6 +9,8 @@
 #define ENVSPARK_H
 #pragma once
 
+#include "baseentity.h"
+
 class CEnvSpark : public CPointEntity
 {
 	DECLARE_CLASS( CEnvSpark, CPointEntity );
@@ -31,7 +33,7 @@ public:
 
 	bool IsSparking( void ){ return ( GetNextThink() != TICK_NEVER_THINK ); }
 	
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	float			m_flDelay;
 	int				m_nGlowSpriteIndex;

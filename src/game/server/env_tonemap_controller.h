@@ -14,7 +14,7 @@ class CTonemapTrigger : public CBaseTrigger
 {
 public:
 	DECLARE_CLASS( CTonemapTrigger, CBaseTrigger );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	virtual void Spawn( void );
 	virtual void StartTouch( CBaseEntity *other );

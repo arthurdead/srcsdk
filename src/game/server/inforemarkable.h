@@ -22,7 +22,7 @@ class CInfoRemarkable : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CInfoRemarkable, CPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	typedef CUtlLinkedList< CInfoRemarkable * > tRemarkableList;
 	static tRemarkableList *GetListOfAllThatIsRemarkable( void );
 

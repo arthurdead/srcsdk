@@ -68,8 +68,6 @@ typedef struct player_info_s player_info_t;
 #define DLLEXPORT /* */
 #endif
 
-#define INTERFACEVERSION_VENGINESERVER_VERSION_21	"VEngineServer021"
-#define INTERFACEVERSION_VENGINESERVER_VERSION_22	"VEngineServer022"
 #define INTERFACEVERSION_VENGINESERVER				"VEngineServer023"
 #define INTERFACEVERSION_VENGINESERVER_INT			23
 
@@ -510,24 +508,26 @@ public:
 	virtual void			CreateNetworkStringTables( void ) = 0;
 	
 	// Save/restore system hooks
-	virtual CSaveRestoreData  *SaveInit( int size ) = 0;
-	virtual void			SaveWriteFields( CSaveRestoreData *, const char *, void *, datamap_t *, typedescription_t *, int ) = 0;
-	virtual void			SaveReadFields( CSaveRestoreData *, const char *, void *, datamap_t *, typedescription_t *, int ) = 0;
-	virtual void			SaveGlobalState( CSaveRestoreData * ) = 0;
-	virtual void			RestoreGlobalState( CSaveRestoreData * ) = 0;
-	virtual void			PreSave( CSaveRestoreData * ) = 0;
-	virtual void			Save( CSaveRestoreData * ) = 0;
-	virtual void			GetSaveComment( char *comment, int maxlength, float flMinutes, float flSeconds, bool bNoTime = false ) = 0;
-	virtual void			WriteSaveHeaders( CSaveRestoreData * ) = 0;
-	virtual void			ReadRestoreHeaders( CSaveRestoreData * ) = 0;
-	virtual void			Restore( CSaveRestoreData *, bool ) = 0;
-	virtual bool			IsRestoring() = 0;
+private:
+	virtual void  *SaveInit( int size ) final { return NULL; }
+	virtual void			SaveWriteFields( void *, const char *, void *, datamap_t *, typedescription_t *, int ) final {}
+	virtual void			SaveReadFields( void *, const char *, void *, datamap_t *, typedescription_t *, int ) final {}
+	virtual void			SaveGlobalState( void * ) final {}
+	virtual void			RestoreGlobalState( void * ) final {}
+	virtual void			PreSave( void * ) final {}
+	virtual void			Save( void * ) final {}
+	virtual void			GetSaveComment( char *comment, int maxlength, float flMinutes, float flSeconds, bool bNoTime = false ) final {}
+	virtual void			WriteSaveHeaders( void * ) final {}
+	virtual void			ReadRestoreHeaders( void * ) final {}
+	virtual void			Restore( void *, bool ) final {}
+	virtual bool			IsRestoring() final { return false; }
 
 	// Returns the number of entities moved across the transition
-	virtual int				CreateEntityTransitionList( CSaveRestoreData *, int ) = 0;
+	virtual int				CreateEntityTransitionList( void *, int ) final { return 0; }
 	// Build the list of maps adjacent to the current map
-	virtual void			BuildAdjacentMapList( void ) = 0;
+	virtual void			BuildAdjacentMapList( void ) final {}
 
+public:
 	// Retrieve info needed for parsing the specified user message
 	virtual bool			GetUserMessageInfo( int msg_type, char *name, int maxnamelength, int& size ) = 0;
 
@@ -539,12 +539,10 @@ public:
 	// Called once per frame even when no level is loaded...
 	virtual void			Think( bool finalTick ) = 0;
 
-#ifdef _XBOX
-	virtual void			GetTitleName( const char *pMapName, char* pTitleBuff, int titleBuffSize ) = 0;
-#endif
+private:
+	virtual void			PreSaveGameLoaded( char const *pSaveName, bool bCurrentlyInGame ) final {}
 
-	virtual void			PreSaveGameLoaded( char const *pSaveName, bool bCurrentlyInGame ) = 0;
-
+public:
 	// Returns true if the game DLL wants the server not to be made public.
 	// Used by commentary system to hide multiplayer commentary servers from the master.
 	virtual bool			ShouldHideServer( void ) = 0;
@@ -564,8 +562,10 @@ public:
 	// Called after the steam API has been shutdown post-level startup
 	virtual void			GameServerSteamAPIShutdown( void ) = 0;
 
-	virtual void			SetServerHibernation( bool bHibernating ) = 0;
+private:
+	virtual void			DO_NOT_USE_SetServerHibernation( bool bHibernating ) = 0;
 
+public:
 	// interface to the new GC based lobby system
 	virtual IServerGCLobby *GetServerGCLobby() = 0;
 
@@ -626,7 +626,68 @@ public:
 	virtual bool			IsManualMapChangeOkay( const char **pszReason ) = 0;
 };
 
-typedef IServerGameDLL IServerGameDLL008;
+#define INTERFACEVERSION_SERVERGAMETAGS		"ServerGameTags001"
+
+//-----------------------------------------------------------------------------
+// Purpose: querying the game dll for Server cvar tags
+//-----------------------------------------------------------------------------
+abstract_class IServerGameTags
+{
+public:
+	// Get the list of cvars that require tags to show differently in the server browser
+	virtual void			GetTaggedConVarList( KeyValues *pCvarTagList ) = 0;
+};
+
+abstract_class IServerGameTagsEx : public IServerGameTags
+{
+public:
+	virtual void			GetMatchmakingGameData( char *buf, size_t bufSize ) = 0;
+	virtual void			GetMatchmakingTags( char *buf, size_t bufSize ) = 0;
+
+	virtual bool			GetServerBrowserMapOverride( char *buf, size_t bufSize ) = 0;
+	virtual void			GetServerBrowserGameData( char *buf, size_t bufSize ) = 0;
+};
+
+abstract_class IServerGameDLLEx : public IServerGameDLL
+{
+private:
+	virtual void			DO_NOT_USE_SetServerHibernation( bool bHibernating ) OVERRIDE
+	{
+		ServerHibernationUpdate( bHibernating );
+	}
+
+	virtual void			GetMatchmakingTags( char *buf, size_t bufSize ) final
+	{
+		GetIServerGameTags()->GetMatchmakingTags( buf, bufSize );
+	}
+
+	virtual const char *GetServerBrowserMapOverride() OVERRIDE final
+	{
+		static char rchResult[2048];
+		rchResult[0] = '\0';
+		if(GetIServerGameTags()->GetServerBrowserMapOverride( rchResult, ARRAYSIZE(rchResult) ))
+			return rchResult;
+		else
+			return NULL;
+	}
+
+	virtual const char *GetServerBrowserGameData() OVERRIDE final
+	{
+		static char rchResult[2048];
+		rchResult[0] = '\0';
+		GetIServerGameTags()->GetServerBrowserGameData( rchResult, ARRAYSIZE(rchResult) );
+		return rchResult;
+	}
+
+	virtual void			GetMatchmakingGameData( char *buf, size_t bufSize ) final
+	{
+		GetIServerGameTags()->GetMatchmakingGameData( buf, bufSize );
+	}
+public:
+	virtual void			ServerHibernationUpdate( bool bHibernating ) = 0;
+
+	virtual IServerGameTagsEx *GetIServerGameTags() = 0;
+};
 
 //-----------------------------------------------------------------------------
 // Just an interface version name for the random number interface
@@ -665,7 +726,6 @@ public:
 	virtual void			CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned short *pEdictIndices, int nEdicts ) = 0;
 };
 
-#define INTERFACEVERSION_SERVERGAMECLIENTS_VERSION_3	"ServerGameClients003"
 #define INTERFACEVERSION_SERVERGAMECLIENTS				"ServerGameClients004"
 
 //-----------------------------------------------------------------------------
@@ -681,10 +741,12 @@ public:
 	//	You can specify a rejection message by writing it into reject
 	virtual bool			ClientConnect( edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen ) = 0;
 
+private:
 	// Client is going active
 	// If bLoadGame is true, don't spawn the player because its state is already setup.
-	virtual void			ClientActive( edict_t *pEntity, bool bLoadGame ) = 0;
-	
+	virtual void			DO_NOT_USE_ClientActive( edict_t *pEntity, bool bLoadGame ) = 0;
+
+public:
 	// Client is disconnecting from server
 	virtual void			ClientDisconnect( edict_t *pEntity ) = 0;
 	
@@ -708,7 +770,7 @@ public:
 								int dropped_packets, bool ignore, bool paused ) = 0;
 	
 	// Let the game .dll do stuff after messages have been sent to all of the clients once the server frame is complete
-	virtual void			PostClientMessagesSent_DEPRECIATED( void ) = 0;
+	virtual void			PostClientMessagesSent( void ) = 0;
 
 	// For players, looks up the CPlayerState structure corresponding to the player
 	virtual CPlayerState	*GetPlayerState( edict_t *player ) = 0;
@@ -733,8 +795,16 @@ public:
 	virtual void			ClientSpawned( edict_t *pPlayer ) = 0;
 };
 
-typedef IServerGameClients IServerGameClients003;
-
+abstract_class IServerGameClientsEx : public IServerGameClients
+{
+private:
+	virtual void			DO_NOT_USE_ClientActive( edict_t *pEntity, bool bLoadGame )
+	{
+		ClientActive( pEntity );
+	}
+public:
+	virtual void			ClientActive( edict_t *pEntity ) = 0;
+};
 
 #define INTERFACEVERSION_UPLOADGAMESTATS		"ServerUploadGameStats001"
 
@@ -792,18 +862,6 @@ public:
 };
 
 #define SERVER_DLL_SHARED_APPSYSTEMS		"VServerDllSharedAppSystems001"
-
-#define INTERFACEVERSION_SERVERGAMETAGS		"ServerGameTags001"
-
-//-----------------------------------------------------------------------------
-// Purpose: querying the game dll for Server cvar tags
-//-----------------------------------------------------------------------------
-abstract_class IServerGameTags
-{
-public:
-	// Get the list of cvars that require tags to show differently in the server browser
-	virtual void			GetTaggedConVarList( KeyValues *pCvarTagList ) = 0;
-};
 
 //-----------------------------------------------------------------------------
 // Purpose: Provide hooks for the GC based lobby system

@@ -237,40 +237,13 @@ BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_Beam )
 END_NETWORK_TABLE()
 
 #if !defined( CLIENT_DLL )
-BEGIN_DATADESC( CBeam )
-	DEFINE_FIELD( m_nHaloIndex, FIELD_MODELINDEX ),
-	DEFINE_FIELD( m_nBeamType, FIELD_INTEGER ),
-	DEFINE_FIELD( m_nBeamFlags, FIELD_INTEGER ),
-	DEFINE_FIELD( m_nNumBeamEnts, FIELD_INTEGER ),
-	DEFINE_ARRAY( m_hAttachEntity, FIELD_EHANDLE, MAX_BEAM_ENTS ),
-	DEFINE_ARRAY( m_nAttachIndex, FIELD_INTEGER, MAX_BEAM_ENTS ),
-	DEFINE_FIELD( m_nMinDXLevel, FIELD_INTEGER ),
-
-	DEFINE_FIELD( m_fWidth, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fEndWidth, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fFadeLength, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fHaloScale, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fAmplitude, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fStartFrame, FIELD_FLOAT ),
-	DEFINE_FIELD( m_fSpeed, FIELD_FLOAT ),
-
-	DEFINE_FIELD( m_flFrameRate, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flFrame, FIELD_FLOAT ),
-
+BEGIN_MAPENTITY( CBeam )
+	
 	DEFINE_KEYFIELD( m_flHDRColorScale, FIELD_FLOAT, "HDRColorScale" ),
 
 	DEFINE_KEYFIELD( m_flDamage, FIELD_FLOAT, "damage" ),
-	DEFINE_FIELD( m_flFireTime, FIELD_TIME ),
-
-	DEFINE_FIELD( m_vecEndPos, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_hEndEntity, FIELD_EHANDLE ),
 
 	DEFINE_KEYFIELD( m_nDissolveType, FIELD_INTEGER, "dissolvetype" ),
-
-#ifdef PORTAL
-	DEFINE_FIELD( m_bDrawInMainRender, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bDrawInPortalRender, FIELD_BOOLEAN ),
-#endif
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "Width", InputWidth ),
@@ -280,10 +253,7 @@ BEGIN_DATADESC( CBeam )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "ColorBlueValue", InputColorBlueValue ),
 	DEFINE_INPUT( m_fSpeed, FIELD_FLOAT, "ScrollSpeed" ),
 
-	// don't save this
-	//DEFINE_FIELD( m_queryHandleHalo, FIELD_ ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 #else
 
@@ -845,19 +815,19 @@ void CBeam::InputWidth( inputdata_t &inputdata )
 void CBeam::InputColorRedValue( inputdata_t &inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt(inputdata.value.Float()), 0, 255 );
-	SetColor( nNewColor, m_clrRender->g, m_clrRender->b );
+	SetColor( nNewColor, GetRenderColorG(), GetRenderColorB() );
 }
 
 void CBeam::InputColorGreenValue( inputdata_t &inputdata )
 {
 	int nNewColor =clamp( FastFloatToSmallInt(inputdata.value.Float()), 0, 255 );
-	SetColor( m_clrRender->r, nNewColor, m_clrRender->b );
+	SetColor( GetRenderColorR(), nNewColor, GetRenderColorB() );
 }
 
 void CBeam::InputColorBlueValue( inputdata_t &inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt(inputdata.value.Float()), 0, 255 );
-	SetColor( m_clrRender->r, m_clrRender->g, nNewColor );
+	SetColor( GetRenderColorR(), GetRenderColorG(), nNewColor );
 }
 
 void CBeam::InputNoise( inputdata_t &inputdata )

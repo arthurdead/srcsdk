@@ -25,7 +25,7 @@ class CSlideshowDisplay : public CBaseEntity
 public:
 
 	DECLARE_CLASS( CSlideshowDisplay, CBaseEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	virtual ~CSlideshowDisplay();
@@ -37,7 +37,6 @@ public:
 
 	virtual void Spawn( void );
 	virtual void Precache( void );
-	virtual void OnRestore( void );
 
 	void	ScreenVisible( bool bVisible );
 
@@ -99,16 +98,10 @@ LINK_ENTITY_TO_CLASS( vgui_slideshow_display, CSlideshowDisplay );
 //-----------------------------------------------------------------------------
 // Save/load 
 //-----------------------------------------------------------------------------
-BEGIN_DATADESC( CSlideshowDisplay )
-	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
-
+BEGIN_MAPENTITY( CSlideshowDisplay )
 	DEFINE_AUTO_ARRAY_KEYFIELD( m_szDisplayText, FIELD_CHARACTER, "displaytext" ),
 
-	DEFINE_AUTO_ARRAY( m_szSlideshowDirectory, FIELD_CHARACTER ),
 	DEFINE_KEYFIELD( m_String_tSlideshowDirectory, FIELD_STRING, "directory" ),
-
-	// DEFINE_FIELD( m_SlideKeywordList, CUtlVector < SlideKeywordList_t* > ),
-	DEFINE_AUTO_ARRAY( m_chCurrentSlideLists, FIELD_CHARACTER ),
 
 	DEFINE_KEYFIELD( m_fMinSlideTime, FIELD_FLOAT, "minslidetime" ),
 	DEFINE_KEYFIELD( m_fMaxSlideTime, FIELD_FLOAT, "maxslidetime" ),
@@ -118,10 +111,6 @@ BEGIN_DATADESC( CSlideshowDisplay )
 
 	DEFINE_KEYFIELD( m_iScreenWidth, FIELD_INTEGER, "width" ),
 	DEFINE_KEYFIELD( m_iScreenHeight, FIELD_INTEGER, "height" ),
-
-	//DEFINE_FIELD( m_bDoFullTransmit, FIELD_BOOLEAN ),
-
-	//DEFINE_UTLVECTOR( m_hScreens, FIELD_EHANDLE ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -137,7 +126,7 @@ BEGIN_DATADESC( CSlideshowDisplay )
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetCycleType", InputSetCycleType ),
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "SetNoListRepeats", InputSetNoListRepeats ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST( CSlideshowDisplay, DT_SlideshowDisplay )
 	SendPropBool( SENDINFO(m_bEnabled) ),
@@ -254,17 +243,6 @@ void CSlideshowDisplay::Precache( void )
 	BuildSlideShowImagesList();
 
 	PrecacheVGuiScreen( "slideshow_display_screen" );
-}
-
-void CSlideshowDisplay::OnRestore( void )
-{
-	BaseClass::OnRestore();
-
-	BuildSlideShowImagesList();
-
-	RestoreControlPanels();
-
-	ScreenVisible( m_bEnabled );
 }
 
 void CSlideshowDisplay::ScreenVisible( bool bVisible )

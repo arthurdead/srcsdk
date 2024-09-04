@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------------
 class CLogicMeasureMovement : public CLogicalEntity
 {
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_CLASS( CLogicMeasureMovement, CLogicalEntity );
 
 public:
@@ -63,18 +63,13 @@ private:
 LINK_ENTITY_TO_CLASS( logic_measure_movement, CLogicMeasureMovement );
 
 
-BEGIN_DATADESC( CLogicMeasureMovement )
+BEGIN_MAPENTITY( CLogicMeasureMovement )
 
 	DEFINE_KEYFIELD( m_strMeasureTarget, FIELD_STRING, "MeasureTarget" ),
 	DEFINE_KEYFIELD( m_strMeasureReference, FIELD_STRING, "MeasureReference" ),
 	DEFINE_KEYFIELD( m_strTargetReference, FIELD_STRING, "TargetReference" ),
 	DEFINE_KEYFIELD( m_flScale, FIELD_FLOAT, "TargetScale" ),
 	DEFINE_KEYFIELD( m_nMeasureType, FIELD_INTEGER, "MeasureType" ),
-
-	DEFINE_FIELD( m_hMeasureTarget, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hMeasureReference, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hTarget, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hTargetReference, FIELD_EHANDLE ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetMeasureTarget", InputSetMeasureTarget ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetMeasureReference", InputSetMeasureReference ),
@@ -85,9 +80,7 @@ BEGIN_DATADESC( CLogicMeasureMovement )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-	DEFINE_THINKFUNC( MeasureThink ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------

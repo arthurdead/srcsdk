@@ -14,8 +14,15 @@
 #include "baseplayer_shared.h"
 #include "shared_classnames.h"
 
+#ifdef GAME_DLL
 class CBaseCombatWeapon;
 class CBaseCombatCharacter;
+#else
+#define CBaseCombatWeapon C_BaseCombatWeapon
+#define CBaseCombatCharacter C_BaseCombatCharacter
+class C_BaseCombatWeapon;
+class C_BaseCombatCharacter;
+#endif
 
 #ifdef GAME_DLL
 class CVGuiScreen;
@@ -38,10 +45,6 @@ public:
 
 	DECLARE_NETWORKCLASS();
 	DECLARE_PREDICTABLE();
-
-#if !defined( CLIENT_DLL )
-	DECLARE_DATADESC();
-#endif
 
 							CBaseViewModel( void );
 							~CBaseViewModel( void );
@@ -70,7 +73,7 @@ public:
 
 	virtual void			Spawn( void );
 
-	virtual CBaseEntity *GetOwner( void ) { return m_hOwner; };
+	virtual CBaseEntity *GetOwner( void ) { return m_hOwner.Get(); };
 
 	virtual void			AddEffects( int nEffects );
 	virtual void			RemoveEffects( int nEffects );
@@ -81,6 +84,9 @@ public:
 	void					ShowControlPanells( bool show );
 
 	virtual CBaseCombatWeapon *GetOwningWeapon( void );
+
+	virtual bool			IsViewModel() const { return true; }
+	virtual bool			IsViewModelOrAttachment() const { return true; }
 	
 	virtual CBaseEntity	*GetOwnerViaInterface( void ) { return GetOwner(); }
 
@@ -91,14 +97,11 @@ public:
 
 	Vector					m_vecLastFacing;
 
-	// Only support prediction in TF2 for now
-#if defined( INVASION_DLL ) || defined( INVASION_CLIENT_DLL )
 	// All predicted weapons need to implement and return true
 	virtual bool			IsPredicted( void ) const
 	{ 
 		return true;
 	}
-#endif
 
 #if !defined( CLIENT_DLL )
 	virtual int				UpdateTransmitState( void );
@@ -106,9 +109,7 @@ public:
 	virtual void			SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
 #else
 
-// Only supported in TF2 right now
-#if defined( INVASION_CLIENT_DLL )
-
+#if defined( CLIENT_DLL )
 	virtual bool ShouldPredict( void )
 	{
 		if ( GetOwner() && GetOwner() == C_BasePlayer::GetLocalPlayer() )
@@ -116,7 +117,6 @@ public:
 
 		return BaseClass::ShouldPredict();
 	}
-
 #endif
 
 
@@ -158,9 +158,7 @@ public:
 
 	// (inherited from C_BaseAnimating)
 	virtual void			FormatViewModelAttachment( int nAttachment, matrix3x4_t &attachmentToWorld );
-	virtual bool			IsViewModel() const;
-	virtual bool			IsViewModelOrAttachment() const { return true; }
-	
+
 	CBaseCombatWeapon		*GetWeapon() const { return m_hWeapon.Get(); }
 
 #ifdef CLIENT_DLL
@@ -199,9 +197,15 @@ private:
 	int						m_nOldAnimationParity;
 #endif
 
+#if defined( CLIENT_DLL )
 
-	typedef CHandle< CBaseCombatWeapon > CBaseCombatWeaponHandle;
-	CNetworkVar( CBaseCombatWeaponHandle, m_hWeapon );
+	// This is used to lag the angles.
+	CInterpolatedVar<QAngle> m_LagAnglesHistory;
+	QAngle m_vLagAngles;
+
+#endif
+
+	CNetworkHandle( CBaseCombatWeapon, m_hWeapon );
 
 	// Control panel
 	typedef CHandle<CVGuiScreen>	ScreenHandle_t;

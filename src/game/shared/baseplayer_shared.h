@@ -9,6 +9,9 @@
 #define BASEPLAYER_SHARED_H
 #pragma once
 
+#include "mathlib/vector.h"
+#include "ehandle.h"
+
 // PlayerUse defines
 #define	PLAYER_USE_RADIUS	80.f
 #define CONE_45_DEGREES		0.707f
@@ -30,8 +33,16 @@
 
 #define DEATH_ANIMATION_TIME	3.0f
 
-typedef struct 
+typedef struct autoaim_params_t
 {
+	autoaim_params_t()
+	{
+		m_fScale = 0;
+		m_fMaxDist = 0;
+		m_fMaxDeflection = -1.0f;
+		m_bOnTargetQueryOnly = false;
+	}
+
 	Vector		m_vecAutoAimDir;		// The direction autoaim wishes to point.
 	Vector		m_vecAutoAimPoint;		// The point (world space) that autoaim is aiming at.
 	EHANDLE		m_hAutoAimEntity;		// The entity that autoaim is aiming at.
@@ -39,6 +50,9 @@ typedef struct
 	bool		m_bOnTargetNatural;		
 	float		m_fScale;
 	float		m_fMaxDist;
+	float		m_fMaxDeflection;		// Input:
+	bool		m_bOnTargetQueryOnly;	// Input: Don't do expensive assistance, just resolve m_bOnTargetNatural
+
 } autoaim_params_t;
 
 enum stepsoundtimes_t

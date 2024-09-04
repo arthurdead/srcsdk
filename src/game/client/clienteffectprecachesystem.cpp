@@ -93,12 +93,18 @@ IClientEffect *CClientEffectPrecacheSystem::Find( const char *pName )
 	return m_Effects[i];
 }
 
-CClientEffect::CClientEffect( const char *pName )
+CClientEffect::CClientEffect( const char *pName, bool (*pCondFunc)() )
 {
 	m_bPrecached = false;
+	m_pCondFunc = pCondFunc;
 
 	//Register with the main effect system
 	ClientEffectPrecacheSystem()->Register( this, pName );
+}
+
+CClientEffect::CClientEffect( const char *pName )
+	: CClientEffect(pName, NULL)
+{
 }
 
 CClientEffect::~CClientEffect()
@@ -132,6 +138,9 @@ void CClientEffect::Release()
 
 void CClientEffect::Precache()
 {
+	if(m_pCondFunc && !m_pCondFunc())
+		return;
+
 	if(m_bPrecached)
 		return;
 

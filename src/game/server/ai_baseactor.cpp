@@ -12,9 +12,9 @@
 #include "choreoactor.h"
 #include "ai_baseactor.h"
 #include "ai_navigator.h"
-#include "saverestore_utlvector.h"
 #include "bone_setup.h"
 #include "physics_npc_solver.h"
+#include "inforemarkable.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -28,89 +28,15 @@ ConVar ai_debug_expressions( "ai_debug_expressions", "0", FCVAR_NONE, "Show rand
 static ConVar scene_showfaceto( "scene_showfaceto", "0", FCVAR_ARCHIVE, "When playing back, show the directions of faceto events." );
 
 
-BEGIN_DATADESC( CAI_BaseActor )
-
-	DEFINE_FIELD( m_fLatchedPositions, FIELD_INTEGER ),
-	DEFINE_FIELD( m_latchedEyeOrigin, FIELD_VECTOR ),
-	DEFINE_FIELD( m_latchedEyeDirection, FIELD_VECTOR ),
-	DEFINE_FIELD( m_latchedHeadDirection, FIELD_VECTOR ),
-	DEFINE_FIELD( m_goalHeadDirection, FIELD_VECTOR ),
-	DEFINE_FIELD( m_goalHeadInfluence, FIELD_FLOAT ),
-	DEFINE_FIELD( m_goalSpineYaw, FIELD_FLOAT ),
-	DEFINE_FIELD( m_goalBodyYaw, FIELD_FLOAT ),
-	DEFINE_FIELD( m_goalHeadCorrection, FIELD_VECTOR ),
-	DEFINE_FIELD( m_flBlinktime, FIELD_TIME ),
-	DEFINE_FIELD( m_hLookTarget, FIELD_EHANDLE ),
-	DEFINE_UTLVECTOR( m_lookQueue,	FIELD_EMBEDDED ), 
-	DEFINE_UTLVECTOR( m_randomLookQueue, FIELD_EMBEDDED ),
-	DEFINE_UTLVECTOR( m_syntheticLookQueue,	FIELD_EMBEDDED ), 
-	DEFINE_FIELD( m_flNextRandomLookTime, FIELD_TIME ),
-	DEFINE_FIELD( m_iszExpressionScene, FIELD_STRING ),
-	DEFINE_FIELD( m_hExpressionSceneEnt, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_flNextRandomExpressionTime, FIELD_TIME ),
-	DEFINE_FIELD( m_iszIdleExpression, FIELD_STRING ),
-	DEFINE_FIELD( m_iszAlertExpression, FIELD_STRING ),
-	DEFINE_FIELD( m_iszCombatExpression, FIELD_STRING ),
-	DEFINE_FIELD( m_iszDeathExpression, FIELD_STRING ),
-	//DEFINE_FIELD( m_ParameterBodyTransY, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_ParameterBodyTransX, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_ParameterBodyLift, FIELD_INTEGER ),
-	DEFINE_FIELD( m_ParameterBodyYaw, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_ParameterBodyPitch, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_ParameterBodyRoll, FIELD_INTEGER ),
-	DEFINE_FIELD( m_ParameterSpineYaw, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_ParameterSpinePitch, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_ParameterSpineRoll, FIELD_INTEGER ),
-	DEFINE_FIELD( m_ParameterNeckTrans, FIELD_INTEGER ),
-	DEFINE_FIELD( m_ParameterHeadYaw, FIELD_INTEGER ),
-	DEFINE_FIELD( m_ParameterHeadPitch, FIELD_INTEGER ),
-	DEFINE_FIELD( m_ParameterHeadRoll, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_FlexweightMoveRightLeft, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_FlexweightMoveForwardBack, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_FlexweightMoveUpDown, FIELD_INTEGER ),
-	DEFINE_FIELD( m_FlexweightBodyRightLeft, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_FlexweightBodyUpDown, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_FlexweightBodyTilt, FIELD_INTEGER ),
-	DEFINE_FIELD( m_FlexweightChestRightLeft, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_FlexweightChestUpDown, FIELD_INTEGER ),
-	//DEFINE_FIELD( m_FlexweightChestTilt, FIELD_INTEGER ),
-	DEFINE_FIELD( m_FlexweightHeadForwardBack, FIELD_INTEGER ),
-	DEFINE_FIELD( m_FlexweightHeadRightLeft, FIELD_INTEGER ),
-	DEFINE_FIELD( m_FlexweightHeadUpDown, FIELD_INTEGER ),
-	DEFINE_FIELD( m_FlexweightHeadTilt, FIELD_INTEGER ),
-
-	DEFINE_FIELD( m_ParameterGestureHeight, FIELD_INTEGER ),
-	DEFINE_FIELD( m_ParameterGestureWidth, FIELD_INTEGER ),
-	DEFINE_FIELD( m_FlexweightGestureUpDown, FIELD_INTEGER ),
-	DEFINE_FIELD( m_FlexweightGestureRightLeft, FIELD_INTEGER ),
-	DEFINE_FIELD( m_flAccumYawDelta, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flAccumYawScale, FIELD_FLOAT ),
-
-	DEFINE_ARRAY( m_flextarget, FIELD_FLOAT, 64 ),
+BEGIN_MAPENTITY( CAI_BaseActor )
 
 	DEFINE_KEYFIELD( m_bDontUseSemaphore, FIELD_BOOLEAN, "DontUseSpeechSemaphore" ),
 
 	DEFINE_KEYFIELD( m_iszExpressionOverride, FIELD_STRING, "ExpressionOverride" ),
 
-	DEFINE_EMBEDDEDBYREF( m_pExpresser ),
-
 	DEFINE_INPUTFUNC( FIELD_STRING,	"SetExpressionOverride",	InputSetExpressionOverride ),
 
-END_DATADESC()
-
-
-BEGIN_SIMPLE_DATADESC( CAI_InterestTarget_t )
-	DEFINE_FIELD( m_eType,		FIELD_INTEGER ),
-	DEFINE_FIELD( m_hTarget,		FIELD_EHANDLE ),
-	DEFINE_FIELD( m_vecPosition,	FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_flStartTime,	FIELD_TIME ),
-	DEFINE_FIELD( m_flEndTime,	FIELD_TIME ),
-	DEFINE_FIELD( m_flRamp,		FIELD_FLOAT ),
-	DEFINE_FIELD( m_flInterest,	FIELD_FLOAT ),
-END_DATADESC()
-
-
-
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: clear out latched state
@@ -478,7 +404,7 @@ bool CAI_BaseActor::ProcessSceneEvent( CSceneEventInfo *info, CChoreoScene *scen
 
 			if (!event->IsLockBodyFacing())
 			{
-				AddFacingTarget( info->m_hTarget, intensity, 0.2 ); // facing targets are lagged by one frame
+				AddFacingTarget( info->m_hTarget.Get(), intensity, 0.2 ); // facing targets are lagged by one frame
 			}
 			return true;
 		}
@@ -536,7 +462,7 @@ bool CAI_BaseActor::ProcessSceneEvent( CSceneEventInfo *info, CChoreoScene *scen
 					if (info->m_hTarget && info->m_flNext < gpGlobals->curtime)
 					{
 						float remaining = event->GetEndTime() - scene->GetTime();
-						NPCPhysics_CreateSolver( this, info->m_hTarget, true, remaining );
+						NPCPhysics_CreateSolver( this, info->m_hTarget.Get(), true, remaining );
 						info->m_flNext = gpGlobals->curtime + remaining;
 					}
 
@@ -693,6 +619,44 @@ void CAI_BaseActor::SetViewtarget( const Vector &viewtarget )
 	BaseClass::SetViewtarget( viewtarget );
 }
 
+void CAI_BaseActor::ClearHeadAdjustment()
+{
+	//DevMsg( "Teleport %s : %.0f %.0f %.0f  : %.0f %.0f %.0f\n", GetEntityNameAsCStr(), Get( m_ParameterHeadYaw ), Get( m_ParameterHeadPitch ), Get( m_ParameterHeadRoll ), m_goalHeadCorrection.x, m_goalHeadCorrection.y, m_goalHeadCorrection.z );
+	m_lookQueue.RemoveAll();
+	m_syntheticLookQueue.RemoveAll();
+	m_randomLookQueue.RemoveAll();
+
+	Set( m_ParameterHeadYaw, 0.0f );
+	Set( m_ParameterHeadPitch, 0.0f );
+	Set( m_ParameterHeadRoll, 0.0f );
+
+	m_goalHeadDirection.Init();
+	m_goalHeadInfluence = 0.0f;
+
+	m_goalSpineYaw = 0.0f;
+	m_goalBodyYaw = 0.0f;
+	m_goalHeadCorrection.Init();
+}
+
+
+void CAI_BaseActor::Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity )
+{
+	ClearHeadAdjustment();
+
+	BaseClass::Teleport( newPosition, newAngles, newVelocity );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Clear out eye/head latched positions
+//-----------------------------------------------------------------------------
+
+void CAI_BaseActor::InvalidateBoneCache()
+{
+	m_fLatchedPositions &= ~(HUMANOID_LATCHED_ALL);
+
+	BaseClass::InvalidateBoneCache();
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns true position of the eyeballs
@@ -1186,7 +1150,7 @@ float CAI_BaseActor::PickLookTarget( CAI_InterestTarget &queue, bool bExcludePla
 	if ( args.hTarget != NULL )
 	{
 		Assert( args.vTarget == vec3_invalid );
-		queue.Add( args.hTarget, args.flInfluence, args.flDuration, args.flRamp );
+		queue.Add( args.hTarget.Get(), args.flInfluence, args.flDuration, args.flRamp );
 	}
 	else
 	{
@@ -1401,6 +1365,67 @@ void CAI_BaseActor::MakeRandomLookTarget( AILookTargetArgs_t *pArgs, float minTi
 
 //-----------------------------------------------------------------------------
 // Purpose: Make sure we're looking at what we're shooting at
+//-----------------------------------------------------------------------------
+
+ConVar rr_remarkable_world_entities_replay_limit( "rr_remarkable_world_entities_replay_limit", "1", FCVAR_CHEAT, "TLK_REMARKs will be dispatched no more than this many times for any given info_remarkable" );
+ConVar rr_remarkables_enabled( "rr_remarkables_enabled", "1", FCVAR_CHEAT, "If 1, polling for info_remarkables and issuances of TLK_REMARK is enabled." );
+ConVar rr_remarkable_max_distance( "rr_remarkable_max_distance", "1200", FCVAR_CHEAT, "AIs will not even consider remarkarbles that are more than this many units away." );
+#define AI_REMARK_SPEECH_INTERVAL 1
+bool CAI_BaseActor::UpdateRemarkableSpeech() RESTRICT
+{
+	VPROF( "CAI_BaseActor::UpdateRemarkableSpeech" );
+	if ( CanPollRemarkables() )
+	{
+		m_fNextRemarkPollTime = gpGlobals->curtime + AI_REMARK_SPEECH_INTERVAL;
+
+		// this is somewhat hokey 12am logic -- we're going to iterate over all 
+		// the remarkables and ask each of them if they're in sight. It's better
+		// to do this the other way (ie the entities would know when they're being
+		// looked at) but we don't seem to have a function for that yet. 
+		CInfoRemarkable::tRemarkableList *pList = CInfoRemarkable::GetListOfAllThatIsRemarkable();
+		const float maxDistSq = rr_remarkable_max_distance.GetFloat() * rr_remarkable_max_distance.GetFloat();
+		const int remarkLimit = rr_remarkable_world_entities_replay_limit.GetInt();
+		for ( int i = pList->Head(); pList->IsValidIndex(i); i = pList->Next(i) )
+		{
+			CInfoRemarkable * RESTRICT remarkable = pList->Element(i);
+			// do a quick distance test for a rough cull.
+			if ( GetAbsOrigin().DistToSqr(remarkable->GetAbsOrigin()) > maxDistSq )
+				continue;
+
+			if ( remarkable->m_iTimesRemarkedUpon < remarkLimit &&
+				 TestRemarkingUpon( remarkable ) )
+			{
+				// remark upon it
+				float distToRemarkable = (remarkable->GetAbsOrigin() - GetAbsOrigin()).Length();
+				const char *pModifiers = UTIL_VarArgs( "Subject:%s,Distance:%f", remarkable->GetRemarkContext(), distToRemarkable );
+
+				if ( CanSpeak() && Speak( "TLK_REMARK", pModifiers ) )
+				{
+					remarkable->m_iTimesRemarkedUpon += 1;
+					return true;
+				}
+			}
+		}
+
+	}
+
+	return false;
+}
+
+
+bool CAI_BaseActor::CanPollRemarkables()
+{
+	return m_bRemarkablePolling &&
+		   ( gpGlobals->curtime > m_fNextRemarkPollTime )	;
+}
+
+bool CAI_BaseActor::TestRemarkingUpon( CInfoRemarkable * RESTRICT pRemarkable )
+{
+	return	IsInFieldOfView( pRemarkable )					&&
+			IsLineOfSightClear( pRemarkable, IGNORE_ACTORS );
+}
+
+
 //-----------------------------------------------------------------------------
 
 void CAI_BaseActor::StartTaskRangeAttack1( const Task_t *pTask )
@@ -1930,3 +1955,12 @@ bool CAI_BaseActor::CreateComponents()
 }
 
 //-----------------------------------------------------------------------------
+
+void CAI_BaseActor::GatherConditions( void )
+{
+	BaseClass::GatherConditions();
+	if ( rr_remarkables_enabled.GetBool() )
+	{
+		UpdateRemarkableSpeech();
+	}
+}

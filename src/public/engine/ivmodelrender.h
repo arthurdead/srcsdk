@@ -54,12 +54,11 @@ struct DrawModelState_t
 // change this when the new version is incompatable with the old
 #define VENGINE_HUDMODEL_INTERFACE_VERSION	"VEngineModel016"
 
-typedef unsigned short ModelInstanceHandle_t;
-
-enum
+enum class ModelInstanceHandle_t : unsigned short
 {
-	MODEL_INSTANCE_INVALID = (ModelInstanceHandle_t)~0
 };
+
+inline const ModelInstanceHandle_t MODEL_INSTANCE_INVALID = (ModelInstanceHandle_t)~0;
 
 struct ModelRenderInfo_t
 {

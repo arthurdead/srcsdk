@@ -15,8 +15,6 @@
 
 struct locksound_t					// sounds that doors and buttons make when locked/unlocked
 {
-	DECLARE_DATADESC();
-
 	string_t	sLockedSound;		// sound a door makes when it's locked
 	string_t	sLockedSentence;	// sentence group played when door is locked
 	string_t	sUnlockedSound;		// sound a door makes when it's unlocked

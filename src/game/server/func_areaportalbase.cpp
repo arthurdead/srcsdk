@@ -22,13 +22,11 @@ CUtlLinkedList<CFuncAreaPortalBase*, unsigned short> g_AreaPortals;
 //---------------------------------------------------------
 // Save/Restore
 //---------------------------------------------------------
-BEGIN_DATADESC( CFuncAreaPortalBase )
+BEGIN_MAPENTITY( CFuncAreaPortalBase )
 
-	DEFINE_FIELD( m_portalNumber,			FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_iPortalVersion,		FIELD_INTEGER, "PortalVersion" )
-//	DEFINE_FIELD( m_AreaPortalsElement,		FIELD_SHORT ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

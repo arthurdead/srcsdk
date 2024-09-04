@@ -18,8 +18,16 @@
 
 enum RallySelectMethod_t
 {
-	RALLY_POINT_SELECT_DEFAULT = 0,
+	RALLY_POINT_SELECT_CLOSEST = 0,
 	RALLY_POINT_SELECT_RANDOM,
+	RALLY_POINT_SELECT_FURTHEST
+};
+
+enum BranchingMethod_t
+{
+	BRANCH_RANDOM,
+	BRANCH_CLOSEST,
+	BRANCH_FURTHEST
 };
 
 enum AssaultCue_t
@@ -41,6 +49,27 @@ enum
 	ASSAULT_SENTENCE_SQUAD_ADVANCE_TO_ASSAULT,
 	ASSAULT_SENTENCE_COVER_NO_AMMO,
 	ASSAULT_SENTENCE_UNDER_ATTACK,
+};
+
+//=============================================================================
+//=============================================================================
+class CAI_AssaultGoal : public CAI_GoalEntity
+{
+	typedef CAI_GoalEntity BaseClass;
+
+	virtual void EnableGoal( CAI_BaseNPC *pAI );
+	virtual void DisableGoal( CAI_BaseNPC *pAI );
+
+	string_t		m_RallyPoint;
+	int				m_AssaultCue;
+	int				m_RallySelectMethod;
+	int				m_BranchMethod;
+
+	void InputBeginAssault( inputdata_t &inputdata );
+
+	DECLARE_MAPENTITY();
+
+	friend class CAI_AssaultBehavior;
 };
 
 // Allow diversion from the assault up to this amount of time after last having an enemy
@@ -89,6 +118,7 @@ public:
 	}
 
 	bool IsLocked( void ) { return (m_hLockedBy.Get() != NULL); }
+	bool ShouldBeLocked( void ) { return m_bShouldLock; }
 
 	int DrawDebugTextOverlays();
 	bool IsExclusive();
@@ -108,10 +138,11 @@ public:
 	bool		m_bForceCrouch;
 	bool		m_bIsUrgent;
 	short		m_sExclusivity;
+	bool		m_bShouldLock;
 
 	COutputEvent	m_OnArrival;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	EHANDLE		m_hLockedBy;
@@ -167,7 +198,7 @@ public:
 
 	COutputEvent	m_OnArrival;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 //=============================================================================
@@ -182,7 +213,7 @@ public:
 	virtual const char *GetName() {	return "Assault"; }
 	virtual int	DrawDebugTextOverlays( int text_offset );
 
-	virtual void OnRestore();
+	void SetGoal( CAI_AssaultGoal *pGoal ) { m_hGoal = pGoal; }
 
 	bool CanRunAScriptedNPCInteraction( bool bForced );
 
@@ -295,9 +326,7 @@ private:
 
 	string_t		m_AssaultPointName;
 
-	//---------------------------------
-	
-	DECLARE_DATADESC();
+	CHandle<CAI_AssaultGoal> m_hGoal;
 };
 
 #endif // AI_BEHAVIOR_ASSAULT_H

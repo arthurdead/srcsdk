@@ -18,7 +18,7 @@ class CMovieDisplay : public CBaseEntity
 public:
 
 	DECLARE_CLASS( CMovieDisplay, CBaseEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	virtual ~CMovieDisplay();
@@ -30,7 +30,6 @@ public:
 
 	virtual void Spawn( void );
 	virtual void Precache( void );
-	virtual void OnRestore( void );
 
 	void	ScreenVisible( bool bVisible );
 
@@ -78,32 +77,24 @@ LINK_ENTITY_TO_CLASS( vgui_movie_display, CMovieDisplay );
 //-----------------------------------------------------------------------------
 // Save/load 
 //-----------------------------------------------------------------------------
-BEGIN_DATADESC( CMovieDisplay )
-
-	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
+BEGIN_MAPENTITY( CMovieDisplay )
 
 	DEFINE_AUTO_ARRAY_KEYFIELD( m_szDisplayText, FIELD_CHARACTER, "displaytext" ),
 
-	DEFINE_AUTO_ARRAY( m_szMovieFilename, FIELD_CHARACTER ),
 	DEFINE_KEYFIELD( m_strMovieFilename, FIELD_STRING, "moviefilename" ),
 
-	DEFINE_AUTO_ARRAY( m_szGroupName, FIELD_CHARACTER ),
 	DEFINE_KEYFIELD( m_strGroupName, FIELD_STRING, "groupname" ),
 
 	DEFINE_KEYFIELD( m_iScreenWidth, FIELD_INTEGER, "width" ),
 	DEFINE_KEYFIELD( m_iScreenHeight, FIELD_INTEGER, "height" ),
 	DEFINE_KEYFIELD( m_bLooping, FIELD_BOOLEAN, "looping" ),
 
-	DEFINE_FIELD( m_bDoFullTransmit, FIELD_BOOLEAN ),
-
-	DEFINE_FIELD( m_hScreen, FIELD_EHANDLE ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetDisplayText", InputSetDisplayText ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST( CMovieDisplay, DT_MovieDisplay )
 	SendPropBool( SENDINFO( m_bEnabled ) ),
@@ -205,18 +196,6 @@ void CMovieDisplay::Precache( void )
 	BaseClass::Precache();
 
 	PrecacheVGuiScreen( "video_display_screen" );
-}
-
-//-----------------------------------------------------------------------------
-// 
-//-----------------------------------------------------------------------------
-void CMovieDisplay::OnRestore( void )
-{
-	BaseClass::OnRestore();
-
-	RestoreControlPanels();
-
-	ScreenVisible( m_bEnabled );
 }
 
 //-----------------------------------------------------------------------------

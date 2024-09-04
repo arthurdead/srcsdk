@@ -15,10 +15,9 @@
 #include "sceneentity.h"
 #endif
 
-#include "engine/ienginesound.h"
-#include "keyvalues.h"
+#include "engine/IEngineSound.h"
+#include "tier1/KeyValues.h"
 #include "ai_criteria.h"
-#include "isaverestore.h"
 
 
 // memdbgon must be the last include file in a .cpp file!!!

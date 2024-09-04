@@ -23,7 +23,7 @@ typedef CGameTrace trace_t;
 class IVPhysicsKeyHandler;
 class IPhysicsEnvironment;
 class ICollideable;
-
+enum class ShadowHandle_t : unsigned short;
 
 //-----------------------------------------------------------------------------
 // Interface versions for static props
@@ -62,7 +62,7 @@ public:
 	virtual void	AddDecalToStaticProp( const Vector& rayStart, const Vector& rayEnd,
 		int staticPropIndex, int decalIndex, bool doTrace, trace_t& tr ) = 0;
 	// Adds/removes shadows from static props
-	virtual void	AddShadowToStaticProp( unsigned short shadowHandle, IClientRenderable* pRenderable ) = 0;
+	virtual void	AddShadowToStaticProp( ShadowHandle_t shadowHandle, IClientRenderable* pRenderable ) = 0;
 	virtual void	RemoveAllShadowsFromStaticProp( IClientRenderable* pRenderable ) = 0;
 
 	// Gets the lighting + material color of a static prop

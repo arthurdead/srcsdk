@@ -70,23 +70,19 @@ private:
 	COutputEvent m_OnGreaterThanOrEqualTo;
 	COutputEvent m_OnEqualTo;
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS(point_angularvelocitysensor, CPointAngularVelocitySensor);
 
 
-BEGIN_DATADESC( CPointAngularVelocitySensor )
+BEGIN_MAPENTITY( CPointAngularVelocitySensor )
 
 	// Fields
-	DEFINE_FIELD( m_hTargetEntity, FIELD_EHANDLE ),
 	DEFINE_KEYFIELD(m_flThreshold, FIELD_FLOAT, "threshold"),
-	DEFINE_FIELD(m_nLastCompareResult, FIELD_INTEGER),
-	DEFINE_FIELD( m_nLastFireResult, FIELD_INTEGER ),
-	DEFINE_FIELD( m_flFireTime, FIELD_TIME ),
+
 	DEFINE_KEYFIELD( m_flFireInterval, FIELD_FLOAT, "fireinterval" ),
-	DEFINE_FIELD( m_flLastAngVelocity, FIELD_FLOAT ),
-	DEFINE_FIELD( m_lastOrientation, FIELD_VECTOR ),
+
 	
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "Test", InputTest),
@@ -103,7 +99,7 @@ BEGIN_DATADESC( CPointAngularVelocitySensor )
 	DEFINE_KEYFIELD( m_vecAxis, FIELD_VECTOR, "axis" ),
 	DEFINE_KEYFIELD( m_bUseHelper, FIELD_BOOLEAN, "usehelper" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -406,18 +402,16 @@ private:
 	void	InputEnable( inputdata_t &inputdata );
 	void	InputDisable( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS( point_velocitysensor, CPointVelocitySensor );
 
-BEGIN_DATADESC( CPointVelocitySensor )
+BEGIN_MAPENTITY( CPointVelocitySensor )
 
 	// Fields
-	DEFINE_FIELD( m_hTargetEntity,	FIELD_EHANDLE ),
 	DEFINE_KEYFIELD( m_vecAxis,		FIELD_VECTOR, "axis" ),
 	DEFINE_KEYFIELD( m_bEnabled,	FIELD_BOOLEAN, "enabled" ),
-	DEFINE_FIELD( m_fPrevVelocity,	FIELD_FLOAT ),
 
 	// Outputs
 	DEFINE_OUTPUT( m_Velocity, "Velocity" ),
@@ -425,7 +419,7 @@ BEGIN_DATADESC( CPointVelocitySensor )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable",		InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable",	InputDisable ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------

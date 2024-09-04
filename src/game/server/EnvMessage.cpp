@@ -18,20 +18,18 @@
 
 LINK_ENTITY_TO_CLASS( env_message, CMessage );
 
-BEGIN_DATADESC( CMessage )
+BEGIN_MAPENTITY( CMessage )
 
 	DEFINE_KEYFIELD( m_iszMessage, FIELD_STRING, "message" ),
 	DEFINE_KEYFIELD( m_sNoise, FIELD_SOUNDNAME, "messagesound" ),
 	DEFINE_KEYFIELD( m_MessageAttenuation, FIELD_INTEGER, "messageattenuation" ),
 	DEFINE_KEYFIELD( m_MessageVolume, FIELD_FLOAT, "messagevolume" ),
 
-	DEFINE_FIELD( m_Radius, FIELD_FLOAT ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "ShowMessage", InputShowMessage ),
 
 	DEFINE_OUTPUT(m_OnShowMessage, "OnShowMessage"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -151,7 +149,7 @@ class CCredits : public CPointEntity
 {
 public:
 	DECLARE_CLASS( CMessage, CPointEntity );
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	void	Spawn( void );
 	void	InputRollCredits( inputdata_t &inputdata );
@@ -161,7 +159,6 @@ public:
 
 	COutputEvent m_OnCreditsDone;
 
-	virtual void OnRestore();
 private:
 
 	void		RollOutroCredits();
@@ -172,16 +169,14 @@ private:
 
 LINK_ENTITY_TO_CLASS( env_credits, CCredits );
 
-BEGIN_DATADESC( CCredits )
+BEGIN_MAPENTITY( CCredits )
 	DEFINE_INPUTFUNC( FIELD_VOID, "RollCredits", InputRollCredits ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "RollOutroCredits", InputRollOutroCredits ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ShowLogo", InputShowLogo ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetLogoLength", InputSetLogoLength ),
 	DEFINE_OUTPUT( m_OnCreditsDone, "OnCreditsDone"),
 
-	DEFINE_FIELD( m_bRolledOutroCredits, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flLogoLength, FIELD_FLOAT )
-END_DATADESC()
+END_MAPENTITY()
 
 void CCredits::Spawn( void )
 {
@@ -202,18 +197,6 @@ static void CreditsDone_f( void )
 static ConCommand creditsdone("creditsdone", CreditsDone_f );
 
 extern ConVar sv_unlockedchapters;
-
-void CCredits::OnRestore()
-{
-	BaseClass::OnRestore();
-
-	if ( m_bRolledOutroCredits )
-	{
-		// Roll them again so that the client .dll will send the "creditsdone" message and we'll
-		//  actually get back to the main menu
-		RollOutroCredits();
-	}
-}
 
 void CCredits::RollOutroCredits()
 {
@@ -274,3 +257,110 @@ void CCredits::InputRollCredits( inputdata_t &inputdata )
 	WRITE_BYTE( 2 );
 	MessageEnd();
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: Play the outtro stats at the end of the campaign
+//-----------------------------------------------------------------------------
+class COuttroStats : public CPointEntity
+{
+public:
+	DECLARE_CLASS( COuttroStats, CPointEntity );
+	DECLARE_MAPENTITY();
+
+	void Spawn( void );
+	void InputRollCredits( inputdata_t &inputdata );
+	void InputRollStatsCrawl( inputdata_t &inputdata );
+	void InputSkipStateChanged( inputdata_t &inputdata );
+
+	void SkipThink( void );
+	void CalcSkipState( int &skippingPlayers, int &totalPlayers );
+
+	COutputEvent m_OnOuttroStatsDone;
+};
+
+//-----------------------------------------------------------------------------
+LINK_ENTITY_TO_CLASS( env_outtro_stats, COuttroStats );
+
+BEGIN_MAPENTITY( COuttroStats )
+	DEFINE_INPUTFUNC( FIELD_VOID, "RollStatsCrawl", InputRollStatsCrawl ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "RollCredits", InputRollCredits ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "SkipStateChanged", InputSkipStateChanged ),
+	DEFINE_OUTPUT( m_OnOuttroStatsDone, "OnOuttroStatsDone"),
+END_MAPENTITY()
+
+//-----------------------------------------------------------------------------
+void COuttroStats::Spawn( void )
+{
+	SetSolid( SOLID_NONE );
+	SetMoveType( MOVETYPE_NONE );
+}
+
+//-----------------------------------------------------------------------------
+void COuttroStats::InputRollStatsCrawl( inputdata_t &inputdata )
+{
+	CReliableBroadcastRecipientFilter players;
+	UserMessageBegin( players, "StatsCrawlMsg" );
+	MessageEnd();
+
+	SetThink( &COuttroStats::SkipThink );
+	SetNextThink( gpGlobals->curtime + 1.0 );
+}
+
+//-----------------------------------------------------------------------------
+void COuttroStats::InputRollCredits( inputdata_t &inputdata )
+{
+	CReliableBroadcastRecipientFilter players;
+	UserMessageBegin( players, "creditsMsg" );
+	MessageEnd();
+}
+
+void COuttroStats::SkipThink( void )
+{
+	// if all valid players are skipping, then end
+	int iNumSkips = 0;
+	int iNumPlayers = 0;
+	CalcSkipState( iNumSkips, iNumPlayers );
+
+	if ( iNumSkips >= iNumPlayers )
+	{
+//		TheDirector->StartScenarioExit();
+	}
+	else
+		SetNextThink( gpGlobals->curtime + 1.0 );
+}
+
+void COuttroStats::CalcSkipState( int &skippingPlayers, int &totalPlayers )
+{
+	// calc skip state
+	skippingPlayers = 0;
+	totalPlayers = 0;
+}
+
+void COuttroStats::InputSkipStateChanged( inputdata_t &inputdata )
+{
+	int iNumSkips = 0;
+	int iNumPlayers = 0;
+	CalcSkipState( iNumSkips, iNumPlayers );
+
+	DevMsg( "COuttroStats: Skip state changed. %d players, %d skips\n", iNumPlayers, iNumSkips );
+	// Don't send to players in singleplayer
+	if ( iNumPlayers > 1 )
+	{
+		CReliableBroadcastRecipientFilter players;
+		UserMessageBegin( players, "StatsSkipState" );
+			WRITE_BYTE( iNumSkips );
+			WRITE_BYTE( iNumPlayers );
+		MessageEnd();
+	}
+}
+
+void CC_Test_Outtro_Stats( const CCommand& args )
+{
+	CBaseEntity *pOuttro = gEntList.FindEntityByClassname( NULL, "env_outtro_stats" );
+	if ( pOuttro )
+	{
+		variant_t emptyVariant;
+		pOuttro->AcceptInput( "RollStatsCrawl", NULL, NULL, emptyVariant, 0 );
+	}
+}
+static ConCommand test_outtro_stats("test_outtro_stats", CC_Test_Outtro_Stats, 0, FCVAR_CHEAT);

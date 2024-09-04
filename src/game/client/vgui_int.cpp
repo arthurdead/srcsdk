@@ -351,8 +351,3 @@ int VGUI_FindSlotForRootPanel( vgui::Panel *pRoot )
 		return 0;
 	return slot;
 }
-
-vgui::VPANEL VGui_GetFullscreenRootVPANEL( void )
-{
-	return VGui_GetFullscreenRootPanel()->GetVPanel();
-}

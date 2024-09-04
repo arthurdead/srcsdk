@@ -20,16 +20,7 @@ static const char *s_pFadeInContextThink = "SpatialEntityFadeInThink";
 static const char *s_pFadeOutContextThink = "SpatialEntityFadeOutThink";
 
 
-BEGIN_DATADESC( CSpatialEntity )
-
-	DEFINE_THINKFUNC( FadeInThink ),
-	DEFINE_THINKFUNC( FadeOutThink ),
-
-	DEFINE_FIELD( m_flCurWeight,	      FIELD_FLOAT ),
-	DEFINE_FIELD( m_flTimeStartFadeIn,	  FIELD_FLOAT ),
-	DEFINE_FIELD( m_flTimeStartFadeOut,	  FIELD_FLOAT ),
-	DEFINE_FIELD( m_flStartFadeInWeight,  FIELD_FLOAT ),
-	DEFINE_FIELD( m_flStartFadeOutWeight, FIELD_FLOAT ),
+BEGIN_MAPENTITY( CSpatialEntity )
 
 	DEFINE_KEYFIELD( m_MinFalloff,		  FIELD_FLOAT,   "minfalloff" ),
 	DEFINE_KEYFIELD( m_MaxFalloff,		  FIELD_FLOAT,   "maxfalloff" ),
@@ -46,7 +37,7 @@ BEGIN_DATADESC( CSpatialEntity )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFadeInDuration", InputSetFadeInDuration ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFadeOutDuration", InputSetFadeOutDuration ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 extern void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 IMPLEMENT_SERVERCLASS_ST_NOBASE(CSpatialEntity, DT_SpatialEntity)

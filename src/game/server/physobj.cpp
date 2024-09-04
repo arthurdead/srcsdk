@@ -18,8 +18,6 @@
 #include "engine/IEngineSound.h"
 #include "model_types.h"
 #include "props.h"
-#include "physics_saverestore.h"
-#include "saverestore_utlvector.h"
 #include "vphysics/constraints.h"
 #include "collisionutils.h"
 #include "decals.h"
@@ -65,7 +63,7 @@ public:
 	IPhysicsObject *GetStartObject() { return m_pSpring ? m_pSpring->GetStartObject() : NULL; }
 	IPhysicsObject *GetEndObject() { return m_pSpring ? m_pSpring->GetEndObject() : NULL; }
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:	
 	IPhysicsSpring		*m_pSpring;
@@ -86,9 +84,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( phys_spring, CPhysicsSpring );
 
-BEGIN_DATADESC( CPhysicsSpring )
-
-	DEFINE_PHYSPTR( m_pSpring ),
+BEGIN_MAPENTITY( CPhysicsSpring )
 
 	DEFINE_KEYFIELD( m_tempConstant, FIELD_FLOAT, "constant" ),
 	DEFINE_KEYFIELD( m_tempLength, FIELD_FLOAT, "length" ),
@@ -98,19 +94,14 @@ BEGIN_DATADESC( CPhysicsSpring )
 	DEFINE_KEYFIELD( m_nameAttachStart, FIELD_STRING, "attach1" ),
 	DEFINE_KEYFIELD( m_nameAttachEnd, FIELD_STRING, "attach2" ),
 
-	DEFINE_FIELD( m_start, FIELD_POSITION_VECTOR ),
 	DEFINE_KEYFIELD( m_end, FIELD_POSITION_VECTOR, "springaxis" ),
-	DEFINE_FIELD( m_isLocal, FIELD_BOOLEAN ),
-
-	// Not necessary to save... it's only there to make sure 
-//	DEFINE_FIELD( m_teleportTick, FIELD_INTEGER ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpringConstant", InputSetSpringConstant ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpringLength", InputSetSpringLength ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpringDamping", InputSetSpringDamping ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 // debug function - slow, uses dynamic_cast<> - use this to query the attached objects
 // physics_debug_entity toggles the constraint system for an object using this
@@ -380,6 +371,7 @@ BEGIN_DATADESC( CPhysBox )
 	DEFINE_KEYFIELD( m_flForceToEnableMotion, FIELD_FLOAT, "forcetoenablemotion" ), 
 	DEFINE_KEYFIELD( m_angPreferredCarryAngles, FIELD_VECTOR, "preferredcarryangles" ),
 	DEFINE_KEYFIELD( m_bNotSolidToWorld, FIELD_BOOLEAN, "notsolid" ),
+	DEFINE_KEYFIELD( m_iExploitableByPlayer, FIELD_INTEGER, "ExploitableByPlayer" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Wake", InputWake ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Sleep", InputSleep ),
@@ -419,19 +411,20 @@ void CPhysBox::Spawn( void )
 	m_flDmgModBullet = func_breakdmg_bullet.GetFloat();
 	m_flDmgModClub = func_breakdmg_club.GetFloat();
 	m_flDmgModExplosive = func_breakdmg_explosive.GetFloat();
+	m_flDmgModFire = 1.0f;
 
 	ParsePropData();
 
 	Precache();
 
-	m_iMaxHealth = ( m_iHealth > 0 ) ? m_iHealth : 1;
+	m_iMaxHealth = ( GetHealth() > 0 ) ? GetHealth() : 1;
 
 	if ( HasSpawnFlags( SF_BREAK_TRIGGER_ONLY ) )
 	{
 		m_takedamage = DAMAGE_EVENTS_ONLY;
 		AddSpawnFlags( SF_BREAK_DONT_TAKE_PHYSICS_DAMAGE );
 	}
-	else if ( m_iHealth == 0 )
+	else if ( GetHealth() == 0 )
 	{
 		m_takedamage = DAMAGE_EVENTS_ONLY;
 		AddSpawnFlags( SF_BREAK_DONT_TAKE_PHYSICS_DAMAGE );
@@ -1937,32 +1930,35 @@ public:
 	void	InputEnable( inputdata_t &inputdata );
 	void	InputDisable( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	virtual void DrawDebugGeometryOverlays( void );
+
+	DECLARE_MAPENTITY();
 
 private:
-	inline void PushEntity( CBaseEntity *pTarget );
+	inline void PushEntity( CBaseEntity *pTarget, const Vector &vecPushPoint );
 
 	bool	m_bEnabled;
 	float	m_flMagnitude;
 	float	m_flRadius;
 	float	m_flInnerRadius;	// Inner radius where the push eminates from (on a sphere)
+	float	m_flConeOfInfluence;	// Cone (in degrees) in which an entity must lie to be affected
+
 };
 
 LINK_ENTITY_TO_CLASS( point_push, CPointPush );
 
-BEGIN_DATADESC( CPointPush )
+BEGIN_MAPENTITY( CPointPush )
 
-	DEFINE_THINKFUNC( PushThink ),
-	
 	DEFINE_KEYFIELD( m_bEnabled,	FIELD_BOOLEAN,	"enabled" ),
 	DEFINE_KEYFIELD( m_flMagnitude, FIELD_FLOAT,	"magnitude" ),
 	DEFINE_KEYFIELD( m_flRadius,	FIELD_FLOAT,	"radius" ),
 	DEFINE_KEYFIELD( m_flInnerRadius,FIELD_FLOAT,	"inner_radius" ),
+	DEFINE_KEYFIELD( m_flConeOfInfluence,	FIELD_FLOAT,	"influence_cone" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-END_DATADESC();
+END_MAPENTITY();
 
 // Spawnflags
 #define	SF_PUSH_TEST_LOS			0x0001
@@ -1970,6 +1966,15 @@ END_DATADESC();
 #define SF_PUSH_NO_FALLOFF			0x0004
 #define	SF_PUSH_PLAYER				0x0008
 #define SF_PUSH_PHYSICS				0x0010
+
+void CPointPush::DrawDebugGeometryOverlays( void )
+{
+	// Draw our center
+	NDebugOverlay::Box( GetAbsOrigin(), -Vector(2,2,2), Vector(2,2,2), 0, 255, 0, 16, 0.05f );
+
+	// Draw our radius
+	NDebugOverlay::Sphere( GetAbsOrigin(), vec3_angle, m_flRadius, 0, 255, 0, 0, false, 0.05f );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1989,7 +1994,7 @@ void CPointPush::Activate( void )
 // Purpose: 
 // Input  : *pTarget - 
 //-----------------------------------------------------------------------------
-void CPointPush::PushEntity( CBaseEntity *pTarget )
+void CPointPush::PushEntity( CBaseEntity *pTarget, const Vector &vecPushPoint )
 {
 	Vector vecPushDir;
 	
@@ -1999,7 +2004,7 @@ void CPointPush::PushEntity( CBaseEntity *pTarget )
 	}
 	else
 	{
-		vecPushDir = ( pTarget->BodyTarget( GetAbsOrigin(), false ) - GetAbsOrigin() );
+		vecPushDir = ( pTarget->BodyTarget( vecPushPoint, false ) - vecPushPoint );
 	}
 
 	float dist = VectorNormalize( vecPushDir );
@@ -2087,6 +2092,22 @@ void CPointPush::PushThink( void )
 		if ( pEnts[i]->GetMoveType() == MOVETYPE_VPHYSICS && HasSpawnFlags( SF_PUSH_PHYSICS ) == false )
 			continue;
 
+		// See if they're within our cone of influence
+		if ( m_flConeOfInfluence != 0.0f )
+		{
+			Vector vecEndPos = pEnts[i]->BodyTarget( GetAbsOrigin(), false );
+			Vector vecDirToTarget = ( vecEndPos - GetAbsOrigin() );
+			VectorNormalize( vecDirToTarget );
+
+			Vector vecDirection;
+			AngleVectors( GetAbsAngles(), &vecDirection );
+
+			// Test if it's within our cone of influence
+			float flDot = DotProduct( vecDirToTarget, vecDirection );
+			if ( flDot < cos(DEG2RAD(m_flConeOfInfluence)) )
+				continue;		
+		}
+
 		// Test for LOS if asked to
 		if ( HasSpawnFlags( SF_PUSH_TEST_LOS ) )
 		{
@@ -2115,7 +2136,7 @@ void CPointPush::PushThink( void )
 		}
 
 		// Push it along
-		PushEntity( pEnts[i] );
+		PushEntity( pEnts[i], GetAbsOrigin() );
 	}
 
 	// Set us up for the next think

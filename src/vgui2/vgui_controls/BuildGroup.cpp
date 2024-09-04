@@ -61,12 +61,12 @@ BuildGroup::BuildGroup(Panel *parentPanel, Panel *contextPanel)
 	_enabled=false;
 	_snapX=1;
 	_snapY=1;
-	_cursor_sizenwse = dc_sizenwse;
-	_cursor_sizenesw = dc_sizenesw;
-	_cursor_sizewe = dc_sizewe;
-	_cursor_sizens = dc_sizens;
-	_cursor_sizeall = dc_sizeall;
-	_currentPanel=null;
+	_cursor_sizenwse = CursorCodeToCursor(dc_sizenwse);
+	_cursor_sizenesw = CursorCodeToCursor(dc_sizenesw);
+	_cursor_sizewe = CursorCodeToCursor(dc_sizewe);
+	_cursor_sizens = CursorCodeToCursor(dc_sizens);
+	_cursor_sizeall = CursorCodeToCursor(dc_sizeall);
+	_currentPanel=NULL;
 	_dragging=false;
 	m_pResourceName=NULL;
 	m_pResourcePathID = NULL;
@@ -339,10 +339,10 @@ bool BuildGroup::CursorMoved(int x, int y, Panel *panel)
 		{
 			KeyValues *keyval = new KeyValues("UpdateControlData");
 			keyval->SetPtr("panel", GetCurrentPanel());
-			ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, NULL);
+			ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, INVALID_VPANEL);
 
 			keyval = new KeyValues("EnableSaveButton");	
-			ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, NULL);	
+			ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, INVALID_VPANEL);	
 		}
 		
 		panel->Repaint();
@@ -380,7 +380,7 @@ bool BuildGroup::MousePressed(MouseCode code, Panel *panel)
 	if (panel == m_hBuildDialog)
 	{
 		// hide the click menu if its up
-		ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("HideNewControlMenu"), NULL);
+		ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("HideNewControlMenu"), INVALID_VPANEL);
 		return true;
 	}
 
@@ -398,7 +398,7 @@ bool BuildGroup::MousePressed(MouseCode code, Panel *panel)
 	if ( code == MOUSE_RIGHT && panel == GetContextPanel())
 	{		
 		// trigger a drop down menu to create new controls
-		ivgui()->PostMessage (m_hBuildDialog->GetVPanel(), new KeyValues("ShowNewControlMenu"), NULL);	
+		ivgui()->PostMessage (m_hBuildDialog->GetVPanel(), new KeyValues("ShowNewControlMenu"), INVALID_VPANEL);	
 	}	
 	else
 	{	
@@ -414,7 +414,7 @@ bool BuildGroup::MousePressed(MouseCode code, Panel *panel)
 
 		_dragging = true;
 		_dragMouseCode = code;
-		ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("HideNewControlMenu"), NULL);
+		ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("HideNewControlMenu"), INVALID_VPANEL);
 		
 		int x, y;
 		input()->GetCursorPos(x, y);
@@ -479,12 +479,12 @@ bool BuildGroup::MousePressed(MouseCode code, Panel *panel)
 				
 				KeyValues *keyval = new KeyValues("SetActiveControl");
 				keyval->SetPtr("PanelPtr", GetCurrentPanel());
-				ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, NULL);
+				ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, INVALID_VPANEL);
 			}		
 		}		
 
 		// store undo information upon panel selection.
-		ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("StoreUndo"), NULL);
+		ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("StoreUndo"), INVALID_VPANEL);
 
 		panel->RequestFocus();
 	}
@@ -517,7 +517,7 @@ bool BuildGroup::MouseReleased(MouseCode code, Panel *panel)
 	Assert(panel);
 
 	_dragging=false;
-	input()->SetMouseCapture(null);
+	input()->SetMouseCapture(INVALID_VPANEL);
 	return true;
 }
 
@@ -621,7 +621,7 @@ bool BuildGroup::KeyCodeTyped(KeyCode code, Panel *panel)
 		case KEY_DELETE:
 		{
 			// delete the panel we have selected 
-			ivgui()->PostMessage (m_hBuildDialog->GetVPanel(), new KeyValues ("DeletePanel"), NULL);
+			ivgui()->PostMessage (m_hBuildDialog->GetVPanel(), new KeyValues ("DeletePanel"), INVALID_VPANEL);
 			break;
 		}
 
@@ -633,18 +633,18 @@ bool BuildGroup::KeyCodeTyped(KeyCode code, Panel *panel)
 		{
 		case KEY_Z:
 			{
-				ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("Undo"), NULL);
+				ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("Undo"), INVALID_VPANEL);
 				break;
 			}
 
 		case KEY_C:
 			{
-				ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("Copy"), NULL);
+				ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("Copy"), INVALID_VPANEL);
 				break;
 			}
 		case KEY_V:
 			{
-				ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("Paste"), NULL);
+				ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("Paste"), INVALID_VPANEL);
 				break;
 			}
 		}
@@ -670,7 +670,7 @@ bool BuildGroup::KeyCodeTyped(KeyCode code, Panel *panel)
 		ApplySnap(panel);
 
 		panel->Repaint();
-		if (panel->GetVParent() != 0)
+		if (panel->GetVParent() != INVALID_VPANEL)
 		{
 			panel->PostMessage(panel->GetVParent(), new KeyValues("Repaint"));
 		}
@@ -682,10 +682,10 @@ bool BuildGroup::KeyCodeTyped(KeyCode code, Panel *panel)
 			// post that it's active
 			KeyValues *keyval = new KeyValues("SetActiveControl");
 			keyval->SetPtr("PanelPtr", GetCurrentPanel());
-			ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, NULL);
+			ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, INVALID_VPANEL);
 
 			// post that it's been changed
-			ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("PanelMoved"), NULL);
+			ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), new KeyValues("PanelMoved"), INVALID_VPANEL);
 		}
 	}
 
@@ -774,7 +774,7 @@ void BuildGroup::ActivateBuildDialog( void )
 	_currentPanel = m_pParentPanel;
 	KeyValues *keyval = new KeyValues("SetActiveControl");
 	keyval->SetPtr("PanelPtr", GetCurrentPanel());
-	ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, NULL);
+	ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, INVALID_VPANEL);
 }
 
 //-----------------------------------------------------------------------------
@@ -1077,7 +1077,7 @@ void BuildGroup::ChangeControlSettingsFile(const char *controlResourceName)
 	// force it to update
 	KeyValues *keyval = new KeyValues("SetActiveControl");
 	keyval->SetPtr("PanelPtr", GetCurrentPanel());
-	ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, NULL);
+	ivgui()->PostMessage(m_hBuildDialog->GetVPanel(), keyval, INVALID_VPANEL);
 }
 
 //-----------------------------------------------------------------------------

@@ -9,7 +9,7 @@
 
 #include "utlmap.h"
 #include "simtimer.h"
-#include "AI_Criteria.h"
+#include "ai_criteria.h"
 #include "ai_baseactor.h"
 #include "ai_speechfilter.h"
 #ifndef _WIN32
@@ -219,8 +219,6 @@ private:
 
 	friend CAI_AllySpeechManager *GetAllySpeechManager();
 	static CAI_AllySpeechManager *gm_pSpeechManager;
-
-	DECLARE_DATADESC();
 };
 
 //-------------------------------------
@@ -246,8 +244,28 @@ enum AISpeechTargetSearchFlags_t
 
 struct AISpeechSelection_t
 {
+	AISpeechSelection_t()
+	 :	response()
+	{
+	}
+	
+	void Set( AIConcept_t newConcept, AI_Response &nuResponse, CBaseEntity *pTarget = NULL )
+	{
+		response = nuResponse;
+		ai_concept = newConcept;
+		hSpeechTarget = pTarget;
+	}
+
+	// Use in a specific case where the response has already been set.
+	void Set( AIConcept_t newConcept, CBaseEntity *pTarget  )
+	{
+		Assert( !response.IsEmpty() );
+		ai_concept = newConcept;
+		hSpeechTarget = pTarget;
+	}
+
 	std::string		ai_concept;
-	AI_Response		Response;
+	AI_Response		response;
 	EHANDLE			hSpeechTarget;
 };
 
@@ -313,7 +331,7 @@ public:
 	void		SetSpeechTarget( CBaseEntity *pSpeechTarget ) 	{ m_hTalkTarget = pSpeechTarget; }
 	
 	void		SetSpeechFilter( CAI_SpeechFilter *pFilter )	{ m_hSpeechFilter = pFilter; }
-	CAI_SpeechFilter *GetSpeechFilter( void )					{ return m_hSpeechFilter; }
+	CAI_SpeechFilter *GetSpeechFilter( void )					{ return m_hSpeechFilter.Get(); }
 
 	//---------------------------------
 	
@@ -333,7 +351,7 @@ public:
 	//---------------------------------
 
 	bool 		SelectSpeechResponse( AIConcept_t ai_concept, const char *pszModifiers, CBaseEntity *pTarget, AISpeechSelection_t *pSelection );
-	void		SetPendingSpeech( AIConcept_t ai_concept, AI_Response &Response );
+	void		SetPendingSpeech( AIConcept_t ai_concept, AI_Response *pResponse );
 	void 		ClearPendingSpeech();
 	bool		HasPendingSpeech()	{ return !m_PendingConcept.empty(); }
 
@@ -354,7 +372,7 @@ public:
 	
 	bool		IsOkToSpeak( void );
 	bool		IsOkToCombatSpeak( void );
-	bool		IsOkToSpeakInResponseToPlayer( void );
+	virtual bool		IsOkToSpeakInResponseToPlayer( void );
 	
 	bool		ShouldSpeakRandom( AIConcept_t ai_concept, int iChance );
 	bool		IsAllowedToSpeak( AIConcept_t ai_concept, bool bRespondingToPlayer = false );
@@ -460,7 +478,7 @@ private:
 	float	m_flTimeLastRegen;		// Last time I regenerated a bit of health.
 	float	m_flHealthAccumulator;	// Counterpart to the damage accumulator in CBaseCombatCharacter. So ally health regeneration is accurate over time.
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 protected:
 	DEFINE_CUSTOM_AI;
 };

@@ -26,6 +26,11 @@
 ConVar crosshair( "crosshair", "1", FCVAR_ARCHIVE );
 ConVar cl_observercrosshair( "cl_observercrosshair", "1", FCVAR_ARCHIVE );
 
+ConVar cl_crosshair_red( "cl_crosshair_red", "200", FCVAR_ARCHIVE );
+ConVar cl_crosshair_green( "cl_crosshair_green", "200", FCVAR_ARCHIVE );
+ConVar cl_crosshair_blue( "cl_crosshair_blue", "200", FCVAR_ARCHIVE );
+ConVar cl_crosshair_scale( "cl_crosshair_scale", "32.0", FCVAR_ARCHIVE );
+
 using namespace vgui;
 
 int ScreenTransform( const Vector& point, Vector& screen );
@@ -108,11 +113,6 @@ bool CHudCrosshair::ShouldDraw( void )
 
 	return ( bNeedsDraw && CHudElement::ShouldDraw() );
 }
-
-extern ConVar cl_crosshair_red;
-extern ConVar cl_crosshair_green;
-extern ConVar cl_crosshair_blue;
-extern ConVar cl_crosshair_scale;
 
 void CHudCrosshair::GetDrawPosition ( float *pX, float *pY, bool *pbBehindCamera, QAngle angleCrosshairOffset )
 {

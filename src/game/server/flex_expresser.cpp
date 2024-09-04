@@ -240,9 +240,9 @@ CFlexExpresser * CFlexExpresser::AsFlexExpresser( CBaseEntity *pEntity )
 }
 
 
-BEGIN_DATADESC( CFlexExpresser )
+BEGIN_MAPENTITY( CFlexExpresser )
 DEFINE_INPUTFUNC( FIELD_STRING,	"SpeakResponseConcept",	InputSpeakResponseConcept ),
 DEFINE_KEYFIELD( m_flThenAnyMaxDist, FIELD_FLOAT, "maxThenAnyDispatchDist" ),
-END_DATADESC()
+END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( prop_talker , CFlexExpresser ); 

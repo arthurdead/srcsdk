@@ -12,8 +12,6 @@
 
 #pragma once
 
-typedef const char *AIConcept_t;
-
 // Speak concepts
 #define TLK_LEAD_START				"TLK_LEAD_START"
 #define TLK_LEAD_ARRIVAL			"TLK_LEAD_ARRIVAL"
@@ -82,8 +80,6 @@ struct AI_LeadArgs_t
 	bool		bDontSpeakStart;
 	bool		bLeadDuringCombat;
 	bool		bGagLeader;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 
@@ -100,8 +96,6 @@ public:
 		ClearGoal();
 	}
 	
-	virtual void OnRestore();
-
 	virtual const char *GetName() {	return "Lead"; }
 
 	virtual int	DrawDebugTextOverlays( int text_offset );
@@ -225,8 +219,6 @@ private:
 	CRandStopwatch  m_LostLOSTimer;
 
 	DEFINE_CUSTOM_SCHEDULE_PROVIDER;
-
-	DECLARE_DATADESC();
 };
 
 //-----------------------------------------------------------------------------

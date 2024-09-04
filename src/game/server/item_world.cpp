@@ -11,16 +11,7 @@
 #include "gamerules.h"
 #include "engine/IEngineSound.h"
 #include "iservervehicle.h"
-#include "physics_saverestore.h"
 #include "world.h"
-
-#ifdef HL2MP
-#include "hl2mp_gamerules.h"
-#endif
-
-#ifdef HEIST_DLL
-#include "heist_gamerules.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -29,7 +20,6 @@
 
 class CWorldItem : public CBaseAnimating
 {
-	DECLARE_DATADESC();
 public:
 	DECLARE_CLASS( CWorldItem, CBaseAnimating );
 
@@ -40,12 +30,6 @@ public:
 };
 
 LINK_ENTITY_TO_CLASS(world_items, CWorldItem);
-
-BEGIN_DATADESC( CWorldItem )
-
-DEFINE_FIELD( m_iType, FIELD_INTEGER ),
-
-END_DATADESC()
 
 
 bool CWorldItem::KeyValue( const char *szKeyName, const char *szValue )
@@ -64,16 +48,6 @@ void CWorldItem::Spawn( void )
 {
 	CBaseEntity *pEntity = NULL;
 
-	switch (m_iType) 
-	{
-	case 44: // ITEM_BATTERY:
-		pEntity = CBaseEntity::Create( "item_battery", GetLocalOrigin(), GetLocalAngles() );
-		break;
-	case 45: // ITEM_SUIT:
-		pEntity = CBaseEntity::Create( "item_suit", GetLocalOrigin(), GetLocalAngles() );
-		break;
-	}
-
 	if (!pEntity)
 	{
 		Warning("unable to create world_item %d\n", m_iType );
@@ -90,28 +64,13 @@ void CWorldItem::Spawn( void )
 }
 
 
-BEGIN_DATADESC( CItem )
-
-	DEFINE_FIELD( m_bActivateWhenAtRest,	 FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_vOriginalSpawnOrigin, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vOriginalSpawnAngles, FIELD_VECTOR ),
-	DEFINE_PHYSPTR( m_pConstraint ),
-
-	// Function Pointers
-	DEFINE_ENTITYFUNC( ItemTouch ),
-	DEFINE_THINKFUNC( Materialize ),
-	DEFINE_THINKFUNC( ComeToRest ),
-
-#if defined( HL2MP ) || defined( TF_DLL ) || defined( HEIST_DLL )
-	DEFINE_FIELD( m_flNextResetCheckTime, FIELD_TIME ),
-	DEFINE_THINKFUNC( FallThink ),
-#endif
+BEGIN_MAPENTITY( CItem )
 
 	// Outputs
 	DEFINE_OUTPUT( m_OnPlayerTouch, "OnPlayerTouch" ),
 	DEFINE_OUTPUT( m_OnCacheInteraction, "OnCacheInteraction" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -120,6 +79,15 @@ END_DATADESC()
 CItem::CItem()
 {
 	m_bActivateWhenAtRest = false;
+}
+
+CItem::~CItem()
+{
+	if ( m_pConstraint )
+	{
+		physenv->DestroyConstraint( m_pConstraint );
+		m_pConstraint = NULL;
+	}
 }
 
 bool CItem::CreateItemVPhysicsObject( void )
@@ -153,6 +121,8 @@ bool CItem::CreateItemVPhysicsObject( void )
 //-----------------------------------------------------------------------------
 void CItem::Spawn( void )
 {
+	SetNetworkQuantizeOriginAngAngles( true );
+
 	if ( g_pGameRules->IsAllowedToSpawn( this ) == false )
 	{
 		UTIL_Remove( this );
@@ -167,7 +137,10 @@ void CItem::Spawn( void )
 	// This will make them not collide with the player, but will collide
 	// against other items + weapons
 	SetCollisionGroup( COLLISION_GROUP_WEAPON );
-	CollisionProp()->UseTriggerBounds( true, ITEM_PICKUP_BOX_BLOAT );
+	if( HasBloatedCollision() )
+	{
+		CollisionProp()->UseTriggerBounds( true, ITEM_PICKUP_BOX_BLOAT );
+	}
 	SetTouch(&CItem::ItemTouch);
 
 	if ( CreateItemVPhysicsObject() == false )
@@ -201,10 +174,14 @@ void CItem::Spawn( void )
 	}
 #endif //CLIENT_DLL
 
-#if defined( HL2MP ) || defined( TF_DLL ) || defined( HEIST_DLL )
+	Vector origin = GetAbsOrigin();
+	QAngle angles = GetAbsAngles();
+	NetworkQuantize( origin, angles );
+	SetAbsOrigin( origin );
+	SetAbsAngles( angles );
+
 	SetThink( &CItem::FallThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
-#endif
 }
 
 unsigned int CItem::PhysicsSolidMaskForEntity( void ) const
@@ -271,8 +248,6 @@ void CItem::ComeToRest( void )
 	}
 }
 
-#if defined( HL2MP ) || defined( TF_DLL ) || defined( HEIST_DLL )
-
 //-----------------------------------------------------------------------------
 // Purpose: Items that have just spawned run this think to catch them when 
 //			they hit the ground. Once we're sure that the object is grounded, 
@@ -283,30 +258,6 @@ void CItem::FallThink ( void )
 {
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
-#if defined( HL2MP )
-	bool shouldMaterialize = false;
-	IPhysicsObject *pPhysics = VPhysicsGetObject();
-	if ( pPhysics )
-	{
-		shouldMaterialize = pPhysics->IsAsleep();
-	}
-	else
-	{
-		shouldMaterialize = (GetFlags() & FL_ONGROUND) ? true : false;
-	}
-
-	if ( shouldMaterialize )
-	{
-		SetThink ( NULL );
-
-		m_vOriginalSpawnOrigin = GetAbsOrigin();
-		m_vOriginalSpawnAngles = GetAbsAngles();
-
-		HL2MPRules()->AddLevelDesignerPlacedObject( this );
-	}
-#endif // HL2MP
-
-#if defined( TF_DLL )
 	// We only come here if ActivateWhenAtRest() is never called,
 	// which is the case when creating currencypacks in MvM
 	if ( !( GetFlags() & FL_ONGROUND ) )
@@ -326,9 +277,7 @@ void CItem::FallThink ( void )
 	{
 		SetThink( &CItem::ComeToRest );
 	}
-#endif // TF
 
-#if defined( HEIST_DLL )
 	bool shouldMaterialize = false;
 	IPhysicsObject *pPhysics = VPhysicsGetObject();
 	if ( pPhysics )
@@ -347,12 +296,10 @@ void CItem::FallThink ( void )
 		m_vOriginalSpawnOrigin = GetAbsOrigin();
 		m_vOriginalSpawnAngles = GetAbsAngles();
 
-		HeistGamerules()->AddLevelDesignerPlacedObject( this );
+		GameRules()->AddLevelDesignerPlacedObject( this );
 	}
-#endif // HL2MP
 }
 
-#endif // HL2MP, TF
 
 //-----------------------------------------------------------------------------
 // Purpose: Used to tell whether an item may be picked up by the player.  This
@@ -469,9 +416,7 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 		{
 			UTIL_Remove( this );
 
-#ifdef HL2MP
-			HL2MPRules()->RemoveLevelDesignerPlacedObject( this );
-#endif
+			GameRules()->RemoveLevelDesignerPlacedObject( this );
 		}
 	}
 	else if (gEvilImpulse101)
@@ -494,9 +439,7 @@ CBaseEntity* CItem::Respawn( void )
 	UTIL_SetOrigin( this, g_pGameRules->VecItemRespawnSpot( this ) );// blip to whereever you should respawn.
 	SetAbsAngles( g_pGameRules->VecItemRespawnAngles( this ) );// set the angles.
 
-#if !defined( TF_DLL )
 	UTIL_DropToFloor( this, MASK_SOLID );
-#endif
 
 	RemoveAllDecals(); //remove any decals
 
@@ -513,11 +456,8 @@ void CItem::Materialize( void )
 	{
 		// changing from invisible state to visible.
 
-#ifdef HL2MP
-		EmitSound( "AlyxEmp.Charge" );
-#else
 		EmitSound( "Item.Materialize" );
-#endif
+
 		RemoveEffects( EF_NODRAW );
 		DoMuzzleFlash();
 	}

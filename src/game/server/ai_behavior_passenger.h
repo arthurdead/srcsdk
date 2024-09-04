@@ -36,8 +36,6 @@ struct passengerVehicleState_t
 	bool	m_bPlayerInVehicle;
 	bool	m_bWasBoosting;
 	bool	m_bWasOverturned;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 // ---------------------------------------------
@@ -64,7 +62,6 @@ enum PassengerState_e
 class CAI_PassengerBehavior : public CAI_SimpleBehavior
 {
 	DECLARE_CLASS( CAI_PassengerBehavior, CAI_SimpleBehavior );
-	DECLARE_DATADESC()
 
 public:
 

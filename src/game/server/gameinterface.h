@@ -14,6 +14,7 @@
 #include "networkstringtabledefs.h"
 #include "eiface.h"
 #include "tier1/utllinkedlist.h"
+#include "steam/steam_api_common.h"
 
 class IReplayFactory;
 class CBasePlayer;
@@ -21,17 +22,14 @@ class CBasePlayer;
 extern INetworkStringTable *g_pStringTableInfoPanel;
 extern INetworkStringTable *g_pStringTableServerMapCycle;
 
-#ifdef TF_DLL
-extern INetworkStringTable *g_pStringTableServerPopFiles;
-#endif
-
 // Player / Client related functions
 // Most of this is implemented in gameinterface.cpp, but some of it is per-mod in files like cs_gameinterface.cpp, etc.
-class CServerGameClients : public IServerGameClients
+class CServerGameClients : public IServerGameClientsEx
 {
 public:
 	virtual bool			ClientConnect( edict_t *pEntity, char const* pszName, char const* pszAddress, char *reject, int maxrejectlen ) OVERRIDE;
-	virtual void			ClientActive( edict_t *pEntity, bool bLoadGame ) OVERRIDE;
+	virtual void			ClientActive( edict_t *pEntity ) OVERRIDE;
+	virtual void			ClientFullyConnect( edict_t *pEntity );
 	virtual void			ClientDisconnect( edict_t *pEntity ) OVERRIDE;
 	virtual void			ClientPutInServer( edict_t *pEntity, const char *playername ) OVERRIDE;
 	virtual void			ClientCommand( edict_t *pEntity, const CCommand &args ) OVERRIDE;
@@ -40,7 +38,7 @@ public:
 	virtual float			ProcessUsercmds( edict_t *player, bf_read *buf, int numcmds, int totalcmds,
 								int dropped_packets, bool ignore, bool paused ) OVERRIDE;
 	// Player is running a command
-	virtual void			PostClientMessagesSent_DEPRECIATED( void ) OVERRIDE;
+	virtual void			PostClientMessagesSent( void ) OVERRIDE;
 	virtual void			SetCommandClient( int index ) OVERRIDE;
 	virtual CPlayerState	*GetPlayerState( edict_t *player ) OVERRIDE;
 	virtual void			ClientEarPosition( edict_t *pEntity, Vector *pEarOrigin ) OVERRIDE;
@@ -54,6 +52,10 @@ public:
 	virtual void			GetBugReportInfo( char *buf, int buflen ) OVERRIDE;
 	virtual void			NetworkIDValidated( const char *pszUserName, const char *pszNetworkID ) OVERRIDE;
 
+	virtual void			ClientVoice( edict_t *pEdict );
+
+	virtual int				GetMaxHumanPlayers();
+
 	// The client has submitted a keyvalues command
 	virtual void			ClientCommandKeyValues( edict_t *pEntity, KeyValues *pKeyValues ) OVERRIDE;
 
@@ -62,7 +64,7 @@ public:
 };
 
 
-class CServerGameDLL : public IServerGameDLL
+class CServerGameDLL : public IServerGameDLLEx
 {
 public:
 	virtual bool			DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
@@ -82,27 +84,6 @@ public:
 	virtual ServerClass*	GetAllServerClasses( void ) OVERRIDE;
 	virtual const char     *GetGameDescription( void ) OVERRIDE;
 	virtual void			CreateNetworkStringTables( void ) OVERRIDE;
-	
-	// Save/restore system hooks
-	virtual CSaveRestoreData  *SaveInit( int size ) OVERRIDE;
-	virtual void			SaveWriteFields( CSaveRestoreData *, char const* , void *, datamap_t *, typedescription_t *, int ) OVERRIDE;
-	virtual void			SaveReadFields( CSaveRestoreData *, char const* , void *, datamap_t *, typedescription_t *, int ) OVERRIDE;
-	virtual void			SaveGlobalState( CSaveRestoreData * ) OVERRIDE;
-	virtual void			RestoreGlobalState( CSaveRestoreData * ) OVERRIDE;
-	virtual int				CreateEntityTransitionList( CSaveRestoreData *, int ) OVERRIDE;
-	virtual void			BuildAdjacentMapList( void ) OVERRIDE;
-
-	virtual void			PreSave( CSaveRestoreData * ) OVERRIDE;
-	virtual void			Save( CSaveRestoreData * ) OVERRIDE;
-	virtual void			GetSaveComment( char *comment, int maxlength, float flMinutes, float flSeconds, bool bNoTime = false ) OVERRIDE;
-#ifdef _XBOX
-	virtual void			GetTitleName( const char *pMapName, char* pTitleBuff, int titleBuffSize ) OVERRIDE;
-#endif
-	virtual void			WriteSaveHeaders( CSaveRestoreData * ) OVERRIDE;
-
-	virtual void			ReadRestoreHeaders( CSaveRestoreData * ) OVERRIDE;
-	virtual void			Restore( CSaveRestoreData *, bool ) OVERRIDE;
-	virtual bool			IsRestoring() OVERRIDE;
 
 	// Retrieve info needed for parsing the specified user message
 	virtual bool			GetUserMessageInfo( int msg_type, char *name, int maxnamelength, int& size ) OVERRIDE;
@@ -110,11 +91,10 @@ public:
 	virtual CStandardSendProxies*	GetStandardSendProxies() OVERRIDE;
 
 	virtual void			PostInit() OVERRIDE;
+	virtual void			PostToolsInit();
 	virtual void			Think( bool finalTick ) OVERRIDE;
 
 	virtual void			OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue ) OVERRIDE;
-
-	virtual void			PreSaveGameLoaded( char const *pSaveName, bool bInGame ) OVERRIDE;
 
 	// Returns true if the game DLL wants the server not to be made public.
 	// Used by commentary system to hide multiplayer commentary servers from the master.
@@ -122,7 +102,13 @@ public:
 
 	virtual void			InvalidateMdlCache() OVERRIDE;
 
-	virtual void			SetServerHibernation( bool bHibernating ) OVERRIDE;
+	virtual void			ServerHibernationUpdate( bool bHibernating ) OVERRIDE;
+
+	// Called to apply lobby settings to a dedicated server
+	virtual void			ApplyGameSettings( KeyValues *pKV );
+
+	// does this game support randomly generated maps?
+	virtual bool			SupportsRandomMaps();
 
 	bool	m_bIsHibernating;
 
@@ -132,11 +118,13 @@ public:
 	// Called after the steam API has been shutdown post-level startup
 	virtual void			GameServerSteamAPIShutdown( void ) OVERRIDE;
 
+	virtual bool			ShouldPreferSteamAuth();
+
 	// interface to the new GC based lobby system
 	virtual IServerGCLobby *GetServerGCLobby() OVERRIDE;
 
-	virtual const char *GetServerBrowserMapOverride() OVERRIDE;
-	virtual const char *GetServerBrowserGameData() OVERRIDE;
+	// return true to disconnect client due to timeout (used to do stricter timeouts when the game is sure the client isn't loading a map)
+	virtual bool			ShouldTimeoutClient( int nUserID, float flTimeSinceLastReceived );
 
 	// Called to add output to the status command
 	virtual void 			Status( void (*print) (const char *fmt, ...) ) OVERRIDE;
@@ -153,6 +141,11 @@ public:
 	// Called to see if the game server is okay with a manual changelevel or map command
 	virtual bool			IsManualMapChangeOkay( const char **pszReason ) OVERRIDE;
 
+	virtual IServerGameTagsEx *GetIServerGameTags();
+
+protected:
+	KeyValues*				FindLaunchOptionByValue( KeyValues *pLaunchOptions, char const *szLaunchOption );
+
 private:
 
 	// This can just be a wrapper on MapEntity_ParseAllEntities, but CS does some tricks in here
@@ -162,6 +155,36 @@ private:
 	void LoadSpecificMOTDMsg( const ConVar &convar, const char *pszStringName );
 };
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+class CSteam3Server : public CSteamGameServerAPIContext
+{
+public:
+	CSteam3Server();
+
+	void Shutdown( void )
+	{
+		Clear();
+		m_bInitialized = false;
+	}
+
+	bool CheckInitialized( void )
+	{
+		if ( !m_bInitialized )
+		{
+			Init();
+			m_bInitialized = true;
+			return true;
+		}
+
+		return false;
+	}
+
+private:
+	bool	m_bInitialized;
+};
+CSteam3Server &Steam3Server();
 
 // Normally, when the engine calls ClientPutInServer, it calls a global function in the game DLL
 // by the same name. Use this to override the function that it calls. This is used for bots.
@@ -195,10 +218,16 @@ public:
 
 bool IsEngineThreaded();
 
-class CServerGameTags : public IServerGameTags
+class CServerGameTags : public IServerGameTagsEx
 {
 public:
 	virtual void GetTaggedConVarList( KeyValues *pCvarTagList );
+
+	virtual void			GetMatchmakingGameData( char *buf, size_t bufSize );
+	virtual void			GetMatchmakingTags( char *buf, size_t bufSize );
+
+	virtual bool			GetServerBrowserMapOverride( char *buf, size_t bufSize );
+	virtual void			GetServerBrowserGameData( char *buf, size_t bufSize );
 
 };
 

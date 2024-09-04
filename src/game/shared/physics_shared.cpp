@@ -19,6 +19,7 @@
 #include "decals.h"
 #include "IEffects.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
+#include "particle_parse.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -743,8 +744,12 @@ void PhysEnableEntityCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObje
 	if ( !pObject0 || !pObject1 )
 		return;
 
+	CBaseEntity *pEntity0 = static_cast<CBaseEntity *>(pObject0->GetGameData());
+	CBaseEntity *pEntity1 = static_cast<CBaseEntity *>(pObject1->GetGameData());
 	g_EntityCollisionHash->RemoveObjectPair( pObject0->GetGameData(), pObject1->GetGameData() );
 	PhysRecheckObjectPair( pObject0, pObject1 );
+	pEntity0->CollisionRulesChanged();
+	pEntity1->CollisionRulesChanged();
 }
 
 // disables collisions between entities (each entity may contain multiple objects)
@@ -753,8 +758,12 @@ void PhysDisableEntityCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObj
 	if ( !pObject0 || !pObject1 )
 		return;
 
+	CBaseEntity *pEntity0 = static_cast<CBaseEntity *>(pObject0->GetGameData());
+	CBaseEntity *pEntity1 = static_cast<CBaseEntity *>(pObject1->GetGameData());
 	g_EntityCollisionHash->AddObjectPair( pObject0->GetGameData(), pObject1->GetGameData() );
 	PhysRecheckObjectPair( pObject0, pObject1 );
+	pEntity0->CollisionRulesChanged();
+	pEntity1->CollisionRulesChanged();
 }
 
 void PhysDisableEntityCollisions( CBaseEntity *pEntity0, CBaseEntity *pEntity1 )
@@ -923,6 +932,9 @@ void PhysFrictionEffect( Vector &vecPos, Vector vecVel, float energy, int surfac
 	Vector invVecVel = -vecVel;
 	VectorNormalize( invVecVel );
 
+	QAngle angDirection;
+	VectorAngles( vecVel, angDirection );
+
 	surfacedata_t *psurf = physprops->GetSurfaceData( surfaceProps );
 	surfacedata_t *phit = physprops->GetSurfaceData( surfacePropsHit );
 
@@ -933,7 +945,7 @@ void PhysFrictionEffect( Vector &vecPos, Vector vecVel, float energy, int surfac
 		if ( energy < MASS10_SPEED2ENERGY(15) )
 			break;
 		
-		g_pEffects->Dust( vecPos, invVecVel, 1, 16 );
+		DispatchParticleEffect( "impact_physics_dust", vecPos, angDirection );
 		break;
 
 	case CHAR_TEX_CONCRETE:
@@ -941,7 +953,7 @@ void PhysFrictionEffect( Vector &vecPos, Vector vecVel, float energy, int surfac
 		if ( energy < MASS10_SPEED2ENERGY(28) )
 			break;
 		
-		g_pEffects->Dust( vecPos, invVecVel, 1, 16 );
+		DispatchParticleEffect( "impact_physics_dust", vecPos, angDirection );
 		break;
 	}
 	
@@ -956,7 +968,7 @@ void PhysFrictionEffect( Vector &vecPos, Vector vecVel, float energy, int surfac
 			case CHAR_TEX_CONCRETE:
 			case CHAR_TEX_METAL:
 
-				g_pEffects->MetalSparks( vecPos, invVecVel );
+				DispatchParticleEffect( "impact_physics_sparks", vecPos, angDirection );
 				break;									
 			}
 		}

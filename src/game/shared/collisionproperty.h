@@ -14,6 +14,7 @@
 #include "mathlib/vector.h"
 #include "ispatialpartition.h"
 #include "predictable_entity.h"
+#include "map_entity.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -60,7 +61,7 @@ class CCollisionProperty : public ICollideable
 	DECLARE_PREDICTABLE();
 
 #ifdef GAME_DLL
-	DECLARE_DATADESC();
+	DECLARE_MAPEMBEDDED();
 #endif
 
 public:
@@ -95,7 +96,7 @@ public:
 	// Spatial partition management
 	void			CreatePartitionHandle();
 	void			DestroyPartitionHandle();
-	unsigned short	GetPartitionHandle() const;
+	SpatialPartitionHandle_t	GetPartitionHandle() const;
 
 	// Marks the spatial partition dirty
 	void			MarkPartitionHandleDirty();
@@ -114,6 +115,7 @@ public:
 	// Sets the method by which the surrounding collision bounds is set
 	// You must pass in values for mins + maxs if you select the USE_SPECIFIED_BOUNDS type. 
 	void			SetSurroundingBoundsType( SurroundingBoundsType_t type, const Vector *pMins = NULL, const Vector *pMaxs = NULL );
+	SurroundingBoundsType_t GetSurroundingBoundsType() const;
 
 	// Sets the solid type (which type of collision representation)
 	void			SetSolid( SolidType_t val );
@@ -192,6 +194,7 @@ public:
 
 	// Computes the distance from a point in world space to the OBB
 	float			CalcDistanceFromPoint( const Vector &vecWorldPt ) const;
+	float			CalcSqrDistanceFromPoint( const Vector &vecWorldPt ) const;
 
 	// Does a rotation make us need to recompute the surrounding box?
 	bool			DoesRotationInvalidateSurroundingBox( ) const;
@@ -314,11 +317,15 @@ inline const CBaseEntity *CCollisionProperty::GetOuter() const
 //-----------------------------------------------------------------------------
 // Spatial partition
 //-----------------------------------------------------------------------------
-inline unsigned short CCollisionProperty::GetPartitionHandle() const
+inline SpatialPartitionHandle_t CCollisionProperty::GetPartitionHandle() const
 {
 	return m_Partition;
 }
 
+inline SurroundingBoundsType_t CCollisionProperty::GetSurroundingBoundsType() const
+{
+	return (SurroundingBoundsType_t)m_nSurroundType.Get();
+}
 
 //-----------------------------------------------------------------------------
 // Methods related to size

@@ -1,0 +1,35 @@
+[binaries]
+c = '/usr/bin/i686-w64-mingw32-gcc'
+cpp = '/usr/bin/i686-w64-mingw32-g++'
+c_ld = 'bfd'
+cpp_ld = 'bfd'
+ar = '/usr/bin/i686-w64-mingw32-gcc-ar'
+strip = '/usr/bin/i686-w64-mingw32-strip'
+cmake = '/usr/bin/i686-w64-mingw32-cmake'
+pkg-config = '/usr/bin/i686-w64-mingw32-pkg-config'
+llvm-config = '/usr/bin/llvm-config32'
+exe_wrapper = '/usr/bin/i686-w64-mingw32-wine'
+
+[cmake]
+CMAKE_C_COMPILER = '/usr/bin/i686-w64-mingw32-gcc'
+CMAKE_CXX_COMPILER = '/usr/bin/i686-w64-mingw32-g++'
+CMAKE_TOOLCHAIN_FILE = '/usr/share/mingw/toolchain-i686-w64-mingw32.cmake'
+CMAKE_CROSSCOMPILING_EMULATOR = '/usr/bin/i686-w64-mingw32-wine'
+CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES = '/usr/i686-w64-mingw32/include'
+CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES = '/usr/i686-w64-mingw32/include'
+
+[built-in options]
+c_args = ['-m32']
+c_link_args = ['-m32']
+cpp_args = ['-m32']
+cpp_link_args = ['-m32']
+pkg_config_path = ['/usr/lib32/pkgconfig']
+prefix = '/usr'
+libdir = 'lib32'
+bindir = 'bin'
+
+[host_machine]
+system = 'windows'
+cpu_family = 'x86'
+cpu = 'i686'
+endian = 'little'

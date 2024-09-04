@@ -62,8 +62,6 @@ public:
 	bool	IsPassengerEntering( void );
 	bool	IsPassengerExiting( void );
 
-	DECLARE_SIMPLE_DATADESC();
-
 private:
 	CFourWheelVehiclePhysics	*GetFourWheelVehiclePhysics( void );
 	
@@ -84,8 +82,8 @@ public:
 	unsigned int GetVehicleType( void )							{ return m_nVehicleType; }
 
 	// CBaseEntity
+	virtual void	Precache();
 	void			Spawn( void );
-	virtual int		Restore( IRestore &restore );
 	void			VPhysicsUpdate( IPhysicsObject *pPhysics );
 	void			DrawDebugGeometryOverlays();
 	int				DrawDebugTextOverlays();
@@ -106,12 +104,10 @@ public:
 	void InputHandBrakeOn( inputdata_t &inputdata );
 	void InputHandBrakeOff( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
-#ifdef HL2_EPISODIC
 	void AddPhysicsChild( CBaseEntity *pChild );
 	void RemovePhysicsChild( CBaseEntity *pChild );
-#endif //HL2_EPISODIC
 		
 protected:
 	// engine sounds
@@ -130,9 +126,7 @@ protected:
 	unsigned int					m_nVehicleType;
 	string_t						m_vehicleScript;
 
-#ifdef HL2_EPISODIC
 	CUtlVector<EHANDLE>				m_hPhysicsChildren;	// List of entities who wish to get physics callbacks from the vehicle
-#endif //HL2_EPISODIC
 
 private:
 	Vector							m_vecSmoothedVelocity;
@@ -170,8 +164,7 @@ public:
 
 	virtual void	Precache( void );
 	virtual void	Spawn( void );
-	virtual int		Restore( IRestore &restore );
-	virtual void	OnRestore();
+
 	virtual void	CreateServerVehicle( void );
 	virtual int		ObjectCaps( void ) { return BaseClass::ObjectCaps() | FCAP_IMPULSE_USE; };
 	virtual void	GetVectors(Vector* pForward, Vector* pRight, Vector* pUp) const;

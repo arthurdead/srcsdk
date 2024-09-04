@@ -33,18 +33,18 @@ private:
 	void InputShowHudHint( inputdata_t &inputdata );
 	void InputHideHudHint( inputdata_t &inputdata );
 	string_t m_iszMessage;
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 };
 
 LINK_ENTITY_TO_CLASS( env_hudhint, CEnvHudHint );
 
-BEGIN_DATADESC( CEnvHudHint )
+BEGIN_MAPENTITY( CEnvHudHint )
 
 	DEFINE_KEYFIELD( m_iszMessage, FIELD_STRING, "message" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ShowHudHint", InputShowHudHint ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "HideHudHint", InputHideHudHint ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 

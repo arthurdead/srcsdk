@@ -16,7 +16,7 @@
 #include "ai_task.h"
 #include "ai_namespaces.h"
 #include "bitstring.h"
-
+#include "string_t.h"
 
 class CAI_Agent;
 
@@ -60,8 +60,6 @@ struct AIAgentScheduleState_t
 	AI_TaskFailureCode_t taskFailureCode;
 	int					 iTaskInterrupt;
 	bool				 bScheduleWasInterrupted;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 //=============================================================================
@@ -80,15 +78,6 @@ public:
 	
 	CAI_Agent();
 	~CAI_Agent();
-
-	//---------------------------------
-	
-	DECLARE_SIMPLE_DATADESC();
-
-	virtual int			Save( ISave &save ); 
-	virtual int			Restore( IRestore &restore );
-	void				SaveConditions( ISave &save, const CAI_ScheduleBits &conditions );
-	void				RestoreConditions( IRestore &restore, CAI_ScheduleBits *pConditions );
 
 	//---------------------------------
 	
@@ -406,12 +395,12 @@ inline void CAI_Agent::ResetScheduleCurTaskIndex()
 
 #define DEFINE_SCHEDULE( id, text ) \
 	scheduleIds.PushBack( #id, id ); \
-	char * g_psz##id = \
+	const char * g_psz##id = \
 		"\n	Schedule" \
 		"\n		" #id \
 		text \
 		"\n"; \
-	schedulesToLoad.AddToTail( (char *)g_psz##id );
+	schedulesToLoad.AddToTail( g_psz##id );
 	
 //-----------------
 
