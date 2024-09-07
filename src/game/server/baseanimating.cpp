@@ -136,6 +136,7 @@ BEGIN_MAPENTITY( CBaseAnimating )
 	DEFINE_KEYFIELD( m_nSequence, FIELD_INTEGER, "sequence" ),
 	DEFINE_KEYFIELD( m_flPlaybackRate, FIELD_FLOAT, "playbackrate" ),
 	DEFINE_KEYFIELD( m_flCycle, FIELD_FLOAT, "cycle" ),
+	DEFINE_KEYFIELD( m_bSuppressAnimSounds, FIELD_BOOLEAN, "SuppressAnimSounds"),
 
 	DEFINE_KEYFIELD( m_iszLightingOriginRelative, FIELD_STRING, "LightingOriginHack" ),
 	DEFINE_KEYFIELD( m_iszLightingOrigin, FIELD_STRING, "LightingOrigin" ),

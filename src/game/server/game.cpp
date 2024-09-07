@@ -30,8 +30,6 @@ ConVar  servercfgfile( "servercfgfile","server.cfg" );
 ConVar  lservercfgfile( "lservercfgfile","listenserver.cfg" );
 
 // multiplayer server rules
-ConVar	teamplay( "mp_teamplay","0", FCVAR_NOTIFY );
-ConVar	fraglimit( "mp_fraglimit","0", FCVAR_NOTIFY );
 ConVar	falldamage( "mp_falldamage","0", FCVAR_NOTIFY );
 ConVar	weaponstay( "mp_weaponstay","0", FCVAR_NOTIFY );
 ConVar	forcerespawn( "mp_forcerespawn","1", FCVAR_NOTIFY );

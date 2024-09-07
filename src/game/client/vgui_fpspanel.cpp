@@ -80,12 +80,12 @@ CFPSPanel::CFPSPanel( vgui::VPANEL parent ) : BaseClass( NULL, "CFPSPanel" )
 {
 	SetParent( parent );
 	SetVisible( false );
-	SetCursor( null );
+	SetCursor( vgui::INVALID_CURSOR );
 
 	SetFgColor( Color( 0, 0, 0, 255 ) );
 	SetPaintBackgroundEnabled( false );
 
-	m_hFont = 0;
+	m_hFont = vgui::INVALID_FONT;
 	m_BatteryPercent = -1;
 	m_lastBatteryPercent = -1.0f;
 
@@ -130,7 +130,7 @@ void CFPSPanel::ApplySchemeSettings(vgui::IScheme *pScheme)
 	BaseClass::ApplySchemeSettings(pScheme);
 
 	m_hFont = pScheme->GetFont( "DefaultFixedOutline" );
-	Assert( m_hFont );
+	Assert( m_hFont != vgui::INVALID_FONT );
 
 	ComputeSize();
 }

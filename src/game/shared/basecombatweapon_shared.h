@@ -193,7 +193,7 @@ public:
 
 	// A derived weapon class should return true here so that weapon sounds, etc, can
 	//  apply the proper filter
-	virtual bool			IsPredicted( void ) const { return false; }
+	virtual bool			IsPredicted( void ) const { return true; }
 
 	virtual void			Spawn( void );
 	virtual void			Precache( void );
@@ -276,6 +276,11 @@ public:
 
 	virtual bool			ShouldBlockPrimaryFire() { return false; }
 
+	float GetWeaponFOV()
+	{
+		return GetWpnData().m_flWeaponFOV;
+	}
+
 #ifdef CLIENT_DLL
 	virtual void			CreateMove( float flInputSampleTime, CUserCmd *pCmd, const QAngle &vecOldViewAngles ) {}
 	virtual int				CalcOverrideModelIndex() OVERRIDE;
@@ -340,6 +345,7 @@ public:
 	virtual const char			*GetDeathNoticeName( void );	// Get the string to print death notices with
 
 	CBaseCombatCharacter	*GetOwner() const;
+	CBasePlayer *GetPlayerOwner() const;
 	void					SetOwner( CBaseCombatCharacter *owner );
 	virtual void			OnPickedUp( CBaseCombatCharacter *pNewOwner );
 
@@ -478,6 +484,11 @@ public:
 
 	virtual CDmgAccumulator	*GetDmgAccumulator( void ) { return NULL; }
 
+	const Vector &GetOriginalSpawnOrigin() const
+	{ return m_vOriginalSpawnOrigin; }
+	const QAngle &GetOriginalSpawnAngles() const
+	{ return m_vOriginalSpawnAngles; }
+
 // Client only methods
 #else
 
@@ -492,6 +503,8 @@ public:
 	virtual ShadowType_t	ShadowCastType();
 	virtual void			SetDormant( bool bDormant );
 	virtual void			OnDataChanged( DataUpdateType_t updateType );
+
+	virtual bool ShouldPredict();
 
 	virtual void			RestartParticleEffect( void ) {}
 
@@ -655,6 +668,12 @@ private:
 	
 	// Server only
 #if !defined( CLIENT_DLL )
+
+	Vector m_vOriginalSpawnOrigin;
+	QAngle m_vOriginalSpawnAngles;
+
+public:
+	float m_flNextResetCheckTime;
 
 	// Outputs
 protected:

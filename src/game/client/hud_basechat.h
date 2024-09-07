@@ -210,6 +210,10 @@ private:
 	int m_iFlag;
 };
 
+extern char* ConvertCRtoNL( char *str );
+extern wchar_t* ConvertCRtoNL( wchar_t *str );
+extern void StripEndNewlineFromString( char *str );
+extern void StripEndNewlineFromString( wchar_t *str );
 
 //-----------------------------------------------------------------------------
 // Purpose: 

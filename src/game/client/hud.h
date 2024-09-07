@@ -74,7 +74,7 @@ public:
 	vgui::HFont hFont;
 
 	// vgui texture Id assigned to this item
-	int			textureId;
+	vgui::HTexture			textureId;
 	// s0, t0, s1, t1
 	float		texCoords[ 4 ];
 

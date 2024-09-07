@@ -111,7 +111,7 @@ void CPhysicsPushedEntities::AddEntity( CBaseEntity *ent )
 //-----------------------------------------------------------------------------
 // Unlink + relink the pusher list so we can actually do the push
 //-----------------------------------------------------------------------------
-void CPhysicsPushedEntities::UnlinkPusherList( int *pPusherHandles )
+void CPhysicsPushedEntities::UnlinkPusherList( SpatialTempHandle_t *pPusherHandles )
 {
 	for ( int i = m_rgPusher.Count(); --i >= 0; )
 	{
@@ -119,7 +119,7 @@ void CPhysicsPushedEntities::UnlinkPusherList( int *pPusherHandles )
 	}
 }
 
-void CPhysicsPushedEntities::RelinkPusherList( int *pPusherHandles )
+void CPhysicsPushedEntities::RelinkPusherList( SpatialTempHandle_t *pPusherHandles )
 {
 	for ( int i = m_rgPusher.Count(); --i >= 0; )
 	{
@@ -211,7 +211,7 @@ bool CPhysicsPushedEntities::SpeculativelyCheckPush( PhysicsPushedInfo_t &info, 
 	CBaseEntity *pBlocker = info.m_pEntity;
 
 	// See if it's possible to move the entity, but disable all pushers in the hierarchy first
-	int *pPusherHandles = (int*)stackalloc( m_rgPusher.Count() * sizeof(int) );
+	SpatialTempHandle_t *pPusherHandles = (SpatialTempHandle_t*)stackalloc( m_rgPusher.Count() * sizeof(SpatialTempHandle_t) );
 	UnlinkPusherList( pPusherHandles );
 	CTraceFilterPushMove pushFilter(pBlocker, pBlocker->GetCollisionGroup() );
 
@@ -701,7 +701,7 @@ private:
 		bool bCollide = false;
 		for ( int i = 0; i < m_collisionGroupCount; i++ )
 		{
-			if ( g_pGameRules->ShouldCollide( pCheck->GetCollisionGroup(), m_collisionGroups[i] ) )
+			if ( GameRules()->ShouldCollide( pCheck->GetCollisionGroup(), m_collisionGroups[i] ) )
 			{
 				bCollide = true;
 				break;

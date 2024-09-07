@@ -44,9 +44,6 @@ extern ConVar developer;	// developer mode
 // Language IDs.
 //-----------------------------------------------------------------------------
 #define LANGUAGE_ENGLISH				0
-#define LANGUAGE_GERMAN					1
-#define LANGUAGE_FRENCH					2
-#define LANGUAGE_BRITISH				3
 
 
 //-----------------------------------------------------------------------------
@@ -883,5 +880,7 @@ int UTIL_HolidaysToVisionFilters( EHolidayFlags eHolidays );
 
 int UTIL_GetActiveHolidaysVisionFilter();
 #endif
+
+extern bool FindInList( const char **pStrings, const char *pToFind );
 
 #endif // UTIL_SHARED_H

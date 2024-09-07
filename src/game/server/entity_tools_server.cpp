@@ -105,9 +105,6 @@ public:
 static CServerTools g_ServerTools;
 IServerTools *g_pServerTools = &g_ServerTools;
 
-// VSERVERTOOLS_INTERFACE_VERSION_1 is compatible with the latest since we're only adding things to the end, so expose that as well.
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CServerTools, IServerTools001, VSERVERTOOLS_INTERFACE_VERSION_1, g_ServerTools );
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CServerTools, IServerTools002, VSERVERTOOLS_INTERFACE_VERSION_2, g_ServerTools );
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CServerTools, IServerTools, VSERVERTOOLS_INTERFACE_VERSION, g_ServerTools );
 
 // When bumping the version to this interface, check that our assumption is still valid and expose the older version in the same way
@@ -263,8 +260,11 @@ void HandleFoundryEntitySpawnRecords()
 
 		if ( pRecord->m_iEntityIndex > 0 )
 		{
+			CBaseEntity *pOldEntity = gEntList.LookupEntityByNetworkIndex( pRecord->m_iEntityIndex );
+			if( pOldEntity )
+				UTIL_Remove( pOldEntity );
+
 			gEntList.ForceEntSerialNumber( pRecord->m_iEntityIndex, pRecord->m_iSerialNumber );
-			engine->ForceFlushEntity( pRecord->m_iEntityIndex );
 		}
 
 		// Figure out the class name.
@@ -422,6 +422,15 @@ bool CServerTools::DestroyEntityByHammerId( int iHammerID )
 
 	UTIL_Remove( pEntity );
 	return true;
+}
+
+void CServerTools::RemoveEntity( int iHammerID )
+{
+	CBaseEntity *pEntity = (CBaseEntity*)FindEntityByHammerID( iHammerID );
+	if ( !pEntity )
+		return;
+
+	UTIL_Remove( pEntity );
 }
 
 void CServerTools::RemoveEntity( CBaseEntity *pEntity )

@@ -415,7 +415,7 @@ void CSprite::AnimateUntilDead( void )
 void CSprite::Expand( float scaleSpeed, float fadeSpeed )
 {
 	m_flSpeed = scaleSpeed;
-	m_iHealth = fadeSpeed;
+	SetHealth( fadeSpeed );
 	SetThink( &CSprite::ExpandThink );
 
 	SetNextThink( gpGlobals->curtime );
@@ -430,7 +430,7 @@ void CSprite::ExpandThink( void )
 	float frametime = gpGlobals->curtime - m_flLastTime;
 	SetSpriteScale( m_flSpriteScale + m_flSpeed * frametime );
 
-	int sub = (int)(m_iHealth * frametime);
+	int sub = (int)(GetHealth() * frametime);
 	if ( sub > GetRenderAlpha() )
 	{
 		SetRenderAlpha( 0 );
@@ -563,19 +563,19 @@ void CSprite::InputShowSprite( inputdata_t &inputdata )
 void CSprite::InputColorRedValue( inputdata_t &inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt( inputdata.value.Float() ), 0, 255 );
-	SetColor( nNewColor, m_clrRender->g, m_clrRender->b );
+	SetColor( nNewColor, GetRenderColorG(), GetRenderColorB() );
 }
 
 void CSprite::InputColorGreenValue( inputdata_t &inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt( inputdata.value.Float() ), 0, 255 );
-	SetColor( m_clrRender->r, nNewColor, m_clrRender->b );
+	SetColor( GetRenderColorR(), nNewColor, GetRenderColorB() );
 }
 
 void CSprite::InputColorBlueValue( inputdata_t &inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt( inputdata.value.Float() ), 0, 255 );
-	SetColor( m_clrRender->r, m_clrRender->g, nNewColor );
+	SetColor( GetRenderColorR(), GetRenderColorG(), nNewColor );
 }
 
 //-----------------------------------------------------------------------------

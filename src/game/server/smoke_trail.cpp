@@ -358,7 +358,8 @@ SporeExplosion::SporeExplosion( void )
 	m_flStartSize			= 1.0f;
 	m_flEndSize				= 0.0f;
 	m_flSpawnRadius			= 16.0f;
-	SetRenderColor( 255, 255, 255, 255 );
+	SetRenderColor( 255, 255, 255 );
+	SetRenderAlpha( 255 );
 	m_bEmit = true;
 	m_bDisabled = false;
 }

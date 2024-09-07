@@ -9,7 +9,6 @@
 #pragma once
 
 #include "tier1/utlvector.h"
-#include <vgui_controls/Panel.h>
 
 #define DECLARE_PANELANIMATION( className )												\
 	static void AddToAnimationMap( char const *scriptname, char const *type, char const *var,	\
@@ -58,6 +57,11 @@
 	{																					\
 		return FindOrAddPanelAnimationMap( GetPanelClassName() );						\
 	}
+
+namespace vgui
+{
+	class Panel;
+}
 
 typedef void *( *PANELLOOKUPFUNC )( vgui::Panel *panel );
 

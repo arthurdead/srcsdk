@@ -5828,11 +5828,11 @@ bool CNavArea::IsCompletelyVisible( const CNavArea *viewedArea ) const
 /**
  * Return true if any portion of this area is visible to anyone on the given team
  */
-bool CNavArea::IsPotentiallyVisibleToTeam( int teamIndex ) const
+bool CNavArea::IsPotentiallyVisibleToTeam( Team_t teamIndex ) const
 {
 	VPROF_BUDGET( "CNavArea::IsPotentiallyVisibleToTeam", "NextBot" );
 
-	CTeam *team = GetGlobalTeam( teamIndex );
+	CTeam *team = GetGlobalTeamByTeam( teamIndex );
 
 	for( int i = 0; i < team->GetNumPlayers(); ++i )
 	{
@@ -5855,11 +5855,11 @@ bool CNavArea::IsPotentiallyVisibleToTeam( int teamIndex ) const
 /**
  * Return true if given area is completely visible from somewhere in this area by someone on the team (very fast)
  */
-bool CNavArea::IsCompletelyVisibleToTeam( int teamIndex ) const
+bool CNavArea::IsCompletelyVisibleToTeam( Team_t teamIndex ) const
 {
 	VPROF_BUDGET( "CNavArea::IsCompletelyVisibleToTeam", "NextBot" );
 
-	CTeam *team = GetGlobalTeam( teamIndex );
+	CTeam *team = GetGlobalTeamByTeam( teamIndex );
 
 	for( int i = 0; i < team->GetNumPlayers(); ++i )
 	{

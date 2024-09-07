@@ -22,7 +22,11 @@ hackmgr_lib = shared_library('hackmgr',name_prefix:'',
 		join_paths(hackmgr_src_dir,'ishadowmgr.cpp'),
 		join_paths(hackmgr_src_dir,'dlloverride.cpp'),
 		join_paths(hackmgr_src_dir,'hackmgr.cpp'),
+		join_paths(hackmgr_src_dir,'hackmgr_client.cpp'),
+		join_paths(hackmgr_src_dir,'hackmgr_server.cpp'),
 		join_paths(hackmgr_src_dir,'engine_interface.cpp'),
+		join_paths(hackmgr_src_dir,'ivdebugoverlay.cpp'),
+		join_paths(hackmgr_src_dir,'isoundemittersystembase.cpp'),
 	),
 	include_directories: include_directories(
 		hackmgr_src_dir,
@@ -33,10 +37,11 @@ hackmgr_lib = shared_library('hackmgr',name_prefix:'',
 	dependencies: [
 		tier1.get_variable('tier1_dep'),
 		tier0.get_variable('tier0_dep'),
-		source_base.get_variable('source_os_shared_lib_dep')
+		source_base.get_variable('source_shared_lib_dep')
 	],
 	install: true,
-	install_dir: join_paths(game_dir,'bin')
+	install_dir: join_paths(game_dir,'bin'),
+	install_rpath: '$ORIGIN'
 )
 
 hackmgr_dep = declare_dependency(

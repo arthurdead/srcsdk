@@ -1298,6 +1298,8 @@ private:
 	void InputGetValue( inputdata_t &inputdata );
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
+	void InputSetMinValueNoFire(inputdata_t &inputdata);
+	void InputSetMaxValueNoFire(inputdata_t &inputdata);
 
 	// Outputs
 	COutputFloat m_OutValue;
@@ -1333,6 +1335,8 @@ BEGIN_MAPENTITY( CMathCounter )
 	DEFINE_INPUTFUNC(FIELD_VOID, "GetValue", InputGetValue),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
+	DEFINE_INPUTFUNC(FIELD_INTEGER, "SetMaxValueNoFire", InputSetMaxValueNoFire),
+	DEFINE_INPUTFUNC(FIELD_INTEGER, "SetMinValueNoFire", InputSetMinValueNoFire),
 
 	// Outputs
 	DEFINE_OUTPUT(m_OutValue, "OutValue"),
@@ -1588,6 +1592,28 @@ void CMathCounter::InputEnable( inputdata_t &inputdata )
 void CMathCounter::InputDisable( inputdata_t &inputdata )
 {
 	m_bDisabled = true;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CMathCounter::InputSetMaxValueNoFire(inputdata_t &inputdata)
+{
+	m_flMax = inputdata.value.Float();
+	if (m_flMax < m_flMin)
+	{
+		m_flMin = m_flMax;
+	}
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CMathCounter::InputSetMinValueNoFire(inputdata_t &inputdata)
+{
+	m_flMin = inputdata.value.Float();
+	if (m_flMax < m_flMin)
+	{
+		m_flMax = m_flMin;
+	}
 }
 
 //-----------------------------------------------------------------------------

@@ -600,6 +600,8 @@ void CViewRender::SetUpViews()
 {
 	VPROF("CViewRender::SetUpViews");
 
+	m_bAllowViewAccess = true;
+
 	// Initialize view structure with default values
 	float farZ = GetZFar();
 
@@ -718,10 +720,6 @@ void CViewRender::SetUpViews()
 
 	// Disable spatial partition access
 	partition->SuppressLists( PARTITION_ALL_CLIENT_EDICTS, true );
-
-	// Enable access to all model bones
-	C_BaseAnimating::PopBoneAccess( "OnRenderStart->CViewRender::SetUpView" ); // pops the (true, false) bone access set in OnRenderStart
-	C_BaseAnimating::PushAllowBoneAccess( true, true, "CViewRender::SetUpView->OnRenderEnd" ); // pop is in OnRenderEnd()
 
 	// Compute the world->main camera transform
     // This is only done for the main "middle-eye" view, not for the various other views.
@@ -887,7 +885,7 @@ void CViewRender::Render( vrect_t *rect )
 			if ( targetFOV == 0 )
 			{
 				// FOV of 0 means use the default FOV
-				targetFOV = g_pGameRules->DefaultFOV();
+				targetFOV = GameRules()->DefaultFOV();
 			}
 
 			float deltaFOV = view.fov - m_flLastFOV;

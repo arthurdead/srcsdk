@@ -138,7 +138,7 @@ void CEnvSoundscape::InputToggleEnabled( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 bool CEnvSoundscape::IsEnabled( void ) const
 {
-	return !m_bDisabled && g_pGameRules->AllowSoundscapes();
+	return !m_bDisabled && GameRules()->AllowSoundscapes();
 }
 
 

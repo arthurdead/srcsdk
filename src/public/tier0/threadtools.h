@@ -98,7 +98,7 @@ PLATFORM_INTERFACE void SetThreadedLoadLibraryFunc( ThreadedLoadLibraryFunc_t fu
 PLATFORM_INTERFACE ThreadedLoadLibraryFunc_t GetThreadedLoadLibraryFunc();
 
 #if defined( _WIN32 ) && !defined( _WIN64 )
-extern "C" unsigned long __declspec(dllimport) __stdcall GetCurrentThreadId();
+extern "C" unsigned long __declspec(dllimport) STDCALL GetCurrentThreadId();
 #define ThreadGetCurrentId GetCurrentThreadId
 #endif
 
@@ -1271,7 +1271,7 @@ protected:
 	bool WaitForCreateComplete( CThreadEvent *pEvent );
 
 	// "Virtual static" facility
-	typedef unsigned (__stdcall *ThreadProc_t)( void * );
+	typedef unsigned (STDCALL *ThreadProc_t)( void * );
 	virtual ThreadProc_t GetThreadProc();
 	virtual bool IsThreadRunning();
 
@@ -1298,7 +1298,7 @@ private:
 		bool *        pfInitSuccess;
 	};
 
-	static unsigned __stdcall ThreadProc( void * pv );
+	static unsigned STDCALL ThreadProc( void * pv );
 
 	// make copy constructor and assignment operator inaccessible
 	CThread( const CThread & );
@@ -1402,10 +1402,7 @@ public:
 	int BoostPriority();
 
 protected:
-#ifndef _WIN32
-#define __stdcall
-#endif
-	typedef uint32 (__stdcall *WaitFunc_t)( int nEvents, CThreadEvent * const *pEvents, int bWaitAll, uint32 timeout );
+	typedef uint32 (STDCALL *WaitFunc_t)( int nEvents, CThreadEvent * const *pEvents, int bWaitAll, uint32 timeout );
 	
 	int Call( unsigned, unsigned timeout, bool fBoost, WaitFunc_t = NULL, CFunctor *pParamFunctor = NULL );
 	int WaitForReply( unsigned timeout, WaitFunc_t );
@@ -1512,10 +1509,10 @@ typedef RTL_CRITICAL_SECTION CRITICAL_SECTION;
 
 extern "C"
 {
-	void __declspec(dllimport) __stdcall InitializeCriticalSection(CRITICAL_SECTION *);
-	void __declspec(dllimport) __stdcall EnterCriticalSection(CRITICAL_SECTION *);
-	void __declspec(dllimport) __stdcall LeaveCriticalSection(CRITICAL_SECTION *);
-	void __declspec(dllimport) __stdcall DeleteCriticalSection(CRITICAL_SECTION *);
+	void __declspec(dllimport) STDCALL InitializeCriticalSection(CRITICAL_SECTION *);
+	void __declspec(dllimport) STDCALL EnterCriticalSection(CRITICAL_SECTION *);
+	void __declspec(dllimport) STDCALL LeaveCriticalSection(CRITICAL_SECTION *);
+	void __declspec(dllimport) STDCALL DeleteCriticalSection(CRITICAL_SECTION *);
 };
 
 //---------------------------------------------------------

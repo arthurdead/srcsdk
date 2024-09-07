@@ -51,6 +51,8 @@
 #include "debugoverlay_shared.h"
 #include "ammodef.h"
 #include "c_basetempentity.h"
+#include "beamdraw.h"
+#include "iviewrender_beams.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -66,6 +68,8 @@ int g_nKillCamTarget2 = 0;
 
 extern ConVar mp_forcecamera; // in gamevars_shared.h
 extern ConVar r_mapextents;
+
+#define CYCLELATCH_TOLERANCE 0.15f
 
 #define FLASHLIGHT_DISTANCE		1000
 #define MAX_VGUI_INPUT_MODE_SPEED 30
@@ -181,14 +185,14 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	RecvPropEHandle( RECVINFO( m_PlayerFog.m_hCtrl ) ),
 
 	// audio data
-	RecvPropVector( RECVINFO( m_audio.localSound[0] ) ),
-	RecvPropVector( RECVINFO( m_audio.localSound[1] ) ),
-	RecvPropVector( RECVINFO( m_audio.localSound[2] ) ),
-	RecvPropVector( RECVINFO( m_audio.localSound[3] ) ),
-	RecvPropVector( RECVINFO( m_audio.localSound[4] ) ),
-	RecvPropVector( RECVINFO( m_audio.localSound[5] ) ),
-	RecvPropVector( RECVINFO( m_audio.localSound[6] ) ),
-	RecvPropVector( RECVINFO( m_audio.localSound[7] ) ),
+	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 0 ) ),
+	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 1 ) ),
+	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 2 ) ),
+	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 3 ) ),
+	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 4 ) ),
+	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 5 ) ),
+	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 6 ) ),
+	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 7 ) ),
 	RecvPropInt( RECVINFO( m_audio.soundscapeIndex ) ),
 	RecvPropInt( RECVINFO( m_audio.localBits ) ),
 	RecvPropEHandle( RECVINFO( m_audio.ent ) ),
@@ -209,16 +213,17 @@ END_RECV_TABLE()
 	BEGIN_RECV_TABLE_NOBASE( C_BasePlayer, DT_LocalPlayerExclusive )
 
 		RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ) ), // RECVINFO_NAME redirects the received var to m_vecNetworkOrigin for interpolation purposes
-		RecvPropFloat( RECVINFO( m_angEyeAngles[0] ) ),
+		RecvPropFloat( RECVINFO_ARRAYELEM( m_angEyeAngles, 0 ) ),
+		RecvPropFloat( RECVINFO_ARRAYELEM( m_angEyeAngles, 1 ) ),
 
 		RecvPropDataTable	( RECVINFO_DT(m_Local),0, &REFERENCE_RECV_TABLE(DT_Local) ),
 
-		RecvPropFloat		( RECVINFO(m_vecViewOffset[0]) ),
-		RecvPropFloat		( RECVINFO(m_vecViewOffset[1]) ),
-		RecvPropFloat		( RECVINFO(m_vecViewOffset[2]) ),
+		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecViewOffset, 0) ),
+		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecViewOffset, 1) ),
+		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecViewOffset, 2) ),
 		RecvPropFloat		( RECVINFO(m_flFriction) ),
 
-		RecvPropArray3		( RECVINFO_ARRAY(m_iAmmo), RecvPropInt( RECVINFO(m_iAmmo[0])) ),
+		RecvPropArray3		( RECVINFO_ARRAY(m_iAmmo), RecvPropInt( RECVINFO_ARRAYELEM(m_iAmmo, 0)) ),
 		
 		RecvPropInt			( RECVINFO(m_fOnTarget) ),
 
@@ -228,9 +233,9 @@ END_RECV_TABLE()
 		RecvPropEHandle		( RECVINFO( m_hLastWeapon ) ),
 		RecvPropEHandle		( RECVINFO( m_hGroundEntity ) ),
 
- 		RecvPropFloat		( RECVINFO(m_vecVelocity[0]), 0, RecvProxy_LocalVelocityX ),
- 		RecvPropFloat		( RECVINFO(m_vecVelocity[1]), 0, RecvProxy_LocalVelocityY ),
- 		RecvPropFloat		( RECVINFO(m_vecVelocity[2]), 0, RecvProxy_LocalVelocityZ ),
+ 		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecVelocity, 0), 0, RecvProxy_LocalVelocityX ),
+ 		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecVelocity, 1), 0, RecvProxy_LocalVelocityY ),
+ 		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecVelocity, 2), 0, RecvProxy_LocalVelocityZ ),
 
 		RecvPropVector		( RECVINFO( m_vecBaseVelocity ) ),
 
@@ -249,10 +254,23 @@ END_RECV_TABLE()
 		RecvPropEHandle		( RECVINFO(m_hTonemapController) ),
 	END_RECV_TABLE()
 
+void RecvProxy_CycleLatch(const CRecvProxyData *pData, void *pStruct, void *pOut)
+{
+	C_BaseAnimating* pEntity = static_cast<C_BaseAnimating *>(pStruct);
+
+	float flServerCycle = (float)pData->m_Value.m_Int / 16.0f;
+	float flCurCycle = pEntity->GetCycle();
+
+	if(fabs(flCurCycle - flServerCycle) > CYCLELATCH_TOLERANCE) {
+		pEntity->SetServerIntendedCycle(flServerCycle);
+	}
+}
+
 	BEGIN_RECV_TABLE_NOBASE( C_BasePlayer, DT_NonLocalPlayerExclusive )
 		RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin), 0, C_BaseEntity::RecvProxy_CellOrigin ), // RECVINFO_NAME again
-		RecvPropFloat( RECVINFO( m_angEyeAngles[0] ) ),
-		RecvPropFloat( RECVINFO( m_angEyeAngles[1] ) ),
+		RecvPropFloat( RECVINFO_ARRAYELEM( m_angEyeAngles, 0 ) ),
+		RecvPropFloat( RECVINFO_ARRAYELEM( m_angEyeAngles, 1 ) ),
+		RecvPropInt(RECVINFO(m_cycleLatch), 0, &RecvProxy_CycleLatch),
 	END_RECV_TABLE()
 	
 // -------------------------------------------------------------------------------- //
@@ -265,7 +283,7 @@ END_RECV_TABLE()
 		RecvPropDataTable( "localdata", 0, 0, &REFERENCE_RECV_TABLE(DT_LocalPlayerExclusive) ),
 		RecvPropDataTable( "nonlocaldata", 0, 0, &REFERENCE_RECV_TABLE(DT_NonLocalPlayerExclusive) ),
 
-		RecvPropBool( RECVINFO( m_bSpawnInterpCounter ) ),
+		RecvPropInt(RECVINFO(m_iSpawnInterpCounter)),
 
 		RecvPropDataTable(RECVINFO_DT(pl), 0, &REFERENCE_RECV_TABLE(DT_PlayerState), DataTableRecvProxy_StaticDataTable),
 
@@ -414,15 +432,19 @@ LINK_ENTITY_TO_CLASS( player, C_BasePlayer );
 // -------------------------------------------------------------------------------- //
 // Functions.
 // -------------------------------------------------------------------------------- //
-C_BasePlayer::C_BasePlayer() : m_iv_vecViewOffset( "C_BasePlayer::m_iv_vecViewOffset" ), m_iv_angEyeAngles( "C_BaseNetworkedPlayer::m_iv_angEyeAngles" )
+C_BasePlayer::C_BasePlayer() :
+	m_iv_vecViewOffset( "C_BasePlayer::m_iv_vecViewOffset" ),
+	m_iv_angEyeAngles( "C_BasePlayer::m_iv_angEyeAngles" )
 {
 	AddVar( &m_vecViewOffset, &m_iv_vecViewOffset, LATCH_SIMULATION_VAR );
 
 	m_angEyeAngles.Init();
 	AddVar( &m_angEyeAngles, &m_iv_angEyeAngles, LATCH_SIMULATION_VAR );
 
-	m_bSpawnInterpCounterCache = false;
-	m_bSpawnInterpCounter = false;
+	m_iSpawnInterpCounterCache = 0;
+	m_iSpawnInterpCounter = 0;
+
+	m_iIDEntIndex = 0;
 	
 #ifdef _DEBUG																
 	m_vecLadderNormal.Init();
@@ -462,6 +484,10 @@ C_BasePlayer::C_BasePlayer() : m_iv_vecViewOffset( "C_BasePlayer::m_iv_vecViewOf
 	m_bIsLocalPlayer = false;
 	m_afButtonForced = 0;
 
+	m_flServerCycle = -1.0f;
+
+	m_pFlashlightBeam = NULL;
+
 	SetPredictionEligible(true);
 
 	ListenForGameEvent( "base_player_teleported" );
@@ -480,20 +506,52 @@ C_BasePlayer::~C_BasePlayer()
 
 	m_PlayerAnimState->Release();
 
-	if ( m_bFlashlightEnabled )
-	{
-		FlashlightEffectManager().TurnOffFlashlight( true );
-		m_bFlashlightEnabled = false;
-	}
+	TurnOffFlashlight();
 }
 
-void C_BasePlayer::PostConstructor( const char *szClassname )
+bool C_BasePlayer::PostConstructor( const char *szClassname )
 {
-	BaseClass::PostConstructor( szClassname );
+	if(!BaseClass::PostConstructor( szClassname ))
+		return false;
 
 	m_PlayerAnimState = CreateAnimState();
+
+	return true;
 }
 
+bool C_BasePlayer::ShouldReceiveProjectedTextures( int flags )
+{
+	Assert(flags & SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK);
+
+	if(IsEffectActive(EF_NODRAW)) {
+		return false;
+	}
+
+	if(flags & SHADOW_FLAGS_FLASHLIGHT) {
+		return true;
+	}
+
+	return BaseClass::ShouldReceiveProjectedTextures(flags);
+}
+
+ShadowType_t C_BasePlayer::ShadowCastType()
+{
+	if(!IsVisible()) {
+		return SHADOWS_NONE;
+	}
+
+	return SHADOWS_RENDER_TO_TEXTURE_DYNAMIC;
+}
+
+CStudioHdr *C_BasePlayer::OnNewModel()
+{
+	CStudioHdr *hdr = BaseClass::OnNewModel();
+
+	if(m_PlayerAnimState)
+		m_PlayerAnimState->OnNewModel();
+
+	return hdr;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -753,7 +811,7 @@ void C_BasePlayer::OnPreDataChanged( DataUpdateType_t updateType )
 	}
 
 	m_bWasFreezeFraming = (GetObserverMode() == OBS_MODE_FREEZECAM);
-	m_hOldFogController = m_Local.m_PlayerFog.m_hCtrl;
+	m_hOldFogController.Set( m_Local.m_PlayerFog.m_hCtrl.Get() );
 
 	BaseClass::OnPreDataChanged( updateType );
 }
@@ -914,16 +972,16 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 	}
 
 	// Did we just respawn?
-	if ( m_bSpawnInterpCounter != m_bSpawnInterpCounterCache )
+	if(m_iSpawnInterpCounter != m_iSpawnInterpCounterCache)
+	{
+		// fix up interp
+		MoveToLastReceivedPosition( true );
+		ResetLatched();
+		
 		Respawn();
-}
-
-const QAngle& C_BasePlayer::EyeAngles()
-{
-	if( IsLocalPlayer() )
-		return BaseClass::EyeAngles();
-	else
-		return m_angEyeAngles;
+	
+		m_iSpawnInterpCounterCache = m_iSpawnInterpCounter;
+	}
 }
 
 const QAngle& C_BasePlayer::GetRenderAngles()
@@ -936,11 +994,6 @@ const QAngle& C_BasePlayer::GetRenderAngles()
 
 void C_BasePlayer::Respawn()
 {
-	// fix up interp
-	MoveToLastReceivedPosition( true );
-	ResetLatched();
-	m_bSpawnInterpCounterCache = m_bSpawnInterpCounter;
-
 	RemoveAllDecals();
 
 	m_PlayerAnimState->ResetGestureSlots();
@@ -949,8 +1002,10 @@ void C_BasePlayer::Respawn()
 	if ( IsLocalPlayer() )
 		ResetToneMapping(1.0);
 
-	if(m_pClientsideRagdoll)
+	if(m_pClientsideRagdoll) {
 		UTIL_Remove(m_pClientsideRagdoll);
+		m_pClientsideRagdoll = NULL;
+	}
 }
 
 class C_TEPlayerAnimEvent : public C_BaseTempEntity
@@ -990,6 +1045,11 @@ void C_BasePlayer::DoAnimationEvent( PlayerAnimEvent_t event, int nData )
 
 	MDLCACHE_CRITICAL_SECTION();
 	m_PlayerAnimState->DoAnimationEvent( event, nData );
+}
+
+void C_BasePlayer::CalculateIKLocks(float currentTime)
+{
+	BaseClass::CalculateIKLocks( currentTime );
 }
 
 void C_BasePlayer::UpdateClientSideAnimation()
@@ -1070,6 +1130,15 @@ void C_BasePlayer::ReceiveMessage( int classID, bf_read &msg )
 	}
 }
 
+void C_BasePlayer::NotifyShouldTransmit(ShouldTransmitState_t state)
+{
+	if(state == SHOULDTRANSMIT_END) {
+		TurnOffFlashlight();
+	}
+
+	BaseClass::NotifyShouldTransmit( state );
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Process incoming data
 //-----------------------------------------------------------------------------
@@ -1111,13 +1180,91 @@ void C_BasePlayer::OnDataChanged( DataUpdateType_t updateType )
 
 		Soundscape_Update( m_Local.m_audio );
 
-		if ( m_hOldFogController != m_Local.m_PlayerFog.m_hCtrl )
+		if ( m_hOldFogController.Get() != m_Local.m_PlayerFog.m_hCtrl.Get() )
 		{
 			FogControllerChanged( updateType == DATA_UPDATE_CREATED );
 		}
 	}
+
+	if(updateType == DATA_UPDATE_CREATED)
+	{
+		SetContextThink( &C_BasePlayer::ThinkIDTarget, TICK_ALWAYS_THINK, "ThinkIDTarget" );
+	}
 }
 
+void C_BasePlayer::ThinkIDTarget()
+{
+	bool bFoundViewTarget = false;
+
+	Vector vForward;
+	AngleVectors(GetLocalAngles(), &vForward);
+
+	for(int iClient = 1; iClient <= gpGlobals->maxClients; ++iClient) {
+		CBaseEntity *pEnt = UTIL_PlayerByIndex( iClient );
+		if(!pEnt || !pEnt->IsPlayer()) {
+			continue;
+		}
+
+		if(pEnt->entindex() == entindex()) {
+			continue;
+		}
+
+		Vector vTargetOrigin = pEnt->GetAbsOrigin();
+		Vector vMyOrigin =  GetAbsOrigin();
+
+		Vector vDir = vTargetOrigin - vMyOrigin;
+		
+		if(vDir.Length() > 128) {
+			continue;
+		}
+
+		VectorNormalize(vDir);
+
+		if(DotProduct(vForward, vDir) < 0.0f) {
+			continue;
+		}
+
+		m_vLookAtTarget = pEnt->EyePosition();
+		bFoundViewTarget = true;
+		break;
+	}
+
+	if(bFoundViewTarget == false) {
+		m_vLookAtTarget = GetAbsOrigin() + vForward * 512;
+	}
+
+	m_viewtarget = m_vLookAtTarget;
+
+	UpdateIDTarget();
+}
+
+void C_BasePlayer::UpdateIDTarget()
+{
+	if(!IsLocalPlayer()) {
+		return;
+	}
+
+	m_iIDEntIndex = 0;
+
+	if(GetObserverMode() == OBS_MODE_CHASE ||
+		GetObserverMode() == OBS_MODE_DEATHCAM) {
+		return;
+	}
+
+	trace_t tr;
+	Vector vecStart, vecEnd;
+	VectorMA(MainViewOrigin(), 1500, MainViewForward(), vecEnd);
+	VectorMA(MainViewOrigin(), 10, MainViewForward(), vecStart);
+	UTIL_TraceLine(vecStart, vecEnd, MASK_SOLID, this, COLLISION_GROUP_NONE, &tr);
+
+	if(!tr.startsolid && tr.DidHitNonWorldEntity()) {
+		C_BaseEntity *pEntity = tr.m_pEnt;
+
+		if(pEntity && (pEntity != this)) {
+			m_iIDEntIndex = pEntity->entindex();
+		}
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Did we just enter a vehicle this frame?
@@ -1348,14 +1495,53 @@ void C_BasePlayer::UpdateFlashlight()
 			{
 				FlashlightEffectManager().TurnOnFlashlight( pFlashlightPlayer->entindex() );
 			}
+
+			if(!m_pFlashlightBeam) {
+				int iAttachment = pFlashlightPlayer->LookupAttachment( "anim_attachment_RH" );
+				if(iAttachment > 0) {
+					Vector vecOrigin;
+					QAngle eyeAngles = pFlashlightPlayer->m_angEyeAngles;
+					pFlashlightPlayer->GetAttachment(iAttachment, vecOrigin, eyeAngles);
+
+					Vector vForward;
+					AngleVectors(eyeAngles, &vForward);
+
+					trace_t tr;
+					UTIL_TraceLine(vecOrigin, vecOrigin + (vForward * 200), MASK_SHOT, pFlashlightPlayer, COLLISION_GROUP_NONE, &tr);
+
+					BeamInfo_t beamInfo;
+					beamInfo.m_nType = TE_BEAMPOINTS;
+					beamInfo.m_vecStart = tr.startpos;
+					beamInfo.m_vecEnd = tr.endpos;
+					beamInfo.m_pszModelName = "sprites/glow01.vmt";
+					beamInfo.m_pszHaloName = "sprites/glow01.vmt";
+					beamInfo.m_flHaloScale = 3.0;
+					beamInfo.m_flWidth = 8.0f;
+					beamInfo.m_flEndWidth = 35.0f;
+					beamInfo.m_flFadeLength = 300.0f;
+					beamInfo.m_flAmplitude = 0;
+					beamInfo.m_flBrightness = 60.0;
+					beamInfo.m_flSpeed = 0.0f;
+					beamInfo.m_nStartFrame = 0.0;
+					beamInfo.m_flFrameRate = 0.0;
+					beamInfo.m_flRed = 255.0;
+					beamInfo.m_flGreen = 255.0;
+					beamInfo.m_flBlue = 255.0;
+					beamInfo.m_nSegments = 8;
+					beamInfo.m_bRenderable = true;
+					beamInfo.m_flLife = 0.5;
+					beamInfo.m_nFlags = FBEAM_FOREVER|FBEAM_ONLYNOISEONCE|FBEAM_NOTILE|FBEAM_HALOBEAM;
+					m_pFlashlightBeam = beams->CreateBeamPoints(beamInfo);
+				}
+			}
+
 			m_bFlashlightEnabled = true;
 		}
 	}
 	else if ( m_bFlashlightEnabled )
 	{
 		// Turned off the flashlight; delete it.
-		FlashlightEffectManager().TurnOffFlashlight();
-		m_bFlashlightEnabled = false;
+		TurnOffFlashlight();
 	}
 
 	if ( pFlashlightPlayer && m_bFlashlightEnabled )
@@ -1380,6 +1566,29 @@ void C_BasePlayer::UpdateFlashlight()
 		FlashlightEffectManager().UpdateFlashlight( vecPos, vecForward, vecRight, vecUp, pFlashlightPlayer->GetFlashlightFOV(), 
 			pFlashlightPlayer->CastsFlashlightShadows(), pFlashlightPlayer->GetFlashlightFarZ(), pFlashlightPlayer->GetFlashlightLinearAtten(),
 			pFlashlightPlayer->GetFlashlightTextureName() );
+
+		if(m_pFlashlightBeam) {
+			int iAttachment = pFlashlightPlayer->LookupAttachment( "anim_attachment_RH" );
+			if(iAttachment > 0) {
+				Vector vecOrigin;
+				QAngle eyeAngles = pFlashlightPlayer->m_angEyeAngles;
+				pFlashlightPlayer->GetAttachment(iAttachment, vecOrigin, eyeAngles);
+
+				Vector vForward;
+				AngleVectors(eyeAngles, &vForward);
+
+				trace_t tr;
+				UTIL_TraceLine(vecOrigin, vecOrigin + (vForward * 200), MASK_SHOT, pFlashlightPlayer, COLLISION_GROUP_NONE, &tr);
+
+				BeamInfo_t beamInfo;
+				beamInfo.m_vecStart = tr.startpos;
+				beamInfo.m_vecEnd = tr.endpos;
+				beamInfo.m_flRed = 255.0;
+				beamInfo.m_flGreen = 255.0;
+				beamInfo.m_flBlue = 255.0;
+				beams->UpdateBeamInfo(m_pFlashlightBeam, beamInfo);
+			}
+		}
 	}
 }
 
@@ -1390,17 +1599,16 @@ void C_BasePlayer::TurnOffFlashlight( void )
 {
 	if ( m_bFlashlightEnabled )
 	{
+		if(m_pFlashlightBeam) {
+			m_pFlashlightBeam->flags = 0;
+			m_pFlashlightBeam->die = gpGlobals->curtime - 1;
+
+			m_pFlashlightBeam = NULL;
+		}
+
 		FlashlightEffectManager().TurnOffFlashlight();
 		m_bFlashlightEnabled = false;
 	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Creates player flashlight if it's ative
-//-----------------------------------------------------------------------------
-void C_BasePlayer::Flashlight( void )
-{
-	UpdateFlashlight();
 }
 
 extern float UTIL_WaterLevel( const Vector &position, float minz, float maxz );
@@ -1526,6 +1734,9 @@ bool C_BasePlayer::ShouldPlayerDrawParticles( void )
 
 int C_BasePlayer::DrawModel( int flags, const RenderableInstance_t &instance )
 {
+	if(!ReadyToDraw()) {
+		return 0;
+	}
 #ifndef PORTAL
 	// In Portal this check is already performed as part of
 	// C_Portal_Player::DrawModel()
@@ -2106,10 +2317,21 @@ bool C_BasePlayer::InFirstPersonView()
 //-----------------------------------------------------------------------------
 bool C_BasePlayer::ShouldDrawThisPlayer()
 {
+	if ( IsRagdoll() )
+	{
+		return false;
+	}
+
+	if ( !IsAlive() )
+	{
+		return false;
+	}
+
 	if ( !InFirstPersonView() )
 	{
 		return true;
 	}
+
 	if ( cl_first_person_uses_world_model.GetBool() )
 	{
 		return true;
@@ -2266,7 +2488,7 @@ bool C_BasePlayer::Simulate()
 	if ( this == C_BasePlayer::GetLocalPlayer() )
 	{
 		//Update the flashlight
-		Flashlight();
+		UpdateFlashlight();
 
 		// Update the player's fog data if necessary.
 		UpdateFogController();
@@ -2279,14 +2501,14 @@ bool C_BasePlayer::Simulate()
 		UpdateStepSound( GetGroundSurface(), GetAbsOrigin(), vel );
 	}
 
-	BaseClass::Simulate();
+	bool ret = BaseClass::Simulate();
 
 	if ( IsNoInterpolationFrame() || Teleported() )
 	{
 		ResetLatched();
 	}
 
-	return true;
+	return ret;
 }
 
 //-----------------------------------------------------------------------------
@@ -2596,6 +2818,10 @@ float C_BasePlayer::GetFOV( void )
 		}
 	}
 
+	float fMinFOV = GetMinFOV();
+
+	fFOV = MAX(fMinFOV, fFOV);
+
 	return fFOV;
 }
 
@@ -2761,15 +2987,7 @@ void C_BasePlayer::LeaveVehicle( void )
 
 float C_BasePlayer::GetMinFOV()	const
 {
-	if ( gpGlobals->maxClients == 1 )
-	{
-		// Let them do whatever they want, more or less, in single player
-		return 5;
-	}
-	else
-	{
-		return 75;
-	}
+	return 75;
 }
 
 float C_BasePlayer::GetFinalPredictedTime() const
@@ -2943,7 +3161,7 @@ void C_BasePlayer::UpdateFogController( void )
 	if ( m_Local.m_PlayerFog.m_hCtrl )
 	{
 		// Don't bother copying while we're transitioning, since it'll be stomped in UpdateFogBlend();
-		if ( m_Local.m_PlayerFog.m_flTransitionTime == -1 && (m_hOldFogController == m_Local.m_PlayerFog.m_hCtrl) )
+		if ( m_Local.m_PlayerFog.m_flTransitionTime == -1 && (m_hOldFogController.Get() == m_Local.m_PlayerFog.m_hCtrl.Get()) )
 		{
 			fogparams_t	*pFogParams = &(m_Local.m_PlayerFog.m_hCtrl->m_fog);
 			if ( m_CurrentFog != *pFogParams )

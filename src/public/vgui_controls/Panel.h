@@ -36,6 +36,8 @@
 
 class CUtlBuffer;
 
+struct PanelAnimationMapEntry;
+
 namespace vgui
 {
 
@@ -81,8 +83,6 @@ struct OverridableColorEntry
 
 #define REGISTER_COLOR_AS_OVERRIDABLE( name, scriptname )			\
 	AddToOverridableColors( &name, scriptname );
-
-
 
 //-----------------------------------------------------------------------------
 // Purpose: For hudanimations.txt scripting of vars

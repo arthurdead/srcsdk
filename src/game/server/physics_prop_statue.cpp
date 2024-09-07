@@ -228,7 +228,7 @@ bool CStatueProp::CreateVPhysicsFromHitBoxes( CBaseAnimating *pInitBaseAnimating
 	QAngle angles;
 
 	// Make enough pointers to convexes for each hitbox
-	CPhysConvex **ppConvex = new (CPhysConvex*[ set->numhitboxes ]);
+	CPhysConvex **ppConvex = new CPhysConvex*[ set->numhitboxes ];
 
 	float flTotalVolume = 0.0f;
 	float flTotalSurfaceArea = 0.0f;
@@ -368,7 +368,7 @@ bool CStatueProp::CreateVPhysicsFromHitBoxes( CBaseAnimating *pInitBaseAnimating
 bool CStatueProp::CreateVPhysicsFromOBBs( CBaseAnimating *pInitBaseAnimating )
 {
 	// Make enough pointers to convexes for each hitbox
-	CPhysConvex **ppConvex = new (CPhysConvex*[ m_pInitOBBs->Count() ]);
+	CPhysConvex **ppConvex = new CPhysConvex*[ m_pInitOBBs->Count() ];
 
 	float flTotalVolume = 0.0f;
 	float flTotalSurfaceArea = 0.0f;

@@ -54,7 +54,7 @@ extern ConVar ai_debug_shoot_positions;
 //-----------------------------------------------------------------------------
 void W_Precache(void)
 {
-	PrecacheFileWeaponInfoDatabase( filesystem, g_pGameRules->GetEncryptionKey() );
+	PrecacheFileWeaponInfoDatabase( filesystem, GameRules()->GetEncryptionKey() );
 
 	g_sModelIndexWExplosion = CBaseEntity::PrecacheModel ("sprites/WXplo1.vmt");// underwater fireball
 	g_sModelIndexBloodSpray = CBaseEntity::PrecacheModel ("sprites/bloodspray.vmt"); // initial blood
@@ -191,7 +191,7 @@ CBaseEntity* CBaseCombatWeapon::Respawn( void )
 {
 	// make a copy of this weapon that is invisible and inaccessible to players (no touch function). The weapon spawn/respawn code
 	// will decide when to make the weapon visible and touchable.
-	CBaseEntity *pNewWeapon = CBaseEntity::Create( GetClassname(), g_pGameRules->VecWeaponRespawnSpot( this ), GetLocalAngles(), GetOwnerEntity() );
+	CBaseEntity *pNewWeapon = CBaseEntity::Create( GetClassname(), GameRules()->VecWeaponRespawnSpot( this ), GetLocalAngles(), GetOwnerEntity() );
 
 	if ( pNewWeapon )
 	{
@@ -203,7 +203,7 @@ CBaseEntity* CBaseCombatWeapon::Respawn( void )
 
 		// not a typo! We want to know when the weapon the player just picked up should respawn! This new entity we created is the replacement,
 		// but when it should respawn is based on conditions belonging to the weapon that was taken.
-		pNewWeapon->SetNextThink( gpGlobals->curtime + g_pGameRules->FlWeaponRespawnTime( this ) );
+		pNewWeapon->SetNextThink( gpGlobals->curtime + GameRules()->FlWeaponRespawnTime( this ) );
 	}
 	else
 	{
@@ -473,40 +473,51 @@ void CBaseCombatWeapon::FallInit( void )
 	SetModel( GetWorldModel() );
 	VPhysicsDestroyObject();
 
-	if ( !VPhysicsInitNormal( SOLID_BBOX, GetSolidFlags() | FSOLID_TRIGGER, false ) )
+	if(HasSpawnFlags(SF_NORESPAWN) == false)
 	{
-		SetMoveType( MOVETYPE_FLYGRAVITY );
-		SetSolid( SOLID_BBOX );
-		AddSolidFlags( FSOLID_TRIGGER );
+		SetMoveType(MOVETYPE_NONE);
+		SetSolid(SOLID_BBOX);
+		AddSolidFlags(FSOLID_TRIGGER);
+
+		UTIL_DropToFloor(this, MASK_SOLID);
 	}
 	else
 	{
-#if !defined( CLIENT_DLL )
-		// Constrained start?
-		if ( HasSpawnFlags( SF_WEAPON_START_CONSTRAINED ) )
+		if ( !VPhysicsInitNormal( SOLID_BBOX, GetSolidFlags() | FSOLID_TRIGGER, false ) )
 		{
-			//Constrain the weapon in place
-			IPhysicsObject *pReferenceObject, *pAttachedObject;
-			
-			pReferenceObject = g_PhysWorldObject;
-			pAttachedObject = VPhysicsGetObject();
-
-			if ( pReferenceObject && pAttachedObject )
-			{
-				constraint_fixedparams_t fixed;
-				fixed.Defaults();
-				fixed.InitWithCurrentObjectState( pReferenceObject, pAttachedObject );
-				
-				fixed.constraint.forceLimit	= lbs2kg( 10000 );
-				fixed.constraint.torqueLimit = lbs2kg( 10000 );
-
-				m_pConstraint = physenv->CreateFixedConstraint( pReferenceObject, pAttachedObject, NULL, fixed );
-
-				m_pConstraint->SetGameData( (void *) this );
-			}
+			SetMoveType( MOVETYPE_FLYGRAVITY );
+			SetSolid( SOLID_BBOX );
+			AddSolidFlags( FSOLID_TRIGGER );
 		}
-#endif //CLIENT_DLL
-	}	
+		else
+		{
+	#if !defined( CLIENT_DLL )
+			// Constrained start?
+			if ( HasSpawnFlags( SF_WEAPON_START_CONSTRAINED ) )
+			{
+				//Constrain the weapon in place
+				IPhysicsObject *pReferenceObject, *pAttachedObject;
+				
+				pReferenceObject = g_PhysWorldObject;
+				pAttachedObject = VPhysicsGetObject();
+
+				if ( pReferenceObject && pAttachedObject )
+				{
+					constraint_fixedparams_t fixed;
+					fixed.Defaults();
+					fixed.InitWithCurrentObjectState( pReferenceObject, pAttachedObject );
+					
+					fixed.constraint.forceLimit	= lbs2kg( 10000 );
+					fixed.constraint.torqueLimit = lbs2kg( 10000 );
+
+					m_pConstraint = physenv->CreateFixedConstraint( pReferenceObject, pAttachedObject, NULL, fixed );
+
+					m_pConstraint->SetGameData( (void *) this );
+				}
+			}
+	#endif //CLIENT_DLL
+		}	
+	}
 
 	SetPickupTouch();
 	
@@ -573,6 +584,11 @@ void CBaseCombatWeapon::Materialize( void )
 		VPhysicsInitNormal( SOLID_BBOX, GetSolidFlags() | FSOLID_TRIGGER, false );
 		SetMoveType( MOVETYPE_VPHYSICS );
 
+		if(GetOriginalSpawnOrigin() == vec3_origin) {
+			m_vOriginalSpawnOrigin = GetAbsOrigin();
+			m_vOriginalSpawnAngles = GetAbsAngles();
+		}
+
 		GameRules()->AddLevelDesignerPlacedObject( this );
 	}
 
@@ -586,7 +602,7 @@ void CBaseCombatWeapon::Materialize( void )
 //-----------------------------------------------------------------------------
 void CBaseCombatWeapon::AttemptToMaterialize( void )
 {
-	float time = g_pGameRules->FlWeaponTryRespawn( this );
+	float time = GameRules()->FlWeaponTryRespawn( this );
 
 	if ( time == 0 )
 	{
@@ -602,7 +618,7 @@ void CBaseCombatWeapon::AttemptToMaterialize( void )
 //-----------------------------------------------------------------------------
 void CBaseCombatWeapon::CheckRespawn( void )
 {
-	switch ( g_pGameRules->WeaponShouldRespawn( this ) )
+	switch ( GameRules()->WeaponShouldRespawn( this ) )
 	{
 	case GR_WEAPON_RESPAWN_YES:
 		Respawn();
@@ -719,3 +735,14 @@ void CBaseCombatWeapon::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_
 	}
 }
 
+void CBaseCombatWeapon::MakeWeaponNameFromEntity( CBaseEntity *pOther )
+{
+	// If I have a name, make my weapon match it with "_weapon" appended
+	if ( pOther->GetEntityName() != NULL_STRING )
+	{
+		const char *pMarineName = STRING( pOther->GetEntityName() );
+		const char *pError = UTIL_VarArgs( "%s_weapon", pMarineName );
+		string_t pooledName = AllocPooledString( pError );
+		SetName( pooledName );
+	}
+}

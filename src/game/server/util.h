@@ -69,7 +69,7 @@ T *_CreateEntityTemplate( T *newEnt, const char *className )
 
 #include "tier0/memdbgoff.h"
 
-CBaseEntity *CreateEntityByName( const char *className, int iForceEdictIndex );
+CBaseEntity *CreateEntityByName( const char *className, int iForceEdictIndex = -1, bool bNotify = true );
 
 // creates an entity by name, and ensure it's correctness
 // does not spawn the entity
@@ -90,14 +90,105 @@ T *_CreateEntity( T *newClass, const char *className )
 #define CREATE_ENTITY( newClass, className ) _CreateEntity( (newClass*)NULL, className )
 #define CREATE_UNSAVED_ENTITY( newClass, className ) _CreateEntityTemplate( (newClass*)NULL, className )
 
+// marks the entity for deletion so it will get removed next frame
+void UTIL_Remove( CBaseEntity *oldObj );
+
+inline void UTIL_Remove( const CBaseEntity *oldObj )
+{
+	UTIL_Remove( const_cast<CBaseEntity *>(oldObj) );
+}
+
+inline void UTIL_Remove( CBaseHandle &oldObj )
+{
+	UTIL_Remove( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+inline void UTIL_Remove( const CBaseHandle &oldObj )
+{
+	UTIL_Remove( const_cast<CBaseHandle &>(oldObj) );
+}
+
+template <class Type>
+inline void UTIL_Remove( CHandle<Type> &oldObj )
+{
+	UTIL_Remove( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+template <class Type>
+inline void UTIL_Remove( const CHandle<Type> &oldObj )
+{
+	UTIL_Remove( const_cast<CHandle<Type> &>(oldObj) );
+}
+
+template <class Type, class Changer>
+inline void UTIL_Remove( CNetworkHandleBase<Type, Changer> &oldObj )
+{
+	UTIL_Remove( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+template <class Type, class Changer>
+inline void UTIL_Remove( const CNetworkHandleBase<Type, Changer> &oldObj )
+{
+	UTIL_Remove( const_cast<CNetworkHandleBase<Type, Changer> &>(oldObj) );
+}
+
+// deletes an entity, without any delay.  Only use this when sure no pointers rely on this entity.
+void UTIL_DisableRemoveImmediate();
+void UTIL_EnableRemoveImmediate();
+void UTIL_RemoveImmediate( CBaseEntity *oldObj );
+
+inline void UTIL_RemoveImmediate( const CBaseEntity *oldObj )
+{
+	UTIL_RemoveImmediate( const_cast<CBaseEntity *>(oldObj) );
+}
+
+inline void UTIL_RemoveImmediate( CBaseHandle &oldObj )
+{
+	UTIL_RemoveImmediate( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+inline void UTIL_RemoveImmediate( const CBaseHandle &oldObj )
+{
+	UTIL_RemoveImmediate( const_cast<CBaseHandle &>(oldObj) );
+}
+
+template <class Type>
+inline void UTIL_RemoveImmediate( CHandle<Type> &oldObj )
+{
+	UTIL_RemoveImmediate( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+template <class Type>
+inline void UTIL_RemoveImmediate( const CHandle<Type> &oldObj )
+{
+	UTIL_RemoveImmediate( const_cast<CHandle<Type> &>(oldObj) );
+}
+
+template <class Type, class Changer>
+inline void UTIL_RemoveImmediate( CNetworkHandleBase<Type, Changer> &oldObj )
+{
+	UTIL_RemoveImmediate( (CBaseEntity *)oldObj.Get() );
+	oldObj.Term();
+}
+
+template <class Type, class Changer>
+inline void UTIL_RemoveImmediate( const CNetworkHandleBase<Type, Changer> &oldObj )
+{
+	UTIL_RemoveImmediate( const_cast<CNetworkHandleBase<Type, Changer> &>(oldObj) );
+}
 
 // This is the glue that hooks .MAP entity class names to our CPP classes
 abstract_class IEntityFactoryDictionary
 {
 public:
 	virtual void InstallFactory( IEntityFactory *pFactory, const char *pClassName ) = 0;
-	virtual IServerNetworkable *Create( const char *pClassName ) = 0;
-	virtual void Destroy( const char *pClassName, IServerNetworkable *pNetworkable ) = 0;
+	virtual CBaseEntity *Create( const char *pClassName ) = 0;
+	virtual void Destroy( const char *pClassName, CBaseEntity *pNetworkable ) = 0;
 	virtual IEntityFactory *FindFactory( const char *pClassName ) = 0;
 	virtual const char *GetCannonicalName( const char *pClassName ) = 0;
 };
@@ -112,8 +203,8 @@ inline bool CanCreateEntityClass( const char *pszClassname )
 abstract_class IEntityFactory
 {
 public:
-	virtual IServerNetworkable *Create( const char *pClassName ) = 0;
-	virtual void Destroy( IServerNetworkable *pNetworkable ) = 0;
+	virtual CBaseEntity *Create( const char *pClassName ) = 0;
+	virtual void Destroy( CBaseEntity *pNetworkable ) = 0;
 	virtual size_t GetEntitySize() = 0;
 };
 
@@ -126,20 +217,17 @@ public:
 		EntityFactoryDictionary()->InstallFactory( this, pClassName );
 	}
 
-	IServerNetworkable *Create( const char *pClassName )
+	CBaseEntity *Create( const char *pClassName )
 	{
 		T* pEnt = _CreateEntityTemplate((T*)NULL, pClassName);
 		if(!pEnt)
 			return NULL;
-		return pEnt->NetworkProp();
+		return pEnt;
 	}
 
-	void Destroy( IServerNetworkable *pNetworkable )
+	void Destroy( CBaseEntity *pNetworkable )
 	{
-		if ( pNetworkable )
-		{
-			pNetworkable->Release();
-		}
+		UTIL_Remove( pNetworkable );
 	}
 
 	virtual size_t GetEntitySize()
@@ -149,7 +237,7 @@ public:
 };
 
 #define LINK_ENTITY_TO_CLASS(mapClassName,DLLClassName) \
-	static CEntityFactory<DLLClassName> mapClassName( #mapClassName );
+	static CEntityFactory<DLLClassName> mapClassName##Factory( #mapClassName );
 
 
 //
@@ -277,98 +365,6 @@ inline int UTIL_EntitiesInSphere( CBaseEntity **pList, int listMax, const Vector
 	return UTIL_EntitiesInSphere( center, radius, &sphereEnum );
 }
 
-// marks the entity for deletion so it will get removed next frame
-void UTIL_Remove( CBaseEntity *oldObj );
-
-inline void UTIL_Remove( const CBaseEntity *oldObj )
-{
-	UTIL_Remove( const_cast<CBaseEntity *>(oldObj) );
-}
-
-inline void UTIL_Remove( CBaseHandle &oldObj )
-{
-	UTIL_Remove( (CBaseEntity *)oldObj.Get() );
-	oldObj.Term();
-}
-
-inline void UTIL_Remove( const CBaseHandle &oldObj )
-{
-	UTIL_Remove( const_cast<CBaseHandle &>(oldObj) );
-}
-
-template <class Type>
-inline void UTIL_Remove( CHandle<Type> &oldObj )
-{
-	UTIL_Remove( (CBaseEntity *)oldObj.Get() );
-	oldObj.Term();
-}
-
-template <class Type>
-inline void UTIL_Remove( const CHandle<Type> &oldObj )
-{
-	UTIL_Remove( const_cast<CHandle<Type> &>(oldObj) );
-}
-
-template <class Type, class Changer>
-inline void UTIL_Remove( CNetworkHandleBase<Type, Changer> &oldObj )
-{
-	UTIL_Remove( (CBaseEntity *)oldObj.Get() );
-	oldObj.Term();
-}
-
-template <class Type, class Changer>
-inline void UTIL_Remove( const CNetworkHandleBase<Type, Changer> &oldObj )
-{
-	UTIL_Remove( const_cast<CNetworkHandleBase<Type, Changer> &>(oldObj) );
-}
-
-// deletes an entity, without any delay.  Only use this when sure no pointers rely on this entity.
-void UTIL_DisableRemoveImmediate();
-void UTIL_EnableRemoveImmediate();
-void UTIL_RemoveImmediate( CBaseEntity *oldObj );
-
-inline void UTIL_RemoveImmediate( const CBaseEntity *oldObj )
-{
-	UTIL_RemoveImmediate( const_cast<CBaseEntity *>(oldObj) );
-}
-
-inline void UTIL_RemoveImmediate( CBaseHandle &oldObj )
-{
-	UTIL_RemoveImmediate( (CBaseEntity *)oldObj.Get() );
-	oldObj.Term();
-}
-
-inline void UTIL_RemoveImmediate( const CBaseHandle &oldObj )
-{
-	UTIL_RemoveImmediate( const_cast<CBaseHandle &>(oldObj) );
-}
-
-template <class Type>
-inline void UTIL_RemoveImmediate( CHandle<Type> &oldObj )
-{
-	UTIL_RemoveImmediate( (CBaseEntity *)oldObj.Get() );
-	oldObj.Term();
-}
-
-template <class Type>
-inline void UTIL_RemoveImmediate( const CHandle<Type> &oldObj )
-{
-	UTIL_RemoveImmediate( const_cast<CHandle<Type> &>(oldObj) );
-}
-
-template <class Type, class Changer>
-inline void UTIL_RemoveImmediate( CNetworkHandleBase<Type, Changer> &oldObj )
-{
-	UTIL_RemoveImmediate( (CBaseEntity *)oldObj.Get() );
-	oldObj.Term();
-}
-
-template <class Type, class Changer>
-inline void UTIL_RemoveImmediate( const CNetworkHandleBase<Type, Changer> &oldObj )
-{
-	UTIL_RemoveImmediate( const_cast<CNetworkHandleBase<Type, Changer> &>(oldObj) );
-}
-
 // make this a fixed size so it just sits on the stack
 #define MAX_SPHERE_QUERY	512
 class CEntitySphereQuery
@@ -398,8 +394,8 @@ bool		UTIL_CheckBottom( CBaseEntity *pEntity, ITraceFilter *pTraceFilter, float 
 void		UTIL_SetOrigin			( CBaseEntity *entity, const Vector &vecOrigin, bool bFireTriggers = false );
 void		UTIL_EmitAmbientSound	( int entindex, const Vector &vecOrigin, const char *samp, float vol, soundlevel_t soundlevel, int fFlags, int pitch, float soundtime = 0.0f, float *duration = NULL );
 void		UTIL_ParticleEffect		( const Vector &vecOrigin, const Vector &vecDirection, ULONG ulColor, ULONG ulCount );
-void		UTIL_ScreenShake		( const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake=false );
-void		UTIL_ScreenShakeObject	( CBaseEntity *pEnt, const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake=false, CUtlVector<CBasePlayer *> *ignore = NULL );
+void		UTIL_ScreenShake		( const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake=false, CUtlVector<CBasePlayer *> *ignore = NULL );
+void		UTIL_ScreenShakeObject	( CBaseEntity *pEnt, const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake=false );
 void		UTIL_ScreenTilt			( const Vector &center, const QAngle &tiltAngle, float duration, float radius, float tiltTime, ShakeCommand_t eCommand, bool bEaseInOut );
 void		UTIL_ViewPunch			( const Vector &center, QAngle angPunch, float radius, bool bInAir );
 void		UTIL_ShowMessage		( const char *pString, CBasePlayer *pPlayer );

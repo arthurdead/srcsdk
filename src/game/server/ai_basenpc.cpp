@@ -1063,7 +1063,7 @@ int CAI_BaseNPC::OnTakeDamage_Dead( const CTakeDamageInfo &info )
 #endif
 
 	// kill the corpse if enough damage was done to destroy the corpse and the damage is of a type that is allowed to destroy the corpse.
-	if ( g_pGameRules->Damage_ShouldGibCorpse( info.GetDamageType() ) )
+	if ( GameRules()->Damage_ShouldGibCorpse( info.GetDamageType() ) )
 	{
 		// Accumulate corpse gibbing damage, so you can gib with multiple hits
 		if ( m_takedamage != DAMAGE_EVENTS_ONLY )
@@ -3029,7 +3029,6 @@ void CAI_BaseNPC::PostMovement()
 //-----------------------------------------------------------------------------
 
 float g_AINextDisabledMessageTime;
-extern bool IsInCommentaryMode( void );
 
 bool CAI_BaseNPC::PreThink( void )
 {
@@ -3045,7 +3044,7 @@ bool CAI_BaseNPC::PreThink( void )
 	if ( (CAI_BaseNPC::m_nDebugBits & bits_debugDisableAI || !TheNavMesh->IsLoaded()) )
 #endif
 	{
-		if ( gpGlobals->curtime >= g_AINextDisabledMessageTime && !IsInCommentaryMode() )
+		if ( gpGlobals->curtime >= g_AINextDisabledMessageTime )
 		{
 			g_AINextDisabledMessageTime = gpGlobals->curtime + 0.5f;
 
@@ -6956,7 +6955,7 @@ bool CAI_BaseNPC::IsNavHullValid() const
 //=========================================================
 void CAI_BaseNPC::NPCInit ( void )
 {
-	if (!g_pGameRules->FAllowNPCs())
+	if (!GameRules()->FAllowNPCs())
 	{
 		UTIL_Remove( this );
 		return;
@@ -10612,7 +10611,7 @@ CBaseEntity *CAI_BaseNPC::DropItem ( const char *pszItemName, Vector vecPos, QAn
 
 	if ( pItem )
 	{
-		if ( g_pGameRules->IsAllowedToSpawn( pItem ) == false )
+		if ( GameRules()->IsAllowedToSpawn( pItem ) == false )
 		{
 			UTIL_Remove( pItem );
 			return NULL;

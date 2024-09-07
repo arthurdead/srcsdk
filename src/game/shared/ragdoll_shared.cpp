@@ -17,6 +17,7 @@
 //CLIENT
 #ifdef CLIENT_DLL 
 #include "c_fire_smoke.h"
+#include "c_entityflame.h"
 #include "c_entitydissolve.h"
 #include "engine/IEngineSound.h"
 #endif
@@ -1011,17 +1012,29 @@ void CRagdollLRURetirement::MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImpo
 #define DEFAULT_MODEL_FADE_LENGTH 0.1f
 #define DEFAULT_FADEIN_LENGTH 1.0f
 
+class C_ClientEntityDissolve : public C_EntityDissolve
+{
+public:
+	DECLARE_CLASS( C_ClientEntityDissolve, C_EntityDissolve );
 
+	C_ClientEntityDissolve()
+		: C_EntityDissolve()
+	{
+		AddEFlags(EFL_NOT_NETWORKED);
+	}
+
+	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
+	virtual	bool			IsClientCreated( void ) const { return true; }
+	virtual bool						IsServerEntity( void ) { return false; }
+};
+
+LINK_ENTITY_TO_CLASS(client_dissolve, C_ClientEntityDissolve);
 
 C_EntityDissolve *DissolveEffect( C_BaseEntity *pTarget, float flTime )
 {
-	C_EntityDissolve *pDissolve = new C_EntityDissolve;
-
-	if ( pDissolve->InitializeAsClientEntity() == false )
-	{
-		UTIL_Remove( pDissolve );
+	C_ClientEntityDissolve *pDissolve = CREATE_ENTITY(C_ClientEntityDissolve, "client_dissolve");
+	if(!pDissolve)
 		return NULL;
-	}
 
 	pDissolve->SetModel( "sprites/blueglow1.vmt" );
 
@@ -1045,19 +1058,39 @@ C_EntityDissolve *DissolveEffect( C_BaseEntity *pTarget, float flTime )
 	pDissolve->SetServerLinkState( false );
 	pTarget->SetEffectEntity( pDissolve );
 
+	if(DispatchSpawn(pDissolve) < 0) {
+		UTIL_Remove(pDissolve);
+		pTarget->SetEffectEntity( NULL );
+		return NULL;
+	}
+
 	return pDissolve;
 
 }
 
+class C_ClientEntityFlame : public C_EntityFlame
+{
+public:
+	DECLARE_CLASS( C_ClientEntityFlame, C_EntityFlame );
+
+	C_ClientEntityFlame()
+		: C_EntityFlame()
+	{
+		AddEFlags(EFL_NOT_NETWORKED);
+	}
+
+	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
+	virtual	bool			IsClientCreated( void ) const { return true; }
+	virtual bool						IsServerEntity( void ) { return false; }
+};
+
+LINK_ENTITY_TO_CLASS(client_fire, C_ClientEntityFlame);
+
 C_EntityFlame *FireEffect( C_BaseAnimating *pTarget, C_BaseEntity *pServerFire, float *flScaleEnd, float *flTimeStart, float *flTimeEnd )
 {
-	C_EntityFlame *pFire = new C_EntityFlame;
-
-	if ( pFire->InitializeAsClientEntity() == false )
-	{
-		UTIL_Remove( pFire );
+	C_ClientEntityFlame *pFire = CREATE_ENTITY(C_ClientEntityFlame, "client_fire");
+	if(!pFire)
 		return NULL;
-	}
 
 	pFire->RemoveFromLeafSystem();
 	
@@ -1085,6 +1118,11 @@ C_EntityFlame *FireEffect( C_BaseAnimating *pTarget, C_BaseEntity *pServerFire, 
 	pTarget->EmitSound( filter, pTarget->GetSoundSourceIndex(), "General.BurningFlesh" );
 
 	pFire->SetContextThink( &C_EntityFlame::RemoveThink, gpGlobals->curtime + 7.0f, "RemoveThink" );
+
+	if(DispatchSpawn(pFire) < 0) {
+		UTIL_Remove(pFire);
+		return NULL;
+	}
 
 	return pFire;
 }

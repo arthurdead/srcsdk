@@ -388,6 +388,8 @@ CVGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreen
 {
 	Assert( pAttachedTo );
 	CVGuiScreen *pScreen = (CVGuiScreen *)CBaseEntity::Create( pScreenClassname, vec3_origin, vec3_angle, pAttachedTo );
+	if(!pScreen)
+		return NULL;
 
 	pScreen->SetPanelName( pScreenType );
 	pScreen->FollowEntity( pAttachedTo );
@@ -397,10 +399,12 @@ CVGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreen
 	return pScreen;
 }
 
-CVGuiScreen *__CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, CBaseEntity *pAttachedTo, CBaseEntity *pOwner, int nAttachmentIndex )
+CVGuiScreen *CreateVGuiScreenPredicted( const char *module, int line, const char *pScreenClassname, const char *pScreenType, CBaseEntity *pAttachedTo, CBaseEntity *pOwner, int nAttachmentIndex )
 {
 	Assert( pAttachedTo );
-	CVGuiScreen *pScreen = (CVGuiScreen *)CREATE_PREDICTED_ENTITY_AT( module, line, pScreenClassname, vec3_origin, vec3_angle, pAttachedTo );
+	CVGuiScreen *pScreen = (CVGuiScreen *)CBaseEntity::CreatePredicted( module, line, pScreenClassname, vec3_origin, vec3_angle, pAttachedTo );
+	if(!pScreen)
+		return NULL;
 
 	pScreen->SetPanelName( pScreenType );
 	pScreen->FollowEntity( pAttachedTo );

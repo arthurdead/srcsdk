@@ -1535,7 +1535,7 @@ public:
 	CInterpolatedVarArray( const char *pDebugName = "no debug name" )
 		: CInterpolatedVarArrayBase<Type, true>( pDebugName )
 	{
-		SetMaxCount( 0.0f, COUNT );
+		this->SetMaxCount( 0.0f, COUNT );
 	}
 };
 
@@ -1551,7 +1551,7 @@ public:
 	CInterpolatedVar( const char *pDebugName = NULL )
 		: CInterpolatedVarArrayBase< Type, false >(pDebugName) 
 	{
-		SetMaxCount( 0.0f, 1 );
+		this->SetMaxCount( 0.0f, 1 );
 	}
 };
 

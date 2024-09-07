@@ -14,6 +14,10 @@
 #include "dt_common.h"
 #include "tier0/dbg.h"
 
+#ifdef GNUC
+#undef offsetof
+#define offsetof(s,m)	__builtin_offsetof(s,m)
+#endif
 
 #define ADDRESSPROXY_NONE	-1
 
@@ -264,8 +268,13 @@ inline bool RecvTable::IsInMainList() const
 	} \
 	template <> int ClientClassInit<tableName::ignored>(tableName::ignored *); \
 	namespace tableName {	\
-		RecvTable g_RecvTable; \
-		int g_RecvTableInit = ClientClassInit((tableName::ignored *)NULL); \
+		INIT_PRIORITY(101) RecvTable g_RecvTable; \
+		INIT_PRIORITY(65535) class RecvTableInit_t { \
+		public: \
+			RecvTableInit_t() { \
+				ClientClassInit((tableName::ignored *)NULL); \
+			} \
+		} g_RecvTableInit; \
 	} \
 	template <> int ClientClassInit<tableName::ignored>(tableName::ignored *) \
 	{ \
@@ -282,11 +291,20 @@ inline bool RecvTable::IsInMainList() const
 	}
 
 
-#define RECVINFO(varName)						#varName, offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName)
-#define RECVINFO_NAME(varName, remoteVarName)	#remoteVarName, offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName)
-#define RECVINFO_STRING(varName)				#varName, offsetof(currentRecvDTClass, varName), STRINGBUFSIZE(currentRecvDTClass, varName)
-#define RECVINFO_BASECLASS(tableName)			RecvPropDataTable("this", 0, 0, &REFERENCE_RECV_TABLE(tableName))
-#define RECVINFO_ARRAY(varName)					#varName, offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName[0]), sizeof(((currentRecvDTClass*)0)->varName)/sizeof(((currentRecvDTClass*)0)->varName[0])
+#define RECVINFO(varName) \
+	#varName, offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName)
+#define RECVINFO_ARRAYELEM(varName, i) \
+	#varName "[" #i "]", (offsetof(currentRecvDTClass, varName) + (sizeof(((currentRecvDTClass*)0)->varName[i]) * i)), sizeof(((currentRecvDTClass*)0)->varName[i])
+#define RECVINFO_NAME(varName, remoteVarName) \
+	#remoteVarName, offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName)
+#define RECVINFO_NAME_ARRAYELEM(varName, i, remoteVarName) \
+	#remoteVarName, (offsetof(currentRecvDTClass, varName) + (sizeof(((currentRecvDTClass*)0)->varName[i]) * i)), sizeof(((currentRecvDTClass*)0)->varName[i])
+#define RECVINFO_STRING(varName) \
+	#varName, offsetof(currentRecvDTClass, varName), STRINGBUFSIZE(currentRecvDTClass, varName)
+#define RECVINFO_BASECLASS(tableName) \
+	RecvPropDataTable("this", 0, 0, &REFERENCE_RECV_TABLE(tableName))
+#define RECVINFO_ARRAY(varName) \
+	#varName, offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName[0]), (sizeof(((currentRecvDTClass*)0)->varName)/sizeof(((currentRecvDTClass*)0)->varName[0]))
 
 // Just specify the name and offset. Used for strings and data tables.
 #define RECVINFO_NOSIZE(varName)				#varName, offsetof(currentRecvDTClass, varName)

@@ -30,13 +30,13 @@ static const char *s_pElectroThinkContext = "ElectroThinkContext";
 //-----------------------------------------------------------------------------
 // Save/load 
 //-----------------------------------------------------------------------------
-BEGIN_DATADESC( CEntityFreezing )
+BEGIN_MAPENTITY( CEntityFreezing )
 
 	DEFINE_KEYFIELD( m_flFrozen, FIELD_FLOAT, "frozen" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "Freeze", InputFreeze ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------

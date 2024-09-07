@@ -47,9 +47,9 @@ public:
 //-----------------------------------------------------------------------------
 IMPLEMENT_CLIENTCLASS_EVENT_DT(C_TEPhysicsProp, DT_TEPhysicsProp, CTEPhysicsProp)
 	RecvPropVector( RECVINFO(m_vecOrigin)),
-	RecvPropFloat( RECVINFO( m_angRotation[0] ) ),
-	RecvPropFloat( RECVINFO( m_angRotation[1] ) ),
-	RecvPropFloat( RECVINFO( m_angRotation[2] ) ),
+	RecvPropFloat( RECVINFO_ARRAYELEM( m_angRotation, 0 ) ),
+	RecvPropFloat( RECVINFO_ARRAYELEM( m_angRotation, 1 ) ),
+	RecvPropFloat( RECVINFO_ARRAYELEM( m_angRotation, 2 ) ),
 	RecvPropVector( RECVINFO(m_vecVelocity)),
 	RecvPropInt( RECVINFO(m_nModelIndex)),
 	RecvPropInt( RECVINFO(m_nFlags)),

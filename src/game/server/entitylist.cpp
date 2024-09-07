@@ -20,10 +20,6 @@
 #include "globalstate.h"
 #include "datacache/imdlcache.h"
 
-#ifdef HL2_DLL
-#include "npc_playercompanion.h"
-#endif // HL2_DLL
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -1300,7 +1296,7 @@ CBaseEntity *CGlobalEntityList::FindEntityGenericNearest( const char *szName, co
 //			threshold - 
 //			classname - 
 //-----------------------------------------------------------------------------
-CBaseEntity *CGlobalEntityList::FindEntityClassNearestFacing( const Vector &origin, const Vector &facing, float threshold, char *classname)
+CBaseEntity *CGlobalEntityList::FindEntityClassNearestFacing( const Vector &origin, const Vector &facing, float threshold, const char *classname)
 {
 	float bestDot = threshold;
 	CBaseEntity *best_ent = NULL;
@@ -1824,7 +1820,7 @@ public:
 			{
 				edict_t *pEdict = engine->PEntityOfEntIndex( nPlayerIndex );
 				ClientPutInServer( pEdict, "unnamed" );
-				ClientActive( pEdict, false );
+				ClientActive( pEdict );
 
 				CBasePlayer *pPlayer = ( CBasePlayer * )CBaseEntity::Instance( pEdict );
 				SceneManager_ClientActive( pPlayer );

@@ -37,6 +37,10 @@
 #define DEBUG_TRANSITIONS_VERBOSE	2
 ConVar g_debug_transitions( "g_debug_transitions", "0", FCVAR_NONE, "Set to 1 and restart the map to be warned if the map has no trigger_transition volumes. Set to 2 to see a dump of all entities & associated results during a transition." );
 
+ConVar mp_transition_players_percent("mp_transition_players_percent",
+	"66", FCVAR_NOTIFY,
+	"How many players in percent are needed for a level transition?");
+
 // Global list of triggers that care about weapon fire
 // Doesn't need saving, the triggers re-add themselves on restore.
 CUtlVector< CHandle<CTriggerMultiple> >	g_hWeaponFireTriggers;
@@ -1384,9 +1388,6 @@ private:
 	// Adds in all entities depended on by entities near the transition
 	static int AddDependentEntities( int nCount, CBaseEntity **ppEntList, int *pEntityFlags, int nMaxList );
 
-	// Figures out save flags for the entity
-	static int ComputeEntitySaveFlags( CBaseEntity *pEntity );
-
 private:
 	char m_szMapName[cchMapNameMost];		// trigger_changelevel only:  next map
 	char m_szLandmarkName[cchMapNameMost];		// trigger_changelevel only:  landmark on next map
@@ -1612,15 +1613,9 @@ void CChangeLevel::WarnAboutActiveLead( void )
 	}
 }
 
-extern ConVar mp_transition_players_percent;
-extern ConVar sv_transitions;
-
-extern void SaveTransitionFile();
-
 void CChangeLevel::ChangeLevelNow( CBaseEntity *pActivator )
 {
 	CBaseEntity	*pLandmark;
-	levellist_t	levels[16];
 
 	Assert(!FStrEq(m_szMapName, ""));
 
@@ -1744,8 +1739,6 @@ void CChangeLevel::ChangeLevelNow( CBaseEntity *pActivator )
 		}
 	}
 
-	SaveTransitionFile();
-
 	Transitioned = true;
 
 	// If we're debugging, don't actually change level
@@ -1767,18 +1760,6 @@ void CChangeLevel::TouchChangeLevel( CBaseEntity *pOther )
 	CBasePlayer *pPlayer = ToBasePlayer(pOther);
 	if ( !pPlayer )
 		return;
-
-	if( pPlayer->IsSinglePlayerGameEnding() )
-	{
-		// Some semblance of deceleration, but allow player to fall normally.
-		// Also, disable controls.
-		Vector vecVelocity = pPlayer->GetAbsVelocity();
-		vecVelocity.x *= 0.5f;
-		vecVelocity.y *= 0.5f;
-		pPlayer->SetAbsVelocity( vecVelocity );
-		pPlayer->AddFlag( FL_FROZEN );
-		return;
-	}
 
 	if ( !pPlayer->IsInAVehicle() && pPlayer->GetMoveType() == MOVETYPE_NOCLIP )
 	{
@@ -1803,21 +1784,7 @@ int CChangeLevel::AddTransitionToList( levellist_t *pLevelList, int listCount, c
 	if ( stricmp( pMapName, STRING(gpGlobals->mapname) ) == 0 )
 		return 0;
 
-	for ( i = 0; i < listCount; i++ )
-	{
-		if ( pLevelList[i].pentLandmark == pentLandmark && stricmp( pLevelList[i].mapName, pMapName ) == 0 )
-			return 0;
-	}
-	Q_strncpy( pLevelList[listCount].mapName, pMapName, sizeof(pLevelList[listCount].mapName) );
-	Q_strncpy( pLevelList[listCount].landmarkName, pLandmarkName, sizeof(pLevelList[listCount].landmarkName) );
-	pLevelList[listCount].pentLandmark = pentLandmark;
-
-	CBaseEntity *ent = CBaseEntity::Instance( pentLandmark );
-	Assert( ent );
-
-	pLevelList[listCount].vecLandmarkOrigin = ent->GetAbsOrigin();
-
-	return 1;
+	return 0;
 }
 
 int BuildChangeList( levellist_t *pLevelList, int maxList )
@@ -1972,46 +1939,6 @@ int CChangeLevel::BuildChangeLevelList( levellist_t *pLevelList, int maxList )
 //------------------------------------------------------------------------------
 // Adds a single entity to the transition list, if appropriate. Returns the new count
 //------------------------------------------------------------------------------
-int CChangeLevel::ComputeEntitySaveFlags( CBaseEntity *pEntity )
-{
-	if ( g_iDebuggingTransition == DEBUG_TRANSITIONS_VERBOSE )
-	{
-		Msg( "Trying %s (%s): ", pEntity->GetClassname(), pEntity->GetDebugName() );
-	}
-
-	int caps = pEntity->ObjectCaps();
-	if ( caps & FCAP_DONT_SAVE )
-	{
-		if ( g_iDebuggingTransition == DEBUG_TRANSITIONS_VERBOSE )
-		{
-			Msg( "IGNORED due to being marked \"Don't save\".\n" );
-		}
-		return 0;
-	}
-
-	// If this entity can be moved or is global, mark it
-	int flags = 0;
-	if ( caps & FCAP_ACROSS_TRANSITION )
-	{
-		flags |= FENTTABLE_MOVEABLE;
-	}
-	if ( pEntity->m_iGlobalname != NULL_STRING && !pEntity->IsDormant() )
-	{
-		flags |= FENTTABLE_GLOBAL;
-	}
-	
-	if ( g_iDebuggingTransition == DEBUG_TRANSITIONS_VERBOSE && !flags )
-	{
-		Msg( "IGNORED, no across_transition flag & no globalname\n" );
-	}
-
-	return flags;
-}
-
-
-//------------------------------------------------------------------------------
-// Adds a single entity to the transition list, if appropriate. Returns the new count
-//------------------------------------------------------------------------------
 inline int CChangeLevel::AddEntityToTransitionList( CBaseEntity *pEntity, int flags, int nCount, CBaseEntity **ppEntList, int *pEntityFlags )
 {
 	ppEntList[ nCount ] = pEntity;
@@ -2060,35 +1987,7 @@ int CChangeLevel::BuildEntityTransitionList( CBaseEntity *pLandmarkEntity, const
 		g_iDebuggingTransition = 0;
 	}
 
-	// Follow the linked list of entities in the PVS of the transition landmark
-	CBaseEntity *pEntity = NULL; 
-	while ( (pEntity = UTIL_EntitiesInPVS( pLandmarkEntity, pEntity)) != NULL )
-	{
-		int flags = ComputeEntitySaveFlags( pEntity );
-		if ( !flags )
-			continue;
-
-		// Check to make sure the entity isn't screened out by a trigger_transition
-		if ( !InTransitionVolume( pEntity, pLandmarkName ) )
-		{
-			if ( g_iDebuggingTransition == DEBUG_TRANSITIONS_VERBOSE )
-			{
-				Msg( "IGNORED, outside transition volume.\n" );
-			}
-			continue;
-		}
-
-		if ( iEntity >= nMaxList )
-		{
-			Warning( "Too many entities across a transition!\n" );
-			Assert( 0 );
-			return iEntity;
-		}
-
-		iEntity = AddEntityToTransitionList( pEntity, flags, iEntity, ppEntList, pEntityFlags );
-	}
-
-	return iEntity;
+	return 0;
 }
 
 
@@ -2129,62 +2028,7 @@ int CChangeLevel::AddDependentEntities( int nCount, CBaseEntity **ppEntList, int
 		Set( pEntitiesSaved, nEntIndex );
 	}
 
-	IEntitySaveUtils *pSaveUtils = GetEntitySaveUtils();
-
-	// Iterate over entities whose dependencies we've not yet processed
-	// NOTE: nCount will change value during this loop in AddEntityToTransitionList
-	for ( i = 0; i < nCount; ++i )
-	{
-		CBaseEntity *pEntity = ppEntList[i];
-
-		// Find dependencies in the hash.
-		int nDepCount = pSaveUtils->GetEntityDependencyCount( pEntity );
-		if ( !nDepCount )
-			continue;
-
-		CBaseEntity **ppDependentEntities = (CBaseEntity**)stackalloc( nDepCount * sizeof(CBaseEntity*) );
-		pSaveUtils->GetEntityDependencies( pEntity, nDepCount, ppDependentEntities );
-		for ( int j = 0; j < nDepCount; ++j )
-		{
-			CBaseEntity *pDependent = ppDependentEntities[j];
-			if ( !pDependent )
-				continue;
-
-			// NOTE: Must use GetEntryIndex because we're saving non-networked entities
-			int nEntIndex = pDependent->GetRefEHandle().GetEntryIndex();
-
-			// Don't re-add it if it's already in the list
-			if ( IsBitSet( pEntitiesSaved, nEntIndex ) )
-				continue;
-
-			// Mark the entity as being in the list
-			Set( pEntitiesSaved, nEntIndex );
-
-			int flags = ComputeEntitySaveFlags( pEntity );
-			if ( flags )
-			{
-				if ( nCount >= nMaxList )
-				{
-					Warning( "Too many entities across a transition!\n" );
-					Assert( 0 );
-					return false;
-				}
-
-				if ( g_debug_transitions.GetInt() )
-				{
-					Msg( "ADDED DEPENDANCY: %s (%s)\n", pEntity->GetClassname(), pEntity->GetDebugName() );
-				}
-
-				nCount = AddEntityToTransitionList( pEntity, flags, nCount, ppEntList, pEntityFlags );
-			}
-			else
-			{
-				Warning("Warning!! Save dependency is linked to an entity that doesn't want to be saved!\n");
-			}
-		}
-	}
-
-	return nCount;
+	return 0;
 }
 
 
@@ -2199,40 +2043,7 @@ int CChangeLevel::AddDependentEntities( int nCount, CBaseEntity **ppEntList, int
 // FIXME: This has grown into a complicated beast. Can we make this more elegant?
 int CChangeLevel::ChangeList( levellist_t *pLevelList, int maxList )
 {
-	// Find all of the possible level changes on this BSP
-	int count = BuildChangeLevelList( pLevelList, maxList );
-
-	if ( !gpGlobals->pSaveData || ( static_cast<CSaveRestoreData *>(gpGlobals->pSaveData)->NumEntities() == 0 ) )
-		return count;
-
-	CSave saveHelper( static_cast<CSaveRestoreData *>(gpGlobals->pSaveData) );
-
-	// For each level change, find nearby entities and save them
-	int	i;
-	for ( i = 0; i < count; i++ )
-	{
-		CBaseEntity *pEntList[ MAX_ENTITY ];
-		int			 entityFlags[ MAX_ENTITY ];
-
-		// First, figure out which entities are near the transition
-		CBaseEntity *pLandmarkEntity = CBaseEntity::Instance( pLevelList[i].pentLandmark );
-		int iEntity = BuildEntityTransitionList( pLandmarkEntity, pLevelList[i].landmarkName, pEntList, entityFlags, MAX_ENTITY );
-
-		// FIXME: Activate if we have a dependency problem on level transition
-		// Next, add in all entities depended on by entities near the transition
-//		iEntity = AddDependentEntities( iEntity, pEntList, entityFlags, MAX_ENTITY );
-
-		int j;
-		for ( j = 0; j < iEntity; j++ )
-		{
-			// Mark entity table with 1<<i
-			int index = saveHelper.EntityIndex( pEntList[j] );
-			// Flag it with the level number
-			saveHelper.EntityFlagsSet( index, entityFlags[j] | (1<<i) );
-		}
-	}
-
-	return count;
+	return 0;
 }
 
 
@@ -2721,6 +2532,12 @@ BEGIN_MAPENTITY( CTriggerCamera )
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget", InputSetTarget),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetTargetAttachment", InputSetTargetAttachment ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "ReturnToEyes", InputReturnToEyes ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "TeleportToView", InputTeleportToView ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetTrackSpeed", InputSetTrackSpeed ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetPath", InputSetPath ),
 
 	// Function Pointers
 	DEFINE_OUTPUT( m_OnEndFollow, "OnEndFollow" ),
@@ -2745,7 +2562,7 @@ void CTriggerCamera::Spawn( void )
 
 	SetMoveType( MOVETYPE_NOCLIP );
 	SetSolid( SOLID_NONE );								// Remove model & collisions
-	SetRenderColorA( 0 );								// The engine won't draw this model if this is set to 0 and blending is on
+	SetRenderAlpha( 0 );								// The engine won't draw this model if this is set to 0 and blending is on
 	SetRenderMode( kRenderTransTexture );
 
 	m_state = USE_OFF;
@@ -2774,6 +2591,10 @@ int CTriggerCamera::UpdateTransmitState()
 	}
 }
 
+void CTriggerCamera::StartCameraShot( const char *pszShotType, CBaseEntity *pSceneEntity, CBaseEntity *pActor1, CBaseEntity *pActor2, float duration )
+{
+	// called from SceneEntity in response to a CChoreoEvent::CAMERA sent from a VCD.
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -2795,6 +2616,10 @@ bool CTriggerCamera::KeyValue( const char *szKeyName, const char *szValue )
 	else if (FStrEq(szKeyName, "deceleration"))
 	{
 		m_deceleration = atof( szValue );
+	}
+	else if (FStrEq(szKeyName, "trackspeed"))
+	{
+		m_targetSpeed = atof(szValue);
 	}
 	else
 		return BaseClass::KeyValue( szKeyName, szValue );
@@ -2820,6 +2645,82 @@ void CTriggerCamera::InputDisable( inputdata_t &inputdata )
 	Disable();
 }
 
+//------------------------------------------------------------------------------
+// Purpose: Set a new target for the camera to point at.
+//------------------------------------------------------------------------------
+void CTriggerCamera::InputSetTarget(inputdata_t &inputdata)
+{
+	m_target = inputdata.value.StringID();
+	m_hTarget = gEntList.FindEntityGeneric(NULL, STRING(m_target), this, inputdata.pActivator);
+}
+
+//------------------------------------------------------------------------------
+// Purpose: Set a new attachment on the target for the camera to point at.
+//------------------------------------------------------------------------------
+void CTriggerCamera::InputSetTargetAttachment(inputdata_t &inputdata)
+{
+	m_iszTargetAttachment = MAKE_STRING(inputdata.value.String());
+}
+
+//------------------------------------------------------------------------------
+// Purpose: Return the camera view to the player's eyes.
+//------------------------------------------------------------------------------
+void CTriggerCamera::InputReturnToEyes(inputdata_t &inputdata)
+{
+	if (m_hPlayer)
+	{
+		CBasePlayer *pPlayer = (CBasePlayer*)m_hPlayer.Get();
+		if (pPlayer)
+		{
+			SetAbsOrigin(m_hPlayer->EyePosition());
+			SetAbsAngles(m_hPlayer->EyeAngles());
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+// Purpose: Teleport the player to the current position of the camera.
+//------------------------------------------------------------------------------
+void CTriggerCamera::InputTeleportToView(inputdata_t &inputdata)
+{
+	if (m_hPlayer)
+	{
+		CBasePlayer *pPlayer = (CBasePlayer*)m_hPlayer.Get();
+		CBaseEntity *pViewControl = pPlayer->GetViewEntity();
+
+		if (pViewControl && pViewControl != pPlayer)
+		{
+			CTriggerCamera *pOtherCamera = dynamic_cast<CTriggerCamera *>(pViewControl);
+			if (pOtherCamera)
+			{
+				static Vector AbsOrigin = pOtherCamera->GetAbsOrigin();
+				if (AbsOrigin != vec3_invalid)
+				{
+					pPlayer->SetAbsOrigin(AbsOrigin);
+				}
+			}
+		}
+	}
+	Disable();
+}
+
+//------------------------------------------------------------------------------
+// Purpose: Set the speed that the camera will try to track it's target.
+//------------------------------------------------------------------------------
+void CTriggerCamera::InputSetTrackSpeed(inputdata_t &inputdata)
+{
+	m_targetSpeed = inputdata.value.Float();
+}
+
+//------------------------------------------------------------------------------
+// Purpose: Have the camera start following a new path.
+//------------------------------------------------------------------------------
+void CTriggerCamera::InputSetPath(inputdata_t &inputdata)
+{
+	m_sPath = inputdata.value.StringID();
+	m_pPath = gEntList.FindEntityGeneric(NULL, STRING(m_sPath), this, inputdata.pActivator);
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -2829,7 +2730,7 @@ void CTriggerCamera::Enable( void )
 
 	if ( !m_hPlayer || !m_hPlayer->IsPlayer() )
 	{
-		m_hPlayer = UTIL_GetLocalPlayer();
+		m_hPlayer = UTIL_GetNearestPlayer( GetAbsOrigin() );
 	}
 
 	if ( !m_hPlayer )
@@ -3744,7 +3645,7 @@ class CTriggerHierarchy : public CTriggerMultiple
 {
 	DECLARE_CLASS( CTriggerHierarchy, CTriggerMultiple );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 	string_t					m_iChildFilterName;
 	CHandle<class CBaseFilter>	m_hChildFilter;
@@ -3758,9 +3659,9 @@ public:
 
 LINK_ENTITY_TO_CLASS( trigger_hierarchy, CTriggerHierarchy );
 
-BEGIN_DATADESC( CTriggerHierarchy )
+BEGIN_MAPENTITY( CTriggerHierarchy )
 	DEFINE_KEYFIELD( m_iChildFilterName,	FIELD_STRING,	"childfiltername" ),
-END_DATADESC()
+END_MAPENTITY()
 
 
 void CTriggerHierarchy::Activate( void )
@@ -3948,9 +3849,6 @@ int CTriggerImpact::DrawDebugTextOverlays(void)
 //-----------------------------------------------------------------------------
 // Purpose: Disables auto movement on players that touch it
 //-----------------------------------------------------------------------------
-
-const int SF_TRIGGER_MOVE_AUTODISABLE				= 0x80;		// disable auto movement
-const int SF_TRIGGER_AUTO_DUCK						= 0x800;	// Duck automatically
 
 class CTriggerPlayerMovement : public CBaseTrigger
 {
@@ -4241,7 +4139,6 @@ public:
 	void Precache();
 	virtual void UpdateOnRemove();
 	bool CreateVPhysics();
-	void OnRestore();
 
 	// UNDONE: Pass trigger event in or change Start/EndTouch.  Add ITriggerVPhysics perhaps?
 	// BUGBUG: If a player touches two of these, his movement will screw up.
@@ -4373,19 +4270,6 @@ void CTriggerVPhysicsMotion::UpdateOnRemove()
 	}
 
 	BaseClass::UpdateOnRemove();
-}
-
-
-//------------------------------------------------------------------------------
-// Restore
-//------------------------------------------------------------------------------
-void CTriggerVPhysicsMotion::OnRestore()
-{
-	BaseClass::OnRestore();
-	if ( m_pController )
-	{
-		m_pController->SetEventHandler( this );
-	}
 }
 
 //------------------------------------------------------------------------------

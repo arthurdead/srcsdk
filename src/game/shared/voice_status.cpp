@@ -336,7 +336,7 @@ void CVoiceStatus::DrawHeadLabels()
 
 void CVoiceStatus::UpdateSpeakerStatus(int entindex, bool bTalking)
 {
-	if(!m_pParentPanel)
+	if(m_pParentPanel == INVALID_VPANEL)
 		return;
 
 	if( voice_clientdebug.GetInt() )

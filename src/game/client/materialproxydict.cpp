@@ -27,9 +27,9 @@ void CMaterialProxyDict::Add( const char *pMaterialProxyName, MaterialProxyFacto
 	m_StringToProxyFactoryMap[pMaterialProxyName] = pMaterialProxyFactory;
 }
 
+INIT_PRIORITY(101) static CMaterialProxyDict g_MaterialProxyDict;
 IMaterialProxyDict &GetMaterialProxyDict()
 {
-	static CMaterialProxyDict g_MaterialProxyDict;
 	return g_MaterialProxyDict;
 }
 

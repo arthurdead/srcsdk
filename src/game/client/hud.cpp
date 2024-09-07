@@ -179,11 +179,11 @@ CHudTexture::CHudTexture()
 	Q_memset( szTextureFile, 0, sizeof( szTextureFile ) );
 	Q_memset( texCoords, 0, sizeof( texCoords ) );
 	Q_memset( &rc, 0, sizeof( rc ) );
-	textureId = -1;
+	textureId = vgui::INVALID_TEXTURE;
 	bRenderUsingFont = false;
 	bPrecached = false;
 	cCharacterInFont = 0;
-	hFont = ( vgui::HFont )NULL;
+	hFont = vgui::INVALID_FONT;
 }
 
 CHudTexture& CHudTexture::operator =( const CHudTexture& src )
@@ -195,10 +195,10 @@ CHudTexture& CHudTexture::operator =( const CHudTexture& src )
 	Q_strncpy( szTextureFile, src.szTextureFile, sizeof( szTextureFile ) );
 	Q_memcpy( texCoords, src.texCoords, sizeof( texCoords ) );
 
-	if ( src.textureId == -1 )
+	if ( src.textureId == vgui::INVALID_TEXTURE )
 	{
 		// Didn't have a texture ID set
-		textureId = -1;
+		textureId = vgui::INVALID_TEXTURE;
 	}
 	else
 	{
@@ -220,7 +220,7 @@ CHudTexture::~CHudTexture()
 	if ( vgui::surface() && vgui::surface()->IsTextureIDValid( textureId ) )
 	{
 		vgui::surface()->DeleteTextureByID( textureId );
-		textureId = -1;
+		textureId = vgui::INVALID_TEXTURE;
 	}
 }
 
@@ -656,7 +656,7 @@ void CHudTexture::DrawSelf( int x, int y, int w, int h, const Color& clr, vgui::
 	}
 	else
 	{
-		if ( textureId == -1 )
+		if ( textureId == vgui::INVALID_TEXTURE )
 			return;
 
 		vgui::surface()->DrawSetTexture( textureId );
@@ -697,7 +697,7 @@ void CHudTexture::DrawSelfCropped( int x, int y, int cropx, int cropy, int cropw
 	}
 	else
 	{
-		if ( textureId == -1 )
+		if ( textureId == vgui::INVALID_TEXTURE )
 			return;
 
 		float fw = (float)Width();
@@ -736,7 +736,7 @@ void CHudTexture::DrawSelfScalableCorners( int drawX, int drawY, int w, int h, i
 		return;
 	}
 
-	if ( textureId == -1 )
+	if ( textureId == vgui::INVALID_TEXTURE )
 		return;
 
 	float fw = (float)Width();
@@ -812,7 +812,7 @@ void CHudTexture::DrawSelfScalableCorners( int drawX, int drawY, int w, int h, i
 		uvy += uvh;
 	}
 
-	vgui::surface()->DrawSetTexture(0);
+	vgui::surface()->DrawSetTexture(vgui::INVALID_TEXTURE);
 }
 
 //-----------------------------------------------------------------------------

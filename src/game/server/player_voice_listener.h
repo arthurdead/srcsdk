@@ -22,14 +22,12 @@ public:
 
 	bool IsPlayerSpeaking( int nPlayerIndex );
 	bool IsPlayerSpeaking( CBasePlayer *pPlayer );
-	bool ScriptIsPlayerSpeaking( int nPlayerIndex );
 
 	void AddPlayerSpeakTime( int nPlayerIndex );
 	void AddPlayerSpeakTime( CBasePlayer *pPlayer );
 
 	float GetPlayerSpeechDuration( int nPlayerIndex );
 	float GetPlayerSpeechDuration( CBasePlayer *pPlayer );
-	float ScriptGetPlayerSpeechDuration( int nPlayerIndex );
 
 private:
 	void	InitData( void );

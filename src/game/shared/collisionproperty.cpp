@@ -1268,7 +1268,7 @@ void CCollisionProperty::SetSurroundingBoundsType( SurroundingBoundsType_t type,
 void CCollisionProperty::MarkSurroundingBoundsDirty()
 {
 	// don't bother with the world
-	if ( m_pOuter->entindex() == 0 )
+	if ( m_pOuter->IsWorld() )
 		return;
 
 	GetOuter()->AddEFlags( EFL_DIRTY_SURROUNDING_COLLISION_BOUNDS );
@@ -1279,7 +1279,8 @@ void CCollisionProperty::MarkSurroundingBoundsDirty()
 	g_pClientShadowMgr->AddToDirtyShadowList( GetOuter() );
 	g_pClientShadowMgr->MarkRenderToTextureShadowDirty( GetOuter()->GetShadowHandle() );
 #else
-	GetOuter()->NetworkProp()->MarkPVSInformationDirty();
+	if( GetOuter()->NetworkProp() )
+		GetOuter()->NetworkProp()->MarkPVSInformationDirty();
 #endif
 }
 

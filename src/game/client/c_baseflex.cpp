@@ -43,9 +43,9 @@ IMPLEMENT_CLIENTCLASS_DT(C_BaseFlex, DT_BaseFlex, CBaseFlex)
 	RecvPropBool(RECVINFO(m_blinktoggle)),
 	RecvPropVector(RECVINFO(m_viewtarget)),
 
-	RecvPropFloat( RECVINFO(m_vecViewOffset[0]) ),
-	RecvPropFloat( RECVINFO(m_vecViewOffset[1]) ),
-	RecvPropFloat( RECVINFO(m_vecViewOffset[2]) ),
+	RecvPropFloat( RECVINFO_ARRAYELEM(m_vecViewOffset, 0) ),
+	RecvPropFloat( RECVINFO_ARRAYELEM(m_vecViewOffset, 1) ),
+	RecvPropFloat( RECVINFO_ARRAYELEM(m_vecViewOffset, 2) ),
 
 	RecvPropVector(RECVINFO(m_vecLean)),
 	RecvPropVector(RECVINFO(m_vecShift)),
@@ -182,6 +182,7 @@ IClientModelRenderable*	C_BaseFlex::GetClientModelRenderable()
 	if ( !BaseClass::GetClientModelRenderable() )
 		return NULL;
 
+	MDLCACHE_CRITICAL_SECTION();
 	// No flexes allowed for fast path atm
 	CStudioHdr *hdr = GetModelPtr();
 	if ( !hdr || ( hdr->numflexcontrollers() != 0 ) )

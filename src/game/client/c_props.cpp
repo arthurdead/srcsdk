@@ -243,6 +243,12 @@ END_RECV_TABLE()
 class CPhysicsPropMultiplayer : public CPhysicsProp, public IMultiplayerPhysics
 {
 	DECLARE_CLASS( CPhysicsPropMultiplayer, CPhysicsProp );
+public:
+	CPhysicsPropMultiplayer()
+		: CPhysicsProp(), IMultiplayerPhysics()
+	{
+		SetClassname("prop_physics_multiplayer");
+	}
 
 	virtual int GetMultiplayerPhysicsMode()
 	{
@@ -278,6 +284,8 @@ class CPhysicsPropMultiplayer : public CPhysicsProp, public IMultiplayerPhysics
 
 	DECLARE_CLIENTCLASS();
 };
+
+LINK_ENTITY_TO_CLASS(prop_physics_multiplayer, CPhysicsPropMultiplayer);
 
 IMPLEMENT_CLIENTCLASS_DT( CPhysicsPropMultiplayer, DT_PhysicsPropMultiplayer, CPhysicsPropMultiplayer )
 	RecvPropInt( RECVINFO( m_iPhysicsMode ) ),

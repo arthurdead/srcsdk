@@ -106,7 +106,7 @@ void CLogicAuto::Think(void)
 		m_OnMapSpawn.FireOutput(NULL, this);
 
 		// In multiplayer, fire the new map / round events.
-		if ( g_pGameRules->InRoundRestart() )
+		if ( GameRules()->InRoundRestart() )
 		{
 			m_OnMultiNewRound.FireOutput(NULL, this);
 		}

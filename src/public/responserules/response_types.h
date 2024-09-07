@@ -179,7 +179,7 @@ namespace ResponseRules
 		void		Merge( const char *modifiers ); // add criteria parsed from a text string
 
 		/// add all of the contexts herein onto an entity. all durations are infinite.
-		void		WriteToEntity( CBaseEntity *pEntity );
+		void		WriteToEntity( CGameBaseEntity *pEntity );
 
 		// Accessors to things that need only be done under unusual circumstances.
 		inline void EnsureCapacity( int num );

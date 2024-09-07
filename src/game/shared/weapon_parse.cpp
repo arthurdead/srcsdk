@@ -346,6 +346,7 @@ FileWeaponInfo_t::FileWeaponInfo_t()
 	bShowUsageHint = false;
 	m_bAllowFlipping = true;
 	m_bBuiltRightHanded = true;
+	m_flWeaponFOV = 54.0;
 }
 
 #ifdef CLIENT_DLL
@@ -400,6 +401,7 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	m_bBuiltRightHanded = pKeyValuesData->GetBool( "BuiltRightHanded", true );
 	m_bAllowFlipping = pKeyValuesData->GetBool( "AllowFlipping", true );
 	m_bMeleeWeapon = pKeyValuesData->GetBool( "MeleeWeapon", false );
+	m_flWeaponFOV = pKeyValuesData->GetFloat("fov", 54.0f); // Allow to change weapon fov.
 
 #if defined(_DEBUG) && defined(HL2_CLIENT_DLL)
 	// make sure two weapons aren't in the same slot & position

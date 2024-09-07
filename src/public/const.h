@@ -258,9 +258,13 @@ enum
 	EF_ITEM_BLINK			= 0x100,	// blink an item so that the user notices it.
 	EF_PARENT_ANIMATES		= 0x200,	// always assume that the parent entity is animating
 
+	EF_NOSHADOWDEPTH		= 0x300,	// Receive projected shadows, but don't cast them
+	EF_NOFLASHLIGHT			= 0x400,	// Cast projected shadows, but don't receive them
+	EF_SHADOWDEPTH_NOCACHE  = 0x800,
+
 	EF_DEPRECATED_NOINTERP				= 0x008,	// don't interpolate the next frame
 
-	EF_MAX_BITS = 10
+	EF_MAX_BITS = 13
 };
 
 #define EF_PARITY_BITS	3

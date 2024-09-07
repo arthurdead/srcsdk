@@ -8,7 +8,7 @@
 #ifdef SERVER_USES_VGUI
 #include "vgui_gamedll_int.h"
 #include "ienginevgui.h"
-#include <vgui/isurface.h>
+#include <vgui/ISurface.h>
 #include <vgui/IVGui.h>
 #include <vgui/IInput.h>
 #include "tier0/vprof.h"
@@ -65,7 +65,7 @@ bool VGui_PostInit()
 
 	// Make sure we have a panel
 	VPANEL root = VGui_GetGameDLLRootPanel();
-	if ( !root )
+	if ( root == INVALID_VPANEL )
 	{
 		return false;
 	}

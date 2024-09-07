@@ -122,7 +122,7 @@ typedef void (C_BaseEntity::*BASEPTR)(void);
 typedef void (C_BaseEntity::*ENTITYFUNCPTR)(C_BaseEntity *pOther );
 
 // For entity creation on the client
-typedef C_BaseEntity* (*DISPATCHFUNCTION)( void );
+typedef C_BaseEntity* (*DISPATCHFUNCTION)( const char * );
 
 #include "touchlink.h"
 #include "groundlink.h"
@@ -310,7 +310,7 @@ protected:
 public:
 	virtual bool InitializeAsClientEntity();
 
-	virtual void PostConstructor( const char *szClassname );
+	virtual bool PostConstructor( const char *szClassname );
 
 public:
 	// memory handling, uses calloc so members are zero'd out on instantiation
@@ -494,6 +494,10 @@ public:
 	// capabilities for save/restore
 	virtual int						ObjectCaps( void );
 
+private:
+	void OnDisableShadowDepthRenderingChanged();
+	void OnShadowDepthRenderingCacheableStateChanged();
+
 public:
 
 	// Called after spawn, and in the case of self-managing objects, after load
@@ -534,9 +538,9 @@ public:
 
 	virtual const Vector&			GetAbsOrigin( void ) const;
 	virtual const QAngle&			GetAbsAngles( void ) const;  // see also GetVectors()
-	inline Vector					Forward() const; ///< get my forward (+x) vector
-	inline Vector					Left() const;    ///< get my left    (+y) vector
-	inline Vector					Up() const;      ///< get my up      (+z) vector
+	inline Vector					Forward() const RESTRICT; ///< get my forward (+x) vector
+	inline Vector					Left() const RESTRICT;    ///< get my left    (+y) vector
+	inline Vector					Up() const RESTRICT;      ///< get my up      (+z) vector
 
 	const Vector&					GetNetworkOrigin() const;
 	const QAngle&					GetNetworkAngles() const;
@@ -657,9 +661,9 @@ public:
 
 	// Team handling
 	virtual C_Team					*GetTeam( void );
-	virtual int						GetTeamNumber( void ) const;
-	virtual void					ChangeTeam( int iTeamNum );			// Assign this entity to a team.
-	virtual int						GetRenderTeamNumber( void );
+	virtual Team_t						GetTeamNumber( void ) const;
+	virtual void					ChangeTeam( Team_t iTeamNum );			// Assign this entity to a team.
+	virtual Team_t						GetRenderTeamNumber( void );
 	virtual bool					InSameTeam( C_BaseEntity *pEntity );	// Returns true if the specified entity is on the same team as this one
 	virtual bool					InLocalTeam( void );
 
@@ -765,6 +769,8 @@ public:
 
 	inline ClientEntityHandle_t		GetClientHandle() const	{ return ClientEntityHandle_t( m_RefEHandle ); }
 	virtual bool						IsServerEntity( void );
+
+	bool IsNetworked( void ) const;
 
 	void							RenderWithViewModels( bool bEnable );
 	bool							IsRenderingWithViewModels() const;
@@ -1524,7 +1530,7 @@ public:
 
 private:
 	// Team Handling
-	int								m_iTeamNum;
+	Team_t								m_iTeamNum;
 
 	// Certain entities (projectiles) can be created on the client
 	CPredictableId					m_PredictableID;
@@ -1896,6 +1902,21 @@ protected:
 };
 
 EXTERN_RECV_TABLE(DT_BaseEntity);
+
+class C_ClientEntity : public C_BaseEntity
+{
+public:
+	C_ClientEntity()
+		: C_BaseEntity()
+	{
+		AddEFlags(EFL_NOT_NETWORKED);
+	}
+	DECLARE_CLASS( C_ClientEntity, C_BaseEntity );
+
+	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
+	virtual	bool			IsClientCreated( void ) const { return true; }
+	virtual bool						IsServerEntity( void ) { return false; }
+};
 
 inline bool FClassnameIs( C_BaseEntity *pEntity, const char *szClassname )
 { 

@@ -22,6 +22,7 @@
 // Create interface
 static CClientEntityList s_EntityList;
 CBaseEntityList *g_pEntityList = &s_EntityList;
+IClientEntityListEx *entitylist = &s_EntityList;
 
 // Expose list to engine
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CClientEntityList, IClientEntityList, VCLIENTENTITYLIST_INTERFACE_VERSION, s_EntityList );
@@ -29,7 +30,6 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CClientEntityList, IClientEntityList, VCLIENT
 // Store local pointer to interface for rest of client .dll only 
 //  (CClientEntityList instead of IClientEntityList )
 CClientEntityList *cl_entitylist = &s_EntityList; 
-
 
 bool PVSNotifierMap_LessFunc( C_BaseEntity* const &a, C_BaseEntity* const &b )
 {
@@ -42,9 +42,9 @@ bool PVSNotifierMap_LessFunc( C_BaseEntity* const &a, C_BaseEntity* const &b )
 ClientEntityHandle_t CClientEntityList::EntIndexToHandle( int entnum )
 {
 	if ( entnum < -1 )
-		return INVALID_EHANDLE_INDEX;
+		return NULL_EHANDLE;
 	C_BaseEntity *pUnk = GetListedEntity( entnum );
-	return pUnk ? pUnk->GetRefEHandle() : INVALID_EHANDLE_INDEX; 
+	return pUnk ? pUnk->GetRefEHandle() : NULL_EHANDLE; 
 }
 
 								 
@@ -139,7 +139,7 @@ int CClientEntityList::GetMaxEntities( void )
 //-----------------------------------------------------------------------------
 int CClientEntityList::HandleToEntIndex( ClientEntityHandle_t handle )
 {
-	if ( handle == INVALID_EHANDLE_INDEX )
+	if ( handle == NULL )
 		return -1;
 	C_BaseEntity *pEnt = GetBaseEntityFromHandle( handle );
 	return pEnt ? pEnt->entindex() : -1; 
@@ -203,6 +203,11 @@ IClientUnknown* CClientEntityList::GetClientUnknownFromHandle( ClientEntityHandl
 	return LookupEntity( hEnt );
 }
 
+IClientUnknown* CClientEntityList::GetClientUnknownFromHandle( CBaseHandle hEnt )
+{
+	return LookupEntity( hEnt );
+}
+
 IClientEntity* CClientEntityList::GetClientEntity( int entnum )
 {
 	return LookupEntityByNetworkIndex( entnum );
@@ -213,12 +218,20 @@ IClientNetworkable* CClientEntityList::GetClientNetworkableFromHandle( ClientEnt
 	return LookupEntity( hEnt );
 }
 
+IClientNetworkable* CClientEntityList::GetClientNetworkableFromHandle( CBaseHandle hEnt )
+{
+	return LookupEntity( hEnt );
+}
 
 IClientEntity* CClientEntityList::GetClientEntityFromHandle( ClientEntityHandle_t hEnt )
 {
 	return LookupEntity( hEnt );
 }
 
+IClientEntity* CClientEntityList::GetClientEntityFromHandle( CBaseHandle hEnt )
+{
+	return LookupEntity( hEnt );
+}
 
 C_BaseEntity* CClientEntityList::GetClientRenderableFromHandle( ClientEntityHandle_t hEnt )
 {
@@ -308,7 +321,7 @@ void CClientEntityList::RemoveListenerEntity( IClientEntityListener *pListener )
 	m_entityListeners.FindAndRemove( pListener );
 }
 
-void CClientEntityList::OnAddEntity( CBaseEntity *pEnt, CBaseHandle handle )
+void CClientEntityList::OnAddEntity( CBaseEntity *pEnt, EHANDLE handle )
 {
 	int entnum = handle.GetEntryIndex();
 	EntityCacheInfo_t *pCache = &m_EntityCacheInfo[entnum];
@@ -336,7 +349,7 @@ void CClientEntityList::OnAddEntity( CBaseEntity *pEnt, CBaseHandle handle )
 	// Store it in a special list for fast iteration if it's a C_BaseEntity.
 	pCache->m_BaseEntitiesIndex = m_BaseEntities.AddToTail( pEnt );
 
-	if ( entnum > MAX_EDICTS )
+	if ( entnum < 0 || entnum >= MAX_EDICTS )
 	{
 		 m_iNumClientNonNetworkable++;
 	}
@@ -410,7 +423,7 @@ CON_COMMAND( cl_removeentity_backtrace_dump, "Dump backtraces for client OnRemov
 
 #endif // STAGING_ONLY
 
-void CClientEntityList::OnRemoveEntity( CBaseEntity *pEnt, CBaseHandle handle )
+void CClientEntityList::OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle )
 {
 	int entnum = handle.GetEntryIndex();
 	EntityCacheInfo_t *pCache = &m_EntityCacheInfo[entnum];
@@ -437,7 +450,7 @@ void CClientEntityList::OnRemoveEntity( CBaseEntity *pEnt, CBaseHandle handle )
 	}
 #endif // STAGING_ONLY
 
-	if ( entnum > MAX_EDICTS )
+	if ( entnum < 0 || entnum >= MAX_EDICTS )
 	{
 		 m_iNumClientNonNetworkable--;
 	}

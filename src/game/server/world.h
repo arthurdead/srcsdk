@@ -32,7 +32,9 @@ public:
 	DECLARE_SERVERCLASS();
 
 	virtual int RequiredEdictIndex( void ) { return 0; }   // the world always needs to be in slot 0
-	
+
+	virtual void PostConstructor( const char *szClassname );
+
 	static void RegisterSharedActivities( void );
 	static void RegisterSharedEvents( void );
 	virtual void Spawn( void );

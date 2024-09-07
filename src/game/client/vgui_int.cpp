@@ -185,7 +185,7 @@ bool VGui_Startup( CreateInterfaceFn appSystemFactory )
 
 	// Make sure we have a panel
 	VPANEL root = VGui_GetClientDLLRootPanel();
-	if ( !root )
+	if ( root == vgui::INVALID_VPANEL )
 	{
 		return false;
 	}
@@ -281,7 +281,7 @@ void GetHudSize( int& w, int &h )
 	vgui::surface()->GetScreenSize( w, h );
 
 	VPANEL hudParent = enginevgui->GetPanel( PANEL_CLIENTDLL );
-	if ( hudParent )
+	if ( hudParent != vgui::INVALID_VPANEL )
 	{
 		vgui::ipanel()->GetSize( hudParent, w, h );
 	}

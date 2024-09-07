@@ -10,9 +10,12 @@
 #pragma once
 
 #ifdef CLIENT_DLL
-	#include "c_baseentity.h"
 	#define CGameRules C_GameRules
 	#define CGameRulesProxy C_GameRulesProxy
+#endif
+
+#ifdef CLIENT_DLL
+	#include "c_baseentity.h"
 #else
 	#include "baseentity.h"
 	#include "recipientfilter.h"
@@ -21,14 +24,29 @@
 #include "igamesystem.h"
 #include "gamerules_register.h"
 #include "baseentity_shared.h"
+#include "GameEventListener.h"
+#include "dt_shared.h"
 
 //#include "items.h"
+
+#ifdef GAME_DLL
 class CBaseCombatWeapon;
 class CBaseCombatCharacter;
 class CBasePlayer;
 class CItem;
+#else
+class C_BaseCombatWeapon;
+#define CBaseCombatWeapon C_BaseCombatWeapon
+class C_BaseCombatCharacter;
+#define CBaseCombatCharacter C_BaseCombatCharacter
+class C_BasePlayer;
+#define CBasePlayer C_BasePlayer
+#endif
 class CAmmoDef;
+#ifdef GAME_DLL
 class CTacticalMissionManager;
+class CBaseExpresserPlayer;
+#endif
 
 extern ConVar sk_autoaim_mode;
 
@@ -77,6 +95,31 @@ typedef struct
 
 extern ConVar mp_timelimit;
 
+class CGameRules;
+
+class CSameTeamGroup
+{
+public:
+	CSameTeamGroup();
+	CSameTeamGroup( const CSameTeamGroup &src );
+
+	// Different users will require different logic for whom to add (e.g., all SplitScreen players on same team, or all Steam Friends on same team)
+	virtual void Build( CGameRules *pGameRules, CBasePlayer *pl ) = 0;
+	virtual void MaybeAddPlayer( CBasePlayer *pl ) = 0;
+
+	CBasePlayer *GetPlayer( int idx );
+
+	int						Count() const;
+	int						Score() const;
+
+	static bool Less( const CSameTeamGroup &p1, const CSameTeamGroup &p2 );
+
+protected:
+
+	CUtlVector< CBasePlayer * >				m_Players;
+	int										m_nScore;
+};
+
 // Autoaiming modes
 enum
 {
@@ -118,7 +161,6 @@ enum
 	GR_NEUTRAL,
 };
 
-
 // This class has the data tables and gets the CGameRules data to the client.
 class CGameRulesProxy : public CBaseEntity
 {
@@ -145,11 +187,11 @@ private:
 	static CGameRulesProxy *s_pGameRulesProxy;
 };
 
-
-abstract_class CGameRules : public CAutoGameSystemPerFrame
+abstract_class CGameRules : public CMemZeroOnNew, public CAutoGameSystemPerFrame, public CGameEventListener
 {
 public:
 	DECLARE_CLASS_GAMEROOT( CGameRules, CAutoGameSystemPerFrame );
+	DECLARE_NETWORKCLASS();
 
 	virtual char const *Name() { return "CGameRules"; }
 
@@ -159,6 +201,9 @@ public:
 	virtual ~CGameRules( void );
 
 	virtual	bool	Init();
+
+	virtual	bool	PostConstructor( const char *classname ) { return true; }
+	bool IsNetworked() const { return true; }
 
 	// Damage Queries - these need to be implemented by the various subclasses (single-player, multi-player, etc).
 	// The queries represent queries against damage types and properties.
@@ -217,6 +262,11 @@ public:
 		return true; 
 	}
 
+	virtual void FireGameEvent( IGameEvent *event );
+
+	// Called when game rules are destroyed by CWorld
+	virtual void LevelShutdown( void );
+
 #ifdef CLIENT_DLL
 
 	virtual bool IsBonusChallengeTimeBased( void );
@@ -227,6 +277,8 @@ public:
 
 	virtual bool AllowMapVisionFilterShaders( void ) { return true; }
 	virtual const char* TranslateEffectForVisionFilter( const char *pchEffectType, const char *pchEffectName ) { return pchEffectName; }
+
+	virtual void ClientAdjustStartSoundParams( StartSoundParams_t& params ) {}
 
 	virtual bool IsLocalPlayer( int nEntIndex );
 
@@ -244,6 +296,8 @@ public:
 
 	virtual void OnFileReceived( const char * fileName, unsigned int transferID ) { return; }
 
+	virtual bool HandleDisconnectAttempt() { return false; }
+
 	const char *GetVoiceCommandSubtitle( int iMenu, int iItem );
 	bool GetVoiceMenuLabels( int iMenu, KeyValues *pKV );
 	
@@ -257,16 +311,16 @@ public:
 public:
 
 // Setup
-	
-	// Called when game rules are destroyed by CWorld
-	virtual void LevelShutdown( void ) { return; };
+	virtual void OnBeginChangeLevel( const char *nextMapName, KeyValues *saveData ) {}	///< called just before a trigger_changelevel starts a changelevel
 
-	virtual void Precache( void ) { return; };
+	virtual void Precache( void );
 
 	virtual void RefreshSkillData( bool forceUpdate );// fill skill data struct with proper values
 	
 	// Called each frame. This just forwards the call to Think().
 	virtual void FrameUpdatePostEntityThink();
+
+	virtual void OnServerHibernating() {}
 
 	virtual void Think( void );// GR_Think - runs every server frame, should handle any timer tasks, periodic events, etc.
 	virtual bool IsAllowedToSpawn( CBaseEntity *pEntity );  // Can this item spawn (eg NPCs don't spawn in deathmatch).
@@ -277,44 +331,23 @@ public:
 	virtual bool IsSkillLevel( int iLevel ) { return GetSkillLevel() == iLevel; }
 	virtual int	GetSkillLevel() { return g_iSkillLevel; }
 	virtual void OnSkillLevelChanged( int iNewLevel ) {};
-	virtual void SetSkillLevel( int iLevel )
-	{
-		int oldLevel = g_iSkillLevel; 
-
-		if ( iLevel < 1 )
-		{
-			iLevel = 1;
-		}
-		else if ( iLevel > 3 )
-		{
-			iLevel = 3; 
-		}
-
-		g_iSkillLevel = iLevel;
-
-		if( g_iSkillLevel != oldLevel )
-		{
-			OnSkillLevelChanged( g_iSkillLevel );
-		}
-	}
+	virtual void SetSkillLevel( int iLevel );
 
 	virtual bool FAllowFlashlight( void );// Are players allowed to switch on their flashlight?
 	virtual bool FShouldSwitchWeapon( CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon );// should the player switch to this weapon?
 
 // Functions to verify the single/multiplayer status of a game
-	virtual bool IsDeathmatch( void );//is this a deathmatch game?
-	virtual bool IsTeamplay( void );// is this deathmatch game being played with team rules?
-	virtual bool IsCoOp( void );// is this a coop game?
 	virtual const char *GetGameDescription( void ) { return "Half-Life 2"; }  // this is the game name that gets seen in the server browser
 	
 // Client connection/disconnection
 	virtual bool ClientConnected( edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen );// a client just connected to the server (player hasn't spawned yet)
 	virtual void InitHUD( CBasePlayer *pl );		// the client dll is ready for updating
 	virtual void ClientDisconnected( edict_t *pClient );// a client just disconnected from the server
+	virtual bool ShouldTimeoutClient( int nUserID, float flTimeSinceLastReceived ) { return false; } // return true to disconnect client due to timeout (used to do stricter timeouts when the game is sure the client isn't loading a map)
 	
 // Client damage rules
 	virtual float FlPlayerFallDamage( CBasePlayer *pPlayer );// this client just hit the ground after a fall. How much damage?
-	virtual bool  FPlayerCanTakeDamage( CBasePlayer *pPlayer, CBaseEntity *pAttacker, const CTakeDamageInfo &info ) {return TRUE;};// can this player take damage from this attacker?
+	virtual bool  FPlayerCanTakeDamage( CBasePlayer *pPlayer, CBaseEntity *pAttacker, const CTakeDamageInfo &info );// can this player take damage from this attacker?
 	virtual bool ShouldAutoAim( CBasePlayer *pPlayer, edict_t *target ) { return TRUE; }
 	virtual float GetAutoAimScale( CBasePlayer *pPlayer ) { return 1.0f; }
 	virtual int	GetAutoAimMode()	{ return AUTOAIM_ON; }
@@ -336,7 +369,7 @@ public:
 	virtual bool IsSpawnPointValid( CBaseEntity *pSpot, CBasePlayer *pPlayer );
 	virtual void ClientSpawned( edict_t * pPlayer ) { return; }
 
-	virtual bool AllowAutoTargetCrosshair( void ) { return TRUE; };
+	virtual bool AllowAutoTargetCrosshair( void );
 	virtual bool ClientCommand( CBaseEntity *pEdict, const CCommand &args );  // handles the user commands;  returns TRUE if command handled properly
 	virtual VoiceCommandMenuItem_t *VoiceCommand( CBaseExpresserPlayer *pPlayer, int iMenu, int iItem );
 	virtual void ClientSettingsChanged( CBasePlayer *pPlayer );		 // the player has changed cvars
@@ -345,7 +378,7 @@ public:
 // Client kills/scoring
 	virtual int IPointsForKill( CBasePlayer *pAttacker, CBasePlayer *pKilled );// how many points do I award whoever kills this player?
 	virtual void PlayerKilled( CBasePlayer *pVictim, const CTakeDamageInfo &info );// Called each time a player dies
-	virtual void DeathNotice( CBasePlayer *pVictim, const CTakeDamageInfo &info )=  0;// Call this from within a GameRules class to report an obituary.
+	virtual void DeathNotice( CBasePlayer *pVictim, const CTakeDamageInfo &info );// Call this from within a GameRules class to report an obituary.
 	virtual const char *GetDamageCustomString( const CTakeDamageInfo &info ) { return NULL; }
 	CBasePlayer *GetDeathScorer( CBaseEntity *pKiller, CBaseEntity *pInflictor );									// old version of method - kept for backward compat
 	virtual CBasePlayer *GetDeathScorer( CBaseEntity *pKiller, CBaseEntity *pInflictor, CBaseEntity *pVictim );		// new version of method
@@ -382,12 +415,16 @@ public:
 	virtual float GetAmmoQuantityScale( int iAmmoIndex ) { return 1.0f; }
 
 // AI Definitions
-	virtual void			InitDefaultAIRelationships( void ) { return; }
-	virtual const char*		AIClassText(int classType) { return NULL; }
+	virtual void			InitDefaultAIRelationships( void );
+	virtual const char*		AIClassText(Class_T classType);
+	virtual int				NumEntityClasses() const	{ return NUM_SHARED_ENTITY_CLASSES; }
+	virtual const char*		AIFactionText(Faction_T classType);
+	virtual int				NumFactions() const	{ return NUM_SHARED_FACTIONS; }
+	virtual int				NumTeams() const	{ return NUM_SHARED_TEAMS; }
 
 // Healthcharger respawn control
 	virtual float FlHealthChargerRechargeTime( void );// how long until a depleted HealthCharger recharges itself?
-	virtual float FlHEVChargerRechargeTime( void ) { return 0; }// how long until a depleted HealthCharger recharges itself?
+	virtual float FlHEVChargerRechargeTime( void );// how long until a depleted HealthCharger recharges itself?
 
 // What happens to a dead player's weapons
 	virtual int DeadPlayerWeapons( CBasePlayer *pPlayer );// what do I do with a player's weapons when he's killed?
@@ -396,21 +433,22 @@ public:
 	virtual int DeadPlayerAmmo( CBasePlayer *pPlayer );// Do I drop ammo when the player dies? How much?
 
 // Teamplay stuff
-	virtual const char *GetTeamID( CBaseEntity *pEntity );// what team is this entity on?
+	virtual const char *GetTeamID( CBaseEntity *pEntity ) { return GetIndexedTeamName(pEntity->GetTeamNumber()); } // what team is this entity on?
 	virtual int PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget );// What is the player's relationship with this entity?
 	virtual bool PlayerCanHearChat( CBasePlayer *pListener, CBasePlayer *pSpeaker );
 	virtual void CheckChatText( CBasePlayer *pPlayer, char *pText ) { return; }
 
-	virtual int GetTeamIndex( const char *pTeamName ) { return -1; }
-	virtual const char *GetIndexedTeamName( int teamIndex ) { return ""; }
-	virtual bool IsValidTeam( const char *pTeamName ) { return true; }
-	virtual void ChangePlayerTeam( CBasePlayer *pPlayer, const char *pTeamName, bool bKill, bool bGib ) {}
-	virtual const char *SetDefaultPlayerTeam( CBasePlayer *pPlayer ) { return ""; }
+	virtual Team_t GetTeamIndex( const char *pTeamName );
+	virtual const char *GetIndexedTeamName( Team_t teamIndex );
+	virtual bool IsValidTeam( const char *pTeamName ) { return GetTeamIndex(pTeamName) != TEAM_INVALID; }
+	virtual void ChangePlayerTeam( CBasePlayer *pPlayer, const char *pTeamName, bool bKill, bool bGib );
+	virtual const char *SetDefaultPlayerTeam( CBasePlayer *pPlayer );
 	virtual void UpdateClientData( CBasePlayer *pPlayer ) { };
 
 // Sounds
 	virtual bool PlayTextureSounds( void ) { return TRUE; }
 	virtual bool PlayFootstepSounds( CBasePlayer *pl );
+	virtual bool AllowSoundscapes( void ) { return TRUE; }
 
 // NPCs
 	virtual bool FAllowNPCs( void );//are NPCs allowed
@@ -423,6 +461,7 @@ public:
 
 	// Setup g_pPlayerResource (some mods use a different entity type here).
 	virtual void CreateStandardEntities();
+	virtual CGameRulesProxy *AllocateProxy();
 
 	// Team name, etc shown in chat and dedicated server console
 	virtual const char *GetChatPrefix( bool bTeamOnly, CBasePlayer *pPlayer );
@@ -431,7 +470,7 @@ public:
 	virtual const char *GetChatLocation( bool bTeamOnly, CBasePlayer *pPlayer ) { return NULL; }
 
 	// VGUI format string for chat, if desired
-	virtual const char *GetChatFormat( bool bTeamOnly, CBasePlayer *pPlayer ) { return NULL; }
+	virtual const char *GetChatFormat( bool bTeamOnly, CBasePlayer *pPlayer );
 
 	// Whether props that are on fire should get a DLIGHT.
 	virtual bool ShouldBurningPropsEmitLight() { return false; }
@@ -446,6 +485,11 @@ public:
 	virtual void ResetMapCycleTimeStamp( void ){ m_nMapCycleTimeStamp = 0; }
 
 	virtual void OnNavMeshLoad( void ) { return; }
+
+	virtual void UpdateGameplayStatsFromSteam( void ) { return; }
+
+	// Assume the game doesn't care
+	virtual int GetMaxHumanPlayers() const { return -1; }
 
 	// game-specific factories
 	virtual CTacticalMissionManager *TacticalMissionManagerFactory( void );
@@ -470,7 +514,6 @@ public:
 	virtual void InitCustomResponseRulesDicts()	{}
 	virtual void ShutdownCustomResponseRulesDicts() {}
 
-	// NVNT virtual to check for haptic device 
 	virtual void GetNextLevelName( char *szNextMap, int bufsize, bool bRandom = false );
 
 	static void DetermineMapCycleFilename( char *pszResult, int nSizeResult, bool bForceSpew );
@@ -488,9 +531,24 @@ public:
 	virtual void LoadMapCycleFile( void );
 	void ChangeLevelToMap( const char *pszMap );
 
+	bool IsIntermission() { return m_flIntermissionEndTime > gpGlobals->curtime; }
+
 	virtual bool InRoundRestart( void ) { return false; }
 
+	virtual edict_t *DoFindClientInPVS( edict_t *pEdict, unsigned char *pvs, unsigned pvssize );
+
+	float GetMapRemainingTime() const;
+
+	void	AddLevelDesignerPlacedObject( CBaseEntity *pEntity );
+	void	RemoveLevelDesignerPlacedObject( CBaseEntity *pEntity );
+
+	virtual bool IsOfficialMap() const;
+
 #endif
+
+	virtual bool IsTeamplay( void ); // is this deathmatch game being played with team rules?
+	virtual bool IsDeathmatch( void );//is this a deathmatch game?
+	virtual bool IsCoOp( void );// is this a coop game?
 
 	virtual const char *GetGameTypeName( void ){ return NULL; }
 	virtual int GetGameType( void ){ return 0; }
@@ -506,12 +564,25 @@ private:
 	CUtlVector< CUtlVector< VoiceCommandMenuItem_t > > m_VoiceCommandMenus;
 
 #ifdef GAME_DLL
+	void CheckRestartGame();
+	void CleanUpMap();
+	void ManageObjectRelocation( void );
+	bool CheckGameOver();
+	void RestartGame();
+
 	float m_flIntermissionEndTime;
 	static int m_nMapCycleTimeStamp;
 	static int m_nMapCycleindex;
-	static CUtlVector<char*> m_MapList;
+	static CUtlStringList m_MapList;
 
 	float m_flTimeLastMapChangeOrPlayerWasConnected;
+
+	CNetworkVar(float, m_flGameStartTime);
+	CUtlVector<EHANDLE> m_hRespawnableItemsAndWeapons;
+	float m_tmNextPeriodicThink;
+	float m_flRestartGameTime;
+	bool m_bCompleteReset;
+	bool m_bChangelevelDone;
 #endif
 
 	CNetworkVar( float, m_flGravityMultiplier );
@@ -538,11 +609,6 @@ extern ConVar g_Language;
 // Gets us at the game rules
 //-----------------------------------------------------------------------------
 
-extern CGameRules *g_pGameRules;
-
-inline CGameRules* GameRules()
-{
-	return g_pGameRules;
-}
+CGameRules* GameRules();
 
 #endif // GAMERULES_H

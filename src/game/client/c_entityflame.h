@@ -14,6 +14,8 @@
 // Entity flame, client-side implementation
 //
 
+#define	NUM_FLAMELETS	5
+
 class C_EntityFlame : public C_BaseEntity
 {
 public:
@@ -26,7 +28,7 @@ public:
 	virtual bool	Simulate( void );
 	virtual void	UpdateOnRemove( void );
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
-	virtual void	ClientThink( void );
+	void	RemoveThink( void );
 
 	EHANDLE				m_hEntAttached;		// The entity that we are burning (attached to).
 

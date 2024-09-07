@@ -57,6 +57,8 @@ public:
 	virtual void HideClientUI();
 	virtual bool AllowedToPrintText( void );
 
+	void SetAsFullscreenViewportInterface( void );
+
 	void LoadHudLayout( void );
 
 	virtual vgui::VPANEL GetSchemeSizingVPanel( void );
@@ -131,7 +133,6 @@ protected:
 	virtual void OnScreenSizeChanged(int iOldWide, int iOldTall);
 	void PostMessageToPanel( IViewPortPanel* pPanel, KeyValues *pKeyValues );
 
-	void SetAsFullscreenViewportInterface( void );
 	bool IsFullscreenViewport() const;
 
 protected:

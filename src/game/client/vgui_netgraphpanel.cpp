@@ -220,11 +220,11 @@ CNetGraphPanel::CNetGraphPanel( VPANEL parent )
 	SetSize( w, h );
 	SetPos( 0, 0 );
 	SetVisible( false );
-	SetCursor( null );
+	SetCursor( vgui::INVALID_CURSOR );
 
-	m_hFont = 0;
-	m_hFontProportional = 0;
-	m_hFontSmall = 0;
+	m_hFont = vgui::INVALID_FONT;
+	m_hFontProportional = vgui::INVALID_FONT;
+	m_hFontSmall = vgui::INVALID_FONT;
 	m_EstimatedWidth = 1;
 	m_nNetGraphHeight = 100;
 

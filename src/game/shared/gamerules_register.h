@@ -8,6 +8,12 @@
 #define GAMERULES_REGISTER_H
 #pragma once
 
+#ifdef GAME_DLL
+class CGameRules;
+#else
+#define CGameRules C_GameRules
+class C_GameRules;
+#endif
 
 // Each game rules class must register using this in it's .cpp file.
 #if !defined(_STATIC_LINKED)
@@ -46,7 +52,7 @@ private:
 
 };
 
-
+void UTIL_Remove( CGameRules *pGameRules );
 
 #ifdef CLIENT_DLL
 

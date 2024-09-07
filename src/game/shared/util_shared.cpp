@@ -309,7 +309,7 @@ bool CTraceFilterSimple::ShouldHitEntity( IHandleEntity *pHandleEntity, int cont
 		return false;
 	if ( !pEntity->ShouldCollide( m_collisionGroup, contentsMask ) )
 		return false;
-	if ( pEntity && !g_pGameRules->ShouldCollide( m_collisionGroup, pEntity->GetCollisionGroup() ) )
+	if ( pEntity && !GameRules()->ShouldCollide( m_collisionGroup, pEntity->GetCollisionGroup() ) )
 		return false;
 	if ( m_pExtraShouldHitCheckFunction &&
 		(! ( m_pExtraShouldHitCheckFunction( pHandleEntity, contentsMask ) ) ) )
@@ -1132,8 +1132,8 @@ END_DATADESC()
 
 BEGIN_NETWORK_TABLE_NOBASE( CTimeline, DT_Timeline )
 #ifdef CLIENT_DLL
-	RecvPropArray3( RECVINFO_ARRAY( m_flValues ), RecvPropFloat( RECVINFO( m_flValues[0] ) ) ),
-	RecvPropArray3( RECVINFO_ARRAY( m_nValueCounts ), RecvPropFloat( RECVINFO( m_nValueCounts[0] ) ) ),
+	RecvPropArray3( RECVINFO_ARRAY( m_flValues ), RecvPropFloat( RECVINFO_ARRAYELEM( m_flValues, 0 ) ) ),
+	RecvPropArray3( RECVINFO_ARRAY( m_nValueCounts ), RecvPropFloat( RECVINFO_ARRAYELEM( m_nValueCounts, 0 ) ) ),
 	RecvPropInt( RECVINFO( m_nBucketCount ) ),
 	RecvPropFloat( RECVINFO( m_flInterval ) ),
 	RecvPropFloat( RECVINFO( m_flFinalValue ) ),
@@ -2465,4 +2465,19 @@ int UTIL_EntitiesAlongRay( const Ray_t &ray, CFlaggedEntitiesEnum *pEnum )
 	partition->EnumerateElementsAlongRay( PARTITION_ENGINE_NON_STATIC_EDICTS, ray, false, pEnum );
 #endif
 	return pEnum->GetCount();
+}
+
+
+// Utility function
+bool FindInList( const char **pStrings, const char *pToFind )
+{
+	int i = 0;
+	while ( pStrings[i][0] != 0 )
+	{
+		if ( Q_stricmp( pStrings[i], pToFind ) == 0 )
+			return true;
+		i++;
+	}
+
+	return false;
 }

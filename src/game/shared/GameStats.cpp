@@ -807,10 +807,7 @@ void CBaseGameStats_Driver::UpdatePerfStats( void )
 	m_flLastRealTime = flCurTime;
 
 #ifdef CLIENT_DLL
-	if ( g_pGameRules && g_pGameRules->IsMultiplayer() )
-	{
-		m_bDidVoiceChat |= GetClientVoiceMgr()->IsLocalPlayerSpeaking();
-	}
+	m_bDidVoiceChat |= GetClientVoiceMgr()->IsLocalPlayerSpeaking();
 #endif
 }
 
@@ -1141,23 +1138,17 @@ bool CBaseGameStats_Driver::AddBaseDataForSend( KeyValues *pKV, StatSendType_t s
 
 			pKV->AddSubKey( pKVPerf );
 
-			// Only keeping track of using voice in a multiplayer game
-			if ( g_pGameRules && g_pGameRules->IsMultiplayer() )
-			{
-				pKV->SetInt( "UsedVoice", m_bDidVoiceChat );
-			}
+			pKV->SetInt( "UsedVoice", m_bDidVoiceChat );
 
 			extern ConVar closecaption;
 			pKV->SetInt( "Caption", closecaption.GetInt() );
 
-#ifndef	NO_STEAM
 			// We can now get the game language from steam :)
 			if ( steamapicontext && steamapicontext->SteamApps() )
 			{
 				const char *currentLanguage = steamapicontext->SteamApps()->GetCurrentGameLanguage();
 				pKV->SetString( "Language", currentLanguage ? currentLanguage : "unknown" );
 			}
-#endif
 
 			// We need to filter out client side dev work from playtest work for the stat reporting.
 			// The simplest way is to check for sv_cheats, since we also do NOT want client stat reports

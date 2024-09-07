@@ -29,22 +29,18 @@ bool found = false;
 
 char szSearchPaths[MAX_PATH * 2];
 int num = pFileSystem->GetSearchPath("EXECUTABLE_PATH", false, szSearchPaths, ARRAYSIZE(szSearchPaths));
-DebuggerBreak();
 if(num > 0) {
 	const char *p = szSearchPaths;
 	const char *lastp = p;
-	while(*p != '\0') {
-		if(*p == ';') {
-			DebuggerBreak();
+	do {
+		if(*p == ';' || *p == '\0') {
 			if(V_strnicmp(lastp, szTargetPath, p-lastp) == 0) {
 				found = true;
 				break;
 			}
 			lastp = p+1;
 		}
-
-		++p;
-	}
+	} while(*p++ != '\0');
 }
 
 if(!found) {

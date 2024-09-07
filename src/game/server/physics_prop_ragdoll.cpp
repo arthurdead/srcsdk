@@ -255,7 +255,7 @@ int CRagdollProp::ObjectCaps()
 void CRagdollProp::InitRagdollAnimation()
 {
 	m_flAnimTime = gpGlobals->curtime;
-	m_flPlaybackRate = 0.0;
+	SetPlaybackRate( 0.0 );
 	SetCycle( 0 );
 	
 	// put into ACT_DIERAGDOLL if it exists, otherwise use sequence 0
@@ -530,7 +530,7 @@ void CRagdollProp::HandleFirstCollisionInteractions( int index, gamevcollisionev
 		// Looks like it's best to break by having the object damage itself. 
 		CTakeDamageInfo info;
 
-		info.SetDamage( m_iHealth );
+		info.SetDamage( GetHealth() );
 		info.SetAttacker( this );
 		info.SetInflictor( this );
 		info.SetDamageType( DMG_GENERIC );
@@ -738,7 +738,6 @@ void CRagdollProp::InitRagdoll( const Vector &forceVector, int forceBone, const 
 	for ( int i = 0; i < m_ragdoll.listCount; i++ )
 	{
 		UpdateNetworkDataFromVPhysics( m_ragdoll.list[i].pObject, i );
-		g_pPhysSaveRestoreManager->AssociateModel( m_ragdoll.list[i].pObject, GetModelIndex() );
 		physcollision->CollideGetAABB( &m_ragdollMins[i], &m_ragdollMaxs[i], m_ragdoll.list[i].pObject->GetCollide(), vec3_origin, vec3_angle );
 	}
 	VPhysicsSetObject( m_ragdoll.list[0].pObject );
@@ -1700,7 +1699,7 @@ public:
 
 	void			InputStartDestruction( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 private:
 	bool		bwehit;
 	bool		busefirstlimit;
@@ -1720,20 +1719,17 @@ private:
 };
 LINK_ENTITY_TO_CLASS( prop_dynamically_destructible, CDynamicDestrProp );
 
-BEGIN_DATADESC( CDynamicDestrProp )
+BEGIN_MAPENTITY( CDynamicDestrProp )
 	DEFINE_KEYFIELD( Health, FIELD_FLOAT, "prophealth" ),
 	DEFINE_KEYFIELD( PieceMass, FIELD_FLOAT, "mass" ),
 	DEFINE_KEYFIELD( iNumHitLimit, FIELD_INTEGER, "numhits" ),
 	DEFINE_KEYFIELD( iNumBrokenPartsLimit, FIELD_INTEGER, "numpieces" ),
 
-	DEFINE_FIELD( iNumHits, FIELD_INTEGER ),
-	DEFINE_FIELD( iNumBrokenParts, FIELD_INTEGER ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "StartDestruction", InputStartDestruction ),
 
 	DEFINE_OUTPUT(m_OnTakeDamage, "OnTakeDamage"),
 	DEFINE_OUTPUT(m_OnFullyDestroyed, "OnFullyDestroyed"),
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose:

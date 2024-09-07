@@ -11,6 +11,7 @@
 #include "ai_activity.h"
 #include "studio.h"
 #include "networkvar.h"
+#include "interpolatedvar.h"
 //#include "player.h"
 
 struct CAnimationLayer;
@@ -31,7 +32,7 @@ typedef enum
 
 #if defined( CLIENT_DLL )
 class C_BasePlayer;
-#define CPlayer C_BasePlayer
+#define CBasePlayer C_BasePlayer
 #else
 class CBasePlayer;
 #endif
@@ -120,9 +121,13 @@ struct PlayerPoseData_t
 {
 	int			m_iMoveX;
 	int			m_iMoveY;
+	int			m_iBodyYaw;
+	int			m_iBodyPitch;
+	int			m_iBodyHeight;
+	int			m_iHeadYaw;
+	int			m_iHeadPitch;
 	int			m_iAimYaw;
 	int			m_iAimPitch;
-	int			m_iBodyHeight;
 	int			m_iMoveYaw;
 	int			m_iMoveScale;
 
@@ -133,9 +138,13 @@ struct PlayerPoseData_t
 	{
 		m_iMoveX = 0;
 		m_iMoveY = 0;
+		m_iBodyYaw = 0;
+		m_iBodyPitch = 0;
+		m_iBodyHeight = 0;
+		m_iHeadYaw = 0;
+		m_iHeadPitch = 0;
 		m_iAimYaw = 0;
 		m_iAimPitch = 0;
-		m_iBodyHeight = 0;
 		m_iMoveYaw = 0;
 		m_iMoveScale = 0;
 		m_flEstimateYaw = 0.0f;
@@ -274,8 +283,8 @@ protected:
 	// Pose parameters.
 	bool				SetupPoseParameters( CStudioHdr *pStudioHdr );
 	virtual void		ComputePoseParam_MoveYaw( CStudioHdr *pStudioHdr );
-	virtual void		ComputePoseParam_AimPitch( CStudioHdr *pStudioHdr );
-	virtual void		ComputePoseParam_AimYaw( CStudioHdr *pStudioHdr );
+	virtual void		ComputePoseParam_BodyPitch( CStudioHdr *pStudioHdr );
+	virtual void		ComputePoseParam_BodyYaw( CStudioHdr *pStudioHdr );
 	void				ComputePoseParam_BodyHeight( CStudioHdr *pStudioHdr );
 	virtual void		EstimateYaw( void );
 	void				ConvergeYawAngles( float flGoalYaw, float flYawRate, float flDeltaTime, float &flCurrentYaw );

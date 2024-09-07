@@ -27,7 +27,26 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( player_manager, CPlayerResource );
 
-CPlayerResource *g_pPlayerResource;
+CPlayerResource *g_pPlayerResource = NULL;
+
+CPlayerResource::CPlayerResource()
+{
+	AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
+
+	if(g_pPlayerResource) {
+		UTIL_Remove(g_pPlayerResource);
+	}
+	g_pPlayerResource = this;
+}
+
+void CPlayerResource::UpdateOnRemove( void )
+{
+	if(g_pPlayerResource == this) {
+		g_pPlayerResource = NULL;
+	}
+
+	BaseClass::UpdateOnRemove();
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 

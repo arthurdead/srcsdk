@@ -1,8 +1,8 @@
 [binaries]
-c = '/usr/bin/gcc'
-cpp = '/usr/bin/g++'
-c_ld = 'bfd'
-cpp_ld = 'bfd'
+c = '/usr/lib/ccache/bin/gcc'
+cpp = '/usr/lib/ccache/bin/g++'
+c_ld = 'gold'
+cpp_ld = 'gold'
 ar = '/usr/bin/gcc-ar'
 strip = '/usr/bin/strip'
 cmake = '/usr/bin/cmake'
@@ -11,7 +11,10 @@ llvm-config = '/usr/bin/llvm-config32'
 
 [cmake]
 CMAKE_C_COMPILER = '/usr/bin/gcc'
+CMAKE_C_COMPILER_LAUNCHER = '/usr/bin/ccache'
 CMAKE_CXX_COMPILER = '/usr/bin/g++'
+CMAKE_CXX_COMPILER_LAUNCHER = '/usr/bin/ccache'
+CMAKE_LINKER_TYPE = 'GOLD'
 
 [built-in options]
 c_args = ['-m32']

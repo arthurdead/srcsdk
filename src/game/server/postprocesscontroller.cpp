@@ -31,17 +31,17 @@ CPostProcessSystem *PostProcessSystem( void )
 LINK_ENTITY_TO_CLASS( postprocess_controller, CPostProcessController );
 
 BEGIN_MAPENTITY( CPostProcessController )
-	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_FADE_TIME ], FIELD_FLOAT,	"fadetime" ),
-	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_LOCAL_CONTRAST_STRENGTH ], FIELD_FLOAT,	"localcontraststrength" ),
-	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_LOCAL_CONTRAST_EDGE_STRENGTH ], FIELD_FLOAT,	"localcontrastedgestrength" ),
-	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_VIGNETTE_START ], FIELD_TIME,	"vignettestart" ),
-	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_VIGNETTE_END ], FIELD_TIME,	"vignetteend" ),
-	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_VIGNETTE_BLUR_STRENGTH ], FIELD_FLOAT,	"vignetteblurstrength" ),
-	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_FADE_TO_BLACK_STRENGTH ], FIELD_FLOAT,	"fadetoblackstrength" ),
-	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_DEPTH_BLUR_FOCAL_DISTANCE ], FIELD_FLOAT, "depthblurfocaldistance" ),
-	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_DEPTH_BLUR_STRENGTH ], FIELD_FLOAT, "depthblurstrength" ),
-	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_SCREEN_BLUR_STRENGTH ], FIELD_FLOAT, "screenblurstrength" ),
-	DEFINE_KEYFIELD( m_flPostProcessParameters[ PPPN_FILM_GRAIN_STRENGTH ], FIELD_FLOAT, "filmgrainstrength" ),
+	DEFINE_KEYFIELD_ARRAYELEM( m_flPostProcessParameters, PPPN_FADE_TIME, FIELD_FLOAT,	"fadetime" ),
+	DEFINE_KEYFIELD_ARRAYELEM( m_flPostProcessParameters, PPPN_LOCAL_CONTRAST_STRENGTH, FIELD_FLOAT,	"localcontraststrength" ),
+	DEFINE_KEYFIELD_ARRAYELEM( m_flPostProcessParameters, PPPN_LOCAL_CONTRAST_EDGE_STRENGTH, FIELD_FLOAT,	"localcontrastedgestrength" ),
+	DEFINE_KEYFIELD_ARRAYELEM( m_flPostProcessParameters, PPPN_VIGNETTE_START, FIELD_TIME,	"vignettestart" ),
+	DEFINE_KEYFIELD_ARRAYELEM( m_flPostProcessParameters, PPPN_VIGNETTE_END, FIELD_TIME,	"vignetteend" ),
+	DEFINE_KEYFIELD_ARRAYELEM( m_flPostProcessParameters, PPPN_VIGNETTE_BLUR_STRENGTH, FIELD_FLOAT,	"vignetteblurstrength" ),
+	DEFINE_KEYFIELD_ARRAYELEM( m_flPostProcessParameters, PPPN_FADE_TO_BLACK_STRENGTH, FIELD_FLOAT,	"fadetoblackstrength" ),
+	DEFINE_KEYFIELD_ARRAYELEM( m_flPostProcessParameters, PPPN_DEPTH_BLUR_FOCAL_DISTANCE, FIELD_FLOAT, "depthblurfocaldistance" ),
+	DEFINE_KEYFIELD_ARRAYELEM( m_flPostProcessParameters, PPPN_DEPTH_BLUR_STRENGTH, FIELD_FLOAT, "depthblurstrength" ),
+	DEFINE_KEYFIELD_ARRAYELEM( m_flPostProcessParameters, PPPN_SCREEN_BLUR_STRENGTH, FIELD_FLOAT, "screenblurstrength" ),
+	DEFINE_KEYFIELD_ARRAYELEM( m_flPostProcessParameters, PPPN_FILM_GRAIN_STRENGTH, FIELD_FLOAT, "filmgrainstrength" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFadeTime", InputSetFadeTime ),

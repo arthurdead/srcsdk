@@ -73,11 +73,11 @@ public:
 protected:
 
 	// These are notifications to the derived class. It can cache info here if it wants.
-	virtual void OnAddEntity( CBaseEntity *pEnt, EHANDLE handle );
+	virtual void OnAddEntity( CBaseEntity *pEnt, EHANDLE handle ) = 0;
 	
 	// It is safe to delete the entity here. We won't be accessing the pointer after
 	// calling OnRemoveEntity.
-	virtual void OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle );
+	virtual void OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle ) = 0;
 
 
 private:

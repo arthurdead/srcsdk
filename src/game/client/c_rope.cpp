@@ -1091,6 +1091,23 @@ C_RopeKeyframe::~C_RopeKeyframe()
 	}
 }
 
+class C_ClientRopeKeyframe : public C_RopeKeyframe
+{
+public:
+	DECLARE_CLASS( C_ClientRopeKeyframe, C_RopeKeyframe );
+
+	C_ClientRopeKeyframe()
+		: C_RopeKeyframe()
+	{
+		AddEFlags(EFL_NOT_NETWORKED);
+	}
+
+	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
+	virtual	bool			IsClientCreated( void ) const { return true; }
+	virtual bool						IsServerEntity( void ) { return false; }
+};
+
+LINK_ENTITY_TO_CLASS(client_keyframerope, C_ClientRopeKeyframe);
 
 C_RopeKeyframe* C_RopeKeyframe::Create(
 	C_BaseEntity *pStartEnt,
@@ -1103,13 +1120,10 @@ C_RopeKeyframe* C_RopeKeyframe::Create(
 	int ropeFlags
 	)
 {
-	C_RopeKeyframe *pRope = new C_RopeKeyframe;
-
-	if(!pRope->InitializeAsClientEntity()) {
-		UTIL_Remove( pRope );
+	C_ClientRopeKeyframe *pRope = CREATE_ENTITY(C_ClientRopeKeyframe, "client_keyframerope");
+	if(!pRope)
 		return NULL;
-	}
-	
+
 	if ( pStartEnt )
 	{
 		pRope->m_hStartPoint = pStartEnt;
@@ -1129,6 +1143,12 @@ C_RopeKeyframe* C_RopeKeyframe::Create(
 	pRope->m_RopeFlags = ropeFlags;
 
 	pRope->FinishInit( pMaterialName );
+
+	if(DispatchSpawn(pRope) < 0) {
+		UTIL_Remove(pRope);
+		return NULL;
+	}
+
 	return pRope;
 }
 

@@ -205,7 +205,10 @@ CRopeKeyframe* CRopeKeyframe::Create(
 	pRet->m_Width = ropeWidth;
 	pRet->m_nSegments = clamp( numSegments, 2, ROPE_MAX_SEGMENTS );
 
-	pRet->Spawn();
+	if(DispatchSpawn(pRet) < 0) {
+		UTIL_Remove(pRet);
+		return NULL;
+	}
 
 	return pRet;
 }
@@ -243,7 +246,10 @@ CRopeKeyframe* CRopeKeyframe::CreateWithSecondPointDetached(
 	pRet->m_Width = ropeWidth;
 	pRet->m_nSegments = clamp( numSegments, 2, ROPE_MAX_SEGMENTS );
 
-	pRet->Spawn();
+	if(DispatchSpawn(pRet) < 0) {
+		UTIL_Remove(pRet);
+		return NULL;
+	}
 
 	return pRet;
 }

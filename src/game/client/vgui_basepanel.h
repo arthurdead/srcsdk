@@ -50,7 +50,7 @@ public:
 
 protected:
 	bool			m_bTexturedBackground;
-	int				m_nBackgroundMaterial;
+	vgui::HTexture				m_nBackgroundMaterial;
 	char			m_szBgTexture[ 256 ];
 	bool			m_bTiled;
 	int				m_nTextureSize[ 2 ];

@@ -359,7 +359,7 @@ void CAmbientGeneric::Activate( void )
 		//  as a regular sound message...
 		if ( gpGlobals->eLoadType == MapLoad_Transition ||
 			gpGlobals->eLoadType == MapLoad_LoadGame || 
-			g_pGameRules->InRoundRestart() )
+			GameRules()->InRoundRestart() )
 		{
 			flags = SND_NOFLAGS;
 		}
@@ -634,7 +634,7 @@ void CAmbientGeneric::InitModulationParms(void)
 {
 	int pitchinc;
 
-	m_dpv.volrun = m_iHealth * 10;	// 0 - 100
+	m_dpv.volrun = GetHealth() * 10;	// 0 - 100
 	if (m_dpv.volrun > 100) m_dpv.volrun = 100;
 	if (m_dpv.volrun < 0) m_dpv.volrun = 0;
 
@@ -745,11 +745,18 @@ void CAmbientGeneric::SendSound( SoundFlags_t flags)
 		{
 			UTIL_EmitAmbientSound(pSoundSource->GetSoundSourceIndex(), pSoundSource->GetAbsOrigin(), szSoundFile, 
 				0, SNDLVL_NONE, flags, 0);
+			m_fActive = false; //DM - unstoppable looping sounds merged from the VDC
 		}
 		else
 		{
 			UTIL_EmitAmbientSound(pSoundSource->GetSoundSourceIndex(), pSoundSource->GetAbsOrigin(), szSoundFile, 
 				(m_dpv.vol * 0.01), m_iSoundLevel, flags, m_dpv.pitch);
+
+			//VDC fix - Only mark active if this is a looping sound.  If not looping, each trigger will cause the sound to play.  
+			//If the sound is still playing from a previous trigger press, it will be shut off and then restarted.
+
+			if (m_fLooping)
+				m_fActive = true;
 		}
 	}	
 	else
@@ -759,6 +766,8 @@ void CAmbientGeneric::SendSound( SoundFlags_t flags)
 		{
 			UTIL_EmitAmbientSound(m_nSoundSourceEntIndex, GetAbsOrigin(), szSoundFile, 
 				0, SNDLVL_NONE, flags, 0);
+
+			m_fActive = false; //VDC
 		}
 	}
 }

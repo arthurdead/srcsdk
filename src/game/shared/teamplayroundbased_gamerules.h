@@ -161,7 +161,7 @@ public:
 //-----------------------------------------------------------------------------
 // Purpose: Teamplay game rules that manage a round based structure for you
 //-----------------------------------------------------------------------------
-class CTeamplayRoundBasedRules : public CTeamplayRules, public CGameEventListener
+class CTeamplayRoundBasedRules : public CTeamplayRules
 {
 	DECLARE_CLASS( CTeamplayRoundBasedRules, CTeamplayRules );
 public:

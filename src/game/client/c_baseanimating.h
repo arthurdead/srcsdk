@@ -632,6 +632,8 @@ private:
 
 	bool							m_bIsStaticProp;
 
+	bool							m_bSuppressAnimSounds;
+
 	// Current animation sequence
 	int								m_nSequence;
 	bool							m_bReceivedSequence;
@@ -728,12 +730,12 @@ enum
 	RAGDOLL_FRICTION_OUT,
 };
 
-class C_ClientRagdoll : public C_BaseAnimating, public IPVSNotify
+class C_ClientRagdoll : public C_ClientAnimating, public IPVSNotify
 {
 	
 public:
 	C_ClientRagdoll();
-	DECLARE_CLASS( C_ClientRagdoll, C_BaseAnimating );
+	DECLARE_CLASS( C_ClientRagdoll, C_ClientAnimating );
 
 	// inherited from IClientUnknown
 	virtual IClientModelRenderable*	GetClientModelRenderable();

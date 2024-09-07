@@ -103,7 +103,7 @@ struct Relationship_t
 {
 	EHANDLE			entity;			// Relationship to a particular entity
 	Class_T			classType;		// Relationship to a class  CLASS_NONE = not class based (Def. in baseentity.h)
-	int				faction;		// Relationship to a faction FACTION_NONE = not faction based
+	Faction_T				faction;		// Relationship to a faction FACTION_NONE = not faction based
 	Disposition_t	disposition;	// D_HT (Hate), D_FR (Fear), D_LI (Like), D_NT (Neutral)
 	int				priority;		// Relative importance of this relationship (higher numbers mean more important)
 };
@@ -374,8 +374,8 @@ public:
 	static void			InitInteractionSystem();
 
 	// Relationships
-	static void			SetDefaultFactionRelationship(int nFaction, int nFactionTarget, Disposition_t nDisposition, int nPriority);
-	Disposition_t		GetFactionRelationshipDisposition( int nFaction );
+	static void			SetDefaultFactionRelationship(Faction_T nFaction, Faction_T nFactionTarget, Disposition_t nDisposition, int nPriority);
+	Disposition_t		GetFactionRelationshipDisposition( Faction_T nFaction );
 	static void			AllocateDefaultFactionRelationships( );
 	static void			AllocateDefaultRelationships( );
 	static void			SetDefaultRelationship( Class_T nClass, Class_T nClassTarget,  Disposition_t nDisposition, int nPriority );
@@ -383,13 +383,13 @@ public:
 	virtual void		AddEntityRelationship( CBaseEntity *pEntity, Disposition_t nDisposition, int nPriority );
 	virtual bool		RemoveEntityRelationship( CBaseEntity *pEntity );
 	virtual void		AddClassRelationship( Class_T nClass, Disposition_t nDisposition, int nPriority );
-	virtual void		AddFactionRelationship(int nFaction, Disposition_t nDisposition, int nPriority);
+	virtual void		AddFactionRelationship(Faction_T nFaction, Disposition_t nDisposition, int nPriority);
 
 	// Factions
 	static int			GetNumFactions( void );
-	static CUtlVector<EHANDLE> *GetEntitiesInFaction( int nFaction );
-	int					GetFaction( void ) const { return m_nFaction; }
-	virtual void		ChangeFaction( int nNewFaction );
+	static CUtlVector<EHANDLE> *GetEntitiesInFaction( Faction_T nFaction );
+	Faction_T					GetFaction( void ) const { return m_nFaction; }
+	virtual void		ChangeFaction( Faction_T nNewFaction );
 
 	virtual void		ChangeTeam( int iTeamNum );
 
@@ -520,7 +520,7 @@ private:
 	//  Relationships
 	// ---------------
 	CUtlVector<Relationship_t>		m_Relationship;						// Array of relationships
-	int								m_nFaction;
+	Faction_T								m_nFaction;
 
 	// Used by trigger_fog to manage when the character is touching multiple fog triggers simultaneously.
 	// The one at the HEAD of the list is always the current fog trigger for the character.

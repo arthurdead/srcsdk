@@ -116,6 +116,10 @@ public:
 	virtual IClientNetworkable*	GetClientNetworkableFromHandle( ClientEntityHandle_t hEnt );
 	virtual IClientEntity*		GetClientEntityFromHandle( ClientEntityHandle_t hEnt );
 
+	virtual IClientNetworkable*	GetClientNetworkableFromHandle( CBaseHandle hEnt );
+	virtual IClientUnknown*		GetClientUnknownFromHandle( CBaseHandle hEnt );
+	virtual IClientEntity*		GetClientEntityFromHandle( CBaseHandle hEnt );
+
 	virtual int					GetHighestEntityIndex( void );
 
 	virtual void				SetMaxEntities( int maxents );
@@ -125,8 +129,8 @@ public:
 // CBaseEntityList overrides.
 protected:
 
-	virtual void OnAddEntity( CBaseEntity *pEnt, CBaseHandle handle );
-	virtual void OnRemoveEntity( CBaseEntity *pEnt, CBaseHandle handle );
+	virtual void OnAddEntity( CBaseEntity *pEnt, EHANDLE handle );
+	virtual void OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle );
 
 
 // Internal to client DLL.

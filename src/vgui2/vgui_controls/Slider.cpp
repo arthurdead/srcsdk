@@ -1181,6 +1181,11 @@ void BaseSlider::OnMouseDoublePressed(MouseCode code)
 //-----------------------------------------------------------------------------
 // Purpose: Handle key presses
 //-----------------------------------------------------------------------------
+void BaseSlider::OnKeyCodeTyped(KeyCode code)
+{
+	BaseClass::OnKeyCodeTyped(code);
+}
+
 void IntSlider::OnKeyCodeTyped(KeyCode code)
 {
 	switch (code)

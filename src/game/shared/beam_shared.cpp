@@ -175,12 +175,9 @@ BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_Beam )
 	SendPropFloat	(SENDINFO(m_fAmplitude),	8,	SPROP_ROUNDDOWN,	0.0f, MAX_BEAM_NOISEAMPLITUDE ),
 	SendPropFloat	(SENDINFO(m_fStartFrame),	8,	SPROP_ROUNDDOWN,	0.0f,   256.0f),
 	SendPropFloat	(SENDINFO(m_fSpeed),		8,	SPROP_NOSCALE,	0.0f,	MAX_BEAM_SCROLLSPEED),
-	SendPropInt		(SENDINFO(m_nRenderFX),		8,	SPROP_UNSIGNED ),
-	SendPropInt		(SENDINFO(m_nRenderMode),	8,	SPROP_UNSIGNED ),
 	SendPropFloat	(SENDINFO(m_flFrameRate),	10, SPROP_ROUNDUP, -25.0f, 25.0f ),
 	SendPropFloat	(SENDINFO(m_flHDRColorScale),	0, SPROP_NOSCALE, 0.0f, 100.0f ),
 	SendPropFloat	(SENDINFO(m_flFrame),		20, SPROP_ROUNDDOWN | SPROP_CHANGES_OFTEN,	0.0f,   256.0f),
-	SendPropInt		(SENDINFO(m_clrRender),		32,	SPROP_UNSIGNED | SPROP_CHANGES_OFTEN ),
 	SendPropInt		(SENDINFO(m_nClipStyle), CBeam::kBEAMCLIPSTYLE_NUMBITS+1, SPROP_UNSIGNED ),
 	SendPropVector	(SENDINFO(m_vecEndPos),		-1,	SPROP_COORD ),
 #ifdef PORTAL
@@ -201,12 +198,12 @@ BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_Beam )
 	RecvPropArray3
 	(
 		RECVINFO_ARRAY( m_hAttachEntity ),
-		RecvPropEHandle (RECVINFO(m_hAttachEntity[0]))
+		RecvPropEHandle (RECVINFO_ARRAYELEM(m_hAttachEntity, 0))
 	),
 	RecvPropArray3	
 	(
 		RECVINFO_ARRAY( m_nAttachIndex ),
-		RecvPropInt (RECVINFO(m_nAttachIndex[0]))
+		RecvPropInt (RECVINFO_ARRAYELEM(m_nAttachIndex, 0))
 	),
 	RecvPropInt		(RECVINFO(m_nHaloIndex)),
 	RecvPropFloat	(RECVINFO(m_fHaloScale)),

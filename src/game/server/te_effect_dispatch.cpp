@@ -85,7 +85,7 @@ void DispatchEffect( const char *pName, const CEffectData &data )
 	DispatchEffect( pName, data, filter );
 }
 
-void DispatchEffect( const char *pName, const CEffectData &data, CRecipientFilter &filter )
+void DispatchEffect( const char *pName, const CEffectData &data, IRecipientFilter &filter )
 {
 	if ( !te->SuppressTE( filter ) )
 	{

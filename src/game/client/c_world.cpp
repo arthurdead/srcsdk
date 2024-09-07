@@ -20,14 +20,13 @@
 #undef CWorld
 #endif
 
-C_GameRules *g_pGameRules = NULL;
 static C_World *g_pClientWorld;
 
+LINK_ENTITY_TO_CLASS(worldspawn, C_World);
 
 void ClientWorldFactoryInit()
 {
-	g_pClientWorld = new C_World;
-	g_pClientWorld->SetClassname("worldspawn");
+	g_pClientWorld = CREATE_ENTITY(C_World, "worldspawn");
 }
 
 void ClientWorldFactoryShutdown()
@@ -40,7 +39,9 @@ static IClientNetworkable* ClientWorldFactory( int entnum, int serialNum )
 {
 	Assert( g_pClientWorld != NULL );
 
-	g_pClientWorld->InitializeAsServerEntity( entnum, serialNum );
+	if(!g_pClientWorld->InitializeAsServerEntity( entnum, serialNum ))
+		return NULL;
+
 	return g_pClientWorld;
 }
 
@@ -145,7 +146,7 @@ int		g_sModelIndexBloodSpray;	// holds the sprite index for splattered blood
 //-----------------------------------------------------------------------------
 void W_Precache(void)
 {
-	PrecacheFileWeaponInfoDatabase( filesystem, g_pGameRules->GetEncryptionKey() );
+	PrecacheFileWeaponInfoDatabase( filesystem, GameRules()->GetEncryptionKey() );
 
 	g_sModelIndexFireball = modelinfo->GetModelIndex ("sprites/zerogxplode.vmt");// fireball
 	g_sModelIndexWExplosion = modelinfo->GetModelIndex ("sprites/WXplo1.vmt");// underwater fireball

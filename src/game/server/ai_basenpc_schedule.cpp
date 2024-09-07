@@ -44,6 +44,8 @@
 #include "ndebugoverlay.h"
 #include "tier0/vcrmode.h"
 #include "env_debughistory.h"
+#include "global_event_log.h"
+#include "ai_behavior.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -3856,10 +3858,8 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 
 	case TASK_GET_PATH_OFF_OF_NPC:
 		{
-			if ( AI_IsSinglePlayer() )
-			{
-				GetNavigator()->SetAllowBigStep( UTIL_GetLocalPlayer() );
-			}
+			//TODO!!! Arthurdead
+			//GetNavigator()->SetAllowBigStep( UTIL_GetLocalPlayer() );
 			ChainRunTask( TASK_MOVE_AWAY_PATH, 48 );
 		}
 		break;

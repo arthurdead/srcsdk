@@ -155,6 +155,8 @@ private:
 	void LoadSpecificMOTDMsg( const ConVar &convar, const char *pszStringName );
 };
 
+extern ConVar sv_force_transmit_ents;
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------

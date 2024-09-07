@@ -10,7 +10,6 @@
 #include "c_entityfreezing.h"
 #include "studio.h"
 #include "bone_setup.h"
-#include "c_surfacerender.h"
 #include "engine/ivdebugoverlay.h"
 #include "dt_utlvector_recv.h"
 #include "debugoverlay_shared.h"
@@ -21,11 +20,7 @@
 
 
 ConVar cl_blobulator_freezing_max_metaball_radius( "cl_blobulator_freezing_max_metaball_radius", 
-												#ifdef INFESTED_DLL
-												  "25.0", // Don't need as much precision in Alien swarm because everything is zoomed out
-												#else
 												  "12.0", 
-												#endif
 												  FCVAR_NONE, "Setting this can create more complex surfaces on large hitboxes at the cost of performance.", true, 12.0f, true, 100.0f );
 
 
@@ -80,16 +75,15 @@ void C_EntityFreezing::OnDataChanged( DataUpdateType_t updateType )
 	BaseClass::OnDataChanged( updateType );
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
-		SetNextClientThink( CLIENT_THINK_ALWAYS );
+		SetContextThink( &C_EntityFreezing::AlphaThink, TICK_ALWAYS_THINK, "AlphaThink" );
 	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_EntityFreezing::ClientThink( void )
+void C_EntityFreezing::AlphaThink( void )
 {
-	__asm nop;
 	//C_BaseAnimating *pAnimating = GetMoveParent() ? GetMoveParent()->GetBaseAnimating() : NULL;
 	//if (!pAnimating)
 	//	return;

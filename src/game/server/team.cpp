@@ -38,7 +38,6 @@ int SendProxyArrayLength_PlayerArray( const void *pStruct, int objectID )
 
 // Datatable
 IMPLEMENT_SERVERCLASS_ST_NOBASE(CTeam, DT_Team)
-	SendPropInt( SENDINFO(m_iTeamNum), 5 ),
 	SendPropInt( SENDINFO(m_iScore), 0 ),
 	SendPropInt( SENDINFO(m_iRoundsWon), 8 ),
 	SendPropString( SENDINFO( m_szTeamname ) ),
@@ -57,10 +56,20 @@ LINK_ENTITY_TO_CLASS( team_manager, CTeam );
 //-----------------------------------------------------------------------------
 // Purpose: Get a pointer to the specified team manager
 //-----------------------------------------------------------------------------
-CTeam *GetGlobalTeam( int iIndex )
+CTeam *GetGlobalTeamByIndex( int iIndex )
 {
 	if ( iIndex < 0 || iIndex >= GetNumberOfTeams() )
 		return NULL;
+
+	return g_Teams[ iIndex ];
+}
+
+CTeam *GetGlobalTeamByTeam( Team_t iIndex )
+{
+	if ( iIndex < 0 || iIndex >= GetNumberOfTeams() )
+		return NULL;
+
+	Assert( g_Teams[ iIndex ]->GetTeamNumber() == iIndex );
 
 	return g_Teams[ iIndex ];
 }
@@ -73,16 +82,16 @@ int GetNumberOfTeams( void )
 	return g_Teams.Size();
 }
 
-const char* GetTeamName( int iTeam )
+const char* GetTeamNameByIndex( int iIndex )
 {
-	CTeam *pTeam = GetGlobalTeam( iTeam );
+	CTeam *pTeam = GetGlobalTeamByIndex( iIndex );
 	if ( pTeam )
 	{
 		return pTeam->GetName();
 	}
 	else
 	{
-		return "UNKNOWN TEAM";
+		return NULL;
 	}
 }
 
@@ -92,6 +101,8 @@ const char* GetTeamName( int iTeam )
 CTeam::CTeam( void )
 {
 	memset( m_szTeamname.GetForModify(), 0, sizeof(m_szTeamname) );
+
+	AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
 }
 
 //-----------------------------------------------------------------------------
@@ -101,6 +112,13 @@ CTeam::~CTeam( void )
 {
 	m_aSpawnPoints.Purge();
 	m_aPlayers.Purge();
+}
+
+void CTeam::UpdateOnRemove( void )
+{
+	g_Teams.FindAndRemove(this);
+
+	BaseClass::UpdateOnRemove();
 }
 
 //-----------------------------------------------------------------------------
@@ -133,15 +151,26 @@ bool CTeam::ShouldTransmitToPlayer( CBasePlayer* pRecipient, CBaseEntity* pEntit
 //-----------------------------------------------------------------------------
 // Initialization
 //-----------------------------------------------------------------------------
-void CTeam::Init( const char *pName, int iNumber )
+void CTeam::Init( const char *pName, Team_t iNumber )
 {
+	if(!pName) {
+		pName = "";
+	}
+
 	InitializeSpawnpoints();
 	InitializePlayers();
 
 	m_iScore = 0;
 
 	Q_strncpy( m_szTeamname.GetForModify(), pName, MAX_TEAM_NAME_LENGTH );
-	m_iTeamNum = iNumber;
+	ChangeTeam( iNumber );
+
+	g_Teams.AddToTail(this);
+}
+
+void CTeam::ChangeTeam( Team_t iTeamNum )
+{
+	BaseClass::ChangeTeam( iTeamNum );
 }
 
 //-----------------------------------------------------------------------------
@@ -149,7 +178,7 @@ void CTeam::Init( const char *pName, int iNumber )
 //-----------------------------------------------------------------------------
 int CTeam::GetTeamNumber( void ) const
 {
-	return m_iTeamNum;
+	return BaseClass::GetTeamNumber();
 }
 
 //-----------------------------------------------------------------------------

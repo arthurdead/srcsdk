@@ -360,9 +360,7 @@ END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( func_physbox, CPhysBox );
 
-BEGIN_DATADESC( CPhysBox )
-
-	DEFINE_FIELD( m_hCarryingPlayer, FIELD_EHANDLE ),
+BEGIN_MAPENTITY( CPhysBox )
 
 	DEFINE_KEYFIELD( m_massScale, FIELD_FLOAT, "massScale" ),
 	DEFINE_KEYFIELD( m_damageType, FIELD_INTEGER, "Damagetype" ),
@@ -380,9 +378,6 @@ BEGIN_DATADESC( CPhysBox )
 	DEFINE_INPUTFUNC( FIELD_VOID, "ForceDrop", InputForceDrop ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableFloating", InputDisableFloating ),
 
-	// Function pointers
-	DEFINE_ENTITYFUNC( BreakTouch ),
-
 	// Outputs
 	DEFINE_OUTPUT( m_OnDamaged, "OnDamaged" ),
 	DEFINE_OUTPUT( m_OnAwakened, "OnAwakened" ),
@@ -393,7 +388,7 @@ BEGIN_DATADESC( CPhysBox )
 	DEFINE_OUTPUT( m_OnPhysGunDrop, "OnPhysGunDrop" ),
 	DEFINE_OUTPUT( m_OnPlayerUse, "OnPlayerUse" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 // UNDONE: Save/Restore needs to take the physics object's properties into account
 // UNDONE: Acceleration, velocity, angular velocity, etc. must be preserved
@@ -855,7 +850,7 @@ bool CPhysBox::HasPreferredCarryAnglesForPlayer( CBasePlayer *pPlayer )
 
 LINK_ENTITY_TO_CLASS( env_physexplosion, CPhysExplosion );
 
-BEGIN_DATADESC( CPhysExplosion )
+BEGIN_MAPENTITY( CPhysExplosion )
 
 	DEFINE_KEYFIELD( m_damage, FIELD_FLOAT, "magnitude" ),
 	DEFINE_KEYFIELD( m_radius, FIELD_FLOAT, "radius" ),
@@ -868,7 +863,7 @@ BEGIN_DATADESC( CPhysExplosion )
 	// Outputs 
 	DEFINE_OUTPUT( m_OnPushedPlayer, "OnPushedPlayer" ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 void CPhysExplosion::Spawn( void )
@@ -1085,18 +1080,15 @@ int CPhysExplosion::DrawDebugTextOverlays( void )
 #define	DEFAULT_EXPLODE_DISTANCE	256
 LINK_ENTITY_TO_CLASS( env_physimpact, CPhysImpact );
 
-BEGIN_DATADESC( CPhysImpact )
+BEGIN_MAPENTITY( CPhysImpact )
 
 	DEFINE_KEYFIELD( m_damage,				FIELD_FLOAT,	"magnitude" ),
 	DEFINE_KEYFIELD( m_distance,			FIELD_FLOAT,	"distance" ),
 	DEFINE_KEYFIELD( m_directionEntityName,FIELD_STRING,	"directionentityname" ),
 
-	// Function pointers
-	DEFINE_FUNCTION( PointAtEntity ),
-
 	DEFINE_INPUTFUNC( FIELD_VOID, "Impact", InputImpact ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 //-----------------------------------------------------------------------------
@@ -1350,7 +1342,7 @@ public:
 	// Input handlers
 	void InputConvertTarget( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 	string_t		m_swapModel;
@@ -1359,7 +1351,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( phys_convert, CPhysConvert );
 
-BEGIN_DATADESC( CPhysConvert )
+BEGIN_MAPENTITY( CPhysConvert )
 
 	DEFINE_KEYFIELD( m_swapModel,		FIELD_STRING,	"swapmodel" ),
 	DEFINE_KEYFIELD( m_flMassOverride,	FIELD_FLOAT,	"massoverride" ),
@@ -1370,7 +1362,7 @@ BEGIN_DATADESC( CPhysConvert )
 	// Outputs
 	DEFINE_OUTPUT( m_OnConvert, "OnConvert"),
 
-END_DATADESC()
+END_MAPENTITY()
 
 
 
@@ -1459,15 +1451,7 @@ void CPhysConvert::InputConvertTarget( inputdata_t &inputdata )
 
 LINK_ENTITY_TO_CLASS( phys_magnet, CPhysMagnet );
 
-// BUGBUG: This won't work!  Right now you can't save physics pointers inside an embedded type!
-BEGIN_SIMPLE_DATADESC( magnetted_objects_t )
-
-	DEFINE_PHYSPTR( pConstraint ),
-	DEFINE_FIELD( hEntity,	FIELD_EHANDLE	),
-
-END_DATADESC()
-
-BEGIN_DATADESC( CPhysMagnet )
+BEGIN_MAPENTITY( CPhysMagnet )
 	// Outputs
 	DEFINE_OUTPUT( m_OnMagnetAttach, "OnAttach" ),
 	DEFINE_OUTPUT( m_OnMagnetDetach, "OnDetach" ),
@@ -1479,21 +1463,12 @@ BEGIN_DATADESC( CPhysMagnet )
 	DEFINE_KEYFIELD( m_forceLimit, FIELD_FLOAT, "forcelimit" ),
 	DEFINE_KEYFIELD( m_torqueLimit, FIELD_FLOAT, "torquelimit" ),
 
-	DEFINE_UTLVECTOR( m_MagnettedEntities, FIELD_EMBEDDED ),
-	DEFINE_PHYSPTR( m_pConstraintGroup ),
-
-	DEFINE_FIELD( m_bActive, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bHasHitSomething, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flTotalMass, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flRadius, FIELD_FLOAT ),
-	DEFINE_FIELD( m_flNextSuckTime, FIELD_FLOAT ),
-
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn", InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 
-END_DATADESC()
+END_MAPENTITY()
 
 //-----------------------------------------------------------------------------
 // Purpose: SendProxy that converts the magnet's attached object UtlVector to entindexes

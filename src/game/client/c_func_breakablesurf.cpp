@@ -233,7 +233,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_BreakableSurface, DT_BreakableSurface, CBreakableSur
 	RecvPropVector( RECVINFO( m_vCorner ) ),
 	RecvPropInt( RECVINFO( m_bIsBroken )),
 	RecvPropInt( RECVINFO( m_nSurfaceType )),
-	RecvPropArray3( RECVINFO_ARRAY(m_RawPanelBitVec), RecvPropInt( RECVINFO( m_RawPanelBitVec[ 0 ] ))),
+	RecvPropArray3( RECVINFO_ARRAY(m_RawPanelBitVec), RecvPropInt( RECVINFO_ARRAYELEM( m_RawPanelBitVec, 0 ))),
 
 END_RECV_TABLE()
 

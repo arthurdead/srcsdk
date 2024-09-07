@@ -21,6 +21,7 @@
 #include "bitvec.h"
 #include "engine/iserverplugin.h"
 #include "tier1/bitbuf.h"
+#include "engine_shared.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations

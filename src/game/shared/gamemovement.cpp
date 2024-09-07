@@ -979,7 +979,7 @@ void CGameMovement::CategorizeGroundSurface( trace_t &pm )
 
 bool CGameMovement::IsDead( void ) const
 {
-	return ( player->m_iHealth <= 0 && !player->IsAlive() );
+	return ( player->GetHealth() <= 0 && !player->IsAlive() );
 }
 
 //-----------------------------------------------------------------------------

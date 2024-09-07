@@ -235,19 +235,7 @@ void CFlashlightEffect::UpdateLightTopDown(const Vector &vecPos, const Vector &v
 	state.m_flShadowSlopeScaleDepthBias = mat_slopescaledepthbias_shadowmap.GetFloat();
 	state.m_flShadowDepthBias = mat_depthbias_shadowmap.GetFloat();
 
-	if( m_FlashlightHandle == CLIENTSHADOW_INVALID_HANDLE )
-	{
-		SetFlashlightHandle( g_pClientShadowMgr->CreateFlashlight( state ) );
-	}
-	else
-	{
-		if( !r_flashlightlockposition.GetBool() )
-		{
-			g_pClientShadowMgr->UpdateFlashlightState( m_FlashlightHandle, state );
-		}
-	}
-
-	g_pClientShadowMgr->UpdateProjectedTexture( m_FlashlightHandle, true );
+	UpdateLightProjection( state );
 
 	// Kill the old flashlight method if we have one.
 	// FIXME: This doesn't compile
@@ -265,6 +253,23 @@ void CFlashlightEffect::UpdateLightTopDown(const Vector &vecPos, const Vector &v
 	}
 }
 
+// @Deferred - Biohazard
+void CFlashlightEffect::UpdateLightProjection(FlashlightState_t &state)
+{
+	if( m_FlashlightHandle == CLIENTSHADOW_INVALID_HANDLE )
+	{
+		SetFlashlightHandle( g_pClientShadowMgr->CreateFlashlight( state ) );
+	}
+	else
+	{
+		if( !r_flashlightlockposition.GetBool() )
+		{
+			g_pClientShadowMgr->UpdateFlashlightState( m_FlashlightHandle, state );
+		}
+	}
+
+	g_pClientShadowMgr->UpdateProjectedTexture( m_FlashlightHandle, true );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Do the headlight
@@ -302,19 +307,7 @@ void CFlashlightEffect::UpdateLight(	int nEntIdx, const Vector &vecPos, const Ve
 		return;
 	}
 
-	if( m_FlashlightHandle == CLIENTSHADOW_INVALID_HANDLE )
-	{
-		SetFlashlightHandle( g_pClientShadowMgr->CreateFlashlight( state ) );
-	}
-	else
-	{
-		if( !r_flashlightlockposition.GetBool() )
-		{
-			g_pClientShadowMgr->UpdateFlashlightState( m_FlashlightHandle, state );
-		}
-	}
-	
-	g_pClientShadowMgr->UpdateProjectedTexture( m_FlashlightHandle, true );
+	UpdateLightProjection( state );
 	
 	if ( clienttools->IsInRecordingMode() )
 	{
@@ -362,19 +355,7 @@ void CFlashlightEffect::UpdateLight(	int nEntIdx, const Vector &vecPos, const Ve
 		//state.m_pProjectedMaterial = NULL;
 	}
 
-	if( m_FlashlightHandle == CLIENTSHADOW_INVALID_HANDLE )
-	{
-		SetFlashlightHandle( g_pClientShadowMgr->CreateFlashlight( state ) );
-	}
-	else
-	{
-		if( !r_flashlightlockposition.GetBool() )
-		{
-			g_pClientShadowMgr->UpdateFlashlightState( m_FlashlightHandle, state );
-		}
-	}
-
-	g_pClientShadowMgr->UpdateProjectedTexture( m_FlashlightHandle, true );
+	UpdateLightProjection( state );
 
 	if ( clienttools->IsInRecordingMode() )
 	{
@@ -606,7 +587,7 @@ bool CFlashlightEffect::ComputeLightPosAndOrientation( const Vector &vecPos, con
 		}
 		else
 		{
-			if ( pPlayer->m_vecFlashlightOrigin != vecPlayerEyePos )
+			if ( pPlayer->GetFlashlightOrigin() != vecPlayerEyePos )
 			{
 				vOrigin = vecPos;
 			}
@@ -772,16 +753,7 @@ void CHeadlightEffect::UpdateLight( const Vector &vecPos, const Vector &vecDir, 
 	//state.m_pProjectedMaterial = NULL;
 	state.m_nSpotlightTextureFrame = 0;
 	
-	if( GetFlashlightHandle() == CLIENTSHADOW_INVALID_HANDLE )
-	{
-		SetFlashlightHandle( g_pClientShadowMgr->CreateFlashlight( state ) );
-	}
-	else
-	{
-		g_pClientShadowMgr->UpdateFlashlightState( GetFlashlightHandle(), state );
-	}
-	
-	g_pClientShadowMgr->UpdateProjectedTexture( GetFlashlightHandle(), true );
+	UpdateLightProjection( state );
 }
 
 void CFlashlightEffect::SetFlashlightHandle( ClientShadowHandle_t Handle )
@@ -790,4 +762,39 @@ void CFlashlightEffect::SetFlashlightHandle( ClientShadowHandle_t Handle )
 
 	Assert(m_nEntIndex >= 0 && m_nEntIndex < ARRAYSIZE(g_hFlashlightHandle));
 	g_hFlashlightHandle[m_nEntIndex] = Handle;
+}
+
+void CFlashlightEffectManager::TurnOnFlashlight( int nEntIndex, const char *pszTextureName, float flFov, float flFarZ, float flLinearAtten )
+{
+	m_pFlashlightTextureName = pszTextureName;
+	m_nFlashlightEntIndex = nEntIndex;
+	m_flFov = flFov;
+	m_flFarZ = flFarZ;
+	m_flLinearAtten = flLinearAtten;
+	m_bFlashlightOn = true;
+
+	if ( m_bFlashlightOverride )
+	{
+		// somebody is overriding the flashlight. We're keeping around the params to restore it later.
+		return;
+	}
+
+	if ( !m_pFlashlightEffect )
+	{
+		if( pszTextureName )
+		{
+			m_pFlashlightEffect = new CFlashlightEffect( m_nFlashlightEntIndex, pszTextureName, flFov, flFarZ, flLinearAtten );
+		}
+		else
+		{
+			m_pFlashlightEffect = new CFlashlightEffect( m_nFlashlightEntIndex );
+		}
+
+		if( !m_pFlashlightEffect )
+		{
+			return;
+		}
+	}
+
+	m_pFlashlightEffect->TurnOn();
 }

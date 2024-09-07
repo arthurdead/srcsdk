@@ -62,11 +62,7 @@ void CServerNetworkProperty::AttachEdict( edict_t *pRequiredEdict )
 {
 	Assert ( !m_pPev );
 
-	// see if there is an edict allocated for it, otherwise get one from the engine
-	if ( !pRequiredEdict )
-	{
-		pRequiredEdict = engine->CreateEdict();
-	}
+	Assert(pRequiredEdict);
 
 	m_pPev = pRequiredEdict;
 	m_pPev->SetEdict( GetBaseEntity(), true );
@@ -98,16 +94,6 @@ void CServerNetworkProperty::Release()
 
 
 //-----------------------------------------------------------------------------
-// Returns the network parent
-//-----------------------------------------------------------------------------
-CServerNetworkProperty* CServerNetworkProperty::GetNetworkParent()
-{
-	CBaseEntity *pParent = m_hParent.Get();
-	return pParent ? pParent->NetworkProp() : NULL;
-}
-
-
-//-----------------------------------------------------------------------------
 // PVS information
 //-----------------------------------------------------------------------------
 void CServerNetworkProperty::RecomputePVSInformation()
@@ -132,7 +118,7 @@ ServerClass* CServerNetworkProperty::GetServerClass()
 
 const char* CServerNetworkProperty::GetClassName() const
 {
-	return STRING(m_pOuter->m_iClassname);
+	return m_pOuter->GetClassname();
 }
 
 

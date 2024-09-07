@@ -317,13 +317,13 @@ void CGlowObjectManager::ApplyEntityGlowEffects( const CViewSetup *pSetup, CMatR
 	// Set the viewport
 	SetRenderTargetAndViewPort( pRtQuarterSize0, pSetup->width / 4, pSetup->height / 4 );
 
-	IMaterialVar *pbloomexpvar = pMatDownsample->FindVar( "$bloomexp", null );
+	IMaterialVar *pbloomexpvar = pMatDownsample->FindVar( "$bloomexp", NULL );
 	if ( pbloomexpvar != NULL )
 	{
 		pbloomexpvar->SetFloatValue( 2.5f );
 	}
 
-	IMaterialVar *pbloomsaturationvar = pMatDownsample->FindVar( "$bloomsaturation", null );
+	IMaterialVar *pbloomsaturationvar = pMatDownsample->FindVar( "$bloomsaturation", NULL );
 	if ( pbloomsaturationvar != NULL )
 	{
 		pbloomsaturationvar->SetFloatValue( 1.0f );

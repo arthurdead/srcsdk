@@ -364,16 +364,6 @@ void CAI_PlayerAlly::DisplayDeathMessage( void )
 	if ( npc_ally_deathmessage.GetBool() == 0 )
 		return;
 
-		
-	for( int i = 1; i <= gpGlobals->maxClients; i++)
-	{
-		CBasePlayer* pPlayer = UTIL_PlayerByIndex( i );
-		if ( pPlayer )	
-		{
-			pPlayer->NotifySinglePlayerGameEnding();
-		}
-	}
-
 	UTIL_ShowMessageAll( GetDeathMessageText());
 }
 
@@ -518,9 +508,9 @@ void CAI_PlayerAlly::PrescheduleThink( void )
 
 		float flHealthRegen = flHealthPerSecond * flDelta;
 
-		if ( g_pGameRules->IsSkillLevel(SKILL_HARD) )
+		if ( GameRules()->IsSkillLevel(SKILL_HARD) )
 			flHealthRegen *= 0.5f;
-		else if ( g_pGameRules->IsSkillLevel(SKILL_EASY) )
+		else if ( GameRules()->IsSkillLevel(SKILL_EASY) )
 			flHealthRegen *= 1.5f;
 
 		m_flTimeLastRegen = gpGlobals->curtime;
@@ -1650,10 +1640,6 @@ void CAI_PlayerAlly::InputDisableSpeakWhileScripting( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 bool CAI_PlayerAlly::SpeakMapmakerInterruptConcept( string_t iszConcept )
 {
-	// Let behaviors override
-	if ( BaseClass::SpeakMapmakerInterruptConcept(iszConcept) )
-		return false;
-
 	if (!IsOkToSpeakInResponseToPlayer())
 		return false;
 

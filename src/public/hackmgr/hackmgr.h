@@ -4,6 +4,8 @@
 #pragma once
 
 #include "tier0/platform.h"
+#include "tier1/interface.h"
+#include "globalvars_base.h"
 
 #ifdef BUILDING_HACKMGR
 	#define HACKMGR_API DLL_EXPORT
@@ -18,8 +20,6 @@
 
 #define HACKMGR_CONCAT5_IMPL(a1,a2,a3,a4,a5) a1##a2##a3##a4##a5
 #define HACKMGR_CONCAT5(a1,a2,a3,a4,a5) HACKMGR_CONCAT5_IMPL(a1,a2,a3,a4,a5)
-
-HACKMGR_API void DependOnHackMgr();
 
 #ifdef __GNUC__
 #define HACKMGR_INIT_PRIO(...) __attribute__((__init_priority__((__VA_ARGS__))))
@@ -64,5 +64,14 @@ namespace HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _) { \
 	} _; \
 }
 #endif
+
+HACKMGR_API void DependOnHackMgr();
+
+class IBaseClientDLL;
+class IServerGameDLL;
+struct CGlobalVars;
+
+HACKMGR_API bool HackMgr_Client_PreInit(IBaseClientDLL *pdll, CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CGlobalVarsBase *pGlobals);
+HACKMGR_API bool HackMgr_Server_PreInit(IServerGameDLL *pdll, CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn fileSystemFactory, CGlobalVars *pGlobals);
 
 #endif

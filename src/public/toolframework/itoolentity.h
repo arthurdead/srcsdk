@@ -342,11 +342,6 @@ public:
 	virtual void RemoveEntity( int nHammerID ) = 0;
 };
 
-typedef IServerTools IServerTools001;
-typedef IServerTools IServerTools002;
-
-#define VSERVERTOOLS_INTERFACE_VERSION_1	"VSERVERTOOLS001"
-#define VSERVERTOOLS_INTERFACE_VERSION_2	"VSERVERTOOLS002"
 #define VSERVERTOOLS_INTERFACE_VERSION		"VSERVERTOOLS003"
 #define VSERVERTOOLS_INTERFACE_VERSION_INT	3
 

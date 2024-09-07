@@ -9,6 +9,7 @@
 #include "EventLog.h"
 #include "team.h"
 #include "KeyValues.h"
+#include "navmesh/nav_area.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -60,6 +61,61 @@ bool CEventLog::PrintGameEvent( IGameEvent *event )
 	return false;
 }
 
+void CEventLog::FormatPlayer( CBaseEntity *ent, char *str, int len ) const
+{
+	if ( !str || len <= 0 )
+	{
+		return;
+	}
+
+	CBasePlayer *player = ToBasePlayer( ent );
+
+	const char *playerName = "Unknown";
+	int userID = 0;
+	const char *networkIDString = "";
+	const char *teamName = "";
+	int areaID = 0;
+	if ( player )
+	{
+		playerName = player->GetPlayerName();
+		userID = player->GetUserID();
+		networkIDString = player->GetNetworkIDString();
+		CTeam *team = player->GetTeam();
+		if ( team )
+		{
+			teamName = team->GetName();
+		}
+	}
+
+	if ( ent && ent->MyCombatCharacterPointer() )
+	{
+		CNavArea *area = ent->MyCombatCharacterPointer()->GetLastKnownArea();
+		if ( area )
+		{
+			areaID = area->GetID();
+		}
+	}
+
+	V_snprintf( str, len, "\"%s<%i><%s><%s><Area %d>\"", playerName, userID, networkIDString, teamName, areaID );
+}
+
+const char *CEventLog::FormatPlayer( CBaseEntity *ent ) const
+{
+	const int MaxEntries = 4;
+	const int BufferLength = PLAYER_LOGINFO_SIZE;
+	static char s_buffer[ MaxEntries ][ BufferLength ];
+	static int s_index = 0;
+
+	char *ret = s_buffer[ s_index++ ];
+	if ( s_index >= MaxEntries )
+	{
+		s_index = 0;
+	}
+
+	FormatPlayer( ent, ret, BufferLength );
+	return ret;
+}
+
 bool CEventLog::PrintPlayerEvent( IGameEvent *event )
 {
 	const char * eventName = event->GetName();
@@ -103,10 +159,10 @@ bool CEventLog::PrintPlayerEvent( IGameEvent *event )
 
 		if ( !bDisconnecting )
 		{
-			const int newTeam = event->GetInt( "team" );
-			const int oldTeam = event->GetInt( "oldteam" );
-			CTeam *team = GetGlobalTeam( newTeam );
-			CTeam *oldteam = GetGlobalTeam( oldTeam );
+			const Team_t newTeam = event->GetInt( "team" );
+			const Team_t oldTeam = event->GetInt( "oldteam" );
+			CTeam *team = GetGlobalTeamByTeam( newTeam );
+			CTeam *oldteam = GetGlobalTeamByTeam( oldTeam );
 			
 			UTIL_LogPrintf( "\"%s<%i><%s><%s>\" joined team \"%s\"\n", 
 			pPlayer->GetPlayerName(),

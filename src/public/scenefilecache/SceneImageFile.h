@@ -10,6 +10,7 @@
 
 #include "commonmacros.h"
 #include "tier1/checksum_crc.h"
+#include "tier0/dbg.h"
 
 #define SCENE_IMAGE_ID			MAKEID( 'V','S','I','F' )
 #define SCENE_IMAGE_VERSION		2
@@ -20,6 +21,14 @@ struct SceneImageSummary_t
 	unsigned int	msecs;
 	int				numSounds;
 	int				soundStrings[1];	// has numSounds
+};
+
+struct SceneImageSummaryEx_t : public SceneImageSummary_t
+{
+	unsigned int	lastspeech_msecs; ///< milliseconds from beginning of vcd to end of last speak event. 
+
+	// return time in seconds from beginning of scene to end of last Speak event
+	inline float GetDurToSpeechEnd( void ) const  { return lastspeech_msecs * 0.001f; }
 };
 
 // stored sorted by crc filename for binary search

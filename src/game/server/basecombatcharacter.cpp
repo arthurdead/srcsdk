@@ -100,7 +100,13 @@ public:
 	{
 		if ( CBaseCombatCharacter::m_DefaultRelationship != NULL )
 		{
-			int iNumClasses = GameRules() ? GameRules()->NumEntityClasses() : LAST_SHARED_ENTITY_CLASS;
+			int iNumClasses = NUM_SHARED_ENTITY_CLASSES;
+			if(GameRules()) {
+				iNumClasses = GameRules()->NumEntityClasses();
+				if(iNumClasses < NUM_SHARED_ENTITY_CLASSES) {
+					iNumClasses = NUM_SHARED_ENTITY_CLASSES;
+				}
+			}
 			for ( int i=0; i<iNumClasses; ++i )
 			{
 				delete[] CBaseCombatCharacter::m_DefaultRelationship[ i ];
@@ -1085,7 +1091,7 @@ bool CTraceFilterMelee::ShouldHitEntity( IHandleEntity *pHandleEntity, int conte
 		if ( !pEntity->ShouldCollide( m_collisionGroup, contentsMask ) )
 			return false;
 		
-		if ( !g_pGameRules->ShouldCollide( m_collisionGroup, pEntity->GetCollisionGroup() ) )
+		if ( !GameRules()->ShouldCollide( m_collisionGroup, pEntity->GetCollisionGroup() ) )
 			return false;
 
 		if ( pEntity->m_takedamage == DAMAGE_NO )
@@ -1314,7 +1320,7 @@ bool  CBaseCombatCharacter::Event_Gibbed( const CTakeDamageInfo &info )
 Vector CBaseCombatCharacter::CalcDamageForceVector( const CTakeDamageInfo &info )
 {
 	// Already have a damage force in the data, use that.
-	bool bNoPhysicsForceDamage = g_pGameRules->Damage_NoPhysicsForce( info.GetDamageType() );
+	bool bNoPhysicsForceDamage = GameRules()->Damage_NoPhysicsForce( info.GetDamageType() );
 	if ( info.GetDamageForce() != vec3_origin || bNoPhysicsForceDamage )
 	{
 		if( info.GetDamageType() & DMG_BLAST )
@@ -2366,7 +2372,7 @@ int CBaseCombatCharacter::OnTakeDamage( const CTakeDamageInfo &info )
 	default:
 	case LIFE_DEAD:
 		retVal = OnTakeDamage_Dead( info );
-		if ( GetHealth() <= 0 && g_pGameRules->Damage_ShouldGibCorpse( info.GetDamageType() ) && ShouldGib( info ) )
+		if ( GetHealth() <= 0 && GameRules()->Damage_ShouldGibCorpse( info.GetDamageType() ) && ShouldGib( info ) )
 		{
 			Event_Gibbed( info );
 			retVal = 0;
@@ -2500,7 +2506,7 @@ void CBaseCombatCharacter::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways 
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-Disposition_t CBaseCombatCharacter::GetFactionRelationshipDisposition( int nFaction )
+Disposition_t CBaseCombatCharacter::GetFactionRelationshipDisposition( Faction_T nFaction )
 {
 	Assert( m_FactionRelationship != NULL );
 
@@ -2591,7 +2597,7 @@ bool CBaseCombatCharacter::RemoveEntityRelationship( CBaseEntity *pEntity )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::AddFactionRelationship(int nFaction, Disposition_t disposition, int priority )
+void CBaseCombatCharacter::AddFactionRelationship(Faction_T nFaction, Disposition_t disposition, int priority )
 {
 	// First check to see if a relationship has already been declared for this faction
 	// If so, update it with the new relationship
@@ -2620,7 +2626,7 @@ void CBaseCombatCharacter::AddFactionRelationship(int nFaction, Disposition_t di
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::ChangeFaction( int nNewFaction ) {
+void CBaseCombatCharacter::ChangeFaction( Faction_T nNewFaction ) {
 	int nOldFaction = m_nFaction;
 
 	if ( ( m_nFaction != FACTION_NONE ) && ( m_aFactions.Count() != 0 ) )
@@ -2678,7 +2684,7 @@ int CBaseCombatCharacter::GetNumFactions( void ) {
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-CUtlVector<EHANDLE> *CBaseCombatCharacter::GetEntitiesInFaction( int nFaction ) {
+CUtlVector<EHANDLE> *CBaseCombatCharacter::GetEntitiesInFaction( Faction_T nFaction ) {
 	if ( !m_aFactions.Count() )
 	{
 		return NULL;
@@ -2756,7 +2762,7 @@ void CBaseCombatCharacter::SetDefaultRelationship(Class_T nClass, Class_T nClass
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::SetDefaultFactionRelationship(int nFaction, int nFactionTarget, Disposition_t nDisposition, int nPriority)
+void CBaseCombatCharacter::SetDefaultFactionRelationship(Faction_T nFaction, Faction_T nFactionTarget, Disposition_t nDisposition, int nPriority)
 {
 	if (!m_FactionRelationship)
 	{
@@ -2818,7 +2824,7 @@ Relationship_t *CBaseCombatCharacter::FindEntityRelationship( CBaseEntity *pTarg
 	CBaseCombatCharacter *pBaseCombatCharacter = pTarget->MyCombatCharacterPointer();
 	if (pBaseCombatCharacter)
 	{
-		int nFaction = pBaseCombatCharacter->GetFaction();
+		Faction_T nFaction = pBaseCombatCharacter->GetFaction();
 		if ( nFaction != FACTION_NONE )
 		{
 			// Then check for relationship with this edict's faction
@@ -3070,7 +3076,7 @@ int CBaseCombatCharacter::GiveAmmo( int iCount, int iAmmoIndex, bool bSuppressSo
 	if (iCount <= 0)
 		return 0;
 
-	if ( !g_pGameRules->CanHaveAmmo( this, iAmmoIndex ) )
+	if ( !GameRules()->CanHaveAmmo( this, iAmmoIndex ) )
 	{
 		// game rules say I can't have any more of this ammo type.
 		return 0;
@@ -3288,7 +3294,7 @@ void RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRa
 	// code unnecessarily. We need TF2 specific rules for RadiusDamage, so I moved
 	// the implementation of radius damage into gamerules. All existing code calls
 	// this method, which calls the game rules method
-	g_pGameRules->RadiusDamage( info, vecSrc, flRadius, iClassIgnore, pEntityIgnore );
+	GameRules()->RadiusDamage( info, vecSrc, flRadius, iClassIgnore, pEntityIgnore );
 
 	// Let the world know if this was an explosion.
 	if( info.GetDamageType() & DMG_BLAST )

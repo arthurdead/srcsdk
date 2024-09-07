@@ -14,20 +14,6 @@
 #include "shake.h"				// For screen fade constants
 #include "engine/IEngineSound.h"
 
-//=============================================================================
-// HPE_BEGIN
-// [dwenger] Necessary for stats tracking
-//=============================================================================
-#ifdef CSTRIKE_DLL
-
-#include "cs_gamestats.h"
-#include "cs_achievement_constants.h"
-
-#endif
-//=============================================================================
-// HPE_END
-//=============================================================================
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -389,7 +375,7 @@ void CMoveHelperServer::Con_NPrintf( int idx, char const* pFormat, ...)
 //-----------------------------------------------------------------------------
 bool CMoveHelperServer::PlayerFallingDamage( void )
 {
-	float flFallDamage = g_pGameRules->FlPlayerFallDamage( m_pHostPlayer );	
+	float flFallDamage = GameRules()->FlPlayerFallDamage( m_pHostPlayer );	
 	if ( flFallDamage > 0 )
 	{
 		m_pHostPlayer->TakeDamage( CTakeDamageInfo( GetContainingEntity(INDEXENT(0)), GetContainingEntity(INDEXENT(0)), flFallDamage, DMG_FALL ) ); 
@@ -419,7 +405,7 @@ bool CMoveHelperServer::PlayerFallingDamage( void )
 
 	if ( m_pHostPlayer->GetHealth() <= 0 )
 	{
-		if ( g_pGameRules->FlPlayerFallDeathDoesScreenFade( m_pHostPlayer ) )
+		if ( GameRules()->FlPlayerFallDeathDoesScreenFade( m_pHostPlayer ) )
 		{
 			color32 black = {0, 0, 0, 255};
 			UTIL_ScreenFade( m_pHostPlayer, black, 0, 9999, FFADE_OUT | FFADE_STAYOUT );

@@ -23,7 +23,7 @@
 #include "ihudlcd.h"
 #include "vgui/IInput.h"
 #include "vgui/ILocalize.h"
-#include "multiplay_gamerules.h"
+#include "gamerules.h"
 #include "voice_status.h"
 
 
@@ -318,7 +318,7 @@ wchar_t* ReadChatTextString( bf_read &msg, OUT_Z_BYTECAP(outSizeInBytes) wchar_t
 CBaseHudChatLine::CBaseHudChatLine( vgui::Panel *parent, const char *panelName ) : 
 	vgui::RichText( parent, panelName )
 {
-	m_hFont = m_hFontMarlett = 0;
+	m_hFont = m_hFontMarlett = vgui::INVALID_FONT;
 	m_flExpireTime = 0.0f;
 	m_flStartTime = 0.0f;
 	m_iNameLength	= 0;
@@ -1063,13 +1063,9 @@ void CBaseHudChat::MsgFunc_VoiceSubtitle( bf_read &msg )
 
 	CGameRules *pGameRules = GameRules();
 
-	CMultiplayRules *pMultiRules = dynamic_cast< CMultiplayRules * >( pGameRules );
-
-	Assert( pMultiRules );
-
-	if ( pMultiRules )
+	if ( pGameRules )
 	{
-		pszSubtitle = pMultiRules->GetVoiceCommandSubtitle( iMenu, iItem );
+		pszSubtitle = pGameRules->GetVoiceCommandSubtitle( iMenu, iItem );
 	}
 
 	SetVoiceSubtitleState( true );
@@ -1636,6 +1632,9 @@ void CBaseHudChatLine::Colorize( int alpha )
 		pChat->GetChatHistory()->InsertString( "\n" );
 	}
 
+	const int UnicodeSize = 4096;
+	const int UTF8Size = UnicodeSize * 2;
+
 	wchar_t wText[4096];
 	Color color;
 	for ( int i=0; i<m_textRanges.Count(); ++i )
@@ -1655,8 +1654,9 @@ void CBaseHudChatLine::Colorize( int alpha )
 			InsertColorChange( color );
 			InsertString( wText );
 
-			// TERROR: color console echo
-			ConColorMsg( color, "%ls", wText );
+			char msg[UTF8Size];
+			V_UnicodeToUTF8(wText, msg, UTF8Size);
+			ConColorMsg( color, "%s", msg );
 
 			CBaseHudChat *pChat = dynamic_cast<CBaseHudChat*>(GetParent() );
 

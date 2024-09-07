@@ -45,7 +45,9 @@ public:
 		Vector vDuckView,
 		Vector vObsHullMin,
 		Vector vObsHullMax,
-		Vector vDeadViewHeight )
+		Vector vDeadViewHeight,
+		Vector vCrouchTraceMin,
+		Vector vCrouchTraceMax )
 	{
 		m_vView = vView;
 		m_vHullMin = vHullMin;
@@ -56,6 +58,8 @@ public:
 		m_vObsHullMin = vObsHullMin;
 		m_vObsHullMax = vObsHullMax;
 		m_vDeadViewHeight = vDeadViewHeight;
+		m_vCrouchTraceMin = vCrouchTraceMin;
+		m_vCrouchTraceMax = vCrouchTraceMax;
 	}
 
 	// Height above entity position where the viewer's eye is.
@@ -72,35 +76,41 @@ public:
 	Vector m_vObsHullMax;
 	
 	Vector m_vDeadViewHeight;
+
+	Vector m_vCrouchTraceMin;
+	Vector m_vCrouchTraceMax;
 };
 
 // Height above entity position where the viewer's eye is.
-#define VEC_VIEW			g_pGameRules->GetViewVectors()->m_vView
-#define VEC_HULL_MIN		g_pGameRules->GetViewVectors()->m_vHullMin
-#define VEC_HULL_MAX		g_pGameRules->GetViewVectors()->m_vHullMax
+#define VEC_VIEW			GameRules()->GetViewVectors()->m_vView
+#define VEC_HULL_MIN		GameRules()->GetViewVectors()->m_vHullMin
+#define VEC_HULL_MAX		GameRules()->GetViewVectors()->m_vHullMax
 
-#define VEC_DUCK_HULL_MIN	g_pGameRules->GetViewVectors()->m_vDuckHullMin
-#define VEC_DUCK_HULL_MAX	g_pGameRules->GetViewVectors()->m_vDuckHullMax
-#define VEC_DUCK_VIEW		g_pGameRules->GetViewVectors()->m_vDuckView
+#define VEC_DUCK_HULL_MIN	GameRules()->GetViewVectors()->m_vDuckHullMin
+#define VEC_DUCK_HULL_MAX	GameRules()->GetViewVectors()->m_vDuckHullMax
+#define VEC_DUCK_VIEW		GameRules()->GetViewVectors()->m_vDuckView
 
-#define VEC_OBS_HULL_MIN	g_pGameRules->GetViewVectors()->m_vObsHullMin
-#define VEC_OBS_HULL_MAX	g_pGameRules->GetViewVectors()->m_vObsHullMax
+#define VEC_OBS_HULL_MIN	GameRules()->GetViewVectors()->m_vObsHullMin
+#define VEC_OBS_HULL_MAX	GameRules()->GetViewVectors()->m_vObsHullMax
 
-#define VEC_DEAD_VIEWHEIGHT	g_pGameRules->GetViewVectors()->m_vDeadViewHeight
+#define VEC_DEAD_VIEWHEIGHT	GameRules()->GetViewVectors()->m_vDeadViewHeight
+
+#define VEC_CROUCH_TRACE_MIN GameRules()->GetViewVectors()->m_vCrouchTraceMin
+#define VEC_CROUCH_TRACE_MAX GameRules()->GetViewVectors()->m_vCrouchTraceMax
 
 // If the player (enemy bots) are scaled, adjust the hull
-#define VEC_VIEW_SCALED( player )				( g_pGameRules->GetViewVectors()->m_vView * player->GetModelScale() )
-#define VEC_HULL_MIN_SCALED( player )			( g_pGameRules->GetViewVectors()->m_vHullMin * player->GetModelScale() )
-#define VEC_HULL_MAX_SCALED( player )			( g_pGameRules->GetViewVectors()->m_vHullMax * player->GetModelScale() )
+#define VEC_VIEW_SCALED( player )				( GameRules()->GetViewVectors()->m_vView * player->GetModelScale() )
+#define VEC_HULL_MIN_SCALED( player )			( GameRules()->GetViewVectors()->m_vHullMin * player->GetModelScale() )
+#define VEC_HULL_MAX_SCALED( player )			( GameRules()->GetViewVectors()->m_vHullMax * player->GetModelScale() )
 
-#define VEC_DUCK_HULL_MIN_SCALED( player )		( g_pGameRules->GetViewVectors()->m_vDuckHullMin * player->GetModelScale() )
-#define VEC_DUCK_HULL_MAX_SCALED( player )		( g_pGameRules->GetViewVectors()->m_vDuckHullMax * player->GetModelScale() )
-#define VEC_DUCK_VIEW_SCALED( player )			( g_pGameRules->GetViewVectors()->m_vDuckView * player->GetModelScale() )
+#define VEC_DUCK_HULL_MIN_SCALED( player )		( GameRules()->GetViewVectors()->m_vDuckHullMin * player->GetModelScale() )
+#define VEC_DUCK_HULL_MAX_SCALED( player )		( GameRules()->GetViewVectors()->m_vDuckHullMax * player->GetModelScale() )
+#define VEC_DUCK_VIEW_SCALED( player )			( GameRules()->GetViewVectors()->m_vDuckView * player->GetModelScale() )
 
-#define VEC_OBS_HULL_MIN_SCALED( player )		( g_pGameRules->GetViewVectors()->m_vObsHullMin * player->GetModelScale() )
-#define VEC_OBS_HULL_MAX_SCALED( player )		( g_pGameRules->GetViewVectors()->m_vObsHullMax * player->GetModelScale() )
+#define VEC_OBS_HULL_MIN_SCALED( player )		( GameRules()->GetViewVectors()->m_vObsHullMin * player->GetModelScale() )
+#define VEC_OBS_HULL_MAX_SCALED( player )		( GameRules()->GetViewVectors()->m_vObsHullMax * player->GetModelScale() )
 
-#define VEC_DEAD_VIEWHEIGHT_SCALED( player )	( g_pGameRules->GetViewVectors()->m_vDeadViewHeight * player->GetModelScale() )
+#define VEC_DEAD_VIEWHEIGHT_SCALED( player )	( GameRules()->GetViewVectors()->m_vDeadViewHeight * player->GetModelScale() )
 
 #define WATERJUMP_HEIGHT			8
 
@@ -256,16 +266,24 @@ enum CastVote
 
 //===================================================================================================================
 // Team Defines
-#define TEAM_ANY				-2
-#define	TEAM_INVALID			-1
-#define TEAM_UNASSIGNED			0	// not assigned to a team
-#define TEAM_SPECTATOR			1	// spectator team
-// Start your team numbers after this
-#define LAST_SHARED_TEAM		TEAM_SPECTATOR
 
-// The first team that's game specific (i.e. not unassigned / spectator)
-#define FIRST_GAME_TEAM			(LAST_SHARED_TEAM+1)
-#define SECOND_GAME_TEAM		(LAST_SHARED_TEAM+2)
+enum
+{
+	TEAM_ANY = -2,
+	TEAM_INVALID = -1,
+
+	TEAM_UNASSIGNED = 0,
+	TEAM_NEUTRAL = 0,
+	TEAM_SPECTATOR = 1,
+
+	NUM_SHARED_TEAMS,
+	LAST_SHARED_TEAM = TEAM_SPECTATOR,
+
+	FIRST_GAME_TEAM = (LAST_SHARED_TEAM+1),
+	SECOND_GAME_TEAM = (LAST_SHARED_TEAM+2)
+};
+
+typedef int Team_t;
 
 #define MAX_TEAMS				32	// Max number of teams in a game
 #define MAX_TEAM_NAME_LENGTH	32	// Max length of a team's name
@@ -576,7 +594,6 @@ enum
 
 	EFL_BOT_FROZEN =			(1<<8),	// This is set on bots that are frozen.
 	EFL_NOT_NETWORKED =			(1<<9),	// Non-networked entity.
-	EFL_NO_AUTO_EDICT_ATTACH =	(1<<10), // Don't attach the edict; we're doing it explicitly
 	
 	// Some dirty bits with respect to abs computations
 	EFL_DIRTY_ABSTRANSFORM =	(1<<11),
@@ -891,28 +908,24 @@ enum
 
 	NUM_SHARED_ENTITY_CLASSES,
 	LAST_SHARED_ENTITY_CLASS = CLASS_PLAYER,
+
+	FIRST_GAME_CLASS = (LAST_SHARED_ENTITY_CLASS+1),
 };
 
 typedef int Class_T;
 
-#if defined( HEIST_DLL )
+// Factions
 enum
 {
-	CLASS_HEISTER = LAST_SHARED_ENTITY_CLASS,
-	CLASS_HEISTER_DISGUISED,
+	FACTION_NONE = 0, // Not assigned a faction.  Entities not assigned a faction will not do faction tests.
 
-	CLASS_CIVILIAN,
-	CLASS_POLICE,
+	NUM_SHARED_FACTIONS,
+	LAST_SHARED_FACTION = FACTION_NONE,
 
-	NUM_HEIST_ENTITY_CLASSES,
+	FIRST_GAME_FACTION = (LAST_SHARED_FACTION+1),
 };
-#endif
 
-// Factions
-#define FACTION_NONE				0					// Not assigned a faction.  Entities not assigned a faction will not do faction tests.
-
-#define LAST_SHARED_FACTION			(FACTION_NONE)
-#define NUM_SHARED_FACTIONS			(FACTION_NONE + 1)
+typedef int Faction_T;
 
 enum
 {

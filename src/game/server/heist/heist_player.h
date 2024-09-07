@@ -4,7 +4,6 @@
 #pragma once
 
 #include "player.h"
-#include "heist_playeranimstate.h"
 
 class CHeistPlayer : public CBaseExpresserPlayer
 {
@@ -23,8 +22,6 @@ public:
 
 	void SetSpotted(bool value);
 	bool IsSpotted() const;
-
-	CPlayerAnimState *CreateAnimState() override;
 
 private:
 	CNetworkVar(bool, m_bSpotted);

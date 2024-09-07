@@ -12,7 +12,6 @@
 #include "EnvMessage.h"
 #include "player.h"
 #include "gamerules.h"
-#include "teamplay_gamerules.h"
 #include "physics.h"
 #include "activitylist.h"
 #include "eventlist.h"
@@ -34,6 +33,8 @@
 #include "engine/IStaticPropMgr.h"
 #include "particle_parse.h"
 #include "globalstate.h"
+#include "model_types.h"
+#include "cvisibilitymonitor.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -189,7 +190,7 @@ LINK_ENTITY_TO_CLASS( infodecal, CDecal );
 void CDecal::Spawn( void )
 {
 	if ( m_nTexture < 0 || 
-		(gpGlobals->deathmatch && HasSpawnFlags( SF_DECAL_NOTINDEATHMATCH )) )
+		(GameRules()->IsDeathmatch() && HasSpawnFlags( SF_DECAL_NOTINDEATHMATCH )) )
 	{
 		UTIL_Remove( this );
 		return;
@@ -409,7 +410,7 @@ LINK_ENTITY_TO_CLASS( info_projecteddecal, CProjectedDecal );
 void CProjectedDecal::Spawn( void )
 {
 	if ( m_nTexture < 0 || 
-		(gpGlobals->deathmatch && HasSpawnFlags( SF_DECAL_NOTINDEATHMATCH )) )
+		(GameRules()->IsDeathmatch() && HasSpawnFlags( SF_DECAL_NOTINDEATHMATCH )) )
 	{
 		UTIL_Remove( this );
 		return;
@@ -574,10 +575,14 @@ CWorld* GetWorldEntity()
 	return g_WorldEntity;
 }
 
+void CWorld::PostConstructor( const char *szClassname )
+{
+	BaseClass::PostConstructor( szClassname );
+}
+
 CWorld::CWorld( )
 {
-	AddEFlags( EFL_NO_AUTO_EDICT_ATTACH | EFL_KEEP_ON_RECREATE_ENTITIES );
-	NetworkProp()->AttachEdict( INDEXENT(RequiredEdictIndex()) );
+	AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
 	ActivityList_Init();
 	EventList_Init();
 	
@@ -600,11 +605,10 @@ CWorld::~CWorld( )
 
 	EventList_Free();
 	ActivityList_Free();
-	if ( g_pGameRules )
+	if ( GameRules() )
 	{
-		g_pGameRules->LevelShutdown();
-		delete g_pGameRules;
-		g_pGameRules = NULL;
+		GameRules()->LevelShutdown();
+		UTIL_Remove( GameRules() );
 	}
 	g_WorldEntity = NULL;
 }
@@ -715,15 +719,15 @@ void CWorld::Precache( void )
 	roomtype.SetValue( 0 );
 
 	// Set up game rules
-	Assert( !g_pGameRules );
-	if (g_pGameRules)
+	Assert( !GameRules() );
+	if (GameRules())
 	{
-		delete g_pGameRules;
+		UTIL_Remove( GameRules() );
 	}
 
 	InstallGameRules();
-	Assert( g_pGameRules );
-	g_pGameRules->Init();
+	Assert( GameRules() );
+	GameRules()->Init();
 
 	CSoundEnt::InitSoundEnt();
 
@@ -735,7 +739,7 @@ void CWorld::Precache( void )
 
 	COM_TimestampedLog( "g_pGameRules->CreateStandardEntities()" );
 	// Create the player resource
-	g_pGameRules->CreateStandardEntities();
+	GameRules()->CreateStandardEntities();
 
 	// UNDONE: Make most of these things server systems or precache_registers
 	// =================================================
@@ -800,11 +804,11 @@ void CWorld::Precache( void )
 	// =================================================
 	//	Initialize NPC Relationships
 	// =================================================
-	g_pGameRules->InitDefaultAIRelationships();
+	GameRules()->InitDefaultAIRelationships();
 	CBaseCombatCharacter::InitInteractionSystem();
 
 	COM_TimestampedLog( "g_pGameRules->Precache" );
-	g_pGameRules->Precache();
+	GameRules()->Precache();
 
 	// Call all registered precachers.
 	CPrecacheRegister::Precache();	

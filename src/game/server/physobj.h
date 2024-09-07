@@ -77,7 +77,7 @@ public:
 	void InputForceDrop( inputdata_t &inputdata );
 	void InputDisableFloating( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	
 protected:
 	int				m_damageType;
@@ -122,7 +122,7 @@ public:
 	// Input handlers
 	void InputExplode( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 private:
 	
 	float		GetRadius( void );
@@ -151,7 +151,7 @@ public:
 
 	void		InputImpact( inputdata_t &inputdata );
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 private:
 
@@ -170,15 +170,13 @@ struct magnetted_objects_t
 {
 	IPhysicsConstraint *pConstraint;
 	EHANDLE			   hEntity;
-
-	DECLARE_SIMPLE_DATADESC();
 };
 
 class CPhysMagnet : public CBaseAnimating, public IPhysicsConstraintEvent
 {
 	DECLARE_CLASS( CPhysMagnet, CBaseAnimating );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	CPhysMagnet();

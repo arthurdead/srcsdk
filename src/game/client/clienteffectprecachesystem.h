@@ -17,6 +17,7 @@
 #include "materialsystem/imaterial.h"
 #include "tier1/utldict.h"
 #include "materialsystem/MaterialSystemUtil.h"
+#include "tier1/utlstring.h"
 
 //-----------------------------------------------------------------------------
 // Interface to automated system for precaching materials
@@ -25,6 +26,7 @@ class IClientEffect
 {
 public:
 	virtual ~IClientEffect() {}
+	virtual void Init()	= 0;
 	virtual void Precache()	= 0;
 	virtual void Shutdown()	= 0;
 	virtual void Release()	= 0;
@@ -46,7 +48,7 @@ public:
 	virtual ~CClientEffectPrecacheSystem() {}
 
 	// Init, shutdown
-	virtual bool Init() { return true; }
+	virtual bool Init();
 	virtual void PostInit() {}
 	virtual void Shutdown();
 
@@ -91,12 +93,14 @@ public:
 
 	void AddMaterial( const char *materialName );
 
+	void Init();
 	void Precache();
 	void Shutdown();
 	void Release();
 
 private:
 	bool m_bPrecached;
+	CUtlVector< CUtlString > m_MaterialsNames;
 	CUtlVector< IMaterial	* > m_Materials;
 	bool (*m_pCondFunc)();
 };
@@ -119,12 +123,12 @@ ClientEffectRegister::ClientEffectRegister(bool(*pCondFunc)()) : CClientEffect(E
 
 //End
 #define	CLIENTEFFECT_REGISTER_END( )	}					\
-ClientEffectRegister	register_ClientEffectRegister(NULL);		\
+INIT_PRIORITY(65535) ClientEffectRegister	register_ClientEffectRegister(NULL);		\
 }
 
 #define	CLIENTEFFECT_REGISTER_END_CONDITIONAL( ... )	}					\
 static bool EffectCond() { return (__VA_ARGS__); } \
-static ClientEffectRegister	register_ClientEffectRegister(EffectCond);		\
+INIT_PRIORITY(65535) static ClientEffectRegister	register_ClientEffectRegister(EffectCond);		\
 }
 
 #endif	//CLIENTEFFECTPRECACHESYSTEM_H

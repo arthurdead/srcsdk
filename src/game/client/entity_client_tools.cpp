@@ -533,7 +533,7 @@ int CClientTools::GetModelIndex( HTOOLHANDLE handle )
 {
 	int idx = m_Handles.Find( HToolEntry_t( handle ) );
 	if ( idx == m_Handles.InvalidIndex() )
-		return NULL;
+		return 0;
 
 	HToolEntry_t &entry = m_Handles[ idx ];
 	if ( entry.m_hEntity )
@@ -586,12 +586,12 @@ EntitySearchResult CClientTools::GetEntity( HTOOLHANDLE handle )
 {
 	int idx = m_Handles.Find( HToolEntry_t( handle ) );
 	if ( idx == m_Handles.InvalidIndex() )
-		return reinterpret_cast< EntitySearchResult >( NULL );
+		return static_cast< EntitySearchResult >( NULL );
 
 	HToolEntry_t *slot = &m_Handles[ idx ];
 	Assert( slot );
 	if ( slot == NULL )
-		return reinterpret_cast< EntitySearchResult >( NULL );
+		return static_cast< EntitySearchResult >( NULL );
 
 	C_BaseEntity *ent = slot->m_hEntity.Get();
 	return reinterpret_cast< EntitySearchResult >( ent );
@@ -696,7 +696,7 @@ void CClientTools::SetRecording( ParticleSystemSearchResult sr, bool bRecord )
 //-----------------------------------------------------------------------------
 ClientShadowHandle_t CClientTools::CreateShadow( CBaseHandle h, int nFlags )
 {
-	return g_pClientShadowMgr->CreateShadow( h, nFlags, NULL );
+	return g_pClientShadowMgr->CreateShadow( h, h.GetEntryIndex(), nFlags );
 }
 
 void CClientTools::DestroyShadow( ClientShadowHandle_t h )

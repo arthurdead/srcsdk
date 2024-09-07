@@ -148,6 +148,8 @@ protected:
 	// Deal with teleportation
 	void Teleported();
 
+	virtual void OnNewCurrentTarget( CPathTrack *pTrackNew, CPathTrack *pTrackOld ) {}
+
 private:
 
 	CPathTrack		*BestPointOnPath( CPathTrack *pPath, const Vector &targetPos, float avoidRadius, bool visible, bool bFarthestPointOnPath );

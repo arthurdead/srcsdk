@@ -47,6 +47,15 @@ CGameRulesRegister* CGameRulesRegister::FindByName( const char *pName )
 // ------------------------------------------------------------------------------------------ //
 #define GAMERULES_STRINGTABLE_NAME		"GameRulesCreation"
 
+extern CGameRules *s_pGameRules;
+
+void UTIL_Remove( CGameRules *pGameRules )
+{
+	if(s_pGameRules == pGameRules)
+		s_pGameRules = NULL;
+	delete pGameRules;
+}
+
 #ifdef CLIENT_DLL
 	#include "networkstringtable_clientdll.h"
 
@@ -55,8 +64,7 @@ CGameRulesRegister* CGameRulesRegister::FindByName( const char *pName )
 	void OnGameRulesCreationStringChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, void const *newData )
 	{
 		// The server has created a new CGameRules object.
-		delete g_pGameRules;
-		g_pGameRules = NULL;
+		UTIL_Remove( s_pGameRules );
 
 		const char *pClassName = (const char*)newData;
 		CGameRulesRegister *pReg = CGameRulesRegister::FindByName( pClassName );
@@ -68,7 +76,7 @@ CGameRulesRegister* CGameRulesRegister::FindByName( const char *pName )
 		// Create the new game rules object.
 		pReg->CreateGameRules();
 
-		if ( !g_pGameRules )
+		if ( !s_pGameRules )
 		{
 			Error( "OnGameRulesCreationStringChanged: game rules entity (%s) not created", pClassName );
 		}
@@ -101,8 +109,7 @@ CGameRulesRegister* CGameRulesRegister::FindByName( const char *pName )
 	void CreateGameRulesObject( const char *pClassName )
 	{
 		// Delete the old game rules object.
-		delete g_pGameRules;
-		g_pGameRules = NULL;
+		UTIL_Remove( s_pGameRules );
 
 		// Create a new game rules object.
 		CGameRulesRegister *pReg = CGameRulesRegister::FindByName( pClassName );
@@ -110,7 +117,7 @@ CGameRulesRegister* CGameRulesRegister::FindByName( const char *pName )
 			Error( "InitGameRules: missing gamerules class '%s' on the server", pClassName );
 	
 		pReg->CreateGameRules();
-		if ( !g_pGameRules )
+		if ( !s_pGameRules )
 		{
 			Error( "InitGameRules: game rules entity (%s) not created", pClassName );
 		}
@@ -119,11 +126,11 @@ CGameRulesRegister* CGameRulesRegister::FindByName( const char *pName )
 		Assert( g_StringTableGameRules );
 		g_StringTableGameRules->AddString( true, "classname", strlen( pClassName ) + 1, pClassName );
 
-		if ( g_pGameRules )
+		if ( s_pGameRules )
 		{
-			g_pGameRules->CreateCustomNetworkStringTables();
+			s_pGameRules->CreateCustomNetworkStringTables();
 		}
-	}			
+	}
 
 #endif
 	

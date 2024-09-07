@@ -14,10 +14,20 @@
 #include "tier0/memdbgon.h"
 
 //Global singelton accessor
-static CClientEffectPrecacheSystem	s_ClientEffectPrecacheSystem;
+INIT_PRIORITY(101) static CClientEffectPrecacheSystem	s_ClientEffectPrecacheSystem;
 CClientEffectPrecacheSystem	*ClientEffectPrecacheSystem( void )
 {
 	return &s_ClientEffectPrecacheSystem;
+}
+
+bool CClientEffectPrecacheSystem::Init()
+{
+	for ( int i = 0; i < m_Effects.Count(); i++ )
+	{
+		m_Effects[i]->Init();
+	}
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -66,7 +76,6 @@ void CClientEffectPrecacheSystem::Shutdown( void )
 	// mark all known effects as free
 	for ( int i = 0; i < m_Effects.Count(); i++ )
 	{
-		m_Effects[i]->Shutdown();
 		m_Effects[i]->Release();
 	}
 
@@ -109,45 +118,46 @@ CClientEffect::CClientEffect( const char *pName )
 
 CClientEffect::~CClientEffect()
 {
-	for(int i = 0; i < m_Materials.Count(); ++i)
-	{
-		if(m_Materials[i]) {
-			m_Materials[i]->DeleteIfUnreferenced();
-		}
-	}
+}
+
+void CClientEffect::Init()
+{
+	m_Materials.SetCount( m_MaterialsNames.Count() );
+	Precache();
 }
 
 void CClientEffect::AddMaterial( const char *materialName )
 {
-	IMaterial	*material = materials->FindMaterial( materialName, TEXTURE_GROUP_CLIENT_EFFECTS );
-	if ( !IsErrorMaterial( material ) )
-	{
-		m_Materials.AddToTail( material );
-	}
+	m_MaterialsNames.AddToTail( materialName );
 }
 
 void CClientEffect::Release()
 {
-	for(int i = 0; i < m_Materials.Count(); ++i)
-	{
-		if(m_Materials[i]) {
-			m_Materials[i]->DeleteIfUnreferenced();
-		}
-	}
+	Shutdown();
+	m_Materials.Purge();
 }
 
 void CClientEffect::Precache()
 {
-	if(m_pCondFunc && !m_pCondFunc())
-		return;
-
 	if(m_bPrecached)
 		return;
 
-	for(int i = 0; i < m_Materials.Count(); ++i)
-	{
-		if(m_Materials[i])
+	for(int i = 0; i < m_MaterialsNames.Count(); ++i) {
+		IMaterial	*material = NULL;
+
+		if(!m_pCondFunc || m_pCondFunc()) {
+			material = materials->FindMaterial( m_MaterialsNames[i].Get(), TEXTURE_GROUP_CLIENT_EFFECTS );
+		}
+
+		if ( !IsErrorMaterial( material ) )
+		{
+			m_Materials[i] = material;
 			m_Materials[i]->IncrementReferenceCount();
+		}
+		else
+		{
+			m_Materials[i] = NULL;
+		}
 	}
 
 	m_bPrecached = true;
@@ -162,8 +172,8 @@ void CClientEffect::Shutdown()
 	{
 		if(m_Materials[i]) {
 			m_Materials[i]->DecrementReferenceCount();
+			m_Materials[i]->DeleteIfUnreferenced();
+			m_Materials[i] = NULL;
 		}
 	}
-
-	m_bPrecached = false;
 }

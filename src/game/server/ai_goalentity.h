@@ -40,7 +40,6 @@ public:
 	virtual int	ObjectCaps()	{ return ((BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | FCAP_NOTIFY_ON_TRANSITION); }
 	
 	virtual void	Spawn();
-	virtual void	OnRestore();
 	virtual int		DrawDebugTextOverlays();
 
 	virtual void OnActivate() {}

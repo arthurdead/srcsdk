@@ -24,8 +24,8 @@ BitmapImage::BitmapImage()
 {
 	m_clr.SetColor( 255, 255, 255, 255 );
 	m_pos[ 0 ] = m_pos[ 1 ]  = 0;
-	m_pPanelSize = NULL;
-	m_nTextureId = -1;
+	m_pPanelSize = vgui::INVALID_VPANEL;
+	m_nTextureId = vgui::INVALID_TEXTURE;
 	m_bProcedural = false;
 
 	SetViewport( false, 0.0f, 0.0f, 0.0f, 0.0f );
@@ -33,7 +33,7 @@ BitmapImage::BitmapImage()
 
 BitmapImage::BitmapImage( vgui::VPANEL parent, const char *filename )
 {
-	m_nTextureId = -1;
+	m_nTextureId = vgui::INVALID_TEXTURE;
 	m_clr.SetColor( 255, 255, 255, 255 );
 	m_pos[ 0 ] = m_pos[ 1 ]  = 0;
 	Init( parent, filename );
@@ -47,10 +47,10 @@ BitmapImage::~BitmapImage()
 
 void BitmapImage::DestroyTexture()
 {
-	if ( m_nTextureId != -1 )
+	if ( m_nTextureId != vgui::INVALID_TEXTURE )
 	{
 		vgui::surface()->DestroyTextureID( m_nTextureId );
-		m_nTextureId = -1;
+		m_nTextureId = vgui::INVALID_TEXTURE;
 		m_bProcedural = false;
 	}
 }
@@ -108,7 +108,7 @@ bool BitmapImage::Init( vgui::VPANEL pParent, KeyValues* pInitData )
 
 void BitmapImage::SetImageFile( const char *newImage )
 {
-	if ( m_nTextureId == -1 || m_bProcedural )
+	if ( m_nTextureId == vgui::INVALID_TEXTURE || m_bProcedural )
 	{
 		DestroyTexture();
 		m_nTextureId = vgui::surface()->CreateNewTextureID();
@@ -194,7 +194,7 @@ void BitmapImage::DoPaint( int x, int y, int wide, int tall, float yaw, float fl
 void BitmapImage::DoPaint( vgui::VPANEL pPanel, float yaw, float flAlphaModulate )
 {
 	int wide, tall;
-	if ( pPanel )
+	if ( pPanel != vgui::INVALID_VPANEL )
 	{
 		vgui::ipanel()->GetSize(pPanel, wide, tall );
 	}
@@ -302,7 +302,7 @@ void BitmapImage::SetViewport( bool use, float left, float top, float right, flo
 //-----------------------------------------------------------------------------
 void BitmapImage::SetBitmap( const Bitmap_t &bitmap )
 {
-	if ( m_nTextureId == -1 || !m_bProcedural )
+	if ( m_nTextureId == vgui::INVALID_TEXTURE || !m_bProcedural )
 	{
 		DestroyTexture();
 		m_nTextureId = vgui::surface()->CreateNewTextureID( true );

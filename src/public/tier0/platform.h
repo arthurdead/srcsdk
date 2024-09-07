@@ -187,7 +187,7 @@ typedef unsigned int		uint;
 	// generating accurate compiler warnings
 	#define NORETURN				__declspec( noreturn )
 #else
-	#define NORETURN
+	#define NORETURN __attribute__((__noreturn__))
 #endif
 
 // This can be used to declare an abstract (interface only) class.
@@ -270,9 +270,10 @@ typedef unsigned int DWORD;
 typedef unsigned short WORD;
 typedef void * HINSTANCE;
 #define _MAX_PATH PATH_MAX
-#define __cdecl
-#define __stdcall
-#define __declspec
+#define __cdecl __attribute__((__cdecl__))
+#define __stdcall __attribute__((__stdcall__))
+#define __thiscall __attribute__((__thiscall__))
+#define __declspec(...) __attribute__((__VA_ARGS__))
 
 #endif // defined(_WIN32) && !defined(WINDED)
 
@@ -292,8 +293,7 @@ typedef void * HINSTANCE;
 
 #ifdef GNUC
 #undef offsetof
-//#define offsetof( type, var ) __builtin_offsetof( type, var ) 
-#define offsetof(s,m)	(size_t)&(((s *)0)->m)
+#define offsetof( type, var ) __builtin_offsetof( type, var ) 
 #else
 #undef offsetof
 #define offsetof(s,m)	(size_t)&(((s *)0)->m)
@@ -417,11 +417,11 @@ typedef void * HINSTANCE;
 
 // Linux had a few areas where it didn't construct objects in the same order that Windows does.
 // So when CVProfile::CVProfile() would access g_pMemAlloc, it would crash because the allocator wasn't initalized yet.
-#ifdef POSIX
-	#define CONSTRUCT_EARLY __attribute__((init_priority(101)))
+#ifdef GNUC
+	#define INIT_PRIORITY(...) __attribute__((init_priority((__VA_ARGS__))))
 #else
-	#define CONSTRUCT_EARLY
-	#endif
+	#define INIT_PRIORITY(...)
+#endif
 
 #if defined(_MSC_VER)
 	#define SELECTANY __declspec(selectany)
@@ -430,11 +430,7 @@ typedef void * HINSTANCE;
 	#define FMTFUNCTION( a, b )
 #elif defined(GNUC)
 	#define SELECTANY __attribute__((weak))
-	#if defined(LINUX) && !defined(DEDICATED)
-		#define RESTRICT
-	#else
-		#define RESTRICT __restrict
-	#endif
+	#define RESTRICT __restrict
 	#define RESTRICT_FUNC
 	// squirrel.h does a #define printf DevMsg which leads to warnings when we try
 	// to use printf as the prototype format function. Using __printf__ instead.
@@ -448,24 +444,30 @@ typedef void * HINSTANCE;
 
 #if defined( _WIN32 )
 
-	// Used for dll exporting and importing
-	#define DLL_EXPORT				extern "C" __declspec( dllexport )
-	#define DLL_IMPORT				extern "C" __declspec( dllimport )
+// Used for dll exporting and importing
+#define DLL_EXPORT				extern "C" __declspec( dllexport )
+#define DLL_IMPORT				extern "C" __declspec( dllimport )
 
-	// Can't use extern "C" when DLL exporting a class
-	#define DLL_CLASS_EXPORT		__declspec( dllexport )
-	#define DLL_CLASS_IMPORT		__declspec( dllimport )
+#define LIB_EXPORT				extern "C"
 
-	// Can't use extern "C" when DLL exporting a global
-	#define DLL_GLOBAL_EXPORT		extern __declspec( dllexport )
-	#define DLL_GLOBAL_IMPORT		extern __declspec( dllimport )
+// Can't use extern "C" when DLL exporting a class
+#define DLL_CLASS_EXPORT		__declspec( dllexport )
+#define DLL_CLASS_IMPORT		__declspec( dllimport )
 
-	#define DLL_LOCAL
+// Can't use extern "C" when DLL exporting a global
+#define DLL_GLOBAL_EXPORT		extern __declspec( dllexport )
+#define DLL_GLOBAL_IMPORT		extern __declspec( dllimport )
+
+#define DLL_LOCAL
+
+#define LIB_LOCAL
 
 #elif defined GNUC
 // Used for dll exporting and importing
 #define  DLL_EXPORT   extern "C" __attribute__ ((visibility("default")))
 #define  DLL_IMPORT   extern "C"
+
+#define  LIB_EXPORT   extern "C" __attribute__ ((visibility("default")))
 
 // Can't use extern "C" when DLL exporting a class
 #define  DLL_CLASS_EXPORT __attribute__ ((visibility("default")))
@@ -477,21 +479,27 @@ typedef void * HINSTANCE;
 
 #define  DLL_LOCAL __attribute__ ((visibility("hidden")))
 
+#define  LIB_LOCAL __attribute__ ((visibility("hidden")))
+
 #else
 #error "Unsupported Platform."
 #endif
 
 // Used for standard calling conventions
 #if defined( _WIN32 )
+	#define  CDECL				__cdecl
 	#define  STDCALL				__stdcall
 	#define  FASTCALL				__fastcall
+	#define  THISCALL				__thiscall
 	#define  FORCEINLINE			__forceinline
 	// GCC 3.4.1 has a bug in supporting forced inline of templated functions
 	// this macro lets us not force inlining in that case
 	#define  FORCEINLINE_TEMPLATE		__forceinline
 #else
-	#define  STDCALL
-	#define  FASTCALL
+	#define  CDECL __attribute__((__cdecl__))
+	#define  STDCALL __attribute__((__stdcall__))
+	#define  FASTCALL __attribute__((__fastcall__))
+	#define  THISCALL __attribute__((__thiscall__))
 	#ifdef _LINUX_DEBUGGABLE
 		#define  FORCEINLINE
 	#else
@@ -517,12 +525,16 @@ typedef void * HINSTANCE;
 #ifdef _MSC_VER
 	#define HINT(THE_HINT)	__assume((THE_HINT))
 #else
-	#define HINT(THE_HINT)	0
+	#define HINT(THE_HINT)	__attribute__((__assume__((THE_HINT))))
 #endif
 
 // Marks the codepath from here until the next branch entry point as unreachable,
 // and asserts if any attempt is made to execute it.
+#ifdef GNUC
+#define UNREACHABLE() __builtin_unreachable()
+#else
 #define UNREACHABLE() { Assert(0); HINT(0); }
+#endif
 
 // In cases where no default is present or appropriate, this causes MSVC to generate
 // as little code as possible, and throw an assertion in debug.

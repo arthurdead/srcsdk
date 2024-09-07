@@ -21,6 +21,12 @@ class C_BaseCombatCharacter;
 
 class ConVar;
 
+#define BULLET_MASS_GRAINS_TO_LB(grains) (0.002285f*(grains)/16.0f)
+#define BULLET_MASS_GRAINS_TO_KG(grains) lbs2kg(BULLET_MASS_GRAINS_TO_LB(grains))
+
+#define BULLET_IMPULSE_EXAGGERATION 3.5f
+#define BULLET_IMPULSE(grains, ftpersec) ((ftpersec)*12*BULLET_MASS_GRAINS_TO_KG(grains)*BULLET_IMPULSE_EXAGGERATION)
+
 struct Ammo_t 
 {
 	char 				*pName;

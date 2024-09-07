@@ -1,5 +1,0 @@
-option('src_root_dir', type: 'string', yield: true)
-option('game_dir', type: 'string', yield: true)
-option('client', type: 'boolean', value: true, yield: true)
-option('server', type: 'boolean', value: true, yield: true)
-option('dedicated', type: 'boolean', value: false, yield: true)

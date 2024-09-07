@@ -310,7 +310,22 @@ void* SendProxy_SendLocalDataTable( const SendProp *pProp, const void *pStruct, 
 }
 
 
+//-----------------------------------------------------------------------------
+// Purpose: Filters updates to a variable so that only non-local players see
+// the changes.  This is so we can send a low-res origin to non-local players
+// while sending a hi-res one to the local player.
+// Input  : *pVarData -
+//			*pOut -
+//			objectID -
+//-----------------------------------------------------------------------------
 
+void* SendProxy_SendNonLocalDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+{
+	pRecipients->SetAllRecipients();
+	pRecipients->ClearRecipient( objectID - 1 );
+	return ( void * )pVarData;
+}
+REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendNonLocalDataTable );
 
 
 // ---------------------------------------------------------------------- //

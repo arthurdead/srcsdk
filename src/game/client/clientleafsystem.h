@@ -133,11 +133,15 @@ struct SetupRenderInfo_t
 	int m_nViewID;
 	bool m_bDrawDetailObjects : 1;
 	bool m_bDrawTranslucentObjects : 1;
+	bool m_bFastEntityRendering : 1;
+	bool m_bDrawDepthViewNonCachedObjectsOnly : 1;
 
 	SetupRenderInfo_t()
 	{
 		m_bDrawDetailObjects = true;
 		m_bDrawTranslucentObjects = true;
+		m_bFastEntityRendering = false;
+		m_bDrawDepthViewNonCachedObjectsOnly = false;
 	}
 };
 
@@ -285,6 +289,12 @@ public:
 
 	//Assuming the renderable would be in a properly built render list, generate a render list entry
 	virtual EngineRenderGroup_t GenerateRenderListEntry( IClientRenderable *pRenderable, CClientRenderablesList::CEntry &entryOut ) = 0; 
+
+	// Enable/disable rendering into the shadow depth buffer
+	virtual void DisableShadowDepthRendering(ClientRenderHandle_t handle, bool bDisable) = 0;
+
+	// Enable/disable caching in the shadow depth buffer
+	virtual void DisableShadowDepthCaching(ClientRenderHandle_t handle, bool bDisable) = 0;
 };
 
 

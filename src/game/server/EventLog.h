@@ -37,8 +37,17 @@ protected:
 	virtual bool PrintPlayerEvent( IGameEvent * event );
 	virtual bool PrintTeamEvent( IGameEvent * event );
 	virtual bool PrintOtherEvent( IGameEvent * event );
+
+public:
+	enum
+	{
+		PLAYER_LOGINFO_SIZE = 256,
+	};
+
+	virtual void FormatPlayer( CBaseEntity *ent, char *str, int len ) const;
+	const char *FormatPlayer( CBaseEntity *ent ) const;
 };
 
-extern IGameSystem* GameLogSystem();
+extern CEventLog* GameLogSystem();
 
 #endif // EVENTLOG_H

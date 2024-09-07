@@ -91,6 +91,16 @@ webm_opts.add_cmake_defines({
 })
 webm = cmake.subproject('webm', options: webm_opts)
 
+install_data(
+	files(
+		join_paths(video_services_root_dir,'lib','linux32','libSDL2.so'),
+		join_paths(video_services_root_dir,'lib','linux32','libvpx.so'),
+		join_paths(video_services_root_dir,'lib','linux32','libvpx.so.8.0.0'),
+	),
+	install_mode: 'rwxr-xr-x',
+	install_dir: join_paths(game_dir,'bin')
+)
+
 video_services_lib = shared_library('video_services',name_prefix:'',
 	cpp_args: [
 		'-DDLLNAME=video_services',
@@ -116,7 +126,7 @@ video_services_lib = shared_library('video_services',name_prefix:'',
 		tier3.get_variable('tier3_dep'),
 		vstdlib.get_variable('vstdlib_dep'),
 		hackmgr.get_variable('hackmgr_dep'),
-		source_base.get_variable('source_os_shared_lib_dep'),
+		source_base.get_variable('source_shared_lib_dep'),
 		vpx,
 		opus,
 		vorbis,
@@ -125,7 +135,8 @@ video_services_lib = shared_library('video_services',name_prefix:'',
 		webm.get_variable('webm_dep'),
 	],
 	install: true,
-	install_dir: join_paths(game_dir,'bin')
+	install_dir: join_paths(game_dir,'bin'),
+	install_rpath: '$ORIGIN'
 )
 
 video_services_dep = declare_dependency(

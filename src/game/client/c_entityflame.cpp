@@ -49,6 +49,8 @@ void C_EntityFlame::StopEffect( void )
 	if ( m_hEffect )
 	{
 		ParticleProp()->StopEmission( m_hEffect, true );
+		m_hEffect->SetControlPointEntity( 0, NULL );
+		m_hEffect->SetControlPointEntity( 1, NULL );
 		m_hEffect = NULL;
 	}
 
@@ -77,6 +79,8 @@ void C_EntityFlame::CreateEffect( void )
 	{
 		m_hOldAttached = m_hEntAttached;
 		ParticleProp()->StopEmission( m_hEffect, true );
+		m_hEffect->SetControlPointEntity( 0, NULL );
+		m_hEffect->SetControlPointEntity( 1, NULL );
 		m_hEffect = NULL;
 	}
 
@@ -128,10 +132,9 @@ bool C_EntityFlame::Simulate( void )
 	if ( gpGlobals->frametime <= 0.0f )
 		return true;
 
-#ifdef HL2_EPISODIC 
 	if ( IsEffectActive(EF_BRIGHTLIGHT) || IsEffectActive(EF_DIMLIGHT) )
 	{
-		dlight_t *dl = effects->CL_AllocDlight( index );
+		dlight_t *dl = effects->CL_AllocDlight( entindex() );
 		dl->origin = GetAbsOrigin();
  		dl->origin[2] += 16;
 		dl->color.r = 254;
@@ -141,16 +144,14 @@ bool C_EntityFlame::Simulate( void )
 		dl->die = gpGlobals->curtime + 0.001;
 	}
 
-#endif // HL2_EPISODIC 
-
 	return true;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void C_EntityFlame::ClientThink( void )
+void C_EntityFlame::RemoveThink( void )
 {
 	StopEffect();
-	Release();
+	UTIL_Remove( this );
 }

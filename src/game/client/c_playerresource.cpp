@@ -80,12 +80,6 @@ C_PlayerResource::C_PlayerResource()
 		m_Colors[i] = COLOR_GREY;
 	}
 
-#ifdef HL2MP
-	m_Colors[TEAM_COMBINE] = COLOR_BLUE;
-	m_Colors[TEAM_REBELS] = COLOR_RED;
-	m_Colors[TEAM_UNASSIGNED] = COLOR_YELLOW;
-#endif
-
 	g_PR = this;
 }
 
@@ -170,7 +164,7 @@ bool C_PlayerResource::IsAlive(int iIndex )
 	return m_bAlive[iIndex];
 }
 
-int C_PlayerResource::GetTeam(int iIndex )
+Team_t C_PlayerResource::GetTeam(int iIndex )
 {
 	if ( iIndex < 1 || iIndex > MAX_PLAYERS )
 	{
@@ -183,9 +177,9 @@ int C_PlayerResource::GetTeam(int iIndex )
 	}
 }
 
-const char * C_PlayerResource::GetTeamName(int index)
+const char * C_PlayerResource::GetTeamName(Team_t index)
 {
-	C_Team *team = GetGlobalTeam( index );
+	C_Team *team = GetGlobalTeamByTeam( index );
 
 	if ( !team )
 		return "Unknown";
@@ -193,9 +187,9 @@ const char * C_PlayerResource::GetTeamName(int index)
 	return team->Get_Name();
 }
 
-int C_PlayerResource::GetTeamScore(int index)
+int C_PlayerResource::GetTeamScore(Team_t index)
 {
-	C_Team *team = GetGlobalTeam( index );
+	C_Team *team = GetGlobalTeamByTeam( index );
 
 	if ( !team )
 		return 0;
@@ -324,7 +318,7 @@ int	C_PlayerResource::GetHealth( int iIndex )
 	return m_iHealth[iIndex];
 }
 
-const Color &C_PlayerResource::GetTeamColor(int index )
+const Color &C_PlayerResource::GetTeamColor(Team_t index )
 {
 	if ( index < 0 || index >= MAX_TEAMS )
 	{

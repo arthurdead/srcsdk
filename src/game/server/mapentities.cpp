@@ -34,35 +34,37 @@ CBaseEntity *CreateEntityByName( const char *className, int iForceEdictIndex, bo
 {
 	if ( iForceEdictIndex != -1 )
 	{
-		g_pForceAttachEdict = engine->CreateEdict( iForceEdictIndex );
-		if ( !g_pForceAttachEdict )
-			Error( "CreateEntityByName( %s, %d ) - CreateEdict failed.", className, iForceEdictIndex );
+		CBaseEntity *pOldEntity = gEntList.LookupEntityByNetworkIndex( iForceEdictIndex );
+		Assert(!pOldEntity);
+		if( pOldEntity ) {
+			UTIL_Remove( pOldEntity );
+			pOldEntity->NetworkProp()->DetachEdict();
+		} else {
+			if( !g_pForceAttachEdict ) {
+				g_pForceAttachEdict = INDEXENT(iForceEdictIndex);
+			}
+		}
+
+		if(!g_pForceAttachEdict) {
+			g_pForceAttachEdict = engine->CreateEdict( iForceEdictIndex );
+			if ( !g_pForceAttachEdict ) {
+				Error( "CreateEntityByName( %s, %d ) - CreateEdict failed.", className, iForceEdictIndex );
+			}
+		}
 	}
 
-	IServerNetworkable *pNetwork = EntityFactoryDictionary()->Create( className );
+	CBaseEntity *pEntity = EntityFactoryDictionary()->Create( className );
+	Assert( pEntity );
 	g_pForceAttachEdict = NULL;
 
-	if ( !pNetwork )
+	if ( !pEntity )
 		return NULL;
 
-	CBaseEntity *pEntity = pNetwork->GetBaseEntity();
-	Assert( pEntity );
 	if ( bNotify )
 	{
 		gEntList.NotifyCreateEntity( pEntity );
 	}
 	return pEntity;
-}
-
-CBaseNetworkable *CreateNetworkableByName( const char *className )
-{
-	IServerNetworkable *pNetwork = EntityFactoryDictionary()->Create( className );
-	if ( !pNetwork )
-		return NULL;
-
-	CBaseNetworkable *pNetworkable = pNetwork->GetBaseNetworkable();
-	Assert( pNetworkable );
-	return pNetworkable;
 }
 
 void FreeContainingEntity( edict_t *ed )
@@ -98,7 +100,7 @@ string_t ExtractParentName(string_t parentName)
 //			pEnt2 - 
 // Output : Returns -1, 0, or 1 per qsort spec.
 //-----------------------------------------------------------------------------
-static int __cdecl CompareSpawnOrder(HierarchicalSpawn_t *pEnt1, HierarchicalSpawn_t *pEnt2)
+static int CDECL CompareSpawnOrder(HierarchicalSpawn_t *pEnt1, HierarchicalSpawn_t *pEnt2)
 {
 	if (pEnt1->m_nDepth == pEnt2->m_nDepth)
 	{
@@ -190,7 +192,7 @@ static void SortSpawnListByHierarchy( int nEntities, HierarchicalSpawn_t *pSpawn
 	// that order. This insures that each entity's parent spawns before it does so that
 	// it can properly set up anything that relies on hierarchy.
 #ifdef _WIN32
-	qsort(&pSpawnList[0], nEntities, sizeof(pSpawnList[0]), (int (__cdecl *)(const void *, const void *))CompareSpawnOrder);
+	qsort(&pSpawnList[0], nEntities, sizeof(pSpawnList[0]), (int (CDECL *)(const void *, const void *))CompareSpawnOrder);
 #elif POSIX
 	qsort(&pSpawnList[0], nEntities, sizeof(pSpawnList[0]), (int (*)(const void *, const void *))CompareSpawnOrder);
 #endif

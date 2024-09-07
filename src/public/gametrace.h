@@ -16,7 +16,7 @@
 
 #if defined( CLIENT_DLL )
 	class C_BaseEntity;
-#else
+#elif defined GAME_DLL
 	class CBaseEntity;
 #endif
 
@@ -61,8 +61,10 @@ public:
 
 #if defined( CLIENT_DLL )
 		C_BaseEntity *m_pEnt;
-#else
+#elif defined GAME_DLL
 		CBaseEntity *m_pEnt;
+#else
+		IHandleEntity *m_pEnt;
 #endif
 
 	// NOTE: this member is overloaded.

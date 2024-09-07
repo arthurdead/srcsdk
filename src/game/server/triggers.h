@@ -11,27 +11,7 @@
 
 #include "basetoggle.h"
 #include "entityoutput.h"
-
-//
-// Spawnflags
-//
-
-enum
-{
-	SF_TRIGGER_ALLOW_CLIENTS				= 0x01,		// Players can fire this trigger
-	SF_TRIGGER_ALLOW_NPCS					= 0x02,		// NPCS can fire this trigger
-	SF_TRIGGER_ALLOW_PUSHABLES				= 0x04,		// Pushables can fire this trigger
-	SF_TRIGGER_ALLOW_PHYSICS				= 0x08,		// Physics objects can fire this trigger
-	SF_TRIGGER_ONLY_PLAYER_ALLY_NPCS		= 0x10,		// *if* NPCs can fire this trigger, this flag means only player allies do so
-	SF_TRIGGER_ONLY_CLIENTS_IN_VEHICLES		= 0x20,		// *if* Players can fire this trigger, this flag means only players inside vehicles can 
-	SF_TRIGGER_ALLOW_ALL					= 0x40,		// Everything can fire this trigger EXCEPT DEBRIS!
-	SF_TRIGGER_ONLY_CLIENTS_OUT_OF_VEHICLES	= 0x200,	// *if* Players can fire this trigger, this flag means only players outside vehicles can 
-	SF_TRIG_PUSH_ONCE						= 0x80,		// trigger_push removes itself after firing once
-	SF_TRIG_PUSH_AFFECT_PLAYER_ON_LADDER	= 0x100,	// if pushed object is player on a ladder, then this disengages them from the ladder (HL2only)
-	SF_TRIG_TOUCH_DEBRIS 					= 0x400,	// Will touch physics debris objects
-	SF_TRIGGER_ONLY_NPCS_IN_VEHICLES		= 0X800,	// *if* NPCs can fire this trigger, only NPCs in vehicles do so (respects player ally flag too)
-	SF_TRIGGER_DISALLOW_BOTS                = 0x1000,   // Bots are not allowed to fire this trigger
-};
+#include "triggers_shared.h"
 
 // DVS TODO: get rid of CBaseToggle
 //-----------------------------------------------------------------------------
@@ -300,6 +280,7 @@ public:
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void FollowTarget( void );
 	void Move(void);
+	void StartCameraShot( const char *pszShotType, CBaseEntity *pSceneEntity, CBaseEntity *pActor1, CBaseEntity *pActor2, float duration );
 
 	// Always transmit to clients so they know where to move the view to
 	virtual int UpdateTransmitState();
@@ -309,6 +290,12 @@ public:
 	// Input handlers
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
+	void InputSetTarget( inputdata_t &inputdata );
+	void InputSetTargetAttachment( inputdata_t &inputdata );
+	void InputReturnToEyes( inputdata_t &inputdata );
+	void InputTeleportToView( inputdata_t &inputdata );
+	void InputSetTrackSpeed( inputdata_t &inputdata );
+	void InputSetPath( inputdata_t &inputdata );
 
 private:
 	EHANDLE m_hPlayer;
@@ -328,6 +315,8 @@ private:
 	int	  m_state;
 	Vector m_vecMoveDir;
 
+	float m_fov;
+	float m_fovSpeed;
 
 	string_t m_iszTargetAttachment;
 	int	  m_iAttachmentIndex;

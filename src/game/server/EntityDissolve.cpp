@@ -338,7 +338,7 @@ void CEntityDissolve::DissolveThink( void )
 		// passing NULL to TakeDamage causes bad things to happen
 		CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin()); 
 
-		int iNoPhysicsDamage = g_pGameRules->Damage_GetNoPhysicsForce();
+		int iNoPhysicsDamage = GameRules()->Damage_GetNoPhysicsForce();
 		CTakeDamageInfo info( pPlayer, pPlayer, 10000.0, DMG_GENERIC | DMG_REMOVENORAGDOLL | iNoPhysicsDamage );
 		pTarget->TakeDamage( info );
 

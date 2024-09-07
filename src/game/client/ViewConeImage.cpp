@@ -43,7 +43,7 @@ void CViewConeImage::Paint( float yaw )
 {
 	g_pMatSystemSurface->DisableClipping( true );
 
-	m_Image.DoPaint( NULL, yaw );
+	m_Image.DoPaint( vgui::INVALID_VPANEL, yaw );
 
 	g_pMatSystemSurface->DisableClipping( false );
 }

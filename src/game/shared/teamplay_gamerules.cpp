@@ -28,6 +28,7 @@ static int team_scores[MAX_TEAMS];
 static int num_teams = 0;
 
 extern bool		g_fGameOver;
+extern ConVar sv_allchat;
 
 REGISTER_GAMERULES_CLASS( CTeamplayRules );
 
@@ -53,6 +54,8 @@ CTeamplayRules::CTeamplayRules()
 //-----------------------------------------------------------------------------
 void CTeamplayRules::Precache( void )
 {
+	BaseClass::Precache();
+
 	// Call the Team Manager's precaches
 	for ( int i = 0; i < GetNumberOfTeams(); i++ )
 	{
@@ -392,6 +395,14 @@ int CTeamplayRules::PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarg
 //-----------------------------------------------------------------------------
 bool CTeamplayRules::PlayerCanHearChat( CBasePlayer *pListener, CBasePlayer *pSpeaker )
 {
+	if ( sv_allchat.GetBool() )
+	{
+		if ( !pSpeaker->IsAlive() )
+		{
+			return !pListener->IsAlive();
+		}
+	}
+
 	return ( PlayerRelationship( pListener, pSpeaker ) == GR_TEAMMATE );
 }
 

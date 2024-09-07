@@ -100,8 +100,8 @@ public:
 
 	/// Remove all deferred responses matching the concept and issuer.
 	void Remove( const AIConcept_t &concept,  ///< concept to dispatch
-		CBaseEntity * const pIssuer = NULL ///< the entity issuing the response, if one exists.
-		);
+		CBaseEntity * const RESTRICT pIssuer = NULL ///< the entity issuing the response, if one exists.
+		) RESTRICT;
 
 	/// Remove all deferred responses queued to be spoken by given character
 	void RemoveSpeechQueuedFor( const CBaseEntity *pSpeaker	);

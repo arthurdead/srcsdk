@@ -1413,22 +1413,15 @@ CBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex,
 
 			// Skip multiplayer pieces that should be spawning on the other dll
 #ifdef GAME_DLL
-			if ( gpGlobals->maxClients > 1 && breakable_multiplayer.GetBool() )
+			if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_CLIENTSIDE )
+				continue;
 #else
-			if ( gpGlobals->maxClients > 1 )
-#endif
-			{
-#ifdef GAME_DLL
-				if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_CLIENTSIDE )
-					continue;
-#else
-				if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_SERVERSIDE )
-					continue;
+			if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_SERVERSIDE )
+				continue;
 #endif
 
-				if ( !defaultLocation && list[i].mpBreakMode == MULTIPLAYER_BREAK_DEFAULT )
-					continue;
-			}
+			if ( !defaultLocation && list[i].mpBreakMode == MULTIPLAYER_BREAK_DEFAULT )
+				continue;
 
 			if ( ( nPropCount != -1 ) && ( nPropBreakablesPerFrameCount > nPropCount ) )
 				break;

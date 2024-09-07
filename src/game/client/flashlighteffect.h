@@ -22,7 +22,7 @@ class CFlashlightEffect
 public:
 
 	CFlashlightEffect(int nEntIndex = 0, const char *pszTextureName = NULL, float flFov = 0.0f, float flFarZ = 0.0f, float flLinearAtten = 0.0f );
-	~CFlashlightEffect();
+	virtual ~CFlashlightEffect();
 
 	void UpdateLight( int nEntIdx, const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp, float flFov, 
 						float flFarZ, float flLinearAtten, bool castsShadows, const char* pTextureName );
@@ -48,12 +48,14 @@ public:
 	}
 
 protected:
+	// @Deferred - Biohazard
+	virtual void UpdateLightProjection(FlashlightState_t &state);
 
 	bool UpdateDefaultFlashlightState(	FlashlightState_t& state, const Vector &vecPos, const Vector &vecDir, const Vector &vecRight,
 										const Vector &vecUp, bool castsShadows, bool bTracePlayers = true );
 	bool ComputeLightPosAndOrientation( const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp,
 										Vector& vecFinalPos, Quaternion& quatOrientation, bool bTracePlayers );
-	void LightOff();
+	virtual void LightOff();
 
 	void UpdateFlashlightTexture( const char* pTextureName );
 	void UpdateLightTopDown(const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp);
@@ -112,40 +114,7 @@ public:
 								m_flFarZ( 0.0f ), m_flLinearAtten( 0.0f ), m_nMuzzleFlashFrameCountdown( 0 ), m_flMuzzleFlashBrightness( 1.0f ),
 								m_bFlashlightOn( false ), m_nFXComputeFrame( -1 ), m_bFlashlightOverride( false ) {}
 
-	void TurnOnFlashlight( int nEntIndex = 0, const char *pszTextureName = NULL, float flFov = 0.0f, float flFarZ = 0.0f, float flLinearAtten = 0.0f )
-	{
-		m_pFlashlightTextureName = pszTextureName;
-		m_nFlashlightEntIndex = nEntIndex;
-		m_flFov = flFov;
-		m_flFarZ = flFarZ;
-		m_flLinearAtten = flLinearAtten;
-		m_bFlashlightOn = true;
-
-		if ( m_bFlashlightOverride )
-		{
-			// somebody is overriding the flashlight. We're keeping around the params to restore it later.
-			return;
-		}
-
-		if ( !m_pFlashlightEffect )
-		{
-			if( pszTextureName )
-			{
-				m_pFlashlightEffect = new CFlashlightEffect( m_nFlashlightEntIndex, pszTextureName, flFov, flFarZ, flLinearAtten );
-			}
-			else
-			{
-				m_pFlashlightEffect = new CFlashlightEffect( m_nFlashlightEntIndex );
-			}
-
-			if( !m_pFlashlightEffect )
-			{
-				return;
-			}
-		}
-
-		m_pFlashlightEffect->TurnOn();
-	}
+	void TurnOnFlashlight( int nEntIndex = 0, const char *pszTextureName = NULL, float flFov = 0.0f, float flFarZ = 0.0f, float flLinearAtten = 0.0f );
 
 	void TurnOffFlashlight( bool bForce = false )
 	{

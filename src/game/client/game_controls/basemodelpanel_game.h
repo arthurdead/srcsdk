@@ -23,8 +23,9 @@ class CModelPanelModel : public C_BaseFlex
 {
 public:
 	CModelPanelModel()
-		: C_BaseFlex(true)
+		: C_BaseFlex()
 	{
+		AddEFlags(EFL_NOT_NETWORKED);
 	}
 	DECLARE_CLASS( CModelPanelModel, C_BaseFlex );
 

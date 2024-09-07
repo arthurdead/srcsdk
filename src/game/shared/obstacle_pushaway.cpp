@@ -79,11 +79,7 @@ bool IsPushableEntity( CBaseEntity *pEnt )
 	{
 		if ( pEnt->GetCollisionGroup() == COLLISION_GROUP_NONE )
 		{
-#ifdef CLIENT_DLL
-			if ( FClassnameIs( pEnt, "class CPhysicsPropMultiplayer" ) )
-#else
 			if ( FClassnameIs( pEnt, "prop_physics_multiplayer" ) )
-#endif // CLIENT_DLL
 			{
 				return true;
 			}

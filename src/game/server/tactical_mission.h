@@ -102,8 +102,5 @@ protected:
 // global singleton
 extern CTacticalMissionManager &TheTacticalMissions( void );
 
-// factory for instantiating the global singleton
-extern CTacticalMissionManager *TacticalMissionFactory( void );
-
 
 #endif // TACTICAL_MISSION_H

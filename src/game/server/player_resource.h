@@ -18,11 +18,14 @@ class CPlayerResource : public CBaseEntity
 public:
 	DECLARE_SERVERCLASS();
 
+	CPlayerResource();
+
 	virtual void Spawn( void );
 	virtual	int	 ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
 	virtual void ResourceThink( void );
 	virtual void UpdatePlayerData( void );
 	virtual int  UpdateTransmitState(void);
+	virtual void			UpdateOnRemove( void );
 
 protected:
 	// Data for each player that's propagated to all clients

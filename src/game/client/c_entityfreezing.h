@@ -32,7 +32,7 @@ public:
 	virtual bool	ShouldDraw() { return true; }
 	virtual void	OnDataChanged( DataUpdateType_t updateType );
 
-	void			ClientThink( void );
+	void			AlphaThink( void );
 
 private:
 	Vector	m_vFreezingOrigin;

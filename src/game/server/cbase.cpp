@@ -450,6 +450,45 @@ void CBaseEntityOutput::DeleteAllElements( void )
 
 }
 
+/// EVENTS save/restore parsing wrapper
+
+class CEventsSaveDataOps : public ICustomFieldOps
+{
+	virtual bool IsEmpty( const FieldInfo_t &fieldInfo )
+	{
+		AssertMsg( fieldInfo.pTypeDesc->fieldSize == 1, "CEventsSaveDataOps does not support arrays");
+		
+		// check all the elements of the array (usually only 1)
+		CBaseEntityOutput *ev = (CBaseEntityOutput*)fieldInfo.pField;
+		const int fieldSize = fieldInfo.pTypeDesc->fieldSize;
+		for ( int i = 0; i < fieldSize; i++, ev++ )
+		{
+			// It's not empty if it has events or if it has a non-void variant value
+			if (( ev->NumberOfElements() != 0 ) || ( ev->ValueFieldType() != FIELD_VOID ))
+				return 0;
+		}
+
+		// variant has no data
+		return 1;
+	}
+
+	virtual void MakeEmpty( const FieldInfo_t &fieldInfo )
+	{
+		// Don't no how to. This is okay, since objects of this type
+		// are always born clean before restore, and not reused
+	}
+
+	virtual bool Parse( const FieldInfo_t &fieldInfo, char const* szValue )
+	{
+		CBaseEntityOutput *ev = (CBaseEntityOutput*)fieldInfo.pField;
+		ev->ParseEventAction( szValue );
+		return true;
+	}
+};
+
+CEventsSaveDataOps g_EventsDataOps;
+ICustomFieldOps *eventFuncs = &g_EventsDataOps;
+
 //-----------------------------------------------------------------------------
 //			CMultiInputVar implementation
 //

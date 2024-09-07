@@ -117,10 +117,13 @@ class SendTable;
 //  a client side class.  Probably could be templatized at some point.
 
 #define LINK_ENTITY_TO_CLASS( localName, className )						\
-	static C_BaseEntity *C##localName##Factory( void )						\
+	static C_BaseEntity *C##localName##Factory( const char *pClassName )						\
 	{																		\
 		C_BaseEntity *pEnt = static_cast< C_BaseEntity * >( new className ); \
-		pEnt->PostConstructor( #localName ); \
+		if(!pEnt->PostConstructor( pClassName )) { \
+			UTIL_Remove( pEnt ); \
+			return NULL; \
+		} \
 		return pEnt;				\
 	};																		\
 	class C##localName##Foo													\
@@ -132,7 +135,7 @@ class SendTable;
 				&C##localName##Factory );									\
 		}																	\
 	};																		\
-	static C##localName##Foo g_C##localName##Foo;
+	INIT_PRIORITY(65535) static C##localName##Foo g_C##localName##Foo;
 
 #define BEGIN_NETWORK_TABLE( className, tableName ) BEGIN_RECV_TABLE( className, tableName )
 #define BEGIN_NETWORK_TABLE_NOBASE( className, tableName ) BEGIN_RECV_TABLE_NOBASE( className, tableName )

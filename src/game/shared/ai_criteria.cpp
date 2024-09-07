@@ -17,3 +17,18 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
+
+using namespace ResponseRules;
+
+void CriteriaSet::WriteToEntity( CGameBaseEntity *pEntity )
+{
+	if ( GetCount() < 1 )
+		return;
+
+#ifdef GAME_DLL
+	for ( int i = Head() ; IsValidIndex(i); i = Next(i) )
+	{
+		pEntity->AddContext( GetName(i), GetValue(i), 0 );
+	}
+#endif
+}

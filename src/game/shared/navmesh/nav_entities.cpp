@@ -373,7 +373,7 @@ int CFuncNavBlocker::DrawDebugTextOverlays( void )
 		{
 			if ( IsBlockingNav( i ) )
 			{
-				CTeam *team = GetGlobalTeam( i );
+				CTeam *team = GetGlobalTeamByTeam( i );
 				if ( team )
 				{
 					EntityText( offset++, str.sprintf( "blocking team %s", team->GetName() ), 0 );

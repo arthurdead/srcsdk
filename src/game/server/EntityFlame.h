@@ -35,6 +35,8 @@ public:
 	{ return Create(pTarget, flLifetime, 0.0f, useHitboxes); }
 	static CEntityFlame	*Create( CBaseEntity *pTarget, bool useHitboxes )
 	{ return Create(pTarget, 0.0f, 0.0f, useHitboxes); }
+	static CEntityFlame	*Create( CBaseEntity *pTarget )
+	{ return Create(pTarget, 0.0f, 0.0f, true); }
 
 	void	AttachToEntity( CBaseEntity *pTarget );
 	void	SetLifetime( float lifetime );

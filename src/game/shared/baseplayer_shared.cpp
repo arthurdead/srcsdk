@@ -72,7 +72,7 @@
 				return false;
 #endif // CSTRIKE_DLL
 
-			return g_pGameRules->CanEntityBeUsePushed( pEntity );
+			return GameRules()->CanEntityBeUsePushed( pEntity );
 		}
 	};
 #endif
@@ -145,6 +145,11 @@ float CBasePlayer::GetPlayerMaxSpeed()
 //-----------------------------------------------------------------------------
 void CBasePlayer::ItemPreFrame()
 {
+	if (GetFlags() & FL_FROZEN )
+	{
+		return;
+	}
+
 	// Handle use events
 	PlayerUse();
 
@@ -216,6 +221,11 @@ void CBasePlayer::ItemPostFrame()
 
 	// Put viewmodels into basically correct place based on new player origin
 	CalcViewModelView( EyePosition(), EyeAngles() );
+
+	if (GetFlags() & FL_FROZEN )
+	{
+		return;
+	}
 
 	// Don't process items while in a vehicle.
 	if ( GetVehicle() )
@@ -1840,10 +1850,7 @@ void CBasePlayer::SharedSpawn()
 	MDLCACHE_CRITICAL_SECTION();
 	SetSequence( SelectWeightedSequence( ACT_IDLE ) );
 
-	if ( GetFlags() & FL_DUCKING ) 
-		SetCollisionBounds( VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX );
-	else
-		SetCollisionBounds( VEC_HULL_MIN, VEC_HULL_MAX );
+	UpdateCollisionBounds();
 
 	// dont let uninitialized value here hurt the player
 	m_Local.m_flFallVelocity = 0;
@@ -1870,7 +1877,7 @@ int CBasePlayer::GetDefaultFOV( void ) const
 	}
 #endif
 
-	int iFOV = ( m_iDefaultFOV == 0 ) ? g_pGameRules->DefaultFOV() : m_iDefaultFOV;
+	int iFOV = ( m_iDefaultFOV == 0 ) ? GameRules()->DefaultFOV() : m_iDefaultFOV;
 	if ( iFOV > MAX_FOV )
 		iFOV = MAX_FOV;
 
@@ -1994,7 +2001,7 @@ void CBasePlayer::UpdateUnderwaterState( void )
 		if ( GetFlags() & FL_INWATER )
 		{
 #ifndef CLIENT_DLL
-			if ( m_iHealth > 0 && IsAlive() )
+			if ( GetHealth() > 0 && IsAlive() )
 			{
 				EmitSound( "Player.Wade" );
 			}

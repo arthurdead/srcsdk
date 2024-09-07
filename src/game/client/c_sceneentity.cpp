@@ -53,6 +53,8 @@ IMPLEMENT_CLIENTCLASS_DT(C_SceneEntity, DT_SceneEntity, CSceneEntity)
 		RecvPropEHandle(NULL, 0, 0)),
 END_RECV_TABLE()
 
+LINK_ENTITY_TO_CLASS(scene_clientside, C_ClientScene);
+
 C_SceneEntity::C_SceneEntity( void )
 {
 	m_pScene = NULL;
@@ -70,9 +72,7 @@ C_SceneEntity::~C_SceneEntity( void )
 void C_SceneEntity::OnResetClientTime()
 {
 	// In TF2 we ignore this as the scene is played entirely client-side.
-#ifndef TF_CLIENT_DLL
 	m_flCurrentTime = m_flForceClientTime;
-#endif
 }
 
 char const *C_SceneEntity::GetSceneFileName()
@@ -91,7 +91,7 @@ char const *C_SceneEntity::GetSceneFileName()
 	return "";
 }
 
-ConVar mp_usehwmvcds( "mp_usehwmvcds", "0", NULL, "Enable the use of the hw morph vcd(s). (-1 = never, 1 = always, 0 = based upon GPU)" ); // -1 = never, 0 = if hasfastvertextextures, 1 = always
+ConVar mp_usehwmvcds( "mp_usehwmvcds", "0", FCVAR_ARCHIVE, "Enable the use of the hw morph vcd(s). (-1 = never, 1 = always, 0 = based upon GPU)" ); // -1 = never, 0 = if hasfastvertextextures, 1 = always
 bool UseHWMorphVCDs()
 {
 	if ( mp_usehwmvcds.GetInt() == 0 )

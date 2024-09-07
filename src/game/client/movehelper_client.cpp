@@ -43,7 +43,7 @@ public:
 
 	virtual bool IsWorldEntity( const CBaseHandle &handle );
 
-	void			SetHost( CBaseEntity *host );
+	void			SetHost( CBasePlayer *host );
 
 private:
 	// results, tallied on client and server, but only used by server to run SV_Impact.
@@ -92,7 +92,7 @@ CMoveHelperClient::~CMoveHelperClient( void )
 // Indicates which entity we're going to move
 //-----------------------------------------------------------------------------
 
-void CMoveHelperClient::SetHost( CBaseEntity *host )
+void CMoveHelperClient::SetHost( CBasePlayer *host )
 {
 	m_pHost = host;
 

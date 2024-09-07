@@ -50,9 +50,9 @@ CDebugOverlay::CDebugOverlay( vgui::VPANEL parent ) :
 	SetSize( w, h );
 	SetPos( 0, 0 );
 	SetVisible( false );
-	SetCursor( null );
+	SetCursor( vgui::INVALID_CURSOR );
 
-	m_hFont = 0;
+	m_hFont = vgui::INVALID_FONT;
 	SetFgColor( Color( 0, 0, 0, 0 ) );
 	SetPaintBackgroundEnabled( false );
 

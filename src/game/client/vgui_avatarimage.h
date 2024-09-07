@@ -145,7 +145,7 @@ private:
 	void LoadAvatarImage();
 
 	Color m_Color;
-	int m_iTextureID;
+	vgui::HTexture m_iTextureID;
 	int m_nX, m_nY;
 	int m_wide, m_tall;
 	int	m_avatarWide, m_avatarTall;
@@ -172,7 +172,7 @@ private:
 	// HPE_END
 	//=============================================================================
 
-	static CUtlMap< AvatarImagePair_t, int > s_AvatarImageCache;
+	static CUtlMap< AvatarImagePair_t, vgui::HTexture > s_AvatarImageCache;
 	static bool m_sbInitializedAvatarCache;
 
 	CCallback<CAvatarImage, PersonaStateChange_t, false> m_sPersonaStateChangedCallback;

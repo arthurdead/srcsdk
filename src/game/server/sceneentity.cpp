@@ -32,6 +32,7 @@
 #include "SceneCache.h"
 #include "scripted.h"
 #include "env_debughistory.h"
+#include "team.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -145,7 +146,7 @@ private:
 		CRestoreSceneSound()
 		{
 			actor = NULL;
-			soundname[ 0 ] = NULL;
+			soundname[ 0 ] = '\0';
 			soundlevel = SNDLVL_NORM;
 			time_in_past = 0.0f;
 		}
@@ -2059,7 +2060,7 @@ void CSceneEntity::StartPlayback( void )
 
 		if ( ShouldNetwork() )
 		{
-			m_nSceneStringIndex = g_pStringTableClientSideChoreoScenes->AddString( CBaseEntity::IsServer(), STRING( m_iszSceneFile ) );
+			m_nSceneStringIndex = g_pStringTableClientSideChoreoScenes->AddString( true, STRING( m_iszSceneFile ) );
 		}
 
 		UpdateTransmitState();
@@ -3877,7 +3878,7 @@ void CSceneEntity::OnSceneFinished( bool canceled, bool fireoutput )
 		CBaseFlex *pFlex =  FindNamedActor( 0 ) ;
 		if ( pFlex )
 		{
-			CBaseMultiplayerPlayer *pAsPlayer = dynamic_cast<CBaseMultiplayerPlayer *>(pFlex);
+			CBaseExpresserPlayer *pAsPlayer = ToBaseExpresserPlayer(pFlex);
 			if (pAsPlayer)
 			{
 				CAI_Expresser *pExpresser = pAsPlayer->GetExpresser();
@@ -3999,7 +4000,7 @@ int CSceneEntity::DrawDebugTextOverlays()
 //-----------------------------------------------------------------------------
 // Purpose: Adds a player (by index) to the recipient filter
 //-----------------------------------------------------------------------------
-void CSceneEntity::AddBroadcastTeamTarget( int nTeamIndex )
+void CSceneEntity::AddBroadcastTeamTarget( Team_t nTeamIndex )
 {
 	if ( m_pRecipientFilter == NULL )
 	{
@@ -4007,7 +4008,7 @@ void CSceneEntity::AddBroadcastTeamTarget( int nTeamIndex )
 		SetRecipientFilter( &filter );
 	}
 
-	CTeam *pTeam = GetGlobalTeam( nTeamIndex );
+	CTeam *pTeam = GetGlobalTeamByTeam( nTeamIndex );
 	Assert( pTeam );
 	if ( pTeam == NULL )
 		return;
@@ -4018,7 +4019,7 @@ void CSceneEntity::AddBroadcastTeamTarget( int nTeamIndex )
 //-----------------------------------------------------------------------------
 // Purpose: Removes a player (by index) from the recipient filter
 //-----------------------------------------------------------------------------
-void CSceneEntity::RemoveBroadcastTeamTarget( int nTeamIndex )
+void CSceneEntity::RemoveBroadcastTeamTarget( Team_t nTeamIndex )
 {
 	if ( m_pRecipientFilter == NULL )
 	{
@@ -4026,7 +4027,7 @@ void CSceneEntity::RemoveBroadcastTeamTarget( int nTeamIndex )
 		SetRecipientFilter( &filter );
 	}
 
-	CTeam *pTeam = GetGlobalTeam( nTeamIndex );
+	CTeam *pTeam = GetGlobalTeamByTeam( nTeamIndex );
 	Assert( pTeam );
 	if ( pTeam == NULL )
 		return;
@@ -4096,8 +4097,6 @@ public:
 								}
 							};
 	virtual void			DispatchPauseScene( CChoreoScene *scene, const char *parameters ) { /* suppress */ };
-
-	void OnRestore();
 
 	virtual float			EstimateLength( void );
 
@@ -4318,39 +4317,6 @@ int GetSceneSpeechCount( char const *pszScene )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Used for precaching instanced scenes
-// Input  : *pszScene - 
-//-----------------------------------------------------------------------------
-void PrecacheInstancedScene( char const *pszScene )
-{
-	static int nMakingReslists = -1;
-	
-	if ( nMakingReslists == -1 )
-	{
-		nMakingReslists = CommandLine()->FindParm( "-makereslists" ) > 0 ? 1 : 0;
-	}
-
-	if ( nMakingReslists == 1 )
-	{
-		// Just stat the file to add to reslist
-		g_pFullFileSystem->Size( pszScene );
-	}
-
-	// verify existence, cache is pre-populated, should be there
-	SceneCachedData_t sceneData;
-	if ( scenefilecache->GetSceneCachedData( pszScene, &sceneData ) )
-	{
-		for ( int i = 0; i < sceneData.numSounds; ++i )
-		{
-			short stringId = scenefilecache->GetSceneCachedSound( sceneData.sceneId, i );
-			CBaseEntity::PrecacheScriptSound( scenefilecache->GetSceneString( stringId ) );
-		}
-	}
-
-	g_pStringTableClientSideChoreoScenes->AddString( true, pszScene );
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CInstancedSceneEntity::StartPlayback( void )
@@ -4503,23 +4469,6 @@ bool CInstancedSceneEntity::PassThrough( CBaseFlex *actor )
 	return false;
 }
 
-
-//-----------------------------------------------------------------------------
-void CInstancedSceneEntity::OnRestore()
-{
-	if ( m_bHadOwner && !m_hOwner )
-	{
-		// probably just came back from a level transition
-		UTIL_Remove( this );
-		return;
-	}
-	// reset background state
-	if ( m_pScene )
-	{
-		m_pScene->SetBackground( m_bIsBackground );
-	}
-	BaseClass::OnRestore();
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: 

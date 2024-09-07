@@ -9,6 +9,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+ConVar	host_timescale( "host_timescale","1.0", FCVAR_REPLICATED, "Prescale the clock by this amount." );
 
 CGameTimescale g_GameTimescale;
 CGameTimescale* GameTimescale() { return &g_GameTimescale; }
@@ -60,7 +61,7 @@ void CGameTimescale::LevelShutdownPostEntity()
 
 void CGameTimescale::SetCurrentTimescale( float flTimescale )
 {
-	if ( m_flCurrentTimescale == flTimescale && m_flCurrentTimescale == engine->GetTimescale() )
+	if ( m_flCurrentTimescale == flTimescale && m_flCurrentTimescale == host_timescale.GetFloat() )
 		return;
 
 	// No ramp in/out, just set it!
@@ -74,7 +75,7 @@ void CGameTimescale::SetCurrentTimescale( float flTimescale )
 	m_flStartBlendRealtime = 0.0f;
 
 #ifndef CLIENT_DLL
-	engine->SetTimescale( m_flCurrentTimescale );
+	host_timescale.SetValue( m_flCurrentTimescale );
 
 	// Pass the change info to the client so it can do prediction
 	CReliableBroadcastRecipientFilter filter;
@@ -164,9 +165,9 @@ void CGameTimescale::UpdateTimescale( void )
 		}
 	}
 
-	if ( m_flCurrentTimescale != engine->GetTimescale() )
+	if ( m_flCurrentTimescale != host_timescale.GetFloat() )
 	{
-		engine->SetTimescale( m_flCurrentTimescale );
+		host_timescale.SetValue( m_flCurrentTimescale );
 	}
 }
 
@@ -181,7 +182,7 @@ void CGameTimescale::ResetTimescale( void )
 	m_flStartBlendTime = 0.0f;
 	m_flStartBlendRealtime = 0.0f;
 
-	engine->SetTimescale( 1.0f );
+	host_timescale.SetValue( 1.0f );
 }
 
 

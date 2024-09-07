@@ -35,8 +35,9 @@ public:
 	DECLARE_CLASS( C_PlasmaSprite, C_Sprite );
 
 	C_PlasmaSprite()
-		: C_Sprite(true)
+		: C_Sprite()
 	{
+		AddEFlags(EFL_NOT_NETWORKED);
 	}
 
 	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
@@ -53,8 +54,9 @@ public:
 	DECLARE_CLASS( C_PlasmaGlow, C_Sprite );
 
 	C_PlasmaGlow()
-		: C_Sprite(true)
+		: C_Sprite()
 	{
+		AddEFlags(EFL_NOT_NETWORKED);
 	}
 
 	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
@@ -62,6 +64,8 @@ public:
 	virtual bool						IsServerEntity( void ) { return false; }
 };
 
+LINK_ENTITY_TO_CLASS(plasmaglow_clientside, C_PlasmaGlow);
+LINK_ENTITY_TO_CLASS(plasmasprite_clientside, C_PlasmaSprite);
 
 class C_Plasma : public C_BaseEntity
 {
@@ -364,12 +368,11 @@ void C_Plasma::Start( void )
 		offset[1] = random->RandomFloat( 0, 360 );
 		offset[2] = 0.0f;
 
+		bool created = false;
+
 		if(!m_pEntFlames[i]) {
-			m_pEntFlames[i] = new C_PlasmaSprite();
-			if(!m_pEntFlames[i]->InitializeAsClientEntity()) {
-				UTIL_Remove( m_pEntFlames[i] );
-				m_pEntFlames[i] = NULL;
-			}
+			m_pEntFlames[i] = CREATE_ENTITY(C_PlasmaSprite, "plasmasprite_clientside");
+			created = true;
 		}
 	
   		AngleVectors( offset, &m_pEntFlames[i]->m_vecMoveDir );
@@ -390,6 +393,13 @@ void C_Plasma::Start( void )
 		m_pEntFlames[i]->SetRenderColor( 255, 255, 255 );
 		m_pEntFlames[i]->SetRenderAlpha( 255 );
 		m_pEntFlames[i]->SetBrightness( 255 );
+
+		if(created) {
+			if(DispatchSpawn(m_pEntFlames[i]) < 0) {
+				UTIL_Remove(m_pEntFlames[i]);
+				m_pEntFlames[i] = NULL;
+			}
+		}
 		
 		if ( i == 0 )
 		{
@@ -402,12 +412,11 @@ void C_Plasma::Start( void )
 		}
 	}
 
+	bool created =false;
+
 	if(!m_pEntGlow) {
-		m_pEntGlow = new C_PlasmaGlow();
-		if(!m_pEntGlow->InitializeAsClientEntity()) {
-			UTIL_Remove(m_pEntGlow);
-			m_pEntGlow = NULL;
-		}
+		m_pEntGlow = CREATE_ENTITY(C_PlasmaGlow, "plasmaglow_clientside");
+		created = true;
 	}
 
 	// Setup the glow
@@ -419,13 +428,23 @@ void C_Plasma::Start( void )
 	m_pEntGlow->SetRenderColor( 255, 255, 255 );
 	m_pEntGlow->SetRenderAlpha( 255 );
 	m_pEntGlow->SetBrightness( 255 );
+
+	if(created) {
+		if(DispatchSpawn(m_pEntGlow) < 0) {
+			UTIL_Remove(m_pEntGlow);
+			m_pEntGlow = NULL;
+		}
+	}
 	
 	m_flGlowScale				= m_flStartScale;
 
-	m_pEntGlow->AddToLeafSystem( false );
+	if(m_pEntGlow)
+		m_pEntGlow->AddToLeafSystem( false );
 
-	for( i=0; i < NUM_CHILD_FLAMES; i++ )
-		m_pEntFlames[i]->AddToLeafSystem( false );
+	for( i=0; i < NUM_CHILD_FLAMES; i++ ) {
+		if(m_pEntFlames[i])
+			m_pEntFlames[i]->AddToLeafSystem( false );
+	}
 }
 
 //-----------------------------------------------------------------------------

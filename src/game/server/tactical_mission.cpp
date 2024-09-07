@@ -9,9 +9,11 @@
 /**
  * Global singleton accessor.
  */
+static CTacticalMissionManager *manager = NULL;
 CTacticalMissionManager &TheTacticalMissions( void )
 {
-	static CTacticalMissionManager *manager = g_pGameRules->TacticalMissionManagerFactory();
+	if(!manager)
+		manager = GameRules()->TacticalMissionManagerFactory();
 
 	return *manager;
 }

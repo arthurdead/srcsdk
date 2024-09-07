@@ -28,9 +28,9 @@ extern void RecvProxy_SimulationTime( const CRecvProxyData *pData, void *pStruct
 
 IMPLEMENT_CLIENTCLASS_DT( C_FuncRotating, DT_FuncRotating, CFuncRotating )
 	RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ) ),
-	RecvPropFloat( RECVINFO_NAME( m_angNetworkAngles[0], m_angRotation[0] ) ),
-	RecvPropFloat( RECVINFO_NAME( m_angNetworkAngles[1], m_angRotation[1] ) ),
-	RecvPropFloat( RECVINFO_NAME( m_angNetworkAngles[2], m_angRotation[2] ) ),
+	RecvPropFloat( RECVINFO_NAME_ARRAYELEM( m_angNetworkAngles, 0, m_angRotation[0] ) ),
+	RecvPropFloat( RECVINFO_NAME_ARRAYELEM( m_angNetworkAngles, 1, m_angRotation[1] ) ),
+	RecvPropFloat( RECVINFO_NAME_ARRAYELEM( m_angNetworkAngles, 2, m_angRotation[2] ) ),
 	RecvPropInt( RECVINFO(m_flSimulationTime), 0, RecvProxy_SimulationTime ),
 END_RECV_TABLE()
 

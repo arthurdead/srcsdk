@@ -1,7 +1,7 @@
 #include "cbase.h"
 #include "c_lights.h"
 
-#include "game_controls/FloatSlider.h"
+#include "vgui_controls/Slider.h"
 #include "vgui_controls/TextEntry.h"
 #include "vgui_controls/Frame.h"
 #include "vgui/IInput.h"

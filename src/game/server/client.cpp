@@ -35,16 +35,19 @@
 #include "voice_gamemgr.h"
 #include "videocfg/videocfg.h"
 #include "tier1/fmtstr.h"
+#include "EventLog.h"
+#include "playeranimstate.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern int giPrecacheGrunt;
-
 // For not just using one big ai net
 extern CBaseEntity*	FindPickerEntity( CBasePlayer* pPlayer );
+extern CBaseEntity *FindPickerEntityClass(CBasePlayer *pPlayer, const char *classname);
 
 ConVar  *sv_cheats = NULL;
+
+ConVar sv_motd_unload_on_dismissal("sv_motd_unload_on_dismissal", "0", 0, "If enabled, the MOTD contents will be unloaded when the player closes the MOTD.");
 
 enum eAllowPointServerCommand {
 	eAllowNever,
@@ -208,11 +211,11 @@ void Host_Say( edict_t *pEdict, const CCommand &args, bool teamonly )
 	const char *pszFormat = NULL;
 	const char *pszPrefix = NULL;
 	const char *pszLocation = NULL;
-	if ( g_pGameRules )
+	if ( GameRules() )
 	{
-		pszFormat = g_pGameRules->GetChatFormat( teamonly, pPlayer );
-		pszPrefix = g_pGameRules->GetChatPrefix( teamonly, pPlayer );	
-		pszLocation = g_pGameRules->GetChatLocation( teamonly, pPlayer );
+		pszFormat = GameRules()->GetChatFormat( teamonly, pPlayer );
+		pszPrefix = GameRules()->GetChatPrefix( teamonly, pPlayer );	
+		pszLocation = GameRules()->GetChatLocation( teamonly, pPlayer );
 	}
 
 	const char *pszPlayerName = pPlayer ? pPlayer->GetPlayerName():"Console";
@@ -258,7 +261,7 @@ void Host_Say( edict_t *pEdict, const CCommand &args, bool teamonly )
 		if ( !(client->IsNetClient()) )	// Not a client ? (should never be true)
 			continue;
 
-		if ( teamonly && !g_pGameRules->PlayerCanHearChat( client, pPlayer ) )
+		if ( teamonly && !GameRules()->PlayerCanHearChat( client, pPlayer ) )
 			continue;
 
 		if ( pPlayer && !client->CanHearAndReadChatFrom( pPlayer ) )
@@ -408,6 +411,8 @@ void ClientPrecache( void )
 	// Game Instructor lessons - don't want people making simple scripted wall hacks
 	engine->ForceExactFile( "scripts/instructor_lessons.txt" );
 	engine->ForceExactFile( "scripts/mod_lessons.txt" );
+
+	engine->ForceExactFile( "scripts/weapon_manifest.txt" );
 }
 
 CON_COMMAND_F( cast_ray, "Tests collision detection", FCVAR_CHEAT )
@@ -972,7 +977,7 @@ CON_COMMAND( fov, "Change players FOV" )
 //------------------------------------------------------------------------------
 void CC_Player_SetModel( const CCommand &args )
 {
-	if ( gpGlobals->deathmatch )
+	if ( !sv_cheats->GetBool() )
 		return;
 
 	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() );
@@ -1532,9 +1537,6 @@ void CC_Notarget_f (void)
 	if ( !pPlayer )
 		return;
 
-	if ( gpGlobals->deathmatch )
-		return;
-
 	pPlayer->ToggleFlag( FL_NOTARGET );
 	if ( !(pPlayer->GetFlags() & FL_NOTARGET ) )
 		ClientPrint( pPlayer, HUD_PRINTCONSOLE, "notarget OFF\n");
@@ -1751,7 +1753,7 @@ void ClientCommand( CBasePlayer *pPlayer, const CCommand &args )
 	}
 	else 
 	{
-		if ( !g_pGameRules->ClientCommand( pPlayer, args ) )
+		if ( !GameRules()->ClientCommand( pPlayer, args ) )
 		{
 			if ( Q_strlen( pCmd ) > 128 )
 			{
@@ -1763,5 +1765,23 @@ void ClientCommand( CBasePlayer *pPlayer, const CCommand &args )
 				ClientPrint( pPlayer, HUD_PRINTCONSOLE, UTIL_VarArgs( "Unknown command: %s\n", pCmd ) );
 			}
 		}
+	}
+}
+
+CBaseEntity *FindEntity(edict_t *pEdict, char *classname)
+{
+	if(FStrEq(classname, "")) {
+		return FindPickerEntityClass(static_cast<CBasePlayer *>(GetContainingEntity(pEdict)), classname);
+	}
+
+	return NULL;
+}
+
+const char *GetGameDescription()
+{
+	if(GameRules()) {
+		return GameRules()->GetGameDescription();
+	} else {
+		return "Half-Life 2";
 	}
 }

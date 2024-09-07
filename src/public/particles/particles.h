@@ -287,6 +287,11 @@ public:
 	}
 };
 
+class IParticleSystemQueryEx : public IParticleSystemQuery
+{
+public:
+	
+};
 
 //-----------------------------------------------------------------------------
 //

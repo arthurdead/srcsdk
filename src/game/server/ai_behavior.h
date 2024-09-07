@@ -247,10 +247,6 @@ protected:
 
 public:
 	static				CGenericClassmap< CAI_BehaviorBase >	m_BehaviorClasses;
-
-private:
-	
-	DECLARE_DATADESC();
 };
 
 #define LINK_BEHAVIOR_TO_CLASS( localName, className )													\

@@ -124,7 +124,7 @@ public:
 		NEXT_SCHEDULE,
 	};
 
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 
 protected:
 	CHandle<CAI_BaseNPC>	m_hNPCHost;

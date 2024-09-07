@@ -195,6 +195,11 @@ void CPlayerMove::SetupMove( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper *p
 	move->m_bConstraintPastRadius = player->m_bConstraintPastRadius;
 	// setup trace optimization
 	g_pGameMovement->SetupMovementBounds( move );
+
+	IServerVehicle *pVehicle = player->GetVehicle();
+	if(pVehicle && gpGlobals->frametime != 0) {
+		pVehicle->SetupMove( player, ucmd, pHelper, move ); 
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -239,6 +244,11 @@ void CPlayerMove::FinishMove( CBasePlayer *player, CUserCmd *ucmd, CMoveData *mo
 	Assert( move->m_flConstraintWidth == player->m_flConstraintWidth );
 	Assert( move->m_flConstraintSpeedFactor == player->m_flConstraintSpeedFactor );
 	Assert( move->m_bConstraintPastRadius == player->m_bConstraintPastRadius );
+
+	IServerVehicle *pVehicle = player->GetVehicle();
+	if(pVehicle && gpGlobals->frametime != 0) {
+		pVehicle->FinishMove( player, ucmd, move );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -258,7 +268,7 @@ void CPlayerMove::RunPreThink( CBasePlayer *player )
 
 	VPROF_SCOPE_BEGIN( "g_pGameRules->PlayerThink( player )" );
 	// Called every frame to let game rules do any specific think logic for the player
-	g_pGameRules->PlayerThink( player );
+	GameRules()->PlayerThink( player );
 	VPROF_SCOPE_END();
 
 	VPROF_SCOPE_BEGIN( "player->PreThink()" );
@@ -304,8 +314,6 @@ void CPlayerMove::RunPostThink( CBasePlayer *player )
 	// Run post-think
 	player->PostThink();
 }
-
-void CommentarySystem_PePlayerRunCommand( CBasePlayer *player, CUserCmd *ucmd );
 
 //-----------------------------------------------------------------------------
 // Purpose: Runs movement commands for the player
@@ -374,8 +382,6 @@ void CPlayerMove::RunCommand ( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 	*/
 
 	g_pGameMovement->StartTrackPredictionErrors( player );
-
-	CommentarySystem_PePlayerRunCommand( player, ucmd );
 
 	// Do weapon selection
 	if ( ucmd->weaponselect != 0 )

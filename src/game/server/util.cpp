@@ -72,8 +72,8 @@ public:
 	CEntityFactoryDictionary();
 
 	virtual void InstallFactory( IEntityFactory *pFactory, const char *pClassName );
-	virtual IServerNetworkable *Create( const char *pClassName );
-	virtual void Destroy( const char *pClassName, IServerNetworkable *pNetworkable );
+	virtual CBaseEntity *Create( const char *pClassName );
+	virtual void Destroy( const char *pClassName, CBaseEntity *pNetworkable );
 	virtual const char *GetCannonicalName( const char *pClassName );
 	void ReportEntitySizes();
 
@@ -107,7 +107,7 @@ void DumpEntityFactories_f()
 	}
 }
 
-static ConCommand dumpentityfactories( "dumpentityfactories", DumpEntityFactories_f, "Lists all entity factory names.", FCVAR_GAMEDLL );
+static ConCommand dumpentityfactories( "dumpserverentityfactories", DumpEntityFactories_f, "Lists all entity factory names.", FCVAR_GAMEDLL );
 
 
 //-----------------------------------------------------------------------------
@@ -155,16 +155,11 @@ void CEntityFactoryDictionary::InstallFactory( IEntityFactory *pFactory, const c
 //-----------------------------------------------------------------------------
 // Instantiate something using a factory
 //-----------------------------------------------------------------------------
-IServerNetworkable *CEntityFactoryDictionary::Create( const char *pClassName )
+CBaseEntity *CEntityFactoryDictionary::Create( const char *pClassName )
 {
 	IEntityFactory *pFactory = FindFactory( pClassName );
 	if ( !pFactory )
 	{
-#ifdef STAGING_ONLY
-		static ConVarRef tf_bot_use_items( "tf_bot_use_items" );
-		if ( tf_bot_use_items.IsValid() && tf_bot_use_items.GetInt() )
-			return NULL;
-#endif
 		Warning("Attempted to create unknown entity type %s!\n", pClassName );
 		return NULL;
 	}
@@ -185,7 +180,7 @@ const char *CEntityFactoryDictionary::GetCannonicalName( const char *pClassName 
 //-----------------------------------------------------------------------------
 // Destroy a networkable
 //-----------------------------------------------------------------------------
-void CEntityFactoryDictionary::Destroy( const char *pClassName, IServerNetworkable *pNetworkable )
+void CEntityFactoryDictionary::Destroy( const char *pClassName, CBaseEntity *pNetworkable )
 {
 	IEntityFactory *pFactory = FindFactory( pClassName );
 	if ( !pFactory )
@@ -206,46 +201,6 @@ void CEntityFactoryDictionary::ReportEntitySizes()
 	{
 		Msg( " %s: %llu", m_Factories.GetElementName( i ), (uint64)(m_Factories[i]->GetEntitySize()) );
 	}
-}
-
-
-//-----------------------------------------------------------------------------
-// class CFlaggedEntitiesEnum
-//-----------------------------------------------------------------------------
-
-CFlaggedEntitiesEnum::CFlaggedEntitiesEnum( CBaseEntity **pList, int listMax, int flagMask )
-{
-	m_pList = pList;
-	m_listMax = listMax;
-	m_flagMask = flagMask;
-	m_count = 0;
-}
-
-bool CFlaggedEntitiesEnum::AddToList( CBaseEntity *pEntity )
-{
-	if ( m_count >= m_listMax )
-	{
-		AssertMsgOnce( 0, "reached enumerated list limit.  Increase limit, decrease radius, or make it so entity flags will work for you" );
-		return false;
-	}
-	m_pList[m_count] = pEntity;
-	m_count++;
-	return true;
-}
-
-IterationRetval_t CFlaggedEntitiesEnum::EnumElement( IHandleEntity *pHandleEntity )
-{
-	CBaseEntity *pEntity = gEntList.GetBaseEntity( pHandleEntity->GetRefEHandle() );
-	if ( pEntity )
-	{
-		if ( m_flagMask && !(pEntity->GetFlags() & m_flagMask) )	// Does it meet the criteria?
-			return ITERATION_CONTINUE;
-
-		if ( !AddToList( pEntity ) )
-			return ITERATION_STOP;
-	}
-
-	return ITERATION_CONTINUE;
 }
 
 
@@ -287,17 +242,15 @@ int UTIL_EntitiesInBox( const Vector &mins, const Vector &maxs, CFlaggedEntities
 	return pEnum->GetCount();
 }
 
-int UTIL_EntitiesAlongRay( const Ray_t &ray, CFlaggedEntitiesEnum *pEnum )
-{
-	partition->EnumerateElementsAlongRay( PARTITION_ENGINE_NON_STATIC_EDICTS, ray, false, pEnum );
-	return pEnum->GetCount();
-}
-
 int UTIL_EntitiesInSphere( const Vector &center, float radius, CFlaggedEntitiesEnum *pEnum )
 {
 	partition->EnumerateElementsInSphere( PARTITION_ENGINE_NON_STATIC_EDICTS, center, radius, false, pEnum );
 	return pEnum->GetCount();
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
 
 CEntitySphereQuery::CEntitySphereQuery( const Vector &center, float radius, int flagMask )
 {
@@ -1565,9 +1518,6 @@ void UTIL_BloodStream( const Vector &origin, const Vector &direction, int color,
 	if ( !UTIL_ShouldShowBlood( color ) )
 		return;
 
-	if ( g_Language.GetInt() == LANGUAGE_GERMAN && color == BLOOD_COLOR_RED )
-		color = 0;
-
 	CPVSFilter filter( origin );
 	te->BloodStream( filter, 0.0, &origin, &direction, 247, 63, 14, 255, MIN( amount, 255 ) );
 }				
@@ -1627,18 +1577,13 @@ void UTIL_PlayerDecalTrace( trace_t *pTrace, int playernum )
 
 bool UTIL_TeamsMatch( const char *pTeamName1, const char *pTeamName2 )
 {
-	// Everyone matches unless it's teamplay
-	if ( !g_pGameRules->IsTeamplay() )
-		return true;
+	if(!pTeamName1 || !pTeamName2)
+		return false;
 
-	// Both on a team?
-	if ( *pTeamName1 != 0 && *pTeamName2 != 0 )
-	{
-		if ( !stricmp( pTeamName1, pTeamName2 ) )	// Same Team?
-			return true;
-	}
+	if(*pTeamName1 == '\0' || *pTeamName2 == '\0')
+		return false;
 
-	return false;
+	return V_stricmp( pTeamName1, pTeamName2 ) == 0;
 }
 
 
@@ -2109,7 +2054,7 @@ int DispatchSpawn( CBaseEntity *pEntity )
 				// Already dead? delete
 				if ( GlobalEntity_GetState(globalIndex) == GLOBAL_DEAD )
 				{
-					pEntity->Remove();
+					UTIL_Remove( pEntity );
 					return -1;
 				}
 				else if ( !FStrEq(STRING(gpGlobals->mapname), GlobalEntity_GetMap(globalIndex)) )
@@ -2524,7 +2469,7 @@ edict_t *UTIL_FindClientInPVSGuts(edict_t *pEdict, unsigned char *pvs, unsigned 
 
 edict_t *UTIL_FindClientInPVS(edict_t *pEdict)
 {
-	return g_pGameRules->DoFindClientInPVSGuts( pEdict, g_CheckClient.m_checkPVS, sizeof( g_CheckClient.m_checkPVS ) );
+	return GameRules()->DoFindClientInPVS( pEdict, g_CheckClient.m_checkPVS, sizeof( g_CheckClient.m_checkPVS ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -2532,7 +2477,7 @@ edict_t *UTIL_FindClientInPVS(edict_t *pEdict)
 //-----------------------------------------------------------------------------
 edict_t *UTIL_FindClientInVisibilityPVS( edict_t *pEdict )
 {
-	return g_pGameRules->DoFindClientInPVSGuts( pEdict, g_CheckClient.m_checkVisibilityPVS, sizeof( g_CheckClient.m_checkVisibilityPVS ) );
+	return GameRules()->DoFindClientInPVS( pEdict, g_CheckClient.m_checkVisibilityPVS, sizeof( g_CheckClient.m_checkVisibilityPVS ) );
 }
 
 

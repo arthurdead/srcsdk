@@ -32,7 +32,7 @@ void C_StatueProp::Spawn( void )
 {
 	BaseClass::Spawn();
 
-	m_EntClientFlags |= ENTCLIENTFLAG_DONTUSEIK;
+	AddClientFlags( ENTCLIENTFLAG_DONTUSEIK );
 }
 
 void C_StatueProp::ComputeWorldSpaceSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )

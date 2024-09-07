@@ -380,6 +380,9 @@ static void AddWatcherToEntity( CBaseEntity *pWatcher, CBaseEntity *pEntity, int
 	if ( !pList )
 	{
 		pList = ( CWatcherList * )pEntity->CreateDataObject( watcherType );
+		if( !pList )
+			return;
+
 		pList->Init();
 	}
 

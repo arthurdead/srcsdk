@@ -12,10 +12,10 @@
 #include "game.h"
 #include "eventqueue.h"
 #include "ai_basenpc.h"
-#include "basemultiplayerplayer.h"
+#include "player.h"
 #include "ai_baseactor.h"
 //#include "flex_expresser.h"
-#include "scenefilecache/iscenefilecache.h"
+#include "scenefilecache/ISceneFileCache.h"
 /*
 #include "engine/ienginesound.h"
 #include "keyvalues.h"
@@ -85,7 +85,7 @@ static void DispatchComeback( CAI_ExpresserWithFollowup *pExpress, CBaseEntity *
 
 	// This is kludgy and needs to be fixed in class hierarchy, but for now, try to guess at the most likely
 	// kinds of targets and dispatch to them.
-	if (CBaseMultiplayerPlayer *pPlayer = dynamic_cast<CBaseMultiplayerPlayer *>(pRespondent))
+	if (CBaseExpresserPlayer *pPlayer = ToBaseExpresserPlayer(pRespondent))
 	{
 		pPlayer->Speak( followup.followup_concept, &criteria );
 	}
@@ -256,7 +256,8 @@ static float GetSpeechDurationForResponse( const AI_Response * RESTRICT response
 	char sceneName[256];
 	response->GetResponse( sceneName, sizeof(sceneName) );
 	// look up the scene in the scene cache
-	SceneCachedData_t scenedata;
+	SceneCachedDataEx_t scenedata;
+	scenedata.m_fLastSpeakSecs = -1.0f;
 	bool bHasData = scenefilecache->GetSceneCachedData( sceneName, &scenedata );
 	AssertMsg1( bHasData, "Couldn't find %s in scene cache.", sceneName );
 	if ( bHasData )

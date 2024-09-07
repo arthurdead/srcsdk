@@ -123,7 +123,7 @@ void CItem::Spawn( void )
 {
 	SetNetworkQuantizeOriginAngAngles( true );
 
-	if ( g_pGameRules->IsAllowedToSpawn( this ) == false )
+	if ( GameRules()->IsAllowedToSpawn( this ) == false )
 	{
 		UTIL_Remove( this );
 		return;
@@ -393,7 +393,7 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 		return;
 
 	// ok, a player is touching this item, but can he have it?
-	if ( !g_pGameRules->CanHaveItem( pPlayer, this ) )
+	if ( !GameRules()->CanHaveItem( pPlayer, this ) )
 	{
 		// no? Ignore the touch.
 		return;
@@ -407,8 +407,8 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 		SetThink( NULL );
 
 		// player grabbed the item. 
-		g_pGameRules->PlayerGotItem( pPlayer, this );
-		if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_YES )
+		GameRules()->PlayerGotItem( pPlayer, this );
+		if ( GameRules()->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_YES )
 		{
 			Respawn(); 
 		}
@@ -436,15 +436,15 @@ CBaseEntity* CItem::Respawn( void )
 	SetSolid( SOLID_BBOX );
 	AddSolidFlags( FSOLID_TRIGGER );
 
-	UTIL_SetOrigin( this, g_pGameRules->VecItemRespawnSpot( this ) );// blip to whereever you should respawn.
-	SetAbsAngles( g_pGameRules->VecItemRespawnAngles( this ) );// set the angles.
+	UTIL_SetOrigin( this, GameRules()->VecItemRespawnSpot( this ) );// blip to whereever you should respawn.
+	SetAbsAngles( GameRules()->VecItemRespawnAngles( this ) );// set the angles.
 
 	UTIL_DropToFloor( this, MASK_SOLID );
 
 	RemoveAllDecals(); //remove any decals
 
 	SetThink ( &CItem::Materialize );
-	SetNextThink( gpGlobals->curtime + g_pGameRules->FlItemRespawnTime( this ) );
+	SetNextThink( gpGlobals->curtime + GameRules()->FlItemRespawnTime( this ) );
 	return this;
 }
 

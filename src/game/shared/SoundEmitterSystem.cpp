@@ -15,6 +15,8 @@
 #include "tier0/vprof.h"
 #include "checksum_crc.h"
 #include "tier0/icommandline.h"
+#include "closedcaptions.h"
+#include "game_timescale_shared.h"
 
 #ifndef CLIENT_DLL
 #include "envmicrophone.h"
@@ -585,9 +587,9 @@ public:
 			params.soundlevel, 
 			params.volume, 
 			ep.m_nFlags | SND_SHOULDPAUSE, 
-			params.pitch, 
+			Clamp( int( params.pitch * GameTimescale()->GetCurrentTimescale() ), 0, 255 ), 
 			ep.m_pOrigin, 
-			ep.m_flSoundTime,
+			ep.m_flSoundTime / GameTimescale()->GetCurrentTimescale(),
 			ep.m_UtlVecSoundOrigin );
 		if ( bSwallowed )
 			return;
@@ -600,7 +602,7 @@ public:
 		}
 #endif
 
-		float st = ep.m_flSoundTime;
+		float st = ep.m_flSoundTime / GameTimescale()->GetCurrentTimescale();
 		if ( !st && 
 			params.delay_msec != 0 )
 		{
@@ -618,7 +620,7 @@ public:
 			params.volume,
 			(soundlevel_t)params.soundlevel,
 			ep.m_nFlags | SND_SHOULDPAUSE,
-			params.pitch,
+			Clamp( int( params.pitch * GameTimescale()->GetCurrentTimescale() ), 0, 255 ),
 			ep.m_nSpecialDSP,
 			ep.m_pOrigin,
 			NULL,
@@ -690,9 +692,9 @@ public:
 				ep.m_SoundLevel, 
 				ep.m_flVolume, 
 				ep.m_nFlags | SND_SHOULDPAUSE, 
-				ep.m_nPitch, 
+				Clamp( int( ep.m_nPitch * GameTimescale()->GetCurrentTimescale() ), 0, 255 ), 
 				ep.m_pOrigin, 
-				ep.m_flSoundTime,
+				ep.m_flSoundTime / GameTimescale()->GetCurrentTimescale(),
 				ep.m_UtlVecSoundOrigin );
 			if ( bSwallowed )
 				return;
@@ -722,13 +724,13 @@ public:
 				ep.m_flVolume, 
 				ep.m_SoundLevel, 
 				ep.m_nFlags | SND_SHOULDPAUSE, 
-				ep.m_nPitch, 
+				Clamp( int( ep.m_nPitch * GameTimescale()->GetCurrentTimescale() ), 0, 255 ),
 				ep.m_nSpecialDSP,
 				ep.m_pOrigin,
 				NULL, 
 				&ep.m_UtlVecSoundOrigin,
 				true, 
-				ep.m_flSoundTime,
+				ep.m_flSoundTime / GameTimescale()->GetCurrentTimescale(),
 				ep.m_nSpeakerEntity );
 			if ( ep.m_pflSoundDuration )
 			{
@@ -737,7 +739,7 @@ public:
 				UTIL_LogPrintf( "getting wav duration for %s\n", ep.m_pSoundName );
 			#endif
 				VPROF( "CSoundEmitterSystem::EmitSound GetSoundDuration (calls engine)" );
-				*ep.m_pflSoundDuration = enginesound->GetSoundDuration( ep.m_pSoundName );
+				*ep.m_pflSoundDuration = enginesound->GetSoundDuration( ep.m_pSoundName ) / GameTimescale()->GetCurrentTimescale();
 			}
 
 			// TERROR:
@@ -778,7 +780,7 @@ public:
 			char const *wav = soundemitterbase->GetWavFileForSound( token, GENDER_NONE );
 			if ( wav )
 			{
-				duration = enginesound->GetSoundDuration( wav );
+				duration = enginesound->GetSoundDuration( wav )  / GameTimescale()->GetCurrentTimescale();
 			}
 			else
 			{
@@ -1005,9 +1007,9 @@ public:
 		}
 
 #if defined( CLIENT_DLL )
-		enginesound->EmitAmbientSound( params.soundname, params.volume, params.pitch, iFlags | SND_SHOULDPAUSE, soundtime );
+		enginesound->EmitAmbientSound( params.soundname, params.volume, Clamp( int( params.pitch * GameTimescale()->GetCurrentTimescale() ), 0, 255 ), iFlags | SND_SHOULDPAUSE, soundtime / GameTimescale()->GetCurrentTimescale() );
 #else
-		engine->EmitAmbientSound(entindex, origin, params.soundname, params.volume, params.soundlevel, iFlags | SND_SHOULDPAUSE, params.pitch, soundtime );
+		engine->EmitAmbientSound(entindex, origin, params.soundname, params.volume, params.soundlevel, iFlags | SND_SHOULDPAUSE, Clamp( int( params.pitch * GameTimescale()->GetCurrentTimescale() ), 0, 255 ), soundtime / GameTimescale()->GetCurrentTimescale() );
 #endif
 
 		bool needsCC = !( iFlags & ( SND_STOP | SND_CHANGE_VOL | SND_CHANGE_PITCH ) );
@@ -1016,7 +1018,7 @@ public:
 		
 		if ( duration || needsCC )
 		{
-			soundduration = enginesound->GetSoundDuration( params.soundname );
+			soundduration = enginesound->GetSoundDuration( params.soundname ) / GameTimescale()->GetCurrentTimescale();
 			if ( duration )
 			{
 				*duration = soundduration;
@@ -1136,9 +1138,9 @@ public:
 							soundlevel, 
 							volume, 
 							flags | SND_SHOULDPAUSE, 
-							pitch, 
+							Clamp( int( pitch * GameTimescale()->GetCurrentTimescale() ), 0, 255 ), 
 							&origin, 
-							soundtime,
+							soundtime / GameTimescale()->GetCurrentTimescale(),
 							dummyorigins );
 		if ( bSwallowed )
 			return;
@@ -1147,14 +1149,14 @@ public:
 		if ( pSample && ( Q_stristr( pSample, ".wav" ) || Q_stristr( pSample, ".mp3" )) )
 		{
 #if defined( CLIENT_DLL )
-			enginesound->EmitAmbientSound( pSample, volume, pitch, flags | SND_SHOULDPAUSE, soundtime );
+			enginesound->EmitAmbientSound( pSample, volume, Clamp( int( pitch * GameTimescale()->GetCurrentTimescale() ), 0, 255 ), flags | SND_SHOULDPAUSE, soundtime / GameTimescale()->GetCurrentTimescale() );
 #else
-			engine->EmitAmbientSound( entindex, origin, pSample, volume, soundlevel, flags | SND_SHOULDPAUSE, pitch, soundtime );
+			engine->EmitAmbientSound( entindex, origin, pSample, volume, soundlevel, flags | SND_SHOULDPAUSE, Clamp( int( pitch * GameTimescale()->GetCurrentTimescale() ), 0, 255 ), soundtime / GameTimescale()->GetCurrentTimescale() );
 #endif
 
 			if ( duration )
 			{
-				*duration = enginesound->GetSoundDuration( pSample );
+				*duration = enginesound->GetSoundDuration( pSample ) / GameTimescale()->GetCurrentTimescale();
 			}
 
 			TraceEmitSound( entindex, "EmitAmbientSound:  Raw wave emitted '%s' (ent %i)\n",
@@ -1803,13 +1805,13 @@ void UTIL_EmitAmbientSound( int entindex, const Vector &vecOrigin, const char *s
 			char name[32];
 			Q_snprintf( name, sizeof(name), "!%d", sentenceIndex );
 #if !defined( CLIENT_DLL )
-			engine->EmitAmbientSound( entindex, vecOrigin, name, vol, soundlevel, fFlags | SND_SHOULDPAUSE, pitch, soundtime );
+			engine->EmitAmbientSound( entindex, vecOrigin, name, vol, soundlevel, fFlags | SND_SHOULDPAUSE, Clamp( int( pitch * GameTimescale()->GetCurrentTimescale() ), 0, 255 ), soundtime / GameTimescale()->GetCurrentTimescale() );
 #else
-			enginesound->EmitAmbientSound( name, vol, pitch, fFlags | SND_SHOULDPAUSE, soundtime );
+			enginesound->EmitAmbientSound( name, vol, Clamp( int( pitch * GameTimescale()->GetCurrentTimescale() ), 0, 255 ), fFlags | SND_SHOULDPAUSE, soundtime / GameTimescale()->GetCurrentTimescale() );
 #endif
 			if ( duration )
 			{
-				*duration = enginesound->GetSoundDuration( name );
+				*duration = enginesound->GetSoundDuration( name ) / GameTimescale()->GetCurrentTimescale();
 			}
 
 			g_SoundEmitterSystem.TraceEmitSound( entindex, "UTIL_EmitAmbientSound:  Sentence emitted '%s' (ent %i)\n",

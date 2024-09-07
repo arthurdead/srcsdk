@@ -42,7 +42,7 @@ public:
 typedef struct MapObject_s {
 	int		objectID;	// unique object ID
 	int		index;		// entity index if any
-	int		icon;		// players texture icon ID
+	vgui::HTexture		icon;		// players texture icon ID
 	Color   color;		// players team color
 	char	name[MAX_PLAYER_NAME_LENGTH];	// show text under icon
 	Vector	position;	// current x,y pos
@@ -95,7 +95,7 @@ protected:	// private structures & types
 	typedef struct MapPlayer_s {
 		int		index;		// player's index
 		int		userid;		// user ID on server
-		int		icon;		// players texture icon ID
+		vgui::HTexture		icon;		// players texture icon ID
 		Color   color;		// players team color
 		char	name[MAX_PLAYER_NAME_LENGTH];
 		int		team;		// N,T,CT
@@ -203,7 +203,7 @@ protected:
 
 	bool			IsInPanel(Vector2D &pos);
 	MapPlayer_t*	GetPlayerByUserID( int userID );
-	int				AddIconTexture(const char *filename);
+	vgui::HTexture				AddIconTexture(const char *filename);
 	int				GetPixelOffset( float height );
 	void			UpdateFollowEntity();
 	virtual void	UpdatePlayers();
@@ -234,11 +234,11 @@ protected:
 
 	IViewPort *		m_pViewPort;
 	MapPlayer_t		m_Players[MAX_PLAYERS];
-	CUtlDict< int, int> m_TextureIDs;
+	CUtlDict< vgui::HTexture, int> m_TextureIDs;
 	CUtlVector<MapObject_t>	m_Objects;
 
 	Color	m_TeamColors[MAX_TEAMS];
-	int		m_TeamIcons[MAX_TEAMS];
+	vgui::HTexture		m_TeamIcons[MAX_TEAMS];
 	int		m_ObjectIcons[64];
 	int		m_ObjectCounterID;
 	vgui::HFont	m_hIconFont;
@@ -248,7 +248,7 @@ protected:
 	bool m_bShowTrails;
 	bool m_bShowHealth;
 
-	int	 m_nMapTextureID;		// texture id for current overview image
+	vgui::HTexture	 m_nMapTextureID;		// texture id for current overview image
 
 	KeyValues * m_MapKeyValues; // keyvalues describing overview parameters
 

@@ -74,12 +74,12 @@ CCenterStringLabel::CCenterStringLabel( vgui::VPANEL parent ) :
 	SetParent( parent );
 	ComputeSize();
 	SetVisible( false );
-	SetCursor( null );
+	SetCursor( vgui::INVALID_CURSOR );
 	SetKeyBoardInputEnabled( false );
 	SetMouseInputEnabled( false );
 	SetContentAlignment( vgui::Label::a_center );
 
-	m_hFont = 0;
+	m_hFont = vgui::INVALID_FONT;
 	SetFgColor( Color( 255, 255, 255, 255 ) );
 
 	SetPaintBackgroundEnabled( false );

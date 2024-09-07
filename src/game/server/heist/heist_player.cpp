@@ -54,7 +54,10 @@ void CHeistPlayer::SetSpotted(bool value)
 			other->m_bSpotted = true;
 		}
 
-		HeistGamerules()->SetSpotted(true);
+		HeistGameRules()->SetSpotted(true);
+
+		ChangeTeam( TEAM_HEISTERS );
+		ChangeFaction( FACTION_HEISTERS );
 	} else {
 		bool any_spotted = false;
 
@@ -71,13 +74,19 @@ void CHeistPlayer::SetSpotted(bool value)
 		}
 
 		if(!any_spotted) {
-			HeistGamerules()->SetSpotted(false);
+			HeistGameRules()->SetSpotted(false);
 		}
+
+		ChangeTeam( TEAM_CIVILIANS );
+		ChangeFaction( FACTION_CIVILIANS );
 	}
 }
 
 void CHeistPlayer::Spawn()
 {
+	ChangeTeam( TEAM_CIVILIANS );
+	ChangeFaction( FACTION_CIVILIANS );
+
 	BaseClass::Spawn();
 
 	SetModel("models/player/leader.mdl");
@@ -85,10 +94,5 @@ void CHeistPlayer::Spawn()
 
 Class_T CHeistPlayer::Classify()
 {
-	return IsSpotted() ? CLASS_HEISTER : CLASS_HEISTER_DISGUISED;
-}
-
-CPlayerAnimState *CHeistPlayer::CreateAnimState()
-{
-	return CreateHeistPlayerAnimState(this);
+	return IsSpotted() ? CLASS_HEISTER : CLASS_CIVILIAN;
 }

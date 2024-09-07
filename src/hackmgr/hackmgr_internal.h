@@ -18,7 +18,9 @@
 #include "tier0/platform.h"
 
 #ifdef __GNUC__
-#define __thiscall __attribute__((__thiscall__))
+#define HACKMGR_THISCALL __attribute__((__thiscall__))
+#else
+#define HACKMGR_THISCALL __thiscall
 #endif
 
 inline void *align(void *ptr, size_t alignment) noexcept
@@ -44,7 +46,7 @@ private:
 
 using generic_object_t = generic_class;
 using generic_func_t = void(*)();
-using generic_plain_mfp_t = void(__thiscall *)(generic_class *);
+using generic_plain_mfp_t = void(HACKMGR_THISCALL *)(generic_class *);
 using generic_mfp_t = void(generic_class::*)();
 using generic_vtable_t = generic_plain_mfp_t *;
 
@@ -150,10 +152,10 @@ using intmfp_t = uint64_t;
 #endif
 
 static_assert(sizeof(&generic_class::generic_function) == sizeof(intmfp_t));
-static_assert(alignof(&generic_class::generic_function) == alignof(intmfp_t));
+static_assert(alignof(decltype(&generic_class::generic_function)) == alignof(intmfp_t));
 
 template <typename R, typename C, typename ...Args>
-union alignas(intmfp_t) mfp_internal_t
+struct alignas(intmfp_t) mfp_internal_t
 {
 	constexpr mfp_internal_t() noexcept = default;
 
@@ -172,12 +174,12 @@ union alignas(intmfp_t) mfp_internal_t
 	{
 	}
 
-	constexpr inline mfp_internal_t(R(__thiscall *addr_)(C *, Args...)) noexcept
+	constexpr inline mfp_internal_t(R(HACKMGR_THISCALL *addr_)(C *, Args...)) noexcept
 		: addr{addr_}, adjustor{0}
 	{
 	}
 
-	constexpr inline mfp_internal_t(R(__thiscall *addr_)(C *, Args...), size_t adjustor_) noexcept
+	constexpr inline mfp_internal_t(R(HACKMGR_THISCALL *addr_)(C *, Args...), size_t adjustor_) noexcept
 		: addr{addr_}, adjustor{adjustor_}
 	{
 	}
@@ -194,7 +196,7 @@ union alignas(intmfp_t) mfp_internal_t
 		return *this;
 	}
 
-	constexpr inline mfp_internal_t &operator=(R(__thiscall *addr_)(C *, Args...)) noexcept
+	constexpr inline mfp_internal_t &operator=(R(HACKMGR_THISCALL *addr_)(C *, Args...)) noexcept
 	{
 		addr = addr_;
 		adjustor = 0;
@@ -211,18 +213,20 @@ union alignas(intmfp_t) mfp_internal_t
 	constexpr inline bool operator!() const noexcept
 	{ return !addr; }
 
-	intmfp_t value;
-	struct {
-		R(__thiscall *addr)(C *, Args...);
-		size_t adjustor;
+	union {
+		intmfp_t value;
+		struct {
+			R(HACKMGR_THISCALL *addr)(C *, Args...);
+			size_t adjustor;
+		};
+		R(C::*func)(Args...) {nullptr};
 	};
-	R(C::*func)(Args...) {nullptr};
 };
 
 using generic_internal_mfp_t = mfp_internal_t<void, generic_class>;
 
 static_assert(sizeof(generic_internal_mfp_t) == sizeof(&generic_class::generic_function));
-static_assert(alignof(generic_internal_mfp_t) == alignof(&generic_class::generic_function));
+static_assert(alignof(generic_internal_mfp_t) == alignof(decltype(&generic_class::generic_function)));
 
 template <typename R, typename C, typename ...Args>
 inline size_t vfunc_index(R(C::*func)(Args...))
@@ -234,6 +238,27 @@ inline size_t vfunc_index(R(C::*func)(Args...))
 	} else {
 		return ((addr_value-1) / sizeof(generic_plain_mfp_t));
 	}
+}
+
+template <typename T>
+struct func_from_vtable_t;
+
+template <typename R, typename C, typename ...Args>
+struct func_from_vtable_t<R(C::*)(Args...)>
+{
+	static inline auto get(generic_plain_mfp_t func) -> R(C::*)(Args...)
+	{
+		mfp_internal_t<R, C, Args...> internal;
+		internal.addr = reinterpret_cast<R(HACKMGR_THISCALL *)(C *, Args...)>(func);
+		internal.adjustor = 0;
+		return internal.func;
+	}
+};
+
+template <typename T>
+inline auto func_from_vtable(generic_plain_mfp_t func)
+{
+	return func_from_vtable_t<T>::get(func);
 }
 
 #endif

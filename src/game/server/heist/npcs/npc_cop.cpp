@@ -35,6 +35,9 @@ void CNPC_Cop::Spawn()
 
 	CapabilitiesAdd(bits_CAP_NO_HIT_SQUADMATES|bits_CAP_SQUAD|bits_CAP_MOVE_SHOOT|bits_CAP_USE_WEAPONS);
 
+	ChangeTeam( TEAM_POLICE );
+	ChangeFaction( FACTION_LAW_ENFORCEMENT );
+
 	BaseClass::Spawn();
 }
 

@@ -7,7 +7,7 @@
 
 #include "cbase.h"
 
-#include "basemultiplayerplayer.h"
+#include "player.h"
 #include "ai_baseactor.h"
 #include "ai_speech.h"
 #include "flex_expresser.h"
@@ -174,7 +174,7 @@ void CResponseQueue::RemoveExpresserHost(CBaseEntity *host)
 /// TODO: Kind of an ugly hack until I get the class hierarchy straightened out.
 static CAI_Expresser *InferExpresserFromBaseEntity(CBaseEntity * RESTRICT pEnt)
 {
-	if ( CBaseMultiplayerPlayer *pPlayer = dynamic_cast<CBaseMultiplayerPlayer *>(pEnt) )
+	if ( CBaseExpresserPlayer *pPlayer = ToBaseExpresserPlayer(pEnt) )
 	{
 		return pPlayer->GetExpresser();
 	}

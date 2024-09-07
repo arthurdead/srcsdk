@@ -106,7 +106,7 @@ void CTakeDamageInfo::AdjustPlayerDamageInflictedForSkillLevel()
 {
 #ifndef CLIENT_DLL
 	CopyDamageToBaseDamage();
-	SetDamage( g_pGameRules->AdjustPlayerDamageInflicted(GetDamage()) );
+	SetDamage( GameRules()->AdjustPlayerDamageInflicted(GetDamage()) );
 #endif
 }
 
@@ -116,7 +116,7 @@ void CTakeDamageInfo::AdjustPlayerDamageTakenForSkillLevel()
 {
 #ifndef CLIENT_DLL
 	CopyDamageToBaseDamage();
-	g_pGameRules->AdjustPlayerDamageTaken(this);
+	GameRules()->AdjustPlayerDamageTaken(this);
 #endif
 }
 
@@ -233,7 +233,7 @@ void AddMultiDamage( const CTakeDamageInfo &info, CBaseEntity *pEntity )
 		g_MultiDamage.SetPlayerPenetrationCount( info.GetPlayerPenetrationCount() );
 	}
 
-	bool bHasPhysicsForceDamage = !g_pGameRules->Damage_NoPhysicsForce( info.GetDamageType() );
+	bool bHasPhysicsForceDamage = !GameRules()->Damage_NoPhysicsForce( info.GetDamageType() );
 	if ( bHasPhysicsForceDamage && g_MultiDamage.GetDamageType() != DMG_GENERIC )
 	{
 		// If you hit this assert, you've called TakeDamage with a damage type that requires a physics damage

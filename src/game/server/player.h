@@ -261,11 +261,6 @@ class CBasePlayer : public CBaseCombatCharacter
 {
 public:
 	DECLARE_CLASS( CBasePlayer, CBaseCombatCharacter );
-protected:
-	// HACK FOR BOTS
-	friend class CBotManager;
-	static edict_t *s_PlayerEdict; // must be set before calling constructor
-public:
 	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
@@ -301,7 +296,7 @@ public:
 
 	CPlayerState			*PlayerData( void ) { return &pl; }
 	
-	int						RequiredEdictIndex( void ) { return ENTINDEX(edict()); } 
+	int						RequiredEdictIndex( void );
 
 	void					LockPlayerInPlace( void );
 	void					UnlockPlayer( void );
@@ -632,8 +627,9 @@ public:
 	float					GetTimeSinceLastUserCommand( void ) { return ( !IsConnected() || IsFakeClient() || IsBot() ) ? 0.f : gpGlobals->curtime - m_flLastUserCommandTime; }
 
 	// Team Handling
-	virtual void			ChangeTeam( int iTeamNum ) { ChangeTeam(iTeamNum,false, false); }
-	virtual void			ChangeTeam( int iTeamNum, bool bAutoTeam, bool bSilent );
+	virtual void			ChangeTeam( Team_t iTeamNum ) { ChangeTeam(iTeamNum,false, false); }
+	virtual void			ChangeTeam( Team_t iTeamNum, bool bAutoTeam, bool bSilent );
+	virtual void			ForceChangeTeam( Team_t iTeamNum );
 
 	// say/sayteam allowed?
 	virtual bool		CanHearAndReadChatFrom( CBasePlayer *pPlayer );
@@ -664,8 +660,6 @@ public:
 	}
 
 	virtual bool			ShouldAnnounceAchievement( void );
-
-	virtual void			ForceChangeTeam( int iTeamNum );
 
 public:
 	// Player Physics Shadow
@@ -1251,11 +1245,13 @@ public:
 
 	float GetConnectionTime( void ) { return m_flConnectionTime; }
 
+	virtual bool ShouldShowVoiceSubtitleToEnemy( void );
+
 	// Command rate limiting.
 	bool ShouldRunRateLimitedCommand( const CCommand &args );
 	bool ShouldRunRateLimitedCommand( const char *pszCommand );
 
-	bool HandleCommand_JoinTeam(int team);
+	bool HandleCommand_JoinTeam(Team_t team);
 
 	void SetLastForcedChangeTeamTimeToNow( void ) { m_flLastForcedChangeTeamTime = gpGlobals->curtime; }
 	float GetLastForcedChangeTeamTime( void ) { return m_flLastForcedChangeTeamTime; }
@@ -1386,7 +1382,6 @@ public:
 	virtual void		PostConstructor( const char *szClassname );
 
 	virtual bool		CanSpeakVoiceCommand( void ) { return true; }
-	virtual bool		ShouldShowVoiceSubtitleToEnemy( void );
 	virtual void		NoteSpokeVoiceCommand( const char *pszScenePlayed ) {}
 
 	virtual void		ModifyOrAppendCriteria( AI_CriteriaSet& criteriaSet );

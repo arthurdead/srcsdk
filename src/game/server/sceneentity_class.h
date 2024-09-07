@@ -192,8 +192,8 @@ public:
 
 	void					InputScriptPlayerDeath( inputdata_t &inputdata );
 
-	void					AddBroadcastTeamTarget( int nTeamIndex );
-	void					RemoveBroadcastTeamTarget( int nTeamIndex );
+	void					AddBroadcastTeamTarget( Team_t nTeamIndex );
+	void					RemoveBroadcastTeamTarget( Team_t nTeamIndex );
 
 	// Data
 public:

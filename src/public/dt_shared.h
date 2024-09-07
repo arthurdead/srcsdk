@@ -26,7 +26,14 @@
 #define PROPINFO_DT_NAME(varName, remoteVarName)	RECVINFO_DTNAME(varName,remoteVarName)	
 #define PROPINFO_NAME(varName,remoteVarName)		RECVINFO_NAME(varName, remoteVarName)	
 
+#define DataTableProxy_StaticDataTable DataTableRecvProxy_StaticDataTable
+
+#define DataTableProxyFn DataTableRecvVarProxyFn
+
+#define REFERENCE_DATATABLE(tableName)	REFERENCE_RECV_TABLE(tableName)
+
 #define DataTableProp	RecvProp
+#define DataTable	RecvTable
 
 #endif
 
@@ -43,7 +50,14 @@
 #define PROPINFO_DT_NAME(varName, remoteVarName)	SENDINFO_DT_NAME(varName, remoteVarName)
 #define PROPINFO_NAME(varName,remoteVarName)		SENDINFO_NAME(varName,remoteVarName)
 
+#define DataTableProxy_StaticDataTable SendProxy_DataTableToDataTable
+
+#define DataTableProxyFn SendTableProxyFn
+
+#define REFERENCE_DATATABLE(tableName)	REFERENCE_SEND_TABLE(tableName)
+
 #define DataTableProp	SendProp
+#define DataTable	SendTable
 
 #endif
 
@@ -81,8 +95,13 @@ DataTableProp PropInt(
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by SENDINFO macro.
 	int nBits=-1,					// Set to -1 to automatically pick (max) number of bits based on size of element.
-	int flags=0,
-	int rightShift=0
+	int flags=0
+	);
+
+DataTableProp PropBool(
+	char *pVarName,
+	int offset,
+	int sizeofVar=SIZEOF_IGNORE	// Handled by SENDINFO macro.
 	);
 
 DataTableProp PropString(
@@ -96,6 +115,14 @@ DataTableProp PropEHandle(
 	char *pVarName,
 	int offset,
 	int sizeofVar=SIZEOF_IGNORE );
+
+DataTableProp PropDataTable(
+	const char *pVarName,
+	int offset,
+	int flags,
+	DataTable *pTable,
+	DataTableProxyFn varProxy=DataTableProxy_StaticDataTable
+	);
 
 #endif // DATATABLE_SHARED_H
 

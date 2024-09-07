@@ -613,7 +613,7 @@ int CCollisionEvent::ShouldCollide_2( IPhysicsObject *pObj0, IPhysicsObject *pOb
 		!(solid0 == SOLID_VPHYSICS || solid0 == SOLID_BSP || movetype0 == MOVETYPE_VPHYSICS) )
 		return 0;
 
-	if ( !g_pGameRules->ShouldCollide( pEntity0->GetCollisionGroup(), pEntity1->GetCollisionGroup() ) )
+	if ( !GameRules()->ShouldCollide( pEntity0->GetCollisionGroup(), pEntity1->GetCollisionGroup() ) )
 		return 0;
 
 	// check contents
@@ -2306,7 +2306,7 @@ void CCollisionEvent::AddDamageEvent( CBaseEntity *pEntity, const CTakeDamageInf
 	if ( pEntity->IsMarkedForDeletion() )
 		return;
 
-	int iTimeBasedDamage = g_pGameRules->Damage_GetTimeBased();
+	int iTimeBasedDamage = GameRules()->Damage_GetTimeBased();
 	if ( !( info.GetDamageType() & (DMG_BURN | DMG_DROWN | iTimeBasedDamage | DMG_PREVENT_PHYSICS_FORCE) ) )
 	{
 		Assert( info.GetDamageForce() != vec3_origin && info.GetDamagePosition() != vec3_origin );

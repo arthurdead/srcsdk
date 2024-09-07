@@ -874,12 +874,12 @@ int CHudMessage::GetFontInfo( FONTABC *pABCs, vgui::HFont hFont )
 {
 	int i;
 
-	if ( !hFont )
+	if ( hFont == vgui::INVALID_FONT )
 	{
 		hFont = m_hFont;
 	}
 
-	if ( !hFont )
+	if ( hFont == vgui::INVALID_FONT )
 		return 0;
 
 	if ( pABCs )
@@ -927,7 +927,7 @@ CHudMessage::message_t *CHudMessage::AllocMessage( void )
 	msg->g = 0;
 	msg->b = 0;
 	msg->a = 0;
-	msg->font = 0;
+	msg->font = vgui::INVALID_FONT;
 
 	SetVisible( true );
 
@@ -1044,7 +1044,7 @@ void CHudMessage::PaintCharacters()
 			vgui::surface()->DrawSetTextFont( m_hFont );
 			break;
 		case TYPE_CHARACTER:
-			if ( m_hFont )
+			if ( m_hFont != vgui::INVALID_FONT )
 			{
 				int a, b, c;
 				vgui::surface()->GetCharABCwide( m_hFont, msg->ch, a, b, c );

@@ -89,9 +89,9 @@ void CFlexExpresser::Spawn( void )
 
 	// funcorators are immortal
 	m_takedamage		= DAMAGE_NO;
-	m_iHealth			= 80000;// no cycler should die
+	SetHealth( 80000 );// no cycler should die
 
-	m_flPlaybackRate	= 1.0f;
+	SetPlaybackRate( 1.0f );
 	m_flGroundSpeed		= 0;
 
 

@@ -154,7 +154,7 @@ CMapOverview::CMapOverview( const char *pElementName ) : BaseClass( NULL, pEleme
 	
 	m_hIconFont = pScheme->GetFont( "DefaultSmall" );
 	
-	m_nMapTextureID = -1;
+	m_nMapTextureID = vgui::INVALID_TEXTURE;
 	m_MapKeyValues = NULL;
 
 	m_MapOrigin = Vector( 0, 0, 0 );
@@ -202,14 +202,14 @@ void CMapOverview::Init( void )
 
 void CMapOverview::InitTeamColorsAndIcons()
 {
-	Q_memset( m_TeamIcons, 0, sizeof(m_TeamIcons) );
+	Q_memset( m_TeamIcons, (int)vgui::INVALID_TEXTURE, sizeof(m_TeamIcons) );
 	Q_memset( m_TeamColors, 0, sizeof(m_TeamColors) );
 	Q_memset( m_ObjectIcons, 0, sizeof(m_ObjectIcons) );
 
 	m_TextureIDs.RemoveAll();
 }
 
-int CMapOverview::AddIconTexture(const char *filename)
+vgui::HTexture CMapOverview::AddIconTexture(const char *filename)
 {
 	int index = m_TextureIDs.Find( filename );
 
@@ -219,12 +219,12 @@ int CMapOverview::AddIconTexture(const char *filename)
 		return m_TextureIDs.Element(index);
 	}
 
-	index = surface()->CreateNewTextureID();
-	surface()->DrawSetTextureFile( index , filename, true, false);
+	HTexture tex = surface()->CreateNewTextureID();
+	surface()->DrawSetTextureFile( tex , filename, true, false);
 
-	m_TextureIDs.Insert( filename, index );
+	m_TextureIDs.Insert( filename, tex );
 
-	return index;
+	return tex;
 }
 
 void CMapOverview::ApplySchemeSettings(vgui::IScheme *scheme)
@@ -543,7 +543,7 @@ void CMapOverview::DrawMapTexture()
 	GetSize(wide, tall);
 	x0 = 0; y0 = 0; x1 = wide - 2; y1 = tall - 2 ;
 
-	if ( m_nMapTextureID < 0 )
+	if ( m_nMapTextureID == vgui::INVALID_TEXTURE )
 		return;
 	
 	Vertex_t points[4] =
@@ -636,7 +636,7 @@ void CMapOverview::DrawObjects( )
 
 bool CMapOverview::DrawIcon( MapObject_t *obj )
 {
-	int textureID = obj->icon;
+	vgui::HTexture textureID = obj->icon;
 	Vector pos = obj->position;
 	float scale = obj->size;
 	float angle = obj->angle[YAW];
@@ -866,7 +866,7 @@ void CMapOverview::SetMap(const char * levelname)
 	if ( !m_MapKeyValues->LoadFromFile( g_pFullFileSystem, tempfile, "GAME" ) )
 	{
 		DevMsg( 1, "Error! CMapOverview::SetMap: couldn't load file %s.\n", tempfile );
-		m_nMapTextureID = -1;
+		m_nMapTextureID = vgui::INVALID_TEXTURE;
 		m_MapOrigin.x = 0;
 		m_MapOrigin.y = 0;
 		m_fMapScale = 1;
@@ -889,7 +889,7 @@ void CMapOverview::SetMap(const char * levelname)
 	if ( wide != tall )
 	{
 		DevMsg( 1, "Error! CMapOverview::SetMap: map image must be a square.\n" );
-		m_nMapTextureID = -1;
+		m_nMapTextureID = vgui::INVALID_TEXTURE;
 		return;
 	}
 
@@ -1037,7 +1037,7 @@ void CMapOverview::SetMode(int mode)
 	}
 	else if ( mode == MAP_MODE_INSET )
 	{
-		if( m_nMapTextureID == -1 )
+		if( m_nMapTextureID == vgui::INVALID_TEXTURE )
 		{
 			SetMode( MAP_MODE_OFF );
 			return;
@@ -1060,7 +1060,7 @@ void CMapOverview::SetMode(int mode)
 	}
 	else if ( mode == MAP_MODE_FULL )
 	{
-		if( m_nMapTextureID == -1 )
+		if( m_nMapTextureID == vgui::INVALID_TEXTURE )
 		{
 			SetMode( MAP_MODE_OFF );
 			return;

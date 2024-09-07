@@ -34,6 +34,7 @@
 #include "c_ai_basenpc.h"
 #include "c_entitydissolve.h"
 #include "c_fire_smoke.h"
+#include "c_entityflame.h"
 #include "input.h"
 #include "soundinfo.h"
 #include "tools/bonelist.h"
@@ -208,6 +209,8 @@ IMPLEMENT_CLIENTCLASS_DT(C_BaseAnimating, DT_BaseAnimating, CBaseAnimating)
 
 	RecvPropFloat( RECVINFO( m_flFrozen ) ), 
 
+	RecvPropBool( RECVINFO( m_bSuppressAnimSounds ) ),
+
 END_RECV_TABLE()
 
 BEGIN_PREDICTION_DATA( C_BaseAnimating )
@@ -261,7 +264,7 @@ END_PREDICTION_DATA()
 LINK_ENTITY_TO_CLASS( client_ragdoll, C_ClientRagdoll );
 
 C_ClientRagdoll::C_ClientRagdoll()
-	: C_BaseAnimating()
+	: C_ClientAnimating()
 {
 	AddEFlags(EFL_NOT_NETWORKED);
 
@@ -585,6 +588,7 @@ class C_BaseAnimatingGameSystem : public CAutoGameSystem
 	}
 } g_BaseAnimatingGameSystem;
 
+LINK_ENTITY_TO_CLASS( prop_clientside, C_ClientAnimating );
 
 //-----------------------------------------------------------------------------
 // Purpose: convert axis rotations to a quaternion
@@ -4179,17 +4183,20 @@ void C_BaseAnimating::FireEvent( const Vector& origin, const QAngle& angles, int
 
 	case AE_CL_PLAYSOUND:
 		{
-			CLocalPlayerFilter filter;
+			if (!m_bSuppressAnimSounds)
+			{
+				CLocalPlayerFilter filter;
 
-			if ( m_Attachments.Count() > 0)
-			{
-				GetAttachment( 1, attachOrigin, attachAngles );
-				EmitSound( filter, GetSoundSourceIndex(), options, &attachOrigin );
+				if ( m_Attachments.Count() > 0)
+				{
+					GetAttachment( 1, attachOrigin, attachAngles );
+					EmitSound( filter, GetSoundSourceIndex(), options, &attachOrigin );
+				}
+				else
+				{
+					EmitSound( filter, GetSoundSourceIndex(), options, &GetAbsOrigin() );
+				} 
 			}
-			else
-			{
-				EmitSound( filter, GetSoundSourceIndex(), options, &GetAbsOrigin() );
-			} 
 		}
 		break;
 	case AE_CL_STOPSOUND:
@@ -4599,16 +4606,19 @@ void C_BaseAnimating::FireObsoleteEvent( const Vector& origin, const QAngle& ang
 	// Obsolete: Use the AE_CL_PLAYSOUND event instead, which doesn't rely on a magic number in the .qc
 	case CL_EVENT_SOUND:
 		{
-			CLocalPlayerFilter filter;
+			if (!m_bSuppressAnimSounds)
+			{
+				CLocalPlayerFilter filter;
 
-			if ( m_Attachments.Count() > 0)
-			{
-				GetAttachment( 1, attachOrigin, attachAngles );
-				EmitSound( filter, GetSoundSourceIndex(), options, &attachOrigin );
-			}
-			else
-			{
-				EmitSound( filter, GetSoundSourceIndex(), options );
+				if ( m_Attachments.Count() > 0)
+				{
+					GetAttachment( 1, attachOrigin, attachAngles );
+					EmitSound( filter, GetSoundSourceIndex(), options, &attachOrigin );
+				}
+				else
+				{
+					EmitSound( filter, GetSoundSourceIndex(), options );
+				}
 			}
 		}
 		break;
@@ -5039,13 +5049,7 @@ bool C_BaseAnimating::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matri
 C_ClientRagdoll* C_BaseAnimating::CreateClientRagdoll()
 {
 	//DevMsg( "Creating ragdoll at tick %d\n", gpGlobals->tickcount );
-	C_ClientRagdoll *pEnt = new C_ClientRagdoll();
-	pEnt->SetClassname("client_ragdoll");
-	if(!pEnt->InitializeAsClientEntity())
-	{
-		UTIL_Remove(pEnt);
-		return NULL;
-	}
+	C_ClientRagdoll *pEnt = CREATE_ENTITY(C_ClientRagdoll, "client_ragdoll");
 	return pEnt;
 }
 
@@ -5105,6 +5109,12 @@ C_BaseAnimating *C_BaseAnimating::CreateRagdollCopy()
 	pRagdoll->SetModelName( AllocPooledString(pModelName) );
 	pRagdoll->CopySequenceTransitions(this);
 	pRagdoll->SetModelScale( GetModelScale() );
+
+	if(DispatchSpawn(pRagdoll) < 0) {
+		UTIL_Remove(pRagdoll);
+		return NULL;
+	}
+
 	return pRagdoll;
 }
 

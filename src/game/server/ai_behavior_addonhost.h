@@ -3,7 +3,6 @@
 // Purpose: A single behavior that handles running all of the NPC's add ons
 //
 //=====================================================================================//
-/*
 
 #ifndef AI_BEHAVIOR_ADDONHOST_H
 #define AI_BEHAVIOR_ADDONHOST_H
@@ -39,9 +38,6 @@ public:
 
 private:
 	CUtlVector<CHandle<CAI_AddOn>>m_AddOns;
-
-	DECLARE_DATADESC();
 };
 
 #endif//AI_BEHAVIOR_ADDONHOST_H
-*/

@@ -47,11 +47,35 @@ typedef IClientNetworkable*	(*CreateEventFn)();
 class ClientClass
 {
 public:
-	ClientClass( const char *pNetworkName, CreateClientClassFn createFn, CreateEventFn createEventFn, RecvTable *pRecvTable )
+	ClientClass( const char *pNetworkName, CreateClientClassFn createFn, RecvTable *pRecvTable )
 	{
 		m_pNetworkName	= pNetworkName;
 		m_pCreateFn		= createFn;
+		m_pCreateEventFn= NULL;
+		m_pRecvTable	= pRecvTable;
+		
+		// Link it in
+		m_pNext				= g_pClientClassHead;
+		g_pClientClassHead	= this;
+	}
+
+	ClientClass( const char *pNetworkName, CreateEventFn createEventFn, RecvTable *pRecvTable )
+	{
+		m_pNetworkName	= pNetworkName;
+		m_pCreateFn		= NULL;
 		m_pCreateEventFn= createEventFn;
+		m_pRecvTable	= pRecvTable;
+		
+		// Link it in
+		m_pNext				= g_pClientClassHead;
+		g_pClientClassHead	= this;
+	}
+
+	ClientClass( const char *pNetworkName, RecvTable *pRecvTable )
+	{
+		m_pNetworkName	= pNetworkName;
+		m_pCreateFn		= NULL;
+		m_pCreateEventFn= NULL;
 		m_pRecvTable	= pRecvTable;
 		
 		// Link it in
@@ -96,16 +120,18 @@ public:
 	static IClientNetworkable* _##clientClassName##_CreateObject( int entnum, int serialNum ) \
 	{ \
 		clientClassName *pRet = new clientClassName; \
+		if(!pRet->PostConstructor( #clientClassName )) { \
+			UTIL_Remove( pRet ); \
+			return NULL; \
+		} \
 		if(!pRet->InitializeAsServerEntity( entnum, serialNum )) { \
 			UTIL_Remove( pRet ); \
 			return NULL; \
 		} \
-		pRet->PostConstructor( #clientClassName ); \
 		return pRet; \
 	} \
 	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
 													_##clientClassName##_CreateObject, \
-													NULL,\
 													&dataTable::g_RecvTable);
 
 // Implement a client class and provide a factory so you can allocate and delete it yourself
@@ -114,7 +140,6 @@ public:
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName) \
 	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
 													factory, \
-													NULL,\
 													&dataTable::g_RecvTable);
 
 // The IMPLEMENT_CLIENTCLASS_DT macros do IMPLEMENT_CLIENT_CLASS and also do BEGIN_RECV_TABLE.
@@ -134,7 +159,6 @@ public:
 	static clientClassName __g_##clientClassName; \
 	static IClientNetworkable* _##clientClassName##_CreateObject() {return &__g_##clientClassName;}\
 	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
-													NULL,\
 													_##clientClassName##_CreateObject, \
 													&dataTable::g_RecvTable);
 
@@ -151,14 +175,22 @@ public:
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName)\
 	static IClientNetworkable* _##clientClassName##_CreateObject() {return ptr;}\
 	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
-													NULL,\
 													_##clientClassName##_CreateObject, \
+													&dataTable::g_RecvTable);
+
+#define IMPLEMENT_CLIENTCLASS_NULL(clientClassName, dataTable, serverClassName)\
+	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName)\
+	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
 													&dataTable::g_RecvTable);
 
 #define IMPLEMENT_CLIENTCLASS_EVENT_NONSINGLETON(clientClassName, dataTable, serverClassName)\
 	static IClientNetworkable* _##clientClassName##_CreateObject() \
 	{ \
 		clientClassName *p = new clientClassName; \
+		if(!p->PostConstructor( #clientClassName )) { \
+			UTIL_Remove( pRet ); \
+			return NULL; \
+		} \
 		if(!p->InitializeAsEventEntity()) { \
 			UTIL_Remove( p ); \
 			return NULL; \
@@ -166,7 +198,6 @@ public:
 		return p; \
 	} \
 	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
-													NULL,\
 													_##clientClassName##_CreateObject, \
 													&dataTable::g_RecvTable);
 
@@ -177,6 +208,10 @@ public:
 	extern ClientClass __g_##clientClassName##ClientClass;\
 	RecvTable*		clientClassName::m_pClassRecvTable = &dataTable::g_RecvTable;\
 	int				clientClassName::YouForgotToImplementOrDeclareClientClass() {return 0;}\
-	ClientClass*	clientClassName::GetClientClass() {return &__g_##clientClassName##ClientClass;}
+	ClientClass*	clientClassName::GetClientClass() { \
+		if(!IsNetworked()) \
+			return NULL; \
+		return &__g_##clientClassName##ClientClass; \
+	}
 
 #endif // CLIENT_CLASS_H

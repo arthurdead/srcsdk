@@ -26,7 +26,7 @@ class IHandleEntity;
 
 #ifdef GAME_DLL
 class CBaseEntity;
-#else
+#elif defined CLIENT_DLL
 class C_BaseEntity;
 #define CBaseEntity C_BaseEntity
 #endif
@@ -46,7 +46,11 @@ public:
 	explicit CBaseHandle( unsigned long value );
 	CBaseHandle( int iEntry, int iSerialNumber );
 	explicit CBaseHandle( const IHandleEntity *pVal );
+
+#if defined GAME_DLL || defined CLIENT_DLL
 	explicit CBaseHandle( const CBaseEntity *pVal );
+#endif
+
 	explicit CBaseHandle( std::nullptr_t );
 
 	void Init( int iEntry, int iSerialNumber );
@@ -64,24 +68,40 @@ public:
 	bool operator ==( const CBaseHandle &other ) const;
 	bool operator ==( const IHandleEntity* pEnt ) const;
 	bool operator !=( const IHandleEntity* pEnt ) const;
+
+#if defined GAME_DLL || defined CLIENT_DLL
 	bool operator ==( const CBaseEntity* pEnt ) const;
 	bool operator !=( const CBaseEntity* pEnt ) const;
+#endif
+
 	bool operator ==( IHandleEntity* pEnt ) const;
 	bool operator !=( IHandleEntity* pEnt ) const;
+
+#if defined GAME_DLL || defined CLIENT_DLL
 	bool operator ==( CBaseEntity* pEnt ) const;
 	bool operator !=( CBaseEntity* pEnt ) const;
+#endif
+
 	bool operator ==( std::nullptr_t ) const;
 	bool operator !=( std::nullptr_t ) const;
 
 	// Assign a value to the handle.
 	CBaseHandle& operator=( const IHandleEntity *pEntity );
+
+#if defined GAME_DLL || defined CLIENT_DLL
 	CBaseHandle& operator=( const CBaseEntity *pEntity );
+#endif
+
 	CBaseHandle& operator=( const CBaseHandle &pEntity );
 	CBaseHandle& operator=( std::nullptr_t );
 
 	void Set( const CBaseHandle &pEntity );
 	void Set( const IHandleEntity *pEntity );
+
+#if defined GAME_DLL || defined CLIENT_DLL
 	void Set( const CBaseEntity *pEntity );
+#endif
+
 	void Set( std::nullptr_t );
 
 	// Use this to dereference the handle.
@@ -136,10 +156,12 @@ inline CBaseHandle::CBaseHandle( const IHandleEntity *pObj )
 	m_Index = pObj->GetRefEHandle().m_Index;
 }
 
+#if defined GAME_DLL || defined CLIENT_DLL
 inline CBaseHandle::CBaseHandle( const CBaseEntity *pObj )
 	: CBaseHandle((const IHandleEntity *)pObj)
 {
 }
+#endif
 
 inline CBaseHandle::CBaseHandle( int iEntry, int iSerialNumber )
 {
@@ -199,6 +221,7 @@ inline bool CBaseHandle::operator !=( const IHandleEntity* pEnt ) const
 	return Get() != pEnt;
 }
 
+#if defined GAME_DLL || defined CLIENT_DLL
 inline bool CBaseHandle::operator ==( const CBaseEntity* pEnt ) const
 {
 	return (const CBaseEntity*)Get() == pEnt;
@@ -208,6 +231,7 @@ inline bool CBaseHandle::operator !=( const CBaseEntity* pEnt ) const
 {
 	return (const CBaseEntity*)Get() != pEnt;
 }
+#endif
 
 inline bool CBaseHandle::operator ==( IHandleEntity* pEnt ) const
 {
@@ -219,6 +243,7 @@ inline bool CBaseHandle::operator !=( IHandleEntity* pEnt ) const
 	return Get() != pEnt;
 }
 
+#if defined GAME_DLL || defined CLIENT_DLL
 inline bool CBaseHandle::operator ==( CBaseEntity* pEnt ) const
 {
 	return (const CBaseEntity*)Get() == pEnt;
@@ -228,6 +253,7 @@ inline bool CBaseHandle::operator !=( CBaseEntity* pEnt ) const
 {
 	return (const CBaseEntity*)Get() != pEnt;
 }
+#endif
 
 inline bool CBaseHandle::operator ==( std::nullptr_t ) const
 {
@@ -245,11 +271,13 @@ inline CBaseHandle& CBaseHandle::operator=( const IHandleEntity *pEntity )
 	return *this;
 }
 
+#if defined GAME_DLL || defined CLIENT_DLL
 inline CBaseHandle& CBaseHandle::operator=( const CBaseEntity *pEntity )
 {
 	Set( pEntity );
 	return *this;
 }
+#endif
 
 inline CBaseHandle& CBaseHandle::operator=( const CBaseHandle &other )
 {
@@ -263,10 +291,12 @@ inline CBaseHandle& CBaseHandle::operator=( std::nullptr_t )
 	return *this;
 }
 
+#if defined GAME_DLL || defined CLIENT_DLL
 inline void CBaseHandle::Set( const CBaseEntity *pEntity ) 
 { 
 	Set( (const IHandleEntity *)pEntity );
 }
+#endif
 
 inline void CBaseHandle::Set( const IHandleEntity *pEntity ) 
 { 

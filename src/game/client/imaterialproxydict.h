@@ -41,6 +41,6 @@ extern IMaterialProxyDict &GetMaterialProxyDict();
 				&C##className##Factory );									\
 		}																	\
 	};																		\
-	static C##proxyName##Foo g_C##proxyName##Foo;
+	INIT_PRIORITY(65535) static C##proxyName##Foo g_C##proxyName##Foo;
 
 #endif // IMATERIALPROXYDICT_H

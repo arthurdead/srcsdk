@@ -12,8 +12,14 @@
 #ifndef VECTOR_H
 #include "mathlib/vector.h"
 #endif
+#include "ihandleentity.h"
 
 #include "tier1/utlvector.h"
+
+#ifdef GNUC
+#undef offsetof
+#define offsetof(s,m)	__builtin_offsetof(s,m)
+#endif
 
 #ifdef NULL
 #undef NULL
@@ -21,7 +27,15 @@
 #define NULL nullptr
 
 // SINGLE_INHERITANCE restricts the size of CBaseEntity pointers-to-member-functions to 4 bytes
+#ifdef GAME_DLL
 class SINGLE_INHERITANCE CBaseEntity;
+#define CGameBaseEntity CBaseEntity
+#elif defined CLIENT_DLL
+class SINGLE_INHERITANCE C_BaseEntity;
+#define CGameBaseEntity C_BaseEntity
+#else
+class SINGLE_INHERITANCE CGameBaseEntity;
+#endif
 struct inputdata_t;
 
 #define INVALID_TIME (FLT_MAX * -1.0) // Special value not rebased on save/load
@@ -131,20 +145,37 @@ DECLARE_FIELD_SIZE( FIELD_MATERIALINDEX,	sizeof(int) )
 #define ARRAYSIZE2D(p)		(sizeof(p)/sizeof(p[0][0]))
 #define SIZE_OF_ARRAY(p)	_ARRAYSIZE(p)
 
-#define _FIELD(name,fieldtype,count,flags,mapname,tolerance)		{ fieldtype, #name, { offsetof(classNameTypedef, name), 0 }, count, flags, mapname, NULL, NULL, NULL, sizeof( ((classNameTypedef *)0)->name ), NULL, 0, tolerance }
-#define DEFINE_FIELD_NULL	{ FIELD_VOID,0, {0,0},0,0,0,0,0,0}
-#define DEFINE_FIELD(name,fieldtype)			_FIELD(name, fieldtype, 1,  0, NULL, 0 )
-#define DEFINE_KEYFIELD(name,fieldtype, mapname) _FIELD(name, fieldtype, 1,  FTYPEDESC_KEY, mapname, 0 )
-#define DEFINE_AUTO_ARRAY(name,fieldtype)		_FIELD(name, fieldtype, SIZE_OF_ARRAY(((classNameTypedef *)0)->name), 0, NULL, 0 )
-#define DEFINE_AUTO_ARRAY_KEYFIELD(name,fieldtype,mapname)		_FIELD(name, fieldtype, SIZE_OF_ARRAY(((classNameTypedef *)0)->name), 0, mapname, 0 )
-#define DEFINE_ARRAY(name,fieldtype, count)		_FIELD(name, fieldtype, count, 0, NULL, 0 )
-#define DEFINE_ENTITY_FIELD(name,fieldtype)			_FIELD(edict_t, name, fieldtype, 1,  FTYPEDESC_KEY, #name, 0 )
-#define DEFINE_CUSTOM_FIELD(name,datafuncs)	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, datafuncs, NULL }
-#define DEFINE_CUSTOM_KEYFIELD(name,datafuncs,mapname)	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_KEY, mapname, datafuncs, NULL }
-#define DEFINE_AUTO_ARRAY2D(name,fieldtype)		_FIELD(name, fieldtype, ARRAYSIZE2D(((classNameTypedef *)0)->name), 0, NULL, 0 )
+#define _FIELD(name,fieldtype,count,flags,mapname,tolerance) \
+	{ fieldtype, #name, { offsetof(classNameTypedef, name), 0 }, count, flags, mapname, NULL, NULL, NULL, sizeof(((classNameTypedef *)0)->name), NULL, 0, tolerance }
+#define _FIELD_ARRAYELEM(name,i,fieldtype,count,flags,mapname,tolerance) \
+	{ fieldtype, #name "[" #i "]", { (offsetof(classNameTypedef, name) + (sizeof(((classNameTypedef *)0)->name[i]) * i)), 0 }, count, flags, mapname, NULL, NULL, NULL, sizeof(((classNameTypedef *)0)->name[i]), NULL, 0, tolerance }
+#define DEFINE_FIELD_NULL \
+	{ FIELD_VOID,0, {0,0},0,0,0,0,0,0}
+#define DEFINE_FIELD(name,fieldtype) \
+	_FIELD(name, fieldtype, 1,  0, NULL, 0 )
+#define DEFINE_KEYFIELD(name,fieldtype, mapname) \
+	_FIELD(name, fieldtype, 1,  FTYPEDESC_KEY, mapname, 0 )
+#define DEFINE_KEYFIELD_ARRAYELEM(name,i,fieldtype, mapname) \
+	_FIELD_ARRAYELEM(name, i, fieldtype, 1,  FTYPEDESC_KEY, mapname, 0 )
+#define DEFINE_AUTO_ARRAY(name,fieldtype) \
+	_FIELD(name, fieldtype, SIZE_OF_ARRAY(((classNameTypedef *)0)->name), 0, NULL, 0 )
+#define DEFINE_AUTO_ARRAY_KEYFIELD(name,fieldtype,mapname) \
+	_FIELD(name, fieldtype, SIZE_OF_ARRAY(((classNameTypedef *)0)->name), 0, mapname, 0 )
+#define DEFINE_ARRAY(name,fieldtype, count) \
+	_FIELD(name, fieldtype, count, 0, NULL, 0 )
+#define DEFINE_ENTITY_FIELD(name,fieldtype) \
+	_FIELD(edict_t, name, fieldtype, 1,  FTYPEDESC_KEY, #name, 0 )
+#define DEFINE_CUSTOM_FIELD(name,datafuncs) \
+	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, datafuncs, NULL }
+#define DEFINE_CUSTOM_KEYFIELD(name,datafuncs,mapname) \
+	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_KEY, mapname, datafuncs, NULL }
+#define DEFINE_AUTO_ARRAY2D(name,fieldtype) \
+	_FIELD(name, fieldtype, ARRAYSIZE2D(((classNameTypedef *)0)->name), 0, NULL, 0 )
 // Used by byteswap datadescs
-#define DEFINE_BITFIELD(name,fieldtype,bitcount)	DEFINE_ARRAY(name,fieldtype,((bitcount+FIELD_BITS(fieldtype)-1)&~(FIELD_BITS(fieldtype)-1)) / FIELD_BITS(fieldtype) )
-#define DEFINE_INDEX(name,fieldtype)			_FIELD(name, fieldtype, 1,  FTYPEDESC_INDEX, NULL, 0 )
+#define DEFINE_BITFIELD(name,fieldtype,bitcount) \
+	DEFINE_ARRAY(name,fieldtype,((bitcount+FIELD_BITS(fieldtype)-1)&~(FIELD_BITS(fieldtype)-1)) / FIELD_BITS(fieldtype) )
+#define DEFINE_INDEX(name,fieldtype) \
+	_FIELD(name, fieldtype, 1,  FTYPEDESC_INDEX, NULL, 0 )
 
 #define DEFINE_EMBEDDED( name )						\
 	{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, NULL, NULL, &(((classNameTypedef *)0)->name.m_DataMap), sizeof( ((classNameTypedef *)0)->name ), NULL, 0, 0.0f }
@@ -185,7 +216,11 @@ DECLARE_FIELD_SIZE( FIELD_MATERIALINDEX,	sizeof(int) )
 // OUTPUTS
 // the variable 'name' MUST BE derived from CBaseOutput
 // we know the output type from the variable itself, so it doesn't need to be specified here
-#define DEFINE_OUTPUT( name, outputname )	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_OUTPUT | FTYPEDESC_KEY, outputname, NULL }
+
+class ICustomFieldOps;
+extern ICustomFieldOps *eventFuncs;
+
+#define DEFINE_OUTPUT( name, outputname )	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_OUTPUT | FTYPEDESC_KEY, outputname, eventFuncs }
 
 // replaces EXPORT table for portability and non-DLL based systems (xbox)
 #define DEFINE_FUNCTION_RAW( function, func_type )			{ FIELD_VOID, nameHolder.GenerateName(#function), { NULL, NULL }, 1, FTYPEDESC_FUNCTIONTABLE, NULL, NULL, (inputfunc_t)((func_type)(&classNameTypedef::function)) }
@@ -221,10 +256,42 @@ struct typedescription_t;
 //
 // Function prototype for all input handlers.
 //
+#ifdef GAME_DLL
 typedef void (CBaseEntity::*inputfunc_t)(inputdata_t &data);
+#elif defined CLIENT_DLL
+typedef void (C_BaseEntity::*inputfunc_t)(inputdata_t &data);
+#else
+typedef void (CGameBaseEntity::*inputfunc_t)(inputdata_t &data);
+#endif
 
 struct datamap_t;
 struct typedescription_t;
+
+struct FieldInfo_t
+{
+	void *			   pField;
+
+	// Note that it is legal for the following two fields to be NULL,
+	// though it may be disallowed by implementors of ISaveRestoreOps
+	void *			   pOwner;
+	typedescription_t *pTypeDesc;
+};
+
+abstract_class ICustomFieldOps
+{
+private:
+	virtual void Unused1( const FieldInfo_t &fieldInfo, void * ) {}
+	virtual void Unused2( const FieldInfo_t &fieldInfo, void * ) {}
+
+public:
+	virtual bool IsEmpty( const FieldInfo_t &fieldInfo ) = 0;
+	virtual void MakeEmpty( const FieldInfo_t &fieldInfo ) = 0;
+	virtual bool Parse( const FieldInfo_t &fieldInfo, char const* szValue ) = 0;
+
+	bool IsEmpty( void *pField)							{ FieldInfo_t fieldInfo = { pField, NULL, NULL }; return IsEmpty( fieldInfo ); }
+	void MakeEmpty( void *pField)						{ FieldInfo_t fieldInfo = { pField, NULL, NULL }; MakeEmpty( fieldInfo ); }
+	bool Parse( void *pField, char const *pszValue )	{ FieldInfo_t fieldInfo = { pField, NULL, NULL }; return Parse( fieldInfo, pszValue ); }
+};
 
 enum
 {
@@ -245,7 +312,7 @@ struct typedescription_t
 	// the name of the variable in the map/fgd data, or the name of the action
 	const char			*externalName;	
 	// pointer to the function set for save/restoring of custom data types
-	void		*pSaveRestoreOps; 
+	ICustomFieldOps		*pFieldOps; 
 	// for associating function with string names
 	inputfunc_t			inputFunc; 
 	// For embedding additional datatables inside this one
@@ -264,6 +331,39 @@ struct typedescription_t
 	float				fieldTolerance;
 };
 
+class CDefCustomFieldOps : public ICustomFieldOps
+{
+public:
+	// save data type interface
+	virtual bool IsEmpty( const FieldInfo_t &fieldInfo ) { return false; }
+	virtual void MakeEmpty( const FieldInfo_t &fieldInfo ) {}
+	virtual bool Parse( const FieldInfo_t &fieldInfo, char const* szValue ) { return false; }
+};
+
+
+//-----------------------------------------------------------------------------
+// Used by ops that deal with pointers
+//-----------------------------------------------------------------------------
+class CClassPtrFieldOps : public CDefCustomFieldOps
+{
+public:
+	virtual bool IsEmpty( const FieldInfo_t &fieldInfo )
+	{
+		void **ppClassPtr = (void **)fieldInfo.pField;
+		int nObjects = fieldInfo.pTypeDesc->fieldSize;
+		for ( int i = 0; i < nObjects; i++ )
+		{
+			if ( ppClassPtr[i] != NULL )
+				return false;
+		}
+		return true;
+	}
+
+	virtual void MakeEmpty( const FieldInfo_t &fieldInfo )
+	{
+		memset( fieldInfo.pField, 0, fieldInfo.pTypeDesc->fieldSize * sizeof( void * ) );
+	}
+};
 
 //-----------------------------------------------------------------------------
 // Purpose: stores the list of objects in the hierarchy

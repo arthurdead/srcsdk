@@ -11,6 +11,7 @@
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "datacache/imdlcache.h"
 #include "activitylist.h"
+#include "playeranimstate.h"
 
 #ifdef CLIENT_DLL
 	#include "prediction.h"
@@ -50,6 +51,10 @@ ConVar weapon_criticals_bucket_default( "weapon_criticals_bucket_default", "300.
 
 CBaseCombatWeapon::CBaseCombatWeapon()
 {
+#ifdef CLIENT_DLL
+	SetPredictionEligible(true);
+#endif
+
 	// Constructor must call this
 	// CONSTRUCT_PREDICTABLE( CBaseCombatWeapon );
 
@@ -86,6 +91,12 @@ CBaseCombatWeapon::CBaseCombatWeapon()
 	m_flCritTokenBucket = weapon_criticals_bucket_default.GetFloat();
 	m_nCritChecks = 1;
 	m_nCritSeedRequests = 0;
+
+#ifdef GAME_DLL
+	AddSolidFlags(FSOLID_TRIGGER);
+
+	m_flNextResetCheckTime = 0.0f;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -112,7 +123,7 @@ void CBaseCombatWeapon::Activate( void )
 	if ( GetOwnerEntity() )
 		return;
 
-	if ( g_pGameRules->IsAllowedToSpawn( this ) == false )
+	if ( GameRules()->IsAllowedToSpawn( this ) == false )
 	{
 		UTIL_Remove( this );
 		return;
@@ -220,7 +231,7 @@ void CBaseCombatWeapon::Spawn( void )
 //-----------------------------------------------------------------------------
 const unsigned char *CBaseCombatWeapon::GetEncryptionKey( void ) 
 { 
-	return g_pGameRules->GetEncryptionKey(); 
+	return GameRules()->GetEncryptionKey(); 
 }
 
 //-----------------------------------------------------------------------------
@@ -538,6 +549,11 @@ CBaseCombatCharacter	*CBaseCombatWeapon::GetOwner() const
 	return ToBaseCombatCharacter( m_hOwner.Get() );
 }	
 
+CBasePlayer	*CBaseCombatWeapon::GetPlayerOwner() const
+{
+	return ToBasePlayer( m_hOwner.Get() );
+}	
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : BaseCombatCharacter - 
@@ -693,7 +709,7 @@ void CBaseCombatWeapon::Drop( const Vector &vecVelocity )
 	// remove myself when I'm dropped by an NPC.
 	if ( pOwner && pOwner->IsNPC() )
 	{
-		if ( g_pGameRules->IsAllowedToSpawn( this ) == false )
+		if ( GameRules()->IsAllowedToSpawn( this ) == false )
 		{
 			UTIL_Remove( this );
 			return;
@@ -1339,7 +1355,7 @@ bool CBaseCombatWeapon::ReloadOrSwitchWeapons( void )
 	if ( !HasAnyAmmo() && m_flNextPrimaryAttack < gpGlobals->curtime && m_flNextSecondaryAttack < gpGlobals->curtime )
 	{
 		// weapon isn't useable, switch.
-		if ( ( (GetWeaponFlags() & ITEM_FLAG_NOAUTOSWITCHEMPTY) == false ) && ( g_pGameRules->SwitchToNextBestWeapon( pOwner, this ) ) )
+		if ( ( (GetWeaponFlags() & ITEM_FLAG_NOAUTOSWITCHEMPTY) == false ) && ( GameRules()->SwitchToNextBestWeapon( pOwner, this ) ) )
 		{
 			m_flNextPrimaryAttack = gpGlobals->curtime + 0.3;
 			return true;
@@ -1953,6 +1969,9 @@ bool CBaseCombatWeapon::DefaultReload( int iClipSize1, int iClipSize2, int iActi
 	WeaponSound( RELOAD );
 #endif
 	SendWeaponAnim( iActivity );
+	if(pOwner->IsPlayer()) {
+		((CBasePlayer *)pOwner)->DoAnimationEvent(PLAYERANIMEVENT_RELOAD);
+	}
 
 	MDLCACHE_CRITICAL_SECTION();
 	float flSequenceEndTime = gpGlobals->curtime + SequenceDuration();

@@ -41,7 +41,7 @@ public:
 	CHandle<CSpriteTrail> m_pTrail;
 	CHandle<CSprite> m_pSprite;
 	int m_iType;
-	int m_iRenderType;
+	RenderMode_t m_iRenderType;
 
 	int m_iR;
 	int m_iG;

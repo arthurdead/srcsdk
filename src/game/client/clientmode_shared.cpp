@@ -309,7 +309,7 @@ void ClientModeShared::ReloadSchemeWithRoot( vgui::VPANEL pRoot, bool flushLowLe
 		KeyValuesSystem()->InvalidateCache();
 	}
 
-	if ( pRoot )
+	if ( pRoot != INVALID_VPANEL )
 	{
 		int wide, tall;
 		vgui::ipanel()->GetSize(pRoot, wide, tall);
@@ -376,7 +376,7 @@ void ClientModeShared::Init()
 	ReplayCamera()->Init();
 #endif
 
-	m_CursorNone = vgui::dc_none;
+	m_CursorNone = vgui::CursorCodeToCursor( vgui::dc_none );
 
 	HOOK_MESSAGE( VGUIMenu );
 	HOOK_MESSAGE( Rumble );
@@ -396,6 +396,9 @@ void ClientModeShared::InitWeaponSelectionHudElement()
 
 void ClientModeShared::InitViewport()
 {
+	m_pViewport = new CBaseViewport();
+	m_pViewport->Start( gameuifuncs, gameeventmanager );
+	m_pViewport->SetAsFullscreenViewportInterface();
 }
 
 
@@ -951,7 +954,7 @@ void ClientModeShared::Disable()
 	// Remove our viewport from the root panel.
 	if( pRoot != 0 )
 	{
-		m_pViewport->SetParent( (vgui::VPANEL)NULL );
+		m_pViewport->SetParent( vgui::INVALID_VPANEL );
 	}
 
 	m_pViewport->SetVisible( false );
@@ -1177,7 +1180,7 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 		if ( bDisconnected )
 			return;
 
-		int team = event->GetInt( "team" );
+		Team_t team = event->GetInt( "team" );
 		bool bAutoTeamed = event->GetBool( "autoteam", false );
 		bool bSilent = event->GetBool( "silent", false );
 
@@ -1191,7 +1194,7 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 			g_pVGuiLocalize->ConvertANSIToUnicode( pszName, wszPlayerName, sizeof(wszPlayerName) );
 
 			wchar_t wszTeam[64];
-			C_Team *pTeam = GetGlobalTeam( team );
+			C_Team *pTeam = GetGlobalTeamByTeam( team );
 			if ( pTeam )
 			{
 				g_pVGuiLocalize->ConvertANSIToUnicode( pTeam->Get_Name(), wszTeam, sizeof(wszTeam) );
@@ -1265,7 +1268,7 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 	}
 	else if (Q_strcmp( "teamplay_broadcast_audio", eventname ) == 0 )
 	{
-		int team = event->GetInt( "team" );
+		Team_t team = event->GetInt( "team" );
 
 		bool bValidTeam = false;
 

@@ -931,8 +931,6 @@ bool CalcPlayersOnFriendsList( int iMinFriends )
 	if ( !g_PR )
 		return false;
 
-	Assert( g_pGameRules->IsMultiplayer() );
-
 	// Do a cheap rejection: check teammate count first to see if we even need to bother checking w/Steam
 	// Subtract 1 for the local player.
 	if ( CalcPlayerCount()-1 < iMinFriends )
@@ -977,14 +975,12 @@ bool CalcPlayersOnFriendsList( int iMinFriends )
 //-----------------------------------------------------------------------------
 bool CalcHasNumClanPlayers( int iClanTeammates )
 {
-	Assert( g_pGameRules->IsMultiplayer() );
-
 	// Do a cheap rejection: check teammate count first to see if we even need to bother checking w/Steam
 	// Subtract 1 for the local player.
 	if ( CalcPlayerCount()-1 < iClanTeammates )
 		return false;
 
-	if ( !SteamFriends() || !SteamUtils() || !g_pGameRules->IsMultiplayer() )
+	if ( !SteamFriends() || !SteamUtils() )
 		return false;
 
 	// determine local player team
@@ -1023,8 +1019,6 @@ bool CalcHasNumClanPlayers( int iClanTeammates )
 //-----------------------------------------------------------------------------
 int	CalcTeammateCount()
 {
-	Assert( g_pGameRules->IsMultiplayer() );
-
 	// determine local player team
 	int iLocalPlayerIndex =  GetLocalPlayerIndex();
 	int iLocalPlayerTeam = g_PR->GetTeam( iLocalPlayerIndex );
@@ -1395,7 +1389,6 @@ int CAchievementMgr::GetAchievementCount()
 }
 
 
-#if !defined(NO_STEAM)
 //-----------------------------------------------------------------------------
 // Purpose: called when stat download is complete
 //-----------------------------------------------------------------------------
@@ -1450,31 +1443,28 @@ void CAchievementMgr::Steam_OnUserStatsStored( UserStatsStored_t *pUserStatsStor
 		{
 #ifndef GAME_DLL
 			// send a message to the server about our achievement
-			if ( g_pGameRules && g_pGameRules->IsMultiplayer() )
+			C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
+			if ( pLocalPlayer )
 			{
-				C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
-				if ( pLocalPlayer )
+				int nAchievementID = m_AchievementsAwarded[0];
+				CBaseAchievement* pAchievement = GetAchievementByID( nAchievementID );
+
+				// verify that it is still achieved (it could have been rejected by Steam)
+				if ( pAchievement->IsAchieved() )
 				{
-					int nAchievementID = m_AchievementsAwarded[0];
-					CBaseAchievement* pAchievement = GetAchievementByID( nAchievementID );
-
-					// verify that it is still achieved (it could have been rejected by Steam)
-					if ( pAchievement->IsAchieved() )
+					// Get the unlocked time from Steam
+					uint32 unlockTime;
+					bool bAchieved;
+					bool bRet = SteamUserStats()->GetAchievementAndUnlockTime( pAchievement->GetName(), &bAchieved, &unlockTime );
+					if ( bRet && bAchieved )
 					{
-						// Get the unlocked time from Steam
-						uint32 unlockTime;
-						bool bAchieved;
-						bool bRet = SteamUserStats()->GetAchievementAndUnlockTime( pAchievement->GetName(), &bAchieved, &unlockTime );
-						if ( bRet && bAchieved )
-						{
-							// set the unlock time
-							pAchievement->SetUnlockTime( unlockTime );
-						}
-
-						KeyValues *kv = new KeyValues( "AchievementEarned" );
-						kv->SetInt( "achievementID", nAchievementID );
-						engine->ServerCmdKeyValues( kv );
+						// set the unlock time
+						pAchievement->SetUnlockTime( unlockTime );
 					}
+
+					KeyValues *kv = new KeyValues( "AchievementEarned" );
+					kv->SetInt( "achievementID", nAchievementID );
+					engine->ServerCmdKeyValues( kv );
 				}
 			}
 #endif			
@@ -1484,7 +1474,6 @@ void CAchievementMgr::Steam_OnUserStatsStored( UserStatsStored_t *pUserStatsStor
 		CheckMetaAchievements();
 	}
 }
-#endif // !defined(NO_STEAM)
 
 void CAchievementMgr::CheckMetaAchievements( void )
 {
@@ -1565,7 +1554,6 @@ void CAchievementMgr::SetAchievementThink( CBaseAchievement *pAchievement, float
 
 void CAchievementMgr::UpdateStateFromSteam_Internal()
 {
-#ifndef NO_STEAM
 	// run through the achievements and set their achieved state according to Steam data
 	FOR_EACH_MAP( m_mapAchievement, i )
 	{
@@ -1618,7 +1606,6 @@ void CAchievementMgr::UpdateStateFromSteam_Internal()
 		gameeventmanager->FireEventClientSide( event );
 #endif
 	}
-#endif
 }
 
 #ifdef CLIENT_DLL
@@ -1783,7 +1770,7 @@ CON_COMMAND_F( achievement_mark_dirty, "Mark achievement data as dirty", FCVAR_C
 //-----------------------------------------------------------------------------
 const char *GetModelName( CBaseEntity *pBaseEntity )
 {
-	CBaseAnimating *pBaseAnimating = dynamic_cast<CBaseAnimating *>( pBaseEntity );
+	CBaseAnimating *pBaseAnimating = pBaseEntity->GetBaseAnimating();
 	if ( pBaseAnimating )
 	{
 		CStudioHdr *pStudioHdr = pBaseAnimating->GetModelPtr();

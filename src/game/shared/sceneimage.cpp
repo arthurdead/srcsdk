@@ -696,7 +696,7 @@ bool CSceneImage::UpdateSceneImageFile( CUtlBuffer &targetBuffer, char const *pc
 			scene.crcFileName = pEntry->crcFilename;
 			scene.compiledBuffer.Put( pData, pEntry->nDataLength );
 			scene.msecs = pSummary->msecs;
-			scene.lastspeak_msecs = pSummary->lastspeech_msecs;
+			scene.lastspeak_msecs = 0;//pSummary->lastspeech_msecs;
 			// Load sounds
 			for ( int j = 0 ; j < pSummary->numSounds; ++j )
 			{
@@ -721,7 +721,6 @@ bool CSceneImage::UpdateSceneImageFile( CUtlBuffer &targetBuffer, char const *pc
 	}
 
 	// Now add the additional files
-	bool bGameIsTF = V_stristr( pchModPath, "\\tf" ) != NULL;
 	for ( int i = 0; i < nUpdateCount; ++i )
 	{
 		const char *pFilename = pFilesToUpdate[i].String();
@@ -731,7 +730,7 @@ bool CSceneImage::UpdateSceneImageFile( CUtlBuffer &targetBuffer, char const *pc
 			continue;
 		}
 
-		if ( !bLittleEndian && bGameIsTF && V_stristr( pSceneName, "high\\" ) )
+		if ( !bLittleEndian && V_stristr( pSceneName, "high\\" ) )
 		{
 			continue;
 		}

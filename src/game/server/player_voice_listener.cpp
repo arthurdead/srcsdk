@@ -6,16 +6,10 @@
 //===========================================================================
 
 #include "cbase.h"
-#include "vscript_server.h"
 
 #include "player_voice_listener.h"
 
 ConVar voice_player_speaking_delay_threshold( "voice_player_speaking_delay_threshold", "0.5f", FCVAR_CHEAT );
-
-BEGIN_SCRIPTDESC_ROOT_NAMED( CPlayerVoiceListener, "CPlayerVoiceListener", SCRIPT_SINGLETON "Player voice listeners" )
-	DEFINE_SCRIPTFUNC_NAMED( ScriptIsPlayerSpeaking, "IsPlayerSpeaking", "Returns whether the player specified is speaking." )
-	DEFINE_SCRIPTFUNC_NAMED( ScriptGetPlayerSpeechDuration, "GetPlayerSpeechDuration", "Returns the number of seconds the player has been continuously speaking." )
-END_SCRIPTDESC()
 
 inline bool IsPlayerIndexValid( int nPlayerIndex )
 {
@@ -61,14 +55,6 @@ bool CPlayerVoiceListener::IsPlayerSpeaking( CBasePlayer *pPlayer )
 		return false;
 
 	return IsPlayerSpeaking( pPlayer->entindex() );
-}
-
-//---------------------------------------------------------------------------
-// Purpose:
-//---------------------------------------------------------------------------
-bool CPlayerVoiceListener::ScriptIsPlayerSpeaking( int nPlayerIndex )
-{
-	return IsPlayerSpeaking( nPlayerIndex );
 }
 
 
@@ -141,19 +127,11 @@ float CPlayerVoiceListener::GetPlayerSpeechDuration( CBasePlayer *pPlayer )
 //---------------------------------------------------------------------------
 // Purpose:
 //---------------------------------------------------------------------------
-float CPlayerVoiceListener::ScriptGetPlayerSpeechDuration( int nPlayerIndex )
-{
-	return GetPlayerSpeechDuration( nPlayerIndex );
-}
-
-//---------------------------------------------------------------------------
-// Purpose:
-//---------------------------------------------------------------------------
 void CPlayerVoiceListener::InitData( void )
 {
 	// Clear our tracking data
-	memset( m_flLastPlayerSpeechTime, 0.0f, ARRAYSIZE(m_flLastPlayerSpeechTime) );
-	memset( m_flPlayerSpeechDuration, 0.0f, ARRAYSIZE(m_flPlayerSpeechDuration) );
+	memset( m_flLastPlayerSpeechTime, 0.0f, sizeof(m_flLastPlayerSpeechTime) );
+	memset( m_flPlayerSpeechDuration, 0.0f, sizeof(m_flPlayerSpeechDuration) );
 }
 
 //---------------------------------------------------------------------------

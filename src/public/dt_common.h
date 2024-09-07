@@ -16,9 +16,9 @@
 #include "tier1/strtools.h"
 #include <stddef.h>
 
-#ifdef LINUX
+#ifdef GNUC
 #undef offsetof
-#define offsetof(s,m)	(size_t)&(((s *)0)->m)
+#define offsetof(s,m)	__builtin_offsetof(s,m)
 #endif
 
 // Max number of properties in a datatable and its children.

@@ -46,7 +46,7 @@ void CLogicPlayerProxy::Activate( void )
 
 	if ( m_hPlayer == NULL )
 	{
-		m_hPlayer = AI_GetSinglePlayer();
+		m_hPlayer = UTIL_GetNearestPlayer( GetAbsOrigin() );
 	}
 }
 
@@ -78,17 +78,21 @@ void CLogicPlayerProxy::InputRequestPlayerHealth( inputdata_t &inputdata )
 	m_RequestedPlayerHealth.Set( m_hPlayer->GetHealth(), inputdata.pActivator, inputdata.pCaller );
 }
 
+#ifdef HL2_DLL
 extern ConVar hl2_darkness_flashlight_factor;
+#endif
 
 void CLogicPlayerProxy::InputSetFlashlightSlowDrain( inputdata_t &inputdata )
 {
 	if( m_hPlayer == NULL )
 		return;
 
+#ifdef HL2_DLL
 	CHL2_Player *pPlayer = dynamic_cast<CHL2_Player*>(m_hPlayer.Get());
 
 	if( pPlayer )
 		pPlayer->SetFlashlightPowerDrainScale( hl2_darkness_flashlight_factor.GetFloat() );
+#endif
 }
 
 void CLogicPlayerProxy::InputSetFlashlightNormalDrain( inputdata_t &inputdata )
@@ -96,10 +100,12 @@ void CLogicPlayerProxy::InputSetFlashlightNormalDrain( inputdata_t &inputdata )
 	if( m_hPlayer == NULL )
 		return;
 
+#ifdef HL2_DLL
 	CHL2_Player *pPlayer = dynamic_cast<CHL2_Player*>(m_hPlayer.Get());
 
 	if( pPlayer )
 		pPlayer->SetFlashlightPowerDrainScale( 1.0f );
+#endif
 }
 
 void CLogicPlayerProxy::InputLowerWeapon( inputdata_t &inputdata )
@@ -107,9 +113,11 @@ void CLogicPlayerProxy::InputLowerWeapon( inputdata_t &inputdata )
 	if( m_hPlayer == NULL )
 		return;
 
+#ifdef HL2_DLL
 	CHL2_Player *pPlayer = dynamic_cast<CHL2_Player*>(m_hPlayer.Get());
 
 	pPlayer->Weapon_Lower();
+#endif
 }
 
 void CLogicPlayerProxy::InputSetLocatorTargetEntity( inputdata_t &inputdata )
@@ -125,8 +133,10 @@ void CLogicPlayerProxy::InputSetLocatorTargetEntity( inputdata_t &inputdata )
 		pTarget = gEntList.FindEntityByName( NULL, iszTarget );
 	}
 
+#ifdef HL2_DLL
 	CHL2_Player *pPlayer = dynamic_cast<CHL2_Player*>(m_hPlayer.Get());
 	pPlayer->SetLocatorTargetEntity(pTarget);
+#endif
 }
 
 void CLogicPlayerProxy::InputRequestAmmoState( inputdata_t &inputdata )
@@ -158,8 +168,10 @@ void CLogicPlayerProxy::InputEnableCappedPhysicsDamage( inputdata_t &inputdata )
 	if ( m_hPlayer == NULL )
 		return;
 
+#ifdef HL2_DLL
 	CHL2_Player *pPlayer = dynamic_cast<CHL2_Player*>(m_hPlayer.Get());
 	pPlayer->EnableCappedPhysicsDamage();
+#endif
 }
 
 void CLogicPlayerProxy::InputDisableCappedPhysicsDamage( inputdata_t &inputdata )
@@ -167,6 +179,8 @@ void CLogicPlayerProxy::InputDisableCappedPhysicsDamage( inputdata_t &inputdata 
 	if ( m_hPlayer == NULL )
 		return;
 
+#ifdef HL2_DLL
 	CHL2_Player *pPlayer = dynamic_cast<CHL2_Player*>(m_hPlayer.Get());
 	pPlayer->DisableCappedPhysicsDamage();
+#endif
 }

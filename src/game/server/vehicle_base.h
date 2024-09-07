@@ -157,7 +157,7 @@ class CPropVehicleDriveable : public CPropVehicle, public IDrivableVehicle, publ
 {
 	DECLARE_CLASS( CPropVehicleDriveable, CPropVehicle );
 	DECLARE_SERVERCLASS();
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 public:
 	CPropVehicleDriveable( void );
 	~CPropVehicleDriveable( void );

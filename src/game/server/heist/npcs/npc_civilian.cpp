@@ -34,5 +34,8 @@ void CNPC_Civilian::Spawn()
 
 	CapabilitiesAdd(bits_CAP_NO_HIT_PLAYER);
 
+	ChangeTeam( TEAM_CIVILIANS );
+	ChangeFaction( FACTION_CIVILIANS );
+
 	BaseClass::Spawn();
 }

@@ -388,6 +388,9 @@ private:
 	// was pev->framerate
 	CNetworkVar( float, m_flPlaybackRate );
 
+protected:
+	CNetworkVar( bool, m_bSuppressAnimSounds );
+
 public:
 	void InitStepHeightAdjust( void );
 	void SetIKGroundContactInfo( float minHeight, float maxHeight );

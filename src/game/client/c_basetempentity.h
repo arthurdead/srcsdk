@@ -30,6 +30,7 @@ public:
 									C_BaseTempEntity( void );
 	virtual							~C_BaseTempEntity( void );
 
+	bool IsNetworked( void ) const { return true; }
 
 // IClientUnknown implementation.
 public:
@@ -38,14 +39,14 @@ public:
 	virtual const CBaseHandle& GetRefEHandle() const		{ return NULL_BASEHANDLE; }
 
 	virtual IClientUnknown*		GetIClientUnknown()		{ return this; }
-	virtual ICollideable*		GetCollideable()		{ return 0; }
+	virtual ICollideable*		GetCollideable()		{ return NULL; }
 	virtual IClientNetworkable*	GetClientNetworkable()	{ return this; }
-	virtual IClientRenderable*	GetClientRenderable()	{ return 0; }
-	virtual IClientEntity*		GetIClientEntity()		{ return 0; }
-	virtual C_BaseEntity*		GetBaseEntity()			{ return 0; }
-	virtual IClientThinkable*	GetClientThinkable()	{ return 0; }
-	virtual IClientModelRenderable*	GetClientModelRenderable()	{ return 0; }
-	virtual IClientAlphaProperty*	GetClientAlphaProperty()	{ return 0; }
+	virtual IClientRenderable*	GetClientRenderable()	{ return NULL; }
+	virtual IClientEntity*		GetIClientEntity()		{ return NULL; }
+	virtual C_BaseEntity*		GetBaseEntity()			{ return NULL; }
+	virtual IClientThinkable*	GetClientThinkable()	{ return NULL; }
+	virtual IClientModelRenderable*	GetClientModelRenderable()	{ return NULL; }
+	virtual IClientAlphaProperty*	GetClientAlphaProperty()	{ return NULL; }
 
 
 // IClientNetworkable overrides.
@@ -74,6 +75,8 @@ public:
 	void NetworkStateChanged( void *pVar ) {}
 
 	virtual bool					InitializeAsServerEntity(int entnum, int iSerialNum);
+
+	virtual bool					PostConstructor( const char * ) { return true; }
 
 	virtual void					Precache( void );
 

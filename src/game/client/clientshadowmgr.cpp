@@ -108,7 +108,7 @@ static ConVar r_worldlight_mincastintensity( "r_worldlight_mincastintensity", "0
 
 static ConVar r_shadow_lightpos_lerptime( "r_shadow_lightpos_lerptime", "0.5" );
 static ConVar r_shadowfromworldlights_debug( "r_shadowfromworldlights_debug", "0", FCVAR_CHEAT );
-static ConVar r_shadowfromanyworldlight( "r_shadowfromanyworldlight", "0", FCVAR_CHEAT );
+static ConVar r_shadowfromanyworldlight( "r_shadowfromanyworldlight", "1", FCVAR_CHEAT );
 static ConVar r_shadow_shortenfactor( "r_shadow_shortenfactor", "1.5" , FCVAR_CHEAT, "Makes shadows cast from local lights shorter" );
 
 static void HalfUpdateRateCallback( IConVar *var, const char *pOldValue, float flOldValue );
@@ -116,13 +116,18 @@ static ConVar r_shadow_half_update_rate( "r_shadow_half_update_rate", "0", 0, "U
 
 static ConVar r_shadow_debug_spew( "r_shadow_debug_spew", "0", FCVAR_CHEAT );
 
+// ConVars from stdshaders/shadow.cpp
+static ConVar r_shadow_rtt_mode( "r_shadow_rtt_mode", "1" );
+static ConVar r_shadow_rtt_farz( "r_shadow_rtt_farz", "100" );
+static ConVar r_shadow_pcss_scale_falloff( "r_shadow_pcss_scale_falloff", "10" );
+
 ConVar r_flashlightdepthtexture( "r_flashlightdepthtexture", "1" );
 ConVar r_max_shadowtextures( "r_max_shadowtextures", "8" );
 
 ConVar r_flashlight_staticprops( "r_flashlight_staticprops", "2" );
 
-ConVar r_flashlightdepthreshigh( "r_flashlightdepthreshigh", "2048" );
-ConVar r_flashlightdepthres( "r_flashlightdepthres", "2048" );
+ConVar r_flashlightdepthreshigh( "r_flashlightdepthreshigh", "4096" );
+ConVar r_flashlightdepthres("r_flashlightdepthres", "4096", FCVAR_ARCHIVE, "Flashlight depth resolution");
 
 ConVar r_threaded_client_shadow_manager( "r_threaded_client_shadow_manager", "0" );
 
@@ -275,8 +280,27 @@ void CTextureAllocator::Init()
 
 void CTextureAllocator::InitRenderTargets( void )
 {
-	// don't need depth buffer for shadows
-	m_TexturePage.InitRenderTarget( TEXTURE_PAGE_SIZE, TEXTURE_PAGE_SIZE, RT_SIZE_NO_CHANGE, IMAGE_FORMAT_ARGB8888, MATERIAL_RT_DEPTH_NONE, false, "_rt_Shadows" );
+	unsigned int textureFlags = TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT;
+
+	if ( r_shadow_rtt_mode.GetInt() != 0 )
+	{
+		// ES: Shadow shader implements software bilinear shadow sampling
+		textureFlags |= TEXTUREFLAGS_POINTSAMPLE;
+	}
+
+	// need depth buffer for shadows
+	ITexture* pShadowsRT = g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
+		"_rt_Shadows",
+		TEXTURE_PAGE_SIZE,
+		TEXTURE_PAGE_SIZE,
+		RT_SIZE_NO_CHANGE,
+		IMAGE_FORMAT_R32F,
+		MATERIAL_RT_DEPTH_SEPARATE,
+		textureFlags,
+		0
+	);
+
+	m_TexturePage.Init( pShadowsRT );
 }
 
 void CTextureAllocator::Shutdown()
@@ -1943,7 +1967,7 @@ const Vector &CClientShadowMgr::GetShadowDirection() const
 //-----------------------------------------------------------------------------
 float CClientShadowMgr::GetShadowDistance( IClientRenderable *pRenderable ) const
 {
-	float flDist = m_flShadowCastDist;
+	float flDist = GetShadowDistance();
 
 	// Allow the renderable to override the default
 	pRenderable->GetShadowCastDistance( &flDist, GetActualShadowCastType( pRenderable ) );
@@ -1996,6 +2020,9 @@ void CClientShadowMgr::SetShadowDistance( float flMaxDistance )
 
 float CClientShadowMgr::GetShadowDistance( ) const
 {
+	if ( r_shadow_rtt_mode.GetInt() == 4 ) // ES: soft shadows
+		return m_flShadowCastDist * r_shadow_pcss_scale_falloff.GetFloat();
+
 	return m_flShadowCastDist;
 }
 
@@ -5073,7 +5100,7 @@ bool CClientShadowMgr::DrawRenderToTextureShadow( ClientShadowHandle_t clientSha
 		pRenderContext->Viewport( x, y, w, h ); 
 
 		// Clear the selected viewport only (don't need to clear depth)
-		pRenderContext->ClearBuffers( true, false );
+		pRenderContext->ClearBuffers( true, true );
 
 		pRenderContext->MatrixMode( MATERIAL_VIEW );
 		pRenderContext->LoadMatrix( shadow.m_WorldToShadow );
@@ -5542,7 +5569,7 @@ void CClientShadowMgr::ComputeShadowTextures( const CViewSetup &view, int leafCo
 	PIXEVENT( pRenderContext, "Render-To-Texture Shadows" );
 
 	// Clear to white (color unused), black alpha
-	pRenderContext->ClearColor4ub( 255, 255, 255, 0 );
+	pRenderContext->ClearColor4ub( 0, 0, 0, 0 );
 
 	// No height clip mode please.
 	MaterialHeightClipMode_t oldHeightClipMode = pRenderContext->GetHeightClipMode();
@@ -5554,7 +5581,7 @@ void CClientShadowMgr::ComputeShadowTextures( const CViewSetup &view, int leafCo
 	pRenderContext->PushMatrix();
 	pRenderContext->LoadIdentity();
 	pRenderContext->Scale( 1, -1, 1 );
-	pRenderContext->Ortho( 0, 0, 1, 1, -9999, 0 );
+	pRenderContext->Ortho( 0, 0, 1, 1, -(r_shadow_rtt_farz.GetFloat()), 0 );
 
 	pRenderContext->MatrixMode( MATERIAL_VIEW );
 	pRenderContext->PushMatrix();
@@ -5564,7 +5591,7 @@ void CClientShadowMgr::ComputeShadowTextures( const CViewSetup &view, int leafCo
 	if ( m_bRenderTargetNeedsClear )
 	{
 		// don't need to clear absent depth buffer
-		pRenderContext->ClearBuffers( true, false );
+		pRenderContext->ClearBuffers( true, true );
 		m_bRenderTargetNeedsClear = false;
 	}
 

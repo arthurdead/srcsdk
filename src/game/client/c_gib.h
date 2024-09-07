@@ -14,11 +14,12 @@
 
 // Base client gibs
 
-class C_Gib : public C_BaseAnimating
+class C_Gib : public C_ClientAnimating
 {
-	typedef C_BaseAnimating BaseClass;
+	typedef C_ClientAnimating BaseClass;
 public:
 
+	C_Gib( void );
 	~C_Gib( void );
 
 	static C_Gib	*CreateClientsideGib( const char *pszModelName, Vector vecOrigin, Vector vecForceDir, AngularImpulse vecAngularImp, float flLifetime = DEFAULT_GIB_LIFETIME );

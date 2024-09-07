@@ -86,13 +86,13 @@ source_slop_dep = declare_dependency(
 	]
 )
 
-source_static_lib_dep = declare_dependency(
+source_static_lib_dep_base = declare_dependency(
 	dependencies: [
 		source_dep
 	],
 )
 
-source_shared_lib_dep = declare_dependency(
+source_shared_lib_dep_base = declare_dependency(
 	dependencies: [
 		source_dep
 	],
@@ -139,16 +139,16 @@ else
 	error('unsupported system')
 endif
 
-source_os_static_lib_dep = declare_dependency(
+source_static_lib_dep = declare_dependency(
 	dependencies: [
-		source_static_lib_dep,
+		source_static_lib_dep_base,
 		os_dep
 	],
 )
 
-source_os_shared_lib_dep = declare_dependency(
+source_shared_lib_dep = declare_dependency(
 	dependencies: [
-		source_shared_lib_dep,
+		source_shared_lib_dep_base,
 		os_dep
 	],
 )

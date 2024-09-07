@@ -74,20 +74,17 @@ private:
 	CNetworkVar( EHANDLE, m_hPlayerOwner );
 
 	friend CVGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreenType, CBaseEntity *pAttachedTo, CBaseEntity *pOwner, int nAttachmentIndex );
-	
-	//DO NOT USE DIRECTLY!!!!
-	friend CVGuiScreen *__CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, CBaseEntity *pAttachedTo, CBaseEntity *pOwner, int nAttachmentIndex );
+	friend CVGuiScreen *CreateVGuiScreenPredicted( const char *module, int line, const char *pScreenClassname, const char *pScreenType, CBaseEntity *pAttachedTo, CBaseEntity *pOwner, int nAttachmentIndex );
 };
 
-#define CREATE_PREDICTED_VGUISCREEN(...) \
-	__CreatePredictedVGuiScreen( __FILE__, __LINE__, __VA_ARGS__ )
+#define CREATE_PREDICTED_VGUISCREEN( classname, ...) \
+	CreateVGuiScreenPredicted( __FILE__, __LINE__, classname __VA_OPT__(, __VA_ARGS__) )
 
 void PrecacheVGuiScreen( const char *pScreenType );
 void PrecacheVGuiScreenOverlayMaterial( const char *pMaterialName );
-CVGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreenType, CBaseEntity *pAttachedTo, CBaseEntity *pOwner, int nAttachmentIndex );
 
-//DO NOT USE DIRECTLY!!!!
-CVGuiScreen *__CreatePredictedVGuiScreen( const char *module, int line, const char *pScreenClassname, const char *pScreenType, CBaseEntity *pAttachedTo, CBaseEntity *pOwner, int nAttachmentIndex );
+CVGuiScreen *CreateVGuiScreen( const char *pScreenClassname, const char *pScreenType, CBaseEntity *pAttachedTo, CBaseEntity *pOwner, int nAttachmentIndex );
+CVGuiScreen *CreateVGuiScreenPredicted( const char *module, int line, const char *pScreenClassname, const char *pScreenType, CBaseEntity *pAttachedTo, CBaseEntity *pOwner, int nAttachmentIndex );
 
 void DestroyVGuiScreen( CVGuiScreen *pVGuiScreen );
 

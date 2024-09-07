@@ -183,6 +183,12 @@ CHandleImpl<T>::CHandleImpl( const T *pObj )
 }
 
 template<class T>
+CHandleImpl<T>::CHandleImpl( T *pObj )
+{
+	Set( pObj );
+}
+
+template<class T>
 CHandleImpl<T>::CHandleImpl( std::nullptr_t )
 {
 	Term();

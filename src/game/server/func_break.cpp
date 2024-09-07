@@ -693,7 +693,7 @@ void CBreakable::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
 		{
 			pEvent->pObjects[index]->SetMass( 2.0f );
 		}
-		CTakeDamageInfo dmgInfo( pHitEntity, pHitEntity, damageForce, damagePos, (m_iHealth + 1), DMG_CRUSH );
+		CTakeDamageInfo dmgInfo( pHitEntity, pHitEntity, damageForce, damagePos, (GetHealth() + 1), DMG_CRUSH );
 		PhysCallbackDamage( this, dmgInfo, *pEvent, index );
 	}
 	else if ( !HasSpawnFlags( SF_BREAK_DONT_TAKE_PHYSICS_DAMAGE ) )
@@ -742,12 +742,12 @@ int CBreakable::OnTakeDamage( const CTakeDamageInfo &info )
 	float flPropDamage = GetBreakableDamage( subInfo, assert_cast<IBreakableWithPropData*>(this) );
 	subInfo.SetDamage( flPropDamage );
 	
-	int iPrevHealth = m_iHealth;
+	int iPrevHealth = GetHealth();
 	BaseClass::OnTakeDamage( subInfo );
 
 	// HACK: slam health back to what it was so UpdateHealth can do its thing
-	int iNewHealth = m_iHealth;
-	m_iHealth = iPrevHealth;
+	int iNewHealth = GetHealth();
+	SetHealth( iPrevHealth );
 	if ( !UpdateHealth( iNewHealth, info.GetAttacker() ) )
 		return 1;
 

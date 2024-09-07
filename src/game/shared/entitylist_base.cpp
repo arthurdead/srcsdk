@@ -272,14 +272,3 @@ void CBaseEntityList::RemoveEntityAtSlot( int iSlot )
 		}
 	}
 }
-
-
-void CBaseEntityList::OnAddEntity( CBaseEntity *pEnt, EHANDLE handle )
-{
-}
-
-
-
-void CBaseEntityList::OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle )
-{
-}

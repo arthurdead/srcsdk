@@ -58,7 +58,7 @@ bool CHudSuspicion::ShouldDraw()
 		return false;
 	}
 
-	if(HeistGamerules()->AnyoneSpotted()) {
+	if(HeistGameRules() && HeistGameRules()->AnyoneSpotted()) {
 		return false;
 	}
 
@@ -82,7 +82,7 @@ void CHudSuspicion::OnThink()
 {
 	BasePanel::OnThink();
 
-	if(HeistGamerules()->AnyoneSpotted()) {
+	if(HeistGameRules() && HeistGameRules()->AnyoneSpotted()) {
 		return;
 	}
 

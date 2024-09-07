@@ -20,6 +20,8 @@ void RegisterUserMessages( void );
 //-----------------------------------------------------------------------------
 CUserMessages::CUserMessages()
 {
+	Register( "Train", 1 );
+
 	Register( "SayText", -1 );	
 	Register( "SayText2", -1 );
 	Register( "TextMsg", -1 );

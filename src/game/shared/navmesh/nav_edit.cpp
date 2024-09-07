@@ -895,7 +895,7 @@ void CNavMesh::DrawEditMode( CBasePlayer *player )
 				CBaseEntity *ladderEntity = m_selectedLadder->GetLadderEntity();
 				if ( ladderEntity )
 				{
-					V_snprintf( buffer, sizeof( buffer ), "Ladder #%d (Team %s)\n", m_selectedLadder->GetID(), GetGlobalTeam( ladderEntity->GetTeamNumber() )->GetName() );
+					V_snprintf( buffer, sizeof( buffer ), "Ladder #%d (Team %s)\n", m_selectedLadder->GetID(), GetGlobalTeamByTeam( ladderEntity->GetTeamNumber() )->GetName() );
 				}
 				else
 				{

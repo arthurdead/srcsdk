@@ -33,6 +33,7 @@ class C_BaseCombatWeapon;
 class C_BaseViewModel;
 class C_FuncLadder;
 class CFlashlightEffect;
+struct Beam_t;
 
 extern int g_nKillCamMode;
 extern int g_nKillCamTarget1;
@@ -81,10 +82,11 @@ public:
 	C_BasePlayer();
 	virtual			~C_BasePlayer();
 
-	virtual void		PostConstructor( const char *szClassname );
+	virtual bool		PostConstructor( const char *szClassname );
 
 	virtual void	Spawn( void );
 	virtual void	SharedSpawn(); // Shared between client and server.
+	virtual void	Respawn();
 	virtual bool	GetSteamID( CSteamID *pID );
 	Class_T		Classify( void ) { return CLASS_PLAYER; }
 
@@ -96,6 +98,8 @@ public:
 
 	virtual void	PreDataUpdate( DataUpdateType_t updateType );
 	virtual void	PostDataUpdate( DataUpdateType_t updateType );
+
+	virtual void NotifyShouldTransmit(ShouldTransmitState_t state);
 	
 	virtual void	ReceiveMessage( int classID, bf_read &msg );
 
@@ -176,6 +180,11 @@ public:
 	virtual void DoAnimationEvent( PlayerAnimEvent_t event, int nData = 0 );
 	virtual void UpdateClientSideAnimation();
 
+	virtual float GetServerIntendedCycle() { return m_flServerCycle; }
+	virtual void SetServerIntendedCycle(float cycle) { m_flServerCycle = cycle; }
+
+	virtual void CalculateIKLocks(float currentTime);
+
 	// This can be overridden to return something other than m_pRagdoll if the mod uses separate 
 	// entities for ragdolls.
 	virtual IRagdoll* GetRepresentativeRagdoll() const;
@@ -194,7 +203,6 @@ public:
 	virtual void	TeamChange( int iNewTeam );
 
 	// Flashlight
-	void	Flashlight( void );
 	void	UpdateFlashlight( void );
 	void	TurnOffFlashlight( void );	// TERROR
 	virtual const char *GetFlashlightTextureName( void ) const { return NULL; } // TERROR
@@ -203,11 +211,17 @@ public:
 	virtual float GetFlashlightLinearAtten( void ) const { return 0.0f; } // TERROR
 	virtual bool CastsFlashlightShadows( void ) const { return true; } // TERROR
 	virtual void GetFlashlightOffset( const Vector &vecForward, const Vector &vecRight, const Vector &vecUp, Vector *pVecOffset ) const;
+
+	const Vector &GetFlashlightOrigin() const { return m_vecFlashlightOrigin; }
+
+private:
 	Vector	m_vecFlashlightOrigin;
 	Vector	m_vecFlashlightForward;
 	Vector	m_vecFlashlightUp;
 	Vector	m_vecFlashlightRight;
+	Beam_t *m_pFlashlightBeam;
 
+public:
 	// Weapon selection code
 	virtual bool				IsAllowedToSwitchWeapons( void ) { return !IsObserver(); }
 	virtual C_BaseCombatWeapon	*GetActiveWeaponForSelection( void );
@@ -228,17 +242,16 @@ public:
 	bool	ShouldPlayerDrawParticles( void );
 
 	// Should this object cast shadows?
-	virtual ShadowType_t		ShadowCastType() { return SHADOWS_NONE; }
+	virtual ShadowType_t		ShadowCastType();
 
-	virtual bool				ShouldReceiveProjectedTextures( int flags )
-	{
-		return false;
-	}
+	virtual bool				ShouldReceiveProjectedTextures( int flags );
 
 	void						CheckForLocalPlayer();
 
 	static bool					IsLocalPlayer( const C_BaseEntity *pl );
 	bool						IsLocalPlayer( void ) const;
+
+	virtual CStudioHdr *OnNewModel();
 
 	// Global/static methods
 	virtual void				ThirdPersonSwitch( bool bThirdperson );
@@ -436,7 +449,7 @@ public:
 	void					SetFiredWeapon( bool bFlag ) { m_bFiredWeapon = bFlag; }
 
 	virtual bool			CanUseFirstPersonCommand( void ){ return true; }
-	
+
 protected:
 	fogparams_t				m_CurrentFog;
 	EHANDLE					m_hOldFogController;
@@ -522,6 +535,8 @@ protected:
 	surfacedata_t* GetGroundSurface();
 
 	virtual void	FireGameEvent( IGameEvent *event );
+
+	int GetIDTarget() const { return m_iIDEntIndex; }
 
 protected:
 	// Did we just enter a vehicle this frame?
@@ -664,9 +679,16 @@ protected:
 	QAngle	m_angEyeAngles;
 	CInterpolatedVar<QAngle>	m_iv_angEyeAngles;
 
-	void Respawn();
-	bool	m_bSpawnInterpCounter;
-	bool	m_bSpawnInterpCounterCache;
+	void ThinkIDTarget();
+	void UpdateIDTarget();
+	Vector m_vLookAtTarget;
+	int m_iIDEntIndex;
+
+	int m_iSpawnInterpCounter;
+	int m_iSpawnInterpCounterCache;
+
+	int m_cycleLatch;
+	float m_flServerCycle;
 
 	CNetworkHandle( C_ColorCorrection, m_hColorCorrectionCtrl );		// active FXVolume color correction
 	CNetworkHandle( C_BaseEntity, m_hTonemapController );

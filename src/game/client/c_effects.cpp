@@ -1376,8 +1376,25 @@ void CClient_Precipitation::ComputeWindVector( )
 	VectorScale( s_WindVector, windspeed, s_WindVector );
 }
 
+class CClient_PrecipitationHack : public CClient_Precipitation
+{
+public:
+	DECLARE_CLASS( CClient_PrecipitationHack, CClient_Precipitation );
 
-CHandle<CClient_Precipitation> g_pPrecipHackEnt;
+	CClient_PrecipitationHack()
+		: CClient_Precipitation()
+	{
+		AddEFlags(EFL_NOT_NETWORKED);
+	}
+
+	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
+	virtual	bool			IsClientCreated( void ) const { return true; }
+	virtual bool						IsServerEntity( void ) { return false; }
+};
+
+LINK_ENTITY_TO_CLASS(func_precipitation_clientside_hack, CClient_PrecipitationHack);
+
+CHandle<CClient_PrecipitationHack> g_pPrecipHackEnt;
 
 class CPrecipHack : public CAutoGameSystemPerFrame
 {
@@ -1391,12 +1408,7 @@ public:
 	{
 		if ( r_RainHack.GetInt() )
 		{
-			CClient_Precipitation *pPrecipHackEnt = new CClient_Precipitation;
-			pPrecipHackEnt->SetClassname("func_precipitation");
-			if(!pPrecipHackEnt->InitializeAsClientEntity()) {
-				UTIL_Remove( pPrecipHackEnt );
-				pPrecipHackEnt = NULL;
-			}
+			CClient_PrecipitationHack *pPrecipHackEnt = CREATE_ENTITY(CClient_PrecipitationHack, "func_precipitation_clientside_hack");
 			g_pPrecipHackEnt = pPrecipHackEnt;
 		}
 		m_bLevelInitted = true;
@@ -1845,7 +1857,7 @@ private:
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-class CSnowFallManager : public C_BaseEntity
+class CSnowFallManager : public C_ClientEntity
 {
 public:
 
@@ -1918,12 +1930,16 @@ private:
 	CUtlVector<SnowFall_t>		m_aSnow;
 };
 
+LINK_ENTITY_TO_CLASS(client_snowfallmgr, CSnowFallManager);
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 CSnowFallManager::CSnowFallManager( void )
-	: C_BaseEntity(true)
+	: C_ClientEntity()
 {
+	AddEFlags( EFL_NOT_NETWORKED );
+
 	m_iSnowFallArea = SNOWFALL_NONE;
 	m_pSnowFallEmitter = NULL;
 	m_vecSnowFallEmitOrigin.Init();
@@ -2475,13 +2491,13 @@ bool SnowFallManagerCreate( CClient_Precipitation *pSnowEntity )
 {
 	if ( !s_pSnowFallMgr )
 	{
-		s_pSnowFallMgr = new CSnowFallManager();
+		s_pSnowFallMgr = CREATE_ENTITY(CSnowFallManager, "client_snowfallmgr");
 		if(!s_pSnowFallMgr->CreateEmitter()) {
 			UTIL_Remove( s_pSnowFallMgr );
 			s_pSnowFallMgr = NULL;
 			return false;
 		}
-		if(!s_pSnowFallMgr->InitializeAsClientEntity()) {
+		if(DispatchSpawn(s_pSnowFallMgr) < 0) {
 			UTIL_Remove( s_pSnowFallMgr );
 			s_pSnowFallMgr = NULL;
 			return false;

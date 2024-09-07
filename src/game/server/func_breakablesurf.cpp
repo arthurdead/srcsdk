@@ -133,7 +133,7 @@ CWindowPane* CWindowPane::CreateWindowPane( const Vector &vecOrigin, const QAngl
 		pGlass->Spawn();
 		pGlass->SetTouch(&CWindowPane::PaneTouch);
 		pGlass->SetLocalAngularVelocity( RandomAngle(-50,50) );
-		pGlass->m_nBody = random->RandomInt(0,2);
+		pGlass->SetBody( random->RandomInt(0,2) );
 	}
 	return pGlass;
 }
@@ -593,7 +593,7 @@ void CBreakableSurface::Die( CBaseEntity *pBreaker, const Vector &vAttackDir )
 	PhysBreakSound( this, VPhysicsGetObject(), GetAbsOrigin() );
 
 	m_bIsBroken = true;
-	m_iHealth = 0.0f;
+	SetHealth( 0.0f );
 
 	if (pBreaker)
 	{

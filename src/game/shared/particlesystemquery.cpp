@@ -52,7 +52,7 @@ typedef struct SProjectedTextureInfo
 //-----------------------------------------------------------------------------
 // Interface to allow the particle system to call back into the game code
 //-----------------------------------------------------------------------------
-class CParticleSystemQuery : public CBaseAppSystem< IParticleSystemQuery >
+class CParticleSystemQuery : public CBaseAppSystem< IParticleSystemQueryEx >
 {
 public:
 	virtual bool IsEditor( ) { return false; }
@@ -78,6 +78,18 @@ public:
 		Vector *pHitBoxRelativeCoordOut,
 		int *pHitBoxIndexOut,
 		int nDesiredHitbox
+		);
+
+	virtual void GetRandomPointsOnControllingObjectHitBox( 
+		CParticleCollection *pParticles,
+		int nControlPointNumber, 
+		int nNumPtsOut,
+		float flBBoxScale,
+		int nNumTrysToGetAPointInsideTheModel,
+		Vector *pPntsOut,
+		Vector vecDirectionalBias,
+		Vector *pHitBoxRelativeCoordOut,
+		int *pHitBoxIndexOut
 		);
 
 	virtual int GetCollisionGroupFromName( const char *pszCollisionGroupName );
@@ -470,6 +482,31 @@ void CParticleSystemQuery::GetRandomPointsOnControllingObjectHitBox(
 	}
 }
 
+void CParticleSystemQuery::GetRandomPointsOnControllingObjectHitBox( 
+	CParticleCollection *pParticles,
+	int nControlPointNumber, 
+	int nNumPtsOut,
+	float flBBoxScale,
+	int nNumTrysToGetAPointInsideTheModel,
+	Vector *pPntsOut,
+	Vector vecDirectionalBias,
+	Vector *pHitBoxRelativeCoordOut,
+	int *pHitBoxIndexOut
+	)
+{
+	GetRandomPointsOnControllingObjectHitBox(
+		pParticles,
+		nControlPointNumber, 
+		nNumPtsOut,
+		flBBoxScale,
+		nNumTrysToGetAPointInsideTheModel,
+		pPntsOut,
+		vecDirectionalBias,
+		pHitBoxRelativeCoordOut,
+		pHitBoxIndexOut,
+		-1
+	);
+}
 
 int CParticleSystemQuery::GetControllingObjectHitBoxInfo(
 	CParticleCollection *pParticles,
@@ -648,7 +685,7 @@ void CParticleSystemQuery::GetControllingObjectOBBox(
 	vecMin = vecMax = vec3_origin;
 #ifndef GAME_DLL
 
-	EHANDLE *phMoveParent = reinterpret_cast<EHANDLE *> ( pParticles->ControlPoint( nControlPointNumber ).m_pObject );
+	EHANDLE *phMoveParent = reinterpret_cast<EHANDLE *> ( pParticles->m_ControlPoints[ nControlPointNumber ].m_pObject );
 	CBaseEntity *pMoveParent = NULL;
 	if ( phMoveParent )
 	{
@@ -847,7 +884,7 @@ void CParticleSystemQuery::DrawModel( void *pModel, const matrix3x4_t &DrawMatri
 			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			CMatRenderData< matrix3x4_t > rdBoneToWorld( pRenderContext, pStudioHdr->numbones );
 			MDL.SetUpBones( DrawMatrix, pStudioHdr->numbones, rdBoneToWorld.Base() );
-			MDL.Draw(DrawMatrix, rdBoneToWorld.Base(), STUDIORENDER_DRAW_NO_SHADOWS );
+			MDL.Draw(DrawMatrix, rdBoneToWorld.Base() );
 		}
 		else
 		{

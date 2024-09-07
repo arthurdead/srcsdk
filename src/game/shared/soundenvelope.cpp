@@ -237,7 +237,6 @@ public:
 	string_t GetName() { return m_iszSoundName; };
 #ifdef CLIENT_DLL
 	int		GetGuid() { return m_guid; };
-	float	GetElapsedTime( void );
 	bool	IsStillPlaying( void );
 #endif
 	string_t GetScriptName() { return m_iszSoundScriptName; }
@@ -441,16 +440,6 @@ float CSoundPatch::GetVolume( void )
 bool CSoundPatch::IsStillPlaying( void )
 {
 	return enginesound->IsSoundStillPlaying(m_guid);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Get the sound's current elapsed time
-// Returns: Time in seconds
-//-----------------------------------------------------------------------------
-float CSoundPatch::GetElapsedTime( void )
-{
-	// convert to seconds
-	return enginesound->GetElapsedTimeByGuid(m_guid) * 0.01;
 }
 #endif
 
@@ -790,7 +779,6 @@ public:
 	float			SoundGetPitch( CSoundPatch *pSound );
 	float			SoundGetVolume( CSoundPatch *pSound );
 #ifdef CLIENT_DLL
-	float			SoundGetElapsedTime( CSoundPatch *pSound );
 	bool			SoundIsStillPlaying( CSoundPatch *pSound );
 	int				SoundGetGuid( CSoundPatch *pSound );
 #endif
@@ -1136,10 +1124,6 @@ float CSoundControllerImp::SoundGetVolume( CSoundPatch *pSound )
 int CSoundControllerImp::SoundGetGuid( CSoundPatch *pSound )
 {
 	return pSound->GetGuid();
-}
-float CSoundControllerImp::SoundGetElapsedTime( CSoundPatch *pSound )
-{
-	return pSound->GetElapsedTime();
 }
 bool CSoundControllerImp::SoundIsStillPlaying( CSoundPatch *pSound )
 {

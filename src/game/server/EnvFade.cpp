@@ -17,6 +17,7 @@ private:
 
 	float m_Duration;
 	float m_HoldTime;
+	float m_ReverseDuration;
 
 	COutputEvent m_OnBeginFade;
 
@@ -37,6 +38,7 @@ public:
 
 	// Inputs
 	void InputFade( inputdata_t &inputdata );
+	void InputFadeReverse( inputdata_t &inputdata );
 };
 
 LINK_ENTITY_TO_CLASS( env_fade, CEnvFade );
@@ -45,8 +47,10 @@ BEGIN_MAPENTITY( CEnvFade )
 
 	DEFINE_KEYFIELD( m_Duration, FIELD_FLOAT, "duration" ),
 	DEFINE_KEYFIELD( m_HoldTime, FIELD_FLOAT, "holdtime" ),
+	DEFINE_KEYFIELD( m_ReverseDuration, FIELD_FLOAT, "ReverseFadeDuration" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Fade", InputFade ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "FadeReverse", InputFadeReverse ),
 
 	DEFINE_OUTPUT( m_OnBeginFade, "OnBeginFade"),
 
@@ -110,6 +114,48 @@ void CEnvFade::InputFade( inputdata_t &inputdata )
 	m_OnBeginFade.FireOutput( inputdata.pActivator, this );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Input that does the exact opposite of the Fade input
+//-----------------------------------------------------------------------------
+void CEnvFade::InputFadeReverse(inputdata_t &inputdata)
+{
+	int fadeFlags = 0;
+
+	if (m_spawnflags & SF_FADE_IN)
+	{
+		fadeFlags |= FFADE_OUT;
+	}
+	else
+	{
+		fadeFlags |= FFADE_IN;
+	}
+
+	if (m_spawnflags & SF_FADE_MODULATE)
+	{
+		fadeFlags |= FFADE_MODULATE;
+	}
+
+	if (m_spawnflags & SF_FADE_STAYOUT)
+	{
+		fadeFlags |= FFADE_STAYOUT;
+	}
+
+	if (m_spawnflags & SF_FADE_ONLYONE)
+	{
+		if (inputdata.pActivator->IsNetClient())
+		{
+			color32 clrRender = {GetRenderColor(), GetRenderAlpha()};
+			UTIL_ScreenFade(inputdata.pActivator, clrRender, m_ReverseDuration, HoldTime(), fadeFlags);
+		}
+	}
+	else
+	{
+		color32 clrRender = {GetRenderColor(), GetRenderAlpha()};
+		UTIL_ScreenFadeAll(clrRender, m_ReverseDuration, HoldTime(), fadeFlags | FFADE_PURGE);
+	}
+
+	m_OnBeginFade.FireOutput(inputdata.pActivator, this);
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Fetches the arguments from the command line for the fadein and fadeout
@@ -191,6 +237,11 @@ int CEnvFade::DrawDebugTextOverlays( void )
 		// print duration
 		Q_snprintf(tempstr,sizeof(tempstr),"    duration: %f", m_Duration);
 		EntityText(text_offset,tempstr,0);
+		text_offset++;
+
+		// print reverse duration
+		Q_snprintf(tempstr, sizeof(tempstr), "    reverse duration: %f", m_ReverseDuration);
+		EntityText(text_offset, tempstr, 0);
 		text_offset++;
 
 		// print hold time

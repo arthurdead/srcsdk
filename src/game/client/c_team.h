@@ -12,7 +12,7 @@
 #include "shareddefs.h"
 #include "utlvector.h"
 #include "client_thinklist.h"
-
+#include "c_baseentity.h"
 
 class C_BasePlayer;
 
@@ -42,7 +42,7 @@ public:
 	// for shared code, use the same function name
 	virtual int		GetNumPlayers( void ) { return Get_Number_Players(); }
 
-	int		GetTeamNumber() const;
+	Team_t		GetTeamNumber() const;
 
 	int		GetRoundsWon(void) { return m_iRoundsWon; }
 
@@ -60,7 +60,6 @@ public:
 	int		m_iDeaths;
 	int		m_iPing;
 	int		m_iPacketloss;
-	int		m_iTeamNum;
 };
 
 
@@ -69,7 +68,8 @@ extern CUtlVector< C_Team * > g_Teams;
 
 // Global team handling functions
 C_Team *GetLocalTeam( void );
-C_Team *GetGlobalTeam( int iTeamNumber );
+C_Team *GetGlobalTeamByIndex( int iIndex );
+C_Team *GetGlobalTeamByTeam( Team_t iTeamNumber );
 C_Team *GetPlayersTeam( int iPlayerIndex );
 C_Team *GetPlayersTeam( C_BasePlayer *pPlayer );
 bool ArePlayersOnSameTeam( int iPlayerIndex1, int iPlayerIndex2 );

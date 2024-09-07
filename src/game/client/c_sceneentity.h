@@ -117,6 +117,21 @@ private:
 	CUtlVector< QueuedEvents_t > m_QueuedEvents;
 };
 
+class C_ClientScene : public C_SceneEntity
+{
+public:
+	C_ClientScene()
+		: C_SceneEntity()
+	{
+		AddEFlags(EFL_NOT_NETWORKED);
+	}
+	DECLARE_CLASS( C_ClientScene, C_SceneEntity );
+
+	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
+	virtual	bool			IsClientCreated( void ) const { return true; }
+	virtual bool						IsServerEntity( void ) { return false; }
+};
+
 //-----------------------------------------------------------------------------
 // Binary compiled VCDs get their strings from a pool
 //-----------------------------------------------------------------------------

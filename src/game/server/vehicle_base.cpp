@@ -301,7 +301,7 @@ IMPLEMENT_SERVERCLASS_ST(CPropVehicleDriveable, DT_PropVehicleDriveable)
 	SendPropVector(SENDINFO(m_vecGunCrosshair), -1, SPROP_COORD),
 END_SEND_TABLE();
 
-BEGIN_DATADESC( CPropVehicleDriveable )
+BEGIN_MAPENTITY( CPropVehicleDriveable )
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Lock",	InputLock ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Unlock",	InputUnlock ),
@@ -316,32 +316,10 @@ BEGIN_DATADESC( CPropVehicleDriveable )
 	DEFINE_OUTPUT( m_pressedAttack2, "PressedAttack2" ),
 	DEFINE_OUTPUT( m_attackaxis, "AttackAxis" ),
 	DEFINE_OUTPUT( m_attack2axis, "Attack2Axis" ),
-	DEFINE_FIELD( m_hPlayer, FIELD_EHANDLE ),
 
-	DEFINE_EMBEDDEDBYREF( m_pServerVehicle ),
-	DEFINE_FIELD( m_nSpeed, FIELD_INTEGER ),
-	DEFINE_FIELD( m_nRPM, FIELD_INTEGER ),
-	DEFINE_FIELD( m_flThrottle, FIELD_FLOAT ),
-	DEFINE_FIELD( m_nBoostTimeLeft, FIELD_INTEGER ),
-	DEFINE_FIELD( m_nHasBoost, FIELD_INTEGER ),
-	DEFINE_FIELD( m_nScannerDisabledWeapons, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_nScannerDisabledVehicle, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bUnableToFire, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_vecEyeExitEndpoint, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( m_vecGunCrosshair, FIELD_VECTOR ),
-
-	DEFINE_FIELD( m_bEngineLocked, FIELD_BOOLEAN ),
 	DEFINE_KEYFIELD( m_bLocked, FIELD_BOOLEAN, "VehicleLocked" ),
-	DEFINE_FIELD( m_flMinimumSpeedToEnterExit, FIELD_FLOAT ),
-	DEFINE_FIELD( m_bEnterAnimOn, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bExitAnimOn, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flTurnOffKeepUpright, FIELD_TIME ),
-	//DEFINE_FIELD( m_flNoImpactDamageTime, FIELD_TIME ),
 
-	DEFINE_FIELD( m_hNPCDriver, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hKeepUpright, FIELD_EHANDLE ),
-
-END_DATADESC()
+END_MAPENTITY()
 
 
 LINK_ENTITY_TO_CLASS( prop_vehicle_driveable, CPropVehicleDriveable );

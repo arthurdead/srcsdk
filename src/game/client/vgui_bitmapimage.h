@@ -60,7 +60,7 @@ public:
 	void DestroyTexture();
 
 private:
-	int				m_nTextureId;
+	vgui::HTexture				m_nTextureId;
 	Color		m_clr;
 	int				m_pos[2];
 	int				m_Size[2];

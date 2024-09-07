@@ -24,14 +24,10 @@ END_RECV_TABLE()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-C_BreakableProp::C_BreakableProp( bool bClientSide )
-	: C_BaseAnimating(bClientSide)
+C_BreakableProp::C_BreakableProp()
+	: C_BaseAnimating()
 {
 	m_takedamage = DAMAGE_YES;
-}
-
-C_BreakableProp::C_BreakableProp( void ) : C_BreakableProp(false)
-{
 }
 
 //-----------------------------------------------------------------------------

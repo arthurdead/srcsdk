@@ -2180,7 +2180,7 @@ void KeyValues::RecursiveMergeKeyValues( KeyValues *baseKV )
 // Returns whether a keyvalues conditional evaluates to true or false
 // Needs more flexibility with conditionals, checking convars would be nice.
 //-----------------------------------------------------------------------------
-bool EvaluateConditional( const char *str )
+bool EvaluateConditional( const char *str, const char *file )
 {
 	if ( !str )
 		return false;
@@ -2195,14 +2195,14 @@ bool EvaluateConditional( const char *str )
 	if ( Q_stristr( str, "$X360" ) )
 	{
 		//if this hits change the file
-		DebuggerBreak();
+		Msg("Remove conditional $X360 from file \"%s\".\n", file);
 		return false ^ bNot;
 	}
 	
 	if ( Q_stristr( str, "$WIN32" ) )
 	{
 		//if this hits change the file
-		DebuggerBreak();
+		Msg("Remove conditional $WIN32 from file \"%s\".\n", file);
 		return true ^ bNot; // hack hack - for now WIN32 really means IsPC
 	}
 
@@ -2315,7 +2315,7 @@ bool KeyValues::LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IBase
 
 		if ( wasConditional )
 		{
-			bAccepted = !m_bEvaluateConditionals || EvaluateConditional( s );
+			bAccepted = !m_bEvaluateConditionals || EvaluateConditional( s, resourceName );
 
 			// Now get the '{'
 			s = ReadToken( buf, wasQuoted, wasConditional );
@@ -2459,7 +2459,7 @@ void KeyValues::RecursiveLoadFromBuffer( char const *resourceName, CUtlBuffer &b
 
 		if ( wasConditional && value )
 		{
-			bAccepted = !m_bEvaluateConditionals || EvaluateConditional( value );
+			bAccepted = !m_bEvaluateConditionals || EvaluateConditional( value, resourceName );
 
 			// get the real value
 			value = ReadToken( buf, wasQuoted, wasConditional );
@@ -2567,7 +2567,7 @@ void KeyValues::RecursiveLoadFromBuffer( char const *resourceName, CUtlBuffer &b
 			const char *peek = ReadToken( buf, wasQuoted, wasConditional );
 			if ( wasConditional )
 			{
-				bAccepted = !m_bEvaluateConditionals || EvaluateConditional( peek );
+				bAccepted = !m_bEvaluateConditionals || EvaluateConditional( peek, resourceName );
 			}
 			else
 			{

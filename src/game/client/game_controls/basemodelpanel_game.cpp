@@ -39,6 +39,8 @@ using namespace vgui;
 
 DECLARE_BUILD_FACTORY( CModelPanel );
 
+LINK_ENTITY_TO_CLASS(prop_panelmodel, CModelPanelModel);
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -271,25 +273,22 @@ void CModelPanel::SetupVCD( void )
 
 	DeleteVCDData();
 
-	C_SceneEntity *pEnt = new class C_SceneEntity;
-
+	C_ClientScene *pEnt = CREATE_ENTITY(C_ClientScene, "scene_clientside");
 	if ( !pEnt )
 		return;
 
-	if ( pEnt->InitializeAsClientEntity() == false )
-	{
-		// we failed to initialize this entity so just return gracefully
-		UTIL_Remove( pEnt );
-		return;
-	}
-
 	ClientLeafSystem()->EnableRendering( pEnt->RenderHandle(), false );
-
-	// setup the handle
-	m_hScene = pEnt;
 
 	// setup the scene
 	pEnt->SetupClientOnlyScene( m_pModelInfo->m_pszVCD, m_hModel, true );
+
+	if(DispatchSpawn(pEnt) < 0) {
+		UTIL_Remove(pEnt);
+		return;
+	}
+
+	// setup the handle
+	m_hScene = pEnt;
 }
 
 //-----------------------------------------------------------------------------
@@ -369,22 +368,11 @@ void CModelPanel::SetupModel( void )
 		return;
 
 	// create the new model
-	CModelPanelModel *pEnt = new CModelPanelModel;
-
+	CModelPanelModel *pEnt = CREATE_ENTITY(CModelPanelModel, "prop_panelmodel");
 	if ( !pEnt )
 		return;
 
-	if ( pEnt->InitializeAsClientEntity() == false )
-	{
-		// we failed to initialize this entity so just return gracefully
-		UTIL_Remove( pEnt );
-		return;
-	}
-
 	pEnt->SetModel( pszModelName );
-	
-	// setup the handle
-	m_hModel = pEnt;
 
 	pEnt->DontRecordInTools();
 	pEnt->AddEffects( EF_NODRAW ); // don't let the renderer draw the model normally
@@ -428,21 +416,22 @@ void CModelPanel::SetupModel( void )
 		}
 	}
 
+	if(DispatchSpawn(pEnt) < 0) {
+		UTIL_Remove(pEnt);
+		return;
+	}
+
+	// setup the handle
+	m_hModel = pEnt;
+
 	// setup any attached models
 	for ( int i = 0 ; i < m_pModelInfo->m_AttachedModelsInfo.Count() ; i++ )
 	{
 		CModelPanelAttachedModelInfo *pInfo = m_pModelInfo->m_AttachedModelsInfo[i];
-		C_ClientAnimating *pTemp = new C_ClientAnimating;
+		C_ClientAnimating *pTemp = CREATE_ENTITY(C_ClientAnimating, "prop_clientside");
 
 		if ( pTemp )
 		{
-			if ( pTemp->InitializeAsClientEntity() == false )
-			{	
-				// we failed to initialize this model so just skip it
-				UTIL_Remove( pTemp );
-				continue;
-			}
-
 			pTemp->SetModel(pInfo->m_pszModelName);
 
 			pTemp->DontRecordInTools();
@@ -455,6 +444,12 @@ void CModelPanel::SetupModel( void )
 			}
 
 			pTemp->SetAnimTime( gpGlobals->curtime );
+
+			if(DispatchSpawn(pTemp) < 0) {
+				UTIL_Remove(pTemp);
+				continue;
+			}
+
 			m_AttachedModels.AddToTail( pTemp );
 		}
 	}

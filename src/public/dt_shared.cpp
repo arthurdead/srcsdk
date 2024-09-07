@@ -74,14 +74,26 @@ DataTableProp PropInt(
 	int offset,
 	int sizeofVar,	// Handled by SENDINFO macro.
 	int nBits,					// Set to -1 to automatically pick (max) number of bits based on size of element.
-	int flags,
-	int rightShift
+	int flags
 	)
 {
 #if !defined (CLIENT_DLL)
-	return SendPropInt( pVarName, offset, sizeofVar, nBits, flags, rightShift );
+	return SendPropInt( pVarName, offset, sizeofVar, nBits, flags );
 #else
 	return RecvPropInt( pVarName, offset, sizeofVar, flags );
+#endif
+}
+
+DataTableProp PropBool(
+	char *pVarName,
+	int offset,
+	int sizeofVar	// Handled by SENDINFO macro.
+	)
+{
+#if !defined (CLIENT_DLL)
+	return SendPropBool( pVarName, offset, sizeofVar );
+#else
+	return RecvPropBool( pVarName, offset, sizeofVar );
 #endif
 }
 
@@ -111,3 +123,17 @@ DataTableProp PropEHandle(
 #endif
 }
 
+DataTableProp PropDataTable(
+	const char *pVarName,
+	int offset,
+	int flags,
+	DataTable *pTable,
+	DataTableProxyFn varProxy
+	)
+{
+#if !defined (CLIENT_DLL)
+	return SendPropDataTable( pVarName, offset, pTable, varProxy );
+#else
+	return RecvPropDataTable( pVarName, offset, flags, pTable, varProxy );
+#endif
+}

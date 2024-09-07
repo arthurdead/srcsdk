@@ -3,19 +3,11 @@
 
 #pragma once
 
-enum HeistPlayerState
-{
-	STATE_ACTIVE=0,
-	STATE_OBSERVER_MODE,
-
-	NUM_PLAYER_STATES
-};
-
-#ifdef CLIENT_DLL
-class C_HeistPlayer;
-	#define CHeistPlayer C_HeistPlayer
-#endif
-
+#ifdef GAME_DLL
 class CHeistPlayer;
+#else
+class C_HeistPlayer;
+#define CHeistPlayer C_HeistPlayer
+#endif
 
 #endif

@@ -103,6 +103,11 @@ void CEntityFlame::Activate()
 	BaseClass::Activate();
 }
 
+void CEntityFlame::UseCheapEffect( bool bCheap )
+{
+	m_bCheapEffect = bCheap;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : inputdata - 
@@ -124,11 +129,7 @@ void CEntityFlame::InputIgnite( inputdata_t &inputdata )
 			// Everything else, we handle here.
 			else
 			{
-				CEntityFlame *pFlame = CEntityFlame::Create(pTarget);
-				if (pFlame)
-				{
-					pFlame->SetLifetime(m_flLifetime);
-				}
+				CEntityFlame::Create(pTarget, m_flLifetime);
 			}
 		}
 	}

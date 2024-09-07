@@ -70,8 +70,6 @@ static float WeightedAngle( Vector vec1, Vector vec2)
 	return a*a;	// vectors are facing opposite direction
 }
 
-#if !defined( CSTRIKE_DLL ) && !defined( DOD_DLL ) && !defined( TF_DLL )// add your mod here if you use your own director
-
 static CHLTVDirector s_HLTVDirector;	// singleton
 
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CHLTVDirector, IHLTVDirector, INTERFACEVERSION_HLTVDIRECTOR, s_HLTVDirector );
@@ -85,8 +83,6 @@ IGameSystem* HLTVDirectorSystem()
 {
 	return &s_HLTVDirector;
 }
-
-#endif // MODs
 
 
 

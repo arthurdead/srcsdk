@@ -426,7 +426,7 @@ inline bool  KeyValues::IsEmpty( int keySymbol )
 	return dat ? dat->IsEmpty( ) : true;
 }
 
-bool EvaluateConditional( const char *str );
+bool EvaluateConditional( const char *str, const char *file );
 
 class CUtlSortVectorKeyValuesByName
 {

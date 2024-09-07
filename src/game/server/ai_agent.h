@@ -380,7 +380,7 @@ inline void CAI_Agent::ResetScheduleCurTaskIndex()
 		typedef baseClass CAgentBase; \
 		const char *pszClassName = #derivedClass; \
 		\
-		CUtlVector<char *> schedulesToLoad; \
+		CUtlVector<const char *> schedulesToLoad; \
 		CUtlVector<AIScheduleLoadFunc_t> reqiredOthers; \
 		CAI_AgentNamespaceInfos scheduleIds; \
 		CAI_AgentNamespaceInfos taskIds; \

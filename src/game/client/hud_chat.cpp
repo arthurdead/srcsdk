@@ -149,7 +149,7 @@ void CHudChat::MsgFunc_TextMsg( bf_read &msg )
 	{
 	case HUD_PRINTCENTER:
 		Q_snprintf( psz, sizeof( szBuf[5] ), msg_text, sstr1, sstr2, sstr3, sstr4 );
-		internalCenterPrint->Print( ConvertCRtoNL( psz ) );
+		GetCenterPrint()->Print( ConvertCRtoNL( psz ) );
 		break;
 
 	case HUD_PRINTNOTIFY:

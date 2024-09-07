@@ -99,6 +99,15 @@ int C_BaseCombatWeapon::GetWorldModelIndex( void )
 	return m_iWorldModelIndex;
 }
 
+bool C_BaseCombatWeapon::ShouldPredict()
+{
+	if(GetOwner() && GetOwner() == C_BasePlayer::GetLocalPlayer()) {
+		return true;
+	}
+
+	return BaseClass::ShouldPredict();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : bnewentity - 

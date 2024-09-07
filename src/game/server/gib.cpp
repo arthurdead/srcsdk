@@ -472,7 +472,7 @@ void CGib::BounceGibTouch ( CBaseEntity *pOther )
 	}
 	else
 	{
-		if ( g_Language.GetInt() != LANGUAGE_GERMAN && m_cBloodDecals > 0 && m_bloodColor != DONT_BLEED )
+		if ( m_cBloodDecals > 0 && m_bloodColor != DONT_BLEED )
 		{
 			vecSpot = GetAbsOrigin() + Vector ( 0 , 0 , 8 );//move up a bit, and trace down.
 			UTIL_TraceLine ( vecSpot, vecSpot + Vector ( 0, 0, -24 ),  MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr);

@@ -19,6 +19,13 @@ ConVar cl_globallight_freeze( "cl_globallight_freeze", "0" );
 ConVar cl_globallight_xoffset( "cl_globallight_xoffset", "-800" );
 ConVar cl_globallight_yoffset( "cl_globallight_yoffset", "1600" );
 
+// Draw where we are projecting the light.
+ConVar cl_globallight_debug( "cl_globallight_debug", "0" );
+
+// We still rely on r_flashlightbrightness, but here we can adjust the multiplier of the global light.
+ConVar cl_globallight_brightness( "cl_globallight_brightness_multiplier", "1.0" );  
+
+
 //------------------------------------------------------------------------------
 // Purpose : Sunlights shadow control entity
 //------------------------------------------------------------------------------
@@ -145,8 +152,6 @@ void C_GlobalLight::ClientThink()
 		Vector vSunDirection2D = vDirection;
 		vSunDirection2D.z = 0.0f;
 
-		HACK_GETLOCALPLAYER_GUARD( "C_GlobalLight::ClientThink" );
-
 		if ( !C_BasePlayer::GetLocalPlayer() )
 			return;
 
@@ -183,7 +188,7 @@ void C_GlobalLight::ClientThink()
 		state.m_Color[3] = 0.0f; // fixme: need to make ambient work m_flAmbient;
 		state.m_NearZ = 4.0f;
 		state.m_FarZ = m_flSunDistance * 2.0f;
-		state.m_fBrightnessScale = 2.0f;
+		state.m_fBrightnessScale = cl_globallight_brightness.GetFloat();
 		state.m_bGlobalLight = true;
 
 		float flOrthoSize = 1000.0f;
@@ -201,7 +206,11 @@ void C_GlobalLight::ClientThink()
 			state.m_bOrtho = false;
 		}
 
-		state.m_bDrawShadowFrustum = true;
+		if (cl_globallight_debug.GetBool())
+		{
+			// Draw where we are projecting.
+			state.m_bDrawShadowFrustum = true;
+		}
 		state.m_flShadowSlopeScaleDepthBias = g_pMaterialSystemHardwareConfig->GetShadowSlopeScaleDepthBias();;
 		state.m_flShadowDepthBias = g_pMaterialSystemHardwareConfig->GetShadowDepthBias();
 		state.m_bEnableShadows = m_bEnableShadows;
@@ -210,7 +219,7 @@ void C_GlobalLight::ClientThink()
 		state.m_nSpotlightTextureFrame = 0;
 
 		state.m_nShadowQuality = 1; // Allow entity to affect shadow quality
-//		state.m_bShadowHighRes = true;
+		state.m_bShadowHighRes = true;
 
 		if ( m_bOldEnableShadows != m_bEnableShadows )
 		{

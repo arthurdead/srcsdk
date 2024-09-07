@@ -44,6 +44,9 @@ public:
 	void InputSetEnableVolumetrics( inputdata_t &inputdata );
 	void InputEnableUberLight( inputdata_t &inputdata );
 	void InputDisableUberLight( inputdata_t &inputdata );
+	void InputSetNearZ( inputdata_t &inputdata );
+	void InputSetFarZ( inputdata_t &inputdata );
+	void InputSetBrightnessScale( inputdata_t &inputdata );
 
 	void InitialThink( void );
 	void FlickerThink( void );
@@ -93,6 +96,8 @@ private:
 	CNetworkVar( float, m_fHeight );
 	CNetworkVar( float, m_fHedge );
 	CNetworkVar( float, m_fRoundness );
+
+	friend void CC_CreateFlashlight( const CCommand &args );
 };
 
 

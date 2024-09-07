@@ -55,9 +55,11 @@ public:
 	void			SetDmgModBullet( float flDmgMod ) { m_flDmgModBullet = flDmgMod; }
 	void			SetDmgModClub( float flDmgMod ) { m_flDmgModClub = flDmgMod; }
 	void			SetDmgModExplosive( float flDmgMod ) { m_flDmgModExplosive = flDmgMod; }
+	void			SetDmgModFire( float flDmgMod ) { m_flDmgModFire = flDmgMod; }
 	float			GetDmgModBullet( void ) { return m_flDmgModBullet; }
 	float			GetDmgModClub( void ) { return m_flDmgModClub; }
 	float			GetDmgModExplosive( void ) { return m_flDmgModExplosive; }
+	float			GetDmgModFire( void ) { return m_flDmgModFire; }
 	void			SetExplosiveRadius( float flRadius ) { m_explodeRadius = flRadius; }
 	void			SetExplosiveDamage( float flDamage ) { m_explodeDamage = flDamage; }
 	float			GetExplosiveRadius( void ) { return m_explodeRadius; }
@@ -112,6 +114,7 @@ protected:
 	float			m_flDmgModBullet;
 	float			m_flDmgModClub;
 	float			m_flDmgModExplosive;
+	float			m_flDmgModFire;
 	string_t		m_iszPhysicsDamageTableName;
 	string_t		m_iszBreakableModel;
 	int				m_iBreakableSkin;

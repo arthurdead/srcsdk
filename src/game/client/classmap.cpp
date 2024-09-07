@@ -46,11 +46,10 @@ public:
 	virtual C_BaseEntity	*CreateEntity( const char *mapname );
 	virtual int				GetClassSize( const char *classname );
 
-private:
 	CUtlDict< classentry_t, unsigned short > m_ClassDict;
 };
 
-static CClassMap g_Classmap;
+INIT_PRIORITY(101) static CClassMap g_Classmap;
 IClassMap& GetClassMap( void )
 {
 	return g_Classmap;
@@ -131,7 +130,7 @@ C_BaseEntity *CClassMap::CreateEntity( const char *mapname )
 			continue;
 		}
 
-		return ( *lookup->factory )();
+		return ( *lookup->factory )( mapname );
 	}
 
 	return NULL;
@@ -156,3 +155,14 @@ int CClassMap::GetClassSize( const char *classname )
 
 	return -1;
 }
+
+void DumpEntityFactories_f()
+{
+	CClassMap &classMap = (CClassMap &)GetClassMap();
+	for ( int i = classMap.m_ClassDict.First(); i != classMap.m_ClassDict.InvalidIndex(); i = classMap.m_ClassDict.Next( i ) )
+	{
+		Warning( "%s\n", classMap.m_ClassDict.Element( i ).GetMapName() );
+	}
+}
+
+static ConCommand dumpentityfactories( "dumpcliententityfactories", DumpEntityFactories_f, "Lists all entity factory names.", FCVAR_CLIENTDLL );

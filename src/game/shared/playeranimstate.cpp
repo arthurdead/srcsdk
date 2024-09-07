@@ -966,6 +966,11 @@ Activity CPlayerAnimState::TranslateActivity( Activity actDesired )
 		}
 	}
 
+	CBaseCombatWeapon *pActiveWep = GetBasePlayer()->GetActiveWeapon();
+	if(pActiveWep) {
+		actDesired = pActiveWep->ActivityOverride(actDesired, nullptr);
+	}
+
 	return actDesired;
 }
 
@@ -1297,10 +1302,10 @@ void CPlayerAnimState::Update( float eyeYaw, float eyePitch )
 		ComputePoseParam_MoveYaw( pStudioHdr );
 
 		// Pose parameter - Torso aiming (up/down).
-		ComputePoseParam_AimPitch( pStudioHdr );
+		ComputePoseParam_BodyPitch( pStudioHdr );
 
 		// Pose parameter - Torso aiming (rotation).
-		ComputePoseParam_AimYaw( pStudioHdr );
+		ComputePoseParam_BodyYaw( pStudioHdr );
 	}
 
 #ifdef CLIENT_DLL
@@ -1361,14 +1366,42 @@ bool CPlayerAnimState::SetupPoseParameters( CStudioHdr *pStudioHdr )
 	*/
 
 	// Look for the aim pitch blender.
-	m_PoseParameterData.m_iAimPitch = GetBasePlayer()->LookupPoseParameter( pStudioHdr, "body_pitch" );
+	m_PoseParameterData.m_iBodyPitch = GetBasePlayer()->LookupPoseParameter( pStudioHdr, "body_pitch" );
 	/*
 	if ( m_PoseParameterData.m_iAimPitch < 0 )
 		return false;
 	*/
 
 	// Look for aim yaw blender.
-	m_PoseParameterData.m_iAimYaw = GetBasePlayer()->LookupPoseParameter( pStudioHdr, "body_yaw" );
+	m_PoseParameterData.m_iBodyYaw = GetBasePlayer()->LookupPoseParameter( pStudioHdr, "body_yaw" );
+	/*
+	if ( m_PoseParameterData.m_iAimYaw < 0 )
+		return false;
+	*/
+
+	// Look for the aim pitch blender.
+	m_PoseParameterData.m_iHeadPitch = GetBasePlayer()->LookupPoseParameter( pStudioHdr, "head_pitch" );
+	/*
+	if ( m_PoseParameterData.m_iHeadPitch < 0 )
+		return false;
+	*/
+
+	// Look for aim yaw blender.
+	m_PoseParameterData.m_iHeadYaw = GetBasePlayer()->LookupPoseParameter( pStudioHdr, "head_yaw" );
+	/*
+	if ( m_PoseParameterData.m_iHeadYaw < 0 )
+		return false;
+	*/
+
+	// Look for the aim pitch blender.
+	m_PoseParameterData.m_iAimPitch = GetBasePlayer()->LookupPoseParameter( pStudioHdr, "aim_pitch" );
+	/*
+	if ( m_PoseParameterData.m_iAimPitch < 0 )
+		return false;
+	*/
+
+	// Look for aim yaw blender.
+	m_PoseParameterData.m_iAimYaw = GetBasePlayer()->LookupPoseParameter( pStudioHdr, "aim_yaw" );
 	/*
 	if ( m_PoseParameterData.m_iAimYaw < 0 )
 		return false;
@@ -1636,20 +1669,20 @@ void CPlayerAnimState::EstimateYaw( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPlayerAnimState::ComputePoseParam_AimPitch( CStudioHdr *pStudioHdr )
+void CPlayerAnimState::ComputePoseParam_BodyPitch( CStudioHdr *pStudioHdr )
 {
 	// Get the view pitch.
 	float flAimPitch = m_flEyePitch;
 
 	// Set the aim pitch pose parameter and save.
-	GetBasePlayer()->SetPoseParameter( pStudioHdr, m_PoseParameterData.m_iAimPitch, -flAimPitch );
+	GetBasePlayer()->SetPoseParameter( pStudioHdr, m_PoseParameterData.m_iBodyPitch, -flAimPitch );
 	m_DebugAnimData.m_flAimPitch = flAimPitch;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPlayerAnimState::ComputePoseParam_AimYaw( CStudioHdr *pStudioHdr )
+void CPlayerAnimState::ComputePoseParam_BodyYaw( CStudioHdr *pStudioHdr )
 {
 	// Get the movement velocity.
 	Vector vecVelocity;
@@ -1719,7 +1752,7 @@ void CPlayerAnimState::ComputePoseParam_AimYaw( CStudioHdr *pStudioHdr )
 	flAimYaw = AngleNormalize( flAimYaw );
 
 	// Set the aim yaw and save.
-	GetBasePlayer()->SetPoseParameter( pStudioHdr, m_PoseParameterData.m_iAimYaw, -flAimYaw );
+	GetBasePlayer()->SetPoseParameter( pStudioHdr, m_PoseParameterData.m_iBodyYaw, -flAimYaw );
 	m_DebugAnimData.m_flAimYaw	= flAimYaw;
 
 	// Turn off a force aim yaw - either we have already updated or we don't need to.

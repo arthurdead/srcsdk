@@ -14,9 +14,16 @@
 //NOTENOTE: This is not yet coupled with the server-side implementation of CGib
 //			This is only a client-side version of gibs at the moment
 
+LINK_ENTITY_TO_CLASS(gib_clientside, C_Gib)
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+C_Gib::C_Gib( void )
+{
+	AddEFlags( EFL_NOT_NETWORKED );
+}
+
 C_Gib::~C_Gib( void )
 {
 	VPhysicsDestroyObject();
@@ -32,10 +39,13 @@ C_Gib::~C_Gib( void )
 //-----------------------------------------------------------------------------
 C_Gib *C_Gib::CreateClientsideGib( const char *pszModelName, Vector vecOrigin, Vector vecForceDir, AngularImpulse vecAngularImp, float flLifetime )
 {
-	C_Gib *pGib = new C_Gib;
-	pGib->SetClassname("gib");
-	if ( pGib->InitializeGib( pszModelName, vecOrigin, vecForceDir, vecAngularImp, flLifetime ) == false )
+	C_Gib *pGib = CREATE_ENTITY(C_Gib, "gib_clientside");
+	if(!pGib)
 		return NULL;
+	if ( pGib->InitializeGib( pszModelName, vecOrigin, vecForceDir, vecAngularImp, flLifetime ) == false ) {
+		UTIL_Remove( pGib );
+		return NULL;
+	}
 
 	return pGib;
 }
@@ -50,12 +60,6 @@ C_Gib *C_Gib::CreateClientsideGib( const char *pszModelName, Vector vecOrigin, V
 //-----------------------------------------------------------------------------
 bool C_Gib::InitializeGib( const char *pszModelName, Vector vecOrigin, Vector vecForceDir, AngularImpulse vecAngularImp, float flLifetime )
 {
-	if ( InitializeAsClientEntity() == false )
-	{
-		UTIL_Remove( this );
-		return false;
-	}
-
 	SetModel( pszModelName );
 
 	SetAbsOrigin( vecOrigin );
@@ -77,11 +81,14 @@ bool C_Gib::InitializeGib( const char *pszModelName, Vector vecOrigin, Vector ve
 	else
 	{
 		// failed to create a physics object
-		UTIL_Remove( this );
 		return false;
 	}
 
 	SetContextThink( &C_Gib::FadeThink, gpGlobals->curtime + flLifetime, "FadeThink" );
+
+	if(DispatchSpawn(this) < 0) {
+		return false;
+	}
 
 	return true;
 }

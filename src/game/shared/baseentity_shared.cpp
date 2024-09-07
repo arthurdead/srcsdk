@@ -30,6 +30,8 @@
 	#include "player_pickup.h"
 	#include "waterbullet.h"
 	#include "func_break.h"
+	#include "world.h"
+	#include "globalstate.h"
 
 	#include "gamestats.h"
 
@@ -358,6 +360,16 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 		return true;
 	}
 
+	if (FStrEq(szKeyName, "disableshadowdepth"))
+	{
+		int val = atoi(szValue);
+		if (val)
+		{
+			AddEffects( EF_NOSHADOWDEPTH );
+		}
+		return true;
+	}
+
 	if ( FStrEq( szKeyName, "mins" ))
 	{
 		Vector mins;
@@ -380,6 +392,16 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 		if (val)
 		{
 			AddEffects( EF_NORECEIVESHADOW );
+		}
+		return true;
+	}
+
+	if (FStrEq(szKeyName, "disableflashlight"))
+	{
+		int val = atoi(szValue);
+		if (val)
+		{
+			AddEffects( EF_NOFLASHLIGHT );
 		}
 		return true;
 	}
@@ -595,6 +617,12 @@ bool CBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen
 		return true;
 	}
 
+	if (FStrEq(szKeyName, "disableshadowdepth"))
+	{
+		Q_snprintf(szValue, iMaxLen, "%d", IsEffectActive(EF_NOSHADOWDEPTH));
+		return true;
+	}
+
 	if ( FStrEq( szKeyName, "mins" ))
 	{
 		Assert( 0 );
@@ -610,6 +638,12 @@ bool CBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen
 	if ( FStrEq( szKeyName, "disablereceiveshadows" ))
 	{
 		Q_snprintf( szValue, iMaxLen, "%d", IsEffectActive( EF_NORECEIVESHADOW ) );
+		return true;
+	}
+
+	if (FStrEq(szKeyName, "disableflashlight"))
+	{
+		Q_snprintf(szValue, iMaxLen, "%d", IsEffectActive(EF_NOFLASHLIGHT));
 		return true;
 	}
 
@@ -1755,11 +1789,12 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 		nDirtyFlags |= EFL_DIRTY_ABSTRANSFORM;
 
 #ifndef CLIENT_DLL
-		NetworkProp()->MarkPVSInformationDirty();
+		if( NetworkProp() )
+			NetworkProp()->MarkPVSInformationDirty();
 #endif
 
 		// NOTE: This will also mark shadow projection + client leaf dirty
-		if ( entindex() != 0 )
+		if ( !IsWorld() )
 		{
 			CollisionProp()->MarkPartitionHandleDirty();
 		}
@@ -1816,7 +1851,7 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 #ifdef CLIENT_DLL
 	else
 	{
-		if ( entindex() != 0 )
+		if ( !IsWorld() )
 		{
 			if((nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | BOUNDS_CHANGED)))
 			{
@@ -2216,7 +2251,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 			int nActualDamageType = nDamageType;
 			if ( flActualDamage == 0.0 )
 			{
-				flActualDamage = g_pGameRules->GetAmmoDamage( pAttacker, tr.m_pEnt, info.m_iAmmoType );
+				flActualDamage = GameRules()->GetAmmoDamage( pAttacker, tr.m_pEnt, info.m_iAmmoType );
 			}
 			else
 			{
@@ -2468,6 +2503,14 @@ void CBaseEntity::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir
 #endif // GAME_DLL
 		{
 			AddMultiDamage( info, this );
+		}
+
+		CBaseEntity *pAttacker = info.GetAttacker();
+
+		if(pAttacker) {
+			if(GameRules()->IsTeamplay() && pAttacker->InSameTeam(this) == true) {
+				return;
+			}
 		}
 
 		int blood = BloodColor();

@@ -34,7 +34,8 @@ IMPLEMENT_CLIENTCLASS_DT(C_ColorCorrection, DT_ColorCorrection, CColorCorrection
 	RecvPropString( RECVINFO(m_netLookupFilename) ),
 	RecvPropBool(   RECVINFO(m_bEnabled) ),
 	RecvPropBool(   RECVINFO(m_bMaster) ),
-	RecvPropBool(	RECVINFO(m_bExclusive) )
+	RecvPropBool(	RECVINFO(m_bExclusive) ),
+	RecvPropBool(	RECVINFO(m_bClientSide) )
 END_RECV_TABLE()
 
 

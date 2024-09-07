@@ -20,7 +20,6 @@ public:
 	DECLARE_CLIENTCLASS();
 
 	C_BreakableProp();
-	C_BreakableProp(bool bClientSide);
 
 	virtual bool IsProp( void ) const
 	{

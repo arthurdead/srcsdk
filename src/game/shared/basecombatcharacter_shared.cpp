@@ -20,7 +20,7 @@
 //-----------------------------------------------------------------------------
 bool CBaseCombatCharacter::SwitchToNextBestWeapon(CBaseCombatWeapon *pCurrent)
 {
-	CBaseCombatWeapon *pNewWeapon = g_pGameRules->GetNextBestWeapon(this, pCurrent);
+	CBaseCombatWeapon *pNewWeapon = GameRules()->GetNextBestWeapon(this, pCurrent);
 	
 	if ( ( pNewWeapon != NULL ) && ( pNewWeapon != pCurrent ) )
 	{

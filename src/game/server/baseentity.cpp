@@ -81,7 +81,6 @@ edict_t *g_pForceAttachEdict = NULL;
 bool CBaseEntity::m_bDebugPause = false;		// Whether entity i/o is paused.
 int CBaseEntity::m_nDebugSteps = 1;				// Number of entity outputs to fire before pausing again.
 bool CBaseEntity::sm_bDisableTouchFuncs = false;	// Disables PhysicsTouch and PhysicsStartTouch function calls
-bool CBaseEntity::sm_bAccurateTriggerBboxChecks = true;	// set to false for legacy behavior in ep1
 
 int CBaseEntity::m_nPredictionRandomSeed = -1;
 int CBaseEntity::m_nPredictionRandomSeedServer = -1;
@@ -723,11 +722,33 @@ void CBaseEntity::PostConstructor( const char *szClassname )
 		NetworkProp()->Init( this );
 
 		// Certain entities set up their edicts in the constructor
-		if ( !IsEFlagSet( EFL_NO_AUTO_EDICT_ATTACH ) )
-		{
-			NetworkProp()->AttachEdict( g_pForceAttachEdict );
-			g_pForceAttachEdict = NULL;
+		if(!g_pForceAttachEdict) {
+			int iForceEdictIndex = RequiredEdictIndex();
+			if(iForceEdictIndex != -1) {
+				CBaseEntity *pOldEntity = gEntList.LookupEntityByNetworkIndex( iForceEdictIndex );
+				Assert(!pOldEntity);
+				if( pOldEntity ) {
+					UTIL_Remove( pOldEntity );
+					pOldEntity->NetworkProp()->DetachEdict();
+				} else {
+					g_pForceAttachEdict = INDEXENT(iForceEdictIndex);
+				}
+
+				if(!g_pForceAttachEdict) {
+					g_pForceAttachEdict = engine->CreateEdict(iForceEdictIndex);
+					if ( !g_pForceAttachEdict ) {
+						Error( "CBaseEntity::PostConstructor( %s, %d ) - CreateEdict failed.", szClassname, iForceEdictIndex );
+					}
+				}
+			} else {
+				g_pForceAttachEdict = engine->CreateEdict(-1);
+				if ( !g_pForceAttachEdict ) {
+					Error( "CBaseEntity::PostConstructor( %s, %d ) - CreateEdict failed.", szClassname, iForceEdictIndex );
+				}
+			}
 		}
+
+		NetworkProp()->AttachEdict( g_pForceAttachEdict );
 		
 		// Some ents like the player override the AttachEdict function and do it at a different time.
 		// While precaching, they don't ever have an edict, so we don't need to add them to
@@ -744,7 +765,9 @@ void CBaseEntity::PostConstructor( const char *szClassname )
 		NetworkProp()->MarkPVSInformationDirty();
 	}
 
-	CheckHasThinkFunction( false );
+	g_pForceAttachEdict = NULL;
+
+	CheckHasThinkFunction( TICK_NEVER_THINK );
 	CheckHasGamePhysicsSimulation();
 }
 
@@ -759,11 +782,17 @@ edict_t *CBaseEntity::edict( void )
 	if(IsEFlagSet(EFL_NOT_NETWORKED))
 		return NULL;
 
+	if(!NetworkProp())
+		return NULL;
+
 	return NetworkProp()->edict();
 }
 const edict_t *CBaseEntity::edict( void ) const
 {
 	if(IsEFlagSet(EFL_NOT_NETWORKED))
+		return NULL;
+
+	if(!NetworkProp())
 		return NULL;
 
 	return NetworkProp()->edict();
@@ -781,6 +810,9 @@ int CBaseEntity::entindex( ) const
 {
 	if(IsEFlagSet(EFL_NOT_NETWORKED))
 		return -1;
+
+	if(!m_Network)
+		return -1;;
 
 	return m_Network->entindex();
 }
@@ -807,6 +839,33 @@ const CServerNetworkProperty *CBaseEntity::NetworkProp() const
 		return NULL;
 
 	return m_Network;
+}
+
+//-----------------------------------------------------------------------------
+// Methods relating to networking
+//-----------------------------------------------------------------------------
+void	CBaseEntity::NetworkStateChanged()
+{
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
+		return;
+
+	if( NetworkProp() )
+		NetworkProp()->NetworkStateChanged();
+}
+
+void	CBaseEntity::NetworkStateChanged( void *pVar )
+{
+	// Make sure it's a semi-reasonable pointer.
+	Assert( (char*)pVar > (char*)this );
+	Assert( (char*)pVar - (char*)this < 32768 );
+
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
+		return;
+
+	// Good, they passed an offset so we can track this variable's change
+	// and avoid sending the whole entity.
+	if( NetworkProp() )
+		NetworkProp()->NetworkStateChanged( (char*)pVar - (char*)this );
 }
 
 //-----------------------------------------------------------------------------
@@ -1871,10 +1930,10 @@ int CBaseEntity::OnTakeDamage( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 int CBaseEntity::TakeDamage( const CTakeDamageInfo &inputInfo )
 {
-	if ( !g_pGameRules )
+	if ( !GameRules() )
 		return 0;
 
-	bool bHasPhysicsForceDamage = !g_pGameRules->Damage_NoPhysicsForce( inputInfo.GetDamageType() );
+	bool bHasPhysicsForceDamage = !GameRules()->Damage_NoPhysicsForce( inputInfo.GetDamageType() );
 	if ( bHasPhysicsForceDamage && inputInfo.GetDamageType() != DMG_GENERIC )
 	{
 		// If you hit this assert, you've called TakeDamage with a damage type that requires a physics damage
@@ -1907,7 +1966,7 @@ int CBaseEntity::TakeDamage( const CTakeDamageInfo &inputInfo )
 		return 0;
 	}
 
-	if( !g_pGameRules->AllowDamage(this, inputInfo) )
+	if( !GameRules()->AllowDamage(this, inputInfo) )
 	{
 		return 0;
 	}
@@ -1975,7 +2034,7 @@ float CBaseEntity::GetReceivedDamageScale( CBaseEntity *pAttacker )
 int CBaseEntity::VPhysicsTakeDamage( const CTakeDamageInfo &info )
 {
 	// don't let physics impacts or fire cause objects to move (again)
-	bool bNoPhysicsForceDamage = g_pGameRules->Damage_NoPhysicsForce( info.GetDamageType() );
+	bool bNoPhysicsForceDamage = GameRules()->Damage_NoPhysicsForce( info.GetDamageType() );
 	if ( bNoPhysicsForceDamage || info.GetDamageType() == DMG_GENERIC )
 		return 1;
 
@@ -2198,6 +2257,12 @@ BEGIN_MAPENTITY_NO_BASE( CBaseEntity )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableShadow", InputDisableShadow ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableShadow", InputEnableShadow ),
+
+	DEFINE_INPUTFUNC(FIELD_VOID, "DisableDraw", InputDisableDraw),
+	DEFINE_INPUTFUNC(FIELD_VOID, "EnableDraw", InputEnableDraw),
+
+	DEFINE_INPUTFUNC(FIELD_VOID, "DisableReceivingFlashlight", InputDisableReceivingFlashlight),
+	DEFINE_INPUTFUNC(FIELD_VOID, "EnableReceivingFlashlight", InputEnableReceivingFlashlight),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "AddOutput", InputAddOutput ),
 
@@ -2846,39 +2911,6 @@ void CBaseEntity::PhysicsRelinkChildren( float dt )
 	}
 }
 
-void CBaseEntity::PhysicsTouchTriggers( const Vector *pPrevAbsOrigin )
-{
-	edict_t *pEdict = edict();
-	if ( pEdict && !IsWorld() )
-	{
-		Assert(CollisionProp());
-		bool isTriggerCheckSolids = IsSolidFlagSet( FSOLID_TRIGGER );
-		bool isSolidCheckTriggers = IsSolid() && !isTriggerCheckSolids;		// NOTE: Moving triggers (items, ammo etc) are not 
-																			// checked against other triggers to reduce the number of touchlinks created
-		if ( !(isSolidCheckTriggers || isTriggerCheckSolids) )
-			return;
-
-		if ( GetSolid() == SOLID_BSP ) 
-		{
-			if ( !GetModel() && Q_strlen( STRING( GetModelName() ) ) == 0 ) 
-			{
-				Warning( "Inserted %s with no model\n", GetClassname() );
-				return;
-			}
-		}
-
-		SetCheckUntouch( true );
-		if ( isSolidCheckTriggers )
-		{
-			engine->SolidMoved( pEdict, CollisionProp(), pPrevAbsOrigin, sm_bAccurateTriggerBboxChecks );
-		}
-		if ( isTriggerCheckSolids )
-		{
-			engine->TriggerMoved( pEdict, sm_bAccurateTriggerBboxChecks );
-		}
-	}
-}
-
 void CBaseEntity::VPhysicsShadowCollision( int index, gamevcollisionevent_t *pEvent )
 {
 }
@@ -3175,7 +3207,7 @@ Class_T CBaseEntity::Classify ( void )
 
 float CBaseEntity::GetAutoAimRadius()
 {
-	if( g_pGameRules->GetAutoAimMode() == AUTOAIM_EXTRA )
+	if( GameRules()->GetAutoAimMode() == AUTOAIM_EXTRA )
 		return 48.0f;
 	else
 		return 24.0f;
@@ -3361,11 +3393,13 @@ CBaseEntity *CBaseEntity::Create( const char *szName, const Vector &vecOrigin, c
 		return NULL;
 	}
 
-	DispatchSpawn( pEntity );
+	if(DispatchSpawn( pEntity ) < 0) {
+		UTIL_Remove( pEntity );
+		return NULL;
+	}
+
 	return pEntity;
 }
-
-
 
 // NOTE: szName must be a pointer to constant memory, e.g. "NPC_class" because the entity
 // will keep a pointer to it after this call.
@@ -3382,12 +3416,10 @@ CBaseEntity * CBaseEntity::CreateNoSpawn( const char *szName, const Vector &vecO
 	pEntity->SetLocalAngles( vecAngles );
 	pEntity->SetOwnerEntity( pOwner );
 
-	gEntList.NotifyCreateEntity( pEntity );
-
 	return pEntity;
 }
 
-void CBaseEntity::__SetupAsPredicted( CBaseEntity *pEntity, const char *szName, const char *module, int line )
+void CBaseEntity::DO_NOT_USE_SetupAsPredicted( CBaseEntity *pEntity, const char *szName, const char *module, int line )
 {
 	CBasePlayer *player = CBaseEntity::GetPredictionPlayer();
 	Assert( player );
@@ -3400,6 +3432,43 @@ void CBaseEntity::__SetupAsPredicted( CBaseEntity *pEntity, const char *szName, 
 
 	// Set up "shared" id number
 	pEntity->m_PredictableID.GetForModify().SetRaw( testId.GetRaw() );
+}
+
+CBaseEntity * CBaseEntity::CreatePredictedNoSpawn( const char *module, int line, const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner )
+{
+	CBaseEntity *pEntity = CreateEntityByName( szName, -1 );
+	if ( !pEntity )
+	{
+		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
+		return NULL;
+	}
+
+	pEntity->SetLocalOrigin( vecOrigin );
+	pEntity->SetLocalAngles( vecAngles );
+	pEntity->SetOwnerEntity( pOwner );
+
+	DO_NOT_USE_SetupAsPredicted( pEntity, szName, module, line );
+
+	return pEntity;
+}
+
+CBaseEntity *CBaseEntity::CreatePredicted( const char *module, int line, const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner )
+{
+	CBaseEntity *pEntity = CreateNoSpawn( szName, vecOrigin, vecAngles, pOwner );
+	if ( !pEntity )
+	{
+		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
+		return NULL;
+	}
+
+	if(DispatchSpawn( pEntity ) < 0) {
+		UTIL_Remove( pEntity );
+		return NULL;
+	}
+
+	DO_NOT_USE_SetupAsPredicted( pEntity, szName, module, line );
+
+	return pEntity;
 }
 
 Vector CBaseEntity::GetSoundEmissionOrigin() const
@@ -3727,7 +3796,7 @@ void CBaseEntity::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways )
 	if ( pInfo->m_pTransmitEdict->Get( index ) )
 		return;
 
-	CServerNetworkProperty *pNetworkParent = NetworkProp()->GetNetworkParent();
+	CBaseEntity *pNetworkParent = GetParent();
 
 	pInfo->m_pTransmitEdict->Set( index );
 
@@ -3752,8 +3821,7 @@ void CBaseEntity::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways )
 	// Force our aiment and move parent to be sent.
 	if ( pNetworkParent )
 	{
-		CBaseEntity *pMoveParent = pNetworkParent->GetBaseEntity();
-		pMoveParent->SetTransmit( pInfo, bAlways );
+		pNetworkParent->SetTransmit( pInfo, bAlways );
 	}
 }
 
@@ -4445,7 +4513,7 @@ void CBaseEntity::ChangeTeam( int iTeamNum )
 //-----------------------------------------------------------------------------
 CTeam *CBaseEntity::GetTeam( void ) const
 {
-	return GetGlobalTeam( m_iTeamNum );
+	return GetGlobalTeamByTeam( m_iTeamNum );
 }
 
 
@@ -4457,6 +4525,9 @@ bool CBaseEntity::InSameTeam( CBaseEntity *pEntity ) const
 	if ( !pEntity )
 		return false;
 
+	if(!GetTeam() || !pEntity->GetTeam())
+		return false;
+
 	return ( pEntity->GetTeam() == GetTeam() );
 }
 
@@ -4466,7 +4537,7 @@ bool CBaseEntity::InSameTeam( CBaseEntity *pEntity ) const
 const char *CBaseEntity::TeamID( void ) const
 {
 	if ( GetTeam() == NULL )
-		return "";
+		return NULL;
 
 	return GetTeam()->GetName();
 }
@@ -4476,13 +4547,16 @@ const char *CBaseEntity::TeamID( void ) const
 //-----------------------------------------------------------------------------
 bool CBaseEntity::IsInTeam( CTeam *pTeam ) const
 {
+	if(!GetTeam() || !pTeam)
+		return false;
+
 	return ( GetTeam() == pTeam );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CBaseEntity::GetTeamNumber( void ) const
+Team_t CBaseEntity::GetTeamNumber( void ) const
 {
 	return m_iTeamNum;
 }
@@ -4700,7 +4774,7 @@ void ModelSoundsCache_PrecacheScriptSound( const char *soundname )
 	CBaseEntity::PrecacheScriptSound( soundname );
 }
 
-static CUtlCachedFileData< CModelSoundsCache > g_ModelSoundsCache( "modelsounds.cache", MODELSOUNDSCACHE_VERSION, 0, UTL_CACHED_FILE_USE_FILESIZE, false );																  
+static CUtlCachedFileData< CModelSoundsCache > g_ModelSoundsCache( "modelsounds_server.cache", MODELSOUNDSCACHE_VERSION, 0, UTL_CACHED_FILE_USE_FILESIZE, false );																  
 
 void ClearModelSoundsCache()
 {
@@ -5423,7 +5497,7 @@ public:
 
 	virtual int CommandCompletionCallback( const char *partial, CUtlVector< CUtlString > &commands )
 	{
-		if ( !g_pGameRules )
+		if ( !GameRules() )
 		{
 			return 0;
 		}
@@ -6305,53 +6379,6 @@ void CBaseEntity::RemoveAllDecals( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : set - 
-//-----------------------------------------------------------------------------
-void CBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
-{
-	// TODO
-	// Append chapter/day?
-
-	set.AppendCriteria( "randomnum", UTIL_VarArgs("%d", RandomInt(0,100)) );
-	// Append map name
-	set.AppendCriteria( "map", gpGlobals->mapname.ToCStr() );
-	// Append our classname and game name
-	set.AppendCriteria( "classname", GetClassname() );
-	set.AppendCriteria( "name", GetEntityName().ToCStr() );
-
-	// Append our health
-	set.AppendCriteria( "health", UTIL_VarArgs( "%i", GetHealth() ) );
-
-	float healthfrac = 0.0f;
-	if ( GetMaxHealth() > 0 )
-	{
-		healthfrac = (float)GetHealth() / (float)GetMaxHealth();
-	}
-
-	set.AppendCriteria( "healthfrac", UTIL_VarArgs( "%.3f", healthfrac ) );
-
-	// Go through all the global states and append them
-
-	for ( int i = 0; i < GlobalEntity_GetNumGlobals(); i++ ) 
-	{
-		const char *szGlobalName = GlobalEntity_GetName(i);
-		int iGlobalState = (int)GlobalEntity_GetStateByIndex(i);
-		set.AppendCriteria( szGlobalName, UTIL_VarArgs( "%i", iGlobalState ) );
-	}
-
-	// Append anything from I/O or keyvalues pairs
-	AppendContextToCriteria( set );
-
-	// Append anything from world I/O/keyvalues with "world" as prefix
-	CWorld *world = dynamic_cast< CWorld * >( CBaseEntity::Instance( engine->PEntityOfEntIndex( 0 ) ) );
-	if ( world )
-	{
-		world->AppendContextToCriteria( set, "world" );
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : set - 
 //			"" - 
 //-----------------------------------------------------------------------------
 void CBaseEntity::AppendContextToCriteria( AI_CriteriaSet& set, const char *prefix /*= ""*/ )
@@ -6653,6 +6680,34 @@ void CBaseEntity::InputDisableShadow( inputdata_t &inputdata )
 void CBaseEntity::InputEnableShadow( inputdata_t &inputdata )
 {
 	RemoveEffects( EF_NOSHADOW );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::InputDisableDraw(inputdata_t &inputdata)
+{
+	AddEffects(EF_NODRAW);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::InputEnableDraw(inputdata_t &inputdata)
+{
+	RemoveEffects(EF_NODRAW);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::InputDisableReceivingFlashlight(inputdata_t &inputdata)
+{
+	AddEffects(EF_NOFLASHLIGHT);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::InputEnableReceivingFlashlight(inputdata_t &inputdata)
+{
+	RemoveEffects(EF_NOFLASHLIGHT);
 }
 
 //-----------------------------------------------------------------------------

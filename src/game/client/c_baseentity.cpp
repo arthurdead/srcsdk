@@ -672,7 +672,7 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropInt( RECVINFO( m_nMinGPULevel ) ), 
 	RecvPropInt( RECVINFO( m_nMaxGPULevel ) ), 
 
-	RecvPropArray2( RecvProxyArrayLength_ModelIndexesOverrides,	RecvPropInt( RECVINFO(m_nModelIndexOverrides[0]) ), NUM_SHARED_VISION_FILTERS, sizeof(int), m_nModelIndexOverrides ),
+	RecvPropArray2( RecvProxyArrayLength_ModelIndexesOverrides,	RecvPropInt( RECVINFO_ARRAYELEM(m_nModelIndexOverrides, 0) ), NUM_SHARED_VISION_FILTERS, sizeof(int), m_nModelIndexOverrides ),
 
 END_RECV_TABLE()
 
@@ -1258,6 +1258,21 @@ IClientNetworkable*C_BaseEntity::GetClientNetworkable()
 	return this;
 }
 
+bool C_BaseEntity::IsNetworked( void ) const
+{
+	if ( m_pPredictionContext != NULL )
+	{
+		// For now can't be both
+		Assert( !GetPredictable() );
+		return true;
+	}
+
+	if(IsEFlagSet(EFL_NOT_NETWORKED))
+		return false;
+
+	return m_nEntIndex != -1;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Returns whether this entity was created on the client.
 //-----------------------------------------------------------------------------
@@ -1422,6 +1437,8 @@ bool C_BaseEntity::InitializeAsServerEntity( int entnum, int iSerialNum )
 
 	cl_entitylist->AddNetworkableEntity( this, entnum, iSerialNum );
 
+	CheckHasThinkFunction( TICK_NEVER_THINK );
+
 	CollisionProp()->CreatePartitionHandle();
 
 	Interp_SetupMappings( GetVarMapping() );
@@ -1441,6 +1458,8 @@ bool C_BaseEntity::InitializeAsPredictedEntity( const char *className, const cha
 	// Add the client entity to the master entity list.
 	cl_entitylist->AddNonNetworkableEntity( this );
 	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
+
+	CheckHasThinkFunction( TICK_NEVER_THINK );
 
 	CollisionProp()->CreatePartitionHandle();
 
@@ -1500,6 +1519,8 @@ bool C_BaseEntity::InitializeAsEventEntity()
 	cl_entitylist->AddNonNetworkableEntity( this );
 	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
 
+	CheckHasThinkFunction( TICK_NEVER_THINK );
+
 	CollisionProp()->CreatePartitionHandle();
 
 	Interp_SetupMappings( GetVarMapping() );
@@ -1520,6 +1541,8 @@ bool C_BaseEntity::InitializeAsClientEntity()
 	cl_entitylist->AddNonNetworkableEntity( this );
 	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
 
+	CheckHasThinkFunction( TICK_NEVER_THINK );
+
 	// Add the client entity to the spatial partition. (Collidable)
 	CollisionProp()->CreatePartitionHandle();
 
@@ -1530,7 +1553,7 @@ bool C_BaseEntity::InitializeAsClientEntity()
 	return true;
 }
 
-void C_BaseEntity::PostConstructor( const char *szClassname )
+bool C_BaseEntity::PostConstructor( const char *szClassname )
 {
 	if ( szClassname )
 	{
@@ -1539,8 +1562,15 @@ void C_BaseEntity::PostConstructor( const char *szClassname )
 
 	Assert( m_iClassname != NULL_STRING && STRING(m_iClassname) != NULL );
 
-	CheckHasThinkFunction( false );
+	if(IsEFlagSet( EFL_NOT_NETWORKED )) {
+		if(!InitializeAsClientEntity()) {
+			return false;
+		}
+	}
+
 	CheckHasGamePhysicsSimulation();
+
+	return true;
 }
 
 void C_BaseEntity::TrackAngRotation( bool bTrack )
@@ -1939,6 +1969,18 @@ bool C_BaseEntity::GetShadowCastDistance( float *pDistance, ShadowType_t shadowT
 	return false;
 }
 
+void C_BaseEntity::OnDisableShadowDepthRenderingChanged()
+{
+	bool bIsShadowDepthRenderingDisabled = IsEffectActive(EF_NOSHADOWDEPTH);
+	ClientLeafSystem()->DisableShadowDepthRendering(m_hRender, bIsShadowDepthRenderingDisabled);
+}
+
+void C_BaseEntity::OnShadowDepthRenderingCacheableStateChanged()
+{
+	bool bIsShadowDepthRenderingCacheDisabled = IsEffectActive(EF_SHADOWDEPTH_NOCACHE);
+	ClientLeafSystem()->DisableShadowDepthCaching(m_hRender, bIsShadowDepthRenderingCacheDisabled);
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -1984,7 +2026,7 @@ bool C_BaseEntity::ShouldReceiveProjectedTextures( int flags )
 {
 	Assert( flags & SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK );
 
-	if ( IsEffectActive( EF_NODRAW ) )
+	if ( IsEffectActive( EF_NODRAW ) || IsEffectActive( EF_NOFLASHLIGHT ) )
 		 return false;
 
 	if( ( flags & ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SIMPLE_PROJECTION ) ) != 0 )
@@ -3756,6 +3798,10 @@ void C_BaseEntity::OnDataChanged( DataUpdateType_t type )
 	// See if it needs to allocate prediction stuff
 	CheckInitPredictable( "OnDataChanged" );
 
+	if(GetPredictable() && !ShouldPredict()) {
+		ShutdownPredictable();
+	}
+
 	// Set up shadows; do it here so that objects can change shadowcasting state
 	CreateShadow();
 
@@ -4136,14 +4182,14 @@ void C_BaseEntity::operator delete[]( void *pMem, int nBlockUse, const char *pFi
 //========================================================================================
 C_Team *C_BaseEntity::GetTeam( void )
 {
-	return GetGlobalTeam( m_iTeamNum );
+	return GetGlobalTeamByTeam( m_iTeamNum );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int C_BaseEntity::GetTeamNumber( void ) const
+Team_t C_BaseEntity::GetTeamNumber( void ) const
 {
 	return m_iTeamNum;
 }
@@ -4151,7 +4197,7 @@ int C_BaseEntity::GetTeamNumber( void ) const
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int	C_BaseEntity::GetRenderTeamNumber( void )
+Team_t	C_BaseEntity::GetRenderTeamNumber( void )
 {
 	return GetTeamNumber();
 }
@@ -5066,6 +5112,7 @@ const char *C_BaseEntity::GetClassname( void )
 
 	if ( !gotname )
 	{
+		Assert( 0 );
 		Q_strncpy( outstr, typeid( *this ).name(), sizeof( outstr ) );
 	}
 
@@ -5087,11 +5134,6 @@ C_BaseEntity *CreateEntityByName( const char *className )
 	C_BaseEntity *ent = GetClassMap().CreateEntity( className );
 	if ( ent )
 	{
-		if(!ent->InitializeAsClientEntity())
-		{
-			UTIL_Remove( ent );
-			return NULL;
-		}
 		return ent;
 	}
 
@@ -5356,7 +5398,7 @@ void C_BaseEntity::SetOwnerEntity( C_BaseEntity *pOwner )
 //-----------------------------------------------------------------------------
 // Purpose: Put the entity in the specified team
 //-----------------------------------------------------------------------------
-void C_BaseEntity::ChangeTeam( int iTeamNum )
+void C_BaseEntity::ChangeTeam( Team_t iTeamNum )
 {
 	m_iTeamNum = iTeamNum;
 }
@@ -6655,9 +6697,15 @@ void C_BaseEntity::SimulateEntities()
 
 	if ( !report_cliententitysim.GetBool() )
 	{
-		int iNext;
+		int iNext = 0;
 		for ( int iCur = g_EntityLists[ENTITY_LIST_SIMULATE].Head(); iCur != g_EntityLists[ENTITY_LIST_SIMULATE].InvalidIndex(); iCur = iNext )
 		{
+			if (!g_EntityLists[ENTITY_LIST_SIMULATE].IsValidIndex(iCur))
+			{
+				iNext++;
+				continue;
+			}
+
 			iNext = g_EntityLists[ENTITY_LIST_SIMULATE].Next( iCur );
 			C_BaseEntity *pCur = g_EntityLists[ENTITY_LIST_SIMULATE].Element(iCur);
 			if ( pCur->IsEFlagSet( EFL_KILLME ) )
@@ -6684,6 +6732,10 @@ void C_BaseEntity::SimulateEntities()
 		for ( int iCur = g_EntityLists[ENTITY_LIST_SIMULATE].Head(); iCur != g_EntityLists[ENTITY_LIST_SIMULATE].InvalidIndex(); iCur = iNext )
 		{
 			iNext = g_EntityLists[ENTITY_LIST_SIMULATE].Next( iCur );
+
+			if (!g_EntityLists[ENTITY_LIST_SIMULATE].IsValidIndex(iCur))
+				continue;
+
 			C_BaseEntity *pCur = g_EntityLists[ENTITY_LIST_SIMULATE].Element(iCur);
 			if ( pCur->IsEFlagSet( EFL_KILLME ) )
 				continue;

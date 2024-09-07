@@ -155,7 +155,7 @@ bool AnimationController::LoadScriptFile(const char *fileName)
 	pMem[bytesRead] = 0;
 	g_pFullFileSystem->Close(f);
 	// parse
-	bool success = ParseScriptFile(pMem, bytesRead);
+	bool success = ParseScriptFile(pMem, bytesRead, fileName);
 	free(pMem);
 	return success;
 }
@@ -284,7 +284,7 @@ void AnimationController::SetupPosition( AnimCmdAnimate_t& cmd, float *output, c
 //-----------------------------------------------------------------------------
 // Purpose: parses a script into sequences
 //-----------------------------------------------------------------------------
-bool AnimationController::ParseScriptFile(char *pMem, int length)
+bool AnimationController::ParseScriptFile(char *pMem, int length, const char *fileName)
 {
 	// get the scheme (for looking up color names)
 	IScheme *scheme = vgui::scheme()->GetIScheme(GetScheme());
@@ -328,7 +328,7 @@ bool AnimationController::ParseScriptFile(char *pMem, int length)
 		pMem = ParseFile(pMem, token, NULL);
 		if ( Q_stristr( token, "[$" ) )
 		{
-			bAccepted = EvaluateConditional( token );
+			bAccepted = EvaluateConditional( token, fileName );
 
 			// now get the open brace
 			pMem = ParseFile(pMem, token, NULL);
@@ -621,7 +621,7 @@ bool AnimationController::ParseScriptFile(char *pMem, int length)
 			char *peek = ParseFile(pMem, token, NULL);
 			if ( Q_stristr( token, "[$" ) )
 			{
-				if ( !EvaluateConditional( token ) )
+				if ( !EvaluateConditional( token, fileName ) )
 				{
 					seq.cmdList.Remove( cmdIndex );
 				}

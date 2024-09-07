@@ -30,7 +30,6 @@ void RecvProxyArrayLength_PlayerArray( void *pStruct, int objectID, int currentA
 
 
 IMPLEMENT_CLIENTCLASS_DT_NOBASE(C_Team, DT_Team, CTeam)
-	RecvPropInt( RECVINFO(m_iTeamNum)),
 	RecvPropInt( RECVINFO(m_iScore)),
 	RecvPropInt( RECVINFO(m_iRoundsWon) ),
 	RecvPropString( RECVINFO(m_szTeamname)),
@@ -106,9 +105,9 @@ C_BasePlayer* C_Team::GetPlayer( int idx )
 }
 
 
-int C_Team::GetTeamNumber() const
+Team_t C_Team::GetTeamNumber() const
 {
-	return m_iTeamNum;
+	return BaseClass::GetTeamNumber();
 }
 
 
@@ -187,7 +186,15 @@ C_Team *GetLocalTeam( void )
 //-----------------------------------------------------------------------------
 // Purpose: Get the C_Team for the specified team number
 //-----------------------------------------------------------------------------
-C_Team *GetGlobalTeam( int iTeamNumber )
+C_Team *GetGlobalTeamByIndex( int iIndex )
+{
+	if( iIndex < 0 || iIndex >= g_Teams.Count() )
+		return NULL;
+
+	return g_Teams[ iIndex ];
+}
+
+C_Team *GetGlobalTeamByTeam( Team_t iTeamNumber )
 {
 	for (int i = 0; i < g_Teams.Count(); i++ )
 	{

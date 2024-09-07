@@ -196,12 +196,8 @@ static void CreditsDone_f( void )
 
 static ConCommand creditsdone("creditsdone", CreditsDone_f );
 
-extern ConVar sv_unlockedchapters;
-
 void CCredits::RollOutroCredits()
 {
-	sv_unlockedchapters.SetValue( "15" );
-	
 	CRecipientFilter filter; 
 	filter.AddAllPlayers(); 
 	filter.MakeReliable(); 

@@ -14,7 +14,7 @@
 DECLARE_BUILD_FACTORY( CAvatarImagePanel );
 
 
-CUtlMap< AvatarImagePair_t, int> CAvatarImage::s_AvatarImageCache; // cache of steam id's to textureids to use for images
+CUtlMap< AvatarImagePair_t, vgui::HTexture> CAvatarImage::s_AvatarImageCache; // cache of steam id's to textureids to use for images
 bool CAvatarImage::m_sbInitializedAvatarCache = false;
 
 //-----------------------------------------------------------------------------
@@ -41,7 +41,7 @@ CAvatarImage::CAvatarImage( void )
 	m_bDrawFriend = true;
 
 	// [menglish] Default icon for avatar icons if there is no avatar icon for the player
-	m_iTextureID = -1;
+	m_iTextureID = vgui::INVALID_TEXTURE;
 
 	// set up friend icon
 	m_pFriendIcon = HudIcons().GetIcon( "ico_friend_indicator_avatar" );
@@ -114,9 +114,6 @@ void CAvatarImage::OnPersonaStateChanged( PersonaStateChange_t *info )
 //-----------------------------------------------------------------------------
 void CAvatarImage::LoadAvatarImage()
 {
-#ifdef CSS_PERF_TEST
-	return;
-#endif
 	// attempt to retrieve the avatar image from Steam
 	if ( m_bLoadPending && steamapicontext->SteamFriends() && steamapicontext->SteamUtils() && gpGlobals->curtime >= m_fNextLoadTime )
 	{
@@ -297,7 +294,7 @@ void CAvatarImage::SetFrame( int nFrame )
 
 vgui::HTexture CAvatarImage::GetID()
 {
-	return 0;
+	return vgui::INVALID_TEXTURE;
 }
 
 

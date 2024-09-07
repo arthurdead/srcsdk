@@ -42,6 +42,8 @@ static int PropBreakablePrecacheAll( int modelIndex )
 static CUtlVector<C_PhysPropClientside*> s_PhysPropList;
 static CUtlVector<C_FuncPhysicsRespawnZone*> s_RespawnZoneList;
 
+LINK_ENTITY_TO_CLASS(prop_physics_clientside, C_PhysPropClientside);
+
 C_PhysPropClientside *C_PhysPropClientside::CreateNew( bool bForce )
 {
 	if ( (s_PhysPropList.Count() >= cl_phys_props_max.GetInt()) && !bForce )
@@ -50,12 +52,14 @@ C_PhysPropClientside *C_PhysPropClientside::CreateNew( bool bForce )
 		return NULL;
 	}
 
-	return new C_PhysPropClientside();
+	return CREATE_ENTITY(C_PhysPropClientside, "prop_physics_clientside");
 }
 
 C_PhysPropClientside::C_PhysPropClientside()
-	: C_BreakableProp(true)
+	: C_BreakableProp()
 {
+	AddEFlags( EFL_NOT_NETWORKED );
+
 	m_fDeathTime = -1;
 	m_impactEnergyScale = 1.0f;
 	m_iHealth = 0;
@@ -233,11 +237,6 @@ int C_PhysPropClientside::ParsePropData( void )
 
 bool C_PhysPropClientside::Initialize()
 {
-	if ( InitializeAsClientEntity() == false )
-	{
-		return false;
-	}
-
 	SetModel( STRING(GetModelName()) );
 
 	const model_t *mod = GetModel();
@@ -277,8 +276,9 @@ bool C_PhysPropClientside::Initialize()
 	{
 		m_pPhysicsObject->EnableMotion( false );
 	}
-		
-	Spawn(); // loads breakable & prop data
+
+	if(DispatchSpawn(this) < 0) // loads breakable & prop data
+		return false;
 
 	if ( m_iPhysicsMode == PHYSICS_MULTIPLAYER_AUTODETECT )
 	{
@@ -339,6 +339,7 @@ void C_PhysPropClientside::Spawn()
 	m_flDmgModBullet = 1.0;
 	m_flDmgModClub = 1.0;
 	m_flDmgModExplosive = 1.0;
+	m_flDmgModFire = 1.0;
 
 	BaseClass::Spawn();
 
@@ -547,7 +548,7 @@ void C_PhysPropClientside::ImpactTrace( trace_t *pTrace, int iDamageType, const 
 	Vector dir = pTrace->endpos - pTrace->startpos;
 	int iDamage = 0;
 
-	if ( iDamageType == DMG_BLAST )
+	if ( iDamageType & DMG_BLAST )
 	{
 		iDamage = VectorLength( dir );
 		dir *= 500;  // adjust impact strenght
@@ -632,7 +633,7 @@ const char *C_PhysPropClientside::ParseEntity( const char *pEntData )
 
 	if ( !Q_strcmp( className, "func_proprrespawnzone" ) )
 	{
-		C_FuncPhysicsRespawnZone *pEntity = new C_FuncPhysicsRespawnZone();
+		C_FuncPhysicsRespawnZone *pEntity = CREATE_ENTITY(C_FuncPhysicsRespawnZone, "func_proprrespawnzone_clientside");
 
 		if ( pEntity )
 		{	
@@ -706,9 +707,132 @@ void C_PhysPropClientside::ParseAllEntities(const char *pMapData)
 	}
 }
 
+CBaseAnimating *BreakModelCreate_Ragdoll( CBaseEntity *pOwnerEnt, breakmodel_t *pModel, const Vector &position, const QAngle &angles, const Vector &velocity, const AngularImpulse &angVelocity )
+{
+	C_BaseAnimating *pOwner = dynamic_cast<C_BaseAnimating *>( pOwnerEnt );
+	if ( !pOwner )
+		return NULL;
+
+	C_ClientRagdoll *pRagdoll = CREATE_ENTITY(C_ClientRagdoll, "client_ragdoll");
+	if ( pRagdoll == NULL )
+		return NULL;
+
+	const char *pModelName = pModel->modelName;
+
+	pRagdoll->SetModel( pModelName );
+
+	pRagdoll->SetAbsOrigin( position );
+	pRagdoll->SetAbsAngles( angles );
+
+	matrix3x4_t boneDelta0[MAXSTUDIOBONES];
+	matrix3x4_t boneDelta1[MAXSTUDIOBONES];
+	matrix3x4_t currentBones[MAXSTUDIOBONES];
+	const float boneDt = 0.1f;
+
+	pRagdoll->SetParent( pOwner );
+	pRagdoll->ForceSetupBonesAtTime( boneDelta0, gpGlobals->curtime - boneDt );
+	pRagdoll->ForceSetupBonesAtTime( boneDelta1, gpGlobals->curtime );
+	pRagdoll->ForceSetupBonesAtTime( currentBones, gpGlobals->curtime );
+	pRagdoll->SetParent( NULL );
+
+	// We need to take these from the entity
+	//pRagdoll->SetAbsOrigin( position );
+	//pRagdoll->SetAbsAngles( angles );
+
+	pRagdoll->IgniteRagdoll( pOwner );
+	pRagdoll->TransferDissolveFrom( pOwner );
+	pRagdoll->InitModelEffects();
+
+	if ( pOwner->IsEffectActive( EF_NOSHADOW ) )
+	{
+		pRagdoll->AddEffects( EF_NOSHADOW );
+	}
+
+	pRagdoll->SetClientSideRagdoll();
+	pRagdoll->SetRenderMode( pOwner->GetRenderMode() );
+	pRagdoll->SetRenderColor( pOwner->GetRenderColor().r, pOwner->GetRenderColor().g, pOwner->GetRenderColor().b );
+	pRagdoll->SetRenderAlpha( pOwner->GetRenderAlpha() );
+	pRagdoll->SetGlobalFadeScale( pOwner->GetGlobalFadeScale() );
+
+	pRagdoll->SetSkin( pOwner->GetSkin() );
+	//pRagdoll->m_vecForce = pOwner->m_vecForce;
+	//pRagdoll->m_nForceBone = 0; //pOwner->m_nForceBone;
+	pRagdoll->SetNextThink( TICK_ALWAYS_THINK );
+
+	pRagdoll->SetModelName( AllocPooledString( pModelName ) );
+	pRagdoll->ResetSequence( 0 );
+	pRagdoll->SetModelScale( pOwner->GetModelScale() );
+	pRagdoll->SetCollisionGroup( COLLISION_GROUP_DEBRIS );
+	//pRagdoll->m_builtRagdoll = true;
+
+	CStudioHdr *hdr = pRagdoll->GetModelPtr();
+	if ( !hdr )
+	{
+		UTIL_Remove( pRagdoll );
+		return NULL;
+	}
+
+	pRagdoll->m_pRagdoll = CreateRagdoll( 
+		pRagdoll, 
+		hdr, 
+		vec3_origin, 
+		0, 
+		boneDelta0, 
+		boneDelta1, 
+		currentBones,
+ 		boneDt );
+
+	IPhysicsObject *pPhysicsObject = pRagdoll->VPhysicsGetObject();
+	if ( pPhysicsObject )
+	{
+		// randomize velocity by 5%
+		float rndf = RandomFloat( -0.025, 0.025 );
+		Vector rndVel = velocity + rndf*velocity;
+
+		pPhysicsObject->AddVelocity( &rndVel, &angVelocity );
+	}
+	pRagdoll->ApplyLocalAngularVelocityImpulse( angVelocity );
+
+	if ( pRagdoll->m_pRagdoll )
+	{
+		pRagdoll->m_bImportant = false;
+		s_RagdollLRU.MoveToTopOfLRU( pRagdoll, pRagdoll->m_bImportant, pModel->fadeTime > 0.0f ? gpGlobals->curtime + pModel->fadeTime : 0.0f );
+		pRagdoll->m_bFadeOut = true;
+	}
+
+	// Cause the entity to recompute its shadow	type and make a
+	// version which only updates when physics state changes
+	// NOTE: We have to do this after m_pRagdoll is assigned above
+	// because that's what ShadowCastType uses to figure out which type of shadow to use.
+	pRagdoll->DestroyShadow();
+	pRagdoll->CreateShadow();
+
+	pRagdoll->SetAbsOrigin( position );
+	pRagdoll->SetAbsAngles( angles );
+
+	pRagdoll->SetPlaybackRate( 0 );
+	pRagdoll->UpdatePartitionListEntry();
+	pRagdoll->MarkRenderHandleDirty();
+
+	//pRagdoll->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt );
+
+	if(DispatchSpawn(pRagdoll) < 0) {
+		UTIL_Remove(pRagdoll);
+		return NULL;
+	}
+
+	return pRagdoll;
+}
+
 CBaseEntity *BreakModelCreateSingle( CBaseEntity *pOwner, breakmodel_t *pModel, const Vector &position, 
 	const QAngle &angles, const Vector &velocity, const AngularImpulse &angVelocity, int nSkin, const breakablepropparams_t &params )
 {
+	if ( pModel->isRagdoll )
+	{
+		CBaseEntity *pEntity = BreakModelCreate_Ragdoll( pOwner, pModel, position, angles, velocity, angVelocity );
+		return pEntity;
+	}
+	
 	C_PhysPropClientside *pEntity = C_PhysPropClientside::CreateNew();
 
 	if ( !pEntity )
@@ -805,8 +929,12 @@ CBaseEntity *BreakModelCreateSingle( CBaseEntity *pOwner, breakmodel_t *pModel, 
 //======================================================================================================================
 // PROP RESPAWN ZONES
 //======================================================================================================================
+LINK_ENTITY_TO_CLASS(func_proprrespawnzone_clientside, C_FuncPhysicsRespawnZone);
+
 C_FuncPhysicsRespawnZone::C_FuncPhysicsRespawnZone( void )
 {
+	AddEFlags( EFL_NOT_NETWORKED );
+
 	s_RespawnZoneList.AddToTail( this );
 }
 
@@ -841,9 +969,6 @@ bool C_FuncPhysicsRespawnZone::KeyValue( const char *szKeyName, const char *szVa
 //-----------------------------------------------------------------------------
 bool C_FuncPhysicsRespawnZone::Initialize( void )
 {
-	if ( InitializeAsClientEntity() == false )
-		return false;
-
 	SetModel(STRING(GetModelName()));
 
 	SetSolid( SOLID_BSP );	
@@ -859,7 +984,8 @@ bool C_FuncPhysicsRespawnZone::Initialize( void )
 		SetCollisionBounds( mins, maxs );
 	}
 
-	Spawn();
+	if(DispatchSpawn(this) < 0)
+		return false;
 
 	AddEffects( EF_NODRAW );
 

@@ -76,7 +76,6 @@ public:
 	virtual float		SoundGetVolume( CSoundPatch *pSound ) = 0;
 
 #ifdef CLIENT_DLL
-	virtual float		SoundGetElapsedTime( CSoundPatch *pSound) = 0;
 	virtual bool		SoundIsStillPlaying( CSoundPatch *pSound) = 0;
 	virtual int			SoundGetGuid( CSoundPatch	* ) = 0;
 #endif

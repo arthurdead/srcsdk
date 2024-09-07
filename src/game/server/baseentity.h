@@ -203,8 +203,7 @@ a list of all CBaseEntitys is kept in gEntList
 // creates an entity by string name, but does not spawn it
 // If iForceEdictIndex is not -1, then it will use the edict by that index. If the index is 
 // invalid or there is already an edict using that index, it will error out.
-CBaseEntity *CreateEntityByName( const char *className, int iForceEdictIndex = -1 );
-CBaseNetworkable *CreateNetworkableByName( const char *className );
+//CBaseEntity *CreateEntityByName( const char *className, int iForceEdictIndex = -1, bool bNotify = true );
 
 // creates an entity and calls all the necessary spawn functions
 extern void SpawnEntityByName( const char *className, CEntityMapData *mapData = NULL );
@@ -229,10 +228,7 @@ struct EmitSound_t;
 struct rotatingpushmove_t;
 
 #define CREATE_PREDICTED_ENTITY( className, ... )	\
-	CBaseEntity::__CreatePredictedHelper( __FILE__, __LINE__, className __VA_OPT__(, __VA_ARGS__) );
-
-#define CREATE_PREDICTED_ENTITY_AT( file, line, className, ... )	\
-	CBaseEntity::__CreatePredictedHelper( file, line, className __VA_OPT__(, __VA_ARGS__) );
+	CBaseEntity::CreatePredicted( __FILE__, __LINE__, className __VA_OPT__(, __VA_ARGS__) );
 
 //
 // Base Entity.  All entity types derive from this
@@ -322,9 +318,9 @@ public:
 	bool					IsCurrentlyTouching( void ) const;
 	const Vector&			GetAbsOrigin( void ) const;
 	const QAngle&			GetAbsAngles( void ) const;
-	inline Vector			Forward() const; ///< get my forward (+x) vector
-	inline Vector			Left() const;    ///< get my left    (+y) vector
-	inline Vector			Up() const;      ///< get my up      (+z) vector
+	inline Vector			Forward() const RESTRICT; ///< get my forward (+x) vector
+	inline Vector			Left() const RESTRICT;    ///< get my left    (+y) vector
+	inline Vector			Up() const RESTRICT;      ///< get my up      (+z) vector
 
 	SolidType_t				GetSolid() const;
 	int			 			GetSolidFlags( void ) const;
@@ -586,6 +582,10 @@ public:
 	void InputDispatchResponse( inputdata_t& inputdata );
 	void InputDisableShadow( inputdata_t &inputdata );
 	void InputEnableShadow( inputdata_t &inputdata );
+	void InputDisableDraw( inputdata_t &inputdata );
+	void InputEnableDraw( inputdata_t &inputdata );
+	void InputDisableReceivingFlashlight( inputdata_t &inputdata );
+	void InputEnableReceivingFlashlight( inputdata_t &inputdata );
 	void InputAddOutput( inputdata_t &inputdata );
 	void InputFireUser1( inputdata_t &inputdata );
 	void InputFireUser2( inputdata_t &inputdata );
@@ -672,6 +672,8 @@ public:
 	float	GetLastThink( const char *szContext = NULL );
 	int		GetNextThinkTick( const char *szContext = NULL );
 	int		GetLastThinkTick( const char *szContext = NULL );
+	bool AlwaysThink( const char *szContext = NULL );
+	bool NeverThink( const char *szContext = NULL );
 
 	float				GetAnimTime() const;
 	void				SetAnimTime( float at );
@@ -859,6 +861,7 @@ public:
 	virtual bool			IsNPC( void ) const { return false; }
 	virtual CAI_BaseNPC				*MyNPCPointer( void ); 
 	virtual CBaseCombatCharacter *MyCombatCharacterPointer( void ) { return NULL; }
+	virtual CBasePlayer *MyPlayerPointer( void ) { return NULL; }
 	virtual float			GetDelay( void ) { return 0; }
 	virtual bool			IsMoving( void );
 	bool					IsWorld() const { extern CWorld *g_WorldEntity; return (void *)this == (void *)g_WorldEntity; }
@@ -882,9 +885,9 @@ public:
 	bool			IsInWorld( void ) const;
 	virtual bool	IsCombatItem( void ) const { return false; }
 
-	virtual bool	IsBaseCombatWeapon( void ) const { return false; }
 	virtual bool	IsWearable( void ) const { return false; }
 	virtual CBaseCombatWeapon *MyCombatWeaponPointer( void ) { return NULL; }
+	virtual bool	IsBaseCombatWeapon( void ) const { return const_cast<CBaseEntity *>(this)->MyCombatWeaponPointer() == NULL ? false : true; }
 
 	// If this is a vehicle, returns the vehicle interface
 	virtual IServerVehicle*			GetServerVehicle() { return NULL; }
@@ -894,8 +897,8 @@ public:
 
 	// Team Handling
 	CTeam			*GetTeam( void ) const;				// Get the Team this entity is on
-	int				GetTeamNumber( void ) const;		// Get the Team number of the team this entity is on
-	virtual void	ChangeTeam( int iTeamNum );			// Assign this entity to a team.
+	Team_t				GetTeamNumber( void ) const;		// Get the Team number of the team this entity is on
+	virtual void	ChangeTeam( Team_t iTeamNum );			// Assign this entity to a team.
 	bool			IsInTeam( CTeam *pTeam ) const;		// Returns true if this entity's in the specified team
 	bool			InSameTeam( CBaseEntity *pEntity ) const;	// Returns true if the specified entity is on the same team as this one
 	bool			IsInAnyTeam( void ) const;			// Returns true if this entity is in any team
@@ -1088,19 +1091,12 @@ public:
 	static CBaseEntity *Create( const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner = NULL );
 	static CBaseEntity *CreateNoSpawn( const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner = NULL );
 
-	//DO NOT USE DIRECTLY!!!!
-	static void __SetupAsPredicted( CBaseEntity *pEntity, const char *szName, const char *module, int line );
+private:
+	static void DO_NOT_USE_SetupAsPredicted( CBaseEntity *pEntity, const char *szName, const char *module, int line );
 
-	//DO NOT USE DIRECTLY!!!!
-	template <typename ...Args>
-	static CBaseEntity *__CreatePredictedHelper( const char *module, int line, const char *szName, Args &&...args )
-	{
-		CBaseEntity *pEntity = Create( szName, args... );
-		if(pEntity) {
-			__SetupAsPredicted( pEntity, szName, module, line );
-		}
-		return pEntity;
-	}
+public:
+	static CBaseEntity *CreatePredicted( const char *module, int line, const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner = NULL );
+	static CBaseEntity *CreatePredictedNoSpawn( const char *module, int line, const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner = NULL );
 
 	// Collision group accessors
 	int				GetCollisionGroup() const;
@@ -1403,8 +1399,8 @@ public:
 
 	// FIXME: Make these private!
 	void					PhysicsCheckForEntityUntouch( void );
- 	bool					PhysicsRunThink( thinkmethods_t thinkMethod = THINK_FIRE_ALL_FUNCTIONS );
-	bool					PhysicsRunSpecificThink( int nContextIndex, BASEPTR thinkFunc );
+ 	bool					PhysicsRunThink( thinkmethods_t thinkMethod = THINK_FIRE_ALL_FUNCTIONS, bool bForce = false );
+	bool					PhysicsRunSpecificThink( int nContextIndex, BASEPTR thinkFunc, bool bForce = false );
 	bool					PhysicsTestEntityPosition( CBaseEntity **ppEntity = NULL );
 	void					PhysicsPushEntity( const Vector& push, trace_t *pTrace );
 	bool					PhysicsCheckWater( void );
@@ -1514,7 +1510,7 @@ private:
 	virtual	QAngle			GetStepAngles( void ) const;
 	
 	// These set entity flags (EFL_*) to help optimize queries
-	void					CheckHasThinkFunction( int thinkTick, bool isThinkingHint = false );
+	void					CheckHasThinkFunction( int thinkTick );
 	void					CheckHasGamePhysicsSimulation();
 	bool					WillThink();
 	bool					WillSimulateGamePhysics();
@@ -1526,6 +1522,8 @@ private:
 	void SetLastThink( int nContextIndex, float thinkTime );
 	float GetNextThink( int nContextIndex ) const;
 	int	GetNextThinkTick( int nContextIndex ) const;
+	bool AlwaysThink( int nContextIndex ) const;
+	bool NeverThink( int nContextIndex ) const;
 
 	// Shot statistics
 	void UpdateShotStatistics( const trace_t &tr );
@@ -1601,8 +1599,8 @@ private:
 	float		m_flDesiredShadowCastDistance;
 
 	// Team handling
-	int			m_iInitialTeamNum;		// Team number of this entity's team read from file
-	CNetworkVar( int, m_iTeamNum );				// Team number of this entity's team. 
+	Team_t			m_iInitialTeamNum;		// Team number of this entity's team read from file
+	CNetworkVar( Team_t, m_iTeamNum );				// Team number of this entity's team. 
 
 	// Sets water type + level for physics objects
 	unsigned char	m_nWaterTouch;
@@ -1770,6 +1768,7 @@ private:
 	bool m_bNetworkQuantizeOriginAndAngles;
 	bool m_bLagCompensate; // Special flag for certain l4d2 props to use
 
+protected:
 	CGlobalEvent	*m_pEvent;
 	
 public:
@@ -2594,27 +2593,6 @@ inline const QAngle &CBaseEntity::LocalEyeAngles( void ) const	// Direction of e
 inline Vector	CBaseEntity::EarPosition( void ) const			// position of ears
 {
 	return const_cast<CBaseEntity*>(this)->EarPosition();
-}
-
-
-//-----------------------------------------------------------------------------
-// Methods relating to networking
-//-----------------------------------------------------------------------------
-inline void	CBaseEntity::NetworkStateChanged()
-{
-	NetworkProp()->NetworkStateChanged();
-}
-
-
-inline void	CBaseEntity::NetworkStateChanged( void *pVar )
-{
-	// Make sure it's a semi-reasonable pointer.
-	Assert( (char*)pVar > (char*)this );
-	Assert( (char*)pVar - (char*)this < 32768 );
-	
-	// Good, they passed an offset so we can track this variable's change
-	// and avoid sending the whole entity.
-	NetworkProp()->NetworkStateChanged( (char*)pVar - (char*)this );
 }
 
 

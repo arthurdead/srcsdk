@@ -182,7 +182,7 @@ float GetBreakableDamage( const CTakeDamageInfo &inputInfo, IBreakableWithPropDa
 	}
 
 	// Poison & other timebased damage types do no damage
-	if ( g_pGameRules->Damage_IsTimeBased( iDmgType ) )
+	if ( GameRules()->Damage_IsTimeBased( iDmgType ) )
 	{
 		flDamage = 0;
 	}
@@ -461,7 +461,7 @@ void CBreakableProp::Ignite( float flFlameLifetime, bool bNPCOnly, float flSize,
 
 	BaseClass::Ignite( flFlameLifetime, bNPCOnly, flSize, bCalledByLevelDesigner );
 
-	if ( g_pGameRules->ShouldBurningPropsEmitLight() )
+	if ( GameRules()->ShouldBurningPropsEmitLight() )
 	{
 		GetEffectEntity()->AddEffects( EF_DIMLIGHT );
 	}
@@ -801,6 +801,8 @@ CBreakableProp::CBreakableProp()
 	SetGlobalFadeScale( 1.0f );
 	m_flDefaultFadeScale = 1;
 	m_mpBreakMode = MULTIPLAYER_BREAK_DEFAULT;
+
+	SetPhysicsMode( PHYSICS_MULTIPLAYER_SOLID );
 	
 	// This defaults to on. Most times mapmakers won't specify a punt sound to play.
 	m_bUsePuntSound = true;
@@ -867,7 +869,7 @@ void CBreakableProp::Spawn()
 	{
 		m_takedamage = DAMAGE_YES;
 
-		if( g_pGameRules->GetAutoAimMode() == AUTOAIM_EXTRA )
+		if( GameRules()->GetAutoAimMode() == AUTOAIM_EXTRA )
 		{
 			if ( HasInteraction( PROPINTER_PHYSGUN_BREAK_EXPLODE ) ||
 				HasInteraction( PROPINTER_PHYSGUN_BREAK_EXPLODE_ICE ) || 
@@ -1211,7 +1213,7 @@ void CBreakableProp::InputBreak( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 void CBreakableProp::InputAddHealth( inputdata_t &inputdata )
 {
-	UpdateHealth( m_iHealth + inputdata.value.Int(), inputdata.pActivator );
+	UpdateHealth( GetHealth() + inputdata.value.Int(), inputdata.pActivator );
 }
 
 //-----------------------------------------------------------------------------
@@ -1220,7 +1222,7 @@ void CBreakableProp::InputAddHealth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 void CBreakableProp::InputRemoveHealth( inputdata_t &inputdata )
 {
-	UpdateHealth( m_iHealth - inputdata.value.Int(), inputdata.pActivator );
+	UpdateHealth( GetHealth() - inputdata.value.Int(), inputdata.pActivator );
 }
 
 
@@ -1241,9 +1243,9 @@ void CBreakableProp::InputSetHealth( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 bool CBreakableProp::UpdateHealth( int iNewHealth, CBaseEntity *pActivator )
 {
-	if ( iNewHealth != m_iHealth )
+	if ( iNewHealth != GetHealth() )
 	{
-		m_iHealth = iNewHealth;
+		SetHealth( iNewHealth );
 
 		if ( m_iMaxHealth == 0 )
 		{
@@ -1252,10 +1254,10 @@ bool CBreakableProp::UpdateHealth( int iNewHealth, CBaseEntity *pActivator )
 		}
 
 		// Output the new health as a percentage of max health [0..1]
-		float flRatio = clamp( (float)m_iHealth / (float)m_iMaxHealth, 0.f, 1.f );
+		float flRatio = clamp( (float)GetHealth() / (float)m_iMaxHealth, 0.f, 1.f );
 		m_OnHealthChanged.Set( flRatio, pActivator, this );
 
-		if ( m_iHealth <= 0 )
+		if ( GetHealth() <= 0 )
 		{
 			CTakeDamageInfo info;
 			info.SetAttacker( this );
@@ -1758,7 +1760,7 @@ void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
 	{
 	case MULTIPLAYER_BREAK_DEFAULT:		// default is to break client-side
 	case MULTIPLAYER_BREAK_CLIENTSIDE:
-		te->PhysicsProp( filter, -1, GetModelIndex(), m_nSkin, GetAbsOrigin(), GetAbsAngles(), velocity, true, GetEffects() );
+		te->PhysicsProp( filter, -1, GetModelIndex(), GetSkin(), GetAbsOrigin(), GetAbsAngles(), velocity, true, GetEffects() );
 		break;
 	case MULTIPLAYER_BREAK_SERVERSIDE:	// server-side break
 		if ( m_PerformanceMode != PM_NO_GIBS || breakable_disable_gib_limit.GetBool() )
@@ -1767,7 +1769,7 @@ void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
 		}
 		break;
 	case MULTIPLAYER_BREAK_BOTH:	// pieces break from both dlls
-		te->PhysicsProp( filter, -1, GetModelIndex(), m_nSkin, GetAbsOrigin(), GetAbsAngles(), velocity, true, GetEffects() );
+		te->PhysicsProp( filter, -1, GetModelIndex(), GetSkin(), GetAbsOrigin(), GetAbsAngles(), velocity, true, GetEffects() );
 		if ( m_PerformanceMode != PM_NO_GIBS || breakable_disable_gib_limit.GetBool() )
 		{
 			PropBreakableCreateAll( GetModelIndex(), pPhysics, params, this, -1, ( m_PerformanceMode == PM_FULL_GIBS ), false );
@@ -2128,7 +2130,10 @@ void CDynamicProp::HandleAnimEvent( animevent_t *pEvent )
 		
 		case SCRIPT_EVENT_SOUND:
 		{
-			EmitSound( pEvent->options );
+			if (!m_bSuppressAnimSounds)
+			{
+				EmitSound( pEvent->options );
+			}
 			break;
 		}
 		
@@ -2517,7 +2522,8 @@ CPhysicsProp::CPhysicsProp( void ) :
 
 CPhysicsProp::~CPhysicsProp()
 {
-	TheNavMesh->UnregisterAvoidanceObstacle( this );
+	if( TheNavMesh )
+		TheNavMesh->UnregisterAvoidanceObstacle( this );
 
 	if (HasSpawnFlags(SF_PHYSPROP_IS_GIB))
 	{
@@ -2645,7 +2651,8 @@ void CPhysicsProp::Spawn( )
 
 	if ( IsPotentiallyAbleToObstructNavAreas() )
 	{
-		TheNavMesh->RegisterAvoidanceObstacle( this );
+		if( TheNavMesh )
+			TheNavMesh->RegisterAvoidanceObstacle( this );
 	}
 }
 
@@ -3201,6 +3208,9 @@ void CPhysicsProp::NavThink( void )
 	if ( !CanObstructNavAreas() )
 		return;
 
+	if( !TheNavMesh )
+		return;
+
 	Extent extent;
 	CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
 	extent.lo.z -= HumanHeight;
@@ -3382,21 +3392,18 @@ int CPhysicsProp::OnTakeDamage( const CTakeDamageInfo &info )
 
 				int dangerRadius = 256; // generous radius to begin with
 
-				if( hl2_episodic.GetBool() )
+				// In Episodic, burning items (such as destroyed APCs) are making very large
+				// danger sounds which frighten NPCs. This danger sound was designed to frighten
+				// NPCs away from burning objects that are about to explode (barrels, etc). 
+				// So if this item has no more health (ie, has died but hasn't exploded), 
+				// make a smaller danger sound, just to keep NPCs away from the flames. 
+				// I suspect this problem didn't appear in HL2 simply because we didn't have 
+				// NPCs in such close proximity to destroyed NPCs. (sjb)
+				if( GetHealth() < 1 )
 				{
-					// In Episodic, burning items (such as destroyed APCs) are making very large
-					// danger sounds which frighten NPCs. This danger sound was designed to frighten
-					// NPCs away from burning objects that are about to explode (barrels, etc). 
-					// So if this item has no more health (ie, has died but hasn't exploded), 
-					// make a smaller danger sound, just to keep NPCs away from the flames. 
-					// I suspect this problem didn't appear in HL2 simply because we didn't have 
-					// NPCs in such close proximity to destroyed NPCs. (sjb)
-					if( GetHealth() < 1 )
-					{
-						// This item has no health, but still exists. That means that it may keep
-						// burning, but isn't likely to explode, so don't frighten over such a large radius.
-						dangerRadius = 120;
-					}
+					// This item has no health, but still exists. That means that it may keep
+					// burning, but isn't likely to explode, so don't frighten over such a large radius.
+					dangerRadius = 120;
 				}
 
 				trace_t tr;
@@ -3509,7 +3516,7 @@ int CPhysicsProp::DrawDebugTextOverlays(void)
 				text_offset++;
 			}
 
-			Q_snprintf(tempstr, sizeof(tempstr),"Skin: %d", m_nSkin.Get() );
+			Q_snprintf(tempstr, sizeof(tempstr),"Skin: %d", GetSkin() );
 			EntityText( text_offset, tempstr, 0,r,g,b);
 			text_offset++;
 
@@ -4007,7 +4014,7 @@ void CBasePropDoor::HandleAnimEvent(animevent_t *pEvent)
 {
 	// Opening is called here via an animation event if the open sequence has one,
 	// otherwise it is called immediately when the open sequence is set.
-	if (pEvent->event == AE_DOOR_OPEN)
+	if (pEvent->Event() == AE_DOOR_OPEN)
 	{
 		DoorActivate();
 		return;
@@ -4933,7 +4940,7 @@ public:
 			if ( !pEntity->ShouldCollide( m_collisionGroup, contentsMask ) )
 				return false;
 			
-			if ( !g_pGameRules->ShouldCollide( m_collisionGroup, pEntity->GetCollisionGroup() ) )
+			if ( !GameRules()->ShouldCollide( m_collisionGroup, pEntity->GetCollisionGroup() ) )
 				return false;
 
 			// If objects are small enough and can move, close on them

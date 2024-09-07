@@ -30,10 +30,12 @@ public:
 	virtual void Think( void );
 	virtual int  UpdateTransmitState( void );
 
+	virtual void			UpdateOnRemove( void );
+
 	//-----------------------------------------------------------------------------
 	// Initialization
 	//-----------------------------------------------------------------------------
-	virtual void		Init( const char *pName, int iNumber );
+	virtual void		Init( const char *pName, Team_t iNumber );
 
 	//-----------------------------------------------------------------------------
 	// Data Handling
@@ -77,6 +79,9 @@ public:
 
 	virtual int GetAliveMembers( void );
 
+private:
+	virtual void	ChangeTeam( Team_t iTeamNum );
+
 public:
 	CUtlVector< CTeamSpawnPoint * > m_aSpawnPoints;
 	CUtlVector< CBasePlayer * >		m_aPlayers;
@@ -89,13 +94,13 @@ public:
 
 	// Spawnpoints
 	int		m_iLastSpawn;		// Index of the last spawnpoint used
-
-	CNetworkVar( int, m_iTeamNum );			// Which team is this?
 };
 
 extern CUtlVector< CTeam * > g_Teams;
-extern CTeam *GetGlobalTeam( int iIndex );
+extern CTeam *GetGlobalTeamByIndex( int iIndex );
+extern CTeam *GetGlobalTeamByTeam( Team_t iIndex );
 extern int GetNumberOfTeams( void );
-extern const char* GetTeamName( int iTeam );
+extern const char* GetTeamNameByIndex( int iIndex );
+extern const char* GetNameOfTeam( Team_t iIndex );
 
 #endif // TEAM_H

@@ -94,6 +94,7 @@
 #include "serverbenchmark_base.h"
 #include "querycache.h"
 #include "globalstate.h"
+#include "hackmgr/hackmgr.h"
 
 #ifdef SERVER_USES_VGUI
 #include "IGameUIFuncs.h"
@@ -281,32 +282,6 @@ CBasePlayer *UTIL_GetCommandClient( void )
 
 	// HLDS console issued command
 	return NULL;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Retrieves the MOD directory for the active game (ie. "hl2")
-//-----------------------------------------------------------------------------
-
-bool UTIL_GetModDir( char *lpszTextOut, unsigned int nSize )
-{
-	// Must pass in a buffer at least large enough to hold the desired string
-	const char *pGameDir = CommandLine()->ParmValue( "-game", "hl2" );
-	Assert( strlen(pGameDir) <= nSize );
-	if ( strlen(pGameDir) > nSize )
-		return false;
-
-	Q_strncpy( lpszTextOut, pGameDir, nSize );
-	if ( Q_strnchr( lpszTextOut, '/', nSize ) || Q_strnchr( lpszTextOut, '\\', nSize ) )
-	{
-		// Strip the last directory off (which will be our game dir)
-		Q_StripLastDir( lpszTextOut, nSize );
-		
-		// Find the difference in string lengths and take that difference from the original string as the mod dir
-		int dirlen = Q_strlen( lpszTextOut );
-		Q_strncpy( lpszTextOut, pGameDir + dirlen, Q_strlen( pGameDir ) - dirlen + 1 );
-	}
-
-	return true;
 }
 
 extern void InitializeCvars( void );
@@ -624,6 +599,9 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		CreateInterfaceFn physicsFactory, CreateInterfaceFn fileSystemFactory, 
 		CGlobalVars *pGlobals)
 {
+	if(!HackMgr_Server_PreInit(this, appSystemFactory, physicsFactory, fileSystemFactory, pGlobals))
+		return false;
+
 	COM_TimestampedLog( "ConnectTier1/2/3Libraries - Start" );
 
 	ConnectTier1Libraries( &appSystemFactory, 1 );
@@ -780,6 +758,9 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		bInitSuccess = InitGameSystems( appSystemFactory );
 		COM_TimestampedLog( "InitGameSystems - Finish" );
 	}
+
+	if(!bInitSuccess)
+		return false;
 
 	// try to get debug overlay, may be NULL if on HLDS
 	debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL );
@@ -1069,16 +1050,10 @@ void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edictCount, int cl
 
 #ifdef USE_NAV_MESH
 	// load the Navigation Mesh for this map
-	TheNavMesh->Load();
-	TheNavMesh->OnServerActivate();
-#endif
-
-#ifdef CSTRIKE_DLL // BOTPORT: TODO: move these ifdefs out
-	TheBots->ServerActivate();
-#endif
-
-#ifdef NEXT_BOT
-	TheNextBots().OnMapLoaded();
+	if( TheNavMesh ) {
+		TheNavMesh->Load();
+		TheNavMesh->OnServerActivate();
+	}
 #endif
 }
 
@@ -1167,11 +1142,8 @@ void CServerGameDLL::GameFrame( bool simulating )
 	GameStartFrame();
 
 #ifdef USE_NAV_MESH
-	TheNavMesh->Update();
-#endif
-
-#ifdef NEXT_BOT
-	TheNextBots().Update();
+	if( TheNavMesh )
+		TheNavMesh->Update();
 #endif
 
 	{
@@ -1202,10 +1174,10 @@ void CServerGameDLL::GameFrame( bool simulating )
 	// FIXME:  Should this only occur on the final tick?
 	UpdateAllClientData();
 
-	if ( g_pGameRules )
+	if ( GameRules() )
 	{
 		VPROF( "g_pGameRules->EndGameFrame" );
-		g_pGameRules->EndGameFrame();
+		GameRules()->EndGameFrame();
 	}
 
 	if ( trace_report.GetBool() )
@@ -1307,9 +1279,6 @@ void CServerGameDLL::LevelShutdown( void )
 #endif
 
 	g_pServerBenchmark->EndBenchmark();
-
-	extern ConVar sv_SecobMod__increment_killed;
-	sv_SecobMod__increment_killed.SetValue (0);
 
 	MDLCACHE_CRITICAL_SECTION();
 	IGameSystem::LevelShutdownPreEntityAllSystems();
@@ -1489,18 +1458,18 @@ bool CServerGameDLL::SupportsRandomMaps()
 // return true to disconnect client due to timeout (used to do stricter timeouts when the game is sure the client isn't loading a map)
 bool CServerGameDLL::ShouldTimeoutClient( int nUserID, float flTimeSinceLastReceived )
 {
-	if ( !g_pGameRules )
+	if ( !GameRules() )
 		return false;
 
-	return g_pGameRules->ShouldTimeoutClient( nUserID, flTimeSinceLastReceived );
+	return GameRules()->ShouldTimeoutClient( nUserID, flTimeSinceLastReceived );
 }
 
 //-----------------------------------------------------------------------------
 void CServerGameDLL::Status( void (*print) (const char *fmt, ...) )
 {
-	if ( g_pGameRules )
+	if ( GameRules() )
 	{
-		g_pGameRules->Status( print );
+		GameRules()->Status( print );
 	}
 }
 
@@ -1914,11 +1883,11 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 					pInfo->m_pTransmitAlways->Set( iEdict );
 				}
 
-				CServerNetworkProperty *pEnt = static_cast<CServerNetworkProperty*>( pEdict->GetNetworkable() );
+				CBaseEntity *pEnt = static_cast<CBaseEntity*>( pEdict->GetIServerEntity() );
 				if ( !pEnt )
 					break;
 
-				CServerNetworkProperty *pParent = pEnt->GetNetworkParent();
+				CBaseEntity *pParent = pEnt->GetParent();
 				if ( !pParent )
 					break;
 
@@ -1929,7 +1898,7 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 		}
 
 		// FIXME: Would like to remove all dependencies
-		CBaseEntity *pEnt = ( CBaseEntity * )pEdict->GetUnknown();
+		CBaseEntity *pEnt = ( CBaseEntity * )pEdict->GetIServerEntity();
 		Assert( dynamic_cast< CBaseEntity* >( pEdict->GetUnknown() ) == pEnt );
 
 		if ( nFlags == FL_EDICT_FULLCHECK )
@@ -1986,7 +1955,7 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 		// If the entity is marked "check PVS" but it's in hierarchy, walk up the hierarchy looking for the
 		//  for any parent which is also in the PVS.  If none are found, then we don't need to worry about sending ourself
 		CBaseEntity *orig = pEnt;
-		CServerNetworkProperty *check = netProp->GetNetworkParent();
+		CBaseEntity *check = pEnt->GetParent();
 
 		// BUG BUG:  I think it might be better to build up a list of edict indices which "depend" on other answers and then
 		// resolve them in a second pass.  Not sure what happens if an entity has two parents who both request PVS check?
@@ -2015,12 +1984,11 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 			if ( checkFlags == FL_EDICT_FULLCHECK )
 			{
 				// do a full ShouldTransmit() check, may return FL_EDICT_CHECKPVS
-				CBaseEntity *pCheckEntity = check->GetBaseEntity();
-				nFlags = pCheckEntity->ShouldTransmit( pInfo );
+				nFlags = check->ShouldTransmit( pInfo );
 				Assert( !(nFlags & FL_EDICT_FULLCHECK) );
 				if ( nFlags & FL_EDICT_ALWAYS )
 				{
-					pCheckEntity->SetTransmit( pInfo, true );
+					check->SetTransmit( pInfo, true );
 					orig->SetTransmit( pInfo, true );
 				}
 				break;
@@ -2029,8 +1997,8 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 			if ( checkFlags & FL_EDICT_PVSCHECK )
 			{
 				// Check pvs
-				check->RecomputePVSInformation();
-				bool bMoveParentInPVS = check->IsInPVS( pInfo );
+				check->NetworkProp()->RecomputePVSInformation();
+				bool bMoveParentInPVS = check->NetworkProp()->IsInPVS( pInfo );
 				if ( bMoveParentInPVS )
 				{
 					orig->SetTransmit( pInfo, true );
@@ -2039,7 +2007,7 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 			}
 
 			// Continue up chain just in case the parent itself has a parent that's in the PVS...
-			check = check->GetNetworkParent();
+			check = check->GetParent();
 		}
 	}
 
@@ -2103,10 +2071,10 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CServerGameClients, IServerGameClients, INTERF
 //-----------------------------------------------------------------------------
 bool CServerGameClients::ClientConnect( edict_t *pEdict, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen )
 {	
-	if ( !g_pGameRules )
+	if ( !GameRules() )
 		return false;
 	
-	return g_pGameRules->ClientConnected( pEdict, pszName, pszAddress, reject, maxrejectlen );
+	return GameRules()->ClientConnected( pEdict, pszName, pszAddress, reject, maxrejectlen );
 }
 
 //-----------------------------------------------------------------------------
@@ -2117,7 +2085,7 @@ void CServerGameClients::ClientActive( edict_t *pEdict )
 {
 	MDLCACHE_CRITICAL_SECTION();
 	
-	::ClientActive( pEdict, false );
+	::ClientActive( pEdict );
 
 	// notify all entities that the player is now in the game
 	for ( CBaseEntity *pEntity = gEntList.FirstEnt(); pEntity != NULL; pEntity = gEntList.NextEnt(pEntity) )
@@ -2137,9 +2105,9 @@ void CServerGameClients::ClientActive( edict_t *pEdict )
 //-----------------------------------------------------------------------------
 void CServerGameClients::ClientSpawned( edict_t *pPlayer )
 {
-	if ( g_pGameRules )
+	if ( GameRules() )
 	{
-		g_pGameRules->ClientSpawned( pPlayer );
+		GameRules()->ClientSpawned( pPlayer );
 	}
 }
 
@@ -2183,9 +2151,9 @@ void CServerGameClients::ClientDisconnect( edict_t *pEdict )
 			player->AddFlag( FL_NOTARGET );	// stop NPCs noticing it
 			player->AddSolidFlags( FSOLID_NOT_SOLID );		// nonsolid
 
-			if ( g_pGameRules )
+			if ( GameRules() )
 			{
-				g_pGameRules->ClientDisconnected( pEdict );
+				GameRules()->ClientDisconnected( pEdict );
 				gamestats->Event_PlayerDisconnected( player );
 			}
 			
@@ -2271,7 +2239,7 @@ void CServerGameClients::ClientSettingsChanged( edict_t *pEdict )
 	if ( !player )
 		return;
 
-	bool bAllowNetworkingClientSettingsChange = g_pGameRules->IsConnectedUserInfoChangeAllowed( player );
+	bool bAllowNetworkingClientSettingsChange = GameRules()->IsConnectedUserInfoChangeAllowed( player );
 	if ( bAllowNetworkingClientSettingsChange )
 	{
 
@@ -2334,7 +2302,7 @@ void CServerGameClients::ClientSettingsChanged( edict_t *pEdict )
 #undef QUICKGETCVARVALUE
 	}
 
-	g_pGameRules->ClientSettingsChanged( player );
+	GameRules()->ClientSettingsChanged( player );
 }
 
 
@@ -2695,9 +2663,9 @@ void CServerGameClients::ClientVoice( edict_t *pEdict )
 
 int CServerGameClients::GetMaxHumanPlayers()
 {
-	if ( g_pGameRules )
+	if ( GameRules() )
 	{
-		return g_pGameRules->GetMaxHumanPlayers();
+		return GameRules()->GetMaxHumanPlayers();
 	}
 	return -1;
 }
@@ -2710,9 +2678,9 @@ void CServerGameClients::ClientCommandKeyValues( edict_t *pEntity, KeyValues *pK
 
 	char const *szCommand = pKeyValues->GetName();
 
-	if ( g_pGameRules )
+	if ( GameRules() )
 	{
-		g_pGameRules->ClientCommandKeyValues( pEntity, pKeyValues );
+		GameRules()->ClientCommandKeyValues( pEntity, pKeyValues );
 	}
 }
 
@@ -2981,9 +2949,9 @@ IServerGameTagsEx *CServerGameDLL::GetIServerGameTags()
 //-----------------------------------------------------------------------------
 void CServerGameTags::GetTaggedConVarList( KeyValues *pCvarTagList )
 {
-	if ( pCvarTagList && g_pGameRules )
+	if ( pCvarTagList && GameRules() )
 	{
-		g_pGameRules->GetTaggedConVarList( pCvarTagList );
+		GameRules()->GetTaggedConVarList( pCvarTagList );
 	}
 }
 

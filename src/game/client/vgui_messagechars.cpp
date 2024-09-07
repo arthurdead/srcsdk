@@ -99,7 +99,7 @@ CMessageCharsPanel::CMessageCharsPanel( vgui::VPANEL parent ) :
 	SetSize( ScreenWidth(), ScreenHeight() );
 	SetPos( 0, 0 );
 	SetVisible( true );
-	SetCursor( null );
+	SetCursor( vgui::INVALID_CURSOR );
 	SetKeyBoardInputEnabled( false );
 	SetMouseInputEnabled( false );
 	
@@ -185,7 +185,7 @@ CMessageCharsPanel::message_t *CMessageCharsPanel::AllocMessage( void )
 	msg->y		= 0;
 	msg->text	= NULL;
 
-	msg->hCustomFont = NULL;
+	msg->hCustomFont = vgui::INVALID_FONT;
 
 	return msg;
 }
@@ -246,7 +246,7 @@ int CMessageCharsPanel::AddText(
 		msg->fTTL = 0;
 	SetVisible( true );
 
-	if ( hCustomFont )
+	if ( hCustomFont != vgui::INVALID_FONT )
 		msg->hCustomFont = hCustomFont;
 	else
 		msg->hCustomFont = m_hFont;
@@ -263,14 +263,14 @@ int CMessageCharsPanel::AddText(
 //-----------------------------------------------------------------------------
 void CMessageCharsPanel::GetTextExtents( vgui::HFont hCustomFont, int *wide, int *tall, const char *string )
 {
-	if ( !hCustomFont )
+	if ( hCustomFont == vgui::INVALID_FONT )
 	{
 		// Make sure we actually have the font...
 		vgui::IScheme *pScheme = vgui::scheme()->GetIScheme( GetScheme() );
 		hCustomFont = pScheme->GetFont( "Default" );
 	}
 
-	Assert( hCustomFont );
+	Assert( hCustomFont != vgui::INVALID_FONT );
 
 	*wide = g_pMatSystemSurface->DrawTextLen( hCustomFont, (char *)string );
 	*tall = vgui::surface()->GetFontTall( hCustomFont );

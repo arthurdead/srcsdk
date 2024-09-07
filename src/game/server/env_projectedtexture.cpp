@@ -61,6 +61,9 @@ BEGIN_MAPENTITY( CEnvProjectedTexture )
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "EnableVolumetrics", InputSetEnableVolumetrics ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableUberLight", InputEnableUberLight ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableUberLight", InputDisableUberLight ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "BrightnessScale", InputSetBrightnessScale ),
+	DEFINE_INPUTFUNC (FIELD_FLOAT, "SetNearZ", InputSetNearZ ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFarZ", InputSetFarZ ),
 
 END_MAPENTITY()
 
@@ -308,6 +311,21 @@ void CEnvProjectedTexture::InputDisableUberLight( inputdata_t &inputdata )
 	m_bUberlight = false;
 }
 
+void CEnvProjectedTexture::InputSetNearZ(inputdata_t &inputdata)
+{
+	m_flNearZ = inputdata.value.Float();
+}
+
+void CEnvProjectedTexture::InputSetFarZ(inputdata_t &inputdata)
+{
+	m_flFarZ = inputdata.value.Float();
+}
+
+void CEnvProjectedTexture::InputSetBrightnessScale(inputdata_t &inputdata)
+{
+	m_flBrightnessScale = inputdata.value.Float();
+}
+
 // Console command for creating env_projectedtexture entities
 void CC_CreateFlashlight( const CCommand &args )
 {
@@ -324,6 +342,8 @@ void CC_CreateFlashlight( const CCommand &args )
 		pFlashlight->SetName( AllocPooledString( args[1] ) );
 	}
 
+	pFlashlight->m_bEnableShadows = true;
+	pFlashlight->m_bAlwaysUpdate = true;
 	pFlashlight->Teleport( &origin, &angles, NULL );
 
 }

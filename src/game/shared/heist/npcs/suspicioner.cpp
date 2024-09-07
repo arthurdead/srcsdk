@@ -22,7 +22,7 @@ BEGIN_SEND_TABLE_NOBASE(CSuspicioner, DT_Suspicioner)
 END_SEND_TABLE()
 #else
 BEGIN_RECV_TABLE_NOBASE(C_Suspicioner, DT_Suspicioner)
-	RecvPropArray(RecvPropFloat(RECVINFO(m_flSuspicion[0])), m_flSuspicion)
+	RecvPropArray(RecvPropFloat(RECVINFO_ARRAYELEM(m_flSuspicion, 0)), m_flSuspicion)
 END_RECV_TABLE()
 #endif
 

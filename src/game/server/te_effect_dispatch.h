@@ -15,7 +15,7 @@
 
 
 void DispatchEffect( const char *pName, const CEffectData &data );
-void DispatchEffect( const char *pName, const CEffectData &data, CRecipientFilter &filter );
+void DispatchEffect( const char *pName, const CEffectData &data, IRecipientFilter &filter );
 void DispatchEffect( IRecipientFilter& filter, float flDelay, const char *pName, const CEffectData &data );
 
 #endif // TE_EFFECT_DISPATCH_H

@@ -213,7 +213,10 @@ bool IGameSystem::InitAllSystems()
 
 		bool valid = sys->Init();
 		if ( !valid )
+		{
+			Error("%s failed to init\n", sys->Name());
 			return false;
+		}
 	}
 
 	return true;

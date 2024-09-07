@@ -142,6 +142,8 @@ public:
 	virtual void EnableRendering( ClientRenderHandle_t handle, bool bEnable );
 	virtual void EnableBloatedBounds( ClientRenderHandle_t handle, bool bEnable );
 	virtual void DisableCachedRenderBounds( ClientRenderHandle_t handle, bool bDisable );
+	virtual void DisableShadowDepthRendering( ClientRenderHandle_t handle, bool bDisable );
+	virtual void DisableShadowDepthCaching( ClientRenderHandle_t handle, bool bDisable );
 
 	// Adds a renderable to a set of leaves
 	virtual void AddRenderableToLeaves( ClientRenderHandle_t handle, int nLeafCount, unsigned short *pLeaves );
@@ -208,6 +210,8 @@ public:
 		unsigned int		m_LeafList;		// What leafs is it in?
 		unsigned int		m_RenderLeaf;	// What leaf do I render in?
 		uint16				m_Flags : 10;				// rendering flags
+		uint16				m_bDisableShadowDepthRendering : 1;	// Should we not render into the shadow depth map?
+		uint16				m_bDisableShadowDepthCaching : 1;	// Should we not be cached in the shadow depth map?
 		EngineRenderGroup_t		m_EngineRenderGroup;	// RenderGroup_t type
 		EngineRenderGroup_t		m_EngineRenderGroupOpaque;	// RenderGroup_t type
 		ClientRenderGroup_t		m_ClientRenderGroup : 8;	// RenderGroup_t type
@@ -350,6 +354,8 @@ private:
 	int ExtractStaticProps( int nCount, RenderableInfo_t **ppRenderables );
 	int ExtractTranslucentRenderables( int nCount, RenderableInfo_t **ppRenderables );
 	int ExtractDuplicates( int nFrameNumber, int nCount, RenderableInfo_t **ppRenderables );
+	int ExtractDisableShadowDepthRenderables(int nCount, RenderableInfo_t **ppRenderables);
+	int ExtractDisableShadowDepthCacheRenderables(int nCount, RenderableInfo_t **ppRenderables);
 	void ComputeBounds( int nCount, RenderableInfo_t **ppRenderables, BuildRenderListInfo_t *pRLInfo );
 	int ExtractCulledRenderables( int nCount, RenderableInfo_t **ppRenderables, BuildRenderListInfo_t *pRLInfo );
 	int ExtractOccludedRenderables( int nCount, RenderableInfo_t **ppRenderables, BuildRenderListInfo_t *pRLInfo );
@@ -435,6 +441,12 @@ private:
 
 	// A little enumerator to help us when adding shadows to renderables
 	int	m_ShadowEnum;
+
+	// Does anything disable shadow depth
+	int m_nDisableShadowDepthCount;
+
+	// Does anything disable shadow depth cache
+	int m_nDisableShadowDepthCacheCount;
 
 	CTSList<EnumResultList_t> m_DeferredInserts;
 
@@ -806,6 +818,8 @@ CClientLeafSystem::CClientLeafSystem() : m_DrawStaticProps(true), m_DrawSmallObj
 	m_ShadowsInLeaf.Init( FirstShadowInLeaf, FirstLeafInShadow ); 
 	m_ShadowsOnRenderable.Init( FirstShadowOnRenderable, FirstRenderableInShadow );
 	m_nAlternateSortCount = 0;
+	m_nDisableShadowDepthCount = 0;
+	m_nDisableShadowDepthCacheCount = 0;
 	m_bDisableLeafReinsertion = false;
 }
 
@@ -868,7 +882,8 @@ void CClientLeafSystem::LevelShutdownPreEntity()
 void CClientLeafSystem::LevelShutdownPostEntity()
 {
 	m_nAlternateSortCount = 0;
-
+	m_nDisableShadowDepthCount = 0;
+	m_nDisableShadowDepthCacheCount = 0;
 	m_ViewModels.Purge();
 	m_Renderables.Purge();
 	m_RenderablesInLeaf.Purge();
@@ -977,9 +992,6 @@ void CClientLeafSystem::RecomputeRenderableLeaves()
 
 			// See note below
 			info.m_Flags &= ~RENDER_FLAGS_HASCHANGED;
-
-			if ( info.RendersWithViewmodels() )
-				continue;
 
 			CalcRenderableWorldSpaceAABB_Bloated( info, absMins, absMaxs );
 			if ( absMins != info.m_vecBloatedAbsMins || absMaxs != info.m_vecBloatedAbsMaxs )
@@ -1170,6 +1182,8 @@ void CClientLeafSystem::CreateRenderableHandle( IClientRenderable* pRenderable, 
 	info.m_FirstShadow = m_ShadowsOnRenderable.InvalidIndex();
 	info.m_LeafList = m_RenderablesInLeaf.InvalidIndex();
 	info.m_Flags = flags;
+	info.m_bDisableShadowDepthRendering = false;
+	info.m_bDisableShadowDepthCaching = false;
 	info.m_EnumCount = 0;
 	info.m_RenderLeaf = m_RenderablesInLeaf.InvalidIndex();
 	info.m_nTranslucencyType = nType;
@@ -1257,6 +1271,34 @@ void CClientLeafSystem::SetTranslucencyType( ClientRenderHandle_t handle, Render
 		}
 
 		RenderableChanged( handle );
+	}
+}
+
+void CClientLeafSystem::DisableShadowDepthRendering(ClientRenderHandle_t handle, bool bDisable)
+{
+	if (handle == INVALID_CLIENT_RENDER_HANDLE)
+		return;
+
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
+	if (bDisable != info.m_bDisableShadowDepthRendering)
+	{
+		info.m_bDisableShadowDepthRendering = bDisable;
+		m_nDisableShadowDepthCount += bDisable ? 1 : -1;
+		Assert(m_nDisableShadowDepthCount >= 0);
+	}
+}
+
+void CClientLeafSystem::DisableShadowDepthCaching(ClientRenderHandle_t handle, bool bDisable)
+{
+	if (handle == INVALID_CLIENT_RENDER_HANDLE)
+		return;
+
+	RenderableInfo_t &info = m_Renderables[(uint)handle];
+	if (bDisable != info.m_bDisableShadowDepthCaching)
+	{
+		info.m_bDisableShadowDepthCaching = bDisable;
+		m_nDisableShadowDepthCacheCount += bDisable ? 1 : -1;
+		Assert(m_nDisableShadowDepthCacheCount >= 0);
 	}
 }
 
@@ -1701,6 +1743,16 @@ void CClientLeafSystem::RemoveRenderable( ClientRenderHandle_t handle )
 	if ( nFlags & RENDER_FLAGS_ALTERNATE_SORTING )
 	{
 		--m_nAlternateSortCount;
+	}
+
+	if (m_Renderables[(uint)handle].m_bDisableShadowDepthRendering)
+	{
+		--m_nDisableShadowDepthCount;
+	}
+
+	if (m_Renderables[(uint)handle].m_bDisableShadowDepthCaching)
+	{
+		--m_nDisableShadowDepthCacheCount;
 	}
 
 	// Reemove the renderable from the dirty list
@@ -2390,7 +2442,10 @@ void CClientLeafSystem::ComputeTranslucentRenderLeaf( int count, const LeafIndex
 				}
 				else
 				{
-					info.m_pAlphaProperty->ComputeAlphaBlend();
+					if( info.m_pAlphaProperty )
+						info.m_pAlphaProperty->ComputeAlphaBlend();
+					else
+						info.m_pRenderable->DO_NOT_USE_ComputeFxBlend();
 				}
 				info.m_TranslucencyCalculated = globalFrameCount;
 				info.m_TranslucencyCalculatedView = viewID;
@@ -2654,6 +2709,61 @@ int CClientLeafSystem::ExtractStaticProps( int nCount, RenderableInfo_t **ppRend
 		ppRenderables[nUniqueCount++] = pInfo;
 	}
 	return nUniqueCount;
+}
+
+//-----------------------------------------------------------------------------
+// Extracts models which are *not* marked for "fast reflections"
+//-----------------------------------------------------------------------------
+int CClientLeafSystem::ExtractDisableShadowDepthRenderables(int nCount, RenderableInfo_t **ppRenderables)
+{
+	if (m_nDisableShadowDepthCount == 0)
+		return nCount;
+
+	int nNewCount = 0;
+	for (int i = 0; i < nCount; ++i)
+	{
+		RenderableInfo_t *pInfo = ppRenderables[i];
+
+		if (!IsLeafMarker(pInfo))
+		{
+			if (pInfo->m_bDisableShadowDepthRendering)
+			{
+				// Necessary for dependent models to be grabbed
+				pInfo->m_nRenderFrame--;
+				continue;
+			}
+		}
+
+		ppRenderables[nNewCount++] = pInfo;
+	}
+
+	return nNewCount;
+}
+
+//-----------------------------------------------------------------------------
+// Extracts models which are cacheable or not depending on what we render now
+//-----------------------------------------------------------------------------
+int CClientLeafSystem::ExtractDisableShadowDepthCacheRenderables(int nCount, RenderableInfo_t **ppRenderables)
+{
+	int nNewCount = 0;
+	for (int i = 0; i < nCount; ++i)
+	{
+		RenderableInfo_t *pInfo = ppRenderables[i];
+
+		if (!IsLeafMarker(pInfo))
+		{
+			if (!pInfo->m_bDisableShadowDepthCaching)	// this means renderable is in depth cache and shouldn't be rendered again
+			{
+				// Necessary for dependent models to be grabbed
+				pInfo->m_nRenderFrame--;
+				continue;
+			}
+		}
+
+		ppRenderables[nNewCount++] = pInfo;
+	}
+
+	return nNewCount;
 }
 
 int CClientLeafSystem::ExtractDuplicates( int nFrameNumber, int nCount, RenderableInfo_t **ppRenderables )
@@ -3358,7 +3468,7 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 		int leaf = info.m_pWorldListInfo->m_pLeafList[ 0 ];
 		orderedList.AddToTail( LeafToMarker( leaf ) );
 
-		for ( int i = m_Renderables.Head(); i != (uint)m_Renderables.InvalidIndex(); i = m_Renderables.Next( i ) )
+		for ( uint i = m_Renderables.Head(); i != (uint)m_Renderables.InvalidIndex(); i = m_Renderables.Next( i ) )
 		{
 			orderedList.AddToTail( &m_Renderables[ i ] );
 		}
@@ -3372,7 +3482,7 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 			orderedList.AddToTail( LeafToMarker( leaf ) );
 
 			// iterate over all elements in this leaf
-			unsigned short idx = m_RenderablesInLeaf.FirstElement(leaf);
+			unsigned int idx = m_RenderablesInLeaf.FirstElement(leaf);
 			for ( ; idx != m_RenderablesInLeaf.InvalidIndex(); idx = m_RenderablesInLeaf.NextElement( idx ) )
 			{
 				orderedList.AddToTail( &m_Renderables[ (uint)m_RenderablesInLeaf.Element(idx) ] );
@@ -3385,6 +3495,15 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 	RenderableInfo_t **ppRenderables = orderedList.Base();
 	nCount = ExtractDuplicates( info.m_nRenderFrame, nCount, ppRenderables );
 	nCount = ExtractStaticProps( nCount, ppRenderables );
+
+	if (info.m_nViewID == VIEW_SHADOW_DEPTH_TEXTURE)
+	{
+		nCount = ExtractDisableShadowDepthRenderables(nCount, ppRenderables);
+		if (info.m_bDrawDepthViewNonCachedObjectsOnly)
+		{
+			nCount = ExtractDisableShadowDepthCacheRenderables(nCount, ppRenderables);
+		}
+	}
 
 	if ( !info.m_bDrawTranslucentObjects )
 	{

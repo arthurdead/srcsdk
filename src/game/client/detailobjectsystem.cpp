@@ -251,7 +251,7 @@ public:
 	// IHandleEntity stubs.
 public:
 	virtual void SetRefEHandle( const CBaseHandle &handle )	{ Assert( false ); }
-	virtual const CBaseHandle& GetRefEHandle() const		{ Assert( false ); return NULL_HANDLE; }
+	virtual const CBaseHandle& GetRefEHandle() const		{ Assert( false ); return NULL_BASEHANDLE; }
 
 	//---------------------------------
 	struct LightStyleInfo_t
@@ -2970,7 +2970,7 @@ void CDetailObjectSystem::BuildRenderingData( DetailRenderableList_t &list, cons
 	int nLeafCount = info.m_pWorldListInfo->m_LeafCount;
 	const LeafIndex_t *pLeafData = info.m_pWorldListInfo->m_pLeafList;
 	int *pValidLeafIndex = (int*)stackalloc( nLeafCount * sizeof(int) );
-	int nValidLeafs = nLeafCount;
+	int nValidLeafs = 0;
 	if ( nValidLeafs == 0 )
 		return;
 

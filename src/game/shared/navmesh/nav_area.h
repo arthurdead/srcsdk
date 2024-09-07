@@ -339,8 +339,8 @@ public:
 	bool IsOverlapping( const Extent &extent ) const;			// return true if 'extent' overlaps our 2D extents
 	bool IsOverlappingX( const CNavArea *area ) const;			// return true if 'area' overlaps our X extent
 	bool IsOverlappingY( const CNavArea *area ) const;			// return true if 'area' overlaps our Y extent
-	inline float GetZ( const Vector * RESTRICT pPos ) const ;			// return Z of area at (x,y) of 'pos'
-	inline float GetZ( const Vector &pos ) const;						// return Z of area at (x,y) of 'pos'
+	inline float GetZ( const Vector * RESTRICT pPos ) const  RESTRICT;			// return Z of area at (x,y) of 'pos'
+	inline float GetZ( const Vector &pos ) const RESTRICT;						// return Z of area at (x,y) of 'pos'
 	float GetZ( float x, float y ) const RESTRICT;				// return Z of area at (x,y) of 'pos'
 	bool Contains( const Vector &pos ) const;					// return true if given point is on or above this area, but no others
 	bool Contains( const CNavArea *area ) const;	
@@ -547,10 +547,10 @@ public:
 	virtual bool IsPartiallyVisible( const Vector &eye, const CBaseEntity *ignore = NULL ) const;				// return true if any portion of the area is visible from given eyepoint (CPU intensive)
 
 	virtual bool IsPotentiallyVisible( const CNavArea *area ) const;		// return true if given area is potentially visible from somewhere in this area (very fast)
-	virtual bool IsPotentiallyVisibleToTeam( int team ) const;				// return true if any portion of this area is visible to anyone on the given team (very fast)
+	virtual bool IsPotentiallyVisibleToTeam( Team_t team ) const;				// return true if any portion of this area is visible to anyone on the given team (very fast)
 
 	virtual bool IsCompletelyVisible( const CNavArea *area ) const;			// return true if given area is completely visible from somewhere in this area (very fast)
-	virtual bool IsCompletelyVisibleToTeam( int team ) const;				// return true if given area is completely visible from somewhere in this area by someone on the team (very fast)
+	virtual bool IsCompletelyVisibleToTeam( Team_t team ) const;				// return true if given area is completely visible from somewhere in this area by someone on the team (very fast)
 
 	//-------------------------------------------------------------------------------------
 	/**

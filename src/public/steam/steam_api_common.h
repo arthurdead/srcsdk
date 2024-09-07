@@ -54,7 +54,7 @@ typedef int32 HSteamUser;
 // a long time now and it's scary to change it, as there may be others that
 // depend on it.
 #ifndef _WIN32
-	#define __cdecl
+	#define __cdecl __attribute__((__cdecl__))
 #endif
 
 // function prototype

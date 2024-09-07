@@ -4,6 +4,7 @@
 #pragma once
 
 #include "npc_humanoidbase.h"
+#include "heist_shareddefs.h"
 
 class CNPC_Cop : public CNPC_HumanoidBase
 {

@@ -120,7 +120,7 @@ CCloseCaptionWorkUnit::CCloseCaptionWorkUnit() :
 	m_bItalic(false),
 	m_pszStream(0),
 	m_Color( Color( 255, 255, 255, 255 ) ),
-	m_hFont( 0 ),
+	m_hFont( vgui::INVALID_FONT ),
 	m_flFadeStartTime(0)
 {
 }
@@ -1631,7 +1631,7 @@ struct WorkUnitParams
 		bold = italic = false;
 		clr = Color( 255, 255, 255, 255 );
 		newline = false;
-		font = 0;
+		font = vgui::INVALID_FONT;
 	}
 
 	~WorkUnitParams()
