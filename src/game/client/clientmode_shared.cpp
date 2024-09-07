@@ -337,8 +337,8 @@ void	ClientModeShared::ComputeVguiResConditions( KeyValues *pkvConditions )
 void ClientModeShared::Init()
 {
 	InitChatHudElement();
-
 	InitWeaponSelectionHudElement();
+	InitVoteHudElement();
 
 	KeyValuesAD pConditions( "conditions" );
 	ComputeVguiResConditions( pConditions );
@@ -392,6 +392,12 @@ void ClientModeShared::InitWeaponSelectionHudElement()
 {
 	m_pWeaponSelection = ( CBaseHudWeaponSelection * )GET_HUDELEMENT( CHudWeaponSelection );
 	Assert( m_pWeaponSelection );
+}
+
+void ClientModeShared::InitVoteHudElement()
+{
+	m_pHudVote = ( CHudVote * )GET_HUDELEMENT( CHudVote );
+	Assert( m_pHudVote );
 }
 
 void ClientModeShared::InitViewport()
@@ -681,10 +687,9 @@ int	ClientModeShared::KeyInput( int down, ButtonCode_t keynum, const char *pszCu
 	}
 	
 	// If we're voting...
-	CHudVote *pHudVote = GET_HUDELEMENT( CHudVote );
-	if ( pHudVote && pHudVote->IsVisible() )
+	if ( m_pHudVote && m_pHudVote->IsVisible() )
 	{
-		if ( !pHudVote->KeyInput( down, keynum, pszCurrentBinding ) )
+		if ( !m_pHudVote->KeyInput( down, keynum, pszCurrentBinding ) )
 		{
 			return 0;
 		}

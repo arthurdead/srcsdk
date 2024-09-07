@@ -11,6 +11,7 @@
 #pragma once
 
 #include "worldsize.h"
+#include "mathlib/mathlib.h"
 
 // Given a world coord, return the cell it should be in
 inline int CellFromCoord( int cellwidth, float f )

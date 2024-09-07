@@ -19,6 +19,7 @@
 
 class CBaseHudChat;
 class CBaseHudWeaponSelection;
+class CHudVote;
 class CViewSetup;
 class C_BaseEntity;
 class C_BasePlayer;
@@ -121,6 +122,7 @@ public:
 
 	virtual void InitChatHudElement( void );
 	virtual void InitWeaponSelectionHudElement( void );
+	virtual void InitVoteHudElement( void );
 
 	virtual void	ComputeVguiResConditions( KeyValues *pkvConditions ) OVERRIDE;
 
@@ -168,6 +170,7 @@ private:
 	CBaseHudChat			*m_pChatElement;
 	vgui::HCursor			m_CursorNone;
 	CBaseHudWeaponSelection *m_pWeaponSelection;
+	CHudVote *m_pHudVote;
 	int						m_nRootSize[2];
 
 	CHandle<C_ColorCorrection> m_pCurrentColorCorrection;

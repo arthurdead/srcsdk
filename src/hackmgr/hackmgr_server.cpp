@@ -16,27 +16,25 @@ static void ProcessSendProp(CUtlString &path, SendProp *pProp)
 	path.Append(pProp->GetName());
 
 	if(pProp->GetFlags() & SPROP_COORD) {
-		DevMsg("%s has SPROP_COORD!!!\n", path.Get());
-	}
-
-	if(pProp->GetFlags() & SPROP_VARINT) {
-		DevMsg("%s has SPROP_VARINT!!!\n", path.Get());
+		DevMsg("Replacing SPROP_COORD with SPROP_COORD_MP in:\n\"%s\"\n", path.Get());
+		pProp->m_Flags &= ~SPROP_COORD;
+		pProp->m_Flags |= SPROP_COORD_MP;
 	}
 
 	if(pProp->GetFlags() & SPROP_CELL_COORD) {
-		DevMsg("%s has SPROP_CELL_COORD!!!\n", path.Get());
+		DevMsg("Replacing SPROP_CELL_COORD with SPROP_COORD_MP in:\n\"%s\"\n", path.Get());
 		pProp->m_Flags &= ~SPROP_CELL_COORD;
-		pProp->m_Flags |= SPROP_COORD;
+		pProp->m_Flags |= SPROP_COORD_MP;
 	}
 	if(pProp->GetFlags() & SPROP_CELL_COORD_LOWPRECISION) {
-		DevMsg("%s has SPROP_CELL_COORD_LOWPRECISION!!!\n", path.Get());
+		DevMsg("Replacing SPROP_CELL_COORD_LOWPRECISION with SPROP_COORD_MP_LOWPRECISION in:\n\"%s\"\n", path.Get());
 		pProp->m_Flags &= ~SPROP_CELL_COORD_LOWPRECISION;
-		pProp->m_Flags |= SPROP_COORD;
+		pProp->m_Flags |= SPROP_COORD_MP_LOWPRECISION;
 	}
 	if(pProp->GetFlags() & SPROP_CELL_COORD_INTEGRAL) {
-		DevMsg("%s has SPROP_CELL_COORD_INTEGRAL!!!\n", path.Get());
+		DevMsg("Replacing SPROP_CELL_COORD_INTEGRAL with SPROP_COORD_MP_INTEGRAL in:\n\"%s\"\n", path.Get());
 		pProp->m_Flags &= ~SPROP_CELL_COORD_INTEGRAL;
-		pProp->m_Flags |= SPROP_COORD;
+		pProp->m_Flags |= SPROP_COORD_MP_INTEGRAL;
 	}
 
 	path.Append("::");
