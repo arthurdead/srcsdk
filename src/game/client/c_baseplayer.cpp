@@ -212,7 +212,10 @@ END_RECV_TABLE()
 
 	BEGIN_RECV_TABLE_NOBASE( C_BasePlayer, DT_LocalPlayerExclusive )
 
-		RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ) ), // RECVINFO_NAME redirects the received var to m_vecNetworkOrigin for interpolation purposes
+		//TODO!!!! why does this break things?
+		//RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ) ), // RECVINFO_NAME redirects the received var to m_vecNetworkOrigin for interpolation purposes
+		RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin), 0, C_BaseEntity::RecvProxy_CellOrigin ), // RECVINFO_NAME again
+
 		RecvPropFloat( RECVINFO_ARRAYELEM( m_angEyeAngles, 0 ) ),
 		RecvPropFloat( RECVINFO_ARRAYELEM( m_angEyeAngles, 1 ) ),
 

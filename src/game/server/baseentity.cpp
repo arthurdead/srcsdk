@@ -450,14 +450,6 @@ void CBaseEntity::SendProxy_AnglesZ( const SendProp *pProp, const void *pStruct,
 	pOut->m_Float = anglemod( a->z );
 }
 
-#if PREDICTION_ERROR_CHECK_LEVEL > 1 
-const int SENDPROP_ANGROTATION_DEFAULT_BITS = -1;
-const int SENDPROP_VECORIGIN_FLAGS = SPROP_NOSCALE|SPROP_CHANGES_OFTEN;
-#else
-const int SENDPROP_ANGROTATION_DEFAULT_BITS = 13;
-const int SENDPROP_VECORIGIN_FLAGS = SPROP_CELL_COORD|SPROP_CHANGES_OFTEN;
-#endif
-
 // This table encodes the CBaseEntity data.
 IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropDataTable( "AnimTimeMustBeFirst", 0, &REFERENCE_SEND_TABLE(DT_AnimTimeMustBeFirst), SendProxy_ClientSideAnimation ),

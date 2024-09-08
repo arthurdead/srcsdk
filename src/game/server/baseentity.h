@@ -227,6 +227,14 @@ struct thinkfunc_t
 struct EmitSound_t;
 struct rotatingpushmove_t;
 
+#if PREDICTION_ERROR_CHECK_LEVEL > 1 
+const int SENDPROP_ANGROTATION_DEFAULT_BITS = -1;
+const int SENDPROP_VECORIGIN_FLAGS = SPROP_NOSCALE|SPROP_CHANGES_OFTEN;
+#else
+const int SENDPROP_ANGROTATION_DEFAULT_BITS = 13;
+const int SENDPROP_VECORIGIN_FLAGS = SPROP_CELL_COORD|SPROP_CHANGES_OFTEN;
+#endif
+
 #define CREATE_PREDICTED_ENTITY( className, ... )	\
 	CBaseEntity::CreatePredicted( __FILE__, __LINE__, className __VA_OPT__(, __VA_ARGS__) );
 
