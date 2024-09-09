@@ -141,7 +141,7 @@ CBaseEntityList::CBaseEntityList()
 {
 	// These are not in any list (yet)
 	int i;
-	for ( i = 0; i < NUM_ENT_ENTRIES; i++ )
+	for ( i = 0; i < GAME_NUM_ENT_ENTRIES; i++ )
 	{
 		m_EntPtrArray[i].ClearLinks();
 		m_EntPtrArray[i].m_SerialNumber = (rand()& SERIAL_MASK); // generate random starting serial number
@@ -150,7 +150,7 @@ CBaseEntityList::CBaseEntityList()
 
 	// make a free list of the non-networkable entities
 	// Initially, all the slots are free.
-	for ( i=MAX_EDICTS+1; i < NUM_ENT_ENTRIES; i++ )
+	for ( i=MAX_EDICTS+1; i < GAME_NUM_ENT_ENTRIES; i++ )
 	{
 		CEntInfo *pList = &m_EntPtrArray[i];
 		m_freeNonNetworkableList.AddToTail( pList );
@@ -248,7 +248,7 @@ EHANDLE CBaseEntityList::AddEntityAtSlot( CBaseEntity *pEnt, int iSlot, int iFor
 
 void CBaseEntityList::RemoveEntityAtSlot( int iSlot )
 {
-	Assert( iSlot >= 0 && iSlot < NUM_ENT_ENTRIES );
+	Assert( iSlot >= 0 && iSlot < GAME_NUM_ENT_ENTRIES );
 
 	CEntInfo *pInfo = &m_EntPtrArray[iSlot];
 

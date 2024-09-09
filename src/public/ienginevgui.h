@@ -13,6 +13,7 @@
 
 #include "interface.h"
 #include "vgui/VGUI.h"
+#include "hackmgr/hackmgr.h"
 
 // Forward declarations.
 namespace vgui
@@ -48,6 +49,8 @@ public:
 	virtual vgui::VPANEL	GetPanel( VGuiPanel_t type ) = 0;
 
 	virtual bool			IsGameUIVisible() = 0;
+
+	HACKMGR_CLASS_API void			ActivateGameUI();
 };
 
 #define VENGINE_VGUI_VERSION	"VEngineVGui001"

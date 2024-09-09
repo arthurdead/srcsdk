@@ -34,6 +34,9 @@ public:
 	virtual void OnDataChanged( DataUpdateType_t type );
 	virtual bool OnInternalDrawModel( ClientModelRenderInfo_t *pInfo );
 
+	bool GetPropDataAngles( const char *pKeyName, QAngle &vecAngles );
+	float GetCarryDistanceOffset( void );
+
 protected:
 	// Networked vars.
 	bool m_bAwake;

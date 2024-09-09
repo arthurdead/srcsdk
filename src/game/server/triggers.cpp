@@ -376,18 +376,21 @@ bool CBaseTrigger::PassesTriggerFilters(CBaseEntity *pOther)
 		{
 			CAI_BaseNPC *pNPC = pOther->MyNPCPointer();
 
-			if ( HasSpawnFlags( SF_TRIGGER_ONLY_PLAYER_ALLY_NPCS ) )
+			if( pNPC )
 			{
-				if ( !pNPC || !pNPC->IsPlayerAlly() )
+				if ( HasSpawnFlags( SF_TRIGGER_ONLY_PLAYER_ALLY_NPCS ) )
 				{
-					return false;
+					if ( !pNPC->IsPlayerAlly() )
+					{
+						return false;
+					}
 				}
-			}
 
-			if ( HasSpawnFlags( SF_TRIGGER_ONLY_NPCS_IN_VEHICLES ) )
-			{
-				if ( !pNPC || !pNPC->IsInAVehicle() )
-					return false;
+				if ( HasSpawnFlags( SF_TRIGGER_ONLY_NPCS_IN_VEHICLES ) )
+				{
+					if ( !pNPC->IsInAVehicle() )
+						return false;
+				}
 			}
 		}
 
@@ -2008,7 +2011,7 @@ static inline void Set( char *pBuf, int nBit )
 //------------------------------------------------------------------------------
 // Adds in all entities depended on by entities near the transition
 //------------------------------------------------------------------------------
-#define MAX_ENTITY_BYTE_COUNT	(NUM_ENT_ENTRIES >> 3)
+#define MAX_ENTITY_BYTE_COUNT	(GAME_NUM_ENT_ENTRIES >> 3)
 int CChangeLevel::AddDependentEntities( int nCount, CBaseEntity **ppEntList, int *pEntityFlags, int nMaxList )
 {
 	char pEntitiesSaved[MAX_ENTITY_BYTE_COUNT];
@@ -2860,6 +2863,13 @@ void CTriggerCamera::Enable( void )
 			m_targetSpeed = m_pPath->m_flSpeed;
 		
 		m_flStopTime += m_pPath->GetDelay();
+		m_vecMoveDir = m_pPath->GetLocalOrigin() - GetLocalOrigin();
+		m_moveDistance = VectorNormalize( m_vecMoveDir );
+		m_flStopTime = gpGlobals->curtime + m_pPath->GetDelay();
+	}
+	else
+	{
+		m_moveDistance = 0;
 	}
 
 
@@ -2904,7 +2914,7 @@ void CTriggerCamera::Enable( void )
 		SetNextThink( gpGlobals->curtime );
 	}
 
-	m_moveDistance = 0;
+	m_vecLastPos = GetAbsOrigin();
 	Move();
 
 	DispatchUpdateTransmitState();
@@ -3090,7 +3100,17 @@ void CTriggerCamera::Move()
 	if (m_pPath)
 	{
 		// Subtract movement from the previous frame
-		m_moveDistance -= m_flSpeed * gpGlobals->frametime;
+		if (m_pPath->GetSpawnFlags() & SF_PATHCORNER_TELEPORT)
+		{
+			SetAbsOrigin(m_pPath->GetAbsOrigin());
+			m_moveDistance = -1;  //Make sure we enter the conditional below and advance to the next corner.
+		}
+		else
+		{	
+			// Subtract movement from the previous frame
+			Vector movDist(GetAbsOrigin() - m_vecLastPos);
+			m_moveDistance -= VectorNormalize(movDist);
+		}
 
 		// Have we moved enough to reach the target?
 		if ( m_moveDistance <= 0 )
@@ -3146,6 +3166,8 @@ void CTriggerCamera::Move()
 			SetAbsVelocity( desiredVel );
 		}
 	}
+
+	m_vecLastPos = GetAbsOrigin();
 }
 
 //-----------------------------------------------------------------------------

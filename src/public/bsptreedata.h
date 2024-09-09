@@ -9,11 +9,12 @@
 //
 //=============================================================================//
 
-#include "tier0/platform.h"
-
 #if !defined( BSPTREEDATA )
 #define BSPTREEDATA
 #pragma once
+
+#include "tier0/platform.h"
+#include "hackmgr/hackmgr.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -70,6 +71,16 @@ public:
 	virtual bool EnumerateLeavesInBox( Vector const& mins, Vector const& maxs, ISpatialLeafEnumerator* pEnum, int context ) = 0;
 	virtual bool EnumerateLeavesInSphere( Vector const& center, float radius, ISpatialLeafEnumerator* pEnum, int context ) = 0;
 	virtual bool EnumerateLeavesAlongRay( Ray_t const& ray, ISpatialLeafEnumerator* pEnum, int context ) = 0;
+
+	HACKMGR_CLASS_API bool EnumerateLeavesInSphereWithFlagSet( const Vector& center, float radius, ISpatialLeafEnumerator* pEnum, int context, int nFlagsCheck );
+	HACKMGR_CLASS_API int ListLeavesInBox( const Vector& mins, const Vector& maxs, unsigned short *pList, int listMax );
+
+	// Used to determine which leaves passed in (specified by leafcount, pLeafs, and nLeafStride ) 
+	// are within radius flRadius of vecCenter and have the flag set.
+	// The result is placed in the pLeafsInSphere array, which specifies _indices_ into the original pLeafs array
+	// The number of leaves found within the sphere is the return value.
+	// The caller is expected to have allocated at least nLeafCount pLeafsInSphere to place the results into
+	HACKMGR_CLASS_API int ListLeavesInSphereWithFlagSet( int *pLeafsInSphere, const Vector& vecCenter, float flRadius, int nLeafCount, const uint16 *pLeafs, int nLeafStride = sizeof(uint16), int nFlagsCheck = 0xFFFFFFFF );
 };
 
 

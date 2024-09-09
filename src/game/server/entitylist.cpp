@@ -274,7 +274,7 @@ public:
 	}
 
 private:
-	unsigned short m_entinfoIndex[NUM_ENT_ENTRIES];
+	unsigned short m_entinfoIndex[GAME_NUM_ENT_ENTRIES];
 	CUtlVector<simthinkentry_t>	m_simThinkList;
 };
 
@@ -1969,7 +1969,7 @@ CON_COMMAND(report_simthinklist, "Lists all simulating/thinking entities")
 	if ( !UTIL_IsCommandIssuedByServerAdmin() )
 		return;
 
-	CBaseEntity *pTmp[NUM_ENT_ENTRIES];
+	CBaseEntity *pTmp[GAME_NUM_ENT_ENTRIES];
 	int count = SimThink_ListCopy( pTmp, ARRAYSIZE(pTmp) );
 
 	CSortedEntityList list;

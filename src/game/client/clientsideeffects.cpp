@@ -44,9 +44,10 @@ bool FXCreationAllowed( void )
 // Purpose: Construct and activate effect
 // Input  : *name - 
 //-----------------------------------------------------------------------------
-CClientSideEffect::CClientSideEffect( const char *name )
+CClientSideEffect::CClientSideEffect( const char *name, int flags )
 {
 	m_pszName = name;
+	m_iFlags = flags;
 	Assert( name );
 
 	m_bActive = true;
@@ -110,7 +111,7 @@ public:
 	// Remove the specified effect
 	void			RemoveEffect( CClientSideEffect *effect );
 	// Draw/update all effects in the current list
-	void			DrawEffects( double frametime );
+	void			DrawEffects( double frametime, int flags = BITS_CLIENTEFFECT_NORMAL );
 	// Flush out all effects from the list
 	void			Flush( void );
 private:
@@ -214,7 +215,7 @@ void CEffectsList::RemoveEffect( int effectIndex )
 // Purpose: Iterate through list and simulate/draw stuff
 // Input  : frametime - 
 //-----------------------------------------------------------------------------
-void CEffectsList::DrawEffects( double frametime )
+void CEffectsList::DrawEffects( double frametime, int flags )
 {
 	VPROF_BUDGET( "CEffectsList::DrawEffects", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	int i;
@@ -224,7 +225,7 @@ void CEffectsList::DrawEffects( double frametime )
 	for ( i = m_nEffects - 1 ; i >= 0; i-- )
 	{
 		effect = m_rgEffects[ i ];
-		if ( !effect )
+		if ( !effect || (effect->GetFlags() & flags) == 0 )
 			continue;
 
 		// Simulate

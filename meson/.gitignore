@@ -2,5 +2,6 @@
 
 /*.sublime-workspace
 
-/subprojects/ShaderCompile/
+/subprojects/JoltPhysics/
+/subprojects/recastnavigation/
 /subprojects/webm/

@@ -144,6 +144,7 @@ void CTimedEventMgr::RemoveEvent( CEventRegister *pEvent )
 			if ( m_Events.Element( i ) == pEvent )
 			{
 				m_Events.RemoveAt( i );
+				pEvent->m_bRegistered = false;
 				break;
 			}
 		}

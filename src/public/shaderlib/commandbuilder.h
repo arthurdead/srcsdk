@@ -109,6 +109,13 @@ public:
 		return m_pDataOut - m_Data;
 	}
 
+	FORCEINLINE uint8 *Copy()
+	{
+		int size = Size();
+		uint8 *tmp = new uint8[ size ];
+		Q_memcpy( tmp, m_Data, size );
+		return  tmp;
+	}
 };
 
 
@@ -512,6 +519,11 @@ public:
 	{
 		this->m_Storage.PutInt( CBCMD_SET_VERTEX_SHADER_NEARZFARZ_STATE );
 		this->m_Storage.PutInt( iRegNum );
+	}
+
+	FORCEINLINE uint8 *Copy( void )
+	{
+		return this->m_Storage.Copy();
 	}
 };
 

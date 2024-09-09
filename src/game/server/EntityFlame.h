@@ -60,6 +60,12 @@ public:
 	void	SetAttacker( CBaseEntity *pAttacker ) { m_hAttacker = pAttacker; }
 	CBaseEntity *GetAttacker( void ) const;
 
+	void	SetFlameDamagePerSecond( float fDamage ) { m_fFlameDmgPerSecond = fDamage; }
+	float	GetFlameDamagePerSecond( void ) { return m_fFlameDmgPerSecond; }
+
+	void	SetFlameRadiusDamagePerSecond( float fDamage ) { m_fFlameRadiusDmgPerSecond = fDamage; }
+	float	GetFlameRadiusDamagePerSecond( void ) { return m_fFlameRadiusDmgPerSecond; }
+
 	DECLARE_MAPENTITY();
 
 protected:
@@ -84,6 +90,9 @@ protected:
 	int m_iDangerSound;
 	bool	m_bPlayingSound;
 	Obstacle_t m_hObstacle;
+
+	float m_fFlameDmgPerSecond;
+	float m_fFlameRadiusDmgPerSecond;
 };
 
 #endif // ENTITYFLAME_H

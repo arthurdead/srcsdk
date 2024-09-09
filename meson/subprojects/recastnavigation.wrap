@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/recastnavigation/recastnavigation.git
+revision = head
+depth = 1
+method = cmake
+diff_files = recastnavigation/recastnavigation.patch

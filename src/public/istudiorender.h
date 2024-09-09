@@ -20,6 +20,7 @@
 #include "datacache/imdlcache.h"
 #include "studio.h"
 //#include "engine/ivmodelrender.h"
+#include "hackmgr/hackmgr.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -217,9 +218,7 @@ struct DrawModelInfo_t
 	int				m_Lod;
 	ColorMeshInfo_t	*m_pColorMeshes;
 	bool			m_bStaticLighting;
-	Vector			m_vecAmbientCube[6];		// ambient, and lights that aren't in locallight[]
-	int				m_nLocalLightCount;
-	LightDesc_t		m_LocalLightDescs[4];
+	MaterialLightingState_t	m_LightingState;
 
 	IMPLEMENT_OPERATOR_EQUAL( DrawModelInfo_t );
 };
@@ -444,6 +443,21 @@ public:
 	virtual int GetMaterialListFromBodyAndSkin( MDLHandle_t studio, int nSkin, int nBody, int nCountOutputMaterials, IMaterial** ppOutputMaterials ) = 0;
 	// draw an array of models with the same state
 	virtual void DrawModelArray( const DrawModelInfo_t &drawInfo, int arrayCount, model_array_instance_t *pInstanceData, int instanceStride, int flags = STUDIORENDER_DRAW_ENTIRE_MODEL ) = 0;
+
+	// no debug modes, just fastest drawing path
+	HACKMGR_CLASS_API void DrawModelArrayStaticProp( const DrawModelInfo_t& drawInfo, int nInstanceCount, const MeshInstanceData_t *pInstanceData, ColorMeshInfo_t **pColorMeshes );
+
+	// draw an array of models with the same state
+	HACKMGR_CLASS_API void DrawModelArray( const StudioModelArrayInfo_t &drawInfo, int nCount, 
+		StudioArrayInstanceData_t *pInstanceData, int nInstanceStride, int flags = STUDIORENDER_DRAW_ENTIRE_MODEL );
+
+	// draw an array of models with the same state
+	HACKMGR_CLASS_API void DrawModelShadowArray( int nCount, StudioArrayData_t *pShadowData, 
+		int nInstanceStride, int flags = STUDIORENDER_DRAW_ENTIRE_MODEL );
+
+	// draw an array of models with the same state
+	HACKMGR_CLASS_API void DrawModelArray( const StudioModelArrayInfo2_t &info, int nCount, StudioArrayData_t *pArrayData, 
+		int nInstanceStride, int flags = STUDIORENDER_DRAW_ENTIRE_MODEL );
 };
 
 extern IStudioRender *g_pStudioRender;

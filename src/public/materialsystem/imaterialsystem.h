@@ -282,6 +282,37 @@ private:
 };
 #endif
 
+enum
+{
+	MATERIAL_MAX_LIGHT_COUNT = 4,
+};
+
+struct MaterialLightingState_t
+{
+	Vector			m_vecAmbientCube[6];		// ambient, and lights that aren't in locallight[]
+	int				m_nLocalLightCount;
+	LightDesc_t		m_pLocalLightDesc[MATERIAL_MAX_LIGHT_COUNT];
+
+	MaterialLightingState_t &operator=( const MaterialLightingState_t &src )
+	{
+		memcpy( this, &src, sizeof(MaterialLightingState_t) - MATERIAL_MAX_LIGHT_COUNT * sizeof(LightDesc_t) );
+		memcpy( m_pLocalLightDesc, &src.m_pLocalLightDesc, src.m_nLocalLightCount * sizeof(LightDesc_t) );
+		return *this;
+	}
+};
+
+struct MaterialLightingStateEx_t : public MaterialLightingState_t
+{
+	Vector			m_vecLightingOrigin;		// The position from which lighting state was computed
+
+	MaterialLightingStateEx_t &operator=( const MaterialLightingStateEx_t &src )
+	{
+		memcpy( this, &src, sizeof(MaterialLightingStateEx_t) - MATERIAL_MAX_LIGHT_COUNT * sizeof(LightDesc_t) );
+		memcpy( m_pLocalLightDesc, &src.m_pLocalLightDesc, src.m_nLocalLightCount * sizeof(LightDesc_t) );
+		return *this;
+	}
+};
+
 #define CREATERENDERTARGETFLAGS_HDR				0x00000001
 #define CREATERENDERTARGETFLAGS_AUTOMIPMAP		0x00000002
 #define CREATERENDERTARGETFLAGS_UNFILTERABLE_OK 0x00000004
@@ -445,7 +476,7 @@ struct FlashlightState_t
 		m_nRight = -1;
 		m_nBottom = -1;
 		m_nShadowQuality = 0;
-		m_Reserved = 0;
+		m_Reserved = (unsigned char)-1;
 	}
 
 	Vector m_vecLightOrigin;

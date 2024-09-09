@@ -134,6 +134,8 @@ IPhysicsObject *PhysModelCreate( CBaseEntity *pEntity, int modelIndex, const Vec
 IPhysicsObject *PhysModelCreateBox( CBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, bool isStatic );
 IPhysicsObject *PhysModelCreateOBB( CBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, const QAngle &angle, bool isStatic );
 
+IPhysicsObject *PhysModelCreateSphere( CBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic );
+
 // Create a vphysics object based on a BSP model (unmoveable)
 IPhysicsObject *PhysModelCreateUnmoveable( CBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles );
 
@@ -142,6 +144,9 @@ IPhysicsObject *PhysModelCreateCustom( CBaseEntity *pEntity, const CPhysCollide 
 
 // Create a bbox collision model (these may be shared among entities, they are auto-deleted at end of level. do not manage)
 CPhysCollide *PhysCreateBbox( const Vector &mins, const Vector &maxs );
+
+// Create a vphysics sphere object
+IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic, solid_t &solid );
 
 // Create a vphysics sphere object
 IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vector &origin, solid_t &solid );

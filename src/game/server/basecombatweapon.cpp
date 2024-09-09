@@ -97,50 +97,6 @@ int CBaseCombatWeapon::UpdateTransmitState( void)
 	}
 }
 
-
-void CBaseCombatWeapon::Operator_FrameUpdate( CBaseCombatCharacter *pOperator )
-{
-	StudioFrameAdvance( ); // animate
-
-	if ( IsSequenceFinished() )
-	{
-		if ( SequenceLoops() )
-		{
-			// animation does loop, which means we're playing subtle idle. Might need to fidget.
-			int iSequence = SelectWeightedSequence( GetActivity() );
-			if ( iSequence != ACTIVITY_NOT_AVAILABLE )
-			{
-				ResetSequence( iSequence );	// Set to new anim (if it's there)
-			}
-		}
-#if 0
-		else
-		{
-			// animation that just ended doesn't loop! That means we just finished a fidget
-			// and should return to our heaviest weighted idle (the subtle one)
-			SelectHeaviestSequence( GetActivity() );
-		}
-#endif
-	}
-
-	// Animation events are passed back to the weapon's owner/operator
-	DispatchAnimEvents( pOperator );
-
-	// Update and dispatch the viewmodel events
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
-
-	if ( pOwner == NULL )
-		return;
-
-	CBaseViewModel *vm = pOwner->GetViewModel( m_nViewModelIndex );
-	
-	if ( vm != NULL )
-	{
-		vm->StudioFrameAdvance();
-		vm->DispatchAnimEvents( this );
-	}
-}
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *pEvent - 

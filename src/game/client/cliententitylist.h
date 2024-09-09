@@ -197,7 +197,7 @@ private:
 	int					m_iMaxUsedServerIndex;
 
 	// This holds fast lookups for special edicts.
-	EntityCacheInfo_t	m_EntityCacheInfo[NUM_ENT_ENTRIES];
+	EntityCacheInfo_t	m_EntityCacheInfo[GAME_NUM_ENT_ENTRIES];
 
 	// For fast iteration.
 	CUtlLinkedList<C_BaseEntity*, unsigned short> m_BaseEntities;

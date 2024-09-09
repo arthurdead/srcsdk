@@ -194,6 +194,7 @@ public:
 
 	virtual void AddFlashlightRenderable( ShadowHandle_t shadow, IClientRenderable *pRenderable ) = 0;
 	virtual ShadowHandle_t CreateShadowEx( IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, int creationFlags ) = 0;
+	HACKMGR_CLASS_API ShadowHandle_t CreateShadowEx( IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, int creationFlags, int nEntIndex );
 
 	virtual void SetFlashlightDepthTexture( ShadowHandle_t shadowHandle, ITexture *pFlashlightDepthTexture, unsigned char ucShadowStencilBit ) = 0;
 
@@ -203,6 +204,37 @@ public:
 	virtual void SetFlashlightRenderState( ShadowHandle_t handle ) = 0;
 
 	HACKMGR_CLASS_API void RemoveAllDecalsFromShadow( ShadowHandle_t handle );
+
+	HACKMGR_CLASS_API void EndFlashlightRenderState( ShadowHandle_t handle );
+
+	HACKMGR_CLASS_API void DrawVolumetrics();
+
+	HACKMGR_CLASS_API int GetNumShadowsOnModel( ModelInstanceHandle_t instance );
+	HACKMGR_CLASS_API int GetShadowsOnModel( ModelInstanceHandle_t instance, ShadowHandle_t* pShadowArray, bool bNormalShadows, bool bFlashlightShadows );
+
+	HACKMGR_CLASS_API void FlashlightDrawCallback( ShadowDrawCallbackFn_t pCallback, void *pData ); //used to draw each additive flashlight pass. The callback is called once per flashlight state for an additive pass.
+
+	//Way for the client to determine which flashlight to use in single-pass modes. Does not actually enable the flashlight in any way.
+	HACKMGR_CLASS_API void SetSinglePassFlashlightRenderState( ShadowHandle_t handle );
+
+	//Enable/Disable the flashlight state set with SetSinglePassFlashlightRenderState.
+	HACKMGR_CLASS_API void PushSinglePassFlashlightStateEnabled( bool bEnable );
+	HACKMGR_CLASS_API void PopSinglePassFlashlightStateEnabled( void );
+
+	HACKMGR_CLASS_API bool SinglePassFlashlightModeEnabled( void );
+
+	// Determine a unique list of flashlights which hit at least one of the specified models
+	// Accepts an instance count and an array of ModelInstanceHandle_ts.
+	// Returns the number of FlashlightInstance_ts it's found that affect the models.
+	// Also fills in a mask of which flashlights affect each ModelInstanceHandle_t
+	// There can be at most MAX_FLASHLIGHTS_PER_INSTANCE_DRAW_CALL pFlashlights,
+	// and the size of the pModelUsageMask array must be nInstanceCount.
+	HACKMGR_CLASS_API int SetupFlashlightRenderInstanceInfo( ShadowHandle_t *pUniqueFlashlights, uint32 *pModelUsageMask, int nUsageStride, int nInstanceCount, const ModelInstanceHandle_t *pInstance );
+
+	// Returns the flashlight state for multiple flashlights
+	HACKMGR_CLASS_API void GetFlashlightRenderInfo( FlashlightInstance_t *pFlashlightState, int nCount, const ShadowHandle_t *pHandles );
+
+	HACKMGR_CLASS_API void SkipShadowForEntity( int nEntIndex );
 };
 
 

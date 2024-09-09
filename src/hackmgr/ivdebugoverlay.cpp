@@ -8,7 +8,11 @@ HACKMGR_CLASS_API void IVDebugOverlay::PurgeTextOverlays()
 {
 	OverlayText_t *it = GetFirst();
 	while(it) {
-		it->m_flEndTime = 0.0f;
+		if(it->m_flEndTime == 0.0f &&
+			it->m_nCreationTick != -1)
+		{
+			it->m_nCreationTick = 0;
+		}
 		it = GetNext(it);
 	}
 }

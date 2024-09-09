@@ -1301,7 +1301,8 @@ void CParticleMgr::RemoveEffect( CParticleEffectBinding *pEffect )
 	// This prevents certain recursive situations where a NotifyRemove
 	// call can wind up triggering another one, usually in an effect's
 	// destructor.
-	if( pEffect->GetRemovalInProgressFlag() )
+	Assert( pEffect );
+	if( !pEffect || pEffect->GetRemovalInProgressFlag() )
 		return;
 	pEffect->SetRemovalInProgressFlag();
 
@@ -1334,6 +1335,10 @@ void CParticleMgr::RemoveEffect( CParticleEffectBinding *pEffect )
 
 void CParticleMgr::RemoveEffect( CNewParticleEffect *pEffect )
 {
+	Assert( pEffect );
+	if ( !pEffect )
+		return;
+	
 	// Don't call RemoveEffect while inside an IParticleEffect's Update() function.
 	// Return false from the Update function instead.
 	Assert( !m_bUpdatingEffects );

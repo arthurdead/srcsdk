@@ -321,8 +321,8 @@ void SpawnAllEntities( int nEntities, HierarchicalSpawn_t *pSpawnList, bool bAct
 CMapEntitySpawner::CMapEntitySpawner()
 {
 	m_nEntities = 0;
-	m_pSpawnMapData = new HierarchicalSpawnMapData_t[NUM_ENT_ENTRIES];
-	m_pSpawnList = new HierarchicalSpawn_t[NUM_ENT_ENTRIES];
+	m_pSpawnMapData = new HierarchicalSpawnMapData_t[GAME_NUM_ENT_ENTRIES];
+	m_pSpawnList = new HierarchicalSpawn_t[GAME_NUM_ENT_ENTRIES];
 	m_bFoundryMode = false;
 }
 

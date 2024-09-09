@@ -774,3 +774,11 @@ surfacedata_t * CBaseCombatCharacter::GetGroundSurface( void ) const
 	return physprops->GetSurfaceData( trace.surface.surfaceProps );
 }
 */
+
+void CBaseCombatCharacter::Weapon_FrameUpdate( void )
+{
+	if ( m_hActiveWeapon )
+	{
+		m_hActiveWeapon->Operator_FrameUpdate( this );
+	}
+}

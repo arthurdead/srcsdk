@@ -70,6 +70,9 @@ public:
 		return &m_hTouchingEntities;
 	}
 
+	bool GetClientSidePredicted( void );
+	void SetClientSidePredicted( bool bClientSidePredicted );
+
 protected:
 
 	// Outputs
@@ -88,6 +91,16 @@ protected:
 
 	DECLARE_MAPENTITY();
 };
+
+inline bool CBaseTrigger::GetClientSidePredicted( void ) 
+{ 
+	return m_bClientSidePredicted; 
+}
+
+inline void CBaseTrigger::SetClientSidePredicted( bool bClientSidePredicted ) 
+{ 
+	m_bClientSidePredicted = bClientSidePredicted; 
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Variable sized repeatable trigger.  Must be targeted at one or more entities.
@@ -262,6 +275,8 @@ private:
 #define SF_CAMERA_PLAYER_INTERRUPT		64
 #define SF_CAMERA_PLAYER_SETFOV			128
 
+#define SF_PATHCORNER_TELEPORT 2
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -314,6 +329,7 @@ private:
 	float m_deceleration;
 	int	  m_state;
 	Vector m_vecMoveDir;
+	Vector m_vecLastPos;
 
 	float m_fov;
 	float m_fovSpeed;

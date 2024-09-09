@@ -13,6 +13,13 @@
 class	Vector;
 struct	FXQuadData_t;
 struct	FXLineData_t;
+
+enum ClientSideEffectFlag_t
+{
+	BITS_CLIENTEFFECT_NORMAL			= 0x00000001,
+	BITS_CLIENTEFFECT_POSTSCREEN		= 0x00000002,
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Base class for client side effects
 //-----------------------------------------------------------------------------
@@ -20,7 +27,7 @@ abstract_class CClientSideEffect
 {
 public:
 	// Constructs the named effect
-						CClientSideEffect( const char *name );
+						CClientSideEffect( const char *name, int flags = BITS_CLIENTEFFECT_NORMAL );
 	virtual				~CClientSideEffect( void );
 
 	// Update/Draw the effect
@@ -36,11 +43,17 @@ public:
 	// Sets the effect name (useful for debugging).
 	virtual void		SetEffectName( const char *pszName );
 
+	// Get draw flags
+	int					GetFlags() { return m_iFlags; }
+
 private:
 	// Name of effect ( static data )
 	const char			*m_pszName;
 	// Is the effect active
 	bool				m_bActive;
+
+	// Draw flags
+	int					m_iFlags;
 };
 
 //-----------------------------------------------------------------------------
@@ -56,7 +69,7 @@ public:
 	// Remove the specified effect
 	virtual void	RemoveEffect( CClientSideEffect *effect ) = 0;
 	// Simulate/Update/Draw effects on list
-	virtual void	DrawEffects( double frametime ) = 0;
+	virtual void	DrawEffects( double frametime, int flags = BITS_CLIENTEFFECT_NORMAL ) = 0;
 	// Flush out all effects fbrom the list
 	virtual void	Flush( void ) = 0;
 };

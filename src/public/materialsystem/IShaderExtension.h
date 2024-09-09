@@ -5,8 +5,9 @@
 #pragma once
 
 #include "materialsystem/imaterialsystem.h"
+#include "appframework/IAppSystem.h"
 
-class IShaderExtension
+class IShaderExtension : public IAppSystem
 {
 protected:
 	virtual ~IShaderExtension() {};

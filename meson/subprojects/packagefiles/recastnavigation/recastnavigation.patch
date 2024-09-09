@@ -1,0 +1,427 @@
+diff --git a/Detour/Include/DetourNavMeshQuery.h b/Detour/Include/DetourNavMeshQuery.h
+index dd8150c..e2e588a 100644
+--- a/Detour/Include/DetourNavMeshQuery.h
++++ b/Detour/Include/DetourNavMeshQuery.h
+@@ -325,6 +325,20 @@ public:
+ 							 const dtQueryFilter* filter,
+ 							 dtPolyRef* nearestRef, float* nearestPt) const;
+ 
++	/// Finds the polygon nearest to the specified center point.
++	/// [opt] means the specified parameter can be a null pointer, in that case the output parameter will not be set.
++	///
++	///  @param[in]		center		The center of the search box. [(x, y, z)]
++	///  @param[in]		halfExtents	The search distance along each axis. [(x, y, z)]
++	///  @param[in]		filter		The polygon filter to apply to the query.
++	///  @param[out]	nearestRef	The reference id of the nearest polygon. Will be set to 0 if no polygon is found.
++	///  @param[out]	nearestPt	The nearest point on the polygon. Unchanged if no polygon is found. [opt] [(x, y, z)]
++	/// @returns The status flags for the query.
++	dtStatus findNearestPoly(const float* center, const float* halfExtents,
++							 const dtQueryFilter* filter,
++							 dtPolyRef* nearestRef, float* nearestPt, 
++							 const float* testPt ) const;
++
+ 	/// Finds the polygon nearest to the specified center point.
+ 	/// [opt] means the specified parameter can be a null pointer, in that case the output parameter will not be set.
+ 	/// 
+@@ -338,6 +352,20 @@ public:
+ 	dtStatus findNearestPoly(const float* center, const float* halfExtents,
+ 							 const dtQueryFilter* filter,
+ 							 dtPolyRef* nearestRef, float* nearestPt, bool* isOverPoly) const;
++
++	/// Finds the polygon nearest to the specified center point.
++	/// [opt] means the specified parameter can be a null pointer, in that case the output parameter will not be set.
++	/// 
++	///  @param[in]		center		The center of the search box. [(x, y, z)]
++	///  @param[in]		halfExtents	The search distance along each axis. [(x, y, z)]
++	///  @param[in]		filter		The polygon filter to apply to the query.
++	///  @param[out]	nearestRef	The reference id of the nearest polygon. Will be set to 0 if no polygon is found.
++	///  @param[out]	nearestPt	The nearest point on the polygon. Unchanged if no polygon is found. [opt] [(x, y, z)]
++	///  @param[out]	isOverPoly 	Set to true if the point's X/Z coordinate lies inside the polygon, false otherwise. Unchanged if no polygon is found. [opt]
++	/// @returns The status flags for the query.
++	dtStatus findNearestPoly(const float* center, const float* halfExtents,
++							 const dtQueryFilter* filter,
++							 dtPolyRef* nearestRef, float* nearestPt, const float* testPt, bool* isOverPoly) const;
+ 	
+ 	/// Finds polygons that overlap the search box.
+ 	///  @param[in]		center		The center of the search box. [(x, y, z)]
+diff --git a/Detour/Source/DetourNavMeshQuery.cpp b/Detour/Source/DetourNavMeshQuery.cpp
+index 9105b34..b90bbc6 100644
+--- a/Detour/Source/DetourNavMeshQuery.cpp
++++ b/Detour/Source/DetourNavMeshQuery.cpp
+@@ -694,14 +694,21 @@ dtStatus dtNavMeshQuery::findNearestPoly(const float* center, const float* halfE
+ 										 const dtQueryFilter* filter,
+ 										 dtPolyRef* nearestRef, float* nearestPt) const
+ {
+-	return findNearestPoly(center, halfExtents, filter, nearestRef, nearestPt, NULL);
++	return findNearestPoly(center, halfExtents, filter, nearestRef, nearestPt, NULL, NULL);
++}
++
++dtStatus dtNavMeshQuery::findNearestPoly(const float* center, const float* halfExtents,
++										 const dtQueryFilter* filter,
++										 dtPolyRef* nearestRef, float* nearestPt, const float* testPt) const
++{
++	return findNearestPoly(center, halfExtents, filter, nearestRef, nearestPt, testPt, NULL);
+ }
+ 
+ // If center and nearestPt point to an equal position, isOverPoly will be true;
+ // however there's also a special case of climb height inside the polygon (see dtFindNearestPolyQuery)
+ dtStatus dtNavMeshQuery::findNearestPoly(const float* center, const float* halfExtents,
+ 										 const dtQueryFilter* filter,
+-										 dtPolyRef* nearestRef, float* nearestPt, bool* isOverPoly) const
++										 dtPolyRef* nearestRef, float* nearestPt, const float* testPt, bool* isOverPoly) const
+ {
+ 	dtAssert(m_nav);
+ 
+@@ -710,7 +717,7 @@ dtStatus dtNavMeshQuery::findNearestPoly(const float* center, const float* halfE
+ 
+ 	// queryPolygons below will check rest of params
+ 	
+-	dtFindNearestPolyQuery query(this, center);
++	dtFindNearestPolyQuery query(this, testPt ? testPt : center);
+ 
+ 	dtStatus status = queryPolygons(center, halfExtents, filter, &query);
+ 	if (dtStatusFailed(status))
+diff --git a/DetourTileCache/Include/DetourTileCache.h b/DetourTileCache/Include/DetourTileCache.h
+index 0d346f1..7ddfd2a 100644
+--- a/DetourTileCache/Include/DetourTileCache.h
++++ b/DetourTileCache/Include/DetourTileCache.h
+@@ -36,7 +36,8 @@ enum ObstacleType
+ {
+ 	DT_OBSTACLE_CYLINDER,
+ 	DT_OBSTACLE_BOX, // AABB
+-	DT_OBSTACLE_ORIENTED_BOX // OBB
++	DT_OBSTACLE_ORIENTED_BOX, // OBB
++	DT_OBSTACLE_POLYGON
+ };
+ 
+ struct dtObstacleCylinder
+@@ -59,7 +60,17 @@ struct dtObstacleOrientedBox
+ 	float rotAux[ 2 ]; //{ cos(0.5f*angle)*sin(-0.5f*angle); cos(0.5f*angle)*cos(0.5f*angle) - 0.5 }
+ };
+ 
+-static const int DT_MAX_TOUCHED_TILES = 8;
++static const int DT_MAX_CONVEX_HULL_VERTICES = 8;
++
++struct dtObstaclePolygon
++{
++	float pos[ 3 ];
++	float height;
++	float verts[DT_MAX_CONVEX_HULL_VERTICES*3];
++	int nverts;
++};
++
++static const int DT_MAX_TOUCHED_TILES = 16;
+ struct dtTileCacheObstacle
+ {
+ 	union
+@@ -67,6 +78,7 @@ struct dtTileCacheObstacle
+ 		dtObstacleCylinder cylinder;
+ 		dtObstacleBox box;
+ 		dtObstacleOrientedBox orientedBox;
++		dtObstaclePolygon polygonBox;
+ 	};
+ 
+ 	dtCompressedTileRef touched[DT_MAX_TOUCHED_TILES];
+@@ -76,6 +88,8 @@ struct dtTileCacheObstacle
+ 	unsigned char state;
+ 	unsigned char ntouched;
+ 	unsigned char npending;
++	// optional alternative area id
++	unsigned char areaId;
+ 	dtTileCacheObstacle* next;
+ };
+ 
+@@ -135,13 +149,20 @@ public:
+ 	
+ 	// Cylinder obstacle.
+ 	dtStatus addObstacle(const float* pos, const float radius, const float height, dtObstacleRef* result);
++	dtStatus addObstacle(const float* pos, const float radius, const float height, unsigned char areaId, dtObstacleRef* result);
+ 
+ 	// Aabb obstacle.
+ 	dtStatus addBoxObstacle(const float* bmin, const float* bmax, dtObstacleRef* result);
++	dtStatus addBoxObstacle(const float* bmin, const float* bmax, unsigned char areaId, dtObstacleRef* result);
+ 
+ 	// Box obstacle: can be rotated in Y.
+ 	dtStatus addBoxObstacle(const float* center, const float* halfExtents, const float yRadians, dtObstacleRef* result);
++	dtStatus addBoxObstacle(const float* center, const float* halfExtents, const float yRadians, unsigned char areaId, dtObstacleRef* result);
+ 	
++	// Polygon obstacle
++	dtStatus addPolygonObstacle(const float* pos, const float* convexHullVertices, int numConvexHullVertices, const float height, dtObstacleRef* result);
++	dtStatus addPolygonObstacle(const float* pos, const float* convexHullVertices, int numConvexHullVertices, const float height, unsigned char areaId, dtObstacleRef* result);
++
+ 	dtStatus removeObstacle(const dtObstacleRef ref);
+ 	
+ 	dtStatus queryTiles(const float* bmin, const float* bmax,
+@@ -241,11 +262,11 @@ private:
+ 	dtTileCacheObstacle* m_obstacles;
+ 	dtTileCacheObstacle* m_nextFreeObstacle;
+ 	
+-	static const int MAX_REQUESTS = 64;
++	static const int MAX_REQUESTS = 2048;
+ 	ObstacleRequest m_reqs[MAX_REQUESTS];
+ 	int m_nreqs;
+ 	
+-	static const int MAX_UPDATE = 64;
++	static const int MAX_UPDATE = 2048;
+ 	dtCompressedTileRef m_update[MAX_UPDATE];
+ 	int m_nupdate;
+ };
+diff --git a/DetourTileCache/Include/DetourTileCacheBuilder.h b/DetourTileCache/Include/DetourTileCacheBuilder.h
+index 20693bf..3e85cdf 100644
+--- a/DetourTileCache/Include/DetourTileCacheBuilder.h
++++ b/DetourTileCache/Include/DetourTileCacheBuilder.h
+@@ -133,6 +133,9 @@ dtStatus dtMarkBoxArea(dtTileCacheLayer& layer, const float* orig, const float c
+ dtStatus dtMarkBoxArea(dtTileCacheLayer& layer, const float* orig, const float cs, const float ch,
+ 					   const float* center, const float* halfExtents, const float* rotAux, const unsigned char areaId);
+ 
++dtStatus dtMarkPolyArea(dtTileCacheLayer& layer, const float* orig, const float cs, const float ch,
++					   const float* verts, const int nverts, const unsigned char areaId);
++
+ dtStatus dtBuildTileCacheRegions(dtTileCacheAlloc* alloc,
+ 								 dtTileCacheLayer& layer,
+ 								 const int walkableClimb);
+diff --git a/DetourTileCache/Source/DetourTileCache.cpp b/DetourTileCache/Source/DetourTileCache.cpp
+index 6f97ab5..1d1be92 100644
+--- a/DetourTileCache/Source/DetourTileCache.cpp
++++ b/DetourTileCache/Source/DetourTileCache.cpp
+@@ -355,8 +355,12 @@ dtStatus dtTileCache::removeTile(dtCompressedTileRef ref, unsigned char** data,
+ 	return DT_SUCCESS;
+ }
+ 
+-
+ dtStatus dtTileCache::addObstacle(const float* pos, const float radius, const float height, dtObstacleRef* result)
++{
++	return addObstacle( pos, radius, height, 0, result );
++}
++
++dtStatus dtTileCache::addObstacle(const float* pos, const float radius, const float height, unsigned char areaId, dtObstacleRef* result)
+ {
+ 	if (m_nreqs >= MAX_REQUESTS)
+ 		return DT_FAILURE | DT_BUFFER_TOO_SMALL;
+@@ -379,6 +383,7 @@ dtStatus dtTileCache::addObstacle(const float* pos, const float radius, const fl
+ 	dtVcopy(ob->cylinder.pos, pos);
+ 	ob->cylinder.radius = radius;
+ 	ob->cylinder.height = height;
++	ob->areaId = areaId;
+ 	
+ 	ObstacleRequest* req = &m_reqs[m_nreqs++];
+ 	memset(req, 0, sizeof(ObstacleRequest));
+@@ -392,6 +397,11 @@ dtStatus dtTileCache::addObstacle(const float* pos, const float radius, const fl
+ }
+ 
+ dtStatus dtTileCache::addBoxObstacle(const float* bmin, const float* bmax, dtObstacleRef* result)
++{
++	return addBoxObstacle( bmin, bmax, static_cast<unsigned char>(0), result );
++}
++
++dtStatus dtTileCache::addBoxObstacle(const float* bmin, const float* bmax, unsigned char areaId, dtObstacleRef* result)
+ {
+ 	if (m_nreqs >= MAX_REQUESTS)
+ 		return DT_FAILURE | DT_BUFFER_TOO_SMALL;
+@@ -413,6 +423,8 @@ dtStatus dtTileCache::addBoxObstacle(const float* bmin, const float* bmax, dtObs
+ 	ob->type = DT_OBSTACLE_BOX;
+ 	dtVcopy(ob->box.bmin, bmin);
+ 	dtVcopy(ob->box.bmax, bmax);
++
++	ob->areaId = areaId;
+ 	
+ 	ObstacleRequest* req = &m_reqs[m_nreqs++];
+ 	memset(req, 0, sizeof(ObstacleRequest));
+@@ -426,6 +438,11 @@ dtStatus dtTileCache::addBoxObstacle(const float* bmin, const float* bmax, dtObs
+ }
+ 
+ dtStatus dtTileCache::addBoxObstacle(const float* center, const float* halfExtents, const float yRadians, dtObstacleRef* result)
++{
++	return addBoxObstacle( center, halfExtents, yRadians, 0, result );
++}
++
++dtStatus dtTileCache::addBoxObstacle(const float* center, const float* halfExtents, const float yRadians, unsigned char areaId, dtObstacleRef* result)
+ {
+ 	if (m_nreqs >= MAX_REQUESTS)
+ 		return DT_FAILURE | DT_BUFFER_TOO_SMALL;
+@@ -453,6 +470,8 @@ dtStatus dtTileCache::addBoxObstacle(const float* center, const float* halfExten
+ 	ob->orientedBox.rotAux[0] = coshalf*sinhalf;
+ 	ob->orientedBox.rotAux[1] = coshalf*coshalf - 0.5f;
+ 
++	ob->areaId = areaId;
++
+ 	ObstacleRequest* req = &m_reqs[m_nreqs++];
+ 	memset(req, 0, sizeof(ObstacleRequest));
+ 	req->action = REQUEST_ADD;
+@@ -464,6 +483,51 @@ dtStatus dtTileCache::addBoxObstacle(const float* center, const float* halfExten
+ 	return DT_SUCCESS;
+ }
+ 
++dtStatus dtTileCache::addPolygonObstacle(const float* pos, const float* convexHullVertices, int numConvexHullVertices, const float height, dtObstacleRef* result)
++{
++	return addPolygonObstacle( pos, convexHullVertices, numConvexHullVertices, height, 0, result );
++}
++
++dtStatus dtTileCache::addPolygonObstacle(const float* pos, const float* convexHullVertices, int numConvexHullVertices, const float height, unsigned char areaId, dtObstacleRef* result)
++{
++	if (m_nreqs >= MAX_REQUESTS)
++		return DT_FAILURE | DT_BUFFER_TOO_SMALL;
++    
++	dtTileCacheObstacle* ob = 0;
++	if (m_nextFreeObstacle)
++	{
++		ob = m_nextFreeObstacle;
++		m_nextFreeObstacle = ob->next;
++		ob->next = 0;
++	}
++	if (!ob)
++		return DT_FAILURE | DT_OUT_OF_MEMORY;
++    
++	unsigned short salt = ob->salt;
++	memset(ob, 0, sizeof(dtTileCacheObstacle));
++	ob->salt = salt;
++	ob->state = DT_OBSTACLE_PROCESSING;
++	ob->type = DT_OBSTACLE_POLYGON;
++	dtVcopy(ob->polygonBox.pos, pos);
++	ob->polygonBox.height = height;
++	ob->polygonBox.nverts = numConvexHullVertices;
++	for (int i = 0; i < ob->polygonBox.nverts; i++)
++	{
++		dtVcopy(&ob->polygonBox.verts[i*3], &convexHullVertices[i*3]);
++	}
++	ob->areaId = areaId;
++    
++	ObstacleRequest* req = &m_reqs[m_nreqs++];
++	memset(req, 0, sizeof(ObstacleRequest));
++	req->action = REQUEST_ADD;
++	req->ref = getObstacleRef(ob);
++    
++	if (result)
++		*result = req->ref;
++    
++	return DT_SUCCESS;
++}
++
+ dtStatus dtTileCache::removeObstacle(const dtObstacleRef ref)
+ {
+ 	if (!ref)
+@@ -689,17 +753,22 @@ dtStatus dtTileCache::buildNavMeshTile(const dtCompressedTileRef ref, dtNavMesh*
+ 			if (ob->type == DT_OBSTACLE_CYLINDER)
+ 			{
+ 				dtMarkCylinderArea(*bc.layer, tile->header->bmin, m_params.cs, m_params.ch,
+-							    ob->cylinder.pos, ob->cylinder.radius, ob->cylinder.height, 0);
++							    ob->cylinder.pos, ob->cylinder.radius, ob->cylinder.height, ob->areaId);
+ 			}
+ 			else if (ob->type == DT_OBSTACLE_BOX)
+ 			{
+ 				dtMarkBoxArea(*bc.layer, tile->header->bmin, m_params.cs, m_params.ch,
+-					ob->box.bmin, ob->box.bmax, 0);
++					ob->box.bmin, ob->box.bmax, ob->areaId);
+ 			}
+ 			else if (ob->type == DT_OBSTACLE_ORIENTED_BOX)
+ 			{
+ 				dtMarkBoxArea(*bc.layer, tile->header->bmin, m_params.cs, m_params.ch,
+-					ob->orientedBox.center, ob->orientedBox.halfExtents, ob->orientedBox.rotAux, 0);
++					ob->orientedBox.center, ob->orientedBox.halfExtents, ob->orientedBox.rotAux, ob->areaId);
++			}
++			else if (ob->type == DT_OBSTACLE_POLYGON)
++			{
++				dtMarkPolyArea(*bc.layer, tile->header->bmin, m_params.cs, m_params.ch,
++								ob->polygonBox.verts, ob->polygonBox.nverts, ob->areaId);
+ 			}
+ 		}
+ 	}
+@@ -822,4 +891,32 @@ void dtTileCache::getObstacleBounds(const struct dtTileCacheObstacle* ob, float*
+ 		bmin[2] = orientedBox.center[2] - maxr;
+ 		bmax[2] = orientedBox.center[2] + maxr;
+ 	}
++	else if (ob->type == DT_OBSTACLE_POLYGON)
++	{
++		// Convex hull obstacles
++		dtVcopy(bmin, ob->polygonBox.verts);
++		dtVcopy(bmax, ob->polygonBox.verts);
++
++		bmax[1] = bmin[1] + ob->polygonBox.height;
++		for (int i = 1; i < ob->polygonBox.nverts; i++)
++		{
++			if (ob->polygonBox.verts[i*3] < bmin[0])
++			{
++				bmin[0] = ob->polygonBox.verts[i*3];
++			}
++			else if (ob->polygonBox.verts[i*3] > bmax[0])
++			{
++				bmax[0] = ob->polygonBox.verts[i*3];
++			}
++
++			if (ob->polygonBox.verts[i*3+2] < bmin[2])
++			{
++				bmin[2] = ob->polygonBox.verts[i*3+2];
++			}
++			else if (ob->polygonBox.verts[i*3+2] > bmax[2])
++			{
++				bmax[2] = ob->polygonBox.verts[i*3+2];
++			}
++		}
++	}
+ }
+diff --git a/DetourTileCache/Source/DetourTileCacheBuilder.cpp b/DetourTileCache/Source/DetourTileCacheBuilder.cpp
+index dbc09eb..6f61f9f 100644
+--- a/DetourTileCache/Source/DetourTileCacheBuilder.cpp
++++ b/DetourTileCache/Source/DetourTileCacheBuilder.cpp
+@@ -2102,6 +2102,61 @@ dtStatus dtMarkBoxArea(dtTileCacheLayer& layer, const float* orig, const float c
+ 	return DT_SUCCESS;
+ }
+ 
++// Copy code from RecastArea.cpp::rcMarkConvexPolyArea(), omitting parameter rcContext *, and replacing rcCompactHeightfield with dtTileCacheLayer
++dtStatus dtMarkPolyArea(dtTileCacheLayer& layer, const float* orig,
++  const float cs, const float /*ch*/, const float* verts, const int nverts,
++  unsigned char areaId)
++{
++  float bmin[3], bmax[3];
++  dtVcopy(bmin, verts);
++  dtVcopy(bmax, verts);
++  for (int i = 1; i < nverts; ++i)
++  {
++    dtVmin(bmin, &verts[i*3]);
++    dtVmax(bmax, &verts[i*3]);
++  }
++
++  const int w = (int)layer.header->width;
++  const int h = (int)layer.header->height;
++  const float ics = 1.0f/cs;
++  //const float ich = 1.0f/ch;
++
++    int minx = (int)floorf((bmin[0]-orig[0])*ics);
++    //int miny = (int)floorf((bmin[1]-orig[1])*ich);
++    int minz = (int)floorf((bmin[2]-orig[2])*ics);
++    int maxx = (int)floorf((bmax[0]-orig[0])*ics);
++    //int maxy = (int)floorf((bmax[1]-orig[1])*ich);
++    int maxz = (int)floorf((bmax[2]-orig[2])*ics);
++
++    if (maxx < 0) return DT_SUCCESS;
++    if (minx >= w) return DT_SUCCESS;
++    if (maxz < 0) return DT_SUCCESS;
++    if (minz >= h) return DT_SUCCESS;
++
++    if (minx < 0) minx = 0;
++    if (maxx >= w) maxx = w-1;
++    if (minz < 0) minz = 0;
++    if (maxz >= h) maxz = h-1;
++
++  // TODO: Optimize.
++  for (int z = minz; z <= maxz; ++z)
++  {
++    for (int x = minx; x <= maxx; ++x)
++    {
++      float p[3];
++      p[0] = orig[0] + (x+0.5f)*cs;
++      p[1] = 0;
++      p[2] = orig[2] + (z+0.5f)*cs;
++
++      if (dtPointInPolygon(p, verts, nverts))
++      {
++        layer.areas[x+z*w] = areaId;
++      }
++    }
++  }
++  return DT_SUCCESS;
++}
++
+ dtStatus dtBuildTileCacheLayer(dtTileCacheCompressor* comp,
+ 							   dtTileCacheLayerHeader* header,
+ 							   const unsigned char* heights,

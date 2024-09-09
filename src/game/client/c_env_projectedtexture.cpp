@@ -291,6 +291,7 @@ void C_EnvProjectedTexture::UpdateLight( bool bForceUpdate )
 	m_FlashlightState.m_FarZ = m_flFarZ;
 	m_FlashlightState.m_flShadowSlopeScaleDepthBias = mat_slopescaledepthbias_shadowmap.GetFloat();
 	m_FlashlightState.m_flShadowDepthBias = mat_depthbias_shadowmap.GetFloat();
+	m_FlashlightState.m_flShadowFilterSize = 1.0f;
 	m_FlashlightState.m_bEnableShadows = m_bEnableShadows;
 	m_FlashlightState.m_pSpotlightTexture = m_SpotlightTexture;
 	m_FlashlightState.m_nSpotlightTextureFrame = m_nSpotlightTextureFrame;

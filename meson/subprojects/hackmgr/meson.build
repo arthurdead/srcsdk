@@ -4,6 +4,7 @@ assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compi
 
 src_root_dir = get_option('src_root_dir')
 game_dir = get_option('game_dir')
+build_libs = get_option('build_libs')
 
 source_base = subproject('source_base')
 
@@ -12,41 +13,68 @@ hackmgr_src_dir = join_paths(src_root_dir,'hackmgr')
 
 tier1 = subproject('tier1')
 tier0 = subproject('tier0')
+vstdlib = subproject('vstdlib')
 
-hackmgr_lib = shared_library('hackmgr',name_prefix:'',
-	cpp_args: [
-		'-DDLLNAME=hackmgr',
-		'-DBUILDING_HACKMGR'
-	],
-	sources: files(
-		join_paths(hackmgr_src_dir,'ishadowmgr.cpp'),
-		join_paths(hackmgr_src_dir,'dlloverride.cpp'),
-		join_paths(hackmgr_src_dir,'hackmgr.cpp'),
-		join_paths(hackmgr_src_dir,'hackmgr_client.cpp'),
-		join_paths(hackmgr_src_dir,'hackmgr_server.cpp'),
-		join_paths(hackmgr_src_dir,'engine_interface.cpp'),
-		join_paths(hackmgr_src_dir,'ivdebugoverlay.cpp'),
-		join_paths(hackmgr_src_dir,'isoundemittersystembase.cpp'),
+install_data(
+	files(
+		join_paths(hackmgr_src_dir,'hackmgr.vdf'),
 	),
-	include_directories: include_directories(
-		hackmgr_src_dir,
-		join_paths(public_dir,'tier0'),
-		join_paths(public_dir,'tier1'),
-		join_paths(public_dir,'hackmgr')
-	),
-	dependencies: [
-		tier1.get_variable('tier1_dep'),
-		tier0.get_variable('tier0_dep'),
-		source_base.get_variable('source_shared_lib_dep')
-	],
-	install: true,
-	install_dir: join_paths(game_dir,'bin'),
-	install_rpath: '$ORIGIN'
+	install_mode: 'r--r--r--',
+	install_dir: join_paths(game_dir,'bin')
 )
 
-hackmgr_dep = declare_dependency(
-	sources: files(
-		join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp')
-	),
-	link_with: hackmgr_lib
-)
+if build_libs
+	hackmgr_lib = shared_library('hackmgr',name_prefix:'',
+		cpp_args: [
+			'-DDLLNAME=hackmgr',
+			'-DBUILDING_HACKMGR'
+		],
+		sources: files(
+			join_paths(hackmgr_src_dir,'ishadowmgr.cpp'),
+			join_paths(hackmgr_src_dir,'dlloverride.cpp'),
+			join_paths(hackmgr_src_dir,'hackmgr.cpp'),
+			join_paths(hackmgr_src_dir,'hackmgr_client.cpp'),
+			join_paths(hackmgr_src_dir,'hackmgr_server.cpp'),
+			join_paths(hackmgr_src_dir,'createinterface.cpp'),
+			join_paths(hackmgr_src_dir,'ivdebugoverlay.cpp'),
+			join_paths(hackmgr_src_dir,'isoundemittersystembase.cpp'),
+			join_paths(hackmgr_src_dir,'IEngineTrace.cpp'),
+			join_paths(hackmgr_src_dir,'ivmodelinfo.cpp'),
+			join_paths(hackmgr_src_dir,'ivmodelrender.cpp'),
+			join_paths(hackmgr_src_dir,'IStaticPropMgr.cpp'),
+			join_paths(hackmgr_src_dir,'istudiorender.cpp'),
+			join_paths(hackmgr_src_dir,'commandline.cpp'),
+			join_paths(public_dir,'SoundParametersInternal.cpp'),
+			join_paths(public_dir,'interval.cpp'),
+		),
+		include_directories: include_directories(
+			hackmgr_src_dir,
+			join_paths(public_dir,'tier0'),
+			join_paths(public_dir,'tier1'),
+			join_paths(public_dir,'hackmgr')
+		),
+		dependencies: [
+			tier1.get_variable('tier1_dep'),
+			tier0.get_variable('tier0_dep'),
+			vstdlib.get_variable('vstdlib_dep'),
+			source_base.get_variable('source_shared_lib_dep')
+		],
+		install: true,
+		install_dir: join_paths(game_dir,'bin'),
+		install_rpath: '$ORIGIN'
+	)
+
+	hackmgr_dep = declare_dependency(
+		sources: files(
+			join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp')
+		),
+		link_with: hackmgr_lib
+	)
+else
+	hackmgr_dep = declare_dependency(
+		sources: files(
+			join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp')
+		),
+		link_args: '-l:hackmgr.so'
+	)
+endif

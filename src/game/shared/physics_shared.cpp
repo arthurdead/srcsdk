@@ -130,6 +130,39 @@ IPhysicsObject *PhysModelCreateBox( CBaseEntity *pEntity, const Vector &mins, co
 	return PhysModelCreateCustom( pEntity, pCollide, origin, vec3_angle, STRING(pEntity->GetModelName()), isStatic, &solid );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *pEntity - 
+//			&mins - 
+//			&maxs - 
+//			&origin - 
+//			isStatic - 
+// Output : static IPhysicsObject
+//-----------------------------------------------------------------------------
+IPhysicsObject *PhysModelCreateSphere( CBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic )
+{
+	int modelIndex = pEntity->GetModelIndex();
+	const char *pSurfaceProps = "flesh";
+	solid_t solid;
+	//PhysGetDefaultAABBSolid( solid );
+	solid.params = g_PhysDefaultObjectParams;
+
+	if ( modelIndex )
+	{
+		const model_t *model = modelinfo->GetModel( modelIndex );
+		if ( model )
+		{
+			CStudioHdr studioHdr( modelinfo->GetStudiomodel( model ), mdlcache );
+			if (studioHdr.IsValid()) 
+			{
+				pSurfaceProps = Studio_GetDefaultSurfaceProps( &studioHdr );
+			}
+		}
+	}
+	Q_strncpy( solid.surfaceprop, pSurfaceProps, sizeof( solid.surfaceprop ) );
+
+	return PhysSphereCreate( pEntity, radius, origin, isStatic, solid );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -464,6 +497,28 @@ IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vect
 
 //-----------------------------------------------------------------------------
 // Purpose: 
+// Input  : *pEntity - 
+//			radius - 
+//			&origin - 
+//			&solid - 
+// Output : IPhysicsObject
+//-----------------------------------------------------------------------------
+IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic, solid_t &solid )
+{
+	int surfaceProp = -1;
+	if ( solid.surfaceprop[0] )
+	{
+		surfaceProp = physprops->GetSurfaceIndex( solid.surfaceprop );
+	}
+
+	solid.params.pGameData = static_cast<void *>(pEntity);
+	IPhysicsObject *pObject = physenv->CreateSphereObject( radius, surfaceProp, origin, vec3_angle, &solid.params, false );
+
+	return pObject;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
 //-----------------------------------------------------------------------------
 void PhysGetDefaultAABBSolid( solid_t &solid )
 {
@@ -724,7 +779,7 @@ void CPhysicsGameTrace::VehicleTraceRayWithWater( const Ray_t &ray, void *pVehic
 //-----------------------------------------------------------------------------
 bool CPhysicsGameTrace::VehiclePointInWater( const Vector &vecPoint )
 {
-	return ( ( UTIL_PointContents( vecPoint ) & MASK_WATER ) != 0 );
+	return ( ( UTIL_PointContents( vecPoint, MASK_WATER ) & MASK_WATER ) != 0 );
 }
 
 void PhysRecheckObjectPair( IPhysicsObject *pObject0, IPhysicsObject *pObject1 )

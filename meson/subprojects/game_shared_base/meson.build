@@ -1,6 +1,7 @@
-project('source_game','cpp')
+project('game_shared_base','cpp','c')
 
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+assert(meson.get_compiler('c').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 
 src_root_dir = get_option('src_root_dir')
 
@@ -18,15 +19,19 @@ tier2 = subproject('tier2')
 tier3 = subproject('tier3')
 steamworks = subproject('steamworks')
 hackmgr = subproject('hackmgr')
+game_loopback = subproject('game_loopback')
+recastnavigation_game = subproject('recastnavigation_game')
 
 public_dir = join_paths(src_root_dir,'public')
 common_dir = join_paths(src_root_dir,'common')
 
 shared_src_dir = join_paths(src_root_dir,'game','shared')
+shared_navmesh_src_dir = join_paths(shared_src_dir,'navmesh')
 
 game_shared_base_dep = declare_dependency(
 	compile_args: [
-		
+		'-DUSE_NAV_MESH',
+		'-DAI_USES_NAV_MESH'
 	],
 	sources: files(
 		join_paths(shared_src_dir,'default','weapon_parse_default.cpp'),
@@ -98,7 +103,6 @@ game_shared_base_dep = declare_dependency(
 		join_paths(shared_src_dir,'weapon_parse.cpp'),
 		join_paths(shared_src_dir,'weapon_proficiency.cpp'),
 		join_paths(shared_src_dir,'mp_shareddefs.cpp'),
-		join_paths(shared_src_dir,'interval.cpp'),
 		join_paths(shared_src_dir,'sheetsimulator.cpp'),
 		join_paths(shared_src_dir,'usermessages.cpp'),
 		join_paths(shared_src_dir,'SpriteTrail.cpp'),
@@ -112,6 +116,15 @@ game_shared_base_dep = declare_dependency(
 		join_paths(shared_src_dir,'ai_speechconcept.cpp'),
 		join_paths(shared_src_dir,'game_timescale_shared.cpp'),
 		join_paths(shared_src_dir,'map_entity.cpp'),
+		join_paths(shared_src_dir,'ai_waypoint.cpp'),
+		#join_paths(shared_src_dir,'recast','recast_file.cpp'),
+		#join_paths(shared_src_dir,'recast','recast_mesh.cpp'),
+		#join_paths(shared_src_dir,'recast','recast_mgr.cpp'),
+		#join_paths(shared_src_dir,'recast','recast_mgr_ent.cpp'),
+		#join_paths(shared_src_dir,'recast','recast_prunetool.cpp'),
+		#join_paths(shared_src_dir,'recast','recast_tilecache_helpers.cpp'),
+		#join_paths(shared_src_dir,'recast','fastlz','fastlz.c'),
+		join_paths(public_dir,'interval.cpp'),
 		join_paths(public_dir,'SoundParametersInternal.cpp'),
 		join_paths(public_dir,'bone_setup.cpp'),
 		join_paths(public_dir,'bone_accessor.cpp'),
@@ -144,6 +157,7 @@ game_shared_base_dep = declare_dependency(
 	),
 	include_directories: include_directories(
 		shared_src_dir,
+		shared_navmesh_src_dir
 	),
 	dependencies: [
 		source_base.get_variable('source_slop_dep'),
@@ -161,5 +175,6 @@ game_shared_base_dep = declare_dependency(
 		tier3.get_variable('tier3_dep'),
 		steamworks.get_variable('steamworks_dep'),
 		hackmgr.get_variable('hackmgr_dep'),
+		recastnavigation_game.get_variable('recastnavigation_game_dep'),
 	]
 )

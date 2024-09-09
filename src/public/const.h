@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "tier0/dbg.h"
+
 // the command line param that tells the engine to use steam
 #define STEAM_PARM					"-steam"
 // the command line param to tell dedicated server to restart 
@@ -75,13 +77,21 @@
 #define SIGNED_GUID_LEN 32 // Hashed CD Key (32 hex alphabetic chars + 0 terminator )
 
 // Used for networking ehandles.
-#define NUM_ENT_ENTRY_BITS		(MAX_EDICT_BITS + 1)
-#define NUM_ENT_ENTRIES			(1 << NUM_ENT_ENTRY_BITS)
-#define ENT_ENTRY_MASK			(NUM_ENT_ENTRIES - 1)
+#define ENGINE_NUM_ENT_ENTRY_BITS		(MAX_EDICT_BITS + 1)
+#define ENGINE_NUM_ENT_ENTRIES			(1 << ENGINE_NUM_ENT_ENTRY_BITS)
+#define ENGINE_ENT_ENTRY_MASK			(ENGINE_NUM_ENT_ENTRIES - 1)
+#define ENGINE_NUM_SERIAL_NUM_BITS		(32 - ENGINE_NUM_ENT_ENTRY_BITS)
+
+#define GAME_NUM_ENT_ENTRY_BITS		(MAX_EDICT_BITS + 4)
+#define GAME_NUM_ENT_ENTRIES			(1 << GAME_NUM_ENT_ENTRY_BITS)
+#define GAME_NUM_SERIAL_NUM_BITS		16
+#define GAME_NUM_SERIAL_NUM_SHIFT_BITS (32 - GAME_NUM_SERIAL_NUM_BITS)
+#define GAME_ENT_ENTRY_MASK			(( 1 << (GAME_NUM_SERIAL_NUM_BITS - 1)) - 1)
+
+// Bit used for testing the extension
+#define GAME_EHANDLE_TEST_BIT		(1 << 31)
+
 #define INVALID_EHANDLE_INDEX	0xFFFFFFFF
-
-#define NUM_SERIAL_NUM_BITS		(32 - NUM_ENT_ENTRY_BITS)
-
 
 // Networked ehandles use less bits to encode the serial number.
 #define NUM_NETWORKED_EHANDLE_SERIAL_NUMBER_BITS	10

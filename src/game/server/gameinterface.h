@@ -153,6 +153,10 @@ private:
 	void LevelInit_ParseAllEntities( const char *pMapEntities );
 	void LoadMessageOfTheDay();
 	void LoadSpecificMOTDMsg( const ConVar &convar, const char *pszStringName );
+
+	bool m_bWasPaused;
+	float m_fPauseTime;
+	int m_nPauseTick;
 };
 
 extern ConVar sv_force_transmit_ents;

@@ -362,7 +362,7 @@ int CBaseProp::ParsePropData( void )
 		return PARSE_FAILED_NO_DATA;
 	}
 
-	int iResult = g_PropDataSystem.ParsePropFromKV( this, pkvPropData, modelKeyValues );
+	int iResult = g_PropDataSystem.ParsePropFromKV( this, dynamic_cast<IBreakableWithPropData *>(this), pkvPropData, modelKeyValues );
 	modelKeyValues->deleteThis();
 	return iResult;
 }
@@ -2953,52 +2953,6 @@ void CPhysicsProp::OnPhysGunDrop( CBasePlayer *pPhysGunUser, PhysGunDrop_t Reaso
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Get the specified key's angles for this prop from the QC's physgun_interactions
-//-----------------------------------------------------------------------------
-bool CPhysicsProp::GetPropDataAngles( const char *pKeyName, QAngle &vecAngles )
-{
-	KeyValues *modelKeyValues = new KeyValues("");
-	if ( modelKeyValues->LoadFromBuffer( modelinfo->GetModelName( GetModel() ), modelinfo->GetModelKeyValueText( GetModel() ) ) )
-	{
-		KeyValues *pkvPropData = modelKeyValues->FindKey( "physgun_interactions" );
-		if ( pkvPropData )
-		{
-			char const *pszBase = pkvPropData->GetString( pKeyName );
-			if ( pszBase && pszBase[0] )
-			{
-				UTIL_StringToVector( vecAngles.Base(), pszBase );
-				modelKeyValues->deleteThis();
-				return true;
-			}
-		}
-	}
-
-	modelKeyValues->deleteThis();
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-float CPhysicsProp::GetCarryDistanceOffset( void )
-{
-	KeyValues *modelKeyValues = new KeyValues("");
-	if ( modelKeyValues->LoadFromBuffer( modelinfo->GetModelName( GetModel() ), modelinfo->GetModelKeyValueText( GetModel() ) ) )
-	{
-		KeyValues *pkvPropData = modelKeyValues->FindKey( "physgun_interactions" );
-		if ( pkvPropData )
-		{
-			float flDistance = pkvPropData->GetFloat( "carry_distance_offset", 0 );
-			modelKeyValues->deleteThis();
-			return flDistance;
-		}
-	}
-
-	modelKeyValues->deleteThis();
-	return 0;
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 int CPhysicsProp::ObjectCaps()
@@ -3746,14 +3700,12 @@ int PropBreakablePrecacheAll( string_t modelName )
 	return iBreakables;
 }
 
-bool PropBreakableCapEdictsOnCreateAll(int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CBaseEntity *pEntity, int iPrecomputedBreakableCount = -1 )
+bool PropBreakableCapEdictsOnCreateAll( CUtlVector<breakmodel_t> &list, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CBaseEntity *pEntity, int iPrecomputedBreakableCount = -1 )
 {
 	// @Note (toml 10-07-03): this is stop-gap to prevent this function from crashing the engine
 	const int BREATHING_ROOM = 64;
+	int nCurrentEntityCount = engine->GetEntityCount();
 
-	CUtlVector<breakmodel_t> list;
-	BreakModelList( list, modelindex, params.defBurstScale, params.defCollisionGroup );
-	
 	int numToCreate = 0;
 
 	if ( iPrecomputedBreakableCount != -1 )
@@ -3764,12 +3716,21 @@ bool PropBreakableCapEdictsOnCreateAll(int modelindex, IPhysicsObject *pPhysics,
 	{
 		if ( list.Count() ) 
 		{
-			for ( int i = 0; i < list.Count(); i++ )
+			// if there are enough don't bother checking each piece
+			int nCurrentAvailable = MAX_EDICTS - (nCurrentEntityCount + BREATHING_ROOM);
+			if ( nCurrentAvailable > list.Count() )
 			{
-				int modelIndex = modelinfo->GetModelIndex( list[i].modelName );
-				if ( modelIndex <= 0 )
-					continue;
-				numToCreate++;
+				numToCreate = list.Count();
+			}
+			else
+			{
+				for ( int i = 0; i < list.Count(); i++ )
+				{
+					int modelIndex = modelinfo->GetModelIndex( list[i].modelName );
+					if ( modelIndex <= 0 )
+						continue;
+					numToCreate++;
+				}
 			}
 		}
 		// Then see if the propdata specifies any breakable pieces
@@ -3783,7 +3744,15 @@ bool PropBreakableCapEdictsOnCreateAll(int modelindex, IPhysicsObject *pPhysics,
 		}
 	}
 
-	return ( !numToCreate || ( engine->GetEntityCount() + numToCreate + BREATHING_ROOM < MAX_EDICTS ) );
+	return ( !numToCreate || ( nCurrentEntityCount + numToCreate + BREATHING_ROOM < MAX_EDICTS ) );
+}
+
+bool PropBreakableCapEdictsOnCreateAll(int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CBaseEntity *pEntity, int iPrecomputedBreakableCount = -1 )
+{
+	CUtlVector<breakmodel_t> list;
+	BreakModelList( list, modelindex, params.defBurstScale, params.defCollisionGroup );
+	
+	return PropBreakableCapEdictsOnCreateAll( list, pPhysics, params, pEntity, iPrecomputedBreakableCount );
 }
 
 

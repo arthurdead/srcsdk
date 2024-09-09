@@ -97,7 +97,7 @@ static ConCommand test_freezeframe( "test_freezeframe", testfreezeframe_f, "Test
 
 //-----------------------------------------------------------------------------
 
-static ConVar r_visocclusion( "r_visocclusion", "0", FCVAR_CHEAT );
+ConVar r_visocclusion( "r_visocclusion", "0", FCVAR_CHEAT );
 extern ConVar r_flashlightdepthtexture;
 extern ConVar vcollide_wireframe;
 extern ConVar mat_motion_blur_enabled;
@@ -109,19 +109,19 @@ extern bool g_bDumpRenderTargets;
 //-----------------------------------------------------------------------------
 // Convars related to controlling rendering
 //-----------------------------------------------------------------------------
-static ConVar cl_maxrenderable_dist("cl_maxrenderable_dist", "3000", FCVAR_CHEAT, "Max distance from the camera at which things will be rendered" );
+ConVar cl_maxrenderable_dist("cl_maxrenderable_dist", "3000", FCVAR_CHEAT, "Max distance from the camera at which things will be rendered" );
 
 ConVar r_entityclips( "r_entityclips", "1" ); //FIXME: Nvidia drivers before 81.94 on cards that support user clip planes will have problems with this, require driver update? Detect and disable?
 
 // Matches the version in the engine
-static ConVar r_drawopaqueworld( "r_drawopaqueworld", "1", FCVAR_CHEAT );
-static ConVar r_drawtranslucentworld( "r_drawtranslucentworld", "1", FCVAR_CHEAT );
+ConVar r_drawopaqueworld( "r_drawopaqueworld", "1", FCVAR_CHEAT );
+ConVar r_drawtranslucentworld( "r_drawtranslucentworld", "1", FCVAR_CHEAT );
 ConVar r_3dsky( "r_3dsky","1", 0, "Enable the rendering of 3d sky boxes" );
 ConVar r_skybox( "r_skybox","1", FCVAR_CHEAT, "Enable the rendering of sky boxes" );
 ConVar r_drawviewmodel( "r_drawviewmodel","1", FCVAR_CHEAT );
-static ConVar r_drawtranslucentrenderables( "r_drawtranslucentrenderables", "1", FCVAR_CHEAT );
+ConVar r_drawtranslucentrenderables( "r_drawtranslucentrenderables", "1", FCVAR_CHEAT );
 ConVar r_drawopaquerenderables( "r_drawopaquerenderables", "1", FCVAR_CHEAT );
-static ConVar r_threaded_renderables( "r_threaded_renderables", "0" );
+static ConVar r_threaded_renderables( "r_threaded_renderables", "1" );
 
 // FIXME: This is not static because we needed to turn it off for TF2 playtests
 ConVar r_DrawDetailProps( "r_DrawDetailProps", "1", FCVAR_NONE, "0=Off, 1=Normal, 2=Wireframe" );
@@ -2532,6 +2532,10 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 
 		GetClientMode()->DoPostScreenSpaceEffects( &view );
 
+		// Draw client side effects post screen effects
+		// NOTE: These are not sorted against the rest of the frame
+		clienteffects->DrawEffects( gpGlobals->frametime, BITS_CLIENTEFFECT_POSTSCREEN );	
+
 		CleanupMain3DView( view );
 
 		if ( m_rbTakeFreezeFrame )
@@ -2707,6 +2711,8 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 	g_WorldListCache.Flush();
 
 	m_CurrentView = view;
+
+	g_pModelRenderSystem->CleanupRenderData();
 }
 
 //-----------------------------------------------------------------------------

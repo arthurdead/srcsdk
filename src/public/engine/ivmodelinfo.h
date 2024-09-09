@@ -12,6 +12,7 @@
 
 #include "platform.h"
 #include "dbg.h"
+#include "hackmgr/hackmgr.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -130,9 +131,12 @@ public:
 	virtual bool					IsTranslucent( model_t const* model ) const = 0;
 	virtual bool					IsTranslucentTwoPass( const model_t *model ) const = 0;
 	virtual void					RecomputeTranslucency( const model_t *model, int nSkin, int nBody, void /*IClientRenderable*/ *pClientRenderable, float fInstanceAlphaModulate=1.0f) = 0;
+	HACKMGR_CLASS_API RenderableTranslucencyType_t ComputeTranslucencyType( const model_t *model, int nSkin, int nBody );
 	virtual int						GetModelMaterialCount( const model_t* model ) const = 0;
 	virtual void					GetModelMaterials( const model_t *model, int count, IMaterial** ppMaterial ) = 0;
 	virtual bool					IsModelVertexLit( const model_t *model ) const = 0;
+	HACKMGR_CLASS_API bool UsesEnvCubemap( const model_t *model ) const;
+	HACKMGR_CLASS_API bool UsesStaticLighting( const model_t *model ) const;
 	virtual const char				*GetModelKeyValueText( const model_t *model ) = 0;
 	virtual bool					GetModelKeyValue( const model_t *model, CUtlBuffer &buf ) = 0; // supports keyvalue blocks in submodels
 	virtual float					GetModelRadius( const model_t *model ) = 0;
@@ -175,13 +179,13 @@ public:
 	virtual bool					IsUsingFBTexture( const model_t *model, int nSkin, int nBody, void /*IClientRenderable*/ *pClientRenderable ) const = 0;
 
 	// Obsolete methods. These are left in to maintain binary compatibility with clients using the IVModelInfo old version.
-	virtual const model_t			*FindOrLoadModel( const char *name ) { Warning( "IVModelInfo::FindOrLoadModel is now obsolte.\n" ); return NULL; }
-	virtual void					InitDynamicModels( ) { Warning( "IVModelInfo::InitDynamicModels is now obsolte.\n" ); }
-	virtual void					ShutdownDynamicModels( ) { Warning( "IVModelInfo::ShutdownDynamicModels is now obsolte.\n" ); }
-	virtual void					AddDynamicModel( const char *name, int nModelIndex = -1 ) { Warning( "IVModelInfo::AddDynamicModel is now obsolte.\n" ); }
-	virtual void					ReferenceModel( int modelindex ) { Warning( "IVModelInfo::ReferenceModel is now obsolte.\n" ); }
-	virtual void					UnreferenceModel( int modelindex ) { Warning( "IVModelInfo::UnreferenceModel is now obsolte.\n" ); }
-	virtual void					CleanupDynamicModels( bool bForce = false ) { Warning( "IVModelInfo::CleanupDynamicModels is now obsolte.\n" ); }
+	virtual const model_t			*FindOrLoadModel( const char *name ) { Assert(0); Warning( "IVModelInfo::FindOrLoadModel is now obsolte.\n" ); return NULL; }
+	virtual void					InitDynamicModels( ) { Assert(0); Warning( "IVModelInfo::InitDynamicModels is now obsolte.\n" ); }
+	virtual void					ShutdownDynamicModels( ) { Assert(0); Warning( "IVModelInfo::ShutdownDynamicModels is now obsolte.\n" ); }
+	virtual void					AddDynamicModel( const char *name, int nModelIndex = -1 ) { Assert(0); Warning( "IVModelInfo::AddDynamicModel is now obsolte.\n" ); }
+	virtual void					ReferenceModel( int modelindex ) { Assert(0); Warning( "IVModelInfo::ReferenceModel is now obsolte.\n" ); }
+	virtual void					UnreferenceModel( int modelindex ) { Assert(0); Warning( "IVModelInfo::UnreferenceModel is now obsolte.\n" ); }
+	virtual void					CleanupDynamicModels( bool bForce = false ) { Assert(0); Warning( "IVModelInfo::CleanupDynamicModels is now obsolte.\n" ); }
 
 	virtual MDLHandle_t				GetCacheHandle( const model_t *model ) const = 0;
 
@@ -208,9 +212,6 @@ public:
 	virtual bool					RegisterModelLoadCallback( int modelindex, IModelLoadCallback* pCallback, bool bCallImmediatelyIfLoaded = true ) = 0;
 	virtual void					UnregisterModelLoadCallback( int modelindex, IModelLoadCallback* pCallback ) = 0;
 };
-
-typedef IVModelInfo IVModelInfo003;
-
 
 abstract_class IVModelInfoClient : public IVModelInfo
 {

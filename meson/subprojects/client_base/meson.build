@@ -1,6 +1,7 @@
-project('source_game','cpp')
+project('client_base','cpp','c')
 
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+assert(meson.get_compiler('c').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 
 src_root_dir = get_option('src_root_dir')
 
@@ -331,6 +332,11 @@ client_base_dep = declare_dependency(
 		join_paths(client_src_dir,'c_func_movelinear.cpp'),
 		join_paths(client_src_dir,'c_entityflame.cpp'),
 		join_paths(client_src_dir,'train.cpp'),
+		join_paths(client_src_dir,'modelrendersystem.cpp'),
+		#join_paths(client_src_dir,'recast','recast_debugdraw.cpp'),
+		#join_paths(client_src_dir,'recast','recast_debugdrawmesh.cpp'),
+		#join_paths(client_src_dir,'recast','recast_detourdebugdraw.cpp'),
+		#join_paths(client_src_dir,'recast','recast_recastdebugdraw.cpp'),
 		join_paths(client_game_ctrls_src_dir,'baseviewport.cpp'),
 		join_paths(client_game_ctrls_src_dir,'basemodelpanel_matsys.cpp'),
 		join_paths(client_game_ctrls_src_dir,'basemodelpanel_game.cpp'),

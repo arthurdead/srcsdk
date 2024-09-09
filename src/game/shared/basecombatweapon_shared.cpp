@@ -1863,7 +1863,7 @@ void CBaseCombatWeapon::WeaponSound( WeaponSound_t sound_type, float soundtime /
 			{
 				filter.UsePredictionRules();
 			}
-			EmitSound( filter, GetOwner()->entindex(), shootsound, NULL, soundtime ); 
+			EmitSound( filter, GetOwner()->entindex(), shootsound, &GetOwner()->GetAbsOrigin(), soundtime ); 
 
 #if !defined( CLIENT_DLL )
 			if( sound_type == EMPTY )
@@ -1880,7 +1880,7 @@ void CBaseCombatWeapon::WeaponSound( WeaponSound_t sound_type, float soundtime /
 			{
 				filter.UsePredictionRules();
 			}
-			EmitSound( filter, entindex(), shootsound, NULL, soundtime ); 
+			EmitSound( filter, entindex(), shootsound, &GetAbsOrigin(), soundtime ); 
 		}
 	}
 }
@@ -2465,6 +2465,50 @@ Activity CBaseCombatWeapon::ActivityOverride( Activity baseAct, bool *pRequired 
 	return baseAct;
 }
 
+void CBaseCombatWeapon::Operator_FrameUpdate( CBaseCombatCharacter *pOperator )
+{
+	StudioFrameAdvance( ); // animate
+
+	if ( IsSequenceFinished() )
+	{
+		if ( SequenceLoops() )
+		{
+			// animation does loop, which means we're playing subtle idle. Might need to fidget.
+			int iSequence = SelectWeightedSequence( GetActivity() );
+			if ( iSequence != ACTIVITY_NOT_AVAILABLE )
+			{
+				ResetSequence( iSequence );	// Set to new anim (if it's there)
+			}
+		}
+#if 0
+		else
+		{
+			// animation that just ended doesn't loop! That means we just finished a fidget
+			// and should return to our heaviest weighted idle (the subtle one)
+			SelectHeaviestSequence( GetActivity() );
+		}
+#endif
+	}
+
+#ifndef CLIENT_DLL
+	// Animation events are passed back to the weapon's owner/operator
+	DispatchAnimEvents( pOperator );
+#endif // CLIENT_DLL
+
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	if ( pOwner == NULL )
+		return;
+
+	CBaseViewModel *vm = pOwner->GetViewModel( m_nViewModelIndex );
+	// Update and dispatch the viewmodel events
+	if ( vm != NULL )
+	{
+		vm->StudioFrameAdvance();
+#ifndef CLIENT_DLL
+		vm->DispatchAnimEvents( this );
+#endif // CLIENT_DLL
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose:

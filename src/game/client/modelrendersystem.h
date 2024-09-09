@@ -58,6 +58,8 @@ public:
 	virtual void CleanupTranslucentTempData( TranslucentTempData_t *pTempData ) = 0;
 
 	virtual IMaterial *GetFastPathColorMaterial() = 0;
+
+	virtual void CleanupRenderData() = 0;
 };
 
 

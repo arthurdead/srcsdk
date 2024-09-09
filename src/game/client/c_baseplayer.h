@@ -28,6 +28,7 @@
 #include "c_colorcorrection.h"
 #include "c_postprocesscontroller.h"
 #include "playeranimstate.h"
+#include "util_shared.h"
 
 class C_BaseCombatWeapon;
 class C_BaseViewModel;
@@ -320,7 +321,7 @@ public:
 	virtual void				ViewPunch( const QAngle &angleOffset );
 	void						ViewPunchReset( float tolerance = 0 );
 
-	void						UpdateButtonState( int nUserCmdButtonMask );
+	virtual void						UpdateButtonState( int nUserCmdButtonMask );
 	int							GetImpulse( void ) const;
 
 	virtual bool				Simulate();
@@ -760,6 +761,31 @@ inline C_BaseEntity *C_BasePlayer::GetUseEntity() const
 inline C_BaseEntity* C_BasePlayer::GetPotentialUseEntity( void ) const 
 { 
 	return GetUseEntity();
+}
+
+//--------------------------------------------------------------------------------------------------------------
+/**
+ * Iterate over all active players in the game, invoking functor on each.
+ * If functor returns false, stop iteration and return false.
+ */
+template < typename Functor >
+bool ForEachPlayer( Functor &func )
+{
+    for( int i=1; i<=gpGlobals->maxClients; ++i )
+    {
+            CBasePlayer *player = static_cast<C_BasePlayer *>( UTIL_PlayerByIndex( i ) );
+
+            if (player == NULL)
+                    continue;
+
+            if (!player->IsPlayer())
+                    continue;
+
+            if (func( player ) == false)
+                    return false;
+    }
+
+    return true;
 }
 
 inline IClientVehicle *C_BasePlayer::GetVehicle() 

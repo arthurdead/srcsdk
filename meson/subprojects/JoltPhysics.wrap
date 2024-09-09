@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/jrouwe/JoltPhysics.git
+revision = head
+depth = 1
+method = cmake
+patch_directory = JoltPhysics
+diff_files = JoltPhysics/JoltPhysics.patch

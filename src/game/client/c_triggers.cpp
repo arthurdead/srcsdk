@@ -19,6 +19,23 @@ IMPLEMENT_CLIENTCLASS_DT( C_BaseTrigger, DT_BaseTrigger, CBaseTrigger )
 END_RECV_TABLE()
 
 //-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void C_BaseTrigger::UpdatePartitionListEntry()
+{
+	if ( !m_bClientSidePredicted )
+	{
+		BaseClass::UpdatePartitionListEntry();
+		return;
+	}
+
+	partition->RemoveAndInsert( 
+		PARTITION_CLIENT_SOLID_EDICTS | PARTITION_CLIENT_RESPONSIVE_EDICTS | PARTITION_CLIENT_NON_STATIC_EDICTS,  // remove
+		PARTITION_CLIENT_TRIGGER_ENTITIES,  // add
+		CollisionProp()->GetPartitionHandle() );
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Disables auto movement on players that touch it
 //-----------------------------------------------------------------------------
 class C_TriggerPlayerMovement : public C_BaseTrigger

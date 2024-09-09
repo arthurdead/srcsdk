@@ -13,6 +13,8 @@
 #include "basehandle.h"
 #include "utlvector.h" //need CUtlVector for IEngineTrace::GetBrushesIn*()
 #include "mathlib/vector4d.h"
+#include "bspflags.h"
+#include "hackmgr/hackmgr.h"
 
 class Vector;
 class IHandleEntity;
@@ -22,8 +24,10 @@ typedef CGameTrace trace_t;
 class ICollideable;
 class QAngle;
 class CTraceListData;
+typedef CTraceListData ITraceListData;
 class CPhysCollide;
 struct cplane_t;
+struct virtualmeshlist_t;
 
 //-----------------------------------------------------------------------------
 // The standard trace filter... NOTE: Most normal traces inherit from CTraceFilter!!!
@@ -106,6 +110,11 @@ public:
 	}
 };
 
+enum DebugTraceCounterBehavior_t
+{
+	kTRACE_COUNTER_SET = 0,
+	kTRACE_COUNTER_INC,
+};
 
 //-----------------------------------------------------------------------------
 // Enumeration interface for EnumerateLinkEntities
@@ -117,6 +126,12 @@ public:
 	virtual bool EnumEntity( IHandleEntity *pHandleEntity ) = 0; 
 };
 
+struct BrushSideInfo_t
+{
+	Vector4D plane;			// The plane of the brush side
+	unsigned short bevel;	// Bevel plane?
+	unsigned short thin;	// Thin?
+};
 
 //-----------------------------------------------------------------------------
 // Interface the engine exposes to the game DLL
@@ -125,10 +140,17 @@ public:
 #define INTERFACEVERSION_ENGINETRACE_CLIENT	"EngineTraceClient003"
 abstract_class IEngineTrace
 {
+private:
+	// Returns the contents mask + entity at a particular world-space position
+	virtual int		DO_NOT_USE_GetPointContents( const Vector &vecAbsPosition, IHandleEntity** ppEntity ) = 0;
+
 public:
 	// Returns the contents mask + entity at a particular world-space position
-	virtual int		GetPointContents( const Vector &vecAbsPosition, IHandleEntity** ppEntity = NULL ) = 0;
+	HACKMGR_CLASS_API int		GetPointContents( const Vector &vecAbsPosition, int contentsMask = MASK_ALL, IHandleEntity** ppEntity = NULL );
 	
+	// Returns the contents mask of the world only @ the world-space position (static props are ignored)
+	HACKMGR_CLASS_API int		GetPointContents_WorldOnly( const Vector &vecAbsPosition, int contentsMask = MASK_ALL );
+
 	// Get the point contents, but only test the specific entity. This works
 	// on static props and brush models.
 	//
@@ -179,10 +201,25 @@ public:
 	//retrieve brush planes and contents, returns true if data is being returned in the output pointers, false if the brush doesn't exist
 	virtual bool GetBrushInfo( int iBrush, CUtlVector<Vector4D> *pPlanesOut, int *pContentsOut ) = 0;
 
+	// gets the number of displacements in the world
+	HACKMGR_CLASS_API int GetNumDisplacements( );
+
+	// gets a specific diplacement mesh
+	HACKMGR_CLASS_API void GetDisplacementMesh( int nIndex, virtualmeshlist_t *pMeshTriList );
+	
+	//retrieve brush planes and contents, returns true if data is being returned in the output pointers, false if the brush doesn't exist
+	HACKMGR_CLASS_API bool GetBrushInfo( int iBrush, CUtlVector<BrushSideInfo_t> *pBrushSideInfoOut, int *pContentsOut );
+
 	virtual bool PointOutsideWorld( const Vector &ptTest ) = 0; //Tests a point to see if it's outside any playable area
 
 	// Walks bsp to find the leaf containing the specified point
 	virtual int GetLeafContainingPoint( const Vector &ptTest ) = 0;
+
+	HACKMGR_CLASS_API ITraceListData *AllocTraceListData();
+	HACKMGR_CLASS_API void FreeTraceListData(ITraceListData *);
+
+	/// Used only in debugging: get/set/clear/increment the trace debug counter. See comment below for details.
+	HACKMGR_CLASS_API int GetSetDebugTraceCounter( int value, DebugTraceCounterBehavior_t behavior );
 };
 
 

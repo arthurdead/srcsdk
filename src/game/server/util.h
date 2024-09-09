@@ -187,6 +187,8 @@ abstract_class IEntityFactoryDictionary
 {
 public:
 	virtual void InstallFactory( IEntityFactory *pFactory, const char *pClassName ) = 0;
+	virtual void RemoveFactory( const char *pClassName ) = 0;
+	virtual bool HasFactory( IEntityFactory *pFactory, const char *pClassName ) = 0;
 	virtual CBaseEntity *Create( const char *pClassName ) = 0;
 	virtual void Destroy( const char *pClassName, CBaseEntity *pNetworkable ) = 0;
 	virtual IEntityFactory *FindFactory( const char *pClassName ) = 0;
@@ -237,7 +239,7 @@ public:
 };
 
 #define LINK_ENTITY_TO_CLASS(mapClassName,DLLClassName) \
-	static CEntityFactory<DLLClassName> mapClassName##Factory( #mapClassName );
+	INIT_PRIORITY(65535) static CEntityFactory<DLLClassName> mapClassName##Factory( #mapClassName );
 
 
 //

@@ -64,6 +64,7 @@
 #include "videocfg/videocfg.h"
 #include "player_lagcompensation.h"
 #include "ai_speech.h"
+#include "recast/recast_mgr.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -459,9 +460,9 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 
 	SendPropInt			(SENDINFO(m_cellbits), MINIMUM_BITS_NEEDED( 32 ), SPROP_UNSIGNED, 0, SENDPROP_CELL_INFO_PRIORITY ),
 //	SendPropArray       (SendPropInt(SENDINFO_ARRAY(m_cellXY), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_CHANGES_OFTEN ), m_cellXY),
-	SendPropInt			(SENDINFO(m_cellX), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED, CBaseEntity::SendProxy_CellX, SENDPROP_CELL_INFO_PRIORITY ), // 32 priority in the send table
-	SendPropInt			(SENDINFO(m_cellY), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED, CBaseEntity::SendProxy_CellY, SENDPROP_CELL_INFO_PRIORITY ),
-	SendPropInt			(SENDINFO(m_cellZ), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED, CBaseEntity::SendProxy_CellZ, SENDPROP_CELL_INFO_PRIORITY ),
+	SendPropInt			(SENDINFO(m_cellX), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellX, SENDPROP_CELL_INFO_PRIORITY ), // 32 priority in the send table
+	SendPropInt			(SENDINFO(m_cellY), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellY, SENDPROP_CELL_INFO_PRIORITY ),
+	SendPropInt			(SENDINFO(m_cellZ), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellZ, SENDPROP_CELL_INFO_PRIORITY ),
 
 	SendPropVector		(SENDINFO(m_vecOrigin), CELL_BASEENTITY_ORIGIN_CELL_BITS, SENDPROP_VECORIGIN_FLAGS, 0.0f, HIGH_DEFAULT, CBaseEntity::SendProxy_CellOrigin ),
 
@@ -504,6 +505,8 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 #ifdef TF_DLL
 	SendPropArray3( SENDINFO_ARRAY3(m_nModelIndexOverrides), SendPropInt( SENDINFO_ARRAY(m_nModelIndexOverrides), SP_MODEL_INDEX_BITS, 0 ) ),
 #endif
+
+	SendPropFloat(SENDINFO(m_fViewDistance),				0, SPROP_COORD),
 
 	// Fading
 	SendPropFloat( SENDINFO( m_fadeMinDist ),			0, SPROP_NOSCALE ),
@@ -634,6 +637,8 @@ CBaseEntity::CBaseEntity()
 	m_flCreateTime = 0.0f;
 
 	m_pEvent = NULL;
+
+	m_NavObstacleRef = NAV_OBSTACLE_INVALID_INDEX;
 }
 
 //-----------------------------------------------------------------------------
@@ -705,7 +710,8 @@ void CBaseEntity::PostConstructor( const char *szClassname )
 	// Possibly get an edict, and add self to global list of entites.
 	if ( IsEFlagSet( EFL_NOT_NETWORKED ) )
 	{
-		gEntList.AddNonNetworkableEntity( this );
+		if( !m_bDoNotRegisterEntity )
+			gEntList.AddNonNetworkableEntity( this );
 	}
 	else
 	{
@@ -1831,7 +1837,7 @@ void CBaseEntity::Activate( void )
 // Returns the amount of health actually taken.
 int CBaseEntity::TakeHealth( float flHealth, int bitsDamageType )
 {
-	if ( !edict() || m_takedamage < DAMAGE_YES )
+	if ( (!edict() && !IsEFlagSet( EFL_NOT_NETWORKED )) || m_takedamage < DAMAGE_YES )
 		return 0;
 
 	int iMax = GetMaxHealth();
@@ -1856,7 +1862,7 @@ int CBaseEntity::OnTakeDamage( const CTakeDamageInfo &info )
 {
 	Vector			vecTemp;
 
-	if ( !edict() || !m_takedamage )
+	if ( (!edict() && !IsEFlagSet( EFL_NOT_NETWORKED )) || !m_takedamage )
 		return 0;
 
 	if ( info.GetInflictor() )

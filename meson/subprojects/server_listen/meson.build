@@ -1,6 +1,7 @@
-project('game', 'cpp')
+project('server_listen', 'cpp', 'c')
 
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+assert(meson.get_compiler('c').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 
 src_root_dir = get_option('src_root_dir')
 game_dir = get_option('game_dir')

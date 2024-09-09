@@ -1632,7 +1632,7 @@ bool CBaseEntity::VPhysicsInitSetup()
 {
 #ifndef CLIENT_DLL
 	// don't support logical ents
-	if ( !edict() || IsMarkedForDeletion() )
+	if ( (!edict() && !m_bForceAllowVPhysics) || IsMarkedForDeletion() )
 		return false;
 #endif
 
@@ -2041,7 +2041,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 	bool bStartedInWater = false;
 	if ( bUnderwaterBullets )
 	{
-		bStartedInWater = ( enginetrace->GetPointContents( info.m_vecSrc ) & (CONTENTS_WATER|CONTENTS_SLIME) ) != 0;
+		bStartedInWater = ( enginetrace->GetPointContents( info.m_vecSrc, MASK_WATER ) & (CONTENTS_WATER|CONTENTS_SLIME) ) != 0;
 	}
 
 	// Prediction is only usable on players
@@ -2222,7 +2222,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 #endif
 
 			// See if the bullet ended up underwater + started out of the water
-			if ( !bHitWater && ( enginetrace->GetPointContents( tr.endpos ) & (CONTENTS_WATER|CONTENTS_SLIME) ) )
+			if ( !bHitWater && ( enginetrace->GetPointContents( tr.endpos, MASK_WATER ) & (CONTENTS_WATER|CONTENTS_SLIME) ) )
 			{
 				bHitWater = HandleShotImpactingWater( info, vecEnd, &traceFilter, &vecTracerDest );
 			}
@@ -2429,7 +2429,7 @@ bool CBaseEntity::HandleShotImpactingWater( const FireBulletsInfo_t &info,
 	AI_TraceLine( info.m_vecSrc, vecEnd, (MASK_SHOT|CONTENTS_WATER|CONTENTS_SLIME), pTraceFilter, &waterTrace );
 	
 	// See if this is the point we entered
-	if ( ( enginetrace->GetPointContents( waterTrace.endpos - Vector(0,0,0.1f) ) & (CONTENTS_WATER|CONTENTS_SLIME) ) == 0 )
+	if ( ( enginetrace->GetPointContents( waterTrace.endpos - Vector(0,0,0.1f), MASK_WATER ) & (CONTENTS_WATER|CONTENTS_SLIME) ) == 0 )
 		return false;
 
 	if ( ShouldDrawWaterImpacts() )

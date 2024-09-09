@@ -169,6 +169,45 @@ bool CServerNetworkProperty::IsInPVS( const edict_t *pRecipient, const void *pvs
 	return false;		// not visible
 }
 
+//TODO!!! test this?
+/*
+// Cull transmission based on the camera limits
+		// These limits are send in cl_strategic_cam_limits (basically just the fov angles)
+		CBaseEntity *pRecipientEntity = CBaseEntity::Instance( pInfo->m_pClientEnt );
+		Assert( pRecipientEntity && pRecipientEntity->IsPlayer() );
+		if ( !pRecipientEntity )
+			return false;
+		CHL2WarsPlayer *pRecipientPlayer = static_cast<CHL2WarsPlayer*>( pRecipientEntity );
+
+		// Get player camera position and limits
+		Vector vPlayerPos = pRecipientPlayer->Weapon_ShootPosition() + pRecipientPlayer->GetCameraOffset();
+		const Vector &vCamLimits = pRecipientPlayer->GetCamLimits();
+
+		// Get player angles
+		matrix3x4_t matAngles;
+		AngleMatrix( pRecipientPlayer->GetAbsAngles(), matAngles );
+
+		// Now check if the entity is within the camera limits
+		const Vector &center = GetOuter()->GetAbsOrigin();
+		if( GetOuter()->IsPointSized() )
+		{
+			if( TestPointInCamera( center, vCamLimits, matAngles, vPlayerPos ) )
+				return true;
+		}
+		else
+		{
+			// TODO: Do a better (and fast) check
+			const Vector &vOffset1 = GetOuter()->CollisionProp()->OBBMins();
+			Vector vOffset2 = GetOuter()->CollisionProp()->OBBMaxs();
+			vOffset2.z = vOffset1.z;
+
+			if( TestPointInCamera( center + vOffset1, vCamLimits, matAngles, vPlayerPos ) ||
+				TestPointInCamera( center + vOffset2, vCamLimits, matAngles, vPlayerPos ) )
+				return true;
+		}
+
+		return false;
+*/
 
 //-----------------------------------------------------------------------------
 // PVS: this function is called a lot, so it avoids function calls
@@ -242,7 +281,10 @@ bool CServerNetworkProperty::IsInPVS( const CCheckTransmitInfo *pInfo )
 void CServerNetworkProperty::SetUpdateInterval( float val )
 {
 	if ( val == 0 )
+	{
 		m_TimerEvent.StopUpdates();
+		FireEvent(); // Fire event in case changed!
+	}
 	else
 		m_TimerEvent.SetUpdateInterval( val );
 }
@@ -252,7 +294,7 @@ void CServerNetworkProperty::FireEvent()
 {
 	// Our timer went off. If our state has changed in the background, then 
 	// trigger a state change in the edict.
-	if ( m_bPendingStateChange )
+	if ( m_bPendingStateChange && m_pPev )
 	{
 		m_pPev->StateChanged();
 		m_bPendingStateChange = false;

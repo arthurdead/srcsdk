@@ -72,6 +72,8 @@ public:
 	CEntityFactoryDictionary();
 
 	virtual void InstallFactory( IEntityFactory *pFactory, const char *pClassName );
+	virtual void RemoveFactory( const char *pClassName );
+	virtual bool HasFactory( IEntityFactory *pFactory, const char *pClassName );
 	virtual CBaseEntity *Create( const char *pClassName );
 	virtual void Destroy( const char *pClassName, CBaseEntity *pNetworkable );
 	virtual const char *GetCannonicalName( const char *pClassName );
@@ -86,9 +88,9 @@ public:
 //-----------------------------------------------------------------------------
 // Singleton accessor
 //-----------------------------------------------------------------------------
+INIT_PRIORITY(101) static CEntityFactoryDictionary s_EntityFactory;
 IEntityFactoryDictionary *EntityFactoryDictionary()
 {
-	static CEntityFactoryDictionary s_EntityFactory;
 	return &s_EntityFactory;
 }
 
@@ -151,6 +153,24 @@ void CEntityFactoryDictionary::InstallFactory( IEntityFactory *pFactory, const c
 	m_Factories.Insert( pClassName, pFactory );
 }
 
+//-----------------------------------------------------------------------------
+// DeInstall a new factory
+//-----------------------------------------------------------------------------
+void CEntityFactoryDictionary::RemoveFactory( const char *pClassName )
+{
+	Assert( FindFactory( pClassName ) != NULL );
+	m_Factories.Remove( pClassName );
+}
+
+//-----------------------------------------------------------------------------
+// DeInstall a new factory
+//-----------------------------------------------------------------------------
+bool CEntityFactoryDictionary::HasFactory( IEntityFactory *pFactory, const char *pClassName )
+{
+	if( pFactory == NULL )
+		return FindFactory( pClassName ) != NULL;
+	return FindFactory( pClassName ) == pFactory;
+}
 
 //-----------------------------------------------------------------------------
 // Instantiate something using a factory
@@ -302,12 +322,10 @@ int UTIL_DropToFloor( CBaseEntity *pEntity, unsigned int mask, CBaseEntity *pIgn
 
 	trace_t	trace;
 
-#ifndef HL2MP
 	// HACK: is this really the only sure way to detect crossing a terrain boundry?
 	UTIL_TraceEntity( pEntity, pEntity->GetAbsOrigin(), pEntity->GetAbsOrigin(), mask, pIgnore, pEntity->GetCollisionGroup(), &trace );
 	if (trace.fraction == 0.0)
 		return -1;
-#endif // HL2MP
 
 	UTIL_TraceEntity( pEntity, pEntity->GetAbsOrigin(), pEntity->GetAbsOrigin() - Vector(0,0,256), mask, pIgnore, pEntity->GetCollisionGroup(), &trace );
 
@@ -1655,18 +1673,18 @@ float UTIL_WaterLevel( const Vector &position, float minz, float maxz )
 	Vector midUp = position;
 	midUp.z = minz;
 
-	if ( !(UTIL_PointContents(midUp) & MASK_WATER) )
+	if ( !(UTIL_PointContents(midUp, MASK_WATER) & MASK_WATER) )
 		return minz;
 
 	midUp.z = maxz;
-	if ( UTIL_PointContents(midUp) & MASK_WATER )
+	if ( UTIL_PointContents(midUp, MASK_WATER) & MASK_WATER )
 		return maxz;
 
 	float diff = maxz - minz;
 	while (diff > 1.0)
 	{
 		midUp.z = minz + diff/2.0;
-		if ( UTIL_PointContents(midUp) & MASK_WATER )
+		if ( UTIL_PointContents(midUp, MASK_WATER) & MASK_WATER )
 		{
 			minz = midUp.z;
 		}

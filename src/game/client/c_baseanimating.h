@@ -157,6 +157,13 @@ public:
 	virtual bool OnPostInternalDrawModel( ClientModelRenderInfo_t *pInfo );
 	void		DoInternalDrawModel( ClientModelRenderInfo_t *pInfo, DrawModelState_t *pState, matrix3x4_t *pBoneToWorldArray = NULL );
 
+	// Allow overriding the base material
+	void					ForcedMaterialOverride( const char *newMaterial, OverrideType_t nOverrideType = OVERRIDE_NORMAL );
+
+	// Option for specifying a lighting offset
+	void					SetCustomLightingOffset( const Vector &offset );
+	const Vector &			GetCustomLightingOffset( void );
+
 	//
 	virtual CMouthInfo *GetMouth();
 	virtual void	ControlMouth( CStudioHdr *pStudioHdr );
@@ -480,6 +487,10 @@ public:
 	void							EnableJiggleBones( void );
 	void							DisableJiggleBones( void );
 
+	// Override
+	void							ForceUseFastPath( bool bUseFastPath ) { m_bCanUseFastPath = bUseFastPath; }
+	bool							GetUseFastPath() { return m_bCanUseFastPath; }
+
 protected:
 	// View models scale their attachment positions to account for FOV. To get the unmodified
 	// attachment position (like if you're rendering something else during the view model's DrawModel call),
@@ -704,6 +715,16 @@ private:
 
 	CUtlReference<CNewParticleEffect>	m_ejectBrassEffect;
 	int									m_iEjectBrassAttachment;
+
+	bool					m_bModelChanged;
+
+	// Material overriding
+	IMaterial *				m_pOverrideMaterial;
+	OverrideType_t			m_nOverrideMaterialType;
+
+	// Custom lighting offset
+	bool					m_bCustomLightingOffset;
+	Vector					m_vCustomLightingOffset;
 };
 
 class C_ClientAnimating : public C_BaseAnimating
@@ -894,6 +915,19 @@ inline float C_BaseAnimating::SequenceDuration( void )
 	return SequenceDuration( GetSequence() ); 
 }
 
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+inline void C_BaseAnimating::SetCustomLightingOffset( const Vector &offset )
+{
+	m_bCustomLightingOffset = offset != vec3_origin;
+	m_vCustomLightingOffset = offset;
+}
+
+inline const Vector &C_BaseAnimating::GetCustomLightingOffset( void )
+{
+	return m_vCustomLightingOffset;
+}
 
 //-----------------------------------------------------------------------------
 // Mouth

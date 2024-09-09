@@ -742,12 +742,12 @@ void CGameRules::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc
 	else
 		falloff = 1.0;
 
-	int bInWater = (UTIL_PointContents ( vecSrc ) & MASK_WATER) ? true : false;
+	int bInWater = (UTIL_PointContents ( vecSrc, MASK_WATER ) & MASK_WATER) ? true : false;
 
 	if( bInWater )
 	{
 		// Only muffle the explosion if deeper than 2 feet in water.
-		if( !(UTIL_PointContents(vecSrc + Vector(0, 0, 24)) & MASK_WATER) )
+		if( !(UTIL_PointContents(vecSrc + Vector(0, 0, 24), MASK_WATER) & MASK_WATER) )
 		{
 			bInWater = false;
 		}
@@ -831,7 +831,7 @@ void CGameRules::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc
 
 			// UNDONE: Probably shouldn't let children block parents either?  Or maybe those guys should set their owner if they want this behavior?
 			// HL2 - Dissolve damage is not reduced by interposing non-world objects
-			if( tr.m_pEnt && tr.m_pEnt != pEntity && tr.m_pEnt->GetOwnerEntity() != pEntity )
+			if( tr.m_pEnt && tr.m_pEnt != pEntity && tr.m_pEnt != pEntityIgnore && tr.m_pEnt->GetOwnerEntity() != pEntity )
 			{
 				// Some entity was hit by the trace, meaning the explosion does not have clear
 				// line of sight to the entity that it's trying to hurt. If the world is also

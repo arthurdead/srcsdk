@@ -215,7 +215,9 @@ protected:
 	void			PlayerWaterSounds( void );
 
 	void ResetGetPointContentsCache();
+	void ResetGetWaterContentsForPointCache();
 	int GetPointContentsCached( const Vector &point, int slot );
+	int GetWaterContentsForPointCached( const Vector &point, int slot );
 
 	// Ducking
 	virtual void	Duck( void );

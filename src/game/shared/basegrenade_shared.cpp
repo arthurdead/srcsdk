@@ -35,15 +35,22 @@ IMPLEMENT_NETWORKCLASS_ALIASED( BaseGrenade, DT_BaseGrenade )
 
 BEGIN_NETWORK_TABLE( CBaseGrenade, DT_BaseGrenade )
 #if !defined( CLIENT_DLL )
+	// Excludes
+	SendPropExclude( "DT_BaseEntity", "m_angRotation" ),
+	SendPropExclude( "DT_BaseEntity", "m_hOwnerEntity" ), // Already got m_hThrower
+	SendPropExclude( "DT_ServerAnimationData" , "m_flCycle" ),	
+	SendPropExclude( "DT_AnimTimeMustBeFirst" , "m_flAnimTime" ),
+
 	SendPropFloat( SENDINFO( m_flDamage ), 10, SPROP_ROUNDDOWN, 0.0, 256.0f ),
 	SendPropFloat( SENDINFO( m_DmgRadius ), 10, SPROP_ROUNDDOWN, 0.0, 1024.0f ),
 	SendPropInt( SENDINFO( m_bIsLive ), 1, SPROP_UNSIGNED ),
 //	SendPropTime( SENDINFO( m_flDetonateTime ) ),
 	SendPropEHandle( SENDINFO( m_hThrower ) ),
 
-	SendPropVector( SENDINFO( m_vecVelocity ), 0, SPROP_NOSCALE ), 
-	// HACK: Use same flag bits as player for now
-	SendPropInt			( SENDINFO(m_fFlags), PLAYER_FLAG_BITS, SPROP_UNSIGNED, SendProxy_CropFlagsToPlayerFlagBitsLength ),
+	// Resend smaller
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 0), 10, SPROP_CHANGES_OFTEN, CBaseEntity::SendProxy_AnglesX ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 1), 10, SPROP_CHANGES_OFTEN, CBaseEntity::SendProxy_AnglesY ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 2), 10, SPROP_CHANGES_OFTEN, CBaseEntity::SendProxy_AnglesZ ),
 #else
 	RecvPropFloat( RECVINFO( m_flDamage ) ),
 	RecvPropFloat( RECVINFO( m_DmgRadius ) ),
@@ -51,10 +58,9 @@ BEGIN_NETWORK_TABLE( CBaseGrenade, DT_BaseGrenade )
 //	RecvPropTime( RECVINFO( m_flDetonateTime ) ),
 	RecvPropEHandle( RECVINFO( m_hThrower ) ),
 
-	// Need velocity from grenades to make animation system work correctly when running
-	RecvPropVector( RECVINFO(m_vecVelocity), 0, RecvProxy_LocalVelocity ),
-
-	RecvPropInt( RECVINFO( m_fFlags ) ),
+	RecvPropFloat( RECVINFO_NAME_ARRAYELEM( m_angNetworkAngles, 0, m_angRotation[0] ) ),
+	RecvPropFloat( RECVINFO_NAME_ARRAYELEM( m_angNetworkAngles, 1, m_angRotation[1] ) ),
+	RecvPropFloat( RECVINFO_NAME_ARRAYELEM( m_angNetworkAngles, 2, m_angRotation[2] ) ),
 #endif
 END_NETWORK_TABLE()
 
@@ -100,7 +106,7 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 	}
 
 	Vector vecAbsOrigin = GetAbsOrigin();
-	int contents = UTIL_PointContents ( vecAbsOrigin );
+	int contents = UTIL_PointContents ( vecAbsOrigin, MASK_WATER );
 
 	// Since this code only runs on the server, make sure it shows the tempents it creates.
 	// This solves a problem with remote detonating the pipebombs (client wasn't seeing the explosion effect)
@@ -117,7 +123,7 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 			!( contents & MASK_WATER ) ? g_sModelIndexFireball : g_sModelIndexWExplosion,
 			m_DmgRadius * .03, 
 			25,
-			TE_EXPLFLAG_NONE,
+			TE_EXPLFLAG_NONE|TE_EXPLFLAG_DLIGHT,
 			m_DmgRadius,
 			m_flDamage,
 			&vecNormal,
@@ -131,7 +137,7 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 			!( contents & MASK_WATER ) ? g_sModelIndexFireball : g_sModelIndexWExplosion,
 			m_DmgRadius * .03, 
 			25,
-			TE_EXPLFLAG_NONE,
+			TE_EXPLFLAG_NONE|TE_EXPLFLAG_DLIGHT,
 			m_DmgRadius,
 			m_flDamage );
 	}
@@ -144,6 +150,7 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 	Vector vecReported = m_hThrower ? m_hThrower->GetAbsOrigin() : vec3_origin;
 	
 	CTakeDamageInfo info( this, m_hThrower, GetBlastForce(), GetAbsOrigin(), m_flDamage, bitsDamageType, 0, &vecReported );
+	//info.SetForceFriendlyFire( m_bForceFriendlyFire );
 
 	RadiusDamage( info, GetAbsOrigin(), m_DmgRadius, CLASS_NONE, NULL );
 
@@ -181,7 +188,7 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 void CBaseGrenade::Smoke( void )
 {
 	Vector vecAbsOrigin = GetAbsOrigin();
-	if ( UTIL_PointContents ( vecAbsOrigin ) & MASK_WATER )
+	if ( UTIL_PointContents ( vecAbsOrigin, MASK_WATER ) & MASK_WATER )
 	{
 		UTIL_Bubbles( vecAbsOrigin - Vector( 64, 64, 64 ), vecAbsOrigin + Vector( 64, 64, 64 ), 100 );
 	}

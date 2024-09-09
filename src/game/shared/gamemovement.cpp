@@ -3603,6 +3603,39 @@ void CGameMovement::ResetGetPointContentsCache()
 	}
 }
 
+void CGameMovement::ResetGetWaterContentsForPointCache()
+{
+	for ( int slot = 0; slot < MAX_PC_CACHE_SLOTS; ++slot )
+	{
+		for ( int i = 0; i < MAX_PLAYERS; ++i )
+		{
+			m_CachedGetPointContents[ i ][ slot ] = -9999;
+		}
+	}
+}
+
+int CGameMovement::GetWaterContentsForPointCached( const Vector &point, int slot )
+{
+	if ( g_bMovementOptimizations ) 
+	{
+		Assert( player );
+		Assert( slot >= 0 && slot < MAX_PC_CACHE_SLOTS );
+
+		int idx = player->entindex() - 1;
+
+		if ( m_CachedGetPointContents[ idx ][ slot ] == -9999 || point.DistToSqr( m_CachedGetPointContentsPoint[ idx ][ slot ] ) > 1 )
+		{
+			m_CachedGetPointContents[ idx ][ slot ] = enginetrace->GetPointContents ( point, MASK_WATER );
+			m_CachedGetPointContentsPoint[ idx ][ slot ] = point;
+		}
+		
+		return m_CachedGetPointContents[ idx ][ slot ];
+	}
+	else
+	{
+		return enginetrace->GetPointContents ( point, MASK_WATER );
+	}
+}
 
 int CGameMovement::GetPointContentsCached( const Vector &point, int slot )
 {
@@ -3671,7 +3704,7 @@ bool CGameMovement::CheckWater( void )
 	player->SetWaterType( CONTENTS_EMPTY );
 
 	// Grab point contents.
-	cont = GetPointContentsCached( point, 0 );	
+	cont = GetWaterContentsForPointCached( point, 0 );	
 	
 	// Are we under water? (not solid and not empty?)
 	if ( cont & MASK_WATER )
@@ -3684,7 +3717,7 @@ bool CGameMovement::CheckWater( void )
 
 		// Now check a point that is at the player hull midpoint.
 		GetWaterCheckPosition( WL_Waist, &point );
-		cont = GetPointContentsCached( point, 1 );
+		cont = GetWaterContentsForPointCached( point, 1 );
 		// If that point is also under water...
 		if ( cont & MASK_WATER )
 		{
@@ -3693,7 +3726,7 @@ bool CGameMovement::CheckWater( void )
 
 			// Now check the eye position.  (view_ofs is relative to the origin)
 			GetWaterCheckPosition( WL_Eyes, &point );
-			cont = GetPointContentsCached( point, 2 );
+			cont = GetWaterContentsForPointCached( point, 2 );
 			if ( cont & MASK_WATER )
 				player->SetWaterLevel( WL_Eyes );  // In over our eyes
 		}

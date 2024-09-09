@@ -1084,7 +1084,7 @@ void PhysicsSplash( IPhysicsFluidController *pFluid, IPhysicsObject *pObject, CB
 	corner[2] = centerPoint + axes[0] + axes[1];
 	corner[3] = centerPoint - axes[0] + axes[1];
 
-	int contents = UTIL_PointContents( centerPoint-Vector(0,0,2) );
+	int contents = UTIL_PointContents( centerPoint-Vector(0,0,2), MASK_WATER );
 
 	bool bInSlime = ( contents & CONTENTS_SLIME ) ? true : false;
 

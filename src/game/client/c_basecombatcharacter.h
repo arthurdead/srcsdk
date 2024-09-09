@@ -12,12 +12,11 @@
 
 #include "shareddefs.h"
 #include "c_baseflex.h"
-#ifdef GLOWS_ENABLE
-#include "glow_outline_effect.h"
-#endif // GLOWS_ENABLE
+#include "basecombatcharacter_shared.h"
 
 class C_BaseCombatWeapon;
-class C_WeaponCombatShield;
+
+class CNavArea;
 
 #define BCC_DEFAULT_LOOK_TOWARDS_TOLERANCE 0.9f
 
@@ -97,6 +96,22 @@ public:
 
 	virtual void TraceAttack(const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator);
 
+	virtual	Vector		Weapon_ShootPosition( );		// gun position at current position/orientation
+
+	// Weapons
+	void				Weapon_SetActivity( Activity newActivity, float duration );
+	virtual void		Weapon_FrameUpdate( void );
+
+#ifdef USE_NAV_MESH
+	// Nav mesh
+	virtual CNavArea *GetLastKnownArea( void ) const		{ return m_lastNavArea; }		// return the last nav area the player occupied - NULL if unknown
+	virtual bool IsAreaTraversable( const CNavArea *area ) const;							// return true if we can use the given area 
+	virtual void ClearLastKnownArea( void );
+	virtual void UpdateLastKnownArea( void );										// invoke this to update our last known nav area (since there is no think method chained to CBaseCombatCharacter)
+	virtual void OnNavAreaChanged( CNavArea *enteredArea, CNavArea *leftArea ) { }	// invoked (by UpdateLastKnownArea) when we enter a new nav area (or it is reset to NULL)
+	virtual void OnNavAreaRemoved( CNavArea *removedArea );
+#endif // USE_NAV_MESH
+
 public:
 
 	float			m_flNextAttack;
@@ -104,6 +119,15 @@ public:
 protected:
 
 	int			m_bloodColor;			// color of blood particless
+
+#ifdef USE_NAV_MESH
+	// last known navigation area of player - NULL if unknown
+	CNavArea *m_lastNavArea;
+	int m_registeredNavTeam;	// ugly, but needed to clean up player team counts in nav mesh
+#endif // USE_NAV_MESH
+
+public:
+	Vector		m_HackedGunPos;			// HACK until we can query end of gun
 
 private:
 	bool				ComputeLOS( const Vector &vecEyePosition, const Vector &vecTarget ) const;

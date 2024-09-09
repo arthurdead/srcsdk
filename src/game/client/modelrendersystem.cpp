@@ -35,6 +35,21 @@ extern ConVar g_CV_FlexSmooth;
 extern ConVar r_fastzreject;
 
 //-----------------------------------------------------------------------------
+// Cache entry for render data
+//-----------------------------------------------------------------------------
+template< class E >
+struct RenderDataCacheEntry
+{
+	RenderDataCacheEntry( IMatRenderContext* pRenderContext, int nDataCount, const E* pSrcData = NULL ) :
+		data( pRenderContext, nDataCount, pSrcData )
+	{
+		nCount = nDataCount;
+	}
+	int nCount;
+	CMatRenderData< E > data;
+};
+
+//-----------------------------------------------------------------------------
 // The client leaf system
 //-----------------------------------------------------------------------------
 class CModelRenderSystem : public CAutoGameSystem, public IModelRenderSystem
@@ -45,6 +60,11 @@ public:
 	virtual void ComputeTranslucentRenderData( ModelRenderSystemData_t *pModels, int nCount, TranslucentInstanceRenderData_t *pRenderData, TranslucentTempData_t *pTempData );
 	virtual void CleanupTranslucentTempData( TranslucentTempData_t *pTempData );
 	virtual IMaterial *GetFastPathColorMaterial() { return m_DebugMaterial; }
+
+	template< class E >
+	CMatRenderData<E> *GetCachedRenderData( CUtlVector< RenderDataCacheEntry< E > * > &cacheList, IMatRenderContext* pRenderContext, int nCount, const E* pSrcData = NULL );
+
+	virtual void CleanupRenderData();
 
 	// Methods of IGameSystem
 public:
@@ -157,6 +177,11 @@ private:
 	int m_nTotalModelCount;
 	bool m_bShadowDepth;
 	bool m_bHasInstanceData;
+
+	// Caches for render data
+	CUtlVector< RenderDataCacheEntry< MaterialLightingState_t > * > m_CachedMaterialLightingStates;
+	CUtlVector< RenderDataCacheEntry< StudioArrayData_t > * > m_CachedStudioArrayData;
+	CUtlVector< RenderDataCacheEntry< RenderModelInfo_t > * > m_CachedRenderModelInfo;
 };
 
 
@@ -164,7 +189,7 @@ private:
 // Singleton accessor
 //-----------------------------------------------------------------------------
 static CModelRenderSystem s_ModelRenderSystem;
-extern IModelRenderSystem *g_pModelRenderSystem = &s_ModelRenderSystem;
+IModelRenderSystem *g_pModelRenderSystem = &s_ModelRenderSystem;
 
 
 //-----------------------------------------------------------------------------
@@ -713,7 +738,7 @@ void CModelRenderSystem::DebugDrawLightingOrigin( const ModelListByType_t &list,
 	if ( !model.m_pLightingState )
 		return;
 
-	const Vector& lightOrigin = model.m_pLightingState->m_vecLightingOrigin;
+	const Vector& lightOrigin = vec3_origin;//model.m_pLightingState->m_vecLightingOrigin;
 	const matrix3x4_t &modelToWorld = model.m_Entry.m_pRenderable->RenderableToWorldTransform();
 
 	// draw z planar cross at lighting origin
@@ -985,7 +1010,7 @@ int CModelRenderSystem::SetupStaticPropLighting( LightingList_t &lightingList, D
 	ColorMeshInfo_t **ppColorMeshInfo = (ColorMeshInfo_t**)stackalloc( nTotalModels * sizeof(ColorMeshInfo_t*) );
 	ITexture **ppEnvCubemap = (ITexture**)stackalloc( nTotalModels * sizeof(ITexture*) );
 
-	CMatRenderData< MaterialLightingState_t > rdLightingState( m_pRenderContext, 2 * nTotalModels );
+	CMatRenderData< MaterialLightingState_t > &rdLightingState = *GetCachedRenderData<MaterialLightingState_t>( m_CachedMaterialLightingStates, m_pRenderContext, 2 * nTotalModels );
 	MaterialLightingState_t *pLightingState = rdLightingState.Base();
 	MaterialLightingState_t *pDecalLightingState = &rdLightingState[ nTotalModels ];
 	modelrender->ComputeStaticLightingState( nTotalModels, pLightingQuery, pLightingState, pDecalLightingState, ppColorMeshInfo, ppEnvCubemap, pColorMeshHandle );
@@ -1013,7 +1038,7 @@ void CModelRenderSystem::SetupStandardLighting( LightingList_t &lightingList )
 	// Compute data necessary for lighting computations
 	int nOffset = 0;
 	LightingQuery_t *pLightingQuery = (LightingQuery_t*)stackalloc( nTotalModels * sizeof(LightingQuery_t) );
-	CMatRenderData<MaterialLightingState_t> rdLightingState( m_pRenderContext, nTotalModels );
+	CMatRenderData< MaterialLightingState_t > &rdLightingState = *GetCachedRenderData<MaterialLightingState_t>( m_CachedMaterialLightingStates, m_pRenderContext, nTotalModels );
 	MaterialLightingState_t *pLightingState = rdLightingState.Base();
 	memset( pLightingState, 0, nTotalModels * sizeof(MaterialLightingState_t) );
 	for ( int i = 0; i < nSetupCount; ++i )
@@ -1086,7 +1111,7 @@ int CModelRenderSystem::SetupPhysicsPropLighting( LightingList_t &lightingList, 
 	// Does all lighting computations for all models
 	ColorMeshInfo_t **ppColorMeshInfo = (ColorMeshInfo_t**)stackalloc( nTotalModels * sizeof(ColorMeshInfo_t*) );
 	ITexture **ppEnvCubemap = (ITexture**)stackalloc( nTotalModels * sizeof(ITexture*) );
-	CMatRenderData< MaterialLightingState_t > rdLightingState( m_pRenderContext, 2 * nTotalModels );
+	CMatRenderData< MaterialLightingState_t > &rdLightingState = *GetCachedRenderData<MaterialLightingState_t>( m_CachedMaterialLightingStates, m_pRenderContext, 2 * nTotalModels );
 	MaterialLightingState_t *pLightingState = rdLightingState.Base();
 	MaterialLightingState_t *pDecalLightingState = &pLightingState[ nTotalModels ];
 	modelrender->ComputeStaticLightingState( nTotalModels, pLightingQuery, pLightingState, pDecalLightingState, ppColorMeshInfo, ppEnvCubemap, pColorMeshHandle );
@@ -1230,7 +1255,7 @@ void CModelRenderSystem::RenderModels( StudioModelArrayInfo2_t *pInfo, int nMode
 		}
 
 		const int nFlags = STUDIORENDER_DRAW_OPAQUE_ONLY;
-		CMatRenderData< StudioArrayData_t > rdArray( m_pRenderContext, nModelTypeCount );
+		CMatRenderData< StudioArrayData_t > &rdArray = (*GetCachedRenderData<StudioArrayData_t>( m_CachedStudioArrayData, m_pRenderContext, nModelTypeCount ));
 
 #ifdef _DEBUG
 		bool bFoundStencil = false;
@@ -1268,7 +1293,7 @@ void CModelRenderSystem::RenderModels( StudioModelArrayInfo2_t *pInfo, int nMode
 		// NOTE: Use this path because we can aggregate draw calls across mdls
 
 		const int nFlags = STUDIORENDER_SHADOWDEPTHTEXTURE | STUDIORENDER_DRAW_OPAQUE_ONLY;
-		CMatRenderData< StudioArrayData_t > rdShadow( m_pRenderContext, nModelTypeCount );
+		CMatRenderData< StudioArrayData_t > &rdShadow = (*GetCachedRenderData<StudioArrayData_t>( m_CachedStudioArrayData, m_pRenderContext, nModelTypeCount ));
 		for ( int i = 0; i < nModelTypeCount; ++i )
 		{
 			ModelListByType_t &list = pModelList[i];
@@ -1469,7 +1494,7 @@ void CModelRenderSystem::DrawModels( ModelRenderSystemData_t *pEntities, int nCo
 	ComputeModelLODs( nModelTypeCount, pModelList, pModelListNode, renderMode );
 
 	// Sort processing list by body, lod, skin, etc.
-	CMatRenderData< RenderModelInfo_t > rdRenderModelInfo( m_pRenderContext, nCount );
+	CMatRenderData< RenderModelInfo_t > &rdRenderModelInfo = (*GetCachedRenderData<RenderModelInfo_t>( m_CachedRenderModelInfo, m_pRenderContext, nCount ));
 	RenderModelInfo_t *pSortedModelListNode = rdRenderModelInfo.Base();	
 	SortModels( pSortedModelListNode, nModelTypeCount, pModelList, pModelListNode );
 
@@ -1599,4 +1624,60 @@ void CModelRenderSystem::CleanupTranslucentTempData( TranslucentTempData_t *pTem
 		CMatRenderContextPtr matRenderContext( g_pMaterialSystem );
 		matRenderContext->ReleaseRenderData();
 	}
+}
+
+static ConVar mat_cached_renderdata_debug("mat_cached_renderdata_debug", "0");
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+template< class E >
+CMatRenderData<E> *CModelRenderSystem::GetCachedRenderData( CUtlVector< RenderDataCacheEntry< E > * > &cacheList, IMatRenderContext* pRenderContext, int nCount, const E* pSrcData )
+{
+	for( int i = 0; i < cacheList.Count(); i++ )
+	{
+		if( cacheList[i]->nCount == nCount )
+		{
+			//DevMsg("Returning cached render data\n");
+			return &cacheList[i]->data;
+		}
+	}
+
+	// Create new render data and return it
+	RenderDataCacheEntry<E> *pCacheEntry = new RenderDataCacheEntry<E>( pRenderContext, nCount, pSrcData );
+	cacheList.AddToTail( pCacheEntry );
+	return &pCacheEntry->data;
+}
+
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+void CModelRenderSystem::CleanupRenderData()
+{
+	if( mat_cached_renderdata_debug.GetBool() )
+	{
+		int offset = 1;
+		engine->Con_NPrintf( offset++, "Cached lighting states: %d\n", m_CachedMaterialLightingStates.Count() );
+		for( int i = 0; i < m_CachedMaterialLightingStates.Count() ; i++ )
+		{
+			engine->Con_NPrintf( offset++, "    lighting state %d: %d\n", i, m_CachedMaterialLightingStates[i]->nCount );
+		}
+
+		offset++;
+		engine->Con_NPrintf( offset++, "Cached studio array data: %d\n", m_CachedStudioArrayData.Count() );
+		for( int i = 0; i < m_CachedStudioArrayData.Count() ; i++ )
+		{
+			engine->Con_NPrintf( offset++, "    studio array data %d: %d\n", i, m_CachedStudioArrayData[i]->nCount );
+		}
+
+		offset++;
+		engine->Con_NPrintf( offset++, "Cached render model info: %d\n", m_CachedRenderModelInfo.Count() );
+		for( int i = 0; i < m_CachedRenderModelInfo.Count() ; i++ )
+		{
+			engine->Con_NPrintf( offset++, "    render model info %d: %d\n", i, m_CachedRenderModelInfo[i]->nCount );
+		}
+	}
+
+	m_CachedMaterialLightingStates.PurgeAndDeleteElements();
+	m_CachedStudioArrayData.PurgeAndDeleteElements();
+	m_CachedRenderModelInfo.PurgeAndDeleteElements();
 }

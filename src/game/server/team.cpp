@@ -12,7 +12,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-CUtlVector< CTeam * > g_Teams;
+CUtlVector< CHandle< CTeam > > g_Teams;
 
 //-----------------------------------------------------------------------------
 // Purpose: SendProxy that converts the Team's player UtlVector to entindexes

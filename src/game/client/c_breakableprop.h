@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------
 class C_BreakableProp : public C_BaseAnimating
 {
-	typedef C_BaseAnimating BaseClass;
+	DECLARE_CLASS( C_BreakableProp, C_BaseAnimating );
 public:
 	DECLARE_CLIENTCLASS();
 
@@ -25,12 +25,26 @@ public:
 	{
 		return true;
 	}
+
+	//virtual bool	ShouldPredict( void );
+	//virtual C_BasePlayer *GetPredictionOwner( void );
+	//virtual bool PredictionErrorShouldResetLatchedForAllPredictables( void ) { return false; }
+
 	
+	//IPlayerPickupVPhysics
+	virtual bool HasPreferredCarryAnglesForPlayer( CBasePlayer *pPlayer );
+	virtual QAngle PreferredCarryAngles( void );
+
 	virtual void SetFadeMinMax( float fademin, float fademax );
 
 	// Copy fade from another breakable prop
 	void CopyFadeFrom( C_BreakableProp *pSource );
 	virtual void OnDataChanged( DataUpdateType_t type );
+
+	const QAngle &GetNetworkedPreferredPlayerCarryAngles( void ) { return m_qPreferredPlayerCarryAngles; }
+
+protected:
+	QAngle m_qPreferredPlayerCarryAngles;
 
 private:
 	bool m_bClientPhysics;

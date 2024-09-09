@@ -1163,6 +1163,7 @@ public:
 	virtual bool		ShouldCollide( int collisionGroup, int contentsMask ) const;
 
 	// Sets physics parameters
+	float				GetFriction( void ) const;
 	void				SetFriction( float flFriction );
 
 	void				SetGravity( float flGravity );
@@ -1225,6 +1226,7 @@ public:
 
 	void				SetRemovalFlag( bool bRemove );
 
+	int					GetSpawnFlags( void ) const;
 	bool				HasSpawnFlags( int nFlags ) const;
 
 	// Effects...
@@ -1721,6 +1723,9 @@ private:
 	// Timestamp of message arrival
 	float							m_flLastMessageTime;
 
+	// If this entity is client created..
+	bool							m_bIsClientCreated;
+
 	// Base velocity
 	Vector							m_vecBaseVelocity;
 	
@@ -1899,6 +1904,42 @@ protected:
 	RenderMode_t m_PreviousRenderMode;
 	color32 m_PreviousRenderColor;
 #endif
+
+public:
+	virtual bool CanBeSeenBy( C_BaseEntity *pEnt ) { return true; } // allows entities to be 'invisible' to Unit senses.
+
+	// Unit move prediction
+	bool							AllowNavIgnore();
+	void							SetAllowNavIgnore( bool bAllowNavIgnore );
+	void							SetNavIgnore( float duration = FLT_MAX );
+	void							ClearNavIgnore();
+	bool							IsNavIgnored() const;
+	void							SetAlwaysNavIgnore( bool bAlwaysNavIgnore );
+	bool							AlwaysNavIgnore();
+
+	ShouldTransmitState_t			GetLastShouldTransmitState();
+
+	// Nav obstacle ref for recast mesh.
+	void SetNavObstacleRef( int ref ) { m_NavObstacleRef = ref; }
+	int GetNavObstacleRef() { return m_NavObstacleRef; }
+
+	// Hack for keeper package due edict limit
+	void SetDoNotRegisterEntity() { m_bDoNotRegisterEntity = true; }
+	// Hack for keeper package to force vphysics creation for entities without edicts (tiles/blocks)
+	void SetForceAllowVPhysics() { m_bForceAllowVPhysics = true; }
+
+private:
+	float m_fViewDistance;
+
+	bool m_bAllowNavIgnore;
+	float m_flNavIgnoreUntilTime;
+	bool m_bAlwaysIgnoreNav;
+	int m_NavObstacleRef;
+
+	ShouldTransmitState_t m_LastShouldTransmitState;
+
+	bool m_bDoNotRegisterEntity;
+	bool m_bForceAllowVPhysics;
 };
 
 EXTERN_RECV_TABLE(DT_BaseEntity);
@@ -2177,6 +2218,11 @@ inline void	C_BaseEntity::SetBaseVelocity( const Vector& v )
 	m_vecBaseVelocity = v; 
 }
 
+inline float CBaseEntity::GetFriction( void ) const
+{ 
+	return m_flFriction; 
+}
+
 inline void C_BaseEntity::SetFriction( float flFriction ) 
 { 
 	m_flFriction = flFriction; 
@@ -2402,6 +2448,51 @@ inline bool C_BaseEntity::IsNoInterpolationFrame()
 	return m_ubOldInterpolationFrame != m_ubInterpolationFrame;
 }
 
+inline bool CBaseEntity::AllowNavIgnore()
+{
+	return m_bAllowNavIgnore;
+}
+
+inline void	CBaseEntity::SetAllowNavIgnore( bool bAllowNavIgnore )
+{
+	m_bAllowNavIgnore = bAllowNavIgnore;
+}
+
+inline void	CBaseEntity::SetNavIgnore( float duration )
+{
+	float flNavIgnoreUntilTime = ( duration == FLT_MAX ) ? FLT_MAX : gpGlobals->curtime + duration;
+	if ( flNavIgnoreUntilTime > m_flNavIgnoreUntilTime )
+		m_flNavIgnoreUntilTime = flNavIgnoreUntilTime;
+}
+
+inline void	CBaseEntity::ClearNavIgnore()
+{
+	m_flNavIgnoreUntilTime = 0;
+}
+
+inline bool	CBaseEntity::IsNavIgnored() const
+{
+	return ( gpGlobals->curtime <= m_flNavIgnoreUntilTime );
+}
+
+inline void	CBaseEntity::SetAlwaysNavIgnore( bool bAlwaysNavIgnore )
+{
+	m_bAlwaysIgnoreNav = bAlwaysNavIgnore;
+}
+
+inline bool CBaseEntity::AlwaysNavIgnore()
+{
+	return m_bAlwaysIgnoreNav;
+}
+
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+inline ShouldTransmitState_t CBaseEntity::GetLastShouldTransmitState() 
+{ 
+	return m_LastShouldTransmitState; 
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : handle - 
@@ -2458,6 +2549,11 @@ inline bool C_BaseEntity::IsVisible() const
 inline bool C_BaseEntity::IsVisibleToAnyPlayer() const
 {
 	return IsVisible();
+}
+
+inline int CBaseEntity::GetSpawnFlags( void ) const
+{ 
+	return m_spawnflags; 
 }
 
 inline bool C_BaseEntity::HasSpawnFlags( int nFlags ) const

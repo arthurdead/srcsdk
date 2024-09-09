@@ -355,9 +355,9 @@ void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Ve
 
 bool UTIL_EntityHasMatchingRootParent( CBaseEntity *pRootParent, CBaseEntity *pEntity );
 
-inline int UTIL_PointContents( const Vector &vec )
+inline int UTIL_PointContents( const Vector &vec, int contentsMask )
 {
-	return enginetrace->GetPointContents( vec );
+	return enginetrace->GetPointContents( vec, contentsMask, NULL );
 }
 
 // Sweeps against a particular model, using collision rules 

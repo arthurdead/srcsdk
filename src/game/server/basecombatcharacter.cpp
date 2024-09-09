@@ -1026,14 +1026,6 @@ void CBaseCombatCharacter::Weapon_SetActivity( Activity newActivity, float durat
 	}
 }
 
-void CBaseCombatCharacter::Weapon_FrameUpdate( void )
-{
-	if ( m_hActiveWeapon )
-	{
-		m_hActiveWeapon->Operator_FrameUpdate( this );
-	}
-}
-
 
 //------------------------------------------------------------------------------
 // Purpose :	expects a length to trace, amount 
@@ -1865,7 +1857,7 @@ void CBaseCombatCharacter::Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector
 	{
 		Vector vThrowPos = Weapon_ShootPosition() - Vector(0,0,12);
 
-		if( UTIL_PointContents(vThrowPos) & CONTENTS_SOLID )
+		if( UTIL_PointContents(vThrowPos, CONTENTS_SOLID) & CONTENTS_SOLID )
 		{
 			Msg("Weapon spawning in solid!\n");
 		}

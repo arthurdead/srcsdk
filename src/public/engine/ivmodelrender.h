@@ -15,6 +15,7 @@
 #include "mathlib/mathlib.h"
 #include "istudiorender.h"
 #include "datacache/idatacache.h"
+#include "hackmgr/hackmgr.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -92,6 +93,11 @@ struct StaticPropRenderInfo_t
 	Vector					*pLightingOrigin;
 	short					skin;
 	ModelInstanceHandle_t	instance;
+};
+
+struct StaticPropRenderInfoEx_t : public StaticPropRenderInfo_t
+{
+	uint8					alpha;
 };
 
 struct LightingQuery_t
@@ -188,6 +194,26 @@ public:
 
 	virtual void AddColoredDecal( ModelInstanceHandle_t handle, Ray_t const& ray, 
 		Vector const& decalUp, int decalIndex, int body, Color cColor, bool noPokeThru = false, int maxLODToDecal = ADDDECAL_TO_ALL_LODS ) = 0;
+
+	// Sets up lighting context for a point in space, with smooth interpolation per model.
+	// Passing MODEL_INSTANCE_INVALID as a handle is equivalent to calling SetupLighting.
+	HACKMGR_CLASS_API void SetupLightingEx( const Vector &vecCenter, ModelInstanceHandle_t handle );
+
+	// Finds the brightest light source illuminating a point. Returns false if there isn't any.
+	HACKMGR_CLASS_API bool GetBrightestShadowingLightSource( const Vector &vecCenter, Vector& lightPos, Vector& lightBrightness, bool bAllowNonTaggedLights );
+
+	// Computes lighting state for an array of lighting requests
+	HACKMGR_CLASS_API void ComputeLightingState( int nCount, const LightingQuery_t *pQuery, MaterialLightingState_t *pState, ITexture **ppEnvCubemapTexture );
+
+	// Gets an array of decal handles given model instances
+	HACKMGR_CLASS_API void GetModelDecalHandles( StudioDecalHandle_t *pDecals, int nDecalStride, int nCount, const ModelInstanceHandle_t *pHandles );
+
+	// Computes lighting state for an array of lighting requests for renderables which use static lighting
+	HACKMGR_CLASS_API void ComputeStaticLightingState( int nCount, const StaticLightingQuery_t *pQuery, MaterialLightingState_t *pState, MaterialLightingState_t *pDecalState, ColorMeshInfo_t **ppStaticLighting, ITexture **ppEnvCubemapTexture, DataCacheHandle_t *pColorMeshHandles );
+
+	// Cleans up lighting state. Must be called after the draw call that uses
+	// the color meshes return from ComputeStaticLightingState has been issued
+	HACKMGR_CLASS_API void CleanupStaticLightingState( int nCount, DataCacheHandle_t *pColorMeshHandles );
 };
 
 

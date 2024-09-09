@@ -118,6 +118,8 @@
 #include "keybindinglistener.h"
 #include "vgui_int.h"
 #include "hackmgr/hackmgr.h"
+#include "game_loopback/igameloopback.h"
+#include "hackmgr/dlloverride.h"
 
 // NVNT includes
 #include "hud_macros.h"
@@ -196,7 +198,15 @@ IReplaySystem *g_pReplay = NULL;
 CSysModule* shaderDLL = NULL;
 IShaderExtension* g_pShaderExtension = NULL;
 
+CSysModule* game_loopbackDLL = NULL;
+IGameLoopback* g_pGameLoopback = NULL;
+
+CSysModule* serverDLL = NULL;
+IGameServerLoopback* g_pGameServerLoopback = NULL;
+
 CSysModule* videoServicesDLL = NULL;
+
+CSysModule* vphysicsDLL = NULL;
 
 //=============================================================================
 // HPE_BEGIN
@@ -288,11 +298,6 @@ void DispatchHudText( const char *pszName );
 static ConVar s_CV_ShowParticleCounts("showparticlecounts", "0", 0, "Display number of particles drawn per frame");
 static ConVar s_cl_team("cl_team", "default", FCVAR_USERINFO|FCVAR_ARCHIVE, "Default team when joining a game");
 static ConVar s_cl_class("cl_class", "default", FCVAR_USERINFO|FCVAR_ARCHIVE, "Default class when joining a game");
-
-#ifdef HL1MP_CLIENT_DLL
-static ConVar s_cl_load_hl1_content("cl_load_hl1_content", "0", FCVAR_ARCHIVE, "Mount the content from Half-Life: Source if possible");
-#endif
-
 
 // Physics system
 bool g_bLevelInitialized;
@@ -408,6 +413,9 @@ public:
 	{
 		AddAppSystem( "soundemittersystem" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
 		AddAppSystem( "scenefilecache" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
+		AddAppSystem( "game_shader_dx9" DLL_EXT_STRING, SHADEREXTENSION_INTERFACE_VERSION );
+		//AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
+		AddAppSystem( "server" DLL_EXT_STRING, GAMESERVERLOOPBACK_INTERFACE_VERSION );
 	}
 
 	virtual int	Count()
@@ -709,6 +717,10 @@ private:
 	CUtlRBTree< IMaterial * > m_CachedMaterials;
 
 	CHudCloseCaption		*m_pHudCloseCaption;
+
+	bool m_bWasPaused;
+	float m_fPauseTime;
+	int m_nPauseTick;
 };
 
 
@@ -1000,6 +1012,63 @@ int CClientDll::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pG
 //-----------------------------------------------------------------------------
 int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CGlobalVarsBase *pGlobals )
 {
+	if ( (filesystem = (IFileSystem *)appSystemFactory(FILESYSTEM_INTERFACE_VERSION, NULL)) == NULL )
+		return false;
+
+	char gamebin_path[MAX_PATH];
+	int gamebin_length = filesystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+	gamebin_length -= 2;
+	gamebin_path[gamebin_length] = '\0';
+
+	if(HackMgr_IsSafeToSwapPhysics()) {
+		int status = IFACE_OK;
+		IPhysics *pOldPhysics = (IPhysics *)physicsFactory( VPHYSICS_INTERFACE_VERSION, &status );
+		if(status != IFACE_OK) {
+			pOldPhysics = NULL;
+		}
+
+		V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "vphysics" DLL_EXT_STRING);
+		vphysicsDLL = Sys_LoadModule( gamebin_path );
+		gamebin_path[gamebin_length] = '\0';
+
+		if( vphysicsDLL != NULL )
+		{
+			CreateInterfaceFn physicsFactory2 = Sys_GetFactory( vphysicsDLL );
+			if( physicsFactory2 != NULL )
+			{
+				status = IFACE_OK;
+				IPhysics *pNewPhysics = (IPhysics *)physicsFactory2( VPHYSICS_INTERFACE_VERSION, &status );
+				if(status != IFACE_OK) {
+					pNewPhysics = NULL;
+				}
+				if(pOldPhysics && pNewPhysics && (pNewPhysics != pOldPhysics)) {
+					pOldPhysics->Shutdown();
+					pOldPhysics->Disconnect();
+
+					bool success = false;
+
+					if(pNewPhysics->Connect(appSystemFactory)) {
+						if(pNewPhysics->Init() == INIT_OK) {
+							HackMgr_SetEnginePhysicsPtr(pOldPhysics, pNewPhysics);
+							success = true;
+							physicsFactory = physicsFactory2;
+						} else {
+							pNewPhysics->Shutdown();
+							pNewPhysics->Disconnect();
+						}
+					} else {
+						pNewPhysics->Disconnect();
+					}
+
+					if(!success) {
+						pOldPhysics->Connect(appSystemFactory);
+						pOldPhysics->Init();
+					}
+				}
+			}
+		}
+	}
+
 	if(!HackMgr_Client_PreInit(this, appSystemFactory, physicsFactory, pGlobals))
 		return false;
 
@@ -1007,9 +1076,6 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	factories.appSystemFactory = appSystemFactory;
 	factories.physicsFactory = physicsFactory;
 	FactoryList_Store( factories );
-
-	if ( (filesystem = (IFileSystem *)appSystemFactory(FILESYSTEM_INTERFACE_VERSION, NULL)) == NULL )
-		return false;
 
 	if(!Connect( appSystemFactory, pGlobals ))
 		return false;
@@ -1080,42 +1146,66 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	InitFbx();
 #endif
 
-	char gamebin_path[MAX_PATH];
-	int gamebin_length = filesystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+	if(HackMgr_IsSafeToSwapVideoServices()) {
+		int status = IFACE_OK;
+		IVideoServices *pOldVideo = (IVideoServices *)appSystemFactory( VIDEO_SERVICES_INTERFACE_VERSION, &status );
+		if(status != IFACE_OK) {
+			pOldVideo = NULL;
+		}
 
-	V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "video_services" DLL_EXT_STRING);
+		V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "video_services" DLL_EXT_STRING);
+		videoServicesDLL = Sys_LoadModule( gamebin_path );
+		gamebin_path[gamebin_length] = '\0';
 
-	videoServicesDLL = Sys_LoadModule( gamebin_path );
-
-	gamebin_path[gamebin_length] = '\0';
-
-	if ( videoServicesDLL != NULL )
-	{
-		CreateInterfaceFn VideoServicesFactory = Sys_GetFactory( videoServicesDLL );
-		if ( VideoServicesFactory != NULL )
+		if ( videoServicesDLL != NULL )
 		{
-			IVideoServices *pVideo = (IVideoServices *)VideoServicesFactory( VIDEO_SERVICES_INTERFACE_VERSION, NULL );
-			if ( pVideo != NULL )
+			CreateInterfaceFn VideoServicesFactory = Sys_GetFactory( videoServicesDLL );
+			if ( VideoServicesFactory != NULL )
 			{
-				if ( g_pVideo )
-				{
-					g_pVideo->Shutdown();
-					g_pVideo->Disconnect();
-					g_pVideo = NULL;
+				status = IFACE_OK;
+				IVideoServices *pNewVideo = (IVideoServices *)VideoServicesFactory( VIDEO_SERVICES_INTERFACE_VERSION, &status );
+				if(status != IFACE_OK) {
+					pNewVideo = NULL;
 				}
+				if ( pNewVideo && pOldVideo && (pOldVideo != pNewVideo) )
+				{
+					bool success = false;
 
-				pVideo->Connect( appSystemFactory );
-				pVideo->Init();
+					pOldVideo->Shutdown();
+					pOldVideo->Disconnect();
 
-				g_pVideo = pVideo;
+					if( pNewVideo->Connect( appSystemFactory ) ) {
+						if( pNewVideo->Init() == INIT_OK ) {
+							HackMgr_SetEngineVideoServicesPtr(pOldVideo, pNewVideo);
+							g_pVideo = pNewVideo;
+							success = true;
+						} else {
+							pNewVideo->Shutdown();
+							pNewVideo->Disconnect();
+						}
+					} else {
+						pNewVideo->Disconnect();
+					}
+
+					if(!success) {
+						pOldVideo->Connect(appSystemFactory);
+						pOldVideo->Init();
+					}
+				}
 			}
 		}
 	}
 
 	V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "game_shader_dx9" DLL_EXT_STRING);
-
 	Sys_LoadInterface( gamebin_path, SHADEREXTENSION_INTERFACE_VERSION, &shaderDLL, reinterpret_cast< void** >( &g_pShaderExtension ) );
+	gamebin_path[gamebin_length] = '\0';
 
+	V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "game_loopback" DLL_EXT_STRING);
+	Sys_LoadInterface( gamebin_path, GAMELOOPBACK_INTERFACE_VERSION, &game_loopbackDLL, reinterpret_cast< void** >( &g_pGameLoopback ) );
+	gamebin_path[gamebin_length] = '\0';
+
+	V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "server" DLL_EXT_STRING);
+	Sys_LoadInterface( gamebin_path, GAMESERVERLOOPBACK_INTERFACE_VERSION, &serverDLL, reinterpret_cast< void** >( &g_pGameServerLoopback ) );
 	gamebin_path[gamebin_length] = '\0';
 
 	COM_TimestampedLog( "soundemitterbase->Connect" );
@@ -1281,8 +1371,17 @@ void CClientDll::Shutdown( void )
 	if ( shaderDLL )
 		Sys_UnloadModule( shaderDLL );
 
+	if ( serverDLL )
+		Sys_UnloadModule( serverDLL );
+
+	if ( game_loopbackDLL )
+		Sys_UnloadModule( game_loopbackDLL );
+
 	if ( videoServicesDLL )
 		Sys_UnloadModule( videoServicesDLL );
+
+	if ( vphysicsDLL )
+		Sys_UnloadModule( vphysicsDLL );
 	
 	ClearKeyValuesCache();
 
@@ -1336,6 +1435,24 @@ void CClientDll::HudProcessInput( bool bActive )
 void CClientDll::HudUpdate( bool bActive )
 {
 	float frametime = gpGlobals->frametime;
+
+	// Ugly HACK! to prevent the game time from changing when paused
+	if( gpGlobals->maxClients == 1 )
+	{
+		if( m_bWasPaused != HackMgr_IsGamePaused() )
+		{
+			m_fPauseTime = gpGlobals->curtime;
+			m_nPauseTick = gpGlobals->tickcount;
+			m_bWasPaused = HackMgr_IsGamePaused();
+		}
+		if(  HackMgr_IsGamePaused() )
+		{
+			gpGlobals->curtime = m_fPauseTime;
+			gpGlobals->tickcount = m_nPauseTick;
+		}
+	} else if( HackMgr_IsGamePaused() ) {
+		HackMgr_SetGamePaused( false );
+	}
 
 #if defined( TF_CLIENT_DLL )
 	CRTime::UpdateRealTime();
@@ -1719,6 +1836,18 @@ GPUMemLevel_t GetGPUMemLevel()
 
 void ConfigureCurrentSystemLevel()
 {
+	// Check if the user supports at least pixel shader 2.0b
+	ConVarRef mat_dxlevel("mat_dxlevel");
+
+	if(mat_dxlevel.IsValid() && g_pMaterialSystemHardwareConfig) {
+		int nMaxDXLevel = g_pMaterialSystemHardwareConfig->GetMaxDXSupportLevel();
+		if( mat_dxlevel.GetInt() < 95 )
+		{
+			Error( "Your graphics card does not seem to support shader model 3.0 or higher. Reported dx level: %d (max setting: %d).", 
+					mat_dxlevel.GetInt(), nMaxDXLevel );
+		}
+	}
+
 	C_BaseEntity::UpdateVisibilityAllEntities();
 	if ( GetViewRenderInstance() )
 	{
@@ -1735,6 +1864,8 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 	if (g_bLevelInitialized)
 		return;
 	g_bLevelInitialized = true;
+
+	m_bWasPaused = false;
 
 	input->LevelInit();
 
@@ -1873,6 +2004,9 @@ void CClientDll::LevelShutdown( void )
 	CReplayRagdollRecorder::Instance().Shutdown();
 	CReplayRagdollCache::Instance().Shutdown();
 #endif
+
+	// Should never be paused at this point
+	HackMgr_SetGamePaused( false );
 }
 
 
@@ -2877,3 +3011,12 @@ class CClientMaterialSystem : public IClientMaterialSystem
 static CClientMaterialSystem s_ClientMaterialSystem;
 IClientMaterialSystem *g_pClientMaterialSystem = &s_ClientMaterialSystem;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CClientMaterialSystem, IClientMaterialSystem, VCLIENTMATERIALSYSTEM_INTERFACE_VERSION, s_ClientMaterialSystem );
+
+class CGameClientLoopback : public CBaseAppSystem< IGameClientLoopback >
+{
+
+};
+
+static CGameClientLoopback s_ClientGameLoopback;
+IGameClientLoopback *g_pGameClientLoopback = &s_ClientGameLoopback;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CGameClientLoopback, IGameClientLoopback, GAMECLIENTLOOPBACK_INTERFACE_VERSION, s_ClientGameLoopback );

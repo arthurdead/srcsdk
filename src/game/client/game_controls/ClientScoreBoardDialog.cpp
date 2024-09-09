@@ -72,11 +72,15 @@ CClientScoreBoardDialog::CClientScoreBoardDialog(IViewPort *pViewPort) : Editabl
 	m_pPlayerList->SetVisible( false ); // hide this until we load the images in applyschemesettings
 
 	m_HLTVSpectators = 0;
+#ifdef REPLAY_ENABLED
 	m_ReplaySpectators = 0;
-	
+#endif
+
 	// update scoreboard instantly if on of these events occure
 	ListenForGameEvent( "hltv_status" );
+#ifdef REPLAY_ENABLED
 	ListenForGameEvent( "replay_status" );
+#endif
 	ListenForGameEvent( "server_spawn" );
 
 	m_pImageList = NULL;
@@ -289,12 +293,14 @@ void CClientScoreBoardDialog::FireGameEvent( IGameEvent *event )
 		m_HLTVSpectators = event->GetInt( "clients" );
 		m_HLTVSpectators -= event->GetInt( "proxies" );
 	}
+#ifdef REPLAY_ENABLED
 	else if ( Q_strcmp(type, "replay_status") == 0 )
 	{
 		// spectators = clients - proxies
 		m_ReplaySpectators = event->GetInt( "clients" );
 		m_ReplaySpectators -= event->GetInt( "proxies" );
 	}
+#endif
 	else if ( Q_strcmp(type, "server_spawn") == 0 )
 	{
 		// We'll post the message ourselves instead of using SetControlString()

@@ -15,11 +15,15 @@ if build_libs
 	subproject('responserules')
 	subproject('vgui_controls')
 	subproject('shaderlib')
+	subproject('hackmgr')
+	subproject('recastnavigation_game')
+	subproject('game_loopback')
+	#subproject('vphysics')
 endif
 if build_client
 	subproject('vaudio_minimp3')
-	subproject('vaudio_redirect')
-	subproject('video_services')
+	#subproject('vaudio_redirect')
+	#subproject('video_services')
 	subproject('game_shader_dx9')
 	subproject('client')
 endif

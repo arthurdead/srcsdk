@@ -356,6 +356,8 @@ private:
 	int ExtractDuplicates( int nFrameNumber, int nCount, RenderableInfo_t **ppRenderables );
 	int ExtractDisableShadowDepthRenderables(int nCount, RenderableInfo_t **ppRenderables);
 	int ExtractDisableShadowDepthCacheRenderables(int nCount, RenderableInfo_t **ppRenderables);
+	int ExtractFadedRenderables( int nViewID, int nCount, RenderableInfo_t **ppRenderables, BuildRenderListInfo_t *pRLInfo );
+	int ExtractNotInScreen( int nViewID, int nCount, RenderableInfo_t **ppRenderables );
 	void ComputeBounds( int nCount, RenderableInfo_t **ppRenderables, BuildRenderListInfo_t *pRLInfo );
 	int ExtractCulledRenderables( int nCount, RenderableInfo_t **ppRenderables, BuildRenderListInfo_t *pRLInfo );
 	int ExtractOccludedRenderables( int nCount, RenderableInfo_t **ppRenderables, BuildRenderListInfo_t *pRLInfo );
@@ -3173,6 +3175,161 @@ int CClientLeafSystem::ComputeTranslucency( int nFrameNumber, int nViewID, int n
 	return nUniqueCount;
 }
 
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+int CClientLeafSystem::ExtractFadedRenderables( int nViewID, int nCount, RenderableInfo_t **ppRenderables, BuildRenderListInfo_t *pRLInfo )
+{
+	// Distance fade computations
+	float flDistFactorSq = 1.0f;
+	Vector vecViewOrigin = (nViewID == VIEW_SHADOW_DEPTH_TEXTURE ? MainViewOrigin() : CurrentViewOrigin());
+	C_BasePlayer *pLocal = C_BasePlayer::GetLocalPlayer();
+	if ( pLocal )
+	{
+		flDistFactorSq = pLocal->GetFOVDistanceAdjustFactor();
+		flDistFactorSq *= flDistFactorSq;
+	}
+
+	// Strip faded renderables
+	int nUniqueCount = 0;
+	for ( int i = 0; i < nCount; ++i )
+	{
+		RenderableInfo_t *pInfo = ppRenderables[i];
+		BuildRenderListInfo_t &rlInfo = pRLInfo[i];
+
+		if( !IsLeafMarker( pInfo ) && pInfo->m_pAlphaProperty )
+		{ 
+			float fDistanceFade = pInfo->m_pAlphaProperty->m_nDistFadeEnd;
+			fDistanceFade *= fDistanceFade;
+
+			Vector vecCenter;
+			VectorAdd( pRLInfo[i].m_vecMaxs, pRLInfo[i].m_vecMins, vecCenter );
+			vecCenter *= 0.5f;
+
+			float flCurrentDistanceSq = flDistFactorSq * vecViewOrigin.DistToSqr( vecCenter );
+
+			if( fDistanceFade != 0 && fDistanceFade < flCurrentDistanceSq )
+			{
+				// Necessary for dependent models to be grabbed
+				pInfo->m_nRenderFrame--;
+				continue;
+			}
+		}
+
+		ppRenderables[nUniqueCount] = pInfo;
+		pRLInfo[nUniqueCount] = rlInfo;
+		++nUniqueCount;
+	}
+	return nUniqueCount;
+}
+
+// Test code:
+static int ScreenTransform2( const Vector& point, Vector& screen, const VMatrix &worldToScreen )
+{
+	// UNDONE: Clean this up some, handle off-screen vertices
+	float w;
+
+	screen.x = worldToScreen[0][0] * point[0] + worldToScreen[0][1] * point[1] + worldToScreen[0][2] * point[2] + worldToScreen[0][3];
+	screen.y = worldToScreen[1][0] * point[0] + worldToScreen[1][1] * point[1] + worldToScreen[1][2] * point[2] + worldToScreen[1][3];
+	//	z		 = worldToScreen[2][0] * point[0] + worldToScreen[2][1] * point[1] + worldToScreen[2][2] * point[2] + worldToScreen[2][3];
+	w		 = worldToScreen[3][0] * point[0] + worldToScreen[3][1] * point[1] + worldToScreen[3][2] * point[2] + worldToScreen[3][3];
+
+	// Just so we have something valid here
+	screen.z = 0.0f;
+
+	bool behind;
+	if( w < 0.001f )
+	{
+		behind = true;
+		screen.x *= 100000;
+		screen.y *= 100000;
+	}
+	else
+	{
+		behind = false;
+		float invw = 1.0f / w;
+		screen.x *= invw;
+		screen.y *= invw;
+	}
+
+	return behind;
+}
+
+#include "vgui_int.h"
+bool GetVectorInScreenSpace2( Vector pos, int& iX, int& iY, Vector *vecOffset, const VMatrix &worldToScreen )
+{
+	Vector screen;
+
+	// Apply the offset, if one was specified
+	if ( vecOffset != NULL )
+		pos += *vecOffset;
+
+	// Transform to screen space
+	int x, y, screenWidth, screenHeight;
+	int insetX, insetY;
+	VGui_GetEngineRenderBounds( x, y, screenWidth, screenHeight, insetX, insetY );
+
+	// Transform to screen space
+	int iFacing = ScreenTransform2( pos, screen, worldToScreen );
+
+	iX = 0.5 * screen[0] * screenWidth;
+	iY = -0.5 * screen[1] * screenHeight;
+	iX += 0.5 * screenWidth;
+	iY += 0.5 * screenHeight;	
+
+	iX += insetX;
+	iY += insetY;
+
+	// Make sure the player's facing it
+	if ( iFacing )
+	{
+		// We're actually facing away from the Target. Stomp the screen position.
+		iX = -640;
+		iY = -640;
+		return false;
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+int CClientLeafSystem::ExtractNotInScreen( int nViewID, int nCount, RenderableInfo_t **ppRenderables )
+{
+	// Strip renderables not in screen of local player
+	int nUniqueCount = 0;
+	int x, y;
+	bool onscreen;
+
+	static VMatrix worldToScreen;
+	if( nViewID == 0 )
+	{
+		worldToScreen = engine->WorldToScreenMatrix();
+	}
+
+	for ( int i = 0; i < nCount; ++i )
+	{
+		RenderableInfo_t *pInfo = ppRenderables[i];
+
+		if( !IsLeafMarker( pInfo ) )
+		{
+			onscreen = GetVectorInScreenSpace2( pInfo->m_pRenderable->GetRenderOrigin(), x, y, NULL, worldToScreen );
+			//NDebugOverlay::Text( pInfo->m_pRenderable->GetRenderOrigin(), VarArgs("%d,%d,%d", x, y, onscreen), false, gpGlobals->frametime );
+			if( !onscreen || x < 0 || y < 0 || x > ScreenWidth() || y > ScreenHeight() )
+			{
+				// Necessary for dependent models to be grabbed
+				pInfo->m_nRenderFrame--;
+				continue;
+			}
+		}
+
+		ppRenderables[nUniqueCount] = pInfo;
+		++nUniqueCount;
+	}
+
+	return nUniqueCount;
+}
 
 //-----------------------------------------------------------------------------
 // Computes bounds for all renderables
@@ -3446,6 +3603,7 @@ void CClientLeafSystem::AddRenderablesToRenderLists( const SetupRenderInfo_t &in
 	AddDependentRenderables( info );
 }
 
+ConVar debug_buildrenderables_snapshot("debug_buildrenderables_snapshot", "0", FCVAR_CHEAT);
 void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 {
 	VPROF_BUDGET( "BuildRenderablesList", "BuildRenderablesList" );
@@ -3460,7 +3618,8 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 	DetailObjectSystem()->BuildRenderingData( detailRenderables, info, flDetailDist, info.m_pRenderList->m_DetailFade );
 
 	// First build a non-unique list of renderables, separated by special leaf markers
-	CUtlVectorFixedGrowable< RenderableInfo_t *, 2048 > orderedList( 2048 );
+	//CUtlVectorFixedGrowable< RenderableInfo_t *, 2048 > orderedList( 2048 );
+	CUtlVectorFixedGrowable< RenderableInfo_t *, 65536 > orderedList( 65536 ); // Temp, for swarm keeper
 
 	if ( info.m_nViewID != VIEW_3DSKY && r_drawallrenderables.GetBool() )
 	{
@@ -3519,8 +3678,39 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 	{
 		nCount = ComputeTranslucency( gpGlobals->framecount /*info.m_nRenderFrame*/, info.m_nViewID, nCount, ppRenderables, pRLInfo );
 	}
+	else
+	{
+		nCount = ExtractFadedRenderables( info.m_nViewID, nCount, ppRenderables, pRLInfo );
+	}
 
 	nCount = ExtractOccludedRenderables( nCount, ppRenderables, pRLInfo );
+
+	// Debug code
+	static bool bSnapshotting = false;
+	static int iSnaphotframecount = -1;
+	static int iOffset = 3;
+	if( debug_buildrenderables_snapshot.GetBool() )
+	{
+		debug_buildrenderables_snapshot.SetValue( false );
+		bSnapshotting = true;
+		iSnaphotframecount = gpGlobals->framecount;
+	}
+
+	if( bSnapshotting )
+	{
+		if( iSnaphotframecount != gpGlobals->framecount )
+		{
+			bSnapshotting = false;
+			iOffset = 3;
+		}
+		else
+		{
+			Vector vecViewOrigin = CurrentViewOrigin();
+			engine->Con_NPrintf( iOffset, "View: %d; Real View: %d; Draw TransLuc: %d; vecViewOrigin: %.2f %.2f %.2f. Leaf count: %d. Renderables count: %d\n", 
+				info.m_nViewID, CurrentViewID(), info.m_bDrawTranslucentObjects, vecViewOrigin.x, vecViewOrigin.y, vecViewOrigin.z, info.m_pWorldListInfo->m_LeafCount, nCount );
+			iOffset += 1;
+		}
+	}
 
 	AddRenderablesToRenderLists( info, nCount, ppRenderables, pRLInfo, detailRenderables.Count(), detailRenderables.Base() );
 	stackfree( pRLInfo );

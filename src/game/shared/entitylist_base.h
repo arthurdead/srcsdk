@@ -15,6 +15,8 @@
 #include "ihandleentity.h"
 #include "ehandle.h"
 
+COMPILE_TIME_ASSERT(GAME_NUM_ENT_ENTRIES > ENGINE_NUM_ENT_ENTRIES);
+
 #ifdef GAME_DLL
 class CBaseEntity;
 #else
@@ -114,7 +116,7 @@ private:
 
 
 	// The first MAX_EDICTS entities are networkable. The rest are client-only or server-only.
-	CEntInfo m_EntPtrArray[NUM_ENT_ENTRIES];
+	CEntInfo m_EntPtrArray[GAME_NUM_ENT_ENTRIES];
 	CEntInfoList	m_activeList;
 	CEntInfoList	m_freeNonNetworkableList;
 };
@@ -128,7 +130,7 @@ inline int CBaseEntityList::GetEntInfoIndex( const CEntInfo *pEntInfo ) const
 {
 	Assert( pEntInfo );
 	int index = (int)(pEntInfo - m_EntPtrArray);
-	Assert( index >= 0 && index < NUM_ENT_ENTRIES );
+	Assert( index >= 0 && index < GAME_NUM_ENT_ENTRIES );
 	return index;
 }
 
@@ -161,7 +163,7 @@ inline CBaseEntity* CBaseEntityList::LookupEntityByNetworkIndex( int edictIndex 
 	if ( edictIndex < 0 )
 		return NULL;
 
-	Assert( edictIndex < NUM_ENT_ENTRIES );
+	Assert( edictIndex < GAME_NUM_ENT_ENTRIES );
 	return m_EntPtrArray[edictIndex].m_pBaseEnt;
 }
 

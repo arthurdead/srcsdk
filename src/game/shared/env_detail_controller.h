@@ -23,6 +23,8 @@ public:
 
 #ifndef CLIENT_DLL
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+#else
+	virtual void OnDataChanged( DataUpdateType_t updateType );
 #endif // !CLIENT_DLL
 
 	CNetworkVar( float, m_flFadeStartDist );
@@ -30,6 +32,12 @@ public:
 
 	// ALWAYS transmit to all clients.
 	virtual int UpdateTransmitState( void );
+
+private:
+#ifdef CLIENT_DLL
+	float m_fOldFadeStartDist;
+	float m_fOldFadeEndDist;
+#endif // CLIENT_DLL
 };
 
 CEnvDetailController * GetDetailController();

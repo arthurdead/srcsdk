@@ -467,10 +467,10 @@ void NWCEdit::RememberEntityPosition( CBaseEntity *pEntity )
 
 	if ( !g_EntityPositions )
 	{
-		g_EntityPositions = new Vector[NUM_ENT_ENTRIES];
-		g_EntityOrientations = new QAngle[NUM_ENT_ENTRIES];
+		g_EntityPositions = new Vector[GAME_NUM_ENT_ENTRIES];
+		g_EntityOrientations = new QAngle[GAME_NUM_ENT_ENTRIES];
 		// have to save these too because some entities change the classname on spawn (e.g. prop_physics_override, physics_prop)
-		g_EntityClassnames = new string_t[NUM_ENT_ENTRIES];
+		g_EntityClassnames = new string_t[GAME_NUM_ENT_ENTRIES];
 	}
 	int index = pEntity->entindex();
 	g_EntityPositions[index] = pEntity->GetAbsOrigin();

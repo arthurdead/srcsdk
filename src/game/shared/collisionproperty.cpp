@@ -405,6 +405,7 @@ void CCollisionProperty::Init( CBaseEntity *pEntity )
 	m_vecMins.GetForModify().Init();
 	m_vecMaxs.GetForModify().Init();
 	m_flRadius = 0.0f;
+	m_flRadius2D = 0.0f;
 	m_triggerBloat = 0;
 	m_usSolidFlags = 0;
 	m_nSolidType = SOLID_NONE;
@@ -684,6 +685,7 @@ void CCollisionProperty::SetCollisionBounds( const Vector &mins, const Vector &m
 		Vector vecSize;
 		VectorSubtract( m_vecMaxs, m_vecMins, vecSize );
 		m_flRadius = vecSize.Length() * 0.5f;
+		m_flRadius2D = vecSize.Length2D() * 0.5f;
 
 		MarkSurroundingBoundsDirty();
 	}
@@ -716,11 +718,12 @@ void CCollisionProperty::RefreshScaledCollisionBounds( void )
 //-----------------------------------------------------------------------------
 float CCollisionProperty::BoundingRadius2D() const
 {
-	Vector vecSize;
-	VectorSubtract( m_vecMaxs, m_vecMins, vecSize );
+	//Vector vecSize;
+	//VectorSubtract( m_vecMaxs, m_vecMins, vecSize );
 
-	vecSize.z = 0;	
-	return vecSize.Length() * 0.5f;
+	//vecSize.z = 0;	
+	//return vecSize.Length() * 0.5f;
+	return m_flRadius2D;
 }
 
 
@@ -1268,7 +1271,7 @@ void CCollisionProperty::SetSurroundingBoundsType( SurroundingBoundsType_t type,
 void CCollisionProperty::MarkSurroundingBoundsDirty()
 {
 	// don't bother with the world
-	if ( m_pOuter->IsWorld() )
+	if ( m_pOuter->IsWorld() && !m_pOuter->IsEFlagSet( EFL_NOT_NETWORKED ) )
 		return;
 
 	GetOuter()->AddEFlags( EFL_DIRTY_SURROUNDING_COLLISION_BOUNDS );
@@ -1376,13 +1379,16 @@ void CCollisionProperty::UpdateServerPartitionMask( )
 	// We'll re-add it below if we need to.
 	partition->Remove( handle );
 
-	// Don't bother with deleted things
-	if ( !m_pOuter->edict() )
-		return;
+	if( !m_pOuter->IsEFlagSet( EFL_NOT_NETWORKED ) ) // Allow server only entities to have collision
+	{
+		// Don't bother with deleted things
+		if ( !m_pOuter->edict() )
+			return;
 
-	// don't add the world
-	if ( m_pOuter->entindex() == 0 )
-		return;		
+		// don't add the world
+		if ( m_pOuter->IsWorld() )
+			return;		
+	}
 
 	// Make sure it's in the list of all entities
 	bool bIsSolid = IsSolid() || IsSolidFlagSet(FSOLID_TRIGGER);
@@ -1443,11 +1449,14 @@ void CCollisionProperty::UpdatePartition( )
 		m_pOuter->RemoveEFlags( EFL_DIRTY_SPATIAL_PARTITION );
 
 #ifndef CLIENT_DLL
-		Assert( m_pOuter->entindex() != 0 );
+		if( !m_pOuter->IsEFlagSet( EFL_NOT_NETWORKED ) ) // Allow server only entities to have collision
+		{
+			Assert( !m_pOuter->IsWorld() );
 
-		// Don't bother with deleted things
-		if ( !m_pOuter->edict() )
-			return;
+			// Don't bother with deleted things
+			if ( !m_pOuter->edict() )
+				return;
+		}
 
 		if ( GetPartitionHandle() == PARTITION_INVALID_HANDLE )
 		{

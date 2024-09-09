@@ -170,10 +170,26 @@ inline CBaseHandle::CBaseHandle( int iEntry, int iSerialNumber )
 
 inline void CBaseHandle::Init( int iEntry, int iSerialNumber )
 {
-	Assert( iEntry >= 0 && iEntry < NUM_ENT_ENTRIES );
-	Assert( iSerialNumber >= 0 && iSerialNumber < (1 << NUM_SERIAL_NUM_BITS) );
+	Assert( iEntry >= 0 );
+	Assert( iSerialNumber >= 0 );
 
-	m_Index = iEntry | (iSerialNumber << NUM_ENT_ENTRY_BITS);
+	if( iEntry >= ENGINE_NUM_ENT_ENTRIES )
+	{
+		Assert( iEntry < GAME_NUM_ENT_ENTRIES );
+		Assert( (iEntry & GAME_ENT_ENTRY_MASK) == iEntry);
+		Assert( iSerialNumber < (1 << GAME_NUM_SERIAL_NUM_BITS) );
+
+		m_Index = iEntry | (iSerialNumber << GAME_NUM_SERIAL_NUM_SHIFT_BITS);
+		m_Index |= GAME_EHANDLE_TEST_BIT;
+	}
+	else
+	{
+		Assert( (iEntry & ENGINE_ENT_ENTRY_MASK) == iEntry);
+		Assert( iSerialNumber < (1 << ENGINE_NUM_SERIAL_NUM_BITS) );
+
+		m_Index = iEntry | (iSerialNumber << ENGINE_NUM_ENT_ENTRY_BITS);
+		m_Index &= ~GAME_EHANDLE_TEST_BIT;
+	}
 }
 
 inline void CBaseHandle::Term()
@@ -188,12 +204,18 @@ inline bool CBaseHandle::IsValid() const
 
 inline int CBaseHandle::GetEntryIndex() const
 {
-	return m_Index & ENT_ENTRY_MASK;
+	if(m_Index == INVALID_EHANDLE_INDEX)
+		return ENGINE_NUM_ENT_ENTRIES-1;
+	if( m_Index & GAME_EHANDLE_TEST_BIT )
+		return (m_Index & ~GAME_EHANDLE_TEST_BIT) & GAME_ENT_ENTRY_MASK;
+	return m_Index & ENGINE_ENT_ENTRY_MASK;
 }
 
 inline int CBaseHandle::GetSerialNumber() const
 {
-	return m_Index >> NUM_ENT_ENTRY_BITS;
+	if( m_Index & GAME_EHANDLE_TEST_BIT )
+		return (m_Index & ~GAME_EHANDLE_TEST_BIT) >> GAME_NUM_SERIAL_NUM_SHIFT_BITS;
+	return m_Index >> ENGINE_NUM_ENT_ENTRY_BITS;
 }
 
 inline int CBaseHandle::ToInt() const

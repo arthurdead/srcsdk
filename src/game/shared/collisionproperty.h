@@ -255,6 +255,7 @@ private:
 	CNetworkVector( m_vecMins );
 	CNetworkVector( m_vecMaxs );
 	float m_flRadius;
+	float m_flRadius2D;
 
 	CNetworkVar( unsigned short, m_usSolidFlags );
 

@@ -151,7 +151,7 @@ protected:
 	virtual void MouseMove ( CUserCmd *cmd );
 
 	// Joystick  movement input helpers
-	void		ControllerMove ( float frametime, CUserCmd *cmd );
+	virtual void		ControllerMove ( float frametime, CUserCmd *cmd );
 	virtual void		JoyStickMove ( float frametime, CUserCmd *cmd );
 	float		ScaleAxisValue( const float axisValue, const float axisThreshold );
 	virtual float JoyStickAdjustYaw( float flSpeed ) { return flSpeed; }
@@ -281,6 +281,7 @@ extern kbutton_t in_forward;
 extern kbutton_t in_back;
 extern kbutton_t in_joyspeed;
 extern kbutton_t in_lookspin;
+extern kbutton_t in_walk;
 
 extern class ConVar in_joystick;
 extern class ConVar joy_autosprint;

@@ -16,6 +16,7 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier1/utldict.h"
 
 #ifdef __GNUC__
 #define HACKMGR_THISCALL __attribute__((__thiscall__))
@@ -89,8 +90,7 @@ namespace __cxxabiv1
 }
 #endif
 
-template <typename C>
-inline __cxxabiv1::vtable_prefix *vtable_prefix_from_object(C *ptr) noexcept
+inline __cxxabiv1::vtable_prefix *vtable_prefix_from_object(void *ptr) noexcept
 {
 #ifdef __clang__
 	#pragma clang diagnostic push
@@ -99,7 +99,7 @@ inline __cxxabiv1::vtable_prefix *vtable_prefix_from_object(C *ptr) noexcept
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wcast-align"
 #endif
-	return reinterpret_cast<__cxxabiv1::vtable_prefix *>(reinterpret_cast<unsigned char *>(*reinterpret_cast<generic_vtable_t *>(ptr)) - offsetof(__cxxabiv1::vtable_prefix, origin));
+	return reinterpret_cast<__cxxabiv1::vtable_prefix *>(reinterpret_cast<unsigned char *>(*reinterpret_cast<generic_vtable_t *>(ptr)) - __builtin_offsetof(__cxxabiv1::vtable_prefix, origin));
 #ifdef __clang__
 	#pragma clang diagnostic pop
 #else
@@ -112,8 +112,7 @@ inline generic_vtable_t vtable_from_prefix(__cxxabiv1::vtable_prefix *prefix) no
 	return reinterpret_cast<generic_vtable_t>(const_cast<void **>(&prefix->origin));
 }
 
-template <typename C>
-inline generic_vtable_t vtable_from_object(C *ptr) noexcept
+inline generic_vtable_t vtable_from_object(void *ptr) noexcept
 {
 	__cxxabiv1::vtable_prefix *prefix{vtable_prefix_from_object(ptr)};
 	return vtable_from_prefix(prefix);
@@ -136,16 +135,33 @@ struct page_info final
 	inline void protect(int flags) noexcept
 	{ mprotect(start, size, flags); }
 
+	inline page_info(const page_info &other)
+		: start(other.start), size(other.size)
+	{
+	}
+	inline page_info &operator=(const page_info &other)
+	{
+		start = other.start;
+		size = other.size;
+		return *this;
+	}
+	inline page_info(page_info &&other)
+		: start(other.start), size(other.size)
+	{
+	}
+	inline page_info &operator=(page_info &&other)
+	{
+		start = other.start;
+		size = other.size;
+		return *this;
+	}
+
 private:
 	void *start;
 	size_t size;
 
 private:
 	page_info() = delete;
-	page_info(const page_info &) = delete;
-	page_info &operator=(const page_info &) = delete;
-	page_info(page_info &&) = delete;
-	page_info &operator=(page_info &&) = delete;
 };
 
 using intmfp_t = uint64_t;
@@ -260,5 +276,25 @@ inline auto func_from_vtable(generic_plain_mfp_t func)
 {
 	return func_from_vtable_t<T>::get(func);
 }
+
+class KeyValues;
+
+class AddressManager
+{
+public:
+	AddressManager();
+	~AddressManager();
+
+	generic_func_t LookupFunction(const char *name);
+
+private:
+	void init();
+
+	KeyValues *kv;
+	bool initialized;
+
+	CUtlDict<generic_func_t> funcs;
+};
+extern AddressManager addresses;
 
 #endif

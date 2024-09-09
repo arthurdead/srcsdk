@@ -1,4 +1,4 @@
-project('source_game','cpp')
+project('game_shader_base','cpp')
 
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 

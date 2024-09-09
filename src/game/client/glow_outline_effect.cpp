@@ -18,6 +18,9 @@
 ConVar glow_outline_effect_enable( "glow_outline_effect_enable", "1", FCVAR_ARCHIVE, "Enable entity outline glow effects." );
 ConVar glow_outline_effect_width( "glow_outline_width", "10.0f", FCVAR_CHEAT, "Width of glow outline effect in screen space." );
 
+ConVar glow_outline_effect_dim( "glow_outline_dim", "1.0f", FCVAR_CHEAT, "" );
+ConVar glow_outline_effect_luminance( "glow_outline_luminance", "0.8f", FCVAR_CHEAT, "" );
+
 extern bool g_bDumpRenderTargets; // in viewpostprocess.cpp
 
 CGlowObjectManager g_GlowObjectManager;
@@ -28,6 +31,8 @@ void CGlowObjectManager::RenderGlowEffects( const CViewSetup *pSetup )
 	{
 		if ( glow_outline_effect_enable.GetBool() )
 		{
+			m_bRenderingGlowEffects = true;
+
 			CMatRenderContextPtr pRenderContext( materials );
 
 			int nX, nY, nWidth, nHeight;
@@ -35,6 +40,8 @@ void CGlowObjectManager::RenderGlowEffects( const CViewSetup *pSetup )
 
 			PIXEvent _pixEvent( pRenderContext, "EntityGlowEffects" );
 			ApplyEntityGlowEffects( pSetup, pRenderContext, glow_outline_effect_width.GetFloat(), nX, nY, nWidth, nHeight );
+
+			m_bRenderingGlowEffects = false;
 		}
 	}
 }
@@ -381,7 +388,9 @@ void CGlowObjectManager::ApplyEntityGlowEffects( const CViewSetup *pSetup, CMatR
 
 		// Do not fade the glows out at all (weight = 1.0)
 		IMaterialVar *pDimVar = pMatHaloAddToScreen->FindVar( "$C0_X", NULL );
-		pDimVar->SetFloatValue( 1.0f );
+		pDimVar->SetFloatValue( glow_outline_effect_dim.GetFloat() );
+		IMaterialVar *pLumVar = pMatHaloAddToScreen->FindVar( "$C1_X", NULL );
+		pLumVar->SetFloatValue( glow_outline_effect_luminance.GetFloat() );
 
 		// Set stencil state
 		ShaderStencilState_t stencilState;

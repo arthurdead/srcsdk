@@ -87,7 +87,7 @@ void hud_autoreloadscript_callback( IConVar *var, const char *pOldValue, float f
 	}
 }
 
-static ConVar cl_leveloverviewmarker( "cl_leveloverviewmarker", "0", FCVAR_CHEAT );
+ConVar cl_leveloverviewmarker( "cl_leveloverviewmarker", "0", FCVAR_CHEAT );
 
 CON_COMMAND( showpanel, "Shows a viewport panel <name>" )
 {

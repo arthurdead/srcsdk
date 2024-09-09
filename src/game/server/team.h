@@ -96,7 +96,7 @@ public:
 	int		m_iLastSpawn;		// Index of the last spawnpoint used
 };
 
-extern CUtlVector< CTeam * > g_Teams;
+extern CUtlVector< CHandle< CTeam > > g_Teams;
 extern CTeam *GetGlobalTeamByIndex( int iIndex );
 extern CTeam *GetGlobalTeamByTeam( Team_t iIndex );
 extern int GetNumberOfTeams( void );

@@ -26,6 +26,7 @@
 #include "ai_hull.h"
 #include "ai_utils.h"
 #include "physics_impact_damage.h"
+#include "basecombatcharacter_shared.h"
 
 class CNavArea;
 class CScriptedTarget;
@@ -80,22 +81,6 @@ enum Capability_t
 class CBaseCombatWeapon;
 
 #define BCC_DEFAULT_LOOK_TOWARDS_TOLERANCE 0.9f
-
-enum Disposition_t 
-{
-	D_ER,		// Undefined - error
-	D_HT,		// Hate
-	D_FR,		// Fear
-	D_LI,		// Like
-	D_NU,		// Neutral
-
-	// The following are duplicates of the above, only with friendlier names
-	D_ERROR = D_ER,		// Undefined - error
-	D_HATE = D_HT,		// Hate
-	D_FEAR = D_FR,		// Fear
-	D_LIKE = D_LI,		// Like
-	D_NEUTRAL = D_NU,	// Neutral
-};
 
 const int DEF_RELATIONSHIP_PRIORITY = INT_MIN;
 

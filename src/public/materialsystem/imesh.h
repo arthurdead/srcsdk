@@ -29,7 +29,7 @@ class IMaterial;
 class CMeshBuilder;
 class IMaterialVar;
 typedef uint64 VertexFormat_t;
-
+struct ShaderStencilState_t;
 
 //-----------------------------------------------------------------------------
 // Define this to find write-combine problems
@@ -190,6 +190,41 @@ struct ModelVertexDX8_t	: public ModelVertexDX7_t
 	Vector4D		m_vecUserData;
 };
 
+//---------------------------------------------------------------------------------------
+// Thin Vertex format for use with ATI tessellator in quad mode
+//---------------------------------------------------------------------------------------
+struct QuadTessVertex_t
+{
+	Vector4D	m_vTangent;		// last component is Binormal flip and Wrinkle weight
+	Vector4D	m_vUV01;		// UV coordinates for points Interior (0), and Parametric V Edge (1)
+	Vector4D	m_vUV23;		// UV coordinates for points Parametric U Edge (2), and Corner (3)
+};
+
+struct MeshBoneRemap_t   // see BoneStateChangeHeader_t
+{
+	DECLARE_BYTESWAP_DATADESC();
+	int m_nActualBoneIndex;
+	int m_nSrcBoneIndex;
+};
+
+struct MeshInstanceData_t
+{
+	int						m_nIndexOffset;
+	int						m_nIndexCount;
+	int						m_nBoneCount;
+	MeshBoneRemap_t *		m_pBoneRemap;		// there are bone count of these, they index into pose to world
+	matrix3x4_t	*			m_pPoseToWorld;	// transforms for the *entire* model, indexed into by m_pBoneIndex. Potentially more than bone count of these
+	const ITexture *		m_pEnvCubemap;
+	MaterialLightingState_t *m_pLightingState;
+	MaterialPrimitiveType_t m_nPrimType;
+	const IVertexBuffer	*	m_pVertexBuffer;
+	int						m_nVertexOffsetInBytes;
+	const IIndexBuffer *	m_pIndexBuffer;
+	const IVertexBuffer	*	m_pColorBuffer;
+	int						m_nColorVertexOffsetInBytes;
+	ShaderStencilState_t *	m_pStencilState;
+	Vector4D				m_DiffuseModulation;
+};
 
 //-----------------------------------------------------------------------------
 // Utility methods for buffer builders
@@ -498,6 +533,8 @@ public:
 	void Color3fv( const float *rgb );
 	void Color4f( float r, float g, float b, float a );
 	void Color4fv( const float *rgba );
+	void Color4Packed( int packedColor );
+	int PackColor4( unsigned char r, unsigned char g, unsigned char b, unsigned char a );
 
 	// Faster versions of color
 	void Color3ub( unsigned char r, unsigned char g, unsigned char b );
@@ -541,11 +578,13 @@ public:
 
 	// bone weights
 	void BoneWeight( int idx, float weight );
+	void BoneWeights2( float weight1, float weight2 );
 	// bone weights (templatized for code which needs to support compressed vertices)
 	template <VertexCompressionType_t T> void CompressedBoneWeight3fv( const float * pWeights );
 
 	// bone matrix index
 	void BoneMatrix( int idx, int matrixIndex );
+	void BoneMatrices4( int matrixIdx0, int matrixIdx1, int matrixIdx2, int matrixIdx3 );
 
 	// Generic per-vertex data
 	void UserData( const float* pData );
@@ -564,6 +603,8 @@ public:
 		ModelVertexDX7_t const *vtx_b,
 		ModelVertexDX7_t const *vtx_c,
 		ModelVertexDX7_t const *vtx_d);
+
+	void FastQuadVertexSSE( const QuadTessVertex_t &vertex );
 
 	void FastVertex( const ModelVertexDX8_t &vertex );
 	void FastVertexSSE( const ModelVertexDX8_t &vertex );
@@ -1808,6 +1849,16 @@ inline void CVertexBuilder::Color4ubv( unsigned char const* rgba )
 	*(int*)m_pCurrColor = col;
 }
 
+FORCEINLINE void CVertexBuilder::Color4Packed( int packedColor )
+{
+	*(int*)m_pCurrColor = packedColor;
+}
+
+FORCEINLINE int CVertexBuilder::PackColor4( unsigned char r, unsigned char g, unsigned char b, unsigned char a )
+{
+	return b | (g << 8) | (r << 16) | (a << 24);
+}
+
 inline void	CVertexBuilder::Specular3f( float r, float g, float b )
 {
 	Assert( m_pSpecular );
@@ -2117,6 +2168,19 @@ inline void CVertexBuilder::BoneWeight( int idx, float weight )
 	}
 }
 
+inline void CVertexBuilder::BoneWeights2( float weight1, float weight2 )
+{
+	Assert( m_pBoneWeight );
+	Assert( IsFinite( weight1 ) && IsFinite( weight2 ) );
+	AssertOnce( m_NumBoneWeights == 2 );
+
+	// This test is here because we store N-1 bone weights (the Nth is computed in
+	// the vertex shader as "1 - C", where C is the sum of the (N-1) other weights)
+	float* pBoneWeight = OffsetFloatPointer( m_pBoneWeight, m_nCurrentVertex, m_VertexSize_BoneWeight );
+	pBoneWeight[0] = weight1;
+	pBoneWeight[1] = weight2;
+}
+
 static int sg_IndexSwap[4] = { 2, 1, 0, 3 };
 
 inline void CVertexBuilder::BoneMatrix( int idx, int matrixIdx )
@@ -2142,6 +2206,32 @@ inline void CVertexBuilder::BoneMatrix( int idx, int matrixIdx )
 #else
 	float* pBoneMatrix = &m_pBoneMatrixIndex[m_nCurrentVertex * m_VertexSize_BoneMatrixIndex];
 	pBoneMatrix[idx] = matrixIdx;
+#endif
+}
+
+inline void CVertexBuilder::BoneMatrices4( int matrixIdx0, int matrixIdx1, int matrixIdx2, int matrixIdx3 )
+{
+	Assert( m_pBoneMatrixIndex );
+
+	// garymcthack
+	Assert( matrixIdx0 != BONE_MATRIX_INDEX_INVALID );
+	Assert( matrixIdx1 != BONE_MATRIX_INDEX_INVALID );
+	Assert( matrixIdx2 != BONE_MATRIX_INDEX_INVALID );
+	Assert( matrixIdx3 != BONE_MATRIX_INDEX_INVALID );
+
+#ifndef NEW_SKINNING
+	int nVal;
+
+	nVal = matrixIdx0 | ( matrixIdx1 << 8 ) | ( matrixIdx2 << 16 ) | ( matrixIdx3 << 24 );
+
+	int* pBoneMatrix = (int*)( &m_pBoneMatrixIndex[m_nCurrentVertex * m_VertexSize_BoneMatrixIndex] );
+	*pBoneMatrix = nVal;
+#else
+	float* pBoneMatrix = &m_pBoneMatrixIndex[m_nCurrentVertex * m_VertexSize_BoneMatrixIndex];
+	pBoneMatrix[0] = matrixIdx0;
+	pBoneMatrix[1] = matrixIdx1;
+	pBoneMatrix[2] = matrixIdx2;
+	pBoneMatrix[3] = matrixIdx3;
 #endif
 }
 
@@ -2452,6 +2542,7 @@ inline bool CIndexBuilder::Lock( int nMaxIndexCount, int nIndexOffset, bool bApp
 	m_bModify = false;
 	m_nIndexOffset = nIndexOffset;
 	m_nMaxIndexCount = nMaxIndexCount;
+	m_nIndexCount = 0;
 	bool bFirstLock = ( m_nBufferOffset == INVALID_BUFFER_OFFSET );
 	if ( bFirstLock )
 	{
@@ -2911,6 +3002,8 @@ inline void CIndexBuilder::GenerateIndices( MaterialPrimitiveType_t primitiveTyp
 	case MATERIAL_POINTS:
 		Assert(0); // Shouldn't get here (this primtype is unindexed)
 		break;
+	//case MATERIAL_SUBD_QUADS_EXTRA:
+	//case MATERIAL_SUBD_QUADS_REG:
 	default:
 		GenerateSequentialIndexBuffer( pIndices, nIndexCount, m_nIndexOffset );
 		break;
@@ -3049,6 +3142,8 @@ public:
 	void Color3ubv( unsigned char const* rgb );
 	void Color4ub( unsigned char r, unsigned char g, unsigned char b, unsigned char a );
 	void Color4ubv( unsigned char const* rgba );
+	void Color4Packed( int packedColor );
+	int PackColor4( unsigned char r, unsigned char g, unsigned char b, unsigned char a );
 
 	// specular color setting
 	void Specular3f( float r, float g, float b );
@@ -3086,11 +3181,13 @@ public:
 
 	// bone weights
 	void BoneWeight( int idx, float weight );
+	void BoneWeights2( float weight1, float weight2 );
 	// bone weights (templatized for code which needs to support compressed vertices)
 	template <VertexCompressionType_t T> void CompressedBoneWeight3fv( const float * pWeights );
 
 	// bone matrix index
 	void BoneMatrix( int idx, int matrixIndex );
+	void BoneMatrices4( int matrixIdx0, int matrixIdx1, int matrixIdx2, int matrixIdx3 );
 
 	// Generic per-vertex data
 	void UserData( const float *pData );
@@ -3106,6 +3203,7 @@ public:
 
 	// Fast Index! No need to call advance index, and no random access allowed
 	void FastIndex( unsigned short index );
+	void FastQuad( int index );
 
 	// Fast Vertex! No need to call advance vertex, and no random access allowed. 
 	// WARNING - these are low level functions that are intended only for use
@@ -3120,11 +3218,24 @@ public:
 		ModelVertexDX7_t const *vtx_c,
 		ModelVertexDX7_t const *vtx_d);
 
+	void FastQuadVertexSSE( const QuadTessVertex_t &vertex );
+
 	void FastVertex( const ModelVertexDX8_t &vertex );
 	void FastVertexSSE( const ModelVertexDX8_t &vertex );
 
 	// Add number of verts and current vert since FastVertexxx routines do not update.
 	void FastAdvanceNVertices(int n);	
+
+	// this low level function gets you a pointer to the vertex output data. It is dangerous - any
+	// caller using it must understand the vertex layout that it is building. It is for optimized
+	// meshbuilding loops like particle drawing that use special shaders. After writing to the output
+	// data, you shuodl call FastAdvanceNVertices
+	FORCEINLINE void *GetVertexDataPtr( int nWhatSizeIThinkItIs )
+	{
+		if ( m_VertexBuilder.m_VertexSize_Position != nWhatSizeIThinkItIs )
+			return NULL;
+		return m_VertexBuilder.m_pCurrPosition;
+	}
 
 private:
 	// Computes number of verts and indices 
@@ -3270,6 +3381,7 @@ inline int CMeshBuilder::IndicesFromVertices( MaterialPrimitiveType_t type, int 
 //-----------------------------------------------------------------------------
 inline void CMeshBuilder::SetCompressionType( VertexCompressionType_t vertexCompressionType )
 {
+	m_CompressionType = vertexCompressionType;
 	m_VertexBuilder.SetCompressionType( vertexCompressionType );
 }
 
@@ -3671,6 +3783,11 @@ FORCEINLINE void CMeshBuilder::FastIndex2( unsigned short nIndex1, unsigned shor
 	m_IndexBuilder.FastIndex2( nIndex1, nIndex2 );
 }
 
+FORCEINLINE void CMeshBuilder::FastQuad( int nIndex )
+{
+	m_IndexBuilder.FastQuad( nIndex );
+}
+
 //-----------------------------------------------------------------------------
 // For use with the FastVertex methods, advances the current vertex by N
 //-----------------------------------------------------------------------------
@@ -3708,6 +3825,11 @@ FORCEINLINE void CMeshBuilder::FastVertex( const ModelVertexDX8_t &vertex )
 FORCEINLINE void CMeshBuilder::FastVertexSSE( const ModelVertexDX8_t &vertex )
 {
 	m_VertexBuilder.FastVertexSSE( vertex );
+}
+
+FORCEINLINE void CMeshBuilder::FastQuadVertexSSE( const QuadTessVertex_t &vertex )
+{
+	m_VertexBuilder.FastQuadVertexSSE( vertex );
 }
 
 //-----------------------------------------------------------------------------
@@ -3781,6 +3903,16 @@ FORCEINLINE void CMeshBuilder::Color4ub( unsigned char r, unsigned char g, unsig
 FORCEINLINE void CMeshBuilder::Color4ubv( unsigned char const* rgba )
 {
 	m_VertexBuilder.Color4ubv( rgba );
+}
+
+FORCEINLINE void CMeshBuilder::Color4Packed( int packedColor )
+{
+	m_VertexBuilder.Color4Packed(packedColor);
+}
+
+FORCEINLINE int CMeshBuilder::PackColor4( unsigned char r, unsigned char g, unsigned char b, unsigned char a )
+{
+	return m_VertexBuilder.PackColor4(r,g,b,a);
 }
 
 FORCEINLINE void CMeshBuilder::Specular3f( float r, float g, float b )
@@ -3898,6 +4030,11 @@ FORCEINLINE void CMeshBuilder::BoneWeight( int nIndex, float flWeight )
 	m_VertexBuilder.BoneWeight( nIndex, flWeight );
 }
 
+FORCEINLINE void CMeshBuilder::BoneWeights2( float weight1, float weight2 )
+{
+	m_VertexBuilder.BoneWeights2( weight1, weight2 );
+}
+
 template <VertexCompressionType_t T> FORCEINLINE void CMeshBuilder::CompressedBoneWeight3fv( const float * pWeights )
 {
 	m_VertexBuilder.CompressedBoneWeight3fv<T>( pWeights );
@@ -3906,6 +4043,11 @@ template <VertexCompressionType_t T> FORCEINLINE void CMeshBuilder::CompressedBo
 FORCEINLINE void CMeshBuilder::BoneMatrix( int nIndex, int nMatrixIdx )
 {
 	m_VertexBuilder.BoneMatrix( nIndex, nMatrixIdx );
+}
+
+FORCEINLINE void CMeshBuilder::BoneMatrices4( int matrixIdx0, int matrixIdx1, int matrixIdx2, int matrixIdx3 )
+{
+	m_VertexBuilder.BoneMatrices4( matrixIdx0, matrixIdx1, matrixIdx2, matrixIdx3 );
 }
 
 FORCEINLINE void CMeshBuilder::UserData( const float* pData )

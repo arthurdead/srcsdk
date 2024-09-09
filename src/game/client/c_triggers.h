@@ -13,8 +13,11 @@
 
 class C_BaseTrigger : public C_BaseToggle
 {
+public:
 	DECLARE_CLASS( C_BaseTrigger, C_BaseToggle );
 	DECLARE_CLIENTCLASS();
+
+	virtual void UpdatePartitionListEntry();
 
 public:
 

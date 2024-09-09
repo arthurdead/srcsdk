@@ -51,6 +51,7 @@
 #include "replay/replay_ragdoll.h"
 #include "studio_stats.h"
 #include "tier1/callqueue.h"
+#include "glow_outline_effect.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -3296,6 +3297,19 @@ bool C_BaseAnimating::ShouldDraw()
 
 ConVar r_drawothermodels( "r_drawothermodels", "1", FCVAR_CHEAT, "0=Off, 1=Normal, 2=Wireframe" );
 
+void C_BaseAnimating::ForcedMaterialOverride( const char *newMaterial, OverrideType_t nOverrideType )
+{
+	if( !newMaterial )
+	{
+		m_pOverrideMaterial = NULL;
+	}
+	else
+	{
+		m_pOverrideMaterial = materials->FindMaterial( newMaterial, NULL );
+		m_nOverrideMaterialType = nOverrideType;
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Draws the object
 // Input  : flags - 
@@ -3341,7 +3355,20 @@ int C_BaseAnimating::DrawModel( int flags, const RenderableInstance_t &instance 
 
 		if ( !IsFollowingEntity() )
 		{
+			bool bOverrideMaterialSet = false;
+			if( m_pOverrideMaterial && !g_GlowObjectManager.IsRenderingGlowEffects() )
+			{
+				float color[3];
+				GetColorModulation( color );
+				m_pOverrideMaterial->ColorModulate( color[0], color[1], color[2] );
+				modelrender->ForcedMaterialOverride( m_pOverrideMaterial, m_nOverrideMaterialType );
+				bOverrideMaterialSet = true;
+			}
+
 			drawn = InternalDrawModel( flags|extraFlags, instance );
+
+			if( bOverrideMaterialSet )
+				modelrender->ForcedMaterialOverride( 0 );
 		}
 		else
 		{
@@ -3349,8 +3376,21 @@ int C_BaseAnimating::DrawModel( int flags, const RenderableInstance_t &instance 
 			C_BaseAnimating *follow = FindFollowedEntity();
 			if ( follow )
 			{
+				bool bOverrideMaterialSet = false;
+				if( m_pOverrideMaterial && !g_GlowObjectManager.IsRenderingGlowEffects() )
+				{
+					float color[3];
+					GetColorModulation( color );
+					m_pOverrideMaterial->ColorModulate( color[0], color[1], color[2] );
+					modelrender->ForcedMaterialOverride( m_pOverrideMaterial, m_nOverrideMaterialType );
+					bOverrideMaterialSet = true;
+				}
+
 				// recompute master entity bone structure
 				int baseDrawn = follow->DrawModel( 0, instance );
+
+				if( bOverrideMaterialSet )
+					modelrender->ForcedMaterialOverride( 0 );
 
 				// draw entity
 				// FIXME: Currently only draws if aiment is drawn.  
@@ -3593,6 +3633,17 @@ int C_BaseAnimating::InternalDrawModel( int flags, const RenderableInstance_t &i
 
 		// Turns the origin + angles into a matrix
 		AngleMatrix( pInfo->angles, pInfo->origin, pInfo->modelToWorld );
+	}
+
+	if( m_bCustomLightingOffset )
+	{
+		if ( !pInfo->pLightingOffset )
+		{
+			pInfo->pLightingOffset = &pInfo->lightingOffset;
+
+			// Turns the origin + angles into a matrix
+			AngleMatrix( vec3_angle, m_vCustomLightingOffset, pInfo->lightingOffset );
+		}
 	}
 
 	DrawModelState_t state;
@@ -4895,7 +4946,16 @@ void C_BaseAnimating::NotifyShouldTransmit( ShouldTransmitState_t state )
 //-----------------------------------------------------------------------------
 void C_BaseAnimating::PostDataUpdate( DataUpdateType_t updateType )
 {
+	const model_t *oldModel = GetModel();
+
 	BaseClass::PostDataUpdate( updateType );
+
+	const model_t *newModel = GetModel();
+
+	if ( oldModel != newModel )
+	{
+		m_bModelChanged = true;
+	}
 
 	if ( m_bClientSideAnimation )
 	{
@@ -5348,6 +5408,11 @@ void C_BaseAnimating::OnDataChanged( DataUpdateType_t updateType )
 	}
 
 	m_bIsUsingRelativeLighting = ( m_hLightingOrigin.Get() != NULL );
+
+	if( m_bModelChanged )
+	{
+		m_bModelChanged = false;
+	}
 }
 
 //-----------------------------------------------------------------------------

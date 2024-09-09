@@ -72,4 +72,27 @@ int CEnvDetailController::UpdateTransmitState()
 		return true;
 	}
 
+#else
+
+	extern ConVar cl_detaildist;
+	extern ConVar cl_detailfade;
+
+
+	void CEnvDetailController::OnDataChanged( DataUpdateType_t updateType )
+	{
+		BaseClass::OnDataChanged( updateType );
+
+		if( m_fOldFadeStartDist != m_flFadeStartDist )
+		{
+			cl_detailfade.SetValue( m_flFadeStartDist );
+			m_fOldFadeStartDist = m_flFadeStartDist;
+		}
+
+		if( m_fOldFadeStartDist != m_flFadeEndDist )
+		{
+			cl_detaildist.SetValue( m_flFadeEndDist );
+			m_fOldFadeEndDist = m_flFadeEndDist;
+		}
+	}
+
 #endif // !CLIENT_DLL

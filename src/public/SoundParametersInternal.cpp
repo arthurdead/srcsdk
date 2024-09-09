@@ -6,7 +6,9 @@
 //
 //=============================================================================//
 
+#if defined GAME_DLL || defined CLIENT_DLL
 #include "cbase.h"
+#endif
 
 #if !defined(_STATIC_LINKED) || defined(SOUNDEMITTERSYSTEM_DLL)
 

@@ -14,6 +14,7 @@
 
 #include "mathlib/vector.h"
 #include "basetypes.h"
+#include "mathlib/mathlib.h"
 
 
 //-----------------------------------------------------------------------------
@@ -34,6 +35,7 @@ enum
 {
 	GAMELUMP_DETAIL_PROPS_VERSION = 4,
 	GAMELUMP_DETAIL_PROP_LIGHTING_VERSION = 0,
+	GAMELUMP_STATIC_PROPS_MIN_VERSION = 4,
 	GAMELUMP_STATIC_PROPS_VERSION = 10,
 	GAMELUMP_STATIC_PROP_LIGHTING_VERSION = 0,
 	GAMELUMP_DETAIL_PROP_LIGHTING_HDR_VERSION = 0,
@@ -67,7 +69,6 @@ enum DetailPropType_t
 //-----------------------------------------------------------------------------
 struct DetailObjectDictLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	char	m_Name[DETAIL_NAME_LENGTH];		// model name
 };
 
@@ -76,7 +77,6 @@ struct DetailObjectDictLump_t
 //-----------------------------------------------------------------------------
 struct DetailSpriteDictLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	// NOTE: All detail prop sprites must lie in the material detail/detailsprites
 	Vector2D	m_UL;		// Coordinate of upper left 
 	Vector2D	m_LR;		// Coordinate of lower right
@@ -86,7 +86,6 @@ struct DetailSpriteDictLump_t
 
 struct DetailObjectLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_DetailModel;		// either index into DetailObjectDictLump_t or DetailPropSpriteLump_t
@@ -109,7 +108,6 @@ struct DetailObjectLump_t
 //-----------------------------------------------------------------------------
 struct DetailPropLightstylesLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	ColorRGBExp32	m_Lighting;
 	unsigned char	m_Style;
 };
@@ -142,15 +140,18 @@ enum
 	STATIC_PROP_WC_MASK		= 0x1d8,						// all flags settable in hammer (?)
 };
 
+enum
+{
+	STATIC_PROP_SCREEN_SPACE_FADE_OBSOLETE	= 0x20,	// only keeping these here to be able to report errors
+};
+
 struct StaticPropDictLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	char	m_Name[STATIC_PROP_NAME_LENGTH];		// model name
 };
 
 struct StaticPropLumpV4_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_PropType;
@@ -167,7 +168,6 @@ struct StaticPropLumpV4_t
 
 struct StaticPropLumpV5_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_PropType;
@@ -185,7 +185,6 @@ struct StaticPropLumpV5_t
 
 struct StaticPropLumpV6_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_PropType;
@@ -203,9 +202,50 @@ struct StaticPropLumpV6_t
 	//	int				m_Lighting;			// index into the GAMELUMP_STATIC_PROP_LIGHTING lump
 };
 
+struct StaticPropLumpV7_t
+{
+	Vector			m_Origin;
+	QAngle			m_Angles;
+	unsigned short	m_PropType;
+	unsigned short	m_FirstLeaf;
+	unsigned short	m_LeafCount;
+	unsigned char	m_Solid;
+	unsigned char	m_Flags;
+	int				m_Skin;
+	float			m_FadeMinDist;
+	float			m_FadeMaxDist;
+	Vector			m_LightingOrigin;
+	float			m_flForcedFadeScale;
+	unsigned short	m_nMinDXLevel;
+	unsigned short	m_nMaxDXLevel;
+	//	int				m_Lighting;			// index into the GAMELUMP_STATIC_PROP_LIGHTING lump
+	color32			m_DiffuseModulation;	// per instance color and alpha modulation
+};
+
+struct StaticPropLumpV8_t
+{
+	Vector			m_Origin;
+	QAngle			m_Angles;
+	unsigned short	m_PropType;
+	unsigned short	m_FirstLeaf;
+	unsigned short	m_LeafCount;
+	unsigned char	m_Solid;
+	unsigned char	m_Flags;
+	int				m_Skin;
+	float			m_FadeMinDist;
+	float			m_FadeMaxDist;
+	Vector			m_LightingOrigin;
+	float			m_flForcedFadeScale;
+	unsigned char	m_nMinCPULevel;
+	unsigned char	m_nMaxCPULevel;
+	unsigned char	m_nMinGPULevel;
+	unsigned char	m_nMaxGPULevel;
+	//	int				m_Lighting;			// index into the GAMELUMP_STATIC_PROP_LIGHTING lump
+	color32			m_DiffuseModulation;	// per instance color and alpha modulation
+};
+
 struct StaticPropLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_PropType;
@@ -275,7 +315,6 @@ struct StaticPropLump_t
 
 struct StaticPropLeafLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
 	unsigned short	m_Leaf;
 };
 

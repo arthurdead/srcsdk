@@ -1,2 +1,3 @@
 option('src_root_dir', type: 'string', yield: true)
 option('src_engine_dir', type: 'string', yield: true)
+option('game_dir', type: 'string', yield: true)

@@ -7,7 +7,7 @@
 # The Heist: Source
 The Heist: Source is A Spiritual Successor to PAYDAY, built in the Source Engine. This repo contains the source code.
 ### Medic bag not included
-## Projects Used
+## Credits
 - [Mini Source SDK](https://github.com/Joshua-Ashton/mini-source-sdk)
 - [Source SDK 2013 Community Edition](https://github.com/Nbc66/source-sdk-2013-ce)
 - [Webm video services](https://github.com/nooodles-ahh/video_services)
@@ -17,3 +17,8 @@ The Heist: Source is A Spiritual Successor to PAYDAY, built in the Source Engine
 - [SecobMod](https://github.com/whoozzem/SecobMod)
 - [Mapbase](https://github.com/mapbase-source/source-sdk-2013)
 - [ShaderCompile](https://github.com/SCell555/ShaderCompile)
+- [Enhanced Source](https://github.com/Enhanced-Source-Project/Enhanced-Source)
+- [Source++](https://github.com/SCell555/Source-PlusPlus)
+- [LambdaWars](https://github.com/Sandern/lambdawars)
+- [VPhysics Jolt](https://github.com/Joshua-Ashton/VPhysics-Jolt)
+- [Recast Navigation](https://github.com/recastnavigation/recastnavigation)

@@ -232,8 +232,8 @@ public:
 	virtual void			SetViewModelIndex( int index = 0 );
 	virtual bool			SendWeaponAnim( int iActivity );
 	virtual void			SendViewModelAnim( int nSequence );
-	float					GetViewModelSequenceDuration();	// Return how long the current view model sequence is.
-	bool					IsViewModelSequenceFinished( void ) const; // Returns if the viewmodel's current animation is finished
+	virtual float					GetViewModelSequenceDuration();	// Return how long the current view model sequence is.
+	virtual bool					IsViewModelSequenceFinished( void ) const; // Returns if the viewmodel's current animation is finished
 
 	virtual void			SetViewModel();
 
@@ -430,7 +430,8 @@ public:
 
 	virtual void			Activate( void );
 
-	virtual bool ShouldUseLargeViewModelVROverride() { return false; }
+	virtual void			Operator_FrameUpdate( CBaseCombatCharacter  *pOperator );
+
 public:
 // Server Only Methods
 #if !defined( CLIENT_DLL )
@@ -468,7 +469,6 @@ public:
 	virtual	int				WeaponMeleeAttack1Condition( float flDot, float flDist );
 	virtual	int				WeaponMeleeAttack2Condition( float flDot, float flDist );
 
-	virtual void			Operator_FrameUpdate( CBaseCombatCharacter  *pOperator );
 	virtual void			Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
 	virtual void			Operator_ForceNPCFire( CBaseCombatCharacter  *pOperator, bool bSecondary, CBaseEntity *pTarget = NULL ) { return; }
 	// NOTE: This should never be called when a character is operating the weapon.  Animation events should be

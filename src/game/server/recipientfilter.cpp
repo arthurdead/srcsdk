@@ -125,6 +125,15 @@ void CRecipientFilter::AddRecipient( const CBasePlayer *player )
 	m_Recipients.AddToTail( index );
 }
 
+void CRecipientFilter::AddRecipient( int index )
+{
+	// Already in list
+	if ( m_Recipients.Find( index ) != m_Recipients.InvalidIndex() )
+		return;
+
+	m_Recipients.AddToTail( index );
+}
+
 void CRecipientFilter::RemoveAllRecipients( void )
 {
 	m_Recipients.RemoveAll();

@@ -345,9 +345,13 @@ public:
 
 	bool					IsTransparent() const;
 
+	bool					AllowNavIgnore();
+	void					SetAllowNavIgnore( bool bAllowNavIgnore );
 	void					SetNavIgnore( float duration = FLT_MAX );
 	void					ClearNavIgnore();
 	bool					IsNavIgnored() const;
+	void					SetAlwaysNavIgnore( bool bAlwaysNavIgnore );
+	bool					AlwaysNavIgnore();
 
 	// Is the entity floating?
 	bool					IsFloating();
@@ -1616,6 +1620,7 @@ private:
 	unsigned char	m_nWaterType;
 	CNetworkVarForDerived( unsigned char, m_nWaterLevel );
 	float			m_flNavIgnoreUntilTime;
+	bool			m_bAlwaysIgnoreNav;
 
 	CNetworkHandleForDerived( CBaseEntity, m_hGroundEntity );
 	float			m_flGroundChangeTime; // Time that the ground entity changed
@@ -1804,6 +1809,31 @@ public:
 	}
 
 	virtual bool ShouldBlockNav() const { return true; }
+
+public:
+	virtual bool CanBeSeenBy( CBaseEntity *pEnt ) { return true; } // allows entities to be 'invisible' to Unit senses.
+
+	// Density map
+	virtual float GetDensityMultiplier() { return 1.0f; }
+	void SetDensityMapType( int iType );
+	// Nav obstacle ref for recast mesh.
+	void SetNavObstacleRef( int ref ) { m_NavObstacleRef = ref; }
+	int GetNavObstacleRef() { return m_NavObstacleRef; }
+	float						GetViewDistance();
+	void						SetViewDistance( float dist );
+	
+	// Hack for keeper package due edict limit
+	void SetDoNotRegisterEntity() { m_bDoNotRegisterEntity = true; }
+	// Hack for keeper package to force vphysics creation for entities without edicts (tiles/blocks)
+	void SetForceAllowVPhysics() { m_bForceAllowVPhysics = true; }
+
+private:
+	bool m_bDoNotRegisterEntity;
+	bool m_bForceAllowVPhysics;
+
+	bool					m_bAllowNavIgnore;
+	int						m_NavObstacleRef;
+	CNetworkVar( float,		m_fViewDistance );
 };
 
 // Send tables exposed in this module.
@@ -2087,11 +2117,31 @@ inline bool CBaseEntity::IsEFlagSet( int nEFlagMask ) const
 	return (m_iEFlags & nEFlagMask) != 0;
 }
 
+inline bool CBaseEntity::AllowNavIgnore()
+{
+	return m_bAllowNavIgnore;
+}
+
+inline void	CBaseEntity::SetAllowNavIgnore( bool bAllowNavIgnore )
+{
+	m_bAllowNavIgnore = bAllowNavIgnore;
+}
+
 inline void	CBaseEntity::SetNavIgnore( float duration )
 {
 	float flNavIgnoreUntilTime = ( duration == FLT_MAX ) ? FLT_MAX : gpGlobals->curtime + duration;
 	if ( flNavIgnoreUntilTime > m_flNavIgnoreUntilTime )
 		m_flNavIgnoreUntilTime = flNavIgnoreUntilTime;
+}
+
+inline void	CBaseEntity::SetAlwaysNavIgnore( bool bAlwaysNavIgnore )
+{
+	m_bAlwaysIgnoreNav = bAlwaysNavIgnore;
+}
+
+inline bool CBaseEntity::AlwaysNavIgnore()
+{
+	return m_bAlwaysIgnoreNav;
 }
 
 inline void	CBaseEntity::ClearNavIgnore()
@@ -2102,6 +2152,16 @@ inline void	CBaseEntity::ClearNavIgnore()
 inline bool	CBaseEntity::IsNavIgnored() const
 {
 	return ( gpGlobals->curtime <= m_flNavIgnoreUntilTime );
+}
+
+inline float CBaseEntity::GetViewDistance()
+{ 
+	return m_fViewDistance; 
+}
+
+inline void CBaseEntity::SetViewDistance( float dist ) 
+{ 
+	m_fViewDistance = dist; 
 }
 
 inline bool CBaseEntity::GetCheckUntouch() const

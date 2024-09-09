@@ -72,7 +72,7 @@ if [[ $? != 0 ]]; then
 	exit 1
 fi
 
-meson install -C "$builddir_linux/libs" --no-rebuild --skip-subprojects='webm'
+meson install -C "$builddir_linux/libs" --no-rebuild
 if [[ $? != 0 ]]; then
 	exit 1
 fi
@@ -82,7 +82,7 @@ if [[ $? != 0 ]]; then
 	exit 1
 fi
 
-meson install -C "$builddir_linux/client" --no-rebuild --skip-subprojects='webm'
+meson install -C "$builddir_linux/client" --no-rebuild
 if [[ $? != 0 ]]; then
 	exit 1
 fi
@@ -92,7 +92,7 @@ if [[ $? != 0 ]]; then
 	exit 1
 fi
 
-meson install -C "$builddir_linux/server" --no-rebuild --skip-subprojects='webm'
+meson install -C "$builddir_linux/server" --no-rebuild
 if [[ $? != 0 ]]; then
 	exit 1
 fi

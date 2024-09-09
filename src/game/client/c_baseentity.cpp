@@ -42,6 +42,7 @@
 #include "clientalphaproperty.h"
 #include "cellcoord.h"
 #include "gamestringpool.h"
+#include "recast/recast_mgr.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -672,6 +673,8 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropInt( RECVINFO( m_nMinGPULevel ) ), 
 	RecvPropInt( RECVINFO( m_nMaxGPULevel ) ), 
 
+	RecvPropFloat( RECVINFO( m_fViewDistance ) ),
+
 	RecvPropArray2( RecvProxyArrayLength_ModelIndexesOverrides,	RecvPropInt( RECVINFO_ARRAYELEM(m_nModelIndexOverrides, 0) ), NUM_SHARED_VISION_FILTERS, sizeof(int), m_nModelIndexOverrides ),
 
 END_RECV_TABLE()
@@ -1208,10 +1211,6 @@ C_BaseEntity::C_BaseEntity() :
 
 	m_nLastThinkTick = gpGlobals->tickcount;
 
-	// Remove prediction context if it exists
-	delete m_pPredictionContext;
-	m_pPredictionContext = NULL;
-
 	// Do not enable this on all entities. It forces bone setup for entities that
 	// don't need it.
 	//AddEFlags( EFL_USE_PARTITION_WHEN_NOT_SOLID );
@@ -1238,6 +1237,12 @@ C_BaseEntity::C_BaseEntity() :
 
 	m_nModelIndexOverridesLength = 0;
 	m_nModelIndexOverrides = NULL;
+
+	m_bIsClientCreated = false;
+
+	m_NavObstacleRef = NAV_OBSTACLE_INVALID_INDEX;
+
+	m_LastShouldTransmitState = SHOULDTRANSMIT_END;
 }
 
 IClientNetworkable*C_BaseEntity::GetClientNetworkable()
@@ -1303,6 +1308,9 @@ bool C_BaseEntity::IsClientCreated( void ) const
 		Assert( !GetPredictable() );
 		return true;
 	}
+
+	if(m_bIsClientCreated)
+		return true;
 
 	if(IsEFlagSet(EFL_NOT_NETWORKED))
 		return true;
@@ -1428,7 +1436,7 @@ void C_BaseEntity::Precache( void )
 //-----------------------------------------------------------------------------
 bool C_BaseEntity::InitializeAsServerEntity( int entnum, int iSerialNum )
 {
-	Assert( entnum >= 0 && entnum < NUM_ENT_ENTRIES );
+	Assert( entnum >= 0 && entnum < GAME_NUM_ENT_ENTRIES );
 
 	RemoveEFlags( EFL_NOT_NETWORKED );
 
@@ -1455,9 +1463,12 @@ bool C_BaseEntity::InitializeAsPredictedEntity( const char *className, const cha
 	m_nEntIndex = -1;
 	m_pClientAlphaProperty->SetDesyncOffset( rand() % 1024 );
 
-	// Add the client entity to the master entity list.
-	cl_entitylist->AddNonNetworkableEntity( this );
-	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
+	if( !m_bDoNotRegisterEntity )
+	{
+		// Add the client entity to the master entity list.
+		cl_entitylist->AddNonNetworkableEntity( this );
+		Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
+	}
 
 	CheckHasThinkFunction( TICK_NEVER_THINK );
 
@@ -1538,8 +1549,13 @@ bool C_BaseEntity::InitializeAsClientEntity()
 	m_pClientAlphaProperty->SetDesyncOffset( rand() % 1024 );
 
 	// Add the client entity to the master entity list.
-	cl_entitylist->AddNonNetworkableEntity( this );
-	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
+	if( !m_bDoNotRegisterEntity )
+	{
+		cl_entitylist->AddNonNetworkableEntity( this );
+		Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
+	}
+
+	m_bIsClientCreated = true;
 
 	CheckHasThinkFunction( TICK_NEVER_THINK );
 
@@ -2546,6 +2562,7 @@ void C_BaseEntity::NotifyShouldTransmit( ShouldTransmitState_t state )
 	if ( m_nEntIndex < 0 )
 		return;
 	
+	m_LastShouldTransmitState = state;
 	switch( state )
 	{
 	case SHOULDTRANSMIT_START:
@@ -3521,6 +3538,10 @@ void C_BaseEntity::MoveToLastReceivedPosition( bool force )
 
 bool C_BaseEntity::ShouldInterpolate()
 {
+	// Never bother interpolating client side entities
+	if( IsClientCreated() )
+		return false;
+
 	if ( IsViewEntity() )
 		return true;
 
@@ -3721,10 +3742,15 @@ void C_BaseEntity::InterpolateServerEntities()
 		g_bWasThreaded = IsEngineThreaded();
 		g_nThreadModeTicks = cl_interp_threadmodeticks.GetInt();
 
-		C_BaseEntityIterator iterator;
-		C_BaseEntity *pEnt;
-		while ( (pEnt = iterator.Next()) != NULL )
+		int iNext;
+		for ( int iCur=g_EntityLists[ENTITY_LIST_INTERPOLATE].Head(); iCur != g_EntityLists[ENTITY_LIST_INTERPOLATE].InvalidIndex(); iCur=iNext )
+		//C_BaseEntityIterator iterator;
+		//C_BaseEntity *pEnt;
+		//while ( (pEnt = iterator.Next()) != NULL )
 		{
+			iNext = g_EntityLists[ENTITY_LIST_INTERPOLATE].Next( iCur );
+			C_BaseEntity *pEnt = g_EntityLists[ENTITY_LIST_INTERPOLATE].Element(iCur);
+
 			pEnt->Interp_UpdateInterpolationAmounts( pEnt->GetVarMapping() );
 		}
 	}

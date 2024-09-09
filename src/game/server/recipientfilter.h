@@ -45,6 +45,7 @@ public:
 	void			RemoveRecipientsByPVS( const Vector& origin );
 	void			AddRecipientsByPAS( const Vector& origin );
 	void			AddRecipient( const CBasePlayer *player );
+	void			AddRecipient( int index );
 	void			RemoveAllRecipients( void );
 	void			RemoveRecipient( CBasePlayer *player );
 	void			RemoveRecipientByPlayerIndex( int playerindex );

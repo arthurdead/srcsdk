@@ -13,7 +13,7 @@
 #include "mathlib/vector.h"
 #include "utlvector.h"
 #include "basehandle.h"
-
+#include "hackmgr/hackmgr.h"
 
 struct vcollide_t;
 struct Ray_t;
@@ -24,6 +24,7 @@ class IVPhysicsKeyHandler;
 class IPhysicsEnvironment;
 class ICollideable;
 enum class ShadowHandle_t : unsigned short;
+struct RenderableInstance_t;
 
 //-----------------------------------------------------------------------------
 // Interface versions for static props
@@ -79,6 +80,11 @@ public:
 	virtual void DrawStaticProps( IClientRenderable **pProps, int count, bool bShadowDepth, bool drawVCollideWireframe ) = 0;
 	virtual void AddColorDecalToStaticProp( Vector const& rayStart, Vector const& rayEnd,
 		int staticPropIndex, int decalIndex, bool doTrace, trace_t& tr, bool bUseColor, Color cColor ) = 0;
+
+	HACKMGR_CLASS_API void DrawStaticProps( IClientRenderable **pProps, const RenderableInstance_t *pInstances, int count, bool bShadowDepth, bool drawVCollideWireframe );
+
+	// Returns the lighting origins of a number of static props
+	HACKMGR_CLASS_API void GetLightingOrigins( Vector *pLightingOrigins, int nOriginStride, int nCount, IClientRenderable **ppRenderable, int nRenderableStride ); 
 };
 
 class IStaticPropMgrServer : public IStaticPropMgr

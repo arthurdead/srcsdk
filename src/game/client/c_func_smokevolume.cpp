@@ -528,7 +528,7 @@ void C_FuncSmokeVolume::FillVolume()
 				vPos = GetSmokeParticlePos( x, y, z );
 				if(SmokeParticleInfo *pInfo = GetSmokeParticleInfo(x,y,z))
 				{
-					int contents = UTIL_PointContents(vPos);
+					int contents = enginetrace->GetPointContents(vPos);
 					if(contents & CONTENTS_SOLID)
 					{
 						pInfo->m_pParticle = NULL;

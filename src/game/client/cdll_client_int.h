@@ -57,6 +57,9 @@ class IEngineClientReplay;
 class IReplayScreenshotManager;
 class CSteamID;
 class IShaderExtension;
+class IGameLoopback;
+class IGameServerLoopback;
+class IGameClientLoopback;
 
 //=============================================================================
 // HPE_BEGIN
@@ -108,6 +111,9 @@ extern IReplayScreenshotManager *g_pReplayScreenshotManager;
 extern IEngineReplay *g_pEngineReplay;
 extern IEngineClientReplay *g_pEngineClientReplay;
 extern IShaderExtension* g_pShaderExtension;
+extern IGameLoopback* g_pGameLoopback;
+extern IGameServerLoopback* g_pGameServerLoopback;
+extern IGameClientLoopback* g_pGameClientLoopback;
 
 // Returns the CPU/GPU level
 CPULevel_t GetCPULevel();

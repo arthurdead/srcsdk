@@ -1,9 +1,10 @@
-project('source_game','cpp')
+project('source_base','cpp')
 
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 
 src_root_dir = get_option('src_root_dir')
 src_engine_dir = get_option('src_engine_dir')
+game_dir = get_option('game_dir')
 
 common_dir = join_paths(src_root_dir,'common')
 
@@ -68,6 +69,7 @@ source_dep = declare_dependency(
 		join_paths(src_root_dir,'utils','common')
 	),
 	link_args: [
+		'-L'+join_paths(game_dir,'bin'),
 		'-L'+join_paths(src_engine_dir,'bin'),
 		'-L'+join_paths(src_root_dir,'lib','public','linux32')
 	],

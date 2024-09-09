@@ -96,7 +96,9 @@ protected:
 	int s_VoiceImage[5];
 	int TrackerImage;
 	int	m_HLTVSpectators;
+#ifdef REPLAY_ENABLED
 	int m_ReplaySpectators;
+#endif
 	float m_fNextUpdateTime;
 
 	void MoveLabelToFront(const char *textEntryName);

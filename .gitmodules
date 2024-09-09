@@ -7,3 +7,6 @@
 [submodule "src/vaudio_minimp3"]
 	path = src/vaudio_minimp3
 	url = https://github.com/Joshua-Ashton/VAudio-MiniMP3.git
+[submodule "src/vphysics_jolt"]
+	path = src/vphysics_jolt
+	url = https://github.com/Joshua-Ashton/VPhysics-Jolt.git

@@ -95,6 +95,9 @@
 #include "querycache.h"
 #include "globalstate.h"
 #include "hackmgr/hackmgr.h"
+#include "game_loopback/igameloopback.h"
+#include "recast/recast_mgr.h"
+#include "hackmgr/dlloverride.h"
 
 #ifdef SERVER_USES_VGUI
 #include "IGameUIFuncs.h"
@@ -166,6 +169,16 @@ IServerReplayContext *g_pReplayServerContext = NULL;
 IEngineVGui *enginevgui = NULL;
 IGameUIFuncs *gameuifuncs = NULL;
 #endif // SERVER_USES_VGUI
+
+#ifndef SWDS
+CSysModule* game_loopbackDLL = NULL;
+IGameLoopback* g_pGameLoopback = NULL;
+
+CSysModule* clientDLL = NULL;
+IGameClientLoopback* g_pGameClientLoopback = NULL;
+#endif
+
+CSysModule* vphysicsDLL = NULL;
 
 IGameSystem *SoundEmitterSystem();
 void SoundSystemPreloadSounds( void );
@@ -522,8 +535,6 @@ void DrawAllDebugOverlays( void )
 }
 
 CServerGameDLL g_ServerGameDLL;
-// INTERFACEVERSION_SERVERGAMEDLL_VERSION_8 is compatible with the latest since we're only adding things to the end, so expose that as well.
-//EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CServerGameDLL, IServerGameDLL008, INTERFACEVERSION_SERVERGAMEDLL_VERSION_8, g_ServerGameDLL );
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CServerGameDLL, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL, g_ServerGameDLL);
 
 // When bumping the version to this interface, check that our assumption is still valid and expose the older version in the same way
@@ -599,8 +610,70 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		CreateInterfaceFn physicsFactory, CreateInterfaceFn fileSystemFactory, 
 		CGlobalVars *pGlobals)
 {
-	if(!HackMgr_Server_PreInit(this, appSystemFactory, physicsFactory, fileSystemFactory, pGlobals))
+	if ( (filesystem = (IFileSystem *)fileSystemFactory(FILESYSTEM_INTERFACE_VERSION,NULL)) == NULL )
 		return false;
+
+	char gamebin_path[MAX_PATH];
+	int gamebin_length = filesystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+	gamebin_length -= 2;
+	gamebin_path[gamebin_length] = '\0';
+
+	if(HackMgr_IsSafeToSwapPhysics()) {
+		int status = IFACE_OK;
+		IPhysics *pOldPhysics = (IPhysics *)physicsFactory( VPHYSICS_INTERFACE_VERSION, &status );
+		if(status != IFACE_OK) {
+			pOldPhysics = NULL;
+		}
+
+		V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "vphysics" DLL_EXT_STRING);
+		vphysicsDLL = Sys_LoadModule( gamebin_path );
+		gamebin_path[gamebin_length] = '\0';
+
+		if( vphysicsDLL != NULL )
+		{
+			CreateInterfaceFn physicsFactory2 = Sys_GetFactory( vphysicsDLL );
+			if( physicsFactory2 != NULL )
+			{
+				status = IFACE_OK;
+				IPhysics *pNewPhysics = (IPhysics *)physicsFactory2( VPHYSICS_INTERFACE_VERSION, &status );
+				if(status != IFACE_OK) {
+					pNewPhysics = NULL;
+				}
+				if(pOldPhysics && pNewPhysics && (pNewPhysics != pOldPhysics)) {
+					pOldPhysics->Shutdown();
+					pOldPhysics->Disconnect();
+
+					bool success = false;
+
+					if(pNewPhysics->Connect(appSystemFactory)) {
+						if(pNewPhysics->Init() == INIT_OK) {
+							HackMgr_SetEnginePhysicsPtr(pOldPhysics, pNewPhysics);
+							success = true;
+							physicsFactory = physicsFactory2;
+						} else {
+							pNewPhysics->Shutdown();
+							pNewPhysics->Disconnect();
+						}
+					} else {
+						pNewPhysics->Disconnect();
+					}
+
+					if(!success) {
+						pOldPhysics->Connect(appSystemFactory);
+						pOldPhysics->Init();
+					}
+				}
+			}
+		}
+	}
+
+#ifdef SWDS
+	if(!HackMgr_Server_PreInit(this, appSystemFactory, physicsFactory, fileSystemFactory, pGlobals, true))
+		return false;
+#else
+	if(!HackMgr_Server_PreInit(this, appSystemFactory, physicsFactory, fileSystemFactory, pGlobals, false))
+		return false;
+#endif
 
 	COM_TimestampedLog( "ConnectTier1/2/3Libraries - Start" );
 
@@ -642,8 +715,6 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		return false;
 	if ( (enginetrace = (IEngineTrace *)appSystemFactory(INTERFACEVERSION_ENGINETRACE_SERVER,NULL)) == NULL )
 		return false;
-	if ( (filesystem = (IFileSystem *)fileSystemFactory(FILESYSTEM_INTERFACE_VERSION,NULL)) == NULL )
-		return false;
 	if ( (gameeventmanager = (IGameEventManager2 *)appSystemFactory(INTERFACEVERSION_GAMEEVENTSMANAGER2,NULL)) == NULL )
 		return false;
 	if ( (datacache = (IDataCache*)appSystemFactory(DATACACHE_INTERFACE_VERSION, NULL )) == NULL )
@@ -676,6 +747,16 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		gameuifuncs = (IGameUIFuncs * )appSystemFactory( VENGINE_GAMEUIFUNCS_VERSION, NULL );
 	}
 #endif // SERVER_USES_VGUI
+
+#ifndef SWDS
+	V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "game_loopback" DLL_EXT_STRING);
+	Sys_LoadInterface( gamebin_path, GAMELOOPBACK_INTERFACE_VERSION, &game_loopbackDLL, reinterpret_cast< void** >( &g_pGameLoopback ) );
+	gamebin_path[gamebin_length] = '\0';
+
+	V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "client" DLL_EXT_STRING);
+	Sys_LoadInterface( gamebin_path, GAMECLIENTLOOPBACK_INTERFACE_VERSION, &clientDLL, reinterpret_cast< void** >( &g_pGameClientLoopback ) );
+	gamebin_path[gamebin_length] = '\0';
+#endif
 
 	COM_TimestampedLog( "Factories - Finish" );
 
@@ -768,6 +849,9 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	// init the gamestatsupload connection
 	gamestatsuploader->InitConnection();
 
+	HackMgr_SetGamePaused( false );
+	m_bWasPaused = false;
+
 	return true;
 }
 
@@ -821,6 +905,17 @@ void CServerGameDLL::DLLShutdown( void )
 		VGui_Shutdown();
 	}
 #endif // SERVER_USES_VGUI
+
+#ifndef SWDS
+	if ( clientDLL )
+		Sys_UnloadModule( clientDLL );
+
+	if ( game_loopbackDLL )
+		Sys_UnloadModule( game_loopbackDLL );
+#endif
+
+	if ( vphysicsDLL )
+		Sys_UnloadModule( vphysicsDLL );
 
 #ifdef USE_NAV_MESH
 	// destroy the Navigation Mesh interface
@@ -910,6 +1005,9 @@ void Game_SetOneWayTransition( void )
 bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background )
 {
 	VPROF("CServerGameDLL::LevelInit");
+
+	HackMgr_SetGamePaused( false );
+	m_bWasPaused = false;
 
 	ResetWindspeed();
 
@@ -1103,6 +1201,19 @@ void CServerGameDLL::GameFrame( bool simulating )
 {
 	VPROF( "CServerGameDLL::GameFrame" );
 
+	// Ugly HACK! to prevent the game time from changing when paused
+	if( m_bWasPaused != HackMgr_IsGamePaused() )
+	{
+		m_fPauseTime = gpGlobals->curtime;
+		m_nPauseTick = gpGlobals->tickcount;
+		m_bWasPaused = HackMgr_IsGamePaused();
+	}
+	if( HackMgr_IsGamePaused() )
+	{
+		gpGlobals->curtime = m_fPauseTime;
+		gpGlobals->tickcount = m_nPauseTick;
+	}
+
 	// All the calls to us from the engine prior to gameframe (like LevelInit & ServerActivate)
 	// are done before the engine has got the Steam API connected, so we have to wait until now to connect ourselves.
 	if ( Steam3Server().CheckInitialized() )
@@ -1272,11 +1383,12 @@ void CServerGameDLL::OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_
 // Called when a level is shutdown (including changing levels)
 void CServerGameDLL::LevelShutdown( void )
 {
-#ifndef NO_STEAM
+	HackMgr_SetGamePaused( false );
+	m_bWasPaused = false;
+
 	IGameSystem::LevelShutdownPreClearSteamAPIContextAllSystems();
 
 	steamgameserverapicontext->Clear();
-#endif
 
 	g_pServerBenchmark->EndBenchmark();
 
@@ -2480,6 +2592,8 @@ void CServerGameClients::ClientSetupVisibility( edict_t *pViewEntity, edict_t *p
 float CServerGameClients::ProcessUsercmds( edict_t *player, bf_read *buf, int numcmds, int totalcmds,
 	int dropped_packets, bool ignore, bool paused )
 {
+	HackMgr_SetGamePaused( paused );
+
 	int				i;
 	CUserCmd		*from, *to;
 
@@ -2908,6 +3022,8 @@ public:
 	{
 		AddAppSystem( "soundemittersystem" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
 		AddAppSystem( "scenefilecache" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
+		//AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
+		AddAppSystem( "client" DLL_EXT_STRING, GAMECLIENTLOOPBACK_INTERFACE_VERSION );
 	}
 
 	virtual int	Count()
@@ -2999,3 +3115,19 @@ bool GetSteamIDForPlayerIndex( int iPlayerIndex, CSteamID &steamid )
 	// Return a bogus steam ID
 	return false;
 }
+
+#ifndef SWDS
+class CGameServerLoopback : public CBaseAppSystem< IGameServerLoopback >
+{
+public:
+	virtual IRecastMgr *GetRecastMgr()
+	{
+		//return &RecastMgr();
+		return NULL;
+	}
+};
+
+static CGameServerLoopback s_ServerGameLoopback;
+IGameServerLoopback *g_pGameServerLoopback = &s_ServerGameLoopback;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CGameServerLoopback, IGameServerLoopback, GAMESERVERLOOPBACK_INTERFACE_VERSION, s_ServerGameLoopback );
+#endif

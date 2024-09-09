@@ -371,6 +371,9 @@ void CCoreDispSurface::AdjustSurfPointData( void )
 	Vector tmpNormals[4];
 	Vector2D tmpTexCoords[4];
 	float  tmpAlphas[4];
+	Vector4D	tmpMultiBlend[ 4 ];
+	Vector4D	tmpAlphaBlend[ 4 ];
+	Vector		tmpBlendColor[ 4 ][ MAX_MULTIBLEND_CHANNELS ];
 
 	int i;
 	for( i = 0; i < QUAD_POINT_COUNT; i++ )
@@ -750,7 +753,7 @@ void CCoreDispInfo::InitSurf( int parentIndex, Vector points[4], Vector normals[
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void CCoreDispInfo::InitDispInfo( int power, int minTess, float smoothingAngle,
-		                          float *alphas, Vector *dispVectorField,  float *dispDistances )
+		                          float *alphas, Vector *dispVectorField,  float *dispDistances, int nFlags, const CDispMultiBlend *pvMultiBlends )
 {
 	Assert( power >= MIN_MAP_DISP_POWER && power <= MAX_MAP_DISP_POWER );
 
@@ -839,7 +842,7 @@ void CCoreDispInfo::InitDispInfo( int power, int minTess, float smoothingAngle,
 
 
 void CCoreDispInfo::InitDispInfo( int power, int minTess, float smoothingAngle, const CDispVert *pVerts,
-								  const CDispTri *pTris )
+								  const CDispTri *pTris, int nFlags, const CDispMultiBlend *pvMultiBlends )
 {
 	Vector vectors[MAX_DISPVERTS];
 	float dists[MAX_DISPVERTS];
@@ -853,7 +856,7 @@ void CCoreDispInfo::InitDispInfo( int power, int minTess, float smoothingAngle, 
 		alphas[i] = pVerts[i].m_flAlpha;
 	}
 
-	InitDispInfo( power, minTess, smoothingAngle, alphas, vectors, dists );
+	InitDispInfo( power, minTess, smoothingAngle, alphas, vectors, dists, nFlags, pvMultiBlends );
 
 	int nTris = NUM_DISP_POWER_TRIS( power );
 	for ( int iTri = 0; iTri < nTris; ++iTri )

@@ -622,12 +622,24 @@ public:
 	virtual void			CleanupDeleteList( void ) = 0;
 	virtual void			EnableDeleteQueue( bool enable ) = 0;
 
+private:
 	// Save/Restore methods
-	virtual bool			Save( const physsaveparams_t &params ) = 0;
-	virtual void			PreRestore( const physprerestoreparams_t &params ) = 0;
-	virtual bool			Restore( const physrestoreparams_t &params ) = 0;
-	virtual void			PostRestore() = 0;
+	virtual bool			Save( const physsaveparams_t &params )
+	{
+		return false;
+	}
+	virtual void			PreRestore( const physprerestoreparams_t &params )
+	{
+	}
+	virtual bool			Restore( const physrestoreparams_t &params )
+	{
+		return false;
+	}
+	virtual void			PostRestore()
+	{
+	}
 
+public:
 	// Debugging:
 	virtual bool IsCollisionModelUsed( CPhysCollide *pCollide ) const = 0;
 	

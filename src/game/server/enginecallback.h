@@ -33,6 +33,9 @@ class IServerFoundry;
 class IServerEngineTools;
 class CSteamAPIContext;
 class CSteamGameServerAPIContext;
+class IGameLoopback;
+class IGameServerLoopback;
+class IGameClientLoopback;
 
 extern IVEngineServer			*engine;
 extern IVoiceServer				*g_pVoiceServer;
@@ -50,7 +53,9 @@ extern IServerEngineTools		*serverenginetools;
 extern IServerFoundry			*serverfoundry;
 extern CSteamAPIContext			*steamapicontext; // available on game clients
 extern CSteamGameServerAPIContext *steamgameserverapicontext; //available on game servers
-
+extern IGameLoopback* g_pGameLoopback;
+extern IGameServerLoopback* g_pGameServerLoopback;
+extern IGameClientLoopback* g_pGameClientLoopback;
 
 
 //-----------------------------------------------------------------------------

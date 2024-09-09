@@ -213,10 +213,10 @@ CEntityDissolve *CEntityDissolve::Create( CBaseEntity *pTarget, const char *pMat
 	pDissolve->m_nDissolveType = nDissolveType;
 	if ( (nDissolveType == ENTITY_DISSOLVE_ELECTRICAL) || (nDissolveType == ENTITY_DISSOLVE_ELECTRICAL_LIGHT) )
 	{
-		if ( pTarget->IsNPC() && pTarget->MyNPCPointer()->CanBecomeRagdoll() )
+		if ( pTarget->MyCombatCharacterPointer() && pTarget->MyCombatCharacterPointer()->CanBecomeRagdoll() )
 		{
 			CTakeDamageInfo info;
-			CBaseEntity *pRagdoll = CreateServerRagdoll( pTarget->MyNPCPointer(), 0, info, COLLISION_GROUP_DEBRIS, true );
+			CBaseEntity *pRagdoll = CreateServerRagdoll( pTarget->MyCombatCharacterPointer(), 0, info, COLLISION_GROUP_DEBRIS, true );
 			pRagdoll->SetCollisionBounds( pTarget->CollisionProp()->OBBMins(), pTarget->CollisionProp()->OBBMaxs() );
 
 			// Necessary to cause it to do the appropriate death cleanup

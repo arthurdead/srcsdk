@@ -98,6 +98,8 @@ public:
 	// Detaches the edict.. should only be called by CBaseNetworkable's destructor.
 	void DetachEdict();
 
+	bool TimerEventActive();
+
 private:
 	CBaseEntity *GetOuter();
 
@@ -238,5 +240,9 @@ inline int CServerNetworkProperty::AreaNum() const
 	return m_PVSInfo.m_nAreaNum;
 }
 
+inline bool CServerNetworkProperty::TimerEventActive()
+{
+	return m_TimerEvent.IsRegistered();
+}
 
 #endif // SERVERNETWORKPROPERTY_H

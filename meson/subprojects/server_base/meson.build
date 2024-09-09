@@ -1,6 +1,7 @@
-project('source_game','cpp')
+project('server_base','cpp','c')
 
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
+assert(meson.get_compiler('c').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 
 src_root_dir = get_option('src_root_dir')
 
@@ -16,8 +17,6 @@ server_base_dep = declare_dependency(
 	compile_args: [
 		'-DGAME_DLL',
 		'-DSERVER_DLL',
-		'-DUSE_NAV_MESH',
-		'-DAI_USES_NAV_MESH'
 	],
 	sources: files(
 		join_paths(server_src_dir,'default','playermove_default.cpp'),
@@ -73,8 +72,6 @@ server_base_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_task.cpp'),
 		join_paths(server_src_dir,'ai_trackpather.cpp'),
 		join_paths(server_src_dir,'ai_utils.cpp'),
-		join_paths(server_src_dir,'ai_waypoint.cpp'),
-		join_paths(server_src_dir,'ai_waypoint.h'),
 		join_paths(server_src_dir,'wcedit.cpp'),
 		join_paths(shared_navmesh_src_dir,'nav_area.cpp'),
 		join_paths(shared_navmesh_src_dir,'nav_colors.cpp'),
@@ -341,6 +338,10 @@ server_base_dep = declare_dependency(
 		join_paths(server_src_dir,'player_voice_listener.cpp'),
 		join_paths(server_src_dir,'ai_expresserfollowup.cpp'),
 		join_paths(server_src_dir,'ambientgeneric.cpp'),
+		#join_paths(server_src_dir,'recast','ChunkyTriMesh.cpp'),
+		#join_paths(server_src_dir,'recast','recast_build.cpp'),
+		#join_paths(server_src_dir,'recast','recast_mapmesh.cpp'),
+		#join_paths(server_src_dir,'recast','recast_offmesh_connection.cpp'),
 		join_paths(shared_src_dir,'voice_gamemgr.cpp'),
 		join_paths(shared_src_dir,'ModelSoundsCache.cpp'),
 		join_paths(shared_src_dir,'SceneCache.cpp'),

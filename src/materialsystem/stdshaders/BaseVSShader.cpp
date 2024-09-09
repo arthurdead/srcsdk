@@ -14,6 +14,7 @@
 #include "convar.h"
 #include "materialsystem/IShaderExtension.h"
 #include "bitvec.h"
+#include "hackmgr/flashlight_mod.h"
 
 #ifndef GAME_SHADER_DLL
 #ifdef HDR
@@ -2250,25 +2251,25 @@ void CBaseVSShader::DrawEqualDepthToDestAlpha( void )
 #endif
 }
 
-class CShaderExtension : public IShaderExtension
+class CShaderExtension : public CBaseAppSystem< IShaderExtension >
 {
 public:
 	void SetUberlightParamsForFlashlightState( FlashlightState_t& flashlightState, const UberlightState_t& uberlightState ) OVERRIDE
 	{
 		AUTO_LOCK( mutex );
-		//TODO!!!!! Arthurdead
+		FlashlightStateMod_t &modstate = HackMgr_GetFlashlightMod( const_cast<FlashlightState_t &>(flashlightState) );
+		modstate.m_uberlightState = uberlightState;
 	}
 
 	void OnFlashlightStateDestroyed( const FlashlightState_t& flashlightState ) OVERRIDE
 	{
-		//TODO!!!!! Arthurdead
+		HackMgr_RemoveFlashlightMod( const_cast<FlashlightState_t &>(flashlightState) );
 	}
 
 	const UberlightState_t* GetState( const FlashlightState_t& flashlightState ) const
 	{
 		AUTO_LOCK( mutex );
-		//TODO!!!!! Arthurdead
-		return NULL;
+		return &HackMgr_GetFlashlightMod( const_cast<FlashlightState_t &>(flashlightState) ).m_uberlightState;
 	}
 
 private:

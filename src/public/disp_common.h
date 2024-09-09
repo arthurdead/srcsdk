@@ -249,6 +249,7 @@ bool DoesPointHaveAnyNeighbors(
 void FindNeighboringDispSurfs( CCoreDispInfo **ppListBase, int nListSize );
 void SetupAllowedVerts( CCoreDispInfo **ppListBase, int nListSize );
 void GetDispBox( CCoreDispInfo *pDisp, CDispBox &box );
+void SmoothDispSurfNormals( CCoreDispInfo **ppListBase, int nListSize );
 
 // ----------------------------------------------------------------------------- //
 // Inlines.
