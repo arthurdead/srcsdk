@@ -19,6 +19,8 @@
 #define SUPPORT_DX8 0
 #define SUPPORT_DX7 0
 
+extern ConVar mat_fullbright;
+
 //-----------------------------------------------------------------------------
 // Helper macro for vertex shaders
 //-----------------------------------------------------------------------------
@@ -248,12 +250,15 @@ public:
 										   int baseTextureFrame2Var,
 										   bool bSSBump
 		);
-	
+#endif
+
 	// Sets up hw morphing state for the vertex shader
 	void SetHWMorphVertexShaderState( int nDimConst, int nSubrectConst, VertexTextureSampler_t morphSampler );
 
+#ifndef GAME_SHADER_DLL
 	// Computes the shader index for vertex lit materials
 	int ComputeVertexLitShaderIndex( bool bVertexLitGeneric, bool hasBump, bool hasEnvmap, bool hasVertexColor, bool bHasNormal ) const;
+#endif
 
 	// Helper for setting up flashlight constants
 	void SetFlashlightVertexShaderConstants( bool bBump, int bumpTransformVar, bool bDetail, int detailScaleVar, bool bSetTextureTransforms );
@@ -305,6 +310,8 @@ public:
 		bool m_bSSBump;
 		float m_fSeamlessScale;								// 0.0 = not seamless
 	};
+
+#ifndef GAME_SHADER_DLL
 	void DrawFlashlight_dx90( IMaterialVar** params, 
 		IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow, DrawFlashlight_dx90_Vars_t &vars );
 #endif // GAME_SHADER_DLL

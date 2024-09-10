@@ -13,6 +13,9 @@ static CreateInterfaceFn filesystem_createinterface = NULL;
 static CSysModule *launcher_DLL = NULL;
 static CreateInterfaceFn launcher_createinterface = NULL;
 
+static CSysModule *materials_DLL = NULL;
+static CreateInterfaceFn materials_createinterface = NULL;
+
 static CreateInterfaceFn do_load(CreateInterfaceFn &func, CSysModule *&dll, const char *name)
 {
 	if(!func) {
@@ -37,4 +40,9 @@ CreateInterfaceFn GetFilesystemInterfaceFactory()
 CreateInterfaceFn GetLauncherInterfaceFactory()
 {
 	return do_load(launcher_createinterface, launcher_DLL, "launcher" DLL_EXT_STRING);
+}
+
+CreateInterfaceFn GetMaterialSystemInterfaceFactory()
+{
+	return do_load(materials_createinterface, materials_DLL, "materialsystem" DLL_EXT_STRING);
 }

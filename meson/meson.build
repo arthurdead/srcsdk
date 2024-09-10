@@ -14,11 +14,13 @@ if build_libs
 	subproject('raytrace')
 	subproject('responserules')
 	subproject('vgui_controls')
-	subproject('shaderlib')
 	subproject('hackmgr')
+	subproject('shaderlib')
 	subproject('recastnavigation_game')
-	subproject('game_loopback')
 	#subproject('vphysics')
+endif
+if build_client or build_listen_server
+	subproject('game_loopback')
 endif
 if build_client
 	subproject('vaudio_minimp3')

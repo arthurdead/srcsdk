@@ -30,6 +30,9 @@
 #include "tier0/memdbgon.h"
 
 extern ConVar think_limit;
+#ifdef VPROF_ENABLED
+ConVar vprof_think_limit( "vprof_think_limit", "0" );
+#endif
 
 ConVar vprof_scope_entity_thinks( "vprof_scope_entity_thinks", "0" );
 ConVar vprof_scope_entity_gamephys( "vprof_scope_entity_gamephys", "0" );

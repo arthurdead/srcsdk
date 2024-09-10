@@ -15,6 +15,7 @@
 #include "shaderlib_cvar.h"
 #include "mathlib/mathlib.h"
 #include "tier2/tier2.h"
+#include "hackmgr/shadersystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -39,6 +40,8 @@ public:
 	virtual void InsertShader( IShader *pShader );
 
 private:
+	bool DoConnect( CreateInterfaceFn factory, bool bIsMaterialSystem );
+
 	CUtlVector< IShader * >	m_ShaderList;
 };
 
@@ -98,11 +101,27 @@ CShaderDLL::CShaderDLL()
 	MathLib_Init( 2.2f, 2.2f, 0.0f, 2.0f );
 }
 
+static bool do_matsys_hack = false;
 
 //-----------------------------------------------------------------------------
 // Connect, disconnect...
 //-----------------------------------------------------------------------------
 bool CShaderDLL::Connect( CreateInterfaceFn factory, bool bIsMaterialSystem )
+{
+	do_matsys_hack = !bIsMaterialSystem;
+
+	return DoConnect( factory, bIsMaterialSystem );
+}
+
+bool CShaderDLL::Connect( CreateInterfaceFn factory )
+{
+	do_matsys_hack = false;
+	HackMgr_ToggleShaderDLLAsMod(const_cast<CShaderDLL *>(this), true);
+
+	return DoConnect( factory, false );
+}
+
+bool CShaderDLL::DoConnect( CreateInterfaceFn factory, bool bIsMaterialSystem )
 {
 	g_pHardwareConfig =  (IMaterialSystemHardwareConfig*)factory( MATERIALSYSTEM_HARDWARECONFIG_INTERFACE_VERSION, NULL );
 	g_pConfig = (const MaterialSystem_Config_t*)factory( MATERIALSYSTEM_CONFIG_VERSION, NULL );
@@ -119,6 +138,9 @@ bool CShaderDLL::Connect( CreateInterfaceFn factory, bool bIsMaterialSystem )
 
 void CShaderDLL::Disconnect( bool bIsMaterialSystem )
 {
+	do_matsys_hack = false;
+	HackMgr_ToggleShaderDLLAsMod(const_cast<CShaderDLL *>(this), true);
+
 	if ( !bIsMaterialSystem )
 	{
 		ConVar_Unregister();
@@ -128,11 +150,6 @@ void CShaderDLL::Disconnect( bool bIsMaterialSystem )
 	g_pHardwareConfig = NULL;
 	g_pConfig = NULL;
 	g_pSLShaderSystem = NULL;
-}
-
-bool CShaderDLL::Connect( CreateInterfaceFn factory )
-{
-	return Connect( factory, false );
 }
 
 void CShaderDLL::Disconnect()
@@ -146,6 +163,11 @@ void CShaderDLL::Disconnect()
 //-----------------------------------------------------------------------------
 int CShaderDLL::ShaderCount() const
 {
+	if(do_matsys_hack) {
+		HackMgr_ToggleShaderDLLAsMod(const_cast<CShaderDLL *>(this), false);
+		do_matsys_hack = false;
+	}
+
 	return m_ShaderList.Count();
 }
 

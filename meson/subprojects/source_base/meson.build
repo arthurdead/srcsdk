@@ -14,7 +14,8 @@ source_debug_dep = declare_dependency(
 		'-DDEV_BUILD',
 		'-DSTAGING_ONLY',
 		'-DDEBUG',
-		'-D_DEBUG'
+		'-D_DEBUG',
+		'-DVPROF_ENABLED'
 	]
 )
 

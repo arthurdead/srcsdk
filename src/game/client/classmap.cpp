@@ -161,7 +161,7 @@ void DumpEntityFactories_f()
 	CClassMap &classMap = (CClassMap &)GetClassMap();
 	for ( int i = classMap.m_ClassDict.First(); i != classMap.m_ClassDict.InvalidIndex(); i = classMap.m_ClassDict.Next( i ) )
 	{
-		Warning( "%s\n", classMap.m_ClassDict.Element( i ).GetMapName() );
+		Msg( "%s\n", classMap.m_ClassDict.Element( i ).GetMapName() );
 	}
 }
 

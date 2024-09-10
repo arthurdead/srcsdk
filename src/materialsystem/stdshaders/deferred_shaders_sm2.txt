@@ -1,2 +1,0 @@
-decalmodulate_vs20.fxc
-decalmodulate_ps2x.fxc

@@ -98,11 +98,10 @@ public:
 
 struct FadeData_t
 {
-	float	m_flPercentMin;
-	float	m_flPercentMax;
-	float	m_flPixelMin;
-	float	m_flPixelMax;
-	float	m_flWidth;
+	float	m_flPixelMin;		// Size (height in pixels) above which objects start to fade in
+	float	m_flPixelMax;		// Size (height in pixels) above which objects are fully faded in
+	float	m_flWidth;			// Reference screen res w.r.t which the above pixel values were chosen
+	float	m_flFadeDistScale;	// Scale factor applied before entity distance-based fade is calculated
 };
 
 //-----------------------------------------------------------------------------
@@ -209,7 +208,7 @@ struct FrustumCache_t
 	bool IsValid( void ) { return ( m_nFrameCount == gpGlobals->framecount ); }
 	void SetUpdated( void ) { m_nFrameCount = gpGlobals->framecount; }
 
-	void Add( const CViewSetup *pView );
+	void Add( const CViewSetupEx *pView );
 };
 
 FrustumCache_t *FrustumCache( void );
@@ -247,7 +246,7 @@ public:
 	CRendering3dView( CViewRender *pMainView );
 	virtual ~CRendering3dView() { ReleaseLists(); }
 
-	virtual void Setup( const CViewSetup &setup );
+	virtual void Setup( const CViewSetupEx &setup );
 
 	// What are we currently rendering? Returns a combination of DF_ flags.
 	virtual int		GetDrawFlags();
@@ -403,9 +402,9 @@ protected:
 	// Pitch drifting data
 	CPitchDrift		m_PitchDrift;
 
-	virtual void	RenderPreScene( const CViewSetup &view ) { }
-	virtual void	PreViewDrawScene( const CViewSetup &view ) {}
-	virtual void	PostViewDrawScene( const CViewSetup &view ) {}
+	virtual void	RenderPreScene( const CViewSetupEx &view ) { }
+	virtual void	PreViewDrawScene( const CViewSetupEx &view ) {}
+	virtual void	PostViewDrawScene( const CViewSetupEx &view ) {}
 
 public:
 					CViewRender();
@@ -414,15 +413,15 @@ public:
 // Implementation of IViewRender interface
 public:
 
-	void			SetupVis( const CViewSetup& view, unsigned int &visFlags, ViewCustomVisibility_t *pCustomVisibility = NULL );
+	void			SetupVis( const CViewSetupEx& view, unsigned int &visFlags, ViewCustomVisibility_t *pCustomVisibility = NULL );
 
 
 	// Render functions
 	virtual	void	Render( vrect_t *rect );
 	virtual void	RenderView( const CViewSetupEx &view, const CViewSetupEx &hudViewSetup, int nClearFlags, int whatToDraw );
 	virtual void	RenderPlayerSprites();
-	virtual void	Render2DEffectsPreHUD( const CViewSetup &view );
-	virtual void	Render2DEffectsPostHUD( const CViewSetup &view );
+	virtual void	Render2DEffectsPreHUD( const CViewSetupEx &view );
+	virtual void	Render2DEffectsPostHUD( const CViewSetupEx &view );
 
 
 	void			DisableFog( void );
@@ -451,7 +450,7 @@ public:
 
 	void			GetWaterLODParams( float &flCheapWaterStartDistance, float &flCheapWaterEndDistance );
 
-	virtual void	QueueOverlayRenderView( const CViewSetup &view, int nClearFlags, int whatToDraw );
+	virtual void	QueueOverlayRenderView( const CViewSetupEx &view, int nClearFlags, int whatToDraw );
 
 	virtual void	GetScreenFadeDistances( float *min, float *max );
 	virtual bool	AllowScreenspaceFade( void ) { return true; }
@@ -459,7 +458,7 @@ public:
 	virtual C_BaseEntity *GetCurrentlyDrawingEntity();
 	virtual void		  SetCurrentlyDrawingEntity( C_BaseEntity *pEnt );
 
-	virtual bool		UpdateShadowDepthTexture( ITexture *pRenderTarget, ITexture *pDepthTexture, const CViewSetup &shadowView );
+	virtual bool		UpdateShadowDepthTexture( ITexture *pRenderTarget, ITexture *pDepthTexture, const CViewSetupEx &shadowView );
 
 	int GetBaseDrawFlags() { return m_BaseDrawFlags; }
 	virtual bool ShouldForceNoVis()  { return m_bForceNoVis; }
@@ -491,9 +490,9 @@ private:
 	// baseDrawFlags is a combination of DF_ defines. DF_MONITOR is passed into here while drawing a monitor.
 	void			ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxVisible, const CViewSetupEx &view, int nClearFlags, view_id_t viewID, bool bDrawViewModel = false, int baseDrawFlags = 0, ViewCustomVisibility_t *pCustomVisibility = NULL );
 
-	void			DrawMonitors( const CViewSetup &cameraView );
+	void			DrawMonitors( const CViewSetupEx &cameraView );
 
-	void			SSAO_DepthPass( const CViewSetup &viewSet );
+	void			SSAO_DepthPass( const CViewSetupEx &viewSet );
 	void			SSAO_DrawResults();
 
 	bool			DrawOneMonitor( ITexture *pRenderTarget, int cameraNum, C_PointCamera *pCameraEnt, const CViewSetupEx &cameraView, C_BasePlayer *localPlayer, 
@@ -501,7 +500,7 @@ private:
 
 	// Drawing primitives
 	bool			ShouldDrawViewModel( bool drawViewmodel );
-	void			DrawViewModels( const CViewSetup &view, bool drawViewmodel );
+	void			DrawViewModels( const CViewSetupEx &view, bool drawViewmodel );
 
 	void			PerformScreenSpaceEffects( int x, int y, int w, int h );
 
@@ -513,14 +512,14 @@ private:
 	void DrawUnderwaterOverlay( void );
 
 	// Water-related methods
-	void			DrawWorldAndEntities( bool drawSkybox, const CViewSetup &view, int nClearFlags, ViewCustomVisibility_t *pCustomVisibility = NULL );
+	void			DrawWorldAndEntities( bool drawSkybox, const CViewSetupEx &view, int nClearFlags, ViewCustomVisibility_t *pCustomVisibility = NULL );
 
-	virtual void			ViewDrawScene_Intro( const CViewSetup &view, int nClearFlags, const IntroData_t &introData );
+	virtual void			ViewDrawScene_Intro( const CViewSetupEx &view, int nClearFlags, const IntroData_t &introData );
 
 #ifdef PORTAL 
 	// Intended for use in the middle of another ViewDrawScene call, this allows stencils to be drawn after opaques but before translucents are drawn in the main view.
-	void			ViewDrawScene_PortalStencil( const CViewSetup &view, ViewCustomVisibility_t *pCustomVisibility );
-	void			Draw3dSkyboxworld_Portal( const CViewSetup &view, int &nClearFlags, bool &bDrew3dSkybox, SkyboxVisibility_t &nSkyboxVisible, ITexture *pRenderTarget = NULL );
+	void			ViewDrawScene_PortalStencil( const CViewSetupEx &view, ViewCustomVisibility_t *pCustomVisibility );
+	void			Draw3dSkyboxworld_Portal( const CViewSetupEx &view, int &nClearFlags, bool &bDrew3dSkybox, SkyboxVisibility_t &nSkyboxVisible, ITexture *pRenderTarget = NULL );
 #endif // PORTAL
 
 	// Determines what kind of water we're going to use
@@ -531,9 +530,9 @@ private:
 
 	// Sets up, cleans up the main 3D view
 	void			SetupMain3DView( const CViewSetupEx &view, const CViewSetupEx &hudViewSetup, int &nClearFlags, ITexture *pRenderTarget );
-	void			CleanupMain3DView( const CViewSetup &view );
+	void			CleanupMain3DView( const CViewSetupEx &view );
 
-	void			UpdateCascadedShadow( const CViewSetup &view );
+	void			UpdateCascadedShadow( const CViewSetupEx &view );
 
 	// This stores the current view
  	CViewSetupEx		m_CurrentView;

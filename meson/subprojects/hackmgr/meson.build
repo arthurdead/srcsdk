@@ -44,6 +44,7 @@ if build_libs
 			join_paths(hackmgr_src_dir,'IStaticPropMgr.cpp'),
 			join_paths(hackmgr_src_dir,'istudiorender.cpp'),
 			join_paths(hackmgr_src_dir,'commandline.cpp'),
+			join_paths(hackmgr_src_dir,'shadersystem.cpp'),
 			join_paths(public_dir,'SoundParametersInternal.cpp'),
 			join_paths(public_dir,'interval.cpp'),
 		),
@@ -51,7 +52,8 @@ if build_libs
 			hackmgr_src_dir,
 			join_paths(public_dir,'tier0'),
 			join_paths(public_dir,'tier1'),
-			join_paths(public_dir,'hackmgr')
+			join_paths(public_dir,'hackmgr'),
+			join_paths(src_root_dir,'materialsystem')
 		),
 		dependencies: [
 			tier1.get_variable('tier1_dep'),

@@ -62,10 +62,12 @@ void CClientEffectPrecacheSystem::LevelShutdownPreEntity( void )
 void CClientEffectPrecacheSystem::LevelShutdownPostEntity( void )
 {
 	// mark all known effects as free
+#if 0
 	for ( int i = 0; i < m_Effects.Count(); i++ )
 	{
 		m_Effects[i]->Shutdown();
 	}
+#endif
 }
 
 //-----------------------------------------------------------------------------

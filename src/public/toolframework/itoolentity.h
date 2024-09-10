@@ -169,52 +169,7 @@ public:
 class IClientToolsEx : public IClientTools
 {
 private:
-	virtual void			DO_NOT_USE_AddClientRenderable( IClientRenderable *pRenderable, int renderGroup ) override final
-	{
-		bool bDrawWithViewModels = false;
-		RenderableTranslucencyType_t nType = RENDERABLE_IS_OPAQUE;
-		RenderableModelType_t nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE;
-
-		switch(renderGroup) {
-		case ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE:
-		case ENGINE_RENDER_GROUP_OPAQUE_STATIC:
-			nType = RENDERABLE_IS_OPAQUE;
-			nModelType = RENDERABLE_MODEL_STATIC_PROP;
-			break;
-		case ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY:
-			nType = RENDERABLE_IS_TRANSLUCENT;
-			nModelType = RENDERABLE_MODEL_ENTITY;
-			break;
-		case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE:
-		case ENGINE_RENDER_GROUP_OPAQUE_ENTITY:
-			nType = RENDERABLE_IS_OPAQUE;
-			nModelType = RENDERABLE_MODEL_ENTITY;
-			break;
-		case ENGINE_RENDER_GROUP_OPAQUE_BRUSH:
-			nType = RENDERABLE_IS_OPAQUE;
-			nModelType = RENDERABLE_MODEL_BRUSH;
-			break;
-		case ENGINE_RENDER_GROUP_VIEW_MODEL_TRANSLUCENT:
-			nType = RENDERABLE_IS_TRANSLUCENT;
-			nModelType = RENDERABLE_MODEL_ENTITY;
-			bDrawWithViewModels = true;
-			break;
-		case ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE:
-			nType = RENDERABLE_IS_OPAQUE;
-			nModelType = RENDERABLE_MODEL_ENTITY;
-			bDrawWithViewModels = true;
-			break;
-		case ENGINE_RENDER_GROUP_TWOPASS:
-			nType = RENDERABLE_IS_TWO_PASS;
-			nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE;
-			break;
-		case ENGINE_RENDER_GROUP_OTHER:
-			nType = RENDERABLE_IS_OPAQUE;
-			nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE;
-			break;
-		}
-		AddClientRenderable( pRenderable, bDrawWithViewModels, nType, nModelType );
-	}
+	virtual void			DO_NOT_USE_AddClientRenderable( IClientRenderable *pRenderable, int renderGroup ) override final;
 
 private:
 #ifdef _DEBUG
@@ -246,6 +201,57 @@ public:
 	virtual ParticleSystemSearchResult	NextParticleSystem( ParticleSystemSearchResult sr ) = 0;
 	virtual void						SetRecording( ParticleSystemSearchResult sr, bool bRecord ) = 0;
 };
+
+inline void IClientToolsEx::DO_NOT_USE_AddClientRenderable( IClientRenderable *pRenderable, int renderGroup )
+{
+	bool bDrawWithViewModels = false;
+	RenderableTranslucencyType_t nType = RENDERABLE_IS_OPAQUE;
+	RenderableModelType_t nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE;
+
+	switch(renderGroup) {
+	case ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE:
+	case ENGINE_RENDER_GROUP_OPAQUE_STATIC_MEDIUM:
+	case ENGINE_RENDER_GROUP_OPAQUE_STATIC_SMALL:
+	case ENGINE_RENDER_GROUP_OPAQUE_STATIC_TINY:
+		nType = RENDERABLE_IS_OPAQUE;
+		nModelType = RENDERABLE_MODEL_STATIC_PROP;
+		break;
+	case ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY:
+		nType = RENDERABLE_IS_TRANSLUCENT;
+		nModelType = RENDERABLE_MODEL_ENTITY;
+		break;
+	case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE:
+	case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_MEDIUM:
+	case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_SMALL:
+	case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_TINY:
+		nType = RENDERABLE_IS_OPAQUE;
+		nModelType = RENDERABLE_MODEL_ENTITY;
+		break;
+	case ENGINE_RENDER_GROUP_OPAQUE_BRUSH:
+		nType = RENDERABLE_IS_OPAQUE;
+		nModelType = RENDERABLE_MODEL_BRUSH;
+		break;
+	case ENGINE_RENDER_GROUP_VIEW_MODEL_TRANSLUCENT:
+		nType = RENDERABLE_IS_TRANSLUCENT;
+		nModelType = RENDERABLE_MODEL_ENTITY;
+		bDrawWithViewModels = true;
+		break;
+	case ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE:
+		nType = RENDERABLE_IS_OPAQUE;
+		nModelType = RENDERABLE_MODEL_ENTITY;
+		bDrawWithViewModels = true;
+		break;
+	case ENGINE_RENDER_GROUP_TWOPASS:
+		nType = RENDERABLE_IS_TWO_PASS;
+		nModelType = RENDERABLE_MODEL_ENTITY;
+		break;
+	case ENGINE_RENDER_GROUP_OTHER:
+		nType = RENDERABLE_IS_TRANSLUCENT;
+		nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE;
+		break;
+	}
+	AddClientRenderable( pRenderable, bDrawWithViewModels, nType, nModelType );
+}
 
 #define VCLIENTTOOLS_INTERFACE_VERSION "VCLIENTTOOLS001"
 

@@ -3829,7 +3829,7 @@ ConVar cl_blurDebug( "cl_blurDebug", "0" );
 ConVar cl_blurTapSize( "cl_blurTapSize", "0.5" );
 ConVar cl_blurPasses( "cl_blurPasses", "1" );
 
-void BlurEntity( IClientRenderable *pRenderable, IClientRenderableMod *pRenderableMod, bool bPreDraw, int drawFlags, const RenderableInstance_t &instance, const CViewSetup &view, int x, int y, int w, int h )
+void BlurEntity( IClientRenderable *pRenderable, IClientRenderableMod *pRenderableMod, bool bPreDraw, int drawFlags, const RenderableInstance_t &instance, const CViewSetupEx &view, int x, int y, int w, int h )
 {
 	ITexture *pFullFrameFB = materials->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
 	ITexture *dest_rt[2];

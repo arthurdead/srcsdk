@@ -8,12 +8,12 @@ HACKMGR_CLASS_API void IStudioRender::DrawModelArrayStaticProp( const DrawModelI
 	Assert(0);
 }
 
-HACKMGR_CLASS_API void IStudioRender::DrawModelArray( const StudioModelArrayInfo_t &drawInfo, int nCount, StudioArrayInstanceData_t *pInstanceData, int nInstanceStride, int flags )
+HACKMGR_CLASS_API void IStudioRender::DrawModelShadowArray( int nCount, StudioArrayData_t *pShadowData, int nInstanceStride, int flags )
 {
 	Assert(0);
 }
 
-HACKMGR_CLASS_API void IStudioRender::DrawModelShadowArray( int nCount, StudioArrayData_t *pShadowData, int nInstanceStride, int flags )
+HACKMGR_CLASS_API void IStudioRender::DrawModelArray( const StudioModelArrayInfo_t &drawInfo, int nCount, StudioArrayInstanceData_t *pInstanceData, int nInstanceStride, int flags )
 {
 	Assert(0);
 }

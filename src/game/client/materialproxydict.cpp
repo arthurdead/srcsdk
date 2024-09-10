@@ -17,7 +17,8 @@ class CMaterialProxyDict : public IMaterialProxyDict
 public:
 	IMaterialProxy *	CreateProxy( const char *proxyName );
 	void				Add( const char *pMaterialProxyName, MaterialProxyFactory_t *pMaterialProxyFactory );
-private:
+	bool ProxyExists( const char *proxyName );
+public:
 	CUtlStringMap<MaterialProxyFactory_t *> m_StringToProxyFactoryMap;
 };
 
@@ -44,3 +45,24 @@ IMaterialProxy *CMaterialProxyDict::CreateProxy( const char *pMaterialProxyName 
 	Assert( pMaterialProxyFactory );
 	return (*pMaterialProxyFactory)();
 }
+
+bool CMaterialProxyDict::ProxyExists( const char *pMaterialProxyName )
+{
+	UtlSymId_t sym = m_StringToProxyFactoryMap.Find( pMaterialProxyName );
+	if ( sym == m_StringToProxyFactoryMap.InvalidIndex() )
+	{
+		return false;
+	}
+	return true;
+}
+
+void DumpProxies_f()
+{
+	for ( int i = 0; i < g_MaterialProxyDict.m_StringToProxyFactoryMap.GetNumStrings(); ++i )
+	{
+		Msg( "%s\n", g_MaterialProxyDict.m_StringToProxyFactoryMap.String(i) );
+	}
+}
+
+static ConCommand dumpmaterialsproxies( "dumpmaterialsproxies", DumpProxies_f, "Lists all material proxies.", FCVAR_CLIENTDLL );
+

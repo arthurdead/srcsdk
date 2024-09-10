@@ -95,10 +95,11 @@ public:
 	virtual Vector const&			GetRenderOrigin( void ) = 0;
 	virtual QAngle const&			GetRenderAngles( void ) = 0;
 	virtual bool					ShouldDraw( void ) = 0;
-private:
+public:
 	virtual bool					DO_NOT_USE_IsTransparent( void ) = 0;
 	virtual bool					DO_NOT_USE_UsesPowerOfTwoFrameBufferTexture() = 0;
 	virtual bool					DO_NOT_USE_UsesFullFrameBufferTexture() = 0;
+
 public:
 	virtual ClientShadowHandle_t	GetShadowHandle() const
 	{
@@ -111,17 +112,19 @@ public:
 
 	// Render baby!
 	virtual const model_t*			GetModel( ) const = 0;
-private:
+public:
 	friend class CClientShadowMgr;
 	virtual int						DO_NOT_USE_DrawModel( int flags ) = 0;
+
 public:
 	// Get the body parameter
 	virtual int		GetBody() = 0;
 
 	// Determine alpha and blend amount for transparent objects based on render state info
-private:
+public:
 	friend void CallComputeFXBlend( IClientRenderable *&pRenderable );
 	friend class CClientLeafSystem;
+
 	virtual void	DO_NOT_USE_ComputeFxBlend( ) = 0;
 	virtual int		DO_NOT_USE_GetFxBlend( void ) = 0;
 public:
@@ -194,7 +197,7 @@ public:
 	virtual int		GetSkin() = 0;
 
 	// Is this a two-pass renderable?
-private:
+public:
 	virtual bool	DO_NOT_USE_IsTwoPass( void ) = 0;
 public:
 	virtual void	OnThreadedDrawSetup() = 0;
@@ -203,7 +206,7 @@ public:
 
 	virtual void	RecordToolMessage() = 0;
 
-private:
+public:
 	virtual bool	DO_NOT_USE_IgnoresZBuffer( void ) const = 0;
 };
 
@@ -271,9 +274,7 @@ private:
 		DebuggerBreak();
 		return 0;
 	}
-#endif
 
-#ifdef _DEBUG
 	virtual bool UsesPowerOfTwoFrameBufferTexture() final
 	{
 		DebuggerBreak();
@@ -284,19 +285,38 @@ private:
 		DebuggerBreak();
 		return false;
 	}
-#endif
-	virtual bool DO_NOT_USE_UsesPowerOfTwoFrameBufferTexture() final
-	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_POWER_OF_TWO_FB) != 0; }
-	virtual bool DO_NOT_USE_UsesFullFrameBufferTexture() final
-	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_FULL_FB) != 0; }
 
-#ifdef _DEBUG
 	virtual int DrawModel(int flags) final
 	{
 		DebuggerBreak();
 		return 0;
 	}
+
+	virtual bool IgnoresZBuffer() const final
+	{
+		DebuggerBreak();
+		return true;
+	}
+
+	virtual bool IsTransparent() final
+	{
+		DebuggerBreak();
+		return true;
+	}
+
+	virtual bool IsTwoPass() final
+	{
+		DebuggerBreak();
+		return false;
+	}
 #endif
+
+public:
+	virtual bool DO_NOT_USE_UsesPowerOfTwoFrameBufferTexture() final
+	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_POWER_OF_TWO_FB) != 0; }
+	virtual bool DO_NOT_USE_UsesFullFrameBufferTexture() final
+	{ return (GetRenderFlags() & ERENDERFLAGS_NEEDS_FULL_FB) != 0; }
+
 	virtual int DO_NOT_USE_DrawModel(int flags) final
 	{
 		RenderableInstance_t &instance = GetDefaultRenderableInstance();
@@ -323,13 +343,6 @@ private:
 		return 255;
 	}
 
-#ifdef _DEBUG
-	virtual bool IgnoresZBuffer() const final
-	{
-		DebuggerBreak();
-		return true;
-	}
-#endif
 	virtual bool DO_NOT_USE_IgnoresZBuffer() const final
 	{
 		IClientAlphaPropertyMod *pAlphaProp = const_cast<IClientRenderableEx *>(this)->GetClientAlphaPropertyMod();
@@ -338,23 +351,9 @@ private:
 		return false;
 	}
 
-#ifdef _DEBUG
-	virtual bool IsTransparent() final
-	{
-		DebuggerBreak();
-		return true;
-	}
-#endif
 	virtual bool DO_NOT_USE_IsTransparent() final
 	{ return (ComputeTranslucencyType() == RENDERABLE_IS_TRANSLUCENT); }
 
-#ifdef _DEBUG
-	virtual bool IsTwoPass() final
-	{
-		DebuggerBreak();
-		return false;
-	}
-#endif
 	virtual bool DO_NOT_USE_IsTwoPass() final
 	{ return (ComputeTranslucencyType() == RENDERABLE_IS_TWO_PASS); }
 

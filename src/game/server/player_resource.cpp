@@ -33,17 +33,14 @@ CPlayerResource::CPlayerResource()
 {
 	AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
 
-	if(g_pPlayerResource) {
-		UTIL_Remove(g_pPlayerResource);
-	}
-	g_pPlayerResource = this;
+	if(!g_pPlayerResource)
+		g_pPlayerResource = this;
 }
 
 void CPlayerResource::UpdateOnRemove( void )
 {
-	if(g_pPlayerResource == this) {
+	if(g_pPlayerResource == this)
 		g_pPlayerResource = NULL;
-	}
 
 	BaseClass::UpdateOnRemove();
 }
@@ -53,6 +50,11 @@ void CPlayerResource::UpdateOnRemove( void )
 //-----------------------------------------------------------------------------
 void CPlayerResource::Spawn( void )
 {
+	if(g_pPlayerResource && g_pPlayerResource != this) {
+		UTIL_Remove(this);
+		return;
+	}
+
 	for ( int i=0; i < MAX_PLAYERS+1; i++ )
 	{
 		m_iPing.Set( i, 0 );

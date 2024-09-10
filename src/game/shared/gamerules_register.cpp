@@ -26,9 +26,9 @@ CGameRulesRegister::CGameRulesRegister( const char *pClassName, CreateGameRulesF
 	s_pHead = this;
 }
 
-void CGameRulesRegister::CreateGameRules()
+CGameRules *CGameRulesRegister::CreateGameRules()
 {
-	m_pFn();
+	return m_pFn();
 }
 
 CGameRulesRegister* CGameRulesRegister::FindByName( const char *pName )
@@ -51,8 +51,9 @@ extern CGameRules *s_pGameRules;
 
 void UTIL_Remove( CGameRules *pGameRules )
 {
-	if(s_pGameRules == pGameRules)
-		s_pGameRules = NULL;
+	if(!pGameRules)
+		return;
+
 	delete pGameRules;
 }
 
@@ -64,7 +65,10 @@ void UTIL_Remove( CGameRules *pGameRules )
 	void OnGameRulesCreationStringChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, void const *newData )
 	{
 		// The server has created a new CGameRules object.
-		UTIL_Remove( s_pGameRules );
+		if(s_pGameRules) {
+			UTIL_Remove( s_pGameRules );
+			s_pGameRules = NULL;
+		}
 
 		const char *pClassName = (const char*)newData;
 		CGameRulesRegister *pReg = CGameRulesRegister::FindByName( pClassName );
@@ -74,7 +78,7 @@ void UTIL_Remove( CGameRules *pGameRules )
 		}
 
 		// Create the new game rules object.
-		pReg->CreateGameRules();
+		s_pGameRules = pReg->CreateGameRules();
 
 		if ( !s_pGameRules )
 		{
@@ -109,14 +113,17 @@ void UTIL_Remove( CGameRules *pGameRules )
 	void CreateGameRulesObject( const char *pClassName )
 	{
 		// Delete the old game rules object.
-		UTIL_Remove( s_pGameRules );
+		if(s_pGameRules) {
+			UTIL_Remove( s_pGameRules );
+			s_pGameRules = NULL;
+		}
 
 		// Create a new game rules object.
 		CGameRulesRegister *pReg = CGameRulesRegister::FindByName( pClassName );
 		if ( !pReg )
 			Error( "InitGameRules: missing gamerules class '%s' on the server", pClassName );
 	
-		pReg->CreateGameRules();
+		s_pGameRules = pReg->CreateGameRules();
 		if ( !s_pGameRules )
 		{
 			Error( "InitGameRules: game rules entity (%s) not created", pClassName );
@@ -126,10 +133,7 @@ void UTIL_Remove( CGameRules *pGameRules )
 		Assert( g_StringTableGameRules );
 		g_StringTableGameRules->AddString( true, "classname", strlen( pClassName ) + 1, pClassName );
 
-		if ( s_pGameRules )
-		{
-			s_pGameRules->CreateCustomNetworkStringTables();
-		}
+		s_pGameRules->CreateCustomNetworkStringTables();
 	}
 
 #endif

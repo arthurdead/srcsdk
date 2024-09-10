@@ -19,6 +19,9 @@ abstract_class IMaterialProxyDict
 public:
 	// This is used to instance a proxy.
 	virtual IMaterialProxy *CreateProxy( const char *proxyName ) = 0;
+
+	virtual bool ProxyExists( const char *proxyName ) = 0;
+
 	// virtual destructor
 	virtual	~IMaterialProxyDict() {}
 	// Used by EXPOSE_MATERIAL_PROXY to insert all proxies into the dictionary.

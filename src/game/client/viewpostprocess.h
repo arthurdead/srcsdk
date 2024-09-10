@@ -21,7 +21,7 @@ void DumpTGAofRenderTarget( const int width, const int height, const char *pFile
 
 bool IsDepthOfFieldEnabled();
 void DoDepthOfField( const CViewSetupEx &view );
-void BlurEntity( IClientRenderable *pRenderable, IClientRenderableMod *pRenderableMod, bool bPreDraw, int drawFlags, const RenderableInstance_t &instance, const CViewSetup &view, int x, int y, int w, int h );
+void BlurEntity( IClientRenderable *pRenderable, IClientRenderableMod *pRenderableMod, bool bPreDraw, int drawFlags, const RenderableInstance_t &instance, const CViewSetupEx &view, int x, int y, int w, int h );
 
 void UpdateMaterialSystemTonemapScalar();
 

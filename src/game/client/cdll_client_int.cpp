@@ -953,27 +953,23 @@ bool InitGameSystems( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 static void *ClientCreateInterfaceHook(const char *pName, int *pCode)
 {
-	static const int matproxyver_len = V_strlen(INTERNAL_IMATERIAL_PROXY_INTERFACE_VERSION);
 	static char buffer[MAX_PATH];
 
-	int totallen = V_strlen(pName);
-	if(totallen >= matproxyver_len) {
-		const char *nameend = ((pName+totallen)-matproxyver_len);
-		if(V_strnicmp(nameend, INTERNAL_IMATERIAL_PROXY_INTERFACE_VERSION, matproxyver_len) == 0) {
-			int namelen = (nameend-pName)+1;
-			V_strncpy(buffer, pName, namelen);
-			buffer[namelen] = '\0';
-			IMaterialProxy *proxy = gHLClient.InstantiateMaterialProxy(buffer);
-			Assert(proxy);
-			if(proxy) {
-				if(pCode)
-					*pCode = IFACE_OK;
-			} else {
-				if(pCode)
-					*pCode = IFACE_FAILED;
-			}
-			return proxy;
+	const char *pProxyInterface = V_strstr(pName, INTERNAL_IMATERIAL_PROXY_INTERFACE_VERSION);
+	if(pProxyInterface != NULL) {
+		int namelen = (pProxyInterface-pName)+1;
+		V_strncpy(buffer, pName, namelen);
+		buffer[namelen] = '\0';
+		IMaterialProxy *proxy = gHLClient.InstantiateMaterialProxy(buffer);
+		Assert(proxy);
+		if(proxy) {
+			if(pCode)
+				*pCode = IFACE_OK;
+		} else {
+			if(pCode)
+				*pCode = IFACE_FAILED;
 		}
+		return proxy;
 	}
 
 	if(pCode) {
@@ -982,6 +978,12 @@ static void *ClientCreateInterfaceHook(const char *pName, int *pCode)
 
 	return NULL;
 }
+
+INIT_PRIORITY(101) struct ClientCreateInterfaceHookInit {
+	ClientCreateInterfaceHookInit() {
+		Sys_SetCreateInterfaceHook(ClientCreateInterfaceHook);
+	}
+} g_ClientCreateInterfaceHookInit;
 
 int CClientDll::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGlobals )
 {
@@ -1843,7 +1845,7 @@ void ConfigureCurrentSystemLevel()
 		int nMaxDXLevel = g_pMaterialSystemHardwareConfig->GetMaxDXSupportLevel();
 		if( mat_dxlevel.GetInt() < 95 )
 		{
-			Error( "Your graphics card does not seem to support shader model 3.0 or higher. Reported dx level: %d (max setting: %d).", 
+			Warning( "Your graphics card does not seem to support shader model 3.0 or higher. Reported dx level: %d (max setting: %d).\n", 
 					mat_dxlevel.GetInt(), nMaxDXLevel );
 		}
 	}

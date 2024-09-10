@@ -518,7 +518,7 @@ void CViewRender::OnRenderStart()
 
 	// Setup the frustum cache for this frame.
 	m_bAllowViewAccess = true;
-	const CViewSetup &view = GetView();
+	const CViewSetupEx &view = GetView();
 	FrustumCache()->Add( &view );
 	FrustumCache()->SetUpdated();
 	m_bAllowViewAccess = false;
@@ -606,7 +606,7 @@ void CViewRender::SetUpViews()
 	float farZ = GetZFar();
 
     // Set up the mono/middle view.
-    CViewSetup &view = m_View;
+    CViewSetupEx &view = m_View;
 
 	view.zFar				= farZ;
 	view.zFarViewmodel	    = farZ;
@@ -798,7 +798,7 @@ void CViewRender::SetUpOverView()
 {
 	static int oldCRC = 0;
 
-    CViewSetup &view = GetView();
+    CViewSetupEx &view = GetView();
 
 	view.m_bOrtho = true;
 
@@ -862,7 +862,7 @@ void CViewRender::Render( vrect_t *rect )
     // Set for console commands, etc.
     render->SetMainView ( m_View.origin, m_View.angles );
 
-	CViewSetup &view = GetView();
+	CViewSetupEx &view = GetView();
 
 #ifdef REPLAY_ENABLED
 	const bool bPlayingBackReplay = g_pEngineClientReplay && g_pEngineClientReplay->IsPlayingReplayDemo();
@@ -1012,7 +1012,7 @@ void CViewRender::Render( vrect_t *rect )
 
     C_BaseEntity::PreRenderEntities();
 
-    CViewSetup hudViewSetup;
+    CViewSetupEx hudViewSetup;
 	VGui_GetHudBounds( hudViewSetup.x, hudViewSetup.y, hudViewSetup.width, hudViewSetup.height );
 	RenderView( view, hudViewSetup, nClearFlags, flags );
 
@@ -1047,7 +1047,7 @@ void CViewRender::Render( vrect_t *rect )
     // (this is not health, ammo, etc. Nor is it pre-game briefing interface stuff - this is the stuff that appears when you hit Esc in-game)
 	// In stereo mode this is rendered inside of RenderView so it goes into the render target
 
-	CViewSetup view2d;
+	CViewSetupEx view2d;
 	view2d.x				= rect->x;
 	view2d.y				= rect->y;
 	view2d.width			= rect->width;

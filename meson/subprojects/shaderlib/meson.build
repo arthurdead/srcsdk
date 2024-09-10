@@ -7,6 +7,8 @@ build_libs = get_option('build_libs')
 
 shaderlib_src_dir = join_paths(src_root_dir,'materialsystem','shaderlib')
 
+hackmgr = subproject('hackmgr')
+
 source_base = subproject('source_base')
 
 if build_libs
@@ -36,7 +38,10 @@ if build_libs
 		include_directories: include_directories(
 			join_paths(src_root_dir,'public','shaderlib')
 		),
-		link_with: shaderlib_lib
+		link_with: shaderlib_lib,
+		dependencies: [
+			hackmgr.get_variable('hackmgr_dep')
+		]
 	)
 else
 	shaderlib_dep = declare_dependency(
@@ -45,6 +50,9 @@ else
 		),
 		link_args: [
 			'-l:shaderlib.a'
+		],
+		dependencies: [
+			hackmgr.get_variable('hackmgr_dep')
 		]
 	)
 endif

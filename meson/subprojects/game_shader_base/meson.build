@@ -10,7 +10,6 @@ tier0 = subproject('tier0')
 vstdlib = subproject('vstdlib')
 mathlib = subproject('mathlib')
 shaderlib = subproject('shaderlib')
-hackmgr = subproject('hackmgr')
 
 public_dir = join_paths(src_root_dir,'public')
 common_dir = join_paths(src_root_dir,'common')
@@ -36,7 +35,6 @@ game_shader_base_dep = declare_dependency(
 		tier1.get_variable('tier1_dep'),
 		mathlib.get_variable('mathlib_dep'),
 		vstdlib.get_variable('vstdlib_dep'),
-		shaderlib.get_variable('shaderlib_dep'),
-		hackmgr.get_variable('hackmgr_dep'),
+		shaderlib.get_variable('shaderlib_dep')
 	]
 )

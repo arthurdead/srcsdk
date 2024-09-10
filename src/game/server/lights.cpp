@@ -234,11 +234,28 @@ class CEnvLight : public EnvLightBase
 public:
 	DECLARE_CLASS( CEnvLight, EnvLightBase );
 
+	CEnvLight();
+	~CEnvLight();
+
 	bool	KeyValue( const char *szKeyName, const char *szValue ); 
 	void	Spawn( void );
 };
 
+CEnvLight *g_pCSMEnvLight = NULL;
+
 LINK_ENTITY_TO_CLASS( light_environment, CEnvLight );
+
+CEnvLight::CEnvLight()
+{
+	if(g_pCSMEnvLight == NULL)
+		g_pCSMEnvLight = this;
+}
+
+CEnvLight::~CEnvLight()
+{
+	if(g_pCSMEnvLight == this)
+		g_pCSMEnvLight = NULL;
+}
 
 bool CEnvLight::KeyValue( const char *szKeyName, const char *szValue )
 {
@@ -257,5 +274,10 @@ bool CEnvLight::KeyValue( const char *szKeyName, const char *szValue )
 
 void CEnvLight::Spawn( void )
 {
+	if(g_pCSMEnvLight && g_pCSMEnvLight != this) {
+		UTIL_Remove(this);
+		return;
+	}
+
 	BaseClass::Spawn( );
 }

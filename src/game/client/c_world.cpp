@@ -20,27 +20,40 @@
 #undef CWorld
 #endif
 
-static C_World *g_pClientWorld;
+C_World *g_pClientWorld;
 
 LINK_ENTITY_TO_CLASS(worldspawn, C_World);
 
 void ClientWorldFactoryInit()
 {
+	if(g_pClientWorld)
+		UTIL_Remove( g_pClientWorld );
 	g_pClientWorld = CREATE_ENTITY(C_World, "worldspawn");
 }
 
 void ClientWorldFactoryShutdown()
 {
-	UTIL_Remove( g_pClientWorld );
-	g_pClientWorld = NULL;
+	if(g_pClientWorld) {
+		UTIL_Remove( g_pClientWorld );
+		g_pClientWorld = NULL;
+	}
 }
 
 static IClientNetworkable* ClientWorldFactory( int entnum, int serialNum )
 {
 	Assert( g_pClientWorld != NULL );
 
-	if(!g_pClientWorld->InitializeAsServerEntity( entnum, serialNum ))
+	if(!g_pClientWorld) {
+		g_pClientWorld = CREATE_ENTITY(C_World, "worldspawn");
+		if(!g_pClientWorld)
+			return NULL;
+	}
+
+	if(!g_pClientWorld->InitializeAsServerEntity( entnum, serialNum )) {
+		UTIL_Remove(g_pClientWorld);
+		g_pClientWorld = NULL;
 		return NULL;
+	}
 
 	return g_pClientWorld;
 }
@@ -65,10 +78,14 @@ END_RECV_TABLE()
 
 C_World::C_World( void )
 {
+	if(!g_pClientWorld)
+		g_pClientWorld = this;
 }
 
 C_World::~C_World( void )
 {
+	if(g_pClientWorld == this)
+		g_pClientWorld = NULL;
 }
 
 bool C_World::InitializeAsServerEntity( int entnum, int iSerialNum )
@@ -178,6 +195,11 @@ void C_World::Precache( void )
 
 void C_World::Spawn( void )
 {
+	if(g_pClientWorld && g_pClientWorld != this) {
+		UTIL_Remove(this);
+		return;
+	}
+
 	Precache();
 }
 

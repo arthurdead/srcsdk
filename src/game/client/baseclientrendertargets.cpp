@@ -93,6 +93,7 @@ void CBaseClientRenderTargets::SetupClientRenderTargets( IMaterialSystem* pMater
 	ITexture *pGlintTexture = pMaterialSystem->CreateNamedRenderTargetTextureEx2( 
 		"_rt_eyeglint", 32, 32, RT_SIZE_NO_CHANGE, IMAGE_FORMAT_BGRA8888, MATERIAL_RT_DEPTH_NONE );
 	pGlintTexture->IncrementReferenceCount();
+
 	g_pClientShadowMgr->InitRenderTargets();
 #ifdef GAMEUI_UISYSTEM2_ENABLED
 	g_pGameUIGameSystem->InitRenderTargets();

@@ -65,6 +65,9 @@ IGameResources * GameResources( void ) { return g_PR; }
 //-----------------------------------------------------------------------------
 C_PlayerResource::C_PlayerResource()
 {
+	if(!g_PR)
+		g_PR = this;
+
 	memset( m_iPing, 0, sizeof( m_iPing ) );
 //	memset( m_iPacketloss, 0, sizeof( m_iPacketloss ) );
 	memset( m_iScore, 0, sizeof( m_iScore ) );
@@ -79,8 +82,6 @@ C_PlayerResource::C_PlayerResource()
 	{
 		m_Colors[i] = COLOR_GREY;
 	}
-
-	g_PR = this;
 }
 
 //-----------------------------------------------------------------------------
@@ -88,7 +89,18 @@ C_PlayerResource::C_PlayerResource()
 //-----------------------------------------------------------------------------
 C_PlayerResource::~C_PlayerResource()
 {
-	g_PR = NULL;
+	if(g_PR == this)
+		g_PR = NULL;
+}
+
+void C_PlayerResource::Spawn()
+{
+	if(g_PR && g_PR != this) {
+		UTIL_Remove(this);
+		return;
+	}
+
+	BaseClass::Spawn();
 }
 
 void C_PlayerResource::OnDataChanged(DataUpdateType_t updateType)

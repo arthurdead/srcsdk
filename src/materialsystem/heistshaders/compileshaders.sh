@@ -24,13 +24,16 @@ _stdshaders_dir_win=$("$WINE64" winepath -w "$stdshaders_dir")
 
 while read line; do
 	name=$(echo "$line")
-
-	if [[ -z "$name" ]]; then
+	
+	if [[ -z "$name" || "$name" == '#*' ]]; then
 		continue
 	fi
 
 	if [[ "$name" =~ [a-zA-Z0-9_]+_ps2x\.fxc ]]; then
 		ver='20b'
+		type='ps'
+	elif [[ "$name" =~ [a-zA-Z0-9_]+_ps30\.fxc ]]; then
+		ver='30'
 		type='ps'
 	elif [[ "$name" =~ [a-zA-Z0-9_]+_vs20\.fxc ]]; then
 		ver='20b'

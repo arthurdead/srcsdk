@@ -129,7 +129,7 @@ ConVar r_flashlight_staticprops( "r_flashlight_staticprops", "2" );
 ConVar r_flashlightdepthreshigh( "r_flashlightdepthreshigh", "4096" );
 ConVar r_flashlightdepthres("r_flashlightdepthres", "4096", FCVAR_ARCHIVE, "Flashlight depth resolution");
 
-ConVar r_threaded_client_shadow_manager( "r_threaded_client_shadow_manager", "0" );
+ConVar r_threaded_client_shadow_manager( "r_threaded_client_shadow_manager", "1" );
 
 #ifdef _WIN32
 #pragma warning( disable: 4701 )
@@ -1671,6 +1671,11 @@ void CClientShadowMgr::ShutdownDepthTextureShadows()
 //-----------------------------------------------------------------------------
 void CClientShadowMgr::InitRenderToTextureShadows()
 {
+	if( !GetMaterialProxyDict().ProxyExists("Shadow") ||
+		!GetMaterialProxyDict().ProxyExists("ShadowModel")) {
+		return;
+	}
+
 	if ( !m_RenderToTextureActive )
 	{
 		m_RenderToTextureActive = true;
@@ -5164,7 +5169,7 @@ void CClientShadowMgr::AdvanceFrame()
 	m_ShadowAllocator.AdvanceFrame();
 }
 
-int __cdecl CompareLights(const ClientShadowHandle_t* light_left, const ClientShadowHandle_t* light_right)
+int CDECL CompareLights(const ClientShadowHandle_t* light_left, const ClientShadowHandle_t* light_right)
 {
 	const FlashlightState_t& flashlightState1 = shadowmgr->GetFlashlightState(g_pClientShadowMgr->GetShadowHandle(*light_left));
 	const FlashlightState_t& flashlightState2 = shadowmgr->GetFlashlightState(g_pClientShadowMgr->GetShadowHandle(*light_right));

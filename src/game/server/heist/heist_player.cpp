@@ -87,9 +87,9 @@ void CHeistPlayer::Spawn()
 	ChangeTeam( TEAM_CIVILIANS );
 	ChangeFaction( FACTION_CIVILIANS );
 
-	BaseClass::Spawn();
-
 	SetModel("models/player/leader.mdl");
+
+	BaseClass::Spawn();
 }
 
 Class_T CHeistPlayer::Classify()

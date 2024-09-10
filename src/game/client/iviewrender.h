@@ -120,7 +120,7 @@ public:
 	virtual void		UpdateReplayScreenshotCache() = 0;
 
 	// Draws another rendering over the top of the screen
-	virtual void		QueueOverlayRenderView( const CViewSetup &view, int nClearFlags, int whatToDraw ) = 0;
+	virtual void		QueueOverlayRenderView( const CViewSetupEx &view, int nClearFlags, int whatToDraw ) = 0;
 
 	// Returns znear and zfar
 	virtual float		GetZNear() = 0;
@@ -132,7 +132,7 @@ public:
 	virtual C_BaseEntity *GetCurrentlyDrawingEntity() = 0;
 	virtual void		SetCurrentlyDrawingEntity( C_BaseEntity *pEnt ) = 0;
 
-	virtual bool		UpdateShadowDepthTexture( ITexture *pRenderTarget, ITexture *pDepthTexture, const CViewSetup &shadowView ) = 0;
+	virtual bool		UpdateShadowDepthTexture( ITexture *pRenderTarget, ITexture *pDepthTexture, const CViewSetupEx &shadowView ) = 0;
 
 	virtual void		FreezeFrame( float flFreezeTime ) = 0;
 

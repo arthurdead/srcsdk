@@ -18,28 +18,37 @@ class C_GameRules;
 // Each game rules class must register using this in it's .cpp file.
 #if !defined(_STATIC_LINKED)
 #define REGISTER_GAMERULES_CLASS( className ) \
-	void __CreateGameRules_##className() { new className; } \
+	CGameRules *__CreateGameRules_##className() { \
+		CGameRules *pRules = new className; \
+		if(!pRules->PostConstructor( #className )) { \
+			UTIL_Remove(pRules); \
+			return NULL; \
+		} \
+		return pRules; \
+	} \
 	static CGameRulesRegister __g_GameRulesRegister_##className( #className, __CreateGameRules_##className );
 #else
 #define REGISTER_GAMERULES_CLASS( className ) \
-	void MAKE_NAME_UNIQUE(__CreateGameRules_)##className() { new className; } \
+	CGameRules * MAKE_NAME_UNIQUE(__CreateGameRules_)##className() { \
+		CGameRules *pRules = new className; \
+		if(!pRules->PostConstructor( #className )) { \
+			UTIL_Remove(pRules); \
+			return NULL; \
+		} \
+		return pRules; \
+	} \
 	static CGameRulesRegister __g_GameRulesRegister_##className( #className, MAKE_NAME_UNIQUE(__CreateGameRules_)##className );
-#endif
-
-#ifdef _XBOX
-// force symbol expansion
-#define REGISTER_GAMERULES_CLASS2( className ) REGISTER_GAMERULES_CLASS( className )
 #endif
 
 class CGameRulesRegister
 {
 public:
-	typedef void (*CreateGameRulesFn)();
+	typedef CGameRules * (*CreateGameRulesFn)();
 
 	CGameRulesRegister( const char *pClassName, CreateGameRulesFn fn );
 
 	// Allocates the gamerules object associated with this class.
-	void CreateGameRules();
+	CGameRules *CreateGameRules();
 
 	static CGameRulesRegister* FindByName( const char *pName );
 

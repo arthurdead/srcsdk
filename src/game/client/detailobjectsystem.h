@@ -33,6 +33,7 @@ struct DetailRenderableInfo_t
 	int m_nLeafIndex;
 	EngineRenderGroup_t m_nEngineRenderGroup;
 	RenderableInstance_t m_InstanceData;
+	ClientRenderHandle_t m_hHandle;
 };
 
 

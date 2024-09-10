@@ -55,6 +55,7 @@ class CEntityMapData;
 class ConVar;
 class CDmgAccumulator;
 class CClientAlphaProperty;
+class C_World;
 
 struct CSoundParameters;
 
@@ -1120,7 +1121,7 @@ public:
 
 	bool							IsInWorld( void ) { return true; }
 
-	bool							IsWorld() const { return entindex() == 0; }
+	bool							IsWorld() const { extern C_World *g_pClientWorld; return (void *)this == (void *)g_pClientWorld; }
 	/////////////////
 
 	virtual bool 					ShouldRegenerateOriginFromCellBits() const;

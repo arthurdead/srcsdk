@@ -171,6 +171,8 @@ public:
 	CGameRulesProxy();
 	~CGameRulesProxy();
 
+	virtual void Spawn( void );
+
 	// UNDONE: Is this correct, Mike?
 	// Don't carry these across a transition, they are recreated.
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
@@ -183,7 +185,7 @@ public:
 	static void NotifyNetworkStateChanged();
 
 private:
-	
+	friend class CGameRules;
 	static CGameRulesProxy *s_pGameRulesProxy;
 };
 
@@ -201,6 +203,8 @@ public:
 	virtual ~CGameRules( void );
 
 	virtual	bool	Init();
+
+	virtual void SafeRemoveIfDesired();
 
 	virtual	bool	PostConstructor( const char *classname ) { return true; }
 	bool IsNetworked() const { return true; }

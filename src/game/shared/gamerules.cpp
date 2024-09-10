@@ -246,19 +246,24 @@ CGameRulesProxy::CGameRulesProxy()
 	AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
 
 	// allow map placed proxy entities to overwrite the static one
-	if ( s_pGameRulesProxy )
-	{
-		UTIL_Remove( s_pGameRulesProxy );
-	}
-	s_pGameRulesProxy = this;
+	if ( !s_pGameRulesProxy )
+		s_pGameRulesProxy = this;
 }
 
 CGameRulesProxy::~CGameRulesProxy()
 {
 	if ( s_pGameRulesProxy == this )
-	{
 		s_pGameRulesProxy = NULL;
+}
+
+void CGameRulesProxy::Spawn( void )
+{
+	if(s_pGameRulesProxy && s_pGameRulesProxy != this) {
+		UTIL_Remove(this);
+		return;
 	}
+
+	BaseClass::Spawn();
 }
 
 int CGameRulesProxy::UpdateTransmitState()
@@ -380,6 +385,16 @@ bool CGameRules::Damage_ShouldNotBleed( int iDmgType )
 	return ( ( iDmgType & ( DMG_POISON | DMG_ACID ) ) != 0 );
 }
 
+void CGameRules::SafeRemoveIfDesired()
+{
+	if(s_pGameRules && s_pGameRules != this) {
+		UTIL_Remove(this);
+		return;
+	}
+
+	BaseClass::SafeRemoveIfDesired();
+}
+
 bool CGameRules::Init()
 {
 #ifdef GAME_DLL
@@ -397,10 +412,8 @@ bool CGameRules::Init()
 CGameRules::CGameRules() : CAutoGameSystemPerFrame( "CGameRules" ), CGameEventListener()
 {
 	Assert( !s_pGameRules );
-	if(s_pGameRules) {
-		UTIL_Remove( s_pGameRules );
-	}
-	s_pGameRules = this;
+	if(!s_pGameRules)
+		s_pGameRules = this;
 
 	m_flGravityMultiplier = 1.0f;
 
@@ -1418,9 +1431,15 @@ static CGameRulesEntityFactory gamerulesProxyFactory;
 
 void CGameRules::CreateStandardEntities()
 {
-	CBaseEntity::Create( "gamerules_proxy", vec3_origin, vec3_angle );
+	if(CGameRulesProxy::s_pGameRulesProxy) {
+		UTIL_Remove(CGameRulesProxy::s_pGameRulesProxy);
+	}
+	CGameRulesProxy::s_pGameRulesProxy = (CGameRulesProxy *)CBaseEntity::Create( "gamerules_proxy", vec3_origin, vec3_angle );
 
-	CBaseEntity::Create( "player_manager", vec3_origin, vec3_angle );
+	if(g_pPlayerResource) {
+		UTIL_Remove(g_pPlayerResource);
+	}
+	g_pPlayerResource = (CPlayerResource *)CBaseEntity::Create( "player_manager", vec3_origin, vec3_angle );
 
 	int iNumTeams = NumTeams();
 	if(iNumTeams < NUM_SHARED_TEAMS) {

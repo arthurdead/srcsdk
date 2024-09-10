@@ -144,7 +144,7 @@ inline void UpdateFrontBufferTexturesForMaterial( IMaterial *pMaterial, bool bFo
 	}
 	else if( pMaterial->NeedsFullFrameBufferTexture() )
 	{
-		const CViewSetup *pView = GetViewRenderInstance()->GetViewSetup();
+		const CViewSetupEx *pView = GetViewRenderInstance()->GetViewSetup();
 		UpdateScreenEffectTexture( 0, pView->x, pView->y, pView->width, pView->height );
 	}
 }
@@ -153,7 +153,7 @@ inline void UpdateScreenEffectTexture( void )
 {
 	Assert( !DrawingShadowDepthView() );
 
-	const CViewSetup *pViewSetup = GetViewRenderInstance()->GetViewSetup();
+	const CViewSetupEx *pViewSetup = GetViewRenderInstance()->GetViewSetup();
 	UpdateScreenEffectTexture( 0, pViewSetup->x, pViewSetup->y, pViewSetup->width, pViewSetup->height);
 }
 

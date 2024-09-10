@@ -51,6 +51,8 @@ public : // IGameResources intreface
 	virtual int		GetFrags( int index );
 	virtual int		GetHealth( int index );
 
+	virtual void Spawn();
+
 	virtual void PlayerNameThink();
 	virtual	void	OnDataChanged(DataUpdateType_t updateType);
 	virtual void	TeamChanged( void ){ }

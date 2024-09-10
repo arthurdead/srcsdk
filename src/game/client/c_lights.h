@@ -12,6 +12,8 @@ public:
 	C_EnvLight();
 	~C_EnvLight();
 
+	virtual void Spawn();
+
 	virtual void OnDataChanged( DataUpdateType_t type );
 
 	bool IsCascadedShadowMappingEnabled() const;

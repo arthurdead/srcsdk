@@ -52,6 +52,11 @@
 
 ConVar mat_fullbright( "mat_fullbright","0", FCVAR_CHEAT );
 
+CON_COMMAND(game_shader_loaded, "Shows that game shader loaded.")
+{
+
+}
+
 // These functions are to be called from the shaders.
 
 //-----------------------------------------------------------------------------
@@ -855,14 +860,13 @@ const char *CBaseVSShader::UnlitGeneric_ComputePixelShaderName( bool bMask,
 		return s_pPixelShaders[pshIndex];
 	}
 }
-
+#endif
 
 //-----------------------------------------------------------------------------
 // Sets up hw morphing state for the vertex shader
 //-----------------------------------------------------------------------------
 void CBaseVSShader::SetHWMorphVertexShaderState( int nDimConst, int nSubrectConst, VertexTextureSampler_t morphSampler )
 {
-#ifndef _X360
 	if ( !s_pShaderAPI->IsHWMorphingEnabled() )
 		return;
 
@@ -881,9 +885,9 @@ void CBaseVSShader::SetHWMorphVertexShaderState( int nDimConst, int nSubrectCons
 	s_pShaderAPI->SetVertexShaderConstant( nSubrectConst, pMorphAccumSubrect );
 
 	s_pShaderAPI->BindStandardVertexTexture( morphSampler, TEXTURE_MORPH_ACCUMULATOR );
-#endif
 }
 
+#ifndef GAME_SHADER_DLL
 
 //-----------------------------------------------------------------------------
 // Vertex shader unlit generic pass
@@ -1608,8 +1612,6 @@ BlendType_t CBaseVSShader::EvaluateBlendRequirements( int textureVar, bool isBas
 	}
 }
 
-#ifndef GAME_SHADER_DLL
-
 void CBaseVSShader::SetFlashlightVertexShaderConstants( bool bBump, int bumpTransformVar, bool bDetail, int detailScaleVar, bool bSetTextureTransforms )
 {
 	Assert( !IsSnapshotting() );
@@ -1650,6 +1652,8 @@ void CBaseVSShader::SetFlashlightVertexShaderConstants( bool bBump, int bumpTran
 		}
 	}
 }
+
+#ifndef GAME_SHADER_DLL
 
 #if SUPPORT_DX8
 void CBaseVSShader::DrawFlashlight_dx80( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow, bool bBump,

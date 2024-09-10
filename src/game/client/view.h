@@ -11,6 +11,9 @@
 #define VIEW_H
 #pragma once
 
+#include "vstdlib/cvar.h"
+#include "tier1/convar.h"
+
 #if _DEBUG
 extern bool g_bRenderingCameraView;		// For debugging (frustum fix for cameras)...
 #endif

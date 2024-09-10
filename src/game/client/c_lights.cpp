@@ -20,47 +20,6 @@ IMPLEMENT_CLIENTCLASS_DT_NOBASE( C_EnvLight, DT_CEnvLight, CEnvLight )
 	RecvPropBool( RECVINFO( m_bCascadedShadowMappingEnabled ) ),
 END_RECV_TABLE()
 
-C_EnvLight::C_EnvLight()
-	: m_angSunAngles( vec3_angle )
-	, m_vecLight( vec3_origin )
-	, m_vecAmbient( vec3_origin )
-	, m_bCascadedShadowMappingEnabled( false )
-{
-	ShadowConfig_t def[] = {
-		{ 64.0f, 0.0f, 0.25f, 0.0f },
-		{ 384.0f, 256.0f, 0.75f, 0.0f }
-	};
-
-	V_memcpy( shadowConfigs, def, sizeof( shadowConfigs ) );
-}
-
-C_EnvLight::~C_EnvLight()
-{
-	if ( g_pCSMEnvLight == this )
-	{
-		g_pCSMEnvLight = NULL;
-	}
-}
-
-void C_EnvLight::OnDataChanged( DataUpdateType_t type )
-{
-	BaseClass::OnDataChanged( type );
-
-	if ( g_pCSMEnvLight == NULL ||
-		(m_bCascadedShadowMappingEnabled && !g_pCSMEnvLight->m_bCascadedShadowMappingEnabled) ||
-		m_vecLight.Length() > g_pCSMEnvLight->m_vecLight.Length() ) // If there are multiple lights, use the brightest one if CSM is forced
-	{
-		g_pCSMEnvLight = this;
-	}
-}
-
-bool C_EnvLight::IsCascadedShadowMappingEnabled() const
-{
-	const int &iCSMCvarEnabled = r_csm_enabled.GetInt();
-	return (m_bCascadedShadowMappingEnabled && iCSMCvarEnabled == 1) || iCSMCvarEnabled == 2;
-}
-
-
 //-----------------------------------------------------------------------------
 // CPrecisionSlider
 // A drop-in replacement for the slider class that contains a text entry that
@@ -96,6 +55,75 @@ private:
 	int				 m_nTextEntryWidth;
 	int				 m_nSpacing;
 };
+
+class CCSMTweakPanel : public vgui::Frame
+{
+	DECLARE_CLASS_SIMPLE( CCSMTweakPanel, vgui::Frame );
+public:
+	CCSMTweakPanel( vgui::VPANEL parent );
+	~CCSMTweakPanel();
+
+	void	OnMessage( const KeyValues *params, vgui::VPANEL fromPanel );
+
+private:
+	void LoadSettings();
+
+	struct
+	{
+		CPrecisionSlider* pOrthoSize;
+		CPrecisionSlider* pForwardOffset;
+		CPrecisionSlider* pUVOffsetX;
+		CPrecisionSlider* pViewDepthBiasHack;
+	} near, far;
+};
+
+CCSMTweakPanel *g_pCSMTweak = NULL;
+
+C_EnvLight::C_EnvLight()
+	: m_angSunAngles( vec3_angle )
+	, m_vecLight( vec3_origin )
+	, m_vecAmbient( vec3_origin )
+	, m_bCascadedShadowMappingEnabled( false )
+{
+	if(!g_pCSMEnvLight)
+		g_pCSMEnvLight = this;
+
+	ShadowConfig_t def[] = {
+		{ 64.0f, 0.0f, 0.25f, 0.0f },
+		{ 384.0f, 256.0f, 0.75f, 0.0f }
+	};
+
+	V_memcpy( shadowConfigs, def, sizeof( shadowConfigs ) );
+}
+
+C_EnvLight::~C_EnvLight()
+{
+	if ( g_pCSMEnvLight == this )
+	{
+		g_pCSMEnvLight = NULL;
+	}
+}
+
+void C_EnvLight::Spawn()
+{
+	if(g_pCSMEnvLight && g_pCSMEnvLight != this) {
+		UTIL_Remove(this);
+		return;
+	}
+
+	BaseClass::Spawn();
+}
+
+void C_EnvLight::OnDataChanged( DataUpdateType_t type )
+{
+	BaseClass::OnDataChanged( type );
+}
+
+bool C_EnvLight::IsCascadedShadowMappingEnabled() const
+{
+	int iCSMCvarEnabled = r_csm_enabled.GetInt();
+	return (m_bCascadedShadowMappingEnabled && iCSMCvarEnabled == 1) || iCSMCvarEnabled == 2;
+}
 
 //-----------------------------------------------------------------------------
 // Constructor
@@ -196,29 +224,11 @@ void CPrecisionSlider::OnMouseWheeled( int delta )
 	}
 }
 
-class CCSMTweakPanel : vgui::Frame
-{
-	DECLARE_CLASS_SIMPLE( CCSMTweakPanel, vgui::Frame );
-public:
-	CCSMTweakPanel( vgui::VPANEL parent );
-	~CCSMTweakPanel();
-
-	void	OnMessage( const KeyValues *params, vgui::VPANEL fromPanel );
-
-private:
-	void LoadSettings();
-
-	struct
-	{
-		CPrecisionSlider* pOrthoSize;
-		CPrecisionSlider* pForwardOffset;
-		CPrecisionSlider* pUVOffsetX;
-		CPrecisionSlider* pViewDepthBiasHack;
-	} near, far;
-};
-
 CCSMTweakPanel::CCSMTweakPanel( vgui::VPANEL parent ): Frame( NULL, "CCSMTweakPanel" )
 {
+	if(!g_pCSMTweak)
+		g_pCSMTweak = this;
+
 	SetParent( parent );
 	near.pOrthoSize = new CPrecisionSlider( this, "nearOrthoSize" );
 	near.pOrthoSize->SetRange( 0, 1024 );
@@ -253,6 +263,9 @@ CCSMTweakPanel::CCSMTweakPanel( vgui::VPANEL parent ): Frame( NULL, "CCSMTweakPa
 
 CCSMTweakPanel::~CCSMTweakPanel()
 {
+	if(g_pCSMTweak == this)
+		g_pCSMTweak = NULL;
+
 	SetCursorAlwaysVisible( false );
 }
 
@@ -320,8 +333,8 @@ void CCSMTweakPanel::LoadSettings()
 
 CON_COMMAND( csm_tweak, "" )
 {
-	if (g_pCSMEnvLight)
+	if (!g_pCSMTweak)
 	{
-		new CCSMTweakPanel(enginevgui->GetPanel(PANEL_CLIENTDLL));
+		g_pCSMTweak = CREATE_PANEL(CCSMTweakPanel, enginevgui->GetPanel(PANEL_CLIENTDLL));
 	}
 }
