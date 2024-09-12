@@ -1794,6 +1794,7 @@ AI_DEFINE_SCHEDULE
 	"		TASK_FIND_COVER_FROM_ENEMY		0"
 	"		TASK_RUN_PATH					0"
 	"		TASK_WAIT_FOR_MOVEMENT			0"
+	"		TASK_REMEMBER					MEMORY:INCOVER" // Now that crouch nodes are fixed, this is necessary in case cover leads to a crouch node
 	""
 	"	Interrupts"
 	"		COND_NEW_ENEMY"
@@ -2379,7 +2380,7 @@ AI_DEFINE_SCHEDULE
  SCHED_INTERACTION_WAIT_FOR_PARTNER,
 
  "	Tasks"
- "		TASK_FACE_TARGET	0"
+ "		TASK_FACE_INTERACTION_ANGLES	0"	// New task to fix forced interaction anomalies
  "		TASK_WAIT			1"
  ""
  "	Interrupts"

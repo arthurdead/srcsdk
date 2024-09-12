@@ -135,6 +135,9 @@ public:
 	virtual bool	GetAttachment( int number, Vector &origin );
 	virtual bool	GetAttachmentVelocity( int number, Vector &originVel, Quaternion &angleVel );
 
+	const Vector	&GetNodePosition( int index );
+	int				GetNumNodes();
+
 private:
 	
 	void			FinishInit( const char *pMaterialName );

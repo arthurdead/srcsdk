@@ -69,7 +69,7 @@ class CClientRenderablesList : public CRefCounted<>
 public:
 	enum
 	{
-		MAX_GROUP_ENTITIES = 4096,
+		MAX_GROUP_ENTITIES = 16834,
 		MAX_BONE_SETUP_DEPENDENCY = 64,
 	};
 

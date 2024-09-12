@@ -89,6 +89,9 @@ typedef enum
 	AE_TAUNT_ENABLE_MOVE,
 	AE_TAUNT_DISABLE_MOVE,
 
+	AE_NPC_RESPONSE,	// Play a response system concept if we're not speaking
+	AE_NPC_RESPONSE_FORCED,		// Always play a response system concept
+
 	LAST_SHARED_ANIMEVENT,
 } Animevent;
 

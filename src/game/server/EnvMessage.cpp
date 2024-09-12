@@ -161,10 +161,15 @@ public:
 
 private:
 
+	void	PrecacheCreditsThink();
+
 	void		RollOutroCredits();
 
 	bool		m_bRolledOutroCredits;
 	float		m_flLogoLength;
+
+	// Custom credits.txt, defaults to that
+	string_t	m_iszCreditsFile;
 };
 
 LINK_ENTITY_TO_CLASS( env_credits, CCredits );
@@ -176,16 +181,24 @@ BEGIN_MAPENTITY( CCredits )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetLogoLength", InputSetLogoLength ),
 	DEFINE_OUTPUT( m_OnCreditsDone, "OnCreditsDone"),
 
+	DEFINE_KEYFIELD( m_iszCreditsFile, FIELD_STRING, "CreditsFile" ),
+
 END_MAPENTITY()
 
 void CCredits::Spawn( void )
 {
 	SetSolid( SOLID_NONE );
 	SetMoveType( MOVETYPE_NONE );
+
+	// Ensures the player has time to spawn
+	SetContextThink( &CCredits::PrecacheCreditsThink, gpGlobals->curtime + 0.5f, "PrecacheCreditsContext" );
 }
 
 static void CreditsDone_f( void )
 {
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
 	CCredits *pCredits = (CCredits*)gEntList.FindEntityByClassname( NULL, "env_credits" );
 
 	if ( pCredits )
@@ -196,6 +209,26 @@ static void CreditsDone_f( void )
 
 static ConCommand creditsdone("creditsdone", CreditsDone_f );
 
+void CCredits::PrecacheCreditsThink()
+{
+	CBasePlayer *pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin());
+	if (!pPlayer)
+	{
+		Warning( "%s: No player\n", GetDebugName() );
+		return;
+	}
+
+	CSingleUserRecipientFilter user( pPlayer );
+	user.MakeReliable();
+	
+	UserMessageBegin( user, "CreditsMsg" );
+		WRITE_BYTE( 4 );
+		WRITE_STRING( STRING(m_iszCreditsFile) );
+	MessageEnd();
+
+	SetContextThink( NULL, TICK_NEVER_THINK, "PrecacheCreditsContext" );
+}
+
 void CCredits::RollOutroCredits()
 {
 	CRecipientFilter filter; 
@@ -203,6 +236,7 @@ void CCredits::RollOutroCredits()
 	filter.MakeReliable(); 
 	UserMessageBegin( filter, "CreditsMsg" ); 
 		WRITE_BYTE( 3 );
+		WRITE_STRING( STRING(m_iszCreditsFile) );
 	MessageEnd();
 }
 
@@ -225,15 +259,15 @@ void CCredits::InputShowLogo( inputdata_t &inputdata )
 	if ( m_flLogoLength )
 	{
 		UserMessageBegin( filter, "LogoTimeMsg" ); 
-
 			WRITE_FLOAT( m_flLogoLength );
+			WRITE_STRING( STRING(m_iszCreditsFile) );
 		MessageEnd();
 	}
 	else
 	{
 		UserMessageBegin( filter, "CreditsMsg" ); 
-
 			WRITE_BYTE( 1 );
+			WRITE_STRING( STRING(m_iszCreditsFile) );
 		MessageEnd();
 	}
 }
@@ -251,6 +285,7 @@ void CCredits::InputRollCredits( inputdata_t &inputdata )
 
 	UserMessageBegin( filter, "CreditsMsg" ); 
 	WRITE_BYTE( 2 );
+	WRITE_STRING( STRING(m_iszCreditsFile) );
 	MessageEnd();
 }
 

@@ -122,8 +122,8 @@ public:
 	bool	KeyValue( const char *szKeyName, const char *szValue );
 
 	inline	int		Points( void ) { return m_Score; }
-	inline	bool	AllowNegativeScore( void ) { return m_spawnflags & SF_SCORE_NEGATIVE; }
-	inline	int		AwardToTeam( void ) { return (m_spawnflags & SF_SCORE_TEAM); }
+	inline	bool	AllowNegativeScore( void ) { return HasSpawnFlags( SF_SCORE_NEGATIVE ); }
+	inline	int		AwardToTeam( void ) { return HasSpawnFlags( SF_SCORE_TEAM); }
 
 	inline	void	SetPoints( int points ) { m_Score = points; }
 
@@ -257,7 +257,7 @@ public:
 
 	DECLARE_MAPENTITY();
 
-	inline	bool	MessageToAll( void ) { return (m_spawnflags & SF_ENVTEXT_ALLPLAYERS); }
+	inline	bool	MessageToAll( void ) { return HasSpawnFlags( SF_ENVTEXT_ALLPLAYERS); }
 	inline	void	MessageSet( const char *pMessage ) { m_iszMessage = AllocPooledString(pMessage); }
 	inline	const char *MessageGet( void )	{ return STRING( m_iszMessage ); }
 
@@ -270,6 +270,8 @@ public:
 	void InputSetTextColor( inputdata_t &inputdata );
 	void InputSetTextColor2( inputdata_t &inputdata );
 
+	void InputSetFont( inputdata_t &inputdata ) { m_strFont = inputdata.value.StringID(); }
+
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 	{
 		Display( pActivator );
@@ -279,6 +281,9 @@ private:
 
 	string_t m_iszMessage;
 	hudtextparms_t	m_textParms;
+
+	string_t m_strFont;
+	bool m_bAutobreak;
 };
 
 LINK_ENTITY_TO_CLASS( game_text, CGameText );
@@ -306,6 +311,11 @@ BEGIN_MAPENTITY( CGameText )
 	DEFINE_INPUTFUNC( FIELD_COLOR32, "SetTextColor", InputSetTextColor ),
 	DEFINE_INPUTFUNC( FIELD_COLOR32, "SetTextColor2", InputSetTextColor2 ),
 
+	DEFINE_KEYFIELD( m_strFont, FIELD_STRING, "font" ),
+	DEFINE_KEYFIELD( m_bAutobreak, FIELD_BOOLEAN, "autobreak" ),
+
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetFont", InputSetFont ),
+
 END_MAPENTITY()
 
 
@@ -330,6 +340,11 @@ bool CGameText::KeyValue( const char *szKeyName, const char *szValue )
 		m_textParms.b2 = color[2];
 		m_textParms.a2 = color[3];
 	}
+	else if (FStrEq( szKeyName, "message" ))
+	{
+		// Needed for newline support
+		SetText( szValue );
+	}
 	else
 		return BaseClass::KeyValue( szKeyName, szValue );
 
@@ -350,11 +365,15 @@ void CGameText::Display( CBaseEntity *pActivator )
 	// also send to all if we haven't got a specific activator player to send to 
 	if ( MessageToAll() || !pActivator || !pActivator->IsPlayer() ) 
 	{
-		UTIL_HudMessageAll( m_textParms, MessageGet() );
+		UTIL_HudMessageAll( m_textParms, MessageGet(), STRING(m_strFont), m_bAutobreak );
 	}
 	else
 	{
-		UTIL_HudMessage( ToBasePlayer( pActivator ), m_textParms, MessageGet() );
+		// Otherwise show the message to the player that triggered us.
+		if ( pActivator && pActivator->IsNetClient() )
+		{
+			UTIL_HudMessage( ToBasePlayer( pActivator ), m_textParms, MessageGet(), STRING(m_strFont), m_bAutobreak );
+		}
 	}
 }
 
@@ -393,7 +412,28 @@ void CGameText::InputSetTextColor2(inputdata_t &inputdata)
 
 void CGameText::SetText( const char* pszStr )
 {
-	m_iszMessage = AllocPooledString( pszStr );
+	// Replace /n with \n
+#if 0 // uuhmm no?
+	if (Q_strstr( pszStr, "/n" ))
+	{
+		CUtlStringList vecLines;
+		Q_SplitString( pszStr, "/n", vecLines );
+
+		char szMsg[512];
+		Q_strncpy( szMsg, vecLines[0], sizeof( szMsg ) );
+
+		for (int i = 1; i < vecLines.Count(); i++)
+		{
+			Q_strncat( szMsg, "\n", sizeof( szMsg ) );
+			Q_strncat( szMsg, vecLines[i], sizeof( szMsg ) );
+		}
+		m_iszMessage = AllocPooledString( szMsg );
+	}
+	else
+#endif
+	{
+		m_iszMessage = AllocPooledString( pszStr );
+	}
 }
 
 //
@@ -409,8 +449,8 @@ class CGameTeamSet : public CRulePointEntity
 public:
 	DECLARE_CLASS( CGameTeamSet, CRulePointEntity );
 
-	inline bool RemoveOnFire( void ) { return (m_spawnflags & SF_TEAMSET_FIREONCE) ? true : false; }
-	inline bool ShouldClearTeam( void ) { return (m_spawnflags & SF_TEAMSET_CLEARTEAM) ? true : false; }
+	inline bool RemoveOnFire( void ) { return HasSpawnFlags( SF_TEAMSET_FIREONCE) ? true : false; }
+	inline bool ShouldClearTeam( void ) { return HasSpawnFlags( SF_TEAMSET_CLEARTEAM) ? true : false; }
 	void InputTrigger( inputdata_t &inputdata );
 
 private:
@@ -540,7 +580,7 @@ public:
 	DECLARE_CLASS( CGamePlayerHurt, CRulePointEntity );
 
 	void		Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-	inline bool RemoveOnFire( void ) { return (m_spawnflags & SF_PKILL_FIREONCE) ? true : false; }
+	inline bool RemoveOnFire( void ) { return HasSpawnFlags( SF_PKILL_FIREONCE) ? true : false; }
 
 	DECLARE_MAPENTITY();
 
@@ -604,7 +644,7 @@ public:
 	void		Touch( CBaseEntity *pOther );
 	void		Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
-	inline bool	UseOnly( void ) { return (m_spawnflags & SF_PLAYEREQUIP_USEONLY) ? true : false; }
+	inline bool	UseOnly( void ) { return HasSpawnFlags( SF_PLAYEREQUIP_USEONLY) ? true : false; }
 
 private:
 
@@ -696,9 +736,9 @@ public:
 
 private:
 
-	inline bool RemoveOnFire( void ) { return (m_spawnflags & SF_PTEAM_FIREONCE) ? true : false; }
-	inline bool ShouldKillPlayer( void ) { return (m_spawnflags & SF_PTEAM_KILL) ? true : false; }
-	inline bool ShouldGibPlayer( void ) { return (m_spawnflags & SF_PTEAM_GIB) ? true : false; }
+	inline bool RemoveOnFire( void ) { return HasSpawnFlags( SF_PTEAM_FIREONCE) ? true : false; }
+	inline bool ShouldKillPlayer( void ) { return HasSpawnFlags( SF_PTEAM_KILL) ? true : false; }
+	inline bool ShouldGibPlayer( void ) { return HasSpawnFlags( SF_PTEAM_GIB) ? true : false; }
 	
 	const char *TargetTeamName( const char *pszTargetName, CBaseEntity *pActivator );
 };

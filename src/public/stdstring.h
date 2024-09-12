@@ -26,4 +26,42 @@
 #pragma warning(pop)
 #endif
 
+#include "datamap.h"
+
+class CStdStringSaveRestoreOps : public CDefCustomFieldOps
+{
+public:
+	enum
+	{
+		MAX_SAVE_LEN = 4096,
+	};
+
+	virtual void MakeEmpty( const FieldInfo_t &fieldInfo )
+	{
+		std::string *pString = (std::string *)fieldInfo.pField;
+		pString->erase();
+	}
+
+	virtual bool IsEmpty( const FieldInfo_t &fieldInfo )
+	{
+		std::string *pString = (std::string *)fieldInfo.pField;
+		return pString->empty();
+	}
+
+	virtual bool Parse( const FieldInfo_t &fieldInfo, char const* szValue )
+	{
+		std::string *pString = (std::string *)fieldInfo.pField;
+		pString->assign(szValue);
+		return true;
+	}
+};
+
+extern ICustomFieldOps *GetStdStringDataOps();
+
+#define DEFINE_STDSTRING(name) \
+	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef,name), 0 }, 1, 0, NULL, GetStdStringDataOps(), NULL }
+
+#define DEFINE_KEYSTDSTRING(name,mapname) \
+	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_KEY, mapname, GetStdStringDataOps(), NULL }
+
 #endif // STDSTRING_H

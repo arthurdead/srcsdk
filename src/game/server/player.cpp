@@ -75,6 +75,7 @@
 #include "mp_shareddefs.h"
 #include "playeranimstate.h"
 #include "player_lagcompensation.h"
+#include "env_tonemap_controller.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -185,6 +186,8 @@ ConVar  sv_player_display_usercommand_errors( "sv_player_display_usercommand_err
 
 ConVar  player_debug_print_damage( "player_debug_print_damage", "0", FCVAR_CHEAT, "When true, print amount and type of all damage received by player to console." );
 
+ConVar	player_use_visibility_cache( "player_use_visibility_cache", "0", FCVAR_NONE, "Allows the player to use the visibility cache." );
+
 
 void CC_GiveCurrentAmmo( void )
 {
@@ -233,8 +236,12 @@ BEGIN_MAPENTITY( CBasePlayer )
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetHealth", InputSetHealth ),
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "SetHUDVisibility", InputSetHUDVisibility ),
-	DEFINE_INPUTFUNC( FIELD_STRING, "SetFogController", InputSetFogController ),
+	DEFINE_INPUTFUNC( FIELD_INPUT, "SetFogController", InputSetFogController ),
+	DEFINE_INPUTFUNC( FIELD_INPUT, "SetPostProcessController", InputSetPostProcessController ),
+	DEFINE_INPUTFUNC( FIELD_INPUT, "SetColorCorrectionController", InputSetColorCorrectionController ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "HandleMapEvent", InputHandleMapEvent ),
+
+	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "SetSuppressAttacks", InputSetSuppressAttacks ),
 
 END_MAPENTITY()
 
@@ -292,6 +299,40 @@ void CBasePlayer::DestroyViewModels( void )
 
 		UTIL_Remove( vm );
 		m_hViewModel.Set( i, NULL );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBasePlayer::CreateHandModel(int index, int iOtherVm)
+{
+	Assert(index >= 0 && index < MAX_VIEWMODELS && iOtherVm >= 0 && iOtherVm < MAX_VIEWMODELS );
+
+	if (GetViewModel( index ))
+	{
+		// This can happen if the player respawns
+		// Don't draw unless we're already using a hands weapon
+		if ( !GetActiveWeapon() || !GetActiveWeapon()->UsesHands() )
+			GetViewModel( index )->AddEffects( EF_NODRAW );
+		return;
+	}
+
+	CBaseViewModel *vm = (CBaseViewModel *)CreateEntityByName("hand_viewmodel");
+	if (vm)
+	{
+		vm->SetAbsOrigin(GetAbsOrigin());
+		vm->SetOwner(this);
+		vm->SetIndex(index);
+
+		vm->SetModel( "models/weapons/v_hands.mdl" );
+		vm->SetSkin( 0 );
+		vm->SetBody( 0 );
+
+		DispatchSpawn(vm);
+		vm->FollowEntity(GetViewModel(iOtherVm), true);
+		m_hViewModel.Set(index, vm);
+		vm->AddEffects( EF_NODRAW );
 	}
 }
 
@@ -721,7 +762,7 @@ void CBasePlayer::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &v
 			//  If an NPC check if friendly fire is disallowed
 			// --------------------------------------------------
 			CAI_BaseNPC *pNPC = info.GetAttacker()->MyNPCPointer();
-			if ( pNPC && (pNPC->CapabilitiesGet() & bits_CAP_NO_HIT_PLAYER) && pNPC->IRelationType( this ) != D_HT )
+			if ( pNPC && (pNPC->CapabilitiesGet() & bits_CAP_NO_HIT_PLAYER) && pNPC->IRelationType( this ) > D_FR )
 				return;
 
 			// Prevent team damage here so blood doesn't appear
@@ -761,7 +802,7 @@ void CBasePlayer::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &v
 		}
 
 		// If this damage type makes us bleed, then do so
-		bool bShouldBleed = !GameRules()->Damage_ShouldNotBleed( info.GetDamageType() );
+		bool bShouldBleed = !GameRules()->Damage_ShouldNotBleed( info.GetDamageType() ) && DamageFilterAllowsBlood( info );
 		if ( bShouldBleed )
 		{
 			SpawnBlood(ptr->endpos, vecDir, BloodColor(), info.GetDamage());// a little surface blood.
@@ -1342,7 +1383,7 @@ void CBasePlayer::RemoveAllItems( bool removeSuit )
 
 bool CBasePlayer::IsDead() const
 {
-	return m_lifeState == LIFE_DEAD;
+	return m_lifeState != LIFE_ALIVE;
 }
 
 static float DamageForce( const Vector &size, float damage )
@@ -3690,6 +3731,10 @@ void CBasePlayer::CheckTimeBasedDamage()
 			case itbd_Acid:
 //				OnTakeDamage(pev, pev, ACID_DAMAGE, DMG_GENERIC);
 				bDuration = ACID_DURATION;
+				// Prevents ant workers from inducing the Flash Plague, flashing the player's screen every time they take damage henceforth.
+				// I think people came up with a different name, but I can't bother to look for it right now.
+				// This fix might prevent other acid damage stuff as well, so it's not episodic-exclusive.
+				m_bitsDamageType &= ~(DMG_ACID);
 				break;
 			case itbd_SlowBurn:
 //				OnTakeDamage(pev, pev, SLOWBURN_DAMAGE, DMG_GENERIC);
@@ -3809,6 +3854,10 @@ void CBasePlayer::UpdateGeigerCounter( void )
 	{
 		range = clamp( (int)range * 4, 0, 255 );
 	}
+
+	// If the geiger is disabled, just use 255
+	if (HasSpawnFlags(SF_PLAYER_NO_GEIGER))
+		range = 255;
 
 	if (range != m_igeigerRangePrev)
 	{
@@ -4719,7 +4768,8 @@ void CBasePlayer::Spawn( void )
 	if ( !m_fGameHUDInitialized )
 		GameRules()->SetDefaultPlayerTeam( this );
 
-	GameRules()->GetPlayerSpawnSpot( this );
+	CBaseEntity *pSpawnPoint = GameRules()->GetPlayerSpawnSpot( this );
+	SpawnedAtPoint( pSpawnPoint );
 
 	m_Local.m_bDucked = false;// This will persist over round restart if you hold duck otherwise. 
 	m_Local.m_bDucking = false;
@@ -4762,6 +4812,7 @@ void CBasePlayer::Spawn( void )
 	enginesound->SetPlayerDSP( user, 0, false );
 
 	CreateViewModel();
+	CreateHandModel();
 
 	SetCollisionGroup( COLLISION_GROUP_PLAYER );
 
@@ -4987,6 +5038,8 @@ void CBasePlayer::Precache( void )
 
 	m_iTrain = TRAIN_NEW;
 #endif
+
+	PrecacheModel( "models/weapons/v_hands.mdl" );
 
 	m_iClientBattery = -1;
 
@@ -5455,13 +5508,30 @@ CBaseEntity	*CBasePlayer::GiveNamedItem( const char *pszName, int iSubType, bool
 	pent->SetLocalOrigin( GetLocalOrigin() );
 	pent->AddSpawnFlags( SF_NORESPAWN );
 
-	CBaseCombatWeapon *pWeapon = dynamic_cast<CBaseCombatWeapon*>( (CBaseEntity*)pent );
+	CBaseCombatWeapon *pWeapon = ( (CBaseEntity*)pent )->MyCombatWeaponPointer();
 	if ( pWeapon )
 	{
 		pWeapon->SetSubType( iSubType );
 	}
 
 	DispatchSpawn( pent );
+
+	if ( pWeapon )
+	{
+		for (int i=0;i<MAX_WEAPONS;i++) 
+		{
+			if ( m_hMyWeapons[i].Get() && m_hMyWeapons[i]->GetSlot() == pWeapon->GetSlot() && m_hMyWeapons[i]->GetPosition() == pWeapon->GetPosition() )
+			{
+				// Make sure it matches the subtype
+				if ( m_hMyWeapons[i]->GetSubType() == iSubType )
+				{
+					// Don't use this weapon if the slot is already occupied
+					UTIL_Remove( pWeapon );
+					return NULL;
+				}
+			}
+		}
+	}
 
 	if ( pent != NULL && !(pent->IsMarkedForDeletion()) ) 
 	{
@@ -5674,6 +5744,8 @@ void CBasePlayer::ImpulseCommands( )
 			CBaseCombatWeapon *pWeapon;
 
 			pWeapon = GetActiveWeapon();
+			if (!pWeapon)
+				return;
 			
 			if( pWeapon->IsEffectActive( EF_NODRAW ) )
 			{
@@ -6211,7 +6283,18 @@ bool CBasePlayer::ClientCommand( const CCommand &args )
 			angle.y = atof( args[5] );
 			angle.z = 0.0f;
 
-			JumptoPosition( origin, angle );
+			#define SPECGOTO_MAX_VALUE 0xFFFF/2.0f
+
+			 // This could crash the game somehow if not checked.. Thanks to Nairda.
+			if (abs(angle.x) <= 360.0f && abs(angle.y) <= 360.0f && abs(origin.x) < SPECGOTO_MAX_VALUE &&
+			    abs(origin.y) < SPECGOTO_MAX_VALUE && abs(origin.z) < SPECGOTO_MAX_VALUE)
+			{
+				JumptoPosition(origin, angle);
+			}
+			else
+			{
+				engine->ClientPrintf(edict(), "spec_goto: Out-of-bounds");
+			}
 		}
 		
 		return true;
@@ -6236,7 +6319,7 @@ bool CBasePlayer::ClientCommand( const CCommand &args )
 		}
 		return true;
 	}
-	if ( FStrEq( cmd, "ignoremsg" ) )
+	else if ( FStrEq( cmd, "ignoremsg" ) )
 	{
 		if ( ShouldRunRateLimitedCommand( args ) )
 		{
@@ -6298,7 +6381,7 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon )
 		if( Weapon_EquipAmmoOnly( pWeapon ) )
 		{
 			// Only remove me if I have no ammo left
-			if ( pWeapon->HasPrimaryAmmo() )
+			if ( pWeapon->HasPrimaryAmmo() || pWeapon->HasSecondaryAmmo() )
 				return false;
 
 			pWeapon->CheckRespawn();
@@ -6311,10 +6394,52 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon )
 			return false;
 		}
 	}
+	// --------------------------------------------------------------------------------
+	// If we own a weapon in the same position take the ammo but leave the weapon behind
+	// --------------------------------------------------------------------------------
+	if (!pWeapon->HasSpawnFlags(SF_WEAPON_USED)) // Make sure we're being used and not being bumped
+	{
+		for (int i=0;i<MAX_WEAPONS;i++) 
+		{
+			if (m_hMyWeapons[i] &&
+				pWeapon->GetSlot() == m_hMyWeapons[i]->GetSlot() &&
+				pWeapon->GetPosition() == m_hMyWeapons[i]->GetPosition())
+			{
+				//Weapon_EquipAmmoOnly( pWeapon );
+
+				// Weapon_EquipAmmoOnly checks the array again, which isn't necessary here
+				int	primaryGiven	= (pWeapon->UsesClipsForAmmo1()) ? pWeapon->m_iClip1 : pWeapon->GetPrimaryAmmoCount();
+				int secondaryGiven	= (pWeapon->UsesClipsForAmmo2()) ? pWeapon->m_iClip2 : pWeapon->GetSecondaryAmmoCount();
+
+				int takenPrimary   = GiveAmmo( primaryGiven, pWeapon->m_iPrimaryAmmoType); 
+				int takenSecondary = GiveAmmo( secondaryGiven, pWeapon->m_iSecondaryAmmoType); 
+				
+				if( pWeapon->UsesClipsForAmmo1() )
+				{
+					pWeapon->m_iClip1 -= takenPrimary;
+				}
+				else
+				{
+					pWeapon->SetPrimaryAmmoCount( pWeapon->GetPrimaryAmmoCount() - takenPrimary );
+				}
+
+				if( pWeapon->UsesClipsForAmmo2() )
+				{
+					pWeapon->m_iClip2 -= takenSecondary;
+				}
+				else
+				{
+					pWeapon->SetSecondaryAmmoCount( pWeapon->GetSecondaryAmmoCount() - takenSecondary );
+				}
+
+				return false;
+			}
+		}
+	}
 	// -------------------------
 	// Otherwise take the weapon
 	// -------------------------
-	else 
+
 	{
 		pWeapon->CheckRespawn();
 
@@ -6327,17 +6452,7 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon )
 		{
 			pWeapon->Holster();
 		}
-		else
-		{
-			// Always switch to a newly-picked up weapon
-			// If it uses clips, load it full. (this is the first time you've picked up this type of weapon)
-			if ( pWeapon->UsesClipsForAmmo1() )
-			{
-				pWeapon->m_iClip1 = pWeapon->GetMaxClip1();
-			}
-
-			Weapon_Switch( pWeapon );
-		}
+		
 		return true;
 	}
 }
@@ -7010,6 +7125,91 @@ void CBasePlayer::ResetAutoaim( void )
 	m_fOnTarget = false;
 }
 
+ConVar  player_debug_probable_aim_target( "player_debug_probable_aim_target", "0", FCVAR_CHEAT, "" );
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+CBaseEntity *CBasePlayer::GetProbableAimTarget( const Vector &vecSrc, const Vector &vecDir )
+{
+	trace_t tr;
+	CBaseEntity *pIgnore = NULL;
+	if (IsInAVehicle())
+		pIgnore = GetVehicleEntity();
+
+	CTraceFilterSkipTwoEntities traceFilter( this, pIgnore, COLLISION_GROUP_NONE );
+
+	// Based on dot product and distance
+	// If we aim directly at something, only return it if there's not a larger entity slightly off-center
+	// Should be weighted based on whether an entity is a NPC, etc.
+	CBaseEntity *pBestEnt = NULL;
+	float flBestWeight = 0.0f;
+	for (CBaseEntity *pEntity = UTIL_EntitiesInPVS( this, NULL ); pEntity; pEntity = UTIL_EntitiesInPVS( this, pEntity ))
+	{
+		// Combat characters can be unviewable if they just died
+		if (!pEntity->IsViewable() && !pEntity->IsCombatCharacter())
+			continue;
+
+		if (pEntity == this || pEntity->GetMoveParent() == this || pEntity == GetVehicleEntity())
+			continue;
+
+		Vector vecEntDir = (pEntity->EyePosition() - vecSrc);
+		float flDot = DotProduct( vecEntDir.Normalized(), vecDir);
+
+		if (flDot < m_flFieldOfView)
+			continue;
+
+		// Make sure we can see it
+		UTIL_TraceLine( vecSrc, pEntity->EyePosition(), MASK_SHOT, &traceFilter, &tr );
+		if (tr.m_pEnt != pEntity)
+		{
+			if (pEntity->IsCombatCharacter())
+			{
+				// Trace between centers as well just in case our eyes are blocked
+				UTIL_TraceLine( WorldSpaceCenter(), pEntity->WorldSpaceCenter(), MASK_SHOT, &traceFilter, &tr );
+				if (tr.m_pEnt != pEntity)
+					continue;
+			}
+			else
+				continue;
+		}
+
+		float flWeight = flDot - (vecEntDir.LengthSqr() / Square( 2048.0f ));
+
+		if (pEntity->IsCombatCharacter())
+		{
+			// Hostile NPCs are more likely targets
+			if (IRelationType( pEntity ) <= D_FR)
+				flWeight += 0.5f;
+		}
+		else if (pEntity->GetFlags() & FL_AIMTARGET)
+		{
+			// FL_AIMTARGET is often used for props like explosive barrels
+			flWeight += 0.25f;
+		}
+
+		if (player_debug_probable_aim_target.GetBool())
+		{
+			float flWeightClamped = 1.0f - RemapValClamped( flWeight, -2.0f, 2.0f, 0.0f, 1.0f );
+			pEntity->EntityText( 0, UTIL_VarArgs( "%f", flWeight ), 2.0f, flWeightClamped * 255.0f, 255.0f, flWeightClamped * 255.0f, 255 );
+		}
+
+		if (flWeight > flBestWeight)
+		{
+			pBestEnt = pEntity;
+			flBestWeight = flWeight;
+		}
+	}
+	
+	if (player_debug_probable_aim_target.GetBool())
+	{
+		Msg( "Best probable aim target is %s\n", pBestEnt->GetDebugName() );
+		NDebugOverlay::EntityBounds( pBestEnt, 255, 100, 0, 0, 2.0f );
+	}
+
+	return pBestEnt;
+}
+
 // ==========================================================================
 //	> Weapon stuff
 // ==========================================================================
@@ -7072,6 +7272,8 @@ void CBasePlayer::Weapon_DropSlot( int weaponSlot )
 	}
 }
 
+ConVar player_autoswitch_on_first_pickup("player_autoswitch_on_pickup", "1", FCVAR_NONE, "Determines how the player should autoswitch when picking up a new weapon. 0 = no autoswitch, 1 = always (default), 2 = use unused weighting system");
+
 //-----------------------------------------------------------------------------
 // Purpose: Override to add weapon to the hud
 //-----------------------------------------------------------------------------
@@ -7079,7 +7281,22 @@ void CBasePlayer::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 {
 	BaseClass::Weapon_Equip( pWeapon );
 
-	bool bShouldSwitch = GameRules()->FShouldSwitchWeapon( this, pWeapon );
+	// BumpWeapon's code appeared to be deprecated; The same operation is already handled here, but with much more code involved.
+	// There's also an unused weighting system which was overridden by that deprecated code. The unused weighting code can be enabled
+	// via player_autoswitch_on_first_pickup.
+	bool bShouldSwitch = false;
+	switch (player_autoswitch_on_first_pickup.GetInt())
+	{
+		// Unused Weighting
+		case 2:
+			bShouldSwitch = GameRules()->FShouldSwitchWeapon( this, pWeapon );
+			break;
+
+		// Always (old behavior)
+		case 1:
+			bShouldSwitch = true;
+			break;
+	}
 
 #ifdef HL2_DLL
 	if ( bShouldSwitch == false && PhysCannonGetHeldEntity( GetActiveWeapon() ) == pWeapon && 
@@ -7096,6 +7313,45 @@ void CBasePlayer::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+Activity CBasePlayer::Weapon_TranslateActivity( Activity baseAct, bool *pRequired )
+{
+	Activity weaponTranslation = BaseClass::Weapon_TranslateActivity( baseAct, pRequired );
+	
+	if ( GetActiveWeapon() && GetActiveWeapon()->IsEffectActive(EF_NODRAW) && baseAct != ACT_ARM )
+	{
+		// Our weapon is holstered. Use the base activity.
+		return baseAct;
+	}
+	if ( GetModelPtr() && (!GetModelPtr()->HaveSequenceForActivity(weaponTranslation) || baseAct == weaponTranslation) )
+	{
+		// This is used so players can fall back to backup activities in the same way NPCs in Mapbase can
+		Activity backupActivity = Weapon_BackupActivity(baseAct, pRequired ? *pRequired : false);
+		if ( baseAct != backupActivity && GetModelPtr()->HaveSequenceForActivity(backupActivity) )
+			return backupActivity;
+
+		return baseAct;
+	}
+
+	return weaponTranslation;
+}
+
+bool CBasePlayer::ShouldUseVisibilityCache( CBaseEntity *pEntity )
+{
+	// In CBaseEntity::FVisible(), players are allowed to see through CONTENTS_BLOCKLOS, which is used for
+	// nodraw, block LOS brushes, etc. This is so some code doesn't erronesouly assume the player can't see
+	// an entity (when the player can, in fact, see it) and therefore do something the player is not supposed to see.
+	// 
+	// However, to reduce the number of traces FVisible() runs, CBaseCombatCharacter uses a "visibility cache" shared
+	// by all entities derived from it. The player is normally a part of this visibility cache, so when it runs a trace
+	// through a CONTENTS_BLOCKLOS surface, the visibility cache assumes entities can now see through it and therefore
+	// NPCs to see through the brush which should normally block their LOS.
+	// 
+	// This solution stops the player from using the visibility cache altogether, toggled by a convar.
+	return player_use_visibility_cache.GetBool();
+}
 
 //=========================================================
 // HasNamedPlayerItem Does the player already have this item?
@@ -7321,6 +7577,9 @@ void CStripWeapons::StripWeapons(inputdata_t &data, bool stripSuit)
 #define SF_SPEED_MOD_SUPPRESS_SPEED		(1<<5)
 #define SF_SPEED_MOD_SUPPRESS_ATTACK	(1<<6)
 #define SF_SPEED_MOD_SUPPRESS_ZOOM		(1<<7)
+// Needs to be inverse because suppressing the flashlight is already default behavior
+// and we don't want to break compatibility for existing speedmods
+#define SF_SPEED_MOD_DONT_SUPPRESS_FLASHLIGHT	(1<<8)
 
 class CMovementSpeedMod : public CPointEntity
 {
@@ -7328,8 +7587,15 @@ class CMovementSpeedMod : public CPointEntity
 public:
 	void InputSpeedMod(inputdata_t &data);
 
+	void InputEnable(inputdata_t &data);
+	void InputDisable(inputdata_t &data);
+
+	void InputSetAdditionalButtons(inputdata_t &data);
+
 private:
 	int GetDisabledButtonMask( void );
+
+	int m_iAdditionalButtons;
 
 	DECLARE_MAPENTITY();
 };
@@ -7338,6 +7604,12 @@ LINK_ENTITY_TO_CLASS( player_speedmod, CMovementSpeedMod );
 
 BEGIN_MAPENTITY( CMovementSpeedMod )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "ModifySpeed", InputSpeedMod ),
+
+	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
+
+	DEFINE_KEYFIELD( m_iAdditionalButtons, FIELD_INTEGER, "AdditionalButtons" ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetAdditionalButtons", InputSetAdditionalButtons ),
 END_MAPENTITY()
 	
 int CMovementSpeedMod::GetDisabledButtonMask( void )
@@ -7374,6 +7646,11 @@ int CMovementSpeedMod::GetDisabledButtonMask( void )
 		nMask |= IN_ZOOM;
 	}
 
+	if ( m_iAdditionalButtons != 0 )
+	{
+		nMask |= m_iAdditionalButtons;
+	}
+
 	return nMask;
 }
 
@@ -7407,14 +7684,17 @@ void CMovementSpeedMod::InputSpeedMod(inputdata_t &data)
 				pPlayer->HideViewModels();
 			}
 
-			// Turn off the flashlight
-			if ( pPlayer->FlashlightIsOn() )
+			if ( !HasSpawnFlags( SF_SPEED_MOD_DONT_SUPPRESS_FLASHLIGHT ) )
 			{
-				pPlayer->FlashlightTurnOff( false );
+				// Turn off the flashlight
+				if ( pPlayer->FlashlightIsOn() )
+				{
+					pPlayer->FlashlightTurnOff( false );
+				}
+				
+				// Disable the flashlight's further use
+				pPlayer->SetFlashlightEnabled( false );
 			}
-			
-			// Disable the flashlight's further use
-			pPlayer->SetFlashlightEnabled( false );
 			pPlayer->DisableButtons( GetDisabledButtonMask() );
 
 			// Hide the HUD
@@ -7435,8 +7715,11 @@ void CMovementSpeedMod::InputSpeedMod(inputdata_t &data)
 				}
 			}
 
-			// Allow the flashlight again
-			pPlayer->SetFlashlightEnabled( true );
+			if ( !HasSpawnFlags( SF_SPEED_MOD_DONT_SUPPRESS_FLASHLIGHT ) )
+			{
+				// Allow the flashlight again
+				pPlayer->SetFlashlightEnabled( true );
+			}
 			pPlayer->EnableButtons( GetDisabledButtonMask() );
 
 			// Restore the HUD
@@ -7450,6 +7733,200 @@ void CMovementSpeedMod::InputSpeedMod(inputdata_t &data)
 	}
 }
 
+void CMovementSpeedMod::InputEnable(inputdata_t &data)
+{
+	CBasePlayer *pPlayer = NULL;
+
+	if ( data.pActivator && data.pActivator->IsPlayer() )
+	{
+		pPlayer = (CBasePlayer *)data.pActivator;
+	}
+	else if ( !GameRules()->IsDeathmatch() )
+	{
+		pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin());
+	}
+
+	if ( pPlayer )
+	{
+		// Holster weapon immediately, to allow it to cleanup
+		if ( HasSpawnFlags( SF_SPEED_MOD_SUPPRESS_WEAPONS ) )
+		{
+			if ( pPlayer->GetActiveWeapon() )
+			{
+				pPlayer->Weapon_SetLast( pPlayer->GetActiveWeapon() );
+				pPlayer->GetActiveWeapon()->Holster();
+				pPlayer->ClearActiveWeapon();
+			}
+			
+			pPlayer->HideViewModels();
+		}
+
+		// Turn off the flashlight
+		if ( pPlayer->FlashlightIsOn() )
+		{
+			pPlayer->FlashlightTurnOff();
+		}
+		
+		// Disable the flashlight's further use
+		pPlayer->SetFlashlightEnabled( false );
+		pPlayer->DisableButtons( GetDisabledButtonMask() );
+
+		// Hide the HUD
+		if ( HasSpawnFlags( SF_SPEED_MOD_SUPPRESS_HUD ) )
+		{
+			pPlayer->m_Local.m_iHideHUD |= HIDEHUD_ALL;
+		}
+	}
+}
+
+void CMovementSpeedMod::InputDisable(inputdata_t &data)
+{
+	CBasePlayer *pPlayer = NULL;
+
+	if ( data.pActivator && data.pActivator->IsPlayer() )
+	{
+		pPlayer = (CBasePlayer *)data.pActivator;
+	}
+	else if ( !GameRules()->IsDeathmatch() )
+	{
+		pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin());
+	}
+
+	if ( pPlayer )
+	{
+		// Bring the weapon back
+		if  ( HasSpawnFlags( SF_SPEED_MOD_SUPPRESS_WEAPONS ) && pPlayer->GetActiveWeapon() == NULL )
+		{
+			pPlayer->SetActiveWeapon( pPlayer->Weapon_GetLast() );
+			if ( pPlayer->GetActiveWeapon() )
+			{
+				pPlayer->GetActiveWeapon()->Deploy();
+			}
+		}
+
+		// Allow the flashlight again
+		pPlayer->SetFlashlightEnabled( true );
+		pPlayer->EnableButtons( GetDisabledButtonMask() );
+
+		// Restore the HUD
+		if ( HasSpawnFlags( SF_SPEED_MOD_SUPPRESS_HUD ) )
+		{
+			pPlayer->m_Local.m_iHideHUD &= ~HIDEHUD_ALL;
+		}
+	}
+}
+
+void CMovementSpeedMod::InputSetAdditionalButtons(inputdata_t &data)
+{
+	CBasePlayer *pPlayer = NULL;
+
+	if ( data.pActivator && data.pActivator->IsPlayer() )
+	{
+		pPlayer = (CBasePlayer *)data.pActivator;
+	}
+	else if ( !GameRules()->IsDeathmatch() )
+	{
+		pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin());
+	}
+
+	bool bAlreadyDisabled = false;
+	if ( pPlayer )
+	{
+		bAlreadyDisabled = (pPlayer->m_afButtonDisabled & GetDisabledButtonMask()) != 0;
+	}
+
+	m_iAdditionalButtons = data.value.Int();
+
+	// If we were already disabling buttons, re-disable them
+	if ( bAlreadyDisabled )
+	{
+		// We should probably do something better than this.
+		pPlayer->m_afButtonForced = GetDisabledButtonMask();
+	}
+}
+
+class CLogicPlayerInfo : public CPointEntity
+{
+	DECLARE_CLASS( CLogicPlayerInfo, CPointEntity );
+public:
+	void InputGetPlayerInfo( inputdata_t &inputdata );
+	void InputGetPlayerByID( inputdata_t &inputdata );
+	void InputGetPlayerByName( inputdata_t &inputdata );
+
+	void GetPlayerInfo( CBasePlayer *pPlayer );
+
+	COutputInt m_OutUserID;
+	COutputString m_OutPlayerName;
+	COutputEHANDLE m_OutPlayerEntity;
+
+	DECLARE_MAPENTITY();
+};
+
+LINK_ENTITY_TO_CLASS( logic_playerinfo, CLogicPlayerInfo );
+
+BEGIN_MAPENTITY( CLogicPlayerInfo )
+	DEFINE_INPUTFUNC( FIELD_EHANDLE, "GetPlayerInfo", InputGetPlayerInfo ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "GetPlayerByID", InputGetPlayerByID ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "GetPlayerByName", InputGetPlayerByName ),
+
+	DEFINE_OUTPUT( m_OutUserID, "OutUserID" ),
+	DEFINE_OUTPUT( m_OutPlayerName, "OutPlayerName" ),
+	DEFINE_OUTPUT( m_OutPlayerEntity, "OutPlayerEntity" ),
+END_MAPENTITY()
+	
+
+void CLogicPlayerInfo::InputGetPlayerInfo( inputdata_t &inputdata )
+{
+	CBasePlayer *pPlayer = ToBasePlayer(inputdata.value.Entity());
+
+	// If there was no entity to begin with, try the local player
+	if (!pPlayer && !inputdata.value.Entity())
+		pPlayer = UTIL_GetNearestPlayer(GetAbsOrigin());
+
+	if (pPlayer)
+		GetPlayerInfo( pPlayer );
+}
+
+void CLogicPlayerInfo::InputGetPlayerByID( inputdata_t &inputdata )
+{
+	for (int i = 1; i < gpGlobals->maxClients; i++)
+	{
+		CBasePlayer *pPlayer = UTIL_PlayerByIndex( i );
+		if (pPlayer)
+		{
+			if (Matcher_NamesMatch( inputdata.value.String(), UTIL_VarArgs("%i", pPlayer->GetUserID()) ))
+			{
+				GetPlayerInfo( pPlayer );
+				return;
+			}
+		}
+	}
+}
+
+void CLogicPlayerInfo::InputGetPlayerByName( inputdata_t &inputdata )
+{
+	for (int i = 1; i < gpGlobals->maxClients; i++)
+	{
+		CBasePlayer *pPlayer = UTIL_PlayerByIndex( i );
+		if (pPlayer)
+		{
+			if (Matcher_NamesMatch( inputdata.value.String(), pPlayer->GetPlayerName() ))
+			{
+				GetPlayerInfo( pPlayer );
+				return;
+			}
+		}
+	}
+}
+
+void CLogicPlayerInfo::GetPlayerInfo( CBasePlayer *pPlayer )
+{
+	m_OutUserID.Set( pPlayer->GetUserID(), pPlayer, this );
+
+	m_OutPlayerName.Set( AllocPooledString(pPlayer->GetPlayerName()), pPlayer, this );
+
+	m_OutPlayerEntity.Set( pPlayer, pPlayer, this );
+}
 
 void SendProxy_CropFlagsToPlayerFlagBitsLength( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID)
 {
@@ -7457,6 +7934,14 @@ void SendProxy_CropFlagsToPlayerFlagBitsLength( const SendProp *pProp, const voi
 	int data = *(int *)pVarData;
 
 	pOut->m_Int = ( data & mask );
+}
+
+// Needs to shift bits since network table only sends the player ones
+void SendProxy_ShiftPlayerSpawnflags( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
+{
+	int *pInt = (int *)pVarData;
+
+	pOut->m_Int = (*pInt) >> 16;
 }
 
 // -------------------------------------------------------------------------------- //
@@ -7524,6 +8009,13 @@ void SendProxy_CropFlagsToPlayerFlagBitsLength( const SendProp *pProp, const voi
 		SendPropFloat		( SENDINFO( m_flLaggedMovementValue ), 0, SPROP_NOSCALE ),
 
 		SendPropEHandle		( SENDINFO( m_hTonemapController ) ),
+
+		// Transmitted from the server for internal player spawnflags.
+		// See baseplayer_shared.h for more details.
+		SendPropInt			( SENDINFO( m_spawnflags ), 3, SPROP_UNSIGNED, SendProxy_ShiftPlayerSpawnflags ),
+
+		SendPropBool		( SENDINFO( m_bDrawPlayerModelExternally ) ),
+		SendPropBool		( SENDINFO( m_bInTriggerFall ) ),
 
 	END_SEND_TABLE()
 
@@ -8072,34 +8564,61 @@ void CBasePlayer::SetDefaultFOV( int FOV )
 // Purpose: // static func
 // Input  : set - 
 //-----------------------------------------------------------------------------
-void CBasePlayer::ModifyOrAppendPlayerCriteria( AI_CriteriaSet& set )
+static char playercriteria_name[128];
+void CBasePlayer::ModifyOrAppendPlayerCriteria( AI_CriteriaSet& set, bool indexed )
 {
+	//TODO Arthurdead !!!! use pointers instead of copying string every time
+
 	// Append our health
-	set.AppendCriteria( "playerhealth", UTIL_VarArgs( "%i", GetHealth() ) );
+	if(indexed)
+		V_snprintf(playercriteria_name, sizeof(playercriteria_name), "player%i_health", entindex());
+	else
+		V_strncpy(playercriteria_name, "player_health", sizeof(playercriteria_name));
+	set.AppendCriteria( playercriteria_name, UTIL_VarArgs( "%i", GetHealth() ) );
 	float healthfrac = 0.0f;
 	if ( GetMaxHealth() > 0 )
 	{
 		healthfrac = (float)GetHealth() / (float)GetMaxHealth();
 	}
 
-	set.AppendCriteria( "playerhealthfrac", UTIL_VarArgs( "%.3f", healthfrac ) );
+	if(indexed)
+		V_snprintf(playercriteria_name, sizeof(playercriteria_name), "player%i_healthfrac", entindex());
+	else
+		V_strncpy(playercriteria_name, "player_healthfrac", sizeof(playercriteria_name));
+	set.AppendCriteria( playercriteria_name, UTIL_VarArgs( "%.3f", healthfrac ) );
 
+	if(indexed)
+		V_snprintf(playercriteria_name, sizeof(playercriteria_name), "player%i_weapon", entindex());
+	else
+		V_strncpy(playercriteria_name, "player_weapon", sizeof(playercriteria_name));
 	CBaseCombatWeapon *weapon = GetActiveWeapon();
 	if ( weapon )
 	{
-		set.AppendCriteria( "playerweapon", weapon->GetClassname() );
+		set.AppendCriteria( playercriteria_name, weapon->GetClassname() );
 	}
 	else
 	{
-		set.AppendCriteria( "playerweapon", "none" );
+		set.AppendCriteria( playercriteria_name, "none" );
 	}
 
 	// Append current activity name
-	set.AppendCriteria( "playeractivity", CAI_BaseNPC::GetActivityName( m_PlayerAnimState->GetCurrentMainActivity() ) );
+	if(indexed)
+		V_snprintf(playercriteria_name, sizeof(playercriteria_name), "player%i_activity", entindex());
+	else
+		V_strncpy(playercriteria_name, "player_activity", sizeof(playercriteria_name));
+	set.AppendCriteria( playercriteria_name, CAI_BaseNPC::GetActivityName( m_PlayerAnimState->GetCurrentMainActivity() ) );
 
-	set.AppendCriteria( "playerspeed", UTIL_VarArgs( "%.3f", GetAbsVelocity().Length() ) );
+	if(indexed)
+		V_snprintf(playercriteria_name, sizeof(playercriteria_name), "player%i_speed", entindex());
+	else
+		V_strncpy(playercriteria_name, "player_speed", sizeof(playercriteria_name));
+	set.AppendCriteria( playercriteria_name, UTIL_VarArgs( "%.3f", GetAbsVelocity().Length() ) );
 
-	AppendContextToCriteria( set, "player" );
+	if(indexed)
+		V_snprintf(playercriteria_name, sizeof(playercriteria_name), "player%i", entindex());
+	else
+		V_strncpy(playercriteria_name, "player", sizeof(playercriteria_name));
+	AppendContextToCriteria( set, playercriteria_name );
 }
 
 
@@ -8278,6 +8797,18 @@ void CBasePlayer::InputSetHUDVisibility( inputdata_t &inputdata )
 	{
 		m_Local.m_iHideHUD |= HIDEHUD_ALL;
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : &inputdata -
+//-----------------------------------------------------------------------------
+void CBasePlayer::InputSetSuppressAttacks( inputdata_t &inputdata )
+{
+	if(inputdata.value.Bool())
+		AddSpawnFlags( SF_PLAYER_SUPPRESS_FIRING );
+	else
+		RemoveSpawnFlags( SF_PLAYER_SUPPRESS_FIRING );
 }
 
 //-----------------------------------------------------------------------------
@@ -9242,7 +9773,20 @@ void CBasePlayer::OnTonemapTriggerEndTouch( CTonemapTrigger *pTonemapTrigger )
 //--------------------------------------------------------------------------------------------------------
 void CBasePlayer::UpdateTonemapController( void )
 {
-	m_hTonemapController = TheTonemapSystem()->GetMasterTonemapController();
+	CEnvTonemapController *pController = TheTonemapSystem()->GetMasterTonemapController();
+
+	m_hTonemapController = pController;
+
+	if(pController) {
+		if (pController->UseCustomAutoExposureMax())
+			m_Local.m_TonemapParams.m_flAutoExposureMax = pController->CustomAutoExposureMax();
+
+		if (pController->UseCustomAutoExposureMin())
+			m_Local.m_TonemapParams.m_flAutoExposureMin = pController->CustomAutoExposureMin();
+
+		if (pController->UseCustomBloomScale())
+			m_Local.m_TonemapParams.m_flBloomScale = pController->CustomBloomScale();
+	}
 }
 
 //-----------------------------------------------------------------------------

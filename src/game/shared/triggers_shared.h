@@ -28,10 +28,13 @@ enum
 	SF_TRIGGER_DISALLOW_BOTS                = 0x1000,   // Bots are not allowed to fire this trigger
 	SF_TRIGGER_PUSH_USE_MASS				= 0x2000,	// Correctly account for an entity's mass (CTriggerPush::Touch used to assume 100Kg)
 	// and multiple component physobjs (car, blob...)
+	SF_TRIGGER_ALLOW_ITEMS					= 0x4000,	// MOVETYPE_FLYGRAVITY (Weapons, items, flares, etc.) can fire this trigger
 };
 
 // Spawnflags for CTriggerPlayerMovement
 const int SF_TRIGGER_MOVE_AUTODISABLE				= 0x080;	// Disable auto movement
 const int SF_TRIGGER_AUTO_DUCK						= 0x800;	// Duck automatically
+const int SF_TRIGGER_AUTO_WALK						= 0x1000;
+const int SF_TRIGGER_DISABLE_JUMP					= 0x2000;
 
 #endif // TRIGGERS_SHARED_H

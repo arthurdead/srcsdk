@@ -39,6 +39,7 @@ protected:
 	CNetworkVar( float, m_flStartTime );
 	CNetworkVar( int, m_iDesiredOverlay );
 	CNetworkVar( bool, m_bIsActive );
+	CNetworkVar( int, m_iOverlayIndex );
 };
 
 LINK_ENTITY_TO_CLASS( env_screenoverlay, CEnvScreenOverlay );
@@ -71,6 +72,8 @@ BEGIN_MAPENTITY( CEnvScreenOverlay )
 	DEFINE_INPUTFUNC( FIELD_VOID, "StopOverlays", InputStopOverlay ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SwitchOverlay", InputSwitchOverlay ),
 
+	DEFINE_KEYFIELD( m_iOverlayIndex, FIELD_INTEGER, "OverlayIndex" ),
+
 END_MAPENTITY()
 
 void SendProxy_String_tToString( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
@@ -85,6 +88,7 @@ IMPLEMENT_SERVERCLASS_ST( CEnvScreenOverlay, DT_EnvScreenOverlay )
 	SendPropFloat( SENDINFO( m_flStartTime ), 32, SPROP_NOSCALE ),
 	SendPropInt( SENDINFO( m_iDesiredOverlay ), 5 ),
 	SendPropBool( SENDINFO( m_bIsActive ) ),
+	SendPropInt( SENDINFO( m_iOverlayIndex ), 5 ),
 END_SEND_TABLE()
 
 //-----------------------------------------------------------------------------
@@ -95,6 +99,7 @@ CEnvScreenOverlay::CEnvScreenOverlay( void )
 	m_flStartTime = 0;
 	m_iDesiredOverlay = 0;
 	m_bIsActive = false;
+	m_iOverlayIndex = -1;
 }
 
 //-----------------------------------------------------------------------------

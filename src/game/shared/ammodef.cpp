@@ -29,6 +29,19 @@ Ammo_t *CAmmoDef::GetAmmoOfIndex(int nAmmoIndex)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
+const char* CAmmoDef::Name(int nAmmoIndex)
+{
+	if ( nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex )
+		return NULL;
+
+	return m_AmmoType[nAmmoIndex].pName;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
 int CAmmoDef::Index(const char *psz)
 {
 	int i;

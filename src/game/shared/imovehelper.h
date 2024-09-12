@@ -25,7 +25,13 @@ struct cmodel_t;
 struct vcollide_t;
 class CGameTrace;
 enum soundlevel_t;
+
+#ifdef GAME_DLL
 class CBasePlayer;
+#else
+#define CBasePlayer C_BasePlayer
+class C_BasePlayer;
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Identifies how submerged in water a player is.

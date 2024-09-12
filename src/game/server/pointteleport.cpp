@@ -84,7 +84,7 @@ void CPointTeleport::Activate( void )
 	m_vSaveAngles = GetAbsAngles();
 
 	// Save off the spawn position of the target if instructed to do so
-	if ( m_spawnflags & SF_TELEPORT_TO_SPAWN_POS )
+	if ( HasSpawnFlags( SF_TELEPORT_TO_SPAWN_POS ) )
 	{
 		CBaseEntity *pTarget = gEntList.FindEntityByName( NULL, m_target );
 		if ( pTarget )
@@ -138,7 +138,7 @@ void CPointTeleport::InputTeleportEntity( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 void CPointTeleport::InputTeleportToCurrentPos( inputdata_t &inputdata )
 {
-	if ( m_spawnflags & SF_TELEPORT_TO_SPAWN_POS )
+	if ( HasSpawnFlags( SF_TELEPORT_TO_SPAWN_POS ) )
 	{
 		// This is a nonsensical spawnflag in combination with this input.
 		Warning( "%s: TeleportToCurrentPos input received; ignoring 'Teleport Home' spawnflag.\n", GetDebugName() );
@@ -176,7 +176,7 @@ void CPointTeleport::DoTeleport( inputdata_t &inputdata, const Vector &vecOrigin
 	}
 
 	// in episodic, we have a special spawn flag that forces Gordon into a duck
-	if ( (m_spawnflags & SF_TELEPORT_INTO_DUCK) && pTarget->IsPlayer() ) 
+	if ( HasSpawnFlags( SF_TELEPORT_INTO_DUCK) && pTarget->IsPlayer() ) 
 	{
 		CBasePlayer *pPlayer = ToBasePlayer( pTarget );
 		if ( pPlayer != NULL )

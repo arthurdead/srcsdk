@@ -958,7 +958,7 @@ void CPrediction::RunCommand( C_BasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 		C_BaseCombatWeapon *weapon = ToBaseCombatWeapon( CBaseEntity::Instance( ucmd->weaponselect ) );
 		if ( weapon )
 		{
-			player->SelectItem( weapon->GetName(), ucmd->weaponsubtype );
+			player->SelectItem( weapon->GetClassname(), ucmd->weaponsubtype );
 		}
 	}
 
@@ -1017,14 +1017,14 @@ void CPrediction::RunCommand( C_BasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 		}
 	}
 
-	FinishMove( player, ucmd, g_pMoveData );
+	RunPostThink( player );
 
 	// Let server invoke any needed impact functions
 	VPROF_SCOPE_BEGIN( "moveHelper->ProcessImpacts(cl)" );
 	moveHelper->ProcessImpacts();
 	VPROF_SCOPE_END();
 
-	RunPostThink( player );
+	FinishMove( player, ucmd, g_pMoveData );
 
 	g_pGameMovement->FinishTrackPredictionErrors( player );
 

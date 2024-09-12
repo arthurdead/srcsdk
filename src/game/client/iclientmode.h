@@ -14,6 +14,7 @@
 #include "cdll_int.h"
 
 class CViewSetup;
+class CViewSetupEx;
 class C_BaseEntity;
 class C_BasePlayer;
 class CUserCmd;
@@ -86,7 +87,7 @@ public:
 	// The mode can choose to not draw fog
 	virtual bool	ShouldDrawFog( void ) = 0;
 
-	virtual void	OverrideView( CViewSetup *pSetup ) = 0;
+	virtual void	OverrideView( CViewSetupEx *pSetup ) = 0;
 	virtual void	OverrideAudioState( AudioState_t *pAudioState ) = 0;
 	virtual int		KeyInput( int down, ButtonCode_t keynum, const char *pszCurrentBinding ) = 0;
 	virtual void	StartMessageMode( int iMessageModeType ) = 0;
@@ -105,7 +106,7 @@ public:
 	virtual void	AdjustEngineViewport( int& x, int& y, int& width, int& height ) = 0;
 
 	// Called before rendering a view.
-	virtual void	PreRender( CViewSetup *pSetup ) = 0;
+	virtual void	PreRender( CViewSetupEx *pSetup ) = 0;
 
 	// Called after everything is rendered.
 	virtual void	PostRender( void ) = 0;
@@ -139,7 +140,7 @@ public:
 	// HPE_END
 	//=============================================================================
 
-	virtual bool	DoPostScreenSpaceEffects( const CViewSetup *pSetup ) = 0;
+	virtual bool	DoPostScreenSpaceEffects( const CViewSetupEx *pSetup ) = 0;
 
 	virtual void	DisplayReplayMessage( const char *pLocalizeName, float flDuration, bool bUrgent,
 										  const char *pSound, bool bDlg ) = 0;

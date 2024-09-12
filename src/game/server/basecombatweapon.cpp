@@ -290,7 +290,7 @@ bool CBaseCombatWeapon::WeaponLOSCondition( const Vector &ownerPos, const Vector
 
 	if ( pBCC ) 
 	{
-		if ( npcOwner->IRelationType( pBCC ) == D_HT )
+		if ( npcOwner->IRelationType( pBCC ) <= D_FR )
 			return true;
 
 		if ( bSetConditions )
@@ -317,24 +317,25 @@ bool CBaseCombatWeapon::WeaponLOSCondition( const Vector &ownerPos, const Vector
 //-----------------------------------------------------------------------------
 int CBaseCombatWeapon::WeaponRangeAttack1Condition( float flDot, float flDist )
 {
- 	if ( UsesPrimaryAmmo() && !HasPrimaryAmmo() )
- 	{
- 		return COND_NO_PRIMARY_AMMO;
- 	}
- 	else if ( flDist < m_fMinRange1) 
- 	{
- 		return COND_TOO_CLOSE_TO_ATTACK;
- 	}
- 	else if (flDist > m_fMaxRange1) 
- 	{
- 		return COND_TOO_FAR_TO_ATTACK;
- 	}
- 	else if (flDot < 0.5) 	// UNDONE: Why check this here? Isn't the AI checking this already?
- 	{
- 		return COND_NOT_FACING_ATTACK;
- 	}
+	// HACKHACK: HasPrimaryAmmo() checks the NPC's reserve ammo counts, which should not be evaluated here if we use clips
+	if ( UsesPrimaryAmmo() && (UsesClipsForAmmo1() ? !m_iClip1 : !HasPrimaryAmmo()) )
+	{
+		return COND_NO_PRIMARY_AMMO;
+	}
+	else if ( flDist < m_fMinRange1) 
+	{
+		return COND_TOO_CLOSE_TO_ATTACK;
+	}
+	else if (flDist > m_fMaxRange1) 
+	{
+		return COND_TOO_FAR_TO_ATTACK;
+	}
+	else if (flDot < 0.5) 	// UNDONE: Why check this here? Isn't the AI checking this already?
+	{
+		return COND_NOT_FACING_ATTACK;
+	}
 
- 	return COND_CAN_RANGE_ATTACK1;
+	return COND_CAN_RANGE_ATTACK1;
 }
 
 //-----------------------------------------------------------------------------
@@ -426,7 +427,7 @@ void CBaseCombatWeapon::Kill( void )
 //-----------------------------------------------------------------------------
 void CBaseCombatWeapon::FallInit( void )
 {
-	SetModel( GetWorldModel() );
+	SetModel( (GetDroppedModel() && GetDroppedModel()[0]) ? GetDroppedModel() : GetWorldModel() );
 	VPhysicsDestroyObject();
 
 	if(HasSpawnFlags(SF_NORESPAWN) == false)
@@ -663,6 +664,130 @@ int	CBaseCombatWeapon::ObjectCaps( void )
 	return caps;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::InputSetAmmo1( inputdata_t &inputdata )
+{
+	SetAmmoFromMapper(inputdata.value.Float());
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::InputSetAmmo2( inputdata_t &inputdata )
+{
+	SetAmmoFromMapper(inputdata.value.Float(), true);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::InputGiveDefaultAmmo( inputdata_t &inputdata )
+{
+	GiveDefaultAmmo();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::InputEnablePlayerPickup( inputdata_t &inputdata )
+{
+	RemoveSpawnFlags(SF_WEAPON_NO_PLAYER_PICKUP);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::InputDisablePlayerPickup( inputdata_t &inputdata )
+{
+	AddSpawnFlags(SF_WEAPON_NO_PLAYER_PICKUP);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::InputEnableNPCPickup( inputdata_t &inputdata )
+{
+	RemoveSpawnFlags(SF_WEAPON_NO_NPC_PICKUP);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::InputDisableNPCPickup( inputdata_t &inputdata )
+{
+	AddSpawnFlags(SF_WEAPON_NO_NPC_PICKUP);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::InputBreakConstraint( inputdata_t &inputdata )
+{
+	if ( m_pConstraint != NULL )
+	{
+		physenv->DestroyConstraint( m_pConstraint );
+		m_pConstraint = NULL;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::InputForceFire( inputdata_t &inputdata, bool bSecondary )
+{
+	CBaseCombatCharacter *pOperator = GetOwner();
+
+	if (!pOperator)
+	{
+		// No owner. This means they want us to fire while possibly on the floor independent of any NPC...the madmapper!
+		pOperator = ToBaseCombatCharacter(inputdata.pActivator);
+		if (pOperator && pOperator->IsNPC())
+		{
+			// Use this guy, I guess
+			Operator_ForceNPCFire(pOperator, bSecondary);
+		}
+		else
+		{
+			// Well...I learned this trick from ent_info. If you have any better ideas, be my guest.
+			pOperator = CreateEntityByName("generic_actor")->MyCombatCharacterPointer();
+			pOperator->SetAbsOrigin(GetAbsOrigin());
+			pOperator->SetAbsAngles(GetAbsAngles());
+			SetOwnerEntity(pOperator);
+
+			Operator_ForceNPCFire(pOperator, bSecondary);
+
+			UTIL_RemoveImmediate(pOperator);
+		}
+	}
+	else if (pOperator->IsPlayer())
+	{
+		// Owner exists and is a player.
+		bSecondary ? SecondaryAttack() : PrimaryAttack();
+	}
+	else
+	{
+		// Owner exists and is a NPC.
+		Operator_ForceNPCFire(pOperator, bSecondary);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::InputForcePrimaryFire( inputdata_t &inputdata )
+{
+	InputForceFire(inputdata, false);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::InputForceSecondaryFire( inputdata_t &inputdata )
+{
+	InputForceFire(inputdata, true);
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -674,6 +799,9 @@ void CBaseCombatWeapon::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_
 	if ( pPlayer )
 	{
 		m_OnPlayerUse.FireOutput( pActivator, pCaller );
+
+		// Mark that we're being +USE'd, not bumped
+		AddSpawnFlags(SF_WEAPON_USED);
 
 		//
 		// Bump the weapon to try equipping it before picking it up physically. This is
@@ -688,6 +816,8 @@ void CBaseCombatWeapon::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_
 		{
 			pPlayer->PickupObject( this );
 		}
+
+		RemoveSpawnFlags(SF_WEAPON_USED);
 	}
 }
 

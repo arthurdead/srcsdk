@@ -136,6 +136,12 @@ bool CBreakable::KeyValue( const char *szKeyName, const char *szValue )
 		int object = atoi( szValue );
 		if ( object > 0 && object < ARRAYSIZE(pSpawnObjects) )
 			m_iszSpawnObject = MAKE_STRING( pSpawnObjects[object] );
+		// "0" is the default value of a "choices" field in Hammer, representing nothing selected
+		// atoi() returning 0 may also indicate a failed conversion, so check szValue directly
+		else if ( FStrEq( szValue, "0" ) )
+			m_iszSpawnObject = NULL_STRING;
+		else
+			m_iszSpawnObject = AllocPooledString(szValue);
 	}
 	else if (FStrEq(szKeyName, "propdata") )
 	{

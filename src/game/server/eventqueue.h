@@ -38,9 +38,9 @@ class CEventQueue
 {
 public:
 	// pushes an event into the queue, targeting a string name (m_iName), or directly by a pointer
-	void AddEvent( const char *target, const char *action, variant_t Value, float fireDelay, CBaseEntity *pActivator, CBaseEntity *pCaller, int outputID = 0 );
-	void AddEvent( CBaseEntity *target, const char *action, float fireDelay, CBaseEntity *pActivator, CBaseEntity *pCaller, int outputID = 0 );
-	void AddEvent( CBaseEntity *target, const char *action, variant_t Value, float fireDelay, CBaseEntity *pActivator, CBaseEntity *pCaller, int outputID = 0 );
+	EventQueuePrioritizedEvent_t *AddEvent( const char *target, const char *action, variant_t Value, float fireDelay, CBaseEntity *pActivator, CBaseEntity *pCaller, int outputID = 0 );
+	EventQueuePrioritizedEvent_t *AddEvent( CBaseEntity *target, const char *action, float fireDelay, CBaseEntity *pActivator, CBaseEntity *pCaller, int outputID = 0 );
+	EventQueuePrioritizedEvent_t *AddEvent( CBaseEntity *target, const char *action, variant_t Value, float fireDelay, CBaseEntity *pActivator, CBaseEntity *pCaller, int outputID = 0 );
 
 	void CancelEvents( CBaseEntity *pCaller );
 	void CancelEventOn( CBaseEntity *pTarget, const char *sInputName );
@@ -59,6 +59,10 @@ public:
 	void Clear( void ); // resets the list
 
 	void Dump( void );
+
+	void CancelEventsByInput( CBaseEntity *pTarget, const char *szInput );
+	void DeleteEvent( EventQueuePrioritizedEvent_t *event );
+	float GetTimeLeft( EventQueuePrioritizedEvent_t *event );
 
 private:
 

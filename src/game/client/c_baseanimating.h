@@ -174,6 +174,11 @@ public:
 	virtual void FireObsoleteEvent( const Vector& origin, const QAngle& angles, int event, const char *options );
 	virtual const char* ModifyEventParticles( const char* token ) { return token; }
 
+	virtual void ResetEventsParity() { m_nPrevResetEventsParity = -1; } // used to force animation events to function on players so the muzzleflashes and other events occur
+																	// so new functions don't have to be made to parse the models like CSS does in ProcessMuzzleFlashEvent
+																	// allows the multiplayer world weapon models to declare the muzzleflashes, and other effects like sp
+																	// without the need to script it and add extra parsing code.
+
 	// Parses and distributes muzzle flash events
 	virtual bool DispatchMuzzleEffect( const char *options, bool isFirstPerson );
 	virtual void EjectParticleBrass( const char *pEffectName, const int iAttachment );
@@ -380,6 +385,12 @@ public:
 	void SetSkin( int iSkin );
 	void SetBody( int iBody );
 
+	int		GetForceBone()				{ return m_nForceBone; }
+	void	SetForceBone( int iBone )	{ m_nForceBone = iBone; }
+	const Vector&	GetRagdollForce()					{ return m_vecForce; }
+	void	SetRagdollForce( const Vector &vecForce )	{ m_vecForce = vecForce; }
+
+
 	const char *GetBodygroupName( int iGroup );
 	int FindBodygroupByName( const char *name );
 	int GetBodygroupCount( int iGroup );
@@ -535,6 +546,7 @@ private:
 public:
 	CRagdoll						*m_pRagdoll;
 	C_BaseAnimating					*m_pClientsideRagdoll;
+	C_BaseAnimating					*m_pServerRagdoll;
 
 private:
 	// Texture group to use
@@ -782,6 +794,7 @@ public:
 	bool m_bFadeOut;
 	bool m_bImportant;
 	float m_flEffectTime;
+	float m_flForcedRetireTime;
 
 	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
 	virtual	bool			IsClientCreated( void ) const { return true; }

@@ -10,6 +10,10 @@
 
 #include "c_te_effect_dispatch.h"
 #include "istudiorender.h"
+#include "ispatialpartition.h"
+#include "cmodel.h"
+
+class C_BaseAnimating;
 
 // Parse the impact data from the server's data block
 C_BaseEntity *ParseImpactData( const CEffectData &data, Vector *vecOrigin, Vector *vecStart, Vector *vecShotDir, short &nSurfaceProp, int &iMaterial, int &iDamageType, int &iHitbox );
@@ -56,12 +60,13 @@ public:
 	// Actual work code
 	virtual IterationRetval_t EnumElement( IHandleEntity *pHandleEntity );
 
-	bool Hit( void ) const { return m_bHit; }
+	bool Hit( void ) const { return m_pHitEnt != NULL; }
+	C_BaseAnimating *GetHit( void ) { return m_pHitEnt; }
 
 private:
 	Ray_t			m_rayShot;
 	int				m_iDamageType;
-	bool			m_bHit;
+	C_BaseAnimating		*m_pHitEnt;
 };
 
 #endif // FX_IMPACT_H

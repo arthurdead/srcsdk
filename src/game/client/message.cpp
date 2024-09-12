@@ -446,15 +446,6 @@ void CHudMessage::MessageScanStart( void )
 			m_parms.fadeBlend = 0;
 		break;
 	}
-
-	m_parms.font = g_hFontTrebuchet24;
-
-	if ( m_parms.vguiFontName != NULL && 
-		m_parms.vguiFontName[ 0 ] )
-	{
-
-		SetFont( vgui::scheme()->GetDefaultScheme(), m_parms.vguiFontName );
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -497,7 +488,15 @@ void CHudMessage::MessageDrawScan( client_textmessage_t *pMessage, float time )
 	m_parms.totalWidth = 0;
 	m_parms.vguiFontName = pMessage->pVGuiSchemeFontName;
 
-	m_parms.font = g_hFontTrebuchet24;
+	if ( m_parms.vguiFontName != NULL &&
+		m_parms.vguiFontName[ 0 ] )
+	{
+		SetFont( vgui::scheme()->GetDefaultScheme(), m_parms.vguiFontName );
+	}
+	else
+	{
+		m_parms.font = g_hFontTrebuchet24;
+	}
 
 	while ( *pText )
 	{

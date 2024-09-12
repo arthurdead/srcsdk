@@ -245,7 +245,7 @@ IterationRetval_t CFireSphere::EnumElement( IHandleEntity *pHandleEntity )
 	{
 		// UNDONE: Measure which of these is faster
 //		CFire *pFire = dynamic_cast<CFire *>(pEntity);
-		if ( !FClassnameIs( pEntity, "env_fire" ) )
+		if ( !EntIsClass( pEntity, gm_isz_class_EnvFire ) )
 			return ITERATION_CONTINUE;
 
 		CFire *pFire = static_cast<CFire *>(pEntity);
@@ -983,7 +983,7 @@ void CFire::Update( float simTime )
 		{
 			continue;
 		}
-		else if ( FClassnameIs( pOther, "env_fire" ) )
+		else if ( EntIsClass( pOther, gm_isz_class_EnvFire ) )
 		{
 			if ( fireCount < ARRAYSIZE(pFires) )
 			{
@@ -1322,6 +1322,7 @@ void CEnvFireSource::InputDisable( inputdata_t &inputdata )
 // CEnvFireSensor detects changes in heat
 //==================================================
 #define SF_FIRESENSOR_START_ON	1
+#define SF_FIRESENSOR_ACCEPT_FLARES 2
 
 class CEnvFireSensor : public CBaseEntity
 {
@@ -1333,6 +1334,8 @@ public:
 	void TurnOff();
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
+
+	int DrawDebugTextOverlays(void);
 
 	DECLARE_MAPENTITY();
 
@@ -1346,6 +1349,9 @@ private:
 
 	COutputEvent	m_OnHeatLevelStart;
 	COutputEvent	m_OnHeatLevelEnd;
+
+	// Only stored for access in debug overlays, don't save
+	float			m_curheat;
 };
 
 BEGIN_MAPENTITY( CEnvFireSensor )
@@ -1395,6 +1401,26 @@ void CEnvFireSensor::Think()
 	{
 		heat += pFires[i]->GetHeatLevel();
 	}
+
+#ifdef HL2_EPISODIC
+	if (HasSpawnFlags(SF_FIRESENSOR_ACCEPT_FLARES))
+	{
+		// Also look for nearby flares
+		CBaseEntity *pEntity = gEntList.FindEntityByClassnameWithin( NULL, "env_flare", GetAbsOrigin(), m_radius );
+		while (pEntity)
+		{
+			CFlare *pFlare = static_cast<CFlare*>(pEntity);
+			if (pFlare)
+			{
+				heat += (pFlare->m_flTimeBurnOut > -1.0 ? (pFlare->m_flTimeBurnOut - gpGlobals->curtime) : 32);
+			}
+
+			pEntity = gEntList.FindEntityByClassnameWithin( pEntity, "env_flare", GetAbsOrigin(), m_radius );
+		}
+	}
+#endif
+
+	m_curheat = heat;
 
 	if ( heat >= m_targetLevel )
 	{
@@ -1451,6 +1477,26 @@ void CEnvFireSensor::InputEnable( inputdata_t &inputdata )
 void CEnvFireSensor::InputDisable( inputdata_t &inputdata )
 {
 	TurnOff();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Draw any debug text overlays
+// Output : Current text offset from the top
+//-----------------------------------------------------------------------------
+int CEnvFireSensor::DrawDebugTextOverlays( void ) 
+{
+	int text_offset = BaseClass::DrawDebugTextOverlays();
+
+	if (m_debugOverlays & OVERLAY_TEXT_BIT) 
+	{
+		char tempstr[512];
+
+		// print flame size
+		Q_snprintf(tempstr, sizeof(tempstr), "    Current Heat: %f", m_curheat);
+		EntityText(text_offset,tempstr,0);
+		text_offset++;
+	}
+	return text_offset;
 }
 
 //-----------------------------------------------------------------------------

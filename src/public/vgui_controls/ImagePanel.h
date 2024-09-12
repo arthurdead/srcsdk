@@ -59,7 +59,7 @@ public:
 	int GetNumFrames();
 	void SetFrame( int nFrame );
 
-	void SetRotation( int iRotation ) { m_iRotation = iRotation; }
+	void SetRotation( int iRotation );
 
 protected:
 	virtual void PaintBackground();

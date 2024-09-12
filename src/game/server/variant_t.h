@@ -49,6 +49,8 @@ public:
 	inline const EHANDLE &Entity(void) const;
 	inline color32 Color32(void) const					{ return rgbaVal; }
 	inline void Vector3D(Vector &vec) const;
+	// Gets angles from a vector
+	inline void Angle3D(QAngle &ang) const;
 
 	fieldtype_t FieldType( void ) { return fieldType; }
 
@@ -59,11 +61,19 @@ public:
 	void SetEntity( CBaseEntity *val );
 	void SetVector3D( const Vector &val ) { vecVal[0] = val[0]; vecVal[1] = val[1]; vecVal[2] = val[2]; fieldType = FIELD_VECTOR; }
 	void SetPositionVector3D( const Vector &val ) { vecVal[0] = val[0]; vecVal[1] = val[1]; vecVal[2] = val[2]; fieldType = FIELD_POSITION_VECTOR; }
+	// Passes in angles as a vector
+	void SetAngle3D( const QAngle &val ) { vecVal[0] = val[0]; vecVal[1] = val[1]; vecVal[2] = val[2]; fieldType = FIELD_VECTOR; }
+
 	void SetColor32( color32 val ) { rgbaVal = val; fieldType = FIELD_COLOR32; }
 	void SetColor32( int r, int g, int b, int a ) { rgbaVal.r = r; rgbaVal.g = g; rgbaVal.b = b; rgbaVal.a = a; fieldType = FIELD_COLOR32; }
 	void Set( fieldtype_t ftype, void *data );
 	void SetOther( void *data );
 	bool Convert( fieldtype_t newType );
+	// Special conversion specifically for FIELD_EHANDLE with !activator, etc.
+	bool Convert( fieldtype_t newType, CBaseEntity *pSelf, CBaseEntity *pActivator, CBaseEntity *pCaller );
+	// Hands over the value + the field type.
+	// ex: "Otis (String)", "3 (Integer)", or "npc_combine_s (Entity)"
+	const char *GetDebug();
 
 	static typedescription_t m_SaveBool[];
 	static typedescription_t m_SaveInt[];
@@ -106,6 +116,23 @@ inline void variant_t::Vector3D(Vector &vec) const
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Returns this variant as angles.
+//-----------------------------------------------------------------------------
+inline void variant_t::Angle3D(QAngle &ang) const
+{
+	if (( fieldType == FIELD_VECTOR ) || ( fieldType == FIELD_POSITION_VECTOR ))
+	{
+		ang[0] =  vecVal[0];
+		ang[1] =  vecVal[1];
+		ang[2] =  vecVal[2];
+	}
+	else
+	{
+		ang = vec3_angle;
+	}
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Returns this variant as an EHANDLE.
 //-----------------------------------------------------------------------------
 inline const EHANDLE &variant_t::Entity(void) const
@@ -116,5 +143,26 @@ inline const EHANDLE &variant_t::Entity(void) const
 	return NULL_EHANDLE;
 }
 
+// Most of these are defined in variant_t.cpp.
+
+// Creates a variant_t from the given string.
+// It could return as a String or a Float.
+variant_t Variant_Parse(const char *szValue);
+
+// Intended to convert FIELD_INPUT I/O parameters to other values, like integers, floats, or even entities.
+// This only changes FIELD_STRING variants. Other data like FIELD_EHANDLE or FIELD_INTEGER are not affected.
+variant_t Variant_ParseInput(inputdata_t inputdata);
+
+// A simpler version of Variant_ParseInput that does not allow FIELD_EHANDLE.
+variant_t Variant_ParseString(variant_t value);
+
+// val1 == val2
+bool Variant_Equal(variant_t val1, variant_t val2, bool bLenAllowed = true);
+
+// val1 > val2
+bool Variant_Greater(variant_t val1, variant_t val2, bool bLenAllowed = true);
+
+// val1 >= val2
+bool Variant_GreaterOrEqual(variant_t val1, variant_t val2, bool bLenAllowed = true);
 
 #endif // VARIANT_T_H

@@ -58,6 +58,8 @@ ConVar debug_latch_reset_onduck( "debug_latch_reset_onduck", "1", FCVAR_CHEAT );
 #endif
 #endif
 
+ConVar player_crouch_multiplier( "player_crouch_multiplier", "0.33333333", FCVAR_REPLICATED );
+
 // [MD] I'll remove this eventually. For now, I want the ability to A/B the optimizations.
 bool g_bMovementOptimizations = true;
 
@@ -4130,12 +4132,18 @@ void CGameMovement::CheckFalling( void )
 	if ( player->GetGroundEntity() == NULL || player->m_Local.m_flFallVelocity <= 0 )
 		return;
 
+	if ( player->m_bInTriggerFall )
+	{
+		// This value lets the existing fall damage functions ensure a fatal fall.
+		player->m_Local.m_flFallVelocity += (PLAYER_FATAL_FALL_SPEED + PLAYER_LAND_ON_FLOATING_OBJECT);
+	}
+
 	if ( !IsDead() && player->m_Local.m_flFallVelocity >= PLAYER_FALL_PUNCH_THRESHOLD )
 	{
 		bool bAlive = true;
 		float fvol = 0.5;
 
-		if ( player->GetWaterLevel() > 0 )
+		if ( player->GetWaterLevel() > 0 && !player->m_bInTriggerFall )
 		{
 			// They landed in water.
 		}
@@ -4523,7 +4531,7 @@ void CGameMovement::HandleDuckingSpeedCrop( void )
 {
 	if ( !( m_iSpeedCropped & SPEED_CROPPED_DUCK ) && ( player->GetFlags() & FL_DUCKING ) && ( player->GetGroundEntity() != NULL ) )
 	{
-		float frac = 0.33333333f;
+		float frac = player_crouch_multiplier.GetFloat();
 		mv->m_flForwardMove	*= frac;
 		mv->m_flSideMove	*= frac;
 		mv->m_flUpMove		*= frac;

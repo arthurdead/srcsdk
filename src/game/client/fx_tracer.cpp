@@ -41,7 +41,6 @@ Vector GetTracerOrigin( const CEffectData &data )
 
 		C_BaseEntity *pEnt = data.GetEntity();
 
-// This check should probably be for all multiplayer games, investigate later
 		if ( pEnt && pEnt->IsDormant() )
 			return vecStart;
 

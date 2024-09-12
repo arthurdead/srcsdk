@@ -35,6 +35,7 @@ enum AI_Formations_t
 	AIF_HUNTER,
 	AIF_VORTIGAUNT,
 	AIF_TOPDOWN_TIGHT,
+	AIF_NUM_FORMATIONS,
 };
 
 enum AI_FollowFormationFlags_t
@@ -64,6 +65,8 @@ public:
 	virtual void InputOutsideTransition( inputdata_t &inputdata );
 
 	int m_iFormation;
+
+	bool m_bNormalMemoryDiscard = false;
 
 	DECLARE_MAPENTITY();
 };

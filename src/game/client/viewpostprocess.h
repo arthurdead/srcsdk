@@ -23,6 +23,8 @@ bool IsDepthOfFieldEnabled();
 void DoDepthOfField( const CViewSetupEx &view );
 void BlurEntity( IClientRenderable *pRenderable, IClientRenderableMod *pRenderableMod, bool bPreDraw, int drawFlags, const RenderableInstance_t &instance, const CViewSetupEx &view, int x, int y, int w, int h );
 
+void SetRenderTargetAndViewPort( ITexture *rt );
+
 void UpdateMaterialSystemTonemapScalar();
 
 float GetCurrentTonemapScale();
@@ -34,6 +36,7 @@ void SetOverridePostProcessingDisable( bool bForceOff );
 void DoBlurFade( float flStrength, float flDesaturate, int x, int y, int w, int h );
 
 void SetPostProcessParams( const PostProcessParameters_t *pPostProcessParameters );
+void SetPostProcessParams( const PostProcessParameters_t* pPostProcessParameters, bool override );
 
 void SetViewFadeParams( byte r, byte g, byte b, byte a, bool bModulate );
 

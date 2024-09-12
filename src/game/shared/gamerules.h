@@ -334,7 +334,7 @@ public:
 
 	virtual bool IsSkillLevel( int iLevel ) { return GetSkillLevel() == iLevel; }
 	virtual int	GetSkillLevel() { return g_iSkillLevel; }
-	virtual void OnSkillLevelChanged( int iNewLevel ) {};
+	virtual void OnSkillLevelChanged( int iNewLevel );
 	virtual void SetSkillLevel( int iLevel );
 
 	virtual bool FAllowFlashlight( void );// Are players allowed to switch on their flashlight?
@@ -547,6 +547,9 @@ public:
 	void	RemoveLevelDesignerPlacedObject( CBaseEntity *pEntity );
 
 	virtual bool IsOfficialMap() const;
+
+	ThreeState_t	GlobalFriendlyFire();
+	void			SetGlobalFriendlyFire(ThreeState_t val);
 
 #endif
 

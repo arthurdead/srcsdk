@@ -390,7 +390,7 @@ void CPlayerMove::RunCommand ( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 		if ( weapon )
 		{
 			VPROF( "player->SelectItem()" );
-			player->SelectItem( weapon->GetName(), ucmd->weaponsubtype );
+			player->SelectItem( weapon->GetClassname(), ucmd->weaponsubtype );
 		}
 	}
 
@@ -426,6 +426,11 @@ void CPlayerMove::RunCommand ( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 		player->pl.v_angle = ucmd->viewangles + player->pl.anglechange;
 	}
 
+	// Let server invoke any needed impact functions
+	VPROF_SCOPE_BEGIN( "moveHelper->ProcessImpacts" );
+	moveHelper->ProcessImpacts();
+	VPROF_SCOPE_END();
+
 	// Call standard client pre-think
 	RunPreThink( player );
 
@@ -447,6 +452,8 @@ void CPlayerMove::RunCommand ( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 		VPROF( "pVehicle->ProcessMovement()" );
 		pVehicle->ProcessMovement( player, g_pMoveData );
 	}
+
+	RunPostThink( player );
 			
 	// Copy output
 	FinishMove( player, ucmd, g_pMoveData );
@@ -456,13 +463,6 @@ void CPlayerMove::RunCommand ( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 	{
 		player->pl.v_angle = player->GetLockViewanglesData();
 	}
-
-	// Let server invoke any needed impact functions
-	VPROF_SCOPE_BEGIN( "moveHelper->ProcessImpacts" );
-	moveHelper->ProcessImpacts();
-	VPROF_SCOPE_END();
-
-	RunPostThink( player );
 
 	g_pGameMovement->FinishTrackPredictionErrors( player );
 	g_pGameMovement->Reset();

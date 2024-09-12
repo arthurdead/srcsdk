@@ -27,6 +27,21 @@ extern short	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for 
 
 #if !defined( CLIENT_DLL )
 
+// Global Savedata for friction modifier
+BEGIN_MAPENTITY( CBaseGrenade )
+
+	DEFINE_KEYFIELD( m_DmgRadius, FIELD_FLOAT, "Radius" ),
+
+	DEFINE_KEYFIELD( m_flDamage, FIELD_FLOAT, "Damage" ),
+
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetDamage", InputSetDamage ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "Detonate", InputDetonate ),
+
+	DEFINE_OUTPUT( m_OnDetonate, "OnDetonate" ),
+	DEFINE_OUTPUT( m_OnDetonate_OutPosition, "OnDetonate_OutPosition" ),
+
+END_MAPENTITY()
+
 void SendProxy_CropFlagsToPlayerFlagBitsLength( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID);
 
 #endif
@@ -518,7 +533,23 @@ CBaseGrenade::CBaseGrenade(void)
 };
 
 
+#ifdef GAME_DLL
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseGrenade::InputSetDamage( inputdata_t &inputdata )
+{
+	SetDamage( inputdata.value.Float() );
+}
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseGrenade::InputDetonate( inputdata_t &inputdata )
+{
+	Detonate();
+}
+#endif
 
 
 

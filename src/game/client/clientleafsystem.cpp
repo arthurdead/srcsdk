@@ -2518,10 +2518,12 @@ inline void AddRenderableToRenderList( CClientRenderablesList &renderList, IClie
 		pEntry->m_InstanceData.m_nAlpha = nAlphaModulation;
 		curCount++;
 	}
+#ifdef _DEBUG
 	else
 	{
 		engine->Con_NPrintf( 10, "Warning: overflowed CClientRenderablesList group %d", group );
 	}
+#endif
 }
 
 

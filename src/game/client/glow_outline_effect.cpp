@@ -25,7 +25,7 @@ extern bool g_bDumpRenderTargets; // in viewpostprocess.cpp
 
 CGlowObjectManager g_GlowObjectManager;
 
-void CGlowObjectManager::RenderGlowEffects( const CViewSetup *pSetup )
+void CGlowObjectManager::RenderGlowEffects( const CViewSetupEx *pSetup )
 {
 	if ( g_pMaterialSystemHardwareConfig->SupportsPixelShaders_2_0() )
 	{
@@ -53,7 +53,7 @@ static void SetRenderTargetAndViewPort( ITexture *rt, int w, int h )
 	pRenderContext->Viewport(0,0,w,h);
 }
 
-void CGlowObjectManager::RenderGlowModels( const CViewSetup *pSetup, CMatRenderContextPtr &pRenderContext )
+void CGlowObjectManager::RenderGlowModels( const CViewSetupEx *pSetup, CMatRenderContextPtr &pRenderContext )
 {
 	//==========================================================================================//
 	// This renders solid pixels with the correct coloring for each object that needs the glow.	//
@@ -161,7 +161,7 @@ void CGlowObjectManager::RenderGlowModels( const CViewSetup *pSetup, CMatRenderC
 	pRenderContext->PopRenderTargetAndViewport();
 }
 
-void CGlowObjectManager::ApplyEntityGlowEffects( const CViewSetup *pSetup, CMatRenderContextPtr &pRenderContext, float flBloomScale, int x, int y, int w, int h )
+void CGlowObjectManager::ApplyEntityGlowEffects( const CViewSetupEx *pSetup, CMatRenderContextPtr &pRenderContext, float flBloomScale, int x, int y, int w, int h )
 {
 	static bool s_bFirstPass = true;
 

@@ -30,7 +30,7 @@ CRR_Response::CRR_Response() : m_fMatchScore(0)
 	m_szResponseName[0] = 0;
 	m_szMatchingRule[0]=0;
 	m_szContext = NULL;
-	m_bApplyContextToWorld = false;
+	m_iContextFlags = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -42,7 +42,7 @@ CRR_Response::CRR_Response( const CRR_Response &from ) : m_fMatchScore(0)
 	memcpy( this, &from, sizeof(*this) );
 	m_szContext = NULL;
 	SetContext( from.m_szContext );
-	m_bApplyContextToWorld = from.m_bApplyContextToWorld;
+	m_iContextFlags = from.m_iContextFlags;
 }
 
 
@@ -54,7 +54,7 @@ CRR_Response &CRR_Response::operator=( const CRR_Response &from )
 	memcpy( this, &from, sizeof(*this) );
 	m_szContext = NULL;
 	SetContext( from.m_szContext );
-	m_bApplyContextToWorld = from.m_bApplyContextToWorld;
+	m_iContextFlags = from.m_iContextFlags;
 	return *this;
 }
 
@@ -104,7 +104,26 @@ void CRR_Response::Init( ResponseType_t type, const char *responseName, const Re
 	Q_strncpy( m_szMatchingRule, ruleName ? ruleName : "NULL", sizeof( m_szMatchingRule ) );
 	m_Params = responseparams;
 	SetContext( applyContext );
-	m_bApplyContextToWorld = bApplyContextToWorld;
+	if(bApplyContextToWorld)
+		m_iContextFlags = APPLYCONTEXT_WORLD;
+	else
+		m_iContextFlags = 0;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *response - 
+//			*criteria - 
+//-----------------------------------------------------------------------------
+void CRR_Response::Init( ResponseType_t type, const char *responseName, const ResponseParams& responseparams, const char *ruleName, const char *applyContext, int iContextFlags )
+{
+	m_Type = type;
+	Q_strncpy( m_szResponseName, responseName, sizeof( m_szResponseName ) );
+	// Copy underlying criteria
+	Q_strncpy( m_szMatchingRule, ruleName ? ruleName : "NULL", sizeof( m_szMatchingRule ) );
+	m_Params = responseparams;
+	SetContext( applyContext );
+	m_iContextFlags = iContextFlags;
 }
 
 //-----------------------------------------------------------------------------
@@ -127,7 +146,15 @@ void CRR_Response::Describe(  const CriteriaSet *pDebugCriteria )
 	}
 	if ( m_szContext )
 	{
-		DevMsg( "Contexts to set '%s' on %s, ", m_szContext, m_bApplyContextToWorld ? "world" : "speaker" );
+		DevMsg( 1, "Contexts to set '%s' on ", m_szContext );
+		if (m_iContextFlags & APPLYCONTEXT_WORLD)
+			DevMsg( 1, "world, " );
+		else if (m_iContextFlags & APPLYCONTEXT_SQUAD)
+			DevMsg( 1, "squad, " );
+		else if (m_iContextFlags & APPLYCONTEXT_ENEMY)
+			DevMsg( 1, "enemy, " );
+		else
+			DevMsg( 1, "speaker, " );
 	}
 
 	DevMsg( "response %s = '%s'\n", DescribeResponse( (ResponseType_t)m_Type ),  m_szResponseName );
@@ -151,6 +178,16 @@ void CRR_Response::GetResponse( char *buf, size_t buflen ) const
 {
 	GetName( buf, buflen );
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : char const
+//-----------------------------------------------------------------------------
+void CRR_Response::GetRule( char *buf, size_t buflen ) const
+{
+	Q_strncpy( buf, m_szMatchingRule, buflen );
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : type - 

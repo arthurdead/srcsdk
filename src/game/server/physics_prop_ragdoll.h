@@ -49,6 +49,7 @@ public:
 	virtual void SetupBones( matrix3x4_t *pBoneToWorld, int boneMask );
 	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics );
 	virtual int VPhysicsGetObjectList( IPhysicsObject **pList, int listMax );
+	int VPhysicsGetFlesh();
 
 	virtual int DrawDebugTextOverlays(void);
 
@@ -56,6 +57,7 @@ public:
 	virtual ResponseRules::IResponseSystem *GetResponseSystem();
 	virtual void ModifyOrAppendCriteria( AI_CriteriaSet& set );
 	void SetSourceClassName( const char *pClassname );
+	const char *GetSourceClassNameAsCStr() { return STRING( m_strSourceClassName ); }
 
 	// Physics attacker
 	virtual CBasePlayer *HasPhysicsAttacker( float dt );
@@ -102,6 +104,8 @@ public:
 	void			InputTurnOn( inputdata_t &inputdata );
 	void			InputTurnOff( inputdata_t &inputdata );
 	void			InputFadeAndRemove( inputdata_t &inputdata );
+	void			InputWake( inputdata_t &inputdata );
+	void			InputSleep( inputdata_t &inputdata );
 
 	DECLARE_MAPENTITY();
 

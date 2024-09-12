@@ -38,6 +38,8 @@ public:
 	void		 CheckSpawnThink( void );
 	void		 InputForceSpawn( inputdata_t &inputdata );
 	void		 InputForceSpawnAtEntityOrigin( inputdata_t &inputdata );
+	void		 InputForceSpawnAtEntityCenter( inputdata_t &inputdata );
+	void		 InputForceSpawnAtPosition( inputdata_t &inputdata );
 
 private:
 
@@ -62,6 +64,7 @@ private:
 
 	COutputEvent	m_pOutputOnSpawned;
 	COutputEvent	m_pOutputOnFailedSpawn;
+	COutputEHANDLE	m_pOutputOutEntity;
 };
 
 BEGIN_MAPENTITY( CEnvEntityMaker )
@@ -75,10 +78,13 @@ BEGIN_MAPENTITY( CEnvEntityMaker )
 	// Outputs
 	DEFINE_OUTPUT( m_pOutputOnSpawned, "OnEntitySpawned" ),
 	DEFINE_OUTPUT( m_pOutputOnFailedSpawn, "OnEntityFailedSpawn" ),
+	DEFINE_OUTPUT( m_pOutputOutEntity, "OutSpawnedEntity" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "ForceSpawn", InputForceSpawn ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "ForceSpawnAtEntityOrigin", InputForceSpawnAtEntityOrigin ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "ForceSpawnAtEntityCenter", InputForceSpawnAtEntityCenter ),
+	DEFINE_INPUTFUNC( FIELD_VECTOR, "ForceSpawnAtPosition", InputForceSpawnAtPosition ),
 
 END_MAPENTITY()
 
@@ -183,7 +189,7 @@ void CEnvEntityMaker::SpawnEntity( Vector vecAlternateOrigin, QAngle vecAlternat
 	m_pOutputOnSpawned.FireOutput( this, this );
 
 	// Start thinking
-	if ( m_spawnflags & SF_ENTMAKER_AUTOSPAWN )
+	if ( HasSpawnFlags( SF_ENTMAKER_AUTOSPAWN ) )
 	{
 		SetThink( &CEnvEntityMaker::CheckSpawnThink );
 		SetNextThink( gpGlobals->curtime + 0.5f );
@@ -195,6 +201,9 @@ void CEnvEntityMaker::SpawnEntity( Vector vecAlternateOrigin, QAngle vecAlternat
 		for ( int i = 0; i < hNewEntities.Count(); i++ )
 		{
 			CBaseEntity *pEntity = hNewEntities[i];
+
+			m_pOutputOutEntity.Set(pEntity, pEntity, this);
+
 			if ( pEntity->GetMoveType() == MOVETYPE_NONE )
 				continue;
 
@@ -230,6 +239,13 @@ void CEnvEntityMaker::SpawnEntity( Vector vecAlternateOrigin, QAngle vecAlternat
 			{
 				pEntity->SetAbsVelocity( vecShootDir );
 			}
+		}
+	}
+	else
+	{
+		for ( int i = 0; i < hNewEntities.Count(); i++ )
+		{
+			m_pOutputOutEntity.Set(hNewEntities[i], hNewEntities[i], this);
 		}
 	}
 
@@ -358,5 +374,29 @@ void CEnvEntityMaker::InputForceSpawnAtEntityOrigin( inputdata_t &inputdata )
 	if( pTargetEntity )
 	{
 		SpawnEntity( pTargetEntity->GetAbsOrigin(), pTargetEntity->GetAbsAngles() );
+	}
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CEnvEntityMaker::InputForceSpawnAtEntityCenter( inputdata_t &inputdata )
+{
+	CBaseEntity *pTargetEntity = gEntList.FindEntityByName( NULL, inputdata.value.String(), this, inputdata.pActivator, inputdata.pCaller );
+		
+	if( pTargetEntity )
+	{
+		SpawnEntity( pTargetEntity->WorldSpaceCenter(), pTargetEntity->GetAbsAngles() );
+	}
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CEnvEntityMaker::InputForceSpawnAtPosition(inputdata_t &inputdata)
+{
+	Vector vecPos;
+	inputdata.value.Vector3D(vecPos);
+	if (vecPos != vec3_origin && vecPos.IsValid())
+	{
+		SpawnEntity(vecPos, GetLocalAngles());
 	}
 }

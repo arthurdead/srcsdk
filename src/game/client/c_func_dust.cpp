@@ -88,7 +88,6 @@ void CDustEffect::RenderParticles( CParticleRenderIterator *pIterator )
 void CDustEffect::SimulateParticles( CParticleSimulateIterator *pIterator )
 {
 	Vector vecWind;
-	GetWindspeedAtTime( gpGlobals->curtime, vecWind );
 
 
 	CFuncDustParticle *pParticle = (CFuncDustParticle*)pIterator->GetFirst();
@@ -105,6 +104,8 @@ void CDustEffect::SimulateParticles( CParticleSimulateIterator *pIterator )
 			}
 			else
 			{
+				vecWind = GetWindspeedAtLocation( pParticle->m_Pos );
+
 				for ( int i = 0 ; i < 2 ; i++ )
 				{
 					if ( pParticle->m_vVelocity[i] < vecWind[i] )

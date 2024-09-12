@@ -25,6 +25,7 @@
 #include "groundlink.h"
 #include "irecipientfilter.h"
 #include "map_entity.h"
+#include "vphysics_interface.h"
 
 class CDamageModifier;
 class CDmgAccumulator;
@@ -447,6 +448,8 @@ public:
 	int				GetSoundSourceIndex() const;
 
 	void	SetFadeDistance( float minFadeDist, float maxFadeDist );
+	float							GetMinFadeDist( ) const;
+	float							GetMaxFadeDist( ) const;
 	void	SetGlobalFadeScale( float flFadeScale );
 	float	GetGlobalFadeScale() const;
 
@@ -485,6 +488,8 @@ public:
 	void ValidateEntityConnections();
 	void FireNamedOutput( const char *pszOutput, variant_t variant, CBaseEntity *pActivator, CBaseEntity *pCaller, float flDelay = 0.0f );
 	CBaseEntityOutput *FindNamedOutput( const char *pszOutput );
+	float GetMaxOutputDelay( const char *pszOutput );
+	//void CancelEventsByInput( const char *szInput );
 
 	// Activate - called for each entity after each load game and level load
 	virtual void Activate( void );
@@ -501,6 +506,7 @@ public:
 	CBaseEntity *NextMovePeer( void );
 
 	void		SetName( string_t newTarget );
+	void		SetNameAsCStr( const char *newTarget );
 	void		SetParent( string_t newParent, CBaseEntity *pActivator, int iAttachment = -1 );
 	
 	// Set the movement parent. Your local origin and angles will become relative to this parent.
@@ -536,6 +542,7 @@ private:
 public:
 	int			GetSpawnFlags( void ) const;
 	void		AddSpawnFlags( int nFlags );
+	void		SetSpawnFlags( int nFlags );
 	void		RemoveSpawnFlags( int nFlags );
 	void		ClearSpawnFlags( void );
 	bool		HasSpawnFlags( int nFlags ) const;
@@ -603,6 +610,67 @@ public:
 	void InputFireUser2( inputdata_t &inputdata );
 	void InputFireUser3( inputdata_t &inputdata );
 	void InputFireUser4( inputdata_t &inputdata );
+	void InputChangeVariable( inputdata_t &inputdata );
+
+	void InputPassUser1( inputdata_t &inputdata );
+	void InputPassUser2( inputdata_t &inputdata );
+	void InputPassUser3( inputdata_t &inputdata );
+	void InputPassUser4( inputdata_t &inputdata );
+
+	void InputFireRandomUser( inputdata_t &inputdata );
+	void InputPassRandomUser( inputdata_t &inputdata );
+
+	void InputSetEntityName( inputdata_t &inputdata );
+
+	virtual void InputSetTarget( inputdata_t &inputdata );
+	virtual void InputSetOwnerEntity( inputdata_t &inputdata );
+
+	virtual void InputAddHealth( inputdata_t &inputdata );
+	virtual void InputRemoveHealth( inputdata_t &inputdata );
+	virtual void InputSetHealth( inputdata_t &inputdata );
+
+	virtual void InputSetMaxHealth( inputdata_t &inputdata );
+
+	void InputFireOutput( inputdata_t &inputdata );
+	void InputRemoveOutput( inputdata_t &inputdata );
+	//virtual void InputCancelOutput( inputdata_t &inputdata ); // Find a way to implement this
+	void InputReplaceOutput( inputdata_t &inputdata );
+	void InputAcceptInput( inputdata_t &inputdata );
+	virtual void InputCancelPending( inputdata_t &inputdata );
+
+	void InputFreeChildren( inputdata_t &inputdata );
+
+	void InputSetLocalOrigin( inputdata_t &inputdata );
+	void InputSetLocalAngles( inputdata_t &inputdata );
+	void InputSetAbsOrigin( inputdata_t &inputdata );
+	void InputSetAbsAngles( inputdata_t &inputdata );
+	void InputSetLocalVelocity( inputdata_t &inputdata );
+	void InputSetLocalAngularVelocity( inputdata_t &inputdata );
+
+	void InputAddSpawnFlags( inputdata_t &inputdata );
+	void InputRemoveSpawnFlags( inputdata_t &inputdata );
+	void InputSetRenderMode( inputdata_t &inputdata );
+	void InputSetRenderFX( inputdata_t &inputdata );
+	void InputSetViewHideFlags( inputdata_t &inputdata );
+	void InputAddEffects( inputdata_t &inputdata );
+	void InputRemoveEffects( inputdata_t &inputdata );
+	void InputDrawEntity( inputdata_t &inputdata );
+	void InputUndrawEntity( inputdata_t &inputdata );
+	void InputAddEFlags( inputdata_t &inputdata );
+	void InputRemoveEFlags( inputdata_t &inputdata );
+	void InputAddSolidFlags( inputdata_t &inputdata );
+	void InputRemoveSolidFlags( inputdata_t &inputdata );
+	void InputSetMoveType( inputdata_t &inputdata );
+	void InputSetCollisionGroup( inputdata_t &inputdata );
+
+	void InputTouch( inputdata_t &inputdata );
+
+	virtual void InputKilledNPC( inputdata_t &inputdata );
+
+	void InputKillIfNotVisible( inputdata_t &inputdata );
+	void InputKillWhenNotVisible( inputdata_t &inputdata );
+
+	void InputSetThinkNull( inputdata_t &inputdata );
 
 	// Returns the origin at which to play an inputted dispatcheffect 
 	virtual void GetInputDispatchEffectPosition( const char *sInputString, Vector &pOrigin, QAngle &pAngles );
@@ -732,6 +800,19 @@ private:
 	CNetworkArray( int, m_nModelIndexOverrides, MAX_VISION_MODES ); // used to override the base model index on the client if necessary
 #endif
 
+public:
+	// Prevents this entity from drawing under certain view IDs. Each flag is (1 << the view ID to hide from).
+	// For example, hiding an entity from VIEW_MONITOR prevents it from showing up on RT camera monitors
+	// and hiding an entity from VIEW_MAIN just prevents it from showing up through the player's own "eyes".
+	// Doing this via flags allows for the entity to be hidden from multiple view IDs at the same time.
+	// 
+	// This was partly inspired by Underhell's keyvalue that allows entities to only render in mirrors and cameras.
+	CNetworkVar( int, m_iViewHideFlags );
+
+private:
+	// Disables receiving projected textures. Based on a keyvalue from later Source games.
+	CNetworkVar( bool, m_bDisableFlashlight );
+
 private:
 	// was pev->rendercolor
 	CNetworkColor32( m_clrRender );
@@ -794,6 +875,13 @@ public:
 	inline const ResponseContext_t	*GetContextData( int index ) const; // note: context may be expired
 	void		ClearAllContexts( void );
 
+	bool	HasContext( const char *name, const char *value ) const;
+	bool	HasContext( string_t name, string_t value ) const; // NOTE: string_t version only compares pointers!
+	bool	HasContext( const char *nameandvalue ) const;
+	const char *GetContextValue( const char *contextName ) const;
+	float	GetContextExpireTime( const char *name );
+	void	RemoveContext( const char *nameandvalue );
+
 
 protected:
 	CUtlVector< ResponseContext_t > m_ResponseContexts;
@@ -838,7 +926,10 @@ public:
 	// Call this to do a TraceAttack on an entity, performs filtering. Don't call TraceAttack() directly except when chaining up to base class
 	void			DispatchTraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator = NULL );
 	virtual bool	PassesDamageFilter( const CTakeDamageInfo &info );
-
+	// Special filter functions made for the "damage" family of filters, including filter_damage_transfer.
+	bool			PassesFinalDamageFilter( const CTakeDamageInfo &info );
+	bool			DamageFilterAllowsBlood( const CTakeDamageInfo &info );
+	bool			DamageFilterDamageMod( CTakeDamageInfo &info );
 
 protected:
 	virtual void	TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator = NULL );
@@ -863,7 +954,7 @@ public:
 	void SendOnKilledGameEvent( const CTakeDamageInfo &info );
 
 	// Notifier that I've killed some other entity. (called from Victim's Event_Killed).
-	virtual void	Event_KilledOther( CBaseEntity *pVictim, const CTakeDamageInfo &info ) { return; }
+	virtual void	Event_KilledOther( CBaseEntity *pVictim, const CTakeDamageInfo &info );
 
 	// UNDONE: Make this data?
 	virtual int				BloodColor( void );
@@ -997,6 +1088,8 @@ public:
 	void					SUB_CallUseToggle( void ) { this->Use( this, this, USE_TOGGLE, 0 ); }
 	void					SUB_PerformFadeOut( void );
 	virtual	bool			SUB_AllowedToFade( void );
+	// For KillWhenNotVisible
+	void					SUB_RemoveWhenNotVisible( void );
 
 	// change position, velocity, orientation instantly
 	// passing NULL means no change
@@ -1073,6 +1166,7 @@ public:
 	// needs to be done in a second pass because we may have multiple overrids for
 	// a context before it all settles out.
 	virtual void	ModifyOrAppendDerivedCriteria( AI_CriteriaSet& set ) {};
+	void			ReAppendContextCriteria( AI_CriteriaSet& set );
 
 private:
 	friend class CAI_Senses;
@@ -1119,6 +1213,18 @@ public:
 	virtual int		GetDamageType() const;
 	virtual float	GetDamage() { return 0; }
 	virtual void	SetDamage(float flDamage) {}
+
+	// Some entities want to use interactions regardless of whether they're a CBaseCombatCharacter.
+	// Valve ran into this issue with frag grenades when they started deriving from CBaseAnimating instead of CBaseCombatCharacter,
+	// preventing them from using the barnacle interactions for rigged grenade timing so it's guaranteed to blow up in the barnacle's face.
+	// We're used to unaltered behavior now, so we're not restoring that as default, but making this a "base entity" thing is supposed to help in situtions like those.
+	// 
+	// Also, keep in mind pretty much all existing DispatchInteraction() calls are only performed on CBaseCombatCharacters.
+	// You'll need to change their code manually if you want other, non-character entities to use the interaction.
+	bool				DispatchInteraction( int interactionType, void *data, CBaseCombatCharacter* sourceEnt );
+
+	// Do not call HandleInteraction directly, use DispatchInteraction
+	virtual bool		HandleInteraction( int interactionType, void *data, CBaseCombatCharacter* sourceEnt ) { return false; }
 
 	virtual Vector	EyePosition( void );			// position of eyes
 	virtual const QAngle &EyeAngles( void );		// Direction of eyes in world space
@@ -1176,6 +1282,9 @@ public:
 
 	// Mechanism for overriding friction for a short duration
 	void			OverrideFriction( float duration, float friction );
+
+	void			SetMass(float mass);
+	float			GetMass();
 
 	virtual	bool FVisible ( CBaseEntity *pEntity, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
 	virtual bool FVisible( const Vector &vecTarget, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
@@ -1307,6 +1416,11 @@ public:
 
 	virtual void ModifyEmitSoundParams( EmitSound_t &params );
 
+	// Same as above, but for sentences
+	// (which don't actually have EmitSound_t params)
+	virtual void ModifySentenceParams( int &iSentenceIndex, int &iChannel, float &flVolume, soundlevel_t &iSoundlevel, int &iFlags, int &iPitch,
+		const Vector **pOrigin, const Vector **pDirection, bool &bUpdatePositions, float &soundtime, int &iSpecialDSP, int &iSpeakerIndex );
+
 	static float GetSoundDuration( const char *soundname, char const *actormodel );
 
 	static bool	GetParametersForSound( const char *soundname, CSoundParameters &params, char const *actormodel );
@@ -1335,7 +1449,9 @@ public:
 	static void EmitCloseCaption( IRecipientFilter& filter, int entindex, char const *token, CUtlVector< Vector >& soundorigins, float duration, bool warnifmissing = false );
 	static void	EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, int iChannel, int iSentenceIndex, 
 		float flVolume, soundlevel_t iSoundlevel, int iFlags = 0, int iPitch = PITCH_NORM,
-		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, bool bUpdatePositions = true, float soundtime = 0.0f );
+		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, bool bUpdatePositions = true, float soundtime = 0.0f
+		, int iSpecialDSP = 0, int iSpeakerIndex = -1 // Needed for env_microphone
+		 );
 
 	static bool IsPrecacheAllowed();
 	static void SetAllowPrecache( bool allow );
@@ -1564,6 +1680,7 @@ protected:
 	// Which frame did I simulate?
 	int						m_nSimulationTick;
 
+protected:
 	// FIXME: Make this private! Still too many references to do so...
 	CNetworkVar( int, m_spawnflags );
 
@@ -1684,6 +1801,10 @@ public:
 
 private:
 	// User outputs. Fired when the "FireInputX" input is triggered.
+	COutputVariant m_OutUser1;
+	COutputVariant m_OutUser2;
+	COutputVariant m_OutUser3;
+	COutputVariant m_OutUser4;
 	COutputEvent m_OnUser1;
 	COutputEvent m_OnUser2;
 	COutputEvent m_OnUser3;
@@ -1982,6 +2103,10 @@ inline void CBaseEntity::SetName( string_t newName )
 	m_iName = newName;
 }
 
+inline void CBaseEntity::SetNameAsCStr( const char *newName )
+{
+	m_iName = AllocPooledString(newName);
+}
 
 inline bool CBaseEntity::NameMatches( const char *pszNameOrWildcard )
 {
@@ -2051,6 +2176,10 @@ inline void CBaseEntity::AddSpawnFlags( int nFlags )
 inline void CBaseEntity::RemoveSpawnFlags( int nFlags ) 
 { 
 	m_spawnflags &= ~nFlags; 
+}
+inline void CBaseEntity::SetSpawnFlags( int nFlags ) 
+{ 
+	m_spawnflags = nFlags; 
 }
 
 inline void CBaseEntity::ClearSpawnFlags( void ) 
@@ -2216,7 +2345,34 @@ inline const QAngle& CBaseEntity::GetAbsAngles( void ) const
 	return m_angAbsRotation;
 }
 
+inline float CBaseEntity::GetMass()
+{
+	IPhysicsObject *vPhys = VPhysicsGetObject();
+	if (vPhys)
+	{
+		return vPhys->GetMass();
+	}
+	else
+	{
+		Warning("Tried to call GetMass() on %s but it has no physics.\n", GetDebugName());
+		return 0;
+	}
+}
 
+inline void CBaseEntity::SetMass(float mass)
+{
+	mass = clamp(mass, VPHYSICS_MIN_MASS, VPHYSICS_MAX_MASS);
+
+	IPhysicsObject *vPhys = VPhysicsGetObject();
+	if (vPhys)
+	{
+		vPhys->SetMass(mass);
+	}
+	else
+	{
+		Warning("Tried to call SetMass() on %s but it has no physics.\n", GetDebugName());
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Returns the entity-to-world transform

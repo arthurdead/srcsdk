@@ -48,6 +48,7 @@ protected:
 	int		m_iCachedDesiredOverlay;
 	int		m_iCurrentOverlay;
 	float	m_flCurrentOverlayTime;
+	int	m_iOverlayIndex;
 };
 
 IMPLEMENT_CLIENTCLASS_DT( C_EnvScreenOverlay, DT_EnvScreenOverlay, CEnvScreenOverlay )
@@ -56,6 +57,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_EnvScreenOverlay, DT_EnvScreenOverlay, CEnvScreenOve
 	RecvPropFloat( RECVINFO( m_flStartTime ) ),
 	RecvPropInt( RECVINFO( m_iDesiredOverlay ) ),
 	RecvPropBool( RECVINFO( m_bIsActive ) ),
+	RecvPropInt( RECVINFO( m_iOverlayIndex ) ),
 END_RECV_TABLE()
 
 //-----------------------------------------------------------------------------
@@ -77,7 +79,7 @@ void C_EnvScreenOverlay::PostDataUpdate( DataUpdateType_t updateType )
 	BaseClass::PostDataUpdate( updateType );
 
 	// If we have a start time now, start the overlays going
-	if ( m_bIsActive && m_flStartTime > 0 && GetViewRenderInstance()->GetScreenOverlayMaterial() == NULL )
+	if ( m_bIsActive && m_flStartTime > 0 && (GetViewRenderInstance()->GetScreenOverlayMaterial() == NULL || (m_iOverlayIndex != -1 && GetViewRenderInstance()->GetIndexedScreenOverlayMaterial(m_iOverlayIndex) == NULL)) )
 	{
 		StartOverlays();
 	}
@@ -111,7 +113,12 @@ void C_EnvScreenOverlay::StopOverlays( void )
 
 	if ( m_bWasActive && !m_bIsActive )
 	{
-		GetViewRenderInstance()->SetScreenOverlayMaterial( NULL );
+		if (m_iOverlayIndex != -1)
+		{
+			GetViewRenderInstance()->SetIndexedScreenOverlayMaterial( m_iOverlayIndex, NULL );
+		}
+		else
+			GetViewRenderInstance()->SetScreenOverlayMaterial( NULL );
 	}
 }
 
@@ -163,7 +170,12 @@ void C_EnvScreenOverlay::StartCurrentOverlay( void )
 	IMaterial *pMaterial = materials->FindMaterial( m_iszOverlayNames[m_iCurrentOverlay], TEXTURE_GROUP_CLIENT_EFFECTS, false );
 	if ( !IsErrorMaterial( pMaterial ) )
 	{
-		GetViewRenderInstance()->SetScreenOverlayMaterial( pMaterial );
+		if (m_iOverlayIndex != -1)
+		{
+			GetViewRenderInstance()->SetIndexedScreenOverlayMaterial( m_iOverlayIndex, pMaterial );
+		}
+		else
+			GetViewRenderInstance()->SetScreenOverlayMaterial( pMaterial );
 	}
 	else
 	{

@@ -167,6 +167,8 @@ public:
 	CNetworkVar( int, m_windRadius );		// the radius this entity affects with its windiness, so a map can have multiple
 	CNetworkVar( int, m_iMinGust );			// the slowest that a gust can be
 	CNetworkVar( int, m_iMaxGust );			// the fastest that a gust can be
+	CNetworkVar( float, m_windRadiusInner );		// the inner-radius for noticable distance fading
+
 
 	CNetworkVar( float, m_flMinGustDelay );	// min time between gusts
 	CNetworkVar( float, m_flMaxGustDelay );	// max time between gusts
@@ -182,6 +184,8 @@ public:
 	Vector m_currentWindVector;	// For all the talk of proper prediction, we ended up just storing and returning through a static vector.  Now we can have multiple env_wind, so we need this in here.
 	Vector m_CurrentSwayVector;
 	Vector m_PrevSwayVector;
+
+	CNetworkVar( float, m_flTreeSwayScale );
 
 	CNetworkVar( int, m_iInitialWindDir );
 	CNetworkVar( float, m_flInitialWindSpeed );
@@ -200,11 +204,13 @@ public:
 		m_windRadius = other.m_windRadius;
 		m_iMinGust = other.m_iMinGust;
 		m_iMaxGust = other.m_iMaxGust;
+		m_windRadiusInner = other.m_windRadiusInner;
 		m_flMinGustDelay = other.m_flMinGustDelay;
 		m_flMaxGustDelay = other.m_flMaxGustDelay;
 		m_flGustDuration = other.m_flGustDuration;
 		m_iGustDirChange = other.m_iGustDirChange;
 		m_location = other.m_location;
+		m_flTreeSwayScale = other.m_flTreeSwayScale;
 		m_iInitialWindDir = other.m_iInitialWindDir;
 		m_flInitialWindSpeed = other.m_flInitialWindSpeed;
 
@@ -274,12 +280,6 @@ inline void CEnvWindShared::SetLocation( const Vector &location )
 // Method to sample the wind speed at a particular location
 //-----------------------------------------------------------------------------
 Vector GetWindspeedAtLocation( const Vector &location );
-
-//-----------------------------------------------------------------------------
-// Method to sample the windspeed at a particular time
-//-----------------------------------------------------------------------------
-void GetWindspeedAtTime( float flTime, Vector &vecVelocity );
-
 
 //-----------------------------------------------------------------------------
 // Method to reset windspeed..

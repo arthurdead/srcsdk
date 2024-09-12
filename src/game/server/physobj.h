@@ -35,6 +35,7 @@
 #define SF_PHYSBOX_NEVER_PICK_UP			0x200000		// Physcannon will never be able to pick this up.
 #define SF_PHYSBOX_NEVER_PUNT				0x400000		// Physcannon will never be able to punt this object.
 #define SF_PHYSBOX_PREVENT_PLAYER_TOUCH_ENABLE 0x800000		// If set, the player will not cause the object to enable its motion when bumped into
+#define SF_PHYSBOX_RADIUS_PICKUP			0x1000000		// Allows this object to be picked up in a radius, useful for smaller objects. Based on the prop_physics input
 
 // UNDONE: Hook collisions into the physics system to generate touch functions and take damage on falls
 // UNDONE: Base class PhysBrush
@@ -76,6 +77,7 @@ public:
 	void InputDisableMotion( inputdata_t &inputdata );
 	void InputForceDrop( inputdata_t &inputdata );
 	void InputDisableFloating( inputdata_t &inputdata );
+	void InputSetDebris( inputdata_t &inputdata );
 
 	DECLARE_MAPENTITY();
 	
@@ -121,6 +123,7 @@ public:
 
 	// Input handlers
 	void InputExplode( inputdata_t &inputdata );
+	void InputExplodeAndRemove( inputdata_t &inputdata );
 
 	DECLARE_MAPENTITY();
 private:
@@ -188,6 +191,7 @@ public:
 	void	VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );
 	void	DoMagnetSuck( CBaseEntity *pOther );
 	void	SetConstraintGroup( IPhysicsConstraintGroup *pGroup );
+	bool	CanBePickedUpByPhyscannon( void );
 
 	bool	IsOn( void ) { return m_bActive; }
 	int		GetNumAttachedObjects( void );

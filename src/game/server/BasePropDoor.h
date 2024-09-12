@@ -76,6 +76,10 @@ public:
 	virtual float GetOpenInterval(void) = 0;
 	// }
 
+	virtual bool PassesDoorFilter(CBaseEntity *pEntity) { return true; }
+
+	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+
 	enum DoorExtent_t
 	{
 		DOOR_EXTENT_OPEN = 1,
@@ -106,6 +110,10 @@ protected:
 	CUtlVector< CHandle< CBasePropDoor > >	m_hDoorList;	// List of doors linked to us
 
 	inline CBaseEntity *GetActivator();
+
+	inline float GetNPCOpenDistance() { return m_flNPCOpenDistance; }
+	inline Activity GetNPCOpenFrontActivity() { return m_eNPCOpenFrontActivity; }
+	inline Activity GetNPCOpenBackActivity() { return m_eNPCOpenBackActivity; }
 
 protected:
 
@@ -172,6 +180,8 @@ private:
 	void InputOpenAwayFrom(inputdata_t &inputdata);
 	void InputToggle(inputdata_t &inputdata);
 	void InputUnlock(inputdata_t &inputdata);
+	void InputAllowPlayerUse(inputdata_t &inputdata);
+	void InputDisallowPlayerUse(inputdata_t &inputdata);
 
 	void SetDoorBlocker( CBaseEntity *pBlocker );
 
@@ -196,6 +206,10 @@ private:
 	string_t m_SoundMoving;
 	string_t m_SoundOpen;
 	string_t m_SoundClose;
+
+	float	m_flNPCOpenDistance;
+	Activity	m_eNPCOpenFrontActivity;
+	Activity	m_eNPCOpenBackActivity;
 
 	int m_nPhysicsMaterial;
 

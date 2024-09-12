@@ -84,6 +84,7 @@ public:
 
 	Ammo_t				*GetAmmoOfIndex(int nAmmoIndex);
 	int					Index(const char *psz);
+	const char*			Name(int nAmmoIndex);
 	int					PlrDamage(int nAmmoIndex);
 	int					NPCDamage(int nAmmoIndex);
 	int					MaxCarry(int nAmmoIndex, const CBaseCombatCharacter *owner);
@@ -99,6 +100,7 @@ public:
 	void				AddAmmoType(char const* name, int damageType, int tracerType, char const* plr_cvar, char const* npc_var, char const* carry_cvar, float physicsForceImpulse, int nFlags, int minSplashSize = 4, int maxSplashSize = 8 );
 
 	int					NumAmmoTypes() { return m_nAmmoIndex; }
+	int					GetNumAmmoTypes() { return m_nAmmoIndex; }
 
 	CAmmoDef(void);
 	virtual ~CAmmoDef( void );

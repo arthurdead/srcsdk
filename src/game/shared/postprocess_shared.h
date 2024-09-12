@@ -35,6 +35,17 @@ struct PostProcessParameters_t
 		m_flParameters[ PPPN_VIGNETTE_END ] = 1.1f;
 	}
 
+	bool operator !=(PostProcessParameters_t other)
+    {
+        for (int i = 0; i < POST_PROCESS_PARAMETER_COUNT; ++i)
+        {
+            if (m_flParameters[i] != other.m_flParameters[i])
+                return true;
+        }
+
+        return false;
+    }
+
 	float m_flParameters[ POST_PROCESS_PARAMETER_COUNT ];
 };
 

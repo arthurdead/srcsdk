@@ -294,6 +294,8 @@ public:
 	void					HideViewModels( void );
 	void					DestroyViewModels( void );
 
+	virtual void			CreateHandModel( int viewmodelindex = 1, int iOtherVm = 0 );
+
 	CPlayerState			*PlayerData( void ) { return &pl; }
 	
 	int						RequiredEdictIndex( void );
@@ -317,6 +319,9 @@ public:
 	virtual void			Activate( void );
 	virtual void			SharedSpawn(); // Shared between client and server.
 	virtual void			ForceRespawn( void );
+
+	// For the logic_playerproxy output
+	virtual void			SpawnedAtPoint( CBaseEntity *pSpawnPoint ) {}
 
 	virtual void			InitialSpawn( void );
 	virtual void			InitHUD( void ) {}
@@ -414,6 +419,13 @@ public:
 	void					ShowViewModel( bool bShow );
 	void					ShowCrosshair( bool bShow );
 
+	int						GetButtons() { return m_nButtons; }
+	int						GetButtonPressed() { return m_afButtonPressed; }
+	int						GetButtonReleased() { return m_afButtonReleased; }
+	int						GetButtonLast() { return m_afButtonLast; }
+	int						GetButtonDisabled() { return m_afButtonDisabled; }
+	int						GetButtonForced() { return m_afButtonForced; }
+
 	// View model prediction setup
 	void					CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, float &zFar, float &fov );
 
@@ -444,6 +456,7 @@ public:
 	void					Weapon_DropSlot( int weaponSlot );
 	CBaseCombatWeapon		*GetLastWeapon( void ) { return m_hLastWeapon.Get(); }
 	CBaseCombatWeapon		*Weapon_GetLast( void ) { return m_hLastWeapon.Get(); }
+	virtual Activity		Weapon_TranslateActivity( Activity baseAct, bool *pRequired = NULL );
 
 	virtual void			OnMyWeaponFired( CBaseCombatWeapon *weapon );	// call this when this player fires a weapon to allow other systems to react
 	virtual float			GetTimeSinceWeaponFired( void ) const;			// returns the time, in seconds, since this player fired a weapon
@@ -588,7 +601,7 @@ public:
 	virtual float			GetHeldObjectMass( IPhysicsObject *pHeldObject );
 	virtual CBaseEntity		*GetHeldObject( void );
 
-	void					CheckSuitUpdate();
+	virtual void					CheckSuitUpdate();
 	void					SetSuitUpdate(const char *name, int fgroup, int iNoRepeat);
 	virtual void			UpdateGeigerCounter( void );
 	void					CheckTimeBasedDamage( void );
@@ -604,6 +617,9 @@ public:
 	QAngle					AutoaimDeflection( Vector &vecSrc, autoaim_params_t &params );
 	virtual bool			ShouldAutoaim( void );
 	void					SetTargetInfo( Vector &vecSrc, float flDist );
+
+	// Tries to figure out what the player is trying to aim at
+	CBaseEntity				*GetProbableAimTarget( const Vector &vecSrc, const Vector &vecDir );
 
 	void					SetViewEntity( CBaseEntity *pEntity );
 	CBaseEntity				*GetViewEntity( void ) { return m_hViewEntity.Get(); }
@@ -638,7 +654,9 @@ public:
 	audioparams_t			&GetAudioParams() { return m_Local.m_audio; }
 	tonemap_params_t		&GetToneMapParams() { return m_Local.m_TonemapParams; }
 
-	virtual void 			ModifyOrAppendPlayerCriteria( AI_CriteriaSet& set );
+	virtual void 			ModifyOrAppendPlayerCriteria( AI_CriteriaSet& set, bool indexed = false );
+
+	static void 			ModifyOrAppendPlayersCriteria( AI_CriteriaSet& set );
 
 	const QAngle& GetPunchAngle();
 	void SetPunchAngle( const QAngle &punchAngle );
@@ -660,6 +678,8 @@ public:
 	}
 
 	virtual bool			ShouldAnnounceAchievement( void );
+
+	bool					ShouldUseVisibilityCache( CBaseEntity *pEntity );
 
 public:
 	// Player Physics Shadow
@@ -704,7 +724,7 @@ public:
 	bool	IsConnected() const		{ return m_iConnected != PlayerDisconnected; }
 	bool	IsDisconnecting() const	{ return m_iConnected == PlayerDisconnecting; }
 	bool	IsSuitEquipped() const	{ return m_Local.m_bWearingSuit; }
-	int		ArmorValue() const		{ return m_iArmor; }
+	virtual int		ArmorValue() const		{ return m_iArmor; }
 	bool	HUDNeedsRestart() const { return m_fInitHUD; }
 	float	MaxSpeed() const		{ return m_flMaxspeed; }
 	bool	IsPlayerLockedInPlace() const { return m_iPlayerLocked != 0; }
@@ -812,6 +832,7 @@ public:
 	void	InputSetHealth( inputdata_t &inputdata );
 	void	InputSetHUDVisibility( inputdata_t &inputdata );
 	void	InputHandleMapEvent( inputdata_t &inputdata );
+	void	InputSetSuppressAttacks( inputdata_t &inputdata );
 
 	surfacedata_t *GetSurfaceData( void ) { return m_pSurfaceData; }
 	void SetLadderNormal( Vector vecLadderNormal ) { m_vecLadderNormal = vecLadderNormal; }
@@ -946,6 +967,9 @@ public:
 private:
 
 	float					m_flLastObjectiveTime;				// Last curtime player touched/killed something the gamemode considers an objective
+
+public:
+	CNetworkVar( bool, m_bInTriggerFall );
 
 protected:
 
@@ -1152,6 +1176,9 @@ public:
 	float					m_flSideMove;
 	int						m_nNumCrateHudHints;
 
+	bool					GetDrawPlayerModelExternally( void ) { return m_bDrawPlayerModelExternally; }
+	void					SetDrawPlayerModelExternally( bool bToggle ) { m_bDrawPlayerModelExternally.Set( bToggle ); }
+
 private:
 
 	// Used in test code to teleport the player to random locations in the map.
@@ -1212,6 +1239,8 @@ protected:
 	int		m_nBodyPitchPoseParam;
 
 	CNetworkString( m_szLastPlaceName, MAX_PLACE_NAME_LENGTH );
+
+	CNetworkVar( bool, m_bDrawPlayerModelExternally );
 
 	char m_szNetworkIDString[MAX_NETWORKID_LENGTH];
 	CPlayerInfo m_PlayerInfo;

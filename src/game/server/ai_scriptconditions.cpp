@@ -49,6 +49,7 @@ BEGIN_MAPENTITY( CAI_ScriptConditions )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
+	DEFINE_INPUTFUNC( FIELD_EHANDLE, "SatisfyConditions", InputSatisfyConditions ),
 
 	//---------------------------------
 
@@ -139,12 +140,16 @@ bool CAI_ScriptConditions::EvalState( const EvalArgs_t &args )
 			-1, // NPC_STATE_PLAYDEAD
 			-1, // NPC_STATE_PRONE
 			-1, // NPC_STATE_DEAD
+			3, // A "Don't care" for the maximum value
 	};
 
 	int valState = stateVals[pNpc->m_NPCState];
 
 	if ( valState < 0 )
 	{
+		if (m_fMinState == 0)
+			return true;
+
 		if ( pNpc->m_NPCState == NPC_STATE_SCRIPT && m_fScriptStatus >= TRS_TRUE )
 			return true;
 
@@ -615,6 +620,23 @@ void CAI_ScriptConditions::InputDisable( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 
+void CAI_ScriptConditions::InputSatisfyConditions( inputdata_t &inputdata )
+{
+	// This satisfies things.
+	CBaseEntity *pActivator = HasSpawnFlags(SF_ACTOR_AS_ACTIVATOR) ? inputdata.value.Entity() : this;
+	m_OnConditionsSatisfied.FireOutput(pActivator, this);
+
+
+	//All done!
+	if ( m_ElementList.Count() == 1 )
+	{
+		Disable();
+		m_ElementList.Purge();
+	}
+}
+
+//-----------------------------------------------------------------------------
+
 bool CAI_ScriptConditions::IsInFOV( CBaseEntity *pViewer, CBaseEntity *pViewed, float fov, bool bTrueCone )
 {
 	CBaseCombatCharacter *pCombatantViewer = (pViewer) ? pViewer->MyCombatCharacterPointer() : NULL;
@@ -769,6 +791,9 @@ void CAI_ScriptConditions::OnEntitySpawned( CBaseEntity *pEntity )
 
 	if ( pEntity->MyNPCPointer() == NULL )
 		 return;
+
+	if ( m_Actor == NULL_STRING )
+		return;
 
 	if ( pEntity->NameMatches( m_Actor ) )
 	{

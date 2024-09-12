@@ -119,6 +119,11 @@ public:
 	virtual void		WriteReplayScreenshot( WriteReplayScreenshotParams_t &params ) = 0;
 	virtual void		UpdateReplayScreenshotCache() = 0;
 
+	virtual void		SetIndexedScreenOverlayMaterial( int i, IMaterial *pMaterial ) = 0;
+	virtual IMaterial	*GetIndexedScreenOverlayMaterial( int i ) = 0;
+	virtual void		ResetIndexedScreenOverlays() = 0;
+	virtual int			GetMaxIndexedScreenOverlays() const = 0;
+
 	// Draws another rendering over the top of the screen
 	virtual void		QueueOverlayRenderView( const CViewSetupEx &view, int nClearFlags, int whatToDraw ) = 0;
 

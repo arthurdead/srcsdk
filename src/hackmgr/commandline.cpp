@@ -8,4 +8,7 @@ HACKMGR_EXECUTE_ON_LOAD_BEGIN(0)
 
 CommandLine()->AppendParm("-nop4", "");
 
+CommandLine()->RemoveParm("+r_hunkalloclightmaps");
+CommandLine()->AppendParm("+r_hunkalloclightmaps", "0");
+
 HACKMGR_EXECUTE_ON_LOAD_END

@@ -24,6 +24,9 @@
 #include "characterset.h"
 #include "responserules/response_host_interface.h"
 #include "../../responserules/runtime/response_types_internal.h"
+#ifdef GAME_DLL
+#include "env_debughistory.h"
+#endif
 
 #include "scenefilecache/ISceneFileCache.h"
 
@@ -35,6 +38,12 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+#if defined CLIENT_DLL || (defined GAME_DLL && defined DISABLE_DEBUG_HISTORY)
+#define LocalScene_Printf Scene_Printf
+#else
+extern void LocalScene_Printf( const char *pFormat, ... );
+#endif
 
 using namespace ResponseRules;
 
@@ -136,6 +145,88 @@ skipwhite:
 	return data;
 }
 
+// A version of the above which preserves casing and supports escaped quotes
+inline const char *RR_Parse_Preserve(const char *data, char *token )
+{
+	unsigned char    c;
+	int             len;
+	characterset_t	*breaks = &g_BreakSetIncludingColons;
+	len = 0;
+	token[0] = 0;
+
+	if (!data)
+		return NULL;
+
+	// skip whitespace
+skipwhite:
+	while ( (c = *data) <= ' ')
+	{
+		if (c == 0)
+			return NULL;                    // end of file;
+		data++;
+	}
+
+	// skip // comments
+	if (c=='/' && data[1] == '/')
+	{
+		while (*data && *data != '\n')
+			data++;
+		goto skipwhite;
+	}
+
+	// handle quoted strings specially
+	if (c == '\"')
+	{
+		bool escaped = false;
+		data++;
+		while (1)
+		{
+			c = *data++;
+			if ((c=='\"' && !escaped) || !c)
+			{
+				token[len] = 0;
+				return data;
+			}
+			else if (c != '\"' && escaped)
+			{
+				// Not an escape character, just a back slash
+				token[len] = '\\';
+				len++;
+			}
+
+			escaped = (c == '\\');
+			if (!escaped)
+			{
+				token[len] = c;
+				len++;
+			}
+		}
+	}
+
+	// parse single characters
+	if ( IN_CHARACTERSET( *breaks, c ) )
+	{
+		token[len] = c;
+		len++;
+		token[len] = 0;
+		return data+1;
+	}
+
+	// parse a regular word
+	do
+	{
+		token[len] = c;
+		data++;
+		len++;
+		c = *data;
+		if ( IN_CHARACTERSET( *breaks, c ) )
+			break;
+	} while (c>32);
+
+	token[len] = 0;
+	return data;
+}
+
 namespace ResponseRules
 {
 	extern const char *ResponseCopyString( const char *in );
@@ -150,6 +241,13 @@ class CResponseRulesToEngineInterface : public ResponseRules::IEngineEmulator
 	{
 		NOTE_UNUSED( maxlen );
 		return RR_Parse( data, token );
+	}
+
+	/// (Optional) Same as ParseFile, but with casing preserved and escaped quotes supported
+	virtual const char			*ParseFilePreserve( const char *data, char *token, int maxlen ) 
+	{
+		NOTE_UNUSED( maxlen );
+		return RR_Parse_Preserve( data, token );
 	}
 
 	/// Return a pointer to an IFileSystem we can use to read and process scripts.
@@ -253,6 +351,18 @@ private:
 };
 
 static CScenePrecacheSystem g_ScenePrecacheSystem;
+
+extern void PrecacheChoreoScene( CChoreoScene *scene );
+extern void FreeSceneFileMemory( void *buffer );
+
+class IChoreoEventCallback;
+
+extern CChoreoScene *ChoreoLoadScene( 
+	char const *filename,
+	IChoreoEventCallback *callback, 
+	ISceneTokenProcessor *tokenizer,
+	void ( *pfn ) ( PRINTF_FORMAT_STRING const char *fmt, ... ) );
+
 //-----------------------------------------------------------------------------
 // Purpose: Used for precaching instanced scenes
 // Input  : *pszScene - 
@@ -284,6 +394,27 @@ void PrecacheInstancedScene( char const *pszScene )
 			short stringId = scenefilecache->GetSceneCachedSound( sceneData.sceneId, i );
 			CBaseEntity::PrecacheScriptSound( scenefilecache->GetSceneString( stringId ) );
 		}
+	}
+	else
+	{
+		char loadfile[MAX_PATH];
+		Q_strncpy( loadfile, pszScene, sizeof( loadfile ) );
+		Q_SetExtension( loadfile, ".vcd", sizeof( loadfile ) );
+		Q_FixSlashes( loadfile );
+
+		// Attempt to precache manually
+		void *pBuffer = NULL;
+		if (filesystem->ReadFileEx( loadfile, "MOD", &pBuffer, true ))
+		{
+			g_TokenProcessor.SetBuffer((char*)pBuffer);
+			CChoreoScene *pScene = ChoreoLoadScene( loadfile, NULL, &g_TokenProcessor, LocalScene_Printf );
+			if (pScene)
+			{
+				PrecacheChoreoScene(pScene);
+			}
+			g_TokenProcessor.SetBuffer(NULL);
+		}
+		FreeSceneFileMemory( pBuffer );
 	}
 
 #ifdef GAME_DLL
@@ -404,6 +535,9 @@ public:
 
 	  virtual void LevelInitPostEntity()
 	  {
+	  #ifdef GAME_DLL
+	  	if(gpGlobals->eLoadType != MapLoad_Transition)
+	  #endif
 		  ResetResponseGroups();
 	  }
 
@@ -440,6 +574,14 @@ public:
 
 	virtual void LevelInitPostEntity()
 	{
+		// CInstancedResponseSystem is not a CAutoGameSystem, so this needs to be called manually.
+		// The same could've been accomplished by making CInstancedResponseSystem derive from CAutoGameSystem,
+		// but their instanced nature would've complicated things a lot.
+		int c = m_InstancedSystems.Count();
+		for ( int i = c - 1 ; i >= 0; i-- )
+		{
+			m_InstancedSystems[i]->LevelInitPostEntity();
+		}
 	}
 
 	virtual void Release()
@@ -501,7 +643,10 @@ public:
 			Precache();
 		}
 
-		ResetResponseGroups();
+	#ifdef GAME_DLL
+		if(gpGlobals->eLoadType != MapLoad_Transition)
+	#endif
+			ResetResponseGroups();
 	}
 
 	void ReloadAllResponseSystems()
@@ -615,6 +760,277 @@ CON_COMMAND( rr_reloadresponsesystems, "Reload all response system scripts." )
 	defaultresponsesytem.ReloadAllResponseSystems();
 }
 
+// Designed for extern magic, this gives the <, >, etc. of response system criteria to the outside world.
+// Mostly just used for Matcher_Match in matchers.h.
+bool ResponseSystemCompare( const char *criterion, const char *value )
+{
+	Criteria criteria;
+	criteria.value = criterion;
+	defaultresponsesytem.ComputeMatcher( &criteria, criteria.matcher );
+	return defaultresponsesytem.CompareUsingMatcher( value, criteria.matcher, true );
+
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// CResponseFilePrecacher
+//
+// Purpose: Precaches a single talker file. That's it.
+// 
+// It copies from a bunch of the original Response System class and therefore it's really messy.
+// Despite the horrors a normal programmer might find in here, I think it performs better than anything else I could've come up with.
+//-----------------------------------------------------------------------------
+/*
+class CResponseFilePrecacher
+{
+public:
+
+	// Stuff copied from the Response System.
+	// Direct copy-pastes are very compact, to say the least.
+	inline bool ParseToken( void )
+	{
+		if ( m_bUnget )
+		{ m_bUnget = false; return true; }
+		if ( m_ScriptStack.Count() <= 0 )
+		{ return false; }
+
+		m_ScriptStack[ 0 ].currenttoken = engine->ParseFile( m_ScriptStack[ 0 ].currenttoken, token, sizeof( token ) );
+		m_ScriptStack[ 0 ].tokencount++;
+		return m_ScriptStack[ 0 ].currenttoken != NULL ? true : false;
+	}
+
+	CUtlVector< CResponseSystem::ScriptEntry >		m_ScriptStack;
+	bool m_bUnget;
+	char		token[ 1204 ];
+
+
+	void PrecacheResponse( const char *response, byte type )
+	{
+		switch ( type )
+		{
+		default:
+			break;
+		case RESPONSE_SCENE:
+			{
+				DevMsg("Precaching scene %s...\n", response);
+
+				// fixup $gender references
+				char file[_MAX_PATH];
+				Q_strncpy( file, response, sizeof(file) );
+				char *gender = strstr( file, "$gender" );
+				if ( gender )
+				{
+					// replace with male & female
+					const char *postGender = gender + strlen("$gender");
+					*gender = 0;
+					char genderFile[_MAX_PATH];
+
+					Q_snprintf( genderFile, sizeof(genderFile), "%smale%s", file, postGender);
+					PrecacheInstancedScene( genderFile );
+
+					Q_snprintf( genderFile, sizeof(genderFile), "%sfemale%s", file, postGender);
+					PrecacheInstancedScene( genderFile );
+				}
+				else
+				{
+					PrecacheInstancedScene( file );
+				}
+			}
+			break;
+		case RESPONSE_SPEAK:
+			{
+				DevMsg("Precaching sound %s...\n", response);
+				CBaseEntity::PrecacheScriptSound( response );
+			}
+			break;
+		}
+	}
+	
+	bool IsRootCommand()
+	{
+		if (!Q_stricmp( token, "#include" ) || !Q_stricmp( token, "response" )
+			|| !Q_stricmp( token, "enumeration" ) || !Q_stricmp( token, "criteria" )
+			|| !Q_stricmp( token, "criterion" ) || !Q_stricmp( token, "rule" ))
+			return true;
+		return false;
+	}
+
+	void ParseResponse( void )
+	{
+		// Must go to response group name
+		ParseToken();
+
+		while ( 1 )
+		{
+			ParseToken();
+
+			if ( !Q_stricmp( token, "{" ) )
+			{
+				while ( 1 )
+				{
+					ParseToken();
+					if ( !Q_stricmp( token, "}" ) )
+						break;
+
+					byte type = ComputeResponseType( token );
+					if (type == RESPONSE_NONE)
+						continue;
+
+					ParseToken();
+					char *value = CopyString( token );
+
+					PrecacheResponse(value, type);
+				}
+				break;
+			}
+
+			byte type = ComputeResponseType( token );
+			if (type == RESPONSE_NONE)
+				break;
+
+			ParseToken();
+			char *value = CopyString( token );
+
+			PrecacheResponse(value, type);
+
+			break;
+		}
+	}
+
+	bool LoadFromBuffer(const char *scriptfile, unsigned char *buffer, CStringPool &includedFiles)
+	{
+		includedFiles.Allocate( scriptfile );
+
+		CResponseSystem::ScriptEntry e;
+		e.name = filesystem->FindOrAddFileName( scriptfile );
+		e.buffer = buffer;
+		e.currenttoken = (char *)e.buffer;
+		e.tokencount = 0;
+		m_ScriptStack.AddToHead( e );
+
+		while ( 1 )
+		{
+			ParseToken();
+			if ( !token[0] )
+			{
+				break;
+			}
+
+			if ( !Q_stricmp( token, "response" ) )
+			{
+				ParseResponse();
+			}
+			else if ( !Q_stricmp( token, "#include" ) || !Q_stricmp( token, "#base" ) )
+			{
+				// Compacted version of ParseInclude(), including new changes.
+				// Look at that if you want to read.
+				char includefile[ 256 ];
+				ParseToken();
+				if (scriptfile) { size_t len = strlen(scriptfile)-1;
+					for (size_t i = 0; i < len; i++)
+					{ if (scriptfile[i] == CORRECT_PATH_SEPARATOR || scriptfile[i] == INCORRECT_PATH_SEPARATOR)
+						{ len = i; }
+					} Q_strncpy(includefile, scriptfile, len+1);
+					if (len+1 != strlen(scriptfile))
+					{ Q_snprintf(includefile, sizeof(includefile), "%s/%s", includefile, token); }
+					else includefile[0] = '\0';
+				} if (!includefile[0]) Q_snprintf( includefile, sizeof( includefile ), "scripts/%s", token );
+
+				if ( includedFiles.Find( includefile ) == NULL )
+				{
+					MEM_ALLOC_CREDIT();
+
+					// Try and load it
+					CUtlBuffer buf;
+					if ( filesystem->ReadFile( includefile, "GAME", buf ) )
+					{
+						LoadFromBuffer( includefile, (unsigned char *)buf.PeekGet(), includedFiles );
+					}
+				}
+			}
+		}
+
+		if ( m_ScriptStack.Count() > 0 )
+			m_ScriptStack.Remove( 0 );
+
+		return true;
+	}
+};
+*/
+
+// Loads a file directly to the main response system
+bool LoadResponseSystemFile(const char *scriptfile)
+{
+	CUtlBuffer buf;
+	if ( !filesystem->ReadFile( scriptfile, "GAME", buf ) )
+	{
+		return false;
+	}
+
+	// This is a really messy and specialized system that precaches the responses and only the responses of a talker file.
+	/*
+	CStringPool includedFiles;
+	CResponseFilePrecacher *rs = new CResponseFilePrecacher();
+	if (!rs || !rs->LoadFromBuffer(scriptfile, (unsigned char *)buf.PeekGet(), includedFiles))
+	{
+		Warning( "Failed to load response system data from %s", scriptfile );
+		delete rs;
+		return false;
+	}
+	delete rs;
+	*/
+
+	// HACKHACK: This is not very efficient
+	/*
+	CInstancedResponseSystem *tempSys = new CInstancedResponseSystem( scriptfile );
+	if ( tempSys && tempSys->Init() )
+	{
+		tempSys->Precache();
+
+		for ( ResponseRulePartition::tIndex idx = tempSys->m_RulePartitions.First() ;
+				tempSys->m_RulePartitions.IsValid(idx) ;
+				idx = tempSys->m_RulePartitions.Next(idx) )
+		{
+			Rule &rule = tempSys->m_RulePartitions[idx];
+			tempSys->CopyRuleFrom( &rule, idx, &defaultresponsesytem );
+		}
+
+		tempSys->Release();
+	}
+	*/
+
+	// HACKHACK: This is even less efficient
+	defaultresponsesytem.LoadFromBuffer( scriptfile, (const char *)buf.PeekGet() );
+	defaultresponsesytem.Precache();
+
+	return true;
+}
+
+// Called from Mapbase manifests to flush
+void ReloadResponseSystem()
+{
+	defaultresponsesytem.ReloadAllResponseSystems();
+}
+
+//-----------------------------------------------------------------------------
+// CResponseSystemSaveRestoreOps
+//
+// Purpose: Handles save and load for instanced response systems...
+//
+// BUGBUG:  This will save the same response system to file multiple times for "shared" response systems and 
+//  therefore it'll restore the same data onto the same pointer N times on reload (probably benign for now, but we could
+//  write code to save/restore the instanced ones by filename in the block handler above maybe?
+//-----------------------------------------------------------------------------
+
+class CResponseSystemSaveRestoreOps : public CDefCustomFieldOps
+{
+public:
+
+	
+
+} g_ResponseSystemFieldOps;
+
+ICustomFieldOps *responseSystemFieldOps = &g_ResponseSystemFieldOps;
 
 //-----------------------------------------------------------------------------
 // Purpose: 

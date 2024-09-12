@@ -82,7 +82,7 @@ bool CBaseCombatCharacter::Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon )
 			return false;
 	}
 
-	if ( !pWeapon->HasAnyAmmo() && !GetAmmoCount( pWeapon->m_iPrimaryAmmoType ) )
+	if ( !pWeapon->HasAnyAmmo() && !GetAmmoCount( pWeapon->m_iPrimaryAmmoType ) && !pWeapon->HasSpawnFlags(SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY) )
 		return false;
 
 	if ( !pWeapon->CanDeploy() )

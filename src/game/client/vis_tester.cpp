@@ -747,6 +747,54 @@ static int CM_PointLeafnum( const Vector& p )
 }
 #pragma endregion
 
+int GetAllClusterBounds( bbox_t *pBBoxList, int maxBBox )
+{
+	CCollisionBSPData *pBSPData = GetCollisionBSPData();
+	if ( pBSPData && pBSPData->map_vis )
+	{
+		// clamp to max clusters in the map
+		if ( maxBBox > pBSPData->map_vis->numclusters )
+		{
+			maxBBox = pBSPData->map_vis->numclusters;
+		}
+		// reset all of the bboxes
+		for ( int i =  0; i < maxBBox; i++ )
+		{
+			ClearBounds( pBBoxList[i].mins, pBBoxList[i].maxs );
+		}
+
+	#if 0
+		// add each leaf's bounds to the bounds for that cluster
+		for ( int i = 0; i < host_state.worldbrush->numleafs; i++ )
+		{
+			mleaf_t *pLeaf = &host_state.worldbrush->leafs[i];
+			// skip solid leaves and leaves with cluster < 0
+			if ( !(pLeaf->contents & CONTENTS_SOLID) && pLeaf->cluster >= 0 && pLeaf->cluster < maxBBox )
+			{
+				Vector mins, maxs;
+				mins = pLeaf->m_vecCenter - pLeaf->m_vecHalfDiagonal;
+				maxs = pLeaf->m_vecCenter + pLeaf->m_vecHalfDiagonal;
+				AddPointToBounds( mins, pBBoxList[pLeaf->cluster].mins, pBBoxList[pLeaf->cluster].maxs );
+				AddPointToBounds( maxs, pBBoxList[pLeaf->cluster].mins, pBBoxList[pLeaf->cluster].maxs );
+			}
+		}
+
+		return pBSPData->map_vis->numclusters;
+	#else
+		return 0;
+	#endif
+	}
+	return 0;
+}
+
+int GetClusterCount( )
+{
+	CCollisionBSPData *pBSPData = GetCollisionBSPData();
+	if ( pBSPData && pBSPData->map_vis )
+		return pBSPData->map_vis->numclusters;
+	return 0;
+}
+
 int GetClusterForOrigin( const Vector& org )
 {
 	return CM_LeafCluster( CM_PointLeafnum( org ) );

@@ -21,6 +21,7 @@ const int SF_MICROPHONE_SOUND_BULLET_IMPACT		= 0x08;
 const int SF_MICROPHONE_SWALLOW_ROUTED_SOUNDS	= 0x10;
 const int SF_MICROPHONE_SOUND_EXPLOSION			= 0x20;
 const int SF_MICROPHONE_IGNORE_NONATTENUATED	= 0x40;
+const int SF_MICROPHONE_SOUND_SENTENCE			= 0x80;
 
 
 // Return codes from SoundPlayed
@@ -52,15 +53,25 @@ public:
 	void SetMaxRange( float flMaxRange );
 	void SetSpeakerName( string_t iszSpeakerName );
 	void SetSpeaker( string_t iszSpeakerName, EHANDLE hSpeaker );
+	bool ShouldHearSentences() const { return HasSpawnFlags( SF_MICROPHONE_SOUND_SENTENCE ); }
+	inline void ToggleHearingSentence( bool bToggle ) { m_bHearingSentence = bToggle; }
 
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
 	void InputSetSpeakerName( inputdata_t &inputdata );
+	void InputSetDSPPreset( inputdata_t &inputdata );
+	void InputSetPitchScale( inputdata_t &inputdata );
+	void InputSetVolumeScale( inputdata_t &inputdata );
+	void InputSetChannel( inputdata_t &inputdata );
 
 	DECLARE_MAPENTITY();
 
 	// Hook for the sound system to tell us when a sound's been played. Returns true if it's to swallow the passed in sound.
 	static bool OnSoundPlayed( int entindex, const char *soundname, soundlevel_t soundlevel, 
+		float flVolume, int iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins );
+
+	// Same as above, except for sentences.
+	static bool OnSentencePlayed( int entindex, int sentenceIndex, soundlevel_t soundlevel, 
 		float flVolume, int iFlags, int iPitch, const Vector *pOrigin, float soundtime, CUtlVector< Vector >& soundorigins );
 
 	static void OnSoundStopped( const char *soundname );
@@ -91,6 +102,14 @@ private:
 	COutputEvent m_OnHeardSound;		// Heard sound.
 
 	char		m_szLastSound[256];
+
+	string_t	m_iszLandmarkName;
+	EHANDLE		m_hLandmark;
+	float		m_flPitchScale = 1.0f;
+	float		m_flVolumeScale = 1.0f;
+	int			m_nChannel = CHAN_STATIC;
+
+	bool		m_bHearingSentence; // HACKHACK: Allows SoundPlayed() to know when to play a sentence instead
 };
 
 #endif // ENVMICROPHONE_H

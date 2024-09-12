@@ -510,6 +510,20 @@ void CFish::AddVisible( CFish *fish )
 
 LINK_ENTITY_TO_CLASS( func_fish_pool, CFishPool );
 
+BEGIN_MAPENTITY( CFishPool )
+
+	DEFINE_INPUT( m_nSkin, FIELD_INTEGER, "skin" ),
+
+	DEFINE_KEYFIELD( m_flLoudPanicRange, FIELD_FLOAT, "LoudPanicRange" ),
+	DEFINE_KEYFIELD( m_flQuietPanicRange, FIELD_FLOAT, "QuietPanicRange" ),
+
+	DEFINE_INPUTFUNC( FIELD_VOID, "SpawnFish", InputSpawnFish ),
+	DEFINE_INPUTFUNC( FIELD_VECTOR, "PanicLoudFromPoint", InputPanicLoudFromPoint ),
+	DEFINE_INPUTFUNC( FIELD_VECTOR, "PanicQuietFromPoint", InputPanicQuietFromPoint ),
+
+	DEFINE_OUTPUT( m_OnSpawnFish, "OnSpawnFish" ),
+
+END_MAPENTITY()
 
 //-------------------------------------------------------------------------------------------------------------
 CFishPool::CFishPool( void )
@@ -519,6 +533,12 @@ CFishPool::CFishPool( void )
 	m_swimDepth = 0.0f;
 	m_isDormant = false;
 	m_waterLevel = 0.0f;
+
+	m_nSkin = 0;
+
+	// Original defaults
+	m_flLoudPanicRange = 500.0f;
+	m_flQuietPanicRange = 75.0f;
 
 	m_visTimer.Start( 0.5f );
 
@@ -554,6 +574,8 @@ void CFishPool::Spawn()
 			CHandle<CFish> hFish;
 			hFish.Set( fish );
 			m_fishes.AddToTail( hFish );
+			fish->SetSkin( m_nSkin );
+			m_OnSpawnFish.Set( hFish, fish, this );
 		}
 	}
 }
@@ -604,8 +626,8 @@ void CFishPool::FireGameEvent( IGameEvent *event )
 	CBasePlayer *player = UTIL_PlayerByUserId( event->GetInt( "userid" ) );
 	
 	// the fish panic
-	const float loudRange = 500.0f;
-	const float quietRange = 75.0f;
+	const float loudRange = m_flLoudPanicRange;
+	const float quietRange = m_flQuietPanicRange;
 
 	float range = (Q_strcmp( "player_footstep", event->GetName() )) ? loudRange : quietRange;
 
@@ -665,6 +687,13 @@ void CFishPool::Update( void )
 		// reset each fishes vis list
 		for( i=0; i<m_fishes.Count(); ++i )
 		{
+			if (m_fishes[i] == NULL)
+			{
+				m_fishes.Remove(i);
+				i--;
+				continue;
+			}
+
 			m_fishes[i]->ResetVisible();
 		}
 
@@ -697,3 +726,58 @@ void CFishPool::Update( void )
 	}
 }
 
+//-------------------------------------------------------------------------------------------------------------
+/**
+ * Inputs
+ */
+void CFishPool::InputSpawnFish( inputdata_t &inputdata )
+{
+	QAngle heading( 0.0f, RandomFloat( 0, 360.0f ), 0.0f );
+
+	CFish *fish = (CFish *)Create( "fish", GetAbsOrigin(), heading, this );
+	fish->Initialize( this, m_fishes.Count() );
+
+	if (fish)
+	{
+		CHandle<CFish> hFish;
+		hFish.Set( fish );
+		m_fishes.AddToTail( hFish );
+		m_OnSpawnFish.Set( hFish, fish, this );
+	}
+}
+
+void CFishPool::InputPanicLoudFromPoint( inputdata_t &inputdata )
+{
+	// Make the fish panic from this point
+	Vector vecPoint;
+	inputdata.value.Vector3D( vecPoint );
+	for( int i=0; i<m_fishes.Count(); ++i )
+	{
+		// Use loud range
+		if ((vecPoint - m_fishes[i]->GetAbsOrigin()).IsLengthGreaterThan( m_flLoudPanicRange ))
+		{
+			// event too far away to care
+			continue;
+		}
+
+		m_fishes[i]->Panic();
+	}
+}
+
+void CFishPool::InputPanicQuietFromPoint( inputdata_t &inputdata )
+{
+	// Make the fish panic from this point
+	Vector vecPoint;
+	inputdata.value.Vector3D( vecPoint );
+	for( int i=0; i<m_fishes.Count(); ++i )
+	{
+		// Use loud range
+		if ((vecPoint - m_fishes[i]->GetAbsOrigin()).IsLengthGreaterThan( m_flQuietPanicRange ))
+		{
+			// event too far away to care
+			continue;
+		}
+
+		m_fishes[i]->Panic();
+	}
+}

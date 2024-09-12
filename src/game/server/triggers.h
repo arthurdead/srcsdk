@@ -13,13 +13,15 @@
 #include "entityoutput.h"
 #include "triggers_shared.h"
 
+class CBaseFilter;
+
 // DVS TODO: get rid of CBaseToggle
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-class CBaseTrigger : public CBaseToggle
+class CBaseTrigger : public CBaseEntity
 {
-	DECLARE_CLASS( CBaseTrigger, CBaseToggle );
+	DECLARE_CLASS( CBaseTrigger, CBaseEntity );
 	DECLARE_SERVERCLASS();
 public:
 	CBaseTrigger();
@@ -63,7 +65,7 @@ public:
 
 	bool		m_bDisabled;
 	string_t	m_iFilterName;
-	CHandle<class CBaseFilter>	m_hFilter;
+	CHandle< CBaseFilter>	m_hFilter;
 
 	const CUtlVector< EHANDLE > *GetTouchingEntities( void ) const
 	{
@@ -88,6 +90,17 @@ protected:
 
 	// True if trigger participates in client side prediction
 	CNetworkVar( bool, m_bClientSidePredicted );
+
+	// We don't descend from CBaseToggle anymore. These have to be defined here now.
+	EHANDLE		m_hActivator;
+	float		m_flWait;
+	string_t	m_sMaster;		// If this button has a master switch, this is the targetname.
+								// A master switch must be of the multisource type. If all 
+								// of the switches in the multisource have been triggered, then
+								// the button will be allowed to operate. Otherwise, it will be
+								// deactivated.
+
+	virtual float	GetDelay( void ) { return m_flWait; }
 
 	DECLARE_MAPENTITY();
 };
@@ -188,6 +201,9 @@ public:
 	{
 		// This field came along after levels were built so the field defaults to 20 here in the constructor.
 		m_flDamageCap = 20.0f;
+
+		// Uh, same here.
+		m_flHurtRate = 0.5f;
 	}
 
 	DECLARE_CLASS( CTriggerHurt, CTriggerHurtShim );
@@ -199,6 +215,8 @@ public:
 	void EndTouch( CBaseEntity *pOther );
 	bool HurtEntity( CBaseEntity *pOther, float damage );
 	int HurtAllTouchers( float dt );
+
+	bool KeyValue( const char *szKeyName, const char *szValue );
 
 	void NavThink( void );
 
@@ -212,6 +230,7 @@ public:
 	int		m_bitsDamageInflict;	// DMG_ damage type that the door or tigger does
 	int		m_damageModel;
 	bool	m_bNoDmgForce;		// Should damage from this trigger impart force on what it's hurting
+	float	m_flHurtRate;
 
 	enum
 	{
@@ -274,6 +293,7 @@ private:
 #define SF_CAMERA_PLAYER_NOT_SOLID		32
 #define SF_CAMERA_PLAYER_INTERRUPT		64
 #define SF_CAMERA_PLAYER_SETFOV			128
+#define SF_CAMERA_PLAYER_NEW_BEHAVIOR			256 // In case anyone or anything relied on the broken features
 
 #define SF_PATHCORNER_TELEPORT 2
 
@@ -287,6 +307,8 @@ public:
 
 	CTriggerCamera();
 
+	void UpdateOnRemove();
+
 	void Spawn( void );
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	void Enable( void );
@@ -296,6 +318,8 @@ public:
 	void FollowTarget( void );
 	void Move(void);
 	void StartCameraShot( const char *pszShotType, CBaseEntity *pSceneEntity, CBaseEntity *pActor1, CBaseEntity *pActor2, float duration );
+
+	void MoveThink( void );
 
 	// Always transmit to clients so they know where to move the view to
 	virtual int UpdateTransmitState();
@@ -311,6 +335,9 @@ public:
 	void InputTeleportToView( inputdata_t &inputdata );
 	void InputSetTrackSpeed( inputdata_t &inputdata );
 	void InputSetPath( inputdata_t &inputdata );
+
+	void InputSetFOV( inputdata_t &inputdata );
+	void InputSetFOVRate( inputdata_t &inputdata );
 
 private:
 	EHANDLE m_hPlayer;
@@ -333,6 +360,9 @@ private:
 
 	float m_fov;
 	float m_fovSpeed;
+	float m_flTrackSpeed;
+
+	bool m_bDontSetPlayerView;
 
 	string_t m_iszTargetAttachment;
 	int	  m_iAttachmentIndex;
@@ -351,6 +381,7 @@ private:
 
 private:
 	COutputEvent m_OnEndFollow;
+	COutputEvent m_OnStartFollow;
 };
 
 #endif // TRIGGERS_H

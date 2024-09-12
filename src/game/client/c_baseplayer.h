@@ -204,7 +204,7 @@ public:
 	virtual void	TeamChange( int iNewTeam );
 
 	// Flashlight
-	void	UpdateFlashlight( void );
+	virtual void	UpdateFlashlight( void );
 	void	TurnOffFlashlight( void );	// TERROR
 	virtual const char *GetFlashlightTextureName( void ) const { return NULL; } // TERROR
 	virtual float GetFlashlightFOV( void ) const { return 0.0f; } // TERROR
@@ -509,20 +509,34 @@ public:
 	float			m_flConstraintSpeedFactor;
 	bool			m_bConstraintPastRadius;
 
+	// Transmitted from the server for internal player spawnflags.
+	// See baseplayer_shared.h for more details.
+	int				m_spawnflags;
+
+	inline bool		HasSpawnFlags( int flags ) { return (m_spawnflags & flags) != 0; }
+	inline void		RemoveSpawnFlags( int flags ) { m_spawnflags &= ~flags; }
+	inline void		AddSpawnFlags( int flags ) { m_spawnflags |= flags; }
+
+	// Allows the player's model to draw on non-main views, like monitors or mirrors.
+	bool			m_bDrawPlayerModelExternally;
+
+	bool			m_bInTriggerFall;
+
 protected:
 
-	void				CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
-	void				CalcVehicleView(IClientVehicle *pVehicle, Vector& eyeOrigin, QAngle& eyeAngles,
+	//Tony; made all of these virtual so mods can override.
+	virtual void				CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
+	virtual void				CalcVehicleView(IClientVehicle *pVehicle, Vector& eyeOrigin, QAngle& eyeAngles,
 							float& zNear, float& zFar, float& fov );
 	virtual void		CalcObserverView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
 	virtual Vector		GetChaseCamViewOffset( CBaseEntity *target );
-	void				CalcChaseCamView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
+	virtual void				CalcChaseCamView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
 	virtual void		CalcInEyeCamView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
 
 	virtual float		GetDeathCamInterpolationTime();
 
 	virtual void		CalcDeathCamView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
-	void				CalcRoamingView(Vector& eyeOrigin, QAngle& eyeAngles, float& fov);
+	virtual void				CalcRoamingView(Vector& eyeOrigin, QAngle& eyeAngles, float& fov);
 	virtual void		CalcFreezeCamView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
 
 	// Check to see if we're in vgui input mode...

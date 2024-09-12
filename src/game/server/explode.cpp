@@ -17,6 +17,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+ConVar explosion_sparks("explosion_sparks", "0", FCVAR_NONE);
+
 //-----------------------------------------------------------------------------
 // Purpose: Spark shower, created by the explosion entity.
 //-----------------------------------------------------------------------------
@@ -111,6 +113,7 @@ public:
 
 	// Input handlers
 	void InputExplode( inputdata_t &inputdata );
+	void InputSetIgnoredEntity( inputdata_t &inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -143,6 +146,7 @@ BEGIN_MAPENTITY( CEnvExplosion )
 
 	// Inputs
 	DEFINE_INPUTFUNC(FIELD_VOID, "Explode", InputExplode),
+	DEFINE_INPUTFUNC(FIELD_EHANDLE, "SetIgnoredEntity", InputSetIgnoredEntity),
 
 END_MAPENTITY()
 
@@ -360,7 +364,7 @@ void CEnvExplosion::InputExplode( inputdata_t &inputdata )
 	SetNextThink( gpGlobals->curtime + 0.3 );
 
 	// Only do these effects if we're not submerged
-	if ( UTIL_PointContents( GetAbsOrigin(), MASK_WATER ) & CONTENTS_WATER )
+	if ( explosion_sparks.GetBool() && !(UTIL_PointContents( GetAbsOrigin(), MASK_WATER ) & CONTENTS_WATER) )
 	{
 		// draw sparks
 		if ( !( m_spawnflags & SF_ENVEXPLOSION_NOSPARKS ) )
@@ -377,6 +381,13 @@ void CEnvExplosion::InputExplode( inputdata_t &inputdata )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Input handler for setting the ignored entity.
+//-----------------------------------------------------------------------------
+void CEnvExplosion::InputSetIgnoredEntity( inputdata_t &inputdata )
+{
+	m_hEntityIgnore = inputdata.value.Entity();
+}
 
 void CEnvExplosion::Smoke( void )
 {

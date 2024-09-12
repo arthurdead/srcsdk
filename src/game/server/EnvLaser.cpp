@@ -26,6 +26,8 @@ BEGIN_MAPENTITY( CEnvLaser )
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
 
+	DEFINE_OUTPUT( m_OnTouchedByEntity, "OnTouchedByEntity" ),
+
 END_MAPENTITY()
 
 
@@ -216,6 +218,11 @@ void CEnvLaser::FireAtPoint( trace_t &tr )
 	// Apply damage and do sparks every 1/10th of a second.
 	if ( gpGlobals->curtime >= m_flFireTime + 0.1 )
 	{
+		if ( tr.fraction != 1.0 && tr.m_pEnt && !tr.m_pEnt->IsWorld() )
+		{
+			m_OnTouchedByEntity.FireOutput( tr.m_pEnt, this );
+		}
+		
 		BeamDamage( &tr );
 		DoSparks( GetAbsStartPos(), tr.endpos );
 	}

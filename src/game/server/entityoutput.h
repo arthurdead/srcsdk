@@ -74,6 +74,10 @@ public:
 	/// Delete every single action in the action list. 
 	void DeleteAllElements( void ) ;
 
+	// Needed for ReplaceOutput, hopefully not bad
+	CEventAction *GetActionList() { return m_ActionList; }
+	void SetActionList(CEventAction *newlist) { m_ActionList = newlist; }
+
 	CEventAction *GetFirstAction() { return m_ActionList; }
 
 	const CEventAction *GetActionForTarget( string_t iSearchTarget ) const;
@@ -146,6 +150,27 @@ public:
 	}
 };
 
+template<>
+class CEntityOutputTemplate<class QAngle, FIELD_VECTOR> : public CBaseEntityOutput
+{
+public:
+	void Init( const QAngle &value )
+	{
+		m_Value.SetAngle3D( value );
+	}
+
+	void Set( const QAngle &value, CBaseEntity *pActivator, CBaseEntity *pCaller )
+	{
+		m_Value.SetAngle3D( value );
+		FireOutput( m_Value, pActivator, pCaller );
+	}
+
+	void Get( QAngle &vec )
+	{
+		m_Value.Angle3D(vec);
+	}
+};
+
 
 template<>
 class CEntityOutputTemplate<class Vector, FIELD_POSITION_VECTOR> : public CBaseEntityOutput
@@ -187,6 +212,7 @@ typedef CEntityOutputTemplate<float,FIELD_FLOAT>			COutputFloat;
 typedef CEntityOutputTemplate<string_t,FIELD_STRING>		COutputString;
 typedef CEntityOutputTemplate<EHANDLE,FIELD_EHANDLE>		COutputEHANDLE;
 typedef CEntityOutputTemplate<Vector,FIELD_VECTOR>			COutputVector;
+typedef CEntityOutputTemplate<QAngle,FIELD_VECTOR>			COutputQAngle;
 typedef CEntityOutputTemplate<Vector,FIELD_POSITION_VECTOR>	COutputPositionVector;
 typedef CEntityOutputTemplate<color32,FIELD_COLOR32>		COutputColor32;
 

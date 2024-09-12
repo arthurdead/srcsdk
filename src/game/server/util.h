@@ -193,6 +193,7 @@ public:
 	virtual void Destroy( const char *pClassName, CBaseEntity *pNetworkable ) = 0;
 	virtual IEntityFactory *FindFactory( const char *pClassName ) = 0;
 	virtual const char *GetCannonicalName( const char *pClassName ) = 0;
+	virtual void UninstallFactory(const char* pClassName) = 0;
 };
 
 IEntityFactoryDictionary *EntityFactoryDictionary();
@@ -279,7 +280,7 @@ extern CGlobalVars *gpGlobals;
 // Misc useful
 inline bool FStrEq(const char *sz1, const char *sz2)
 {
-	return ( sz1 == sz2 || V_stricmp(sz1, sz2) == 0 );
+	return ( V_stricmp(sz1, sz2) == 0 );
 }
 
 #if 0
@@ -354,6 +355,7 @@ CBaseEntity *UTIL_EntitiesInPVS( CBaseEntity *pPVSEntity, CBaseEntity *pStarting
 int			UTIL_EntitiesInBox( const Vector &mins, const Vector &maxs, CFlaggedEntitiesEnum *pEnum  );
 int			UTIL_EntitiesAlongRay( const Ray_t &ray, CFlaggedEntitiesEnum *pEnum  );
 int			UTIL_EntitiesInSphere( const Vector &center, float radius, CFlaggedEntitiesEnum *pEnum  );
+int			UTIL_EntitiesAtPoint( const Vector &point, CFlaggedEntitiesEnum *pEnum );
 
 inline int UTIL_EntitiesInBox( CBaseEntity **pList, int listMax, const Vector &mins, const Vector &maxs, int flagMask )
 {
@@ -365,6 +367,12 @@ inline int UTIL_EntitiesInSphere( CBaseEntity **pList, int listMax, const Vector
 {
 	CFlaggedEntitiesEnum sphereEnum( pList, listMax, flagMask );
 	return UTIL_EntitiesInSphere( center, radius, &sphereEnum );
+}
+
+inline int UTIL_EntitiesAtPoint( CBaseEntity **pList, int listMax, const Vector &point, int flagMask )
+{
+	CFlaggedEntitiesEnum pointEnum( pList, listMax, flagMask );
+	return UTIL_EntitiesAtPoint( point, &pointEnum );
 }
 
 // make this a fixed size so it just sits on the stack
@@ -422,6 +430,9 @@ void		UTIL_AxisStringToPointPoint( Vector &start, Vector &end, const char *pStri
 void		UTIL_AxisStringToUnitDir( Vector &dir, const char *pString );
 void		UTIL_ClipPunchAngleOffset( QAngle &in, const QAngle &punch, const QAngle &clip );
 void		UTIL_PredictedPosition( CBaseEntity *pTarget, float flTimeDelta, Vector *vecPredictedPosition );
+void		UTIL_PredictedPosition( CBaseEntity *pTarget, const Vector &vecActualPosition, float flTimeDelta, Vector *vecPredictedPosition );
+void		UTIL_PredictedAngles( CBaseEntity *pTarget, const QAngle &angActualAngles, float flTimeDelta, QAngle *angPredictedAngles );
+
 void		UTIL_Beam( Vector &Start, Vector &End, int nModelIndex, int nHaloIndex, unsigned char FrameStart, unsigned char FrameRate,
 				float Life, unsigned char Width, unsigned char EndWidth, unsigned char FadeLength, unsigned char Noise, unsigned char Red, unsigned char Green,
 				unsigned char Blue, unsigned char Brightness, unsigned char Speed);
@@ -452,6 +463,8 @@ void UTIL_BubbleTrail( const Vector& from, const Vector& to, int count );
 
 // allows precacheing of other entities
 void UTIL_PrecacheOther( const char *szClassname, const char *modelName = NULL );
+// Tests whether this entity exists in the dictionary and if it does, precaches it. (as opposed to complaining when it's missing)
+bool UTIL_TestPrecacheOther( const char *szClassname, const char *modelName = NULL );
 
 // prints a message to each client
 void			UTIL_ClientPrintAll( int msg_dest, const char *msg_name, const char *param1 = NULL, const char *param2 = NULL, const char *param3 = NULL, const char *param4 = NULL );
@@ -529,8 +542,8 @@ void UTIL_SetModel( CBaseEntity *pEntity, const char *pModelName );
 
 
 // prints as transparent 'title' to the HUD
-void			UTIL_HudMessageAll( const hudtextparms_t &textparms, const char *pMessage );
-void			UTIL_HudMessage( CBasePlayer *pToPlayer, const hudtextparms_t &textparms, const char *pMessage );
+void			UTIL_HudMessageAll( const hudtextparms_t &textparms, const char *pMessage, const char *pszFont = NULL, bool bAutobreak = false );
+void			UTIL_HudMessage( CBasePlayer *pToPlayer, const hudtextparms_t &textparms, const char *pMessage, const char *pszFont = NULL, bool bAutobreak = false );
 
 // brings up hud keyboard hints display
 void			UTIL_HudHintText( CBaseEntity *pEntity, const char *pMessage );
@@ -569,7 +582,12 @@ float UTIL_ScaleForGravity( float desiredGravity );
 #define SF_BRUSH_ROTATE_BACKWARDS	2
 #define SF_BRUSH_ROTATE_Z_AXIS		4
 #define SF_BRUSH_ROTATE_X_AXIS		8
-#define SF_BRUSH_ROTATE_CLIENTSIDE	16
+#define SF_BRUSH_ROTATE_CLIENTSIDE	1024
+
+// brought over from bmodels.cpp
+#define	SF_BRUSH_ACCDCC					16	// brush should accelerate and decelerate when toggled
+#define	SF_BRUSH_HURT					32	// rotating brush that inflicts pain based on rotation speed
+#define	SF_ROTATING_NOT_SOLID			64	// some special rotating objects are not solid.
 
 
 #define SF_BRUSH_ROTATE_SMALLRADIUS	128

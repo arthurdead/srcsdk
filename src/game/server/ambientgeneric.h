@@ -81,6 +81,7 @@ public:
 
 	virtual void ToggleSound();
 	virtual void SendSound( SoundFlags_t flags );
+	void SoundEnd();
 
 	// Input handlers
 	void InputPlaySound( inputdata_t &inputdata );
@@ -90,6 +91,7 @@ public:
 	void InputVolume( inputdata_t &inputdata );
 	void InputFadeIn( inputdata_t &inputdata );
 	void InputFadeOut( inputdata_t &inputdata );
+	void InputSetSound( inputdata_t &inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -105,6 +107,10 @@ public:
 	string_t m_sSourceEntName;
 	EHANDLE m_hSoundSource;	// entity from which the sound comes
 	int		m_nSoundSourceEntIndex; // In case the entity goes away before we finish stopping the sound...
+
+	int		m_iSoundFlags;
+
+	COutputEvent m_OnSoundFinished;
 };
 
 #endif // AMBIENTGENERIC_H

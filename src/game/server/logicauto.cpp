@@ -115,7 +115,7 @@ void CLogicAuto::Think(void)
 			m_OnMultiNewMap.FireOutput(NULL, this);
 		}
 
-		if (m_spawnflags & SF_AUTO_FIREONCE)
+		if (HasSpawnFlags( SF_AUTO_FIREONCE) )
 		{
 			UTIL_Remove(this);
 		}

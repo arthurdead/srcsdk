@@ -6,11 +6,10 @@
 
 #ifndef AI_BEHAVIOR_LEAD_H
 #define AI_BEHAVIOR_LEAD_H
+#pragma once
 
 #include "simtimer.h"
 #include "ai_behavior.h"
-
-#pragma once
 
 // Speak concepts
 #define TLK_LEAD_START				"TLK_LEAD_START"
@@ -117,7 +116,7 @@ public:
 	bool Connect( CAI_LeadBehaviorHandler *);
 	bool Disconnect( CAI_LeadBehaviorHandler *);
 
-	void SetWaitForWeapon( string_t iszWeaponName ) { m_weaponname = iszWeaponName; m_flWeaponSafetyTimeOut = gpGlobals->curtime + 60; }
+	void SetWaitForWeapon( string_t iszWeaponName, float flTimeout = 60 ) { m_weaponname = iszWeaponName; m_flWeaponSafetyTimeOut = gpGlobals->curtime + flTimeout; }
 
 	enum
 	{

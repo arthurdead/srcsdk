@@ -640,6 +640,9 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 
 	RecvPropInt("m_clrRender", 0, sizeof(color32), 0, RecvProxy_ClrRender),
 
+	RecvPropInt(RECVINFO(m_iViewHideFlags)),
+	RecvPropBool(RECVINFO(m_bDisableFlashlight)),
+
 	RecvPropInt(RECVINFO(m_iTeamNum)),
 	RecvPropInt(RECVINFO(m_CollisionGroup)),
 	RecvPropFloat(RECVINFO(m_flElasticity)),
@@ -2045,6 +2048,9 @@ bool C_BaseEntity::ShouldReceiveProjectedTextures( int flags )
 	if ( IsEffectActive( EF_NODRAW ) || IsEffectActive( EF_NOFLASHLIGHT ) )
 		 return false;
 
+	if ( m_bDisableFlashlight )
+		return false;
+
 	if( ( flags & ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SIMPLE_PROJECTION ) ) != 0 )
 	{
 		if ( GetRenderMode() > kRenderNormal && GetRenderAlpha() == 0 )
@@ -2481,6 +2487,15 @@ int C_BaseEntity::DrawModel( int flags, const RenderableInstance_t &instance )
 	if ( !m_pModel )
 	{
 		return drawn;
+	}
+
+	if (m_iViewHideFlags > 0)
+	{
+		// Hide this entity if it's not supposed to be drawn in this view.
+		if (m_iViewHideFlags & (1 << CurrentViewID()))
+		{
+			return 0;
+		}
 	}
 
 	int modelType = modelinfo->GetModelType( m_pModel );

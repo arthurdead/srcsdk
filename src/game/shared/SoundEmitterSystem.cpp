@@ -1788,6 +1788,52 @@ int SENTENCEG_Lookup(const char *sample)
 }
 #endif
 
+#if defined(GAME_DLL)
+//-----------------------------------------------------------------------------
+// Purpose: Wrapper to emit a sentence and also a close caption token for the sentence as appropriate.
+// Input  : filter - 
+//			iEntIndex - 
+//			iChannel - 
+//			iSentenceIndex - 
+//			flVolume - 
+//			iSoundlevel - 
+//			iFlags - 
+//			iPitch - 
+//			bUpdatePositions - 
+//			soundtime - 
+//-----------------------------------------------------------------------------
+void CBaseEntity::EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, int iChannel, int iSentenceIndex, 
+	float flVolume, soundlevel_t iSoundlevel, int iFlags /*= 0*/, int iPitch /*=PITCH_NORM*/,
+	const Vector *pOrigin /*=NULL*/, const Vector *pDirection /*=NULL*/, 
+	bool bUpdatePositions /*=true*/, float soundtime /*=0.0f*/, int iSpecialDSP /*= 0*/, int iSpeakerIndex /*= 0*/ )
+{
+	CUtlVector< Vector > soundOrigins;
+
+	bool bSwallowed = CEnvMicrophone::OnSentencePlayed( 
+		iEntIndex, 
+		iSentenceIndex, 
+		iSoundlevel, 
+		flVolume, 
+		iFlags, 
+		iPitch, 
+		pOrigin, 
+		soundtime,
+		soundOrigins );
+	if ( bSwallowed )
+		return;
+	
+	CBaseEntity *pEntity = UTIL_EntityByIndex( iEntIndex );
+	if ( pEntity )
+	{
+		pEntity->ModifySentenceParams( iSentenceIndex, iChannel, flVolume, iSoundlevel, iFlags, iPitch,
+			&pOrigin, &pDirection, bUpdatePositions, soundtime, iSpecialDSP, iSpeakerIndex );
+	}
+
+	enginesound->EmitSentenceByIndex( filter, iEntIndex, iChannel, iSentenceIndex, 
+		flVolume, iSoundlevel, iFlags, iPitch * GameTimescale()->GetCurrentTimescale(), iSpecialDSP, pOrigin, pDirection, &soundOrigins, bUpdatePositions, soundtime / GameTimescale()->GetCurrentTimescale(), iSpeakerIndex );
+}
+#endif
+
 void UTIL_EmitAmbientSound( int entindex, const Vector &vecOrigin, const char *samp, float vol, soundlevel_t soundlevel, int fFlags, int pitch, float soundtime /*= 0.0f*/, float *duration /*=NULL*/ )
 {
 #ifdef STAGING_ONLY

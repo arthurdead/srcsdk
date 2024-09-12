@@ -457,6 +457,17 @@ Vector *g_EntityPositions = NULL;
 QAngle *g_EntityOrientations = NULL;
 string_t *g_EntityClassnames = NULL;
 
+class GlobalCleanUp : public CAutoGameSystem
+{
+	void Shutdown()
+	{
+		delete [] g_EntityPositions;
+		delete [] g_EntityOrientations;
+		delete [] g_EntityClassnames;
+	}
+};
+GlobalCleanUp g_GlobalCleanUp;
+
 //-----------------------------------------------------------------------------
 // Purpose: Saves the entity's position for future communication with Hammer
 //-----------------------------------------------------------------------------

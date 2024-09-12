@@ -350,7 +350,7 @@ PostProcessingPass HDRSimulate_NonHDR[] =
 	PPP_END
 };
 
-static void SetRenderTargetAndViewPort(ITexture *rt)
+void SetRenderTargetAndViewPort(ITexture *rt)
 {
 	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
 
@@ -829,7 +829,18 @@ static float GetCurrentBloomScale( void )
 {
 	// Use the appropriate bloom scale settings.  Mapmakers's overrides the convar settings.
 	float flCurrentBloomScale = 1.0f;
-	if ( g_bUseCustomBloomScale )
+	//Tony; get the local player first..
+	C_BasePlayer *pLocalPlayer = NULL;
+
+	if ( ( gpGlobals->maxClients > 1 ) )
+		pLocalPlayer = (C_BasePlayer*)C_BasePlayer::GetLocalPlayer();
+
+	//Tony; in multiplayer, get the local player etc.
+	if ( (pLocalPlayer != NULL && pLocalPlayer->m_Local.m_TonemapParams.m_flAutoExposureMin > 0.0f) )
+	{
+		flCurrentBloomScale = pLocalPlayer->m_Local.m_TonemapParams.m_flAutoExposureMin;
+	}
+	else if ( g_bUseCustomBloomScale )
 	{
 		flCurrentBloomScale = g_flCustomBloomScale;
 	}
@@ -843,7 +854,19 @@ static float GetCurrentBloomScale( void )
 static void GetExposureRange( float *pflAutoExposureMin, float *pflAutoExposureMax )
 {
 	// Get min
-	if ( ( g_bUseCustomAutoExposureMin ) && ( g_flCustomAutoExposureMin > 0.0f ) )
+	//Tony; get the local player first..
+	C_BasePlayer *pLocalPlayer = NULL;
+
+	if ( ( gpGlobals->maxClients > 1 ) )
+		pLocalPlayer = (C_BasePlayer*)C_BasePlayer::GetLocalPlayer();
+
+	//Tony; in multiplayer, get the local player etc.
+	if ( (pLocalPlayer != NULL && pLocalPlayer->m_Local.m_TonemapParams.m_flAutoExposureMin > 0.0f) )
+	{
+		*pflAutoExposureMin = pLocalPlayer->m_Local.m_TonemapParams.m_flAutoExposureMin;
+	}
+	// Get min
+	else if ( ( g_bUseCustomAutoExposureMin ) && ( g_flCustomAutoExposureMin > 0.0f ) )
 	{
 		*pflAutoExposureMin = g_flCustomAutoExposureMin;
 	}
@@ -853,7 +876,13 @@ static void GetExposureRange( float *pflAutoExposureMin, float *pflAutoExposureM
 	}
 
 	// Get max
-	if ( ( g_bUseCustomAutoExposureMax ) && ( g_flCustomAutoExposureMax > 0.0f ) )
+	//Tony; in multiplayer, get the value from the local player, if it's set.
+	if ( (pLocalPlayer != NULL && pLocalPlayer->m_Local.m_TonemapParams.m_flAutoExposureMax > 0.0f) )
+	{
+		*pflAutoExposureMax = pLocalPlayer->m_Local.m_TonemapParams.m_flAutoExposureMax;
+	}
+	// Get max
+	else if ( ( g_bUseCustomAutoExposureMax ) && ( g_flCustomAutoExposureMax > 0.0f ) )
 	{
 		*pflAutoExposureMax = g_flCustomAutoExposureMax;
 	}
@@ -1242,6 +1271,20 @@ public:
 
 static PPInit g_PPInit;
 
+static bool s_bOverridePostProcessParams = false;
+
+void SetPostProcessParams( const PostProcessParameters_t* pPostProcessParameters )
+{
+    if (!s_bOverridePostProcessParams)
+	    s_LocalPostProcessParameters = *pPostProcessParameters;
+}
+
+void SetPostProcessParams( const PostProcessParameters_t* pPostProcessParameters, bool bOverride )
+{
+    s_bOverridePostProcessParams = bOverride;
+    s_LocalPostProcessParameters = *pPostProcessParameters;
+}
+
 void ResetToneMapping( float flTonemappingScale )
 {
 	GetCurrentTonemappingSystem()->ResetTonemappingScale( flTonemappingScale );
@@ -1370,11 +1413,6 @@ void SetOverrideTonemapScale( bool bEnableOverride, float flTonemapScale )
 void SetOverridePostProcessingDisable( bool bForceOff )
 {
 	s_bOverridePostProcessingDisable = bForceOff;
-}
-
-void SetPostProcessParams( const PostProcessParameters_t *pPostProcessParameters )
-{
-	s_LocalPostProcessParameters = *pPostProcessParameters;
 }
 
 void SetViewFadeParams( byte r, byte g, byte b, byte a, bool bModulate )

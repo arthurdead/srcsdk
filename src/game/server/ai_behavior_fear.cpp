@@ -60,6 +60,8 @@ void CAI_FearBehavior::StartTask( const Task_t *pTask )
 	#ifndef AI_USES_NAV_MESH
 		m_hSafePlaceHint = m_hMovingToHint;
 		m_hSafePlaceHint->Lock( GetOuter() );
+		if (m_hFearGoal)
+			m_hFearGoal->m_OnArriveAtFearNode.FireOutput(m_hSafePlaceHint, GetOuter());
 	#else
 		m_pSafePlaceArea = m_pMovingToArea;
 	#endif
@@ -326,6 +328,20 @@ bool CAI_FearBehavior::CanSelectSchedule()
 	if( GetOuter()->IRelationType(pEnemy) != D_FR )
 		return false;
 
+	// Don't run fear behavior if we've been ordered somewhere
+	if (GetOuter()->GetCommandGoal() != vec3_invalid)
+		return false;
+
+	// Don't run fear behavior if we're running any non-follow behaviors
+	if (GetOuter()->GetPrimaryBehavior() && GetOuter()->GetPrimaryBehavior() != this && !FStrEq(GetOuter()->GetPrimaryBehavior()->GetName(), "Follow"))
+		return false;
+
+	if (m_hFearGoal && m_iszFearTarget != NULL_STRING)
+	{
+		if (pEnemy->NameMatches(m_iszFearTarget) || pEnemy->ClassMatches(m_iszFearTarget))
+			return true;
+	}
+
 	if( !pEnemy->ClassMatches("npc_hunter") )
 		return false;
 
@@ -549,6 +565,89 @@ CNavArea *CAI_FearBehavior::FindFearWithdrawalDest()
 	return NULL;
 }
 #endif
+
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+Activity CAI_FearBehavior::NPC_TranslateActivity( Activity activity )
+{
+	return BaseClass::NPC_TranslateActivity( activity );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CAI_FearBehavior::SetParameters( CAI_FearGoal *pGoal, string_t target )
+{
+	m_hFearGoal = pGoal;
+	m_iszFearTarget = target;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//=============================================================================
+//=============================================================================
+// >AI_GOAL_FEAR
+//=============================================================================
+//=============================================================================
+LINK_ENTITY_TO_CLASS( ai_goal_fear, CAI_FearGoal );
+
+BEGIN_MAPENTITY( CAI_FearGoal )
+	//DEFINE_KEYFIELD( m_iSomething, FIELD_INTEGER, "something" ),
+
+	// Inputs
+	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputActivate ),
+
+	// Outputs
+	//DEFINE_OUTPUT( m_OnSeeFearEntity, "OnSeeFearEntity" ),
+	DEFINE_OUTPUT( m_OnArriveAtFearNode, "OnArrivedAtNode" ),
+END_MAPENTITY()
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CAI_FearGoal::EnableGoal( CAI_BaseNPC *pAI )
+{
+	CAI_FearBehavior *pBehavior;
+
+	if ( !pAI->GetBehavior( &pBehavior ) )
+	{
+		return;
+	}
+
+	pBehavior->SetParameters(this, m_target);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CAI_FearGoal::DisableGoal( CAI_BaseNPC *pAI )
+{
+	CAI_FearBehavior *pBehavior;
+
+	if ( !pAI->GetBehavior( &pBehavior ) )
+	{
+		return;
+	}
+
+	pBehavior->SetParameters(NULL, NULL_STRING);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : &inputdata - 
+//-----------------------------------------------------------------------------
+void CAI_FearGoal::InputActivate( inputdata_t &inputdata )
+{
+	BaseClass::InputActivate( inputdata );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : &inputdata - 
+//-----------------------------------------------------------------------------
+void CAI_FearGoal::InputDeactivate( inputdata_t &inputdata )
+{
+	BaseClass::InputDeactivate( inputdata );
+}
 
 AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER( CAI_FearBehavior )
 

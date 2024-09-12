@@ -68,6 +68,10 @@ ConVar	ai_shot_bias_min( "ai_shot_bias_min", "-1.0", FCVAR_REPLICATED );
 ConVar	ai_shot_bias_max( "ai_shot_bias_max", "1.0", FCVAR_REPLICATED );
 ConVar	ai_debug_shoot_positions( "ai_debug_shoot_positions", "0", FCVAR_REPLICATED | FCVAR_CHEAT );
 
+#if defined(GAME_DLL)
+ConVar	ai_shot_notify_targets( "ai_shot_notify_targets", "0", FCVAR_NONE, "Allows fired bullets to notify the NPCs and players they are targeting, regardless of whether they hit them or not. Can be used for custom AI and speech." );
+#endif
+
 // Utility func to throttle rate at which the "reasonable position" spew goes out
 static double s_LastEntityReasonableEmitTime;
 bool CheckEmitReasonablePhysicsSpew()
@@ -461,6 +465,13 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 		// calling SetLocalOrigin from within a KeyValues method.. use SetAbsOrigin instead!
 		Assert( (GetMoveParent() == NULL) && !IsEFlagSet( EFL_DIRTY_ABSTRANSFORM ) );
 		SetAbsOrigin( vecOrigin );
+		return true;
+	}
+
+	if ( FStrEq( szKeyName, "eflags" ) )
+	{
+		// Can't use DEFINE_KEYFIELD since eflags might be set before KV are parsed
+		AddEFlags( atoi( szValue ) );
 		return true;
 	}
 
@@ -2037,6 +2048,17 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 	}
 #endif // SERVER_DLL
 
+	if (info.m_pIgnoreEntList != NULL)
+	{
+		for (int i = 0; i < info.m_pIgnoreEntList->Count(); i++)
+		{
+			if (info.m_pIgnoreEntList->Element(i))
+			{
+				traceFilter.AddEntityToIgnore(info.m_pIgnoreEntList->Element(i));
+			}
+		}
+	}
+
 	bool bUnderwaterBullets = ShouldDrawUnderwaterBulletBubbles();
 	bool bStartedInWater = false;
 	if ( bUnderwaterBullets )
@@ -2253,7 +2275,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 			{
 				flActualDamage = GameRules()->GetAmmoDamage( pAttacker, tr.m_pEnt, info.m_iAmmoType );
 			}
-			else
+			else if ((info.m_nFlags & FIRE_BULLETS_NO_AUTO_GIB_TYPE) == 0)
 			{
 				nActualDamageType = nDamageType | ((flActualDamage > 16) ? DMG_ALWAYSGIB : DMG_NEVERGIB );
 			}
@@ -2399,6 +2421,23 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 		CTakeDamageInfo dmgInfo( this, pAttacker, flCumulativeDamage, nDamageType );
 		gamestats->Event_WeaponHit( pPlayer, info.m_bPrimaryAttack, pPlayer->GetActiveWeapon()->GetClassname(), dmgInfo );
 	}
+
+	if ( ai_shot_notify_targets.GetBool() )
+	{
+		if ( IsPlayer() )
+		{
+			// Look for probable target to notify of attack
+			CBaseEntity *pAimTarget = static_cast<CBasePlayer*>(this)->GetProbableAimTarget( info.m_vecSrc, info.m_vecDirShooting );
+			if ( pAimTarget && pAimTarget->IsCombatCharacter() )
+			{
+				pAimTarget->MyCombatCharacterPointer()->OnEnemyRangeAttackedMe( this, vecDir, vecEnd );
+			}
+		}
+		else if ( GetEnemy() && GetEnemy()->IsCombatCharacter() )
+		{
+			GetEnemy()->MyCombatCharacterPointer()->OnEnemyRangeAttackedMe( this, vecDir, vecEnd );
+		}
+	}
 #endif
 }
 
@@ -2515,7 +2554,11 @@ void CBaseEntity::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir
 
 		int blood = BloodColor();
 		
+#if defined(GAME_DLL)
+		if ( blood != DONT_BLEED && DamageFilterAllowsBlood( info ) )
+#else
 		if ( blood != DONT_BLEED )
+#endif
 		{
 			SpawnBlood( vecOrigin, vecDir, blood, info.GetDamage() );// a little surface blood.
 			TraceBleed( info.GetDamage(), vecDir, ptr, info.GetDamageType() );
@@ -2714,6 +2757,14 @@ void CBaseEntity::ModifyEmitSoundParams( EmitSound_t &params )
 	}
 #endif
 }
+
+#if defined(GAME_DLL)
+void CBaseEntity::ModifySentenceParams( int &iSentenceIndex, int &iChannel, float &flVolume, soundlevel_t &iSoundlevel, int &iFlags, int &iPitch,
+	const Vector **pOrigin, const Vector **pDirection, bool &bUpdatePositions, float &soundtime, int &iSpecialDSP, int &iSpeakerIndex )
+{
+
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // These methods encapsulate MOVETYPE_FOLLOW, which became obsolete
@@ -3026,14 +3077,15 @@ void CBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 	// Append map name
 	set.AppendCriteria( "map", gpGlobals->mapname.ToCStr() );
 
-	// Append anything from I/O or keyvalues pairs
-	AppendContextToCriteria( set );
-
 	// Append anything from world I/O/keyvalues with "world" as prefix
-	CWorld *world = assert_cast< CWorld * >( CBaseEntity::Instance( INDEXENT( 0 ) ) );
+	CWorld *world = GetWorldEntity();
 	if ( world )
 	{
 		world->AppendContextToCriteria( set, "world" );
 	}
+
+	// Append base stuff
+	set.AppendCriteria("spawnflags", UTIL_VarArgs("%i", GetSpawnFlags()));
+	set.AppendCriteria("flags", UTIL_VarArgs("%i", GetFlags()));
 #endif
 }

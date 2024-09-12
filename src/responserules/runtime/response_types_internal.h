@@ -51,6 +51,7 @@ namespace ResponseRules
 		bool	minequals : 1;  //5
 		bool	usemax : 1;     //6
 		bool	maxequals : 1;  //7
+		bool	isbit : 1;      //8
 
 		void	SetToken( char const *s );
 
@@ -314,7 +315,9 @@ namespace ResponseRules
 		inline bool	IsEnabled() const { return m_bEnabled; }
 		inline void	Disable() { m_bEnabled = false; }
 		inline bool	IsMatchOnce() const { return m_bMatchOnce; }
-		inline bool	IsApplyContextToWorld() const { return m_bApplyContextToWorld; }
+		inline int	GetContextFlags() const { return m_iContextFlags; }
+		inline bool	IsApplyContextToWorld() const { return (m_iContextFlags & APPLYCONTEXT_WORLD) != 0; }
+
 
 	    const char *GetValueForRuleCriterionByName( CResponseSystem *pSystem, const CUtlSymbol &pCritNameSym );
 	    const Criteria *GetPointerForRuleCriterionByName( CResponseSystem *pSystem, const CUtlSymbol &pCritNameSym );
@@ -326,7 +329,8 @@ namespace ResponseRules
 		const char			*m_szContext;
 		uint8				m_nForceWeight;
 
-		bool				m_bApplyContextToWorld : 1;
+		// TODO: Could this cause any issues with the code optimization?
+		uint8				m_iContextFlags;
 
 		bool				m_bMatchOnce : 1;
 		bool				m_bEnabled : 1;
@@ -415,6 +419,8 @@ namespace ResponseRules
 
 		// dump everything.
 		void RemoveAll();
+
+		void PurgeAndDeleteElements();
 
 		inline Rule &operator[]( tIndex idx );
 		int Count( void ); // number of elements inside, but you can't iterate from 0 to this

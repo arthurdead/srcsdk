@@ -35,10 +35,12 @@ public:
 
 	void		InputStart( inputdata_t &inputdata );
 	void		InputStop( inputdata_t &inputdata );
+	void		InputDestroyImmediately( inputdata_t &inputdata );
 	void		InputStopEndCap( inputdata_t &inputdata );
-	void		InputDestroy( inputdata_t &inputdata );
 	void		StartParticleSystemThink( void );
 	bool		SetControlPointValue( int iControlPoint, const Vector &vValue ); //server controlled control points (variables in particle effects instead of literal follow points)
+
+	virtual bool UsesCoordinates( void ) { return false; }
 
 	enum
 	{	
@@ -74,8 +76,21 @@ protected:
 
 	string_t			m_iszControlPointNames[kMAXCONTROLPOINTS];
 	CNetworkArray( EHANDLE, m_hControlPointEnts, kMAXCONTROLPOINTS );
+	CNetworkArray( Vector, m_vControlPointVecs, kMAXCONTROLPOINTS );
 	CNetworkArray( unsigned char, m_iControlPointParents, kMAXCONTROLPOINTS );
 	CNetworkVar( bool,	m_bWeatherEffect );
+
+	CNetworkVar( bool, m_bDestroyImmediately );
+};
+
+//-----------------------------------------------------------------------------
+// Purpose: An entity that spawns and controls a particle system using coordinates. 
+//-----------------------------------------------------------------------------
+class CParticleSystemCoordinate : public CParticleSystem
+{
+	DECLARE_CLASS( CParticleSystemCoordinate, CParticleSystem );
+public:
+	virtual bool UsesCoordinates( void ) { return true; }
 };
 
 #endif // PARTICLE_SYSTEM_H

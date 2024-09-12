@@ -99,7 +99,7 @@ public:
 
 	virtual void			SetModel( const char *szModelName );
 
-	virtual	bool			StartSceneEvent( CSceneEventInfo *info, CChoreoScene *scene, CChoreoEvent *event, CChoreoActor *actor, CBaseEntity *pTarget );
+	virtual	bool			StartSceneEvent( CSceneEventInfo *info, CChoreoScene *scene, CChoreoEvent *event, CChoreoActor *actor, CBaseEntity *pTarget, CSceneEntity *pSceneEnt = NULL );
 	virtual bool			ProcessSceneEvent( CSceneEventInfo *info, CChoreoScene *scene, CChoreoEvent *event );
 	virtual	bool			ClearSceneEvent( CSceneEventInfo *info, bool fastKill, bool canceled );
 	virtual bool			CheckSceneEventCompletion( CSceneEventInfo *info, float currenttime, CChoreoScene *scene, CChoreoEvent *event );
@@ -196,7 +196,10 @@ public:
 		SCENE_AI_RANDOMFACEFLEX,
 		SCENE_AI_RANDOMHEADFLEX,
 		SCENE_AI_IGNORECOLLISION,
-		SCENE_AI_DISABLEAI
+		SCENE_AI_DISABLEAI,
+		SCENE_AI_ADDCONTEXT,
+		SCENE_AI_INPUT,
+		SCENE_AI_GAMETEXT, // This is handled in CBaseFlex
 	};
 
 	//---------------------------------

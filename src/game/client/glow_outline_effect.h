@@ -15,6 +15,7 @@
 
 class C_BaseEntity;
 class CViewSetup;
+class CViewSetupEx;
 class CMatRenderContextPtr;
 
 class CGlowObjectManager
@@ -117,14 +118,14 @@ public:
 		return false;
 	}
 
-	void RenderGlowEffects( const CViewSetup *pSetup );
+	void RenderGlowEffects( const CViewSetupEx *pSetup );
 
 	bool IsRenderingGlowEffects() { return m_bRenderingGlowEffects; }
 
 private:
 
-	void RenderGlowModels( const CViewSetup *pSetup, CMatRenderContextPtr &pRenderContext );
-	void ApplyEntityGlowEffects( const CViewSetup *pSetup, CMatRenderContextPtr &pRenderContext, float flBloomScale, int x, int y, int w, int h );
+	void RenderGlowModels( const CViewSetupEx *pSetup, CMatRenderContextPtr &pRenderContext );
+	void ApplyEntityGlowEffects( const CViewSetupEx *pSetup, CMatRenderContextPtr &pRenderContext, float flBloomScale, int x, int y, int w, int h );
 
 	struct GlowObjectDefinition_t
 	{

@@ -168,6 +168,7 @@ private:
 
 public:
 	Color		m_captionColor;
+	Color		m_bindingColor;
 };
 
 extern int Locator_AddTarget();

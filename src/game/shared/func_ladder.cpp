@@ -5,6 +5,7 @@
 //=============================================================================//
 #include "cbase.h"
 #include "func_ladder.h"
+#include "gamemovement.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -105,7 +106,7 @@ void CFuncLadder::Spawn()
 		}
 
 		// Force geometry overlays on, but only if developer 2 is set...
-		if ( developer.GetInt() > 1 )
+		if ( sv_showladders.GetBool() )
 		{
 			m_debugOverlays |= OVERLAY_TEXT_BIT;
 		}
@@ -385,6 +386,28 @@ void CFuncLadder::InputDisable( inputdata_t &inputdata )
 	m_bDisabled = true;
 }
 
+#ifdef GAME_DLL
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : &inputdata - 
+//-----------------------------------------------------------------------------
+void CFuncLadder::InputForcePlayerOn( inputdata_t &inputdata )
+{
+	//TODO Arthurdead!!!!
+	//static_cast<CGameMovement*>(g_pGameMovement)->ForcePlayerOntoLadder(this);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : &inputdata - 
+//-----------------------------------------------------------------------------
+void CFuncLadder::InputCheckPlayerOn( inputdata_t &inputdata )
+{
+	//TODO Arthurdead!!!!
+	//static_cast<CGameMovement*>(g_pGameMovement)->MountPlayerOntoLadder(this);
+}
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *pPlayer - 
@@ -458,6 +481,9 @@ BEGIN_MAPENTITY( CFuncLadder )
 	DEFINE_KEYFIELD( m_surfacePropName,FIELD_STRING,	"ladderSurfaceProperties" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
+
+	DEFINE_INPUTFUNC( FIELD_VOID, "ForcePlayerOn", InputForcePlayerOn ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "CheckPlayerOn", InputCheckPlayerOn ),
 
 	DEFINE_OUTPUT(	m_OnPlayerGotOnLadder,	"OnPlayerGotOnLadder" ),
 	DEFINE_OUTPUT(	m_OnPlayerGotOffLadder,	"OnPlayerGotOffLadder" ),

@@ -13,6 +13,8 @@
 #include "ivieweffects.h"
 #include "shake.h"
 #include "eventlist.h"
+#include "mapentities_shared.h"
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -73,6 +75,7 @@ BEGIN_RECV_TABLE( C_World, DT_World )
 	RecvPropString(RECVINFO(m_iszDetailSpriteMaterial)),
 	RecvPropInt(RECVINFO(m_bColdWorld)),
 	RecvPropInt(RECVINFO(m_iTimeOfDay)),
+	RecvPropString(RECVINFO(m_iszChapterTitle)),
 END_RECV_TABLE()
 
 
@@ -203,7 +206,56 @@ void C_World::Spawn( void )
 	Precache();
 }
 
+//-----------------------------------------------------------------------------
+// Parse data from a map file
+//-----------------------------------------------------------------------------
+bool C_World::KeyValue( const char *szKeyName, const char *szValue ) 
+{
+	return BaseClass::KeyValue( szKeyName, szValue );
+}
 
+//-----------------------------------------------------------------------------
+// Parses worldspawn data from BSP on the client
+//-----------------------------------------------------------------------------
+void C_World::ParseWorldMapData( const char *pMapData )
+{
+	char szTokenBuffer[MAPKEY_MAXLENGTH];
+	for ( ; true; pMapData = MapEntity_SkipToNextEntity(pMapData, szTokenBuffer) )
+	{
+		//
+		// Parse the opening brace.
+		//
+		char token[MAPKEY_MAXLENGTH];
+		pMapData = MapEntity_ParseToken( pMapData, token );
+
+		//
+		// Check to see if we've finished or not.
+		//
+		if (!pMapData)
+			break;
+
+		if (token[0] != '{')
+		{
+			Error( "MapEntity_ParseAllEntities: found %s when expecting {", token);
+			continue;
+		}
+
+		CEntityMapData entData( (char*)pMapData );
+		char className[MAPKEY_MAXLENGTH];
+
+		if (!entData.ExtractValue( "classname", className ))
+		{
+			Error( "classname missing from entity!\n" );
+		}
+
+		if ( !Q_strcmp( className, "worldspawn" ) )
+		{
+			// Set up keyvalues.
+			ParseMapData( &entData );
+			return;
+		}
+	}
+}
 
 C_World *GetClientWorldEntity()
 {

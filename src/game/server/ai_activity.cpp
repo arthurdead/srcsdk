@@ -65,6 +65,21 @@ const char *CAI_BaseNPC::GetActivityName(int actID)
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Gets an activity ID or registers a new private one if it doesn't exist
+//-----------------------------------------------------------------------------
+int CAI_BaseNPC::GetOrRegisterActivity( const char *actName )
+{
+	int actID = GetActivityID( actName );
+	if (actID == ACT_INVALID)
+	{
+		actID = ActivityList_RegisterPrivateActivity( actName );
+		AddActivityToSR( actName, actID );
+	}
+
+	return actID;
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Given and activity name, return the activity ID
 //-----------------------------------------------------------------------------
 int CAI_BaseNPC::GetActivityID(const char* actName) 
@@ -2233,4 +2248,86 @@ void CAI_BaseNPC::InitDefaultActivitySR(void)
 	ADD_ACTIVITY_TO_SR( ACT_MELEE_VM_INSPECT_START );
 	ADD_ACTIVITY_TO_SR( ACT_MELEE_VM_INSPECT_IDLE );
 	ADD_ACTIVITY_TO_SR( ACT_MELEE_VM_INSPECT_END );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: This is a multi-purpose table which links NPC activities to their gesture variants.
+//-----------------------------------------------------------------------------
+CAI_BaseNPC::actlink_t CAI_BaseNPC::gm_ActivityGestureLinks[] =
+{
+	{ ACT_RANGE_ATTACK1,				ACT_GESTURE_RANGE_ATTACK1 },
+	{ ACT_RANGE_ATTACK2,				ACT_GESTURE_RANGE_ATTACK2 },
+	{ ACT_MELEE_ATTACK1,				ACT_GESTURE_MELEE_ATTACK1 },
+	{ ACT_MELEE_ATTACK2,				ACT_GESTURE_MELEE_ATTACK2 },
+	{ ACT_RELOAD,						ACT_GESTURE_RELOAD },
+	
+	{ ACT_RANGE_ATTACK1_LOW,			ACT_GESTURE_RANGE_ATTACK1 }, // NOTE: ACT_GESTURE_RANGE_ATTACK1_LOW exists, but isn't used
+	{ ACT_RANGE_ATTACK2_LOW,			ACT_GESTURE_RANGE_ATTACK2 }, // NOTE: ACT_GESTURE_RANGE_ATTACK2_LOW exists, but isn't used
+	{ ACT_RELOAD_LOW,					ACT_GESTURE_RELOAD },
+
+	{ ACT_MELEE_ATTACK_SWING,			ACT_GESTURE_MELEE_ATTACK_SWING },
+
+	// -----------------------------------------------------------
+	
+	{ ACT_RANGE_ATTACK_AR2,				ACT_GESTURE_RANGE_ATTACK_AR2 },
+	{ ACT_RANGE_ATTACK_AR2_LOW,			ACT_GESTURE_RANGE_ATTACK_AR2 },
+	{ ACT_RANGE_ATTACK_SMG1,			ACT_GESTURE_RANGE_ATTACK_SMG1 },
+	{ ACT_RANGE_ATTACK_SMG1_LOW,		ACT_GESTURE_RANGE_ATTACK_SMG1 },
+	{ ACT_RANGE_ATTACK_SHOTGUN,			ACT_GESTURE_RANGE_ATTACK_SHOTGUN },
+	{ ACT_RANGE_ATTACK_SHOTGUN_LOW,		ACT_GESTURE_RANGE_ATTACK_SHOTGUN },
+	{ ACT_RANGE_ATTACK_PISTOL,			ACT_GESTURE_RANGE_ATTACK_PISTOL },
+	{ ACT_RANGE_ATTACK_PISTOL_LOW,		ACT_GESTURE_RANGE_ATTACK_PISTOL },
+
+	// -----------------------------------------------------------
+	
+	{ ACT_SMALL_FLINCH,					ACT_GESTURE_SMALL_FLINCH },
+	{ ACT_BIG_FLINCH,					ACT_GESTURE_BIG_FLINCH },
+	{ ACT_FLINCH_HEAD,					ACT_GESTURE_FLINCH_HEAD },
+	{ ACT_FLINCH_CHEST,					ACT_GESTURE_FLINCH_CHEST },
+	{ ACT_FLINCH_STOMACH,				ACT_GESTURE_FLINCH_STOMACH },
+	{ ACT_FLINCH_LEFTARM,				ACT_GESTURE_FLINCH_LEFTARM },
+	{ ACT_FLINCH_RIGHTARM,				ACT_GESTURE_FLINCH_RIGHTARM },
+	{ ACT_FLINCH_LEFTLEG,				ACT_GESTURE_FLINCH_LEFTLEG },
+	{ ACT_FLINCH_RIGHTLEG,				ACT_GESTURE_FLINCH_RIGHTLEG },
+
+	// -----------------------------------------------------------
+
+	{ ACT_RELOAD_SMG1,					ACT_GESTURE_RELOAD_SMG1 },
+	{ ACT_RELOAD_SMG1_LOW,				ACT_GESTURE_RELOAD_SMG1 },
+	{ ACT_RELOAD_SHOTGUN,				ACT_GESTURE_RELOAD_SHOTGUN },
+	{ ACT_RELOAD_SHOTGUN_LOW,			ACT_GESTURE_RELOAD_SHOTGUN },
+	{ ACT_RELOAD_PISTOL,				ACT_GESTURE_RELOAD_PISTOL },
+	{ ACT_RELOAD_PISTOL_LOW,			ACT_GESTURE_RELOAD_PISTOL },
+};
+
+Activity CAI_BaseNPC::GetGestureVersionOfActivity( Activity inActivity )
+{
+	actlink_t *pTable = gm_ActivityGestureLinks;
+	int actCount = ARRAYSIZE( gm_ActivityGestureLinks );
+
+	for ( int i = 0; i < actCount; i++, pTable++ )
+	{
+		if ( inActivity == pTable->sequence )
+		{
+			return pTable->gesture;
+		}
+	}
+
+	return ACT_INVALID;
+}
+
+Activity CAI_BaseNPC::GetSequenceVersionOfGesture( Activity inActivity )
+{
+	actlink_t *pTable = gm_ActivityGestureLinks;
+	int actCount = ARRAYSIZE( gm_ActivityGestureLinks );
+
+	for (int i = 0; i < actCount; i++, pTable++)
+	{
+		if (inActivity == pTable->gesture)
+		{
+			return pTable->sequence;
+		}
+	}
+
+	return ACT_INVALID;
 }

@@ -748,32 +748,30 @@ void CBeam::BeamDamage( trace_t *ptr )
 	if ( ptr->fraction != 1.0 && ptr->m_pEnt != NULL )
 	{
 		CBaseEntity *pHit = ptr->m_pEnt;
-		if ( pHit )
+
+		ClearMultiDamage();
+		Vector dir = ptr->endpos - GetAbsOrigin();
+		VectorNormalize( dir );
+		int nDamageType = DMG_ENERGYBEAM;
+
+		if (m_nDissolveType == 0)
 		{
-			ClearMultiDamage();
-			Vector dir = ptr->endpos - GetAbsOrigin();
-			VectorNormalize( dir );
-			int nDamageType = DMG_ENERGYBEAM;
+			nDamageType = DMG_DISSOLVE;
+		}
+		else if ( m_nDissolveType > 0 )
+		{
+			nDamageType = DMG_DISSOLVE | DMG_SHOCK; 
+		}
 
-			if (m_nDissolveType == 0)
+		CTakeDamageInfo info( this, this, m_flDamage * (gpGlobals->curtime - m_flFireTime), nDamageType );
+		CalculateMeleeDamageForce( &info, dir, ptr->endpos );
+		pHit->DispatchTraceAttack( info, dir, ptr );
+		ApplyMultiDamage();
+		if ( HasSpawnFlags( SF_BEAM_DECALS ) )
+		{
+			if ( pHit->IsBSPModel() )
 			{
-				nDamageType = DMG_DISSOLVE;
-			}
-			else if ( m_nDissolveType > 0 )
-			{
-				nDamageType = DMG_DISSOLVE | DMG_SHOCK; 
-			}
-
-			CTakeDamageInfo info( this, this, m_flDamage * (gpGlobals->curtime - m_flFireTime), nDamageType );
-			CalculateMeleeDamageForce( &info, dir, ptr->endpos );
-			pHit->DispatchTraceAttack( info, dir, ptr );
-			ApplyMultiDamage();
-			if ( HasSpawnFlags( SF_BEAM_DECALS ) )
-			{
-				if ( pHit->IsBSPModel() )
-				{
-					UTIL_DecalTrace( ptr, GetDecalName() );
-				}
+				UTIL_DecalTrace( ptr, GetDecalName() );
 			}
 		}
 	}

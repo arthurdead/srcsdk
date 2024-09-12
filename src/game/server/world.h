@@ -69,10 +69,22 @@ public:
 
 	int GetTimeOfDay()	{ return m_iTimeOfDay; }
 
+	inline const char *GetChapterTitle()
+	{
+		return STRING(m_iszChapterTitle.Get());
+	}
+
+	void InputSetChapterTitle( inputdata_t &inputdata );
+
 private:
 	DECLARE_MAPENTITY();
 
-	string_t m_iszChapterTitle;
+	// Now needs to show up on the client for RPC
+	CNetworkVar( string_t, m_iszChapterTitle );
+
+	// Suppresses m_iszChapterTitle's env_message creation,
+	// allowing it to only be used for saves and RPC
+	bool m_bChapterTitleNoMessage;
 
 	CNetworkVar( float, m_flWaveHeight );
 	CNetworkVector( m_WorldMins );

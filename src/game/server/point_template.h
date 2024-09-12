@@ -42,6 +42,7 @@ public:
 	void			AddTemplate( CBaseEntity *pEntity, const char *pszMapData, int nLen );
 	bool			ShouldRemoveTemplateEntities( void );
 	bool			AllowNameFixup();
+	bool			NameFixupExpanded() { return m_bFixupExpanded; }
 
 	// Templates accessors
 	int				GetNumTemplates( void );
@@ -49,10 +50,13 @@ public:
 
 	// Template instancing
 	bool			CreateInstance( const Vector &vecOrigin, const QAngle &vecAngles, CUtlVector<CBaseEntity*> *pEntities, CBaseEntity *pEntityMaker = NULL, bool bCreateTime = false );
+	bool			CreateSpecificInstance( int iTemplate, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity **pOutEntity );
+
 	void			CreationComplete( const CUtlVector<CBaseEntity*> &entities );
 
 	// Inputs
 	void			InputForceSpawn( inputdata_t &inputdata );
+	void			InputForceSpawnRandomTemplate( inputdata_t &inputdata );
 
 	virtual void	PerformPrecache();
 
@@ -68,6 +72,11 @@ private:
 	CUtlVector< template_t >		m_hTemplates;
 
 	COutputEvent					m_pOutputOnSpawned;
+	COutputEHANDLE					m_pOutputOutEntity;
+
+	// Allows name fixup to target all instances of a name in a keyvalue, including output parameters.
+	// TODO: Support for multiple fixup modes?
+	bool							m_bFixupExpanded;
 };
 
 #endif // POINT_TEMPLATE_H

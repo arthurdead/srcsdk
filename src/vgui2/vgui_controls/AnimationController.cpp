@@ -31,6 +31,9 @@ using namespace vgui;
 
 static CUtlSymbolTable g_ScriptSymbols(0, 128, true);
 
+// Allows animation sequences to be overridden by map-specific files
+bool g_bUsingCustomHudAnimations = false;
+
 // singleton accessor for animation controller for use by the vgui controls
 namespace vgui
 {
@@ -315,18 +318,39 @@ bool AnimationController::ParseScriptFile(char *pMem, int length, const char *fi
 			return false;
 		}
 		
-		int seqIndex;
+		int seqIndex = -1;
 		UtlSymId_t nameIndex = g_ScriptSymbols.AddString(token);
+
+		if (g_bUsingCustomHudAnimations)
+		{
+			// look through for the sequence
+			for (seqIndex = 0; seqIndex < m_Sequences.Count(); seqIndex++)
+			{
+				if (m_Sequences[seqIndex].name == nameIndex)
+					break;
+			}
+
+			if (seqIndex >= m_Sequences.Count())
+				seqIndex = -1;
+			else
+			{
+				// Clear some stuff
+				m_Sequences[seqIndex].cmdList.RemoveAll();
+			}
+		}
 				
 		// Create a new sequence
-		seqIndex = m_Sequences.AddToTail();
+		if(seqIndex == -1)
+			seqIndex = m_Sequences.AddToTail();
+		
 		AnimSequence_t &seq = m_Sequences[seqIndex];
 		seq.name = nameIndex;
 		seq.duration = 0.0f;
 
 		// get the open brace or a conditional
 		pMem = ParseFile(pMem, token, NULL);
-		if ( Q_stristr( token, "[$" ) )
+		// Fixes ! conditionals
+		if ( Q_stristr( token, "[$" ) || Q_stristr( token, "[!$" ) )
 		{
 			bAccepted = EvaluateConditional( token, fileName );
 
@@ -619,7 +643,8 @@ bool AnimationController::ParseScriptFile(char *pMem, int length, const char *fi
 			
 			// Look ahead one token for a conditional
 			char *peek = ParseFile(pMem, token, NULL);
-			if ( Q_stristr( token, "[$" ) )
+			// Fixes ! conditionals
+			if ( Q_stristr( token, "[$" ) || Q_stristr( token, "[!$" ) )
 			{
 				if ( !EvaluateConditional( token, fileName ) )
 				{

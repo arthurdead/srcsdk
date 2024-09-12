@@ -109,6 +109,7 @@ bool CAI_RappelBehavior::KeyValue( const char *szKeyName, const char *szValue )
 
 void CAI_RappelBehavior::Precache()
 {
+	CBaseEntity::PrecacheModel( "cable/cable_rappel.vmt" );
 	CBaseEntity::PrecacheModel( "cable/cable.vmt" );
 }
 
@@ -284,7 +285,10 @@ void CAI_RappelBehavior::GatherConditions()
 	if( HasCondition( COND_CAN_RANGE_ATTACK1 ) )
 	{
 		// Shoot at the enemy so long as I'm six feet or more above them.
-		if( (GetAbsOrigin().z - GetEnemy()->GetAbsOrigin().z >= 36.0f) && GetOuter()->GetShotRegulator()->ShouldShoot() )
+		// There seems to be an underlying issue here. COND_CAN_RANGE_ATTACK1 should not be valid without an enemy,
+		// but crashes have been reported from GetEnemy() returning null in this code.
+		Assert( GetEnemy() );
+		if( GetEnemy() && (GetAbsOrigin().z - GetEnemy()->GetAbsOrigin().z >= 36.0f) && GetOuter()->GetShotRegulator()->ShouldShoot() )
 		{
 			Activity activity = GetOuter()->TranslateActivity( ACT_GESTURE_RANGE_ATTACK1 );
 			Assert( activity != ACT_INVALID );
@@ -370,7 +374,7 @@ void CAI_RappelBehavior::CreateZipline()
 		if( attachment > 0 )
 		{
 			CBeam *pBeam;
-			pBeam = CBeam::BeamCreate( "cable/cable.vmt", 1 );
+			pBeam = CBeam::BeamCreate( "cable/cable_rappel.vmt", 1 );
 			pBeam->SetColor( 150, 150, 150 );
 			pBeam->SetWidth( 0.3 );
 			pBeam->SetEndWidth( 0.3 );

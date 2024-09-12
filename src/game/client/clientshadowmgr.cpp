@@ -131,6 +131,9 @@ ConVar r_flashlightdepthres("r_flashlightdepthres", "4096", FCVAR_ARCHIVE, "Flas
 
 ConVar r_threaded_client_shadow_manager( "r_threaded_client_shadow_manager", "1" );
 
+ConVar mat_slopescaledepthbias_shadowmap( "mat_slopescaledepthbias_shadowmap", "16", FCVAR_CHEAT );
+ConVar mat_depthbias_shadowmap(	"mat_depthbias_shadowmap", "0.0005", FCVAR_CHEAT  );
+
 #ifdef _WIN32
 #pragma warning( disable: 4701 )
 #endif

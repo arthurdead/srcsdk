@@ -86,11 +86,26 @@ IPlayerInfo *CPlayerInfoManager::GetPlayerInfo( edict_t *pEdict )
 	}
 }
 
+IPlayerInfo *CPlayerInfoManager::GetPlayerInfo( int index )
+{
+	return GetPlayerInfo( engine->PEntityOfEntIndex( index ) );
+}
+
 CGlobalVars *CPlayerInfoManager::GetGlobalVars()
 {
 	return gpGlobals;
 }
 
+// Games implementing advanced bot support should override this.
+int CPlayerInfoManager::AliasToWeaponId(const char *weaponName)
+{
+	return -1;
+}
 
+// Games implementing advanced bot support should override this.
+const char *CPlayerInfoManager::WeaponIdToAlias(int weaponId)
+{
+	return "MOD_DIDNT_IMPLEMENT_ME";
+}
 
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CPlayerInfoManager, IPlayerInfoManager, INTERFACEVERSION_PLAYERINFOMANAGER, s_PlayerInfoManager);

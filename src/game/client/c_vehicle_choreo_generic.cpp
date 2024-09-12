@@ -51,7 +51,7 @@ public:
 		flFOV = m_flFOV;
 	}
 	virtual void DrawHudElements();
-	virtual bool IsPassengerUsingStandardWeapons( int nRole = VEHICLE_ROLE_DRIVER ) { return false; }
+	virtual bool IsPassengerUsingStandardWeapons( int nRole = VEHICLE_ROLE_DRIVER ) { return m_bAllowStandardWeapons; }
 	virtual void UpdateViewAngles( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd );
 	virtual C_BaseCombatCharacter *GetPassenger( int nRole );
 	virtual int	GetPassengerRole( C_BaseCombatCharacter *pPassenger );
@@ -84,6 +84,8 @@ private:
 	Vector					m_vecEyeExitEndpoint;
 	float					m_flFOV;				// The current FOV (changes during entry/exit anims).
 
+	bool	m_bAllowStandardWeapons;
+
 	ViewSmoothingData_t		m_ViewSmoothingData;
 
 	vehicleview_t m_vehicleView;
@@ -104,6 +106,7 @@ IMPLEMENT_CLIENTCLASS_DT(C_PropVehicleChoreoGeneric, DT_PropVehicleChoreoGeneric
 	RecvPropFloat( RECVINFO( m_vehicleView.flYawMax ) ),
 	RecvPropFloat( RECVINFO( m_vehicleView.flPitchMin ) ),
 	RecvPropFloat( RECVINFO( m_vehicleView.flPitchMax ) ),
+	RecvPropBool( RECVINFO( m_bAllowStandardWeapons ) ),
 END_RECV_TABLE()
 
 //-----------------------------------------------------------------------------

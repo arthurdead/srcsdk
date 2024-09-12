@@ -82,6 +82,7 @@ public:
 
 	// Event callback handler
 	void			SetEventCallbackInterface( IChoreoEventCallback *callback );
+	IChoreoEventCallback	*GetEventCallbackInterface() { return m_pIChoreoEventCallback; }
 
 	// Loading
 	bool			ParseFromBuffer( char const *pFilename, ISceneTokenProcessor *tokenizer );

@@ -62,6 +62,7 @@ END_MAPENTITY()
 #define SF_FADE_MODULATE		0x0002		// Modulate, don't blend
 #define SF_FADE_ONLYONE			0x0004
 #define SF_FADE_STAYOUT			0x0008
+#define SF_FADE_DONT_PURGE		0x0016
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -78,7 +79,7 @@ void CEnvFade::InputFade( inputdata_t &inputdata )
 {
 	int fadeFlags = 0;
 
-	if ( m_spawnflags & SF_FADE_IN )
+	if ( HasSpawnFlags(SF_FADE_IN) )
 	{
 		fadeFlags |= FFADE_IN;
 	}
@@ -87,17 +88,22 @@ void CEnvFade::InputFade( inputdata_t &inputdata )
 		fadeFlags |= FFADE_OUT;
 	}
 
-	if ( m_spawnflags & SF_FADE_MODULATE )
+	if ( HasSpawnFlags(SF_FADE_MODULATE) )
 	{
 		fadeFlags |= FFADE_MODULATE;
 	}
 
-	if ( m_spawnflags & SF_FADE_STAYOUT )
+	if ( HasSpawnFlags(SF_FADE_STAYOUT) )
 	{
 		fadeFlags |= FFADE_STAYOUT;
 	}
 
-	if ( m_spawnflags & SF_FADE_ONLYONE )
+	if ( !HasSpawnFlags(SF_FADE_DONT_PURGE) )
+	{
+		fadeFlags |= FFADE_PURGE;
+	}
+
+	if ( HasSpawnFlags(SF_FADE_ONLYONE) )
 	{
 		if ( inputdata.pActivator && inputdata.pActivator->IsNetClient() )
 		{
@@ -108,7 +114,7 @@ void CEnvFade::InputFade( inputdata_t &inputdata )
 	else
 	{
 		color32 clrRender = {GetRenderColor(), GetRenderAlpha()};
-		UTIL_ScreenFadeAll( clrRender, Duration(), HoldTime(), fadeFlags|FFADE_PURGE );
+		UTIL_ScreenFadeAll( clrRender, Duration(), HoldTime(), fadeFlags );
 	}
 
 	m_OnBeginFade.FireOutput( inputdata.pActivator, this );
@@ -121,7 +127,7 @@ void CEnvFade::InputFadeReverse(inputdata_t &inputdata)
 {
 	int fadeFlags = 0;
 
-	if (m_spawnflags & SF_FADE_IN)
+	if (HasSpawnFlags(SF_FADE_IN))
 	{
 		fadeFlags |= FFADE_OUT;
 	}
@@ -130,17 +136,17 @@ void CEnvFade::InputFadeReverse(inputdata_t &inputdata)
 		fadeFlags |= FFADE_IN;
 	}
 
-	if (m_spawnflags & SF_FADE_MODULATE)
+	if (HasSpawnFlags(SF_FADE_MODULATE))
 	{
 		fadeFlags |= FFADE_MODULATE;
 	}
 
-	if (m_spawnflags & SF_FADE_STAYOUT)
+	if (HasSpawnFlags(SF_FADE_STAYOUT))
 	{
 		fadeFlags |= FFADE_STAYOUT;
 	}
 
-	if (m_spawnflags & SF_FADE_ONLYONE)
+	if (HasSpawnFlags(SF_FADE_ONLYONE))
 	{
 		if (inputdata.pActivator->IsNetClient())
 		{

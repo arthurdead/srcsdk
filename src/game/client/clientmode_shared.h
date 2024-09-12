@@ -16,11 +16,14 @@
 #include "networkvar.h"
 #include "cdll_int.h"
 #include "ehandle.h"
+#include "c_postprocesscontroller.h"
+#include "util_shared.h"
 
 class CBaseHudChat;
 class CBaseHudWeaponSelection;
 class CHudVote;
 class CViewSetup;
+class CViewSetupEx;
 class C_BaseEntity;
 class C_BasePlayer;
 class C_ColorCorrection;
@@ -73,7 +76,7 @@ public:
 
 	virtual void	ReloadScheme( bool flushLowLevel );
 	virtual void	ReloadSchemeWithRoot( vgui::VPANEL pRoot, bool flushLowLevel );
-	virtual void	OverrideView( CViewSetup *pSetup );
+	virtual void	OverrideView( CViewSetupEx *pSetup );
 	virtual void	OverrideAudioState( AudioState_t *pAudioState ) { return; }
 	virtual bool	ShouldDrawDetailObjects( );
 	virtual bool	ShouldDrawEntity(C_BaseEntity *pEnt);
@@ -83,7 +86,7 @@ public:
 	virtual bool	ShouldDrawCrosshair( void );
 	virtual bool	ShouldBlackoutAroundHUD() OVERRIDE;
 	virtual void	AdjustEngineViewport( int& x, int& y, int& width, int& height );
-	virtual void	PreRender(CViewSetup *pSetup);
+	virtual void	PreRender(CViewSetupEx *pSetup);
 	virtual void	PostRender();
 	virtual void	PostRenderVGui();
 	virtual void	ProcessInput(bool bActive);
@@ -91,6 +94,7 @@ public:
 	virtual void	Update();
 	virtual void	OnColorCorrectionWeightsReset( void );
 	virtual float	GetColorCorrectionScale( void ) const;
+	virtual void	ClearCurrentColorCorrection() { m_pCurrentColorCorrection = NULL; }
 	virtual void	SetBlurFade( float scale ) {}
 	virtual float	GetBlurFade( void ) { return 0.0f; }
 
@@ -140,7 +144,7 @@ public:
 	// HPE_END
 	//=============================================================================
 
-	virtual bool	DoPostScreenSpaceEffects( const CViewSetup *pSetup );
+	virtual bool	DoPostScreenSpaceEffects( const CViewSetupEx *pSetup );
 
 	virtual void	DisplayReplayMessage( const char *pLocalizeName, float flDuration, bool bUrgent,
 										  const char *pSound, bool bDlg );
@@ -172,6 +176,13 @@ private:
 	CBaseHudWeaponSelection *m_pWeaponSelection;
 	CHudVote *m_pHudVote;
 	int						m_nRootSize[2];
+
+	void UpdatePostProcessingEffects();
+
+	const C_PostProcessController* m_pCurrentPostProcessController;
+	PostProcessParameters_t m_CurrentPostProcessParameters;
+	PostProcessParameters_t m_LerpStartPostProcessParameters, m_LerpEndPostProcessParameters;
+	CountdownTimer m_PostProcessLerpTimer;
 
 	CHandle<C_ColorCorrection> m_pCurrentColorCorrection;
 };

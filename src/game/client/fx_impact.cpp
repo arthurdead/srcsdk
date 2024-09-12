@@ -24,6 +24,11 @@ static ConVar  r_drawflecks( "r_drawflecks", "1" );
 static ConVar  r_impacts_alt_orientation ( "r_impacts_alt_orientation", "1" );
 extern ConVar r_drawmodeldecals;
 
+ConVar g_ragdoll_steal_impacts_client( "g_ragdoll_steal_impacts_client", "1", FCVAR_NONE, "Allows clientside death ragdolls to \"steal\" impacts from their source entities. This fixes issues with NPCs dying before decals are applied." );
+ConVar g_ragdoll_steal_impacts_server( "g_ragdoll_steal_impacts_server", "1", FCVAR_NONE, "Allows serverside death ragdolls to \"steal\" impacts from their source entities. This fixes issues with NPCs dying before decals are applied." );
+
+ConVar g_ragdoll_client_impact_decals( "g_ragdoll_client_impact_decals", "1", FCVAR_NONE, "Applies decals to clientside ragdolls when they are hit." );
+
 ImpactSoundRouteFn g_pImpactSoundRouteFn = NULL;
 
 //==========================================================================================================================
@@ -33,7 +38,7 @@ CRagdollEnumerator::CRagdollEnumerator( Ray_t& shot, int iDamageType )
 {
 	m_rayShot = shot;
 	m_iDamageType = iDamageType;
-	m_bHit = false;
+	m_pHitEnt = NULL;
 }
 
 IterationRetval_t CRagdollEnumerator::EnumElement( IHandleEntity *pHandleEntity )
@@ -58,7 +63,7 @@ IterationRetval_t CRagdollEnumerator::EnumElement( IHandleEntity *pHandleEntity 
 	if ( tr.fraction < 1.0 )
 	{
 		pModel->ImpactTrace( &tr, m_iDamageType, NULL );
-		m_bHit = true;
+		m_pHitEnt = pModel;
 
 		//FIXME: Yes?  No?
 		return ITERATION_STOP;
@@ -85,6 +90,20 @@ bool FX_AffectRagdolls( Vector vecOrigin, Vector vecStart, int iDamageType )
 	return ragdollEnum.Hit();
 }
 
+C_BaseAnimating *FX_AffectRagdolls_GetHit( Vector vecOrigin, Vector vecStart, int iDamageType )
+{
+	// don't do this when lots of ragdolls are simulating
+	if ( s_RagdollLRU.CountRagdolls(true) > 1 )
+		return NULL;
+	Ray_t shotRay;
+	shotRay.Init( vecStart, vecOrigin );
+
+	CRagdollEnumerator ragdollEnum( shotRay, iDamageType );
+	partition->EnumerateElementsAlongRay( PARTITION_CLIENT_RESPONSIVE_EDICTS, shotRay, false, &ragdollEnum );
+
+	return ragdollEnum.GetHit();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : &data - 
@@ -107,6 +126,20 @@ bool Impact( const Vector &vecOrigin, const Vector &vecStart, int iMaterial, int
 
 	MDLCACHE_CRITICAL_SECTION();
 
+	// If the entity already has a ragdoll that was created on the current tick, use that ragdoll instead.
+	// This allows the killing damage's decals to show up on the ragdoll.
+	if (C_BaseAnimating *pAnimating = pEntity->GetBaseAnimating())
+	{
+		if (pAnimating->m_pClientsideRagdoll && WasRagdollCreatedOnCurrentTick( pAnimating->m_pClientsideRagdoll ) && g_ragdoll_steal_impacts_client.GetBool())
+		{
+			pEntity = pAnimating->m_pClientsideRagdoll;
+		}
+		else if (pAnimating->m_pServerRagdoll && WasRagdollCreatedOnCurrentTick( pAnimating->m_pServerRagdoll ) && g_ragdoll_steal_impacts_server.GetBool())
+		{
+			pEntity = pAnimating->m_pServerRagdoll;
+		}
+	}
+
 	// Clear out the trace
 	memset( &tr, 0, sizeof(trace_t));
 	tr.fraction = 1.0f;
@@ -123,7 +156,39 @@ bool Impact( const Vector &vecOrigin, const Vector &vecStart, int iMaterial, int
 	
 	if ( !pEntity->IsClientCreated() )
 	{
-		bHitRagdoll = FX_AffectRagdolls( vecOrigin, vecStart, iDamageType );
+		C_BaseAnimating *pRagdoll = FX_AffectRagdolls_GetHit( vecOrigin, vecStart, iDamageType );
+		if (pRagdoll)
+		{
+			bHitRagdoll = true;
+
+			if (g_ragdoll_client_impact_decals.GetBool() && pRagdoll->IsRagdoll())
+			{
+				pEntity = pRagdoll;
+
+				// HACKHACK: Get the ragdoll's nearest bone for its material
+				int iNearestMaterial = 0;
+				float flNearestDistSqr = FLT_MAX;
+
+				IPhysicsObject *pList[VPHYSICS_MAX_OBJECT_LIST_COUNT];
+				int count = pEntity->VPhysicsGetObjectList( pList, ARRAYSIZE(pList) );
+				for ( int i = 0; i < count; i++ )
+				{
+					Vector vecPosition;
+					QAngle angAngles;
+					pList[i]->GetPosition( &vecPosition, &angAngles );
+					float flDistSqr = (vecStart - vecPosition).LengthSqr();
+					if (flDistSqr < flNearestDistSqr)
+					{
+						iNearestMaterial = pList[i]->GetMaterialIndex();
+						flNearestDistSqr = flDistSqr;
+					}
+				}
+
+				// Get the material from the surfaceprop
+				surfacedata_t *psurfaceData = physprops->GetSurfaceData( iNearestMaterial );
+				iMaterial = psurfaceData->game.material;
+			}
+		}
 	}
 
 	if ( (nFlags & IMPACT_NODECAL) == 0 )

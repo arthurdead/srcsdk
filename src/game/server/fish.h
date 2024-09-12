@@ -93,6 +93,7 @@ class CFishPool : public CBaseEntity, public CGameEventListener
 {
 public:
 	DECLARE_CLASS( CFishPool, CBaseEntity );
+	DECLARE_MAPENTITY();
 
 	CFishPool( void );
 
@@ -107,6 +108,10 @@ public:
 	float GetWaterLevel( void ) const;		///< return Z coordinate of water in world coords
 	float GetMaxRange( void ) const;		///< return how far a fish is allowed to wander
 
+	void	InputSpawnFish( inputdata_t &inputdata );
+	void	InputPanicLoudFromPoint( inputdata_t &inputdata );
+	void	InputPanicQuietFromPoint( inputdata_t &inputdata );
+
 private:
 	int m_fishCount;						///< number of fish in the pool
 	float m_maxRange;						///< how far a fish is allowed to wander
@@ -119,6 +124,13 @@ private:
 	CUtlVector< CHandle<CFish> > m_fishes;	///< vector of all fish in this pool
 
 	CountdownTimer m_visTimer;				///< for throttling line of sight checks between all fish
+
+	int m_nSkin; // Sets the skin of spawned fish
+
+	float m_flLoudPanicRange;
+	float m_flQuietPanicRange;
+
+	COutputEHANDLE	m_OnSpawnFish;
 };
 
 

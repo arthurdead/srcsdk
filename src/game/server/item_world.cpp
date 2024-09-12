@@ -57,7 +57,7 @@ void CWorldItem::Spawn( void )
 		pEntity->m_target = m_target;
 		pEntity->SetName( GetEntityName() );
 		pEntity->ClearSpawnFlags();
-		pEntity->AddSpawnFlags( m_spawnflags );
+		pEntity->AddSpawnFlags( GetSpawnFlags() );
 	}
 
 	UTIL_RemoveImmediate( this );
@@ -70,8 +70,57 @@ BEGIN_MAPENTITY( CItem )
 	DEFINE_OUTPUT( m_OnPlayerTouch, "OnPlayerTouch" ),
 	DEFINE_OUTPUT( m_OnCacheInteraction, "OnCacheInteraction" ),
 
+	DEFINE_INPUTFUNC( FIELD_VOID, "EnablePlayerPickup", InputEnablePlayerPickup ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "DisablePlayerPickup", InputDisablePlayerPickup ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "EnableNPCPickup", InputEnableNPCPickup ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "DisableNPCPickup", InputDisableNPCPickup ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "BreakConstraint", InputBreakConstraint ),
+
 END_MAPENTITY()
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CItem::InputEnablePlayerPickup( inputdata_t &inputdata )
+{
+	RemoveSpawnFlags(SF_ITEM_NO_PLAYER_PICKUP);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CItem::InputDisablePlayerPickup( inputdata_t &inputdata )
+{
+	AddSpawnFlags(SF_ITEM_NO_PLAYER_PICKUP);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CItem::InputEnableNPCPickup( inputdata_t &inputdata )
+{
+	RemoveSpawnFlags(SF_ITEM_NO_NPC_PICKUP);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CItem::InputDisableNPCPickup( inputdata_t &inputdata )
+{
+	AddSpawnFlags(SF_ITEM_NO_NPC_PICKUP);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CItem::InputBreakConstraint( inputdata_t &inputdata )
+{
+	if ( m_pConstraint != NULL )
+	{
+		physenv->DestroyConstraint( m_pConstraint );
+		m_pConstraint = NULL;
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Constructor 

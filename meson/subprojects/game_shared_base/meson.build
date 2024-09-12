@@ -117,6 +117,7 @@ game_shared_base_dep = declare_dependency(
 		join_paths(shared_src_dir,'game_timescale_shared.cpp'),
 		join_paths(shared_src_dir,'map_entity.cpp'),
 		join_paths(shared_src_dir,'ai_waypoint.cpp'),
+		join_paths(shared_src_dir,'mapbase','matchers.cpp'),
 		#join_paths(shared_src_dir,'recast','recast_file.cpp'),
 		#join_paths(shared_src_dir,'recast','recast_mesh.cpp'),
 		#join_paths(shared_src_dir,'recast','recast_mgr.cpp'),

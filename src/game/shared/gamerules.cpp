@@ -186,6 +186,8 @@ ConVar sv_item_respawn_time("sv_item_respawn_time", "30", FCVAR_GAMEDLL|FCVAR_NO
 
 #define WEAPON_MAX_DISTANCE_FROM_SPAWN 64
 
+#define FRIENDLY_FIRE_GLOBALNAME "friendly_fire_override"
+
 extern IVoiceGameMgrHelper *g_pVoiceGameMgrHelper;
 extern bool	g_fGameOver;
 
@@ -1378,6 +1380,28 @@ void CGameRules::EndGameFrame( void )
 			g_MultiDamage.GetAttacker()->GetDebugName(),
 			g_MultiDamage.GetDamage() );
 		ApplyMultiDamage();
+	}
+}
+
+void CGameRules::OnSkillLevelChanged( int iNewLevel )
+{
+	variant_t varNewLevel;
+	varNewLevel.SetInt(iNewLevel);
+
+	// Iterate through all logic_skill entities and fire them
+	CBaseEntity *pEntity = gEntList.FindEntityByClassname(NULL, "logic_skill");
+	while (pEntity)
+	{
+		pEntity->AcceptInput("SkillLevelChanged", NULL, NULL, varNewLevel, 0);
+		pEntity = gEntList.FindEntityByClassname(pEntity, "logic_skill");
+	}
+
+	// Fire game event for difficulty level changed
+	IGameEvent *event = gameeventmanager->CreateEvent("skill_changed");
+	if (event)
+	{
+		event->SetInt("skill_level", iNewLevel);
+		gameeventmanager->FireEvent(event);
 	}
 }
 
@@ -2780,6 +2804,22 @@ int CGameRules::DeadPlayerWeapons( CBasePlayer *pPlayer )
 int CGameRules::DeadPlayerAmmo( CBasePlayer *pPlayer )
 {
 	return GR_PLR_DROP_AMMO_ACTIVE;
+}
+
+//-----------------------------------------------------------------------------
+// Gets our global friendly fire override.
+//-----------------------------------------------------------------------------
+ThreeState_t CGameRules::GlobalFriendlyFire()
+{
+	return GlobalEntity_IsInTable(FRIENDLY_FIRE_GLOBALNAME) ? TO_THREESTATE(GlobalEntity_GetState(FRIENDLY_FIRE_GLOBALNAME)) : TRS_NONE;
+}
+
+//-----------------------------------------------------------------------------
+// Sets our global friendly fire override.
+//-----------------------------------------------------------------------------
+void CGameRules::SetGlobalFriendlyFire(ThreeState_t val)
+{
+	GlobalEntity_Add(MAKE_STRING(FRIENDLY_FIRE_GLOBALNAME), gpGlobals->mapname, (GLOBALESTATE)val);
 }
 
 #endif // !CLIENT_DLL

@@ -53,6 +53,22 @@ class CUserCmd;
 #define SF_WEAPON_NO_PLAYER_PICKUP	(1<<1)
 #define SF_WEAPON_NO_PHYSCANNON_PUNT (1<<2)
 
+// I really, REALLY hope no weapon uses their own spawnflags.
+// If you want yours to use spawnflags, start at 16 just to be safe.
+
+#define SF_WEAPON_NO_NPC_PICKUP	(1<<3) // Prevents NPCs from picking up the weapon.
+#define SF_WEAPON_PRESERVE_AMMO (1<<4) // Prevents the weapon from filling up to max automatically when dropped or picked up by players.
+#define SF_WEAPON_PRESERVE_NAME	(1<<5) // Prevents the weapon's name from being cleared upon being picked up by a player.
+#define SF_WEAPON_ALWAYS_TOUCHABLE	(1<<6) // Makes a weapon always touchable/pickupable, even through walls.
+
+// ----------------------------------------------
+// These spawnflags are not supposed to be used by level designers.
+// They're just my way of trying to avoid adding new variables
+// that have to stay in memory and save/load.
+// ----------------------------------------------
+#define SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY (1<<6) // So weapons with ammo preserved at 0 don't switch.
+#define SF_WEAPON_USED (1<<7) // Weapon is being +USE'd, not bumped
+
 //Percent
 #define	CLIP_PERC_THRESHOLD		0.75f	
 
@@ -117,6 +133,24 @@ namespace vgui2
 {
 	typedef unsigned long HFont;
 }
+
+// ------------------
+// Weapon classes
+// ------------------
+// I found myself in situations where this is useful.
+// Their purpose is similar to Class_T on NPCs.
+
+enum WeaponClass_t
+{
+	WEPCLASS_INVALID = 0,
+
+	WEPCLASS_HANDGUN,
+	WEPCLASS_RIFLE,
+	WEPCLASS_SHOTGUN,
+	WEPCLASS_HEAVY,
+
+	WEPCLASS_MELEE,
+};
 
 #define MWHEEL_UP		 1
 #define MWHEEL_DOWN		-1
@@ -198,7 +232,19 @@ public:
 	virtual void			Spawn( void );
 	virtual void			Precache( void );
 
+	void					SetAmmoFromMapper( float flAmmo, bool bSecondary = false );
+	virtual bool			KeyValue( const char *szKeyName, const char *szValue );
+	virtual bool			GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen );
+
 	void					MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
+
+	virtual WeaponClass_t	WeaponClassify();
+	static WeaponClass_t	WeaponClassFromString(const char *str);
+
+	virtual bool			SupportsBackupActivity(Activity activity);
+	virtual acttable_t		*GetBackupActivityList();
+	virtual int				GetBackupActivityListCount();
+	static acttable_t		*GetDefaultBackupActivityList( acttable_t *pTable, int &actCount );
 
 	// Subtypes are used to manage multiple weapons of the same type on the player.
 	virtual int				GetSubType( void ) { return m_iSubType; }
@@ -295,6 +341,8 @@ public:
 	virtual bool			Reload( void );
 	bool					DefaultReload( int iClipSize1, int iClipSize2, int iActivity );
 	bool					ReloadsSingly( void ) const;
+	// Originally created for the crossbow, can be used to add special NPC reloading behavior
+	virtual void			Reload_NPC( bool bPlaySound = true );
 
 	virtual bool			AutoFiresFullClip( void ) const { return false; }
 	virtual void			UpdateAutoFire( void );
@@ -362,7 +410,7 @@ public:
 	bool					IsLocked( CBaseEntity *pAsker );
 
 	//All weapons can be picked up by NPCs by default
-	virtual bool			CanBePickedUpByNPCs( void ) { return true;	}
+	virtual bool			CanBePickedUpByNPCs( void );
 
 	virtual int				GetSkinOverride() const { return -1; }
 
@@ -391,6 +439,12 @@ public:
 	virtual bool			UsesClipsForAmmo1( void ) const;
 	virtual bool			UsesClipsForAmmo2( void ) const;
 	bool					IsMeleeWeapon() const;
+	float					GetViewmodelFOVOverride() const;
+	float					GetBobScale() const;
+	float					GetSwayScale() const;
+	float					GetSwaySpeedScale() const;
+	virtual const char		*GetDroppedModel( void ) const;
+	bool					UsesHands( void ) const;
 
 	virtual	void			OnMouseWheel( int nDirection ) {}
 
@@ -431,6 +485,31 @@ public:
 	virtual void			Activate( void );
 
 	virtual void			Operator_FrameUpdate( CBaseCombatCharacter  *pOperator );
+
+	// Gets the weapon script name to load.
+	virtual const char*		GetWeaponScriptName() { return GetClassname(); }
+
+	bool				FiresUnderwater() { return m_bFiresUnderwater; }
+	void				SetFiresUnderwater( bool bVal ) { m_bFiresUnderwater = bVal; }
+	bool				AltFiresUnderwater() { return m_bAltFiresUnderwater; }
+	void				SetAltFiresUnderwater( bool bVal ) { m_bAltFiresUnderwater = bVal; }
+	float				MinRange1() { return m_fMinRange1; }
+	void				SetMinRange1( float flVal ) { m_fMinRange1 = flVal; }
+	float				MinRange2() { return m_fMinRange2; }
+	void				SetMinRange2( float flVal ) { m_fMinRange2 = flVal; }
+	float				MaxRange1() { return m_fMaxRange1; }
+	void				SetMaxRange1( float flVal ) { m_fMaxRange1 = flVal; }
+	float				MaxRange2() { return m_fMaxRange2; }
+	void				SetMaxRange2( float flVal ) { m_fMaxRange2 = flVal; }
+	//bool				ReloadsSingly() { return m_bReloadsSingly; }
+	void				SetReloadsSingly( bool bVal ) { m_bReloadsSingly = bVal; }
+	float				FireDuration() { return m_fFireDuration; }
+	void				SetFireDuration( float flVal ) { m_fFireDuration = flVal; }
+
+	float				NextPrimaryAttack() { return m_flNextPrimaryAttack; }
+	void				SetNextPrimaryAttack( float flVal ) { m_flNextPrimaryAttack = flVal; }
+	float				NextSecondaryAttack() { return m_flNextSecondaryAttack; }
+	void				SetNextSecondaryAttack( float flVal ) { m_flNextSecondaryAttack = flVal; }
 
 public:
 // Server Only Methods
@@ -478,6 +557,18 @@ public:
 	virtual int				UpdateTransmitState( void );
 
 	void					InputHideWeapon( inputdata_t &inputdata );
+	void					InputSetAmmo1( inputdata_t &inputdata );
+	void					InputSetAmmo2( inputdata_t &inputdata );
+	void					InputGiveDefaultAmmo( inputdata_t &inputdata );
+	void					InputEnablePlayerPickup( inputdata_t &inputdata );
+	void					InputDisablePlayerPickup( inputdata_t &inputdata );
+	void					InputEnableNPCPickup( inputdata_t &inputdata );
+	void					InputDisableNPCPickup( inputdata_t &inputdata );
+	void					InputBreakConstraint( inputdata_t &inputdata );
+	void					InputForceFire( inputdata_t &inputdata, bool bSecondary = false );
+	void					InputForcePrimaryFire( inputdata_t &inputdata );
+	void					InputForceSecondaryFire( inputdata_t &inputdata );
+
 	void					Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
 	virtual void			MakeWeaponNameFromEntity( CBaseEntity *pOther );
@@ -603,6 +694,8 @@ public:
 	// Weapon art
 	CNetworkVar( int, m_iViewModelIndex );
 	CNetworkVar( int, m_iWorldModelIndex );
+	CNetworkVar( int, m_iDroppedModelIndex );
+
 	// Sounds
 	float					m_flNextEmptySoundTime;				// delay on empty sound playing
 
@@ -681,6 +774,7 @@ protected:
 	COutputEvent			m_OnPlayerPickup;	// Fired when the player picks up the weapon.
 	COutputEvent			m_OnNPCPickup;		// Fired when an NPC picks up the weapon.
 	COutputEvent			m_OnCacheInteraction;	// For awarding lambda cache achievements in HL2 on 360. See .FGD file for details 
+	COutputEvent			m_OnDropped;
 
 #else // Client .dll only
 

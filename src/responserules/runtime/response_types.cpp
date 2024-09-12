@@ -34,6 +34,7 @@ Matcher::Matcher()
 	minequals = false;
 	usemax = false;
 	maxequals = false;
+	isbit = false;
 	maxval = 0.0f;
 	minval = 0.0f;
 
@@ -73,6 +74,12 @@ void Matcher::Describe( void )
 	if ( minmaxcount >= 1 )
 	{
 		DevMsg( "    matcher:  %s\n", sz );
+		return;
+	}
+
+	if ( isbit )
+	{
+		DevMsg( 1, "    matcher:  &%s%s\n", notequal ? "~" : "", GetToken() );
 		return;
 	}
 
@@ -209,7 +216,7 @@ Rule::Rule() : m_nForceWeight(0)
 	m_bMatchOnce = false;
 	m_bEnabled = true;
 	m_szContext = NULL;
-	m_bApplyContextToWorld = false;
+	m_iContextFlags = 0;
 }
 
 Rule& Rule::operator =( const Rule& src )
@@ -237,7 +244,7 @@ Rule& Rule::operator =( const Rule& src )
 	SetContext( src.m_szContext );
 	m_bMatchOnce = src.m_bMatchOnce;
 	m_bEnabled = src.m_bEnabled;
-	m_bApplyContextToWorld = src.m_bApplyContextToWorld;
+	m_iContextFlags = src.m_iContextFlags;
 	m_nForceWeight = src.m_nForceWeight;
 	return *this;
 }

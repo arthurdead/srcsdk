@@ -23,7 +23,7 @@ class CBasePlayer;
 // order in which they are initialized and updated. They are shut down in
 // reverse order from which they are initialized.
 //-----------------------------------------------------------------------------
-
+const char *GetMapName();
 
 // UNDONE: Do these need GameInit/GameShutdown as well?
 // UNDONE: Remove the Pre/Post entity semantics and rely on system ordering?

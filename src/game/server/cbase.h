@@ -76,6 +76,9 @@
 #include "baseentity_shared.h"
 #include "basetoggle.h"
 #include "igameevents.h"
+#include "tier1/mapbase_matchers_base.h"
+#include "mapbase/matchers.h"
+#include "mapbase/GlobalStrings.h"
 
 // maximum number of targets a single multi_manager entity may be assigned.
 #define MAX_MULTI_TARGETS	16 
@@ -92,6 +95,9 @@ extern void FireTargets( const char *targetName, CBaseEntity *pActivator, CBaseE
 #define	GIB_HEALTH_VALUE	-30
 
 #define MAX_OLD_ENEMIES		4 // how many old enemies to remember
+
+// Use the model keyvalue if it is defined
+#define DefaultOrCustomModel(defaultModel) GetModelName() != NULL_STRING ? STRING(GetModelName()) : defaultModel
 
 // when calling KILLED(), a value that governs gib behavior is expected to be 
 // one of these three values

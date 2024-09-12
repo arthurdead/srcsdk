@@ -15,6 +15,7 @@
 #include "ai_basenpc.h"
 #include "ai_criteria.h"
 #include "sceneentity.h"
+#include "ai_squad.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -27,6 +28,8 @@ ConVar ai_debug_speech( "ai_debug_speech", "0" );
 inline void SpeechMsg( ... ) {}
 #define DebuggingSpeech() (false)
 #endif
+
+ConVar ai_speech_print_mode( "ai_speech_print_mode", "1", FCVAR_NONE, "Set this value to 1 to print responses as game_text instead of debug point_message-like text." );
 
 extern ConVar rr_debugresponses;
 
@@ -92,7 +95,15 @@ int CAI_Expresser::GetVoicePitch() const
 RR::CApplyContextOperator RR::sm_OpCopy(0); // "
 RR::CIncrementOperator RR::sm_OpIncrement(2); // "++"
 RR::CDecrementOperator RR::sm_OpDecrement(2); // "--"
+RR::CMultiplyOperator RR::sm_OpMultiply(2); // "**"
+RR::CDivideOperator RR::sm_OpDivide(2); // "/="
 RR::CToggleOperator RR::sm_OpToggle(1); // "!"
+
+// LEGACY - See below
+RR::CIncrementOperator RR::sm_OpLegacyIncrement(1); // "+"
+RR::CDecrementOperator RR::sm_OpLegacyDecrement(1); // "-"
+RR::CMultiplyOperator RR::sm_OpLegacyMultiply(1); // "*"
+RR::CDivideOperator RR::sm_OpLegacyDivide(1); // "/"
 
 RR::CApplyContextOperator *RR::CApplyContextOperator::FindOperator( const char *pContextString )
 {
@@ -101,22 +112,63 @@ RR::CApplyContextOperator *RR::CApplyContextOperator::FindOperator( const char *
 		return &sm_OpCopy;
 	}
 
-	if ( pContextString[0] == '+' && pContextString [1] == '+' && pContextString[2] != '\0' )
+	// This is one of those freak coincidences where Mapbase implemented its own context operators with no knowledge of context operators from later versions of the engine.
+	// Mapbase's context operators only required *one* operator character (e.g. '+' as opposed to '++') and supported multiplication and division.
+	// Although Valve's system now replaces Mapbase's system, multiplication and division have been added and maintaining the old syntax is needed for legacy support.
+	// That being said, it's believed that almost nobody knew that Mapbase supported context operators in the first place, so there might not be much legacy to support anyway.
+	switch (pContextString[0])
 	{
-		return &sm_OpIncrement;
+		case '+':
+		{
+			if (pContextString[1] != '+')
+			{
+				Warning( "\"%s\" needs another '+' to qualify as a proper operator. This code is regarding it as an operator anyway for legacy support, which might be going away soon!!!\n", pContextString );
+				return &sm_OpLegacyIncrement;
+			}
+			else if (pContextString[2] == '\0')
+				break;
+			return &sm_OpIncrement;
+		}
+		case '-':
+		{
+			if (pContextString[1] != '-')
+			{
+				Warning( "\"%s\" needs another '-' to qualify as a proper operator. This code is regarding it as an operator anyway for legacy support, which might be going away soon!!!\n", pContextString );
+				return &sm_OpLegacyDecrement;
+			}
+			else if (pContextString[2] == '\0')
+				break;
+			return &sm_OpIncrement;
+		}
+		case '*':
+		{
+			if (pContextString[1] != '*')
+			{
+				Warning( "\"%s\" needs another '*' to qualify as a proper operator. This code is regarding it as an operator anyway for legacy support, which might be going away soon!!!\n", pContextString );
+				return &sm_OpLegacyMultiply;
+			}
+			else if (pContextString[2] == '\0')
+				break;
+			return &sm_OpMultiply;
+		}
+		case '/':
+		{
+			if (pContextString[1] != '=')
+			{
+				Warning( "\"%s\" needs a '=' after the '/' to qualify as a proper operator. This code is regarding it as an operator anyway for legacy support, which might be going away soon!!!\n", pContextString );
+				return &sm_OpLegacyDivide;
+			}
+			else if (pContextString[2] == '\0')
+				break;
+			return &sm_OpDivide;
+		} break;
+		case '!':
+		{
+			return &sm_OpToggle;
+		}
 	}
-	else if ( pContextString[0] == '-' && pContextString [1] == '-' && pContextString[2] != '\0' )
-	{
-		return &sm_OpDecrement;
-	}
-	else if ( pContextString[0] == '!' )
-	{
-		return &sm_OpToggle;
-	}
-	else
-	{
-		return &sm_OpCopy;
-	}
+
+	return &sm_OpCopy;
 }
 
 // default is just copy
@@ -161,6 +213,29 @@ bool RR::CToggleOperator::Apply( const char *pOldValue, const char *pOperator, c
 	// parse out the old value as a numeric
 	int nOld = pOldValue ? V_atoi(pOldValue) : 0;
 	V_snprintf( pNewValue, pNewValBufSize, "%d", nOld ? 0 : 1 );
+	return true;
+}
+
+bool RR::CMultiplyOperator::Apply( const char *pOldValue, const char *pOperator, char *pNewValue, int pNewValBufSize )
+{
+	Assert( pOperator[0] == '*' && pOperator[1] == '*' );
+	// parse out the old value as a numeric
+	int nOld = pOldValue ? V_atoi(pOldValue) : 0;
+	int nInc = V_atoi( pOperator+m_nSkipChars );
+	V_snprintf( pNewValue, pNewValBufSize, "%d", nOld*nInc );
+	return true;
+}
+
+bool RR::CDivideOperator::Apply( const char *pOldValue, const char *pOperator, char *pNewValue, int pNewValBufSize )
+{
+	Assert( pOperator[0] == '/' && pOperator[1] == '=' );
+	// parse out the old value as a numeric
+	int nOld = pOldValue ? V_atoi(pOldValue) : 0;
+	int nInc = V_atoi( pOperator+m_nSkipChars );
+	if (nInc == 0)
+		V_strncpy( pNewValue, "0", pNewValBufSize );
+	else
+		V_snprintf( pNewValue, pNewValBufSize, "%d", nOld/nInc );
 	return true;
 }
 
@@ -303,6 +378,16 @@ void CAI_Expresser::GatherCriteria( AI_CriteriaSet * RESTRICT outputSet, const A
 
 	// Let our outer fill in most match criteria
 	GetOuter()->ModifyOrAppendCriteria( *outputSet );
+
+	// Append local player criteria to set, but not if this is a player doing the talking
+	if ( !GetOuter()->IsPlayer() )
+	{
+		CBasePlayer *pPlayer = UTIL_PlayerByIndex( 1 );
+		if( pPlayer )
+			pPlayer->ModifyOrAppendPlayerCriteria( *outputSet );
+	}
+
+	GetOuter()->ReAppendContextCriteria( *outputSet );
 }
 
 //-----------------------------------------------------------------------------
@@ -318,12 +403,6 @@ bool CAI_Expresser::FindResponse( AI_Response &outResponse, AIConcept_t &concept
 	if ( !rs )
 	{
 		Assert( !"No response system installed for CAI_Expresser::GetOuter()!!!" );
-		return false;
-	}
-
-	// if I'm dead, I can't possibly match dialog.
-	if ( !GetOuter()->IsAlive() )
-	{
 		return false;
 	}
 
@@ -471,7 +550,7 @@ bool CAI_Expresser::SpeakDispatchResponse( AIConcept_t &concept, AI_Response *re
 			if ( !result->ShouldntUseScene() )
 			{
 				// This generates a fake CChoreoScene wrapping the sound.txt name
-				spoke = SpeakAutoGeneratedScene( response, delay );
+				spoke = SpeakAutoGeneratedScene( response, delay, result, filter );
 			}
 			else
 			{
@@ -481,6 +560,9 @@ bool CAI_Expresser::SpeakDispatchResponse( AIConcept_t &concept, AI_Response *re
 				DevMsg( 2, "SpeakDispatchResponse:  Entity ( %i/%s ) playing sound '%s'\n", GetOuter()->entindex(), STRING( GetOuter()->GetEntityName() ), response );
 				NoteSpeaking( speakTime, delay );
 				spoke = true;
+
+				// Not really any other way of doing this
+				OnSpeechFinished();
 			}
 		}
 		break;
@@ -488,6 +570,9 @@ bool CAI_Expresser::SpeakDispatchResponse( AIConcept_t &concept, AI_Response *re
 	case ResponseRules::RESPONSE_SENTENCE:
 		{
 			spoke = ( -1 != SpeakRawSentence( response, delay, VOL_NORM, soundlevel ) ) ? true : false;
+
+			// Not really any other way of doing this
+			OnSpeechFinished();
 		}
 		break;
 
@@ -505,18 +590,77 @@ bool CAI_Expresser::SpeakDispatchResponse( AIConcept_t &concept, AI_Response *re
 		break;
 	case ResponseRules::RESPONSE_PRINT:
 		{
-			if ( g_pDeveloper->GetInt() > 0 )
+			// Note speaking for print responses
+			int responseLen = Q_strlen( response );
+			float responseDuration = ((float)responseLen) * 0.1f;
+			NoteSpeaking( responseDuration, delay );
+
+			// game_text print responses
+			hudtextparms_t textParams;
+			textParams.holdTime = 4.0f + responseDuration; // Give extra padding for the text itself
+			textParams.fadeinTime = 0.5f;
+			textParams.fadeoutTime = 0.5f;
+
+			textParams.channel = 3;
+			textParams.x = -1;
+			textParams.y = 0.6;
+			textParams.effect = 0;
+
+			textParams.r1 = 255;
+			textParams.g1 = 255;
+			textParams.b1 = 255;
+
+			if (ai_speech_print_mode.GetBool() && GetOuter()->GetGameTextSpeechParams( textParams ))
 			{
-				Vector vPrintPos;
-				GetOuter()->CollisionProp()->NormalizedToWorldSpace( Vector(0.5,0.5,1.0f), &vPrintPos );
-				NDebugOverlay::Text( vPrintPos, response, true, 1.5 );
-			}
+				CRecipientFilter filter;
+				filter.AddAllPlayers();
+				filter.MakeReliable();
+
+				UserMessageBegin( filter, "HudMsg" );
+					WRITE_BYTE ( textParams.channel & 0xFF );
+					WRITE_FLOAT( textParams.x );
+					WRITE_FLOAT( textParams.y );
+					WRITE_BYTE ( textParams.r1 );
+					WRITE_BYTE ( textParams.g1 );
+					WRITE_BYTE ( textParams.b1 );
+					WRITE_BYTE ( textParams.a1 );
+					WRITE_BYTE ( textParams.r2 );
+					WRITE_BYTE ( textParams.g2 );
+					WRITE_BYTE ( textParams.b2 );
+					WRITE_BYTE ( textParams.a2 );
+					WRITE_BYTE ( textParams.effect );
+					WRITE_FLOAT( textParams.fadeinTime );
+					WRITE_FLOAT( textParams.fadeoutTime );
+					WRITE_FLOAT( textParams.holdTime );
+					WRITE_FLOAT( textParams.fxTime );
+					WRITE_STRING( response );
+					WRITE_STRING( "" ); // No custom font
+					WRITE_BYTE ( responseLen );
+				MessageEnd();
+
 				spoke = true;
+
+				OnSpeechFinished();
 			}
+			else
+			{
+				if ( g_pDeveloper->GetInt() > 0 )
+				{
+					Vector vPrintPos;
+					GetOuter()->CollisionProp()->NormalizedToWorldSpace( Vector(0.5,0.5,1.0f), &vPrintPos );
+					NDebugOverlay::Text( vPrintPos, response, true, 1.5 );
+				}
+				{
+					spoke = true;
+					OnSpeechFinished();
+				}
+			}
+		}
 		break;
 	case ResponseRules::RESPONSE_ENTITYIO:
 		{
-			return FireEntIOFromResponse( response, GetOuter() );
+			spoke = FireEntIOFromResponse( response, GetOuter() );
+			OnSpeechFinished();
 		}
 		break;
 	}
@@ -531,17 +675,46 @@ bool CAI_Expresser::SpeakDispatchResponse( AIConcept_t &concept, AI_Response *re
 			NDebugOverlay::Text( vPrintPos, CFmtStr( "%s: %s", (const char*)concept, response ), true, 1.5 );
 		}
 
-		if ( result->IsApplyContextToWorld() )
+		if (result->GetContext())
 		{
-			CBaseEntity *pEntity = CBaseEntity::Instance( INDEXENT( 0 ) );
-			if ( pEntity )
+			const char *pszContext = result->GetContext();
+
+			int iContextFlags = result->GetContextFlags();
+			if ( iContextFlags & ResponseRules::APPLYCONTEXT_SQUAD )
 			{
-				pEntity->AddContext( result->GetContext() );
+				CAI_BaseNPC *pNPC = GetOuter()->MyNPCPointer();
+				if (pNPC && pNPC->GetSquad())
+				{
+					AISquadIter_t iter;
+					CAI_BaseNPC *pSquadmate = pNPC->GetSquad()->GetFirstMember( &iter );
+					while ( pSquadmate )
+					{
+						pSquadmate->AddContext( pszContext );
+
+						pSquadmate = pNPC->GetSquad()->GetNextMember( &iter );
+					}
+				}
 			}
-		}
-		else
-		{
-			GetOuter()->AddContext( result->GetContext() );
+			if ( iContextFlags & ResponseRules::APPLYCONTEXT_ENEMY )
+			{
+				CBaseEntity *pEnemy = GetOuter()->GetEnemy();
+				if ( pEnemy )
+				{
+					pEnemy->AddContext( pszContext );
+				}
+			}
+			if ( iContextFlags & ResponseRules::APPLYCONTEXT_WORLD )
+			{
+				CBaseEntity *pEntity = CBaseEntity::Instance( INDEXENT( 0 ) );
+				if ( pEntity )
+				{
+					pEntity->AddContext( pszContext );
+				}
+			}
+			if ( iContextFlags == 0 || iContextFlags & ResponseRules::APPLYCONTEXT_SELF )
+			{
+				GetOuter()->AddContext( pszContext );
+			}
 		}
 		SetSpokeConcept( concept, result );
 	}
@@ -648,6 +821,35 @@ float CAI_Expresser::GetResponseDuration( AI_Response *result )
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CAI_Expresser::SetUsingProspectiveResponses( bool bToggle )
+{
+	VPROF("CAI_Expresser::SetUsingProspectiveResponses");
+	IResponseSystem *rs = GetOuter()->GetResponseSystem();
+	if ( !rs )
+	{
+		Assert( !"No response system installed for CAI_Expresser::GetOuter()!!!" );
+		return;
+	}
+
+	rs->SetProspective( bToggle );
+}
+
+void CAI_Expresser::MarkResponseAsUsed( AI_Response *response )
+{
+	VPROF("CAI_Expresser::MarkResponseAsUsed");
+	IResponseSystem *rs = GetOuter()->GetResponseSystem();
+	if ( !rs )
+	{
+		Assert( !"No response system installed for CAI_Expresser::GetOuter()!!!" );
+		return;
+	}
+
+	rs->MarkResponseAsUsed( response->GetInternalIndices()[0], response->GetInternalIndices()[1] );
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Placeholder for rules based response system
 // Input  : concept - 
 // Output : Returns true on success, false on failure.
@@ -717,9 +919,9 @@ bool CAI_Expresser::SpeakRawScene( const char *pszScene, float delay, AI_Respons
 }
 
 // This will create a fake .vcd/CChoreoScene to wrap the sound to be played
-bool CAI_Expresser::SpeakAutoGeneratedScene( char const *soundname, float delay )
+bool CAI_Expresser::SpeakAutoGeneratedScene( char const *soundname, float delay, AI_Response *response, IRecipientFilter *filter )
 {
-	float speakTime = GetOuter()->PlayAutoGeneratedSoundScene( soundname );
+	float speakTime = GetOuter()->PlayAutoGeneratedSoundScene( soundname, delay, response, filter );
 	if ( speakTime > 0 )
 	{
 		SpeechMsg( GetOuter(), "SpeakAutoGeneratedScene( %s, %f) %f\n", soundname, delay, speakTime );
@@ -949,6 +1151,30 @@ void CAI_Expresser::SetSpokeConcept( AIConcept_t ai_concept, AI_Response *respon
 void CAI_Expresser::ClearSpokeConcept( AIConcept_t ai_concept )
 {
 	m_ConceptHistories.Remove( ai_concept );
+}
+
+//-------------------------------------
+
+AIConcept_t CAI_Expresser::GetLastSpokeConcept( AIConcept_t excludeConcept /* = NULL */ )
+{
+	int iLastSpokenIndex = m_ConceptHistories.InvalidIndex();
+	float flLast = 0.0f;
+	for ( int i = m_ConceptHistories.First(); i != m_ConceptHistories.InvalidIndex(); i = m_ConceptHistories.Next(i ) )
+	{
+		ConceptHistory_t *h = &m_ConceptHistories[ i ];
+
+		// If an 'exclude concept' was provided, skip over this entry in the history if it matches the exclude concept
+		if ( excludeConcept != NULL && FStrEq( m_ConceptHistories.GetElementName( i ), excludeConcept ) )
+			continue;
+
+		if ( h->timeSpoken >= flLast )
+		{
+			iLastSpokenIndex = i;
+			flLast = h->timeSpoken;
+		}
+	}
+
+	return iLastSpokenIndex != m_ConceptHistories.InvalidIndex() ? m_ConceptHistories.GetElementName( iLastSpokenIndex ) : NULL;
 }
 
 //-------------------------------------

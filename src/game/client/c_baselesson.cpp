@@ -39,6 +39,11 @@ extern ConVar gameinstructor_verbose;
 extern ConVar gameinstructor_verbose_lesson;
 extern ConVar gameinstructor_find_errors;
 
+// Mapbase was originally going to use a HL2-style default color (245,232,179).
+// This is no longer the case, but mods are free to change this cvar in their config files.
+ConVar gameinstructor_default_captioncolor( "gameinstructor_default_captioncolor", "255,255,255", FCVAR_NONE );
+ConVar gameinstructor_default_bindingcolor( "gameinstructor_default_bindingcolor", "0,0,0", FCVAR_NONE );
+
 //
 // CGameInstructorLesson
 //
@@ -404,7 +409,10 @@ void CIconLesson::Init( void )
 
 	m_iFlags = LOCATOR_ICON_FX_NONE;
 
-	m_szCaptionColor = "255,255,255";// Default to white
+	m_szCaptionColor		= gameinstructor_default_captioncolor.GetString();
+
+	m_iIconTargetPos		= ICON_TARGET_EYE_POSITION;
+	m_szHudHint				= "";
 }
 
 void CIconLesson::Start( void )
@@ -569,6 +577,16 @@ void CIconLesson::Update( void )
 		else
 		{
 			m_fCurrentDistance = pLocalPlayer->ActivePlayerCombatCharacter()->EyePosition().DistTo( pTarget->WorldSpaceCenter() );
+		}
+
+		if (m_szHudHint.String()[0] != '\0' && GetRoot()->IsLearned())
+		{
+			DevMsg("Showing hint\n");
+			CUtlBuffer msg_data;
+			msg_data.PutChar( 1 );
+			msg_data.PutString( m_szHudHint.String() );
+			bf_read msg( msg_data.Base(), msg_data.TellPut() );
+			usermessages->DispatchUserMessage( usermessages->LookupUserMessage( "KeyHintText" ), msg );
 		}
 
 		m_fUpdateDistanceTime = gpGlobals->curtime + LESSON_DISTANCE_UPDATE_RATE;
@@ -799,7 +817,7 @@ void CIconLesson::UpdateLocatorTarget( CLocatorTarget *pLocatorTarget, C_BaseEnt
 	else
 	{
 		pLocatorTarget->m_bOriginInScreenspace = false;
-		pLocatorTarget->m_vecOrigin = pIconTarget->EyePosition() + MainViewUp( 0 ) * m_flRelativeUpOffset + Vector( 0.0f, 0.0f, m_flUpOffset );
+		pLocatorTarget->m_vecOrigin = GetIconTargetPosition( pIconTarget ) + MainViewUp() * m_flRelativeUpOffset + Vector( 0.0f, 0.0f, m_flUpOffset );
 		pLocatorTarget->SetVguiTargetName( "" );
 	}
 
@@ -892,6 +910,22 @@ void CIconLesson::UpdateLocatorTarget( CLocatorTarget *pLocatorTarget, C_BaseEnt
 			GetGameInstructor().PlaySound( m_szStartSound.String() );
 			m_bHasPlayedSound = true;
 		}
+	}
+}
+
+Vector CIconLesson::GetIconTargetPosition( C_BaseEntity *pIconTarget )
+{
+	switch (m_iIconTargetPos)
+	{
+		default:
+		case ICON_TARGET_EYE_POSITION:
+			return pIconTarget->EyePosition();
+
+		case ICON_TARGET_ORIGIN:
+			return pIconTarget->GetAbsOrigin();
+
+		case ICON_TARGET_CENTER:
+			return pIconTarget->WorldSpaceCenter();
 	}
 }
 

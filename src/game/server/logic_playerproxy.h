@@ -44,7 +44,7 @@ public:
 
 	void Activate( void );
 
-	bool PassesDamageFilter( const CTakeDamageInfo &info );
+	bool PassesDamageFilter( CBaseEntity *pCaller, const CTakeDamageInfo &info );
 
 	EHANDLE m_hPlayer;
 };

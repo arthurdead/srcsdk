@@ -187,6 +187,7 @@ public:
 
 	bool					HasUnplayedSpeech( void );
 	bool					HasFlexAnimation( void );
+	bool					IsPlayingSpeech( void );
 
 	void					SetCurrentTime( float t, bool forceClientSync );
 
@@ -211,6 +212,16 @@ public:
 	string_t				m_iszTarget6;
 	string_t				m_iszTarget7;
 	string_t				m_iszTarget8;
+
+	void					SetTarget(int nTarget, string_t pTargetName, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL);
+	void					InputSetTarget1(inputdata_t &inputdata);
+	void					InputSetTarget2(inputdata_t &inputdata);
+	void					InputSetTarget3(inputdata_t &inputdata);
+	void					InputSetTarget4(inputdata_t &inputdata);
+	void					InputSetTarget5(inputdata_t &inputdata);
+	void					InputSetTarget6(inputdata_t &inputdata);
+	void					InputSetTarget7(inputdata_t &inputdata);
+	void					InputSetTarget8(inputdata_t &inputdata);
 
 	EHANDLE					m_hTarget1;
 	EHANDLE					m_hTarget2;

@@ -90,10 +90,13 @@ public:
 	void InputSetScrollSpeed( inputdata_t &inputdata );
 	void InputSetForce( inputdata_t &inputdata );
 	void InputBreak( inputdata_t &inputdata );
+	void InputSetSlack( inputdata_t &inputdata );
+	void InputSetWidth( inputdata_t &inputdata );
+	void InputSetSubdivision( inputdata_t &inputdata );
 
 public:
 
-	bool			Break( void );
+	bool			Break( CBaseEntity *pActivator = NULL );
 	void			DetachPoint( int iPoint );
 	
 	void			EndpointsChanged();
@@ -178,6 +181,8 @@ private:
 	CNetworkHandle( CBaseEntity, m_hEndPoint );
 	CNetworkVar( short, m_iStartAttachment );	// StartAttachment/EndAttachment are attachment points.
 	CNetworkVar( short, m_iEndAttachment );
+
+	COutputEvent m_OnBreak;
 };
 
 

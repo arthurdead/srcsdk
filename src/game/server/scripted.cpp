@@ -35,6 +35,12 @@
 
 ConVar ai_task_pre_script(  "ai_task_pre_script", "0", FCVAR_NONE );
 
+#define ScriptMsg( lvl, msg ) 					DevMsg( lvl, msg )
+#define ScriptMsg1( lvl, msg, a ) 				DevMsg( lvl, msg, a )
+#define ScriptMsg2( lvl, msg, a, b ) 			DevMsg( lvl, msg, a, b )
+#define ScriptMsg3( lvl, msg, a, b, c ) 		DevMsg( lvl, msg, a, b, c )
+#define ScriptMsg4( lvl, msg, a, b, c, d )		DevMsg( lvl, msg, a, b, c, d )
+#define ScriptMsg5( lvl, msg, a, b, c, d, e )	DevMsg( lvl, msg, a, b, c, d, e )
 
 //
 // targetname "me" - there can be more than one with the same name, and they act in concert
@@ -86,6 +92,11 @@ BEGIN_MAPENTITY( CAI_ScriptedSequence )
 	DEFINE_OUTPUT(m_OnScriptEvent[5], "OnScriptEvent06"),
 	DEFINE_OUTPUT(m_OnScriptEvent[6], "OnScriptEvent07"),
 	DEFINE_OUTPUT(m_OnScriptEvent[7], "OnScriptEvent08"),
+
+	DEFINE_OUTPUT(m_OnEntrySequence, "OnEntrySequence"),
+	DEFINE_OUTPUT(m_OnActionSequence, "OnActionSequence"),
+	DEFINE_OUTPUT(m_OnPreIdleSequence, "OnPreIdleSequence"),
+	DEFINE_OUTPUT(m_OnFoundNPC, "OnFoundNPC"),
 
 END_MAPENTITY()
 
@@ -150,18 +161,18 @@ void CAI_ScriptedSequence::ScriptEntityCancel( CBaseEntity *pentCine, bool bPret
 		if ( bPretendSuccess )
 		{
 			// We need to pretend that this sequence actually finished fully
-			pCineTarget->m_OnEndSequence.FireOutput(NULL, pCineTarget);
-			pCineTarget->m_OnPostIdleEndSequence.FireOutput(NULL, pCineTarget);
+			pCineTarget->m_OnEndSequence.FireOutput(pEntity, pCineTarget);
+			pCineTarget->m_OnPostIdleEndSequence.FireOutput(pEntity, pCineTarget);
 		}
 		else
 		{
 			// Fire the cancel
- 			pCineTarget->m_OnCancelSequence.FireOutput(NULL, pCineTarget);
+ 			pCineTarget->m_OnCancelSequence.FireOutput(pEntity, pCineTarget);
 
 			if ( pCineTarget->m_startTime == 0 )
 			{
 				// If start time is 0, this sequence never actually ran. Fire the failed output.
-				pCineTarget->m_OnCancelFailedSequence.FireOutput(NULL, pCineTarget);
+				pCineTarget->m_OnCancelFailedSequence.FireOutput(pEntity, pCineTarget);
 			}
 		}
 	}
@@ -179,7 +190,7 @@ void CAI_ScriptedSequence::Spawn( void )
 	// If we have no name or we are set to start immediately, find the NPC and
 	// have them move to their script position now.
 	//
-	if ( !GetEntityName() || ( m_spawnflags & SF_SCRIPT_START_ON_SPAWN ) )
+	if ( !GetEntityName() || HasSpawnFlags( SF_SCRIPT_START_ON_SPAWN ) )
 	{
 		StartThink();
 		SetNextThink( gpGlobals->curtime + 1.0f );
@@ -195,7 +206,7 @@ void CAI_ScriptedSequence::Spawn( void )
 		}
 	}
 
-	if ( m_spawnflags & SF_SCRIPT_NOINTERRUPT )
+	if ( HasSpawnFlags( SF_SCRIPT_NOINTERRUPT ) )
 	{
 		m_interruptable = false;
 	}
@@ -242,7 +253,7 @@ void CAI_ScriptedSequence::StopThink()
 //-----------------------------------------------------------------------------
 bool CAI_ScriptedSequence::FCanOverrideState( void )
 {
-	if ( m_spawnflags & SF_SCRIPT_OVERRIDESTATE )
+	if ( HasSpawnFlags( SF_SCRIPT_OVERRIDESTATE ) )
 		return true;
 	return false;
 }
@@ -303,6 +314,15 @@ void CAI_ScriptedSequence::InputMoveToPosition( inputdata_t &inputdata )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Sets our target NPC with the generic SetTarget input.
+//-----------------------------------------------------------------------------
+void CAI_ScriptedSequence::InputSetTarget( inputdata_t &inputdata )
+{
+	m_hActivator = inputdata.pActivator;
+	m_iszEntity = AllocPooledString(inputdata.value.String());
+	m_hTargetEnt = NULL;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that activates the scripted sequence.
@@ -314,6 +334,12 @@ void CAI_ScriptedSequence::InputBeginSequence( inputdata_t &inputdata )
 
 	// Start the script as soon as possible.
 	m_bWaitForBeginSequence = false;
+
+	m_hActivator = inputdata.pActivator;
+
+	// TODO: Investigate whether this is necessary
+	//if (FStrEq(STRING(m_iszEntity), "!activator"))
+	//	SetTarget(NULL);
 		
 	// do I already know who I should use?
 	CBaseEntity *pEntity = GetTarget();
@@ -492,7 +518,7 @@ CAI_BaseNPC *CAI_ScriptedSequence::FindScriptEntity( )
 	{
 		interrupt = SS_INTERRUPT_BY_NAME;
 		
-		pEntity = gEntList.FindEntityByNameWithin( m_hLastFoundEntity, STRING( m_iszEntity ), GetAbsOrigin(), m_flRadius );
+		pEntity = gEntList.FindEntityByNameWithin( m_hLastFoundEntity, STRING( m_iszEntity ), GetAbsOrigin(), m_flRadius, this, m_hActivator );
 		if (!pEntity)
 		{
 			pEntity = gEntList.FindEntityByClassnameWithin( m_hLastFoundEntity, STRING( m_iszEntity ), GetAbsOrigin(), m_flRadius );
@@ -519,7 +545,7 @@ CAI_BaseNPC *CAI_ScriptedSequence::FindScriptEntity( )
 				// They can play it, but only enqueued. We'll use them as a last resort.
 				pEnqueueNPC = pNPC;
 			}
-			else if (!(m_spawnflags & SF_SCRIPT_NO_COMPLAINTS))
+			else if (!HasSpawnFlags( SF_SCRIPT_NO_COMPLAINTS))
 			{
 				// They cannot play the script.
 				DevMsg( "Found %s, but can't play!\n", STRING( m_iszEntity ));
@@ -563,7 +589,7 @@ bool CAI_ScriptedSequence::FindEntity( void )
 {
 	CAI_BaseNPC *pTarget = FindScriptEntity( );
 
-	if ( (m_spawnflags & SF_SCRIPT_SEARCH_CYCLICALLY))
+	if ( HasSpawnFlags( SF_SCRIPT_SEARCH_CYCLICALLY))
 	{
 		// next time this is called, start searching from the one found last time
 		m_hLastFoundEntity = pTarget;
@@ -730,6 +756,8 @@ void CAI_ScriptedSequence::StartScript( void )
 			DevWarning( "scripted_sequence %d:%s - restarting dormant entity %d:%s : %.1f:%.1f\n", entindex(), GetDebugName(), pTarget->entindex(), pTarget->GetDebugName(), gpGlobals->curtime, pTarget->GetNextThink() );
 			pTarget->SetNextThink( gpGlobals->curtime );
 		}
+
+		m_OnFoundNPC.FireOutput( pTarget, this );
 	}
 }
 
@@ -767,9 +795,24 @@ void CAI_ScriptedSequence::ScriptThink( void )
 // Purpose: Callback for firing the begin sequence output. Called by the NPC that
 //			is running the script as it starts the action seqeunce.
 //-----------------------------------------------------------------------------
-void CAI_ScriptedSequence::OnBeginSequence( void )
+void CAI_ScriptedSequence::OnBeginSequence( CBaseEntity *pActor )
 {
-	m_OnBeginSequence.FireOutput( this, this );
+	m_OnBeginSequence.FireOutput( pActor, this );
+}
+
+void CAI_ScriptedSequence::OnEntrySequence( CBaseEntity *pActor )
+{
+	m_OnEntrySequence.FireOutput( pActor, this );
+}
+
+void CAI_ScriptedSequence::OnActionSequence( CBaseEntity *pActor )
+{
+	m_OnActionSequence.FireOutput( pActor, this );
+}
+
+void CAI_ScriptedSequence::OnPreIdleSequence( CBaseEntity *pActor )
+{
+	m_OnPreIdleSequence.FireOutput( pActor, this );
 }
 
 
@@ -939,7 +982,7 @@ void CAI_ScriptedSequence::SequenceDone( CAI_BaseNPC *pNPC )
 		}
 	}
 
-	m_OnEndSequence.FireOutput(NULL, this);
+	m_OnEndSequence.FireOutput(pNPC, this);
 }
 
 //-----------------------------------------------------------------------------
@@ -994,7 +1037,7 @@ void CAI_ScriptedSequence::PostIdleDone( CAI_BaseNPC *pNPC )
 	// but allow another scripted sequence to take control of the NPC if it wants to,
 	// unless another script has stolen them from us.
 	//
-	if ( ( m_iszPostIdle != NULL_STRING ) && ( m_spawnflags & SF_SCRIPT_LOOP_IN_POST_IDLE ) && ( m_hNextCine == NULL ) )
+	if ( ( m_iszPostIdle != NULL_STRING ) && HasSpawnFlags( SF_SCRIPT_LOOP_IN_POST_IDLE ) && ( m_hNextCine == NULL ) )
 	{
 		//
 		// First time we've gotten here for this script. Start playing the post idle
@@ -1010,7 +1053,7 @@ void CAI_ScriptedSequence::PostIdleDone( CAI_BaseNPC *pNPC )
 	}
 	else
 	{
-		if ( !( m_spawnflags & SF_SCRIPT_REPEATABLE ) )
+		if ( !HasSpawnFlags( SF_SCRIPT_REPEATABLE ) )
 		{
 			SetThink( &CAI_ScriptedSequence::SUB_Remove );
 			SetNextThink( gpGlobals->curtime + 0.1f );
@@ -1039,7 +1082,7 @@ void CAI_ScriptedSequence::PostIdleDone( CAI_BaseNPC *pNPC )
 			// Don't link ourselves in if we are going to be deleted.
 			// TODO: use EHANDLEs instead of pointers to scripts!
 			//
-			if ( ( pNextCine != this ) || ( m_spawnflags & SF_SCRIPT_REPEATABLE ) )
+			if ( ( pNextCine != this ) || HasSpawnFlags( SF_SCRIPT_REPEATABLE ) )
 			{
 				pNextCine->SetTarget( pNPC );
 				pNextCine->StartScript();
@@ -1048,7 +1091,7 @@ void CAI_ScriptedSequence::PostIdleDone( CAI_BaseNPC *pNPC )
 	}
 
 	//Msg("%s finished post idle at %0.2f\n", pNPC->GetDebugName(), gpGlobals->curtime );
-	m_OnPostIdleEndSequence.FireOutput(NULL, this);
+	m_OnPostIdleEndSequence.FireOutput(pNPC, this);
 }
 
 
@@ -1095,7 +1138,7 @@ void CAI_ScriptedSequence::FixFlyFlag( CAI_BaseNPC *pNPC, int iSavedCineFlags )
 //-----------------------------------------------------------------------------
 void CAI_ScriptedSequence::AllowInterrupt( bool fAllow )
 {
-	if ( m_spawnflags & SF_SCRIPT_NOINTERRUPT )
+	if ( HasSpawnFlags( SF_SCRIPT_NOINTERRUPT ) )
 		return;
 	m_interruptable = fAllow;
 }
@@ -1273,11 +1316,29 @@ void CAI_ScriptedSequence::ModifyScriptedAutoMovement( Vector *vecNewPos )
 			}
 		}
 
+		VMatrix matInteractionPosition = m_matInteractionPosition;
+
+		// Account for our own sequence movement
+		pAnimating = m_hTargetEnt->GetBaseAnimating();
+		if (pAnimating)
+		{
+			Vector vecDeltaPos;
+			QAngle angDeltaAngles;
+
+			pAnimating->GetSequenceMovement( pAnimating->GetSequence(), 0.0f, pAnimating->GetCycle(), vecDeltaPos, angDeltaAngles );
+			if (!vecDeltaPos.IsZero())
+			{
+				VMatrix matLocalMovement;
+				matLocalMovement.SetupMatrixOrgAngles( vecDeltaPos, angDeltaAngles );
+				MatrixMultiply( m_matInteractionPosition, matLocalMovement, matInteractionPosition );
+			}
+		}
+
 		// We've been asked to maintain a specific position relative to the other NPC
 		// we're interacting with. Lerp towards the relative position.
  		VMatrix matMeToWorld, matLocalToWorld;
 		matMeToWorld.SetupMatrixOrgAngles( vecRelativeOrigin, angRelativeAngles );
-		MatrixMultiply( matMeToWorld, m_matInteractionPosition, matLocalToWorld );
+		MatrixMultiply( matMeToWorld, matInteractionPosition, matLocalToWorld );
 
 		// Get the desired NPC position in worldspace
 		Vector vecOrigin;
@@ -1551,6 +1612,7 @@ private:
 	// Input handlers
 	void InputStartSchedule( inputdata_t &inputdata );
 	void InputStopSchedule( inputdata_t &inputdata );
+	void InputSetTarget( inputdata_t &inputdata );
 
 	CAI_BaseNPC *FindScriptEntity(  bool bCyclic );
 
@@ -1626,7 +1688,7 @@ void CAI_ScriptedSchedule::ScriptThink( void )
 	
 	if ( !m_bGrabAll )
 	{
-		pTarget = FindScriptEntity( (m_spawnflags & SF_SCRIPT_SEARCH_CYCLICALLY) != 0 );
+		pTarget = FindScriptEntity( HasSpawnFlags( SF_SCRIPT_SEARCH_CYCLICALLY) );
 		if ( pTarget )
 		{
 			DevMsg( 2,  "scripted_schedule \"%s\" using NPC \"%s\"(%s)\n", GetDebugName(), STRING( m_iszEntity ), pTarget->GetEntityName().ToCStr() );
@@ -1777,7 +1839,7 @@ void CAI_ScriptedSchedule::StartSchedule( CAI_BaseNPC *pTarget )
 
 			if (!pTarget->ScheduledMoveToGoalEntity( SCHED_IDLE_WALK, pGoalEnt, movementActivity ))
 			{
-				if (!(m_spawnflags & SF_SCRIPT_NO_COMPLAINTS))
+				if (!HasSpawnFlags( SF_SCRIPT_NO_COMPLAINTS))
 				{
 					DevMsg( 1, "ScheduledMoveToGoalEntity to goal entity %s failed\nCan't execute script %s\n", STRING(m_sGoalEnt), GetDebugName() );
 				}
@@ -1799,7 +1861,7 @@ void CAI_ScriptedSchedule::StartSchedule( CAI_BaseNPC *pTarget )
 			}
 			if (!pTarget->ScheduledFollowPath( SCHED_IDLE_WALK, pGoalEnt, movementActivity ))
 			{
-				if (!(m_spawnflags & SF_SCRIPT_NO_COMPLAINTS))
+				if (!HasSpawnFlags( SF_SCRIPT_NO_COMPLAINTS))
 				{
 					DevMsg( 1, "ScheduledFollowPath to goal entity %s failed\nCan't execute script %s\n", STRING(m_sGoalEnt), GetDebugName() );
 				}
@@ -1829,7 +1891,7 @@ void CAI_ScriptedSchedule::InputStartSchedule( inputdata_t &inputdata )
 		DevMsg( 2,  "aiscripted_schedule - no schedule or state has been set!\n" );
 	}
 	
-	if ( !m_bDidFireOnce || ( m_spawnflags & SF_SCRIPT_REPEATABLE ) )
+	if ( !m_bDidFireOnce || HasSpawnFlags( SF_SCRIPT_REPEATABLE ) )
 	{
 		// DVS TODO: Is the NPC already playing the script?
 		m_hActivator = inputdata.pActivator;
@@ -1856,7 +1918,7 @@ void CAI_ScriptedSchedule::InputStopSchedule( inputdata_t &inputdata )
 	CAI_BaseNPC *pTarget;
 	if ( !m_bGrabAll )
 	{
-		pTarget = FindScriptEntity( (m_spawnflags & SF_SCRIPT_SEARCH_CYCLICALLY) != 0 );
+		pTarget = FindScriptEntity( HasSpawnFlags( SF_SCRIPT_SEARCH_CYCLICALLY) );
 		if ( pTarget )
 		{
 			StopSchedule( pTarget );
@@ -1870,6 +1932,15 @@ void CAI_ScriptedSchedule::InputStopSchedule( inputdata_t &inputdata )
 			StopSchedule( pTarget );
 		}
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Sets our target NPC with the generic SetTarget input.
+//-----------------------------------------------------------------------------
+void CAI_ScriptedSchedule::InputSetTarget( inputdata_t &inputdata )
+{
+	m_hActivator = inputdata.pActivator;
+	m_iszEntity = AllocPooledString( inputdata.value.String() );
 }
 
 //-----------------------------------------------------------------------------
@@ -2045,7 +2116,7 @@ void CAI_ScriptedSentence::FindThink( void )
 		
 		m_OnEndSentence.FireOutput(NULL, this, length + m_flRepeat);
 
-		if ( m_spawnflags & SF_SENTENCE_ONCE )
+		if ( HasSpawnFlags( SF_SENTENCE_ONCE ) )
 			UTIL_Remove( this );
 		
 		float delay = m_flDelay + length + 0.1;
@@ -2089,13 +2160,13 @@ bool CAI_ScriptedSentence::AcceptableSpeaker( CAI_BaseNPC *pNPC )
 {
 	if ( pNPC )
 	{
-		if ( m_spawnflags & SF_SENTENCE_FOLLOWERS )
+		if ( HasSpawnFlags( SF_SENTENCE_FOLLOWERS ) )
 		{
 			if ( pNPC->GetTarget() == NULL || !pNPC->GetTarget()->IsPlayer() )
 				return false;
 		}
 		bool override;
-		if ( m_spawnflags & SF_SENTENCE_INTERRUPT )
+		if ( HasSpawnFlags( SF_SENTENCE_INTERRUPT ) )
 			override = true;
 		else
 			override = false;
@@ -2159,12 +2230,12 @@ int CAI_ScriptedSentence::StartSentence( CAI_BaseNPC *pTarget )
 	}
 
 	bool bConcurrent = false;
-	if ( !(m_spawnflags & SF_SENTENCE_CONCURRENT) )
+	if ( !HasSpawnFlags( SF_SENTENCE_CONCURRENT) )
 		bConcurrent = true;
 
 	CBaseEntity *pListener = NULL;
 
-	if ( m_spawnflags & SF_SENTENCE_SPEAKTOACTIVATOR )
+	if (HasSpawnFlags( SF_SENTENCE_SPEAKTOACTIVATOR ))
 	{
 		pListener = m_pActivator;
 	}
@@ -2208,3 +2279,166 @@ const char *CAI_ScriptedSequence::GetSpawnPreIdleSequenceForScript( CBaseEntity 
 	return NULL;
 }
 
+//-----------------------------------------------------------------------------
+// This isn't exclusive to NPCs, so it could be moved if needed.
+//-----------------------------------------------------------------------------
+class CScriptedSound : public CPointEntity
+{
+public:
+	DECLARE_CLASS( CScriptedSound, CPointEntity );
+	DECLARE_MAPENTITY();
+
+	void Precache();
+
+	CBaseEntity *GetTarget(inputdata_t &inputdata);
+
+	// Input handlers
+	void InputPlaySound( inputdata_t &inputdata );
+	void InputPlaySoundOnEntity( inputdata_t &inputdata );
+	void InputStopSound( inputdata_t &inputdata );
+	void InputSetSound( inputdata_t &inputdata );
+
+private:
+	string_t m_message;
+
+	bool m_bGrabAll;
+};
+
+
+BEGIN_MAPENTITY( CScriptedSound )
+
+	DEFINE_KEYFIELD( m_message, FIELD_STRING, "message" ),
+	DEFINE_KEYFIELD( m_bGrabAll, FIELD_BOOLEAN, "GrabAll" ),
+
+	// Inputs
+	DEFINE_INPUTFUNC(FIELD_VOID, "PlaySound", InputPlaySound),
+	DEFINE_INPUTFUNC(FIELD_EHANDLE, "PlaySoundOnEntity", InputPlaySoundOnEntity),
+	DEFINE_INPUTFUNC(FIELD_VOID, "StopSound", InputStopSound),
+	DEFINE_INPUTFUNC(FIELD_STRING, "SetSound", InputSetSound),
+
+END_MAPENTITY()
+
+
+
+LINK_ENTITY_TO_CLASS( scripted_sound, CScriptedSound );
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : 
+// Output : 
+//-----------------------------------------------------------------------------
+void CScriptedSound::Precache()
+{
+	//PrecacheScriptSound(STRING(m_message));
+
+	BaseClass::Precache();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : 
+// Output : 
+//-----------------------------------------------------------------------------
+CBaseEntity *CScriptedSound::GetTarget(inputdata_t &inputdata)
+{
+	CBaseEntity *pEntity = NULL;
+	if (m_target == NULL_STRING)
+	{
+		// Use this as the default source entity
+		pEntity = this;
+		m_bGrabAll = false;
+	}
+	else
+	{
+		pEntity = gEntList.FindEntityGeneric(NULL, STRING(m_target), this, inputdata.pActivator, inputdata.pCaller);
+	}
+
+	return pEntity;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : 
+// Output : 
+//-----------------------------------------------------------------------------
+void CScriptedSound::InputPlaySound( inputdata_t &inputdata )
+{
+	PrecacheScriptSound(STRING(m_message));
+
+	CBaseEntity *pEntity = GetTarget(inputdata);
+	const char *sound = STRING(m_message);
+	if (m_bGrabAll)
+	{
+		//if (pEntity)
+		//{
+		//	pEntity->PrecacheScriptSound(sound);
+		//}
+
+		while (pEntity)
+		{
+			pEntity->EmitSound(sound);
+			pEntity = gEntList.FindEntityGeneric(pEntity, STRING(m_target), this, inputdata.pActivator, inputdata.pCaller);
+		}
+	}
+	else if (pEntity)
+	{
+		//pEntity->PrecacheScriptSound(sound);
+		pEntity->EmitSound(sound);
+	}
+	else
+	{
+		Warning("%s unable to find target entity %s!\n", GetDebugName(), STRING(m_target));
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : 
+// Output : 
+//-----------------------------------------------------------------------------
+void CScriptedSound::InputPlaySoundOnEntity( inputdata_t &inputdata )
+{
+	if (inputdata.value.Entity())
+	{
+		inputdata.value.Entity()->PrecacheScriptSound(STRING(m_message));
+		inputdata.value.Entity()->EmitSound(STRING(m_message));
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : 
+// Output : 
+//-----------------------------------------------------------------------------
+void CScriptedSound::InputStopSound( inputdata_t &inputdata )
+{
+	CBaseEntity *pEntity = GetTarget(inputdata);
+	const char *sound = STRING(m_message);
+	if (m_bGrabAll)
+	{
+		while (pEntity)
+		{
+			pEntity->StopSound(sound);
+			pEntity = gEntList.FindEntityGeneric(pEntity, STRING(m_target), this, inputdata.pActivator, inputdata.pCaller);
+		}
+	}
+	else if (pEntity)
+	{
+		pEntity->StopSound(sound);
+	}
+	else
+	{
+		Warning("%s unable to find target entity %s!\n", GetDebugName(), STRING(m_target));
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : 
+// Output : 
+//-----------------------------------------------------------------------------
+void CScriptedSound::InputSetSound( inputdata_t &inputdata )
+{
+	PrecacheScriptSound(inputdata.value.String());
+	m_message = inputdata.value.StringID();
+}

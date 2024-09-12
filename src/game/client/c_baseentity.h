@@ -448,6 +448,8 @@ public:
 	bool							IsMarkedForDeletion( void );
 
 	int						entindex( void ) const final;
+
+	inline int GetEntityIndex() const { return entindex(); }
 	
 	// This works for client-only entities and returns the GetEntryIndex() of the entity's handle,
 	// so the sound system can get an IClientEntity from it.
@@ -1127,6 +1129,7 @@ public:
 	virtual bool 					ShouldRegenerateOriginFromCellBits() const;
 
 	virtual bool					IsPlayer( void ) const { return false; };
+	virtual bool						IsBot( void ) const { return ((GetFlags() & FL_FAKECLIENT) == FL_FAKECLIENT) ? true : false; }
 	virtual bool					IsBaseCombatCharacter( void ) { return false; };
 	virtual C_BaseCombatCharacter	*MyCombatCharacterPointer( void ) { return NULL; }
 	virtual bool					IsNPC( void ) { return false; }
@@ -1152,6 +1155,9 @@ public:
 	virtual const QAngle&	EyeAngles( void );		// Direction of eyes
 	virtual const QAngle&	LocalEyeAngles( void );	// Direction of eyes in local space (pl.v_angle)
 	
+	// Created for script_intro and info_player_view_proxy
+	virtual void			GetEyePosition( Vector &vecOrigin, QAngle &angAngles ) { vecOrigin = EyePosition(); angAngles = EyeAngles(); }
+
 	// position of ears
 	virtual Vector		EarPosition( void );
 
@@ -1229,6 +1235,9 @@ public:
 
 	int					GetSpawnFlags( void ) const;
 	bool				HasSpawnFlags( int nFlags ) const;
+	void				SetSpawnFlags( int nFlags );
+	void				AddSpawnFlags( int nFlags );
+	void				RemoveSpawnFlags( int nFlags );
 
 	// Effects...
 	bool				IsEffectActive( int nEffectMask ) const;
@@ -1445,6 +1454,9 @@ public:
 
 	const CPredictableId &GetPredictableID() const
 	{ return m_PredictableID; }
+
+	int								m_iViewHideFlags;
+	bool							m_bDisableFlashlight;
 
 protected:
 	int								m_cellbits;
@@ -2560,6 +2572,21 @@ inline int CBaseEntity::GetSpawnFlags( void ) const
 inline bool C_BaseEntity::HasSpawnFlags( int nFlags ) const
 { 
 	return (m_spawnflags & nFlags) != 0; 
+}
+
+inline void C_BaseEntity::SetSpawnFlags( int nFlags )
+{ 
+	m_spawnflags = nFlags;
+}
+
+inline void C_BaseEntity::AddSpawnFlags( int nFlags )
+{ 
+	m_spawnflags |= nFlags;
+}
+
+inline void C_BaseEntity::RemoveSpawnFlags( int nFlags )
+{ 
+	m_spawnflags &= ~nFlags;
 }
 
 //-----------------------------------------------------------------------------

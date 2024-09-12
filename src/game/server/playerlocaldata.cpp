@@ -59,6 +59,9 @@ BEGIN_SEND_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	// 3d skybox data
 	SendPropInt(SENDINFO_STRUCTELEM(m_skybox3d.scale), 12),
 	SendPropVector	(SENDINFO_STRUCTELEM(m_skybox3d.origin),      -1,  SPROP_COORD),
+	SendPropVector	(SENDINFO_STRUCTELEM(m_skybox3d.angles),      -1,  SPROP_COORD),
+	SendPropEHandle	(SENDINFO_STRUCTELEM(m_skybox3d.skycamera)),
+	SendPropInt	(SENDINFO_STRUCTELEM(m_skybox3d.skycolor),      32,  (SPROP_COORD|SPROP_UNSIGNED), SendProxy_Color32ToInt32),
 	SendPropInt	(SENDINFO_STRUCTELEM(m_skybox3d.area),	8, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO_STRUCTELEM( m_skybox3d.fog.enable ), 1, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO_STRUCTELEM( m_skybox3d.fog.blend ), 1, SPROP_UNSIGNED ),
@@ -69,6 +72,7 @@ BEGIN_SEND_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	SendPropFloat( SENDINFO_STRUCTELEM( m_skybox3d.fog.end ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO_STRUCTELEM( m_skybox3d.fog.maxdensity ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO_STRUCTELEM( m_skybox3d.fog.HDRColorScale ), 0, SPROP_NOSCALE ),
+	SendPropFloat( SENDINFO_STRUCTELEM( m_skybox3d.fog.farz ), 0, SPROP_NOSCALE ),
 
 	SendPropEHandle( SENDINFO_STRUCTELEM( m_PlayerFog.m_hCtrl ) ),
 
@@ -158,14 +162,15 @@ void ClientData_Update( CBasePlayer *pl )
 	// HACKHACK: for 3d skybox 
 	// UNDONE: Support multiple sky cameras?
 	CSkyCamera *pSkyCamera = GetCurrentSkyCamera();
-	if ( pSkyCamera != pl->m_Local.m_pOldSkyCamera )
+	// Needs null protection now that the sky can go from valid to null
+	if ( !pSkyCamera )
+	{
+		pl->m_Local.m_skybox3d.area = 255;
+	}
+	else if ( pSkyCamera != pl->m_Local.m_pOldSkyCamera )
 	{
 		pl->m_Local.m_pOldSkyCamera = pSkyCamera;
 		pl->m_Local.m_skybox3d.CopyFrom(pSkyCamera->m_skyboxData);
-	}
-	else if ( !pSkyCamera )
-	{
-		pl->m_Local.m_skybox3d.area = 255;
 	}
 }
 

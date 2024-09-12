@@ -6,6 +6,7 @@
 
 #ifndef AI_PLAYERALLY_H
 #define AI_PLAYERALLY_H
+#pragma once
 
 #include "utlmap.h"
 #include "simtimer.h"
@@ -20,8 +21,6 @@
 #undef MINMAX_H
 #include "minmax.h"
 #endif
-
-#pragma once
 
 //-----------------------------------------------------------------------------
 
@@ -129,6 +128,11 @@
 #define TLK_TGLOSTYOU 	"TLK_TGLOSTYOU"
 #define TLK_TGCATCHUP 	"TLK_TGCATCHUP"
 #define TLK_TGENDTOUR 	"TLK_TGENDTOUR"
+
+// Additional concepts for companions in mods
+#define TLK_TAKING_FIRE	"TLK_TAKING_FIRE"	// Someone fired at me (regardless of whether I was hit)
+#define TLK_NEW_ENEMY	"TLK_NEW_ENEMY"		// A new enemy appeared while combat was already in progress
+#define TLK_COMBAT_IDLE	"TLK_COMBAT_IDLE"	// Similar to TLK_ATTACKING, but specifically for when *not* currently attacking (e.g. when in cover or reloading)
 
 //-----------------------------------------------------------------------------
 
@@ -240,6 +244,8 @@ enum AISpeechTargetSearchFlags_t
 	AIST_IGNORE_RELATIONSHIP	= (1<<2),
 	AIST_ANY_QUALIFIED			= (1<<3),
 	AIST_FACING_TARGET			= (1<<4),
+	// I needed this for something
+	AIST_NOT_GAGGED				= (1<<5),
 };
 
 struct AISpeechSelection_t
@@ -300,10 +306,14 @@ public:
 	void		ClearTransientConditions();
 	void		Touch(	CBaseEntity *pOther );
 
+	virtual bool		CanFlinch( void );
+
 	//---------------------------------
 	// Combat
 	//---------------------------------
 	void		OnKilledNPC( CBaseCombatCharacter *pKilled );
+
+	void		OnEnemyRangeAttackedMe( CBaseEntity *pEnemy, const Vector &vecDir, const Vector &vecEnd );
 
 	//---------------------------------
 	// Damage handling
@@ -329,6 +339,10 @@ public:
 	
 	CBaseEntity *GetSpeechTarget()								{ return m_hTalkTarget.Get(); }
 	void		SetSpeechTarget( CBaseEntity *pSpeechTarget ) 	{ m_hTalkTarget = pSpeechTarget; }
+
+	// Needed for additional speech target responses
+	CBaseEntity *GetPotentialSpeechTarget()								{ return m_hPotentialSpeechTarget.Get(); }
+	void		SetPotentialSpeechTarget( CBaseEntity *pSpeechTarget ) 	{ m_hPotentialSpeechTarget = pSpeechTarget; }
 	
 	void		SetSpeechFilter( CAI_SpeechFilter *pFilter )	{ m_hSpeechFilter = pFilter; }
 	CAI_SpeechFilter *GetSpeechFilter( void )					{ return m_hSpeechFilter.Get(); }
@@ -376,7 +390,9 @@ public:
 	
 	bool		ShouldSpeakRandom( AIConcept_t ai_concept, int iChance );
 	bool		IsAllowedToSpeak( AIConcept_t ai_concept, bool bRespondingToPlayer = false );
+	bool		IsAllowedToSpeakFollowup( AIConcept_t concept, CBaseEntity *pIssuer, bool bSpecific );
 	virtual bool SpeakIfAllowed( AIConcept_t ai_concept, const char *modifiers = NULL, bool bRespondingToPlayer = false, char *pszOutResponseChosen = NULL, size_t bufsize = 0 );
+	virtual bool SpeakIfAllowed( AIConcept_t ai_concept, AI_CriteriaSet* modifiers, bool bRespondingToPlayer = false, char *pszOutResponseChosen = NULL, size_t bufsize = 0 );
 	void		ModifyOrAppendCriteria( AI_CriteriaSet& set );
 
 	//---------------------------------
@@ -402,6 +418,8 @@ public:
 	virtual const char		*GetDeathMessageText( void ) { return "GAMEOVER_ALLY"; }
 	void			InputMakeGameEndAlly( inputdata_t &inputdata );
 	void			InputMakeRegularAlly( inputdata_t &inputdata );
+	bool			AskQuestionNow( CBaseEntity *pSpeechTarget = NULL, int iQARandomNumber = -1, const char *concept = TLK_QUESTION );
+	void			InputAskQuestion( inputdata_t &inputdata );
 	void			InputAnswerQuestion( inputdata_t &inputdata );
 	void			InputAnswerQuestionHello( inputdata_t &inputdata );
 	void			InputEnableSpeakWhileScripting( inputdata_t &inputdata );

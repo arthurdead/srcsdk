@@ -29,7 +29,8 @@ public:
 	void		Spawn( void );
 	void		Precache( void );
 	bool		CreateVPhysics( void );
-	bool		ShouldSavePhysics( void );
+
+	void		SetParent( CBaseEntity* pNewParent, int iAttachment = -1 );
 
 	void		MoveTo(Vector vPosition, float flSpeed);
 	void		Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
@@ -59,6 +60,10 @@ public:
 	float		m_flMoveDistance;		// Total distance the brush can move
 
 	IPhysicsFluidController *m_pFluidController;
+
+	// For the parenting fix.
+	// Prevents position inconsistencies when changing parent.
+	Vector		m_vecReference;
 
 	// Outputs
 	COutputEvent m_OnFullyOpen;

@@ -201,17 +201,21 @@ void CAI_StandoffBehavior::SetActive( bool fActive )
 {
 	if ( fActive !=	m_fActive )
 	{
+		// These sentences are only spoken if the standoff behavior is active, so they have to be arranged separately
 		if ( fActive )
 		{
+			m_fActive = fActive;
+			NotifyChangeBehaviorStatus();
+
 			GetOuter()->SpeakSentence( STANDOFF_SENTENCE_BEGIN_STANDOFF );
 		}
 		else
 		{
 			GetOuter()->SpeakSentence( STANDOFF_SENTENCE_END_STANDOFF );
-		}
 
-		m_fActive = fActive;
-		NotifyChangeBehaviorStatus();
+			m_fActive = fActive;
+			NotifyChangeBehaviorStatus();
+		}
 	}
 }
 
@@ -239,7 +243,8 @@ bool CAI_StandoffBehavior::CanSelectSchedule()
 	if ( !m_fActive )
 		return false;
 		
-	return ( GetNpcState() == NPC_STATE_COMBAT && GetOuter()->GetActiveWeapon() != NULL );
+	// Allow NPCs with innate range attacks to use standoffs
+	return ( GetNpcState() == NPC_STATE_COMBAT && (GetOuter()->GetActiveWeapon() != NULL || GetOuter()->CapabilitiesGet() & bits_CAP_INNATE_RANGE_ATTACK1) );
 }
 
 //-------------------------------------
@@ -505,7 +510,7 @@ int CAI_StandoffBehavior::SelectScheduleEstablishAim( void )
 {
 	if ( HasCondition( COND_ENEMY_OCCLUDED ) )
 	{
-		if ( GetPosture() == AIP_CROUCHING )
+		if ( GetPosture() == AIP_CROUCHING || GetPosture() == AIP_CROUCHING_MED )
 		{
 			// force a stand up, just in case
 			GetOuter()->SpeakSentence( STANDOFF_SENTENCE_STAND_CHECK_TARGET );
@@ -543,7 +548,7 @@ int CAI_StandoffBehavior::SelectScheduleAttack( void )
 			 !HasCondition( COND_CAN_MELEE_ATTACK1 ) &&
 			  HasCondition( COND_TOO_FAR_TO_ATTACK ) )
 		{
-			if ( GetOuter()->GetActiveWeapon() && ( GetOuter()->GetActiveWeapon()->CapabilitiesGet() & bits_CAP_WEAPON_RANGE_ATTACK1 ) )
+			if ( (GetOuter()->GetActiveWeapon() && ( GetOuter()->GetActiveWeapon()->CapabilitiesGet() & bits_CAP_WEAPON_RANGE_ATTACK1 )) || GetOuter()->CapabilitiesGet() & bits_CAP_INNATE_RANGE_ATTACK1 )
 			{
 				if ( !HasCondition( COND_ENEMY_OCCLUDED ) || random->RandomInt(0,99) < 50 )
 					// Don't advance, just fire anyway
@@ -616,6 +621,13 @@ Activity CAI_MappedActivityBehavior_Temporary::GetMappedActivity( AI_Posture_t p
 {
 	if ( posture != AIP_STANDING )
 	{
+		// See UpdateTranslateActivityMap() for more information on what this is for
+		if ( posture == AIP_CROUCHING_MED )
+		{
+			if (activity != ACT_RANGE_ATTACK1)
+				posture = AIP_CROUCHING;
+		}
+
 		unsigned short iActivityTranslation = m_ActivityMap.Find( MAKE_ACTMAP_KEY( posture, activity ) );
 		if ( iActivityTranslation != m_ActivityMap.InvalidIndex() )
 		{
@@ -633,10 +645,21 @@ Activity CAI_StandoffBehavior::NPC_TranslateActivity( Activity activity )
 	Activity coverActivity = GetCoverActivity();
 	if ( coverActivity != ACT_INVALID )
 	{
+		if ( GetPosture() == AIP_STANDING )
+		{
+			if ( coverActivity == ACT_COVER_LOW )
+				SetPosture( AIP_CROUCHING );
+			else if ( coverActivity == ACT_COVER_MED )
+			{
+				SetPosture( AIP_CROUCHING_MED );
+				coverActivity = ACT_COVER_LOW;
+			}
+		}
+		else if (coverActivity == ACT_COVER_MED)
+			coverActivity = ACT_COVER_LOW;
+
 		if ( activity == ACT_IDLE )
 			activity = coverActivity;
-		if ( GetPosture() == AIP_STANDING && coverActivity == ACT_COVER_LOW )
-			SetPosture( AIP_CROUCHING );
 	}
 	
 	Activity result = GetMappedActivity( GetPosture(), activity );
@@ -1095,6 +1118,12 @@ struct AI_ActivityMapping_t
 	Activity		activity;
 	const char *	pszWeapon;
 	Activity		translation;
+	Activity		backup;
+
+	AI_ActivityMapping_t( AI_Posture_t _p, Activity _a, const char *_w, Activity _t, Activity _b = ACT_INVALID )
+	{
+		posture = _p; activity = _a; pszWeapon = _w; translation = _t; backup = _b;
+	}
 };
 
 void CAI_MappedActivityBehavior_Temporary::UpdateTranslateActivityMap()
@@ -1108,14 +1137,46 @@ void CAI_MappedActivityBehavior_Temporary::UpdateTranslateActivityMap()
 		{	AIP_CROUCHING, 	ACT_WALK_AIM, 			NULL, 				ACT_WALK_CROUCH_AIM, 		},
 		{	AIP_CROUCHING, 	ACT_RUN_AIM, 			NULL, 				ACT_RUN_CROUCH_AIM, 		},
 		{	AIP_CROUCHING,	ACT_RELOAD,				NULL, 				ACT_RELOAD_LOW,				},
-		{	AIP_CROUCHING,	ACT_RANGE_ATTACK_SMG1,	NULL,				ACT_RANGE_ATTACK_SMG1_LOW,	},
-		{	AIP_CROUCHING,	ACT_RANGE_ATTACK_AR2,	NULL,				ACT_RANGE_ATTACK_AR2_LOW,	},
+		{	AIP_CROUCHING, 	ACT_RANGE_ATTACK1,		NULL, 				ACT_RANGE_ATTACK1_LOW,		},
+		{	AIP_CROUCHING, 	ACT_COVER_MED,			NULL,				ACT_COVER_LOW,				},
 		
 		//----
-		{	AIP_PEEKING, 	ACT_IDLE,				NULL,				ACT_RANGE_AIM_LOW,			},
-		{	AIP_PEEKING, 	ACT_IDLE_ANGRY,			NULL,				ACT_RANGE_AIM_LOW,			},
-		{	AIP_PEEKING, 	ACT_COVER_LOW,			NULL,				ACT_RANGE_AIM_LOW,			},
-		{	AIP_PEEKING, 	ACT_RANGE_ATTACK1,		NULL, 				ACT_RANGE_ATTACK1_LOW,		},
+		// 
+		// ============ Really long explanation that should be in a wiki/documentation article somewhere ~ Blixibon, 10/27/2021 ============
+		// 
+		// Standoff behavior assumes low attack animations allow NPCs to see over barricades, with ACT_COVER_LOW being their "safely in cover" animation.
+		// This is why AIP_CROUCHING translates ACT_RANGE_ATTACK1 to its low animation, but translates ACT_IDLE_ANGRY to ACT_COVER_LOW instead of ACT_RANGE_AIM_LOW,
+		// as this would ideally allow NPCs to pop in and out of cover to shoot.
+		// This is also why AIP_PEEKING translates ACT_COVER_LOW to ACT_RANGE_AIM_LOW, as it's supposed to force the NPC to peek over their cover.
+		// 
+		// However, this assumption mainly just applies to metrocops. Citizens' low attacking animations crouch low to the ground (which isn't effective for
+		// shooting over most barricades) and, while they do have a distinct ACT_COVER_LOW animation with transitions, they are close enough together that popping
+		// in and out of cover is redundant in most cases. Meanwhile, Combine soldiers have identical ACT_COVER_LOW and ACT_RANGE_AIM_LOW animations, which means
+		// they do not pop in and out of cover and AIP_PEEKING does nothing. This may be the reason why Combine soldiers occasionally get stuck in cover after a fight.
+		// 
+		// -------------------------------------------------------------
+		// 
+		// As part of Mapbase v7.0's NPC activity overhaul, a new "medium cover" activity set has been added. Metrocops' previous "low cover" animation set (which, as
+		// mentioned before, is different from that of other NPCs) has been retroactively changed to use "medium cover". This was done for a few reasons unrelated to
+		// standoff behavior, but the important point is that these activities indicate a new cover height. This means we can use them to give standoff behavior more leeway
+		// for judging which animations to use in various levels of cover.
+		// 
+		// Standoff behavior can use "medium cover" animations in cover which is too high for the "low" animations, and when the medium cover animations are not available,
+		// it simply falls back to the "standing" animations, thus resolving the issue with other NPCs not peeking in and out of cover without requiring new medium cover
+		// animations.
+		// 
+		// In Mapbase, this is done by changing AIP_PEEKING to use the medium cover animations and adding a new alternate crouching posture posture called "AIP_CROUCHING_MED",
+		// which only uses the medium cover attack activity and otherwise automatically falls back to AIP_CROUCHING. AIP_CROUCHING_MED is automatically set if the NPC cannot
+		// get LOS from a regular crouching position.
+		// 
+		{	AIP_CROUCHING_MED,		ACT_RANGE_ATTACK1,		NULL, 		ACT_RANGE_ATTACK1_MED,		},
+
+		//----
+		{	AIP_PEEKING, 	ACT_IDLE,				NULL,				ACT_RANGE_AIM_MED,			},
+		{	AIP_PEEKING, 	ACT_IDLE_ANGRY,			NULL,				ACT_RANGE_AIM_MED,			},
+		{	AIP_PEEKING, 	ACT_COVER_LOW,			NULL,				ACT_RANGE_AIM_MED,			ACT_IDLE_ANGRY		},
+		{	AIP_PEEKING, 	ACT_COVER_MED,			NULL,				ACT_RANGE_AIM_MED,			ACT_IDLE_ANGRY		},
+		{	AIP_PEEKING, 	ACT_RANGE_ATTACK1,		NULL, 				ACT_RANGE_ATTACK1_MED,		},
 		{	AIP_PEEKING,	ACT_RELOAD, 			NULL, 				ACT_RELOAD_LOW,				},
 	};
 
@@ -1127,10 +1188,17 @@ void CAI_MappedActivityBehavior_Temporary::UpdateTranslateActivityMap()
 	{
 		if ( !mappings[i].pszWeapon || stricmp( mappings[i].pszWeapon, pszWeaponClass ) == 0 )
 		{
-			if ( HaveSequenceForActivity( mappings[i].translation ) || HaveSequenceForActivity( GetOuter()->Weapon_TranslateActivity( mappings[i].translation ) ) )
+			// Check NPC backup activity
+			if ( HaveSequenceForActivity( mappings[i].translation ) || HaveSequenceForActivity( GetOuter()->Weapon_TranslateActivity( mappings[i].translation ) ) || HaveSequenceForActivity( GetOuter()->Weapon_BackupActivity( mappings[i].translation ) ) )
 			{
 				Assert( m_ActivityMap.Find( MAKE_ACTMAP_KEY( mappings[i].posture, mappings[i].activity ) ) == m_ActivityMap.InvalidIndex() );
 				m_ActivityMap.Insert( MAKE_ACTMAP_KEY( mappings[i].posture, mappings[i].activity ), mappings[i].translation );
+			}
+			// Check activity map backup activity
+			else if ( mappings[i].backup != ACT_INVALID && HaveSequenceForActivity( mappings[i].backup ) )
+			{
+				Assert( m_ActivityMap.Find( MAKE_ACTMAP_KEY( mappings[i].posture, mappings[i].activity ) ) == m_ActivityMap.InvalidIndex() );
+				m_ActivityMap.Insert( MAKE_ACTMAP_KEY( mappings[i].posture, mappings[i].activity ), mappings[i].backup );
 			}
 		}
 	}

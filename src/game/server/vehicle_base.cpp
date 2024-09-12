@@ -307,6 +307,10 @@ BEGIN_MAPENTITY( CPropVehicleDriveable )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Unlock",	InputUnlock ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOn",	InputTurnOn ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "EnterVehicle", InputEnterVehicle ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "EnterVehicleImmediate", InputEnterVehicleImmediate ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "ExitVehicle", InputExitVehicle ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "ExitVehicleImmediate", InputExitVehicleImmediate ),
 	DEFINE_INPUT( m_bHasGun, FIELD_BOOLEAN, "EnableGun" ),
 
 	// Outputs
@@ -316,6 +320,7 @@ BEGIN_MAPENTITY( CPropVehicleDriveable )
 	DEFINE_OUTPUT( m_pressedAttack2, "PressedAttack2" ),
 	DEFINE_OUTPUT( m_attackaxis, "AttackAxis" ),
 	DEFINE_OUTPUT( m_attack2axis, "Attack2Axis" ),
+	DEFINE_OUTPUT( m_OnPlayerUse, "OnPlayerUse" ),
 
 	DEFINE_KEYFIELD( m_bLocked, FIELD_BOOLEAN, "VehicleLocked" ),
 
@@ -463,6 +468,8 @@ void CPropVehicleDriveable::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, 
 		return;
 
 	ResetUseKey( pPlayer );
+
+	m_OnPlayerUse.FireOutput(pActivator, this);
 
 	m_pServerVehicle->HandlePassengerEntry( pPlayer, (value>0) );
 }
@@ -752,6 +759,97 @@ void CPropVehicleDriveable::InputTurnOff( inputdata_t &inputdata )
 
 	StopEngine();
 	m_VehiclePhysics.SetDisableEngine( true );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CPropVehicleDriveable::InputEnterVehicle( inputdata_t &inputdata )
+{
+	if ( m_bEnterAnimOn )
+		return;
+
+	// Try the activator first & use them if they are a player.
+	CBaseCombatCharacter *pPassenger = ToBaseCombatCharacter( inputdata.pActivator );
+	if ( pPassenger == NULL )
+	{
+		// Activator was not a player, just grab the singleplayer player.
+		pPassenger = UTIL_PlayerByIndex( 1 );
+		if ( pPassenger == NULL )
+			return;
+	}
+
+	// FIXME: I hate code like this. I should really add a parameter to HandlePassengerEntry
+	//		  to allow entry into locked vehicles
+	bool bWasLocked = m_bLocked;
+	m_bLocked = false;
+	GetServerVehicle()->HandlePassengerEntry( pPassenger, true );
+	m_bLocked = bWasLocked;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : &inputdata - 
+//-----------------------------------------------------------------------------
+void CPropVehicleDriveable::InputEnterVehicleImmediate( inputdata_t &inputdata )
+{
+	if ( m_bEnterAnimOn )
+		return;
+
+	// Try the activator first & use them if they are a player.
+	CBaseCombatCharacter *pPassenger = ToBaseCombatCharacter( inputdata.pActivator );
+	if ( pPassenger == NULL )
+	{
+		// Activator was not a player, just grab the singleplayer player.
+		pPassenger = UTIL_PlayerByIndex( 1 );
+		if ( pPassenger == NULL )
+			return;
+	}
+
+	CBasePlayer *pPlayer = ToBasePlayer( pPassenger );
+	if ( pPlayer != NULL )
+	{
+		if ( pPlayer->IsInAVehicle() )
+		{
+			// Force the player out of whatever vehicle they are in.
+			pPlayer->LeaveVehicle();
+		}
+		
+		pPlayer->GetInVehicle( GetServerVehicle(), VEHICLE_ROLE_DRIVER );
+	}
+	else
+	{
+		// NPCs are not currently supported - jdw
+		Assert( 0 );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CPropVehicleDriveable::InputExitVehicle( inputdata_t &inputdata )
+{
+	if (!GetDriver())
+		return;
+
+	if ( CanExitVehicle(GetDriver()) )
+	{
+		GetServerVehicle()->HandlePassengerExit(GetDriver()->MyCombatCharacterPointer());
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CPropVehicleDriveable::InputExitVehicleImmediate( inputdata_t &inputdata )
+{
+	if (!GetDriver())
+		return;
+
+	if (GetDriver()->IsPlayer())
+	{
+		static_cast<CBasePlayer*>(GetDriver())->LeaveVehicle();
+	}
 }
 
 //-----------------------------------------------------------------------------

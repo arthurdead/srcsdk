@@ -98,6 +98,22 @@ namespace ResponseRules
 		NUM_RESPONSES,
 	};
 
+	// The "apply to world" context option has been replaced with a flag-based integer which can apply contexts to more things.
+	// 
+	// New ones should be implemented in: 
+	// CResponseSystem::BuildDispatchTables() - AI_ResponseSystem.cpp (with their own funcs for m_RuleDispatch)
+	// CRR_Response::Describe() - rr_response.cpp
+	// CAI_Expresser::SpeakDispatchResponse() - ai_speech.cpp
+	// 
+	// Also mind that this is 8-bit
+	enum : uint8
+	{
+		APPLYCONTEXT_SELF = (1 << 0), // Included for contexts that apply to both self and something else
+		APPLYCONTEXT_WORLD = (1 << 1), // Apply to world
+
+		APPLYCONTEXT_SQUAD = (1 << 2), // Apply to squad
+		APPLYCONTEXT_ENEMY = (1 << 3), // Apply to enemy
+	};
 
 #pragma pack(push,1)
 	struct ResponseParams
@@ -297,6 +313,7 @@ namespace ResponseRules
 
 		void			GetName( char *buf, size_t buflen ) const;
 		void			GetResponse( char *buf, size_t buflen ) const;
+		void			GetRule( char *buf, size_t buflen ) const;
 		const ResponseParams *GetParams() const { return &m_Params; }
 		ResponseType_t	GetType() const { return (ResponseType_t)m_Type; }
 		soundlevel_t	GetSoundLevel() const;
@@ -320,7 +337,11 @@ namespace ResponseRules
 		inline float	GetMatchScore( void ) { return m_fMatchScore; }
 		inline void		SetMatchScore( float f ) { m_fMatchScore = f; }
 
-		bool			IsApplyContextToWorld( void ) { return m_bApplyContextToWorld; }
+		int				GetContextFlags() { return m_iContextFlags; }
+		bool			IsApplyContextToWorld( void ) { return (m_iContextFlags & APPLYCONTEXT_WORLD) != 0; }
+
+		inline short	*GetInternalIndices() { return m_InternalIndices; }
+		inline void		SetInternalIndices( short iGroup, short iWithinGroup ) { m_InternalIndices[0] = iGroup; m_InternalIndices[1] = iWithinGroup; }
 
 		void Describe( const CriteriaSet *pDebugCriteria = NULL ); 
 
@@ -330,6 +351,13 @@ namespace ResponseRules
 			const char *matchingRule,
 			const char *applyContext,
 			bool bApplyContextToWorld );
+
+		void	Init( ResponseType_t type,
+			const char *responseName,
+			const ResponseParams& responseparams,
+			const char *matchingRule,
+			const char *applyContext,
+			int iContextFlags );
 
 		static const char *DescribeResponse( ResponseType_t type );
 
@@ -349,7 +377,11 @@ namespace ResponseRules
 		float	m_fMatchScore; // when instantiated dynamically in SpeakFindResponse, the score of the rule that matched it.
 
 		char *			m_szContext; // context data we apply to character after running
-		bool			m_bApplyContextToWorld;
+		int				m_iContextFlags;
+
+		// The response's original indices in the system. [0] is the group's index, [1] is the index within the group.
+		// For now, this is only set in prospecctive mode. It's used to call back to the ParserResponse and mark a prospectively chosen response as used.
+		short			m_InternalIndices[2];
 
 #ifdef _MANAGED
 		friend ref class ResponseRulesCLI::ResponseQueryResult;
@@ -373,6 +405,13 @@ namespace ResponseRules
 		virtual bool FindBestResponse( const CriteriaSet& set, CRR_Response& response, IResponseFilter *pFilter = NULL ) = 0;
 		virtual void GetAllResponses( CUtlVector<CRR_Response> *pResponses ) = 0;
 		virtual void PrecacheResponses( bool bEnable ) = 0;
+
+		// (Optional) Call this before and after using FindBestResponse() for a prospective lookup, e.g. a response that might not actually be used
+		// and should not trigger displayfirst, etc.
+		virtual void SetProspective( bool bToggle ) {};
+
+		// (Optional) Marks a prospective response as used
+		virtual void MarkResponseAsUsed( short iGroup, short iWithinGroup ) {};
 	};
 
 

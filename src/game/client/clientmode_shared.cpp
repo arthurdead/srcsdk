@@ -36,6 +36,9 @@
 #include <vgui/ILocalize.h>
 #include "hud_vote.h"
 #include "ienginevgui.h"
+#include "clienteffectprecachesystem.h"
+#include "viewpostprocess.h"
+#include "glow_outline_effect.h"
 
 #if defined( REPLAY_ENABLED )
 #include "replay/replaycamera.h"
@@ -69,6 +72,11 @@ ConVar hud_freezecamhide( "hud_freezecamhide", "0", FCVAR_CLIENTDLL | FCVAR_ARCH
 ConVar cl_show_num_particle_systems( "cl_show_num_particle_systems", "0", FCVAR_CLIENTDLL, "Display the number of active particle systems." );
 
 ConVar default_fov( "default_fov", "90", FCVAR_CHEAT );
+
+CLIENTEFFECT_REGISTER_BEGIN( PrecachePostProcessingEffectsGlow )
+CLIENTEFFECT_MATERIAL( "dev/glow_color" )
+CLIENTEFFECT_MATERIAL( "dev/halo_add_to_screen" )
+CLIENTEFFECT_REGISTER_END_CONDITIONAL( engine->GetDXSupportLevel() >= 90 )
 
 extern ConVar v_viewmodel_fov;
 extern ConVar voice_modenable;
@@ -279,6 +287,10 @@ ClientModeShared::ClientModeShared()
 	m_flReplayStartRecordTime = 0.0f;
 	m_flReplayStopRecordTime = 0.0f;
 #endif
+
+	m_pCurrentPostProcessController = NULL;
+	m_PostProcessLerpTimer.Invalidate();
+	m_pCurrentColorCorrection = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -442,7 +454,7 @@ bool ClientModeShared::CreateMove( float flInputSampleTime, CUserCmd *cmd )
 // Purpose: 
 // Input  : *pSetup - 
 //-----------------------------------------------------------------------------
-void ClientModeShared::OverrideView( CViewSetup *pSetup )
+void ClientModeShared::OverrideView( CViewSetupEx *pSetup )
 {
 	QAngle camAngles;
 
@@ -586,7 +598,7 @@ void ClientModeShared::AdjustEngineViewport( int& x, int& y, int& width, int& he
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void ClientModeShared::PreRender( CViewSetup *pSetup )
+void ClientModeShared::PreRender( CViewSetupEx *pSetup )
 {
 }
 
@@ -616,6 +628,8 @@ void ClientModeShared::Update()
 	{
 		m_pViewport->SetVisible( cl_drawhud.GetBool() );
 	}
+
+	UpdatePostProcessingEffects();
 
 	UpdateRumbleEffects();
 
@@ -822,8 +836,10 @@ int ClientModeShared::HudElementKeyInput( int down, ButtonCode_t keynum, const c
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool ClientModeShared::DoPostScreenSpaceEffects( const CViewSetup *pSetup )
+bool ClientModeShared::DoPostScreenSpaceEffects( const CViewSetupEx *pSetup )
 {
+	g_GlowObjectManager.RenderGlowEffects( pSetup );
+
 #if defined( REPLAY_ENABLED )
 	if ( engine->IsPlayingDemo() )
 	{
@@ -831,6 +847,7 @@ bool ClientModeShared::DoPostScreenSpaceEffects( const CViewSetup *pSetup )
 			return false;
 	}
 #endif 
+
 	return true;
 }
 
@@ -914,10 +931,67 @@ void ClientModeShared::LevelShutdown( void )
  		s_hVGuiContext = DEFAULT_VGUI_CONTEXT;
 	}
 
+	// Always reset post-processing on level unload
+	//if (m_pCurrentPostProcessController)
+	{
+		m_CurrentPostProcessParameters = PostProcessParameters_t();
+		m_LerpEndPostProcessParameters = PostProcessParameters_t();
+		m_pCurrentPostProcessController = NULL;
+		SetPostProcessParams( &m_CurrentPostProcessParameters );
+	}
+
 	// Reset any player explosion/shock effects
 	CLocalPlayerFilter filter;
 	enginesound->SetPlayerDSP( filter, 0, true );
 	enginesound->SetRoomType( filter, 1 );
+}
+
+void ClientModeShared::UpdatePostProcessingEffects()
+{
+	C_PostProcessController* pNewPostProcessController = NULL;
+	C_BasePlayer* pPlayer = C_BasePlayer::GetLocalPlayer();
+
+	if (pPlayer)
+		pNewPostProcessController = pPlayer->GetActivePostProcessController();
+
+	if (!pNewPostProcessController)
+	{
+		m_CurrentPostProcessParameters = PostProcessParameters_t();
+		m_pCurrentPostProcessController = NULL;
+		SetPostProcessParams( &m_CurrentPostProcessParameters );
+		return;
+	}
+
+	if (pNewPostProcessController != m_pCurrentPostProcessController)
+		m_pCurrentPostProcessController = pNewPostProcessController;
+
+	// Start a lerp timer if the parameters changed, regardless of whether the controller changed
+	if (m_LerpEndPostProcessParameters != pNewPostProcessController->m_PostProcessParameters)
+	{
+		m_LerpStartPostProcessParameters = m_CurrentPostProcessParameters;
+		m_LerpEndPostProcessParameters = pNewPostProcessController ? pNewPostProcessController->m_PostProcessParameters : m_CurrentPostProcessParameters;
+
+		float flFadeTime = pNewPostProcessController ? pNewPostProcessController->m_PostProcessParameters.m_flParameters[PPPN_FADE_TIME] : 0.0f;
+		if (flFadeTime <= 0.0f)
+		{
+			flFadeTime = 0.001f;
+		}
+
+		m_PostProcessLerpTimer.Start( flFadeTime );
+	}
+
+	// Lerp between old and new parameters
+	float flLerpFactor = 1.0f - m_PostProcessLerpTimer.GetRemainingRatio();
+	for (int nParameter = 0; nParameter < POST_PROCESS_PARAMETER_COUNT; ++nParameter)
+	{
+		m_CurrentPostProcessParameters.m_flParameters[nParameter] =
+			Lerp(
+			flLerpFactor,
+			m_LerpStartPostProcessParameters.m_flParameters[nParameter],
+			m_LerpEndPostProcessParameters.m_flParameters[nParameter] );
+	}
+
+	SetPostProcessParams( &m_CurrentPostProcessParameters );
 }
 
 
@@ -1673,7 +1747,7 @@ void ClientModeShared::DeactivateInGameVGuiContext()
 //-----------------------------------------------------------------------------
 float ClientModeShared::GetColorCorrectionScale( void ) const
 {
-	return 0.0f;
+	return 1.0f;
 }
 
 void ClientModeShared::OnColorCorrectionWeightsReset()

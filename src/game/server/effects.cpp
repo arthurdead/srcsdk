@@ -29,11 +29,15 @@
 #include "Sprite.h"
 #include "precipitation_shared.h"
 #include "shot_manipulator.h"
+#include "point_template.h"
+#include "TemplateEntities.h"
+#include "mapentities_shared.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 #define SF_FUNNEL_REVERSE			1 // funnel effect repels particles instead of attracting them.
+#define SF_FUNNEL_DONT_REMOVE		2
 
 #define	SF_GIBSHOOTER_REPEATABLE	(1<<0)	// allows a gibshooter to be refired
 #define	SF_SHOOTER_FLAMING			(1<<1)	// gib is on fire
@@ -506,7 +510,7 @@ CBaseEntity *CGibShooter::SpawnGib( const Vector &vecShootDir, float flSpeed )
 		{
 			// UNDONE: Assume a mass of 200 for now
 			Vector force = vecShootDir * flSpeed * 200;
-			return CreateRagGib( STRING( GetModelName() ), GetAbsOrigin(), GetAbsAngles(), force, m_flGibLife );
+			return CreateRagGib( STRING( GetModelName() ), GetAbsOrigin(), GetAbsAngles(), force, m_flGibLife, HasSpawnFlags(SF_SHOOTER_FLAMING) );
 		}
 
 		case GIB_SIMULATE_PHYSICS:
@@ -1114,6 +1118,7 @@ static ConCommand bloodspray( "bloodspray", CC_BloodSpray, "blood", FCVAR_CHEAT 
 //-----------------------------------------------------------------------------
 class CEnvFunnel : public CBaseEntity
 {
+	DECLARE_MAPENTITY();
 public:
 	DECLARE_CLASS( CEnvFunnel, CBaseEntity );
 
@@ -1122,13 +1127,29 @@ public:
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
 	int		m_iSprite;	// Don't save, precache
+
+	// This unfortunately doesn't work with the way the effect is set up
+	//string_t	m_iszSprite;
 };
 
 LINK_ENTITY_TO_CLASS( env_funnel, CEnvFunnel );
 
+//---------------------------------------------------------
+// Save/Restore
+//---------------------------------------------------------
+BEGIN_MAPENTITY( CEnvFunnel )
+
+	//DEFINE_KEYFIELD( m_iszSprite, FIELD_STRING, "Sprite" ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "Activate", InputUse ),
+
+END_MAPENTITY()
 
 void CEnvFunnel::Precache ( void )
 {
+	//if (m_iszSprite == NULL_STRING)
+	//	m_iszSprite = AllocPooledString("sprites/flare6.vmt");
+
+	//m_iSprite = PrecacheModel(STRING(m_iszSprite));
 	m_iSprite = PrecacheModel ( "sprites/flare6.vmt" );
 }
 
@@ -1137,6 +1158,9 @@ void CEnvFunnel::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE us
 	CBroadcastRecipientFilter filter;
 	te->LargeFunnel( filter, 0.0,
 		&GetAbsOrigin(), m_iSprite, HasSpawnFlags( SF_FUNNEL_REVERSE ) ? 1 : 0 );
+
+	if (HasSpawnFlags(SF_FUNNEL_DONT_REMOVE))
+		return;
 
 	SetThink( &CEnvFunnel::SUB_Remove );
 	SetNextThink( gpGlobals->curtime );
@@ -1380,7 +1404,7 @@ void CPrecipitation::Spawn( void )
 	SetMoveType( MOVETYPE_NONE );
 	SetModel( STRING( GetModelName() ) );		// Set size
 
-	if ( m_nPrecipType == PRECIPITATION_TYPE_PARTICLERAIN )
+	if ( IsParticleRainType( m_nPrecipType ) )
 	{
 		SetSolid( SOLID_VPHYSICS );
 		AddSolidFlags( FSOLID_NOT_SOLID );
@@ -1487,6 +1511,21 @@ BEGIN_MAPENTITY( CEnvWind )
 	DEFINE_KEYFIELD( m_EnvWindShared.m_iGustDirChange, FIELD_INTEGER, "gustdirchange" ),
 	DEFINE_KEYFIELD( m_EnvWindShared.m_flGustDuration, FIELD_FLOAT, "gustduration" ),
 	DEFINE_KEYFIELD( m_EnvWindShared.m_iszGustSound, FIELD_STRING, "gustsound" ),
+	DEFINE_KEYFIELD( m_EnvWindShared.m_windRadius, FIELD_FLOAT, "windradius" ),
+	DEFINE_KEYFIELD( m_EnvWindShared.m_windRadiusInner, FIELD_FLOAT, "windradiusinner" ),
+	DEFINE_KEYFIELD( m_EnvWindShared.m_flTreeSwayScale, FIELD_FLOAT, "treeswayscale" ),
+
+	DEFINE_INPUT( m_EnvWindShared.m_iMinWind, FIELD_INTEGER, "SetMinWind" ),
+	DEFINE_INPUT( m_EnvWindShared.m_iMaxWind, FIELD_INTEGER, "SetMaxWind" ),
+	DEFINE_INPUT( m_EnvWindShared.m_iMinGust, FIELD_INTEGER, "SetMinGust" ),
+	DEFINE_INPUT( m_EnvWindShared.m_iMaxGust, FIELD_INTEGER, "SetMaxGust" ),
+	DEFINE_INPUT( m_EnvWindShared.m_flMinGustDelay, FIELD_FLOAT, "SetMinGustDelay" ),
+	DEFINE_INPUT( m_EnvWindShared.m_flMaxGustDelay, FIELD_FLOAT, "SetMaxGustDelay" ),
+	DEFINE_INPUT( m_EnvWindShared.m_iGustDirChange, FIELD_INTEGER, "SetGustDirChange" ),
+	DEFINE_INPUT( m_EnvWindShared.m_flGustDuration, FIELD_FLOAT, "SetGustDuration" ),
+	DEFINE_INPUT( m_EnvWindShared.m_windRadius, FIELD_FLOAT, "SetWindRadius" ),
+	DEFINE_INPUT( m_EnvWindShared.m_windRadiusInner, FIELD_FLOAT, "SetWindRadiusInner" ),
+	DEFINE_INPUT( m_EnvWindShared.m_flTreeSwayScale, FIELD_FLOAT, "SetTreeSwayScale" ),
 
 	DEFINE_OUTPUT( m_EnvWindShared.m_OnGustStart, "OnGustStart" ),
 	DEFINE_OUTPUT( m_EnvWindShared.m_OnGustEnd,	"OnGustEnd" ),
@@ -1513,6 +1552,11 @@ BEGIN_SEND_TABLE_NOBASE(CEnvWindShared, DT_EnvWindShared)
 	SendPropFloat	(SENDINFO(m_flGustDuration), 0, SPROP_NOSCALE),
 	// Sound related
 //	SendPropInt		(SENDINFO(m_iszGustSound),	10, SPROP_UNSIGNED ),
+
+	SendPropFloat	(SENDINFO(m_windRadius), 0, SPROP_NOSCALE),
+	SendPropFloat	(SENDINFO(m_windRadiusInner), 0, SPROP_NOSCALE),
+	SendPropVector	(SENDINFO(m_location), -1, SPROP_COORD),
+	SendPropFloat	(SENDINFO(m_flTreeSwayScale), 0, SPROP_NOSCALE),
 END_SEND_TABLE()
 
 // This table encodes the CBaseEntity data.
@@ -1536,6 +1580,7 @@ void CEnvWind::Spawn( void )
 
 	m_EnvWindShared.m_iInitialWindDir = (int)( anglemod( m_EnvWindShared.m_iInitialWindDir ) );
 	m_EnvWindShared.Init( entindex(), 0, gpGlobals->curtime, GetLocalAngles().y, 0 );
+	m_EnvWindShared.m_location = GetAbsOrigin();
 
 	SetThink( &CEnvWind::WindThink );
 	SetNextThink( gpGlobals->curtime );
@@ -1961,6 +2006,8 @@ public:
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
 
+	void InputFireBurst( inputdata_t &inputdata );
+
 	int	m_iMinBurstSize;
 	int m_iMaxBurstSize;
 
@@ -1986,6 +2033,8 @@ public:
 
 	EHANDLE m_hTarget;
 
+	COutputEvent m_OnFire;
+
 
 	DECLARE_MAPENTITY();
 };
@@ -2005,6 +2054,9 @@ BEGIN_MAPENTITY( CEnvGunfire )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "FireBurst", InputFireBurst ),
+
+	DEFINE_OUTPUT( m_OnFire, "OnFire" ),
 END_MAPENTITY()
 LINK_ENTITY_TO_CLASS( env_gunfire, CEnvGunfire );
 
@@ -2149,10 +2201,19 @@ void CEnvGunfire::ShootThink()
 
 	m_iShotsRemaining--;
 
+	m_OnFire.FireOutput(m_hTarget, this);
+
 	if( m_iShotsRemaining == 0 )
 	{
-		StartShooting();
-		SetNextThink( gpGlobals->curtime + random->RandomFloat( m_flMinBurstDelay, m_flMaxBurstDelay ) );
+		if (m_bDisabled)
+		{
+			StopShooting();
+		}
+		else
+		{
+			StartShooting();
+			SetNextThink( gpGlobals->curtime + random->RandomFloat( m_flMinBurstDelay, m_flMaxBurstDelay ) );
+		}
 	}
 }
 
@@ -2170,6 +2231,16 @@ void CEnvGunfire::InputDisable( inputdata_t &inputdata )
 {
 	m_bDisabled = true;
 	SetThink( NULL );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CEnvGunfire::InputFireBurst( inputdata_t &inputdata )
+{
+	m_iShotsRemaining = inputdata.value.Int();
+
+	SetThink( &CEnvGunfire::ShootThink );
+	SetNextThink( gpGlobals->curtime );
 }
 
 LINK_ENTITY_TO_CLASS( env_quadraticbeam, CEnvQuadraticBeam );
@@ -2278,4 +2349,122 @@ void CEnvViewPunch::DoViewPunch()
 void CEnvViewPunch::InputViewPunch( inputdata_t &inputdata )
 {
 	DoViewPunch();
+}
+
+class CBreakableGibShooter : public CBaseEntity
+{
+	DECLARE_CLASS( CBreakableGibShooter, CBaseEntity );
+	DECLARE_MAPENTITY();
+public:
+
+	int GetRandomTemplateModelIndex( CPointTemplate *pTemplate );
+
+	void		Precache( void );
+
+	void		Shoot( void );
+
+	// ----------------
+	//	Inputs
+	// ----------------
+	void InputShoot( inputdata_t &inputdata );
+
+public:
+
+	int m_iModelType;
+	enum
+	{
+		MODELTYPE_BREAKABLECHUNKS,
+		MODELTYPE_MODEL,
+		MODELTYPE_TEMPLATE,
+	};
+
+	int m_iCount;
+	float m_flDelay;
+	Vector m_vecGibSize;
+	float m_flGibSpeed;
+	int m_iRandomization;
+	float m_flLifetime;
+	int m_iGibFlags;
+};
+
+BEGIN_MAPENTITY( CBreakableGibShooter )
+
+	DEFINE_KEYFIELD( m_iModelType, FIELD_INTEGER, "modeltype" ),
+	DEFINE_INPUT( m_iCount, FIELD_INTEGER, "SetCount" ),
+	DEFINE_INPUT( m_flDelay, FIELD_FLOAT, "SetDelay" ),
+	DEFINE_INPUT( m_vecGibSize, FIELD_VECTOR, "SetGibSize" ),
+	DEFINE_INPUT( m_flGibSpeed, FIELD_FLOAT, "SetGibSpeed" ),
+	DEFINE_INPUT( m_iRandomization, FIELD_INTEGER, "SetRandomization" ),
+	DEFINE_INPUT( m_flLifetime, FIELD_FLOAT, "SetLifetime" ),
+	DEFINE_INPUT( m_iGibFlags, FIELD_INTEGER, "SetGibFlags" ),
+
+	DEFINE_INPUTFUNC( FIELD_VOID, "Shoot", InputShoot ),
+
+END_MAPENTITY()
+
+
+LINK_ENTITY_TO_CLASS( env_break_shooter, CBreakableGibShooter );
+
+
+int CBreakableGibShooter::GetRandomTemplateModelIndex( CPointTemplate *pTemplate )
+{
+	int iIndex = RandomInt( 0, pTemplate->GetNumTemplates() );
+	const char *szTemplate = STRING(Templates_FindByIndex(pTemplate->GetTemplateIndexForTemplate(iIndex)));
+
+	// This might seem a little messy, but I think it's cheaper than creating the entity.
+	char szModel[MAPKEY_MAXLENGTH];
+	bool modelExtracted = MapEntity_ExtractValue(szTemplate, "model", szModel);
+
+	return modelinfo->GetModelIndex( modelExtracted ? szModel : NULL );
+}
+
+void CBreakableGibShooter::Precache( void )
+{
+	if (m_iModelType == MODELTYPE_MODEL)
+		PrecacheModel( STRING(GetModelName()) );
+}
+
+void CBreakableGibShooter::Shoot( void )
+{
+	int iModelIndex = 0;
+	if (m_iModelType == MODELTYPE_MODEL)
+		iModelIndex = modelinfo->GetModelIndex( STRING(GetModelName()) );
+
+	CPointTemplate *pTemplate = NULL;
+	if (m_iModelType == MODELTYPE_TEMPLATE)
+	{
+		pTemplate = dynamic_cast<CPointTemplate*>(gEntList.FindEntityByName(NULL, STRING(GetModelName()), this));
+		if (!pTemplate)
+		{
+			Warning("%s cannot find point_template %s!\n", GetDebugName(), STRING(GetModelName()));
+			return;
+		}
+	}
+
+	CPVSFilter filter( GetAbsOrigin() );
+	for ( int i = 0; i < m_iCount; i++ )
+	{
+		if (m_iModelType == MODELTYPE_BREAKABLECHUNKS)
+			iModelIndex = modelinfo->GetModelIndex( g_PropDataSystem.GetRandomChunkModel( STRING( GetModelName() ) ) );
+		else if (m_iModelType == MODELTYPE_TEMPLATE)
+			iModelIndex = GetRandomTemplateModelIndex( pTemplate );
+
+		// All objects except the first one in this run are marked as slaves...
+		int slaveFlag = 0;
+		if ( i != 0 )
+		{
+			slaveFlag = BREAK_SLAVE;
+		}
+
+		Vector vecShootDir;
+		AngleVectors( GetAbsAngles(), &vecShootDir );
+		VectorNormalize( vecShootDir );
+
+		te->BreakModel( filter, m_flDelay, GetAbsOrigin(), GetAbsAngles(), m_vecGibSize, vecShootDir * m_flGibSpeed, iModelIndex, m_iRandomization, 1, m_flLifetime, m_iGibFlags | slaveFlag );
+	}
+}
+
+void CBreakableGibShooter::InputShoot( inputdata_t &inputdata )
+{
+	Shoot();
 }

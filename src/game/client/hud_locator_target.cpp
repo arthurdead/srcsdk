@@ -85,6 +85,7 @@ ConVar locator_text_glow_color( "locator_text_glow_color", "255 255 255 255", FC
 ConVar locator_split_maxwide_percent( "locator_split_maxwide_percent", "0.80f", FCVAR_CHEAT );
 ConVar locator_split_len( "locator_split_len", "0.5f", FCVAR_CHEAT );
 
+extern ConVar gameinstructor_default_bindingcolor;
 
 //Precahce the effects
 
@@ -135,6 +136,21 @@ void CLocatorTarget::Activate( int serialNumber )
 	m_declutterIndex = 0;
 	m_lastDeclutterIndex = 0;
 	AddIconEffects( LOCATOR_ICON_FX_FADE_IN );
+
+	// Mods are capable of using a custom binding color
+	CSplitString colorValues( gameinstructor_default_bindingcolor.GetString(), "," );
+
+	int r,g,b;
+	r = g = b = 0;
+
+	if (colorValues.Count() == 3)
+	{
+		r = atoi( colorValues[0] );
+		g = atoi( colorValues[1] );
+		b = atoi( colorValues[2] );
+	}
+
+	m_bindingColor.SetColor( r, g, b, 255 );
 }
 
 //------------------------------------
@@ -2020,7 +2036,8 @@ void CLocatorPanel::DrawBindingName( CLocatorTarget *pTarget, const char *pchBin
 		int iWidth = GetScreenWidthForCaption( wszCaption, m_hKeysFont );
 
 		// Draw black text
-		vgui::surface()->DrawSetTextColor( 0,0,0, pTarget->m_alpha );
+		// Mods are capable of choosing a custom color
+		vgui::surface()->DrawSetTextColor( pTarget->m_bindingColor.r(), pTarget->m_bindingColor.g(), pTarget->m_bindingColor.b(), pTarget->m_alpha );
 		vgui::surface()->DrawSetTextPos( x - (iWidth>>1) - 1, y - (fontTall >>1) - 1 );
 		vgui::surface()->DrawUnicodeString( wszCaption );
 	}

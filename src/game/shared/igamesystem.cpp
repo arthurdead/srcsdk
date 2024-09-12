@@ -41,6 +41,15 @@ static CUtlVector<IGameSystemPerFrame*> s_GameSystemsPerFrame( 0, 4 );
 // The map name
 static char* s_pMapName = 0;
 
+const char *GetMapName()
+{
+#ifdef CLIENT_DLL
+	return s_pMapName;
+#else
+	return STRING(gpGlobals->mapname);
+#endif
+}
+
 static CBasePlayer *s_pRunCommandPlayer = NULL;
 static CUserCmd *s_pRunCommandUserCmd = NULL;
 

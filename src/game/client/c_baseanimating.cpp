@@ -276,6 +276,7 @@ C_ClientRagdoll::C_ClientRagdoll()
 	m_bFadingOut = false;
 	m_bImportant = false;
 	m_bNoModelParticles = false;
+	m_flForcedRetireTime = 0.0f;
 
 	SetClientSideRagdoll();
 }
@@ -615,6 +616,7 @@ C_BaseAnimating::C_BaseAnimating() :
 	m_nRestoreSequence = -1;
 	m_pRagdoll		= NULL;
 	m_pClientsideRagdoll = NULL;
+	m_pServerRagdoll = NULL;
 	m_builtRagdoll = false;
 	m_hitboxBoneCacheHandle = 0;
 	int i;
@@ -1804,6 +1806,12 @@ void C_BaseAnimating::MaintainSequenceTransitions( IBoneSetup &boneSetup, float 
 		return;
 	}
 
+	if ( IsRagdoll() )
+	{
+		m_nPrevNewSequenceParity = m_nNewSequenceParity;
+		return;
+	}
+
 	m_SequenceTransitioner.CheckForSequenceChange( 
 		boneSetup.GetStudioHdr(),
 		GetSequence(),
@@ -2625,14 +2633,28 @@ void C_BaseAnimating::CalculateIKLocks( float currentTime )
 
 					// debugoverlay->AddBoxOverlay( origin, Vector( -1, -1, -1 ), Vector( 1, 1, 1 ), QAngle( 0, 0, 0 ), 255, 0, 0, 0, 0 );
 
-					float d = (pTarget->est.pos - origin).Length();
+					Vector vecDelta = (origin - pTarget->est.pos);
+					float d = vecDelta.Length();
 
 					if ( d >= flDist)
 						continue;
 
 					flDist = d;
-					pTarget->SetPos( origin );
-					pTarget->SetAngles( angles );
+
+					// For blending purposes, IK attachments should obey weight
+					if ( pTarget->est.flWeight < 1.0f )
+					{
+						Quaternion qTarget;
+						AngleQuaternion( angles, qTarget );
+
+						QuaternionSlerp( pTarget->est.q, qTarget, pTarget->est.flWeight, pTarget->est.q );
+						pTarget->SetPos( pTarget->est.pos + (vecDelta * pTarget->est.flWeight) );
+					}
+					else
+					{
+						pTarget->SetPos( origin );
+						pTarget->SetAngles( angles );
+					}
 					// debugoverlay->AddBoxOverlay( pTarget->est.pos, Vector( -pTarget->est.radius, -pTarget->est.radius, -pTarget->est.radius ), Vector( pTarget->est.radius, pTarget->est.radius, pTarget->est.radius), QAngle( 0, 0, 0 ), 0, 255, 0, 0, 0 );
 				}
 
@@ -3321,6 +3343,15 @@ int C_BaseAnimating::DrawModel( int flags, const RenderableInstance_t &instance 
 		return 0;
 
 	int drawn = 0;
+
+	if (m_iViewHideFlags > 0)
+	{
+		// Hide this entity if it's not supposed to be drawn in this view.
+		if (m_iViewHideFlags & (1 << CurrentViewID()))
+		{
+			return 0;
+		}
+	}
 
 	ValidateModelIndex();
 
@@ -4329,16 +4360,30 @@ void C_BaseAnimating::FireEvent( const Vector& origin, const QAngle& angles, int
 
 	// Eject brass
 	case CL_EVENT_EJECTBRASS1:
-		if ( m_Attachments.Count() > 0 )
 		{
-			if ( MainViewOrigin().DistToSqr( GetAbsOrigin() ) < (256 * 256) )
+			// Check if we're a weapon, if we belong to the local player, and if the local player is in third person - if all are true, don't do a muzzleflash in this instance, because
+			// we're using the view models dispatch for smoothness.
+			if ( MyCombatWeaponPointer() != NULL )
 			{
-				Vector attachOrigin;
-				QAngle attachAngles; 
-				
-				if( GetAttachment( 2, attachOrigin, attachAngles ) )
+				C_BaseCombatWeapon *pWeapon = MyCombatWeaponPointer();
+				if ( pWeapon && pWeapon->GetOwner() == C_BasePlayer::GetLocalPlayer() && ::input->CAM_IsThirdPerson() )
+					break;
+			}
+
+			if ( ( prediction->InPrediction() && !prediction->IsFirstTimePredicted() ) )
+				break;
+
+			if ( m_Attachments.Count() > 0 )
+			{
+				if ( MainViewOrigin().DistToSqr( GetAbsOrigin() ) < (256 * 256) )
 				{
-					tempents->EjectBrass( attachOrigin, attachAngles, GetAbsAngles(), atoi( options ), NULL );
+					Vector attachOrigin;
+					QAngle attachAngles; 
+					
+					if( GetAttachment( 2, attachOrigin, attachAngles ) )
+					{
+						tempents->EjectBrass( attachOrigin, attachAngles, GetAbsAngles(), atoi( options ), NULL );
+					}
 				}
 			}
 		}
@@ -4353,6 +4398,35 @@ void C_BaseAnimating::FireEvent( const Vector& origin, const QAngle& angles, int
 
 	case AE_NPC_MUZZLEFLASH:
 		{
+			// works for the modified CSS weapons included in the new template sdk.
+			// HL2MP - Make third person muzzleflashes as reliable as the first person ones
+			// while in third person the view model dispatches the muzzleflash event - note: the weapon models dispatch them too, but not frequently.
+			if ( IsViewModel() )
+			{
+				C_BasePlayer *pPlayer = ToBasePlayer( ToBaseViewModel(this)->GetOwner() );
+				if ( pPlayer && pPlayer == C_BasePlayer::GetLocalPlayer())
+				{
+					if ( ::input->CAM_IsThirdPerson() )
+					{
+						// Dispatch on the weapon - the player model doesn't have the attachments in hl2mp.
+						C_BaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();
+						if ( !pWeapon )
+							break;
+						pWeapon->DispatchMuzzleEffect( options, false );
+						break;
+					}
+				}
+			}
+
+			// Check if we're a weapon, if we belong to the local player, and if the local player is in third person - if all are true, don't do a muzzleflash in this instance, because
+			// we're using the view models dispatch for smoothness.
+			if ( MyCombatWeaponPointer() != NULL )
+			{
+				C_BaseCombatWeapon *pWeapon = MyCombatWeaponPointer();
+				if ( pWeapon && pWeapon->GetOwner() == C_BasePlayer::GetLocalPlayer() && ::input->CAM_IsThirdPerson() )
+					break;
+			}
+
 			// Send out the effect for an NPC
 			DispatchMuzzleEffect( options, false );
 			break;
@@ -5158,6 +5232,10 @@ C_BaseAnimating *C_BaseAnimating::CreateRagdollCopy()
 	pRagdoll->SetRenderMode( GetRenderMode() );
 	pRagdoll->SetRenderColor( GetRenderColor().r, GetRenderColor().g, GetRenderColor().b );
 	pRagdoll->SetRenderAlpha( GetRenderAlpha() );
+
+	pRagdoll->m_iViewHideFlags = m_iViewHideFlags;
+
+	pRagdoll->SetDistanceFade( GetMinFadeDist(), GetMaxFadeDist() );
 	pRagdoll->SetGlobalFadeScale( GetGlobalFadeScale() );
 
 	pRagdoll->SetBody( GetBody() );

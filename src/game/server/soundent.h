@@ -61,6 +61,14 @@ enum
 	SOUND_CONTEXT_FROM_FIRE			= 0x40000000,	// A fire is nearby
 	SOUND_CONTEXT_FOLLOW_OWNER		= 0x80000000,	// The sound origin is at the owner
 
+	// You know, I wouldn't mind this approach of leaving types and contexts on the same int
+	// since it was important in the GoldSrc era with how many CSounds there can be at any given time.
+	// I'm just frustrated that this system was retained in Source with very specific and/or useless contexts with very little room to expand.
+	// If this doesn't work, replace SOUND_CONTEXT_PLAYER_VEHICLE with owner server vehicle checks.
+
+	// Only heard by NPCs the owner likes. Needed for shared grenade code.
+	SOUND_CONTEXT_OWNER_ALLIES		= 0x40000000,
+
 	ALL_CONTEXTS			= 0xFFF00000,
 
 	ALL_SCENTS				= SOUND_CARCASS | SOUND_MEAT | SOUND_GARBAGE,

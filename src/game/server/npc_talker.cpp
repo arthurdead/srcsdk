@@ -353,7 +353,7 @@ void CNPCSimpleTalker::AlertFriends( CBaseEntity *pKiller )
 				}
 				else
 				{
-					if( IRelationType(pKiller) == D_HT)
+					if( IRelationType(pKiller) <= D_FR)
 					{
 						// Killed by an enemy!!!
 						CNPCSimpleTalker *pAlly = (CNPCSimpleTalker *)pNPC;

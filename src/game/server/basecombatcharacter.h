@@ -123,6 +123,8 @@ public:
 	virtual bool		FVisible( const Vector &vecTarget, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL )	{ return BaseClass::FVisible( vecTarget, traceMask, ppBlocker ); }
 	static void			ResetVisibilityCache( CBaseCombatCharacter *pBCC = NULL );
 
+	virtual bool		ShouldUseVisibilityCache( CBaseEntity *pEntity );
+
 #ifdef PORTAL
 	virtual	bool		FVisibleThroughPortal( const CProp_Portal *pPortal, CBaseEntity *pEntity, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
 #endif
@@ -223,7 +225,10 @@ public:
 	virtual CBaseCombatWeapon*	Weapon_OwnsThisType( const char *pszWeapon, int iSubType = 0 ) const;  // True if already owns a weapon of this class
 	virtual int			Weapon_GetSlot( const char *pszWeapon, int iSubType = 0 ) const;  // Returns -1 if they don't have one
 	virtual bool		Weapon_CanUse( CBaseCombatWeapon *pWeapon );		// True is allowed to use this class of weapon
+	virtual Activity	Weapon_BackupActivity( Activity activity, bool weaponTranslationWasRequired = false, CBaseCombatWeapon *pSpecificWeapon = NULL );
 	virtual void		Weapon_Equip( CBaseCombatWeapon *pWeapon );			// Adds weapon to player
+	virtual void		Weapon_EquipHolstered( CBaseCombatWeapon *pWeapon );	// Pretty much only useful for NPCs
+	virtual void		Weapon_HandleEquip( CBaseCombatWeapon *pWeapon );
 	virtual bool		Weapon_EquipAmmoOnly( CBaseCombatWeapon *pWeapon );	// Adds weapon ammo to player, leaves weapon
 	bool				Weapon_Detach( CBaseCombatWeapon *pWeapon );		// Clear any pointers to the weapon.
 	virtual void		Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget = NULL, const Vector *pVelocity = NULL );
@@ -244,6 +249,8 @@ public:
 	virtual bool			RemovePlayerItem( CBaseCombatWeapon *pItem ) { return false; }
 
 	virtual bool			CanBecomeServerRagdoll( void ) { return true; }
+
+	virtual void			OnEnemyRangeAttackedMe( CBaseEntity *pEnemy, const Vector &vecDir, const Vector &vecEnd ) {}
 
 	// -----------------------
 	// Damage
@@ -287,7 +294,24 @@ public:
 
 	// Killed a character
 	void InputKilledNPC( inputdata_t &inputdata );
-	virtual void OnKilledNPC( CBaseCombatCharacter *pKilled ) {}; 
+	void InputGiveWeapon( inputdata_t &inputdata );
+	void InputDropWeapon( inputdata_t &inputdata );
+	void InputPickupWeaponInstant( inputdata_t &inputdata );
+	COutputEvent	m_OnWeaponEquip;
+	COutputEvent	m_OnWeaponDrop;
+
+	virtual void	InputHolsterWeapon( inputdata_t &inputdata );
+	virtual void	InputHolsterAndDestroyWeapon( inputdata_t &inputdata );
+	virtual void	InputUnholsterWeapon( inputdata_t &inputdata );
+	void			InputSwitchToWeapon( inputdata_t &inputdata );
+
+	COutputEHANDLE	m_OnKilledEnemy;
+	COutputEHANDLE	m_OnKilledPlayer;
+	virtual void OnKilledNPC( CBaseCombatCharacter *pKilled ); 
+
+	virtual	CBaseEntity *FindNamedEntity( const char *pszName, IEntityFindFilter *pFilter = NULL );
+
+	COutputFloat	m_OnHealthChanged;
 
 	// Exactly one of these happens immediately after killed (gibbed may happen later when the corpse gibs)
 	// Character gibbed or faded out (violence controls) (only fired once)
@@ -302,6 +326,10 @@ public:
 	virtual void			FixupBurningServerRagdoll( CBaseEntity *pRagdoll );
 
 	virtual bool			BecomeRagdollBoogie( CBaseEntity *pKiller, const Vector &forceVector, float duration, int flags );
+
+	// A version of BecomeRagdollBoogie() that allows the color to change and returns the entity itself instead.
+	// In order to avoid breaking anything, it doesn't change the original function.
+	virtual CBaseEntity		*BecomeRagdollBoogie( CBaseEntity *pKiller, const Vector &forceVector, float duration, int flags, const Vector *vecColor );
 
 	CBaseEntity				*FindHealthItem( const Vector &vecPosition, const Vector &range );
 
@@ -326,6 +354,9 @@ public:
 	virtual Disposition_t	IRelationType( CBaseEntity *pTarget );
 	virtual int				IRelationPriority( CBaseEntity *pTarget );
 
+	void					AddRelationship( const char *pszRelationship, CBaseEntity *pActivator );
+	void					InputSetRelationship( inputdata_t &inputdata );
+
 	virtual void			SetLightingOriginRelative( CBaseEntity *pLightingOrigin );
 
 protected:
@@ -341,6 +372,7 @@ public:
 
 	// Blood color (see BLOOD_COLOR_* macros in baseentity.h)
 	void SetBloodColor( int nBloodColor );
+	void InputSetBloodColor( inputdata_t &inputdata );
 
 	// Weapons..
 	CBaseCombatWeapon*	GetActiveWeapon() const;
@@ -348,9 +380,14 @@ public:
 	CBaseCombatWeapon*	GetWeapon( int i ) const;
 	bool				RemoveWeapon( CBaseCombatWeapon *pWeapon );
 	virtual void		RemoveAllWeapons();
-	WeaponProficiency_t GetCurrentWeaponProficiency() { return m_CurrentWeaponProficiency; }
+	WeaponProficiency_t GetCurrentWeaponProficiency()
+	{
+		// Mapbase adds proficiency override
+		return (m_ProficiencyOverride > WEAPON_PROFICIENCY_INVALID) ? m_ProficiencyOverride : m_CurrentWeaponProficiency;
+	}
 	void				SetCurrentWeaponProficiency( WeaponProficiency_t iProficiency ) { m_CurrentWeaponProficiency = iProficiency; }
 	virtual WeaponProficiency_t CalcWeaponProficiency( CBaseCombatWeapon *pWeapon );
+	inline bool			OverridingWeaponProficiency() { return (m_ProficiencyOverride > WEAPON_PROFICIENCY_INVALID); }
 	virtual	Vector		GetAttackSpread( CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget = NULL );
 	virtual	float		GetSpreadBias(  CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget );
 	virtual void		DoMuzzleFlash();
@@ -360,6 +397,10 @@ public:
 
 	// Relationships
 	static void			SetDefaultFactionRelationship(Faction_T nFaction, Faction_T nFactionTarget, Disposition_t nDisposition, int nPriority);
+	static bool			DefaultRelationshipsLoaded();
+	static Disposition_t	GetDefaultRelationshipDisposition( Class_T nClassSource, Class_T nClassTarget );
+	static int				GetDefaultRelationshipPriority( Class_T nClassSource, Class_T nClassTarget );
+	int						GetDefaultRelationshipPriority( Class_T nClassTarget );
 	Disposition_t		GetFactionRelationshipDisposition( Faction_T nFaction );
 	static void			AllocateDefaultFactionRelationships( );
 	static void			AllocateDefaultRelationships( );
@@ -369,6 +410,7 @@ public:
 	virtual bool		RemoveEntityRelationship( CBaseEntity *pEntity );
 	virtual void		AddClassRelationship( Class_T nClass, Disposition_t nDisposition, int nPriority );
 	virtual void		AddFactionRelationship(Faction_T nFaction, Disposition_t nDisposition, int nPriority);
+	virtual bool		RemoveClassRelationship( Class_T nClass );
 
 	// Factions
 	static int			GetNumFactions( void );
@@ -447,7 +489,6 @@ public:
 public:
 	// returns the last body region that took damage
 	int	LastHitGroup() const				{ return m_LastHitGroup; }
-protected:
 	void SetLastHitGroup( int nHitGroup )	{ m_LastHitGroup = nHitGroup; }
 
 public:
@@ -475,6 +516,9 @@ protected:
 public:
 	static int					GetInteractionID();	// Returns the next interaction #
 
+	// Mapbase's new method for adding interactions which allows them to be handled with their names, currently for VScript
+	static void					AddInteractionWithString( int &interaction, const char *szName );
+
 protected:
 	// Visibility-related stuff
 	bool ComputeLOS( const Vector &vecEyePosition, const Vector &vecTarget ) const;
@@ -500,6 +544,9 @@ private:
 	// Weapon proficiency gets calculated each time an NPC changes his weapon, and then
 	// cached off as the CurrentWeaponProficiency.
 	WeaponProficiency_t m_CurrentWeaponProficiency;
+
+	// Weapon proficiency can be overridden with this.
+	WeaponProficiency_t m_ProficiencyOverride = WEAPON_PROFICIENCY_INVALID;
 
 	// ---------------
 	//  Relationships

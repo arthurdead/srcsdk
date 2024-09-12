@@ -24,6 +24,8 @@ BEGIN_NETWORK_TABLE( CDynamicProp, DT_DynamicProp )
 	RecvPropBool(RECVINFO(m_bUseHitboxesForRenderBox)),
 END_NETWORK_TABLE()
 
+LINK_ENTITY_TO_CLASS( prop_dynamic, C_DynamicProp );
+
 C_DynamicProp::C_DynamicProp( void )
 {
 	m_iCachedFrameCount = -1;

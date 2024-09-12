@@ -703,7 +703,9 @@ bool CNPC_VehicleDriver::OverridePathMove( float flInterval )
 
 	// Have we reached our target? See if we've passed the current waypoint's plane.
 	Vector vecAbsMins, vecAbsMaxs;
-	CollisionProp()->WorldSpaceAABB( &vecAbsMins, &vecAbsMaxs );
+	vecAbsMins = m_hVehicleEntity->CollisionProp()->OBBMins();
+	vecAbsMaxs = m_hVehicleEntity->CollisionProp()->OBBMaxs();
+	m_hVehicleEntity->CollisionProp()->WorldSpaceAABB( &vecAbsMins, &vecAbsMaxs );
 	if ( BoxOnPlaneSide( vecAbsMins, vecAbsMaxs, &m_pCurrentWaypoint->planeWaypoint ) == 3 )
 	{
 		if ( WaypointReached() )

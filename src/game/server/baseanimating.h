@@ -316,6 +316,9 @@ public:
 	void InputIgniteNumHitboxFires( inputdata_t &inputdata );
 	void InputIgniteHitboxFireScale( inputdata_t &inputdata );
 	void InputBecomeRagdoll( inputdata_t &inputdata );
+	void InputCreateSeparateRagdoll( inputdata_t &inputdata );
+	void InputCreateSeparateRagdollClient( inputdata_t &inputdata );
+	void InputSetPoseParameter( inputdata_t &inputdata );
 
 	// Ice
 	virtual bool	IsFrozen( void ) { return m_flFrozen >= 1.0f; }
@@ -336,11 +339,11 @@ public:
 	float				m_flLastEventCheck;	// cycle index of when events were last checked
 
 	virtual void SetLightingOriginRelative( CBaseEntity *pLightingOriginRelative );
-	void SetLightingOriginRelative( string_t strLightingOriginRelative );
+	void SetLightingOriginRelative( string_t strLightingOriginRelative, inputdata_t *inputdata = NULL );
 	CBaseEntity *GetLightingOriginRelative();
 
 	virtual void SetLightingOrigin( CBaseEntity *pLightingOrigin );
-	void SetLightingOrigin( string_t strLightingOrigin );
+	void SetLightingOrigin( string_t strLightingOrigin, inputdata_t *inputdata = NULL );
 	CBaseEntity *GetLightingOrigin();
 
 	const float* GetPoseParameterArray() { return m_flPoseParameter.Base(); }
@@ -365,6 +368,10 @@ private:
 	void InputSetLightingOriginRelative( inputdata_t &inputdata );
 	void InputSetLightingOrigin( inputdata_t &inputdata );
 	void InputSetModelScale( inputdata_t &inputdata );
+	void InputSetModel( inputdata_t &inputdata );
+
+	void InputSetCycle( inputdata_t &inputdata );
+	void InputSetPlaybackRate( inputdata_t &inputdata );
 public:
 
 	bool CanSkipAnimation(void); // this shouldnt be private
@@ -452,6 +459,7 @@ protected:
 
 public:
 	COutputEvent m_OnIgnite;
+	COutputEHANDLE m_OnServerRagdoll;
 
 private:
 	CStudioHdr			*m_pStudioHdr;

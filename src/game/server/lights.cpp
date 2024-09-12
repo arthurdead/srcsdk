@@ -67,7 +67,7 @@ void CLight::Spawn( void )
 			m_iszPattern = MAKE_STRING(GetDefaultLightstyleString(m_iDefaultStyle));
 		}
 
-		if (FBitSet(m_spawnflags, SF_LIGHT_START_OFF))
+		if (HasSpawnFlags( SF_LIGHT_START_OFF))
 			engine->LightStyle(m_iStyle, "a");
 		else if (m_iszPattern != NULL_STRING)
 			engine->LightStyle(m_iStyle, (char *)STRING( m_iszPattern ));
@@ -81,7 +81,7 @@ void CLight::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useTyp
 {
 	if (m_iStyle >= 32)
 	{
-		if ( !ShouldToggle( useType, !FBitSet(m_spawnflags, SF_LIGHT_START_OFF) ) )
+		if ( !ShouldToggle( useType, !HasSpawnFlags( SF_LIGHT_START_OFF) ) )
 			return;
 
 		Toggle();
@@ -102,7 +102,7 @@ void CLight::TurnOn( void )
 		engine->LightStyle( m_iStyle, "m" );
 	}
 
-	CLEARBITS( m_spawnflags, SF_LIGHT_START_OFF );
+	RemoveSpawnFlags(  SF_LIGHT_START_OFF );
 }
 
 //-----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ void CLight::TurnOn( void )
 void CLight::TurnOff( void )
 {
 	engine->LightStyle( m_iStyle, "a" );
-	SETBITS( m_spawnflags, SF_LIGHT_START_OFF );
+	AddSpawnFlags(  SF_LIGHT_START_OFF );
 }
 
 //-----------------------------------------------------------------------------
@@ -120,7 +120,7 @@ void CLight::TurnOff( void )
 void CLight::Toggle( void )
 {
 	//Toggle it
-	if ( FBitSet( m_spawnflags, SF_LIGHT_START_OFF ) )
+	if ( HasSpawnFlags(  SF_LIGHT_START_OFF ) )
 	{
 		TurnOn();
 	}
@@ -166,7 +166,7 @@ void CLight::InputSetPattern( inputdata_t &inputdata )
 	engine->LightStyle(m_iStyle, (char *)STRING( m_iszPattern ));
 
 	// Light is on if pattern is set
-	CLEARBITS(m_spawnflags, SF_LIGHT_START_OFF);
+	RemoveSpawnFlags( SF_LIGHT_START_OFF);
 }
 
 
@@ -183,7 +183,7 @@ void CLight::InputFadeToPattern( inputdata_t &inputdata )
 	SetNextThink( gpGlobals->curtime );
 
 	// Light is on if pattern is set
-	CLEARBITS(m_spawnflags, SF_LIGHT_START_OFF);
+	RemoveSpawnFlags( SF_LIGHT_START_OFF);
 }
 
 

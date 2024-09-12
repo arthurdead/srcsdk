@@ -94,6 +94,7 @@ void CFuncMoveLinear::Spawn( void )
 	m_vecPosition1 = GetLocalOrigin() - (m_vecMoveDir * m_flMoveDistance * m_flStartPosition);
 	m_vecPosition2 = m_vecPosition1 + (m_vecMoveDir * m_flMoveDistance);
 	m_vecFinalDest = GetLocalOrigin();
+	m_vecReference = GetLocalOrigin();
 
 	SetTouch( NULL );
 
@@ -109,7 +110,7 @@ void CFuncMoveLinear::Spawn( void )
 		AddSolidFlags( FSOLID_VOLUME_CONTENTS );
 	}
 
-	if ( !FClassnameIs( this, "func_water_analog" ) && FBitSet (m_spawnflags, SF_MOVELINEAR_NOTSOLID) )
+	if ( !FClassnameIs( this, "func_water_analog" ) && HasSpawnFlags ( SF_MOVELINEAR_NOTSOLID) )
 	{
 		AddSolidFlags( FSOLID_NOT_SOLID );
 	}
@@ -117,12 +118,26 @@ void CFuncMoveLinear::Spawn( void )
 	CreateVPhysics();
 }
 
-
-bool CFuncMoveLinear::ShouldSavePhysics( void )
+//-----------------------------------------------------------------------------
+// Purpose: Sets the movement parent of this entity. This entity will be moved
+//			to a local coordinate calculated from its current absolute offset
+//			from the parent entity and will then follow the parent entity.
+// Input  : pParentEntity - This entity's new parent in the movement hierarchy.
+//-----------------------------------------------------------------------------
+void CFuncMoveLinear::SetParent( CBaseEntity *pParentEntity, int iAttachment )
 {
-	// don't save physics for func_water_analog, regen
-	return !FClassnameIs( this, "func_water_analog" );
-		
+	Vector oldLocal = GetLocalOrigin();
+
+	BaseClass::SetParent( pParentEntity, iAttachment );
+
+	// SOLID_NONE indicates we haven't spawned yet
+	if (GetSolid() != SOLID_NONE)
+	{
+		m_vecReference = ((m_vecReference - oldLocal) + GetLocalOrigin());
+		m_vecPosition1 = m_vecReference - (m_vecMoveDir * m_flMoveDistance * m_flStartPosition);
+		m_vecPosition2 = m_vecPosition1 + (m_vecMoveDir * m_flMoveDistance);
+		m_vecFinalDest = m_vecReference - m_vecFinalDest;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -398,17 +413,46 @@ int CFuncMoveLinear::DrawDebugTextOverlays(void)
 
 	if (m_debugOverlays & OVERLAY_TEXT_BIT) 
 	{
-		char tempstr[512];
-		float flTravelDist = (m_vecPosition1 - m_vecPosition2).Length();
-		float flCurDist	   = (m_vecPosition1 - GetLocalOrigin()).Length();
-		Q_snprintf(tempstr,sizeof(tempstr),"Current Pos: %3.3f",flCurDist/flTravelDist);
-		EntityText(text_offset,tempstr,0);
-		text_offset++;
+		if (GetMoveParent())
+		{
+			Vector vecReference, vecPosition1, vecPosition2;
+			QAngle angReference;
 
-		float flTargetDist	   = (m_vecPosition1 - m_vecFinalDest).Length();
-		Q_snprintf(tempstr,sizeof(tempstr),"Target Pos: %3.3f",flTargetDist/flTravelDist);
-		EntityText(text_offset,tempstr,0);
-		text_offset++;
+			vecReference = m_vecFinalDest + GetMoveParent()->GetAbsOrigin();
+			angReference = GetAbsAngles();
+			vecPosition1 = vecReference + m_vecPosition1;
+			vecPosition2 = vecReference + m_vecPosition2;
+
+			NDebugOverlay::Axis( vecReference, angReference, 12.0f, true, 0.15f );
+			NDebugOverlay::Axis( vecPosition1, angReference, 5.0f, true, 0.15f );
+			NDebugOverlay::Axis( vecPosition2, angReference, 2.5f, true, 0.15f );
+
+			char tempstr[512];
+			float flTravelDist = (vecPosition1 - vecPosition2).Length();
+			float flCurDist	   = (vecPosition1 - GetAbsOrigin()).Length();
+			Q_snprintf(tempstr,sizeof(tempstr),"Current Pos: %3.3f",flCurDist/flTravelDist);
+			EntityText(text_offset,tempstr,0);
+			text_offset++;
+
+			float flTargetDist	   = (vecPosition1 - m_vecFinalDest).Length();
+			Q_snprintf(tempstr,sizeof(tempstr),"Target Pos: %3.3f",flTargetDist/flTravelDist);
+			EntityText(text_offset,tempstr,0);
+			text_offset++;
+		}
+		else
+		{
+			char tempstr[512];
+			float flTravelDist = (m_vecPosition1 - m_vecPosition2).Length();
+			float flCurDist	   = (m_vecPosition1 - GetLocalOrigin()).Length();
+			Q_snprintf(tempstr,sizeof(tempstr),"Current Pos: %3.3f",flCurDist/flTravelDist);
+			EntityText(text_offset,tempstr,0);
+			text_offset++;
+
+			float flTargetDist	   = (m_vecPosition1 - m_vecFinalDest).Length();
+			Q_snprintf(tempstr,sizeof(tempstr),"Target Pos: %3.3f",flTargetDist/flTravelDist);
+			EntityText(text_offset,tempstr,0);
+			text_offset++;
+		}
 	}
 	return text_offset;
 }

@@ -35,6 +35,7 @@ public:
 	void InputTurnOn( inputdata_t &inputdata );
 	void InputTurnOff( inputdata_t &inputdata );
 	void InputToggle( inputdata_t &inputdata );
+	void InputSetTarget( inputdata_t &inputdata ) { m_iszLaserTarget = inputdata.value.StringID(); }
 
 	DECLARE_MAPENTITY();
 
@@ -42,6 +43,8 @@ public:
 	CSprite	*m_pSprite;
 	string_t m_iszSpriteName;
 	Vector  m_firePosition;
+
+	COutputEvent	m_OnTouchedByEntity;
 
 	float	m_flStartFrame;
 };

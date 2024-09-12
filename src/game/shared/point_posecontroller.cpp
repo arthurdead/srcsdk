@@ -55,6 +55,7 @@ BEGIN_MAPENTITY( CPoseController )
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFModAmplitude", InputSetFModAmplitude ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "RandomizeFMod", InputRandomizeFMod ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "GetFMod", InputGetFMod ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "SetTarget", InputSetTarget ),
 END_MAPENTITY()
 
 
@@ -325,6 +326,10 @@ void CPoseController::InputGetFMod( inputdata_t &inputdata )
 			m_fFModAmplitude.Get() );
 }
 
+void CPoseController::InputSetTarget( inputdata_t &inputdata )
+{
+	SetPropName( inputdata.value.String() );
+}
 
 #else //#ifndef CLIENT_DLL
 //-----------------------------------------------------------------------------

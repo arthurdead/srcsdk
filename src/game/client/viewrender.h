@@ -17,6 +17,7 @@
 #include "tier1/mempool.h"
 #include "clientleafsystem.h"
 #include "cdll_client_int.h"
+#include "view.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -34,6 +35,8 @@ class C_BaseEntity;
 struct WriteReplayScreenshotParams_t;
 class CReplayScreenshotTaker;
 class C_BasePlayer;
+
+class C_FuncFakeWorldPortal;
 
 #ifdef HL2_EPISODIC
 	class CStunEffect;
@@ -55,34 +58,20 @@ struct IntroData_t
 	QAngle	m_vecCameraViewAngles;
 	float	m_playerViewFOV;
 	CUtlVector<IntroDataBlendPass_t> m_Passes;
+	// Used for ortho views
+	CHandle<C_PointCamera> m_hCameraEntity;
 
 	// Fade overriding for the intro
 	float	m_flCurrentFadeColor[4];
+
+	// Draws the skybox.
+	bool	m_bDrawSky;
+	// Draws the skybox in the secondary camera as well.
+	bool	m_bDrawSky2;
 };
 
 // Robin, make this point at something to get intro mode.
 extern IntroData_t *g_pIntroData;
-
-// This identifies the view for certain systems that are unique per view (e.g. pixel visibility)
-// NOTE: This is identifying which logical part of the scene an entity is being redered in
-// This is not identifying a particular render target necessarily.  This is mostly needed for entities that
-// can be rendered more than once per frame (pixel vis queries need to be identified per-render call)
-enum view_id_t
-{
-	VIEW_ILLEGAL = -2,
-	VIEW_NONE = -1,
-	VIEW_MAIN = 0,
-	VIEW_3DSKY = 1,
-	VIEW_MONITOR = 2,
-	VIEW_REFLECTION = 3,
-	VIEW_REFRACTION = 4,
-	VIEW_INTRO_PLAYER = 5,
-	VIEW_INTRO_CAMERA = 6,
-	VIEW_SHADOW_DEPTH_TEXTURE = 7,
-	VIEW_SSAO = 8,
-	VIEW_ID_COUNT
-};
-view_id_t CurrentViewID();
 
 //-----------------------------------------------------------------------------
 // Purpose: Stored pitch drifting variables
@@ -498,6 +487,10 @@ private:
 	bool			DrawOneMonitor( ITexture *pRenderTarget, int cameraNum, C_PointCamera *pCameraEnt, const CViewSetupEx &cameraView, C_BasePlayer *localPlayer, 
 						int x, int y, int width, int height );
 
+	bool			DrawFakeWorldPortal( ITexture *pRenderTarget, C_FuncFakeWorldPortal *pCameraEnt, const CViewSetupEx &cameraView, C_BasePlayer *localPlayer, 
+						int x, int y, int width, int height,
+						const CViewSetupEx &mainView, const Vector &vecAbsPlaneNormal, float flLocalPlaneDist );
+
 	// Drawing primitives
 	bool			ShouldDrawViewModel( bool drawViewmodel );
 	void			DrawViewModels( const CViewSetupEx &view, bool drawViewmodel );
@@ -509,12 +502,17 @@ private:
 	IMaterial		*GetScreenOverlayMaterial( );
 	void			PerformScreenOverlay( int x, int y, int w, int h );
 
+	void			SetIndexedScreenOverlayMaterial( int i, IMaterial *pMaterial );
+	IMaterial		*GetIndexedScreenOverlayMaterial( int i );
+	void			ResetIndexedScreenOverlays();
+	int				GetMaxIndexedScreenOverlays() const;
+
 	void DrawUnderwaterOverlay( void );
 
 	// Water-related methods
 	void			DrawWorldAndEntities( bool drawSkybox, const CViewSetupEx &view, int nClearFlags, ViewCustomVisibility_t *pCustomVisibility = NULL );
 
-	virtual void			ViewDrawScene_Intro( const CViewSetupEx &view, int nClearFlags, const IntroData_t &introData );
+	virtual void			ViewDrawScene_Intro( const CViewSetupEx &view, int nClearFlags, const IntroData_t &introData, bool bDrew3dSkybox = false, SkyboxVisibility_t nSkyboxVisible = SKYBOX_NOT_VISIBLE, bool bDrawViewModel = false, ViewCustomVisibility_t *pCustomVisibility = NULL );
 
 #ifdef PORTAL 
 	// Intended for use in the middle of another ViewDrawScene call, this allows stencils to be drawn after opaques but before translucents are drawn in the main view.
@@ -550,6 +548,8 @@ private:
 	CMaterialReference	m_ModulateSingleColor;
 	CMaterialReference	m_ScreenOverlayMaterial;
 	CMaterialReference m_UnderWaterOverlayMaterial;
+	CMaterialReference	m_IndexedScreenOverlayMaterials[MAX_SCREEN_OVERLAYS];
+	bool m_bUsingIndexedScreenOverlays;
 
 	Vector			m_vecLastFacing;
 	float			m_flCheapWaterStartDistance;

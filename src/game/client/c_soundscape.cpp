@@ -304,6 +304,7 @@ public:
 	// "dsp_volume"
 	void ProcessDSPVolume( KeyValues *pKey, subsoundscapeparams_t &params );
 
+	void	AddSoundScapeFile( const char *filename );
 
 private:
 
@@ -311,8 +312,6 @@ private:
 	{
 		return gpGlobals->framecount == m_nRestoreFrame ? true : false;
 	}
-
-	void	AddSoundScapeFile( const char *filename );
 
 	void		TouchPlayLooping( KeyValues *pAmbient );
 	void		TouchPlayRandom( KeyValues *pPlayRandom );
@@ -367,6 +366,11 @@ void Soundscape_Update( audioparams_t &audio )
 	g_SoundscapeSystem.UpdateAudioParams( audio );
 }
 
+void Soundscape_AddFile( const char *szFile )
+{
+	g_SoundscapeSystem.AddSoundScapeFile(szFile);
+}
+
 #define SOUNDSCAPE_MANIFEST_FILE				"scripts/soundscapes_manifest.txt"
 
 void C_SoundscapeSystem::AddSoundScapeFile( const char *filename )
@@ -406,6 +410,14 @@ bool C_SoundscapeSystem::Init()
 	if ( mapname && *mapname )
 	{
 		mapSoundscapeFilename = VarArgs( "scripts/soundscapes_%s.txt", mapname );
+	}
+
+	if (filesystem->FileExists(VarArgs("maps/%s_soundscapes.txt", mapname)))
+	{
+		// A Mapbase-specific file exists. Load that instead.
+		// Any additional soundscape files, like the original scripts/soundscapes version,
+		// could be loaded through #include and/or #base.
+		mapSoundscapeFilename = VarArgs("maps/%s_soundscapes.txt", mapname);
 	}
 
 	KeyValues *manifest = new KeyValues( SOUNDSCAPE_MANIFEST_FILE );

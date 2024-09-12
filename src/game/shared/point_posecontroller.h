@@ -72,6 +72,7 @@ public:
 	void InputSetFModAmplitude( inputdata_t &inputdata );
 	void InputRandomizeFMod( inputdata_t &inputdata );
 	void InputGetFMod( inputdata_t &inputdata );
+	void InputSetTarget( inputdata_t &inputdata );
 
 private:
 

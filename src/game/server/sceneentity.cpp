@@ -138,6 +138,10 @@ public:
 			bool			IsRunningScriptedSceneWithSpeech( CBaseFlex *pActor, bool bIgnoreInstancedScenes );
 			bool			IsRunningScriptedSceneWithSpeechAndNotPaused( CBaseFlex *pActor, bool bIgnoreInstancedScenes );
 
+			bool			IsRunningScriptedSceneWithFlexAndNotPaused( CBaseFlex *pActor, bool bIgnoreInstancedScenes, const char *pszNotThisScene = NULL );
+			bool			IsTalkingInAScriptedScene( CBaseFlex *pActor, bool bIgnoreInstancedScenes = false );
+
+			CUtlVector< CHandle< CSceneEntity > > *GetActiveSceneList();
 
 private:
 
@@ -209,10 +213,7 @@ bool CopySceneFileIntoMemory( char const *pFilename, void **pBuffer, int *pSize 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void FreeSceneFileMemory( void *buffer )
-{
-	delete[] (byte*) buffer;
-}
+extern void FreeSceneFileMemory( void *buffer );
 
 //-----------------------------------------------------------------------------
 // Binary compiled VCDs get their strings from a pool
@@ -309,6 +310,15 @@ BEGIN_MAPENTITY( CSceneEntity )
 	DEFINE_KEYFIELD( m_iszTarget6, FIELD_STRING, "target6" ),
 	DEFINE_KEYFIELD( m_iszTarget7, FIELD_STRING, "target7" ),
 	DEFINE_KEYFIELD( m_iszTarget8, FIELD_STRING, "target8" ),
+
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget1", InputSetTarget1 ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget2", InputSetTarget2 ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget3", InputSetTarget3 ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget4", InputSetTarget4 ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget5", InputSetTarget5 ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget6", InputSetTarget6 ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget7", InputSetTarget7 ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetTarget8", InputSetTarget8 ),
 
 	DEFINE_KEYFIELD( m_BusyActor, FIELD_INTEGER, "busyactor" ),
 
@@ -527,7 +537,13 @@ float CSceneEntity::GetSoundSystemLatency( void )
 	// Assume 100 msec sound system latency
 	return SOUND_SYSTEM_LATENCY_DEFAULT;
 }
-		
+
+//-----------------------------------------------------------------------------
+// I copied CSceneEntity's PrecacheScene to a unique static function so PrecacheInstancedScene()
+// can precache loose scene files without having to use a CSceneEntity.
+//-----------------------------------------------------------------------------
+extern void PrecacheChoreoScene( CChoreoScene *scene );
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *scene - 
@@ -642,6 +658,28 @@ bool CSceneEntity::HasFlexAnimation( void )
 	return false;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool CSceneEntity::IsPlayingSpeech( void )
+{
+	if ( m_pScene )
+	{
+		float flTime = m_pScene->GetTime();
+		for ( int i = 0; i < m_pScene->GetNumEvents(); i++ )
+		{
+			CChoreoEvent *e = m_pScene->GetEvent( i );
+			if ( e->GetType() == CChoreoEvent::SPEAK )
+			{
+				if ( /*flTime >= e->GetStartTime() &&*/ flTime <= e->GetEndTime() )
+					return true;
+			}
+		}
+	}
+
+	return false;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1664,7 +1702,7 @@ void CSceneEntity::InputPitchShiftPlayback( inputdata_t &inputdata )
 
 void CSceneEntity::InputTriggerEvent( inputdata_t &inputdata )
 {
-	CBaseEntity *pActivator = this; // at some point, find this from the inputdata
+	CBaseEntity *pActivator = inputdata.pActivator; // at some point, find this from the inputdata
 	switch ( inputdata.value.Int() )
 	{
 	case 1:
@@ -1821,6 +1859,105 @@ void CSceneEntity::InputInterjectResponse( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+void CSceneEntity::SetTarget( int nTarget, string_t pTargetName, CBaseEntity *pActivator, CBaseEntity *pCaller )
+{
+	if (/*m_bIsPlayingBack ||*/ !nTarget)
+	{
+		return;
+	}
+
+	switch (nTarget)
+	{
+	case 1:		m_iszTarget1 = pTargetName; break;
+	case 2:		m_iszTarget2 = pTargetName; break;
+	case 3:		m_iszTarget3 = pTargetName; break;
+	case 4:		m_iszTarget4 = pTargetName; break;
+	case 5:		m_iszTarget5 = pTargetName; break;
+	case 6:		m_iszTarget6 = pTargetName; break;
+	case 7:		m_iszTarget7 = pTargetName; break;
+	case 8:		m_iszTarget8 = pTargetName; break;
+	}
+
+	// Reset our handle.
+	// Internal functions set them when they're null anyway.
+	switch (nTarget)
+	{
+	case 1:		m_hTarget1 = NULL; break;
+	case 2:		m_hTarget2 = NULL; break;
+	case 3:		m_hTarget3 = NULL; break;
+	case 4:		m_hTarget4 = NULL; break;
+	case 5:		m_hTarget5 = NULL; break;
+	case 6:		m_hTarget6 = NULL; break;
+	case 7:		m_hTarget7 = NULL; break;
+	case 8:		m_hTarget8 = NULL; break;
+	}
+
+	//CBaseEntity *pTarget = gEntList.FindEntityByName(NULL, pTargetName, this, pActivator, pCaller);
+	//if (!pTarget)
+	//{
+	//	DevWarning("%s (%s) could not find SetTarget entity %s!\n", GetClassname(), GetDebugName(), pTargetName);
+	//	return;
+	//}
+
+	/*
+	switch (nTarget)
+	{
+	case 1:		m_hTarget1 = pTarget; break;
+	case 2:		m_hTarget2 = pTarget; break;
+	case 3:		m_hTarget3 = pTarget; break;
+	case 4:		m_hTarget4 = pTarget; break;
+	case 5:		m_hTarget5 = pTarget; break;
+	case 6:		m_hTarget6 = pTarget; break;
+	case 7:		m_hTarget7 = pTarget; break;
+	case 8:		m_hTarget8 = pTarget; break;
+	}
+	*/
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CSceneEntity::InputSetTarget1( inputdata_t &inputdata )
+{
+	SetTarget(1, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
+}
+
+void CSceneEntity::InputSetTarget2( inputdata_t &inputdata )
+{
+	SetTarget(2, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
+}
+
+void CSceneEntity::InputSetTarget3( inputdata_t &inputdata )
+{
+	SetTarget(3, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
+}
+
+void CSceneEntity::InputSetTarget4( inputdata_t &inputdata )
+{
+	SetTarget(4, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
+}
+
+void CSceneEntity::InputSetTarget5( inputdata_t &inputdata )
+{
+	SetTarget(5, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
+}
+
+void CSceneEntity::InputSetTarget6( inputdata_t &inputdata )
+{
+	SetTarget(6, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
+}
+
+void CSceneEntity::InputSetTarget7( inputdata_t &inputdata )
+{
+	SetTarget(7, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
+}
+
+void CSceneEntity::InputSetTarget8( inputdata_t &inputdata )
+{
+	SetTarget(8, inputdata.value.StringID(), inputdata.pActivator, inputdata.pCaller);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void CSceneEntity::InputStopWaitingForActor( inputdata_t &inputdata )
 {
 	if( m_bIsPlayingBack )
@@ -1877,6 +2014,28 @@ bool CSceneEntity::CheckActors()
 #endif // HL2_EPISODIC
 
 				if ( pActor->GetExpresser() && pActor->GetExpresser()->IsSpeaking() )
+				{
+					bShouldWait = true;
+				}
+
+				if ( bShouldWait )
+				{
+					// One of the actors for this scene is talking already.
+					// Try again next think.
+					m_bWaitingForActor = true;
+					return false;
+				}
+			}
+			else if ( pTestActor->IsPlayer() )
+			{
+				// Blixibon - Player speech handling
+				CBasePlayer *pPlayer = static_cast<CBasePlayer*>(pTestActor);
+				bool bShouldWait = false;
+				if ( pPlayer->GetExpresser() && pPlayer->GetExpresser()->IsSpeaking() )
+				{
+					bShouldWait = true;
+				}
+				else if ( IsTalkingInAScriptedScene( pPlayer ) )
 				{
 					bShouldWait = true;
 				}
@@ -2387,6 +2546,10 @@ void CSceneEntity::DispatchStartSubScene( CChoreoScene *scene, CBaseFlex *pActor
 
 		if ( subscene )
 		{
+			// Somes may not be created with a CSceneEntity as the event callback
+			if (!scene->GetEventCallbackInterface())
+				scene->SetEventCallbackInterface( this );
+
 			subscene->ResetSimulation();
 		}
 	}
@@ -2712,7 +2875,8 @@ void CSceneEntity::StartEvent( float currenttime, CChoreoScene *scene, CChoreoEv
 			if ( IsMultiplayer() )
 				break;
 
-			DispatchStartPermitResponses( scene, pActor, event );
+			if ( pActor )
+				DispatchStartPermitResponses( scene, pActor, event );
 		}
 		break;
 	default:
@@ -2862,7 +3026,8 @@ void CSceneEntity::EndEvent( float currenttime, CChoreoScene *scene, CChoreoEven
 			if ( IsMultiplayer() )
 				break;
 
-			DispatchEndPermitResponses( scene, pActor, event );
+			if ( pActor )
+				DispatchEndPermitResponses( scene, pActor, event );
 		}
 		break;
 	default:
@@ -2925,23 +3090,40 @@ CChoreoScene *CSceneEntity::LoadScene( const char *filename, IChoreoEventCallbac
 	Q_FixSlashes( loadfile );
 
 	// binary compiled vcd
-	void *pBuffer;
+	void *pBuffer = NULL;
+	// 
+	// Raw scene file support
+	// 
+	CChoreoScene *pScene;
 	int fileSize;
-	if ( !CopySceneFileIntoMemory( loadfile, &pBuffer, &fileSize ) )
+
+	// First, check if it's in scenes.image...
+	if ( CopySceneFileIntoMemory( loadfile, &pBuffer, &fileSize ) )
+	{
+		pScene = new CChoreoScene( NULL );
+		CUtlBuffer buf( pBuffer, fileSize, CUtlBuffer::READ_ONLY );
+		if ( !pScene->RestoreFromBinaryBuffer( buf, loadfile, &g_ChoreoStringPool ) )
+		{
+			Warning( "CSceneEntity::LoadScene: Unable to load binary scene '%s'\n", loadfile );
+			delete pScene;
+			pScene = NULL;
+		}
+	}
+	// Next, check if it's a loose file...
+	else if (filesystem->ReadFileEx( loadfile, "MOD", &pBuffer, true ))
+	{
+		g_TokenProcessor.SetBuffer((char*)pBuffer);
+		pScene = ChoreoLoadScene( loadfile, NULL, &g_TokenProcessor, LocalScene_Printf );
+		g_TokenProcessor.SetBuffer(NULL);
+	}
+	// Okay, it's definitely missing.
+	else
 	{
 		MissingSceneWarning( loadfile );
-		return NULL;
-	}
-
-	CChoreoScene *pScene = new CChoreoScene( NULL );
-	CUtlBuffer buf( pBuffer, fileSize, CUtlBuffer::READ_ONLY );
-	if ( !pScene->RestoreFromBinaryBuffer( buf, loadfile, &g_ChoreoStringPool ) )
-	{
-		Warning( "CSceneEntity::LoadScene: Unable to load binary scene '%s'\n", loadfile );
-		delete pScene;
 		pScene = NULL;
 	}
-	else
+
+	if (pScene)
 	{
 		pScene->SetPrintFunc( LocalScene_Printf );
 		pScene->SetEventCallbackInterface( pCallback );
@@ -3431,6 +3613,75 @@ CBaseEntity *CSceneEntity::FindNamedEntity( const char *name, CBaseEntity *pActo
 	return entity;
 }
 
+const char *GetFirstSoundInScene(const char *pszScene)
+{
+	const char *soundName = NULL;
+	SceneCachedData_t sceneData;
+	if ( scenefilecache->GetSceneCachedData( pszScene, &sceneData ) )
+	{
+		if ( sceneData.numSounds > 0 )
+		{
+			// 0 is the first index...right?
+			short stringId = scenefilecache->GetSceneCachedSound( sceneData.sceneId, 0 );
+
+			// Trust that it's been precached
+			soundName = scenefilecache->GetSceneString( stringId );
+		}
+	}
+	else
+	{
+		void *pBuffer = NULL;
+		if (filesystem->ReadFileEx( pszScene, "MOD", &pBuffer, true ))
+		{
+			g_TokenProcessor.SetBuffer((char*)pBuffer);
+			CChoreoScene *pScene = ChoreoLoadScene( pszScene, NULL, &g_TokenProcessor, LocalScene_Printf );
+			g_TokenProcessor.SetBuffer(NULL);
+			if (pScene)
+			{
+				for (int i = 0; i < pScene->GetNumEvents(); i++)
+				{
+					CChoreoEvent *pEvent = pScene->GetEvent(i);
+
+					if (pEvent->GetType() == CChoreoEvent::SPEAK)
+					{
+						soundName = pEvent->GetParameters();
+						break;
+					}
+				}
+			}
+		}
+		FreeSceneFileMemory( pBuffer );
+	}
+
+	return soundName;
+}
+
+const char *GetFirstSoundInScene(CChoreoScene *scene)
+{
+	for ( int i = 0; i < scene->GetNumEvents(); i++ )
+	{
+		CChoreoEvent *pEvent = scene->GetEvent( i );
+
+		if (pEvent->GetType() == CChoreoEvent::SPEAK)
+			return pEvent->GetParameters();
+	}
+
+	return NULL;
+}
+
+CBaseEntity *UTIL_FindNamedSceneEntity(const char *name, CBaseEntity *pActor, CSceneEntity *scene, bool bBaseFlexOnly, bool bUseClear)
+{
+	if (scene)
+	{
+		CBaseEntity *pEnt = scene->FindNamedEntity(name, pActor, bBaseFlexOnly, bUseClear);
+		return pEnt;
+	}
+	else
+	{
+		//Warning("SCENE NOT FOUND!\n");
+		return NULL;
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Search for an actor by name, make sure it can do face poses
@@ -3878,16 +4129,18 @@ void CSceneEntity::OnSceneFinished( bool canceled, bool fireoutput )
 		CBaseFlex *pFlex =  FindNamedActor( 0 ) ;
 		if ( pFlex )
 		{
-			CBaseExpresserPlayer *pAsPlayer = ToBaseExpresserPlayer(pFlex);
+			CBasePlayer *pAsPlayer = ToBasePlayer(pFlex);
 			if (pAsPlayer)
 			{
 				CAI_Expresser *pExpresser = pAsPlayer->GetExpresser();
-				pExpresser->OnSpeechFinished();
+				if(pExpresser)
+					pExpresser->OnSpeechFinished();
 			}
 			else if ( CAI_BaseActor *pActor = ToBaseActor( pFlex ) )
 			{
 				CAI_Expresser *pExpresser = pActor->GetExpresser();
-				pExpresser->OnSpeechFinished();
+				if(pExpresser)
+					pExpresser->OnSpeechFinished();
 			}
 		}
 	}
@@ -4239,7 +4492,9 @@ float InstancedScriptedScene( CBaseFlex *pActor, const char *pszScene, EHANDLE *
 //			*phSceneEnt - 
 // Output : float
 //-----------------------------------------------------------------------------
-float InstancedAutoGeneratedSoundScene( CBaseFlex *pActor, char const *soundname, EHANDLE *phSceneEnt /*= NULL*/ )
+float InstancedAutoGeneratedSoundScene( CBaseFlex *pActor, const char *soundname, EHANDLE *phSceneEnt,
+										 float flPostDelay, bool bIsBackground, AI_Response *response,
+										 bool bMultiplayer, IRecipientFilter *filter /* = NULL */ )
 {
 	if ( !pActor )
 	{
@@ -4257,9 +4512,30 @@ float InstancedAutoGeneratedSoundScene( CBaseFlex *pActor, char const *soundname
 
 	pScene->GenerateSoundScene( pActor, soundname );
 
-	pScene->Spawn();
+	pScene->m_bMultiplayer = bMultiplayer;
+	pScene->SetPostSpeakDelay( flPostDelay );
+	DispatchSpawn( pScene );
 	pScene->Activate();
+	pScene->m_bIsBackground = bIsBackground;
+
+	pScene->SetBackground( bIsBackground );
+	pScene->SetRecipientFilter( filter );
+
+	if ( response )
+	{
+		float flPreDelay = response->GetPreDelay();
+		if ( flPreDelay )
+		{
+			pScene->SetPreDelay( flPreDelay );
+		}
+	}
 	pScene->StartPlayback();
+
+	if ( response )
+	{
+		// If the response wants us to abort on NPC state switch, remember that
+		pScene->SetBreakOnNonIdle( response->ShouldBreakOnNonIdle() );
+	}
 
 	if ( phSceneEnt )
 	{
@@ -4281,6 +4557,34 @@ void StopScriptedScene( CBaseFlex *pActor, EHANDLE hSceneEnt )
 		LocalScene_Printf( "%s : stop scripted scene\n", STRING( pScene->m_iszSceneFile ) );
 		pScene->CancelPlayback();
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *pszScene - 
+// Output : float
+//-----------------------------------------------------------------------------
+float GetSceneSpeechDuration( char const* pszScene )
+{
+	float flSecs = 0.0f;
+
+	CChoreoScene* pScene = CSceneEntity::LoadScene( pszScene, nullptr );
+	if (pScene)
+	{
+		for (int i = pScene->GetNumEvents() - 1; i >= 0; i--)
+		{
+			CChoreoEvent* pEvent = pScene->GetEvent( i );
+
+			if (pEvent->GetType() == CChoreoEvent::SPEAK)
+			{
+				flSecs = pEvent->GetStartTime() + pEvent->GetDuration();
+				break;
+			}
+		}
+		delete pScene;
+	}
+
+	return flSecs;
 }
 
 //-----------------------------------------------------------------------------
@@ -4312,6 +4616,31 @@ int GetSceneSpeechCount( char const *pszScene )
 	if ( scenefilecache->GetSceneCachedData( pszScene, &cachedData ) )
 	{
 		return cachedData.numSounds;
+	}
+	else
+	{
+		void *pBuffer = NULL;
+		int iNumSounds = 0;
+		if (filesystem->ReadFileEx( pszScene, "MOD", &pBuffer, true ))
+		{
+			g_TokenProcessor.SetBuffer((char*)pBuffer);
+			CChoreoScene *pScene = ChoreoLoadScene( pszScene, NULL, &g_TokenProcessor, LocalScene_Printf );
+			g_TokenProcessor.SetBuffer(NULL);
+			if (pScene)
+			{
+				for (int i = 0; i < pScene->GetNumEvents(); i++)
+				{
+					CChoreoEvent *pEvent = pScene->GetEvent(i);
+
+					if (pEvent->GetType() == CChoreoEvent::SPEAK)
+						iNumSounds++;
+				}
+			}
+		}
+
+		FreeSceneFileMemory( pBuffer );
+
+		return iNumSounds;
 	}
 	return 0;
 }
@@ -4483,6 +4812,13 @@ void CInstancedSceneEntity::OnLoaded()
 {
 	BaseClass::OnLoaded();
 	SetBackground( m_bIsBackground );
+
+	// It looks like !Target1 in those default NPC scenes was a freaking lie.
+	if (m_hOwner)
+	{
+		m_hTarget1 = m_hOwner;
+		m_iszTarget1 = m_hOwner->GetEntityName();
+	}
 }
 
 bool g_bClientFlex = true;
@@ -4913,6 +5249,61 @@ bool CSceneManager::IsRunningScriptedSceneWithSpeechAndNotPaused( CBaseFlex *pAc
 	return false;
 }
 
+bool CSceneManager::IsRunningScriptedSceneWithFlexAndNotPaused( CBaseFlex *pActor, bool bIgnoreInstancedScenes, const char *pszNotThisScene )
+{
+	int c = m_ActiveScenes.Count();
+	for ( int i = 0; i < c; i++ )
+	{
+		CSceneEntity *pScene = m_ActiveScenes[ i ].Get();
+		if ( !pScene ||
+			 !pScene->IsPlayingBack() ||
+			 pScene->IsPaused() ||
+			 ( bIgnoreInstancedScenes && dynamic_cast<CInstancedSceneEntity *>(pScene) != NULL ) ||
+			 ( pszNotThisScene == NULL || Q_strcmp( pszNotThisScene, STRING(pScene->m_iszSceneFile) ) == 0 )
+			)
+		{
+			continue;
+		}
+		
+		if ( pScene->InvolvesActor( pActor ) )
+		{
+			if ( pScene->HasFlexAnimation() )
+				return true;
+		}
+	}
+	return false;
+}
+
+
+bool CSceneManager::IsTalkingInAScriptedScene( CBaseFlex *pActor, bool bIgnoreInstancedScenes )
+{
+	int c = m_ActiveScenes.Count();
+	for ( int i = 0; i < c; i++ )
+	{
+		CSceneEntity *pScene = m_ActiveScenes[ i ].Get();
+		if ( !pScene ||
+			 !pScene->IsPlayingBack() ||
+			 pScene->IsPaused() ||
+			 ( bIgnoreInstancedScenes && dynamic_cast<CInstancedSceneEntity *>(pScene) != NULL )
+			)
+		{
+			continue;
+		}
+		
+		if ( pScene->InvolvesActor( pActor ) )
+		{
+			if ( pScene->IsPlayingSpeech() )
+				return true;
+		}
+	}
+	return false;
+}
+
+
+CUtlVector< CHandle< CSceneEntity > > *CSceneManager::GetActiveSceneList()
+{
+	return &m_ActiveScenes;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -4999,6 +5390,20 @@ bool IsRunningScriptedSceneWithSpeechAndNotPaused( CBaseFlex *pActor, bool bIgno
 	return GetSceneManager()->IsRunningScriptedSceneWithSpeechAndNotPaused( pActor, bIgnoreInstancedScenes );
 }
 
+bool IsRunningScriptedSceneWithFlexAndNotPaused( CBaseFlex *pActor, bool bIgnoreInstancedScenes, const char *pszNotThisScene )
+{
+	return GetSceneManager()->IsRunningScriptedSceneWithFlexAndNotPaused( pActor, bIgnoreInstancedScenes, pszNotThisScene );
+}
+
+bool IsTalkingInAScriptedScene( CBaseFlex *pActor, bool bIgnoreInstancedScenes )
+{
+	return GetSceneManager()->IsTalkingInAScriptedScene( pActor, bIgnoreInstancedScenes );
+}
+
+CUtlVector< CHandle< CSceneEntity > > *GetActiveSceneList()
+{
+	return GetSceneManager()->GetActiveSceneList();
+}
 
 //===========================================================================================================
 // SCENE LIST MANAGER

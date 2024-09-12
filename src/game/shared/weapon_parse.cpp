@@ -277,7 +277,7 @@ bool ReadWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeapo
 	FileWeaponInfo_t *pFileInfo = GetFileWeaponInfoFromHandle( *phandle );
 	Assert( pFileInfo );
 
-	if ( pFileInfo->bParsedScript )
+	if ( pFileInfo->bParsedScript && !pFileInfo->bCustom )
 		return true;
 
 	char sz[128];
@@ -294,6 +294,7 @@ bool ReadWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeapo
 	if ( !pKV )
 		return false;
 
+	pFileInfo->bCustom = false;
 	pFileInfo->Parse( pKV, szWeaponName );
 
 	pKV->deleteThis();
@@ -301,6 +302,44 @@ bool ReadWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeapo
 	return true;
 }
 
+bool ReadCustomWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeaponName, WEAPON_FILE_INFO_HANDLE *phandle, const unsigned char *pICEKey )
+{
+	if ( !phandle )
+	{
+		Assert( 0 );
+		return false;
+	}
+	
+	*phandle = FindWeaponInfoSlot( szWeaponName );
+	FileWeaponInfo_t *pFileInfo = GetFileWeaponInfoFromHandle( *phandle );
+	Assert( pFileInfo );
+
+	// Just parse the custom script anyway even if it was already loaded. This is because after one is loaded,
+	// there's no way of distinguishing between maps with no custom scripts and maps with their own new custom scripts.
+	//if ( pFileInfo->bParsedScript && pFileInfo->bCustom )
+	//	return true;
+
+	char sz[128];
+	Q_snprintf( sz, sizeof( sz ), "maps/%s_%s", GetMapName(), szWeaponName );
+
+	KeyValues *pKV = ReadEncryptedKVFile( filesystem, sz, pICEKey,
+#if defined( DOD_DLL )
+		true			// Only read .ctx files!
+#else
+		false
+#endif
+		);
+
+	if ( !pKV )
+		return false;
+
+	pFileInfo->bCustom = true;
+	pFileInfo->Parse( pKV, szWeaponName );
+
+	pKV->deleteThis();
+
+	return true;
+}
 
 //-----------------------------------------------------------------------------
 // FileWeaponInfo_t implementation.
@@ -347,11 +386,24 @@ FileWeaponInfo_t::FileWeaponInfo_t()
 	m_bAllowFlipping = true;
 	m_bBuiltRightHanded = true;
 	m_flWeaponFOV = 54.0;
+	m_flViewmodelFOV = 0.0f;
+	m_flBobScale = 1.0f;
+	m_flSwayScale = 1.0f;
+	m_flSwaySpeedScale = 1.0f;
+	szDroppedModel[0] = 0;
+	m_bUsesHands = false;
+	m_nWeaponRestriction = WPNRESTRICT_NONE;
 }
 
 #ifdef CLIENT_DLL
 extern ConVar hud_fastswitch;
 #endif
+
+const char* pWeaponRestrictions[NUM_WEAPON_RESTRICTION_TYPES] = {
+	"none",
+	"player_only",
+	"npc_only",
+};
 
 void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponName )
 {
@@ -402,6 +454,28 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	m_bAllowFlipping = pKeyValuesData->GetBool( "AllowFlipping", true );
 	m_bMeleeWeapon = pKeyValuesData->GetBool( "MeleeWeapon", false );
 	m_flWeaponFOV = pKeyValuesData->GetFloat("fov", 54.0f); // Allow to change weapon fov.
+
+	m_flViewmodelFOV = pKeyValuesData->GetFloat( "viewmodel_fov", 0.0f );
+	m_flBobScale = pKeyValuesData->GetFloat( "bob_scale", 1.0f );
+	m_flSwayScale = pKeyValuesData->GetFloat( "sway_scale", 1.0f );
+	m_flSwaySpeedScale = pKeyValuesData->GetFloat( "sway_speed_scale", 1.0f );
+
+	Q_strncpy( szDroppedModel, pKeyValuesData->GetString( "droppedmodel" ), MAX_WEAPON_STRING );
+
+	m_bUsesHands = ( pKeyValuesData->GetInt( "uses_hands", 0 ) != 0 ) ? true : false;
+
+	const char* pszRestrictString = pKeyValuesData->GetString("usage_restriction", nullptr);
+	if (pszRestrictString)
+	{
+		for (int i = 0; i < NUM_WEAPON_RESTRICTION_TYPES; i++)
+		{
+			if (V_stricmp(pszRestrictString, pWeaponRestrictions[i]) == 0)
+			{
+				m_nWeaponRestriction = i;
+				break;
+			}
+		}
+	}
 
 #if defined(_DEBUG) && defined(HL2_CLIENT_DLL)
 	// make sure two weapons aren't in the same slot & position

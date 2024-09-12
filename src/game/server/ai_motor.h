@@ -60,6 +60,8 @@ public:
 	virtual void 		MoveClimbStart( const Vector &climbDest, const Vector &climbDir, float climbDist, float yaw );
 	virtual AIMoveResult_t MoveClimbExecute( const Vector &climbDest, const Vector &climbDir, float climbDist, float yaw, int climbNodesLeft );
 	virtual void 		MoveClimbStop();
+	virtual void		MoveClimbPause();
+	virtual bool		MoveClimbShouldTeleportToSequenceEnd( Vector &teleportOrigin );
 
 	//---------------------------------
 
@@ -81,7 +83,7 @@ public:
 	const Vector &		GetCurVel() const			{ return m_vecVelocity;			 }
 
 	virtual float		OverrideMaxYawSpeed( Activity activity )	{ return -1; }
-	bool				IsDeceleratingToGoal() const				{ return false; }
+	virtual bool				IsDeceleratingToGoal() const				{ return false; }
 
 	//---------------------------------
 	// Raw ground step forward to the specifed position

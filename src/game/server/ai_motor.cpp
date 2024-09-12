@@ -223,18 +223,42 @@ void CAI_Motor::MoveClimbStart(  const Vector &climbDest, const Vector &climbDir
 	//	> code are not reciprocal for all state, and furthermore, stomp 
 	//	> other state?
 
-	if ( fabsf( climbDir.z ) < .1 )
+	bool bGoingUp = (climbDir.z > 0.01);
+	if ( bGoingUp && GetOuter()->HaveSequenceForActivity( ACT_CLIMB_MOUNT_BOTTOM ) )
+	{
+		SetActivity( ACT_CLIMB_MOUNT_BOTTOM );
+
+		// Steal m_vecDismount for this
+		GetOuter()->GetSequenceLinearMotion( GetSequence(), &m_vecDismount );
+		GetOuter()->SetCycle( GetOuter()->GetMovementFrame( m_vecDismount.z - climbDist ) );
+	}
+	else if ( !bGoingUp && GetOuter()->HaveSequenceForActivity( ACT_CLIMB_MOUNT_TOP ) )
+	{
+		SetActivity( ACT_CLIMB_MOUNT_TOP );
+
+		// Steal m_vecDismount for this
+		GetOuter()->GetSequenceLinearMotion( GetSequence(), &m_vecDismount );
+		GetOuter()->SetCycle( GetOuter()->GetMovementFrame( m_vecDismount.z - climbDist ) );
+	}
+	else if ( fabsf( climbDir.z ) < .1 )
 	{
 		SetActivity( GetNavigator()->GetMovementActivity() );
 	}
 	else
 	{
-		SetActivity( (climbDir.z > -0.01 ) ? ACT_CLIMB_UP : ACT_CLIMB_DOWN );
+		SetActivity( bGoingUp ? ACT_CLIMB_UP : ACT_CLIMB_DOWN );
 	}
 
 	m_nDismountSequence = SelectWeightedSequence( ACT_CLIMB_DISMOUNT );
 	if (m_nDismountSequence != ACT_INVALID)
 	{
+		if ( !bGoingUp )
+		{
+			int nBottomDismount = SelectWeightedSequence( ACT_CLIMB_DISMOUNT_BOTTOM );
+			if (nBottomDismount != ACTIVITY_NOT_AVAILABLE)
+				m_nDismountSequence = nBottomDismount;
+		}
+		
 		GetOuter()->GetSequenceLinearMotion( m_nDismountSequence, &m_vecDismount );
 	}
 	else
@@ -250,35 +274,73 @@ void CAI_Motor::MoveClimbStart(  const Vector &climbDest, const Vector &climbDir
 
 AIMoveResult_t CAI_Motor::MoveClimbExecute( const Vector &climbDest, const Vector &climbDir, float climbDist, float yaw, int climbNodesLeft )
 {
-	if ( fabsf( climbDir.z ) > .1 )
+	if ( (GetActivity() == ACT_CLIMB_MOUNT_TOP || GetActivity() == ACT_CLIMB_MOUNT_BOTTOM) )
 	{
-		if ( GetActivity() != ACT_CLIMB_DISMOUNT )
+		if (!GetOuter()->IsActivityFinished())
 		{
-			Activity desiredActivity = (climbDir.z > -0.01 ) ? ACT_CLIMB_UP : ACT_CLIMB_DOWN;
+			// Wait for the mounting to finish
+			SetGroundEntity( NULL );
+		}
+		else
+		{
+			// Fix up our position if we have to
+			Vector vecTeleportOrigin;
+			if (MoveClimbShouldTeleportToSequenceEnd( vecTeleportOrigin ))
+			{
+				SetLocalOrigin( vecTeleportOrigin );
+			}
+
+			// Reset activity and start from the beginning
+			GetOuter()->ResetActivity();
+			return MoveClimbExecute( climbDest, climbDir, climbDist, yaw, climbNodesLeft );
+		}
+	}
+	else if ( fabsf( climbDir.z ) > .1 && (GetActivity() != ACT_CLIMB_DISMOUNT && GetActivity() != ACT_CLIMB_DISMOUNT_BOTTOM) )
+	{
+		bool bGoingUp = (climbDir.z > -0.01);
+		if ( GetOuter()->HaveSequenceForActivity( ACT_CLIMB_ALL ) )
+		{
+			SetActivity( ACT_CLIMB_ALL );
+
+			// TODO: Use UTIL_VecToPitch() instead if move_yaw becomes a true climb yaw and not just an up-down scalar
+			SetPoseParameter( GetOuter()->LookupPoseMoveYaw(), climbDir.z < 0 ? 180.0 : -180.0 );
+		}
+		else
+		{
+			Activity desiredActivity = bGoingUp ? ACT_CLIMB_UP : ACT_CLIMB_DOWN;
 			if ( GetActivity() != desiredActivity )
 			{
 				SetActivity( desiredActivity );
 			}
 		}
 
-		if ( GetActivity() != ACT_CLIMB_UP && GetActivity() != ACT_CLIMB_DOWN && GetActivity() != ACT_CLIMB_DISMOUNT )
-		{
-			DevMsg( "Climber not in a climb activity!\n" );
-			return AIMR_ILLEGAL;
-		}
-
 		if (m_nDismountSequence != ACT_INVALID)
 		{
-			if (GetActivity() == ACT_CLIMB_UP )
+			if (climbNodesLeft <= 2 && climbDist < fabs( m_vecDismount.z ))
 			{
-				if (climbNodesLeft <= 2 && climbDist < fabs( m_vecDismount.z ))
+				if (bGoingUp)
 				{
 					// fixme: No other way to force m_nIdealSequence?
 					GetOuter()->SetActivity( ACT_CLIMB_DISMOUNT );
 					GetOuter()->SetCycle( GetOuter()->GetMovementFrame( m_vecDismount.z - climbDist ) );
 				}
+				else
+				{
+					if (GetSequence() != m_nDismountSequence && GetOuter()->GetSequenceActivity( m_nDismountSequence ) == ACT_CLIMB_DISMOUNT_BOTTOM)
+					{
+						SetActivity( ACT_CLIMB_DISMOUNT_BOTTOM );
+					}
+				}
 			}
 		}
+	}
+	else if ( climbDir.Length() == 0 && GetOuter()->GetInstantaneousVelocity() <= 0.01 )
+	{
+		// The NPC is somehow stuck climbing with no direction or movement.
+		// This can be caused by NPCs getting stuck in each other and/or being moved away from the ladder.
+		// In these cases, the NPC has to be made unstuck, or else they may remain in an immobile climbing state forever.
+		Warning( "%s had to abort climbing due to no direction or movement\n", GetOuter()->GetDebugName() );
+		return AIMR_ILLEGAL;
 	}
 
 	float climbSpeed = GetOuter()->GetInstantaneousVelocity();
@@ -286,7 +348,23 @@ AIMoveResult_t CAI_Motor::MoveClimbExecute( const Vector &climbDest, const Vecto
 	if (m_nDismountSequence != ACT_INVALID)
 	{
 		// catch situations where the climb mount/dismount finished before reaching goal
-		climbSpeed = MAX( climbSpeed, 30.0 );
+		if ((GetActivity() == ACT_CLIMB_DISMOUNT || GetActivity() == ACT_CLIMB_DISMOUNT_BOTTOM))
+		{
+			SetGroundEntity( NULL );
+
+			if (GetOuter()->IsActivityFinished())
+			{
+				// Fix up our position if we have to
+				Vector vecTeleportOrigin;
+				if (MoveClimbShouldTeleportToSequenceEnd( vecTeleportOrigin ))
+				{
+					// Just force it to complete
+					climbDist = 0.0f;
+				}
+
+				climbSpeed = 200.0f;
+			}
+		}
 	}
 	else
 	{
@@ -318,6 +396,18 @@ AIMoveResult_t CAI_Motor::MoveClimbExecute( const Vector &climbDest, const Vecto
 	// --------------------------------------------
 	SetIdealYawAndUpdate( yaw );
 
+	// Lock the yaw if we're in position
+	if ( UTIL_AngleMod( yaw ) == UTIL_AngleMod( GetLocalAngles().y ) )
+	{
+		SetYawLocked( true );
+	}
+	else if ( IsYawLocked() )
+	{
+		// We're in a different position now. Unlock the yaw and update it
+		SetYawLocked( false );
+		UpdateYaw( -1 );
+	}
+
 	return AIMR_OK;
 }
 
@@ -328,9 +418,56 @@ void CAI_Motor::MoveClimbStop()
 	else
 		SetActivity( ACT_IDLE );
 
+	// Unlock desired weapon state so NPCs can unholster their weapons again.
+	GetOuter()->SetDesiredWeaponState( DESIREDWEAPONSTATE_IGNORE );
+
+	// Unlock yaw
+	SetYawLocked( false );
+
 	GetOuter()->RemoveFlag( FL_FLY );
 	SetSmoothedVelocity( vec3_origin );
 	SetGravity( 1.0 );
+}
+
+void CAI_Motor::MoveClimbPause()
+{
+	if (GetActivity() != ACT_CLIMB_DISMOUNT 
+#if EXPANDED_NAVIGATION_ACTIVITIES
+		&& GetActivity() != ACT_CLIMB_MOUNT_TOP && GetActivity() != ACT_CLIMB_MOUNT_BOTTOM
+#endif
+		)
+	{
+		if ( GetActivity() == ACT_CLIMB_ALL )
+		{
+			SetPoseParameter( GetOuter()->LookupPoseMoveYaw(), 0.0f );
+		}
+
+		SetSmoothedVelocity( vec3_origin );
+	}
+	else
+	{
+		// If already dismounting, do nothing
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: This is part of a hack needed in cases where ladder mount/dismount animations collide with the world and don't move properly.
+// It's based off of the same code as scripted_sequence's teleportation fixup, although this function only resolves the bone origin and
+// returns whether or not teleportation is necessary, as the teleportation is achieved in different ways for different uses of this code.
+//-----------------------------------------------------------------------------
+bool CAI_Motor::MoveClimbShouldTeleportToSequenceEnd( Vector &teleportOrigin )
+{
+	QAngle new_angle;
+	GetOuter()->GetBonePosition( 0, teleportOrigin, new_angle );
+
+	// Ensure that there is actually a distance needed to teleport there
+	if ((GetLocalOrigin() - teleportOrigin).Length2DSqr() > Square( 8.0 ))
+	{
+		teleportOrigin.z = GetLocalOrigin().z;
+		return true;
+	}
+
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -646,6 +783,7 @@ void CAI_Motor::MoveFacing( const AILocalMoveGoal_t &move )
 	{
 		// FIXME: move this up to navigator so that path goals can ignore these overrides.
 		Vector dir;
+
 		float flInfluence = GetFacingDirection( dir );
 		dir = move.facing * (1 - flInfluence) + dir * flInfluence;
 		VectorNormalize( dir );

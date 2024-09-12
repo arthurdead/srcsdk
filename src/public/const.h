@@ -159,6 +159,18 @@
 #define FL_TRANSRAGDOLL			(1<<30) // In the process of turning into a client side ragdoll.
 #define FL_UNBLOCKABLE_BY_PLAYER (1<<31) // pusher that can't be blocked by the player
 
+//Tony; added for IPlayerInfo V3.
+//Putting all standard possible stances, but GetStance in CBasePlayer will only return standing or ducking by default -
+//up to the mod to specify the others, or override what GetStance returns.
+enum player_Stance
+{
+	PINFO_STANCE_STANDING = 0,
+	PINFO_STANCE_DUCKING,
+
+	PINFO_STANCE_SPRINTING,
+	PINFO_STANCE_PRONE,
+};
+
 // edict->movetype values
 enum MoveType_t
 {
@@ -231,6 +243,9 @@ enum SolidFlags_t
 	FSOLID_TRIGGER_TOUCH_DEBRIS	= 0x0200,	// This trigger will touch debris objects
 	FSOLID_TRIGGER_TOUCH_PLAYER	= 0x0400,	// This trigger will touch only players
 	FSOLID_NOT_MOVEABLE			= 0x0800,	// Assume this object will not move
+
+	// From https://developer.valvesoftware.com/wiki/Owner
+	FSOLID_COLLIDE_WITH_OWNER	= 0X1000,
 
 	FSOLID_MAX_BITS	= 12
 };
@@ -431,17 +446,6 @@ enum
 
 class CThreadMutex;
 typedef CThreadMutex CSourceMutex;
-
-#if defined( CLIENT_DLL )
-#define IsServerDll() false
-#define IsClientDll() true
-#elif defined( GAME_DLL )
-#define IsServerDll() true
-#define IsClientDll() false
-#else
-#define IsServerDll() false
-#define IsClientDll() false
-#endif
 
 #endif
 

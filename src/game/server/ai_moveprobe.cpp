@@ -87,7 +87,9 @@ bool CAI_MoveProbe::ShouldBrushBeIgnored( CBaseEntity *pEntity )
 			return false;
 
 		// this is true if my class or entity name matches the exclusion name on the func brush
-		bool nameMatches = ( pFuncBrush->m_iszExcludedClass == GetOuter()->m_iClassname ) || GetOuter()->NameMatches(pFuncBrush->m_iszExcludedClass);
+		// The only way it could conflict is if a map has a NPC using a classname as its targetname, like a single npc_fastzombie entity referred to as "npc_zombie".
+		// I doubt anyone's doing that unless they don't know what they're doing, and even then this still shouldn't be barred from plain-HL2 mappers.
+		bool nameMatches = GetOuter()->ClassMatches(pFuncBrush->m_iszExcludedClass) || GetOuter()->NameMatches(pFuncBrush->m_iszExcludedClass);
 
 		// return true (ignore brush) if the name matches, or, if exclusion is inverted, if the name does not match
 		return ( pFuncBrush->m_bInvertExclusion ? !nameMatches : nameMatches );

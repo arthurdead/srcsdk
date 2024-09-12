@@ -49,6 +49,7 @@ enum AI_Posture_t
 	AIP_INDIFFERENT,
 	AIP_STANDING,
 	AIP_CROUCHING,
+	AIP_CROUCHING_MED,	// See UpdateTranslateActivityMap() for more information on what this is for
 	AIP_PEEKING,
 };
 
@@ -158,6 +159,12 @@ protected:
 
 	// Standoff overrides base AI crouch handling
 	bool		IsCrouching( void ) { return false; }
+
+	// Standoff overrides base cover activity translation
+	bool		CanTranslateCrouchActivity( void ) { return false; }
+
+	// Don't do death poses while crouching
+	bool		ShouldPickADeathPose( void ) { return (GetPosture() != AIP_CROUCHING && GetPosture() != AIP_PEEKING) && BaseClass::ShouldPickADeathPose(); }
 	
 private:
 	

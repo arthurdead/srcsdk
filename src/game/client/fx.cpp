@@ -1122,6 +1122,11 @@ void FX_BuildTeslaHitbox( const CEffectData &data )
 {
 	Vector vColor( 1, 1, 1 );
 
+	if ( data.m_bCustomColors )
+	{
+		vColor = data.m_CustomColors.m_vecColor1;
+	}
+
 	C_BaseEntity *pEntity = ClientEntityList().GetEnt( data.entindex() );
 	C_BaseAnimating *pAnimating = pEntity ? pEntity->GetBaseAnimating() : NULL;
 	if (!pAnimating)

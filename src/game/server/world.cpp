@@ -507,6 +507,10 @@ BEGIN_MAPENTITY( CWorld )
 	DEFINE_KEYFIELD( m_iszDetailSpriteMaterial, FIELD_STRING, "detailmaterial" ),
 	DEFINE_KEYFIELD( m_bColdWorld,		FIELD_BOOLEAN, "coldworld" ),
 
+	DEFINE_KEYFIELD( m_bChapterTitleNoMessage, FIELD_BOOLEAN, "chaptertitlenomessage" ),
+
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetChapterTitle", InputSetChapterTitle ),
+
 END_MAPENTITY()
 
 
@@ -522,6 +526,7 @@ IMPLEMENT_SERVERCLASS_ST(CWorld, DT_WORLD)
 	SendPropFloat	(SENDINFO(m_flMinPropScreenSpaceWidth), 0, SPROP_NOSCALE ),
 	SendPropStringT (SENDINFO(m_iszDetailSpriteMaterial) ),
 	SendPropInt		(SENDINFO(m_bColdWorld), 1, SPROP_UNSIGNED ),
+	SendPropStringT (SENDINFO(m_iszChapterTitle) ),
 END_SEND_TABLE()
 
 //
@@ -813,14 +818,14 @@ void CWorld::Precache( void )
 	// Call all registered precachers.
 	CPrecacheRegister::Precache();	
 
-	if ( m_iszChapterTitle != NULL_STRING )
+	if ( m_iszChapterTitle.Get() != NULL_STRING && !m_bChapterTitleNoMessage )
 	{
-		DevMsg( 2, "Chapter title: %s\n", STRING(m_iszChapterTitle) );
+		DevMsg( 2, "Chapter title: %s\n", STRING(m_iszChapterTitle.Get()) );
 		CMessage *pMessage = (CMessage *)CBaseEntity::Create( "env_message", vec3_origin, vec3_angle, NULL );
 		if ( pMessage )
 		{
-			pMessage->SetMessage( m_iszChapterTitle );
-			m_iszChapterTitle = NULL_STRING;
+			pMessage->SetMessage( m_iszChapterTitle.Get() );
+			m_iszChapterTitle.Set( NULL_STRING );
 
 			// send the message entity a play message command, delayed by 1 second
 			pMessage->AddSpawnFlags( SF_MESSAGE_ONCE );
@@ -889,4 +894,9 @@ int CWorld::GetTimeOfDay() const
 void CWorld::SetTimeOfDay( int iTimeOfDay )
 {
 	m_iTimeOfDay = iTimeOfDay;
+}
+
+void CWorld::InputSetChapterTitle( inputdata_t &inputdata )
+{
+	m_iszChapterTitle.Set( inputdata.value.StringID() );
 }

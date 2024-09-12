@@ -1454,6 +1454,10 @@ BEGIN_RECV_TABLE_NOBASE(CEnvWindShared, DT_EnvWindShared)
 	RecvPropFloat	(RECVINFO(m_flStartTime)),
 	RecvPropFloat	(RECVINFO(m_flGustDuration)),
 //	RecvPropInt		(RECVINFO(m_iszGustSound)),
+	RecvPropFloat	(RECVINFO(m_windRadius)),
+	RecvPropFloat	(RECVINFO(m_windRadiusInner)),
+	RecvPropVector	(RECVINFO(m_location)),
+	RecvPropFloat	(RECVINFO(m_flTreeSwayScale)),
 END_RECV_TABLE()
 
 IMPLEMENT_CLIENTCLASS_DT( C_EnvWind, DT_EnvWind, CEnvWind )
@@ -1805,8 +1809,7 @@ public:
 
 		pParticle->m_vecVelocity *= flSpeed;
 
-		Vector vecWindVelocity;
-		GetWindspeedAtTime( gpGlobals->curtime, vecWindVelocity );
+		Vector vecWindVelocity = GetWindspeedAtLocation( pParticle->m_Pos );
 		pParticle->m_vecVelocity += ( vecWindVelocity * r_SnowWindScale.GetFloat() );
 	}
 

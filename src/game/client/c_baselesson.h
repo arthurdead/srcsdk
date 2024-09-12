@@ -264,6 +264,17 @@ protected:
 	bool	m_bShowWhenOccluded;
 	bool	m_bNoOffscreen;
 	bool	m_bForceCaption;
+
+	int		m_iIconTargetPos;
+
+	enum
+	{
+		ICON_TARGET_EYE_POSITION,
+		ICON_TARGET_ORIGIN,
+		ICON_TARGET_CENTER,
+	};
+
+	CGameInstructorSymbol	m_szHudHint;
 };
 
 enum LessonAction

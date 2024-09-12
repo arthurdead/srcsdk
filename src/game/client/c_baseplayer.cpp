@@ -121,6 +121,14 @@ void RecvProxy_LocalVelocityZ( const CRecvProxyData *pData, void *pStruct, void 
 void RecvProxy_ObserverTarget( const CRecvProxyData *pData, void *pStruct, void *pOut );
 void RecvProxy_ObserverMode  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
 
+// Needs to shift bits back
+void RecvProxy_ShiftPlayerSpawnflags( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	C_BasePlayer *pPlayer = (C_BasePlayer *)pStruct;
+
+	pPlayer->m_spawnflags = (pData->m_Value.m_Int) << 16;
+}
+
 // -------------------------------------------------------------------------------- //
 // RecvTable for CPlayerState.
 // -------------------------------------------------------------------------------- //
@@ -169,6 +177,9 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	RecvPropInt(RECVINFO(m_skybox3d.scale)),
 	RecvPropVector(RECVINFO(m_skybox3d.origin)),
 	RecvPropInt(RECVINFO(m_skybox3d.area)),
+	RecvPropVector(RECVINFO(m_skybox3d.angles)),
+	RecvPropEHandle(RECVINFO(m_skybox3d.skycamera)),
+	RecvPropInt( RECVINFO( m_skybox3d.skycolor ), 0, RecvProxy_Int32ToColor32 ),
 
 	// 3d skybox fog data
 	RecvPropInt( RECVINFO( m_skybox3d.fog.enable ) ),
@@ -180,6 +191,7 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	RecvPropFloat( RECVINFO( m_skybox3d.fog.end ) ),
 	RecvPropFloat( RECVINFO( m_skybox3d.fog.maxdensity ) ),
 	RecvPropFloat( RECVINFO( m_skybox3d.fog.HDRColorScale ) ),
+	RecvPropFloat( RECVINFO( m_skybox3d.fog.farz ) ),
 
 	// fog data
 	RecvPropEHandle( RECVINFO( m_PlayerFog.m_hCtrl ) ),
@@ -253,6 +265,13 @@ END_RECV_TABLE()
 
 		RecvPropInt			( RECVINFO( m_nWaterLevel ) ),
 		RecvPropFloat		( RECVINFO( m_flLaggedMovementValue )),
+
+		// Transmitted from the server for internal player spawnflags.
+		// See baseplayer_shared.h for more details.
+		RecvPropInt			( RECVINFO( m_spawnflags ), 0, RecvProxy_ShiftPlayerSpawnflags ),
+
+		RecvPropBool		( RECVINFO( m_bDrawPlayerModelExternally ) ),
+		RecvPropBool		( RECVINFO( m_bInTriggerFall ) ),
 
 		RecvPropEHandle		( RECVINFO(m_hTonemapController) ),
 	END_RECV_TABLE()
@@ -430,8 +449,6 @@ BEGIN_PREDICTION_DATA( C_BasePlayer )
 
 END_PREDICTION_DATA()
 
-LINK_ENTITY_TO_CLASS( player, C_BasePlayer );
-
 // -------------------------------------------------------------------------------- //
 // Functions.
 // -------------------------------------------------------------------------------- //
@@ -522,9 +539,17 @@ bool C_BasePlayer::PostConstructor( const char *szClassname )
 	return true;
 }
 
+ConVar cl_player_allow_thirdperson_projtex( "cl_player_allow_thirdperson_projtex", "1", FCVAR_NONE, "Allows players to receive projected textures if they're non-local or in third person." );
+ConVar cl_player_allow_thirdperson_rttshadows( "cl_player_allow_thirdperson_rttshadows", "0", FCVAR_NONE, "Allows players to cast RTT shadows if they're non-local or in third person." );
+ConVar cl_player_allow_firstperson_projtex( "cl_player_allow_firstperson_projtex", "1", FCVAR_NONE, "Allows players to receive projected textures even if they're in first person." );
+ConVar cl_player_allow_firstperson_rttshadows( "cl_player_allow_firstperson_rttshadows", "0", FCVAR_NONE, "Allows players to cast RTT shadows even if they're in first person." );
+
 bool C_BasePlayer::ShouldReceiveProjectedTextures( int flags )
 {
 	Assert(flags & SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK);
+
+	if ( (!IsLocalPlayer() || ShouldDraw()) ? !cl_player_allow_thirdperson_projtex.GetBool() : !cl_player_allow_firstperson_projtex.GetBool() )
+		return false;
 
 	if(IsEffectActive(EF_NODRAW)) {
 		return false;
@@ -539,6 +564,9 @@ bool C_BasePlayer::ShouldReceiveProjectedTextures( int flags )
 
 ShadowType_t C_BasePlayer::ShadowCastType()
 {
+	if ( (!IsLocalPlayer() || ShouldDraw()) ? !cl_player_allow_thirdperson_rttshadows.GetBool() : !cl_player_allow_firstperson_rttshadows.GetBool() )
+		return SHADOWS_NONE;
+
 	if(!IsVisible()) {
 		return SHADOWS_NONE;
 	}
@@ -1319,12 +1347,12 @@ void C_BasePlayer::DetermineVguiInputMode( CUserCmd *pCmd )
 
 	// If we're in vgui mode *and* we're holding down mouse buttons,
 	// stay in vgui mode even if we're outside the screen bounds
-	if (m_pCurrentVguiScreen.Get() && (pCmd->buttons & (IN_ATTACK | IN_ATTACK2)) )
+	if (m_pCurrentVguiScreen.Get() && (pCmd->buttons & (IN_ATTACK | IN_ATTACK2 | IN_VALIDVGUIINPUT)))
 	{
 		SetVGuiScreenButtonState( m_pCurrentVguiScreen.Get(), pCmd->buttons );
 
 		// Kill all attack inputs if we're in vgui screen mode
-		pCmd->buttons &= ~(IN_ATTACK | IN_ATTACK2);
+		pCmd->buttons &= ~(IN_ATTACK | IN_ATTACK2 | IN_VALIDVGUIINPUT);
 		return;
 	}
 
@@ -1446,7 +1474,8 @@ bool C_BasePlayer::CreateMove( float flInputSampleTime, CUserCmd *pCmd )
 	m_vecOldViewAngles = pCmd->viewangles;
 	
 	// Check to see if we're in vgui input mode...
-	DetermineVguiInputMode( pCmd );
+	if(pCmd->buttons & IN_VALIDVGUIINPUT)
+		DetermineVguiInputMode( pCmd );
 
 	return true;
 }
@@ -1724,7 +1753,10 @@ bool C_BasePlayer::ShouldInterpolate()
 
 bool C_BasePlayer::ShouldDraw()
 {
-	return ShouldDrawThisPlayer() && BaseClass::ShouldDraw();
+	// We have to "always draw" a player with m_bDrawPlayerModelExternally in order to show up in whatever rendering list all of the views use, 
+	// but we can't put this in ShouldDrawThisPlayer() because we would have no way of knowing if it stomps the other checks that draw the player model anyway.
+	// As a result, we have to put it here in the central ShouldDraw() function. DrawModel() makes sure we only draw in non-main views and nothing's drawing the model anyway.
+	return (ShouldDrawThisPlayer() || m_bDrawPlayerModelExternally) && BaseClass::ShouldDraw();
 }
 
 //-----------------------------------------------------------------------------
@@ -1740,6 +1772,22 @@ int C_BasePlayer::DrawModel( int flags, const RenderableInstance_t &instance )
 	if(!ReadyToDraw()) {
 		return 0;
 	}
+
+	if (m_bDrawPlayerModelExternally)
+	{
+		// Draw the player in any view except the main or "intro" view, both of which are default first-person views.
+		// HACKHACK: Also don't draw in shadow depth textures if the player's flashlight is on, as that causes the playermodel to block it.
+		view_id_t viewID = CurrentViewID();
+		if (viewID == VIEW_MAIN || viewID == VIEW_INTRO_CAMERA || (viewID == VIEW_SHADOW_DEPTH_TEXTURE && IsEffectActive(EF_DIMLIGHT)))
+		{
+			// Make sure the player model wouldn't draw anyway...
+			if (!ShouldDrawThisPlayer())
+				return 0;
+		}
+
+		return BaseClass::DrawModel( flags, instance );
+	}
+
 #ifndef PORTAL
 	// In Portal this check is already performed as part of
 	// C_Portal_Player::DrawModel()
@@ -1880,7 +1928,14 @@ void C_BasePlayer::CalcChaseCamView(Vector& eyeOrigin, QAngle& eyeAngles, float&
 		}
 	}
 
-	if ( target && !target->IsPlayer() && target->IsNPC() )
+	// SDK TODO
+	if ( target && target->IsBaseTrain() )
+	{
+		// if this is a train, we want to be back a little further so we can see more of it
+		flMaxDistance *= 2.5f;
+		m_flObserverChaseDistance = flMaxDistance;
+	}
+	else if ( target && !target->IsPlayer() && target->IsNPC() )
 	{
 		// if this is a boss, we want to be back a little further so we can see more of it
 		flMaxDistance *= 2.5f;
@@ -3248,6 +3303,10 @@ void C_BasePlayer::UpdateFogBlend( void )
 	}
 }
 
+// FIXME/UNDONE:  Should the local player say yes to adding itself now 
+// and then, when it ges time to render and it shouldn't still do the render with
+// STUDIO_EVENTS set so that its attachment points will get updated even if not
+// in third person?
 bool C_BasePlayer::PreRender()
 {
 	if ( !IsVisible() || 
@@ -3256,8 +3315,16 @@ bool C_BasePlayer::PreRender()
 		return true;
 	}
 
+	// Add in water effects
+	if ( IsLocalPlayer() )
+	{
+		CreateWaterEffects();
+	}
+
 	// Add in lighting effects
-	return CreateLightEffects();
+	CreateLightEffects();
+
+	return true;
 }
 
 bool C_BasePlayer::ShouldRegenerateOriginFromCellBits() const

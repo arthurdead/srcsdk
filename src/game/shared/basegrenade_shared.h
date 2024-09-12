@@ -42,6 +42,9 @@ public:
 
 	DECLARE_PREDICTABLE();
 	DECLARE_NETWORKCLASS();
+#if !defined( CLIENT_DLL )
+	DECLARE_MAPENTITY();
+#endif
 
 	virtual void		Precache( void );
 
@@ -96,6 +99,11 @@ public:
 	void				  SetThrower( CBaseCombatCharacter *pThrower );
 	CBaseEntity *GetOriginalThrower() { return m_hOriginalThrower.Get(); }
 
+	float				GetDetonateTime() { return m_flDetonateTime; }
+	bool				HasWarnedAI() { return m_bHasWarnedAI; }
+	bool				IsLive() { return m_bIsLive; }
+	float				GetWarnAITime() { return m_flWarnAITime; }
+
 #if !defined( CLIENT_DLL )
 	// Allow +USE pickup
 	int ObjectCaps() 
@@ -104,6 +112,11 @@ public:
 	}
 
 	void				Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+#endif
+
+#ifdef GAME_DLL
+	void				InputSetDamage( inputdata_t &inputdata );
+	void				InputDetonate( inputdata_t &inputdata );
 #endif
 
 public:
@@ -121,6 +134,11 @@ protected:
 
 	CNetworkVar( float, m_flDamage );		// Damage to inflict.
 	string_t m_iszBounceSound;	// The sound to make on bouncing.  If not NULL, overrides the BounceSound() function.
+
+#if !defined(CLIENT_DLL)
+	COutputEvent m_OnDetonate;
+	COutputVector m_OnDetonate_OutPosition;
+#endif
 
 private:
 	CNetworkHandle( CBaseEntity, m_hThrower );					// Who threw this grenade

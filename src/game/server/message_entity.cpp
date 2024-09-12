@@ -17,6 +17,8 @@
 #include "vstdlib/random.h"
 #include "engine/IEngineSound.h"
 #include "game.h"
+#include "tier3/tier3.h"
+#include "vgui/ILocalize.h"
 
 #include "player.h"
 #include "entitylist.h"
@@ -38,12 +40,13 @@ public:
 	void	Spawn( void );
 	void	Activate( void );
 	void	Think( void );
-	void	DrawOverlays(void);
+	virtual void	DrawOverlays(void);
 
 	virtual void UpdateOnRemove();
 
 	void	InputEnable( inputdata_t &inputdata );
 	void	InputDisable( inputdata_t &inputdata );
+	virtual void	InputSetMessage( inputdata_t &inputdata );
 
 	DECLARE_MAPENTITY();
 
@@ -66,6 +69,8 @@ BEGIN_MAPENTITY( CMessageEntity )
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,	 "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	 "Disable", InputDisable ),
+
+	DEFINE_INPUTFUNC( FIELD_STRING,	 "SetMessage", InputSetMessage ),
 
 END_MAPENTITY()
 
@@ -170,6 +175,17 @@ void CMessageEntity::InputDisable( inputdata_t &inputdata )
 	m_bEnabled = false;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CMessageEntity::InputSetMessage( inputdata_t &inputdata )
+{
+	char newmessage[256];
+	Q_strncpy(newmessage, inputdata.value.String(), sizeof(newmessage));
+
+	m_messageText = AllocPooledString(newmessage);
+}
+
 // This is a hack to make point_message stuff appear in developer 0 release builds
 //  for now
 void DrawMessageEntities()
@@ -185,5 +201,122 @@ void DrawMessageEntities()
 		}
 
 		me->DrawOverlays();
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+class CMessageEntityLocalized : public CMessageEntity
+{
+	DECLARE_CLASS( CMessageEntityLocalized, CMessageEntity );
+
+public:
+	bool	KeyValue(const char *szKeyName, const char *szValue);
+	void	SetMessage(const char *szValue);
+	void	DrawOverlays(void);
+	void	InputSetMessage( inputdata_t &inputdata );
+
+	CUtlVector<string_t> m_messageLines;
+
+	DECLARE_MAPENTITY();
+};
+
+LINK_ENTITY_TO_CLASS( point_message_localized, CMessageEntityLocalized );
+
+BEGIN_MAPENTITY( CMessageEntityLocalized )
+
+	//DEFINE_INPUTFUNC( FIELD_STRING,	 "SetMessage", InputSetMessage ),
+
+END_MAPENTITY()
+
+//-----------------------------------------------------------------------------
+// Purpose: Handles key values from the BSP before spawn is called.
+//-----------------------------------------------------------------------------
+bool CMessageEntityLocalized::KeyValue(const char *szKeyName, const char *szValue)
+{
+	if (FStrEq(szKeyName, "message"))
+	{
+		SetMessage(szValue);
+		return true;
+	}
+
+	return BaseClass::KeyValue(szKeyName, szValue);
+}
+
+// I would use "\\n", but Hammer doesn't let you use back slashes.
+#define CONVERSION_CHAR "/n"
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CMessageEntityLocalized::SetMessage(const char *szValue)
+{
+	// Find a localization token matching this string
+	wchar_t *pszMessage = g_pVGuiLocalize->Find(szValue);
+
+	// If this is a localized string, convert it back to char.
+	// If it isn't, just copy it right into this.
+	char szBackToChar[256];
+	if (pszMessage)
+		g_pVGuiLocalize->ConvertUnicodeToANSI(pszMessage, szBackToChar, sizeof(szBackToChar));
+	else
+		Q_strncpy(szBackToChar, szValue, sizeof(szBackToChar));
+
+	// szTemp is used to turn \n from localized strings into /n.
+	char szTemp[256];
+	if (Q_strstr(szBackToChar, "\n"))
+	{
+		char *token = strtok(szBackToChar, "\n");
+		while (token)
+		{
+			Q_snprintf(szTemp, sizeof(szTemp), "%s%s%s", szTemp, token, CONVERSION_CHAR);
+			token = strtok(NULL, "\n");
+		}
+	}
+	else
+	{
+		Q_strncpy(szTemp, szBackToChar, sizeof(szTemp));
+	}
+
+	m_messageLines.RemoveAll();
+
+	CUtlStringList vecLines;
+	Q_SplitString(szTemp, CONVERSION_CHAR, vecLines);
+	FOR_EACH_VEC( vecLines, i )
+	{
+		m_messageLines.AddToTail( AllocPooledString(vecLines[i]) );
+	}
+
+	vecLines.PurgeAndDeleteElements();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CMessageEntityLocalized::InputSetMessage( inputdata_t &inputdata )
+{
+	SetMessage(inputdata.value.String());
+}
+
+//-------------------------------------------
+//-------------------------------------------
+void CMessageEntityLocalized::DrawOverlays(void) 
+{
+	if ( !m_drawText )
+		return;
+
+	if ( m_bDeveloperOnly && !g_pDeveloper->GetInt() )
+		return;
+
+	if ( !m_bEnabled )
+		return;
+
+	// display text if they are within range
+	int offset = 0;
+	FOR_EACH_VEC( m_messageLines, i )
+	{
+		EntityText( offset, STRING(m_messageLines[i]), 0 );
+		offset++;
 	}
 }

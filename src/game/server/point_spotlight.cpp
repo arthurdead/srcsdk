@@ -26,6 +26,7 @@ public:
 	DECLARE_MAPENTITY();
 
 	CPointSpotlight();
+	~CPointSpotlight();
 
 	void	Precache(void);
 	void	Spawn(void);
@@ -46,6 +47,8 @@ private:
 	// ------------------------------
 	void InputLightOn( inputdata_t &inputdata );
 	void InputLightOff( inputdata_t &inputdata );
+	void InputLightToggle( inputdata_t &inputdata ) { m_bSpotlightOn ? InputLightOff(inputdata) : InputLightOn(inputdata); }
+
 	void InputSetColor( inputdata_t &inputdata );
 	void InputForceUpdate( inputdata_t &inputdata );
 
@@ -72,6 +75,10 @@ private:
 	float	m_flHDRColorScale;
 	int		m_nMinDXLevel;
 
+	float	m_flHaloScale;
+	string_t	m_iszHaloMaterial;
+	string_t	m_iszSpotlightMaterial;
+
 public:
 	COutputEvent m_OnOn, m_OnOff;     ///< output fires when turned on, off
 };
@@ -83,6 +90,9 @@ BEGIN_MAPENTITY( CPointSpotlight )
 	DEFINE_KEYFIELD( m_flSpotlightGoalWidth,FIELD_FLOAT, "SpotlightWidth"),
 	DEFINE_KEYFIELD( m_flHDRColorScale, FIELD_FLOAT, "HDRColorScale" ),
 	DEFINE_KEYFIELD( m_nMinDXLevel, FIELD_INTEGER, "mindxlevel" ),
+	DEFINE_KEYFIELD( m_flHaloScale, FIELD_FLOAT, "HaloScale" ),
+	DEFINE_KEYFIELD( m_iszHaloMaterial, FIELD_STRING, "HaloMaterial" ),
+	DEFINE_KEYFIELD( m_iszSpotlightMaterial, FIELD_STRING, "SpotlightMaterial" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID,		"LightOn",		InputLightOn ),
@@ -91,6 +101,7 @@ BEGIN_MAPENTITY( CPointSpotlight )
 	DEFINE_OUTPUT( m_OnOff, "OnLightOff" ),
 	DEFINE_INPUTFUNC( FIELD_COLOR32,	"SetColor",		InputSetColor ),
 	DEFINE_INPUTFUNC( FIELD_VOID,		"ForceUpdate",	InputForceUpdate ),
+	DEFINE_INPUTFUNC( FIELD_VOID,		"LightToggle",		InputLightToggle ),
 
 END_MAPENTITY()
 
@@ -110,8 +121,16 @@ CPointSpotlight::CPointSpotlight()
 	m_flHDRColorScale = 1.0f;
 	m_nMinDXLevel = 0;
 	m_bIgnoreSolid = false;
+	m_flHaloScale = 60.0f;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+CPointSpotlight::~CPointSpotlight()
+{
+	SpotlightDestroy();
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -121,8 +140,18 @@ void CPointSpotlight::Precache(void)
 	BaseClass::Precache();
 
 	// Sprites.
-	m_nHaloSprite = PrecacheModel("sprites/light_glow03.vmt");
-	PrecacheModel( "sprites/glow_test02.vmt" );
+	if (m_iszHaloMaterial == NULL_STRING)
+	{
+		m_iszHaloMaterial = AllocPooledString( "sprites/light_glow03.vmt" );
+	}
+
+	if (m_iszSpotlightMaterial == NULL_STRING)
+	{
+		m_iszSpotlightMaterial = AllocPooledString( "sprites/glow_test02.vmt" );
+	}
+
+	m_nHaloSprite = PrecacheModel( STRING( m_iszHaloMaterial ) );
+	PrecacheModel( STRING( m_iszSpotlightMaterial ) );
 }
 
 
@@ -201,7 +230,7 @@ void CPointSpotlight::ComputeRenderInfo()
 	m_hSpotlight->SetEndWidth(flNewWidth);
 
 	// Adjust width of light on the end.  
-	if ( FBitSet (m_spawnflags, SF_SPOTLIGHT_NO_DYNAMIC_LIGHT) )
+	if ( HasSpawnFlags ( SF_SPOTLIGHT_NO_DYNAMIC_LIGHT) )
 	{
 		m_hSpotlightTarget->m_flLightScale = 0.0;
 	}
@@ -343,19 +372,19 @@ void CPointSpotlight::SpotlightCreate(void)
 	m_hSpotlightTarget->SetRenderColor( GetRenderColor() );
 	m_hSpotlightTarget->m_Radius = m_flSpotlightMaxLength;
 
-	if ( FBitSet (m_spawnflags, SF_SPOTLIGHT_NO_DYNAMIC_LIGHT) )
+	if ( HasSpawnFlags ( SF_SPOTLIGHT_NO_DYNAMIC_LIGHT) )
 	{
 		m_hSpotlightTarget->m_flLightScale = 0.0;
 	}
 
 	//m_hSpotlight = CBeam::BeamCreate( "sprites/spotlight.vmt", m_flSpotlightGoalWidth );
-	m_hSpotlight = CBeam::BeamCreate( "sprites/glow_test02.vmt", m_flSpotlightGoalWidth );
+	m_hSpotlight = CBeam::BeamCreate( STRING(m_iszSpotlightMaterial), m_flSpotlightGoalWidth );
 	// Set the temporary spawnflag on the beam so it doesn't save (we'll recreate it on restore)
 	m_hSpotlight->SetHDRColorScale( m_flHDRColorScale );
 	m_hSpotlight->AddSpawnFlags( SF_BEAM_TEMPORARY );
 	m_hSpotlight->SetColor( GetRenderColorR(), GetRenderColorG(), GetRenderColorB() ); 
 	m_hSpotlight->SetHaloTexture(m_nHaloSprite);
-	m_hSpotlight->SetHaloScale(60);
+	m_hSpotlight->SetHaloScale(m_flHaloScale);
 	m_hSpotlight->SetEndWidth(m_flSpotlightGoalWidth);
 	m_hSpotlight->SetBeamFlags( (FBEAM_SHADEOUT|FBEAM_NOTILE) );
 	m_hSpotlight->SetBrightness( 64 );

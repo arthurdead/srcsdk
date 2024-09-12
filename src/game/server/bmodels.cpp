@@ -16,10 +16,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define		SF_BRUSH_ACCDCC	16// brush should accelerate and decelerate when toggled
-#define		SF_BRUSH_HURT		32// rotating brush that inflicts pain based on rotation speed
-#define		SF_ROTATING_NOT_SOLID	64	// some special rotating objects are not solid.
-
 // =================== FUNC_WALL ==============================================
 class CFuncWall : public CBaseEntity
 {
@@ -441,6 +437,9 @@ protected:
 
 	bool m_bSolidBsp;				// Brush is SOLID_BSP
 
+	int		m_iMinPitch = 30; // FANPITCHMIN
+	int		m_iMaxPitch = 100; // FANPITCHMAX
+
 public:
 	Vector m_vecClientOrigin;
 	QAngle m_vecClientAngles;
@@ -456,6 +455,9 @@ BEGIN_MAPENTITY( CFuncRotating )
 	DEFINE_KEYFIELD( m_NoiseRunning, FIELD_SOUNDNAME, "message" ),
 
 	DEFINE_KEYFIELD( m_bSolidBsp, FIELD_BOOLEAN, "solidbsp" ),
+
+	DEFINE_KEYFIELD( m_iMinPitch, FIELD_INTEGER, "minpitch" ),
+	DEFINE_KEYFIELD( m_iMaxPitch, FIELD_INTEGER, "maxpitch" ),
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeed", InputSetSpeed ),
@@ -788,10 +790,6 @@ void CFuncRotating::HurtTouch ( CBaseEntity *pOther )
 }
 
 
-#define FANPITCHMIN		30
-#define FANPITCHMAX		100
-
-
 //-----------------------------------------------------------------------------
 // Purpose: Ramp pitch and volume up to maximum values, based on the difference
 //			between how fast we're going vs how fast we can go.
@@ -804,7 +802,7 @@ void CFuncRotating::RampPitchVol( void )
 	float fpct = fabs(m_flSpeed) / m_flMaxSpeed;
 	float fvol = clamp(m_flVolume * fpct, 0.f, 1.f);			  // slowdown volume ramps down to 0
 
-	float fpitch = FANPITCHMIN + (FANPITCHMAX - FANPITCHMIN) * fpct;	
+	float fpitch = m_iMinPitch + (m_iMaxPitch - m_iMinPitch) * fpct;	
 	
 	int pitch = clamp(FastFloatToSmallInt(fpitch), 0, 255);
 	if (pitch == PITCH_NORM)
@@ -908,7 +906,7 @@ void CFuncRotating::UpdateSpeed( float flNewSpeed )
 		ep.m_pSoundName = STRING(m_NoiseRunning);
 		ep.m_flVolume = 0.01;
 		ep.m_SoundLevel = ATTN_TO_SNDLVL( m_flAttenuation );
-		ep.m_nPitch = FANPITCHMIN;
+		ep.m_nPitch = m_iMinPitch;
 
 		EmitSound( filter, entindex(), ep );
 		RampPitchVol();
@@ -1054,6 +1052,16 @@ void CFuncRotating::ReverseMove( void )
 void CFuncRotating::RotateMove( void )
 {
 	SetMoveDoneTime( 10 );
+
+	QAngle angNormalizedAngles = GetLocalAngles();
+	if (m_vecMoveAng.x)
+		angNormalizedAngles.x = AngleNormalize( angNormalizedAngles.x );
+	if (m_vecMoveAng.y)
+		angNormalizedAngles.y = AngleNormalize( angNormalizedAngles.y );
+	if (m_vecMoveAng.z)
+		angNormalizedAngles.z = AngleNormalize( angNormalizedAngles.z );
+
+	SetLocalAngles(angNormalizedAngles);
 
 	if ( m_bStopAtStartPos )
 	{
@@ -1344,6 +1352,8 @@ public:
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
 
+	void InputSetFilter( inputdata_t &inputdata );
+
 private:
 
 	string_t						m_iFilterName;
@@ -1359,6 +1369,10 @@ BEGIN_MAPENTITY( CFuncVPhysicsClip )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
+
+	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
+
+	DEFINE_INPUTFUNC( FIELD_EHANDLE, "SetFilter", InputSetFilter ),
 
 END_MAPENTITY()
 
@@ -1426,4 +1440,18 @@ void CFuncVPhysicsClip::InputDisable( inputdata_t &inputdata )
 {
 	VPhysicsGetObject()->EnableCollisions(false);
 	m_bDisabled = true;
+}
+
+void CFuncVPhysicsClip::InputSetFilter( inputdata_t &inputdata )
+{
+	if (inputdata.value.Entity())
+	{
+		m_iFilterName = inputdata.value.Entity()->GetEntityName();
+		m_hFilter = dynamic_cast<CBaseFilter *>(inputdata.value.Entity().Get());
+	}
+	else
+	{
+		m_iFilterName = NULL_STRING;
+		m_hFilter = NULL;
+	}
 }

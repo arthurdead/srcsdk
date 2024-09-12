@@ -38,6 +38,9 @@ public:
 	// Don't treat as a live target
 	virtual bool IsAlive( void ) { return false; }
 	virtual bool OverridePropdata() { return true; }
+
+	// Attempt to replace a dynamic_cast
+	virtual bool IsPropPhysics() { return false; }
 };
 
 
@@ -58,11 +61,13 @@ public:
 	virtual float GetAutoAimRadius() { return 24.0f; }
 	virtual void UpdateOnRemove();
 
+	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+
 	void BreakablePropTouch( CBaseEntity *pOther );
 
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 	void Event_Killed( const CTakeDamageInfo &info );
-	void Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info );
+	virtual void Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info );
 	void BreakThink( void );
 	void AnimateThink( void );
 
@@ -72,6 +77,8 @@ public:
 	void InputAddHealth( inputdata_t &inputdata );
 	void InputRemoveHealth( inputdata_t &inputdata );
 	void InputSetHealth( inputdata_t &inputdata );
+	void InputSetInteraction( inputdata_t &inputdata );
+	void InputRemoveInteraction( inputdata_t &inputdata );
 
 	int	 GetNumBreakableChunks( void ) { return m_iNumBreakableChunks; }
 
@@ -86,6 +93,9 @@ public:
 		if ( HasInteraction( PROPINTER_PHYSGUN_LAUNCH_SPIN_Z ) )
 			return true;
 
+		if ( m_bUsesCustomCarryAngles )
+			return true;
+
 		return false; 
 	}
 
@@ -98,6 +108,9 @@ public:
 	void	HandleInteractionStick( int index, gamevcollisionevent_t *pEvent );
 	void	StickAtPosition( const Vector &stickPosition, const Vector &savePosition, const QAngle &saveAngles );
 	
+	// Uses the new CBaseEntity interaction implementation
+	bool	HandleInteraction( int interactionType, void *data, CBaseCombatCharacter* sourceEnt );
+
 	// Disable auto fading under dx7 or when level fades are specified
 	void	DisableAutoFade();
 
@@ -111,6 +124,9 @@ public:
 	int				m_iMinHealthDmg;
 
 	QAngle			m_preferredCarryAngles;
+
+	// Indicates whether the prop is using the keyvalue carry angles.
+	bool			m_bUsesCustomCarryAngles;
 
 public:
 // IBreakableWithPropData
@@ -201,6 +217,7 @@ public:
 	virtual	CBasePlayer *HasPhysicsAttacker( float dt );
 
 #ifdef HL2_EPISODIC
+	virtual float GetFlareLifetime() { return 30.0f; }
 	void CreateFlare( float flLifetime );
 #endif //HL2_EPISODIC
 
@@ -356,6 +373,9 @@ public:
 	bool CreateVPhysics( void );
 	bool OverridePropdata( void );
 
+	// Attempt to replace a dynamic_cast
+	virtual bool IsPropPhysics() { return true; }
+
 	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics );
 	virtual void VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );
 
@@ -364,6 +384,7 @@ public:
 	void InputEnableMotion( inputdata_t &inputdata );
 	void InputDisableMotion( inputdata_t &inputdata );
 	void InputDisableFloating( inputdata_t &inputdata );
+	void InputSetDebris( inputdata_t &inputdata );
 
 	void EnableMotion( void );
 	bool CanBePickedUpByPhyscannon( void );

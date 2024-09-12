@@ -28,10 +28,11 @@ public:
 	void	Precache( void );
 
 private:
-	inline	bool	AllPlayers( void ) { return (m_spawnflags & SF_HUDHINT_ALLPLAYERS) != 0; }
+	inline	bool	AllPlayers( void ) { return HasSpawnFlags(SF_HUDHINT_ALLPLAYERS); }
 
 	void InputShowHudHint( inputdata_t &inputdata );
 	void InputHideHudHint( inputdata_t &inputdata );
+	void InputSetHudHint( inputdata_t &inputdata );
 	string_t m_iszMessage;
 	DECLARE_MAPENTITY();
 };
@@ -43,6 +44,7 @@ BEGIN_MAPENTITY( CEnvHudHint )
 	DEFINE_KEYFIELD( m_iszMessage, FIELD_STRING, "message" ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ShowHudHint", InputShowHudHint ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "HideHudHint", InputHideHudHint ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetHudHint", InputSetHudHint ),
 
 END_MAPENTITY()
 
@@ -102,6 +104,13 @@ void CEnvHudHint::InputShowHudHint( inputdata_t &inputdata )
 			WRITE_STRING( STRING(m_iszMessage) );
 		MessageEnd();
 	}
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CEnvHudHint::InputSetHudHint( inputdata_t &inputdata )
+{
+	m_iszMessage = inputdata.value.StringID();
 }
 
 //-----------------------------------------------------------------------------

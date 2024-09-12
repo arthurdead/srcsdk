@@ -142,6 +142,8 @@ enum ThreeState_t
 	TRS_NONE,
 };
 
+#define TO_THREESTATE(num)	static_cast<ThreeState_t>(num)
+
 typedef float vec_t;
 
 #if defined(__GNUC__)

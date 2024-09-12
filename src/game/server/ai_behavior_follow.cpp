@@ -360,8 +360,8 @@ bool CAI_FollowBehavior::SetFollowGoal( CAI_FollowGoal *pGoal, bool fFinishCurSc
 		GetOuter()->SetCondition(COND_PROVOKED);
 
 		SetFollowTarget( pGoal->GetGoalEntity() );
-		Assert( pGoal->m_iFormation == AIF_SIMPLE || pGoal->m_iFormation == AIF_WIDE || pGoal->m_iFormation == AIF_MEDIUM || pGoal->m_iFormation == AIF_SIDEKICK || pGoal->m_iFormation == AIF_VORTIGAUNT );
-		SetParameters( AI_FollowParams_t( (AI_Formations_t)pGoal->m_iFormation ) );
+		Assert( pGoal->m_iFormation < AIF_NUM_FORMATIONS );
+		SetParameters( AI_FollowParams_t( (AI_Formations_t)pGoal->m_iFormation, pGoal->m_bNormalMemoryDiscard ) );
 		m_hFollowGoalEnt = pGoal;
 		m_flTimeUpdatedFollowPosition = 0;
 		return true;
@@ -725,11 +725,8 @@ void CAI_FollowBehavior::GatherConditions( void )
 
 #ifdef HL2_EPISODIC
 	// Let followers know if the player is lit in the darkness
-#ifdef SM_AI_FIXES
-	if ( GetFollowTarget()->IsPlayer() && HL2MPRules()->IsAlyxInDarknessMode() )
-#else
-	if ( GetFollowTarget()->IsPlayer() && HL2GameRules()->IsAlyxInDarknessMode() )
-#endif
+	// If the darkness mode counter is 1, follow behavior is not affected by darkness.
+	if ( GetFollowTarget()->IsPlayer() && HL2GameRules()->IsAlyxInDarknessMode() && GlobalEntity_GetCounter("ep_alyx_darknessmode") != 1 )
 	{
 		if ( LookerCouldSeeTargetInDarkness( GetOuter(), GetFollowTarget() ) )
 		{

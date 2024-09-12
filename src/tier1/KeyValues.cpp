@@ -2233,6 +2233,26 @@ bool EvaluateConditional( const char *str, const char *file )
 #else
 		return false ^ bNot;
 #endif
+
+	// Custom conditional
+	switch( str[bNot ? 1 : 0] )
+	{
+		case '%':
+		{
+			// Look for a cvar
+			ConVarRef cvar( str + (bNot ? 2 : 1), true );
+			if (cvar.IsValid())
+			{
+				return cvar.GetBool() ^ bNot;
+			}
+		} break;
+
+		case '-':
+		{
+			// Look for a command line param
+			return (CommandLine()->CheckParm( bNot ? str+1 : str ) != 0) ^ bNot;
+		} break;
+	}
 	
 	return false;
 }

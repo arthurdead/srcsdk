@@ -184,7 +184,7 @@ void CSprite::Spawn( void )
 			GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z, m_flGlowProxySize.Get(), MAX_GLOW_PROXY_SIZE );
 		m_flGlowProxySize = MAX_GLOW_PROXY_SIZE;
 	}
-	if ( GetEntityName() != NULL_STRING && !(m_spawnflags & SF_SPRITE_STARTON) )
+	if ( GetEntityName() != NULL_STRING && !HasSpawnFlags( SF_SPRITE_STARTON) )
 	{
 		TurnOff();
 	}
@@ -454,7 +454,7 @@ void CSprite::Animate( float frames )
 	if ( m_flFrame > m_flMaxFrame )
 	{
 #if !defined( CLIENT_DLL )
-		if ( m_spawnflags & SF_SPRITE_ONCE )
+		if ( HasSpawnFlags( SF_SPRITE_ONCE ) )
 		{
 			TurnOff();
 		}
@@ -514,7 +514,7 @@ void CSprite::TurnOn( void )
 	RemoveEffects( EF_NODRAW );
 	if ( (m_flSpriteFramerate && m_flMaxFrame > 1.0)
 #if !defined( CLIENT_DLL )
-		|| (m_spawnflags & SF_SPRITE_ONCE) 
+		|| (HasSpawnFlags( SF_SPRITE_ONCE) )
 #endif
 		)
 	{

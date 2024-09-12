@@ -18,6 +18,9 @@
 #include "util.h"
 #include "utllinkedlist.h"
 
+class CAI_Expresser;
+class CAI_ExpresserSink;
+
 typedef CAI_Concept AIConcept_t;
 
 #define AI_RESPONSE_QUEUE_SIZE 64
@@ -121,6 +124,9 @@ public:
 	/// Iterate over potential expressers for this queue
 	inline int GetNumExpresserTargets() const;
 	inline CBaseEntity *GetExpresserHost(int which) const;
+
+	void AppendFollowupCriteria( AIConcept_t concept, AI_CriteriaSet &set, CAI_Expresser *pEx,
+		CAI_ExpresserSink *pSink, CBaseEntity *pTarget, CBaseEntity *pIssuer, DeferredResponseTarget_t nTargetType );
 
 protected:
 	/// Actually send off one response to a consumer

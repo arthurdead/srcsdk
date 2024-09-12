@@ -51,14 +51,20 @@ extern ConVar cl_leveloverview;
 //			... - 
 // Output : char
 //-----------------------------------------------------------------------------
+static char		varargs_string[5][1024];
+static int curr_varargs = 0;
 const char *VarArgs( const char *format, ... )
 {
 	va_list		argptr;
-	static char		string[1024];
 	
 	va_start (argptr, format);
-	Q_vsnprintf (string, sizeof( string ), format,argptr);
+	Q_vsnprintf(varargs_string[curr_varargs], sizeof(varargs_string[curr_varargs]), format,argptr);
 	va_end (argptr);
+
+	const char *string = varargs_string[curr_varargs++];
+	if(curr_varargs == ARRAYSIZE(varargs_string)) {
+		curr_varargs = 0;
+	}
 
 	return string;	
 }

@@ -261,7 +261,7 @@ void CPhysConstraint::Deactivate()
 	m_pConstraint->Deactivate();
 	ClearStaticFlag( m_pConstraint->GetReferenceObject() );
 	ClearStaticFlag( m_pConstraint->GetAttachedObject() );
-	if ( m_spawnflags & SF_CONSTRAINT_DISABLE_COLLISION )
+	if ( HasSpawnFlags( SF_CONSTRAINT_DISABLE_COLLISION ) )
 	{
 		// constraint may be getting deactivated because an object got deleted, so check them here.
 		IPhysicsObject *pRef = m_pConstraint->GetReferenceObject();
@@ -530,7 +530,7 @@ void CPhysConstraint::OnConstraintSetup( hl_constraint_info_t &info )
 	{
 		SetupTeleportationHandling( info );
 	}
-	if ( m_spawnflags & SF_CONSTRAINT_DISABLE_COLLISION )
+	if ( HasSpawnFlags( SF_CONSTRAINT_DISABLE_COLLISION ) )
 	{
 		PhysDisableEntityCollisions( info.pObjects[0], info.pObjects[1] );
 	}
@@ -1196,7 +1196,7 @@ IPhysicsConstraint *CPhysSlideConstraint::CreateConstraint( IPhysicsConstraintGr
 
 	sliding.InitWithCurrentObjectState( info.pObjects[0], info.pObjects[1], axisDirection );
 	sliding.friction = m_slideFriction;
-	if ( m_spawnflags & SF_SLIDE_LIMIT_ENDS )
+	if ( HasSpawnFlags( SF_SLIDE_LIMIT_ENDS ) )
 	{
 		Vector position;
 		info.pObjects[1]->GetPosition( &position, NULL );
@@ -1397,7 +1397,7 @@ IPhysicsConstraint *CPhysPulley::CreateConstraint( IPhysicsConstraintGroup *pGro
 		pulley.gearRatio = m_gearRatio;
 	}
 	GetBreakParams( pulley.constraint, info );
-	if ( m_spawnflags & SF_PULLEY_RIGID )
+	if ( HasSpawnFlags( SF_PULLEY_RIGID ) )
 	{
 		pulley.isRigid = true;
 	}

@@ -35,6 +35,7 @@
 // Spawn flags
 #define SF_BREAKABLESURF_CRACK_DECALS				0x00000001
 #define SF_BREAKABLESURF_DAMAGE_FROM_HELD_OBJECTS	0x00000002
+#define SF_BREAKABLESURF_PLAY_BREAK_SOUND			0x00000004
 
 //#############################################################################
 //  > CWindowPane
@@ -590,7 +591,11 @@ void CBreakableSurface::Die( CBaseEntity *pBreaker, const Vector &vAttackDir )
 		return;
 
 	// Play a break sound
-	PhysBreakSound( this, VPhysicsGetObject(), GetAbsOrigin() );
+	if ( HasSpawnFlags(SF_BREAKABLESURF_PLAY_BREAK_SOUND) )
+	{
+		Vector centerPos = (m_vLLVertex + m_vURVertex) / 2;
+		PhysBreakSound( this, VPhysicsGetObject(), centerPos );
+	}
 
 	m_bIsBroken = true;
 	SetHealth( 0.0f );
@@ -1217,7 +1222,7 @@ void CBreakableSurface::VPhysicsCollision( int index, gamevcollisionevent_t *pEv
 	{
 		int damageType = 0;
 		string_t iszDamageTable = ( ( m_nSurfaceType == SHATTERSURFACE_GLASS ) ? ( "glass" ) : ( NULL_STRING ) );
-		bool bDamageFromHeldObjects = ( ( m_spawnflags & SF_BREAKABLESURF_DAMAGE_FROM_HELD_OBJECTS ) != 0 );
+		bool bDamageFromHeldObjects = HasSpawnFlags( SF_BREAKABLESURF_DAMAGE_FROM_HELD_OBJECTS );
 		float damage = CalculateDefaultPhysicsDamage( index, pEvent, 1.0, false, damageType, iszDamageTable, bDamageFromHeldObjects );
 
 		if ( damage > 10 )
@@ -1239,7 +1244,7 @@ void CBreakableSurface::VPhysicsCollision( int index, gamevcollisionevent_t *pEv
 		}
 		else if ( damage > 0 )
 		{
-			if ( m_spawnflags & SF_BREAKABLESURF_CRACK_DECALS )
+			if ( HasSpawnFlags( SF_BREAKABLESURF_CRACK_DECALS ) )
 			{
 
 				Vector normal, damagePos;

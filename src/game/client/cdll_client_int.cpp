@@ -948,6 +948,9 @@ bool InitGameSystems( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 	ClientWorldFactoryInit();
 
+	CommandLine()->RemoveParm("+r_hunkalloclightmaps");
+	CommandLine()->AppendParm("+r_hunkalloclightmaps", "0");
+
 	return true;
 }
 
@@ -1889,6 +1892,9 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 	GetViewRenderInstance()->LevelInit();
 	tempents->LevelInit();
 	ResetToneMapping(1.0);
+
+	if(GetClientWorldEntity())
+		GetClientWorldEntity()->ParseWorldMapData( engine->GetMapEntitiesString() );
 
 	IGameSystem::LevelInitPreEntityAllSystems(pMapName);
 

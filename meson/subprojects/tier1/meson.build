@@ -60,6 +60,7 @@ if build_libs
 			join_paths(tier1_src_dir,'checksum_md5.cpp'),
 			join_paths(tier1_src_dir,'generichash.cpp'),
 			join_paths(tier1_src_dir,'splitstring.cpp'),
+			join_paths(tier1_src_dir,'mapbase_matchers_base.cpp'),
 			#join_paths(tier1_src_dir,'math_proxy.cpp'),
 			join_paths(src_root_dir,'utils','lzma','C','LzmaDec.c')
 		),

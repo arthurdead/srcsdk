@@ -135,6 +135,10 @@ void LoadHudTextures( CUtlDict< CHudTexture *, int >& list, const char *szFilena
 			}
 		}
 	}
+	else
+	{
+		Warning( "Unable to read script %s.\n", szFilenameWithoutExtension );
+	}
 
 	// Failed for some reason. Delete the Key data and abort.
 	pKeyValuesData->deleteThis();
@@ -515,6 +519,9 @@ void CHudIcons::Init()
 	// check to see if we have sprites for this res; if not, step down
 	LoadHudTextures( textureList, "scripts/hud_textures", NULL );
 	LoadHudTextures( textureList, "scripts/mod_textures", NULL );
+
+	LoadHudTextures( textureList, "scripts/instructor_textures", NULL );
+	LoadHudTextures( textureList, "scripts/instructor_modtextures", NULL );
 
 	int c = textureList.Count();
 	for ( int index = 0; index < c; index++ )

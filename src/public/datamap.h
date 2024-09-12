@@ -219,8 +219,12 @@ DECLARE_FIELD_SIZE( FIELD_MATERIALINDEX,	sizeof(int) )
 
 class ICustomFieldOps;
 extern ICustomFieldOps *eventFuncs;
-
 #define DEFINE_OUTPUT( name, outputname )	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_OUTPUT | FTYPEDESC_KEY, outputname, eventFuncs }
+
+// Quick way to define variants in a datadesc.
+extern ICustomFieldOps *variantFuncs;
+#define DEFINE_VARIANT(name) { FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, variantFuncs, NULL }
+#define DEFINE_KEYVARIANT(name,mapname)	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_KEY, mapname, variantFuncs, NULL }
 
 // replaces EXPORT table for portability and non-DLL based systems (xbox)
 #define DEFINE_FUNCTION_RAW( function, func_type )			{ FIELD_VOID, nameHolder.GenerateName(#function), { NULL, NULL }, 1, FTYPEDESC_FUNCTIONTABLE, NULL, NULL, (inputfunc_t)((func_type)(&classNameTypedef::function)) }
@@ -523,6 +527,8 @@ inline void DataMapAccess(T *ignored, datamap_t **p)
 {
 	*p = &T::m_DataMap;
 }
+
+template <typename T> datamap_t* DataMapInit(T*);
 
 #include "tier0/memdbgon.h"
 

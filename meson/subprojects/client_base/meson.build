@@ -337,6 +337,7 @@ client_base_dep = declare_dependency(
 		#join_paths(client_src_dir,'recast','recast_debugdrawmesh.cpp'),
 		#join_paths(client_src_dir,'recast','recast_detourdebugdraw.cpp'),
 		#join_paths(client_src_dir,'recast','recast_recastdebugdraw.cpp'),
+		join_paths(client_src_dir,'mapbase','c_func_fake_worldportal.cpp'),
 		join_paths(client_game_ctrls_src_dir,'baseviewport.cpp'),
 		join_paths(client_game_ctrls_src_dir,'basemodelpanel_matsys.cpp'),
 		join_paths(client_game_ctrls_src_dir,'basemodelpanel_game.cpp'),

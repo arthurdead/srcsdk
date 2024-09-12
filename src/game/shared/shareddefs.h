@@ -233,7 +233,12 @@ enum CastVote
 #define bits_SUIT_DEVICE_FLASHLIGHT	0x00000002
 #define bits_SUIT_DEVICE_BREATHER	0x00000004
 
-#define MAX_SUIT_DEVICES			3
+// Custom suit power devices
+#define bits_SUIT_DEVICE_CUSTOM0	0x00000008
+#define bits_SUIT_DEVICE_CUSTOM1	0x00000010
+#define bits_SUIT_DEVICE_CUSTOM2	0x00000020
+
+#define MAX_SUIT_DEVICES			6		// Mapbase boosts this to 6 for the custom devices
 
 
 //===================================================================================================================
@@ -667,6 +672,7 @@ enum FireBulletsFlags_t
 	FIRE_BULLETS_NO_PIERCING_SPARK = 0x16,	// do a piercing spark effect when a bullet penetrates an alien
 	FIRE_BULLETS_HULL = 0x32,	// bullet trace is a hull rather than a line
 	FIRE_BULLETS_ANGULAR_SPREAD = 0x64,	// bullet spread is based on uniform random change to angles rather than gaussian search
+	FIRE_BULLETS_NO_AUTO_GIB_TYPE = 0x10,		// Don't automatically add DMG_ALWAYSGIB or DMG_NEVERGIB if m_flDamage is set
 };
 
 
@@ -692,6 +698,8 @@ struct FireBulletsInfo_t
 #endif
 		m_bPrimaryAttack = true;
 		m_bUseServerRandomSeed = false;
+
+		m_pIgnoreEntList = NULL;
 	}
 
 	FireBulletsInfo_t( int nShots, const Vector &vecSrc, const Vector &vecDir, const Vector &vecSpread, float flDistance, int nAmmoType, bool bPrimaryAttack = true )
@@ -711,7 +719,11 @@ struct FireBulletsInfo_t
 		m_flDamageForceScale = 1.0f;
 		m_bPrimaryAttack = bPrimaryAttack;
 		m_bUseServerRandomSeed = false;
+
+		m_pIgnoreEntList = NULL;
 	}
+
+	~FireBulletsInfo_t() {}
 
 	int m_iShots;
 	Vector m_vecSrc;
@@ -728,6 +740,46 @@ struct FireBulletsInfo_t
 	CBaseEntity *m_pAdditionalIgnoreEnt;
 	bool m_bPrimaryAttack;
 	bool m_bUseServerRandomSeed;
+
+	// This variable is like m_pAdditionalIgnoreEnt, but it's a list of entities instead of just one.
+	// Since func_tanks already use m_pAdditionalIgnoreEnt for parents, they needed another way to stop hitting their controllers.
+	// After much trial and error, I decided to just add more excluded entities to the bullet firing info.
+	// It could've just been a single entity called "m_pAdditionalIgnoreEnt2", but since these are just pointers,
+	// I planned ahead and made it a CUtlVector instead.
+	CUtlVector<CBaseEntity*> *m_pIgnoreEntList;
+
+	int GetShots() { return m_iShots; }
+	void SetShots( int value ) { m_iShots = value; }
+
+	Vector GetSource() { return m_vecSrc; }
+	void SetSource( Vector value ) { m_vecSrc = value; }
+	Vector GetDirShooting() { return m_vecDirShooting; }
+	void SetDirShooting( Vector value ) { m_vecDirShooting = value; }
+	Vector GetSpread() { return m_vecSpread; }
+	void SetSpread( Vector value ) { m_vecSpread = value; }
+
+	float GetDistance() { return m_flDistance; }
+	void SetDistance( float value ) { m_flDistance = value; }
+
+	int GetAmmoType() { return m_iAmmoType; }
+	void SetAmmoType( int value ) { m_iAmmoType = value; }
+
+	int GetTracerFreq() { return m_iTracerFreq; }
+	void SetTracerFreq( int value ) { m_iTracerFreq = value; }
+
+	float GetDamage() { return m_flDamage; }
+	void SetDamage( float value ) { m_flDamage = value; }
+	int GetPlayerDamage() { return m_flPlayerDamage; }
+	void SetPlayerDamage( float value ) { m_flPlayerDamage = value; }
+
+	int GetFlags() { return m_nFlags; }
+	void SetFlags( float value ) { m_nFlags = value; }
+
+	float GetDamageForceScale() { return m_flDamageForceScale; }
+	void SetDamageForceScale( float value ) { m_flDamageForceScale = value; }
+
+	bool GetPrimaryAttack() { return m_bPrimaryAttack; }
+	void SetPrimaryAttack( bool value ) { m_bPrimaryAttack = value; }
 };
 
 //-----------------------------------------------------------------------------
@@ -903,6 +955,9 @@ enum
 
 enum
 {
+	CLASS_ANY = -2,
+	CLASS_INVALID = -1,
+
 	CLASS_NONE = 0,
 	CLASS_PLAYER,
 
@@ -917,6 +972,9 @@ typedef int Class_T;
 // Factions
 enum
 {
+	FACTION_ANY = -2,
+	FACTION_INVALID = -1,
+
 	FACTION_NONE = 0, // Not assigned a faction.  Entities not assigned a faction will not do faction tests.
 
 	NUM_SHARED_FACTIONS,
@@ -1019,5 +1077,34 @@ enum
 	MAX_SUPPORTED_VISION_FILTERS = 32
 };
 #endif
+
+enum tprbGameInfo_e
+{
+	// Teamplay Roundbased Game rules shared
+	TPRBGAMEINFO_GAMESTATE = 1,					//gets the state of the current game (waiting for players, setup, active, overtime, stalemate, roundreset)
+	TPRBGAMEINFO_RESERVED1,
+	TPRBGAMEINFO_RESERVED2,
+	TPRBGAMEINFO_RESERVED3,
+	TPRBGAMEINFO_RESERVED4,
+	TPRBGAMEINFO_RESERVED5,
+	TPRBGAMEINFO_RESERVED6,
+	TPRBGAMEINFO_RESERVED7,
+	TPRBGAMEINFO_RESERVED8,
+
+	TPRBGAMEINFO_LASTGAMEINFO,
+};
+// Mark it off so valvegame_plugin_def.h ignores it, if both headers are included in a plugin.
+#define TPRBGAMEINFO_x 1
+
+//Tony; (t)eam(p)lay(r)ound(b)ased gamerules -- Game Info values
+#define TPRB_STATE_WAITING				(1<<0)
+#define TPRB_STATE_SETUP				(1<<1)
+#define TPRB_STATE_ACTIVE				(1<<2)
+#define TPRB_STATE_ROUNDWON				(1<<3)
+#define TPRB_STATE_OVERTIME				(1<<4)
+#define TPRB_STATE_STALEMATE			(1<<5)
+#define TPRB_STATE_ROUNDRESET			(1<<6)
+#define TPRB_STATE_WAITINGREADYSTART	(1<<7)
+
 
 #endif // SHAREDDEFS_H

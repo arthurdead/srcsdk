@@ -101,6 +101,8 @@ CEnvWindShared::CEnvWindShared() : m_WindAveQueue(10), m_WindVariationQueue(10)
 {
 	m_pWindSound = NULL;
 	s_windControllers.AddToTail( this );
+	m_windRadius = -1.0f;
+	m_flTreeSwayScale = 1.0f;
 }
 
 CEnvWindShared::~CEnvWindShared()
@@ -127,6 +129,9 @@ void CEnvWindShared::Init( int nEntIndex, int iRandomSeed, float flTime,
 	m_iInitialWindDir = (int)( anglemod( m_iInitialWindDir ) );
 
 	m_flAveWindSpeed = m_flWindSpeed = m_flInitialWindSpeed = flInitialWindSpeed;
+
+	if (m_windRadiusInner == 0.0f)
+		m_windRadiusInner = m_windRadius;
 
 	/*
 	// Cache in the wind sound...
@@ -175,7 +180,7 @@ void CEnvWindShared::UpdateTreeSway( float flTime )
 	{
 		// Since the wind is constantly changing, but we need smooth values, we cache them off here.
 		m_PrevSwayVector = m_CurrentSwayVector;
-		m_CurrentSwayVector = m_currentWindVector;
+		m_CurrentSwayVector = m_flTreeSwayScale != 1.0f ? (m_currentWindVector * m_flTreeSwayScale) : m_currentWindVector;
 		m_flSwayTime += TREE_SWAY_UPDATE_TIME;
 	}
 
@@ -227,8 +232,13 @@ float CEnvWindShared::WindThink( float flTime )
 
 	ComputeWindVariation( flTime );
 
-	// Update Tree Sway
-	UpdateTreeSway( flTime );
+#if defined(CLIENT_DLL)
+	if (m_flTreeSwayScale != 0.0f)
+	{
+		// Update Tree Sway
+		UpdateTreeSway( flTime );
+	}
+#endif
 
 	while (true)
 	{
@@ -366,21 +376,4 @@ Vector GetWindspeedAtLocation( const Vector &location )
 	}
 
 	return Vector(0,0,0);// No wind
-}
-
-//-----------------------------------------------------------------------------
-// Method to sample the windspeed at a particular time
-//-----------------------------------------------------------------------------
-void GetWindspeedAtTime( float flTime, Vector &vecVelocity )
-{
-	// For now, ignore history and time.. fix later when we use wind to affect
-	// client-side prediction
-	if ( s_windControllers.Count() == 0 )
-	{
-		vecVelocity.Init( 0, 0, 0 );
-	}
-	else
-	{
-		VectorCopy( s_windControllers[ s_windControllers.Head() ]->m_currentWindVector, vecVelocity );
-	}
 }

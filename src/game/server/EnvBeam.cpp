@@ -48,6 +48,9 @@ public:
 	void InputTurnOff( inputdata_t &inputdata );
 	void InputToggle( inputdata_t &inputdata );
 	void InputStrikeOnce( inputdata_t &inputdata );
+	void InputAmplitude( inputdata_t &inputdata );
+	void InputSetStartEntity( inputdata_t &inputdata ) { m_iszStartEntity = inputdata.value.StringID(); BeamUpdateVars(); }
+	void InputSetEndEntity( inputdata_t &inputdata ) { m_iszEndEntity = inputdata.value.StringID(); BeamUpdateVars(); }
 
 	void TurnOn( void );
 	void TurnOff( void );
@@ -129,6 +132,9 @@ BEGIN_MAPENTITY( CEnvBeam )
 	DEFINE_INPUTFUNC( FIELD_VOID, "TurnOff", InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "StrikeOnce", InputStrikeOnce ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "Amplitude", InputAmplitude ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetStartEntity", InputSetStartEntity ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetEndEntity", InputSetEndEntity ),
 
 	DEFINE_OUTPUT( m_OnTouchedByEntity, "OnTouchedByEntity" ),
 
@@ -303,6 +309,13 @@ void CEnvBeam::InputStrikeOnce( inputdata_t &inputdata )
 	Strike();
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Input handler for amplitude
+//-----------------------------------------------------------------------------
+void CEnvBeam::InputAmplitude( inputdata_t &inputdata )
+{
+	m_noiseAmplitude = inputdata.value.Float();
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Turns the lightning on. If it is set for interval refiring, it will
@@ -420,26 +433,39 @@ void CEnvBeam::Strike( void )
 	{
 		if ( m_spawnflags & SF_BEAM_RING )
 		{
-			// don't work
-			return;
+			te->BeamRing( filter, 0.0,
+				pointStart ? 0 : pStart->entindex(),
+				pointEnd ? 0 : pEnd->entindex(),
+				m_spriteTexture, 
+				0,	// No halo
+				m_frameStart,
+				(int)m_flFrameRate,
+				m_life,
+				m_boltWidth,
+				0,	// No spread
+				m_noiseAmplitude,
+				GetRenderColorR(),	GetRenderColorG(),	GetRenderColorB(),	GetRenderAlpha(),
+				m_speed );
 		}
-
-		te->BeamEntPoint( filter, 0.0,
-			pointStart ? 0 : pStart->entindex(),
-			pointStart ? &pStart->GetAbsOrigin() : NULL,
-			pointEnd ? 0 : pEnd->entindex(),
-			pointEnd ? &vEndPointLocation : NULL,
-			m_spriteTexture,
-			0,	// No halo
-			m_frameStart,
-			(int)m_flFrameRate,
-			m_life,
-			m_boltWidth,
-			m_boltWidth,	// End width
-			0,				// No fade
-			m_noiseAmplitude,
-			GetRenderColorR(),	GetRenderColorG(),	GetRenderColorB(),	GetRenderAlpha(),
-			m_speed );
+		else
+		{
+			te->BeamEntPoint( filter, 0.0,
+				pointStart ? 0 : pStart->entindex(),
+				pointStart ? &pStart->GetAbsOrigin() : NULL,
+				pointEnd ? 0 : pEnd->entindex(),
+				pointEnd ? &vEndPointLocation : NULL,
+				m_spriteTexture,
+				0,	// No halo
+				m_frameStart,
+				(int)m_flFrameRate,
+				m_life,
+				m_boltWidth,
+				m_boltWidth,	// End width
+				0,				// No fade
+				m_noiseAmplitude,
+				GetRenderColorR(),	GetRenderColorG(),	GetRenderColorB(),	GetRenderAlpha(),
+				m_speed );
+		}
 	}
 	else
 	{

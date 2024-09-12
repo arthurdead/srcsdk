@@ -158,6 +158,7 @@ private:
 	// Input handlers
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
+	void InputSatisfyConditions( inputdata_t &inputdata );
 
 	// Output handlers
 	COutputEvent	m_OnConditionsSatisfied;

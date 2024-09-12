@@ -187,11 +187,13 @@ void CBaseCombatWeapon::Spawn( void )
 	// Assume 
 	m_nViewModelIndex = 0;
 
-	GiveDefaultAmmo();
+	// Don't reset to default ammo if we're supposed to use the keyvalue
+	if (!HasSpawnFlags( SF_WEAPON_PRESERVE_AMMO ))
+		GiveDefaultAmmo();
 
 	if ( GetWorldModel() )
 	{
-		SetModel( GetWorldModel() );
+		SetModel( (GetDroppedModel() && GetDroppedModel()[0]) ? GetDroppedModel() : GetWorldModel() );
 	}
 
 #if !defined( CLIENT_DLL )
@@ -240,14 +242,16 @@ const unsigned char *CBaseCombatWeapon::GetEncryptionKey( void )
 void CBaseCombatWeapon::Precache( void )
 {
 #if defined( CLIENT_DLL )
-	Assert( Q_strlen( GetClassname() ) > 0 );
+	Assert( Q_strlen( GetWeaponScriptName() ) > 0 );
 	// Msg( "Client got %s\n", GetClassname() );
 #endif
 	m_iPrimaryAmmoType = m_iSecondaryAmmoType = -1;
 
 	// Add this weapon to the weapon registry, and get our index into it
 	// Get weapon data from script file
-	if ( ReadWeaponDataFromFileForSlot( filesystem, GetClassname(), &m_hWeaponFileInfo, GetEncryptionKey() ) )
+	// Allow custom scripts to be loaded on a map-by-map basis
+	if ( ReadCustomWeaponDataFromFileForSlot( filesystem, GetWeaponScriptName(), &m_hWeaponFileInfo, GetEncryptionKey() ) || 
+		ReadWeaponDataFromFileForSlot( filesystem, GetWeaponScriptName(), &m_hWeaponFileInfo, GetEncryptionKey() ) )
 	{
 		// Get the ammo indexes for the ammo's specified in the data file
 		if ( GetWpnData().szAmmo1[0] )
@@ -282,6 +286,17 @@ void CBaseCombatWeapon::Precache( void )
 			m_iWorldModelIndex = CBaseEntity::PrecacheModel( GetWorldModel() );
 		}
 
+		m_iDroppedModelIndex = 0;
+		if ( GetDroppedModel() && GetDroppedModel()[0] )
+		{
+			m_iDroppedModelIndex = CBaseEntity::PrecacheModel( GetDroppedModel() );
+		}
+		else
+		{
+			// Use the world model index
+			m_iDroppedModelIndex = m_iWorldModelIndex;
+		}
+
 		// Precache sounds, too
 		for ( int i = 0; i < NUM_SHOOT_SOUND_TYPES; ++i )
 		{
@@ -295,7 +310,7 @@ void CBaseCombatWeapon::Precache( void )
 	else
 	{
 		// Couldn't read data file, remove myself
-		Warning( "Error reading weapon data file for: %s\n", GetClassname() );
+		Warning( "Error reading weapon data file for: %s\n", GetWeaponScriptName() );
 	//	Remove( );	//don't remove, this gets released soon!
 	}
 
@@ -307,6 +322,62 @@ void CBaseCombatWeapon::Precache( void )
 
 	PrecacheEffect( "ParticleTracer" );
 	PrecacheParticleSystem( "weapon_tracers" );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Sets ammo based on mapper value
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::SetAmmoFromMapper( float flAmmo, bool bSecondary )
+{
+	int iFinalAmmo;
+	if (flAmmo > 0.0f && flAmmo < 1.0f)
+	{
+		// Ratio from max ammo
+		iFinalAmmo = ((float)(!bSecondary ? GetMaxClip1() : GetMaxClip2()) * flAmmo);
+	}
+	else
+	{
+		// Actual ammo value
+		iFinalAmmo = (int)flAmmo;
+	}
+
+	!bSecondary ?
+		m_iClip1 = iFinalAmmo :
+		m_iClip2 = iFinalAmmo;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+bool CBaseCombatWeapon::KeyValue( const char *szKeyName, const char *szValue )
+{
+	if ( FStrEq(szKeyName, "SetAmmo1") )
+	{
+		SetAmmoFromMapper(atof(szValue));
+	}
+	if ( FStrEq(szKeyName, "SetAmmo2") )
+	{
+		SetAmmoFromMapper(atof(szValue), true);
+	}
+	else if ( FStrEq(szKeyName, "spawnflags") )
+	{
+		SetSpawnFlags( atoi(szValue) );
+#ifndef CLIENT_DLL
+		// Some spawnflags have to be on the client right now
+		if (GetSpawnFlags() != 0)
+			DispatchUpdateTransmitState();
+#endif
+	}
+	else
+		return BaseClass::KeyValue( szKeyName, szValue );
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+bool CBaseCombatWeapon::GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen )
+{
+	return BaseClass::GetKeyValue(szKeyName, szValue, iMaxLen);
 }
 
 //-----------------------------------------------------------------------------
@@ -393,6 +464,36 @@ bool CBaseCombatWeapon::UsesClipsForAmmo1( void ) const
 bool CBaseCombatWeapon::IsMeleeWeapon() const
 {
 	return GetWpnData().m_bMeleeWeapon;
+}
+
+float CBaseCombatWeapon::GetViewmodelFOVOverride() const
+{
+	return GetWpnData().m_flViewmodelFOV;
+}
+
+float CBaseCombatWeapon::GetBobScale() const
+{
+	return GetWpnData().m_flBobScale;
+}
+
+float CBaseCombatWeapon::GetSwayScale() const
+{
+	return GetWpnData().m_flSwayScale;
+}
+
+float CBaseCombatWeapon::GetSwaySpeedScale() const
+{
+	return GetWpnData().m_flSwaySpeedScale;
+}
+
+const char *CBaseCombatWeapon::GetDroppedModel() const
+{
+	return GetWpnData().szDroppedModel;
+}
+
+bool CBaseCombatWeapon::UsesHands() const
+{
+	return GetWpnData().m_bUsesHands;
 }
 
 //-----------------------------------------------------------------------------
@@ -705,6 +806,10 @@ void CBaseCombatWeapon::Drop( const Vector &vecVelocity )
 	SetOwnerEntity( NULL );
 	SetOwner( NULL );
 
+	m_bInReload = false;
+
+	m_OnDropped.FireOutput(pOwner, this);
+
 	// If we're not allowing to spawn due to the gamerules,
 	// remove myself when I'm dropped by an NPC.
 	if ( pOwner && pOwner->IsNPC() )
@@ -750,7 +855,9 @@ void CBaseCombatWeapon::OnPickedUp( CBaseCombatCharacter *pNewOwner )
 		// Robin: We don't want to delete weapons the player has picked up, so 
 		// clear the name of the weapon. This prevents wildcards that are meant 
 		// to find NPCs finding weapons dropped by the NPCs as well.
-		SetName( NULL_STRING );
+		// Level designers might want some weapons to preserve their original names, however.
+		if ( !HasSpawnFlags(SF_WEAPON_PRESERVE_NAME) )
+			SetName( NULL_STRING );
 	}
 	else
 	{
@@ -962,6 +1069,63 @@ void CBaseCombatWeapon::SetPickupTouch( void )
 #endif
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+WeaponClass_t CBaseCombatWeapon::WeaponClassify()
+{
+	return WEPCLASS_INVALID;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+WeaponClass_t CBaseCombatWeapon::WeaponClassFromString(const char *str)
+{
+	if (FStrEq(str, "WEPCLASS_HANDGUN"))
+		return WEPCLASS_HANDGUN;
+	else if (FStrEq(str, "WEPCLASS_RIFLE"))
+		return WEPCLASS_RIFLE;
+	else if (FStrEq(str, "WEPCLASS_SHOTGUN"))
+		return WEPCLASS_SHOTGUN;
+	else if (FStrEq(str, "WEPCLASS_HEAY"))
+		return WEPCLASS_HEAVY;
+
+	else if (FStrEq(str, "WEPCLASS_MELEE"))
+		return WEPCLASS_MELEE;
+
+	return WEPCLASS_INVALID;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool CBaseCombatWeapon::SupportsBackupActivity(Activity activity)
+{
+	// Derived classes should override this.
+
+	return true;
+}
+
+acttable_t *CBaseCombatWeapon::GetBackupActivityList()
+{
+	return NULL;
+}
+
+int CBaseCombatWeapon::GetBackupActivityListCount()
+{
+	return 0;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+acttable_t *CBaseCombatWeapon::GetDefaultBackupActivityList( acttable_t *pTable, int &actCount )
+{
+
+	actCount = 0;
+	return NULL;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Become a child of the owner (MOVETYPE_FOLLOW)
@@ -989,6 +1153,9 @@ void CBaseCombatWeapon::Equip( CBaseCombatCharacter *pOwner )
 	}
 #endif
 
+	// Ammo may be overridden to 0, in which case we shouldn't autoswitch
+	if (m_iClip1 <= 0 && m_iClip2 <= 0)
+		AddSpawnFlags(SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY);
 
 	m_flNextPrimaryAttack		= gpGlobals->curtime;
 	m_flNextSecondaryAttack		= gpGlobals->curtime;
@@ -1355,7 +1522,8 @@ bool CBaseCombatWeapon::ReloadOrSwitchWeapons( void )
 	if ( !HasAnyAmmo() && m_flNextPrimaryAttack < gpGlobals->curtime && m_flNextSecondaryAttack < gpGlobals->curtime )
 	{
 		// weapon isn't useable, switch.
-		if ( ( (GetWeaponFlags() & ITEM_FLAG_NOAUTOSWITCHEMPTY) == false ) && ( GameRules()->SwitchToNextBestWeapon( pOwner, this ) ) )
+		// Ammo might be overridden to 0, in which case we shouldn't do this
+		if ( ( (GetWeaponFlags() & ITEM_FLAG_NOAUTOSWITCHEMPTY) == false ) && !HasSpawnFlags(SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY) && ( GameRules()->SwitchToNextBestWeapon( pOwner, this ) ) )
 		{
 			m_flNextPrimaryAttack = gpGlobals->curtime + 0.3;
 			return true;
@@ -1506,6 +1674,9 @@ bool CBaseCombatWeapon::Holster( CBaseCombatWeapon *pSwitchingTo )
 			RescindReloadHudHint();
 	}
 
+	if (HasSpawnFlags(SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY))
+		RemoveSpawnFlags(SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY);
+
 	// reset pose parameters
 	PoseParameterOverride( true );
 
@@ -1650,7 +1821,12 @@ void CBaseCombatWeapon::ItemPostFrame( void )
 	// Secondary attack has priority
 	if ((pOwner->m_nButtons & IN_ATTACK2) && CanPerformSecondaryAttack() )
 	{
-		if (UsesSecondaryAmmo() && pOwner->GetAmmoCount(m_iSecondaryAmmoType)<=0 )
+		if (pOwner->HasSpawnFlags(SF_PLAYER_SUPPRESS_FIRING))
+		{
+			// Don't do anything, just cancel the whole function
+			return;
+		}
+		else if (UsesSecondaryAmmo() && pOwner->GetAmmoCount(m_iSecondaryAmmoType)<=0 )
 		{
 			if (m_flNextEmptySoundTime < gpGlobals->curtime)
 			{
@@ -1686,8 +1862,13 @@ void CBaseCombatWeapon::ItemPostFrame( void )
 	
 	if ( !bFired && (pOwner->m_nButtons & IN_ATTACK) && (m_flNextPrimaryAttack <= gpGlobals->curtime))
 	{
+		if (pOwner->HasSpawnFlags( SF_PLAYER_SUPPRESS_FIRING ))
+		{
+			// Don't do anything, just cancel the whole function
+			return;
+		}
 		// Clip empty? Or out of ammo on a no-clip weapon?
-		if ( !IsMeleeWeapon() &&  
+		else if ( !IsMeleeWeapon() &&  
 			(( UsesClipsForAmmo1() && m_iClip1 <= 0) || ( !UsesClipsForAmmo1() && pOwner->GetAmmoCount(m_iPrimaryAmmoType)<=0 )) )
 		{
 			HandleFireOnEmpty();
@@ -1994,6 +2175,26 @@ bool CBaseCombatWeapon::ReloadsSingly( void ) const
 bool CBaseCombatWeapon::Reload( void )
 {
 	return DefaultReload( GetMaxClip1(), GetMaxClip2(), ACT_VM_RELOAD );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::Reload_NPC( bool bPlaySound )
+{
+	if (bPlaySound)
+		WeaponSound( RELOAD_NPC );
+
+	if (UsesClipsForAmmo1())
+	{
+		m_iClip1 = GetMaxClip1();
+	}
+	else
+	{
+		// For weapons which don't use clips, give the owner ammo.
+		if (GetOwner())
+			GetOwner()->SetAmmoCount( GetDefaultClip1(), m_iPrimaryAmmoType );
+	}
 }
 
 //=========================================================
@@ -2440,6 +2641,11 @@ bool CBaseCombatWeapon::IsLocked( CBaseEntity *pAsker )
 	return ( m_flUnlockTime > gpGlobals->curtime && m_hLocker != pAsker );
 }
 
+bool CBaseCombatWeapon::CanBePickedUpByNPCs(void)
+{
+	return GetWpnData().m_nWeaponRestriction != WPNRESTRICT_PLAYER_ONLY;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose:
 // Input  :
@@ -2677,11 +2883,23 @@ BEGIN_MAPENTITY( CBaseCombatWeapon )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "HideWeapon", InputHideWeapon ),
 
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAmmo1", InputSetAmmo1 ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetAmmo2", InputSetAmmo2 ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "GiveDefaultAmmo", InputGiveDefaultAmmo ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "EnablePlayerPickup", InputEnablePlayerPickup ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "DisablePlayerPickup", InputDisablePlayerPickup ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "EnableNPCPickup", InputEnableNPCPickup ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "DisableNPCPickup", InputDisableNPCPickup ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "BreakConstraint", InputBreakConstraint ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "ForcePrimaryFire", InputForcePrimaryFire ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "ForceSecondaryFire", InputForceSecondaryFire ),
+
 	// Outputs
 	DEFINE_OUTPUT( m_OnPlayerUse, "OnPlayerUse"),
 	DEFINE_OUTPUT( m_OnPlayerPickup, "OnPlayerPickup"),
 	DEFINE_OUTPUT( m_OnNPCPickup, "OnNPCPickup"),
 	DEFINE_OUTPUT( m_OnCacheInteraction, "OnCacheInteraction" ),
+	DEFINE_OUTPUT( m_OnDropped, "OnDropped" ),
 
 END_MAPENTITY()
 
@@ -2726,6 +2944,14 @@ void* SendProxy_SendLocalWeaponDataTable( const SendProp *pProp, const void *pSt
 		if ( pPlayer )
 		{
 			pRecipients->SetOnly( pPlayer->GetClientIndex() );
+			return (void*)pVarData;
+		}
+		else if (pWeapon->HasSpawnFlags( SF_WEAPON_PRESERVE_AMMO ))
+		{
+			// Ammo values are sent to the client using this proxy.
+			// Preserved ammo values from the server need to be sent to the client ASAP to avoid HUD issues, etc.
+			// I've tried many nasty hacks, but this is the one that works well enough and there's not much else we could do.
+			pRecipients->SetAllRecipients();
 			return (void*)pVarData;
 		}
 	}
@@ -2825,6 +3051,7 @@ BEGIN_NETWORK_TABLE(CBaseCombatWeapon, DT_BaseCombatWeapon)
 	SendPropDataTable("LocalActiveWeaponData", 0, &REFERENCE_SEND_TABLE(DT_LocalActiveWeaponData), SendProxy_SendActiveLocalWeaponDataTable ),
 	SendPropModelIndex( SENDINFO(m_iViewModelIndex) ),
 	SendPropModelIndex( SENDINFO(m_iWorldModelIndex) ),
+	SendPropModelIndex( SENDINFO(m_iDroppedModelIndex) ),
 	SendPropInt( SENDINFO(m_iState ), 8, SPROP_UNSIGNED ),
 	SendPropEHandle( SENDINFO(m_hOwner) ),
 #else
@@ -2832,6 +3059,7 @@ BEGIN_NETWORK_TABLE(CBaseCombatWeapon, DT_BaseCombatWeapon)
 	RecvPropDataTable("LocalActiveWeaponData", 0, 0, &REFERENCE_RECV_TABLE(DT_LocalActiveWeaponData)),
 	RecvPropInt( RECVINFO(m_iViewModelIndex)),
 	RecvPropInt( RECVINFO(m_iWorldModelIndex)),
+	RecvPropInt( RECVINFO(m_iDroppedModelIndex) ),
 	RecvPropInt( RECVINFO(m_iState), 0, &CBaseCombatWeapon::RecvProxy_WeaponState ),
 	RecvPropEHandle( RECVINFO(m_hOwner ) ),
 #endif

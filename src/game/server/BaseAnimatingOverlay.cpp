@@ -573,6 +573,16 @@ float CBaseAnimatingOverlay::GetLayerDuration( int iLayer )
 	return 0.0;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool CBaseAnimatingOverlay::IsLayerFinished( int iLayer )
+{
+	if (!IsValidLayer( iLayer ))
+		return true;
+
+	return m_AnimOverlay[iLayer].m_bSequenceFinished;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 

@@ -20,6 +20,8 @@ public:
 
 	void Spawn() override
 	{
+		Precache();
+
 		BaseClass::Spawn();
 
 		SetModel("models/dog.mdl");
@@ -42,6 +44,8 @@ public:
 
 	void Spawn() override
 	{
+		Precache();
+
 		BaseClass::Spawn();
 
 		SetModel("models/alyx.mdl");

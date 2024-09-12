@@ -241,6 +241,8 @@ public:
 	void	SetLayerLooping( int iLayer, bool bLooping );
 	void	SetLayerNoEvents( int iLayer, bool bNoEvents );
 
+	bool	IsLayerFinished( int iLayer );
+
 	Activity	GetLayerActivity( int iLayer );
 	int			GetLayerSequence( int iLayer );
 

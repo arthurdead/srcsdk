@@ -1464,7 +1464,12 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 #endif
 
 	case TASK_STOP_MOVING:
-		if ( ( GetNavigator()->IsGoalSet() && GetNavigator()->IsGoalActive() ) || GetNavType() == NAV_JUMP )
+		if ( GetNavType() == NAV_CLIMB )
+		{
+			// Don't clear the goal so that the climb can finish
+			DbgNavMsg( this, "Start TASK_STOP_MOVING with climb workaround\n" );
+		}
+		else if ( ( GetNavigator()->IsGoalSet() && GetNavigator()->IsGoalActive() ) || GetNavType() == NAV_JUMP )
 		{
 			DbgNavMsg( this, "Start TASK_STOP_MOVING\n" );
 			if ( pTask->flTaskData == 1 )
@@ -1711,6 +1716,43 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 	case TASK_FACE_PLAYER:
 		// track head to the client for a while.
 		SetWait( pTask->flTaskData );
+		break;
+
+	case TASK_FACE_INTERACTION_ANGLES:
+		{
+			if ( !m_hForcedInteractionPartner )
+			{
+				TaskFail( FAIL_NO_TARGET );
+				return;
+			}
+
+			// Get our running interaction from our partner,
+			// as this should only run with the NPC "receiving" the interaction
+			ScriptedNPCInteraction_t *pInteraction = m_hForcedInteractionPartner->GetRunningDynamicInteraction();
+
+			if ( !(pInteraction->iFlags & SCNPC_FLAG_TEST_OTHER_ANGLES) )
+			{
+				TaskComplete();
+				return;
+			}
+
+			// Get our target's origin
+			Vector vecTarget = m_hForcedInteractionPartner->GetAbsOrigin();
+
+			// Face the angles the interaction actually wants us at, opposite to the partner
+			float angInteractionAngle = pInteraction->angRelativeAngles.y;
+			angInteractionAngle += 180.0f;
+
+			GetMotor()->SetIdealYaw( AngleNormalize( CalcIdealYaw( vecTarget ) + angInteractionAngle ) );
+
+			if (FacingIdeal())
+				TaskComplete();
+			else
+			{
+				GetMotor()->SetIdealYaw( CalcReasonableFacing( true ) );
+				SetTurnActivity();
+			}
+		}
 		break;
 
 	case TASK_FACE_ENEMY:
@@ -2958,7 +3000,11 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 
 			string_t iszArrivalText;
 
-			if ( m_hCine->m_iszEntry != NULL_STRING )
+			if ( m_hCine->m_iszPreIdle != NULL_STRING )
+			{
+				iszArrivalText = m_hCine->m_iszPreIdle;
+			}
+			else if ( m_hCine->m_iszEntry != NULL_STRING )
 			{
 				iszArrivalText = m_hCine->m_iszEntry;
 			}
@@ -3048,6 +3094,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			//
 			if ( m_hCine->m_iszPreIdle != NULL_STRING )
 			{
+				m_hCine->OnPreIdleSequence( this );
 				m_hCine->StartSequence( ( CAI_BaseNPC * )this, m_hCine->m_iszPreIdle, false );
 				if ( FStrEq( STRING( m_hCine->m_iszPreIdle ), STRING( m_hCine->m_iszPlay ) ) )
 				{
@@ -3160,7 +3207,14 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 
 	case TASK_ITEM_PICKUP:
 		{
-			SetIdealActivity( ACT_PICKUP_GROUND );
+			if (GetTarget() && fabs( GetTarget()->WorldSpaceCenter().z - GetAbsOrigin().z ) >= 12.0f)
+			{
+				SetIdealActivity( ACT_PICKUP_RACK );
+			}
+			else
+			{
+				SetIdealActivity( ACT_PICKUP_GROUND );
+			}
 		}
 		break;
 
@@ -3509,6 +3563,34 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 				// 						  a navigation while in the middle of a climb
 				if (GetNavType() == NAV_CLIMB)
 				{
+					if (GetActivity() != ACT_CLIMB_DISMOUNT)
+					{
+						// Try to just pause the climb, but dismount if we're in SCHED_FAIL
+						if (IsCurSchedule( SCHED_FAIL, false ))
+						{
+							GetMotor()->MoveClimbStop();
+						}
+						else
+						{
+							GetMotor()->MoveClimbPause();
+						}
+
+						TaskComplete();
+					}
+					else if (IsActivityFinished())
+					{
+						// Dismount complete.
+						GetMotor()->MoveClimbStop();
+
+						// Fix up our position if we have to
+						Vector vecTeleportOrigin;
+						if (GetMotor()->MoveClimbShouldTeleportToSequenceEnd( vecTeleportOrigin ))
+						{
+							SetLocalOrigin( vecTeleportOrigin );
+						}
+
+						TaskComplete();
+					}
 					// wait until you reach the end
 					break;
 				}
@@ -3592,6 +3674,34 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 			else
 			{
 				TaskFail(FAIL_NO_PLAYER);
+			}
+		}
+		break;
+
+	case TASK_FACE_INTERACTION_ANGLES:
+		{
+			if ( !m_hForcedInteractionPartner )
+			{
+				TaskFail( FAIL_NO_TARGET );
+				return;
+			}
+
+			// Get our running interaction from our partner,
+			// as this should only run with the NPC "receiving" the interaction
+			ScriptedNPCInteraction_t *pInteraction = m_hForcedInteractionPartner->GetRunningDynamicInteraction();
+
+			// Get our target's origin
+			Vector vecTarget = m_hForcedInteractionPartner->GetAbsOrigin();
+
+			// Face the angles the interaction actually wants us at, opposite to the partner
+			float angInteractionAngle = pInteraction->angRelativeAngles.y;
+			angInteractionAngle += 180.0f;
+
+			GetMotor()->SetIdealYawAndUpdate( CalcIdealYaw( vecTarget ) + angInteractionAngle, AI_KEEP_YAW_SPEED );
+
+			if (IsWaitFinished())
+			{
+				TaskComplete();
 			}
 		}
 		break;
@@ -4117,15 +4227,17 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 			if ( m_hCine && m_hCine->IsTimeToStart() )
 			{
 				TaskComplete();
-				m_hCine->OnBeginSequence();
+				m_hCine->OnBeginSequence(this);
 
 				// If we have an entry, we have to play it first
 				if ( m_hCine->m_iszEntry != NULL_STRING )
 				{
+					m_hCine->OnEntrySequence( this );
 					m_hCine->StartSequence( (CAI_BaseNPC *)this, m_hCine->m_iszEntry, true );
 				}
 				else
 				{
+					m_hCine->OnActionSequence( this );
 					m_hCine->StartSequence( (CAI_BaseNPC *)this, m_hCine->m_iszPlay, true );
 				}
 
@@ -4189,6 +4301,14 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 					m_hCine->SynchronizeSequence( this );
 				}
 			}
+
+			if ( IsRunningDynamicInteraction() && m_poseInteractionRelativeYaw > -1 )
+			{
+				// Animations in progress require pose parameters to be set every frame, so keep setting the interaction relative yaw pose.
+				// The random value is added to help it pass server transmit checks.
+				SetPoseParameter( m_poseInteractionRelativeYaw, GetPoseParameter( m_poseInteractionRelativeYaw ) + RandomFloat( -0.1f, 0.1f ) );
+			}
+
 			break;
 		}
 
@@ -4412,15 +4532,13 @@ void CAI_BaseNPC::SetTurnActivity ( void )
 	float flYD;
 	flYD = GetMotor()->DeltaIdealYaw();
 
-	// FIXME: unknown case, update yaw should catch these
-	/*
+	// Allow AddTurnGesture() to decide this
 	if (GetMotor()->AddTurnGesture( flYD ))
 	{
 		SetIdealActivity( ACT_IDLE );
 		Remember( bits_MEMORY_TURNING );
 		return;
 	}
-	*/
 
 	if( flYD <= -80 && flYD >= -100 && SelectWeightedSequence( ACT_90_RIGHT ) != ACTIVITY_NOT_AVAILABLE )
 	{

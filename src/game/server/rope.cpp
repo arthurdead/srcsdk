@@ -71,6 +71,13 @@ BEGIN_MAPENTITY( CRopeKeyframe )
 	DEFINE_INPUTFUNC( FIELD_VECTOR,	"SetForce",			InputSetForce ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"Break",			InputBreak ),
 
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetSlack", InputSetSlack ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetWidth", InputSetWidth ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetSubdivision", InputSetSubdivision ),
+
+	// Outputs
+	DEFINE_OUTPUT( m_OnBreak, "OnBreak" ),
+
 END_MAPENTITY()
 
 
@@ -368,7 +375,7 @@ void CRopeKeyframe::Activate()
 	{
 		SetEndPoint( pEnt );
 
-		if( m_spawnflags & SF_ROPE_RESIZE )
+		if( HasSpawnFlags( SF_ROPE_RESIZE ) )
 			m_RopeFlags |= ROPE_RESIZE;
 	}
 	else
@@ -571,16 +578,61 @@ void CRopeKeyframe::InputSetForce( inputdata_t &inputdata )
 void CRopeKeyframe::InputBreak( inputdata_t &inputdata )
 {
 	//Route through the damage code
-	Break();
+	Break(inputdata.pActivator);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Sets the slack
+// Input  : &inputdata - 
+//-----------------------------------------------------------------------------
+void CRopeKeyframe::InputSetSlack( inputdata_t &inputdata )
+{
+	m_Slack = inputdata.value.Int();
+
+	// Must resize in order for changes to occur
+	m_RopeFlags |= ROPE_RESIZE;
+
+	if (!(m_RopeFlags & ROPE_USE_WIND))
+	{
+		Warning( "WARNING: SetSlack on %s may need wind enabled in order to function\n", GetDebugName() );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Sets the width
+// Input  : &inputdata - 
+//-----------------------------------------------------------------------------
+void CRopeKeyframe::InputSetWidth( inputdata_t &inputdata )
+{
+	m_Width = inputdata.value.Float();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Sets the subdivision
+// Input  : &inputdata - 
+//-----------------------------------------------------------------------------
+void CRopeKeyframe::InputSetSubdivision( inputdata_t &inputdata )
+{
+	m_Subdiv = inputdata.value.Int();
+
+	// Must resize in order for changes to occur
+	m_RopeFlags |= ROPE_RESIZE;
+
+	if (!(m_RopeFlags & ROPE_USE_WIND))
+	{
+		Warning( "WARNING: SetSubdivision on %s may need wind enabled in order to function\n", GetDebugName() );
+	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Breaks the rope
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CRopeKeyframe::Break( void )
+bool CRopeKeyframe::Break( CBaseEntity *pActivator )
 {
 	DetachPoint( 0 );
+
+	m_OnBreak.FireOutput(pActivator ? pActivator : this, this);
 
 	// Find whoever references us and detach us from them.
 	// UNDONE: PERFORMANCE: This is very slow!!!
@@ -640,7 +692,7 @@ int CRopeKeyframe::OnTakeDamage( const CTakeDamageInfo &info )
 	if( !(m_RopeFlags & ROPE_BREAKABLE) )
 		return false;
 
-	Break();
+	Break(info.GetAttacker());
 	return 0;
 }
 
@@ -732,15 +784,15 @@ bool CRopeKeyframe::KeyValue( const char *szKeyName, const char *szValue )
 		int iShader = atoi( szValue );
 		if ( iShader == 0 )
 		{
-			m_strRopeMaterialModel = MAKE_STRING( "cable/cable.vmt" );
+			m_strRopeMaterialModel = AllocPooledString( "cable/cable.vmt" );
 		}
 		else if ( iShader == 1 )
 		{
-			m_strRopeMaterialModel = MAKE_STRING( "cable/rope.vmt" );
+			m_strRopeMaterialModel = AllocPooledString( "cable/rope.vmt" );
 		}
 		else
 		{
-			m_strRopeMaterialModel = MAKE_STRING( "cable/chain.vmt" );
+			m_strRopeMaterialModel = AllocPooledString( "cable/chain.vmt" );
 		}
 		m_iRopeMaterialModelIndex = PrecacheModel( STRING( m_strRopeMaterialModel ) );
 	}

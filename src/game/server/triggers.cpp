@@ -100,6 +100,9 @@ BEGIN_MAPENTITY( CBaseTrigger )
 
 	DEFINE_KEYFIELD( m_bDisabled,		FIELD_BOOLEAN,	"StartDisabled" ),
 
+	DEFINE_KEYFIELD( m_flWait, FIELD_FLOAT, "wait" ),
+	DEFINE_KEYFIELD( m_sMaster, FIELD_STRING, "master" ),
+
 	// Inputs	
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -269,7 +272,7 @@ void CBaseTrigger::TouchTest( void )
 		if ( m_hTouchingEntities.Count() !=0 )
 		{
 			
-			m_OnTouching.FireOutput( this, this );
+			m_OnTouching.FireOutput( m_hTouchingEntities[0], this );
 		}
 		else
 		{
@@ -364,6 +367,8 @@ bool CBaseTrigger::PassesTriggerFilters(CBaseEntity *pOther)
 		(HasSpawnFlags(SF_TRIGGER_ALLOW_NPCS) && (pOther->GetFlags() & FL_NPC)) ||
 		(HasSpawnFlags(SF_TRIGGER_ALLOW_PUSHABLES) && FClassnameIs(pOther, "func_pushable")) ||
 		(HasSpawnFlags(SF_TRIGGER_ALLOW_PHYSICS) && pOther->GetMoveType() == MOVETYPE_VPHYSICS) 
+		||
+		(HasSpawnFlags(SF_TRIGGER_ALLOW_ITEMS) && pOther->GetMoveType() == MOVETYPE_FLYGRAVITY)
 		||
 		(	HasSpawnFlags(SF_TRIG_TOUCH_DEBRIS) && 
 			(pOther->GetCollisionGroup() == COLLISION_GROUP_DEBRIS ||
@@ -663,6 +668,8 @@ BEGIN_MAPENTITY( CTriggerHurt )
 	DEFINE_KEYFIELD( m_damageModel, FIELD_INTEGER, "damagemodel" ),
 	DEFINE_KEYFIELD( m_bNoDmgForce, FIELD_BOOLEAN, "nodmgforce" ),
 
+	DEFINE_KEYFIELD( m_flHurtRate, FIELD_FLOAT, "hurtrate" ),
+
 	// Inputs
 	DEFINE_INPUT( m_flDamage, FIELD_FLOAT, "SetDamage" ),
 
@@ -761,7 +768,7 @@ void CTriggerHurt::RadiationThink( void )
 	}
 
 	float dt = gpGlobals->curtime - m_flLastDmgTime;
-	if ( dt >= 0.5 )
+	if ( dt >= m_flHurtRate )
 	{
 		HurtAllTouchers( dt );
 	}
@@ -837,7 +844,7 @@ void CTriggerHurt::HurtThink()
 	}
 	else
 	{
-		SetNextThink( gpGlobals->curtime + 0.5f );
+		SetNextThink( gpGlobals->curtime + m_flHurtRate );
 	}
 }
 
@@ -930,6 +937,22 @@ void CTriggerHurt::Touch( CBaseEntity *pOther )
 		SetThink( &CTriggerHurtShim::HurtThinkShim );
 		SetNextThink( gpGlobals->curtime );
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool CTriggerHurt::KeyValue( const char *szKeyName, const char *szValue )
+{
+	// Additional OR flags
+	if (FStrEq( szKeyName, "damageor" ) || FStrEq( szKeyName, "damagepresets" ))
+	{
+		m_bitsDamageInflict |= atoi(szValue);
+	}
+	else
+		return BaseClass::KeyValue( szKeyName, szValue );
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -1070,7 +1093,7 @@ class CTriggerLook : public CTriggerOnce
 	DECLARE_CLASS( CTriggerLook, CTriggerOnce );
 public:
 
-	EHANDLE m_hLookTarget;
+	CUtlVector<EHANDLE> m_hLookTargets;
 	float m_flFieldOfView;
 	float m_flLookTime;			// How long must I look for
 	float m_flLookTimeTotal;	// How long have I looked
@@ -1078,6 +1101,9 @@ public:
 	float m_flTimeoutDuration;	// Number of seconds after start touch to fire anyway
 	bool m_bTimeoutFired;		// True if the OnTimeout output fired since the last StartTouch.
 	EHANDLE m_hActivator;		// The entity that triggered us.
+	bool m_bUseLOS;				// Makes lookers use LOS calculations in addition to viewcone calculations
+	bool m_bUseLookEntityAsCaller;	// Fires OnTrigger with the seen entity
+
 
 	void Spawn( void );
 	void Touch( CBaseEntity *pOther );
@@ -1089,7 +1115,7 @@ public:
 
 private:
 
-	void Trigger(CBaseEntity *pActivator, bool bTimeout);
+	void Trigger(CBaseEntity *pActivator, bool bTimeout, CBaseEntity *pCaller = NULL);
 	void TimeoutThink();
 
 	COutputEvent m_OnTimeout;
@@ -1106,6 +1132,9 @@ BEGIN_MAPENTITY( CTriggerLook )
 	DEFINE_INPUT( m_flFieldOfView,		FIELD_FLOAT,	"FieldOfView" ),
 	DEFINE_INPUT( m_flLookTime,			FIELD_FLOAT,	"LookTime" ),
 
+	DEFINE_KEYFIELD( m_bUseLOS, FIELD_BOOLEAN, "UseLOS" ),
+	DEFINE_KEYFIELD( m_bUseLookEntityAsCaller, FIELD_BOOLEAN, "LookEntityCaller" ),
+
 END_MAPENTITY()
 
 
@@ -1114,7 +1143,6 @@ END_MAPENTITY()
 //------------------------------------------------------------------------------
 void CTriggerLook::Spawn( void )
 {
-	m_hLookTarget = NULL;
 	m_flLookTimeTotal = -1;
 	m_bTimeoutFired = false;
 
@@ -1179,12 +1207,13 @@ void CTriggerLook::Touch(CBaseEntity *pOther)
 	// --------------------------------
 	// Make sure we have a look target
 	// --------------------------------
-	if (m_hLookTarget == NULL)
+	if (m_hLookTargets.Count() <= 0)
 	{
-		m_hLookTarget = GetNextTarget();
-		if (m_hLookTarget == NULL)
+		CBaseEntity *pEntity = gEntList.FindEntityByName( NULL, m_target, this, m_hActivator, this );
+		while (pEntity)
 		{
-			return;
+			m_hLookTargets.AddToTail(pEntity);
+			pEntity = gEntList.FindEntityByName( pEntity, m_target, this, m_hActivator, this );
 		}
 	}
 
@@ -1215,11 +1244,26 @@ void CTriggerLook::Touch(CBaseEntity *pOther)
 			vLookDir = ((CBaseCombatCharacter*)pOther)->EyeDirection3D( );
 		}
 
-		Vector vTargetDir = m_hLookTarget->GetAbsOrigin() - pOther->EyePosition();
-		VectorNormalize(vTargetDir);
+		// Check if the player is looking at any of the entities, even if they turn to look at another entity candidate.
+		// This is how we're doing support for multiple entities without redesigning trigger_look.
+		EHANDLE hLookingAtEntity = NULL;
+		for (int i = 0; i < m_hLookTargets.Count(); i++)
+		{
+			if (!m_hLookTargets[i])
+				continue;
 
-		float fDotPr = DotProduct(vLookDir,vTargetDir);
-		if (fDotPr > m_flFieldOfView)
+			Vector vTargetDir = m_hLookTargets[i]->GetAbsOrigin() - pOther->EyePosition();
+			VectorNormalize(vTargetDir);
+
+			float fDotPr = DotProduct(vLookDir,vTargetDir);
+			if (fDotPr > m_flFieldOfView && (!m_bUseLOS || pOther->FVisible(m_hLookTargets[i])))
+			{
+				hLookingAtEntity = m_hLookTargets[i];
+				break;
+			}
+		}
+
+		if (hLookingAtEntity != NULL)
 		{
 			// Is it the first time I'm looking?
 			if (m_flLookTimeTotal == -1)
@@ -1235,7 +1279,7 @@ void CTriggerLook::Touch(CBaseEntity *pOther)
 
 			if (m_flLookTimeTotal >= m_flLookTime)
 			{
-				Trigger(pOther, false);
+				Trigger(pOther, false, hLookingAtEntity);
 			}
 		}
 		else
@@ -1249,7 +1293,7 @@ void CTriggerLook::Touch(CBaseEntity *pOther)
 //-----------------------------------------------------------------------------
 // Purpose: Called when the trigger is fired by look logic or timeout.
 //-----------------------------------------------------------------------------
-void CTriggerLook::Trigger(CBaseEntity *pActivator, bool bTimeout)
+void CTriggerLook::Trigger(CBaseEntity *pActivator, bool bTimeout, CBaseEntity *pCaller)
 {
 	if (bTimeout)
 	{
@@ -1262,7 +1306,7 @@ void CTriggerLook::Trigger(CBaseEntity *pActivator, bool bTimeout)
 	else
 	{
 		// Fire because the player looked at the target.
-		m_OnTrigger.FireOutput(pActivator, this);
+		m_OnTrigger.FireOutput(pActivator, m_bUseLookEntityAsCaller ? pCaller : this);
 		m_flLookTimeTotal = -1;
 
 		// Cancel the timeout think.
@@ -1805,7 +1849,7 @@ struct collidelist_t
 
 // NOTE: This routine is relatively slow.  If you need to use it for per-frame work, consider that fact.
 // UNDONE: Expand this to the full matrix of solid types on each side and move into enginetrace
-static bool TestEntityTriggerIntersection_Accurate( CBaseEntity *pTrigger, CBaseEntity *pEntity )
+bool TestEntityTriggerIntersection_Accurate( CBaseEntity *pTrigger, CBaseEntity *pEntity )
 {
 	Assert( pTrigger->GetSolid() == SOLID_BSP );
 
@@ -2064,6 +2108,9 @@ public:
 	void Untouch( CBaseEntity *pOther );
 	void DrawDebugGeometryOverlays();
 
+	void InputSetSpeed( inputdata_t &inputdata );
+	void InputSetPushDir( inputdata_t &inputdata );
+
 	void InputSetPushDirection( inputdata_t &inputdata );
 
 	Vector m_vecPushDir;
@@ -2078,6 +2125,8 @@ BEGIN_MAPENTITY( CTriggerPush )
 	DEFINE_KEYFIELD( m_vecPushDir, FIELD_VECTOR, "pushdir" ),
 	DEFINE_KEYFIELD( m_flAlternateTicksFix, FIELD_FLOAT, "alternateticksfix" ),
 	DEFINE_INPUTFUNC( FIELD_VECTOR, "SetPushDirection", InputSetPushDirection ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeed", InputSetSpeed ),
+	DEFINE_INPUTFUNC( FIELD_VECTOR, "SetPushDir", InputSetPushDir ),
 END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( trigger_push, CTriggerPush );
@@ -2106,6 +2155,32 @@ void CTriggerPush::Spawn()
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CTriggerPush::InputSetSpeed( inputdata_t &inputdata )
+{
+	m_flSpeed = inputdata.value.Float();
+
+	// Need to update push speed/alternative ticks
+	Activate();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CTriggerPush::InputSetPushDir( inputdata_t &inputdata )
+{
+	inputdata.value.Vector3D( m_vecPushDir );
+
+	// Convert pushdir from angles to a vector
+	Vector vecAbsDir;
+	QAngle angPushDir = QAngle( m_vecPushDir.x, m_vecPushDir.y, m_vecPushDir.z );
+	AngleVectors( angPushDir, &vecAbsDir );
+
+	// Transform the vector into entity space
+	VectorIRotate( vecAbsDir, EntityToWorldTransform(), m_vecPushDir );
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -2544,6 +2619,14 @@ BEGIN_MAPENTITY( CTriggerCamera )
 
 	// Function Pointers
 	DEFINE_OUTPUT( m_OnEndFollow, "OnEndFollow" ),
+	DEFINE_OUTPUT( m_OnStartFollow, "OnStartFollow" ),
+	DEFINE_KEYFIELD( m_flTrackSpeed, FIELD_FLOAT, "trackspeed" ),
+
+	DEFINE_KEYFIELD( m_bDontSetPlayerView, FIELD_BOOLEAN, "DontSetPlayerView" ),
+
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFOV", InputSetFOV ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetFOVRate", InputSetFOVRate ),
+
 
 END_MAPENTITY()
 
@@ -2554,6 +2637,20 @@ CTriggerCamera::CTriggerCamera()
 {
 	m_fov = 90;
 	m_fovSpeed = 1;
+	m_flTrackSpeed = 40.0f;
+}
+
+//------------------------------------------------------------------------------
+// Cleanup
+//------------------------------------------------------------------------------
+void CTriggerCamera::UpdateOnRemove()
+{
+	if (m_state == USE_ON && HasSpawnFlags(SF_CAMERA_PLAYER_NEW_BEHAVIOR))
+	{
+		Disable();
+	}
+
+	BaseClass::UpdateOnRemove();
 }
 
 //-----------------------------------------------------------------------------
@@ -2599,6 +2696,27 @@ void CTriggerCamera::StartCameraShot( const char *pszShotType, CBaseEntity *pSce
 	// called from SceneEntity in response to a CChoreoEvent::CAMERA sent from a VCD.
 }
 
+//------------------------------------------------------------------------------
+// Purpose: Input handler to set FOV.
+//------------------------------------------------------------------------------
+void CTriggerCamera::InputSetFOV( inputdata_t &inputdata )
+{
+	m_fov = inputdata.value.Float();
+
+	if ( m_state == USE_ON && m_hPlayer )
+	{
+		((CBasePlayer*)m_hPlayer.Get())->SetFOV( this, m_fov, m_fovSpeed );
+	}
+}
+
+//------------------------------------------------------------------------------
+// Purpose: Input handler to set FOV rate.
+//------------------------------------------------------------------------------
+void CTriggerCamera::InputSetFOVRate( inputdata_t &inputdata )
+{ 
+	m_fovSpeed = inputdata.value.Float();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -2631,6 +2749,42 @@ bool CTriggerCamera::KeyValue( const char *szKeyName, const char *szValue )
 }
 
 //------------------------------------------------------------------------------
+// Purpose: 
+//------------------------------------------------------------------------------
+void CTriggerCamera::InputSetTargetAttachment( inputdata_t &inputdata )
+{
+	m_iszTargetAttachment = inputdata.value.StringID();
+	m_iAttachmentIndex = 0;
+
+	if (m_hTarget)
+	{
+		if ( m_iszTargetAttachment != NULL_STRING )
+		{
+			if ( !m_hTarget->GetBaseAnimating() )
+			{
+				Warning("%s tried to target an attachment (%s) on target %s, which has no model.\n", GetClassname(), STRING(m_iszTargetAttachment), STRING(m_hTarget->GetEntityName()) );
+			}
+			else
+			{
+				m_iAttachmentIndex = m_hTarget->GetBaseAnimating()->LookupAttachment( STRING(m_iszTargetAttachment) );
+				if ( m_iAttachmentIndex <= 0 )
+				{
+					Warning("%s could not find attachment %s on target %s.\n", GetClassname(), STRING(m_iszTargetAttachment), STRING(m_hTarget->GetEntityName()) );
+				}
+			}
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+// Purpose: 
+//------------------------------------------------------------------------------
+void CTriggerCamera::InputSetTrackSpeed( inputdata_t &inputdata )
+{
+	m_flTrackSpeed = inputdata.value.Float();
+}
+
+//------------------------------------------------------------------------------
 // Purpose: Input handler to turn on this trigger.
 //------------------------------------------------------------------------------
 void CTriggerCamera::InputEnable( inputdata_t &inputdata )
@@ -2653,16 +2807,18 @@ void CTriggerCamera::InputDisable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 void CTriggerCamera::InputSetTarget(inputdata_t &inputdata)
 {
-	m_target = inputdata.value.StringID();
-	m_hTarget = gEntList.FindEntityGeneric(NULL, STRING(m_target), this, inputdata.pActivator);
-}
+	BaseClass::InputSetTarget( inputdata );
 
-//------------------------------------------------------------------------------
-// Purpose: Set a new attachment on the target for the camera to point at.
-//------------------------------------------------------------------------------
-void CTriggerCamera::InputSetTargetAttachment(inputdata_t &inputdata)
-{
-	m_iszTargetAttachment = MAKE_STRING(inputdata.value.String());
+	if ( FStrEq(STRING(m_target), "!player") )
+	{
+		AddSpawnFlags( SF_CAMERA_PLAYER_TARGET );
+		m_hTarget = m_hPlayer;
+	}
+	else
+	{
+		RemoveSpawnFlags( SF_CAMERA_PLAYER_TARGET );
+		m_hTarget = GetNextTarget();
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -2705,14 +2861,6 @@ void CTriggerCamera::InputTeleportToView(inputdata_t &inputdata)
 		}
 	}
 	Disable();
-}
-
-//------------------------------------------------------------------------------
-// Purpose: Set the speed that the camera will try to track it's target.
-//------------------------------------------------------------------------------
-void CTriggerCamera::InputSetTrackSpeed(inputdata_t &inputdata)
-{
-	m_targetSpeed = inputdata.value.Float();
 }
 
 //------------------------------------------------------------------------------
@@ -2897,13 +3045,15 @@ void CTriggerCamera::Enable( void )
 		SetAbsVelocity( vec3_origin );
 	}
 
-
-	pPlayer->SetViewEntity( this );
-
-	// Hide the player's viewmodel
-	if ( pPlayer->GetActiveWeapon() )
+	if (!m_bDontSetPlayerView)
 	{
-		pPlayer->GetActiveWeapon()->AddEffects( EF_NODRAW );
+		pPlayer->SetViewEntity( this );
+
+		// Hide the player's viewmodel
+		if ( pPlayer->GetActiveWeapon() )
+		{
+			pPlayer->GetActiveWeapon()->AddEffects( EF_NODRAW );
+		}
 	}
 
 	// Only track if we have a target
@@ -2913,6 +3063,14 @@ void CTriggerCamera::Enable( void )
 		SetThink( &CTriggerCamera::FollowTarget );
 		SetNextThink( gpGlobals->curtime );
 	}
+	else if (m_pPath && HasSpawnFlags(SF_CAMERA_PLAYER_NEW_BEHAVIOR))
+	{
+		// Move if we have a path
+		SetThink( &CTriggerCamera::MoveThink );
+		SetNextThink( gpGlobals->curtime );
+	}
+
+	m_OnStartFollow.FireOutput( pPlayer, this );
 
 	m_vecLastPos = GetAbsOrigin();
 	Move();
@@ -2937,9 +3095,16 @@ void CTriggerCamera::Disable( void )
 				pBasePlayer->RemoveSolidFlags( FSOLID_NOT_SOLID );
 			}
 
-			pBasePlayer->SetViewEntity( NULL );
-			pBasePlayer->EnableControl(TRUE);
-			pBasePlayer->m_Local.m_bDrawViewmodel = true;
+			if ( HasSpawnFlags( SF_CAMERA_PLAYER_TAKECONTROL ) )
+			{
+				pBasePlayer->EnableControl( TRUE );
+			}
+
+			if (!m_bDontSetPlayerView)
+			{
+				pBasePlayer->SetViewEntity( NULL );
+				pBasePlayer->m_Local.m_bDrawViewmodel = true;
+			}
 		}
 
 		if ( HasSpawnFlags( SF_CAMERA_PLAYER_SETFOV ) )
@@ -3054,7 +3219,7 @@ void CTriggerCamera::FollowTarget( )
 			dy = dy - 360;
 
 		QAngle vecAngVel;
-		vecAngVel.Init( dx * 40 * gpGlobals->frametime, dy * 40 * gpGlobals->frametime, GetLocalAngularVelocity().z );
+		vecAngVel.Init( dx * m_flTrackSpeed * gpGlobals->frametime, dy * m_flTrackSpeed * gpGlobals->frametime, GetLocalAngularVelocity().z );
 		SetLocalAngularVelocity(vecAngVel);
 	}
 
@@ -3070,6 +3235,12 @@ void CTriggerCamera::FollowTarget( )
 	SetNextThink( gpGlobals->curtime );
 
 	Move();
+}
+
+void CTriggerCamera::MoveThink()
+{
+	Move();
+	SetNextThink( gpGlobals->curtime );
 }
 
 void CTriggerCamera::Move()
@@ -3932,6 +4103,16 @@ void CTriggerPlayerMovement::StartTouch( CBaseEntity *pOther )
 		pPlayer->ForceButtons( IN_DUCK );
 	}
 
+	if ( HasSpawnFlags( SF_TRIGGER_AUTO_WALK ) )
+	{
+		pPlayer->ForceButtons( IN_WALK );
+	}
+
+	if ( HasSpawnFlags( SF_TRIGGER_DISABLE_JUMP ) )
+	{
+		pPlayer->DisableButtons( IN_JUMP );
+	}
+
 	// UNDONE: Currently this is the only operation this trigger can do
 	if ( HasSpawnFlags(SF_TRIGGER_MOVE_AUTODISABLE) )
 	{
@@ -3952,6 +4133,16 @@ void CTriggerPlayerMovement::EndTouch( CBaseEntity *pOther )
 	if ( HasSpawnFlags( SF_TRIGGER_AUTO_DUCK ) )
 	{
 		pPlayer->UnforceButtons( IN_DUCK );
+	}
+
+	if ( HasSpawnFlags( SF_TRIGGER_AUTO_WALK ) )
+	{
+		pPlayer->UnforceButtons( IN_WALK );
+	}
+
+	if ( HasSpawnFlags( SF_TRIGGER_DISABLE_JUMP ) )
+	{
+		pPlayer->EnableButtons( IN_JUMP );
 	}
 
 	if ( HasSpawnFlags(SF_TRIGGER_MOVE_AUTODISABLE) )
@@ -4109,37 +4300,77 @@ void CBaseVPhysicsTrigger::EndTouch( CBaseEntity *pOther )
 //-----------------------------------------------------------------------------
 bool CBaseVPhysicsTrigger::PassesTriggerFilters( CBaseEntity *pOther )
 {
-	if ( pOther->GetMoveType() != MOVETYPE_VPHYSICS && !pOther->IsPlayer() )
+	if ( !pOther->VPhysicsGetObject() )
 		return false;
 
 	// First test spawn flag filters
+	// Copied and pasted code from CBaseTrigger::PassesTriggerFilters().
 	if ( HasSpawnFlags(SF_TRIGGER_ALLOW_ALL) ||
 		(HasSpawnFlags(SF_TRIGGER_ALLOW_CLIENTS) && (pOther->GetFlags() & FL_CLIENT)) ||
 		(HasSpawnFlags(SF_TRIGGER_ALLOW_NPCS) && (pOther->GetFlags() & FL_NPC)) ||
 		(HasSpawnFlags(SF_TRIGGER_ALLOW_PUSHABLES) && FClassnameIs(pOther, "func_pushable")) ||
-		(HasSpawnFlags(SF_TRIGGER_ALLOW_PHYSICS) && pOther->GetMoveType() == MOVETYPE_VPHYSICS))
+		(HasSpawnFlags(SF_TRIGGER_ALLOW_PHYSICS) && pOther->GetMoveType() == MOVETYPE_VPHYSICS) ||
+		(HasSpawnFlags(SF_TRIGGER_ALLOW_ITEMS) && pOther->GetMoveType() == MOVETYPE_FLYGRAVITY)
+		||
+		(	HasSpawnFlags(SF_TRIG_TOUCH_DEBRIS) && 
+			(pOther->GetCollisionGroup() == COLLISION_GROUP_DEBRIS ||
+			pOther->GetCollisionGroup() == COLLISION_GROUP_DEBRIS_TRIGGER || 
+			pOther->GetCollisionGroup() == COLLISION_GROUP_INTERACTIVE_DEBRIS)
+		)
+		)
 	{
-		bool bOtherIsPlayer = pOther->IsPlayer();
-		if( HasSpawnFlags(SF_TRIGGER_ONLY_PLAYER_ALLY_NPCS) && !bOtherIsPlayer )
+		if ( pOther->GetFlags() & FL_NPC )
 		{
 			CAI_BaseNPC *pNPC = pOther->MyNPCPointer();
 
-			if( !pNPC || !pNPC->IsPlayerAlly() )
+			if ( HasSpawnFlags( SF_TRIGGER_ONLY_PLAYER_ALLY_NPCS ) )
 			{
-				return false;
+				if ( !pNPC || !pNPC->IsPlayerAlly() )
+				{
+					return false;
+				}
+			}
+
+			if ( HasSpawnFlags( SF_TRIGGER_ONLY_NPCS_IN_VEHICLES ) )
+			{
+				if ( !pNPC || !pNPC->IsInAVehicle() )
+					return false;
 			}
 		}
 
-		if ( HasSpawnFlags(SF_TRIGGER_ONLY_CLIENTS_IN_VEHICLES) && bOtherIsPlayer )
-		{
-			if ( !((CBasePlayer*)pOther)->IsInAVehicle() )
-				return false;
-		}
+		bool bOtherIsPlayer = pOther->IsPlayer();
 
-		if ( HasSpawnFlags(SF_TRIGGER_ONLY_CLIENTS_OUT_OF_VEHICLES) && bOtherIsPlayer )
+		if ( bOtherIsPlayer )
 		{
-			if ( ((CBasePlayer*)pOther)->IsInAVehicle() )
+			CBasePlayer *pPlayer = (CBasePlayer*)pOther;
+			if ( !pPlayer->IsAlive() )
 				return false;
+
+			if ( HasSpawnFlags(SF_TRIGGER_ONLY_CLIENTS_IN_VEHICLES) )
+			{
+				if ( !pPlayer->IsInAVehicle() )
+					return false;
+
+				// Make sure we're also not exiting the vehicle at the moment
+				IServerVehicle *pVehicleServer = pPlayer->GetVehicle();
+				if ( pVehicleServer == NULL )
+					return false;
+
+				if ( pVehicleServer->IsPassengerExiting() )
+					return false;
+			}
+
+			if ( HasSpawnFlags(SF_TRIGGER_ONLY_CLIENTS_OUT_OF_VEHICLES) )
+			{
+				if ( pPlayer->IsInAVehicle() )
+					return false;
+			}
+
+			if ( HasSpawnFlags( SF_TRIGGER_DISALLOW_BOTS ) )
+			{
+				if ( pPlayer->IsFakeClient() )
+					return false;
+			}
 		}
 
 		CBaseFilter *pFilter = m_hFilter.Get();
@@ -4490,6 +4721,11 @@ void CServerRagdollTrigger::Spawn( void )
 {
 	BaseClass::Spawn();
 
+	// This didn't use PassesTriggerFilters() before, so a trigger_serverragdoll could work regardless of flags.
+	// Because of this, using trigger filters now will break existing trigger_serverragdolls that functioned without the right flags ticked.
+	// NPCs are going to be using this in almost all circumstances, so SF_TRIGGER_ALLOW_NPCS is pretty much the main flag of concern.
+	AddSpawnFlags(SF_TRIGGER_ALLOW_NPCS);
+
 	InitTrigger();
 }
 
@@ -4500,10 +4736,22 @@ void CServerRagdollTrigger::StartTouch(CBaseEntity *pOther)
 	if ( pOther->IsPlayer() )
 		return;
 
+	// This means base class didn't accept it (trigger filters)
+	if (m_hTouchingEntities.Find(pOther) == m_hTouchingEntities.InvalidIndex())
+		return;
+
 	CBaseCombatCharacter *pCombatChar = pOther->MyCombatCharacterPointer();
 
 	if ( pCombatChar )
 	{
+		// The mapper or some other force might've changed it themselves.
+		// Pretend it never touched us...
+		if (pCombatChar->m_bForceServerRagdoll == true)
+		{
+			BaseClass::EndTouch(pOther);
+			return;
+		}
+
 		pCombatChar->m_bForceServerRagdoll = true;
 	}
 }
@@ -4593,6 +4841,74 @@ void CTriggerApplyImpulse::InputApplyImpulse( inputdata_t& )
 			m_hTouchingEntities[i]->ApplyAbsVelocityImpulse( vecImpulse );
 		}
 	}
+}
+
+class CTriggerFall : public CBaseTrigger
+{
+	DECLARE_CLASS( CTriggerFall, CBaseTrigger );
+
+public:
+
+	virtual void StartTouch( CBaseEntity *pOther );
+	virtual void EndTouch( CBaseEntity *pOther );
+	virtual void Spawn( void );
+
+	bool m_bStayLethal;
+
+	DECLARE_MAPENTITY();
+};
+
+LINK_ENTITY_TO_CLASS( trigger_fall, CTriggerFall );
+
+BEGIN_MAPENTITY( CTriggerFall )
+
+	DEFINE_KEYFIELD( m_bStayLethal, FIELD_BOOLEAN, "StayLethal" ),
+
+END_MAPENTITY()
+
+void CTriggerFall::Spawn( void )
+{
+	BaseClass::Spawn();
+
+	InitTrigger();
+}
+
+void CTriggerFall::StartTouch(CBaseEntity *pOther)
+{
+	BaseClass::StartTouch( pOther );
+
+	if ( !pOther->IsPlayer() )
+		return;
+
+	static_cast<CBasePlayer*>(pOther)->m_bInTriggerFall = true;
+}
+
+void CTriggerFall::EndTouch(CBaseEntity *pOther)
+{
+	BaseClass::EndTouch( pOther );
+
+	if ( !pOther->IsPlayer() || m_bStayLethal )
+		return;
+
+	static_cast<CBasePlayer*>(pOther)->m_bInTriggerFall = false;
+}
+
+
+
+class CTriggerWorld : public CTriggerMultiple
+{
+	DECLARE_CLASS( CTriggerWorld, CTriggerMultiple );
+
+public:
+
+	virtual bool PassesTriggerFilters(CBaseEntity *pOther);
+};
+
+LINK_ENTITY_TO_CLASS( trigger_world, CTriggerWorld );
+
+bool CTriggerWorld::PassesTriggerFilters( CBaseEntity *pOther )
+{
+	return pOther->IsWorld();
 }
 
 //----------------------------------------------------------------------------------

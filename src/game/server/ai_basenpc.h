@@ -100,6 +100,28 @@ extern bool AIStrongOpt( void );
 // Max's of the box used to search for a weapon to pick up. 45x45x~8 ft.
 #define WEAPON_SEARCH_DELTA	Vector( 540, 540, 100 )
 
+// This macro implements the response system on any NPC, particularly non-actors that can't use CAI_ExpresserHost.
+// NOTE: Because of the lack of CAI_ExpresserHost, some Response System settings like odds, delays, etc. cannot be used.
+// It's recommended to just use CAI_ExpresserHost if possible.
+#define DeclareResponseSystem IResponseSystem *GetResponseSystem() { extern IResponseSystem *g_pResponseSystem; return g_pResponseSystem; }
+
+// Default CAI_ExpresserHost implementation for NPCs using CAI_ExpresserHost.
+#define DeclareDefaultExpresser() virtual CAI_Expresser *CreateExpresser( void ) { m_pExpresser = new CAI_Expresser(this); if (!m_pExpresser) return NULL; m_pExpresser->Connect(this); return m_pExpresser; } \\
+		virtual CAI_Expresser *GetExpresser() { return m_pExpresser;  } \\
+		virtual void		PostConstructor(const char *szClassname) { BaseClass::PostConstructor(szClassname); CreateExpresser(); } \\
+	private: \\
+		CAI_Expresser *m_pExpresser; \\
+	public:
+
+// Variant of DeclareDefaultExpresser() that doesn't implement its own PostConstructor.
+// CreateExpresser() should still be called from there.
+#define DeclareDefaultExpresser_ExistingPC() virtual CAI_Expresser *CreateExpresser( void ) { m_pExpresser = new CAI_Expresser(this); if (!m_pExpresser) return NULL; m_pExpresser->Connect(this); return m_pExpresser; } \\
+		virtual CAI_Expresser *GetExpresser() { return m_pExpresser;  } \\
+	private: \\
+		CAI_Expresser *m_pExpresser; \\
+	public:
+
+
 enum Interruptability_t
 {
 	GENERAL_INTERRUPTABILITY,
@@ -149,7 +171,6 @@ enum Interruptability_t
 #define SF_NPC_WAIT_TILL_SEEN			( 1 << 0  )	// spawnflag that makes npcs wait until player can see them before attacking.
 #define SF_NPC_GAG						( 1 << 1  )	// no idle noises from this npc
 #define SF_NPC_FALL_TO_GROUND			( 1 << 2  )	// used my NPC_Maker
-#define SF_NPC_DROP_HEALTHKIT			( 1 << 3  )	// Drop a healthkit upon death
 #define SF_NPC_START_EFFICIENT			( 1 << 4  ) // Set into efficiency mode from spawn
 //										( 1 << 5  )
 //										( 1 << 6  )
@@ -321,6 +342,8 @@ struct UnreachableEnt_t
 #define SCNPC_FLAG_NEEDS_WEAPON_THEM			( 1 << 5 )
 #define SCNPC_FLAG_DONT_TELEPORT_AT_END_ME		( 1 << 6 )
 #define SCNPC_FLAG_DONT_TELEPORT_AT_END_THEM	( 1 << 7 )
+#define SCNPC_FLAG_MAPBASE_ADDITION				( 1 << 8 )
+#define SCNPC_FLAG_TEST_END_POSITION			( 1 << 9 )
 
 // -----------------------------------------
 //	Scripted NPC interaction trigger methods
@@ -390,11 +413,18 @@ struct ScriptedNPCInteraction_t
 		flNextAttemptTime = 0;
 		iszMyWeapon = NULL_STRING;
 		iszTheirWeapon = NULL_STRING;
+		vecRelativeEndPos = vec3_origin;
+		bHasSeparateSequenceNames = false;
+		flMaxAngleDiff = DSS_MAX_ANGLE_DIFF;
+		iszRelatedInteractions = NULL_STRING;
+		MiscCriteria = NULL_STRING;
 
 		for ( int i = 0; i < SNPCINT_NUM_PHASES; i++)
 		{
 			sPhases[i].iszSequence = NULL_STRING;
 			sPhases[i].iActivity = ACT_INVALID;
+			sTheirPhases[i].iszSequence = NULL_STRING;
+			sTheirPhases[i].iActivity = ACT_INVALID;
 		}
 	}
 
@@ -406,6 +436,7 @@ struct ScriptedNPCInteraction_t
 	Vector		vecRelativeOrigin;			// (forward, right, up)
 	QAngle		angRelativeAngles;				
 	Vector		vecRelativeVelocity;		// Desired relative velocity of the other NPC
+	Vector		vecRelativeEndPos;			// Relative position that the NPC must fit in
 	float		flDelay;					// Delay before interaction can be used again
 	float		flDistSqr;					// Max distance sqr from the relative origin the NPC is allowed to be to trigger
 	string_t	iszMyWeapon;				// Classname of the weapon I'm holding, if any
@@ -417,6 +448,15 @@ struct ScriptedNPCInteraction_t
 	bool		bValidOnCurrentEnemy;
 
 	float		flNextAttemptTime;
+
+	ScriptedNPCInteraction_Phases_t sTheirPhases[SNPCINT_NUM_PHASES];	// The animations played by the target NPC, if they are different
+	bool		bHasSeparateSequenceNames;
+
+	float		flMaxAngleDiff;
+	string_t	iszRelatedInteractions;	// These interactions will be delayed as well when this interaction is used.
+
+	// Unrecognized keyvalues which are tested against response criteria later.
+	string_t	MiscCriteria;
 };
 
 //=============================================================================
@@ -519,6 +559,7 @@ public:
 	virtual unsigned int	PhysicsSolidMaskForEntity( void ) const;
 
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+	virtual bool GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen );
 
 	//---------------------------------
 	
@@ -574,6 +615,8 @@ public:
 	// Thinking, including core thinking, movement, animation
 	virtual void		NPCThink( void );
 
+	void				InputSetThinkNPC( inputdata_t &inputdata );
+
 	// Core thinking (schedules & tasks)
 	virtual void		RunAI( void );// core ai function!	
 
@@ -619,7 +662,6 @@ public:
 
 	virtual bool		ShouldAlwaysThink();
 	void				ForceGatherConditions()	{ m_bForceConditionsGather = true; SetEfficiency( AIE_NORMAL ); }	// Force an NPC out of PVS to call GatherConditions on next think
-
 	bool IsForceGatherConditionsSet() { return m_bForceConditionsGather; }
 
 	virtual float		LineOfSightDist( const Vector &vecDir = vec3_invalid, float zEye = FLT_MAX );
@@ -794,6 +836,7 @@ protected: // pose parameters
 	int					m_poseAim_Pitch;
 	int					m_poseAim_Yaw;
 	int					m_poseMove_Yaw;
+	int					m_poseInteractionRelativeYaw;
 	virtual void		PopulatePoseParameters( void );
 
 public:
@@ -801,7 +844,8 @@ public:
 
 	// Return the stored pose parameter for "move_yaw"
 	inline int			LookupPoseMoveYaw()		{ return m_poseMove_Yaw; }
- 
+
+	inline int			LookupPoseInteractionRelativeYaw()	{ return m_poseInteractionRelativeYaw; } 
 
 	//-----------------------------------------------------
 	//
@@ -898,6 +942,9 @@ public:
 
 	bool				DidChooseEnemy() const			{ return !m_bSkippedChooseEnemy; }
 
+	void				InputSetCondition( inputdata_t &inputdata );
+	void				InputClearCondition( inputdata_t &inputdata );
+
 private:
 	CAI_ScheduleBits	m_Conditions;
 	CAI_ScheduleBits	m_CustomInterruptConditions;	//Bit string assembled by the schedule running, then 
@@ -942,6 +989,8 @@ public:
 
 	virtual void				UpdateSleepState( bool bInPVS );
 	virtual	void		Wake( bool bFireOutput = true );
+	// A version of Wake() that takes an activator
+	virtual	void		Wake( CBaseEntity *pActivator );
 	void				Sleep();
 	bool				WokeThisTick() const;
 
@@ -971,11 +1020,16 @@ public:
 	
 	Activity			TranslateActivity( Activity idealActivity, Activity *pIdealWeaponActivity = NULL );
 	Activity			NPC_TranslateActivity( Activity eNewActivity );
+	Activity			TranslateCrouchActivity( Activity baseAct );
+	virtual bool		CanTranslateCrouchActivity( void ) { return true; }
+	virtual Activity	NPC_BackupActivity( Activity eNewActivity );
 	Activity			GetActivity( void ) { return m_Activity; }
 	virtual void		SetActivity( Activity NewActivity );
 	Activity			GetIdealActivity( void ) { return m_IdealActivity; }
 	void				SetIdealSequence( int iSequence, bool bReset = false ) { if ( bReset ) ResetIdealActivity( ACT_SPECIFIC_SEQUENCE ); else SetIdealActivity( ACT_SPECIFIC_SEQUENCE ); m_nIdealSequence = iSequence; }
 	void				SetIdealActivity( Activity NewActivity );
+	Activity			GetTranslatedActivity( void ) { return m_translatedActivity; }
+	Activity			GetIdealTranslatedActivity( void ) { return m_IdealTranslatedActivity; }
 	void				ResetIdealActivity( Activity newIdealActivity );
 	void				SetSequenceByName( const char *szSequence );
 	void				SetSequenceById( int iSequence );
@@ -992,6 +1046,23 @@ public:
 
 	void				SetActivityAndSequence(Activity NewActivity, int iSequence, Activity translatedActivity, Activity weaponActivity);
 
+	//-----------------------------------------------------
+
+	// Returns the gesture variant of an activity (i.e. "ACT_GESTURE_RANGE_ATTACK1")
+	static Activity			GetGestureVersionOfActivity( Activity inActivity );
+
+	// Returns the sequence variant of a gesture activity
+	static Activity			GetSequenceVersionOfGesture( Activity inActivity );
+
+	//-----------------------------------------------------
+
+	virtual bool				ShouldPlayFakeSequenceGesture( Activity nActivity, Activity nTranslatedActivity );
+	virtual Activity			SelectFakeSequenceGesture( Activity nActivity, Activity nTranslatedActivity );
+	void				PlayFakeSequenceGesture( Activity nActivity, Activity nSequence, Activity nTranslatedSequence );
+
+	int					GetFakeSequenceGesture();
+	void				ResetFakeSequenceGesture();
+
 private:
 
 	void				AdvanceToIdealActivity(void);
@@ -1004,6 +1075,7 @@ private:
 	int					m_nIdealSequence;				// Desired animation sequence
 	Activity			m_IdealTranslatedActivity;		// Desired actual translated animation state
 	Activity			m_IdealWeaponActivity;			// Desired weapon animation state
+	int					m_FakeSequenceGestureLayer;		// The gesture layer impersonating a sequence (-1 if invalid)
 
 	CNetworkVar(int, m_iDeathPose );
 	CNetworkVar(int, m_iDeathFrame );
@@ -1019,6 +1091,8 @@ public:
 	const CAI_Senses *	GetSenses() const	{ return m_pSenses; }
 	
 	void				SetDistLook( float flDistLook );
+	void				InputSetDistLook( inputdata_t &inputdata );
+	void				InputSetDistTooFar( inputdata_t &inputdata );
 
 	virtual bool		QueryHearSound( CSound *pSound );
 	virtual bool		QuerySeeEntity( CBaseEntity *pEntity, bool bOnlyHateOrFearIfNPC = false );
@@ -1089,6 +1163,7 @@ public:
 	CBaseEntity *GetEnemyOccluder(void);
 
 	virtual void		StartTargetHandling( CBaseEntity *pTargetEnt );
+	void				InputSetTarget( inputdata_t &inputdata );
 
 	//---------------------------------
 	
@@ -1169,6 +1244,19 @@ private:
 public:
 	CAI_MoveMonitor	m_CommandMoveMonitor;
 
+	ThreeState_t m_FriendlyFireOverride = TRS_NONE;
+	virtual bool	FriendlyFireEnabled();
+	void			InputSetFriendlyFire( inputdata_t &inputdata );
+
+	// Grenade-related functions from Combine soldiers ported to ai_basenpc so they could be shared.
+	// 
+	// This is necessary because other NPCs can use them now and many instances where they were used relied on dynamic_casts.
+	virtual Vector		GetAltFireTarget() { return GetEnemy() ? GetEnemy()->BodyTarget(Weapon_ShootPosition()) : vec3_origin; }
+	virtual void		DelayGrenadeCheck(float delay) { ; }
+	virtual void		AddGrenades( int inc, CBaseEntity *pLastGrenade = NULL ) { ; }
+
+	int					GetScriptState() { return m_scriptState; }
+
 	//-----------------------------------------------------
 	// Dynamic scripted NPC interactions
 	//-----------------------------------------------------
@@ -1178,12 +1266,15 @@ public:
 protected:
 	void ParseScriptedNPCInteractions( void );
 	void AddScriptedNPCInteraction( ScriptedNPCInteraction_t *pInteraction  );
-	const char *GetScriptedNPCInteractionSequence( ScriptedNPCInteraction_t *pInteraction, int iPhase );
+	const char *GetScriptedNPCInteractionSequence( ScriptedNPCInteraction_t *pInteraction, int iPhase, bool bOtherNPC = false );
 	void StartRunningInteraction( CAI_BaseNPC *pOtherNPC, bool bActive );
 	void StartScriptedNPCInteraction( CAI_BaseNPC *pOtherNPC, ScriptedNPCInteraction_t *pInteraction, Vector vecOtherOrigin, QAngle angOtherAngles );
 	void CheckForScriptedNPCInteractions( void );
 	void CalculateValidEnemyInteractions( void );
 	void CheckForcedNPCInteractions( void );
+	// This is checked during automatic dynamic interactions, but not during forced interactions.
+	// This is so we can control interaction permissions while still letting forced interactions play when needed.
+	virtual bool InteractionIsAllowed( CAI_BaseNPC *pOtherNPC, ScriptedNPCInteraction_t *pInteraction );
 	bool InteractionCouldStart( CAI_BaseNPC *pOtherNPC, ScriptedNPCInteraction_t *pInteraction, Vector &vecOrigin, QAngle &angAngles );
 	virtual bool CanRunAScriptedNPCInteraction( bool bForced = false );
 	bool IsRunningDynamicInteraction( void ) { return (m_iInteractionState != NPCINT_NOT_RUNNING && (m_hCine != NULL)); }
@@ -1191,11 +1282,15 @@ protected:
 	ScriptedNPCInteraction_t *GetRunningDynamicInteraction( void ) { return &(m_ScriptedInteractions[m_iInteractionPlaying]); }
 	void SetInteractionCantDie( bool bCantDie ) { m_bCannotDieDuringInteraction = bCantDie; }
 	bool HasInteractionCantDie( void );
+	bool HasValidInteractionsOnCurrentEnemy( void );
+	virtual bool CanStartDynamicInteractionDuringMelee() { return false; }
 
 	void InputForceInteractionWithNPC( inputdata_t &inputdata );
 	void StartForcedInteraction( CAI_BaseNPC *pNPC, int iInteraction );
 	void CleanupForcedInteraction( void );
 	void CalculateForcedInteractionPosition( void );
+
+public:
 	CAI_BaseNPC *GetInteractionPartner( void );
 
 private:
@@ -1212,6 +1307,11 @@ private:
 	CUtlVector<ScriptedNPCInteraction_t> m_ScriptedInteractions;
 
 	float								 m_flInteractionYaw;
+
+	// Allows mappers to control dynamic interactions.
+	// DI added by Mapbase requires this to be on TRS_TRUE (1). Others, like Alyx's interactions, only require TRS_NONE (2).
+	// TRS_FALSE (0) disables all dynamic interactions, including existing ones.
+	ThreeState_t						m_iDynamicInteractionsAllowed;
 
 	
 public:
@@ -1256,6 +1356,8 @@ public:
 	virtual void		PlayerHasIlluminatedNPC( CBasePlayer *pPlayer, float flDot );
 
 	virtual void		ModifyOrAppendCriteria( AI_CriteriaSet& set );
+	virtual void		ModifyOrAppendEnemyCriteria( AI_CriteriaSet& set, CBaseEntity *pEnemy );
+	virtual void		ModifyOrAppendDamageCriteria( AI_CriteriaSet& set, const CTakeDamageInfo &info );
 
 protected:
 	float		SoundWaitTime() const { return m_flSoundWaitTime; }
@@ -1272,6 +1374,9 @@ public:
 	int					CapabilitiesAdd( int capabilities );
 	int					CapabilitiesRemove( int capabilities );
 	void				CapabilitiesClear( void );
+
+	void				InputAddCapabilities( inputdata_t &inputdata );
+	void				InputRemoveCapabilities( inputdata_t &inputdata );
 
 private:
 	int					m_afCapability;			// tells us what a npc can/can't do.
@@ -1622,8 +1727,21 @@ public:
 	bool				IsWeaponStateChanging( void );
 	void				SetDesiredWeaponState( DesiredWeaponState_t iState ) { m_iDesiredWeaponState = iState; }
 
+	virtual bool		DoHolster(void);
+	virtual bool		DoUnholster(void);
+
+	virtual bool		ShouldUnholsterWeapon();
+	virtual bool		CanUnholsterWeapon();
+
+	void				InputGiveWeaponHolstered( inputdata_t &inputdata );
+	void				InputChangeWeapon( inputdata_t &inputdata );
+	void				InputPickupWeapon( inputdata_t &inputdata );
+	void				InputPickupItem( inputdata_t &inputdata );
+
 	// NOTE: The Shot Regulator is used to manage the RangeAttack1 weapon.
 	inline CAI_ShotRegulator* GetShotRegulator()		{ return &m_ShotRegulator; }
+	// A special function for ai_weaponmodifier.
+	inline void SetShotRegulator(CAI_ShotRegulator NewRegulator) { m_ShotRegulator = NewRegulator; }
 	virtual void		OnRangeAttack1();
 	
 protected:
@@ -1644,6 +1762,7 @@ protected:
 	float				m_flNextWeaponSearchTime;	// next time to search for a better weapon
 	string_t			m_iszPendingWeapon;			// THe NPC should create and equip this weapon.
 	bool				m_bIgnoreUnseenEnemies;
+	int					m_iLastHolsteredWeapon;
 
 private:
 	CAI_ShotRegulator	m_ShotRegulator;			// When should I shoot next?
@@ -1737,7 +1856,6 @@ public:
 	//-----------------------------------------------------
 
 	void				InitRelationshipTable( void );
-	void				AddRelationship( const char *pszRelationship, CBaseEntity *pActivator );
 
 	virtual void		AddEntityRelationship( CBaseEntity *pEntity, Disposition_t nDisposition, int nPriority );
 	virtual void		AddClassRelationship( Class_T nClass, Disposition_t nDisposition, int nPriority );
@@ -1768,10 +1886,6 @@ public:
 	virtual bool		UseAttackSquadSlots()	{ return false; }
 
 	//---------------------------------
-	
-	virtual	CBaseEntity *FindNamedEntity( const char *pszName, IEntityFindFilter *pFilter = NULL );
-
-	//---------------------------------
 	//  States
 	//---------------------------------
 
@@ -1780,7 +1894,8 @@ public:
 	virtual bool		ShouldLookForBetterWeapon();
 	bool				Weapon_IsBetterAvailable ( void ) ;
 	virtual Vector		Weapon_ShootPosition( void );
-	virtual	void		GiveWeapon( string_t iszWeaponName );
+	virtual	CBaseCombatWeapon*		GiveWeapon( string_t iszWeaponName, bool bDiscardCurrent = true );
+	virtual	CBaseCombatWeapon*		GiveWeaponHolstered( string_t iszWeaponName );
 	virtual void		OnGivenWeapon( CBaseCombatWeapon *pNewWeapon ) { }
 	bool				IsMovingToPickupWeapon();
 	virtual bool		WeaponLOSCondition(const Vector &ownerPos, const Vector &targetPos, bool bSetConditions);
@@ -1822,6 +1937,7 @@ public:
 	//---------------------------------
 
 	virtual void		Ignite( float flFlameLifetime, bool bNPCOnly = true, float flSize = 0.0f, bool bCalledByLevelDesigner = false );
+	virtual void		EnemyIgnited( CAI_BaseNPC *pVictim ) {}
 	virtual bool		PassesDamageFilter( const CTakeDamageInfo &info );
 
 	//---------------------------------
@@ -1880,7 +1996,7 @@ public:
 	//---------------------------------
 
 	virtual void	PickupWeapon( CBaseCombatWeapon *pWeapon );
-	virtual void	PickupItem( CBaseEntity *pItem ) { };
+	virtual void	PickupItem( CBaseEntity *pItem );
 	CBaseEntity*	DropItem( const char *pszItemName, Vector vecPos, QAngle vecAng );// drop an item.
 
 
@@ -1897,6 +2013,7 @@ public:
 	void InputIgnoreDangerSounds( inputdata_t &inputdata );
 	void InputUpdateEnemyMemory( inputdata_t &inputdata );
 	void InputCreateAddon( inputdata_t &inputdata );
+	void InputSetHealthFraction( inputdata_t &inputdata );
 
 	//---------------------------------
 	
@@ -1992,6 +2109,14 @@ public:
 	COutputEvent		m_OnForcedInteractionAborted;
 	COutputEvent		m_OnForcedInteractionFinished;
 
+	COutputEHANDLE		m_OnHolsterWeapon;
+	COutputEHANDLE		m_OnUnholsterWeapon;
+
+	COutputEHANDLE		m_OnItemPickup;
+	COutputEHANDLE		m_OnItemDrop;
+
+	COutputInt			m_OnStateChange;
+
 public:
 	// use this to shrink the bbox temporarily
 	void				SetHullSizeNormal( bool force = false );
@@ -2063,6 +2188,7 @@ public:
 	static const char*	GetActivityName	(int actID);	
 
 	static void			AddActivityToSR(const char *actName, int conID);
+	static int			GetOrRegisterActivity( const char *actName );
 	
 	static void			AddEventToSR(const char *eventName, int conID);
 	static const char*	GetEventName	(int actID);
@@ -2076,6 +2202,8 @@ public:
 	virtual bool IsCrouching( void );
 	inline void	ForceCrouch( void );
 	inline void	ClearForceCrouch( void );
+
+	bool		 CouldShootIfCrouchingAt( const Vector &vecPosition, const Vector &vecForward, const Vector &vecRight, float flDist = 48.0f );
 
 protected:
 	virtual bool Crouch( void );
@@ -2135,6 +2263,14 @@ private:
 	
 	static CAI_GlobalScheduleNamespace	gm_SchedulingSymbols;
 	static CAI_ClassScheduleIdSpace		gm_ClassScheduleIdSpace;
+
+	typedef struct
+	{
+		Activity	sequence;
+		Activity	gesture;
+	} actlink_t;
+
+	static actlink_t		gm_ActivityGestureLinks[];
 
 public:
 	//----------------------------------------------------
@@ -2213,6 +2349,13 @@ public:
 	void				InputDisableSpeedModifier( inputdata_t &inputdata ) { m_bSpeedModActive = false; }
 	void				InputSetSpeedModifierRadius( inputdata_t &inputdata );
 	void				InputSetSpeedModifierSpeed( inputdata_t &inputdata );
+
+	// Hammer input to change the speed of the NPC (based on 1upD's npc_shadow_walker code)
+	// Not to be confused with the inputs above
+	virtual float		GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, int iSequence );
+	inline float		GetSequenceGroundSpeed( int iSequence ) { return GetSequenceGroundSpeed( GetModelPtr(), iSequence ); }
+	void				InputSetSpeedModifier( inputdata_t &inputdata );
+	float				m_flSpeedModifier;
 
 	virtual bool		ShouldProbeCollideAgainstEntity( CBaseEntity *pEntity );
 
@@ -2774,7 +2917,7 @@ public:
 	derivedClass::AccessClassScheduleIdSpaceDirect().Init( #derivedClass, BaseClass::GetSchedulingSymbols(), &BaseClass::AccessClassScheduleIdSpaceDirect() ); \
 	derivedClass::gm_SquadSlotIdSpace.Init( &CAI_BaseNPC::gm_SquadSlotNamespace, &BaseClass::gm_SquadSlotIdSpace);
 
-#define	ADD_CUSTOM_INTERACTION( interaction )	{ interaction = CBaseCombatCharacter::GetInteractionID(); }
+#define	ADD_CUSTOM_INTERACTION( interaction )	{ CBaseCombatCharacter::AddInteractionWithString( interaction, #interaction ); }
 
 #define ADD_CUSTOM_SQUADSLOT_NAMED(derivedClass,squadSlotName,squadSlotEN)\
 	if ( !derivedClass::gm_SquadSlotIdSpace.AddSymbol( squadSlotName, squadSlotEN, "squadslot", derivedClass::gm_pszErrorClassName ) ) return;
@@ -3165,7 +3308,9 @@ public:
 #define	DEFINE_BASENPCINTERACTABLE_DATADESC() \
 	DEFINE_OUTPUT( m_OnAlyxStartedInteraction,				"OnAlyxStartedInteraction" ),	\
 	DEFINE_OUTPUT( m_OnAlyxFinishedInteraction,				"OnAlyxFinishedInteraction" ),  \
-	DEFINE_INPUTFUNC( FIELD_VOID, "InteractivePowerDown", InputPowerdown )
+	DEFINE_OUTPUT( m_OnHacked,								"OnHacked" ),  \
+	DEFINE_INPUTFUNC( FIELD_VOID, "InteractivePowerDown", InputPowerdown ), \
+	DEFINE_INPUTFUNC( FIELD_VOID, "Hack", InputDoInteraction )
 
 template <class NPC_CLASS>
 class CNPCBaseInteractive : public NPC_CLASS, public INPCInteractive
@@ -3179,6 +3324,11 @@ public:
 	virtual void	InputPowerdown( inputdata_t &inputdata )
 	{
 
+	}
+
+	virtual void	InputDoInteraction( inputdata_t &inputdata )
+	{
+		NotifyInteraction(inputdata.pActivator ? inputdata.pActivator->MyNPCPointer() : NULL);
 	}
 
 	// Alyx specific interactions
@@ -3196,6 +3346,8 @@ public:
 	// Alyx specific interactions
 	COutputEvent	m_OnAlyxStartedInteraction;
 	COutputEvent	m_OnAlyxFinishedInteraction;
+
+	COutputEvent	m_OnHacked;
 };
 
 //

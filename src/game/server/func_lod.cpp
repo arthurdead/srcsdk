@@ -97,6 +97,14 @@ bool CFunc_LOD::KeyValue( const char *szKeyName, const char *szValue )
 		m_flDisappearMinDist = (float)atof(szValue);
 		m_flDisappearMaxDist = m_flDisappearMinDist + 800;
 	}
+	else if (FStrEq(szKeyName, "DisappearMaxDist"))
+	{
+		m_flDisappearMaxDist = (float)atof(szValue);
+	}
+	else if (FStrEq(szKeyName, "DisappearMinDist")) // Forwards compatibility
+	{
+		m_flDisappearMinDist = (float)atof(szValue);
+	}
 	else if (FStrEq(szKeyName, "Solid"))
 	{
 		if (atoi(szValue) != 0)

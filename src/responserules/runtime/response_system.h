@@ -47,6 +47,10 @@ namespace ResponseRules
 		// IResponseSystem
 		virtual bool FindBestResponse( const CriteriaSet& set, CRR_Response& response, IResponseFilter *pFilter = NULL );
 		virtual void GetAllResponses( CUtlVector<CRR_Response> *pResponses );
+
+		virtual void SetProspective( bool bToggle ) { m_bInProspective = bToggle; }
+
+		virtual void MarkResponseAsUsed( short iGroup, short iWithinGroup );
 #pragma endregion Implement interface from IResponseSystem
 
 		virtual void Release() = 0;
@@ -55,7 +59,7 @@ namespace ResponseRules
 
 		bool		IsCustomManagable()	{ return m_bCustomManagable; }
 
-		void		Clear();
+		virtual void		Clear();
 
 		void		DumpDictionary( const char *pszName );
 
@@ -119,6 +123,24 @@ namespace ResponseRules
 			return m_ScriptStack[ 0 ].currenttoken != NULL ? true : false;
 		}
 
+		inline bool ParseTokenIntact( void )
+		{
+			if ( m_bUnget )
+			{
+				m_bUnget = false;
+				return true;
+			}
+			if ( m_ScriptStack.Count() <= 0 )
+			{
+				Assert( 0 );
+				return false;
+			}
+
+			m_ScriptStack[ 0 ].currenttoken = IEngineEmulator::Get()->ParseFilePreserve( m_ScriptStack[ 0 ].currenttoken, token, sizeof( token ) );
+			m_ScriptStack[ 0 ].tokencount++;
+			return m_ScriptStack[ 0 ].currenttoken != NULL ? true : false;
+		}
+
 		inline void Unget()
 		{
 			m_bUnget = true;
@@ -168,6 +190,8 @@ namespace ResponseRules
 		void		ParseRule_MatchOnce( Rule &newRule );
 		void		ParseRule_ApplyContextToWorld( Rule &newRule );
 		void		ParseRule_ApplyContext( Rule &newRule );
+		void		ParseRule_ApplyContextToSquad( Rule &newRule );
+		void		ParseRule_ApplyContextToEnemy( Rule &newRule );
 		void		ParseRule_Response( Rule &newRule );
 		//void		ParseRule_ForceWeight( Rule &newRule );
 		void		ParseRule_Criteria( Rule &newRule );
@@ -214,6 +238,8 @@ public:
 		float		LookupEnumeration( const char *name, bool& found );
 
 		ResponseRulePartition::tIndex FindBestMatchingRule( const CriteriaSet& set, bool verbose, float &scoreOfBestMatchingRule );
+
+		void		DisableEmptyRules();
 		
 		float		ScoreCriteriaAgainstRule( const CriteriaSet& set, ResponseRulePartition::tRuleDict &dict, int irule, bool verbose = false );
 		float		RecursiveScoreSubcriteriaAgainstRule( const CriteriaSet& set, Criteria *parent, bool& exclude, bool verbose /*=false*/ );
@@ -261,6 +287,11 @@ public:
 		bool		m_bUnget;
 
 		bool		m_bCustomManagable;
+
+		// This is a hack specifically designed to fix displayfirst, speakonce, etc. in "prospective" response searches,
+		// especially the prospective lookups in followup responses.
+		// It works by preventing responses from being marked as "used".
+		bool		m_bInProspective;
 
 		struct ScriptEntry
 		{

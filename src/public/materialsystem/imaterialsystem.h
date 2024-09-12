@@ -467,7 +467,7 @@ struct FlashlightState_t
 		m_flShadowMapResolution = 4096.0f;
 		m_flShadowFilterSize = 0.2f;
 		m_flShadowSlopeScaleDepthBias = 4.0f;
-		m_flShadowDepthBias = 0.0005f;
+		m_flShadowDepthBias = 0.00001f;
 		m_flShadowJitterSeed = 0.0f;
 		m_flShadowAtten = 0.0f;
 		m_bScissor = false; 
@@ -587,6 +587,8 @@ struct FlashlightStateMod_t
 	int m_nNumPlanes;
 	float m_flPlaneOffset;
 	float m_flVolumetricIntensity;
+
+	bool m_bAlwaysDraw;
 
 	int m_nUnused;
 

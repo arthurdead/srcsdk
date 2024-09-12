@@ -105,6 +105,15 @@ struct sky3dparams_t
 	CNetworkVector( origin );
 	CNetworkVar( int, area );
 
+	// Skybox angle support
+	CNetworkQAngle( angles );
+
+	// Skybox entity-based option
+	CNetworkHandle( CBaseEntity, skycamera );
+
+	// Sky clearcolor
+	CNetworkColor32( skycolor );
+
 	// 3d skybox fog data
 	CNetworkVarEmbedded( fogparams_t, fog );
 };

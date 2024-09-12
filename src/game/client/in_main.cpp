@@ -1173,6 +1173,7 @@ void CInput::CreateMove ( int sequence_number, float input_sample_frametime, boo
 	}
 
 	// Let the move manager override anything it wants to.
+	cmd->buttons |= IN_VALIDVGUIINPUT;
 	if ( GetClientMode()->CreateMove( input_sample_frametime, cmd ) )
 	{
 		// Get current view angles after the client mode tweaks with it
@@ -1242,7 +1243,7 @@ void CInput::DecodeUserCmdFromBuffer( bf_read& buf, int sequence_number )
 	CUserCmd nullcmd;
 	CUserCmd *cmd = &m_pCommands[ sequence_number % MULTIPLAYER_BACKUP];
 
-	ReadUsercmd( &buf, cmd, &nullcmd );
+	ReadUsercmd( &buf, cmd, &nullcmd, NULL );
 }
 
 void CInput::ValidateUserCmd( CUserCmd *usercmd, int sequence_number )

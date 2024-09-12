@@ -50,12 +50,12 @@ void CLogicPlayerProxy::Activate( void )
 	}
 }
 
-bool CLogicPlayerProxy::PassesDamageFilter( const CTakeDamageInfo &info )
+bool CLogicPlayerProxy::PassesDamageFilter( CBaseEntity *pCaller, const CTakeDamageInfo &info )
 {
 	if (m_hDamageFilter)
 	{
 		CBaseFilter *pFilter = (CBaseFilter *)(m_hDamageFilter.Get());
-		return pFilter->PassesDamageFilter(info);
+		return pFilter->PassesDamageFilter(pCaller, info);
 	}
 
 	return true;

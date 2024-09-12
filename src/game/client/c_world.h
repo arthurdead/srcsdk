@@ -39,6 +39,12 @@ public:
 	float GetWaveHeight() const;
 	const char *GetDetailSpriteMaterial() const;
 
+	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+
+	// A special function which parses map data for the client world entity before LevelInitPreEntity().
+	// This can be used to access keyvalues early and without transmitting from the server.
+	void ParseWorldMapData( const char *pMapData );
+
 public:
 	enum
 	{
@@ -55,6 +61,8 @@ public:
 	float	m_flMaxPropScreenSpaceWidth;
 	bool	m_bColdWorld;
 	int		m_iTimeOfDay;
+
+	char	m_iszChapterTitle[64];
 
 private:
 	void	RegisterSharedActivities( void );

@@ -74,6 +74,9 @@ static void DispatchComeback( CAI_ExpresserWithFollowup *pExpress, CBaseEntity *
 	// add in the FROM context so dispatchee knows was from me
 	const char * RESTRICT pszSpeakerName = GetResponseName( pSpeaker );
 	criteria.AppendCriteria( "From", pszSpeakerName );
+	// See DispatchFollowupThroughQueue()
+	criteria.AppendCriteria( "From_idx", CNumStr( pSpeaker->entindex() ) );
+	criteria.AppendCriteria( "From_class", pSpeaker->GetClassname() );
 	// if a SUBJECT criteria is missing, put it back in.
 	if ( criteria.FindCriterionIndex( "Subject" ) == -1 )
 	{
@@ -83,16 +86,12 @@ static void DispatchComeback( CAI_ExpresserWithFollowup *pExpress, CBaseEntity *
 	// add in any provided contexts from the parameters onto the ones stored in the followup
 	criteria.Merge( followup.followup_contexts );
 
-	// This is kludgy and needs to be fixed in class hierarchy, but for now, try to guess at the most likely
-	// kinds of targets and dispatch to them.
-	if (CBaseExpresserPlayer *pPlayer = ToBaseExpresserPlayer(pRespondent))
+	if (CAI_ExpresserSink *pSink = dynamic_cast<CAI_ExpresserSink *>(pRespondent))
 	{
-		pPlayer->Speak( followup.followup_concept, &criteria );
-	}
+		criteria.AppendCriteria( "dist_from_issuer",  UTIL_VarArgs( "%f", (pRespondent->GetAbsOrigin() - pSpeaker->GetAbsOrigin()).Length() ) );
+		g_ResponseQueueManager.GetQueue()->AppendFollowupCriteria( followup.followup_concept, criteria, pSink->GetSinkExpresser(), pSink, pRespondent, pSpeaker, kDRT_SPECIFIC );
 
-	else if (CAI_BaseActor *pActor = dynamic_cast<CAI_BaseActor *>(pRespondent))
-	{
-		pActor->Speak( followup.followup_concept, &criteria );
+		pSink->Speak( followup.followup_concept, &criteria );
 	}
 }
 
@@ -141,7 +140,15 @@ static CBaseEntity *AscertainSpeechSubjectFromContext( AI_Response *response, AI
 	if (subject)
 	{
 
-		return gEntList.FindEntityByName( NULL, subject );
+		CBaseEntity *pEnt = gEntList.FindEntityByName( NULL, subject );
+
+		// Allow entity indices to be used (see DispatchFollowupThroughQueue() for one particular use case)
+		if (!pEnt && atoi(subject))
+		{
+			pEnt = CBaseEntity::Instance( atoi( subject ) );
+		}
+
+		return pEnt;
 
 	}
 	else
@@ -166,7 +173,8 @@ static CResponseQueue::CFollowupTargetSpec_t ResolveFollowupTargetToEntity( AICo
 	}
 	else if ( Q_stricmp(szTarget, "from") == 0 )
 	{
-		return CResponseQueue::CFollowupTargetSpec_t( AscertainSpeechSubjectFromContext( response, criteria, "From" ) );
+		// See DispatchFollowupThroughQueue()
+		return CResponseQueue::CFollowupTargetSpec_t( AscertainSpeechSubjectFromContext( response, criteria, "From_idx" ) );
 	}
 	else if ( Q_stricmp(szTarget, "any") == 0 )
 	{
@@ -178,7 +186,7 @@ static CResponseQueue::CFollowupTargetSpec_t ResolveFollowupTargetToEntity( AICo
 	}
 
 	// last resort, try a named lookup
-	else if ( CBaseEntity *pSpecific = gEntList.FindEntityByName(NULL, szTarget) ) // it could be anything
+	else if ( CBaseEntity *pSpecific = gEntList.FindEntityByName(NULL, szTarget, concept.GetSpeaker()) ) // it could be anything
 	{
 		return CResponseQueue::CFollowupTargetSpec_t( pSpecific );
 	}
@@ -299,14 +307,14 @@ bool CAI_ExpresserWithFollowup::SpeakDispatchResponse( AIConcept_t &concept, AI_
 	if ( followup  )
 	{
 		if ( followup->followup_entityiotarget && followup->followup_entityioinput )
-		if ( criteria ) 
 		{
-			CBaseEntity * RESTRICT pTarget = gEntList.FindEntityByName( NULL, followup->followup_entityiotarget );
+			CBaseEntity * RESTRICT pTarget = ResolveFollowupTargetToEntity( concept, *criteria, followup->followup_entityiotarget, response ).m_hHandle;
 			if ( pTarget )
 			{
 				g_EventQueue.AddEvent( pTarget, followup->followup_entityioinput, variant_t(), followup->followup_entityiodelay, GetOuter(), GetOuter() );
 			}
 		}
+
 		if ( followup->IsValid() )
 		{
 			// 11th hour change: rather than trigger followups from the end of a VCD,
@@ -350,13 +358,6 @@ bool CAI_ExpresserWithFollowup::SpeakDispatchResponse( AIConcept_t &concept, AI_
 					ResolveFollowupTargetToEntity( concept, *criteria, response, followup ), 
 					-followup->followup_delay, GetOuter() );
 			}
-			else if ( response->GetType() == ResponseRules::RESPONSE_PRINT )
-			{	// zero-duration responses dispatch immediately via the queue (must be the queue bec.
-				// the m_pPostponedFollowup will never trigger)
-				DispatchFollowupThroughQueue( followup->followup_concept, followup->followup_contexts, 
-					ResolveFollowupTargetToEntity( concept, *criteria, response, followup ), 
-					followup->followup_delay, GetOuter() );
-			}
 			else
 			{
 				// this is kind of a quick patch to immediately deal with the issue of null criteria 
@@ -394,6 +395,16 @@ void CAI_ExpresserWithFollowup::DispatchFollowupThroughQueue( const AIConcept_t 
 
 	criteria.AppendCriteria( "From", STRING( pOuter->GetEntityName() ) );
 
+	// The index of the "From" entity.
+	// In HL2 mods, many followup users would be generic NPCs (e.g. citizens) who might not have any particular significance.
+	// Those generic NPCs are quite likely to have no name or have a name in common with other entities. As a result, Mapbase
+	// changes internal operations of the "From" context to search for an entity index. This won't be 100% reliable if the source
+	// talker dies and another entity is created immediately afterwards, but it's a lot more reliable than a simple entity name search.
+	criteria.AppendCriteria( "From_idx", CNumStr( pOuter->entindex() ) );
+
+	// Generic NPCs should also be attributable by classname
+	criteria.AppendCriteria( "From_class", pOuter->GetClassname() );
+
 	criteria.Merge( criteriaStr );
 	g_ResponseQueueManager.GetQueue()->Add( concept, &criteria, gpGlobals->curtime + delay, target, pOuter );
 }
@@ -429,6 +440,11 @@ void CAI_ExpresserWithFollowup::OnSpeechFinished()
 {
 	if (m_pPostponedFollowup && m_pPostponedFollowup->IsValid())
 	{
+		// HACKHACK: Non-scene speech (e.g. noscene speak/sentence) fire OnSpeechFinished() immediately,
+		// so add the actual speech time to the followup delay
+		if (GetTimeSpeechCompleteWithoutDelay() > gpGlobals->curtime)
+			m_pPostponedFollowup->followup_delay += GetTimeSpeechCompleteWithoutDelay() - gpGlobals->curtime;
+
 		return SpeakDispatchFollowup(*m_pPostponedFollowup);
 	}
 }

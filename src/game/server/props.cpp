@@ -43,6 +43,7 @@
 #include "vehicle_base.h"
 #include "tier0/icommandline.h"
 #include "vphysics/friction.h"
+#include "collisionutils.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -80,9 +81,12 @@ ConVar func_breakdmg_explosive( "func_breakdmg_explosive", "1.25" );
 
 ConVar sv_turbophysics( "sv_turbophysics", "0", FCVAR_REPLICATED, "Turns on turbo physics" );
 
+ConVar mapbase_prop_consistency_noremove("sv_prop_consistency_noremove", "1", FCVAR_NONE, "Prevents the removal of props when their classes do not match up with their models' propdata.");
+
 #ifdef HL2_EPISODIC
-	#define PROP_FLARE_LIFETIME 30.0f
+	#define DEFAULT_PROP_FLARE_LIFETIME 30.0f
 	#define PROP_FLARE_IGNITE_SUBSTRACT 5.0f
+	float GetEnvFlareLifetime( CBaseEntity *pEntity );
 	CBaseEntity *CreateFlare( Vector vOrigin, QAngle Angles, CBaseEntity *pOwner, float flDuration );
 	void KillFlare( CBaseEntity *pOwnerEntity, CBaseEntity *pEntity, float flKillTime );
 #endif
@@ -216,28 +220,34 @@ void CBaseProp::Spawn( void )
 	{
 		if ( iResult == PARSE_FAILED_BAD_DATA )
 		{
-			DevWarning( "%s at %.0f %.0f %0.f uses model %s, which has an invalid prop_data type. DELETED.\n", GetClassname(), GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z, szModel );
-			UTIL_Remove( this );
-			return;
+			DevWarning( "%s at %.0f %.0f %0.f uses model %s, which has an invalid prop_data type.\n", GetClassname(), GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z, szModel );
+			if (!mapbase_prop_consistency_noremove.GetBool()) {
+				UTIL_Remove( this );
+				return;
+			}
 		}
 		else if ( iResult == PARSE_FAILED_NO_DATA )
 		{
 			// If we don't have data, but we're a prop_physics, fail
 			if ( FClassnameIs( this, "prop_physics" ) )
 			{
-				DevWarning( "%s at %.0f %.0f %0.f uses model %s, which has no propdata which means it must be used on a prop_static. DELETED.\n", GetClassname(), GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z, szModel );
-				UTIL_Remove( this );
-				return;
+				DevWarning( "%s at %.0f %.0f %0.f uses model %s, which has no propdata which means it must be used on a prop_static.\n", GetClassname(), GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z, szModel );
+				if (!mapbase_prop_consistency_noremove.GetBool()) {
+					UTIL_Remove( this );
+					return;
+				}
 			}
 		}
 		else if ( iResult == PARSE_SUCCEEDED )
 		{
 			// If we have data, and we're not a physics prop, fail
-			if ( !dynamic_cast<CPhysicsProp*>(this) )
+			if ( !IsPropPhysics() )
 			{
-				DevWarning( "%s at %.0f %.0f %0.f uses model %s, which has propdata which means that it be used on a prop_physics. DELETED.\n", GetClassname(), GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z, szModel );
-				UTIL_Remove( this );
-				return;
+				DevWarning( "%s at %.0f %.0f %0.f uses model %s, which has propdata which means that it be used on a prop_physics.\n", GetClassname(), GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z, szModel );
+				if (!mapbase_prop_consistency_noremove.GetBool()) {
+					UTIL_Remove( this );
+					return;
+				}
 			}
 		}
 	}
@@ -296,7 +306,7 @@ bool CBaseProp::KeyValue( const char *szKeyName, const char *szValue )
 	if ( FStrEq(szKeyName, "health") )
 	{
 		// Only override props are allowed to override health.
-		if ( FClassnameIs( this, "prop_physics_override" ) || FClassnameIs( this, "prop_dynamic_override" ) )
+		if ( OverridePropdata() && !FStrEq(szValue, "-1") )
 			return BaseClass::KeyValue( szKeyName, szValue );
 
 		return true;
@@ -723,6 +733,39 @@ void CBreakableProp::HandleInteractionStick( int index, gamevcollisionevent_t *p
 	}
 }
 
+extern int g_interactionBarnacleVictimBite;
+extern ConVar npc_barnacle_ignite;
+//-----------------------------------------------------------------------------
+// Purpose:  Uses the new CBaseEntity interaction implementation
+// Input  :  The type of interaction, extra info pointer, and who started it
+// Output :	 true  - if sub-class has a response for the interaction
+//			 false - if sub-class has no response
+//-----------------------------------------------------------------------------
+bool CBreakableProp::HandleInteraction( int interactionType, void *data, CBaseCombatCharacter* sourceEnt )
+{
+#ifdef HL2_EPISODIC
+	// Allows flares to ignite barnacles.
+	if ( interactionType == g_interactionBarnacleVictimBite )
+	{
+		if ( npc_barnacle_ignite.GetBool() && sourceEnt->IsOnFire() == false )
+		{
+			sourceEnt->Ignite( 25.0f );
+			KillFlare( this, m_hFlareEnt, PROP_FLARE_IGNITE_SUBSTRACT );
+			IGameEvent *event = gameeventmanager->CreateEvent( "flare_ignite_npc" );
+			if ( event )
+			{
+				event->SetInt( "entindex", sourceEnt->entindex() );
+				gameeventmanager->FireEvent( event );
+			}
+		}
+
+		return true;
+	}
+#endif
+
+	return BaseClass::HandleInteraction(interactionType, data, sourceEnt);
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Turn on prop debugging mode
 //-----------------------------------------------------------------------------
@@ -778,6 +821,9 @@ BEGIN_MAPENTITY( CBreakableProp )
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisablePhyscannonPickup", InputDisablePhyscannonPickup ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnablePuntSound", InputEnablePuntSound ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisablePuntSound", InputDisablePuntSound ),
+
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetInteraction", InputSetInteraction ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "RemoveInteraction", InputRemoveInteraction ),
 
 	// Outputs
 	DEFINE_OUTPUT( m_OnBreak, "OnBreak" ),
@@ -889,7 +935,8 @@ void CBreakableProp::Spawn()
 		m_impactEnergyScale = 0.1f;
 	}
 
- 	m_preferredCarryAngles = QAngle( -5, 0, 0 );
+	if (!m_bUsesCustomCarryAngles)
+		m_preferredCarryAngles = QAngle( -5, 0, 0 );
 
 	// The presence of this activity causes us to have to detach it before it can be grabbed.
 	if ( SelectWeightedSequence( ACT_PHYSCANNON_ANIMATE ) != ACTIVITY_NOT_AVAILABLE )
@@ -910,6 +957,55 @@ void CBreakableProp::Spawn()
 	m_hBreaker = NULL;
 
 	SetTouch( &CBreakableProp::BreakablePropTouch );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Handles keyvalues from the BSP. Called before spawning.
+//-----------------------------------------------------------------------------
+bool CBreakableProp::KeyValue( const char *szKeyName, const char *szValue )
+{
+	if ( OverridePropdata() )
+	{
+		if ( FStrEq(szKeyName, "InitialInteractions") )
+		{
+			// Only override props are allowed to override interactions.
+			if (strchr(szValue, ' '))
+			{
+				// How many interactions could there possibly be?
+				char szInteractions[64];
+				Q_strncpy(szInteractions, szValue, sizeof(szInteractions));
+
+				char *token = strtok(szInteractions, " ,");
+				while (token)
+				{
+					SetInteraction((propdata_interactions_t)atoi(token));
+					token = strtok(token, " ,");
+				}
+			}
+			else
+				SetInteraction((propdata_interactions_t)atoi(szValue));
+		}
+		else if ( FStrEq(szKeyName, "preferredcarryangles") )
+		{
+			// Only detect as custom if it's non-zero
+			if (!FStrEq( szValue, "0" ))
+			{
+				QAngle angCarryAngles;
+				UTIL_StringToVector( angCarryAngles.Base(), szValue );
+
+				m_preferredCarryAngles = angCarryAngles;
+				m_bUsesCustomCarryAngles = true;
+			}
+		}
+		else
+			return BaseClass::KeyValue( szKeyName, szValue );
+	}
+	else
+	{
+		return BaseClass::KeyValue( szKeyName, szValue );
+	}
+
+	return true;
 }
 
 void CBreakableProp::UpdateOnRemove()
@@ -1234,6 +1330,21 @@ void CBreakableProp::InputSetHealth( inputdata_t &inputdata )
 	UpdateHealth( inputdata.value.Int(), inputdata.pActivator );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Input handler for setting interactions.
+//-----------------------------------------------------------------------------
+void CBreakableProp::InputSetInteraction( inputdata_t &inputdata )
+{
+	SetInteraction( (propdata_interactions_t)inputdata.value.Int() );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Input handler for Adding interactions.
+//-----------------------------------------------------------------------------
+void CBreakableProp::InputRemoveInteraction( inputdata_t &inputdata )
+{
+	RemoveInteraction( (propdata_interactions_t)inputdata.value.Int() );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Choke point for changes to breakable health. Ensures outputs are fired.
@@ -1490,7 +1601,8 @@ void CBreakableProp::CreateFlare( float flLifetime )
 		int iAttachment = LookupAttachment( "fuse" );
 
 		Vector vOrigin;
-		GetAttachment( iAttachment, vOrigin );
+		if (!GetAttachment( iAttachment, vOrigin ))
+			vOrigin = GetLocalOrigin();
 
 		pFlare->SetMoveType( MOVETYPE_NONE );
 		pFlare->SetSolid( SOLID_NONE );
@@ -2439,6 +2551,350 @@ void COrnamentProp::InputDetach( inputdata_t &inputdata )
 	DetachFromOwner();
 }
 
+#define SF_INTERACTABLE_USE_INTERACTS					512	// Allows +USE interaction.
+#define SF_INTERACTABLE_TOUCH_INTERACTS					1024 // Allows touch interaction.
+#define SF_INTERACTABLE_IGNORE_COMMANDS_WHEN_LOCKED		2048 // Completely ignores player commands when locked.
+#define SF_INTERACTABLE_RADIUS_USE						4096 // Uses radius +USE
+
+//-----------------------------------------------------------------------------
+// Purpose: Button prop for +USEable dynamic props
+//-----------------------------------------------------------------------------
+class CInteractableProp : public CDynamicProp
+{
+	DECLARE_CLASS( CInteractableProp, CDynamicProp );
+public:
+	DECLARE_MAPENTITY();
+
+	void Spawn();
+	void Precache();
+	//void Activate();
+
+	int	ObjectCaps()
+	{
+		int caps = BaseClass::ObjectCaps();
+		
+		if (HasSpawnFlags(SF_INTERACTABLE_USE_INTERACTS) && (!HasSpawnFlags( SF_INTERACTABLE_IGNORE_COMMANDS_WHEN_LOCKED ) || !m_bLocked))
+		{
+			caps |= FCAP_IMPULSE_USE;
+		
+			if (HasSpawnFlags(SF_INTERACTABLE_RADIUS_USE))
+				caps |= FCAP_USE_IN_RADIUS;
+		}
+
+		return caps;
+	};
+
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void InteractablePropTouch( CBaseEntity *pOther );
+
+	void SetPushSequence(int iSequence);
+	void PushThink();
+
+	// Input handlers
+	void InputLock( inputdata_t &inputdata );
+	void InputUnlock( inputdata_t &inputdata );
+	void InputPress( inputdata_t &inputdata );
+
+	void InputEnableUseInteraction( inputdata_t &inputdata ) { AddSpawnFlags(SF_INTERACTABLE_USE_INTERACTS); }
+	void InputDisableUseInteraction( inputdata_t &inputdata ) { RemoveSpawnFlags(SF_INTERACTABLE_USE_INTERACTS); }
+	void InputEnableTouchInteraction( inputdata_t &inputdata ) { AddSpawnFlags( SF_INTERACTABLE_TOUCH_INTERACTS ); }
+	void InputDisableTouchInteraction( inputdata_t &inputdata ) { RemoveSpawnFlags( SF_INTERACTABLE_TOUCH_INTERACTS ); }
+	void InputStartIgnoringCommandsWhenLocked( inputdata_t &inputdata ) { AddSpawnFlags( SF_INTERACTABLE_IGNORE_COMMANDS_WHEN_LOCKED ); }
+	void InputStopIgnoringCommandsWhenLocked( inputdata_t &inputdata ) { RemoveSpawnFlags( SF_INTERACTABLE_IGNORE_COMMANDS_WHEN_LOCKED ); }
+	void InputEnableRadiusInteract( inputdata_t &inputdata ) { AddSpawnFlags( SF_INTERACTABLE_RADIUS_USE ); }
+	void InputDisableRadiusInteract( inputdata_t &inputdata ) { RemoveSpawnFlags( SF_INTERACTABLE_RADIUS_USE ); }
+
+	COutputEvent m_OnPressed;
+	COutputEvent m_OnLockedUse;
+	COutputEvent m_OnIn;
+	COutputEvent m_OnOut;
+
+	bool m_bLocked;
+
+	float m_flCooldown;
+
+private:
+	float m_flCooldownTime;
+
+	int m_iCurSequence = INTERACTSEQ_NONE; // Currently in a sequence
+	enum
+	{
+		INTERACTSEQ_NONE = -1,
+		INTERACTSEQ_IN,
+		INTERACTSEQ_OUT,
+		INTERACTSEQ_LOCKED,
+	};
+
+	string_t	m_iszPressedSound;
+	string_t	m_iszLockedSound;
+
+	string_t	m_iszInSequence;
+	string_t	m_iszOutSequence;
+	string_t	m_iszLockedSequence;
+
+	Vector		m_vecUseMins;
+	Vector		m_vecUseMaxs;
+};
+
+LINK_ENTITY_TO_CLASS( prop_interactable, CInteractableProp );
+
+BEGIN_MAPENTITY( CInteractableProp )
+
+	DEFINE_KEYFIELD( m_bLocked, FIELD_BOOLEAN, "Locked" ),
+	DEFINE_INPUT( m_flCooldown, FIELD_FLOAT, "SetCooldown" ),
+
+	DEFINE_KEYFIELD( m_iszPressedSound, FIELD_STRING, "PressedSound" ),
+	DEFINE_KEYFIELD( m_iszLockedSound, FIELD_STRING, "LockedSound" ),
+	DEFINE_KEYFIELD( m_iszInSequence, FIELD_STRING, "InSequence" ),
+	DEFINE_KEYFIELD( m_iszOutSequence, FIELD_STRING, "OutSequence" ),
+	DEFINE_KEYFIELD( m_iszLockedSequence, FIELD_STRING, "LockedSequence" ),
+
+	DEFINE_KEYFIELD( m_vecUseMins, FIELD_VECTOR, "use_mins" ),
+	DEFINE_KEYFIELD( m_vecUseMaxs, FIELD_VECTOR, "use_maxs" ),
+
+	// Inputs
+	DEFINE_INPUTFUNC( FIELD_VOID,	"Lock",		InputLock ),
+	DEFINE_INPUTFUNC( FIELD_VOID,	"Unlock",	InputUnlock ),
+	DEFINE_INPUTFUNC( FIELD_VOID,	"Press",	InputPress ),
+
+	DEFINE_INPUTFUNC( FIELD_VOID,	"EnableUseInteraction",		InputEnableUseInteraction ),
+	DEFINE_INPUTFUNC( FIELD_VOID,	"DisableUseInteraction",	InputDisableUseInteraction ),
+	DEFINE_INPUTFUNC( FIELD_VOID,	"EnableTouchInteraction",	InputEnableTouchInteraction ),
+	DEFINE_INPUTFUNC( FIELD_VOID,	"DisableTouchInteraction",	InputDisableTouchInteraction ),
+	DEFINE_INPUTFUNC( FIELD_VOID,	"StartIgnoringCommandsWhenLocked",	InputStartIgnoringCommandsWhenLocked ),
+	DEFINE_INPUTFUNC( FIELD_VOID,	"StopIgnoringCommandsWhenLocked",	InputStopIgnoringCommandsWhenLocked ),
+	DEFINE_INPUTFUNC( FIELD_VOID,	"EnableRadiusInteract",		InputEnableRadiusInteract ),
+	DEFINE_INPUTFUNC( FIELD_VOID,	"DisableRadiusInteract",	InputDisableRadiusInteract ),
+
+	// Outputs
+	DEFINE_OUTPUT( m_OnPressed, "OnPressed" ),
+	DEFINE_OUTPUT( m_OnLockedUse, "OnLockedUse" ),
+	DEFINE_OUTPUT( m_OnIn, "OnIn" ),
+	DEFINE_OUTPUT( m_OnOut, "OnOut" ),
+
+END_MAPENTITY()
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CInteractableProp::Spawn( void )
+{
+	BaseClass::Spawn();
+
+	SetTouch( &CInteractableProp::InteractablePropTouch );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CInteractableProp::Precache( void )
+{
+	BaseClass::Precache();
+
+	if (m_iszPressedSound != NULL_STRING)
+		PrecacheScriptSound( STRING(m_iszPressedSound) );
+	if (m_iszLockedSound != NULL_STRING)
+		PrecacheScriptSound( STRING(m_iszLockedSound) );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *pActivator - 
+//			*pCaller - 
+//			useType - 
+//			value - 
+//-----------------------------------------------------------------------------
+void CInteractableProp::Use(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value)
+{
+	if (m_flCooldownTime > gpGlobals->curtime)
+		return;
+
+	// If we're using +USE mins/maxs, make sure this is being +USE'd from the right place
+	if (m_vecUseMins.LengthSqr() != 0.0f && m_vecUseMaxs.LengthSqr() != 0.0f)
+	{
+		CBasePlayer *pPlayer = ToBasePlayer(pActivator);
+		if (pPlayer)
+		{
+			Vector forward;
+			pPlayer->EyeVectors(&forward, NULL, NULL);
+
+			// This might be a little convoluted and/or seem needlessly expensive, but I couldn't figure out any better way to do this.
+			// TOOD: Can we calculate a box in local space instead of world space?
+			Vector vecWorldMins, vecWorldMaxs;
+			RotateAABB(EntityToWorldTransform(), m_vecUseMins, m_vecUseMaxs, vecWorldMins, vecWorldMaxs);
+			TransformAABB(EntityToWorldTransform(), vecWorldMins, vecWorldMaxs, vecWorldMins, vecWorldMaxs);
+			if (!IsBoxIntersectingRay(vecWorldMins, vecWorldMaxs, pPlayer->EyePosition(), forward * 1024))
+			{
+				// Reject this +USE if it's not in our box
+				DevMsg("Outside of +USE box\n");
+				return;
+			}
+		}
+	}
+
+	int nSequence = -1;
+
+	if (m_bLocked)
+	{
+		m_OnLockedUse.FireOutput(pActivator, this);
+		EmitSound(STRING(m_iszLockedSound));
+		nSequence = LookupSequence(STRING(m_iszLockedSequence));
+		m_iCurSequence = INTERACTSEQ_LOCKED;
+	}
+	else
+	{
+		m_OnPressed.FireOutput(pActivator, this);
+		EmitSound(STRING(m_iszPressedSound));
+		nSequence = LookupSequence(STRING(m_iszInSequence));
+		m_iCurSequence = INTERACTSEQ_IN;
+	}
+
+	if (nSequence > ACTIVITY_NOT_AVAILABLE)
+	{
+		SetPushSequence(nSequence);
+
+		// We still fire our inherited animation outputs
+		m_pOutputAnimBegun.FireOutput(pActivator, this);
+	}
+
+	if (m_flCooldown == -1 && !m_bLocked){
+		m_flCooldownTime = FLT_MAX; // yeah we're not going to hit this any time soon
+	}
+	else if (m_flCooldown == -1){
+		m_flCooldownTime = gpGlobals->curtime + 1.0f; // 1s cooldown if locked
+	}
+	else{
+		m_flCooldownTime = gpGlobals->curtime + m_flCooldown;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *pOther - 
+//-----------------------------------------------------------------------------
+void CInteractableProp::InteractablePropTouch( CBaseEntity *pOther )
+{
+	// Do base touch function first
+	BreakablePropTouch( pOther );
+
+	if ( HasSpawnFlags(SF_INTERACTABLE_TOUCH_INTERACTS) && (!HasSpawnFlags(SF_INTERACTABLE_IGNORE_COMMANDS_WHEN_LOCKED) || !m_bLocked) && pOther->IsPlayer() )
+	{
+		Use( pOther, pOther, USE_ON, 0 );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CInteractableProp::InputLock( inputdata_t &inputdata )
+{
+	m_bLocked = true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CInteractableProp::InputUnlock( inputdata_t &inputdata )
+{
+	m_bLocked = false;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CInteractableProp::InputPress( inputdata_t &inputdata )
+{
+	Use( inputdata.pActivator, inputdata.pCaller, USE_ON, 0 );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CInteractableProp::SetPushSequence( int iSequence )
+{
+	m_iGoalSequence = iSequence;
+
+	int nNextSequence;
+	float nextCycle;
+	float flInterval = 0.1f;
+
+	if (GotoSequence( GetSequence(), GetCycle(), GetPlaybackRate(), m_iGoalSequence, nNextSequence, nextCycle, m_iTransitionDirection ))
+	{
+		FinishSetSequence( nNextSequence );
+	}
+
+	SetThink( &CInteractableProp::PushThink );
+	if ( GetNextThink() <= gpGlobals->curtime )
+		SetNextThink( gpGlobals->curtime + flInterval );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CInteractableProp::PushThink()
+{
+	if ( m_nPendingSequence != -1 )
+	{
+		FinishSetSequence( m_nPendingSequence );
+		m_nPendingSequence = -1;
+	}
+
+	SetNextThink( gpGlobals->curtime + 0.1f );
+
+	if ( ((m_iTransitionDirection > 0 && GetCycle() >= 0.999f) || (m_iTransitionDirection < 0 && GetCycle() <= 0.0f)) && !SequenceLoops() )
+	{
+		if (!SequenceLoops())
+		{
+			// We still fire our inherited animation outputs
+			m_pOutputAnimOver.FireOutput(NULL, this);
+		}
+
+		if (m_iCurSequence == INTERACTSEQ_OUT)
+		{
+			m_OnOut.FireOutput( NULL, this );
+
+			m_iCurSequence = INTERACTSEQ_NONE;
+		}
+		else
+		{
+			m_OnIn.FireOutput( NULL, this );
+		}
+	}
+
+	StudioFrameAdvance();
+	DispatchAnimEvents(this);
+	m_BoneFollowerManager.UpdateBoneFollowers(this);
+
+	if (m_flCooldownTime < gpGlobals->curtime)
+	{
+		if (m_iCurSequence == INTERACTSEQ_IN)
+		{
+			int nSequence = LookupSequence( STRING(m_iszOutSequence) );
+			if ( m_iszOutSequence != NULL_STRING && nSequence > ACTIVITY_NOT_AVAILABLE )
+			{
+				m_iCurSequence = INTERACTSEQ_OUT;
+				SetPushSequence(nSequence);
+
+				// We still fire our inherited animation outputs
+				m_pOutputAnimBegun.FireOutput( NULL, this );
+			}
+			else
+			{
+				m_iCurSequence = INTERACTSEQ_NONE;
+			}
+		}
+
+		if (m_iCurSequence == INTERACTSEQ_NONE)
+		{
+			if (m_iszDefaultAnim != NULL_STRING)
+			{
+				PropSetAnim( STRING( m_iszDefaultAnim ) );
+			}
+
+			SetNextThink( TICK_NEVER_THINK );
+		}
+	}
+}
 
 //=============================================================================
 // PHYSICS PROPS
@@ -2454,6 +2910,7 @@ BEGIN_MAPENTITY( CPhysicsProp )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Wake", InputWake ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Sleep", InputSleep ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableFloating", InputDisableFloating ),
+	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "SetDebris", InputSetDebris ),
 
 	DEFINE_KEYFIELD( m_massScale, FIELD_FLOAT, "massscale" ),
 	DEFINE_KEYFIELD( m_inertiaScale, FIELD_FLOAT, "inertiascale" ),
@@ -2533,7 +2990,7 @@ CPhysicsProp::~CPhysicsProp()
 
 bool CPhysicsProp::IsGib()
 {
-	return (m_spawnflags & SF_PHYSPROP_IS_GIB) ? true : false;
+	return HasSpawnFlags( SF_PHYSPROP_IS_GIB) ? true : false;
 }
 
 //-----------------------------------------------------------------------------
@@ -2550,7 +3007,7 @@ void CPhysicsProp::Spawn( )
 	// Condense classname's to one, except for "prop_physics_override"
 	if ( FClassnameIs( this, "physics_prop" ) )
 	{
-		SetClassname( "prop_physics" );
+		m_iClassname = gm_isz_class_PropPhysics;
 	}
 
 	BaseClass::Spawn();
@@ -2561,9 +3018,9 @@ void CPhysicsProp::Spawn( )
 	m_flFrozenThawRate = 0.1f;
 
 	// Now condense all classnames to one
-	if ( FClassnameIs( this, "prop_physics_override") )
+	if ( EntIsClass( this, gm_isz_class_PropPhysicsOverride ) )
 	{
-		SetClassname( "prop_physics" );
+		m_iClassname = gm_isz_class_PropPhysics;
 	}
 
 	if ( HasSpawnFlags( SF_PHYSPROP_DEBRIS ) || HasInteraction( PROPINTER_PHYSGUN_CREATE_FLARE ) )
@@ -2785,7 +3242,7 @@ bool CPhysicsProp::CanBePickedUpByPhyscannon( void )
 //-----------------------------------------------------------------------------
 bool CPhysicsProp::OverridePropdata( void )
 {
-	return ( FClassnameIs(this, "prop_physics_override" ) );
+	return EntIsClass(this, gm_isz_class_PropPhysicsOverride);
 }
 
 //-----------------------------------------------------------------------------
@@ -2836,6 +3293,23 @@ void CPhysicsProp::InputDisableMotion( inputdata_t &inputdata )
 void CPhysicsProp::InputDisableFloating( inputdata_t &inputdata )
 {
 	PhysEnableFloating( VPhysicsGetObject(), false );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Adds or removes the debris spawnflag.
+//-----------------------------------------------------------------------------
+void CPhysicsProp::InputSetDebris( inputdata_t &inputdata )
+{
+	if (inputdata.value.Bool())
+	{
+		AddSpawnFlags(SF_PHYSPROP_DEBRIS);
+		SetCollisionGroup(HasSpawnFlags(SF_PHYSPROP_FORCE_TOUCH_TRIGGERS) ? COLLISION_GROUP_DEBRIS_TRIGGER : COLLISION_GROUP_DEBRIS);
+	}
+	else
+	{
+		RemoveSpawnFlags(SF_PHYSPROP_DEBRIS);
+		SetCollisionGroup(COLLISION_GROUP_INTERACTIVE); // Is this the default collision group?
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -3776,6 +4250,9 @@ enum
 
 void PlayLockSounds(CBaseEntity *pEdict, locksound_t *pls, int flocked, int fbutton);
 
+ConVar ai_door_enable_acts( "ai_door_enable_acts", "0", FCVAR_NONE, "Enables the new door-opening activities by default. Override keyvalues will override this cvar." );
+ConVar ai_door_open_dist_override( "ai_door_open_dist_override", "-1", FCVAR_NONE, "Overrides the distance from a door a NPC has to navigate to in order to open a door." );
+
 BEGIN_MAPENTITY(CBasePropDoor)
 
 	DEFINE_KEYFIELD(m_nHardwareType, FIELD_INTEGER, "hardware"),
@@ -3787,6 +4264,9 @@ BEGIN_MAPENTITY(CBasePropDoor)
 	DEFINE_KEYFIELD(m_ls.sLockedSound, FIELD_SOUNDNAME, "soundlockedoverride"),
 	DEFINE_KEYFIELD(m_ls.sUnlockedSound, FIELD_SOUNDNAME, "soundunlockedoverride"),
 	DEFINE_KEYFIELD(m_SlaveName, FIELD_STRING, "slavename" ),
+	DEFINE_KEYFIELD(m_flNPCOpenDistance, FIELD_FLOAT, "opendistoverride"),
+	DEFINE_KEYFIELD(m_eNPCOpenFrontActivity, FIELD_INTEGER, "openfrontactivityoverride"),
+	DEFINE_KEYFIELD(m_eNPCOpenBackActivity, FIELD_INTEGER, "openbackactivityoverride"),
 
 	//DEFINE_KEYFIELD(m_flBlockDamage, FIELD_FLOAT, "dmg"),
 	DEFINE_KEYFIELD( m_bForceClosed, FIELD_BOOLEAN, "forceclosed" ),
@@ -3797,6 +4277,8 @@ BEGIN_MAPENTITY(CBasePropDoor)
 	DEFINE_INPUTFUNC(FIELD_VOID, "Toggle", InputToggle),
 	DEFINE_INPUTFUNC(FIELD_VOID, "Lock", InputLock),
 	DEFINE_INPUTFUNC(FIELD_VOID, "Unlock", InputUnlock),
+	DEFINE_INPUTFUNC(FIELD_VOID, "AllowPlayerUse", InputAllowPlayerUse),
+	DEFINE_INPUTFUNC(FIELD_VOID, "DisallowPlayerUse", InputDisallowPlayerUse),
 
 	DEFINE_OUTPUT(m_OnBlockedOpening, "OnBlockedOpening"),
 	DEFINE_OUTPUT(m_OnBlockedClosing, "OnBlockedClosing"),
@@ -3840,6 +4322,32 @@ CBasePropDoor::CBasePropDoor( void )
 {
 	m_hMaster = NULL;
 	m_nPhysicsMaterial = -1;
+	m_flNPCOpenDistance = -1;
+	m_eNPCOpenFrontActivity = ACT_INVALID;
+	m_eNPCOpenBackActivity = ACT_INVALID;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Handles keyvalues from the BSP. Called before spawning.
+//-----------------------------------------------------------------------------
+bool CBasePropDoor::KeyValue( const char *szKeyName, const char *szValue )
+{
+	if ( FStrEq(szKeyName, "openfrontactivityoverride") )
+	{
+		m_eNPCOpenFrontActivity = (Activity)CAI_BaseNPC::GetActivityID( szValue );
+		if (m_eNPCOpenFrontActivity == ACT_INVALID)
+			m_eNPCOpenFrontActivity = ActivityList_RegisterPrivateActivity( szValue );
+	}
+	else if ( FStrEq(szKeyName, "openbackactivityoverride") )
+	{
+		m_eNPCOpenBackActivity = (Activity)CAI_BaseNPC::GetActivityID( szValue );
+		if (m_eNPCOpenBackActivity == ACT_INVALID)
+			m_eNPCOpenBackActivity = ActivityList_RegisterPrivateActivity( szValue );
+	}
+	else
+		return BaseClass::KeyValue( szKeyName, szValue );
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -4047,7 +4555,38 @@ void CBasePropDoor::CalcDoorSounds()
 			{
 				strSoundLocked = AllocPooledString( pkvHardwareData->GetString( "locked" ) );
 				strSoundUnlocked = AllocPooledString( pkvHardwareData->GetString( "unlocked" ) );
+
+				if (ai_door_enable_acts.GetBool())
+				{
+					if (m_eNPCOpenFrontActivity == ACT_INVALID)
+					{
+						const char *pszActivity = pkvHardwareData->GetString( "activity_front" );
+						if (pszActivity[0] != '\0')
+						{
+							m_eNPCOpenFrontActivity = (Activity)CAI_BaseNPC::GetActivityID( pszActivity );
+							if (m_eNPCOpenFrontActivity == ACT_INVALID)
+								m_eNPCOpenFrontActivity = ActivityList_RegisterPrivateActivity( pszActivity );
+						}
+					}
+					if (m_eNPCOpenBackActivity == ACT_INVALID)
+					{
+						const char *pszActivity = pkvHardwareData->GetString( "activity_back" );
+						if (pszActivity[0] != '\0')
+						{
+							m_eNPCOpenBackActivity = (Activity)CAI_BaseNPC::GetActivityID( pszActivity );
+							if (m_eNPCOpenBackActivity == ACT_INVALID)
+								m_eNPCOpenBackActivity = ActivityList_RegisterPrivateActivity( pszActivity );
+						}
+					}
+				}
+
+				if (m_flNPCOpenDistance == -1)
+					m_flNPCOpenDistance = pkvHardwareData->GetFloat( "npc_distance", ai_door_enable_acts.GetBool() ? 32.0 : 64.0 );
 			}
+
+			// This would still be -1 if the hardware wasn't valid
+			if (m_flNPCOpenDistance == -1)
+				m_flNPCOpenDistance = ai_door_enable_acts.GetBool() ? 32.0 : 64.0;
 
 			// If any sounds were missing, try the "defaults" block.
 			if ( ( strSoundOpen == NULL_STRING ) || ( strSoundClose == NULL_STRING ) || ( strSoundMoving == NULL_STRING ) ||
@@ -4128,7 +4667,8 @@ void CBasePropDoor::UpdateAreaPortals(bool isOpen)
 		return;
 	
 	CBaseEntity *pPortal = NULL;
-	while ((pPortal = gEntList.FindEntityByClassname(pPortal, "func_areaportal")) != NULL)
+	// For func_areaportal_oneway.
+	while ((pPortal = gEntList.FindEntityByClassname(pPortal, "func_areaportal*")) != NULL)
 	{
 		if (pPortal->HasTarget(name))
 		{
@@ -4320,6 +4860,21 @@ void CBasePropDoor::InputUnlock(inputdata_t &inputdata)
 	Unlock();
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Input handler that makes the door usable for players.
+//-----------------------------------------------------------------------------
+void CBasePropDoor::InputAllowPlayerUse(inputdata_t &inputdata)
+{
+	RemoveSpawnFlags(SF_DOOR_IGNORE_USE);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Input handler that makes the door unusable for players.
+//-----------------------------------------------------------------------------
+void CBasePropDoor::InputDisallowPlayerUse(inputdata_t &inputdata)
+{
+	AddSpawnFlags(SF_DOOR_IGNORE_USE);
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Locks the door so that it cannot be opened.
@@ -4922,6 +5477,10 @@ public:
 				if ( pPhysics->IsMoveable() && pPhysics->GetMass() < 32 )
 					return false;
 			}
+
+			// They're children, for goodness sake!
+			if (pEntity->GetParent() == EntityFromEntityHandle(m_pDoor))
+				return false;
 		}
 
 		return true;
@@ -4973,6 +5532,13 @@ enum PropDoorRotatingOpenDirection_e
 	DOOR_ROTATING_OPEN_BACKWARD,
 };
 
+enum PropDoorRotatingBreakType_e
+{
+	DOOR_ROTATING_BREAK_NORMAL = 0, // Base behavior.
+	DOOR_ROTATING_BREAK_PHYS, // Turn into a physics prop via phys_conversion.
+	DOOR_ROTATING_BREAK_PHYS_HINGE, // Same as above, but use a phys_hinge.
+};
+
 //===============================================
 // Rotating prop door
 //===============================================
@@ -5014,6 +5580,12 @@ public:
 
 	virtual void ComputeDoorExtent( Extent *extent, unsigned int extentType );	// extent contains the volume encompassing open + closed states
 
+	void	Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info );
+
+	// Filters don't work well with the way doors are considered obstructions, so it's just a spawnflag that stops all NPCs for now.
+	virtual bool PassesDoorFilter(CBaseEntity *pEntity) { return !HasSpawnFlags(SF_DOOR_NONPCS); }
+
+
 	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
@@ -5037,6 +5609,7 @@ private:
 
 	PropDoorRotatingSpawnPos_t m_eSpawnPosition;
 	PropDoorRotatingOpenDirection_e m_eOpenDirection;
+	PropDoorRotatingBreakType_e m_eBreakType;
 
 	QAngle	m_angRotationAjar;			// Angles to spawn at if we are set to spawn ajar.
 	QAngle	m_angRotationClosed;		// Our angles when we are fully closed.
@@ -5060,6 +5633,7 @@ BEGIN_MAPENTITY(CPropDoorRotating)
 	DEFINE_KEYFIELD(m_vecAxis, FIELD_VECTOR, "axis"),
 	DEFINE_KEYFIELD(m_flDistance, FIELD_FLOAT, "distance"),
 	DEFINE_KEYFIELD( m_angRotationAjar, FIELD_VECTOR, "ajarangles" ),
+	DEFINE_KEYFIELD(m_eBreakType, FIELD_INTEGER, "breaktype" ),
 
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetRotationDistance", InputSetRotationDistance ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeed", InputSetSpeed ),
@@ -5693,20 +6267,25 @@ void CPropDoorRotating::GetNPCOpenData(CAI_BaseNPC *pNPC, opendata_t &opendata)
 
 	Vector vecNPCOrigin = pNPC->GetAbsOrigin();
 
+	float flPosOffset = ai_door_open_dist_override.GetFloat() >= 0.0f ? ai_door_open_dist_override.GetFloat() : GetNPCOpenDistance();
+
 	if (pNPC->GetAbsOrigin().Dot(vecForward) > GetAbsOrigin().Dot(vecForward))
 	{
 		// In front of the door relative to the door's forward vector.
-		opendata.vecStandPos += vecForward * 64;
+		opendata.vecStandPos += vecForward * flPosOffset;
 		opendata.vecFaceDir = -vecForward;
+		opendata.eActivity = GetNPCOpenFrontActivity();
 	}
 	else
 	{
 		// Behind the door relative to the door's forward vector.
-		opendata.vecStandPos -= vecForward * 64;
+		opendata.vecStandPos -= vecForward * flPosOffset;
 		opendata.vecFaceDir = vecForward;
+		opendata.eActivity = GetNPCOpenBackActivity();
 	}
 
-	opendata.eActivity = ACT_OPEN_DOOR;
+	if (opendata.eActivity == ACT_INVALID)
+		opendata.eActivity = ACT_OPEN_DOOR;
 }
 
 
@@ -5771,6 +6350,100 @@ int CPropDoorRotating::DrawDebugTextOverlays(void)
 	return text_offset;
 }
 
+//extern bool TransferPhysicsObject( CBaseEntity *pFrom, CBaseEntity *pTo, bool wakeUp );
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CPropDoorRotating::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
+{
+	if (m_eBreakType == DOOR_ROTATING_BREAK_NORMAL)
+		return BaseClass::Break( pBreaker, info );
+
+	if (m_eBreakType == DOOR_ROTATING_BREAK_PHYS || m_eBreakType == DOOR_ROTATING_BREAK_PHYS_HINGE)
+	{
+		UnlinkFromParent( this );
+
+		CBaseEntity *pPhys = CreateNoSpawn( "prop_physics", GetLocalOrigin(), GetLocalAngles() );
+		if ( pPhys )
+		{
+			pPhys->SetModelName( GetModelName() );
+
+			pPhys->SetRenderMode( GetRenderMode() );
+			pPhys->SetRenderFX( GetRenderFX() );
+			const color24 rclr = GetRenderColor();
+			pPhys->SetRenderColor(rclr.r, rclr.g, rclr.b);
+			pPhys->SetRenderAlpha( GetRenderAlpha() );
+
+			CBaseAnimating *pPhysAnimating = pPhys->GetBaseAnimating();
+
+			pPhysAnimating->SetSkin( GetSkin() );
+			pPhysAnimating->SetBody( GetBody() );
+			pPhysAnimating->SetModelScale(GetModelScale());
+
+			pPhys->SetName( GetEntityName() );
+
+			UTIL_TransferPoseParameters( this, pPhys );
+			TransferChildren( this, pPhys );
+
+			AddSolidFlags( FSOLID_NOT_SOLID );
+			AddEffects( EF_NODRAW );
+
+
+			PhysBreakSound( this, VPhysicsGetObject(), WorldSpaceCenter() );
+
+			DispatchSpawn(pPhys);
+
+			// Transferring the physics object in this case has proven to be buggy.
+			if (pPhys->VPhysicsGetObject()) //if ( !TransferPhysicsObject( this, pPhys, true ) )
+			{
+				//pPhys->VPhysicsInitNormal( SOLID_VPHYSICS, 0, false );
+
+				pPhys->VPhysicsGetObject()->SetMaterialIndex( VPhysicsGetObject()->GetMaterialIndex() );
+			}
+
+			if (m_eBreakType == DOOR_ROTATING_BREAK_PHYS_HINGE)
+			{
+				// This is the point where names get a little weird.
+				if (GetEntityName() != NULL_STRING)
+					SetName(NULL_STRING);
+				else
+				{
+					// Since we don't have a name, but the designer wants a hinge, give the new prop a name for the hinge to target.
+					pPhys->SetName(AllocPooledString(UTIL_VarArgs("_physdoor%i", entindex())));
+				}
+
+				CBaseEntity *pHinge = CreateNoSpawn("phys_hinge", GetLocalOrigin(), GetLocalAngles());
+				pHinge->SetName(AllocPooledString(UTIL_VarArgs("%s_createdhinge", STRING(pPhys->GetEntityName()))));
+				pHinge->KeyValue("attach1", STRING(pPhys->GetEntityName()));
+				pHinge->KeyValue("hingeaxis", m_vecAxis);
+				pHinge->KeyValue("breaksound", "Metal_Box.BulletImpact");
+
+				DispatchSpawn(pHinge);
+			}
+
+			BaseClass::Break( pBreaker, info );
+
+			//UTIL_Remove( this );
+
+			pPhys->VPhysicsTakeDamage(info);
+
+			//if (pPhys->VPhysicsGetObject())
+			//	pPhys->VPhysicsGetObject()->ApplyForceOffset(info.GetDamageForce(), info.GetDamagePosition());
+		}
+		else
+		{
+			BaseClass::Break( pBreaker, info );
+		}
+	}
+}
+
+void CPropDoorRotating::InputSetSpeed(inputdata_t &inputdata)
+{
+	AssertMsg1(inputdata.value.Float() > 0.0f, "InputSetSpeed on %s called with negative parameter!", GetDebugName() );
+	m_flSpeed = inputdata.value.Float();
+	DoorResume();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Change this door's distance (in degrees) between open and closed
 //-----------------------------------------------------------------------------
@@ -5813,13 +6486,6 @@ public:
 BEGIN_MAPENTITY( CPhysSphere )
 	DEFINE_KEYFIELD( m_fRadius, FIELD_FLOAT, "radius" ),
 END_MAPENTITY()
-
-void CPropDoorRotating::InputSetSpeed(inputdata_t &inputdata)
-{
-	AssertMsg1(inputdata.value.Float() > 0.0f, "InputSetSpeed on %s called with negative parameter!", GetDebugName() );
-	m_flSpeed = inputdata.value.Float();
-	DoorResume();
-}
 
 LINK_ENTITY_TO_CLASS( prop_sphere, CPhysSphere );
 
@@ -5868,7 +6534,124 @@ IMPLEMENT_SERVERCLASS_ST( CPhysBoxMultiplayer, DT_PhysBoxMultiplayer )
 	SendPropFloat( SENDINFO( m_fMass ), 0, SPROP_NOSCALE ),
 END_SEND_TABLE()
 
+#if defined(HL2_EPISODIC)
+// ------------------------------------------------------------------------------------------ //
+// Flare class for higher interaction possibilities, inspired by Black Mesa
+// ------------------------------------------------------------------------------------------ //
+class CPropFlare : public CPhysicsProp
+{
+	DECLARE_CLASS( CPropFlare, CPhysicsProp );
+	DECLARE_MAPENTITY();
+public:
+	
+	void Precache()
+	{
+		BaseClass::Precache();
 
+		if (GetModelName() != NULL_STRING)
+		{
+			PrecacheModel(STRING(GetModelName()));
+		}
+		else
+		{
+			PrecacheModel("models/props_junk/flare.mdl");
+		}
+	}
+
+	void Spawn()
+	{
+		if (GetModelName() == NULL_STRING)
+		{
+			// Must've been spawned with ent_create or something
+			SetModelName(AllocPooledString("models/props_junk/flare.mdl"));
+			//SetModel("models/props_junk/flare.mdl");
+		}
+
+		if (!HasInteraction(PROPINTER_PHYSGUN_CREATE_FLARE))
+		{
+			SetInteraction(PROPINTER_PHYSGUN_CREATE_FLARE);
+		}
+
+		SetClassname( "prop_physics" );
+
+		return BaseClass::Spawn();
+	}
+
+	bool OverridePropdata( void ) { return true; }
+
+	virtual float GetFlareLifetime() { return m_flFlareLifetime; }
+
+	void InputStartFlare( inputdata_t &inputdata )
+	{
+		CreateFlare( PROP_FLARE_LIFETIME );
+	}
+	void InputStopFlare( inputdata_t &inputdata )
+	{
+		KillFlare( this, m_hFlareEnt, PROP_FLARE_IGNITE_SUBSTRACT );
+	}
+
+	void InputAddFlareLifetime( inputdata_t &inputdata )
+	{
+		if (m_hFlareEnt)
+		{
+			KillFlare( this, m_hFlareEnt, (inputdata.value.Float() * -1) );
+		}
+		else
+		{
+			CreateFlare( inputdata.value.Float() );
+		}
+	}
+
+	void InputRemoveFlare( inputdata_t &inputdata )
+	{
+		UTIL_Remove(m_hFlareEnt);
+		m_nSkin = 1;
+	}
+
+	void InputRestoreFlare( inputdata_t &inputdata )
+	{
+		if (!HasInteraction(PROPINTER_PHYSGUN_CREATE_FLARE) && !m_hFlareEnt)
+		{
+			SetInteraction(PROPINTER_PHYSGUN_CREATE_FLARE);
+			m_OnRestored.FireOutput(inputdata.pActivator, inputdata.pCaller);
+			m_nSkin = 0;
+		}
+	}
+
+	int DrawDebugTextOverlays(void)
+	{
+		int text_offset = BaseClass::DrawDebugTextOverlays();
+
+		if (m_debugOverlays & OVERLAY_TEXT_BIT)
+		{
+			char tempstr[512];
+			Q_snprintf(tempstr, sizeof(tempstr), "Flare Duration: %f", GetEnvFlareLifetime(m_hFlareEnt));
+			EntityText(text_offset, tempstr, 0);
+			text_offset++;
+		}
+
+		return text_offset;
+	}
+
+	COutputEvent m_OnRestored;
+	float m_flFlareLifetime = 30.0f;
+};
+
+LINK_ENTITY_TO_CLASS( prop_flare, CPropFlare );
+ 
+BEGIN_MAPENTITY( CPropFlare )
+
+	DEFINE_KEYFIELD( m_flFlareLifetime, FIELD_FLOAT, "FlareLifetime" ),
+
+	DEFINE_INPUTFUNC( FIELD_VOID, "StartFlare", InputStartFlare ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "StopFlare", InputStopFlare ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "AddFlareLifetime", InputAddFlareLifetime ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "RemoveFlare", InputRemoveFlare ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "RestoreFlare", InputRestoreFlare ),
+	DEFINE_OUTPUT( m_OnRestored, "OnRestored" ),
+
+END_MAPENTITY()
+#endif
 
 class CPhysicsPropMultiplayer : public CPhysicsProp, public IMultiplayerPhysics
 {
@@ -5899,7 +6682,7 @@ class CPhysicsPropMultiplayer : public CPhysicsProp, public IMultiplayerPhysics
 	float	GetMass() { return m_fMass; }
 	bool	IsAsleep() { return !m_bAwake; }
 
-	bool	IsDebris( void )			{ return ( ( m_spawnflags & SF_PHYSPROP_DEBRIS ) != 0 ); }
+	bool	IsDebris( void )			{ return  HasSpawnFlags( SF_PHYSPROP_DEBRIS ); }
 
 	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics )
 	{

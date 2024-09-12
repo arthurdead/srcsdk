@@ -530,7 +530,29 @@ bool CHudHintKeyDisplay::SetHintText( const char *text )
 			const char *key = engine->Key_LookupBinding( *binding == '+' ? binding + 1 : binding );
 			if ( !key )
 			{
-				key = "< not bound >";
+				const char *pszNotBound = VarArgs("< %s, not bound >", *binding == '+' ? binding + 1 : binding);
+				if (strchr(binding, '&'))
+				{
+					// "%walk&use%" >> "ALT + E"
+					char *token = strtok(binding, "&");
+					while (token)
+					{
+						const char *tokenkey = engine->Key_LookupBinding( *token == '+' ? token + 1 : token );
+
+						key = VarArgs("%s%s%s", key ? key : "", key ? " + " : "", tokenkey ? tokenkey : pszNotBound);
+
+						token = strtok(NULL, "&");
+					}
+				}
+				else if (binding[0] == '$')
+				{
+					// "%$COOL STRING DUDE%" >> "COOL STRING DUDE"
+					key = binding + 1;
+				}
+				else
+				{
+					key = pszNotBound;
+				}
 			}
 
 			Q_snprintf( friendlyName, sizeof(friendlyName), "#%s", key );

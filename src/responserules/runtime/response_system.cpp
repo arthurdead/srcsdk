@@ -12,6 +12,7 @@
 #include "fmtstr.h"
 #include "generichash.h"
 #include "tier1/convar.h"
+#include "tier1/mapbase_matchers_base.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -86,6 +87,7 @@ ConVar rr_debugrule( "rr_debugrule", "", FCVAR_NONE, "If set to the name of the 
 ConVar rr_dumpresponses( "rr_dumpresponses", "0", FCVAR_NONE, "Dump all response_rules.txt and rules (requires restart)" );
 ConVar rr_debugresponseconcept( "rr_debugresponseconcept", "", FCVAR_NONE, "If set, rr_debugresponses will print only responses testing for the specified concept" );
 #define RR_DEBUGRESPONSES_SPECIALCASE 4
+ConVar rr_disableemptyrules( "rr_disableemptyrules", "0", FCVAR_NONE, "Disables rules with no remaining responses, e.g. rules which use norepeat responses." );
 
 
 
@@ -185,6 +187,7 @@ CResponseSystem::CResponseSystem() :
 	token[0] = 0;
 	m_bUnget = false;
 	m_bCustomManagable = false;
+	m_bInProspective = false;
 
 	BuildDispatchTables();
 }
@@ -240,7 +243,8 @@ void CResponseSystem::Clear()
 {
 	m_Responses.RemoveAll();
 	m_Criteria.RemoveAll();
-	m_RulePartitions.RemoveAll();
+	// Must purge to avoid issues with reloading the system
+	m_RulePartitions.PurgeAndDeleteElements();
 	m_Enumerations.RemoveAll();
 }
 
@@ -289,24 +293,6 @@ void CResponseSystem::ResolveToken( Matcher& matcher, char *token, size_t bufsiz
 	Q_snprintf( token, bufsize, "%f", f );
 }
 
-
-static bool AppearsToBeANumber( char const *token )
-{
-	if ( atof( token ) != 0.0f )
-		return true;
-
-	char const *p = token;
-	while ( *p )
-	{
-		if ( *p != '0' )
-			return false;
-
-		p++;
-	}
-
-	return true;
-}
-
 void CResponseSystem::ComputeMatcher( Criteria *c, Matcher& matcher )
 {
 	const char *s = c->value;
@@ -330,6 +316,7 @@ void CResponseSystem::ComputeMatcher( Criteria *c, Matcher& matcher )
 	bool lt = false;
 	bool eq = false;
 	bool nt = false;
+	bool bit = false;
 
 	bool done = false;
 	while ( !done )
@@ -362,6 +349,15 @@ void CResponseSystem::ComputeMatcher( Criteria *c, Matcher& matcher )
 				// Convert raw token to real token in case token is an enumerated type specifier
 				ResolveToken( matcher, token, sizeof( token ), rawtoken );
 
+				// Bits are an entirely different and independent story
+				if (bit)
+				{
+					matcher.isbit = true;
+					matcher.notequal = nt;
+
+					matcher.isnumeric = true;
+				}
+				else
 				// Fill in first data set
 				if ( gt )
 				{
@@ -403,6 +399,11 @@ void CResponseSystem::ComputeMatcher( Criteria *c, Matcher& matcher )
 		case '!':
 			nt = true;
 			break;
+		case '~':
+			nt = true;
+		case '&':
+			bit = true;
+			break;
 		default:
 			rawtoken[ n++ ] = *in;
 			break;
@@ -426,6 +427,17 @@ bool CResponseSystem::CompareUsingMatcher( const char *setValue, Matcher& m, boo
 	{
 		bool found = false;
 		v = LookupEnumeration( setValue, found );
+	}
+
+	// Bits are always a different story
+	if (m.isbit)
+	{
+		int v1 = v;
+		int v2 = atoi( m.GetToken() );
+		if (m.notequal)
+			return (v1 & v2) == 0;
+		else
+			return (v1 & v2) != 0;
 	}
 
 	int minmaxcount = 0;
@@ -477,7 +489,7 @@ bool CResponseSystem::CompareUsingMatcher( const char *setValue, Matcher& m, boo
 		}
 		else
 		{
-			if ( !Q_stricmp( setValue, m.GetToken() ) )
+			if ( Matcher_NamesMatch( m.GetToken(), setValue ) )
 				return false;
 		}
 
@@ -494,7 +506,7 @@ bool CResponseSystem::CompareUsingMatcher( const char *setValue, Matcher& m, boo
 		return v == (float)atof( m.GetToken() );
 	}
 
-	return !Q_stricmp( setValue, m.GetToken() ) ? true : false;
+	return Matcher_NamesMatch( m.GetToken(), setValue );
 }
 
 bool CResponseSystem::Compare( const char *setValue, Criteria *c, bool verbose /*= false*/ )
@@ -743,6 +755,43 @@ void CResponseSystem::ResetResponseGroups()
 	{
 		m_Responses[ i ].Reset();
 	}
+
+	for ( ResponseRulePartition::tIndex idx = m_RulePartitions.First() ;
+		m_RulePartitions.IsValid(idx) ;
+		idx = m_RulePartitions.Next(idx) )
+	{
+		m_RulePartitions[ idx ].m_bEnabled = true;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CResponseSystem::DisableEmptyRules()
+{
+	if (rr_disableemptyrules.GetBool() == false)
+		return;
+
+	for ( ResponseRulePartition::tIndex idx = m_RulePartitions.First() ;
+		m_RulePartitions.IsValid(idx) ;
+		idx = m_RulePartitions.Next(idx) )
+	{
+		Rule &rule = m_RulePartitions[ idx ];
+
+		// Set it as disabled in advance
+		rule.m_bEnabled = false;
+
+		int c2 = rule.m_Responses.Count();
+		for (int s = 0; s < c2; s++)
+		{
+			if (m_Responses[rule.m_Responses[s]].IsEnabled())
+			{
+				// Re-enable it if there's any valid responses
+				rule.m_bEnabled = true;
+				break;
+			}
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -820,6 +869,7 @@ int CResponseSystem::SelectWeightedResponseFromResponseGroup( ResponseGroup *g, 
 		if ( g->IsNoRepeat() )
 		{
 			g->SetEnabled( false );
+			DisableEmptyRules();
 			return -1;
 		}
 	}
@@ -907,8 +957,11 @@ int CResponseSystem::SelectWeightedResponseFromResponseGroup( ResponseGroup *g, 
 		}
 	}
 
-	if ( slot != -1 )
-		g->MarkResponseUsed( slot );
+	if ( slot != -1 ) {
+		// Don't mark responses as used in prospective mode
+		if (m_bInProspective == false)
+			g->MarkResponseUsed( slot );
+	}
 
 	// Revert fake depletion of unavailable choices
 	RevertFakedDepletes( g );
@@ -956,6 +1009,7 @@ bool CResponseSystem::ResolveResponse( ResponseSearchResult& searchResult, int d
 				if ( g->IsNoRepeat() )
 				{
 					g->SetEnabled( false );
+					DisableEmptyRules();
 					return false;
 				}
 				idx = 0;
@@ -1071,6 +1125,7 @@ bool CResponseSystem::GetBestResponse( ResponseSearchResult& searchResult, Rule 
 				if ( g->IsNoRepeat() )
 				{
 					g->SetEnabled( false );
+					DisableEmptyRules();
 					return false;
 				}
 				responseIndex = 0;
@@ -1214,11 +1269,11 @@ bool CResponseSystem::FindBestResponse( const CriteriaSet& set, CRR_Response& re
 	char ruleName[ 128 ];
 	char responseName[ 128 ];
 	const char *context;
-	bool bcontexttoworld;
+	int contextflags;
 	ruleName[ 0 ] = 0;
 	responseName[ 0 ] = 0;
 	context = NULL;
-	bcontexttoworld = false;
+	contextflags = 0;
 	if ( m_RulePartitions.IsValid( bestRule ) )
 	{
 		Rule * RESTRICT r = &m_RulePartitions[ bestRule ];
@@ -1240,13 +1295,33 @@ bool CResponseSystem::FindBestResponse( const CriteriaSet& set, CRR_Response& re
 			r->Disable();
 		}
 		context = r->GetContext();
-		bcontexttoworld = r->IsApplyContextToWorld();
+		contextflags = r->GetContextFlags();
+
+		// Sets the internal indices for the response to call back to later for prospective responses
+		// (NOTE: Performance not tested; Be wary of turning off the m_bInProspective check!)
+		if (m_bInProspective)
+		{
+			for ( int i = 0; i < (int)m_Responses.Count(); i++ )
+			{
+				if (&m_Responses[i] == result.group)
+				{
+					ResponseGroup &group = m_Responses[i];
+					for ( int j = 0; j < group.group.Count(); j++)
+					{
+						if (&group.group[j] == result.action)
+						{
+							response.SetInternalIndices( i, j );
+						}
+					}
+				}
+			}
+		}
 
 		response.SetMatchScore(scoreOfBestRule);
 		valid = true;
 	}
 
-	response.Init( responseType, responseName, rp, ruleName, context, bcontexttoworld );
+	response.Init( responseType, responseName, rp, ruleName, context, contextflags );
 
 	if ( showResult )
 	{
@@ -1319,11 +1394,49 @@ void CResponseSystem::GetAllResponses( CUtlVector<CRR_Response> *pResponses )
 	}
 }
 
+void CResponseSystem::MarkResponseAsUsed( short iGroup, short iWithinGroup )
+{
+	if (m_Responses.Count() > (unsigned int)iGroup)
+	{
+		ResponseGroup &group = m_Responses[iGroup];
+		if (group.group.Count() > (int)iWithinGroup)
+		{
+			group.MarkResponseUsed( iWithinGroup );
+
+			DevMsg( 1, "Marked response %s (%i) used\n", group.group[iWithinGroup].value, iWithinGroup );
+		}
+	}
+}
+
 void CResponseSystem::ParseInclude()
 {
 	char includefile[ 256 ];
 	ParseToken();
-	Q_snprintf( includefile, sizeof( includefile ), "scripts/%s", token );
+	char scriptfile[256];
+	GetCurrentScript( scriptfile, sizeof( scriptfile ) );
+
+	// Gets first path
+	// (for example, an #include from a file in resource/script/resp will return resource)
+	size_t len = strlen(scriptfile)-1;
+	for (size_t i = 0; i < len; i++)
+	{
+		if (scriptfile[i] == CORRECT_PATH_SEPARATOR || scriptfile[i] == INCORRECT_PATH_SEPARATOR)
+		{
+			len = i;
+		}
+	}
+	Q_strncpy(includefile, scriptfile, len+1);
+
+	if (len+1 != strlen(scriptfile))
+	{
+		Q_strncat( includefile, "/", sizeof( includefile ) );
+		Q_strncat( includefile, token, sizeof( includefile ) );
+	}
+	else
+		includefile[0] = '\0';
+
+	if (!includefile[0])
+		Q_snprintf( includefile, sizeof( includefile ), "scripts/%s", token );
 
 	// check if the file is already included
 	if ( m_IncludedFiles.Find( includefile ) != NULL )
@@ -1638,12 +1751,13 @@ void CResponseSystem::ParseOneResponse( const char *responseGroupName, ResponseG
 
 	newResponse.type = ComputeResponseType( token );
 	if ( RESPONSE_NONE == newResponse.type )
-{
+	{
 		ResponseWarning( "response entry '%s' with unknown response type '%s'\n", responseGroupName, token );
 		return;
-}
+	}
 
-	ParseToken();
+	// HACKHACK: Some response system usage in the pre-Alien Swarm system require response names to preserve casing or even have escaped quotes.
+	ParseTokenIntact();
 	newResponse.value = ResponseCopyString( token );
 
 	while ( TokenWaiting() )
@@ -1778,7 +1892,10 @@ void CResponseSystem::ParseResponse( void )
 
 	while ( 1 )
 	{
-		ParseToken();
+		if ( !ParseToken() || !Q_stricmp( token, "}" ) )
+		{
+			break;
+		}
 
 		unsigned int hash = RR_HASH( token );
 
@@ -1810,13 +1927,14 @@ int CResponseSystem::ParseOneCriterion( const char *criterionName )
 	Criteria *pNewCriterion = NULL;
 
 	int idx;
-	if ( m_Criteria.Find( criterionName ) != m_Criteria.InvalidIndex() )
+	short existing = m_Criteria.Find( criterionName );
+	if ( existing != m_Criteria.InvalidIndex() )
 	{
-		static Criteria dummy;
-		pNewCriterion = &dummy;
-
-		ResponseWarning( "Multiple definitions for criteria '%s' [%d]\n", criterionName, RR_HASH( criterionName ) );
-		idx = m_Criteria.InvalidIndex();
+		//ResponseWarning( "Additional definition for criteria '%s', overwriting\n", criterionName );
+		m_Criteria[existing] = Criteria();
+		m_Criteria.SetElementName(existing, criterionName);
+		idx = existing;
+		pNewCriterion = &m_Criteria[ idx ];
 	}
 	else
 	{
@@ -1828,7 +1946,10 @@ int CResponseSystem::ParseOneCriterion( const char *criterionName )
 
 	while ( TokenWaiting() || !gotbody )
 	{
-		ParseToken();
+		if ( !ParseToken() )
+		{
+			break;
+		}
 
 		// Oops, part of next definition
 		if( IsRootCommand() )
@@ -1970,7 +2091,17 @@ void CResponseSystem::ParseRule_MatchOnce( Rule &newRule )
 
 void CResponseSystem::ParseRule_ApplyContextToWorld( Rule &newRule )
 		{
-			newRule.m_bApplyContextToWorld = true;
+			newRule.m_iContextFlags |= APPLYCONTEXT_WORLD;
+		}
+
+void CResponseSystem::ParseRule_ApplyContextToSquad( Rule &newRule )
+		{
+			newRule.m_iContextFlags |= APPLYCONTEXT_SQUAD;
+		}
+
+void CResponseSystem::ParseRule_ApplyContextToEnemy( Rule &newRule )
+		{
+			newRule.m_iContextFlags |= APPLYCONTEXT_ENEMY;
 		}
 
 void CResponseSystem::ParseRule_ApplyContext( Rule &newRule )
@@ -2286,7 +2417,7 @@ void CResponseSystem::CopyRuleFrom( Rule *pSrcRule, ResponseRulePartition::tInde
 	dstRule->SetContext( pSrcRule->GetContext() );
 	dstRule->m_bMatchOnce = pSrcRule->m_bMatchOnce;
 	dstRule->m_bEnabled = pSrcRule->m_bEnabled;
-	dstRule->m_bApplyContextToWorld = pSrcRule->m_bApplyContextToWorld;
+	dstRule->m_iContextFlags = pSrcRule->m_iContextFlags;
 
 	// Copy off criteria.
 	CopyCriteriaFrom( pSrcRule, dstRule, pCustomSystem );
@@ -2375,6 +2506,9 @@ void CResponseSystem::BuildDispatchTables()
 
 	m_RuleDispatch.Insert( RR_HASH( "matchonce" ), &CResponseSystem::ParseRule_MatchOnce );
 	m_RuleDispatch.Insert( RR_HASH( "applycontexttoworld" ), &CResponseSystem::ParseRule_ApplyContextToWorld );
+	m_RuleDispatch.Insert( RR_HASH( "applycontexttosquad" ), &CResponseSystem::ParseRule_ApplyContextToSquad );
+	m_RuleDispatch.Insert( RR_HASH( "applycontexttoenemy" ), &CResponseSystem::ParseRule_ApplyContextToEnemy );
+
 	m_RuleDispatch.Insert( RR_HASH( "applycontext" ), &CResponseSystem::ParseRule_ApplyContext );
 	m_RuleDispatch.Insert( RR_HASH( "response" ), &CResponseSystem::ParseRule_Response );
 //	m_RuleDispatch.Insert( RR_HASH( "forceweight" ), &CResponseSystem::ParseRule_ForceWeight );
