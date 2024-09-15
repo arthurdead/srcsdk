@@ -84,11 +84,15 @@ bool CAI_BaseNPC::LoadDefaultSchedules(void)
 		}
 	} break_on_end_scope;
 
+	bool fValid = true;
+
+	//AI_LOAD_DEF_SCHEDULE_MEMORY( CAI_BaseNPC, Error );
+
 	AI_LOAD_DEF_SCHEDULE_MEMORY( CAI_BaseNPC, SCHED_NONE );
 
 	#include "ai_default_sched_enum.inc"
 
-	return true;
+	return fValid;
 }
 
 int CAI_BaseNPC::TranslateSchedule( int scheduleType )
@@ -338,14 +342,22 @@ static CAI_SystemHook g_AISystemHook( "CAI_SystemHook" );
 //-----------------------------------------------------------------------------
 AI_DEFINE_SCHEDULE
 (
-	SCHED_NONE,
-
-R"(
+	Error, R"(
 
 Tasks
 {
 	TASK_DEBUG_BREAK
 }
 
-)"
-);
+)");
+
+AI_DEFINE_SCHEDULE
+(
+	SCHED_NONE, R"(
+
+Tasks
+{
+	TASK_DEBUG_BREAK
+}
+
+)");

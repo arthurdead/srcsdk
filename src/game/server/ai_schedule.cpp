@@ -232,8 +232,22 @@ static int sched_tempTaskNum = 0;
 static Task_t sched_tempTask[50];
 static CAI_ScheduleBits sched_tempInterruptMask;
 
+#ifdef _DEBUG
+#define AI_SCHEDULE_PARSER_STRICT_BOOL 1
+#define AI_SCHEDULE_PARSER_STRICT_NULL 1
+#define AI_SCHEDULE_PARSER_STRICT_NAMES 1
+#define AI_SCHEDULE_PARSER_STRICT_REGISTRATION 0
+#define AI_SCHEDULE_PARSER_STRICT_ENUM 0
+#else
+#define AI_SCHEDULE_PARSER_STRICT_BOOL 0
+#define AI_SCHEDULE_PARSER_STRICT_NULL 0
+#define AI_SCHEDULE_PARSER_STRICT_NAMES 0
+#define AI_SCHEDULE_PARSER_STRICT_REGISTRATION 0
+#define AI_SCHEDULE_PARSER_STRICT_ENUM 0
+#endif
+
 template <typename T>
-static bool schedule_parse_enum(
+static int schedule_parse_enum(
 	const char *&pfile, const char *pclassname, const char *pfilename,
 	const char *tag, const char *enum_prefix, bool with_prefix, T(*func)(const char *), T invalid_value,
 	int dataNum, TaskDataType_t datatype, T (TaskData_t::*datavar)
@@ -249,22 +263,40 @@ static bool schedule_parse_enum(
 		{
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting ':' after '%s' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
 			Assert(0);
-			return false;
+			return 0;
 		}
 
 		pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
+
+	#if AI_SCHEDULE_PARSER_STRICT_NAMES == 1
+		if(with_prefix && strnicmp(sched_tempbuffer, enum_prefix, enum_prefix_len)) {
+			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting, '%s' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
+			Assert(0);
+			return 0;
+		}
+	#endif
 
 		T state = func(sched_tempbuffer);
 		if(state == invalid_value)
 		{
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Unknown '%s' '%s'.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
 			Assert(0);
-			return false;
+		#if AI_SCHEDULE_PARSER_STRICT_ENUM == 1
+			return 0;
+		#endif
 		}
 
 		(sched_tempTask[sched_tempTaskNum].data[dataNum].*datavar) = state;
 		sched_tempTask[sched_tempTaskNum].data[dataNum].nType = datatype;
-		return true;
+		if(state != invalid_value) {
+			return 1;
+		} else {
+		#if AI_SCHEDULE_PARSER_STRICT_ENUM == 1
+			return 0;
+		#else
+			return 2;
+		#endif
+		}
 	}
 	else if(!strnicmp(sched_tempbuffer, enum_prefix, enum_prefix_len))
 	{
@@ -273,23 +305,33 @@ static bool schedule_parse_enum(
 		{
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Unknown '%s' '%s'.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
 			Assert(0);
-			return false;
+		#if AI_SCHEDULE_PARSER_STRICT_ENUM == 1
+			return 0;
+		#endif
 		}
 
 		(sched_tempTask[sched_tempTaskNum].data[dataNum].*datavar) = state;
 		sched_tempTask[sched_tempTaskNum].data[dataNum].nType = datatype;
-		return true;
+		if(state != invalid_value) {
+			return 1;
+		} else {
+		#if AI_SCHEDULE_PARSER_STRICT_ENUM == 1
+			return 0;
+		#else
+			return 2;
+		#endif
+		}
 	}
 	else
 	{
 		DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting '%s' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
 		Assert(0);
-		return false;
+		return 0;
 	}
 }
 
 template <typename T, typename U>
-static bool schedule_parse_namespace_id(
+static int schedule_parse_namespace_id(
 	const char *&pfile, const char *pclassname, const char *pfilename,
 	const char *tag, const char *enum_prefix,
 	T (CAI_GlobalScheduleNamespace::*symid)( const char *pszTask ) const, U (CAI_ClassScheduleIdSpace::*globtolocal)( T ) const,
@@ -307,7 +349,7 @@ static bool schedule_parse_namespace_id(
 		{
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting ':' after '%s' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
 			Assert(0);
-			return false;
+			return 0;
 		}
 
 		pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
@@ -318,20 +360,36 @@ static bool schedule_parse_namespace_id(
 		{
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Unknown '%s' '%s'.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
 			Assert(0);
-			return false;
+		#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1
+			return 0;
+		#endif
 		}
 
-		U taskValueLocalID = (pIdSpace) ? (pIdSpace->*globtolocal)(taskValueGlobalID) : AI_RemapFromGlobal( taskValueGlobalID );
-		if(taskValueLocalID == -1)
-		{
-			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Unknown '%s' '%s'.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
-			Assert(0);
-			return false;
+		U taskValueLocalID = -1;
+
+		if(taskValueGlobalID != -1) {
+			taskValueLocalID = (pIdSpace) ? (pIdSpace->*globtolocal)(taskValueGlobalID) : AI_RemapFromGlobal( taskValueGlobalID );
+			if(taskValueLocalID == -1)
+			{
+				DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Unknown '%s' '%s'.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
+				Assert(0);
+			#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1
+				return 0;
+			#endif
+			}
 		}
 
 		sched_tempTask[sched_tempTaskNum].data[dataNum].nType = datatype;
 		(sched_tempTask[sched_tempTaskNum].data[dataNum].*datavar) = taskValueLocalID;
-		return true;
+		if(taskValueLocalID != -1) {
+			return 1;
+		} else {
+		#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1
+			return 0;
+		#else
+			return 2;
+		#endif
+		}
 	}
 	else if (!strnicmp(enum_prefix,sched_tempbuffer,enum_prefix_len))
 	{
@@ -341,24 +399,40 @@ static bool schedule_parse_namespace_id(
 		{
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Unknown '%s' '%s'.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
 			Assert(0);
+		#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1
 			return false;
+		#endif
 		}
 
-		U taskValueLocalID = (pIdSpace) ? (pIdSpace->*globtolocal)(taskValueGlobalID) : AI_RemapFromGlobal( taskValueGlobalID );
-		if(taskValueLocalID == -1)
-		{
-			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Unknown '%s' '%s'.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
-			Assert(0);
-			return false;
+		U taskValueLocalID = -1;
+
+		if(taskValueGlobalID != -1) {
+			taskValueLocalID = (pIdSpace) ? (pIdSpace->*globtolocal)(taskValueGlobalID) : AI_RemapFromGlobal( taskValueGlobalID );
+			if(taskValueLocalID == -1)
+			{
+				DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Unknown '%s' '%s'.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
+				Assert(0);
+			#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1
+				return false;
+			#endif
+			}
 		}
 
 		sched_tempTask[sched_tempTaskNum].data[dataNum].nType = datatype;
 		(sched_tempTask[sched_tempTaskNum].data[dataNum].*datavar) = taskValueLocalID;
-		return true;
+		if(taskValueLocalID != -1) {
+			return 1;
+		} else {
+		#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1
+			return 0;
+		#else
+			return 2;
+		#endif
+		}
 	} else {
 		DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting '%s' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
 		Assert(0);
-		return false;
+		return 0;
 	}
 }
 
@@ -388,7 +462,7 @@ static bool schedule_parse_namespace_id(
 #endif
 */
 
-static bool sched_parse_task_value(
+static int sched_parse_task_value(
 	const char *&pfile, const char *pclassname, const char *pfilename,
 	CAI_ClassScheduleIdSpace *pIdSpace, CAI_GlobalScheduleNamespace *pGlobalNamespace,
 	const TaskParamCheck_t *paramCheck, int dataNum
@@ -414,7 +488,7 @@ static bool sched_parse_task_value(
 			{
 				DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting ':' after 'Num' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 				Assert(0);
-				return false;
+				return 0;
 			}
 
 			pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
@@ -441,11 +515,11 @@ static bool sched_parse_task_value(
 				sched_tempTask[sched_tempTaskNum].data[dataNum].iData = V_atoi(sched_tempbuffer);
 				sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_INT;
 			}
-			return true;
+			return 1;
 		} else {
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting 'Num' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 			Assert(0);
-			return false;
+			return 0;
 		}
 	} else if(paramCheck->nTypes[dataNum] == TASK_DATA_CHECK_INT) {
 		if (!stricmp("Int",sched_tempbuffer))
@@ -456,7 +530,7 @@ static bool sched_parse_task_value(
 			{
 				DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting ':' after 'Int' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 				Assert(0);
-				return false;
+				return 0;
 			}
 
 			pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
@@ -475,11 +549,11 @@ static bool sched_parse_task_value(
 		if(all_num) {
 			sched_tempTask[sched_tempTaskNum].data[dataNum].iData = V_atoi(sched_tempbuffer);
 			sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_INT;
-			return true;
+			return 1;
 		} else {
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting 'Int' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 			Assert(0);
-			return false;
+			return 0;
 		}
 	} else if(paramCheck->nTypes[dataNum] == TASK_DATA_CHECK_FLOAT) {
 		if (!stricmp("Float",sched_tempbuffer))
@@ -490,7 +564,7 @@ static bool sched_parse_task_value(
 			{
 				DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting ':' after 'Float' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 				Assert(0);
-				return false;
+				return 0;
 			}
 
 			pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
@@ -509,11 +583,11 @@ static bool sched_parse_task_value(
 		if(all_num) {
 			sched_tempTask[sched_tempTaskNum].data[dataNum].flData = V_atof(sched_tempbuffer);
 			sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_FLOAT;
-			return true;
+			return 1;
 		} else {
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting 'Float' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 			Assert(0);
-			return false;
+			return 0;
 		}
 	} else if(paramCheck->nTypes[dataNum] == TASK_DATA_CHECK_BOOL) {
 		if (!stricmp("Bool",sched_tempbuffer))
@@ -524,7 +598,7 @@ static bool sched_parse_task_value(
 			{
 				DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting ':' after 'Bool' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 				Assert(0);
-				return false;
+				return 0;
 			}
 
 			pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
@@ -533,23 +607,27 @@ static bool sched_parse_task_value(
 		if (!stricmp("True",sched_tempbuffer)) {
 			sched_tempTask[sched_tempTaskNum].data[dataNum].bData = true;
 			sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_BOOL;
-			return true;
+			return 1;
 		} else if (!stricmp("False",sched_tempbuffer)) {
 			sched_tempTask[sched_tempTaskNum].data[dataNum].bData = false;
 			sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_BOOL;
-			return true;
-		} else if (!stricmp("1",sched_tempbuffer)) {
+			return 1;
+		}
+	#if AI_SCHEDULE_PARSER_STRICT_BOOL == 0
+		else if (!stricmp("1",sched_tempbuffer)) {
 			sched_tempTask[sched_tempTaskNum].data[dataNum].bData = true;
 			sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_BOOL;
-			return true;
+			return 1;
 		} else if (!stricmp("0",sched_tempbuffer)) {
 			sched_tempTask[sched_tempTaskNum].data[dataNum].bData = false;
 			sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_BOOL;
-			return true;
-		} else {
+			return 1;
+		} else
+	#endif
+		{
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting 'Bool' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 			Assert(0);
-			return false;
+			return 0;
 		}
 	} else if(paramCheck->nTypes[dataNum] == TASK_DATA_CHECK_STRING) {
 		if (!stricmp("String",sched_tempbuffer))
@@ -560,7 +638,7 @@ static bool sched_parse_task_value(
 			{
 				DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting ':' after 'String' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 				Assert(0);
-				return false;
+				return 0;
 			}
 
 			pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
@@ -570,29 +648,36 @@ static bool sched_parse_task_value(
 		if(len >= sizeof(TaskData_t::szStr)) {
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): String '%s' is too large.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 			Assert(0);
-			return false;
+			return 0;
 		}
 
 		V_strncpy(sched_tempTask[sched_tempTaskNum].data[dataNum].szStr, sched_tempbuffer, len);
 		sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_STRING;
-		return true;
+		return 1;
 	} else if(paramCheck->nTypes[dataNum] == TASK_DATA_CHECK_NULL) {
 		if(!stricmp("Void",sched_tempbuffer)) {
 			sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_NONE;
-			return true;
+			return 1;
 		} else if(!stricmp("Null",sched_tempbuffer)) {
 			sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_NONE;
-			return true;
+			return 1;
 		} else if(!stricmp("None",sched_tempbuffer)) {
 			sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_NONE;
-			return true;
+			return 1;
 		} else if(!stricmp("empty",sched_tempbuffer)) {
 			sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_NONE;
-			return true;
-		} else {
+			return 1;
+		} else
+	#if AI_SCHEDULE_PARSER_STRICT_NULL == 0
+		if(!stricmp("0",sched_tempbuffer)) {
+			sched_tempTask[sched_tempTaskNum].data[dataNum].nType = TASK_DATA_NONE;
+			return 1;
+		} else
+	#endif
+		{
 			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting 'Null' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 			Assert(0);
-			return false;
+			return 0;
 		}
 	} else if(paramCheck->nTypes[dataNum] == TASK_DATA_CHECK_TASK_ID) {
 		return schedule_parse_namespace_id(pfile, pclassname, pfilename,
@@ -641,7 +726,7 @@ static bool sched_parse_task_value(
 	} else {
 		DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i): Task '%s' (#%i) has invalid param check type on %i.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,dataNum);
 		Assert(0);
-		return false;
+		return 0;
 	}
 }
 
@@ -698,18 +783,28 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 			{
 				pfile = engine->ParseFile(pfile, sched_pSchedName, SCHED_BUFFER_STRIDE );
 			}
-		}
 
-		if(strnicmp("SCHED_",sched_pSchedName,6))
-		{
-			DevMsg( "ERROR: LoadSchd (%s) (%s) (#%i): Malformed, Expecting 'Schedule' got '%s' instead.\n",pclassname,pfilename,sched_tempSchedNum,sched_pSchedName);
-			Assert(0);
-			return false;
+			//need to allow 'Error'
+		#if AI_SCHEDULE_PARSER_STRICT_NAMES == 1 && 0
+			if(strnicmp("SCHED_",sched_pSchedName,6))
+			{
+				DevMsg( "ERROR: LoadSchd (%s) (%s) (#%i): Malformed, Expecting 'Schedule' got '%s' instead.\n",pclassname,pfilename,sched_tempSchedNum,sched_pSchedName);
+				Assert(0);
+				return false;
+			}
+		#endif
+		} else {
+			if(strnicmp("SCHED_",sched_pSchedName,6))
+			{
+				DevMsg( "ERROR: LoadSchd (%s) (%s) (#%i): Malformed, Expecting 'Schedule' got '%s' instead.\n",pclassname,pfilename,sched_tempSchedNum,sched_pSchedName);
+				Assert(0);
+				return false;
+			}
 		}
 
 		//TODO Arthurdead!!!
 	#if 0
-		if(!stricmp(sched_pSchedName,"SCHED_NONE"))
+		if(!stricmp(sched_pSchedName,"SCHED_NONE") || !stricmp(sched_pSchedName,"Error"))
 		{
 			DevMsg( "ERROR: LoadSchd (%s) (%s): '%s' (#%i) cannot be modified.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum);
 			Assert(0);
@@ -722,12 +817,13 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 		{
 			DevMsg( "ERROR: LoadSchd (%s) (%s): '%s' (#%i) was not registered.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum);
 			Assert(0);
+		#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1
 			return false;
+		#endif
 		}
-
 		//TODO Arthurdead!!!
 	#if 0
-		if(scheduleID == SCHED_NONE)
+		else if(scheduleID == SCHED_NONE)
 		{
 			DevMsg( "ERROR: LoadSchd (%s) (%s): '%s' (#%i) cannot be modified.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum);
 			Assert(0);
@@ -748,6 +844,7 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 		memset(sched_tempTask, 0, sizeof(sched_tempTask));
 
 		pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
+		bool first = true;
 		for(;;) {
 			if (!stricmp(sched_tempbuffer,"Tasks")) {
 				pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
@@ -766,12 +863,14 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 
 				pfile = engine->ParseFile(pfile, sched_pCurrTaskName, SCHED_BUFFER_STRIDE );
 				for(;;) {
+				#if AI_SCHEDULE_PARSER_STRICT_NAMES == 1
 					if(strnicmp("TASK_",sched_pCurrTaskName,5))
 					{
 						DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i): Malformed, Expecting 'Task' got '%s' instead.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName);
 						Assert(0);
 						return false;
 					}
+				#endif
 
 					// Convert generic ID to sub-class specific enum
 					TaskGlobalId_t taskGlobalID = pGlobalNamespace->TaskSymbolToId( sched_pCurrTaskName );
@@ -782,24 +881,31 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 					{
 						DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i): Task '%s' (#%i) was not registered.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum);
 						Assert(0);
+					#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == -1
 						return false;
+					#endif
 					}
 
-					Assert( AI_IdIsLocal( taskLocalID ) );
+					const TaskParamCheck_t *paramCheck = NULL;
 
 					sched_tempTask[sched_tempTaskNum].iTask = taskLocalID;
 
-					const TaskParamCheck_t *paramCheck = (pIdSpace) ? pIdSpace->TaskParamsCheck( taskLocalID ) : pGlobalNamespace->TaskParamsCheck( taskGlobalID );
-					if ( !paramCheck )
+					if (taskLocalID != -1)
 					{
-						DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i): Task '%s' (#%i) has no params check.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum);
-						Assert(0);
-						return false;
+						Assert( AI_IdIsLocal( taskLocalID ) );
+
+						paramCheck = (pIdSpace) ? pIdSpace->TaskParamsCheck( taskLocalID ) : pGlobalNamespace->TaskParamsCheck( taskGlobalID );
+						if ( !paramCheck )
+						{
+							DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i): Task '%s' (#%i) has no params check.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum);
+							Assert(0);
+							return false;
+						}
 					}
 
-					sched_tempTask[sched_tempTaskNum].numData = paramCheck->numTotal;
+					sched_tempTask[sched_tempTaskNum].numData = paramCheck ? paramCheck->numTotal : 0;
 
-					if(paramCheck->numTotal > 1) {
+					if(paramCheck && paramCheck->numTotal > 1) {
 						bool parenthesis = false;
 
 						pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
@@ -825,12 +931,20 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 
 						pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
 						for(int i = 0; i < paramCheck->numTotal; ++i) {
-							if(!sched_parse_task_value(pfile,pclassname,pfilename,
+							int parsed = sched_parse_task_value(pfile,pclassname,pfilename,
 								pIdSpace,pGlobalNamespace,
 								paramCheck, i
-							)) {
+							);
+
+						#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1 && AI_SCHEDULE_PARSER_STRICT_ENUM == 1
+							if(parsed != 1) {
 								return false;
 							}
+						#else
+							if(parsed == 0) {
+								return false;
+							}
+						#endif
 
 							pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
 
@@ -852,25 +966,33 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 						}
 
 						pfile = engine->ParseFile(pfile, sched_pCurrTaskName, SCHED_BUFFER_STRIDE );
-					} else if(paramCheck->numTotal == 1) {
-						if(paramCheck[0].nTypes[0] != TASK_DATA_CHECK_NULL) {
+					} else if(paramCheck && paramCheck->numTotal == 1 && paramCheck->nTypes[0] != TASK_DATA_CHECK_NULL) {
+						pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
+						if(!stricmp("=",sched_tempbuffer)) {
 							pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
-							if(!stricmp("=",sched_tempbuffer)) {
-								pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
-							}
+						}
 
-							if(!sched_parse_task_value(
-								pfile,pclassname,pfilename,
-								pIdSpace,pGlobalNamespace,
-								paramCheck, 0
-							)) {
-								return false;
-							}
+						int parsed = sched_parse_task_value(
+							pfile,pclassname,pfilename,
+							pIdSpace,pGlobalNamespace,
+							paramCheck, 0
+						);
 
-							pfile = engine->ParseFile(pfile, sched_pCurrTaskName, SCHED_BUFFER_STRIDE );
-						} else {
-							pfile = engine->ParseFile(pfile, sched_pCurrTaskName, SCHED_BUFFER_STRIDE );
+					#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1 && AI_SCHEDULE_PARSER_STRICT_ENUM == 1
+						if(parsed != 1) {
+							return false;
+						}
+					#else
+						if(parsed == 0) {
+							return false;
+						}
+					#endif
 
+						pfile = engine->ParseFile(pfile, sched_pCurrTaskName, SCHED_BUFFER_STRIDE );
+					} else if(!paramCheck || (paramCheck->numTotal == 0 || (paramCheck->numTotal == 1 && paramCheck->nTypes[0] == TASK_DATA_CHECK_NULL))) {
+						pfile = engine->ParseFile(pfile, sched_pCurrTaskName, SCHED_BUFFER_STRIDE );
+
+						if(!paramCheck || (paramCheck->numTotal == 1 && paramCheck->nTypes[0] == TASK_DATA_CHECK_NULL)) {
 							bool equal = !stricmp("=",sched_pCurrTaskName);
 
 							if(equal) {
@@ -889,14 +1011,19 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 							} else if(!stricmp("empty",sched_pCurrTaskName)) {
 								sched_tempTask[sched_tempTaskNum].data[0].nType = TASK_DATA_NONE;
 								pfile = engine->ParseFile(pfile, sched_pCurrTaskName, SCHED_BUFFER_STRIDE );
-							} else if(equal) {
+							}
+						#if AI_SCHEDULE_PARSER_STRICT_NULL == 0
+							if(!stricmp("0",sched_pCurrTaskName)) {
+								sched_tempTask[sched_tempTaskNum].data[0].nType = TASK_DATA_NONE;
+								pfile = engine->ParseFile(pfile, sched_pCurrTaskName, SCHED_BUFFER_STRIDE );
+							}
+						#endif
+							else if(equal) {
 								DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting 'Null' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,sched_tempbuffer);
 								Assert(0);
 								return false;
 							}
 						}
-					} else if(paramCheck->numTotal == 0 ) {
-						pfile = engine->ParseFile(pfile, sched_pCurrTaskName, SCHED_BUFFER_STRIDE );
 					}
 
 					sched_tempTaskNum++;
@@ -934,12 +1061,14 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 
 				pfile = engine->ParseFile(pfile, sched_pCurrTaskName, SCHED_BUFFER_STRIDE );
 				for(;;) {
+				#if AI_SCHEDULE_PARSER_STRICT_NAMES == 1
 					if(strnicmp("COND_",sched_pCurrTaskName,5))
 					{
 						DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i): Malformed, Expecting 'Condition' got '%s' instead.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName);
 						Assert(0);
 						return false;
 					}
+				#endif
 
 					// Convert generic ID to sub-class specific enum
 					AiCondGlobalId_t condID = pGlobalNamespace->ConditionSymbolToId(sched_pCurrTaskName);
@@ -949,14 +1078,18 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 					{
 						DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i): Condition '%s' was not registered.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName);
 						Assert(0);
+					#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1
 						return false;
+					#endif
 					}
 
 					// Otherwise, add to this schedules list of conditions
-
-					int interrupt = AI_RemapFromGlobal(condID);
-					Assert( AI_IdIsGlobal( condID ) && interrupt >= 0 && interrupt < MAX_CONDITIONS );
-					sched_tempInterruptMask.Set(interrupt);
+					if(condID != -1)
+					{
+						int interrupt = AI_RemapFromGlobal(condID);
+						Assert( AI_IdIsGlobal( condID ) && interrupt >= 0 && interrupt < MAX_CONDITIONS );
+						sched_tempInterruptMask.Set(interrupt);
+					}
 
 					// Read the next token
 					pfile = engine->ParseFile(pfile, sched_pCurrTaskName, SCHED_BUFFER_STRIDE );
@@ -974,6 +1107,15 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 
 				pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
 			} else {
+				if(first) {
+					if (!stricmp(sched_tempbuffer,"}"))
+					{
+						break;
+					}
+
+					first = false;
+				}
+
 				DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i): Malformed, Expecting 'Tasks' or 'Interrupts' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_tempbuffer);
 				Assert(0);
 				return false;
@@ -988,38 +1130,55 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 		// -----------------------------
 		// Check for duplicate schedule
 		// -----------------------------
-		int old_num = 0;
-
-		CAI_Schedule *new_schedule = GetScheduleByName(sched_pSchedName);
-		if(!new_schedule) {
-			new_schedule = CreateSchedule(sched_pSchedName,scheduleID);
-
-			old_num = 0;
-
-			// Now copy the tasks into the new schedule
-			new_schedule->m_iNumTasks = sched_tempTaskNum;
-		} else {
-			old_num = new_schedule->m_iNumTasks;
-
-			new_schedule->m_iNumTasks += sched_tempTaskNum;
-		}
-
-		if(!new_schedule->m_pTaskList) {
-			new_schedule->m_pTaskList = (Task_t *)malloc(sizeof(Task_t) * new_schedule->m_iNumTasks);
-		} else {
-			new_schedule->m_pTaskList = (Task_t *)realloc(new_schedule->m_pTaskList, sizeof(Task_t) * new_schedule->m_iNumTasks);
-		}
-
-		for (int i=old_num;i<new_schedule->m_iNumTasks;i++)
+		if(scheduleID != -1)
 		{
-			memcpy(&new_schedule->m_pTaskList[i], &sched_tempTask[i], sizeof(Task_t));
+			int old_num = 0;
 
-			Assert( AI_IdIsLocal( new_schedule->m_pTaskList[i].iTask ) );
+			CAI_Schedule *new_schedule = GetScheduleByName(sched_pSchedName);
+			if(!new_schedule) {
+				new_schedule = CreateSchedule(sched_pSchedName,scheduleID);
+				old_num = 0;
+			} else {
+				old_num = new_schedule->m_iNumTasks;
+			}
+
+			int mem_num = (old_num+sched_tempTaskNum);
+
+			if(!new_schedule->m_pTaskList) {
+				new_schedule->m_pTaskList = (Task_t *)malloc(sizeof(Task_t) * mem_num);
+			} else {
+				new_schedule->m_pTaskList = (Task_t *)realloc(new_schedule->m_pTaskList, sizeof(Task_t) * mem_num);
+			}
+
+			int actual_num = old_num;
+
+			for (int k=0;k<sched_tempTaskNum;k++)
+			{
+				int old_i = old_num+k;
+				int new_i = k;
+
+				if(sched_tempTask[new_i].iTask == -1) {
+					continue;
+				}
+
+				memcpy(&new_schedule->m_pTaskList[old_i], &sched_tempTask[new_i], sizeof(Task_t));
+				actual_num++;
+
+				Assert( AI_IdIsLocal( new_schedule->m_pTaskList[old_i].iTask ) );
+			}
+
+			new_schedule->m_iNumTasks = actual_num;
+
+			if(actual_num == 0) {
+				free(new_schedule->m_pTaskList);
+			} else if(mem_num != actual_num) {
+				new_schedule->m_pTaskList = (Task_t *)realloc(new_schedule->m_pTaskList, sizeof(Task_t) * actual_num);
+			}
+
+			CAI_ScheduleBits tmp;
+			new_schedule->m_InterruptMask.Or(sched_tempInterruptMask, &tmp);
+			new_schedule->m_InterruptMask = tmp;
 		}
-
-		CAI_ScheduleBits tmp;
-		new_schedule->m_InterruptMask.Or(sched_tempInterruptMask, &tmp);
-		new_schedule->m_InterruptMask = tmp;
 
 		pfile = engine->ParseFile(pfile, sched_pSchedName, SCHED_BUFFER_STRIDE );
 

@@ -11,11 +11,11 @@ AI_TASK_ENUM(TASK_RESET_ACTIVITY, TaskParamCheck_t())
 AI_TASK_ENUM(TASK_WAIT, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
 
 // Make announce attack sound
-AI_TASK_ENUM(TASK_ANNOUNCE_ATTACK, TaskParamCheck_t())
+AI_TASK_ENUM(TASK_ANNOUNCE_ATTACK, TaskParamCheck_t(TASK_DATA_CHECK_INT))
 
 // Waits for the specified number of seconds. Will constantly turn to 
 // face the enemy while waiting. 
-AI_TASK_ENUM(TASK_WAIT_FACE_ENEMY, TaskParamCheck_t())
+AI_TASK_ENUM(TASK_WAIT_FACE_ENEMY, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
 
 // Waits up to the specified number of seconds. Will constantly turn to 
 // face the enemy while waiting. 
@@ -48,7 +48,7 @@ AI_TASK_ENUM(TASK_MOVE_TO_GOAL_RANGE, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
 // Path that moves the character a few steps forward of where it is.
 AI_TASK_ENUM(TASK_MOVE_AWAY_PATH, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
 
-AI_TASK_ENUM(TASK_GET_PATH_AWAY_FROM_BEST_SOUND, TaskParamCheck_t())
+AI_TASK_ENUM(TASK_GET_PATH_AWAY_FROM_BEST_SOUND, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
 
 // Set the implied goal for TASK_GET_PATH_TO_GOAL
 AI_TASK_ENUM(TASK_SET_GOAL, TaskParamCheck_t(TASK_DATA_CHECK_GOAL_TYPE))
@@ -143,7 +143,7 @@ AI_TASK_ENUM(TASK_GET_PATH_TO_SAVEPOSITION_LOS, TaskParamCheck_t())
 #ifndef AI_USES_NAV_MESH
 AI_TASK_ENUM(TASK_GET_PATH_TO_RANDOM_NODE)
 #else
-AI_TASK_ENUM(TASK_GET_PATH_TO_RANDOM_AREA, TaskParamCheck_t())
+AI_TASK_ENUM(TASK_GET_PATH_TO_RANDOM_AREA, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
 #endif
 
 // Path to source of loudest heard sound that I care about
@@ -156,7 +156,7 @@ AI_TASK_ENUM(TASK_GET_PATH_TO_BESTSCENT, TaskParamCheck_t())
 AI_TASK_ENUM(TASK_RUN_PATH, TaskParamCheck_t())
 
 // Walk the current path
-AI_TASK_ENUM(TASK_WALK_PATH, TaskParamCheck_t())
+AI_TASK_ENUM(TASK_WALK_PATH, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
 
 // Walk the current path for a specified number of seconds
 AI_TASK_ENUM(TASK_WALK_PATH_TIMED, TaskParamCheck_t(TASK_DATA_CHECK_NUM))

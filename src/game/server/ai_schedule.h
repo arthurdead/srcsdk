@@ -173,7 +173,7 @@ private:
 
 #define AI_DEFINE_SCHEDULE( name, text ) \
 	const char * g_psz##name = \
-		#name \
+		"Schedule "#name \
 		"\n{\n" \
 		text \
 		"\n}\n"
@@ -213,8 +213,15 @@ public:
 		} \
 	} while (false)
 
+#ifdef _DEBUG
+#define AI_SCHEDULE_PARSER_STRICT_LOAD 0
+#else
+#define AI_SCHEDULE_PARSER_STRICT_LOAD 0
+#endif
 
 // For loading default schedules in memory  (see ai_default.cpp)
+
+#if AI_SCHEDULE_PARSER_STRICT_LOAD == 1
 #define AI_LOAD_DEF_SCHEDULE_MEMORY( classname, name ) \
 	do \
 	{ \
@@ -229,6 +236,22 @@ public:
 		if (!g_AI_SchedulesManager.LoadSchedules( #classname,NULL,UTIL_VarArgs("%s/%s.sch",folder,#name),&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
 			return false; \
 	} while (false)
+#else
+#define AI_LOAD_DEF_SCHEDULE_MEMORY( classname, name ) \
+	do \
+	{ \
+		extern const char * g_psz##name; \
+		if (!g_AI_SchedulesManager.LoadSchedules( #classname,(char *)g_psz##name,NULL,&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
+			fValid = false; \
+	} while (false)
+
+#define AI_LOAD_DEF_SCHEDULE_FILE( classname, name, folder ) \
+	do \
+	{ \
+		if (!g_AI_SchedulesManager.LoadSchedules( #classname,NULL,UTIL_VarArgs("%s/%s.sch",folder,#name),&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
+			fValid = false; \
+	} while (false)
+#endif
 
 //-----------------
 
