@@ -1643,12 +1643,12 @@ void CStudioHdr::CActivityToSequenceMapping::Initialize( CStudioHdr * __restrict
 #endif
 
 		// is there an activity associated with this sequence?
-		if (seqdesc.activity >= 0)
+		if (seqdesc.Activity() >= 0)
 		{
 			bFoundOne = true;
 
 			// look up if we already have an entry. First we need to make a speculative one --
-			HashValueType entry(seqdesc.activity, 0, 1, iabs(seqdesc.actweight));
+			HashValueType entry(seqdesc.Activity(), 0, 1, iabs(seqdesc.actweight));
 			UtlHashHandle_t handle = m_ActToSeqHash.Find(entry);
 			if ( m_ActToSeqHash.IsValidHandle(handle) )
 			{	
@@ -1713,13 +1713,13 @@ void CStudioHdr::CActivityToSequenceMapping::Initialize( CStudioHdr * __restrict
 	for ( int i = 0 ; i < NumSeq ; ++i )
 	{
 		const mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( i );
-		if (seqdesc.activity >= 0)
+		if (seqdesc.Activity() >= 0)
 		{
-			const HashValueType &element = m_ActToSeqHash[m_ActToSeqHash.Find(HashValueType(seqdesc.activity, 0, 0, 0))];
+			const HashValueType &element = m_ActToSeqHash[m_ActToSeqHash.Find(HashValueType(seqdesc.Activity(), 0, 0, 0))];
 			
 			// If this assert trips, we've written more sequences per activity than we allocated 
 			// (therefore there must have been a miscount in the first for loop above).
-			int tupleOffset = seqsPerAct[seqdesc.activity];
+			int tupleOffset = seqsPerAct[seqdesc.Activity()];
 			Assert( tupleOffset < element.count );
 
 			if ( seqdesc.numactivitymodifiers > 0 )
@@ -1751,7 +1751,7 @@ void CStudioHdr::CActivityToSequenceMapping::Initialize( CStudioHdr * __restrict
 				(tupleList + element.startingIdx + tupleOffset)->weight = 1;
 			}
 
-			seqsPerAct[seqdesc.activity] += 1;
+			seqsPerAct[seqdesc.Activity()] += 1;
 		}
 	}
 

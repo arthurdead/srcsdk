@@ -24,7 +24,6 @@
 #include "physics_impact_damage.h"
 #include "KeyValues.h"
 #include "filesystem.h"
-#include "scriptevent.h"
 #include "entityblocker.h"
 #include "soundent.h"
 #include "EntityFlame.h"
@@ -277,9 +276,7 @@ void CBaseProp::Precache( void )
 	PrecacheScriptSound( "Metal.SawbladeStick" );
 	PrecacheScriptSound( "PropaneTank.Burst" );
 
-#ifdef HL2_EPISODIC
 	UTIL_PrecacheOther( "env_flare" );
-#endif
 
 	BaseClass::Precache();
 }
@@ -794,7 +791,6 @@ static ConCommand prop_debug("prop_debug", CC_Prop_Debug, "Toggle prop debug mod
 // BREAKABLE PROPS
 //=============================================================================================================
 IMPLEMENT_SERVERCLASS_ST(CBreakableProp, DT_BreakableProp)
-	SendPropBool( SENDINFO( m_bClientPhysics ) ),
 END_SEND_TABLE()
 
 BEGIN_MAPENTITY( CBreakableProp )
@@ -846,9 +842,9 @@ CBreakableProp::CBreakableProp()
 	SetFadeDistance( -1.0f, 0.0f );
 	SetGlobalFadeScale( 1.0f );
 	m_flDefaultFadeScale = 1;
-	m_mpBreakMode = MULTIPLAYER_BREAK_DEFAULT;
+	m_breakMode = BREAK_DEFAULT;
 
-	SetPhysicsMode( PHYSICS_MULTIPLAYER_SOLID );
+	SetPhysicsMode( PHYSICS_SOLID );
 	
 	// This defaults to on. Most times mapmakers won't specify a punt sound to play.
 	m_bUsePuntSound = true;
@@ -1868,19 +1864,19 @@ void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
 	if ( pPhysics )
 		pPhysics->GetVelocity( &velocity, NULL );
 
-	switch ( GetMultiplayerBreakMode() )
+	switch ( GetBreakMode() )
 	{
-	case MULTIPLAYER_BREAK_DEFAULT:		// default is to break client-side
-	case MULTIPLAYER_BREAK_CLIENTSIDE:
+	case BREAK_DEFAULT:		// default is to break client-side
+	case BREAK_CLIENTSIDE:
 		te->PhysicsProp( filter, -1, GetModelIndex(), GetSkin(), GetAbsOrigin(), GetAbsAngles(), velocity, true, GetEffects() );
 		break;
-	case MULTIPLAYER_BREAK_SERVERSIDE:	// server-side break
+	case BREAK_SERVERSIDE:	// server-side break
 		if ( m_PerformanceMode != PM_NO_GIBS || breakable_disable_gib_limit.GetBool() )
 		{
 			PropBreakableCreateAll( GetModelIndex(), pPhysics, params, this, -1, ( m_PerformanceMode == PM_FULL_GIBS ), false );
 		}
 		break;
-	case MULTIPLAYER_BREAK_BOTH:	// pieces break from both dlls
+	case BREAK_BOTH:	// pieces break from both dlls
 		te->PhysicsProp( filter, -1, GetModelIndex(), GetSkin(), GetAbsOrigin(), GetAbsAngles(), velocity, true, GetEffects() );
 		if ( m_PerformanceMode != PM_NO_GIBS || breakable_disable_gib_limit.GetBool() )
 		{
@@ -2902,6 +2898,7 @@ void CInteractableProp::PushThink()
 LINK_ENTITY_TO_CLASS( physics_prop, CPhysicsProp );
 LINK_ENTITY_TO_CLASS( prop_physics, CPhysicsProp );	
 LINK_ENTITY_TO_CLASS( prop_physics_override, CPhysicsProp );	
+LINK_ENTITY_TO_CLASS( prop_physics_multiplayer, CPhysicsProp );
 
 BEGIN_MAPENTITY( CPhysicsProp )
 
@@ -2911,6 +2908,8 @@ BEGIN_MAPENTITY( CPhysicsProp )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Sleep", InputSleep ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableFloating", InputDisableFloating ),
 	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "SetDebris", InputSetDebris ),
+
+	DEFINE_KEYFIELD( m_iPhysicsMode, FIELD_INTEGER, "physicsmode" ),
 
 	DEFINE_KEYFIELD( m_massScale, FIELD_FLOAT, "massscale" ),
 	DEFINE_KEYFIELD( m_inertiaScale, FIELD_FLOAT, "inertiascale" ),
@@ -2957,6 +2956,11 @@ IMPLEMENT_SERVERCLASS_ST( CPhysicsProp, DT_PhysicsProp )
 
 	SendPropBool( SENDINFO( m_bAwake ) ),
 	//SendPropInt( SENDINFO(m_spawnflags), 16, SPROP_UNSIGNED ),	// Undone: L4D didn't need these bits, but other games do!
+
+	SendPropInt( SENDINFO( m_iPhysicsMode ), 2, SPROP_UNSIGNED ),
+	SendPropFloat( SENDINFO( m_fMass ), 0, SPROP_NOSCALE ),
+	SendPropVector( SENDINFO( m_collisionMins ), 0, SPROP_NOSCALE ),
+	SendPropVector( SENDINFO( m_collisionMaxs ), 0, SPROP_NOSCALE ),
 END_SEND_TABLE()
 
 // external function to tell if this entity is a gib physics prop
@@ -2974,7 +2978,8 @@ CPhysicsProp::CPhysicsProp( void ) :
 	m_bHasBeenAwakened( false ), 
 	m_fNextCheckDisableMotionContactsTime( 0 )
 {
-
+	m_iPhysicsMode = PHYSICS_AUTODETECT;
+	m_usingCustomCollisionBounds = false;
 }
 
 CPhysicsProp::~CPhysicsProp()
@@ -3005,7 +3010,7 @@ void CPhysicsProp::Spawn( )
 		g_ActiveGibCount++;
 	}
 	// Condense classname's to one, except for "prop_physics_override"
-	if ( FClassnameIs( this, "physics_prop" ) )
+	if ( FClassnameIs( this, "physics_prop" ) || FClassnameIs( this, "prop_physics_multiplayer" ) )
 	{
 		m_iClassname = gm_isz_class_PropPhysics;
 	}
@@ -3048,8 +3053,6 @@ void CPhysicsProp::Spawn( )
 		if ( pkvPropData )
 		{
 			SetAIAddOn( AllocPooledString( pkvPropData->GetString() ) );
-			modelKeyValues->deleteThis();
-			return;
 		}
 		else
 		{
@@ -3060,17 +3063,16 @@ void CPhysicsProp::Spawn( )
 			}
 		}
 	}
-
 	modelKeyValues->deleteThis();
 
 	// Do prop_physics_multiplayer stuff here
 	// if no physicsmode was defined by .QC or propdata.txt, 
 	// use auto detect based on size & mass
-	if ( m_iPhysicsMode == PHYSICS_MULTIPLAYER_AUTODETECT )
+	if ( m_iPhysicsMode == PHYSICS_AUTODETECT )
 	{
 		if ( VPhysicsGetObject() )
 		{
-			m_iPhysicsMode = GetAutoMultiplayerPhysicsMode( 
+			m_iPhysicsMode = GetAutoPhysicsMode( 
 				CollisionProp()->OBBSize(), VPhysicsGetObject()->GetMass() );
 		}
 		else
@@ -3083,20 +3085,20 @@ void CPhysicsProp::Spawn( )
 	// check if map maker overrides physics mode to force a server-side entity
 	if ( GetSpawnFlags() & SF_PHYSPROP_FORCE_SERVER_SIDE )
 	{
-		SetPhysicsMode( PHYSICS_MULTIPLAYER_NON_SOLID );
+		SetPhysicsMode( PHYSICS_NON_SOLID );
 	}
 
-	if ( m_iPhysicsMode == PHYSICS_MULTIPLAYER_CLIENTSIDE )
+	if ( m_iPhysicsMode == PHYSICS_CLIENTSIDE )
 	{
 		if ( engine->IsInEditMode() )
 		{
 			// in map edit mode always spawn as server phys prop
-			SetPhysicsMode( PHYSICS_MULTIPLAYER_NON_SOLID );
+			SetPhysicsMode( PHYSICS_NON_SOLID );
 		}
 		else if ( CommandLine()->FindParm( "-makereslists" ) )
 		{
 			// when building reslists always spawn as server phys prop
-			SetPhysicsMode( PHYSICS_MULTIPLAYER_NON_SOLID );
+			SetPhysicsMode( PHYSICS_NON_SOLID );
 		}
 		else
 		{
@@ -3106,11 +3108,50 @@ void CPhysicsProp::Spawn( )
 		}
 	}
 
+	if ( GetCollisionGroup() == COLLISION_GROUP_NONE )
+		SetCollisionGroup( COLLISION_GROUP_PUSHAWAY );
+
+	// Items marked as debris should be set as such.
+	if ( IsDebris() )
+	{
+		SetCollisionGroup( COLLISION_GROUP_DEBRIS );
+	}
+
+	m_fMass = VPhysicsGetObject()->GetMass();
+
+	// VPhysicsGetObject() is NULL on the client, which prevents the client from finding a decent
+	// AABB surrounding the collision bounds.  If we've got a VPhysicsGetObject()->GetCollide(), we'll
+	// grab it's unrotated bounds and use it to calculate our collision surrounding bounds.  This
+	// can end up larger than the CollisionProp() would have calculated on its own, but it'll be
+	// identical on the client and the server.
+	m_usingCustomCollisionBounds = false;
+	if ( ( GetSolid() == SOLID_VPHYSICS ) && ( GetMoveType() == MOVETYPE_VPHYSICS ) )
+	{
+		IPhysicsObject *pPhysics = VPhysicsGetObject();
+		if ( pPhysics && pPhysics->GetCollide() )
+		{
+			physcollision->CollideGetAABB( &m_collisionMins.GetForModify(), &m_collisionMaxs.GetForModify(), pPhysics->GetCollide(), vec3_origin, vec3_angle );
+			CollisionProp()->SetSurroundingBoundsType( USE_GAME_CODE );
+			m_usingCustomCollisionBounds = true;
+		}
+	}
+
 	if ( IsPotentiallyAbleToObstructNavAreas() )
 	{
 		if( TheNavMesh )
 			TheNavMesh->RegisterAvoidanceObstacle( this );
 	}
+}
+
+void CPhysicsProp::ComputeWorldSpaceSurroundingBox( Vector *mins, Vector *maxs )
+{
+	Assert( m_usingCustomCollisionBounds );
+	Assert( mins != NULL && maxs != NULL );
+	if ( !mins || !maxs )
+		return;
+
+	// Take our saved collision bounds, and transform into world space
+	TransformAABB( EntityToWorldTransform(), m_collisionMins, m_collisionMaxs, *mins, *maxs );
 }
 
 //-----------------------------------------------------------------------------
@@ -3208,11 +3249,6 @@ bool CPhysicsProp::CreateVPhysics()
 	if ( HasSpawnFlags(SF_PHYSPROP_PREVENT_PICKUP) )
 	{
 		PhysSetGameFlags(pPhysicsObject, FVPHYSICS_NO_PLAYER_PICKUP);
-	}
-
-	if ( !pPhysicsObject->IsMoveable() || pPhysicsObject->GetMass() >= VPHYSICS_LARGE_OBJECT_MASS )
-	{
-		m_bClientPhysics = true;
 	}
 
 	return true;
@@ -3552,6 +3588,26 @@ void CPhysicsProp::VPhysicsUpdate( IPhysicsObject *pPhysics )
 		{
 			DevMsg("Disabling motion on phys prop");
 			pPhysicsObject->EnableMotion( false );
+		}
+	}
+
+	if ( sv_turbophysics.GetBool() )
+	{
+		// If the object is set to debris, don't let turbo physics change it.
+		if ( IsDebris() )
+			return;
+
+		if ( m_bAwake )
+		{
+			SetCollisionGroup( COLLISION_GROUP_PUSHAWAY );
+		}
+		else if ( m_iPhysicsMode == PHYSICS_NON_SOLID )
+		{
+			SetCollisionGroup( COLLISION_GROUP_DEBRIS );
+		}
+		else
+		{
+			SetCollisionGroup( COLLISION_GROUP_NONE );
 		}
 	}
 }
@@ -6490,50 +6546,6 @@ END_MAPENTITY()
 LINK_ENTITY_TO_CLASS( prop_sphere, CPhysSphere );
 
 
-// ------------------------------------------------------------------------------------------ //
-// Special version of func_physbox.
-// ------------------------------------------------------------------------------------------ //
-class CPhysBoxMultiplayer : public CPhysBox, public IMultiplayerPhysics
-{
-public:
-	DECLARE_CLASS( CPhysBoxMultiplayer, CPhysBox );
-
-	virtual int GetMultiplayerPhysicsMode()
-	{
-		return m_iPhysicsMode;
-	}
-
-	virtual float GetMass()
-	{
-		return m_fMass;
-	}
-
-	virtual bool IsAsleep()
-	{
-		return VPhysicsGetObject()->IsAsleep();
-	}
-
-	CNetworkVar( int, m_iPhysicsMode );	// One of the PHYSICS_MULTIPLAYER_ defines.	
-	CNetworkVar( float, m_fMass );
-
-
-	DECLARE_SERVERCLASS();
-
-	virtual void Activate()
-	{
-		BaseClass::Activate();
-		SetCollisionGroup( COLLISION_GROUP_PUSHAWAY );
-		m_fMass = VPhysicsGetObject()->GetMass();
-	}
-};
-
-LINK_ENTITY_TO_CLASS( func_physbox_multiplayer, CPhysBoxMultiplayer );
-
-IMPLEMENT_SERVERCLASS_ST( CPhysBoxMultiplayer, DT_PhysBoxMultiplayer )
-	SendPropInt( SENDINFO( m_iPhysicsMode ), 1, SPROP_UNSIGNED ),
-	SendPropFloat( SENDINFO( m_fMass ), 0, SPROP_NOSCALE ),
-END_SEND_TABLE()
-
 #if defined(HL2_EPISODIC)
 // ------------------------------------------------------------------------------------------ //
 // Flare class for higher interaction possibilities, inspired by Black Mesa
@@ -6652,163 +6664,6 @@ BEGIN_MAPENTITY( CPropFlare )
 
 END_MAPENTITY()
 #endif
-
-class CPhysicsPropMultiplayer : public CPhysicsProp, public IMultiplayerPhysics
-{
-	DECLARE_CLASS( CPhysicsPropMultiplayer, CPhysicsProp );
-
-	CNetworkVar( int, m_iPhysicsMode );	// One of the PHYSICS_MULTIPLAYER_ defines.	
-	CNetworkVar( float, m_fMass );
-
-	DECLARE_SERVERCLASS();
-	DECLARE_MAPENTITY();
-
-	CPhysicsPropMultiplayer()
-	{
-		m_iPhysicsMode = PHYSICS_MULTIPLAYER_AUTODETECT;
-		m_usingCustomCollisionBounds = false;
-	}
-
-// IBreakableWithPropData:
-	void SetPhysicsMode(int iMode)
-	{
-		m_iPhysicsMode = iMode;
-	}
-
-	int		GetPhysicsMode() { return m_iPhysicsMode; }
-
-// IMultiplayerPhysics:
-	int		GetMultiplayerPhysicsMode() { return m_iPhysicsMode; }
-	float	GetMass() { return m_fMass; }
-	bool	IsAsleep() { return !m_bAwake; }
-
-	bool	IsDebris( void )			{ return  HasSpawnFlags( SF_PHYSPROP_DEBRIS ); }
-
-	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics )
-	{
-		BaseClass::VPhysicsUpdate( pPhysics );
-
-		if ( sv_turbophysics.GetBool() )
-		{
-			// If the object is set to debris, don't let turbo physics change it.
-			if ( IsDebris() )
-				return;
-
-			if ( m_bAwake )
-			{
-				SetCollisionGroup( COLLISION_GROUP_PUSHAWAY );
-			}
-			else if ( m_iPhysicsMode == PHYSICS_MULTIPLAYER_NON_SOLID )
-			{
-				SetCollisionGroup( COLLISION_GROUP_DEBRIS );
-			}
-			else
-			{
-				SetCollisionGroup( COLLISION_GROUP_NONE );
-			}
-		}
-	}
-
-	virtual void Spawn( void )
-	{
-		BaseClass::Spawn();
-
-		// if no physicsmode was defined by .QC or propdata.txt, 
-		// use auto detect based on size & mass
-		if ( m_iPhysicsMode == PHYSICS_MULTIPLAYER_AUTODETECT )
-		{
-			if ( VPhysicsGetObject() )
-			{
-				m_iPhysicsMode = GetAutoMultiplayerPhysicsMode( 
-					CollisionProp()->OBBSize(), VPhysicsGetObject()->GetMass() );
-			}
-			else
-			{
-				UTIL_Remove( this );
-				return;
-			}
-		}
-
-		// check if map maker overrides physics mode to force a server-side entity
-		if ( GetSpawnFlags() & SF_PHYSPROP_FORCE_SERVER_SIDE )
-		{
-			SetPhysicsMode( PHYSICS_MULTIPLAYER_NON_SOLID );
-		}
-
-		if ( m_iPhysicsMode == PHYSICS_MULTIPLAYER_CLIENTSIDE )
-		{
-			if ( engine->IsInEditMode() )
-			{
-				// in map edit mode always spawn as server phys prop
-				SetPhysicsMode( PHYSICS_MULTIPLAYER_NON_SOLID );
-			}
-			else
-			{
-				// don't spawn clientside props on server
-				UTIL_Remove( this );
-				return;
-			}
-			
-		}
-
-		if ( GetCollisionGroup() == COLLISION_GROUP_NONE )
-			SetCollisionGroup( COLLISION_GROUP_PUSHAWAY );
-
-		// Items marked as debris should be set as such.
-		if ( IsDebris() )
-		{
-			SetCollisionGroup( COLLISION_GROUP_DEBRIS );
-		}
-
-		m_fMass = VPhysicsGetObject()->GetMass();
-
-		// VPhysicsGetObject() is NULL on the client, which prevents the client from finding a decent
-		// AABB surrounding the collision bounds.  If we've got a VPhysicsGetObject()->GetCollide(), we'll
-		// grab it's unrotated bounds and use it to calculate our collision surrounding bounds.  This
-		// can end up larger than the CollisionProp() would have calculated on its own, but it'll be
-		// identical on the client and the server.
-		m_usingCustomCollisionBounds = false;
-		if ( ( GetSolid() == SOLID_VPHYSICS ) && ( GetMoveType() == MOVETYPE_VPHYSICS ) )
-		{
-			IPhysicsObject *pPhysics = VPhysicsGetObject();
-			if ( pPhysics && pPhysics->GetCollide() )
-			{
-				physcollision->CollideGetAABB( &m_collisionMins.GetForModify(), &m_collisionMaxs.GetForModify(), pPhysics->GetCollide(), vec3_origin, vec3_angle );
-				CollisionProp()->SetSurroundingBoundsType( USE_GAME_CODE );
-				m_usingCustomCollisionBounds = true;
-			}
-		}
-	}
-
-	virtual void ComputeWorldSpaceSurroundingBox( Vector *mins, Vector *maxs )
-	{
-		Assert( m_usingCustomCollisionBounds );
-		Assert( mins != NULL && maxs != NULL );
-		if ( !mins || !maxs )
-			return;
-
-		// Take our saved collision bounds, and transform into world space
-		TransformAABB( EntityToWorldTransform(), m_collisionMins, m_collisionMaxs, *mins, *maxs );
-	}
-
-private:
-	bool m_usingCustomCollisionBounds;
-	CNetworkVector( m_collisionMins );
-	CNetworkVector( m_collisionMaxs );
-};
-
-LINK_ENTITY_TO_CLASS( prop_physics_multiplayer, CPhysicsPropMultiplayer );
-
-BEGIN_MAPENTITY( CPhysicsPropMultiplayer )
-	DEFINE_KEYFIELD( m_iPhysicsMode, FIELD_INTEGER, "physicsmode" ),
-END_MAPENTITY()
-
-IMPLEMENT_SERVERCLASS_ST( CPhysicsPropMultiplayer, DT_PhysicsPropMultiplayer )
-	SendPropInt( SENDINFO( m_iPhysicsMode ), 2, SPROP_UNSIGNED ),
-	SendPropFloat( SENDINFO( m_fMass ), 0, SPROP_NOSCALE ),
-	SendPropVector( SENDINFO( m_collisionMins ), 0, SPROP_NOSCALE ),
-	SendPropVector( SENDINFO( m_collisionMaxs ), 0, SPROP_NOSCALE ),
-END_SEND_TABLE()
 
 #define RESPAWNABLE_PROP_DEFAULT_TIME 60.0f
 

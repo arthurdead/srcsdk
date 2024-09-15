@@ -53,6 +53,7 @@
 #include "c_basetempentity.h"
 #include "beamdraw.h"
 #include "iviewrender_beams.h"
+#include "clientalphaproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -734,7 +735,7 @@ int C_BasePlayer::GetObserverMode() const
 
 uint8 C_BasePlayer::ViewModel_OverrideRenderAlpha( uint8 nAlpha )
 {
-	return AlphaProp()->ComputeRenderAlpha();
+	return AlphaProp()->GetAlphaBlend();
 }
 
 RenderableTranslucencyType_t C_BasePlayer::ViewModel_ComputeTranslucencyType( void )

@@ -356,9 +356,12 @@ void CPhysicsSpring::NotifySystemEvent( CBaseEntity *pNotify, notify_system_even
 
 // SendTable stuff.
 IMPLEMENT_SERVERCLASS_ST(CPhysBox, DT_PhysBox)
+	SendPropInt( SENDINFO( m_iPhysicsMode ), 1, SPROP_UNSIGNED ),
+	SendPropFloat( SENDINFO( m_fMass ), 0, SPROP_NOSCALE ),
 END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( func_physbox, CPhysBox );
+LINK_ENTITY_TO_CLASS( func_physbox_multiplayer, CPhysBox );
 
 BEGIN_MAPENTITY( CPhysBox )
 
@@ -408,6 +411,12 @@ void CPhysBox::Spawn( void )
 	m_flDmgModClub = func_breakdmg_club.GetFloat();
 	m_flDmgModExplosive = func_breakdmg_explosive.GetFloat();
 	m_flDmgModFire = 1.0f;
+
+	// Condense classname's to one, except for "prop_physics_override"
+	if ( FClassnameIs( this, "func_physbox_multiplayer" ) )
+	{
+		m_iClassname = gm_isz_class_FuncPhysbox;
+	}
 
 	ParsePropData();
 
@@ -462,6 +471,13 @@ void CPhysBox::Spawn( void )
 	{
 		m_impactEnergyScale = 1.0;
 	}
+}
+
+void CPhysBox::Activate()
+{
+	BaseClass::Activate();
+	SetCollisionGroup( COLLISION_GROUP_PUSHAWAY );
+	m_fMass = VPhysicsGetObject()->GetMass();
 }
 
 // shared from studiomdl, checks for long, thin objects and adds some damping 

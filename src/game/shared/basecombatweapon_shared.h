@@ -640,7 +640,7 @@ public:
 	// Viewmodel overriding
 	virtual RenderableTranslucencyType_t ViewModel_ComputeTranslucencyType( void ) { return ComputeTranslucencyType(); }
 	virtual int ViewModel_GetRenderFlags( void ) { return GetRenderFlags(); }
-	virtual uint8 ViewModel_OverrideRenderAlpha( uint8 nAlpha ) { return AlphaProp()->ComputeRenderAlpha(); }
+	virtual uint8 ViewModel_OverrideRenderAlpha( uint8 nAlpha );
 	virtual bool			IsOverridingViewmodel( void ) { return false; };
 	virtual int				ViewModel_DrawModel( C_BaseViewModel *pViewmodel, int flags, const RenderableInstance_t &instance ) { return 0; };
 	bool					WantsToOverrideViewmodelAttachments( void ) { return false; }

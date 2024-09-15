@@ -13,7 +13,6 @@
 #include "r_efx.h"
 #include "dlight.h"
 #include "beamdraw.h"
-#include "cl_animevent.h"
 #include "engine/IEngineSound.h"
 #include "c_te_legacytempents.h"
 #include "activitylist.h"
@@ -177,12 +176,30 @@ void RecvProxy_Sequence( const CRecvProxyData *pData, void *pStruct, void *pOut 
 	pAnimating->UpdateVisibility();
 }
 
+void RecvProxy_Skin( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	C_BaseAnimating *pAnimating = (C_BaseAnimating *)pStruct;
+	if ( !pAnimating )
+		return;
+
+	pAnimating->SetSkin( pData->m_Value.m_Int );
+}
+
+void RecvProxy_Body( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	C_BaseAnimating *pAnimating = (C_BaseAnimating *)pStruct;
+	if ( !pAnimating )
+		return;
+
+	pAnimating->SetBody( pData->m_Value.m_Int );
+}
+
 IMPLEMENT_CLIENTCLASS_DT(C_BaseAnimating, DT_BaseAnimating, CBaseAnimating)
 	RecvPropInt(RECVINFO(m_nSequence), 0, RecvProxy_Sequence),
 	RecvPropInt(RECVINFO(m_nForceBone)),
 	RecvPropVector(RECVINFO(m_vecForce)),
-	RecvPropInt(RECVINFO(m_nSkin)),
-	RecvPropInt(RECVINFO(m_nBody)),
+	RecvPropInt(RECVINFO(m_nSkin), 0, RecvProxy_Skin),
+	RecvPropInt(RECVINFO(m_nBody), 0, RecvProxy_Body),
 	RecvPropInt(RECVINFO(m_nHitboxSet)),
 
 	RecvPropFloat(RECVINFO(m_flModelScale)),
@@ -1299,7 +1316,8 @@ void C_BaseAnimating::TermRopes()
 {
 	FOR_EACH_LL( m_Ropes, i )
 	{
-		UTIL_Remove( m_Ropes[i] );
+		if(m_Ropes[i])
+			UTIL_Remove( m_Ropes[i] );
 	}
 
 	m_Ropes.Purge();
@@ -3863,14 +3881,17 @@ void C_BaseAnimating::DoAnimationEvents( CStudioHdr *pStudioHdr )
 		{
 			// ignore all non-client-side events
 
-			if ( pevent[i].type & AE_TYPE_NEWEVENTSYSTEM )
-			{
-				if ( !( pevent[i].type & AE_TYPE_CLIENT ) )
-					 continue;
-			}
-			else if ( pevent[i].Event_OldSystem() < EVENT_CLIENT ) //Adrian - Support the old event system
-				continue;
-		
+			bool bClient = ( (pevent[i].Type() & AE_TYPE_CLIENT) != 0 );
+			bool bServer = ( (pevent[i].Type() & AE_TYPE_SERVER) != 0 );
+
+		#ifdef GAME_DLL
+			if ( !bServer && bClient )
+				 continue;
+		#else
+			if ( !bClient && bServer )
+				 continue;
+		#endif
+
 			if ( pevent[i].cycle <= m_flPrevEventCycle )
 				continue;
 			
@@ -3895,13 +3916,16 @@ void C_BaseAnimating::DoAnimationEvents( CStudioHdr *pStudioHdr )
 
 	for (int i = 0; i < (int)seqdesc.numevents; i++)
 	{
-		if ( pevent[i].type & AE_TYPE_NEWEVENTSYSTEM )
-		{
-			if ( !( pevent[i].type & AE_TYPE_CLIENT ) )
-				 continue;
-		}
-		else if ( pevent[i].Event_OldSystem() < EVENT_CLIENT ) //Adrian - Support the old event system
-			continue;
+		bool bClient = ( (pevent[i].Type() & AE_TYPE_CLIENT) != 0 );
+		bool bServer = ( (pevent[i].Type() & AE_TYPE_SERVER) != 0 );
+
+	#ifdef GAME_DLL
+		if ( !bServer && bClient )
+			 continue;
+	#else
+		if ( !bClient && bServer )
+			 continue;
+	#endif
 
 		if ( (pevent[i].cycle > m_flPrevEventCycle && pevent[i].cycle <= flEventCycle) )
 		{
@@ -5111,8 +5135,6 @@ void C_BaseAnimating::OnPreDataChanged( DataUpdateType_t updateType )
 {
 	BaseClass::OnPreDataChanged( updateType );
 
-	m_nPrevBody = GetBody();
-	m_nPrevSkin = GetSkin();
 	m_bLastClientSideFrameReset = m_bClientSideFrameReset;
 }
 
@@ -5411,11 +5433,6 @@ void C_BaseAnimating::OnDataChanged( DataUpdateType_t updateType )
 	}
 
 	BaseClass::OnDataChanged( updateType );
-
-	if ( m_nPrevBody != GetBody() || m_nPrevSkin != GetSkin() )
-	{
-		OnTranslucencyTypeChanged();
-	}
 
 	if ( (updateType == DATA_UPDATE_CREATED) || modelchanged )
 	{
@@ -6213,6 +6230,7 @@ void C_BaseAnimating::SetSkin( int iSkin )
 	if ( m_nSkin != iSkin )
 	{
 		m_nSkin = iSkin;
+		modelinfo->RecomputeTranslucency( const_cast<model_t*>(GetModel()), GetSkin(), GetBody(), GetClientRenderable() );
 		OnTranslucencyTypeChanged();
 	}
 }
@@ -6222,6 +6240,7 @@ void C_BaseAnimating::SetBody( int iBody )
 	if ( m_nBody != iBody )
 	{
 		m_nBody = iBody;
+		modelinfo->RecomputeTranslucency( const_cast<model_t*>(GetModel()), GetSkin(), GetBody(), GetClientRenderable() );
 		OnTranslucencyTypeChanged();
 	}
 }
@@ -6235,6 +6254,7 @@ void C_BaseAnimating::SetBodygroup( int iGroup, int iValue )
 	::SetBodygroup( GetModelPtr( ), m_nBody, iGroup, iValue );
 	if ( nOldBody != m_nBody )
 	{
+		modelinfo->RecomputeTranslucency( const_cast<model_t*>(GetModel()), GetSkin(), GetBody(), GetClientRenderable() );
 		OnTranslucencyTypeChanged();
 	}
 }

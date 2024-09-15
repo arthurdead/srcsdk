@@ -12,7 +12,7 @@
 
 #include "shareddefs.h"
 #include "soundflags.h"
-#include "basehandle.h"
+#include "ehandle.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -50,7 +50,7 @@ enum
 // An entity identifier that works in both game + client dlls
 //-----------------------------------------------------------------------------
 
-typedef CBaseHandle EntityHandle_t;
+typedef EHANDLE EntityHandle_t;
 
 
 #define INVALID_ENTITY_HANDLE INVALID_EHANDLE_INDEX
@@ -89,7 +89,7 @@ public:
 
 	virtual IPhysicsSurfaceProps *GetSurfaceProps( void ) = 0;
 
-	virtual bool IsWorldEntity( const CBaseHandle &handle ) = 0;
+	virtual bool IsWorldEntity( const EHANDLE &handle ) = 0;
 
 protected:
 	// Inherited classes can call this to set the singleton

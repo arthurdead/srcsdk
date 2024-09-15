@@ -238,7 +238,7 @@ public:
 
 	int ExtractBbox( int sequence, Vector& mins, Vector& maxs );
 	void SetSequenceBox( void );
-	int RegisterPrivateActivity( const char *pszActivityName );
+	Activity RegisterPrivateActivity( const char *pszActivityName );
 
 	void	ResetClientsideFrame( void );
 
@@ -269,7 +269,7 @@ public:
 	float GetMovementFrame( float flDist );
 	bool HasMovement( int iSequence );
 
-	void ReportMissingActivity( int iActivity );
+	void ReportMissingActivity( Activity iActivity );
 	virtual bool TestCollision( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr );
 	virtual bool TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr );
 	class CBoneCache *GetBoneCache( void );

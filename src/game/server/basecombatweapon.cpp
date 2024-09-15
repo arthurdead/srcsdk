@@ -106,21 +106,18 @@ void CBaseCombatWeapon::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseComb
 {
 	int nEvent = pEvent->Event();
 
-	if ( (pEvent->type & AE_TYPE_NEWEVENTSYSTEM) && (pEvent->type & AE_TYPE_SERVER) )
+	if ( nEvent == AE_NPC_WEAPON_FIRE )
 	{
-		if ( nEvent == AE_NPC_WEAPON_FIRE )
+		bool bSecondary = (atoi( pEvent->options ) != 0);
+		Operator_ForceNPCFire( pOperator, bSecondary );
+		return;
+	}
+	else if ( nEvent == AE_WPN_PLAYWPNSOUND )
+	{
+		int iSnd = GetWeaponSoundFromString(pEvent->options);
+		if ( iSnd != -1 )
 		{
-			bool bSecondary = (atoi( pEvent->options ) != 0);
-			Operator_ForceNPCFire( pOperator, bSecondary );
-			return;
-		}
-		else if ( nEvent == AE_WPN_PLAYWPNSOUND )
-		{
-			int iSnd = GetWeaponSoundFromString(pEvent->options);
-			if ( iSnd != -1 )
-			{
-				WeaponSound( (WeaponSound_t)iSnd );
-			}
+			WeaponSound( (WeaponSound_t)iSnd );
 		}
 	}
 

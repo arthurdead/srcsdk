@@ -12,6 +12,7 @@
 //-----------------------------------------------------------------------------
 #include "cbase.h"
 #include "cliententitylist.h"
+#include "tier1/fmtstr.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -94,11 +95,114 @@ void CClientEntityList::Release( void )
 	m_iMaxUsedServerIndex = -1;
 }
 
+#if defined( STAGING_ONLY )
+
+// Defined in tier1 / interface.cpp for Windows and native for POSIX platforms.
+extern "C" int backtrace( void **buffer, int size );
+
+extern "C" char ** backtrace_symbols (void *const *buffer, int size);
+
+static struct
+{
+	int entnum;
+	float time;
+	C_BaseEntity *pBaseEntity;
+	void *backtrace_addrs[ 32 ];
+	char **backtrace_syms;
+} g_RemoveEntityBacktraces[ 1024 ];
+static uint32 g_RemoveEntityBacktracesIndex = 0;
+
+static void OnRemoveEntityBacktraceHook( int entnum, C_BaseEntity *pBaseEntity )
+{
+	int index = g_RemoveEntityBacktracesIndex++;
+	if ( g_RemoveEntityBacktracesIndex >= ARRAYSIZE( g_RemoveEntityBacktraces ) )
+		g_RemoveEntityBacktracesIndex = 0;
+
+	g_RemoveEntityBacktraces[ index ].entnum = entnum;
+	g_RemoveEntityBacktraces[ index ].time = gpGlobals->curtime;
+	g_RemoveEntityBacktraces[ index ].pBaseEntity = pBaseEntity;
+
+	memset( g_RemoveEntityBacktraces[ index ].backtrace_addrs, 0, sizeof( g_RemoveEntityBacktraces[ index ].backtrace_addrs ) );
+	backtrace( g_RemoveEntityBacktraces[ index ].backtrace_addrs, ARRAYSIZE( g_RemoveEntityBacktraces[ index ].backtrace_addrs ) );
+#ifdef POSIX
+	if( g_RemoveEntityBacktraces[ index ].backtrace_syms )
+		free( g_RemoveEntityBacktraces[ index ].backtrace_syms );
+	g_RemoveEntityBacktraces[ index ].backtrace_syms = backtrace_symbols( g_RemoveEntityBacktraces[ index ].backtrace_addrs, ARRAYSIZE( g_RemoveEntityBacktraces[ index ].backtrace_addrs ) );
+#endif
+}
+
+// Should help us track down CL_PreserveExistingEntity Host_Error() issues:
+//  1. Set cl_removeentity_backtrace_capture to 1.
+//  2. When error hits, run "cl_removeentity_backtrace_dump [entnum]".
+//  3. In debugger, track down what functions the spewed addresses refer to.
+static ConVar cl_removeentity_backtrace_capture( "cl_removeentity_backtrace_capture",
+#ifdef _DEBUG
+	"1", 
+#else
+	"0", 
+#endif
+	0,
+	"For debugging. Capture backtraces for CClientEntityList::OnRemoveEntity calls." );
+
+void do_removeentity_backtrace_dump(int entnum, bool do_trap)
+{
+	for ( int i = 0; i < ARRAYSIZE( g_RemoveEntityBacktraces ); i++ )
+	{
+		if ( g_RemoveEntityBacktraces[ i ].time && 
+			( entnum == -1 || g_RemoveEntityBacktraces[ i ].entnum == entnum ) )
+		{
+			Msg( "%d: time:%.2f pBaseEntity:%p\n", g_RemoveEntityBacktraces[i].entnum,
+				g_RemoveEntityBacktraces[ i ].time, g_RemoveEntityBacktraces[ i ].pBaseEntity );
+			for ( int j = 0; j < ARRAYSIZE( g_RemoveEntityBacktraces[ i ].backtrace_addrs ); j++ )
+			{
+			#ifdef POSIX
+				if(g_RemoveEntityBacktraces[ i ].backtrace_syms)
+					Msg( "  %p - %s\n", g_RemoveEntityBacktraces[ i ].backtrace_addrs[ j ], g_RemoveEntityBacktraces[ i ].backtrace_syms[ j ] ? g_RemoveEntityBacktraces[ i ].backtrace_syms[ j ] : "NULL" );
+				else
+			#endif
+				Msg( "  %p\n", g_RemoveEntityBacktraces[ i ].backtrace_addrs[ j ] );
+			}
+
+			if(do_trap) {
+				DebuggerBreak();
+			}
+
+			if(entnum != -1) {
+				break;
+			}
+		}
+	}
+}
+
+CON_COMMAND( cl_removeentity_backtrace_dump, "Dump backtraces for client OnRemoveEntity calls." )
+{
+	if ( !cl_removeentity_backtrace_capture.GetBool() )
+	{
+		Msg( "cl_removeentity_backtrace_dump error: cl_removeentity_backtrace_capture not enabled. Backtraces not captured.\n" );
+		return;
+	}
+
+	int entnum = ( args.ArgC() >= 2 ) ? atoi( args[ 1 ] ) : -1;
+
+	do_removeentity_backtrace_dump( entnum, false );
+}
+
+#endif // STAGING_ONLY
+
 IClientNetworkable* CClientEntityList::GetClientNetworkable( int entnum )
 {
 	Assert( entnum >= 0 );
 	Assert( entnum < MAX_EDICTS );
-	return m_EntityCacheInfo[entnum].m_pNetworkable;
+
+	IClientNetworkable *pNetworkable = m_EntityCacheInfo[entnum].m_pNetworkable;
+
+#if defined( STAGING_ONLY ) && 0
+	if(!pNetworkable) {
+		do_removeentity_backtrace_dump(entnum, true);
+	}
+#endif // STAGING_ONLY
+
+	return pNetworkable;
 }
 
 EntityCacheInfo_t *CClientEntityList::GetClientNetworkableArray()
@@ -361,68 +465,6 @@ void CClientEntityList::OnAddEntity( CBaseEntity *pEnt, EHANDLE handle )
 		m_entityListeners[i]->OnEntityCreated( pEnt );
 	}
 }
-
-#if defined( STAGING_ONLY )
-
-// Defined in tier1 / interface.cpp for Windows and native for POSIX platforms.
-extern "C" int backtrace( void **buffer, int size );
-
-static struct
-{
-	int entnum;
-	float time;
-	C_BaseEntity *pBaseEntity;
-	void *backtrace_addrs[ 16 ];
-} g_RemoveEntityBacktraces[ 1024 ];
-static uint32 g_RemoveEntityBacktracesIndex = 0;
-
-static void OnRemoveEntityBacktraceHook( int entnum, C_BaseEntity *pBaseEntity )
-{
-	int index = g_RemoveEntityBacktracesIndex++;
-	if ( g_RemoveEntityBacktracesIndex >= ARRAYSIZE( g_RemoveEntityBacktraces ) )
-		g_RemoveEntityBacktracesIndex = 0;
-
-	g_RemoveEntityBacktraces[ index ].entnum = entnum;
-	g_RemoveEntityBacktraces[ index ].time = gpGlobals->curtime;
-	g_RemoveEntityBacktraces[ index ].pBaseEntity = pBaseEntity;
-
-	memset( g_RemoveEntityBacktraces[ index ].backtrace_addrs, 0, sizeof( g_RemoveEntityBacktraces[ index ].backtrace_addrs ) );
-	backtrace( g_RemoveEntityBacktraces[ index ].backtrace_addrs, ARRAYSIZE( g_RemoveEntityBacktraces[ index ].backtrace_addrs ) );
-}
-
-// Should help us track down CL_PreserveExistingEntity Host_Error() issues:
-//  1. Set cl_removeentity_backtrace_capture to 1.
-//  2. When error hits, run "cl_removeentity_backtrace_dump [entnum]".
-//  3. In debugger, track down what functions the spewed addresses refer to.
-static ConVar cl_removeentity_backtrace_capture( "cl_removeentity_backtrace_capture", "0", 0,
-	"For debugging. Capture backtraces for CClientEntityList::OnRemoveEntity calls." );
-
-CON_COMMAND( cl_removeentity_backtrace_dump, "Dump backtraces for client OnRemoveEntity calls." )
-{
-	if ( !cl_removeentity_backtrace_capture.GetBool() )
-	{
-		Msg( "cl_removeentity_backtrace_dump error: cl_removeentity_backtrace_capture not enabled. Backtraces not captured.\n" );
-		return;
-	}
-
-	int entnum = ( args.ArgC() >= 2 ) ? atoi( args[ 1 ] ) : -1;
-
-	for ( int i = 0; i < ARRAYSIZE( g_RemoveEntityBacktraces ); i++ )
-	{
-		if ( g_RemoveEntityBacktraces[ i ].time && 
-			( entnum == -1 || g_RemoveEntityBacktraces[ i ].entnum == entnum ) )
-		{
-			Msg( "%d: time:%.2f pBaseEntity:%p\n", g_RemoveEntityBacktraces[i].entnum,
-				g_RemoveEntityBacktraces[ i ].time, g_RemoveEntityBacktraces[ i ].pBaseEntity );
-			for ( int j = 0; j < ARRAYSIZE( g_RemoveEntityBacktraces[ i ].backtrace_addrs ); j++ )
-			{
-				Msg( "  %p\n", g_RemoveEntityBacktraces[ i ].backtrace_addrs[ j ] );
-			}
-		}
-	}
-}
-
-#endif // STAGING_ONLY
 
 void CClientEntityList::OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle )
 {

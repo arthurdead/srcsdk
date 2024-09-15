@@ -73,6 +73,8 @@ ConVar cl_show_num_particle_systems( "cl_show_num_particle_systems", "0", FCVAR_
 
 ConVar default_fov( "default_fov", "90", FCVAR_CHEAT );
 
+extern ConVar r_DrawDetailProps;
+
 CLIENTEFFECT_REGISTER_BEGIN( PrecachePostProcessingEffectsGlow )
 CLIENTEFFECT_MATERIAL( "dev/glow_color" )
 CLIENTEFFECT_MATERIAL( "dev/halo_add_to_screen" )
@@ -546,6 +548,9 @@ bool ClientModeShared::ShouldDrawViewModel()
 
 bool ClientModeShared::ShouldDrawDetailObjects( )
 {
+	if(r_DrawDetailProps.GetInt() == 0)
+		return false;
+
 	return true;
 }
 

@@ -995,26 +995,26 @@ Activity CBaseCombatCharacter::GetDeathActivity ( void )
 
 	if ( deathActivity == ACT_DIEFORWARD )
 	{
-			// make sure there's room to fall forward
-			UTIL_TraceHull ( vecSrc, vecSrc + forward * 64, Vector(-16,-16,-18), 
-				Vector(16,16,18), MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
+		// make sure there's room to fall forward
+		UTIL_TraceHull ( vecSrc, vecSrc + forward * 64, Vector(-16,-16,-18), 
+			Vector(16,16,18), MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
 
-			if ( tr.fraction != 1.0 )
-			{
-				deathActivity = ACT_DIESIMPLE;
-			}
+		if ( tr.fraction != 1.0 )
+		{
+			deathActivity = ACT_DIESIMPLE;
+		}
 	}
 
 	if ( deathActivity == ACT_DIEBACKWARD )
 	{
-			// make sure there's room to fall backward
-			UTIL_TraceHull ( vecSrc, vecSrc - forward * 64, Vector(-16,-16,-18), 
-				Vector(16,16,18), MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
+		// make sure there's room to fall backward
+		UTIL_TraceHull ( vecSrc, vecSrc - forward * 64, Vector(-16,-16,-18), 
+			Vector(16,16,18), MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
 
-			if ( tr.fraction != 1.0 )
-			{
-				deathActivity = ACT_DIESIMPLE;
-			}
+		if ( tr.fraction != 1.0 )
+		{
+			deathActivity = ACT_DIESIMPLE;
+		}
 	}
 
 	return deathActivity;

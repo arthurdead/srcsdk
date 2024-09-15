@@ -13,6 +13,8 @@
 #include "viewdebug.h"
 #include "smoke_fog_overlay.h"
 #include "materialsystem/imaterialvar.h"
+#include "foundryhelpers_client.h"
+#include "recast/recast_mgr.h"
 
 #ifdef PORTAL
 //#include "C_Portal_Player.h"
@@ -315,6 +317,11 @@ static void OverlayShowTexture( const char* textureName, float scale )
 void CDebugViewRender::Draw3DDebuggingInfo( const CViewSetup &view )
 {
 	VPROF("CViewRender::Draw3DDebuggingInfo");
+
+	// Draw anything Foundry wants to.
+	//FoundryHelpers_DrawAll();
+
+	RecastMgr().DebugRender();
 
 	// Draw 3d overlays
 	render->Draw3DDebugOverlays();

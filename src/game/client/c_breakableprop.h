@@ -45,9 +45,6 @@ public:
 
 protected:
 	QAngle m_qPreferredPlayerCarryAngles;
-
-private:
-	bool m_bClientPhysics;
 };
 
 #endif // C_BREAKABLEPROP_H

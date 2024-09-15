@@ -1559,13 +1559,19 @@ void CAI_FollowBehavior::StartTask( const Task_t *pTask )
 
 		case TASK_SET_FOLLOW_DELAY:
 		{
-			m_FollowDelay.Start( pTask->flTaskData );
+			Assert( pTask->numData == 1 );
+			Assert( pTask->data[0].CanBeFloat() );
+
+			m_FollowDelay.Start( pTask->data[0].AsFloat() );
 			TaskComplete();
 			break;
 		}
 
 		case TASK_FIND_COVER_FROM_ENEMY:
 		{
+			Assert( pTask->numData == 1 );
+			Assert( pTask->data[0].CanBeFloat() );
+
 			CBaseEntity *pLeader = GetFollowTarget();
 			if ( pLeader )
 			{
@@ -1577,7 +1583,7 @@ void CAI_FollowBehavior::StartTask( const Task_t *pTask )
 					AI_NavGoal_t goal(GOALTYPE_COVER, coverPos, ACT_RUN, AIN_HULL_TOLERANCE, AIN_DEF_FLAGS);
 					GetNavigator()->SetGoal( goal );
 
-					GetOuter()->m_flMoveWaitFinished = gpGlobals->curtime + pTask->flTaskData;
+					GetOuter()->m_flMoveWaitFinished = gpGlobals->curtime + pTask->data[0].AsFloat();
 					TaskComplete();
 				}
 				else
@@ -3014,17 +3020,17 @@ AI_FollowGroup_t *CAI_FollowManager::FindFollowerGroup( CBaseEntity *pFollower )
 
 AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER(CAI_FollowBehavior)
 
-	DECLARE_TASK(TASK_CANT_FOLLOW)
-	DECLARE_TASK(TASK_FACE_FOLLOW_TARGET)
-	DECLARE_TASK(TASK_MOVE_TO_FOLLOW_POSITION)
-	DECLARE_TASK(TASK_GET_PATH_TO_FOLLOW_POSITION)
-	DECLARE_TASK(TASK_SET_FOLLOW_TARGET_MARK)
-	DECLARE_TASK(TASK_FOLLOWER_FACE_TACTICAL)
-	DECLARE_TASK(TASK_SET_FOLLOW_DELAY)
-	DECLARE_TASK(TASK_GET_PATH_TO_FOLLOW_POINT)
-	DECLARE_TASK(TASK_ARRIVE_AT_FOLLOW_POINT)
-	DECLARE_TASK(TASK_BEGIN_STAND_AT_WAIT_POINT)
-	DECLARE_TASK(TASK_SET_FOLLOW_POINT_STAND_SCHEDULE)
+	DECLARE_TASK(TASK_CANT_FOLLOW, TaskParamCheck_t())
+	DECLARE_TASK(TASK_FACE_FOLLOW_TARGET, TaskParamCheck_t())
+	DECLARE_TASK(TASK_MOVE_TO_FOLLOW_POSITION, TaskParamCheck_t())
+	DECLARE_TASK(TASK_GET_PATH_TO_FOLLOW_POSITION, TaskParamCheck_t())
+	DECLARE_TASK(TASK_SET_FOLLOW_TARGET_MARK, TaskParamCheck_t())
+	DECLARE_TASK(TASK_FOLLOWER_FACE_TACTICAL, TaskParamCheck_t())
+	DECLARE_TASK(TASK_SET_FOLLOW_DELAY, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
+	DECLARE_TASK(TASK_GET_PATH_TO_FOLLOW_POINT, TaskParamCheck_t())
+	DECLARE_TASK(TASK_ARRIVE_AT_FOLLOW_POINT, TaskParamCheck_t())
+	DECLARE_TASK(TASK_BEGIN_STAND_AT_WAIT_POINT, TaskParamCheck_t())
+	DECLARE_TASK(TASK_SET_FOLLOW_POINT_STAND_SCHEDULE, TaskParamCheck_t())
 
 	DECLARE_CONDITION(COND_TARGET_MOVED_FROM_MARK)
 	DECLARE_CONDITION(COND_FOUND_WAIT_POINT)

@@ -80,25 +80,25 @@ enum propdata_interactions_t
 };
 
 // Entities using COLLISION_GROUP_SPECIAL_PHYSICS should support this interface.
-abstract_class IMultiplayerPhysics
+abstract_class ISpecialPhysics
 {
 public:
-	virtual int		GetMultiplayerPhysicsMode() = 0;
+	virtual int		GetPhysicsMode() = 0;
 	virtual float	GetMass() = 0;
 	virtual bool	IsAsleep() = 0;
 };
 
-#define PHYSICS_MULTIPLAYER_AUTODETECT	0	// use multiplayer physics mode as defined in model prop data
-#define PHYSICS_MULTIPLAYER_SOLID		1	// soild, pushes player away 
-#define PHYSICS_MULTIPLAYER_NON_SOLID	2	// nonsolid, but pushed by player
-#define PHYSICS_MULTIPLAYER_CLIENTSIDE	3	// Clientside only, nonsolid 	
+#define PHYSICS_AUTODETECT	0	// use multiplayer physics mode as defined in model prop data
+#define PHYSICS_SOLID		1	// soild, pushes player away 
+#define PHYSICS_NON_SOLID	2	// nonsolid, but pushed by player
+#define PHYSICS_CLIENTSIDE	3	// Clientside only, nonsolid 	
 
-enum mp_break_t
+enum break_t
 {
-	MULTIPLAYER_BREAK_DEFAULT,
-	MULTIPLAYER_BREAK_SERVERSIDE,
-	MULTIPLAYER_BREAK_CLIENTSIDE,
-	MULTIPLAYER_BREAK_BOTH
+	BREAK_DEFAULT,
+	BREAK_SERVERSIDE,
+	BREAK_CLIENTSIDE,
+	BREAK_BOTH
 };
 
 
@@ -157,13 +157,13 @@ public:
 	virtual void		SetInteraction( propdata_interactions_t Interaction ) = 0;
 	virtual bool		HasInteraction( propdata_interactions_t Interaction ) = 0;
 
-	// Multiplayer physics mode
+	// physics mode
 	virtual void		SetPhysicsMode(int iMode) = 0;
 	virtual int			GetPhysicsMode() = 0;
 
-	// Multiplayer breakable spawn behavior
-	virtual void		SetMultiplayerBreakMode( mp_break_t mode ) = 0;
-	virtual mp_break_t	GetMultiplayerBreakMode( void ) const = 0;
+	// breakable spawn behavior
+	virtual void		SetBreakMode( break_t mode ) = 0;
+	virtual break_t	GetBreakMode( void ) const = 0;
 
 	// Used for debugging
 	virtual void		SetBasePropData( string_t iszBase ) = 0;
@@ -222,7 +222,7 @@ struct breakmodel_t
 	bool		isRagdoll;
 	bool		placementIsBone;
 	bool		isMotionDisabled;
-	mp_break_t	mpBreakMode;
+	break_t		breakMode;
 	Vector		velocity;
 };
 
@@ -250,7 +250,7 @@ struct breakablepropparams_t
 };
 
 const char *GetMassEquivalent(float flMass);
-int  GetAutoMultiplayerPhysicsMode( Vector size, float mass );
+int  GetAutoPhysicsMode( Vector size, float mass );
 void BuildPropList( const char *pszBlockName, CUtlVector<breakmodel_t> &list, int modelindex, float defBurstScale, int defCollisionGroup );
 void BreakModelList( CUtlVector<breakmodel_t> &list, int modelindex, float defBurstScale, int defCollisionGroup );
 void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLImit, bool defaultLocation = true );

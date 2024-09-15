@@ -66,7 +66,7 @@ CRecastMesh::CRecastMesh() :
 	m_tcomp(0),
 	m_tmproc(0)
 {
-	m_Name.Set("default");
+	m_Hull = HULL_NONE;
 
 	m_regionMinSize = 8;
 	m_regionMergeSize = 20;
@@ -140,110 +140,64 @@ CRecastMesh::~CRecastMesh()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CRecastMesh::ComputeMeshSettings( const char *name, 
+bool CRecastMesh::ComputeMeshSettings( Hull_t hull, 
 	float &fAgentRadius, float &fAgentHeight, float &fAgentMaxClimb, float &fAgentMaxSlope,
 	float &fCellSize, float &fCellHeight, float &fTileSize )
 {
 	// Per type
 	fAgentMaxSlope = recast_maxslope.GetFloat(); // Default slope for units
 	fTileSize = 48;
-	if( V_strncmp( name, "human", V_strlen( name ) ) == 0 )
-	{
-		// HULL_HUMAN, e.g. Soldier/human
-		fAgentHeight = 72.0f;
-		fAgentRadius = 18.5f;
-		fAgentMaxClimb = 18.0f;
-		fCellSize = round( fAgentRadius / 3.0f );
-		fCellHeight = round( fCellSize / 2.0f );
-		// Increase tile size a bit, so it's more or less the world size of the other types
-		// Take care not to make this value to big, or tiles may not generate (some limit in tilecache somewhere?)
-		fTileSize = 64;
-	}
-	else if( V_strncmp( name, "medium", V_strlen( name ) )== 0 )
-	{
-		// HULL_MEDIUM & HULL_TALL, e.g. antlion, hunter, dog
-		fAgentHeight = 80.0f;
-		fAgentRadius = 26.0f;
-		fAgentMaxClimb = 18.0f;
-		fCellSize = round( fAgentRadius / 3.0f );
-		fCellHeight = round( fCellSize / 2.0f );
-	}
-	else if( V_strncmp( name, "large", V_strlen( name ) )== 0 )
-	{
-		// HULL_LARGE, e.g. Antlion Guard
-		fAgentHeight = 100.0f;
-		fAgentRadius = 58.0f; 
-		fAgentMaxClimb = 18.0f;
-		fCellSize = 10.0f;
-		fCellHeight = round( fCellSize / 2.0f );
-	}
-	else if( V_strncmp( name, "verylarge", V_strlen( name ) )== 0 )
-	{
-		// HULL_LARGE, e.g. Antlion Guard Boss
-		fAgentHeight = 150.0f;
-		fAgentRadius = 90.0f; 
-		fAgentMaxClimb = 18.0f;
-		fCellSize = 12.0f;
-		fCellHeight = round( fCellSize / 2.0f );
-	}
-	else if( V_strncmp( name, "air", V_strlen( name ) )== 0 )
-	{
-		// HULL_LARGE_CENTERED, e.g. Strider. Should also be good for gunship/helicop.
-		fAgentHeight = 450.0f; // Not really that height ever, but don't want to have areas indoor
-		fAgentRadius = 42.0f; 
-		fAgentMaxClimb =  225.0f;
-		fAgentMaxSlope = 70.0f;
-		fCellSize = 10.0f;
-		fCellHeight = round( fCellSize / 2.0f );
-	}
-	else
-	{
-		Warning( "CRecastMesh::ComputeMeshSettings: Unknown mesh %s\n", name );
 
-		fAgentHeight = 72.0f; // => Soldier/human
-		fAgentRadius = 18.5f; // => Soldier/human
-		fAgentMaxClimb = 18.0f;
-		fCellSize = 10.0f;
-		fCellHeight = round( fCellSize / 2.0f );
+	fAgentHeight = NAI_Hull::Height( hull );
 
-		return false;
-	}
+	const Vector &vecMaxs = NAI_Hull::Maxs( hull );
+	const Vector &vecMins = NAI_Hull::Mins( hull );
+
+	Vector vecSize;
+	VectorSubtract( vecMaxs, vecMins, vecSize );
+	fAgentRadius = vecSize.Length2D() * 0.5f;
+
+	fAgentMaxClimb = 18.0f;
+
+	fCellSize = round( fAgentRadius / 3.0f );
+	fCellHeight = round( fCellSize / 2.0f );
+
 	return true;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CRecastMesh::SharedInit(  const char *name )
+void CRecastMesh::SharedInit(  Hull_t hull )
 {
-	m_Name.Set( name );
+	m_Hull = hull;
 
 	m_navQuery = dtAllocNavMeshQuery();
 	m_navQueryLimitedNodes = dtAllocNavMeshQuery();
 
 	m_talloc = new LinearAllocator( 96000 );
 	m_tcomp = new FastLZCompressor;
-	m_tmproc = new MeshProcess( name );
+	m_tmproc = new MeshProcess( hull );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CRecastMesh::Init( const char *name )
+void CRecastMesh::Init( Hull_t hull )
 {
-	SharedInit( name );
+	SharedInit( hull );
 
 	// Shared settings by all
-	ComputeMeshSettings( name, m_agentRadius, m_agentHeight, m_agentMaxClimb, m_agentMaxSlope,
+	ComputeMeshSettings( hull, m_agentRadius, m_agentHeight, m_agentMaxClimb, m_agentMaxSlope,
 		m_cellSize, m_cellHeight, m_tileSize );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CRecastMesh::Init( const char *name, float agentRadius, float agentHeight, float agentMaxClimb, float agentMaxSlope )
+void CRecastMesh::Init( Hull_t hull, float agentRadius, float agentHeight, float agentMaxClimb, float agentMaxSlope )
 {
-	SharedInit( name );
+	SharedInit( hull );
 
 	m_agentHeight = agentHeight;
 	m_agentRadius = agentRadius;
@@ -340,8 +294,8 @@ void CRecastMesh::DebugRender()
 		{
 			IRecastMgr *pRecastMgr = g_pGameServerLoopback ? g_pGameServerLoopback->GetRecastMgr() : NULL;
 			if( pRecastMgr ) {
-				navMesh = pRecastMgr->GetNavMesh( m_Name.Get() );
-				navQuery = pRecastMgr->GetNavMeshQuery( m_Name.Get() );
+				navMesh = pRecastMgr->GetNavMesh( m_Hull );
+				navQuery = pRecastMgr->GetNavMeshQuery( m_Hull );
 			}
 		}
 		else
@@ -870,9 +824,12 @@ AI_Waypoint_t *CRecastMesh::ConstructWaypointsFromStraightPath( pathfind_resultd
 		// For now, offmesh connections are always considered as edges.
 		if( pOffmeshCon )
 		{
+			//TODO Arthurdead!!!!
+		#if 0
 			if( pResultPath )
 				pResultPath->SpecialGoalStatus = CHS_EDGEDOWNDEST;
 			pNewPath->SpecialGoalStatus = CHS_EDGEDOWN;
+		#endif
 		}
 		pResultPath = pNewPath;
 	}

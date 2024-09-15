@@ -13,12 +13,12 @@
 #include "iviewrender.h"
 #include "view.h"
 #include "mathlib/vmatrix.h"
-#include "cl_animevent.h"
 #include "eventlist.h"
 #include "tools/bonelist.h"
 #include <KeyValues.h>
 #include "hltvcamera.h"
 #include "iinput.h"
+#include "clientalphaproperty.h"
 
 #if defined( REPLAY_ENABLED )
 #include "replay/replaycamera.h"

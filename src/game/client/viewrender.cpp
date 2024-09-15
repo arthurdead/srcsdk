@@ -128,7 +128,7 @@ static ConVar r_nearz_skybox( "r_nearz_skybox", "2.0", FCVAR_CHEAT );
 
 
 // FIXME: This is not static because we needed to turn it off for TF2 playtests
-ConVar r_DrawDetailProps( "r_DrawDetailProps", "1", FCVAR_NONE, "0=Off, 1=Normal, 2=Wireframe" );
+ConVar r_DrawDetailProps( "r_DrawDetailProps", "0", FCVAR_NONE, "0=Off, 1=Normal, 2=Wireframe" );
 
 ConVar r_worldlistcache( "r_worldlistcache", "1" );
 
@@ -1167,8 +1167,8 @@ void CViewRender::DrawViewModels( const CViewSetupEx &view, bool drawViewmodel )
 
 	CViewModelRenderablesList list;
 	ClientLeafSystem()->CollateViewModelRenderables( &list );
-	CViewModelRenderablesList::RenderGroups_t &opaqueList = list.m_RenderGroups[ CViewModelRenderablesList::VM_GROUP_OPAQUE ];
-	CViewModelRenderablesList::RenderGroups_t &translucentList = list.m_RenderGroups[ CViewModelRenderablesList::VM_GROUP_TRANSLUCENT ];
+	CViewModelRenderablesList::RenderGroups_t &opaqueList = list.m_RenderGroups[ CViewModelRenderablesList::GROUP_OPAQUE ];
+	CViewModelRenderablesList::RenderGroups_t &translucentList = list.m_RenderGroups[ CViewModelRenderablesList::GROUP_TRANSLUCENT ];
 
 	if ( ToolsEnabled() && ( !bShouldDrawPlayerViewModel || !bShouldDrawToolViewModels ) )
 	{
@@ -4101,7 +4101,7 @@ void CRendering3dView::SetupRenderablesList( int viewID )
 
 	// Clear the list.
 	int i;
-	for( i=0; i < ENGINE_RENDER_GROUP_COUNT; i++ )
+	for( i=0; i < CClientRenderablesList::GROUP_COUNT; i++ )
 	{
 		m_pRenderablesList->m_RenderGroupCounts[i] = 0;
 	}
@@ -4284,6 +4284,7 @@ void CRendering3dView::BuildRenderableRenderLists( int viewID )
 
 	ClientWorldListInfo_t& info = *m_pWorldListInfo;
 
+#if 0
 	// For better sorting, find out the leaf *nearest* to the camera
 	// and render translucent objects as if they are in that leaf.
 	if( m_pMainView->ShouldDrawEntities() && ( viewID != VIEW_SHADOW_DEPTH_TEXTURE ) )
@@ -4291,6 +4292,7 @@ void CRendering3dView::BuildRenderableRenderLists( int viewID )
 		ClientLeafSystem()->ComputeTranslucentRenderLeaf( 
 			info.m_LeafCount, info.m_pLeafList, info.m_pLeafFogVolume, m_pMainView->BuildRenderablesListsNumber(), viewID );
 	}
+#endif
 
 	SetupRenderablesList( viewID );
 
@@ -4302,8 +4304,8 @@ void CRendering3dView::BuildRenderableRenderLists( int viewID )
 	if ( viewID != VIEW_SHADOW_DEPTH_TEXTURE )
 	{
 		// update lightmap on brush models if necessary
-		CClientRenderablesList::CEntry *pEntities = m_pRenderablesList->m_RenderGroups[ENGINE_RENDER_GROUP_OPAQUE_BRUSH];
-		int nOpaque = m_pRenderablesList->m_RenderGroupCounts[ENGINE_RENDER_GROUP_OPAQUE_BRUSH];
+		CClientRenderablesList::CEntry *pEntities = m_pRenderablesList->m_RenderGroups[CClientRenderablesList::GROUP_OPAQUE_BRUSH];
+		int nOpaque = m_pRenderablesList->m_RenderGroupCounts[CClientRenderablesList::GROUP_OPAQUE_BRUSH];
 		int i;
 		for( i=0; i < nOpaque; ++i )
 		{
@@ -4312,19 +4314,14 @@ void CRendering3dView::BuildRenderableRenderLists( int viewID )
 		}
 
 		// update lightmap on brush models if necessary
-		pEntities = m_pRenderablesList->m_RenderGroups[ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY];
-		int nTranslucent = m_pRenderablesList->m_RenderGroupCounts[ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY];
+		pEntities = m_pRenderablesList->m_RenderGroups[CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY];
+		int nTranslucent = m_pRenderablesList->m_RenderGroupCounts[CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY];
 		for( i=0; i < nTranslucent; ++i )
 		{
-			const model_t *pModel = pEntities[i].m_pRenderable->GetModel();
-			if( pModel )
-			{
-				int nModelType = modelinfo->GetModelType( pModel );
-				if( nModelType == mod_brush )
-				{
-					UpdateBrushModelLightmap( pEntities[i].m_pRenderable );
-				}
-			}
+			if ( pEntities[i].m_nModelType != RENDERABLE_MODEL_BRUSH )
+				continue;
+			Assert(pEntities[i].m_TwoPass==0);
+			UpdateBrushModelLightmap( pEntities[i].m_pRenderable );
 		}
 
 		render->EndUpdateLightmaps();
@@ -4715,14 +4712,16 @@ static inline void DrawOpaqueRenderable( IClientRenderable *pEnt, IClientRendera
 
 ConVar r_drawopaquestaticpropslast( "r_drawopaquestaticpropslast", "0", 0, "Whether opaque static props are rendered after non-npcs" );
 
+#ifdef STAGING_ONLY
+#define DEBUG_BUCKETS 1
+#else
 #define DEBUG_BUCKETS 0
+#endif
 
 #if DEBUG_BUCKETS
-ConVar r_drawopaque_old( "r_drawopaque_old", "0", 0, "Whether old unbucketed technique is used" );
 ConVar r_drawopaquesbucket( "r_drawopaquesbucket", "0", FCVAR_CHEAT, "Draw only specific bucket: positive - props, negative - ents" );
 ConVar r_drawopaquesbucket_stats( "r_drawopaquesbucket_stats", "1", FCVAR_CHEAT, "Draw distribution of props/ents in the buckets" );
 #endif
-
 
 static void SetupBonesOnBaseAnimating( C_BaseAnimating *&pBaseAnimating )
 {
@@ -4788,7 +4787,7 @@ static void DrawOpaqueRenderables_Range( CClientRenderablesList::CEntry *pEntiti
 	}
 }
 
-ConVar cl_modelfastpath( "cl_modelfastpath", "0" );
+ConVar cl_modelfastpath( "cl_modelfastpath", "1" );
 ConVar cl_skipslowpath( "cl_skipslowpath", "0", FCVAR_CHEAT, "Set to 1 to skip any models that don't go through the model fast path" );
 extern ConVar r_drawothermodels;
 static void	DrawOpaqueRenderables_ModelRenderables( int nCount, ModelRenderSystemData_t* pModelRenderables, ERenderDepthMode DepthMode )
@@ -4830,87 +4829,56 @@ void CRendering3dView::DrawOpaqueRenderables( ERenderDepthMode DepthMode )
 
 	bool const bDrawopaquestaticpropslast = r_drawopaquestaticpropslast.GetBool();
 
-	
 	//
 	// First do the brush models
 	//
 	{
 		CClientRenderablesList::CEntry *pEntitiesBegin, *pEntitiesEnd;
-		pEntitiesBegin = m_pRenderablesList->m_RenderGroups[ENGINE_RENDER_GROUP_OPAQUE_BRUSH];
-		pEntitiesEnd = pEntitiesBegin + m_pRenderablesList->m_RenderGroupCounts[ENGINE_RENDER_GROUP_OPAQUE_BRUSH];
+		pEntitiesBegin = m_pRenderablesList->m_RenderGroups[CClientRenderablesList::GROUP_OPAQUE_BRUSH];
+		pEntitiesEnd = pEntitiesBegin + m_pRenderablesList->m_RenderGroupCounts[CClientRenderablesList::GROUP_OPAQUE_BRUSH];
 		DrawOpaqueRenderables_DrawBrushModels( pEntitiesBegin, pEntitiesEnd, DepthMode );
 	}
 
-
-
-#if DEBUG_BUCKETS
-	{
-		con_nprint_s nxPrn = { 0 };
-		nxPrn.index = 16;
-		nxPrn.time_to_live = -1;
-		nxPrn.color[0] = 0.9f, nxPrn.color[1] = 1.0f, nxPrn.color[2] = 0.9f;
-		nxPrn.fixed_width_font = true;
-
-		engine->Con_NXPrintf( &nxPrn, "Draw Opaque Technique : NEW" );
-		if ( r_drawopaque_old.GetBool() )
-		{
-
-			engine->Con_NXPrintf( &nxPrn, "Draw Opaque Technique : OLD" );
-
-			// now the static props
-			{
-				for ( int bucket = RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS - 1; bucket -- > 0; )
-				{
-					CClientRenderablesList::CEntry
-						* const pEntitiesBegin = m_pRenderablesList->m_RenderGroups[ ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ],
-						* const pEntitiesEnd = pEntitiesBegin + m_pRenderablesList->m_RenderGroupCounts[ ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ];
-					DrawOpaqueRenderables_DrawStaticProps( pEntitiesBegin, pEntitiesEnd, DepthMode );
-				}
-			}
-
-			// now the other opaque entities
-			for ( int bucket = RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS - 1; bucket -- > 0; )
-			{
-				CClientRenderablesList::CEntry
-					* const pEntitiesBegin = m_pRenderablesList->m_RenderGroups[ ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ],
-					* const pEntitiesEnd = pEntitiesBegin + m_pRenderablesList->m_RenderGroupCounts[ ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ];
-				DrawOpaqueRenderables_Range( pEntitiesBegin, pEntitiesEnd, DepthMode );
-			}
-
-			//
-			// Ropes and particles
-			//
-			RopeManager()->DrawRenderCache( DepthMode );
-			g_pParticleSystemMgr->DrawRenderCache( DepthMode );
-
-			return;
-		}
-	}
-#endif
-
-	bool bUseFastPath = ( cl_modelfastpath.GetInt() != 0 );
+	bool bUseFastPath = ( 
+	#if 0
+		cl_modelfastpath.GetInt() != 0
+	#else
+		false
+	#endif
+	);
 
 	//
 	// Sort everything that's not a static prop
 	//
 	int numOpaqueEnts = 0;
 	for ( int bucket = 0; bucket < RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS; ++ bucket )
-		numOpaqueEnts += m_pRenderablesList->m_RenderGroupCounts[ ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ];
+		numOpaqueEnts += m_pRenderablesList->m_RenderGroupCounts[ CClientRenderablesList::GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ];
 
 	int nStaticPropCount = 0;
 	for ( int bucket = 0; bucket < RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS; ++ bucket )
-		nStaticPropCount += m_pRenderablesList->m_RenderGroupCounts[ ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ];
+		nStaticPropCount += m_pRenderablesList->m_RenderGroupCounts[ CClientRenderablesList::GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ];
 
 	CUtlVector< C_BaseAnimating * > arrBoneSetupNpcsLast( (C_BaseAnimating **)_alloca( numOpaqueEnts * sizeof( C_BaseAnimating * ) ), numOpaqueEnts, numOpaqueEnts );
 	CUtlVector< CClientRenderablesList::CEntry > arrRenderEntsNpcsFirst( (CClientRenderablesList::CEntry *)_alloca( numOpaqueEnts * sizeof( CClientRenderablesList::CEntry ) ), numOpaqueEnts, numOpaqueEnts );
 	CUtlVector< ModelRenderSystemData_t > arrModelRenderables( (ModelRenderSystemData_t *)_alloca( ( numOpaqueEnts + nStaticPropCount ) * sizeof( ModelRenderSystemData_t ) ), (numOpaqueEnts + nStaticPropCount), (numOpaqueEnts + nStaticPropCount) );
-	int numFastModel = 0, numNpcs = 0, numNonNpcsAnimating = 0;
+	int numFastModel = 0, numNpcs = 0, numNpcsRender = 0, numNonNpcsAnimating = 0;
+
+#if DEBUG_BUCKETS
+	int debugNumSlowOpaqueEnts[ RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS ];
+	int debugSlowStaticPropCount[ RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS ];
+#endif
 
 	for ( int bucket = 0; bucket < RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS; ++ bucket )
 	{
+		int nBucketOpaqueEnts = m_pRenderablesList->m_RenderGroupCounts[ CClientRenderablesList::GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ];
+
+	#if DEBUG_BUCKETS
+		debugNumSlowOpaqueEnts[ bucket ] = nBucketOpaqueEnts;
+	#endif
+
 		for( CClientRenderablesList::CEntry
-			* const pEntitiesBegin = m_pRenderablesList->m_RenderGroups[ ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ],
-			* const pEntitiesEnd = pEntitiesBegin + m_pRenderablesList->m_RenderGroupCounts[ ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ],
+			* const pEntitiesBegin = m_pRenderablesList->m_RenderGroups[ CClientRenderablesList::GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ],
+			* const pEntitiesEnd = pEntitiesBegin + nBucketOpaqueEnts,
 			*itEntity = pEntitiesBegin; itEntity < pEntitiesEnd; ++ itEntity )
 		{
 			IClientUnknown *pUnknown = itEntity->m_pRenderable ? itEntity->m_pRenderable->GetIClientUnknown() : NULL;
@@ -4920,17 +4888,28 @@ void CRendering3dView::DrawOpaqueRenderables( ERenderDepthMode DepthMode )
 			C_BaseEntity *pEntity = pUnknown ? pUnknown->GetBaseEntity() : NULL;
 			if ( pEntity )
 			{
-				if ( pEntity->IsNPC() && ( !bUseFastPath || !pModelRenderable ) )
+				if ( pEntity->IsNPC() )
 				{
 					C_BaseAnimating *pba = assert_cast<C_BaseAnimating *>( pEntity );
-					arrRenderEntsNpcsFirst[ numNpcs ++ ] = *itEntity;
+
+					if( (!bUseFastPath || !pModelRenderable) && !cl_skipslowpath.GetBool() ) 
+						arrRenderEntsNpcsFirst[ numNpcsRender ++ ] = *itEntity;
+
+					numNpcs ++;
 					arrBoneSetupNpcsLast[ numOpaqueEnts - numNpcs ] = pba;
 
-					itEntity->m_pRenderable = NULL;		// We will render NPCs separately
-					itEntity->m_pRenderableMod = NULL;
-					itEntity->m_RenderHandle = INVALID_CLIENT_RENDER_HANDLE;
-					
-					continue;
+					if( (!bUseFastPath || !pModelRenderable) || cl_skipslowpath.GetBool() )
+					{
+						itEntity->m_pRenderable = NULL;		// We will render NPCs separately
+						itEntity->m_pRenderableMod = NULL;
+						itEntity->m_RenderHandle = INVALID_CLIENT_RENDER_HANDLE;
+
+					#if DEBUG_BUCKETS
+						--debugNumSlowOpaqueEnts[ bucket ];
+					#endif
+
+						continue;
+					}
 				}
 				else if ( pEntity->GetBaseAnimating() )
 				{
@@ -4952,43 +4931,86 @@ void CRendering3dView::DrawOpaqueRenderables( ERenderDepthMode DepthMode )
 				itEntity->m_pRenderable = NULL;
 				itEntity->m_pRenderableMod = NULL;
 				itEntity->m_RenderHandle = INVALID_CLIENT_RENDER_HANDLE;
-				
+
+			#if DEBUG_BUCKETS
+				--debugNumSlowOpaqueEnts[ bucket ];
+			#endif
+
+				continue;
+			}
+			else if( cl_skipslowpath.GetBool() )
+			{
+				itEntity->m_pRenderable = NULL;
+				itEntity->m_pRenderableMod = NULL;
+				itEntity->m_RenderHandle = INVALID_CLIENT_RENDER_HANDLE;
+
+			#if DEBUG_BUCKETS
+				--debugNumSlowOpaqueEnts[ bucket ];
+			#endif
+
 				continue;
 			}
 		}
 
-		for( CClientRenderablesList::CEntry
-			* const pPropsBegin = m_pRenderablesList->m_RenderGroups[ ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ],
-			* const pPropsEnd = pPropsBegin + m_pRenderablesList->m_RenderGroupCounts[ ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ],
-			*itProp = pPropsBegin; itProp < pPropsEnd; ++ itProp )
+		int nBucketStaticPropCount = m_pRenderablesList->m_RenderGroupCounts[ CClientRenderablesList::GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ];
+
+	#if DEBUG_BUCKETS
+		debugSlowStaticPropCount[ bucket ] = nBucketStaticPropCount;
+	#endif
+
+		if( bUseFastPath || cl_skipslowpath.GetBool() )
 		{
-			IClientUnknown *pUnknown = itProp->m_pRenderable ? itProp->m_pRenderable->GetIClientUnknown() : NULL;
-			IClientUnknownMod *pUnknownMod = itProp->m_pRenderableMod ? itProp->m_pRenderableMod->GetIClientUnknownMod() : NULL;
-			IClientModelRenderable *pModelRenderable = pUnknownMod ? pUnknownMod->GetClientModelRenderable() : NULL;
-
-			if ( bUseFastPath && pModelRenderable )
+			for( CClientRenderablesList::CEntry
+				* const pPropsBegin = m_pRenderablesList->m_RenderGroups[ CClientRenderablesList::GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ],
+				* const pPropsEnd = pPropsBegin + nBucketStaticPropCount,
+				*itProp = pPropsBegin; itProp < pPropsEnd; ++ itProp )
 			{
-				ModelRenderSystemData_t data;
-				data.m_pRenderable = itProp->m_pRenderable;
-				data.m_pModelRenderable = pModelRenderable;
-				data.m_InstanceData = itProp->m_InstanceData;
+				IClientUnknown *pUnknown = itProp->m_pRenderable ? itProp->m_pRenderable->GetIClientUnknown() : NULL;
+				IClientUnknownMod *pUnknownMod = itProp->m_pRenderableMod ? itProp->m_pRenderableMod->GetIClientUnknownMod() : NULL;
+				IClientModelRenderable *pModelRenderable = pUnknownMod ? pUnknownMod->GetClientModelRenderable() : NULL;
 
-				arrModelRenderables[ numFastModel ++ ] = data;
+				if ( bUseFastPath && pModelRenderable )
+				{
+					ModelRenderSystemData_t data;
+					data.m_pRenderable = itProp->m_pRenderable;
+					data.m_pModelRenderable = pModelRenderable;
+					data.m_InstanceData = itProp->m_InstanceData;
 
-				itProp->m_pRenderable = NULL;
-				itProp->m_pRenderableMod = NULL;
-				itProp->m_RenderHandle = INVALID_CLIENT_RENDER_HANDLE;
-				
-				continue;
+					arrModelRenderables[ numFastModel ++ ] = data;
+
+					itProp->m_pRenderable = NULL;
+					itProp->m_pRenderableMod = NULL;
+					itProp->m_RenderHandle = INVALID_CLIENT_RENDER_HANDLE;
+
+				#if DEBUG_BUCKETS
+					--debugSlowStaticPropCount[ bucket ];
+				#endif
+
+					continue;
+				}
+				else if( cl_skipslowpath.GetBool() )
+				{
+					itProp->m_pRenderable = NULL;
+					itProp->m_pRenderableMod = NULL;
+					itProp->m_RenderHandle = INVALID_CLIENT_RENDER_HANDLE;
+
+				#if DEBUG_BUCKETS
+					--debugSlowStaticPropCount[ bucket ];
+				#endif
+
+					continue;
+				}
 			}
 		}
 	}
 
+#if 0
 	if ( r_threaded_renderables.GetBool() )
 	{
 		ParallelProcess( "BoneSetupNpcsLast", arrBoneSetupNpcsLast.Base() + numOpaqueEnts - numNpcs, numNpcs, &SetupBonesOnBaseAnimating );
 		ParallelProcess( "BoneSetupNpcsLast NonNPCs", arrBoneSetupNpcsLast.Base(), numNonNpcsAnimating, &SetupBonesOnBaseAnimating );
 	}
+#endif
 
 	//
 	// Draw model renderables now (ie. models that use the fast path)
@@ -4998,41 +5020,71 @@ void CRendering3dView::DrawOpaqueRenderables( ERenderDepthMode DepthMode )
 	//
 	// Draw static props + opaque entities from the biggest bucket to the smallest
 	//
+	CClientRenderablesList::CEntry * pEnts[ RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS ][2];
+	CClientRenderablesList::CEntry * pProps[ RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS ][2];
+
+#if DEBUG_BUCKETS
+	con_nprint_s nxPrn = { 0 };
+	if ( r_drawopaquesbucket_stats.GetBool() )
 	{
-		CClientRenderablesList::CEntry * pEnts[ RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS ][2];
-		CClientRenderablesList::CEntry * pProps[ RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS ][2];
+		nxPrn.time_to_live = -1;
+		nxPrn.color[0] = 0.9f, nxPrn.color[1] = 1.0f, nxPrn.color[2] = 0.9f;
+		nxPrn.fixed_width_font = true;
+	}
+#endif
 
-		for ( int bucket = 0; bucket < RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS; ++ bucket )
+	for ( int bucket = 0; bucket < RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS; ++ bucket )
+	{
+		pEnts[bucket][0] = m_pRenderablesList->m_RenderGroups[ CClientRenderablesList::GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ];
+		pEnts[bucket][1] = pEnts[bucket][0] + m_pRenderablesList->m_RenderGroupCounts[ CClientRenderablesList::GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ];
+		
+		pProps[bucket][0] = m_pRenderablesList->m_RenderGroups[ CClientRenderablesList::GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ];
+		pProps[bucket][1] = pProps[bucket][0] + m_pRenderablesList->m_RenderGroupCounts[ CClientRenderablesList::GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ];
+
+		// Render sequence debugging
+	#if DEBUG_BUCKETS
+		if ( r_drawopaquesbucket_stats.GetBool() )
 		{
-			pEnts[bucket][0] = m_pRenderablesList->m_RenderGroups[ ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ];
-			pEnts[bucket][1] = pEnts[bucket][0] + m_pRenderablesList->m_RenderGroupCounts[ ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE + 2 * bucket ];
+			nxPrn.index = 20 + bucket * 3;
+
+			int nTotalEnts = (pEnts[bucket][1] - pEnts[bucket][0]);
+			int nTotalProps = (pProps[bucket][1] - pProps[bucket][0]);
+
+			auto printTotals = [&](bool ents_first) {
+				if ( ents_first ) {
+					if(debugNumSlowOpaqueEnts[ bucket ] != nTotalEnts) {
+						engine->Con_NXPrintf( &nxPrn, "[%i] Ents: %3d, %3d", bucket + 1, debugNumSlowOpaqueEnts[ bucket ], nTotalEnts );
+					} else {
+						engine->Con_NXPrintf( &nxPrn, "[%i] Ents: %3d", bucket + 1, debugNumSlowOpaqueEnts[ bucket ] );
+					}
+				} else {
+					if(debugSlowStaticPropCount[ bucket ] != nTotalProps) {
+						engine->Con_NXPrintf( &nxPrn, "[%i] Props: %3d, %3d", bucket + 1, debugSlowStaticPropCount[ bucket ], nTotalProps );
+					} else {
+						engine->Con_NXPrintf( &nxPrn, "[%i] Props: %3d", bucket + 1, debugSlowStaticPropCount[ bucket ] );
+					}
+				}
+			};
 			
-			pProps[bucket][0] = m_pRenderablesList->m_RenderGroups[ ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ];
-			pProps[bucket][1] = pProps[bucket][0] + m_pRenderablesList->m_RenderGroupCounts[ ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE + 2 * bucket ];
-
-			// Render sequence debugging
-			#if DEBUG_BUCKETS
- 			if ( r_drawopaquesbucket_stats.GetBool() )
-			{
-				con_nprint_s nxPrn = { 0 };
-				nxPrn.index = 20 + bucket * 3;
-				nxPrn.time_to_live = -1;
-				nxPrn.color[0] = 0.9f, nxPrn.color[1] = 1.0f, nxPrn.color[2] = 0.9f;
-				nxPrn.fixed_width_font = true;
-				
-				if ( bDrawopaquestaticpropslast )
-					engine->Con_NXPrintf( &nxPrn, "[ %2d  ]  Ents : %3d", bucket + 1, pEnts[bucket][1] - pEnts[bucket][0] ),
-					++ nxPrn.index,
-					engine->Con_NXPrintf( &nxPrn, "[ %2d  ]  Props: %3d", bucket + 1, pProps[bucket][1] - pProps[bucket][0] );
-				else
-					engine->Con_NXPrintf( &nxPrn, "[ %2d  ]  Props: %3d", bucket + 1, pProps[bucket][1] - pProps[bucket][0] ),
-					++ nxPrn.index,
-					engine->Con_NXPrintf( &nxPrn, "[ %2d  ]  Ents : %3d", bucket + 1, pEnts[bucket][1] - pEnts[bucket][0] );
-			}
-			#endif
+			printTotals( bDrawopaquestaticpropslast );
+			++ nxPrn.index;
+			printTotals( !bDrawopaquestaticpropslast );
+			++ nxPrn.index;
 		}
+	#endif
+	}
 
+#if DEBUG_BUCKETS
+	if ( r_drawopaquesbucket_stats.GetBool() )
+	{
+		++ nxPrn.index;
+		engine->Con_NXPrintf( &nxPrn, "Npcs: %3d", numNpcsRender );
+		++ nxPrn.index;
+		engine->Con_NXPrintf( &nxPrn, "Fast Model: %3d", numFastModel );
+	}
+#endif
 
+	if(!cl_skipslowpath.GetBool()) {
 #if DEBUG_BUCKETS
 		if ( r_drawopaquesbucket.GetInt() != 0 )
 		{
@@ -5046,35 +5098,34 @@ void CRendering3dView::DrawOpaqueRenderables( ERenderDepthMode DepthMode )
 			{
 				DrawOpaqueRenderables_DrawStaticProps( pProps[- 1 - iBucket][0], pProps[- 1 - iBucket][1], DepthMode );
 			}
-		}
-		else
+		} else {
 #endif
-
-		for ( int bucket = 0; bucket < RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS; ++ bucket )
-		{
-			// PVS-Studio pointed out that the two sides of the if/else were identical. Fixing
-			// this long-broken behavior would change rendering, so I fixed the code but
-			// commented out the new behavior. Uncomment the if statement and else block
-			// when needed.
-			if ( bDrawopaquestaticpropslast )
+			for ( int bucket = 0; bucket < RENDER_GROUP_CFG_NUM_OPAQUE_ENT_BUCKETS; ++ bucket )
 			{
-				DrawOpaqueRenderables_Range( pEnts[bucket][0], pEnts[bucket][1], DepthMode );
-				DrawOpaqueRenderables_DrawStaticProps( pProps[bucket][0], pProps[bucket][1], DepthMode );
+				// PVS-Studio pointed out that the two sides of the if/else were identical. Fixing
+				// this long-broken behavior would change rendering, so I fixed the code but
+				// commented out the new behavior. Uncomment the if statement and else block
+				// when needed.
+				if ( bDrawopaquestaticpropslast )
+				{
+					DrawOpaqueRenderables_Range( pEnts[bucket][0], pEnts[bucket][1], DepthMode );
+					DrawOpaqueRenderables_DrawStaticProps( pProps[bucket][0], pProps[bucket][1], DepthMode );
+				}
+				else
+				{
+					DrawOpaqueRenderables_DrawStaticProps( pProps[bucket][0], pProps[bucket][1], DepthMode );
+					DrawOpaqueRenderables_Range( pEnts[bucket][0], pEnts[bucket][1], DepthMode );
+				}
 			}
-			else
-			{
-				DrawOpaqueRenderables_DrawStaticProps( pProps[bucket][0], pProps[bucket][1], DepthMode );
-				DrawOpaqueRenderables_Range( pEnts[bucket][0], pEnts[bucket][1], DepthMode );
-			}
+	#if DEBUG_BUCKETS
 		}
+	#endif
 
-
-	}	
-
-	//
-	// Draw NPCs now
-	//
-	DrawOpaqueRenderables_NPCs( arrRenderEntsNpcsFirst.Base(), arrRenderEntsNpcsFirst.Base() + numNpcs, DepthMode );
+		//
+		// Draw NPCs now
+		//
+		DrawOpaqueRenderables_NPCs( arrRenderEntsNpcsFirst.Base(), arrRenderEntsNpcsFirst.Base() + numNpcsRender, DepthMode );
+	}
 
 	//
 	// Ropes and particles
@@ -5120,9 +5171,11 @@ void CRendering3dView::DrawTranslucentWorldAndDetailPropsInLeaves( int iCurLeafI
 		Assert( nActualLeafIndex != INVALID_LEAF_INDEX );
 		if ( render->LeafContainsTranslucentSurfaces( m_pWorldRenderList, nActualLeafIndex, nEngineDrawFlags ) )
 		{
-			// First draw any queued-up detail props from previously visited leaves
-			DetailObjectSystem()->RenderTranslucentDetailObjects( tmp, CurrentViewOrigin(), CurrentViewForward(), CurrentViewRight(), CurrentViewUp(), nDetailLeafCount, pDetailLeafList );
-			nDetailLeafCount = 0;
+			if(r_DrawDetailProps.GetInt() != 0) {
+				// First draw any queued-up detail props from previously visited leaves
+				DetailObjectSystem()->RenderTranslucentDetailObjects( tmp, CurrentViewOrigin(), CurrentViewForward(), CurrentViewRight(), CurrentViewUp(), nDetailLeafCount, pDetailLeafList );
+				nDetailLeafCount = 0;
+			}
 
 			// Now draw the surfaces in this leaf
 			render->DrawTranslucentSurfaces( m_pWorldRenderList, nActualLeafIndex, nEngineDrawFlags, bShadowDepth );
@@ -5193,8 +5246,8 @@ void CRendering3dView::DrawTranslucentRenderablesNoWorld( bool bInSkybox )
 
 	bool bShadowDepth = (m_DrawFlags & ( DF_SHADOW_DEPTH_MAP | DF_SSAO_DEPTH_PASS ) ) != 0;
 
-	CClientRenderablesList::CEntry *pEntities = m_pRenderablesList->m_RenderGroups[ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY];
-	int iCurTranslucentEntity = m_pRenderablesList->m_RenderGroupCounts[ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY] - 1;
+	CClientRenderablesList::CEntry *pEntities = m_pRenderablesList->m_RenderGroups[CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY];
+	int iCurTranslucentEntity = m_pRenderablesList->m_RenderGroupCounts[CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY] - 1;
 
 	while( iCurTranslucentEntity >= 0 )
 	{
@@ -5234,8 +5287,8 @@ void CRendering3dView::DrawNoZBufferTranslucentRenderables( void )
 
 	bool bShadowDepth = (m_DrawFlags & ( DF_SHADOW_DEPTH_MAP | DF_SSAO_DEPTH_PASS ) ) != 0;
 
-	CClientRenderablesList::CEntry *pEntities = m_pRenderablesList->m_RenderGroups[ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY];
-	int iCurTranslucentEntity = m_pRenderablesList->m_RenderGroupCounts[ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY] - 1;
+	CClientRenderablesList::CEntry *pEntities = m_pRenderablesList->m_RenderGroups[CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY];
+	int iCurTranslucentEntity = m_pRenderablesList->m_RenderGroupCounts[CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY] - 1;
 
 	while( iCurTranslucentEntity >= 0 )
 	{
@@ -5420,8 +5473,8 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 		// Draw the particle singletons.
 		DrawParticleSingletons( bInSkybox );
 
-		CClientRenderablesList::CEntry *pEntities = m_pRenderablesList->m_RenderGroups[ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY];
-		int iCurTranslucentEntity = m_pRenderablesList->m_RenderGroupCounts[ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY] - 1;
+		CClientRenderablesList::CEntry *pEntities = m_pRenderablesList->m_RenderGroups[CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY];
+		int iCurTranslucentEntity = m_pRenderablesList->m_RenderGroupCounts[CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY] - 1;
 
 		bool bRenderingWaterRenderTargets = m_DrawFlags & ( DF_RENDER_REFRACTION | DF_RENDER_REFLECTION );
 
@@ -5440,7 +5493,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 			int nLeaf = info.m_pLeafList[iThisLeaf];
 
 			bool bDrawDetailProps = ClientLeafSystem()->ShouldDrawDetailObjectsInLeaf( nLeaf, m_pMainView->BuildWorldListsNumber() );
-			if ( bDrawDetailProps )
+			if ( bDrawDetailProps && r_DrawDetailProps.GetInt() != 0 )
 			{
 				// Draw detail props up to but not including this leaf
 				Assert( nDetailLeafCount > 0 ); 
@@ -5459,6 +5512,14 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 					DetailObjectSystem()->RenderTranslucentDetailObjectsInLeaf( DistanceFadeInfo_t(), CurrentViewOrigin(), CurrentViewForward(), CurrentViewRight(), CurrentViewUp(), nLeaf, &vecRenderOrigin );
 
 					int nRenderFlags = pRenderableMod ? pRenderableMod->GetRenderFlags() : 0;
+					if(!pRenderableMod) {
+						if(pRenderable->DO_NOT_USE_UsesFullFrameBufferTexture()) {
+							nRenderFlags |= ERENDERFLAGS_NEEDS_FULL_FB;
+						}
+						if(pRenderable->DO_NOT_USE_UsesPowerOfTwoFrameBufferTexture()) {
+							nRenderFlags |= ERENDERFLAGS_NEEDS_POWER_OF_TWO_FB;
+						}
+					}
 
 					bool bUsesPowerOfTwoFB = nRenderFlags & ERENDERFLAGS_NEEDS_POWER_OF_TWO_FB;
 					bool bUsesFullFB       = nRenderFlags & ERENDERFLAGS_NEEDS_FULL_FB;
@@ -5494,9 +5555,11 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 			}
 			else
 			{
-				// Draw queued up detail props (we know that the list of detail leaves won't include this leaf, since ShouldDrawDetailObjectsInLeaf is false)
-				// Therefore no fixup on nDetailLeafCount is required as in the above section
-				DetailObjectSystem()->RenderTranslucentDetailObjects( m_pRenderablesList->m_DetailFade, CurrentViewOrigin(), CurrentViewForward(), CurrentViewRight(), CurrentViewUp(), nDetailLeafCount, pDetailLeafList );
+				if(r_DrawDetailProps.GetInt() != 0) {
+					// Draw queued up detail props (we know that the list of detail leaves won't include this leaf, since ShouldDrawDetailObjectsInLeaf is false)
+					// Therefore no fixup on nDetailLeafCount is required as in the above section
+					DetailObjectSystem()->RenderTranslucentDetailObjects( m_pRenderablesList->m_DetailFade, CurrentViewOrigin(), CurrentViewForward(), CurrentViewRight(), CurrentViewUp(), nDetailLeafCount, pDetailLeafList );
+				}
 
 				for( ;pEntities[iCurTranslucentEntity].m_iWorldListInfoLeaf == iThisLeaf && iCurTranslucentEntity >= 0; --iCurTranslucentEntity )
 				{
@@ -5537,8 +5600,10 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 	// Draw the rest of the surfaces in world leaves
 	DrawTranslucentWorldAndDetailPropsInLeaves( iPrevLeaf, 0, nEngineDrawFlags, nDetailLeafCount, pDetailLeafList, bShadowDepth );
 
-	// Draw any queued-up detail props from previously visited leaves
-	DetailObjectSystem()->RenderTranslucentDetailObjects( m_pRenderablesList->m_DetailFade, CurrentViewOrigin(), CurrentViewForward(), CurrentViewRight(), CurrentViewUp(), nDetailLeafCount, pDetailLeafList );
+	if(r_DrawDetailProps.GetInt() != 0) {
+		// Draw any queued-up detail props from previously visited leaves
+		DetailObjectSystem()->RenderTranslucentDetailObjects( m_pRenderablesList->m_DetailFade, CurrentViewOrigin(), CurrentViewForward(), CurrentViewRight(), CurrentViewUp(), nDetailLeafCount, pDetailLeafList );
+	}
 
 	// Reset the blend state.
 	render->SetBlend( 1 );

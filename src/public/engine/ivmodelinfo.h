@@ -91,7 +91,6 @@ public:
 
 // change this when the new version is incompatable with the old
 #define VMODELINFO_CLIENT_INTERFACE_VERSION		"VModelInfoClient006"
-#define VMODELINFO_SERVER_INTERFACE_VERSION_3	"VModelInfoServer003"
 #define VMODELINFO_SERVER_INTERFACE_VERSION		"VModelInfoServer004"
 
 // MODEL INDEX RULES
@@ -179,13 +178,13 @@ public:
 	virtual bool					IsUsingFBTexture( const model_t *model, int nSkin, int nBody, void /*IClientRenderable*/ *pClientRenderable ) const = 0;
 
 	// Obsolete methods. These are left in to maintain binary compatibility with clients using the IVModelInfo old version.
-	virtual const model_t			*FindOrLoadModel( const char *name ) { Assert(0); Warning( "IVModelInfo::FindOrLoadModel is now obsolte.\n" ); return NULL; }
-	virtual void					InitDynamicModels( ) { Assert(0); Warning( "IVModelInfo::InitDynamicModels is now obsolte.\n" ); }
-	virtual void					ShutdownDynamicModels( ) { Assert(0); Warning( "IVModelInfo::ShutdownDynamicModels is now obsolte.\n" ); }
-	virtual void					AddDynamicModel( const char *name, int nModelIndex = -1 ) { Assert(0); Warning( "IVModelInfo::AddDynamicModel is now obsolte.\n" ); }
-	virtual void					ReferenceModel( int modelindex ) { Assert(0); Warning( "IVModelInfo::ReferenceModel is now obsolte.\n" ); }
-	virtual void					UnreferenceModel( int modelindex ) { Assert(0); Warning( "IVModelInfo::UnreferenceModel is now obsolte.\n" ); }
-	virtual void					CleanupDynamicModels( bool bForce = false ) { Assert(0); Warning( "IVModelInfo::CleanupDynamicModels is now obsolte.\n" ); }
+	virtual const model_t			*DO_NOT_USE_FindOrLoadModel( const char *name ) { Assert(0); Warning( "IVModelInfo::FindOrLoadModel is now obsolte.\n" ); return NULL; }
+	virtual void					DO_NOT_USE_InitDynamicModels( ) { Assert(0); Warning( "IVModelInfo::InitDynamicModels is now obsolte.\n" ); }
+	virtual void					DO_NOT_USE_ShutdownDynamicModels( ) { Assert(0); Warning( "IVModelInfo::ShutdownDynamicModels is now obsolte.\n" ); }
+	virtual void					DO_NOT_USE_AddDynamicModel( const char *name, int nModelIndex = -1 ) { Assert(0); Warning( "IVModelInfo::AddDynamicModel is now obsolte.\n" ); }
+	virtual void					DO_NOT_USE_ReferenceModel( int modelindex ) { Assert(0); Warning( "IVModelInfo::ReferenceModel is now obsolte.\n" ); }
+	virtual void					DO_NOT_USE_UnreferenceModel( int modelindex ) { Assert(0); Warning( "IVModelInfo::UnreferenceModel is now obsolte.\n" ); }
+	virtual void					DO_NOT_USE_CleanupDynamicModels( bool bForce = false ) { Assert(0); Warning( "IVModelInfo::CleanupDynamicModels is now obsolte.\n" ); }
 
 	virtual MDLHandle_t				GetCacheHandle( const model_t *model ) const = 0;
 
@@ -219,7 +218,7 @@ public:
 	virtual void OnDynamicModelsStringTableChange( int nStringIndex, const char *pString, const void *pData ) = 0;
 
 	// For tools only!
-	virtual const model_t *FindOrLoadModel( const char *name ) = 0;
+	virtual const model_t *DO_NOT_USE_FindOrLoadModel( const char *name ) = 0;
 };
 
 

@@ -72,9 +72,6 @@ Studio models are position independent, so the cache manager can move them.
 // NOTE!!! : Changing this number also changes the vtx file format!!!!!
 #define MAX_NUM_BONES_PER_VERT 3
 
-//Adrian - Remove this when we completely phase out the old event system.
-#define NEW_EVENT_STYLE ( 1 << 10 )
-
 struct mstudiodata_t
 {
 	int		count;
@@ -484,7 +481,8 @@ struct mstudiomodelgrouplookup_t
 	int					indexwithingroup;
 };
 
-#define AE_TYPE_NEWEVENTSYSTEM  ( 1 << 10 ) //Temporary flag.
+//Adrian - Remove this when we completely phase out the old event system.
+#define NEW_EVENT_STYLE ( 1 << 10 )
 
 // events
 struct mstudioevent_t
@@ -492,53 +490,68 @@ struct mstudioevent_t
 	DECLARE_BYTESWAP_DATADESC();
 	float				cycle;
 
-#ifdef CLIENT_DLL
-	union
-	{
-		// Client shares with the high word
-		unsigned short	_event_highword;
-		unsigned short	event_newsystem;
-	};
-	unsigned short	_event_lowword;		// Placeholder for the low word
-#else
-	unsigned short	_event_highword;	// Placeholder for the high word
-	union
-	{
-		// Server shares with the low word
-		unsigned short	_event_lowword;
-		unsigned short	event_newsystem;
-	};
-#endif
+	unsigned short			event_server;
+	unsigned short			event_client;
 
-	int					type;
+	unsigned short			type_server;
+	unsigned short			type_client;
+
 	inline const char * pszOptions( void ) const { return options; }
 	char				options[64];
 
 	int					szeventindex;
-	inline char * const pszEventName( void ) const { return ((char *)this) + szeventindex; }
+	inline const char * pszEventName( void ) const
+	{
+		if((type_server & NEW_EVENT_STYLE) != 0) {
+			return ((char *)this) + szeventindex;
+		} else {
+		#if defined GAME_DLL || defined CLIENT_DLL
+			extern const char *EventList_NameForIndex( int iEventIndex );
+			return EventList_NameForIndex( event_server );
+		#else
+			return NULL;
+		#endif
+		}
+	}
 
-	// For setting and getting through Event, check the AE_TYPE_NEWEVENTSYSTEM flag to decide
-	// if we should set/get just the short used by the client/server or use the whole int.
-	int Event_OldSystem( void ) const { return *static_cast< const int* >( static_cast< const void* >( &_event_highword ) ); }
-	void Event_OldSystem( int nEvent ) { *static_cast< int* >( static_cast< void* >( &_event_highword ) ) = nEvent; }
+	inline bool IsNewType() const
+	{ return (type_server & NEW_EVENT_STYLE) != 0; }
+
+#if defined GAME_DLL || defined CLIENT_DLL
 	int Event( void ) const
 	{
-		if ( type & AE_TYPE_NEWEVENTSYSTEM )
-			return event_newsystem;
-
-		return Event_OldSystem();
+	#ifdef GAME_DLL
+		return event_server;
+	#elif defined CLIENT_DLL
+		return event_client;
+	#endif
 	}
-	void Event( int nEvent )
+	int Type( void ) const
 	{
-		if ( type & AE_TYPE_NEWEVENTSYSTEM )
-		{
-			event_newsystem = nEvent;
-		}
-		else
-		{
-			Event_OldSystem( nEvent );
-		}
+	#ifdef GAME_DLL
+		return type_server & ~NEW_EVENT_STYLE;
+	#elif defined CLIENT_DLL
+		return type_client;
+	#endif
 	}
+	void Event( int nEvent, int nType )
+	{
+	#ifdef GAME_DLL
+		event_server = nEvent;
+
+		bool was_new = ((type_server & NEW_EVENT_STYLE) != 0);
+
+		type_server = nType;
+
+		if(was_new) {
+			type_server |= NEW_EVENT_STYLE;
+		}
+	#elif defined CLIENT_DLL
+		event_client = nEvent;
+		type_client = nType;
+	#endif
+	}
+#endif
 };
 
 #define	ATTACHMENT_FLAG_WORLD_ALIGN 0x10000
@@ -878,7 +891,28 @@ struct mstudioseqdesc_t
 
 	int					flags;		// looping/non-looping flags
 
-	int					activity;	// initialized at loadtime to game DLL values
+	unsigned short			activity_server;	// initialized at loadtime to game DLL values
+	unsigned short			activity_client;	// initialized at loadtime to game DLL values
+
+#if defined GAME_DLL || defined CLIENT_DLL
+	int Activity( void ) const
+	{
+	#ifdef GAME_DLL
+		return activity_server;
+	#elif defined CLIENT_DLL
+		return activity_client;
+	#endif
+	}
+	void Activity( int nActivity )
+	{
+	#ifdef GAME_DLL
+		activity_server = nActivity;
+	#elif defined CLIENT_DLL
+		activity_client = nActivity;
+	#endif
+	}
+#endif
+
 	int					actweight;
 
 	int					numevents;
@@ -2801,8 +2835,8 @@ public:
 		const void *m_expectedVModel;
 
 		// double-check that the data I point to hasn't changed
-		bool ValidateAgainst( const CStudioHdr * RESTRICT pstudiohdr );
-		void SetValidationPair( const CStudioHdr *RESTRICT pstudiohdr );
+		bool ValidateAgainst( const CStudioHdr * RESTRICT pstudiohdr ) RESTRICT;
+		void SetValidationPair( const CStudioHdr *RESTRICT pstudiohdr ) RESTRICT;
 
 		friend class CStudioHdr;
 	};
@@ -3118,8 +3152,8 @@ inline const mstudioflexcontroller_t *mstudioflexcontrollerui_t::pController( in
 #define STUDIO_LOCAL	0x0200		// sequence has a local context sequence
 #define STUDIO_HIDDEN	0x0400		// don't show in default selection views
 #define STUDIO_OVERRIDE	0x0800		// a forward declared sequence (empty)
-#define STUDIO_ACTIVITY	0x1000		// Has been updated at runtime to activity index
-#define STUDIO_EVENT	0x2000		// Has been updated at runtime to event index
+#define STUDIO_ACTIVITY_SERVER	0x1000		// Has been updated at runtime to activity index
+#define STUDIO_EVENT_SERVER	0x2000		// Has been updated at runtime to event index
 #define STUDIO_WORLD	0x4000		// sequence blends in worldspace
 // autolayer flags
 //							0x0001
@@ -3139,6 +3173,15 @@ inline const mstudioflexcontroller_t *mstudioflexcontrollerui_t::pController( in
 #define STUDIO_AL_POSE		0x4000		// layer blends using a pose parameter instead of parent cycle
 #define STUDIO_NOFORCELOOP 0x8000	// do not force the animation loop
 #define STUDIO_EVENT_CLIENT 0x10000	// Has been updated at runtime to event index on client
+#define STUDIO_ACTIVITY_CLIENT 0x20000	// Has been updated at runtime to event index on client
+
+#ifdef GAME_DLL
+#define STUDIO_ACTIVITY STUDIO_ACTIVITY_SERVER
+#define STUDIO_EVENT STUDIO_EVENT_SERVER
+#elif defined CLIENT_DLL
+#define STUDIO_ACTIVITY STUDIO_ACTIVITY_CLIENT
+#define STUDIO_EVENT STUDIO_EVENT_CLIENT
+#endif
 
 // Insert this code anywhere that you need to allow for conversion from an old STUDIO_VERSION
 // to a new one.

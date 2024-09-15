@@ -589,7 +589,7 @@ bool CRecastMesh::Build( CMapMesh *pMapMesh )
 
 	PostLoad();
 
-	DevMsg( "CRecastMesh: Generated navigation mesh %s in %f seconds\n", m_Name.Get(), Plat_FloatTime() - fStartTime );
+	DevMsg( "CRecastMesh: Generated navigation mesh %s in %f seconds\n", GetName(), Plat_FloatTime() - fStartTime );
 
 	return true;
 }
@@ -667,7 +667,7 @@ bool CRecastMesh::RebuildPartial( CMapMesh *pMapMesh, const Vector &vMins, const
 	}
 
 	if( recast_build_partial_debug.GetBool() )
-		DevMsg( "CRecastMesh: Generated partial mesh update %s in %f seconds\n", m_Name.Get(), Plat_FloatTime() - fStartTime );
+		DevMsg( "CRecastMesh: Generated partial mesh update %s in %f seconds\n", GetName(), Plat_FloatTime() - fStartTime );
 
 	return true;
 }
@@ -716,14 +716,14 @@ bool CRecastMgr::LoadMapMesh( bool bLog, bool bDynamicOnly, const Vector &vMinBo
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CRecastMgr::BuildMesh( CMapMesh *pMapMesh, const char *name )
+bool CRecastMgr::BuildMesh( CMapMesh *pMapMesh, Hull_t hull )
 {
-	CRecastMesh *pMesh = GetMesh( name );
+	CRecastMesh *pMesh = GetMeshOfHull( hull );
 	if( !pMesh )
 	{
 		pMesh = new CRecastMesh();
-		pMesh->Init( name );
-		m_Meshes.Insert( pMesh->GetName(), pMesh );
+		pMesh->Init( hull );
+		m_Meshes.Insert( hull, pMesh );
 	}
 	if( pMesh->Build( pMapMesh ) )
 	{
@@ -763,11 +763,13 @@ static char* s_MeshNames[] =
 //-----------------------------------------------------------------------------
 // Purpose: Checks if building this mesh is disabled
 //-----------------------------------------------------------------------------
-bool CRecastMgr::IsMeshBuildDisabled( const char *meshName )
+bool CRecastMgr::IsMeshBuildDisabled( Hull_t hull )
 {
 	CRecastMgrEnt *pMgrEnt = GetRecastMgrEnt();
 	if( pMgrEnt )
 	{
+		//TODO Arthurdead!!!!
+	#if 0
 		if( pMgrEnt->HasSpawnFlags( SF_DISABLE_MESH_HUMAN ) && V_strcmp( "human", meshName ) == 0 )
 			return true;
 		else if( pMgrEnt->HasSpawnFlags( SF_DISABLE_MESH_MEDIUM ) && V_strcmp( "medium", meshName ) == 0 )
@@ -778,6 +780,7 @@ bool CRecastMgr::IsMeshBuildDisabled( const char *meshName )
 			return true;
 		else if( pMgrEnt->HasSpawnFlags( SF_DISABLE_MESH_AIR ) && V_strcmp( "air", meshName ) == 0 )
 			return true;
+	#endif
 	}
 	return false;
 }
@@ -785,7 +788,7 @@ bool CRecastMgr::IsMeshBuildDisabled( const char *meshName )
 //-----------------------------------------------------------------------------
 // Purpose: Builds all navigation meshes
 //-----------------------------------------------------------------------------
-bool CRecastMgr::Build( bool loadDefaultMeshes )
+bool CRecastMgr::Build( bool loadMeshes )
 {
 	double fStartTime = Plat_FloatTime();
 
@@ -797,14 +800,14 @@ bool CRecastMgr::Build( bool loadDefaultMeshes )
 	}
 
 	// Insert all meshes first
-	if( loadDefaultMeshes )
+	if( loadMeshes )
 	{
-		InitDefaultMeshes();
+		InitMeshes();
 	}
 	CUtlVector<CRecastMesh *> meshesToBuild;
-	for ( int i = m_Meshes.First(); i != m_Meshes.InvalidIndex(); i = m_Meshes.Next(i ) )
+	for ( int i = m_Meshes.FirstInorder(); i != m_Meshes.InvalidIndex(); i = m_Meshes.NextInorder(i ) )
 	{
-		if( IsMeshBuildDisabled( m_Meshes[i]->GetName() ) )
+		if( IsMeshBuildDisabled( m_Meshes[i]->GetHull() ) )
 			continue;
 		meshesToBuild.AddToTail( m_Meshes[i] );
 	}
@@ -821,13 +824,16 @@ bool CRecastMgr::Build( bool loadDefaultMeshes )
 	{
 		if( V_strlen( recast_build_single.GetString() ) > 0 )
 		{
-			BuildMesh( m_pMapMesh, recast_build_single.GetString() );
+			Hull_t hull = NAI_Hull::LookupId( recast_build_single.GetString() );
+			Assert( hull != HULL_NONE );
+
+			BuildMesh( m_pMapMesh, hull );
 		}
 		else
 		{
 			for( int i = 0; i < meshesToBuild.Count(); i++ )
 			{
-				BuildMesh( m_pMapMesh, meshesToBuild[i]->GetName() );
+				BuildMesh( m_pMapMesh, meshesToBuild[i]->GetHull() );
 			}
 		}
 	}
@@ -881,9 +887,9 @@ void CRecastMgr::UpdateRebuildPartial()
 
 	// Perform the update
 	CUtlVector<CRecastMesh *> meshesToBuild;
-	for ( int i = m_Meshes.First(); i != m_Meshes.InvalidIndex(); i = m_Meshes.Next(i ) )
+	for ( int i = m_Meshes.FirstInorder(); i != m_Meshes.InvalidIndex(); i = m_Meshes.NextInorder(i ) )
 	{
-		if( IsMeshBuildDisabled( m_Meshes[i]->GetName() ) )
+		if( IsMeshBuildDisabled( m_Meshes[i]->GetHull() ) )
 			continue;
 		meshesToBuild.AddToTail( m_Meshes[i] );
 	}
@@ -915,7 +921,14 @@ CON_COMMAND( recast_mesh_setcellsize, "" )
 		return;
 #endif // CLIENT_DLL
 
-	CRecastMesh *pMesh = RecastMgr().GetMesh( args[1] );
+	Hull_t hull = NAI_Hull::LookupId( args[1] );
+	if( hull == HULL_NONE )
+	{
+		Warning("recast_mesh_setcellsize: unknown hull name \"%s\"\n", args[1] );
+		return;
+	}
+
+	CRecastMesh *pMesh = RecastMgr().GetMeshOfHull( hull );
 	if( !pMesh )
 	{
 		Warning("recast_mesh_setcellsize: could not find mesh \"%s\"\n", args[1] );
@@ -931,12 +944,20 @@ CON_COMMAND( recast_mesh_setcellheight, "" )
 		return;
 #endif // CLIENT_DLL
 
-	CRecastMesh *pMesh = RecastMgr().GetMesh( args[1] );
+	Hull_t hull = NAI_Hull::LookupId( args[1] );
+	if( hull == HULL_NONE )
+	{
+		Warning("recast_mesh_setcellheight: unknown hull name \"%s\"\n", args[1] );
+		return;
+	}
+
+	CRecastMesh *pMesh = RecastMgr().GetMeshOfHull( hull );
 	if( !pMesh )
 	{
 		Warning("recast_mesh_setcellheight: could not find mesh \"%s\"\n", args[1] );
 		return;
 	}
+
 	pMesh->SetCellHeight( atof( args[2] ) );
 }
 
@@ -947,11 +968,19 @@ CON_COMMAND( recast_mesh_settilesize, "" )
 		return;
 #endif // CLIENT_DLL
 
-	CRecastMesh *pMesh = RecastMgr().GetMesh( args[1] );
+	Hull_t hull = NAI_Hull::LookupId( args[1] );
+	if( hull == HULL_NONE )
+	{
+		Warning("recast_mesh_settilesize: unknown hull name \"%s\"\n", args[1] );
+		return;
+	}
+
+	CRecastMesh *pMesh = RecastMgr().GetMeshOfHull( hull );
 	if( !pMesh )
 	{
 		Warning("recast_mesh_settilesize: could not find mesh \"%s\"\n", args[1] );
 		return;
 	}
+
 	pMesh->SetTileSize( atof( args[2] ) );
 }

@@ -8,10 +8,6 @@
 #define SCRIPTED_H
 #pragma once
 
-#ifndef SCRIPTEVENT_H
-#include "scriptevent.h"
-#endif
-
 #include "ai_basenpc.h"
 
 

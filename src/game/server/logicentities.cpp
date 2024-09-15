@@ -5253,11 +5253,11 @@ void CLogicModelInfo::InputLookupActivity( inputdata_t &inputdata )
 	CBaseAnimating *pAnimating = GetTarget(inputdata);
 	if (pAnimating && pAnimating->GetModelPtr())
 	{
-		int iActivity = ActivityList_IndexForName(inputdata.value.String());
+		Activity iActivity = ActivityList_IndexForName(inputdata.value.String());
 		if (iActivity == -1)
 		{
 			// Check if it's a raw activity ID
-			iActivity = atoi(inputdata.value.String());
+			iActivity = (Activity)atoi(inputdata.value.String());
 			if (!ActivityList_NameForIndex(iActivity))
 			{
 				Msg("%s received invalid LookupActivity %s\n", GetDebugName(), inputdata.value.String());

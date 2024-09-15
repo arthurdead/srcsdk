@@ -17,6 +17,7 @@
 #include "toolframework/itoolframework.h"
 #include "toolframework_client.h"
 #include "view.h"
+#include "clientalphaproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -648,4 +649,9 @@ void C_BaseCombatWeapon::GetToolRecordingState( KeyValues *msg )
 	{
 		SetModelIndex( nModelIndex );
 	}
+}
+
+uint8 C_BaseCombatWeapon::ViewModel_OverrideRenderAlpha( uint8 nAlpha )
+{
+	return AlphaProp()->GetAlphaBlend();
 }

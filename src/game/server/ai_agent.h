@@ -382,35 +382,14 @@ inline void CAI_Agent::ResetScheduleCurTaskIndex()
 		\
 		CUtlVector<const char *> schedulesToLoad; \
 		CUtlVector<AIScheduleLoadFunc_t> reqiredOthers; \
-		CAI_AgentNamespaceInfos scheduleIds; \
-		CAI_AgentNamespaceInfos taskIds; \
-		CAI_AgentNamespaceInfos conditionIds;
+		CAI_NamespaceInfos scheduleIds; \
+		CAI_TaskNamespaceInfos taskIds; \
+		CAI_NamespaceInfos conditionIds;
 		
 
 #define AI_BEGIN_AGENT( derivedClass ) \
 	AI_BEGIN_AGENT_( derivedClass, BaseClass )
 		
-
-//-----------------
-
-#define DEFINE_SCHEDULE( id, text ) \
-	scheduleIds.PushBack( #id, id ); \
-	const char * g_psz##id = \
-		"\n	Schedule" \
-		"\n		" #id \
-		text \
-		"\n"; \
-	schedulesToLoad.AddToTail( g_psz##id );
-	
-//-----------------
-
-#define DECLARE_CONDITION( id ) \
-	conditionIds.PushBack( #id, id );
-
-//-----------------
-
-#define DECLARE_TASK( id ) \
-	taskIds.PushBack( #id, id );
 
 //-----------------
 
@@ -432,7 +411,7 @@ inline void CAI_Agent::ResetScheduleCurTaskIndex()
 		\
 		for ( i = 0; i < taskIds.Count(); i++ ) \
 		{ \
-			ADD_CUSTOM_TASK_NAMED( CNpc, taskIds[i].pszName, taskIds[i].localId );  \
+			ADD_CUSTOM_TASK_NAMED( CNpc, taskIds[i].pszName, taskIds[i].localId, taskIds[i].params );  \
 		} \
 		\
 		for ( i = 0; i < conditionIds.Count(); i++ ) \
@@ -452,7 +431,7 @@ inline void CAI_Agent::ResetScheduleCurTaskIndex()
 		{ \
 			if ( CNpc::gm_SchedLoadStatus.fValid ) \
 			{ \
-				CNpc::gm_SchedLoadStatus.fValid = g_AI_AgentSchedulesManager.LoadSchedulesFromBuffer( pszClassName, schedulesToLoad[i], &AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
+				CNpc::gm_SchedLoadStatus.fValid = g_AI_AgentSchedulesManager.LoadSchedules( pszClassName, schedulesToLoad[i], "MEMORY", &AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
 			} \
 			else \
 				break; \
@@ -471,56 +450,14 @@ inline bool AIAgentValidateConditionLimits( const char *pszNewCondition )
 	return true;
 }
 
-
-//-------------------------------------
-
-struct AI_AgentNamespaceAddInfo_t
-{
-	AI_AgentNamespaceAddInfo_t( const char *pszName, int localId )
-	 :	pszName( pszName ),
-		localId( localId )
-	{
-	}
-	
-	const char *pszName;
-	int			localId;
-};
-
-class CAI_AgentNamespaceInfos : public CUtlVector<AI_AgentNamespaceAddInfo_t>
-{
-public:
-	void PushBack(  const char *pszName, int localId )
-	{
-		AddToTail( AI_AgentNamespaceAddInfo_t( pszName, localId ) );
-	}
-
-	void Sort()
-	{
-		CUtlVector<AI_AgentNamespaceAddInfo_t>::Sort( Compare );
-	}
-	
-private:
-	static int __cdecl Compare(const AI_AgentNamespaceAddInfo_t *pLeft, const AI_AgentNamespaceAddInfo_t *pRight )
-	{
-		return pLeft->localId - pRight->localId;
-	}
-	
-};
-
 //-------------------------------------
 
 // Declares the static variables that hold the string registry offset for the new subclass
 // as well as the initialization in schedule load functions
 
-struct AI_AgentSchedLoadStatus_t
-{
-	bool fValid;
-	int  signature;
-};
-
 // Load schedules pulled out to support stepping through with debugger
-inline bool AI_DoLoadSchedules( bool (*pfnBaseLoad)(), void (*pfnInitCustomSchedules)(),
-								AI_AgentSchedLoadStatus_t *pLoadStatus )
+inline bool AI_DoAgentLoadSchedules( bool (*pfnBaseLoad)(), void (*pfnInitCustomSchedules)(),
+								AI_SchedLoadStatus_t *pLoadStatus )
 {
 	(*pfnBaseLoad)();
 	
@@ -535,25 +472,8 @@ inline bool AI_DoLoadSchedules( bool (*pfnBaseLoad)(), void (*pfnInitCustomSched
 
 //-------------------------------------
 
-typedef bool (*AIScheduleLoadFunc_t)();
-
-// @Note (toml 02-16-03): The following class exists to allow us to establish an anonymous friendship
-// in DEFINE_AGENT. The particulars of this implementation is almost entirely
-// defined by bugs in MSVC 6.0
-class AgentScheduleLoadHelperImpl
-{
-public:
-	template <typename T> 
-	static AIScheduleLoadFunc_t AccessScheduleLoadFunc(T *)
-	{
-		return (&T::LoadSchedules);
-	}
-};
-
-//-------------------------------------
-
 #define DEFINE_AGENT()\
-	static AI_AgentSchedLoadStatus_t 		gm_SchedLoadStatus; \
+	static AI_SchedLoadStatus_t 		gm_SchedLoadStatus; \
 	static CAI_ClassScheduleIdSpace 	gm_ClassScheduleIdSpace; \
 	static const char *					gm_pszErrorClassName;\
 	\
@@ -566,7 +486,7 @@ public:
 	static bool							LoadSchedules(void);\
 	virtual bool						LoadedSchedules(void); \
 	\
-	friend class AgentScheduleLoadHelperImpl;	\
+	friend class ScheduleLoadHelperImpl;	\
 	\
 	class CScheduleLoader \
 	{ \
@@ -579,7 +499,7 @@ public:
 //-------------------------------------
 
 #define IMPLEMENT_AGENT(derivedClass, baseClass)\
-	AI_AgentSchedLoadStatus_t		derivedClass::gm_SchedLoadStatus = { true, -1 }; \
+	AI_SchedLoadStatus_t		derivedClass::gm_SchedLoadStatus = { true, -1 }; \
 	CAI_ClassScheduleIdSpace 	derivedClass::gm_ClassScheduleIdSpace; \
 	const char *				derivedClass::gm_pszErrorClassName = #derivedClass; \
 	\
@@ -593,7 +513,7 @@ public:
 	/* --------------------------------------------- */ \
 	bool derivedClass::LoadSchedules(void)\
 	{\
-		return AI_DoLoadSchedules( derivedClass::baseClass::LoadSchedules, \
+		return AI_DoAgentLoadSchedules( derivedClass::baseClass::LoadSchedules, \
 								   derivedClass::InitCustomSchedules, \
 								   &derivedClass::gm_SchedLoadStatus ); \
 	}\
@@ -602,25 +522,6 @@ public:
 	{ \
 		return derivedClass::gm_SchedLoadStatus.fValid;\
 	} 
-
-
-//-------------------------------------
-
-#define ADD_CUSTOM_SCHEDULE_NAMED(derivedClass,schedName,schedEN)\
-	if ( !derivedClass::AccessClassScheduleIdSpaceDirect().AddSchedule( schedName, schedEN, derivedClass::gm_pszErrorClassName ) ) return;
-
-#define ADD_CUSTOM_SCHEDULE(derivedClass,schedEN) ADD_CUSTOM_SCHEDULE_NAMED(derivedClass,#schedEN,schedEN)
-
-#define ADD_CUSTOM_TASK_NAMED(derivedClass,taskName,taskEN)\
-	if ( !derivedClass::AccessClassScheduleIdSpaceDirect().AddTask( taskName, taskEN, derivedClass::gm_pszErrorClassName ) ) return;
-
-#define ADD_CUSTOM_TASK(derivedClass,taskEN) ADD_CUSTOM_TASK_NAMED(derivedClass,#taskEN,taskEN)
-
-#define ADD_CUSTOM_CONDITION_NAMED(derivedClass,condName,condEN)\
-	if ( !derivedClass::AccessClassScheduleIdSpaceDirect().AddCondition( condName, condEN, derivedClass::gm_pszErrorClassName ) ) return;
-
-#define ADD_CUSTOM_CONDITION(derivedClass,condEN) ADD_CUSTOM_CONDITION_NAMED(derivedClass,#condEN,condEN)
-
 
 
 #endif // AI_AGENT_H

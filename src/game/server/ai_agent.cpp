@@ -1390,7 +1390,10 @@ void CAI_Agent::StartTask( const Task_t *pTask )
 	switch( pTask->iTask )
 	{
 	case TASK_SET_SCHEDULE:
-		if ( !SetSchedule( pTask->flTaskData ) )
+		Assert( pTask->numData == 1 );
+		Assert( pTask->data[0].nType == TASK_DATA_SCHEDULE_ID );
+
+		if ( !SetSchedule( pTask->data[0].schedId ) )
 			TaskFail(FAIL_SCHEDULE_NOT_FOUND);
 		break;
 
@@ -1445,12 +1448,12 @@ int CAI_Agent::SelectFailSchedule( int failedSchedule, int failedTask, AI_TaskFa
 
 void CAI_Agent::InitDefaultTaskSR(void)
 {
-#define ADD_DEF_TASK( name ) idSpace.AddTask(#name, name, "CAI_Agent" )
+#define ADD_DEF_TASK( name, params ) idSpace.AddTask(#name, name, params, "CAI_Agent" )
 
 	CAI_ClassScheduleIdSpace &idSpace = CAI_Agent::AccessClassScheduleIdSpaceDirect();
 
-	ADD_DEF_TASK( TASK_INVALID );
-	ADD_DEF_TASK( TASK_SET_SCHEDULE );
+	ADD_DEF_TASK( TASK_INVALID, TaskParamCheck_t() );
+	ADD_DEF_TASK( TASK_SET_SCHEDULE, TaskParamCheck_t(TASK_DATA_CHECK_SCHEDULE_ID) );
 }
 
 void CAI_Agent::InitDefaultConditionSR(void)

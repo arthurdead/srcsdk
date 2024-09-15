@@ -26,9 +26,7 @@ class CGameStringPool : public CBaseGameSystem
 #endif
 {
 	virtual char const *Name() { return "CGameStringPool"; }
-#if defined(GAME_DLL)
 	virtual void LevelInitPreEntity() { InitGlobalStrings(); }
-#endif
 	virtual void LevelShutdownPostEntity()
 	{
 		FreeAll();

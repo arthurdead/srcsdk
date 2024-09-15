@@ -486,7 +486,7 @@ void		UTIL_SayTextAll( const char *pText, CBasePlayer *pEntity = NULL, bool bCha
 void		UTIL_SayTextFilter( IRecipientFilter& filter, const char *pText, CBasePlayer *pEntity, bool bChat );
 void		UTIL_SayText2Filter( IRecipientFilter& filter, CBasePlayer *pEntity, bool bChat, const char *msg_name, const char *param1 = NULL, const char *param2 = NULL, const char *param3 = NULL, const char *param4 = NULL );
 
-byte		*UTIL_LoadFileForMe( const char *filename, int *pLength );
+byte		*UTIL_LoadFileForMe( const char *filename, int *pLength, const char *pPathID = "GAME" );
 void        UTIL_FreeFile( byte *buffer );
 
 class CGameTrace;

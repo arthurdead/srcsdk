@@ -83,10 +83,12 @@ void LinearAllocator::free(void* /*ptr*/)
 }
 
 
-MeshProcess::MeshProcess( const char *meshName )
+MeshProcess::MeshProcess( Hull_t hull )
 {
 	meshFlags = 0;
 
+//TODO Arthurdead!!!!
+#if 0
 #ifndef CLIENT_DLL
 	if( V_strncmp( meshName, "human", V_strlen( meshName ) ) == 0 )
 	{
@@ -109,15 +111,16 @@ MeshProcess::MeshProcess( const char *meshName )
 		meshFlags |= SF_OFFMESHCONN_AIR;
 	}
 #endif // CLIENT_DLL
+#endif
 
 	// One time parse all
 	parseAll();
 }
 
-static void TestAgentRadius( const char *meshName, float &fAgentRadius )
+static void TestAgentRadius( Hull_t hull, float &fAgentRadius )
 {
 	float meshAgentRadius, stub;
-	CRecastMesh::ComputeMeshSettings( meshName, meshAgentRadius, stub, stub, stub, stub, stub, stub );
+	CRecastMesh::ComputeMeshSettings( hull, meshAgentRadius, stub, stub, stub, stub, stub, stub );
 	if( meshAgentRadius > fAgentRadius ) 
 	{
 		fAgentRadius = meshAgentRadius;
@@ -177,6 +180,8 @@ void MeshProcess::parseConnection( COffMeshConnection *pOffMeshConn )
 			offMeshConnVerts[vertOffset+5] = vEnd.y;
 
 			float rad = 0.0f;
+			//TODO Arthurdead!!!!
+		#if 0
 			if( spawnFlags & SF_OFFMESHCONN_HUMAN )
 				TestAgentRadius( "human", rad );
 			if( spawnFlags & SF_OFFMESHCONN_MEDIUM )
@@ -187,6 +192,7 @@ void MeshProcess::parseConnection( COffMeshConnection *pOffMeshConn )
 				TestAgentRadius( "verylarge", rad );
 			if( spawnFlags & SF_OFFMESHCONN_AIR )
 				TestAgentRadius( "air", rad );
+		#endif
 
 			offMeshConnRad.AddToTail( rad );
 

@@ -28,7 +28,6 @@ void RecvProxy_UnmodifiedQAngles( const CRecvProxyData *pData, void *pStruct, vo
 
 IMPLEMENT_CLIENTCLASS_DT(C_BreakableProp, DT_BreakableProp, CBreakableProp)
 	RecvPropQAngles( RECVINFO( m_qPreferredPlayerCarryAngles ), 0, RecvProxy_UnmodifiedQAngles ),
-	RecvPropBool( RECVINFO( m_bClientPhysics ) ),
 END_RECV_TABLE()
 
 //-----------------------------------------------------------------------------
@@ -60,11 +59,6 @@ void C_BreakableProp::CopyFadeFrom( C_BreakableProp *pSource )
 void C_BreakableProp::OnDataChanged( DataUpdateType_t type )
 {
 	BaseClass::OnDataChanged( type );
-	if ( m_bClientPhysics )
-	{
-		bool bCreate = (type == DATA_UPDATE_CREATED) ? true : false;
-		VPhysicsShadowDataChanged(bCreate, this);
-	}
 }
 
 //IPlayerPickupVPhysics

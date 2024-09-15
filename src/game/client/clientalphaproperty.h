@@ -12,6 +12,7 @@
 #include "iclientalphaproperty.h"
 #include "iclientrenderable.h"
 #include "iclientunknown.h"
+#include "cdll_client_int.h"
 
 #define CLIENT_ALPHA_DISTANCE_FADE_MODE_BIT_COUNT 1
 
@@ -87,6 +88,9 @@ private:
 	// It needs to be no more than 32 bytes, which it is right now
 	// (remember the vtable adds 4 bytes). Try to restrict usage
 	// to reserved areas or figure out a way of compressing existing fields
+
+	// ^^^^^ Arthurdead: No it doesnt?
+
 	IClientUnknown *m_pOuter;
 
 	ClientShadowHandle_t m_hShadowHandle;
@@ -108,6 +112,8 @@ private:
 	float m_flRenderFxStartTime;
 	float m_flRenderFxDuration;
 
+	int m_nFXComputeFrame;
+
 	IClientUnknownMod *m_pOuterMod;
 	IClientRenderableMod *m_pRenderMod;
 
@@ -124,6 +130,7 @@ inline uint8 CClientAlphaProperty::GetAlphaModulation() const
 
 inline uint8 CClientAlphaProperty::GetAlphaBlend() const
 {
+	//Assert( m_nFXComputeFrame == gpGlobals->framecount );
 	return m_nAlphaBlend;
 }
 

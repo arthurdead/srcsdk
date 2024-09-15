@@ -64,6 +64,7 @@ public:
 		m_flFieldOfView = 0.5f;
 		NPCInit();
 
+		CBaseEntity::m_nDebugPlayer = 1;
 		m_debugOverlays |= (OVERLAY_NPC_NEAREST_BIT|OVERLAY_NPC_ROUTE_BIT);
 
 		CBaseEntity *pEntity = gEntList.FindEntityByClassname(NULL, "prop_dev_pather_target");

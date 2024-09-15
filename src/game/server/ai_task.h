@@ -9,7 +9,14 @@
 #define AI_TASK_H
 #pragma once
 
+#include "ai_activity.h"
+#include "ai_schedule.h"
+#include "strtools.h"
+#include "activitylist.h"
+
 class CStringRegistry;
+
+class CAI_BaseNPC;
 
 // ----------------------------------------------------------------------
 // Failure messages
@@ -90,12 +97,266 @@ enum TaskStatus_e
 	TASKSTATUS_COMPLETE	=			4,			// Completed, get next task
 };
 
+typedef int TaskId_t;
+typedef int TaskGlobalId_t;
+typedef int TaskLocalId_t;
+
+enum TaskDataType_t
+{
+	TASK_DATA_NONE,
+	TASK_DATA_FLOAT,
+	TASK_DATA_INT,
+	TASK_DATA_BOOL,
+	TASK_DATA_STRING,
+	TASK_DATA_ACTIVITY,
+	TASK_DATA_TASK_ID,
+	TASK_DATA_SCHEDULE_ID,
+	TASK_DATA_NPCSTATE,
+	TASK_DATA_MEMORY_ID,
+	TASK_DATA_PATH_TYPE,
+	TASK_DATA_GOAL_TYPE,
+};
+
 // an array of tasks is a task list
 // an array of schedules is a schedule list
-struct Task_t
+struct TaskData_t
 {
-	int		iTask;
-	float	flTaskData;
+	TaskData_t() = default;
+	TaskData_t(const TaskData_t &) = default;
+	TaskData_t &operator=(const TaskData_t &) = default;
+	TaskData_t(TaskData_t &&) = default;
+	TaskData_t &operator=(TaskData_t &&) = default;
+	~TaskData_t() = default;
+
+	TaskData_t(float flVal)
+		: nType(TASK_DATA_FLOAT), flData(flVal)
+	{
+	}
+
+	TaskData_t(int iVal)
+		: nType(TASK_DATA_INT), iData(iVal)
+	{
+	}
+
+	TaskData_t(bool bVal)
+		: nType(TASK_DATA_BOOL), bData(bVal)
+	{
+	}
+
+	TaskData_t(Activity actVal)
+		: nType(TASK_DATA_ACTIVITY), activity(actVal)
+	{
+	}
+
+	union {
+		float	flData;
+		int iData;
+		bool bData;
+		char szStr[64] = {0};
+		Activity activity;
+		TaskGlobalId_t taskId;
+		SchedGlobalId_t schedId;
+		NPC_STATE nNpcState;
+		int nMemoryId;
+		pathType_t pathType;
+		goalType_t goalType;
+	};
+
+	bool CanBeBool() const
+	{
+		switch(nType) {
+		case TASK_DATA_NONE:
+			return false;
+		case TASK_DATA_FLOAT:
+			return true;
+		case TASK_DATA_INT:
+			return true;
+		case TASK_DATA_BOOL:
+			return true;
+		case TASK_DATA_STRING:
+			return true;
+		case TASK_DATA_ACTIVITY:
+			return true;
+		case TASK_DATA_NPCSTATE:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	bool AsBool() const
+	{
+		switch(nType) {
+		case TASK_DATA_NONE:
+			return false;
+		case TASK_DATA_FLOAT:
+			return flData > 0.0f;
+		case TASK_DATA_INT:
+			return iData > 0;
+		case TASK_DATA_BOOL:
+			return bData;
+		case TASK_DATA_STRING:
+			if(!V_stricmp(szStr, "true")) {
+				return true;
+			} else if(!V_stricmp(szStr, "false")) {
+				return false;
+			} else {
+				return V_atoi(szStr) > 0;
+			}
+		case TASK_DATA_ACTIVITY:
+			return activity != ACT_INVALID;
+		case TASK_DATA_NPCSTATE:
+			return nNpcState >= NPC_STATE_IDLE && nNpcState <= NPC_STATE_COMBAT;
+		default:
+			return false;
+		}
+	}
+
+	bool CanBeInt() const
+	{
+		switch(nType) {
+		case TASK_DATA_NONE:
+			return true;
+		case TASK_DATA_FLOAT:
+			return true;
+		case TASK_DATA_INT:
+			return true;
+		case TASK_DATA_BOOL:
+			return true;
+		case TASK_DATA_STRING:
+			return true;
+		case TASK_DATA_ACTIVITY:
+			return true;
+		case TASK_DATA_NPCSTATE:
+			return true;
+		case TASK_DATA_TASK_ID:
+			return true;
+		case TASK_DATA_SCHEDULE_ID:
+			return true;
+		case TASK_DATA_MEMORY_ID:
+			return true;
+		case TASK_DATA_PATH_TYPE:
+			return true;
+		case TASK_DATA_GOAL_TYPE:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	int AsInt() const
+	{
+		switch(nType) {
+		case TASK_DATA_NONE:
+			return -1;
+		case TASK_DATA_FLOAT:
+			return (int)flData;
+		case TASK_DATA_INT:
+			return iData;
+		case TASK_DATA_BOOL:
+			return bData ? 1 : 0;
+		case TASK_DATA_STRING:
+			if(!V_stricmp(szStr, "true")) {
+				return 1;
+			} else if(!V_stricmp(szStr, "false")) {
+				return 0;
+			} else {
+				return V_atoi(szStr);
+			}
+		case TASK_DATA_ACTIVITY:
+			return (int)activity;
+		case TASK_DATA_NPCSTATE:
+			return (int)nNpcState;
+		case TASK_DATA_TASK_ID:
+			return (int)taskId;
+		case TASK_DATA_SCHEDULE_ID:
+			return (int)schedId;
+		case TASK_DATA_MEMORY_ID:
+			return (int)nMemoryId;
+		case TASK_DATA_PATH_TYPE:
+			return (int)pathType;
+		case TASK_DATA_GOAL_TYPE:
+			return (int)goalType;
+		default:
+			return -1;
+		}
+	}
+
+	bool CanBeActivity() const
+	{
+		switch(nType) {
+		case TASK_DATA_NONE:
+			return false;
+		case TASK_DATA_INT:
+			return true;
+		case TASK_DATA_STRING:
+			return true;
+		case TASK_DATA_ACTIVITY:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	Activity AsActivity() const
+	{
+		switch(nType) {
+		case TASK_DATA_NONE:
+			return ACT_INVALID;
+		case TASK_DATA_INT:
+			return (Activity)iData;
+		case TASK_DATA_STRING:
+			return ActivityList_IndexForName( szStr );
+		case TASK_DATA_ACTIVITY:
+			return activity;
+		default:
+			return ACT_INVALID;
+		}
+	}
+
+	bool CanBeFloat() const
+	{
+		switch(nType) {
+		case TASK_DATA_NONE:
+			return true;
+		case TASK_DATA_FLOAT:
+			return true;
+		case TASK_DATA_INT:
+			return true;
+		case TASK_DATA_BOOL:
+			return true;
+		case TASK_DATA_STRING:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	float AsFloat() const
+	{
+		switch(nType) {
+		case TASK_DATA_NONE:
+			return -1.0f;
+		case TASK_DATA_FLOAT:
+			return flData;
+		case TASK_DATA_INT:
+			return (float)iData;
+		case TASK_DATA_BOOL:
+			return bData ? 1.0f : 0.0f;
+		case TASK_DATA_STRING:
+			if(!V_stricmp(szStr, "true")) {
+				return 1.0f;
+			} else if(!V_stricmp(szStr, "false")) {
+				return 0.0f;
+			} else {
+				return V_atof(szStr);
+			}
+		default:
+			return -1.0f;
+		}
+	}
+
+	TaskDataType_t nType = TASK_DATA_NONE;
 };
 
 //=========================================================
@@ -103,459 +364,91 @@ struct Task_t
 //=========================================================
 enum sharedtasks_e
 {
-		TASK_INVALID = 0,
-		
-		// Forces the activity to reset.
-		TASK_RESET_ACTIVITY,
-
-		// Waits for the specified number of seconds.
-		TASK_WAIT,					
-
-		// Make announce attack sound
-		TASK_ANNOUNCE_ATTACK,
-
-		// Waits for the specified number of seconds. Will constantly turn to 
-		// face the enemy while waiting. 
-		TASK_WAIT_FACE_ENEMY,
-
-		// Waits up to the specified number of seconds. Will constantly turn to 
-		// face the enemy while waiting. 
-		TASK_WAIT_FACE_ENEMY_RANDOM,
-
-		// Wait until the player enters the same PVS as this character.
-		TASK_WAIT_PVS,
-
-		// DON'T use this, it needs to go away. 
-		TASK_SUGGEST_STATE,
-
-		// Set m_hTargetEnt to nearest player
-		TASK_TARGET_PLAYER,
-
-		// Walk to m_hTargetEnt's location
-		TASK_SCRIPT_WALK_TO_TARGET,
-
-		// Run to m_hTargetEnt's location
-		TASK_SCRIPT_RUN_TO_TARGET,
-
-		// Move to m_hTargetEnt's location using the activity specified by m_hCine->m_iszCustomMove.
-		TASK_SCRIPT_CUSTOM_MOVE_TO_TARGET,
-
-		// Move to within specified range of m_hTargetEnt
-		TASK_MOVE_TO_TARGET_RANGE,
-
-		// Move to within specified range of our nav goal
-		TASK_MOVE_TO_GOAL_RANGE,
-
-		// Path that moves the character a few steps forward of where it is.
-		TASK_MOVE_AWAY_PATH,
-
-		TASK_GET_PATH_AWAY_FROM_BEST_SOUND,
-
-		// Set the implied goal for TASK_GET_PATH_TO_GOAL
-		TASK_SET_GOAL,
-
-		// Get the path to the goal specified by TASK_SET_GOAL
-		TASK_GET_PATH_TO_GOAL,
-
-		// Path to the enemy's location. Even if the enemy is unseen!
-		TASK_GET_PATH_TO_ENEMY,
-		
-		// Path to the last place this character saw the enemy
-		TASK_GET_PATH_TO_ENEMY_LKP,
-
-		// Path to the enemy's location or path to a LOS with the enemy's last known position, depending on range
-		TASK_GET_CHASE_PATH_TO_ENEMY,
-
-		// Path to a LOS with the enemy's last known position
-		TASK_GET_PATH_TO_ENEMY_LKP_LOS,
-
-		// Path to the dead enemy's carcass.
-		TASK_GET_PATH_TO_ENEMY_CORPSE,
-
-		// Path to the player's origin
-		TASK_GET_PATH_TO_PLAYER,
-
-		// Path to node with line of sight to enemy
-		TASK_GET_PATH_TO_ENEMY_LOS,
-
-		// Path to node with line of sight to enemy, at least flTaskData units away from m_vSavePosition
-		TASK_GET_FLANK_RADIUS_PATH_TO_ENEMY_LOS,
-
-		// Path to node with line of sight to enemy, at least flTaskData degrees away from m_vSavePosition from the enemy's POV
-		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LOS,
-
-		// Path to the within shot range of last place this character saw the enemy
-		TASK_GET_PATH_TO_RANGE_ENEMY_LKP_LOS,
-
-		// Build a path to m_hTargetEnt
-		TASK_GET_PATH_TO_TARGET,
-
-		// Allow a little slop, and allow for some Z offset (like the target is a gun on a table).
-		TASK_GET_PATH_TO_TARGET_WEAPON,
-
-		// I'm on another NPC's head and I need to get down
-		TASK_GET_PATH_OFF_OF_NPC,
-
-		TASK_CREATE_PENDING_WEAPON,
-
-		// Path to nodes[ m_pHintNode ]
-	#ifndef AI_USES_NAV_MESH
-		TASK_GET_PATH_TO_HINTNODE,
-	#else
-		TASK_GET_PATH_TO_NAV_AREA,
-	#endif
-
-		// Store current position for later reference
-		TASK_STORE_LASTPOSITION,
-
-		// Clear stored position
-		TASK_CLEAR_LASTPOSITION,
-
-		// Store current position for later reference
-		TASK_STORE_POSITION_IN_SAVEPOSITION,
-
-		// Store best sound position for later reference
-		TASK_STORE_BESTSOUND_IN_SAVEPOSITION,
-		TASK_STORE_BESTSOUND_REACTORIGIN_IN_SAVEPOSITION,
-
-		TASK_REACT_TO_COMBAT_SOUND,
-
-		// Store current enemy position in saveposition
-		TASK_STORE_ENEMY_POSITION_IN_SAVEPOSITION,
-
-		// Move to the goal specified by the player in command mode.
-		TASK_GET_PATH_TO_COMMAND_GOAL,
-
-		TASK_MARK_COMMAND_GOAL_POS,
-
-		TASK_CLEAR_COMMAND_GOAL,
-
-		// Path to last position (Last position must be stored with TASK_STORE_LAST_POSITION)
-		TASK_GET_PATH_TO_LASTPOSITION,
-
-		// Path to saved position (Save position must by set in code or by a task)
-		TASK_GET_PATH_TO_SAVEPOSITION,
-
-		// Path to location that has line of sight to saved position (Save position must by set in code or by a task)
-		TASK_GET_PATH_TO_SAVEPOSITION_LOS,
-
-		// Path to random node
-	#ifndef AI_USES_NAV_MESH
-		TASK_GET_PATH_TO_RANDOM_NODE,
-	#else
-		TASK_GET_PATH_TO_RANDOM_AREA,
-	#endif
-
-		// Path to source of loudest heard sound that I care about
-		TASK_GET_PATH_TO_BESTSOUND,
-
-		// Path to source of the strongest scend that I care about
-		TASK_GET_PATH_TO_BESTSCENT,
-
-		// Run the current path
-		TASK_RUN_PATH,	
-
-		// Walk the current path
-		TASK_WALK_PATH,	
-
-		// Walk the current path for a specified number of seconds
-		TASK_WALK_PATH_TIMED,
-
-		// Walk the current path until you are x units from the goal.
-		TASK_WALK_PATH_WITHIN_DIST,
-
-		// Walk the current path until for x units
-		TASK_WALK_PATH_FOR_UNITS,
-
-		// Rung the current path until you are x units from the goal.
-		TASK_RUN_PATH_FLEE,
-
-		// Run the current path for a specified number of seconds
-		TASK_RUN_PATH_TIMED,
-
-		// Run the current path until for x units
-		TASK_RUN_PATH_FOR_UNITS,
-
-		// Run the current path until you are x units from the goal.
-		TASK_RUN_PATH_WITHIN_DIST,
-
-		// Walk the current path sideways (must be supported by animation)
-		TASK_STRAFE_PATH,
-
-		// Clear m_flMoveWaitFinished (timer that inhibits movement)
-		TASK_CLEAR_MOVE_WAIT,
-
-		// Decide on the appropriate small flinch animation, and play it. 
-		TASK_SMALL_FLINCH,
-
-		// Decide on the appropriate big flinch animation, and play it. 
-		TASK_BIG_FLINCH,
-
-		// Prevent dodging for a certain amount of time.
-		TASK_DEFER_DODGE,
-
-		// Turn to face ideal yaw
-		TASK_FACE_IDEAL,
-
-		// Find an interesting direction to face. Don't face into walls, corners if you can help it.
-		TASK_FACE_REASONABLE,
-
-		// Turn to face the way I should walk or run
-		TASK_FACE_PATH,
-
-		// Turn to face a player
-		TASK_FACE_PLAYER,
-
-		// Turn to face the enemy
-		TASK_FACE_ENEMY,
-
-		// Turn to face nodes[ m_pHintNode ]
-	#ifndef AI_USES_NAV_MESH
-		TASK_FACE_HINTNODE,
-
-		// Play activity associate with the current hint
-		TASK_PLAY_HINT_ACTIVITY,
-	#else
-		TASK_FACE_NAV_AREA,
-
-		// Play activity associate with the current hint
-		TASK_PLAY_AREA_ACTIVITY,
-	#endif
-
-		// Turn to face m_hTargetEnt
-		TASK_FACE_TARGET,
-
-		// Turn to face stored last position (last position must be stored first!)
-		TASK_FACE_LASTPOSITION,
-
-		// Turn to face stored save position (save position must be stored first!)
-		TASK_FACE_SAVEPOSITION,
-
-		// Turn to face directly away from stored save position (save position must be stored first!)
-		TASK_FACE_AWAY_FROM_SAVEPOSITION,
-
-		// Set the current facing to be the ideal
-		TASK_SET_IDEAL_YAW_TO_CURRENT,
-
-		// Attack the enemy (should be facing the enemy)
-		TASK_RANGE_ATTACK1,
-		TASK_RANGE_ATTACK2,		
-		TASK_MELEE_ATTACK1,		
-		TASK_MELEE_ATTACK2,		
-
-		// Reload weapon
-		TASK_RELOAD,
-
-		// Execute special attack (user-defined)
-		TASK_SPECIAL_ATTACK1,
-		TASK_SPECIAL_ATTACK2,
-
-	#ifndef AI_USES_NAV_MESH
-		TASK_FIND_HINTNODE,
-		TASK_FIND_LOCK_HINTNODE,
-
-		TASK_CLEAR_HINTNODE,
-
-		// Claim m_pHintNode exclusively for this NPC.
-		TASK_LOCK_HINTNODE,
-	#else
-		TASK_FIND_NAV_AREA,
-		TASK_FIND_LOCK_NAV_AREA,
-
-		TASK_CLEAR_NAV_AREA,
-
-		// Claim m_pHintNode exclusively for this NPC.
-		TASK_LOCK_NAV_AREA,
-	#endif
-
-		// Emit an angry sound
-		TASK_SOUND_ANGRY,
-
-		// Emit a dying sound
-		TASK_SOUND_DEATH,
-
-		// Emit an idle sound
-		TASK_SOUND_IDLE,
-
-		// Emit a sound because you are pissed off because you just saw someone you don't like
-		TASK_SOUND_WAKE,
-
-		// Emit a pain sound
-		TASK_SOUND_PAIN,
-
-		// Emit a death sound
-		TASK_SOUND_DIE,
-
-		// Speak a sentence
-		TASK_SPEAK_SENTENCE,
-
-		// Wait for the current sentence I'm speaking to finish
-		TASK_WAIT_FOR_SPEAK_FINISH,
-
-		// Set current animation activity to the specified activity
-		TASK_SET_ACTIVITY,
-
-		// Adjust the framerate to plus/minus N%
-		TASK_RANDOMIZE_FRAMERATE,
-
-		// Immediately change to a schedule of the specified type
-		TASK_SET_SCHEDULE,
-
-		// Set the specified schedule to execute if the current schedule fails.
-		TASK_SET_FAIL_SCHEDULE,
-
-		// How close to route goal do I need to get
-		TASK_SET_TOLERANCE_DISTANCE,
-
-		// How many seconds should I spend search for a route
-		TASK_SET_ROUTE_SEARCH_TIME,
-
-		// Return to use of default fail schedule
-		TASK_CLEAR_FAIL_SCHEDULE,
-
-		// Play the specified animation sequence before continuing
-		TASK_PLAY_SEQUENCE,
-
-		// Play the specified private animation sequence before continuing
-		TASK_PLAY_PRIVATE_SEQUENCE,
-
-		// Turn to face the enemy while playing specified animation sequence
-		TASK_PLAY_PRIVATE_SEQUENCE_FACE_ENEMY,
-		TASK_PLAY_SEQUENCE_FACE_ENEMY,
-		TASK_PLAY_SEQUENCE_FACE_TARGET,
-
-		// tries lateral cover first, then node cover
-		TASK_FIND_COVER_FROM_BEST_SOUND,
-
-		// tries lateral cover first, then node cover
-		TASK_FIND_COVER_FROM_ENEMY,
-
-		// Find a place to hide from the enemy, somewhere on either side of me
-		TASK_FIND_LATERAL_COVER_FROM_ENEMY,
-
-		// Find a place further from the saved position
-		TASK_FIND_BACKAWAY_FROM_SAVEPOSITION,
-
-	#ifndef AI_USES_NAV_MESH
-		// Fine a place to hide from the enemy, anywhere. Use the node system.
-		TASK_FIND_NODE_COVER_FROM_ENEMY,
-
-		// Find a place to hide from the enemy that's within the specified distance
-		TASK_FIND_NEAR_NODE_COVER_FROM_ENEMY,
-
-		// data for this one is there MINIMUM aceptable distance to the cover.
-		TASK_FIND_FAR_NODE_COVER_FROM_ENEMY,
-	#else
-		// Fine a place to hide from the enemy, anywhere. Use the node system.
-		TASK_FIND_AREA_COVER_FROM_ENEMY,
-
-		// Find a place to hide from the enemy that's within the specified distance
-		TASK_FIND_NEAR_AREA_COVER_FROM_ENEMY,
-
-		// data for this one is there MINIMUM aceptable distance to the cover.
-		TASK_FIND_FAR_AREA_COVER_FROM_ENEMY,
-	#endif
-
-		// Find a place to go that can't see to where I am now.
-		TASK_FIND_COVER_FROM_ORIGIN,
-
-		// Unhook from the AI system.
-		TASK_DIE,
-
-		// Wait until scripted sequence plays
-		TASK_WAIT_FOR_SCRIPT,
-
-		// Play scripted sequence animation
-		TASK_PUSH_SCRIPT_ARRIVAL_ACTIVITY,
-		TASK_PLAY_SCRIPT,
-		TASK_PLAY_SCRIPT_POST_IDLE,
-		TASK_ENABLE_SCRIPT,
-		TASK_PLANT_ON_SCRIPT,
-		TASK_FACE_SCRIPT,
-
-		// Wait for scene to complete
-		TASK_PLAY_SCENE,
-
-		// Wait for 0 to specified number of seconds
-		TASK_WAIT_RANDOM,
-
-		// Wait forever (until this schedule is interrupted)
-		TASK_WAIT_INDEFINITE,
-
-		TASK_STOP_MOVING,
-		
-		// Turn left the specified number of degrees
-		TASK_TURN_LEFT,
-
-		// Turn right the specified number of degrees
-		TASK_TURN_RIGHT,
-
-		// Remember the specified piece of data
-		TASK_REMEMBER,
-
-		// Forget the specified piece of data
-		TASK_FORGET,
-		
-		// Wait until current movement is complete. 
-		TASK_WAIT_FOR_MOVEMENT,
-
-		// Wait until a single-step movement is complete.
-		TASK_WAIT_FOR_MOVEMENT_STEP,
-
-		// Wait until I can't hear any danger sound.
-		TASK_WAIT_UNTIL_NO_DANGER_SOUND,
-
-		// Pick up new weapons:
-		TASK_WEAPON_FIND,
-		TASK_WEAPON_PICKUP,
-		TASK_WEAPON_RUN_PATH,	// run to weapon but break if someone else picks it up
-		TASK_WEAPON_CREATE,
-
-		TASK_ITEM_PICKUP,
-		TASK_ITEM_RUN_PATH,
-
-		// Use small hull for tight navigation
-		TASK_USE_SMALL_HULL,
-
-		// wait until you are on ground
-		TASK_FALL_TO_GROUND,
-
-		// Wander for a specfied amound of time
-		TASK_WANDER,
-
-		TASK_FREEZE,
-
-		// regather conditions at the start of a schedule (all conditions are cleared between schedules)
-		TASK_GATHER_CONDITIONS,
-
-		// Require an enemy be seen after the task is run to be considered a candidate enemy
-		TASK_IGNORE_OLD_ENEMIES,
-		
-		TASK_DEBUG_BREAK,
-
-		// Add a specified amount of health to this NPC
-		TASK_ADD_HEALTH,
-
-		// Add a gesture layer and wait until it's finished
-		TASK_ADD_GESTURE_WAIT,
-
-		// Add a gesture layer
-		TASK_ADD_GESTURE,
-
-		// Get a path to my forced interaction partner
-		TASK_GET_PATH_TO_INTERACTION_PARTNER,
-		
-		// First task of all schedules for playing back scripted sequences
-		TASK_PRE_SCRIPT,
-
-		// Faces the actual interaction angles instead of just facing the enemy
-		TASK_FACE_INTERACTION_ANGLES,
-
-		// ======================================
-		// IMPORTANT: This must be the last enum
-		// ======================================
-		LAST_SHARED_TASK
-
+	#define AI_TASK_ENUM(name, params, ...) \
+		name __VA_OPT__( = __VA_ARGS__),
+
+	#include "ai_default_task_enum.inc"
+
+	// ======================================
+	// IMPORTANT: This must be the last enum
+	// ======================================
+	LAST_SHARED_TASK
 };
+
+#define TASK_MAX_PARAMETERS 5
+
+struct Task_t
+{
+	TaskId_t iTask = TASK_INVALID;
+	TaskData_t data[TASK_MAX_PARAMETERS];
+	int numData = 0;
+};
+
+enum TaskDataTypeCheck_t
+{
+	TASK_DATA_CHECK_NULL,
+	TASK_DATA_CHECK_FLOAT,
+	TASK_DATA_CHECK_INT,
+	TASK_DATA_CHECK_NUM,
+	TASK_DATA_CHECK_BOOL,
+	TASK_DATA_CHECK_STRING,
+	TASK_DATA_CHECK_ACTIVITY,
+	TASK_DATA_CHECK_TASK_ID,
+	TASK_DATA_CHECK_SCHEDULE_ID,
+	TASK_DATA_CHECK_NPCSTATE,
+	TASK_DATA_CHECK_MEMORY_ID,
+	TASK_DATA_CHECK_PATH_TYPE,
+	TASK_DATA_CHECK_GOAL_TYPE,
+};
+
+//TODO Arthurdead!!!! support optional parameters??
+
+struct TaskParamCheck_t
+{
+	TaskParamCheck_t(const TaskParamCheck_t &) = default;
+	TaskParamCheck_t &operator=(const TaskParamCheck_t &) = default;
+	TaskParamCheck_t(TaskParamCheck_t &&) = default;
+	TaskParamCheck_t &operator=(TaskParamCheck_t &&) = default;
+	~TaskParamCheck_t() = default;
+
+	TaskParamCheck_t()
+		: numTotal(0)
+	{
+		nTypes[0] = TASK_DATA_CHECK_NULL;
+	}
+
+	TaskParamCheck_t(TaskDataTypeCheck_t type)
+		: numTotal(1)
+	{
+		nTypes[0] = type;
+	}
+
+	template <int types_num>
+	TaskParamCheck_t(const TaskDataTypeCheck_t (&types)[types_num])
+		: numTotal(types_num)
+	{
+		COMPILE_TIME_ASSERT(types_num < TASK_MAX_PARAMETERS);
+
+		for(int i = 0; i < types_num; ++i) {
+			nTypes[i] = types[i];
+		}
+	}
+
+	int numTotal;
+	TaskDataTypeCheck_t nTypes[TASK_MAX_PARAMETERS];
+};
+
+typedef void(CAI_BaseNPC::*TaskFunc_t)(const Task_t *pTask);
+
+//-----------------
+
+#define DECLARE_TASK( id, params ) \
+	taskIds.PushBack( #id, id, params );
+
+#define ADD_CUSTOM_TASK_NAMED(derivedClass,taskName,taskEN,params)\
+	if ( !derivedClass::AccessClassScheduleIdSpaceDirect().AddTask( taskName, taskEN, params, derivedClass::gm_pszErrorClassName ) ) return;
+
+#define ADD_CUSTOM_TASK(derivedClass,taskEN,params) ADD_CUSTOM_TASK_NAMED(derivedClass,#taskEN,taskEN,params)
+
 
 #endif // AI_TASK_H

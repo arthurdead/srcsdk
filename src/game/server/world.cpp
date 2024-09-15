@@ -587,9 +587,15 @@ void CWorld::PostConstructor( const char *szClassname )
 
 CWorld::CWorld( )
 {
+	if(!g_WorldEntity)
+		g_WorldEntity = this;
+
 	AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
-	ActivityList_Init();
-	EventList_Init();
+
+	if(g_WorldEntity == this) {
+		ActivityList_Init();
+		EventList_Init();
+	}
 	
 	SetSolid( SOLID_BSP );
 	SetMoveType( MOVETYPE_NONE );
@@ -602,20 +608,25 @@ CWorld::CWorld( )
 
 CWorld::~CWorld( )
 {
-	// If in edit mode tell Hammer I'm ending my session. This re-enables
-	// the Hammer UI so they can continue editing the map.
-#ifdef _WIN32
-	Editor_EndSession(false);
-#endif
+	if(g_WorldEntity == this) {
+		// If in edit mode tell Hammer I'm ending my session. This re-enables
+		// the Hammer UI so they can continue editing the map.
+	#ifdef _WIN32
+		Editor_EndSession(false);
+	#endif
 
-	EventList_Free();
-	ActivityList_Free();
-	if ( GameRules() )
-	{
-		GameRules()->LevelShutdown();
-		UTIL_Remove( GameRules() );
+		EventList_Free();
+		ActivityList_Free();
+
+		if ( GameRules() )
+		{
+			GameRules()->LevelShutdown();
+			UTIL_Remove( GameRules() );
+		}
 	}
-	g_WorldEntity = NULL;
+
+	if(g_WorldEntity == this)
+		g_WorldEntity = NULL;
 }
 
 
@@ -654,6 +665,11 @@ void CWorld::RegisterSharedEvents( void )
 
 void CWorld::Spawn( void )
 {
+	if(g_WorldEntity && g_WorldEntity != this) {
+		UTIL_Remove(this);
+		return;
+	}
+
 	SetLocalOrigin( vec3_origin );
 	SetLocalAngles( vec3_angle );
 	// NOTE:  SHOULD NEVER BE ANYTHING OTHER THAN 1!!!
@@ -710,9 +726,12 @@ const char *GetDefaultLightstyleString( int styleIndex )
 
 void CWorld::Precache( void )
 {
+	if(g_WorldEntity && g_WorldEntity != this) {
+		return;
+	}
+
 	COM_TimestampedLog( "CWorld::Precache - Start" );
 
-	g_WorldEntity = this;
 	g_fGameOver = false;
 	g_pLastSpawn = NULL;
 	g_Language.SetValue( LANGUAGE_ENGLISH );	// TODO use VGUI to get current language

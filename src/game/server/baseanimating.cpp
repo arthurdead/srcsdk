@@ -1110,74 +1110,67 @@ void CBaseAnimating::DispatchAnimEvents ( CBaseAnimating *eventHandler )
 //-----------------------------------------------------------------------------
 void CBaseAnimating::HandleAnimEvent( animevent_t *pEvent )
 {
-	int nEvent = pEvent->Event();
+	Animevent nEvent = (Animevent)pEvent->Event();
 
-	if ((pEvent->type & AE_TYPE_NEWEVENTSYSTEM) && (pEvent->type & AE_TYPE_SERVER))
+	if ( nEvent == AE_SV_PLAYSOUND )
 	{
-		if ( nEvent == AE_SV_PLAYSOUND )
-		{
-			EmitSound( pEvent->options );
-			return;
-		}
-		else if ( nEvent == AE_NPC_RESPONSE )
-		{
-			if (MyNPCPointer() && MyNPCPointer()->GetExpresser() && !MyNPCPointer()->GetExpresser()->IsSpeaking())
-			{
-				DispatchResponse( pEvent->options );
-			}
-			return;
-		}
-		else if ( nEvent == AE_NPC_RESPONSE_FORCED )
+		EmitSound( pEvent->options );
+		return;
+	}
+	else if ( nEvent == AE_NPC_RESPONSE )
+	{
+		if (MyNPCPointer() && MyNPCPointer()->GetExpresser() && !MyNPCPointer()->GetExpresser()->IsSpeaking())
 		{
 			DispatchResponse( pEvent->options );
-			return;
 		}
-		else if ( nEvent == AE_RAGDOLL )
-		{
-			// Convert to ragdoll immediately
-			BecomeRagdollOnClient( vec3_origin );
-			return;
-		}
-		else if ( nEvent == AE_SV_DUSTTRAIL )
-		{
-			char szAttachment[128];
-			float flDuration;
-			float flSize;
-			if (sscanf( pEvent->options, "%s %f %f", szAttachment, &flDuration, &flSize ) == 3)
-			{
-				CHandle<DustTrail>	hDustTrail;
-
-				hDustTrail = DustTrail::CreateDustTrail();
-
-				if( hDustTrail )
-				{
-					hDustTrail->m_SpawnRate = 4;    // Particles per second
-					hDustTrail->m_ParticleLifetime = 1.5;   // Lifetime of each particle, In seconds
-					hDustTrail->m_Color.Init(0.5f, 0.46f, 0.44f);
-					hDustTrail->m_StartSize = flSize;
-					hDustTrail->m_EndSize = hDustTrail->m_StartSize * 8;
-					hDustTrail->m_SpawnRadius = 3;    // Each particle randomly offset from the center up to this many units
-					hDustTrail->m_MinSpeed = 4;    // u/sec
-					hDustTrail->m_MaxSpeed = 10;    // u/sec
-					hDustTrail->m_Opacity = 0.5f;  
-					hDustTrail->SetLifetime(flDuration);  // Lifetime of the spawner, in seconds
-					hDustTrail->m_StopEmitTime = gpGlobals->curtime + flDuration;
-					hDustTrail->SetParent( this, LookupAttachment( szAttachment ) );
-					hDustTrail->SetLocalOrigin( vec3_origin );
-				}
-			}
-			else
-			{
-				DevWarning( 1, "%s unable to parse AE_SV_DUSTTRAIL event \"%s\"\n", STRING( GetModelName() ), pEvent->options );
-			}
-
-			return;
-		}
-	}
-
-	// New event, not meant for server.  Don't spam console.
-	if ((pEvent->type & AE_TYPE_NEWEVENTSYSTEM) && !(pEvent->type & AE_TYPE_SERVER))
 		return;
+	}
+	else if ( nEvent == AE_NPC_RESPONSE_FORCED )
+	{
+		DispatchResponse( pEvent->options );
+		return;
+	}
+	else if ( nEvent == AE_RAGDOLL )
+	{
+		// Convert to ragdoll immediately
+		BecomeRagdollOnClient( vec3_origin );
+		return;
+	}
+	else if ( nEvent == AE_SV_DUSTTRAIL )
+	{
+		char szAttachment[128];
+		float flDuration;
+		float flSize;
+		if (sscanf( pEvent->options, "%s %f %f", szAttachment, &flDuration, &flSize ) == 3)
+		{
+			CHandle<DustTrail>	hDustTrail;
+
+			hDustTrail = DustTrail::CreateDustTrail();
+
+			if( hDustTrail )
+			{
+				hDustTrail->m_SpawnRate = 4;    // Particles per second
+				hDustTrail->m_ParticleLifetime = 1.5;   // Lifetime of each particle, In seconds
+				hDustTrail->m_Color.Init(0.5f, 0.46f, 0.44f);
+				hDustTrail->m_StartSize = flSize;
+				hDustTrail->m_EndSize = hDustTrail->m_StartSize * 8;
+				hDustTrail->m_SpawnRadius = 3;    // Each particle randomly offset from the center up to this many units
+				hDustTrail->m_MinSpeed = 4;    // u/sec
+				hDustTrail->m_MaxSpeed = 10;    // u/sec
+				hDustTrail->m_Opacity = 0.5f;  
+				hDustTrail->SetLifetime(flDuration);  // Lifetime of the spawner, in seconds
+				hDustTrail->m_StopEmitTime = gpGlobals->curtime + flDuration;
+				hDustTrail->SetParent( this, LookupAttachment( szAttachment ) );
+				hDustTrail->SetLocalOrigin( vec3_origin );
+			}
+		}
+		else
+		{
+			DevWarning( 1, "%s unable to parse AE_SV_DUSTTRAIL event \"%s\"\n", STRING( GetModelName() ), pEvent->options );
+		}
+
+		return;
+	}
 
 	// Failed to find a handler
 	const char *pName = EventList_NameForIndex( nEvent );
@@ -2371,7 +2364,7 @@ void CBaseAnimating::SetSequenceBox( void )
 
 //=========================================================
 //=========================================================
-int CBaseAnimating::RegisterPrivateActivity( const char *pszActivityName )
+Activity CBaseAnimating::RegisterPrivateActivity( const char *pszActivityName )
 {
 	return ActivityList_RegisterPrivateActivity( pszActivityName );
 }
@@ -2391,7 +2384,7 @@ int CBaseAnimating::RegisterPrivateActivity( const char *pszActivityName )
 //			entity that registered an activity there, and the activity name
 //			each character registered.
 //-----------------------------------------------------------------------------
-void CBaseAnimating::ReportMissingActivity( int iActivity )
+void CBaseAnimating::ReportMissingActivity( Activity iActivity )
 {
 	Msg( "%s has no sequence for act:%s\n", GetClassname(), ActivityList_NameForIndex(iActivity) );
 }

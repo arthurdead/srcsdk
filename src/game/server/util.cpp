@@ -1502,19 +1502,11 @@ void UTIL_SetModel( CBaseEntity *pEntity, const char *pModelName )
 	int i = modelinfo->GetModelIndex( pModelName );
 	if ( i == -1 )	
 	{
-#if !defined(_DEBUG)
-		// Throwing a program-terminating error might be a little too much since we could just precache it here.
-		// If we're not in debug mode, just let it off with a nice warning.
-		if (int newi = CBaseEntity::PrecacheModel(pModelName))
-		{
-			i = newi;
-			Warning("%s was not precached\n", pModelName);
-		}
-#else
-		Error("%i/%s - %s:  UTIL_SetModel:  not precached: %s\n", pEntity->entindex(),
+		Warning("%i/%s - %s:  UTIL_SetModel:  not precached: %s\n", pEntity->entindex(),
 			STRING( pEntity->GetEntityName() ),
 			pEntity->GetClassname(), pModelName);
-#endif
+
+		i = CBaseEntity::PrecacheModel( pModelName );
 	}
 
 	CBaseAnimating *pAnimating = pEntity->GetBaseAnimating();
@@ -2914,11 +2906,11 @@ AngularImpulse WorldToLocalRotation( const VMatrix &localToWorld, const Vector &
 //			*pLength - 
 // Output : byte
 //-----------------------------------------------------------------------------
-byte *UTIL_LoadFileForMe( const char *filename, int *pLength )
+byte *UTIL_LoadFileForMe( const char *filename, int *pLength, const char *pPathID )
 {
 	void *buffer = NULL;
 
-	int length = filesystem->ReadFileEx( filename, "GAME", &buffer, true, true );
+	int length = filesystem->ReadFileEx( filename, pPathID, &buffer, true, true );
 
 	if ( pLength )
 	{

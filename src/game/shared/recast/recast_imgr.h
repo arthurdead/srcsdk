@@ -11,6 +11,7 @@
 #pragma once
 
 #include "tier0/platform.h"
+#include "ai_hull.h"
 
 class dtNavMesh;
 class dtNavMeshQuery;
@@ -20,8 +21,8 @@ abstract_class IRecastMgr
 {
 public:
 	// Used for debugging purposes on client
-	virtual dtNavMesh* GetNavMesh( const char *meshName ) = 0;
-	virtual dtNavMeshQuery* GetNavMeshQuery( const char *meshName ) = 0;
+	virtual dtNavMesh* GetNavMesh( Hull_t hull ) = 0;
+	virtual dtNavMeshQuery* GetNavMeshQuery( Hull_t hull ) = 0;
 	virtual IMapMesh* GetMapMesh() = 0;
 };
 

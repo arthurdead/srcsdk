@@ -644,13 +644,16 @@ void C_BaseAnimatingOverlay::DoAnimationEvents( CStudioHdr *pStudioHdr )
 			for (int i = 0; i < (int)seqdesc.numevents; i++)
 			{
 				// ignore all non-client-side events
-				if ( pevent[i].type & AE_TYPE_NEWEVENTSYSTEM )
-				{
-					if ( !( pevent[i].type & AE_TYPE_CLIENT ) )
-						 continue;
-				}
-				else if ( pevent[i].Event_OldSystem() < EVENT_CLIENT ) //Adrian - Support the old event system
-					continue;
+				bool bClient = ( (pevent[i].Type() & AE_TYPE_CLIENT) != 0 );
+				bool bServer = ( (pevent[i].Type() & AE_TYPE_SERVER) != 0 );
+
+			#ifdef GAME_DLL
+				if ( !bServer && bClient )
+					 continue;
+			#else
+				if ( !bClient && bServer )
+					 continue;
+			#endif
 			
 				if ( pevent[i].cycle <= m_flOverlayPrevEventCycle[j] )
 					continue;
@@ -676,13 +679,16 @@ void C_BaseAnimatingOverlay::DoAnimationEvents( CStudioHdr *pStudioHdr )
 
 		for (int i = 0; i < (int)seqdesc.numevents; i++)
 		{
-			if ( pevent[i].type & AE_TYPE_NEWEVENTSYSTEM )
-			{
-				if ( !( pevent[i].type & AE_TYPE_CLIENT ) )
-					 continue;
-			}
-			else if ( pevent[i].Event_OldSystem() < EVENT_CLIENT ) //Adrian - Support the old event system
-				continue;
+			bool bClient = ( (pevent[i].Type() & AE_TYPE_CLIENT) != 0 );
+			bool bServer = ( (pevent[i].Type() & AE_TYPE_SERVER) != 0 );
+
+		#ifdef GAME_DLL
+			if ( !bServer && bClient )
+				 continue;
+		#else
+			if ( !bClient && bServer )
+				 continue;
+		#endif
 
 			if ( (pevent[i].cycle > m_flOverlayPrevEventCycle[j] && pevent[i].cycle <= m_AnimOverlay[j].m_flCycle) )
 			{

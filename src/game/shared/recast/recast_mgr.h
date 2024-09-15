@@ -14,6 +14,7 @@
 #include "DetourTileCache.h"
 #include "recast_imgr.h"
 #include "ehandle.h"
+#include "ai_hull.h"
 
 #ifdef GAME_DLL
 class CBaseEntity;
@@ -57,24 +58,24 @@ public:
 	virtual void Update( float dt );
 
 	// Load methods
-	virtual bool InitDefaultMeshes();
-	virtual bool InsertMesh( const char *name, float agentRadius, float agentHeight, float agentMaxClimb, float agentMaxSlope );
+	virtual bool InitMeshes();
+	virtual bool InsertMesh( Hull_t hull, float agentRadius, float agentHeight, float agentMaxClimb, float agentMaxSlope );
 	virtual bool Load();
 	virtual void Reset();
 	
 	// Accessors for Units
 	bool HasMeshes();
-	CRecastMesh *GetMesh( const char *name );
+	CRecastMesh *GetMeshOfHull( Hull_t hull );
 	CRecastMesh *FindBestMeshForRadiusHeight( float radius, float height );
 	CRecastMesh *FindBestMeshForEntity( CBaseEntity *pEntity );
-	bool IsMeshLoaded( const char *name );
+	bool IsMeshLoaded( Hull_t hull );
 
 	const char *FindBestMeshNameForRadiusHeight( float radius, float height );
 	const char *FindBestMeshNameForEntity( CBaseEntity *pEntity );
 
 	// Used for debugging purposes on client. Don't use for anything else!
-	virtual dtNavMesh* GetNavMesh( const char *meshName );
-	virtual dtNavMeshQuery* GetNavMeshQuery( const char *meshName );
+	virtual dtNavMesh* GetNavMesh( Hull_t hull );
+	virtual dtNavMeshQuery* GetNavMeshQuery( Hull_t hull );
 	virtual IMapMesh* GetMapMesh();
 	
 #ifndef CLIENT_DLL
@@ -84,7 +85,7 @@ public:
 	virtual bool Build( bool loadDefaultMeshes = true );
 	virtual bool Save();
 
-	virtual bool IsMeshBuildDisabled( const char *meshName );
+	virtual bool IsMeshBuildDisabled( Hull_t hull );
 
 	// Rebuilds mesh partial. Clears and rebuilds tiles touching the bounds.
 	virtual bool RebuildPartial( const Vector &vMins, const Vector& vMaxs );
@@ -108,12 +109,12 @@ public:
 	void DebugListMeshes();
 
 private:
-	CRecastMesh *GetMesh( int index );
-	int FindMeshIndex( const char *name );
+	CRecastMesh *GetMeshByIndex( int index );
+	int FindMeshIndex( Hull_t hull );
 
 #ifndef CLIENT_DLL
 	const char *GetFilename( void ) const;
-	virtual bool BuildMesh( CMapMesh *m_pMapMesh, const char *name );
+	virtual bool BuildMesh( CMapMesh *m_pMapMesh, Hull_t hull );
 #endif // CLIENT_DLL
 
 	NavObstacleArray_t &FindOrCreateObstacle( CBaseEntity *pEntity );
@@ -134,7 +135,7 @@ private:
 	CUtlVector< PartialMeshUpdate_t > m_pendingPartialMeshUpdates;
 #endif // CLIENT_DLL
 
-	CUtlDict< CRecastMesh *, int > m_Meshes;
+	CUtlMap< Hull_t, CRecastMesh * > m_Meshes;
 
 	CUtlMap< EHANDLE, NavObstacleArray_t > m_Obstacles;
 };
@@ -146,11 +147,11 @@ inline bool CRecastMgr::HasMeshes()
 	return m_bLoaded;
 }
 
-inline CRecastMesh *CRecastMgr::GetMesh( const char *name )
+inline CRecastMesh *CRecastMgr::GetMeshOfHull( Hull_t hull )
 {
-	int idx = FindMeshIndex( name );
+	int idx = FindMeshIndex( hull );
 	if( idx != -1 )
-		return GetMesh( idx );
+		return GetMeshByIndex( idx );
 	return NULL;
 }
 

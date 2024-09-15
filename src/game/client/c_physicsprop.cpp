@@ -22,7 +22,16 @@
 
 IMPLEMENT_CLIENTCLASS_DT(C_PhysicsProp, DT_PhysicsProp, CPhysicsProp)
 	RecvPropBool( RECVINFO( m_bAwake ) ),
+	RecvPropInt( RECVINFO( m_iPhysicsMode ) ),
+	RecvPropFloat( RECVINFO( m_fMass ) ),
+	RecvPropVector( RECVINFO( m_collisionMins ) ),
+	RecvPropVector( RECVINFO( m_collisionMaxs ) ),
 END_RECV_TABLE()
+
+LINK_ENTITY_TO_CLASS( physics_prop, C_PhysicsProp );
+LINK_ENTITY_TO_CLASS( prop_physics, C_PhysicsProp );	
+LINK_ENTITY_TO_CLASS( prop_physics_override, C_PhysicsProp );	
+LINK_ENTITY_TO_CLASS(prop_physics_multiplayer, C_PhysicsProp);
 
 ConVar r_PhysPropStaticLighting( "r_PhysPropStaticLighting", "1" );
 
@@ -33,6 +42,7 @@ ConVar r_visualizeproplightcaching( "r_visualizeproplightcaching", "0" );
 // Purpose: 
 //-----------------------------------------------------------------------------
 C_PhysicsProp::C_PhysicsProp( void )
+	: C_BreakableProp(), ISpecialPhysics()
 {
 	m_pPhysicsObject = NULL;
 	m_takedamage = DAMAGE_YES;
@@ -80,6 +90,16 @@ IClientModelRenderable*	C_PhysicsProp::GetClientModelRenderable()
 	// if the prop is known by the viewrender system to be opaque already
 	// so we need no other opacity checks here.
 	return this;
+}
+
+void C_PhysicsProp::ComputeWorldSpaceSurroundingBox( Vector *mins, Vector *maxs )
+{
+	Assert( mins != NULL && maxs != NULL );
+	if ( !mins || !maxs )
+		return;
+
+	// Take our saved collision bounds, and transform into world space
+	TransformAABB( EntityToWorldTransform(), m_collisionMins, m_collisionMaxs, *mins, *maxs );
 }
 
 bool C_PhysicsProp::GetRenderData( void *pData, ModelDataCategory_t nCategory )

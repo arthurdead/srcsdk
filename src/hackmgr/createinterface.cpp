@@ -16,6 +16,9 @@ static CreateInterfaceFn launcher_createinterface = NULL;
 static CSysModule *materials_DLL = NULL;
 static CreateInterfaceFn materials_createinterface = NULL;
 
+static CSysModule *vstdlib_DLL = NULL;
+static CreateInterfaceFn vstdlib_createinterface = NULL;
+
 static CreateInterfaceFn do_load(CreateInterfaceFn &func, CSysModule *&dll, const char *name)
 {
 	if(!func) {
@@ -45,4 +48,13 @@ CreateInterfaceFn GetLauncherInterfaceFactory()
 CreateInterfaceFn GetMaterialSystemInterfaceFactory()
 {
 	return do_load(materials_createinterface, materials_DLL, "materialsystem" DLL_EXT_STRING);
+}
+
+CreateInterfaceFn GetVstdlibInterfaceFactory()
+{
+#ifdef __linux__
+	return do_load(vstdlib_createinterface, vstdlib_DLL, "libvstdlib" DLL_EXT_STRING);
+#else
+	return do_load(vstdlib_createinterface, vstdlib_DLL, "vstdlib" DLL_EXT_STRING);
+#endif
 }

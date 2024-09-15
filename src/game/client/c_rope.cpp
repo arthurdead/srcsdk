@@ -87,7 +87,7 @@ static ConVar rope_smooth_maxalphawidth( "rope_smooth_maxalphawidth", "1.75" );
 static ConVar rope_smooth_maxalpha( "rope_smooth_maxalpha", "0.5", 0, "Alpha for rope antialiasing effect" );
 
 extern ConVar mat_fullbright; // get it from the engine
-static ConVar r_drawropes( "r_drawropes", "1", FCVAR_CHEAT );
+static ConVar r_drawropes( "r_drawropes", "0", FCVAR_CHEAT );
 static ConVar r_queued_ropes( "r_queued_ropes", "1" );
 static ConVar r_ropetranslucent( "r_ropetranslucent", "1");
 static ConVar r_rope_holiday_light_scale( "r_rope_holiday_light_scale", "0.055", FCVAR_DEVELOPMENTONLY );
@@ -655,37 +655,16 @@ bool CRopeManager::IsHolidayLightMode( void )
 		return false;
 	}
 
-#ifdef TF_CLIENT_DLL
-	if ( TFGameRules() && TFGameRules()->IsPowerupMode() )
-	{
-		// We don't want to draw the lights for the grapple.
-		// They get left behind for a while and look bad.
-		return false;
-	}
-#endif
-
 	bool bDrawHolidayLights = false;
 
-#ifdef USES_ECON_ITEMS
 	if ( !m_bHolidayInitialized && GameRules() )
 	{
 		m_bHolidayInitialized = true;
-		m_bDrawHolidayLights = GameRules()->IsHolidayActive( kHoliday_Christmas );
+		m_bDrawHolidayLights = GameRules()->IsHolidayActive( HOLIDAY_CHRISTMAS );
 	}
 
 	bDrawHolidayLights = m_bDrawHolidayLights;
 	m_nHolidayLightsStyle = 0;
-
-#ifdef TF_CLIENT_DLL
-	// Turn them on in Pyro-vision too
-	if ( IsLocalPlayerUsingVisionFilterFlags( TF_VISION_FILTER_PYRO ) )
-	{
-		bDrawHolidayLights = true;
-		m_nHolidayLightsStyle = 1;
-	}
-#endif // TF_CLIENT_DLL
-
-#endif // USES_ECON_ITEMS
 
 	return bDrawHolidayLights;
 }
@@ -1119,6 +1098,9 @@ C_RopeKeyframe* C_RopeKeyframe::Create(
 	int ropeFlags
 	)
 {
+	if(!r_drawropes.GetBool())
+		return NULL;
+
 	C_ClientRopeKeyframe *pRope = CREATE_ENTITY(C_ClientRopeKeyframe, "client_keyframerope");
 	if(!pRope)
 		return NULL;
@@ -1539,6 +1521,9 @@ bool C_RopeKeyframe::ShouldDraw()
 	if( !(m_RopeFlags & ROPE_SIMULATE) )
 		return false;
 
+	if(!r_drawropes.GetBool())
+		return false;
+
 	CPULevel_t nCPULevel = GetCPULevel();
 	bool bNoDraw = ( GetMinCPULevel() && GetMinCPULevel()-1 > nCPULevel );
 	bNoDraw = bNoDraw || ( GetMaxCPULevel() && GetMaxCPULevel()-1 < nCPULevel );
@@ -1807,7 +1792,7 @@ void C_RopeKeyframe::BuildRope( RopeSegData_t *pSegmentData, const Vector &vCurr
 			data.m_nHitBox = ( iNode << 8 );
 			data.m_flScale = r_rope_holiday_light_scale.GetFloat();
 			data.m_vOrigin = pSegmentData->m_Segments[nSegmentCount].m_vPos;
-			DispatchEffect( "TF_HolidayLight", data );
+			DispatchEffect( "HolidayLight", data );
 		}
 
 		++nSegmentCount;
@@ -1841,7 +1826,7 @@ void C_RopeKeyframe::BuildRope( RopeSegData_t *pSegmentData, const Vector &vCurr
 					data.m_nHitBox++;
 					data.m_flScale = r_rope_holiday_light_scale.GetFloat();
 					data.m_vOrigin = pSegmentData->m_Segments[nSegmentCount].m_vPos;
-					DispatchEffect( "TF_HolidayLight", data );
+					DispatchEffect( "HolidayLight", data );
 				}
 
 				++nSegmentCount;
@@ -2076,7 +2061,6 @@ bool C_RopeKeyframe::GetEndPointPos( int iPt, Vector &vPos )
 
 IMaterial* C_RopeKeyframe::GetSolidMaterial( void )
 {
-#ifdef TF_CLIENT_DLL
 	if ( RopeManager()->IsHolidayLightMode() )
 	{
 		if ( RopeManager()->GetHolidayLightStyle() == 1 )
@@ -2084,7 +2068,6 @@ IMaterial* C_RopeKeyframe::GetSolidMaterial( void )
 			return materials->FindMaterial( "cable/pure_white", TEXTURE_GROUP_OTHER );
 		}
 	}
-#endif
 
 	return m_pMaterial;
 }

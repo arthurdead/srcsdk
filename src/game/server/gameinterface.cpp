@@ -603,6 +603,8 @@ static bool InitGameSystems( CreateInterfaceFn appSystemFactory )
 	TheNavMesh = NavMeshFactory();
 #endif
 
+	RecastMgr().Init();
+
 	return true;
 }
 
@@ -1153,6 +1155,8 @@ void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edictCount, int cl
 		TheNavMesh->OnServerActivate();
 	}
 #endif
+
+	RecastMgr().Load();
 }
 
 //-----------------------------------------------------------------------------
@@ -1256,6 +1260,8 @@ void CServerGameDLL::GameFrame( bool simulating )
 	if( TheNavMesh )
 		TheNavMesh->Update();
 #endif
+
+	RecastMgr().Update( gpGlobals->frametime );
 
 	{
 		VPROF( "gamestatsuploader->UpdateConnection" );
@@ -1417,6 +1423,8 @@ void CServerGameDLL::LevelShutdown( void )
 		TheNavMesh->Reset();
 	}
 #endif
+
+	RecastMgr().Reset();
 }
 
 //-----------------------------------------------------------------------------
@@ -3122,8 +3130,7 @@ class CGameServerLoopback : public CBaseAppSystem< IGameServerLoopback >
 public:
 	virtual IRecastMgr *GetRecastMgr()
 	{
-		//return &RecastMgr();
-		return NULL;
+		return &RecastMgr();
 	}
 };
 

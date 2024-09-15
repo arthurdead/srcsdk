@@ -527,7 +527,7 @@ void CPoseDebuggerImpl::AccumulatePose( const CStudioHdr *pStudioHdr, CIKContext
 	ModelPoseDebugInfo::InfoText txt;
 	int numLines = 0;
 	
-	txt.m_iActivity = seqdesc.activity;
+	txt.m_iActivity = seqdesc.Activity();
 	sprintf( txt.m_chActivity, "%s", seqdesc.pszActivityName() );
 	sprintf( txt.m_chLabel, "%s", seqdesc.pszLabel() );
 

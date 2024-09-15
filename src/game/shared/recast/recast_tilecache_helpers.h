@@ -12,6 +12,7 @@
 #include "DetourTileCache.h"
 #include "DetourTileCacheBuilder.h"
 #include "tier1/utlvector.h"
+#include "ai_hull.h"
 
 class CMapMesh;
 
@@ -50,7 +51,7 @@ class COffMeshConnection;
 
 struct MeshProcess : public dtTileCacheMeshProcess
 {
-	MeshProcess( const char *meshName );
+	MeshProcess( Hull_t hull );
 
 	virtual void process(struct dtNavMeshCreateParams* params,
 						 unsigned char* polyAreas, unsigned short* polyFlags);

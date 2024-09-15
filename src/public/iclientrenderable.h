@@ -320,19 +320,17 @@ public:
 	virtual int DO_NOT_USE_DrawModel(int flags) final
 	{
 		RenderableInstance_t &instance = GetDefaultRenderableInstance();
-		IClientAlphaPropertyMod *pAlphaProp = GetClientAlphaPropertyMod();
-		if(pAlphaProp)
-			instance.m_nAlpha = pAlphaProp->GetAlphaBlend();
-		else
-			instance.m_nAlpha = 255;
 		return static_cast<IClientRenderableMod *>(this)->DrawModel(flags, instance);
 	}
 
 	virtual void DO_NOT_USE_ComputeFxBlend() final
 	{
 		IClientAlphaPropertyMod *pAlphaProp = GetClientAlphaPropertyMod();
-		if(pAlphaProp)
+		if(pAlphaProp) {
 			pAlphaProp->ComputeAlphaBlend();
+			RenderableInstance_t &instance = GetDefaultRenderableInstance();
+			instance.m_nAlpha = pAlphaProp->GetAlphaBlend();
+		}
 	}
 
 	virtual int DO_NOT_USE_GetFxBlend() final

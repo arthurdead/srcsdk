@@ -39,7 +39,7 @@
 
 // UNDONE: Hook collisions into the physics system to generate touch functions and take damage on falls
 // UNDONE: Base class PhysBrush
-class CPhysBox : public CBreakable
+class CPhysBox : public CBreakable, public ISpecialPhysics
 {
 DECLARE_CLASS( CPhysBox, CBreakable );
 
@@ -47,6 +47,7 @@ public:
 	DECLARE_SERVERCLASS();
 
 	void	Spawn ( void );
+	virtual void Activate();
 	bool	CreateVPhysics();
 	void	Move( const Vector &force );
 	virtual int ObjectCaps();
@@ -69,6 +70,21 @@ public:
 	virtual QAngle PreferredCarryAngles( void ) { return m_angPreferredCarryAngles; }
 
 	int			ExploitableByPlayer() const { return m_iExploitableByPlayer; }
+
+	virtual int GetPhysicsMode()
+	{
+		return m_iPhysicsMode;
+	}
+
+	virtual float GetMass()
+	{
+		return m_fMass;
+	}
+
+	virtual bool IsAsleep()
+	{
+		return VPhysicsGetObject()->IsAsleep();
+	}
 
 	// inputs
 	void InputWake( inputdata_t &inputdata );
@@ -102,6 +118,9 @@ protected:
 	COutputEvent	m_OnPlayerUse;
 
 	CHandle<CBasePlayer>	m_hCarryingPlayer;	// Player who's carrying us
+
+	CNetworkVar( int, m_iPhysicsMode );	// One of the PHYSICS_MULTIPLAYER_ defines.	
+	CNetworkVar( float, m_fMass );
 };
 
 // ---------------------------------------------------------------------

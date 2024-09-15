@@ -182,6 +182,10 @@ void CClientAlphaProperty::SetFade( float flGlobalFadeScale, float flDistFadeSta
 //-----------------------------------------------------------------------------
 void CClientAlphaProperty::ComputeAlphaBlend( )
 {
+	// Don't recompute if we've already computed this frame
+	if ( m_nFXComputeFrame == gpGlobals->framecount )
+		return;
+
 	if ( m_nRenderMode == kRenderNone || m_nRenderMode == kRenderEnvironmental )
 	{
 		m_nAlphaBlend = 0;
@@ -297,6 +301,8 @@ void CClientAlphaProperty::ComputeAlphaBlend( )
 	}
 
 	m_nAlphaBlend = clamp( m_nAlphaBlend, 0, 255 );
+
+	m_nFXComputeFrame = gpGlobals->framecount;
 }
 
 uint8 CClientAlphaProperty::ComputeRenderAlpha( bool bShadow )

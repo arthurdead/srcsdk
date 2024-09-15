@@ -13,6 +13,8 @@
 #include "gamebspfile.h"
 #include <filesystem.h>
 #include "SkyCamera.h"
+#include "player.h"
+#include "ai_basenpc.h"
 
 #include "ChunkyTriMesh.h"
 
@@ -334,7 +336,14 @@ bool CMapMesh::GenerateDispVertsAndTris( void *fileContent, CUtlVector<float> &v
 //-----------------------------------------------------------------------------
 vcollide_t *LoadModelPhysCollide( const char *pModelName )
 {
-	const model_t *pModel = modelinfo->FindOrLoadModel( pModelName );
+	int modelindex = CBaseEntity::PrecacheModel( pModelName );
+	if( modelindex == -1 )
+	{
+		Warning("LoadModelPhysCollide: unable to load model %s\n", pModelName);
+		return NULL;
+	}
+
+	const model_t *pModel = modelinfo->GetModel( modelindex );
 	if( !pModel )
 	{
 		Warning("LoadModelPhysCollide: unable to load model %s\n", pModelName);
@@ -350,6 +359,12 @@ vcollide_t *LoadModelPhysCollide( const char *pModelName )
 void CMapMesh::AddCollisionModelToMesh( const matrix3x4_t &transform, CPhysCollide const *pCollisionModel, 
 	CUtlVector<float> &verts, CUtlVector<int> &triangles, int filterContents )
 {
+	if( !pCollisionModel )
+	{
+		Warning("AddCollisionModelToMesh: could not create collision query model\n");
+		return;
+	}
+
 	ICollisionQuery *pCollisionQuery = physcollision->CreateQueryModel( (CPhysCollide *)pCollisionModel );
 	if( !pCollisionQuery )
 	{
@@ -417,13 +432,13 @@ bool CMapMesh::GenerateStaticPropData( void *fileContent, CUtlVector<float> &ver
 		dgamelump_t *gamelump = (dgamelump_t *)((char *)gamelumpheader + sizeof( dgamelumpheader_t ) + (i * sizeof( dgamelump_t )));
 		if( gamelump->id == GAMELUMP_STATIC_PROPS )
 		{
-			if( gamelump->version == GAMELUMP_STATIC_PROPS_VERSION )
+			if( (gamelump->version >= GAMELUMP_STATIC_PROPS_MIN_VERSION && gamelump->version <= GAMELUMP_STATIC_PROPS_VERSION) && gamelump->version != 9 )
 			{
 				staticPropLumpHeader = gamelump;
 			}
 			else
 			{
-				Warning("CRecastMesh::GenerateStaticPropData: Found static prop lump with version %d, but expected %d!\n", gamelump->version, GAMELUMP_STATIC_PROPS_VERSION );
+				Warning("CRecastMesh::GenerateStaticPropData: Found static prop lump with version %d, but expected 4, 5, 6, 7, 8 or %d!\n", gamelump->version, GAMELUMP_STATIC_PROPS_VERSION );
 			}
 			break;
 		}
@@ -470,9 +485,8 @@ bool CMapMesh::GenerateStaticPropData( void *fileContent, CUtlVector<float> &ver
 		int staticPropEntries = staticPropData.GetInt();
 		int propsWithCollision = 0;
 		int propsWithCollisionBB = 0;
-		StaticPropLump_t staticProp;
-		for( int i = 0; i < staticPropEntries; i++ )
-		{
+
+		auto readLump = [&](auto &staticProp) {
 			staticPropData.Get( &staticProp, sizeof( staticProp ) );
 
 			vcollide_t *vcollide = modelsVCollides[staticProp.m_PropType];
@@ -508,6 +522,39 @@ bool CMapMesh::GenerateStaticPropData( void *fileContent, CUtlVector<float> &ver
 			}
 
 			//Msg("%d: %f %f %f\n", i, staticProp.m_Origin.x, staticProp.m_Origin.y, staticProp.m_Origin.z);
+		};
+
+		for( int i = 0; i < staticPropEntries; i++ )
+		{
+			switch(staticPropLumpHeader->version) {
+			case 4: {
+				StaticPropLumpV4_t staticProp;
+				readLump(staticProp);
+			} break;
+			case 5: {
+				StaticPropLumpV5_t staticProp;
+				readLump(staticProp);
+			} break;
+			case 6: {
+				StaticPropLumpV6_t staticProp;
+				readLump(staticProp);
+			} break;
+			case 7: {
+				StaticPropLumpV7_t staticProp;
+				readLump(staticProp);
+			} break;
+			case 8: {
+				StaticPropLumpV8_t staticProp;
+				readLump(staticProp);
+			} break;
+			case GAMELUMP_STATIC_PROPS_VERSION: {
+				StaticPropLump_t staticProp;
+				readLump(staticProp);
+			} break;
+			default:
+				Assert(0);
+				break;
+			}
 		}
 
 		if( m_bLog )
@@ -687,12 +734,12 @@ bool CMapMesh::Load( bool bDynamicOnly )
 	{
 		// nav filename is derived from map filename
 		char filename[256];
-		V_snprintf( filename, sizeof( filename ), "maps\\%s.bsp", STRING( gpGlobals->mapname ) );
+		V_snprintf( filename, sizeof( filename ), "maps" CORRECT_PATH_SEPARATOR_S "%s.bsp", STRING( gpGlobals->mapname ) );
 
 		CUtlBuffer fileBuffer( 4096, 1024*1024, CUtlBuffer::READ_ONLY );
-		if ( !filesystem->ReadFile( filename, "MOD", fileBuffer ) )	// this ignores .nav files embedded in the .bsp ...
+		if ( !filesystem->ReadFile( filename, "GAME", fileBuffer ) )	// this ignores .nav files embedded in the .bsp ...
 		{
-			Warning("Recast LoadMapData: unable to read bsp");
+			Warning("Recast LoadMapData: unable to read bsp \"%s\"", filename);
 			return false;
 		}
 
@@ -730,34 +777,6 @@ bool CMapMesh::Load( bool bDynamicOnly )
 		}
 	}
 #endif // _DEBUG
-
-#ifdef ENABLE_PYTHON
-	// Fire signal to postprocess the mesh if desired
-	if( SrcPySystem()->IsPythonRunning() )
-	{
-		try
-		{
-			boost::python::dict kwargs;
-			kwargs["sender"] = boost::python::object();
-			kwargs["mapmesh"] = boost::python::ptr( this );
-			if( m_vMeshMins != vec3_origin )
-			{
-				const int fBloatBounds = 416.0f;
-				kwargs["bounds"] = boost::python::make_tuple( m_vMeshMins - Vector(fBloatBounds, fBloatBounds, fBloatBounds), 
-					m_vMeshMaxs + Vector(fBloatBounds, fBloatBounds, fBloatBounds) );
-			}
-			else
-			{
-				kwargs["bounds"] = boost::python::object();
-			}
-			SrcPySystem()->CallSignal( SrcPySystem()->Get("recast_mapmesh_postprocess", "core.signals", true), kwargs );
-		}
-		catch( boost::python::error_already_set & ) 
-		{
-			PyErr_Print();
-		}
-	}
-#endif // ENABLE_PYTHON
 
 	if( m_bLog )
 		Msg( "Recast Load static + dynamic map data: %d verts and %d tris\n", GetNumVerts(), GetNumTris() );
@@ -808,24 +827,24 @@ bool CMapMesh::Load( bool bDynamicOnly )
 		return false;
 	}
 
-#ifdef HL2WARS_DLL
 	// Origins for testing reachability of polygons
-	AddSampleOrigins( m_sampleOrigins, "info_start_wars" );
-	AddSampleOrigins( m_sampleOrigins, "overrun_wave_spawnpoint" );
+	AddSampleOrigins( m_sampleOrigins, "info_player_start" );
+	AddSampleOrigins( m_sampleOrigins, "info_player_coop" );
+	AddSampleOrigins( m_sampleOrigins, "info_player_deathmatch" );
 
-	if( !m_sampleOrigins.Count() )
-	{
-		// Probably single player map, so add all units as sample points
-		// This includes buildings, so should include good points.
-		// Number of sample points won't hurt build time, since already
-		// visited polygons are skipped.
-		CUnitBase **ppUnits = g_Unit_Manager.AccessUnits();
-		for ( int i = 0; i < g_Unit_Manager.NumUnits(); i++ )
-		{
-			m_sampleOrigins.AddToTail( ppUnits[i]->GetAbsOrigin() );
-		}
+	for(int i = 1; i <= gpGlobals->maxClients; ++i) {
+		CBasePlayer *pPlayer = UTIL_PlayerByIndex(i);
+		if(!pPlayer)
+			continue;
+
+		m_sampleOrigins.AddToTail( pPlayer->GetAbsOrigin() );
 	}
-#endif // HL2WARS_DLL
+
+	CAI_BaseNPC **ppNpcs = g_AI_Manager.AccessAIs();
+	for ( int i = 0; i < g_AI_Manager.NumAIs(); i++ )
+	{
+		m_sampleOrigins.AddToTail( ppNpcs[i]->GetAbsOrigin() );
+	}
 
 	return true;
 }

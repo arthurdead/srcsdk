@@ -2303,14 +2303,22 @@ void C_BaseEntity::SetMoveCollide( MoveCollide_t val )
 //-----------------------------------------------------------------------------
 RenderableTranslucencyType_t C_BaseEntity::ComputeTranslucencyType()
 {
-	modelinfo->RecomputeTranslucency( GetModel(), GetSkin(), GetBody(), GetClientRenderable() );
+	if ( m_bIsBlurred )
+		return RENDERABLE_IS_TRANSLUCENT;
 
-	if( modelinfo->IsTranslucentTwoPass( GetModel() ) )
+	// When an entity has a material proxy, we have to recompute
+	// translucency here because the proxy may have changed it.
+	if (modelinfo->ModelHasMaterialProxy( GetModel() ))
+	{
+		modelinfo->RecomputeTranslucency( const_cast<model_t*>(GetModel()), GetSkin(), GetBody(), GetClientRenderable() );
+	}
+
+	if( modelinfo->IsTranslucentTwoPass( m_pModel ) )
 	{
 		return RENDERABLE_IS_TWO_PASS;
 	}
 
-	if( modelinfo->IsTranslucent( GetModel() ) || (GetRenderMode() != kRenderNormal) || m_bIsBlurred )
+	if( modelinfo->IsTranslucent( m_pModel ) )
 	{
 		return RENDERABLE_IS_TRANSLUCENT;
 	}
@@ -5073,6 +5081,9 @@ int C_BaseEntity::PrecacheModel( const char *name )
 //-----------------------------------------------------------------------------
 void UTIL_Remove( C_BaseEntity *pEntity )
 {
+	if(!pEntity)
+		return;
+
 	if ( pEntity->IsMarkedForDeletion( ) )
 		return;
 	pEntity->AddEFlags( EFL_KILLME );	// Make sure to ignore further calls into here or UTIL_Remove.
@@ -5090,6 +5101,9 @@ static bool in_purge_entities = false;
 
 void UTIL_RemoveImmediate( C_BaseEntity *pEntity )
 {
+	if(!pEntity)
+		return;
+
 	bool lastallowed = s_bImmediateRemovesAllowed;
 	s_bImmediateRemovesAllowed = true;
 	pEntity->AddEFlags( EFL_KILLME );
@@ -5125,6 +5139,26 @@ C_BaseEntity* C_BaseEntity::Instance( CBaseHandle hEnt )
 C_BaseEntity *C_BaseEntity::Instance( int iEnt )
 {
 	return ClientEntityList().GetBaseEntity( iEnt );
+}
+
+bool EntityNamesMatch( const char *pszQuery, string_t nameToMatch )
+{
+	// NamesMatch has been turned into Matcher_NamesMatch in matchers.h
+	// for a wider range of accessibility and flexibility.
+	return Matcher_NamesMatch(pszQuery, STRING(nameToMatch));
+}
+
+bool CBaseEntity::NameMatchesComplex( const char *pszNameOrWildcard )
+{
+	if ( !Q_stricmp( "!player", pszNameOrWildcard) )
+		return IsPlayer();
+
+	return EntityNamesMatch( pszNameOrWildcard, m_iName );
+}
+
+bool CBaseEntity::ClassMatchesComplex( const char *pszClassOrWildcard )
+{
+	return EntityNamesMatch( pszClassOrWildcard, m_iClassname );
 }
 
 //-----------------------------------------------------------------------------
@@ -6029,6 +6063,15 @@ void C_BaseEntity::DrawBBoxVisualizations( void )
 	}
 }
 
+RenderMode_t CBaseEntity::GetRenderMode() const
+{
+	return m_pClientAlphaProperty->GetRenderMode();
+}
+
+RenderFx_t CBaseEntity::GetRenderFX() const
+{
+	return m_pClientAlphaProperty->GetRenderFX();
+}
 
 //-----------------------------------------------------------------------------
 // Sets the render mode

@@ -891,6 +891,9 @@ void CAI_StandoffBehavior::StartTask( const Task_t *pTask )
 		
 		case TASK_FIND_COVER_FROM_ENEMY:
 		{
+			Assert( pTask->numData == 1 );
+			Assert( pTask->data[0].CanBeFloat() );
+
 			StandoffMsg( "TASK_FIND_COVER_FROM_ENEMY\n" );
 
 			// If within time window to force change
@@ -971,7 +974,7 @@ void CAI_StandoffBehavior::StartTask( const Task_t *pTask )
 					AI_NavGoal_t goal(GOALTYPE_COVER, coverPos, ACT_RUN, AIN_HULL_TOLERANCE, AIN_DEF_FLAGS);
 					GetNavigator()->SetGoal( goal );
 
-					GetOuter()->m_flMoveWaitFinished = gpGlobals->curtime + pTask->flTaskData;
+					GetOuter()->m_flMoveWaitFinished = gpGlobals->curtime + pTask->data[0].AsFloat();
 					TaskComplete();
 				}
 				else

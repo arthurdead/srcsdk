@@ -79,11 +79,11 @@ void UTIL_LoadActivityRemapFile( const char *filename, const char *section, CUtl
 //=========================================================
 extern void ActivityList_Init( void );
 extern void ActivityList_Free( void );
-extern bool ActivityList_RegisterSharedActivity( const char *pszActivityName, int iActivityIndex );
+extern bool ActivityList_RegisterSharedActivity( const char *pszActivityName, Activity iActivityIndex );
 extern Activity ActivityList_RegisterPrivateActivity( const char *pszActivityName );
-extern int ActivityList_IndexForName( const char *pszActivityName );
-extern const char *ActivityList_NameForIndex( int iActivityIndex );
-extern int ActivityList_HighestIndex();
+extern Activity ActivityList_IndexForName( const char *pszActivityName );
+extern const char *ActivityList_NameForIndex( Activity iActivityIndex );
+extern Activity ActivityList_HighestIndex();
 
 // This macro guarantees that the names of each activity and the constant used to
 // reference it in the code are identical.

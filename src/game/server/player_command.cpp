@@ -268,7 +268,8 @@ void CPlayerMove::RunPreThink( CBasePlayer *player )
 
 	VPROF_SCOPE_BEGIN( "g_pGameRules->PlayerThink( player )" );
 	// Called every frame to let game rules do any specific think logic for the player
-	GameRules()->PlayerThink( player );
+	if(GameRules())
+		GameRules()->PlayerThink( player );
 	VPROF_SCOPE_END();
 
 	VPROF_SCOPE_BEGIN( "player->PreThink()" );

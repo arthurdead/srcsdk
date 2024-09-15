@@ -203,7 +203,7 @@ ConVar	teamplay( "mp_teamplay","0", FCVAR_NOTIFY|FCVAR_REPLICATED );
 ConVar	deathmatch( "deathmatch","0", FCVAR_NOTIFY|FCVAR_REPLICATED, "Running a deathmatch server." );	// 0, 1, or 2
 ConVar	coop( "coop","0", FCVAR_NOTIFY|FCVAR_REPLICATED, "Cooperative play." );			// 0 or 1
 
-static CViewVectors g_DefaultViewVectors(
+CViewVectors g_DefaultViewVectors(
 	Vector( 0, 0, 64 ),			//VEC_VIEW (m_vView)
 								
 	Vector(-16, -16, 0 ),		//VEC_HULL_MIN (m_vHullMin)

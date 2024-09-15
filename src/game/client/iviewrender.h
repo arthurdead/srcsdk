@@ -41,7 +41,7 @@ enum DrawFlags_t
 	DF_SKIP_WORLD_DECALS_AND_OVERLAYS	= 0x8000,
 
 	DF_UNUSED5				= 0x10000,
-	DF_SAVEGAMESCREENSHOT	= 0x20000,
+	DF_UNUSED6	= 0x20000,
 	DF_CLIP_SKYBOX			= 0x40000,
 
 	DF_SHADOW_DEPTH_MAP		= 0x100000,	// Currently rendering a shadow depth map

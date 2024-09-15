@@ -14,7 +14,6 @@
 #include "tempent.h"
 #include "c_te_legacytempents.h"
 #include "clientsideeffects.h"
-#include "cl_animevent.h"
 #include "iefx.h"
 #include "engine/IEngineSound.h"
 #include "env_wind_shared.h"
@@ -1102,7 +1101,7 @@ void CTempEnts::PhysicsProp( int modelindex, int skin, const Vector& pos, const 
 	pEntity->SetSkin( skin );
 	pEntity->SetAbsOrigin( pos );
 	pEntity->SetAbsAngles( angles );
-	pEntity->SetPhysicsMode( PHYSICS_MULTIPLAYER_CLIENTSIDE );
+	pEntity->SetPhysicsMode( PHYSICS_CLIENTSIDE );
 	pEntity->SetEffects( effects );
 
 	pEntity->SetModelIndex( modelindex );

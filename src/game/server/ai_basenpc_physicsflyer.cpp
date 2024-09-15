@@ -192,7 +192,10 @@ void CAI_BasePhysicsFlyingBot::StartTask( const Task_t *pTask )
 		// Override to get more to get a directional path
 		case TASK_GET_PATH_TO_RANDOM_AREA:  
 		{
-			if ( GetNavigator()->SetRandomGoal( pTask->flTaskData, m_vLastPatrolDir ) )
+			Assert( pTask->numData == 1 );
+			Assert( pTask->data[0].CanBeFloat() );
+
+			if ( GetNavigator()->SetRandomGoal( pTask->data[0].AsFloat(), m_vLastPatrolDir ) )
 				TaskComplete();
 			else
 				TaskFail(FAIL_NO_REACHABLE_AREA);

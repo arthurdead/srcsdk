@@ -8,7 +8,6 @@
 #include "ModelSoundsCache.h"
 #include "studio.h"
 #include "eventlist.h"
-#include "scriptevent.h"
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
@@ -25,14 +24,6 @@ void ModelSoundsCache_FinishModel( CStudioHdr *hdr );
 //-----------------------------------------------------------------------------
 
 void VerifySequenceIndex( CStudioHdr *pstudiohdr );
-
-// HACK:  This must match the #define in cl_animevent.h in the client .dll code!!!
-#define CL_EVENT_SOUND				5004
-#define CL_EVENT_FOOTSTEP_LEFT		6004
-#define CL_EVENT_FOOTSTEP_RIGHT		6005
-#define CL_EVENT_MFOOTSTEP_LEFT		6006
-#define CL_EVENT_MFOOTSTEP_RIGHT	6007
-
 
 extern ISoundEmitterSystemBase *soundemitterbase;
 
@@ -152,15 +143,9 @@ void CModelSoundsCache::BuildAnimationEventSoundList( CStudioHdr *hdr, CUtlVecto
 			
 			switch ( nEvent )
 			{
-			default:
+			case AE_SV_PLAYSOUND:
 				{
-					if ( pEvent->type & AE_TYPE_NEWEVENTSYSTEM )
-					{
-						if ( nEvent == AE_SV_PLAYSOUND )
-						{
-							FindOrAddScriptSound( sounds, pEvent->pszOptions() );
-						}
-					}
+					FindOrAddScriptSound( sounds, pEvent->pszOptions() );
 				}
 				break;
 			// Old-style client .dll animation event
@@ -191,9 +176,6 @@ void CModelSoundsCache::BuildAnimationEventSoundList( CStudioHdr *hdr, CUtlVecto
 				break;
 			case AE_CL_PLAYSOUND:
 				{
-					if ( !( pEvent->type & AE_TYPE_CLIENT ) )
-						break;
-
 					if ( pEvent->pszOptions()[0] )
 					{
 						FindOrAddScriptSound( sounds, pEvent->pszOptions() );

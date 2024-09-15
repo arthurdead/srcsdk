@@ -11,6 +11,7 @@
 #include "igamemovement.h"
 #include "engine/IEngineTrace.h"
 #include "engine/ivmodelinfo.h"
+#include "c_world.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -41,7 +42,7 @@ public:
 	virtual void	PlaybackEventFull( int flags, int clientindex, unsigned short eventindex, float delay, Vector& origin, Vector& angles, float fparam1, float fparam2, int iparam1, int iparam2, int bparam1, int bparam2 );
 	virtual IPhysicsSurfaceProps *GetSurfaceProps( void );
 
-	virtual bool IsWorldEntity( const CBaseHandle &handle );
+	virtual bool IsWorldEntity( const EHANDLE &handle );
 
 	void			SetHost( CBasePlayer *host );
 
@@ -273,7 +274,10 @@ bool CMoveHelperClient::PlayerFallingDamage(void)
 	return(true);
 }
 
-bool CMoveHelperClient::IsWorldEntity( const CBaseHandle &handle )
+bool CMoveHelperClient::IsWorldEntity( const EHANDLE &handle )
 {
-	return handle == cl_entitylist->GetNetworkableHandle( 0 );
+	if(!GetClientWorldEntity())
+		return false;
+
+	return handle == GetClientWorldEntity()->GetRefEHandle();
 }

@@ -3662,7 +3662,7 @@ void CBasePlayer::CheckTimeBasedDamage()
 	static float gtbdPrev = 0.0;
 
 	// If we don't have any time based damage return.
-	if ( !GameRules()->Damage_IsTimeBased( m_bitsDamageType ) )
+	if ( GameRules() && !GameRules()->Damage_IsTimeBased( m_bitsDamageType ) )
 		return;
 
 	// only check for time based damage approx. every 2 seconds
@@ -3676,7 +3676,7 @@ void CBasePlayer::CheckTimeBasedDamage()
 		// Make sure the damage type is really time-based.
 		// This is kind of hacky but necessary until we setup DamageType as an enum.
 		int iDamage = ( DMG_PARALYZE << i );
-		if ( !GameRules()->Damage_IsTimeBased( iDamage ) )
+		if ( GameRules() && !GameRules()->Damage_IsTimeBased( iDamage ) )
 			continue;
 
 
@@ -6645,7 +6645,8 @@ void CBasePlayer::UpdateClientData( void )
 		m_Local.m_iHideHUD &= ~HIDEHUD_BONUS_PROGRESS;
 
 	// Let any global rules update the HUD, too
-	GameRules()->UpdateClientData( this );
+	if(GameRules())
+		GameRules()->UpdateClientData( this );
 }
 
 void CBasePlayer::RumbleEffect( unsigned char index, unsigned char rumbleData, unsigned char rumbleFlags )
@@ -9150,19 +9151,16 @@ float CBasePlayer::GetStickDist()
 //-----------------------------------------------------------------------------
 void CBasePlayer::HandleAnimEvent( animevent_t *pEvent )
 {
-	if ((pEvent->type & AE_TYPE_NEWEVENTSYSTEM) && (pEvent->type & AE_TYPE_SERVER))
+	if ( pEvent->Event() == AE_RAGDOLL )
 	{
-		if ( pEvent->Event() == AE_RAGDOLL )
-		{
-			// Convert to ragdoll immediately
-			CreateRagdollEntity();
-			BecomeRagdollOnClient( vec3_origin );
- 
-			// Force the player to start death thinking
-			SetThink(&CBasePlayer::PlayerDeathThink);
-			SetNextThink( gpGlobals->curtime + 0.1f );
-			return;
-		}
+		// Convert to ragdoll immediately
+		CreateRagdollEntity();
+		BecomeRagdollOnClient( vec3_origin );
+
+		// Force the player to start death thinking
+		SetThink(&CBasePlayer::PlayerDeathThink);
+		SetNextThink( gpGlobals->curtime + 0.1f );
+		return;
 	}
 
 	BaseClass::HandleAnimEvent( pEvent );

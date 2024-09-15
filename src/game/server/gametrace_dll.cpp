@@ -13,6 +13,8 @@
 
 bool CGameTrace::DidHitWorld() const
 {
+	if(!GetWorldEntity())
+		return false;
 	return m_pEnt == GetWorldEntity();
 }
 

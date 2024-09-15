@@ -13,11 +13,6 @@
 
 IMPLEMENT_NETWORKCLASS_ALIASED( RecastMgrEnt, DT_RecastMgrEnt );
 BEGIN_NETWORK_TABLE( CRecastMgrEnt, DT_RecastMgrEnt )
-#ifdef CLIENT_DLL
-	RecvPropInt( RECVINFO( m_spawnflags ) ),
-#else
-	SendPropInt( SENDINFO(m_spawnflags), -1, SPROP_NOSCALE )
-#endif // CLIENT_DLL
 END_NETWORK_TABLE()
 
 LINK_ENTITY_TO_CLASS( recast_mgr, CRecastMgrEnt );
@@ -31,11 +26,22 @@ CRecastMgrEnt *GetRecastMgrEnt()
 
 CRecastMgrEnt::CRecastMgrEnt()
 {
-	s_pRecastMgrEnt = this;
+	if(!s_pRecastMgrEnt)
+		s_pRecastMgrEnt = this;
 }
 
 CRecastMgrEnt::~CRecastMgrEnt()
 {
 	if( s_pRecastMgrEnt == this )
 		s_pRecastMgrEnt = NULL;
+}
+
+void CRecastMgrEnt::Spawn()
+{
+	if(s_pRecastMgrEnt && s_pRecastMgrEnt != this) {
+		UTIL_Remove(this);
+		return;
+	}
+
+	BaseClass::Spawn();
 }

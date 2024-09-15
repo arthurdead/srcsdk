@@ -42,6 +42,8 @@ static ConVar r_shadows_on_renderables_enable( "r_shadows_on_renderables_enable"
 static ConVar r_drawallrenderables( "r_drawallrenderables", "0", FCVAR_CHEAT, "Draw all renderables, even ones inside solid leaves." );
 static ConVar cl_leafsystemvis( "cl_leafsystemvis", "0", FCVAR_CHEAT );
 
+extern ConVar r_DrawDetailProps;
+
 extern ConVar cl_leveloverview;
 #ifdef _DEBUG
 extern ConVar r_FadeProps;
@@ -111,9 +113,10 @@ public:
 
 // Methods of IClientLeafSystem
 public:
-	
+	void NewRenderable( IClientRenderable* pRenderable, bool bRenderWithViewModels, RenderableTranslucencyType_t nType, RenderableModelType_t nModelType );
 	virtual void AddRenderable( IClientRenderable* pRenderable, bool bRenderWithViewModels, RenderableTranslucencyType_t nType, RenderableModelType_t nModelType );
 	virtual bool IsRenderableInPVS( IClientRenderable *pRenderable );
+	virtual void DO_NOT_USE_CreateRenderableHandle( IClientRenderable* pRenderable, bool bIsStaticProp );
 	virtual void CreateRenderableHandle( IClientRenderable* pRenderable, bool bRenderWithViewModels, RenderableTranslucencyType_t nType, RenderableModelType_t nModelType );
 	virtual void RemoveRenderable( ClientRenderHandle_t handle );
 
@@ -185,17 +188,17 @@ public:
 public:
 	enum
 	{
-		RENDER_FLAGS_DISABLE_RENDERING		= 0x01,
-		RENDER_FLAGS_HASCHANGED				= 0x02,
-		RENDER_FLAGS_ALTERNATE_SORTING		= 0x04,
-		RENDER_FLAGS_RENDER_WITH_VIEWMODELS	= 0x08,
-		RENDER_FLAGS_BLOAT_BOUNDS			= 0x10,
-		RENDER_FLAGS_BOUNDS_VALID			= 0x20,
+		RENDER_FLAGS_DISABLE_RENDERING		=  0x01,
+		RENDER_FLAGS_HASCHANGED				=  0x02,
+		RENDER_FLAGS_ALTERNATE_SORTING		=  0x04,
+		RENDER_FLAGS_RENDER_WITH_VIEWMODELS	=  0x08,
+		RENDER_FLAGS_BLOAT_BOUNDS			=  0x10,
+		RENDER_FLAGS_BOUNDS_VALID			=  0x20,
 		RENDER_FLAGS_BOUNDS_ALWAYS_RECOMPUTE = 0x40,
-		RENDER_FLAGS_TWOPASS				= 0x80,
-		RENDER_FLAGS_STATIC_PROP			= 0x100,
-		RENDER_FLAGS_BRUSH_MODEL			= 0x200,
-		RENDER_FLAGS_STUDIO_MODEL			= 0x400,
+		RENDER_FLAGS_TWOPASS				=  0x80,
+		RENDER_FLAGS_STATIC_PROP			=  0x100,
+		RENDER_FLAGS_BRUSH_MODEL			=  0x200,
+		RENDER_FLAGS_STUDIO_MODEL			=  0x400,
 	};
 
 	// All the information associated with a particular handle
@@ -209,17 +212,17 @@ public:
 		int					m_TranslucencyCalculated;
 		unsigned int		m_LeafList;		// What leafs is it in?
 		unsigned int		m_RenderLeaf;	// What leaf do I render in?
-		uint16				m_Flags : 10;				// rendering flags
-		uint16				m_bDisableShadowDepthRendering : 1;	// Should we not render into the shadow depth map?
-		uint16				m_bDisableShadowDepthCaching : 1;	// Should we not be cached in the shadow depth map?
-		EngineRenderGroup_t		m_EngineRenderGroup;	// RenderGroup_t type
-		EngineRenderGroup_t		m_EngineRenderGroupOpaque;	// RenderGroup_t type
-		ClientRenderGroup_t		m_ClientRenderGroup : 8;	// RenderGroup_t type
+		uint16				m_Flags : 11;				// rendering flags
+		bool				m_bDisableShadowDepthRendering : 1;	// Should we not render into the shadow depth map?
+		bool				m_bDisableShadowDepthCaching : 1;	// Should we not be cached in the shadow depth map?
+		EngineRenderGroup_t		m_EngineRenderGroup : 4;	// RenderGroup_t type
+		EngineRenderGroup_t		m_EngineRenderGroupOpaque : 4;	// RenderGroup_t type
+		ClientRenderGroup_t		m_ClientRenderGroup : 3;	// RenderGroup_t type
 		unsigned short		m_FirstShadow;	// The first shadow caster that cast on it
 		short m_Area;	// -1 if the renderable spans multiple areas.
 		signed char			m_TranslucencyCalculatedView;
 		RenderableTranslucencyType_t				m_nTranslucencyType : 2;	// RenderableTranslucencyType_t
-		RenderableModelType_t				m_nModelType : 3;			// RenderableModelType_t
+		RenderableModelType_t				m_nModelType;			// RenderableModelType_t
 		Vector				m_vecBloatedAbsMins;		// Use this for tree insertion
 		Vector				m_vecBloatedAbsMaxs;
 		Vector				m_vecAbsMins;			// NOTE: These members are not threadsafe!!
@@ -462,6 +465,12 @@ private:
 		mdlcache->EndLock();
 	}
 
+public:
+	const RenderableInfo_t &GetRenderableInfo( ClientRenderHandle_t handle ) const
+	{ 
+		return m_Renderables[(uint)handle];
+	}
+
 private:
 	// Stores data associated with each leaf.
 	CUtlVector< ClientLeaf_t >	m_Leaf;
@@ -558,164 +567,39 @@ bool CClientLeafSystem::RenderableInfo_t::IsTwoPass() const
 {
 	return (
 		(m_Flags & RENDER_FLAGS_TWOPASS) ||
-		(m_nTranslucencyType == RENDERABLE_IS_TWO_PASS) ||
-		(m_EngineRenderGroup == ENGINE_RENDER_GROUP_TWOPASS)
+		(m_nTranslucencyType == RENDERABLE_IS_TWO_PASS)
 	);
 }
 
 bool CClientLeafSystem::RenderableInfo_t::RendersWithViewmodels() const
 {
 	return (
-		((m_Flags & RENDER_FLAGS_RENDER_WITH_VIEWMODELS) != 0) ||
-		IsEngineRenderGroupViewModel(m_EngineRenderGroup)
+		((m_Flags & RENDER_FLAGS_RENDER_WITH_VIEWMODELS) != 0)
 	);
 }
 
 ClientRenderGroup_t CClientLeafSystem::RenderableInfo_t::GetClientRenderGroup() const
 {
-	if(IsEngineRenderGroupTranslucent(m_EngineRenderGroup)) {
-		return CLIENT_RENDER_GROUP_TRANSLUCENT;
-	}
-
-	if(
-		((m_ClientRenderGroup == CLIENT_RENDER_GROUP_OPAQUE)) ||
-		IsEngineRenderGroupOpaque(m_EngineRenderGroup)
-	) {
-		return CLIENT_RENDER_GROUP_OPAQUE;
-	}
-
-	if(
-		((m_Flags & RENDER_FLAGS_DISABLE_RENDERING) != 0) ||
-		((m_nModelType == RENDERABLE_MODEL_UNKNOWN_TYPE)) ||
-		((m_EngineRenderGroup == ENGINE_RENDER_GROUP_OTHER))
-	) {
-		return CLIENT_RENDER_GROUP_COUNT;
-	}
-
 	return m_ClientRenderGroup;
 }
 
 bool CClientLeafSystem::RenderableInfo_t::IsOpaque() const
 {
-	if(
-		((m_Flags & RENDER_FLAGS_TWOPASS) != 0) ||
-		((m_EngineRenderGroup == ENGINE_RENDER_GROUP_TWOPASS))
-	) {
-		return false;
-	}
-
-	if(
-		IsEngineRenderGroupTranslucent(m_EngineRenderGroup) ||
-		(
-			(m_ClientRenderGroup == CLIENT_RENDER_GROUP_TRANSLUCENT) ||
-			(m_ClientRenderGroup == CLIENT_RENDER_GROUP_TRANSLUCENT_IGNOREZ)
-		)
-	) {
-		return false;
-	}
-
-	if(
-		((m_ClientRenderGroup == CLIENT_RENDER_GROUP_OPAQUE)) ||
-		IsEngineRenderGroupOpaque(m_EngineRenderGroup)
-	) {
-		return true;
-	}
-
 	return (m_nTranslucencyType == RENDERABLE_IS_OPAQUE);
 }
 
 bool CClientLeafSystem::RenderableInfo_t::IsTranslucent() const
 {
-	if(
-		((m_Flags & RENDER_FLAGS_TWOPASS) != 0) ||
-		((m_EngineRenderGroup == ENGINE_RENDER_GROUP_TWOPASS))
-	) {
-		return true;
-	}
-
-	if(
-		IsEngineRenderGroupTranslucent(m_EngineRenderGroup) ||
-		(
-			(m_ClientRenderGroup == CLIENT_RENDER_GROUP_TRANSLUCENT) ||
-			(m_ClientRenderGroup == CLIENT_RENDER_GROUP_TRANSLUCENT_IGNOREZ)
-		)
-	) {
-		return true;
-	}
-
-	if(
-		((m_ClientRenderGroup == CLIENT_RENDER_GROUP_OPAQUE)) ||
-		IsEngineRenderGroupOpaque(m_EngineRenderGroup)
-	) {
-		return false;
-	}
-
 	return (m_nTranslucencyType == RENDERABLE_IS_TRANSLUCENT);
 }
 
 RenderableTranslucencyType_t CClientLeafSystem::RenderableInfo_t::GetTranslucencyType() const
 {
-	if(
-		((m_Flags & RENDER_FLAGS_TWOPASS) != 0) ||
-		((m_EngineRenderGroup == ENGINE_RENDER_GROUP_TWOPASS))
-	) {
-		return RENDERABLE_IS_TWO_PASS;
-	}
-
-	if(
-		IsEngineRenderGroupTranslucent(m_EngineRenderGroup) ||
-		(
-			(m_ClientRenderGroup == CLIENT_RENDER_GROUP_TRANSLUCENT) ||
-			(m_ClientRenderGroup == CLIENT_RENDER_GROUP_TRANSLUCENT_IGNOREZ)
-		)
-	) {
-		return RENDERABLE_IS_TRANSLUCENT;
-	}
-
-	if(
-		((m_ClientRenderGroup == CLIENT_RENDER_GROUP_OPAQUE)) ||
-		IsEngineRenderGroupOpaque(m_EngineRenderGroup)
-	) {
-		return RENDERABLE_IS_OPAQUE;
-	}
-
 	return m_nTranslucencyType;
 }
 
 RenderableModelType_t CClientLeafSystem::RenderableInfo_t::GetModelType() const
 {
-	if(
-		((m_Flags & RENDER_FLAGS_BRUSH_MODEL) != 0) ||
-		(m_EngineRenderGroup == ENGINE_RENDER_GROUP_OPAQUE_BRUSH)
-	) {
-		return RENDERABLE_MODEL_BRUSH;
-	}
-
-	if(
-		(m_Flags & RENDER_FLAGS_STUDIO_MODEL) != 0
-	) {
-		return RENDERABLE_MODEL_STUDIOMDL;
-	}
-
-	if(
-		((m_Flags & RENDER_FLAGS_STATIC_PROP) != 0) ||
-		IsEngineRenderGroupStatic(m_EngineRenderGroup)
-	) {
-		return RENDERABLE_MODEL_STATIC_PROP;
-	}
-
-	if(IsEngineRenderGroupEntity(m_EngineRenderGroup)) {
-		return RENDERABLE_MODEL_ENTITY;
-	}
-
-	if(
-		((m_Flags & RENDER_FLAGS_DISABLE_RENDERING) != 0) ||
-		((m_ClientRenderGroup == CLIENT_RENDER_GROUP_COUNT)) ||
-		((m_EngineRenderGroup == ENGINE_RENDER_GROUP_OTHER))
-	) {
-		return RENDERABLE_MODEL_UNKNOWN_TYPE;
-	}
-
 	return m_nModelType;
 }
 
@@ -723,8 +607,7 @@ bool CClientLeafSystem::RenderableInfo_t::IsBrushModel() const
 {
 	return (
 		((m_Flags & RENDER_FLAGS_BRUSH_MODEL) != 0) ||
-		((m_nModelType == RENDERABLE_MODEL_BRUSH)) ||
-		((m_EngineRenderGroup == ENGINE_RENDER_GROUP_OPAQUE_BRUSH))
+		((m_nModelType == RENDERABLE_MODEL_BRUSH))
 	);
 }
 
@@ -740,26 +623,21 @@ bool CClientLeafSystem::RenderableInfo_t::IsStaticProp() const
 {
 	return (
 		((m_Flags & RENDER_FLAGS_STATIC_PROP) != 0) ||
-		((m_nModelType == RENDERABLE_MODEL_STATIC_PROP)) ||
-		IsEngineRenderGroupStatic(m_EngineRenderGroup)
+		((m_nModelType == RENDERABLE_MODEL_STATIC_PROP))
 	);
 }
 
 bool CClientLeafSystem::RenderableInfo_t::IsEntity() const
 {
 	return (
-		((m_nModelType == RENDERABLE_MODEL_ENTITY)) ||
-		IsEngineRenderGroupEntity(m_EngineRenderGroup)
+		((m_nModelType == RENDERABLE_MODEL_ENTITY))
 	);
 }
 
 bool CClientLeafSystem::RenderableInfo_t::IsDisabled() const
 {
 	return (
-		((m_Flags & RENDER_FLAGS_DISABLE_RENDERING) != 0) ||
-		((m_nModelType == RENDERABLE_MODEL_UNKNOWN_TYPE)) ||
-		((m_ClientRenderGroup == CLIENT_RENDER_GROUP_COUNT)) ||
-		((m_EngineRenderGroup == ENGINE_RENDER_GROUP_OTHER))
+		((m_Flags & RENDER_FLAGS_DISABLE_RENDERING) != 0)
 	);
 }
 
@@ -1061,15 +939,18 @@ void CClientLeafSystem::RecomputeRenderableLeaves()
 
 		s_bIsInRecomputeRenderableLeaves = false;
 
+	#if 0
 		bool bThreaded = ( nDirty > 5 && cl_threaded_client_leaf_system.GetBool() && g_pThreadPool->NumThreads() );
 
 		if ( !bThreaded )
+	#endif
 		{
 			for ( i = nDirty; --i >= 0; )
 			{
 				InsertIntoTree( m_DirtyRenderables[i], absMins, absMaxs );
 			}
 		}
+	#if 0
 		else
 		{
 			// InsertIntoTree can result in new renderables being added, so copy:
@@ -1081,6 +962,7 @@ void CClientLeafSystem::RecomputeRenderableLeaves()
 			}
 			ParallelProcess( "CClientLeafSystem::PreRender", pDirtyRenderables, nDirty, this, &CClientLeafSystem::InsertIntoTreeParallel, &CClientLeafSystem::FrameLock, &CClientLeafSystem::FrameUnlock );
 		}
+	#endif
 
 		if ( m_DeferredInserts.Count() )
 		{
@@ -1112,11 +994,202 @@ void CClientLeafSystem::RecomputeRenderableLeaves()
 	}
 }
 
+#ifdef STAGING_ONLY
+static const char *ent_model_typestr[]{
+	"mod_bad",
+	"mod_brush",
+	"mod_sprite",
+	"mod_studio",
+};
+
+static const char *model_typestr[]{
+	"RENDERABLE_MODEL_UNKNOWN_TYPE",
+	"RENDERABLE_MODEL_ENTITY",
+	"RENDERABLE_MODEL_STUDIOMDL",
+	"RENDERABLE_MODEL_STATIC_PROP",
+	"RENDERABLE_MODEL_BRUSH",
+};
+
+static const char *translucent_typestr[]{
+	"RENDERABLE_IS_OPAQUE",
+	"RENDERABLE_IS_TRANSLUCENT",
+	"RENDERABLE_IS_TWO_PASS",
+};
+
+static const char *clrendergroup_typestr[]{
+	"CLIENT_RENDER_GROUP_OPAQUE",
+	"CLIENT_RENDER_GROUP_TRANSLUCENT",
+	"CLIENT_RENDER_GROUP_TRANSLUCENT_IGNOREZ",
+	"CLIENT_RENDER_GROUP_COUNT",
+};
+
+static const char *engrndergroup_typestr[]{
+	"ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE",
+	"ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE",
+	"ENGINE_RENDER_GROUP_OPAQUE_STATIC_MEDIUM",
+	"ENGINE_RENDER_GROUP_OPAQUE_ENTITY_MEDIUM",
+	"ENGINE_RENDER_GROUP_OPAQUE_STATIC_SMALL",
+	"ENGINE_RENDER_GROUP_OPAQUE_ENTITY_SMALL",
+	"ENGINE_RENDER_GROUP_OPAQUE_STATIC_TINY",
+	"ENGINE_RENDER_GROUP_OPAQUE_ENTITY_TINY",
+	"ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY",
+	"ENGINE_RENDER_GROUP_TWOPASS",
+	"ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE",
+	"ENGINE_RENDER_GROUP_VIEW_MODEL_TRANSLUCENT",
+	"ENGINE_RENDER_GROUP_OPAQUE_BRUSH",
+	"ENGINE_RENDER_GROUP_OTHER",
+	"ENGINE_RENDER_GROUP_COUNT",
+};
+
+static const char *rndmodestr[]{
+	"kRenderNormal",
+	"kRenderTransColor",
+	"kRenderTransTexture",
+	"kRenderGlow",
+	"kRenderTransAlpha",
+	"kRenderTransAdd",
+	"kRenderEnvironmental",
+	"kRenderTransAddFrameBlend",
+	"kRenderTransAlphaAdd",
+	"kRenderWorldGlow",
+	"kRenderNone",
+	"kRenderModeCount",
+};
+
+static const char *rndfxstr[]{
+	"kRenderFxNone",
+	"kRenderFxPulseSlow",
+	"kRenderFxPulseFast",
+	"kRenderFxPulseSlowWide",
+	"kRenderFxPulseFastWide",
+	"kRenderFxFadeSlow",
+	"kRenderFxFadeFast",
+	"kRenderFxSolidSlow",
+	"kRenderFxSolidFast",
+	"kRenderFxStrobeSlow",
+	"kRenderFxStrobeFast",
+	"kRenderFxStrobeFaster",
+	"kRenderFxFlickerSlow",
+	"kRenderFxFlickerFast",
+	"kRenderFxNoDissipation",
+	"kRenderFxDistort",
+	"kRenderFxHologram",
+	"kRenderFxExplode",
+	"kRenderFxGlowShell",
+	"kRenderFxClampMinScale",
+	"kRenderFxEnvRain",
+	"kRenderFxEnvSnow",
+	"kRenderFxSpotlight",
+	"kRenderFxPulseFastWider",
+	"kRenderFxFadeOut",
+	"kRenderFxFadeIn",
+	"kRenderFxMax",
+};
+
+static void dump_render_info(const CClientLeafSystem::RenderableInfo_t &info)
+{
+	DevMsg("  info engine render group = %s\n", engrndergroup_typestr[info.m_EngineRenderGroup]);
+	DevMsg("  info engine render group opaque = %s\n", engrndergroup_typestr[info.m_EngineRenderGroupOpaque]);
+	DevMsg("  info client render group = %s\n", clrendergroup_typestr[info.m_ClientRenderGroup]);
+	DevMsg("  info translucency type = %s\n", translucent_typestr[info.m_nTranslucencyType]);
+	DevMsg("  info model type = %s\n", model_typestr[info.m_nModelType+1]);
+	DevMsg("  info flags = \n");
+	if((info.m_Flags & CClientLeafSystem::RENDER_FLAGS_DISABLE_RENDERING) != 0) {
+		DevMsg("    RENDER_FLAGS_DISABLE_RENDERING\n");
+	}
+	if((info.m_Flags & CClientLeafSystem::RENDER_FLAGS_HASCHANGED) != 0) {
+		DevMsg("    RENDER_FLAGS_HASCHANGED\n");
+	}
+	if((info.m_Flags & CClientLeafSystem::RENDER_FLAGS_ALTERNATE_SORTING) != 0) {
+		DevMsg("    RENDER_FLAGS_ALTERNATE_SORTING\n");
+	}
+	if((info.m_Flags & CClientLeafSystem::RENDER_FLAGS_RENDER_WITH_VIEWMODELS) != 0) {
+		DevMsg("    RENDER_FLAGS_RENDER_WITH_VIEWMODELS\n");
+	}
+	if((info.m_Flags & CClientLeafSystem::RENDER_FLAGS_BLOAT_BOUNDS) != 0) {
+		DevMsg("    RENDER_FLAGS_BLOAT_BOUNDS\n");
+	}
+	if((info.m_Flags & CClientLeafSystem::RENDER_FLAGS_BOUNDS_VALID) != 0) {
+		DevMsg("    RENDER_FLAGS_BOUNDS_VALID\n");
+	}
+	if((info.m_Flags & CClientLeafSystem::RENDER_FLAGS_BOUNDS_ALWAYS_RECOMPUTE) != 0) {
+		DevMsg("    RENDER_FLAGS_BOUNDS_ALWAYS_RECOMPUTE\n");
+	}
+	if((info.m_Flags & CClientLeafSystem::RENDER_FLAGS_TWOPASS) != 0) {
+		DevMsg("    RENDER_FLAGS_TWOPASS\n");
+	}
+	if((info.m_Flags & CClientLeafSystem::RENDER_FLAGS_STATIC_PROP) != 0) {
+		DevMsg("    RENDER_FLAGS_STATIC_PROP\n");
+	}
+	if((info.m_Flags & CClientLeafSystem::RENDER_FLAGS_BRUSH_MODEL) != 0) {
+		DevMsg("    RENDER_FLAGS_BRUSH_MODEL\n");
+	}
+	if((info.m_Flags & CClientLeafSystem::RENDER_FLAGS_STUDIO_MODEL) != 0) {
+		DevMsg("    RENDER_FLAGS_STUDIO_MODEL\n");
+	}
+}
+
+CON_COMMAND_F(cl_ent_render_debug, "", FCVAR_DEVELOPMENTONLY|FCVAR_CHEAT)
+{
+	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	if(!pPlayer) {
+		DevMsg("no client\n");
+		return;
+	}
+
+	Vector forward;
+	pPlayer->EyeVectors(&forward);
+
+	trace_t tr;
+	UTIL_TraceLine(pPlayer->EyePosition(), pPlayer->EyePosition() + forward * MAX_COORD_RANGE, MASK_SHOT, pPlayer, COLLISION_GROUP_NONE, &tr);
+	if( !tr.m_pEnt ) {
+		DevMsg("trace fail\n");
+		return;
+	}
+
+	C_BaseEntity *pTarget = tr.m_pEnt;
+
+	DevMsg("cl_ent_render_debug %p\n", pTarget->GetClientRenderable());
+	DevMsg("  ent translucency type = %s\n", translucent_typestr[pTarget->ComputeTranslucencyType()]);
+
+	if(pTarget->GetModel()) {
+		DevMsg("  model = %s\n", modelinfo->GetModelName(pTarget->GetModel()));
+		DevMsg("  ent model type = %s\n", ent_model_typestr[modelinfo->GetModelType(pTarget->GetModel())]);
+		DevMsg("  is two pass = %i\n", modelinfo->IsTranslucentTwoPass(pTarget->GetModel()));
+		DevMsg("  is translucent = %i\n", modelinfo->IsTranslucent(pTarget->GetModel()));
+	} else {
+		DevMsg("no model\n");
+	}
+
+	if(pTarget->AlphaProp()) {
+		DevMsg("  alpha blend = %i\n", pTarget->AlphaProp()->GetAlphaBlend());
+		DevMsg("  alpha modulation = %i\n", pTarget->AlphaProp()->GetAlphaModulation());
+		DevMsg("  render mode = %s\n", rndmodestr[pTarget->AlphaProp()->GetRenderMode()]);
+		DevMsg("  render fx = %s\n", rndfxstr[pTarget->AlphaProp()->GetRenderFX()]);
+		DevMsg("  ignorez = %i\n", pTarget->AlphaProp()->IgnoresZBuffer());
+		DevMsg("  fade min = %f\n", pTarget->AlphaProp()->GetMinFadeDist());
+		DevMsg("  fade max = %f\n", pTarget->AlphaProp()->GetMaxFadeDist());
+		DevMsg("  fade scale = %f\n", pTarget->AlphaProp()->GetGlobalFadeScale());
+	} else {
+		DevMsg("no alphaprop\n");
+	}
+
+	ClientRenderHandle_t handle = pTarget->RenderHandle();
+	if(handle == INVALID_CLIENT_RENDER_HANDLE) {
+		DevMsg("no render handle\n");
+		return;
+	}
+
+	const CClientLeafSystem::RenderableInfo_t &info = CClientLeafSystem::s_ClientLeafSystem.GetRenderableInfo(handle);
+
+	dump_render_info(info);
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Creates a new renderable
 //-----------------------------------------------------------------------------
-void CClientLeafSystem::CreateRenderableHandle( IClientRenderable* pRenderable, bool bRenderWithViewModels, RenderableTranslucencyType_t nType, RenderableModelType_t nModelType )
+void CClientLeafSystem::NewRenderable( IClientRenderable* pRenderable, bool bRenderWithViewModels, RenderableTranslucencyType_t nType, RenderableModelType_t nModelType )
 {
 	Assert( pRenderable );
 	Assert( pRenderable->RenderHandle() == INVALID_CLIENT_RENDER_HANDLE );
@@ -1146,17 +1219,16 @@ void CClientLeafSystem::CreateRenderableHandle( IClientRenderable* pRenderable, 
 	IClientUnknownMod *pUnkMod = dynamic_cast<IClientUnknownMod *>( pRenderable->GetIClientUnknown() );
 	CClientAlphaProperty *pAlphaProp = static_cast< CClientAlphaProperty* >( pUnkMod ? pUnkMod->GetClientAlphaProperty() : NULL );
 
+	info.m_Flags = 0;
+
 	switch(nType) {
 	case RENDERABLE_IS_OPAQUE:
 		info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_OPAQUE;
 		break;
-	case RENDERABLE_IS_TRANSLUCENT:
-		if(pAlphaProp && pAlphaProp->IgnoresZBuffer())
-			info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT_IGNOREZ;
-		else
-			info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT;
-		break;
 	case RENDERABLE_IS_TWO_PASS:
+		info.m_Flags |= RENDER_FLAGS_TWOPASS;
+		[[fallthrough]];
+	case RENDERABLE_IS_TRANSLUCENT:
 		if(pAlphaProp && pAlphaProp->IgnoresZBuffer())
 			info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT_IGNOREZ;
 		else
@@ -1169,61 +1241,62 @@ void CClientLeafSystem::CreateRenderableHandle( IClientRenderable* pRenderable, 
 
 	switch(nModelType) {
 	case RENDERABLE_MODEL_STUDIOMDL:
+		Assert(modelType == mod_studio);
+		info.m_Flags |= RENDER_FLAGS_STUDIO_MODEL;
+		[[fallthrough]];
 	case RENDERABLE_MODEL_ENTITY:
-		info.m_EngineRenderGroupOpaque = (bRenderWithViewModels ? ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE : ENGINE_RENDER_GROUP_OPAQUE_ENTITY);
+		switch(nType) {
+		case RENDERABLE_IS_OPAQUE:
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
+			break;
+		case RENDERABLE_IS_TWO_PASS:
+		case RENDERABLE_IS_TRANSLUCENT:
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
+			break;
+		default:
+			Assert(0);
+			break;
+		}
+		info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
 		break;
 	case RENDERABLE_MODEL_STATIC_PROP:
-		info.m_EngineRenderGroupOpaque = (bRenderWithViewModels ? ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE : ENGINE_RENDER_GROUP_OPAQUE_STATIC);
+		Assert(modelType == mod_studio);
+		info.m_Flags |= RENDER_FLAGS_STATIC_PROP;
+		switch(nType) {
+		case RENDERABLE_IS_OPAQUE:
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_STATIC;
+			break;
+		case RENDERABLE_IS_TWO_PASS:
+		case RENDERABLE_IS_TRANSLUCENT:
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
+			break;
+		default:
+			Assert(0);
+			break;
+		}
+		info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_STATIC;
 		break;
 	case RENDERABLE_MODEL_BRUSH:
-		info.m_EngineRenderGroupOpaque = (bRenderWithViewModels ? ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE : ENGINE_RENDER_GROUP_OPAQUE_BRUSH);
+		Assert(modelType == mod_brush);
+		info.m_Flags |= RENDER_FLAGS_BRUSH_MODEL;
+		switch(nType) {
+		case RENDERABLE_IS_OPAQUE:
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_BRUSH;
+			break;
+		case RENDERABLE_IS_TWO_PASS:
+		case RENDERABLE_IS_TRANSLUCENT:
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
+			break;
+		default:
+			Assert(0);
+			break;
+		}
+		info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_BRUSH;
 		break;
 	default:
+		info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OTHER;
 		info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OTHER;
 		break;
-	}
-
-	switch(nType) {
-	case RENDERABLE_IS_OPAQUE:
-		info.m_EngineRenderGroup = info.m_EngineRenderGroupOpaque;
-		break;
-	case RENDERABLE_IS_TRANSLUCENT:
-		info.m_EngineRenderGroup = (bRenderWithViewModels ? ENGINE_RENDER_GROUP_VIEW_MODEL_TRANSLUCENT : ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY);
-		break;
-	case RENDERABLE_IS_TWO_PASS:
-		info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TWOPASS;
-		break;
-	default:
-		Assert(0);
-		break;
-	}
-
-	int flags = 0;
-
-	if(bRenderWithViewModels)
-	{
-		flags |= RENDER_FLAGS_RENDER_WITH_VIEWMODELS;
-	}
-
-	if(nType == RENDERABLE_IS_TWO_PASS)
-	{
-		flags |= RENDER_FLAGS_TWOPASS;
-	}
-
-	if(nModelType == RENDERABLE_MODEL_STATIC_PROP)
-	{
-		flags = RENDER_FLAGS_STATIC_PROP;
-	}
-
-	// We need to know if it's a brush model for shadows
-	if(modelType == mod_brush || nModelType == RENDERABLE_MODEL_BRUSH)
-	{
-		flags |= RENDER_FLAGS_BRUSH_MODEL;
-	}
-
-	if(modelType == mod_studio || nModelType == RENDERABLE_MODEL_STUDIOMDL)
-	{
-		flags |= RENDER_FLAGS_STUDIO_MODEL;
 	}
 
 	info.m_pRenderable = pRenderable;
@@ -1234,7 +1307,6 @@ void CClientLeafSystem::CreateRenderableHandle( IClientRenderable* pRenderable, 
 	info.m_TranslucencyCalculatedView = VIEW_ILLEGAL;
 	info.m_FirstShadow = m_ShadowsOnRenderable.InvalidIndex();
 	info.m_LeafList = m_RenderablesInLeaf.InvalidIndex();
-	info.m_Flags = flags;
 	info.m_bDisableShadowDepthRendering = false;
 	info.m_bDisableShadowDepthCaching = false;
 	info.m_EnumCount = 0;
@@ -1246,12 +1318,69 @@ void CClientLeafSystem::CreateRenderableHandle( IClientRenderable* pRenderable, 
 	info.m_vecAbsMins.Init();
 	info.m_vecAbsMaxs.Init();
 
+#if defined STAGING_ONLY && 0
+	DevMsg("CClientLeafSystem::NewRenderable %p\n", info.m_pRenderable);
+	dump_render_info(info);
+#endif
+
 	pRenderable->RenderHandle() = handle;
 
-	if(bRenderWithViewModels) {
-		AddToViewModelList( handle );
-		RemoveFromTree( handle );
+	RenderWithViewModels( handle, bRenderWithViewModels );
+}
+
+void CClientLeafSystem::DO_NOT_USE_CreateRenderableHandle( IClientRenderable* pRenderable, bool bIsStaticProp )
+{
+	RenderableModelType_t nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE;
+	if(bIsStaticProp) {
+		nModelType = RENDERABLE_MODEL_STATIC_PROP;
+	} else {
+		// We need to know if it's a brush model for shadows
+		int modelType = modelinfo->GetModelType( pRenderable->GetModel() );
+		switch(modelType) {
+		case mod_sprite:
+			nModelType = RENDERABLE_MODEL_ENTITY;
+			break;
+		case mod_brush:
+			nModelType = RENDERABLE_MODEL_BRUSH;
+			break;
+		case mod_studio:
+			nModelType = RENDERABLE_MODEL_STUDIOMDL;
+			break;
+		default:
+			Assert(0);
+			break;
+		}
 	}
+
+	RenderableTranslucencyType_t nType = RENDERABLE_IS_OPAQUE;
+
+	IClientRenderableMod *pRenderMod = dynamic_cast<IClientRenderableMod *>( pRenderable );
+	if(pRenderMod) {
+		nType = pRenderMod->ComputeTranslucencyType();
+	} else {
+		if(pRenderable->DO_NOT_USE_IsTransparent()) {
+			if(pRenderable->DO_NOT_USE_IsTwoPass()) {
+				nType = RENDERABLE_IS_TWO_PASS;
+			} else {
+				nType = RENDERABLE_IS_TRANSLUCENT;
+			}
+		}
+	}
+
+	NewRenderable( pRenderable, false, nType, nModelType );
+}
+
+void CClientLeafSystem::CreateRenderableHandle( IClientRenderable* pRenderable, bool bRenderWithViewModels, RenderableTranslucencyType_t nType, RenderableModelType_t nModelType )
+{
+	NewRenderable( pRenderable, bRenderWithViewModels, nType, nModelType );
+}
+
+void CClientLeafSystem::AddRenderable( IClientRenderable* pRenderable, bool bRenderWithViewModels, RenderableTranslucencyType_t nType, RenderableModelType_t nModelType )
+{
+	// force a relink we we try to draw it for the first time
+	NewRenderable( pRenderable, bRenderWithViewModels, nType, nModelType );
+	ClientRenderHandle_t handle = pRenderable->RenderHandle();
+	RenderableChanged( handle );
 }
 
 //-----------------------------------------------------------------------------
@@ -1278,23 +1407,19 @@ void CClientLeafSystem::SetTranslucencyType( ClientRenderHandle_t handle, Render
 		case RENDERABLE_IS_OPAQUE:
 			info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_OPAQUE;
 			break;
+		case RENDERABLE_IS_TWO_PASS:
 		case RENDERABLE_IS_TRANSLUCENT:
 			if(info.m_pAlphaProperty && info.m_pAlphaProperty->IgnoresZBuffer())
 				info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT_IGNOREZ;
 			else
 				info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT;
 			break;
-		case RENDERABLE_IS_TWO_PASS:
-			if(info.m_pAlphaProperty && info.m_pAlphaProperty->IgnoresZBuffer())
-				info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT_IGNOREZ;
-			else
-				info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT;
+		default:
+			Assert(0);
 			break;
 		}
 
-		if(info.RendersWithViewmodels()) {
-			info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE;
-		} else if(info.IsStaticProp()) {
+		if(info.IsStaticProp()) {
 			if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroupOpaque))
 				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_STATIC;
 		} else if(info.IsBrushModel()) {
@@ -1304,23 +1429,20 @@ void CClientLeafSystem::SetTranslucencyType( ClientRenderHandle_t handle, Render
 				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
 		} else {
 			Assert(0);
+			info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OTHER;
 		}
 
 		switch(nType) {
 		case RENDERABLE_IS_OPAQUE:
 			info.m_EngineRenderGroup = info.m_EngineRenderGroupOpaque;
 			break;
-		case RENDERABLE_IS_TRANSLUCENT:
-			if(info.RendersWithViewmodels()) {
-				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_VIEW_MODEL_TRANSLUCENT;
-			} else if(info.IsEntity() || info.IsBrushModel() || info.IsStudioModel() || info.IsStaticProp()) {
-				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
-			} else {
-				Assert(0);
-			}
-			break;
 		case RENDERABLE_IS_TWO_PASS:
-			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TWOPASS;
+		case RENDERABLE_IS_TRANSLUCENT:
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
+			break;
+		default:
+			Assert(0);
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OTHER;
 			break;
 		}
 	}
@@ -1372,8 +1494,6 @@ void CClientLeafSystem::DO_NOT_USE_ChangeRenderableRenderGroup( ClientRenderHand
 
 	if(info.m_EngineRenderGroup != group)
 	{
-		info.m_EngineRenderGroup = group;
-
 		if(IsEngineRenderGroupStatic(group)) {
 			info.m_Flags |= RENDER_FLAGS_STATIC_PROP;
 		} else {
@@ -1387,9 +1507,9 @@ void CClientLeafSystem::DO_NOT_USE_ChangeRenderableRenderGroup( ClientRenderHand
 		}
 
 		if(IsEngineRenderGroupViewModel(group)) {
-			info.m_Flags |= RENDER_FLAGS_RENDER_WITH_VIEWMODELS;
+			RenderWithViewModels(handle, true);
 		} else {
-			info.m_Flags &= ~RENDER_FLAGS_RENDER_WITH_VIEWMODELS;
+			RenderWithViewModels(handle, false);
 		}
 
 		switch(group) {
@@ -1397,12 +1517,25 @@ void CClientLeafSystem::DO_NOT_USE_ChangeRenderableRenderGroup( ClientRenderHand
 		case ENGINE_RENDER_GROUP_OPAQUE_STATIC_MEDIUM:
 		case ENGINE_RENDER_GROUP_OPAQUE_STATIC_SMALL:
 		case ENGINE_RENDER_GROUP_OPAQUE_STATIC_TINY:
+			info.m_EngineRenderGroup = group;
 			info.m_EngineRenderGroupOpaque = group;
 			info.m_nTranslucencyType = RENDERABLE_IS_OPAQUE;
 			info.m_nModelType = RENDERABLE_MODEL_STATIC_PROP;
 			info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_OPAQUE;
 			break;
+		case ENGINE_RENDER_GROUP_TWOPASS:
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
+			if(!IsEngineRenderGroupOpaqueEntity(info.m_EngineRenderGroupOpaque))
+				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
+			info.m_nTranslucencyType = RENDERABLE_IS_TWO_PASS;
+			info.m_nModelType = RENDERABLE_MODEL_ENTITY;
+			if(info.m_pAlphaProperty && info.m_pAlphaProperty->IgnoresZBuffer())
+				info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT_IGNOREZ;
+			else
+				info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT;
+			break;
 		case ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY:
+			info.m_EngineRenderGroup = group;
 			if(!IsEngineRenderGroupOpaqueEntity(info.m_EngineRenderGroupOpaque))
 				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
 			info.m_nTranslucencyType = RENDERABLE_IS_TRANSLUCENT;
@@ -1416,19 +1549,22 @@ void CClientLeafSystem::DO_NOT_USE_ChangeRenderableRenderGroup( ClientRenderHand
 		case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_MEDIUM:
 		case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_SMALL:
 		case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_TINY:
+			info.m_EngineRenderGroup = group;
 			info.m_EngineRenderGroupOpaque = group;
 			info.m_nTranslucencyType = RENDERABLE_IS_OPAQUE;
 			info.m_nModelType = RENDERABLE_MODEL_ENTITY;
 			info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_OPAQUE;
 			break;
 		case ENGINE_RENDER_GROUP_OPAQUE_BRUSH:
+			info.m_EngineRenderGroup = group;
 			info.m_EngineRenderGroupOpaque = group;
 			info.m_nTranslucencyType = RENDERABLE_IS_OPAQUE;
 			info.m_nModelType = RENDERABLE_MODEL_BRUSH;
 			info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_OPAQUE;
 			break;
 		case ENGINE_RENDER_GROUP_VIEW_MODEL_TRANSLUCENT:
-			info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE;
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
+			info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
 			info.m_nTranslucencyType = RENDERABLE_IS_TRANSLUCENT;
 			info.m_nModelType = RENDERABLE_MODEL_ENTITY;
 			if(info.m_pAlphaProperty && info.m_pAlphaProperty->IgnoresZBuffer())
@@ -1437,22 +1573,16 @@ void CClientLeafSystem::DO_NOT_USE_ChangeRenderableRenderGroup( ClientRenderHand
 				info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT;
 			break;
 		case ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE:
-			info.m_EngineRenderGroupOpaque = group;
+			if(!IsEngineRenderGroupOpaqueEntity(info.m_EngineRenderGroup))
+				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
+			if(!IsEngineRenderGroupOpaqueEntity(info.m_EngineRenderGroupOpaque))
+				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
 			info.m_nTranslucencyType = RENDERABLE_IS_OPAQUE;
 			info.m_nModelType = RENDERABLE_MODEL_ENTITY;
 			info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_OPAQUE;
 			break;
-		case ENGINE_RENDER_GROUP_TWOPASS:
-			if(!IsEngineRenderGroupOpaqueEntity(info.m_EngineRenderGroupOpaque))
-				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
-			info.m_nTranslucencyType = RENDERABLE_IS_TWO_PASS;
-			info.m_nModelType = RENDERABLE_MODEL_ENTITY;
-			if(info.m_pAlphaProperty && info.m_pAlphaProperty->IgnoresZBuffer())
-				info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT_IGNOREZ;
-			else
-				info.m_ClientRenderGroup = CLIENT_RENDER_GROUP_TRANSLUCENT;
-			break;
 		case ENGINE_RENDER_GROUP_OTHER:
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OTHER;
 			info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OTHER;
 			info.m_nTranslucencyType = RENDERABLE_IS_TRANSLUCENT;
 			info.m_nModelType = RENDERABLE_MODEL_UNKNOWN_TYPE;
@@ -1510,38 +1640,43 @@ void CClientLeafSystem::SetModelType( ClientRenderHandle_t handle, RenderableMod
 			info.m_Flags &= ~RENDER_FLAGS_BRUSH_MODEL;
 		}
 
-		if(info.IsTwoPass()) {
-			if(!IsEngineRenderGroupOpaqueEntity(info.m_EngineRenderGroupOpaque))
+		switch(nModelType) {
+		case RENDERABLE_MODEL_STUDIOMDL:
+		case RENDERABLE_MODEL_ENTITY:
+			if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroupOpaque))
 				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
-			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TWOPASS;
-		} else if(info.RendersWithViewmodels()) {
-			if(info.IsTranslucent()) {
-				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE;
-				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_VIEW_MODEL_TRANSLUCENT;
-			} else {
-				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE;
-				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE;
-			}
-		} else if(info.IsTranslucent()) {
-			if(!IsEngineRenderGroupOpaqueEntity(info.m_EngineRenderGroupOpaque))
-				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
-			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
-		} else if(info.IsStaticProp()) {
+			if(info.IsOpaque()) {
+				if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroup))
+					info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
+			} else
+				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
+			break;
+		case RENDERABLE_MODEL_STATIC_PROP:
 			if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroupOpaque))
 				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_STATIC;
-			if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroup))
-				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_STATIC;
-		} else if(info.IsBrushModel()) {
+			if(info.IsOpaque()) {
+				if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroup))
+					info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_STATIC;
+			} else
+				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
+			break;
+		case RENDERABLE_MODEL_BRUSH:
 			info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_BRUSH;
-			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_BRUSH;
-		} else if(info.IsEntity() || info.IsStudioModel()) {
-			if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroupOpaque))
-				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
-			if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroup))
-				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
-		} else {
-			Assert(0);
+			if(info.IsOpaque())
+				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_BRUSH;
+			else
+				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
+			break;
+		default:
+			info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OTHER;
+			info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OTHER;
+			break;
 		}
+
+	#if defined STAGING_ONLY && 0
+		DevMsg("CClientLeafSystem::SetModelType %p\n", info.m_pRenderable);
+		dump_render_info(info);
+	#endif
 
 		RenderableChanged( handle );
 	}
@@ -1651,14 +1786,6 @@ void CClientLeafSystem::RenderWithViewModels( ClientRenderHandle_t handle, bool 
 		{
 			info.m_Flags |= RENDER_FLAGS_RENDER_WITH_VIEWMODELS;
 
-			if(info.IsTranslucent()) {
-				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE;
-				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_VIEW_MODEL_TRANSLUCENT;
-			} else {
-				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE;
-				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_VIEW_MODEL_OPAQUE;
-			}
-
 			AddToViewModelList( handle );
 			RemoveFromTree( handle );
 		}
@@ -1668,31 +1795,6 @@ void CClientLeafSystem::RenderWithViewModels( ClientRenderHandle_t handle, bool 
 		if((info.m_Flags & RENDER_FLAGS_RENDER_WITH_VIEWMODELS ) != 0)
 		{
 			info.m_Flags &= ~RENDER_FLAGS_RENDER_WITH_VIEWMODELS;
-
-			if(info.IsTwoPass()) {
-				if(!IsEngineRenderGroupOpaqueEntity(info.m_EngineRenderGroupOpaque))
-					info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
-				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TWOPASS;
-			} else if(info.IsTranslucent()) {
-				if(!IsEngineRenderGroupOpaqueEntity(info.m_EngineRenderGroupOpaque))
-					info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
-				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY;
-			} else if(info.IsStaticProp()) {
-				if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroupOpaque))
-					info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_STATIC;
-				if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroup))
-					info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_STATIC;
-			} else if(info.IsBrushModel()) {
-				info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_BRUSH;
-				info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_BRUSH;
-			} else if(info.IsEntity() || info.IsStudioModel()) {
-				if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroupOpaque))
-					info.m_EngineRenderGroupOpaque = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
-				if(!IsEngineRenderGroupOpaqueStatic(info.m_EngineRenderGroup))
-					info.m_EngineRenderGroup = ENGINE_RENDER_GROUP_OPAQUE_ENTITY;
-			} else {
-				Assert(0);
-			}
 
 			RemoveFromViewModelList( handle );
 			RenderableChanged( handle );
@@ -1712,18 +1814,6 @@ bool CClientLeafSystem::IsRenderingWithViewModels( ClientRenderHandle_t handle )
 //-----------------------------------------------------------------------------
 // Add/remove renderable
 //-----------------------------------------------------------------------------
-void CClientLeafSystem::AddRenderable( IClientRenderable* pRenderable, bool bRenderWithViewModels, RenderableTranslucencyType_t nType, RenderableModelType_t nModelType )
-{
-	CreateRenderableHandle( pRenderable, bRenderWithViewModels, nType, nModelType );
-
-	ClientRenderHandle_t handle = pRenderable->RenderHandle();
-
-	RenderableInfo_t &info = m_Renderables[(uint)handle];
-	info.m_Flags |= RENDER_FLAGS_HASCHANGED;
-
-	m_DirtyRenderables.AddToTail( handle );
-}
-
 void CClientLeafSystem::RemoveRenderable( ClientRenderHandle_t handle )
 {
 	// This can happen upon level shutdown
@@ -2392,6 +2482,9 @@ void CClientLeafSystem::DrawDetailObjectsInLeaf( int leaf, int nFrameNumber, int
 //-----------------------------------------------------------------------------
 bool CClientLeafSystem::ShouldDrawDetailObjectsInLeaf( int leaf, int frameNumber )
 {
+	if(r_DrawDetailProps.GetInt() == 0)
+		return false;
+
 	ClientLeaf_t &leafInfo = m_Leaf[leaf];
 	return ( (leafInfo.m_DetailPropRenderFrame == frameNumber ) &&
 			 ( ( leafInfo.m_DetailPropCount != 0 ) || ( leafInfo.m_pSubSystemData[CLSUBSYSTEM_DETAILOBJECTS] ) ) );
@@ -2490,8 +2583,8 @@ void CClientLeafSystem::ComputeTranslucentRenderLeaf( int count, const LeafIndex
 //-----------------------------------------------------------------------------
 // Adds a renderable to the list of renderables to render this frame
 //-----------------------------------------------------------------------------
-inline void AddRenderableToRenderList( CClientRenderablesList &renderList, IClientRenderable *pRenderable, IClientRenderableMod *pRenderableMod, 
-	int iLeaf, EngineRenderGroup_t group,	int nModelType, uint8 nAlphaModulation, ClientRenderHandle_t renderHandle, bool bTwoPass )
+inline void AddRenderableToRenderList( CClientRenderablesList &renderList, const DetailRenderableInfo_t &info, 
+	int iLeaf, uint8 nAlphaModulation, ClientRenderHandle_t renderHandle )
 {
 #ifdef _DEBUG
 	if (cl_drawleaf.GetInt() >= 0)
@@ -2501,27 +2594,149 @@ inline void AddRenderableToRenderList( CClientRenderablesList &renderList, IClie
 	}
 #endif
 
-	Assert( group >= 0 && group < ENGINE_RENDER_GROUP_COUNT );
-	
-	int &curCount = renderList.m_RenderGroupCounts[group];
+	int group_index = CClientRenderablesList::GROUP_COUNT;
+
+	switch(info.m_nEngineRenderGroup) {
+	case ENGINE_RENDER_GROUP_OPAQUE_ENTITY:
+		group_index = CClientRenderablesList::GROUP_OPAQUE_ENTITY;
+		break;
+	case ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY:
+		group_index = CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY;
+		break;
+	default:
+		Assert(0);
+		return;
+	}
+
+	Assert( group_index >= 0 && group_index < CClientRenderablesList::GROUP_COUNT );
+
+	int &curCount = renderList.m_RenderGroupCounts[group_index];
 	if ( curCount < CClientRenderablesList::MAX_GROUP_ENTITIES )
 	{
 		Assert( (iLeaf >= 0) && (iLeaf <= 65535) );
 
-		CClientRenderablesList::CEntry *pEntry = &renderList.m_RenderGroups[group][curCount];
-		pEntry->m_pRenderable = pRenderable;
-		pEntry->m_pRenderableMod = pRenderableMod;
+		CClientRenderablesList::CEntry *pEntry = &renderList.m_RenderGroups[group_index][curCount];
+		pEntry->m_pRenderable = info.m_pRenderable;
+		pEntry->m_pRenderableMod = info.m_pRenderableMod;
 		pEntry->m_iWorldListInfoLeaf = iLeaf;
-		pEntry->m_TwoPass = bTwoPass;
+		pEntry->m_TwoPass = false;
 		pEntry->m_RenderHandle = renderHandle;
-		pEntry->m_nModelType = nModelType;
+		pEntry->m_nModelType = RENDERABLE_MODEL_ENTITY;
 		pEntry->m_InstanceData.m_nAlpha = nAlphaModulation;
 		curCount++;
 	}
 #ifdef _DEBUG
 	else
 	{
-		engine->Con_NPrintf( 10, "Warning: overflowed CClientRenderablesList group %d", group );
+		engine->Con_NPrintf( 10, "Warning: overflowed CClientRenderablesList group %d", group_index );
+	}
+#endif
+}
+
+enum
+{
+	ADD_RENDERABLE_TRANSLUCENT,
+	ADD_RENDERABLE_OPAQUE,
+};
+
+inline void AddRenderableToRenderList( CClientRenderablesList &renderList, const CClientLeafSystem::RenderableInfo_t &info, 
+	int iLeaf, uint8 nAlphaModulation, ClientRenderHandle_t renderHandle, bool bTwoPass, int method )
+{
+#ifdef _DEBUG
+	if (cl_drawleaf.GetInt() >= 0)
+	{
+		if (iLeaf != cl_drawleaf.GetInt())
+			return;
+	}
+#endif
+
+	int group_index = CClientRenderablesList::GROUP_COUNT;
+
+	if(info.IsBrushModel()) {
+		if(method == ADD_RENDERABLE_TRANSLUCENT) {
+			group_index = CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY;
+		} else if(method == ADD_RENDERABLE_OPAQUE) {
+			group_index = CClientRenderablesList::GROUP_OPAQUE_BRUSH;
+		} else {
+			Assert(0);
+			return;
+		}
+	} else if(info.IsStaticProp()) {
+		if(method == ADD_RENDERABLE_TRANSLUCENT) {
+			group_index = CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY;
+		} else if(method == ADD_RENDERABLE_OPAQUE) {
+			switch(info.m_EngineRenderGroupOpaque) {
+			case ENGINE_RENDER_GROUP_OPAQUE_STATIC_HUGE:
+				group_index = CClientRenderablesList::GROUP_OPAQUE_STATIC_HUGE;
+				break;
+			case ENGINE_RENDER_GROUP_OPAQUE_STATIC_MEDIUM:
+				group_index = CClientRenderablesList::GROUP_OPAQUE_STATIC_MEDIUM;
+				break;
+			case ENGINE_RENDER_GROUP_OPAQUE_STATIC_SMALL:
+				group_index = CClientRenderablesList::GROUP_OPAQUE_STATIC_SMALL;
+				break;
+			case ENGINE_RENDER_GROUP_OPAQUE_STATIC_TINY:
+				group_index = CClientRenderablesList::GROUP_OPAQUE_STATIC_TINY;
+				break;
+			default:
+				Assert(0);
+				return;
+			}
+		} else {
+			Assert(0);
+			return;
+		}
+	} else if(info.IsEntity() || info.IsStudioModel()) {
+		if(method == ADD_RENDERABLE_TRANSLUCENT) {
+			group_index = CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY;
+		} else if(method == ADD_RENDERABLE_OPAQUE) {
+			switch(info.m_EngineRenderGroupOpaque) {
+			case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_HUGE:
+				group_index = CClientRenderablesList::GROUP_OPAQUE_ENTITY_HUGE;
+				break;
+			case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_MEDIUM:
+				group_index = CClientRenderablesList::GROUP_OPAQUE_ENTITY_MEDIUM;
+				break;
+			case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_SMALL:
+				group_index = CClientRenderablesList::GROUP_OPAQUE_ENTITY_SMALL;
+				break;
+			case ENGINE_RENDER_GROUP_OPAQUE_ENTITY_TINY:
+				group_index = CClientRenderablesList::GROUP_OPAQUE_ENTITY_TINY;
+				break;
+			default:
+				Assert(0);
+				return;
+			}
+		} else {
+			Assert(0);
+			return;
+		}
+	} else {
+		Assert(0);
+		return;
+	}
+
+	Assert( group_index >= 0 && group_index < CClientRenderablesList::GROUP_COUNT );
+	
+	int &curCount = renderList.m_RenderGroupCounts[group_index];
+	if ( curCount < CClientRenderablesList::MAX_GROUP_ENTITIES )
+	{
+		Assert( (iLeaf >= 0) && (iLeaf <= 65535) );
+
+		CClientRenderablesList::CEntry *pEntry = &renderList.m_RenderGroups[group_index][curCount];
+		pEntry->m_pRenderable = info.m_pRenderable;
+		pEntry->m_pRenderableMod = info.m_pRenderableMod;
+		pEntry->m_iWorldListInfoLeaf = iLeaf;
+		pEntry->m_TwoPass = bTwoPass;
+		pEntry->m_RenderHandle = renderHandle;
+		pEntry->m_nModelType = info.GetModelType();
+		pEntry->m_InstanceData.m_nAlpha = nAlphaModulation;
+		curCount++;
+	}
+#ifdef _DEBUG
+	else
+	{
+		engine->Con_NPrintf( 10, "Warning: overflowed CClientRenderablesList group %d", group_index );
 	}
 #endif
 }
@@ -2534,8 +2749,8 @@ inline void AddRenderableToRenderList( CClientRenderablesList &renderList, IClie
 //-----------------------------------------------------------------------------
 void CClientLeafSystem::CollateViewModelRenderables( CViewModelRenderablesList *pList )
 {
-	CViewModelRenderablesList::RenderGroups_t &opaqueList = pList->m_RenderGroups[ CViewModelRenderablesList::VM_GROUP_OPAQUE ];
-	CViewModelRenderablesList::RenderGroups_t &translucentList = pList->m_RenderGroups[ CViewModelRenderablesList::VM_GROUP_TRANSLUCENT ];
+	CViewModelRenderablesList::RenderGroups_t &opaqueList = pList->m_RenderGroups[ CViewModelRenderablesList::GROUP_OPAQUE ];
+	CViewModelRenderablesList::RenderGroups_t &translucentList = pList->m_RenderGroups[ CViewModelRenderablesList::GROUP_TRANSLUCENT ];
 
 	for ( int i = m_ViewModels.Count()-1; i >= 0; --i )
 	{
@@ -2607,11 +2822,11 @@ static void DetectBucketedRenderGroup( CClientLeafSystem::RenderableInfo_t &info
 	EngineRenderGroup_t bucketedGroup = ENGINE_RENDER_GROUP_OTHER;
 
 	if(info.IsStaticProp()) {
-		bucketedGroup = (EngineRenderGroup_t)RENDER_GROUP_OPAQUE_BUCKETED_STATIC( bucketedGroupIndex );
+		bucketedGroup = (EngineRenderGroup_t)ENGINE_RENDER_GROUP_OPAQUE_BUCKETED_STATIC( bucketedGroupIndex );
 
 		Assert( bucketedGroup >= ENGINE_RENDER_GROUP_OPAQUE_BEGIN && bucketedGroup < ENGINE_RENDER_GROUP_OPAQUE_END );
 	} else if(info.IsEntity() || info.IsStudioModel()) {
-		bucketedGroup = (EngineRenderGroup_t)RENDER_GROUP_OPAQUE_BUCKETED_ENTITY( bucketedGroupIndex );
+		bucketedGroup = (EngineRenderGroup_t)ENGINE_RENDER_GROUP_OPAQUE_BUCKETED_ENTITY( bucketedGroupIndex );
 
 		Assert( bucketedGroup >= ENGINE_RENDER_GROUP_OPAQUE_BEGIN && bucketedGroup < ENGINE_RENDER_GROUP_OPAQUE_END );
 	}
@@ -3559,8 +3774,8 @@ void CClientLeafSystem::AddDependentRenderables( const SetupRenderInfo_t &info )
 //-----------------------------------------------------------------------------
 void CClientLeafSystem::AddRenderablesToRenderLists( const SetupRenderInfo_t &info, int nCount, RenderableInfoAndHandle_t *ppRenderables, BuildRenderListInfo_t *pRLInfo, int nDetailCount, DetailRenderableInfo_t *pDetailInfo )
 {
-	CClientRenderablesList::CEntry *pTranslucentEntries = info.m_pRenderList->m_RenderGroups[ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY];
-	const int &nTranslucentEntries = info.m_pRenderList->m_RenderGroupCounts[ENGINE_RENDER_GROUP_TRANSLUCENT_ENTITY];
+	CClientRenderablesList::CEntry *pTranslucentEntries = info.m_pRenderList->m_RenderGroups[CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY];
+	const int &nTranslucentEntries = info.m_pRenderList->m_RenderGroupCounts[CClientRenderablesList::GROUP_TRANSLUCENT_ENTITY];
 	int nTranslucent = 0;
 	int nCurDetail = 0;
 	int nWorldListLeafIndex = -1;
@@ -3577,8 +3792,8 @@ void CClientLeafSystem::AddRenderablesToRenderLists( const SetupRenderInfo_t &in
 				if ( detailInfo.m_nLeafIndex > nWorldListLeafIndex )
 					break;
 				Assert( detailInfo.m_nLeafIndex == nWorldListLeafIndex );
-				AddRenderableToRenderList( *info.m_pRenderList, detailInfo.m_pRenderable, detailInfo.m_pRenderableMod, 
-					nWorldListLeafIndex, detailInfo.m_nEngineRenderGroup, RENDERABLE_MODEL_ENTITY, detailInfo.m_InstanceData.m_nAlpha, detailInfo.m_hHandle, false );
+				AddRenderableToRenderList( *info.m_pRenderList, detailInfo, 
+					nWorldListLeafIndex, detailInfo.m_InstanceData.m_nAlpha, detailInfo.m_hHandle );
 			}
 
 			int nNewTranslucent = nTranslucentEntries - nTranslucent;
@@ -3597,25 +3812,28 @@ void CClientLeafSystem::AddRenderablesToRenderLists( const SetupRenderInfo_t &in
 		bool bIsTranslucent = ( pRLInfo[i].m_nAlpha != 255 ) || ( !pInfo->IsOpaque() ); 
 		if ( !bIsTranslucent )
 		{
-			AddRenderableToRenderList( *info.m_pRenderList, pInfo->m_pRenderable, pInfo->m_pRenderableMod, 
-				nWorldListLeafIndex, pInfo->m_EngineRenderGroup, pInfo->GetModelType(), pRLInfo[i].m_nAlpha, ppRenderables[i].handle, false );
+			AddRenderableToRenderList( *info.m_pRenderList, *pInfo, 
+				nWorldListLeafIndex, pRLInfo[i].m_nAlpha, ppRenderables[i].handle, false, ADD_RENDERABLE_OPAQUE );
 			continue;
 		}
 
 		// FIXME: Remove call to GetFXBlend
 		bool bIsTwoPass = ( pInfo->IsTwoPass() ) && ( pRLInfo[i].m_nAlpha == 255 );	// Two pass?
+		if(pInfo->IsBrushModel()) {
+			bIsTwoPass = false;
+		}
 
 		// Add to appropriate list if drawing translucent objects (shadow depth mapping will skip this)
 		if ( info.m_bDrawTranslucentObjects ) 
 		{
-			AddRenderableToRenderList( *info.m_pRenderList, pInfo->m_pRenderable, pInfo->m_pRenderableMod, 
-				nWorldListLeafIndex, pInfo->m_EngineRenderGroup, pInfo->m_nModelType, pRLInfo[i].m_nAlpha, ppRenderables[i].handle, bIsTwoPass );
+			AddRenderableToRenderList( *info.m_pRenderList, *pInfo, 
+				nWorldListLeafIndex, pRLInfo[i].m_nAlpha, ppRenderables[i].handle, bIsTwoPass, ADD_RENDERABLE_TRANSLUCENT );
 		}
 
 		if ( bIsTwoPass )	// Also add to opaque list if it's a two-pass model... 
 		{
-			AddRenderableToRenderList( *info.m_pRenderList, pInfo->m_pRenderable, pInfo->m_pRenderableMod, 
-				nWorldListLeafIndex, pInfo->m_EngineRenderGroupOpaque, pInfo->GetModelType(), 255, ppRenderables[i].handle, bIsTwoPass );
+			AddRenderableToRenderList( *info.m_pRenderList, *pInfo, 
+				nWorldListLeafIndex, 255, ppRenderables[i].handle, bIsTwoPass, ADD_RENDERABLE_OPAQUE );
 		}
 	}
 
@@ -3626,8 +3844,8 @@ void CClientLeafSystem::AddRenderablesToRenderLists( const SetupRenderInfo_t &in
 		if ( detailInfo.m_nLeafIndex > nWorldListLeafIndex )
 			break;
 		Assert( detailInfo.m_nLeafIndex == nWorldListLeafIndex );
-		AddRenderableToRenderList( *info.m_pRenderList, detailInfo.m_pRenderable, detailInfo.m_pRenderableMod, 
-			nWorldListLeafIndex, detailInfo.m_nEngineRenderGroup, RENDERABLE_MODEL_ENTITY, detailInfo.m_InstanceData.m_nAlpha, detailInfo.m_hHandle, false );
+		AddRenderableToRenderList( *info.m_pRenderList, detailInfo, 
+			nWorldListLeafIndex, detailInfo.m_InstanceData.m_nAlpha, detailInfo.m_hHandle );
 	}
 
 	int nNewTranslucent = nTranslucentEntries - nTranslucent;

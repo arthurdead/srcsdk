@@ -36,6 +36,8 @@ public:
 	CRecastMgrEnt();
 	~CRecastMgrEnt();
 
+	virtual void Spawn();
+
 #if defined( GAME_DLL )
 	int UpdateTransmitState()
 	{

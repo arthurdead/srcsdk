@@ -31,7 +31,7 @@
 #include "particle_property.h"
 #include "toolframework/itoolentity.h"
 #include "tier0/threadtools.h"
-#include "clientalphaproperty.h"
+//#include "clientalphaproperty.h"
 #include "map_entity.h"
 
 class C_Team;
@@ -1444,6 +1444,24 @@ public:
 
 	const char	*GetEntityName();
 
+	bool		NameMatches( const char *pszNameOrWildcard );
+	bool		ClassMatches( const char *pszClassOrWildcard );
+
+#ifndef NO_STRING_T
+	bool		NameMatches( string_t nameStr );
+	bool		ClassMatches( string_t nameStr );
+#endif
+	bool		NameMatchesExact( string_t nameStr );
+	bool		ClassMatchesExact( string_t nameStr );
+
+	template <typename T>
+	bool		Downcast( string_t iszClass, T **ppResult );
+
+private:
+	bool		NameMatchesComplex( const char *pszNameOrWildcard );
+	bool		ClassMatchesComplex( const char *pszClassOrWildcard );
+
+public:
 	bool ReadyToDraw() const
 	{ return m_bReadyToDraw; }
 
@@ -1601,7 +1619,7 @@ public:
 
 	bool			IsCombatCharacter() { return MyCombatCharacterPointer() == NULL ? false : true; }
 protected:
-	int								m_nFXComputeFrame;
+	
 
 private:
 	// FIXME: Should I move the functions handling these out of C_ClientEntity
@@ -2340,16 +2358,6 @@ inline int C_BaseEntity::GetMaxGPULevel( ) const
 	return m_nMaxGPULevel;
 }
 
-inline RenderMode_t CBaseEntity::GetRenderMode() const
-{
-	return m_pClientAlphaProperty->GetRenderMode();
-}
-
-inline RenderFx_t CBaseEntity::GetRenderFX() const
-{
-	return m_pClientAlphaProperty->GetRenderFX();
-}
-
 inline float CBaseEntity::GetOldSimulationTime() const
 {
 	return m_flOldSimulationTime;
@@ -2596,6 +2604,62 @@ inline const char *C_BaseEntity::GetEntityName()
 { 
 	return m_iName; 
 }
+
+inline bool CBaseEntity::NameMatches( const char *pszNameOrWildcard )
+{
+	if ( IDENT_STRINGS(m_iName, pszNameOrWildcard) )
+		return true;
+	return NameMatchesComplex( pszNameOrWildcard );
+}
+
+#ifndef NO_STRING_T
+inline bool CBaseEntity::NameMatches( string_t nameStr )
+{
+	if ( IDENT_STRINGS(m_iName, nameStr) )
+		return true;
+	return NameMatchesComplex( STRING(nameStr) );
+}
+#endif
+
+inline bool CBaseEntity::ClassMatches( const char *pszClassOrWildcard )
+{
+	if ( IDENT_STRINGS(m_iClassname, pszClassOrWildcard ) )
+		return true;
+	return ClassMatchesComplex( pszClassOrWildcard );
+}
+
+inline bool CBaseEntity::NameMatchesExact( string_t nameStr )
+{
+	return IDENT_STRINGS(m_iName, nameStr);
+}
+
+inline bool CBaseEntity::ClassMatchesExact( string_t nameStr )
+{
+	return IDENT_STRINGS(m_iClassname, nameStr );
+}
+
+#ifndef NO_STRING_T
+inline bool CBaseEntity::ClassMatches( string_t nameStr )
+{
+	if ( IDENT_STRINGS(m_iClassname, nameStr ) )
+		return true;
+	return ClassMatchesComplex( STRING(nameStr) );
+}
+#endif
+
+template <typename T>
+inline bool CBaseEntity::Downcast( string_t iszClass, T **ppResult )
+{
+	if ( IDENT_STRINGS( iszClass, m_iClassname ) )
+	{
+		*ppResult = static_cast< T* >( this );
+		return true;
+	}
+	*ppResult = NULL;
+	return false;
+}
+
+bool EntityNamesMatch( const char *pszQuery, string_t nameToMatch );
 
 class CAbsQueryScopeGuard
 {

@@ -520,7 +520,10 @@ void CAI_AssaultBehavior::StartTask( const Task_t *pTask )
 		break;
 
 	case TASK_ASSAULT_DEFER_SCHEDULE_SELECTION:
-		m_flTimeDeferScheduleSelection = gpGlobals->curtime + pTask->flTaskData;
+		Assert( pTask->numData == 1 );
+		Assert( pTask->data[0].CanBeFloat() );
+
+		m_flTimeDeferScheduleSelection = gpGlobals->curtime + pTask->data[0].AsFloat();
 		TaskComplete();
 		break;
 
@@ -1674,17 +1677,17 @@ void CAI_AssaultGoal::InputBeginAssault( inputdata_t &inputdata )
 
 AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER(CAI_AssaultBehavior)
 
-	DECLARE_TASK(TASK_GET_PATH_TO_RALLY_POINT)
-	DECLARE_TASK(TASK_FACE_RALLY_POINT)
-	DECLARE_TASK(TASK_GET_PATH_TO_ASSAULT_POINT)
-	DECLARE_TASK(TASK_FACE_ASSAULT_POINT)
-	DECLARE_TASK(TASK_AWAIT_CUE)
-	DECLARE_TASK(TASK_AWAIT_ASSAULT_TIMEOUT)
-	DECLARE_TASK(TASK_ANNOUNCE_CLEAR)
-	DECLARE_TASK(TASK_WAIT_ASSAULT_DELAY)
-	DECLARE_TASK(TASK_HIT_ASSAULT_POINT)
-	DECLARE_TASK(TASK_HIT_RALLY_POINT)
-	DECLARE_TASK(TASK_ASSAULT_DEFER_SCHEDULE_SELECTION)
+	DECLARE_TASK(TASK_GET_PATH_TO_RALLY_POINT, TaskParamCheck_t())
+	DECLARE_TASK(TASK_FACE_RALLY_POINT, TaskParamCheck_t())
+	DECLARE_TASK(TASK_GET_PATH_TO_ASSAULT_POINT, TaskParamCheck_t())
+	DECLARE_TASK(TASK_FACE_ASSAULT_POINT, TaskParamCheck_t())
+	DECLARE_TASK(TASK_AWAIT_CUE, TaskParamCheck_t())
+	DECLARE_TASK(TASK_AWAIT_ASSAULT_TIMEOUT, TaskParamCheck_t())
+	DECLARE_TASK(TASK_ANNOUNCE_CLEAR, TaskParamCheck_t())
+	DECLARE_TASK(TASK_WAIT_ASSAULT_DELAY, TaskParamCheck_t())
+	DECLARE_TASK(TASK_HIT_ASSAULT_POINT, TaskParamCheck_t())
+	DECLARE_TASK(TASK_HIT_RALLY_POINT, TaskParamCheck_t())
+	DECLARE_TASK(TASK_ASSAULT_DEFER_SCHEDULE_SELECTION, TaskParamCheck_t())
 	
 	//=========================================================
 	//=========================================================

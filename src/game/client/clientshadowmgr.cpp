@@ -90,6 +90,7 @@
 #include "flashlighteffect.h"
 #include "c_env_projectedtexture.h"
 #include "imaterialproxydict.h"
+#include "clientalphaproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

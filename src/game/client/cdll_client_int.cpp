@@ -120,6 +120,7 @@
 #include "hackmgr/hackmgr.h"
 #include "game_loopback/igameloopback.h"
 #include "hackmgr/dlloverride.h"
+#include "recast/recast_mgr.h"
 
 // NVNT includes
 #include "hud_macros.h"
@@ -1264,6 +1265,8 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	COM_TimestampedLog( "C_BaseAnimating::InitBoneSetupThreadPool" );
 	C_BaseAnimating::InitBoneSetupThreadPool();
 
+	RecastMgr().Init();
+
 	// This is a fullscreen element, so only lives on slot 0!!!
 	m_pHudCloseCaption = GET_FULLSCREEN_HUDELEMENT( CHudCloseCaption );
 
@@ -1471,6 +1474,8 @@ void CClientDll::HudUpdate( bool bActive )
 		C_BaseAnimating::AutoAllowBoneAccess boneaccess( true, false ); 
 		IGameSystem::UpdateAllSystems( frametime );
 	}
+
+	RecastMgr().Update( frametime );
 
 	// run vgui animations
 	vgui::GetAnimationController()->UpdateAnimations( engine->Time() );
@@ -1906,6 +1911,8 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 		engine->ClientCmd( "cl_predict 1" );
 	}
 
+	RecastMgr().Load();
+
 	GetHud().LevelInit();
 
 #if defined( REPLAY_ENABLED )
@@ -1983,6 +1990,8 @@ void CClientDll::LevelShutdown( void )
 
 	// Now do the post-entity shutdown of all systems
 	IGameSystem::LevelShutdownPostEntityAllSystems();
+
+	RecastMgr().Reset();
 
 	GetViewRenderInstance()->LevelShutdown();
 	beams->ClearBeams();

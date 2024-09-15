@@ -79,7 +79,7 @@ bool IsPushableEntity( CBaseEntity *pEnt )
 	{
 		if ( pEnt->GetCollisionGroup() == COLLISION_GROUP_NONE )
 		{
-			if ( FClassnameIs( pEnt, "prop_physics_multiplayer" ) )
+			if ( FClassnameIs( pEnt, "prop_physics" ) )
 			{
 				return true;
 			}
@@ -106,10 +106,10 @@ bool IsBreakableEntity( CBaseEntity *pEnt )
 	if ( pEnt->GetHealth() > 200 )
 		return false;
 
-	IMultiplayerPhysics *pPhysicsInterface = dynamic_cast< IMultiplayerPhysics * >( pEnt );
+	ISpecialPhysics *pPhysicsInterface = dynamic_cast< ISpecialPhysics * >( pEnt );
 	if ( pPhysicsInterface )
 	{
-		if ( pPhysicsInterface->GetMultiplayerPhysicsMode() != PHYSICS_MULTIPLAYER_SOLID )
+		if ( pPhysicsInterface->GetPhysicsMode() != PHYSICS_SOLID )
 			return false;
 	}
 	else
@@ -204,8 +204,8 @@ void AvoidPushawayProps( CBaseCombatCharacter *pPlayer, CUserCmd *pCmd )
 	for ( int i=0; i < nEnts; i++ )
 	{
 		// Don't respond to this entity on the client unless it has PHYSICS_MULTIPLAYER_FULL set.
-		IMultiplayerPhysics *pInterface = dynamic_cast<IMultiplayerPhysics*>( props[i] );
-		if ( pInterface && pInterface->GetMultiplayerPhysicsMode() != PHYSICS_MULTIPLAYER_SOLID )
+		ISpecialPhysics *pInterface = dynamic_cast<ISpecialPhysics*>( props[i] );
+		if ( pInterface && pInterface->GetPhysicsMode() != PHYSICS_SOLID )
 			continue;
 
 		const float minMass = 10.0f; // minimum mass that can push a player back
@@ -298,9 +298,9 @@ void PerformObstaclePushaway( CBaseCombatCharacter *pPushingEntity )
 	{
 		// If this entity uas PHYSICS_MULTIPLAYER_FULL set (ie: it's not just debris), and we're moving too slow, don't push it away.
 		// Instead, let the client bounce off it. This allows players to get close to and duck behind things without knocking them over.
-		IMultiplayerPhysics *pInterface = dynamic_cast<IMultiplayerPhysics*>( props[i] );
+		ISpecialPhysics *pInterface = dynamic_cast<ISpecialPhysics*>( props[i] );
 
-		if ( pInterface && pInterface->GetMultiplayerPhysicsMode() == PHYSICS_MULTIPLAYER_SOLID )
+		if ( pInterface && pInterface->GetPhysicsMode() == PHYSICS_SOLID )
 		{
 			if ( pPushingEntity->GetAbsVelocity().Length2D() < sv_pushaway_min_player_speed.GetFloat() )
 				continue;

@@ -12,7 +12,6 @@
 #include "ai_activity.h"
 #include "animation.h"
 #include "bone_setup.h"
-#include "scriptevent.h"
 #include "npcevent.h"
 #include "eventlist.h"
 #include "tier0/vprof.h"
@@ -59,14 +58,7 @@ extern int g_nEventListVersion;
 
 void SetEventIndexForSequence( mstudioseqdesc_t &seqdesc )
 {
-	if ( &seqdesc == NULL )
-		 return;
-
-#ifndef CLIENT_DLL
 	seqdesc.flags |= STUDIO_EVENT;
-#else
-	seqdesc.flags |= STUDIO_EVENT_CLIENT;
-#endif
 
 	if ( seqdesc.numevents == 0 )
 		 return;
@@ -78,32 +70,36 @@ void SetEventIndexForSequence( mstudioseqdesc_t &seqdesc )
 		if ( !pevent )
 			 continue;
 
-		if ( pevent->type & AE_TYPE_NEWEVENTSYSTEM )
+		Animevent iEventIndex = AE_INVALID;
+
+		const char *pEventName = NULL;
+
+		if(pevent->IsNewType()) {
+			pEventName = pevent->pszEventName();
+			iEventIndex = EventList_IndexForName( pEventName );
+		} else {
+			iEventIndex = (Animevent)pevent->event_server;
+			pEventName = EventList_NameForIndex( iEventIndex );
+		}
+
+		if ( iEventIndex == AE_INVALID )
 		{
-			const char *pEventName = pevent->pszEventName();
-			
-			int iEventIndex = EventList_IndexForName( pEventName );
-				
-			if ( iEventIndex == -1 )
-			{
-				pevent->event_newsystem = EventList_RegisterPrivateEvent( pEventName );
-			}
-			else
-			{
-				pevent->event_newsystem = iEventIndex;
-				pevent->type |= EventList_GetEventType( iEventIndex );
-			}
+		#ifdef _DEBUG
+			Warning( "***\nSequence tried to reference unregistered event: %s \n***\n", pEventName );
+		#endif
+
+			pevent->Event( EventList_RegisterPrivateEvent( pEventName ), 0 );
+		}
+		else
+		{
+			pevent->Event( iEventIndex, EventList_GetEventType( iEventIndex ) );
 		}
 	}
 }
 
 mstudioevent_t *GetEventIndexForSequence( mstudioseqdesc_t &seqdesc )
 {
-#ifndef CLIENT_DLL
 	if ( !(seqdesc.flags & STUDIO_EVENT) )
-#else
-	if ( !(seqdesc.flags & STUDIO_EVENT_CLIENT) )
-#endif
 	{
 		SetEventIndexForSequence( seqdesc );
 	}
@@ -151,7 +147,11 @@ void SetActivityForSequence( CStudioHdr *pstudiohdr, int i )
 	const char *pszActivityName;
 	mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( i );
 
-	seqdesc.flags |= STUDIO_ACTIVITY;
+#ifdef GAME_DLL
+	seqdesc.flags |= STUDIO_ACTIVITY_SERVER;
+#else
+	seqdesc.flags |= STUDIO_ACTIVITY_CLIENT;
+#endif
 
 	pszActivityName = GetSequenceActivityName( pstudiohdr, i );
 	if ( pszActivityName[0] != '\0' )
@@ -160,19 +160,15 @@ void SetActivityForSequence( CStudioHdr *pstudiohdr, int i )
 		
 		if ( iActivityIndex == -1 )
 		{
-			// Allow this now.  Animators can create custom activities that are referenced only on the client or by scripts, etc.
-			//Warning( "***\nModel %s tried to reference unregistered activity: %s \n***\n", pstudiohdr->name, pszActivityName );
-			//Assert(0);
-			// HACK: the client and server don't share the private activity list so registering it on the client would hose the server
-#ifdef CLIENT_DLL
-			seqdesc.flags &= ~STUDIO_ACTIVITY;
-#else
-			seqdesc.activity = ActivityList_RegisterPrivateActivity( pszActivityName );
-#endif
+		#ifdef _DEBUG
+			Warning( "***\nModel %s tried to reference unregistered activity: %s \n***\n", pstudiohdr->pszName(), pszActivityName );
+		#endif
+
+			seqdesc.Activity( ActivityList_RegisterPrivateActivity( pszActivityName ) );
 		}
 		else
 		{
-			seqdesc.activity = iActivityIndex;
+			seqdesc.Activity( iActivityIndex );
 		}
 	}
 }
@@ -272,7 +268,7 @@ int CStudioHdr::CActivityToSequenceMapping::SelectWeightedSequence( CStudioHdr *
 	{
 		mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( curSequence );
 
-		if (seqdesc.activity == activity && seqdesc.actweight < 0)
+		if (seqdesc.Activity() == activity && seqdesc.actweight < 0)
 			return curSequence;
 	}
 
@@ -303,7 +299,7 @@ int CStudioHdr::CActivityToSequenceMapping::SelectWeightedSequence( CStudioHdr *
 	{
 		mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( curSequence );
 
-		if (seqdesc.activity == activity && seqdesc.actweight < 0)
+		if (seqdesc.Activity() == activity && seqdesc.actweight < 0)
 			return curSequence;
 	}
 
@@ -324,7 +320,7 @@ int CStudioHdr::CActivityToSequenceMapping::SelectWeightedSequence( CStudioHdr *
 	int randomValue = 0;
 	if ( actData->totalWeight <= 0 )
 	{
-		Warning( "Activity %s has %d sequences with a total weight of %d!", ActivityList_NameForIndex(activity), actData->count, actData->totalWeight );
+		Warning( "Activity %s has %d sequences with a total weight of %d!", ActivityList_NameForIndex((Activity)activity), actData->count, actData->totalWeight );
 		return (m_pSequenceTuples + actData->startingIdx)->seqnum;
 	}
 	else if ( actData->totalWeight == 1 )
@@ -495,7 +491,7 @@ int LookupActivity( CStudioHdr *pstudiohdr, const char *label )
 		mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( i );
 		if ( stricmp( seqdesc.pszActivityName(), label ) == 0 )
 		{
-			return seqdesc.activity;
+			return seqdesc.Activity();
 		}
 	}
 
@@ -654,8 +650,6 @@ bool HasAnimationEventOfType( CStudioHdr *pstudiohdr, int sequence, int type )
 		return false;
 
 	mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( sequence );
-	if ( !&seqdesc )
-		return false;
 
 	mstudioevent_t *pevent = GetEventIndexForSequence( seqdesc );
 	if ( !pevent )
@@ -689,15 +683,17 @@ int GetAnimationEvent( CStudioHdr *pstudiohdr, int sequence, animevent_t *pNPCEv
 	mstudioevent_t *pevent = GetEventIndexForSequence( seqdesc );
 	for (; index < (int)seqdesc.numevents; index++)
 	{
-		// Don't send client-side events to the server AI
-		if ( pevent[index].type & AE_TYPE_NEWEVENTSYSTEM )
-		{
-			if ( !(pevent[index].type & AE_TYPE_SERVER) )
-				 continue;
-		}
-		else if ( pevent[index].Event_OldSystem() >= EVENT_CLIENT ) //Adrian - Support the old event system
-			continue;
-	
+		bool bClient = ( (pevent[index].Type() & AE_TYPE_CLIENT) != 0 );
+		bool bServer = ( (pevent[index].Type() & AE_TYPE_SERVER) != 0 );
+
+	#ifdef GAME_DLL
+		if ( !bServer && bClient )
+			 continue;
+	#else
+		if ( !bClient && bServer )
+			 continue;
+	#endif
+
 		bool bOverlapEvent = false;
 
 		if (pevent[index].cycle >= flStart && pevent[index].cycle < flEnd)
@@ -722,9 +718,8 @@ int GetAnimationEvent( CStudioHdr *pstudiohdr, int sequence, animevent_t *pNPCEv
 #else
 			pNPCEvent->eventtime = 0.0f;
 #endif
-			pNPCEvent->Event( pevent[index].Event() );
+			pNPCEvent->Event( (Animevent)pevent[index].Event(), pevent[index].Type() );
 			pNPCEvent->options = pevent[index].pszOptions();
-			pNPCEvent->type	= pevent[index].type;
 			return index + 1;
 		}
 	}
@@ -1039,7 +1034,7 @@ int GetSequenceActivity( CStudioHdr *pstudiohdr, int sequence, int *pweight )
 	}
 	if (pweight)
 		*pweight = seqdesc.actweight;
-	return seqdesc.activity;
+	return seqdesc.Activity();
 }
 
 

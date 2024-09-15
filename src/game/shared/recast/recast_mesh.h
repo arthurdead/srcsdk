@@ -17,6 +17,7 @@
 #include "tier1/utlbuffer.h"
 #include "tier1/utlstring.h"
 #include "ai_waypoint.h"
+#include "ai_hull.h"
 
 #ifdef GAME_DLL
 class CBaseEntity;
@@ -80,12 +81,13 @@ public:
 	CRecastMesh();
 	~CRecastMesh();
 
-	const char *GetName();
-	void Init( const char *name );
-	void Init( const char *name, float agentRadius, float agentHeight, float agentMaxClimb, float agentMaxSlope );
-	bool IsLoaded();
+	const char *GetName() const;
+	Hull_t GetHull() const;
+	void Init( Hull_t hull );
+	void Init( Hull_t hull, float agentRadius, float agentHeight, float agentMaxClimb, float agentMaxSlope );
+	bool IsLoaded() const;
 
-	static bool ComputeMeshSettings( const char *pMeshName, 
+	static bool ComputeMeshSettings( Hull_t hull, 
 		float &fAgentRadius, float &fAgentHeight, float &fAgentMaxClimb, float &fAgentMaxSlope,
 		float &fCellSize, float &fCellHeight, float &fTileSize );
 
@@ -147,7 +149,7 @@ public:
 private:
 	virtual void PostLoad();
 
-	void SharedInit(  const char *name );
+	void SharedInit( Hull_t hull );
 
 	// Building
 	bool DisableUnreachablePolygons( const CUtlVector< Vector > &samplePositions );
@@ -215,7 +217,7 @@ protected:
 	unsigned short m_allObstacleFlags;
 
 private:
-	CUtlString m_Name;
+	Hull_t m_Hull;
 	
 	// Data used during build
 	rcConfig m_cfg;
@@ -236,12 +238,17 @@ private:
 	pathfind_resultdata_t m_pathfindData;
 };
 
-inline const char *CRecastMesh::GetName()
+inline const char *CRecastMesh::GetName() const
 {
-	return m_Name.Get();
+	return NAI_Hull::Name( m_Hull );
 }
 
-inline bool CRecastMesh::IsLoaded()
+inline Hull_t CRecastMesh::GetHull() const
+{
+	return m_Hull;
+}
+
+inline bool CRecastMesh::IsLoaded() const
 {
 	return m_tileCache != NULL;
 }

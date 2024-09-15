@@ -13,6 +13,7 @@
 #include "movehelper_server.h"
 #include "shake.h"				// For screen fade constants
 #include "engine/IEngineSound.h"
+#include "world.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -53,7 +54,7 @@ public:
 
 	void			SetHost( CBasePlayer *host );
 
-	virtual bool IsWorldEntity( const CBaseHandle &handle );
+	virtual bool IsWorldEntity( const EHANDLE &handle );
 
 private:
 	CBasePlayer*	m_pHostPlayer;
@@ -416,7 +417,9 @@ bool CMoveHelperServer::PlayerFallingDamage( void )
 	return(true);
 }
 
-bool CMoveHelperServer::IsWorldEntity( const CBaseHandle &handle )
+bool CMoveHelperServer::IsWorldEntity( const EHANDLE &handle )
 {
-	return handle == CBaseEntity::Instance( 0 );
+	if(!GetWorldEntity())
+		return false;
+	return handle == GetWorldEntity()->GetRefEHandle();
 }

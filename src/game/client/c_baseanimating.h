@@ -674,9 +674,6 @@ private:
 	float							m_flOldModelScale;
 	int								m_nOldSequence;
 
-	int m_nPrevBody;
-	int m_nPrevSkin;
-
 	bool							m_isJiggleBonesEnabled;
 
 	// True if bone setup should latch bones for demo polish subsystem

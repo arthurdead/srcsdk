@@ -320,23 +320,25 @@ int CPropData::ParsePropFromKV( CBaseEntity *pProp, IBreakableWithPropData *pBre
 	pBreakableInterface->SetPhysicsMode( pSection->GetInt( "physicsmode", 
 		pBreakableInterface->GetPhysicsMode() ) );
 
-	const char *multiplayer_break = pSection->GetString( "multiplayer_break", NULL );
-	if ( multiplayer_break )
+	const char *break_mode = pSection->GetString( "breakmode", NULL );
+	if(!break_mode)
+		break_mode = pSection->GetString( "multiplayer_break", NULL );
+	if ( break_mode )
 	{
-		mp_break_t mode = MULTIPLAYER_BREAK_DEFAULT;
-		if ( FStrEq( multiplayer_break, "server" ) )
+		break_t mode = BREAK_DEFAULT;
+		if ( FStrEq( break_mode, "server" ) )
 		{
-			mode = MULTIPLAYER_BREAK_SERVERSIDE;
+			mode = BREAK_SERVERSIDE;
 		}
-		else if ( FStrEq( multiplayer_break, "client" ) )
+		else if ( FStrEq( break_mode, "client" ) )
 		{
-			mode = MULTIPLAYER_BREAK_CLIENTSIDE;
+			mode = BREAK_CLIENTSIDE;
 		}
-		else if ( FStrEq( multiplayer_break, "both" ) )
+		else if ( FStrEq( break_mode, "both" ) )
 		{
-			mode = MULTIPLAYER_BREAK_BOTH;
+			mode = BREAK_BOTH;
 		}
-		pBreakableInterface->SetMultiplayerBreakMode( mode );
+		pBreakableInterface->SetBreakMode( mode );
 	}
 
 	// Get damage modifiers, but only if they're specified, because our base may have already overridden them.
@@ -611,15 +613,15 @@ public:
 			Q_strncpy( pModel->placementName, pValue, sizeof(pModel->placementName) );
 			pModel->placementIsBone = false;
 		}
-		else if ( !strcmpi( pKey, "multiplayer_break" ) )
+		else if ( !strcmpi( pKey, "multiplayer_break" ) || !strcmpi( pKey, "mode" ) )
 		{
 			if ( FStrEq( pValue, "server" ) )
 			{
-				pModel->mpBreakMode = MULTIPLAYER_BREAK_SERVERSIDE;
+				pModel->breakMode = BREAK_SERVERSIDE;
 			}
 			else if ( FStrEq( pValue, "client" ) )
 			{
-				pModel->mpBreakMode = MULTIPLAYER_BREAK_CLIENTSIDE;
+				pModel->breakMode = BREAK_CLIENTSIDE;
 			}
 		}
 		else if ( !strcmpi( pKey, "velocity" ) )
@@ -642,7 +644,7 @@ public:
 		pModel->isMotionDisabled = false;
 		pModel->placementName[0] = 0;
 		pModel->placementIsBone = false;
-		pModel->mpBreakMode = MULTIPLAYER_BREAK_DEFAULT;
+		pModel->breakMode = BREAK_DEFAULT;
 		pModel->velocity = vec3_origin;
 		m_wroteCollisionGroup = false;
 	}
@@ -685,7 +687,7 @@ void BreakModelList( CUtlVector<breakmodel_t> &list, int modelindex, float defBu
 }
 
 #if !defined(_STATIC_LINKED) || defined(CLIENT_DLL)
-int GetAutoMultiplayerPhysicsMode( Vector size, float mass )
+int GetAutoPhysicsMode( Vector size, float mass )
 {
 	float volume = size.x * size.y * size.z;
 
@@ -693,17 +695,17 @@ int GetAutoMultiplayerPhysicsMode( Vector size, float mass )
 
 	// if it's too small, client side only
 	if ( volume < (minsize*minsize*minsize) )
-		return PHYSICS_MULTIPLAYER_CLIENTSIDE;
+		return PHYSICS_CLIENTSIDE;
 
 	// if it's too light, no player pushback
 	if ( mass < 8.0 )
-		return PHYSICS_MULTIPLAYER_NON_SOLID;
+		return PHYSICS_NON_SOLID;
 
 	// full pushbackmode
-	return PHYSICS_MULTIPLAYER_SOLID;
+	return PHYSICS_SOLID;
 }
 #else
-extern int GetAutoMultiplayerPhysicsMode( Vector size, float mass );
+extern int GetAutoPhysicsMode( Vector size, float mass );
 #endif
 
 //-----------------------------------------------------------------------------
@@ -1046,14 +1048,14 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 			}
 
 #ifdef GAME_DLL
-			if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_CLIENTSIDE )
+			if ( list[i].breakMode == BREAK_CLIENTSIDE )
 				continue;
 #else
-			if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_SERVERSIDE )
+			if ( list[i].breakMode == BREAK_SERVERSIDE )
 				continue;
 #endif
 
-			if ( !defaultLocation && list[i].mpBreakMode == MULTIPLAYER_BREAK_DEFAULT )
+			if ( !defaultLocation && list[i].breakMode == BREAK_DEFAULT )
 				continue;
 
 			if ( ( nPropCount != -1 ) && ( nPropBreakablesPerFrameCount > nPropCount ) )
@@ -1445,14 +1447,14 @@ CBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex,
 
 			// Skip multiplayer pieces that should be spawning on the other dll
 #ifdef GAME_DLL
-			if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_CLIENTSIDE )
+			if ( list[i].breakMode == BREAK_CLIENTSIDE )
 				continue;
 #else
-			if ( list[i].mpBreakMode == MULTIPLAYER_BREAK_SERVERSIDE )
+			if ( list[i].breakMode == BREAK_SERVERSIDE )
 				continue;
 #endif
 
-			if ( !defaultLocation && list[i].mpBreakMode == MULTIPLAYER_BREAK_DEFAULT )
+			if ( !defaultLocation && list[i].breakMode == BREAK_DEFAULT )
 				continue;
 
 			if ( ( nPropCount != -1 ) && ( nPropBreakablesPerFrameCount > nPropCount ) )

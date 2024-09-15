@@ -16,9 +16,9 @@
 
 
 #include "c_baseentity.h"
+#include "props_shared.h"
 
-
-class C_PhysBox : public C_BaseEntity
+class C_PhysBox : public C_BaseEntity, public ISpecialPhysics
 {
 public:
 	DECLARE_CLASS( C_PhysBox, C_BaseEntity );
@@ -27,9 +27,26 @@ public:
 					C_PhysBox();
 	virtual			~C_PhysBox();
 	virtual ShadowType_t ShadowCastType();
+
+	virtual int GetPhysicsMode()
+	{
+		return m_iPhysicsMode;
+	}
+
+	virtual float GetMass()
+	{
+		return m_fMass;
+	}
+
+	virtual bool IsAsleep()
+	{
+		Assert ( 0 );
+		return true;
+	}
 	
 public:
-	float			m_mass;	// TEST..
+	CNetworkVar( int, m_iPhysicsMode );	// One of the PHYSICS_MULTIPLAYER_ defines.	
+	CNetworkVar( float, m_fMass );
 };
 
 

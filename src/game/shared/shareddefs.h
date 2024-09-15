@@ -81,36 +81,40 @@ public:
 	Vector m_vCrouchTraceMax;
 };
 
+extern CViewVectors g_DefaultViewVectors;
+
+#define VIEW_VECTORS ( GameRules() ? GameRules()->GetViewVectors() : &g_DefaultViewVectors )
+
 // Height above entity position where the viewer's eye is.
-#define VEC_VIEW			GameRules()->GetViewVectors()->m_vView
-#define VEC_HULL_MIN		GameRules()->GetViewVectors()->m_vHullMin
-#define VEC_HULL_MAX		GameRules()->GetViewVectors()->m_vHullMax
+#define VEC_VIEW			VIEW_VECTORS->m_vView
+#define VEC_HULL_MIN		VIEW_VECTORS->m_vHullMin
+#define VEC_HULL_MAX		VIEW_VECTORS->m_vHullMax
 
-#define VEC_DUCK_HULL_MIN	GameRules()->GetViewVectors()->m_vDuckHullMin
-#define VEC_DUCK_HULL_MAX	GameRules()->GetViewVectors()->m_vDuckHullMax
-#define VEC_DUCK_VIEW		GameRules()->GetViewVectors()->m_vDuckView
+#define VEC_DUCK_HULL_MIN	VIEW_VECTORS->m_vDuckHullMin
+#define VEC_DUCK_HULL_MAX	VIEW_VECTORS->m_vDuckHullMax
+#define VEC_DUCK_VIEW		VIEW_VECTORS->m_vDuckView
 
-#define VEC_OBS_HULL_MIN	GameRules()->GetViewVectors()->m_vObsHullMin
-#define VEC_OBS_HULL_MAX	GameRules()->GetViewVectors()->m_vObsHullMax
+#define VEC_OBS_HULL_MIN	VIEW_VECTORS->m_vObsHullMin
+#define VEC_OBS_HULL_MAX	VIEW_VECTORS->m_vObsHullMax
 
-#define VEC_DEAD_VIEWHEIGHT	GameRules()->GetViewVectors()->m_vDeadViewHeight
+#define VEC_DEAD_VIEWHEIGHT	VIEW_VECTORS->m_vDeadViewHeight
 
-#define VEC_CROUCH_TRACE_MIN GameRules()->GetViewVectors()->m_vCrouchTraceMin
-#define VEC_CROUCH_TRACE_MAX GameRules()->GetViewVectors()->m_vCrouchTraceMax
+#define VEC_CROUCH_TRACE_MIN VIEW_VECTORS->m_vCrouchTraceMin
+#define VEC_CROUCH_TRACE_MAX VIEW_VECTORS->m_vCrouchTraceMax
 
 // If the player (enemy bots) are scaled, adjust the hull
-#define VEC_VIEW_SCALED( player )				( GameRules()->GetViewVectors()->m_vView * player->GetModelScale() )
-#define VEC_HULL_MIN_SCALED( player )			( GameRules()->GetViewVectors()->m_vHullMin * player->GetModelScale() )
-#define VEC_HULL_MAX_SCALED( player )			( GameRules()->GetViewVectors()->m_vHullMax * player->GetModelScale() )
+#define VEC_VIEW_SCALED( player )				( VEC_VIEW * player->GetModelScale() )
+#define VEC_HULL_MIN_SCALED( player )			( VEC_HULL_MIN * player->GetModelScale() )
+#define VEC_HULL_MAX_SCALED( player )			( VEC_HULL_MAX * player->GetModelScale() )
 
-#define VEC_DUCK_HULL_MIN_SCALED( player )		( GameRules()->GetViewVectors()->m_vDuckHullMin * player->GetModelScale() )
-#define VEC_DUCK_HULL_MAX_SCALED( player )		( GameRules()->GetViewVectors()->m_vDuckHullMax * player->GetModelScale() )
-#define VEC_DUCK_VIEW_SCALED( player )			( GameRules()->GetViewVectors()->m_vDuckView * player->GetModelScale() )
+#define VEC_DUCK_HULL_MIN_SCALED( player )		( VEC_DUCK_HULL_MIN * player->GetModelScale() )
+#define VEC_DUCK_HULL_MAX_SCALED( player )		( VEC_DUCK_HULL_MAX * player->GetModelScale() )
+#define VEC_DUCK_VIEW_SCALED( player )			( VEC_DUCK_VIEW * player->GetModelScale() )
 
-#define VEC_OBS_HULL_MIN_SCALED( player )		( GameRules()->GetViewVectors()->m_vObsHullMin * player->GetModelScale() )
-#define VEC_OBS_HULL_MAX_SCALED( player )		( GameRules()->GetViewVectors()->m_vObsHullMax * player->GetModelScale() )
+#define VEC_OBS_HULL_MIN_SCALED( player )		( VEC_OBS_HULL_MIN * player->GetModelScale() )
+#define VEC_OBS_HULL_MAX_SCALED( player )		( VEC_OBS_HULL_MAX * player->GetModelScale() )
 
-#define VEC_DEAD_VIEWHEIGHT_SCALED( player )	( GameRules()->GetViewVectors()->m_vDeadViewHeight * player->GetModelScale() )
+#define VEC_DEAD_VIEWHEIGHT_SCALED( player )	( VEC_DEAD_VIEWHEIGHT * player->GetModelScale() )
 
 #define WATERJUMP_HEIGHT			8
 

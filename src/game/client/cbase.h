@@ -27,6 +27,7 @@ struct studiohdr_t;
 #include "string_t.h"
 #include "tier1/mapbase_matchers_base.h"
 #include "mapbase/matchers.h"
+#include "mapbase/GlobalStrings.h"
 
 // These two have to be included very early
 #include "predictableid.h"

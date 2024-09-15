@@ -10,6 +10,7 @@
 #include "recast/recast_mgr.h"
 #include "recast/recast_mesh.h"
 #include "game_loopback/igameloopback.h"
+#include "ai_hull.h"
 
 #ifndef CLIENT_DLL
 #include "recast/recast_mapmesh.h"
@@ -23,7 +24,7 @@
 #include "tier0/memdbgon.h"
 
 #ifdef CLIENT_DLL
-	ConVar recast_debug_mesh( "recast_debug_mesh", "human" );	
+	ConVar recast_debug_mesh( "recast_debug_mesh", "HUMAN_HULL" );	
 #endif // CLIENT_DLL
 
 //-----------------------------------------------------------------------------
@@ -38,7 +39,7 @@ CRecastMgr &RecastMgr()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CRecastMgr::CRecastMgr() : m_bLoaded(false), m_Obstacles( 0, 0, DefLessFunc( EHANDLE ) )
+CRecastMgr::CRecastMgr() : m_bLoaded(false), m_Obstacles( 0, 0, DefLessFunc( EHANDLE ) ), m_Meshes( 0, 0, DefLessFunc( Hull_t ) )
 {
 #ifndef CLIENT_DLL
 	m_pMapMesh = NULL;
@@ -84,27 +85,17 @@ void CRecastMgr::Reset()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-static char* s_DefaultMeshNames[] = 
-{
-	"human",
-	"medium",
-	"large",
-	"verylarge",
-	"air"
-};
-
-
-bool CRecastMgr::InitDefaultMeshes()
+bool CRecastMgr::InitMeshes()
 {
 	// Ensures default meshes exists, even if they don't have a mesh loaded.
-	for( int i = 0; i < ARRAYSIZE( s_DefaultMeshNames ); i++ )
+	for( int i = 0; i < NUM_HULLS; i++ )
 	{
-		CRecastMesh *pMesh = GetMesh( s_DefaultMeshNames[i] );
+		CRecastMesh *pMesh = GetMeshOfHull( (Hull_t)i );
 		if( !pMesh )
 		{
 			pMesh = new CRecastMesh();
-			pMesh->Init( s_DefaultMeshNames[i] );
-			m_Meshes.Insert( pMesh->GetName(), pMesh );
+			pMesh->Init( (Hull_t)i );
+			m_Meshes.Insert( (Hull_t)i, pMesh );
 		}
 	}
 
@@ -114,18 +105,18 @@ bool CRecastMgr::InitDefaultMeshes()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CRecastMgr::InsertMesh( const char *name, float agentRadius, float agentHeight, float agentMaxClimb, float agentMaxSlope )
+bool CRecastMgr::InsertMesh( Hull_t hull, float agentRadius, float agentHeight, float agentMaxClimb, float agentMaxSlope )
 {
-	CRecastMesh *pMesh = GetMesh( name );
+	CRecastMesh *pMesh = GetMeshOfHull( hull );
 	if( pMesh )
 	{
-		Warning( "CRecastMgr::InsertMesh: %s already exists!\n", name );
+		Warning( "CRecastMgr::InsertMesh: %s already exists!\n", NAI_Hull::Name( hull ) );
 		return false;
 	}
 
 	pMesh = new CRecastMesh();
-	pMesh->Init( name, agentRadius, agentHeight, agentMaxClimb, agentMaxSlope );
-	m_Meshes.Insert( pMesh->GetName(), pMesh );
+	pMesh->Init( hull, agentRadius, agentHeight, agentMaxClimb, agentMaxSlope );
+	m_Meshes.Insert( hull, pMesh );
 	return true;
 }
 
@@ -140,7 +131,7 @@ void CRecastMgr::Update( float dt )
 	UpdateRebuildPartial();
 #endif // CLIENT_DLL
 
-	for ( int i = m_Meshes.First(); i != m_Meshes.InvalidIndex(); i = m_Meshes.Next(i ) )
+	for ( int i = m_Meshes.FirstInorder(); i != m_Meshes.InvalidIndex(); i = m_Meshes.NextInorder(i ) )
 	{
 		CRecastMesh *pMesh = m_Meshes[ i ];
 		pMesh->Update( dt );
@@ -150,7 +141,7 @@ void CRecastMgr::Update( float dt )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CRecastMesh *CRecastMgr::GetMesh( int index )
+CRecastMesh *CRecastMgr::GetMeshByIndex( int index )
 {
 	if( !m_Meshes.IsValidIndex( index ) )
 	{
@@ -167,7 +158,7 @@ CRecastMesh *CRecastMgr::FindBestMeshForRadiusHeight( float radius, float height
 	int bestIdx = -1;
 	float fBestRadiusDiff = 0;
 	float fBestHeightDiff = 0;
-	for ( int i = m_Meshes.First(); i != m_Meshes.InvalidIndex(); i = m_Meshes.Next(i ) )
+	for ( int i = m_Meshes.FirstInorder(); i != m_Meshes.InvalidIndex(); i = m_Meshes.NextInorder(i ) )
 	{
 		CRecastMesh *pMesh = m_Meshes[ i ];
 		if( !pMesh->IsLoaded() )
@@ -191,7 +182,7 @@ CRecastMesh *CRecastMgr::FindBestMeshForRadiusHeight( float radius, float height
 			fBestHeightDiff = fHeightDiff;
 		}
 	}
-	return GetMesh( bestIdx );
+	return GetMeshByIndex( bestIdx );
 }
 
 //-----------------------------------------------------------------------------
@@ -207,17 +198,17 @@ CRecastMesh *CRecastMgr::FindBestMeshForEntity( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CRecastMgr::FindMeshIndex( const char *name )
+int CRecastMgr::FindMeshIndex( Hull_t hull )
 {
-	return m_Meshes.Find( name );
+	return m_Meshes.Find( hull );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CRecastMgr::IsMeshLoaded( const char *name )
+bool CRecastMgr::IsMeshLoaded( Hull_t hull )
 {
-	CRecastMesh *pMesh = GetMesh( name );
+	CRecastMesh *pMesh = GetMeshOfHull( hull );
 	return pMesh != NULL && pMesh->IsLoaded();
 }
 
@@ -242,9 +233,9 @@ const char *CRecastMgr::FindBestMeshNameForEntity( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-dtNavMesh* CRecastMgr::GetNavMesh( const char *meshName )
+dtNavMesh* CRecastMgr::GetNavMesh( Hull_t hull )
 {
-	int idx = FindMeshIndex( meshName );
+	int idx = FindMeshIndex( hull );
 	if( m_Meshes.IsValidIndex( idx ) )
 	{
 		return m_Meshes[idx]->GetNavMesh();
@@ -255,9 +246,9 @@ dtNavMesh* CRecastMgr::GetNavMesh( const char *meshName )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-dtNavMeshQuery* CRecastMgr::GetNavMeshQuery( const char *meshName )
+dtNavMeshQuery* CRecastMgr::GetNavMeshQuery( Hull_t hull )
 {
-	int idx = FindMeshIndex( meshName );
+	int idx = FindMeshIndex( hull );
 	if( m_Meshes.IsValidIndex( idx ) )
 	{
 		return m_Meshes[idx]->GetNavMeshQuery();
@@ -289,7 +280,7 @@ bool CRecastMgr::AddEntRadiusObstacle( CBaseEntity *pEntity, float radius, float
 	obstacle.areaId = DetermineAreaID( pEntity, -Vector( radius, radius, radius ), Vector( radius, radius, radius ) );
 
 	bool bSuccess = true;
-	for ( int i = m_Meshes.First(); i != m_Meshes.InvalidIndex(); i = m_Meshes.Next(i ) )
+	for ( int i = m_Meshes.FirstInorder(); i != m_Meshes.InvalidIndex(); i = m_Meshes.NextInorder(i ) )
 	{
 		CRecastMesh *pMesh = m_Meshes[ i ];
 		// TODO: better check. Needs to filter out obstacles for air mesh
@@ -323,7 +314,7 @@ bool CRecastMgr::AddEntBoxObstacle( CBaseEntity *pEntity, const Vector &mins, co
 	obstacle.areaId = DetermineAreaID( pEntity, mins, maxs );
 
 	bool bSuccess = true;
-	for ( int i = m_Meshes.First(); i != m_Meshes.InvalidIndex(); i = m_Meshes.Next(i ) )
+	for ( int i = m_Meshes.FirstInorder(); i != m_Meshes.InvalidIndex(); i = m_Meshes.NextInorder(i ) )
 	{
 		CRecastMesh *pMesh = m_Meshes[ i ];
 		// TODO: better check. Needs to filter out obstacles for air mesh
@@ -441,17 +432,21 @@ NavObstacleArray_t &CRecastMgr::FindOrCreateObstacle( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 void CRecastMgr::DebugRender()
 {
-	int idx = m_Meshes.Find( recast_debug_mesh.GetString() );
+	Hull_t hull = NAI_Hull::LookupId( recast_debug_mesh.GetString() );
+	if(hull == HULL_NONE)
+		return;
+
+	int idx = m_Meshes.Find( hull );
 	if( idx == m_Meshes.InvalidIndex() )
 	{
 		// Might be visualizing a server mesh that does not exist on the client
 		// Insert dummy mesh on the fly.
 		IRecastMgr *pRecastMgr = g_pGameServerLoopback ? g_pGameServerLoopback->GetRecastMgr() : NULL;
-		if( pRecastMgr && pRecastMgr->GetNavMesh( recast_debug_mesh.GetString() ) )
+		if( pRecastMgr && pRecastMgr->GetNavMesh( hull ) )
 		{
 			CRecastMesh *pMesh = new CRecastMesh();
-			pMesh->Init( recast_debug_mesh.GetString() );
-			idx = m_Meshes.Insert( pMesh->GetName(), pMesh );
+			pMesh->Init( hull );
+			idx = m_Meshes.Insert( hull, pMesh );
 		}
 	}
 
@@ -467,7 +462,7 @@ void CRecastMgr::DebugRender()
 //-----------------------------------------------------------------------------
 void CRecastMgr::DebugListMeshes()
 {
-	int idx = m_Meshes.First();
+	int idx = m_Meshes.FirstInorder();
 	while( m_Meshes.IsValidIndex( idx ) )
 	{
 		CRecastMesh *pMesh = m_Meshes.Element(idx);
@@ -475,7 +470,7 @@ void CRecastMgr::DebugListMeshes()
 			pMesh->GetName(),
 			pMesh->GetAgentRadius(), pMesh->GetAgentHeight(), pMesh->GetAgentMaxClimb(), pMesh->GetAgentMaxSlope(),
 			pMesh->GetCellSize(), pMesh->GetCellHeight());
-		idx = m_Meshes.Next( idx );
+		idx = m_Meshes.NextInorder( idx );
 	}
 }
 
@@ -548,9 +543,12 @@ CON_COMMAND_F( recast_readd_phys_props, "", FCVAR_CHEAT )
 	{
 		if( FClassnameIs( pEntity, "prop_physics" ) )
 		{
+			//TODO Arthurdead!!!!
+		#if 0
 			CBaseProp *pProp = dynamic_cast< CBaseProp * >( pEntity );
 			if( pProp )
 				pProp->UpdateNavObstacle( true );
+		#endif
 		}
 	}
 }

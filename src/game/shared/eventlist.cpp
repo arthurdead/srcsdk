@@ -17,10 +17,10 @@
 // (eventIndex can be reused by private activities), so a custom table is necessary
 struct eventlist_t
 {
-	int					eventIndex;
+	Animevent			eventIndex;
 	int					iType;
 	unsigned short		stringKey;
-	short				isPrivate;
+	bool				isPrivate;
 };
 
 CUtlVector<eventlist_t> g_EventList;
@@ -30,14 +30,14 @@ CUtlVector<eventlist_t> g_EventList;
 CStringRegistry	g_EventStrings;
 
 // this is just here to accelerate adds
-static int g_HighestEvent = 0;
+static Animevent g_HighestEvent = (Animevent)0;
 
 int g_nEventListVersion = 1;
 
 
 void EventList_Init( void )
 {
-	g_HighestEvent = 0;
+	g_HighestEvent = (Animevent)0;
 }
 
 void EventList_Free( void )
@@ -50,7 +50,7 @@ void EventList_Free( void )
 }
 
 // add a new event to the database
-eventlist_t *EventList_AddEventEntry( const char *pName, int iEventIndex, bool isPrivate, int iType )
+eventlist_t *EventList_AddEventEntry( const char *pName, Animevent iEventIndex, bool isPrivate, int iType )
 {
 	MEM_ALLOC_CREDIT();
 	int index = g_EventList.AddToTail();
@@ -82,8 +82,11 @@ static eventlist_t *ListFromString( const char *pString )
 }
 
 // Get the database entry for an index
-static eventlist_t *ListFromEvent( int eventIndex )
+static eventlist_t *ListFromEvent( Animevent eventIndex )
 {
+	if(eventIndex == AE_INVALID)
+		return NULL;
+
 	// ugly linear search
 	for ( int i = 0; i < g_EventList.Size(); i++ )
 	{
@@ -96,8 +99,11 @@ static eventlist_t *ListFromEvent( int eventIndex )
 	return NULL;
 }
 
-int EventList_GetEventType( int eventIndex )
+int EventList_GetEventType( Animevent eventIndex )
 {
+	if(eventIndex == AE_INVALID)
+		return 0;
+
 	eventlist_t *pEvent = ListFromEvent( eventIndex );
 
 	if ( pEvent )
@@ -105,12 +111,13 @@ int EventList_GetEventType( int eventIndex )
 		return pEvent->iType;
 	}
 
-	return -1;
+	return 0;
 }
 
 
-bool EventList_RegisterSharedEvent( const char *pszEventName, int iEventIndex, int iType )
+bool EventList_RegisterSharedEvent( const char *pszEventName, Animevent iEventIndex, int iType )
 {
+#ifdef _DEBUG
 	// UNDONE: Do we want to do these checks when not in developer mode? or maybe DEBUG only?
 	// They really only matter when you change the list of code controlled activities.  IDs
 	// for content controlled activities never collide because they are generated.
@@ -126,12 +133,14 @@ bool EventList_RegisterSharedEvent( const char *pszEventName, int iEventIndex, i
 	//Already in list.
 	if ( pList )
 	{
+		Warning( "***\nShared event collision! %s<->%s\n***\n", pszEventName, g_EventStrings.GetStringForKey( pList->stringKey ) );
+		Assert(0);
 		return false;
 	}
 	// ----------------------------------------------------------------
+#endif
 
-	EventList_AddEventEntry( pszEventName, iEventIndex, false, iType );
-	return true;
+	return ( EventList_AddEventEntry( pszEventName, iEventIndex, false, iType ) != NULL );
 }
 
 Animevent EventList_RegisterPrivateEvent( const char *pszEventName )
@@ -154,13 +163,13 @@ Animevent EventList_RegisterPrivateEvent( const char *pszEventName )
 		}
 	}
 
-	pList = EventList_AddEventEntry( pszEventName, g_HighestEvent+1, true, AE_TYPE_SERVER );
+	pList = EventList_AddEventEntry( pszEventName, (Animevent)(g_HighestEvent+1), true, AE_TYPE_SERVER );
 	return (Animevent)pList->eventIndex;
 }
 
 // Get the index for a given Event name
 // Done at load time for all models
-int EventList_IndexForName( const char *pszEventName )
+Animevent EventList_IndexForName( const char *pszEventName )
 {
 	// this is a fast O(lgn) search (actually does 2 O(lgn) searches)
 	eventlist_t *pList = ListFromString( pszEventName );
@@ -170,13 +179,13 @@ int EventList_IndexForName( const char *pszEventName )
 		return pList->eventIndex;
 	}
 
-	return -1;
+	return AE_INVALID;
 }
 
 // Get the name for a given index
 // This should only be used in debug code, it does a linear search
 // But at least it only compares integers
-const char *EventList_NameForIndex( int eventIndex )
+const char *EventList_NameForIndex( Animevent eventIndex )
 {
 	eventlist_t *pList = ListFromEvent( eventIndex );
 	if ( pList )
@@ -186,73 +195,46 @@ const char *EventList_NameForIndex( int eventIndex )
 	return NULL;
 }
 
+//for studio.h
+const char *EventList_NameForIndex( int eventIndex )
+{ return EventList_NameForIndex((Animevent)eventIndex); }
+
 void EventList_RegisterSharedEvents( void )
 {
-	REGISTER_SHARED_ANIMEVENT( AE_EMPTY, AE_TYPE_SERVER );
-	
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_LEFTFOOT, AE_TYPE_SERVER );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_RIGHTFOOT, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_BODYDROP_LIGHT, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_BODYDROP_HEAVY, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_SWISHSOUND, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_180TURN, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_ITEM_PICKUP, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_WEAPON_DROP, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_WEAPON_SET_SEQUENCE_NAME, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_WEAPON_SET_SEQUENCE_NUMBER, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_WEAPON_SET_ACTIVITY, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_HOLSTER, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_DRAW, AE_TYPE_SERVER  );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_WEAPON_FIRE, AE_TYPE_SERVER | AE_TYPE_WEAPON );
+	#define EVENTLIST_ENUM(name, type, ...) \
+		REGISTER_SHARED_ANIMEVENT(name, type);
 
-	REGISTER_SHARED_ANIMEVENT( AE_CL_PLAYSOUND, AE_TYPE_CLIENT );
-	REGISTER_SHARED_ANIMEVENT( AE_SV_PLAYSOUND, AE_TYPE_SERVER );
-	REGISTER_SHARED_ANIMEVENT( AE_CL_STOPSOUND, AE_TYPE_CLIENT );
+	#include "eventlist_enum.inc"
 
-	REGISTER_SHARED_ANIMEVENT( AE_START_SCRIPTED_EFFECT, AE_TYPE_SERVER );
-	REGISTER_SHARED_ANIMEVENT( AE_STOP_SCRIPTED_EFFECT, AE_TYPE_SERVER );
+	Assert(g_HighestEvent <= (Animevent)(unsigned short)-1);
+}
 
-	REGISTER_SHARED_ANIMEVENT( AE_CLIENT_EFFECT_ATTACH, AE_TYPE_CLIENT );
-
-	REGISTER_SHARED_ANIMEVENT( AE_MUZZLEFLASH, AE_TYPE_CLIENT );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_MUZZLEFLASH, AE_TYPE_CLIENT );
-
-	REGISTER_SHARED_ANIMEVENT( AE_THUMPER_THUMP, AE_TYPE_SERVER );
-	REGISTER_SHARED_ANIMEVENT( AE_AMMOCRATE_PICKUP_AMMO, AE_TYPE_SERVER );
-
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_RAGDOLL, AE_TYPE_SERVER );
-
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_ADDGESTURE, AE_TYPE_SERVER );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_RESTARTGESTURE, AE_TYPE_SERVER );
-
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_ATTACK_BROADCAST, AE_TYPE_SERVER );
-
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_HURT_INTERACTION_PARTNER, AE_TYPE_SERVER );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_SET_INTERACTION_CANTDIE, AE_TYPE_SERVER );
-
-	REGISTER_SHARED_ANIMEVENT( AE_SV_DUSTTRAIL, AE_TYPE_SERVER );
-
-	REGISTER_SHARED_ANIMEVENT( AE_CL_CREATE_PARTICLE_EFFECT, AE_TYPE_CLIENT );
-
-	REGISTER_SHARED_ANIMEVENT( AE_RAGDOLL, AE_TYPE_SERVER );
-
-	REGISTER_SHARED_ANIMEVENT( AE_CL_ENABLE_BODYGROUP, AE_TYPE_CLIENT );
-	REGISTER_SHARED_ANIMEVENT( AE_CL_DISABLE_BODYGROUP, AE_TYPE_CLIENT );
-	REGISTER_SHARED_ANIMEVENT( AE_CL_BODYGROUP_SET_VALUE, AE_TYPE_CLIENT );
-	REGISTER_SHARED_ANIMEVENT( AE_CL_BODYGROUP_SET_VALUE_CMODEL_WPN, AE_TYPE_CLIENT );
-
-	REGISTER_SHARED_ANIMEVENT( AE_WPN_PRIMARYATTACK, AE_TYPE_CLIENT | AE_TYPE_SERVER );
-	REGISTER_SHARED_ANIMEVENT( AE_WPN_INCREMENTAMMO, AE_TYPE_CLIENT | AE_TYPE_SERVER );
-
-	REGISTER_SHARED_ANIMEVENT( AE_WPN_HIDE, AE_TYPE_CLIENT | AE_TYPE_SERVER );
-	REGISTER_SHARED_ANIMEVENT( AE_WPN_UNHIDE, AE_TYPE_CLIENT | AE_TYPE_SERVER );
-
-	REGISTER_SHARED_ANIMEVENT( AE_WPN_PLAYWPNSOUND, AE_TYPE_CLIENT | AE_TYPE_SERVER );
-	REGISTER_SHARED_ANIMEVENT( AE_RD_ROBOT_POP_PANELS_OFF, AE_TYPE_CLIENT | AE_TYPE_SERVER );
-
-	REGISTER_SHARED_ANIMEVENT( AE_TAUNT_ENABLE_MOVE, AE_TYPE_CLIENT | AE_TYPE_SERVER );
-	REGISTER_SHARED_ANIMEVENT( AE_TAUNT_DISABLE_MOVE, AE_TYPE_CLIENT | AE_TYPE_SERVER );
-
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_RESPONSE, AE_TYPE_SERVER );
-	REGISTER_SHARED_ANIMEVENT( AE_NPC_RESPONSE_FORCED, AE_TYPE_SERVER );
+#ifdef GAME_DLL
+CON_COMMAND(sv_dumpmodelevents, "")
+#else
+CON_COMMAND(cl_dumpmodelevents, "")
+#endif
+{
+	for(int i = 0; i < g_EventList.Count(); ++i) {
+		DevMsg("%s - %i ", g_EventStrings.GetStringForKey(g_EventList[i].stringKey), g_EventList[i].eventIndex);
+		if((g_EventList[i].iType & AE_TYPE_SERVER) != 0) {
+			DevMsg("AE_TYPE_SERVER|");
+		}
+		if((g_EventList[i].iType & AE_TYPE_SCRIPTED) != 0) {
+			DevMsg("AE_TYPE_SCRIPTED|");
+		}
+		if((g_EventList[i].iType & AE_TYPE_SHARED) != 0) {
+			DevMsg("AE_TYPE_SHARED|");
+		}
+		if((g_EventList[i].iType & AE_TYPE_WEAPON) != 0) {
+			DevMsg("AE_TYPE_WEAPON|");
+		}
+		if((g_EventList[i].iType & AE_TYPE_CLIENT) != 0) {
+			DevMsg("AE_TYPE_CLIENT|");
+		}
+		if((g_EventList[i].iType & AE_TYPE_FACEPOSER) != 0) {
+			DevMsg("AE_TYPE_FACEPOSER|");
+		}
+		DevMsg(" %i\n", g_EventList[i].isPrivate);
+	}
 }

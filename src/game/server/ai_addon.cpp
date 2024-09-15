@@ -225,11 +225,17 @@ void CAI_AddOn::StartTask( const Task_t *pTask )
 	switch( pTask->iTask )
 	{
 	case TASK_ADDON_WAIT:
-		m_flWaitFinished = gpGlobals->curtime + pTask->flTaskData;
+		Assert( pTask->numData == 1 );
+		Assert( pTask->data[0].CanBeFloat() );
+
+		m_flWaitFinished = gpGlobals->curtime + pTask->data[0].AsFloat();
 		break;
 
 	case TASK_ADDON_WAIT_RANDOM:
-		m_flWaitFinished = gpGlobals->curtime + random->RandomFloat( 0.1f, pTask->flTaskData );
+		Assert( pTask->numData == 1 );
+		Assert( pTask->data[0].CanBeFloat() );
+
+		m_flWaitFinished = gpGlobals->curtime + random->RandomFloat( 0.1f, pTask->data[0].AsFloat() );
 		break;
 
 	default:
@@ -549,8 +555,8 @@ void CAI_AddOn::InputRemove( inputdata_t &data )
 
 
 AI_BEGIN_AGENT_(CAI_AddOn,CAI_Agent)
-	DECLARE_TASK( TASK_ADDON_WAIT )
-	DECLARE_TASK( TASK_ADDON_WAIT_RANDOM )
+	DECLARE_TASK( TASK_ADDON_WAIT, TaskParamCheck_t() )
+	DECLARE_TASK( TASK_ADDON_WAIT_RANDOM, TaskParamCheck_t() )
 
 	DECLARE_CONDITION( COND_ADDON_LOST_HOST )
 

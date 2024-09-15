@@ -159,12 +159,10 @@ public:
 	void			SetInteraction( propdata_interactions_t Interaction ) { m_iInteractions |= (1 << Interaction); }
 	void			RemoveInteraction( propdata_interactions_t Interaction ) { m_iInteractions &= ~(1 << Interaction); }
 	bool			HasInteraction( propdata_interactions_t Interaction ) { return ( m_iInteractions & (1 << Interaction) ) != 0; }
-	void			SetMultiplayerBreakMode( mp_break_t mode ) { m_mpBreakMode = mode; }
-	mp_break_t		GetMultiplayerBreakMode( void ) const { return m_mpBreakMode; }
-
-// derived by multiplayer phys props:
-	virtual void	SetPhysicsMode(int iMode) { m_iPhysicsMode = iMode; }
-	virtual int		GetPhysicsMode() { return m_iPhysicsMode; }
+	void			SetPhysicsMode(int iMode){}
+	int				GetPhysicsMode() { return PHYSICS_SOLID; }
+	void			SetBreakMode( break_t mode ) { m_breakMode = mode; }
+	break_t		GetBreakMode( void ) const { return m_breakMode; }
 
 	// Copy fade from another breakable prop
 	void CopyFadeFrom( CBreakableProp *pSource );
@@ -175,9 +173,6 @@ protected:
 	virtual void	OnBreak( const Vector &vecVelocity, const AngularImpulse &angVel, CBaseEntity *pBreaker ) {}
 
 protected:
-	//Base prop_physics can be client-side etc
-	int				m_iPhysicsMode;
-
 	unsigned int	m_createTick;
 	float			m_flPressureDelay;
 	EHANDLE			m_hBreaker;
@@ -262,15 +257,12 @@ private:
 	COutputEvent			m_OnPhysCannonPullAnimFinished; // We've had our pull anim finished, or the post-pull has finished if there is one
 	float					m_flDefaultFadeScale;	// Things may temporarily change the fade scale, but this is its steady-state condition
 
-	mp_break_t m_mpBreakMode;
+	break_t m_breakMode;
 
 	EHANDLE					m_hLastAttacker;		// Last attacker that harmed me.
 	EHANDLE					m_hFlareEnt;
 	string_t				m_iszPuntSound;
 	bool					m_bUsePuntSound;
-	CNetworkVar( bool, m_noGhostCollision );
-protected:
-	CNetworkVar( bool, m_bClientPhysics );
 };
 
 // Spawnflags
@@ -359,7 +351,7 @@ protected:
 // Purpose: 
 //-----------------------------------------------------------------------------
 DECLARE_AUTO_LIST( IPhysicsPropAutoList );
-class CPhysicsProp : public CBreakableProp, public IPhysicsPropAutoList, public INavAvoidanceObstacle
+class CPhysicsProp : public CBreakableProp, public IPhysicsPropAutoList, public INavAvoidanceObstacle, public ISpecialPhysics
 {
 	DECLARE_CLASS( CPhysicsProp, CBreakableProp );
 	DECLARE_SERVERCLASS();
@@ -378,6 +370,8 @@ public:
 
 	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics );
 	virtual void VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );
+
+	virtual void ComputeWorldSpaceSurroundingBox( Vector *mins, Vector *maxs );
 
 	void InputWake( inputdata_t &inputdata );
 	void InputSleep( inputdata_t &inputdata );
@@ -423,6 +417,20 @@ public:
 	string_t GetPhysOverrideScript( void ) { return m_iszOverrideScript; }
 	float	GetMassScale( void ) { return m_massScale; }
 
+// IBreakableWithPropData:
+	void SetPhysicsMode(int iMode)
+	{
+		m_iPhysicsMode = iMode;
+	}
+
+	int		GetPhysicsMode() { return m_iPhysicsMode; }
+
+// IMultiplayerPhysics:
+	float	GetMass() { return m_fMass; }
+	bool	IsAsleep() { return !m_bAwake; }
+
+	bool	IsDebris( void )			{ return  HasSpawnFlags( SF_PHYSPROP_DEBRIS ); }
+
 private:
 	// Compute impulse to apply to the enabled entity.
 	void ComputeEnablingImpulse( int index, gamevcollisionevent_t *pEvent );
@@ -449,6 +457,13 @@ private:
 	int			m_iExploitableByPlayer;
 	bool		m_bHasBeenAwakened;
 	float		m_fNextCheckDisableMotionContactsTime;
+
+	CNetworkVar( int, m_iPhysicsMode );	// One of the PHYSICS_MULTIPLAYER_ defines.	
+	CNetworkVar( float, m_fMass );
+
+	bool m_usingCustomCollisionBounds;
+	CNetworkVector( m_collisionMins );
+	CNetworkVector( m_collisionMaxs );
 
 protected:
 	CNetworkVar( bool, m_bAwake );

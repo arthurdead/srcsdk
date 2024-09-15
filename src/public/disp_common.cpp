@@ -1418,7 +1418,7 @@ static void BlendSubNeighbors( CCoreDispInfo **ppListBase, int nListSize )
 //			iNeighbors[512] - 
 // Output : int
 //-----------------------------------------------------------------------------
-static int GetAllNeighbors( const CCoreDispInfo *pDisp, int iNeighbors[512] )
+static int GetAllNeighbors( const CCoreDispInfo *pDisp, int *iNeighbors, int iNeighborsSize )
 {
 	int nNeighbors = 0;
 
@@ -1429,7 +1429,7 @@ static int GetAllNeighbors( const CCoreDispInfo *pDisp, int iNeighbors[512] )
 
 		for ( int i=0; i < pCorner->m_nNeighbors; i++ )
 		{
-			if ( nNeighbors < _ARRAYSIZE( iNeighbors ) )
+			if ( nNeighbors < iNeighborsSize )
 				iNeighbors[nNeighbors++] = pCorner->m_Neighbors[i];
 		}
 	}
@@ -1463,7 +1463,7 @@ static void BlendCorners( CCoreDispInfo **ppListBase, int nListSize )
 		CCoreDispInfo *pDisp = ppListBase[iDisp];
 
 		int iNeighbors[512];
-		int nNeighbors = GetAllNeighbors( pDisp, iNeighbors );
+		int nNeighbors = GetAllNeighbors( pDisp, iNeighbors, ARRAYSIZE(iNeighbors) );
 
 		// Make sure we have room for all the neighbors.
 		nbCornerVerts.RemoveAll();

@@ -26,8 +26,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define FORMAT_BSPFILE "maps\\%s.bsp"
-#define FORMAT_NAVFILE "maps\\%s.recast"
+#define FORMAT_BSPFILE "maps" CORRECT_PATH_SEPARATOR_S "%s.bsp"
+#define FORMAT_NAVFILE "maps" CORRECT_PATH_SEPARATOR_S "%s.recast"
 #define EXT_NAVFILE "recast"
 
 static const int NAVMESHSET_MAGIC = 'M'<<24 | 'S'<<16 | 'E'<<8 | 'T'; //'MSET';
@@ -107,10 +107,17 @@ bool CRecastMesh::Load( CUtlBuffer &fileBuffer, CMapMesh *pMapMesh )
 	fileBuffer.Get( szName, header.lenName );
 	szName[header.lenName] = 0;
 
-	Init( szName );
+	Hull_t hull = NAI_Hull::LookupId( szName );
+	if( hull == HULL_NONE )
+	{
+		Msg( "Mesh name %s does not correspond to any hull type\n", szName );
+		return false;
+	}
+
+	Init( hull );
 
 	DevMsg( 2, "Loading mesh %s with cell size %f, cell height %f, tile size %f\n", 
-		m_Name.Get(), m_cellSize, m_cellHeight, m_tileSize );
+		GetName(), m_cellSize, m_cellHeight, m_tileSize );
 
 	m_navMesh = dtAllocNavMesh();
 	if (!m_navMesh)
@@ -187,12 +194,6 @@ bool CRecastMesh::Load( CUtlBuffer &fileBuffer, CMapMesh *pMapMesh )
 //-----------------------------------------------------------------------------
 bool CRecastMgr::Load()
 {
-#ifdef ENABLE_PYTHON
-	// Fire pre loaded signal, so other code can override the behavior if desired
-	if( SrcPySystem()->IsPythonRunning() )
-		SrcPySystem()->CallSignalNoArgs( SrcPySystem()->Get( "navmesh_preload", "core.signals", true ) );
-#endif // ENABLE_PYTHON
-
 	if( m_bLoaded )
 		return true;
 
@@ -219,7 +220,7 @@ bool CRecastMgr::Load()
 		navIsInBsp = true;
 		if ( !filesystem->ReadFile( filename, "BSP", fileBuffer ) )	// ... and this looks for one if it's the only one around.
 		{
-			InitDefaultMeshes();
+			InitMeshes();
 			return false;
 		}
 	}
@@ -271,17 +272,11 @@ bool CRecastMgr::Load()
 		if( !pMesh->Load( fileBuffer ) )
 			return false;
 
-		m_Meshes.Insert( pMesh->GetName(), pMesh );
+		m_Meshes.Insert( pMesh->GetHull(), pMesh );
 	}
 	
 	m_bLoaded = true;
 	DevMsg( "CRecastMgr: Loaded %d nav meshes in %f seconds\n", m_Meshes.Count(), Plat_FloatTime() - fStartTime );
-
-#ifdef ENABLE_PYTHON
-	// Fire loaded signal
-	if( SrcPySystem()->IsPythonRunning() )
-		SrcPySystem()->CallSignalNoArgs( SrcPySystem()->Get( "navmeshloaded", "core.signals", true ) );
-#endif // ENABLE_PYTHON
 
 	return true;
 }
@@ -290,7 +285,7 @@ bool CRecastMgr::Load()
 bool CRecastMesh::Save( CUtlBuffer &fileBuffer )
 {
 	Msg( "Saving mesh %s with cell size %f, cell height %f, tile size %f\n", 
-		m_Name.Get(), m_cellSize, m_cellHeight, m_tileSize );
+		GetName(), m_cellSize, m_cellHeight, m_tileSize );
 
 	// Store header.
 	TileCacheSetHeader header;
@@ -298,31 +293,44 @@ bool CRecastMesh::Save( CUtlBuffer &fileBuffer )
 	header.cellHeight = m_cellHeight;
 	header.tileSize = m_tileSize;
 	header.numTiles = 0;
-	header.lenName = m_Name.Length();
-	for (int i = 0; i < m_tileCache->getTileCount(); ++i)
-	{
-		const dtCompressedTile* tile = m_tileCache->getTile(i);
-		if (!tile || !tile->header || !tile->dataSize) 
-			continue;
-		header.numTiles++;
+	int nameLen = V_strlen( GetName() );
+	header.lenName = nameLen;
+
+	if(m_tileCache) {
+		for (int i = 0; i < m_tileCache->getTileCount(); ++i)
+		{
+			const dtCompressedTile* tile = m_tileCache->getTile(i);
+			if (!tile || !tile->header || !tile->dataSize) 
+				continue;
+			header.numTiles++;
+		}
 	}
-	memcpy(&header.cacheParams, m_tileCache->getParams(), sizeof(dtTileCacheParams));
-	memcpy(&header.meshParams, m_navMesh->getParams(), sizeof(dtNavMeshParams));
+
+	if(m_tileCache)
+		memcpy(&header.cacheParams, m_tileCache->getParams(), sizeof(dtTileCacheParams));
+	else
+		memset(&header.cacheParams, 0, sizeof(dtTileCacheParams));
+	if(m_navMesh)
+		memcpy(&header.meshParams, m_navMesh->getParams(), sizeof(dtNavMeshParams));
+	else
+		memset(&header.meshParams, 0, sizeof(dtNavMeshParams));
 	fileBuffer.Put( &header, sizeof( header ) );
-	fileBuffer.Put( m_Name.Get(), m_Name.Length() );
+	fileBuffer.Put( GetName(), nameLen );
 
 	// Store tiles.
-	for (int i = 0; i < m_tileCache->getTileCount(); ++i)
-	{
-		const dtCompressedTile* tile = m_tileCache->getTile(i);
-		if (!tile || !tile->header || !tile->dataSize) continue;
+	if(m_tileCache) {
+		for (int i = 0; i < m_tileCache->getTileCount(); ++i)
+		{
+			const dtCompressedTile* tile = m_tileCache->getTile(i);
+			if (!tile || !tile->header || !tile->dataSize) continue;
 
-		TileCacheTileHeader tileHeader;
-		tileHeader.tileRef = m_tileCache->getTileRef(tile);
-		tileHeader.dataSize = tile->dataSize;
-		fileBuffer.Put( &tileHeader, sizeof( tileHeader ) );
+			TileCacheTileHeader tileHeader;
+			tileHeader.tileRef = m_tileCache->getTileRef(tile);
+			tileHeader.dataSize = tile->dataSize;
+			fileBuffer.Put( &tileHeader, sizeof( tileHeader ) );
 
-		fileBuffer.Put( tile->data, tile->dataSize );
+			fileBuffer.Put( tile->data, tile->dataSize );
+		}
 	}
 
 	return true;
@@ -333,13 +341,9 @@ bool CRecastMesh::Save( CUtlBuffer &fileBuffer )
 //-----------------------------------------------------------------------------
 const char *CRecastMgr::GetFilename( void ) const
 {
-	// filename is local to game dir for Steam, so we need to prepend game dir for regular file save
-	char gamePath[256];
-	engine->GetGameDir( gamePath, 256 );
-
 	// persistant return value
 	static char filename[256];
-	V_snprintf( filename, sizeof( filename ), "%s\\" FORMAT_NAVFILE, gamePath, STRING( gpGlobals->mapname ) );
+	V_snprintf( filename, sizeof( filename ), FORMAT_NAVFILE, STRING( gpGlobals->mapname ) );
 
 	return filename;
 }
@@ -365,10 +369,10 @@ bool CRecastMgr::Save()
 	DevMsg( "Size of bsp file '%s' is %u bytes.\n", bspFilename, bspSize );
 
 	CUtlVector< CRecastMesh * > meshesToSave;
-	for ( int i = m_Meshes.First(); i != m_Meshes.InvalidIndex(); i = m_Meshes.Next(i ) )
+	for ( int i = m_Meshes.FirstInorder(); i != m_Meshes.InvalidIndex(); i = m_Meshes.NextInorder(i ) )
 	{
 		// Mesh is not build, but could still be there from previous build when it was not disabled.
-		if( IsMeshBuildDisabled( m_Meshes[i]->GetName() ) )
+		if( IsMeshBuildDisabled( m_Meshes[i]->GetHull() ) )
 			continue;
 		meshesToSave.AddToTail( m_Meshes[i] );
 	}

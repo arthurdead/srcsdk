@@ -8996,7 +8996,7 @@ Vector CAI_BaseNPC::EyePosition( void )
 //------------------------------------------------------------------------------
 void CAI_BaseNPC::HandleAnimEvent( animevent_t *pEvent )
 {
-	int nEvent = pEvent->Event();
+	Animevent nEvent = pEvent->Event();
 
 	// UNDONE: Share this code into CBaseAnimating as appropriate?
 	switch( nEvent )
@@ -9308,170 +9308,167 @@ void CAI_BaseNPC::HandleAnimEvent( animevent_t *pEvent )
 		}
 
 	default:
-		if ((pEvent->type & AE_TYPE_NEWEVENTSYSTEM) && (pEvent->type & AE_TYPE_SERVER))
+		if (nEvent == AE_NPC_HOLSTER)
 		{
-			if (nEvent == AE_NPC_HOLSTER)
-			{
-				CBaseCombatWeapon *pWeapon = GetActiveWeapon();
-				if (DoHolster())
-					m_OnHolsterWeapon.Set(pWeapon, pWeapon, this);
+			CBaseCombatWeapon *pWeapon = GetActiveWeapon();
+			if (DoHolster())
+				m_OnHolsterWeapon.Set(pWeapon, pWeapon, this);
 
-				return;
-			}
-			else if (nEvent == AE_NPC_DRAW)
+			return;
+		}
+		else if (nEvent == AE_NPC_DRAW)
+		{
+			if (DoUnholster())
+				m_OnUnholsterWeapon.Set(GetActiveWeapon(), GetActiveWeapon(), this);
+			return;
+		}
+		else if ( nEvent == AE_NPC_BODYDROP_HEAVY )
+		{
+			if ( GetFlags() & FL_ONGROUND )
 			{
-				if (DoUnholster())
-					m_OnUnholsterWeapon.Set(GetActiveWeapon(), GetActiveWeapon(), this);
-				return;
+				EmitSound( "AI_BaseNPC.BodyDrop_Heavy" );
 			}
-			else if ( nEvent == AE_NPC_BODYDROP_HEAVY )
+			return;
+		}
+		else if ( nEvent == AE_NPC_LEFTFOOT || nEvent == AE_NPC_RIGHTFOOT )
+		{
+			return;
+		}
+		else if ( nEvent == AE_NPC_RAGDOLL )
+		{
+			// Convert to ragdoll immediately
+			BecomeRagdollOnClient( vec3_origin );
+			return;
+		}
+		else if ( nEvent == AE_NPC_ADDGESTURE )
+		{
+			Activity act = ( Activity )LookupActivity( pEvent->options );
+			if (act != ACT_INVALID)
 			{
-				if ( GetFlags() & FL_ONGROUND )
-				{
-					EmitSound( "AI_BaseNPC.BodyDrop_Heavy" );
-				}
-				return;
-			}
-			else if ( nEvent == AE_NPC_LEFTFOOT || nEvent == AE_NPC_RIGHTFOOT )
-			{
-				return;
-			}
-			else if ( nEvent == AE_NPC_RAGDOLL )
-			{
-				// Convert to ragdoll immediately
-				BecomeRagdollOnClient( vec3_origin );
-				return;
-			}
-			else if ( nEvent == AE_NPC_ADDGESTURE )
-			{
-				Activity act = ( Activity )LookupActivity( pEvent->options );
+				act = TranslateActivity( act );
 				if (act != ACT_INVALID)
 				{
-					act = TranslateActivity( act );
-					if (act != ACT_INVALID)
-					{
-						AddGesture( act );
-					}
+					AddGesture( act );
 				}
-				return;
 			}
-			else if ( nEvent == AE_NPC_RESTARTGESTURE )
+			return;
+		}
+		else if ( nEvent == AE_NPC_RESTARTGESTURE )
+		{
+			Activity act = ( Activity )LookupActivity( pEvent->options );
+			if (act != ACT_INVALID)
 			{
-				Activity act = ( Activity )LookupActivity( pEvent->options );
+				act = TranslateActivity( act );
 				if (act != ACT_INVALID)
 				{
-					act = TranslateActivity( act );
-					if (act != ACT_INVALID)
-					{
-						RestartGesture( act );
-					}
+					RestartGesture( act );
 				}
-				return;
 			}
- 			else if ( nEvent == AE_NPC_WEAPON_DROP )
+			return;
+		}
+		else if ( nEvent == AE_NPC_WEAPON_DROP )
+		{
+			// Drop our active weapon (or throw it at the specified target entity).
+			CBaseEntity *pTarget = NULL;
+			if (pEvent->options)
 			{
-				// Drop our active weapon (or throw it at the specified target entity).
-				CBaseEntity *pTarget = NULL;
-				if (pEvent->options)
+				pTarget = gEntList.FindEntityGeneric(NULL, pEvent->options, this);
+			}
+
+			if (pTarget)
+			{
+				Vector vecTargetPos = pTarget->WorldSpaceCenter();
+				Weapon_Drop(GetActiveWeapon(), &vecTargetPos);
+			}
+			else
+			{
+				Weapon_Drop(GetActiveWeapon());
+			}
+			return;
+		}
+		else if ( nEvent == AE_NPC_WEAPON_SET_ACTIVITY )
+		{
+			CBaseCombatWeapon *pWeapon = GetActiveWeapon();
+			if ((pWeapon) && (pEvent->options))
+			{
+				Activity act = (Activity)pWeapon->LookupActivity(pEvent->options);
+				if (act == ACT_INVALID)
 				{
-					pTarget = gEntList.FindEntityGeneric(NULL, pEvent->options, this);
+					// Try and translate it
+					act = Weapon_TranslateActivity( (Activity)CAI_BaseNPC::GetActivityID(pEvent->options), NULL );
 				}
 
-				if (pTarget)
+				if (act != ACT_INVALID)
 				{
-					Vector vecTargetPos = pTarget->WorldSpaceCenter();
-					Weapon_Drop(GetActiveWeapon(), &vecTargetPos);
+					// FIXME: where should the duration come from? normally it would come from the current sequence
+					Weapon_SetActivity(act, 0);
 				}
-				else
-				{
-					Weapon_Drop(GetActiveWeapon());
-				}
-				return;
 			}
-			else if ( nEvent == AE_NPC_WEAPON_SET_ACTIVITY )
+			return;
+		}
+		else if ( nEvent == AE_NPC_SET_INTERACTION_CANTDIE )
+		{
+			SetInteractionCantDie( (atoi(pEvent->options) != 0) );
+			return;
+		}
+		else if ( nEvent == AE_NPC_HURT_INTERACTION_PARTNER )
+		{
+			// If we're currently interacting with an enemy, hurt them/me
+			if ( m_hInteractionPartner )
 			{
-				CBaseCombatWeapon *pWeapon = GetActiveWeapon();
-				if ((pWeapon) && (pEvent->options))
+				CAI_BaseNPC *pTarget = NULL;
+				CAI_BaseNPC *pAttacker = NULL;
+				if ( pEvent->options )
 				{
-					Activity act = (Activity)pWeapon->LookupActivity(pEvent->options);
-					if (act == ACT_INVALID)
+					char szEventOptions[128];
+					Q_strncpy( szEventOptions, pEvent->options, sizeof(szEventOptions) );
+					char *pszParam = strtok( szEventOptions, " " );
+					if ( pszParam )
 					{
-						// Try and translate it
-						act = Weapon_TranslateActivity( (Activity)CAI_BaseNPC::GetActivityID(pEvent->options), NULL );
-					}
-
-					if (act != ACT_INVALID)
-					{
-						// FIXME: where should the duration come from? normally it would come from the current sequence
-						Weapon_SetActivity(act, 0);
-					}
-				}
-				return;
-			}
-			else if ( nEvent == AE_NPC_SET_INTERACTION_CANTDIE )
-			{
-				SetInteractionCantDie( (atoi(pEvent->options) != 0) );
-				return;
-			}
-			else if ( nEvent == AE_NPC_HURT_INTERACTION_PARTNER )
-			{
-				// If we're currently interacting with an enemy, hurt them/me
-				if ( m_hInteractionPartner )
-				{
-					CAI_BaseNPC *pTarget = NULL;
-					CAI_BaseNPC *pAttacker = NULL;
-					if ( pEvent->options )
-					{
-						char szEventOptions[128];
-						Q_strncpy( szEventOptions, pEvent->options, sizeof(szEventOptions) );
-						char *pszParam = strtok( szEventOptions, " " );
-						if ( pszParam )
+						if ( !Q_strncmp( pszParam, "ME", 2 ) )
 						{
-							if ( !Q_strncmp( pszParam, "ME", 2 ) )
-							{
-								pTarget = this;
-								pAttacker = m_hInteractionPartner.Get();
-							}
-							else if ( !Q_strncmp( pszParam, "THEM", 4 ) ) 
-							{
-								pAttacker = this;
-								pTarget = m_hInteractionPartner.Get();
-							}
+							pTarget = this;
+							pAttacker = m_hInteractionPartner.Get();
+						}
+						else if ( !Q_strncmp( pszParam, "THEM", 4 ) ) 
+						{
+							pAttacker = this;
+							pTarget = m_hInteractionPartner.Get();
+						}
 
-							pszParam = strtok(NULL," ");
-							if ( pAttacker && pTarget && pszParam )
+						pszParam = strtok(NULL," ");
+						if ( pAttacker && pTarget && pszParam )
+						{
+							int iDamage = atoi( pszParam );
+								if ( iDamage )
 							{
-								int iDamage = atoi( pszParam );
- 								if ( iDamage )
-								{
-									// We've got a target, and damage. Now hurt them.
-									CTakeDamageInfo info;
-									info.SetDamage( iDamage );
-									info.SetAttacker( pAttacker );
-									info.SetInflictor( pAttacker );
-   									info.SetDamageType( DMG_GENERIC | DMG_PREVENT_PHYSICS_FORCE );
-									pTarget->TakeDamage( info );
-									return;
-								}
+								// We've got a target, and damage. Now hurt them.
+								CTakeDamageInfo info;
+								info.SetDamage( iDamage );
+								info.SetAttacker( pAttacker );
+								info.SetInflictor( pAttacker );
+									info.SetDamageType( DMG_GENERIC | DMG_PREVENT_PHYSICS_FORCE );
+								pTarget->TakeDamage( info );
+								return;
 							}
 						}
 					}
-					
-					// Bad data. Explain how to use this anim event.
-					const char *pName = EventList_NameForIndex( nEvent );
-					DevWarning( 1, "Bad %s format. Should be: { AE_NPC_HURT_INTERACTION_PARTNER <frame number> \"<ME/THEM> <Amount of damage done>\" }\n", pName );
-					return;
 				}
-
-				DevWarning( "%s received AE_NPC_HURT_INTERACTION_PARTNER anim event, but it's not interacting with anything.\n", GetDebugName() );
+				
+				// Bad data. Explain how to use this anim event.
+				const char *pName = EventList_NameForIndex( nEvent );
+				DevWarning( 1, "Bad %s format. Should be: { AE_NPC_HURT_INTERACTION_PARTNER <frame number> \"<ME/THEM> <Amount of damage done>\" }\n", pName );
 				return;
 			}
+
+			DevWarning( "%s received AE_NPC_HURT_INTERACTION_PARTNER anim event, but it's not interacting with anything.\n", GetDebugName() );
+			return;
 		}
 
 		// FIXME: why doesn't this code pass unhandled events down to its parent?
 		// Came from my weapon?
 		//Adrian I'll clean this up once the old event system is phased out.
-		if ( pEvent->pSource != this || ( pEvent->type & AE_TYPE_NEWEVENTSYSTEM && pEvent->type & AE_TYPE_WEAPON ) || (nEvent >= EVENT_WEAPON && nEvent <= EVENT_WEAPON_LAST) )
+		if ( pEvent->pSource != this || ( pEvent->Type() & AE_TYPE_WEAPON ) )
 		{
 			Weapon_HandleAnimEvent( pEvent );
 		}

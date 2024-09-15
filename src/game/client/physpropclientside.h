@@ -13,7 +13,7 @@
 
 class C_FuncPhysicsRespawnZone;
 
-class C_PhysPropClientside : public C_BreakableProp, public IBreakableWithPropData, public IMultiplayerPhysics
+class C_PhysPropClientside : public C_BreakableProp, public IBreakableWithPropData, public ISpecialPhysics
 {
 	
 public:
@@ -33,7 +33,6 @@ public:
 	virtual	void			ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName );
 	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
 	virtual	bool			IsClientCreated( void ) const { return true; }
-	virtual int				GetMultiplayerPhysicsMode() { return m_iPhysicsMode; }
 	virtual float			GetMass();
 	virtual bool			IsAsleep();
 	
@@ -82,8 +81,8 @@ public:
 	bool			HasInteraction( propdata_interactions_t Interaction ) { return ( m_iInteractions & (1 << Interaction) ) != 0; }
 	void			SetPhysicsMode(int iMode);
 	int				GetPhysicsMode() { return m_iPhysicsMode; }
-	void			SetMultiplayerBreakMode( mp_break_t mode ) {}
-	mp_break_t		GetMultiplayerBreakMode( void ) const { return MULTIPLAYER_BREAK_DEFAULT; }
+	void			SetBreakMode( break_t mode ) {}
+	break_t		GetBreakMode( void ) const { return BREAK_DEFAULT; }
 
 
 // static management fucntions:

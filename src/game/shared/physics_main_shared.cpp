@@ -2118,10 +2118,16 @@ bool CBaseEntity::PhysicsRunSpecificThink( int nContextIndex, BASEPTR thinkFunc,
 {
 	int thinktick = GetNextThinkTick( nContextIndex );
 
+	if ( NeverThink(nContextIndex) )
+		return true;
+
 	if(!bForce) {
-		if ( !AlwaysThink(nContextIndex) && (NeverThink(nContextIndex) || thinktick <= 0 || thinktick > gpGlobals->tickcount) )
+		if ( thinktick > gpGlobals->tickcount )
 			return true;
 	}
+
+	if ( thinktick <= 0 )
+		return true;
 	
 	float thinktime = thinktick * TICK_INTERVAL;
 

@@ -63,7 +63,7 @@ C_PhysPropClientside::C_PhysPropClientside()
 	m_fDeathTime = -1;
 	m_impactEnergyScale = 1.0f;
 	m_iHealth = 0;
-	m_iPhysicsMode = PHYSICS_MULTIPLAYER_AUTODETECT;
+	m_iPhysicsMode = PHYSICS_AUTODETECT;
 	m_flTouchDelta = 0;
 	m_pRespawnZone = NULL;
 
@@ -84,7 +84,7 @@ C_PhysPropClientside::~C_PhysPropClientside()
 
 void C_PhysPropClientside::SetPhysicsMode(int iMode)
 {
-	if ( m_iPhysicsMode == PHYSICS_MULTIPLAYER_AUTODETECT )
+	if ( m_iPhysicsMode == PHYSICS_AUTODETECT )
 		m_iPhysicsMode = iMode;
 }
 
@@ -280,9 +280,9 @@ bool C_PhysPropClientside::Initialize()
 	if(DispatchSpawn(this) < 0) // loads breakable & prop data
 		return false;
 
-	if ( m_iPhysicsMode == PHYSICS_MULTIPLAYER_AUTODETECT )
+	if ( m_iPhysicsMode == PHYSICS_AUTODETECT )
 	{
-		m_iPhysicsMode = GetAutoMultiplayerPhysicsMode( 
+		m_iPhysicsMode = GetAutoPhysicsMode( 
 			CollisionProp()->OBBSize(), m_pPhysicsObject->GetMass() );
 	}
 
@@ -294,7 +294,7 @@ bool C_PhysPropClientside::Initialize()
 		
 
 	
-	if ( m_iPhysicsMode != PHYSICS_MULTIPLAYER_CLIENTSIDE )
+	if ( m_iPhysicsMode != PHYSICS_CLIENTSIDE )
 	{
 		// spawn only clientside entities
 		return false;
@@ -502,7 +502,7 @@ void C_PhysPropClientside::Clone( Vector &velocity )
 	pEntity->SetLocalOrigin( GetLocalOrigin() );
 	pEntity->SetLocalAngles( GetLocalAngles() );
 	pEntity->SetOwnerEntity( this );
-	pEntity->SetPhysicsMode( PHYSICS_MULTIPLAYER_CLIENTSIDE );
+	pEntity->SetPhysicsMode( PHYSICS_CLIENTSIDE );
 
 	if ( !pEntity->Initialize() )
 	{
@@ -615,7 +615,9 @@ const char *C_PhysPropClientside::ParseEntity( const char *pEntData )
 		Error( "classname missing from entity!\n" );
 	}
 
-	if ( !Q_strcmp( className, "prop_physics_multiplayer" ) )
+	if ( !Q_strcmp( className, "prop_physics" ) ||
+		!Q_strcmp( className, "prop_physics_override" ) ||
+		!Q_strcmp( className, "prop_physics_multiplayer" ) )
 	{
 		// always force clientside entitis placed in maps
 		C_PhysPropClientside *pEntity = C_PhysPropClientside::CreateNew( true ); 
@@ -864,7 +866,7 @@ CBaseEntity *BreakModelCreateSingle( CBaseEntity *pOwner, breakmodel_t *pModel, 
 	pEntity->SetLocalOrigin( position );
 	pEntity->SetLocalAngles( angles );
 	pEntity->SetOwnerEntity( pOwner );
-	pEntity->SetPhysicsMode( PHYSICS_MULTIPLAYER_CLIENTSIDE );
+	pEntity->SetPhysicsMode( PHYSICS_CLIENTSIDE );
 
 	if ( !pEntity->Initialize() )
 	{
@@ -1097,7 +1099,7 @@ void C_FuncPhysicsRespawnZone::RespawnProps( void )
 				pEntity->SetModelName( m_PropList[i].iszModelName );
 				pEntity->SetAbsOrigin( m_PropList[i].vecOrigin );
 				pEntity->SetAbsAngles( m_PropList[i].vecAngles );
-				pEntity->SetPhysicsMode( PHYSICS_MULTIPLAYER_CLIENTSIDE );
+				pEntity->SetPhysicsMode( PHYSICS_CLIENTSIDE );
 				pEntity->SetSkin( m_PropList[i].iSkin );
 				pEntity->m_iHealth = m_PropList[i].iHealth;
 				if ( pEntity->m_iHealth == 0 )

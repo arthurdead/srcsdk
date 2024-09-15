@@ -44,7 +44,6 @@
 #include "ai_basenpc.h"
 #include "iservervehicle.h"
 #include "eventlist.h"
-#include "scriptevent.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "UtlCachedFileData.h"
 #include "utlbuffer.h"
@@ -5172,19 +5171,16 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 
 					int nEvent = pEvent->Event();
 
-					if ( !( pEvent->type & AE_TYPE_NEWEVENTSYSTEM ) || ( pEvent->type & AE_TYPE_CLIENT ) )
+					if ( nEvent == AE_CL_CREATE_PARTICLE_EFFECT )
 					{
-						if ( nEvent == AE_CL_CREATE_PARTICLE_EFFECT )
+						char token[256];
+						const char *pOptions = pEvent->pszOptions();
+						nexttoken( token, pOptions, ' ', sizeof(token) );
+						if ( token[0] ) 
 						{
-							char token[256];
-							const char *pOptions = pEvent->pszOptions();
-							nexttoken( token, pOptions, ' ', sizeof(token) );
-							if ( token[0] ) 
-							{
-								PrecacheParticleSystem( token );
-							}
-							continue;
+							PrecacheParticleSystem( token );
 						}
+						break;
 					}
 				}
 			}

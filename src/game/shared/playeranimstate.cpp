@@ -446,12 +446,7 @@ void CPlayerAnimState::RunGestureSlotAnimEventsToCompletion( GestureSlot_t *pGes
 
 		for (int i = 0; i < (int)seqdesc.numevents; i++)
 		{
-			if ( pevent[i].type & AE_TYPE_NEWEVENTSYSTEM )
-			{
-				if ( !( pevent[i].type & AE_TYPE_CLIENT ) )
-					continue;
-			}
-			else if ( pevent[i].Event_OldSystem() < EVENT_CLIENT ) //Adrian - Support the old event system
+			if ( !( pevent[i].Type() & AE_TYPE_CLIENT ) )
 				continue;
 
 			if ( pevent[i].cycle > pGesture->m_pAnimLayer->m_flPrevCycle &&

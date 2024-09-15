@@ -645,9 +645,21 @@ public:
 	// remap base schedules into child-specific behaviors
 	virtual int			TranslateSchedule( int scheduleType );
 
+public:
 	virtual void		StartTask( const Task_t *pTask );
 	virtual void		RunTask( const Task_t *pTask );
 
+protected:
+	#define AI_TASK_ENUM(name, params, ...) \
+		void START_##name(const Task_t *pTask); \
+		void RUN_##name(const Task_t *pTask);
+
+	#include "ai_default_task_enum.inc"
+
+private:
+	static TaskFunc_t s_DefaultTasks[LAST_SHARED_TASK][2];
+
+public:
 	void				ClearTransientConditions();
 
 	virtual void		HandleAnimEvent( animevent_t *pEvent );
@@ -680,8 +692,8 @@ public:
 protected:
 	// Used by derived classes to chain a task to a task that might not be the 
 	// one they are currently handling:
-	void				ChainStartTask( int task, float taskData = 0 )	{ Task_t tempTask = { task, taskData }; StartTask( (const Task_t *)&tempTask ); }
-	void				ChainRunTask( int task, float taskData = 0 )	{ Task_t tempTask = { task, taskData }; RunTask( (const Task_t *)	&tempTask );	}
+	void				ChainStartTask( TaskId_t task, TaskData_t taskData = TaskData_t() )	{ Task_t tempTask = { task, taskData }; StartTask( (const Task_t *)&tempTask ); }
+	void				ChainRunTask( TaskId_t task, TaskData_t taskData = TaskData_t() )	{ Task_t tempTask = { task, taskData }; RunTask( (const Task_t *)	&tempTask );	}
 
 	void				StartTaskOverlay();
 	virtual void				RunTaskOverlay();
@@ -707,9 +719,10 @@ private:
 	void				PostRun( void );
 	void				PerformMovement();
 	void				PostMovement();
-	
-	virtual int			StartTask ( Task_t *pTask ) { DevMsg( "Called wrong StartTask()\n" ); StartTask( (const Task_t *)pTask ); return 0; } // to ensure correct signature in derived classes
-	virtual int			RunTask ( Task_t *pTask )	{ DevMsg( "Called wrong RunTask()\n" ); RunTask( (const Task_t *)pTask ); return 0; } // to ensure correct signature in derived classes
+
+private:
+	virtual int			StartTask ( Task_t *pTask ) final { Assert(0); DevMsg( "Called wrong StartTask()\n" ); StartTask( (const Task_t *)pTask ); return 0; } // to ensure correct signature in derived classes
+	virtual int			RunTask ( Task_t *pTask ) final	{ Assert(0); DevMsg( "Called wrong RunTask()\n" ); RunTask( (const Task_t *)pTask ); return 0; } // to ensure correct signature in derived classes
 
 public:
 	//-----------------------------------------------------
@@ -2145,10 +2158,10 @@ private:
 	void StartTurn( float flDeltaYaw );
 	bool FindCoverFromEnemy( bool bNodesOnly = false, float flMinDistance = 0, float flMaxDistance = FLT_MAX );
 	bool FindCoverFromBestSound( Vector *pCoverPos );
-	void StartScriptMoveToTargetTask( int task );
+	void StartScriptMoveToTargetTask( TaskId_t task );
 	
 	virtual void RunDieTask();
-	void RunAttackTask( int task );
+	void RunAttackTask( TaskId_t task );
 
 protected:
 	virtual float CalcReasonableFacing( bool bIgnoreOriginalFacing = false );
@@ -2180,19 +2193,19 @@ public:
 	virtual CAI_ClassScheduleIdSpace *	GetClassScheduleIdSpace()	{ return &gm_ClassScheduleIdSpace; }
 
 	static int			GetScheduleID	(const char* schedName);
-	static int			GetActivityID	(const char* actName);
-	static int			GetConditionID	(const char* condName);
-	static int			GetTaskID		(const char* taskName);
+	static Activity			GetActivityID	(const char* actName);
+	static AiCondGlobalId_t			GetConditionID	(const char* condName);
+	static TaskId_t			GetTaskID		(const char* taskName);
 	static int			GetSquadSlotID	(const char* slotName);
 	virtual const char* GetSquadSlotDebugName( int iSquadSlot );
-	static const char*	GetActivityName	(int actID);	
+	static const char*	GetActivityName	(Activity actID);	
 
-	static void			AddActivityToSR(const char *actName, int conID);
-	static int			GetOrRegisterActivity( const char *actName );
+	static void			AddActivityToSR(const char *actName, Activity conID);
+	static Activity			GetOrRegisterActivity( const char *actName );
 	
-	static void			AddEventToSR(const char *eventName, int conID);
-	static const char*	GetEventName	(int actID);
-	static int			GetEventID	(const char* actName);
+	static void			AddEventToSR(const char *eventName, Animevent conID);
+	static const char*	GetEventName	(Animevent actID);
+	static Animevent			GetEventID	(const char* actName);
 
 public:
 	//-----------------------------------------------------
@@ -2264,13 +2277,14 @@ private:
 	static CAI_GlobalScheduleNamespace	gm_SchedulingSymbols;
 	static CAI_ClassScheduleIdSpace		gm_ClassScheduleIdSpace;
 
+public:
 	typedef struct
 	{
 		Activity	sequence;
 		Activity	gesture;
 	} actlink_t;
 
-	static actlink_t		gm_ActivityGestureLinks[];
+	static const actlink_t		gm_ActivityGestureLinks[];
 
 public:
 	//----------------------------------------------------
@@ -2548,7 +2562,7 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 		CUtlVector<const char *> schedulesToLoad; \
 		CUtlVector<AIScheduleLoadFunc_t> reqiredOthers; \
 		CAI_NamespaceInfos scheduleIds; \
-		CAI_NamespaceInfos taskIds; \
+		CAI_TaskNamespaceInfos taskIds; \
 		CAI_NamespaceInfos conditionIds;
 		
 
@@ -2564,37 +2578,9 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 		CUtlVector<const char *> schedulesToLoad; \
 		CUtlVector<AIScheduleLoadFunc_t> reqiredOthers; \
 		CAI_NamespaceInfos scheduleIds; \
-		CAI_NamespaceInfos taskIds; \
+		CAI_TaskNamespaceInfos taskIds; \
 		CAI_NamespaceInfos conditionIds; \
 		CAI_NamespaceInfos squadSlotIds;
-		
-//-----------------
-
-#define EXTERN_SCHEDULE( id ) \
-	scheduleIds.PushBack( #id, id ); \
-	extern const char * g_psz##id; \
-	schedulesToLoad.AddToTail( g_psz##id );
-
-//-----------------
-
-#define DEFINE_SCHEDULE( id, text ) \
-	scheduleIds.PushBack( #id, id ); \
-	const char * g_psz##id = \
-		"\n	Schedule" \
-		"\n		" #id \
-		text \
-		"\n"; \
-	schedulesToLoad.AddToTail( g_psz##id );
-	
-//-----------------
-
-#define DECLARE_CONDITION( id ) \
-	conditionIds.PushBack( #id, id );
-
-//-----------------
-
-#define DECLARE_TASK( id ) \
-	taskIds.PushBack( #id, id );
 
 //-----------------
 
@@ -2618,10 +2604,6 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 
 //-----------------
 
-#define DECLARE_USES_SCHEDULE_PROVIDER( classname )	reqiredOthers.AddToTail( ScheduleLoadHelper(classname) );
-
-//-----------------
-
 // IDs are stored and then added in order due to constraints in the namespace implementation
 #define AI_END_CUSTOM_SCHEDULE_PROVIDER() \
 		\
@@ -2640,7 +2622,7 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 		\
 		for ( i = 0; i < taskIds.Count(); i++ ) \
 		{ \
-			ADD_CUSTOM_TASK_NAMED( CNpc, taskIds[i].pszName, taskIds[i].localId );  \
+			ADD_CUSTOM_TASK_NAMED( CNpc, taskIds[i].pszName, taskIds[i].localId, taskIds[i].params );  \
 		} \
 		\
 		for ( i = 0; i < conditionIds.Count(); i++ ) \
@@ -2660,7 +2642,7 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 		{ \
 			if ( CNpc::gm_SchedLoadStatus.fValid ) \
 			{ \
-				CNpc::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedulesFromBuffer( pszClassName, schedulesToLoad[i], &AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
+				CNpc::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedules( pszClassName, schedulesToLoad[i], "MEMORY",&AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
 			} \
 			else \
 				break; \
@@ -2702,7 +2684,7 @@ inline bool ValidateConditionLimits( const char *pszNewCondition )
 		\
 		for ( i = 0; i < taskIds.Count(); i++ ) \
 		{ \
-			ADD_CUSTOM_TASK_NAMED( CNpc, taskIds[i].pszName, taskIds[i].localId );  \
+			ADD_CUSTOM_TASK_NAMED( CNpc, taskIds[i].pszName, taskIds[i].localId, taskIds[i].params );  \
 		} \
 		\
 		for ( i = 0; i < conditionIds.Count(); i++ ) \
@@ -2727,7 +2709,7 @@ inline bool ValidateConditionLimits( const char *pszNewCondition )
 		{ \
 			if ( CNpc::gm_SchedLoadStatus.fValid ) \
 			{ \
-				CNpc::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedulesFromBuffer( pszClassName, schedulesToLoad[i], &AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
+				CNpc::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedules( pszClassName, schedulesToLoad[i], "MEMORY", &AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
 			} \
 			else \
 				break; \
@@ -2736,49 +2718,8 @@ inline bool ValidateConditionLimits( const char *pszNewCondition )
 
 //-------------------------------------
 
-struct AI_NamespaceAddInfo_t
-{
-	AI_NamespaceAddInfo_t( const char *pszName, int localId )
-	 :	pszName( pszName ),
-		localId( localId )
-	{
-	}
-	
-	const char *pszName;
-	int			localId;
-};
-
-class CAI_NamespaceInfos : public CUtlVector<AI_NamespaceAddInfo_t>
-{
-public:
-	void PushBack(  const char *pszName, int localId )
-	{
-		AddToTail( AI_NamespaceAddInfo_t( pszName, localId ) );
-	}
-
-	void Sort()
-	{
-		CUtlVector<AI_NamespaceAddInfo_t>::Sort( Compare );
-	}
-	
-private:
-	static int __cdecl Compare(const AI_NamespaceAddInfo_t *pLeft, const AI_NamespaceAddInfo_t *pRight )
-	{
-		return pLeft->localId - pRight->localId;
-	}
-	
-};
-
-//-------------------------------------
-
 // Declares the static variables that hold the string registry offset for the new subclass
 // as well as the initialization in schedule load functions
-
-struct AI_SchedLoadStatus_t
-{
-	bool fValid;
-	int  signature;
-};
 
 // Load schedules pulled out to support stepping through with debugger
 inline bool AI_DoLoadSchedules( bool (*pfnBaseLoad)(), void (*pfnInitCustomSchedules)(),
@@ -2794,25 +2735,6 @@ inline bool AI_DoLoadSchedules( bool (*pfnBaseLoad)(), void (*pfnInitCustomSched
 	}
 	return pLoadStatus->fValid;
 }
-
-//-------------------------------------
-
-typedef bool (*AIScheduleLoadFunc_t)();
-
-// @Note (toml 02-16-03): The following class exists to allow us to establish an anonymous friendship
-// in DEFINE_CUSTOM_SCHEDULE_PROVIDER. The particulars of this implementation is almost entirely
-// defined by bugs in MSVC 6.0
-class ScheduleLoadHelperImpl
-{
-public:
-	template <typename T> 
-	static AIScheduleLoadFunc_t AccessScheduleLoadFunc(T *)
-	{
-		return (&T::LoadSchedules);
-	}
-};
-
-#define ScheduleLoadHelper( type ) (ScheduleLoadHelperImpl::AccessScheduleLoadFunc((type *)0))
 
 //-------------------------------------
 
@@ -2892,24 +2814,6 @@ public:
 	{\
 		return gm_SquadSlotNamespace.IdToSymbol( derivedClass::gm_SquadSlotIdSpace.LocalToGlobal(slotEN) );\
 	}
-
-
-//-------------------------------------
-
-#define ADD_CUSTOM_SCHEDULE_NAMED(derivedClass,schedName,schedEN)\
-	if ( !derivedClass::AccessClassScheduleIdSpaceDirect().AddSchedule( schedName, schedEN, derivedClass::gm_pszErrorClassName ) ) return;
-
-#define ADD_CUSTOM_SCHEDULE(derivedClass,schedEN) ADD_CUSTOM_SCHEDULE_NAMED(derivedClass,#schedEN,schedEN)
-
-#define ADD_CUSTOM_TASK_NAMED(derivedClass,taskName,taskEN)\
-	if ( !derivedClass::AccessClassScheduleIdSpaceDirect().AddTask( taskName, taskEN, derivedClass::gm_pszErrorClassName ) ) return;
-
-#define ADD_CUSTOM_TASK(derivedClass,taskEN) ADD_CUSTOM_TASK_NAMED(derivedClass,#taskEN,taskEN)
-
-#define ADD_CUSTOM_CONDITION_NAMED(derivedClass,condName,condEN)\
-	if ( !derivedClass::AccessClassScheduleIdSpaceDirect().AddCondition( condName, condEN, derivedClass::gm_pszErrorClassName ) ) return;
-
-#define ADD_CUSTOM_CONDITION(derivedClass,condEN) ADD_CUSTOM_CONDITION_NAMED(derivedClass,#condEN,condEN)
 
 //-------------------------------------
 

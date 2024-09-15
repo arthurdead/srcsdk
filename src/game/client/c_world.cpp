@@ -94,15 +94,21 @@ C_World::~C_World( void )
 bool C_World::InitializeAsServerEntity( int entnum, int iSerialNum )
 {
 	m_flWaveHeight = 0.0f;
-	ActivityList_Init();
-	EventList_Init();
+
+	if(g_pClientWorld == this) {
+		ActivityList_Init();
+		EventList_Init();
+	}
 
 	return BaseClass::InitializeAsServerEntity( entnum, iSerialNum );
 }
 
 void C_World::UpdateOnRemove()
 {
-	ActivityList_Free();
+	if(g_pClientWorld == this) {
+		ActivityList_Free();
+	}
+
 	BaseClass::UpdateOnRemove();
 }
 
@@ -118,28 +124,30 @@ void C_World::OnDataChanged( DataUpdateType_t updateType )
 	// Always force reset to normal mode upon receipt of world in new map
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
-		modemanager->SwitchMode( CLIENTMODE_NORMAL, true );
+		if(g_pClientWorld == this) {
+			modemanager->SwitchMode( CLIENTMODE_NORMAL, true );
 
-		if ( m_bStartDark )
-		{
-			ScreenFade_t sf;
-			memset( &sf, 0, sizeof( sf ) );
-			sf.a = 255;
-			sf.r = 0;
-			sf.g = 0;
-			sf.b = 0;
-			sf.duration = (float)(1<<SCREENFADE_FRACBITS) * 5.0f;
-			sf.holdTime = (float)(1<<SCREENFADE_FRACBITS) * 1.0f;
-			sf.fadeFlags = FFADE_IN | FFADE_PURGE;
-			GetViewEffects()->Fade( sf );
+			if ( m_bStartDark )
+			{
+				ScreenFade_t sf;
+				memset( &sf, 0, sizeof( sf ) );
+				sf.a = 255;
+				sf.r = 0;
+				sf.g = 0;
+				sf.b = 0;
+				sf.duration = (float)(1<<SCREENFADE_FRACBITS) * 5.0f;
+				sf.holdTime = (float)(1<<SCREENFADE_FRACBITS) * 1.0f;
+				sf.fadeFlags = FFADE_IN | FFADE_PURGE;
+				GetViewEffects()->Fade( sf );
+			}
+
+			OcclusionParams_t params;
+			params.m_flMaxOccludeeArea = m_flMaxOccludeeArea;
+			params.m_flMinOccluderArea = m_flMinOccluderArea;
+			engine->SetOcclusionParameters( params );
+
+			modelinfo->SetLevelScreenFadeRange( m_flMinPropScreenSpaceWidth, m_flMaxPropScreenSpaceWidth );
 		}
-
-		OcclusionParams_t params;
-		params.m_flMaxOccludeeArea = m_flMaxOccludeeArea;
-		params.m_flMinOccluderArea = m_flMinOccluderArea;
-		engine->SetOcclusionParameters( params );
-
-		modelinfo->SetLevelScreenFadeRange( m_flMinPropScreenSpaceWidth, m_flMaxPropScreenSpaceWidth );
 	}
 }
 
@@ -180,6 +188,10 @@ void W_Precache(void)
 
 void C_World::Precache( void )
 {
+	if(g_pClientWorld && g_pClientWorld != this) {
+		return;
+	}
+
 	// UNDONE: Make most of these things server systems or precache_registers
 	// =================================================
 	//	Activities
