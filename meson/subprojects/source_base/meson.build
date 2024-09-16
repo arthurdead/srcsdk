@@ -96,7 +96,8 @@ source_dep = declare_dependency(
 	link_args: [
 		'-L'+join_paths(game_dir,'bin'),
 		'-L'+join_paths(src_engine_dir,'bin'),
-		'-L'+lib_folder
+		'-L'+lib_folder,
+		'-latomic',
 	],
 	dependencies: [
 		source_debug_dep

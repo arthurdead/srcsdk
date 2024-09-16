@@ -176,7 +176,7 @@ if(!mgr || status != IFACE_OK)
 generic_vtable_t vtable = NULL;
 
 #if defined __GNUC__ && defined __linux__
-generic_vtable_t vtable = vtable_from_object(mgr);
+vtable = vtable_from_object(mgr);
 
 page_info page_access(vtable, (sizeof(generic_plain_mfp_t) * IShadowMgr_CreateShadowEx_index));
 page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);

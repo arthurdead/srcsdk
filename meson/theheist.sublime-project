@@ -16,7 +16,7 @@
 			"clangd": {
 				"enabled": true,
 				"initializationOptions": {
-					"clangd.compile-commands-dir": "$project_path/build_windows/everything",
+					"clangd.compile-commands-dir": "$project_path/build_linux/everything",
 				},
 			},
 		},
