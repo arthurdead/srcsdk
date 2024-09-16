@@ -1,1 +1,8 @@
-/lib/ filter=lfs diff=lfs merge=lfs -text
+/lib/common/* filter=lfs diff=lfs merge=lfs -text
+/lib/common/linux32/* filter=lfs diff=lfs merge=lfs -text
+/lib/common/ubuntu12_32/* filter=lfs diff=lfs merge=lfs -text
+/lib/public/* filter=lfs diff=lfs merge=lfs -text
+/lib/public/2010/* filter=lfs diff=lfs merge=lfs -text
+/lib/public/2012/* filter=lfs diff=lfs merge=lfs -text
+/lib/public/linux32/* filter=lfs diff=lfs merge=lfs -text
+/lib/public/osx32/* filter=lfs diff=lfs merge=lfs -text
