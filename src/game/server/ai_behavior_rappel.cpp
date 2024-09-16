@@ -400,48 +400,14 @@ AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER( CAI_RappelBehavior )
 
 	//===============================================
 	//===============================================
-	DEFINE_SCHEDULE
-	(
-		SCHED_RAPPEL_WAIT,
-
-		"	Tasks"
-		"		TASK_SET_ACTIVITY				ACTIVITY:ACT_RAPPEL_LOOP"
-		"		TASK_WAIT_INDEFINITE			0"
-		""
-		"	Interrupts"
-		"		COND_BEGIN_RAPPEL"
-	);
+	DEFINE_SCHEDULE_FILE( SCHED_RAPPEL_WAIT );
 
 	//===============================================
 	//===============================================
-	DEFINE_SCHEDULE
-	(
-		SCHED_RAPPEL,
-
-		"	Tasks"
-		"		TASK_SET_ACTIVITY		ACTIVITY:ACT_RAPPEL_LOOP"
-		"		TASK_RAPPEL				0"
-		"		TASK_SET_SCHEDULE		SCHEDULE:SCHED_CLEAR_RAPPEL_POINT"
-		""
-		"	Interrupts"
-		""
-		"		COND_NEW_ENEMY"	// Only so the enemy selection code will pick an enemy!
-	);
+	DEFINE_SCHEDULE_FILE( SCHED_RAPPEL );
 
 	//===============================================
 	//===============================================
-	DEFINE_SCHEDULE
-	(
-		SCHED_CLEAR_RAPPEL_POINT,
-
-		"	Tasks"
-		"		TASK_HIT_GROUND			0"
-		"		TASK_MOVE_AWAY_PATH		128"	// Clear this spot for other rappellers
-		"		TASK_RUN_PATH			0"
-		"		TASK_WAIT_FOR_MOVEMENT	0"
-		""
-		"	Interrupts"
-		""
-	);
+	DEFINE_SCHEDULE_FILE( SCHED_CLEAR_RAPPEL_POINT );
 
 AI_END_CUSTOM_SCHEDULE_PROVIDER()

@@ -2559,9 +2559,8 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 		typedef derivedClass CNpc; \
 		const char *pszClassName = #derivedClass; \
 		\
-		CUtlVector<const char *> schedulesToLoad; \
 		CUtlVector<AIScheduleLoadFunc_t> reqiredOthers; \
-		CAI_NamespaceInfos scheduleIds; \
+		CAI_ScheduleNamespaceInfos scheduleIds; \
 		CAI_TaskNamespaceInfos taskIds; \
 		CAI_NamespaceInfos conditionIds;
 		
@@ -2575,9 +2574,8 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 		typedef derivedClass CNpc; \
 		const char *pszClassName = #derivedClass; \
 		\
-		CUtlVector<const char *> schedulesToLoad; \
 		CUtlVector<AIScheduleLoadFunc_t> reqiredOthers; \
-		CAI_NamespaceInfos scheduleIds; \
+		CAI_ScheduleNamespaceInfos scheduleIds; \
 		CAI_TaskNamespaceInfos taskIds; \
 		CAI_NamespaceInfos conditionIds; \
 		CAI_NamespaceInfos squadSlotIds;
@@ -2638,11 +2636,13 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 			(*reqiredOthers[i])();  \
 		} \
 		\
-		for ( i = 0; i < schedulesToLoad.Count(); i++ ) \
+		for ( i = 0; i < scheduleIds.Count(); i++ ) \
 		{ \
 			if ( CNpc::gm_SchedLoadStatus.fValid ) \
 			{ \
-				CNpc::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedules( pszClassName, schedulesToLoad[i], "MEMORY",&AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
+				const char *pbuffer = scheduleIds[i].filename ? NULL : scheduleIds[i].pszValue; \
+				const char *pfilename = scheduleIds[i].filename ? UTIL_VarArgs("scripts/schedules/behavior/%s/%s.sch",pszClassName,scheduleIds[i].pszValue) : NULL; \
+				CNpc::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedules( pszClassName, pbuffer, pfilename,&AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
 			} \
 			else \
 				break; \
@@ -2705,11 +2705,13 @@ inline bool ValidateConditionLimits( const char *pszNewCondition )
 			(*reqiredOthers[i])();  \
 		} \
 		\
-		for ( i = 0; i < schedulesToLoad.Count(); i++ ) \
+		for ( i = 0; i < scheduleIds.Count(); i++ ) \
 		{ \
 			if ( CNpc::gm_SchedLoadStatus.fValid ) \
 			{ \
-				CNpc::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedules( pszClassName, schedulesToLoad[i], "MEMORY", &AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
+				const char *pbuffer = scheduleIds[i].filename ? NULL : scheduleIds[i].pszValue; \
+				const char *pfilename = scheduleIds[i].filename ? UTIL_VarArgs("scripts/schedules/npc/%s/%s.sch",pszClassName,scheduleIds[i].pszValue) : NULL; \
+				CNpc::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedules( pszClassName, pbuffer, pfilename, &AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
 			} \
 			else \
 				break; \

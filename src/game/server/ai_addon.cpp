@@ -4,6 +4,8 @@
 #include "ai_basenpc.h"
 #include "ai_behavior_addonhost.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //---------------------------------------------------------
 // Answers YES if the attachment is on the model and not
@@ -555,18 +557,10 @@ void CAI_AddOn::InputRemove( inputdata_t &data )
 
 
 AI_BEGIN_AGENT_(CAI_AddOn,CAI_Agent)
-	DECLARE_TASK( TASK_ADDON_WAIT, TaskParamCheck_t() )
-	DECLARE_TASK( TASK_ADDON_WAIT_RANDOM, TaskParamCheck_t() )
+	DECLARE_TASK( TASK_ADDON_WAIT, TaskParamCheck_t(TASK_DATA_CHECK_NUM) )
+	DECLARE_TASK( TASK_ADDON_WAIT_RANDOM, TaskParamCheck_t(TASK_DATA_CHECK_NUM) )
 
 	DECLARE_CONDITION( COND_ADDON_LOST_HOST )
 
-	DEFINE_SCHEDULE
-	(
-		SCHED_ADDON_NO_OWNER,
-		"	Tasks"
-		"	TASK_ADDON_WAIT		1"
-		"	"
-		"	Interrupts"
-		"	"
-	)
+	DEFINE_SCHEDULE_FILE( SCHED_ADDON_NO_OWNER )
 AI_END_AGENT()

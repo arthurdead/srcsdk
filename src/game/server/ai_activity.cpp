@@ -102,6 +102,11 @@ void CAI_BaseNPC::InitDefaultActivitySR(void)
 {
 	#define ACTIVITY_ENUM(name, ...) \
 		ADD_ACTIVITY_TO_SR( name );
+	#define ACTIVITY_ENUM_ALIAS(name, value)
+
+	#include "ai_activity_enum.inc"
+
+	#define ACTIVITY_ENUM(name, ...)
 	#define ACTIVITY_ENUM_ALIAS(name, value) \
 		AddActivityToSR( #name, value );
 

@@ -3042,239 +3042,38 @@ AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER(CAI_FollowBehavior)
 	DECLARE_CONDITION(COND_FOLLOW_PLAYER_IS_NOT_LIT)
 
 	//=========================================================
-	// > SCHED_FOLLOWER_MOVE_AWAY_END
-	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_FOLLOWER_MOVE_AWAY_END,
-
-		"	Tasks"
-		"		 TASK_SET_FAIL_SCHEDULE					SCHEDULE:SCHED_FOLLOWER_MOVE_AWAY_FAIL "
-		"		 TASK_STOP_MOVING						0"
-		"		 TASK_FACE_FOLLOW_TARGET				0"
-		"		 TASK_SET_FOLLOW_DELAY					2"
-		""
-		"	Interrupts"
-		"		COND_PLAYER_PUSHING"
-	)
-
-	//=========================================================
-	// > SCHED_FOLLOWER_MOVE_AWAY_FAIL
-	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_FOLLOWER_MOVE_AWAY_FAIL,
-
-		"	Tasks"
-		"		 TASK_STOP_MOVING						0"
-		"		 TASK_FACE_FOLLOW_TARGET				0"
-		"		 TASK_SET_FOLLOW_DELAY					2"
-		""
-		"	Interrupts"
-		"		COND_PLAYER_PUSHING"
-	)
-
-	//=========================================================
 	// > SCHED_FOLLOW
 	//=========================================================
-	DEFINE_SCHEDULE
-	(
-		SCHED_FOLLOW,
-
-		"	Tasks"
-		"		TASK_GET_PATH_TO_FOLLOW_POSITION 0"
-		"		TASK_MOVE_TO_FOLLOW_POSITION	0"
-		"		TASK_WAIT_FOR_MOVEMENT			0"
-		"		TASK_SET_SCHEDULE				SCHEDULE:SCHED_TARGET_FACE "
-		""
-		"	Interrupts"
-		"		COND_NEW_ENEMY"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_HEAR_DANGER"
-		"		COND_PROVOKED"
-		"		COND_PLAYER_PUSHING"
-		"		COND_BETTER_WEAPON_AVAILABLE"
-	);
+	DEFINE_SCHEDULE_FILE(SCHED_FOLLOW);
 
 	//=========================================================
 	// > SCHED_MOVE_TO_FACE_FOLLOW_TARGET
 	//=========================================================
-	DEFINE_SCHEDULE
-	(
-		SCHED_MOVE_TO_FACE_FOLLOW_TARGET,
-
-		"	Tasks"
-//		"		TASK_SET_ACTIVITY					ACTIVITY:ACT_IDLE"
-//		"		TASK_FACE_FOLLOW_TARGET				0"
-//		"		TASK_SET_ACTIVITY					ACTIVITY:ACT_IDLE"
-		"		TASK_SET_SCHEDULE					SCHEDULE:SCHED_FOLLOW"
-		""
-		"	Interrupts"
-		"		COND_NEW_ENEMY"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_HEAR_DANGER"
-		"		COND_PROVOKED"
-		"		COND_PLAYER_PUSHING"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_MOVE_TO_FACE_FOLLOW_TARGET)
 	
 	//=========================================================
 	// > SCHED_FACE_FOLLOW_TARGET
 	//=========================================================
-	DEFINE_SCHEDULE
-	(
-		SCHED_FACE_FOLLOW_TARGET,
-
-		"	Tasks"
-		"		TASK_SET_ACTIVITY					ACTIVITY:ACT_IDLE"
-		"		TASK_FACE_FOLLOW_TARGET				0"
-		"		TASK_SET_ACTIVITY					ACTIVITY:ACT_IDLE"
-		"		TASK_SET_SCHEDULE					SCHEDULE:SCHED_FOLLOWER_IDLE_STAND "
-		""
-		"	Interrupts"
-		"		COND_NEW_ENEMY"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_HEAR_DANGER"
-		"		COND_PROVOKED"
-		"		COND_PLAYER_PUSHING"
-		"		COND_GIVE_WAY"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_FACE_FOLLOW_TARGET)
 
 	//=========================================================
 	// > SCHED_FOLLOWER_GO_TO_WAIT_POINT
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_FOLLOWER_GO_TO_WAIT_POINT,
-
-		"	Tasks"
-		"		TASK_LOCK_HINTNODE			0		" // this will fail the schedule if no hint node or not already lockable
-		"		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_FOLLOWER_GO_TO_WAIT_POINT_FAIL"
-		"		TASK_SET_TOLERANCE_DISTANCE	4"
-		"		TASK_GET_PATH_TO_FOLLOW_POINT	0"
-		"		TASK_SET_FOLLOW_TARGET_MARK 0"
-		"		TASK_WALK_PATH				0"
-		"		TASK_WAIT_FOR_MOVEMENT		0"
-		"		TASK_ARRIVE_AT_FOLLOW_POINT	0"
-		"		TASK_SET_FOLLOW_POINT_STAND_SCHEDULE 0"
-
-		""
-		"	Interrupts"
-		"		COND_NEW_ENEMY"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_HEAR_DANGER"
-		"		COND_PROVOKED"
-		"		COND_PLAYER_PUSHING"
-		"		COND_TARGET_MOVED_FROM_MARK"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_FOLLOWER_GO_TO_WAIT_POINT)
 
 	//=========================================================
 	// > SCHED_FOLLOWER_GO_TO_WAIT_POINT_FAIL
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_FOLLOWER_GO_TO_WAIT_POINT_FAIL,
-
-		"	Tasks"
-		"		TASK_CLEAR_HINTNODE			.5"
-		"		TASK_SET_FOLLOW_DELAY		1"
-		""
-		"	Interrupts"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_FOLLOWER_GO_TO_WAIT_POINT_FAIL)
 
 	//=========================================================
 	// > SCHED_FOLLOWER_STAND_AT_WAIT_POINT
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_FOLLOWER_STAND_AT_WAIT_POINT,
+	DEFINE_SCHEDULE_FILE(SCHED_FOLLOWER_STAND_AT_WAIT_POINT)
 
-		"	Tasks"
-		"		TASK_BEGIN_STAND_AT_WAIT_POINT 0"
-		"		TASK_PLAY_HINT_ACTIVITY		0"
-		"		TASK_SET_SCHEDULE			SCHEDULE:SCHED_FOLLOWER_STAND_AT_WAIT_POINT "
-		""
-		"	Interrupts"
-		"		COND_NEW_ENEMY"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_HEAR_DANGER"
-		"		COND_PROVOKED"
-		"		COND_PLAYER_PUSHING"
-		"		COND_TARGET_MOVED_FROM_MARK"
-		"		COND_GIVE_WAY"
-		"		COND_FOLLOW_WAIT_POINT_INVALID"
-//		"		COND_IDLE_INTERRUPT"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_FOLLOWER_IDLE_STAND)
 
-	DEFINE_SCHEDULE
-	(
-		SCHED_FOLLOWER_IDLE_STAND,
-
-		"	Tasks"
-		"		TASK_STOP_MOVING				0"
-		"		TASK_SET_ACTIVITY				ACTIVITY:ACT_IDLE"
-//		"		TASK_SET_FOLLOW_TARGET_MARK		0"
-		"		TASK_WAIT						2.5"
-		"		TASK_FACE_FOLLOW_TARGET			0"
-		"		TASK_SET_ACTIVITY				ACTIVITY:ACT_IDLE"
-		"		TASK_WAIT						3"
-		""
-		"	Interrupts"
-		"		COND_NEW_ENEMY"
-		"		COND_SEE_FEAR"
-		"		COND_CAN_RANGE_ATTACK1"
-		"		COND_NO_PRIMARY_AMMO"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_SMELL"
-		"		COND_PROVOKED"
-		"		COND_GIVE_WAY"
-		"		COND_HEAR_DANGER"
-		"		COND_HEAR_COMBAT"
-		"		COND_HEAR_BULLET_IMPACT"
-		"		COND_PLAYER_PUSHING"
-		"		COND_TARGET_MOVED_FROM_MARK"
-		"		COND_FOLLOW_DELAY_EXPIRED"
-		"		COND_FOUND_WAIT_POINT"
-		"		COND_IDLE_INTERRUPT"
-		"		COND_BETTER_WEAPON_AVAILABLE"
-	)
-
-	DEFINE_SCHEDULE
-	(
-	SCHED_FOLLOWER_COMBAT_FACE,
-
-		"	Tasks"
-		"		TASK_STOP_MOVING		0"
-		"		TASK_SET_ACTIVITY		ACTIVITY:ACT_IDLE"
-		"		TASK_FACE_ENEMY			0"
-		""
-		"	Interrupts"
-		"		COND_NEW_ENEMY"
-		"		COND_SEE_FEAR"
-		"		COND_CAN_RANGE_ATTACK1"
-		"		COND_CAN_RANGE_ATTACK2"
-		"		COND_CAN_MELEE_ATTACK1"
-		"		COND_CAN_MELEE_ATTACK2"
-		"		COND_NO_PRIMARY_AMMO"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_SMELL"
-		"		COND_PROVOKED"
-		"		COND_GIVE_WAY"
-		"		COND_HEAR_DANGER"
-		"		COND_HEAR_COMBAT"
-		"		COND_HEAR_BULLET_IMPACT"
-		"		COND_PLAYER_PUSHING"
-		"		COND_TARGET_MOVED_FROM_MARK"
-		"		COND_FOLLOW_DELAY_EXPIRED"
-		"		COND_FOUND_WAIT_POINT"
-		"		COND_BETTER_WEAPON_AVAILABLE"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_FOLLOWER_COMBAT_FACE)
 
 	AI_END_CUSTOM_SCHEDULE_PROVIDER()
 

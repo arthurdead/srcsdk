@@ -1691,214 +1691,43 @@ AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER(CAI_AssaultBehavior)
 	
 	//=========================================================
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_MOVE_TO_RALLY_POINT,
-
-		"	Tasks"
-		"		TASK_SET_FAIL_SCHEDULE					SCHEDULE:SCHED_ASSAULT_FAILED_TO_MOVE"
-		"		TASK_GET_PATH_TO_RALLY_POINT			0"
-		"		TASK_RUN_PATH							0"
-		"		TASK_WAIT_FOR_MOVEMENT					0"
-		"		TASK_STOP_MOVING						0"
-		"		TASK_FACE_RALLY_POINT					0"
-		"		TASK_HIT_RALLY_POINT					0"
-		"		TASK_SET_SCHEDULE						SCHEDULE:SCHED_HOLD_RALLY_POINT"
-		"	"
-		"	Interrupts"
-		"		COND_HEAR_DANGER"
-		"		COND_PROVOKED"
-		"		COND_NO_PRIMARY_AMMO"
-		"		COND_PLAYER_PUSHING"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_MOVE_TO_RALLY_POINT)
 
 	//=========================================================
 	//=========================================================
-	DEFINE_SCHEDULE
-	(
-		SCHED_ASSAULT_FAILED_TO_MOVE,
-
-		"	Tasks"
-		"		TASK_ASSAULT_DEFER_SCHEDULE_SELECTION	1"
-		"	"
-		"	Interrupts"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_ASSAULT_FAILED_TO_MOVE)
 
 	//=========================================================
 	//=========================================================
-	DEFINE_SCHEDULE
-	(
-		SCHED_FAIL_MOVE_TO_RALLY_POINT,
+	DEFINE_SCHEDULE_FILE(SCHED_FAIL_MOVE_TO_RALLY_POINT)
 
-		"	Tasks"
-		"		TASK_WAIT			1"
-		"	"
-		"	Interrupts"
-		"		COND_HEAR_DANGER"
-		"		COND_CAN_RANGE_ATTACK1"
-		"		COND_CAN_MELEE_ATTACK1"
-	)
-
-
-#ifdef HL2_EPISODIC
-	//=========================================================
-	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_HOLD_RALLY_POINT,
-
-		"	Tasks"
-		"		TASK_FACE_RALLY_POINT					0"
-		"		TASK_AWAIT_CUE							0"
-		"		TASK_WAIT_ASSAULT_DELAY					0"
-		"	"
-		"	Interrupts"
-		//"		COND_NEW_ENEMY"
-		"		COND_CAN_RANGE_ATTACK1"
-		"		COND_CAN_MELEE_ATTACK1"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_PLAYER_PUSHING"
-		"		COND_HEAR_DANGER"
-		"		COND_HEAR_BULLET_IMPACT"
-		"		COND_NO_PRIMARY_AMMO"
-	)
-#else
-	//=========================================================
-	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-	SCHED_HOLD_RALLY_POINT,
-
-	"	Tasks"
-	"		TASK_FACE_RALLY_POINT					0"
-	"		TASK_AWAIT_CUE							0"
-	"		TASK_WAIT_ASSAULT_DELAY					0"
-	"	"
-	"	Interrupts"
-	"		COND_NEW_ENEMY"
-	"		COND_CAN_RANGE_ATTACK1"
-	"		COND_CAN_MELEE_ATTACK1"
-	"		COND_LIGHT_DAMAGE"
-	"		COND_HEAVY_DAMAGE"
-	"		COND_PLAYER_PUSHING"
-	"		COND_HEAR_DANGER"
-	"		COND_HEAR_BULLET_IMPACT"
-	"		COND_NO_PRIMARY_AMMO"
-	"		COND_TOO_CLOSE_TO_ATTACK"
-	)
-#endif//HL2_EPISODIC
 
 	//=========================================================
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_HOLD_ASSAULT_POINT,
-
-		"	Tasks"
-		"		TASK_SET_ACTIVITY			ACTIVITY:ACT_IDLE"
-		"		TASK_WAIT					3"
-		""
-		"	Interrupts"
-		"		COND_NEW_ENEMY"
-		"		COND_ENEMY_DEAD"
-		"		COND_CAN_RANGE_ATTACK1"
-		"		COND_CAN_MELEE_ATTACK1"
-		"		COND_CAN_RANGE_ATTACK2"
-		"		COND_CAN_MELEE_ATTACK2"
-		"		COND_TOO_CLOSE_TO_ATTACK"
-		"		COND_LOST_ENEMY"
-		"		COND_HEAR_DANGER"
-		"		COND_HEAR_BULLET_IMPACT"
-		"		COND_NO_PRIMARY_AMMO"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_HOLD_RALLY_POINT)
 
 	//=========================================================
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_MOVE_TO_ASSAULT_POINT,
-
-		"	Tasks"
-		"		TASK_SET_FAIL_SCHEDULE					SCHEDULE:SCHED_ASSAULT_FAILED_TO_MOVE"
-		"		TASK_GATHER_CONDITIONS					0"
-		"		TASK_GET_PATH_TO_ASSAULT_POINT			0"
-		"		TASK_RUN_PATH							0"
-		"		TASK_WAIT_FOR_MOVEMENT					0"
-		"		TASK_FACE_ASSAULT_POINT					0"
-		"		TASK_HIT_ASSAULT_POINT					0"
-		"	"
-		"	Interrupts"
-		"		COND_NO_PRIMARY_AMMO"
-		"		COND_HEAR_DANGER"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_HOLD_ASSAULT_POINT)
 
 	//=========================================================
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-	SCHED_AT_ASSAULT_POINT,
-
-	"	Tasks"
-	"		TASK_FACE_ASSAULT_POINT					0"
-	"		TASK_HIT_ASSAULT_POINT					0"
-	"	"
-	"	Interrupts"
-	"		COND_NO_PRIMARY_AMMO"
-	"		COND_HEAR_DANGER"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_MOVE_TO_ASSAULT_POINT)
 
 	//=========================================================
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_WAIT_AND_CLEAR,
-
-		"	Tasks"
-		"		TASK_FACE_ASSAULT_POINT		0"
-		"		TASK_SET_ACTIVITY			ACTIVITY:ACT_IDLE"
-		"		TASK_AWAIT_ASSAULT_TIMEOUT	0"
-		"		TASK_ANNOUNCE_CLEAR			0"
-		"	"
-		"	Interrupts"
-		"		COND_NEW_ENEMY"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_CAN_RANGE_ATTACK1"
-		"		COND_CAN_MELEE_ATTACK1"
-		"		COND_CAN_RANGE_ATTACK2"
-		"		COND_CAN_MELEE_ATTACK2"
-		"		COND_HEAR_DANGER"
-		"		COND_HEAR_BULLET_IMPACT"
-		"		COND_TOO_CLOSE_TO_ATTACK"
-		"		COND_NOT_FACING_ATTACK"
-		"		COND_PLAYER_PUSHING"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_AT_ASSAULT_POINT)
 
 	//=========================================================
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_CLEAR_ASSAULT_POINT,
-
-		"	Tasks"
-		"		TASK_ANNOUNCE_CLEAR			0"
-		"	"
-		"	Interrupts"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_WAIT_AND_CLEAR)
 
 	//=========================================================
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_ASSAULT_MOVE_AWAY,
+	DEFINE_SCHEDULE_FILE(SCHED_CLEAR_ASSAULT_POINT)
 
-		"	Tasks"
-		"		TASK_MOVE_AWAY_PATH						120"
-		"		TASK_RUN_PATH							0"
-		"		TASK_WAIT_FOR_MOVEMENT					0"
-		"	"
-		"	Interrupts"
-	)
+	//=========================================================
+	//=========================================================
+	DEFINE_SCHEDULE_FILE(SCHED_ASSAULT_MOVE_AWAY)
 
 AI_END_CUSTOM_SCHEDULE_PROVIDER()

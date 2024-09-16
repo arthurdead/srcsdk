@@ -203,55 +203,22 @@ public:
 
 #define ScheduleLoadHelper( type ) (ScheduleLoadHelperImpl::AccessScheduleLoadFunc((type *)0))
 
-#define AI_LOAD_SCHEDULE( classname, name ) \
+struct AiScheduleInfo_t
+{
+
+	const char *value;
+	bool filename;
+};
+
+#define AI_LOAD_SCHEDULE_BUFFER( classname, name ) \
 	do \
 	{ \
-		extern const char * g_psz##name; \
 		if ( classname::gm_SchedLoadStatus.fValid ) \
 		{ \
+			extern const char * g_psz##name; \
 			classname::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedules( #classname,(char *)g_psz##name,NULL,&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() ); \
 		} \
 	} while (false)
-
-#ifdef _DEBUG
-#define AI_SCHEDULE_PARSER_STRICT_LOAD 0
-#else
-#define AI_SCHEDULE_PARSER_STRICT_LOAD 0
-#endif
-
-// For loading default schedules in memory  (see ai_default.cpp)
-
-#if AI_SCHEDULE_PARSER_STRICT_LOAD == 1
-#define AI_LOAD_DEF_SCHEDULE_MEMORY( classname, name ) \
-	do \
-	{ \
-		extern const char * g_psz##name; \
-		if (!g_AI_SchedulesManager.LoadSchedules( #classname,(char *)g_psz##name,NULL,&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
-			return false; \
-	} while (false)
-
-#define AI_LOAD_DEF_SCHEDULE_FILE( classname, name, folder ) \
-	do \
-	{ \
-		if (!g_AI_SchedulesManager.LoadSchedules( #classname,NULL,UTIL_VarArgs("%s/%s.sch",folder,#name),&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
-			return false; \
-	} while (false)
-#else
-#define AI_LOAD_DEF_SCHEDULE_MEMORY( classname, name ) \
-	do \
-	{ \
-		extern const char * g_psz##name; \
-		if (!g_AI_SchedulesManager.LoadSchedules( #classname,(char *)g_psz##name,NULL,&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
-			fValid = false; \
-	} while (false)
-
-#define AI_LOAD_DEF_SCHEDULE_FILE( classname, name, folder ) \
-	do \
-	{ \
-		if (!g_AI_SchedulesManager.LoadSchedules( #classname,NULL,UTIL_VarArgs("%s/%s.sch",folder,#name),&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
-			fValid = false; \
-	} while (false)
-#endif
 
 //-----------------
 
@@ -259,21 +226,22 @@ public:
 
 //-----------------
 
-#define EXTERN_SCHEDULE( id ) \
-	scheduleIds.PushBack( #id, id ); \
+#define EXTERN_SCHEDULE_BUFFER( id ) \
 	extern const char * g_psz##id; \
-	schedulesToLoad.AddToTail( g_psz##id );
+	scheduleIds.PushBack( #id, id, g_psz##id, false );
 
 //-----------------
 
-#define DEFINE_SCHEDULE( id, text ) \
-	scheduleIds.PushBack( #id, id ); \
+#define DEFINE_SCHEDULE_BUFFER( id, text ) \
 	const char * g_psz##id = \
 		"\n	Schedule" \
 		"\n		" #id \
 		text \
 		"\n"; \
-	schedulesToLoad.AddToTail( g_psz##id );
+	scheduleIds.PushBack( #id, id, g_psz##id, false );
+
+#define DEFINE_SCHEDULE_FILE( id ) \
+	scheduleIds.PushBack( #id, id, #id, true );
 
 //-----------------------------------------------------------------------------
 

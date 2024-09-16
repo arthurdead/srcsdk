@@ -46,6 +46,7 @@ if build_libs
 			join_paths(hackmgr_src_dir,'commandline.cpp'),
 			join_paths(hackmgr_src_dir,'shadersystem.cpp'),
 			join_paths(hackmgr_src_dir,'cvar.cpp'),
+			join_paths(hackmgr_src_dir,'filesystem.cpp'),
 			join_paths(public_dir,'SoundParametersInternal.cpp'),
 			join_paths(public_dir,'interval.cpp'),
 		),

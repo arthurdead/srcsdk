@@ -195,14 +195,19 @@ void ActivityList_RegisterSharedActivities( void )
 {
 	#define ACTIVITY_ENUM(name, ...) \
 		REGISTER_SHARED_ACTIVITY( name );
-	#define ACTIVITY_ENUM_ALIAS(name, value) \
-		ActivityList_RegisterSharedActivity( #name, value );
+	#define ACTIVITY_ENUM_ALIAS(name, value)
 
 	#include "ai_activity_enum.inc"
 
 	AssertMsg( g_HighestActivity == LAST_SHARED_ACTIVITY - 1, "Not all activities from ai_activity.h registered in activitylist.cpp" ); 
 
 	Assert(g_HighestActivity <= (Activity)(unsigned short)-1);
+
+	#define ACTIVITY_ENUM(name, ...)
+	#define ACTIVITY_ENUM_ALIAS(name, value) \
+		ActivityList_RegisterSharedActivity( #name, value );
+
+	#include "ai_activity_enum.inc"
 } 
 
 

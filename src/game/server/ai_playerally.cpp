@@ -1892,67 +1892,17 @@ AI_BEGIN_CUSTOM_NPC(talk_monster_base,CAI_PlayerAlly)
 	//=========================================================
 	// > SCHED_TALKER_SPEAK_PENDING_IDLE
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_TALKER_SPEAK_PENDING_IDLE,
-
-		"	Tasks"
-		"		TASK_TALKER_SPEAK_PENDING		0"
-		"		TASK_STOP_MOVING				0"
-		"		TASK_SET_ACTIVITY				ACTIVITY:ACT_IDLE"
-		"		TASK_WAIT_FOR_SPEAK_FINISH		0"
-		"		TASK_WAIT_RANDOM			0.5"
-		""
-		"	Interrupts"
-		"		COND_NEW_ENEMY"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_HEAR_DANGER"
-		"		COND_HEAR_COMBAT"
-		"		COND_PLAYER_PUSHING"
-		"		COND_GIVE_WAY"
-	)
+	DEFINE_SCHEDULE_FILE( SCHED_TALKER_SPEAK_PENDING_IDLE)
 
 	//=========================================================
 	// > SCHED_TALKER_SPEAK_PENDING_ALERT
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_TALKER_SPEAK_PENDING_ALERT,
-
-		"	Tasks"
-		"		TASK_TALKER_SPEAK_PENDING		0"
-		"		TASK_STOP_MOVING				0"
-		"		TASK_SET_ACTIVITY				ACTIVITY:ACT_IDLE"
-		"		TASK_WAIT_FOR_SPEAK_FINISH		0"
-		"		TASK_WAIT_RANDOM				0.5"
-		""
-		"	Interrupts"
-		"		COND_NEW_ENEMY"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_HEAR_DANGER"
-		"		COND_PLAYER_PUSHING"
-		"		COND_GIVE_WAY"
-	)
+	DEFINE_SCHEDULE_FILE( SCHED_TALKER_SPEAK_PENDING_ALERT)
 
 	//=========================================================
 	// > SCHED_TALKER_SPEAK_PENDING_COMBAT
 	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_TALKER_SPEAK_PENDING_COMBAT,
-
-		"	Tasks"
-		"		TASK_TALKER_SPEAK_PENDING		0"
-		"		TASK_STOP_MOVING				0"
-		"		TASK_SET_ACTIVITY				ACTIVITY:ACT_IDLE"
-		"		TASK_WAIT_FOR_SPEAK_FINISH		0"
-		""
-		"	Interrupts"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_HEAR_DANGER"
-	)
+	DEFINE_SCHEDULE_FILE(SCHED_TALKER_SPEAK_PENDING_COMBAT)
 
 AI_END_CUSTOM_NPC()
 

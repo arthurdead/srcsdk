@@ -438,7 +438,7 @@ static void FileSystem_AddLoadedSearchPath(
 {
 
 	// Check for mounting LV game content in LV builds only
-	if ( V_stricmp( pPathID, "game_lv" ) == 0 )
+	if ( V_stricmp( pPathID, "GAME_LV" ) == 0 )
 	{
 
 		// Not in LV build, don't mount
@@ -446,11 +446,11 @@ static void FileSystem_AddLoadedSearchPath(
 			return;
 
 		// Mount, as a game path
-		pPathID = "game";
+		pPathID = "GAME";
 	}
 
 	// Check for mounting HD game content if enabled
-	if ( V_stricmp( pPathID, "game_hd" ) == 0 )
+	if ( V_stricmp( pPathID, "GAME_HD" ) == 0 )
 	{
 
 		// Not in LV build, don't mount
@@ -458,12 +458,12 @@ static void FileSystem_AddLoadedSearchPath(
 			return;
 
 		// Mount, as a game path
-		pPathID = "game";
+		pPathID = "GAME";
 	}
 
 
 	// Special processing for ordinary game folders
-	if ( V_stristr( fullLocationPath, ".vpk" ) == NULL && Q_stricmp( pPathID, "game" ) == 0 )
+	if ( V_stristr( fullLocationPath, ".vpk" ) == NULL && Q_stricmp( pPathID, "GAME" ) == 0 )
 	{
 		if ( CommandLine()->FindParm( "-tempcontent" ) != 0 )
 		{
@@ -675,12 +675,12 @@ FSReturnCode_t FileSystem_LoadSearchPaths( CFSSearchPathsInit &initInfo )
 
 	// Also, mark specific path IDs as "by request only". That way, we won't waste time searching in them
 	// when people forget to specify a search path.
-	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "executable_path", true );
-	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "gamebin", true );
-	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "download", true );
-	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "mod", true );
-	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "game_write", true );
-	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "mod_write", true );
+	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "EXECUTABLE_PATH", true );
+	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "GAMEBIN", true );
+	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "DOWNLOAD", true );
+	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "MOD", true );
+	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "GAME_WRITE", true );
+	initInfo.m_pFileSystem->MarkPathIDByRequestOnly( "MOD_WRITE", true );
 
 #ifdef _DEBUG	
 	// initInfo.m_pFileSystem->PrintSearchPaths();

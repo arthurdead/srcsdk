@@ -344,6 +344,19 @@ struct AI_TaskNamespaceAddInfo_t : public AI_NamespaceAddInfo_t
 	TaskParamCheck_t params;
 };
 
+struct AI_ScheduleNamespaceAddInfo_t : public AI_NamespaceAddInfo_t
+{
+	AI_ScheduleNamespaceAddInfo_t( const char *pszName, int localId ) = delete;
+
+	AI_ScheduleNamespaceAddInfo_t( const char *pszName, int localId, const char *pszValue, bool filename_ )
+	 :	AI_NamespaceAddInfo_t( pszName, localId ), pszValue(pszValue), filename(filename_)
+	{
+	}
+
+	const char *pszValue;
+	bool filename;
+};
+
 class CAI_NamespaceInfos : public CUtlVector<AI_NamespaceAddInfo_t>
 {
 public:
@@ -382,6 +395,28 @@ public:
 
 private:
 	static int __cdecl Compare(const AI_TaskNamespaceAddInfo_t *pLeft, const AI_TaskNamespaceAddInfo_t *pRight )
+	{
+		return pLeft->localId - pRight->localId;
+	}
+};
+
+class CAI_ScheduleNamespaceInfos : public CUtlVector<AI_ScheduleNamespaceAddInfo_t>
+{
+public:
+	void PushBack(  const char *pszName, int localId ) = delete;
+
+	void PushBack(  const char *pszName, int localId, const char *pszValue, bool filename )
+	{
+		AddToTail( AI_ScheduleNamespaceAddInfo_t( pszName, localId, pszValue, filename ) );
+	}
+
+	void Sort()
+	{
+		CUtlVector<AI_ScheduleNamespaceAddInfo_t>::Sort( Compare );
+	}
+
+private:
+	static int __cdecl Compare(const AI_ScheduleNamespaceAddInfo_t *pLeft, const AI_ScheduleNamespaceAddInfo_t *pRight )
 	{
 		return pLeft->localId - pRight->localId;
 	}

@@ -74,21 +74,55 @@ void CAI_BaseNPC::InitDefaultScheduleSR(void)
 
 bool CAI_BaseNPC::LoadDefaultSchedules(void)
 {
-	#define AI_SCHED_ENUM(name, ...) \
-		AI_LOAD_DEF_SCHEDULE_FILE( CAI_BaseNPC, name, "scripts/schedules/basenpc" );
-	#define AI_SCHED_ENUM_NO_LOAD(name, ...)
+#ifdef _DEBUG
+#define AI_SCHEDULE_PARSER_STRICT_LOAD 0
+#else
+#define AI_SCHEDULE_PARSER_STRICT_LOAD 0
+#endif
 
-	struct break_on_end_scope_t {
-		~break_on_end_scope_t() {
-			DebuggerBreak();
-		}
-	} break_on_end_scope;
+// For loading default schedules in memory  (see ai_default.cpp)
+
+#if AI_SCHEDULE_PARSER_STRICT_LOAD == 1
+#define AI_LOAD_DEF_SCHEDULE_BUFFER( classname, name ) \
+	do \
+	{ \
+		extern const char * g_psz##name; \
+		if (!g_AI_SchedulesManager.LoadSchedules( #classname,(char *)g_psz##name,NULL,&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
+			return false; \
+	} while (false)
+
+#define AI_LOAD_DEF_SCHEDULE_FILE( classname, name ) \
+	do \
+	{ \
+		if (!g_AI_SchedulesManager.LoadSchedules( #classname,NULL,UTIL_VarArgs("scripts/schedules/npc/CAI_BaseNPC/%s.sch",#name),&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
+			return false; \
+	} while (false)
+#else
+#define AI_LOAD_DEF_SCHEDULE_BUFFER( classname, name ) \
+	do \
+	{ \
+		extern const char * g_psz##name; \
+		if (!g_AI_SchedulesManager.LoadSchedules( #classname,(char *)g_psz##name,NULL,&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
+			fValid = false; \
+	} while (false)
+
+#define AI_LOAD_DEF_SCHEDULE_FILE( classname, name ) \
+	do \
+	{ \
+		if (!g_AI_SchedulesManager.LoadSchedules( #classname,NULL,UTIL_VarArgs("scripts/schedules/npc/CAI_BaseNPC/%s.sch",#name),&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
+			fValid = false; \
+	} while (false)
+#endif
+
+	#define AI_SCHED_ENUM(name, ...) \
+		AI_LOAD_DEF_SCHEDULE_FILE( CAI_BaseNPC, name );
+	#define AI_SCHED_ENUM_NO_LOAD(name, ...)
 
 	bool fValid = true;
 
-	//AI_LOAD_DEF_SCHEDULE_MEMORY( CAI_BaseNPC, Error );
+	//AI_LOAD_DEF_SCHEDULE_BUFFER( CAI_BaseNPC, Error );
 
-	AI_LOAD_DEF_SCHEDULE_MEMORY( CAI_BaseNPC, SCHED_NONE );
+	AI_LOAD_DEF_SCHEDULE_BUFFER( CAI_BaseNPC, SCHED_NONE );
 
 	#include "ai_default_sched_enum.inc"
 

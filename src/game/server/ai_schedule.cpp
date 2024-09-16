@@ -354,6 +354,14 @@ static int schedule_parse_namespace_id(
 
 		pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
 
+	#if AI_SCHEDULE_PARSER_STRICT_NAMES == 1
+		if(strnicmp(sched_tempbuffer, enum_prefix, enum_prefix_len)) {
+			DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i) (%s #%i): Malformed, Expecting, '%s' got '%s' instead.\n",pclassname,pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum,tag,sched_tempbuffer);
+			Assert(0);
+			return 0;
+		}
+	#endif
+
 		// Convert generic ID to sub-class specific enum
 		T taskValueGlobalID = (pGlobalNamespace->*symid)( sched_tempbuffer );
 		if(taskValueGlobalID == -1)
