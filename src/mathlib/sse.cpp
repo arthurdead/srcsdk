@@ -26,7 +26,7 @@ static const uint32 _sincos_inv_masks[] = { (uint32)~0x0, (uint32)0x0 };
 // Macros and constants required by some of the SSE assembly:
 //-----------------------------------------------------------------------------
 
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	#define _PS_EXTERN_CONST(Name, Val) \
 		const __declspec(align(16)) float _ps_##Name[4] = { Val, Val, Val, Val }
 
@@ -38,7 +38,7 @@ static const uint32 _sincos_inv_masks[] = { (uint32)~0x0, (uint32)0x0 };
 
 	#define _PS_CONST(Name, Val) \
 		static const __declspec(align(16)) float _ps_##Name[4] = { Val, Val, Val, Val }
-#elif POSIX
+#elif defined POSIX || defined GNUC
 	#define _PS_EXTERN_CONST(Name, Val) \
 		const float _ps_##Name[4] __attribute__((aligned(16))) = { Val, Val, Val, Val }
 
@@ -87,13 +87,13 @@ float _SSE_Sqrt(float x)
 {
 	Assert( s_bMathlibInitialized );
 	float	root = 0.f;
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	_asm
 	{
 		sqrtss		xmm0, x
 		movss		root, xmm0
 	}
-#elif POSIX
+#elif defined POSIX || defined GNUC
 	_mm_store_ss( &root, _mm_sqrt_ss( _mm_load_ss( &x ) ) );
 #endif
 	return root;
@@ -118,7 +118,7 @@ float _SSE_RSqrtAccurate(float x)
 }
 #else
 
-#ifdef POSIX
+#if defined POSIX || defined GNUC
 const __m128  f3  = _mm_set_ss(3.0f);  // 3 as SSE value
 const __m128  f05 = _mm_set_ss(0.5f);  // 0.5 as SSE value
 #endif
@@ -127,7 +127,7 @@ const __m128  f05 = _mm_set_ss(0.5f);  // 0.5 as SSE value
 float _SSE_RSqrtAccurate(float a)
 {
 
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	float x;
 	float half = 0.5f;
 	float three = 3.f;
@@ -149,7 +149,7 @@ float _SSE_RSqrtAccurate(float a)
 	}
 
 	return x;
-#elif POSIX	
+#elif defined POSIX	|| defined GNUC
 	__m128  xx = _mm_load_ss( &a );
     __m128  xr = _mm_rsqrt_ss( xx );
     __m128  xt;
@@ -176,13 +176,13 @@ float _SSE_RSqrtFast(float x)
 	Assert( s_bMathlibInitialized );
 
 	float rroot;
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	_asm
 	{
 		rsqrtss	xmm0, x
 		movss	rroot, xmm0
 	}
-#elif POSIX
+#elif defined POSIX || defined GNUC
 	__asm__ __volatile__( "rsqrtss %0, %1" : "=x" (rroot) : "x" (x) );
 #else
 #error
@@ -197,9 +197,9 @@ float FASTCALL _SSE_VectorNormalize (Vector& vec)
 
 	// NOTE: This is necessary to prevent an memory overwrite...
 	// sice vec only has 3 floats, we can't "movaps" directly into it.
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	__declspec(align(16)) float result[4];
-#elif POSIX
+#elif defined POSIX || defined GNUC
 	 float result[4] __attribute__((aligned(16)));
 #endif
 
@@ -213,7 +213,7 @@ float FASTCALL _SSE_VectorNormalize (Vector& vec)
 	// be much of a performance win, considering you will very likely miss 3 branch predicts in a row.
 	if ( v[0] || v[1] || v[2] )
 	{
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	_asm
 		{
 			mov			eax, v
@@ -238,7 +238,7 @@ float FASTCALL _SSE_VectorNormalize (Vector& vec)
 			mulps		xmm4, xmm1			// r4 = vx * 1/radius, vy * 1/radius, vz * 1/radius, X
 			movaps		[edx], xmm4			// v = vx * 1/radius, vy * 1/radius, vz * 1/radius, X
 		}
-#elif POSIX
+#elif defined POSIX || defined GNUC
 		__asm__ __volatile__(
 #ifdef ALIGNED_VECTOR
             "movaps          %2, %%xmm4 \n\t"
@@ -287,7 +287,7 @@ void FASTCALL _SSE_VectorNormalizeFast (Vector& vec)
 float _SSE_InvRSquared(const float* v)
 {
 	float	inv_r2 = 1.f;
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	_asm { // Intel SSE only routine
 		mov			eax, v
 		movss		xmm5, inv_r2		// x5 = 1.0, 0, 0, 0
@@ -307,7 +307,7 @@ float _SSE_InvRSquared(const float* v)
 		rcpss		xmm0, xmm1			// x0 = 1 / max( 1.0, x1 )
 		movss		inv_r2, xmm0		// inv_r2 = x0
 	}
-#elif POSIX
+#elif defined POSIX || defined GNUC
 		__asm__ __volatile__(
 		"movss			 %0, %%xmm5 \n\t"
 #ifdef ALIGNED_VECTOR
@@ -337,7 +337,7 @@ float _SSE_InvRSquared(const float* v)
 }
 
 
-#ifdef POSIX
+#if defined POSIX || defined GNUC
 // #define _PS_CONST(Name, Val) static const ALIGN16 float _ps_##Name[4] ALIGN16_POST = { Val, Val, Val, Val }
 #define _PS_CONST_TYPE(Name, Type, Val) static const ALIGN16 Type _ps_##Name[4] ALIGN16_POST = { Val, Val, Val, Val }
 
@@ -380,7 +380,7 @@ typedef __m64 v2si;   // vector of 2 int (mmx)
 
 void _SSE_SinCos(float x, float* s, float* c)
 {
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	float t4, t8, t12;
 
 	__asm
@@ -465,7 +465,7 @@ void _SSE_SinCos(float x, float* s, float* c)
 		movss	[eax], xmm0
 		movss	[edx], xmm4
 	}
-#elif POSIX
+#elif defined POSIX || defined GNUC
 	
 	Assert( "Needs testing, verify impl!\n" );
 	
@@ -587,7 +587,7 @@ void _SSE_SinCos(float x, float* s, float* c)
 
 float _SSE_cos( float x )
 {
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	float temp;
 	__asm
 	{
@@ -636,7 +636,7 @@ float _SSE_cos( float x )
 		movss   x,    xmm0
 
 	}
-#elif POSIX
+#elif defined POSIX || defined GNUC
 
 	Assert( "Needs testing, verify impl!\n" );
 
@@ -745,7 +745,7 @@ float _SSE_cos( float x )
 #ifdef PLATFORM_WINDOWS_PC32
 void _SSE2_SinCos(float x, float* s, float* c)  // any x
 {
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	__asm
 	{
 		movss	xmm0, x
@@ -821,7 +821,7 @@ void _SSE2_SinCos(float x, float* s, float* c)  // any x
 		movss	[eax], xmm0
 		movss	[edx], xmm6
 	}
-#elif POSIX
+#elif defined POSIX || defined GNUC
 	#warning "_SSE2_SinCos NOT implemented!"
 	Assert( 0 );
 #else
@@ -833,7 +833,7 @@ void _SSE2_SinCos(float x, float* s, float* c)  // any x
 #ifdef PLATFORM_WINDOWS_PC32
 float _SSE2_cos(float x)  
 {
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	__asm
 	{
 		movss	xmm0, x
@@ -879,7 +879,7 @@ float _SSE2_cos(float x)
 		mulss	xmm0, xmm1
 		movss   x,    xmm0
 	}
-#elif POSIX
+#elif defined POSIX || defined GNUC
 	#warning "_SSE2_cos NOT implemented!"
 	Assert( 0 );
 #else
@@ -1006,8 +1006,8 @@ void VectorRotateSSE( const float *in1, const matrix3x4_t& in2, float *out1 )
 }
 #endif
 
-#ifdef _WIN32
-void _declspec(naked) _SSE_VectorMA( const float *start, float scale, const float *direction, float *dest )
+#if defined _WIN32 && !defined GNUC
+void __declspec(naked) _SSE_VectorMA( const float *start, float scale, const float *direction, float *dest )
 {
 	// FIXME: This don't work!! It will overwrite memory in the write to dest
 	Assert(0);

@@ -18,6 +18,8 @@
 #include "tier0/platform.h"
 #include "tier1/utldict.h"
 
+#include <stdint.h>
+
 #ifdef __GNUC__
 #define HACKMGR_THISCALL __attribute__((__thiscall__))
 #else
@@ -165,7 +167,6 @@ private:
 };
 
 using intmfp_t = uint64_t;
-#endif
 
 static_assert(sizeof(&generic_class::generic_function) == sizeof(intmfp_t));
 static_assert(alignof(decltype(&generic_class::generic_function)) == alignof(intmfp_t));
@@ -276,6 +277,7 @@ inline auto func_from_vtable(generic_plain_mfp_t func)
 {
 	return func_from_vtable_t<T>::get(func);
 }
+#endif
 
 class KeyValues;
 

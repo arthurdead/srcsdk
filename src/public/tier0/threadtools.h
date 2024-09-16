@@ -56,9 +56,9 @@ const unsigned TT_INFINITE = 0xffffffff;
 #ifndef NO_THREAD_LOCAL
 
 #ifndef THREAD_LOCAL
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 #define THREAD_LOCAL __declspec(thread)
-#elif POSIX
+#elif defined POSIX || defined GNUC
 #define THREAD_LOCAL __thread
 #endif
 #endif
@@ -145,9 +145,9 @@ inline int ThreadWaitForObject( HANDLE handle, bool bWaitAll = true, unsigned ti
 //
 //-----------------------------------------------------------------------------
 
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 #define NOINLINE
-#elif POSIX
+#elif defined POSIX || defined GNUC
 #define NOINLINE __attribute__ ((noinline))
 #endif
 
@@ -1522,7 +1522,7 @@ inline void CThreadMutex::Lock()
 #ifdef THREAD_MUTEX_TRACING_ENABLED
 		uint thisThreadID = ThreadGetCurrentId();
 		if ( m_bTrace && m_currentOwnerID && ( m_currentOwnerID != thisThreadID ) )
-		Msg( "Thread %u about to wait for lock %p owned by %u\n", ThreadGetCurrentId(), (CRITICAL_SECTION *)&m_CriticalSection, m_currentOwnerID );
+		Msg( "Thread %u about to wait for lock %p owned by %u\n", (unsigned)ThreadGetCurrentId(), (CRITICAL_SECTION *)&m_CriticalSection, m_currentOwnerID );
 	#endif
 
 	VCRHook_EnterCriticalSection((CRITICAL_SECTION *)&m_CriticalSection);
@@ -1563,7 +1563,7 @@ inline bool CThreadMutex::AssertOwnedByCurrentThread()
 #ifdef THREAD_MUTEX_TRACING_ENABLED
 	if (ThreadGetCurrentId() == m_currentOwnerID)
 		return true;
-	AssertMsg3( 0, "Expected thread %u as owner of lock %p, but %u owns", ThreadGetCurrentId(), (CRITICAL_SECTION *)&m_CriticalSection, m_currentOwnerID );
+	AssertMsg3( 0, "Expected thread %u as owner of lock %p, but %u owns", (unsigned)ThreadGetCurrentId(), (CRITICAL_SECTION *)&m_CriticalSection, m_currentOwnerID );
 	return false;
 #else
 	return true;

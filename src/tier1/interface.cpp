@@ -406,7 +406,7 @@ CreateInterfaceFn Sys_GetFactory( CSysModule *pModule )
 		return NULL;
 
 	HMODULE	hDLL = reinterpret_cast<HMODULE>(pModule);
-#ifdef _WIN32
+#if defined _WIN32
 	return reinterpret_cast<CreateInterfaceFn>(GetProcAddress( hDLL, CREATEINTERFACE_PROCNAME ));
 #elif defined(POSIX)
 	// Linux gives this error:
@@ -436,9 +436,9 @@ CreateInterfaceFn Sys_GetFactoryThis( void )
 //-----------------------------------------------------------------------------
 CreateInterfaceFn Sys_GetFactory( const char *pModuleName )
 {
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	return static_cast<CreateInterfaceFn>( Sys_GetProcAddress( pModuleName, CREATEINTERFACE_PROCNAME ) );
-#elif defined(POSIX)
+#elif defined(POSIX) || defined GNUC
 	// see Sys_GetFactory( CSysModule *pModule ) for an explanation
 	return (CreateInterfaceFn)( Sys_GetProcAddress( pModuleName, CREATEINTERFACE_PROCNAME ) );
 #endif

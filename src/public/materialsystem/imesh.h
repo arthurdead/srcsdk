@@ -1194,7 +1194,7 @@ inline void CVertexBuilder::FastVertex( const ModelVertexDX7_t &vertex )
 	Assert( m_CompressionType == VERTEX_COMPRESSION_NONE ); // FIXME: support compressed verts if needed
 	Assert( m_nCurrentVertex < m_nMaxVertexCount );
 
-#if defined( _WIN32 )
+#if defined( _WIN32 ) && !defined GNUC
 	const void *pRead = &vertex;
 	void *pCurrPos = m_pCurrPosition;
 
@@ -1255,7 +1255,7 @@ inline void CVertexBuilder::FastVertexSSE( const ModelVertexDX7_t &vertex )
 	Assert( m_CompressionType == VERTEX_COMPRESSION_NONE ); // FIXME: support compressed verts if needed
 	Assert( m_nCurrentVertex < m_nMaxVertexCount );
 
-#if defined( _WIN32 )
+#if defined( _WIN32 ) && !defined GNUC
 	const void *pRead = &vertex;
 	void *pCurrPos = m_pCurrPosition;
 	__asm
@@ -1302,7 +1302,7 @@ inline void CVertexBuilder::Fast4VerticesSSE(
 	Assert( m_CompressionType == VERTEX_COMPRESSION_NONE ); // FIXME: support compressed verts if needed
 	Assert( m_nCurrentVertex < m_nMaxVertexCount-3 );
 
-#if defined( _WIN32 )
+#if defined( _WIN32 ) && !defined GNUC
 	void *pCurrPos = m_pCurrPosition;
 	__asm
 	{
@@ -1360,7 +1360,7 @@ inline void CVertexBuilder::FastVertex( const ModelVertexDX8_t &vertex )
 	Assert( m_CompressionType == VERTEX_COMPRESSION_NONE ); // FIXME: support compressed verts if needed
 	Assert( m_nCurrentVertex < m_nMaxVertexCount );
 
-#if defined( _WIN32 )
+#if defined( _WIN32 ) && !defined GNUC
 	const void *pRead = &vertex;
 	void *pCurrPos = m_pCurrPosition;
 	__asm
@@ -1428,7 +1428,7 @@ inline void CVertexBuilder::FastVertexSSE( const ModelVertexDX8_t &vertex )
 	Assert( m_CompressionType == VERTEX_COMPRESSION_NONE ); // FIXME: support compressed verts if needed
 	Assert( m_nCurrentVertex < m_nMaxVertexCount );
 
-#if defined( _WIN32 )
+#if defined( _WIN32 ) && !defined GNUC
 	const void *pRead = &vertex;
 	void *pCurrPos = m_pCurrPosition;
 	__asm

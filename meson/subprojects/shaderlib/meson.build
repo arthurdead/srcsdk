@@ -31,7 +31,7 @@ if build_libs
 			source_base.get_variable('source_static_lib_dep')
 		],
 		install: true,
-		install_dir: join_paths(src_root_dir,'lib','public','linux32')
+		install_dir: source_base.get_variable('lib_folder')
 	)
 
 	shaderlib_dep = declare_dependency(
@@ -49,7 +49,7 @@ else
 			join_paths(src_root_dir,'public','shaderlib')
 		),
 		link_args: [
-			'-l:shaderlib.a'
+			'-l:shaderlib'+source_base.get_variable('lib_ext')
 		],
 		dependencies: [
 			hackmgr.get_variable('hackmgr_dep')

@@ -32,7 +32,7 @@ float _3DNow_Sqrt(float x)
 {
 	Assert( s_bMathlibInitialized );
 	float	root = 0.f;
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	_asm
 	{
 		femms
@@ -43,7 +43,7 @@ float _3DNow_Sqrt(float x)
 		movd		root, mm0
 		femms
 	}
-#elif LINUX
+#elif defined LINUX || defined GNUC
  	__asm __volatile__( "femms" );
  	__asm __volatile__
 	(
@@ -79,7 +79,7 @@ float FASTCALL _3DNow_VectorNormalize (Vector& vec)
 
 	if ( v[0] || v[1] || v[2] )
 	{
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	_asm
 		{
 			mov			eax, v
@@ -102,7 +102,7 @@ float FASTCALL _3DNow_VectorNormalize (Vector& vec)
 			movd		radius, mm1
 			femms
 		}
-#elif LINUX	
+#elif defined LINUX	|| defined GNUC
 		long long a,c;
     		int b,d;
     		memcpy(&a,&vec[0],sizeof(a));
@@ -150,7 +150,7 @@ float _3DNow_InvRSquared(const float* v)
 {
 	Assert( s_bMathlibInitialized );
 	float	r2 = 1.f;
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 	_asm { // AMD 3DNow only routine
 		mov			eax, v
 		femms
@@ -166,7 +166,7 @@ float _3DNow_InvRSquared(const float* v)
 		movd		[r2], mm0
 		femms
 	}
-#elif LINUX
+#elif defined LINUX || defined GNUC
 		long long a,c;
     		int b;
     		memcpy(&a,&v[0],sizeof(a));

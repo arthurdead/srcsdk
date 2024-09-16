@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "tier0/platform.h"
 #include "utlvector.h"
 #include "mathlib/vector.h"
 #include "c_baseentity.h"
@@ -57,7 +58,7 @@ public:
 		Assert( !m_GlowObjectDefinitions[nGlowObjectHandle].IsUnused() );
 
 		m_GlowObjectDefinitions[nGlowObjectHandle].m_nNextFreeSlot = m_nFirstFreeSlot;
-		m_GlowObjectDefinitions[nGlowObjectHandle].m_hEntity = NULL;
+		m_GlowObjectDefinitions[nGlowObjectHandle].m_hEntity.Term();
 		m_nFirstFreeSlot = nGlowObjectHandle;
 	}
 

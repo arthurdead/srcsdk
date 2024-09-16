@@ -13,6 +13,7 @@ exe_wrapper = '/usr/bin/i686-w64-mingw32-wine'
 [cmake]
 CMAKE_C_COMPILER = '/usr/bin/i686-w64-mingw32-gcc'
 CMAKE_CXX_COMPILER = '/usr/bin/i686-w64-mingw32-g++'
+CMAKE_LINKER_TYPE = 'BFD'
 CMAKE_TOOLCHAIN_FILE = '/usr/share/mingw/toolchain-i686-w64-mingw32.cmake'
 CMAKE_CROSSCOMPILING_EMULATOR = '/usr/bin/i686-w64-mingw32-wine'
 CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES = '/usr/i686-w64-mingw32/include'

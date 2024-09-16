@@ -38,7 +38,7 @@ if build_libs
 			source_base.get_variable('source_static_lib_dep')
 		],
 		install: true,
-		install_dir: join_paths(src_root_dir,'lib','public','linux32')
+		install_dir: source_base.get_variable('lib_folder')
 	)
 
 	responserules_runtime_dep = declare_dependency(
@@ -53,7 +53,7 @@ else
 			join_paths(public_dir,'responserules')
 		),
 		link_args: [
-			'-l:responserules_runtime.a'
+			'-l:responserules_runtime'+source_base.get_variable('lib_ext')
 		]
 	)
 endif

@@ -10,6 +10,15 @@ coplay_src_dir = join_paths(coplay_root_dir,'src')
 
 coplay_cpp_args = []
 
+target_system = target_machine.system()
+if target_system == 'linux' or target_system == 'gnu'
+	coplay_lib_folder = join_paths(coplay_root_dir,'lib','public','linux32')
+elif target_system == 'windows'
+	coplay_lib_folder = join_paths(coplay_root_dir,'lib','public')
+else
+	error('unsupported system')
+endif
+
 sdl2_net = dependency('SDL2_net', required: false)
 if not sdl2_net.found()
 	sdl2_net = declare_dependency(
@@ -17,7 +26,7 @@ if not sdl2_net.found()
 			join_paths(coplay_root_dir,'include')
 		),
 		link_args: [
-			'-L'+join_paths(coplay_root_dir,'lib','linux32'),
+			'-L'+coplay_lib_folder,
 			'-lSDL2_net'
 		]
 	)

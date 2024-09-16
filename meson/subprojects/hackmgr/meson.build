@@ -79,6 +79,6 @@ else
 		sources: files(
 			join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp')
 		),
-		link_args: '-l:hackmgr.so'
+		link_args: '-l:hackmgr'+source_base.get_variable('sharedlib_ext')
 	)
 endif

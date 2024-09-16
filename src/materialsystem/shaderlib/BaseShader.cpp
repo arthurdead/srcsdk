@@ -68,7 +68,7 @@ static bool s_bBuildingInstanceCommandBuffer = false;
 static CInstanceCommandBufferBuilder< CFixedCommandStorageBuffer< 512 > > s_InstanceCommandBuffer;
 
 bool g_shaderConfigDumpEnable = false; //true;		//DO NOT CHECK IN ENABLED FIXME
-static ConVar mat_fullbright( "mat_fullbright","0", FCVAR_CHEAT );
+ConVar mat_fullbright( "mat_fullbright","0", FCVAR_CHEAT );
 	
 //-----------------------------------------------------------------------------
 // constructor

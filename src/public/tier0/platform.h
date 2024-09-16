@@ -171,9 +171,11 @@ typedef unsigned int		uint;
 #ifdef _MSC_VER
 #define SINGLE_INHERITANCE __single_inheritance
 #define MULTIPLE_INHERITANCE __multiple_inheritance
+#define VIRTUAL_INHERITANCE __virtual_inheritance
 #else
 #define SINGLE_INHERITANCE
 #define MULTIPLE_INHERITANCE
+#define VIRTUAL_INHERITANCE
 #endif
 
 #ifdef _MSC_VER
@@ -331,10 +333,10 @@ typedef void * HINSTANCE;
 
 // C functions for external declarations that call the appropriate C++ methods
 #ifndef EXPORT
-	#ifdef _WIN32
-		#define EXPORT	_declspec( dllexport )
+	#if defined _WIN32 && !defined GNUC
+		#define EXPORT	__declspec( dllexport )
 	#else
-		#define EXPORT	/* */
+		#define EXPORT	__attribute__ ((visibility("default")))
 	#endif
 #endif
 
@@ -345,7 +347,7 @@ typedef void * HINSTANCE;
 #endif  // __i386__
 
 // decls for aligning data
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
         #define DECL_ALIGN(x) __declspec(align(x))
 
 #elif GNUC
@@ -442,7 +444,7 @@ typedef void * HINSTANCE;
 	#define FMTFUNCTION( a, b )
 #endif
 
-#if defined( _WIN32 )
+#if defined( _WIN32 ) && !defined GNUC
 
 // Used for dll exporting and importing
 #define DLL_EXPORT				extern "C" __declspec( dllexport )
@@ -486,7 +488,7 @@ typedef void * HINSTANCE;
 #endif
 
 // Used for standard calling conventions
-#if defined( _WIN32 )
+#if defined( _WIN32 ) && !defined GNUC
 	#define  CDECL				__cdecl
 	#define  STDCALL				__stdcall
 	#define  FASTCALL				__fastcall

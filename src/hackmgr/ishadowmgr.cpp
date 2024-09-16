@@ -159,9 +159,11 @@ HACKMGR_API void HackMgr_RemoveFlashlightMod(FlashlightState_t &flashlightState)
 
 HACKMGR_EXECUTE_ON_LOAD_BEGIN(101)
 
+#if defined __GNUC__ && defined __linux__
 IShadowMgr_CreateShadow_index = vfunc_index(&IShadowMgr::CreateShadow);
 IShadowMgr_CreateShadowEx_index = vfunc_index(static_cast<IShadowMgr_CreateShadowEx_t>(&IShadowMgr::CreateShadowEx));
 IShadowMgr_DestroyShadow_index = vfunc_index(&IShadowMgr::DestroyShadow);
+#endif
 
 if(!GetEngineInterfaceFactory())
 	return;
@@ -171,7 +173,9 @@ IShadowMgr *mgr = (IShadowMgr *)GetEngineInterfaceFactory()(ENGINE_SHADOWMGR_INT
 if(!mgr || status != IFACE_OK)
 	return;
 
-#ifdef __linux__
+generic_vtable_t vtable = NULL;
+
+#if defined __GNUC__ && defined __linux__
 generic_vtable_t vtable = vtable_from_object(mgr);
 
 page_info page_access(vtable, (sizeof(generic_plain_mfp_t) * IShadowMgr_CreateShadowEx_index));
@@ -180,10 +184,10 @@ page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
 IShadowMgr_CreateShadow_ptr = func_from_vtable<decltype(IShadowMgr_CreateShadow_ptr)>(vtable[IShadowMgr_CreateShadow_index]);
 IShadowMgr_CreateShadowEx_ptr = func_from_vtable<decltype(IShadowMgr_CreateShadowEx_ptr)>(vtable[IShadowMgr_CreateShadowEx_index]);
 IShadowMgr_DestroyShadow_ptr = func_from_vtable<decltype(IShadowMgr_DestroyShadow_ptr)>(vtable[IShadowMgr_DestroyShadow_index]);
+#endif
 
 vtable[IShadowMgr_CreateShadow_index] = reinterpret_cast<generic_plain_mfp_t>(IShadowMgr_CreateShadow_hook);
 vtable[IShadowMgr_CreateShadowEx_index] = reinterpret_cast<generic_plain_mfp_t>(IShadowMgr_CreateShadowEx_hook);
 vtable[IShadowMgr_DestroyShadow_index] = reinterpret_cast<generic_plain_mfp_t>(IShadowMgr_DestroyShadow_hook);
-#endif
 
 HACKMGR_EXECUTE_ON_LOAD_END

@@ -190,18 +190,26 @@ HACKMGR_API void HackMgr_SetEngineVideoServicesPtr(IVideoServices *pOldInter, IV
 	CVideoServicesRedirect::source = pOldInter;
 	CVideoServicesRedirect::target = pNewInter;
 
-	generic_vtable_t source_vtable = vtable_from_object(CVideoServicesRedirect::source);
-
 	int vtable_size = CVideoServicesRedirect::vtable_size;
 	int vtable_mem_size = (sizeof(generic_plain_mfp_t) * CVideoServicesRedirect::vtable_size);
+
+	generic_vtable_t source_vtable = NULL;
+	generic_vtable_t target_vtable = NULL;
+
+#if defined __GNUC__ && defined __linux__
+	source_vtable = vtable_from_object(CVideoServicesRedirect::source);
 
 	page_info page_access = page_info(source_vtable, vtable_mem_size);
 	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
 
-	generic_vtable_t target_vtable = vtable_from_object(&s_VideoRedirect);
+	target_vtable = vtable_from_object(&s_VideoRedirect);
 
 	page_access = page_info(target_vtable, vtable_mem_size);
 	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
+#else
+	Assert(0);
+	DebuggerBreak();
+#endif
 
 	for(int i = 0; i < vtable_size; ++i) {
 		source_vtable[i] = target_vtable[i];
@@ -221,18 +229,26 @@ HACKMGR_API void HackMgr_SetEnginePhysicsPtr(IPhysics *pOldInter, IPhysics *pNew
 	CPhysicsRedirect::source = pOldInter;
 	CPhysicsRedirect::target = pNewInter;
 
-	generic_vtable_t source_vtable = vtable_from_object(CPhysicsRedirect::source);
-
 	int vtable_size = CPhysicsRedirect::vtable_size;
 	int vtable_mem_size = (sizeof(generic_plain_mfp_t) * CPhysicsRedirect::vtable_size);
+
+	generic_vtable_t source_vtable = NULL;
+	generic_vtable_t target_vtable = NULL;
+
+#if defined __GNUC__ && defined __linux__
+	source_vtable = vtable_from_object(CPhysicsRedirect::source);
 
 	page_info page_access = page_info(source_vtable, vtable_mem_size);
 	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
 
-	generic_vtable_t target_vtable = vtable_from_object(&s_VideoRedirect);
+	target_vtable = vtable_from_object(&s_VideoRedirect);
 
 	page_access = page_info(target_vtable, vtable_mem_size);
 	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
+#else
+	Assert(0);
+	DebuggerBreak();
+#endif
 
 	for(int i = 0; i < vtable_size; ++i) {
 		source_vtable[i] = target_vtable[i];
@@ -309,8 +325,10 @@ static app_sys_pair_t reconnect_interface(CAppSystemGroup *ParentAppSystemGroup,
 
 HACKMGR_EXECUTE_ON_LOAD_BEGIN(0)
 
+#if defined __GNUC__ && defined __linux__
 CVideoServicesRedirect::vtable_size = vfunc_index(&IVideoServices::GetCodecName) + 1;
 CPhysicsRedirect::vtable_size = vfunc_index(&IPhysics::DestroyAllCollisionSets) + 1;
+#endif
 
 if(!GetFilesystemInterfaceFactory()) {
 	return;

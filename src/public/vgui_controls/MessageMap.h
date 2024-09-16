@@ -40,7 +40,7 @@ enum DataType_t
 };
 
 #ifdef WIN32
-class __virtual_inheritance Panel;
+class VIRTUAL_INHERITANCE Panel;
 #else
 class Panel;
 #endif

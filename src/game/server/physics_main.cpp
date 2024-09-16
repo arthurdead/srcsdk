@@ -1044,9 +1044,9 @@ void CBaseEntity::PhysicsDispatchThink( BASEPTR thinkFunc )
 			}
 			else
 			{
-#ifdef _WIN32
+#if defined _WIN32 && !defined GNUC
 				Msg( "%s(%s) thinking for %.02f ms!!!\n", GetClassname(), typeid(this).raw_name(), ftime );
-#elif POSIX
+#elif defined POSIX || defined GNUC
 				Msg( "%s(%s) thinking for %.02f ms!!!\n", GetClassname(), typeid(this).name(), ftime );
 #else
 #error "typeinfo"

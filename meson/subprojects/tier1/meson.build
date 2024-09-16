@@ -72,7 +72,7 @@ if build_libs
 			source_base.get_variable('source_static_lib_dep')
 		],
 		install: true,
-		install_dir: join_paths(src_root_dir,'lib','public','linux32')
+		install_dir: source_base.get_variable('lib_folder')
 	)
 
 	tier1_dep = declare_dependency(
@@ -87,7 +87,7 @@ else
 			join_paths(src_root_dir,'public','tier1')
 		),
 		link_args: [
-			'-l:tier1.a'
+			'-l:tier1'+source_base.get_variable('lib_ext')
 		]
 	)
 endif

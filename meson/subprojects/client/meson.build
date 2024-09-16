@@ -22,7 +22,6 @@ if build_client
 	shared_library('client',name_prefix:'',
 		cpp_args: [
 			'-DHEIST_CLIENT_DLL',
-			'-DWEBM_VIDEO_SERVICES_MOD'
 		],
 		cpp_pch: [
 			#join_paths(client_src_dir,'pch','cbase_pch.h'),

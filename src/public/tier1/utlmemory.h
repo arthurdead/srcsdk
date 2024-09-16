@@ -326,8 +326,10 @@ public:
 	{
 #ifdef REMEMBER_ALLOC_SIZE_FOR_VALGRIND
 		return m_nCurAllocSize;
-#else
+#elif !defined NO_MALLOC_OVERRIDE
 		return ( m_pMemory ) ? g_pMemAlloc->GetSize( m_pMemory ) : 0;
+#else
+		return _msize( m_pMemory );
 #endif
 	}
 

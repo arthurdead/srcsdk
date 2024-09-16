@@ -26,10 +26,22 @@ source_release_dep = declare_dependency(
 	]
 )
 
+target_system = target_machine.system()
+if target_system == 'linux' or target_system == 'gnu'
+	lib_folder = join_paths(src_root_dir,'lib','public','linux32')
+	lib_ext = '.a'
+	sharedlib_ext = '.so'
+elif target_system == 'windows'
+	lib_folder = join_paths(src_root_dir,'lib','public')
+	lib_ext = '.lib'
+	sharedlib_ext = '.dll'
+else
+	error('unsupported system')
+endif
+
 source_dep = declare_dependency(
 	compile_args: [
 		'-DRAD_TELEMETRY_DISABLED',
-		'-DSDK2013CE',
 		'-DVERSION_SAFE_STEAM_API_INTERFACES',
 		'-DMOVE_CONSTRUCTOR_SUPPORT',
 		'-DVALVE_RVALUE_REFS',
@@ -62,7 +74,19 @@ source_dep = declare_dependency(
 		'-Wno-uninitialized',
 		'-Wno-logical-not-parentheses',
 		'-Wno-int-in-bool-context',
-		'-Wno-sequence-point'
+		'-Wno-sequence-point',
+		'-march=i386',
+		'-m32',
+		'-mtune=generic',
+		'-mmmx',
+		'-msse',
+		'-msse2',
+		'-msse3',
+		'-mssse3',
+		'-msse4',
+		'-msse4.1',
+		'-msse4.2',
+		'-mlzcnt',
 	],
 	include_directories: include_directories(
 		join_paths(src_root_dir,'public'),
@@ -72,7 +96,7 @@ source_dep = declare_dependency(
 	link_args: [
 		'-L'+join_paths(game_dir,'bin'),
 		'-L'+join_paths(src_engine_dir,'bin'),
-		'-L'+join_paths(src_root_dir,'lib','public','linux32')
+		'-L'+lib_folder
 	],
 	dependencies: [
 		source_debug_dep
@@ -130,10 +154,12 @@ source_windows_dep = declare_dependency(
 		'-D_WIN32',
 		'-D_DLL_EXT=.dll',
 		'-DBINK_VIDEO',
+
+		'-DNO_MALLOC_OVERRIDE',
+		'-DNO_HOOK_MALLOC'
 	]
 )
 
-target_system = target_machine.system()
 if target_system == 'linux' or target_system == 'gnu'
 	os_dep = source_linux_dep
 elif target_system == 'windows'

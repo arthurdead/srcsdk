@@ -11,9 +11,9 @@
 #pragma once
 
 #include <stddef.h>
-#ifdef LINUX
+#ifdef GNUC
 #undef offsetof
-#define offsetof(s,m)	(size_t)&(((s *)0)->m)
+#define offsetof(s,m)	__builtin_offsetof(s,m)
 #endif
 
 #include "tier0/platform.h"

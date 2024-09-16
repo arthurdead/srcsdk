@@ -500,6 +500,30 @@ inline void *MemAlloc_ReallocAligned( void *ptr, size_t size, size_t align )
 
 	return ptr_new_aligned;
 }
+#elif defined( GNUC )
+
+inline void *MemAlloc_Alloc( size_t nSize, const char *pFileName = NULL, int nLine = 0 )							{ return malloc( nSize ); }
+inline void MemAlloc_Free( void *ptr, const char *pFileName = NULL, int nLine = 0 )									{ free( ptr ); }
+
+inline void *MemAlloc_AllocAligned( size_t size, size_t align, const char *pszFile = NULL, int nLine = 0  )	        { return _aligned_malloc( size, align ); }
+inline void *MemAlloc_AllocAlignedFileLine( size_t size, size_t align, const char *pszFile = NULL, int nLine = 0 )	{ return _aligned_malloc( size, align ); }
+inline void MemAlloc_FreeAligned( void *pMemBlock, const char *pszFile = NULL, int nLine = 0 ) 						{ _aligned_free( pMemBlock ); }
+
+inline void *MemAlloc_ReallocAligned( void *ptr, size_t size, size_t align )
+{
+	void *ptr_new_aligned = _aligned_malloc( size, align );
+
+	if( ptr_new_aligned )
+	{
+		size_t old_size = _msize( ptr );
+		size_t copy_size = ( size < old_size ) ? size : old_size;
+
+		memcpy( ptr_new_aligned, ptr, copy_size );
+		free( ptr );
+	}
+
+	return ptr_new_aligned;
+}
 #else
 #define MemAlloc_GetDebugInfoSize() g_pMemAlloc->GetDebugInfoSize()
 #define MemAlloc_SaveDebugInfo( pvDebugInfo ) g_pMemAlloc->SaveDebugInfo( pvDebugInfo )

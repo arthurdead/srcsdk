@@ -333,7 +333,7 @@ void C_BaseEntity::PhysicsDispatchThink( BASEPTR thinkFunc )
 			else
 #endif
 			{
-#ifdef WIN32
+#if defined WIN32 && !defined GNUC
 				Msg( "CLIENT:  %s(%s) thinking for %.02f ms!!!\n", GetClassname(), typeid(this).raw_name(), time );
 #else
 				Msg( "CLIENT:  %s(%s) thinking for %.02f ms!!!\n", GetClassname(), typeid(this).name(), time );				
