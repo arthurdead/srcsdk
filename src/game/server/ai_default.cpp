@@ -94,7 +94,7 @@ bool CAI_BaseNPC::LoadDefaultSchedules(void)
 #define AI_LOAD_DEF_SCHEDULE_FILE( classname, name ) \
 	do \
 	{ \
-		if (!g_AI_SchedulesManager.LoadSchedules( #classname,NULL,UTIL_VarArgs("scripts/schedules/npc/CAI_BaseNPC/%s.sch",#name),&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
+		if (!g_AI_SchedulesManager.LoadSchedules( #classname,NULL,UTIL_VarArgs("scripts/schedules/%s.sch",#name),&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
 			return false; \
 	} while (false)
 #else
@@ -109,7 +109,7 @@ bool CAI_BaseNPC::LoadDefaultSchedules(void)
 #define AI_LOAD_DEF_SCHEDULE_FILE( classname, name ) \
 	do \
 	{ \
-		if (!g_AI_SchedulesManager.LoadSchedules( #classname,NULL,UTIL_VarArgs("scripts/schedules/npc/CAI_BaseNPC/%s.sch",#name),&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
+		if (!g_AI_SchedulesManager.LoadSchedules( #classname,NULL,UTIL_VarArgs("scripts/schedules/%s.sch",#name),&classname::gm_ClassScheduleIdSpace, classname::GetSchedulingSymbols() )) \
 			fValid = false; \
 	} while (false)
 #endif
@@ -374,9 +374,7 @@ static CAI_SystemHook g_AISystemHook( "CAI_SystemHook" );
 // Schedules
 //
 //-----------------------------------------------------------------------------
-AI_DEFINE_SCHEDULE
-(
-	Error, R"(
+AI_DEFINE_SCHEDULE_BUFFER(Error, R"(
 
 Tasks
 {
@@ -385,9 +383,7 @@ Tasks
 
 )");
 
-AI_DEFINE_SCHEDULE
-(
-	SCHED_NONE, R"(
+AI_DEFINE_SCHEDULE_BUFFER(SCHED_NONE, R"(
 
 Tasks
 {

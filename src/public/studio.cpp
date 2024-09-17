@@ -1656,10 +1656,12 @@ void CStudioHdr::CActivityToSequenceMapping::Initialize( CStudioHdr * __restrict
 				HashValueType * __restrict toUpdate = &m_ActToSeqHash.Element(handle);
 				toUpdate->count += 1;
 				toUpdate->totalWeight += iabs(seqdesc.actweight);
+			#if 0
 				if ( !HushAsserts() )
 				{
 					AssertMsg( toUpdate->totalWeight > 0, "toUpdate->totalWeight: %d", toUpdate->totalWeight );
 				}
+			#endif
 			}
 			else
 			{

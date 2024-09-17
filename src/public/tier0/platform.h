@@ -445,6 +445,20 @@ typedef void * HINSTANCE;
 #endif
 
 #if defined( _WIN32 ) && !defined GNUC
+#define DLL_EXPORT_ATTR __declspec( dllexport )
+#define DLL_IMPORT_ATTR __declspec( dllimport )
+#else
+#define DLL_EXPORT_ATTR __attribute__ ((dllexport))
+#define DLL_IMPORT_ATTR __attribute__ ((dllimport))
+#endif
+
+#ifdef GNUC
+#define SYMALIAS(name) __attribute__ ((alias(name)))
+#else
+#define SYMALIAS(name) 
+#endif
+
+#if defined( _WIN32 ) && !defined GNUC
 
 // Used for dll exporting and importing
 #define DLL_EXPORT				extern "C" __declspec( dllexport )
@@ -463,6 +477,26 @@ typedef void * HINSTANCE;
 #define DLL_LOCAL
 
 #define LIB_LOCAL
+
+#elif defined( _WIN32 ) && defined GNUC
+
+// Used for dll exporting and importing
+#define  DLL_EXPORT   extern "C" __attribute__ ((visibility("default"),dllexport))
+#define  DLL_IMPORT   extern "C" __attribute__ ((dllimport))
+
+#define  LIB_EXPORT   extern "C" __attribute__ ((visibility("default")))
+
+// Can't use extern "C" when DLL exporting a class
+#define  DLL_CLASS_EXPORT __attribute__ ((visibility("default"),dllexport))
+#define  DLL_CLASS_IMPORT __attribute__ ((dllimport))
+
+// Can't use extern "C" when DLL exporting a global
+#define  DLL_GLOBAL_EXPORT   extern __attribute ((visibility("default"), dllexport))
+#define  DLL_GLOBAL_IMPORT   extern __attribute ((dllimport))
+
+#define  DLL_LOCAL __attribute__ ((visibility("hidden")))
+
+#define  LIB_LOCAL __attribute__ ((visibility("hidden")))
 
 #elif defined GNUC
 // Used for dll exporting and importing
@@ -498,10 +532,13 @@ typedef void * HINSTANCE;
 	// this macro lets us not force inlining in that case
 	#define  FORCEINLINE_TEMPLATE		__forceinline
 #else
+	#undef CDECL
 	#define  CDECL __attribute__((__cdecl__))
 	#define  STDCALL __attribute__((__stdcall__))
+	#undef FASTCALL
 	#define  FASTCALL __attribute__((__fastcall__))
 	#define  THISCALL __attribute__((__thiscall__))
+	#undef FORCEINLINE
 	#ifdef _LINUX_DEBUGGABLE
 		#define  FORCEINLINE
 	#else

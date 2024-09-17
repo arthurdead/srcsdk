@@ -15,6 +15,7 @@
 #include "platform.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include "icommandline.h"
 
 //-----------------------------------------------------------------------------
 // dll export stuff
@@ -215,7 +216,7 @@ DBG_INTERFACE void SetAssertFailedNotifyFunc( AssertFailedNotifyFunc_t func );
 DBG_INTERFACE void CallAssertFailedNotifyFunc( const char *pchFile, int nLine, const char *pchMessage );
 
 /* True if -hushasserts was passed on command line. */
-DBG_INTERFACE bool HushAsserts();
+DBG_INTERFACE SELECTANY bool HushAsserts();
 
 #if defined( USE_SDL )
 DBG_INTERFACE void SetAssertDialogParent( struct SDL_Window *window );

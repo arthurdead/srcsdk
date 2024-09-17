@@ -6,7 +6,7 @@ builddir_linux="$__script_dir__/build_linux"
 
 src_root_dir=$(realpath "$__script_dir__/../src")
 src_engine_dir=~/'.steam/steam/steamapps/common/Source SDK Base 2013 Multiplayer'
-game_dir=$(realpath "$__script_dir__/../../the-heist-files")
+game_dir=~/'.steam/steam/steamapps/sourcemods/heist'
 
 export CCACHE_COMPILERTYPE='gcc'
 export CCACHE_COMPILER=

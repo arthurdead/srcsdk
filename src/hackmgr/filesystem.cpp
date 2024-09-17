@@ -18,18 +18,19 @@ if(!pFileSystem || status != IFACE_OK) {
 	return;
 }
 
-const char *pGameDir = CommandLine()->ParmValue("-game", "hl2");
+char basePath[MAX_PATH];
+int len = pFileSystem->GetSearchPath("BASE_PATH", false, basePath, sizeof(basePath));
 
-char szTargetPath[MAX_PATH];
-V_strncpy(szTargetPath, pGameDir, sizeof(szTargetPath));
-int len = V_strlen(szTargetPath);
-if(szTargetPath[len] != CORRECT_PATH_SEPARATOR &&
-	szTargetPath[len] != INCORRECT_PATH_SEPARATOR) {
-	V_strcat(szTargetPath, CORRECT_PATH_SEPARATOR_S "user" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
-} else {
-	V_strcat(szTargetPath, "user" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
+if(basePath[len-1] == INCORRECT_PATH_SEPARATOR) {
+	basePath[len-1] = CORRECT_PATH_SEPARATOR;
+} else if(basePath[len-1] != CORRECT_PATH_SEPARATOR) {
+	basePath[len++] = CORRECT_PATH_SEPARATOR;
+	basePath[len] = '\0';
 }
 
-//TODO!!! remove both config and platform
+char platformPath[MAX_PATH];
+V_sprintf_safe(platformPath, "%splatform" CORRECT_PATH_SEPARATOR_S, basePath);
+
+pFileSystem->RemoveSearchPath(platformPath, "PLATFORM");
 
 HACKMGR_EXECUTE_ON_LOAD_END

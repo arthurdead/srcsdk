@@ -247,4 +247,15 @@ void DeepCopyMap( const CUtlMap<K,T,I>& pmapIn, CUtlMap<K,T,I> *out_pmapOut )
 	}
 }
 
+template < typename K, typename T, typename I >
+void DeepAppendMap( const CUtlMap<K,T,I>& pmapIn, CUtlMap<K,T,I> *out_pmapOut )
+{
+	Assert( out_pmapOut );
+
+	FOR_EACH_MAP_FAST( pmapIn, i )
+	{
+		out_pmapOut->Insert( pmapIn.Key( i ), pmapIn.Element( i ) );
+	}
+}
+
 #endif // UTLMAP_H

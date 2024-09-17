@@ -1,6 +1,8 @@
 #ifndef CPU_MONITORING_H
 #define CPU_MONITORING_H
 
+#include "tier0/platform.h"
+
 /*
 This header defines functions and structures for controlling the measurement of CPU frequency
 in order to detect thermal throttling. For details see the associated source file.
@@ -18,7 +20,7 @@ struct CPUFrequencyResults
 // When CPU monitoring is 'disabled' it may still be running at a low frequency,
 // for OGS purposes or for proactively warning users of problems. If fGetDisabledResults
 // is true then results will be returned when disabled (if available).
-PLATFORM_INTERFACE CPUFrequencyResults GetCPUFrequencyResults( bool fGetDisabledResults = false );
+PLATFORM_INTERFACE SELECTANY CPUFrequencyResults GetCPUFrequencyResults( bool fGetDisabledResults = false );
 
 // Call this to set the monitoring frequency. Intervals of 2-5 seconds (2,000 to 5,000 ms)
 // are recommended. An interval of zero will disable CPU monitoring. Short delays (below

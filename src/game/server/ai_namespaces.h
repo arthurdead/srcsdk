@@ -160,7 +160,9 @@ public:
 	 :	m_ScheduleIds( fIsRoot ),
 	 	m_TaskIds( fIsRoot ),
 	 	m_ConditionIds( fIsRoot ),
-	 	m_TaskParamsChecks(0, 0, DefLessFunc(TaskLocalId_t))
+	 	m_TaskParamsChecks(0, 0, DefLessFunc(TaskLocalId_t)),
+	 	m_pGlobalNamespace(NULL),
+	 	m_pParentIDSpace(NULL)
 	{
 	}
 
@@ -185,8 +187,13 @@ public:
 	const TaskParamCheck_t *TaskParamsCheck( TaskLocalId_t id ) const
 	{
 		int index = m_TaskParamsChecks.Find( id );
-		if(index == m_TaskParamsChecks.InvalidIndex())
+		if(index == m_TaskParamsChecks.InvalidIndex()) {
+			if(m_pParentIDSpace)
+				return m_pParentIDSpace->TaskParamsCheck( id );
+			if(m_pGlobalNamespace)
+				return m_pGlobalNamespace->TaskParamsCheck( TaskLocalToGlobal( id ) );
 			return NULL;
+		}
 		return &m_TaskParamsChecks[index];
 	}
 
@@ -195,6 +202,9 @@ private:
 	CAI_LocalIdSpace m_ScheduleIds;
 	CAI_LocalIdSpace m_TaskIds;
 	CAI_LocalIdSpace m_ConditionIds;
+
+	CAI_GlobalScheduleNamespace *m_pGlobalNamespace;
+	CAI_ClassScheduleIdSpace *m_pParentIDSpace;
 
 	CUtlMap<TaskGlobalId_t, TaskParamCheck_t> m_TaskParamsChecks;
 };
@@ -254,10 +264,16 @@ inline int CAI_GlobalScheduleNamespace::NumConditions() const
 
 inline bool CAI_ClassScheduleIdSpace::Init( const char *pszClassName, CAI_GlobalScheduleNamespace *pGlobalNamespace, CAI_ClassScheduleIdSpace *pParentIDSpace )
 {
+	m_pGlobalNamespace = pGlobalNamespace;
+	m_pParentIDSpace = pParentIDSpace;
+
 	m_pszClassName = pszClassName;
-	return ( m_ScheduleIds.Init( &pGlobalNamespace->m_ScheduleNamespace, ( pParentIDSpace ) ? &pParentIDSpace->m_ScheduleIds : NULL ) &&
-			 m_TaskIds.Init( &pGlobalNamespace->m_TaskNamespace, ( pParentIDSpace ) ? &pParentIDSpace->m_TaskIds : NULL ) &&
-			 m_ConditionIds.Init( &pGlobalNamespace->m_ConditionNamespace, ( pParentIDSpace ) ? &pParentIDSpace->m_ConditionIds : NULL ) );
+	if ( !m_ScheduleIds.Init( &pGlobalNamespace->m_ScheduleNamespace, ( pParentIDSpace ) ? &pParentIDSpace->m_ScheduleIds : NULL ) ||
+			 !m_TaskIds.Init( &pGlobalNamespace->m_TaskNamespace, ( pParentIDSpace ) ? &pParentIDSpace->m_TaskIds : NULL ) ||
+			 !m_ConditionIds.Init( &pGlobalNamespace->m_ConditionNamespace, ( pParentIDSpace ) ? &pParentIDSpace->m_ConditionIds : NULL ) )
+		return false;
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------

@@ -7,6 +7,9 @@ build_listen_server = get_option('build_listen_server')
 build_dedicated_server = get_option('build_dedicated_server')
 build_libs = get_option('build_libs')
 
+src_engine_dir = get_option('src_engine_dir')
+game_dir = get_option('game_dir')
+
 if build_libs
 	subproject('choreoobjects')
 	subproject('mathlib')

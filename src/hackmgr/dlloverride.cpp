@@ -344,14 +344,17 @@ const char *pGameDir = CommandLine()->ParmValue("-game", "hl2");
 
 char szTargetPath[MAX_PATH];
 V_strncpy(szTargetPath, pGameDir, sizeof(szTargetPath));
+
 int len = V_strlen(szTargetPath);
-if(szTargetPath[len] != CORRECT_PATH_SEPARATOR &&
-	szTargetPath[len] != INCORRECT_PATH_SEPARATOR) {
-	V_strcat(szTargetPath, CORRECT_PATH_SEPARATOR_S "bin" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
-} else {
-	V_strcat(szTargetPath, "bin" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
+
+if(szTargetPath[len-1] == INCORRECT_PATH_SEPARATOR) {
+	szTargetPath[len-1] = CORRECT_PATH_SEPARATOR;
+} else if(szTargetPath[len-1] != CORRECT_PATH_SEPARATOR) {
+	szTargetPath[len++] = CORRECT_PATH_SEPARATOR;
+	szTargetPath[len] = '\0';
 }
-len = V_strlen(szTargetPath);
+
+V_strcat(szTargetPath, "bin" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
 
 bool found = false;
 

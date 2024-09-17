@@ -2641,7 +2641,7 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 			if ( CNpc::gm_SchedLoadStatus.fValid ) \
 			{ \
 				const char *pbuffer = scheduleIds[i].filename ? NULL : scheduleIds[i].pszValue; \
-				const char *pfilename = scheduleIds[i].filename ? UTIL_VarArgs("scripts/schedules/behavior/%s/%s.sch",pszClassName,scheduleIds[i].pszValue) : NULL; \
+				const char *pfilename = scheduleIds[i].filename ? UTIL_VarArgs("scripts/schedules/%s.sch",scheduleIds[i].pszValue) : NULL; \
 				CNpc::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedules( pszClassName, pbuffer, pfilename,&AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
 			} \
 			else \
@@ -2710,7 +2710,7 @@ inline bool ValidateConditionLimits( const char *pszNewCondition )
 			if ( CNpc::gm_SchedLoadStatus.fValid ) \
 			{ \
 				const char *pbuffer = scheduleIds[i].filename ? NULL : scheduleIds[i].pszValue; \
-				const char *pfilename = scheduleIds[i].filename ? UTIL_VarArgs("scripts/schedules/npc/%s/%s.sch",pszClassName,scheduleIds[i].pszValue) : NULL; \
+				const char *pfilename = scheduleIds[i].filename ? UTIL_VarArgs("scripts/schedules/%s.sch",scheduleIds[i].pszValue) : NULL; \
 				CNpc::gm_SchedLoadStatus.fValid = g_AI_SchedulesManager.LoadSchedules( pszClassName, pbuffer, pfilename, &AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
 			} \
 			else \

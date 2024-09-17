@@ -889,7 +889,7 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 					{
 						DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i): Task '%s' (#%i) was not registered.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum);
 						Assert(0);
-					#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == -1
+					#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1
 						return false;
 					#endif
 					}
@@ -902,12 +902,19 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 					{
 						Assert( AI_IdIsLocal( taskLocalID ) );
 
-						paramCheck = (pIdSpace) ? pIdSpace->TaskParamsCheck( taskLocalID ) : pGlobalNamespace->TaskParamsCheck( taskGlobalID );
+						if(pIdSpace) {
+							paramCheck = pIdSpace->TaskParamsCheck( taskLocalID );
+						}
+						if(!paramCheck) {
+							paramCheck = pGlobalNamespace->TaskParamsCheck( taskGlobalID );
+						}
 						if ( !paramCheck )
 						{
 							DevMsg( "ERROR: LoadSchd (%s) (%s) (%s #%i): Task '%s' (#%i) has no params check.\n", pclassname, pfilename,sched_pSchedName,sched_tempSchedNum,sched_pCurrTaskName,sched_tempTaskNum);
 							Assert(0);
+						#if AI_SCHEDULE_PARSER_STRICT_REGISTRATION == 1
 							return false;
+						#endif
 						}
 					}
 

@@ -171,7 +171,7 @@ private:
 // In-memory schedules
 //
 
-#define AI_DEFINE_SCHEDULE( name, text ) \
+#define AI_DEFINE_SCHEDULE_BUFFER( name, text ) \
 	const char * g_psz##name = \
 		"Schedule "#name \
 		"\n{\n" \
@@ -234,10 +234,10 @@ struct AiScheduleInfo_t
 
 #define DEFINE_SCHEDULE_BUFFER( id, text ) \
 	const char * g_psz##id = \
-		"\n	Schedule" \
-		"\n		" #id \
+		"Schedule " #id \
+		"\n{\n" \
 		text \
-		"\n"; \
+		"\n}\n"; \
 	scheduleIds.PushBack( #id, id, g_psz##id, false );
 
 #define DEFINE_SCHEDULE_FILE( id ) \

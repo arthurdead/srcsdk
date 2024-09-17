@@ -18,13 +18,13 @@ typedef enum
 
 	#include "ai_activity_enum.inc"
 
+	// this is the end of the global activities, private per-monster activities start here.
+	LAST_SHARED_ACTIVITY,
+
 	#define ACTIVITY_ENUM_ALIAS(name, value) \
 		name = value,
 
 	#include "ai_activity_enum.inc"
-
-	// this is the end of the global activities, private per-monster activities start here.
-	LAST_SHARED_ACTIVITY,
 } Activity;
 
 

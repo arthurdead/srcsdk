@@ -6,7 +6,7 @@ builddir_linux="$__script_dir__/build_windows"
 
 src_root_dir=$(realpath "$__script_dir__/../src")
 src_engine_dir=~/'.steam/steam/steamapps/common/Source SDK Base 2013 Multiplayer'
-game_dir=$(realpath "$__script_dir__/../../the-heist-files")
+game_dir=~/'.steam/steam/steamapps/sourcemods/heist'
 
 export CC='/usr/bin/i686-w64-mingw32-gcc'
 export CXX='/usr/bin/i686-w64-mingw32-g++'

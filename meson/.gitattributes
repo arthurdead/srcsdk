@@ -1,0 +1,7 @@
+*.build text
+*.wrap text
+*.code-workspace text
+*.sublime-project text
+
+/i686-gcc-linux-gnu
+/i686-w64-mingw32

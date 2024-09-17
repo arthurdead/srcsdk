@@ -98,7 +98,7 @@ PLATFORM_INTERFACE void SetThreadedLoadLibraryFunc( ThreadedLoadLibraryFunc_t fu
 PLATFORM_INTERFACE ThreadedLoadLibraryFunc_t GetThreadedLoadLibraryFunc();
 
 #if defined( _WIN32 ) && !defined( _WIN64 )
-extern "C" unsigned long __declspec(dllimport) STDCALL GetCurrentThreadId();
+extern "C" unsigned long DLL_IMPORT_ATTR STDCALL GetCurrentThreadId();
 #define ThreadGetCurrentId GetCurrentThreadId
 #endif
 
@@ -1509,10 +1509,10 @@ typedef RTL_CRITICAL_SECTION CRITICAL_SECTION;
 
 extern "C"
 {
-	void __declspec(dllimport) STDCALL InitializeCriticalSection(CRITICAL_SECTION *);
-	void __declspec(dllimport) STDCALL EnterCriticalSection(CRITICAL_SECTION *);
-	void __declspec(dllimport) STDCALL LeaveCriticalSection(CRITICAL_SECTION *);
-	void __declspec(dllimport) STDCALL DeleteCriticalSection(CRITICAL_SECTION *);
+	void DLL_IMPORT_ATTR STDCALL InitializeCriticalSection(CRITICAL_SECTION *);
+	void DLL_IMPORT_ATTR STDCALL EnterCriticalSection(CRITICAL_SECTION *);
+	void DLL_IMPORT_ATTR STDCALL LeaveCriticalSection(CRITICAL_SECTION *);
+	void DLL_IMPORT_ATTR STDCALL DeleteCriticalSection(CRITICAL_SECTION *);
 };
 
 //---------------------------------------------------------

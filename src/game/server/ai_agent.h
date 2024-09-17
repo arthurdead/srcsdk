@@ -431,7 +431,7 @@ inline void CAI_Agent::ResetScheduleCurTaskIndex()
 			if ( CNpc::gm_SchedLoadStatus.fValid ) \
 			{ \
 				const char *pbuffer = scheduleIds[i].filename ? NULL : scheduleIds[i].pszValue; \
-				const char *pfilename = scheduleIds[i].filename ? UTIL_VarArgs("scripts/schedules/agents/%s/%s.sch",pszClassName,scheduleIds[i].pszValue) : NULL; \
+				const char *pfilename = scheduleIds[i].filename ? UTIL_VarArgs("scripts/schedules/%s.sch",scheduleIds[i].pszValue) : NULL; \
 				CNpc::gm_SchedLoadStatus.fValid = g_AI_AgentSchedulesManager.LoadSchedules( pszClassName, pbuffer, pfilename, &AccessClassScheduleIdSpaceDirect(), GetSchedulingSymbols() ); \
 			} \
 			else \
