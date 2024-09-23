@@ -30,6 +30,7 @@ if build_client
 	#subproject('vaudio_redirect')
 	#subproject('video_services')
 	subproject('game_shader_dx9')
+	subproject('gameui')
 	subproject('client')
 endif
 if build_listen_server
