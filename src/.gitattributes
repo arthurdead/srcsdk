@@ -1,3 +1,9 @@
+*.a binary
+*.lib binary
+*.so binary
+*.dll binary
+*.exe binary
+
 *.c text diff=cpp
 *.cc text diff=cpp
 *.cxx text diff=cpp

@@ -43,9 +43,9 @@ public:
 
 	const Vector &		GetHullMins() const			{ return WorldAlignMins(); }
 	const Vector &		GetHullMaxs() const			{ return WorldAlignMaxs(); }
-	float				GetHullWidth()	const		{ return (GetHullMaxs().y - GetHullMins().y); }
-	float				GetHullLength() const		{ return (GetHullMaxs().x - GetHullMins().x); }
-	float				GetHullHeight() const		{ return (GetHullMaxs().z - GetHullMins().z); }
+	float				GetHullWidth()	const		{ return CollisionProp()->Width(); }
+	float				GetHullLength() const		{ return CollisionProp()->Length(); }
+	float				GetHullHeight() const		{ return CollisionProp()->Height(); }
 
 private:
 	C_AI_BaseNPC( const C_AI_BaseNPC & ); // not defined, not accessible
