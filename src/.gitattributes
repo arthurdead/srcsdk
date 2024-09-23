@@ -1,9 +1,3 @@
-*.a binary filter=lfs diff=lfs merge=lfs
-*.lib binary filter=lfs diff=lfs merge=lfs
-*.so binary filter=lfs diff=lfs merge=lfs
-*.dll binary filter=lfs diff=lfs merge=lfs
-*.exe binary filter=lfs diff=lfs merge=lfs
-
 *.c text diff=cpp
 *.cc text diff=cpp
 *.cxx text diff=cpp
