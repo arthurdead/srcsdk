@@ -16,9 +16,9 @@
 class CBasePlayer;
 class CTeamSpawnPoint;
 
-class CTeam : public CBaseEntity
+class CTeam : public CLogicalEntity
 {
-	DECLARE_CLASS( CTeam, CBaseEntity );
+	DECLARE_CLASS( CTeam, CLogicalEntity );
 public:
 	CTeam( void );
 	virtual ~CTeam( void );
@@ -28,7 +28,6 @@ public:
 	virtual void Precache( void ) { return; };
 
 	virtual void Think( void );
-	virtual int  UpdateTransmitState( void );
 
 	virtual void			UpdateOnRemove( void );
 

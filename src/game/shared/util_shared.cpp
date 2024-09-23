@@ -2518,14 +2518,12 @@ int UTIL_EntitiesAlongRay( const Ray_t &ray, CFlaggedEntitiesEnum *pEnum )
 
 
 // Utility function
-bool FindInList( const char **pStrings, const char *pToFind )
+bool FindInList( const char **pStrings, const char *pToFind, int size )
 {
-	int i = 0;
-	while ( pStrings[i][0] != 0 )
+	for(int i = 0; i < size; ++i)
 	{
 		if ( Q_stricmp( pStrings[i], pToFind ) == 0 )
 			return true;
-		i++;
 	}
 
 	return false;

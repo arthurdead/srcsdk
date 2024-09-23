@@ -415,7 +415,7 @@ void CPhysBox::Spawn( void )
 	// Condense classname's to one, except for "prop_physics_override"
 	if ( FClassnameIs( this, "func_physbox_multiplayer" ) )
 	{
-		m_iClassname = gm_isz_class_FuncPhysbox;
+		SetClassname( gm_isz_class_FuncPhysbox );
 	}
 
 	ParsePropData();
@@ -1527,7 +1527,7 @@ void CPhysConvert::InputConvertTarget( inputdata_t &inputdata )
 		// don't convert something that is already physics based
 		if ( pEntity->GetMoveType() == MOVETYPE_VPHYSICS )
 		{
-			Msg( "ERROR phys_convert %s ! Already MOVETYPE_VPHYSICS\n", STRING(pEntity->m_iClassname) );
+			Msg( "ERROR phys_convert %s ! Already MOVETYPE_VPHYSICS\n", pEntity->GetClassname() );
 			continue;
 		}
 

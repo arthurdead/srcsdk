@@ -18,6 +18,12 @@ class CShaderLibConVarAccessor : public IConCommandBaseAccessor
 public:
 	virtual bool	RegisterConCommandBase( ConCommandBase *pCommand )
 	{
+	#ifdef _DEBUG
+		if(cvar->FindCommandBase(pCommand->GetName()) != NULL) {
+			DevMsg("shader dll tried to re-register con var/command named %s\n", pCommand->GetName());
+		}
+	#endif
+
 		// Link to engine's list instead
 		g_pCVar->RegisterConCommand( pCommand );
 

@@ -815,6 +815,9 @@ void PhysDisableEntityCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObj
 
 	CBaseEntity *pEntity0 = static_cast<CBaseEntity *>(pObject0->GetGameData());
 	CBaseEntity *pEntity1 = static_cast<CBaseEntity *>(pObject1->GetGameData());
+	if ( !pEntity0 || !pEntity1 )
+		return;
+
 	g_EntityCollisionHash->AddObjectPair( pObject0->GetGameData(), pObject1->GetGameData() );
 	PhysRecheckObjectPair( pObject0, pObject1 );
 	pEntity0->CollisionRulesChanged();

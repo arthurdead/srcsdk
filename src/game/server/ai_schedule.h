@@ -82,6 +82,7 @@ public:
 
 private:
 	friend class CAI_SystemHook;
+	friend class CServerGameDLL;
 	
 	int				m_CurLoadSig;					// Note when schedules reset
 	CAI_Schedule*	allSchedules;						// A linked list of all schedules

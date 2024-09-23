@@ -1790,12 +1790,12 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 
 	int nChildrenChangeFlags = (nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED));
 
-	if ( nChangeFlags & VELOCITY_CHANGED )
+	if ( (nChangeFlags & VELOCITY_CHANGED) != 0 )
 	{
 		nDirtyFlags |= EFL_DIRTY_ABSVELOCITY;
 	}
 
-	if ( nChangeFlags & POSITION_CHANGED )
+	if ( (nChangeFlags & POSITION_CHANGED) != 0 )
 	{
 		nDirtyFlags |= EFL_DIRTY_ABSTRANSFORM;
 
@@ -1815,7 +1815,7 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 
 	// NOTE: This has to be done after velocity + position are changed
 	// because we change the nChangeFlags for the child entities
-	if ( nChangeFlags & ANGLES_CHANGED )
+	if ( (nChangeFlags & ANGLES_CHANGED) != 0 )
 	{
 		nDirtyFlags |= EFL_DIRTY_ABSTRANSFORM;
 
@@ -1832,7 +1832,7 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 		nChildrenChangeFlags |= (POSITION_CHANGED | VELOCITY_CHANGED);
 	}
 
-	if ( nChangeFlags & SEQUENCE_CHANGED )
+	if ( (nChangeFlags & SEQUENCE_CHANGED) != 0 )
 	{
 		if ( !bSurroundDirty )
 		{
@@ -1845,12 +1845,12 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 		}
 	}
 
-	if ( nChangeFlags & ANIMATION_CHANGED )
+	if ( (nChangeFlags & ANIMATION_CHANGED) != 0 )
 	{
 		nChildrenChangeFlags |= (POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED);
 	}
 
-	if ( nChangeFlags & BOUNDS_CHANGED )
+	if ( (nChangeFlags & BOUNDS_CHANGED) != 0 )
 	{
 		nChildrenChangeFlags |= (POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED);
 	}
@@ -1864,13 +1864,13 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 	{
 		if ( !IsWorld() )
 		{
-			if((nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | BOUNDS_CHANGED)))
+			if((nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | BOUNDS_CHANGED)) != 0)
 			{
 				MarkRenderHandleDirty();
 				g_pClientShadowMgr->AddToDirtyShadowList( this );
 			}
 
-			if((nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | BOUNDS_CHANGED)) || (nChangeFlags & ANIMATION_CHANGED))
+			if((nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | BOUNDS_CHANGED)) != 0 || (nChangeFlags & ANIMATION_CHANGED) != 0)
 			{
 				g_pClientShadowMgr->MarkRenderToTextureShadowDirty( GetShadowHandle() );
 			}
@@ -1884,7 +1884,7 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 	{
 		// If this is due to the parent animating, only invalidate children that are parented to an attachment
 		// Entities that are following also access attachments points on parents and must be invalidated.
-		if ( (nChangeFlags & ANIMATION_CHANGED) && !(nChangeFlags & (POSITION_CHANGED | VELOCITY_CHANGED | ANGLES_CHANGED)) )
+		if ( (nChangeFlags & ANIMATION_CHANGED) != 0 && (nChangeFlags & (POSITION_CHANGED | VELOCITY_CHANGED | ANGLES_CHANGED)) == 0 )
 		{
 #ifdef CLIENT_DLL
 			if ( (pChild->GetParentAttachment() == 0) && !pChild->IsFollowingEntity() )
@@ -1897,7 +1897,7 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 		pChild->InvalidatePhysicsRecursive( nChildrenChangeFlags );
 	}
 
-	if ( nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | ANIMATION_CHANGED) )
+	if ( (nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | ANIMATION_CHANGED)) != 0 )
 	{
 		CBaseAnimating *pAnim = GetBaseAnimating();
 		if ( pAnim )

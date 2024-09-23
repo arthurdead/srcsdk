@@ -15,6 +15,7 @@
 #include "datacache/idatacache.h"
 #include "tier0/threadtools.h"
 #include "ai_activity.h"
+#include "eventlist.h"
 
 struct animevent_t;
 struct matrix3x4_t;
@@ -139,7 +140,7 @@ public:
 	virtual void CalculateIKLocks( float currentTime );
 	virtual void Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity );
 
-	bool HasAnimEvent( int nSequence, int nEvent );
+	bool HasAnimEvent( int nSequence, Animevent nEvent );
 	virtual	void DispatchAnimEvents ( CBaseAnimating *eventHandler ); // Handle events that have happend since last time called up until X seconds into the future
 	virtual void HandleAnimEvent( animevent_t *pEvent );
 	virtual bool HandleBehaviorAnimEvent( animevent_t *pEvent ) { return false; }
@@ -236,7 +237,7 @@ public:
 	// Clone a CBaseAnimating from another (copies model & sequence data)
 	void CopyAnimationDataFrom( CBaseAnimating *pSource );
 
-	int ExtractBbox( int sequence, Vector& mins, Vector& maxs );
+	bool ExtractBbox( int sequence, Vector& mins, Vector& maxs );
 	void SetSequenceBox( void );
 	Activity RegisterPrivateActivity( const char *pszActivityName );
 

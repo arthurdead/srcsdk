@@ -96,7 +96,8 @@ public:
 	void RecomputePVSInformation();
 
 	// Detaches the edict.. should only be called by CBaseNetworkable's destructor.
-	void DetachEdict();
+	void ReleaseEdict();
+	edict_t *DetachEdict();
 
 	bool TimerEventActive();
 

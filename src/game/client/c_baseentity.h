@@ -244,6 +244,10 @@ public:
 		}
 	}
 
+	// returns the edict index the entity requires when used in save/restore (eg players, world)
+	// -1 means it doesn't require any special index
+	virtual int RequiredEdictIndex( void ) { return -1; } 
+
 	static void						UpdateVisibilityAllEntities();
 	virtual void					ModifyOrAppendCriteria( AI_CriteriaSet& set );
 
@@ -599,6 +603,7 @@ public:
 	// *centered at the world space center* bounding the collision representation 
 	// of the entity. NOTE: The world space center *may* move when the entity rotates.
 	float							BoundingRadius() const;
+	float					BoundingRadius2D() const;
 
 	// Used when the collision prop is told to ask game code for the world-space surrounding box
 	virtual void					ComputeWorldSpaceSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs );
@@ -979,7 +984,8 @@ public:
 // Methods implemented on both client and server
 public:
 	void							SetSize( const Vector &vecMin, const Vector &vecMax ); // UTIL_SetSize( pev, mins, maxs );
-	virtual char const						*GetClassname( void );
+	virtual char const						*GetClassname( void ) final;
+	bool HasClassname();
 	char const						*GetDebugName( void );
 	virtual const char				*GetPlayerName() const { return NULL; }
 	static int						PrecacheModel( const char *name ); 
@@ -1146,6 +1152,8 @@ public:
 
 	virtual bool					IsBaseTrain( void ) const { return false; }
 
+	virtual bool			IsMoving( void );
+
 	// Entities like the player, weapon models, and view models have special logic per-view port related to visibility and the model to be used, etc.
 	void							SetBlurState( bool bShouldBlur );
 	virtual bool					IsBlurred( void );
@@ -1197,6 +1205,9 @@ public:
 	void				SetAbsVelocity( const Vector &vecVelocity );
 	const Vector&		GetLocalVelocity() const;
 	const Vector&		GetAbsVelocity( ) const;
+
+	// FIXME: Figure out what to do about this
+	virtual void	GetVelocity(Vector *vVelocity, AngularImpulse *vAngVelocity = NULL);
 
 	void				ApplyLocalVelocityImpulse( const Vector &vecImpulse );
 	void				ApplyAbsVelocityImpulse( const Vector &vecImpulse );
@@ -1485,6 +1496,7 @@ protected:
 	Vector							m_vecCellOrigin; // cached cell offset position
 
 private:	
+	friend class C_World;
 
 	// Determine what entity this corresponds to
 	int								m_nEntIndex;	
@@ -1975,20 +1987,65 @@ private:
 
 EXTERN_RECV_TABLE(DT_BaseEntity);
 
-class C_ClientEntity : public C_BaseEntity
+#include "baseentity_shared.h"
+
+class C_PointEntity : public C_BaseEntity
 {
 public:
-	C_ClientEntity()
-		: C_BaseEntity()
-	{
-		AddEFlags(EFL_NOT_NETWORKED);
-	}
-	DECLARE_CLASS( C_ClientEntity, C_BaseEntity );
+	DECLARE_CLASS( C_PointEntity, C_BaseEntity );
+
+	void	Spawn( void );
+	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+private:
+};
+
+// Has no position or size
+class C_LogicalEntity : public C_BaseEntity
+{
+	DECLARE_CLASS( C_LogicalEntity, C_BaseEntity );
+
+public:
+	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+};
+
+// Has a position + size
+class C_ClientOnlyEntity : public C_BaseEntity
+{
+	DECLARE_CLASS( C_ClientOnlyEntity, C_BaseEntity );
+public:
+	C_ClientOnlyEntity();
 
 	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
 	virtual	bool			IsClientCreated( void ) const { return true; }
 	virtual bool						IsServerEntity( void ) { return false; }
+	
+	virtual int ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
 };
+
+typedef C_ClientOnlyEntity C_ClientEntity;
+
+// Has only a position, no size
+class C_ClientOnlyPointEntity : public C_ClientOnlyEntity
+{
+	DECLARE_CLASS( C_ClientOnlyPointEntity, C_ClientOnlyEntity );
+
+public:
+	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+};
+
+// Has no position or size
+class C_ClientOnlyLogicalEntity : public C_ClientOnlyEntity
+{
+	DECLARE_CLASS( C_ClientOnlyLogicalEntity, C_ClientOnlyEntity );
+
+public:
+	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+};
+
+#define CPointEntity C_PointEntity
+#define CLogicalEntity C_LogicalEntity
 
 inline bool FClassnameIs( C_BaseEntity *pEntity, const char *szClassname )
 { 
@@ -2200,6 +2257,11 @@ inline const Vector& C_BaseEntity::WorldAlignSize( ) const
 inline float CBaseEntity::BoundingRadius() const
 {
 	return CollisionProp()->BoundingRadius();
+}
+
+inline float CBaseEntity::BoundingRadius2D() const
+{
+	return CollisionProp()->BoundingRadius2D();
 }
 
 inline bool CBaseEntity::IsPointSized() const

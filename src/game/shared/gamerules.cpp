@@ -204,22 +204,18 @@ ConVar	deathmatch( "deathmatch","0", FCVAR_NOTIFY|FCVAR_REPLICATED, "Running a d
 ConVar	coop( "coop","0", FCVAR_NOTIFY|FCVAR_REPLICATED, "Cooperative play." );			// 0 or 1
 
 CViewVectors g_DefaultViewVectors(
-	Vector( 0, 0, 64 ),			//VEC_VIEW (m_vView)
-								
 	Vector(-16, -16, 0 ),		//VEC_HULL_MIN (m_vHullMin)
-	Vector( 16,  16,  72 ),		//VEC_HULL_MAX (m_vHullMax)
-													
+	Vector( 16,  16,  71 ),		//VEC_HULL_MAX (m_vHullMax)
+	Vector( 0, 0, 62 ),			//VEC_VIEW (m_vView)
+
 	Vector(-16, -16, 0 ),		//VEC_DUCK_HULL_MIN (m_vDuckHullMin)
-	Vector( 16,  16,  36 ),		//VEC_DUCK_HULL_MAX	(m_vDuckHullMax)
-	Vector( 0, 0, 28 ),			//VEC_DUCK_VIEW		(m_vDuckView)
-													
+	Vector( 16,  16,  55 ),		//VEC_DUCK_HULL_MAX	(m_vDuckHullMax)
+	Vector( 0, 0, 37 ),			//VEC_DUCK_VIEW		(m_vDuckView)
+
 	Vector(-10, -10, -10 ),		//VEC_OBS_HULL_MIN	(m_vObsHullMin)
 	Vector( 10,  10,  10 ),		//VEC_OBS_HULL_MAX	(m_vObsHullMax)
-													
-	Vector( 0, 0, 14 ),			//VEC_DEAD_VIEWHEIGHT (m_vDeadViewHeight)
 
-	Vector(-16, -16, 0 ),		//VEC_CROUCH_TRACE_MIN (m_vCrouchTraceMin)
-	Vector( 16,  16,  60 )		//VEC_CROUCH_TRACE_MAX (m_vCrouchTraceMax)
+	Vector( 0, 0, 14 )			//VEC_DEAD_VIEWHEIGHT (m_vDeadViewHeight)
 );
 
 #ifndef CLIENT_DLL
@@ -240,27 +236,26 @@ IVoiceGameMgrHelper *g_pVoiceGameMgrHelper = &g_VoiceGameMgrHelper;
 // CGameRulesProxy implementation.
 // ------------------------------------------------------------------------------------ //
 
-CGameRulesProxy *CGameRulesProxy::s_pGameRulesProxy = NULL;
-
+CGameRulesProxy *g_pGameRulesProxy = NULL;
 
 CGameRulesProxy::CGameRulesProxy()
 {
-	AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
-
 	// allow map placed proxy entities to overwrite the static one
-	if ( !s_pGameRulesProxy )
-		s_pGameRulesProxy = this;
+	if ( !g_pGameRulesProxy ) {
+		g_pGameRulesProxy = this;
+		AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
+	}
 }
 
 CGameRulesProxy::~CGameRulesProxy()
 {
-	if ( s_pGameRulesProxy == this )
-		s_pGameRulesProxy = NULL;
+	if ( g_pGameRulesProxy == this )
+		g_pGameRulesProxy = NULL;
 }
 
 void CGameRulesProxy::Spawn( void )
 {
-	if(s_pGameRulesProxy && s_pGameRulesProxy != this) {
+	if(g_pGameRulesProxy && g_pGameRulesProxy != this) {
 		UTIL_Remove(this);
 		return;
 	}
@@ -268,21 +263,10 @@ void CGameRulesProxy::Spawn( void )
 	BaseClass::Spawn();
 }
 
-int CGameRulesProxy::UpdateTransmitState()
-{
-#ifndef CLIENT_DLL
-	// ALWAYS transmit to all clients.
-	return SetTransmitState( FL_EDICT_ALWAYS );
-#else
-	return 0;
-#endif
-
-}
-
 void CGameRulesProxy::NotifyNetworkStateChanged()
 {
-	if ( s_pGameRulesProxy )
-		s_pGameRulesProxy->NetworkStateChanged();
+	if ( g_pGameRulesProxy )
+		g_pGameRulesProxy->NetworkStateChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -1047,7 +1031,6 @@ static const char *s_PreserveEnts[] = {
 	"trigger_soundscape",
 	"viewmodel",
 	"worldspawn",
-	"",
 };
 
 class CMapEntityFilter : public IMapEntityFilter
@@ -1055,7 +1038,7 @@ class CMapEntityFilter : public IMapEntityFilter
 public:
 	virtual bool ShouldCreateEntity(const char *pClassname)
 	{
-		if(!FindInList(s_PreserveEnts, pClassname)) {
+		if(!FindInList(s_PreserveEnts, pClassname, ARRAYSIZE(s_PreserveEnts))) {
 			return true;
 		} else {
 			if(m_iIterator != g_MapEntityRefs.InvalidIndex()) {
@@ -1096,7 +1079,7 @@ void CGameRules::CleanUpMap()
 			if(!pWeapon->GetPlayerOwner()) {
 				UTIL_Remove(pCur);
 			}
-		} else if(!FindInList(s_PreserveEnts, pCur->GetClassname())) {
+		} else if(!FindInList(s_PreserveEnts, pCur->GetClassname(), ARRAYSIZE(s_PreserveEnts))) {
 			UTIL_Remove( pCur );
 		}
 
@@ -1455,10 +1438,10 @@ static CGameRulesEntityFactory gamerulesProxyFactory;
 
 void CGameRules::CreateStandardEntities()
 {
-	if(CGameRulesProxy::s_pGameRulesProxy) {
-		UTIL_Remove(CGameRulesProxy::s_pGameRulesProxy);
+	if(g_pGameRulesProxy) {
+		UTIL_Remove(g_pGameRulesProxy);
 	}
-	CGameRulesProxy::s_pGameRulesProxy = (CGameRulesProxy *)CBaseEntity::Create( "gamerules_proxy", vec3_origin, vec3_angle );
+	g_pGameRulesProxy = (CGameRulesProxy *)CBaseEntity::Create( "gamerules_proxy", vec3_origin, vec3_angle );
 
 	if(g_pPlayerResource) {
 		UTIL_Remove(g_pPlayerResource);

@@ -10,9 +10,6 @@
 #include "soundent.h"
 #include "TemplateEntities.h"
 #include "point_template.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_initutils.h"
-#endif
 #include "lights.h"
 #include "mapentities.h"
 #include "wcedit.h"
@@ -37,8 +34,11 @@ CBaseEntity *CreateEntityByName( const char *className, int iForceEdictIndex, bo
 		CBaseEntity *pOldEntity = gEntList.LookupEntityByNetworkIndex( iForceEdictIndex );
 		Assert(!pOldEntity);
 		if( pOldEntity ) {
+			if(!g_pForceAttachEdict)
+				g_pForceAttachEdict = pOldEntity->NetworkProp()->DetachEdict();
+			else
+				pOldEntity->NetworkProp()->ReleaseEdict();
 			UTIL_Remove( pOldEntity );
-			pOldEntity->NetworkProp()->DetachEdict();
 		} else {
 			if( !g_pForceAttachEdict ) {
 				g_pForceAttachEdict = INDEXENT(iForceEdictIndex);
@@ -351,7 +351,7 @@ void CMapEntitySpawner::AddEntity( CBaseEntity *pEntity, const char *pCurMapData
 	}
 
 	// To 
-	if ( dynamic_cast<CWorld*>( pEntity ) )
+	if ( pEntity->IsWorld() )
 	{
 		Assert( !m_bFoundryMode );
 		VPROF( "MapEntity_ParseAllEntities_SpawnWorld");
@@ -603,6 +603,8 @@ void MapEntity_PrecacheEntity( const char *pEntData, int &nStringSize )
 	}
 }
 
+extern CBaseEntity *GetSingletonOfClassname(const char *pClassname);
+
 //-----------------------------------------------------------------------------
 // Purpose: Takes a block of character data as the input
 // Input  : pEntity - Receives the newly constructed entity, NULL on failure.
@@ -619,31 +621,33 @@ const char *MapEntity_ParseEntity(CBaseEntity *&pEntity, const char *pEntData, I
 		Error( "classname missing from entity!\n" );
 	}
 
-	pEntity = NULL;
-	if ( !pFilter || pFilter->ShouldCreateEntity( className ) )
+	pEntity = GetSingletonOfClassname( className );
+	if( !pEntity )
 	{
 		//
 		// Construct via the LINK_ENTITY_TO_CLASS factory.
 		//
-		if ( pFilter )
-			pEntity = pFilter->CreateNextEntity( className );
-		else
+		if ( !pFilter )
+		{
 			pEntity = CreateEntityByName(className);
+		}
+		else if ( pFilter->ShouldCreateEntity( className ) )
+		{
+			pEntity = pFilter->CreateNextEntity( className );
+		}
+	}
 
-		//
-		// Set up keyvalues.
-		//
-		if (pEntity != NULL)
-		{
-			pEntity->ParseMapData(&entData);
-		}
-		else
-		{
-			Warning("Can't init %s\n", className);
-		}
+	//
+	// Set up keyvalues.
+	//
+	if (pEntity != NULL)
+	{
+		pEntity->ParseMapData(&entData);
 	}
 	else
 	{
+		Warning("Can't init %s\n", className);
+
 		// Just skip past all the keys.
 		char keyName[MAPKEY_MAXLENGTH];
 		char value[MAPKEY_MAXLENGTH];

@@ -976,6 +976,8 @@ int CCollisionEvent::ShouldSolvePenetration( IPhysicsObject *pObj0, IPhysicsObje
 	// Pointers to the entity for each physics object
 	CBaseEntity *pEntity0 = static_cast<CBaseEntity *>(pGameData0);
 	CBaseEntity *pEntity1 = static_cast<CBaseEntity *>(pGameData1);
+	if(!pEntity0 || !pEntity1)
+		return false;
 
 	// this can get called as entities are being constructed on the other side of a game load or level transition
 	// Some entities may not be fully constructed, so don't call into their code until the level is running

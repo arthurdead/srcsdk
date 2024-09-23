@@ -83,7 +83,8 @@ void AddCoolLine( const Vector &v1, const Vector &v2, unsigned long iExtraFadeOf
 		CBeamSegDraw beamDraw;
 		beamDraw.Start( pRenderContext, 2, pBeamMaterial );
 		BeamSeg_t beamSeg;
-		beamSeg.SetColor( baseColor[0] * flAlpha / 255.0f, baseColor[1] * flAlpha / 255.0f, baseColor[2] * flAlpha / 255.0f, 1.0f );
+		beamSeg.m_vColor = Vector( baseColor[0] * flAlpha / 255.0f, baseColor[1] * flAlpha / 255.0f, baseColor[2] * flAlpha / 255.0f );
+		beamSeg.m_flAlpha = 1.0f;
 		beamSeg.m_flTexCoord = 0;
 		beamSeg.m_flWidth = 6;
 

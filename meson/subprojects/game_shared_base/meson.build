@@ -26,12 +26,10 @@ public_dir = join_paths(src_root_dir,'public')
 common_dir = join_paths(src_root_dir,'common')
 
 shared_src_dir = join_paths(src_root_dir,'game','shared')
-shared_navmesh_src_dir = join_paths(shared_src_dir,'navmesh')
 
 game_shared_base_dep = declare_dependency(
 	compile_args: [
-		'-DUSE_NAV_MESH',
-		'-DAI_USES_NAV_MESH'
+		
 	],
 	sources: files(
 		join_paths(shared_src_dir,'default','weapon_parse_default.cpp'),
@@ -55,7 +53,6 @@ game_shared_base_dep = declare_dependency(
 		join_paths(shared_src_dir,'beam_shared.cpp'),
 		join_paths(shared_src_dir,'collisionproperty.cpp'),
 		join_paths(shared_src_dir,'death_pose.cpp'),
-		join_paths(shared_src_dir,'debugoverlay_shared.cpp'),
 		join_paths(shared_src_dir,'decals.cpp'),
 		join_paths(shared_src_dir,'effect_dispatch_data.cpp'),
 		join_paths(shared_src_dir,'ehandle.cpp'),
@@ -125,7 +122,6 @@ game_shared_base_dep = declare_dependency(
 		join_paths(shared_src_dir,'recast','recast_prunetool.cpp'),
 		join_paths(shared_src_dir,'recast','recast_tilecache_helpers.cpp'),
 		join_paths(shared_src_dir,'recast','fastlz','fastlz.c'),
-		join_paths(shared_src_dir,'ai_hull.cpp'),
 		join_paths(shared_src_dir,'mapbase','GlobalStrings.cpp'),
 		join_paths(public_dir,'interval.cpp'),
 		join_paths(public_dir,'SoundParametersInternal.cpp'),
@@ -163,7 +159,6 @@ game_shared_base_dep = declare_dependency(
 	),
 	include_directories: include_directories(
 		shared_src_dir,
-		shared_navmesh_src_dir
 	),
 	dependencies: [
 		source_base.get_variable('source_slop_dep'),

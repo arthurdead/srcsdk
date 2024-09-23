@@ -16,9 +16,9 @@
 
 class C_BasePlayer;
 
-class C_Team : public C_BaseEntity
+class C_Team : public C_LogicalEntity
 {
-	DECLARE_CLASS( C_Team, C_BaseEntity );
+	DECLARE_CLASS( C_Team, C_LogicalEntity );
 public:
 	DECLARE_CLIENTCLASS();
 	DECLARE_PREDICTABLE();

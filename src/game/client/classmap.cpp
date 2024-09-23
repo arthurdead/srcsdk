@@ -58,6 +58,9 @@ IClassMap& GetClassMap( void )
 void CClassMap::Add( const char *mapname, const char *classname, int size, DISPATCHFUNCTION factory = 0 )
 {
 	const char *map = ClassnameToMapName( classname );
+
+	Assert( !map );
+
 	if ( map && !Q_strcasecmp( mapname, map ) )
 		return;
 

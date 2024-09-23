@@ -702,48 +702,6 @@ void CTriggerHurt::Spawn( void )
 		SetThink ( &CTriggerHurtShim::RadiationThinkShim );
 		SetNextThink( gpGlobals->curtime + random->RandomFloat(0.0, 0.5) );
 	}
-
-	if ( TheNavMesh )
-	{
-		SetContextThink( &CTriggerHurt::NavThink, gpGlobals->curtime, "NavContext" );
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Marks nav areas as damaging.
-//-----------------------------------------------------------------------------
-void CTriggerHurt::NavThink( void )
-{
-	const float deltaT = 5.0f;
-	SetContextThink( &CTriggerHurt::NavThink, gpGlobals->curtime + deltaT, "NavContext" );
-
-	if ( !TheNavMesh->IsLoaded() )
-		return;
-
-	if ( m_bDisabled )
-		return;
-
-	// mark overlapping nav areas as "damaging"
-	NavAreaCollector overlap;
-	Extent extent;
-	CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
-	extent.lo.z -= HumanHeight;
-
-	if ( m_bitsDamageInflict & DMG_BURN )
-	{
-		const float DangerBloat = HalfHumanWidth;
-		Vector dangerBloat( DangerBloat, DangerBloat, 0 );
-		extent.lo -= dangerBloat;
-		extent.hi += dangerBloat;
-	}
-
-	TheNavMesh->ForAllAreasOverlappingExtent( overlap, extent );
-
-	FOR_EACH_VEC( overlap.m_area, it )
-	{
-		CNavArea *area = overlap.m_area[ it ];
-		area->MarkAsDamaging( deltaT + 1.0f );
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -2398,7 +2356,7 @@ void CTriggerTeleport::Touch( CBaseEntity *pOther )
 	pentTarget = gEntList.FindEntityByName( pentTarget, m_target, NULL, pOther, pOther );
 	if (!pentTarget)
 	{
-	    Warning("Teleport trigger '%s' cannot find destination named '%s'!\n", STRING(this->GetEntityName()), m_target );
+	    Warning("Teleport trigger '%s' cannot find destination named '%s'!\n", STRING(this->GetEntityName()), STRING(m_target) );
 	   return;
 	}
 	

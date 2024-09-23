@@ -218,8 +218,6 @@ public:
 
 	bool KeyValue( const char *szKeyName, const char *szValue );
 
-	void NavThink( void );
-
 	DECLARE_MAPENTITY();
 
 	float	m_flOriginalDamage;	// Damage as specified by the level designer.

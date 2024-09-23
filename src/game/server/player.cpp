@@ -21,11 +21,6 @@
 #include "globalstate.h"
 #include "basecombatweapon.h"
 #include "ai_basenpc.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_network.h"
-#include "ai_node.h"
-#include "ai_networkmanager.h"
-#endif
 #include "ammodef.h"
 #include "mathlib/mathlib.h"
 #include "ndebugoverlay.h"
@@ -54,7 +49,6 @@
 #include "coordsize.h"
 #include "vphysics/player_controller.h"
 #include "hltvdirector.h"
-#include "nav_mesh.h"
 #include "env_zoom.h"
 #include "rumble_shared.h"
 #include "gamestats.h"
@@ -1548,8 +1542,6 @@ void CBasePlayer::Event_Killed( const CTakeDamageInfo &info )
 		m_hObserverTarget.Set( NULL );
 
 	m_flDeathTime = gpGlobals->curtime;
-
-	ClearLastKnownArea();
 
 	BaseClass::Event_Killed( newinfo );
 
@@ -3543,8 +3535,6 @@ void CBasePlayer::PreThink(void)
 
 	if ( m_lifeState >= LIFE_DYING )
 	{
-		// track where we are in the nav mesh even when dead
-		UpdateLastKnownArea();
 		return;
 	}
 
@@ -3568,10 +3558,6 @@ void CBasePlayer::PreThink(void)
 	{
 		m_Local.m_flFallVelocity = -GetAbsVelocity().z;
 	}
-
-	// track where we are in the nav mesh
-	UpdateLastKnownArea();
-
 
 	// StudioFrameAdvance( );//!!!HACKHACK!!! Can't be hit by traceline when not animating?
 }
@@ -4863,13 +4849,7 @@ void CBasePlayer::Spawn( void )
 
 	m_movementCollisionNormal = Vector( 0, 0, 1 );
 
-	// track where we are in the nav mesh
-	UpdateLastKnownArea();
-
 	BaseClass::Spawn();
-
-	// track where we are in the nav mesh
-	UpdateLastKnownArea();
 
 	m_weaponFiredTimer.Invalidate();
 
@@ -4901,7 +4881,7 @@ void CBasePlayer::Spawn( void )
 						if(!FindPassableSpace(this, up, 1, oldorigin)) {
 							if(!FindPassableSpace(this, up, -1, oldorigin)) {
 								if(!FindPassableSpace(this, forward, -1, oldorigin)) {
-									SetCollisionBounds(VEC_CROUCH_TRACE_MIN, VEC_CROUCH_TRACE_MAX);
+									UTIL_SetSize(this, VEC_DUCK_HULL_MIN_SCALED(this), VEC_DUCK_HULL_MAX_SCALED(this));
 									AddFlag(FL_DUCKING);
 									m_Local.m_bDucked = true;
 									m_Local.m_bDucking = false;
@@ -5645,7 +5625,7 @@ CBaseEntity *FindPickerEntity( CBasePlayer *pPlayer )
 	CBaseEntity *pEntity = FindEntityForward( pPlayer, true );
 
 	// If that fails just look for the nearest facing entity
-	if (!pEntity) 
+	if (!pEntity && pPlayer) 
 	{
 		Vector forward;
 		Vector origin;
@@ -5655,38 +5635,6 @@ CBaseEntity *FindPickerEntity( CBasePlayer *pPlayer )
 	}
 	return pEntity;
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: Finds the nearest node in front of the player
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-CAI_Node *FindPickerAINode( CBasePlayer *pPlayer, NodeType_e nNodeType )
-{
-	Vector forward;
-	Vector origin;
-
-	pPlayer->EyeVectors( &forward );
-	origin = pPlayer->EyePosition();	
-	return g_pAINetworkManager->GetEditOps()->FindAINodeNearestFacing( origin, forward,0.90, nNodeType);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Finds the nearest link in front of the player
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-CAI_Link *FindPickerAILink( CBasePlayer* pPlayer )
-{
-	Vector forward;
-	Vector origin;
-
-	pPlayer->EyeVectors( &forward );
-	origin = pPlayer->EyePosition();	
-	return g_pAINetworkManager->GetEditOps()->FindAILinkNearestFacing( origin, forward,0.90);
-}
-#endif
 
 /*
 ===============

@@ -31,7 +31,7 @@
 #define EXT_NAVFILE "recast"
 
 static const int NAVMESHSET_MAGIC = 'M'<<24 | 'S'<<16 | 'E'<<8 | 'T'; //'MSET';
-static const int NAVMESHSET_VERSION = 1;
+static const int NAVMESHSET_VERSION = 2;
 
 struct NavMgrHeader
 {
@@ -49,7 +49,6 @@ struct TileCacheSetHeader
 	int numTiles;
 	dtNavMeshParams meshParams;
 	dtTileCacheParams cacheParams;
-	int lenName;
 };
 
 struct TileCacheTileHeader
@@ -63,7 +62,7 @@ static char *RecastGetBspFilename( const char *navFilename )
 	static char bspFilename[256];
 
 #ifdef CLIENT_DLL
-	V_snprintf( bspFilename, sizeof( bspFilename ), FORMAT_BSPFILE, STRING( engine->GetLevelName() ) );
+	V_snprintf( bspFilename, sizeof( bspFilename ), FORMAT_BSPFILE, engine->GetLevelName() );
 #else
 	V_snprintf( bspFilename, sizeof( bspFilename ), FORMAT_BSPFILE, STRING( gpGlobals->mapname ) );
 #endif // CLIENT_DLL
@@ -97,24 +96,7 @@ bool CRecastMesh::Load( CUtlBuffer &fileBuffer, CMapMesh *pMapMesh )
 	m_cellHeight = header.cellHeight;
 	m_tileSize = header.tileSize;
 
-	if( header.lenName > 2048 )
-	{
-		Msg( "Mesh name too long. Invalid mesh file?\n" );
-		return false;
-	}
-
-	char *szName = (char *)stackalloc( sizeof( char ) * (header.lenName + 1) );
-	fileBuffer.Get( szName, header.lenName );
-	szName[header.lenName] = 0;
-
-	Hull_t hull = NAI_Hull::LookupId( szName );
-	if( hull == HULL_NONE )
-	{
-		Msg( "Mesh name %s does not correspond to any hull type\n", szName );
-		return false;
-	}
-
-	Init( hull );
+	Init();
 
 	DevMsg( 2, "Loading mesh %s with cell size %f, cell height %f, tile size %f\n", 
 		GetName(), m_cellSize, m_cellHeight, m_tileSize );
@@ -265,18 +247,44 @@ bool CRecastMgr::Load()
 		}
 	}
 
+	int numLoaded = 0;
+
 	// Read the meshes!
 	for( int i = 0; i < header.numMeshes; i++ )
 	{
-		CRecastMesh *pMesh = new CRecastMesh();
-		if( !pMesh->Load( fileBuffer ) )
-			return false;
+		int lenName = 0;
+		fileBuffer.Get(&lenName, sizeof(int));
 
-		m_Meshes.Insert( pMesh->GetHull(), pMesh );
+		if( lenName > 2048 )
+		{
+			Msg( "Mesh name too long. Invalid mesh file?\n" );
+			return false;
+		}
+
+		char *szName = (char *)stackalloc( sizeof( char ) * (lenName + 1) );
+		fileBuffer.Get( szName, lenName );
+		szName[lenName] = 0;
+
+		NavMeshType_t type = NAI_Hull::LookupId( szName );
+		if( type == RECAST_NAVMESH_INVALID )
+		{
+			Msg( "Mesh name %s does not correspond to any type\n", szName );
+			return false;
+		}
+
+		CRecastMesh *pMesh = new CRecastMesh( type );
+		if( !pMesh->Load( fileBuffer ) ) {
+			delete pMesh;
+			return false;
+		}
+
+		m_Meshes[type] = pMesh;
+
+		numLoaded++;
 	}
 	
 	m_bLoaded = true;
-	DevMsg( "CRecastMgr: Loaded %d nav meshes in %f seconds\n", m_Meshes.Count(), Plat_FloatTime() - fStartTime );
+	DevMsg( "CRecastMgr: Loaded %d nav meshes in %f seconds\n", numLoaded, Plat_FloatTime() - fStartTime );
 
 	return true;
 }
@@ -287,14 +295,15 @@ bool CRecastMesh::Save( CUtlBuffer &fileBuffer )
 	Msg( "Saving mesh %s with cell size %f, cell height %f, tile size %f\n", 
 		GetName(), m_cellSize, m_cellHeight, m_tileSize );
 
+	int nameLen = V_strlen( GetName() );
+	fileBuffer.Put( GetName(), nameLen );
+
 	// Store header.
 	TileCacheSetHeader header;
 	header.cellSize = m_cellSize;
 	header.cellHeight = m_cellHeight;
 	header.tileSize = m_tileSize;
 	header.numTiles = 0;
-	int nameLen = V_strlen( GetName() );
-	header.lenName = nameLen;
 
 	if(m_tileCache) {
 		for (int i = 0; i < m_tileCache->getTileCount(); ++i)
@@ -315,7 +324,6 @@ bool CRecastMesh::Save( CUtlBuffer &fileBuffer )
 	else
 		memset(&header.meshParams, 0, sizeof(dtNavMeshParams));
 	fileBuffer.Put( &header, sizeof( header ) );
-	fileBuffer.Put( GetName(), nameLen );
 
 	// Store tiles.
 	if(m_tileCache) {
@@ -369,10 +377,12 @@ bool CRecastMgr::Save()
 	DevMsg( "Size of bsp file '%s' is %u bytes.\n", bspFilename, bspSize );
 
 	CUtlVector< CRecastMesh * > meshesToSave;
-	for ( int i = m_Meshes.FirstInorder(); i != m_Meshes.InvalidIndex(); i = m_Meshes.NextInorder(i ) )
+	for ( int i = 0; i < RECAST_NAVMESH_NUM; i++ )
 	{
+		if(!m_Meshes[i])
+			continue;
 		// Mesh is not build, but could still be there from previous build when it was not disabled.
-		if( IsMeshBuildDisabled( m_Meshes[i]->GetHull() ) )
+		if( IsMeshBuildDisabled( m_Meshes[i]->GetType() ) )
 			continue;
 		meshesToSave.AddToTail( m_Meshes[i] );
 	}

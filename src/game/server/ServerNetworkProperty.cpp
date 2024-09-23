@@ -36,7 +36,7 @@ CServerNetworkProperty::~CServerNetworkProperty()
 	engine->CleanUpEntityClusterList( &m_PVSInfo );
 
 	// remove the attached edict if it exists
-	DetachEdict();
+	ReleaseEdict();
 }
 
 
@@ -68,7 +68,7 @@ void CServerNetworkProperty::AttachEdict( edict_t *pRequiredEdict )
 	m_pPev->SetEdict( GetBaseEntity(), true );
 }
 
-void CServerNetworkProperty::DetachEdict()
+void CServerNetworkProperty::ReleaseEdict()
 {
 	if ( m_pPev )
 	{
@@ -78,6 +78,18 @@ void CServerNetworkProperty::DetachEdict()
 	}
 }
 
+edict_t *CServerNetworkProperty::DetachEdict()
+{
+	if ( m_pPev )
+	{
+		m_pPev->SetEdict( NULL, false );
+		edict_t *pOld = m_pPev;
+		m_pPev = NULL;
+		return pOld;
+	}
+
+	return NULL;
+}
 
 //-----------------------------------------------------------------------------
 // Entity handles

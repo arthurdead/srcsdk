@@ -12,6 +12,64 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+static const char *g_DefaultLightstyles[] =
+{
+	// 0 normal
+	"m",
+	// 1 FLICKER (first variety)
+	"mmnmmommommnonmmonqnmmo",
+	// 2 SLOW STRONG PULSE
+	"abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba",
+	// 3 CANDLE (first variety)
+	"mmmmmaaaaammmmmaaaaaabcdefgabcdefg",
+	// 4 FAST STROBE
+	"mamamamamama",
+	// 5 GENTLE PULSE 1
+	"jklmnopqrstuvwxyzyxwvutsrqponmlkj",
+	// 6 FLICKER (second variety)
+	"nmonqnmomnmomomno",
+	// 7 CANDLE (second variety)
+	"mmmaaaabcdefgmmmmaaaammmaamm",
+	// 8 CANDLE (third variety)
+	"mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa",
+	// 9 SLOW STROBE (fourth variety)
+	"aaaaaaaazzzzzzzz",
+	// 10 FLUORESCENT FLICKER
+	"mmamammmmammamamaaamammma",
+	// 11 SLOW PULSE NOT FADE TO BLACK
+	"abcdefghijklmnopqrrqponmlkjihgfedcba",
+	// 12 UNDERWATER LIGHT MUTATION
+	// this light only distorts the lightmap - no contribution
+	// is made to the brightness of affected surfaces
+	"mmnnmmnnnmmnn",
+};
+
+const char *GetDefaultLightstyleString( int styleIndex )
+{
+	if ( styleIndex < ARRAYSIZE(g_DefaultLightstyles) )
+	{
+		return g_DefaultLightstyles[styleIndex];
+	}
+	return "m";
+}
+
+void SetupDefaultLightstyle()
+{
+	//
+	// Setup light animation tables. 'a' is total darkness, 'z' is maxbright.
+	//
+	COM_TimestampedLog( "LightStyles" );
+	for ( int i = 0; i < ARRAYSIZE(g_DefaultLightstyles); i++ )
+	{
+		engine->LightStyle( i, GetDefaultLightstyleString(i) );
+	}
+
+	// styles 32-62 are assigned by the light program for switchable lights
+
+	// 63 testing
+	engine->LightStyle(63, "a");
+}
+
 LINK_ENTITY_TO_CLASS( light, CLight );
 
 BEGIN_MAPENTITY( CLight )
@@ -28,8 +86,6 @@ BEGIN_MAPENTITY( CLight )
 	DEFINE_INPUTFUNC( FIELD_VOID,	"TurnOff", InputTurnOff ),
 
 END_MAPENTITY()
-
-
 
 //
 // Cache user-entity-field values until spawn is called.
@@ -227,25 +283,42 @@ LINK_ENTITY_TO_CLASS( light_spot, CLight );
 LINK_ENTITY_TO_CLASS( light_glspot, CLight );
 LINK_ENTITY_TO_CLASS( light_directional, CLight );
 
-#define EnvLightBase CBaseEntity
+#define EnvLightBase CLogicalEntity
 
 class CEnvLight : public EnvLightBase
 {
 public:
 	DECLARE_CLASS( CEnvLight, EnvLightBase );
+	DECLARE_NETWORKCLASS();
 
 	CEnvLight();
 	~CEnvLight();
 
 	bool	KeyValue( const char *szKeyName, const char *szValue ); 
-	void	Spawn( void );
+
+	virtual void Spawn();
+
+private:
+	CNetworkQAngle( m_angSunAngles );
+	CNetworkVector( m_vecLight );
+	CNetworkVector( m_vecAmbient );
+	CNetworkVar( bool, m_bCascadedShadowMappingEnabled );
+	bool m_bHasHDRLightSet;
+	bool m_bHasHDRAmbientSet;
 };
+
+IMPLEMENT_SERVERCLASS_ST_NOBASE( CEnvLight, DT_CEnvLight )
+	SendPropQAngles( SENDINFO( m_angSunAngles ) ),
+	SendPropVector( SENDINFO( m_vecLight ) ),
+	SendPropVector( SENDINFO( m_vecAmbient ) ),
+	SendPropBool( SENDINFO( m_bCascadedShadowMappingEnabled ) ),
+END_SEND_TABLE()
 
 CEnvLight *g_pCSMEnvLight = NULL;
 
 LINK_ENTITY_TO_CLASS( light_environment, CEnvLight );
 
-CEnvLight::CEnvLight()
+CEnvLight::CEnvLight() : m_bHasHDRLightSet( false ), m_bHasHDRAmbientSet( false )
 {
 	if(g_pCSMEnvLight == NULL)
 		g_pCSMEnvLight = this;
@@ -257,21 +330,6 @@ CEnvLight::~CEnvLight()
 		g_pCSMEnvLight = NULL;
 }
 
-bool CEnvLight::KeyValue( const char *szKeyName, const char *szValue )
-{
-	if (FStrEq(szKeyName, "_light"))
-	{
-		// nothing
-	}
-	else
-	{
-		return BaseClass::KeyValue( szKeyName, szValue );
-	}
-
-	return true;
-}
-
-
 void CEnvLight::Spawn( void )
 {
 	if(g_pCSMEnvLight && g_pCSMEnvLight != this) {
@@ -279,5 +337,86 @@ void CEnvLight::Spawn( void )
 		return;
 	}
 
+	SetName( MAKE_STRING( "light_environment" ) );
+
 	BaseClass::Spawn( );
+
+	m_bCascadedShadowMappingEnabled = HasSpawnFlags( 0x01 );
+}
+
+static Vector ConvertLightmapGammaToLinear( int *iColor4 )
+{
+	Vector vecColor;
+	for ( int i = 0; i < 3; ++i )
+	{
+		vecColor[i] = powf( iColor4[i] / 255.0f, 2.2f );
+	}
+	vecColor *= iColor4[3] / 255.0f;
+	return vecColor;
+}
+
+bool CEnvLight::KeyValue( const char *szKeyName, const char *szValue )
+{
+	if ( FStrEq( szKeyName, "pitch" ) )
+	{
+		m_angSunAngles.SetX( -atof( szValue ) );
+	}
+	else if ( FStrEq( szKeyName, "angles" ) )
+	{
+		Vector vecParsed;
+		UTIL_StringToVector( vecParsed.Base(), szValue );
+		m_angSunAngles.SetY( vecParsed.y );
+	}
+	else if ( FStrEq( szKeyName, "_light" ) || FStrEq( szKeyName, "_lightHDR" ) )
+	{
+		int iParsed[4];
+		UTIL_StringToIntArray( iParsed, 4, szValue );
+
+		if ( iParsed[0] <= 0 || iParsed[1] <= 0 || iParsed[2] <= 0 )
+			return true;
+
+		if ( FStrEq( szKeyName, "_lightHDR" ) )
+		{
+			// HDR overrides LDR
+			m_bHasHDRLightSet = true;
+		}
+		else if ( m_bHasHDRLightSet )
+		{
+			// If this is LDR and we got HDR already, bail out.
+			return true;
+		}
+
+		m_vecLight = ConvertLightmapGammaToLinear( iParsed );
+		Msg( "Parsed light_environment light: %i %i %i %i\n",
+			 iParsed[0], iParsed[1], iParsed[2], iParsed[3] );
+	}
+	else if ( FStrEq( szKeyName, "_ambient" ) || FStrEq( szKeyName, "_ambientHDR" ) )
+	{
+		int iParsed[4];
+		UTIL_StringToIntArray( iParsed, 4, szValue );
+
+		if ( iParsed[0] <= 0 || iParsed[1] <= 0 || iParsed[2] <= 0 )
+			return true;
+
+		if ( FStrEq( szKeyName, "_ambientHDR" ) )
+		{
+			// HDR overrides LDR
+			m_bHasHDRLightSet = true;
+		}
+		else if ( m_bHasHDRLightSet )
+		{
+			// If this is LDR and we got HDR already, bail out.
+			return true;
+		}
+
+		m_vecAmbient = ConvertLightmapGammaToLinear( iParsed );
+		Msg( "Parsed light_environment ambient: %i %i %i %i\n",
+			 iParsed[0], iParsed[1], iParsed[2], iParsed[3] );
+	}
+	else
+	{
+		return BaseClass::KeyValue( szKeyName, szValue );
+	}
+
+	return true;
 }

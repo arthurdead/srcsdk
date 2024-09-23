@@ -10,7 +10,6 @@
 #include "maprules.h"
 #include "player.h"
 #include "entitylist.h"
-#include "ai_hull.h"
 #include "entityoutput.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -532,7 +531,7 @@ void CGamePlayerZone::InputCountPlayersInZone( inputdata_t &inputdata )
 	if ( !CanFireForActivator( inputdata.pActivator ) )
 		return;
 
-	CBaseEntity *pPlayer = NULL;
+	CBasePlayer *pPlayer = NULL;
 
 	for ( int i = 1; i <= gpGlobals->maxClients; i++ )
 	{
@@ -540,16 +539,17 @@ void CGamePlayerZone::InputCountPlayersInZone( inputdata_t &inputdata )
 		if ( pPlayer )
 		{
 			trace_t		trace;
-			Hull_t		hullType;
 
-			hullType = HULL_HUMAN;
 			if ( pPlayer->GetFlags() & FL_DUCKING )
 			{
-				hullType = HULL_SMALL_CENTERED;
+				UTIL_TraceModel( pPlayer->GetAbsOrigin(), pPlayer->GetAbsOrigin(), VEC_DUCK_HULL_MIN_SCALED( pPlayer ), 
+					VEC_DUCK_HULL_MAX_SCALED( pPlayer ), this, COLLISION_GROUP_NONE, &trace );
 			}
-
-			UTIL_TraceModel( pPlayer->GetAbsOrigin(), pPlayer->GetAbsOrigin(), NAI_Hull::Mins(hullType), 
-				NAI_Hull::Maxs(hullType), this, COLLISION_GROUP_NONE, &trace );
+			else
+			{
+				UTIL_TraceModel( pPlayer->GetAbsOrigin(), pPlayer->GetAbsOrigin(), VEC_HULL_MIN_SCALED( pPlayer ), 
+					VEC_HULL_MAX_SCALED( pPlayer ), this, COLLISION_GROUP_NONE, &trace );
+			}
 
 			if ( trace.startsolid )
 			{

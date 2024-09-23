@@ -55,15 +55,15 @@ void FoundryHelpers_AddEntityHighlightEffect( CBaseEntity *pEnt )
 }
 
 
-CBasePlayer* CheckInFoundryMode()
+bool CheckInFoundryMode()
 {
 	if ( !serverfoundry )
 	{
 		Warning( "Not in Foundry mode.\n" );
-		return NULL;
+		return false;
 	}
 
-	return UTIL_GetListenServerHost();
+	return true;
 }
 
 
@@ -96,6 +96,9 @@ void GetCrosshairOrNamedEntities( const CCommand &args, CUtlVector<CBaseEntity*>
 
 CON_COMMAND( foundry_update_entity, "Updates the entity's position/angles when in edit mode" )
 {
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
 	if ( !CheckInFoundryMode() )
 		return;
 
@@ -111,7 +114,10 @@ CON_COMMAND( foundry_update_entity, "Updates the entity's position/angles when i
 
 CON_COMMAND( foundry_sync_hammer_view, "Move Hammer's 3D view to the same position as the engine's 3D view." )
 {
-	CBasePlayer *pPlayer = CheckInFoundryMode();
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
+	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
 		return;
 
@@ -122,6 +128,9 @@ CON_COMMAND( foundry_sync_hammer_view, "Move Hammer's 3D view to the same positi
 
 CON_COMMAND( foundry_engine_get_mouse_control, "Give the engine control of the mouse." )
 {
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
 	if ( !CheckInFoundryMode() )
 		return;
 
@@ -131,6 +140,9 @@ CON_COMMAND( foundry_engine_get_mouse_control, "Give the engine control of the m
 
 CON_COMMAND( foundry_engine_release_mouse_control, "Give the control of the mouse back to Hammer." )
 {
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
 	if ( !CheckInFoundryMode() )
 		return;
 
@@ -139,6 +151,9 @@ CON_COMMAND( foundry_engine_release_mouse_control, "Give the control of the mous
 
 CON_COMMAND( foundry_select_entity, "Select the entity under the crosshair or select entities with the specified name." )
 {
+	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
 	CUtlVector<CBaseEntity*> entities;
 	GetCrosshairOrNamedEntities( args, entities );
 
@@ -151,7 +166,7 @@ CON_COMMAND( foundry_select_entity, "Select the entity under the crosshair or se
 
 	if ( hammerIDs.Count() == 0 )
 	{
-		CBasePlayer *pPlayer = CheckInFoundryMode();
+		CBasePlayer *pPlayer = UTIL_GetCommandClient();
 		if ( !pPlayer )
 			return;
 

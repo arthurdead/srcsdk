@@ -17,9 +17,9 @@
 #define PLAYER_UNCONNECTED_NAME	"unconnected"
 #define PLAYER_ERROR_NAME		"ERRORNAME"
 
-class C_PlayerResource : public C_BaseEntity, public IGameResources
+class C_PlayerResource : public C_LogicalEntity, public IGameResources
 {
-	DECLARE_CLASS( C_PlayerResource, C_BaseEntity );
+	DECLARE_CLASS( C_PlayerResource, C_LogicalEntity );
 public:
 	DECLARE_CLIENTCLASS();
 	DECLARE_PREDICTABLE();

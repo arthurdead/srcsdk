@@ -256,6 +256,8 @@ public:
 	// Returns the ent index
 	int		EntIndex() const;
 
+	bool	IsWorld() const;
+
 private:
 	// SoundPatches take volumes between 0 & 1, and use that to multiply the sounds.txt specified volume.
 	// This function is an internal method of accessing the real volume passed into the engine (i.e. post multiply)
@@ -452,6 +454,12 @@ inline int CSoundPatch::EntIndex() const
 	return m_hEnt.Get() ? m_hEnt->entindex() : -1;
 }
 
+inline bool CSoundPatch::IsWorld() const
+{
+	Assert( !m_hEnt.IsValid() || m_hEnt.Get() );
+	return m_hEnt.Get() ? m_hEnt->IsWorld() : false;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: SoundPatches take volumes between 0 & 1, and use that to multiply the sounds.txt specified volume.
 // This function is an internal method of accessing the real volume passed into the engine (i.e. post multiply)
@@ -549,7 +557,7 @@ bool CSoundPatch::Update( float time, float deltaTime )
 		ep.m_nPitch = (int)m_pitch.Value();
 
 		// only pass the position if it's coming from the world
-		if( EntIndex() == 0 )
+		if( IsWorld() )
 			ep.m_pOrigin = &m_soundOrigin;
 
 		CBaseEntity::EmitSound( m_Filter, EntIndex(), ep );
@@ -583,7 +591,7 @@ void CSoundPatch::StartSound( float flStartTime )
 		ep.m_flVolume = GetVolumeForEngine();
 		ep.m_SoundLevel = m_soundlevel;
 		// only pass the position if it's coming from the world
-		if( EntIndex() == 0 )
+		if( IsWorld() )
 			ep.m_pOrigin = &m_soundOrigin;
 
 		if ( V_stristr( STRING(m_iszSoundName), "music" ) )
@@ -642,7 +650,7 @@ void CSoundPatch::ResumeSound( void )
 			ep.m_nPitch = (int)m_pitch.Value();
 
 			// only pass the position if it's coming from the world
-			if( EntIndex() == 0 )
+			if( IsWorld() )
 				ep.m_pOrigin = &m_soundOrigin;
 
 			CBaseEntity::EmitSound( m_Filter, EntIndex(), ep );
@@ -678,7 +686,7 @@ void CSoundPatch::AddPlayerPost( CBasePlayer *pPlayer )
 		ep.m_nPitch = (int)m_pitch.Value();
 
 		// only pass the position if it's coming from the world
-		if( EntIndex() == 0 )
+		if( IsWorld() )
 			ep.m_pOrigin = &m_soundOrigin;
 
 		CBaseEntity::EmitSound( filter, EntIndex(), ep );

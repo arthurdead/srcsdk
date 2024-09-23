@@ -20,7 +20,8 @@ public:
 
 	void Spawn() override;
 
-	DEFINE_CUSTOM_AI;
+private:
+	void SuspicionThink();
 
 protected:
 	CNetworkVarEmbedded(CSuspicioner, m_Suspicioner)

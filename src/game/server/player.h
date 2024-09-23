@@ -88,7 +88,6 @@ class IPhysicsPlayerController;
 class IServerVehicle;
 class CUserCmd;
 class CFuncLadder;
-class CNavArea;
 class CHintSystem;
 class CAI_Expresser;
 
@@ -410,6 +409,8 @@ public:
 	virtual const Vector	GetPlayerMaxs( void ) const; // uses local player
 
 	virtual void			UpdateCollisionBounds( void );
+
+	float		StepHeight() const			{ return m_Local.m_flStepSize; }
 
 	virtual void			NoClipStateChanged( void ) { };
 

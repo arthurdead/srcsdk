@@ -13,8 +13,8 @@ AI_BEHAVIOR_METHOD_0( bool, IsCrouching );
 AI_BEHAVIOR_METHOD_1( bool, IsValidEnemy, CBaseEntity * );
 AI_BEHAVIOR_METHOD_0( CBaseEntity *, BestEnemy );
 AI_BEHAVIOR_METHOD_2( bool,	IsCoverPosition, const Vector &, const Vector & );
-AI_BEHAVIOR_METHOD_2( bool, IsValidCover, const Vector &, CNavArea const * );
-AI_BEHAVIOR_METHOD_2( bool, IsValidShootPosition, const Vector &, CNavArea * );
+AI_BEHAVIOR_METHOD_1( bool, IsValidCover, const Vector & );
+AI_BEHAVIOR_METHOD_1( bool, IsValidShootPosition, const Vector & );
 AI_BEHAVIOR_METHOD_3( bool, WeaponLOSCondition, const Vector &, const Vector &, bool );
 AI_BEHAVIOR_METHOD_0( float, GetMaxTacticalLateralMovement );
 AI_BEHAVIOR_METHOD_1( bool, ShouldIgnoreSound, CSound * );
@@ -35,7 +35,6 @@ AI_BEHAVIOR_METHOD_3( bool, OnCalcBaseMove, AILocalMoveGoal_t *, float, AIMoveRe
 AI_BEHAVIOR_METHOD_1V( ModifyOrAppendCriteria, AI_CriteriaSet& );
 AI_BEHAVIOR_METHOD_3V( Teleport, const Vector *, const QAngle *, const Vector * );
 AI_BEHAVIOR_METHOD_1V( HandleAnimEvent, animevent_t * );
-AI_BEHAVIOR_METHOD_1( bool, FValidateArea, CNavArea * );
 AI_BEHAVIOR_METHOD_0( bool, ShouldAlwaysThink );
 AI_BEHAVIOR_METHOD_0( bool, IsCurTaskContinuousMove );
 AI_BEHAVIOR_METHOD_0V( AimGun );

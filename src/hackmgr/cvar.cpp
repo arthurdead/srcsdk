@@ -60,15 +60,36 @@ if(!pCvar || status != IFACE_OK) {
 	return;
 }
 
-ConCommand *pFindCmd = pCvar->FindCommand("find");
-if(!pFindCmd) {
-	return;
+ConVar *r_hunkalloclightmaps = pCvar->FindVar("r_hunkalloclightmaps");
+if(r_hunkalloclightmaps) {
+	r_hunkalloclightmaps->SetValue(false);
 }
 
-/*
-pFindCmd->m_fnCommandCallback = FindCmdCB;
-pFindCmd->m_bUsingNewCommandCallback = true;
-pFindCmd->m_bUsingCommandCallbackInterface = false;
-*/
+ConVar *developer = pCvar->FindVar("developer");
+if(developer) {
+#ifdef _DEBUG
+	developer->SetValue(4);
+#else
+	developer->SetValue(0);
+#endif
+}
+
+ConVar *sv_cheats = pCvar->FindVar("sv_cheats");
+if(sv_cheats) {
+#ifdef _DEBUG
+	sv_cheats->SetValue(true);
+#else
+	sv_cheats->SetValue(false);
+#endif
+}
+
+ConCommand *pFindCmd = pCvar->FindCommand("find");
+if(pFindCmd) {
+	/*
+	pFindCmd->m_fnCommandCallback = FindCmdCB;
+	pFindCmd->m_bUsingNewCommandCallback = true;
+	pFindCmd->m_bUsingCommandCallbackInterface = false;
+	*/
+}
 
 HACKMGR_EXECUTE_ON_LOAD_END

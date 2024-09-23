@@ -827,7 +827,7 @@ CBaseEntity	*UTIL_EntityByIndex( int entityIndex )
 {
 	CBaseEntity *entity = NULL;
 
-	if ( entityIndex > 0 )
+	if ( entityIndex != -1 )
 	{
 		edict_t *edict = INDEXENT( entityIndex );
 		if ( edict && !edict->IsFree() )
@@ -846,7 +846,7 @@ int ENTINDEX( CBaseEntity *pEnt )
 	if ( pEnt )
 		return pEnt->entindex();
 	else
-		return 0;
+		return -1;
 }
 
 //-----------------------------------------------------------------------------

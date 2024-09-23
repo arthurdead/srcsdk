@@ -17,7 +17,6 @@
 #include "ispatialpartition.h"
 #include "collisionutils.h"
 #include "tier0/vprof.h"
-#include "nav_mesh.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -176,7 +175,6 @@ protected:
 	float	m_flDamageTime;
 	float	m_lastDamage;
 	float	m_flFireSize;	// size of the fire in world units
-	float	m_flLastNavUpdateTime;	// last time we told the nav mesh about ourselves
 
 	float	m_flHeatLevel;	// Used as a "health" for the fire.  > 0 means the fire is burning
 	float	m_flHeatAbsorb;	// This much heat must be "absorbed" before it gets transferred to the flame size
@@ -854,7 +852,6 @@ void CFire::Start()
 	SpawnEffect( (fireType_e)m_nFireType, FIRE_SCALE_FROM_SIZE(m_flFireSize) );
 	m_OnIgnited.FireOutput( this, this );
 	SetThink( &CFire::BurnThink );
-	m_flLastNavUpdateTime = 0.0f;
 	m_flDamageTime = 0;
 	// think right now
 	BurnThink();
@@ -1056,34 +1053,6 @@ void CFire::BurnThink( void )
 	SetNextThink( gpGlobals->curtime + FIRE_THINK_INTERVAL );
 
 	Update( FIRE_THINK_INTERVAL );
-
-	// only need to update the nav mesh infrequently
-	const float NavUpdateDelta = 5.0f;
-	if ( gpGlobals->curtime > m_flLastNavUpdateTime + NavUpdateDelta )
-	{
-		m_flLastNavUpdateTime = gpGlobals->curtime;
-
-		// mark overlapping nav areas as "damaging"
-		NavAreaCollector overlap;
-		Extent extent;
-		CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
-		extent.lo.z -= HumanHeight;
-
-		// bloat extents enough to ensure any non-damaging area is actually safe
-		// bloat in Z as well to catch nav areas that may be slightly above/below ground
-		const float DangerBloat = 32.0f;
-		Vector dangerBloat( DangerBloat, DangerBloat, DangerBloat );
-		extent.lo -= dangerBloat;
-		extent.hi += dangerBloat;
-
-		TheNavMesh->ForAllAreasOverlappingExtent( overlap, extent );
-
-		FOR_EACH_VEC( overlap.m_area, it )
-		{
-			CNavArea *area = overlap.m_area[ it ];
-			area->MarkAsDamaging( NavUpdateDelta + 1.0f );
-		}
-	}
 }
 
 void CFire::GoOutThink()

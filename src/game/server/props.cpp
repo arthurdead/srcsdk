@@ -43,6 +43,7 @@
 #include "tier0/icommandline.h"
 #include "vphysics/friction.h"
 #include "collisionutils.h"
+#include "recast/recast_mgr.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -296,6 +297,16 @@ void CBaseProp::Activate( void )
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseProp::UpdateOnRemove()
+{
+	BaseClass::UpdateOnRemove();
+
+	RecastMgr().RemoveEntObstacles( this );
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Handles keyvalues from the BSP. Called before spawning.
 //-----------------------------------------------------------------------------
 bool CBaseProp::KeyValue( const char *szKeyName, const char *szValue )
@@ -372,6 +383,49 @@ int CBaseProp::ParsePropData( void )
 	int iResult = g_PropDataSystem.ParsePropFromKV( this, dynamic_cast<IBreakableWithPropData *>(this), pkvPropData, modelKeyValues );
 	modelKeyValues->deleteThis();
 	return iResult;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBaseProp::UpdateNavObstacle( bool bForce )
+{
+	if( !m_bCanBecomeObstacle || !IsSolid() || HasSpawnFlags( SF_PHYSPROP_DEBRIS ) )
+		return;
+
+	if( !RecastMgr().HasMeshes() )
+		return;
+
+	IPhysicsObject *pPhysObject = VPhysicsGetObject();
+	if( !pPhysObject )
+		return;
+
+	if( m_fNextCanUpdateObstacle > gpGlobals->curtime )
+		return;
+
+	if( !bForce && m_vNavObstaclePos != vec3_origin && m_vNavObstaclePos.DistToSqr( GetAbsOrigin() ) < 32.0f*32.0f )
+		return;
+
+	RecastMgr().RemoveEntObstacles( this );
+
+	const CPhysCollide *pCollide = pPhysObject->GetCollide();
+	Vector mins, maxs;
+	physcollision->CollideGetAABB( &mins, &maxs, pCollide, vec3_origin, vec3_angle );
+
+	//NDebugOverlay::BoxAngles( GetAbsOrigin(), mins, maxs, GetAbsAngles(), 255, 0, 255, 200, 60.0f );
+		
+	/*Msg("Adding obstacle: %f %f %f, %f %f %f (height: %f)\n", 
+		mins.x, mins.y, mins.z, 
+		maxs.x, maxs.y, maxs.z,
+		maxs.z - mins.z );*/
+	mins.z -= 16.0f; // Bloat it a bit, otherwise it may not make the cut for some small props
+	if( !RecastMgr().AddEntBoxObstacle( this, mins, maxs, maxs.z - mins.z ) )
+	{
+		Warning("UpdateNavObstacle: could not add prop obstacle to nav mesh\n");
+	}
+
+	m_vNavObstaclePos = GetAbsOrigin();
+	m_fNextCanUpdateObstacle = gpGlobals->curtime + 1.5f;
 }
 
 //-----------------------------------------------------------------------------
@@ -1018,7 +1072,7 @@ void CBreakableProp::DisableAutoFade()
 	m_flDefaultFadeScale = 0;
 }
 
-	
+
 //-----------------------------------------------------------------------------
 // Copy fade from another breakable.
 //-----------------------------------------------------------------------------
@@ -2984,9 +3038,6 @@ CPhysicsProp::CPhysicsProp( void ) :
 
 CPhysicsProp::~CPhysicsProp()
 {
-	if( TheNavMesh )
-		TheNavMesh->UnregisterAvoidanceObstacle( this );
-
 	if (HasSpawnFlags(SF_PHYSPROP_IS_GIB))
 	{
 		g_ActiveGibCount--;
@@ -3012,7 +3063,7 @@ void CPhysicsProp::Spawn( )
 	// Condense classname's to one, except for "prop_physics_override"
 	if ( FClassnameIs( this, "physics_prop" ) || FClassnameIs( this, "prop_physics_multiplayer" ) )
 	{
-		m_iClassname = gm_isz_class_PropPhysics;
+		SetClassname( gm_isz_class_PropPhysics );
 	}
 
 	BaseClass::Spawn();
@@ -3025,7 +3076,7 @@ void CPhysicsProp::Spawn( )
 	// Now condense all classnames to one
 	if ( EntIsClass( this, gm_isz_class_PropPhysicsOverride ) )
 	{
-		m_iClassname = gm_isz_class_PropPhysics;
+		SetClassname( gm_isz_class_PropPhysics );
 	}
 
 	if ( HasSpawnFlags( SF_PHYSPROP_DEBRIS ) || HasInteraction( PROPINTER_PHYSGUN_CREATE_FLARE ) )
@@ -3135,12 +3186,6 @@ void CPhysicsProp::Spawn( )
 			m_usingCustomCollisionBounds = true;
 		}
 	}
-
-	if ( IsPotentiallyAbleToObstructNavAreas() )
-	{
-		if( TheNavMesh )
-			TheNavMesh->RegisterAvoidanceObstacle( this );
-	}
 }
 
 void CPhysicsProp::ComputeWorldSpaceSurroundingBox( Vector *mins, Vector *maxs )
@@ -3170,6 +3215,16 @@ void CPhysicsProp::Precache( void )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CPhysicsProp::Activate()
+{
+	BaseClass::Activate();
+
+	m_bCanBecomeObstacle = true;
+	UpdateNavObstacle();
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -3610,104 +3665,8 @@ void CPhysicsProp::VPhysicsUpdate( IPhysicsObject *pPhysics )
 			SetCollisionGroup( COLLISION_GROUP_NONE );
 		}
 	}
-}
 
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-bool CPhysicsProp::IsPotentiallyAbleToObstructNavAreas( void ) const
-{
-	if ( !IsSolid() )
-		return false;
-
-	if ( IsSolidFlagSet( FSOLID_NOT_SOLID ) )
-		return false;
-
-	const float MinObstructingMass = 100.0f;
-	if ( GetMass() <= MinObstructingMass )
-		return false;
-
-	Extent extent;
-	CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
-	return (extent.hi - extent.lo).IsLengthGreaterThan( StepHeight );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-float CPhysicsProp::GetNavObstructionHeight( void ) const
-{
-	Extent extent;
-	CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
-	return extent.hi.z - extent.lo.z;
-}
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-bool CPhysicsProp::CanObstructNavAreas( void ) const
-{
-	if (m_bAwake )
-		return false;
-
-	const float MinObstructingMass = 100.0f;
-	if ( GetMass() <= MinObstructingMass )
-		return false;
-
-	if ( !IsSolid() )
-		return false;
-
-	if ( IsSolidFlagSet( FSOLID_NOT_SOLID ) )
-		return false;
-
-	Extent extent;
-	CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
-	float height = extent.hi.z - extent.lo.z;
-
-	if ( height < StepHeight )
-		return false;
-
-	if ( GetHealth() < 300 && m_takedamage == DAMAGE_YES )
-		return false;
-
-	return true;
-}
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-void CPhysicsProp::OnNavMeshLoaded( void )
-{
-#ifdef USE_NAV_MESH
-	if ( !m_bAwake )	// tank walls have a different behavior
-	{
-		SetContextThink( &CPhysicsProp::NavThink, gpGlobals->curtime, "NavContext" );
-	}
-#endif
-}
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-void CPhysicsProp::NavThink( void )
-{
-#ifdef USE_NAV_MESH
-	if ( !CanObstructNavAreas() )
-		return;
-
-	if( !TheNavMesh )
-		return;
-
-	Extent extent;
-	CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
-	extent.lo.z -= HumanHeight;
-	NavAreaCollector overlap;
-	TheNavMesh->ForAllAreasOverlappingExtent( overlap, extent );
-
-	float obstructionHeight = GetNavObstructionHeight();
-	FOR_EACH_VEC( overlap.m_area, it )
-	{
-		CNavArea *area = overlap.m_area[ it ];
-		area->MarkObstacleToAvoid( obstructionHeight );
-	}
-#endif
+	UpdateNavObstacle();
 }
 
 //-----------------------------------------------------------------------------
@@ -4289,20 +4248,6 @@ bool PropBreakableCapEdictsOnCreateAll(int modelindex, IPhysicsObject *pPhysics,
 //=============================================================================================================
 // BASE PROP DOOR
 //=============================================================================================================
-//
-// Private activities.
-//
-static int ACT_DOOR_OPEN = 0;
-static int ACT_DOOR_LOCKED = 0;
-
-//
-// Anim events.
-//
-enum
-{
-	AE_DOOR_OPEN = 1,	// The door should start opening.
-};
-
 
 void PlayLockSounds(CBaseEntity *pEdict, locksound_t *pls, int flocked, int fbutton);
 
@@ -4475,25 +4420,7 @@ int	CBasePropDoor::ObjectCaps()
 void CBasePropDoor::Precache(void)
 {
 	BaseClass::Precache();
-
-	RegisterPrivateActivities();
 }
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CBasePropDoor::RegisterPrivateActivities(void)
-{
-	static bool bRegistered = false;
-
-	if (bRegistered)
-		return;
-
-	REGISTER_PRIVATE_ACTIVITY( ACT_DOOR_OPEN );
-	REGISTER_PRIVATE_ACTIVITY( ACT_DOOR_LOCKED );
-}
-
 
 //-----------------------------------------------------------------------------
 // Purpose: 

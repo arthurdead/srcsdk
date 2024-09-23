@@ -10,41 +10,33 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-// Number of characters worth of debug to use per history category
-#define DEBUG_HISTORY_VERSION			6
-#define DEBUG_HISTORY_FIRST_VERSIONED	5
-#define MAX_DEBUG_HISTORY_LINE_LENGTH	256
-#define MAX_DEBUG_HISTORY_LENGTH		(1000 * MAX_DEBUG_HISTORY_LINE_LENGTH)
-
-//-----------------------------------------------------------------------------
-// Purpose: Stores debug history in savegame files for debugging reference
-//-----------------------------------------------------------------------------
-class CDebugHistory : public CBaseEntity 
-{
-	DECLARE_CLASS( CDebugHistory, CBaseEntity );
-public:
-
-	void	Spawn();
-	void	AddDebugHistoryLine( int iCategory, const char *szLine );
-	void	ClearHistories( void );
-	void	DumpDebugHistory( int iCategory );
-
-private:
-	char m_DebugLines[MAX_HISTORY_CATEGORIES][MAX_DEBUG_HISTORY_LENGTH];
-	char *m_DebugLineEnd[MAX_HISTORY_CATEGORIES];
-};
-
 LINK_ENTITY_TO_CLASS( env_debughistory, CDebugHistory );
 
 // The handle to the debug history singleton. Created on first access via GetDebugHistory.
-static CHandle< CDebugHistory >	s_DebugHistory;
+CHandle< CDebugHistory >	s_DebugHistory;
 
+CDebugHistory::CDebugHistory()
+{
+	if(!s_DebugHistory)
+		s_DebugHistory = this;
+}
+
+CDebugHistory::~CDebugHistory()
+{
+	if(s_DebugHistory == this)
+		s_DebugHistory = NULL;
+}
 
 //-----------------------------------------------------------------------------
 // Spawn
 //-----------------------------------------------------------------------------
 void CDebugHistory::Spawn()
 {
+	if(s_DebugHistory && s_DebugHistory != this) {
+		UTIL_Remove(this);
+		return;
+	}
+
 	BaseClass::Spawn();
 
 #ifdef DISABLE_DEBUG_HISTORY
@@ -199,23 +191,6 @@ CDebugHistory *GetDebugHistory()
 #ifdef DISABLE_DEBUG_HISTORY
 	return NULL;
 #else
-	if ( s_DebugHistory == NULL )
-	{
-		CBaseEntity *pEnt = gEntList.FindEntityByClassname( NULL, "env_debughistory" );
-		if ( pEnt )
-		{
-			s_DebugHistory = dynamic_cast<CDebugHistory*>(pEnt);
-		}
-		else
-		{
-			s_DebugHistory = ( CDebugHistory * )CreateEntityByName( "env_debughistory" );
-			if ( s_DebugHistory )
-			{
-				s_DebugHistory->Spawn();
-			}
-		}
-	}
-
 	Assert( s_DebugHistory );
 	return s_DebugHistory;
 #endif

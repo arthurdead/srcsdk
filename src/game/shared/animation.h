@@ -12,6 +12,7 @@
 
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
+#include "ai_activity.h"
 
 #define ACTIVITY_NOT_AVAILABLE		-1
 
@@ -20,13 +21,13 @@ struct studiohdr_t;
 class CStudioHdr;
 struct mstudioseqdesc_t;
 
-int ExtractBbox( CStudioHdr *pstudiohdr, int sequence, Vector& mins, Vector& maxs );
+bool ExtractBbox( CStudioHdr *pstudiohdr, int sequence, Vector& mins, Vector& maxs );
 
 void IndexModelSequences( CStudioHdr *pstudiohdr );
 void ResetActivityIndexes( CStudioHdr *pstudiohdr );
 void VerifySequenceIndex( CStudioHdr *pstudiohdr );
-int SelectWeightedSequence( CStudioHdr *pstudiohdr, int activity, int curSequence = -1 );
-int SelectHeaviestSequence( CStudioHdr *pstudiohdr, int activity );
+int SelectWeightedSequence( CStudioHdr *pstudiohdr, Activity activity, int curSequence = -1 );
+int SelectHeaviestSequence( CStudioHdr *pstudiohdr, Activity activity );
 void SetEventIndexForSequence( mstudioseqdesc_t &seqdesc );
 void BuildAllAnimationEventIndexes( CStudioHdr *pstudiohdr );
 void ResetEventIndexes( CStudioHdr *pstudiohdr );
@@ -34,7 +35,7 @@ float GetSequenceLinearMotionAndDuration( CStudioHdr *pstudiohdr, int iSequence,
 
 void GetEyePosition( CStudioHdr *pstudiohdr, Vector &vecEyePosition );
 
-int LookupActivity( CStudioHdr *pstudiohdr, const char *label );
+Activity LookupActivity( CStudioHdr *pstudiohdr, const char *label );
 int LookupSequence( CStudioHdr *pstudiohdr, const char *label );
 
 #define NOMOTION 99999
@@ -61,7 +62,7 @@ int GetNumBodyGroups( CStudioHdr *pstudiohdr );
 
 const char *GetBodygroupPartName( CStudioHdr *pstudiohdr, int iGroup, int iPart );
 
-int GetSequenceActivity( CStudioHdr *pstudiohdr, int sequence, int *pweight = NULL );
+Activity GetSequenceActivity( CStudioHdr *pstudiohdr, int sequence, int *pweight = NULL );
 
 void GetAttachmentLocalSpace( CStudioHdr *pstudiohdr, int attachIndex, matrix3x4_t &pLocalToWorld );
 

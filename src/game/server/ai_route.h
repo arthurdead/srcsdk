@@ -11,12 +11,6 @@
 
 #include "ai_basenpc.h"
 #include "mathlib/vector.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_network.h"
-#include "ai_node.h"
-#else
-#include "nav_area.h"
-#endif
 #include "ai_waypoint.h"
 
 struct AI_Waypoint_t;
@@ -101,17 +95,13 @@ public:
 	// Target of this path
 	//---------------------------------
 	void			SetTarget(CBaseEntity * pTarget )	{ m_target = pTarget;				}
-	void			ClearTarget()						{ m_target = NULL; m_vecTargetOffset = vec3_origin;	}
+	void			ClearTarget()						{ m_target.Term(); m_vecTargetOffset = vec3_origin;	}
 	void			SetTargetOffset( const Vector &vecOffset)	{ m_vecTargetOffset = vecOffset;	}
 	CBaseEntity *	GetTarget()							{ return m_target.Get();					}
 
 	void			SetGoalType(GoalType_t goalType);				// Set the goal type
 	void			SetGoalPosition(const Vector &goalPos);			// Set the goal position
-#ifndef AI_USES_NAV_MESH
-	void			SetLastNodeAsGoal(bool bReset = false);			// Sets last node as goal and goal position
-#else
-	void			SetLastAreaAsGoal(bool bReset = false);
-#endif
+	void			SetLastWaypointAsGoal(bool bReset = false);
 	void			ResetGoalPosition(const Vector &goalPos);		// Reset the goal position
 
 	// Returns the *base* goal position (without the offset applied) 
@@ -136,20 +126,7 @@ public:
 
 	//---------------------------------
 
-#ifndef AI_USES_NAV_MESH
-	int GetLastNodeReached() { return m_iLastNodeReached; }
-#else
-	CNavArea * GetLastAreaReached() { return m_pLastAreaReached; }
-#endif
-	void ClearWaypoints()
-	{ 
-		m_Waypoints.RemoveAll();
-	#ifndef AI_USES_NAV_MESH
-		m_iLastNodeReached = NO_NODE;
-	#else
-		m_pLastAreaReached = NULL;
-	#endif
-	}
+	void ClearWaypoints() { m_Waypoints.RemoveAll(); }
 
 private:
 
@@ -170,13 +147,6 @@ private:
 	//---------------------------------
 	Activity	m_arrivalActivity;
 	int			m_arrivalSequence;
-
-	//---------------------------------
-#ifndef AI_USES_NAV_MESH
-	int			m_iLastNodeReached;			// What was the last node that I reached
-#else
-	CNavArea *	m_pLastAreaReached;			// What was the last area that I reached
-#endif
 
 	bool		m_bGoalPosSet;				// Was goal position set (used to check for errors)
 	Vector		m_goalPos;					// Our ultimate goal position

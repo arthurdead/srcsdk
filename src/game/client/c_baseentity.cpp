@@ -626,6 +626,7 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropInt( RECVINFO( m_cellZ ), 0, C_BaseEntity::RecvProxy_CellZ ),
 
 	RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ), 0, C_BaseEntity::RecvProxy_CellOrigin ),
+
 #if PREDICTION_ERROR_CHECK_LEVEL > 1 
 	RecvPropVector( RECVINFO_NAME( m_angNetworkAngles, m_angRotation ) ),
 #else
@@ -1579,8 +1580,6 @@ bool C_BaseEntity::PostConstructor( const char *szClassname )
 		SetClassname(szClassname);
 	}
 
-	Assert( m_iClassname != NULL_STRING && STRING(m_iClassname) != NULL );
-
 	if(IsEFlagSet( EFL_NOT_NETWORKED )) {
 		if(!InitializeAsClientEntity()) {
 			return false;
@@ -1590,6 +1589,63 @@ bool C_BaseEntity::PostConstructor( const char *szClassname )
 	CheckHasGamePhysicsSimulation();
 
 	return true;
+}
+
+C_ClientOnlyEntity::C_ClientOnlyEntity()
+ : C_BaseEntity()
+{
+	AddEFlags( EFL_NOT_NETWORKED );
+}
+
+// Landmark class
+void C_PointEntity::Spawn( void )
+{
+	SetSolid( SOLID_NONE );
+//	UTIL_SetSize(this, vec3_origin, vec3_origin);
+}
+
+bool C_PointEntity::KeyValue( const char *szKeyName, const char *szValue ) 
+{
+	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
+	{
+		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
+		return true;
+	}
+
+	return BaseClass::KeyValue( szKeyName, szValue );
+}						 
+
+bool C_LogicalEntity::KeyValue( const char *szKeyName, const char *szValue ) 
+{
+	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
+	{
+		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
+		return true;
+	}
+
+	return BaseClass::KeyValue( szKeyName, szValue );
+}
+
+bool C_ClientOnlyPointEntity::KeyValue( const char *szKeyName, const char *szValue ) 
+{
+	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
+	{
+		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
+		return true;
+	}
+
+	return BaseClass::KeyValue( szKeyName, szValue );
+}
+
+bool C_ClientOnlyLogicalEntity::KeyValue( const char *szKeyName, const char *szValue ) 
+{
+	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
+	{
+		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
+		return true;
+	}
+
+	return BaseClass::KeyValue( szKeyName, szValue );
 }
 
 void C_BaseEntity::TrackAngRotation( bool bTrack )
@@ -1782,6 +1838,39 @@ void C_BaseEntity::GetVectors(Vector* pForward, Vector* pRight, Vector* pUp) con
 	{
 		MatrixGetColumn( entityToWorld, 2, *pUp ); 
 	}
+}
+
+//------------------------------------------------------------------------------
+// Purpose : Returns velcocity of base entity.  If physically simulated gets
+//			 velocity from physics object
+// Input   :
+// Output  :
+//------------------------------------------------------------------------------
+void C_BaseEntity::GetVelocity(Vector *vVelocity, AngularImpulse *vAngVelocity)
+{
+	if (GetMoveType()==MOVETYPE_VPHYSICS && m_pPhysicsObject)
+	{
+		m_pPhysicsObject->GetVelocity(vVelocity,vAngVelocity);
+	}
+	else
+	{
+		if (vVelocity != NULL)
+		{
+			*vVelocity = GetAbsVelocity();
+		}
+		if (vAngVelocity != NULL)
+		{
+			QAngle tmp = GetLocalAngularVelocity();
+			QAngleToAngularImpulse( tmp, *vAngVelocity );
+		}
+	}
+}
+
+bool C_BaseEntity::IsMoving()
+{ 
+	Vector velocity;
+	GetVelocity( &velocity, NULL );
+	return velocity != vec3_origin; 
 }
 
 void C_BaseEntity::UpdateVisibility()
@@ -2357,7 +2446,7 @@ CMouthInfo *C_BaseEntity::GetMouth( void )
 bool C_BaseEntity::GetSoundSpatialization( SpatializationInfo_t& info )
 {
 	// World is always audible
-	if ( m_nEntIndex == 0 )
+	if ( IsWorld() )
 	{
 		return true;
 	}
@@ -3056,7 +3145,7 @@ void C_BaseEntity::PostDataUpdate( DataUpdateType_t updateType )
 	}
 
 	// If it's the world, force solid flags
-	if ( m_nEntIndex == 0 )
+	if ( IsWorld() )
 	{
 		m_nModelIndex = 1;
 		SetSolid( SOLID_BSP );
@@ -3568,7 +3657,7 @@ bool C_BaseEntity::ShouldInterpolate()
 	if ( IsViewEntity() )
 		return true;
 
-	if ( m_nEntIndex == 0 || !GetModel() )
+	if ( IsWorld() || !GetModel() )
 		return false;
 
 	// always interpolate if visible
@@ -5153,12 +5242,12 @@ bool CBaseEntity::NameMatchesComplex( const char *pszNameOrWildcard )
 	if ( !Q_stricmp( "!player", pszNameOrWildcard) )
 		return IsPlayer();
 
-	return EntityNamesMatch( pszNameOrWildcard, m_iName );
+	return Matcher_NamesMatch( pszNameOrWildcard, m_iName );
 }
 
 bool CBaseEntity::ClassMatchesComplex( const char *pszClassOrWildcard )
 {
-	return EntityNamesMatch( pszClassOrWildcard, m_iClassname );
+	return Matcher_NamesMatch( pszClassOrWildcard, GetClassname() );
 }
 
 //-----------------------------------------------------------------------------
@@ -5168,30 +5257,39 @@ bool CBaseEntity::ClassMatchesComplex( const char *pszClassOrWildcard )
 const char *C_BaseEntity::GetClassname( void )
 {
 	static char outstr[ 256 ];
-	outstr[ 0 ] = 0;
 
 	if(m_iClassname != NULL_STRING)
 		return STRING(m_iClassname);
-
-	bool gotname = false;
 
 	if ( GetPredDescMap() )
 	{
 		const char *mapname =  GetClassMap().ClassnameToMapName( GetPredDescMap()->dataClassName );
 		if ( mapname && mapname[ 0 ] ) 
 		{
-			Q_strncpy( outstr, mapname, sizeof( outstr ) );
-			gotname = true;
+			return mapname;
 		}
 	}
 
-	if ( !gotname )
-	{
-		Assert( 0 );
-		Q_strncpy( outstr, typeid( *this ).name(), sizeof( outstr ) );
-	}
+	Q_strncpy( outstr, typeid( *this ).name(), sizeof( outstr ) );
 
 	return outstr;
+}
+
+bool C_BaseEntity::HasClassname()
+{
+	if(m_iClassname != NULL_STRING)
+		return true;
+
+	if ( GetPredDescMap() )
+	{
+		const char *mapname =  GetClassMap().ClassnameToMapName( GetPredDescMap()->dataClassName );
+		if ( mapname && mapname[ 0 ] ) 
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 const char *C_BaseEntity::GetDebugName( void )

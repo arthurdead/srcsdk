@@ -8,9 +8,6 @@
 #include "cbase.h"
 #include "mempool.h"
 #include "ai_navtype.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_node.h"
-#endif
 #include "ai_waypoint.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -28,38 +25,32 @@ DEFINE_FIXEDSIZE_ALLOCATOR( AI_Waypoint_t, WAYPOINT_POOL_SIZE, CUtlMemoryPool::G
 
 AI_Waypoint_t::AI_Waypoint_t()
 {
-	memset( this, 0, sizeof(*this) );
+	memset( this, 0, sizeof(AI_Waypoint_t) );
 	vecLocation	= vec3_invalid;
-#ifndef AI_USES_NAV_MESH
-	iNodeID		= NO_NODE;
-#else
-	pArea = NULL;
-#endif
+	polyRef = 0;
+	meshType = RECAST_NAVMESH_INVALID;
 	flPathDistGoal = -1;
 }
 
 //-------------------------------------
 
-#ifndef AI_USES_NAV_MESH
-AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigation_t initNavType, int initWaypointFlags, int initNodeID )
-#else
-AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigation_t initNavType, int initWaypointFlags, CNavArea *initArea )
-#endif
+AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigation_t initNavType, int initWaypointFlags, dtPolyRef initPolyRef, NavMeshType_t initMeshType )
 {
-	memset( this, 0, sizeof(*this) );
+	memset( this, 0, sizeof(AI_Waypoint_t) );
 
 	// A Route of length one to the endpoint
 	vecLocation	= initPosition;
 	flYaw		= initYaw;
 	m_iWPType	= initNavType;
 	m_fWaypointFlags = initWaypointFlags;
-#ifndef AI_USES_NAV_MESH
-	iNodeID		= initNodeID;
-#else
-	pArea		= initArea;
-#endif
-
+	polyRef		= initPolyRef;
+	meshType = initMeshType;
 	flPathDistGoal = -1;
+}
+
+AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigation_t initNavType, int initWaypointFlags )
+	: AI_Waypoint_t( initPosition, initYaw, initNavType, initWaypointFlags, 0, RECAST_NAVMESH_INVALID )
+{
 }
 
 //-------------------------------------
@@ -97,11 +88,7 @@ void CAI_WaypointList::PrependWaypoints( AI_Waypoint_t *pWaypoints )
 
 void CAI_WaypointList::PrependWaypoint( const Vector &newPoint, Navigation_t navType, unsigned waypointFlags, float flYaw )
 {
-#ifndef AI_USES_NAV_MESH
-	PrependWaypoints( new AI_Waypoint_t( newPoint, flYaw, navType, waypointFlags, NO_NODE ) );
-#else
-	PrependWaypoints( new AI_Waypoint_t( newPoint, flYaw, navType, waypointFlags, NULL ) );
-#endif
+	PrependWaypoints( new AI_Waypoint_t( newPoint, flYaw, navType, waypointFlags ) );
 }
 
 //-------------------------------------
@@ -184,24 +171,7 @@ void AddWaypointLists(AI_Waypoint_t *oldRoute, AI_Waypoint_t *addRoute)
 
 	waypoint->ModifyFlags( bits_WP_TO_GOAL, false );
 
-	// Check for duplication, but copy the type
-#ifndef AI_USES_NAV_MESH
-	if (waypoint->iNodeID != NO_NODE			&&
-		waypoint->iNodeID == addRoute->iNodeID	)
-#else
-	if (waypoint->pArea != NULL			&&
-		waypoint->pArea == addRoute->pArea	)
-#endif
-	{
-//		waypoint->iWPType = addRoute->iWPType; <<TODO>> found case where this was bad
-		AI_Waypoint_t *pNext = addRoute->GetNext();
-		delete addRoute;
-		waypoint->SetNext(pNext);
-	}
-	else
-	{
-		waypoint->SetNext(addRoute);
-	}
+	waypoint->SetNext(addRoute);
 
 	while (waypoint->GetNext()) 
 	{

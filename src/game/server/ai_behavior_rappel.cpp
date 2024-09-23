@@ -185,7 +185,7 @@ void CAI_RappelBehavior::StartTask( const Task_t *pTask )
 	case TASK_HIT_GROUND:
 		m_bOnGround = true;
 
-		if( GetOuter()->GetGroundEntity() != NULL && GetOuter()->GetGroundEntity()->IsNPC() && GetOuter()->GetGroundEntity()->m_iClassname == GetOuter()->m_iClassname )
+		if( GetOuter()->GetGroundEntity() != NULL && GetOuter()->GetGroundEntity()->IsNPC() && GetOuter()->GetGroundEntity()->GetClassnameStr() == GetOuter()->GetClassnameStr() )
 		{
 			// Although I tried to get NPC's out from under me, I landed on one. Kill it, so long as it's the same type of character as me.
 			variant_t val;

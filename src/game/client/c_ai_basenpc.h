@@ -9,8 +9,9 @@
 #define C_AI_BASENPC_H
 #pragma once
 
-
 #include "c_basecombatcharacter.h"
+
+extern ConVar sv_stepsize;
 
 // NOTE: Moved all controller code into c_basestudiomodel
 class C_AI_BaseNPC : public C_BaseCombatCharacter
@@ -24,6 +25,7 @@ public:
 	virtual unsigned int	PhysicsSolidMaskForEntity( void ) const;
 	virtual bool			IsNPC( void ) { return true; }
 	bool					IsMoving( void ){ return m_bIsMoving; }
+	virtual float		StepHeight() const			{ return sv_stepsize.GetFloat(); }
 	bool					ShouldAvoidObstacle( void ){ return m_bPerformAvoidance; }
 	virtual bool			AddRagdollToFadeQueue( void ) { return m_bFadeCorpse; }
 
@@ -38,6 +40,12 @@ public:
 	void					SpeedModThink( void );
 	void					OnDataChanged( DataUpdateType_t type );
 	bool					ImportantRagdoll( void ) { return m_bImportanRagdoll;	}
+
+	const Vector &		GetHullMins() const			{ return WorldAlignMins(); }
+	const Vector &		GetHullMaxs() const			{ return WorldAlignMaxs(); }
+	float				GetHullWidth()	const		{ return (GetHullMaxs().y - GetHullMins().y); }
+	float				GetHullLength() const		{ return (GetHullMaxs().x - GetHullMins().x); }
+	float				GetHullHeight() const		{ return (GetHullMaxs().z - GetHullMins().z); }
 
 private:
 	C_AI_BaseNPC( const C_AI_BaseNPC & ); // not defined, not accessible
@@ -55,5 +63,6 @@ private:
 	bool m_bImportanRagdoll;
 };
 
+#define CAI_BaseNPC C_AI_BaseNPC
 
 #endif // C_AI_BASENPC_H

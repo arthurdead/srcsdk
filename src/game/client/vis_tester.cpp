@@ -37,7 +37,7 @@ public:
 
 	void LevelInitPreEntity() OVERRIDE
 	{
-		CM_LoadMap( VarArgs( "maps/%s.bsp", MapName() ) );
+		CM_LoadMap( engine->GetLevelName() );
 	}
 
 	void LevelShutdownPreEntity() OVERRIDE

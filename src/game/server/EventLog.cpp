@@ -9,7 +9,6 @@
 #include "EventLog.h"
 #include "team.h"
 #include "KeyValues.h"
-#include "navmesh/nav_area.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -74,7 +73,6 @@ void CEventLog::FormatPlayer( CBaseEntity *ent, char *str, int len ) const
 	int userID = 0;
 	const char *networkIDString = "";
 	const char *teamName = "";
-	int areaID = 0;
 	if ( player )
 	{
 		playerName = player->GetPlayerName();
@@ -87,16 +85,7 @@ void CEventLog::FormatPlayer( CBaseEntity *ent, char *str, int len ) const
 		}
 	}
 
-	if ( ent && ent->MyCombatCharacterPointer() )
-	{
-		CNavArea *area = ent->MyCombatCharacterPointer()->GetLastKnownArea();
-		if ( area )
-		{
-			areaID = area->GetID();
-		}
-	}
-
-	V_snprintf( str, len, "\"%s<%i><%s><%s><Area %d>\"", playerName, userID, networkIDString, teamName, areaID );
+	V_snprintf( str, len, "\"%s<%i><%s><%s>\"", playerName, userID, networkIDString, teamName );
 }
 
 const char *CEventLog::FormatPlayer( CBaseEntity *ent ) const

@@ -340,43 +340,11 @@ if(!pFileSystem || status != IFACE_OK) {
 	return;
 }
 
-const char *pGameDir = CommandLine()->ParmValue("-game", "hl2");
+char gamebin_path[MAX_PATH];
+pFileSystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+V_StripTrailingSlash(gamebin_path);
 
-char szTargetPath[MAX_PATH];
-V_strncpy(szTargetPath, pGameDir, sizeof(szTargetPath));
-
-int len = V_strlen(szTargetPath);
-
-if(szTargetPath[len-1] == INCORRECT_PATH_SEPARATOR) {
-	szTargetPath[len-1] = CORRECT_PATH_SEPARATOR;
-} else if(szTargetPath[len-1] != CORRECT_PATH_SEPARATOR) {
-	szTargetPath[len++] = CORRECT_PATH_SEPARATOR;
-	szTargetPath[len] = '\0';
-}
-
-V_strcat(szTargetPath, "bin" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
-
-bool found = false;
-
-char szSearchPaths[MAX_PATH * 2];
-int num = pFileSystem->GetSearchPath("EXECUTABLE_PATH", false, szSearchPaths, ARRAYSIZE(szSearchPaths));
-if(num > 0) {
-	const char *p = szSearchPaths;
-	const char *lastp = p;
-	do {
-		if(*p == ';' || *p == '\0') {
-			if(V_strnicmp(lastp, szTargetPath, p-lastp) == 0) {
-				found = true;
-				break;
-			}
-			lastp = p+1;
-		}
-	} while(*p++ != '\0');
-}
-
-if(!found) {
-	pFileSystem->AddSearchPath(szTargetPath, "EXECUTABLE_PATH", PATH_ADD_TO_HEAD);
-}
+pFileSystem->AddSearchPath(gamebin_path, "EXECUTABLE_PATH", PATH_ADD_TO_HEAD);
 
 if(!GetEngineInterfaceFactory())
 	return;

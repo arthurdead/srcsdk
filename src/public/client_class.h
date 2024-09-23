@@ -120,7 +120,7 @@ public:
 	static IClientNetworkable* _##clientClassName##_CreateObject( int entnum, int serialNum ) \
 	{ \
 		clientClassName *pRet = new clientClassName; \
-		if(!pRet->PostConstructor( #clientClassName )) { \
+		if(!pRet->PostConstructor( NULL )) { \
 			UTIL_Remove( pRet ); \
 			return NULL; \
 		} \
@@ -187,7 +187,7 @@ public:
 	static IClientNetworkable* _##clientClassName##_CreateObject() \
 	{ \
 		clientClassName *p = new clientClassName; \
-		if(!p->PostConstructor( #clientClassName )) { \
+		if(!p->PostConstructor( NULL )) { \
 			UTIL_Remove( pRet ); \
 			return NULL; \
 		} \

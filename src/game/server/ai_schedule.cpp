@@ -15,9 +15,6 @@
 #include "ai_activity.h"
 #include "ai_schedule.h"
 #include "ai_default.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_hint.h"
-#endif
 #include "bitstring.h"
 #include "stringregistry.h"
 

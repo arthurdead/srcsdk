@@ -351,9 +351,9 @@ void C_FuncSmokeVolume::Update( float fTimeDelta )
 			int x, y, z;
 			GetParticleInfoXYZ(i, x, y, z);
 
-			int xCountOffset = rand();
-			int yCountOffset = rand();
-			int zCountOffset = rand();
+			int xCountOffset = RandomInt( 0, VALVE_RAND_MAX );
+			int yCountOffset = RandomInt( 0, VALVE_RAND_MAX );
+			int zCountOffset = RandomInt( 0, VALVE_RAND_MAX );
 
 			bool bFound = false;
 			for(int xCount=0; xCount < 3 && !bFound; xCount++)

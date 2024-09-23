@@ -6,8 +6,6 @@
 
 LINK_ENTITY_TO_CLASS(npc_civilian, CNPC_Civilian);
 
-IMPLEMENT_CUSTOM_AI(npc_civilian, CNPC_Civilian);
-
 static const char *g_pszCivilianModels[]{
 	"models/humans/group01/male_01.mdl"
 };
@@ -21,18 +19,17 @@ void CNPC_Civilian::Precache()
 	}
 }
 
-void CNPC_Civilian::InitCustomSchedules() 
-{
-	INIT_CUSTOM_AI(CNPC_Civilian);
-}
-
 void CNPC_Civilian::Spawn()
 {
 	if(GetModelName() == NULL_STRING) {
 		SetModel(g_pszCivilianModels[random->RandomInt(0, ARRAYSIZE(g_pszCivilianModels)-1)]);
 	}
 
-	CapabilitiesAdd(bits_CAP_NO_HIT_PLAYER);
+	UTIL_SetSize(this, NAI_Hull::Mins(RECAST_NAVMESH_HUMAN), NAI_Hull::Maxs(RECAST_NAVMESH_HUMAN));
+
+	CapabilitiesAdd(
+		bits_CAP_NO_HIT_PLAYER
+	);
 
 	ChangeTeam( TEAM_CIVILIANS );
 	ChangeFaction( FACTION_CIVILIANS );

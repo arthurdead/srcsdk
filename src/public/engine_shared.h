@@ -30,7 +30,7 @@ typedef struct player_info_s
 	bool			fakeplayer;
 	// true if player is the HLTV proxy
 	bool			ishltv;
-#if defined( REPLAY_ENABLED )
+#if defined( ENGINE_REPLAY_ENABLED )
 	// true if player is the Replay proxy
 	bool			isreplay;
 #endif

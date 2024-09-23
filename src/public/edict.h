@@ -27,7 +27,7 @@ struct edict_t;
 enum MapLoadType_t
 {
 	MapLoad_NewGame = 0,
-	MapLoad_LoadGame,
+	MapLoad_Unused1,
 	MapLoad_Transition,
 	MapLoad_Background,
 };

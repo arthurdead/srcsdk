@@ -17,13 +17,6 @@
 #include "soundent.h"
 #include "player.h"
 #include "server_class.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_node.h"
-#include "ai_link.h"
-#endif
-#ifndef AI_USES_NAV_MESH
-#include "ai_networkmanager.h"
-#endif
 #include "ndebugoverlay.h"
 #include "ivoiceserver.h"
 #include <stdarg.h>
@@ -72,6 +65,12 @@
 #include "entity_tools_server.h"
 #include "env_debughistory.h"
 #include "player_voice_listener.h"
+#include "activitylist.h"
+#include "eventlist.h"
+#include "ai_schedule.h"
+#include "ai_basenpc.h"
+#include "ai_squad.h"
+#include "world.h"
 
 #ifdef SERVER_USES_VGUI
 #include "ienginevgui.h"
@@ -95,16 +94,14 @@
 #include "querycache.h"
 #include "globalstate.h"
 #include "hackmgr/hackmgr.h"
+#ifndef SWDS
 #include "game_loopback/igameloopback.h"
+#endif
 #include "recast/recast_mgr.h"
 #include "hackmgr/dlloverride.h"
 
 #ifdef SERVER_USES_VGUI
 #include "IGameUIFuncs.h"
-#endif
-
-#ifdef USE_NAV_MESH
-#include "nav_mesh.h"
 #endif
 
 #ifdef PORTAL
@@ -170,10 +167,10 @@ IEngineVGui *enginevgui = NULL;
 IGameUIFuncs *gameuifuncs = NULL;
 #endif // SERVER_USES_VGUI
 
-#ifndef SWDS
 CSysModule* game_loopbackDLL = NULL;
 IGameLoopback* g_pGameLoopback = NULL;
 
+#ifndef SWDS
 CSysModule* clientDLL = NULL;
 IGameClientLoopback* g_pGameClientLoopback = NULL;
 #endif
@@ -255,10 +252,6 @@ const IChangeInfoAccessor *CBaseEdict::GetChangeAccessor() const
 	return engine->GetChangeAccessor( (const edict_t *)this );
 }
 
-#ifndef AI_USES_NAV_MESH
-const char *GetHintTypeDescription( CAI_Hint *pHint );
-#endif
-
 void ClientPutInServerOverride( ClientPutInServerOverrideFn fn )
 {
 	g_pClientPutInServerOverride = fn;
@@ -277,8 +270,7 @@ int UTIL_GetCommandClientIndex( void )
 	// -1 == unknown,dedicated server console
 	// 0  == player 1
 
-	// Convert to 1 based offset
-	return (g_nCommandClientIndex+1);
+	return g_nCommandClientIndex;
 }
 
 //-----------------------------------------------------------------------------
@@ -288,9 +280,9 @@ int UTIL_GetCommandClientIndex( void )
 CBasePlayer *UTIL_GetCommandClient( void )
 {
 	int idx = UTIL_GetCommandClientIndex();
-	if ( idx > 0 )
+	if ( idx != -1 )
 	{
-		return UTIL_PlayerByIndex( idx );
+		return UTIL_PlayerByIndex( idx+1 );
 	}
 
 	// HLDS console issued command
@@ -300,17 +292,9 @@ CBasePlayer *UTIL_GetCommandClient( void )
 extern void InitializeCvars( void );
 
 CBaseEntity*	FindPickerEntity( CBasePlayer* pPlayer );
-#ifndef AI_USES_NAV_MESH
-CAI_Node*		FindPickerAINode( CBasePlayer* pPlayer, NodeType_e nNodeType );
-CAI_Link*		FindPickerAILink( CBasePlayer* pPlayer );
-#endif
 float			GetFloorZ(const Vector &origin);
 void			UpdateAllClientData( void );
 void			DrawMessageEntities();
-
-#ifndef AI_USES_NAV_MESH
-#include "ai_network.h"
-#endif
 
 // For now just using one big AI network
 extern ConVar think_limit;
@@ -411,86 +395,6 @@ void DrawAllDebugOverlays( void )
 	//  Draw debug overlay lines 
 	// --------------------------------------------------------
 	UTIL_DrawOverlayLines();
-
-	// ------------------------------------------------------------------------
-	// If in wc_edit mode draw a box to highlight which node I'm looking at
-	// ------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-	if (engine->IsInEditMode())
-	{
-		CBasePlayer* pPlayer = UTIL_PlayerByIndex( CBaseEntity::m_nDebugPlayer );
-		if (pPlayer) 
-		{
-			if (g_pAINetworkManager->GetEditOps()->m_bLinkEditMode)
-			{
-				CAI_Link* pAILink = FindPickerAILink(pPlayer);
-				if (pAILink)
-				{
-					// For now just using one big AI network
-					Vector startPos = g_pBigAINet->GetNode(pAILink->m_iSrcID)->GetPosition(g_pAINetworkManager->GetEditOps()->m_iHullDrawNum);
-					Vector endPos	= g_pBigAINet->GetNode(pAILink->m_iDestID)->GetPosition(g_pAINetworkManager->GetEditOps()->m_iHullDrawNum);
-					Vector linkDir	= startPos-endPos;
-					float linkLen = VectorNormalize( linkDir );
-					
-					// Draw in green if link that's been turned off
-					if (pAILink->m_LinkInfo & bits_LINK_OFF)
-					{
-						NDebugOverlay::BoxDirection(startPos, Vector(-4,-4,-4), Vector(-linkLen,4,4), linkDir, 0,255,0,40,0);
-					}
-					else
-					{
-						NDebugOverlay::BoxDirection(startPos, Vector(-4,-4,-4), Vector(-linkLen,4,4), linkDir, 255,0,0,40,0);
-					}
-				}
-			}
-			else
-			{
-				CAI_Node* pAINode;
-				if (g_pAINetworkManager->GetEditOps()->m_bAirEditMode)
-				{
-					pAINode = FindPickerAINode(pPlayer,NODE_AIR);
-				}
-				else
-				{
-					pAINode = FindPickerAINode(pPlayer,NODE_GROUND);
-				}
-
-				if (pAINode)
-				{
-					Vector vecPos = pAINode->GetPosition(g_pAINetworkManager->GetEditOps()->m_iHullDrawNum);
-					NDebugOverlay::Box( vecPos, Vector(-8,-8,-8), Vector(8,8,8), 255,0,0,40,0);
-
-					if ( pAINode->GetHint() )
-					{
-						CBaseEntity *pEnt = (CBaseEntity *)pAINode->GetHint();
-						if ( pEnt->GetEntityName() != NULL_STRING )
-						{
-							NDebugOverlay::Text( vecPos + Vector(0,0,6), STRING(pEnt->GetEntityName()), false, 0 );
-						}
-						NDebugOverlay::Text( vecPos, GetHintTypeDescription( pAINode->GetHint() ), false, 0 );
-					}
-				}
-			}
-			// ------------------------------------
-			// If in air edit mode draw guide line
-			// ------------------------------------
-			if (g_pAINetworkManager->GetEditOps()->m_bAirEditMode)
-			{
-				UTIL_DrawPositioningOverlay(g_pAINetworkManager->GetEditOps()->m_flAirEditDistance);
-			}
-			else
-			{
-				NDebugOverlay::DrawGroundCrossHairOverlay();
-			}
-		}
-	}
-
-	// For not just using one big AI Network
-	if ( g_pAINetworkManager )
-	{
-		g_pAINetworkManager->GetEditOps()->DrawAINetworkOverlay();
-	}
-#endif
 
 	// PERFORMANCE: only do this in developer mode
 	if ( g_pDeveloper->GetInt() && !engine->IsDedicatedServer() )
@@ -598,11 +502,6 @@ static bool InitGameSystems( CreateInterfaceFn appSystemFactory )
 
 	InvalidateQueryCache();
 
-#ifdef USE_NAV_MESH
-	// create the Navigation Mesh interface
-	TheNavMesh = NavMeshFactory();
-#endif
-
 	RecastMgr().Init();
 
 	return true;
@@ -616,9 +515,9 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		return false;
 
 	char gamebin_path[MAX_PATH];
-	int gamebin_length = filesystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
-	gamebin_length -= 2;
-	gamebin_path[gamebin_length] = '\0';
+	filesystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+	V_AppendSlash(gamebin_path, ARRAYSIZE(gamebin_path));
+	int gamebin_length = V_strlen(gamebin_path);
 
 	if(HackMgr_IsSafeToSwapPhysics()) {
 		int status = IFACE_OK;
@@ -627,7 +526,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 			pOldPhysics = NULL;
 		}
 
-		V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "vphysics" DLL_EXT_STRING);
+		V_strcat_safe(gamebin_path, "vphysics" DLL_EXT_STRING);
 		vphysicsDLL = Sys_LoadModule( gamebin_path );
 		gamebin_path[gamebin_length] = '\0';
 
@@ -750,14 +649,16 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	}
 #endif // SERVER_USES_VGUI
 
-#ifndef SWDS
-	V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "game_loopback" DLL_EXT_STRING);
+	V_strcat_safe(gamebin_path, "game_loopback" DLL_EXT_STRING);
 	Sys_LoadInterface( gamebin_path, GAMELOOPBACK_INTERFACE_VERSION, &game_loopbackDLL, reinterpret_cast< void** >( &g_pGameLoopback ) );
 	gamebin_path[gamebin_length] = '\0';
 
-	V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "client" DLL_EXT_STRING);
-	Sys_LoadInterface( gamebin_path, GAMECLIENTLOOPBACK_INTERFACE_VERSION, &clientDLL, reinterpret_cast< void** >( &g_pGameClientLoopback ) );
-	gamebin_path[gamebin_length] = '\0';
+#ifndef SWDS
+	if(!engine->IsDedicatedServer()) {
+		V_strcat_safe(gamebin_path, "client" DLL_EXT_STRING);
+		Sys_LoadInterface( gamebin_path, GAMECLIENTLOOPBACK_INTERFACE_VERSION, &clientDLL, reinterpret_cast< void** >( &g_pGameClientLoopback ) );
+		gamebin_path[gamebin_length] = '\0';
+	}
 #endif
 
 	COM_TimestampedLog( "Factories - Finish" );
@@ -845,8 +746,10 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	if(!bInitSuccess)
 		return false;
 
+#ifndef SWDS
 	// try to get debug overlay, may be NULL if on HLDS
 	debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL );
+#endif
 
 	// init the gamestatsupload connection
 	gamestatsuploader->InitConnection();
@@ -854,11 +757,36 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	HackMgr_SetGamePaused( false );
 	m_bWasPaused = false;
 
+	// UNDONE: Make most of these things server systems or precache_registers
+	// =================================================
+	//	Activities
+	// =================================================
+	ActivityList_Free();
+	ActivityList_Init();
+	ActivityList_RegisterSharedActivities();
+
+	EventList_Free();
+	EventList_Init();
+	EventList_RegisterSharedEvents();
+
+	g_AI_SchedulesManager.CreateStringRegistries();
+
+	// =================================================
+	//	Load and Init AI Schedules
+	// =================================================
+	COM_TimestampedLog( "LoadAllSchedules" );
+	g_AI_SchedulesManager.LoadAllSchedules();
+
 	return true;
 }
 
 void CServerGameDLL::PostInit()
 {
+	// init sentence group playback stuff from sentences.txt.
+	// ok to call this multiple times, calls after first are ignored.
+	COM_TimestampedLog( "SENTENCEG_Init()" );
+	SENTENCEG_Init();
+
 	IGameSystem::PostInitAllSystems();
 
 #ifdef SERVER_USES_VGUI
@@ -883,11 +811,10 @@ void CServerGameDLL::PostToolsInit()
 
 void CServerGameDLL::DLLShutdown( void )
 {
-	//SecobMod__Information: Clear the transition file.
-	FileHandle_t hFile = g_pFullFileSystem->Open( "transition.cfg", "w" );
-	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
-	g_pFullFileSystem->WriteFile( "transition.cfg", "MOD", buf );
-	g_pFullFileSystem->Close( hFile );
+	g_AI_SchedulesManager.DeleteAllSchedules();
+	g_AI_AgentSchedulesManager.DeleteAllSchedules();
+	g_AI_SchedulesManager.DestroyStringRegistries();
+	g_AI_AgentSchedulesManager.DestroyStringRegistries();
 
 	// Due to dependencies, these are not autogamesystems
 	ModelSoundsCacheShutdown();
@@ -911,22 +838,14 @@ void CServerGameDLL::DLLShutdown( void )
 #ifndef SWDS
 	if ( clientDLL )
 		Sys_UnloadModule( clientDLL );
+#endif
 
 	if ( game_loopbackDLL )
 		Sys_UnloadModule( game_loopbackDLL );
-#endif
 
 	if ( vphysicsDLL )
 		Sys_UnloadModule( vphysicsDLL );
 
-#ifdef USE_NAV_MESH
-	// destroy the Navigation Mesh interface
-	if ( TheNavMesh )
-	{
-		delete TheNavMesh;
-		TheNavMesh = NULL;
-	}
-#endif
 	// reset (shutdown) the gamestatsupload connection
 	gamestatsuploader->InitConnection();
 
@@ -1003,96 +922,148 @@ void Game_SetOneWayTransition( void )
 	g_OneWayTransition = true;
 }
 
+extern void SetupDefaultLightstyle();
+
+extern CWorld *g_WorldEntity;
+extern CBaseEntity				*g_pLastSpawn;
+extern void InitBodyQue(void);
+extern void W_Precache(void);
+
+extern ConVar sv_stepsize;
+
 // Called any time a new level is started (after GameInit() also on level transitions within a game)
-bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background )
+bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool background )
 {
 	VPROF("CServerGameDLL::LevelInit");
 
 	HackMgr_SetGamePaused( false );
 	m_bWasPaused = false;
 
-	ResetWindspeed();
-
 	//Tony; parse custom manifest if exists!
 	ParseParticleEffectsMap( pMapName, false );
 
 	// IGameSystem::LevelInitPreEntityAllSystems() is called when the world is precached
 	// That happens either in LoadGameState() or in MapEntity_ParseAllEntities()
-	if ( loadGame )
+	if ( background )
 	{
-		if ( pOldLevel )
-		{
-			gpGlobals->eLoadType = MapLoad_Transition;
-		}
-		else
-		{
-			gpGlobals->eLoadType = MapLoad_LoadGame;
-		}
-
-		if ( !engine->LoadGameState( pMapName, 1 ) )
-		{
-			if ( pOldLevel )
-			{
-				MapEntity_ParseAllEntities( pMapEntities );
-			}
-			else
-			{
-				// Regular save load case
-				return false;
-			}
-		}
-
-		if ( pOldLevel )
-		{
-			engine->LoadAdjacentEnts( pOldLevel, pLandmarkName );
-		}
-
-		if ( g_OneWayTransition )
-		{
-			engine->ClearSaveDirAfterClientLoad();
-		}
+		gpGlobals->eLoadType = MapLoad_Background;
 	}
 	else
 	{
-		if ( background )
-		{
-			gpGlobals->eLoadType = MapLoad_Background;
-		}
-		else
-		{
-			gpGlobals->eLoadType = MapLoad_NewGame;
-		}
-
-		// Clear out entity references, and parse the entities into it.
-		g_MapEntityRefs.Purge();
-		CMapLoadEntityFilter filter;
-		MapEntity_ParseAllEntities( pMapEntities, &filter );
-
-		g_pServerBenchmark->StartBenchmark();
-
-		// Now call the mod specific parse
-		LevelInit_ParseAllEntities( pMapEntities );
+		gpGlobals->eLoadType = MapLoad_NewGame;
 	}
 
-	// Now that all of the active entities have been loaded in, precache any entities who need point_template parameters
-	//  to be parsed (the above code has loaded all point_template entities)
-	PrecachePointTemplates();
+	g_fGameOver = false;
+	g_pLastSpawn = NULL;
+	g_Language.SetValue( LANGUAGE_ENGLISH );	// TODO use VGUI to get current language
+	g_AIFriendliesTalkSemaphore.Release();
+	g_AIFoesTalkSemaphore.Release();
+	g_OneWayTransition = false;
 
-	// load MOTD from file into stringtable
-	LoadMessageOfTheDay();
+	sv_stepsize.Revert();
+
+	ConVarRef roomtype( "room_type" );
+	roomtype.SetValue( 0 );
+
+	// Set up game rules
+	Assert( !GameRules() );
+	if (GameRules())
+	{
+		UTIL_Remove( GameRules() );
+	}
+
+	InstallGameRules();
+	Assert( GameRules() );
+	GameRules()->Init();
+
+	// Only allow precaching between LevelInitPreEntity and PostEntity
+	CBaseEntity::SetAllowPrecache( true );
+
+	COM_TimestampedLog( "IGameSystem::LevelInitPreEntityAllSystems" );
+	IGameSystem::LevelInitPreEntityAllSystems();
+
+	COM_TimestampedLog( "PrecacheStandardParticleSystems()" );
+	// Precache standard particle systems
+	PrecacheStandardParticleSystems( );
+
+	// the area based ambient sounds MUST be the first precache_sounds
+
+	COM_TimestampedLog( "W_Precache()" );
+	
+	// player precaches     
+	W_Precache();									// get weapon precaches
+	
+	COM_TimestampedLog( "ClientPrecache()" );
+	ClientPrecache();
+
+	COM_TimestampedLog( "PrecacheTempEnts()" );
+	// precache all temp ent stuff
+	CBaseTempEntity::PrecacheTempEnts();
+
+	COM_TimestampedLog( "g_pGameRules->Precache" );
+	GameRules()->Precache();
+
+	// Call all registered precachers.
+	CPrecacheRegister::Precache();
+
+	// =================================================
+	//	Initialize NPC Relationships
+	// =================================================
+	GameRules()->InitDefaultAIRelationships();
+	CBaseCombatCharacter::InitInteractionSystem();
+
+	g_EventQueue.Init();
+
+	SetupDefaultLightstyle();
+
+	g_WorldEntity = (CWorld *)CreateEntityByName("worldspawn", 0);
+	g_WorldEntity->SetLocalOrigin( vec3_origin );
+	g_WorldEntity->SetLocalAngles( vec3_angle );
+	DispatchSpawn(g_WorldEntity);
+
+	COM_TimestampedLog( "g_pGameRules->CreateStandardEntities()" );
+	// Create the player resource
+	GameRules()->CreateStandardEntities();
+
+	CSoundEnt::InitSoundEnt();
+
+	COM_TimestampedLog( "InitBodyQue()" );
+	InitBodyQue();
+
+	// Clear out entity references, and parse the entities into it.
+	g_MapEntityRefs.Purge();
+	CMapLoadEntityFilter filter;
+	MapEntity_ParseAllEntities( pMapEntities, &filter );
+
+	// Now call the mod specific parse
+	LevelInit_ParseAllEntities( pMapEntities );
 
 	// Sometimes an ent will Remove() itself during its precache, so RemoveImmediate won't happen.
 	// This makes sure those ents get cleaned up.
 	gEntList.CleanupDeleteList();
 
-	g_AIFriendliesTalkSemaphore.Release();
-	g_AIFoesTalkSemaphore.Release();
-	g_OneWayTransition = false;
+	// Now that all of the active entities have been loaded in, precache any entities who need point_template parameters
+	//  to be parsed (the above code has loaded all point_template entities)
+	PrecachePointTemplates();
+
+	g_pServerBenchmark->StartBenchmark();
+
+	// load MOTD from file into stringtable
+	LoadMessageOfTheDay();
 
 	// ask for the latest game rules
 	GameRules()->UpdateGameplayStatsFromSteam();
 
 	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : float
+//-----------------------------------------------------------------------------
+float GetRealTime()
+{
+	return engine->Time();
 }
 
 //-----------------------------------------------------------------------------
@@ -1139,24 +1110,19 @@ void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edictCount, int cl
 	}
 
 	IGameSystem::LevelInitPostEntityAllSystems();
+
+	ResetWindspeed();
+
 	// No more precaching after PostEntityAllSystems!!!
 	CBaseEntity::SetAllowPrecache( false );
+
+	RecastMgr().Load();
 
 	// only display the think limit when the game is run with "developer" mode set
 	if ( !g_pDeveloper->GetInt() )
 	{
 		think_limit.SetValue( 0 );
 	}
-
-#ifdef USE_NAV_MESH
-	// load the Navigation Mesh for this map
-	if( TheNavMesh ) {
-		TheNavMesh->Load();
-		TheNavMesh->OnServerActivate();
-	}
-#endif
-
-	RecastMgr().Load();
 }
 
 //-----------------------------------------------------------------------------
@@ -1256,11 +1222,6 @@ void CServerGameDLL::GameFrame( bool simulating )
 	IGameSystem::FrameUpdatePreEntityThinkAllSystems();
 	GameStartFrame();
 
-#ifdef USE_NAV_MESH
-	if( TheNavMesh )
-		TheNavMesh->Update();
-#endif
-
 	RecastMgr().Update( gpGlobals->frametime );
 
 	{
@@ -1337,10 +1298,10 @@ void CServerGameDLL::PreClientUpdate( bool simulating )
 	}
 	*/
 
-//#ifdef _DEBUG  - allow this in release for now
+#ifdef _DEBUG
 	DrawAllDebugOverlays();
-//#endif
-	
+#endif
+
 	IGameSystem::PreClientUpdateAllSystems();
 
 #ifdef _DEBUG
@@ -1393,10 +1354,7 @@ void CServerGameDLL::LevelShutdown( void )
 	m_bWasPaused = false;
 
 	IGameSystem::LevelShutdownPreClearSteamAPIContextAllSystems();
-
 	steamgameserverapicontext->Clear();
-
-	g_pServerBenchmark->EndBenchmark();
 
 	MDLCACHE_CRITICAL_SECTION();
 	IGameSystem::LevelShutdownPreEntityAllSystems();
@@ -1411,20 +1369,20 @@ void CServerGameDLL::LevelShutdown( void )
 
 	InvalidateQueryCache();
 
+	RecastMgr().Reset();
+
+	if ( GameRules() )
+	{
+		GameRules()->LevelShutdown();
+		UTIL_Remove( GameRules() );
+	}
+
 	IGameSystem::LevelShutdownPostEntityAllSystems();
+
+	g_pServerBenchmark->EndBenchmark();
 
 	// In case we quit out during initial load
 	CBaseEntity::SetAllowPrecache( false );
-
-#ifdef USE_NAV_MESH
-	// reset the Navigation Mesh
-	if ( TheNavMesh )
-	{
-		TheNavMesh->Reset();
-	}
-#endif
-
-	RecastMgr().Reset();
 }
 
 //-----------------------------------------------------------------------------
@@ -2134,9 +2092,13 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 //	Msg("A:%i, N:%i, F: %i, P: %i\n", always, dontSend, fullCheck, PVS );
 }
 
+extern bool IsStandardEntityClassname(const char *pClassname);
+
 bool CMapLoadEntityFilter::ShouldCreateEntity( const char *pClassname )
 {
-	// During map load, create all the entities.
+	if(IsStandardEntityClassname(pClassname))
+		return false;
+
 	return true;
 }
 
@@ -2192,7 +2154,7 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CServerGameClients, IServerGameClients, INTERF
 bool CServerGameClients::ClientConnect( edict_t *pEdict, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen )
 {	
 	if ( !GameRules() )
-		return false;
+		return true;
 	
 	return GameRules()->ClientConnected( pEdict, pszName, pszAddress, reject, maxrejectlen );
 }
@@ -2276,29 +2238,6 @@ void CServerGameClients::ClientDisconnect( edict_t *pEdict )
 				GameRules()->ClientDisconnected( pEdict );
 				gamestats->Event_PlayerDisconnected( player );
 			}
-			
-			//SecobMod__Information: If a client disconnects wipe them from the transition file. Note that if you want it so people who lag out can rejoin instantly without picking a class, then comment all this section out.
-			KeyValues *pkvTransitionRestoreFile = new KeyValues( "transition.cfg" );
-			if ( pkvTransitionRestoreFile->LoadFromFile( filesystem, "transition.cfg" ) )
-			{
-				while ( pkvTransitionRestoreFile )
-				{
-					const char *pszSteamID = pkvTransitionRestoreFile->GetName(); //Gets our header, which we use the players SteamID for.
-					const char *PlayerSteamID = engine->GetPlayerNetworkIDString(player->edict()); //Finds the current players Steam ID.	
-		
-					if ( Q_strcmp( PlayerSteamID, pszSteamID ) != 0)	 
-					{
-						break;		 
-					}
-
-					KeyValues *pkvNULL= pkvTransitionRestoreFile->FindKey( pszSteamID );
-					pkvNULL->deleteThis();	
-					//pkvNULL = NULL;
-					//pkvNULL->SaveToFile( filesystem, pkvTransitionRestoreFile, NULL );
-					pkvTransitionRestoreFile->SaveToFile( filesystem, "cfg/transition.cfg" );
-					break;
-				}
-			}
 		}
 
 		// Make sure all Untouch()'s are called for this client leaving
@@ -2308,23 +2247,23 @@ void CServerGameClients::ClientDisconnect( edict_t *pEdict )
 		// Make sure anything we "own" is simulated by the server from now on
 		player->ClearPlayerSimulationList();
 
-		#if defined( TF_DLL )
-			if ( !player->IsFakeClient() )
+	#if defined( TF_DLL )
+		if ( !player->IsFakeClient() )
+		{
+			CSteamID steamID;
+			if ( player->GetSteamID( &steamID ) )
 			{
-				CSteamID steamID;
-				if ( player->GetSteamID( &steamID ) )
+				GTFGCClientSystem()->ClientDisconnected( steamID );
+			}
+			else
+			{
+				if ( !player->IsReplay() && !player->IsHLTV() )
 				{
-					GTFGCClientSystem()->ClientDisconnected( steamID );
-				}
-				else
-				{
-					if ( !player->IsReplay() && !player->IsHLTV() )
-					{
-						Log("WARNING: ClientDisconnected, but we don't know his SteamID?\n");
-					}
+					Log("WARNING: ClientDisconnected, but we don't know his SteamID?\n");
 				}
 			}
-		#endif
+		}
+	#endif
 	}
 }
 
@@ -3031,7 +2970,11 @@ public:
 		AddAppSystem( "soundemittersystem" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
 		AddAppSystem( "scenefilecache" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
 		//AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
-		AddAppSystem( "client" DLL_EXT_STRING, GAMECLIENTLOOPBACK_INTERFACE_VERSION );
+	#ifndef SWDS
+		if(!engine || !engine->IsDedicatedServer()) {
+			AddAppSystem( "client" DLL_EXT_STRING, GAMECLIENTLOOPBACK_INTERFACE_VERSION );
+		}
+	#endif
 	}
 
 	virtual int	Count()
@@ -3124,7 +3067,6 @@ bool GetSteamIDForPlayerIndex( int iPlayerIndex, CSteamID &steamid )
 	return false;
 }
 
-#ifndef SWDS
 class CGameServerLoopback : public CBaseAppSystem< IGameServerLoopback >
 {
 public:
@@ -3137,4 +3079,3 @@ public:
 static CGameServerLoopback s_ServerGameLoopback;
 IGameServerLoopback *g_pGameServerLoopback = &s_ServerGameLoopback;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CGameServerLoopback, IGameServerLoopback, GAMESERVERLOOPBACK_INTERFACE_VERSION, s_ServerGameLoopback );
-#endif

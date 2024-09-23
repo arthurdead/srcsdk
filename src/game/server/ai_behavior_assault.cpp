@@ -417,18 +417,6 @@ void CAI_AssaultBehavior::ClearAssaultPoint( void )
 	// Exclusive or not, we unlock here. The assault is done.
 	UnlockRallyPoint();
 
-	// If this assault behavior has changed the NPC's hint group,
-	// slam that NPC's hint group back to null.
-	// !!!TODO: if the NPC had a different hint group before the 
-	// assault began, we're slamming that, too! We might want
-	// to cache it off if this becomes a problem (sjb)
-#ifndef AI_USES_NAV_MESH
-	if( m_hAssaultPoint->m_AssaultHintGroup != NULL_STRING )
-	{
-		GetOuter()->SetHintGroup( NULL_STRING );
-	}
-#endif
-
 	m_hAssaultPoint->m_OnAssaultClear.FireOutput( GetOuter(), GetOuter(), 0 );
 }
 
@@ -443,13 +431,6 @@ void CAI_AssaultBehavior::OnHitAssaultPoint( void )
 	if ( m_hAssaultPoint )
 	{
 		m_hAssaultPoint->m_OnArrival.FireOutput( GetOuter(), m_hAssaultPoint.Get(), 0 );
-		// Set the assault hint group
-	#ifndef AI_USES_NAV_MESH
-		if( m_hAssaultPoint->m_AssaultHintGroup != NULL_STRING )
-		{
-			SetHintGroup( m_hAssaultPoint->m_AssaultHintGroup );
-		}
-	#endif
 	}
 }
 
@@ -573,11 +554,7 @@ void CAI_AssaultBehavior::StartTask( const Task_t *pTask )
 			if ( GetNavigator()->SetGoal( goal ) == false )
 			{
 				// Try and get as close as possible otherwise
-			#ifndef AI_USES_NAV_MESH
-				AI_NavGoal_t nearGoal( GOALTYPE_LOCATION_NEAREST_NODE, m_hRallyPoint->GetAbsOrigin(), AIN_DEF_ACTIVITY, 256 );
-			#else
-				AI_NavGoal_t nearGoal( GOALTYPE_LOCATION_NEAREST_AREA, m_hRallyPoint->GetAbsOrigin(), AIN_DEF_ACTIVITY, 256 );
-			#endif
+				AI_NavGoal_t nearGoal( GOALTYPE_LOCATION, m_hRallyPoint->GetAbsOrigin(), AIN_DEF_ACTIVITY, 256 );
 				if ( GetNavigator()->SetGoal( nearGoal, AIN_CLEAR_PREVIOUS_STATE ) )
 				{
 					//FIXME: HACK! The internal pathfinding is setting this without our consent, so override it!
@@ -607,11 +584,7 @@ void CAI_AssaultBehavior::StartTask( const Task_t *pTask )
 			if ( GetNavigator()->SetGoal( goal ) == false )
 			{
 				// Try and get as close as possible otherwise
-			#ifndef AI_USES_NAV_MESH
-				AI_NavGoal_t nearGoal( GOALTYPE_LOCATION_NEAREST_NODE, m_hAssaultPoint->GetAbsOrigin(), AIN_DEF_ACTIVITY, 256 );
-			#else
-				AI_NavGoal_t nearGoal( GOALTYPE_LOCATION_NEAREST_AREA, m_hAssaultPoint->GetAbsOrigin(), AIN_DEF_ACTIVITY, 256 );
-			#endif
+				AI_NavGoal_t nearGoal( GOALTYPE_LOCATION, m_hAssaultPoint->GetAbsOrigin(), AIN_DEF_ACTIVITY, 256 );
 				if ( GetNavigator()->SetGoal( nearGoal, AIN_CLEAR_PREVIOUS_STATE ) )
 				{
 					//FIXME: HACK! The internal pathfinding is setting this without our consent, so override it!
@@ -843,11 +816,7 @@ CRallyPoint *CAI_AssaultBehavior::FindBestRallyPointInRadius( const Vector &vecC
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-bool CAI_AssaultBehavior::IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint )
-#else
-bool CAI_AssaultBehavior::IsValidShootPosition( const Vector &vLocation, CNavArea *pArea )
-#endif
+bool CAI_AssaultBehavior::IsValidShootPosition( const Vector &vLocation )
 {
 	CBaseEntity *pCuePoint = NULL;
 	float flTolerance = 0.0f;
@@ -872,11 +841,7 @@ bool CAI_AssaultBehavior::IsValidShootPosition( const Vector &vLocation, CNavAre
 	if ( pCuePoint && (vLocation - pCuePoint->GetAbsOrigin()).Length2DSqr() > Square( flTolerance - 0.1 ) )
 		return false;
 
-#ifndef AI_USES_NAV_MESH
-	return BaseClass::IsValidShootPosition( vLocation, pNode, pHint );
-#else
-	return BaseClass::IsValidShootPosition( vLocation, pArea );
-#endif
+	return BaseClass::IsValidShootPosition( vLocation );
 }
 
 //-----------------------------------------------------------------------------

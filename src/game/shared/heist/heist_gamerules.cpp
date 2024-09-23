@@ -1,9 +1,16 @@
 #include "cbase.h"
 #include "heist_gamerules.h"
 #include "suspicioner.h"
+#include "dt_shared.h"
+
+#ifdef GAME_DLL
+#include "heist_player.h"
+#else
+#include "c_heist_player.h"
+#define CHeistPlayer C_HeistPlayer
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
-#include "dt_shared.h"
 #include "tier0/memdbgon.h"
 
 REGISTER_GAMERULES_CLASS(CHeistGameRules);
@@ -145,5 +152,25 @@ void CHeistGameRules::InitDefaultAIRelationships()
 	CBaseCombatCharacter::SetDefaultFactionRelationship(FACTION_HEISTERS, FACTION_CIVILIANS, D_NU, 0);
 	CBaseCombatCharacter::SetDefaultFactionRelationship(FACTION_HEISTERS, FACTION_LAW_ENFORCEMENT, D_HT, 0);
 	CBaseCombatCharacter::SetDefaultFactionRelationship(FACTION_HEISTERS, FACTION_HEISTERS, D_LI, 0);
+}
+#endif
+
+#ifdef GAME_DLL
+CON_COMMAND(heist_clear_spotted,"")
+{
+	if(!UTIL_IsCommandIssuedByServerAdmin()) {
+		return;
+	}
+
+	for(int i = 1; i <= gpGlobals->maxClients; ++i) {
+		CHeistPlayer *pPlayer = (CHeistPlayer *)UTIL_PlayerByIndex(i);
+		if(!pPlayer) {
+			continue;
+		}
+
+		pPlayer->SetSpotted(false);
+	}
+
+	HeistGameRules()->SetSpotted(false);
 }
 #endif

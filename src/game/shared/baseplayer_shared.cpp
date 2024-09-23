@@ -1463,7 +1463,7 @@ void CBasePlayer::SmoothViewOnStairs( Vector& eyeOrigin )
 
 		m_flOldPlayerZ += steptime * 150 * dir;
 
-		const float stepSize = 18.0f;
+		const float stepSize = StepHeight();
 
 		if ( dir > 0 )
 		{

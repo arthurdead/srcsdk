@@ -14,6 +14,7 @@
 #include "shake.h"
 #include "eventlist.h"
 #include "mapentities_shared.h"
+#include "clientalphaproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -22,36 +23,23 @@
 #undef CWorld
 #endif
 
-C_World *g_pClientWorld;
+C_World *g_pClientWorld = NULL;
 
 LINK_ENTITY_TO_CLASS(worldspawn, C_World);
-
-void ClientWorldFactoryInit()
-{
-	if(g_pClientWorld)
-		UTIL_Remove( g_pClientWorld );
-	g_pClientWorld = CREATE_ENTITY(C_World, "worldspawn");
-}
-
-void ClientWorldFactoryShutdown()
-{
-	if(g_pClientWorld) {
-		UTIL_Remove( g_pClientWorld );
-		g_pClientWorld = NULL;
-	}
-}
 
 static IClientNetworkable* ClientWorldFactory( int entnum, int serialNum )
 {
 	Assert( g_pClientWorld != NULL );
+	Assert( entnum == 0 );
 
 	if(!g_pClientWorld) {
-		g_pClientWorld = CREATE_ENTITY(C_World, "worldspawn");
-		if(!g_pClientWorld)
-			return NULL;
+		g_pClientWorld = (C_World *)CreateEntityByName("worldspawn");
+		g_pClientWorld->SetLocalOrigin( vec3_origin );
+		g_pClientWorld->SetLocalAngles( vec3_angle );
+		g_pClientWorld->ParseWorldMapData( engine->GetMapEntitiesString() );
 	}
 
-	if(!g_pClientWorld->InitializeAsServerEntity( entnum, serialNum )) {
+	if(!g_pClientWorld->InitializeAsServerEntity( 0, serialNum )) {
 		UTIL_Remove(g_pClientWorld);
 		g_pClientWorld = NULL;
 		return NULL;
@@ -81,34 +69,41 @@ END_RECV_TABLE()
 
 C_World::C_World( void )
 {
-	if(!g_pClientWorld)
-		g_pClientWorld = this;
+	Assert( !g_pClientWorld );
+
+	g_pClientWorld = this;
+
+	m_flWaveHeight = 0.0f;
+
+	m_nEntIndex = 0;
+
+	//cl_entitylist->AddNetworkableEntity( this, 0 );
+
+	m_nCreationTick = gpGlobals->tickcount;
 }
 
 C_World::~C_World( void )
 {
-	if(g_pClientWorld == this)
-		g_pClientWorld = NULL;
+	Assert( g_pClientWorld == this );
+
+	g_pClientWorld = NULL;
 }
 
 bool C_World::InitializeAsServerEntity( int entnum, int iSerialNum )
 {
-	m_flWaveHeight = 0.0f;
+	Assert( entnum == 0 );
 
-	if(g_pClientWorld == this) {
-		ActivityList_Init();
-		EventList_Init();
-	}
+	//cl_entitylist->ForceEntSerialNumber( 0, iSerialNum );
 
-	return BaseClass::InitializeAsServerEntity( entnum, iSerialNum );
+	//m_RefEHandle.Init( 0, iSerialNum );
+
+	cl_entitylist->AddNetworkableEntity( this, 0, iSerialNum );
+
+	return true;
 }
 
 void C_World::UpdateOnRemove()
 {
-	if(g_pClientWorld == this) {
-		ActivityList_Free();
-	}
-
 	BaseClass::UpdateOnRemove();
 }
 
@@ -120,92 +115,10 @@ void C_World::PreDataUpdate( DataUpdateType_t updateType )
 void C_World::OnDataChanged( DataUpdateType_t updateType )
 {
 	BaseClass::OnDataChanged( updateType );
-
-	// Always force reset to normal mode upon receipt of world in new map
-	if ( updateType == DATA_UPDATE_CREATED )
-	{
-		if(g_pClientWorld == this) {
-			modemanager->SwitchMode( CLIENTMODE_NORMAL, true );
-
-			if ( m_bStartDark )
-			{
-				ScreenFade_t sf;
-				memset( &sf, 0, sizeof( sf ) );
-				sf.a = 255;
-				sf.r = 0;
-				sf.g = 0;
-				sf.b = 0;
-				sf.duration = (float)(1<<SCREENFADE_FRACBITS) * 5.0f;
-				sf.holdTime = (float)(1<<SCREENFADE_FRACBITS) * 1.0f;
-				sf.fadeFlags = FFADE_IN | FFADE_PURGE;
-				GetViewEffects()->Fade( sf );
-			}
-
-			OcclusionParams_t params;
-			params.m_flMaxOccludeeArea = m_flMaxOccludeeArea;
-			params.m_flMinOccluderArea = m_flMinOccluderArea;
-			engine->SetOcclusionParameters( params );
-
-			modelinfo->SetLevelScreenFadeRange( m_flMinPropScreenSpaceWidth, m_flMaxPropScreenSpaceWidth );
-		}
-	}
-}
-
-void C_World::RegisterSharedActivities( void )
-{
-	ActivityList_RegisterSharedActivities();
-	EventList_RegisterSharedEvents();
-}
-
-// -----------------------------------------
-//	Sprite Index info
-// -----------------------------------------
-int		g_sModelIndexLaser;			// holds the index for the laser beam
-int		g_sModelIndexLaserDot;		// holds the index for the laser beam dot
-int		g_sModelIndexFireball;		// holds the index for the fireball
-int		g_sModelIndexSmoke;			// holds the index for the smoke cloud
-int		g_sModelIndexWExplosion;	// holds the index for the underwater explosion
-int		g_sModelIndexBubbles;		// holds the index for the bubbles model
-int		g_sModelIndexBloodDrop;		// holds the sprite index for the initial blood
-int		g_sModelIndexBloodSpray;	// holds the sprite index for splattered blood
-
-//-----------------------------------------------------------------------------
-// Purpose: Precache global weapon sounds
-//-----------------------------------------------------------------------------
-void W_Precache(void)
-{
-	PrecacheFileWeaponInfoDatabase( filesystem, GameRules()->GetEncryptionKey() );
-
-	g_sModelIndexFireball = modelinfo->GetModelIndex ("sprites/zerogxplode.vmt");// fireball
-	g_sModelIndexWExplosion = modelinfo->GetModelIndex ("sprites/WXplo1.vmt");// underwater fireball
-	g_sModelIndexSmoke = modelinfo->GetModelIndex ("sprites/steam1.vmt");// smoke
-	g_sModelIndexBubbles = modelinfo->GetModelIndex ("sprites/bubble.vmt");//bubbles
-	g_sModelIndexBloodSpray = modelinfo->GetModelIndex ("sprites/bloodspray.vmt"); // initial blood
-	g_sModelIndexBloodDrop = modelinfo->GetModelIndex ("sprites/blood.vmt"); // splattered blood 
-	g_sModelIndexLaser = modelinfo->GetModelIndex( "sprites/laserbeam.vmt" );
-	g_sModelIndexLaserDot = modelinfo->GetModelIndex("sprites/laserdot.vmt");
 }
 
 void C_World::Precache( void )
 {
-	if(g_pClientWorld && g_pClientWorld != this) {
-		return;
-	}
-
-	// UNDONE: Make most of these things server systems or precache_registers
-	// =================================================
-	//	Activities
-	// =================================================
-	ActivityList_Free();
-	EventList_Free();
-
-	RegisterSharedActivities();
-
-	// Get weapon precaches
-	W_Precache();	
-
-	// Call all registered precachers.
-	CPrecacheRegister::Precache();
 }
 
 void C_World::Spawn( void )
@@ -216,6 +129,27 @@ void C_World::Spawn( void )
 	}
 
 	Precache();
+
+	if ( m_bStartDark )
+	{
+		ScreenFade_t sf;
+		memset( &sf, 0, sizeof( sf ) );
+		sf.a = 255;
+		sf.r = 0;
+		sf.g = 0;
+		sf.b = 0;
+		sf.duration = (float)(1<<SCREENFADE_FRACBITS) * 5.0f;
+		sf.holdTime = (float)(1<<SCREENFADE_FRACBITS) * 1.0f;
+		sf.fadeFlags = FFADE_IN | FFADE_PURGE;
+		GetViewEffects()->Fade( sf );
+	}
+
+	OcclusionParams_t params;
+	params.m_flMaxOccludeeArea = m_flMaxOccludeeArea;
+	params.m_flMinOccluderArea = m_flMinOccluderArea;
+	engine->SetOcclusionParameters( params );
+
+	modelinfo->SetLevelScreenFadeRange( m_flMinPropScreenSpaceWidth, m_flMaxPropScreenSpaceWidth );
 }
 
 //-----------------------------------------------------------------------------

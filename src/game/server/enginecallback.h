@@ -55,8 +55,9 @@ extern CSteamAPIContext			*steamapicontext; // available on game clients
 extern CSteamGameServerAPIContext *steamgameserverapicontext; //available on game servers
 extern IGameLoopback* g_pGameLoopback;
 extern IGameServerLoopback* g_pGameServerLoopback;
+#ifndef SWDS
 extern IGameClientLoopback* g_pGameClientLoopback;
-
+#endif
 
 //-----------------------------------------------------------------------------
 // Precaches a material

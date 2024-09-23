@@ -12,19 +12,17 @@
 #include "shareddefs.h"
 #include "baseentity.h"
 
-class CPlayerResource : public CBaseEntity
+class CPlayerResource : public CLogicalEntity
 {
-	DECLARE_CLASS( CPlayerResource, CBaseEntity );
+	DECLARE_CLASS( CPlayerResource, CLogicalEntity );
 public:
 	DECLARE_SERVERCLASS();
 
 	CPlayerResource();
 
 	virtual void Spawn( void );
-	virtual	int	 ObjectCaps( void ) { return BaseClass::ObjectCaps(); }
 	virtual void ResourceThink( void );
 	virtual void UpdatePlayerData( void );
-	virtual int  UpdateTransmitState(void);
 	virtual void			UpdateOnRemove( void );
 
 protected:

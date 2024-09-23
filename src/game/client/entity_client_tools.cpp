@@ -492,7 +492,7 @@ void CClientTools::SetEnabled( HTOOLHANDLE handle, bool enabled )
 		return;
 
 	C_BaseEntity *ent = slot->m_hEntity.Get();
-	if ( ent == NULL ||	ent->entindex() == 0 )
+	if ( ent == NULL ||	ent->IsWorld() )
 		return; // Don't disable/enable the "world"
 
 	ent->EnableInToolView( enabled );

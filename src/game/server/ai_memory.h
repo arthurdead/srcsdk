@@ -14,10 +14,6 @@
 
 class CBaseEntity;
 
-#ifndef AI_USES_NAV_MESH
-class CAI_Network;
-#endif
-
 DECLARE_POINTER_HANDLE(AIEnemiesIter_t);
 
 const float AI_DEF_ENEMY_DISCARD_TIME = 60.0;
@@ -73,11 +69,7 @@ public:
 	int				GetSerialNumber() const	{ return m_serial;		}
 
 	void			RefreshMemories(void);
-#ifndef AI_USES_NAV_MESH
-	bool			UpdateMemory( CAI_Network* pAINet, CBaseEntity *enemy, const Vector &vPosition, float reactionDelay, bool firstHand );
-#else
 	bool			UpdateMemory( CBaseEntity *enemy, const Vector &vPosition, float reactionDelay, bool firstHand );
-#endif
 	void			OnTookDamageFrom( CBaseEntity *pEnemy );
 
 	bool			HasMemory( CBaseEntity *enemy );

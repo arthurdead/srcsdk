@@ -3,6 +3,13 @@
 #include "heist_gamerules.h"
 
 #ifdef GAME_DLL
+#include "ai_basenpc.h"
+#else
+#include "c_ai_basenpc.h"
+#define CAI_BaseNPC C_AI_BaseNPC
+#endif
+
+#ifdef GAME_DLL
 #include "heist_player.h"
 #else
 #include "c_heist_player.h"
@@ -11,6 +18,12 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+#ifdef GAME_DLL
+ConVar sv_heist_suspicion_increase_rate("sv_heist_suspicion_increase_rate", "0.02");
+ConVar sv_heist_suspicion_decrease_rate("sv_heist_suspicion_decrease_rate", "0.02");
+ConVar sv_heist_suspicion_dist("sv_heist_suspicion_dist", "90");
+#endif
 
 CUtlVector<CSuspicioner *> CSuspicioner::s_SuspicionerList;
 
@@ -48,11 +61,19 @@ void CSuspicioner::Init(CBaseEntity *owner)
 #ifdef GAME_DLL
 void CSuspicioner::SetSuspicion(CHeistPlayer *player, float value)
 {
-	if(player->IsSpotted()) {
-		return;
-	}
-
 	int idx = (player->entindex()-1);
+
+	SetSuspicion(idx, value);
+}
+
+void CSuspicioner::SetSuspicion(int idx, float value)
+{
+	CHeistPlayer *pPlayer = (CHeistPlayer *)UTIL_PlayerByIndex(idx);
+	if(!pPlayer || !pPlayer->IsAlive()) {
+		value = 0.0f;
+	} else if((pPlayer && pPlayer->IsSpotted()) || HeistGameRules()->AnyoneSpotted()) {
+		value = 100.0f;
+	}
 
 	float oldsuspicion = m_flSuspicion.Get(idx);
 
@@ -62,19 +83,60 @@ void CSuspicioner::SetSuspicion(CHeistPlayer *player, float value)
 
 	m_flSuspicion.Set(idx, value);
 
-	if(CloseEnough(value, 100.0f)) {
-		player->SetSpotted(true);
+	if(CloseEnough(value, 100.0f) && pPlayer) {
+		pPlayer->SetSpotted(true);
+		HeistGameRules()->SetSpotted(true);
 	}
 }
 #endif
 
 float CSuspicioner::GetSuspicion(CHeistPlayer *player) const
 {
-	if(player->IsSpotted()) {
+	int idx = (player->entindex()-1);
+
+	return GetSuspicion(idx);
+}
+
+float CSuspicioner::GetSuspicion(int idx) const
+{
+	CHeistPlayer *pPlayer = (CHeistPlayer *)UTIL_PlayerByIndex(idx);
+	if(!pPlayer || !pPlayer->IsAlive()) {
+		return 0.0f;
+	} else if((pPlayer && pPlayer->IsSpotted()) || HeistGameRules()->AnyoneSpotted()) {
 		return 100.0f;
 	}
 
-	int idx = (player->entindex()-1);
-
 	return m_flSuspicion.Get(idx);
+}
+
+void CSuspicioner::Update()
+{
+	if(HeistGameRules()->AnyoneSpotted()) {
+		return;
+	}
+
+	CAI_BaseNPC *pNPC = (CAI_BaseNPC *)m_hOwner.Get();
+	if(!pNPC) {
+		return;
+	}
+
+#ifdef GAME_DLL
+	for(int i = 0; i < MAX_PLAYERS; ++i) {
+		CHeistPlayer *pPlayer = (CHeistPlayer *)UTIL_PlayerByIndex(i+1);
+		if(!pPlayer || !pPlayer->IsAlive()) {
+			m_flSuspicion.Set(i, 0.0f);
+			continue;
+		}
+
+		if(pNPC->IsInFieldOfView(pPlayer)) {
+			float flNewValue = GetSuspicion(i) + sv_heist_suspicion_increase_rate.GetFloat();
+			SetSuspicion(i, flNewValue);
+		} else {
+			float flNewValue = GetSuspicion(i) + sv_heist_suspicion_decrease_rate.GetFloat();
+			SetSuspicion(i, flNewValue);
+		}
+
+		DevMsg("%f\n", m_flSuspicion.Get(i));
+	}
+#endif
 }

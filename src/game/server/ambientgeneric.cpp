@@ -377,14 +377,6 @@ void CAmbientGeneric::Activate( void )
 	if ( m_fActive )
 	{
 		int flags = SND_SPAWNING;
-		// If we are loading a saved game, we can't write into the init/signon buffer here, so just issue
-		//  as a regular sound message...
-		if ( gpGlobals->eLoadType == MapLoad_Transition ||
-			gpGlobals->eLoadType == MapLoad_LoadGame || 
-			GameRules()->InRoundRestart() )
-		{
-			flags = SND_NOFLAGS;
-		}
 
 		// Tracker 76119:  8/12/07 ywb: 
 		//  Make sure pitch and volume are set up to the correct value (especially after restoring a .sav file)

@@ -14,7 +14,7 @@
 #include "tier0/memdbgon.h"
 
 // Keeps us from doing strcmps in the tracefilter.
-string_t g_iszPhysicsPropClassname;
+extern string_t g_iszPhysicsPropClassname;
 
 enum Touch_t
 {
@@ -232,8 +232,6 @@ void CEnvBeam::Precache( void )
 		
 		m_iszSpriteName = AllocPooledString( fixedname );
 	}
-
-	g_iszPhysicsPropClassname = AllocPooledString( "prop_physics" );
 
 	m_spriteTexture = PrecacheModel( STRING(m_iszSpriteName) );
 	BaseClass::Precache();
@@ -550,7 +548,7 @@ public:
 		CBaseEntity *pEntity = EntityFromEntityHandle( pServerEntity );
 		if ( pEntity )
 		{
-			if ( pEntity->IsPlayer() || pEntity->MyNPCPointer() || pEntity->m_iClassname == g_iszPhysicsPropClassname )
+			if ( pEntity->IsPlayer() || pEntity->MyNPCPointer() || pEntity->GetClassnameStr() == g_iszPhysicsPropClassname )
 				return true;
 		}
 
@@ -587,7 +585,7 @@ bool CEnvBeam::PassesTouchFilters(CBaseEntity *pOther)
 
 	if( m_TouchType == touch_player_or_npc_or_physicsprop )
 	{
-		if( pOther->m_iClassname == g_iszPhysicsPropClassname )
+		if( pOther->GetClassnameStr() == g_iszPhysicsPropClassname )
 		{
 			fPassedSoFar = true;
 		}

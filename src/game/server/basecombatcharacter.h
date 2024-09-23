@@ -23,12 +23,11 @@
 #include "baseflex.h"
 #include "damagemodifier.h"
 #include "utllinkedlist.h"
-#include "ai_hull.h"
 #include "ai_utils.h"
 #include "physics_impact_damage.h"
 #include "basecombatcharacter_shared.h"
+#include "recast/recast_imgr.h"
 
-class CNavArea;
 class CScriptedTarget;
 typedef CHandle<CBaseCombatWeapon> CBaseCombatWeaponHandle;
 
@@ -420,9 +419,14 @@ public:
 
 	virtual void		ChangeTeam( int iTeamNum );
 
+	virtual void			SetCollisionBounds( const Vector& mins, const Vector &maxs );
+
+	virtual void OnSequenceSet( int nOldSequence );
+
 	// Nav hull type
-	Hull_t	GetHullType() const				{ return m_eHull; }
-	void	SetHullType( Hull_t hullType )	{ m_eHull = hullType; }
+	NavMeshType_t	GetNavMeshType() const				{ return m_navMeshType; }
+
+	virtual void OnNavMeshTypeChanged() {}
 
 	// FIXME: The following 3 methods are backdoor hack methods
 	
@@ -450,13 +454,6 @@ public:
 	bool				IsAllowedToPickupWeapons( void ) { return !m_bPreventWeaponPickup; }
 	void				SetPreventWeaponPickup( bool bPrevent ) { m_bPreventWeaponPickup = bPrevent; }
 	bool				m_bPreventWeaponPickup;
-
-	virtual CNavArea *GetLastKnownArea( void ) const		{ return m_lastNavArea; }		// return the last nav area the player occupied - NULL if unknown
-	virtual bool IsAreaTraversable( const CNavArea *area ) const;							// return true if we can use the given area 
-	virtual void ClearLastKnownArea( void );
-	virtual void UpdateLastKnownArea( void );										// invoke this to update our last known nav area (since there is no think method chained to CBaseCombatCharacter)
-	virtual void OnNavAreaChanged( CNavArea *enteredArea, CNavArea *leftArea ) { }	// invoked (by UpdateLastKnownArea) when we enter a new nav area (or it is reset to NULL)
-	virtual void OnNavAreaRemoved( CNavArea *removedArea );
 
 #ifdef INVASION_DLL
 public:
@@ -495,7 +492,7 @@ public:
 	CNetworkVar( float, m_flNextAttack );			// cannot attack again until this time
 
 private:
-	Hull_t		m_eHull;
+	NavMeshType_t		m_navMeshType;
 
 	void				UpdateGlowEffect( void );
 	void				DestroyGlowEffect( void );
@@ -522,7 +519,7 @@ public:
 protected:
 	// Visibility-related stuff
 	bool ComputeLOS( const Vector &vecEyePosition, const Vector &vecTarget ) const;
-	bool ComputeTargetIsInDarkness( const Vector &vecEyePosition, CNavArea *pTargetNavArea, const Vector &vecTargetPos ) const;
+	bool ComputeTargetIsInDarkness( const Vector &vecEyePosition, const Vector &vecTargetPos ) const;
 
 private:
 	// For weapon strip
@@ -585,11 +582,6 @@ protected:
 		IntervalTimer interval;		// how long has it been
 	};
 	DamageHistory m_damageHistory[ MAX_DAMAGE_TEAMS ];
-
-	// last known navigation area of player - NULL if unknown
-	CNavArea *m_lastNavArea;
-	CAI_MoveMonitor m_NavAreaUpdateMonitor;
-	int m_registeredNavTeam;	// ugly, but needed to clean up player team counts in nav mesh
 
 	friend class CCleanupDefaultRelationShips;
 };

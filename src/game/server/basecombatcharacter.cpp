@@ -35,7 +35,6 @@
 #include "movevars_shared.h"
 #include "RagdollBoogie.h"
 #include "rumble_shared.h"
-#include "nav_mesh.h"
 #include "rope.h"
 
 #ifdef PORTAL
@@ -56,13 +55,10 @@ extern ConVar weapon_showproficiency;
 ConVar ai_show_hull_attacks( "ai_show_hull_attacks", "0" );
 ConVar ai_force_serverside_ragdoll( "ai_force_serverside_ragdoll", "0" );
 
-ConVar nb_last_area_update_tolerance( "ai_last_area_update_tolerance", "4.0", FCVAR_CHEAT, "Distance a character needs to travel in order to invalidate cached area" ); // 4.0 tested as sweet spot (for wanderers, at least). More resulted in little benefit, less quickly diminished benefit [7/31/2008 tom]
-
 ConVar ai_use_visibility_cache( "ai_use_visibility_cache", "1" );
 
 BEGIN_MAPENTITY( CBaseCombatCharacter )
 
-	DEFINE_KEYFIELD( m_eHull, FIELD_INTEGER, "HullType" ),
 	DEFINE_KEYFIELD( m_bloodColor, FIELD_INTEGER, "BloodColor" ),
 
 	DEFINE_INPUT( m_ProficiencyOverride, FIELD_INTEGER, "SetProficiencyOverride"),
@@ -738,10 +734,6 @@ CBaseCombatCharacter::CBaseCombatCharacter( void )
 		m_damageHistory[t].team = TEAM_INVALID;
 	}
 
-	// not standing on a nav area yet
-	m_lastNavArea = NULL;
-	m_registeredNavTeam = TEAM_INVALID;
-
 	for (int i = 0; i < MAX_WEAPONS; i++)
 	{
 		m_hMyWeapons.Set( i, NULL );
@@ -753,6 +745,8 @@ CBaseCombatCharacter::CBaseCombatCharacter( void )
 	m_impactEnergyScale = 1.0f;
 
 	m_bForceServerRagdoll = ai_force_serverside_ragdoll.GetBool();
+
+	m_navMeshType = RECAST_NAVMESH_INVALID;
 }
 
 //------------------------------------------------------------------------------
@@ -768,7 +762,6 @@ CBaseCombatCharacter::~CBaseCombatCharacter( void )
 	}
 	RemoveRagdoll();
 	ResetVisibilityCache( this );
-	ClearLastKnownArea();
 }
 
 void CBaseCombatCharacter::RemoveRagdoll()
@@ -795,10 +788,27 @@ void CBaseCombatCharacter::Spawn( void )
 		m_damageHistory[t].team = TEAM_INVALID;
 	}
 
-	// not standing on a nav area yet
-	ClearLastKnownArea();
-
 	RemoveRagdoll();
+}
+
+void CBaseCombatCharacter::OnSequenceSet( int nOldSequence )
+{
+	BaseClass::OnSequenceSet( nOldSequence );
+}
+
+void CBaseCombatCharacter::SetCollisionBounds( const Vector& mins, const Vector &maxs )
+{
+	BaseClass::SetCollisionBounds( mins, maxs );
+
+	Vector vecSize;
+	VectorSubtract( maxs, mins, vecSize );
+	float flRadius2D = vecSize.Length2D() * 0.5f;
+
+	NavMeshType_t newType = RecastMgr().FindBestMeshTypeForRadiusHeight( flRadius2D, maxs.z );
+	if(newType != m_navMeshType) {
+		m_navMeshType = newType;
+		OnNavMeshTypeChanged();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1697,9 +1707,6 @@ void CBaseCombatCharacter::Event_Killed( const CTakeDamageInfo &info )
 			BecomeRagdoll( info, forceVector );
 		}
 	}
-	
-	// no longer standing on a nav area
-	ClearLastKnownArea();
 
 	// L4D specific hack for zombie commentary mode
 	if( GetOwnerEntity() != NULL )
@@ -4064,7 +4071,7 @@ void CBaseCombatCharacter::InputSwitchToWeapon( inputdata_t &inputdata )
 	for (int i = 0; i<MAX_WEAPONS; i++)
 	{
 		// These are both pooled, so if they're the same classname they should point to the same address
-		if (m_hMyWeapons[i].Get() && m_hMyWeapons[i]->m_iClassname == inputdata.value.StringID())
+		if (m_hMyWeapons[i].Get() && m_hMyWeapons[i]->GetClassnameStr() == inputdata.value.StringID())
 		{
 			Weapon_Switch( m_hMyWeapons[i] );
 			return;
@@ -4354,104 +4361,10 @@ CBaseEntity *CBaseCombatCharacter::GetFogTrigger( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Invoke this to update our last known nav area 
-// (since there is no think method chained to CBaseCombatCharacter)
-//-----------------------------------------------------------------------------
-void CBaseCombatCharacter::UpdateLastKnownArea( void )
-{
-	if ( TheNavMesh->IsGenerating() )
-	{
-		ClearLastKnownArea();
-		return;
-	}
-
-	if ( nb_last_area_update_tolerance.GetFloat() > 0.0f )
-	{
-		// skip this test if we're not standing on the world (ie: elevators that move us)
-		if ( GetGroundEntity() == NULL || GetGroundEntity()->IsWorld() )
-		{
-			if ( m_lastNavArea && m_NavAreaUpdateMonitor.IsMarkSet() && !m_NavAreaUpdateMonitor.TargetMoved( this ) )
-				return;
-
-			m_NavAreaUpdateMonitor.SetMark( this, nb_last_area_update_tolerance.GetFloat() );
-		}
-	}
-
-	// find the area we are directly standing in
-	CNavArea *area = TheNavMesh->GetNearestNavArea( this, GETNAVAREA_CHECK_GROUND | GETNAVAREA_CHECK_LOS, 50.0f );
-	if ( !area )
-		return;
-
-	// make sure we can actually use this area - if not, consider ourselves off the mesh
-	if ( !IsAreaTraversable( area ) )
-		return;
-
-	if ( area != m_lastNavArea )
-	{
-		// player entered a new nav area
-		if ( m_lastNavArea )
-		{
-			m_lastNavArea->DecrementPlayerCount( m_registeredNavTeam, entindex() );
-			m_lastNavArea->OnExit( this, area );
-		}
-
-		m_registeredNavTeam = GetTeamNumber();
-		area->IncrementPlayerCount( m_registeredNavTeam, entindex() );
-		area->OnEnter( this, m_lastNavArea );
-
-		OnNavAreaChanged( area, m_lastNavArea );
-
-		m_lastNavArea = area;
-	}
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Return true if we can use (walk through) the given area 
-//-----------------------------------------------------------------------------
-bool CBaseCombatCharacter::IsAreaTraversable( const CNavArea *area ) const
-{
-	return area ? !area->IsBlocked( GetTeamNumber() ) : false;
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Leaving the nav mesh
-//-----------------------------------------------------------------------------
-void CBaseCombatCharacter::ClearLastKnownArea( void )
-{
-	OnNavAreaChanged( NULL, m_lastNavArea );
-	
-	if ( m_lastNavArea )
-	{
-		m_lastNavArea->DecrementPlayerCount( m_registeredNavTeam, entindex() );
-		m_lastNavArea->OnExit( this, NULL );
-		m_lastNavArea = NULL;
-		m_registeredNavTeam = TEAM_INVALID;
-	}
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Handling editor removing the area we're standing upon
-//-----------------------------------------------------------------------------
-void CBaseCombatCharacter::OnNavAreaRemoved( CNavArea *removedArea )
-{
-	if ( m_lastNavArea == removedArea )
-	{
-		ClearLastKnownArea();
-	}
-}
-
-
-//-----------------------------------------------------------------------------
 // Purpose: Changing team, maintain associated data
 //-----------------------------------------------------------------------------
 void CBaseCombatCharacter::ChangeTeam( int iTeamNum )
 {
-	// old team member no longer in the nav mesh
-	ClearLastKnownArea();
-
 	BaseClass::ChangeTeam( iTeamNum );
 }
 

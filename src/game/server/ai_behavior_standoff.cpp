@@ -7,12 +7,6 @@
 
 #include "cbase.h"
 
-#ifndef AI_USES_NAV_MESH
-#include "ai_hint.h"
-#include "ai_node.h"
-#else
-#include "nav_area.h"
-#endif
 #include "ai_navigator.h"
 #include "ai_tacticalservices.h"
 #include "ai_behavior_standoff.h"
@@ -190,7 +184,7 @@ CAI_StandoffBehavior::CAI_StandoffBehavior( CAI_BaseNPC *pOuter )
 	SetPosture( AIP_STANDING );
 	m_SavedDistTooFar = FLT_MAX;
 	m_fForceNewEnemy = false;
-	m_TimePreventForceNewEnemy.Set( 3.0, 6.0 );
+	m_TimePreventForceNewEnemy.Set( 3.0f, 6.0f );
 	m_fIgnoreFronts = false;
 	m_bHasLowCoverActivity = false;
 }
@@ -289,12 +283,6 @@ void CAI_StandoffBehavior::OnUpdateShotRegulator()
 
 void CAI_StandoffBehavior::EndScheduleSelection()
 {
-#ifndef AI_USES_NAV_MESH
-	UnlockHintNode();
-#else
-	UnlockActiveArea();
-#endif
-
 	m_vecStandoffGoalPosition = GOAL_POSITION_INVALID;
 	GetOuter()->m_flDistTooFar = m_SavedDistTooFar;
 
@@ -457,7 +445,6 @@ int CAI_StandoffBehavior::SelectScheduleUpdateWeapon( void )
 
 		if ( iPercent <= m_params.oddsCover && GetEnemy() != NULL )
 		{
-			SetReuseCurrentCover();
 			StandoffMsg( "Hurt, firing one more shot before cover\n" );
 			if ( !GetOuter()->GetShotRegulator()->IsInRestInterval() )
 			{
@@ -487,17 +474,8 @@ int CAI_StandoffBehavior::SelectScheduleCheckCover( void )
 	if ( GetOuter()->GetShotRegulator()->IsInRestInterval() )
 	{
 		StandoffMsg( "Regulated to not shoot\n" );
-	#ifndef AI_USES_NAV_MESH
-		if ( GetHintType() == HINT_TACTICAL_COVER_LOW )
-			SetPosture( AIP_CROUCHING );
-		else
-			SetPosture( AIP_STANDING );
-	#else
 		SetPosture( AIP_STANDING );
-	#endif
 
-		if ( random->RandomInt(0,99) < 80 )
-			SetReuseCurrentCover();
 		return SCHED_TAKE_COVER_FROM_ENEMY;
 	}
 	
@@ -642,26 +620,11 @@ Activity CAI_MappedActivityBehavior_Temporary::GetMappedActivity( AI_Posture_t p
 
 Activity CAI_StandoffBehavior::NPC_TranslateActivity( Activity activity )
 {
-	Activity coverActivity = GetCoverActivity();
-	if ( coverActivity != ACT_INVALID )
-	{
-		if ( GetPosture() == AIP_STANDING )
-		{
-			if ( coverActivity == ACT_COVER_LOW )
-				SetPosture( AIP_CROUCHING );
-			else if ( coverActivity == ACT_COVER_MED )
-			{
-				SetPosture( AIP_CROUCHING_MED );
-				coverActivity = ACT_COVER_LOW;
-			}
-		}
-		else if (coverActivity == ACT_COVER_MED)
-			coverActivity = ACT_COVER_LOW;
+	Activity coverActivity = ACT_COVER;
 
-		if ( activity == ACT_IDLE )
-			activity = coverActivity;
-	}
-	
+	if ( activity == ACT_IDLE )
+		activity = coverActivity;
+
 	Activity result = GetMappedActivity( GetPosture(), activity );
 	if ( result != ACT_INVALID)
 		return result;
@@ -831,10 +794,9 @@ bool CAI_StandoffBehavior::IsBehindBattleLines( const Vector &point )
 
 //-------------------------------------
 
-#ifndef AI_USES_NAV_MESH
-bool CAI_StandoffBehavior::IsValidCover( const Vector &vecCoverLocation, const CAI_Hint *pHint )
+bool CAI_StandoffBehavior::IsValidCover( const Vector &vecCoverLocation )
 {
-	if ( !BaseClass::IsValidCover( vecCoverLocation, pHint ) )
+	if ( !BaseClass::IsValidCover( vecCoverLocation ) )
 		return false;
 
 	if ( IsCurSchedule( SCHED_TAKE_COVER_FROM_BEST_SOUND ) )
@@ -845,35 +807,13 @@ bool CAI_StandoffBehavior::IsValidCover( const Vector &vecCoverLocation, const C
 
 //-------------------------------------
 
-bool CAI_StandoffBehavior::IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, const CAI_Hint *pHint )
+bool CAI_StandoffBehavior::IsValidShootPosition( const Vector &vLocation )
 {
-	if ( !BaseClass::IsValidShootPosition( vLocation, pNode, pHint ) )
+	if ( !BaseClass::IsValidShootPosition( vLocation ) )
 		return false;
 
 	return ( m_fIgnoreFronts || IsBehindBattleLines( vLocation ) );
 }
-#else
-bool CAI_StandoffBehavior::IsValidCover( const Vector &vecCoverLocation, const CNavArea *pArea )
-{
-	if ( !BaseClass::IsValidCover( vecCoverLocation, pArea ) )
-		return false;
-
-	if ( IsCurSchedule( SCHED_TAKE_COVER_FROM_BEST_SOUND ) )
-		return true;
-
-	return ( m_fIgnoreFronts || IsBehindBattleLines( vecCoverLocation ) );
-}
-
-//-------------------------------------
-
-bool CAI_StandoffBehavior::IsValidShootPosition( const Vector &vLocation, CNavArea *pArea )
-{
-	if ( !BaseClass::IsValidShootPosition( vLocation, pArea ) )
-		return false;
-
-	return ( m_fIgnoreFronts || IsBehindBattleLines( vLocation ) );
-}
-#endif
 
 //-------------------------------------
 
@@ -999,15 +939,6 @@ void CAI_StandoffBehavior::StartTask( const Task_t *pTask )
 
 //-------------------------------------
 
-#ifndef AI_USES_NAV_MESH
-void CAI_StandoffBehavior::OnChangeHintGroup( string_t oldGroup, string_t newGroup )
-{
-	OnChangeTacticalConstraints();
-}
-#endif
-
-//-------------------------------------
-
 void CAI_StandoffBehavior::OnChangeTacticalConstraints()
 {
 	if ( m_params.tactChangeReaction > AIHCR_DEFAULT_AI )
@@ -1049,69 +980,6 @@ bool CAI_StandoffBehavior::GetDirectionOfStandoff( Vector *pDir )
 	}
 	return false;
 }
-
-//-------------------------------------
-
-#ifndef AI_USES_NAV_MESH
-Hint_e CAI_StandoffBehavior::GetHintType()
-{
-	CAI_Hint *pHintNode = GetHintNode();
-	if ( pHintNode )
-		return pHintNode->HintType();
-	return HINT_NONE;
-}
-#endif
-
-//-------------------------------------
-
-void CAI_StandoffBehavior::SetReuseCurrentCover()
-{
-#ifndef AI_USES_NAV_MESH
-	CAI_Hint *pHintNode = GetHintNode();
-	if ( pHintNode && pHintNode->GetNode() && pHintNode->GetNode()->IsLocked() )
-		pHintNode->GetNode()->Unlock();
-#endif
-}
-
-//-------------------------------------
-
-#ifndef AI_USES_NAV_MESH
-void CAI_StandoffBehavior::UnlockHintNode()
-{
-	CAI_Hint *pHintNode = GetHintNode();
-	if ( pHintNode )
-	{
-		if ( pHintNode->IsLocked() && pHintNode->IsLockedBy( GetOuter() ) )
-			pHintNode->Unlock();
-		CAI_Node *pNode = pHintNode->GetNode();
-		if ( pNode && pNode->IsLocked() )
-			pNode->Unlock();
-		ClearHintNode();
-	}
-}
-#else
-void CAI_StandoffBehavior::UnlockActiveArea()
-{
-	CNavArea *pActiveArea = GetActiveArea();
-	if ( pActiveArea )
-	{
-		ClearActiveArea();
-	}
-}
-#endif
-
-//-------------------------------------
-
-Activity CAI_StandoffBehavior::GetCoverActivity()
-{
-#ifndef AI_USES_NAV_MESH
-	CAI_Hint *pHintNode = GetHintNode();
-	if ( pHintNode && pHintNode->HintType() == HINT_TACTICAL_COVER_LOW )
-		return GetOuter()->GetCoverActivity( pHintNode );
-#endif
-	return ACT_INVALID;
-}
-
 
 //-------------------------------------
 

@@ -487,7 +487,7 @@ public:
 	virtual void			Operator_FrameUpdate( CBaseCombatCharacter  *pOperator );
 
 	// Gets the weapon script name to load.
-	virtual const char*		GetWeaponScriptName() { return GetClassname(); }
+	virtual const char*		GetWeaponScriptName();
 
 	bool				FiresUnderwater() { return m_bFiresUnderwater; }
 	void				SetFiresUnderwater( bool bVal ) { m_bFiresUnderwater = bVal; }

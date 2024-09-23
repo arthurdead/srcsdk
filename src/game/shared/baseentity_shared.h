@@ -7,7 +7,8 @@
 
 #ifndef BASEENTITY_SHARED_H
 #define BASEENTITY_SHARED_H
-#pragma once
+
+#include "mathlib/vector.h"
 
 // Simple shared header file for common base entities
 
@@ -36,6 +37,38 @@
 // Maximum number of vphysics objects per entity
 #define VPHYSICS_MAX_OBJECT_LIST_COUNT	1024
 
+// Shared EntityMessage between game and client .dlls
+#define BASEENTITY_MSG_REMOVE_DECALS	1
+
+extern float k_flMaxEntityPosCoord;
+extern float k_flMaxEntityEulerAngle;
+extern float k_flMaxEntitySpeed;
+extern float k_flMaxEntitySpinRate;
+
+extern bool CheckEmitReasonablePhysicsSpew();
+
+// Returns:
+//   -1 - velocity is really, REALLY bad and probably should be rejected.
+//   0  - velocity was suspicious and clamped.
+//   1  - velocity was OK and not modified
+extern int CheckEntityVelocity( Vector &v );
+
+bool IsEntityCoordinateReasonable ( const vec_t c );
+
+bool IsEntityPositionReasonable( const Vector &v );
+
+bool IsEntityQAngleReasonable( const QAngle &q );
+
+// Angular velocity in exponential map form
+bool IsEntityAngularVelocityReasonable( const Vector &q );
+
+// Angular velocity of each Euler angle.
+bool IsEntityQAngleVelReasonable( const QAngle &q );
+
+#endif
+
+#ifndef BASEENTITY_SHARED_INLINES_H
+#define BASEENTITY_SHARED_INLINES_H
 
 #if defined( CLIENT_DLL )
 #include "c_baseentity.h"
@@ -226,9 +259,6 @@ inline bool CBaseEntity::IsEffectActive( int nEffects ) const
 	return (m_fEffects & nEffects) != 0; 
 }
 
-// Shared EntityMessage between game and client .dlls
-#define BASEENTITY_MSG_REMOVE_DECALS	1
-
 // convenience functions for fishing out the vectors of this object
 // equivalent to GetVectors(), but doesn't need an intermediate stack 
 // variable (which might cause an LHS anyway)
@@ -250,11 +280,6 @@ inline Vector	CBaseEntity::Up() const  RESTRICT      ///< get my up      (+z) ve
 	return Vector( mat[0][2], mat[1][2], mat[2][2] );
 }
 
-extern float k_flMaxEntityPosCoord;
-extern float k_flMaxEntityEulerAngle;
-extern float k_flMaxEntitySpeed;
-extern float k_flMaxEntitySpinRate;
-
 inline bool IsEntityCoordinateReasonable ( const vec_t c )
 {
 	float r = k_flMaxEntityPosCoord;
@@ -269,12 +294,6 @@ inline bool IsEntityPositionReasonable( const Vector &v )
 		v.y > -r && v.y < r &&
 		v.z > -r && v.z < r;
 }
-
-// Returns:
-//   -1 - velocity is really, REALLY bad and probably should be rejected.
-//   0  - velocity was suspicious and clamped.
-//   1  - velocity was OK and not modified
-extern int CheckEntityVelocity( Vector &v );
 
 inline bool IsEntityQAngleReasonable( const QAngle &q )
 {
@@ -304,7 +323,5 @@ inline bool IsEntityQAngleVelReasonable( const QAngle &q )
 		q.y > -r && q.y < r &&
 		q.z > -r && q.z < r;
 }
-
-extern bool CheckEmitReasonablePhysicsSpew();
 
 #endif // BASEENTITY_SHARED_H

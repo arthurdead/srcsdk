@@ -15,13 +15,14 @@
 #include "tier1/utlvector.h"
 #include "bspflags.h"
 #include "vcollide.h"
+#include "recast/recast_imgr.h"
 
 class CBaseEntity;
 
 class CMapMesh : public IMapMesh
 {
 public:
-	CMapMesh( bool bLog = true );
+	CMapMesh( MapMeshType_t type, bool bLog = true );
 	~CMapMesh();
 
 	bool Load( bool bDynamicOnly = false );
@@ -55,6 +56,8 @@ private:
 	virtual bool GenerateBrushData( void *fileContent, CUtlVector<float> &verts, CUtlVector<int> &triangles );
 
 private:
+	MapMeshType_t m_Type;
+
 	bool m_bLog;
 
 	CUtlVector< float > m_Vertices;

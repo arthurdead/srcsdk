@@ -28,7 +28,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-static ConVar recast_build_single( "recast_build_single", "", 0, "Limit building to a single mesh named in this convar" );
 static ConVar recast_build_threaded( "recast_build_threaded", "1", FCVAR_ARCHIVE );
 static ConVar recast_build_numthreads( "recast_build_numthreads", "8", FCVAR_ARCHIVE );
 static ConVar recast_build_remove_unreachable_polys( "recast_build_remove_unreachable_polys", "1", 0 );
@@ -360,7 +359,7 @@ bool CRecastMesh::RemoveUnreachablePoly( CMapMesh *pMapMesh )
 		for( int i = 0; i < tile->header->polyCount; ++i )
 		{
 			const dtPoly* p = &tile->polys[i];
-			if( p->flags & SAMPLE_POLYFLAGS_DISABLED ) {
+			if( p->flags & POLYFLAGS_DISABLED ) {
 
 				// TODO: Maybe optimize by creating a custom version of dtMarkPolyArea, but probably fast enough
 				CUtlVector< float > verts;
@@ -675,9 +674,9 @@ bool CRecastMesh::RebuildPartial( CMapMesh *pMapMesh, const Vector &vMins, const
 //-----------------------------------------------------------------------------
 // Purpose: Loads the map mesh (geometry)
 //-----------------------------------------------------------------------------
-bool CRecastMgr::LoadMapMesh( bool bLog, bool bDynamicOnly, const Vector &vMinBounds, const Vector &vMaxBounds )
+bool CRecastMgr::LoadMapMesh( MapMeshType_t type, bool bLog, bool bDynamicOnly, const Vector &vMinBounds, const Vector &vMaxBounds )
 {
-	if( bDynamicOnly && !m_pMapMesh )
+	if( bDynamicOnly && !m_pMapMeshes[type] )
 	{
 		Warning("CRecastMesh::LoadMapMesh: load dynamic specified, but no existing static map mesh data!\n");
 		return false;
@@ -688,21 +687,21 @@ bool CRecastMgr::LoadMapMesh( bool bLog, bool bDynamicOnly, const Vector &vMinBo
 	// Create a new map mesh if we are loading everything
 	if( !bDynamicOnly )
 	{
-		if( m_pMapMesh )
+		if( m_pMapMeshes[type] )
 		{
-			delete m_pMapMesh;
-			m_pMapMesh = NULL;
+			delete m_pMapMeshes[type];
+			m_pMapMeshes[type] = NULL;
 		}
 
-		m_pMapMesh = new CMapMesh( bLog );
+		m_pMapMeshes[type] = new CMapMesh( type, bLog );
 	}
 	else
 	{
-		m_pMapMesh->SetLog( bLog );
+		m_pMapMeshes[type]->SetLog( bLog );
 	}
 
-	m_pMapMesh->SetBounds( vMinBounds, vMaxBounds );
-	if( !m_pMapMesh->Load( bDynamicOnly ) )
+	m_pMapMeshes[type]->SetBounds( vMinBounds, vMaxBounds );
+	if( !m_pMapMeshes[type]->Load( bDynamicOnly ) )
 	{
 		Warning("CRecastMesh::LoadMapMesh: failed to load map data!\n");
 		return false;
@@ -716,14 +715,14 @@ bool CRecastMgr::LoadMapMesh( bool bLog, bool bDynamicOnly, const Vector &vMinBo
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CRecastMgr::BuildMesh( CMapMesh *pMapMesh, Hull_t hull )
+bool CRecastMgr::BuildMesh( CMapMesh *pMapMesh, NavMeshType_t type )
 {
-	CRecastMesh *pMesh = GetMeshOfHull( hull );
+	CRecastMesh *pMesh = GetMesh( type );
 	if( !pMesh )
 	{
-		pMesh = new CRecastMesh();
-		pMesh->Init( hull );
-		m_Meshes.Insert( hull, pMesh );
+		pMesh = new CRecastMesh( type );
+		pMesh->Init();
+		m_Meshes[type] = pMesh;
 	}
 	if( pMesh->Build( pMapMesh ) )
 	{
@@ -742,45 +741,24 @@ static void PostThreadedBuildMesh()
 
 void CRecastMgr::ThreadedBuildMesh( CRecastMesh *&pMesh )
 {
-	pMesh->Build( (CMapMesh *)RecastMgr().GetMapMesh() );
+	pMesh->Build( (CMapMesh *)RecastMgr().GetMapMesh( pMesh->GetMapType() ) );
 }
 
 void CRecastMgr::ThreadedRebuildPartialMesh( CRecastMesh *&pMesh )
 {
-	CMapMesh *pMapMesh = (CMapMesh *)RecastMgr().GetMapMesh();
+	CMapMesh *pMapMesh = (CMapMesh *)RecastMgr().GetMapMesh( pMesh->GetMapType() );
 	pMesh->RebuildPartial( pMapMesh, pMapMesh->GetMinBounds(), pMapMesh->GetMaxBounds() );
 }
-
-static char* s_MeshNames[] = 
-{
-	"human",
-	"medium",
-	"large",
-	"verylarge",
-	"air"
-};
 
 //-----------------------------------------------------------------------------
 // Purpose: Checks if building this mesh is disabled
 //-----------------------------------------------------------------------------
-bool CRecastMgr::IsMeshBuildDisabled( Hull_t hull )
+bool CRecastMgr::IsMeshBuildDisabled( NavMeshType_t type )
 {
 	CRecastMgrEnt *pMgrEnt = GetRecastMgrEnt();
 	if( pMgrEnt )
 	{
-		//TODO Arthurdead!!!!
-	#if 0
-		if( pMgrEnt->HasSpawnFlags( SF_DISABLE_MESH_HUMAN ) && V_strcmp( "human", meshName ) == 0 )
-			return true;
-		else if( pMgrEnt->HasSpawnFlags( SF_DISABLE_MESH_MEDIUM ) && V_strcmp( "medium", meshName ) == 0 )
-			return true;
-		else if( pMgrEnt->HasSpawnFlags( SF_DISABLE_MESH_LARGE ) && V_strcmp( "large", meshName ) == 0 )
-			return true;
-		else if( pMgrEnt->HasSpawnFlags( SF_DISABLE_MESH_VERYLARGE ) && V_strcmp( "verylarge", meshName ) == 0 )
-			return true;
-		else if( pMgrEnt->HasSpawnFlags( SF_DISABLE_MESH_AIR ) && V_strcmp( "air", meshName ) == 0 )
-			return true;
-	#endif
+		return pMgrEnt->HasSpawnFlags( (SF_DISABLE_MESH_FLAGS_START << type) );
 	}
 	return false;
 }
@@ -793,10 +771,12 @@ bool CRecastMgr::Build( bool loadMeshes )
 	double fStartTime = Plat_FloatTime();
 
 	// Load map mesh
-	if( !LoadMapMesh() )
-	{
-		Warning("CRecastMesh::Build: failed to load map data!\n");
-		return false;
+	for(int i = 0; i < RECAST_MAPMESH_NUM; ++i) {
+		if( !LoadMapMesh( (MapMeshType_t)i ) )
+		{
+			Warning("CRecastMesh::Build: failed to load map data!\n");
+			return false;
+		}
 	}
 
 	// Insert all meshes first
@@ -804,10 +784,13 @@ bool CRecastMgr::Build( bool loadMeshes )
 	{
 		InitMeshes();
 	}
+
 	CUtlVector<CRecastMesh *> meshesToBuild;
-	for ( int i = m_Meshes.FirstInorder(); i != m_Meshes.InvalidIndex(); i = m_Meshes.NextInorder(i ) )
+	for ( int i = 0; i < RECAST_NAVMESH_NUM; i++ )
 	{
-		if( IsMeshBuildDisabled( m_Meshes[i]->GetHull() ) )
+		if(!m_Meshes[i])
+			continue;
+		if( IsMeshBuildDisabled( (NavMeshType_t)i ) )
 			continue;
 		meshesToBuild.AddToTail( m_Meshes[i] );
 	}
@@ -822,24 +805,16 @@ bool CRecastMgr::Build( bool loadMeshes )
 	}
 	else
 	{
-		if( V_strlen( recast_build_single.GetString() ) > 0 )
+		for( int i = 0; i < meshesToBuild.Count(); i++ )
 		{
-			Hull_t hull = NAI_Hull::LookupId( recast_build_single.GetString() );
-			Assert( hull != HULL_NONE );
-
-			BuildMesh( m_pMapMesh, hull );
-		}
-		else
-		{
-			for( int i = 0; i < meshesToBuild.Count(); i++ )
-			{
-				BuildMesh( m_pMapMesh, meshesToBuild[i]->GetHull() );
-			}
+			NavMeshType_t type = meshesToBuild[i]->GetType();
+			MapMeshType_t maptype = meshesToBuild[i]->GetMapType();
+			BuildMesh( m_pMapMeshes[maptype], type );
 		}
 	}
 
 	m_bLoaded = true;
-	DevMsg( "CRecastMgr: Finished generating %d meshes in %f seconds\n", m_Meshes.Count(), Plat_FloatTime() - fStartTime );
+	DevMsg( "CRecastMgr: Finished generating %d meshes in %f seconds\n", meshesToBuild.Count(), Plat_FloatTime() - fStartTime );
 	return true;
 }
 
@@ -879,17 +854,21 @@ void CRecastMgr::UpdateRebuildPartial()
 	}
 
 	// Load map mesh
-	if( !LoadMapMesh( recast_build_partial_debug.GetBool(), true, curUpdate.vMins, curUpdate.vMaxs ) )
-	{
-		Warning( "CRecastMgr::UpdateRebuildPartial: failed to load map data!\n" );
-		return;
+	for(int i = 0; i < RECAST_MAPMESH_NUM; ++i) {
+		if( !LoadMapMesh( (MapMeshType_t)i, recast_build_partial_debug.GetBool(), true, curUpdate.vMins, curUpdate.vMaxs ) )
+		{
+			Warning( "CRecastMgr::UpdateRebuildPartial: failed to load map data!\n" );
+			return;
+		}
 	}
 
 	// Perform the update
 	CUtlVector<CRecastMesh *> meshesToBuild;
-	for ( int i = m_Meshes.FirstInorder(); i != m_Meshes.InvalidIndex(); i = m_Meshes.NextInorder(i ) )
+	for ( int i = 0; i < RECAST_NAVMESH_NUM; i++ )
 	{
-		if( IsMeshBuildDisabled( m_Meshes[i]->GetHull() ) )
+		if(!m_Meshes[i])
+			continue;
+		if( IsMeshBuildDisabled( m_Meshes[i]->GetType() ) )
 			continue;
 		meshesToBuild.AddToTail( m_Meshes[i] );
 	}
@@ -921,14 +900,14 @@ CON_COMMAND( recast_mesh_setcellsize, "" )
 		return;
 #endif // CLIENT_DLL
 
-	Hull_t hull = NAI_Hull::LookupId( args[1] );
-	if( hull == HULL_NONE )
+	NavMeshType_t type = NAI_Hull::LookupId( args[1] );
+	if( type == RECAST_NAVMESH_INVALID )
 	{
-		Warning("recast_mesh_setcellsize: unknown hull name \"%s\"\n", args[1] );
+		Warning("recast_mesh_setcellsize: unknown name \"%s\"\n", args[1] );
 		return;
 	}
 
-	CRecastMesh *pMesh = RecastMgr().GetMeshOfHull( hull );
+	CRecastMesh *pMesh = RecastMgr().GetMesh( type );
 	if( !pMesh )
 	{
 		Warning("recast_mesh_setcellsize: could not find mesh \"%s\"\n", args[1] );
@@ -944,14 +923,14 @@ CON_COMMAND( recast_mesh_setcellheight, "" )
 		return;
 #endif // CLIENT_DLL
 
-	Hull_t hull = NAI_Hull::LookupId( args[1] );
-	if( hull == HULL_NONE )
+	NavMeshType_t type = NAI_Hull::LookupId( args[1] );
+	if( type == RECAST_NAVMESH_INVALID )
 	{
-		Warning("recast_mesh_setcellheight: unknown hull name \"%s\"\n", args[1] );
+		Warning("recast_mesh_setcellheight: unknown name \"%s\"\n", args[1] );
 		return;
 	}
 
-	CRecastMesh *pMesh = RecastMgr().GetMeshOfHull( hull );
+	CRecastMesh *pMesh = RecastMgr().GetMesh( type );
 	if( !pMesh )
 	{
 		Warning("recast_mesh_setcellheight: could not find mesh \"%s\"\n", args[1] );
@@ -968,14 +947,14 @@ CON_COMMAND( recast_mesh_settilesize, "" )
 		return;
 #endif // CLIENT_DLL
 
-	Hull_t hull = NAI_Hull::LookupId( args[1] );
-	if( hull == HULL_NONE )
+	NavMeshType_t type = NAI_Hull::LookupId( args[1] );
+	if( type == RECAST_NAVMESH_INVALID )
 	{
-		Warning("recast_mesh_settilesize: unknown hull name \"%s\"\n", args[1] );
+		Warning("recast_mesh_settilesize: unknown name \"%s\"\n", args[1] );
 		return;
 	}
 
-	CRecastMesh *pMesh = RecastMgr().GetMeshOfHull( hull );
+	CRecastMesh *pMesh = RecastMgr().GetMesh( type );
 	if( !pMesh )
 	{
 		Warning("recast_mesh_settilesize: could not find mesh \"%s\"\n", args[1] );

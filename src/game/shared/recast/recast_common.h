@@ -11,6 +11,7 @@
 
 #include "DetourAssert.h"
 #include "DetourNavMesh.h"
+#include "shareddefs.h"
 #include "tier1/strtools.h"
 
 class PolyRefArray

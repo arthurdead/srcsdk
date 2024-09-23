@@ -4,16 +4,10 @@
 
 #ifndef AI_TACTICALSERVICES_H
 #define AI_TACTICALSERVICES_H
+#pragma once
 
 #include "ai_component.h"
 
-#pragma once
-
-#ifndef AI_USES_NAV_MESH
-class CAI_Network;
-#else
-class CNavArea;
-#endif
 class CAI_Pathfinder;
 
 
@@ -32,18 +26,11 @@ class CAI_TacticalServices : public CAI_Component
 public:
 	CAI_TacticalServices( CAI_BaseNPC *pOuter )
 	 :	CAI_Component(pOuter)
-#ifndef AI_USES_NAV_MESH
-	 ,m_pNetwork( NULL )
-#endif
 	{
 		m_bAllowFindLateralLos = true;
 	}
 
-#ifndef AI_USES_NAV_MESH
-	void Init( CAI_Network *pNetwork );
-#else
 	void Init();
-#endif
 
 	bool			FindLos( const Vector &threatPos, const Vector &threatEyePos, float minThreatDist, float maxThreatDist, float blockTime, Vector *pResult );
 	bool			FindLos( const Vector &threatPos, const Vector &threatEyePos, float minThreatDist, float maxThreatDist, float blockTime, FlankType_t eFlankType, const Vector &VecFlankRefPos, float flFlankParam, Vector *pResult );
@@ -62,33 +49,14 @@ private:
 	bool			TestLateralCover( const Vector &vecCheckStart, const Vector &vecCheckEnd, float flMinDist );
 	bool			TestLateralLos( const Vector &vecCheckStart, const Vector &vecCheckEnd );
 
-#ifndef AI_USES_NAV_MESH
-	int				FindBackAwayNode( const Vector &vecThreat );
-	int				FindCoverNode( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist );
-	int				FindCoverNode( const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist );
-	int				FindLosNode( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinThreatDist, float flMaxThreatDist, float flBlockTime, FlankType_t eFlankType, const Vector &vThreatFacing, float flFlankParam );
-	
-	Vector			GetNodePos( int );
-#else
-	CNavArea *				FindBackAwayArea( const Vector &vecThreat );
-	CNavArea *				FindCoverArea( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist );
-	CNavArea *				FindCoverArea( const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist );
-	CNavArea *				FindLosArea( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinThreatDist, float flMaxThreatDist, float flBlockTime, FlankType_t eFlankType, const Vector &vThreatFacing, float flFlankParam );
-	
-	Vector			GetAreaPos( CNavArea * );
-#endif
-
-#ifndef AI_USES_NAV_MESH
-	CAI_Network *GetNetwork()				{ return m_pNetwork; }
-	const CAI_Network *GetNetwork() const	{ return m_pNetwork; }
-#endif
+	Vector				FindBackAwayPos( const Vector &vecThreat );
+	Vector				FindCoverPos( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist );
+	Vector				FindCoverPos( const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist );
+	Vector				FindLosPos( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinThreatDist, float flMaxThreatDist, float flBlockTime, FlankType_t eFlankType, const Vector &vThreatFacing, float flFlankParam );
 
 	CAI_Pathfinder *GetPathfinder()				{ return m_pPathfinder; }
 	const CAI_Pathfinder *GetPathfinder() const	{ return m_pPathfinder; }
 
-#ifndef AI_USES_NAV_MESH
-	CAI_Network *m_pNetwork;
-#endif
 	CAI_Pathfinder *m_pPathfinder;
 
 	bool	m_bAllowFindLateralLos;	// Allows us to turn Lateral LOS checking on/off. 

@@ -660,6 +660,9 @@ C_BaseAnimating::C_BaseAnimating() :
 	m_nEventSequence = -1;
 
 	m_pIk = NULL;
+	m_iIKCounter = 0;
+
+	InitStepHeightAdjust();
 
 	// Assume false.  Derived classes might fill in a receive table entry
 	// and in that case this would show up as true
@@ -1077,6 +1080,7 @@ CStudioHdr *C_BaseAnimating::OnNewModel()
 	{
 		delete m_pIk;
 		m_pIk = NULL;
+		m_iIKCounter = 0;
 	}
 
 	// Don't reallocate unless a different size. 
@@ -1979,7 +1983,7 @@ void C_BaseAnimating::StandardBlendingRules( CStudioHdr *hdr, Vector pos[], Quat
 	// build root animation
 	float fCycle = GetCycle();
 
-#if 1 //_DEBUG
+#ifdef _DEBUG
 	if (/* Q_stristr( hdr->pszName(), r_sequence_debug.GetString()) != NULL || */ r_sequence_debug.GetInt() == entindex())
 	{
 		DevMsgRT( "%8.4f : %30s : %5.3f : %4.2f\n", currentTime, hdr->pSeqdesc( GetSequence() ).pszLabel(), fCycle, 1.0 );
@@ -2012,7 +2016,7 @@ void C_BaseAnimating::StandardBlendingRules( CStudioHdr *hdr, Vector pos[], Quat
 	UnragdollBlend( hdr, pos, q, currentTime );
 
 #ifdef STUDIO_ENABLE_PERF_COUNTERS
-#if _DEBUG
+#ifdef _DEBUG
 	if (Q_stristr( hdr->pszName(), r_sequence_debug.GetString()) != NULL)
 	{
 		DevMsgRT( "layers %4d : bones %4d : animated %4d\n", hdr->m_nPerfAnimationLayers, hdr->m_nPerfUsedBones, hdr->m_nPerfAnimatedBones );
@@ -2687,12 +2691,10 @@ void C_BaseAnimating::CalculateIKLocks( float currentTime )
 		}
 	}
 
-#if defined( HL2_CLIENT_DLL )
 	if (minHeight < FLT_MAX)
 	{
-		input->AddIKGroundContactInfo( entindex(), minHeight, maxHeight );
+		SetIKGroundContactInfo( minHeight, maxHeight );
 	}
-#endif
 
 	CBaseEntity::PopEnableAbsRecomputations();
 	partition->SuppressLists( curSuppressed, true );
@@ -2917,6 +2919,110 @@ bool C_BaseAnimating::InThreadedBoneSetup()
 	return g_bInThreadedBoneSetup;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Receives the clients IK floor position
+//-----------------------------------------------------------------------------
+
+void C_BaseAnimating::SetIKGroundContactInfo( float minHeight, float maxHeight )
+{
+	m_flIKGroundContactTime = gpGlobals->curtime;
+	m_flIKGroundMinHeight = minHeight;
+	m_flIKGroundMaxHeight = maxHeight;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Initializes IK floor position
+//-----------------------------------------------------------------------------
+
+void C_BaseAnimating::InitStepHeightAdjust( void )
+{
+	m_flIKGroundContactTime = 0;
+	m_flIKGroundMinHeight = 0;
+	m_flIKGroundMaxHeight = 0;
+
+	// FIXME: not safe to call GetAbsOrigin here. Hierarchy might not be set up!
+	m_flEstIkFloor = GetAbsOrigin().z;
+	m_flEstIkOffset = 0;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Interpolates client IK floor position and drops entity down so that the feet will reach
+//-----------------------------------------------------------------------------
+
+ConVar npc_height_adjust( "npc_height_adjust", "1", FCVAR_ARCHIVE|FCVAR_REPLICATED, "Enable test mode for ik height adjustment" );
+
+void C_BaseAnimating::UpdateStepOrigin()
+{
+	if (!npc_height_adjust.GetBool())
+	{
+		m_flEstIkOffset = 0;
+		m_flEstIkFloor = GetLocalOrigin().z;
+		return;
+	}
+
+	/*
+	if (m_debugOverlays & OVERLAY_NPC_SELECTED_BIT)
+	{
+		Msg("%x : %x\n", GetMoveParent(), GetGroundEntity() );
+	}
+	*/
+
+	if (m_flIKGroundContactTime > 0.2 && m_flIKGroundContactTime > gpGlobals->curtime - 0.2)
+	{
+		if ((GetFlags() & (FL_FLY | FL_SWIM)) == 0 && GetMoveParent() == NULL && GetGroundEntity() != NULL && !GetGroundEntity()->IsMoving())
+		{
+			Vector toAbs = GetAbsOrigin() - GetLocalOrigin();
+			if (toAbs.z == 0.0)
+			{
+				// FIXME:  There needs to be a default step height somewhere
+				float height = sv_stepsize.GetFloat();
+				if (IsNPC())
+				{
+					height = MyNPCPointer()->StepHeight();
+				}
+				else if(IsPlayer())
+				{
+					height = ToBasePlayer(this)->StepHeight();
+				}
+
+				// debounce floor location
+				m_flEstIkFloor = m_flEstIkFloor * 0.2 + m_flIKGroundMinHeight * 0.8;
+
+				// don't let heigth difference between min and max exceed step height
+				float bias = clamp( (m_flIKGroundMaxHeight - m_flIKGroundMinHeight) - height, 0.f, height );
+				// save off reasonable offset
+				m_flEstIkOffset = clamp( m_flEstIkFloor - GetAbsOrigin().z, -height + bias, 0.0f );
+				return;
+			}
+		}
+	}
+
+	// don't use floor offset, decay the value
+	m_flEstIkOffset *= 0.5;
+	m_flEstIkFloor = GetLocalOrigin().z;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns the origin to use for model rendering
+//-----------------------------------------------------------------------------
+
+Vector C_BaseAnimating::GetStepOrigin( void ) const 
+{ 
+	Vector tmp = GetLocalOrigin();
+	tmp.z += m_flEstIkOffset;
+	return tmp;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns the origin to use for model rendering
+//-----------------------------------------------------------------------------
+
+QAngle C_BaseAnimating::GetStepAngles( void ) const
+{
+	// TODO: Add in body lean
+	return GetLocalAngles();
+}
+
 bool C_BaseAnimating::SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, int boneMask, float currentTime )
 {
 	VPROF_BUDGET( "C_BaseAnimating::SetupBones", ( !g_bInThreadedBoneSetup ) ? VPROF_BUDGETGROUP_CLIENT_ANIMATION : "Client_Animation_Threaded" );
@@ -3046,6 +3152,13 @@ bool C_BaseAnimating::SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, i
 	// Make sure that we know that we've already calculated some bone stuff this time around.
 	m_iMostRecentModelBoneCounter = g_iModelBoneCounter;
 
+	if (Teleported() || IsNoInterpolationFrame()) {
+		InitStepHeightAdjust();
+	}
+
+	// adjust hit boxes based on IK driven offset
+	Vector adjRenderOrigin = GetRenderOrigin() + Vector( 0, 0, m_flEstIkOffset );
+
 	// Have we cached off all bones meeting the flag set?
 	if( ( m_BoneAccessor.GetReadableBones() & boneMask ) != boneMask )
 	{
@@ -3060,7 +3173,7 @@ bool C_BaseAnimating::SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, i
 
 		// Setup our transform based on render angles and origin.
 		matrix3x4_t parentTransform;
-		AngleMatrix( GetRenderAngles(), GetRenderOrigin(), parentTransform );
+		AngleMatrix( GetRenderAngles(), adjRenderOrigin, parentTransform );
 
 		// Load the boneMask with the total of what was asked for last frame.
 		boneMask |= m_iPrevBoneMask;
@@ -3112,6 +3225,7 @@ bool C_BaseAnimating::SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, i
 				{
 					delete m_pIk;
 					m_pIk = NULL;
+					m_iIKCounter = 0;
 				}
 			}
 
@@ -3128,10 +3242,12 @@ bool C_BaseAnimating::SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, i
 
 			if ( m_pIk )
 			{
-				if (Teleported() || IsNoInterpolationFrame())
+				if (Teleported() || IsNoInterpolationFrame()) {
 					m_pIk->ClearTargets();
+				}
 
-				m_pIk->Init( hdr, GetRenderAngles(), GetRenderOrigin(), currentTime, gpGlobals->framecount, bonesMaskNeedRecalc );
+				m_iIKCounter++;
+				m_pIk->Init( hdr, GetRenderAngles(), adjRenderOrigin, currentTime, m_iIKCounter, bonesMaskNeedRecalc );
 			}
 
 			// Let pose debugger know that we are blending
@@ -4813,6 +4929,7 @@ void C_BaseAnimating::ResetLatched( void )
 	{
 		delete m_pIk;
 		m_pIk = NULL;
+		m_iIKCounter = 0;
 	}
 
 	BaseClass::ResetLatched();
@@ -6420,7 +6537,7 @@ void C_BaseAnimating::DrawClientHitboxes( float duration /*= 0.0f*/, bool monoco
 // Input  : activity - 
 // Output : int C_BaseAnimating::SelectWeightedSequence
 //-----------------------------------------------------------------------------
-int C_BaseAnimating::SelectWeightedSequence ( int activity )
+int C_BaseAnimating::SelectWeightedSequence ( Activity activity )
 {
 	Assert( activity != ACT_INVALID );
 

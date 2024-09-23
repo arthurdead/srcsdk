@@ -405,7 +405,9 @@ bool C_SoundscapeSystem::Init()
 {
 	m_loopingSoundId = 0;
 
-	const char *mapname = MapName();
+	char mapname[MAX_PATH];
+	V_FileBase(engine->GetLevelName(), mapname, sizeof(mapname));
+
 	const char *mapSoundscapeFilename = NULL;
 	if ( mapname && *mapname )
 	{

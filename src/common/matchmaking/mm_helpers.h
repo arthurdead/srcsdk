@@ -9,9 +9,10 @@
 #define __COMMON__MM_HELPERS_H_
 #pragma once
 
-#include "tier1/keyvalues.h"
+#include "tier1/KeyValues.h"
 #include "tier1/fmtstr.h"
 
+typedef unsigned long XUID;
 
 //
 // Contains inline functions to deal with common tasks involving matchmaking and sessions

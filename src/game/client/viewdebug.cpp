@@ -319,7 +319,7 @@ void CDebugViewRender::Draw3DDebuggingInfo( const CViewSetup &view )
 	VPROF("CViewRender::Draw3DDebuggingInfo");
 
 	// Draw anything Foundry wants to.
-	//FoundryHelpers_DrawAll();
+	FoundryHelpers_DrawAll();
 
 	RecastMgr().DebugRender();
 

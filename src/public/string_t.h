@@ -101,7 +101,7 @@ inline void NetworkVarConstruct( string_t &x ) { x = NULL_STRING; }
 #else	// NO_STRING_T
 
 typedef const char *string_t;
-#define NULL_STRING				0
+#define NULL_STRING				NULL
 #define STRING( c_str )			( c_str )
 #define MAKE_STRING( c_str )	( c_str )
 #define IDENT_STRINGS( s1, s2 )	( *((void **)&(s1)) == *((void **)&(s2)) )

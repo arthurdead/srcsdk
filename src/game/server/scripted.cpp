@@ -17,17 +17,11 @@
 #include "ai_schedule.h"
 #include "ai_default.h"
 #include "ai_motor.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_hint.h"
-#include "ai_networkmanager.h"
-#include "ai_network.h"
-#else
-#include "nav_mesh.h"
-#endif
 #include "engine/IEngineSound.h"
 #include "animation.h"
 #include "scripted.h"
 #include "entitylist.h"
+#include "recast/recast_mgr.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -767,11 +761,7 @@ void CAI_ScriptedSequence::StartScript( void )
 //-----------------------------------------------------------------------------
 void CAI_ScriptedSequence::ScriptThink( void )
 {
-#ifndef AI_USES_NAV_MESH
-	if ( g_pAINetworkManager && !g_pAINetworkManager->IsInitialized() )
-#else
-	if ( TheNavMesh && !TheNavMesh->IsLoaded() )
-#endif
+	if ( !RecastMgr().HasMeshes() )
 	{
 		SetNextThink( gpGlobals->curtime + 0.1f );
 	}
@@ -1763,22 +1753,8 @@ void CAI_ScriptedSchedule::StartSchedule( CAI_BaseNPC *pTarget )
 	// NOTE: !!! all possible choices require a goal ent currently
 	if ( !pGoalEnt ) 
 	{
-	#ifndef AI_USES_NAV_MESH
-		CHintCriteria hintCriteria;
-		hintCriteria.SetGroup( m_sGoalEnt );
-		hintCriteria.SetHintType( HINT_ANY );
-		hintCriteria.AddIncludePosition( pTarget->GetAbsOrigin(), FLT_MAX );
-		CAI_Hint *pHint = CAI_HintManager::FindHint( pTarget->GetAbsOrigin(), hintCriteria );
-		if ( !pHint )
-		{
-			DevMsg( 1, "Can't find goal entity %s\nCan't execute script %s\n", STRING(m_sGoalEnt), GetDebugName() );
-			return;
-		}
-		pGoalEnt = pHint;
-	#else
 		DevMsg( 1, "Can't find goal entity %s\nCan't execute script %s\n", STRING(m_sGoalEnt), GetDebugName() );
 		return;
-	#endif
 	}
 	
 	static NPC_STATE forcedStatesMap[] = 

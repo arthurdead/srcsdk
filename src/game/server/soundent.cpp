@@ -25,7 +25,7 @@
 
 LINK_ENTITY_TO_CLASS( soundent, CSoundEnt );
 
-static CSoundEnt *g_pSoundEnt = NULL;
+CSoundEnt *g_pSoundEnt = NULL;
 
 
 //=========================================================
@@ -179,13 +179,14 @@ const Vector &CSound::GetSoundReactOrigin( void )
 bool CSoundEnt::InitSoundEnt()
 {
 	///!!!LATER - do we want a sound ent in deathmatch? (sjb)
-	g_pSoundEnt = (CSoundEnt*)CBaseEntity::Create( "soundent", vec3_origin, vec3_angle, GetWorldEntity() );
-	if ( !g_pSoundEnt )
-	{
-		Warning( "**COULD NOT CREATE SOUNDENT**\n" );
-		return false;
+	if(!g_pSoundEnt) {
+		g_pSoundEnt = (CSoundEnt*)CBaseEntity::Create( "soundent", vec3_origin, vec3_angle, GetWorldEntity() );
+		if ( !g_pSoundEnt )
+		{
+			Warning( "**COULD NOT CREATE SOUNDENT**\n" );
+			return false;
+		}
 	}
-	g_pSoundEnt->AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
 	return true;
 }
 
@@ -193,7 +194,7 @@ void CSoundEnt::ShutdownSoundEnt()
 {
 	if ( g_pSoundEnt )
 	{
-		g_pSoundEnt->FreeList();
+		UTIL_Remove(g_pSoundEnt);
 		g_pSoundEnt = NULL;
 	}
 }
@@ -204,10 +205,16 @@ void CSoundEnt::ShutdownSoundEnt()
 //-----------------------------------------------------------------------------
 CSoundEnt::CSoundEnt()
 {
+	if(!g_pSoundEnt) {
+		g_pSoundEnt = this;
+		AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
+	}
 }
 
 CSoundEnt::~CSoundEnt()
 {
+	if(g_pSoundEnt == this)
+		g_pSoundEnt = NULL;
 }
 
 
@@ -216,6 +223,11 @@ CSoundEnt::~CSoundEnt()
 //=========================================================
 void CSoundEnt::Spawn( void )
 {
+	if(g_pSoundEnt && g_pSoundEnt != this) {
+		UTIL_Remove(this);
+		return;
+	}
+
 	SetSolid( SOLID_NONE );
 	Initialize();
 

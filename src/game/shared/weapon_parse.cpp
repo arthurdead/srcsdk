@@ -320,7 +320,14 @@ bool ReadCustomWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *s
 	//	return true;
 
 	char sz[128];
-	Q_snprintf( sz, sizeof( sz ), "maps/%s_%s", GetMapName(), szWeaponName );
+#ifdef GAME_DLL
+	Q_snprintf( sz, sizeof( sz ), "maps/%s_%s", STRING( gpGlobals->mapname ), szWeaponName );
+#else
+	char mapname[MAX_PATH];
+	V_FileBase(engine->GetLevelName(), mapname, sizeof(mapname));
+
+	Q_snprintf( sz, sizeof( sz ), "maps/%s_%s", mapname, szWeaponName );
+#endif
 
 	KeyValues *pKV = ReadEncryptedKVFile( filesystem, sz, pICEKey,
 #if defined( DOD_DLL )

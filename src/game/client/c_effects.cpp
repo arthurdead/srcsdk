@@ -1860,7 +1860,7 @@ private:
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-class CSnowFallManager : public C_ClientEntity
+class CSnowFallManager : public C_ClientOnlyLogicalEntity
 {
 public:
 
@@ -1939,7 +1939,7 @@ LINK_ENTITY_TO_CLASS(client_snowfallmgr, CSnowFallManager);
 // Purpose: 
 //-----------------------------------------------------------------------------
 CSnowFallManager::CSnowFallManager( void )
-	: C_ClientEntity()
+	: C_ClientOnlyLogicalEntity()
 {
 	AddEFlags( EFL_NOT_NETWORKED );
 
@@ -1975,7 +1975,7 @@ bool CSnowFallManager::CreateEmitter( void )
 //-----------------------------------------------------------------------------
 void CSnowFallManager::Spawn( void )
 {
-	C_BaseEntity::Spawn();
+	C_ClientOnlyLogicalEntity::Spawn();
 
 	m_tSnowFallParticleTimer.Init( 500 );
 	m_tSnowFallParticleTraceTimer.Init( 6 );

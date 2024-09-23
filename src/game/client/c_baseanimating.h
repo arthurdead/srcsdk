@@ -474,7 +474,7 @@ public:
 	virtual float GetServerIntendedCycle( void ) { return -1.0f; }
 
 	// For prediction
-	int								SelectWeightedSequence ( int activity );
+	int								SelectWeightedSequence ( Activity activity );
 	int								SelectWeightedSequenceFromModifiers( Activity activity, CUtlSymbol *pActivityModifiers, int iModifierCount );
 	void							ResetSequenceInfo( void );
 	float							SequenceDuration( void );
@@ -561,8 +561,25 @@ public:
 
 	CSequenceTransitioner			m_SequenceTransitioner;
 
+public:
+	Vector	GetStepOrigin( void ) const;
+	QAngle	GetStepAngles( void ) const;
+
+public:
+	void InitStepHeightAdjust( void );
+	void SetIKGroundContactInfo( float minHeight, float maxHeight );
+	void UpdateStepOrigin( void );
+
 protected:
+	float				m_flIKGroundContactTime;
+	float				m_flIKGroundMinHeight;
+	float				m_flIKGroundMaxHeight;
+
+	float				m_flEstIkFloor; // debounced
+	float				m_flEstIkOffset;
+
 	CIKContext						*m_pIk;
+	int					m_iIKCounter;
 
 	int								m_iEyeAttachment;
 

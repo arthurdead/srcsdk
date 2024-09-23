@@ -7,17 +7,13 @@
 
 #ifndef AI_BEHAVIOR_STANDOFF_H
 #define AI_BEHAVIOR_STANDOFF_H
+#pragma once
 
 #include "utlvector.h"
 #include "utlmap.h"
 
 #include "ai_behavior.h"
 #include "ai_utils.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_hint.h"
-#endif
-
-#pragma once
 
 //-----------------------------------------------------------------------------
 
@@ -119,19 +115,10 @@ protected:
 
 	Activity 	NPC_TranslateActivity( Activity eNewActivity );
 
-#ifndef AI_USES_NAV_MESH
-	bool		IsValidCover( const Vector &vecCoverLocation, CAI_Hint const *pHint );
-	bool		IsValidShootPosition( const Vector &vecCoverLocation, CAI_Node *pNode, CAI_Hint const *pHint );
-#else
-	bool		IsValidCover( const Vector &vecCoverLocation, CNavArea const *pArea );
-	bool		IsValidShootPosition( const Vector &vecCoverLocation, CNavArea *pArea );
-#endif
+	bool		IsValidCover( const Vector &vecCoverLocation );
+	bool		IsValidShootPosition( const Vector &vecCoverLocation );
 
 	void		SetPosture( AI_Posture_t posture );
-
-#ifndef AI_USES_NAV_MESH
-	void		OnChangeHintGroup( string_t oldGroup, string_t newGroup );
-#endif
 
 	virtual int SelectScheduleUpdateWeapon();
 	virtual int SelectScheduleCheckCover();
@@ -143,15 +130,6 @@ protected:
 	bool		GetDirectionOfStandoff( Vector *pDir );
 			
 	void UpdateBattleLines();
-
-#ifndef AI_USES_NAV_MESH
-	Hint_e GetHintType();
-	void UnlockHintNode();
-#else
-	void UnlockActiveArea();
-#endif
-	void SetReuseCurrentCover();
-	Activity GetCoverActivity();
 
 	void OnRestore();
 

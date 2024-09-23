@@ -40,19 +40,6 @@ CON_COMMAND_F( mission_list, "List all available tactical missions", FCVAR_GAMED
 }
 
 
-
-//---------------------------------------------------------------------------------------------
-class CShowZone : public IForEachNavArea
-{
-public:
-	virtual bool Inspect( const CNavArea *area )
-	{
-		area->DrawFilled( 255, 255, 0, 255, 9999.9f );
-		return true;
-	}
-};
-
-
 CON_COMMAND_F( mission_show, "Show the given mission", FCVAR_GAMEDLL )
 {
 	if ( !UTIL_IsCommandIssuedByServerAdmin() )
@@ -70,8 +57,7 @@ CON_COMMAND_F( mission_show, "Show the given mission", FCVAR_GAMEDLL )
 		const CTacticalMissionZone *zone = mission->GetDeployZone( NULL );
 		if ( zone )
 		{
-			CShowZone show;
-			zone->ForEachArea( show );
+			
 		}
 		else
 		{
@@ -83,41 +69,6 @@ CON_COMMAND_F( mission_show, "Show the given mission", FCVAR_GAMEDLL )
 		Msg( "Unknown mission '%s'\n", args.Arg(1) );
 	}
 }
-
-
-//---------------------------------------------------------------------------------------------
-CNavArea *CTacticalMissionZone::SelectArea( CBasePlayer *who ) const
-{
-	if ( m_areaVector.Count() == 0 )
-		return NULL;
-
-	int which = RandomInt( 0, m_areaVector.Count()-1 );
-	return m_areaVector[ which ];
-}
-
-
-//---------------------------------------------------------------------------------------------
-/**
- * Iterate each area in this zone.
- * If functor returns false, stop iterating and return false.
- */
-bool CTacticalMissionZone::ForEachArea( IForEachNavArea &func ) const
-{
-	int i;
-
-	for( i=0; i<m_areaVector.Count(); ++i )
-	{
-		if ( func.Inspect( m_areaVector[i] ) == false )
-			break;
-	}
-
-	bool wasCompleteIteration = ( i == m_areaVector.Count() );
-
-	func.PostIteration( wasCompleteIteration );
-
-	return wasCompleteIteration;
-}
-
 
 //---------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------

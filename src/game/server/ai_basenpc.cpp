@@ -24,24 +24,11 @@
 #include "shot_manipulator.h"
 #include "point_camera.h"
 
-#ifndef AI_USES_NAV_MESH
-#include "ai_network.h"
-#include "ai_networkmanager.h"
-#else
-#include "nav_mesh.h"
-#endif
 #include "ai_pathfinder.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_node.h"
-#endif
 #include "ai_default.h"
 #include "ai_schedule.h"
 #include "ai_task.h"
-#include "ai_hull.h"
 #include "ai_moveprobe.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_hint.h"
-#endif
 #include "ai_navigator.h"
 #include "ai_senses.h"
 #include "ai_squadslot.h"
@@ -50,9 +37,6 @@
 #include "ai_localnavigator.h"
 #include "ai_tacticalservices.h"
 #include "ai_behavior.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_dynamiclink.h"
-#endif
 #include "ai_criteria.h"
 #include "basegrenade_shared.h"
 #include "ammodef.h"
@@ -87,6 +71,7 @@
 #include "datacache/imdlcache.h"
 #include "vstdlib/jobthread.h"
 #include "ai_addon.h"
+#include "recast/recast_mgr.h"
 
 #include "ilagcompensationmanager.h"
 
@@ -610,19 +595,6 @@ void CAI_BaseNPC::CleanupOnDeath( CBaseEntity *pCulprit, bool bFireDeathOutput )
 			m_hCine->CancelScript();
 			// now keep going with the death code
 		}
-
-	#ifndef AI_USES_NAV_MESH
-		if ( GetHintNode() )
-		{
-			GetHintNode()->Unlock();
-			SetHintNode( NULL );
-		}
-	#else
-		if ( GetActiveArea() )
-		{
-			SetActiveArea( NULL );
-		}
-	#endif
 
 		if( bFireDeathOutput )
 		{
@@ -1406,7 +1378,7 @@ bool CAI_BaseNPC::PointInSpread( CBaseCombatCharacter *pCheckEntity, const Vecto
 				// If this guy is in front, do the hull/line test:
 				if( pCheckEntity )
 				{
-					float flBBoxDist = NAI_Hull::Width( pCheckEntity->GetHullType() );
+					float flBBoxDist = pCheckEntity->CollisionProp()->Width();
 					flBBoxDist *= 1.414f; // sqrt(2)
 
 					// !!!BUGBUG - this 2d check will stop a citizen shooting at a gunship or strider
@@ -2227,7 +2199,7 @@ bool CAI_BaseNPC::QueryHearSound( CSound *pSound )
 	// Disregard footsteps from our own class type
 	if ( pSound->IsSoundType( SOUND_COMBAT ) && pSound->SoundChannel() == SOUNDENT_CHANNEL_NPC_FOOTSTEP )
 	{
-		if ( pSound->m_hOwner && pSound->m_hOwner->ClassMatches( m_iClassname ) )
+		if ( pSound->m_hOwner && pSound->m_hOwner->ClassMatches( GetClassnameStr() ) )
 				return false;
 	}
 
@@ -2453,50 +2425,6 @@ void CAI_BaseNPC::OnListened()
 	}
 }
 
-//=========================================================
-// FValidateHintType - tells use whether or not the npc cares
-// about the type of Hint Node given
-//=========================================================
-#ifndef AI_USES_NAV_MESH
-bool CAI_BaseNPC::FValidateHintType ( CAI_Hint *pHint )
-#else
-bool CAI_BaseNPC::FValidateArea ( CNavArea *pArea )
-#endif
-{
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Override in subclasses to associate specific hint types
-//			with activities
-//-----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-Activity CAI_BaseNPC::GetHintActivity( short sHintType, Activity act )
-#else
-Activity CAI_BaseNPC::GetAreaActivity( CNavArea* pArea, Activity act )
-#endif
-{
-	if ( act != ACT_INVALID )
-		return act;
-
-	return ACT_IDLE;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Override in subclasses to give specific hint types delays
-//			before they can be used again
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-float	CAI_BaseNPC::GetHintDelay( short sHintType )
-#else
-float	CAI_BaseNPC::GetAreaDelay( CNavArea* pArea )
-#endif
-{
-	return 0;
-}
-
 //-----------------------------------------------------------------------------
 // Purpose:	Return incoming grenade if spotted
 // Input  :
@@ -2535,29 +2463,6 @@ CBaseGrenade* CAI_BaseNPC::IncomingGrenade(void)
 			return pBG;
 	}
 	return NULL;
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Check my physical state with the environment
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-void CAI_BaseNPC::TryRestoreHull(void)
-{
-	if ( IsUsingSmallHull() && GetCurSchedule() )
-	{
-		trace_t tr;
-		Vector	vUpBit = GetAbsOrigin();
-		vUpBit.z += 1;
-
-		AI_TraceHull( GetAbsOrigin(), vUpBit, GetHullMins(),
-			GetHullMaxs(), MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
-		if ( !tr.startsolid && (tr.fraction == 1.0) )
-		{
-			SetHullSizeNormal();
-		}
-	}
 }
 
 //=========================================================
@@ -3202,11 +3107,7 @@ bool CAI_BaseNPC::PreThink( void )
 	//
 	// Don't do this if the convar wants it hidden
 	// ----------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-	if ( (CAI_BaseNPC::m_nDebugBits & bits_debugDisableAI || !g_pAINetworkManager->NetworksLoaded()) )
-#else
-	if ( (CAI_BaseNPC::m_nDebugBits & bits_debugDisableAI || !TheNavMesh->IsLoaded()) )
-#endif
+	if ( (CAI_BaseNPC::m_nDebugBits & bits_debugDisableAI || !RecastMgr().HasMeshes()) )
 	{
 		if ( gpGlobals->curtime >= g_AINextDisabledMessageTime )
 		{
@@ -4233,11 +4134,7 @@ void CAI_BaseNPC::NPCThink( void )
 		if ( thinkLimit > 0 )
 			timer.Start();
 
-	#ifndef AI_USES_NAV_MESH
-		if ( g_pAINetworkManager && g_pAINetworkManager->IsInitialized() )
-	#else
-		if ( TheNavMesh && TheNavMesh->IsLoaded() )
-	#endif
+		if ( RecastMgr().HasMeshes() )
 		{
 			VPROF_BUDGET( "NPCs", VPROF_BUDGETGROUP_NPCS );
 
@@ -5243,11 +5140,7 @@ void CAI_BaseNPC::RunAI( void )
 	m_bConditionsGathered = false;
 	m_bSkippedChooseEnemy = false;
 
-#ifndef AI_USES_NAV_MESH
-	if ( g_pDeveloper->GetInt() && !GetNavigator()->IsOnNetwork() )
-#else
 	if ( g_pDeveloper->GetInt() && !GetNavigator()->IsOnNavMesh() )
-#endif
 	{
 		AddTimedOverlay( "NPC w/no reachable nodes!", 5 );
 	}
@@ -5259,8 +5152,6 @@ void CAI_BaseNPC::RunAI( void )
 
 	if ( !m_bConditionsGathered )
 		m_bConditionsGathered = true; // derived class didn't call to base
-
-	TryRestoreHull();
 
 	g_AIPrescheduleThinkTimer.Start();
 
@@ -5936,11 +5827,7 @@ bool CAI_BaseNPC::UpdateEnemyMemory( CBaseEntity *pEnemy, const Vector &position
 		}
 		float reactionDelay = ( !pInformer || pInformer == this ) ? GetReactionDelay( pEnemy ) : 0.0;
 
-	#ifndef AI_USES_NAV_MESH
-		bool result = GetEnemies()->UpdateMemory(GetNavigator()->GetNetwork(), pEnemy, position, reactionDelay, firstHand);
-	#else
 		bool result = GetEnemies()->UpdateMemory(pEnemy, position, reactionDelay, firstHand);
-	#endif
 
 		if ( !firstHand && pEnemy && result && GetState() == NPC_STATE_IDLE ) // if it's a new potential enemy
 			ForceDecisionThink();
@@ -6143,11 +6030,7 @@ void CAI_BaseNPC::GatherEnemyConditions( CBaseEntity *pEnemy )
 	// ----------------------------------------------------------------------------
 	// Check if enemy is reachable via the node graph unless I'm not on a network
 	// ----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-	if (GetNavigator()->IsOnNetwork())
-#else
 	if (GetNavigator()->IsOnNavMesh())
-#endif
 	{
 		// Note that unreachablity times out
 		if (IsUnreachable(GetEnemy()))
@@ -6471,20 +6354,13 @@ Activity CAI_BaseNPC::NPC_TranslateActivity( Activity eNewActivity )
 	{
 		if (eNewActivity == ACT_RELOAD)
 		{
-		#ifndef AI_USES_NAV_MESH
-			return GetReloadActivity(GetHintNode());
-		#else
-			return GetReloadActivity(GetActiveArea());
-		#endif
+			return GetReloadActivity();
 		}
-		else if ((eNewActivity == ACT_COVER	)								 ||
+		else if ((eNewActivity == ACT_COVER	) ||
 				 (eNewActivity == ACT_IDLE && HasMemory(bits_MEMORY_INCOVER)))
 		{
-		#ifndef AI_USES_NAV_MESH
-			Activity nCoverActivity = GetCoverActivity(GetHintNode());
-		#else
-			Activity nCoverActivity = GetCoverActivity(GetActiveArea());
-		#endif
+			Activity nCoverActivity = GetCoverActivity();
+
 			// ---------------------------------------------------------------
 			// Some NPCs don't have a cover activity defined so just use idle
 			// ---------------------------------------------------------------
@@ -7119,9 +6995,6 @@ CBaseEntity *CAI_BaseNPC::GetNavTargetEntity(void)
 //			if the throw fails, returns the distance
 //			that can be travelled before an obstacle is hit
 //-----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-#include "ai_initutils.h"
-#endif
 //#define _THROWDEBUG
 float CAI_BaseNPC::ThrowLimit(	const Vector &vecStart,
 								const Vector &vecEnd,
@@ -7328,49 +7201,14 @@ void CAI_BaseNPC::StartTouch( CBaseEntity *pOther )
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: To be called instead of UTIL_SetSize, so pathfinding hull
-//			and actual hull agree
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-void CAI_BaseNPC::SetHullSizeNormal( bool force )
+void CAI_BaseNPC::SetCollisionBounds( const Vector& mins, const Vector &maxs )
 {
-	if ( m_fIsUsingSmallHull || force )
-	{
-		// Find out what the height difference will be between the versions and adjust our bbox accordingly to keep us level
-		const float flScale = GetModelScale();
-		Vector vecMins = ( GetHullMins() * flScale );
-		Vector vecMaxs = ( GetHullMaxs() * flScale );
-		
-		UTIL_SetSize( this, vecMins, vecMaxs );
+	BaseClass::SetCollisionBounds( mins, maxs );
 
-		m_fIsUsingSmallHull = false;
-		if ( VPhysicsGetObject() )
-		{
-			SetupVPhysicsHull();
-		}
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: To be called instead of UTIL_SetSize, so pathfinding hull
-//			and actual hull agree
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-bool CAI_BaseNPC::SetHullSizeSmall( bool force )
-{
-	if ( !m_fIsUsingSmallHull || force )
+	if ( VPhysicsGetObject() )
 	{
-		UTIL_SetSize(this, NAI_Hull::SmallMins(GetHullType()),NAI_Hull::SmallMaxs(GetHullType()));
-		m_fIsUsingSmallHull = true;
-		if ( VPhysicsGetObject() )
-		{
-			SetupVPhysicsHull();
-		}
+		SetupVPhysicsHull();
 	}
-	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -7444,7 +7282,7 @@ void CAI_BaseNPC::NPCInit ( void )
 		if ( !IsNavHullValid() )
 		{
 			Warning("NPC Entity %s (%d) has a bounding box which extends outside its nav box!\n",
-				STRING(m_iClassname), entindex() );
+				GetClassname(), entindex() );
 		}
 	}
 #endif
@@ -7478,12 +7316,6 @@ void CAI_BaseNPC::NPCInit ( void )
 		ResetActivityIndexes();
 		ResetEventIndexes();
 	}
-
-#ifndef AI_USES_NAV_MESH
-	SetHintNode( NULL );
-#else
-	SetActiveArea( NULL );
-#endif
 
 	m_afMemory			= MEMORY_CLEAR;
 
@@ -7697,52 +7529,55 @@ int CAI_BaseNPC::UnholsterWeapon( void )
 	if ( iHolsterGesture != -1 )
 		return iHolsterGesture;
 
-	int i = m_iLastHolsteredWeapon >= 0 && GetWeapon(m_iLastHolsteredWeapon) ? m_iLastHolsteredWeapon : -1;
-	if (i == -1)
-	{
+	int i = m_iLastHolsteredWeapon;
+	if(i != -1 && !GetWeapon(i)) {
+		i = -1;
+	}
+
+	if (i == -1) {
 		// Set i to the first weapon you can find
-		for (i = 0; i < WeaponCount(); i++)
+		for (int j = 0; j < WeaponCount(); j++)
 		{
-			if (GetWeapon(i))
+			if (GetWeapon(j)) {
+				i = j;
 				break;
+			}
 		}
 	}
 
+	if(i != -1 && GetWeapon( i ))
 	{
-		if ( GetWeapon( i ))
+		SetActiveWeapon( GetWeapon(i) );
+
+		int iLayer = AddGesture( TranslateActivity( ACT_ARM ), true );
+		//iLayer = AddGesture( ACT_GESTURE_ARM, true );
+
+		if (iLayer != -1)
 		{
-			SetActiveWeapon( GetWeapon(i) );
+			// Prevent firing during the holster / unholster
+			float flDuration = GetLayerDuration( iLayer );
+			m_ShotRegulator.FireNoEarlierThan( gpGlobals->curtime + flDuration + 0.5 );
 
-			int iLayer = AddGesture( TranslateActivity( ACT_ARM ), true );
-			//iLayer = AddGesture( ACT_GESTURE_ARM, true );
-
-			if (iLayer != -1)
-			{
-				// Prevent firing during the holster / unholster
-				float flDuration = GetLayerDuration( iLayer );
-				m_ShotRegulator.FireNoEarlierThan( gpGlobals->curtime + flDuration + 0.5 );
-
-				m_iDesiredWeaponState = DESIREDWEAPONSTATE_CHANGING;
-			}
-			else
-			{
-				// We don't have the animation, so just make our weapon unholster instantaneously.
-				DoUnholster();
-			}
-
-			// Refill the clip
-			if ( GetActiveWeapon()->UsesClipsForAmmo1() )
-			{
-				GetActiveWeapon()->m_iClip1 = GetActiveWeapon()->GetMaxClip1(); 
-			}
-
-			// Make sure we don't try to reload while we're unholstering
-			ClearCondition(COND_LOW_PRIMARY_AMMO);
-			ClearCondition(COND_NO_PRIMARY_AMMO);
-			ClearCondition(COND_NO_SECONDARY_AMMO);
-
-			return iLayer;
+			m_iDesiredWeaponState = DESIREDWEAPONSTATE_CHANGING;
 		}
+		else
+		{
+			// We don't have the animation, so just make our weapon unholster instantaneously.
+			DoUnholster();
+		}
+
+		// Refill the clip
+		if ( GetActiveWeapon()->UsesClipsForAmmo1() )
+		{
+			GetActiveWeapon()->m_iClip1 = GetActiveWeapon()->GetMaxClip1(); 
+		}
+
+		// Make sure we don't try to reload while we're unholstering
+		ClearCondition(COND_LOW_PRIMARY_AMMO);
+		ClearCondition(COND_NO_PRIMARY_AMMO);
+		ClearCondition(COND_NO_SECONDARY_AMMO);
+
+		return iLayer;
 	}
 
 	return -1;
@@ -7761,7 +7596,7 @@ void CAI_BaseNPC::InputHolsterWeapon( inputdata_t &inputdata )
 			for (int i=0;i<MAX_WEAPONS;i++)
 			{
 				// These are both pooled, so if they're the same classname they should point to the same address
-				if ( m_hMyWeapons[i].Get() && m_hMyWeapons[i]->m_iClassname == inputdata.value.StringID() )
+				if ( m_hMyWeapons[i].Get() && m_hMyWeapons[i]->GetClassnameStr() == inputdata.value.StringID() )
 				{
 					//Weapon_Switch(m_hMyWeapons[i]);
 					//DoHolster();
@@ -7930,7 +7765,7 @@ void CAI_BaseNPC::InputChangeWeapon( inputdata_t &inputdata )
 	for (int i=0;i<MAX_WEAPONS;i++)
 	{
 		// These are both pooled, so if they're the same classname they should point to the same address
-		if ( m_hMyWeapons[i].Get() && m_hMyWeapons[i]->m_iClassname == inputdata.value.StringID() )
+		if ( m_hMyWeapons[i].Get() && m_hMyWeapons[i]->GetClassnameStr() == inputdata.value.StringID() )
 		{
 			pSwitchTo = m_hMyWeapons[i];
 			iSwitchTo = i;
@@ -7973,7 +7808,7 @@ void CAI_BaseNPC::InputChangeWeapon( inputdata_t &inputdata )
 		}
 
 		variant_t variant;
-		variant.SetString(pSwitchTo->m_iClassname);
+		variant.SetString(pSwitchTo->GetClassnameStr());
 		g_EventQueue.AddEvent(this, "UnholsterWeapon", variant, GetLayerDuration(iHolsterLayer) /*+ 0.65*/, this, this);
 	}
 }
@@ -8819,38 +8654,10 @@ CBaseEntity *CAI_BaseNPC::BestEnemy( void )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-Activity CAI_BaseNPC::GetReloadActivity( CAI_Hint* pHint )
-#else
-Activity CAI_BaseNPC::GetReloadActivity( CNavArea* pArea )
-#endif
+Activity CAI_BaseNPC::GetReloadActivity()
 {
 	Activity nReloadActivity = ACT_RELOAD;
 
-#ifndef AI_USES_NAV_MESH
-	if (pHint && GetEnemy()!=NULL)
-	{
-		switch (pHint->HintType())
-		{
-			case HINT_TACTICAL_COVER_LOW:
-			case HINT_TACTICAL_COVER_MED:
-			{
-				if (SelectWeightedSequence( ACT_RELOAD_LOW ) != ACTIVITY_NOT_AVAILABLE)
-				{
-					Vector vEyePos = GetAbsOrigin() + EyeOffset(ACT_RELOAD_LOW);
-					// Check if this location will block the threat's line of sight to me
-					trace_t tr;
-					AI_TraceLOS( vEyePos, GetEnemy()->EyePosition(), this, &tr );
-					if (tr.fraction != 1.0)
-					{
-						nReloadActivity = ACT_RELOAD_LOW;
-					}
-				}
-				break;
-			}
-		}
-	}
-#endif
 	return nReloadActivity;
 }
 
@@ -8859,35 +8666,9 @@ Activity CAI_BaseNPC::GetReloadActivity( CNavArea* pArea )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-Activity CAI_BaseNPC::GetCoverActivity( CAI_Hint *pHint )
-#else
-Activity CAI_BaseNPC::GetCoverActivity( CNavArea *pArea )
-#endif
+Activity CAI_BaseNPC::GetCoverActivity()
 {
 	Activity nCoverActivity = ACT_INVALID;
-
-	// ---------------------------------------------------------------
-	//  Check if hint node specifies different cover type
-	// ---------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-	if (pHint)
-	{
-		switch (pHint->HintType())
-		{
-			case HINT_TACTICAL_COVER_MED:
-			{
-				nCoverActivity = ACT_COVER_MED;
-				break;
-			}
-			case HINT_TACTICAL_COVER_LOW:
-			{
-				nCoverActivity = ACT_COVER_LOW;
-				break;
-			}
-		}
-	}
-#endif
 
 	if ( nCoverActivity == ACT_INVALID )
 		nCoverActivity = ACT_COVER;
@@ -9554,19 +9335,13 @@ void CAI_BaseNPC::DrawDebugGeometryOverlays(void)
 	// ------------------------------
 	if ((m_debugOverlays & OVERLAY_NPC_NEAREST_BIT))
 	{
-	#ifndef AI_USES_NAV_MESH
-		int iNodeID = GetPathfinder()->NearestNodeToNPC();
-		if (iNodeID != NO_NODE)
+		dtPolyRef poly = GetPathfinder()->NearestPolyToNPC();
+		if (poly != 0)
 		{
-			NDebugOverlay::Box(GetNavigator()->GetNetwork()->AccessNodes()[iNodeID]->GetPosition(GetHullType()), Vector(-10,-10,-10),Vector(10,10,10), 255, 255, 255, 0, 0);
-		}
-	#else
-		CNavArea* pArea = GetPathfinder()->NearestAreaToNPC();
-		if (pArea != NULL)
-		{
+		#if 0
 			NDebugOverlay::Box(pArea->GetCenter(), Vector(-10,-10,-10),Vector(10,10,10), 255, 255, 255, 0, 0);
+		#endif
 		}
-	#endif
 	}
 
 	// ------------------------------
@@ -9736,7 +9511,7 @@ void CAI_BaseNPC::DrawDebugGeometryOverlays(void)
 					}
 					else
 					{
-						NDebugOverlay::Cross3D(drawPos,NAI_Hull::Mins(npcEnemy->GetHullType()),NAI_Hull::Maxs(npcEnemy->GetHullType()),r,g,b,false,0);
+						NDebugOverlay::Cross3D(drawPos,npcEnemy->WorldAlignMins(),npcEnemy->WorldAlignMaxs(),r,g,b,false,0);
 					}
 				}
 			}
@@ -9817,7 +9592,7 @@ int CAI_BaseNPC::DrawDebugTextOverlays(void)
 			}
 			else
 			{
-				Q_strncat(tempstr,STRING(GetEnemy()->m_iClassname),sizeof(tempstr), COPY_ALL_CHARACTERS);
+				Q_strncat(tempstr,GetEnemy()->GetClassname(),sizeof(tempstr), COPY_ALL_CHARACTERS);
 				Q_strncat(tempstr,"\n",sizeof(tempstr), COPY_ALL_CHARACTERS);
 			}
 		}
@@ -9870,18 +9645,6 @@ int CAI_BaseNPC::DrawDebugTextOverlays(void)
 			EntityText(text_offset,tempstr,0,r,g,b);
 			text_offset++;
 		}
-
-		// -----------------
-		// Hint Group?
-		// -----------------
-	#ifndef AI_USES_NAV_MESH
-		if( GetHintGroup() != NULL_STRING )
-		{
-			Q_snprintf(tempstr,sizeof(tempstr),"Hint Group: %s", STRING(GetHintGroup()) );
-			EntityText(text_offset,tempstr,0);
-			text_offset++;
-		}
-	#endif
 
 		// -----------------
 		// Print MotionType
@@ -10091,7 +9854,7 @@ int CAI_BaseNPC::DrawDebugTextOverlays(void)
 			}
 			else
 			{
-				Q_strncat(tempstr,STRING(GetGoalEnt()->m_iClassname),sizeof(tempstr), COPY_ALL_CHARACTERS);
+				Q_strncat(tempstr,GetGoalEnt()->GetClassname(),sizeof(tempstr), COPY_ALL_CHARACTERS);
 			}
 			EntityText(text_offset, tempstr, 0,r,g,b);
 			text_offset++;
@@ -10311,21 +10074,6 @@ CanPlaySequence_t CAI_BaseNPC::CanPlaySequence( bool fDisregardNPCState, int int
 	// unknown situation
 	return CANNOT_PLAY;
 }
-
-
-//-----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-void CAI_BaseNPC::SetHintGroup( string_t newGroup, bool bHintGroupNavLimiting )	
-{ 
-	string_t oldGroup = m_strHintGroup;
-	m_strHintGroup = newGroup;
-	m_bHintGroupNavLimiting = bHintGroupNavLimiting;
-
-	if ( oldGroup != newGroup )
-		OnChangeHintGroup( oldGroup, newGroup );
-
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
@@ -11328,21 +11076,6 @@ void CAI_BaseNPC::OnScheduleChange ( void )
 	GetNavigator()->ClearGoal();
 
 	UnlockBestSound();
-
-	// If I locked a hint node clear it
-#ifndef AI_USES_NAV_MESH
-	if ( HasMemory(bits_MEMORY_LOCKED_HINT)	&& GetHintNode() != NULL)
-	{
-		float hintDelay = GetHintDelay(GetHintNode()->HintType());
-		GetHintNode()->Unlock(hintDelay);
-		SetHintNode( NULL );
-	}
-#else
-	if ( HasMemory(bits_MEMORY_LOCKED_AREA)	&& GetActiveArea() != NULL)
-	{
-		SetActiveArea( NULL );
-	}
-#endif
 }
 
 
@@ -11739,7 +11472,6 @@ CAI_BaseNPC::CAI_BaseNPC(void)
 
 	m_afCapability				= 0;		// Make sure this is cleared in the base class
 
-	SetHullType(HULL_HUMAN);  // Give human hull by default, subclasses should override
 	m_nAITraceMask				= MASK_NPCSOLID;
 
 	m_iMySquadSlot				= SQUAD_SLOT_NONE;
@@ -11760,12 +11492,6 @@ CAI_BaseNPC::CAI_BaseNPC(void)
 	m_pSquad					= NULL;
 
 	m_flMoveWaitFinished		= 0;
-
-	m_fIsUsingSmallHull			= true;
-
-#ifndef AI_USES_NAV_MESH
-	m_bHintGroupNavLimiting		= false;
-#endif
 
 	m_fNoDamageDecal			= false;
 
@@ -11804,6 +11530,8 @@ CAI_BaseNPC::CAI_BaseNPC(void)
 	m_flSpeedModifier = 1.0f;
 
 	m_FakeSequenceGestureLayer = -1;
+
+	m_iLastHolsteredWeapon = -1;
 }
 
 //-----------------------------------------------------------------------------
@@ -11893,16 +11621,10 @@ bool CAI_BaseNPC::CreateComponents()
 
 	m_pMotor->Init( m_pLocalNavigator );
 	m_pLocalNavigator->Init( m_pNavigator );
-#ifndef AI_USES_NAV_MESH
-	m_pNavigator->Init( g_pBigAINet );
-	m_pPathfinder->Init( g_pBigAINet );
-	m_pTacticalServices->Init( g_pBigAINet );
-#else
 	m_pNavigator->Init();
 	m_pPathfinder->Init();
 	m_pTacticalServices->Init();
-#endif
-	
+
 	return CreateBehaviors();
 }
 
@@ -12738,11 +12460,6 @@ bool CAI_BaseNPC::OnUpcomingPropDoor( AILocalMoveGoal_t *pMoveGoal,
 			opendata.vecStandPos,
 			NULL, 
 			bits_WP_TO_DOOR | bits_WP_DONT_SIMPLIFY, 
-		#ifndef AI_USES_NAV_MESH
-			NO_NODE,
-		#else
-			NULL,
-		#endif
 			bits_BUILD_GROUND | bits_BUILD_IGNORE_NPCS,
 			0.0);
 		
@@ -13137,7 +12854,7 @@ bool CAI_BaseNPC::IsCoverPosition( const Vector &vecThreat, const Vector &vecPos
 
 	if( tr.fraction != 1.0 )
 	{
-		if( tr.m_pEnt->m_iClassname == m_iClassname )
+		if( tr.m_pEnt->GetClassnameStr() == GetClassnameStr() )
 		{
 			// Don't hide behind buddies!
 			return false;
@@ -13323,41 +13040,26 @@ bool CAI_BaseNPC::FindNearestValidGoalPos( const Vector &vTestPoint, Vector *pRe
 
 	if ( vCandidate == vec3_invalid )
 	{
-	#ifndef AI_USES_NAV_MESH
-		int iNearestNode = GetPathfinder()->NearestNodeToPoint( vTestPoint );
-		if ( iNearestNode != NO_NODE )
+		CRecastMesh *pMesh = GetNavMesh();
+		if ( pMesh )
 		{
-			GetMoveProbe()->MoveLimit( NAV_GROUND, 
-									   g_pBigAINet->GetNodePosition(GetHullType(), iNearestNode ), 
-									   vTestPoint, 
-									   MASK_SOLID_BRUSHONLY, 
-									   NULL, 
-									   0, 
-									   &moveTrace );
-			if ( ( moveTrace.vEndPosition - vTestPoint ).Length2DSqr() < Square( GetHullWidth() * 3.0 ) &&
-				 GetMoveProbe()->CheckStandPosition( moveTrace.vEndPosition, MASK_SOLID_BRUSHONLY ) )
+			Vector closest;
+			if( pMesh->ClosestPointOnMesh( vTestPoint, closest ) )
 			{
-				vCandidate = moveTrace.vEndPosition;
+				GetMoveProbe()->MoveLimit( NAV_GROUND, 
+										   closest, 
+										   vTestPoint, 
+										   MASK_SOLID_BRUSHONLY, 
+										   NULL, 
+										   0, 
+										   &moveTrace );
+				if ( ( moveTrace.vEndPosition - vTestPoint ).Length2DSqr() < Square( GetHullWidth() * 3.0 ) &&
+					 GetMoveProbe()->CheckStandPosition( moveTrace.vEndPosition, MASK_SOLID_BRUSHONLY ) )
+				{
+					vCandidate = moveTrace.vEndPosition;
+				}
 			}
 		}
-	#else
-		CNavArea *pNearestArea = GetPathfinder()->NearestAreaToPoint( vTestPoint );
-		if ( pNearestArea != NULL )
-		{
-			GetMoveProbe()->MoveLimit( NAV_GROUND, 
-									   pNearestArea->GetClosestPointOnArea( vTestPoint ), 
-									   vTestPoint, 
-									   MASK_SOLID_BRUSHONLY, 
-									   NULL, 
-									   0, 
-									   &moveTrace );
-			if ( ( moveTrace.vEndPosition - vTestPoint ).Length2DSqr() < Square( GetHullWidth() * 3.0 ) &&
-				 GetMoveProbe()->CheckStandPosition( moveTrace.vEndPosition, MASK_SOLID_BRUSHONLY ) )
-			{
-				vCandidate = moveTrace.vEndPosition;
-			}
-		}
-	#endif
 	}
 
 	if ( vCandidate != vec3_invalid )
@@ -13366,9 +13068,6 @@ bool CAI_BaseNPC::FindNearestValidGoalPos( const Vector &vTestPoint, Vector *pRe
 
 		if ( pPathToPoint )
 		{
-		#ifndef AI_USES_NAV_MESH
-			GetPathfinder()->UnlockRouteNodes( pPathToPoint );
-		#endif
 			CAI_Path tempPath;
 			tempPath.SetWaypoints( pPathToPoint ); // path object will delete waypoints
 		}
@@ -14198,7 +13897,7 @@ void CAI_BaseNPC::CalculateValidEnemyInteractions( void )
 				if (Q_strstr(myweapon, "WEPCLASS"))
 					pass = (GetActiveWeapon()->WeaponClassFromString(myweapon) == GetActiveWeapon()->WeaponClassify()) ? !pass : pass;
 				else
-					pass = (GetActiveWeapon()->m_iClassname == pInteraction->iszMyWeapon) ? !pass : pass;
+					pass = (GetActiveWeapon()->GetClassnameStr() == pInteraction->iszMyWeapon) ? !pass : pass;
 
 				if (!pass)
 					continue;
@@ -14223,7 +13922,7 @@ void CAI_BaseNPC::CalculateValidEnemyInteractions( void )
 				if (Q_strstr(theirweapon, "WEPCLASS"))
 					pass = (pNPC->GetActiveWeapon()->WeaponClassFromString(theirweapon) == pNPC->GetActiveWeapon()->WeaponClassify()) ? !pass : pass;
 				else
-					pass = (pNPC->GetActiveWeapon()->m_iClassname == pInteraction->iszTheirWeapon) ? !pass : pass;
+					pass = (pNPC->GetActiveWeapon()->GetClassnameStr() == pInteraction->iszTheirWeapon) ? !pass : pass;
 
 				if (!pass)
 					continue;
@@ -15189,4 +14888,13 @@ void CAI_BaseNPC::DesireCrouch( void )
 bool CAI_BaseNPC::IsInChoreo() const
 {
 	return m_bInChoreo;
+}
+
+CRecastMesh *CAI_BaseNPC::GetNavMesh() const
+{
+	NavMeshType_t type = GetNavMeshType();
+	if(type == RECAST_NAVMESH_INVALID)
+		return NULL;
+
+	return RecastMgr().GetMesh( type );
 }

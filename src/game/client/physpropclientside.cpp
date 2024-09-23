@@ -638,7 +638,7 @@ const char *C_PhysPropClientside::ParseEntity( const char *pEntData )
 		C_FuncPhysicsRespawnZone *pEntity = CREATE_ENTITY(C_FuncPhysicsRespawnZone, "func_proprrespawnzone_clientside");
 
 		if ( pEntity )
-		{	
+		{
 			// Set up keyvalues.
 			pEntity->ParseMapData(&entData);
 

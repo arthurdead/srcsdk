@@ -10,14 +10,10 @@
 #include "cbase.h"
 #include "ai_basenpc.h"
 #include "ai_default.h"
-#include "ai_hull.h"
 #include "ai_squadslot.h"
 #include "ai_squad.h"
 #include "bitstring.h"
 #include "entitylist.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_hint.h"
-#endif
 #include "IEffects.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -90,25 +86,8 @@ void CAI_BaseNPC::VacateStrategySlot(void)
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-bool CAI_BaseNPC::IsValidCover( const Vector &vecCoverLocation, CAI_Hint const *pHint )
-#else
-bool CAI_BaseNPC::IsValidCover( const Vector &vecCoverLocation, CNavArea const *pArea )
-#endif
+bool CAI_BaseNPC::IsValidCover( const Vector &vecCoverLocation )
 {
-	// firstly, limit choices to hint groups
-#ifndef AI_USES_NAV_MESH
-	string_t iszHint = GetHintGroup();
-	char *pszHint = (char *)STRING(iszHint);
-	if ((iszHint != NULL_STRING) && (pszHint[0] != '\0'))
-	{
-		if (!pHint || pHint->GetGroup() != GetHintGroup())
-		{
-			return false;
-		}
-	}
-#endif
-
 	/*
 	// If I'm in a squad don't pick cover node it other squad member
 	// is already nearby
@@ -144,24 +123,8 @@ bool CAI_BaseNPC::IsValidCover( const Vector &vecCoverLocation, CNavArea const *
 // Output :
 //-----------------------------------------------------------------------------
 
-#ifndef AI_USES_NAV_MESH
-bool CAI_BaseNPC::IsValidShootPosition( const Vector &vecShootLocation, CAI_Node *pNode, CAI_Hint const *pHint )
-#else
-bool CAI_BaseNPC::IsValidShootPosition( const Vector &vecShootLocation, CNavArea *pArea )
-#endif
+bool CAI_BaseNPC::IsValidShootPosition( const Vector &vecShootLocation )
 {
-#ifndef AI_USES_NAV_MESH
-	// limit choices to hint groups
-	if (GetHintGroup() != NULL_STRING)
-	{
-		if (!pHint || pHint->GetGroup() != GetHintGroup())
-		{
-			if ( ( vecShootLocation - GetAbsOrigin() ).Length2DSqr() > 1 )
-				return false;
-		}
-	}
-#endif
-
 	return true;
 }
 
@@ -281,7 +244,7 @@ int CAI_BaseNPC::NumWeaponsInSquad( const char *pszWeaponClassname )
 
 	if( !GetSquad() )
 	{
-		if( GetActiveWeapon() && GetActiveWeapon()->m_iClassname == iszWeaponClassname )
+		if( GetActiveWeapon() && GetActiveWeapon()->GetClassnameStr() == iszWeaponClassname )
 		{
 			// I'm alone in my squad, but I do have this weapon.
 			return 1;
@@ -295,7 +258,7 @@ int CAI_BaseNPC::NumWeaponsInSquad( const char *pszWeaponClassname )
 	CAI_BaseNPC *pSquadmate = m_pSquad->GetFirstMember( &iter );
 	while ( pSquadmate )
 	{
-		if( pSquadmate->GetActiveWeapon() && pSquadmate->GetActiveWeapon()->m_iClassname == iszWeaponClassname )
+		if( pSquadmate->GetActiveWeapon() && pSquadmate->GetActiveWeapon()->GetClassnameStr() == iszWeaponClassname )
 		{
 			count++;
 		}

@@ -199,9 +199,6 @@ bool CAI_LeadBehavior::GetClosestPointOnRoute( const Vector &targetPos, Vector *
 		if ( !builtwaypoints )
 			return false;
 
-	#ifndef AI_USES_NAV_MESH
-		GetOuter()->GetPathfinder()->UnlockRouteNodes( builtwaypoints );
-	#endif
 		waypoint = builtwaypoints;
 	}
 

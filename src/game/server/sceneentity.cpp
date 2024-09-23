@@ -5442,39 +5442,35 @@ void CSceneListManager::Activate( void )
 {
 	BaseClass::Activate();
 
-	// Hook up scenes, but not after loading a game because they're saved.
-	if ( gpGlobals->eLoadType != MapLoad_LoadGame )
+	for ( int i = 0; i < SCENE_LIST_MANAGER_MAX_SCENES; i++ )
 	{
-		for ( int i = 0; i < SCENE_LIST_MANAGER_MAX_SCENES; i++ )
+		if ( m_iszScenes[i] != NULL_STRING )
 		{
-			if ( m_iszScenes[i] != NULL_STRING )
+			m_hScenes[i] = gEntList.FindEntityByName( NULL, STRING(m_iszScenes[i]) );
+			if ( m_hScenes[i] )
 			{
-				m_hScenes[i] = gEntList.FindEntityByName( NULL, STRING(m_iszScenes[i]) );
-				if ( m_hScenes[i] )
+				CSceneEntity *pScene = dynamic_cast<CSceneEntity*>(m_hScenes[i].Get());
+				if ( pScene )
 				{
-					CSceneEntity *pScene = dynamic_cast<CSceneEntity*>(m_hScenes[i].Get());
-					if ( pScene )
+					pScene->AddListManager( this );
+				}
+				else 
+				{
+					CSceneListManager *pList = dynamic_cast<CSceneListManager*>(m_hScenes[i].Get());
+					if ( pList )
 					{
-						pScene->AddListManager( this );
+						pList->AddListManager( this );
 					}
-					else 
+					else
 					{
-						CSceneListManager *pList = dynamic_cast<CSceneListManager*>(m_hScenes[i].Get());
-						if ( pList )
-						{
-							pList->AddListManager( this );
-						}
-						else
-						{
-							Warning( "%s(%s) found an entity that wasn't a logic_choreographed_scene or logic_scene_list_manager in slot %d, named %s\n", GetDebugName(), GetClassname(), i, STRING(m_iszScenes[i]) );
-							m_hScenes[i] = NULL;
-						}
+						Warning( "%s(%s) found an entity that wasn't a logic_choreographed_scene or logic_scene_list_manager in slot %d, named %s\n", GetDebugName(), GetClassname(), i, STRING(m_iszScenes[i]) );
+						m_hScenes[i] = NULL;
 					}
 				}
-				else
-				{
-					Warning( "%s(%s) could not find scene %d, named %s\n", GetDebugName(), GetClassname(), i, STRING(m_iszScenes[i]) );
-				}
+			}
+			else
+			{
+				Warning( "%s(%s) could not find scene %d, named %s\n", GetDebugName(), GetClassname(), i, STRING(m_iszScenes[i]) );
 			}
 		}
 	}

@@ -150,7 +150,7 @@ static void drawMeshTile(duDebugDraw* dd, const dtNavMesh& mesh, const dtNavMesh
 		const dtPoly* p = &tile->polys[i];
 		if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION)	// Skip off-mesh links.
 			continue;
-		if (!recast_debug_show_disabled.GetBool() && p->flags & SAMPLE_POLYFLAGS_DISABLED)
+		if (!recast_debug_show_disabled.GetBool() && p->flags & POLYFLAGS_DISABLED)
 			continue;
 			
 		const dtPolyDetail* pd = &tile->detailMeshes[i];
@@ -202,7 +202,7 @@ static void drawMeshTile(duDebugDraw* dd, const dtNavMesh& mesh, const dtNavMesh
 			const dtPoly* p = &tile->polys[i];
 			if (p->getType() != DT_POLYTYPE_OFFMESH_CONNECTION)	// Skip regular polys.
 				continue;
-			if (p->flags & SAMPLE_POLYFLAGS_DISABLED)
+			if (p->flags & POLYFLAGS_DISABLED)
 				continue;
 
 			unsigned int col, col2;

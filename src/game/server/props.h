@@ -13,7 +13,6 @@
 #include "physics_bone_follower.h"
 #include "player_pickup.h"
 #include "positionwatcher.h"
-#include "nav_mesh.h"
 
 //=============================================================================================================
 // PROP TYPES
@@ -25,6 +24,7 @@ class CBaseProp : public CBaseAnimating
 {
 	DECLARE_CLASS( CBaseProp, CBaseAnimating );
 public:
+	virtual void UpdateOnRemove();
 
 	void Spawn( void );
 	void Precache( void );
@@ -32,6 +32,9 @@ public:
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	void CalculateBlockLOS( void );
 	int  ParsePropData( void );
+
+	// Updates the prop as obstacle on navigation mesh
+	void UpdateNavObstacle( bool bForce = false );
 	
 	void DrawDebugGeometryOverlays( void );
 
@@ -41,6 +44,11 @@ public:
 
 	// Attempt to replace a dynamic_cast
 	virtual bool IsPropPhysics() { return false; }
+
+protected:
+	Vector m_vNavObstaclePos;
+	bool m_bCanBecomeObstacle;
+	float m_fNextCanUpdateObstacle;
 };
 
 
@@ -351,7 +359,7 @@ protected:
 // Purpose: 
 //-----------------------------------------------------------------------------
 DECLARE_AUTO_LIST( IPhysicsPropAutoList );
-class CPhysicsProp : public CBreakableProp, public IPhysicsPropAutoList, public INavAvoidanceObstacle, public ISpecialPhysics
+class CPhysicsProp : public CBreakableProp, public IPhysicsPropAutoList, public ISpecialPhysics
 {
 	DECLARE_CLASS( CPhysicsProp, CBreakableProp );
 	DECLARE_SERVERCLASS();
@@ -359,6 +367,8 @@ class CPhysicsProp : public CBreakableProp, public IPhysicsPropAutoList, public 
 public:
 	~CPhysicsProp();
 	CPhysicsProp( void );
+
+	void Activate( void );
 
 	void Spawn( void );
 	void Precache();
@@ -398,13 +408,6 @@ public:
 	int ExploitableByPlayer() const { return m_iExploitableByPlayer; }
 
 	void ClearFlagsThink( void );
-
-	virtual bool IsPotentiallyAbleToObstructNavAreas( void ) const;	// could we at some future time obstruct nav?
-	virtual float GetNavObstructionHeight( void ) const;			// height at which to obstruct nav areas
-	virtual bool CanObstructNavAreas( void ) const;					// can we obstruct nav right this instant?
-	virtual CBaseEntity *GetObstructingEntity( void ) { return this; }
-	virtual void OnNavMeshLoaded( void );
-	void NavThink( void );
 
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 	int DrawDebugTextOverlays(void);

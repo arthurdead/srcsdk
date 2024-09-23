@@ -477,8 +477,6 @@ bool CAI_FreePass::ShouldAllowFVisible(bool bBaseResult )
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-string_t g_iszFuncBrushClassname = NULL_STRING;
-
 //-----------------------------------------------------------------------------
 CTraceFilterNav::CTraceFilterNav( CAI_BaseNPC *pProber, bool bIgnoreTransientEntities, const IServerEntity *passedict, int collisionGroup, bool bAllowPlayerAvoid ) : 
 	CTraceFilterSimple( passedict, collisionGroup ),

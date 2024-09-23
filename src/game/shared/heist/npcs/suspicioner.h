@@ -23,9 +23,11 @@ public:
 
 #ifdef GAME_DLL
 	void SetSuspicion(CHeistPlayer *player, float value);
+	void SetSuspicion(int idx, float value);
 #endif
 
 	float GetSuspicion(CHeistPlayer *player) const;
+	float GetSuspicion(int idx) const;
 
 	static void ClearAll()
 	{ s_SuspicionerList.RemoveAll(); }
@@ -37,6 +39,8 @@ public:
 
 	EHANDLE GetOwner() const
 	{ return m_hOwner; }
+
+	void Update();
 
 private:
 	static CUtlVector<CSuspicioner *> s_SuspicionerList;

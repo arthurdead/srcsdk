@@ -16,13 +16,7 @@
 #include "activitylist.h"
 #include "eventlist.h"
 #include "eventqueue.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_network.h"
-#endif
 #include "ai_schedule.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_networkmanager.h"
-#endif
 #include "ai_utils.h"
 #include "basetempentity.h"
 #include "world.h"
@@ -82,7 +76,6 @@ void CInfoGameEventProxy::Spawn()
 	{
 		VisibilityMonitor_AddEntity( this, m_flRange, &CInfoGameEventProxy::GameEventProxyCallback, NULL );
 	}
-
 }
 
 //-----------------------------------------------------------------------------
@@ -592,11 +585,6 @@ CWorld::CWorld( )
 
 	AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
 
-	if(g_WorldEntity == this) {
-		ActivityList_Init();
-		EventList_Init();
-	}
-	
 	SetSolid( SOLID_BSP );
 	SetMoveType( MOVETYPE_NONE );
 
@@ -615,18 +603,8 @@ CWorld::~CWorld( )
 		Editor_EndSession(false);
 	#endif
 
-		EventList_Free();
-		ActivityList_Free();
-
-		if ( GameRules() )
-		{
-			GameRules()->LevelShutdown();
-			UTIL_Remove( GameRules() );
-		}
-	}
-
-	if(g_WorldEntity == this)
 		g_WorldEntity = NULL;
+	}
 }
 
 
@@ -652,17 +630,6 @@ void CWorld::DecalTrace( trace_t *pTrace, char const *decalName)
 	}
 }
 
-void CWorld::RegisterSharedActivities( void )
-{
-	ActivityList_RegisterSharedActivities();
-}
-
-void CWorld::RegisterSharedEvents( void )
-{
-	EventList_RegisterSharedEvents();
-}
-
-
 void CWorld::Spawn( void )
 {
 	if(g_WorldEntity && g_WorldEntity != this) {
@@ -678,50 +645,7 @@ void CWorld::Spawn( void )
 	SetModelName( AllocPooledString( modelinfo->GetModelName( GetModel() ) ) );
 	AddFlag( FL_WORLDBRUSH );
 
-	g_EventQueue.Init();
 	Precache( );
-}
-
-static const char *g_DefaultLightstyles[] =
-{
-	// 0 normal
-	"m",
-	// 1 FLICKER (first variety)
-	"mmnmmommommnonmmonqnmmo",
-	// 2 SLOW STRONG PULSE
-	"abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba",
-	// 3 CANDLE (first variety)
-	"mmmmmaaaaammmmmaaaaaabcdefgabcdefg",
-	// 4 FAST STROBE
-	"mamamamamama",
-	// 5 GENTLE PULSE 1
-	"jklmnopqrstuvwxyzyxwvutsrqponmlkj",
-	// 6 FLICKER (second variety)
-	"nmonqnmomnmomomno",
-	// 7 CANDLE (second variety)
-	"mmmaaaabcdefgmmmmaaaammmaamm",
-	// 8 CANDLE (third variety)
-	"mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa",
-	// 9 SLOW STROBE (fourth variety)
-	"aaaaaaaazzzzzzzz",
-	// 10 FLUORESCENT FLICKER
-	"mmamammmmammamamaaamammma",
-	// 11 SLOW PULSE NOT FADE TO BLACK
-	"abcdefghijklmnopqrrqponmlkjihgfedcba",
-	// 12 UNDERWATER LIGHT MUTATION
-	// this light only distorts the lightmap - no contribution
-	// is made to the brightness of affected surfaces
-	"mmnnmmnnnmmnn",
-};
-
-
-const char *GetDefaultLightstyleString( int styleIndex )
-{
-	if ( styleIndex < ARRAYSIZE(g_DefaultLightstyles) )
-	{
-		return g_DefaultLightstyles[styleIndex];
-	}
-	return "m";
 }
 
 void CWorld::Precache( void )
@@ -731,111 +655,6 @@ void CWorld::Precache( void )
 	}
 
 	COM_TimestampedLog( "CWorld::Precache - Start" );
-
-	g_fGameOver = false;
-	g_pLastSpawn = NULL;
-	g_Language.SetValue( LANGUAGE_ENGLISH );	// TODO use VGUI to get current language
-
-	ConVarRef stepsize( "sv_stepsize" );
-	stepsize.SetValue( 18 );
-
-	ConVarRef roomtype( "room_type" );
-	roomtype.SetValue( 0 );
-
-	// Set up game rules
-	Assert( !GameRules() );
-	if (GameRules())
-	{
-		UTIL_Remove( GameRules() );
-	}
-
-	InstallGameRules();
-	Assert( GameRules() );
-	GameRules()->Init();
-
-	CSoundEnt::InitSoundEnt();
-
-	// Only allow precaching between LevelInitPreEntity and PostEntity
-	CBaseEntity::SetAllowPrecache( true );
-
-	COM_TimestampedLog( "IGameSystem::LevelInitPreEntityAllSystems" );
-	IGameSystem::LevelInitPreEntityAllSystems( STRING( GetModelName() ) );
-
-	COM_TimestampedLog( "g_pGameRules->CreateStandardEntities()" );
-	// Create the player resource
-	GameRules()->CreateStandardEntities();
-
-	// UNDONE: Make most of these things server systems or precache_registers
-	// =================================================
-	//	Activities
-	// =================================================
-	ActivityList_Free();
-	RegisterSharedActivities();
-
-	EventList_Free();
-	RegisterSharedEvents();
-
-	COM_TimestampedLog( "InitBodyQue()" );
-	InitBodyQue();
-// init sentence group playback stuff from sentences.txt.
-// ok to call this multiple times, calls after first are ignored.
-
-	COM_TimestampedLog( "SENTENCEG_Init()" );
-	SENTENCEG_Init();
-
-	COM_TimestampedLog( "PrecacheStandardParticleSystems()" );
-	// Precache standard particle systems
-	PrecacheStandardParticleSystems( );
-
-// the area based ambient sounds MUST be the first precache_sounds
-
-	COM_TimestampedLog( "W_Precache()" );
-// player precaches     
-	W_Precache ();									// get weapon precaches
-	
-	COM_TimestampedLog( "ClientPrecache()" );
-	ClientPrecache();
-
-	COM_TimestampedLog( "PrecacheTempEnts()" );
-	// precache all temp ent stuff
-	CBaseTempEntity::PrecacheTempEnts();
-
-//
-// Setup light animation tables. 'a' is total darkness, 'z' is maxbright.
-//
-	COM_TimestampedLog( "LightStyles" );
-	for ( int i = 0; i < ARRAYSIZE(g_DefaultLightstyles); i++ )
-	{
-		engine->LightStyle( i, GetDefaultLightstyleString(i) );
-	}
-
-	// styles 32-62 are assigned by the light program for switchable lights
-
-	// 63 testing
-	engine->LightStyle(63, "a");
-
-#ifndef AI_USES_NAV_MESH
-	// =================================================
-	//	Load and Init AI Networks
-	// =================================================
-	CAI_NetworkManager::InitializeAINetworks();
-#endif
-	// =================================================
-	//	Load and Init AI Schedules
-	// =================================================
-	COM_TimestampedLog( "LoadAllSchedules" );
-	g_AI_SchedulesManager.LoadAllSchedules();
-	// =================================================
-	//	Initialize NPC Relationships
-	// =================================================
-	GameRules()->InitDefaultAIRelationships();
-	CBaseCombatCharacter::InitInteractionSystem();
-
-	COM_TimestampedLog( "g_pGameRules->Precache" );
-	GameRules()->Precache();
-
-	// Call all registered precachers.
-	CPrecacheRegister::Precache();	
 
 	if ( m_iszChapterTitle.Get() != NULL_STRING && !m_bChapterTitleNoMessage )
 	{
@@ -853,8 +672,6 @@ void CWorld::Precache( void )
 		}
 	}
 
-	g_iszFuncBrushClassname = AllocPooledString("func_brush");
-
 	if ( m_iszDetailSpriteMaterial.Get() != NULL_STRING )
 	{
 		PrecacheMaterial( STRING( m_iszDetailSpriteMaterial.Get() ) );
@@ -869,16 +686,6 @@ void CWorld::UpdateOnRemove( void )
 {
 	BaseClass::UpdateOnRemove();
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : float
-//-----------------------------------------------------------------------------
-float GetRealTime()
-{
-	return engine->Time();
-}
-
 
 bool CWorld::GetDisplayTitle() const
 {

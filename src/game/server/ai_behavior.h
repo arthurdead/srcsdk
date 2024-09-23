@@ -201,12 +201,6 @@ protected:
 	virtual const char *GetSchedulingErrorName();
 	bool IsCurSchedule( int schedId, bool fIdeal = true );
 
-
-	CNavArea *		GetActiveArea()							{ return GetOuter()->GetActiveArea(); }
-	const CNavArea *GetActiveArea() const						{ return GetOuter()->GetActiveArea(); }
-	void			SetActiveArea( CNavArea *pArea )		{ GetOuter()->SetActiveArea( pArea ); }
-	void			ClearActiveArea( )	{ GetOuter()->ClearActiveArea( ); }
-
 	// For now, only support simple behavior stack:
 	DELEGATE_TO_OBJECT_0V( BehaviorBridge_GatherConditions, m_pBackBridge );
 	DELEGATE_TO_OBJECT_0( int, BehaviorBridge_SelectSchedule, m_pBackBridge );
@@ -216,8 +210,11 @@ protected:
 protected:
 	// Used by derived classes to chain a task to a task that might not be the 
 	// one they are currently handling:
-	void	ChainStartTask( int task, float taskData = 0 );
-	void	ChainRunTask( int task, float taskData = 0 );
+	void	ChainStartTask( TaskId_t task, TaskData_t taskData );
+	void	ChainRunTask( TaskId_t task, TaskData_t taskData );
+
+	void	ChainStartTask( TaskId_t task );
+	void	ChainRunTask( TaskId_t task );
 
 protected:
 
@@ -506,7 +503,7 @@ inline bool CAI_BehaviorBase::BridgeRunTask( const Task_t *pTask)
 
 //-------------------------------------
 
-inline void CAI_BehaviorBase::ChainStartTask( int task, float taskData )
+inline void CAI_BehaviorBase::ChainStartTask( TaskId_t task, TaskData_t taskData )
 {
 	Task_t tempTask = { task, taskData }; 
 
@@ -517,9 +514,30 @@ inline void CAI_BehaviorBase::ChainStartTask( int task, float taskData )
 
 //-------------------------------------
 
-inline void CAI_BehaviorBase::ChainRunTask( int task, float taskData )
+inline void CAI_BehaviorBase::ChainRunTask( TaskId_t task, TaskData_t taskData )
 { 
 	Task_t tempTask = { task, taskData }; 
+	bool fPrevOverride = m_fOverrode;
+	this->GetOuter()->RunTask( (const Task_t *)	&tempTask );
+	m_fOverrode = fPrevOverride;;
+}
+
+//-------------------------------------
+
+inline void CAI_BehaviorBase::ChainStartTask( TaskId_t task )
+{
+	Task_t tempTask = { task }; 
+
+	bool fPrevOverride = m_fOverrode;
+	this->GetOuter()->StartTask( (const Task_t *)&tempTask );
+	m_fOverrode = fPrevOverride;;
+}
+
+//-------------------------------------
+
+inline void CAI_BehaviorBase::ChainRunTask( TaskId_t task )
+{ 
+	Task_t tempTask = { task }; 
 	bool fPrevOverride = m_fOverrode;
 	this->GetOuter()->RunTask( (const Task_t *)	&tempTask );
 	m_fOverrode = fPrevOverride;;

@@ -1163,9 +1163,9 @@ void CAchievementMgr::FireGameEvent( IGameEvent *event )
 	if ( 0 == Q_strcmp( name, "entity_killed" ) )
 	{
 #ifdef GAME_DLL
-		CBaseEntity *pVictim = UTIL_EntityByIndex( event->GetInt( "entindex_killed", 0 ) );
-		CBaseEntity *pAttacker = UTIL_EntityByIndex( event->GetInt( "entindex_attacker", 0 ) );
-		CBaseEntity *pInflictor = UTIL_EntityByIndex( event->GetInt( "entindex_inflictor", 0 ) );
+		CBaseEntity *pVictim = UTIL_EntityByIndex( event->GetInt( "entindex_killed", -1 ) );
+		CBaseEntity *pAttacker = UTIL_EntityByIndex( event->GetInt( "entindex_attacker", -1 ) );
+		CBaseEntity *pInflictor = UTIL_EntityByIndex( event->GetInt( "entindex_inflictor", -1 ) );
 		OnKillEvent( pVictim, pAttacker, pInflictor, event );
 #endif // GAME_DLL
 	}

@@ -248,7 +248,7 @@ public:
 //
 inline int	  ENTINDEX( edict_t *pEdict)			
 { 
-	int nResult = pEdict ? pEdict->m_EdictIndex : 0;
+	int nResult = pEdict ? pEdict->m_EdictIndex : -1;
 	Assert( nResult == engine->IndexOfEdict(pEdict) );
 	return nResult;
 }
@@ -263,7 +263,7 @@ inline edict_t* INDEXENT( int iEdictNum )
 // Testing the three types of "entity" for nullity
 inline bool FNullEnt(const edict_t* pent)
 { 
-	return pent == NULL || ENTINDEX((edict_t*)pent) == 0; 
+	return pent == NULL || ENTINDEX((edict_t*)pent) == -1; 
 }
 
 // Dot products for view cone checking

@@ -259,6 +259,8 @@ private:
 	CSound	m_SoundPool[ MAX_WORLD_SOUNDS_MP ];
 };
 
+extern CSoundEnt *g_pSoundEnt;
+
 
 //-----------------------------------------------------------------------------
 // Inline methods

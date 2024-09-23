@@ -211,7 +211,7 @@ bool Impact( const Vector &vecOrigin, const Vector &vecStart, int iMaterial, int
 
 		if ( !bSkipDecal )
 		{
-			if ( (pEntity->entindex() == 0) && (iHitbox != 0) )
+			if ( (pEntity->IsWorld()) && (iHitbox != 0) )
 			{
 				staticpropmgr->AddDecalToStaticProp( vecStart, traceExt, iHitbox - 1, decalNumber, true, tr );
 			}
@@ -228,7 +228,7 @@ bool Impact( const Vector &vecOrigin, const Vector &vecStart, int iMaterial, int
 		Ray_t ray;
 		ray.Init( vecStart, traceExt );
 
-		if ( (pEntity->entindex() == 0) && (iHitbox != 0) )
+		if ( (pEntity->IsWorld()) && (iHitbox != 0) )
 		{
 			// Special case for world entity with hitbox (that's a static prop)
 			ICollideable *pCollideable = staticpropmgr->GetStaticPropByIndex( iHitbox - 1 ); 

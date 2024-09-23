@@ -53,6 +53,12 @@ class CGameDLL_ConVarAccessor : public IConCommandBaseAccessor
 public:
 	virtual bool	RegisterConCommandBase( ConCommandBase *pCommand )
 	{
+	#ifdef _DEBUG
+		if(cvar->FindCommandBase(pCommand->GetName()) != NULL) {
+			DevMsg("server dll tried to re-register con var/command named %s\n", pCommand->GetName());
+		}
+	#endif
+
 		// Remember "unlinked" default value for replicated cvars
 		bool replicated = pCommand->IsFlagSet( FCVAR_REPLICATED );
 		const char *defvalue = NULL;

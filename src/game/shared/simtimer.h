@@ -82,18 +82,47 @@ protected:
 class CSimTimer : public CSimpleSimTimer
 {
 public:
-	CSimTimer( float interval = 0.0, bool startExpired = true )	
+	CSimTimer()	
 	{ 
-		Set( interval, startExpired );
+		this->Set( 0.0, true );
+	}
+
+	CSimTimer( float interval )	
+	{ 
+		this->Set( interval, true );
+	}
+
+	CSimTimer( float interval, bool startExpired )	
+	{ 
+		this->Set( interval, startExpired );
+	}
+
+	void Set( float interval )
+	{
+		this->Set( interval, true );
+	}
+
+	void Set( float minInterval, float maxInterval )
+	{
+		if ( maxInterval > 0.0 )
+			m_interval = random->RandomFloat( minInterval, maxInterval );
+		else
+			m_interval = minInterval;
+		m_next = gpGlobals->curtime + m_interval;
 	}
 	
-	void Set( float interval, bool startExpired = true )
+	void Set( float interval, bool startExpired )
 	{ 
 		m_interval = interval;
 		m_next = (startExpired) ? -1.0 : gpGlobals->curtime + m_interval;
 	}
 
-	void Reset( float interval = -1.0 )
+	void Reset()
+	{
+		this->Reset( -1.0 );
+	}
+
+	void Reset( float interval )
 	{
 		if ( interval == -1.0 )
 		{
@@ -121,12 +150,37 @@ private:
 class CRandSimTimer : public CSimpleSimTimer
 {
 public:
-	CRandSimTimer( float minInterval = 0.0, float maxInterval = 0.0, bool startExpired = true )	
+	CRandSimTimer( )	
 	{ 
-		Set( minInterval, maxInterval, startExpired );
+		this->Set( 0.0, 0.0, true );
+	}
+
+	CRandSimTimer( float minInterval )	
+	{ 
+		this->Set( minInterval, 0.0, true );
+	}
+
+	CRandSimTimer( float minInterval, float maxInterval )	
+	{ 
+		this->Set( minInterval, maxInterval, true );
+	}
+
+	CRandSimTimer( float minInterval, float maxInterval, bool startExpired )	
+	{ 
+		this->Set( minInterval, maxInterval, startExpired );
+	}
+
+	void Set( float minInterval )
+	{ 
+		this->Set( minInterval, 0.0, true );
+	}
+
+	void Set( float minInterval, float maxInterval )
+	{ 
+		this->Set( minInterval, maxInterval, true );
 	}
 	
-	void Set( float minInterval, float maxInterval = 0.0, bool startExpired = true )
+	void Set( float minInterval, float maxInterval, bool startExpired )
 	{ 
 		m_minInterval = minInterval;
 		m_maxInterval = maxInterval;
@@ -222,14 +276,27 @@ public:
 class CStopwatch : public CStopwatchBase
 {
 public:
-	CStopwatch ( float interval = 0.0 )
+	CStopwatch ( )
 	{ 
-		Set( interval );
+		this->Set( 0.0, 0.0 );
+	}
+
+	CStopwatch ( float interval )
+	{ 
+		this->Set( interval, 0.0 );
 	}
 	
 	void Set( float interval )
 	{ 
-		m_interval = interval;
+		this->Set( interval, 0.0 );
+	}
+
+	void Set( float minInterval, float maxInterval )
+	{ 
+		if ( maxInterval > 0.0 )
+			m_interval = random->RandomFloat( minInterval, maxInterval );
+		else
+			m_interval = minInterval;
 	}
 
 	void Start( float intervalOverride )
@@ -240,7 +307,7 @@ public:
 
 	void Start()
 	{
-		Start( m_interval );
+		this->Start( m_interval );
 	}
 	
 	float GetInterval() const
@@ -257,18 +324,33 @@ private:
 class CRandStopwatch : public CStopwatchBase
 {
 public:
-	CRandStopwatch( float minInterval = 0.0, float maxInterval = 0.0 )	
+	CRandStopwatch()	
 	{ 
-		Set( minInterval, maxInterval );
+		this->Set( 0.0, 0.0 );
+	}
+
+	CRandStopwatch( float minInterval, float maxInterval )	
+	{ 
+		this->Set( minInterval, maxInterval );
 	}
 	
-	void Set( float minInterval, float maxInterval = 0.0 )
+	void Set( float interval )
+	{ 
+		this->Set( interval, 0.0 );
+	}
+
+	void Set( float minInterval, float maxInterval )
 	{ 
 		m_minInterval = minInterval;
 		m_maxInterval = maxInterval;
 	}
 
-	void Start( float minOverride, float maxOverride = 0.0 )
+	void Start( float minOverride )
+	{ 
+		this->Start( minOverride, 0.0 );
+	}
+
+	void Start( float minOverride, float maxOverride )
 	{ 
 		m_fIsRunning = true;
 		if ( maxOverride == 0 )
@@ -279,7 +361,7 @@ public:
 
 	void Start()
 	{
-		Start( m_minInterval, m_maxInterval );
+		this->Start( m_minInterval, m_maxInterval );
 	}
 	
 	float GetInterval() const

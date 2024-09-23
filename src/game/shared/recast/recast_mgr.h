@@ -14,7 +14,8 @@
 #include "DetourTileCache.h"
 #include "recast_imgr.h"
 #include "ehandle.h"
-#include "ai_hull.h"
+#include "tier1/utlbuffer.h"
+#include "tier1/convar.h"
 
 #ifdef GAME_DLL
 class CBaseEntity;
@@ -47,6 +48,55 @@ typedef struct NavObstacleArray_t
 
 #define NAV_OBSTACLE_INVALID_INDEX -1
 
+/**
+ * A place is a named group of navigation areas
+ */
+typedef unsigned int Place;
+#define UNDEFINED_PLACE 0				// ie: "no place"
+#define ANY_PLACE 0xFFFF
+
+//--------------------------------------------------------------------------------------------------------------
+//
+// The 'place directory' is used to save and load places from
+// nav files in a size-efficient manner that also allows for the 
+// order of the place ID's to change without invalidating the
+// nav files.
+//
+// The place directory is stored in the nav file as a list of 
+// place name strings.  Each nav area then contains an index
+// into that directory, or zero if no place has been assigned to 
+// that area.
+//
+class PlaceDirectory
+{
+public:
+	typedef unsigned short IndexType;	// Loaded/Saved as UnsignedShort.  Change this and you'll have to version.
+
+	PlaceDirectory( void );
+	void Reset( void );
+	bool IsKnown( Place place ) const;						/// return true if this place is already in the directory
+	IndexType GetIndex( Place place ) const;				/// return the directory index corresponding to this Place (0 = no entry)
+	void AddPlace( Place place );							/// add the place to the directory if not already known
+	Place IndexToPlace( IndexType entry ) const;			/// given an index, return the Place
+	void Save( CUtlBuffer &fileBuffer );					/// store the directory
+	void Load( CUtlBuffer &fileBuffer, int version );		/// load the directory
+	const CUtlVector< Place > *GetPlaces( void ) const
+	{
+		return &m_directory;
+	}
+
+	bool HasUnnamedPlaces( void ) const 
+	{
+		return m_hasUnnamedAreas;
+	}
+
+private:
+	CUtlVector< Place > m_directory;
+	bool m_hasUnnamedAreas;
+};
+
+extern PlaceDirectory placeDirectory;
+
 class CRecastMgr : public IRecastMgr
 {
 public:
@@ -59,33 +109,32 @@ public:
 
 	// Load methods
 	virtual bool InitMeshes();
-	virtual bool InsertMesh( Hull_t hull, float agentRadius, float agentHeight, float agentMaxClimb, float agentMaxSlope );
 	virtual bool Load();
 	virtual void Reset();
 	
 	// Accessors for Units
 	bool HasMeshes();
-	CRecastMesh *GetMeshOfHull( Hull_t hull );
+	CRecastMesh *GetMesh( NavMeshType_t type );
 	CRecastMesh *FindBestMeshForRadiusHeight( float radius, float height );
 	CRecastMesh *FindBestMeshForEntity( CBaseEntity *pEntity );
-	bool IsMeshLoaded( Hull_t hull );
+	bool IsMeshLoaded( NavMeshType_t type );
 
-	const char *FindBestMeshNameForRadiusHeight( float radius, float height );
-	const char *FindBestMeshNameForEntity( CBaseEntity *pEntity );
+	NavMeshType_t FindBestMeshTypeForRadiusHeight( float radius, float height );
+	NavMeshType_t FindBestMeshTypeForEntity( CBaseEntity *pEntity );
 
 	// Used for debugging purposes on client. Don't use for anything else!
-	virtual dtNavMesh* GetNavMesh( Hull_t hull );
-	virtual dtNavMeshQuery* GetNavMeshQuery( Hull_t hull );
-	virtual IMapMesh* GetMapMesh();
+	virtual dtNavMesh* GetNavMesh( NavMeshType_t type );
+	virtual dtNavMeshQuery* GetNavMeshQuery( NavMeshType_t type );
+	virtual IMapMesh* GetMapMesh( MapMeshType_t type );
 	
 #ifndef CLIENT_DLL
 	// Generation methods
-	virtual bool LoadMapMesh( bool bLog = true, bool bDynamicOnly = false, 
+	virtual bool LoadMapMesh( MapMeshType_t type, bool bLog = true, bool bDynamicOnly = false, 
 		const Vector &vMinBounds = vec3_origin, const Vector &vMaxBounds = vec3_origin );
 	virtual bool Build( bool loadDefaultMeshes = true );
 	virtual bool Save();
 
-	virtual bool IsMeshBuildDisabled( Hull_t hull );
+	virtual bool IsMeshBuildDisabled( NavMeshType_t type );
 
 	// Rebuilds mesh partial. Clears and rebuilds tiles touching the bounds.
 	virtual bool RebuildPartial( const Vector &vMins, const Vector& vMaxs );
@@ -108,13 +157,25 @@ public:
 
 	void DebugListMeshes();
 
+	const char *PlaceToName( Place place ) const;						// given a place, return its name
+	Place NameToPlace( const char *name ) const;						// given a place name, return a place ID or zero if no place is defined
+	Place PartialNameToPlace( const char *name ) const;					// given the first part of a place name, return a place ID or zero if no place is defined, or the partial match is ambiguous
+	void PrintAllPlaces( void ) const;									// output a list of names to the console
+	int PlaceNameAutocomplete( char const *partial, char commands[ COMMAND_COMPLETION_MAXITEMS ][ COMMAND_COMPLETION_ITEM_LENGTH ] );	// Given a partial place name, fill in possible place names for ConCommand autocomplete
+
+	//-------------------------------------------------------------------------------------
+	// Edit mode
+	//
+	unsigned int GetNavPlace( void ) const			{ return m_navPlace; }
+	void SetNavPlace( unsigned int place )			{ m_navPlace = place; }
+
 private:
 	CRecastMesh *GetMeshByIndex( int index );
-	int FindMeshIndex( Hull_t hull );
+	int FindMeshIndex( NavMeshType_t type );
 
 #ifndef CLIENT_DLL
 	const char *GetFilename( void ) const;
-	virtual bool BuildMesh( CMapMesh *m_pMapMesh, Hull_t hull );
+	virtual bool BuildMesh( CMapMesh *pMapMesh, NavMeshType_t type );
 #endif // CLIENT_DLL
 
 	NavObstacleArray_t &FindOrCreateObstacle( CBaseEntity *pEntity );
@@ -125,7 +186,7 @@ private:
 
 #ifndef CLIENT_DLL
 	// Map mesh used for generation. May not be set.
-	CMapMesh *m_pMapMesh;
+	CMapMesh *m_pMapMeshes[ RECAST_MAPMESH_NUM ];
 	// Pending partial updates
 	struct PartialMeshUpdate_t
 	{
@@ -135,9 +196,18 @@ private:
 	CUtlVector< PartialMeshUpdate_t > m_pendingPartialMeshUpdates;
 #endif // CLIENT_DLL
 
-	CUtlMap< Hull_t, CRecastMesh * > m_Meshes;
+	CRecastMesh *m_Meshes[RECAST_NAVMESH_NUM];
 
 	CUtlMap< EHANDLE, NavObstacleArray_t > m_Obstacles;
+
+	unsigned int m_navPlace;									// current navigation place for editing
+
+	//----------------------------------------------------------------------------------
+	// Place directory
+	//
+	char **m_placeName;											// master directory of place names (ie: "places")
+	unsigned int m_placeCount;									// number of "places" defined in placeName[]
+	void LoadPlaceDatabase( void );								// load the place names from a file
 };
 
 CRecastMgr &RecastMgr();
@@ -147,9 +217,11 @@ inline bool CRecastMgr::HasMeshes()
 	return m_bLoaded;
 }
 
-inline CRecastMesh *CRecastMgr::GetMeshOfHull( Hull_t hull )
+inline CRecastMesh *CRecastMgr::GetMesh( NavMeshType_t type )
 {
-	int idx = FindMeshIndex( hull );
+	if(type == RECAST_NAVMESH_INVALID)
+		return NULL;
+	int idx = FindMeshIndex( type );
 	if( idx != -1 )
 		return GetMeshByIndex( idx );
 	return NULL;

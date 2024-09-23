@@ -21,13 +21,6 @@
 #include "Color.h"
 #include "tier0/memdbgon.h"
 
-#ifndef NDEBUG
-// Comment this out when we release.
-#define ALLOW_DEVELOPMENT_CVARS
-#endif
-
-
-
 //-----------------------------------------------------------------------------
 // Statically constructed list of ConCommandBases, 
 // used for registering them with the ICVar interface
@@ -50,6 +43,18 @@ public:
 };
 
 static CDefaultAccessor s_DefaultAccessor;
+
+static void ModifyFlags(int &flags)
+{
+#ifndef _DEBUG
+	if ( ( flags & ( FCVAR_ARCHIVE | FCVAR_RELEASE | FCVAR_USERINFO ) ) == 0 )
+	{
+		flags |= (FCVAR_HIDDEN | FCVAR_DEVELOPMENTONLY);
+	}
+#else
+	flags &= ~(FCVAR_HIDDEN | FCVAR_DEVELOPMENTONLY);
+#endif
+}
 
 //-----------------------------------------------------------------------------
 // Called by the framework to register ConCommandBases with the ICVar
@@ -159,13 +164,11 @@ void ConCommandBase::CreateBase( const char *pName, const char *pHelpString /*= 
 	m_pszName = pName;
 	m_pszHelpString = pHelpString ? pHelpString : "";
 
+	ModifyFlags( flags );
+
 	m_nFlags = flags;
 
-#ifdef ALLOW_DEVELOPMENT_CVARS
-	m_nFlags &= ~FCVAR_DEVELOPMENTONLY;
-#endif
-
-	if ( !( m_nFlags & FCVAR_UNREGISTERED ) )
+	if ( !IsFlagSet(FCVAR_UNREGISTERED) )
 	{
 		m_pNext = s_pConCommandBases;
 		s_pConCommandBases = this;
@@ -233,9 +236,7 @@ void ConCommandBase::AddFlags( int flags )
 {
 	m_nFlags |= flags;
 
-#ifdef ALLOW_DEVELOPMENT_CVARS
-	m_nFlags &= ~FCVAR_DEVELOPMENTONLY;
-#endif
+	ModifyFlags( m_nFlags );
 }
 
 
@@ -683,43 +684,60 @@ ConVar::~ConVar( void )
 //-----------------------------------------------------------------------------
 void ConVar::InstallChangeCallback( FnChangeCallback_t callback )
 {
-	Assert( !m_pParent->m_fnChangeCallback || !callback );
-	m_pParent->m_fnChangeCallback = callback;
+	Assert( !m_fnChangeCallback || !callback );
+	m_fnChangeCallback = callback;
 
-	if ( m_pParent->m_fnChangeCallback )
-	{
-		// Call it immediately to set the initial value...
-		m_pParent->m_fnChangeCallback( this, m_pszString, m_fValue );
+	if(!m_pParent || m_pParent == this) {
+		if ( m_fnChangeCallback )
+		{
+			// Call it immediately to set the initial value...
+			m_fnChangeCallback( this, m_pszString, m_fValue );
+		}
+	} else {
+		if ( m_fnChangeCallback )
+		{
+			// Call it immediately to set the initial value...
+			m_fnChangeCallback( m_pParent, m_pParent->m_pszString, m_pParent->m_fValue );
+		}
 	}
 }
 
 bool ConVar::IsFlagSet( int flag ) const
 {
-	return ( flag & m_pParent->m_nFlags ) ? true : false;
+	return ( flag & GetFlags() ) ? true : false;
 }
 
 const char *ConVar::GetHelpText( void ) const
 {
-	return m_pParent->m_pszHelpString;
+	if(m_pParent)
+		return m_pParent->m_pszHelpString;
+	else
+		return m_pszHelpString;
 }
 
 void ConVar::AddFlags( int flags )
 {
-	m_pParent->m_nFlags |= flags;
+	m_nFlags |= flags;
 
-#ifdef ALLOW_DEVELOPMENT_CVARS
-	m_pParent->m_nFlags &= ~FCVAR_DEVELOPMENTONLY;
-#endif
+	if(m_pParent && m_pParent != this) {
+		m_pParent->m_nFlags = m_nFlags;
+	}
 }
 
 bool ConVar::IsRegistered( void ) const
 {
-	return m_pParent->m_bRegistered;
+	if(m_pParent)
+		return m_pParent->m_bRegistered;
+	else
+		return m_bRegistered;
 }
 
 const char *ConVar::GetName( void ) const
 {
-	return m_pParent->m_pszName;
+	if(m_pParent)
+		return m_pParent->m_pszName;
+	else
+		return m_pszName;
 }
 
 //-----------------------------------------------------------------------------
@@ -759,9 +777,7 @@ void ConVar::InternalSetValue( const char *value )
 	char  tempVal[ 32 ];
 	char  *val;
 
-	Assert(m_pParent == this); // Only valid for root convars.
-
-	float flOldValue = m_fValue;
+	float flOldValue = (m_pParent ? m_pParent->m_fValue : m_fValue);
 
 	val = (char *)value;
 	if ( !value )
@@ -779,7 +795,12 @@ void ConVar::InternalSetValue( const char *value )
 	m_fValue		= fNewValue;
 	m_nValue		= ( int )( fNewValue );
 
-	if ( !( m_nFlags & FCVAR_NEVER_AS_STRING ) )
+	if(m_pParent && m_pParent != this) {
+		m_pParent->m_fValue		= m_fValue;
+		m_pParent->m_nValue		= m_nValue;
+	}
+
+	if ( !IsFlagSet(FCVAR_NEVER_AS_STRING ) )
 	{
 		ChangeStringValue( val, flOldValue );
 	}
@@ -791,11 +812,11 @@ void ConVar::InternalSetValue( const char *value )
 //-----------------------------------------------------------------------------
 void ConVar::ChangeStringValue( const char *tempVal, float flOldValue )
 {
-	Assert( !( m_nFlags & FCVAR_NEVER_AS_STRING ) );
+	Assert( !IsFlagSet(FCVAR_NEVER_AS_STRING ) );
 
- 	char* pszOldValue = (char*)stackalloc( m_StringLength );
-	memcpy( pszOldValue, m_pszString, m_StringLength );
-	
+ 	char* pszOldValue = (char*)stackalloc( m_pParent ? m_pParent->m_StringLength : m_StringLength );
+	memcpy( pszOldValue, (m_pParent ? m_pParent->m_pszString : m_pszString), (m_pParent ? m_pParent->m_StringLength : m_StringLength) );
+
 	if ( tempVal )
 	{
 		int len = Q_strlen(tempVal) + 1;
@@ -812,22 +833,60 @@ void ConVar::ChangeStringValue( const char *tempVal, float flOldValue )
 		}
 
 		memcpy( m_pszString, tempVal, len );
+
+		if(m_pParent && m_pParent != this) {
+			if ( len > m_pParent->m_StringLength)
+			{
+				if (m_pParent->m_pszString)
+				{
+					delete[] m_pParent->m_pszString;
+				}
+
+				m_pParent->m_pszString	= new char[len];
+				m_pParent->m_StringLength = len;
+			}
+
+			memcpy( m_pParent->m_pszString, tempVal, len );
+		}
 	}
 	else 
 	{
 		*m_pszString = 0;
+
+		if(m_pParent && m_pParent != this) {
+			*m_pParent->m_pszString = 0;
+		}
 	}
 
-	// If nothing has changed, don't do the callbacks.
-	if (V_strcmp(pszOldValue, m_pszString) != 0)
-	{
-		// Invoke any necessary callback function
-		if ( m_fnChangeCallback )
+	if(!m_pParent || m_pParent == this) {
+		// If nothing has changed, don't do the callbacks.
+		if (V_strcmp(pszOldValue, m_pszString) != 0)
 		{
-			m_fnChangeCallback( this, pszOldValue, flOldValue );
-		}
+			// Invoke any necessary callback function
+			if ( m_fnChangeCallback )
+			{
+				m_fnChangeCallback( this, pszOldValue, flOldValue );
+			}
 
-		g_pCVar->CallGlobalChangeCallbacks( this, pszOldValue, flOldValue );
+			if(IsRegistered())
+				g_pCVar->CallGlobalChangeCallbacks( this, pszOldValue, flOldValue );
+		}
+	} else {
+		if (V_strcmp(pszOldValue, m_pParent->m_pszString) != 0)
+		{
+			// Invoke any necessary callback function
+			if ( m_fnChangeCallback )
+			{
+				m_fnChangeCallback( m_pParent, pszOldValue, flOldValue );
+			}
+
+			if ( m_pParent->m_fnChangeCallback && m_pParent->m_fnChangeCallback != m_fnChangeCallback )
+			{
+				m_pParent->m_fnChangeCallback( m_pParent, pszOldValue, flOldValue );
+			}
+
+			g_pCVar->CallGlobalChangeCallbacks( m_pParent, pszOldValue, flOldValue );
+		}
 	}
 
 	stackfree( pszOldValue );
@@ -840,16 +899,30 @@ void ConVar::ChangeStringValue( const char *tempVal, float flOldValue )
 //-----------------------------------------------------------------------------
 bool ConVar::ClampValue( float& value )
 {
-	if ( m_bHasMin && ( value < m_fMinVal ) )
-	{
-		value = m_fMinVal;
-		return true;
-	}
-	
-	if ( m_bHasMax && ( value > m_fMaxVal ) )
-	{
-		value = m_fMaxVal;
-		return true;
+	if(m_pParent) {
+		if ( m_pParent->m_bHasMin && ( value < m_pParent->m_fMinVal ) )
+		{
+			value = m_pParent->m_fMinVal;
+			return true;
+		}
+		
+		if ( m_pParent->m_bHasMax && ( value > m_pParent->m_fMaxVal ) )
+		{
+			value = m_pParent->m_fMaxVal;
+			return true;
+		}
+	} else {
+		if ( m_bHasMin && ( value < m_fMinVal ) )
+		{
+			value = m_fMinVal;
+			return true;
+		}
+		
+		if ( m_bHasMax && ( value > m_fMaxVal ) )
+		{
+			value = m_fMaxVal;
+			return true;
+		}
 	}
 
 	return false;
@@ -861,7 +934,7 @@ bool ConVar::ClampValue( float& value )
 //-----------------------------------------------------------------------------
 void ConVar::InternalSetFloatValue( float fNewValue )
 {
-	if ( fNewValue == m_fValue )
+	if ( fNewValue == (m_pParent ? m_pParent->m_fValue : m_fValue) )
 		return;
 
 	if ( IsFlagSet( FCVAR_MATERIAL_THREAD_MASK ) )
@@ -873,20 +946,23 @@ void ConVar::InternalSetFloatValue( float fNewValue )
 		}
 	}
 
-	Assert( m_pParent == this ); // Only valid for root convars.
-
 	// Check bounds
 	ClampValue( fNewValue );
 
 	// Redetermine value
-	float flOldValue = m_fValue;
+	float flOldValue = (m_pParent ? m_pParent->m_fValue : m_fValue);
 	m_fValue		= fNewValue;
 	m_nValue		= ( int )m_fValue;
 
-	if ( !( m_nFlags & FCVAR_NEVER_AS_STRING ) )
+	if(m_pParent && m_pParent != this) {
+		m_pParent->m_fValue		= m_fValue;
+		m_pParent->m_nValue		= m_nValue;
+	}
+
+	if ( !IsFlagSet(FCVAR_NEVER_AS_STRING ) )
 	{
 		char tempVal[ 32 ];
-		Q_snprintf( tempVal, sizeof( tempVal), "%f", m_fValue );
+		Q_snprintf( tempVal, sizeof( tempVal), "%f", (m_pParent ? m_pParent->m_fValue : m_fValue) );
 		ChangeStringValue( tempVal, flOldValue );
 	}
 	else
@@ -901,7 +977,7 @@ void ConVar::InternalSetFloatValue( float fNewValue )
 //-----------------------------------------------------------------------------
 void ConVar::InternalSetIntValue( int nValue )
 {
-	if ( nValue == m_nValue )
+	if ( nValue == (m_pParent ? m_pParent->m_nValue : m_nValue) )
 		return;
 
 	if ( IsFlagSet( FCVAR_MATERIAL_THREAD_MASK ) )
@@ -913,8 +989,6 @@ void ConVar::InternalSetIntValue( int nValue )
 		}
 	}
 
-	Assert( m_pParent == this ); // Only valid for root convars.
-
 	float fValue = (float)nValue;
 	if ( ClampValue( fValue ) )
 	{
@@ -922,14 +996,19 @@ void ConVar::InternalSetIntValue( int nValue )
 	}
 
 	// Redetermine value
-	float flOldValue = m_fValue;
+	float flOldValue = (m_pParent ? m_pParent->m_fValue : m_fValue);
 	m_fValue		= fValue;
 	m_nValue		= nValue;
 
-	if ( !( m_nFlags & FCVAR_NEVER_AS_STRING ) )
+	if(m_pParent && m_pParent != this) {
+		m_pParent->m_fValue = m_fValue;
+		m_pParent->m_nValue = m_nValue;
+	}
+
+	if ( !IsFlagSet(FCVAR_NEVER_AS_STRING ) )
 	{
 		char tempVal[ 32 ];
-		Q_snprintf( tempVal, sizeof( tempVal ), "%d", m_nValue );
+		Q_snprintf( tempVal, sizeof( tempVal ), "%d", (m_pParent ? m_pParent->m_nValue : m_nValue) );
 		ChangeStringValue( tempVal, flOldValue );
 	}
 	else
@@ -953,12 +1032,12 @@ void ConVar::Create( const char *pName, const char *pDefaultValue, int flags /*=
 	m_StringLength = V_strlen( m_pszDefaultValue ) + 1;
 	m_pszString = new char[m_StringLength];
 	memcpy( m_pszString, m_pszDefaultValue, m_StringLength );
-	
+
 	m_bHasMin = bMin;
 	m_fMinVal = fMin;
 	m_bHasMax = bMax;
 	m_fMaxVal = fMax;
-	
+
 	m_fnChangeCallback = callback;
 
 	m_fValue = ( float )atof( m_pszString );
@@ -984,8 +1063,7 @@ void ConVar::Create( const char *pName, const char *pDefaultValue, int flags /*=
 //-----------------------------------------------------------------------------
 void ConVar::SetValue(const char *value)
 {
-	ConVar *var = ( ConVar * )m_pParent;
-	var->InternalSetValue( value );
+	InternalSetValue( value );
 }
 
 //-----------------------------------------------------------------------------
@@ -994,8 +1072,7 @@ void ConVar::SetValue(const char *value)
 //-----------------------------------------------------------------------------
 void ConVar::SetValue( float value )
 {
-	ConVar *var = ( ConVar * )m_pParent;
-	var->InternalSetFloatValue( value );
+	InternalSetFloatValue( value );
 }
 
 //-----------------------------------------------------------------------------
@@ -1004,8 +1081,7 @@ void ConVar::SetValue( float value )
 //-----------------------------------------------------------------------------
 void ConVar::SetValue( int value )
 {
-	ConVar *var = ( ConVar * )m_pParent;
-	var->InternalSetIntValue( value );
+	InternalSetIntValue( value );
 }
 
 //-----------------------------------------------------------------------------
@@ -1014,8 +1090,7 @@ void ConVar::SetValue( int value )
 void ConVar::Revert( void )
 {
 	// Force default value again
-	ConVar *var = ( ConVar * )m_pParent;
-	var->SetValue( var->m_pszDefaultValue );
+	SetValue( m_pParent ? m_pParent->m_pszDefaultValue : m_pszDefaultValue );
 }
 
 //-----------------------------------------------------------------------------
@@ -1025,8 +1100,13 @@ void ConVar::Revert( void )
 //-----------------------------------------------------------------------------
 bool ConVar::GetMin( float& minVal ) const
 {
-	minVal = m_pParent->m_fMinVal;
-	return m_pParent->m_bHasMin;
+	if(m_pParent) {
+		minVal = m_pParent->m_fMinVal;
+		return m_pParent->m_bHasMin;
+	} else {
+		minVal = m_fMinVal;
+		return m_bHasMin;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1035,8 +1115,13 @@ bool ConVar::GetMin( float& minVal ) const
 //-----------------------------------------------------------------------------
 bool ConVar::GetMax( float& maxVal ) const
 {
-	maxVal = m_pParent->m_fMaxVal;
-	return m_pParent->m_bHasMax;
+	if(m_pParent) {
+		maxVal = m_pParent->m_fMaxVal;
+		return m_pParent->m_bHasMax;
+	} else {
+		maxVal = m_fMaxVal;
+		return m_bHasMax;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1045,42 +1130,27 @@ bool ConVar::GetMax( float& maxVal ) const
 //-----------------------------------------------------------------------------
 const char *ConVar::GetDefault( void ) const
 {
-	return m_pParent->m_pszDefaultValue;
+	if(m_pParent)
+		return m_pParent->m_pszDefaultValue;
+	else
+		return m_pszDefaultValue;
 }
 
 void ConVar::SetDefault( const char *pszDefault ) 
 { 
 	m_pszDefaultValue = pszDefault ? pszDefault : "";
 	Assert( m_pszDefaultValue );
+
+	if(m_pParent && m_pParent != this) {
+		m_pParent->m_pszDefaultValue = m_pszDefaultValue;
+	}
 }
 
 //-----------------------------------------------------------------------------
 // This version is simply used to make reading convars simpler.
 // Writing convars isn't allowed in this mode
 //-----------------------------------------------------------------------------
-class CEmptyConVar : public ConVar
-{
-public:
-	CEmptyConVar() : ConVar( "", "0" ) {}
-	// Used for optimal read access
-	virtual void SetValue( const char *pValue ) {}
-	virtual void SetValue( float flValue ) {}
-	virtual void SetValue( int nValue ) {}
-	virtual const char *GetName( void ) const { return ""; }
-	virtual bool IsFlagSet( int nFlags ) const { return false; }
-};
-
-static CEmptyConVar s_EmptyConVar;
-
-ConVarRef::ConVarRef( const char *pName )
-{
-	Init( pName );
-}
-
-ConVarRef::ConVarRef( const char *pName, bool bIgnoreMissing )
-{
-	Init( pName, bIgnoreMissing );
-}
+CEmptyConVar s_EmptyConVar;
 
 void ConVarRef::Init( const char *pName, bool bIgnoreMissing )
 {
@@ -1102,11 +1172,6 @@ void ConVarRef::Init( const char *pName, bool bIgnoreMissing )
 			bFirst = false;
 		}
 	}
-}
-
-void ConVarRef::Init( const char *pName )
-{
-	Init( pName, false );
 }
 
 ConVarRef::ConVarRef( IConVar *pConVar )

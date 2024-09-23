@@ -29,7 +29,6 @@
 #include "tier1/strtools.h"
 #include "te_effect_dispatch.h"
 #include "globals.h"
-#include "nav_mesh.h"
 #include "team.h"
 #include "datacache/imdlcache.h"
 #include "voice_gamemgr.h"
@@ -497,7 +496,7 @@ CBaseEntity *GetNextCommandEntity( CBasePlayer *pPlayer, const char *name, CBase
 	while ( (ent = gEntList.NextEnt(ent)) != NULL )
 	{
 		if (  (ent->GetEntityName() != NULL_STRING	&& ent->NameMatches(name))	|| 
-			  (ent->m_iClassname != NULL_STRING && ent->ClassMatches(name)) )
+			  (ent->GetClassnameStr() != NULL_STRING && ent->ClassMatches(name)) )
 		{
 			return ent;
 		}
@@ -551,7 +550,7 @@ void KillTargets( const char *pKillTargetName )
 	{
 		UTIL_Remove( pentKillTarget );
 
-		DevMsg( 2, "killing %s\n", STRING( pentKillTarget->m_iClassname ) );
+		DevMsg( 2, "killing %s\n", pentKillTarget->GetClassname() );
 		pentKillTarget = gEntList.FindEntityByName( pentKillTarget, pKillTargetName );
 	}
 }
@@ -1782,6 +1781,6 @@ const char *GetGameDescription()
 	if(GameRules()) {
 		return GameRules()->GetGameDescription();
 	} else {
-		return "Half-Life 2";
+		return "Source SDK";
 	}
 }

@@ -333,6 +333,9 @@ void CCSMTweakPanel::LoadSettings()
 
 CON_COMMAND( csm_tweak, "" )
 {
+	if(!g_pCSMEnvLight)
+		Msg("No light_environment!!!\n");
+
 	if (!g_pCSMTweak)
 	{
 		g_pCSMTweak = CREATE_PANEL(CCSMTweakPanel, enginevgui->GetPanel(PANEL_CLIENTDLL));

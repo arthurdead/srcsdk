@@ -406,6 +406,9 @@ void CCollisionProperty::Init( CBaseEntity *pEntity )
 	m_vecMaxs.GetForModify().Init();
 	m_flRadius = 0.0f;
 	m_flRadius2D = 0.0f;
+	m_flWidth = 0.0f;
+	m_flHeight = 0.0f;
+	m_flLength = 0.0f;
 	m_triggerBloat = 0;
 	m_usSolidFlags = 0;
 	m_nSolidType = SOLID_NONE;
@@ -686,6 +689,10 @@ void CCollisionProperty::SetCollisionBounds( const Vector &mins, const Vector &m
 		VectorSubtract( m_vecMaxs, m_vecMins, vecSize );
 		m_flRadius = vecSize.Length() * 0.5f;
 		m_flRadius2D = vecSize.Length2D() * 0.5f;
+
+		m_flWidth = vecSize.y;
+		m_flHeight = vecSize.z;
+		m_flLength = vecSize.x;
 
 		MarkSurroundingBoundsDirty();
 	}
@@ -1423,7 +1430,7 @@ void CCollisionProperty::UpdateServerPartitionMask( )
 void CCollisionProperty::MarkPartitionHandleDirty()
 {
 	// don't bother with the world
-	if ( m_pOuter->entindex() == 0 )
+	if ( m_pOuter->IsWorld() )
 		return;
 	
 	if ( !m_pOuter->IsEFlagSet( EFL_DIRTY_SPATIAL_PARTITION ) )

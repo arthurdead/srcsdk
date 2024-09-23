@@ -99,6 +99,7 @@ public:
 
 	virtual void Release()
 	{
+		delete this;
 	}
 
 protected:

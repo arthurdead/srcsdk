@@ -35,11 +35,12 @@ static ConVar recast_mapmesh_no_filter_skybox("recast_mapmesh_no_filter_skybox",
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CMapMesh::CMapMesh( bool bLog ) : m_chunkyMesh(0), m_iStaticVertCountEnd(0), m_iStaticTrisCountEnd(0)
+CMapMesh::CMapMesh( MapMeshType_t type, bool bLog ) : m_chunkyMesh(0), m_iStaticVertCountEnd(0), m_iStaticTrisCountEnd(0)
 {
 	m_bLog = bLog;
 	m_vMeshMins = vec3_origin;
 	m_vMeshMaxs = vec3_origin;
+	m_Type = type;
 }
 
 //-----------------------------------------------------------------------------
@@ -91,7 +92,7 @@ void CMapMesh::AddEntity( CBaseEntity *pEntity )
 		IPhysicsObject *pPhysObj = pEntity->VPhysicsGetObject();
 		if( pPhysObj )
 		{
-			AddCollisionModelToMesh( transform, pPhysObj->GetCollide(), m_Vertices, m_Triangles );
+			AddCollisionModelToMesh( transform, pPhysObj->GetCollide(), m_Vertices, m_Triangles, CONTENTS_EMPTY );
 		}
 	}
 }
@@ -110,7 +111,7 @@ void CMapMesh::AddEntityBBox( CBaseEntity *pEntity, const Vector &vMins, const V
 		matrix3x4_t transform; // model to world transformation
 		AngleMatrix( pEntity->GetAbsAngles(), pEntity->GetAbsOrigin(), transform);
 
-		AddCollisionModelToMesh( transform, pCollide, m_Vertices, m_Triangles );
+		AddCollisionModelToMesh( transform, pCollide, m_Vertices, m_Triangles, CONTENTS_EMPTY );
 
 		physcollision->DestroyCollide( pCollide );
 	}
@@ -166,9 +167,11 @@ bool CMapMesh::IsTriangleInValidArea( const Vector *vTriangle, bool bCheckNoArea
 		}
 	}
 
+	unsigned int tracemask = NAI_Hull::TraceMask( m_Type );
+
 	// Perform trace to get the surface property
 	trace_t tr;
-	UTIL_TraceLine( vCenter + (vNormal*2.0f), vCenter + (-vNormal*2.0f), MASK_NPCWORLDSTATIC, NULL, COLLISION_GROUP_NONE, &tr );
+	UTIL_TraceLine( vCenter + (vNormal*2.0f), vCenter + (-vNormal*2.0f), tracemask, NULL, COLLISION_GROUP_NONE, &tr );
 	if( tr.DidHit() )
 	{
 		// Ignore if trace is inside (npc) clips
@@ -314,7 +317,7 @@ bool CMapMesh::GenerateDispVertsAndTris( void *fileContent, CUtlVector<float> &v
 				trisVerts[k].Init( vert[0], vert[2], vert[1] );
 			}
 
-			if( !IsTriangleInValidArea( trisVerts ) )
+			if( !IsTriangleInValidArea( trisVerts, true ) )
 			{
 				i += 3;
 				continue;
@@ -391,7 +394,7 @@ void CMapMesh::AddCollisionModelToMesh( const matrix3x4_t &transform, CPhysColli
 				// Preferable we should just have some way to get the material.
 				vCenter = (trisVerts[0] + trisVerts[1] + trisVerts[2]) / 3.0f;
 				Vector offset(0, 0, 2.0f);
-				if( enginetrace->GetPointContents_WorldOnly(vCenter-offset, filterContents) & filterContents &&
+				if( (enginetrace->GetPointContents_WorldOnly(vCenter-offset, filterContents) & filterContents) != 0 &&
 					(enginetrace->GetPointContents_WorldOnly(vCenter+offset, filterContents) & filterContents) == 0 )
 				{
 					continue;
@@ -506,7 +509,7 @@ bool CMapMesh::GenerateStaticPropData( void *fileContent, CUtlVector<float> &ver
 					for( j = 0; j < vcollide->solidCount; j++ )
 					{
 						AddCollisionModelToMesh( transform,  
-							modelsVCollides[staticProp.m_PropType]->solids[j], verts, triangles );
+							modelsVCollides[staticProp.m_PropType]->solids[j], verts, triangles, CONTENTS_EMPTY );
 					}
 				}
 				break;
@@ -597,7 +600,7 @@ bool CMapMesh::GenerateDynamicPropData( CUtlVector<float> &verts, CUtlVector<int
 				IPhysicsObject *pPhysObj = pEntity->VPhysicsGetObject();
 				if( pPhysObj )
 				{
-					AddCollisionModelToMesh( transform, pPhysObj->GetCollide(), verts, triangles );
+					AddCollisionModelToMesh( transform, pPhysObj->GetCollide(), verts, triangles, CONTENTS_EMPTY );
 				}
 			}
 		}
@@ -720,7 +723,7 @@ static void AddSampleOrigins( CUtlVector< Vector > &sampleOrigins, const char *p
 	{
 		sampleOrigins.AddToTail( pSampleEnt->GetAbsOrigin() );
 		pSampleEnt = gEntList.FindEntityByClassname( pSampleEnt, pClassName );
-	}	
+	}
 }
 
 //-----------------------------------------------------------------------------

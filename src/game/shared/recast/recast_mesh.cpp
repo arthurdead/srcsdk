@@ -14,6 +14,8 @@
 #include "cbase.h"
 #include "recast/recast_mesh.h"
 #include "recast/recast_mgr.h"
+#include "mathlib/extent.h"
+#include "worldsize.h"
 
 #ifndef CLIENT_DLL
 #include "recast/recast_mapmesh.h"
@@ -37,36 +39,154 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#ifndef CLIENT_DLL
-ConVar recast_findpath_debug( "recast_findpath_debug", "0", FCVAR_CHEAT, "" );
-ConVar recast_areaslope_debug( "recast_areaslope_debug", "0", FCVAR_CHEAT, "" );
-#else
-ConVar recast_findpath_debug( "cl_recast_findpath_debug", "0", FCVAR_CHEAT, "" );
-ConVar recast_areaslope_debug( "cl_recast_areaslope_debug", "0", FCVAR_CHEAT, "" );
-#endif // CLIENT_DLL
+ConVar recast_findpath_debug( "recast_findpath_debug", "0", FCVAR_REPLICATED|FCVAR_CHEAT, "" );
+ConVar recast_areaslope_debug( "recast_areaslope_debug", "0", FCVAR_REPLICATED|FCVAR_CHEAT, "" );
 
 // Defaults
-static ConVar recast_maxslope( "recast_maxslope", "45.0", FCVAR_REPLICATED|FCVAR_CHEAT );
 static ConVar recast_findpath_use_caching( "recast_findpath_use_caching", "1", FCVAR_REPLICATED|FCVAR_CHEAT );
+
+CRecastQueryFilter::CRecastQueryFilter()
+{
+	// Change costs.
+	setAreaCost(POLYAREA_GROUND, 1.0f);
+	setAreaCost(POLYAREA_WATER, 10.0f);
+	setAreaCost(POLYAREA_ROAD, 1.0f);
+	setAreaCost(POLYAREA_DOOR, 1.0f);
+	setAreaCost(POLYAREA_GRASS, 2.0f);
+	setAreaCost(POLYAREA_JUMP, 1.5f);
+}
+
+CRecastQueryFilter::CRecastQueryFilter( PolyFlags flags, bool include )
+	: CRecastQueryFilter()
+{
+	if(include)
+		setIncludeFlags( flags );
+	else
+		setExcludeFlags( flags );
+}
+
+CRecastQueryFilter::CRecastQueryFilter( PolyFlags include, PolyFlags exclude )
+	: CRecastQueryFilter()
+{
+	setIncludeFlags( include );
+	setExcludeFlags( exclude );
+}
+
+CRecastQueryFilter defaultQueryFilter( (PolyFlags)POLYFLAGS_MASK_ALL, (PolyFlags)(POLYFLAGS_DISABLED|POLYFLAGS_MASK_OBSTACLES) );
+CRecastQueryFilter allQueryFilter( (PolyFlags)(POLYFLAGS_MASK_ALL|POLYFLAGS_MASK_OBSTACLES), (PolyFlags)POLYFLAGS_DISABLED );
+CRecastQueryFilter obstacleQueryFilter( (PolyFlags)POLYFLAGS_MASK_OBSTACLES, (PolyFlags)POLYFLAGS_DISABLED );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CRecastMesh::CRecastMesh() :
-	m_navMesh(0),
-	m_tileCache(0),
+struct ai_hull_t
+{
+	ai_hull_t( const char *pName, const Vector &_mins, const Vector &_maxs )
+		: mins( _mins ), maxs( _maxs ), name( pName )
+	{
+		Vector vecSize;
+		VectorSubtract( maxs, mins, vecSize );
+		radius = vecSize.Length() * 0.5f;
+		radius2d = vecSize.Length2D() * 0.5f;
+
+		width = vecSize.y;
+		height = vecSize.z;
+		length = vecSize.x;
+	}
+
+	const char*	name;
+
+	Vector mins;
+	Vector maxs;
+
+	float radius;
+	float radius2d;
+
+	float width;
+	float height;
+	float length;
+};
+
+static const ai_hull_t hull[]{
+	ai_hull_t("HUMAN", Vector(-13, -13, 0), Vector(13, 13, 72) ), // Combine, Stalker, Zombie...
+	ai_hull_t("SMALL_CENTERED", Vector(-20, -20, -20), Vector(20, 20, 20) ), // Scanner
+	ai_hull_t("WIDE_HUMAN", Vector(-15, -15, 0), Vector(15, 15, 72) ), // Vortigaunt
+	ai_hull_t("TINY", Vector(-12, -12, 0), Vector(12, 12, 24) ), // Headcrab
+	ai_hull_t("WIDE_SHORT", Vector(-35, -35, 0), Vector(35, 35, 32) ), // Bullsquid
+	ai_hull_t("MEDIUM", Vector(-16, -16, 0), Vector(16, 16, 64) ), // Cremator
+	ai_hull_t("TINY_CENTERED", Vector(-8, -8, -4), Vector(8, 8, 4) ), // Manhack 
+	ai_hull_t("LARGE", Vector(-40, -40, 0), Vector(40, 40, 100) ), // Antlion Guard
+	ai_hull_t("LARGE_CENTERED", Vector(-38, -38, -38), Vector(38, 38, 38) ), // Mortar Synth
+	ai_hull_t("MEDIUM_TALL", Vector(-18, -18, 0), Vector(18, 18, 100) ), // Hunter
+	ai_hull_t("TINY_FLUID", Vector(-6.5, -6.5, 0), Vector(6.5, 6.5, 13) ), // Blob
+	ai_hull_t("MEDIUMBIG", Vector(-17, -17, 0), Vector(17, 17, 69) ), // Infested drone
+};
+
+COMPILE_TIME_ASSERT(ARRAYSIZE(hull) == (RECAST_NAVMESH_NUM-1));
+COMPILE_TIME_ASSERT(RECAST_NAVMESH_PLAYER == ARRAYSIZE(hull));
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+NavMeshType_t NAI_Hull::LookupId(const char *szName)
+{
+	if(V_strnicmp(szName, "RECAST_NAVMESH_", 15) == 0) {
+		szName += 15;
+	}
+
+	if(V_stricmp(szName, "PLAYER") == 0) {
+		return ARRAYSIZE(hull);
+	}
+
+	for(int i = 0; i < ARRAYSIZE(hull); ++i) {
+		if(V_stricmp(szName, hull[i].name) == 0) {
+			return (NavMeshType_t)i;
+		}
+	}
+
+	return RECAST_NAVMESH_INVALID;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+const char *NAI_Hull::Name(NavMeshType_t type)
+{
+	if(type == RECAST_NAVMESH_INVALID)
+		return "RECAST_NAVMESH_INVALID";
+
+	if(type == ARRAYSIZE(hull))
+		return "RECAST_NAVMESH_PLAYER";
+
+	if(type >= 0 && type < ARRAYSIZE(hull))
+		return hull[type].name;
+
+	return "RECAST_NAVMESH_INVALID";
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+CRecastMesh::CRecastMesh( NavMeshType_t type ) :
+	m_navMesh(NULL),
+	m_tileCache(NULL),
 	m_cacheBuildTimeMs(0),
 	m_cacheCompressedSize(0),
 	m_cacheRawSize(0),
 	m_cacheLayerCount(0),
 	m_cacheBuildMemUsage(0),
-	m_navQuery(0),
-	m_navQueryLimitedNodes(0),
-	m_talloc(0),
-	m_tcomp(0),
-	m_tmproc(0)
+	m_navQuery(NULL),
+	m_navQueryLimitedNodes(NULL),
+	m_talloc(NULL),
+	m_tcomp(NULL),
+	m_tmproc(NULL)
 {
-	m_Hull = HULL_NONE;
+	m_Type = type;
+	m_MapType = NAI_Hull::MapMeshType( m_Type );
 
 	m_regionMinSize = 8;
 	m_regionMergeSize = 20;
@@ -75,28 +195,11 @@ CRecastMesh::CRecastMesh() :
 	m_vertsPerPoly = 6.0f;
 	m_detailSampleDist = 600.0f;
 	m_detailSampleMaxError = 100.0f;
-	m_partitionType = SAMPLE_PARTITION_WATERSHED;
+	m_partitionType = RECAST_PARTITION_WATERSHED;
 
 	m_maxTiles = 0;
 	m_maxPolysPerTile = 0;
 	m_tileSize = 48;
-
-	m_allObstacleFlags = 0;
-	unsigned short curFlag = SAMPLE_POLYFLAGS_OBSTACLE_START;
-	while( curFlag != SAMPLE_POLYFLAGS_OBSTACLE_END )
-	{
-		m_allObstacleFlags |= curFlag;
-		curFlag = curFlag << 1;
-	}
-
-	m_defaultFilter.setIncludeFlags( SAMPLE_POLYFLAGS_ALL ^ (SAMPLE_POLYFLAGS_DISABLED|m_allObstacleFlags) );
-	m_defaultFilter.setExcludeFlags( 0 );
-
-	m_obstacleFilter.setIncludeFlags( m_allObstacleFlags );
-	m_obstacleFilter.setExcludeFlags( 0 );
-
-	m_allFilter.setIncludeFlags( SAMPLE_POLYFLAGS_ALL ^ SAMPLE_POLYFLAGS_DISABLED );
-	m_allFilter.setExcludeFlags( 0 );
 }
 
 //-----------------------------------------------------------------------------
@@ -109,101 +212,221 @@ CRecastMesh::~CRecastMesh()
 	if( m_navQuery )
 	{
 		dtFreeNavMeshQuery( m_navQuery );
-		m_navQuery = 0;
+		m_navQuery = NULL;
 	}
 
 	if( m_navQueryLimitedNodes )
 	{
 		dtFreeNavMeshQuery( m_navQueryLimitedNodes );
-		m_navQueryLimitedNodes = 0;
+		m_navQueryLimitedNodes = NULL;
 	}
 
 	if( m_talloc )
 	{
 		delete m_talloc;
-		m_talloc = 0;
+		m_talloc = NULL;
 	}
 
 	if( m_tcomp )
 	{
 		delete m_tcomp;
-		m_tcomp = 0;
+		m_tcomp = NULL;
 	}
 
 	if( m_tmproc )
 	{
 		delete m_tmproc;
-		m_tmproc = 0;
+		m_tmproc = NULL;
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-bool CRecastMesh::ComputeMeshSettings( Hull_t hull, 
-	float &fAgentRadius, float &fAgentHeight, float &fAgentMaxClimb, float &fAgentMaxSlope,
-	float &fCellSize, float &fCellHeight, float &fTileSize )
+MapMeshType_t NAI_Hull::MapMeshType(NavMeshType_t type)
 {
-	// Per type
-	fAgentMaxSlope = recast_maxslope.GetFloat(); // Default slope for units
-	fTileSize = 48;
+	if(type == RECAST_NAVMESH_TINY_FLUID)
+		return RECAST_MAPMESH_NPC_FLUID;
 
-	fAgentHeight = NAI_Hull::Height( hull );
+	if(type == ARRAYSIZE(hull))
+		return RECAST_MAPMESH_PLAYER;
 
-	const Vector &vecMaxs = NAI_Hull::Maxs( hull );
-	const Vector &vecMins = NAI_Hull::Mins( hull );
-
-	Vector vecSize;
-	VectorSubtract( vecMaxs, vecMins, vecSize );
-	fAgentRadius = vecSize.Length2D() * 0.5f;
-
-	fAgentMaxClimb = 18.0f;
-
-	fCellSize = round( fAgentRadius / 3.0f );
-	fCellHeight = round( fCellSize / 2.0f );
-
-	return true;
+	return RECAST_MAPMESH_NPC;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
+// Input  :
+// Output :
 //-----------------------------------------------------------------------------
-void CRecastMesh::SharedInit(  Hull_t hull )
+unsigned int NAI_Hull::TraceMask(NavMeshType_t type)
 {
-	m_Hull = hull;
+	return TraceMask( MapMeshType( type ) );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+unsigned int NAI_Hull::TraceMask(MapMeshType_t type)
+{ 
+	switch (type) {
+	case RECAST_MAPMESH_NPC:
+		return MASK_NPCWORLDSTATIC;
+	case RECAST_MAPMESH_NPC_FLUID:
+		return MASK_NPCWORLDSTATIC_FLUID;
+	case RECAST_MAPMESH_PLAYER:
+		return MASK_PLAYERWORLDSTATIC;
+	}
+
+	return 0;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+const Vector &NAI_Hull::Mins(NavMeshType_t type)
+{
+	if(type == RECAST_NAVMESH_INVALID)
+		return vec3_origin;
+
+	if(type == ARRAYSIZE(hull))
+		return VEC_HULL_MIN;
+
+	if(type >= 0 && type < ARRAYSIZE(hull))
+		return hull[type].mins;
+
+	return vec3_origin;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+const Vector &NAI_Hull::Maxs(NavMeshType_t type)
+{
+	if(type == RECAST_NAVMESH_INVALID)
+		return vec3_origin;
+
+	if(type == ARRAYSIZE(hull))
+		return VEC_HULL_MAX;
+
+	if(type >= 0 && type < ARRAYSIZE(hull))
+		return hull[type].maxs;
+
+	return vec3_origin;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+float NAI_Hull::Height(NavMeshType_t type)
+{
+	if(type == RECAST_NAVMESH_INVALID)
+		return 0.0f;
+
+	if(type == ARRAYSIZE(hull))
+		return VIEW_VECTORS->m_flHeight;
+
+	if(type >= 0 && type < ARRAYSIZE(hull))
+		return hull[type].height;
+
+	return 0.0f;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+float NAI_Hull::Length(NavMeshType_t type)
+{
+	if(type == RECAST_NAVMESH_INVALID)
+		return 0.0f;
+
+	if(type == ARRAYSIZE(hull))
+		return VIEW_VECTORS->m_flLength;
+
+	if(type >= 0 && type < ARRAYSIZE(hull))
+		return hull[type].length;
+
+	return 0.0f;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+float NAI_Hull::Width(NavMeshType_t type)
+{
+	if(type == RECAST_NAVMESH_INVALID)
+		return 0.0f;
+
+	if(type == ARRAYSIZE(hull))
+		return VIEW_VECTORS->m_flWidth;
+
+	if(type >= 0 && type < ARRAYSIZE(hull))
+		return hull[type].width;
+
+	return 0.0f;
+}
+
+float NAI_Hull::Radius(NavMeshType_t type)
+{
+	if(type == RECAST_NAVMESH_INVALID)
+		return 0.0f;
+
+	if(type == ARRAYSIZE(hull))
+		return VIEW_VECTORS->m_flRadius;
+
+	if(type >= 0 && type < ARRAYSIZE(hull))
+		return hull[type].radius;
+
+	return 0.0f;
+}
+
+float NAI_Hull::Radius2D(NavMeshType_t type)
+{
+	if(type == RECAST_NAVMESH_INVALID)
+		return 0.0f;
+
+	if(type == ARRAYSIZE(hull))
+		return VIEW_VECTORS->m_flRadius2D;
+
+	if(type >= 0 && type < ARRAYSIZE(hull))
+		return hull[type].radius2d;
+
+	return 0.0f;
+}
+
+void CRecastMesh::Init()
+{
+	HidingSpot::m_nextID[ m_Type ] = 1;
+	HidingSpot::m_masterMarker[ m_Type ] = 0;
 
 	m_navQuery = dtAllocNavMeshQuery();
 	m_navQueryLimitedNodes = dtAllocNavMeshQuery();
 
 	m_talloc = new LinearAllocator( 96000 );
 	m_tcomp = new FastLZCompressor;
-	m_tmproc = new MeshProcess( hull );
-}
+	m_tmproc = new MeshProcess( m_Type );
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CRecastMesh::Init( Hull_t hull )
-{
-	SharedInit( hull );
+	// Per type
+	m_agentMaxSlope = 45.573; // Default slope for units
+	m_tileSize = 48;
 
-	// Shared settings by all
-	ComputeMeshSettings( hull, m_agentRadius, m_agentHeight, m_agentMaxClimb, m_agentMaxSlope,
-		m_cellSize, m_cellHeight, m_tileSize );
-}
+	m_agentHeight = NAI_Hull::Height( m_Type );
+	m_agentRadius = NAI_Hull::Radius2D( m_Type );
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CRecastMesh::Init( Hull_t hull, float agentRadius, float agentHeight, float agentMaxClimb, float agentMaxSlope )
-{
-	SharedInit( hull );
+	//m_agentMaxClimb = 18.0f;
+	m_agentMaxClimb = 25.0f;
 
-	m_agentHeight = agentHeight;
-	m_agentRadius = agentRadius;
-	m_agentMaxClimb = agentMaxClimb;
-	m_agentMaxSlope = agentMaxSlope;
 	m_cellSize = round( m_agentRadius / 3.0f );
+
 	m_cellHeight = round( m_cellSize / 2.0f );
 }
 
@@ -212,6 +435,12 @@ void CRecastMesh::Init( Hull_t hull, float agentRadius, float agentHeight, float
 //-----------------------------------------------------------------------------
 void CRecastMesh::PostLoad()
 {
+	// allow hiding spots to compute information
+	FOR_EACH_VEC( TheHidingSpots[ m_Type ], hit )
+	{
+		HidingSpot *spot = TheHidingSpots[ m_Type ][ hit ];
+		spot->PostLoad();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -254,6 +483,17 @@ bool CRecastMesh::Reset()
 		m_tileCache = 0;
 	}
 
+	HidingSpot::m_nextID[ m_Type ] = 1;
+	HidingSpot::m_masterMarker[ m_Type ] = 0;
+
+	// free all the HidingSpots
+	FOR_EACH_VEC( TheHidingSpots[ m_Type ], hit )
+	{
+		delete TheHidingSpots[ m_Type ][ hit ];
+	}
+
+	TheHidingSpots[ m_Type ].RemoveAll();
+
 	return true;
 }
 
@@ -276,7 +516,7 @@ void CRecastMesh::DebugRender()
 		IRecastMgr *pRecastMgr = g_pGameServerLoopback ? g_pGameServerLoopback->GetRecastMgr() : NULL;
 		if( pRecastMgr )
 		{
-			IMapMesh *pMapMesh = pRecastMgr->GetMapMesh();
+			IMapMesh *pMapMesh = pRecastMgr->GetMapMesh( m_MapType );
 			if( pMapMesh && pMapMesh->GetNorms() )
 			{
 				duDebugDrawTriMeshSlope(&dd, pMapMesh->GetVerts(), pMapMesh->GetNumVerts(),
@@ -294,8 +534,8 @@ void CRecastMesh::DebugRender()
 		{
 			IRecastMgr *pRecastMgr = g_pGameServerLoopback ? g_pGameServerLoopback->GetRecastMgr() : NULL;
 			if( pRecastMgr ) {
-				navMesh = pRecastMgr->GetNavMesh( m_Hull );
-				navQuery = pRecastMgr->GetNavMeshQuery( m_Hull );
+				navMesh = pRecastMgr->GetNavMesh( m_Type );
+				navQuery = pRecastMgr->GetNavMeshQuery( m_Type );
 			}
 		}
 		else
@@ -317,7 +557,7 @@ void CRecastMesh::DebugRender()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CRecastMesh::GetPolyRef( const Vector &vPoint, float fBeneathLimit, float fExtent2D )
+dtPolyRef CRecastMesh::GetPolyRef( const Vector &vPoint, float fBeneathLimit, float fExtent2D )
 {
 	if( !IsLoaded() )
 		return 0;
@@ -334,7 +574,7 @@ int CRecastMesh::GetPolyRef( const Vector &vPoint, float fBeneathLimit, float fE
 	polyPickExt[2] = fExtent2D;
 
 	dtPolyRef ref;
-	dtStatus status = m_navQuery->findNearestPoly(pos, polyPickExt, &m_defaultFilter, &ref, 0);
+	dtStatus status = m_navQuery->findNearestPoly(pos, polyPickExt, &defaultQueryFilter, &ref, NULL);
 	if( !dtStatusSucceed( status ) )
 	{
 		return 0;
@@ -345,21 +585,21 @@ int CRecastMesh::GetPolyRef( const Vector &vPoint, float fBeneathLimit, float fE
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CRecastMesh::IsValidPolyRef( int polyRef )
+bool CRecastMesh::IsValidPolyRef( dtPolyRef polyRef ) const
 {
 	if( !IsLoaded() )
 		return false;
 
-	return polyRef >= 0 && m_navQuery->isValidPolyRef( (dtPolyRef)polyRef, &m_defaultFilter );
+	return polyRef >= 0 && m_navQuery->isValidPolyRef( (dtPolyRef)polyRef, &defaultQueryFilter );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-Vector CRecastMesh::ClosestPointOnMesh( const Vector &vPoint, float fBeneathLimit, float fRadius )
+bool CRecastMesh::ClosestPointOnMesh( const Vector &vPoint, Vector &out, float fBeneathLimit, float fRadius )
 {
 	if( !IsLoaded() )
-		return vec3_origin;
+		return false;
 
 	float pos[3];
 	float center[3];
@@ -378,20 +618,29 @@ Vector CRecastMesh::ClosestPointOnMesh( const Vector &vPoint, float fBeneathLimi
 	polyPickExt[2] = fRadius;
 
 	dtPolyRef closestRef;
-	dtStatus status = m_navQuery->findNearestPoly(center, polyPickExt, &m_defaultFilter, &closestRef, NULL, pos);
+	dtStatus status = m_navQuery->findNearestPoly(center, polyPickExt, &defaultQueryFilter, &closestRef, NULL, pos);
 	if( !dtStatusSucceed( status ) )
 	{
-		return vec3_origin;
+		return false;
 	}
 
 	float closest[3];
 	status = m_navQuery->closestPointOnPoly(closestRef, pos, closest, NULL/*, &posOverPoly*/);
 	if( !dtStatusSucceed( status ) )
 	{
-		return vec3_origin;
+		return false;
 	}
 
-	return Vector( closest[0], closest[2], closest[1] );
+	out = Vector( closest[0], closest[2], closest[1] );
+	return true;
+}
+
+Vector CRecastMesh::ClosestPointOnMesh( const Vector &vPoint, float fBeneathLimit, float fRadius )
+{
+	Vector out;
+	if(!ClosestPointOnMesh(vPoint, out, fBeneathLimit, fRadius))
+		return vec3_origin;
+	return out;
 }
 
 // Returns a random number [0..1)
@@ -399,7 +648,7 @@ static float frand()
 {
 //	return ((float)(rand() & 0xffff)/(float)0xffff);
 //	return (float)rand()/(float)RAND_MAX;
-	return random->RandomFloat();
+	return random->RandomFloat(0.0f, 1.0f);
 }
 
 //-----------------------------------------------------------------------------
@@ -434,7 +683,7 @@ Vector CRecastMesh::RandomPointWithRadius( const Vector &vCenter, float fRadius,
 	polyPickExt[2] = 256.0f;
 
 	dtPolyRef closestRef;
-	dtStatus status = m_navQuery->findNearestPoly( pos, polyPickExt, &m_defaultFilter, &closestRef, NULL );
+	dtStatus status = m_navQuery->findNearestPoly( pos, polyPickExt, &defaultQueryFilter, &closestRef, NULL );
 	if( !dtStatusSucceed( status ) )
 	{
 		return vec3_origin;
@@ -442,7 +691,7 @@ Vector CRecastMesh::RandomPointWithRadius( const Vector &vCenter, float fRadius,
 
 	dtPolyRef eRef;
 	float epos[3];
-	status = m_navQuery->findRandomPointAroundCircle( closestRef, center, fRadius, &m_defaultFilter, frand, &eRef, epos );
+	status = m_navQuery->findRandomPointAroundCircle( closestRef, center, fRadius, &defaultQueryFilter, frand, &eRef, epos );
 	if( !dtStatusSucceed( status ) )
 	{
 		return vec3_origin;
@@ -480,7 +729,7 @@ float CRecastMesh::IsAreaFlat( const Vector &vCenter, const Vector &vExtents, fl
 	dtPolyRef polys[RECASTMESH_MAX_POLYS];
 	int npolys = 0;
 
-	status = m_navQuery->queryPolygons( center, extents, &m_defaultFilter, polys, &npolys, RECASTMESH_MAX_POLYS );
+	status = m_navQuery->queryPolygons( center, extents, &defaultQueryFilter, polys, &npolys, RECASTMESH_MAX_POLYS );
 	if( !dtStatusSucceed( status ) )
 	{
 		return 0;
@@ -574,7 +823,7 @@ static void markObstaclePolygonsWalkableNavmesh(dtNavMesh* nav, NavmeshFlags* fl
 		enabledPolys.Tail().ref = ref;
 		enabledPolys.Tail().flags = polyFlags;
 
-		nav->setPolyFlags( ref, (polyFlags | SAMPLE_POLYFLAGS_WALK) );
+		nav->setPolyFlags( ref, (polyFlags | POLYFLAGS_WALK) );
 
 		// Get current poly and tile.
 		// The API input has been cheked already, skip checking internal data.
@@ -629,7 +878,7 @@ dtStatus CRecastMesh::DoFindPath( dtNavMeshQuery *navQuery, dtPolyRef startRef, 
 				pNavMeshFlags->init( m_navMesh );
 
 				// Find the obstacle flag
-				obstacleFlag &= m_allObstacleFlags;
+				obstacleFlag &= POLYFLAGS_MASK_OBSTACLES;
 				// Make this ref and all linked refs with this flag walkable
 				markObstaclePolygonsWalkableNavmesh( m_navMesh, pNavMeshFlags, endRef, obstacleFlag, enabledPolys );
 
@@ -637,7 +886,7 @@ dtStatus CRecastMesh::DoFindPath( dtNavMeshQuery *navQuery, dtPolyRef startRef, 
 			}
 		}
 
-		status = navQuery->findPath( startRef, endRef, spos, epos, &m_defaultFilter, findpathData.polys, &findpathData.npolys, RECASTMESH_MAX_POLYS );
+		status = navQuery->findPath( startRef, endRef, spos, epos, &defaultQueryFilter, findpathData.polys, &findpathData.npolys, RECASTMESH_MAX_POLYS );
 
 		// Restore obstacle polyflags again (if any)
 		for( int i = 0; i < enabledPolys.Count(); i++ )
@@ -711,11 +960,11 @@ dtStatus CRecastMesh::ComputeAdjustedStartAndEnd( dtNavMeshQuery *navQuery, floa
 		spostest[0] = (*pStartTestPos)[0];
 		spostest[1] = (*pStartTestPos)[2];
 		spostest[2] = (*pStartTestPos)[1];
-		status = navQuery->findNearestPoly(spos, polyPickExt, &m_defaultFilter, &startRef, 0, spostest);
+		status = navQuery->findNearestPoly(spos, polyPickExt, &defaultQueryFilter, &startRef, 0, spostest);
 	}
 	else
 	{
-		status = navQuery->findNearestPoly(spos, polyPickExt, &m_defaultFilter, &startRef, 0);
+		status = navQuery->findNearestPoly(spos, polyPickExt, &defaultQueryFilter, &startRef, 0);
 	}
 
 	if( !dtStatusSucceed( status ) )
@@ -732,11 +981,11 @@ dtStatus CRecastMesh::ComputeAdjustedStartAndEnd( dtNavMeshQuery *navQuery, floa
 			spostest[0] = (*pStartTestPos)[0];
 			spostest[1] = (*pStartTestPos)[2];
 			spostest[2] = (*pStartTestPos)[1];
-			status = navQuery->findNearestPoly(spos, polyPickExt, &m_allFilter, &startRef, 0, spostest);
+			status = navQuery->findNearestPoly(spos, polyPickExt, &allQueryFilter, &startRef, 0, spostest);
 		}
 		else
 		{
-			status = navQuery->findNearestPoly(spos, polyPickExt, &m_allFilter, &startRef, 0);
+			status = navQuery->findNearestPoly(spos, polyPickExt, &allQueryFilter, &startRef, 0);
 		}
 	}
 	
@@ -750,7 +999,7 @@ dtStatus CRecastMesh::ComputeAdjustedStartAndEnd( dtNavMeshQuery *navQuery, floa
 	// these polygons of the obstacle as walkable. Obstacles next to this obstacle have different flags, so they all have their own polygons.
 
 	// Find the end area
-	status = navQuery->findNearestPoly(epos, polyPickExt, bHasTargetAndIsObstacle ? &m_obstacleFilter : &m_defaultFilter, &endRef, 0);
+	status = navQuery->findNearestPoly(epos, polyPickExt, bHasTargetAndIsObstacle ? &obstacleQueryFilter : &defaultQueryFilter, &endRef, 0);
 	if( !dtStatusSucceed( status ) )
 	{
 		return status;
@@ -761,7 +1010,7 @@ dtStatus CRecastMesh::ComputeAdjustedStartAndEnd( dtNavMeshQuery *navQuery, floa
 		// Try again, bigger picker querying more tiles
 		// This is mostly the case at the map borders, where we have no nav polygons. It's useful to have some tolerance, rather than just bug
 		// out with a "can't move there" notification.
-		status = navQuery->findNearestPoly(epos, polyPickExtEndBig, bHasTargetAndIsObstacle ? &m_obstacleFilter : &m_defaultFilter, &endRef, 0);
+		status = navQuery->findNearestPoly(epos, polyPickExtEndBig, bHasTargetAndIsObstacle ? &obstacleQueryFilter : &defaultQueryFilter, &endRef, 0);
 		if( !dtStatusSucceed( status ) )
 		{
 			return status;
@@ -772,7 +1021,7 @@ dtStatus CRecastMesh::ComputeAdjustedStartAndEnd( dtNavMeshQuery *navQuery, floa
 	{
 		// Work-around: in case of some small physics obstacles may not generate as an obstacle on the mesh
 		// Todo: figure out something better?
-		status = navQuery->findNearestPoly(epos, polyPickExt, &m_defaultFilter, &endRef, 0);
+		status = navQuery->findNearestPoly(epos, polyPickExt, &defaultQueryFilter, &endRef, 0);
 		if( !dtStatusSucceed( status ) )
 		{
 			return status;
@@ -812,19 +1061,21 @@ AI_Waypoint_t *CRecastMesh::ConstructWaypointsFromStraightPath( pathfind_resultd
 {
 	AI_Waypoint_t *pResultPath = NULL;
 
+	int fWaypointFlags = bits_WP_TO_GOAL;
+
 	for (int i = findpathData.nstraightPath - 1; i >= 0; i--)
 	{
 		const dtOffMeshConnection *pOffmeshCon = m_navMesh->getOffMeshConnectionByRef( findpathData.straightPathPolys[i] );
 
 		Vector pos( findpathData.straightPath[i*3], findpathData.straightPath[i*3+2], findpathData.straightPath[i*3+1] );
 
-		AI_Waypoint_t *pNewPath = new AI_Waypoint_t( pos, 0.0f, NAV_GROUND, 0, NULL );
+		AI_Waypoint_t *pNewPath = new AI_Waypoint_t( pos, 0.0f, NAV_GROUND, fWaypointFlags );
+		fWaypointFlags = 0;
 		pNewPath->SetNext( pResultPath );
 
 		// For now, offmesh connections are always considered as edges.
 		if( pOffmeshCon )
 		{
-			//TODO Arthurdead!!!!
 		#if 0
 			if( pResultPath )
 				pResultPath->SpecialGoalStatus = CHS_EDGEDOWNDEST;
@@ -870,6 +1121,50 @@ AI_Waypoint_t * CRecastMesh::FindPath( const Vector &vStart, const Vector &vEnd,
 	{
 		return NULL;
 	}
+
+	if( recast_findpath_debug.GetBool() )
+	{
+		NDebugOverlay::Box( Vector(epos[0], epos[2], epos[1] + 16.0f), 
+			-Vector(8, 8, 8), Vector(8, 8, 8), 255, 0, 0, 255, 5.0f);
+	}
+
+	DoFindPath( m_navQuery, startRef, endRef, spos, epos, bHasTargetAndIsObstacle, m_pathfindData );
+
+	if( m_pathfindData.cacheValid )
+	{
+		if( bIsPartial ) 
+		{
+			*bIsPartial = m_pathfindData.isPartial;
+		}
+
+		pResultPath = ConstructWaypointsFromStraightPath( m_pathfindData );
+	}
+
+	return pResultPath;
+}
+
+AI_Waypoint_t * CRecastMesh::FindPath( dtPolyRef startRef, const Vector &vStart, dtPolyRef endRef, const Vector &vEnd, CBaseEntity *pTarget, 
+	bool *bIsPartial )
+{
+	VPROF_BUDGET( "CRecastMesh::FindPath", "RecastNav" );
+
+	if( !IsLoaded() )
+		return NULL;
+
+	AI_Waypoint_t *pResultPath = NULL;
+
+	dtStatus status;
+
+	float spos[3];
+	spos[0] = vStart[0];
+	spos[1] = vStart[2];
+	spos[2] = vStart[1];
+	float epos[3];
+	epos[0] = vEnd[0];
+	epos[1] = vEnd[2];
+	epos[2] = vEnd[1];
+
+	bool bHasTargetAndIsObstacle = pTarget && pTarget->GetNavObstacleRef() != NAV_OBSTACLE_INVALID_INDEX;
 
 	if( recast_findpath_debug.GetBool() )
 	{
@@ -981,12 +1276,12 @@ bool CRecastMesh::TestRoute( const Vector &vStart, const Vector &vEnd )
 	polyPickExt[1] = 600.0f;
 	polyPickExt[2] = 128.0f;
 
-	status = m_navQuery->findNearestPoly(spos, polyPickExt, &m_defaultFilter, &startRef, 0);
+	status = m_navQuery->findNearestPoly(spos, polyPickExt, &defaultQueryFilter, &startRef, 0);
 	if( !dtStatusSucceed( status ) )
 	{
 		return false;
 	}
-	status = m_navQuery->findNearestPoly(epos, polyPickExt, &m_defaultFilter, &endRef, 0);
+	status = m_navQuery->findNearestPoly(epos, polyPickExt, &defaultQueryFilter, &endRef, 0);
 	if( !dtStatusSucceed( status ) )
 	{
 		return false;
@@ -995,7 +1290,7 @@ bool CRecastMesh::TestRoute( const Vector &vStart, const Vector &vEnd )
 	dtRaycastHit rayHit;
 	rayHit.maxPath = 0;
 	rayHit.pathCost = rayHit.t = 0;
-	status = m_navQuery->raycast( startRef, spos, epos, &m_defaultFilter, 0, &rayHit );
+	status = m_navQuery->raycast( startRef, spos, epos, &defaultQueryFilter, 0, &rayHit );
 	if( !dtStatusSucceed( status ) )
 	{
 		return false;
@@ -1088,4 +1383,310 @@ bool CRecastMesh::RemoveObstacle( const dtObstacleRef ref )
 		return false;
 	}
 	return true;
+}
+
+//--------------------------------------------------------------------------------------------------------------
+/**
+ * Return Z of area at (x,y) of 'pos'
+ * Trilinear interpolation of Z values at quad edges.
+ * NOTE: pos->z is not used.
+ */
+
+float CRecastMesh::GetPolyZ( dtPolyRef polyRef, float x, float y ) const RESTRICT
+{
+	if( !IsValidPolyRef( polyRef ) )
+		return MAX_COORD_FLOAT;
+
+	float pos[3];
+	pos[0] = x;
+	pos[1] = 0.0f;
+	pos[2] = y;
+
+	dtStatus status = m_navQuery->getPolyHeight( polyRef, pos, &pos[1] );
+	if( !dtStatusSucceed( status ) )
+	{
+		return MAX_COORD_FLOAT;
+	}
+
+	return pos[1];
+}
+
+PolyFlags CRecastMesh::GetPolyFlags( dtPolyRef polyRef ) const
+{
+	if( !IsValidPolyRef( polyRef ) )
+		return (PolyFlags)0;
+
+	unsigned short flags;
+	dtStatus status = m_navMesh->getPolyFlags( polyRef, &flags );
+	if( !dtStatusSucceed( status ) )
+	{
+		return (PolyFlags)0;
+	}
+
+	return (PolyFlags)flags;
+}
+
+bool CRecastMesh::GetPolyExtent( dtPolyRef polyRef, Extent *extent ) const
+{
+	if( !IsValidPolyRef( polyRef ) )
+		return false;
+
+	const dtMeshTile* tile = NULL;
+	const dtPoly* poly = NULL;
+	m_navMesh->getTileAndPolyByRefUnsafe( polyRef, &tile, &poly );
+
+	Vector lo = Vector( MAX_COORD_FLOAT, MAX_COORD_FLOAT, MAX_COORD_FLOAT );
+	Vector hi = Vector( 0.0, 0.0, 0.0 );
+
+	for( int i =0; i < DT_VERTS_PER_POLYGON; ++i ) {
+		const float *vec = &tile->verts[poly->verts[i]];
+
+		if(vec[0] < lo.x)
+			lo.x = vec[0];
+		if(vec[1] < lo.y)
+			lo.y = vec[0];
+		if(vec[2] < lo.z)
+			lo.z = vec[0];
+
+		if(vec[0] > hi.x)
+			hi.x = vec[0];
+		if(vec[1] > hi.y)
+			hi.y = vec[0];
+		if(vec[2] > hi.z)
+			hi.z = vec[0];
+	}
+
+	extent->Init( lo, hi );
+
+	return true;
+}
+
+HidingSpotVector TheHidingSpots[RECAST_NAVMESH_NUM];
+unsigned int HidingSpot::m_nextID[RECAST_NAVMESH_NUM] = {1};
+unsigned int HidingSpot::m_masterMarker[RECAST_NAVMESH_NUM] = {0};
+
+//--------------------------------------------------------------------------------------------------------------
+/**
+ * Hiding Spot factory
+ */
+HidingSpot *CRecastMesh::CreateHidingSpot( void ) const
+{
+	return new HidingSpot( m_Type );
+}
+
+//--------------------------------------------------------------------------------------------------------------
+/**
+ * Construct a Hiding Spot.  Assign a unique ID which may be overwritten if loaded.
+ */
+HidingSpot::HidingSpot( NavMeshType_t type )
+{
+	m_navMeshType = type;
+
+	m_pos = Vector( 0, 0, 0 );
+	m_id = m_nextID[type]++;
+	m_flags = 0;
+	m_poly = 0;
+
+	TheHidingSpots[type].AddToTail( this );
+}
+
+//--------------------------------------------------------------------------------------------------------------
+void HidingSpot::Save( CUtlBuffer &fileBuffer, unsigned int version ) const
+{
+	fileBuffer.PutUnsignedInt( m_id );
+	fileBuffer.PutFloat( m_pos.x );
+	fileBuffer.PutFloat( m_pos.y );
+	fileBuffer.PutFloat( m_pos.z );
+	fileBuffer.PutUnsignedChar( m_flags );
+}
+
+//--------------------------------------------------------------------------------------------------------------
+void HidingSpot::Load( CUtlBuffer &fileBuffer, unsigned int version )
+{
+	m_id = fileBuffer.GetUnsignedInt();
+	m_pos.x = fileBuffer.GetFloat();
+	m_pos.y = fileBuffer.GetFloat();
+	m_pos.z = fileBuffer.GetFloat();
+	m_flags = fileBuffer.GetUnsignedChar();
+
+	// update next ID to avoid ID collisions by later spots
+	if (m_id >= m_nextID[m_navMeshType])
+		m_nextID[m_navMeshType] = m_id+1;
+}
+
+//--------------------------------------------------------------------------------------------------------------
+/**
+ * Hiding Spot post-load processing
+ */
+bool HidingSpot::PostLoad( void )
+{
+	// set our area
+	CRecastMesh *pMesh = RecastMgr().GetMesh( m_navMeshType );
+	if( !pMesh )
+	{
+		DevWarning( "A Hiding Spot has invalid Nav Mesh at setpos %.0f %.0f %.0f\n", m_pos.x, m_pos.y, m_pos.z );
+		return false;
+	}
+
+	float halfHeight = NAI_Hull::Height( m_navMeshType ) * 0.5f;
+
+	m_poly = pMesh->GetPolyRef( m_pos + Vector( 0, 0, halfHeight ) );
+	if ( m_poly == 0 )
+	{
+		DevWarning( "A Hiding Spot is off of the Nav Mesh at setpos %.0f %.0f %.0f\n", m_pos.x, m_pos.y, m_pos.z );
+	}
+
+	return true;
+}
+
+//--------------------------------------------------------------------------------------------------------------
+/**
+ * Given a HidingSpot ID, return the associated HidingSpot
+ */
+HidingSpot *GetHidingSpotByID( NavMeshType_t type, unsigned int id )
+{
+	FOR_EACH_VEC( TheHidingSpots[type], it )
+	{
+		HidingSpot *spot = TheHidingSpots[type][ it ];
+
+		if (spot->GetID() == id)
+			return spot;
+	}
+
+	return NULL;
+}
+
+extern ConVar sv_stepsize;
+
+//--------------------------------------------------------------------------------------------------------------
+/**
+ * Determine how much walkable area we can see from the spot, and how far away we can see.
+ */
+void ClassifySniperSpot( HidingSpot *spot )
+{
+	Vector eye = spot->GetPosition();
+
+	CRecastMesh *pMesh = RecastMgr().GetMesh( spot->m_navMeshType );
+	if( !pMesh )
+	{
+		return;
+	}
+
+	dtPolyRef hidingArea = pMesh->GetPolyRef( spot->GetPosition() );
+
+	const float halfHeight = NAI_Hull::Height( spot->m_navMeshType ) * 0.5f;
+
+#if 0
+	if (hidingArea != 0 && (pMesh->GetPolyFlags( hidingArea ) & NAV_MESH_STAND))
+	{
+		// we will be standing at this hiding spot
+		eye.z += NAI_Hull::Height( spot->m_navMeshType );
+	}
+	else
+#endif
+	{
+		// we are crouching when at this hiding spot
+		eye.z += halfHeight;
+	}
+
+	Extent sniperExtent;
+	float farthestRangeSq = 0.0f;
+	const float minSniperRangeSq = 1000.0f * 1000.0f;
+	bool found = false;
+
+	// to make compiler stop warning me
+	sniperExtent.lo = Vector( 0.0f, 0.0f, 0.0f );
+	sniperExtent.hi = Vector( 0.0f, 0.0f, 0.0f );
+
+	const float stepSize = sv_stepsize.GetFloat();
+
+	auto func = 
+	[&found,&sniperExtent,minSniperRangeSq,&farthestRangeSq,eye,stepSize,halfHeight]
+	( CRecastMesh *pMesh, dtPolyRef polyref ) -> bool {
+		const dtMeshTile* tile = NULL;
+		const dtPoly* poly = NULL;
+
+		pMesh->GetNavMesh()->getTileAndPolyByRefUnsafe(polyref, &tile, &poly);
+
+		Extent areaExtent;
+		if(!pMesh->GetPolyExtent( polyref, &areaExtent ))
+			return true;
+
+		// scan this area
+		Vector walkable;
+		for( walkable.y = areaExtent.lo.y + stepSize/2.0f; walkable.y < areaExtent.hi.y; walkable.y += stepSize )
+		{
+			for( walkable.x = areaExtent.lo.x + stepSize/2.0f; walkable.x < areaExtent.hi.x; walkable.x += stepSize )
+			{
+				walkable.z = pMesh->GetPolyZ( polyref, walkable ) + halfHeight;
+
+				// check line of sight
+				trace_t result;
+				UTIL_TraceLine( eye, walkable, CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_PLAYERCLIP, NULL, COLLISION_GROUP_NONE, &result );
+
+				if (result.fraction == 1.0f && !result.startsolid)
+				{
+					// can see this spot
+
+					// keep track of how far we can see
+					float rangeSq = (eye - walkable).LengthSqr();
+					if (rangeSq > farthestRangeSq)
+					{
+						farthestRangeSq = rangeSq;
+
+						if (rangeSq >= minSniperRangeSq)
+						{
+							// this is a sniper spot
+							// determine how good of a sniper spot it is by keeping track of the snipable area
+							if (found)
+							{
+								if (walkable.x < sniperExtent.lo.x)
+									sniperExtent.lo.x = walkable.x;
+								if (walkable.x > sniperExtent.hi.x)
+									sniperExtent.hi.x = walkable.x;
+
+								if (walkable.y < sniperExtent.lo.y)
+									sniperExtent.lo.y = walkable.y;
+								if (walkable.y > sniperExtent.hi.y)
+									sniperExtent.hi.y = walkable.y;
+							}
+							else
+							{
+								sniperExtent.lo = walkable;
+								sniperExtent.hi = walkable;
+								found = true;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return true;
+	};
+
+	pMesh->ForAllPolys( func );
+
+	if (found)
+	{
+		// if we can see a large snipable area, it is an "ideal" spot
+		float snipableArea = sniperExtent.Area();
+
+		const float minIdealSniperArea = 200.0f * 200.0f;
+		const float longSniperRangeSq = 1500.0f * 1500.0f;
+
+		if (snipableArea >= minIdealSniperArea || farthestRangeSq >= longSniperRangeSq)
+			spot->m_flags |= HidingSpot::IDEAL_SNIPER_SPOT;
+		else
+			spot->m_flags |= HidingSpot::GOOD_SNIPER_SPOT;
+	}
+}
+
+//--------------------------------------------------------------------------------------------------------------
+/**
+ * Return radio chatter place for given coordinate
+ */
+unsigned int CRecastMesh::GetPlace( const Vector &pos ) const
+{
+	return UNDEFINED_PLACE;
 }

@@ -12,12 +12,9 @@
 
 #include <mempool.h>
 #include "ai_navtype.h"
-
-#ifdef AI_USES_NAV_MESH
-#include "nav.h"
-
-class CNavLadder;
-#endif
+#include "ehandle.h"
+#include "DetourNavMesh.h"
+#include "recast/recast_imgr.h"
 
 // ----------------------------------------------------------------------------
 // Forward declarations
@@ -31,11 +28,7 @@ enum WaypointFlags_t
 	// The type of waypoint
 	bits_WP_TO_DETOUR =			0x01, // move to detour point.
 	bits_WP_TO_PATHCORNER =		0x02, // move to a path corner
-#ifndef AI_USES_NAV_MESH
-	bits_WP_TO_NODE =			0x04, // move to a node
-#else
-	bits_WP_TO_AREA =			0x04,
-#endif
+	bits_WP_TO_POLYREF =		0x04, // move to a node
 	bits_WP_TO_GOAL =			0x08, // move to an arbitrary point
 	bits_WP_TO_DOOR =			0x10, // move to position to open a door
 
@@ -53,11 +46,8 @@ struct AI_Waypoint_t
 
 public:
 	AI_Waypoint_t();
-#ifndef AI_USES_NAV_MESH
-	AI_Waypoint_t( const Vector &vecPosition, float flYaw, Navigation_t navType, int fWaypointFlags, int nNodeID );
-#else
-	AI_Waypoint_t( const Vector &vecPosition, float flYaw, Navigation_t navType, int fWaypointFlags, CNavArea *pArea );
-#endif
+	AI_Waypoint_t( const Vector &vecPosition, float flYaw, Navigation_t navType, int fWaypointFlags, dtPolyRef initPolyRef, NavMeshType_t initMeshType );
+	AI_Waypoint_t( const Vector &vecPosition, float flYaw, Navigation_t navType, int fWaypointFlags );
 	AI_Waypoint_t( const AI_Waypoint_t &from )
 	{
 		memcpy( this, &from, sizeof(*this) );
@@ -135,14 +125,9 @@ public:
 	//
 	Vector			vecLocation;
 	float			flYaw;				// Waypoint facing dir 
-#ifndef AI_USES_NAV_MESH
-	int				iNodeID;			// If waypoint is a node, which one
-#else
-	CNavArea * pArea;
-	NavTraverseType nNavHow;
-	const CNavLadder *pNavLadder;
-#endif
-	
+	dtPolyRef		polyRef;			// If waypoint is a node, which one
+	NavMeshType_t meshType;
+
 	//---------------------------------
 	//
 	// Precalculated distances

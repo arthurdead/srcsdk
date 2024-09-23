@@ -15,11 +15,7 @@
 #include "baseentity.h"
 #endif
 
-#define SF_DISABLE_MESH_HUMAN				0x000001
-#define SF_DISABLE_MESH_MEDIUM				0x000002
-#define SF_DISABLE_MESH_LARGE				0x000004
-#define SF_DISABLE_MESH_VERYLARGE			0x000008
-#define SF_DISABLE_MESH_AIR					0x000010
+#define SF_DISABLE_MESH_FLAGS_START (1 << 0)
 
 //-----------------------------------------------------------------------------
 // 
@@ -27,23 +23,16 @@
 #if defined( CLIENT_DLL )
 #define CRecastMgrEnt C_RecastMgrEnt
 #endif
-class CRecastMgrEnt : public CBaseEntity
+class CRecastMgrEnt : public CPointEntity
 {
 public:
-	DECLARE_CLASS( CRecastMgrEnt, CBaseEntity );
+	DECLARE_CLASS( CRecastMgrEnt, CPointEntity );
 	DECLARE_NETWORKCLASS();
 
 	CRecastMgrEnt();
 	~CRecastMgrEnt();
 
 	virtual void Spawn();
-
-#if defined( GAME_DLL )
-	int UpdateTransmitState()
-	{
-		return SetTransmitState( FL_EDICT_ALWAYS );
-	}
-#endif
 };
 
 CRecastMgrEnt *GetRecastMgrEnt();

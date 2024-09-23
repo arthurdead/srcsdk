@@ -6,8 +6,8 @@
 #ifndef TACTICAL_MISSION_H
 #define TACTICAL_MISSION_H
 
-#include "nav_area.h"
 #include "GameEventListener.h"
+#include "tier1/utlvector.h"
 
 class CBasePlayer;
 
@@ -18,16 +18,7 @@ class CBasePlayer;
 class CTacticalMissionZone
 {
 public:
-	virtual CNavArea *SelectArea( CBasePlayer *who ) const;
 
-	/**
-	 * Iterate each area in this zone.
-	 * If functor returns false, stop iterating and return false.
-	 */
-	virtual bool ForEachArea( IForEachNavArea &func ) const;
-
-protected:
-	CUtlVector< CNavArea * > m_areaVector;
 };
 
 

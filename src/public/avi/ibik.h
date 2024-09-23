@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "appframework/iappsystem.h"
+#include "appframework/IAppSystem.h"
 
 #define BIK_LOOP		0x00000001	// play endlessly
 #define BIK_PRELOAD		0x00000002	// causes the entire move to load into memory

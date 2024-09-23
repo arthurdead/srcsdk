@@ -22,6 +22,8 @@ public:
 
 	C_World( void );
 	~C_World( void );
+
+	virtual int RequiredEdictIndex( void ) { return 0; }   // the world always needs to be in slot 0
 	
 	// Override the factory create/delete functions since the world is a singleton.
 	virtual bool InitializeAsServerEntity( int entnum, int iSerialNum );
@@ -65,7 +67,6 @@ public:
 	char	m_iszChapterTitle[64];
 
 private:
-	void	RegisterSharedActivities( void );
 	char	m_iszDetailSpriteMaterial[MAX_DETAIL_SPRITE_MATERIAL_NAME_LENGTH];
 };
 
@@ -79,8 +80,6 @@ inline const char *C_World::GetDetailSpriteMaterial() const
 	return m_iszDetailSpriteMaterial;
 }
 
-void ClientWorldFactoryInit();
-void ClientWorldFactoryShutdown();
 C_World* GetClientWorldEntity();
 
 #endif // C_WORLD_H

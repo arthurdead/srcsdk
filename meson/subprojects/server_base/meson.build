@@ -11,7 +11,6 @@ common_dir = join_paths(src_root_dir,'common')
 server_src_dir = join_paths(src_root_dir,'game','server')
 
 shared_src_dir = join_paths(src_root_dir,'game','shared')
-shared_navmesh_src_dir = join_paths(shared_src_dir,'navmesh')
 
 server_base_dep = declare_dependency(
 	compile_args: [
@@ -73,18 +72,6 @@ server_base_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_trackpather.cpp'),
 		join_paths(server_src_dir,'ai_utils.cpp'),
 		join_paths(server_src_dir,'wcedit.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_area.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_colors.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_edit.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_entities.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_file.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_generate.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_ladder.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_merge.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_mesh.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_mesh_factory.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_node.cpp'),
-		join_paths(shared_navmesh_src_dir,'nav_simplify.cpp'),
 		join_paths(server_src_dir,'base_transmit_proxy.cpp'),
 		join_paths(server_src_dir,'baseanimating.cpp'),
 		join_paths(server_src_dir,'BaseAnimatingOverlay.cpp'),
@@ -180,7 +167,6 @@ server_base_dep = declare_dependency(
 		join_paths(server_src_dir,'modelentities.cpp'),
 		join_paths(server_src_dir,'movehelper_server.cpp'),
 		join_paths(server_src_dir,'movement.cpp'),
-		join_paths(server_src_dir,'ndebugoverlay.cpp'),
 		join_paths(server_src_dir,'particle_light.cpp'),
 		join_paths(server_src_dir,'particle_system.cpp'),
 		join_paths(server_src_dir,'pathcorner.cpp'),
@@ -256,8 +242,6 @@ server_base_dep = declare_dependency(
 		join_paths(server_src_dir,'gamehandle.cpp'),
 		join_paths(server_src_dir,'h_export.cpp'),
 		join_paths(server_src_dir,'init_factory.cpp'),
-		join_paths(server_src_dir,'entity_tools_server.cpp'),
-		join_paths(server_src_dir,'toolframework_server.cpp'),
 		join_paths(server_src_dir,'basetempentity.cpp'),
 		join_paths(server_src_dir,'movie_explosion.cpp'),
 		join_paths(server_src_dir,'particle_fire.cpp'),
@@ -338,6 +322,7 @@ server_base_dep = declare_dependency(
 		join_paths(server_src_dir,'player_voice_listener.cpp'),
 		join_paths(server_src_dir,'ai_expresserfollowup.cpp'),
 		join_paths(server_src_dir,'ambientgeneric.cpp'),
+		join_paths(server_src_dir,'lightcache.cpp'),
 		join_paths(server_src_dir,'mapbase','func_fake_worldportal.cpp'),
 		join_paths(server_src_dir,'mapbase','datadesc_mod.cpp'),
 		join_paths(server_src_dir,'recast','ChunkyTriMesh.cpp'),
@@ -353,6 +338,5 @@ server_base_dep = declare_dependency(
 	),
 	include_directories: include_directories(
 		server_src_dir,
-		shared_navmesh_src_dir
 	)
 )

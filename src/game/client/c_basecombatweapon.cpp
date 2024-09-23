@@ -22,6 +22,35 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+// -----------------------------------------
+//	Sprite Index info
+// -----------------------------------------
+int		g_sModelIndexLaser;			// holds the index for the laser beam
+int		g_sModelIndexLaserDot;		// holds the index for the laser beam dot
+int		g_sModelIndexFireball;		// holds the index for the fireball
+int		g_sModelIndexSmoke;			// holds the index for the smoke cloud
+int		g_sModelIndexWExplosion;	// holds the index for the underwater explosion
+int		g_sModelIndexBubbles;		// holds the index for the bubbles model
+int		g_sModelIndexBloodDrop;		// holds the sprite index for the initial blood
+int		g_sModelIndexBloodSpray;	// holds the sprite index for splattered blood
+
+//-----------------------------------------------------------------------------
+// Purpose: Precache global weapon sounds
+//-----------------------------------------------------------------------------
+void W_Precache(void)
+{
+	PrecacheFileWeaponInfoDatabase( filesystem, GameRules()->GetEncryptionKey() );
+
+	g_sModelIndexFireball = modelinfo->GetModelIndex ("sprites/zerogxplode.vmt");// fireball
+	g_sModelIndexWExplosion = modelinfo->GetModelIndex ("sprites/WXplo1.vmt");// underwater fireball
+	g_sModelIndexSmoke = modelinfo->GetModelIndex ("sprites/steam1.vmt");// smoke
+	g_sModelIndexBubbles = modelinfo->GetModelIndex ("sprites/bubble.vmt");//bubbles
+	g_sModelIndexBloodSpray = modelinfo->GetModelIndex ("sprites/bloodspray.vmt"); // initial blood
+	g_sModelIndexBloodDrop = modelinfo->GetModelIndex ("sprites/blood.vmt"); // splattered blood 
+	g_sModelIndexLaser = modelinfo->GetModelIndex( "sprites/laserbeam.vmt" );
+	g_sModelIndexLaserDot = modelinfo->GetModelIndex("sprites/laserdot.vmt");
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -108,7 +137,7 @@ int C_BaseCombatWeapon::GetWorldModelIndex( void )
 	if ( GameRules() )
 	{
 		const char *pBaseName = modelinfo->GetModelName( modelinfo->GetModel( iIndex ) );
-		const char *pTranslatedName = GameRules()->TranslateEffectForVisionFilter( "weapons", pBaseName );
+		const char *pTranslatedName = GameRules()->TranslateEffectForVisionFilter( EFFECT_TRANSLATE_WEAPONMODEL, pBaseName );
 
 		if ( pTranslatedName != pBaseName )
 		{

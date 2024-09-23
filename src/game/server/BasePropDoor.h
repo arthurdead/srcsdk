@@ -19,7 +19,7 @@
 #include "props.h"
 #include "locksounds.h"
 #include "entityoutput.h"
-#include "nav.h"
+#include "mathlib/extent.h"
 
 extern ConVar g_debug_doors;
 
@@ -221,8 +221,6 @@ private:
 	string_t m_SlaveName;
 
 	CHandle< CBasePropDoor > m_hMaster;
-
-	static void RegisterPrivateActivities();
 
 	// Outputs
 	COutputEvent m_OnBlockedClosing;		// Triggered when the door becomes blocked while closing.

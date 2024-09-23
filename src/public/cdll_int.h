@@ -185,12 +185,11 @@ typedef void (*pfnDemoCustomDataCallback)( uint8 *pData, size_t iSize );
 
 // change this when the new version is incompatable with the old
 #define VENGINE_CLIENT_INTERFACE_VERSION		"VEngineClient014"
-#define VENGINE_CLIENT_INTERFACE_VERSION_13		"VEngineClient013"
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface exposed from the engine to the client .dll
 //-----------------------------------------------------------------------------
-abstract_class IVEngineClient013
+abstract_class IVEngineClient
 {
 public:
 	// Find the model's surfaces that intersect the given sphere.
@@ -572,11 +571,6 @@ public:
 	
 	virtual void				AddPhonemeFile( const char *pszPhonemeFile ) = 0;
 
-};
-
-abstract_class IVEngineClient : public IVEngineClient013
-{
-public:
 	virtual uint GetProtocolVersion() = 0;
 	virtual bool IsWindowedMode() = 0;
 
@@ -593,7 +587,6 @@ public:
 
 	virtual int GetInstancesRunningCount( ) = 0;
 };
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface exposed from the client .dll back to the engine

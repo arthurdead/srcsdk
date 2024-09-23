@@ -49,6 +49,7 @@ if build_libs
 			join_paths(hackmgr_src_dir,'filesystem.cpp'),
 			join_paths(hackmgr_src_dir,'dbg.cpp'),
 			join_paths(hackmgr_src_dir,'cpumonitoring.cpp'),
+			join_paths(hackmgr_src_dir,'toolframework.cpp'),
 			join_paths(public_dir,'SoundParametersInternal.cpp'),
 			join_paths(public_dir,'interval.cpp'),
 		),

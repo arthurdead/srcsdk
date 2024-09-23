@@ -27,13 +27,13 @@
 #pragma warning( disable : 4244 )
 #define iabs(i) (( (i) >= 0 ) ? (i) : -(i) )
 
-int ExtractBbox( CStudioHdr *pstudiohdr, int sequence, Vector& mins, Vector& maxs )
+bool ExtractBbox( CStudioHdr *pstudiohdr, int sequence, Vector& mins, Vector& maxs )
 {
 	if (! pstudiohdr)
-		return 0;
+		return false;
 
 	if (!pstudiohdr->SequencesAvailable())
-		return 0;
+		return false;
 
 	mstudioseqdesc_t	&seqdesc = pstudiohdr->pSeqdesc( sequence );
 	
@@ -41,7 +41,7 @@ int ExtractBbox( CStudioHdr *pstudiohdr, int sequence, Vector& mins, Vector& max
 
 	maxs = seqdesc.bbmax;
 
-	return 1;
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ void ResetEventIndexes( CStudioHdr *pstudiohdr )
 
 void SetActivityForSequence( CStudioHdr *pstudiohdr, int i )
 {
-	int iActivityIndex;
+	Activity iActivityIndex;
 	const char *pszActivityName;
 	mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( i );
 
@@ -230,7 +230,7 @@ bool IsInPrediction()
 	return CBaseEntity::GetPredictionPlayer() != NULL;
 }
 
-int SelectWeightedSequence( CStudioHdr *pstudiohdr, int activity, int curSequence )
+int SelectWeightedSequence( CStudioHdr *pstudiohdr, Activity activity, int curSequence )
 {
 	VPROF( "SelectWeightedSequence" );
 #ifdef CLIENT_DLL
@@ -240,10 +240,10 @@ int SelectWeightedSequence( CStudioHdr *pstudiohdr, int activity, int curSequenc
 #endif
 
 	if (! pstudiohdr)
-		return 0;
+		return ACTIVITY_NOT_AVAILABLE;
 
 	if (!pstudiohdr->SequencesAvailable())
-		return 0;
+		return ACTIVITY_NOT_AVAILABLE;
 
 	VerifySequenceIndex( pstudiohdr );
 
@@ -434,10 +434,10 @@ int CStudioHdr::CActivityToSequenceMapping::SelectWeightedSequenceFromModifiers(
 
 #endif
 
-int SelectHeaviestSequence( CStudioHdr *pstudiohdr, int activity )
+int SelectHeaviestSequence( CStudioHdr *pstudiohdr, Activity activity )
 {
 	if ( !pstudiohdr )
-		return 0;
+		return ACTIVITY_NOT_AVAILABLE;
 
 	VerifySequenceIndex( pstudiohdr );
 
@@ -446,7 +446,7 @@ int SelectHeaviestSequence( CStudioHdr *pstudiohdr, int activity )
 	int weight = 0;
 	for (int i = 0; i < pstudiohdr->GetNumSeq(); i++)
 	{
-		int curActivity = GetSequenceActivity( pstudiohdr, i, &weight );
+		Activity curActivity = GetSequenceActivity( pstudiohdr, i, &weight );
 		if (curActivity == activity)
 		{
 			if ( iabs(weight) > maxweight )
@@ -477,13 +477,13 @@ void GetEyePosition ( CStudioHdr *pstudiohdr, Vector &vecEyePosition )
 // Input  : label - Name of the activity to look up, ie "ACT_IDLE"
 // Output : Activity index or ACT_INVALID if not found.
 //-----------------------------------------------------------------------------
-int LookupActivity( CStudioHdr *pstudiohdr, const char *label )
+Activity LookupActivity( CStudioHdr *pstudiohdr, const char *label )
 {
 	VPROF( "LookupActivity" );
 
 	if ( !pstudiohdr )
 	{
-		return 0;
+		return ACT_INVALID;
 	}
 
 	for ( int i = 0; i < pstudiohdr->GetNumSeq(); i++ )
@@ -491,7 +491,7 @@ int LookupActivity( CStudioHdr *pstudiohdr, const char *label )
 		mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( i );
 		if ( stricmp( seqdesc.pszActivityName(), label ) == 0 )
 		{
-			return seqdesc.Activity();
+			return (Activity)seqdesc.Activity();
 		}
 	}
 
@@ -509,10 +509,10 @@ int LookupSequence( CStudioHdr *pstudiohdr, const char *label )
 	VPROF( "LookupSequence" );
 
 	if (! pstudiohdr)
-		return 0;
+		return -1;
 
 	if (!pstudiohdr->SequencesAvailable())
-		return 0;
+		return -1;
 
 	//
 	// Look up by sequence name.
@@ -527,13 +527,13 @@ int LookupSequence( CStudioHdr *pstudiohdr, const char *label )
 	//
 	// Not found, look up by activity name.
 	//
-	int nActivity = LookupActivity( pstudiohdr, label );
+	Activity nActivity = LookupActivity( pstudiohdr, label );
 	if (nActivity != ACT_INVALID )
 	{
 		return SelectWeightedSequence( pstudiohdr, nActivity );
 	}
 
-	return ACT_INVALID;
+	return -1;
 }
 
 void GetSequenceLinearMotion( CStudioHdr *pstudiohdr, int iSequence, const float poseParameter[], Vector *pVec )
@@ -1016,13 +1016,13 @@ int GetNumBodyGroups( CStudioHdr *pstudiohdr )
 	return pstudiohdr->numbodyparts();
 }
 
-int GetSequenceActivity( CStudioHdr *pstudiohdr, int sequence, int *pweight )
+Activity GetSequenceActivity( CStudioHdr *pstudiohdr, int sequence, int *pweight )
 {
 	if (!pstudiohdr || !pstudiohdr->SequencesAvailable() )
 	{
 		if (pweight)
 			*pweight = 0;
-		return 0;
+		return ACT_INVALID;
 	}
 
 	Assert(sequence >= 0 && sequence < pstudiohdr->GetNumSeq());
@@ -1034,7 +1034,7 @@ int GetSequenceActivity( CStudioHdr *pstudiohdr, int sequence, int *pweight )
 	}
 	if (pweight)
 		*pweight = seqdesc.actweight;
-	return seqdesc.Activity();
+	return (Activity)seqdesc.Activity();
 }
 
 

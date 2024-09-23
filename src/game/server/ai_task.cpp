@@ -19,7 +19,6 @@ const char * g_ppszTaskFailureText[] =
 	"No Target",                                     // FAIL_NO_TARGET
 	"Weapon owned by someone else",                  // FAIL_WEAPON_OWNED
 	"Weapon/Item doesn't exist",                     // FAIL_ITEM_NO_FIND
-	"No hint node",                                  // FAIL_NO_HINT_NODE
 	"Schedule not found",                            // FAIL_SCHEDULE_NOT_FOUND
 	"Don't have an enemy",                           // FAIL_NO_ENEMY
 	"Found no backaway node",                        // FAIL_NO_BACKAWAY_NODE
@@ -44,7 +43,10 @@ const char * g_ppszTaskFailureText[] =
 	"Stuck on top of something",                     // FAIL_STUCK_ONTOP
 	"Item has been taken",		                     // FAIL_ITEM_TAKEN
 	"Too frozen",									 // FAIL_FROZEN
+	"UNIMPLEMENTED!!!!"
 };
+
+COMPILE_TIME_ASSERT(ARRAYSIZE(g_ppszTaskFailureText) == NUM_FAIL_CODES);
 
 const char *TaskFailureToString( AI_TaskFailureCode_t code )
 {

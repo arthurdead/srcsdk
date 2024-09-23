@@ -68,8 +68,7 @@ public:
 
 	int				network_protocol;
 
-	// current saverestore data
-	void *pSaveData;
+	void *unused1;
 
 private:
 	// Set to true in client code.

@@ -97,13 +97,6 @@ AI_TASK_ENUM(TASK_GET_PATH_OFF_OF_NPC, TaskParamCheck_t())
 
 AI_TASK_ENUM(TASK_CREATE_PENDING_WEAPON, TaskParamCheck_t())
 
-// Path to nodes[ m_pHintNode ]
-#ifndef AI_USES_NAV_MESH
-AI_TASK_ENUM(TASK_GET_PATH_TO_HINTNODE)
-#else
-AI_TASK_ENUM(TASK_GET_PATH_TO_NAV_AREA, TaskParamCheck_t())
-#endif
-
 // Store current position for later reference
 AI_TASK_ENUM(TASK_STORE_LASTPOSITION, TaskParamCheck_t())
 
@@ -140,11 +133,7 @@ AI_TASK_ENUM(TASK_GET_PATH_TO_SAVEPOSITION, TaskParamCheck_t())
 AI_TASK_ENUM(TASK_GET_PATH_TO_SAVEPOSITION_LOS, TaskParamCheck_t())
 
 // Path to random node
-#ifndef AI_USES_NAV_MESH
-AI_TASK_ENUM(TASK_GET_PATH_TO_RANDOM_NODE)
-#else
-AI_TASK_ENUM(TASK_GET_PATH_TO_RANDOM_AREA, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
-#endif
+AI_TASK_ENUM(TASK_GET_PATH_TO_RANDOM_LOCATION, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
 
 // Path to source of loudest heard sound that I care about
 AI_TASK_ENUM(TASK_GET_PATH_TO_BESTSOUND, TaskParamCheck_t())
@@ -209,19 +198,6 @@ AI_TASK_ENUM(TASK_FACE_PLAYER, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
 // Turn to face the enemy
 AI_TASK_ENUM(TASK_FACE_ENEMY, TaskParamCheck_t())
 
-// Turn to face nodes[ m_pHintNode ]
-#ifndef AI_USES_NAV_MESH
-AI_TASK_ENUM(TASK_FACE_HINTNODE)
-
-// Play activity associate with the current hint
-AI_TASK_ENUM(TASK_PLAY_HINT_ACTIVITY)
-#else
-AI_TASK_ENUM(TASK_FACE_NAV_AREA, TaskParamCheck_t())
-
-// Play activity associate with the current hint
-AI_TASK_ENUM(TASK_PLAY_AREA_ACTIVITY, TaskParamCheck_t())
-#endif
-
 // Turn to face m_hTargetEnt
 AI_TASK_ENUM(TASK_FACE_TARGET, TaskParamCheck_t())
 
@@ -253,26 +229,6 @@ AI_TASK_ENUM(TASK_RELOAD, TaskParamCheck_t())
 AI_TASK_ENUM(TASK_SPECIAL_ATTACK1, TaskParamCheck_t())
 
 AI_TASK_ENUM(TASK_SPECIAL_ATTACK2, TaskParamCheck_t())
-
-#ifndef AI_USES_NAV_MESH
-AI_TASK_ENUM(TASK_FIND_HINTNODE)
-
-AI_TASK_ENUM(TASK_FIND_LOCK_HINTNODE)
-
-AI_TASK_ENUM(TASK_CLEAR_HINTNODE)
-
-// Claim m_pHintNode exclusively for this NPC.
-AI_TASK_ENUM(TASK_LOCK_HINTNODE)
-#else
-AI_TASK_ENUM(TASK_FIND_NAV_AREA, TaskParamCheck_t())
-
-AI_TASK_ENUM(TASK_FIND_LOCK_NAV_AREA, TaskParamCheck_t())
-
-AI_TASK_ENUM(TASK_CLEAR_NAV_AREA, TaskParamCheck_t())
-
-// Claim m_pHintNode exclusively for this NPC.
-AI_TASK_ENUM(TASK_LOCK_NAV_AREA, TaskParamCheck_t())
-#endif
 
 // Emit an angry sound
 AI_TASK_ENUM(TASK_SOUND_ANGRY, TaskParamCheck_t())
@@ -344,25 +300,14 @@ AI_TASK_ENUM(TASK_FIND_LATERAL_COVER_FROM_ENEMY, TaskParamCheck_t())
 // Find a place further from the saved position
 AI_TASK_ENUM(TASK_FIND_BACKAWAY_FROM_SAVEPOSITION, TaskParamCheck_t())
 
-#ifndef AI_USES_NAV_MESH
 // Fine a place to hide from the enemy, anywhere. Use the node system.
-AI_TASK_ENUM(TASK_FIND_NODE_COVER_FROM_ENEMY)
+AI_TASK_ENUM(TASK_FIND_NAV_MESH_COVER_FROM_ENEMY, TaskParamCheck_t())
 
 // Find a place to hide from the enemy that's within the specified distance
-AI_TASK_ENUM(TASK_FIND_NEAR_NODE_COVER_FROM_ENEMY)
+AI_TASK_ENUM(TASK_FIND_NEAR_NAV_MESH_COVER_FROM_ENEMY, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
 
 // data for this one is there MINIMUM aceptable distance to the cover.
-AI_TASK_ENUM(TASK_FIND_FAR_NODE_COVER_FROM_ENEMY)
-#else
-// Fine a place to hide from the enemy, anywhere. Use the node system.
-AI_TASK_ENUM(TASK_FIND_AREA_COVER_FROM_ENEMY, TaskParamCheck_t())
-
-// Find a place to hide from the enemy that's within the specified distance
-AI_TASK_ENUM(TASK_FIND_NEAR_AREA_COVER_FROM_ENEMY, TaskParamCheck_t())
-
-// data for this one is there MINIMUM aceptable distance to the cover.
-AI_TASK_ENUM(TASK_FIND_FAR_AREA_COVER_FROM_ENEMY, TaskParamCheck_t())
-#endif
+AI_TASK_ENUM(TASK_FIND_FAR_NAV_MESH_COVER_FROM_ENEMY, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
 
 // Find a place to go that can't see to where I am now.
 AI_TASK_ENUM(TASK_FIND_COVER_FROM_ORIGIN, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
@@ -431,9 +376,6 @@ AI_TASK_ENUM(TASK_WEAPON_CREATE, TaskParamCheck_t())
 AI_TASK_ENUM(TASK_ITEM_PICKUP, TaskParamCheck_t())
 
 AI_TASK_ENUM(TASK_ITEM_RUN_PATH, TaskParamCheck_t())
-
-// Use small hull for tight navigation
-AI_TASK_ENUM(TASK_USE_SMALL_HULL, TaskParamCheck_t())
 
 // wait until you are on ground
 AI_TASK_ENUM(TASK_FALL_TO_GROUND, TaskParamCheck_t())

@@ -358,7 +358,7 @@ bool CTriggerBrush::PassesInputFilter( CBaseEntity *pOther, int filter )
 		return false;
 
 	// pushables
-	if ( (filter & TRIGGER_IGNOREPUSHABLES) && FStrEq(STRING(pOther->m_iClassname), "func_pushable") )
+	if ( (filter & TRIGGER_IGNOREPUSHABLES) && FStrEq(pOther->GetClassname(), "func_pushable") )
 		return false;
 
 	return true;

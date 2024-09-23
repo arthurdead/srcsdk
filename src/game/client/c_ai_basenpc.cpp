@@ -19,6 +19,8 @@
 
 #define PING_MAX_TIME	2.0
 
+#undef CAI_BaseNPC
+
 IMPLEMENT_CLIENTCLASS_DT( C_AI_BaseNPC, DT_AI_BaseNPC, CAI_BaseNPC )
 	RecvPropInt( RECVINFO( m_lifeState ) ),
 	RecvPropBool( RECVINFO( m_bPerformAvoidance ) ),

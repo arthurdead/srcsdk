@@ -110,6 +110,8 @@ public:
 
 	virtual float GetPlayerMaxSpeed();
 
+	float		StepHeight() const			{ return m_Local.m_flStepSize; }
+
 	void	SetAnimationExtension( const char *pExtension );
 
 	C_BaseViewModel		*GetViewModel( int viewmodelindex = 0, bool bObserverOK=true );

@@ -72,12 +72,9 @@ public:
 	virtual bool	IsFakeClient( void ) const = 0;
 	// returns true, if client is a HLTV proxy
 	virtual bool	IsHLTV( void ) const = 0;
-#if defined( REPLAY_ENABLED )
+#if defined( ENGINE_REPLAY_ENABLED )
 	// returns true, if client is a Replay proxy
 	virtual bool	IsReplay( void ) const = 0;
-#else
-	// !KLUDGE! Reduce number of #ifdefs required
-	inline bool		IsReplay( void ) const { return false; }
 #endif
 	// returns true, if client hears this player
 	virtual bool	IsHearingClient(int index) const = 0;

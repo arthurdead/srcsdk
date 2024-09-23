@@ -121,6 +121,7 @@
 #include "game_loopback/igameloopback.h"
 #include "hackmgr/dlloverride.h"
 #include "recast/recast_mgr.h"
+#include "activitylist.h"
 
 // NVNT includes
 #include "hud_macros.h"
@@ -845,6 +846,7 @@ CClientDll::CClientDll()
 	SetDefLessFunc( m_CachedMaterials );
 }
 
+extern void InitializeCvars( void );
 
 extern IGameSystem *ViewportClientSystem();
 
@@ -947,11 +949,6 @@ bool InitGameSystems( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	if ( !PhysicsDLLInit( physicsFactory ) )
 		return false;
 
-	ClientWorldFactoryInit();
-
-	CommandLine()->RemoveParm("+r_hunkalloclightmaps");
-	CommandLine()->AppendParm("+r_hunkalloclightmaps", "0");
-
 	return true;
 }
 
@@ -1007,7 +1004,7 @@ int CClientDll::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pG
 	ClientSteamContext().Activate();
 
 	// Initialize the console variables.
-	ConVar_Register( FCVAR_CLIENTDLL );
+	InitializeCvars();
 
 	return true;
 }
@@ -1022,9 +1019,9 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		return false;
 
 	char gamebin_path[MAX_PATH];
-	int gamebin_length = filesystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
-	gamebin_length -= 2;
-	gamebin_path[gamebin_length] = '\0';
+	filesystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+	V_AppendSlash(gamebin_path, ARRAYSIZE(gamebin_path));
+	int gamebin_length = V_strlen(gamebin_path);
 
 	if(HackMgr_IsSafeToSwapPhysics()) {
 		int status = IFACE_OK;
@@ -1262,6 +1259,18 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	if(!bInitSuccess)
 		return false;
 
+		// UNDONE: Make most of these things server systems or precache_registers
+	// =================================================
+	//	Activities
+	// =================================================
+	ActivityList_Free();
+	ActivityList_Init();
+	ActivityList_RegisterSharedActivities();
+
+	EventList_Free();
+	EventList_Init();
+	EventList_RegisterSharedEvents();
+
 	COM_TimestampedLog( "C_BaseAnimating::InitBoneSetupThreadPool" );
 	C_BaseAnimating::InitBoneSetupThreadPool();
 
@@ -1344,7 +1353,6 @@ void CClientDll::Shutdown( void )
 	}
 
 	C_BaseAnimating::ShutdownBoneSetupThreadPool();
-	ClientWorldFactoryShutdown();
 
 	ClientVoiceMgr_Shutdown();
 
@@ -1865,6 +1873,10 @@ void ConfigureCurrentSystemLevel()
 	}
 }
 
+extern C_World *g_pClientWorld;
+
+extern void W_Precache(void);
+
 //-----------------------------------------------------------------------------
 // Purpose: Per level init
 //-----------------------------------------------------------------------------
@@ -1882,10 +1894,10 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 	GetViewEffects()->LevelInit();
 
 	ClientVoiceMgr_LevelInit();
-	
+
 	//Tony; loadup per-map manifests.
 	ParseParticleEffectsMap( pMapName, true );
-	
+
 	// Tell mode manager that map is changing
 	modemanager->LevelInit( pMapName );
 	ParticleMgr()->LevelInit();
@@ -1898,12 +1910,21 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 	tempents->LevelInit();
 	ResetToneMapping(1.0);
 
-	if(GetClientWorldEntity())
-		GetClientWorldEntity()->ParseWorldMapData( engine->GetMapEntitiesString() );
+	// Always force reset to normal mode upon receipt of world in new map
+	modemanager->SwitchMode( CLIENTMODE_NORMAL, true );
 
-	IGameSystem::LevelInitPreEntityAllSystems(pMapName);
+	// Get weapon precaches
+	W_Precache();
 
-	ResetWindspeed();
+	// Call all registered precachers.
+	CPrecacheRegister::Precache();
+
+	IGameSystem::LevelInitPreEntityAllSystems();
+
+	g_pClientWorld = (C_World *)CreateEntityByName("worldspawn");
+	g_pClientWorld->SetLocalOrigin( vec3_origin );
+	g_pClientWorld->SetLocalAngles( vec3_angle );
+	g_pClientWorld->ParseWorldMapData( engine->GetMapEntitiesString() );
 
 	// don't set direct because of FCVAR_USERINFO
 	if ( !cl_predict->GetInt() )
@@ -1931,7 +1952,11 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 void CClientDll::LevelInitPostEntity( )
 {
 	IGameSystem::LevelInitPostEntityAllSystems();
+
+	ResetWindspeed();
+
 	C_PhysPropClientside::RecreateAll();
+
 	GetCenterPrint()->Clear();
 }
 
@@ -3031,7 +3056,30 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CClientMaterialSystem, IClientMaterialSystem,
 
 class CGameClientLoopback : public CBaseAppSystem< IGameClientLoopback >
 {
+public:
+	// Computes light due to dynamic lighting at a point
+	// If the normal isn't specified, then it'll return the maximum lighting
+	// If pBoxColors is specified (it's an array of 6), then it'll copy the light contribution at each box side.
+	virtual void		ComputeLighting( const Vector& pt, const Vector* pNormal, bool bClamp, Vector& color, Vector *pBoxColors=NULL )
+	{ engine->ComputeLighting( pt, pNormal, bClamp, color, pBoxColors ); }
 
+	// Computes light due to dynamic lighting at a point
+	// If the normal isn't specified, then it'll return the maximum lighting
+	virtual void		ComputeDynamicLighting( const Vector& pt, const Vector* pNormal, Vector& color )
+	{ engine->ComputeDynamicLighting( pt, pNormal, color ); }
+
+	// Get the lighting intensivty for a specified point
+	// If bClamp is specified, the resulting Vector is restricted to the 0.0 to 1.0 for each element
+	virtual Vector				GetLightForPoint(const Vector &pos, bool bClamp)
+	{ return engine->GetLightForPoint( pos, bClamp ); }
+
+	// Just get the leaf ambient light - no caching, no samples
+	virtual Vector			GetLightForPointFast(const Vector &pos, bool bClamp)
+	{ return engine->GetLightForPointFast( pos, bClamp ); }
+
+	// Returns the color of the ambient light
+	virtual void		GetAmbientLightColor( Vector& color )
+	{ engine->GetAmbientLightColor( color); }
 };
 
 static CGameClientLoopback s_ClientGameLoopback;

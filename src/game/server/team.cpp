@@ -129,14 +129,6 @@ void CTeam::Think( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Teams are always transmitted to clients
-//-----------------------------------------------------------------------------
-int CTeam::UpdateTransmitState()
-{
-	return SetTransmitState( FL_EDICT_ALWAYS );
-}
-
-//-----------------------------------------------------------------------------
 // Visibility/scanners
 //-----------------------------------------------------------------------------
 bool CTeam::ShouldTransmitToPlayer( CBasePlayer* pRecipient, CBaseEntity* pEntity )

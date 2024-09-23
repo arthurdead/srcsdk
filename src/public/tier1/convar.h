@@ -381,7 +381,10 @@ private:
 
 	// Used internally by OneTimeInit to initialize.
 	virtual void				Init();
-	int GetFlags() { return m_pParent->m_nFlags; }
+
+	int GetFlags() { return m_pParent ? m_pParent->m_nFlags : m_nFlags; }
+	int GetFlags() const { return m_pParent ? m_pParent->m_nFlags : m_nFlags; }
+
 private:
 
 	// This either points to "this" or it points to the original declaration of a ConVar.
@@ -413,14 +416,24 @@ private:
 
 FORCEINLINE_CVAR void ConVar::SetMin( float v )
 {
-	m_pParent->m_bHasMin = true;
-	m_pParent->m_fMinVal = v;
+	m_bHasMin = true;
+	m_fMinVal = v;
+
+	if(m_pParent && m_pParent != this) {
+		m_pParent->m_bHasMin = true;
+		m_pParent->m_fMinVal = v;
+	}
 }
 
 FORCEINLINE_CVAR void ConVar::SetMax( float v )
 {
-	m_pParent->m_bHasMax = true;
-	m_pParent->m_fMaxVal = v;
+	m_bHasMax = true;
+	m_fMaxVal = v;
+
+	if(m_pParent && m_pParent != this) {
+		m_pParent->m_bHasMax = true;
+		m_pParent->m_fMaxVal = v;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -429,7 +442,10 @@ FORCEINLINE_CVAR void ConVar::SetMax( float v )
 //-----------------------------------------------------------------------------
 FORCEINLINE_CVAR float ConVar::GetFloat( void ) const
 {
-	return m_pParent->m_fValue;
+	if(m_pParent)
+		return m_pParent->m_fValue;
+	else
+		return m_fValue;
 }
 
 //-----------------------------------------------------------------------------
@@ -438,9 +454,11 @@ FORCEINLINE_CVAR float ConVar::GetFloat( void ) const
 //-----------------------------------------------------------------------------
 FORCEINLINE_CVAR int ConVar::GetInt( void ) const 
 {
-	return m_pParent->m_nValue;
+	if(m_pParent)
+		return m_pParent->m_nValue;
+	else
+		return m_nValue;
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Return ConVar value as a string, return "" for bogus string pointer, etc.
@@ -448,19 +466,36 @@ FORCEINLINE_CVAR int ConVar::GetInt( void ) const
 //-----------------------------------------------------------------------------
 FORCEINLINE_CVAR const char *ConVar::GetString( void ) const 
 {
-	if ( m_nFlags & FCVAR_NEVER_AS_STRING )
+	if ( IsFlagSet( FCVAR_NEVER_AS_STRING ) )
 		return "FCVAR_NEVER_AS_STRING";
 
-	return ( m_pParent->m_pszString ) ? m_pParent->m_pszString : "";
+	if(m_pParent)
+		return m_pParent->m_pszString ? m_pParent->m_pszString : "";
+	else
+		return m_pszString ? m_pszString : "";
 }
 
 FORCEINLINE_CVAR Color ConVar::GetColor() const
 {
 	Color clr;
 	extern void CONVAR_StringToColor( Color &color, const char *pString );
-	CONVAR_StringToColor( clr, m_pParent->m_pszString );
+	CONVAR_StringToColor( clr, (m_pParent ? m_pParent->m_pszString : m_pszString) );
 	return clr;
 }
+
+class CEmptyConVar : public ConVar
+{
+public:
+	CEmptyConVar() : ConVar( "", "0" ) {}
+	// Used for optimal read access
+	virtual void SetValue( const char *pValue ) {}
+	virtual void SetValue( float flValue ) {}
+	virtual void SetValue( int nValue ) {}
+	virtual const char *GetName( void ) const { return ""; }
+	virtual bool IsFlagSet( int nFlags ) const { return false; }
+};
+
+extern CEmptyConVar s_EmptyConVar;
 
 //-----------------------------------------------------------------------------
 // Used to read/write convars that already exist (replaces the FindVar method)
@@ -468,12 +503,12 @@ FORCEINLINE_CVAR Color ConVar::GetColor() const
 class ConVarRef
 {
 public:
-	ConVarRef( const char *pName );
-	ConVarRef( const char *pName, bool bIgnoreMissing );
+	ConVarRef( const char *pName ) { Init( pName ); }
+	ConVarRef( const char *pName, bool bIgnoreMissing ) { Init( pName, bIgnoreMissing ); }
 	ConVarRef( IConVar *pConVar );
 
 	void Init( const char *pName, bool bIgnoreMissing );
-	void Init( const char *pName );
+	void Init( const char *pName ) { Init( pName, false ); }
 	bool IsValid() const;
 	bool IsFlagSet( int nFlags ) const;
 	IConVar *GetLinkedConVar();

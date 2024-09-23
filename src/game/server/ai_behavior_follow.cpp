@@ -10,11 +10,6 @@
 #include "utlvector.h"
 #include "ai_navigator.h"
 #include "scripted.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_hint.h"
-#else
-#include "nav_area.h"
-#endif
 #include "ai_behavior_follow.h"
 #include "ai_memory.h"
 #include "ai_squad.h"
@@ -197,10 +192,6 @@ CAI_FollowBehavior::CAI_FollowBehavior( const AI_FollowParams_t &params )
 	m_FollowDelay.Set( 1.0, 3.0 );
 	m_hFollowManagerInfo.m_pGroup = NULL;
 	m_hFollowManagerInfo.m_hFollower = 0;
-	
-	m_TimeBlockUseWaitPoint.Set( 0.5, 1.5 );
-	m_TimeCheckForWaitPoint.Set( 1.0 );
-	m_pInterruptWaitPoint = NULL;
 
 	m_TimeBeforeSpreadFacing.Set( 2.0, 4.0 );
 	m_TimeNextSpreadFacing.Set( 3.0, 12.0 );
@@ -635,8 +626,7 @@ void CAI_FollowBehavior::GatherConditions( void )
 		ClearCondition( COND_FOLLOW_TARGET_NOT_VISIBLE );
 		ClearCondition( COND_FOLLOW_DELAY_EXPIRED );
 		ClearCondition( COND_TARGET_MOVED_FROM_MARK );
-		ClearFollowPoint();
-		m_pInterruptWaitPoint = NULL;
+
 		m_bTargetUnreachable = false;
 		m_flTimeFollowTargetVisible = 0;
 
@@ -668,23 +658,6 @@ void CAI_FollowBehavior::GatherConditions( void )
 
 	if ( !m_TargetMonitor.IsMarkSet() )
 		m_bTargetUnreachable = false;
-
-	m_pInterruptWaitPoint = NULL;
-
-#ifndef AI_USES_NAV_MESH
-	if ( GetHintNode() == NULL )
-#else
-	if ( GetActiveArea() == NULL )
-#endif
-	{
-		if ( ShouldUseFollowPoints() && m_TimeBlockUseWaitPoint.Expired() && m_TimeCheckForWaitPoint.Expired() )
-		{
-			m_TimeCheckForWaitPoint.Reset();
-			m_pInterruptWaitPoint = FindFollowPoint();
-			if ( m_pInterruptWaitPoint )
-				SetCondition( COND_FOUND_WAIT_POINT );
-		}
-	}
 
 	if ( m_flTimeUpdatedFollowPosition == 0 || gpGlobals->curtime - m_flTimeUpdatedFollowPosition > 2.0 )
 		UpdateFollowPosition();
@@ -753,11 +726,6 @@ void CAI_FollowBehavior::GatherConditions( void )
 		ClearCondition( COND_FOLLOW_TARGET_VISIBLE );
 		SetCondition( COND_FOLLOW_TARGET_NOT_VISIBLE );
 	}
-
-	if ( HasFollowPoint() && ( m_flTimeFollowTargetVisible != 0 && gpGlobals->curtime - m_flTimeFollowTargetVisible > 5.0 ) )
-		SetCondition( COND_FOLLOW_WAIT_POINT_INVALID );
-	else
-		ClearCondition( COND_FOLLOW_WAIT_POINT_INVALID );
 }
 
 //-------------------------------------
@@ -823,12 +791,7 @@ bool CAI_FollowBehavior::ShouldMoveToFollowTarget()
 	}
 #endif
 
-	if ( HasFollowPoint() )
-	{
-		if ( IsFollowPointInRange() )
-			return false;
-	}
-	else if ( IsFollowTargetInRange() )
+	if ( IsFollowTargetInRange() )
 		return false;
 
 	if( m_FollowDelay.IsRunning() && !m_FollowDelay.Expired() && !HasCondition( COND_TARGET_MOVED_FROM_MARK ) )
@@ -847,250 +810,6 @@ int CAI_FollowBehavior::SelectScheduleManagePosition()
 	if ( !UpdateFollowPosition() )
 		return SCHED_FAIL;
 
-	return SCHED_NONE;
-}
-	
-//-------------------------------------
-
-bool CAI_FollowBehavior::ShouldUseFollowPoints()
-{
-	if ( !ai_follow_use_points.GetBool() || GetEnemy() != NULL )
-		return false;
-
-	return true;
-}
-
-//-------------------------------------
-
-bool CAI_FollowBehavior::HasFollowPoint()
-{
-#ifndef AI_USES_NAV_MESH
-	return ( GetHintNode() && GetHintNode()->HintType() == HINT_FOLLOW_WAIT_POINT );
-#else
-	return ( GetActiveArea() );
-#endif
-}
-
-//-------------------------------------
-
-void CAI_FollowBehavior::ClearFollowPoint()
-{
-#ifndef AI_USES_NAV_MESH
-	if ( GetHintNode() && GetHintNode()->HintType() == HINT_FOLLOW_WAIT_POINT )
-	{
-		GetHintNode()->Unlock();
-		SetHintNode( NULL );
-	}
-#else
-	if ( GetActiveArea() )
-	{
-		SetActiveArea( NULL );
-	}
-#endif
-}
-
-//-------------------------------------
-
-const Vector &CAI_FollowBehavior::GetFollowPoint()
-{
-	static Vector invalid = vec3_invalid;
-#ifndef AI_USES_NAV_MESH
-	if ( GetHintNode() && GetHintNode()->HintType() == HINT_FOLLOW_WAIT_POINT )
-		return GetHintNode()->GetAbsOrigin();
-#else
-	if ( GetActiveArea() ) {
-		static Vector temp = vec3_invalid;
-		temp = GetActiveArea()->GetClosestPointOnArea( GetGoalPosition() );
-		return temp;
-	}
-#endif
-	return invalid;
-}
-
-//-------------------------------------
-
-#ifndef AI_USES_NAV_MESH
-CAI_Hint *CAI_FollowBehavior::FindFollowPoint()
-{
-	if ( !m_TimeBlockUseWaitPoint.Expired() )
-		return NULL;
-
-	CHintCriteria hintCriteria;
-	hintCriteria.SetHintType( HINT_FOLLOW_WAIT_POINT );
-	hintCriteria.SetFlag( bits_HINT_NODE_VISIBLE | bits_HINT_NODE_NEAREST );
-
-	// Add the search position
-	hintCriteria.AddIncludePosition( GetGoalPosition(), MAX( m_FollowNavGoal.followPointTolerance, GetGoalRange() ) );
-	hintCriteria.AddExcludePosition( GetGoalPosition(), (GetFollowTarget()->WorldAlignMins().AsVector2D() - GetFollowTarget()->WorldAlignMaxs().AsVector2D()).Length());
-
-	return CAI_HintManager::FindHint( GetOuter(), hintCriteria );
-}
-#else
-CNavArea *CAI_FollowBehavior::FindFollowPoint()
-{
-	if ( !m_TimeBlockUseWaitPoint.Expired() )
-		return NULL;
-
-	return NULL;
-}
-#endif
-
-//-------------------------------------
-
-bool CAI_FollowBehavior::IsFollowPointInRange()
-{
-#ifndef AI_USES_NAV_MESH
-	return ( GetHintNode() && 
-			 GetHintNode()->HintType() == HINT_FOLLOW_WAIT_POINT && 
-			 (GetHintNode()->GetAbsOrigin() - GetFollowTarget()->GetAbsOrigin()).LengthSqr() < Square(MAX(m_FollowNavGoal.followPointTolerance, GetGoalRange())) );
-#else
-	return ( GetActiveArea() && 
-			 (GetActiveArea()->GetCenter() - GetFollowTarget()->GetAbsOrigin()).LengthSqr() < Square(MAX(m_FollowNavGoal.followPointTolerance, GetGoalRange())) );
-#endif
-}
-
-
-//-------------------------------------
-
-bool CAI_FollowBehavior::ShouldIgnoreFollowPointFacing()
-{
-#ifndef AI_USES_NAV_MESH
-	if ( !GetHintNode() )
-		return true;
-
-	HintIgnoreFacing_t hintSetting = GetHintNode()->GetIgnoreFacing();
-
-	if ( hintSetting == HIF_DEFAULT )
-		return ( GetHintNode()->HintActivityName() == NULL_STRING );
-
-	return ( hintSetting == HIF_YES );
-#else
-	if ( !GetActiveArea() )
-		return true;
-
-	return false;
-#endif
-}
-
-//-------------------------------------
-
-#ifndef AI_USES_NAV_MESH
-void CAI_FollowBehavior::SetFollowPoint( CAI_Hint *pHintNode )
-{
-	if ( !pHintNode )
-		return;
-
-	Assert( pHintNode->HintType() == HINT_FOLLOW_WAIT_POINT );
-	
-	if ( GetHintNode() == pHintNode )
-		return;
-
-	if ( GetHintNode() )
-		GetHintNode()->Unlock();
-
-	if ( !pHintNode->Lock( GetOuter() ) )
-	{
-		SetHintNode( NULL );
-		m_TimeBlockUseWaitPoint.Reset();
-	}
-	else
-		SetHintNode( pHintNode );
-}
-#else
-void CAI_FollowBehavior::SetFollowPoint( CNavArea *pArea )
-{
-	if ( !pArea )
-		return;
-
-	if ( GetActiveArea() == pArea )
-		return;
-
-	SetActiveArea( pArea );
-}
-#endif
-
-//-------------------------------------
-
-int CAI_FollowBehavior::SelectScheduleFollowPoints()
-{
-	bool bShouldUseFollowPoints = ( ShouldUseFollowPoints() && IsFollowGoalInRange( m_FollowNavGoal.followPointTolerance + 0.1, GetGoalZRange(), GetGoalFlags() ) );
-	float distSqToPoint = FLT_MAX;
-	bool bHasFollowPoint = HasFollowPoint();
-
-	if ( bHasFollowPoint )
-	{
-	#ifndef AI_USES_NAV_MESH
-		distSqToPoint = (GetHintNode()->GetAbsOrigin() - GetAbsOrigin()).LengthSqr();
-	#else
-		distSqToPoint = (GetActiveArea()->GetClosestPointOnArea( GetAbsOrigin() ) - GetAbsOrigin()).LengthSqr();
-	#endif
-
-		if ( !bShouldUseFollowPoints || 
-			distSqToPoint > Square(2.0 * GetHullWidth()) ||
-			HasCondition( COND_FOLLOW_WAIT_POINT_INVALID ) )
-		{
-		#ifndef AI_USES_NAV_MESH
-			GetHintNode()->Unlock();
-			SetHintNode( NULL );
-		#else
-			SetActiveArea( NULL );
-		#endif
-			m_TimeBlockUseWaitPoint.Reset();
-			bShouldUseFollowPoints = false;
-		}
-	}
-
-	if ( bShouldUseFollowPoints )
-	{
-		bool bNewHint = false;
-	#ifndef AI_USES_NAV_MESH
-		if ( GetHintNode() && !bHasFollowPoint )
-		{
-			GetHintNode()->Unlock();
-			SetHintNode( NULL );
-		}
-	#else
-		if ( GetActiveArea() && !bHasFollowPoint )
-		{
-			SetActiveArea( NULL );
-		}
-	#endif
-
-	#ifndef AI_USES_NAV_MESH
-		if (!GetHintNode())
-		{
-			bNewHint = true;
-			SetFollowPoint( ( m_pInterruptWaitPoint ) ? m_pInterruptWaitPoint : FindFollowPoint() );
-			
-			if ( GetHintNode() )
-				distSqToPoint = (GetHintNode()->GetAbsOrigin() - GetAbsOrigin()).LengthSqr();
-		}
-	#else
-		if (!GetActiveArea())
-		{
-			bNewHint = true;
-			SetFollowPoint( ( m_pInterruptWaitPoint ) ? m_pInterruptWaitPoint : FindFollowPoint() );
-			
-			if ( GetActiveArea() )
-				distSqToPoint = (GetActiveArea()->GetClosestPointOnArea( GetAbsOrigin() ) - GetAbsOrigin()).LengthSqr();
-		}
-	#endif
-	
-	#ifndef AI_USES_NAV_MESH
-		if ( GetHintNode() )
-	#else
-		if ( GetActiveArea() )
-	#endif
-		{
-			if ( bNewHint || distSqToPoint > WAIT_HINT_MIN_DIST )
-				return SCHED_FOLLOWER_GO_TO_WAIT_POINT;
-			if ( !ShouldIgnoreFollowPointFacing() )
-				return SCHED_FOLLOWER_STAND_AT_WAIT_POINT;
-		}
-	}
-	else
-		ClearFollowPoint();
-	
 	return SCHED_NONE;
 }
 
@@ -1145,10 +864,6 @@ int CAI_FollowBehavior::SelectSchedule()
 			if ( result != SCHED_NONE )
 				return result;
 			
-			result = SelectScheduleFollowPoints();
-			if ( result != SCHED_NONE )
-				return result;
-				
 			result = SelectScheduleMoveToFormation();
 			if ( result != SCHED_NONE )
 				return result;
@@ -1193,9 +908,7 @@ int CAI_FollowBehavior::TranslateSchedule( int scheduleType )
 			{
 				return SCHED_MOVE_TO_FACE_FOLLOW_TARGET;			
 			}
-			if ( HasFollowPoint() && !ShouldIgnoreFollowPointFacing() )
-				return SCHED_FOLLOWER_GO_TO_WAIT_POINT;
-			
+
 			// If we have an enemy, at least face them!
 			if ( GetEnemy() )
 				return SCHED_FOLLOWER_COMBAT_FACE;
@@ -1219,8 +932,6 @@ int CAI_FollowBehavior::TranslateSchedule( int scheduleType )
 			{
 				return SCHED_MOVE_TO_FACE_FOLLOW_TARGET;			
 			}
-			if ( HasFollowPoint() && !ShouldIgnoreFollowPointFacing() )
-				return SCHED_FOLLOWER_GO_TO_WAIT_POINT;
 			if ( !m_TargetMonitor.IsMarkSet() )
 				m_TargetMonitor.SetMark( m_hFollowTarget.Get(), m_FollowNavGoal.targetMoveTolerance );
 			return SCHED_FACE_FOLLOW_TARGET; // @TODO (toml 03-03-03): should select a facing sched
@@ -1286,15 +997,6 @@ int CAI_FollowBehavior::TranslateSchedule( int scheduleType )
 
 void CAI_FollowBehavior::OnStartSchedule( int scheduleType )
 {
-	if ( !IsRunning() && HasFollowPoint() )
-	{
-	#ifndef AI_USES_NAV_MESH
-		ClearHintNode( 0.5 );
-	#else
-		ClearActiveArea();
-	#endif
-	}
-
 	if ( !m_TargetMonitor.IsMarkSet() && !IsCurScheduleFollowSchedule() )
 	{
 		m_TargetMonitor.SetMark( m_hFollowTarget.Get(), m_FollowNavGoal.targetMoveTolerance );
@@ -1593,87 +1295,6 @@ void CAI_FollowBehavior::StartTask( const Task_t *pTask )
 				BaseClass::StartTask( pTask );
 			break;
 		}
-				
-		case TASK_GET_PATH_TO_FOLLOW_POINT:
-		{
-		#ifndef AI_USES_NAV_MESH
-			ChainStartTask( TASK_GET_PATH_TO_HINTNODE, ShouldIgnoreFollowPointFacing() );
-		#else
-			ChainStartTask( TASK_GET_PATH_TO_NAV_AREA, ShouldIgnoreFollowPointFacing() );
-		#endif
-			break;
-		}
-
-		case TASK_ARRIVE_AT_FOLLOW_POINT:
-		{
-		#ifndef AI_USES_NAV_MESH
-			if ( GetHintNode() && !ShouldIgnoreFollowPointFacing() )
-				ChainStartTask( TASK_FACE_HINTNODE, 0 );
-		#else
-			if ( GetActiveArea() && !ShouldIgnoreFollowPointFacing() )
-				ChainStartTask( TASK_FACE_NAV_AREA, 0 );
-		#endif
-			else
-				TaskComplete();
-			break;
-		}
-
-		case TASK_SET_FOLLOW_POINT_STAND_SCHEDULE:
-		{
-		#ifndef AI_USES_NAV_MESH
-			if ( GetHintNode() && !ShouldIgnoreFollowPointFacing() )
-			{
-				float distSqToPoint = (GetHintNode()->GetAbsOrigin() - GetAbsOrigin()).LengthSqr();
-				if ( distSqToPoint < WAIT_HINT_MIN_DIST )
-				{
-					GetOuter()->SetSchedule( SCHED_FOLLOWER_STAND_AT_WAIT_POINT );
-				}
-				else
-				{
-					GetHintNode()->Unlock();
-					SetHintNode( NULL );
-					m_TimeBlockUseWaitPoint.Reset();
-					TaskFail("Couldn't get to wait node." );
-				}
-			}
-		#else
-			if ( GetActiveArea() && !ShouldIgnoreFollowPointFacing() )
-			{
-				float distSqToPoint = (GetActiveArea()->GetClosestPointOnArea( GetAbsOrigin() ) - GetAbsOrigin()).LengthSqr();
-				if ( distSqToPoint < WAIT_HINT_MIN_DIST )
-				{
-					GetOuter()->SetSchedule( SCHED_FOLLOWER_STAND_AT_WAIT_POINT );
-				}
-				else
-				{
-					SetActiveArea( NULL );
-					m_TimeBlockUseWaitPoint.Reset();
-					TaskFail("Couldn't get to wait node." );
-				}
-			}
-		#endif
-			else
-			{
-				GetOuter()->SetSchedule( SCHED_FACE_FOLLOW_TARGET );
-			}
-			break;
-		}
-
-		case TASK_BEGIN_STAND_AT_WAIT_POINT:
-		{
-			if ( !m_TargetMonitor.IsMarkSet() && IsFollowPointInRange() )
-				m_TargetMonitor.SetMark( m_hFollowTarget.Get(), m_FollowNavGoal.targetMoveTolerance );
-		#ifndef AI_USES_NAV_MESH
-			if ( GetHintNode() && !ShouldIgnoreFollowPointFacing() )
-				ChainStartTask( TASK_FACE_HINTNODE, 0 );
-		#else
-			if ( GetActiveArea() && !ShouldIgnoreFollowPointFacing() )
-				ChainStartTask( TASK_FACE_NAV_AREA, 0 );
-		#endif
-			else
-				TaskComplete();
-			break;
-		}
 
 		default:
 			BaseClass::StartTask( pTask );
@@ -1730,10 +1351,7 @@ void CAI_FollowBehavior::RunTask( const Task_t *pTask )
 				{
 					Assert( !m_bMovingToCover );
 					Vector vGoalPosition;
-					if ( HasFollowPoint() && IsFollowPointInRange() )
-						vGoalPosition = GetFollowPoint();
-					else
-						vGoalPosition = GetGoalPosition();
+					vGoalPosition = GetGoalPosition();
 
 					AI_NavGoal_t goal( vGoalPosition, AIN_DEF_ACTIVITY, GetGoalTolerance() );
 					if ( !m_hFollowTarget->GetParent() || !m_hFollowTarget->GetParent()->GetServerVehicle() )
@@ -1810,32 +1428,10 @@ void CAI_FollowBehavior::RunTask( const Task_t *pTask )
 					break;
 				}
 				
-				if ( ShouldUseFollowPoints() && ai_follow_use_points_when_moving.GetBool() )
+				if ( GetNavigator()->IsGoalActive() )
 				{
-					if ( HasFollowPoint() )
-					{
-						if ( !IsFollowPointInRange() )
-						{
-							ClearFollowPoint();
-							GetNavigator()->SetArrivalDirection( vec3_origin );
-							GetNavigator()->SetArrivalActivity( ACT_INVALID );
-							m_TimeBlockUseWaitPoint.Reset();
-							m_TimeCheckForWaitPoint.Reset();
-						}
-					}
-					if ( GetNavigator()->GetNavType() != NAV_JUMP && !HasFollowPoint() && m_pInterruptWaitPoint )
-					{
-						SetFollowPoint( m_pInterruptWaitPoint );
-					}
-				}
-				else
-				{
-					ClearFollowPoint();
-					if ( GetNavigator()->IsGoalActive() )
-					{
-						GetNavigator()->SetArrivalDirection( vec3_origin );
-						GetNavigator()->SetArrivalActivity( ACT_INVALID );
-					}
+					GetNavigator()->SetArrivalDirection( vec3_origin );
+					GetNavigator()->SetArrivalActivity( ACT_INVALID );
 				}
 				
 				if ( !GetNavigator()->IsGoalActive() )
@@ -1843,8 +1439,6 @@ void CAI_FollowBehavior::RunTask( const Task_t *pTask )
 					// What this probably means is that the navigation failed but within tolerance
 					// So for now, just call it good and block another attempt for a bit
 					TaskComplete();
-					if ( !IsFollowPointInRange() )
-						ClearFollowPoint();
 					if ( !IsFollowGoalInRange( m_FollowNavGoal.tolerance, GetGoalZRange(), GetGoalFlags() ) )
 						m_FollowDelay.Start( 0.25, 0.75 );
 					else
@@ -1854,98 +1448,55 @@ void CAI_FollowBehavior::RunTask( const Task_t *pTask )
 					}
 					break;
 				}
-				
-				if ( !HasFollowPoint() )
+			
+				float range = GetGoalRange();
+
+				Vector vVelocity =- GetFollowTarget()->GetSmoothedVelocity();
+				bool bDoSlowdown = ( vVelocity.LengthSqr() < Square(4*12) );
+				if ( bDoSlowdown )
 				{
-					float range = GetGoalRange();
-
-					Vector vVelocity =- GetFollowTarget()->GetSmoothedVelocity();
-					bool bDoSlowdown = ( vVelocity.LengthSqr() < Square(4*12) );
-					if ( bDoSlowdown )
-					{
-						range += GetMotor()->MinStoppingDist(12) - 12;
-					}
-
-					if ( IsFollowGoalInRange( range, GetGoalZRange(), GetGoalFlags() ) )
-					{
-						m_TimeBeforeSpreadFacing.Reset();
-						TaskComplete();
-						GetNavigator()->StopMoving( !bDoSlowdown );		// Stop moving
-						m_TargetMonitor.SetMark( GetFollowTarget(), m_FollowNavGoal.targetMoveTolerance );
-						break;
-					}
-
-					// Update the nav goal if needed
-					if ( m_RepathOnFollowTimer.Expired() )
-					{
-						if ( (GetNavigator()->GetGoalPos() - GetGoalPosition()).LengthSqr() > Square( m_FollowNavGoal.repathOnRouteTolerance ) )
-						{
-							if ( GetNavigator()->GetNavType() != NAV_JUMP )
-							{
-								m_RepathOnFollowTimer.Set( .5 );
-								if ( !GetNavigator()->UpdateGoalPos( GetGoalPosition() ) )
-								{
-									bool bSuccess = false;
-									const Vector &vTarget = GetFollowTarget()->WorldSpaceCenter();
-									Vector vToGoal = GetGoalPosition() - vTarget;
-									if ( vToGoal.Length2DSqr() > 6*12 )
-									{
-										if ( GetNavigator()->UpdateGoalPos( vTarget + vToGoal * 0.5 ) )
-										{
-											bSuccess = true;
-										}
-									}
-
-									if ( !bSuccess )
-									{
-										TaskFail(FAIL_NO_ROUTE);
-										m_bTargetUnreachable = true;
-									}
-									break;
-								}
-								NoteSuccessfulFollow();
-							}
-						}
-					}
+					range += GetMotor()->MinStoppingDist(12) - 12;
 				}
-				else
+
+				if ( IsFollowGoalInRange( range, GetGoalZRange(), GetGoalFlags() ) )
 				{
-					const Vector &vFollowPoint = GetFollowPoint();
-					if ( GetNavigator()->GetGoalPos() != vFollowPoint )
+					m_TimeBeforeSpreadFacing.Reset();
+					TaskComplete();
+					GetNavigator()->StopMoving( !bDoSlowdown );		// Stop moving
+					m_TargetMonitor.SetMark( GetFollowTarget(), m_FollowNavGoal.targetMoveTolerance );
+					break;
+				}
+
+				// Update the nav goal if needed
+				if ( m_RepathOnFollowTimer.Expired() )
+				{
+					if ( (GetNavigator()->GetGoalPos() - GetGoalPosition()).LengthSqr() > Square( m_FollowNavGoal.repathOnRouteTolerance ) )
 					{
-						if ( !GetNavigator()->UpdateGoalPos( vFollowPoint ) )
+						if ( GetNavigator()->GetNavType() != NAV_JUMP )
 						{
-							TaskFail(FAIL_NO_ROUTE);
-							m_bTargetUnreachable = true;
-							break;
-						}
-						NoteSuccessfulFollow();
-
-						if ( !ShouldIgnoreFollowPointFacing() )
-						#ifndef AI_USES_NAV_MESH
-							GetNavigator()->SetArrivalDirection( GetHintNode()->GetDirection() );
-						#else
-							GetNavigator()->SetArrivalDirection( vec3_origin );
-						#endif
-
-					#ifndef AI_USES_NAV_MESH
-						if ( GetHintNode()->HintActivityName() != NULL_STRING )
-						{
-							Activity hintActivity = (Activity)CAI_BaseNPC::GetActivityID( STRING(GetHintNode()->HintActivityName()) );
-							if ( hintActivity != ACT_INVALID )
+							m_RepathOnFollowTimer.Set( .5 );
+							if ( !GetNavigator()->UpdateGoalPos( GetGoalPosition() ) )
 							{
-								GetNavigator()->SetArrivalActivity( GetOuter()->GetHintActivity(GetHintNode()->HintType(), hintActivity  ) );
-							}
-							else
-							{
-								int iSequence = GetOuter()->LookupSequence(STRING(GetHintNode()->HintActivityName()));
-								if ( iSequence != ACT_INVALID )
+								bool bSuccess = false;
+								const Vector &vTarget = GetFollowTarget()->WorldSpaceCenter();
+								Vector vToGoal = GetGoalPosition() - vTarget;
+								if ( vToGoal.Length2DSqr() > 6*12 )
 								{
-									GetNavigator()->SetArrivalSequence( iSequence );
+									if ( GetNavigator()->UpdateGoalPos( vTarget + vToGoal * 0.5 ) )
+									{
+										bSuccess = true;
+									}
 								}
+
+								if ( !bSuccess )
+								{
+									TaskFail(FAIL_NO_ROUTE);
+									m_bTargetUnreachable = true;
+								}
+								break;
 							}
+							NoteSuccessfulFollow();
 						}
-					#endif
 					}
 				}
 
@@ -1984,26 +1535,6 @@ void CAI_FollowBehavior::RunTask( const Task_t *pTask )
 				}
 
 			}
-			break;
-		}
-			
-		case TASK_ARRIVE_AT_FOLLOW_POINT:
-		{
-		#ifndef AI_USES_NAV_MESH
-			ChainRunTask( TASK_FACE_HINTNODE, 0 );
-		#else
-			ChainRunTask( TASK_FACE_NAV_AREA, 0 );
-		#endif
-			break;
-		}
-
-		case TASK_BEGIN_STAND_AT_WAIT_POINT:
-		{
-		#ifndef AI_USES_NAV_MESH
-			ChainRunTask( TASK_FACE_HINTNODE, 0 );
-		#else
-			ChainRunTask( TASK_FACE_NAV_AREA, 0 );
-		#endif
 			break;
 		}
 
@@ -2094,12 +1625,6 @@ void CAI_FollowBehavior::BuildScheduleTestBits()
 
 Activity CAI_FollowBehavior::NPC_TranslateActivity( Activity activity )
 {
-#ifndef AI_USES_NAV_MESH
-	if ( activity == ACT_IDLE && HasFollowPoint() && GetHintNode()->HintActivityName() != NULL_STRING )
-	{
-		return GetOuter()->GetHintActivity(GetHintNode()->HintType(), (Activity)CAI_BaseNPC::GetActivityID( STRING(GetHintNode()->HintActivityName()) ) );
-	}
-#endif
 	return BaseClass::NPC_TranslateActivity( activity );
 }
 
@@ -2169,60 +1694,21 @@ void CAI_FollowBehavior::OnMovementComplete()
 
 //-------------------------------------
 
-#ifndef AI_USES_NAV_MESH
-bool CAI_FollowBehavior::FValidateHintType( CAI_Hint *pHint )
-{
-	if ( pHint->HintType() == HINT_FOLLOW_WAIT_POINT )
-	{
-		if ( GetFollowTarget() && GetFollowTarget()->FVisible( pHint->GetAbsOrigin() + Vector( 0, 0, 0.1 ) )  )
-			return true;
-		else
-			return false;
-	}
-	return BaseClass::FValidateHintType( pHint );
-}
-
-//-------------------------------------
-
-bool CAI_FollowBehavior::IsValidCover( const Vector &vLocation, CAI_Hint const *pHint )
+bool CAI_FollowBehavior::IsValidCover( const Vector &vLocation )
 {
 	if ( (vLocation - m_FollowNavGoal.position).LengthSqr() > Square( m_FollowNavGoal.coverTolerance + 0.1 ) )
 		return false;
-	return BaseClass::IsValidCover( vLocation, pHint );
+	return BaseClass::IsValidCover( vLocation );
 }
 
 //-------------------------------------
 
-bool CAI_FollowBehavior::IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint )
+bool CAI_FollowBehavior::IsValidShootPosition( const Vector &vLocation )
 {
 	if ( (vLocation - m_FollowNavGoal.position).LengthSqr() > Square( m_FollowNavGoal.enemyLOSTolerance + 0.1 ) )
 		return false;
-	return BaseClass::IsValidShootPosition( vLocation, pNode, pHint );
+	return BaseClass::IsValidShootPosition( vLocation );
 }
-#else
-bool CAI_FollowBehavior::FValidateArea( CNavArea *pArea )
-{
-	return BaseClass::FValidateArea( pArea );
-}
-
-//-------------------------------------
-
-bool CAI_FollowBehavior::IsValidCover( const Vector &vLocation, CNavArea const *pArea )
-{
-	if ( (vLocation - m_FollowNavGoal.position).LengthSqr() > Square( m_FollowNavGoal.coverTolerance + 0.1 ) )
-		return false;
-	return BaseClass::IsValidCover( vLocation, pArea );
-}
-
-//-------------------------------------
-
-bool CAI_FollowBehavior::IsValidShootPosition( const Vector &vLocation, CNavArea *pArea )
-{
-	if ( (vLocation - m_FollowNavGoal.position).LengthSqr() > Square( m_FollowNavGoal.enemyLOSTolerance + 0.1 ) )
-		return false;
-	return BaseClass::IsValidShootPosition( vLocation, pArea );
-}
-#endif
 
 //-------------------------------------
 
@@ -3027,10 +2513,6 @@ AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER(CAI_FollowBehavior)
 	DECLARE_TASK(TASK_SET_FOLLOW_TARGET_MARK, TaskParamCheck_t())
 	DECLARE_TASK(TASK_FOLLOWER_FACE_TACTICAL, TaskParamCheck_t())
 	DECLARE_TASK(TASK_SET_FOLLOW_DELAY, TaskParamCheck_t(TASK_DATA_CHECK_NUM))
-	DECLARE_TASK(TASK_GET_PATH_TO_FOLLOW_POINT, TaskParamCheck_t())
-	DECLARE_TASK(TASK_ARRIVE_AT_FOLLOW_POINT, TaskParamCheck_t())
-	DECLARE_TASK(TASK_BEGIN_STAND_AT_WAIT_POINT, TaskParamCheck_t())
-	DECLARE_TASK(TASK_SET_FOLLOW_POINT_STAND_SCHEDULE, TaskParamCheck_t())
 
 	DECLARE_CONDITION(COND_TARGET_MOVED_FROM_MARK)
 	DECLARE_CONDITION(COND_FOUND_WAIT_POINT)

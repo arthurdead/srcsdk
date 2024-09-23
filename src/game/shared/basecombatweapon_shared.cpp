@@ -236,6 +236,16 @@ const unsigned char *CBaseCombatWeapon::GetEncryptionKey( void )
 	return GameRules()->GetEncryptionKey(); 
 }
 
+const char*	CBaseCombatWeapon::GetWeaponScriptName()
+{
+#ifdef CLIENT_DLL
+	if(!HasClassname())
+		return "weapon_default";
+#endif
+
+	return GetClassname();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
@@ -341,8 +351,9 @@ void CBaseCombatWeapon::SetAmmoFromMapper( float flAmmo, bool bSecondary )
 		iFinalAmmo = (int)flAmmo;
 	}
 
-	!bSecondary ?
-		m_iClip1 = iFinalAmmo :
+	if(!bSecondary)
+		m_iClip1 = iFinalAmmo;
+	else
 		m_iClip2 = iFinalAmmo;
 }
 

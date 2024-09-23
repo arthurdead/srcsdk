@@ -6,6 +6,7 @@
 class IPlayer;
 class IPlayerFriend;
 class IPlayerLocal;
+typedef unsigned long XUID;
 
 abstract_class IPlayerManager
 {

@@ -471,10 +471,12 @@ public:
 	virtual bool			GameInit( void ) = 0;
 
 	// Called any time a new level is started (after GameInit() also on level transitions within a game)
-	virtual bool			LevelInit( char const *pMapName, 
+private:
+	virtual bool			DO_NOT_USE_LevelInit( char const *pMapName, 
 									char const *pMapEntities, char const *pOldLevel, 
 									char const *pLandmarkName, bool loadGame, bool background ) = 0;
 
+public:
 	// The server is about to activate
 	virtual void			ServerActivate( edict_t *pEdictList, int edictCount, int clientMax ) = 0;
 
@@ -684,10 +686,21 @@ private:
 	{
 		GetIServerGameTags()->GetMatchmakingGameData( buf, bufSize );
 	}
+
+	virtual bool			DO_NOT_USE_LevelInit( char const *pMapName, 
+									char const *pMapEntities, char const *pOldLevel, 
+									char const *pLandmarkName, bool loadGame, bool background ) final
+	{
+		return LevelInit( pMapName, pMapEntities, pOldLevel, pLandmarkName, background );
+	}
 public:
 	virtual void			ServerHibernationUpdate( bool bHibernating ) = 0;
 
 	virtual IServerGameTagsEx *GetIServerGameTags() = 0;
+
+	virtual bool			LevelInit( char const *pMapName, 
+									char const *pMapEntities, char const *pOldLevel, 
+									char const *pLandmarkName, bool background ) = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -804,6 +817,8 @@ private:
 		ClientActive( pEntity );
 	}
 public:
+	virtual void			ClientFullyConnect( edict_t *pEntity ) = 0;
+
 	virtual void			ClientActive( edict_t *pEntity ) = 0;
 };
 

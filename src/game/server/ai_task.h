@@ -34,18 +34,9 @@ enum AI_BaseTaskFailureCodes_t
 	FAIL_NO_TARGET,
 	FAIL_WEAPON_OWNED,
 	FAIL_ITEM_NO_FIND,
-#ifndef AI_USES_NAV_MESH
-	FAIL_NO_HINT_NODE,
-#else
-	FAIL_NO_NAV_AREA,
-#endif
 	FAIL_SCHEDULE_NOT_FOUND,
 	FAIL_NO_ENEMY,
-#ifndef AI_USES_NAV_MESH
-	FAIL_NO_BACKAWAY_NODE,
-#else
-	FAIL_NO_BACKAWAY_AREA,
-#endif
+	FAIL_NO_BACKAWAY_POSITION,
 	FAIL_NO_COVER,
 	FAIL_NO_FLANK,
 	FAIL_NO_SHOOT,
@@ -60,21 +51,15 @@ enum AI_BaseTaskFailureCodes_t
 	FAIL_BAD_ACTIVITY,
 	FAIL_NO_GOAL,
 	FAIL_NO_PLAYER,
-#ifndef AI_USES_NAV_MESH
-	FAIL_NO_REACHABLE_NODE,
-#else
-	FAIL_NO_REACHABLE_AREA,
-#endif
-#ifndef AI_USES_NAV_MESH
-	FAIL_NO_AI_NETWORK,
-#else
+	FAIL_NOT_REACHABLE,
 	FAIL_NO_NAV_MESH,
-#endif
 	FAIL_BAD_POSITION,
 	FAIL_BAD_PATH_GOAL,
 	FAIL_STUCK_ONTOP,
 	FAIL_ITEM_TAKEN,
 	FAIL_FROZEN,
+
+	FAIL_UNIMPLEMENTED,
 
 	NUM_FAIL_CODES,
 };
@@ -379,6 +364,19 @@ enum sharedtasks_e
 
 struct Task_t
 {
+	Task_t() = default;
+
+	Task_t(TaskId_t iTask_)
+		: iTask(iTask_), numData(0)
+	{
+	}
+
+	Task_t(TaskId_t iTask_, TaskData_t data_)
+		: iTask(iTask_), numData(1)
+	{
+		data[0] = data_;
+	}
+
 	TaskId_t iTask = TASK_INVALID;
 	TaskData_t data[TASK_MAX_PARAMETERS];
 	int numData = 0;

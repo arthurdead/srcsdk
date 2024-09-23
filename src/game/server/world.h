@@ -35,8 +35,6 @@ public:
 
 	virtual void PostConstructor( const char *szClassname );
 
-	static void RegisterSharedActivities( void );
-	static void RegisterSharedEvents( void );
 	virtual void Spawn( void );
 	virtual void UpdateOnRemove( void );
 	virtual void Precache( void );

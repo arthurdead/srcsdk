@@ -21,7 +21,7 @@
 #include "fastlz/fastlz.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
-//#include "tier0/memdbgon.h"
+#include "tier0/memdbgon.h"
 
 int FastLZCompressor::maxCompressedSize(const int bufferSize)
 {
@@ -83,44 +83,21 @@ void LinearAllocator::free(void* /*ptr*/)
 }
 
 
-MeshProcess::MeshProcess( Hull_t hull )
+MeshProcess::MeshProcess( NavMeshType_t type )
 {
-	meshFlags = 0;
-
-//TODO Arthurdead!!!!
-#if 0
 #ifndef CLIENT_DLL
-	if( V_strncmp( meshName, "human", V_strlen( meshName ) ) == 0 )
-	{
-		meshFlags |= SF_OFFMESHCONN_HUMAN;
-	}
-	else if( V_strncmp( meshName, "medium", V_strlen( meshName ) )== 0 )
-	{
-		meshFlags |= SF_OFFMESHCONN_MEDIUM;
-	}
-	else if( V_strncmp( meshName, "large", V_strlen( meshName ) )== 0 )
-	{
-		meshFlags |= SF_OFFMESHCONN_LARGE;
-	}
-	else if( V_strncmp( meshName, "verylarge", V_strlen( meshName ) )== 0 )
-	{
-		meshFlags |= SF_OFFMESHCONN_VERYLARGE;
-	}
-	else if( V_strncmp( meshName, "air", V_strlen( meshName ) )== 0 )
-	{
-		meshFlags |= SF_OFFMESHCONN_AIR;
-	}
+	meshFlags = (SF_OFFMESHCONN_TYPE_FLAGS_START << type);
+#else
+	meshFlags = 0;
 #endif // CLIENT_DLL
-#endif
 
 	// One time parse all
 	parseAll();
 }
 
-static void TestAgentRadius( Hull_t hull, float &fAgentRadius )
+static void TestAgentRadius( NavMeshType_t type, float &fAgentRadius )
 {
-	float meshAgentRadius, stub;
-	CRecastMesh::ComputeMeshSettings( hull, meshAgentRadius, stub, stub, stub, stub, stub, stub );
+	float meshAgentRadius = NAI_Hull::Radius2D( type );
 	if( meshAgentRadius > fAgentRadius ) 
 	{
 		fAgentRadius = meshAgentRadius;
@@ -180,19 +157,10 @@ void MeshProcess::parseConnection( COffMeshConnection *pOffMeshConn )
 			offMeshConnVerts[vertOffset+5] = vEnd.y;
 
 			float rad = 0.0f;
-			//TODO Arthurdead!!!!
-		#if 0
-			if( spawnFlags & SF_OFFMESHCONN_HUMAN )
-				TestAgentRadius( "human", rad );
-			if( spawnFlags & SF_OFFMESHCONN_MEDIUM )
-				TestAgentRadius( "medium", rad );
-			if( spawnFlags & SF_OFFMESHCONN_LARGE )
-				TestAgentRadius( "large", rad );
-			if( spawnFlags & SF_OFFMESHCONN_VERYLARGE )
-				TestAgentRadius( "verylarge", rad );
-			if( spawnFlags & SF_OFFMESHCONN_AIR )
-				TestAgentRadius( "air", rad );
-		#endif
+			for(int i = 0; i < RECAST_NAVMESH_NUM; ++i) {
+				if( (spawnFlags & (SF_OFFMESHCONN_TYPE_FLAGS_START << i)) != 0 )
+					TestAgentRadius( i, rad );
+			}
 
 			offMeshConnRad.AddToTail( rad );
 
@@ -200,15 +168,15 @@ void MeshProcess::parseConnection( COffMeshConnection *pOffMeshConn )
 
 			if( spawnFlags & SF_OFFMESHCONN_JUMPEDGE )
 			{
-				offMeshConnArea.AddToTail( SAMPLE_POLYAREA_JUMP );
-				offMeshConnFlags.AddToTail( SAMPLE_POLYFLAGS_JUMP );
+				offMeshConnArea.AddToTail( POLYAREA_JUMP );
+				offMeshConnFlags.AddToTail( POLYFLAGS_JUMP );
 				offMeshConnDir.AddToTail( 0 ); // one direction
 			}
 			else
 			{
-				offMeshConnArea.AddToTail( SAMPLE_POLYAREA_GROUND );
-				offMeshConnFlags.AddToTail( SAMPLE_POLYFLAGS_WALK );
-				offMeshConnDir.AddToTail( 1 ); // bi direction
+				offMeshConnArea.AddToTail( POLYAREA_GROUND );
+				offMeshConnFlags.AddToTail( POLYFLAGS_WALK );
+				offMeshConnDir.AddToTail( DT_OFFMESH_CON_BIDIR ); // bi direction
 			}
 
 			//Msg("Parsed offmesh connection with rad %f, start %f %f %f, end %f %f %f\n", rad,
@@ -231,16 +199,25 @@ void MeshProcess::process(struct dtNavMeshCreateParams* params,
 	for (int i = 0; i < params->polyCount; ++i)
 	{
 		if (polyAreas[i] == DT_TILECACHE_WALKABLE_AREA)
-			polyAreas[i] = SAMPLE_POLYAREA_GROUND;
+			polyAreas[i] = POLYAREA_GROUND;
 
-		if (polyAreas[i] == SAMPLE_POLYAREA_GROUND)
+		if (polyAreas[i] == POLYAREA_GROUND ||
+			polyAreas[i] == POLYAREA_GRASS ||
+			polyAreas[i] == POLYAREA_ROAD)
 		{
-			polyFlags[i] = SAMPLE_POLYFLAGS_WALK;
+			polyFlags[i] = POLYFLAGS_WALK;
 		}
-
-		if (polyAreas[i] >= SAMPLE_POLYAREA_OBSTACLE_START && polyAreas[i] <= SAMPLE_POLYAREA_OBSTACLE_END )
+		else if (polyAreas[i] == POLYAREA_WATER)
 		{
-			polyFlags[i] = SAMPLE_POLYFLAGS_OBSTACLE_START << (polyAreas[i] - SAMPLE_POLYAREA_OBSTACLE_START);
+			polyFlags[i] = POLYFLAGS_SWIM;
+		}
+		else if (polyAreas[i] == POLYAREA_DOOR)
+		{
+			polyFlags[i] = POLYFLAGS_WALK | POLYFLAGS_DOOR;
+		}
+		else if (polyAreas[i] >= POLYAREA_OBSTACLE_START && polyAreas[i] <= POLYAREA_OBSTACLE_END )
+		{
+			polyFlags[i] = POLYFLAGS_OBSTACLE_START << (polyAreas[i] - POLYAREA_OBSTACLE_START);
 		}
 	}
 

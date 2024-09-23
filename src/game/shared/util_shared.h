@@ -887,6 +887,6 @@ int UTIL_HolidaysToVisionFilters( EHolidayFlags eHolidays );
 int UTIL_GetActiveHolidaysVisionFilter();
 #endif
 
-extern bool FindInList( const char **pStrings, const char *pToFind );
+extern bool FindInList( const char **pStrings, const char *pToFind, int size );
 
 #endif // UTIL_SHARED_H

@@ -11,14 +11,8 @@
 #include "ai_schedule.h"
 #include "ai_squad.h"
 #include "ai_senses.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_networkmanager.h"
-#endif
 #include "stringregistry.h"
 #include "igamesystem.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_network.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -335,8 +329,6 @@ public:
 	{
 		extern float g_AINextDisabledMessageTime;
 		g_AINextDisabledMessageTime = 0;
-	
-		g_AI_SchedulesManager.CreateStringRegistries();
 
 		CAI_BaseNPC::gm_iNextThinkRebalanceTick = 0;
 	}
@@ -348,20 +340,13 @@ public:
 
 	void LevelShutdownPreEntity()
 	{
-		CBaseCombatCharacter::ResetVisibilityCache();
 	}
 
 	void LevelShutdownPostEntity( void )
 	{
-		g_AI_SensedObjectsManager.Term();
-	#ifndef AI_USES_NAV_MESH
-		g_pAINetworkManager->DeleteAllAINetworks();
-	#endif
-		g_AI_SchedulesManager.DeleteAllSchedules();
-		g_AI_AgentSchedulesManager.DeleteAllSchedules();
 		g_AI_SquadManager.DeleteAllSquads();
-		g_AI_SchedulesManager.DestroyStringRegistries();
-		g_AI_AgentSchedulesManager.DestroyStringRegistries();
+		CBaseCombatCharacter::ResetVisibilityCache( NULL );
+		g_AI_SensedObjectsManager.Term();
 	}
 };
 

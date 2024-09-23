@@ -2139,6 +2139,12 @@ inline bool AlmostEqual( const Vector &a, const Vector &b, int maxUlps = 10)
 		AlmostEqual( a.z, b.z, maxUlps );
 }
 
+//--------------------------------------------------------------------------------------------------------------
+inline float RoundToUnits( float val, float unit )
+{
+	val = val + ((val < 0.0f) ? -unit*0.5f : unit*0.5f);
+	return (float)( unit * ( ((int)val) / (int)unit ) );
+}
 
 #endif	// MATH_BASE_H
 

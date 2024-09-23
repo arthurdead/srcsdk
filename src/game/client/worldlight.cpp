@@ -115,7 +115,7 @@ void CWorldLights::Clear()
 void CWorldLights::LevelInitPreEntity()
 {
 	// Open map
-	FileHandle_t hFile = g_pFullFileSystem->Open( VarArgs( "maps/%s.bsp", MapName() ), "rb" );
+	FileHandle_t hFile = g_pFullFileSystem->Open( engine->GetLevelName(), "rb" );
 	if ( !hFile )
 	{
 		Warning( "CWorldLights: unable to open map\n" );

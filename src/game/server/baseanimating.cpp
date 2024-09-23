@@ -307,6 +307,8 @@ void CBaseAnimating::Spawn()
 void CBaseAnimating::UseClientSideAnimation()
 {
 	m_bClientSideAnimation = true;
+
+	DisableServerIK();
 }
 
 #define MAX_ANIMTIME_INTERVAL 0.2f
@@ -988,7 +990,7 @@ float CBaseAnimating::GetIdealAccel( ) const
 // Input  : nSequence - sequence number to check
 //			nEvent - anim event number to look for
 //-----------------------------------------------------------------------------
-bool CBaseAnimating::HasAnimEvent( int nSequence, int nEvent )
+bool CBaseAnimating::HasAnimEvent( int nSequence, Animevent nEvent )
 {
 	CStudioHdr *pstudiohdr = GetModelPtr();
 	if ( !pstudiohdr )
@@ -1499,7 +1501,9 @@ void CBaseAnimating::InitStepHeightAdjust( void )
 // Purpose: Interpolates client IK floor position and drops entity down so that the feet will reach
 //-----------------------------------------------------------------------------
 
-ConVar npc_height_adjust( "npc_height_adjust", "1", FCVAR_ARCHIVE, "Enable test mode for ik height adjustment" );
+ConVar npc_height_adjust( "npc_height_adjust", "1", FCVAR_ARCHIVE|FCVAR_REPLICATED, "Enable test mode for ik height adjustment" );
+
+extern ConVar sv_stepsize;
 
 void CBaseAnimating::UpdateStepOrigin()
 {
@@ -1524,12 +1528,15 @@ void CBaseAnimating::UpdateStepOrigin()
 			Vector toAbs = GetAbsOrigin() - GetLocalOrigin();
 			if (toAbs.z == 0.0)
 			{
-				CAI_BaseNPC *pNPC = MyNPCPointer();
 				// FIXME:  There needs to be a default step height somewhere
-				float height = 18.0f;
-				if (pNPC)
+				float height = sv_stepsize.GetFloat();
+				if (IsNPC())
 				{
-					height = pNPC->StepHeight();
+					height = MyNPCPointer()->StepHeight();
+				}
+				else if(IsPlayer())
+				{
+					height = ToBasePlayer(this)->StepHeight();
 				}
 
 				// debounce floor location
@@ -1585,6 +1592,10 @@ void CBaseAnimating::CalculateIKLocks( float currentTime )
 		CTraceFilterSkipNPCs traceFilter( this, GetCollisionGroup() );
 		Vector up;
 		GetVectors( NULL, NULL, &up );
+
+		float minHeight = FLT_MAX;
+		float maxHeight = -FLT_MAX;
+
 		// FIXME: check number of slots?
 		for (int i = 0; i < m_pIk->m_target.Count(); i++)
 		{
@@ -1599,11 +1610,12 @@ void CBaseAnimating::CalculateIKLocks( float currentTime )
 			case IK_GROUND:
 				{
 					Vector estGround;
+					Vector p1, p2;
+
 					estGround = (pTarget->est.pos - GetAbsOrigin());
 					estGround = estGround - (estGround * up) * up;
 					estGround = GetAbsOrigin() + estGround + pTarget->est.floor * up;
 
-					Vector p1, p2;
 					VectorMA( estGround, pTarget->est.height, up, p1 );
 					VectorMA( estGround, -pTarget->est.height, up, p2 );
 
@@ -1638,13 +1650,35 @@ void CBaseAnimating::CalculateIKLocks( float currentTime )
 						{
 							pTarget->SetPosWithNormalOffset( trace.endpos, trace.plane.normal );
 							pTarget->SetNormal( trace.plane.normal );
+
+							// only do this on forward tracking or commited IK ground rules
+							if (pTarget->est.release < 0.1)
+							{
+								// keep track of ground height
+								float offset = DotProduct( pTarget->est.pos, up );
+								if (minHeight > offset )
+									minHeight = offset;
+
+								if (maxHeight < offset )
+									maxHeight = offset;
+							}
 						}
 						else
 						{
 							pTarget->SetPos( trace.endpos );
 							pTarget->SetAngles( GetAbsAngles() );
-						}
 
+							// only do this on forward tracking or commited IK ground rules
+							if (pTarget->est.release < 0.1)
+							{
+								float offset = DotProduct( pTarget->est.pos, up );
+								if (minHeight > offset )
+									minHeight = offset;
+
+								if (maxHeight < offset )
+									maxHeight = offset;
+							}
+						}
 					}
 				}
 				break;
@@ -1654,6 +1688,11 @@ void CBaseAnimating::CalculateIKLocks( float currentTime )
 				}
 				break;
 			}
+		}
+
+		if (minHeight < FLT_MAX)
+		{
+			SetIKGroundContactInfo( minHeight, maxHeight );
 		}
 	}
 }
@@ -2297,10 +2336,10 @@ void CBaseAnimating::RandomizeBodygroups( CUtlVector< const char * >& groups )
 	}
 }
 
-int CBaseAnimating::ExtractBbox( int sequence, Vector& mins, Vector& maxs )
+bool CBaseAnimating::ExtractBbox( int sequence, Vector& mins, Vector& maxs )
 {
 	Assert( IsDynamicModelLoading() || GetModelPtr() );
-	return IsDynamicModelLoading() ? 0 : ::ExtractBbox( GetModelPtr( ), sequence, mins, maxs );
+	return IsDynamicModelLoading() ? false : ::ExtractBbox( GetModelPtr( ), sequence, mins, maxs );
 }
 
 //=========================================================

@@ -31,10 +31,10 @@ CPlayerResource *g_pPlayerResource = NULL;
 
 CPlayerResource::CPlayerResource()
 {
-	AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
-
-	if(!g_pPlayerResource)
+	if(!g_pPlayerResource) {
 		g_pPlayerResource = this;
+		AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
+	}
 }
 
 void CPlayerResource::UpdateOnRemove( void )
@@ -68,15 +68,6 @@ void CPlayerResource::Spawn( void )
 	SetThink( &CPlayerResource::ResourceThink );
 	SetNextThink( gpGlobals->curtime );
 	m_nUpdateCounter = 0;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: The Player resource is always transmitted to clients
-//-----------------------------------------------------------------------------
-int CPlayerResource::UpdateTransmitState()
-{
-	// ALWAYS transmit to all clients.
-	return SetTransmitState( FL_EDICT_ALWAYS );
 }
 
 //-----------------------------------------------------------------------------

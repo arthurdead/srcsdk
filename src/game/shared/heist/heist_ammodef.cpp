@@ -9,7 +9,8 @@ class CHeistAmmoDef : public CAmmoDef
 public:
 	CHeistAmmoDef()
 	{
-		AddAmmoType("Gravity", DMG_CLUB, TRACER_NONE, 0, 0, 8, 0, 0);
+		AddAmmoType("Gravity", DMG_CLUB, TRACER_NONE, 0, 0, 0, 0, 0);
+		AddAmmoType("Pistol", DMG_BULLET, TRACER_LINE_AND_WHIZ, 1, 1, INFINITE_AMMO, BULLET_IMPULSE(200, 1225), 0 );
 	}
 };
 

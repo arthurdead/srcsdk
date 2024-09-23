@@ -191,17 +191,10 @@ protected:
 	virtual bool	IsCurTaskContinuousMove();
 	virtual void	OnMovementFailed();
 	virtual void	OnMovementComplete();
-#ifndef AI_USES_NAV_MESH
-	virtual bool	FValidateHintType( CAI_Hint *pHint );
-	
-	bool			IsValidCover( const Vector &vLocation, CAI_Hint const *pHint );
-	bool			IsValidShootPosition( const Vector &vLocation, CAI_Node *pNode, CAI_Hint const *pHint );
-#else
-	virtual bool	FValidateArea( CNavArea *pArea );
-	
-	bool			IsValidCover( const Vector &vLocation, CNavArea const *pArea );
-	bool			IsValidShootPosition( const Vector &vLocation, CNavArea *pArea );
-#endif
+
+	bool			IsValidCover( const Vector &vLocation );
+	bool			IsValidShootPosition( const Vector &vLocation );
+
 	bool 			FindCoverFromEnemyAtFollowTarget( float coverRadius, Vector *pResult );
 	
 	bool			ShouldAlwaysThink();
@@ -209,30 +202,10 @@ protected:
 	bool			ShouldMoveToFollowTarget();
 
 	int 			SelectScheduleManagePosition();
-	int 			SelectScheduleFollowPoints();
 	int 			SelectScheduleMoveToFormation();
 
 	void			GetFollowTargetViewLoc( Vector *pResult);
 	bool			ValidateFaceTarget(  Vector *pFaceTarget );
-
-	//----------------------------
-
-	bool			ShouldUseFollowPoints();
-	bool			HasFollowPoint();
-#ifndef AI_USES_NAV_MESH
-	void 			SetFollowPoint( CAI_Hint *pHintNode );
-#else
-	void 			SetFollowPoint( CNavArea *pArea );
-#endif
-	void			ClearFollowPoint();
-	const Vector &	GetFollowPoint();
-#ifndef AI_USES_NAV_MESH
-	CAI_Hint *		FindFollowPoint();
-#else
-	CNavArea *		FindFollowPoint();
-#endif
-	bool			IsFollowPointInRange();
-	bool			ShouldIgnoreFollowPointFacing();
 
 	//----------------------------
 	
@@ -274,10 +247,6 @@ protected:
 		TASK_SET_FOLLOW_TARGET_MARK,
 		TASK_FOLLOWER_FACE_TACTICAL,
 		TASK_SET_FOLLOW_DELAY,
-		TASK_GET_PATH_TO_FOLLOW_POINT,
-		TASK_ARRIVE_AT_FOLLOW_POINT,
-		TASK_SET_FOLLOW_POINT_STAND_SCHEDULE,
-		TASK_BEGIN_STAND_AT_WAIT_POINT,
 		NEXT_TASK,
 
 		COND_TARGET_MOVED_FROM_MARK = BaseClass::NEXT_CONDITION,
@@ -322,16 +291,6 @@ protected:
 
 	Activity						m_CurrentFollowActivity;
 
-	//---------------------------------
-	
-	CRandSimTimer					m_TimeBlockUseWaitPoint;
-	CSimTimer						m_TimeCheckForWaitPoint;
-#ifndef AI_USES_NAV_MESH
-	CAI_Hint *						m_pInterruptWaitPoint;
-#else
-	CNavArea *						m_pInterruptWaitPoint;
-#endif
-	
 	//---------------------------------
 
 	CRandSimTimer					m_TimeBeforeSpreadFacing;

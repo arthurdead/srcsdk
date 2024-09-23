@@ -295,7 +295,7 @@ int C_BaseViewModel::DrawModel( int flags, const RenderableInstance_t &instance 
 		render->SetColorModulation(	color );
 	}
 		
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	C_BasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 	C_BaseCombatWeapon *pWeapon = GetOwningWeapon();
 	int ret;
 	// If the local player's overriding the viewmodel rendering, let him do it
@@ -415,7 +415,7 @@ int C_BaseViewModel::DrawOverriddenViewmodel( int flags, const RenderableInstanc
 uint8 C_BaseViewModel::OverrideRenderAlpha( uint8 nAlpha )
 {
 	// See if the local player wants to override the viewmodel's rendering
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	C_BasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 	if ( pPlayer && pPlayer->IsOverridingViewmodel() )
 		return pPlayer->ViewModel_OverrideRenderAlpha( nAlpha );
 	
@@ -433,7 +433,7 @@ uint8 C_BaseViewModel::OverrideRenderAlpha( uint8 nAlpha )
 RenderableTranslucencyType_t C_BaseViewModel::ComputeTranslucencyType( void )
 {
 	// See if the local player wants to override the viewmodel's rendering
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	C_BasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 	if ( pPlayer && pPlayer->IsOverridingViewmodel() )
 		return pPlayer->ViewModel_ComputeTranslucencyType();
 
@@ -450,7 +450,7 @@ RenderableTranslucencyType_t C_BaseViewModel::ComputeTranslucencyType( void )
 int C_BaseViewModel::GetRenderFlags( void )
 {
 	// See if the local player wants to override the viewmodel's rendering
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	C_BasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 	if ( pPlayer && pPlayer->IsOverridingViewmodel() )
 	{
 		return pPlayer->ViewModel_GetRenderFlags();

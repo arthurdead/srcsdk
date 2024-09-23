@@ -11,8 +11,8 @@
 #pragma once
 
 #include "networkvar.h"
-#include "ai_hull.h"
 #include "ai_activity.h"
+#include "recast/recast_imgr.h"
 
 class CAI_BaseNPC;
 class CAI_Enemies;
@@ -44,12 +44,19 @@ public:
 	CAI_BaseNPC *		GetOuter() 			{ return m_pOuter; }
 	const CAI_BaseNPC *	GetOuter() const 	{ return m_pOuter; }
 
-	Hull_t				GetHullType() const;
+	NavMeshType_t		GetNavMeshType() const;
+	float 				GetNavMeshWidth() const;
+	float 				GetNavMeshHeight() const;
+	float 				GetNavMeshLength() const;
+	const Vector &		GetNavMeshMins() const;
+	const Vector &		GetNavMeshMaxs() const;
+	int					GetNavMeshTraceMask() const;
+
 	float 				GetHullWidth() const;
 	float 				GetHullHeight() const;
+	float 				GetHullLength() const;
 	const Vector &		GetHullMins() const;
 	const Vector &		GetHullMaxs() const;
-	int					GetHullTraceMask() const;
 
 protected:
 	//

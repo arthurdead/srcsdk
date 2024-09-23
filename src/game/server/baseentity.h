@@ -321,8 +321,8 @@ public:
 	// An inline version the game code can use
 	CCollisionProperty		*CollisionProp();
 	const CCollisionProperty*CollisionProp() const;
-	CServerNetworkProperty *NetworkProp();
-	const CServerNetworkProperty *NetworkProp() const;
+	virtual CServerNetworkProperty *NetworkProp();
+	virtual const CServerNetworkProperty *NetworkProp() const;
 
 	bool					IsCurrentlyTouching( void ) const;
 	const Vector&			GetAbsOrigin( void ) const;
@@ -442,9 +442,9 @@ public:
 	virtual const char	*GetTracerType( void );
 
 	// returns a pointer to the entities edict, if it has one.  should be removed!
-	edict_t			*edict( void );
-	const edict_t	*edict( void ) const;
-	int				entindex( ) const;
+	virtual edict_t			*edict( void );
+	virtual const edict_t	*edict( void ) const;
+	virtual int				entindex( ) const;
 	int				GetSoundSourceIndex() const;
 
 	void	SetFadeDistance( float minFadeDist, float maxFadeDist );
@@ -680,7 +680,9 @@ public:
 
 	// classname access
 	void		SetClassname( const char *className );
+	void		SetClassname( string_t className );
 	const char* GetClassname();
+	string_t GetClassnameStr();
 
 	virtual const char *GetPlayerName() const { return NULL; }
 
@@ -775,9 +777,10 @@ private:
 	// NOTE: Keep this near vtable so it's in cache with vtable.
 	CServerNetworkProperty *m_Network;
 
-public:
+private:
 	// members
 	string_t m_iClassname;  // identifier for entity creation and save/restore
+public:
 	string_t m_iGlobalname; // identifier for carrying entity across level transitions
 	string_t m_iParent;	// the name of the entities parent; linked into m_pParent during Activate()
 
@@ -1198,7 +1201,7 @@ public:
 	static CBaseEntity *CreateNoSpawn( const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner = NULL );
 
 private:
-	static void DO_NOT_USE_SetupAsPredicted( CBaseEntity *pEntity, const char *szName, const char *module, int line );
+	static bool DO_NOT_USE_SetupAsPredicted( CBaseEntity *pEntity, const char *szName, const char *module, int line );
 
 public:
 	static CBaseEntity *CreatePredicted( const char *module, int line, const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner = NULL );
@@ -1289,7 +1292,8 @@ public:
 	virtual	bool FVisible ( CBaseEntity *pEntity, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
 	virtual bool FVisible( const Vector &vecTarget, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
 
-	virtual bool CanBeSeenBy( CAI_BaseNPC *pNPC ) { return true; } // allows entities to be 'invisible' to NPC senses.
+	virtual bool CanBeSeenBy( CAI_BaseNPC *pNPC ); // allows entities to be 'invisible' to NPC senses.
+	virtual bool CanBeSeenBy( CBaseEntity *pEnt ); // allows entities to be 'invisible' to NPC senses.
 
 	// This function returns a value that scales all damage done by this entity.
 	// Use CDamageModifier to hook in damage modifiers on a guy.
@@ -1339,7 +1343,7 @@ public:
 	const Vector&			WorldAlignMaxs( ) const;
 
 	// This defines collision bounds in OBB space
-	void					SetCollisionBounds( const Vector& mins, const Vector &maxs );
+	virtual void					SetCollisionBounds( const Vector& mins, const Vector &maxs );
 
 	// NOTE: The world space center *may* move when the entity rotates.
 	virtual const Vector&	WorldSpaceCenter( ) const;
@@ -1349,6 +1353,7 @@ public:
 	// *centered at the world space center* bounding the collision representation 
 	// of the entity. NOTE: The world space center *may* move when the entity rotates.
 	float					BoundingRadius() const;
+	float					BoundingRadius2D() const;
 	bool					IsPointSized() const;
 
 	// NOTE: Setting the abs origin or angles will cause the local origin + angles to be set also
@@ -1932,11 +1937,6 @@ public:
 	virtual bool ShouldBlockNav() const { return true; }
 
 public:
-	virtual bool CanBeSeenBy( CBaseEntity *pEnt ) { return true; } // allows entities to be 'invisible' to Unit senses.
-
-	// Density map
-	virtual float GetDensityMultiplier() { return 1.0f; }
-	void SetDensityMapType( int iType );
 	// Nav obstacle ref for recast mesh.
 	void SetNavObstacleRef( int ref ) { m_NavObstacleRef = ref; }
 	int GetNavObstacleRef() { return m_NavObstacleRef; }
@@ -2144,6 +2144,10 @@ inline const char* CBaseEntity::GetClassname()
 	return STRING(m_iClassname);
 }
 
+inline string_t CBaseEntity::GetClassnameStr()
+{
+	return m_iClassname;
+}
 
 inline bool CBaseEntity::ClassMatches( string_t nameStr )
 {
@@ -2763,6 +2767,11 @@ inline float CBaseEntity::BoundingRadius() const
 	return CollisionProp()->BoundingRadius();
 }
 
+inline float CBaseEntity::BoundingRadius2D() const
+{
+	return CollisionProp()->BoundingRadius2D();
+}
+
 inline bool CBaseEntity::IsPointSized() const
 {
 	return CollisionProp()->BoundingRadius() == 0.0f;
@@ -2880,7 +2889,27 @@ public:
 	void	Spawn( void );
 	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+
+	int UpdateTransmitState()
+	{
+		return SetTransmitState( FL_EDICT_ALWAYS );
+	}
 private:
+};
+
+// Has no position or size
+class CLogicalEntity : public CBaseEntity
+{
+	DECLARE_CLASS( CLogicalEntity, CBaseEntity );
+
+public:
+	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+
+	int UpdateTransmitState()
+	{
+		return SetTransmitState( FL_EDICT_ALWAYS );
+	}
 };
 
 // Has a position + size
@@ -2889,7 +2918,16 @@ class CServerOnlyEntity : public CBaseEntity
 	DECLARE_CLASS( CServerOnlyEntity, CBaseEntity );
 public:
 	CServerOnlyEntity();
-	
+
+	virtual IServerNetworkable *GetNetworkable() { return NULL; }
+
+	CServerNetworkProperty *NetworkProp() { return NULL; }
+	const CServerNetworkProperty *NetworkProp() const { return NULL; }
+
+	edict_t			*edict( void ) { return NULL; }
+	const edict_t	*edict( void ) const { return NULL; }
+	int				entindex( ) const { return -1; }
+
 	virtual int ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
 };
 
@@ -2903,9 +2941,9 @@ public:
 };
 
 // Has no position or size
-class CLogicalEntity : public CServerOnlyEntity
+class CServerOnlyLogicalEntity : public CServerOnlyEntity
 {
-	DECLARE_CLASS( CLogicalEntity, CServerOnlyEntity );
+	DECLARE_CLASS( CServerOnlyLogicalEntity, CServerOnlyEntity );
 
 public:
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );

@@ -26,6 +26,7 @@
 #include "collisionutils.h"
 #include "iservervehicle.h"
 #include "func_break.h"
+#include "eventlist.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -104,7 +105,7 @@ int CBaseCombatWeapon::UpdateTransmitState( void)
 //-----------------------------------------------------------------------------
 void CBaseCombatWeapon::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )
 {
-	int nEvent = pEvent->Event();
+	Animevent nEvent = pEvent->Event();
 
 	if ( nEvent == AE_NPC_WEAPON_FIRE )
 	{
@@ -119,9 +120,19 @@ void CBaseCombatWeapon::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseComb
 		{
 			WeaponSound( (WeaponSound_t)iSnd );
 		}
+		return;
 	}
 
-	DevWarning( 2, "Unhandled animation event %d from %s --> %s\n", nEvent, pOperator->GetClassname(), GetClassname() );
+	// Failed to find a handler
+	const char *pName = EventList_NameForIndex( nEvent );
+	if ( pName)
+	{
+		DevWarning( 2, "Unhandled animation event %s from %s --> %s\n", pName, pOperator->GetClassname(), GetClassname() );
+	}
+	else
+	{
+		DevWarning( 2, "Unhandled animation event %d from %s --> %s\n", nEvent, pOperator->GetClassname(), GetClassname() );
+	}
 }
 
 // NOTE: This should never be called when a character is operating the weapon.  Animation events should be
@@ -761,7 +772,10 @@ void CBaseCombatWeapon::InputForceFire( inputdata_t &inputdata, bool bSecondary 
 	else if (pOperator->IsPlayer())
 	{
 		// Owner exists and is a player.
-		bSecondary ? SecondaryAttack() : PrimaryAttack();
+		if(bSecondary)
+			SecondaryAttack();
+		else
+			PrimaryAttack();
 	}
 	else
 	{

@@ -136,14 +136,14 @@ char const* CMoveHelperServer::GetName( EntityHandle_t handle ) const
 	CBaseEntity *ent = CBaseEntity::Instance( pEdict );
 	
 	// Is it the world?
-	if (ENTINDEX(pEdict) == 0)
+	if (ent && ent->IsWorld())
 		return STRING(gpGlobals->mapname);
 
 	// Is it a model?
 	if ( ent && ent->GetModelName() != NULL_STRING )
 		return STRING( ent->GetModelName() );
 
-	if ( ent->GetClassname() != NULL )
+	if ( ent && ent->GetClassname() != NULL )
 	{
 		return ent->GetClassname();
 	}

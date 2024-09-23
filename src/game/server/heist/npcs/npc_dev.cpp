@@ -2,14 +2,29 @@
 #include "ai_basenpc.h"
 #include "ai_behavior.h"
 #include "ai_behavior_follow.h"
+#include "recast/recast_mgr.h"
+#include "recast/recast_mesh.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+extern ConVar recast_debug_mesh;
+
+CBaseEntity *pPathTarget = NULL;
 
 class CPatherTarget : public CBaseAnimating
 {
 public:
 	DECLARE_CLASS(CPatherTarget, CBaseAnimating);
+
+	CPatherTarget()
+	{
+	}
+
+	~CPatherTarget()
+	{
+		pPathTarget = NULL;
+	}
 
 	void Precache() override
 	{
@@ -25,6 +40,8 @@ public:
 		BaseClass::Spawn();
 
 		SetModel("models/dog.mdl");
+
+		pPathTarget = this;
 	}
 };
 
@@ -50,8 +67,7 @@ public:
 
 		SetModel("models/alyx.mdl");
 
-		SetHullType(HULL_HUMAN);
-		SetHullSizeNormal();
+		UTIL_SetSize(this, NAI_Hull::Mins(RECAST_NAVMESH_HUMAN), NAI_Hull::Maxs(RECAST_NAVMESH_HUMAN));
 
 		SetSolid(SOLID_BBOX);
 		AddSolidFlags(FSOLID_NOT_STANDABLE);

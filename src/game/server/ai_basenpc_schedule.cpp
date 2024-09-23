@@ -15,22 +15,8 @@
 #include "basecombatweapon.h"
 #include "bitstring.h"
 #include "ai_task.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_network.h"
-#else
-#include "nav_mesh.h"
-#endif
 #include "ai_schedule.h"
-#include "ai_hull.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_node.h"
-#else
-#include "nav_area.h"
-#endif
 #include "ai_motor.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_hint.h"
-#endif
 #include "ai_memory.h"
 #include "ai_navigator.h"
 #include "ai_tacticalservices.h"
@@ -904,7 +890,7 @@ bool CAI_BaseNPC::FindCoverPosInRadius( CBaseEntity *pEntity, const Vector &goal
 
 	if( ( !GetSquad() || GetSquad()->GetFirstMember() == this ) &&
 		IsCoverPosition( enemyEyePos, goalPos + GetViewOffset() ) && 
-		IsValidCover( goalPos, NULL ) )
+		IsValidCover( goalPos ) )
 	{
 		coverPos = goalPos;
 	}
@@ -959,40 +945,6 @@ void CAI_BaseNPC::StartTurn( float flDeltaYaw )
 	SetTurnActivity();
 }
 
-
-//-----------------------------------------------------------------------------
-// TASK_CLEAR_HINTNODE
-//-----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-void CAI_BaseNPC::ClearHintNode( float reuseDelay )
-{
-	if ( m_pHintNode )
-	{
-		if ( m_pHintNode->IsLockedBy(this) )
-			m_pHintNode->Unlock(reuseDelay);
-		m_pHintNode = NULL;
-	}
-}
-
-void CAI_BaseNPC::SetHintNode( CAI_Hint *pHintNode )
-{
-	m_pHintNode = pHintNode;
-}
-#else
-void CAI_BaseNPC::ClearActiveArea()
-{
-	if ( m_pActiveArea )
-	{
-		m_pActiveArea = NULL;
-	}
-}
-
-void CAI_BaseNPC::SetActiveArea( CNavArea *pArea )
-{
-	m_pActiveArea = pArea;
-}
-#endif
-
 //-----------------------------------------------------------------------------
 
 bool CAI_BaseNPC::FindCoverFromEnemy( bool bNodesOnly, float flMinDistance, float flMaxDistance )
@@ -1004,12 +956,6 @@ bool CAI_BaseNPC::FindCoverFromEnemy( bool bNodesOnly, float flMinDistance, floa
 		pEntity = this;
 
 	Vector coverPos = vec3_invalid;
-
-#ifndef AI_USES_NAV_MESH
-	ClearHintNode();
-#else
-	ClearActiveArea();
-#endif
 
 	if ( bNodesOnly )
 	{
@@ -1030,21 +976,9 @@ bool CAI_BaseNPC::FindCoverFromEnemy( bool bNodesOnly, float flMinDistance, floa
 	if ( !GetNavigator()->SetGoal( goal ) )
 		return false;
 
-#ifndef AI_USES_NAV_MESH
 	// FIXME: add to goal
-	if (GetHintNode())
-	{
-		GetNavigator()->SetArrivalActivity( GetCoverActivity( GetHintNode() ) );
-		GetNavigator()->SetArrivalDirection( GetHintNode()->GetDirection() );
-	}
-#else
-	// FIXME: add to goal
-	if (GetActiveArea())
-	{
-		GetNavigator()->SetArrivalActivity( GetCoverActivity( GetActiveArea() ) );
-		GetNavigator()->SetArrivalDirection( vec3_origin );
-	}
-#endif
+	GetNavigator()->SetArrivalActivity( GetCoverActivity() );
+	GetNavigator()->SetArrivalDirection( vec3_origin );
 	
 	return true;
 }
@@ -1260,14 +1194,8 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		return;
 	}
 
-	switch ( pTask->iTask )
-	{
-	default:
-		{
-			DevMsg( "No StartTask entry for %s\n", TaskName( task ) );
-		}
-		break;
-	}
+	DevMsg( "No StartTask entry for %s\n", TaskName( task ) );
+	TaskFail(FAIL_UNIMPLEMENTED);
 }
 
 //=========================================================
@@ -1284,80 +1212,8 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 		return;
 	}
 
-	switch ( task )
-	{
-#ifndef AI_USES_NAV_MESH
-	case TASK_GET_PATH_TO_RANDOM_NODE:
-#else
-	case TASK_GET_PATH_TO_RANDOM_AREA:
-#endif
-		{
-			break;
-		}
-
-#ifndef AI_USES_NAV_MESH
-	case TASK_PLAY_HINT_ACTIVITY:
-		{
-			if (!GetHintNode())
-			{
-				TaskFail(FAIL_NO_HINT_NODE);
-			}
-
-			// Put a debugging check in here
-			if (GetHintNode()->User() != this)
-			{
-				DevMsg("Hint node (%s) being used by non-owner!\n",GetHintNode()->GetDebugName());
-			}
-
-			if ( IsActivityFinished() )
-			{
-				TaskComplete();
-			}
-
-			break;
-		}
-#else
-	case TASK_PLAY_AREA_ACTIVITY:
-		{
-			if (!GetActiveArea())
-			{
-				TaskFail(FAIL_NO_NAV_AREA);
-			}
-
-			if ( IsActivityFinished() )
-			{
-				TaskComplete();
-			}
-
-			break;
-		}
-#endif
-
-#ifndef AI_USES_NAV_MESH
-	case TASK_FACE_HINTNODE:
-#else
-	case TASK_FACE_NAV_AREA:
-#endif
-		{
-			// If the yaw is locked, this function will not act correctly
-			Assert( GetMotor()->IsYawLocked() == false );
-
-			GetMotor()->UpdateYaw();
-   
-   			if ( FacingIdeal() )
-   			{
-   				TaskComplete();
-   			}
-   			break;
-		}
-
-	default:
-		{
-			DevMsg( "No RunTask entry for %s\n", TaskName( pTask->iTask ) );
-			TaskComplete();
-		}
-		break;
-	}
+	DevMsg( "No RunTask entry for %s\n", TaskName( pTask->iTask ) );
+	TaskFail(FAIL_UNIMPLEMENTED);
 }
 
 void CAI_BaseNPC::StartTaskOverlay()
@@ -2021,7 +1877,7 @@ int CAI_BaseNPC::SelectFlinchSchedule()
 		return SCHED_NONE;
 
 	// If we've flinched recently, don't do it again. A gesture flinch will be played instead.
- 	if ( HasMemory(bits_MEMORY_FLINCHED) )
+	if ( HasMemory(bits_MEMORY_FLINCHED) )
 		return SCHED_NONE;
 
 	if ( !CanFlinch() )

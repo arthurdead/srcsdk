@@ -130,6 +130,10 @@ public:
 	float			BoundingRadius() const;
 	float			BoundingRadius2D() const;
 
+	float			Width() const { return m_flWidth; }
+	float			Length() const { return m_flLength; }
+	float			Height() const { return m_flHeight; }
+
 	// Returns the center of the OBB in collision space
 	const Vector &	OBBCenter( ) const;
 
@@ -256,6 +260,9 @@ private:
 	CNetworkVector( m_vecMaxs );
 	float m_flRadius;
 	float m_flRadius2D;
+	float m_flWidth;
+	float m_flHeight;
+	float m_flLength;
 
 	CNetworkVar( unsigned short, m_usSolidFlags );
 

@@ -985,6 +985,11 @@ void CBaseEntity::SetClassname( const char *className )
 	m_iClassname = AllocPooledString( className );
 }
 
+void CBaseEntity::SetClassname( string_t className )
+{
+	m_iClassname = className;
+}
+
 void CBaseEntity::SetModelIndex( int index )
 {
 	if ( IsDynamicModelIndex( index ) && !(GetBaseAnimating() && m_bDynamicModelAllowed) )
@@ -3215,6 +3220,18 @@ bool CBaseEntity::FVisible( CBaseEntity *pEntity, int traceMask, CBaseEntity **p
 	return true;// line of sight is valid.
 }
 
+bool CBaseEntity::CanBeSeenBy( CAI_BaseNPC *pNPC )
+{
+	return true;
+}
+
+bool CBaseEntity::CanBeSeenBy( CBaseEntity *pEnt )
+{
+	if( pEnt->MyNPCPointer() )
+		return CanBeSeenBy( pEnt->MyNPCPointer() );
+	return true;
+}
+
 //=========================================================
 // FVisible - returns true if a line can be traced from
 // the caller's eyes to the wished position.
@@ -3548,19 +3565,22 @@ CBaseEntity * CBaseEntity::CreateNoSpawn( const char *szName, const Vector &vecO
 	return pEntity;
 }
 
-void CBaseEntity::DO_NOT_USE_SetupAsPredicted( CBaseEntity *pEntity, const char *szName, const char *module, int line )
+bool CBaseEntity::DO_NOT_USE_SetupAsPredicted( CBaseEntity *pEntity, const char *szName, const char *module, int line )
 {
 	CBasePlayer *player = CBaseEntity::GetPredictionPlayer();
 	Assert( player );
+	if( !player )
+		return false;
 
 	int command_number = player->CurrentCommandNumber();
-	int player_index = player->entindex() - 1;
+	int player_index = player->entindex()-1;
 
 	CPredictableId testId;
 	testId.Init( player_index, command_number, szName, module, line );
 
 	// Set up "shared" id number
 	pEntity->m_PredictableID.GetForModify().SetRaw( testId.GetRaw() );
+	return true;
 }
 
 CBaseEntity * CBaseEntity::CreatePredictedNoSpawn( const char *module, int line, const char *szName, const Vector &vecOrigin, const QAngle &vecAngles, CBaseEntity *pOwner )
@@ -3576,7 +3596,10 @@ CBaseEntity * CBaseEntity::CreatePredictedNoSpawn( const char *module, int line,
 	pEntity->SetLocalAngles( vecAngles );
 	pEntity->SetOwnerEntity( pOwner );
 
-	DO_NOT_USE_SetupAsPredicted( pEntity, szName, module, line );
+	if(!DO_NOT_USE_SetupAsPredicted( pEntity, szName, module, line )) {
+		UTIL_Remove(pEntity);
+		return NULL;
+	}
 
 	return pEntity;
 }
@@ -3595,7 +3618,10 @@ CBaseEntity *CBaseEntity::CreatePredicted( const char *module, int line, const c
 		return NULL;
 	}
 
-	DO_NOT_USE_SetupAsPredicted( pEntity, szName, module, line );
+	if(!DO_NOT_USE_SetupAsPredicted( pEntity, szName, module, line )) {
+		UTIL_Remove(pEntity);
+		return NULL;
+	}
 
 	return pEntity;
 }
@@ -5424,7 +5450,7 @@ void CC_Ent_Remove( const CCommand& args )
 			while ( (ent = gEntList.NextEnt(ent)) != NULL )
 			{
 				if (  (ent->GetEntityName() != NULL_STRING	&& FStrEq(args[1], STRING(ent->GetEntityName())))	|| 
-					(ent->m_iClassname != NULL_STRING	&& FStrEq(args[1], STRING(ent->m_iClassname))) ||
+					(ent->GetClassnameStr() != NULL_STRING	&& FStrEq(args[1], ent->GetClassname())) ||
 					(ent->GetClassname()!=NULL && FStrEq(args[1], ent->GetClassname())))
 				{
 					pEntity = ent;
@@ -5437,7 +5463,7 @@ void CC_Ent_Remove( const CCommand& args )
 	// Found one?
 	if ( pEntity )
 	{
-		Msg( "Removed %s(%s)\n", STRING(pEntity->m_iClassname), pEntity->GetDebugName() );
+		Msg( "Removed %s(%s)\n", pEntity->GetClassname(), pEntity->GetDebugName() );
 		UTIL_Remove( pEntity );
 	}
 }
@@ -5459,7 +5485,7 @@ void CC_Ent_RemoveAll( const CCommand& args )
 		while ( (ent = gEntList.NextEnt(ent)) != NULL )
 		{
 			if (  (ent->GetEntityName() != NULL_STRING	&& FStrEq(args[1], STRING(ent->GetEntityName())))	|| 
-				  (ent->m_iClassname != NULL_STRING	&& FStrEq(args[1], STRING(ent->m_iClassname))) ||
+				  (ent->GetClassnameStr() != NULL_STRING	&& FStrEq(args[1], ent->GetClassname())) ||
 				  (ent->GetClassname()!=NULL && FStrEq(args[1], ent->GetClassname())))
 			{
 				UTIL_Remove( ent );
@@ -5506,7 +5532,7 @@ void CC_Ent_SetName( const CCommand& args )
 			while ( (ent = gEntList.NextEnt(ent)) != NULL )
 			{
 				if (  (ent->GetEntityName() != NULL_STRING	&& FStrEq(args[1], STRING(ent->GetEntityName())))	|| 
-					  (ent->m_iClassname != NULL_STRING	&& FStrEq(args[1], STRING(ent->m_iClassname))) ||
+					  (ent->GetClassnameStr() != NULL_STRING	&& FStrEq(args[1], ent->GetClassname())) ||
 					  (ent->GetClassname()!=NULL && FStrEq(args[1], ent->GetClassname())))
 				{
 					pEntity = ent;
@@ -5518,7 +5544,7 @@ void CC_Ent_SetName( const CCommand& args )
 		// Found one?
 		if ( pEntity )
 		{
-			Msg( "Set the name of %s to %s\n", STRING(pEntity->m_iClassname), args[1] );
+			Msg( "Set the name of %s to %s\n", pEntity->GetClassname(), args[1] );
 			pEntity->SetName( AllocPooledString( args[1] ) );
 		}
 	}
@@ -8352,19 +8378,7 @@ void CBaseEntity::SetRefEHandle( const CBaseHandle &handle )
 	}
 }
 
-
 bool CPointEntity::KeyValue( const char *szKeyName, const char *szValue ) 
-{
-	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
-	{
-		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
-		return true;
-	}
-
-	return BaseClass::KeyValue( szKeyName, szValue );
-}						 
-
-bool CServerOnlyPointEntity::KeyValue( const char *szKeyName, const char *szValue ) 
 {
 	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
 	{
@@ -8386,6 +8400,27 @@ bool CLogicalEntity::KeyValue( const char *szKeyName, const char *szValue )
 	return BaseClass::KeyValue( szKeyName, szValue );
 }
 
+bool CServerOnlyPointEntity::KeyValue( const char *szKeyName, const char *szValue ) 
+{
+	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
+	{
+		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
+		return true;
+	}
+
+	return BaseClass::KeyValue( szKeyName, szValue );
+}
+
+bool CServerOnlyLogicalEntity::KeyValue( const char *szKeyName, const char *szValue ) 
+{
+	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
+	{
+		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
+		return true;
+	}
+
+	return BaseClass::KeyValue( szKeyName, szValue );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Sets the entity invisible, and makes it remove itself on the next frame

@@ -71,7 +71,7 @@ AIMoveResult_t AIComputeBlockerMoveResult( CBaseEntity *pBlocker )
 {
 	if (pBlocker->MyNPCPointer())
 		return AIMR_BLOCKED_NPC;
-	else if (pBlocker->entindex() == 0)
+	else if (pBlocker->IsWorld())
 		return AIMR_BLOCKED_WORLD;
 	return AIMR_BLOCKED_ENTITY;
 }
@@ -79,7 +79,7 @@ AIMoveResult_t AIComputeBlockerMoveResult( CBaseEntity *pBlocker )
 //-----------------------------------------------------------------------------
 bool CAI_MoveProbe::ShouldBrushBeIgnored( CBaseEntity *pEntity )
 {
-	if ( pEntity->m_iClassname == g_iszFuncBrushClassname )
+	if ( pEntity->GetClassnameStr() == g_iszFuncBrushClassname )
 	{
 		CFuncBrush *pFuncBrush = assert_cast<CFuncBrush *>(pEntity);
 

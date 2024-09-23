@@ -37,48 +37,72 @@ public:
 	CViewVectors() {}
 
 	CViewVectors( 
-		Vector vView,
 		Vector vHullMin,
 		Vector vHullMax,
+		Vector vView,
 		Vector vDuckHullMin,
 		Vector vDuckHullMax,
 		Vector vDuckView,
 		Vector vObsHullMin,
 		Vector vObsHullMax,
-		Vector vDeadViewHeight,
-		Vector vCrouchTraceMin,
-		Vector vCrouchTraceMax )
+		Vector vDeadViewHeight )
 	{
-		m_vView = vView;
 		m_vHullMin = vHullMin;
 		m_vHullMax = vHullMax;
+		m_vView = vView;
+
+		Vector vecSize;
+		VectorSubtract( m_vHullMax, m_vHullMin, vecSize );
+		m_flRadius = vecSize.Length() * 0.5f;
+		m_flRadius2D = vecSize.Length2D() * 0.5f;
+
+		m_flWidth = vecSize.y;
+		m_flHeight = vecSize.z;
+		m_flLength = vecSize.x;
+
 		m_vDuckHullMin = vDuckHullMin;
 		m_vDuckHullMax = vDuckHullMax;
 		m_vDuckView = vDuckView;
+
+		VectorSubtract( m_vDuckHullMax, m_vDuckHullMin, vecSize );
+		m_flDuckRadius = vecSize.Length() * 0.5f;
+		m_flDuckRadius2D = vecSize.Length2D() * 0.5f;
+
+		m_flDuckWidth = vecSize.y;
+		m_flDuckHeight = vecSize.z;
+		m_flDuckLength = vecSize.x;
+
 		m_vObsHullMin = vObsHullMin;
 		m_vObsHullMax = vObsHullMax;
+
 		m_vDeadViewHeight = vDeadViewHeight;
-		m_vCrouchTraceMin = vCrouchTraceMin;
-		m_vCrouchTraceMax = vCrouchTraceMax;
 	}
 
 	// Height above entity position where the viewer's eye is.
-	Vector m_vView;
-	
 	Vector m_vHullMin;
 	Vector m_vHullMax;
-	
+	Vector m_vView;
+
+	float m_flRadius;
+	float m_flRadius2D;
+	float m_flWidth;
+	float m_flHeight;
+	float m_flLength;
+
 	Vector m_vDuckHullMin;
 	Vector m_vDuckHullMax;
 	Vector m_vDuckView;
-	
+
+	float m_flDuckRadius;
+	float m_flDuckRadius2D;
+	float m_flDuckWidth;
+	float m_flDuckHeight;
+	float m_flDuckLength;
+
 	Vector m_vObsHullMin;
 	Vector m_vObsHullMax;
 	
 	Vector m_vDeadViewHeight;
-
-	Vector m_vCrouchTraceMin;
-	Vector m_vCrouchTraceMax;
 };
 
 extern CViewVectors g_DefaultViewVectors;
@@ -86,9 +110,9 @@ extern CViewVectors g_DefaultViewVectors;
 #define VIEW_VECTORS ( GameRules() ? GameRules()->GetViewVectors() : &g_DefaultViewVectors )
 
 // Height above entity position where the viewer's eye is.
-#define VEC_VIEW			VIEW_VECTORS->m_vView
 #define VEC_HULL_MIN		VIEW_VECTORS->m_vHullMin
 #define VEC_HULL_MAX		VIEW_VECTORS->m_vHullMax
+#define VEC_VIEW			VIEW_VECTORS->m_vView
 
 #define VEC_DUCK_HULL_MIN	VIEW_VECTORS->m_vDuckHullMin
 #define VEC_DUCK_HULL_MAX	VIEW_VECTORS->m_vDuckHullMax
@@ -99,22 +123,23 @@ extern CViewVectors g_DefaultViewVectors;
 
 #define VEC_DEAD_VIEWHEIGHT	VIEW_VECTORS->m_vDeadViewHeight
 
-#define VEC_CROUCH_TRACE_MIN VIEW_VECTORS->m_vCrouchTraceMin
-#define VEC_CROUCH_TRACE_MAX VIEW_VECTORS->m_vCrouchTraceMax
-
 // If the player (enemy bots) are scaled, adjust the hull
-#define VEC_VIEW_SCALED( player )				( VEC_VIEW * player->GetModelScale() )
-#define VEC_HULL_MIN_SCALED( player )			( VEC_HULL_MIN * player->GetModelScale() )
-#define VEC_HULL_MAX_SCALED( player )			( VEC_HULL_MAX * player->GetModelScale() )
+#define VEC_VIEW_SCALED( player )				( VEC_VIEW * (player)->GetModelScale() )
+#define VEC_HULL_MIN_SCALED( player )			( VEC_HULL_MIN * (player)->GetModelScale() )
+#define VEC_HULL_MAX_SCALED( player )			( VEC_HULL_MAX * (player)->GetModelScale() )
 
-#define VEC_DUCK_HULL_MIN_SCALED( player )		( VEC_DUCK_HULL_MIN * player->GetModelScale() )
-#define VEC_DUCK_HULL_MAX_SCALED( player )		( VEC_DUCK_HULL_MAX * player->GetModelScale() )
-#define VEC_DUCK_VIEW_SCALED( player )			( VEC_DUCK_VIEW * player->GetModelScale() )
+#define VEC_DUCK_HULL_MIN_SCALED( player )		( VEC_DUCK_HULL_MIN * (player)->GetModelScale() )
+#define VEC_DUCK_HULL_MAX_SCALED( player )		( VEC_DUCK_HULL_MAX * (player)->GetModelScale() )
+#define VEC_DUCK_VIEW_SCALED( player )			( VEC_DUCK_VIEW * (player)->GetModelScale() )
 
-#define VEC_OBS_HULL_MIN_SCALED( player )		( VEC_OBS_HULL_MIN * player->GetModelScale() )
-#define VEC_OBS_HULL_MAX_SCALED( player )		( VEC_OBS_HULL_MAX * player->GetModelScale() )
+#define VEC_OBS_HULL_MIN_SCALED( player )		( VEC_OBS_HULL_MIN * (player)->GetModelScale() )
+#define VEC_OBS_HULL_MAX_SCALED( player )		( VEC_OBS_HULL_MAX * (player)->GetModelScale() )
 
-#define VEC_DEAD_VIEWHEIGHT_SCALED( player )	( VEC_DEAD_VIEWHEIGHT * player->GetModelScale() )
+#define VEC_DEAD_VIEWHEIGHT_SCALED( player )	( VEC_DEAD_VIEWHEIGHT * (player)->GetModelScale() )
+
+#define PlayerDuckHeight VIEW_VECTORS->m_flDuckHeight
+#define PlayerStandEyeHeight VEC_VIEW.z
+#define PlayerDuckEyeHeight VEC_DUCK_VIEW.z
 
 #define WATERJUMP_HEIGHT			8
 
@@ -719,6 +744,27 @@ struct FireBulletsInfo_t
 		m_flPlayerDamage = 0;
 		m_pAttacker = NULL;
 		m_nFlags = 0;
+		m_pAdditionalIgnoreEnt = NULL;
+		m_flDamageForceScale = 1.0f;
+		m_bPrimaryAttack = bPrimaryAttack;
+		m_bUseServerRandomSeed = false;
+
+		m_pIgnoreEntList = NULL;
+	}
+
+	FireBulletsInfo_t( int cShots, const Vector &vecSrc, const Vector &vecDirShooting, const Vector &vecSpread, float flDistance, int iAmmoType, int iTracerFreq, float flDamage, CBaseEntity *pAttacker, bool bFirstShotAccurate, bool bPrimaryAttack )
+	{
+		m_iShots = cShots;
+		m_vecSrc = vecSrc;
+		m_vecDirShooting = vecDirShooting;
+		m_vecSpread = vecSpread;
+		m_flDistance = flDistance;
+		m_iAmmoType = iAmmoType;
+		m_iTracerFreq = iTracerFreq;
+		m_flDamage = flDamage;
+		m_flPlayerDamage = 0;
+		m_pAttacker = pAttacker;
+		m_nFlags = bFirstShotAccurate ? FIRE_BULLETS_FIRST_SHOT_ACCURATE : 0;
 		m_pAdditionalIgnoreEnt = NULL;
 		m_flDamageForceScale = 1.0f;
 		m_bPrimaryAttack = bPrimaryAttack;

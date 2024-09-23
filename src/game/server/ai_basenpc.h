@@ -21,7 +21,6 @@
 #include "ai_navtype.h"
 #include "ai_namespaces.h"
 #include "ai_npcstate.h"
-#include "ai_hull.h"
 #include "ai_utils.h"
 #include "ai_moveshoot.h"
 #include "entityoutput.h"
@@ -34,18 +33,14 @@
 #include "ai_navigator.h"
 #include "tier1/functors.h"
 #include "igamesystem.h"
+#include "recast/recast_mesh.h"
+#include "ai_pathfinder.h"
 
 #define PLAYER_SQUADNAME "player_squad"
 
 class CAI_Schedule;
 class CAI_Network;
 class CAI_Route;
-#ifndef AI_USES_NAV_MESH
-class CAI_Hint;
-class CAI_Node;
-#else
-class CNavArea;
-#endif
 class CAI_Navigator;
 class CAI_Pathfinder;
 class CAI_Senses;
@@ -529,6 +524,8 @@ public:
 	virtual bool		 BehaviorBridge_MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost )  { return 0; }
 };
 
+extern ConVar sv_stepsize;
+
 //=============================================================================
 //
 //	class CAI_BaseNPC
@@ -593,6 +590,8 @@ public:
 	virtual CAI_Navigator *	CreateNavigator();
 	virtual CAI_Pathfinder *CreatePathfinder();
 	virtual CAI_TacticalServices *CreateTacticalServices();
+
+	CRecastMesh *GetNavMesh() const;
 
 	//---------------------------------
 
@@ -692,8 +691,11 @@ public:
 protected:
 	// Used by derived classes to chain a task to a task that might not be the 
 	// one they are currently handling:
-	void				ChainStartTask( TaskId_t task, TaskData_t taskData = TaskData_t() )	{ Task_t tempTask = { task, taskData }; StartTask( (const Task_t *)&tempTask ); }
-	void				ChainRunTask( TaskId_t task, TaskData_t taskData = TaskData_t() )	{ Task_t tempTask = { task, taskData }; RunTask( (const Task_t *)	&tempTask );	}
+	void				ChainStartTask( TaskId_t task, TaskData_t taskData )	{ Task_t tempTask = { task, taskData }; StartTask( (const Task_t *)&tempTask ); }
+	void				ChainRunTask( TaskId_t task, TaskData_t taskData )	{ Task_t tempTask = { task, taskData }; RunTask( (const Task_t *)	&tempTask );	}
+
+	void				ChainStartTask( TaskId_t task )	{ Task_t tempTask = { task }; StartTask( (const Task_t *)&tempTask ); }
+	void				ChainRunTask( TaskId_t task )	{ Task_t tempTask = { task }; RunTask( (const Task_t *)	&tempTask );	}
 
 	void				StartTaskOverlay();
 	virtual void				RunTaskOverlay();
@@ -1461,7 +1463,7 @@ public:
 	virtual bool		IsJumpLegal( const Vector &startPos, const Vector &apex, const Vector &endPos ) const; // Override for specific creature types
 	bool				IsJumpLegal( const Vector &startPos, const Vector &apex, const Vector &endPos, float maxUp, float maxDown, float maxDist ) const;
 	bool 				ShouldMoveWait();
-	virtual float		StepHeight() const			{ return 18.0f; }
+	virtual float		StepHeight() const			{ return sv_stepsize.GetFloat(); }
 	float				GetStepDownMultiplier() const;
 	virtual float		GetMaxJumpSpeed() const		{ return 350.0f; }
 	virtual float		GetJumpGravity() const		{ return GetDefaultJumpGravity(); }
@@ -1475,11 +1477,6 @@ public:
 
 	//---------------------------------
 
-#ifndef AI_USES_NAV_MESH
-	virtual bool		IsUnusableNode(int iNodeID, CAI_Hint *pHint); // Override for special NPC behavior
-#else
-	virtual bool		IsUnusableArea(CNavArea *pArea);
-#endif
 	virtual bool		ValidateNavGoal();
 	virtual bool		IsCurTaskContinuousMove();
 	virtual bool		IsValidMoveAwayDest( const Vector &vecDest )	{ return true; }
@@ -1570,11 +1567,7 @@ public:
 	
 	virtual void				SetDefaultEyeOffset ( void );
 	const Vector &		GetDefaultEyeOffset( void )			{ return m_vDefaultEyeOffset;	}
-#ifndef AI_USES_NAV_MESH
-	virtual Vector		GetNodeViewOffset()					{ return GetViewOffset();		}
-#else
-	virtual Vector		GetAreaViewOffset()					{ return GetViewOffset();		}
-#endif
+	virtual Vector		GetNavMeshViewOffset()					{ return GetViewOffset();		}
 
 	virtual Vector		EyeOffset( Activity nActivity );
 	virtual Vector		EyePosition( void );
@@ -1811,13 +1804,6 @@ public:
 
 	int					NumWeaponsInSquad( const char *pszWeaponClassname );
 
-#ifndef AI_USES_NAV_MESH
-	string_t			GetHintGroup( void )			{ return m_strHintGroup;		}
-	void				ClearHintGroup( void )			{ SetHintGroup( NULL_STRING );	}
-	void				SetHintGroup( string_t name, bool bHintGroupNavLimiting = false );
-	bool				IsLimitingHintGroups( void )	{ return m_bHintGroupNavLimiting; }
-#endif
-
 	//---------------------------------
 
 	CAI_TacticalServices *GetTacticalServices()			{ return m_pTacticalServices; }
@@ -1829,36 +1815,20 @@ public:
 	virtual bool		FindCoverPos( CBaseEntity *pEntity, Vector *pResult );
 	virtual bool		FindCoverPosInRadius( CBaseEntity *pEntity, const Vector &goalPos, float coverRadius, Vector *pResult );
 	virtual bool		FindCoverPos( CSound *pSound, Vector *pResult );
-#ifndef AI_USES_NAV_MESH
-	virtual bool		IsValidCover ( const Vector &vecCoverLocation, CAI_Hint const *pHint );
-#else
-	virtual bool		IsValidCover ( const Vector &vecCoverLocation, CNavArea const *pArea );
-#endif
-#ifndef AI_USES_NAV_MESH
-	virtual bool		IsValidShootPosition ( const Vector &vecCoverLocation, CAI_Node *pNode, CAI_Hint const *pHint );
-#else
-	virtual bool		IsValidShootPosition ( const Vector &vecCoverLocation, CNavArea *pArea );
-#endif
+	virtual bool		IsValidCover ( const Vector &vecCoverLocation );
+	virtual bool		IsValidShootPosition ( const Vector &vecCoverLocation );
 	virtual bool		TestShootPosition(const Vector &vecShootPos, const Vector &targetPos )	{ return WeaponLOSCondition( vecShootPos, targetPos, false ); }
 	virtual bool		IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition );
 	virtual float		CoverRadius( void ) { return 1024; } // Default cover radius
 	virtual float		GetMaxTacticalLateralMovement( void ) { return MAXTACLAT_IGNORE; }
 
 protected:
-#ifndef AI_USES_NAV_MESH
-	virtual void		OnChangeHintGroup( string_t oldGroup, string_t newGroup ) {}
-#endif
-
 	CAI_Squad *			m_pSquad;		// The squad that I'm on
 	string_t			m_SquadName;
 
 	int					m_iMySquadSlot;	// this is the behaviour slot that the npc currently holds in the squad. 
 
 private:
-#ifndef AI_USES_NAV_MESH
-	string_t			m_strHintGroup;
-	bool				m_bHintGroupNavLimiting;
-#endif
 	CAI_TacticalServices *m_pTacticalServices;
 
 public:
@@ -1925,19 +1895,8 @@ public:
 	virtual bool		FCanCheckAttacks ( void );
 	virtual void		CheckAmmo( void ) {}
 
-#ifndef AI_USES_NAV_MESH
-	virtual bool		FValidateHintType( CAI_Hint *pHint );
-	virtual Activity	GetHintActivity( short sHintType, Activity HintsActivity );
-	virtual float		GetHintDelay( short sHintType );
-	virtual Activity	GetCoverActivity( CAI_Hint* pHint );
-	virtual Activity	GetReloadActivity( CAI_Hint* pHint );
-#else
-	virtual bool		FValidateArea( CNavArea *pArea );
-	virtual Activity	GetAreaActivity( CNavArea* pArea, Activity AreaActivity );
-	virtual float		GetAreaDelay( CNavArea* pArea );
-	virtual Activity	GetCoverActivity( CNavArea* pArea );
-	virtual Activity	GetReloadActivity( CNavArea* pArea );
-#endif
+	virtual Activity	GetCoverActivity();
+	virtual Activity	GetReloadActivity();
 
 	virtual void		SetTurnActivity( void );
 	bool				UpdateTurnGesture( void );
@@ -2047,18 +2006,6 @@ public:
 	CBaseEntity*	GetGoalEnt()							{ return m_hGoalEnt.Get();	}
 	void			SetGoalEnt( CBaseEntity *pGoalEnt )		{ m_hGoalEnt.Set( pGoalEnt ); }
 
-#ifndef AI_USES_NAV_MESH
-	CAI_Hint		*GetHintNode()							{ return m_pHintNode; }
-	const CAI_Hint *GetHintNode() const						{ return m_pHintNode; }
-	void			SetHintNode( CAI_Hint *pHintNode );
-	void			ClearHintNode( float reuseDelay = 0.0 );
-#else
-	CNavArea		*GetActiveArea()							{ return m_pActiveArea; }
-	const CNavArea *GetActiveArea() const						{ return m_pActiveArea; }
-	void			SetActiveArea( CNavArea *pArea );
-	void			ClearActiveArea();
-#endif
-
 	float				m_flWaitFinished;			// if we're told to wait, this is the time that the wait will be over.
 
 	float				m_flNextFlinchTime;			// Time at which we'll flinch fully again (as opposed to just doing gesture flinches)
@@ -2071,11 +2018,7 @@ public:
 	Vector				m_vInterruptSavePosition;	// position stored by a task that was interrupted
 
 private:
-#ifndef AI_USES_NAV_MESH
-	CHandle<CAI_Hint>	m_pHintNode;				// this is the hint that the npc is moving towards or performing active idle on.
-#else
-	CNavArea *m_pActiveArea;
-#endif
+	
 
 public:
 	int					m_cAmmoLoaded;				// how much ammo is in the weapon (used to trigger reload anim sequences)
@@ -2131,26 +2074,27 @@ public:
 	COutputInt			m_OnStateChange;
 
 public:
-	// use this to shrink the bbox temporarily
-	void				SetHullSizeNormal( bool force = false );
-	bool				SetHullSizeSmall( bool force = false );
+	const Vector &		GetNavMeshMins() const		{ return NAI_Hull::Mins(GetNavMeshType()); }
+	const Vector &		GetNavMeshMaxs() const		{ return NAI_Hull::Maxs(GetNavMeshType()); }
+	float				GetNavMeshWidth()	const	{ return NAI_Hull::Width(GetNavMeshType()); }
+	float				GetNavMeshHeight() const	{ return NAI_Hull::Height(GetNavMeshType()); }
+	float				GetNavMeshLength() const	{ return NAI_Hull::Length(GetNavMeshType()); }
+	unsigned int		GetNavMeshTraceMask() const	{ return NAI_Hull::TraceMask(GetNavMeshType()); }
 
-	bool				IsUsingSmallHull() const	{ return m_fIsUsingSmallHull; }
-
-	const Vector &		GetHullMins() const		{ return NAI_Hull::Mins(GetHullType()); }
-	const Vector &		GetHullMaxs() const		{ return NAI_Hull::Maxs(GetHullType()); }
-	float				GetHullWidth()	const	{ return NAI_Hull::Width(GetHullType()); }
-	float				GetHullHeight() const	{ return NAI_Hull::Height(GetHullType()); }
-	unsigned int		GetHullTraceMask() const	{ return NAI_Hull::TraceMask(GetHullType()); }
+	const Vector &		GetHullMins() const			{ return WorldAlignMins(); }
+	const Vector &		GetHullMaxs() const			{ return WorldAlignMaxs(); }
+	float				GetHullWidth()	const		{ return CollisionProp()->Width(); }
+	float				GetHullLength() const		{ return CollisionProp()->Length(); }
+	float				GetHullHeight() const		{ return CollisionProp()->Height(); }
 
 	void				SetupVPhysicsHull();
 	virtual void		StartTouch( CBaseEntity *pOther );
 	void				CheckPhysicsContacts();
 	virtual bool		ShouldCheckPhysicsContacts( void ) { return ( GetMoveType() == MOVETYPE_STEP && VPhysicsGetObject() ); }
 
+	virtual void			SetCollisionBounds( const Vector& mins, const Vector &maxs );
+
 private:
-	void				TryRestoreHull( void );
-	bool				m_fIsUsingSmallHull;
 	bool				m_bCheckContacts;
 
 private:
@@ -2258,6 +2202,7 @@ private:
 	bool IsNavHullValid() const;
 
 	friend class CAI_SystemHook;
+	friend class CServerGameDLL;
 	friend class CAI_SchedulesManager;
 	
 	static bool			LoadDefaultSchedules(void);
@@ -2904,9 +2849,9 @@ inline const Vector &CAI_Component::WorldAlignMaxs() const
 	
 //-----------------------------------------------------------------------------
 
-inline Hull_t CAI_Component::GetHullType() const
+inline NavMeshType_t CAI_Component::GetNavMeshType() const
 {
-	return GetOuter()->GetHullType();
+	return GetOuter()->GetNavMeshType();
 }
 
 //-----------------------------------------------------------------------------
@@ -2932,35 +2877,77 @@ inline void CAI_Component::SetGravity( float flGravity )
 
 //-----------------------------------------------------------------------------
 
+inline float CAI_Component::GetNavMeshWidth() const
+{
+	return GetOuter()->GetNavMeshWidth();
+}
+
+//-----------------------------------------------------------------------------
+
+inline float CAI_Component::GetNavMeshHeight() const
+{
+	return GetOuter()->GetNavMeshHeight();
+}
+
+//-----------------------------------------------------------------------------
+
+inline float CAI_Component::GetNavMeshLength() const
+{
+	return GetOuter()->GetNavMeshLength();
+}
+
+//-----------------------------------------------------------------------------
+
+inline const Vector &CAI_Component::GetNavMeshMins() const
+{
+	return GetOuter()->GetNavMeshMins();
+}
+
+//-----------------------------------------------------------------------------
+
+inline const Vector &CAI_Component::GetNavMeshMaxs() const
+{
+	return GetOuter()->GetNavMeshMaxs();
+}
+
+inline int CAI_Component::GetNavMeshTraceMask() const
+{
+	return GetOuter()->GetNavMeshTraceMask();
+}
+
+//-----------------------------------------------------------------------------
+
 inline float CAI_Component::GetHullWidth() const
 {
-	return NAI_Hull::Width(GetOuter()->GetHullType());
+	return GetOuter()->GetHullWidth();
 }
 
 //-----------------------------------------------------------------------------
 
 inline float CAI_Component::GetHullHeight() const
 {
-	return NAI_Hull::Height(GetOuter()->GetHullType());
+	return GetOuter()->GetHullHeight();
+}
+
+//-----------------------------------------------------------------------------
+
+inline float CAI_Component::GetHullLength() const
+{
+	return GetOuter()->GetHullLength();
 }
 
 //-----------------------------------------------------------------------------
 
 inline const Vector &CAI_Component::GetHullMins() const
 {
-	return NAI_Hull::Mins(GetOuter()->GetHullType());
+	return GetOuter()->GetHullMins();
 }
 
 //-----------------------------------------------------------------------------
 
 inline const Vector &CAI_Component::GetHullMaxs() const
 {
-	return NAI_Hull::Maxs(GetOuter()->GetHullType());
-}
-
-inline int CAI_Component::GetHullTraceMask() const
-{
-	return NAI_Hull::TraceMask(GetOuter()->GetHullType());
+	return GetOuter()->GetNavMeshMaxs();
 }
 
 //-----------------------------------------------------------------------------
@@ -3192,6 +3179,11 @@ inline edict_t *CAI_Component::GetEdict()
 inline float CAI_Component::GetLastThink( const char *szContext )
 {
 	return GetOuter()->GetLastThink( szContext );
+}
+
+inline CRecastMesh *CAI_Pathfinder::GetNavMesh() const
+{
+	return GetOuter()->GetNavMesh();
 }
 
 // ============================================================================

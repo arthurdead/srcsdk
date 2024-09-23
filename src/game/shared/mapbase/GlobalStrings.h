@@ -34,6 +34,9 @@ class C_BaseEntity;
 // 
 // -------------------------------------------------------------
 
+extern string_t g_iszFuncBrushClassname;
+extern string_t g_iszPhysicsPropClassname;
+
 extern string_t gm_isz_class_Bullseye;
 
 extern string_t gm_isz_class_PropPhysics;

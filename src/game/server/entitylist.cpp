@@ -14,12 +14,15 @@
 #include "tier0/vprof.h"
 #include "mapentities.h"
 #include "client.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_initutils.h"
-#endif
 #include "globalstate.h"
 #include "datacache/imdlcache.h"
 #include "ai_basenpc.h"
+#include "world.h"
+#include "team.h"
+#include "player_resource.h"
+#include "soundent.h"
+#include "env_debughistory.h"
+#include "recast/recast_mgr_ent.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -1328,6 +1331,7 @@ CBaseEntity *CGlobalEntityList::FindEntityGenericNearest( const char *szName, co
 	return pEntity;
 } 
 
+bool IsStandardEntityClassname(const char *pClassname);
 
 //-----------------------------------------------------------------------------
 // Purpose: Find the nearest entity along the facing direction from the given origin
@@ -1340,6 +1344,9 @@ CBaseEntity *CGlobalEntityList::FindEntityGenericNearest( const char *szName, co
 //-----------------------------------------------------------------------------
 CBaseEntity *CGlobalEntityList::FindEntityClassNearestFacing( const Vector &origin, const Vector &facing, float threshold, const char *classname)
 {
+	if(IsStandardEntityClassname(classname))
+		return NULL;
+
 	float bestDot = threshold;
 	CBaseEntity *best_ent = NULL;
 
@@ -1358,6 +1365,9 @@ CBaseEntity *CGlobalEntityList::FindEntityClassNearestFacing( const Vector &orig
 		if (ent->IsPointSized() )
 			continue;
 
+		if(IsStandardEntityClassname(classname))
+			continue;
+
 		// Make vector to entity
 		Vector	to_ent = (ent->GetAbsOrigin() - origin);
 
@@ -1367,12 +1377,8 @@ CBaseEntity *CGlobalEntityList::FindEntityClassNearestFacing( const Vector &orig
 		{
 			if (FClassnameIs(ent,classname))
 			{
-				// Ignore if worldspawn
-				if (!FClassnameIs( ent, "worldspawn" )  && !FClassnameIs( ent, "soundent")) 
-				{
-					bestDot	= dot;
-					best_ent = ent;
-				}
+				bestDot	= dot;
+				best_ent = ent;
 			}
 		}
 	}
@@ -1407,6 +1413,11 @@ CBaseEntity *CGlobalEntityList::FindEntityNearestFacing( const Vector &origin, c
 		if (!ent->edict())
 			continue;
 
+		const char *classname = ent->GetClassname();
+
+		if(IsStandardEntityClassname(classname))
+			continue;
+
 		// Make vector to entity
 		Vector	to_ent = ent->WorldSpaceCenter() - origin;
 		VectorNormalize(to_ent);
@@ -1415,12 +1426,8 @@ CBaseEntity *CGlobalEntityList::FindEntityNearestFacing( const Vector &origin, c
 		if (dot <= bestDot) 
 			continue;
 
-		// Ignore if worldspawn
-		if (!FStrEq( STRING(ent->m_iClassname), "worldspawn")  && !FStrEq( STRING(ent->m_iClassname), "soundent")) 
-		{
-			bestDot	= dot;
-			best_ent = ent;
-		}
+		bestDot	= dot;
+		best_ent = ent;
 	}
 	return best_ent;
 }
@@ -1758,13 +1765,51 @@ void CEntityTouchManager::FrameUpdatePostEntityThink()
 	}
 }
 
+static const char *s_StandardEnts[] = {
+	"gamerules_proxy",
+	"player_manager",
+	"team_manager",
+	"soundent",
+	"worldspawn",
+	"env_debughistory",
+	"recast_mgr",
+};
+
+bool IsStandardEntityClassname(const char *pClassname)
+{
+	return FindInList(s_StandardEnts, pClassname, ARRAYSIZE(s_StandardEnts));
+}
+
+CBaseEntity *GetSingletonOfClassname(const char *pClassname)
+{
+	if(V_strcmp(pClassname, "worldspawn") == 0) {
+		return GetWorldEntity();
+	} else if(V_strcmp(pClassname, "player_manager") == 0) {
+		return g_pPlayerResource;
+	} else if(V_strcmp(pClassname, "gamerules_proxy") == 0) {
+		return g_pGameRulesProxy;
+	} else if(V_strcmp(pClassname, "soundent") == 0) {
+		return g_pSoundEnt;
+	} else if(V_strcmp(pClassname, "team_manager") == 0) {
+		return NULL;
+	} else if(V_strcmp(pClassname, "env_debughistory") == 0) {
+		return GetDebugHistory();
+	} else if(V_strcmp(pClassname, "recast_mgr") == 0) {
+		return GetRecastMgrEnt();
+	} else {
+		return NULL;
+	}
+}
+
 class CRespawnEntitiesFilter : public IMapEntityFilter
 {
 public:
 	virtual bool ShouldCreateEntity( const char *pClassname )
 	{
-		// Create everything but the world
-		return Q_stricmp( pClassname, "worldspawn" ) != 0;
+		if(IsStandardEntityClassname(pClassname))
+			return false;
+
+		return true;
 	}
 
 	virtual CBaseEntity* CreateNextEntity( const char *pClassname )
@@ -1848,11 +1893,6 @@ public:
 
 			// Allows us to immediately re-use the edict indices we just freed to avoid edict overflow
 			engine->AllowImmediateEdictReuse();
-
-			// Reset node counter used during load
-		#ifndef AI_USES_NAV_MESH
-			CNodeEnt::m_nNodeCount = 0;
-		#endif
 
 			CRespawnEntitiesFilter filter;
 			MapEntity_ParseAllEntities( engine->GetMapEntitiesString(), &filter, true );

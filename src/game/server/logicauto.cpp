@@ -39,7 +39,6 @@ private:
 
 	// fired for specified types of map loads
 	COutputEvent m_OnNewGame;
-	COutputEvent m_OnLoadGame;
 	COutputEvent m_OnMapTransition;
 	COutputEvent m_OnBackgroundMap;
 	COutputEvent m_OnMultiNewMap;
@@ -58,7 +57,6 @@ BEGIN_MAPENTITY( CLogicAuto )
 	// Outputs
 	DEFINE_OUTPUT(m_OnMapSpawn, "OnMapSpawn"),
 	DEFINE_OUTPUT(m_OnNewGame, "OnNewGame"),
-	DEFINE_OUTPUT(m_OnLoadGame, "OnLoadGame"),
 	DEFINE_OUTPUT(m_OnMapTransition, "OnMapTransition"),
 	DEFINE_OUTPUT(m_OnBackgroundMap, "OnBackgroundMap"),
 	DEFINE_OUTPUT(m_OnMultiNewMap, "OnMultiNewMap" ),
@@ -93,10 +91,6 @@ void CLogicAuto::Think(void)
 		else if (gpGlobals->eLoadType == MapLoad_NewGame)
 		{
 			m_OnNewGame.FireOutput(NULL, this);
-		}
-		else if (gpGlobals->eLoadType == MapLoad_LoadGame)
-		{
-			m_OnLoadGame.FireOutput(NULL, this);
 		}
 		else if (gpGlobals->eLoadType == MapLoad_Background)
 		{

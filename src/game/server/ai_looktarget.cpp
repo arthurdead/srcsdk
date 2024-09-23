@@ -115,7 +115,7 @@ CAI_LookTarget *CAI_LookTarget::GetFirstLookTarget()
 	}
 
 	pEnt = gEntList.FirstEnt();
-	while( pEnt && pEnt->m_iClassname != iszLookTarget )
+	while( pEnt && pEnt->GetClassnameStr() != iszLookTarget )
 	{
 		pEnt = gEntList.NextEnt( pEnt );
 	}
@@ -136,7 +136,7 @@ CAI_LookTarget *CAI_LookTarget::GetNextLookTarget( CAI_LookTarget *pCurrentTarge
 	}
 
 	pEnt = gEntList.NextEnt( pCurrentTarget );
-	while( pEnt && pEnt->m_iClassname != iszLookTarget )
+	while( pEnt && pEnt->GetClassnameStr() != iszLookTarget )
 	{
 		pEnt = gEntList.NextEnt( pEnt );
 	}

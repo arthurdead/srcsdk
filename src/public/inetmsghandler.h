@@ -116,7 +116,7 @@ public:
 	PROCESS_CLC_MESSAGE( RespondCvarValue ) = 0;
 	PROCESS_CLC_MESSAGE( FileCRCCheck ) = 0;
 	PROCESS_CLC_MESSAGE( FileMD5Check ) = 0;
-#if defined( REPLAY_ENABLED )
+#if defined( ENGINE_REPLAY_ENABLED )
 	PROCESS_CLC_MESSAGE( SaveReplay ) = 0;
 #endif
 	PROCESS_CLC_MESSAGE( CmdKeyValues ) = 0;

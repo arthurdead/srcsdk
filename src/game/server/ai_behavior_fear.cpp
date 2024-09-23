@@ -7,11 +7,6 @@
 #include "cbase.h"
 #include "ai_motor.h"
 #include "ai_behavior_fear.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_hint.h"
-#else
-#include "nav_area.h"
-#endif
 #include "ai_navigator.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -31,11 +26,6 @@ ConVar ai_fear_player_dist("ai_fear_player_dist", "720" );
 //-----------------------------------------------------------------------------
 CAI_FearBehavior::CAI_FearBehavior()
 {
-#ifndef AI_USES_NAV_MESH
-	ReleaseAllHints();
-#else
-	ReleaseAllAreas();
-#endif
 	m_SafePlaceMoveMonitor.ClearMark();
 }
 
@@ -57,14 +47,6 @@ void CAI_FearBehavior::StartTask( const Task_t *pTask )
 	{
 	case TASK_FEAR_IN_SAFE_PLACE:
 		// We've arrived! Lock the hint and set the marker. we're safe for now.
-	#ifndef AI_USES_NAV_MESH
-		m_hSafePlaceHint = m_hMovingToHint;
-		m_hSafePlaceHint->Lock( GetOuter() );
-		if (m_hFearGoal)
-			m_hFearGoal->m_OnArriveAtFearNode.FireOutput(m_hSafePlaceHint, GetOuter());
-	#else
-		m_pSafePlaceArea = m_pMovingToArea;
-	#endif
 		m_SafePlaceMoveMonitor.SetMark( GetOuter(), FEAR_SAFE_PLACE_TOLERANCE );
 		TaskComplete();
 		break;
@@ -112,76 +94,14 @@ void CAI_FearBehavior::RunTask( const Task_t *pTask )
 			{
 			case 0:// Find the hint node
 				{
-				#ifndef AI_USES_NAV_MESH
-					ReleaseAllHints();
-				#else
-					ReleaseAllAreas();
-				#endif
-				#ifndef AI_USES_NAV_MESH
-					CAI_Hint *pDest = FindFearWithdrawalDest();
-				#else
-					CNavArea *pDest = FindFearWithdrawalDest();
-				#endif
-
-					if( pDest == NULL )
-					{
-						TaskFail("Fear: Couldn't find hint node\n");
-						m_flDeferUntil = gpGlobals->curtime + 3.0f;// Don't bang the hell out of this behavior. If we don't find a node, take a short break and run regular AI.
-					}
-					else
-					{
-					#ifndef AI_USES_NAV_MESH
-						m_hMovingToHint.Set( pDest );
-					#else
-						m_pMovingToArea = pDest;
-					#endif
-						GetOuter()->TaskInterrupt();
-					}
+					TaskFail("Fear: Couldn't find hint node\n");
+					m_flDeferUntil = gpGlobals->curtime + 3.0f;// Don't bang the hell out of this behavior. If we don't find a node, take a short break and run regular AI.
 				}
 				break;
 
 			case 1:// Do the pathfinding.
 				{
-				#ifndef AI_USES_NAV_MESH
-					Assert( m_hMovingToHint != NULL );
-
-					AI_NavGoal_t goal(m_hMovingToHint->GetAbsOrigin());
-				#else
-					Assert( m_pMovingToArea != NULL );
-
-					AI_NavGoal_t goal(m_pMovingToArea->GetCenter());
-				#endif
-					goal.pTarget = NULL;
-					if( GetNavigator()->SetGoal( goal ) == false )
-					{
-					#ifndef AI_USES_NAV_MESH
-						m_hMovingToHint.Set( NULL );
-					#else
-						m_pMovingToArea = NULL;
-					#endif
-						// Do whatever we'd want to do if we can't find a path
-						/*
-						Msg("Can't path to the Fear Hint!\n");
-
-						AI_NavGoal_t nearGoal( GOALTYPE_LOCATION_NEAREST_NODE, m_hRallyPoint->GetAbsOrigin(), AIN_DEF_ACTIVITY, 256 );
-						if ( GetNavigator()->SetGoal( nearGoal, AIN_CLEAR_PREVIOUS_STATE ) )
-						{
-						//FIXME: HACK! The internal pathfinding is setting this without our consent, so override it!
-						ClearCondition( COND_TASK_FAILED );
-						GetNavigator()->SetArrivalDirection( m_hRallyPoint->GetAbsAngles() );
-						TaskComplete();
-						return;
-						}
-						*/
-					}
-					else
-					{
-					#ifndef AI_USES_NAV_MESH
-						GetNavigator()->SetArrivalDirection( m_hMovingToHint->GetAbsAngles() );
-					#else
-						GetNavigator()->SetArrivalDirection( vec3_origin );
-					#endif
-					}
+					TaskFail("Fear: Couldn't find hint node\n");
 				}
 				break;
 			}
@@ -224,16 +144,6 @@ bool CAI_FearBehavior::EnemyDislikesMe()
 //-----------------------------------------------------------------------------
 void CAI_FearBehavior::MarkAsUnsafe()
 {
-#ifndef AI_USES_NAV_MESH
-	Assert( m_hSafePlaceHint );
-#else
-	Assert( m_pSafePlaceArea != NULL );
-#endif
-
-	// Disable the node to stop anyone from picking it for a while.
-#ifndef AI_USES_NAV_MESH
-	m_hSafePlaceHint->DisableForSeconds( 5.0f );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -258,47 +168,6 @@ void CAI_FearBehavior::SpoilSafePlace()
 {
 	m_SafePlaceMoveMonitor.ClearMark();
 }
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-void CAI_FearBehavior::ReleaseAllHints()
-{
-	if( m_hSafePlaceHint )
-	{
-		// If I have a safe place, unlock it for others.
-		m_hSafePlaceHint->Unlock();
-
-		// Don't make it available right away. I probably left for a good reason.
-		// We also don't want to oscillate
-		m_hSafePlaceHint->DisableForSeconds( 4.0f );
-		m_hSafePlaceHint = NULL;
-	}
-
-	if( m_hMovingToHint )
-	{
-		m_hMovingToHint->Unlock();
-		m_hMovingToHint = NULL;
-	}
-
-	m_SafePlaceMoveMonitor.ClearMark();
-}
-#else
-void CAI_FearBehavior::ReleaseAllAreas()
-{
-	if( m_pSafePlaceArea )
-	{
-		m_pSafePlaceArea = NULL;
-	}
-
-	if( m_pMovingToArea )
-	{
-		m_pMovingToArea = NULL;
-	}
-
-	m_SafePlaceMoveMonitor.ClearMark();
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -421,28 +290,6 @@ void CAI_FearBehavior::GatherConditions()
 //-----------------------------------------------------------------------------
 void CAI_FearBehavior::BeginScheduleSelection()
 {
-#ifndef AI_USES_NAV_MESH
-	if( m_hSafePlaceHint )
-	{
-		// We think we're safe. Is it true?
-		if( !IsInASafePlace() )
-		{
-			// no! So mark it so.
-			ReleaseAllHints();
-		}
-	}
-#else
-	if( m_pSafePlaceArea )
-	{
-		// We think we're safe. Is it true?
-		if( !IsInASafePlace() )
-		{
-			// no! So mark it so.
-			ReleaseAllAreas();
-		}
-	}
-#endif
-
 	m_flTimePlayerLastVisible = gpGlobals->curtime;
 }
 
@@ -525,46 +372,6 @@ int CAI_FearBehavior::TranslateSchedule( int scheduleType )
 
 	return BaseClass::TranslateSchedule( scheduleType );
 }
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-#ifndef AI_USES_NAV_MESH
-CAI_Hint *CAI_FearBehavior::FindFearWithdrawalDest()
-{
-	CAI_Hint *pHint;
-	CHintCriteria hintCriteria;
-	CAI_BaseNPC *pOuter = GetOuter();
-
-	Assert(pOuter != NULL);
-
-	hintCriteria.AddHintType( HINT_PLAYER_ALLY_FEAR_DEST );
-	hintCriteria.SetFlag( bits_HINT_NODE_VISIBLE_TO_PLAYER | bits_HINT_NOT_CLOSE_TO_ENEMY /*| bits_HINT_NODE_IN_VIEWCONE | bits_HINT_NPC_IN_NODE_FOV*/ );
-	hintCriteria.AddIncludePosition( UTIL_GetNearestPlayer(GetAbsOrigin())->GetAbsOrigin(), ( ai_fear_player_dist.GetFloat() ) );
-
-	pHint = CAI_HintManager::FindHint( pOuter, hintCriteria );
-
-	if( pHint )
-	{
-		// Reserve this node while I try to get to it. When I get there I will lock it.
-		// Otherwise, if I fail to get there, the node will come available again soon.
-		pHint->DisableForSeconds( 4.0f );
-	}
-#if 0
-	else
-	{
-		Msg("DID NOT FIND HINT\n");
-		NDebugOverlay::Cross3D( GetOuter()->WorldSpaceCenter(), 32, 255, 255, 0, false, 10.0f );
-	}
-#endif
-
-	return pHint;
-}
-#else
-CNavArea *CAI_FearBehavior::FindFearWithdrawalDest()
-{
-	return NULL;
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // 

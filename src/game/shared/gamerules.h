@@ -162,10 +162,10 @@ enum
 };
 
 // This class has the data tables and gets the CGameRules data to the client.
-class CGameRulesProxy : public CBaseEntity
+class CGameRulesProxy : public CLogicalEntity
 {
 public:
-	DECLARE_CLASS( CGameRulesProxy, CBaseEntity );
+	DECLARE_CLASS( CGameRulesProxy, CLogicalEntity );
 	DECLARE_NETWORKCLASS();
 
 	CGameRulesProxy();
@@ -173,21 +173,15 @@ public:
 
 	virtual void Spawn( void );
 
-	// UNDONE: Is this correct, Mike?
-	// Don't carry these across a transition, they are recreated.
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
-
-	// ALWAYS transmit to all clients.
-	virtual int UpdateTransmitState( void );
-
 	// CGameRules chains its NetworkStateChanged calls to here, since this
 	// is the actual entity that will send the data.
 	static void NotifyNetworkStateChanged();
 
 private:
 	friend class CGameRules;
-	static CGameRulesProxy *s_pGameRulesProxy;
 };
+
+extern CGameRulesProxy *g_pGameRulesProxy;
 
 abstract_class CGameRules : public CMemZeroOnNew, public CAutoGameSystemPerFrame, public CGameEventListener
 {

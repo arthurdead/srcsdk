@@ -13,14 +13,6 @@
 #include "ndebugoverlay.h"
 #include "wcedit.h"
 
-#ifdef POSIX
-#include "ai_basenpc.h"
-#ifndef AI_USES_NAV_MESH
-#include "ai_network.h"
-#include "ai_networkmanager.h"
-#endif
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -155,26 +147,18 @@ void UTIL_DrawPositioningOverlay( float flCrossDistance )
 	Vector pRight;
 	pPlayer->EyeVectors( NULL, &pRight, NULL );
 
-#if defined _WIN32 && !defined AI_USES_NAV_MESH
-	Vector topPos		= NWCEdit::AirNodePlacementPosition();
-#else
-        Vector pForward;
-        pPlayer->EyeVectors( &pForward );
+    Vector pForward;
+    pPlayer->EyeVectors( &pForward );
 
-        Vector  floorVec = pForward;
-        floorVec.z = 0;
-        VectorNormalize( floorVec );
-        VectorNormalize( pForward );
+    Vector  floorVec = pForward;
+    floorVec.z = 0;
+    VectorNormalize( floorVec );
+    VectorNormalize( pForward );
 
-        float cosAngle = DotProduct(floorVec,pForward);
+    float cosAngle = DotProduct(floorVec,pForward);
 
-    #ifndef AI_USES_NAV_MESH
-        float lookDist = g_pAINetworkManager->GetEditOps()->m_flAirEditDistance/cosAngle;
-    #else
-        float lookDist = 300.0f/cosAngle;
-    #endif
-        Vector topPos = pPlayer->EyePosition()+pForward * lookDist;
-#endif
+    float lookDist = 300.0f/cosAngle;
+    Vector topPos = pPlayer->EyePosition()+pForward * lookDist;
 
 	Vector bottomPos	= topPos;
 	bottomPos.z			= GetLongFloorZ(bottomPos);
