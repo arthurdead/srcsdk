@@ -4,20 +4,16 @@
 //
 //=====================================================================================//
 
-#include "VKeyboardMouse.h"
-#include "VFooterPanel.h"
-#include "VDropDownMenu.h"
-#include "VSliderControl.h"
-#include "VHybridButton.h"
-#include "EngineInterface.h"
+#include "vkeyboardmouse.h"
+#include "vfooterpanel.h"
+#include "vdropdownmenu.h"
+#include "vslidercontrol.h"
+#include "vhybridbutton.h"
+#include "engineinterface.h"
 #include "gameui_util.h"
 #include "vgui/ISurface.h"
-#include "VGenericConfirmation.h"
+#include "vgenericconfirmation.h"
 #include "materialsystem/materialsystem_config.h"
-
-#ifdef _X360
-#include "xbox/xbox_launch.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

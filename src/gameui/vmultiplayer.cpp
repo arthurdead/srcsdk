@@ -4,27 +4,22 @@
 //
 //=====================================================================================//
 
-#include "VMultiplayer.h"
-#include "VFooterPanel.h"
-#include "VDropDownMenu.h"
-#include "VSliderControl.h"
-#include "VHybridButton.h"
-#include "vgui_controls/fileopendialog.h"
-#include "vgui_controls/textentry.h"
-#include "vgui_controls/combobox.h"
-#include "vgui_controls/imagepanel.h"
+#include "vmultiplayer.h"
+#include "vfooterpanel.h"
+#include "vdropdownmenu.h"
+#include "vslidercontrol.h"
+#include "vhybridbutton.h"
+#include "vgui_controls/FileOpenDialog.h"
+#include "vgui_controls/TextEntry.h"
+#include "vgui_controls/ComboBox.h"
+#include "vgui_controls/ImagePanel.h"
 #include "gameui_util.h"
 #include "vgui/ISurface.h"
-#include "EngineInterface.h"
+#include "engineinterface.h"
 #include "filesystem.h"
 #include "fmtstr.h"
-#include "cdll_util.h"
 #include "nb_header_footer.h"
 #include "materialsystem/materialsystem_config.h"
-
-#ifdef _X360
-#include "xbox/xbox_launch.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

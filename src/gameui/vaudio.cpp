@@ -15,7 +15,6 @@
 #include "vgenericconfirmation.h"
 #include "ivoicetweak.h"
 #include "materialsystem/materialsystem_config.h"
-#include "cdll_util.h"
 #include "nb_header_footer.h"
 #include "vgui_controls/ImagePanel.h"
 

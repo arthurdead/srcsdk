@@ -20,6 +20,7 @@
 #include "tier0/dbg.h"
 #include "Color.h"
 #include "tier0/memdbgon.h"
+#include "common/module_name.h"
 
 //-----------------------------------------------------------------------------
 // Statically constructed list of ConCommandBases, 
@@ -31,18 +32,25 @@ static int s_nCVarFlag = 0;
 static int s_nDLLIdentifier = -1;	// A unique identifier indicating which DLL this convar came from
 static bool s_bRegistered = false;
 
-class CDefaultAccessor : public IConCommandBaseAccessor
+bool CDefaultAccessor::RegisterConCommandBase( ConCommandBase *pVar )
 {
-public:
-	virtual bool RegisterConCommandBase( ConCommandBase *pVar )
-	{
-		// Link to engine's list instead
-		g_pCVar->RegisterConCommand( pVar );
-		return true;
+	if(cvar->FindCommandBase(pVar->GetName()) != NULL) {
+		DevMsg("%s dll tried to re-register con var/command named %s\n", modulename::dll, pVar->GetName());
 	}
-};
 
-static CDefaultAccessor s_DefaultAccessor;
+	// Link to engine's list instead
+	g_pCVar->RegisterConCommand( pVar );
+
+	char const *pValue = g_pCVar->GetCommandLineValue( pVar->GetName() );
+	if( pValue && !pVar->IsCommand() )
+	{
+		( ( ConVar * )pVar )->SetValue( pValue );
+	}
+
+	return true;
+}
+
+CDefaultAccessor s_DefaultAccessor;
 
 static void ModifyFlags(int &flags)
 {
@@ -164,9 +172,8 @@ void ConCommandBase::CreateBase( const char *pName, const char *pHelpString /*= 
 	m_pszName = pName;
 	m_pszHelpString = pHelpString ? pHelpString : "";
 
-	ModifyFlags( flags );
-
 	m_nFlags = flags;
+	ModifyFlags( m_nFlags );
 
 	if ( !IsFlagSet(FCVAR_UNREGISTERED) )
 	{
@@ -225,7 +232,7 @@ const char *ConCommandBase::GetName( void ) const
 //-----------------------------------------------------------------------------
 bool ConCommandBase::IsFlagSet( int flag ) const
 {
-	return ( flag & m_nFlags ) ? true : false;
+	return ( flag & GetFlags() ) ? true : false;
 }
 
 //-----------------------------------------------------------------------------
@@ -235,7 +242,6 @@ bool ConCommandBase::IsFlagSet( int flag ) const
 void ConCommandBase::AddFlags( int flags )
 {
 	m_nFlags |= flags;
-
 	ModifyFlags( m_nFlags );
 }
 
@@ -718,26 +724,22 @@ const char *ConVar::GetHelpText( void ) const
 void ConVar::AddFlags( int flags )
 {
 	m_nFlags |= flags;
+	ModifyFlags( m_nFlags );
 
 	if(m_pParent && m_pParent != this) {
-		m_pParent->m_nFlags = m_nFlags;
+		m_pParent->m_nFlags |= flags;
+		ModifyFlags( m_pParent->m_nFlags );
 	}
 }
 
 bool ConVar::IsRegistered( void ) const
 {
-	if(m_pParent)
-		return m_pParent->m_bRegistered;
-	else
-		return m_bRegistered;
+	return m_bRegistered;
 }
 
 const char *ConVar::GetName( void ) const
 {
-	if(m_pParent)
-		return m_pParent->m_pszName;
-	else
-		return m_pszName;
+	return m_pszName;
 }
 
 //-----------------------------------------------------------------------------
@@ -868,8 +870,19 @@ void ConVar::ChangeStringValue( const char *tempVal, float flOldValue )
 				m_fnChangeCallback( this, pszOldValue, flOldValue );
 			}
 
-			if(IsRegistered())
+			/*
+			engine calls IClientRenderTargets->InitClientRenderTargets before IBaseClientDLL::Init
+
+			which leads to:
+
+			engine ->
+				IClientRenderTargets->InitClientRenderTargets ->
+					IClientShadowMgr::InitRenderTargets ->
+						r_flashlightdepthres.SetValue -> crash because convars arent registered yet
+			*/
+			if(IsRegistered()) {
 				g_pCVar->CallGlobalChangeCallbacks( this, pszOldValue, flOldValue );
+			}
 		}
 	} else {
 		if (V_strcmp(pszOldValue, m_pParent->m_pszString) != 0)
@@ -1017,6 +1030,51 @@ void ConVar::InternalSetIntValue( int nValue )
 	}
 }
 
+void ConVar::InternalSetBoolValue( bool nValue )
+{
+	if ( nValue == (m_pParent ? m_pParent->m_nValue : m_nValue) )
+		return;
+
+	if ( IsFlagSet( FCVAR_MATERIAL_THREAD_MASK ) )
+	{
+		if ( g_pCVar && !g_pCVar->IsMaterialThreadSetAllowed() )
+		{
+			g_pCVar->QueueMaterialThreadSetValue( this, nValue );
+			return;
+		}
+	}
+
+	float fValue = nValue ? 1.0f : 0.0f;
+	if ( ClampValue( fValue ) )
+	{
+		if(fValue > 0.0f)
+			nValue = true;
+		else
+			nValue = false;
+	}
+
+	// Redetermine value
+	float flOldValue = (m_pParent ? m_pParent->m_fValue : m_fValue);
+	m_fValue		= fValue;
+	m_nValue		= nValue;
+
+	if(m_pParent && m_pParent != this) {
+		m_pParent->m_fValue = m_fValue;
+		m_pParent->m_nValue = m_nValue;
+	}
+
+	if ( !IsFlagSet(FCVAR_NEVER_AS_STRING ) )
+	{
+		char tempVal[ 32 ];
+		Q_snprintf( tempVal, sizeof( tempVal ), "%d", (m_pParent ? m_pParent->m_nValue : m_nValue) );
+		ChangeStringValue( tempVal, flOldValue );
+	}
+	else
+	{
+		Assert( !m_fnChangeCallback );
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Private creation
 //-----------------------------------------------------------------------------
@@ -1084,6 +1142,11 @@ void ConVar::SetValue( int value )
 	InternalSetIntValue( value );
 }
 
+void ConVar::SetValue( bool value )
+{
+	InternalSetBoolValue( value );
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Reset to default value
 //-----------------------------------------------------------------------------
@@ -1146,6 +1209,122 @@ void ConVar::SetDefault( const char *pszDefault )
 	}
 }
 
+ConVar_ServerBounded *ConVar::GetServerBounded()
+{
+	ConVar_ServerBounded *pServer = dynamic_cast<ConVar_ServerBounded *>(this);
+	if(!pServer && m_pParent)
+		pServer = dynamic_cast<ConVar_ServerBounded *>(m_pParent);
+	return pServer;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Return ConVar value as a float
+// Output : float
+//-----------------------------------------------------------------------------
+float ConVar::GetBaseFloatValue( void ) const
+{
+	if(m_pParent)
+		return m_pParent->m_fValue;
+	else
+		return m_fValue;
+}
+
+float ConVar::GetFloat( void ) const
+{
+	const ConVar_ServerBounded *pServer = GetServerBounded();
+	if(pServer)
+		return pServer->GetFloat();
+	else
+		return GetBaseFloatValue();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Return ConVar value as an int
+// Output : int
+//-----------------------------------------------------------------------------
+int ConVar::GetBaseIntValue( void ) const 
+{
+	if(m_pParent)
+		return m_pParent->m_nValue;
+	else
+		return m_nValue;
+}
+
+int ConVar::GetInt( void ) const 
+{
+	const ConVar_ServerBounded *pServer = GetServerBounded();
+	if(pServer)
+		return pServer->GetInt();
+	else
+		return GetBaseIntValue();
+}
+
+bool ConVar::GetBaseBoolValue( void ) const 
+{
+	if(m_pParent)
+		return m_pParent->m_nValue != 0;
+	else
+		return m_nValue != 0;
+}
+
+bool ConVar::GetBool( void ) const 
+{
+	const ConVar_ServerBounded *pServer = GetServerBounded();
+	if(pServer)
+		return pServer->GetBool();
+	else
+		return GetBaseBoolValue();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Return ConVar value as a string, return "" for bogus string pointer, etc.
+// Output : const char *
+//-----------------------------------------------------------------------------
+const char *ConVar::GetString( void ) const 
+{
+	if ( IsFlagSet( FCVAR_NEVER_AS_STRING ) )
+		return "FCVAR_NEVER_AS_STRING";
+
+	if(m_pParent)
+		return m_pParent->m_pszString ? m_pParent->m_pszString : "";
+	else
+		return m_pszString ? m_pszString : "";
+}
+
+void CONVAR_StringToColor( Color &color, const char *pString )
+{
+	char tempString[128];
+	int	j;
+
+	V_strcpy_safe( tempString, pString );
+	const char *pfront;
+	const char* pstr = pfront = tempString;
+
+	for ( j = 0; j < 4; j++ )
+	{
+		color[j] = atoi( pfront );
+
+		while ( *pstr && *pstr != ' ' )
+			pstr++;
+		if ( !*pstr )
+			break;
+		pstr++;
+		pfront = pstr;
+	}
+
+	for ( j++; j < 4; j++ )
+	{
+		color[j] = 0;
+	}
+}
+
+Color ConVar::GetColor() const
+{
+	Color clr;
+	CONVAR_StringToColor( clr, GetString() );
+	return clr;
+}
+
 //-----------------------------------------------------------------------------
 // This version is simply used to make reading convars simpler.
 // Writing convars isn't allowed in this mode
@@ -1159,7 +1338,6 @@ void ConVarRef::Init( const char *pName, bool bIgnoreMissing )
 	{
 		m_pConVar = &s_EmptyConVar;
 	}
-	m_pConVarState = static_cast< ConVar * >( m_pConVar );
 	if( !IsValid() )
 	{
 		static bool bFirst = true;
@@ -1176,8 +1354,12 @@ void ConVarRef::Init( const char *pName, bool bIgnoreMissing )
 
 ConVarRef::ConVarRef( IConVar *pConVar )
 {
+	m_pConVar = (ConVar *)(pConVar ? pConVar : static_cast<IConVar *>(&s_EmptyConVar));
+}
+
+ConVarRef::ConVarRef( ConVar *pConVar )
+{
 	m_pConVar = pConVar ? pConVar : &s_EmptyConVar;
-	m_pConVarState = static_cast< ConVar * >( m_pConVar );
 }
 
 bool ConVarRef::IsValid() const
@@ -1321,10 +1503,10 @@ void ConVar_PrintDescription( const ConCommandBase *pVar )
 		ConMsg( "\n" );
 
 		// Handled virtualized cvars.
-		if ( pBounded && fabs( pBounded->GetFloat() - var->GetFloat() ) > 0.0001f )
+		if ( pBounded && fabs( pBounded->GetFloat() - pBounded->GetBaseFloatValue() ) > 0.0001f )
 		{
 			ConColorMsg( clr, "** NOTE: The real value is %.3f but the server has temporarily restricted it to %.3f **\n",
-				var->GetFloat(), pBounded->GetFloat() );
+				pBounded->GetBaseFloatValue(), pBounded->GetFloat() );
 		}
 	}
 	else

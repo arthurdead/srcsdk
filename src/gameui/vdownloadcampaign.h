@@ -7,7 +7,7 @@
 #ifndef __VDOWNLOADCAMPAIGN_H__
 #define __VDOWNLOADCAMPAIGN_H__
 
-#include "vgui_controls/CvarToggleCheckButton.h"
+#include "gameui_cvartogglecheckbutton.h"
 #include "gameui_util.h"
 
 #include "basemodui.h"
@@ -30,7 +30,7 @@ protected:
 	void UpdateText();
 
 private:
-//	vgui::CvarToggleCheckButton<CGameUIConVarRef> *m_pDoNotShowWarning;
+//	CGameUICvarToggleCheckButton *m_pDoNotShowWarning;
 
 	CUtlString m_campaignName;
 	CUtlString m_author;

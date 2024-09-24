@@ -11,6 +11,7 @@
 #include "IGameUIFuncs.h"
 #include "tier1/KeyValues.h"
 #include "tier1/convar.h"
+#include "gameui_util.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -64,7 +65,7 @@ void CCvarTextEntry::ApplyChanges( bool immediate )
 	if ( immediate )
 	{
 		// set immediately - don't wait for the next frame
-		ConVarRef newCvar( m_pszCvarName );
+		CGameUIConVarRef newCvar( m_pszCvarName );
 		newCvar.SetValue( szText );
 	}
 	else
@@ -80,7 +81,7 @@ void CCvarTextEntry::ApplyChanges( bool immediate )
 void CCvarTextEntry::Reset()
 {
 //	char *value = engine->pfnGetCvarString( m_pszCvarName );
-	ConVarRef var( m_pszCvarName );
+	CGameUIConVarRef var( m_pszCvarName );
 	if ( !var.IsValid() )
 		return;
 	const char *value = var.GetString();

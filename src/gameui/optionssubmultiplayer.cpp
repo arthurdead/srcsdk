@@ -33,7 +33,6 @@
 #include <vgui_controls/MessageBox.h>
 
 #include "cvartextentry.h"
-#include "cvartogglecheckbutton.h"
 #include "cvarslider.h"
 #include "labeledcommandcombobox.h"
 #include "filesystem.h"
@@ -106,7 +105,7 @@ class CrosshairImagePanel : public ImagePanel
 {
 	typedef ImagePanel BaseClass;
 public:
-	CrosshairImagePanel( Panel *parent, const char *name, CCvarToggleCheckButton *pAdditive );
+	CrosshairImagePanel( Panel *parent, const char *name, CGameUICvarToggleCheckButton *pAdditive );
 
 	virtual void Paint();
 
@@ -116,12 +115,12 @@ protected:
 	int m_R, m_G, m_B;
 	int m_barSize;
 	int m_barGap;
-	CCvarToggleCheckButton *m_pAdditive;
-	int m_iCrosshairTextureID;
+	CGameUICvarToggleCheckButton *m_pAdditive;
+	vgui::HTexture m_iCrosshairTextureID;
 };
 
 //-----------------------------------------------------------------------------
-CrosshairImagePanel::CrosshairImagePanel( Panel *parent, const char *name, CCvarToggleCheckButton *pAdditive ) : ImagePanel( parent, name )
+CrosshairImagePanel::CrosshairImagePanel( Panel *parent, const char *name, CGameUICvarToggleCheckButton *pAdditive ) : ImagePanel( parent, name )
 {
 	m_pAdditive = pAdditive;
 	UpdateCrosshair( 50, 250, 50, 0 );
@@ -205,7 +204,7 @@ void CrosshairImagePanel::Paint()
 	int a = 200;
 	if ( !additive )
 	{
-		ConVarRef cl_crosshairalpha( "cl_crosshairalpha" );
+		CGameUIConVarRef cl_crosshairalpha( "cl_crosshairalpha" );
 		if ( cl_crosshairalpha.IsValid() )
 		{
 			a = clamp( cl_crosshairalpha.GetInt(), 0, 255 );
@@ -241,7 +240,7 @@ protected:
 	float m_flScale;
 
 	// material
-	int				m_iCrosshairTextureID;
+	vgui::HTexture				m_iCrosshairTextureID;
 	IVguiMatInfo	*m_pAdvCrosshair;
 
 	// animation
@@ -363,7 +362,7 @@ void AdvancedCrosshairImagePanel::Paint()
 	vgui::surface()->DrawSetColor( m_R, m_G, m_B, 255 );
 	vgui::surface()->DrawSetTexture( m_iCrosshairTextureID );
 	vgui::surface()->DrawTexturedRect( x, y, x+flDrawWidth, y+flDrawWidth );
-	vgui::surface()->DrawSetTexture(0);
+	vgui::surface()->DrawSetTexture(vgui::INVALID_TEXTURE);
 }
 
 //-----------------------------------------------------------------------------
@@ -394,7 +393,7 @@ COptionsSubMultiplayer::COptionsSubMultiplayer(vgui::Panel *parent) : vgui::Prop
 	m_pSecondaryColorSlider = new CCvarSlider( this, "Secondary Color Slider", "#GameUI_SecondaryColor",
 		0.0f, 255.0f, "bottomcolor" );
 
-	m_pHighQualityModelCheckBox = new CCvarToggleCheckButton( this, "High Quality Models", "#GameUI_HighModels", "cl_himodels" );
+	m_pHighQualityModelCheckBox = new CGameUICvarToggleCheckButton( this, "High Quality Models", "#GameUI_HighModels", "cl_himodels" );
 
 	m_pModelList = new CLabeledCommandComboBox( this, "Player model" );
 	m_ModelName[0] = 0;
@@ -420,7 +419,7 @@ COptionsSubMultiplayer::COptionsSubMultiplayer(vgui::Panel *parent) : vgui::Prop
 	// crosshair controls
 	m_pCrosshairColorComboBox = new ComboBox(this, "CrosshairColorComboBox", 6, false);
 	m_pCrosshairSize = new CLabeledCommandComboBox(this, "CrosshairSizeComboBox");
-	m_pCrosshairTranslucencyCheckbox = new CCvarToggleCheckButton(this, "CrosshairTranslucencyCheckbox", "#GameUI_Translucent", "cl_crosshairusealpha");
+	m_pCrosshairTranslucencyCheckbox = new CGameUICvarToggleCheckButton(this, "CrosshairTranslucencyCheckbox", "#GameUI_Translucent", "cl_crosshairusealpha");
 	m_pCrosshairImage = new CrosshairImagePanel( this, "CrosshairImage", m_pCrosshairTranslucencyCheckbox );
 
 	// advanced crosshair controls
@@ -1835,7 +1834,7 @@ void COptionsSubMultiplayer::InitLogoList( CLabeledCommandComboBox *cb )
 	FileFindHandle_t fh;
 	char directory[ 512 ];
 
-	ConVarRef cl_logofile( "cl_logofile" );
+	CGameUIConVarRef cl_logofile( "cl_logofile" );
 	if ( !cl_logofile.IsValid() )
 		return;
 
@@ -1930,7 +1929,7 @@ void StripStringOutOfString( const char *pPattern, const char *pIn, char *pOut )
 
 void FindVMTFilesInFolder( const char *pFolder, const char *pFolderName, CLabeledCommandComboBox *cb, int &iCount, int &iInitialItem )
 {
-	ConVarRef cl_modelfile( "cl_playermodel" );
+	CGameUIConVarRef cl_modelfile( "cl_playermodel" );
 	if ( !cl_modelfile.IsValid() )
 		return;
 
@@ -2022,7 +2021,7 @@ void COptionsSubMultiplayer::InitModelList( CLabeledCommandComboBox *cb )
 void COptionsSubMultiplayer::InitCrosshairColorEntries()
 {
 	// parse the string for the custom color settings and get the initial settings.
-	ConVarRef cl_crosshaircolor( "cl_crosshaircolor" );
+	CGameUIConVarRef cl_crosshaircolor( "cl_crosshaircolor" );
 	int index = 0;
 	if ( cl_crosshaircolor.IsValid() )
 	{
@@ -2077,7 +2076,7 @@ void COptionsSubMultiplayer::RedrawCrosshairImage()
 		selectedVal = m_pCrosshairColorComboBox->GetActiveItem();
 	}
 
-	ConVarRef cl_crosshaircolor( "cl_crosshaircolor" );
+	CGameUIConVarRef cl_crosshaircolor( "cl_crosshaircolor" );
 	if ( cl_crosshaircolor.IsValid() )
 	{
 		actualVal = clamp( cl_crosshaircolor.GetInt(), 0, NumCrosshairColors );
@@ -2156,7 +2155,7 @@ void COptionsSubMultiplayer::InitCrosshairSizeList(CLabeledCommandComboBox *cb)
 
 	// parse out the size value from the cvar and set the initial value.
 	int initialScale = 0;
-	ConVarRef cl_crosshairscale( "cl_crosshairscale" );
+	CGameUIConVarRef cl_crosshairscale( "cl_crosshairscale" );
 	if ( cl_crosshairscale.IsValid() )
 	{
 		initialScale = cl_crosshairscale.GetInt();
@@ -2189,7 +2188,7 @@ void COptionsSubMultiplayer::InitAdvCrosshairStyleList(CLabeledCommandComboBox *
 	FileFindHandle_t fh;
 	char directory[ 512 ];
 
-	ConVarRef cl_crosshair_file( "cl_crosshair_file" );
+	CGameUIConVarRef cl_crosshair_file( "cl_crosshair_file" );
 	if ( !cl_crosshair_file.IsValid() )
 		return;
 
@@ -2506,7 +2505,7 @@ void COptionsSubMultiplayer::OnResetData()
 	if ( m_pDownloadFilterCombo )
 	{
 		// cl_downloadfilter
-		ConVarRef  cl_downloadfilter( "cl_downloadfilter" );
+		CGameUIConVarRef  cl_downloadfilter( "cl_downloadfilter" );
 
 		if ( Q_stricmp( cl_downloadfilter.GetString(), "none" ) == 0 )
 		{
@@ -2537,7 +2536,7 @@ void COptionsSubMultiplayer::OnApplyChanges()
 
 	for ( int i=0; i<m_cvarToggleCheckButtons.GetCount(); ++i )
 	{
-		CCvarToggleCheckButton *toggleButton = m_cvarToggleCheckButtons[i];
+		CGameUICvarToggleCheckButton *toggleButton = m_cvarToggleCheckButtons[i];
 		if( toggleButton->IsVisible() && toggleButton->IsEnabled() )
 		{
 			toggleButton->ApplyChanges();
@@ -2604,7 +2603,7 @@ void COptionsSubMultiplayer::OnApplyChanges()
 	// set the DownloadFilter cvar
 	if ( m_pDownloadFilterCombo )
 	{
-		ConVarRef  cl_downloadfilter( "cl_downloadfilter" );
+		CGameUIConVarRef  cl_downloadfilter( "cl_downloadfilter" );
 		
 		switch ( m_pDownloadFilterCombo->GetActiveItem() )
 		{
@@ -2646,7 +2645,7 @@ Panel *COptionsSubMultiplayer::CreateControlByName( const char *controlName )
 {
 	if( !Q_stricmp( "CCvarToggleCheckButton", controlName ) )
 	{
-		CCvarToggleCheckButton *newButton = new CCvarToggleCheckButton( this, controlName, "", "" );
+		CGameUICvarToggleCheckButton *newButton = new CGameUICvarToggleCheckButton( this, controlName, "", "" );
 		m_cvarToggleCheckButtons.AddElement( newButton );
 		return newButton;
 	}

@@ -21,7 +21,7 @@ class CCommand;
 //-----------------------------------------------------------------------------
 // Purpose: Implementation of GameUI's exposed interface 
 //-----------------------------------------------------------------------------
-class CGameUI : public IGameUI
+class CGameUI : public IGameUIEx
 {
 public:
 	CGameUI();
@@ -50,12 +50,12 @@ public:
 	// notifications
 	virtual void OnGameUIActivated();
 	virtual void OnGameUIHidden();
-	virtual void OLD_OnConnectToServer( const char *game, int IP, int port );	// OLD: use OnConnectToServer2
-	virtual void OnConnectToServer2( const char *game, int IP, int connectionPort, int queryPort );
+	virtual void DO_NOT_USE_OnConnectToServer( const char *game, int IP, int port );	// OLD: use OnConnectToServer2
+	virtual void OnConnectToServer( const char *game, int IP, int connectionPort, int queryPort );
 	virtual void OnDisconnectFromServer( uint8 eSteamLoginFailure );
 	virtual void OnLevelLoadingStarted( const char *levelName, bool bShowProgressDialog );
 	virtual void OnLevelLoadingFinished( bool bError, const char *failureReason, const char *extendedReason );
-	virtual void OnDisconnectFromServer_OLD( uint8 eSteamLoginFailure, const char *username ) { OnDisconnectFromServer( eSteamLoginFailure ); }
+	virtual void DO_NOT_USE_OnDisconnectFromServer( uint8 eSteamLoginFailure, const char *username ) { OnDisconnectFromServer( eSteamLoginFailure ); }
 
 	// progress
 	virtual bool UpdateProgressBar(float progress, const char *statusText);
@@ -71,10 +71,6 @@ public:
 
  	virtual void SetProgressOnStart();
  
-#if defined( _X360 ) && defined( _DEMO )
-	virtual void OnDemoTimeout();
-#endif
-
  	// state
  	bool IsInLevel();
  	bool IsInBackgroundLevel();

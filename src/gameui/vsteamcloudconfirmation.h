@@ -7,7 +7,7 @@
 #ifndef __VSTEAMCLOUDCONFIRMATION_H__
 #define __VSTEAMCLOUDCONFIRMATION_H__
 
-#include "vgui_controls/CvarToggleCheckButton.h"
+#include "gameui_cvartogglecheckbutton.h"
 #include "gameui_util.h"
 
 #include "basemodui.h"
@@ -26,7 +26,7 @@ protected:
 	virtual void OnThink();
 
 private:
-	vgui::CvarToggleCheckButton<CGameUIConVarRef> *m_pSteamCloudCheckBox;
+	CGameUICvarToggleCheckButton *m_pSteamCloudCheckBox;
 };
 
 };

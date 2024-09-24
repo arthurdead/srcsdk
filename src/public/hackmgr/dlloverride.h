@@ -5,11 +5,15 @@
 
 #include "hackmgr.h"
 
+#ifndef SWDS
 class IVideoServices;
+#endif
 class IPhysics;
 
+#ifndef SWDS
 HACKMGR_API bool HackMgr_IsSafeToSwapVideoServices();
 HACKMGR_API void HackMgr_SetEngineVideoServicesPtr(IVideoServices *pOldInter, IVideoServices *pNewInter);
+#endif
 
 HACKMGR_API bool HackMgr_IsSafeToSwapPhysics();
 HACKMGR_API void HackMgr_SetEnginePhysicsPtr(IPhysics *pOldInter, IPhysics *pNewInter);

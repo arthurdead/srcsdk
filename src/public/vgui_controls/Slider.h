@@ -188,6 +188,8 @@ protected:
 	float _value;		// the position of the Slider, in coordinates as specified by SetRange/SetRangeWindow
 };
 
+typedef FloatSlider Slider;
+
 }
 
 #endif // SLIDER_H

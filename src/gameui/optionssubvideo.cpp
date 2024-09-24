@@ -18,7 +18,6 @@
 #include "vgui_controls/ComboBox.h"
 #include "vgui_controls/Frame.h"
 #include "vgui_controls/QueryBox.h"
-#include "CvarToggleCheckButton.h"
 #include "tier1/KeyValues.h"
 #include "vgui/IInput.h"
 #include "vgui/ILocalize.h"
@@ -26,6 +25,7 @@
 #include "tier0/icommandline.h"
 #include "tier1/convar.h"
 #include "modinfo.h"
+#include "gameui_util.h"
 
 #include "inetchannelinfo.h"
 
@@ -378,7 +378,7 @@ public:
 			m_pShadowDetail->AddItem("#gameui_high", NULL);
 		}
 
-		ConVarRef mat_dxlevel( "mat_dxlevel" );
+		CGameUIConVarRef mat_dxlevel( "mat_dxlevel" );
 
 		m_pHDR = new ComboBox( this, "HDR", 6, false );
 		m_pHDR->AddItem("#GameUI_hdr_level0", NULL);
@@ -508,7 +508,7 @@ public:
 
 	MESSAGE_FUNC( ResetDXLevelCombo, "ResetDXLevelCombo" )
 	{
-		ConVarRef mat_dxlevel( "mat_dxlevel" );
+		CGameUIConVarRef mat_dxlevel( "mat_dxlevel" );
 		for (int i = 0; i < m_pDXLevel->GetItemCount(); i++)
 		{
 			KeyValues *kv = m_pDXLevel->GetItemUserData(i);
@@ -522,7 +522,7 @@ public:
 		// Reset HDR too
 		if ( m_pHDR->IsEnabled() )
 		{
-			ConVarRef mat_hdr_level("mat_hdr_level");
+			CGameUIConVarRef mat_hdr_level("mat_hdr_level");
 			Assert( mat_hdr_level.IsValid() );
 			m_pHDR->ActivateItem( clamp( mat_hdr_level.GetInt(), 0, 2 ) );
 		}
@@ -695,7 +695,7 @@ public:
 
 		if( m_pHDR->IsEnabled() )
 		{
-			ConVarRef mat_hdr_level("mat_hdr_level");
+			CGameUIConVarRef mat_hdr_level("mat_hdr_level");
 			Assert( mat_hdr_level.IsValid() );
 			mat_hdr_level.SetValue(m_pHDR->GetActiveItem());
 		}
@@ -756,24 +756,24 @@ public:
 
 	virtual void OnResetData()
 	{
-		ConVarRef mat_dxlevel( "mat_dxlevel" );
-		ConVarRef r_rootlod( "r_rootlod" );
-		ConVarRef mat_picmip( "mat_picmip" );
-		ConVarRef mat_trilinear( "mat_trilinear" );
-		ConVarRef mat_forceaniso( "mat_forceaniso" );
-		ConVarRef mat_antialias( "mat_antialias" );
-		ConVarRef mat_aaquality( "mat_aaquality" );
-		ConVarRef mat_vsync( "mat_vsync" );
-		ConVarRef r_flashlightdepthtexture( "r_flashlightdepthtexture" );
+		CGameUIConVarRef mat_dxlevel( "mat_dxlevel" );
+		CGameUIConVarRef r_rootlod( "r_rootlod" );
+		CGameUIConVarRef mat_picmip( "mat_picmip" );
+		CGameUIConVarRef mat_trilinear( "mat_trilinear" );
+		CGameUIConVarRef mat_forceaniso( "mat_forceaniso" );
+		CGameUIConVarRef mat_antialias( "mat_antialias" );
+		CGameUIConVarRef mat_aaquality( "mat_aaquality" );
+		CGameUIConVarRef mat_vsync( "mat_vsync" );
+		CGameUIConVarRef r_flashlightdepthtexture( "r_flashlightdepthtexture" );
 #ifndef _X360
-		ConVarRef r_waterforceexpensive( "r_waterforceexpensive" );
+		CGameUIConVarRef r_waterforceexpensive( "r_waterforceexpensive" );
 #endif
-		ConVarRef r_waterforcereflectentities( "r_waterforcereflectentities" );
-		ConVarRef mat_reducefillrate("mat_reducefillrate" );
-		ConVarRef mat_hdr_level( "mat_hdr_level" );
-		ConVarRef mat_colorcorrection( "mat_colorcorrection" );
-		ConVarRef mat_motion_blur_enabled( "mat_motion_blur_enabled" );
-		ConVarRef r_shadowrendertotexture( "r_shadowrendertotexture" );
+		CGameUIConVarRef r_waterforcereflectentities( "r_waterforcereflectentities" );
+		CGameUIConVarRef mat_reducefillrate("mat_reducefillrate" );
+		CGameUIConVarRef mat_hdr_level( "mat_hdr_level" );
+		CGameUIConVarRef mat_colorcorrection( "mat_colorcorrection" );
+		CGameUIConVarRef mat_motion_blur_enabled( "mat_motion_blur_enabled" );
+		CGameUIConVarRef r_shadowrendertotexture( "r_shadowrendertotexture" );
 
 		ResetDXLevelCombo();
 
@@ -918,7 +918,7 @@ public:
 			if ( !GameUI().IsInMultiplayer() )
 				return false;
 
-			ConVarRef mat_dxlevel( "mat_dxlevel" );
+			CGameUIConVarRef mat_dxlevel( "mat_dxlevel" );
 			KeyValues *pUserData = m_pDXLevel->GetActiveItemUserData();
 			Assert( pUserData );
 			if ( pUserData && mat_dxlevel.GetInt() != pUserData->GetInt("dxlevel") )
@@ -929,7 +929,7 @@ public:
 			// HDR changed?
 			if ( m_pHDR->IsEnabled() )
 			{
-				ConVarRef mat_hdr_level("mat_hdr_level");
+				CGameUIConVarRef mat_hdr_level("mat_hdr_level");
 				Assert( mat_hdr_level.IsValid() );
 				if ( mat_hdr_level.GetInt() != m_pHDR->GetActiveItem() )
 					return true;

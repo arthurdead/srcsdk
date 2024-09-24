@@ -101,6 +101,7 @@ public:
 	virtual void			QueueMaterialThreadSetValue( ConVar *pConVar, const char *pValue ) = 0;
 	virtual void			QueueMaterialThreadSetValue( ConVar *pConVar, int nValue ) = 0;
 	virtual void			QueueMaterialThreadSetValue( ConVar *pConVar, float flValue ) = 0;
+	void			QueueMaterialThreadSetValue( ConVar *pConVar, bool nValue ) { QueueMaterialThreadSetValue( pConVar, nValue ? 1 : 0 ); }
 	virtual bool			HasQueuedMaterialThreadConVarSets() const = 0;
 	virtual int				ProcessQueuedMaterialThreadConVarSets() = 0;
 

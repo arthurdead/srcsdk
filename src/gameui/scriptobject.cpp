@@ -14,6 +14,7 @@
 #include <vgui_controls/Label.h>
 #include "filesystem.h"
 #include "tier1/convar.h"
+#include "gameui_util.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -950,7 +951,7 @@ void CDescription::TransferCurrentValues( const char *pszConfigFile )
 		}
 		*/
 
-		ConVarRef var( pObj->cvarname );
+		CGameUIConVarRef var( pObj->cvarname );
 		if ( !var.IsValid() )
 		{
 			DevMsg( "Could not find '%s'\n", pObj->cvarname );

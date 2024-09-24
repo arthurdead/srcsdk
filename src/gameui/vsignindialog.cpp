@@ -149,7 +149,7 @@ void SignInDialog::ApplySchemeSettings( IScheme *pScheme )
 		 ERROR_SUCCESS == XUserGetSigninInfo( XBX_GetPrimaryUserId(), XUSER_GET_SIGNIN_INFO_ONLINE_XUID_ONLY, &xsi ) &&
 		 !(xsi.dwInfoFlags & XUSER_INFO_FLAG_GUEST) )	// need to catch promoted-guest-accounts
 	{
-		static ConVarRef cl_names_debug( "cl_names_debug" );
+		static CGameUIConVarRef cl_names_debug( "cl_names_debug" );
 		if ( cl_names_debug.GetInt() )
 		{
 			strcpy( chGamerName, PLAYER_DEBUG_NAME );

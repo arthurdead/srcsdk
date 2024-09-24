@@ -18,7 +18,6 @@ particles = subproject('particles')
 tier2 = subproject('tier2')
 tier3 = subproject('tier3')
 steamworks = subproject('steamworks')
-hackmgr = subproject('hackmgr')
 game_loopback = subproject('game_loopback')
 recastnavigation_game = subproject('recastnavigation_game')
 
@@ -175,7 +174,6 @@ game_shared_base_dep = declare_dependency(
 		tier2.get_variable('tier2_dep'),
 		tier3.get_variable('tier3_dep'),
 		steamworks.get_variable('steamworks_dep'),
-		hackmgr.get_variable('hackmgr_dep'),
 		recastnavigation_game.get_variable('recastnavigation_game_dep'),
 	]
 )

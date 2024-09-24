@@ -4,18 +4,17 @@
 //
 //=====================================================================================//
 
-#include "cbase.h"
-#include "VInGameMainMenu.h"
-#include "VGenericConfirmation.h"
-#include "VFooterPanel.h"
-#include "VFlyoutMenu.h"
-#include "VHybridButton.h"
-#include "EngineInterface.h"
+#include "vingamemainmenu.h"
+#include "vgenericconfirmation.h"
+#include "vfooterpanel.h"
+#include "vflyoutmenu.h"
+#include "vhybridbutton.h"
+#include "engineinterface.h"
 
 #include "fmtstr.h"
 
 #include "game/client/IGameClientExports.h"
-#include "GameUI_Interface.h"
+#include "gameui_interface.h"
 
 #include "vgui/ILocalize.h"
 #include "vgui_controls/Button.h"
@@ -334,7 +333,7 @@ void InGameMainMenu::OnCommand( const char *command )
 			engine->ClientCmd("gameui_hide");
 			return;
 			/*
-			static ConVarRef mp_gamemode( "mp_gamemode" );
+			static CGameUIConVarRef mp_gamemode( "mp_gamemode" );
 			if ( mp_gamemode.IsValid() )
 			{
 				char const *szGameMode = mp_gamemode.GetString();

@@ -10,7 +10,9 @@
 #include "tier1/strtools.h"
 #include "createinterface.h"
 #include "vphysics_interface.h"
+#ifndef SWDS
 #include "video/ivideoservices.h"
+#endif
 
 #include "tier1/interface.h"
 #include "tier1/utlvector.h"
@@ -76,6 +78,7 @@ static void *AppSystemCreateInterfaceFnHack(const char *pName, int *pReturnCode)
 	return pInterface;
 }
 
+#ifndef SWDS
 class CVideoServicesRedirect : public IVideoServices
 {
 public:
@@ -141,6 +144,7 @@ public:
 	static inline int vtable_size = -1;
 };
 static CVideoServicesRedirect s_VideoRedirect;
+#endif
 
 abstract_class CPhysicsRedirect : public IPhysics
 {
@@ -182,6 +186,7 @@ public:
 };
 static CPhysicsRedirect s_PhysicsRedirect;
 
+#ifndef SWDS
 HACKMGR_API void HackMgr_SetEngineVideoServicesPtr(IVideoServices *pOldInter, IVideoServices *pNewInter)
 {
 	if(!pOldInter || !pNewInter || (pOldInter == pNewInter))
@@ -220,6 +225,7 @@ HACKMGR_API bool HackMgr_IsSafeToSwapVideoServices()
 {
 	return false;
 }
+#endif
 
 HACKMGR_API void HackMgr_SetEnginePhysicsPtr(IPhysics *pOldInter, IPhysics *pNewInter)
 {
@@ -326,7 +332,9 @@ static app_sys_pair_t reconnect_interface(CAppSystemGroup *ParentAppSystemGroup,
 HACKMGR_EXECUTE_ON_LOAD_BEGIN(0)
 
 #if defined __GNUC__ && defined __linux__
+#ifndef SWDS
 CVideoServicesRedirect::vtable_size = vfunc_index(&IVideoServices::GetCodecName) + 1;
+#endif
 CPhysicsRedirect::vtable_size = vfunc_index(&IPhysics::DestroyAllCollisionSets) + 1;
 #endif
 
@@ -350,9 +358,13 @@ if(!GetEngineInterfaceFactory())
 	return;
 
 status = IFACE_OK;
+#ifndef SWDS
 void *pEngineAPI = GetEngineInterfaceFactory()("VENGINE_LAUNCHER_API_VERSION004", &status);
 if(!pEngineAPI || status != IFACE_OK)
 	return;
+#else
+	#error
+#endif
 
 void *StartupInfo = ((unsigned char *)pEngineAPI + CEngineAPI_m_StartupInfo_offset);
 
@@ -397,11 +409,14 @@ do {
 				app_sys_pair_t pair;
 				pair = reconnect_interface(ParentAppSystemGroup, pOldFactory, new_mod.m_Factory, VPHYSICS_INTERFACE_VERSION);
 				HackMgr_SetEnginePhysicsPtr((IPhysics *)pair.pOldInter, (IPhysics *)pair.pNewInter);
-			} else if(V_stricmp(new_mod.m_pModuleName, "video_services" DLL_EXT_STRING) == 0) {
+			}
+		#ifndef SWDS
+			else if(V_stricmp(new_mod.m_pModuleName, "video_services" DLL_EXT_STRING) == 0) {
 				app_sys_pair_t pair;
 				pair = reconnect_interface(ParentAppSystemGroup, pOldFactory, new_mod.m_Factory, VIDEO_SERVICES_INTERFACE_VERSION);
 				HackMgr_SetEngineVideoServicesPtr((IVideoServices *)pair.pOldInter, (IVideoServices *)pair.pNewInter);
 			}
+		#endif
 
 		#ifdef __linux__
 			Dl_info mod_dl_info;

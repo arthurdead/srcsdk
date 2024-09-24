@@ -173,6 +173,7 @@ IGameLoopback* g_pGameLoopback = NULL;
 #ifndef SWDS
 CSysModule* clientDLL = NULL;
 IGameClientLoopback* g_pGameClientLoopback = NULL;
+IClientTools	*clienttools = NULL;
 #endif
 
 CSysModule* vphysicsDLL = NULL;
@@ -656,8 +657,24 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 #ifndef SWDS
 	if(!engine->IsDedicatedServer()) {
 		V_strcat_safe(gamebin_path, "client" DLL_EXT_STRING);
-		Sys_LoadInterface( gamebin_path, GAMECLIENTLOOPBACK_INTERFACE_VERSION, &clientDLL, reinterpret_cast< void** >( &g_pGameClientLoopback ) );
+		clientDLL = Sys_LoadModule(gamebin_path);
 		gamebin_path[gamebin_length] = '\0';
+		if(clientDLL) {
+			CreateInterfaceFn clientFactory = Sys_GetFactory(clientDLL);
+			if(clientFactory) {
+				int status = IFACE_OK;
+				g_pGameClientLoopback = (IGameClientLoopback *)clientFactory(GAMECLIENTLOOPBACK_INTERFACE_VERSION, &status);
+				if(status != IFACE_OK) {
+					g_pGameClientLoopback = NULL;
+				}
+
+				status = IFACE_OK;
+				clienttools = (IClientTools *)clientFactory(VCLIENTTOOLS_INTERFACE_VERSION, &status);
+				if(status != IFACE_OK) {
+					clienttools = NULL;
+				}
+			}
+		}
 	}
 #endif
 
@@ -747,8 +764,10 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		return false;
 
 #ifndef SWDS
-	// try to get debug overlay, may be NULL if on HLDS
-	debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL );
+	if(!engine->IsDedicatedServer()) {
+		// try to get debug overlay, may be NULL if on HLDS
+		debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL );
+	}
 #endif
 
 	// init the gamestatsupload connection
@@ -1182,6 +1201,10 @@ void CServerGameDLL::GameFrame( bool simulating )
 	{
 		gpGlobals->curtime = m_fPauseTime;
 		gpGlobals->tickcount = m_nPauseTick;
+	}
+
+	if( engine->IsDedicatedServer() || gpGlobals->maxClients > 1 ) {
+		HackMgr_SetGamePaused( engine->IsPaused() );
 	}
 
 	// All the calls to us from the engine prior to gameframe (like LevelInit & ServerActivate)
@@ -2539,7 +2562,13 @@ void CServerGameClients::ClientSetupVisibility( edict_t *pViewEntity, edict_t *p
 float CServerGameClients::ProcessUsercmds( edict_t *player, bf_read *buf, int numcmds, int totalcmds,
 	int dropped_packets, bool ignore, bool paused )
 {
-	HackMgr_SetGamePaused( paused );
+#ifndef SWDS
+	if(!engine->IsDedicatedServer()) {
+		if( gpGlobals->maxClients == 1 ) {
+			HackMgr_SetGamePaused( paused );
+		}
+	}
+#endif
 
 	int				i;
 	CUserCmd		*from, *to;

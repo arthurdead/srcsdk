@@ -155,28 +155,38 @@ inline int CheckDeclareClass_Access( T *, const char *pShouldBe )
 // All classes that contain CNetworkVars need a NetworkStateChanged() function. If the class is not an entity,
 // it needs to forward the call to the entity it's in. These macros can help.
 	
-	// These macros setup an entity pointer in your class. Use IMPLEMENT_NETWORKVAR_CHAIN before you do
-	// anything inside the class itself.
-	class CBaseEntity;
-	class CAutoInitEntPtr
+// These macros setup an entity pointer in your class. Use IMPLEMENT_NETWORKVAR_CHAIN before you do
+// anything inside the class itself.
+
+#ifdef GAME_DLL
+class CBaseEntity;
+typedef CBaseEntity CGameBaseEntity;
+#elif defined CLIENT_DLL
+class C_BaseEntity;
+typedef C_BaseEntity CGameBaseEntity;
+#else
+class CGameBaseEntity;
+#endif
+
+class CAutoInitEntPtr
+{
+public:
+	CAutoInitEntPtr()
 	{
-	public:
-		CAutoInitEntPtr()
-		{
-			m_pEnt = NULL;
-		}
-		CBaseEntity *m_pEnt;
-	};
+		m_pEnt = NULL;
+	}
+	CGameBaseEntity *m_pEnt;
+};
 
-	//TODO: Currently, these don't get the benefit of tracking changes to individual vars.
-	// Would be nice if they did.
-	#define DECLARE_NETWORKVAR_CHAIN() \
-		CAutoInitEntPtr __m_pChainEntity; \
-		void NetworkStateChanged() { CHECK_USENETWORKVARS __m_pChainEntity.m_pEnt->NetworkStateChanged(); } \
-		void NetworkStateChanged( void *pVar ) { CHECK_USENETWORKVARS __m_pChainEntity.m_pEnt->NetworkStateChanged(); }
+//TODO: Currently, these don't get the benefit of tracking changes to individual vars.
+// Would be nice if they did.
+#define DECLARE_NETWORKVAR_CHAIN() \
+	CAutoInitEntPtr __m_pChainEntity; \
+	void NetworkStateChanged() { CHECK_USENETWORKVARS __m_pChainEntity.m_pEnt->NetworkStateChanged(); } \
+	void NetworkStateChanged( void *pVar ) { CHECK_USENETWORKVARS __m_pChainEntity.m_pEnt->NetworkStateChanged(); }
 
-	#define IMPLEMENT_NETWORKVAR_CHAIN( varName ) \
-		(varName)->__m_pChainEntity.m_pEnt = this;
+#define IMPLEMENT_NETWORKVAR_CHAIN( varName ) \
+	(varName)->__m_pChainEntity.m_pEnt = this;
 
 
 

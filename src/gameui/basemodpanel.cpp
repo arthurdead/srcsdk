@@ -129,7 +129,7 @@ CBaseModPanel::CBaseModPanel(): BaseClass(0, "CBaseModPanel"),
 	}
 
 	// Set special DLC parameters mask
-	static ConVarRef mm_dlcs_mask_extras( "mm_dlcs_mask_extras" );
+	static CGameUIConVarRef mm_dlcs_mask_extras( "mm_dlcs_mask_extras" );
 	if ( mm_dlcs_mask_extras.IsValid() && steamapicontext && steamapicontext->SteamUtils() )
 	{
 		int iDLCmask = mm_dlcs_mask_extras.GetInt();
@@ -1204,7 +1204,7 @@ void CBaseModPanel::OnLevelLoadingStarted( char const *levelName, bool bShowProg
 				pServerDLL->ApplyGameSettings( pApplyServerSettings );
 			}
 
-			static ConVarRef r_mp_gamemode( "mp_gamemode" );
+			static CGameUIConVarRef r_mp_gamemode( "mp_gamemode" );
 			if ( r_mp_gamemode.IsValid() )
 			{
 				pGameSettings = new KeyValues( "CmdLineSettings" );
@@ -1838,7 +1838,7 @@ void CBaseModPanel::ApplySchemeSettings(IScheme *pScheme)
 	float aspectRatio = (float)screenWide/(float)screenTall;
 	bIsWidescreen = aspectRatio >= 1.5999f;
 #else
-	static ConVarRef mat_xbox_iswidescreen( "mat_xbox_iswidescreen" );
+	static CGameUIConVarRef mat_xbox_iswidescreen( "mat_xbox_iswidescreen" );
 	bIsWidescreen = mat_xbox_iswidescreen.GetBool();
 #endif
 	if ( !bIsWidescreen )
@@ -2304,7 +2304,7 @@ bool CBaseModPanel::IsReadyToWriteConfig( void )
 {
 	// For cert we only want to write config files is it has been at least 3 seconds
 #ifdef _X360
-	static ConVarRef r_host_write_last_time( "host_write_last_time" );
+	static CGameUIConVarRef r_host_write_last_time( "host_write_last_time" );
 	return ( Plat_FloatTime() > r_host_write_last_time.GetFloat() + 3.05f );
 #endif
 	return false;

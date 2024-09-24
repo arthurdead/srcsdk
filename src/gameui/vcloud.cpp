@@ -15,7 +15,6 @@
 #include "vgenericconfirmation.h"
 #include "materialsystem/materialsystem_config.h"
 #include "ConfigManager.h"
-#include "cdll_util.h"
 #include "nb_header_footer.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

@@ -46,16 +46,10 @@ bool CVAudioRedirect::Init()
 
 	char szTargetPath[MAX_PATH];
 	V_strncpy(szTargetPath, pGameDir, sizeof(szTargetPath));
-	int len = V_strlen(szTargetPath);
-	if(szTargetPath[len] != CORRECT_PATH_SEPARATOR &&
-		szTargetPath[len] != INCORRECT_PATH_SEPARATOR) {
-		V_strcat(szTargetPath, CORRECT_PATH_SEPARATOR_S "bin" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
-	} else {
-		V_strcat(szTargetPath, "bin" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
-	}
+	V_AppendSlash(szTargetPath, sizeof(szTargetPath));
 
 	if(strcmp(V_STRINGIFY(DLLNAME), "vaudio_miles") == 0) {
-		V_strcat(szTargetPath, "vaudio_minimp3", sizeof(szTargetPath));
+		V_strcat(szTargetPath, "vaudio_minimp3" DLL_EXT_STRING, sizeof(szTargetPath));
 	} else {
 		return false;
 	}
@@ -70,9 +64,9 @@ bool CVAudioRedirect::Init()
 		return false;
 	}
 
-	int status;
+	int status = IFACE_OK;
 	m_pTarget = (IVAudio *)pFactory(VAUDIO_INTERFACE_VERSION, &status);
-	if(status != IFACE_OK) {
+	if(!m_pTarget || status != IFACE_OK) {
 		return false;
 	}
 

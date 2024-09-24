@@ -54,9 +54,13 @@ public:
 	virtual void OnGameUIHidden() = 0;
 	
 	// OLD: Use OnConnectToServer2
-	virtual void OLD_OnConnectToServer(const char *game, int IP, int port) = 0; 
-	
-	virtual void OnDisconnectFromServer_OLD( uint8 eSteamLoginFailure, const char *username ) = 0;
+public:
+	virtual void DO_NOT_USE_OnConnectToServer(const char *game, int IP, int port) = 0;
+
+public:
+	virtual void DO_NOT_USE_OnDisconnectFromServer( uint8 eSteamLoginFailure, const char *username ) = 0;
+
+public:
 	virtual void OnLevelLoadingStarted(bool bShowProgressDialog) = 0;
 	virtual void OnLevelLoadingFinished(bool bError, const char *failureReason, const char *extendedReason) = 0;
 
@@ -69,13 +73,15 @@ public:
 	virtual void ShowNewGameDialog( int chapter ) = 0;
 
 	// Xbox 360
-	virtual void SessionNotification( const int notification, const int param = 0 ) = 0;
-	virtual void SystemNotification( const int notification ) = 0;
-	virtual void ShowMessageDialog( const uint nType, vgui::Panel *pOwner ) = 0;
-	virtual void UpdatePlayerInfo( uint64 nPlayerId, const char *pName, int nTeam, byte cVoiceState, int nPlayersNeeded, bool bHost ) = 0;
-	virtual void SessionSearchResult( int searchIdx, void *pHostData, void *pResult, int ping ) = 0;
-	virtual void OnCreditsFinished( void ) = 0;
+private:
+	virtual void DO_NOT_USE_SessionNotification( const int notification, const int param = 0 ) final {}
+	virtual void DO_NOT_USE_SystemNotification( const int notification ) final {}
+	virtual void DO_NOT_USE_ShowMessageDialog( const uint nType, vgui::Panel *pOwner ) final {}
+	virtual void DO_NOT_USE_UpdatePlayerInfo( uint64 nPlayerId, const char *pName, int nTeam, byte cVoiceState, int nPlayersNeeded, bool bHost ) final {}
+	virtual void DO_NOT_USE_SessionSearchResult( int searchIdx, void *pHostData, void *pResult, int ping ) final {}
+	virtual void DO_NOT_USE_OnCreditsFinished( void ) final {}
 
+public:
 	// inserts specified panel as background for level load dialog
 	virtual void SetLoadingBackgroundDialog( vgui::VPANEL panel ) = 0;
 
@@ -89,14 +95,16 @@ public:
 	virtual int BonusMapNumAdvancedCompleted( void ) = 0;
 	virtual void BonusMapNumMedals( int piNumMedals[ 3 ] ) = 0;
 
-	virtual void OnConnectToServer2(const char *game, int IP, int connectionPort, int queryPort) = 0;
+	virtual void OnConnectToServer(const char *game, int IP, int connectionPort, int queryPort) = 0;
 
+private:
 	// X360 Storage device validation:
 	//		returns true right away if storage device has been previously selected.
 	//		otherwise returns false and will set the variable pointed by pStorageDeviceValidated to 1
 	//				  once the storage device is selected by user.
-	virtual bool ValidateStorageDevice( int *pStorageDeviceValidated ) = 0;
+	virtual bool DO_NOT_USE_ValidateStorageDevice( int *pStorageDeviceValidated ) { return false; }
 
+public:
 	virtual void SetProgressOnStart() = 0;
 	virtual void OnDisconnectFromServer( uint8 eSteamLoginFailure ) = 0;
 
@@ -108,6 +116,55 @@ public:
 	virtual void SetMainMenuOverride( vgui::VPANEL panel ) = 0;
 	// Client DLL is telling us that a main menu command was issued, probably from its custom main menu panel
 	virtual void SendMainMenuCommand( const char *pszCommand ) = 0;
+};
+
+abstract_class IGameUIEx : public IGameUI
+{
+private:
+#ifdef _DEBUG
+	virtual void SessionNotification( const int notification, const int param = 0 ) final
+	{
+		Assert(0);
+	}
+	virtual void SystemNotification( const int notification ) final
+	{
+		Assert(0);
+	}
+	virtual void ShowMessageDialog( const uint nType, vgui::Panel *pOwner ) final
+	{
+		Assert(0);
+	}
+	virtual void UpdatePlayerInfo( uint64 nPlayerId, const char *pName, int nTeam, byte cVoiceState, int nPlayersNeeded, bool bHost ) final
+	{
+		Assert(0);
+	}
+	virtual void SessionSearchResult( int searchIdx, void *pHostData, void *pResult, int ping ) final
+	{
+		Assert(0);
+	}
+	virtual void OnCreditsFinished( void ) final
+	{
+		Assert(0);
+	}
+
+	virtual void OnConnectToServer2(const char *game, int IP, int connectionPort, int queryPort) final
+	{
+		Assert(0);
+	}
+
+	virtual void OLD_OnConnectToServer(const char *game, int IP, int port) final
+	{
+		Assert(0);
+	}
+
+	virtual void OnDisconnectFromServer_OLD( uint8 eSteamLoginFailure, const char *username ) final
+	{
+		Assert(0);
+	}
+#endif
+
+public:
+
 };
 
 #define GAMEUI_INTERFACE_VERSION "GameUI011"

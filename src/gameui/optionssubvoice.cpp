@@ -12,7 +12,6 @@
 #include <vgui_controls/Slider.h>
 #include "engineinterface.h"
 #include "ivoicetweak.h"
-#include "CvarToggleCheckButton.h"
 #include "tier1/KeyValues.h"
 #include "tier1/convar.h"
 
@@ -41,7 +40,7 @@ COptionsSubVoice::COptionsSubVoice(vgui::Panel *parent) : PropertyPage(parent, N
 	m_pMicrophoneVolume->SetRange( 0, 100 );
 	m_pMicrophoneVolume->AddActionSignalTarget( this );
 
-	m_pVoiceEnableCheckButton = new CCvarToggleCheckButton( this, "voice_modenable", "#GameUI_EnableVoice", "voice_modenable" );
+	m_pVoiceEnableCheckButton = new CGameUICvarToggleCheckButton( this, "voice_modenable", "#GameUI_EnableVoice", "voice_modenable" );
 
 	m_pMicBoost = new CheckButton(this, "MicBoost", "#GameUI_BoostMicrophone" );
 	m_pMicBoost->AddActionSignalTarget( this );
@@ -49,7 +48,7 @@ COptionsSubVoice::COptionsSubVoice(vgui::Panel *parent) : PropertyPage(parent, N
 	// Open mic controls
 	m_pThresholdSliderLabel = new Label(this, "ThresholdLabel", "#GameUI_VoiceThreshold");
 	m_pThresholdVolume = new CCvarSlider( this, "VoiceThreshold", "#GameUI_VoiceThreshold", 0, 16384, "voice_threshold" );
-	m_pOpenMicEnableCheckButton = new CCvarToggleCheckButton( this, "voice_vox", "#GameUI_EnableOpenMic", "voice_vox" );
+	m_pOpenMicEnableCheckButton = new CGameUICvarToggleCheckButton( this, "voice_vox", "#GameUI_EnableOpenMic", "voice_vox" );
 
 	m_pTestMicrophoneButton = new Button(this, "TestMicrophone", "#GameUI_TestMicrophone");
 
@@ -250,7 +249,7 @@ void COptionsSubVoice::ResetVoiceParameters()
     m_pVoiceTweak->SetControlFloat( MicBoost, m_bMicBoostSelected ? 1.0f : 0.0f );
 
     // restore the old value
-	ConVarRef voice_scale( "voice_scale" );
+	CGameUIConVarRef voice_scale( "voice_scale" );
 	voice_scale.SetValue( m_fReceiveVolume );
     
 	m_pReceiveVolume->Reset();

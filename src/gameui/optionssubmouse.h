@@ -10,10 +10,10 @@
 #pragma once
 
 #include <vgui_controls/PropertyPage.h>
+#include "gameui_cvartogglecheckbutton.h"
 
 class CCvarNegateCheckButton;
 class CKeyToggleCheckButton;
-class CCvarToggleCheckButton;
 class CCvarSlider;
 
 namespace vgui
@@ -51,11 +51,11 @@ private:
 	void UpdateJoystickPanels();
 
 	CCvarNegateCheckButton		*m_pReverseMouseCheckBox;
-	CCvarToggleCheckButton		*m_pMouseFilterCheckBox;
-	CCvarToggleCheckButton		*m_pJoystickCheckBox;
-	CCvarToggleCheckButton		*m_pJoystickSouthpawCheckBox;
-	CCvarToggleCheckButton		*m_pQuickInfoCheckBox;
-	CCvarToggleCheckButton		*m_pReverseJoystickCheckBox;
+	CGameUICvarToggleCheckButton		*m_pMouseFilterCheckBox;
+	CGameUICvarToggleCheckButton		*m_pJoystickCheckBox;
+	CGameUICvarToggleCheckButton		*m_pJoystickSouthpawCheckBox;
+	CGameUICvarToggleCheckButton		*m_pQuickInfoCheckBox;
+	CGameUICvarToggleCheckButton		*m_pReverseJoystickCheckBox;
 
 	CCvarSlider					*m_pMouseSensitivitySlider;
     vgui::TextEntry             *m_pMouseSensitivityLabel;

@@ -4,7 +4,7 @@
 //
 //=====================================================================================//
 
-#include "VPasswordEntry.h"
+#include "vpasswordentry.h"
 
 #include "vgui_controls/Label.h"
 #include "vgui/ISurface.h"

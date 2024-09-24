@@ -9,6 +9,7 @@
 #include "tier1/convar.h"
 #include "engineinterface.h"
 #include "tier1/KeyValues.h"
+#include "gameui_util.h"
 
 #include "vgui_controls/RadioButton.h"
 
@@ -32,7 +33,7 @@ COptionsSubDifficulty::COptionsSubDifficulty(vgui::Panel *parent) : BaseClass(pa
 //-----------------------------------------------------------------------------
 void COptionsSubDifficulty::OnResetData()
 {
-	ConVarRef var( "skill" );
+	CGameUIConVarRef var( "skill" );
 
 	if (var.GetInt() == 1)
 	{
@@ -53,7 +54,7 @@ void COptionsSubDifficulty::OnResetData()
 //-----------------------------------------------------------------------------
 void COptionsSubDifficulty::OnApplyChanges()
 {
-	ConVarRef var( "skill" );
+	CGameUIConVarRef var( "skill" );
 
 	if ( m_pEasyRadio->IsSelected() )
 	{

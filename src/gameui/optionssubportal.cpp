@@ -6,7 +6,6 @@
 //
 //=============================================================================//
 #include "optionssubportal.h"
-#include "CvarToggleCheckButton.h"
 #include "vgui_controls/ComboBox.h"
 
 #include "engineinterface.h"
@@ -23,7 +22,7 @@ using namespace vgui;
 
 COptionsSubPortal::COptionsSubPortal(vgui::Panel *parent) : PropertyPage(parent, NULL)
 {
-	m_pPortalFunnelCheckBox = new CCvarToggleCheckButton( 
+	m_pPortalFunnelCheckBox = new CGameUICvarToggleCheckButton( 
 		this, 
 		"PortalFunnel", 
 		"#GameUI_PortalFunnel", 
@@ -59,7 +58,7 @@ void COptionsSubPortal::OnResetData()
 	m_pPortalFunnelCheckBox->Reset();
 
 	// Portal render depth
-	ConVarRef r_portal_stencil_depth("r_portal_stencil_depth");
+	CGameUIConVarRef r_portal_stencil_depth("r_portal_stencil_depth");
 	if ( r_portal_stencil_depth.IsValid() )
 	{
 		m_pPortalDepthCombo->ActivateItem(r_portal_stencil_depth.GetInt());
@@ -76,7 +75,7 @@ void COptionsSubPortal::OnApplyChanges()
 	// Portal render depth
 	if ( m_pPortalDepthCombo->IsEnabled() )
 	{
-		ConVarRef r_portal_stencil_depth( "r_portal_stencil_depth" );
+		CGameUIConVarRef r_portal_stencil_depth( "r_portal_stencil_depth" );
 		r_portal_stencil_depth.SetValue( m_pPortalDepthCombo->GetActiveItem() );
 	}
 }

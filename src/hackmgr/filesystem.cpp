@@ -19,18 +19,11 @@ if(!pFileSystem || status != IFACE_OK) {
 }
 
 char basePath[MAX_PATH];
-int len = pFileSystem->GetSearchPath("BASE_PATH", false, basePath, sizeof(basePath));
+pFileSystem->GetSearchPath("BASE_PATH", false, basePath, sizeof(basePath));
+V_AppendSlash(basePath, sizeof(basePath));
+V_strcat(basePath, "platform", sizeof(basePath));
+V_AppendSlash(basePath, sizeof(basePath));
 
-if(basePath[len-1] == INCORRECT_PATH_SEPARATOR) {
-	basePath[len-1] = CORRECT_PATH_SEPARATOR;
-} else if(basePath[len-1] != CORRECT_PATH_SEPARATOR) {
-	basePath[len++] = CORRECT_PATH_SEPARATOR;
-	basePath[len] = '\0';
-}
-
-char platformPath[MAX_PATH];
-V_sprintf_safe(platformPath, "%splatform" CORRECT_PATH_SEPARATOR_S, basePath);
-
-pFileSystem->RemoveSearchPath(platformPath, "PLATFORM");
+pFileSystem->RemoveSearchPath(basePath, "PLATFORM");
 
 HACKMGR_EXECUTE_ON_LOAD_END

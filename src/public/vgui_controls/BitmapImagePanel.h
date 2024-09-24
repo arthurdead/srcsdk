@@ -52,4 +52,6 @@ private:
 
 };
 
+typedef vgui::CBitmapImagePanel CBitmapImagePanel;
+
 #endif // BITMAPIMAGEPANEL_H

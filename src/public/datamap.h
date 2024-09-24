@@ -29,10 +29,10 @@
 // SINGLE_INHERITANCE restricts the size of CBaseEntity pointers-to-member-functions to 4 bytes
 #ifdef GAME_DLL
 class SINGLE_INHERITANCE CBaseEntity;
-#define CGameBaseEntity CBaseEntity
+typedef CBaseEntity CGameBaseEntity;
 #elif defined CLIENT_DLL
 class SINGLE_INHERITANCE C_BaseEntity;
-#define CGameBaseEntity C_BaseEntity
+typedef C_BaseEntity CGameBaseEntity;
 #else
 class SINGLE_INHERITANCE CGameBaseEntity;
 #endif

@@ -16,7 +16,7 @@
 #include "vgui/ISurface.h"
 #include "engineinterface.h"
 #include "vloadingprogress.h"
-#include "VGenericConfirmation.h"
+#include "vgenericconfirmation.h"
 #include "nb_select_mission_panel.h"
 #include "nb_select_campaign_panel.h"
 
@@ -26,10 +26,6 @@
 #include "fmtstr.h"
 #include "smartptr.h"
 
-#include "matchmaking/swarm/imatchext_swarm.h"
-
-#include "missionchooser/iasw_mission_chooser.h"
-#include "missionchooser/iasw_mission_chooser_source.h"
 #include "nb_header_footer.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

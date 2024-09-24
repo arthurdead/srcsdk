@@ -122,6 +122,9 @@
 #include "hackmgr/dlloverride.h"
 #include "recast/recast_mgr.h"
 #include "activitylist.h"
+#include "gamepadui/igamepadui.h"
+#include "GameUI/IGameUI.h"
+#include "GameUI/IGameConsole.h"
 
 // NVNT includes
 #include "hud_macros.h"
@@ -197,6 +200,136 @@ IEngineClientReplay *g_pEngineClientReplay = NULL;
 IReplaySystem *g_pReplay = NULL;
 #endif
 
+CSysModule* gamepaduiDLL = NULL;
+IGamepadUI* g_pGamepadUI = NULL;
+
+CSysModule* gameuiDLL = NULL;
+IGameUI* g_pGameUI = NULL;
+IGameConsole* g_pGameConsole = NULL;
+
+class CGameUIRedirect : public IGameUI
+{
+public:
+	virtual void Initialize( CreateInterfaceFn appFactory )
+	{ g_pGameUI->Initialize( appFactory ); }
+	virtual void PostInit()
+	{ g_pGameUI->PostInit(); }
+
+	// connect to other interfaces at the same level (gameui.dll/server.dll/client.dll)
+	virtual void Connect( CreateInterfaceFn gameFactory )
+	{ g_pGameUI->Initialize( gameFactory ); }
+
+	virtual void Start()
+	{ g_pGameUI->Start(); }
+	virtual void Shutdown()
+	{ g_pGameUI->Shutdown(); }
+	virtual void RunFrame()
+	{ g_pGameUI->RunFrame(); }
+
+	// notifications
+	virtual void OnGameUIActivated()
+	{ g_pGameUI->OnGameUIActivated(); }
+	virtual void OnGameUIHidden()
+	{ g_pGameUI->OnGameUIHidden(); }
+	
+	// OLD: Use OnConnectToServer2
+	virtual void DO_NOT_USE_OnConnectToServer(const char *game, int IP, int port)
+	{ g_pGameUI->DO_NOT_USE_OnConnectToServer(game, IP, port); }
+	
+	virtual void DO_NOT_USE_OnDisconnectFromServer( uint8 eSteamLoginFailure, const char *username )
+	{ g_pGameUI->DO_NOT_USE_OnDisconnectFromServer(eSteamLoginFailure, username); }
+	virtual void OnLevelLoadingStarted(bool bShowProgressDialog)
+	{ g_pGameUI->OnLevelLoadingStarted(bShowProgressDialog); }
+	virtual void OnLevelLoadingFinished(bool bError, const char *failureReason, const char *extendedReason)
+	{ g_pGameUI->OnLevelLoadingFinished(bError, failureReason, extendedReason); }
+
+	// level loading progress, returns true if the screen needs updating
+	virtual bool UpdateProgressBar(float progress, const char *statusText)
+	{ return g_pGameUI->UpdateProgressBar(progress, statusText); }
+	// Shows progress desc, returns previous setting... (used with custom progress bars )
+	virtual bool SetShowProgressText( bool show )
+	{ return g_pGameUI->SetShowProgressText(show); }
+
+	// !!!!!!!!!members added after "GameUI011" initial release!!!!!!!!!!!!!!!!!!!
+	virtual void ShowNewGameDialog( int chapter )
+	{ g_pGameUI->ShowNewGameDialog(chapter); }
+
+	// inserts specified panel as background for level load dialog
+	virtual void SetLoadingBackgroundDialog( vgui::VPANEL panel )
+	{ g_pGameUI->SetLoadingBackgroundDialog(panel); }
+
+	// Bonus maps interfaces
+	virtual void BonusMapUnlock( const char *pchFileName = NULL, const char *pchMapName = NULL )
+	{ g_pGameUI->BonusMapUnlock(pchFileName, pchMapName); }
+	virtual void BonusMapComplete( const char *pchFileName = NULL, const char *pchMapName = NULL )
+	{ g_pGameUI->BonusMapComplete(pchFileName, pchMapName); }
+	virtual void BonusMapChallengeUpdate( const char *pchFileName, const char *pchMapName, const char *pchChallengeName, int iBest )
+	{ g_pGameUI->BonusMapChallengeUpdate(pchFileName, pchMapName, pchChallengeName, iBest); }
+	virtual void BonusMapChallengeNames( char *pchFileName, char *pchMapName, char *pchChallengeName )
+	{ g_pGameUI->BonusMapChallengeNames(pchFileName, pchMapName, pchChallengeName); }
+	virtual void BonusMapChallengeObjectives( int &iBronze, int &iSilver, int &iGold )
+	{ g_pGameUI->BonusMapChallengeObjectives(iBronze, iSilver, iGold); }
+	virtual void BonusMapDatabaseSave( void )
+	{ g_pGameUI->BonusMapDatabaseSave(); }
+	virtual int BonusMapNumAdvancedCompleted( void )
+	{ return g_pGameUI->BonusMapNumAdvancedCompleted(); }
+	virtual void BonusMapNumMedals( int piNumMedals[ 3 ] )
+	{ g_pGameUI->BonusMapNumMedals(piNumMedals); }
+
+	virtual void OnConnectToServer(const char *game, int IP, int connectionPort, int queryPort)
+	{ g_pGameUI->OnConnectToServer(game, IP, connectionPort, queryPort); }
+
+	virtual void SetProgressOnStart()
+	{ g_pGameUI->SetProgressOnStart(); }
+	virtual void OnDisconnectFromServer( uint8 eSteamLoginFailure )
+	{ g_pGameUI->OnDisconnectFromServer(eSteamLoginFailure); }
+
+	virtual void OnConfirmQuit( void )
+	{ g_pGameUI->OnConfirmQuit(); }
+
+	virtual bool IsMainMenuVisible( void )
+	{ return g_pGameUI->IsMainMenuVisible(); }
+
+	// Client DLL is providing us with a panel that it wants to replace the main menu with
+	virtual void SetMainMenuOverride( vgui::VPANEL panel )
+	{ g_pGameUI->SetMainMenuOverride(panel); }
+	// Client DLL is telling us that a main menu command was issued, probably from its custom main menu panel
+	virtual void SendMainMenuCommand( const char *pszCommand )
+	{ g_pGameUI->SendMainMenuCommand(pszCommand); }
+};
+
+static CGameUIRedirect g_GameUIRedirect;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CGameUIRedirect, IGameUI, GAMEUI_INTERFACE_VERSION, g_GameUIRedirect);
+
+class CGameConsoleRedirect : public IGameConsole
+{
+public:
+	// activates the console, makes it visible and brings it to the foreground
+	virtual void Activate()
+	{ g_pGameConsole->Activate(); }
+
+	virtual void Initialize()
+	{ g_pGameConsole->Initialize(); }
+
+	// hides the console
+	virtual void Hide()
+	{ g_pGameConsole->Hide(); }
+
+	// clears the console
+	virtual void Clear()
+	{ g_pGameConsole->Clear(); }
+
+	// return true if the console has focus
+	virtual bool IsConsoleVisible()
+	{ return g_pGameConsole->IsConsoleVisible(); }
+
+	virtual void SetParent( int parent )
+	{ g_pGameConsole->SetParent(parent); }
+};
+
+static CGameConsoleRedirect g_GameConsoleRedirect;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CGameConsoleRedirect, IGameConsole, GAMECONSOLE_INTERFACE_VERSION, g_GameConsoleRedirect);
+
 CSysModule* shaderDLL = NULL;
 IShaderExtension* g_pShaderExtension = NULL;
 
@@ -205,6 +338,7 @@ IGameLoopback* g_pGameLoopback = NULL;
 
 CSysModule* serverDLL = NULL;
 IGameServerLoopback* g_pGameServerLoopback = NULL;
+IServerTools	*servertools = NULL;
 
 CSysModule* videoServicesDLL = NULL;
 
@@ -1030,7 +1164,7 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 			pOldPhysics = NULL;
 		}
 
-		V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "vphysics" DLL_EXT_STRING);
+		V_strcat_safe(gamebin_path, "vphysics" DLL_EXT_STRING);
 		vphysicsDLL = Sys_LoadModule( gamebin_path );
 		gamebin_path[gamebin_length] = '\0';
 
@@ -1149,6 +1283,34 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	InitFbx();
 #endif
 
+	V_strcat_safe(gamebin_path, "GameUI" DLL_EXT_STRING);
+	gameuiDLL = Sys_LoadModule(gamebin_path);
+	gamebin_path[gamebin_length] = '\0';
+	if(gameuiDLL) {
+		CreateInterfaceFn gameuiFactory = Sys_GetFactory(gameuiDLL);
+		if(gameuiFactory) {
+			int status = IFACE_OK;
+			g_pGameUI = (IGameUI *)gameuiFactory(GAMEUI_INTERFACE_VERSION, &status);
+			if(status != IFACE_OK) {
+				g_pGameUI = NULL;
+			}
+
+			status = IFACE_OK;
+			g_pGameConsole = (IGameConsole *)gameuiFactory(GAMECONSOLE_INTERFACE_VERSION, &status);
+			if(status != IFACE_OK) {
+				g_pGameConsole = NULL;
+			}
+		}
+	}
+
+	V_strcat_safe(gamebin_path, "gamepadui" DLL_EXT_STRING);
+	Sys_LoadInterface( gamebin_path, GAMEPADUI_INTERFACE_VERSION, &gamepaduiDLL, reinterpret_cast< void** >( &g_pGamepadUI ) );
+	gamebin_path[gamebin_length] = '\0';
+
+	if(g_pGamepadUI) {
+		g_pGamepadUI->Initialize(appSystemFactory);
+	}
+
 	if(HackMgr_IsSafeToSwapVideoServices()) {
 		int status = IFACE_OK;
 		IVideoServices *pOldVideo = (IVideoServices *)appSystemFactory( VIDEO_SERVICES_INTERFACE_VERSION, &status );
@@ -1156,7 +1318,7 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 			pOldVideo = NULL;
 		}
 
-		V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "video_services" DLL_EXT_STRING);
+		V_strcat_safe(gamebin_path, "video_services" DLL_EXT_STRING);
 		videoServicesDLL = Sys_LoadModule( gamebin_path );
 		gamebin_path[gamebin_length] = '\0';
 
@@ -1199,17 +1361,33 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		}
 	}
 
-	V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "game_shader_dx9" DLL_EXT_STRING);
+	V_strcat_safe(gamebin_path, "game_shader_dx9" DLL_EXT_STRING);
 	Sys_LoadInterface( gamebin_path, SHADEREXTENSION_INTERFACE_VERSION, &shaderDLL, reinterpret_cast< void** >( &g_pShaderExtension ) );
 	gamebin_path[gamebin_length] = '\0';
 
-	V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "game_loopback" DLL_EXT_STRING);
+	V_strcat_safe(gamebin_path, "game_loopback" DLL_EXT_STRING);
 	Sys_LoadInterface( gamebin_path, GAMELOOPBACK_INTERFACE_VERSION, &game_loopbackDLL, reinterpret_cast< void** >( &g_pGameLoopback ) );
 	gamebin_path[gamebin_length] = '\0';
 
-	V_strcat_safe(gamebin_path, CORRECT_PATH_SEPARATOR_S "server" DLL_EXT_STRING);
-	Sys_LoadInterface( gamebin_path, GAMESERVERLOOPBACK_INTERFACE_VERSION, &serverDLL, reinterpret_cast< void** >( &g_pGameServerLoopback ) );
+	V_strcat_safe(gamebin_path, "server" DLL_EXT_STRING);
+	serverDLL = Sys_LoadModule(gamebin_path);
 	gamebin_path[gamebin_length] = '\0';
+	if(serverDLL) {
+		CreateInterfaceFn serverFactory = Sys_GetFactory(serverDLL);
+		if(serverFactory) {
+			int status = IFACE_OK;
+			g_pGameServerLoopback = (IGameServerLoopback *)serverFactory(GAMESERVERLOOPBACK_INTERFACE_VERSION, &status);
+			if(status != IFACE_OK) {
+				g_pGameServerLoopback = NULL;
+			}
+
+			status = IFACE_OK;
+			servertools = (IServerTools *)serverFactory(VSERVERTOOLS_INTERFACE_VERSION, &status);
+			if(status != IFACE_OK) {
+				servertools = NULL;
+			}
+		}
+	}
 
 	COM_TimestampedLog( "soundemitterbase->Connect" );
 	// Yes, both the client and game .dlls will try to Connect, the soundemittersystem.dll will handle this gracefully
@@ -1258,6 +1436,9 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 	if(!bInitSuccess)
 		return false;
+
+	HackMgr_SetGamePaused( false );
+	m_bWasPaused = false;
 
 		// UNDONE: Make most of these things server systems or precache_registers
 	// =================================================
@@ -1384,6 +1565,10 @@ void CClientDll::Shutdown( void )
 
 	ParticleMgr()->Term();
 
+	if(g_pGamepadUI) {
+		g_pGamepadUI->Shutdown();
+	}
+
 	if ( shaderDLL )
 		Sys_UnloadModule( shaderDLL );
 
@@ -1395,6 +1580,12 @@ void CClientDll::Shutdown( void )
 
 	if ( videoServicesDLL )
 		Sys_UnloadModule( videoServicesDLL );
+
+	if ( gameuiDLL )
+		Sys_UnloadModule( gameuiDLL );
+
+	if ( gamepaduiDLL )
+		Sys_UnloadModule( gamepaduiDLL );
 
 	if ( vphysicsDLL )
 		Sys_UnloadModule( vphysicsDLL );
@@ -1428,6 +1619,10 @@ void CClientDll::Shutdown( void )
 //-----------------------------------------------------------------------------
 int CClientDll::HudVidInit( void )
 {
+	if(g_pGamepadUI) {
+		g_pGamepadUI->VidInit();
+	}
+
 	GetHud().VidInit();
 
 	GetClientVoiceMgr()->VidInit();
@@ -1453,21 +1648,20 @@ void CClientDll::HudUpdate( bool bActive )
 	float frametime = gpGlobals->frametime;
 
 	// Ugly HACK! to prevent the game time from changing when paused
-	if( gpGlobals->maxClients == 1 )
+	if( m_bWasPaused != HackMgr_IsGamePaused() )
 	{
-		if( m_bWasPaused != HackMgr_IsGamePaused() )
-		{
-			m_fPauseTime = gpGlobals->curtime;
-			m_nPauseTick = gpGlobals->tickcount;
-			m_bWasPaused = HackMgr_IsGamePaused();
-		}
-		if(  HackMgr_IsGamePaused() )
-		{
-			gpGlobals->curtime = m_fPauseTime;
-			gpGlobals->tickcount = m_nPauseTick;
-		}
-	} else if( HackMgr_IsGamePaused() ) {
-		HackMgr_SetGamePaused( false );
+		m_fPauseTime = gpGlobals->curtime;
+		m_nPauseTick = gpGlobals->tickcount;
+		m_bWasPaused = HackMgr_IsGamePaused();
+	}
+	if( HackMgr_IsGamePaused() )
+	{
+		gpGlobals->curtime = m_fPauseTime;
+		gpGlobals->tickcount = m_nPauseTick;
+	}
+
+	if(g_pGamepadUI) {
+		g_pGamepadUI->OnUpdate(frametime);
 	}
 
 #if defined( TF_CLIENT_DLL )
@@ -1887,6 +2081,7 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 		return;
 	g_bLevelInitialized = true;
 
+	HackMgr_SetGamePaused( false );
 	m_bWasPaused = false;
 
 	input->LevelInit();
@@ -1934,6 +2129,10 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 
 	RecastMgr().Load();
 
+	if(g_pGamepadUI) {
+		g_pGamepadUI->OnLevelInitializePreEntity();
+	}
+
 	GetHud().LevelInit();
 
 #if defined( REPLAY_ENABLED )
@@ -1956,6 +2155,10 @@ void CClientDll::LevelInitPostEntity( )
 	ResetWindspeed();
 
 	C_PhysPropClientside::RecreateAll();
+
+	if(g_pGamepadUI) {
+		g_pGamepadUI->OnLevelInitializePostEntity();
+	}
 
 	GetCenterPrint()->Clear();
 }
@@ -2024,6 +2227,10 @@ void CClientDll::LevelShutdown( void )
 	
 	StopAllRumbleEffects();
 
+	if(g_pGamepadUI) {
+		g_pGamepadUI->OnLevelShutdown();
+	}
+
 	GetHud().LevelShutdown();
 
 	GetCenterPrint()->Clear();
@@ -2049,6 +2256,7 @@ void CClientDll::LevelShutdown( void )
 
 	// Should never be paused at this point
 	HackMgr_SetGamePaused( false );
+	m_bWasPaused = false;
 }
 
 

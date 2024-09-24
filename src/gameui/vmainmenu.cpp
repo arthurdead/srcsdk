@@ -19,7 +19,7 @@
 
 #include "vsignindialog.h"
 #include "vguisystemmoduleloader.h"
-#include "VAttractScreen.h"
+#include "vattractscreen.h"
 #include "gamemodes.h"
 
 #include "vgui/ILocalize.h"
@@ -38,8 +38,6 @@
 #include "tier0/icommandline.h"
 #include "fmtstr.h"
 
-#include "matchmaking/swarm/imatchext_swarm.h"
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -50,13 +48,8 @@ using namespace BaseModUI;
 static ConVar connect_lobby( "connect_lobby", "", FCVAR_HIDDEN, "Sets the lobby ID to connect to on start." );
 static ConVar ui_old_options_menu( "ui_old_options_menu", "0", FCVAR_HIDDEN, "Brings up the old tabbed options dialog from Keyboard/Mouse when set to 1." );
 static ConVar ui_play_online_browser( "ui_play_online_browser",
-#if defined( _DEMO ) && !defined( _X360 )
-									 "0",
-									 FCVAR_NONE,
-#else
 									 "1",
 									 FCVAR_RELEASE,
-#endif
 									 "Whether play online displays a browser or plain search dialog." );
 
 ConVar asw_show_all_singleplayer_maps( "asw_show_all_singleplayer_maps", "0", FCVAR_NONE, "If set, offline practice option on the main menu will show all maps." );

@@ -14,31 +14,17 @@
 // Engine Cvars
 const ConVar	*g_pDeveloper = NULL;
 
-class CClientDLL_ConVarAccessor : public IConCommandBaseAccessor
+class CClientDLL_ConVarAccessor : public CDefaultAccessor
 {
 public:
 	virtual bool	RegisterConCommandBase( ConCommandBase *pCommand )
 	{
 	#ifdef _DEBUG
-		if(cvar->FindCommandBase(pCommand->GetName()) != NULL) {
-			DevMsg("client dll tried to re-register con var/command named %s\n", pCommand->GetName());
-		}
+		if(pCommand->IsFlagSet(FCVAR_GAMEDLL))
+			DevMsg("client dll tried to register server con var/command named %s\n", pCommand->GetName());
 	#endif
 
-		// Link to engine's list instead
-		cvar->RegisterConCommand( pCommand );
-
-		// Apply any command-line values.
-		const char *pValue = cvar->GetCommandLineValue( pCommand->GetName() );
-		if( pValue )
-		{
-			if ( !pCommand->IsCommand() )
-			{
-				( ( ConVar * )pCommand )->SetValue( pValue );
-			}
-		}
-
-		return true;
+		return CDefaultAccessor::RegisterConCommandBase( pCommand );
 	}
 };
 

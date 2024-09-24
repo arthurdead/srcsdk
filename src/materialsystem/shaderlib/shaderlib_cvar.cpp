@@ -13,26 +13,17 @@
 // ------------------------------------------------------------------------------------------- //
 // ConVar stuff.
 // ------------------------------------------------------------------------------------------- //
-class CShaderLibConVarAccessor : public IConCommandBaseAccessor
+class CShaderLibConVarAccessor : public CDefaultAccessor
 {
 public:
 	virtual bool	RegisterConCommandBase( ConCommandBase *pCommand )
 	{
 	#ifdef _DEBUG
-		if(cvar->FindCommandBase(pCommand->GetName()) != NULL) {
-			DevMsg("shader dll tried to re-register con var/command named %s\n", pCommand->GetName());
-		}
+		if(pCommand->IsFlagSet(FCVAR_GAMEDLL))
+			DevMsg("shader dll tried to register server con var/command named %s\n", pCommand->GetName());
 	#endif
 
-		// Link to engine's list instead
-		g_pCVar->RegisterConCommand( pCommand );
-
-		char const *pValue = g_pCVar->GetCommandLineValue( pCommand->GetName() );
-		if( pValue && !pCommand->IsCommand() )
-		{
-			( ( ConVar * )pCommand )->SetValue( pValue );
-		}
-		return true;
+		return CDefaultAccessor::RegisterConCommandBase( pCommand );
 	}
 };
 
@@ -43,6 +34,6 @@ void InitShaderLibCVars( CreateInterfaceFn cvarFactory )
 {
 	if ( g_pCVar )
 	{
-		ConVar_Register( FCVAR_MATERIAL_SYSTEM_THREAD, &g_ConVarAccessor );
+		ConVar_Register( FCVAR_MATERIAL_SYSTEM_THREAD | FCVAR_CLIENTDLL, &g_ConVarAccessor );
 	}
 }

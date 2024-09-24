@@ -8,7 +8,12 @@
 extern CreateInterfaceFn GetEngineInterfaceFactory();
 extern CreateInterfaceFn GetFilesystemInterfaceFactory();
 extern CreateInterfaceFn GetLauncherInterfaceFactory();
+#ifndef SWDS
 extern CreateInterfaceFn GetMaterialSystemInterfaceFactory();
+#endif
 extern CreateInterfaceFn GetVstdlibInterfaceFactory();
+#ifndef SWDS
+extern bool IsDedicatedServer();
+#endif
 
 #endif

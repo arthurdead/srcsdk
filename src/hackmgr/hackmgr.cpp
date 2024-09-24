@@ -8,7 +8,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-HACKMGR_API void DependOnHackMgr()
+HACKMGR_API void HackMgr_DependantModuleLoaded(const char *name)
 {
 }
 
@@ -53,21 +53,8 @@ void AddressManager::init()
 		return;
 	}
 
-	const char *pGameDir = CommandLine()->ParmValue("-game", "hl2");
-
-	char szTargetPath[MAX_PATH];
-	V_strncpy(szTargetPath, pGameDir, sizeof(szTargetPath));
-	int len = V_strlen(szTargetPath);
-	if(szTargetPath[len] != CORRECT_PATH_SEPARATOR &&
-		szTargetPath[len] != INCORRECT_PATH_SEPARATOR) {
-		V_strcat(szTargetPath, CORRECT_PATH_SEPARATOR_S "bin" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
-	} else {
-		V_strcat(szTargetPath, "bin" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
-	}
-	V_strcat(szTargetPath, "hackmgr.vdf", sizeof(szTargetPath));
-
 	kv = new KeyValues("HackMgr");
-	if(!kv->LoadFromFile(pFileSystem, szTargetPath, NULL)) {
+	if(!kv->LoadFromFile(pFileSystem, "hackmgr.vdf", "GAMEBIN")) {
 		kv->deleteThis();
 		kv = NULL;
 		return;

@@ -16,7 +16,6 @@ using namespace vgui;
 #include "filesystem.h"
 #include "tier1/convar.h"
 #include "engineinterface.h"
-#include "CvarToggleCheckButton.h"
 
 #include "modinfo.h"
 
@@ -52,7 +51,7 @@ CCreateMultiplayerGameServerPage::CCreateMultiplayerGameServerPage(vgui::Panel *
 
 	// initialize password
 //	SetControlString("PasswordEdit", engine->pfnGetCvarString("sv_password"));
-	ConVarRef var( "sv_password" );
+	CGameUIConVarRef var( "sv_password" );
 	if ( var.IsValid() )
 	{
 		SetControlString("PasswordEdit", var.GetString() );
@@ -106,7 +105,7 @@ void CCreateMultiplayerGameServerPage::OnApplyChanges()
 			quota = 0;
 		}
 		m_pSavedData->SetInt( "bot_quota", quota );
-		ConVarRef bot_quota( "bot_quota" );
+		CGameUIConVarRef bot_quota( "bot_quota" );
 		bot_quota.SetValue( quota );
 
 		int difficulty = 0;
@@ -125,7 +124,7 @@ void CCreateMultiplayerGameServerPage::OnApplyChanges()
 			}
 		}
 		m_pSavedData->SetInt( "bot_difficulty", difficulty );
-		ConVarRef bot_difficulty( "bot_difficulty" );
+		CGameUIConVarRef bot_difficulty( "bot_difficulty" );
 		bot_difficulty.SetValue( difficulty );
 	}
 }

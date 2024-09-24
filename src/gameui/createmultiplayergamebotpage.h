@@ -10,11 +10,11 @@
 #pragma once
 
 #include <vgui_controls/PropertyPage.h>
+#include "gameui_cvartogglecheckbutton.h"
 
 class CPanelListPanel;
 class CDescription;
 class mpcontrol_t;
-class CCvarToggleCheckButton;
 
 //-----------------------------------------------------------------------------
 // Purpose: advanced bot properties page of the create game server dialog
@@ -32,22 +32,22 @@ protected:
 	virtual void OnApplyChanges();
 
 private:
-	CCvarToggleCheckButton *m_joinAfterPlayer;
+	CGameUICvarToggleCheckButton *m_joinAfterPlayer;
 
-	CCvarToggleCheckButton *m_allowRogues;
+	CGameUICvarToggleCheckButton *m_allowRogues;
 
-	CCvarToggleCheckButton *m_allowPistols;
-	CCvarToggleCheckButton *m_allowShotguns;
-	CCvarToggleCheckButton *m_allowSubmachineGuns;
-	CCvarToggleCheckButton *m_allowMachineGuns;
-	CCvarToggleCheckButton *m_allowRifles;
-	CCvarToggleCheckButton *m_allowGrenades;
+	CGameUICvarToggleCheckButton *m_allowPistols;
+	CGameUICvarToggleCheckButton *m_allowShotguns;
+	CGameUICvarToggleCheckButton *m_allowSubmachineGuns;
+	CGameUICvarToggleCheckButton *m_allowMachineGuns;
+	CGameUICvarToggleCheckButton *m_allowRifles;
+	CGameUICvarToggleCheckButton *m_allowGrenades;
 #ifdef CS_SHIELD_ENABLED
-	CCvarToggleCheckButton *m_allowShields;
+	CGameUICvarToggleCheckButton *m_allowShields;
 #endif // CS_SHIELD_ENABLED
-	CCvarToggleCheckButton *m_allowSnipers;
+	CGameUICvarToggleCheckButton *m_allowSnipers;
 
-	CCvarToggleCheckButton *m_deferToHuman;
+	CGameUICvarToggleCheckButton *m_deferToHuman;
 
 	vgui::ComboBox *m_joinTeamCombo;
 	void SetJoinTeamCombo( const char *team );

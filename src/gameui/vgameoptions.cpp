@@ -4,9 +4,9 @@
 //
 //=====================================================================================//
 
-#include "VGameOptions.h"
-#include "VSpinnerControl.h"
-#include "VFooterPanel.h"
+#include "vgameoptions.h"
+#include "vspinnercontrol.h"
+#include "vfooterpanel.h"
 #include "gameui_util.h"
 #include "vgui_controls/CheckButton.h"
 

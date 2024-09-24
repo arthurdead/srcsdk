@@ -24,13 +24,10 @@
 #include "vgenericconfirmation.h"
 #include "vgamesettings.h"
 #include "vgetlegacydata.h"
-#include "cdll_util.h"
 #include "nb_header_footer.h"
 #include "nb_button.h"
 #include "fmtstr.h"
 #include "smartptr.h"
-#include "missionchooser/iasw_mission_chooser.h"
-#include "missionchooser/iasw_mission_chooser_source.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

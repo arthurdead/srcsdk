@@ -4,9 +4,9 @@
 //
 //=====================================================================================//
 
-#include "VOptions.h"
-#include "VFooterPanel.h"
-#include "VHybridButton.h"
+#include "voptions.h"
+#include "vfooterpanel.h"
+#include "vhybridbutton.h"
 
 #include "vgui_controls/Button.h"
 

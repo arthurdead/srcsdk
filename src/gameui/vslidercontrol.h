@@ -3,8 +3,7 @@
 
 #include "basemodui.h"
 #include "vgui/MouseCode.h"
-
-class CGameUIConVarRef;
+#include "gameui_util.h"
 
 namespace BaseModUI
 {

@@ -18,7 +18,7 @@ CGameUiAvatarImage::CGameUiAvatarImage( void )
 {
 	m_bValid = false;
 	m_flFetchedTime = 0.0f;
-	m_iTextureID = ( -1 );
+	m_iTextureID = vgui::INVALID_TEXTURE;
 }
 
 void CGameUiAvatarImage::ClearAvatarSteamID( void )
@@ -36,7 +36,8 @@ bool CGameUiAvatarImage::SetAvatarSteamID( CSteamID steamIDUser )
 
 	if ( steamapicontext->SteamFriends() && steamapicontext->SteamUtils() )
 	{
-		int iAvatar = steamapicontext->SteamFriends()->GetFriendAvatar( steamIDUser, k_EAvatarSize64x64 );
+		//int iAvatar = steamapicontext->SteamFriends()->GetFriendAvatar( steamIDUser, k_EAvatarSize64x64 );
+		int iAvatar = steamapicontext->SteamFriends()->GetMediumFriendAvatar( steamIDUser );
 
 		/*
 		// See if it's in our list already
@@ -79,7 +80,7 @@ bool CGameUiAvatarImage::SetAvatarSteamID( CSteamID steamIDUser )
 //-----------------------------------------------------------------------------
 void CGameUiAvatarImage::InitFromRGBA( const byte *rgba, int width, int height )
 {
-	if ( m_iTextureID == -1 )
+	if ( m_iTextureID == vgui::INVALID_TEXTURE )
 	{
 		m_iTextureID = vgui::surface()->CreateNewTextureID( true );
 	}

@@ -143,10 +143,6 @@ void ControllerOptionsButtons::Activate()
 
 	m_iActiveUserSlot = CBaseModPanel::GetSingleton().GetLastActiveUserId();
 
-	int iActiveController = XBX_GetUserId( m_iActiveUserSlot );
-
-	SetGameUIActiveSplitScreenPlayerSlot( m_iActiveUserSlot );
-
 	// Figure out which button should be default
 
 #if defined ( _X360 )
@@ -160,7 +156,7 @@ void ControllerOptionsButtons::Activate()
 		{
 			firstPanel->NavigateTo();
 		}
-	}		
+	}
 #endif
 
 	vgui::Label *pLabel = dynamic_cast< vgui::Label * >( FindChildByName( "LblGameTitle" ) );
@@ -302,13 +298,8 @@ void ControllerOptionsButtons::OnCommand(const char *command)
 				joy_cfg_preset.SetValue( i );
 			}
 
-			int iOldSlot = engine->GetActiveSplitScreenPlayerSlot();
-			engine->SetActiveSplitScreenPlayerSlot( m_iActiveUserSlot );
-
 			const char *pszCfg = pszButtonSettingConfigs[i];
 			engine->ExecuteClientCmd( VarArgs( "exec %s", pszCfg ) );
-
-			engine->SetActiveSplitScreenPlayerSlot( iOldSlot );
 
 //			RecalculateBindingLabels();
 			m_nRecalculateLabelsTicks = 1; // used to delay polling the values until we've flushed the command buffer 

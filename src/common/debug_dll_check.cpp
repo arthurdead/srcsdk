@@ -8,6 +8,7 @@
 
 #if defined(DEBUG) || defined(_DEBUG)
 #include "tier0/platform.h"
+#include "module_name.h"
 
 #ifndef DLLNAME
 	#error

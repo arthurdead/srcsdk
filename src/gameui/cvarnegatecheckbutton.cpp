@@ -11,6 +11,7 @@
 #include "IGameUIFuncs.h"
 #include "tier1/KeyValues.h"
 #include "tier1/convar.h"
+#include "gameui_util.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -44,7 +45,7 @@ void CCvarNegateCheckButton::Paint()
 
 	// Look up current value
 //	float value = engine->pfnGetCvarFloat( m_pszCvarName );
-	ConVarRef var( m_pszCvarName );
+	CGameUIConVarRef var( m_pszCvarName );
 	if ( !var.IsValid() )
 		return;
 
@@ -73,7 +74,7 @@ void CCvarNegateCheckButton::Reset()
 {
 	// Look up current value
 //	float value = engine->pfnGetCvarFloat( m_pszCvarName );
-	ConVarRef var( m_pszCvarName );
+	CGameUIConVarRef var( m_pszCvarName );
 	if ( !var.IsValid() )
 		return;
 
@@ -109,7 +110,7 @@ void CCvarNegateCheckButton::ApplyChanges()
 	if ( !m_pszCvarName || !m_pszCvarName[ 0 ] ) 
 		return;
 
-	ConVarRef var( m_pszCvarName );
+	CGameUIConVarRef var( m_pszCvarName );
 	float value = var.GetFloat();
 	
 	value = (float)fabs( value );

@@ -15,7 +15,12 @@
 
 class ICollideable;
 class IServerNetworkable;
+#ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CServerBaseEntity;
+#else
+class CServerBaseEntity;
+#endif
 
 
 // This is the server's version of IUnknown. We may want to use a QueryInterface-like
@@ -26,7 +31,7 @@ public:
 	// Gets the interface to the collideable + networkable representation of the entity
 	virtual ICollideable*		GetCollideable() = 0;
 	virtual IServerNetworkable*	GetNetworkable() = 0;
-	virtual CBaseEntity*		GetBaseEntity() = 0;
+	virtual CServerBaseEntity*		GetBaseEntity() = 0;
 };
 
 class IServerUnknownMod

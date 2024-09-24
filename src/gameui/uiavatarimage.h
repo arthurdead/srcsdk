@@ -8,14 +8,8 @@
 #define __UIAVATARIMAGE_H__
 
 #include "vgui/IImage.h"
-
-#ifdef _X360
-
-typedef vgui::IImage CGameUiAvatarImage;
-
-#else
-
 #include "steam/steam_api.h"
+#include "Color.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -87,14 +81,11 @@ protected:
 
 private:
 	Color m_Color;
-	int m_iTextureID;
+	vgui::HTexture m_iTextureID;
 	int m_nX, m_nY, m_nWide, m_nTall;
 	bool m_bValid;
 	float m_flFetchedTime;
 };
-
-#endif // !_X360
-
 
 
 #endif // __UIAVATARIMAGE_H__

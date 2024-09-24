@@ -65,13 +65,17 @@ namespace HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _) { \
 }
 #endif
 
-HACKMGR_API void DependOnHackMgr();
+HACKMGR_API void HackMgr_DependantModuleLoaded(const char *name);
 
+#ifndef SWDS
 class IBaseClientDLL;
+#endif
 class IServerGameDLL;
 struct CGlobalVars;
 
+#ifndef SWDS
 HACKMGR_API bool HackMgr_Client_PreInit(IBaseClientDLL *pdll, CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CGlobalVarsBase *pGlobals);
+#endif
 HACKMGR_API bool HackMgr_Server_PreInit(IServerGameDLL *pdll, CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn fileSystemFactory, CGlobalVars *pGlobals, bool bDedicated);
 
 HACKMGR_API bool HackMgr_IsGamePaused();

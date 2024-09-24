@@ -9,6 +9,13 @@ HACKMGR_EXECUTE_ON_LOAD_BEGIN(65535)
 
 CommandLine()->AppendParm("-nop4", "");
 
+#ifndef SWDS
+if(!IsDedicatedServer()) {
+	CommandLine()->RemoveParm("-nogamepadui");
+	CommandLine()->AppendParm("-gamepadui", "");
+}
+#endif
+
 #ifdef _DEBUG
 CommandLine()->AppendParm("-allowdebug", "");
 CommandLine()->AppendParm("-dev", "");
@@ -28,8 +35,7 @@ CommandLine()->AppendParm("-conclearlog", "");
 CommandLine()->RemoveParm("-tools");
 CommandLine()->RemoveParm("-edit");
 #else
-bool is_dedicated = false;
-if(is_dedicated) {
+if(IsDedicatedServer()) {
 	CommandLine()->RemoveParm("-tools");
 	CommandLine()->RemoveParm("-edit");
 } else {

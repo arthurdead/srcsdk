@@ -8,7 +8,7 @@
 #include "vgenericpanellist.h"
 #include "vhybridbutton.h"
 #include "vmainmenu.h"
-#include "EngineInterface.h"
+#include "engineinterface.h"
 #include "gameui_util.h"
 
 #include "tier1/KeyValues.h"
@@ -34,7 +34,7 @@ ConVar cl_quick_join_scroll_start( "cl_quick_join_scroll_start", "1", FCVAR_NONE
 ConVar cl_quick_join_scroll_max( "cl_quick_join_scroll_max", "4", FCVAR_NONE, "Max players shown in the friend scrolling ticker." );
 ConVar cl_quick_join_scroll_rate( "cl_quick_join_scroll_rate", "90", FCVAR_NONE, "Rate of the friend scrolling ticker." );
 ConVar cl_quick_join_scroll_offset( "cl_quick_join_scroll_offset", "16", FCVAR_NONE, "Offset of the friend scrolling ticker from the title." );
-ConVar cl_quick_join_panel_tall( "cl_quick_join_panel_tall", IsX360() ? "16" : "14", // X360 doesn't show icons, but need extra space on PC for Steam avatars
+ConVar cl_quick_join_panel_tall( "cl_quick_join_panel_tall", "14", // X360 doesn't show icons, but need extra space on PC for Steam avatars
 								 FCVAR_NONE, "The spacing between panels." );
 ConVar cl_quick_join_panel_accel( "cl_quick_join_panel_accel", "0.025", FCVAR_NONE, "Acceleration for the y position of the panel when items are added or removed." );
 ConVar cl_quick_join_panel_fakecount( "cl_quick_join_panel_fakecount", "-1", FCVAR_NONE );

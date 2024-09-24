@@ -42,6 +42,8 @@ class CCommand;
 
 #define FCVAR_RELEASE			(1<<15) // Cvars tagged with this are the only cvars avaliable to customers
 
+#define FCVAR_SERVERBOUNDED		(1<<19)
+
 // ConVar only
 #define FCVAR_PROTECTED			(1<<5)  // It's a server cvar, but we don't send the data since it's a password, etc.  Sends 1 if it's not bland/zero, 0 otherwise as value
 #define	FCVAR_ARCHIVE			(1<<7)	// set to cause it to be saved to vars.rc
@@ -76,10 +78,6 @@ class CCommand;
 
 // #define FCVAR_AVAILABLE			(1<<6)
 // #define FCVAR_AVAILABLE			(1<<18)
-// #define FCVAR_AVAILABLE			(1<<19)
-// #define FCVAR_AVAILABLE			(1<<20)
-// #define FCVAR_AVAILABLE			(1<<21)
-// #define FCVAR_AVAILABLE			(1<<23)
 // #define FCVAR_AVAILABLE			(1<<24)
 // #define FCVAR_AVAILABLE			(1<<26)
 // #define FCVAR_AVAILABLE			(1<<27)

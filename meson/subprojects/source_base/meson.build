@@ -89,6 +89,7 @@ source_dep = declare_dependency(
 		'-mlzcnt',
 	],
 	include_directories: include_directories(
+		src_root_dir,
 		join_paths(src_root_dir,'public'),
 		join_paths(src_root_dir,'common'),
 		join_paths(src_root_dir,'utils','common')
@@ -118,6 +119,9 @@ source_static_lib_dep_base = declare_dependency(
 	dependencies: [
 		source_dep
 	],
+	sources: files(
+		join_paths(common_dir,'module_name.cpp'),
+	)
 )
 
 source_shared_lib_dep_base = declare_dependency(
@@ -125,7 +129,8 @@ source_shared_lib_dep_base = declare_dependency(
 		source_dep
 	],
 	sources: files(
-		join_paths(common_dir,'debug_dll_check.cpp')
+		join_paths(common_dir,'module_name.cpp'),
+		join_paths(common_dir,'debug_dll_check.cpp'),
 	)
 )
 

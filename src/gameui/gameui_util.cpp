@@ -17,6 +17,30 @@
 using namespace vgui;
 
 //-----------------------------------------------------------------------------
+// Purpose: Performs a var args printf into a static return buffer
+// Input  : *format - 
+//			... - 
+// Output : char
+//-----------------------------------------------------------------------------
+static char		varargs_string[5][1024];
+static int curr_varargs = 0;
+const char *VarArgs( const char *format, ... )
+{
+	va_list		argptr;
+	
+	va_start (argptr, format);
+	Q_vsnprintf(varargs_string[curr_varargs], sizeof(varargs_string[curr_varargs]), format,argptr);
+	va_end (argptr);
+
+	const char *string = varargs_string[curr_varargs++];
+	if(curr_varargs == ARRAYSIZE(varargs_string)) {
+		curr_varargs = 0;
+	}
+
+	return string;	
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Scans player names
 //Passes the player name to be checked in a KeyValues pointer
 //with the keyname "name"
@@ -69,80 +93,4 @@ void GameUI_MakeSafeName( const char *oldName, char *newName, int newNameBufSize
 		}
 	}
 	newName[newpos] = 0;
-}
-
-//-----------------------------------------------------------------------------
-// This version is simply used to make reading convars simpler.
-// Writing convars isn't allowed in this mode
-//-----------------------------------------------------------------------------
-class CEmptyGameUIConVar : public ConVar
-{
-public:
-	CEmptyGameUIConVar() : ConVar( "", "0" ) {}
-	// Used for optimal read access
-	virtual void SetValue( const char *pValue ) {}
-	virtual void SetValue( float flValue ) {}
-	virtual void SetValue( int nValue ) {}
-	virtual const char *GetName( void ) const { return ""; }
-	virtual bool IsFlagSet( int nFlags ) const { return false; }
-};
-
-static CEmptyGameUIConVar s_EmptyGameUIConVar;
-
-// Helper for splitscreen ConVars
-CGameUIConVarRef::CGameUIConVarRef( const char *pName )
-{
-	Init( pName, false );
-}
-
-CGameUIConVarRef::CGameUIConVarRef( const char *pName, bool bIgnoreMissing )
-{
-	Init( pName, bIgnoreMissing );
-}
-
-void CGameUIConVarRef::Init( const char *pName, bool bIgnoreMissing )
-{
-	char pchName[ 256 ];
-	Q_strncpy( pchName, pName, sizeof( pchName ) );
-
-	m_pConVar = g_pCVar ? g_pCVar->FindVar( pchName ) : &s_EmptyGameUIConVar;
-	if ( !m_pConVar )
-	{
-		m_pConVar = &s_EmptyGameUIConVar;
-	}
-	m_pConVarState = static_cast< ConVar * >( m_pConVar );
-
-	if ( !IsValid() )
-	{
-		static bool bFirst = true;
-		if ( g_pCVar || bFirst )
-		{
-			if ( !bIgnoreMissing )
-			{
-				Warning( "CGameUIConVarRef %s doesn't point to an existing ConVar\n", pName );
-			}
-			bFirst = false;
-		}
-	}
-}
-
-CGameUIConVarRef::CGameUIConVarRef( IConVar *pConVar )
-{
-	m_pConVar = pConVar ? pConVar : &s_EmptyGameUIConVar;
-	m_pConVarState = static_cast< ConVar * >( m_pConVar );
-
-	char pchName[ 256 ];
-	Q_strncpy( pchName, pConVar->GetName(), sizeof( pchName ) );
-
-	m_pConVar = g_pCVar ? g_pCVar->FindVar( pchName ) : &s_EmptyGameUIConVar;
-	if ( !m_pConVar )
-	{
-		m_pConVar = &s_EmptyGameUIConVar;
-	}
-	m_pConVarState = static_cast< ConVar * >( m_pConVar );
-}
-
-bool CGameUIConVarRef::IsValid() const
-{
-	return m_pConVar != &s_EmptyGameUIConVar;
 }

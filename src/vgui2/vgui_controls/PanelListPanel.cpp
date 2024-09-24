@@ -26,14 +26,49 @@ using namespace vgui;
 
 DECLARE_BUILD_FACTORY( PanelListPanel );
 
+class VScrollBarReversedButtons : public ScrollBar
+{
+public:
+	VScrollBarReversedButtons( Panel *parent, const char *panelName, bool vertical );
+	virtual void ApplySchemeSettings( IScheme *pScheme );
+};
+
+VScrollBarReversedButtons::VScrollBarReversedButtons( Panel *parent, const char *panelName, bool vertical ) : ScrollBar( parent, panelName, vertical )
+{
+}
+
+void VScrollBarReversedButtons::ApplySchemeSettings( IScheme *pScheme )
+{
+	ScrollBar::ApplySchemeSettings( pScheme );
+
+	Button *pButton;
+	pButton = GetButton( 0 );
+	pButton->SetArmedColor(		pButton->GetSchemeColor("DimBaseText", pScheme), pButton->GetBgColor());
+	pButton->SetDepressedColor(	pButton->GetSchemeColor("DimBaseText", pScheme), pButton->GetBgColor());
+	pButton->SetDefaultColor(	pButton->GetFgColor(),							 pButton->GetBgColor());
+	
+	pButton = GetButton( 1 );
+	pButton->SetArmedColor(		pButton->GetSchemeColor("DimBaseText", pScheme), pButton->GetBgColor());
+	pButton->SetDepressedColor(	pButton->GetSchemeColor("DimBaseText", pScheme), pButton->GetBgColor());
+	pButton->SetDefaultColor(	pButton->GetFgColor(),							 pButton->GetBgColor());
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-PanelListPanel::PanelListPanel( vgui::Panel *parent, char const *panelName ) : EditablePanel( parent, panelName )
+PanelListPanel::PanelListPanel( vgui::Panel *parent, char const *panelName, bool inverseButtons ) : EditablePanel( parent, panelName )
 {
 	SetBounds( 0, 0, 100, 100 );
 
-	m_vbar = new ScrollBar(this, "PanelListPanelVScroll", true);
+	if (inverseButtons)
+	{
+		m_vbar = new VScrollBarReversedButtons(this, "PanelListPanelVScroll", true );
+	}
+	else
+	{
+		m_vbar = new ScrollBar(this, "PanelListPanelVScroll", true);
+	}
+
 	m_vbar->SetVisible(false);
 	m_vbar->AddActionSignalTarget( this );
 

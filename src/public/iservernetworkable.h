@@ -27,7 +27,12 @@
 class ServerClass;
 class SendTable;
 struct edict_t;
+#ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CServerBaseEntity;
+#else
+class CServerBaseEntity;
+#endif
 class CSerialEntity;
 class CBaseNetworkable;
 
@@ -100,7 +105,7 @@ public:
 
 	// In place of a generic QueryInterface.
 	virtual CBaseNetworkable* GetBaseNetworkable() = 0;
-	virtual CBaseEntity*	GetBaseEntity() = 0; // Only used by game code.
+	virtual CServerBaseEntity*	GetBaseEntity() = 0; // Only used by game code.
 	virtual PVSInfo_t*		GetPVSInfo() = 0; // get current visibilty data
 
 protected:

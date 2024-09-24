@@ -21,7 +21,6 @@ using namespace vgui;
 #include "scriptobject.h"
 #include "tier1/convar.h"
 #include "engineinterface.h"
-#include "CvarToggleCheckButton.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -97,21 +96,21 @@ CCreateMultiplayerGameBotPage::CCreateMultiplayerGameBotPage( vgui::Panel *paren
 {
 	m_pSavedData = botKeys;
 
-	m_allowRogues = new CCvarToggleCheckButton( this, "BotAllowRogueCheck", "", "bot_allow_rogues" );
-	m_allowPistols = new CCvarToggleCheckButton( this, "BotAllowPistolsCheck", "", "bot_allow_pistols" );
-	m_allowShotguns = new CCvarToggleCheckButton( this, "BotAllowShotgunsCheck", "", "bot_allow_shotguns" );
-	m_allowSubmachineGuns = new CCvarToggleCheckButton( this, "BotAllowSubmachineGunsCheck", "", "bot_allow_sub_machine_guns" );
-	m_allowRifles = new CCvarToggleCheckButton( this, "BotAllowRiflesCheck", "", "bot_allow_rifles" );
-	m_allowMachineGuns = new CCvarToggleCheckButton( this, "BotAllowMachineGunsCheck", "", "bot_allow_machine_guns" );
-	m_allowGrenades = new CCvarToggleCheckButton( this, "BotAllowGrenadesCheck", "", "bot_allow_grenades" );
-	m_allowSnipers = new CCvarToggleCheckButton( this, "BotAllowSnipersCheck", "", "bot_allow_snipers" );
+	m_allowRogues = new CGameUICvarToggleCheckButton( this, "BotAllowRogueCheck", "", "bot_allow_rogues" );
+	m_allowPistols = new CGameUICvarToggleCheckButton( this, "BotAllowPistolsCheck", "", "bot_allow_pistols" );
+	m_allowShotguns = new CGameUICvarToggleCheckButton( this, "BotAllowShotgunsCheck", "", "bot_allow_shotguns" );
+	m_allowSubmachineGuns = new CGameUICvarToggleCheckButton( this, "BotAllowSubmachineGunsCheck", "", "bot_allow_sub_machine_guns" );
+	m_allowRifles = new CGameUICvarToggleCheckButton( this, "BotAllowRiflesCheck", "", "bot_allow_rifles" );
+	m_allowMachineGuns = new CGameUICvarToggleCheckButton( this, "BotAllowMachineGunsCheck", "", "bot_allow_machine_guns" );
+	m_allowGrenades = new CGameUICvarToggleCheckButton( this, "BotAllowGrenadesCheck", "", "bot_allow_grenades" );
+	m_allowSnipers = new CGameUICvarToggleCheckButton( this, "BotAllowSnipersCheck", "", "bot_allow_snipers" );
 #ifdef CS_SHIELD_ENABLED
-	m_allowShields = new CCvarToggleCheckButton( this, "BotAllowShieldCheck", "", "bot_allow_shield" );
+	m_allowShields = new CGameUICvarToggleCheckButton( this, "BotAllowShieldCheck", "", "bot_allow_shield" );
 #endif // CS_SHIELD_ENABLED
 
-	m_joinAfterPlayer = new CCvarToggleCheckButton( this, "BotJoinAfterPlayerCheck", "", "bot_join_after_player" );
+	m_joinAfterPlayer = new CGameUICvarToggleCheckButton( this, "BotJoinAfterPlayerCheck", "", "bot_join_after_player" );
 
-	m_deferToHuman = new CCvarToggleCheckButton( this, "BotDeferToHumanCheck", "", "bot_defer_to_human" );
+	m_deferToHuman = new CGameUICvarToggleCheckButton( this, "BotDeferToHumanCheck", "", "bot_defer_to_human" );
 
 	// set up team join combo box
 	// NOTE: If order of AddItem is changed, update the associated enum
@@ -179,7 +178,7 @@ void UpdateValue( KeyValues *data, const char *cvarName, int value )
 {
 	data->SetInt( cvarName, value );
 
-	ConVarRef var( cvarName );
+	CGameUIConVarRef var( cvarName );
 	var.SetValue( value );
 }
 
@@ -189,7 +188,7 @@ void UpdateValue( KeyValues *data, const char *cvarName, const char *value )
 {
 	data->SetString( cvarName, value );
 
-	ConVarRef var( cvarName );
+	CGameUIConVarRef var( cvarName );
 	var.SetValue( value );
 }
 

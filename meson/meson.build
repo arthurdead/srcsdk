@@ -31,6 +31,7 @@ if build_client
 	#subproject('video_services')
 	subproject('game_shader_dx9')
 	subproject('gameui')
+	subproject('gamepadui_redirect')
 	subproject('client')
 endif
 if build_listen_server

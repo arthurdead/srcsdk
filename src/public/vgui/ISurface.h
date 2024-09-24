@@ -325,7 +325,7 @@ public:
 	virtual vgui::HCursor CreateCursorFromFile( char const *curOrAniFile, char const *pPathID = 0 ) = 0;
 
 	// create IVguiMatInfo object ( IMaterial wrapper in VguiMatSurface, NULL in CWin32Surface )
-	virtual IVguiMatInfo *DrawGetTextureMatInfoFactory( int id ) = 0;
+	virtual IVguiMatInfo *DrawGetTextureMatInfoFactory( HTexture id ) = 0;
 
 	virtual void PaintTraverseEx(VPANEL panel, bool paintPopups = false ) = 0;
 

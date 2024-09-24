@@ -7,7 +7,7 @@
 #ifndef __VGENERICCONFIRMATION_H__
 #define __VGENERICCONFIRMATION_H__
 
-#include "vgui_controls/CvarToggleCheckButton.h"
+#include "gameui_cvartogglecheckbutton.h"
 #include "gameui_util.h"
 
 #include "basemodui.h"
@@ -59,9 +59,7 @@ protected:
 	virtual void ApplySchemeSettings(vgui::IScheme *pScheme);
 	virtual void OnCommand(const char *command);
 	virtual void OnKeyCodePressed(vgui::KeyCode code);
-#ifndef _X360
 	virtual void OnKeyCodeTyped( vgui::KeyCode code );
-#endif
 	virtual void OnOpen();
 	virtual void LoadLayout();
 	virtual void PaintBackground();
@@ -71,7 +69,7 @@ protected:
 	vgui::Label *m_pLblCancelButton;
 	vgui::Label *m_pLblCancelText;
 	vgui::Panel *m_pPnlLowerGarnish;
-	vgui::CvarToggleCheckButton<CGameUIConVarRef> *m_pCheckBox;
+	CGameUICvarToggleCheckButton *m_pCheckBox;
 
 	CNB_Button* m_pBtnOK;
 	CNB_Button* m_pBtnCancel;

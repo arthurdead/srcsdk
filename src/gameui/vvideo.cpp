@@ -5,20 +5,19 @@
 //=====================================================================================//
 
 #include "vvideo.h"
-#include "VFooterPanel.h"
-#include "VDropDownMenu.h"
-#include "VSliderControl.h"
-#include "VHybridButton.h"
-#include "EngineInterface.h"
+#include "vfooterpanel.h"
+#include "vdropdownmenu.h"
+#include "vslidercontrol.h"
+#include "vhybridbutton.h"
+#include "engineinterface.h"
 #include "IGameUIFuncs.h"
 #include "gameui_util.h"
 #include "vgui/ISurface.h"
 #include "modes.h"
 #include "videocfg/videocfg.h"
-#include "VGenericConfirmation.h"
+#include "vgenericconfirmation.h"
 #include "nb_header_footer.h"
 #include "materialsystem/materialsystem_config.h"
-#include "cdll_util.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

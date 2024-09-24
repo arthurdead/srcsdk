@@ -107,7 +107,7 @@ void VControlsListPanel::StartCaptureMode( HCursor hCursor )
 
 	engine->StartKeyTrapMode();
 
-	if (hCursor)
+	if (hCursor != vgui::INVALID_CURSOR)
 	{
 		m_pInlineEditPanel->SetCursor(hCursor);
 
@@ -122,11 +122,11 @@ void VControlsListPanel::StartCaptureMode( HCursor hCursor )
 void VControlsListPanel::EndCaptureMode( HCursor hCursor )
 {
 	m_bCaptureMode = false;
-	input()->SetMouseCapture(NULL);
+	input()->SetMouseCapture(vgui::INVALID_VPANEL);
 	LeaveEditMode();
 	RequestFocus();
 	input()->SetMouseFocus(GetVPanel());
-	if (hCursor)
+	if (hCursor != vgui::INVALID_CURSOR)
 	{
 		m_pInlineEditPanel->SetCursor(hCursor);
 		surface()->SetCursor(hCursor);	

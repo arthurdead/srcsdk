@@ -9,7 +9,7 @@
 
 #include "basemodui.h"
 #include "vgenericpanellist.h"
-#include "vgui_controls/CvarToggleCheckButton.h"
+#include "gameui_cvartogglecheckbutton.h"
 #include "gameui_util.h"
 
 class CNB_Button;
@@ -86,7 +86,7 @@ private:
 	vgui::Label *m_LblDescription;
 	vgui::ImagePanel *m_ImgAddonIcon;
 	CNB_Header_Footer *m_pHeaderFooter;
-	vgui::CvarToggleCheckButton<CGameUIConVarRef> *m_pDoNotAskForAssociation;
+	CGameUICvarToggleCheckButton *m_pDoNotAskForAssociation;
 
 	vgui::EditablePanel *m_pSupportRequiredPanel;
 	vgui::EditablePanel *m_pInstallingSupportPanel;

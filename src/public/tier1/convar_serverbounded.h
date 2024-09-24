@@ -8,6 +8,7 @@
 #define CONVAR_SERVERBOUNDED_H
 #pragma once
 
+#include "convar.h"
 
 // This class is used to virtualize a ConVar's value, so the client can restrict its 
 // value while connected to a server. When using this across modules, it's important
@@ -20,18 +21,36 @@
 class ConVar_ServerBounded : public ConVar
 {
 public:
-	ConVar_ServerBounded( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString )
-		: ConVar( pName, pDefaultValue, flags, pHelpString ) 
+	ConVar_ServerBounded( void ) = delete;
+
+	ConVar_ServerBounded( const char *pName, const char *pDefaultValue, int flags = 0)
+		: ConVar( pName, pDefaultValue, flags|FCVAR_SERVERBOUNDED ) 
 	{
 	}
 
-	ConVar_ServerBounded( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, FnChangeCallback_t callback )
-		: ConVar( pName, pDefaultValue, flags, pHelpString, callback ) 
+	ConVar_ServerBounded( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString )
+		: ConVar( pName, pDefaultValue, flags|FCVAR_SERVERBOUNDED, pHelpString ) 
 	{
 	}
-	
-	ConVar_ServerBounded( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, bool bMin, float fMin, bool bMax, float fMax )
-		: ConVar( pName, pDefaultValue, flags, pHelpString, bMin, fMin, bMax, fMax ) {}
+	ConVar_ServerBounded( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, bool bMin, float fMin, bool bMax, float fMax )
+		: ConVar( pName, pDefaultValue, flags|FCVAR_SERVERBOUNDED, pHelpString, bMin, fMin, bMax, fMax ) 
+	{
+	}
+	ConVar_ServerBounded( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, FnChangeCallback_t callback )
+		: ConVar( pName, pDefaultValue, flags|FCVAR_SERVERBOUNDED, pHelpString, callback ) 
+	{
+	}
+	ConVar_ServerBounded( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, bool bMin, float fMin, bool bMax, float fMax,
+		FnChangeCallback_t callback )
+		: ConVar( pName, pDefaultValue, flags|FCVAR_SERVERBOUNDED, pHelpString, bMin, fMin, bMax, fMax, callback ) 
+	{
+	}
+
+	virtual void AddFlags( int flags ) { ConVar::AddFlags( flags ); }
 
 	// You must implement GetFloat.
 	virtual float GetFloat() const = 0;
@@ -43,7 +62,17 @@ public:
 	// Use this to get the underlying cvar's value.
 	float GetBaseFloatValue() const
 	{
-		return ConVar::GetFloat();
+		return ConVar::GetBaseFloatValue();
+	}
+
+	int GetBaseIntValue() const
+	{
+		return ConVar::GetBaseIntValue();
+	}
+
+	bool GetBaseBoolValue() const
+	{
+		return ConVar::GetBaseBoolValue();
 	}
 };
 

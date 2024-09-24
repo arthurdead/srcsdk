@@ -10,11 +10,11 @@
 #pragma once
 
 #include <vgui_controls/PropertyPage.h>
+#include <vgui_controls/BitmapImagePanel.h>
+#include "gameui_cvartogglecheckbutton.h"
 
 class CLabeledCommandComboBox;
-class CBitmapImagePanel;
 
-class CCvarToggleCheckButton;
 class CCvarTextEntry;
 class CCvarSlider;
 
@@ -88,7 +88,7 @@ private:
 
 	void ColorForName(char const *pszColorName, int &r, int &g, int &b);
 
-	CBitmapImagePanel *m_pModelImage;
+	vgui::CBitmapImagePanel *m_pModelImage;
 	CLabeledCommandComboBox *m_pModelList;
 	char m_ModelName[128];
 
@@ -98,16 +98,16 @@ private:
 
     CCvarSlider *m_pPrimaryColorSlider;
     CCvarSlider *m_pSecondaryColorSlider;
-	CCvarToggleCheckButton *m_pHighQualityModelCheckBox;
+	CGameUICvarToggleCheckButton *m_pHighQualityModelCheckBox;
 
 	// Mod specific general checkboxes
-	vgui::Dar< CCvarToggleCheckButton * > m_cvarToggleCheckButtons;
+	vgui::Dar< CGameUICvarToggleCheckButton * > m_cvarToggleCheckButtons;
 
 	// --- crosshair controls ----------------------------------
 	CLabeledCommandComboBox *m_pCrosshairSize;
 	void InitCrosshairSizeList(CLabeledCommandComboBox *cb);
 
-	CCvarToggleCheckButton *m_pCrosshairTranslucencyCheckbox;
+	CGameUICvarToggleCheckButton *m_pCrosshairTranslucencyCheckbox;
 
 	vgui::ComboBox *m_pCrosshairColorComboBox;
 	void InitCrosshairColorEntries();
@@ -153,9 +153,8 @@ private:
 	int	m_nLogoG;
 	int	m_nLogoB;
 
-#ifndef _XBOX
 	vgui::DHANDLE<CMultiplayerAdvancedDialog> m_hMultiplayerAdvancedDialog;
-#endif
+
 	vgui::FileOpenDialog *m_hImportSprayDialog;
 };
 

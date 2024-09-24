@@ -30,7 +30,7 @@ class PanelListPanel : public EditablePanel
 	DECLARE_CLASS_SIMPLE( PanelListPanel, Panel );
 
 public:
-	PanelListPanel( vgui::Panel *parent, char const *panelName );
+	PanelListPanel( vgui::Panel *parent, char const *panelName, bool inverseButtons = false );
 	~PanelListPanel();
 
 	// DATA & ROW HANDLING
@@ -121,4 +121,7 @@ private:
 };
 
 }
+
+typedef vgui::PanelListPanel CPanelListPanel;
+
 #endif // PANELLISTPANEL_H

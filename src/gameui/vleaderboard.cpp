@@ -5,10 +5,10 @@
 //=====================================================================================//
 
 #include "vleaderboard.h"
-#include "VGenericPanelList.h"
-#include "EngineInterface.h"
-#include "VFooterPanel.h"
-#include "UIGameData.h"
+#include "vgenericpanellist.h"
+#include "engineinterface.h"
+#include "vfooterpanel.h"
+#include "uigamedata.h"
 #include "gameui_util.h"
 
 #include "vgui/ISurface.h"
@@ -18,11 +18,11 @@
 #include "vgui_controls/ImagePanel.h"
 #include "vgui/ILocalize.h"
 #include "vstdlib/random.h"	// remove once we have real data in the leaderboard
-#include "VFlyoutMenu.h"
-#include "VHybridButton.h"
-#include "VDropDownMenu.h"
-#include "VGameSettings.h"
-#include "FileSystem.h"
+#include "vflyoutmenu.h"
+#include "vhybridbutton.h"
+#include "vdropdownmenu.h"
+#include "vgamesettings.h"
+#include "filesystem.h"
 
 #include "fmtstr.h"
 #include "checksum_crc.h"

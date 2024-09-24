@@ -12,6 +12,7 @@
 #include "tier1/convar.h"
 #include <vgui/IVGui.h>
 #include <vgui_controls/PropertyPage.h>
+#include "gameui_util.h"
 
 #define CVARSLIDER_SCALE_FACTOR 100.0f
 
@@ -171,7 +172,7 @@ void CCvarSlider::Paint()
 {
 	// Get engine's current value
 //	float curvalue = engine->pfnGetCvarFloat( m_szCvarName );
-	ConVarRef var( m_szCvarName );
+	CGameUIConVarRef var( m_szCvarName );
 	if ( !var.IsValid() )
 		return;
 	float curvalue = var.GetFloat();
@@ -208,7 +209,7 @@ void CCvarSlider::ApplyChanges()
         }
     
 		//engine->Cvar_SetValue( m_szCvarName, m_fStartValue );
-		ConVarRef var( m_szCvarName );
+		CGameUIConVarRef var( m_szCvarName );
 		var.SetValue( (float)m_fStartValue );
 	}
 }
@@ -253,7 +254,7 @@ void CCvarSlider::Reset()
 {
 	// Set slider to current value
 //	m_fStartValue = engine->pfnGetCvarFloat( m_szCvarName );
-	ConVarRef var( m_szCvarName );
+	CGameUIConVarRef var( m_szCvarName );
 	if ( !var.IsValid() )
 	{
 	    m_fCurrentValue = m_fStartValue = 0.0f;

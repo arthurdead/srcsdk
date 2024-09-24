@@ -3,9 +3,8 @@
 // Purpose: 
 //
 //=====================================================================================//
-#include "cbase.h"
-#include "VLoadingProgress.h"
-#include "EngineInterface.h"
+#include "vloadingprogress.h"
+#include "engineinterface.h"
 #include "vgui_controls/Label.h"
 #include "vgui_controls/ProgressBar.h"
 #include "vgui/ISurface.h"
@@ -15,7 +14,7 @@
 #include "gameui_util.h"
 #include "KeyValues.h"
 #include "fmtstr.h"
-#include "FileSystem.h"
+#include "filesystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -36,7 +35,7 @@ LoadingProgress::LoadingProgress(Panel *parent, const char *panelName, LoadingWi
 {
 	memset( m_szGameMode, 0, sizeof( m_szGameMode ) );
 
-	if ( IsPC() && eLoadingType == LWT_LOADINGPLAQUE )
+	if ( eLoadingType == LWT_LOADINGPLAQUE )
 	{
 		MakePopup( false );
 	}
@@ -154,7 +153,7 @@ void LoadingProgress::ApplySchemeSettings( IScheme *pScheme )
 #if defined ( SUPPORT_DEFAULT_LOADING_POSTER )
 	if ( m_pDefaultPosterDataKV )
 	{
-		static ConVarRef mat_xbox_iswidescreen( "mat_xbox_iswidescreen" );
+		static CGameUIConVarRef mat_xbox_iswidescreen( "mat_xbox_iswidescreen" );
 		bool bIsWidescreen = mat_xbox_iswidescreen.GetBool();
 		bool bFullscreenPoster = m_pDefaultPosterDataKV->GetBool( "fullscreen", false );
 		const char *pszPosterImage = ( bFullscreenPoster && bIsWidescreen ) ? m_pDefaultPosterDataKV->GetString( "posterImage_widescreen" ) : m_pDefaultPosterDataKV->GetString( "posterImage" );
@@ -568,7 +567,7 @@ void LoadingProgress::SetupPoster( void )
 		float aspectRatio = (float)screenWide/(float)screenTall;
 		bool bIsWidescreen = aspectRatio >= 1.5999f;
 #else
-		static ConVarRef mat_xbox_iswidescreen( "mat_xbox_iswidescreen" );
+		static CGameUIConVarRef mat_xbox_iswidescreen( "mat_xbox_iswidescreen" );
 		bool bIsWidescreen = mat_xbox_iswidescreen.GetBool();
 #endif
 		const char *pszPosterImage;

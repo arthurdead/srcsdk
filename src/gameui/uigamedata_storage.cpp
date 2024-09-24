@@ -656,7 +656,7 @@ void CUIGameData::OnCompletedAsyncDeviceAttached( CAsyncCtxUIOnDeviceAttached * 
 	ISelectStorageDeviceClient *pStorageDeviceClient = m_pSelectStorageClient;
 	m_pSelectStorageClient = NULL;
 
-	static ConVarRef mm_dlcs_mask_extras( "mm_dlcs_mask_extras" );
+	static CGameUIConVarRef mm_dlcs_mask_extras( "mm_dlcs_mask_extras" );
 	if ( mm_dlcs_mask_extras.IsValid() )
 	{
 #ifdef _X360

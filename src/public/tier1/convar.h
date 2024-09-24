@@ -53,6 +53,13 @@ public:
 	virtual bool RegisterConCommandBase( ConCommandBase *pVar ) = 0;
 };
 
+class CDefaultAccessor : public IConCommandBaseAccessor
+{
+public:
+	virtual bool RegisterConCommandBase( ConCommandBase *pVar );
+};
+
+extern CDefaultAccessor s_DefaultAccessor;
 
 //-----------------------------------------------------------------------------
 // Called when a ConCommand needs to execute
@@ -99,9 +106,9 @@ class ConCommandBase
 	friend class CDefaultCvar;
 
 public:
-								ConCommandBase( void );
-								ConCommandBase( const char *pName, const char *pHelpString = 0, 
-									int flags = 0 );
+	ConCommandBase( void );
+	ConCommandBase( const char *pName, const char *pHelpString = 0, 
+		int flags = 0 );
 
 	virtual						~ConCommandBase( void );
 
@@ -126,6 +133,8 @@ public:
 
 	// Returns the DLL identifier
 	virtual CVarDLLIdentifier_t	GetDLLIdentifier() const;
+
+	int GetFlags() const { return m_nFlags; }
 
 protected:
 	virtual void				CreateBase( const char *pName, const char *pHelpString = 0, 
@@ -302,6 +311,7 @@ private:
 	bool m_bUsingCommandCallbackInterface : 1;
 };
 
+class ConVar_ServerBounded;
 
 //-----------------------------------------------------------------------------
 // Purpose: A console variable
@@ -314,17 +324,19 @@ friend class ConVarRef;
 public:
 	typedef ConCommandBase BaseClass;
 
-								ConVar( const char *pName, const char *pDefaultValue, int flags = 0);
+	ConVar( void ) = delete;
 
-								ConVar( const char *pName, const char *pDefaultValue, int flags, 
-									const char *pHelpString );
-								ConVar( const char *pName, const char *pDefaultValue, int flags, 
-									const char *pHelpString, bool bMin, float fMin, bool bMax, float fMax );
-								ConVar( const char *pName, const char *pDefaultValue, int flags, 
-									const char *pHelpString, FnChangeCallback_t callback );
-								ConVar( const char *pName, const char *pDefaultValue, int flags, 
-									const char *pHelpString, bool bMin, float fMin, bool bMax, float fMax,
-									FnChangeCallback_t callback );
+	ConVar( const char *pName, const char *pDefaultValue, int flags = 0);
+
+	ConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString );
+	ConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, bool bMin, float fMin, bool bMax, float fMax );
+	ConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, FnChangeCallback_t callback );
+	ConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, bool bMin, float fMin, bool bMax, float fMax,
+		FnChangeCallback_t callback );
 
 	virtual						~ConVar( void );
 
@@ -339,11 +351,15 @@ public:
 	void InstallChangeCallback( FnChangeCallback_t callback );
 
 	// Retrieve value
-	FORCEINLINE_CVAR float			GetFloat( void ) const;
-	FORCEINLINE_CVAR int			GetInt( void ) const;
-	FORCEINLINE_CVAR bool			GetBool() const {  return !!GetInt(); }
-	FORCEINLINE_CVAR char const	   *GetString( void ) const;
-	FORCEINLINE_CVAR Color			GetColor( void ) const;
+	float			GetBaseFloatValue( void ) const;
+	int			GetBaseIntValue( void ) const;
+	bool			GetBaseBoolValue( void ) const;
+
+	float			GetFloat( void ) const;
+	int			GetInt( void ) const;
+	bool			GetBool() const;
+	char const	   *GetString( void ) const;
+	Color			GetColor( void ) const;
 
 	void SetMin(float min);
 	void SetMax(float max);
@@ -355,6 +371,7 @@ public:
 	virtual void				SetValue( const char *value );
 	virtual void				SetValue( float value );
 	virtual void				SetValue( int value );
+	void				SetValue( bool value );
 	
 	// Reset to default value
 	void						Revert( void );
@@ -371,6 +388,7 @@ private:
 	// For CVARs marked FCVAR_NEVER_AS_STRING
 	virtual void				InternalSetFloatValue( float fNewValue );
 	virtual void				InternalSetIntValue( int nValue );
+	void				InternalSetBoolValue( bool nValue );
 
 	virtual bool				ClampValue( float& value );
 	virtual void				ChangeStringValue( const char *tempVal, float flOldValue );
@@ -382,7 +400,12 @@ private:
 	// Used internally by OneTimeInit to initialize.
 	virtual void				Init();
 
-	int GetFlags() { return m_pParent ? m_pParent->m_nFlags : m_nFlags; }
+	ConVar_ServerBounded *GetServerBounded();
+	const ConVar_ServerBounded *GetServerBounded() const { return const_cast<ConVar *>(this)->GetServerBounded(); }
+
+	ConVar *GetTarget() { return m_pParent ? m_pParent : this; }
+	const ConVar *GetTarget() const { return const_cast<ConVar *>(this)->GetTarget(); }
+
 	int GetFlags() const { return m_pParent ? m_pParent->m_nFlags : m_nFlags; }
 
 private:
@@ -436,53 +459,6 @@ FORCEINLINE_CVAR void ConVar::SetMax( float v )
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Return ConVar value as a float
-// Output : float
-//-----------------------------------------------------------------------------
-FORCEINLINE_CVAR float ConVar::GetFloat( void ) const
-{
-	if(m_pParent)
-		return m_pParent->m_fValue;
-	else
-		return m_fValue;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Return ConVar value as an int
-// Output : int
-//-----------------------------------------------------------------------------
-FORCEINLINE_CVAR int ConVar::GetInt( void ) const 
-{
-	if(m_pParent)
-		return m_pParent->m_nValue;
-	else
-		return m_nValue;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Return ConVar value as a string, return "" for bogus string pointer, etc.
-// Output : const char *
-//-----------------------------------------------------------------------------
-FORCEINLINE_CVAR const char *ConVar::GetString( void ) const 
-{
-	if ( IsFlagSet( FCVAR_NEVER_AS_STRING ) )
-		return "FCVAR_NEVER_AS_STRING";
-
-	if(m_pParent)
-		return m_pParent->m_pszString ? m_pParent->m_pszString : "";
-	else
-		return m_pszString ? m_pszString : "";
-}
-
-FORCEINLINE_CVAR Color ConVar::GetColor() const
-{
-	Color clr;
-	extern void CONVAR_StringToColor( Color &color, const char *pString );
-	CONVAR_StringToColor( clr, (m_pParent ? m_pParent->m_pszString : m_pszString) );
-	return clr;
-}
-
 class CEmptyConVar : public ConVar
 {
 public:
@@ -506,6 +482,7 @@ public:
 	ConVarRef( const char *pName ) { Init( pName ); }
 	ConVarRef( const char *pName, bool bIgnoreMissing ) { Init( pName, bIgnoreMissing ); }
 	ConVarRef( IConVar *pConVar );
+	ConVarRef( ConVar *pConVar );
 
 	void Init( const char *pName, bool bIgnoreMissing );
 	void Init( const char *pName ) { Init( pName, false ); }
@@ -516,7 +493,7 @@ public:
 	// Get/Set value
 	float GetFloat( void ) const;
 	int GetInt( void ) const;
-	bool GetBool() const { return !!GetInt(); }
+	bool GetBool() const;
 	const char *GetString( void ) const;
 	Color GetColor(void) const;
 
@@ -531,8 +508,7 @@ public:
 
 private:
 	// High-speed method to read convar data
-	IConVar *m_pConVar;
-	ConVar *m_pConVarState;
+	ConVar *m_pConVar;
 };
 
 
@@ -560,7 +536,7 @@ FORCEINLINE_CVAR const char *ConVarRef::GetName() const
 //-----------------------------------------------------------------------------
 FORCEINLINE_CVAR float ConVarRef::GetFloat( void ) const
 {
-	return m_pConVarState->m_fValue;
+	return m_pConVar->GetFloat();
 }
 
 //-----------------------------------------------------------------------------
@@ -568,15 +544,17 @@ FORCEINLINE_CVAR float ConVarRef::GetFloat( void ) const
 //-----------------------------------------------------------------------------
 FORCEINLINE_CVAR int ConVarRef::GetInt( void ) const 
 {
-	return m_pConVarState->m_nValue;
+	return m_pConVar->GetInt();
+}
+
+FORCEINLINE_CVAR bool ConVarRef::GetBool( void ) const 
+{
+	return m_pConVar->GetBool();
 }
 
 FORCEINLINE_CVAR Color ConVarRef::GetColor() const
 {
-	Color clr;
-	extern void CONVAR_StringToColor( Color &color, const char *pString );
-	CONVAR_StringToColor( clr, m_pConVarState->m_pszString );
-	return clr;
+	return m_pConVar->GetColor();
 }
 
 //-----------------------------------------------------------------------------
@@ -585,7 +563,7 @@ FORCEINLINE_CVAR Color ConVarRef::GetColor() const
 FORCEINLINE_CVAR const char *ConVarRef::GetString( void ) const 
 {
 	Assert( !IsFlagSet( FCVAR_NEVER_AS_STRING ) );
-	return m_pConVarState->m_pszString;
+	return m_pConVar->GetString();
 }
 
 
@@ -606,12 +584,12 @@ FORCEINLINE_CVAR void ConVarRef::SetValue( int nValue )
 
 FORCEINLINE_CVAR void ConVarRef::SetValue( bool bValue )
 {
-	m_pConVar->SetValue( bValue ? 1 : 0 );
+	m_pConVar->SetValue( bValue );
 }
 
 FORCEINLINE_CVAR const char *ConVarRef::GetDefault() const
 {
-	return m_pConVarState->m_pszDefaultValue;
+	return m_pConVar->GetDefault();
 }
 
 

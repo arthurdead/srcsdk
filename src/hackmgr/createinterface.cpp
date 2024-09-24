@@ -13,8 +13,10 @@ static CreateInterfaceFn filesystem_createinterface = NULL;
 static CSysModule *launcher_DLL = NULL;
 static CreateInterfaceFn launcher_createinterface = NULL;
 
+#ifndef SWDS
 static CSysModule *materials_DLL = NULL;
 static CreateInterfaceFn materials_createinterface = NULL;
+#endif
 
 static CSysModule *vstdlib_DLL = NULL;
 static CreateInterfaceFn vstdlib_createinterface = NULL;
@@ -42,13 +44,19 @@ CreateInterfaceFn GetFilesystemInterfaceFactory()
 
 CreateInterfaceFn GetLauncherInterfaceFactory()
 {
+#ifndef SWDS
 	return do_load(launcher_createinterface, launcher_DLL, "launcher" DLL_EXT_STRING);
+#else
+	#error
+#endif
 }
 
+#ifndef SWDS
 CreateInterfaceFn GetMaterialSystemInterfaceFactory()
 {
 	return do_load(materials_createinterface, materials_DLL, "materialsystem" DLL_EXT_STRING);
 }
+#endif
 
 CreateInterfaceFn GetVstdlibInterfaceFactory()
 {
@@ -58,3 +66,11 @@ CreateInterfaceFn GetVstdlibInterfaceFactory()
 	return do_load(vstdlib_createinterface, vstdlib_DLL, "vstdlib" DLL_EXT_STRING);
 #endif
 }
+
+#ifndef SWDS
+bool IsDedicatedServer()
+{
+	//TODO!!!!
+	return false;
+}
+#endif

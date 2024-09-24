@@ -9,7 +9,6 @@
 //#include "CommandCheckButton.h"
 #include "keytogglecheckbutton.h"
 #include "cvarnegatecheckbutton.h"
-#include "cvartogglecheckbutton.h"
 #include "cvarslider.h"
 
 #include "engineinterface.h"
@@ -32,31 +31,31 @@ COptionsSubMouse::COptionsSubMouse(vgui::Panel *parent) : PropertyPage(parent, N
 		"#GameUI_ReverseMouse", 
 		"m_pitch" );
 	
-	m_pMouseFilterCheckBox = new CCvarToggleCheckButton( 
+	m_pMouseFilterCheckBox = new CGameUICvarToggleCheckButton( 
 		this, 
 		"MouseFilter", 
 		"#GameUI_MouseFilter", 
 		"m_filter" );
 
-	m_pJoystickCheckBox = new CCvarToggleCheckButton( 
+	m_pJoystickCheckBox = new CGameUICvarToggleCheckButton( 
 		this, 
 		"Joystick", 
 		"#GameUI_Joystick", 
 		"joystick" );
 
-	m_pJoystickSouthpawCheckBox = new CCvarToggleCheckButton( 
+	m_pJoystickSouthpawCheckBox = new CGameUICvarToggleCheckButton( 
 		this, 
 		"JoystickSouthpaw", 
 		"#GameUI_JoystickSouthpaw", 
 		"joy_movement_stick" );
 
-	m_pReverseJoystickCheckBox = new CCvarToggleCheckButton( 
+	m_pReverseJoystickCheckBox = new CGameUICvarToggleCheckButton( 
 		this, 
 		"ReverseJoystick", 
 		"#GameUI_ReverseJoystick", 
 		"joy_inverty" );
 
-	m_pQuickInfoCheckBox = new CCvarToggleCheckButton(
+	m_pQuickInfoCheckBox = new CGameUICvarToggleCheckButton(
 		this,
 		"HudQuickInfo",
 		"#GameUI_HudQuickInfo",
@@ -79,7 +78,7 @@ COptionsSubMouse::COptionsSubMouse(vgui::Panel *parent) : PropertyPage(parent, N
 	LoadControlSettings("Resource\\OptionsSubMouse.res");
 
     //float sensitivity = engine->pfnGetCvarFloat( "sensitivity" );
-	ConVarRef var( "sensitivity" );
+	CGameUIConVarRef var( "sensitivity" );
 	if ( var.IsValid() )
 	{
 		float sensitivity = var.GetFloat();

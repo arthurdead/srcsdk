@@ -9,11 +9,12 @@
 #pragma once
 
 #include <vgui_controls/PropertyPage.h>
+#include "gameui_cvartogglecheckbutton.h"
 
 typedef struct IVoiceTweak_s IVoiceTweak;
 
 class CCvarSlider;
-class CCvarToggleCheckButton;
+
 //-----------------------------------------------------------------------------
 // Purpose: Voice Details, Part of OptionsDialog
 //-----------------------------------------------------------------------------
@@ -59,9 +60,9 @@ private:
 	// "Open mic" settings
 	vgui::Label             *m_pThresholdSliderLabel;
 	CCvarSlider             *m_pThresholdVolume;
-	CCvarToggleCheckButton  *m_pOpenMicEnableCheckButton;
+	CGameUICvarToggleCheckButton  *m_pOpenMicEnableCheckButton;
 
-    CCvarToggleCheckButton  *m_pVoiceEnableCheckButton;
+    CGameUICvarToggleCheckButton  *m_pVoiceEnableCheckButton;
 
 	int						m_nVoiceThresholdValue;
 	int                     m_nMicVolumeValue;

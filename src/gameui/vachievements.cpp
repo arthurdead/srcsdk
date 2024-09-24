@@ -22,7 +22,6 @@
 #include "vgui_controls/TextImage.h"
 
 #include "filesystem.h"
-#include "cdll_util.h"
 #include "vgui/ISurface.h"
 #include "vachievements.h"
 //#include "asw_achievements.h"

@@ -26,7 +26,7 @@ SteamCloudConfirmation::SteamCloudConfirmation( Panel *parent, const char *panel
 {
 	SetProportional( true );
 
-	m_pSteamCloudCheckBox = new CvarToggleCheckButton<CGameUIConVarRef>( 
+	m_pSteamCloudCheckBox = new CGameUICvarToggleCheckButton( 
 		this, 
 		"CheckButtonCloud", 
 		"#L4D360UI_Cloud_KeepInSync_Tip", 

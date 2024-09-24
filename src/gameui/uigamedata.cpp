@@ -1359,12 +1359,12 @@ bool GameModeIsSingleChapter( char const *szGameMode )
 
 uint64 GetDlcInstalledMask()
 {
-	static ConVarRef mm_dlcs_mask_fake( "mm_dlcs_mask_fake" );
+	static CGameUIConVarRef mm_dlcs_mask_fake( "mm_dlcs_mask_fake" );
 	char const *szFakeDlcsString = mm_dlcs_mask_fake.GetString();
 	if ( *szFakeDlcsString )
 		return atoi( szFakeDlcsString );
 
-	static ConVarRef mm_dlcs_mask_extras( "mm_dlcs_mask_extras" );
+	static CGameUIConVarRef mm_dlcs_mask_extras( "mm_dlcs_mask_extras" );
 	uint64 uiDLCmask = ( unsigned ) mm_dlcs_mask_extras.GetInt();
 
 	bool bSearchPath = false;

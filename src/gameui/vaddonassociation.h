@@ -7,7 +7,7 @@
 #ifndef __VADDONASSOCIATION_H__
 #define __VADDONASSOCIATION_H__
 
-#include "vgui_controls/CvarToggleCheckButton.h"
+#include "gameui_cvartogglecheckbutton.h"
 #include "gameui_util.h"
 
 #include "basemodui.h"
@@ -36,7 +36,7 @@ protected:
 	virtual void OnThink();
 
 private:
-	vgui::CvarToggleCheckButton<CGameUIConVarRef> *m_pDoNotAskForAssociation;
+	CGameUICvarToggleCheckButton *m_pDoNotAskForAssociation;
 
 };
 

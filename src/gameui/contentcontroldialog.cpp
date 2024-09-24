@@ -8,13 +8,14 @@
 
 #include <stdio.h>
 #include <memory.h>
-#if !defined( _X360 )
+#ifdef _WIN32
 #include <windows.h>
 #endif
 
-#include "ContentControlDialog.h"
+#include "contentcontroldialog.h"
 #include "checksum_md5.h"
-#include "EngineInterface.h"
+#include "engineinterface.h"
+#include "gameui_util.h"
 
 #include <vgui/IInput.h>
 #include <vgui/ISystem.h>
@@ -27,10 +28,6 @@
 #include <vgui_controls/Label.h>
 #include <vgui_controls/RadioButton.h>
 #include <vgui_controls/TextEntry.h>
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -288,16 +285,16 @@ bool CContentControlDialog::EnablePassword(const char *newPW)
 	engine->Cvar_SetValue("violence_agibs" , 0.0 );
 	*/
 
-	ConVarRef violence_hblood( "violence_hblood" );
+	CGameUIConVarRef violence_hblood( "violence_hblood" );
 	violence_hblood.SetValue(false);
 
-	ConVarRef violence_hgibs( "violence_hgibs" );
+	CGameUIConVarRef violence_hgibs( "violence_hgibs" );
 	violence_hgibs.SetValue(false);
 
-	ConVarRef violence_ablood( "violence_ablood" );
+	CGameUIConVarRef violence_ablood( "violence_ablood" );
 	violence_ablood.SetValue(false);
 
-	ConVarRef violence_agibs( "violence_agibs" );
+	CGameUIConVarRef violence_agibs( "violence_agibs" );
 	violence_agibs.SetValue(false);
 	
     // Store digest to registry
@@ -346,16 +343,16 @@ bool CContentControlDialog::DisablePassword(const char *oldPW)
 	engine->Cvar_SetValue("violence_ablood", 1.0 );
 	engine->Cvar_SetValue("violence_agibs" , 1.0 );
 	*/
-	ConVarRef violence_hblood( "violence_hblood" );
+	CGameUIConVarRef violence_hblood( "violence_hblood" );
 	violence_hblood.SetValue(true);
 
-	ConVarRef violence_hgibs( "violence_hgibs" );
+	CGameUIConVarRef violence_hgibs( "violence_hgibs" );
 	violence_hgibs.SetValue(true);
 
-	ConVarRef violence_ablood( "violence_ablood" );
+	CGameUIConVarRef violence_ablood( "violence_ablood" );
 	violence_ablood.SetValue(true);
 
-	ConVarRef violence_agibs( "violence_agibs" );
+	CGameUIConVarRef violence_agibs( "violence_agibs" );
 	violence_agibs.SetValue(true);
 
 

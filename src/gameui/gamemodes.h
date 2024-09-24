@@ -12,7 +12,7 @@ struct GameModeInfo_t
 	CUtlString						m_TitleText;
 	CUtlString						m_HintText;
 	CUtlString						m_HintTextDisabled;
-	int								m_nImageId;
+	vgui::HTexture								m_nImageId;
 	bool							m_bEnabled;
 	BaseModUI::BaseModHybridButton	*m_pHybridButton;
 };
@@ -91,11 +91,11 @@ private:
 	bool		m_bHideLabels;
 	int			m_nScrollMultipleCount;
 
-	int			m_nBorderImageId;
-	int			m_nTopBorderImageId;
-	int			m_nBottomBorderImageId;
-	int			m_nLeftArrowId;
-	int			m_nRightArrowId;
+	vgui::HTexture			m_nBorderImageId;
+	vgui::HTexture			m_nTopBorderImageId;
+	vgui::HTexture			m_nBottomBorderImageId;
+	vgui::HTexture			m_nLeftArrowId;
+	vgui::HTexture			m_nRightArrowId;
 	Color		m_smearColor;
 
 	CUtlVector< GameModeInfo_t >	m_GameModeInfos;

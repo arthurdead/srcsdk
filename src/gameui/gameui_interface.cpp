@@ -65,9 +65,6 @@
 
 #include "basemodpanel.h"
 #include "basemodui.h"
-typedef BaseModUI::CBaseModPanel UI_BASEMOD_PANEL_CLASS;
-inline UI_BASEMOD_PANEL_CLASS & GetUiBaseModPanelClass() { return UI_BASEMOD_PANEL_CLASS::GetSingleton(); }
-inline UI_BASEMOD_PANEL_CLASS & ConstructUiBaseModPanelClass() { return * new UI_BASEMOD_PANEL_CLASS(); }
 
 #include "tier0/dbg.h"
 #include "engine/IEngineSound.h"
@@ -75,6 +72,10 @@ inline UI_BASEMOD_PANEL_CLASS & ConstructUiBaseModPanelClass() { return * new UI
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+typedef BaseModUI::CBaseModPanel UI_BASEMOD_PANEL_CLASS;
+inline UI_BASEMOD_PANEL_CLASS & GetUiBaseModPanelClass() { return UI_BASEMOD_PANEL_CLASS::GetSingleton(); }
+inline UI_BASEMOD_PANEL_CLASS & ConstructUiBaseModPanelClass() { return * new UI_BASEMOD_PANEL_CLASS(); }
 
 IEngineVGui *enginevguifuncs = NULL;
 vgui::ISurface *enginesurfacefuncs = NULL;
@@ -143,6 +144,24 @@ CGameUI::~CGameUI()
 	g_pGameUI = NULL;
 }
 
+// ------------------------------------------------------------------------------------------- //
+// ConVar stuff.
+// ------------------------------------------------------------------------------------------- //
+class CGameUIConVarAccessor : public CDefaultAccessor
+{
+public:
+	virtual bool	RegisterConCommandBase( ConCommandBase *pCommand )
+	{
+	#ifdef _DEBUG
+		if(pCommand->IsFlagSet(FCVAR_GAMEDLL))
+			DevMsg("gameui dll tried to register server con var/command named %s\n", pCommand->GetName());
+	#endif
+
+		return CDefaultAccessor::RegisterConCommandBase( pCommand );
+	}
+};
+
+CGameUIConVarAccessor g_ConVarAccessor;
 
 //-----------------------------------------------------------------------------
 // Purpose: Initialization
@@ -152,7 +171,7 @@ void CGameUI::Initialize( CreateInterfaceFn factory )
 	MEM_ALLOC_CREDIT();
 	ConnectTier1Libraries( &factory, 1 );
 	ConnectTier2Libraries( &factory, 1 );
-	ConVar_Register( FCVAR_CLIENTDLL );
+	ConVar_Register( FCVAR_CLIENTDLL, &g_ConVarAccessor );
 	ConnectTier3Libraries( &factory, 1 );
 
 	enginesound = (IEngineSound *)factory(IENGINESOUND_CLIENT_INTERFACE_VERSION, NULL);
@@ -170,6 +189,7 @@ void CGameUI::Initialize( CreateInterfaceFn factory )
 
 	// load localization file
 	g_pVGuiLocalize->AddFile( "Resource/gameui_%language%.txt", "GAME", true );
+	g_pVGuiLocalize->AddFile( "Resource/deck_%language%.txt", "GAME", true );
 
 	// load mod info
 	ModInfo().LoadCurrentGameInfo();

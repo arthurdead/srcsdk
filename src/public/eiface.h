@@ -39,11 +39,15 @@ class	ServerClass;
 class	IMoveHelper;
 struct  Ray_t;
 struct	studiohdr_t;
-class	CBaseEntity;
+#ifdef GAME_DLL
+class CBaseEntity;
+typedef CBaseEntity CServerBaseEntity;
+#else
+class CServerBaseEntity;
+#endif
 class	variant_t;
 struct	vcollide_t;
 class	IRecipientFilter;
-class	CBaseEntity;
 class	ITraceFilter;
 struct	client_textmessage_t;
 class	INetChannelInfo;
@@ -729,8 +733,8 @@ public:
 	virtual void			FreeContainingEntity( edict_t * ) = 0; 
 
 	// This allows the engine to get at edicts in a CGameTrace.
-	virtual edict_t*		BaseEntityToEdict( CBaseEntity *pEnt ) = 0;
-	virtual CBaseEntity*	EdictToBaseEntity( edict_t *pEdict ) = 0;
+	virtual edict_t*		BaseEntityToEdict( CServerBaseEntity *pEnt ) = 0;
+	virtual CServerBaseEntity*	EdictToBaseEntity( edict_t *pEdict ) = 0;
 
 	// This sets a bit in pInfo for each edict in the list that wants to be transmitted to the 
 	// client specified in pInfo.

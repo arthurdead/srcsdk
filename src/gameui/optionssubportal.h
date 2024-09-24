@@ -10,9 +10,9 @@
 #pragma once
 
 #include <vgui_controls/PropertyPage.h>
+#include "gameui_cvartogglecheckbutton.h"
 
 class CLabeledCommandComboBox;
-class CCvarToggleCheckButton;
 
 namespace vgui
 {
@@ -48,7 +48,7 @@ private:
 		OnControlModified();
 	}
 
-	CCvarToggleCheckButton		*m_pPortalFunnelCheckBox;
+	CGameUICvarToggleCheckButton		*m_pPortalFunnelCheckBox;
 	vgui::ComboBox				*m_pPortalDepthCombo;
 };
 
