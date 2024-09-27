@@ -140,7 +140,7 @@ void COptionsSubAudio::OnResetData()
    //
    char szCurrentLanguage[50] = "";
    char szAvailableLanguages[512] = "";
-   szAvailableLanguages[0] = NULL;
+   szAvailableLanguages[0] = '\0';
 
    // Fallback to current engine language
    engine->GetUILanguage( szCurrentLanguage, sizeof( szCurrentLanguage ));
@@ -200,7 +200,7 @@ void COptionsSubAudio::OnApplyChanges()
 	// Tracker 28933:  Note we can't do this because closecaption is marked
 	//  FCVAR_USERINFO and it won't get sent to server is we direct set it, we
 	//  need to pass it along to the engine parser!!!
-	// ConVar *closecaption = (ConVar *)cvar->FindVar("closecaption");
+	// ConVar *closecaption = (ConVar *)g_pCVar->FindVar("closecaption");
 	int closecaption_value = 0;
 
 	CGameUIConVarRef cc_subtitles( "cc_subtitles" );

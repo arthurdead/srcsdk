@@ -9,7 +9,9 @@
 #define SYS_UTILS_H
 #pragma once
 
-typedef int WHANDLE;
+#ifdef _WIN32
+typedef int SYSWHANDLE;
+typedef int SYSMHANDLE;
 
 // ERROR HANDLING
 extern const unsigned int SYS_NO_ERROR;
@@ -19,29 +21,25 @@ void Sys_SetLastError(unsigned long error);
 unsigned long Sys_GetLastError();
 
 // MUTEX HANDLING
-WHANDLE Sys_CreateMutex(const char *mutexName);
-void Sys_ReleaseMutex(WHANDLE mutexHandle);
+SYSMHANDLE Sys_CreateMutex(const char *mutexName);
+void Sys_ReleaseMutex(SYSMHANDLE mutexHandle);
 
 // MUTEX SYNCHRONIZATION
 extern const unsigned int SYS_WAIT_OBJECT_0;
 extern const unsigned int SYS_WAIT_ABANDONED;
-unsigned int Sys_WaitForSingleObject(WHANDLE mutexHandle, int milliseconds);
+unsigned int Sys_WaitForSingleObject(SYSMHANDLE mutexHandle, int milliseconds);
 
 // window handling
 unsigned int Sys_RegisterWindowMessage(const char *msgName);
-WHANDLE Sys_FindWindow(const char *className, const char *windowName);
+SYSWHANDLE Sys_FindWindow(const char *className, const char *windowName);
 void Sys_EnumWindows(void *callbackFunction, int lparam);
-void Sys_GetWindowText(WHANDLE wnd, char *buffer, int bufferSize);
-void Sys_PostMessage(WHANDLE wnd, unsigned int msg, unsigned int wParam, unsigned int lParam);
-WHANDLE Sys_CreateWindowEx(const char *windowName);
-void Sys_DestroyWindow(WHANDLE wnd);
+void Sys_GetWindowText(SYSWHANDLE wnd, char *buffer, int bufferSize);
+void Sys_PostMessage(SYSWHANDLE wnd, unsigned int msg, unsigned int wParam, unsigned int lParam);
+SYSWHANDLE Sys_CreateWindowEx(const char *windowName);
+void Sys_DestroyWindow(SYSWHANDLE wnd);
 
 // mouse
 void Sys_SetCursorPos(int x, int y);
-
-
-
-
-
+#endif
 
 #endif // SYS_UTILS_H

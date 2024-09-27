@@ -20,8 +20,7 @@
 #include "tier1/checksum_crc.h"
 #include "tier1/checksum_md5.h"
 #include "tier1/refcount.h"
-
-#pragma once
+#include "hackmgr/hackmgr.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -90,10 +89,7 @@ enum FileSystemSeek_t
 	FILESYSTEM_SEEK_TAIL	= SEEK_END,
 };
 
-enum
-{
-	FILESYSTEM_INVALID_FIND_HANDLE = -1
-};
+inline const FileFindHandle_t FILESYSTEM_INVALID_FIND_HANDLE = (FileFindHandle_t)-1;
 
 enum FileWarningLevel_t
 {
@@ -503,23 +499,23 @@ public:
 	virtual int				Write( void const* pInput, int size, FileHandle_t file ) = 0;
 
 	// if pathID is NULL, all paths will be searched for the file
-	virtual FileHandle_t	Open( const char *pFileName, const char *pOptions, const char *pathID = 0 ) = 0;
+	virtual FileHandle_t	Open( const char *pFileName, const char *pOptions, const char *pathID = NULL ) = 0;
 	virtual void			Close( FileHandle_t file ) = 0;
 
 
 	virtual void			Seek( FileHandle_t file, int pos, FileSystemSeek_t seekType ) = 0;
 	virtual unsigned int	Tell( FileHandle_t file ) = 0;
 	virtual unsigned int	Size( FileHandle_t file ) = 0;
-	virtual unsigned int	Size( const char *pFileName, const char *pPathID = 0 ) = 0;
+	virtual unsigned int	Size( const char *pFileName, const char *ppathID = NULL ) = 0;
 
 	virtual void			Flush( FileHandle_t file ) = 0;
-	virtual bool			Precache( const char *pFileName, const char *pPathID = 0 ) = 0;
+	virtual bool			Precache( const char *pFileName, const char *ppathID = NULL ) = 0;
 
-	virtual bool			FileExists( const char *pFileName, const char *pPathID = 0 ) = 0;
-	virtual bool			IsFileWritable( char const *pFileName, const char *pPathID = 0 ) = 0;
-	virtual bool			SetFileWritable( char const *pFileName, bool writable, const char *pPathID = 0 ) = 0;
+	virtual bool			FileExists( const char *pFileName, const char *ppathID = NULL ) = 0;
+	virtual bool			IsFileWritable( char const *pFileName, const char *ppathID = NULL ) = 0;
+	virtual bool			SetFileWritable( char const *pFileName, bool writable, const char *ppathID = NULL ) = 0;
 
-	virtual long			GetFileTime( const char *pFileName, const char *pPathID = 0 ) = 0;
+	virtual long			GetFileTime( const char *pFileName, const char *ppathID = NULL ) = 0;
 
 	//--------------------------------------------------------
 	// Reads/writes files to utlbuffers. Use this for optimal read performance when doing open/read/close
@@ -529,6 +525,18 @@ public:
 	virtual bool			UnzipFile( const char *pFileName, const char *pPath, const char *pDestination ) = 0;
 };
 
+// DLC license mask flags is 32 publisher defined bits
+// MSW 16 bits in 8.8: Type.SubVersion
+// LSW 16 bits: Flags
+
+// return id component
+#define DLC_LICENSE_ID( x )				( ( ( (unsigned int)( x ) ) >> 24 ) & 0x000000FF )
+// returns minor version component (not generally used, i.e. we dont rev dlc's yet)
+#define DLC_LICENSE_MINORVERSION( x )	( ( ( (unsigned int)( x ) ) >> 16 ) & 0x000000FF )
+// returns license flags
+#define DLC_LICENSE_FLAGS( x )			( ( ( (unsigned int)( x ) ) & 0x0000FFFF ) )
+
+#define DLCFLAGS_PRESENCE_ONLY			0x0001	// causes no search path loadout
 
 //-----------------------------------------------------------------------------
 // Main file system interface
@@ -565,7 +573,7 @@ public:
 	//  and this file becomes the highest priority search path ( i.e., it's looked at first
 	//   even before the mod's file system path ).
 	virtual void			AddSearchPath( const char *pPath, const char *pathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL ) = 0;
-	virtual bool			RemoveSearchPath( const char *pPath, const char *pathID = 0 ) = 0;
+	virtual bool			RemoveSearchPath( const char *pPath, const char *pathID = NULL ) = 0;
 
 	// Remove all search paths (including write path?)
 	virtual void			RemoveAllSearchPaths( void ) = 0;
@@ -603,16 +611,16 @@ public:
 	//--------------------------------------------------------
 
 	// Deletes a file (on the WritePath)
-	virtual void			RemoveFile( char const* pRelativePath, const char *pathID = 0 ) = 0;
+	virtual void			RemoveFile( char const* pRelativePath, const char *pathID = NULL ) = 0;
 
 	// Renames a file (on the WritePath)
-	virtual bool			RenameFile( char const *pOldPath, char const *pNewPath, const char *pathID = 0 ) = 0;
+	virtual bool			RenameFile( char const *pOldPath, char const *pNewPath, const char *pathID = NULL ) = 0;
 
 	// create a local directory structure
-	virtual void			CreateDirHierarchy( const char *path, const char *pathID = 0 ) = 0;
+	virtual void			CreateDirHierarchy( const char *path, const char *pathID = NULL ) = 0;
 
 	// File I/O and info
-	virtual bool			IsDirectory( const char *pFileName, const char *pathID = 0 ) = 0;
+	virtual bool			IsDirectory( const char *pFileName, const char *pathID = NULL ) = 0;
 
 	virtual void			FileTimeToString( char* pStrip, int maxCharsIncludingTerminator, long fileTime ) = 0;
 
@@ -634,7 +642,7 @@ public:
 	//--------------------------------------------------------
 
 	// load/unload modules
-	virtual CSysModule 		*LoadModule( const char *pFileName, const char *pPathID = 0, bool bValidatedDllOnly = true ) = 0;
+	virtual CSysModule 		*LoadModule( const char *pFileName, const char *ppathID = NULL, bool bValidatedDllOnly = true ) = 0;
 	virtual void			UnloadModule( CSysModule *pModule ) = 0;
 
 	//--------------------------------------------------------
@@ -772,7 +780,7 @@ public:
 	// Start of new functions after Lost Coast release (7/05)
 	//--------------------------------------------------------
 
-	virtual FileHandle_t	OpenEx( const char *pFileName, const char *pOptions, unsigned flags = 0, const char *pathID = 0, char **ppszResolvedFilename = NULL ) = 0;
+	virtual FileHandle_t	OpenEx( const char *pFileName, const char *pOptions, unsigned flags = 0, const char *pathID = NULL, char **ppszResolvedFilename = NULL ) = 0;
 
 	// Extended version of read provides more context to allow for more optimal reading
 	virtual int				ReadEx( void* pOutput, int sizeDest, int size, FileHandle_t file ) = 0;
@@ -803,9 +811,9 @@ public:
 
 	// If the "PreloadedData" hasn't been purged, then this'll try and instance the KeyValues using the fast path of compiled keyvalues loaded during startup.
 	// Otherwise, it'll just fall through to the regular KeyValues loading routines
-	virtual KeyValues	*LoadKeyValues( KeyValuesPreloadType_t type, char const *filename, char const *pPathID = 0 ) = 0;
-	virtual bool		LoadKeyValues( KeyValues& head, KeyValuesPreloadType_t type, char const *filename, char const *pPathID = 0 ) = 0;
-	virtual bool		ExtractRootKeyName( KeyValuesPreloadType_t type, char *outbuf, size_t bufsize, char const *filename, char const *pPathID = 0 ) = 0;
+	virtual KeyValues	*LoadKeyValues( KeyValuesPreloadType_t type, char const *filename, char const *ppathID = NULL ) = 0;
+	virtual bool		LoadKeyValues( KeyValues& head, KeyValuesPreloadType_t type, char const *filename, char const *ppathID = NULL ) = 0;
+	virtual bool		ExtractRootKeyName( KeyValuesPreloadType_t type, char *outbuf, size_t bufsize, char const *filename, char const *ppathID = NULL ) = 0;
 
 	virtual FSAsyncStatus_t	AsyncWrite(const char *pFileName, const void *pSrc, int nSrcBytes, bool bFreeMemory, bool bAppend = false, FSAsyncControl_t *pControl = NULL ) = 0;
 	virtual FSAsyncStatus_t	AsyncWriteFile(const char *pFileName, const CUtlBuffer *pSrc, int nSrcBytes, bool bFreeMemory, bool bAppend = false, FSAsyncControl_t *pControl = NULL ) = 0;
@@ -924,6 +932,19 @@ public:
 	{
 		return GetCaseCorrectFullPath_Ptr( pFullPath, pDest, (int)maxLenInChars );
 	}
+
+	HACKMGR_CLASS_API void AddVPKFile( char const *pszName, SearchPathAdd_t addType = PATH_ADD_TO_TAIL );
+	HACKMGR_CLASS_API void RemoveVPKFile( char const *pszName );
+	HACKMGR_CLASS_API void GetVPKFileNames( CUtlVector<CUtlString> &destVector );
+	HACKMGR_CLASS_API void			RemoveAllMapSearchPaths();
+
+	HACKMGR_CLASS_API bool			DiscoverDLC();
+	HACKMGR_CLASS_API int				IsAnyDLCPresent( bool *pbDLCSearchPathMounted = NULL );
+	HACKMGR_CLASS_API bool			GetAnyDLCInfo( int iDLC, unsigned int *pLicenseMask, wchar_t *pTitleBuff, int nOutTitleSize );
+	HACKMGR_CLASS_API int				IsAnyCorruptDLC();
+	HACKMGR_CLASS_API bool			GetAnyCorruptDLCInfo( int iCorruptDLC, wchar_t *pTitleBuff, int nOutTitleSize );
+	HACKMGR_CLASS_API bool			AddDLCSearchPaths();
+	HACKMGR_CLASS_API bool			IsSpecificDLCPresent( unsigned int nDLCPackage );
 };
 
 //-----------------------------------------------------------------------------

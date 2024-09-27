@@ -30,6 +30,7 @@ public:
 	virtual bool Evict() { return false; }
 	virtual int GetNumFrames() { return 0; }
 	virtual void SetFrame( int nFrame ) {}
+	virtual int GetFrame() { return 0; }
 	virtual HTexture GetID() { return INVALID_TEXTURE; }
 	virtual void SetRotation( int iRotation ) { return; };
 };

@@ -37,11 +37,11 @@ void AddCoolLine( const Vector &v1, const Vector &v2, unsigned long iExtraFadeOf
 
 	static IMaterial *pWireframeMaterial = NULL;
 	if ( !pWireframeMaterial )
-		pWireframeMaterial = materials->FindMaterial( "debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER );
+		pWireframeMaterial = g_pMaterialSystem->FindMaterial( "debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER );
 
 	static IMaterial *pBeamMaterial = NULL;
 	if ( !pBeamMaterial )
-		pBeamMaterial = materials->FindMaterial( "effects/laser1", TEXTURE_GROUP_OTHER );
+		pBeamMaterial = g_pMaterialSystem->FindMaterial( "effects/laser1", TEXTURE_GROUP_OTHER );
 
 	CMatRenderContextPtr pRenderContext( materials );
 

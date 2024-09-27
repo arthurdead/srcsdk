@@ -623,10 +623,10 @@ bool C_GameInstructor::WriteSaveData( void )
 
 	{
 		Q_snprintf( szFilename, sizeof( szFilename ), "save/game_instructor_counts.txt" );
-		filesystem->CreateDirHierarchy( "save", "MOD" );
+		g_pFullFileSystem->CreateDirHierarchy( "save", "MOD" );
 	}
 
-	bool bWriteSuccess = filesystem->WriteFile( szFilename, MOD_DIR, buf );
+	bool bWriteSuccess = g_pFullFileSystem->WriteFile( szFilename, MOD_DIR, buf );
 
 	return bWriteSuccess;
 }

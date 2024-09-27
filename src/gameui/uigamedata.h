@@ -60,7 +60,6 @@ extern const tokenset_t< const char * > s_characterPortraits[];
 class ISelectStorageDeviceClient
 {
 public:
-	virtual int  GetCtrlrIndex() = 0;			// Controller index (0, 1, 2 or 3)
 	virtual bool ForceSelector() = 0;			// Whether device selector should be forcefully shown
 	virtual bool AllowDeclined() = 0;			// Whether declining storage device is allowed
 	virtual bool AllowAnyController() = 0;		// Whether any connected controller can be selecting storage or only game-committed
@@ -87,11 +86,10 @@ public:
 class CChangeStorageDevice : public ISelectStorageDeviceClient
 {
 public:
-	explicit CChangeStorageDevice( int iCtrlr );
+	explicit CChangeStorageDevice();
 	virtual ~CChangeStorageDevice() {}
 
 public:
-	virtual int  GetCtrlrIndex() { return m_iCtrlr; }
 	virtual bool ForceSelector() { return m_bForce; }
 	virtual bool AllowDeclined() { return m_bAllowDeclined; }
 	virtual bool AllowAnyController() { return m_bAnyController; }
@@ -107,7 +105,6 @@ public:
 	virtual void DeviceChangeCompleted( bool bChanged );
 
 public:
-	int m_iCtrlr;
 	bool m_bForce;
 	bool m_bAllowDeclined;
 	bool m_bAnyController;
@@ -155,7 +152,7 @@ public:
 	void DisplayOkOnlyMsgBox( CBaseModFrame *pCallerFrame, const char *szTitle, const char *szMsg );
 	CBaseModFrame * GetParentWindowForSystemMessageBox();
 
-	const char *GetLocalPlayerName( int iController );
+	const char *GetLocalPlayerName();
 
 	bool SelectStorageDevice( ISelectStorageDeviceClient *pSelectClient );
 	void OnDeviceAttached();
@@ -237,11 +234,6 @@ protected:
 };
 
 }
-
-extern ConVar x360_audio_english;
-
-extern ConVar demo_ui_enable;
-extern ConVar demo_connect_string;
 
 uint64 GetDlcInstalledMask();
 

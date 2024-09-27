@@ -72,6 +72,7 @@ if build_libs
 			join_paths(hackmgr_src_dir,'ivmodelrender.cpp'),
 			join_paths(hackmgr_src_dir,'shadersystem.cpp'),
 			join_paths(hackmgr_src_dir,'toolframework.cpp'),
+			join_paths(hackmgr_src_dir,'vgui.cpp'),
 		],
 		dependencies: [
 			hackmgr_base_lib,
@@ -81,9 +82,9 @@ if build_libs
 		install_rpath: '$ORIGIN'
 	)
 
-	hackmgr_sv_lib = shared_library('hackmgr_sv',name_prefix:'',
+	hackmgr_ds_lib = shared_library('hackmgr_ds',name_prefix:'',
 		cpp_args: [
-			'-DDLLNAME=hackmgr_sv',
+			'-DDLLNAME=hackmgr_ds',
 			'-DDEDICATED',
 			'-DSWDS',
 		],
@@ -108,11 +109,11 @@ if build_libs
 		link_with: hackmgr_lib
 	)
 
-	hackmgr_sv_dep = declare_dependency(
+	hackmgr_ds_dep = declare_dependency(
 		dependencies: [
 			hackmgr_base_dep,
 		],
-		link_with: hackmgr_sv_lib
+		link_with: hackmgr_ds_lib
 	)
 else
 	hackmgr_base_dep = declare_dependency(
@@ -128,10 +129,10 @@ else
 		link_args: '-l:hackmgr'+source_base.get_variable('sharedlib_ext')
 	)
 
-	hackmgr_sv_dep = declare_dependency(
+	hackmgr_ds_dep = declare_dependency(
 		dependencies: [
 			hackmgr_base_dep,
 		],
-		link_args: '-l:hackmgr_sv'+source_base.get_variable('sharedlib_ext')
+		link_args: '-l:hackmgr_ds'+source_base.get_variable('sharedlib_ext')
 	)
 endif

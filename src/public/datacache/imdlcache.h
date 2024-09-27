@@ -41,7 +41,7 @@ typedef unsigned short MDLHandle_t;
 
 inline MDLHandle_t VoidPtrToMDLHandle( void *ptr )
 {
-	return (MDLHandle_t)(int)ptr;
+	return (MDLHandle_t)(((int)ptr)&0xffff);
 }
 
 enum
@@ -224,8 +224,8 @@ private:
 #define MDLCACHE_CRITICAL_SECTION_( pCache ) ((void)(0))
 #define MDLCACHE_COARSE_LOCK_( pCache ) CMDLCacheCriticalSection cacheCriticalSection(pCache)
 #endif
-#define MDLCACHE_CRITICAL_SECTION() MDLCACHE_CRITICAL_SECTION_(mdlcache)
-#define MDLCACHE_COARSE_LOCK() MDLCACHE_COARSE_LOCK_(mdlcache)
+#define MDLCACHE_CRITICAL_SECTION() MDLCACHE_CRITICAL_SECTION_(g_pMDLCache)
+#define MDLCACHE_COARSE_LOCK() MDLCACHE_COARSE_LOCK_(g_pMDLCache)
 
 #endif // IMDLCACHE_H
 

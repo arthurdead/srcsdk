@@ -56,11 +56,6 @@ using namespace vgui;
 //setup in GameUI_Interface.cpp
 extern const char *COM_GetModDirectory( void );
 
-ConVar x360_audio_english("x360_audio_english", "0", 0, "Keeps track of whether we're forcing english in a localized language." );
-
-ConVar demo_ui_enable( "demo_ui_enable", "", FCVAR_DEVELOPMENTONLY, "Suffix for the demo UI" );
-ConVar demo_connect_string( "demo_connect_string", "", FCVAR_DEVELOPMENTONLY, "Connect string for demo UI" );
-
 ///Asyncronous Operations
 
 ConVar mm_ping_max_green( "ping_max_green", "70" );
@@ -558,13 +553,13 @@ void CUIGameData::DisplayOkOnlyMsgBox( CBaseModFrame *pCallerFrame, const char *
 	confirmation->SetUsageData(data);
 }
 
-const char *CUIGameData::GetLocalPlayerName( int iController )
+const char *CUIGameData::GetLocalPlayerName()
 {
 	static CGameUIConVarRef cl_names_debug( "cl_names_debug" );
 	if ( cl_names_debug.GetInt() )
 		return "WWWWWWWWWWWWWWW";
 
-	IPlayer *player = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
+	IPlayer *player = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer();
 	if ( !player )
 	{
 		return "";

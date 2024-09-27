@@ -25,9 +25,9 @@ BaseClass( parent, panelName, true, true )
 {
 	SetPaintBackgroundEnabled( true );
 
-	m_iImageID = -1;
+	m_iImageID = vgui::INVALID_TEXTURE;
 	m_flTransitionStartTime = 0;
-	m_hFont = NULL;
+	m_hFont = vgui::INVALID_FONT;
 	m_bComplete = false;
 }
 

@@ -328,7 +328,7 @@ CON_COMMAND_F( toggle_replmat, "Toggles the material replacement system", FCVAR_
 		s_ReplacementSystem.Enable();
 	}
 
-	materials->UncacheAllMaterials();
-	materials->CacheUsedMaterials();
-	materials->ReloadMaterials();
+	g_pMaterialSystem->UncacheAllMaterials();
+	g_pMaterialSystem->CacheUsedMaterials();
+	g_pMaterialSystem->ReloadMaterials();
 }

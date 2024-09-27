@@ -287,7 +287,7 @@ void CTextWindow::ShowFile( const char *filename )
 		Q_strncat( localURL, pPathData, sizeof( localURL ), COPY_ALL_CHARACTERS );
 
 		// force steam to dump a local copy
-		filesystem->GetLocalCopy( pPathData );
+		g_pFullFileSystem->GetLocalCopy( pPathData );
 
 		ShowURL( localURL );
 	}

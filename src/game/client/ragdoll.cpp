@@ -284,7 +284,7 @@ void CRagdoll::ResetRagdollSleepAfterTime( void )
 
 void CRagdoll::DrawWireframe()
 {
-	IMaterial *pWireframe = materials->FindMaterial("debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER);
+	IMaterial *pWireframe = g_pMaterialSystem->FindMaterial("debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER);
 
 	int i;
 	matrix3x4_t matrix;
@@ -451,7 +451,7 @@ int C_ServerRagdoll::InternalDrawModel( int flags, const RenderableInstance_t &i
 	if ( vcollide_wireframe.GetBool() )
 	{
 		vcollide_t *pCollide = modelinfo->GetVCollide( GetModelIndex() );
-		IMaterial *pWireframe = materials->FindMaterial("debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER);
+		IMaterial *pWireframe = g_pMaterialSystem->FindMaterial("debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER);
 
 		matrix3x4_t matrix;
 		for ( int i = 0; i < m_elementCount; i++ )

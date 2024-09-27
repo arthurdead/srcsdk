@@ -66,23 +66,7 @@ const char *g_PinCornerStrings [] =
 
 COMPILE_TIME_ASSERT( Panel::PIN_LAST == ARRAYSIZE( g_PinCornerStrings ) );
 
-static const char *COM_GetModDirectory()
-{
-	static char modDir[MAX_PATH];
-	if ( Q_strlen( modDir ) == 0 )
-	{
-		const char *gamedir = CommandLine()->ParmValue("-game", CommandLine()->ParmValue( "-defaultgamedir", "hl2" ) );
-		Q_strncpy( modDir, gamedir, sizeof(modDir) );
-		if ( strchr( modDir, '/' ) || strchr( modDir, '\\' ) )
-		{
-			Q_StripLastDir( modDir, sizeof(modDir) );
-			int dirlen = Q_strlen( modDir );
-			Q_strncpy( modDir, gamedir + dirlen, sizeof(modDir) - dirlen );
-		}
-	}
-
-	return modDir;
-}
+extern const char *COM_GetModDirectory();
 extern int GetBuildModeDialogCount();
 
 static char *CopyString( const char *in )

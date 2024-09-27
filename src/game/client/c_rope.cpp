@@ -495,7 +495,7 @@ void CRopeManager::DrawRenderCache_NonQueued( bool bShadowDepth, RopeRenderData_
 			}
 		}
 
-		if ( materials->GetRenderContext()->GetCallQueue() != NULL && pBuildRopeQueuedData == NULL )
+		if ( g_pMaterialSystem->GetRenderContext()->GetCallQueue() != NULL && pBuildRopeQueuedData == NULL )
 		{
 			// We build ropes outside of queued mode for holidy lights
 			// But we don't want to render them
@@ -548,7 +548,7 @@ void CRopeManager::DrawRenderCache( bool bShadowDepth )
 	Vector vOrigin = CurrentViewOrigin();
 
 	ICallQueue *pCallQueue;
-	if( r_queued_ropes.GetBool() && (pCallQueue = materials->GetRenderContext()->GetCallQueue()) != NULL )
+	if( r_queued_ropes.GetBool() && (pCallQueue = g_pMaterialSystem->GetRenderContext()->GetCallQueue()) != NULL )
 	{
 		//material queue available and desired
 		CRopeManager::RopeRenderData_t *pRenderCache = m_aRenderCache.Base();
@@ -1343,7 +1343,7 @@ void C_RopeKeyframe::FinishInit( const char *pMaterialName )
 	}
 
 	// Get the material from the material system.	
-	m_pMaterial = materials->FindMaterial( pMaterialName, TEXTURE_GROUP_OTHER );
+	m_pMaterial = g_pMaterialSystem->FindMaterial( pMaterialName, TEXTURE_GROUP_OTHER );
 	if( m_pMaterial )
 		m_TextureHeight = m_pMaterial->GetMappingHeight();
 	else
@@ -1352,7 +1352,7 @@ void C_RopeKeyframe::FinishInit( const char *pMaterialName )
 	char backName[512];
 	Q_snprintf( backName, sizeof( backName ), "%s_back", pMaterialName );
 	
-	m_pBackMaterial = materials->FindMaterial( backName, TEXTURE_GROUP_OTHER, false );
+	m_pBackMaterial = g_pMaterialSystem->FindMaterial( backName, TEXTURE_GROUP_OTHER, false );
 	if ( IsErrorMaterial( m_pBackMaterial ) )
 		m_pBackMaterial = NULL;
 
@@ -2065,7 +2065,7 @@ IMaterial* C_RopeKeyframe::GetSolidMaterial( void )
 	{
 		if ( RopeManager()->GetHolidayLightStyle() == 1 )
 		{
-			return materials->FindMaterial( "cable/pure_white", TEXTURE_GROUP_OTHER );
+			return g_pMaterialSystem->FindMaterial( "cable/pure_white", TEXTURE_GROUP_OTHER );
 		}
 	}
 

@@ -34,7 +34,7 @@ CMatStubHandler::CMatStubHandler()
 
 		// Replace all material system pointers with the stub.
 		GetStubMaterialSystem()->SetRealMaterialSystem( materials );
-		materials->SetInStubMode( true );
+		g_pMaterialSystem->SetInStubMode( true );
 		materials = GetStubMaterialSystem();
 		engine->Mat_Stub( materials );
 	}
@@ -57,12 +57,12 @@ void CMatStubHandler::End()
 	if ( m_pOldMaterialSystem )
 	{
 		materials = m_pOldMaterialSystem;
-		materials->SetInStubMode( false );
+		g_pMaterialSystem->SetInStubMode( false );
 		engine->Mat_Stub( materials );
 		m_pOldMaterialSystem = 0;
 //		if( gl_clear.GetBool() )
 		{
-			materials->ClearBuffers( true, true );
+			g_pMaterialSystem->ClearBuffers( true, true );
 		}
 	}
 }

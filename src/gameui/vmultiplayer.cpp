@@ -322,13 +322,6 @@ void Multiplayer::OnThink()
 
 void Multiplayer::OnKeyCodePressed(KeyCode code)
 {
-	int joystick = GetJoystickForCode( code );
-	int userId = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-	if ( joystick != userId || joystick < 0 )
-	{	
-		return;
-	}
-
 	switch ( GetBaseButtonCode( code ) )
 	{
 	case KEY_XBUTTON_B:
@@ -426,7 +419,7 @@ void Multiplayer::OnCommand(const char *command)
 		}
 		else
 		{
-			char *pchCustomPath = ( ( m_nSpraypaint[ iLogo ].m_bCustom ) ? ( MULTIPLAYER_CUSTOM_SPRAY_FOLDER ) : ( "" ) );
+			const char *pchCustomPath = ( ( m_nSpraypaint[ iLogo ].m_bCustom ) ? ( MULTIPLAYER_CUSTOM_SPRAY_FOLDER ) : ( "" ) );
 
 			char rootFilename[MAX_PATH];
 			Q_snprintf( rootFilename, sizeof(rootFilename), MULTIPLAYER_SPRAY_FOLDER "%s%s.vtf", pchCustomPath, m_nSpraypaint[ iLogo ].m_szFilename );
@@ -472,7 +465,7 @@ void Multiplayer::OnCommand(const char *command)
 	}
 	else if( Q_stricmp( "Back", command ) == 0 )
 	{
-		OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, CBaseModPanel::GetSingleton().GetLastActiveUserId() ) );
+		OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, 0 ) );
 	}
 	else if ( !Q_stricmp( command, "#L4D360UI_Gore_High" ) )
 	{
@@ -677,7 +670,7 @@ void Multiplayer::OnFlyoutMenuCancelled()
 //=============================================================================
 Panel* Multiplayer::NavigateBack()
 {
-	engine->ClientCmd_Unrestricted( VarArgs( "host_writeconfig_ss %d", XBX_GetPrimaryUserId() ) );
+	engine->ClientCmd_Unrestricted( "host_writeconfig" );
 
 	return BaseClass::NavigateBack();
 }

@@ -65,7 +65,7 @@ void GetParticleManifest( CUtlVector<CUtlString>& list )
 {
 	// Open the manifest file, and read the particles specified inside it
 	KeyValues *manifest = new KeyValues( PARTICLES_MANIFEST_FILE );
-	if ( manifest->LoadFromFile( filesystem, PARTICLES_MANIFEST_FILE, "GAME" ) )
+	if ( manifest->LoadFromFile( g_pFullFileSystem, PARTICLES_MANIFEST_FILE, "GAME" ) )
 	{
 		for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
 		{
@@ -187,7 +187,7 @@ void ParseParticleEffectsMap( const char *pMapName, bool bLoadSheets, IFileList 
 
 	// Open the manifest file, and read the particles specified inside it
 	KeyValues *manifest = new KeyValues( szMapManifestFilename );
-	if ( manifest->LoadFromFile( filesystem, szMapManifestFilename, "GAME" ) )
+	if ( manifest->LoadFromFile( g_pFullFileSystem, szMapManifestFilename, "GAME" ) )
 	{
 		DevMsg( "Successfully loaded particle effects manifest '%s' for map '%s'\n", szMapManifestFilename, pMapName );
 		for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )

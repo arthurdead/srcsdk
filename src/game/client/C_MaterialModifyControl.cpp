@@ -163,7 +163,7 @@ void C_MaterialModifyControl::OnDataChanged( DataUpdateType_t updateType )
 {
 	if( updateType == DATA_UPDATE_CREATED )
 	{
-		m_pMaterial = materials->FindMaterial( m_szMaterialName, TEXTURE_GROUP_OTHER );
+		m_pMaterial = g_pMaterialSystem->FindMaterial( m_szMaterialName, TEXTURE_GROUP_OTHER );
 
 		// Clear out our variables
 		m_bHasNewAnimationCommands = true;

@@ -57,7 +57,7 @@ public:
 	virtual float GetFloat() const
 	{
 		if ( !sv_cheats )
-			sv_cheats = cvar->FindVar( "sv_cheats" );
+			sv_cheats = g_pCVar->FindVar( "sv_cheats" );
 
 		// If sv_cheats is on then it can be anything.
 		float flBaseValue = GetBaseFloatValue();
@@ -142,7 +142,7 @@ void CInput::ActivateMouse (void)
 
 		// clear raw mouse accumulated data
 		int rawX, rawY;
-		inputsystem->GetRawMouseAccumulators(rawX, rawY);
+		g_pInputSystem->GetRawMouseAccumulators(rawX, rawY);
 	}
 }
 
@@ -341,7 +341,7 @@ void CInput::GetAccumulatedMouseDeltasAndResetAccumulators( float *mx, float *my
 	if ( m_rawinput.GetBool() )
 	{
 		int rawMouseX, rawMouseY;
-		if ( inputsystem->GetRawMouseAccumulators(rawMouseX, rawMouseY) )
+		if ( g_pInputSystem->GetRawMouseAccumulators(rawMouseX, rawMouseY) )
 		{
 			*mx = (float)rawMouseX;
 			*my = (float)rawMouseY;
@@ -767,5 +767,5 @@ void CInput::ClearStates (void)
 
 	// clear raw mouse accumulated data
 	int rawX, rawY;
-	inputsystem->GetRawMouseAccumulators(rawX, rawY);
+	g_pInputSystem->GetRawMouseAccumulators(rawX, rawY);
 }

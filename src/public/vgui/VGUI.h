@@ -60,10 +60,10 @@ enum class HScheme : unsigned long
 };
 const HScheme INVALID_SCHEME = (HScheme)0;
 // Both -1 and 0 are used for invalid textures. Be careful.
-enum class HTexture : unsigned long
+enum class HTexture : int
 {
 };
-const HTexture INVALID_TEXTURE = (HTexture)0;
+const HTexture INVALID_TEXTURE = (HTexture)-1;
 enum class HCursor: unsigned long
 {
 };

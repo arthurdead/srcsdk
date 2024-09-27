@@ -6,8 +6,10 @@
 //
 //=============================================================================//
 
-#ifndef GAME_H
-#define GAME_H
+#ifndef GAME_CLIENT_H
+#define GAME_CLIENT_H
+
+class ConVar;
 
 extern void GameDLLInit( void );
 

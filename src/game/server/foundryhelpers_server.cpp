@@ -11,7 +11,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-
 //-----------------------------------------------------------------------------
 // Purpose: This just marshalls certain FoundryHelpers_ calls to the client.
 //-----------------------------------------------------------------------------
@@ -59,7 +58,7 @@ bool CheckInFoundryMode()
 {
 	if ( !serverfoundry )
 	{
-		Warning( "Not in Foundry mode.\n" );
+		Log_Warning( LOG_FOUNDRY, "Not in Foundry mode.\n" );
 		return false;
 	}
 

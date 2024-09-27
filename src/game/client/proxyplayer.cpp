@@ -399,7 +399,7 @@ bool CPlayerLogoProxy::Init( IMaterial *pMaterial, KeyValues *pKeyValues )
 	if ( !found )
 		return false;
 
-	m_pDefaultTexture = materials->FindTexture( pKeyValues->GetString( "defaultDecal", DEFAULT_DECAL_NAME ), TEXTURE_GROUP_DECAL );
+	m_pDefaultTexture = g_pMaterialSystem->FindTexture( pKeyValues->GetString( "defaultDecal", DEFAULT_DECAL_NAME ), TEXTURE_GROUP_DECAL );
 	if ( IsErrorTexture( m_pDefaultTexture ) )
 		return false;
 
@@ -451,7 +451,7 @@ void CPlayerLogoProxy::OnLogoBindInternal( int playerindex )
 
 		Q_snprintf( crcfilename, sizeof( crcfilename ), "user_custom/%s", logohex );
 
-		texture = materials->FindTexture( crcfilename, TEXTURE_GROUP_DECAL, false );
+		texture = g_pMaterialSystem->FindTexture( crcfilename, TEXTURE_GROUP_DECAL, false );
 		if ( texture )
 		{
 			// Make sure it doesn't get flushed

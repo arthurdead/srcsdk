@@ -12,8 +12,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef _WIN32
 const unsigned int SYS_NO_ERROR = NO_ERROR;
 const unsigned int SYS_ERROR_INVALID_HANDLE = ERROR_INVALID_HANDLE;
+
+const unsigned int SYS_WAIT_OBJECT_0 = WAIT_OBJECT_0;
+const unsigned int SYS_WAIT_ABANDONED = WAIT_ABANDONED;
 
 void Sys_SetLastError(unsigned long error)
 {
@@ -25,22 +29,17 @@ unsigned long Sys_GetLastError()
 	return ::GetLastError();
 }
 
-
-WHANDLE Sys_CreateMutex(const char *mutexName)
+SYSMHANDLE Sys_CreateMutex(const char *mutexName)
 {
-	return (WHANDLE)::CreateMutex(NULL, FALSE, TEXT(mutexName));
+	return (SYSMHANDLE)::CreateMutex(NULL, FALSE, TEXT(mutexName));
 }
 
-void Sys_ReleaseMutex(WHANDLE mutexHandle)
+void Sys_ReleaseMutex(SYSMHANDLE mutexHandle)
 {
 	::ReleaseMutex((HANDLE)mutexHandle);
 }
 
-
-const unsigned int SYS_WAIT_OBJECT_0 = WAIT_OBJECT_0;
-const unsigned int SYS_WAIT_ABANDONED = WAIT_ABANDONED;
-
-unsigned int Sys_WaitForSingleObject(WHANDLE mutexHandle, int milliseconds)
+unsigned int Sys_WaitForSingleObject(SYSMHANDLE mutexHandle, int milliseconds)
 {
 	return WaitForSingleObject((HANDLE)mutexHandle, milliseconds);
 }
@@ -50,9 +49,9 @@ unsigned int Sys_RegisterWindowMessage(const char *msgName)
 	return ::RegisterWindowMessage(msgName);
 }
 
-WHANDLE Sys_FindWindow(const char *className, const char *windowName)
+SYSWHANDLE Sys_FindWindow(const char *className, const char *windowName)
 {
-	return (WHANDLE)::FindWindow(className, windowName);
+	return (SYSWHANDLE)::FindWindow(className, windowName);
 }
 
 void Sys_EnumWindows(void *callbackFunction, int lparam)
@@ -60,39 +59,31 @@ void Sys_EnumWindows(void *callbackFunction, int lparam)
 	::EnumWindows((WNDENUMPROC)callbackFunction, lparam);
 }
 
-#ifndef _XBOX
-void Sys_GetWindowText(WHANDLE wnd, char *buffer, int bufferSize)
+void Sys_GetWindowText(SYSWHANDLE wnd, char *buffer, int bufferSize)
 {
 	::GetWindowText((HWND)wnd, buffer, bufferSize - 1);
 }
-#endif
 
-void Sys_PostMessage(WHANDLE wnd, unsigned int msg, unsigned int wParam, unsigned int lParam)
+void Sys_PostMessage(SYSWHANDLE wnd, unsigned int msg, unsigned int wParam, unsigned int lParam)
 {
 	::PostMessageA((HWND)wnd, msg, wParam, lParam);
 }
 
-#ifndef _XBOX
 void Sys_SetCursorPos(int x, int y)
 {
 	::SetCursorPos(x, y);
-//	engine->SetCursorPos(x,y); // SRC version
 }
-#endif
 
-#ifndef _XBOX
 static ATOM staticWndclassAtom = 0;
 static WNDCLASS staticWndclass = { NULL };
-#endif
 
 static LRESULT CALLBACK staticProc(HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
 {
 	return DefWindowProc(hwnd,msg,wparam,lparam);
 }
 
-WHANDLE Sys_CreateWindowEx(const char *windowName)
+SYSWHANDLE Sys_CreateWindowEx(const char *windowName)
 {
-	/*
 	if (!staticWndclassAtom)
 	{
 		memset( &staticWndclass,0,sizeof(staticWndclass) );
@@ -106,13 +97,11 @@ WHANDLE Sys_CreateWindowEx(const char *windowName)
 		DWORD error = ::GetLastError();
 	}
 
-	return (WHANDLE)::CreateWindow(windowName, windowName, 0, 0, 0, 0, 0, 0, 0, GetModuleHandle(NULL), 0);
-	*/
-	return (WHANDLE)1;
+	return (SYSWHANDLE)::CreateWindow(windowName, windowName, 0, 0, 0, 0, 0, 0, 0, GetModuleHandle(NULL), 0);
 }
 
-void Sys_DestroyWindow(WHANDLE wnd)
+void Sys_DestroyWindow(SYSWHANDLE wnd)
 {
-	//::DestroyWindow((HWND)wnd);
+	::DestroyWindow((HWND)wnd);
 }
-
+#endif

@@ -1101,7 +1101,7 @@ public:
 
 		// Load file into memory
 		void *buffer = NULL;
-		int len = filesystem->ReadFileEx( UTIL_VarArgs( "expressions/%s.vfe", szFilename ), "GAME", &buffer, false, true );
+		int len = g_pFullFileSystem->ReadFileEx( UTIL_VarArgs( "expressions/%s.vfe", szFilename ), "GAME", &buffer, false, true );
 
 		if ( !len )
 			return NULL;
@@ -1130,7 +1130,7 @@ private:
 		{
 			CFlexSceneFile *file = m_FileList[ 0 ];
 			m_FileList.Remove( 0 );
-			filesystem->FreeOptimalReadBuffer( file->buffer );
+			g_pFullFileSystem->FreeOptimalReadBuffer( file->buffer );
 			delete file;
 		}
 	}

@@ -69,7 +69,7 @@ void CGlowObjectManager::RenderGlowModels( const CViewSetupEx *pSetup, CMatRende
 
 	// Get pointer to FullFrameFB
 	ITexture *pRtFullFrame = NULL;
-	pRtFullFrame = materials->FindTexture( FULL_FRAME_TEXTURE, TEXTURE_GROUP_RENDER_TARGET );
+	pRtFullFrame = g_pMaterialSystem->FindTexture( FULL_FRAME_TEXTURE, TEXTURE_GROUP_RENDER_TARGET );
 
 	SetRenderTargetAndViewPort( pRtFullFrame, pSetup->width, pSetup->height );
 
@@ -79,7 +79,7 @@ void CGlowObjectManager::RenderGlowModels( const CViewSetupEx *pSetup, CMatRende
 	// Set override material for glow color
 	IMaterial *pMatGlowColor = NULL;
 
-	pMatGlowColor = materials->FindMaterial( "dev/glow_color", TEXTURE_GROUP_OTHER, true );
+	pMatGlowColor = g_pMaterialSystem->FindMaterial( "dev/glow_color", TEXTURE_GROUP_OTHER, true );
 
 	ShaderStencilState_t stencilState;
 	stencilState.m_bEnable = false;
@@ -169,7 +169,7 @@ void CGlowObjectManager::ApplyEntityGlowEffects( const CViewSetupEx *pSetup, CMa
 	// Render objects into stencil buffer					 //
 	//=======================================================//
 	// Set override shader to the same simple shader we use to render the glow models
-	IMaterial *pMatGlowColor = materials->FindMaterial( "dev/glow_color", TEXTURE_GROUP_OTHER, true );
+	IMaterial *pMatGlowColor = g_pMaterialSystem->FindMaterial( "dev/glow_color", TEXTURE_GROUP_OTHER, true );
 	g_pStudioRender->ForcedMaterialOverride( pMatGlowColor );
 
 	ShaderStencilState_t stencilStateDisable;
@@ -301,13 +301,13 @@ void CGlowObjectManager::ApplyEntityGlowEffects( const CViewSetupEx *pSetup, CMa
 	pRenderContext->GetViewport( nViewportX, nViewportY, nViewportWidth, nViewportHeight );
 
 	// Get material and texture pointers
-	IMaterial *pMatDownsample = materials->FindMaterial( "dev/glow_downsample", TEXTURE_GROUP_OTHER, true);
-	IMaterial *pMatBlurX = materials->FindMaterial( "dev/glow_blur_x", TEXTURE_GROUP_OTHER, true );
-	IMaterial *pMatBlurY = materials->FindMaterial( "dev/glow_blur_y", TEXTURE_GROUP_OTHER, true );
+	IMaterial *pMatDownsample = g_pMaterialSystem->FindMaterial( "dev/glow_downsample", TEXTURE_GROUP_OTHER, true);
+	IMaterial *pMatBlurX = g_pMaterialSystem->FindMaterial( "dev/glow_blur_x", TEXTURE_GROUP_OTHER, true );
+	IMaterial *pMatBlurY = g_pMaterialSystem->FindMaterial( "dev/glow_blur_y", TEXTURE_GROUP_OTHER, true );
 
-	ITexture *pRtFullFrame = materials->FindTexture( FULL_FRAME_TEXTURE, TEXTURE_GROUP_RENDER_TARGET );
-	ITexture *pRtQuarterSize0 = materials->FindTexture( "_rt_SmallFB0", TEXTURE_GROUP_RENDER_TARGET );
-	ITexture *pRtQuarterSize1 = materials->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *pRtFullFrame = g_pMaterialSystem->FindTexture( FULL_FRAME_TEXTURE, TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *pRtQuarterSize0 = g_pMaterialSystem->FindTexture( "_rt_SmallFB0", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *pRtQuarterSize1 = g_pMaterialSystem->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET );
 
 	//============================================
 	// Downsample _rt_FullFrameFB to _rt_SmallFB0
@@ -384,7 +384,7 @@ void CGlowObjectManager::ApplyEntityGlowEffects( const CViewSetupEx *pSetup, CMa
 		// blobs. Now we need to stencil out the original objects by only writing pixels that have no            //
 		// stencil bits set in the range we care about.                                                          //
 		//=======================================================================================================//
-		IMaterial *pMatHaloAddToScreen = materials->FindMaterial( "dev/halo_add_to_screen", TEXTURE_GROUP_OTHER, true );
+		IMaterial *pMatHaloAddToScreen = g_pMaterialSystem->FindMaterial( "dev/halo_add_to_screen", TEXTURE_GROUP_OTHER, true );
 
 		// Do not fade the glows out at all (weight = 1.0)
 		IMaterialVar *pDimVar = pMatHaloAddToScreen->FindVar( "$C0_X", NULL );

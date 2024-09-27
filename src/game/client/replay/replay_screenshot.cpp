@@ -214,7 +214,7 @@ void CReplayScreenshotTaker::TakeScreenshot( WriteReplayScreenshotParams_t &para
 	Q_snprintf( szPathedFileName, sizeof(szPathedFileName), "//MOD/%s", params.m_pFilename );
 
 	timer.Start();
-		filesystem->AsyncWrite( szPathedFileName, m_pBuffer->Base(), m_pBuffer->TellPut(), false );
+		g_pFullFileSystem->AsyncWrite( szPathedFileName, m_pBuffer->Base(), m_pBuffer->TellPut(), false );
 	timer.End();
 	if ( bDbg ) Warning( "Screenshot AsyncWrite(): %.4f s\n", timer.GetDuration().GetSeconds() );
 

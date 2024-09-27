@@ -161,8 +161,7 @@ public:
 	{
 		if ( ((size_t)&m_Head) % TSLIST_HEAD_ALIGNMENT != 0 )
 		{
-			Error( "CTSListBase: Misaligned list\n" );
-			DebuggerBreak();
+			Log_FatalError( LOG_TIER0, "CTSListBase: Misaligned list\n" );
 		}
 
 #ifdef USE_NATIVE_SLIST
@@ -184,8 +183,7 @@ public:
 #ifdef _DEBUG
 		if ( (size_t)pNode % TSLIST_NODE_ALIGNMENT != 0 )
 		{
-			Error( "CTSListBase: Misaligned node\n" );
-			DebuggerBreak();
+			Log_FatalError( LOG_TIER0, "CTSListBase: Misaligned node\n" );
 		}
 #endif
 
@@ -684,13 +682,11 @@ public:
 		COMPILE_TIME_ASSERT( sizeof(Node_t) >= sizeof(TSLNodeBase_t) );
 		if ( ((size_t)&m_Head) % TSLIST_HEAD_ALIGNMENT != 0 )
 		{
-			Error( "CTSQueue: Misaligned queue\n" );
-			DebuggerBreak();
+			Log_FatalError( LOG_TIER0, "CTSQueue: Misaligned queue\n" );
 		}
 		if ( ((size_t)&m_Tail) % TSLIST_HEAD_ALIGNMENT != 0 )
 		{
-			Error( "CTSQueue: Misaligned queue\n" );
-			DebuggerBreak();
+			Log_FatalError( LOG_TIER0, "CTSQueue: Misaligned queue\n" );
 		}
 		m_Count = 0;
 		m_Head.value.sequence = m_Tail.value.sequence = 0;
@@ -782,7 +778,7 @@ public:
 
 		if ( !bResult )
 		{
-			Msg( "Corrupt CTSQueueDetected" );
+			Log_Error( LOG_TIER0, "Corrupt CTSQueueDetected" );
 		}
 
 		return bResult;
@@ -808,8 +804,7 @@ public:
 #ifdef _DEBUG
 		if ( (size_t)pNode % TSLIST_NODE_ALIGNMENT != 0 )
 		{
-			Error( "CTSListBase: Misaligned node\n" );
-			DebuggerBreak();
+			Log_FatalError( LOG_TIER0, "CTSListBase: Misaligned node\n" );
 		}
 #endif
 
@@ -871,7 +866,7 @@ public:
 			{
 				if ( pNext == TSQUEUE_BAD_NODE_LINK )
 				{
-					Msg( "Bad node link detected\n" );
+					Log_Error( LOG_TIER0, "Bad node link detected\n" );
 					continue;
 				}
 			}

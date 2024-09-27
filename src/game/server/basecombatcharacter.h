@@ -124,6 +124,8 @@ public:
 
 	virtual bool		ShouldUseVisibilityCache( CBaseEntity *pEntity );
 
+	virtual void			NotifySystemEvent( CBaseEntity *pNotify, notify_system_event_t eventType, const notify_system_event_params_t &params );
+
 #ifdef PORTAL
 	virtual	bool		FVisibleThroughPortal( const CProp_Portal *pPortal, CBaseEntity *pEntity, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
 #endif

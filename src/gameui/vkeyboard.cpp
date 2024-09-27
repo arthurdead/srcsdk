@@ -15,7 +15,6 @@
 #include "vgenericconfirmation.h"
 #include "materialsystem/materialsystem_config.h"
 #include "ConfigManager.h"
-#include "cdll_util.h"
 #include "nb_header_footer.h"
 #include "optionssubkeyboard.h"
 #include "vcontrolslistpanel.h"
@@ -82,13 +81,6 @@ void VKeyboard::OnThink()
 
 void VKeyboard::OnKeyCodePressed(KeyCode code)
 {
-	int joystick = GetJoystickForCode( code );
-	int userId = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-	if ( joystick != userId || joystick < 0 )
-	{	
-		return;
-	}
-
 	switch ( GetBaseButtonCode( code ) )
 	{
 	case KEY_XBUTTON_B:
@@ -102,14 +94,13 @@ void VKeyboard::OnKeyCodePressed(KeyCode code)
 	}
 }
 
-#ifndef _X360
 void VKeyboard::OnKeyCodeTyped( vgui::KeyCode code )
 {
 	// For PC, this maps space bar to OK and esc to cancel
 	switch ( code )
 	{
 	case KEY_SPACE:
-		OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_A, CBaseModPanel::GetSingleton().GetLastActiveUserId() ) );
+		OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_A, 0 ) );
 		break;
 
 	case KEY_ESCAPE:
@@ -121,14 +112,13 @@ void VKeyboard::OnKeyCodeTyped( vgui::KeyCode code )
 		else if ( !m_pOptionsSubKeyboard->GetControlsList()->IsInEditMode() )
 		{
 			m_pOptionsSubKeyboard->OnApplyChanges();
-			OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, CBaseModPanel::GetSingleton().GetLastActiveUserId() ) );
+			OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, 0 ) );
 		}
 		break;
 	}
 
 	BaseClass::OnKeyTyped( code );
 }
-#endif
 
 //=============================================================================
 void VKeyboard::OnCommand(const char *command)

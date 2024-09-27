@@ -71,7 +71,6 @@ namespace BaseModUI
 		WT_LEADERBOARD,
 		WT_ADDONASSOCIATION,
 		WT_GETLEGACYDATA,
-		WT_JUKEBOX,
 		WT_WINDOW_COUNT // WT_WINDOW_COUNT must be last in the list!
 	};
 
@@ -126,7 +125,9 @@ namespace BaseModUI
 		CBaseModFrame* GetWindow( const WINDOW_TYPE& wt );
 
 		void OnFrameClosed( WINDOW_PRIORITY pri, WINDOW_TYPE wt );
+	#ifdef _DEBUG
 		void DbgShowCurrentUIState();
+	#endif
 		bool IsLevelLoading();
 
 		WINDOW_TYPE GetActiveWindowType();
@@ -161,8 +162,6 @@ namespace BaseModUI
 		void StartExitingProcess( bool bWarmRestart );
 
 		CBaseModFooterPanel* GetFooterPanel();
-		void SetLastActiveUserId( int userId );
-		int GetLastActiveUserId();
 		void OpenOptionsDialog( Panel *parent );
 		void OpenKeyBindingsDialog( Panel *parent );
 
@@ -203,12 +202,11 @@ namespace BaseModUI
 		bool m_LevelLoading;
 		vgui::HScheme m_UIScheme;
 		vgui::DHANDLE<COptionsDialog> m_hOptionsDialog;	// standalone options dialog - PC only
-		int m_lastActiveUserId;
 
 		vgui::HFont m_hDefaultFont;
 
-		int	m_iBackgroundImageID;
-		int	m_iFadeToBackgroundImageID;
+		vgui::HTexture	m_iBackgroundImageID;
+		vgui::HTexture	m_iFadeToBackgroundImageID;
 		float m_flMovieFadeInTime;
 
 		int m_DelayActivation;
@@ -222,7 +220,7 @@ namespace BaseModUI
 		CUtlString m_backgroundMusic;
 		int m_nBackgroundMusicGUID;
 
-		int m_iProductImageID;
+		vgui::HTexture m_iProductImageID;
 		int m_nProductImageWide;
 		int m_nProductImageTall;
 

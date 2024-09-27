@@ -44,9 +44,7 @@ ConVar	sv_nostats( "sv_nostats", "0", FCVAR_REPLICATED | FCVAR_NOTIFY, "Disable 
 // HPE_END
 //=============================================================================
 
-const char *COM_GetModDirectory();
-
-extern ConVar developer;
+extern const char *COM_GetModDirectory();
 
 #define DEBUG_ACHIEVEMENTS_IN_RELEASE 0
 
@@ -73,65 +71,65 @@ static void WriteAchievementGlobalState( KeyValues *pKV, bool bPersistToSteamClo
 	// Save to a buffer instead.
 	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 	pKV->RecursiveSaveToFile( buf, 0 );
-	filesystem->WriteFile( szFilename, NULL, buf );
+	g_pFullFileSystem->WriteFile( szFilename, NULL, buf );
 	pKV->deleteThis();
 
-    //=============================================================================
-    // HPE_BEGIN
-    // [dwenger] Steam Cloud Support
-    //=============================================================================
+	//=============================================================================
+	// HPE_BEGIN
+	// [dwenger] Steam Cloud Support
+	//=============================================================================
 
-    if ( bPersistToSteamCloud )
-    {
-        Q_snprintf( szFilename, sizeof( szFilename ), "GameState.txt" );
+	if ( bPersistToSteamCloud )
+	{
+		Q_snprintf( szFilename, sizeof( szFilename ), "GameState.txt" );
 
-        ISteamRemoteStorage *pRemoteStorage = SteamClient()?(ISteamRemoteStorage *)SteamClient()->GetISteamGenericInterface(
-            SteamAPI_GetHSteamUser(), SteamAPI_GetHSteamPipe(), STEAMREMOTESTORAGE_INTERFACE_VERSION ):NULL;
+		ISteamRemoteStorage *pRemoteStorage = SteamClient()?(ISteamRemoteStorage *)SteamClient()->GetISteamGenericInterface(
+			SteamAPI_GetHSteamUser(), SteamAPI_GetHSteamPipe(), STEAMREMOTESTORAGE_INTERFACE_VERSION ):NULL;
 
-        if (pRemoteStorage)
-        {
-            uint64 availableBytes = 0;
-            uint64 totalBytes = 0;
-            if ( pRemoteStorage->GetQuota( &totalBytes, &availableBytes ) )
-            {
-                if ( totalBytes > 0 )
-                {
-                    int32   filesize = (int32)filesystem->Size(szFilename);
+		if (pRemoteStorage)
+		{
+			uint64 availableBytes = 0;
+			uint64 totalBytes = 0;
+			if ( pRemoteStorage->GetQuota( &totalBytes, &availableBytes ) )
+			{
+				if ( totalBytes > 0 )
+				{
+					int32   filesize = (int32)g_pFullFileSystem->Size(szFilename);
 
-                    if (filesize > 0)
-                    {
-                        char*   pData = new char[filesize];
+					if (filesize > 0)
+					{
+						char*   pData = new char[filesize];
 
-                        if (pData)
-                        {
-                            // Read in the data from the file system GameState.txt file
-                            FileHandle_t    handle = filesystem->Open(szFilename, "r");
+						if (pData)
+						{
+							// Read in the data from the file system GameState.txt file
+							FileHandle_t    handle = g_pFullFileSystem->Open(szFilename, "r");
 
-                            if (handle)
-                            {
-                                int32 nRead = filesystem->Read(pData, filesize, handle);
+							if (handle)
+							{
+								int32 nRead = g_pFullFileSystem->Read(pData, filesize, handle);
 
-                                filesystem->Close(handle);
+								g_pFullFileSystem->Close(handle);
 
-                                if (nRead == filesize)
-                                {
-                                    // Write out the data to steam cloud
-                                    pRemoteStorage->FileWrite(szFilename, pData, filesize);
-                                }
-                            }
+								if (nRead == filesize)
+								{
+									// Write out the data to steam cloud
+									pRemoteStorage->FileWrite(szFilename, pData, filesize);
+								}
+							}
 
-                            // Delete the data array
-                            delete []pData;
-                        }
-                    }
-                }
-            }
-        }
-    }
+							// Delete the data array
+							delete []pData;
+						}
+					}
+				}
+			}
+		}
+	}
 
-    //=============================================================================
-    // HPE_END
-    //=============================================================================
+	//=============================================================================
+	// HPE_END
+	//=============================================================================
 }
 
 //-----------------------------------------------------------------------------
@@ -220,23 +218,23 @@ m_CallbackUserStatsStored( this, &CAchievementMgr::Steam_OnUserStatsStored )
 	m_bCheatsEverOn = false;
 	m_flTimeLastSaved = 0;
 
-    //=============================================================================
-    // HPE_BEGIN
-    // [dwenger] Steam Cloud Support
-    //=============================================================================
+	//=============================================================================
+	// HPE_BEGIN
+	// [dwenger] Steam Cloud Support
+	//=============================================================================
 
-    if ( ePersistToSteamCloud == SteamCloudPersist_Off )
-    {
-        m_bPersistToSteamCloud = false;
-    }
-    else
-    {
-        m_bPersistToSteamCloud = true;
-    }
+	if ( ePersistToSteamCloud == SteamCloudPersist_Off )
+	{
+		m_bPersistToSteamCloud = false;
+	}
+	else
+	{
+		m_bPersistToSteamCloud = true;
+	}
 
-    //=============================================================================
-    // HPE_END
-    //=============================================================================
+	//=============================================================================
+	// HPE_END
+	//=============================================================================
 
 	m_AchievementsAwarded.RemoveAll();
 }
@@ -385,7 +383,7 @@ void CAchievementMgr::Update( float frametime )
 #ifdef CLIENT_DLL
 	if ( !sv_cheats )
 	{
-		sv_cheats = cvar->FindVar( "sv_cheats" );
+		sv_cheats = g_pCVar->FindVar( "sv_cheats" );
 	}
 #endif
 
@@ -560,24 +558,6 @@ void CAchievementMgr::DownloadUserData()
 	}
 }
 
-const char *COM_GetModDirectory()
-{
-	static char modDir[MAX_PATH];
-	if ( Q_strlen( modDir ) == 0 )
-	{
-		const char *gamedir = CommandLine()->ParmValue("-game", CommandLine()->ParmValue( "-defaultgamedir", "hl2" ) );
-		Q_strncpy( modDir, gamedir, sizeof(modDir) );
-		if ( strchr( modDir, '/' ) || strchr( modDir, '\\' ) )
-		{
-			Q_StripLastDir( modDir, sizeof(modDir) );
-			int dirlen = Q_strlen( modDir );
-			Q_strncpy( modDir, gamedir + dirlen, sizeof(modDir) - dirlen );
-		}
-	}
-
-	return modDir;
-}
-
 //-----------------------------------------------------------------------------
 // Purpose: uploads user data to steam
 //-----------------------------------------------------------------------------
@@ -600,58 +580,58 @@ void CAchievementMgr::LoadGlobalState()
 	char	szFilename[_MAX_PATH];
 	Q_snprintf( szFilename, sizeof( szFilename ), "GameState.txt" );
 
-    //=============================================================================
-    // HPE_BEGIN
-    // [dwenger] Steam Cloud Support
-    //=============================================================================
+	//=============================================================================
+	// HPE_BEGIN
+	// [dwenger] Steam Cloud Support
+	//=============================================================================
 
-    if ( m_bPersistToSteamCloud )
-    {
-        ISteamRemoteStorage *pRemoteStorage = SteamClient()?(ISteamRemoteStorage *)SteamClient()->GetISteamGenericInterface(
-            SteamAPI_GetHSteamUser(), SteamAPI_GetHSteamPipe(), STEAMREMOTESTORAGE_INTERFACE_VERSION ):NULL;
+	if ( m_bPersistToSteamCloud )
+	{
+		ISteamRemoteStorage *pRemoteStorage = SteamClient()?(ISteamRemoteStorage *)SteamClient()->GetISteamGenericInterface(
+			SteamAPI_GetHSteamUser(), SteamAPI_GetHSteamPipe(), STEAMREMOTESTORAGE_INTERFACE_VERSION ):NULL;
 
-        if (pRemoteStorage)
-        {
-            if (pRemoteStorage->FileExists(szFilename))
-            {
-                int32   fileSize = pRemoteStorage->GetFileSize(szFilename);
+		if (pRemoteStorage)
+		{
+			if (pRemoteStorage->FileExists(szFilename))
+			{
+				int32   fileSize = pRemoteStorage->GetFileSize(szFilename);
 
-                if (fileSize > 0)
-                {
-                    // Allocate space for the file data
-                    char*   pData = new char[fileSize];
+				if (fileSize > 0)
+				{
+					// Allocate space for the file data
+					char*   pData = new char[fileSize];
 
-                    if (pData)
-                    {
-                        int32   sizeRead = pRemoteStorage->FileRead(szFilename, pData, fileSize);
+					if (pData)
+					{
+						int32   sizeRead = pRemoteStorage->FileRead(szFilename, pData, fileSize);
 
-                        if (sizeRead == fileSize)
-                        {
-                            // Write out data to a filesystem GameState file that can be read by the original code below
-                            FileHandle_t    handle = filesystem->Open(szFilename, "w");
+						if (sizeRead == fileSize)
+						{
+							// Write out data to a filesystem GameState file that can be read by the original code below
+							FileHandle_t    handle = g_pFullFileSystem->Open(szFilename, "w");
 
-                            if (handle)
-                            {
-                                filesystem->Write(pData, fileSize, handle);
+							if (handle)
+							{
+								g_pFullFileSystem->Write(pData, fileSize, handle);
 
-                                filesystem->Close(handle);
-                            }
-                        }
+								g_pFullFileSystem->Close(handle);
+							}
+						}
 
-                        // Delete the data array
-                        delete []pData;
-                    }
-                }
-            }
-        }
-    }
+						// Delete the data array
+						delete []pData;
+					}
+				}
+			}
+		}
+	}
 
-    //=============================================================================
-    // HPE_END
-    //=============================================================================
+	//=============================================================================
+	// HPE_END
+	//=============================================================================
 
 	KeyValues *pKV = new KeyValues("GameState" );
-	if ( pKV->LoadFromFile( filesystem, szFilename, "MOD" ) )
+	if ( pKV->LoadFromFile( g_pFullFileSystem, szFilename, "MOD" ) )
 	{
 		KeyValues *pNode = pKV->GetFirstSubKey();
 		while ( pNode )
@@ -692,7 +672,7 @@ void CAchievementMgr::SaveGlobalState( bool bAsync )
 			pNode->SetInt( "id", pAchievement->GetAchievementID() );
 
 			pAchievement->GetSettings(pNode);
-        }
+		}
 	}
 
 	if ( !bAsync )
@@ -763,24 +743,24 @@ void CAchievementMgr::AwardAchievement( int iAchievementID )
 	}
 #endif
 
-    //=============================================================================
-    // HPE_BEGIN
-    //=============================================================================
+	//=============================================================================
+	// HPE_BEGIN
+	//=============================================================================
 
-    // [dwenger] Necessary for sorting achievements by award time
+	// [dwenger] Necessary for sorting achievements by award time
 	pAchievement->OnAchieved();
 
-    // [tj]
-    IGameEvent * event = gameeventmanager->CreateEvent( "achievement_earned_local" );
-    if ( event )
-    {
-        event->SetInt( "achievement", pAchievement->GetAchievementID() );
-        gameeventmanager->FireEventClientSide( event );
-    }
+	// [tj]
+	IGameEvent * event = gameeventmanager->CreateEvent( "achievement_earned_local" );
+	if ( event )
+	{
+		event->SetInt( "achievement", pAchievement->GetAchievementID() );
+		gameeventmanager->FireEventClientSide( event );
+	}
 
-    //=============================================================================
-    // HPE_END
-    //=============================================================================
+	//=============================================================================
+	// HPE_END
+	//=============================================================================
 
 	if ( cc_achievement_debug.GetInt() > 0 )
 	{

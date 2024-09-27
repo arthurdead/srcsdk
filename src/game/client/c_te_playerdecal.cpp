@@ -157,7 +157,7 @@ IMaterial *CreateTempMaterialForPlayerLogo( int iPlayerIndex, player_info_t *inf
 	if ( !info->customFiles[0] )	
 		return NULL;
 
-	IMaterial *logo = materials->FindMaterial( VarArgs("decals/playerlogo%2.2d", iPlayerIndex), TEXTURE_GROUP_DECAL );
+	IMaterial *logo = g_pMaterialSystem->FindMaterial( VarArgs("decals/playerlogo%2.2d", iPlayerIndex), TEXTURE_GROUP_DECAL );
 	if ( IsErrorMaterial( logo ) )
 		return NULL;
 
@@ -169,16 +169,16 @@ IMaterial *CreateTempMaterialForPlayerLogo( int iPlayerIndex, player_info_t *inf
 	char fulltexname[ 512 ];
 	Q_snprintf( fulltexname, sizeof( fulltexname ), "materials/user_custom/%s.vtf", logohex );
 
-	if ( !filesystem->FileExists( fulltexname ) )
+	if ( !g_pFullFileSystem->FileExists( fulltexname ) )
 	{
 		char searchPaths[512];
 
 		//find the download path, using the first path found
-		filesystem->GetSearchPath( "DOWNLOAD", false, searchPaths, sizeof( searchPaths ) );
+		g_pFullFileSystem->GetSearchPath( "DOWNLOAD", false, searchPaths, sizeof( searchPaths ) );
 		const char* downloadPath = strtok( searchPaths, ";" );
 
 		//get download folder relative to game folder, or empty it out (to use root) if no download path found; GAME_WRITE works too
-		if ( downloadPath == NULL || !filesystem->FullPathToRelativePathEx( downloadPath, "GAME", searchPaths, ARRAYSIZE(searchPaths) ) )
+		if ( downloadPath == NULL || !g_pFullFileSystem->FullPathToRelativePathEx( downloadPath, "GAME", searchPaths, ARRAYSIZE(searchPaths) ) )
 		{
 			V_strcpy_safe( searchPaths, "download/" );
 		}
@@ -192,7 +192,7 @@ IMaterial *CreateTempMaterialForPlayerLogo( int iPlayerIndex, player_info_t *inf
 		V_sprintf_safe( custname, "%smaterials/user_custom/%s.dat", searchPaths, logohex );
 
 		// it may have been downloaded but not copied under materials folder
-		if ( !filesystem->FileExists( custname ) )
+		if ( !g_pFullFileSystem->FileExists( custname ) )
 			return NULL; // not downloaded yet
 
 		// copy from download folder to materials/temp folder
@@ -234,7 +234,7 @@ void TE_PlayerDecal( IRecipientFilter& filter, float delay,
 	if ( !logo )
 		return;
 
-	ITexture *texture = materials->FindTexture( texname, TEXTURE_GROUP_DECAL );
+	ITexture *texture = g_pMaterialSystem->FindTexture( texname, TEXTURE_GROUP_DECAL );
 	if ( IsErrorTexture( texture ) ) 
 	{
 		return; // not found 

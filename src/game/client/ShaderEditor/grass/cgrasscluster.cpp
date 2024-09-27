@@ -529,14 +529,14 @@ CGrassClusterManager *CGrassClusterManager::GetInstance()
 
 bool CGrassClusterManager::Init()
 {
-	materials->AddReleaseFunc( &ReleaseGrassCluster );
+	g_pMaterialSystem->AddReleaseFunc( &ReleaseGrassCluster );
 
 	return true;
 }
 
 void CGrassClusterManager::Shutdown()
 {
-	materials->RemoveReleaseFunc( &ReleaseGrassCluster );
+	g_pMaterialSystem->RemoveReleaseFunc( &ReleaseGrassCluster );
 }
 
 IMaterial *CGrassClusterManager::GetActiveMaterial()

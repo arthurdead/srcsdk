@@ -70,6 +70,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_BASEENTITY, "BaseEntity Server" );
+
 extern bool g_bTestMoveTypeStepSimulation;
 extern ConVar sv_vehicle_autoaim_scale;
 
@@ -4963,7 +4965,7 @@ CStudioHdr *ModelSoundsCache_LoadModel( const char *filename )
 		model_t *mdl = (model_t *)modelinfo->GetModel( idx );
 		if ( mdl )
 		{
-			CStudioHdr *studioHdr = new CStudioHdr( modelinfo->GetStudiomodel( mdl ), mdlcache ); 
+			CStudioHdr *studioHdr = new CStudioHdr( modelinfo->GetStudiomodel( mdl ), g_pMDLCache ); 
 			if ( studioHdr->IsValid() )
 			{
 				return studioHdr;
@@ -5054,13 +5056,13 @@ class CWatchForModelAccess: public CAutoGameSystem
 public:
 	virtual bool Init()
 	{
-		filesystem->AddLoggingFunc(&ModelLogFunc);
+		g_pFullFileSystem->AddLoggingFunc(&ModelLogFunc);
 		return true;
 	}
 
 	virtual void Shutdown()
 	{
-		filesystem->RemoveLoggingFunc(&ModelLogFunc);
+		g_pFullFileSystem->RemoveLoggingFunc(&ModelLogFunc);
 	}
 
 };
@@ -5180,7 +5182,7 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 	// model anim event owned components
 	{
 		// Check animevents for particle events
-		CStudioHdr studioHdr( modelinfo->GetStudiomodel( pModel ), mdlcache ); 
+		CStudioHdr studioHdr( modelinfo->GetStudiomodel( pModel ), g_pMDLCache ); 
 		if ( studioHdr.IsValid() )
 		{
 			// force animation event resolution!!!

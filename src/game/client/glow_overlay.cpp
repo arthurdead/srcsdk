@@ -422,7 +422,7 @@ void CGlowOverlay::Draw( bool bCacheFullSceneState )
 		// Get our material (deferred default load)
 		if ( m_Sprites[iSprite].m_pMaterial == NULL )
 		{
-			m_Sprites[iSprite].m_pMaterial = materials->FindMaterial( "sprites/light_glow02_add_noz", TEXTURE_GROUP_CLIENT_EFFECTS );
+			m_Sprites[iSprite].m_pMaterial = g_pMaterialSystem->FindMaterial( "sprites/light_glow02_add_noz", TEXTURE_GROUP_CLIENT_EFFECTS );
 		}
 
 		Assert( m_Sprites[iSprite].m_pMaterial );
@@ -469,7 +469,7 @@ void CGlowOverlay::Draw( bool bCacheFullSceneState )
 
 		if( bWireframe )
 		{
-			IMaterial *pWireframeMaterial = materials->FindMaterial( "debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER );
+			IMaterial *pWireframeMaterial = g_pMaterialSystem->FindMaterial( "debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER );
 			pRenderContext->Bind( pWireframeMaterial );
 			
 			// Draw the sprite.

@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "tier0/dbg.h"
+#include "phonemeconverter.h"
+
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_PHONEMECONVERTER, "PhonemeConverter" );
 
 struct PhonemeMap_t
 {
@@ -95,7 +98,7 @@ const char *ConvertPhoneme( int code )
 			return test->string;
 	}
 
-	Warning( "Unrecognized phoneme code %i\n", code );
+	Log_Warning( LOG_PHONEMECONVERTER, "Unrecognized phoneme code %i\n", code );
 	return "<sil>";
 }
 
@@ -113,7 +116,7 @@ int TextToPhoneme( const char *text )
 			return test->code;
 	}
 
-	Warning( "Unrecognized phoneme %s\n", text );
+	Log_Warning( LOG_PHONEMECONVERTER, "Unrecognized phoneme %s\n", text );
 	return '_';
 }
 
@@ -131,7 +134,7 @@ float WeightForPhonemeCode( int code )
 			return test->weight;
 	}
 
-	Warning( "Unrecognized phoneme code %i\n", code );
+	Log_Warning( LOG_PHONEMECONVERTER, "Unrecognized phoneme code %i\n", code );
 	return 1.0f;
 }
 
@@ -149,7 +152,7 @@ float WeightForPhoneme( char *text )
 			return test->weight;
 	}
 
-	Warning( "WeightForPhoneme:: Unrecognized phoneme %s\n", text );
+	Log_Warning( LOG_PHONEMECONVERTER, "WeightForPhoneme:: Unrecognized phoneme %s\n", text );
 	return 1.0f;
 }
 

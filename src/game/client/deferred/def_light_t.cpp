@@ -380,7 +380,7 @@ IDefCookie *def_light_t::CreateCookieInstance( const char *pszCookieName )
 	if ( pVProj != NULL )
 		return new CDefCookieProjectable( pVProj );
 
-	ITexture *pTex = materials->FindTexture( pszCookieName, TEXTURE_GROUP_OTHER );
+	ITexture *pTex = g_pMaterialSystem->FindTexture( pszCookieName, TEXTURE_GROUP_OTHER );
 	if ( !IsErrorTexture( pTex ) )
 		return new CDefCookieTexture( pTex );
 

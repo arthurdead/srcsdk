@@ -5,8 +5,8 @@
 //=============================================================================//
 
 
-#include "BaseSaveGameDialog.h"
-#include "FileSystem.h"
+#include "basesavegamedialog.h"
+#include "filesystem.h"
 #include "savegame_version.h"
 #include "vgui_controls/PanelListPanel.h"
 #include "vgui_controls/Label.h"
@@ -17,9 +17,8 @@
 #include "tier2/resourceprecacher.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "FileSystem.h"
 
-#include "MouseMessageForwardingPanel.h"
+#include "mousemessageforwardingpanel.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

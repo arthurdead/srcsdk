@@ -60,6 +60,8 @@ public:
 
 	virtual int GetNumFrames() = 0;
 	virtual void SetFrame( int nFrame ) = 0;
+	inline int GetFrame()
+	{ return 0; }
 	virtual HTexture GetID() = 0;
 
 	virtual void SetRotation( int iRotation ) = 0;

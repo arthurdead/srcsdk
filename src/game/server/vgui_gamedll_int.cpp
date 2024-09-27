@@ -5,7 +5,6 @@
 // $NoKeywords: $
 //=============================================================================
 #include "cbase.h"
-#ifdef SERVER_USES_VGUI
 #include "vgui_gamedll_int.h"
 #include "ienginevgui.h"
 #include <vgui/ISurface.h>
@@ -97,6 +96,3 @@ void VGui_Shutdown( void )
 	//  actually gets deleted before this dll goes away
 	vgui::ivgui()->RunFrame();
 }
-
-#endif // SERVER_USES_VGUI
-

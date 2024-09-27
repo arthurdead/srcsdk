@@ -82,7 +82,7 @@ void C_ReplayCamera::Init()
 	m_szTitleText[0] = 0;
 
 	// get a handle to the engine convar
-	replay_transmitall = cvar->FindVar( "replay_transmitall" );
+	replay_transmitall = g_pCVar->FindVar( "replay_transmitall" );
 }
 
 void C_ReplayCamera::Reset()

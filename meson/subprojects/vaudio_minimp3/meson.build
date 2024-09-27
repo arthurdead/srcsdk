@@ -12,6 +12,7 @@ public_dir = join_paths(src_root_dir,'public')
 
 tier1 = subproject('tier1')
 tier0 = subproject('tier0')
+hackmgr = subproject('hackmgr')
 
 if build_client
 	shared_library('vaudio_minimp3',name_prefix:'',
@@ -29,7 +30,8 @@ if build_client
 		dependencies: [
 			tier1.get_variable('tier1_dep'),
 			tier0.get_variable('tier0_dep'),
-			source_base.get_variable('source_shared_lib_dep')
+			source_base.get_variable('source_shared_lib_dep'),
+			hackmgr.get_variable('hackmgr_dep'),
 		],
 		install: true,
 		install_dir: join_paths(game_dir,'bin'),

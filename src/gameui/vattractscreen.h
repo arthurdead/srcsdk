@@ -37,8 +37,6 @@ public:
 	enum AttractMode_t
 	{
 		ATTRACT_GAMESTART,			// When the game initially boots, try not to bug user too much
-		ATTRACT_GOSPLITSCREEN,		// When enabled from the main menu
-		ATTRACT_GOSINGLESCREEN,		// Splitscreen disabled from the main menu
 		ATTRACT_GUESTSIGNIN,		// When guest wants to sign in
 		ATTRACT_ACCEPTINVITE,		// Accepting invite
 	};

@@ -47,6 +47,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_BASEENTITY, "BaseEntity Client" );
 
 #ifdef INTERPOLATEDVAR_PARANOID_MEASUREMENT
 	int g_nInterpolatedVarsChanged = 0;
@@ -1761,12 +1762,12 @@ void C_BaseEntity::SetGlobalFadeScale( float flFadeScale )
 		MDLHandle_t hStudioHdr = modelinfo->GetCacheHandle( m_pModel );
 		if ( hStudioHdr != MDLHANDLE_INVALID )
 		{
-			const studiohdr_t *pStudioHdr = mdlcache->LockStudioHdr( hStudioHdr );
+			const studiohdr_t *pStudioHdr = g_pMDLCache->LockStudioHdr( hStudioHdr );
 			if ( pStudioHdr->flags & STUDIOHDR_FLAGS_NO_FORCED_FADE )
 			{
 				flFadeScale = 0.0f;
 			}
-			mdlcache->UnlockStudioHdr( hStudioHdr );
+			g_pMDLCache->UnlockStudioHdr( hStudioHdr );
 		}
 	}
 	AlphaProp()->SetFade( flFadeScale, GetMinFadeDist(), GetMaxFadeDist() );
@@ -5336,10 +5337,10 @@ int DispatchSpawn( C_BaseEntity *pEntity )
 			MemAlloc_PushAllocDbgInfo( pszClassname, __LINE__ );
 		}
 #endif
-		bool bAsyncAnims = mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, false );
+		bool bAsyncAnims = g_pMDLCache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, false );
 		pEntity->m_flSpawnTime = engine->GetLastTimeStamp();
 		pEntity->Spawn();
-		mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, bAsyncAnims );
+		g_pMDLCache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, bAsyncAnims );
 
 #if defined(TRACK_ENTITY_MEMORY) && defined(USE_MEM_DEBUG)
 		if ( pszClassname )

@@ -115,21 +115,8 @@ private:
 
 	bool		m_isOpen;
 	bool		m_isNavigateTo; //to help cure flashing
-	bool		m_bOnlyActiveUser;
 	bool		m_bIgnoreButtonA;
 
-	enum UseIndex_t
-	{
-		USE_NOBODY = -2,		// Nobody can use the button
-		USE_EVERYBODY = -1,		// Everybody can use the button
-		USE_SLOT0 = 0,			// Only Slot0 can use the button
-		USE_SLOT1,				// Only Slot1 can use the button
-		USE_SLOT2,				// Only Slot2 can use the button
-		USE_SLOT3,				// Only Slot3 can use the button
-		USE_PRIMARY = 0xFF,		// Only primary user can use the button
-	};
-
-	int m_iUsablePlayerIndex;
 	EnableCondition mEnableCondition;
 
 	CUtlString	m_enabledToolText;
@@ -152,8 +139,8 @@ private:
 
 	bool		m_bShowDropDownIndicator;	// down arrow used for player names that can be clicked on
 	bool		m_bOverrideDropDownIndicator;	// down arrow used for player names that can be clicked on
-	int			m_iSelectedArrow;			// texture ids for the arrow
-	int			m_iUnselectedArrow;
+	vgui::HTexture			m_iSelectedArrow;			// texture ids for the arrow
+	vgui::HTexture			m_iUnselectedArrow;
 	int			m_iSelectedArrowSize;		// size to draw the arrow
 
 	int			m_nWideAtOpen;

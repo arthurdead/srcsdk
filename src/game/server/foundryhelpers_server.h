@@ -8,10 +8,8 @@
 #define FOUNDRYHELPERS_SERVER_H
 #pragma once
 
-
 #include "foundry/iserverfoundry.h"
 #include "enginecallback.h"
-
 
 void FoundryHelpers_ClearEntityHighlightEffects();
 void FoundryHelpers_AddEntityHighlightEffect( CBaseEntity *pEnt );

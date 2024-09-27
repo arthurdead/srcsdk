@@ -1521,7 +1521,7 @@ void CClientShadowMgr::InitRenderTargets()
 	}
 
 	// If someone turned shadow depth mapping on but we can't do it, force it off
-	if ( r_flashlightdepthtexture.GetBool() && !materials->SupportsShadowDepthTextures() )
+	if ( r_flashlightdepthtexture.GetBool() && !g_pMaterialSystem->SupportsShadowDepthTextures() )
 	{
 		r_flashlightdepthtexture.SetValue( 0 );
 		ShutdownDepthTextureShadows();	
@@ -1555,14 +1555,14 @@ void CClientShadowMgr::InitRenderTargets()
 		r_flashlightdepthreshigh.SetValue( m_nDepthTextureResolutionHigh );
 	}
 
-	materials->AddRestoreFunc( ShadowRestoreFunc );
+	g_pMaterialSystem->AddRestoreFunc( ShadowRestoreFunc );
 }
 
 void CClientShadowMgr::ShutdownRenderTargets( void )
 {
 	if ( materials )										// ugh - this gets called during program shutdown, but with no mat system
 	{
-		materials->RemoveRestoreFunc( ShadowRestoreFunc );
+		g_pMaterialSystem->RemoveRestoreFunc( ShadowRestoreFunc );
 	}
 }
 
@@ -1603,11 +1603,11 @@ void CClientShadowMgr::InitDepthTextureShadows()
 		CalculateRenderTargetsAndSizes();
 		m_bDepthTexturesAllocated = true;
 
-		ImageFormat dstFormat  = materials->GetShadowDepthTextureFormat();	// Vendor-dependent depth texture format
+		ImageFormat dstFormat  = g_pMaterialSystem->GetShadowDepthTextureFormat();	// Vendor-dependent depth texture format
 
-		ImageFormat nullFormat = materials->GetNullTextureFormat();			// Vendor-dependent null texture format (takes as little memory as possible)
+		ImageFormat nullFormat = g_pMaterialSystem->GetNullTextureFormat();			// Vendor-dependent null texture format (takes as little memory as possible)
 
-		materials->BeginRenderTargetAllocation();
+		g_pMaterialSystem->BeginRenderTargetAllocation();
 
 		m_DummyColorTexture.InitRenderTarget( m_nDepthTextureResolution, m_nDepthTextureResolution, RT_SIZE_NO_CHANGE, nullFormat, MATERIAL_RT_DEPTH_NONE, false, "_rt_ShadowDummy" );
 
@@ -1637,7 +1637,7 @@ void CClientShadowMgr::InitDepthTextureShadows()
 		m_CascadedDepthTexture.InitRenderTarget( iCadcadedShadowWidth, iCadcadedShadowHeight, RT_SIZE_NO_CHANGE,
 												 dstFormat, MATERIAL_RT_DEPTH_NONE, false, "_rt_CascadedShadowDepth" );
 
-		materials->EndRenderTargetAllocation();
+		g_pMaterialSystem->EndRenderTargetAllocation();
 	}
 
 #ifdef _DEBUG
@@ -1745,7 +1745,7 @@ void CClientShadowMgr::ShutdownRenderToTextureShadows( bool bFullShutdown )
 			m_ShadowAllocator.Shutdown();
 
 			// Cause the render target to go away
-			materials->UncacheUnusedMaterials();
+			g_pMaterialSystem->UncacheUnusedMaterials();
 		}
 
 		m_RenderToTextureActive = false;
@@ -4044,7 +4044,7 @@ void CClientShadowMgr::ReprojectShadows()
 
 	{
 		// If someone turned shadow depth mapping on but we can't do it, force it off
-		if ( r_flashlightdepthtexture.GetBool() && !materials->SupportsShadowDepthTextures() )
+		if ( r_flashlightdepthtexture.GetBool() && !g_pMaterialSystem->SupportsShadowDepthTextures() )
 		{
 			r_flashlightdepthtexture.SetValue( 0 );
 			ShutdownDepthTextureShadows();	

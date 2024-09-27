@@ -3,17 +3,19 @@
 // Purpose: Win32 Console API helpers
 //
 //=============================================================================
-#ifndef WIN32_CONSOLE_IO_H
-#define WIN32_CONSOLE_IO_H
+#ifndef CONSOLE_IO_H
+#define CONSOLE_IO_H
 
 #pragma once
 
+#include "tier0/platform.h"
+
 // Function to attach a console for I/O to a Win32 GUI application in a reasonably smart fashion.
-PLATFORM_INTERFACE bool SetupWin32ConsoleIO();
+PLATFORM_INTERFACE bool SetupConsoleIO();
 
 // Win32 Console Color API Helpers, originally from cmdlib.
 
-struct Win32ConsoleColorContext_t
+struct ConsoleColorContext_t
 {
 	int  m_InitialColor;
 	uint16 m_LastColor;
@@ -21,10 +23,10 @@ struct Win32ConsoleColorContext_t
 	uint16 m_BackgroundFlags;
 };
 
-PLATFORM_INTERFACE void InitWin32ConsoleColorContext( Win32ConsoleColorContext_t *pContext );
+PLATFORM_INTERFACE void InitConsoleColorContext( ConsoleColorContext_t *pContext );
 
-PLATFORM_INTERFACE uint16 SetWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, int nRed, int nGreen, int nBlue, int nIntensity );
+PLATFORM_INTERFACE uint16 SetConsoleColor( ConsoleColorContext_t *pContext, int nRed, int nGreen, int nBlue, int nIntensity );
 
-PLATFORM_INTERFACE void RestoreWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, uint16 prevColor );
+PLATFORM_INTERFACE void RestoreConsoleColor( ConsoleColorContext_t *pContext, uint16 prevColor );
 
 #endif 

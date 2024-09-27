@@ -54,7 +54,7 @@ public:
 	virtual bool	RegisterConCommandBase( ConCommandBase *pCommand )
 	{
 	#ifdef _DEBUG
-		if(cvar->FindCommandBase(pCommand->GetName()) != NULL) {
+		if(g_pCVar->FindCommandBase(pCommand->GetName()) != NULL) {
 			DevMsg("server dll tried to re-register con var/command named %s\n", pCommand->GetName());
 		}
 
@@ -71,10 +71,10 @@ public:
 		}
 
 		// Link to engine's list instead
-		cvar->RegisterConCommand( pCommand );
+		g_pCVar->RegisterConCommand( pCommand );
 
 		// Apply any command-line values.
-		const char *pValue = cvar->GetCommandLineValue( pCommand->GetName() );
+		const char *pValue = g_pCVar->GetCommandLineValue( pCommand->GetName() );
 		if( pValue )
 		{
 			if ( !pCommand->IsCommand() )
@@ -101,15 +101,15 @@ public:
 	}
 };
 
-static CGameDLL_ConVarAccessor g_ConVarAccessor;
+static CGameDLL_ConVarAccessor g_ServerConVarAccessor;
 
 // Register your console variables here
 // This gets called one time when the game is initialied
-void InitializeCvars( void )
+void InitializeServerCvars( void )
 {
 	// Register cvars here:
-	ConVar_Register( FCVAR_GAMEDLL, &g_ConVarAccessor ); 
+	ConVar_Register( FCVAR_GAMEDLL, &g_ServerConVarAccessor ); 
 
-	g_pDeveloper	= cvar->FindVar( "developer" );
+	g_pDeveloper	= g_pCVar->FindVar( "developer" );
 }
 

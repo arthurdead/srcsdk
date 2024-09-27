@@ -325,7 +325,7 @@ void CReplayRagdollRecorder::Record()
 	static bool bLookedForConvar = false;
 	if ( bLookedForConvar )
 	{
-		pReplayEnable =  (ConVar*)cvar->FindVar( "replay_enable" );
+		pReplayEnable =  (ConVar*)g_pCVar->FindVar( "replay_enable" );
 		bLookedForConvar = true;
 	}
 	if ( !pReplayEnable || !pReplayEnable->GetInt() )
@@ -479,7 +479,7 @@ bool CReplayRagdollRecorder::DumpRagdollsToDisk( char const* pFilename ) const
 		}
 
 		// Write the file
-		filesystem->WriteFile( pFilename, "MOD", buf );
+		g_pFullFileSystem->WriteFile( pFilename, "MOD", buf );
 	}
 
 	CleanupDMX( pSimulations );

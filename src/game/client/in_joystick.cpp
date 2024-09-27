@@ -701,7 +701,7 @@ bool CInput::ControllerModeActive( void )
 bool CInput::JoyStickActive()
 {
 	// verify joystick is available and that the user wants to use it
-	if ( !in_joystick.GetInt() || 0 == inputsystem->GetJoystickCount() )
+	if ( !in_joystick.GetInt() || 0 == g_pInputSystem->GetJoystickCount() )
 		return false; 
 
 	return true;
@@ -751,7 +751,7 @@ void CInput::JoyStickSampleAxes( float &forward, float &side, float &pitch, floa
 		if ( GAME_AXIS_NONE == m_rgAxes[i].AxisMap )
 			continue;
 
-		float fAxisValue = inputsystem->GetAnalogValue( (AnalogCode_t)JOYSTICK_AXIS( 0, i ) );
+		float fAxisValue = g_pInputSystem->GetAnalogValue( (AnalogCode_t)JOYSTICK_AXIS( 0, i ) );
 
 		if ( joy_wwhack2.GetInt() != 0 )
 		{
@@ -868,7 +868,7 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 		return;
 
 	// Reinitialize the 'advanced joystick' system if hotplugging has caused us toggle between some/none joysticks.
-	bool haveJoysticks = ( inputsystem->GetJoystickCount() > 0 );
+	bool haveJoysticks = ( g_pInputSystem->GetJoystickCount() > 0 );
 	if ( haveJoysticks != m_fHadJoysticks )
 	{
 		Joystick_Advanced(true);
@@ -903,7 +903,7 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 		if ( GAME_AXIS_NONE == m_rgAxes[i].AxisMap )
 			continue;
 
-		float fAxisValue = inputsystem->GetAnalogValue( (AnalogCode_t)JOYSTICK_AXIS( 0, i ) );
+		float fAxisValue = g_pInputSystem->GetAnalogValue( (AnalogCode_t)JOYSTICK_AXIS( 0, i ) );
 
 		if (joy_wwhack2.GetInt() != 0 )
 		{

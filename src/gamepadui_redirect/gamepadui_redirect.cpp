@@ -1,4 +1,7 @@
 #include "gamepadui/igamepadui.h"
+#include "tier1/interface.h"
+#include "tier1/strtools.h"
+#include "tier0/icommandline.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -33,12 +36,12 @@ bool CGamepadUIRedirect::Init()
 {
 	CSysModule *pTargetMod = NULL;
 
-	const char *pGameDir = CommandLine()->ParmValue("-game", "hl2");
+	const char *pGameDir = CommandLine()->ParmValue( "-game", CommandLine()->ParmValue( "-defaultgamedir", "hl2" ) );
 
 	char szTargetPath[MAX_PATH];
 	V_strncpy(szTargetPath, pGameDir, sizeof(szTargetPath));
 	V_AppendSlash(szTargetPath, sizeof(szTargetPath));
-	V_strcat(szTargetPath, "GameUI" DLL_EXT_STRING, sizeof(szTargetPath));
+	V_strcat(szTargetPath, "bin" CORRECT_PATH_SEPARATOR_S "GameUI" DLL_EXT_STRING, sizeof(szTargetPath));
 
 	pTargetMod = Sys_LoadModule(szTargetPath);
 	if(!pTargetMod) {

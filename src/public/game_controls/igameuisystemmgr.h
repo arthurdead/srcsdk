@@ -19,14 +19,13 @@ class IGameUISoundPlayback;
 class IMaterialProxy;
 
 // External includes
-#include "tier1/timeutils.h"
+#include "movieobjects/timeutils.h"
 #include "tier1/utlsymbol.h"
-#include "materialsystem/materialsystemutil.h"
+#include "materialsystem/MaterialSystemUtil.h"
 #include "materialsystem/imaterialsystem.h"
 #include "vgui_surfacelib/ifontsurface.h" 
-#include "rendersystem/irenderdevice.h"
-#include "inputsystem/inputenums.h"
-
+#include "inputsystem/InputEnums.h"
+#include "tier0/platwindow.h"
 
 // Game controls includes
 #include "miscutils.h"
@@ -36,7 +35,8 @@ class IMaterialProxy;
 // Types
 FORWARD_DECLARE_HANDLE( InputContextHandle_t );
 
-
+typedef void * HRenderTexture;
+class IRenderContext;
 
 //-----------------------------------------------------------------------------
 // Interface used to drive gameui (tier3)
@@ -76,7 +76,7 @@ public:
 	virtual IMaterialProxy *CreateProxy( const char *proxyName ) = 0;
 };
 
-
+extern IGameUISystemMgr *g_pGameUISystemMgr;
 
 //-----------------------------------------------------------------------------
 // Used to allow clients to install code hooks to the gui screens
@@ -235,25 +235,5 @@ public:
 	virtual void *EmitSound( const char *pSoundName ) = 0;
 	virtual void StopSound( void *pSoundHandle ) = 0; 
 };
-
-
-
-
-
-//
-// LINK_GAME_CONTROLS_LIB() macro must be included in the outer .dll code
-// to force all required lib objects linked into the DLL.
-//
-extern void LinkGameControlsLib();
-#define LINK_GAME_CONTROLS_LIB() \
-namespace { \
-	static class CLinkGameControlsLib { \
-	public: \
-		CLinkGameControlsLib() { \
-			LinkGameControlsLib(); \
-		} \
-	} s_LinkHelper; \
-};
-
 
 #endif // IGAMEUISYSTEMMGR_H

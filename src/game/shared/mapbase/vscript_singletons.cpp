@@ -2827,14 +2827,14 @@ void CScriptConvarAccessor::SetChangeCallback( const char *name, HSCRIPT fn )
 void ScriptConVarCallback( IConVar *var, const char* pszOldValue, float flOldValue )
 {
 	ConVar *cvar = (ConVar*)var;
-	const char *name = cvar->GetName();
+	const char *name = g_pCVar->GetName();
 	unsigned int hash = CScriptConvarAccessor::Hash( name );
 	int idx = g_ScriptConVars.Find(hash);
 	if ( idx != g_ScriptConVars.InvalidIndex() )
 	{
 		Assert( g_ScriptConVars[idx]->m_hCallback );
 
-		ScriptVariant_t args[5] = { name, pszOldValue, flOldValue, cvar->GetString(), cvar->GetFloat() };
+		ScriptVariant_t args[5] = { name, pszOldValue, flOldValue, g_pCVar->GetString(), g_pCVar->GetFloat() };
 		if ( g_pScriptVM->ExecuteFunction( g_ScriptConVars[idx]->m_hCallback, args, 5, NULL, NULL, true ) == SCRIPT_ERROR )
 		{
 			DevWarning( 1, "CScriptConVar: invalid change callback for '%s'\n", name );

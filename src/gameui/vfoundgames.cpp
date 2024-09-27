@@ -81,10 +81,7 @@ bool BaseModUI::FoundGameListItem::Info::IsJoinable() const
 
 bool BaseModUI::FoundGameListItem::Info::IsDLC() const
 {
-	if ( IsX360() )
-		return mbDLC;
-
-	return false;
+	return mbDLC;
 }
 
 char const * BaseModUI::FoundGameListItem::Info::IsOtherTitle() const
@@ -97,9 +94,6 @@ char const * BaseModUI::FoundGameListItem::Info::IsOtherTitle() const
 
 bool BaseModUI::FoundGameListItem::Info::IsDownloadable() const
 {
-	if ( IsX360() )
-		return false;
-
 	if ( mbInGame && mpGameDetails )
 	{
 		IASW_Mission_Chooser_Source *pSource = missionchooser ? missionchooser->LocalMissionSource() : NULL;
@@ -207,71 +201,68 @@ FoundGameListItem::~FoundGameListItem()
 //=============================================================================
 void FoundGameListItem::SetAvatarXUID( XUID xuid )
 {
-	if ( IsPC() )
+	vgui::ImagePanel *imgAvatar = dynamic_cast< vgui::ImagePanel* >( FindChildByName( "PnlGamerPic" ) );
+	vgui::ImagePanel *pnlModPic = dynamic_cast< vgui::ImagePanel* >( FindChildByName( "PnlModPic" ) );
+
+	if ( GetFullInfo().mInfoType == FGT_PUBLICGAME && pnlModPic )
 	{
-		vgui::ImagePanel *imgAvatar = dynamic_cast< vgui::ImagePanel* >( FindChildByName( "PnlGamerPic" ) );
-		vgui::ImagePanel *pnlModPic = dynamic_cast< vgui::ImagePanel* >( FindChildByName( "PnlModPic" ) );
+		SetControlVisible( "ImgAvatarBG", false );
 
-		if ( GetFullInfo().mInfoType == FGT_PUBLICGAME && pnlModPic )
+		// TODO: Show wrench icon for custom missions/campaigns
+		/*
+		char const *szCampaign = GetFullInfo().mpGameDetails->GetString( "game/campaign", "" );
+		KeyValues *pCampaignInfo = ( szCampaign && *szCampaign ) ? g_pMatchExt->GetAllMissions()->FindKey( szCampaign ) : NULL;
+		if ( pCampaignInfo )
 		{
-			SetControlVisible( "ImgAvatarBG", false );
-
-			// TODO: Show wrench icon for custom missions/campaigns
-			/*
-			char const *szCampaign = GetFullInfo().mpGameDetails->GetString( "game/campaign", "" );
-			KeyValues *pCampaignInfo = ( szCampaign && *szCampaign ) ? g_pMatchExtSwarm->GetAllMissions()->FindKey( szCampaign ) : NULL;
-			if ( pCampaignInfo )
+			if ( pCampaignInfo->GetInt( "builtin" ) )
 			{
-				if ( pCampaignInfo->GetInt( "builtin" ) )
-				{
-					//pnlModPic->SetImage( "icon_l4d" );
-					pnlModPic->SetVisible( false );
-				}
-				else
-				{
-					pnlModPic->SetImage( "icon_modwrench" );
-					pnlModPic->SetVisible( true );
-				}
+				//pnlModPic->SetImage( "icon_l4d" );
+				pnlModPic->SetVisible( false );
 			}
 			else
 			{
-				pnlModPic->SetImage( "icon_download" );
+				pnlModPic->SetImage( "icon_modwrench" );
 				pnlModPic->SetVisible( true );
 			}
-			*/
-
-			
-			imgAvatar->SetVisible( false );
 		}
-		else if ( imgAvatar )
+		else
 		{
-			if ( xuid != 0 )
+			pnlModPic->SetImage( "icon_download" );
+			pnlModPic->SetVisible( true );
+		}
+		*/
+
+		
+		imgAvatar->SetVisible( false );
+	}
+	else if ( imgAvatar )
+	{
+		if ( xuid != 0 )
+		{
+			IImage *pImage = NULL;
+			
+			if ( m_FullInfo.mInfoType == FoundGameListItem::FGT_PLAYER )
+				pImage = CUIGameData::Get()->GetAvatarImage( xuid );
+
+			if ( pImage )
 			{
-				IImage *pImage = NULL;
-				
-				if ( m_FullInfo.mInfoType == FoundGameListItem::FGT_PLAYER )
-					pImage = CUIGameData::Get()->GetAvatarImage( xuid );
-
-				if ( pImage )
-				{
-					imgAvatar->SetImage( pImage );
-				}
-				else
-				{
-					imgAvatar->SetImage( "icon_lobby" );
-				}
-
-				SetControlVisible( "ImgAvatarBG", ( pImage != NULL ) );
+				imgAvatar->SetImage( pImage );
 			}
 			else
 			{
 				imgAvatar->SetImage( "icon_lobby" );
-				SetControlVisible( "ImgAvatarBG", false );
 			}
 
-			imgAvatar->SetVisible( true );
-			pnlModPic->SetVisible( false );
+			SetControlVisible( "ImgAvatarBG", ( pImage != NULL ) );
 		}
+		else
+		{
+			imgAvatar->SetImage( "icon_lobby" );
+			SetControlVisible( "ImgAvatarBG", false );
+		}
+
+		imgAvatar->SetVisible( true );
+		pnlModPic->SetVisible( false );
 	}
 }
 
@@ -310,8 +301,7 @@ void FoundGameListItem::SetGameIndex( const Info& fi )
 		SetControlString( "LblPing", VarArgs( "%d", fi.miPing ) );
 	}
 
-	if ( IsPC() )
-		SetControlVisible( "ImgPingSmall", ( fi.miPing > 0 ) );
+	SetControlVisible( "ImgPingSmall", ( fi.miPing > 0 ) );
 
 	if ( fi.IsDLC() )
 	{

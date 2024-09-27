@@ -30,21 +30,18 @@ public:
 	void LoadGameInfoFromBuffer( const char *buffer );
 
 	// data accessors
-   	const wchar_t *GetGameTitle();
-   	const wchar_t *GetGameTitle2();
+	const wchar_t *GetGameTitle();
+	const wchar_t *GetGameTitle2();
 	const char *GetGameName();
-
-   	bool IsMultiplayerOnly();
-   	bool IsSinglePlayerOnly();
 
 	bool HasPortals();
 
 	bool NoDifficulty();
-  	bool NoModels();
-  	bool NoHiModel();
-  	bool NoCrosshair();
+	bool NoModels();
+	bool NoHiModel();
+	bool NoCrosshair();
 	bool AdvCrosshair();
-   	const char *GetFallbackDir();
+	const char *GetFallbackDir();
 	bool UseGameLogo();
 
 	KeyValues *GetHiddenMaps();

@@ -69,6 +69,8 @@ T *_CreateEntityTemplate( T *newEnt, const char *className )
 
 #include "tier0/memdbgoff.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_ENTITYFACTORY );
+
 CBaseEntity *CreateEntityByName( const char *className, int iForceEdictIndex = -1, bool bNotify = true );
 
 // creates an entity by name, and ensure it's correctness
@@ -80,7 +82,7 @@ T *_CreateEntity( T *newClass, const char *className )
 	T *newEnt = dynamic_cast<T*>( CreateEntityByName(className, -1) );
 	if ( !newEnt )
 	{
-		Warning( "classname %s used to create wrong class type\n", className );
+		Log_Error( LOG_ENTITYFACTORY, "classname %s used to create wrong class type\n", className );
 		Assert(0);
 	}
 

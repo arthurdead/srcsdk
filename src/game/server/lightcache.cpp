@@ -1,4 +1,5 @@
 #include "cbase.h"
+#include "lightcache.h"
 #include "enginecallback.h"
 #include "igamesystem.h"
 #include "filesystem.h"
@@ -8,6 +9,7 @@
 #ifndef SWDS
 #include "game_loopback/igameloopback.h"
 #endif
+#include "con_nprint.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -42,25 +44,53 @@ struct LightEqualFunctor
 	}
 };
 
+#ifdef _DEBUG
+ConVar draw_lightcache("draw_lightcache", "0");
+#endif
+
 class CLightCacheSystem : CAutoGameSystemPerFrame
 {
 public:
 	static inline const unsigned int magic = 'L'<<24 | 'I'<<16 | 'I'<<8 | 'C';
 	static inline const unsigned short version = 1;
 
-	virtual void LevelInitPreEntity()
+	virtual void FrameUpdatePostEntityThink()
 	{
-	#ifndef SWDS
-		if(!engine->IsDedicatedServer() && g_pGameClientLoopback) {
-			return;
+	#ifdef _DEBUG
+		if(draw_lightcache.GetBool()) {
+			CBasePlayer *pPlayer = UTIL_PlayerByIndex( 1 );
+			if(pPlayer) {
+				trace_t tr;
+				Vector forward;
+				pPlayer->EyeVectors( &forward );
+				UTIL_TraceLine(pPlayer->EyePosition(),
+					pPlayer->EyePosition() + forward * MAX_TRACE_LENGTH,MASK_AI_VISION, 
+					pPlayer, COLLISION_GROUP_NONE, &tr );
+
+				if ( tr.fraction != 1.0 )
+				{
+					float lightIntensity = GetLightIntensity( tr.endpos );
+
+					con_nprint_s nxPrn = { 0 };
+					nxPrn.time_to_live = -1;
+					nxPrn.color[0] = 0.9f, nxPrn.color[1] = 1.0f, nxPrn.color[2] = 0.9f;
+					nxPrn.fixed_width_font = true;
+					nxPrn.index = 40;
+
+					engine->Con_NXPrintf( &nxPrn, "%f", lightIntensity );
+				}
+			}
 		}
 	#endif
+	}
 
+	virtual void LevelInitPreEntity()
+	{
 		char filename[MAX_PATH];
-		V_sprintf_safe(filename, "maps/%s.lightcache", STRING(gpGlobals->mapname));
+		V_sprintf_safe(filename, "maps" CORRECT_PATH_SEPARATOR_S "%s.lightcache", STRING(gpGlobals->mapname));
 
 		CUtlBuffer buf;
-		if(!filesystem->ReadFile(filename, "MOD", buf))
+		if(!g_pFullFileSystem->ReadFile(filename, "MOD", buf))
 			return;
 
 		if(buf.GetUnsignedInt() != magic)
@@ -84,10 +114,10 @@ public:
 		}
 	}
 
-	virtual void LevelShutdownPostEntity()
+	void Save()
 	{
 		char filename[MAX_PATH];
-		V_sprintf_safe(filename, "maps/%s.lightcache", STRING(gpGlobals->mapname));
+		V_sprintf_safe(filename, "maps" CORRECT_PATH_SEPARATOR_S "%s.lightcache", STRING(gpGlobals->mapname));
 
 		CUtlBuffer buf;
 		buf.PutUnsignedInt( magic );
@@ -103,7 +133,13 @@ public:
 			buf.PutFloat( lights[it].intensity );
 		}
 
-		filesystem->WriteFile(filename, "MOD", buf);
+		g_pFullFileSystem->RemoveFile(filename, "MOD");
+		g_pFullFileSystem->WriteFile(filename, "MOD", buf);
+	}
+
+	virtual void LevelShutdownPostEntity()
+	{
+		Save();
 
 		lights.Purge();
 	}
@@ -111,6 +147,32 @@ public:
 	CUtlHashtable< Vector, Lightcache_t, LightHashFunctor, LightEqualFunctor > lights;
 };
 static CLightCacheSystem lightcache;
+
+void UpdateLightIntensity( const Vector &pos )
+{
+#ifndef SWDS
+	if(!engine->IsDedicatedServer() && g_pGameClientLoopback) {
+		Vector light( 0, 0, 0 );
+		light = g_pGameClientLoopback->GetLightForPoint( pos, true );
+
+		Vector ambientColor;
+		g_pGameClientLoopback->GetAmbientLightColor( ambientColor );
+
+		float ambientIntensity = ambientColor.x + ambientColor.y + ambientColor.z;
+		float lightIntensity = light.x + light.y + light.z;
+		lightIntensity = clamp( lightIntensity, 0.f, 1.f );	// sum can go well over 1.0, but it's the lower region we care about.  if it's bright, we don't need to know *how* bright.
+
+		lightIntensity = MAX( lightIntensity, ambientIntensity );
+
+		auto idx = lightcache.lights.Find( pos );
+		if(idx != lightcache.lights.InvalidHandle()) {
+			lightcache.lights[idx].intensity = lightIntensity;
+		} else {
+			lightcache.lights.Insert( pos, Lightcache_t( pos, lightIntensity ) );
+		}
+	}
+#endif
+}
 
 float GetLightIntensity( const Vector &pos )
 {
@@ -128,8 +190,6 @@ float GetLightIntensity( const Vector &pos )
 
 		lightIntensity = MAX( lightIntensity, ambientIntensity );
 
-		bool found = false;
-
 		auto idx = lightcache.lights.Find( pos );
 		if(idx != lightcache.lights.InvalidHandle()) {
 			lightcache.lights[idx].intensity = lightIntensity;
@@ -144,11 +204,36 @@ float GetLightIntensity( const Vector &pos )
 	{
 		FOR_EACH_HASHTABLE( lightcache.lights, it )
 		{
-			if(lightcache.lights[it].pos.DistTo(pos) <= 100.0f) {
+			if(lightcache.lights[it].pos.DistTo(pos) <= 1.0f) {
 				return lightcache.lights[it].intensity;
 			}
 		}
 	}
 
 	return 1.0f;
+}
+
+#ifdef _DEBUG
+CON_COMMAND(get_lightcache, "")
+{
+	CBasePlayer *pPlayer = UTIL_GetCommandClient();
+	if(!pPlayer) {
+		return;
+	}
+
+	const Vector &pos = pPlayer->EyePosition();
+
+	float lightIntensity = GetLightIntensity( pos );
+	Msg("%f\n", lightIntensity);
+}
+#endif
+
+void SaveLightIntensity()
+{
+	lightcache.Save();
+}
+
+CON_COMMAND( save_lightcache, "" )
+{
+	SaveLightIntensity();
 }

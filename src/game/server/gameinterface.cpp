@@ -72,7 +72,7 @@
 #include "ai_squad.h"
 #include "world.h"
 
-#ifdef SERVER_USES_VGUI
+#ifndef SWDS
 #include "ienginevgui.h"
 #include "vgui_gamedll_int.h"
 #include "vgui_controls/AnimationController.h"
@@ -86,7 +86,8 @@
 #include "tier2/tier2.h"
 #include "particles/particles.h"
 #include "gamestats.h"
-//#include "engine/imatchmaking.h"
+#include "engine/imatchmaking.h"
+#include "matchmaking/imatchframework.h"
 #include "particle_parse.h"
 #include "steam/steam_gameserver.h"
 #include "tier3/tier3.h"
@@ -100,7 +101,7 @@
 #include "recast/recast_mgr.h"
 #include "hackmgr/dlloverride.h"
 
-#ifdef SERVER_USES_VGUI
+#ifndef SWDS
 #include "IGameUIFuncs.h"
 #endif
 
@@ -138,11 +139,6 @@ CUtlLinkedList<CMapEntityRef, unsigned short> g_MapEntityRefs;
 // Engine interfaces.
 IVEngineServer	*engine = NULL;
 IVoiceServer	*g_pVoiceServer = NULL;
-#if !defined(_STATIC_LINKED)
-IFileSystem		*filesystem = NULL;
-#else
-extern IFileSystem *filesystem;
-#endif
 INetworkStringTableContainer *networkstringtable = NULL;
 IStaticPropMgrServer *staticpropmgr = NULL;
 IUniformRandomStream *random = NULL;
@@ -151,29 +147,30 @@ ISpatialPartition *partition = NULL;
 IVModelInfo *modelinfo = NULL;
 IEngineTrace *enginetrace = NULL;
 IGameEventManager2 *gameeventmanager = NULL;
-IDataCache *datacache = NULL;
 IVDebugOverlay * debugoverlay = NULL;
-ISoundEmitterSystemBase *soundemitterbase = NULL;
 IServerPluginHelpers *serverpluginhelpers = NULL;
+#ifndef SWDS
 IServerEngineTools *serverenginetools = NULL;
 IServerFoundry *serverfoundry = NULL;
+#endif
 ISceneFileCache *scenefilecache = NULL;
+IMatchFramework *g_pMatchFramework = NULL;
+IMatchmaking *matchmaking = NULL;
 #if defined( REPLAY_ENABLED )
 IReplaySystem *g_pReplay = NULL;
 IServerReplayContext *g_pReplayServerContext = NULL;
 #endif
-#ifdef SERVER_USES_VGUI
+#ifndef SWDS
 IEngineVGui *enginevgui = NULL;
 IGameUIFuncs *gameuifuncs = NULL;
 #endif // SERVER_USES_VGUI
 
+#ifndef SWDS
 CSysModule* game_loopbackDLL = NULL;
 IGameLoopback* g_pGameLoopback = NULL;
 
-#ifndef SWDS
 CSysModule* clientDLL = NULL;
 IGameClientLoopback* g_pGameClientLoopback = NULL;
-IClientTools	*clienttools = NULL;
 #endif
 
 CSysModule* vphysicsDLL = NULL;
@@ -290,7 +287,7 @@ CBasePlayer *UTIL_GetCommandClient( void )
 	return NULL;
 }
 
-extern void InitializeCvars( void );
+extern void InitializeServerCvars( void );
 
 CBaseEntity*	FindPickerEntity( CBasePlayer* pPlayer );
 float			GetFloorZ(const Vector &origin);
@@ -472,7 +469,7 @@ static bool InitGameSystems( CreateInterfaceFn appSystemFactory )
 	// Add sound emitter
 	IGameSystem::Add( SoundEmitterSystem() );
 
-#ifdef SERVER_USES_VGUI
+#ifndef SWDS
 	// Startup vgui
 	if ( enginevgui && !engine->IsDedicatedServer() )
 	{
@@ -512,11 +509,11 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		CreateInterfaceFn physicsFactory, CreateInterfaceFn fileSystemFactory, 
 		CGlobalVars *pGlobals)
 {
-	if ( (filesystem = (IFileSystem *)fileSystemFactory(FILESYSTEM_INTERFACE_VERSION,NULL)) == NULL )
+	if ( (g_pFullFileSystem = (IFileSystem *)fileSystemFactory(FILESYSTEM_INTERFACE_VERSION,NULL)) == NULL )
 		return false;
 
 	char gamebin_path[MAX_PATH];
-	filesystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+	g_pFullFileSystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
 	V_AppendSlash(gamebin_path, ARRAYSIZE(gamebin_path));
 	int gamebin_length = V_strlen(gamebin_path);
 
@@ -586,7 +583,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	COM_TimestampedLog( "ConnectTier1/2/3Libraries - Finish" );
 
 	// Connected in ConnectTier1Libraries
-	if ( cvar == NULL )
+	if ( g_pCVar == NULL )
 		return false;
 
 #ifndef SWDS
@@ -619,27 +616,32 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		return false;
 	if ( (gameeventmanager = (IGameEventManager2 *)appSystemFactory(INTERFACEVERSION_GAMEEVENTSMANAGER2,NULL)) == NULL )
 		return false;
-	if ( (datacache = (IDataCache*)appSystemFactory(DATACACHE_INTERFACE_VERSION, NULL )) == NULL )
+	if ( !g_pDataCache )
 		return false;
-	if ( (soundemitterbase = (ISoundEmitterSystemBase *)appSystemFactory(SOUNDEMITTERSYSTEM_INTERFACE_VERSION, NULL)) == NULL )
+	if ( !g_pSoundEmitterSystem )
 		return false;
 	if ( (gamestatsuploader = (IUploadGameStats *)appSystemFactory( INTERFACEVERSION_UPLOADGAMESTATS, NULL )) == NULL )
 		return false;
-	if ( !mdlcache )
+	if ( !g_pMDLCache )
 		return false;
 	if ( (serverpluginhelpers = (IServerPluginHelpers *)appSystemFactory(INTERFACEVERSION_ISERVERPLUGINHELPERS, NULL)) == NULL )
 		return false;
 	if ( (scenefilecache = (ISceneFileCache *)appSystemFactory( SCENE_FILE_CACHE_INTERFACE_VERSION, NULL )) == NULL )
 		return false;
 
+	g_pMatchFramework = (IMatchFramework *)appSystemFactory( IMATCHFRAMEWORK_VERSION_STRING, NULL );
+	matchmaking = (IMatchmaking *)appSystemFactory( VENGINE_MATCHMAKING_VERSION, NULL );
+
+#ifndef SWDS
 	// If not running dedicated, grab the engine vgui interface
 	if ( !engine->IsDedicatedServer() )
 	{
 		// This interface is optional, and is only valid when running with -tools
 		serverenginetools = ( IServerEngineTools * )appSystemFactory( VSERVERENGINETOOLS_INTERFACE_VERSION, NULL );
 	}
+#endif
 
-#ifdef SERVER_USES_VGUI
+#ifndef SWDS
 	// If not running dedicated, grab the engine vgui interface
 	if ( !engine->IsDedicatedServer() )
 	{
@@ -650,12 +652,12 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	}
 #endif // SERVER_USES_VGUI
 
-	V_strcat_safe(gamebin_path, "game_loopback" DLL_EXT_STRING);
-	Sys_LoadInterface( gamebin_path, GAMELOOPBACK_INTERFACE_VERSION, &game_loopbackDLL, reinterpret_cast< void** >( &g_pGameLoopback ) );
-	gamebin_path[gamebin_length] = '\0';
-
 #ifndef SWDS
 	if(!engine->IsDedicatedServer()) {
+		V_strcat_safe(gamebin_path, "game_loopback" DLL_EXT_STRING);
+		Sys_LoadInterface( gamebin_path, GAMELOOPBACK_INTERFACE_VERSION, &game_loopbackDLL, reinterpret_cast< void** >( &g_pGameLoopback ) );
+		gamebin_path[gamebin_length] = '\0';
+
 		V_strcat_safe(gamebin_path, "client" DLL_EXT_STRING);
 		clientDLL = Sys_LoadModule(gamebin_path);
 		gamebin_path[gamebin_length] = '\0';
@@ -667,12 +669,6 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 				if(status != IFACE_OK) {
 					g_pGameClientLoopback = NULL;
 				}
-
-				status = IFACE_OK;
-				clienttools = (IClientTools *)clientFactory(VCLIENTTOOLS_INTERFACE_VERSION, &status);
-				if(status != IFACE_OK) {
-					clienttools = NULL;
-				}
 			}
 		}
 	}
@@ -680,10 +676,10 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 
 	COM_TimestampedLog( "Factories - Finish" );
 
-	COM_TimestampedLog( "soundemitterbase->Connect" );
+	COM_TimestampedLog( "g_pSoundEmitterSystem->Connect" );
 
 	// Yes, both the client and game .dlls will try to Connect, the soundemittersystem.dll will handle this gracefully
-	if ( !soundemitterbase->Connect( appSystemFactory ) )
+	if ( !g_pSoundEmitterSystem->Connect( appSystemFactory ) )
 		return false;
 
 	// cache the globals
@@ -708,7 +704,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	gameeventmanager->LoadEventsFromFile("resource/gameevents.res");
 
 	// init the cvar list first in case inits want to reference them
-	InitializeCvars();
+	InitializeServerCvars();
 
 	COM_TimestampedLog( "g_pParticleSystemMgr->Init" );
 
@@ -808,7 +804,7 @@ void CServerGameDLL::PostInit()
 
 	IGameSystem::PostInitAllSystems();
 
-#ifdef SERVER_USES_VGUI
+#ifndef SWDS
 	if ( !engine->IsDedicatedServer() && enginevgui )
 	{
 		if ( VGui_PostInit() )
@@ -843,11 +839,11 @@ void CServerGameDLL::DLLShutdown( void )
 	{
 		g_TextStatsMgr.SetStatsFilename( "stats.txt" );
 	}
-	g_TextStatsMgr.WriteFile( filesystem );
+	g_TextStatsMgr.WriteFile( g_pFullFileSystem );
 
 	IGameSystem::ShutdownAllSystems();
 
-#ifdef SERVER_USES_VGUI
+#ifndef SWDS
 	if ( enginevgui && !engine->IsDedicatedServer() )
 	{
 		VGui_Shutdown();
@@ -857,10 +853,10 @@ void CServerGameDLL::DLLShutdown( void )
 #ifndef SWDS
 	if ( clientDLL )
 		Sys_UnloadModule( clientDLL );
-#endif
 
 	if ( game_loopbackDLL )
 		Sys_UnloadModule( game_loopbackDLL );
+#endif
 
 	if ( vphysicsDLL )
 		Sys_UnloadModule( vphysicsDLL );
@@ -1662,14 +1658,14 @@ void CServerGameDLL::LoadSpecificMOTDMsg( const ConVar &convar, const char *pszS
 	// Check the preferred filename first
 	char szResolvedFilename[ MAX_PATH ];
 	V_strcpy_safe( szResolvedFilename, szPreferredFilename );
-	bool bFound = filesystem->ReadFile( szResolvedFilename, "GAME", buf );
+	bool bFound = g_pFullFileSystem->ReadFile( szResolvedFilename, "GAME", buf );
 
 	// Not found?  Try in the root, which is the old place it used to go.
 	if ( !bFound )
 	{
 
 		V_strcpy_safe( szResolvedFilename, convar.GetString() );
-		bFound = filesystem->ReadFile( szResolvedFilename, "GAME", buf );
+		bFound = g_pFullFileSystem->ReadFile( szResolvedFilename, "GAME", buf );
 	}
 
 	// Still not found?  See if we can try the default.
@@ -1679,7 +1675,7 @@ void CServerGameDLL::LoadSpecificMOTDMsg( const ConVar &convar, const char *pszS
 		char *dotTxt = V_stristr( szResolvedFilename, ".txt" );
 		Assert ( dotTxt != NULL );
 		if ( dotTxt ) V_strcpy( dotTxt, "_default.txt" );
-		bFound = filesystem->ReadFile( szResolvedFilename, "GAME", buf );
+		bFound = g_pFullFileSystem->ReadFile( szResolvedFilename, "GAME", buf );
 	}
 
 	if ( !bFound )
@@ -1771,7 +1767,7 @@ void PrecacheParticleFileAndSystems( const char *pParticleSystemFile )
 
 void PrecacheGameSoundsFile( const char *pSoundFile )
 {
-	soundemitterbase->AddSoundsFromFile( pSoundFile, true );
+	g_pSoundEmitterSystem->AddSoundsFromFile( pSoundFile, true );
 	SoundSystemPreloadSounds();
 }
 
@@ -2998,8 +2994,8 @@ public:
 	{
 		AddAppSystem( "soundemittersystem" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
 		AddAppSystem( "scenefilecache" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
-		//AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
 	#ifndef SWDS
+		//AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
 		if(!engine || !engine->IsDedicatedServer()) {
 			AddAppSystem( "client" DLL_EXT_STRING, GAMECLIENTLOOPBACK_INTERFACE_VERSION );
 		}
@@ -3096,6 +3092,7 @@ bool GetSteamIDForPlayerIndex( int iPlayerIndex, CSteamID &steamid )
 	return false;
 }
 
+#ifndef SWDS
 class CGameServerLoopback : public CBaseAppSystem< IGameServerLoopback >
 {
 public:
@@ -3108,3 +3105,4 @@ public:
 static CGameServerLoopback s_ServerGameLoopback;
 IGameServerLoopback *g_pGameServerLoopback = &s_ServerGameLoopback;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CGameServerLoopback, IGameServerLoopback, GAMESERVERLOOPBACK_INTERFACE_VERSION, s_ServerGameLoopback );
+#endif

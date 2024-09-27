@@ -16,6 +16,7 @@
 #include "tier0/threadtools.h"
 #include "ai_activity.h"
 #include "eventlist.h"
+#include "tier3/tier3.h"
 
 struct animevent_t;
 struct matrix3x4_t;
@@ -487,7 +488,7 @@ inline CStudioHdr *CBaseAnimating::GetModelPtr( void )
 	if ( !HushAsserts() )
 	{
 		// GetModelPtr() is often called before OnNewModel() so go ahead and set it up first chance.
-		static IDataCacheSection *pModelCache = datacache->FindSection( "ModelData" );
+		static IDataCacheSection *pModelCache = g_pDataCache->FindSection( "ModelData" );
 		AssertOnce( pModelCache->IsFrameLocking() );
 	}
 #endif

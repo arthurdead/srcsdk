@@ -94,24 +94,23 @@ BaseModUI::BaseModHybridButton::BaseModHybridButton( Panel *parent, const char *
 	SetConsoleStylePanel( true );
 
 	m_isNavigateTo = false;
-	m_bOnlyActiveUser = false;
 	m_bIgnoreButtonA = false;
 
 	mEnableCondition = EC_ALWAYS;
 
 	m_nStyle = BUTTON_SIMPLE;
-	m_hTextFont = 0;
-	m_hTextBlurFont = 0;
-	m_hHintTextFont = 0;
-	m_hSelectionFont = 0;
-	m_hSelectionBlurFont = 0;
+	m_hTextFont = vgui::INVALID_FONT;
+	m_hTextBlurFont = vgui::INVALID_FONT;
+	m_hHintTextFont = vgui::INVALID_FONT;
+	m_hSelectionFont = vgui::INVALID_FONT;
+	m_hSelectionBlurFont = vgui::INVALID_FONT;
 
 	m_originalTall = 0;
 	m_textInsetX = 0;
 	m_textInsetY = 0;
 
-	m_iSelectedArrow = -1;
-	m_iUnselectedArrow = -1;
+	m_iSelectedArrow = vgui::INVALID_TEXTURE;
+	m_iUnselectedArrow = vgui::INVALID_TEXTURE;
 
 	m_nWideAtOpen = 0;
 }
@@ -126,23 +125,22 @@ BaseModUI::BaseModHybridButton::BaseModHybridButton( Panel *parent, const char *
 	SetButtonActivationType( ACTIVATE_ONRELEASED );
 
 	m_isNavigateTo = false;
-	m_iUsablePlayerIndex = -1;
 
 	mEnableCondition = EC_ALWAYS;
 
 	m_nStyle = BUTTON_SIMPLE;
-	m_hTextFont = 0;
-	m_hTextBlurFont = 0;
-	m_hHintTextFont = 0;
-	m_hSelectionFont = 0;
-	m_hSelectionBlurFont = 0;
+	m_hTextFont = vgui::INVALID_FONT;
+	m_hTextBlurFont = vgui::INVALID_FONT;
+	m_hHintTextFont = vgui::INVALID_FONT;
+	m_hSelectionFont = vgui::INVALID_FONT;
+	m_hSelectionBlurFont = vgui::INVALID_FONT;
 
 	m_originalTall = 0;
 	m_textInsetX = 0;
 	m_textInsetY = 0;
 
-	m_iSelectedArrow = -1;
-	m_iUnselectedArrow = -1;
+	m_iSelectedArrow = vgui::INVALID_TEXTURE;
+	m_iUnselectedArrow = vgui::INVALID_TEXTURE;
 }
 
 BaseModUI::BaseModHybridButton::~BaseModHybridButton()
@@ -154,13 +152,12 @@ BaseModUI::BaseModHybridButton::~BaseModHybridButton()
 BaseModHybridButton::State BaseModHybridButton::GetCurrentState()
 {
 	State curState = Enabled;
-	if ( IsPC() )
+
+	if ( HasFocus() )
 	{
-		if ( HasFocus() )
-		{
-			curState = IsEnabled() ? Focus : FocusDisabled;
-		}
+		curState = IsEnabled() ? Focus : FocusDisabled;
 	}
+
 	if( m_isOpen )
 	{
 		curState = Open;
@@ -194,10 +191,8 @@ void BaseModHybridButton::SetOpen()
 	if ( m_isOpen )
 		return;
 	m_isOpen = true;
-	if ( IsPC() )
-	{
-		PostMessageToAllSiblingsOfType< BaseModHybridButton >( new KeyValues( "OnSiblingHybridButtonOpened" ) );
-	}
+	
+	PostMessageToAllSiblingsOfType< BaseModHybridButton >( new KeyValues( "OnSiblingHybridButtonOpened" ) );
 }
 
 void BaseModHybridButton::SetClosed()
@@ -210,9 +205,6 @@ void BaseModHybridButton::SetClosed()
 
 void BaseModHybridButton::OnSiblingHybridButtonOpened()
 {
-	if ( !IsPC() )
-		return;
-
 	bool bClosed = false;
 
 	FlyoutMenu *pActiveFlyout = FlyoutMenu::GetActiveMenu();
@@ -254,21 +246,19 @@ void BaseModHybridButton::UpdateFooterHelpText()
 void BaseModHybridButton::OnMousePressed( vgui::MouseCode code )
 {
 	BaseClass::OnMousePressed( code );
-	if ( IsPC() )
+
+	if( code == MOUSE_RIGHT )
 	{
-		if( code == MOUSE_RIGHT )
+		FlyoutMenu::CloseActiveMenu( this );
+	}
+	else
+	{
+		if( (code == MOUSE_LEFT) && (IsEnabled() == false) && (dynamic_cast<FlyoutMenu *>( GetParent() ) == NULL) )
 		{
+			//when trying to use an inactive item that isn't part of a flyout. Close any open flyouts.
 			FlyoutMenu::CloseActiveMenu( this );
 		}
-		else
-		{
-			if( (code == MOUSE_LEFT) && (IsEnabled() == false) && (dynamic_cast<FlyoutMenu *>( GetParent() ) == NULL) )
-			{
-				//when trying to use an inactive item that isn't part of a flyout. Close any open flyouts.
-				FlyoutMenu::CloseActiveMenu( this );
-			}
-			RequestFocus( 0 );			
-		}
+		RequestFocus( 0 );			
 	}
 }
 
@@ -284,26 +274,24 @@ void BaseModHybridButton::NavigateTo( )
 		parentMenu->NotifyChildFocus( this );
 	}
 
-	if (GetVParent())
+	if (GetVParent() != vgui::INVALID_VPANEL)
 	{
 		KeyValues *msg = new KeyValues("OnHybridButtonNavigatedTo");
-		msg->SetInt("button", ToHandle() );
+		msg->SetInt("button", (ulong)ToHandle() );
 
 		ivgui()->PostMessage(GetVParent(), msg, GetVPanel());
 	}
 
 	m_isNavigateTo = true;
-	if ( IsPC() )
-	{
-		RequestFocus( 0 );
-	}
+	
+	RequestFocus( 0 );
 }
 
 void BaseModHybridButton::NavigateFrom( )
 {
 	BaseClass::NavigateFrom( );
 
-	if ( IsPC() && CBaseModPanel::GetSingleton().GetFooterPanel() )
+	if ( CBaseModPanel::GetSingleton().GetFooterPanel() )
 	{
 		// Show no help text if they left the button
 		CBaseModPanel::GetSingleton().GetFooterPanel()->FadeHelpText();
@@ -533,7 +521,7 @@ void BaseModHybridButton::PaintButtonEx()
 
 			vgui::surface()->DrawSetColor( col );
 			vgui::surface()->DrawTexturedRect( imageX, imageY, imageX + m_iSelectedArrowSize, imageY + m_iSelectedArrowSize );
-			vgui::surface()->DrawSetTexture( 0 );
+			vgui::surface()->DrawSetTexture( vgui::INVALID_TEXTURE );
 
 			availableWidth -= m_iSelectedArrowSize * 2;
 		}
@@ -837,7 +825,7 @@ void BaseModHybridButton::ApplySettings( KeyValues * inResourceData )
 	//0 = press and release
 	//1 = press
 	//2 = release
-	int activationType = inResourceData->GetInt( "ActivationType", IsPC() ? 1 : 2 );
+	int activationType = inResourceData->GetInt( "ActivationType", 1 );
 	clamp( activationType, 0, 2 );
 	SetButtonActivationType( static_cast< vgui::Button::ActivationType_t >( activationType ) );
 
@@ -851,23 +839,6 @@ void BaseModHybridButton::ApplySettings( KeyValues * inResourceData )
 		tall = m_nTextFontHeight + m_nHintTextFontHeight;
 		SetSize( wide, tall );
 		m_originalTall = m_nTextFontHeight;
-	}
-
-	m_iUsablePlayerIndex = USE_EVERYBODY;
-	if ( const char *pszValue = inResourceData->GetString( "usablePlayerIndex", "" ) )
-	{
-		if ( !stricmp( "primary", pszValue ) )
-		{
-			m_iUsablePlayerIndex = USE_PRIMARY;
-		}
-		else if ( !stricmp( "nobody", pszValue ) )
-		{
-			m_iUsablePlayerIndex = USE_NOBODY;
-		}
-		else if ( isdigit( pszValue[0] ) )
-		{
-			m_iUsablePlayerIndex = atoi( pszValue );
-		}
 	}
 
 	//handle different conditions to allow the control to be enabled and disabled automatically
@@ -889,7 +860,6 @@ void BaseModHybridButton::ApplySettings( KeyValues * inResourceData )
 		}
 	}
 
-	m_bOnlyActiveUser = ( inResourceData->GetInt( "OnlyActiveUser", 0 ) != 0 );
 	m_bIgnoreButtonA = ( inResourceData->GetInt( "IgnoreButtonA", 0 ) != 0 );
 
 	m_bShowDropDownIndicator = ( inResourceData->GetInt( "ShowDropDownIndicator", 0 ) != 0 );
@@ -910,7 +880,7 @@ void BaseModHybridButton::ApplySchemeSettings( vgui::IScheme *pScheme )
 	// use find or create pattern, avoid pointless redundant i/o
 	pImageName = "vgui/icon_arrow_down";
 	m_iSelectedArrow = vgui::surface()->DrawGetTextureId( pImageName );
-	if ( m_iSelectedArrow == -1 )
+	if ( m_iSelectedArrow == vgui::INVALID_TEXTURE )
 	{
 		m_iSelectedArrow = vgui::surface()->CreateNewTextureID();
 		vgui::surface()->DrawSetTextureFile( m_iSelectedArrow, pImageName, true, false );	
@@ -919,7 +889,7 @@ void BaseModHybridButton::ApplySchemeSettings( vgui::IScheme *pScheme )
 	// use find or create pattern, avoid pointles redundant i/o
 	pImageName = "vgui/icon_arrow";
 	m_iUnselectedArrow = vgui::surface()->DrawGetTextureId( pImageName );
-	if ( m_iUnselectedArrow == -1 )
+	if ( m_iUnselectedArrow == vgui::INVALID_TEXTURE )
 	{
 		m_iUnselectedArrow = vgui::surface()->CreateNewTextureID();
 		vgui::surface()->DrawSetTextureFile( m_iUnselectedArrow, pImageName, true, false );	
@@ -928,27 +898,9 @@ void BaseModHybridButton::ApplySchemeSettings( vgui::IScheme *pScheme )
 
 void BaseModHybridButton::OnKeyCodePressed( vgui::KeyCode code )
 {
-	int iJoystick = GetJoystickForCode( code );
-
-	if ( m_bOnlyActiveUser )
-	{
-		// Only allow input from the active userid
-		int userId = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-
-		if( iJoystick != userId || iJoystick < 0 )
-		{	
-			return;
-		}
-	}
-
-	BaseModUI::CBaseModPanel::GetSingleton().SetLastActiveUserId( iJoystick );
-
-	int iController = XBX_GetUserId( iJoystick );
-	bool bIsPrimaryUser = ( iController >= 0 && XBX_GetPrimaryUserId() == DWORD( iController ) );
-
 	KeyCode localCode = GetBaseButtonCode( code );
 
-	if ( ( localCode == KEY_XBUTTON_A ) )
+	if ( localCode == KEY_XBUTTON_A )
 	{
 		if ( m_bIgnoreButtonA )
 		{
@@ -957,43 +909,14 @@ void BaseModHybridButton::OnKeyCodePressed( vgui::KeyCode code )
 			return;
 		}
 
-		bool bEnabled = true;
 		if ( !IsEnabled() )
-		{
-			bEnabled = false;
-		}
-
-		switch( m_iUsablePlayerIndex )
-		{
-		case USE_EVERYBODY:
-			break;
-
-		case USE_PRIMARY:
-			if ( !bIsPrimaryUser )
-				bEnabled = false;
-			break;
-
-		case USE_SLOT0:
-		case USE_SLOT1:
-		case USE_SLOT2:
-		case USE_SLOT3:
-			if ( iJoystick != m_iUsablePlayerIndex )
-				bEnabled = false;
-			break;
-
-		default:
-			bEnabled = false;
-			break;
-		}
-
-		if ( !bEnabled )
 		{
 			CBaseModPanel::GetSingleton().PlayUISound( UISOUND_INVALID );
 			return;
 		}
 	}
 
-	if ( IsX360() && m_nStyle == BUTTON_GAMEMODE )
+	if ( m_nStyle == BUTTON_GAMEMODE )
 	{
 		GameModes *pGameModes = dynamic_cast< GameModes * >( GetParent() );
 		if ( pGameModes )
@@ -1051,23 +974,21 @@ void BaseModHybridButton::EnableDropdownSelection( bool bEnable )
 void BaseModHybridButton::OnCursorEntered()
 {
 	BaseClass::OnCursorEntered();
-	if ( IsPC() )
-	{
-		if ( !m_isOpen )
-		{
-			if ( IsEnabled() && !HasFocus() )
-			{
-				CBaseModPanel::GetSingleton().PlayUISound( UISOUND_FOCUS );
-			}
 
-			if( GetParent() )
-			{
-				GetParent()->NavigateToChild( this );
-			}
-			else
-			{
-				NavigateTo();
-			}
+	if ( !m_isOpen )
+	{
+		if ( IsEnabled() && !HasFocus() )
+		{
+			CBaseModPanel::GetSingleton().PlayUISound( UISOUND_FOCUS );
+		}
+
+		if( GetParent() )
+		{
+			GetParent()->NavigateToChild( this );
+		}
+		else
+		{
+			NavigateTo();
 		}
 	}
 }
@@ -1077,10 +998,7 @@ void BaseModHybridButton::OnCursorExited()
 	// This is a hack for now, we shouldn't close if the cursor goes to the flyout of this item...
 	// Maybe have VFloutMenu check the m_navFrom and it's one of these, keep the SetClosedState...
 	BaseClass::OnCursorExited();
-	if ( IsPC() )
-	{
-//		SetClosed();
-	}
+//	SetClosed();
 }
 
 // Message targets that the button has been pressed
@@ -1088,17 +1006,14 @@ void BaseModHybridButton::FireActionSignal( void )
 {
 	BaseClass::FireActionSignal();
 
-	if ( IsPC() )
-	{
-		PostMessageToAllSiblingsOfType< BaseModHybridButton >( new KeyValues( "OnSiblingHybridButtonOpened" ) );
-	}
+	PostMessageToAllSiblingsOfType< BaseModHybridButton >( new KeyValues( "OnSiblingHybridButtonOpened" ) );
 }
 
 
 Panel* BaseModHybridButton::NavigateUp()
 {
 	Panel *target = BaseClass::NavigateUp();
-	if ( IsPC() && !target && 
+	if ( !target && 
 		(dynamic_cast< DropDownMenu * >( GetParent() ) || dynamic_cast< SliderControl * >( GetParent() )) )
 	{
 		target = GetParent()->NavigateUp();
@@ -1110,7 +1025,7 @@ Panel* BaseModHybridButton::NavigateUp()
 Panel* BaseModHybridButton::NavigateDown()
 {
 	Panel *target = BaseClass::NavigateDown();
-	if ( IsPC() && !target && 
+	if ( !target && 
 		(dynamic_cast< DropDownMenu * >( GetParent() ) || dynamic_cast< SliderControl * >( GetParent() )) )
 	{
 		target = GetParent()->NavigateDown();
@@ -1121,7 +1036,7 @@ Panel* BaseModHybridButton::NavigateDown()
 Panel* BaseModHybridButton::NavigateLeft()
 {
 	Panel *target = BaseClass::NavigateLeft();
-	if ( IsPC() && !target && 
+	if ( !target && 
 		dynamic_cast< DropDownMenu * >( GetParent() ) )
 	{
 		target = GetParent()->NavigateLeft();
@@ -1132,7 +1047,7 @@ Panel* BaseModHybridButton::NavigateLeft()
 Panel* BaseModHybridButton::NavigateRight()
 {
 	Panel *target = BaseClass::NavigateRight();
-	if ( IsPC() && !target && 
+	if ( !target && 
 		dynamic_cast< DropDownMenu * >( GetParent() ) )
 	{
 		target = GetParent()->NavigateRight();

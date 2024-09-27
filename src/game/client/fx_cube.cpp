@@ -117,7 +117,7 @@ public:
 
 void FX_AddCube( const Vector &mins, const Vector &maxs, const Vector &vColor, float life, const char *materialName )
 {
-	IMaterial *mat = materials->FindMaterial(materialName, TEXTURE_GROUP_CLIENT_EFFECTS);
+	IMaterial *mat = g_pMaterialSystem->FindMaterial(materialName, TEXTURE_GROUP_CLIENT_EFFECTS);
 
 	FX_Cube *pCube = new FX_Cube(mat);
 	pCube->m_mins = mins;

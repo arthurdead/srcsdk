@@ -36,6 +36,7 @@
 #include "RagdollBoogie.h"
 #include "rumble_shared.h"
 #include "rope.h"
+#include "lightcache.h"
 
 #ifdef PORTAL
 	#include "portal_util_shared.h"
@@ -789,6 +790,17 @@ void CBaseCombatCharacter::Spawn( void )
 	}
 
 	RemoveRagdoll();
+
+	UpdateLightIntensity( EyePosition() );
+}
+
+void CBaseCombatCharacter::NotifySystemEvent( CBaseEntity *pNotify, notify_system_event_t eventType, const notify_system_event_params_t &params )
+{
+	BaseClass::NotifySystemEvent( pNotify, eventType, params );
+
+	if(eventType == NOTIFY_EVENT_TELEPORT) {
+		UpdateLightIntensity( pNotify->EyePosition() );
+	}
 }
 
 void CBaseCombatCharacter::OnSequenceSet( int nOldSequence )

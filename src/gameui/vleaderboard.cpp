@@ -630,7 +630,7 @@ void Leaderboard::Activate()
 	// clear out the panel list
 	ReturnAllListItemsToPool();
 
-	m_pPanelList->SetScrollBarVisible( IsPC() );
+	m_pPanelList->SetScrollBarVisible( true );
 	m_pPanelList->NavigateTo();
 
 	AddFrameListener( this );
@@ -672,10 +672,10 @@ void Leaderboard::Activate()
 	m_Mode = LEADERBOARD_FRIENDS;
 
 	KeyValues *pInfoMission = NULL;
-	KeyValues *pInfoMap = g_pMatchExtSwarm->GetMapInfo( m_pDataSettings, &pInfoMission );
+	KeyValues *pInfoMap = g_pMatchExt->GetMapInfo( m_pDataSettings, &pInfoMission );
 	
 	char const *szGameMode = m_pDataSettings->GetString( "game/mode", "survival" );
-	KeyValues *pAllMissions = g_pMatchExtSwarm->GetAllMissions();
+	KeyValues *pAllMissions = g_pMatchExt->GetAllMissions();
 	pInfoMission = pAllMissions ? pAllMissions->GetFirstTrueSubKey() : NULL;
 
 	while ( !pInfoMap && pInfoMission )
@@ -736,19 +736,12 @@ void Leaderboard::ApplySchemeSettings( IScheme *pScheme )
 int Leaderboard::GetCurrentChapterContext( void )
 {
 	KeyValues *pMissionInfo = NULL;
-	if ( KeyValues *pMapInfo = g_pMatchExtSwarm->GetMapInfo( m_pDataSettings, &pMissionInfo ) )
+	if ( KeyValues *pMapInfo = g_pMatchExt->GetMapInfo( m_pDataSettings, &pMissionInfo ) )
 	{
-		if ( IsX360() )
-		{
-			return pMapInfo->GetInt( "x360ctx" );
-		}
-		else
-		{
-			CFmtStr chapterCtx( "%s_%d", pMissionInfo->GetString( "name" ), pMapInfo->GetInt( "chapter" ) );
-			char *szStringVal = chapterCtx.Access();
-			V_strlower( szStringVal );
-			return CRC32_ProcessSingleBuffer( szStringVal, strlen( szStringVal ) );
-		}
+		CFmtStr chapterCtx( "%s_%d", pMissionInfo->GetString( "name" ), pMapInfo->GetInt( "chapter" ) );
+		char *szStringVal = chapterCtx.Access();
+		V_strlower( szStringVal );
+		return CRC32_ProcessSingleBuffer( szStringVal, strlen( szStringVal ) );
 	}
 	return 0;
 }
@@ -806,7 +799,7 @@ void Leaderboard::OnMissionChapterChanged()
 	InitializeDropDownControls();
 
 	KeyValues *pInfoMission = NULL;
-	KeyValues *pInfoMap = g_pMatchExtSwarm->GetMapInfo( m_pDataSettings, &pInfoMission );
+	KeyValues *pInfoMap = g_pMatchExt->GetMapInfo( m_pDataSettings, &pInfoMission );
 
 	const char *pszChapter = pInfoMap ? pInfoMap->GetString( "displayname" ) : NULL;
 
@@ -878,7 +871,7 @@ int Leaderboard::GetCurrentLeaderboardView( void )
 {
 #if defined( _X360 )
 	KeyValues *pInfoMission = NULL;
-	KeyValues *pInfoMap = g_pMatchExtSwarm->GetMapInfo( m_pDataSettings, &pInfoMission );
+	KeyValues *pInfoMap = g_pMatchExt->GetMapInfo( m_pDataSettings, &pInfoMission );
 	if ( !pInfoMap )
 	{
 		Assert( 0 );
@@ -1123,13 +1116,9 @@ void Leaderboard::SendNextRequestInQueue( void )
 		bSuccess = SendQuery_StatsGlobalPage();
 		break;
 
-#if !defined( _X360 )
-
 	case QUERY_FIND_LEADERBOARD:
 		bSuccess = SendQuery_FindLeaderboard();
 		break;
-
-#endif // !_X360
 
 	default:
 		Assert( 0 );
@@ -1605,7 +1594,7 @@ void Leaderboard::GetLeaderboardName( int iMapContext, char *pszBuf, int iBufLen
 	// name = "<mapname>_<gamemode>"
 
 	KeyValues *pInfoMission = NULL;
-	KeyValues *pInfoMap = g_pMatchExtSwarm->GetMapInfo( m_pDataSettings, &pInfoMission );
+	KeyValues *pInfoMap = g_pMatchExt->GetMapInfo( m_pDataSettings, &pInfoMission );
 
 	if ( pInfoMap )
 	{
@@ -2506,11 +2495,11 @@ void Leaderboard::CmdJumpToMe()
 void Leaderboard::CmdLeaderboardHelper( int nOffset )
 {
 	KeyValues *pMissionInfo = NULL;
-	KeyValues *pMapInfo = g_pMatchExtSwarm->GetMapInfo( m_pDataSettings, &pMissionInfo );
+	KeyValues *pMapInfo = g_pMatchExt->GetMapInfo( m_pDataSettings, &pMissionInfo );
 	if ( !pMapInfo )
 		return;
 
-	KeyValues *pAllMissions = g_pMatchExtSwarm->GetAllMissions();
+	KeyValues *pAllMissions = g_pMatchExt->GetAllMissions();
 	if ( !pAllMissions )
 		return;
 

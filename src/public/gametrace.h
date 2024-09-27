@@ -13,11 +13,12 @@
 #include "utlvector.h"
 #include "ihandleentity.h"
 #include "ispatialpartition.h"
+#include "engine/IEngineTrace.h"
 
 #if defined( CLIENT_DLL )
-	class C_BaseEntity;
+class C_BaseEntity;
 #elif defined GAME_DLL
-	class CBaseEntity;
+class CBaseEntity;
 #endif
 
 
@@ -60,11 +61,11 @@ public:
 	short		physicsbone;			// physics bone hit by trace in studio
 
 #if defined( CLIENT_DLL )
-		C_BaseEntity *m_pEnt;
+	C_BaseEntity *m_pEnt;
 #elif defined GAME_DLL
-		CBaseEntity *m_pEnt;
+	CBaseEntity *m_pEnt;
 #else
-		IHandleEntity *m_pEnt;
+	IHandleEntity *m_pEnt;
 #endif
 
 	// NOTE: this member is overloaded.
@@ -87,7 +88,6 @@ inline bool CGameTrace::DidHit() const
 { 
 	return fraction < 1 || allsolid || startsolid; 
 }
-
 
 typedef CGameTrace trace_t;
 
@@ -140,7 +140,7 @@ public:
 	{
 		if ( m_nLeafCount >= m_aLeafList.Count() )
 		{
-			DevMsg( "CTraceListData: Max leaf count along ray exceeded!\n" );
+			Log_Error( LOG_TRACE, "CTraceListData: Max leaf count along ray exceeded!\n" );
 			m_aLeafList.AddMultipleToTail( m_aLeafList.Count() );
 		}
 
@@ -153,7 +153,7 @@ public:
 	{
 		if ( m_nEntityCount >= m_aEntityList.Count() )
 		{
-			DevMsg( "CTraceListData: Max entity count along ray exceeded!\n" );
+			Log_Error( LOG_TRACE, "CTraceListData: Max entity count along ray exceeded!\n" );
 			m_aEntityList.AddMultipleToTail( m_aEntityList.Count() );
 		}
 

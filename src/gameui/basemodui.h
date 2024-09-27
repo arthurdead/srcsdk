@@ -13,10 +13,9 @@
 #include "gameui_interface.h"
 #include "const.h"
 
-#ifndef _CERT
-	extern int UI_IsDebug();
-#else
-#	define UI_IsDebug()		0
+#ifdef _DEBUG
+extern bool UI_IsDebug();
+extern int UI_DebugLevel();
 #endif
 
 #endif

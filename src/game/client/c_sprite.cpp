@@ -68,7 +68,7 @@ void DrawSpriteModel( IClientEntity *baseentity, CEngineSprite *psprite, const V
 	
 	if ( ShouldDrawInWireFrameMode() || r_drawsprites.GetInt() == 2 )
 	{
-		IMaterial *pMaterial = materials->FindMaterial( "debug/debugspritewireframe", TEXTURE_GROUP_OTHER );
+		IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( "debug/debugspritewireframe", TEXTURE_GROUP_OTHER );
 		pRenderContext->Bind( pMaterial, NULL );
 	}
 	else

@@ -3813,7 +3813,7 @@ public:
 		if ( code < 0 || code >= ANALOG_CODE_LAST )
 			return 0;
 
-		return inputsystem->GetAnalogValue( (AnalogCode_t)code );
+		return g_pInputSystem->GetAnalogValue( (AnalogCode_t)code );
 	}
 
 	int GetAnalogDelta( int code )
@@ -3823,7 +3823,7 @@ public:
 		if ( code < 0 || code >= ANALOG_CODE_LAST )
 			return 0;
 
-		return inputsystem->GetAnalogDelta( (AnalogCode_t)code );
+		return g_pInputSystem->GetAnalogDelta( (AnalogCode_t)code );
 	}
 
 	bool IsButtonDown( int code )
@@ -3833,13 +3833,13 @@ public:
 		if ( code < BUTTON_CODE_NONE || code >= BUTTON_CODE_LAST )
 			return 0;
 
-		return inputsystem->IsButtonDown( (ButtonCode_t)code );
+		return g_pInputSystem->IsButtonDown( (ButtonCode_t)code );
 	}
 
 	// key -> button
 	int StringToButtonCode( const char *key )
 	{
-		return inputsystem->StringToButtonCode( key );
+		return g_pInputSystem->StringToButtonCode( key );
 	}
 
 	// button -> key
@@ -3850,7 +3850,7 @@ public:
 		if ( code < BUTTON_CODE_NONE || code >= BUTTON_CODE_LAST )
 			return 0;
 
-		return inputsystem->ButtonCodeToString( (ButtonCode_t)code );
+		return g_pInputSystem->ButtonCodeToString( (ButtonCode_t)code );
 	}
 
 	// bind -> key

@@ -57,12 +57,9 @@ Options::~Options()
 //=============================================================================
 void Options::OnCommand(const char *command)
 {
-	int iUserSlot = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-	int iController = XBX_GetUserId( iUserSlot );
-
 	if ( UI_IsDebug() )
 	{
-		Msg("[GAMEUI] Handling options menu command %s from user%d ctrlr%d\n", command, iUserSlot, iController );
+		Msg("[GAMEUI] Handling options menu command %s\n", command );
 	}
 
 	if(!Q_strcmp(command, "Game"))

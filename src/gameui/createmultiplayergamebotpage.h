@@ -12,7 +12,6 @@
 #include <vgui_controls/PropertyPage.h>
 #include "gameui_cvartogglecheckbutton.h"
 
-class CPanelListPanel;
 class CDescription;
 class mpcontrol_t;
 

@@ -20,6 +20,8 @@
 
 #include "tier0/platform.h"
 
+#include "tier2_logging.h"
+
 // Builds a directory which is a subdirectory of the current mod
 void GetModSubdirectory( const char *pSubDir, char *pBuf, int nBufLen );
 
@@ -111,7 +113,7 @@ public:
 	{
 		int ret=Read( pOutput, size );
 		if (ret != size )
-			Error("failed to read %d bytes\n", size );
+			Log_FatalError( LOG_TIER2, "failed to read %d bytes\n", size );
 	}
 	
 	int Write( void const* pInput, int size)
@@ -271,7 +273,7 @@ public:
 		CBaseFile::Open( pFname, "r" );
 		if ( ! IsOk() )
 		{
-			Error("error opening required file %s\n", pFname );
+			Log_FatalError( LOG_TIER2, "error opening required file %s\n", pFname );
 		}
 	}
 
@@ -292,7 +294,7 @@ public:
 		CBaseFile::Open( pFname, "rb" );
 		if ( ! IsOk() )
 		{
-			Error("error opening required file %s\n", pFname );
+			Log_FatalError( LOG_TIER2, "error opening required file %s\n", pFname );
 		}
 	}
 

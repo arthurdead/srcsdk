@@ -44,6 +44,7 @@
 #include <vgui/ISurface.h>
 #include "ScreenSpaceEffects.h"
 #include "vgui_int.h"
+#include "gameui_sys.h"
 
 #if defined( REPLAY_ENABLED )
 #include "replay/ireplaysystem.h"
@@ -265,8 +266,8 @@ void CViewRender::Init( void )
 
 	m_bDrawOverlay = false;
 
-	m_pDrawEntities		= cvar->FindVar( "r_drawentities" );
-	m_pDrawBrushModels	= cvar->FindVar( "r_drawbrushmodels" );
+	m_pDrawEntities		= g_pCVar->FindVar( "r_drawentities" );
+	m_pDrawBrushModels	= g_pCVar->FindVar( "r_drawbrushmodels" );
 
 	beams->InitBeams();
 	tempents->Init();
@@ -849,6 +850,8 @@ void CViewRender::SetUpOverView()
 	// render->DrawTopView( true );
 }
 
+extern bool IsGameUIPanelVisible();
+
 //-----------------------------------------------------------------------------
 // Purpose: Render current view into specified rectangle
 // Input  : *rect - is computed by CVideoMode_Common::GetClientViewRect()
@@ -988,7 +991,7 @@ void CViewRender::Render( vrect_t *rect )
     else
     {
 	    MaterialAdapterInfo_t adapterInfo;
-	    materials->GetDisplayAdapterInfo( materials->GetCurrentAdapter(), adapterInfo );
+	    g_pMaterialSystem->GetDisplayAdapterInfo( g_pMaterialSystem->GetCurrentAdapter(), adapterInfo );
 
 	    // On Posix, on ATI, we always clear color if we're antialiasing
 	    if ( adapterInfo.m_VendorID == 0x1002 )
@@ -1045,11 +1048,10 @@ void CViewRender::Render( vrect_t *rect )
 	// TODO: when embedded UI will be used for HUD, we will need it to maintain
 	// a separate screen for HUD and a separate screen stack for pause menu & main menu.
 	// for now only render embedded UI in pause menu & main menu
-#if defined( GAMEUI_UISYSTEM2_ENABLED ) && 0
-	BaseModUI::CBaseModPanel *pBaseModPanel = BaseModUI::CBaseModPanel::GetSingletonPtr();
+
 	// render the new-style embedded UI only if base mod panel is not visible (game-hud)
 	// otherwise base mod panel will render the embedded UI on top of video/productscreen
-	if ( !pBaseModPanel || !pBaseModPanel->IsVisible() )
+	if ( !IsGameUIPanelVisible() )
 	{
 		Rect_t uiViewport;
 		uiViewport.x		= rect->x;
@@ -1058,7 +1060,6 @@ void CViewRender::Render( vrect_t *rect )
 		uiViewport.height	= rect->height;
 		g_pGameUIGameSystem->Render( uiViewport, gpGlobals->curtime );
 	}
-#endif
 
 	// Draw all of the UI stuff "fullscreen"
     // (this is not health, ammo, etc. Nor is it pre-game briefing interface stuff - this is the stuff that appears when you hit Esc in-game)

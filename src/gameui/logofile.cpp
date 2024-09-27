@@ -66,6 +66,27 @@ unsigned char AveragePixels (int count)
 	return pixdata[0];
 }
 
+#ifndef _WIN32
+typedef struct tagBITMAPINFOHEADER {
+  DWORD biSize;
+  LONG  biWidth;
+  LONG  biHeight;
+  WORD  biPlanes;
+  WORD  biBitCount;
+  DWORD biCompression;
+  DWORD biSizeImage;
+  LONG  biXPelsPerMeter;
+  LONG  biYPelsPerMeter;
+  DWORD biClrUsed;
+  DWORD biClrImportant;
+} BITMAPINFOHEADER, *LPBITMAPINFOHEADER, *PBITMAPINFOHEADER;
+
+typedef struct tagBITMAPINFO {
+  BITMAPINFOHEADER bmiHeader;
+  RGBQUAD          bmiColors[1];
+} BITMAPINFO, *LPBITMAPINFO, *PBITMAPINFO;
+#endif
+
 /*
 ==============
 GrabMip

@@ -178,13 +178,13 @@ public:
 	virtual bool					IsUsingFBTexture( const model_t *model, int nSkin, int nBody, void /*IClientRenderable*/ *pClientRenderable ) const = 0;
 
 	// Obsolete methods. These are left in to maintain binary compatibility with clients using the IVModelInfo old version.
-	virtual const model_t			*DO_NOT_USE_FindOrLoadModel( const char *name ) { Assert(0); Warning( "IVModelInfo::FindOrLoadModel is now obsolte.\n" ); return NULL; }
-	virtual void					DO_NOT_USE_InitDynamicModels( ) { Assert(0); Warning( "IVModelInfo::InitDynamicModels is now obsolte.\n" ); }
-	virtual void					DO_NOT_USE_ShutdownDynamicModels( ) { Assert(0); Warning( "IVModelInfo::ShutdownDynamicModels is now obsolte.\n" ); }
-	virtual void					DO_NOT_USE_AddDynamicModel( const char *name, int nModelIndex = -1 ) { Assert(0); Warning( "IVModelInfo::AddDynamicModel is now obsolte.\n" ); }
-	virtual void					DO_NOT_USE_ReferenceModel( int modelindex ) { Assert(0); Warning( "IVModelInfo::ReferenceModel is now obsolte.\n" ); }
-	virtual void					DO_NOT_USE_UnreferenceModel( int modelindex ) { Assert(0); Warning( "IVModelInfo::UnreferenceModel is now obsolte.\n" ); }
-	virtual void					DO_NOT_USE_CleanupDynamicModels( bool bForce = false ) { Assert(0); Warning( "IVModelInfo::CleanupDynamicModels is now obsolte.\n" ); }
+	virtual const model_t			*DO_NOT_USE_FindOrLoadModel( const char *name ) { Assert(0); return NULL; }
+	virtual void					DO_NOT_USE_InitDynamicModels( ) { Assert(0); }
+	virtual void					DO_NOT_USE_ShutdownDynamicModels( ) { Assert(0); }
+	virtual void					DO_NOT_USE_AddDynamicModel( const char *name, int nModelIndex = -1 ) { Assert(0); }
+	virtual void					DO_NOT_USE_ReferenceModel( int modelindex ) { Assert(0); }
+	virtual void					DO_NOT_USE_UnreferenceModel( int modelindex ) { Assert(0); }
+	virtual void					DO_NOT_USE_CleanupDynamicModels( bool bForce = false ) { Assert(0); }
 
 	virtual MDLHandle_t				GetCacheHandle( const model_t *model ) const = 0;
 

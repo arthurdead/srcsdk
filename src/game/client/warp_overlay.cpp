@@ -58,7 +58,7 @@ void CWarpOverlay::Draw( bool bCacheFullSceneState )
 		CalcBasis( vToGlow, flHorzSize, flVertSize, vBasePt, vUp, vRight );
 
 		// Draw the sprite.
-		IMaterial *pMaterial = materials->FindMaterial( "sun/overlay", TEXTURE_GROUP_CLIENT_EFFECTS );
+		IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( "sun/overlay", TEXTURE_GROUP_CLIENT_EFFECTS );
 		IMesh *pMesh = pRenderContext->GetDynamicMesh( false, 0, 0, pMaterial );
 
 		CMeshBuilder builder;

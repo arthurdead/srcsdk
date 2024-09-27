@@ -106,7 +106,7 @@ bool QuickJoinPanelItem::GetText(char* outText, int buffLen)
 void QuickJoinPanelItem::Update()
 {
 	vgui::ImagePanel *imgAvatar = dynamic_cast< vgui::ImagePanel* >( FindChildByName( "PnlGamerPic" ) );
-	if ( imgAvatar && IsPC() )
+	if ( imgAvatar )
 	{
 		if ( !GetName() || GetName()[ 0 ] == L'\0' )
 		{
@@ -339,10 +339,8 @@ void QuickJoinPanel::OnThink()
 	vgui::surface()->GetScreenSize( screenWide, screenTall );
 
 	int iYOffset = 110;
-	if ( IsPC() )
-	{
-		iYOffset = 30;
-	}
+
+	iYOffset = 30;
 
 	bool bScrolling = ( iNumItems >= cl_quick_join_scroll_start.GetInt() );
 

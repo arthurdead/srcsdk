@@ -219,7 +219,7 @@ KeyValues* ReadEncryptedKVFile( IFileSystem *filesystem, const char *szFilenameW
 		{
 			Q_snprintf(szFullName,sizeof(szFullName), "%s.ctx", szFilenameWithoutExtension); // fall back to the .ctx file
 
-			FileHandle_t f = filesystem->Open( szFullName, "rb", pSearchPath );
+			FileHandle_t f = g_pFullFileSystem->Open( szFullName, "rb", pSearchPath );
 
 			if (!f)
 			{
@@ -227,14 +227,14 @@ KeyValues* ReadEncryptedKVFile( IFileSystem *filesystem, const char *szFilenameW
 				return NULL;
 			}
 			// load file into a null-terminated buffer
-			int fileSize = filesystem->Size(f);
+			int fileSize = g_pFullFileSystem->Size(f);
 			char *buffer = (char*)MemAllocScratch(fileSize + 1);
 		
 			Assert(buffer);
 		
-			filesystem->Read(buffer, fileSize, f); // read into local buffer
+			g_pFullFileSystem->Read(buffer, fileSize, f); // read into local buffer
 			buffer[fileSize] = 0; // null terminate file as EOF
-			filesystem->Close( f );	// close file after reading
+			g_pFullFileSystem->Close( f );	// close file after reading
 
 			UTIL_DecodeICE( (unsigned char*)buffer, fileSize, pICEKey );
 

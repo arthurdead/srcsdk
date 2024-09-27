@@ -85,12 +85,10 @@ MainMenu::~MainMenu()
 //=============================================================================
 void MainMenu::OnCommand( const char *command )
 {
-	int iUserSlot = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-
 	if ( UI_IsDebug() )
 	{
-		Msg("[GAMEUI] Handling main menu command %s from user%d ctrlr%d\n",
-			command, iUserSlot, XBX_GetUserId( iUserSlot ) );
+		Msg("[GAMEUI] Handling main menu command %s\n",
+			command );
 	}
 
 	bool bOpeningFlyout = false;
@@ -286,64 +284,12 @@ void MainMenu::OnCommand( const char *command )
 			g_pMatchFramework->CreateSession( pSettings );
 		}
 	}
-	else if ( !Q_strcmp( command, "DeveloperCommentary" ) )
-	{
-#ifdef _X360
-		if ( XBX_GetNumGameUsers() > 1 )
-		{
-			GenericConfirmation* confirmation = 
-				static_cast< GenericConfirmation* >( CBaseModPanel::GetSingleton().OpenWindow( WT_GENERICCONFIRMATION, this, false ) );
-
-			GenericConfirmation::Data_t data;
-
-			data.pWindowTitle = "#L4D360UI_MainMenu_SplitscreenDisableConf";
-			data.pMessageText = "#L4D360UI_Extras_Commentary_ss_Msg";
-
-			data.bOkButtonEnabled = true;
-			data.pfnOkCallback = &AcceptSplitscreenDisableCallback;
-			data.bCancelButtonEnabled = true;
-
-			confirmation->SetUsageData(data);
-			return;
-		}
-#endif
-		// Explain the rules of commentary
-		GenericConfirmation* confirmation = 
-			static_cast< GenericConfirmation* >( CBaseModPanel::GetSingleton().OpenWindow( WT_GENERICCONFIRMATION, this, false ) );
-
-		GenericConfirmation::Data_t data;
-
-		data.pWindowTitle = "#GAMEUI_CommentaryDialogTitle";
-		data.pMessageText = "#L4D360UI_Commentary_Explanation";
-
-		data.bOkButtonEnabled = true;
-		data.pfnOkCallback = &AcceptCommentaryRulesCallback;
-		data.bCancelButtonEnabled = true;
-
-		confirmation->SetUsageData(data);
-		NavigateFrom();
-	}
 	else if ( !Q_strcmp( command, "StatsAndAchievements" ) )
 	{
 		// If PC make sure that the Steam user is logged in
 		if ( CheckAndDisplayErrorIfNotLoggedIn() )
 			return;
 
-#ifdef _X360
-		// If 360 make sure that the user is not a guest
-		if ( XBX_GetUserIsGuest( CBaseModPanel::GetSingleton().GetLastActiveUserId() ) )
-		{
-			GenericConfirmation* confirmation = 
-				static_cast<GenericConfirmation*>( CBaseModPanel::GetSingleton().OpenWindow( WT_GENERICCONFIRMATION, this, false ) );
-			GenericConfirmation::Data_t data;
-			data.pWindowTitle = "#L4D360UI_MsgBx_AchievementsDisabled";
-			data.pMessageText = "#L4D360UI_MsgBx_GuestsUnavailableToGuests";
-			data.bOkButtonEnabled = true;
-			confirmation->SetUsageData(data);
-
-			return;
-		}
-#endif //_X360
 		if ( m_ActiveControl )
 		{
 			m_ActiveControl->NavigateFrom( );
@@ -353,22 +299,12 @@ void MainMenu::OnCommand( const char *command )
 	}
 	else if ( !Q_strcmp( command, "FlmExtrasFlyoutCheck" ) )
 	{
-		if ( IsX360() && CUIGameData::Get()->SignedInToLive() )
-			OnCommand( "FlmExtrasFlyout_Live" );
-		else
-			OnCommand( "FlmExtrasFlyout_Simple" );
+		OnCommand( "FlmExtrasFlyout_Simple" );
 		return;
 	}
 	else if ( char const *szInviteType = StringAfterPrefix( command, "InviteUI_" ) )
 	{
-		if ( IsX360() )
-		{
-			CUIGameData::Get()->OpenInviteUI( szInviteType );
-		}
-		else
-		{
-			CUIGameData::Get()->ExecuteOverlayCommand( "LobbyInvite" );
-		}
+		CUIGameData::Get()->ExecuteOverlayCommand( "LobbyInvite" );
 	}
 	else if (!Q_strcmp(command, "Game"))
 	{
@@ -396,13 +332,6 @@ void MainMenu::OnCommand( const char *command )
 	}
 	else if (!Q_strcmp(command, "Storage"))
 	{
-#ifdef _X360
-		if ( XBX_GetUserIsGuest( iUserSlot ) )
-		{
-			CBaseModPanel::GetSingleton().PlayUISound( UISOUND_INVALID );
-			return;
-		}
-#endif
 		if ( m_ActiveControl )
 		{
 			m_ActiveControl->NavigateFrom( );
@@ -413,25 +342,6 @@ void MainMenu::OnCommand( const char *command )
 	}
 	else if (!Q_strcmp(command, "Credits"))
 	{
-#ifdef _X360
-		if ( XBX_GetNumGameUsers() > 1 )
-		{
-			GenericConfirmation* confirmation = 
-				static_cast< GenericConfirmation* >( CBaseModPanel::GetSingleton().OpenWindow( WT_GENERICCONFIRMATION, this, false ) );
-
-			GenericConfirmation::Data_t data;
-
-			data.pWindowTitle = "#L4D360UI_MainMenu_SplitscreenDisableConf";
-			data.pMessageText = "#L4D360UI_Extras_Credits_ss_Msg";
-
-			data.bOkButtonEnabled = true;
-			data.pfnOkCallback = &AcceptSplitscreenDisableCallback;
-			data.bCancelButtonEnabled = true;
-
-			confirmation->SetUsageData(data);
-			return;
-		}
-#endif
 		KeyValues *pSettings = KeyValues::FromString(
 			"settings",
 			" system { "
@@ -456,67 +366,25 @@ void MainMenu::OnCommand( const char *command )
 	}
 	else if (!Q_strcmp(command, "QuitGame"))
 	{
-		if ( IsPC() )
-		{
-			GenericConfirmation* confirmation = 
-				static_cast< GenericConfirmation* >( CBaseModPanel::GetSingleton().OpenWindow( WT_GENERICCONFIRMATION, this, false ) );
-
-			GenericConfirmation::Data_t data;
-
-			data.pWindowTitle = "#L4D360UI_MainMenu_Quit_Confirm";
-			data.pMessageText = "#L4D360UI_MainMenu_Quit_ConfirmMsg";
-
-			data.bOkButtonEnabled = true;
-			data.pfnOkCallback = &AcceptQuitGameCallback;
-			data.bCancelButtonEnabled = true;
-
-			confirmation->SetUsageData(data);
-
-			NavigateFrom();
-		}
-
-		if ( IsX360() )
-		{
-			engine->ExecuteClientCmd( "demo_exit" );
-		}
-	}
-	else if ( !Q_stricmp( command, "QuitGame_NoConfirm" ) )
-	{
-		if ( IsPC() )
-		{
-			engine->ClientCmd( "quit" );
-		}
-	}
-	else if ( !Q_strcmp( command, "EnableSplitscreen" ) )
-	{
-		Msg( "Enabling splitscreen from main menu...\n" );
-
-		CBaseModPanel::GetSingleton().CloseAllWindows();
-		CAttractScreen::SetAttractMode( CAttractScreen::ATTRACT_GOSPLITSCREEN );
-		CBaseModPanel::GetSingleton().OpenWindow( WT_ATTRACTSCREEN, NULL, true );
-	}
-	else if ( !Q_strcmp( command, "DisableSplitscreen" ) )
-	{
 		GenericConfirmation* confirmation = 
 			static_cast< GenericConfirmation* >( CBaseModPanel::GetSingleton().OpenWindow( WT_GENERICCONFIRMATION, this, false ) );
 
 		GenericConfirmation::Data_t data;
 
-		data.pWindowTitle = "#L4D360UI_MainMenu_SplitscreenDisableConf";
-		data.pMessageText = "#L4D360UI_MainMenu_SplitscreenDisableConfMsg";
+		data.pWindowTitle = "#L4D360UI_MainMenu_Quit_Confirm";
+		data.pMessageText = "#L4D360UI_MainMenu_Quit_ConfirmMsg";
 
 		data.bOkButtonEnabled = true;
-		data.pfnOkCallback = &AcceptSplitscreenDisableCallback;
+		data.pfnOkCallback = &AcceptQuitGameCallback;
 		data.bCancelButtonEnabled = true;
 
 		confirmation->SetUsageData(data);
-	}
-	else if ( !Q_strcmp( command, "DisableSplitscreen_NoConfirm" ) )
-	{
-		Msg( "Disabling splitscreen from main menu...\n" );
 
-		CAttractScreen::SetAttractMode( CAttractScreen::ATTRACT_GAMESTART  );
-		OnCommand( "ActivateAttractScreen" );
+		NavigateFrom();
+	}
+	else if ( !Q_stricmp( command, "QuitGame_NoConfirm" ) )
+	{
+		engine->ClientCmd( "quit" );
 	}
 	else if (!Q_strcmp(command, "ChangeGamers"))	// guest SIGN-IN command
 	{
@@ -535,7 +403,7 @@ void MainMenu::OnCommand( const char *command )
 			{
 				pWnd->PostMessage( pWnd, new KeyValues( "ChangeGamers" ) );
 			}
-		}		
+		}
 	}
 	else if (!Q_strcmp(command, "Audio"))
 	{
@@ -655,11 +523,6 @@ void MainMenu::OnCommand( const char *command )
 		// on PC, bring up the server browser and switch it to the LAN tab (tab #5)
 		engine->ClientCmd( "openserverbrowser" );
 	}
-	else if ( !Q_strcmp( command, "DemoConnect" ) )
-	{
-		g_pMatchFramework->GetMatchTitle()->PrepareClientForConnect( NULL );
-		engine->ClientCmd( CFmtStr( "connect %s", demo_connect_string.GetString() ) );
-	}
 	else if (command && command[0] == '#')
 	{
 		// Pass it straight to the engine as a command
@@ -718,16 +581,7 @@ void MainMenu::OnCommand( const char *command )
 	else
 	{
 		const char *pchCommand = command;
-		if ( !Q_strcmp(command, "FlmOptionsFlyout") )
-		{
-#ifdef _X360
-			if ( XBX_GetPrimaryUserIsGuest() )
-			{
-				pchCommand = "FlmOptionsGuestFlyout";
-			}
-#endif
-		}
-		else if ( !Q_strcmp(command, "FlmVersusFlyout") )
+		if ( !Q_strcmp(command, "FlmVersusFlyout") )
 		{
 			command = "VersusSoftLock";
 		}
@@ -824,9 +678,6 @@ void MainMenu::OnFlyoutMenuCancelled()
 //=============================================================================
 void MainMenu::OnKeyCodePressed( KeyCode code )
 {
-	int userId = GetJoystickForCode( code );
-	BaseModUI::CBaseModPanel::GetSingleton().SetLastActiveUserId( userId );
-
 	switch( GetBaseButtonCode( code ) )
 	{
 	case KEY_XBUTTON_B:
@@ -845,27 +696,9 @@ void MainMenu::OnKeyCodePressed( KeyCode code )
 		}
 
 	case KEY_XBUTTON_BACK:
-#ifdef _X360
-		if ( XBX_GetNumGameUsers() > 1 )
-		{
-			OnCommand( "DisableSplitscreen" );
-		}
-#endif
 		break;
 
 	case KEY_XBUTTON_INACTIVE_START:
-#ifdef _X360
-		if ( !XBX_GetPrimaryUserIsGuest() &&
-			 userId != (int) XBX_GetPrimaryUserId() &&
-			 userId >= 0 &&
-			 CUIGameData::Get()->CanPlayer2Join() )
-		{
-			// Pass the index of controller which wanted to join splitscreen
-			CBaseModPanel::GetSingleton().CloseAllWindows();
-			CAttractScreen::SetAttractMode( CAttractScreen::ATTRACT_GOSPLITSCREEN, userId );
-			CBaseModPanel::GetSingleton().OpenWindow( WT_ATTRACTSCREEN, NULL, true );
-		}
-#endif
 		break;
 
 	default:
@@ -906,14 +739,11 @@ void MainMenu::OnThink()
 		}
 	}
 
-	if ( IsPC() )
+	FlyoutMenu *pFlyout = dynamic_cast< FlyoutMenu* >( FindChildByName( "FlmOptionsFlyout" ) );
+	if ( pFlyout )
 	{
-		FlyoutMenu *pFlyout = dynamic_cast< FlyoutMenu* >( FindChildByName( "FlmOptionsFlyout" ) );
-		if ( pFlyout )
-		{
-			const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
-			pFlyout->SetControlEnabled( "BtnBrightness", !config.Windowed() );
-		}
+		const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
+		pFlyout->SetControlEnabled( "BtnBrightness", !config.Windowed() );
 	}
 
 	BaseClass::OnThink();
@@ -922,10 +752,10 @@ void MainMenu::OnThink()
 //=============================================================================
 void MainMenu::OnOpen()
 {
-	if ( IsPC() && connect_lobby.GetString()[0] )
+	if ( connect_lobby.GetString()[0] )
 	{
 		// if we were launched with "+connect_lobby <lobbyid>" on the command line, join that lobby immediately
-		uint64 nLobbyID = _atoi64( connect_lobby.GetString() );
+		uint64 nLobbyID = V_atoi64( connect_lobby.GetString() );
 		if ( nLobbyID != 0 )
 		{
 			KeyValues *pSettings = KeyValues::FromString(
@@ -950,7 +780,6 @@ void MainMenu::OnOpen()
 
 	SetFooterState();
 
-#ifndef _X360
 	bool bSteamCloudVisible = false;
 
 	{
@@ -969,7 +798,6 @@ void MainMenu::OnOpen()
 			CBaseModPanel::GetSingleton().OpenWindow( WT_ADDONASSOCIATION, this, false );
 		}
 	}
-#endif
 }
 
 //=============================================================================
@@ -998,12 +826,6 @@ void MainMenu::SetFooterState()
 	if ( footer )
 	{
 		CBaseModFooterPanel::FooterButtons_t buttons = FB_ABUTTON;
-#if defined( _X360 )
-		if ( XBX_GetPrimaryUserIsGuest() == 0 )
-		{
-			buttons |= FB_XBUTTON;
-		}
-#endif
 
 		footer->SetButtons( buttons, FF_MAINMENU, false );
 		footer->SetButtonText( FB_ABUTTON, "#L4D360UI_Select" );
@@ -1018,7 +840,6 @@ void MainMenu::ApplySchemeSettings( IScheme *pScheme )
 
 	const char *pSettings = "Resource/UI/BaseModUI/MainMenu.res";
 
-#if !defined( _X360 )
 	if ( !g_pMatchFramework->GetMatchSystem() )
 	{
 		Msg( "BAD!\n" );
@@ -1027,21 +848,18 @@ void MainMenu::ApplySchemeSettings( IScheme *pScheme )
 	{
 		Msg( "BAD PLAYER MANAGER!\n" );
 	}
-	if ( !g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( 0 ) )
+	if ( !g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer() )
 	{
 		pSettings = "Resource/UI/BaseModUI/MainMenuStub.res";
 	}
-#endif
 
 	LoadControlSettings( pSettings );
 
 	BaseModHybridButton *button = dynamic_cast< BaseModHybridButton* >( FindChildByName( "BtnPlaySolo" ) );
 	if ( button )
 	{
-#ifdef _X360
-		button->SetText( ( XBX_GetNumGameUsers() > 1 ) ? ( "#L4D360UI_MainMenu_PlaySplitscreen" ) : ( "#L4D360UI_MainMenu_PlaySolo" ) );
-		button->SetHelpText( ( XBX_GetNumGameUsers() > 1 ) ? ( "#L4D360UI_MainMenu_OfflineCoOp_Tip" ) : ( "#L4D360UI_MainMenu_PlaySolo_Tip" ) );
-#endif
+		button->SetText( "#L4D360UI_MainMenu_PlaySolo" );
+		button->SetHelpText( "#L4D360UI_MainMenu_PlaySolo_Tip" );
 	}
 
 #ifdef _X360
@@ -1104,135 +922,51 @@ void MainMenu::ApplySchemeSettings( IScheme *pScheme )
 	}
 #endif
 
-	if ( IsPC() )
+	FlyoutMenu *pFlyout = dynamic_cast< FlyoutMenu* >( FindChildByName( "FlmOptionsFlyout" ) );
+	if ( pFlyout )
 	{
-		FlyoutMenu *pFlyout = dynamic_cast< FlyoutMenu* >( FindChildByName( "FlmOptionsFlyout" ) );
-		if ( pFlyout )
+		bool bUsesCloud = false;
+
+		ISteamRemoteStorage *pRemoteStorage = SteamClient()?(ISteamRemoteStorage *)SteamClient()->GetISteamGenericInterface(
+			SteamAPI_GetHSteamUser(), SteamAPI_GetHSteamPipe(), STEAMREMOTESTORAGE_INTERFACE_VERSION ):NULL;
+
+		int32 availableBytes, totalBytes = 0;
+		if ( pRemoteStorage && pRemoteStorage->GetQuota( &totalBytes, &availableBytes ) )
 		{
-			bool bUsesCloud = false;
-
-#ifdef IS_WINDOWS_PC
-			ISteamRemoteStorage *pRemoteStorage = SteamClient()?(ISteamRemoteStorage *)SteamClient()->GetISteamGenericInterface(
-				SteamAPI_GetHSteamUser(), SteamAPI_GetHSteamPipe(), STEAMREMOTESTORAGE_INTERFACE_VERSION ):NULL;
-#else
-			ISteamRemoteStorage *pRemoteStorage =  NULL; 
-			AssertMsg( false, "This branch run on a PC build without IS_WINDOWS_PC defined." );
-#endif
-
-			int32 availableBytes, totalBytes = 0;
-			if ( pRemoteStorage && pRemoteStorage->GetQuota( &totalBytes, &availableBytes ) )
+			if ( totalBytes > 0 )
 			{
-				if ( totalBytes > 0 )
-				{
-					bUsesCloud = true;
-				}
+				bUsesCloud = true;
 			}
-
-			pFlyout->SetControlEnabled( "BtnCloud", bUsesCloud );
 		}
+
+		pFlyout->SetControlEnabled( "BtnCloud", bUsesCloud );
 	}
 
 	SetFooterState();
 
-	if ( IsX360() )
-	{		
-		GameModes *pGameModes =  dynamic_cast< GameModes* >( FindChildByName( "BtnGameModes" ) );	
-		if ( pGameModes )
+	GameModes *pGameModes =  dynamic_cast< GameModes* >( FindChildByName( "BtnGameModes" ) );
+	if ( pGameModes )
+	{
+		char lastActive[MAX_PATH];
+		if ( pGameModes->GetLastActiveNameId( lastActive, sizeof( lastActive ) ) )
 		{
-			char lastActive[MAX_PATH];
-			if ( pGameModes->GetLastActiveNameId( lastActive, sizeof( lastActive ) ) )
-			{
-				pGameModes->SetActive( lastActive, true );
-			}
-			else
-			{
-				pGameModes->SetActive( "BtnPlaySolo", true );
-			}
-			m_ActiveControl = pGameModes;
+			pGameModes->SetActive( lastActive, true );
 		}
-	}
-
-	if ( IsPC() )
-	{
-		vgui::Panel *firstPanel = FindChildByName( "BtnCoOp" );
-		if ( firstPanel )
+		else
 		{
-			if ( m_ActiveControl )
-			{
-				m_ActiveControl->NavigateFrom( );
-			}
-			firstPanel->NavigateTo();
+			pGameModes->SetActive( "BtnPlaySolo", true );
 		}
+		m_ActiveControl = pGameModes;
 	}
 
-#if defined( _X360 ) && defined( _DEMO )
-	SetControlVisible( "BtnExtras", !engine->IsDemoHostedFromShell() );
-	SetControlVisible( "BtnQuit", engine->IsDemoHostedFromShell() );
-#endif
-
-	// CERT CATCH ALL JUST IN CASE!
-#ifdef _X360
-	bool bAllUsersCorrectlySignedIn = ( XBX_GetNumGameUsers() > 0 );
-	for ( int k = 0; k < ( int ) XBX_GetNumGameUsers(); ++ k )
+	vgui::Panel *firstPanel = FindChildByName( "BtnCoOp" );
+	if ( firstPanel )
 	{
-		if ( !g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( XBX_GetUserId( k ) ) )
-			bAllUsersCorrectlySignedIn = false;
-	}
-	if ( !bAllUsersCorrectlySignedIn )
-	{
-		Warning( "======= SIGNIN FAIL SIGNIN FAIL SIGNIN FAIL SIGNIN FAIL ==========\n" );
-		Assert( 0 );
-		CBaseModPanel::GetSingleton().CloseAllWindows( CBaseModPanel::CLOSE_POLICY_EVEN_MSGS );
-		CAttractScreen::SetAttractMode( CAttractScreen::ATTRACT_GAMESTART );
-		CBaseModPanel::GetSingleton().OpenWindow( WT_ATTRACTSCREEN, NULL, true );
-		Warning( "======= SIGNIN RESET SIGNIN RESET SIGNIN RESET SIGNIN RESET ==========\n" );
-	}
-#endif
-}
-
-const char *pDemoDisabledButtons[] = { "BtnVersus", "BtnSurvival", "BtnStatsAndAchievements", "BtnExtras" };
-
-void MainMenu::Demo_DisableButtons( void )
-{
-	for ( int i = 0; i < ARRAYSIZE( pDemoDisabledButtons ); i++ )
-	{
-		BaseModHybridButton *pButton = dynamic_cast< BaseModHybridButton* >( FindChildByName( pDemoDisabledButtons[i] ) );
-
-		if ( pButton )
+		if ( m_ActiveControl )
 		{
-			Demo_DisableButton( pButton );
+			m_ActiveControl->NavigateFrom( );
 		}
-	}
-}
-
-void MainMenu::AcceptCommentaryRulesCallback() 
-{
-	if ( MainMenu *pMainMenu = static_cast< MainMenu* >( CBaseModPanel::GetSingleton().GetWindow( WT_MAINMENU ) ) )
-	{
-		KeyValues *pSettings = KeyValues::FromString(
-			"settings",
-			" system { "
-				" network offline "
-			" } "
-			" game { "
-				" mode single_mission "
-			" } "
-			" options { "
-				" play commentary "
-			" } "
-			);
-		KeyValues::AutoDelete autodelete( pSettings );
-
-		g_pMatchFramework->CreateSession( pSettings );
-	}
-
-}
-
-void MainMenu::AcceptSplitscreenDisableCallback()
-{
-	if ( MainMenu *pMainMenu = static_cast< MainMenu* >( CBaseModPanel::GetSingleton().GetWindow( WT_MAINMENU ) ) )
-	{
-		pMainMenu->OnCommand( "DisableSplitscreen_NoConfirm" );
+		firstPanel->NavigateTo();
 	}
 }
 
@@ -1253,28 +987,24 @@ void MainMenu::AcceptVersusSoftLockCallback()
 }
 
 
-#ifndef _X360
 CON_COMMAND_F( openserverbrowser, "Opens server browser", 0 )
 {
-	bool isSteam = IsPC() && steamapicontext->SteamFriends() && steamapicontext->SteamUtils();
+	bool isSteam = steamapicontext->SteamFriends() && steamapicontext->SteamUtils();
 	if ( isSteam )
 	{
 		// show the server browser
-		g_VModuleLoader.ActivateModule("Servers");
+		g_VModuleLoader.ActivateModule( "Servers" );
 
 		// if an argument was passed, that's the tab index to show, send a message to server browser to switch to that tab
 		if ( args.ArgC() > 1 )
 		{
 			KeyValues *pKV = new KeyValues( "ShowServerBrowserPage" );
 			pKV->SetInt( "page", atoi( args[1] ) );
-			g_VModuleLoader.PostMessageToAllModules( pKV );
+			g_VModuleLoader.PostMessageToModule( "Servers", pKV );
 		}
 
-#ifdef INFESTED_DLL
 		KeyValues *pSchemeKV = new KeyValues( "SetCustomScheme" );
 		pSchemeKV->SetString( "SchemeName", "SwarmServerBrowserScheme" );
-		g_VModuleLoader.PostMessageToAllModules( pSchemeKV );
-#endif
+		g_VModuleLoader.PostMessageToModule( "Servers", pSchemeKV );
 	}
 }
-#endif

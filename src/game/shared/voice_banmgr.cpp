@@ -49,24 +49,24 @@ bool CVoiceBanMgr::Init(const char *pGameDir)
 	Term();
 
 	// Load in the squelch file.
-	FileHandle_t fh = filesystem->Open(g_pBanMgrFilename, "rb");
+	FileHandle_t fh = g_pFullFileSystem->Open(g_pBanMgrFilename, "rb");
 	if (fh)
 	{
 		int version;
-		filesystem->Read(&version, sizeof(version), fh);
-		if(version == BANMGR_FILEVERSION && filesystem->Size(fh) > 4 )
+		g_pFullFileSystem->Read(&version, sizeof(version), fh);
+		if(version == BANMGR_FILEVERSION && g_pFullFileSystem->Size(fh) > 4 )
 		{
-			int nIDs = ( filesystem->Size( fh ) - sizeof(version)) / SIGNED_GUID_LEN;
+			int nIDs = ( g_pFullFileSystem->Size( fh ) - sizeof(version)) / SIGNED_GUID_LEN;
 
 			for(int i=0; i < nIDs; i++)
 			{
 				char playerID[SIGNED_GUID_LEN];
-				filesystem->Read(playerID, SIGNED_GUID_LEN, fh);
+				g_pFullFileSystem->Read(playerID, SIGNED_GUID_LEN, fh);
 				AddBannedPlayer(playerID);
 			}			
 		}
 
-		filesystem->Close(fh);
+		g_pFullFileSystem->Close(fh);
 	}
 
 	return true;
@@ -94,22 +94,22 @@ void CVoiceBanMgr::Term()
 void CVoiceBanMgr::SaveState(const char *pGameDir)
 {
 	// Save the file out.
-	FileHandle_t fh = filesystem->Open(g_pBanMgrFilename, "wb");
+	FileHandle_t fh = g_pFullFileSystem->Open(g_pBanMgrFilename, "wb");
 	if(fh)
 	{
 		int version = BANMGR_FILEVERSION;
-		filesystem->Write(&version, sizeof(version), fh);
+		g_pFullFileSystem->Write(&version, sizeof(version), fh);
 
 		for(int i=0; i < 256; i++)
 		{
 			BannedPlayer *pListHead = &m_PlayerHash[i];
 			for(BannedPlayer *pCur=pListHead->m_pNext; pCur != pListHead; pCur=pCur->m_pNext)
 			{
-				filesystem->Write(pCur->m_PlayerID, SIGNED_GUID_LEN, fh);
+				g_pFullFileSystem->Write(pCur->m_PlayerID, SIGNED_GUID_LEN, fh);
 			}
 		}
 
-		filesystem->Close(fh);
+		g_pFullFileSystem->Close(fh);
 	}
 }
 

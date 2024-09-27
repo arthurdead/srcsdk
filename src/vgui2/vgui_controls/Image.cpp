@@ -275,6 +275,11 @@ void Image::SetFrame( int nFrame )
 {
 }
 
+int Image::GetFrame()
+{
+	return 0;
+}
+
 HTexture Image::GetID()
 {
 	return INVALID_TEXTURE;

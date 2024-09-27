@@ -261,7 +261,7 @@ public:
 	virtual void LevelInitPostEntity()
 	{
 		// Check for a generic "mapname_manifest.txt" file and load it.
-		if (filesystem->FileExists( AUTOLOADED_MANIFEST_FILE, "GAME" ))
+		if (g_pFullFileSystem->FileExists( AUTOLOADED_MANIFEST_FILE, "GAME" ))
 		{
 			AddManifestFile( AUTOLOADED_MANIFEST_FILE );
 		}
@@ -360,7 +360,7 @@ public:
 		{
 			int iNumCameras = CommandLine()->ParmValue( "-numcameratextures", 3 );
 
-			materials->BeginRenderTargetAllocation();
+			g_pMaterialSystem->BeginRenderTargetAllocation();
 
 			for (int i = 0; i < iNumCameras; i++)
 			{
@@ -383,7 +383,7 @@ public:
 					CREATERENDERTARGETFLAGS_HDR ) );
 			}
 
-			materials->EndRenderTargetAllocation();
+			g_pMaterialSystem->EndRenderTargetAllocation();
 
 			m_bInitializedRTs = true;
 		}
@@ -437,7 +437,7 @@ public:
 
 	void LoadFromValue( const char *value, int type, bool bDontWarn )
 	{
-		if (type != MANIFEST_VSCRIPT && !filesystem->FileExists(value, "MOD"))
+		if (type != MANIFEST_VSCRIPT && !g_pFullFileSystem->FileExists(value, "MOD"))
 		{
 			if (!bDontWarn)
 			{
@@ -448,7 +448,7 @@ public:
 
 		switch (type)
 		{
-			case MANIFEST_SOUNDSCRIPTS: { soundemitterbase->AddSoundOverrides(value); } break;
+			case MANIFEST_SOUNDSCRIPTS: { g_pSoundEmitterSystem->AddSoundOverrides(value); } break;
 			//case MANIFEST_PROPDATA: { g_PropDataSystem.ParsePropDataFile(value); } break;
 			case MANIFEST_LOCALIZATION: { g_pVGuiLocalize->AddFile( value, "MOD", true ); } break;
 			case MANIFEST_SURFACEPROPS: { AddSurfacepropFile( value, physprops, filesystem ); } break;
@@ -771,7 +771,7 @@ public:
 	void LoadManifestFile( void )
 	{
 		const char *scriptfile = STRING(m_target);
-		if ( filesystem->FileExists( scriptfile, "MOD" ) )
+		if ( g_pFullFileSystem->FileExists( scriptfile, "MOD" ) )
 		{
 			CGMsg(0, CON_GROUP_MAPBASE_MISC, "Mapbase: Adding manifest file \"%s\"\n", scriptfile);
 			g_MapbaseSystem.AddManifestFile(scriptfile);

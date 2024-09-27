@@ -38,7 +38,7 @@ AddonAssociation::AddonAssociation( Panel *parent, const char *panelName )
 {
 	SetProportional( true );
 
-	m_pDoNotAskForAssociation = new CvarToggleCheckButton<CGameUIConVarRef>( 
+	m_pDoNotAskForAssociation = new CGameUICvarToggleCheckButton( 
 		this, 
 		"CheckButtonAddonAssociation", 
 		"#L4D360UI_Cloud_KeepInSync_Tip", 
@@ -62,6 +62,7 @@ void AddonAssociation::OnThink()
 }
 
 //=============================================================================
+#ifdef IS_WINDOWS_PC
 static void GetAddonInstallerUtilityPath( char path[MAX_PATH] )
 {
 	char p[MAX_PATH];
@@ -72,6 +73,7 @@ static void GetAddonInstallerUtilityPath( char path[MAX_PATH] )
 
 	Q_strncpy( path, p, MAX_PATH );
 }
+#endif
 
 //=============================================================================
 static void RegisterAssocation( bool showFailure )

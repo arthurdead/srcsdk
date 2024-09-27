@@ -597,7 +597,7 @@ void CClient_Precipitation::Precache( )
 		{
 		case PRECIPITATION_TYPE_SNOW:
 			m_Speed	= SNOW_SPEED;
-			m_MatHandle = materials->FindMaterial( "particle/snow", TEXTURE_GROUP_CLIENT_EFFECTS );
+			m_MatHandle = g_pMaterialSystem->FindMaterial( "particle/snow", TEXTURE_GROUP_CLIENT_EFFECTS );
 			m_InitialRamp = 0.6f;
 			m_Width = SNOW_TRACER_WIDTH;
 			break;
@@ -605,7 +605,7 @@ void CClient_Precipitation::Precache( )
 		case PRECIPITATION_TYPE_RAIN:
 			Assert( m_nPrecipType == PRECIPITATION_TYPE_RAIN );
 			m_Speed	= RAIN_SPEED;
-			m_MatHandle = materials->FindMaterial( "particle/rain", TEXTURE_GROUP_CLIENT_EFFECTS );
+			m_MatHandle = g_pMaterialSystem->FindMaterial( "particle/rain", TEXTURE_GROUP_CLIENT_EFFECTS );
 			m_InitialRamp = 1.0f;
 			m_Color[3] = 1.0f;	// make translucent
 			m_Width = RAIN_TRACER_WIDTH;

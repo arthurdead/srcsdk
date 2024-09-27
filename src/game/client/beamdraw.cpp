@@ -47,7 +47,7 @@ CEngineSprite *Draw_SetSpriteTexture( const model_t *pSpriteModel, int frame, in
 	if ( ShouldDrawInWireFrameMode() || r_DrawBeams.GetInt() == 2 )
 	{
 		if ( !g_pBeamWireframeMaterial )
-			g_pBeamWireframeMaterial = materials->FindMaterial( "debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER );
+			g_pBeamWireframeMaterial = g_pMaterialSystem->FindMaterial( "debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER );
 		pRenderContext->Bind( g_pBeamWireframeMaterial, NULL );
 		return psprite;
 	}

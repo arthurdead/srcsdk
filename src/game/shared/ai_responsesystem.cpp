@@ -253,7 +253,7 @@ class CResponseRulesToEngineInterface : public ResponseRules::IEngineEmulator
 	/// Return a pointer to an IFileSystem we can use to read and process scripts.
 	virtual IFileSystem *GetFilesystem() 
 	{
-		return filesystem;
+		return g_pFullFileSystem;
 	}
 
 	/// Return a pointer to an instance of an IUniformRandomStream
@@ -404,7 +404,7 @@ void PrecacheInstancedScene( char const *pszScene )
 
 		// Attempt to precache manually
 		void *pBuffer = NULL;
-		if (filesystem->ReadFileEx( loadfile, "MOD", &pBuffer, true ))
+		if (g_pFullFileSystem->ReadFileEx( loadfile, "MOD", &pBuffer, true ))
 		{
 			g_TokenProcessor.SetBuffer((char*)pBuffer);
 			CChoreoScene *pScene = ChoreoLoadScene( loadfile, NULL, &g_TokenProcessor, LocalScene_Printf );
@@ -902,7 +902,7 @@ public:
 		includedFiles.Allocate( scriptfile );
 
 		CResponseSystem::ScriptEntry e;
-		e.name = filesystem->FindOrAddFileName( scriptfile );
+		e.name = g_pFullFileSystem->FindOrAddFileName( scriptfile );
 		e.buffer = buffer;
 		e.currenttoken = (char *)e.buffer;
 		e.tokencount = 0;
@@ -942,7 +942,7 @@ public:
 
 					// Try and load it
 					CUtlBuffer buf;
-					if ( filesystem->ReadFile( includefile, "GAME", buf ) )
+					if ( g_pFullFileSystem->ReadFile( includefile, "GAME", buf ) )
 					{
 						LoadFromBuffer( includefile, (unsigned char *)buf.PeekGet(), includedFiles );
 					}
@@ -962,7 +962,7 @@ public:
 bool LoadResponseSystemFile(const char *scriptfile)
 {
 	CUtlBuffer buf;
-	if ( !filesystem->ReadFile( scriptfile, "GAME", buf ) )
+	if ( !g_pFullFileSystem->ReadFile( scriptfile, "GAME", buf ) )
 	{
 		return false;
 	}

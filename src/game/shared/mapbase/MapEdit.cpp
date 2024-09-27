@@ -76,7 +76,7 @@ public:
 		// Set the available cvar if we can find commentary data for this level
 		char szFullName[512];
 		Q_snprintf(szFullName,sizeof(szFullName), "maps/%s_auto.txt", STRING( gpGlobals->mapname) );
-		if ( filesystem->FileExists( szFullName ) )
+		if ( g_pFullFileSystem->FileExists( szFullName ) )
 		{
 			bool bAllowed = IsAutoMapEditAllowed();
 			g_bMapEditLoaded = bAllowed;
@@ -360,7 +360,7 @@ public:
 	void InitMapEdit( const char* pFile = MAPEDIT_DEFAULT_FILE )
 	{
 		// Install the global cvar callback
-		cvar->InstallGlobalChangeCallback( CV_GlobalChange_MapEdit );
+		g_pCVar->InstallGlobalChangeCallback( CV_GlobalChange_MapEdit );
 
 
 		// If we find the commentary semaphore, the commentary entities already exist.
@@ -590,12 +590,12 @@ public:
 		}
 
 		// Remove our global convar callback
-		cvar->RemoveGlobalChangeCallback( CV_GlobalChange_MapEdit );
+		g_pCVar->RemoveGlobalChangeCallback( CV_GlobalChange_MapEdit );
 
 		// Reset any convars that have been changed by the commentary
 		for ( int i = 0; i < m_ModifiedConvars.Count(); i++ )
 		{
-			ConVar *pConVar = (ConVar *)cvar->FindVar( m_ModifiedConvars[i].pszConvar );
+			ConVar *pConVar = (ConVar *)g_pCVar->FindVar( m_ModifiedConvars[i].pszConvar );
 			if ( pConVar )
 			{
 				pConVar->SetValue( m_ModifiedConvars[i].pszOrgValue );
@@ -612,7 +612,7 @@ public:
 		// If we're turning on commentary, create all the entities.
 		if ( bMapEdit )
 		{
-			if (filesystem->FileExists(pFile) || pFile == NULL)
+			if (g_pFullFileSystem->FileExists(pFile) || pFile == NULL)
 			{
 				g_bMapEditLoaded = true;
 				m_bMapEditLoadedMidGame = true;
@@ -631,7 +631,7 @@ public:
 
 	void OnRestore( void )
 	{
-		cvar->RemoveGlobalChangeCallback( CV_GlobalChange_MapEdit );
+		g_pCVar->RemoveGlobalChangeCallback( CV_GlobalChange_MapEdit );
 
 		if ( !IsMapEditLoaded() )
 			return;
@@ -639,7 +639,7 @@ public:
 		// Set any convars that have already been changed by the commentary before the save
 		for ( int i = 0; i < m_ModifiedConvars.Count(); i++ )
 		{
-			ConVar *pConVar = (ConVar *)cvar->FindVar( m_ModifiedConvars[i].pszConvar );
+			ConVar *pConVar = (ConVar *)g_pCVar->FindVar( m_ModifiedConvars[i].pszConvar );
 			if ( pConVar )
 			{
 				//Msg("    Restoring Convar %s: value %s (org %s)\n", m_ModifiedConvars[i].pszConvar, m_ModifiedConvars[i].pszCurrentValue, m_ModifiedConvars[i].pszOrgValue );
@@ -648,7 +648,7 @@ public:
 		}
 
 		// Install the global cvar callback
-		cvar->InstallGlobalChangeCallback( CV_GlobalChange_MapEdit );
+		g_pCVar->InstallGlobalChangeCallback( CV_GlobalChange_MapEdit );
 	}
 
 	bool MapEditLoadedMidGame( void ) 
@@ -725,7 +725,7 @@ void MapEdit_MapReload( void )
 //-----------------------------------------------------------------------------
 void MapEdit_LoadFile(const char *pFile, bool bStack)
 {
-	if (!filesystem->FileExists(pFile))
+	if (!g_pFullFileSystem->FileExists(pFile))
 	{
 		Warning("MapEdit: No such file \"%s\"!\n", pFile);
 		return;
@@ -835,7 +835,7 @@ static ConCommand mapedit_unload("mapedit_unload", CC_MapEdit_Unload, "Forces ma
 void CC_MapEdit_Print( const CCommand& args )
 {
 	const char *szFullName = args[1];
-	if (szFullName && filesystem->FileExists(szFullName))
+	if (szFullName && g_pFullFileSystem->FileExists(szFullName))
 	{
 		KeyValues *pkvFile = new KeyValues( "MapEdit" );
 		if ( pkvFile->LoadFromFile( filesystem, szFullName, "MOD" ) )

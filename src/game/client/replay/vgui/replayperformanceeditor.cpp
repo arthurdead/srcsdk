@@ -895,7 +895,7 @@ public:
 	:	BaseClass( pParent, pName, pText ),
 		m_flPressTime( 0.0f )
 	{
-		m_pHostTimescale = cvar->FindVar( "host_timescale" );
+		m_pHostTimescale = g_pCVar->FindVar( "host_timescale" );
 		AssertMsg( m_pHostTimescale, "host_timescale lookup failed!" );
 
 		ivgui()->AddTickSignal( GetVPanel(), 10 );

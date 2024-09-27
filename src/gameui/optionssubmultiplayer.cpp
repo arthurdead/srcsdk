@@ -565,13 +565,11 @@ void COptionsSubMultiplayer::OnCommand( const char *command )
 {
 	if ( !stricmp( command, "Advanced" ) )
 	{
-#ifndef _XBOX
 		if (!m_hMultiplayerAdvancedDialog.Get())
 		{
 			m_hMultiplayerAdvancedDialog = new CMultiplayerAdvancedDialog( this );
 		}
 		m_hMultiplayerAdvancedDialog->Activate();
-#endif
 	}
 	else if (!stricmp( command, "ImportSprayImage" ) )
 	{
@@ -595,7 +593,6 @@ void COptionsSubMultiplayer::OnCommand( const char *command )
 // file selected.  This can only happen when someone selects an image to be imported as a spray logo.
 void COptionsSubMultiplayer::OnFileSelected(const char *fullpath)
 {
-#ifndef _XBOX
 	if ((fullpath == NULL) || (fullpath[0] == 0))
 	{
 		return;
@@ -888,7 +885,7 @@ void COptionsSubMultiplayer::OnFileSelected(const char *fullpath)
 	// delete the intermediate VTF file if one was made.
 	if (deleteIntermediateVTF)
 	{
-		DeleteFile(vtfPath);
+		g_pFullFileSystem->RemoveFile(vtfPath);
 
 		// the TGA->VTF conversion process generates a .txt file if one wasn't already there.
 		// in this case, delete the .txt file.
@@ -898,18 +895,17 @@ void COptionsSubMultiplayer::OnFileSelected(const char *fullpath)
 			--c;
 		}
 		Q_strncpy(c, "txt", sizeof(vtfPath)-(c-vtfPath));
-		DeleteFile(vtfPath);
+		g_pFullFileSystem->RemoveFile(vtfPath);
 	}
 
 	// delete the intermediate TGA file if one was made.
 	if (deleteIntermediateTGA)
 	{
-		DeleteFile(tgaPath);
+		g_pFullFileSystem->RemoveFile(tgaPath);
 	}
 
 	// change the cursor back to normal
 	surface()->SetCursor(dc_user);
-#endif
 }
 
 struct ValveJpegErrorHandler_t 
@@ -941,7 +937,6 @@ static void ValveJpegErrorHandler( j_common_ptr cinfo )
 // convert the JPEG file given to a TGA file at the given output path.
 ConversionErrorType COptionsSubMultiplayer::ConvertJPEGToTGA(const char *jpegpath, const char *tgaPath)
 {
-#if !defined( _X360 )
 	struct jpeg_decompress_struct jpegInfo;
 	struct ValveJpegErrorHandler_t jerr;
 	JSAMPROW row_pointer[1];
@@ -1055,18 +1050,11 @@ ConversionErrorType COptionsSubMultiplayer::ConvertJPEGToTGA(const char *jpegpat
 
 	free(buf);
 	return bRetVal ? CE_SUCCESS : CE_ERROR_WRITING_OUTPUT_FILE;
-
-#else
-	return CE_SOURCE_FILE_FORMAT_NOT_SUPPORTED;
-#endif
 }
 
 // convert the bmp file given to a TGA file at the given destination path.
 ConversionErrorType COptionsSubMultiplayer::ConvertBMPToTGA(const char *bmpPath, const char *tgaPath)
 {
-	if ( !IsPC() )
-		return CE_SOURCE_FILE_FORMAT_NOT_SUPPORTED;
-
 	HBITMAP hBitmap = (HBITMAP)LoadImage(NULL, bmpPath, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION | LR_LOADFROMFILE | LR_DEFAULTSIZE);
 	BITMAP bitmap;
 

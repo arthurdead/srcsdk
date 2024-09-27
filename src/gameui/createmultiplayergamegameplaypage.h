@@ -10,8 +10,8 @@
 #pragma once
 
 #include <vgui_controls/PropertyPage.h>
+#include <vgui_controls/PanelListPanel.h>
 
-class CPanelListPanel;
 class CDescription;
 class mpcontrol_t;
 

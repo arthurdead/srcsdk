@@ -69,7 +69,7 @@ void SteamCloudConfirmation::OnCommand(const char *command)
 			{
 				cl_cloud_settings.SetValue( STEAMREMOTESTORAGE_CLOUD_ALL );
 				// Re-read the configuration
-				engine->ReadConfiguration( -1, false );
+				engine->ReadConfiguration( false );
 			}
 			else
 			{

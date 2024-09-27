@@ -19,6 +19,8 @@
 #include "tier0/memalloc.h"
 #include "tier0/memdbgon.h"
 
+#include "tier1_logging.h"
+
 #pragma warning (disable:4100)
 #pragma warning (disable:4514)
 
@@ -275,7 +277,7 @@ void CUtlBlockMemory<T,I>::ChangeSize( int nBlocks )
 
 	if ( !m_pMemory )
 	{
-		Error( "CUtlBlockMemory overflow!\n" );
+		Log_FatalError( LOG_TIER1, "CUtlBlockMemory overflow!\n" );
 	}
 
 	// allocate new blocks if growing

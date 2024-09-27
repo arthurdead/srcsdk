@@ -203,11 +203,11 @@ public:
 	{
 		if ( !m_pSoundMixerVar )
 		{
-			m_pSoundMixerVar = (ConVar *)cvar->FindVar( "snd_soundmixer" );
+			m_pSoundMixerVar = (ConVar *)g_pCVar->FindVar( "snd_soundmixer" );
 		}
 		if ( !m_pDSPVolumeVar )
 		{
-			m_pDSPVolumeVar = (ConVar *)cvar->FindVar( "dsp_volume" );
+			m_pDSPVolumeVar = (ConVar *)g_pCVar->FindVar( "dsp_volume" );
 		}
 	}
 
@@ -376,7 +376,7 @@ void Soundscape_AddFile( const char *szFile )
 void C_SoundscapeSystem::AddSoundScapeFile( const char *filename )
 {
 	KeyValues *script = new KeyValues( filename );
-	if ( filesystem->LoadKeyValues( *script, IFileSystem::TYPE_SOUNDSCAPE, filename, "GAME" ) )
+	if ( g_pFullFileSystem->LoadKeyValues( *script, IFileSystem::TYPE_SOUNDSCAPE, filename, "GAME" ) )
 	{
 		// parse out all of the top level sections and save their names
 		KeyValues *pKeys = script;
@@ -414,7 +414,7 @@ bool C_SoundscapeSystem::Init()
 		mapSoundscapeFilename = VarArgs( "scripts/soundscapes_%s.txt", mapname );
 	}
 
-	if (filesystem->FileExists(VarArgs("maps/%s_soundscapes.txt", mapname)))
+	if (g_pFullFileSystem->FileExists(VarArgs("maps/%s_soundscapes.txt", mapname)))
 	{
 		// A Mapbase-specific file exists. Load that instead.
 		// Any additional soundscape files, like the original scripts/soundscapes version,
@@ -423,7 +423,7 @@ bool C_SoundscapeSystem::Init()
 	}
 
 	KeyValues *manifest = new KeyValues( SOUNDSCAPE_MANIFEST_FILE );
-	if ( filesystem->LoadKeyValues( *manifest, IFileSystem::TYPE_SOUNDSCAPE, SOUNDSCAPE_MANIFEST_FILE, "GAME" ) )
+	if ( g_pFullFileSystem->LoadKeyValues( *manifest, IFileSystem::TYPE_SOUNDSCAPE, SOUNDSCAPE_MANIFEST_FILE, "GAME" ) )
 	{
 		for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
 		{
@@ -442,7 +442,7 @@ bool C_SoundscapeSystem::Init()
 				SOUNDSCAPE_MANIFEST_FILE, sub->GetName() );
 		}
 
-		if ( mapSoundscapeFilename && filesystem->FileExists( mapSoundscapeFilename ) )
+		if ( mapSoundscapeFilename && g_pFullFileSystem->FileExists( mapSoundscapeFilename ) )
 		{
 			AddSoundScapeFile( mapSoundscapeFilename );
 		}
@@ -1030,7 +1030,7 @@ void C_SoundscapeSystem::ProcessPlayLooping( KeyValues *pAmbient, const subsound
 
 void C_SoundscapeSystem::TouchSoundFile( char const *wavefile )
 {
-	filesystem->GetFileTime( VarArgs( "sound/%s", PSkipSoundChars( wavefile ) ), "GAME" );
+	g_pFullFileSystem->GetFileTime( VarArgs( "sound/%s", PSkipSoundChars( wavefile ) ), "GAME" );
 }
 
 // start a new looping sound

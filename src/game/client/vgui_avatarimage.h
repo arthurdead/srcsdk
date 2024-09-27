@@ -135,6 +135,7 @@ public:
 	virtual bool Evict();
 	virtual int GetNumFrames();
 	virtual void SetFrame( int nFrame );
+	virtual int GetFrame();
 	virtual vgui::HTexture GetID();
 	virtual void SetRotation( int iRotation ) { return; }
 

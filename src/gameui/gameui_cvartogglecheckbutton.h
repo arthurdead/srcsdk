@@ -9,8 +9,15 @@
 #define GAMEUI_CVARTOGGLECHECKBUTTON_H
 #pragma once
 
+#undef ConVarRef
+
 #include <vgui_controls/cvartogglecheckbutton.h>
 #include "gameui_util.h"
+
+#ifdef _DEBUG
+// In GAMUI we should never use the regular ConVarRef
+#define ConVarRef ****!!!USE_CGameUIConVarRef!!!!***
+#endif
 
 extern template class vgui::CvarToggleCheckButton<CGameUIConVarRef>;
 

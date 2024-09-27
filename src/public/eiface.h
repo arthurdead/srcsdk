@@ -61,17 +61,15 @@ class IReplayFactory;
 class IReplaySystem;
 class IServer;
 
-typedef struct player_info_s player_info_t;
+struct con_nprint_s;
+
+struct player_info_s;
+
+typedef player_info_s player_info_t;
 
 //-----------------------------------------------------------------------------
 // defines
 //-----------------------------------------------------------------------------
-
-#ifdef _WIN32
-#define DLLEXPORT __stdcall
-#else
-#define DLLEXPORT /* */
-#endif
 
 #define INTERFACEVERSION_VENGINESERVER				"VEngineServer023"
 #define INTERFACEVERSION_VENGINESERVER_INT			23
@@ -206,7 +204,7 @@ public:
 	virtual void		Con_NPrintf( int pos, PRINTF_FORMAT_STRING const char *fmt, ... ) = 0;
 	// SINGLE PLAYER/LISTEN SERVER ONLY(just matching the client .dll api for this)
 	// Similar to Con_NPrintf, but allows specifying custom text color and duration information
-	virtual void		Con_NXPrintf( const struct con_nprint_s *info, PRINTF_FORMAT_STRING const char *fmt, ... ) = 0;
+	virtual void		Con_NXPrintf( const con_nprint_s *info, PRINTF_FORMAT_STRING const char *fmt, ... ) = 0;
 
 	// Change a specified player's "view entity" (i.e., use the view entity position/orientation for rendering the client view)
 	virtual void		SetView( const edict_t *pClient, const edict_t *pViewent ) = 0;

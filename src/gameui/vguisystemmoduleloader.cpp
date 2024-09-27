@@ -106,7 +106,7 @@ bool CVGuiSystemModuleLoader::InitializeAllModules(CreateInterfaceFn *factorylis
 #ifdef GAMEUI_EXPORTS
 		m_Modules[i].moduleInterface->SetParent(GetGameUIBasePanel());
 #else
-		m_Modules[i].moduleInterface->SetParent(g_pMainPanel->GetVPanel());		
+		m_Modules[i].moduleInterface->SetParent(g_pMainPanel->GetVPanel());
 #endif
 	}
 
@@ -123,7 +123,7 @@ bool CVGuiSystemModuleLoader::LoadPlatformModules(CreateInterfaceFn *factorylist
 
 	// load platform menu
 	KeyValues *kv = new KeyValues("Platform");
-	if (!kv->LoadFromFile(g_pFullFileSystem, "steam/games/PlatformMenu.vdf", "PLATFORM"))
+	if (!kv->LoadFromFile(g_pFullFileSystem, "Resource/PlatformMenu.vdf", "MOD"))
 	{
 		kv->deleteThis();
 		return false;
@@ -144,13 +144,22 @@ bool CVGuiSystemModuleLoader::LoadPlatformModules(CreateInterfaceFn *factorylist
 			continue;
 
 		// get copy out of steam cache
-		const char *dllPath = it->GetString("dll");
+		const char *dllPath = NULL;
+	#ifdef _WIN32
+		dllPath = it->GetString("dll");
+	#elif defined POSIX
+		dllPath = it->GetString("dll_linux");
+	#elif defined OSX
+		dllPath = it->GetString("dll_osx");
+	#endif
 
 		// load the module (LoadModule calls GetLocalCopy() under steam)
-		CSysModule *mod = g_pFullFileSystem->LoadModule(dllPath, "EXECUTABLE_PATH");
+		CSysModule *mod = g_pFullFileSystem->LoadModule(dllPath, "GAMEBIN");
+		if (!mod)
+			mod = g_pFullFileSystem->LoadModule(dllPath, "EXECUTABLE_PATH");
 		if (!mod)
 		{
-			Error("Platform Error: bad module '%s', not loading\n", it->GetString("dll"));
+			Error("Platform Error: bad module '%s', not loading\n", dllPath);
 			bSuccess = false;
 			continue;
 		}
@@ -159,7 +168,7 @@ bool CVGuiSystemModuleLoader::LoadPlatformModules(CreateInterfaceFn *factorylist
 		IVGuiModule *moduleInterface = (IVGuiModule *)Sys_GetFactory(mod)(pchInterface, NULL);
 		if (!moduleInterface)
 		{
-			Warning("Platform Error: module version ('%s, %s) invalid, not loading\n", it->GetString("dll"), it->GetString("interface"));
+			Warning("Platform Error: module version ('%s, %s) invalid, not loading\n", dllPath, it->GetString("interface"));
 			bSuccess = false;
 			continue;
 		}
@@ -194,7 +203,7 @@ void CVGuiSystemModuleLoader::ShutdownPlatformModules()
 	int i;
 	for ( i = 0; i < m_Modules.Count(); i++ )
 	{
-		vgui::ivgui()->PostMessage(m_Modules[i].moduleInterface->GetPanel(), new KeyValues("Command", "command", "Quit"), NULL);
+		vgui::ivgui()->PostMessage(m_Modules[i].moduleInterface->GetPanel(), new KeyValues("Command", "command", "Quit"), vgui::INVALID_VPANEL);
 	}
 
 	for ( i = 0; i < m_Modules.Count(); i++ )
@@ -331,7 +340,20 @@ void CVGuiSystemModuleLoader::PostMessageToAllModules(KeyValues *message)
 {
 	for (int i = 0; i < m_Modules.Count(); i++)
 	{
-		vgui::ivgui()->PostMessage(m_Modules[i].moduleInterface->GetPanel(), message->MakeCopy(), NULL);
+		vgui::ivgui()->PostMessage(m_Modules[i].moduleInterface->GetPanel(), message->MakeCopy(), vgui::INVALID_VPANEL);
+	}
+	message->deleteThis();
+}
+
+void CVGuiSystemModuleLoader::PostMessageToModule(const char *moduleName, KeyValues *message)
+{
+	for (int i = 0; i < m_Modules.Count(); i++)
+	{
+		if (!stricmp(GetModuleLabel(i), moduleName) || !stricmp(m_Modules[i].data->GetName(), moduleName))
+		{
+			vgui::ivgui()->PostMessage(m_Modules[i].moduleInterface->GetPanel(), message, vgui::INVALID_VPANEL);
+			return;
+		}
 	}
 	message->deleteThis();
 }

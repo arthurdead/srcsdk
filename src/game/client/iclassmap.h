@@ -10,6 +10,9 @@
 #pragma once
 
 #include "tier0/platform.h"
+#include "tier0/logging.h"
+
+DECLARE_LOGGING_CHANNEL( LOG_ENTITYFACTORY );
 
 class C_BaseEntity;
 typedef C_BaseEntity* (*DISPATCHFUNCTION)( const char * );

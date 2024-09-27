@@ -2,8 +2,6 @@ project('vaudio_redirect', 'cpp')
 
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 
-error('cannot be used yet until hackmgr can patch the engine pointers')
-
 src_root_dir = get_option('src_root_dir')
 game_dir = get_option('game_dir')
 build_client = get_option('build_client')

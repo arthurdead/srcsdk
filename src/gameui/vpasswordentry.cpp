@@ -65,20 +65,18 @@ void PasswordEntry::OnCommand(const char *command)
 {
 	if ( Q_stricmp( command, "OK" ) == 0 )
 	{
-		OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_A, CBaseModPanel::GetSingleton().GetLastActiveUserId() ) );
+		OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_A, 0 ) );
 	}
 	else if ( Q_stricmp( command, "cancel" ) == 0 )
 	{
-		OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, CBaseModPanel::GetSingleton().GetLastActiveUserId() ) );
+		OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, 0 ) );
 	}
 }
 
 //=============================================================================
 void PasswordEntry::OnKeyCodePressed( KeyCode keycode )
 {
-	int userId = GetJoystickForCode( keycode );
 	vgui::KeyCode code = GetBaseButtonCode( keycode );
-	BaseModUI::CBaseModPanel::GetSingleton().SetLastActiveUserId( userId );
 
 	switch ( code )
 	{
@@ -119,22 +117,20 @@ void PasswordEntry::OnKeyCodePressed( KeyCode keycode )
 	}
 }
 
-#ifndef _X360
 void PasswordEntry::OnKeyCodeTyped( vgui::KeyCode code )
 {
 	// For PC, this maps space bar to OK and esc to cancel
 	switch ( code )
 	{
 	case KEY_SPACE:
-		return OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_A, CBaseModPanel::GetSingleton().GetLastActiveUserId() ) );
+		return OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_A, 0 ) );
 
 	case KEY_ESCAPE:
-		return OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, CBaseModPanel::GetSingleton().GetLastActiveUserId() ) );
+		return OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, 0 ) );
 	}
 
 	BaseClass::OnKeyTyped( code );
 }
-#endif
 
 void PasswordEntry::OnOpen( )
 {
@@ -202,19 +198,14 @@ void PasswordEntry::LoadLayout()
 	// In the Xbox, OK/Cancel xbox buttons use the same font and are the same size, use the OK button
 	int buttonWide = 0;
 	int buttonTall = 0;
-	if ( IsX360() )
-	{
-		m_pLblOkButton->GetContentSize( buttonWide, buttonTall );
-	}
+
 	// On the PC, the buttons will be the same size, use the OK button
 	vgui::Button *pOkButton = NULL;
 	vgui::Button *pCancelButton = NULL;
-	if ( IsPC() )
-	{
-		pOkButton = dynamic_cast< vgui::Button* >( FindChildByName( "BtnOk" ) );
-		pCancelButton = dynamic_cast< vgui::Button* >( FindChildByName( "BtnCancel" ) );
-		pOkButton->GetSize( buttonWide, buttonTall );
-	}
+
+	pOkButton = dynamic_cast< vgui::Button* >( FindChildByName( "BtnOk" ) );
+	pCancelButton = dynamic_cast< vgui::Button* >( FindChildByName( "BtnCancel" ) );
+	pOkButton->GetSize( buttonWide, buttonTall );
 
 	// Account for input button
 	int inputTall = m_pInputField->GetTall();
@@ -262,51 +253,46 @@ void PasswordEntry::LoadLayout()
 	m_pLblOkButton->SetVisible( false );
 	m_pLblOkText->SetVisible( false );
 
-	if ( IsPC() )
+	if ( pOkButton )
 	{
-		if ( pOkButton )
-		{
-			pOkButton->SetVisible( m_data.bOkButtonEnabled );
-		}
-		if ( pCancelButton )
-		{
-			pCancelButton->SetVisible( m_data.bCancelButtonEnabled );
-		}
-
-		if ( m_data.bCancelButtonEnabled || m_data.bOkButtonEnabled )
-		{
-			// when only one button is enabled, center that button
-			vgui::Button *pButton = NULL;
-			bool bSingleButton = false;
-			if ( ( m_data.bCancelButtonEnabled && !m_data.bOkButtonEnabled ) )
-			{
-				// cancel is centered
-				bSingleButton = true;
-				pButton = pCancelButton;
-			}
-			else if ( !m_data.bCancelButtonEnabled && m_data.bOkButtonEnabled )
-			{
-				// OK is centered
-				bSingleButton = true;
-				pButton = pOkButton;
-			}
-
-			if ( bSingleButton )
-			{
-				// center the button
-				pButton->SetPos( ( dialogWidth - buttonWide )/2, nButtonY );
-			}
-			else
-			{
-				// left align the cancel
-				pCancelButton->SetPos( borderGap, nButtonY );
-				// right align the OK
-				pOkButton->SetPos( dialogWidth - borderGap - buttonWide, nButtonY );
-			}
-		}
+		pOkButton->SetVisible( m_data.bOkButtonEnabled );
+	}
+	if ( pCancelButton )
+	{
+		pCancelButton->SetVisible( m_data.bCancelButtonEnabled );
 	}
 
-	
+	if ( m_data.bCancelButtonEnabled || m_data.bOkButtonEnabled )
+	{
+		// when only one button is enabled, center that button
+		vgui::Button *pButton = NULL;
+		bool bSingleButton = false;
+		if ( ( m_data.bCancelButtonEnabled && !m_data.bOkButtonEnabled ) )
+		{
+			// cancel is centered
+			bSingleButton = true;
+			pButton = pCancelButton;
+		}
+		else if ( !m_data.bCancelButtonEnabled && m_data.bOkButtonEnabled )
+		{
+			// OK is centered
+			bSingleButton = true;
+			pButton = pOkButton;
+		}
+
+		if ( bSingleButton )
+		{
+			// center the button
+			pButton->SetPos( ( dialogWidth - buttonWide )/2, nButtonY );
+		}
+		else
+		{
+			// left align the cancel
+			pCancelButton->SetPos( borderGap, nButtonY );
+			// right align the OK
+			pOkButton->SetPos( dialogWidth - borderGap - buttonWide, nButtonY );
+		}
+	}
 }
 
 void PasswordEntry::PaintBackground()

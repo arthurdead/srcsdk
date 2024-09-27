@@ -17,6 +17,6 @@ server_dedicated_base_dep = declare_dependency(
 	],
 	sources: files(
 		join_paths(server_src_dir,'debugoverlay_null.cpp'),
-		hackmgr.get_variable('hackmgr_sv_dep'),
+		hackmgr.get_variable('hackmgr_ds_dep'),
 	),
 )

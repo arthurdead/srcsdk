@@ -86,7 +86,7 @@ static void RenderMaterial( const char *pMaterialName )
 	float x = 100.0f, y = 100.0f;
 	// float x = 0.0f, y = 0.0f;
 
-	IMaterial *pMaterial = materials->FindMaterial( pMaterialName, TEXTURE_GROUP_OTHER, false );
+	IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( pMaterialName, TEXTURE_GROUP_OTHER, false );
 	if ( !IsErrorMaterial( pMaterial ) )
 	{
 		CMatRenderContextPtr pRenderContext( materials );
@@ -166,8 +166,8 @@ static void OverlayWaterTexture( IMaterial *pMaterial, int xOffset, int yOffset,
 
 static void OverlayWaterTextures( void )
 {
-	OverlayWaterTexture( materials->FindMaterial( "debug/debugreflect", NULL ), 0, 0, false );
-	OverlayWaterTexture( materials->FindMaterial( "debug/debugrefract", NULL ), 0, 1, true );
+	OverlayWaterTexture( g_pMaterialSystem->FindMaterial( "debug/debugreflect", NULL ), 0, 0, false );
+	OverlayWaterTexture( g_pMaterialSystem->FindMaterial( "debug/debugrefract", NULL ), 0, 1, true );
 }
 
 void OverlayCameraRenderTarget( const char *pszMaterialName, float flX, float flY, float w, float h )
@@ -175,7 +175,7 @@ void OverlayCameraRenderTarget( const char *pszMaterialName, float flX, float fl
 	float offsetS = ( 0.5f / 256.0f );
 	float offsetT = ( 0.5f / 256.0f );
 	IMaterial *pMaterial;
-	pMaterial = materials->FindMaterial( pszMaterialName, TEXTURE_GROUP_OTHER, true );
+	pMaterial = g_pMaterialSystem->FindMaterial( pszMaterialName, TEXTURE_GROUP_OTHER, true );
 	if( !IsErrorMaterial( pMaterial ) )
 	{
 		// HACKHACK
@@ -220,7 +220,7 @@ static void OverlayFrameBufferTexture( int nFrameBufferIndex )
 	IMaterial *pMaterial;
 	char buf[MAX_PATH];
 	Q_snprintf( buf, MAX_PATH, "debug/debugfbtexture%d", nFrameBufferIndex );
-	pMaterial = materials->FindMaterial( buf, NULL, true );
+	pMaterial = g_pMaterialSystem->FindMaterial( buf, NULL, true );
 	if( !IsErrorMaterial( pMaterial ) )
 	{
 		CMatRenderContextPtr pRenderContext( materials );
@@ -270,7 +270,7 @@ static void OverlayShowTexture( const char* textureName, float scale )
 	x = 32;
 	y = 32;
 
-	pMaterial = materials->FindMaterial( "___debug", TEXTURE_GROUP_OTHER, true );
+	pMaterial = g_pMaterialSystem->FindMaterial( "___debug", TEXTURE_GROUP_OTHER, true );
 	BaseTextureVar = pMaterial->FindVar( "$basetexture", &foundVar, false );
 	if (!foundVar)
 		return;
@@ -279,7 +279,7 @@ static void OverlayShowTexture( const char* textureName, float scale )
 
 	if ( textureName && textureName[0] )
 	{
-		pTex = materials->FindTexture( textureName, TEXTURE_GROUP_OTHER, false );
+		pTex = g_pMaterialSystem->FindTexture( textureName, TEXTURE_GROUP_OTHER, false );
 		BaseTextureVar->SetTextureValue( pTex );
 
 		w = pTex->GetActualWidth() * scale;
@@ -340,7 +340,7 @@ void CDebugViewRender::Draw2DDebuggingInfo( const CViewSetup &view )
 	if ( mat_yuv.GetInt() && (engine->GetDXSupportLevel() >= 80) )
 	{
 		IMaterial *pMaterial;
-		pMaterial = materials->FindMaterial( "debug/yuv", TEXTURE_GROUP_OTHER, true );
+		pMaterial = g_pMaterialSystem->FindMaterial( "debug/yuv", TEXTURE_GROUP_OTHER, true );
 		if( !IsErrorMaterial( pMaterial ) )
 		{
 			pMaterial->IncrementReferenceCount();
@@ -352,7 +352,7 @@ void CDebugViewRender::Draw2DDebuggingInfo( const CViewSetup &view )
 	if ( mat_hsv.GetInt() && (engine->GetDXSupportLevel() >= 90) )
 	{
 		IMaterial *pMaterial;
-		pMaterial = materials->FindMaterial( "debug/hsv", TEXTURE_GROUP_OTHER, true );
+		pMaterial = g_pMaterialSystem->FindMaterial( "debug/hsv", TEXTURE_GROUP_OTHER, true );
 		if( !IsErrorMaterial( pMaterial ) )
 		{
 			pMaterial->IncrementReferenceCount();
@@ -461,7 +461,7 @@ CON_COMMAND_F( r_screenoverlay, "Draw specified material as an overlay", FCVAR_C
 		}
 		else
 		{
-			IMaterial *pMaterial = materials->FindMaterial( args[1], TEXTURE_GROUP_OTHER, false );
+			IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( args[1], TEXTURE_GROUP_OTHER, false );
 			if ( !IsErrorMaterial( pMaterial ) )
 			{
 				GetViewRenderInstance()->SetScreenOverlayMaterial( pMaterial );
@@ -499,7 +499,7 @@ CON_COMMAND_F( r_screenoverlay_indexed, "Draw specified material as an overlay i
 		}
 		else
 		{
-			IMaterial *pMaterial = materials->FindMaterial( args[2], TEXTURE_GROUP_OTHER, false );
+			IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( args[2], TEXTURE_GROUP_OTHER, false );
 			if ( !IsErrorMaterial( pMaterial ) )
 			{
 				GetViewRenderInstance()->SetIndexedScreenOverlayMaterial( index, pMaterial );

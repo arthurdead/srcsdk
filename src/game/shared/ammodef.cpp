@@ -254,7 +254,7 @@ void CAmmoDef::AddAmmoType(char const* name, int damageType, int tracerType,
 
 	if (plr_cvar)
 	{
-		m_AmmoType[m_nAmmoIndex].pPlrDmgCVar	= cvar->FindVar(plr_cvar);
+		m_AmmoType[m_nAmmoIndex].pPlrDmgCVar	= g_pCVar->FindVar(plr_cvar);
 		if (!m_AmmoType[m_nAmmoIndex].pPlrDmgCVar)
 		{
 			Msg("ERROR: Ammo (%s) found no CVar named (%s)\n",name,plr_cvar);
@@ -263,7 +263,7 @@ void CAmmoDef::AddAmmoType(char const* name, int damageType, int tracerType,
 	}
 	if (npc_cvar)
 	{
-		m_AmmoType[m_nAmmoIndex].pNPCDmgCVar	= cvar->FindVar(npc_cvar);
+		m_AmmoType[m_nAmmoIndex].pNPCDmgCVar	= g_pCVar->FindVar(npc_cvar);
 		if (!m_AmmoType[m_nAmmoIndex].pNPCDmgCVar)
 		{
 			Msg("ERROR: Ammo (%s) found no CVar named (%s)\n",name,npc_cvar);
@@ -272,7 +272,7 @@ void CAmmoDef::AddAmmoType(char const* name, int damageType, int tracerType,
 	}
 	if (carry_cvar)
 	{
-		m_AmmoType[m_nAmmoIndex].pMaxCarryCVar= cvar->FindVar(carry_cvar);
+		m_AmmoType[m_nAmmoIndex].pMaxCarryCVar= g_pCVar->FindVar(carry_cvar);
 		if (!m_AmmoType[m_nAmmoIndex].pMaxCarryCVar)
 		{
 			Msg("ERROR: Ammo (%s) found no CVar named (%s)\n",name,carry_cvar);

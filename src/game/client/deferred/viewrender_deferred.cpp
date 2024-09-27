@@ -1795,7 +1795,7 @@ void CUnderWaterDeferredView::Setup( const CViewSetup &view, bool bDrawSkybox, c
 		char const *pOverlayName = pScreenOverlayVar->GetStringValue();
 		if ( pOverlayName[0] != '0' )						// fixme!!!
 		{
-			IMaterial *pOverlayMaterial = materials->FindMaterial( pOverlayName,  TEXTURE_GROUP_OTHER );
+			IMaterial *pOverlayMaterial = g_pMaterialSystem->FindMaterial( pOverlayName,  TEXTURE_GROUP_OTHER );
 			m_pMainView->SetWaterOverlayMaterial( pOverlayMaterial );
 		}
 	}
@@ -2987,7 +2987,7 @@ void CDeferredViewRender::RenderView( const CViewSetup &view, int nClearFlags, i
 
 	CleanupMain3DView( worldView );
 
-	pRenderContext = materials->GetRenderContext();
+	pRenderContext = g_pMaterialSystem->GetRenderContext();
 	pRenderContext->SetRenderTarget( saveRenderTarget );
 	pRenderContext.SafeRelease();
 
@@ -3010,8 +3010,8 @@ void CDeferredViewRender::RenderView( const CViewSetup &view, int nClearFlags, i
 	{
 		CMatRenderContextPtr pRenderContext( materials );
 
-		ITexture	*pFullFrameFB1 = materials->FindTexture( "_rt_FullFrameFB1", TEXTURE_GROUP_RENDER_TARGET );
-		IMaterial	*pCopyMaterial = materials->FindMaterial( "dev/upscale", TEXTURE_GROUP_OTHER );
+		ITexture	*pFullFrameFB1 = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB1", TEXTURE_GROUP_RENDER_TARGET );
+		IMaterial	*pCopyMaterial = g_pMaterialSystem->FindMaterial( "dev/upscale", TEXTURE_GROUP_OTHER );
 		pCopyMaterial->IncrementReferenceCount();
 
 		Rect_t	DownscaleRect, UpscaleRect;
@@ -3065,7 +3065,7 @@ void CDeferredViewRender::RenderView( const CViewSetup &view, int nClearFlags, i
 		{
 			if( g_ClientVirtualReality.ShouldRenderHUDInWorld() )
 			{
-				pTexture = materials->FindTexture( "_rt_gui", NULL, false );
+				pTexture = g_pMaterialSystem->FindTexture( "_rt_gui", NULL, false );
 				if( pTexture )
 				{
 					bPaintMainMenu = true;
@@ -3092,7 +3092,7 @@ void CDeferredViewRender::RenderView( const CViewSetup &view, int nClearFlags, i
 
 		// Get the render context out of materials to avoid some debug stuff.
 		// WARNING THIS REQUIRES THE .SafeRelease below or it'll never release the ref
-		pRenderContext = materials->GetRenderContext();
+		pRenderContext = g_pMaterialSystem->GetRenderContext();
 
 		// clear depth in the backbuffer before we push the render target
 		if( bClear )
@@ -3155,7 +3155,7 @@ void CDeferredViewRender::RenderView( const CViewSetup &view, int nClearFlags, i
 		VGui_PostRender();
 
 		g_pClientMode->PostRenderVGui();
-		pRenderContext = materials->GetRenderContext();
+		pRenderContext = g_pMaterialSystem->GetRenderContext();
 		if (pTexture)
 		{
 			pRenderContext->OverrideAlphaWriteEnable( false, true );

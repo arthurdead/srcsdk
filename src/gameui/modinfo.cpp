@@ -56,27 +56,6 @@ void CModInfo::FreeModInfo()
 //-----------------------------------------------------------------------------
 // Purpose: data accessor
 //-----------------------------------------------------------------------------
-bool CModInfo::IsMultiplayerOnly()
-{
-	return (stricmp(m_pModData->GetString("type", ""), "multiplayer_only") == 0);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: data accessor
-//-----------------------------------------------------------------------------
-bool CModInfo::IsSinglePlayerOnly()
-{
-#ifndef _XBOX
-	return (stricmp(m_pModData->GetString("type", ""), "singleplayer_only") == 0);
-#else
-	// xboxissue - no support for disparate mounted content
-	return true;
-#endif
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: data accessor
-//-----------------------------------------------------------------------------
 const char *CModInfo::GetFallbackDir()
 {
 	return m_pModData->GetString("fallback_dir", "");
@@ -154,7 +133,7 @@ bool CModInfo::HasPortals()
 //-----------------------------------------------------------------------------
 bool CModInfo::NoDifficulty()
 {
-	return (stricmp(m_pModData->GetString("nodifficulty", "0"), "1") == 0);
+	return (stricmp(m_pModData->GetString("nodifficulty", "1"), "1") == 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -162,7 +141,7 @@ bool CModInfo::NoDifficulty()
 //-----------------------------------------------------------------------------
 bool CModInfo::NoModels()
 {
-	return (stricmp(m_pModData->GetString("nomodels", "0"), "1") == 0);
+	return (stricmp(m_pModData->GetString("nomodels", "1"), "1") == 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -170,7 +149,7 @@ bool CModInfo::NoModels()
 //-----------------------------------------------------------------------------
 bool CModInfo::NoHiModel()
 {
-	return (stricmp(m_pModData->GetString("nohimodel", "0"), "1") == 0);
+	return (stricmp(m_pModData->GetString("nohimodel", "1"), "1") == 0);
 }
 
 //-----------------------------------------------------------------------------

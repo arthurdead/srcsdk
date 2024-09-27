@@ -252,8 +252,8 @@ bool CReplayRenderer::SetupRenderer( RenderMovieParams_t &params, IReplayMovie *
 	m_iTgaFrame = 0;
 	m_curSampleTime = DmeTime_t(0);
 
-	m_pViewmodelFov = ( ConVar * )cvar->FindVar( "viewmodel_fov" );
-	m_pDefaultFov = ( ConVar * )cvar->FindVar( "default_fov" );
+	m_pViewmodelFov = ( ConVar * )g_pCVar->FindVar( "viewmodel_fov" );
+	m_pDefaultFov = ( ConVar * )g_pCVar->FindVar( "default_fov" );
 
 	InitBuffers( params );
 

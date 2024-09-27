@@ -60,6 +60,7 @@ class IShaderExtension;
 class IGameLoopback;
 class IGameServerLoopback;
 class IGameClientLoopback;
+class ISoundEmitterSystemBase;
 
 //=============================================================================
 // HPE_BEGIN
@@ -78,30 +79,23 @@ extern IVModelRender *modelrender;
 extern IVEfx *effects;
 extern IVRenderView *render;
 extern IVDebugOverlay *debugoverlay;
-extern IMaterialSystem *materials;
 extern IMaterialSystemStub *materials_stub;
 extern IMaterialSystemHardwareConfig *g_pMaterialSystemHardwareConfig;
-extern IDataCache *datacache;
-extern IMDLCache *mdlcache;
 extern IVModelInfoClient *modelinfo;
 extern IEngineVGui *enginevgui;
 extern ISpatialPartition* partition;
 extern IBaseClientDLL *clientdll;
-extern IFileSystem *filesystem;
 extern IStaticPropMgrClient *staticpropmgr;
 extern IShadowMgr *shadowmgr;
 extern IEngineSound *enginesound;
-extern IMatSystemSurface *g_pMatSystemSurface;
 extern IEngineTrace *enginetrace;
 extern IGameUIFuncs *gameuifuncs;
 extern IGameEventManager2 *gameeventmanager;
 extern IPhysicsGameTrace *physgametrace;
 extern CGlobalVarsBase *gpGlobals;
 extern IClientTools *clienttools;
-extern IInputSystem *inputsystem;
 extern ISceneFileCache *scenefilecache;
 extern IMatchmaking *matchmaking;
-extern IVideoServices *g_pVideo;
 extern IUploadGameStats *gamestatsuploader;
 extern CSteamAPIContext *steamapicontext;
 extern IReplaySystem *g_pReplay;

@@ -9,7 +9,7 @@
 #include "ienginevgui.h"
 #include "engineinterface.h"
 #include "vgamelobby.h"
-#include "VGameLobbyChat.h"
+#include "vgamelobbychat.h"
 #include "vgui/IInput.h"
 #include "vgui/ILocalize.h"
 

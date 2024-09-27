@@ -24,7 +24,6 @@ class IDebugTextureInfo;
 class IVBAllocTracker;
 class IInputSystem;
 class INetworkSystem;
-class IP4;
 class IMdlLib;
 class IQueuedLoader;
 
@@ -36,7 +35,6 @@ class IQueuedLoader;
 // allowing link libraries to access tier2 library interfaces
 //-----------------------------------------------------------------------------
 extern IFileSystem *g_pFullFileSystem;
-extern IMaterialSystem *materials;
 extern IMaterialSystem *g_pMaterialSystem;
 extern IInputSystem *g_pInputSystem;
 extern INetworkSystem *g_pNetworkSystem;
@@ -44,7 +42,6 @@ extern IMaterialSystemHardwareConfig *g_pMaterialSystemHardwareConfig;
 extern IDebugTextureInfo *g_pMaterialSystemDebugTextureInfo;
 extern IVBAllocTracker *g_VBAllocTracker;
 extern IColorCorrectionSystem *colorcorrection;
-extern IP4 *p4;
 extern IMdlLib *mdllib;
 extern IQueuedLoader *g_pQueuedLoader;
 

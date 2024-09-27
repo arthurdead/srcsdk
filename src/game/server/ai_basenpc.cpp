@@ -3882,7 +3882,7 @@ bool CAI_BaseNPC::PreNPCThink()
 
 	if ( frameTimeLimit == FLT_MAX )
 	{
-		pHostTimescale = cvar->FindVar( "host_timescale" );
+		pHostTimescale = g_pCVar->FindVar( "host_timescale" );
 	}
 
 	bool bUseThinkLimits = ( !m_bInChoreo && ShouldUseFrameThinkLimits() );
@@ -14645,7 +14645,7 @@ void CAI_BaseNPC::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 	const char *modelname = STRING(GetModelName());
 	if (modelname)
 	{
-		set.AppendCriteria( "gender", UTIL_VarArgs("%i", soundemitterbase->GetActorGender(modelname)) );
+		set.AppendCriteria( "gender", UTIL_VarArgs("%i", g_pSoundEmitterSystem->GetActorGender(modelname)) );
 	}
 
 	if (IsInSquad())

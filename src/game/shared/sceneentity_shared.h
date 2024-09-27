@@ -16,6 +16,7 @@
 #include "iscenetokenprocessor.h"
 #include "ehandle.h"
 #include "tier1/convar.h"
+#include "scenetokenprocessor.h"
 
 class CBaseFlex;
 
@@ -103,24 +104,6 @@ public:
 	void					InitWeight( CBaseFlex *pActor );
 	float					UpdateWeight( CBaseFlex *pActor );
 };
-
-//-----------------------------------------------------------------------------
-// Purpose: Helper for parsing scene data file
-//-----------------------------------------------------------------------------
-class CSceneTokenProcessor : public ISceneTokenProcessor
-{
-public:
-	const char	*CurrentToken( void );
-	bool		GetToken( bool crossline );
-	bool		TokenAvailable( void );
-	void		Error( PRINTF_FORMAT_STRING const char *fmt, ... );
-	void		SetBuffer( char *buffer );
-private:
-	const char	*m_pBuffer;
-	char		m_szToken[ 1024 ];
-};
-
-extern CSceneTokenProcessor g_TokenProcessor;
 
 void Scene_Printf( PRINTF_FORMAT_STRING const char *pFormat, ... );
 extern ConVar scene_clientflex;

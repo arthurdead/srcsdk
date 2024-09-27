@@ -60,7 +60,6 @@ private:
 	float	m_flSecondaryProgressStartTime;
 	bool	m_bShowingVACInfo;
 	bool	m_bCenter;
-	bool	m_bConsoleStyle;
 	float	m_flProgressFraction;	
 
 	CPanelAnimationVar( int, m_iAdditionalIndentX, "AdditionalIndentX", "0" );

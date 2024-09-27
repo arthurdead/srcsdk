@@ -43,7 +43,7 @@ void CClientEffectPrecacheSystem::LevelInitPreEntity( void )
 	
 	//FIXME: Double check this
 	//Finally, force the cache of these materials
-	materials->CacheUsedMaterials();
+	g_pMaterialSystem->CacheUsedMaterials();
 
 	// Now, cache off our material handles
 	FX_CacheMaterialHandles();
@@ -148,7 +148,7 @@ void CClientEffect::Precache()
 		IMaterial	*material = NULL;
 
 		if(!m_pCondFunc || m_pCondFunc()) {
-			material = materials->FindMaterial( m_MaterialsNames[i].Get(), TEXTURE_GROUP_CLIENT_EFFECTS );
+			material = g_pMaterialSystem->FindMaterial( m_MaterialsNames[i].Get(), TEXTURE_GROUP_CLIENT_EFFECTS );
 		}
 
 		if ( !IsErrorMaterial( material ) )

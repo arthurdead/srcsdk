@@ -476,6 +476,16 @@ void ImagePanel::SetFrame( int nFrame )
 	return m_pImage->SetFrame( nFrame );
 }
 
+int ImagePanel::GetFrame()
+{
+	if ( !m_pImage )
+	{
+		return 0;
+	}
+
+	return m_pImage->GetFrame();
+}
+
 void ImagePanel::SetRotation( int iRotation )
 {
 	m_iRotation = iRotation;

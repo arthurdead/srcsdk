@@ -242,7 +242,7 @@ void ApplyPostProcessingPasses(PostProcessingPass *pass_list, // table of effect
 			IMaterial *src_mat=pass_list->m_mat_ref;
 			if (! src_mat)
 			{
-				src_mat=materials->FindMaterial(pass_list->material_name,
+				src_mat=g_pMaterialSystem->FindMaterial(pass_list->material_name,
 					TEXTURE_GROUP_OTHER,true);
 				if (src_mat)
 				{
@@ -251,7 +251,7 @@ void ApplyPostProcessingPasses(PostProcessingPass *pass_list, // table of effect
 			}
 			if (pass_list->dest_rendering_target)
 			{
-				ITexture *dest_rt=materials->FindTexture(pass_list->dest_rendering_target,
+				ITexture *dest_rt=g_pMaterialSystem->FindTexture(pass_list->dest_rendering_target,
 					TEXTURE_GROUP_RENDER_TARGET );
 				pRenderContext->SetRenderTarget( dest_rt);
 			}
@@ -267,7 +267,7 @@ void ApplyPostProcessingPasses(PostProcessingPass *pass_list, // table of effect
 
 			if (pass_list->src_rendering_target)
 			{
-				ITexture *src_rt=materials->FindTexture(pass_list->src_rendering_target,
+				ITexture *src_rt=g_pMaterialSystem->FindTexture(pass_list->src_rendering_target,
 					TEXTURE_GROUP_RENDER_TARGET );
 				int src_width=src_rt->GetActualWidth();
 				int src_height=src_rt->GetActualHeight();
@@ -447,7 +447,7 @@ void CHistogramBucket::IssueQuery( int nFrameNum )
 	float flTestRangeMax = ( m_flMaxLuminance == 1.0f ) ? 1e20f : m_flMaxLuminance; // Count all pixels >1.0 as 1.0
 
 	// First, set stencil bits where the colors match
-	IMaterial *pLumCompareMaterial=materials->FindMaterial( "dev/lumcompare", TEXTURE_GROUP_OTHER, true );
+	IMaterial *pLumCompareMaterial=g_pMaterialSystem->FindMaterial( "dev/lumcompare", TEXTURE_GROUP_OTHER, true );
 	IMaterialVar *pMinVar = pLumCompareMaterial->FindVar( "$C0_X", NULL );
 	pMinVar->SetFloatValue( flTestRangeMin );
 	IMaterialVar *pMaxVar = pLumCompareMaterial->FindVar( "$C0_Y", NULL );
@@ -536,7 +536,7 @@ void CHistogramBucket::IssueQuery( int nFrameNum )
 		pRenderContext->SetStencilZFailOperation( STENCILOPERATION_KEEP );
 		pRenderContext->SetStencilReferenceValue( 1 );
 
-		IMaterial *pLumCompareStencilMaterial=materials->FindMaterial( "dev/no_pixel_write", TEXTURE_GROUP_OTHER, true);
+		IMaterial *pLumCompareStencilMaterial=g_pMaterialSystem->FindMaterial( "dev/no_pixel_write", TEXTURE_GROUP_OTHER, true);
 		pRenderContext->DrawScreenSpaceRectangle( pLumCompareStencilMaterial,
 												  nScreenMinX, nScreenMinY,
 												  1 + nScreenMaxX - nScreenMinX,
@@ -1754,13 +1754,13 @@ IMaterial * CEnginePostMaterialProxy::SetupEnginePostMaterial(	const Vector4D & 
 	if ( bPerformSoftwareAA || bPerformColCorrect )
 	{
 		SetupEnginePostMaterialTextureTransform( fullViewportBloomUVs, fullViewportFBUVs, destTexSize );
-		return materials->FindMaterial( "dev/engine_post", TEXTURE_GROUP_OTHER, true);
+		return g_pMaterialSystem->FindMaterial( "dev/engine_post", TEXTURE_GROUP_OTHER, true);
 	}
 	else
 	{
 		// Just use the old bloomadd material (which uses additive blending, unlike engine_post)
 		// NOTE: this path is what gets used for DX8 (which cannot enable AA or col-correction)
-		return materials->FindMaterial( "dev/bloomadd", TEXTURE_GROUP_OTHER, true);
+		return g_pMaterialSystem->FindMaterial( "dev/bloomadd", TEXTURE_GROUP_OTHER, true);
 	}
 }
 
@@ -1905,9 +1905,9 @@ void DumpTGAofRenderTarget( const int width, const int height, const char *pFile
 	Q_snprintf( szPathedFileName, sizeof(szPathedFileName), "//MOD/%d_%s_%s.tga", s_nRTIndex++, pFilename, "PC" );
 #endif
 
-	FileHandle_t fileTGA = filesystem->Open( szPathedFileName, "wb" );
-	filesystem->Write( buffer.Base(), buffer.TellPut(), fileTGA );
-	filesystem->Close( fileTGA );
+	FileHandle_t fileTGA = g_pFullFileSystem->Open( szPathedFileName, "wb" );
+	g_pFullFileSystem->Write( buffer.Base(), buffer.TellPut(), fileTGA );
+	g_pFullFileSystem->Close( fileTGA );
 
 	free( pTGA );
 }
@@ -1922,7 +1922,7 @@ static void DownsampleFBQuarterSize( IMatRenderContext *pRenderContext, int nSrc
 	Assert( pRenderContext );
 	Assert( pDest );
 
-	IMaterial *downsample_mat = materials->FindMaterial( bFloatHDR ? "dev/downsample" : "dev/downsample_non_hdr", TEXTURE_GROUP_OTHER, true );
+	IMaterial *downsample_mat = g_pMaterialSystem->FindMaterial( bFloatHDR ? "dev/downsample" : "dev/downsample_non_hdr", TEXTURE_GROUP_OTHER, true );
 
 	// *Everything* in here relies on the small RTs being exactly 1/4 the full FB res
 	Assert( pDest->GetActualWidth()  == nSrcWidth  / 4 );
@@ -1958,24 +1958,24 @@ static void Generate8BitBloomTexture( IMatRenderContext *pRenderContext, float f
 	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
 
 	pRenderContext->PushRenderTargetAndViewport();
-	ITexture *pSrc = materials->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *pSrc = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
 	int nSrcWidth = pSrc->GetActualWidth();
 	int nSrcHeight = pSrc->GetActualHeight(); //,dest_height;
 
-	IMaterial *downsample_mat = materials->FindMaterial( "dev/downsample_non_hdr", TEXTURE_GROUP_OTHER, true);
+	IMaterial *downsample_mat = g_pMaterialSystem->FindMaterial( "dev/downsample_non_hdr", TEXTURE_GROUP_OTHER, true);
 
-	IMaterial *xblur_mat = materials->FindMaterial( "dev/blurfilterx_nohdr", TEXTURE_GROUP_OTHER, true );
+	IMaterial *xblur_mat = g_pMaterialSystem->FindMaterial( "dev/blurfilterx_nohdr", TEXTURE_GROUP_OTHER, true );
 	IMaterial *yblur_mat = NULL;
 	if ( bClearRGB )
 	{
-		yblur_mat = materials->FindMaterial( "dev/blurfiltery_nohdr_clear", TEXTURE_GROUP_OTHER, true );
+		yblur_mat = g_pMaterialSystem->FindMaterial( "dev/blurfiltery_nohdr_clear", TEXTURE_GROUP_OTHER, true );
 	}
 	else
 	{
-		yblur_mat = materials->FindMaterial( "dev/blurfiltery_nohdr", TEXTURE_GROUP_OTHER, true );
+		yblur_mat = g_pMaterialSystem->FindMaterial( "dev/blurfiltery_nohdr", TEXTURE_GROUP_OTHER, true );
 	}
-	ITexture *dest_rt0 = materials->FindTexture( "_rt_SmallFB0", TEXTURE_GROUP_RENDER_TARGET );
-	ITexture *dest_rt1 = materials->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *dest_rt0 = g_pMaterialSystem->FindTexture( "_rt_SmallFB0", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *dest_rt1 = g_pMaterialSystem->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET );
 
 	// *Everything* in here relies on the small RTs being exactly 1/4 the full FB res
 	Assert( dest_rt0->GetActualWidth()  == pSrc->GetActualWidth()  / 4 );
@@ -2284,9 +2284,9 @@ static void DrawPyroVignette( int nDestX, int nDestY, int nWidth, int nHeight,	/
 
 	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
-	IMaterial *pVignetteBorder = materials->FindMaterial( "dev/pyro_vignette_border", TEXTURE_GROUP_OTHER, true );
-	IMaterial *pMaterial = materials->FindMaterial( "dev/pyro_vignette", TEXTURE_GROUP_OTHER, true );
-	ITexture *pRenderTarget = materials->FindTexture( "_rt_ResolvedFullFrameDepth", TEXTURE_GROUP_RENDER_TARGET );
+	IMaterial *pVignetteBorder = g_pMaterialSystem->FindMaterial( "dev/pyro_vignette_border", TEXTURE_GROUP_OTHER, true );
+	IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( "dev/pyro_vignette", TEXTURE_GROUP_OTHER, true );
+	ITexture *pRenderTarget = g_pMaterialSystem->FindTexture( "_rt_ResolvedFullFrameDepth", TEXTURE_GROUP_RENDER_TARGET );
 
 	pRenderContext->PushRenderTargetAndViewport( pRenderTarget );
 	pRenderContext->ClearColor4ub( 0, 0, 0, 0 );
@@ -2735,7 +2735,7 @@ void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, b
 			pRenderContext->EnableColorCorrection( bPerformColCorrect );
 
 			bool bPerformLocalContrastEnhancement = false;
-			IMaterial* pPostMat = materials->FindMaterial( "dev/engine_post", TEXTURE_GROUP_OTHER, true );
+			IMaterial* pPostMat = g_pMaterialSystem->FindMaterial( "dev/engine_post", TEXTURE_GROUP_OTHER, true );
 			if ( pPostMat )
 			{
 				IMaterialVar* pMatVar = pPostMat->FindVar( "$localcontrastenable", NULL, false );
@@ -2749,11 +2749,11 @@ void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, b
 			{
 				tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "ColorCorrection" );
 
-				ITexture *pSrc = materials->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
+				ITexture *pSrc = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
 				int nSrcWidth = pSrc->GetActualWidth();
 				int nSrcHeight = pSrc->GetActualHeight();
 
-				ITexture *dest_rt1 = materials->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET );
+				ITexture *dest_rt1 = g_pMaterialSystem->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET );
 
 				if ( !s_bScreenEffectTextureIsUpdated )
 				{
@@ -2946,7 +2946,7 @@ void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, b
 							partialViewportPostSrcCorners.z,			partialViewportPostSrcCorners.w, 
 							GetClientWorldEntity()->GetClientRenderable() );
 
-						IMaterial *pPyroVisionPostMaterial = materials->FindMaterial( "dev/pyro_post", TEXTURE_GROUP_OTHER, true);
+						IMaterial *pPyroVisionPostMaterial = g_pMaterialSystem->FindMaterial( "dev/pyro_post", TEXTURE_GROUP_OTHER, true);
 						DrawPyroPost( pPyroVisionPostMaterial,
                             // TODO: check if offsets should be 0,0 here, as with the combined-pass case
 							partialViewportPostDestRect.x,				partialViewportPostDestRect.y, 
@@ -2991,7 +2991,7 @@ void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, b
 			}
 			
 			IMaterial *pBloomMaterial;
-			pBloomMaterial = materials->FindMaterial( "dev/floattoscreen_combine", "" );
+			pBloomMaterial = g_pMaterialSystem->FindMaterial( "dev/floattoscreen_combine", "" );
 			IMaterialVar *pBloomAmountVar = pBloomMaterial->FindVar( "$bloomamount", NULL );
 			pBloomAmountVar->SetFloatValue( flBloomScale );
 			
@@ -3064,7 +3064,7 @@ void DoBlurFade( float flStrength, float flDesaturate, int x, int y, int w, int 
 	int nRtWidth, nRtHeight;
 	pRenderContext->GetRenderTargetDimensions( nRtWidth, nRtHeight );
 
-	IMaterial* pMat = materials->FindMaterial( "dev/fade_blur", TEXTURE_GROUP_OTHER, true );
+	IMaterial* pMat = g_pMaterialSystem->FindMaterial( "dev/fade_blur", TEXTURE_GROUP_OTHER, true );
 	bool bFound = false;
 	IMaterialVar* pVar = pMat->FindVar( "$c0_x", &bFound );
 	if ( pVar )
@@ -3486,7 +3486,7 @@ void DoImageSpaceMotionBlur( const CViewSetupEx &view, int x, int y, int w, int 
 		history.m_flLastTimeUpdate = gpGlobals->realtime;
 	}
 
-	ITexture *pSrc = materials->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *pSrc = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
 	float flSrcWidth = ( float )pSrc->GetActualWidth();
 	float flSrcHeight = ( float )pSrc->GetActualHeight();
 
@@ -3526,7 +3526,7 @@ void DoImageSpaceMotionBlur( const CViewSetupEx &view, int x, int y, int w, int 
 	//=============================================================================================//
 	CMatRenderContextPtr pRenderContext( materials );
 	//pRenderContext->PushRenderTargetAndViewport();
-	pSrc = materials->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
+	pSrc = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
 	int nSrcWidth = pSrc->GetActualWidth();
 	int nSrcHeight = pSrc->GetActualHeight();
 	int nViewportWidth, nViewportHeight, nDummy;
@@ -3538,7 +3538,7 @@ void DoImageSpaceMotionBlur( const CViewSetupEx &view, int x, int y, int w, int 
 	}
 
 	// Get material pointer
-	IMaterial *pMatMotionBlur = materials->FindMaterial( "dev/motion_blur", TEXTURE_GROUP_OTHER, true );
+	IMaterial *pMatMotionBlur = g_pMaterialSystem->FindMaterial( "dev/motion_blur", TEXTURE_GROUP_OTHER, true );
 
 	//SetRenderTargetAndViewPort( dest_rt0 );
 	//pRenderContext->PopRenderTargetAndViewport();
@@ -3681,7 +3681,7 @@ void DoDepthOfField( const CViewSetupEx &view )
 
 	CMatRenderContextPtr pRenderContext( materials );
 
-	ITexture *pSrc = materials->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *pSrc = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
 	int nSrcWidth = pSrc->GetActualWidth();
 	int nSrcHeight = pSrc->GetActualHeight();
 
@@ -3693,7 +3693,7 @@ void DoDepthOfField( const CViewSetupEx &view )
 
 		// Update downsampled framebuffer. TODO: Don't do this again for the bloom if we already did it here...
 		pRenderContext->PushRenderTargetAndViewport();
-		ITexture *dest_rt0 = materials->FindTexture( "_rt_SmallFB0", TEXTURE_GROUP_RENDER_TARGET );
+		ITexture *dest_rt0 = g_pMaterialSystem->FindTexture( "_rt_SmallFB0", TEXTURE_GROUP_RENDER_TARGET );
 
 		// *Everything* in here relies on the small RTs being exactly 1/4 the full FB res
 		Assert( dest_rt0->GetActualWidth()  == pSrc->GetActualWidth()  / 4 );
@@ -3706,7 +3706,7 @@ void DoDepthOfField( const CViewSetupEx &view )
 		// Additional blur using 3x3 gaussian
 		//////////////////////////////////////
 
-		IMaterial *pMat = materials->FindMaterial( "dev/blurgaussian_3x3", TEXTURE_GROUP_OTHER, true );
+		IMaterial *pMat = g_pMaterialSystem->FindMaterial( "dev/blurgaussian_3x3", TEXTURE_GROUP_OTHER, true );
 
 		if ( pMat == NULL )
 			return;
@@ -3716,7 +3716,7 @@ void DoDepthOfField( const CViewSetupEx &view )
 		SetMaterialVarFloat( pMat, "$c1_x", -0.5f / (float)dest_rt0->GetActualWidth() );
 		SetMaterialVarFloat( pMat, "$c1_y", 0.5f / (float)dest_rt0->GetActualHeight() );
 
-		ITexture *dest_rt1 = materials->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET );
+		ITexture *dest_rt1 = g_pMaterialSystem->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET );
 		SetRenderTargetAndViewPort( dest_rt1 );
 
 		pRenderContext->DrawScreenSpaceRectangle(
@@ -3734,7 +3734,7 @@ void DoDepthOfField( const CViewSetupEx &view )
 	int nDummy = 0;
 	pRenderContext->GetViewport( nDummy, nDummy, nViewportWidth, nViewportHeight );
 
-	IMaterial *pMatDOF = materials->FindMaterial( "dev/depth_of_field", TEXTURE_GROUP_OTHER, true );
+	IMaterial *pMatDOF = g_pMaterialSystem->FindMaterial( "dev/depth_of_field", TEXTURE_GROUP_OTHER, true );
 
 	if ( pMatDOF == NULL )
 		return;
@@ -3869,18 +3869,18 @@ ConVar cl_blurPasses( "cl_blurPasses", "1" );
 
 void BlurEntity( IClientRenderable *pRenderable, IClientRenderableMod *pRenderableMod, bool bPreDraw, int drawFlags, const RenderableInstance_t &instance, const CViewSetupEx &view, int x, int y, int w, int h )
 {
-	ITexture *pFullFrameFB = materials->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *pFullFrameFB = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
 	ITexture *dest_rt[2];
-	dest_rt[0] = materials->FindTexture( "_rt_SmallFB0", TEXTURE_GROUP_RENDER_TARGET );
-	dest_rt[1] = materials->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET );
+	dest_rt[0] = g_pMaterialSystem->FindTexture( "_rt_SmallFB0", TEXTURE_GROUP_RENDER_TARGET );
+	dest_rt[1] = g_pMaterialSystem->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET );
 
 	IMaterial *pBlurPass[2];
-	pBlurPass[0] = materials->FindMaterial( "dev/blurentity_blurpass0", TEXTURE_GROUP_OTHER );
-	pBlurPass[1] = materials->FindMaterial( "dev/blurentity_blurpass1", TEXTURE_GROUP_OTHER );
+	pBlurPass[0] = g_pMaterialSystem->FindMaterial( "dev/blurentity_blurpass0", TEXTURE_GROUP_OTHER );
+	pBlurPass[1] = g_pMaterialSystem->FindMaterial( "dev/blurentity_blurpass1", TEXTURE_GROUP_OTHER );
 	IMaterial *pEntBlurCopyBack[2];
-	pEntBlurCopyBack[0] = materials->FindMaterial( "dev/blurentity_copyback0", TEXTURE_GROUP_OTHER );
-	pEntBlurCopyBack[1] = materials->FindMaterial( "dev/blurentity_copyback1", TEXTURE_GROUP_OTHER );
-	IMaterial *pEntBlurAlphaSilhoutte = materials->FindMaterial( "dev/blurentity_alphasilhoutte", TEXTURE_GROUP_OTHER );
+	pEntBlurCopyBack[0] = g_pMaterialSystem->FindMaterial( "dev/blurentity_copyback0", TEXTURE_GROUP_OTHER );
+	pEntBlurCopyBack[1] = g_pMaterialSystem->FindMaterial( "dev/blurentity_copyback1", TEXTURE_GROUP_OTHER );
+	IMaterial *pEntBlurAlphaSilhoutte = g_pMaterialSystem->FindMaterial( "dev/blurentity_alphasilhoutte", TEXTURE_GROUP_OTHER );
 
 	if( !pFullFrameFB || 
 		!dest_rt[0] || !dest_rt[1] || 

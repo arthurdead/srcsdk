@@ -88,12 +88,6 @@ void ControllerOptionsSticks::Activate()
 {
 	BaseClass::Activate();
 
-	m_iActiveUserSlot = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-
-	int iActiveController = XBX_GetUserId( m_iActiveUserSlot );
-
-	SetGameUIActiveSplitScreenPlayerSlot( m_iActiveUserSlot );
-
 #if defined ( _X360 )
 	CGameUIConVarRef joy_movement_stick("joy_movement_stick");
 	if ( joy_movement_stick.IsValid() )
@@ -120,7 +114,7 @@ void ControllerOptionsSticks::Activate()
 
 		if ( pwcTemplate )
 		{		
-			const char *pszPlayerName = BaseModUI::CUIGameData::Get()->GetLocalPlayerName( iActiveController );
+			const char *pszPlayerName = BaseModUI::CUIGameData::Get()->GetLocalPlayerName();
 
 			wchar_t wWelcomeMsg[128];
 			wchar_t wGamerTag[32];
@@ -140,16 +134,13 @@ void ControllerOptionsSticks::Activate()
 //=============================================================================
 void ControllerOptionsSticks::OnKeyCodePressed(KeyCode code)
 {
-	if ( m_iActiveUserSlot != CBaseModPanel::GetSingleton().GetLastActiveUserId() )
-		return;
-
 	vgui::KeyCode basecode = GetBaseButtonCode( code );
 
 	switch( basecode )
 	{
 	case KEY_XBUTTON_A:
 		// Nav back when the select one of the options
-		BaseClass::OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, CBaseModPanel::GetSingleton().GetLastActiveUserId() ) );
+		BaseClass::OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, 0 ) );
 		break;
 
 	case KEY_XBUTTON_Y:

@@ -29,17 +29,20 @@ class IGameEventManager2;
 class IVDebugOverlay;
 class IDataCache;
 class IMDLCache;
+#ifndef SWDS
 class IServerFoundry;
 class IServerEngineTools;
+#endif
 class CSteamAPIContext;
 class CSteamGameServerAPIContext;
+#ifndef SWDS
 class IGameLoopback;
 class IGameServerLoopback;
 class IGameClientLoopback;
+#endif
 
 extern IVEngineServer			*engine;
 extern IVoiceServer				*g_pVoiceServer;
-extern IFileSystem				*filesystem;
 extern IStaticPropMgrServer		*staticpropmgr;
 extern ISpatialPartition		*partition;
 extern IEngineSound				*enginesound;
@@ -47,15 +50,15 @@ extern IVModelInfo				*modelinfo;
 extern IEngineTrace				*enginetrace;
 extern IGameEventManager2		*gameeventmanager;
 extern IVDebugOverlay			*debugoverlay;
-extern IDataCache				*datacache;
-extern IMDLCache				*mdlcache;
+#ifndef SWDS
 extern IServerEngineTools		*serverenginetools;
 extern IServerFoundry			*serverfoundry;
+#endif
 extern CSteamAPIContext			*steamapicontext; // available on game clients
 extern CSteamGameServerAPIContext *steamgameserverapicontext; //available on game servers
+#ifndef SWDS
 extern IGameLoopback* g_pGameLoopback;
 extern IGameServerLoopback* g_pGameServerLoopback;
-#ifndef SWDS
 extern IGameClientLoopback* g_pGameClientLoopback;
 #endif
 

@@ -1541,14 +1541,14 @@ static float s_flThreadedPSystemTimeStep;
 
 static void PreProcessPSystem()
 {
-	//mdlcache->BeginCoarseLock();
-	mdlcache->BeginLock();
+	//g_pMDLCache->BeginCoarseLock();
+	g_pMDLCache->BeginLock();
 }
 
 static void PostProcessPSystem()
 {
-	mdlcache->EndLock();
-	//mdlcache->EndCoarseLock();
+	g_pMDLCache->EndLock();
+	//g_pMDLCache->EndCoarseLock();
 }
 
 static void ProcessPSystem( ParticleSimListEntry_t& pSimListEntry )

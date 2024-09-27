@@ -43,10 +43,6 @@
 // tier 3
 #include "vphysics_interface.h"
 
-#ifndef SWDS
-#define SERVER_USES_VGUI 1
-#endif
-
 // Shared engine/DLL constants
 #include "const.h"
 #include "edict.h"

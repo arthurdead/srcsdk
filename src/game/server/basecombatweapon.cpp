@@ -55,7 +55,7 @@ extern ConVar ai_debug_shoot_positions;
 //-----------------------------------------------------------------------------
 void W_Precache(void)
 {
-	PrecacheFileWeaponInfoDatabase( filesystem, GameRules()->GetEncryptionKey() );
+	PrecacheFileWeaponInfoDatabase( g_pFullFileSystem, GameRules()->GetEncryptionKey() );
 
 	g_sModelIndexWExplosion = CBaseEntity::PrecacheModel ("sprites/WXplo1.vmt");// underwater fireball
 	g_sModelIndexBloodSpray = CBaseEntity::PrecacheModel ("sprites/bloodspray.vmt"); // initial blood

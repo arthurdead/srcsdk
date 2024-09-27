@@ -82,7 +82,7 @@ void CV_InitMod()
 {
 	if (!m_bModActive)
 	{
-		cvar->InstallGlobalChangeCallback( CV_GlobalChange_Mapbase );
+		g_pCVar->InstallGlobalChangeCallback( CV_GlobalChange_Mapbase );
 		m_bModActive = true;
 	}
 }
@@ -156,12 +156,12 @@ void CVEnt_Activate(CMapbaseCVarModEntity *modent)
 void CVEnt_Deactivate(CMapbaseCVarModEntity *modent)
 {
 	// Remove our global convar callback
-	cvar->RemoveGlobalChangeCallback( CV_GlobalChange_Mapbase );
+	g_pCVar->RemoveGlobalChangeCallback( CV_GlobalChange_Mapbase );
 
 	// Reset any convars that have been changed by the commentary
 	for ( int i = 0; i < modent->m_ModifiedConvars.Count(); i++ )
 	{
-		ConVar *pConVar = (ConVar *)cvar->FindVar( modent->m_ModifiedConvars[i].pszConvar );
+		ConVar *pConVar = (ConVar *)g_pCVar->FindVar( modent->m_ModifiedConvars[i].pszConvar );
 		if ( pConVar )
 		{
 			pConVar->SetValue( modent->m_ModifiedConvars[i].pszOrgValue );
@@ -182,7 +182,7 @@ void CVEnt_Deactivate(CMapbaseCVarModEntity *modent)
 		else
 		{
 			// We're done and we're still active, install our callback again
-			cvar->InstallGlobalChangeCallback( CV_GlobalChange_Mapbase );
+			g_pCVar->InstallGlobalChangeCallback( CV_GlobalChange_Mapbase );
 		}
 	}
 }
@@ -276,7 +276,7 @@ void CMapbaseCVarModEntity::OnRestore( void )
 	{
 		for ( int i = 0; i < m_ModifiedConvars.Count(); i++ )
 		{
-			ConVar *pConVar = (ConVar *)cvar->FindVar( m_ModifiedConvars[i].pszConvar );
+			ConVar *pConVar = (ConVar *)g_pCVar->FindVar( m_ModifiedConvars[i].pszConvar );
 			if ( pConVar )
 			{
 				if (g_debug_convarmod.GetBool())

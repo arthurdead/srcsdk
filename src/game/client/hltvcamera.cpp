@@ -81,7 +81,7 @@ void C_HLTVCamera::Init()
 	m_szTitleText[0] = 0;
 
 	// get a handle to the engine convar
-	tv_transmitall = cvar->FindVar( "tv_transmitall" );
+	tv_transmitall = g_pCVar->FindVar( "tv_transmitall" );
 }
 
 void C_HLTVCamera::Reset()

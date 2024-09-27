@@ -11,9 +11,7 @@
 #include "materialsystem/imaterialsystemhardwareconfig.h"	// Hardware config checks
 #include "tier0/icommandline.h"
 #include "materialsystem/itexture.h"
-#ifdef GAMEUI_UISYSTEM2_ENABLED
-#include "gameui.h"
-#endif
+#include "gameui_sys.h"
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
@@ -95,9 +93,7 @@ void CBaseClientRenderTargets::SetupClientRenderTargets( IMaterialSystem* pMater
 	pGlintTexture->IncrementReferenceCount();
 
 	g_pClientShadowMgr->InitRenderTargets();
-#ifdef GAMEUI_UISYSTEM2_ENABLED
 	g_pGameUIGameSystem->InitRenderTargets();
-#endif
 
 	materials = pSave;
 }

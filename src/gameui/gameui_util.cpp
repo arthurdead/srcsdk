@@ -10,6 +10,9 @@
 #include "gameui_util.h"
 #include "strtools.h"
 #include "engineinterface.h"
+#include "vgui/ISurface.h"
+#include "vgui_controls/Controls.h"
+#include "ienginevgui.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -38,6 +41,39 @@ const char *VarArgs( const char *format, ... )
 	}
 
 	return string;	
+}
+
+void GetHudSize( int& w, int &h )
+{
+	vgui::surface()->GetScreenSize( w, h );
+
+	VPANEL hudParent = enginevgui->GetPanel( PANEL_CLIENTDLL );
+	if ( hudParent != vgui::INVALID_VPANEL )
+	{
+		vgui::ipanel()->GetSize( hudParent, w, h );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: ScreenHeight returns the height of the screen, in pixels
+// Output : int
+//-----------------------------------------------------------------------------
+int ScreenHeight( void )
+{
+	int w, h;
+	GetHudSize( w, h );
+	return h;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: ScreenWidth returns the width of the screen, in pixels
+// Output : int
+//-----------------------------------------------------------------------------
+int ScreenWidth( void )
+{
+	int w, h;
+	GetHudSize( w, h );
+	return w;
 }
 
 //-----------------------------------------------------------------------------

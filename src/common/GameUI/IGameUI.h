@@ -164,9 +164,10 @@ private:
 #endif
 
 public:
-
+	virtual bool IsPanelVisible() = 0;
 };
 
 #define GAMEUI_INTERFACE_VERSION "GameUI011"
+#define GAMEUI_EX_INTERFACE_VERSION "GameUIEx001"
 
 #endif // IGAMEUI_H

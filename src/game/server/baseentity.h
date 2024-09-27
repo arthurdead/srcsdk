@@ -194,6 +194,8 @@ enum DebugOverlayBits_t
 
 struct TimedOverlay_t;
 
+DECLARE_LOGGING_CHANNEL( LOG_BASEENTITY );
+
 /* =========  CBaseEntity  ======== 
 
   All objects in the game are derived from this.
@@ -2358,7 +2360,7 @@ inline float CBaseEntity::GetMass()
 	}
 	else
 	{
-		Warning("Tried to call GetMass() on %s but it has no physics.\n", GetDebugName());
+		Log_Warning( LOG_BASEENTITY, "Tried to call GetMass() on %s but it has no physics.\n", GetDebugName());
 		return 0;
 	}
 }
@@ -2374,7 +2376,7 @@ inline void CBaseEntity::SetMass(float mass)
 	}
 	else
 	{
-		Warning("Tried to call SetMass() on %s but it has no physics.\n", GetDebugName());
+		Log_Warning( LOG_BASEENTITY, "Tried to call SetMass() on %s but it has no physics.\n", GetDebugName());
 	}
 }
 

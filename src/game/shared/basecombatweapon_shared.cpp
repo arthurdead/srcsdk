@@ -260,8 +260,8 @@ void CBaseCombatWeapon::Precache( void )
 	// Add this weapon to the weapon registry, and get our index into it
 	// Get weapon data from script file
 	// Allow custom scripts to be loaded on a map-by-map basis
-	if ( ReadCustomWeaponDataFromFileForSlot( filesystem, GetWeaponScriptName(), &m_hWeaponFileInfo, GetEncryptionKey() ) || 
-		ReadWeaponDataFromFileForSlot( filesystem, GetWeaponScriptName(), &m_hWeaponFileInfo, GetEncryptionKey() ) )
+	if ( ReadCustomWeaponDataFromFileForSlot( g_pFullFileSystem, GetWeaponScriptName(), &m_hWeaponFileInfo, GetEncryptionKey() ) || 
+		ReadWeaponDataFromFileForSlot( g_pFullFileSystem, GetWeaponScriptName(), &m_hWeaponFileInfo, GetEncryptionKey() ) )
 	{
 		// Get the ammo indexes for the ammo's specified in the data file
 		if ( GetWpnData().szAmmo1[0] )
@@ -3091,10 +3091,10 @@ int CBaseCombatWeapon::LookupAttachment( const char *pAttachmentName )
 			MDLHandle_t hStudioHdr = modelinfo->GetCacheHandle( pWorldModel );
 			if ( MDLHANDLE_INVALID != hStudioHdr )
 			{
-				const studiohdr_t *pStudioHdr = mdlcache->GetStudioHdr( hStudioHdr );
+				const studiohdr_t *pStudioHdr = g_pMDLCache->GetStudioHdr( hStudioHdr );
 				if ( pStudioHdr )
 				{
-					CStudioHdr studioHdrContainer( pStudioHdr, mdlcache );
+					CStudioHdr studioHdrContainer( pStudioHdr, g_pMDLCache );
 					int iRet = Studio_FindAttachment( &studioHdrContainer, pAttachmentName ) + 1;
 					return iRet;
 				}

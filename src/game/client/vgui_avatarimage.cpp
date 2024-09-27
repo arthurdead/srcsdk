@@ -292,6 +292,11 @@ void CAvatarImage::SetFrame( int nFrame )
 {
 }
 
+int CAvatarImage::GetFrame()
+{
+	return 0;
+}
+
 vgui::HTexture CAvatarImage::GetID()
 {
 	return vgui::INVALID_TEXTURE;

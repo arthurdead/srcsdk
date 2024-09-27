@@ -3,50 +3,20 @@
 
 #pragma once
 
-#ifndef DLLNAME
-	#if defined GAME_DLL || defined SERVER_DLL
-		#if defined SWDS || defined DEDICATED
-			#define DLLNAME server_srv
-		#else
-			#define DLLNAME server
-		#endif
-	#endif
-
-	#ifdef CLIENT_DLL
-		#define DLLNAME client
-	#endif
-
-	#ifdef GAMEUI_EXPORTS
-		#define DLLNAME GameUI
-	#endif
-
-	#if defined GAMEPADUI_DLL && !defined GAMEUI_EXPORTS
-		#define DLLNAME gamepadui
-	#endif
-
-	#ifdef GAME_SHADER_DLL
-		#ifdef STDSHADER_DX9_DLL_EXPORT
-			#define DLLNAME game_shader_dx9
-		#else
-			#define DLLNAME game_shader_generic
-		#endif
-	#endif
-#endif
-
-#ifndef LIBNAME
-	#ifdef TIER1_STATIC_LIB
-		#define LIBNAME tier1
-	#endif
-
-	#ifdef MATHLIB_LIB
-		#define LIBNAME mathlib
-	#endif
-#endif
+#include "tier0/dbg.h"
+#include "module_name_shared.h"
 
 namespace modulename
 {
-	extern const char *dll;
-	extern const char *lib;
+#ifdef DLLNAME
+	static const char *dll = V_STRINGIFY(DLLNAME);
+#else
+	extern LIB_LOCAL const char *dll;
+#endif
+
+#ifdef LIBNAME
+	static const char *lib = V_STRINGIFY(LIBNAME);
+#endif
 }
 
 #endif

@@ -134,12 +134,12 @@ void CCreateMultiplayerGameServerPage::OnApplyChanges()
 //-----------------------------------------------------------------------------
 void CCreateMultiplayerGameServerPage::LoadMaps( const char *pszPathID )
 {
-	FileFindHandle_t findHandle = NULL;
+	FileFindHandle_t findHandle = FILESYSTEM_INVALID_FIND_HANDLE;
 
 	KeyValues *hiddenMaps = ModInfo().GetHiddenMaps();
 
 	const char *pszFilename = g_pFullFileSystem->FindFirst( "maps/*.bsp", &findHandle );
-	while ( pszFilename )
+	for ( ; pszFilename; pszFilename = g_pFullFileSystem->FindNext( findHandle ) )
 	{
 		char mapname[256];
 
@@ -148,7 +148,7 @@ void CCreateMultiplayerGameServerPage::LoadMaps( const char *pszPathID )
 		Q_snprintf( mapname, sizeof(mapname), "maps/%s", pszFilename );
 		if ( !g_pFullFileSystem->FileExists( mapname, pszPathID ) )
 		{
-			goto nextFile;
+			continue;
 		}
 
 		// remove the text 'maps/' and '.bsp' from the file name to get the map name
@@ -168,28 +168,17 @@ void CCreateMultiplayerGameServerPage::LoadMaps( const char *pszPathID )
 			*ext = 0;
 		}
 
-		//!! hack: strip out single player HL maps
-		// this needs to be specified in a seperate file
-		if ( !stricmp( ModInfo().GetGameName(), "Half-Life" ) && ( mapname[0] == 'c' || mapname[0] == 't') && mapname[2] == 'a' && mapname[1] >= '0' && mapname[1] <= '5' )
-		{
-			goto nextFile;
-		}
-
 		// strip out maps that shouldn't be displayed
 		if ( hiddenMaps )
 		{
 			if ( hiddenMaps->GetInt( mapname, 0 ) )
 			{
-				goto nextFile;
+				continue;
 			}
 		}
 
 		// add to the map list
 		m_pMapList->AddItem( mapname, new KeyValues( "data", "mapname", mapname ) );
-
-		// get the next file
-	nextFile:
-		pszFilename = g_pFullFileSystem->FindNext( findHandle );
 	}
 	g_pFullFileSystem->FindClose( findHandle );
 }
@@ -208,20 +197,12 @@ void CCreateMultiplayerGameServerPage::LoadMapList()
 	m_pMapList->AddItem( RANDOM_MAP, new KeyValues( "data", "mapname", RANDOM_MAP ) );
 
 	// iterate the filesystem getting the list of all the files
-	// UNDONE: steam wants this done in a special way, need to support that
-	const char *pathID = "MOD";
-	if ( !stricmp(ModInfo().GetGameName(), "Half-Life" ) ) 
-	{
-		pathID = NULL; // hl is the base dir
-	}
 
 	// Load the GameDir maps
-	LoadMaps( pathID ); 
+	LoadMaps( "MOD" ); 
 
-	// If we're not the Valve directory and we're using a "fallback_dir" in gameinfo.txt then include those maps...
-	// (pathID is NULL if we're "Half-Life")
 	const char *pszFallback = ModInfo().GetFallbackDir();
-	if ( pathID && pszFallback[0] )
+	if ( pszFallback && pszFallback[0] != '\0' )
 	{
 		LoadMaps( "GAME_FALLBACK" );
 	}

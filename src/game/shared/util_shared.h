@@ -37,7 +37,7 @@ class CGameTrace;
 class CBasePlayer;
 typedef CGameTrace trace_t;
 
-extern ConVar developer;	// developer mode
+extern ConVarRef developer;	// developer mode
 
 
 //-----------------------------------------------------------------------------
@@ -258,7 +258,7 @@ private:
 // helper
 void DebugDrawLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, int r, int g, int b, bool test, float duration );
 
-extern ConVar r_visualizetraces;
+extern ConVarRef r_visualizetraces;
 
 inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, unsigned int mask, 
 					 const IHandleEntity *ignore, int collisionGroup, trace_t *ptr )

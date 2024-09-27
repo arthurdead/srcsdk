@@ -266,12 +266,28 @@ void FoundPublicGames::AddServersToList( void )
 		fi.mInfoType = FoundGameListItem::FGT_PUBLICGAME;
 		char const *szGameMode = pGameDetails->GetString( "game/mode", "campaign" );
 		bool bGameModeChapters = GameModeIsSingleChapter( szGameMode );
-		const char *szDisplayName = pGameDetails->GetString( "game/missioninfo/displaytitle" );
-		if ( !szDisplayName || !szDisplayName[0] )
+
+		const char *szDetailsDisplayTitle = pGameDetails->GetString( "game/missioninfo/displaytitle" );
+		if( szDetailsDisplayTitle && szDetailsDisplayTitle[0] != '\0' )
 		{
-			szDisplayName = "Unknown Mission";
+			Q_strncpy( fi.Name, szDetailsDisplayTitle, sizeof( fi.Name ) );
 		}
-		Q_strncpy( fi.Name, szDisplayName, sizeof( fi.Name ) );
+		else
+		{
+			KeyValues *pMissionInfo = NULL;
+			KeyValues *pChapterInfo = GetMapInfoRespectingAnyChapter( fi.mpGameDetails, &pMissionInfo );
+			if ( pMissionInfo && pChapterInfo )
+			{
+				if ( bGameModeChapters )
+					Q_strncpy( fi.Name, pChapterInfo->GetString( "displayname", "#L4D360UI_LevelName_Unknown" ), sizeof( fi.Name ) );
+				else
+					Q_strncpy( fi.Name, pMissionInfo->GetString( "displaytitle", "#L4D360UI_CampaignName_Unknown" ), sizeof( fi.Name ) );
+			}
+			else
+			{
+				Q_strncpy( fi.Name, "#L4D360UI_CampaignName_Unknown", sizeof( fi.Name ) );
+			}
+		}
 
 		fi.mIsJoinable = item->IsJoinable();
 		fi.mbInGame = true;
@@ -290,25 +306,6 @@ void FoundPublicGames::AddServersToList( void )
 		{
 			fi.mpGameDetails->SetInt( "game/chapter", 1 );
 			fi.mpGameDetails->SetBool( "UI/nochapter", 1 );
-		}
-
-		if ( IsX360() )
-		{
-			// For X360 titles do not transmit campaign display title, so client needs to resolve locally
-			KeyValues *pMissionInfo = NULL;
-			KeyValues *pChapterInfo = NULL; //GetMapInfoRespectingAnyChapter( fi.mpGameDetails, &pMissionInfo );
-			if ( pMissionInfo && pChapterInfo )
-			{
-				if ( bGameModeChapters )
-					Q_strncpy( fi.Name, pChapterInfo->GetString( "displayname", "#L4D360UI_LevelName_Unknown" ), sizeof( fi.Name ) );
-				else
-					Q_strncpy( fi.Name, pMissionInfo->GetString( "displaytitle", "#L4D360UI_CampaignName_Unknown" ), sizeof( fi.Name ) );
-			}
-			else
-			{
-				Q_strncpy( fi.Name, "#L4D360UI_CampaignName_Unknown", sizeof( fi.Name ) );
-				fi.mbDLC = true;
-			}
 		}
 
 		fi.mFriendXUID = item->GetOnlineId();

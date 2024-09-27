@@ -249,9 +249,9 @@ public:
 		SetSize( 260, 400 );
 
 		m_pDXLevel = new ComboBox(this, "dxlabel", 6, false );
-		const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
+		const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
 		KeyValues *pKeyValues = new KeyValues( "config" );
-		materials->GetRecommendedConfigurationInfo( 0, pKeyValues );
+		g_pMaterialSystem->GetRecommendedConfigurationInfo( 0, pKeyValues );
 		m_pDXLevel->DeleteAllItems();
 		for (int i = 0; i < ARRAYSIZE(g_DirectXLevels); i++)
 		{
@@ -264,7 +264,7 @@ public:
 
 			KeyValues *pTempKV = new KeyValues("config");
 			if (g_DirectXLevels[i] == pKeyValues->GetInt("ConVar.mat_dxlevel")
-				|| materials->GetRecommendedConfigurationInfo( g_DirectXLevels[i], pTempKV ))
+				|| g_pMaterialSystem->GetRecommendedConfigurationInfo( g_DirectXLevels[i], pTempKV ))
 			{
 				// add the configuration in the combo
 				char szDXLevelName[64];
@@ -306,7 +306,7 @@ public:
 		m_nAAModes[m_nNumAAModes].m_nQualityLevel = 0;
 		m_nNumAAModes++;
 
-		if ( materials->SupportsMSAAMode(2) )
+		if ( g_pMaterialSystem->SupportsMSAAMode(2) )
 		{
 			m_pAntialiasingMode->AddItem("#GameUI_2X", NULL);
 			m_nAAModes[m_nNumAAModes].m_nNumSamples = 2;
@@ -314,7 +314,7 @@ public:
 			m_nNumAAModes++;
 		}
 
-		if ( materials->SupportsMSAAMode(4) )
+		if ( g_pMaterialSystem->SupportsMSAAMode(4) )
 		{
 			m_pAntialiasingMode->AddItem("#GameUI_4X", NULL);
 			m_nAAModes[m_nNumAAModes].m_nNumSamples = 4;
@@ -322,7 +322,7 @@ public:
 			m_nNumAAModes++;
 		}
 
-		if ( materials->SupportsMSAAMode(6) )
+		if ( g_pMaterialSystem->SupportsMSAAMode(6) )
 		{
 			m_pAntialiasingMode->AddItem("#GameUI_6X", NULL);
 			m_nAAModes[m_nNumAAModes].m_nNumSamples = 6;
@@ -330,7 +330,7 @@ public:
 			m_nNumAAModes++;
 		}
 
-		if ( materials->SupportsCSAAMode(4, 2) )							// nVidia CSAA			"8x"
+		if ( g_pMaterialSystem->SupportsCSAAMode(4, 2) )							// nVidia CSAA			"8x"
 		{
 			m_pAntialiasingMode->AddItem("#GameUI_8X_CSAA", NULL);
 			m_nAAModes[m_nNumAAModes].m_nNumSamples = 4;
@@ -338,7 +338,7 @@ public:
 			m_nNumAAModes++;
 		}
 
-		if ( materials->SupportsCSAAMode(4, 4) )							// nVidia CSAA			"16x"
+		if ( g_pMaterialSystem->SupportsCSAAMode(4, 4) )							// nVidia CSAA			"16x"
 		{
 			m_pAntialiasingMode->AddItem("#GameUI_16X_CSAA", NULL);
 			m_nAAModes[m_nNumAAModes].m_nNumSamples = 4;
@@ -346,7 +346,7 @@ public:
 			m_nNumAAModes++;
 		}
 
-		if ( materials->SupportsMSAAMode(8) )
+		if ( g_pMaterialSystem->SupportsMSAAMode(8) )
 		{
 			m_pAntialiasingMode->AddItem("#GameUI_8X", NULL);
 			m_nAAModes[m_nNumAAModes].m_nNumSamples = 8;
@@ -354,7 +354,7 @@ public:
 			m_nNumAAModes++;
 		}
 
-		if ( materials->SupportsCSAAMode(8, 2) )							// nVidia CSAA			"16xQ"
+		if ( g_pMaterialSystem->SupportsCSAAMode(8, 2) )							// nVidia CSAA			"16xQ"
 		{
 			m_pAntialiasingMode->AddItem("#GameUI_16XQ_CSAA", NULL);
 			m_nAAModes[m_nNumAAModes].m_nNumSamples = 8;
@@ -384,12 +384,12 @@ public:
 		m_pHDR->AddItem("#GameUI_hdr_level0", NULL);
 		m_pHDR->AddItem("#GameUI_hdr_level1", NULL);
 
-		if ( materials->SupportsHDRMode( HDR_TYPE_INTEGER ) )
+		if ( g_pMaterialSystem->SupportsHDRMode( HDR_TYPE_INTEGER ) )
 		{
 			m_pHDR->AddItem("#GameUI_hdr_level2", NULL);
 		}
 #if 0
-		if ( materials->SupportsHDRMode( HDR_TYPE_FLOAT ) )
+		if ( g_pMaterialSystem->SupportsHDRMode( HDR_TYPE_FLOAT ) )
 		{
 			m_pHDR->AddItem("#GameUI_hdr_level3", NULL);
 		}
@@ -538,7 +538,7 @@ public:
 	{
 		// Pull in data from dxsupport.cfg database (includes fine-grained per-vendor/per-device config data)
 		KeyValues *pKeyValues = new KeyValues( "config" );
-		materials->GetRecommendedConfigurationInfo( 0, pKeyValues );	
+		g_pMaterialSystem->GetRecommendedConfigurationInfo( 0, pKeyValues );	
 
 		// Read individual values from keyvalues which came from dxsupport.cfg database
 		int nSkipLevels = pKeyValues->GetInt( "ConVar.mat_picmip", 0 );
@@ -649,7 +649,7 @@ public:
 
 	void ApplyChangesToConVar( const char *pConVarName, int value )
 	{
-		Assert( cvar->FindVar( pConVarName ) );
+		Assert( g_pCVar->FindVar( pConVarName ) );
 		char szCmd[256];
 		Q_snprintf( szCmd, sizeof(szCmd), "%s %d\n", pConVarName, value );
 		engine->ClientCmd_Unrestricted( szCmd );
@@ -980,7 +980,7 @@ COptionsSubVideo::COptionsSubVideo(vgui::Panel *parent) : PropertyPage(parent, N
 	int i16x9ItemID = m_pAspectRatio->AddItem( pszAspectName[1], NULL );
 	int i16x10ItemID = m_pAspectRatio->AddItem( pszAspectName[2], NULL );
 	
-	const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
+	const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
 	
 	int iAspectMode = GetScreenAspectMode( config.m_VideoMode.m_Width, config.m_VideoMode.m_Height );
 	switch ( iAspectMode )
@@ -1035,7 +1035,7 @@ void COptionsSubVideo::PrepareResolutionList()
 	int count = 0;
 	gameuifuncs->GetVideoModes( &plist, &count );
 
-	const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
+	const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
 
 	bool bWindowed = (m_pWindowed->GetActiveItem() > 0);
 	int desktopWidth, desktopHeight;
@@ -1113,7 +1113,7 @@ void COptionsSubVideo::OnResetData()
 {
 	m_bRequireRestart = false;
 
-	const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
+	const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
 
     // reset UI elements
     m_pWindowed->ActivateItem(config.Windowed() ? 1 : 0);
@@ -1134,7 +1134,7 @@ void COptionsSubVideo::SetCurrentResolutionComboItem()
 	int count = 0;
 	gameuifuncs->GetVideoModes( &plist, &count );
 
-	const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
+	const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
 
     int resolution = -1;
     for ( int i = 0; i < count; i++, plist++ )
@@ -1205,7 +1205,7 @@ void COptionsSubVideo::OnApplyChanges()
 	bool windowed = (m_pWindowed->GetActiveItem() > 0) ? true : false;
 
 	// make sure there is a change
-	const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
+	const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
 	if ( config.m_VideoMode.m_Width != width 
 		|| config.m_VideoMode.m_Height != height
 		|| config.Windowed() != windowed)
@@ -1230,7 +1230,7 @@ void COptionsSubVideo::PerformLayout()
 
 	if ( m_pGammaButton )
 	{
-		const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
+		const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
 		m_pGammaButton->SetEnabled( !config.Windowed() );
 	}
 }
@@ -1242,7 +1242,7 @@ void COptionsSubVideo::OnTextChanged(Panel *pPanel, const char *pszText)
 {
 	if (pPanel == m_pMode)
     {
-		const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
+		const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
 
 		m_nSelectedMode = m_pMode->GetActiveItem();
 
@@ -1325,9 +1325,7 @@ void COptionsSubVideo::OpenGammaDialog()
 //-----------------------------------------------------------------------------
 void COptionsSubVideo::LaunchBenchmark()
 {
-#if defined( BASEPANEL_LEGACY_SOURCE1 )
 	BasePanel()->OnOpenBenchmarkDialog();
-#endif
 }
 
 

@@ -130,6 +130,10 @@ inline wchar_t*	V_wcsupr (wchar_t *start)							{ return _wcsupr( start ); }
 
 #endif
 
+#ifdef POSIX
+char *  itoa ( int value, char * str, int base );
+#endif
+
 int			V_atoi (const char *str);
 int64 		V_atoi64(const char *str);
 uint64 		V_atoui64(const char *str);

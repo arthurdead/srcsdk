@@ -49,7 +49,7 @@ void CThirdPersonManager::Init( void )
 
 	if ( !sv_cheats )
 	{
-		sv_cheats = cvar->FindVar( "sv_cheats" );
+		sv_cheats = g_pCVar->FindVar( "sv_cheats" );
 	}
 }
 

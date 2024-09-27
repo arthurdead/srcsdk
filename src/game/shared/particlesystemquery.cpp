@@ -867,7 +867,7 @@ void CParticleSystemQuery::DrawModel( void *pModel, const matrix3x4_t &DrawMatri
 	if ( pMDL )
 	{
 		MDLHandle_t hStudioHdr = modelinfo->GetCacheHandle( pMDL );
-		studiohdr_t *pStudioHdr = mdlcache->GetStudioHdr( hStudioHdr );
+		studiohdr_t *pStudioHdr = g_pMDLCache->GetStudioHdr( hStudioHdr );
 
 		CMDL	MDL;
 		MDL.SetMDL( hStudioHdr );

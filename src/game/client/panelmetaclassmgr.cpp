@@ -361,7 +361,7 @@ void CPanelMetaClassMgrImp::LoadMetaClassDefinitionFile( const char *pFileName )
 	// Read in all metaclass definitions...
 
 	// Load the file
-	if ( !pKeyValues->LoadFromFile( filesystem, pFileName ) )
+	if ( !pKeyValues->LoadFromFile( g_pFullFileSystem, pFileName ) )
 	{
 		Warning( "Couldn't find metaclass definition file %s\n", pFileName );
 		pKeyValues->deleteThis();

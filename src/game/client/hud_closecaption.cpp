@@ -486,9 +486,9 @@ struct AsyncCaptionData_t
 	{
 		if ( m_bLoadPending && !m_bLoadCompleted )
 		{
-			filesystem->AsyncFinish( m_hAsyncControl, true );
+			g_pFullFileSystem->AsyncFinish( m_hAsyncControl, true );
 		}
-		filesystem->AsyncRelease( m_hAsyncControl );
+		g_pFullFileSystem->AsyncRelease( m_hAsyncControl );
 
 		WipeData();
 		delete this;
@@ -496,7 +496,7 @@ struct AsyncCaptionData_t
 
 	void ReleaseData()
 	{
-		filesystem->AsyncRelease( m_hAsyncControl );
+		g_pFullFileSystem->AsyncRelease( m_hAsyncControl );
 		m_hAsyncControl = 0;
 		WipeData();
 		m_bLoadCompleted = false;
@@ -537,7 +537,7 @@ struct AsyncCaptionData_t
 		
 		// queue for async load
 		MEM_ALLOC_CREDIT();
-		filesystem->AsyncRead( fileRequest, &m_hAsyncControl );
+		g_pFullFileSystem->AsyncRead( fileRequest, &m_hAsyncControl );
 	}
 
 	// you must implement these static functions for the ResourceManager
@@ -579,7 +579,7 @@ public:
 
 	virtual bool Init()
 	{
-		CCacheClientBaseClass::Init( datacache, "Captions", MAX_ASYNCCAPTION_MEMORY_CACHE );
+		CCacheClientBaseClass::Init( g_pDataCache, "Captions", MAX_ASYNCCAPTION_MEMORY_CACHE );
 		return true;
 	}
 	virtual void Shutdown()
@@ -2679,7 +2679,7 @@ void CHudCloseCaption::InitCaptionDictionary( const char *dbfile, bool bForce )
 	g_AsyncCaptionResourceManager.Clear();
 
 	char searchPaths[4096];
-	filesystem->GetSearchPath( "GAME", true, searchPaths, sizeof( searchPaths ) );
+	g_pFullFileSystem->GetSearchPath( "GAME", true, searchPaths, sizeof( searchPaths ) );
 
 	for ( char *path = strtok( searchPaths, ";" ); path; path = strtok( NULL, ";" ) )
 	{
@@ -2687,7 +2687,7 @@ void CHudCloseCaption::InitCaptionDictionary( const char *dbfile, bool bForce )
 		Q_snprintf( fullpath, sizeof( fullpath ), "%s%s", path, dbfile );
 		Q_FixSlashes( fullpath );
 
-        FileHandle_t fh = filesystem->Open( fullpath, "rb" );
+        FileHandle_t fh = g_pFullFileSystem->Open( fullpath, "rb" );
 		if ( FILESYSTEM_INVALID_HANDLE != fh )
 		{
 			MEM_ALLOC_CREDIT();
@@ -2697,7 +2697,7 @@ void CHudCloseCaption::InitCaptionDictionary( const char *dbfile, bool bForce )
 			AsyncCaption_t& entry = m_AsyncCaptions[ m_AsyncCaptions.AddToTail() ];
 
 			// Read the header
-			filesystem->Read( &entry.m_Header, sizeof( entry.m_Header ), fh );
+			g_pFullFileSystem->Read( &entry.m_Header, sizeof( entry.m_Header ), fh );
 			if ( entry.m_Header.magic != COMPILED_CAPTION_FILEID )
 				Error( "Invalid file id for %s\n", fullpath );
 			if ( entry.m_Header.version != COMPILED_CAPTION_VERSION )
@@ -2711,8 +2711,8 @@ void CHudCloseCaption::InitCaptionDictionary( const char *dbfile, bool bForce )
 			entry.m_CaptionDirectory.EnsureCapacity( entry.m_Header.directorysize );
 			dirbuffer.EnsureCapacity( directoryBytes );
 			
-			filesystem->Read( dirbuffer.Base(), directoryBytes, fh );
-			filesystem->Close( fh );
+			g_pFullFileSystem->Read( dirbuffer.Base(), directoryBytes, fh );
+			g_pFullFileSystem->Close( fh );
 
 			entry.m_CaptionDirectory.CopyArray( (const CaptionLookup_t *)dirbuffer.PeekGet(), entry.m_Header.directorysize );
 			entry.m_CaptionDirectory.RedoSort( true );
@@ -2953,10 +2953,10 @@ void CHudCloseCaption::FindSound( char const *pchANSI )
 			{
 				nLoadedBlock = blockNum;
 
-				FileHandle_t fh = filesystem->Open( fn, "rb" );
-				filesystem->Seek( fh, params.blockoffset, FILESYSTEM_SEEK_CURRENT );
-				filesystem->Read( block, data.m_Header.blocksize, fh );
-				filesystem->Close( fh );
+				FileHandle_t fh = g_pFullFileSystem->Open( fn, "rb" );
+				g_pFullFileSystem->Seek( fh, params.blockoffset, FILESYSTEM_SEEK_CURRENT );
+				g_pFullFileSystem->Read( block, data.m_Header.blocksize, fh );
+				g_pFullFileSystem->Close( fh );
 			}
 
 			// Now we have the data
@@ -2974,9 +2974,9 @@ void CHudCloseCaption::FindSound( char const *pchANSI )
 				Msg( "found '%s' in %s\n", streamANSI, fn );
 
 				// Now find the sounds that will hash to this
-				for ( int k = soundemitterbase->First(); k != soundemitterbase->InvalidIndex(); k = soundemitterbase->Next( k ) )
+				for ( int k = g_pSoundEmitterSystem->First(); k != g_pSoundEmitterSystem->InvalidIndex(); k = g_pSoundEmitterSystem->Next( k ) )
 				{
-					char const *pchSoundName = soundemitterbase->GetSoundName( k );
+					char const *pchSoundName = g_pSoundEmitterSystem->GetSoundName( k );
 
 					// Hash it
 					

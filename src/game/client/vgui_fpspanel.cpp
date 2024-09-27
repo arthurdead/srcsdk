@@ -404,7 +404,7 @@ static ConVar cl_blocking_threshold( "cl_blocking_threshold", "0.000", 0, "If fi
 
 void ShowBlockingChanged( ConVar *var, char const *pOldString )
 {
-	filesystem->EnableBlockingFileAccessTracking( var->GetBool() );
+	g_pFullFileSystem->EnableBlockingFileAccessTracking( var->GetBool() );
 }
 
 static ConVar cl_showblocking( "cl_showblocking", "0", 0, "Show blocking i/o on top of fps panel", ShowBlockingChanged );
@@ -551,7 +551,7 @@ void CBlockingFileIOPanel::Paint()
 	int bval = cl_showblocking.GetInt();
 	if ( bval > 0 )
 	{
-		IBlockingFileItemList *list = filesystem->RetrieveBlockingFileAccessInfo();
+		IBlockingFileItemList *list = g_pFullFileSystem->RetrieveBlockingFileAccessInfo();
 		if ( list )
 		{
 			int i;

@@ -1861,9 +1861,9 @@ void Anim_StateLog( const char *pMsg, ... )
 
 	if ( anim_showstatelog.GetInt() > 1 )
 	{
-//		static FileHandle_t hFile = filesystem->Open( "AnimState.log", "wt" );
-//		filesystem->FPrintf( hFile, "%s", str );
-//		filesystem->Flush( hFile );
+//		static FileHandle_t hFile = g_pFullFileSystem->Open( "AnimState.log", "wt" );
+//		g_pFullFileSystem->FPrintf( hFile, "%s", str );
+//		g_pFullFileSystem->Flush( hFile );
 	}
 }
 

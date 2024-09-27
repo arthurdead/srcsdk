@@ -10,8 +10,7 @@
 #pragma once
 
 #include <vgui_controls/Panel.h>
-
-class CPanelListPanel;
+#include <vgui_controls/PanelListPanel.h>
 
 #define SCRIPT_VERSION 1.0f
 

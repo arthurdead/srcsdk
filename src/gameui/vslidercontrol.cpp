@@ -314,7 +314,7 @@ void SliderControl::ApplySettings( KeyValues* inResourceData )
 			if( fontName )
 			{
 				vgui::HFont font = scheme->GetFont( fontName , true );
-				if( font )
+				if( font != vgui::INVALID_FONT )
 				{
 					m_lblSliderText->SetFont( font );
 				}
@@ -378,15 +378,7 @@ void SliderControl::PerformLayout()
 
 void SliderControl::OnKeyCodePressed( vgui::KeyCode code )
 {
-	int userId = GetJoystickForCode( code );
 	vgui::KeyCode basecode = GetBaseButtonCode( code );
-
-	int active_userId = CBaseModPanel::GetSingleton().GetLastActiveUserId()	;
-	
-	if( userId != active_userId || userId < 0 )
-	{	
-		return;
-	}
 
 	switch( basecode )
 	{
@@ -493,14 +485,12 @@ void SliderControl::OnFinishDragging( bool mousereleased, vgui::MouseCode code, 
 void SliderControl::OnCursorEntered()
 {
 	BaseClass::OnCursorEntered();
-	if ( IsPC() )
-	{
-		CBaseModPanel::GetSingleton().PlayUISound( UISOUND_FOCUS );
-		if( GetParent() )
-			GetParent()->NavigateToChild( this );
-		else
-			NavigateTo();
-	}
+
+	CBaseModPanel::GetSingleton().PlayUISound( UISOUND_FOCUS );
+	if( GetParent() )
+		GetParent()->NavigateToChild( this );
+	else
+		NavigateTo();
 }
 
 void SliderControl::OnCursorExited()

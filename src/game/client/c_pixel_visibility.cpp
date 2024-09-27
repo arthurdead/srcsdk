@@ -562,9 +562,9 @@ void CPixelVisibilitySystem::LevelInitPreEntity()
 		}
 	}
 
-	m_pProxyMaterial = materials->FindMaterial("engine/occlusionproxy", TEXTURE_GROUP_CLIENT_EFFECTS);
+	m_pProxyMaterial = g_pMaterialSystem->FindMaterial("engine/occlusionproxy", TEXTURE_GROUP_CLIENT_EFFECTS);
 	m_pProxyMaterial->IncrementReferenceCount();
-	m_pDrawMaterial = materials->FindMaterial("engine/occlusionproxy_countdraw", TEXTURE_GROUP_CLIENT_EFFECTS);
+	m_pDrawMaterial = g_pMaterialSystem->FindMaterial("engine/occlusionproxy_countdraw", TEXTURE_GROUP_CLIENT_EFFECTS);
 	m_pDrawMaterial->IncrementReferenceCount();
 	m_freeQueriesList = m_queryList.CreateList();
 	m_activeSetsList = m_setList.CreateList();
@@ -932,7 +932,7 @@ void PixelVisibility_ShiftVisibilityViews( int iSourceViewID, int iDestViewID )
 		if( iDestIndex != iInvalidIndex )
 		{
 			//destroy dest
-			materials->GetRenderContext()->DestroyOcclusionQueryObject( pPairs[iDestIndex].hOcclusionHandle );
+			g_pMaterialSystem->GetRenderContext()->DestroyOcclusionQueryObject( pPairs[iDestIndex].hOcclusionHandle );
 			s_OcclusionQueries[i].occlusionHandles.FastRemove( iDestIndex );
 		}
 	}
@@ -1009,11 +1009,11 @@ void COcclusionQuerySet::BeginQueryDrawing( int iViewID )
 		iIndex = pData->occlusionHandles.AddToTail();
 		OcclusionHandleViewIDPair_t &Entry = pData->occlusionHandles.Element(iIndex);
 		Entry.iViewID = iViewID;
-		Entry.hOcclusionHandle = materials->GetRenderContext()->CreateOcclusionQueryObject();	
-		materials->GetRenderContext()->ResetOcclusionQueryObject( Entry.hOcclusionHandle );
+		Entry.hOcclusionHandle = g_pMaterialSystem->GetRenderContext()->CreateOcclusionQueryObject();	
+		g_pMaterialSystem->GetRenderContext()->ResetOcclusionQueryObject( Entry.hOcclusionHandle );
 	}
 
-	materials->GetRenderContext()->BeginOcclusionQueryDrawing( pData->occlusionHandles.Element(iIndex).hOcclusionHandle );
+	g_pMaterialSystem->GetRenderContext()->BeginOcclusionQueryDrawing( pData->occlusionHandles.Element(iIndex).hOcclusionHandle );
 	pData->occlusionHandles.Element(iIndex).iLastFrameRendered = gpGlobals->framecount;
 }
 
@@ -1029,7 +1029,7 @@ void COcclusionQuerySet::EndQueryDrawing( int iViewID )
 	int iIndex = FindQueryHandlePairIndex( pData, iViewID );
 	if( iIndex != pData->occlusionHandles.InvalidIndex() )
 	{
-		materials->GetRenderContext()->EndOcclusionQueryDrawing( pData->occlusionHandles.Element(iIndex).hOcclusionHandle );
+		g_pMaterialSystem->GetRenderContext()->EndOcclusionQueryDrawing( pData->occlusionHandles.Element(iIndex).hOcclusionHandle );
 	}
 }
 
@@ -1045,7 +1045,7 @@ int COcclusionQuerySet::QueryNumPixelsRendered( int iViewID )
 	int iIndex = FindQueryHandlePairIndex( pData, iViewID );
 	if( iIndex != pData->occlusionHandles.InvalidIndex() )
 	{
-		return materials->GetRenderContext()->OcclusionQuery_GetNumPixelsRendered( pData->occlusionHandles.Element(iIndex).hOcclusionHandle );
+		return g_pMaterialSystem->GetRenderContext()->OcclusionQuery_GetNumPixelsRendered( pData->occlusionHandles.Element(iIndex).hOcclusionHandle );
 	}
 
 	return 0;
@@ -1064,8 +1064,8 @@ float COcclusionQuerySet::QueryPercentageOfScreenRendered( int iViewID )
 	if( iIndex != pData->occlusionHandles.InvalidIndex() )
 	{
 		int iX, iY, iWidth, iHeight;
-		materials->GetRenderContext()->GetViewport( iX, iY, iWidth, iHeight );
-		return ((float)materials->GetRenderContext()->OcclusionQuery_GetNumPixelsRendered( pData->occlusionHandles.Element(iIndex).hOcclusionHandle )) / ((float)(iWidth * iHeight));
+		g_pMaterialSystem->GetRenderContext()->GetViewport( iX, iY, iWidth, iHeight );
+		return ((float)g_pMaterialSystem->GetRenderContext()->OcclusionQuery_GetNumPixelsRendered( pData->occlusionHandles.Element(iIndex).hOcclusionHandle )) / ((float)(iWidth * iHeight));
 	}
 
 	return 0.0f;

@@ -206,7 +206,7 @@ ITexture *C_FuncReflectiveGlass::ReflectionRenderTarget()
 		if (!m_pReflectRenderTarget)
 		{
 			// We don't use a CTextureReference for this because we don't want to shut down the texture on removal/change
-			m_pReflectRenderTarget = materials->FindTexture( m_iszReflectRenderTarget, TEXTURE_GROUP_RENDER_TARGET );
+			m_pReflectRenderTarget = g_pMaterialSystem->FindTexture( m_iszReflectRenderTarget, TEXTURE_GROUP_RENDER_TARGET );
 		}
 
 		if (m_pReflectRenderTarget)
@@ -224,7 +224,7 @@ ITexture *C_FuncReflectiveGlass::RefractionRenderTarget()
 		if (!m_pRefractRenderTarget)
 		{
 			// We don't use a CTextureReference for this because we don't want to shut down the texture on removal/change
-			m_pRefractRenderTarget = materials->FindTexture( m_iszRefractRenderTarget, TEXTURE_GROUP_RENDER_TARGET );
+			m_pRefractRenderTarget = g_pMaterialSystem->FindTexture( m_iszRefractRenderTarget, TEXTURE_GROUP_RENDER_TARGET );
 		}
 
 		if (m_pRefractRenderTarget)

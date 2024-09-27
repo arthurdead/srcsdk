@@ -34,7 +34,7 @@ void InitSmokeFogOverlay()
 
 	if(materials)
 	{
-		g_pSmokeFogMaterial = materials->FindMaterial( "particle/screenspace_fog", TEXTURE_GROUP_CLIENT_EFFECTS );
+		g_pSmokeFogMaterial = g_pMaterialSystem->FindMaterial( "particle/screenspace_fog", TEXTURE_GROUP_CLIENT_EFFECTS );
 		if(g_pSmokeFogMaterial)
 			g_pSmokeFogMaterial->IncrementReferenceCount();
 	}

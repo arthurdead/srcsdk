@@ -197,10 +197,10 @@ bool CRecastMgr::Load()
 
 	bool navIsInBsp = false;
 	CUtlBuffer fileBuffer( 4096, 1024*1024, CUtlBuffer::READ_ONLY );
-	if ( !filesystem->ReadFile( filename, "MOD", fileBuffer ) )	// this ignores .nav files embedded in the .bsp ...
+	if ( !g_pFullFileSystem->ReadFile( filename, "MOD", fileBuffer ) )	// this ignores .nav files embedded in the .bsp ...
 	{
 		navIsInBsp = true;
-		if ( !filesystem->ReadFile( filename, "BSP", fileBuffer ) )	// ... and this looks for one if it's the only one around.
+		if ( !g_pFullFileSystem->ReadFile( filename, "BSP", fileBuffer ) )	// ... and this looks for one if it's the only one around.
 		{
 			InitMeshes();
 			return false;
@@ -231,7 +231,7 @@ bool CRecastMgr::Load()
 		return false;
 	}
 
-	unsigned int bspSize = filesystem->Size( bspFilename );
+	unsigned int bspSize = g_pFullFileSystem->Size( bspFilename );
 	if ( bspSize != header.bspSize && !navIsInBsp )
 	{
 #ifndef CLIENT_DLL
@@ -373,7 +373,7 @@ bool CRecastMgr::Save()
 		return false;
 	}
 
-	unsigned int bspSize  = filesystem->Size( bspFilename );
+	unsigned int bspSize  = g_pFullFileSystem->Size( bspFilename );
 	DevMsg( "Size of bsp file '%s' is %u bytes.\n", bspFilename, bspSize );
 
 	CUtlVector< CRecastMesh * > meshesToSave;
@@ -399,13 +399,13 @@ bool CRecastMgr::Save()
 		meshesToSave[i]->Save( fileBuffer );
 	}
 
-	if ( !filesystem->WriteFile( filename, "MOD", fileBuffer ) )
+	if ( !g_pFullFileSystem->WriteFile( filename, "MOD", fileBuffer ) )
 	{
 		Warning( "Unable to save %d bytes to %s\n", fileBuffer.Size(), filename );
 		return false;
 	}
 
-	unsigned int navSize = filesystem->Size( filename );
+	unsigned int navSize = g_pFullFileSystem->Size( filename );
 	DevMsg( "Size of nav file '%s' is %u bytes.\n", filename, navSize );
 
 	return true;

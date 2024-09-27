@@ -30,7 +30,7 @@ CFXStaticLine::CFXStaticLine( const char *name, const Vector& start, const Vecto
 		return;
 
 	// Create a material...
-	m_pMaterial = materials->FindMaterial( shader, TEXTURE_GROUP_CLIENT_EFFECTS );
+	m_pMaterial = g_pMaterialSystem->FindMaterial( shader, TEXTURE_GROUP_CLIENT_EFFECTS );
 	m_pMaterial->IncrementReferenceCount();
 
 	//Fill in the rest of the fields

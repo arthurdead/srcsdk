@@ -49,25 +49,6 @@ COptionsSubKeyboard::COptionsSubKeyboard(vgui::Panel *parent) : EditablePanel(pa
 
 	Q_memset( m_Bindings, 0, sizeof( m_Bindings ));
 
-	m_nSplitScreenUser = 0;
-
-	// For joystick buttons, controls which user are binding/unbinding
-	if ( !IsX360() )
-	{
-		//HACK HACK:  Probably the entire gameui needs to have a splitscrene context for which player the settings apply to, but this is only
-		// on the PC...
-		static CGameUIConVarRef in_forceuser( "in_forceuser" );
-
-		if ( in_forceuser.IsValid() )
-		{
-			m_nSplitScreenUser = clamp( in_forceuser.GetInt(), 0, 1 );
-		}
-		else
-		{
-			m_nSplitScreenUser = MAX( 0, engine->GetActiveSplitScreenPlayerSlot() );
-		}
-	}
-
 	// create the key bindings list
 	CreateKeyBindingList();
 	// Store all current key bindings
@@ -163,7 +144,7 @@ void COptionsSubKeyboard::OnCommand( const char *command )
 	}
 	else if ( !m_pKeyBindList->IsCapturing() && !stricmp( command, "ChangeKey" ) )
 	{
-		m_pKeyBindList->StartCaptureMode(dc_blank);
+		m_pKeyBindList->StartCaptureMode(CursorCodeToCursor(dc_blank));
 	}
 	else if ( !m_pKeyBindList->IsCapturing() && !stricmp( command, "ClearKey" ) )
 	{
@@ -450,9 +431,6 @@ void COptionsSubKeyboard::FillInCurrentBindings( void )
 		ButtonCode_t bc = ( ButtonCode_t )i;
 
 		bool bIsJoystickCode = IsJoystickCode( bc );
-		// Skip Joystick buttons for the "other" user
-		if ( bIsJoystickCode && GetJoystickForCode( bc ) != m_nSplitScreenUser )
-			continue;
 
 		// Look up binding
 		const char *binding = gameuifuncs->GetBindingForButtonCode( bc );
@@ -586,7 +564,7 @@ void COptionsSubKeyboard::ApplyAllBindings( void )
 			ButtonCode_t code = g_pInputSystem->StringToButtonCode( keyname );
 			if ( IsJoystickCode( code ) )
 			{
-				code = ButtonCodeToJoystickButtonCode( code, m_nSplitScreenUser );
+				code = ButtonCodeToJoystickButtonCode( code, 0 );
 			}
 
 			// Tell the engine
@@ -656,10 +634,6 @@ void COptionsSubKeyboard::FillInDefaultBindings( void )
 			data = UTIL_Parse( data, szBinding, sizeof(szBinding) );
 			if ( szKeyName[ 0 ] == '\0' )  
 				break; // Error
-
-			// Skip it if it's a bind for the other slit
-			if ( nJoyStick != m_nSplitScreenUser )
-				continue;
 
 			// Find item
 			KeyValues *item = GetItemForBinding( szBinding );
@@ -745,7 +719,7 @@ void COptionsSubKeyboard::Finish( ButtonCode_t code )
 	int r = m_pKeyBindList->GetItemOfInterest();
 
 	// Retrieve clicked row and column
-	m_pKeyBindList->EndCaptureMode( dc_arrow );
+	m_pKeyBindList->EndCaptureMode( CursorCodeToCursor(dc_arrow) );
 
 	// Find item for this row
 	KeyValues *item = m_pKeyBindList->GetItemData(r);

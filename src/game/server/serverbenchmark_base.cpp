@@ -171,14 +171,14 @@ public:
 		float flRunTime = Benchmark_ValidTime() - m_fl_ValidTime_BenchmarkStartTime;
 		if ( m_nBenchmarkMode == 2 )
 		{
-			FileHandle_t fh = filesystem->Open( "sv_benchmark_results.txt", "wt", "DEFAULT_WRITE_PATH" );
+			FileHandle_t fh = g_pFullFileSystem->Open( "sv_benchmark_results.txt", "wt", "DEFAULT_WRITE_PATH" );
 			
 			// If this file doesn't get written out, then the build script will generate an email that there's a problem somewhere.
 			if ( fh )
 			{
-				filesystem->FPrintf( fh, "sv_benchmark := %.2f\n", flRunTime );
+				g_pFullFileSystem->FPrintf( fh, "sv_benchmark := %.2f\n", flRunTime );
 			}
-			filesystem->Close( fh );
+			g_pFullFileSystem->Close( fh );
 
 			// Quit out.
 			engine->ServerCommand( "quit\n" );

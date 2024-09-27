@@ -86,8 +86,8 @@ CBaseModFrame::CBaseModFrame( vgui::Panel *parent, const char *panelName, bool o
 	// used for dialog styles which are artificially larger to allow dropdowns
 	m_hOriginalTall = 0;
 
-	m_nTopBorderImageId = -1;
-	m_nBottomBorderImageId = -1;
+	m_nTopBorderImageId = vgui::INVALID_TEXTURE;
+	m_nBottomBorderImageId = vgui::INVALID_TEXTURE;
 }
 
 //=============================================================================
@@ -555,7 +555,7 @@ void CBaseModFrame::ApplySchemeSettings( IScheme *pScheme )
 
 	const char *pTopImageName = pScheme->GetResourceString( "Frame.TopBorderImage" );
 	m_nTopBorderImageId = vgui::surface()->DrawGetTextureId( pTopImageName );
-	if ( m_nTopBorderImageId == -1 )
+	if ( m_nTopBorderImageId == vgui::INVALID_TEXTURE )
 	{
 		m_nTopBorderImageId = vgui::surface()->CreateNewTextureID();
 		// @TODO: why is this string empty?
@@ -567,7 +567,7 @@ void CBaseModFrame::ApplySchemeSettings( IScheme *pScheme )
 
 	const char *pBotImageName = pScheme->GetResourceString( "Frame.BottomBorderImage" );
 	m_nBottomBorderImageId = vgui::surface()->DrawGetTextureId( pBotImageName );
-	if ( m_nBottomBorderImageId == -1 )
+	if ( m_nBottomBorderImageId == vgui::INVALID_TEXTURE )
 	{
 		m_nBottomBorderImageId = vgui::surface()->CreateNewTextureID();
 		// @TODO: why is this string empty?

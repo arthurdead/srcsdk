@@ -55,7 +55,7 @@ COptionsDialog::COptionsDialog(vgui::Panel *parent, OptionsDialogTabStyle iTabSt
 	{
 		SetTitle("#GameUI_Options", true);
 
-		if ( ModInfo().IsSinglePlayerOnly() && !ModInfo().NoDifficulty() )
+		if ( !ModInfo().NoDifficulty() )
 		{
 			AddPage(new COptionsSubDifficulty(this), "#GameUI_Difficulty");
 		}
@@ -73,17 +73,10 @@ COptionsDialog::COptionsDialog(vgui::Panel *parent, OptionsDialogTabStyle iTabSt
 		m_pOptionsSubVideo = new COptionsSubVideo(this);
 		AddPage(m_pOptionsSubVideo, "#GameUI_Video");
 
-		if ( !ModInfo().IsSinglePlayerOnly() ) 
-		{
-			AddPage(new COptionsSubVoice(this), "#GameUI_Voice");
-		}
+		AddPage(new COptionsSubVoice(this), "#GameUI_Voice");
 
 		// add the multiplay page last, if we're combo single/multi or just multi
-		if ( (ModInfo().IsMultiplayerOnly() && !ModInfo().IsSinglePlayerOnly()) ||
-			 (!ModInfo().IsMultiplayerOnly() && !ModInfo().IsSinglePlayerOnly()) )
-		{
-			AddPage(new COptionsSubMultiplayer(this), "#GameUI_Multiplayer");
-		}
+		AddPage(new COptionsSubMultiplayer(this), "#GameUI_Multiplayer");
 	}
 	else if ( iTabStyle == OPTIONS_DIALOG_ONLY_BINDING_TABS )
 	{

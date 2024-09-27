@@ -51,12 +51,12 @@ void DefRTsOnModeChanged()
 void InitDeferredRTs( bool bInitial )
 {
 	if ( !bInitial )
-		materials->BeginRenderTargetAllocation(); // HAHAHAHA. No.
+		g_pMaterialSystem->BeginRenderTargetAllocation(); // HAHAHAHA. No.
 
 	int screen_w, screen_h;
 	int dummy = 128;
 
-	materials->GetBackBufferDimensions( screen_w, screen_h );
+	g_pMaterialSystem->GetBackBufferDimensions( screen_w, screen_h );
 
 const ImageFormat fmt_gbuffer0 =
 #if DEFCFG_LIGHTCTRL_PACKING
@@ -92,7 +92,7 @@ const ImageFormat fmt_gbuffer0 =
 
 	const ImageFormat fmt_depth = GetDeferredManager()->GetShadowDepthFormat();
 	const ImageFormat fmt_depthColor = bShadowUseColor ? IMAGE_FORMAT_R32F
-		: materials->GetNullTextureFormat();
+		: g_pMaterialSystem->GetNullTextureFormat();
 	const ImageFormat fmt_radAlbedo = IMAGE_FORMAT_RGB888;
 	const ImageFormat fmt_radNormal = IMAGE_FORMAT_RGB888;
 	const ImageFormat fmt_radBuffer = IMAGE_FORMAT_RGB888;
@@ -114,13 +114,13 @@ const ImageFormat fmt_gbuffer0 =
 	unsigned int radBufferFlags =		TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_RENDERTARGET;
 	unsigned int radNormalFlags =		TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_RENDERTARGET | TEXTUREFLAGS_POINTSAMPLE;
 
-	materials->BeginRenderTargetAllocation();
+	g_pMaterialSystem->BeginRenderTargetAllocation();
 
 	shadowData_general_t generalShadowData;
 
 	if ( bInitial )
 	{
-		g_tex_Normals.Init( materials->CreateNamedRenderTargetTextureEx2( DEFRTNAME_GBUFFER0,
+		g_tex_Normals.Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2( DEFRTNAME_GBUFFER0,
 			dummy, dummy,
 			RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP,
 			fmt_gbuffer0,
@@ -131,7 +131,7 @@ const ImageFormat fmt_gbuffer0 =
 #endif
 			gbufferFlags, 0 ) );
 
-		g_tex_Depth.Init( materials->CreateNamedRenderTargetTextureEx2( DEFRTNAME_GBUFFER1,
+		g_tex_Depth.Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2( DEFRTNAME_GBUFFER1,
 			dummy, dummy,
 			RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP,
 			fmt_gbuffer1,
@@ -139,7 +139,7 @@ const ImageFormat fmt_gbuffer0 =
 			gbufferFlags, 0 ) );
 
 #if ( DEFCFG_LIGHTCTRL_PACKING == 0 )
-	g_tex_LightCtrl.Init( materials->CreateNamedRenderTargetTextureEx2( DEFRTNAME_GBUFFER2,
+	g_tex_LightCtrl.Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2( DEFRTNAME_GBUFFER2,
 		dummy, dummy,
 		RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP,
 		fmt_gbuffer2,
@@ -147,14 +147,14 @@ const ImageFormat fmt_gbuffer0 =
 		gbufferFlags, 0 ) );
 
 #elif DEFCFG_DEFERRED_SHADING == 1
-	g_tex_Albedo.Init( materials->CreateNamedRenderTargetTextureEx2( DEFRTNAME_GBUFFER2,
+	g_tex_Albedo.Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2( DEFRTNAME_GBUFFER2,
 		dummy, dummy,
 		RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP,
 		fmt_gbuffer2,
 		MATERIAL_RT_DEPTH_SHARED,
 		gbufferFlags, 0 ) );
 
-	g_tex_Specular.Init( materials->CreateNamedRenderTargetTextureEx2( DEFRTNAME_GBUFFER3,
+	g_tex_Specular.Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2( DEFRTNAME_GBUFFER3,
 		dummy, dummy,
 		RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP,
 		fmt_gbuffer3,
@@ -162,7 +162,7 @@ const ImageFormat fmt_gbuffer0 =
 		gbufferFlags, 0 ) );
 #endif
 
-		g_tex_Lightaccum.Init( materials->CreateNamedRenderTargetTextureEx2( DEFRTNAME_LIGHTACCUM,
+		g_tex_Lightaccum.Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2( DEFRTNAME_LIGHTACCUM,
 			dummy, dummy,
 			RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP,
 			fmt_lightAccum,
@@ -170,7 +170,7 @@ const ImageFormat fmt_gbuffer0 =
 			lightAccumFlags, 0 ) );
 
 		for ( int i = 0; i < 2; i++ )
-			g_tex_VolumetricsBuffer[ i ].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_VolumetricsBuffer[ i ].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_VOLUMACCUM, i ),
 				dummy, dummy,
 				RT_SIZE_HDR,
@@ -178,7 +178,7 @@ const ImageFormat fmt_gbuffer0 =
 				MATERIAL_RT_DEPTH_NONE,
 				volumAccumFlags, 0 ) );
 
-		g_tex_VolumePrepass.Init( materials->CreateNamedRenderTargetTextureEx2(
+		g_tex_VolumePrepass.Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 			DEFRTNAME_VOLUMPREPASS,
 			dummy, dummy,
 			RT_SIZE_HDR,
@@ -197,7 +197,7 @@ const ImageFormat fmt_gbuffer0 =
 			int iResolution_y = c.iResolution;
 #endif
 
-			g_tex_ShadowDepth_Ortho[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowDepth_Ortho[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWDEPTH_ORTHO, i ),
 				iResolution_x, iResolution_y,
 				RT_SIZE_NO_CHANGE,
@@ -205,7 +205,7 @@ const ImageFormat fmt_gbuffer0 =
 				MATERIAL_RT_DEPTH_NONE,
 				depthFlags, 0 ) );
 
-			g_tex_ShadowColor_Ortho[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowColor_Ortho[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWCOLOR_ORTHO, i ),
 				iResolution_x, iResolution_y,
 				RT_SIZE_NO_CHANGE,
@@ -214,7 +214,7 @@ const ImageFormat fmt_gbuffer0 =
 				shadowColorFlags, 0 ) );
 
 #if DEFCFG_ENABLE_RADIOSITY
-			g_tex_ShadowRad_Albedo_Ortho[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowRad_Albedo_Ortho[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWRAD_ALBEDO_ORTHO, i ),
 				iResolution_x, iResolution_y,
 				RT_SIZE_NO_CHANGE,
@@ -222,7 +222,7 @@ const ImageFormat fmt_gbuffer0 =
 				MATERIAL_RT_DEPTH_NONE,
 				radAlbedoNormalFlags, 0 ) );
 
-			g_tex_ShadowRad_Normal_Ortho[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowRad_Normal_Ortho[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWRAD_NORMAL_ORTHO, i ),
 				iResolution_x, iResolution_y,
 				RT_SIZE_NO_CHANGE,
@@ -239,7 +239,7 @@ const ImageFormat fmt_gbuffer0 =
 
 		for ( int i = 0; i < NUM_PROJECTABLE_VGUI; i++ )
 		{
-			g_tex_ProjectableVGUI[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ProjectableVGUI[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_PROJECTABLE_VGUI, i ),
 				PROJECTABLE_VGUI_RES, PROJECTABLE_VGUI_RES,
 				RT_SIZE_NO_CHANGE,
@@ -251,7 +251,7 @@ const ImageFormat fmt_gbuffer0 =
 #if DEFCFG_ENABLE_RADIOSITY
 		for ( int i = 0; i < 2; i++ )
 		{
-			g_tex_RadiosityBuffer[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_RadiosityBuffer[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_RADIOSITY_BUFFER, i ),
 				RADIOSITY_BUFFER_RES_X, RADIOSITY_BUFFER_RES_Y,
 				RT_SIZE_NO_CHANGE,
@@ -259,7 +259,7 @@ const ImageFormat fmt_gbuffer0 =
 				MATERIAL_RT_DEPTH_NONE,
 				radBufferFlags, 0 ) );
 
-			g_tex_RadiosityNormal[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_RadiosityNormal[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_RADIOSITY_NORMAL, i ),
 				RADIOSITY_BUFFER_RES_X, RADIOSITY_BUFFER_RES_Y,
 				RT_SIZE_NO_CHANGE,
@@ -277,7 +277,7 @@ const ImageFormat fmt_gbuffer0 =
 		bool bFirst = i == 0;
 
 		if ( !bShadowUseColor || bFirst )
-			g_tex_ShadowDepth_Proj[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowDepth_Proj[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWDEPTH_PROJ, i ),
 				res, res,
 				RT_SIZE_NO_CHANGE,
@@ -288,7 +288,7 @@ const ImageFormat fmt_gbuffer0 =
 			g_tex_ShadowDepth_Proj[i].Init( g_tex_ShadowDepth_Proj[0] );
 
 		if ( bShadowUseColor || bFirst )
-			g_tex_ShadowColor_Proj[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowColor_Proj[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWCOLOR_PROJ, i ),
 				res, res,
 				RT_SIZE_NO_CHANGE,
@@ -308,7 +308,7 @@ const ImageFormat fmt_gbuffer0 =
 		generalShadowData.iPROJ_Res_LOD1 = res;
 
 		if ( !bShadowUseColor || bFirst )
-			g_tex_ShadowDepth_Proj_LOD1[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowDepth_Proj_LOD1[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWDEPTH_PROJ_LOD1, i ),
 				res, res,
 				RT_SIZE_NO_CHANGE,
@@ -319,7 +319,7 @@ const ImageFormat fmt_gbuffer0 =
 			g_tex_ShadowDepth_Proj_LOD1[i].Init( g_tex_ShadowDepth_Proj_LOD1[0] );
 
 		if ( bShadowUseColor || bFirst )
-			g_tex_ShadowColor_Proj_LOD1[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowColor_Proj_LOD1[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWCOLOR_PROJ_LOD1, i ),
 				res, res,
 				RT_SIZE_NO_CHANGE,
@@ -338,7 +338,7 @@ const ImageFormat fmt_gbuffer0 =
 		generalShadowData.iPROJ_Res_LOD2 = res;
 
 		if ( !bShadowUseColor || bFirst )
-			g_tex_ShadowDepth_Proj_LOD2[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowDepth_Proj_LOD2[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWDEPTH_PROJ_LOD2, i ),
 				res, res,
 				RT_SIZE_NO_CHANGE,
@@ -349,7 +349,7 @@ const ImageFormat fmt_gbuffer0 =
 			g_tex_ShadowDepth_Proj_LOD2[i].Init( g_tex_ShadowDepth_Proj_LOD2[0] );
 
 		if ( bShadowUseColor || bFirst )
-			g_tex_ShadowColor_Proj_LOD2[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowColor_Proj_LOD2[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWCOLOR_PROJ_LOD2, i ),
 				res, res,
 				RT_SIZE_NO_CHANGE,
@@ -377,7 +377,7 @@ const ImageFormat fmt_gbuffer0 =
 		bool bFirst = i == 0;
 
 		if ( !bShadowUseColor || bFirst )
-			g_tex_ShadowDepth_DP[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowDepth_DP[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWDEPTH_DP, i ),
 				res_x, res_y,
 				RT_SIZE_NO_CHANGE,
@@ -388,7 +388,7 @@ const ImageFormat fmt_gbuffer0 =
 			g_tex_ShadowDepth_DP[i].Init( g_tex_ShadowDepth_DP[0] );
 
 		if ( bShadowUseColor || bFirst )
-			g_tex_ShadowColor_DP[i].Init( materials->CreateNamedRenderTargetTextureEx2(
+			g_tex_ShadowColor_DP[i].Init( g_pMaterialSystem->CreateNamedRenderTargetTextureEx2(
 				VarArgs( "%s%02i", DEFRTNAME_SHADOWCOLOR_DP, i ),
 				res_x, res_y,
 				RT_SIZE_NO_CHANGE,
@@ -406,7 +406,7 @@ const ImageFormat fmt_gbuffer0 =
 
 	
 
-	materials->EndRenderTargetAllocation();
+	g_pMaterialSystem->EndRenderTargetAllocation();
 
 	GetDeferredExt()->CommitTexture_General( g_tex_Normals, g_tex_Depth,
 #if ( DEFCFG_LIGHTCTRL_PACKING == 0 )

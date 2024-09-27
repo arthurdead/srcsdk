@@ -868,7 +868,7 @@ void C_BasePlayer::CheckForLocalPlayer()
 
 		// Reset our sound mixed in case we were in a freeze cam when we
 		// changed level, which would cause the snd_soundmixer to be left modified.
-		ConVar *pVar = (ConVar *)cvar->FindVar( "snd_soundmixer" );
+		ConVar *pVar = (ConVar *)g_pCVar->FindVar( "snd_soundmixer" );
 		pVar->Revert();
 	}
 }
@@ -962,7 +962,7 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 			}
 
 			// Force the sound mixer to the freezecam mixer
-			ConVar *pVar = (ConVar *)cvar->FindVar( "snd_soundmixer" );
+			ConVar *pVar = (ConVar *)g_pCVar->FindVar( "snd_soundmixer" );
 			pVar->SetValue( "FreezeCam_Only" );
 
 			// When we start, give unused textures an opportunity to unload
@@ -979,7 +979,7 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 
 			GetViewRenderInstance()->FreezeFrame(0);
 
-			ConVar *pVar = (ConVar *)cvar->FindVar( "snd_soundmixer" );
+			ConVar *pVar = (ConVar *)g_pCVar->FindVar( "snd_soundmixer" );
 			pVar->Revert();
 
 			m_nForceVisionFilterFlags = 0;
@@ -2646,12 +2646,12 @@ void C_BasePlayer::PlayPlayerJingle()
 	char fullsoundname[ 512 ];
 	Q_snprintf( fullsoundname, sizeof( fullsoundname ), "sound/temp/%s.wav", soundhex );
 
-	if ( !filesystem->FileExists( fullsoundname ) )
+	if ( !g_pFullFileSystem->FileExists( fullsoundname ) )
 	{
 		char custname[ 512 ];
 		Q_snprintf( custname, sizeof( custname ), "download/user_custom/%c%c/%s.dat", soundhex[0], soundhex[1], soundhex );
 		// it may have been downloaded but not copied under materials folder
-		if ( !filesystem->FileExists( custname ) )
+		if ( !g_pFullFileSystem->FileExists( custname ) )
 			return; // not downloaded yet
 
 		// copy from download folder to materials/temp folder

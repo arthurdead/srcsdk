@@ -26,7 +26,7 @@ void CCustomWeaponSystem::LevelInitPreEntity()
 	LoadCustomWeaponsManifest(GLOBAL_WEAPONS_MANIFEST);
 
 	// Check for a generic "mapname_manifest.txt" file and load it.
-	if (filesystem->FileExists(AUTOLOADED_MANIFEST_FILE, "GAME"))
+	if (g_pFullFileSystem->FileExists(AUTOLOADED_MANIFEST_FILE, "GAME"))
 	{
 		AddManifestFile(AUTOLOADED_MANIFEST_FILE);
 	}

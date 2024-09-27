@@ -114,7 +114,7 @@ IPhysicsObject *PhysModelCreateBox( CBaseEntity *pEntity, const Vector &mins, co
 		const model_t *model = modelinfo->GetModel( modelIndex );
 		if ( model )
 		{
-			CStudioHdr studioHdr( modelinfo->GetStudiomodel( model ), mdlcache );
+			CStudioHdr studioHdr( modelinfo->GetStudiomodel( model ), g_pMDLCache );
 			if ( studioHdr.IsValid() )
 			{
 				pSurfaceProps = Studio_GetDefaultSurfaceProps( &studioHdr );
@@ -152,7 +152,7 @@ IPhysicsObject *PhysModelCreateSphere( CBaseEntity *pEntity, float radius, const
 		const model_t *model = modelinfo->GetModel( modelIndex );
 		if ( model )
 		{
-			CStudioHdr studioHdr( modelinfo->GetStudiomodel( model ), mdlcache );
+			CStudioHdr studioHdr( modelinfo->GetStudiomodel( model ), g_pMDLCache );
 			if (studioHdr.IsValid()) 
 			{
 				pSurfaceProps = Studio_GetDefaultSurfaceProps( &studioHdr );
@@ -187,7 +187,7 @@ IPhysicsObject *PhysModelCreateOBB( CBaseEntity *pEntity, const Vector &mins, co
 		const model_t *model = modelinfo->GetModel( modelIndex );
 		if ( model )
 		{
-			CStudioHdr studioHdr( modelinfo->GetStudiomodel( model ), mdlcache );
+			CStudioHdr studioHdr( modelinfo->GetStudiomodel( model ), g_pMDLCache );
 			if (studioHdr.IsValid()) 
 			{
 				pSurfaceProps = Studio_GetDefaultSurfaceProps( &studioHdr );

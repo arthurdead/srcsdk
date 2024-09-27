@@ -39,7 +39,6 @@ public:
 	// Run frame of the matchmaking framework
 	virtual void RunFrame() = 0;
 
-
 	// Get matchmaking extensions
 	virtual IMatchExtensions * GetMatchExtensions() = 0;
 
@@ -66,7 +65,12 @@ public:
 	virtual void MatchSession( KeyValues *pSettings ) = 0;
 
 	// Accept invite
-	virtual void AcceptInvite( int iController ) = 0;
+private:
+	virtual void DO_NOT_USE_AcceptInvite( int iController ) = 0;
+
+public:
+	inline void AcceptInvite()
+	{ DO_NOT_USE_AcceptInvite(0); }
 
 	// Close the session
 	virtual void CloseSession() = 0;
@@ -74,7 +78,7 @@ public:
 
 #define IMATCHFRAMEWORK_VERSION_STRING "MATCHFRAMEWORK_001"
 
-
+extern IMatchFramework *g_pMatchFramework;
 
 abstract_class IMatchSession
 {

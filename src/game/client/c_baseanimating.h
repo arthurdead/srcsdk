@@ -25,6 +25,7 @@
 #include "tier0/threadtools.h"
 #include "datacache/idatacache.h"
 #include "toolframework/itoolframework.h"
+#include "tier3/tier3.h"
 
 #define LIPSYNC_POSEPARAM_NAME "mouth"
 #define NUM_HITBOX_FIRES	10
@@ -52,7 +53,6 @@ FORWARD_DECLARE_HANDLE( memhandle_t );
 typedef unsigned short MDLHandle_t;
 
 extern ConVar vcollide_wireframe;
-extern IDataCache *datacache;
 
 struct ClientModelRenderInfo_t : public ModelRenderInfo_t
 {
@@ -897,14 +897,14 @@ inline CStudioHdr *C_BaseAnimating::GetModelPtr() const
 
 #ifdef _DEBUG
 	// GetModelPtr() is often called before OnNewModel() so go ahead and set it up first chance.
-//	static IDataCacheSection *pModelCache = datacache->FindSection( "ModelData" );
+//	static IDataCacheSection *pModelCache = g_pDataCache->FindSection( "ModelData" );
 //	AssertOnce( pModelCache->IsFrameLocking() );
 #endif
 	if ( !m_pStudioHdr )
 	{
 		const_cast<C_BaseAnimating *>(this)->LockStudioHdr();
 	}
-	Assert( m_pStudioHdr ? m_pStudioHdr->GetRenderHdr() == mdlcache->GetStudioHdr(m_hStudioHdr) : m_hStudioHdr == MDLHANDLE_INVALID );
+	Assert( m_pStudioHdr ? m_pStudioHdr->GetRenderHdr() == g_pMDLCache->GetStudioHdr(m_hStudioHdr) : m_hStudioHdr == MDLHANDLE_INVALID );
 	return m_pStudioHdr;
 }
 

@@ -98,7 +98,22 @@ public:
 	private:
 		AutoDelete( AutoDelete const &x ); // forbid
 		AutoDelete & operator= ( AutoDelete const &x ); // forbid
+	protected:
 		KeyValues *m_pKeyValues;
+	};
+
+	//
+	// AutoDeleteInline is useful when you want to hold your keyvalues object inside
+	// and delete it right after using.
+	// You can also pass temporary KeyValues object as an argument to a function by wrapping it into KeyValues::AutoDeleteInline
+	// instance:   call_my_function( KeyValues::AutoDeleteInline( new KeyValues( "test" ) ) )
+	//
+	class AutoDeleteInline : public AutoDelete
+	{
+	public:
+		explicit inline AutoDeleteInline( KeyValues *pKeyValues ) : AutoDelete( pKeyValues ) {}
+		inline operator KeyValues *() const { return m_pKeyValues; }
+		inline KeyValues * Get() const { return m_pKeyValues; }
 	};
 
 	// Quick setup constructors
@@ -126,6 +141,9 @@ public:
 
 	// Read from a utlbuffer...
 	bool LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IBaseFileSystem* pFileSystem = NULL, const char *pPathID = NULL );
+
+	// Assign keyvalues from a string
+	static KeyValues * FromString( char const *szName, char const *szStringVal );
 
 	// Find a keyValue, create it if it is not found.
 	// Set bCreate to true to create the key if it doesn't already exist (which ensures a valid pointer will be returned)
@@ -256,7 +274,7 @@ public:
 
 	// Dump keyvalues recursively into a dump context
 	bool Dump( class IKeyValuesDumpContext *pDump, int nIndentLevel = 0 );
-		
+
 	// Merge in another KeyValues, keeping "our" settings
 	void RecursiveMergeKeyValues( KeyValues *baseKV );
 

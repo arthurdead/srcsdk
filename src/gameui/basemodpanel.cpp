@@ -57,7 +57,6 @@
 #include "vsteamcloudconfirmation.h"
 #include "vcustomcampaigns.h"
 #include "vdownloadcampaign.h"
-#include "vjukebox.h"
 #include "vleaderboard.h"
 #include "gameconsole.h"
 #include "vgui/ISystem.h"
@@ -72,6 +71,7 @@
 #include "fmtstr.h"
 #include "smartptr.h"
 #include "nb_header_footer.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -87,28 +87,16 @@ extern IGameConsole *IGameConsole();
 //=============================================================================
 CBaseModPanel* CBaseModPanel::m_CFactoryBasePanel = 0;
 
-#ifndef _CERT
-#ifdef _X360
-ConVar ui_gameui_debug( "ui_gameui_debug", "1" );
-#else
+#ifdef _DEBUG
 ConVar ui_gameui_debug( "ui_gameui_debug", "0", FCVAR_RELEASE );
-#endif
-int UI_IsDebug()
+bool UI_IsDebug()
 {
-	return (*(int *)(&ui_gameui_debug)) ? ui_gameui_debug.GetInt() : 0;
+	return ui_gameui_debug.GetBool();
 }
-#endif
-
-#if defined( _X360 )
-static void InstallStatusChanged( IConVar *pConVar, const char *pOldValue, float flOldValue )
+int UI_DebugLevel()
 {
-	// spew out status
-	if ( ((ConVar *)pConVar)->GetBool() && g_pXboxInstaller )
-	{
-		g_pXboxInstaller->SpewStatus();
-	}
+	return ui_gameui_debug.GetInt();
 }
-ConVar xbox_install_status( "xbox_install_status", "0", 0, "Show install status", InstallStatusChanged );
 #endif
 
 // Use for show demos to force the correct campaign poster
@@ -118,10 +106,8 @@ ConVar ui_lobby_noresults_create_msg_time( "ui_lobby_noresults_create_msg_time",
 
 //=============================================================================
 CBaseModPanel::CBaseModPanel(): BaseClass(0, "CBaseModPanel"),
-	m_bClosingAllWindows( false ),
-	m_lastActiveUserId( 0 )
+	m_bClosingAllWindows( false )
 {
-#if !defined( _X360 ) && !defined( NOSTEAM )
 	// Set Steam overlay position
 	if ( steamapicontext && steamapicontext->SteamUtils() )
 	{
@@ -134,24 +120,8 @@ CBaseModPanel::CBaseModPanel(): BaseClass(0, "CBaseModPanel"),
 	{
 		int iDLCmask = mm_dlcs_mask_extras.GetInt();
 
-		// Low Violence and Germany (or bordering countries) = CS.GUNS
-		char const *cc = steamapicontext->SteamUtils()->GetIPCountry();
-		char const *ccGuns = ":DE:DK:PL:CZ:AT:CH:FR:LU:BE:NL:";
-		if ( engine->IsLowViolence() && Q_stristr( ccGuns, CFmtStr( ":%s:", cc ) ) )
-		{
-			// iDLCmask |= ( 1 << ? );
-		}
-
-		// PreOrder DLC AppId Ownership = BAT
-		if ( steamapicontext->SteamApps()->BIsSubscribedApp( 565 ) )
-		{
-			// iDLCmask |= ( 1 << ? );
-		}
-
 		mm_dlcs_mask_extras.SetValue( iDLCmask );
 	}
-
-#endif
 
 	MakePopup( false );
 
@@ -172,11 +142,8 @@ CBaseModPanel::CBaseModPanel(): BaseClass(0, "CBaseModPanel"),
 	// needed to allow engine to exec startup commands (background map signal is 1 frame behind) 
 	m_DelayActivation = 3;
 
-	m_UIScheme = vgui::scheme()->LoadSchemeFromFileEx( 0, "resource/SwarmSchemeNew.res", "SwarmScheme" );
+	m_UIScheme = vgui::scheme()->LoadSchemeFromFileEx( vgui::INVALID_VPANEL, "resource/SwarmSchemeNew.res", "SwarmScheme" );
 	SetScheme( m_UIScheme );
-
-	// Only one user on the PC, so set it now
-	SetLastActiveUserId( IsPC() ? 0 : -1 );
 
 	// Precache critical font characters for the 360, dampens severity of these runtime i/o hitches
 	IScheme *pScheme = vgui::scheme()->GetIScheme( m_UIScheme );
@@ -185,10 +152,6 @@ CBaseModPanel::CBaseModPanel(): BaseClass(0, "CBaseModPanel"),
 	vgui::surface()->PrecacheFontCharacters( pScheme->GetFont( "DefaultBold", true ), NULL );
 	vgui::surface()->PrecacheFontCharacters( pScheme->GetFont( "DefaultLarge", true ), NULL );
 	vgui::surface()->PrecacheFontCharacters( pScheme->GetFont( "FrameTitle", true ), NULL );
-
-#ifdef _X360
-	x360_audio_english.SetValue( XboxLaunch()->GetForceEnglish() );
-#endif
 
 	m_FooterPanel = new CBaseModFooterPanel( this, "FooterPanel" );
 	m_hOptionsDialog = NULL;
@@ -199,8 +162,8 @@ CBaseModPanel::CBaseModPanel(): BaseClass(0, "CBaseModPanel"),
 	m_flBlurScale = 0;
 	m_flLastBlurTime = 0;
 
-	m_iBackgroundImageID = -1;
-	m_iProductImageID = -1;
+	m_iBackgroundImageID = vgui::INVALID_TEXTURE;
+	m_iProductImageID = vgui::INVALID_TEXTURE;
 
 	m_backgroundMusic = "Misc.MainUI";
 	m_nBackgroundMusicGUID = 0;
@@ -317,13 +280,7 @@ CBaseModFrame* CBaseModPanel::OpenWindow(const WINDOW_TYPE & wt, CBaseModFrame *
 			break;
 
 		case WT_CLOUD:
-#if defined( _X360 )
-			// not for xbox
-			Assert( 0 );
-			break;
-#else
 			m_Frames[wt] = new Cloud(this, "Cloud");
-#endif
 			break;
 
 		case WT_CONTROLLER:
@@ -339,13 +296,7 @@ CBaseModFrame* CBaseModPanel::OpenWindow(const WINDOW_TYPE & wt, CBaseModFrame *
 			break;
 
 		case WT_DOWNLOADS:
-#if defined( _X360 )
-			// not for xbox
-			Assert( 0 );
-			break;
-#else
 			m_Frames[wt] = new Downloads(this, "Downloads");
-#endif
 			break;
 
 		case WT_GAMELOBBY:
@@ -385,13 +336,7 @@ CBaseModFrame* CBaseModPanel::OpenWindow(const WINDOW_TYPE & wt, CBaseModFrame *
 			break;
 
 		case WT_KEYBOARDMOUSE:
-#if defined( _X360 )
-			// not for xbox
-			Assert( 0 );
-			break;
-#else
 			m_Frames[wt] = new VKeyboard(this, "VKeyboard");
-#endif
 			break;
 
 		case WT_LOADINGPROGRESSBKGND:
@@ -447,13 +392,7 @@ CBaseModFrame* CBaseModPanel::OpenWindow(const WINDOW_TYPE & wt, CBaseModFrame *
 			break;
 
 		case WT_STEAMCLOUDCONFIRM:
-#if defined( _X360 )
-			// not for xbox
-			Assert( 0 );
-			break;
-#else
 			m_Frames[wt] = new SteamCloudConfirmation(this, "SteamCloudConfirmation");
-#endif
 			break;
 
 		case WT_STEAMGROUPSERVERS:
@@ -461,23 +400,11 @@ CBaseModFrame* CBaseModPanel::OpenWindow(const WINDOW_TYPE & wt, CBaseModFrame *
 			break;
 
 		case WT_CUSTOMCAMPAIGNS:
-#if defined( _X360 )
-			// not for xbox
-			Assert( 0 );
-			break;
-#else
 			m_Frames[ wt ] = new CustomCampaigns( this, "CustomCampaigns" );
-#endif
 			break;
 
 		case WT_DOWNLOADCAMPAIGN:
-#if defined( _X360 )
-			// not for xbox
-			Assert( 0 );
-			break;
-#else
 			m_Frames[ wt ] = new DownloadCampaign( this, "DownloadCampaign" );
-#endif
 			break;
 
 		case WT_LEADERBOARD:
@@ -485,43 +412,15 @@ CBaseModFrame* CBaseModPanel::OpenWindow(const WINDOW_TYPE & wt, CBaseModFrame *
 			break;
 
 		case WT_ADDONS:
-#if defined( _X360 )
-			// not for xbox
-			Assert( 0 );
-			break;
-#else
 			m_Frames[wt] = new Addons( this, "Addons" );
-#endif
-			break;
-
-		case WT_JUKEBOX:
-#if defined( _X360 )
-			// not for xbox
-			Assert( 0 );
-			break;
-#else
-			m_Frames[wt] = new VJukebox( this, "Jukebox" );
-#endif
 			break;
 
 		case WT_ADDONASSOCIATION:
-#if defined( _X360 )
-			// not for xbox
-			Assert( 0 );
-			break;
-#else
 			m_Frames[wt] = new AddonAssociation( this, "AddonAssociation" );
-#endif
 			break;
 
 		case WT_GETLEGACYDATA:
-#if defined( _X360 )
-			// not for xbox
-			Assert( 0 );
-			break;
-#else
 			m_Frames[wt] = new GetLegacyData( this, "GetLegacyData" );
-#endif
 			break;
 
 		default:
@@ -736,9 +635,10 @@ void CBaseModPanel::OnFrameClosed( WINDOW_PRIORITY pri, WINDOW_TYPE wt )
 	}
 }
 
+#ifdef _DEBUG
 void CBaseModPanel::DbgShowCurrentUIState()
 {
-	if ( UI_IsDebug() < 2 )
+	if ( UI_DebugLevel() < 2 )
 		return;
 
 	Msg( "[GAMEUI] Priorities WT: " );
@@ -761,6 +661,7 @@ void CBaseModPanel::DbgShowCurrentUIState()
 		}
 	}
 }
+#endif
 
 bool CBaseModPanel::IsLevelLoading()
 {
@@ -1218,7 +1119,7 @@ void CBaseModPanel::OnLevelLoadingStarted( char const *levelName, bool bShowProg
 			// It is critical to get map info by the actual levelname that is being loaded, because
 			// for level transitions the server is still in the old map and the game settings returned
 			// will reflect the old state of the server.
-			pChapterInfo = g_pMatchExtSwarm->GetMapInfoByBspName( pGameSettings, levelName, &pMissionInfo );
+			pChapterInfo = g_pMatchExt->GetMapInfoByBspName( pGameSettings, levelName, &pMissionInfo );
 			Q_strncpy( chGameMode, pGameSettings->GetString( "game/mode", "" ), ARRAYSIZE( chGameMode ) );
 		}
 	}
@@ -1228,7 +1129,7 @@ void CBaseModPanel::OnLevelLoadingStarted( char const *levelName, bool bShowProg
 	{
 		if ( KeyValues *pSettings = pSession->GetSessionSettings() )
 		{
-			pChapterInfo = g_pMatchExtSwarm->GetMapInfo( pSettings, &pMissionInfo );
+			pChapterInfo = g_pMatchExt->GetMapInfo( pSettings, &pMissionInfo );
 			Q_strncpy( chGameMode, pSettings->GetString( "game/mode", "" ), ARRAYSIZE( chGameMode ) );
 		}
 	}
@@ -1735,21 +1636,6 @@ BaseModUI::CBaseModFooterPanel* CBaseModPanel::GetFooterPanel()
 	return m_FooterPanel;
 }
 
-void CBaseModPanel::SetLastActiveUserId( int userId )
-{
-	if ( m_lastActiveUserId != userId )
-	{
-		DevWarning( "SetLastActiveUserId: %d -> %d\n", m_lastActiveUserId, userId );
-	}
-
-	m_lastActiveUserId = userId;
-}
-
-int CBaseModPanel::GetLastActiveUserId( )
-{
-	return m_lastActiveUserId;
-}
-
 //-----------------------------------------------------------------------------
 // Purpose: moves the game menu button to the right place on the taskbar
 //-----------------------------------------------------------------------------
@@ -1770,31 +1656,25 @@ static void BaseUI_PositionDialog(vgui::PHandle dlg)
 //=============================================================================
 void CBaseModPanel::OpenOptionsDialog( Panel *parent )
 {
-	if ( IsPC() )
-	{			
-		if ( !m_hOptionsDialog.Get() )
-		{
-			m_hOptionsDialog = new COptionsDialog( parent );
-			BaseUI_PositionDialog( m_hOptionsDialog );
-		}
-
-		m_hOptionsDialog->Activate();
+	if ( !m_hOptionsDialog.Get() )
+	{
+		m_hOptionsDialog = new COptionsDialog( parent );
+		BaseUI_PositionDialog( m_hOptionsDialog );
 	}
+
+	m_hOptionsDialog->Activate();
 }
 
 //=============================================================================
 void CBaseModPanel::OpenKeyBindingsDialog( Panel *parent )
 {
-	if ( IsPC() )
-	{			
-		if ( !m_hOptionsDialog.Get() )
-		{
-			m_hOptionsDialog = new COptionsDialog( parent, OPTIONS_DIALOG_ONLY_BINDING_TABS );
-			BaseUI_PositionDialog( m_hOptionsDialog );
-		}
-
-		m_hOptionsDialog->Activate();
+	if ( !m_hOptionsDialog.Get() )
+	{
+		m_hOptionsDialog = new COptionsDialog( parent, OPTIONS_DIALOG_ONLY_BINDING_TABS );
+		BaseUI_PositionDialog( m_hOptionsDialog );
 	}
+
+	m_hOptionsDialog->Activate();
 }
 
 //=============================================================================
@@ -1834,13 +1714,10 @@ void CBaseModPanel::ApplySchemeSettings(IScheme *pScheme)
 	int logoH = 192;
 
 	bool bIsWidescreen;
-#if !defined( _X360 )
+
 	float aspectRatio = (float)screenWide/(float)screenTall;
 	bIsWidescreen = aspectRatio >= 1.5999f;
-#else
-	static CGameUIConVarRef mat_xbox_iswidescreen( "mat_xbox_iswidescreen" );
-	bIsWidescreen = mat_xbox_iswidescreen.GetBool();
-#endif
+
 	if ( !bIsWidescreen )
 	{
 		// smaller in standard res
@@ -2425,14 +2302,14 @@ bool CBaseModPanel::StartBackgroundMusic( float fVol )
 	// trying to exit, cannot start it
 	if ( m_ExitingFrameCount )
 		return false;
-	
+
 	CSoundParameters params;
-	if ( !soundemitterbase->GetParametersForSound( m_backgroundMusic.Get(), params, GENDER_NONE ) )
+	if ( !g_pSoundEmitterSystem->GetParametersForSound( m_backgroundMusic.Get(), params, GENDER_NONE ) )
 		return false;
 
 	enginesound->EmitAmbientSound( params.soundname, params.volume * fVol, params.pitch );
 	m_nBackgroundMusicGUID = enginesound->GetGuidForLastSoundEmitted();
-		
+
 	return ( m_nBackgroundMusicGUID != 0 );
 }
 

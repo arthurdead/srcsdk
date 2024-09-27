@@ -95,7 +95,7 @@ public:
 	{
 		bool bSpewCR = false;
 
-		Warning( "KeyValues Error: %s in file %s\n", pError, m_pFilename );
+		Warning( "KeyValues Error: %s in file %s\n", pError, m_pFilename ? m_pFilename : "NULL" );
 		for ( int i = 0; i < m_maxErrorIndex; i++ )
 		{
 			if ( i < MAX_ERROR_STACK && m_errorStack[i] != INVALID_KEY_SYMBOL )
@@ -568,7 +568,7 @@ const char *KeyValues::ReadToken( CUtlBuffer &buf, bool &wasQuoted, bool &wasCon
 		return s_pTokenBuf;
 	}
 
-	if ( *c == '{' || *c == '}' )
+	if ( *c == '{' || *c == '}' || *c == '=' )
 	{
 		// it's a control char, just add this one char and stop reading
 		s_pTokenBuf[0] = *c;
@@ -588,7 +588,7 @@ const char *KeyValues::ReadToken( CUtlBuffer &buf, bool &wasQuoted, bool &wasCon
 			break;
 
 		// break if any control character appears in non quoted tokens
-		if ( *c == '"' || *c == '{' || *c == '}' )
+		if ( *c == '"' || *c == '{' || *c == '}' || *c == '=' )
 			break;
 
 		if ( *c == '[' )
@@ -650,36 +650,7 @@ bool KeyValues::LoadFromFile( IBaseFileSystem *filesystem, const char *resourceN
 	Assert( ( _heapchk() == _HEAPOK ) );
 #endif
 
-#ifdef STAGING_ONLY
-	static bool s_bCacheEnabled = !!CommandLine()->FindParm( "-enable_keyvalues_cache" );
-	const bool bUseCache = s_bCacheEnabled && ( s_pfGetSymbolForString == KeyValues::GetSymbolForStringClassic );
-#else
-	/*
-	People are cheating with the keyvalue cache enabled by doing the below, so disable it.
-
-	For example if one is to allow a blue demoman texture on sv_pure they
-	change it to this, "$basetexture" "temp/demoman_blue". Remember to move the
-	demoman texture to the temp folder in the materials folder. It will likely
-	not be there so make a new folder for it. Once the directory in the
-	demoman_blue vmt is changed to the temp folder and the vtf texture is in
-	the temp folder itself you are finally done.
-
-	I packed my mods into a vpk but I don't think it's required. Once in game
-	you must create a server via the create server button and select the map
-	that will load the custom texture before you join a valve server. I suggest
-	you only do this with player textures and such as they are always loaded.
-	After you load the map you join the valve server and the textures should
-	appear and work on valve servers.
-
-	This can be done on any sv_pure 1 server but it depends on what is type of
-	files are allowed. All valve servers allow temp files so that is the
-	example I used here."
-
-	So all vmt's files can bypass sv_pure 1. And I believe this mod is mostly
-	made of vmt files, so valve's sv_pure 1 bull is pretty redundant.
-	*/
-	const bool bUseCache = false;
-#endif
+	const bool bUseCache = s_pfGetSymbolForString == KeyValues::GetSymbolForStringClassic;
 
 	// If pathID is null, we cannot cache the result because that has a weird iterate-through-a-bunch-of-locations behavior.
 	const bool bUseCacheForRead = bUseCache && !refreshCache && pathID != NULL; 
@@ -733,6 +704,15 @@ bool KeyValues::LoadFromFile( IBaseFileSystem *filesystem, const char *resourceN
 	COM_TimestampedLog("KeyValues::LoadFromFile(%s%s%s): End / Success", pathID ? pathID : "", pathID && resourceName ? "/" : "", resourceName ? resourceName : "");
 
 	return bRetOK;
+}
+
+KeyValues * KeyValues::FromString( char const *szName, char const *szStringVal )
+{
+	KeyValues *kv = new KeyValues( szName );
+
+	kv->LoadFromBuffer( NULL, szStringVal, NULL, NULL );
+
+	return kv;
 }
 
 //-----------------------------------------------------------------------------
@@ -2065,58 +2045,62 @@ void KeyValues::AppendIncludedKeys( CUtlVector< KeyValues * >& includedKeys )
 void KeyValues::ParseIncludedKeys( char const *resourceName, const char *filetoinclude, 
 		IBaseFileSystem* pFileSystem, const char *pPathID, CUtlVector< KeyValues * >& includedKeys )
 {
-	Assert( resourceName );
 	Assert( filetoinclude );
-	Assert( pFileSystem );
-	
-	// Load it...
-	if ( !pFileSystem )
-	{
-		return;
-	}
 
 	// Get relative subdirectory
 	char fullpath[ 512 ];
-	Q_strncpy( fullpath, resourceName, sizeof( fullpath ) );
+	fullpath[0] = '\0';
 
-	// Strip off characters back to start or first /
-	int len = Q_strlen( fullpath );
-	for (;;)
+	if( resourceName )
 	{
-		if ( len <= 0 )
-		{
-			break;
-		}
-		
-		if ( fullpath[ len - 1 ] == '\\' || 
-			 fullpath[ len - 1 ] == '/' )
-		{
-			break;
-		}
+		Q_strncpy( fullpath, resourceName, sizeof( fullpath ) );
 
-		// zero it
-		fullpath[ len - 1 ] = 0;
-		--len;
+		// Strip off characters back to start or first /
+		int len = Q_strlen( fullpath );
+		for (;;)
+		{
+			if ( len <= 0 )
+			{
+				break;
+			}
+			
+			if ( fullpath[ len - 1 ] == '\\' || 
+				 fullpath[ len - 1 ] == '/' )
+			{
+				break;
+			}
+
+			// zero it
+			fullpath[ len - 1 ] = 0;
+			--len;
+		}
 	}
 
 	// Append included file
 	Q_strncat( fullpath, filetoinclude, sizeof( fullpath ), COPY_ALL_CHARACTERS );
 
-	KeyValues *newKV = new KeyValues( fullpath );
-
-	// CUtlSymbol save = s_CurrentFileSymbol;	// did that had any use ???
-
-	newKV->UsesEscapeSequences( m_bHasEscapeSequences != 0 );	// use same format as parent
-	newKV->UsesConditionals( m_bEvaluateConditionals != 0 );
-
-	if ( newKV->LoadFromFile( pFileSystem, fullpath, pPathID ) )
+	if( pFileSystem )
 	{
-		includedKeys.AddToTail( newKV );
+		KeyValues *newKV = new KeyValues( fullpath );
+
+		// CUtlSymbol save = s_CurrentFileSymbol;	// did that had any use ???
+
+		newKV->UsesEscapeSequences( m_bHasEscapeSequences != 0 );	// use same format as parent
+		newKV->UsesConditionals( m_bEvaluateConditionals != 0 );
+
+		if ( newKV->LoadFromFile( pFileSystem, fullpath, pPathID ) )
+		{
+			includedKeys.AddToTail( newKV );
+		}
+		else
+		{
+			DevMsg( "KeyValues::ParseIncludedKeys: Couldn't load included keyvalue file %s\n", fullpath );
+			newKV->deleteThis();
+		}
 	}
 	else
 	{
 		DevMsg( "KeyValues::ParseIncludedKeys: Couldn't load included keyvalue file %s\n", fullpath );
-		newKV->deleteThis();
 	}
 
 	// s_CurrentFileSymbol = save;
@@ -2269,7 +2253,7 @@ bool KeyValues::LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IBase
 	CUtlVector< KeyValues * > baseKeys;
 	bool wasQuoted;
 	bool wasConditional;
-	g_KeyValuesErrorStack.SetFilename( resourceName );	
+	g_KeyValuesErrorStack.SetFilename( resourceName );
 	do 
 	{
 		bool bAccepted = true;
@@ -2388,7 +2372,7 @@ bool KeyValues::LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IBase
 		}
 	}
 
-	g_KeyValuesErrorStack.SetFilename( "" );	
+	g_KeyValuesErrorStack.SetFilename( "" );
 
 	return true;
 }
@@ -2483,6 +2467,37 @@ void KeyValues::RecursiveLoadFromBuffer( char const *resourceName, CUtlBuffer &b
 
 			// get the real value
 			value = ReadToken( buf, wasQuoted, wasConditional );
+		}
+
+		if ( !value )
+		{
+			g_KeyValuesErrorStack.ReportError("RecursiveLoadFromBuffer:  got NULL key" );
+			break;
+		}
+
+		if ( *value == '=' && !wasQuoted )
+		{
+			value = ReadToken( buf, wasQuoted, wasConditional );
+
+			bool tmpWasConditional = wasConditional;
+
+			if ( wasConditional && value )
+			{
+				bAccepted = !m_bEvaluateConditionals || EvaluateConditional( value, resourceName );
+
+				// get the real value
+				value = ReadToken( buf, wasQuoted, wasConditional );
+			}
+
+			if ( tmpWasConditional && bAccepted )
+			{
+				KeyValues *pExistingKey = FindKey( dat->GetNameSymbol() );
+				if ( pExistingKey && pExistingKey != dat )
+				{
+					RemoveSubKey( pExistingKey );
+					pExistingKey->deleteThis();
+				}
+			}
 		}
 
 		if ( !value )

@@ -27,7 +27,7 @@ public:
 	bool IsTransitionComplete();
 
 private:
-	int			m_iImageID;
+	vgui::HTexture			m_iImageID;
 	float		m_flTransitionStartTime;
 	vgui::HFont	m_hFont;
 	bool		m_bComplete;

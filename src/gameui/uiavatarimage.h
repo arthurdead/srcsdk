@@ -69,6 +69,7 @@ public:
 
 	virtual int GetNumFrames() { return 0; }
 	virtual void SetFrame( int nFrame ) {}
+	virtual int GetFrame() { return 0; }
 
 	virtual vgui::HTexture GetID() { return m_iTextureID; }
 

@@ -18,6 +18,8 @@
 #include "tier0/memalloc.h"
 #include "tier0/memdbgon.h"
 
+#include "tier1_logging.h"
+
 #pragma warning (disable:4100)
 #pragma warning (disable:4514)
 
@@ -292,7 +294,7 @@ void CUtlFixedMemory<T>::Grow( int num )
 	BlockHeader_t *  RESTRICT pBlockHeader = ( BlockHeader_t* )malloc( sizeof( BlockHeader_t ) + nBlockSize * sizeof( T ) );
 	if ( !pBlockHeader )
 	{
-		Error( "CUtlFixedMemory overflow!\n" );
+		Log_FatalError( LOG_TIER1, "CUtlFixedMemory overflow!\n" );
 	}
 	pBlockHeader->m_pNext = NULL;
 	pBlockHeader->m_nBlockSize = nBlockSize;

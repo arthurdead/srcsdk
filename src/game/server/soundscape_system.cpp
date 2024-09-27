@@ -62,7 +62,7 @@ void CSoundscapeSystem::AddSoundscapeFile( const char *filename )
 	MEM_ALLOC_CREDIT();
 	// Open the soundscape data file, and abort if we can't
 	KeyValues *pKeyValuesData = new KeyValues( filename );
-	if ( filesystem->LoadKeyValues( *pKeyValuesData, IFileSystem::TYPE_SOUNDSCAPE, filename, "GAME" ) )
+	if ( g_pFullFileSystem->LoadKeyValues( *pKeyValuesData, IFileSystem::TYPE_SOUNDSCAPE, filename, "GAME" ) )
 	{
 		// parse out all of the top level sections and save their names
 		KeyValues *pKeys = pKeyValuesData;
@@ -132,7 +132,7 @@ bool CSoundscapeSystem::Init()
 		mapSoundscapeFilename = UTIL_VarArgs( "scripts/soundscapes_%s.txt", mapname );
 	}
 
-	if (filesystem->FileExists(UTIL_VarArgs("maps/%s_soundscapes.txt", mapname)))
+	if (g_pFullFileSystem->FileExists(UTIL_VarArgs("maps/%s_soundscapes.txt", mapname)))
 	{
 		// A Mapbase-specific file exists. Load that instead.
 		// Any additional soundscape files, like the original scripts/soundscapes version,
@@ -141,7 +141,7 @@ bool CSoundscapeSystem::Init()
 	}
 
 	KeyValues *manifest = new KeyValues( SOUNDSCAPE_MANIFEST_FILE );
-	if ( filesystem->LoadKeyValues( *manifest, IFileSystem::TYPE_SOUNDSCAPE, SOUNDSCAPE_MANIFEST_FILE, "GAME" ) )
+	if ( g_pFullFileSystem->LoadKeyValues( *manifest, IFileSystem::TYPE_SOUNDSCAPE, SOUNDSCAPE_MANIFEST_FILE, "GAME" ) )
 	{
 		for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
 		{
@@ -160,7 +160,7 @@ bool CSoundscapeSystem::Init()
 				SOUNDSCAPE_MANIFEST_FILE, sub->GetName() );
 		}
 
-		if ( mapSoundscapeFilename && filesystem->FileExists( mapSoundscapeFilename ) )
+		if ( mapSoundscapeFilename && g_pFullFileSystem->FileExists( mapSoundscapeFilename ) )
 		{
 			AddSoundscapeFile( mapSoundscapeFilename );
 		}

@@ -53,7 +53,6 @@ FlyoutMenu::FlyoutMenu( vgui::Panel *parent, const char* panelName )
 	m_szInitialSelection[0] = 0;
 	m_FromOriginalTall = 0;
 
-	m_bOnlyActiveUser = false;
 	m_bExpandUp = false;
 	m_bUsingWideAtOpen = false;
 }
@@ -298,8 +297,6 @@ void FlyoutMenu::ApplySettings( KeyValues* inResourceData )
 		m_defaultControl = dynamic_cast< vgui::Panel* >( FindChildByName( initFocus ) );
 	}
 
-	m_bOnlyActiveUser = ( inResourceData->GetInt( "OnlyActiveUser", 0 ) != 0 );
-
 	m_bExpandUp = ( inResourceData->GetInt( "ExpandUp", 0 ) != 0 );
 }
 
@@ -369,7 +366,7 @@ void FlyoutMenu::LoadControlSettings( const char *dialogResourceName, const char
 		rDat = new KeyValues( dialogResourceName );
 
 		bool bSuccess = false;
-		if ( !IsX360() && !pathID )
+		if ( !pathID )
 		{
 			bSuccess = rDat->LoadFromFile(g_pFullFileSystem, szLoadFile, "SKIN");
 		}
@@ -377,14 +374,12 @@ void FlyoutMenu::LoadControlSettings( const char *dialogResourceName, const char
 		{
 			bSuccess = rDat->LoadFromFile(g_pFullFileSystem, szLoadFile, pathID);
 		}
+	#if 0
 		if ( bSuccess )
 		{
-			if ( IsX360() )
-			{
-				rDat->ProcessResolutionKeys( surface()->GetResolutionKey() );
-			}
+			rDat->ProcessResolutionKeys( surface()->GetResolutionKey() );
 		}
-
+	#endif
 
 		// Find the auto-generated-chapter hook
 		if ( KeyValues *pHook = rDat->FindKey( "BtnChapter" ) )
@@ -508,7 +503,7 @@ vgui::Button* FlyoutMenu::FindNextChildButtonByCommand( const char* command )
 			KeyValues* commandVal = button->GetCommand();
 			if ( commandVal )
 			{
-				const char* commandStr = commandVal->GetString( "command", NULL );			
+				const char* commandStr = commandVal->GetString( "command", NULL );
 				if ( commandStr && *commandStr && command )
 				{
 					if ( !Q_stricmp( command, commandStr ) )
@@ -524,29 +519,16 @@ vgui::Button* FlyoutMenu::FindNextChildButtonByCommand( const char* command )
 
 void FlyoutMenu::OnKeyCodePressed( vgui::KeyCode code )
 {
-	int iJoystick = GetJoystickForCode( code );
-
-	if ( m_bOnlyActiveUser )
-	{
-		// Only allow input from the active userid
-		int userId = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-
-		if( iJoystick != userId || iJoystick < 0 )
-		{	
-			return;
-		}
-	}
-
-	BaseModUI::CBaseModPanel::GetSingleton().SetLastActiveUserId( iJoystick );
+	static ConVarRef vgui_nav_lock( "vgui_nav_lock" );
 
 	vgui::KeyCode basecode = GetBaseButtonCode( code );
 
 	switch( basecode )
 	{
 	case KEY_XBUTTON_B:
-		if ( !s_NavLock )
+		if ( ( !vgui_nav_lock.IsValid() || vgui_nav_lock.GetInt() == 0 ) )
 		{
-			s_NavLock = 2;
+			vgui_nav_lock.SetValue( 2 );
 			CBaseModPanel::GetSingleton().PlayUISound( UISOUND_BACK );
 			CloseMenu( m_navFrom );
 			if( m_listener )
@@ -571,9 +553,11 @@ void FlyoutMenu::OnKeyCodePressed( vgui::KeyCode code )
 
 void FlyoutMenu::OnCommand( const char* command )
 {
+	static ConVarRef vgui_nav_lock( "vgui_nav_lock" );
+
 	if ( m_navFrom )
 	{
-		s_NavLock = 2;
+		vgui_nav_lock.SetValue( 2 );
 		CloseMenu( m_navFrom );
 		if ( m_navFrom->GetParent() )
 		{
@@ -595,7 +579,7 @@ void FlyoutMenu::CloseActiveMenu( vgui::Panel *pFlyTo )
 			FlyoutMenu *pOldActiveMenu = sm_pActiveMenu;
 			sm_pActiveMenu = NULL;
 			pOldActiveMenu->CloseMenu( pFlyTo );
-		}		
+		}
 	}
 }
 

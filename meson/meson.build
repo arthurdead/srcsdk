@@ -21,17 +21,19 @@ if build_libs
 	subproject('shaderlib')
 	subproject('recastnavigation_game')
 	#subproject('vphysics')
+	subproject('matchmaking')
 endif
 if build_client or build_listen_server
 	subproject('game_loopback')
 endif
 if build_client
 	subproject('vaudio_minimp3')
-	#subproject('vaudio_redirect')
+	subproject('vaudio_redirect')
 	#subproject('video_services')
 	subproject('game_shader_dx9')
 	subproject('gameui')
 	subproject('gamepadui_redirect')
+	subproject('serverbrowser_redirect')
 	subproject('client')
 endif
 if build_listen_server

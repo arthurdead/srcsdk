@@ -61,12 +61,12 @@ DEFINE_FIXEDSIZE_ALLOCATOR( CClientRenderablesList, 1, CUtlMemoryPool::GROW_SLOW
 
 static void FrameLock()
 {
-	mdlcache->BeginLock();
+	g_pMDLCache->BeginLock();
 }
 
 static void FrameUnlock()
 {
-	mdlcache->EndLock();
+	g_pMDLCache->EndLock();
 }
 
 void CallComputeFXBlend( IClientRenderable *&pRenderable )
@@ -457,12 +457,12 @@ private:
 
 	void FrameLock()
 	{
-		mdlcache->BeginLock();
+		g_pMDLCache->BeginLock();
 	}
 
 	void FrameUnlock()
 	{
-		mdlcache->EndLock();
+		g_pMDLCache->EndLock();
 	}
 
 public:

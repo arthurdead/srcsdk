@@ -177,7 +177,7 @@ CustomCampaigns::CustomCampaigns( Panel *parent, const char *panelName ):
 
 	m_GplCustomCampaigns = new GenericPanelList( this, "GplCustomCampaigns", GenericPanelList::ISM_ELEVATOR );
 	m_GplCustomCampaigns->ShowScrollProgress( true );
-	m_GplCustomCampaigns->SetScrollBarVisible( IsPC() );
+	m_GplCustomCampaigns->SetScrollBarVisible( true );
 
 	m_hasAddonCampaign = false;
 	m_SomeAddonNoSupport = false;
@@ -224,7 +224,7 @@ void CustomCampaigns::Activate()
 	m_GplCustomCampaigns->RemoveAllPanelItems();
 
 	// Build a list of campaigns
-	KeyValues *pAllMissions = g_pMatchExtSwarm->GetAllMissions();
+	KeyValues *pAllMissions = g_pMatchExt->GetAllMissions();
 	if ( !pAllMissions )
 		return;
 
@@ -344,7 +344,7 @@ void CustomCampaigns::Select()
 	if ( !pSelectedItem )
 		return;
 
-	KeyValues *pAllMissions = g_pMatchExtSwarm->GetAllMissions();
+	KeyValues *pAllMissions = g_pMatchExt->GetAllMissions();
 	if ( !pAllMissions )
 		return;
 
@@ -392,7 +392,7 @@ void CustomCampaigns::OnItemSelected( const char* panelName )
 	if ( !pSelectedItem )
 		return;
 
-	KeyValues *pAllMissions = g_pMatchExtSwarm->GetAllMissions();
+	KeyValues *pAllMissions = g_pMatchExt->GetAllMissions();
 	if ( !pAllMissions )
 		return;
 

@@ -178,7 +178,7 @@ public:
 
 	void	SetImage( const char *pszImage )
 	{
-		m_pArrowMaterial = materials->FindMaterial( pszImage, TEXTURE_GROUP_VGUI );
+		m_pArrowMaterial = g_pMaterialSystem->FindMaterial( pszImage, TEXTURE_GROUP_VGUI );
 	}
 
 private:

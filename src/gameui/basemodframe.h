@@ -157,8 +157,8 @@ namespace BaseModUI {
 
 		int m_hOriginalTall;
 
-		int m_nTopBorderImageId;
-		int m_nBottomBorderImageId;
+		vgui::HTexture m_nTopBorderImageId;
+		vgui::HTexture m_nBottomBorderImageId;
 		Color m_smearColor;
 
 	protected:

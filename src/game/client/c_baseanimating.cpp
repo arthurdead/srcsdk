@@ -906,7 +906,7 @@ void C_BaseAnimating::LockStudioHdr()
 
 	if ( m_hStudioHdr != MDLHANDLE_INVALID || m_pStudioHdr != NULL )
 	{
-		Assert( m_pStudioHdr ? m_pStudioHdr->GetRenderHdr() == mdlcache->GetStudioHdr(m_hStudioHdr) : m_hStudioHdr == MDLHANDLE_INVALID );
+		Assert( m_pStudioHdr ? m_pStudioHdr->GetRenderHdr() == g_pMDLCache->GetStudioHdr(m_hStudioHdr) : m_hStudioHdr == MDLHANDLE_INVALID );
 		return;
 	}
 
@@ -918,7 +918,7 @@ void C_BaseAnimating::LockStudioHdr()
 	if ( m_hStudioHdr == MDLHANDLE_INVALID )
 		return;
 
-	const studiohdr_t *pStudioHdr = mdlcache->LockStudioHdr( m_hStudioHdr );
+	const studiohdr_t *pStudioHdr = g_pMDLCache->LockStudioHdr( m_hStudioHdr );
 	if ( !pStudioHdr )
 	{
 		m_hStudioHdr = MDLHANDLE_INVALID;
@@ -926,13 +926,13 @@ void C_BaseAnimating::LockStudioHdr()
 	}
 
 	CStudioHdr *pNewWrapper = new CStudioHdr;
-	pNewWrapper->Init( pStudioHdr, mdlcache );
+	pNewWrapper->Init( pStudioHdr, g_pMDLCache );
 	Assert( pNewWrapper->IsValid() );
 	
 	if ( pNewWrapper->GetVirtualModel() )
 	{
-		MDLHandle_t hVirtualModel = (MDLHandle_t)(int)(pStudioHdr->virtualModel)&0xffff;
-		mdlcache->LockStudioHdr( hVirtualModel );
+		MDLHandle_t hVirtualModel = VoidPtrToMDLHandle(pStudioHdr->virtualModel);
+		g_pMDLCache->LockStudioHdr( hVirtualModel );
 	}
 
 	m_pStudioHdr = pNewWrapper; // must be last to ensure virtual model correctly set up
@@ -942,17 +942,17 @@ void C_BaseAnimating::UnlockStudioHdr()
 {
 	if ( m_hStudioHdr != MDLHANDLE_INVALID )
 	{
-		studiohdr_t *pStudioHdr = mdlcache->GetStudioHdr( m_hStudioHdr );
+		studiohdr_t *pStudioHdr = g_pMDLCache->GetStudioHdr( m_hStudioHdr );
 		Assert( m_pStudioHdr && m_pStudioHdr->GetRenderHdr() == pStudioHdr );
 
 #if 0
 		// XXX need to figure out where to flush the queue on map change to not crash
-		if ( ICallQueue *pCallQueue = materials->GetRenderContext()->GetCallQueue() )
+		if ( ICallQueue *pCallQueue = g_pMaterialSystem->GetRenderContext()->GetCallQueue() )
 		{
 			// Parallel rendering: don't unlock model data until end of rendering
 			if ( pStudioHdr->GetVirtualModel() )
 			{
-				MDLHandle_t hVirtualModel = (MDLHandle_t)(int)pStudioHdr->virtualModel&0xffff;
+				MDLHandle_t hVirtualModel = VoidPtrToMDLHandle(pStudioHdr->virtualModel);
 				pCallQueue->QueueCall( mdlcache, &IMDLCache::UnlockStudioHdr, hVirtualModel );
 			}
 			pCallQueue->QueueCall( mdlcache, &IMDLCache::UnlockStudioHdr, m_hStudioHdr );
@@ -963,10 +963,10 @@ void C_BaseAnimating::UnlockStudioHdr()
 			// Immediate-mode rendering, can unlock immediately
 			if ( pStudioHdr->GetVirtualModel() )
 			{
-				MDLHandle_t hVirtualModel = (MDLHandle_t)(int)pStudioHdr->virtualModel&0xffff;
-				mdlcache->UnlockStudioHdr( hVirtualModel );
+				MDLHandle_t hVirtualModel = VoidPtrToMDLHandle(pStudioHdr->virtualModel);
+				g_pMDLCache->UnlockStudioHdr( hVirtualModel );
 			}
-			mdlcache->UnlockStudioHdr( m_hStudioHdr );
+			g_pMDLCache->UnlockStudioHdr( m_hStudioHdr );
 		}
 		m_hStudioHdr = MDLHANDLE_INVALID;
 
@@ -2792,12 +2792,12 @@ void C_BaseAnimating::SetupBonesOnBaseAnimating( C_BaseAnimating *&pBaseAnimatin
 
 static void PreThreadedBoneSetup()
 {
-	mdlcache->BeginLock();
+	g_pMDLCache->BeginLock();
 }
 
 static void PostThreadedBoneSetup()
 {
-	mdlcache->EndLock();
+	g_pMDLCache->EndLock();
 #ifdef DEBUG_BONE_SETUP_THREADING
  	Msg( "  %x done, %d\n", ThreadGetCurrentId(), (int)(*pCount) );
  	(*pCount) = 0;
@@ -3461,7 +3461,7 @@ void C_BaseAnimating::ForcedMaterialOverride( const char *newMaterial, OverrideT
 	}
 	else
 	{
-		m_pOverrideMaterial = materials->FindMaterial( newMaterial, NULL );
+		m_pOverrideMaterial = g_pMaterialSystem->FindMaterial( newMaterial, NULL );
 		m_nOverrideMaterialType = nOverrideType;
 	}
 }
@@ -5495,7 +5495,7 @@ bool C_BaseAnimating::InitAsClientRagdoll( const matrix3x4_t *pDeltaBones0, cons
 
 #if defined( REPLAY_ENABLED )
 	// If Replay is enabled on server, add an entry to the ragdoll recorder for this entity
-	ConVar* pReplayEnable = (ConVar*)cvar->FindVar( "replay_enable" );
+	ConVar* pReplayEnable = (ConVar*)g_pCVar->FindVar( "replay_enable" );
 	if ( m_pRagdoll && pReplayEnable && pReplayEnable->GetInt() && !engine->IsPlayingDemo() && !engine->IsPlayingTimeDemo() )
 	{
 		CReplayRagdollRecorder& RagdollRecorder = CReplayRagdollRecorder::Instance();
@@ -6659,7 +6659,7 @@ void C_BaseAnimating::ClearRagdoll()
 
 #if defined( REPLAY_ENABLED )
 		// Delete entry from ragdoll recorder if Replay is enabled on server
-		ConVar* pReplayEnable = (ConVar*)cvar->FindVar( "replay_enable" );
+		ConVar* pReplayEnable = (ConVar*)g_pCVar->FindVar( "replay_enable" );
 		if ( pReplayEnable && pReplayEnable->GetInt() && !engine->IsPlayingDemo() && !engine->IsPlayingTimeDemo() )
 		{
 			CReplayRagdollRecorder& RagdollRecorder = CReplayRagdollRecorder::Instance();

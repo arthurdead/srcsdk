@@ -23,6 +23,8 @@
 #include "tier1/strtools.h"
 #include "vstdlib/random.h"
 
+#include "tier1_logging.h"
+
 #define FOR_EACH_VEC( vecName, iteratorName ) \
 	for ( int iteratorName = 0; iteratorName < (vecName).Count(); iteratorName++ )
 #define FOR_EACH_VEC_BACK( vecName, iteratorName ) \
@@ -597,8 +599,7 @@ inline void StagingUtlVectorBoundsCheck( int i, int size )
 {
 	if ( (unsigned)i >= (unsigned)size )
 	{
-		Msg( "Array access error: %d / %d\n", i, size );
-		DebuggerBreak();
+		Log_FatalError( LOG_TIER1, "Array access error: %d / %d\n", i, size );
 	}
 }
 

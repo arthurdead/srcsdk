@@ -2698,14 +2698,14 @@ void CBaseAnimating::LockStudioHdr()
 		MDLHandle_t hStudioHdr = modelinfo->GetCacheHandle( mdl );
 		if ( hStudioHdr != MDLHANDLE_INVALID )
 		{
-			const studiohdr_t *pStudioHdr = mdlcache->LockStudioHdr( hStudioHdr );
+			const studiohdr_t *pStudioHdr = g_pMDLCache->LockStudioHdr( hStudioHdr );
 			CStudioHdr *pStudioHdrContainer = NULL;
 			if ( !m_pStudioHdr )
 			{
 				if ( pStudioHdr )
 				{
 					pStudioHdrContainer = new CStudioHdr;
-					pStudioHdrContainer->Init( pStudioHdr, mdlcache );
+					pStudioHdrContainer->Init( pStudioHdr, g_pMDLCache );
 				}
 			}
 			else
@@ -2718,7 +2718,7 @@ void CBaseAnimating::LockStudioHdr()
 			if ( pStudioHdrContainer && pStudioHdrContainer->GetVirtualModel() )
 			{
 				MDLHandle_t hVirtualModel = VoidPtrToMDLHandle(pStudioHdrContainer->GetRenderHdr()->virtualModel);
-				mdlcache->LockStudioHdr( hVirtualModel );
+				g_pMDLCache->LockStudioHdr( hVirtualModel );
 			}
 			m_pStudioHdr = pStudioHdrContainer; // must be last to ensure virtual model correctly set up
 		}
@@ -2732,11 +2732,11 @@ void CBaseAnimating::UnlockStudioHdr()
 		const model_t *mdl = GetModel();
 		if (mdl)
 		{
-			mdlcache->UnlockStudioHdr( modelinfo->GetCacheHandle( mdl ) );
+			g_pMDLCache->UnlockStudioHdr( modelinfo->GetCacheHandle( mdl ) );
 			if ( m_pStudioHdr->GetVirtualModel() )
 			{
 				MDLHandle_t hVirtualModel = VoidPtrToMDLHandle(m_pStudioHdr->GetRenderHdr()->virtualModel);
-				mdlcache->UnlockStudioHdr( hVirtualModel );
+				g_pMDLCache->UnlockStudioHdr( hVirtualModel );
 			}
 		}
 	}

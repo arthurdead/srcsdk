@@ -63,6 +63,7 @@ void DBG_AssertFunction( bool fExpr, const char *szExpr, const char *szFile, int
 }
 #endif	// DEBUG
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_ENTITYFACTORY, "EntityFactory Server" );
 
 //-----------------------------------------------------------------------------
 // Entity creation factory
@@ -2133,7 +2134,7 @@ int DispatchSpawn( CBaseEntity *pEntity )
 			MemAlloc_PushAllocDbgInfo( pszClassname, __LINE__ );
 		}
 #endif
-		bool bAsyncAnims = mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, false );
+		bool bAsyncAnims = g_pMDLCache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, false );
 		CBaseAnimating *pAnimating = pEntity->GetBaseAnimating();
 		if (!pAnimating)
 		{
@@ -2147,7 +2148,7 @@ int DispatchSpawn( CBaseEntity *pEntity )
 			if ( pEntSafe != NULL )
 				pAnimating->ClearBoneCacheFlags( BCF_IS_IN_SPAWN );
 		}
-		mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, bAsyncAnims );
+		g_pMDLCache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, bAsyncAnims );
 
 #if defined(TRACK_ENTITY_MEMORY) && defined(USE_MEM_DEBUG)
 		if ( pszClassname )
@@ -2910,7 +2911,7 @@ byte *UTIL_LoadFileForMe( const char *filename, int *pLength, const char *pPathI
 {
 	void *buffer = NULL;
 
-	int length = filesystem->ReadFileEx( filename, pPathID, &buffer, true, true );
+	int length = g_pFullFileSystem->ReadFileEx( filename, pPathID, &buffer, true, true );
 
 	if ( pLength )
 	{
@@ -2926,7 +2927,7 @@ byte *UTIL_LoadFileForMe( const char *filename, int *pLength, const char *pPathI
 //-----------------------------------------------------------------------------
 void UTIL_FreeFile( byte *buffer )
 {
-	filesystem->FreeOptimalReadBuffer( buffer );
+	g_pFullFileSystem->FreeOptimalReadBuffer( buffer );
 }
 
 //-----------------------------------------------------------------------------
@@ -3049,7 +3050,7 @@ bool UTIL_LoadAndSpawnEntitiesFromScript( CUtlVector <CBaseEntity*> &entities, c
 {
 	KeyValues *pkvFile = new KeyValues( pBlock );
 
-	if ( pkvFile->LoadFromFile( filesystem, pScriptFile, "MOD" ) )
+	if ( pkvFile->LoadFromFile( g_pFullFileSystem, pScriptFile, "MOD" ) )
 	{	
 		// Load each block, and spawn the entities
 		KeyValues *pkvNode = pkvFile->GetFirstSubKey();
@@ -3092,13 +3093,13 @@ bool UTIL_LoadAndSpawnEntitiesFromScript( CUtlVector <CBaseEntity*> &entities, c
 
 		if ( bActivate == true )
 		{
-			bool bAsyncAnims = mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, false );
+			bool bAsyncAnims = g_pMDLCache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, false );
 			// Then activate all the entities
 			for ( int i = 0; i < entities.Count(); i++ )
 			{
 				entities[i]->Activate();
 			}
-			mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, bAsyncAnims );
+			g_pMDLCache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, bAsyncAnims );
 		}
 	}
 	else

@@ -6726,14 +6726,14 @@ void CC_Prop_Dynamic_Create( const CCommand &args )
 	char pModelName[512];
 	Q_snprintf( pModelName, sizeof(pModelName), "models/%s", args[1] );
 	Q_DefaultExtension( pModelName, ".mdl", sizeof(pModelName) );
-	MDLHandle_t h = mdlcache->FindMDL( pModelName );
+	MDLHandle_t h = g_pMDLCache->FindMDL( pModelName );
 	if ( h == MDLHANDLE_INVALID )
 		return;
 
 	bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
 	CBaseEntity::SetAllowPrecache( true );
 
-	vcollide_t *pVCollide = mdlcache->GetVCollide( h );
+	vcollide_t *pVCollide = g_pMDLCache->GetVCollide( h );
 
 	Vector xaxis( 1.0f, 0.0f, 0.0f );
 	Vector yaxis;
@@ -6808,17 +6808,17 @@ CPhysicsProp* CreatePhysicsProp( const char *pModelName, const Vector &vTraceSta
 {
 	MDLCACHE_CRITICAL_SECTION();
 
-	MDLHandle_t h = mdlcache->FindMDL( pModelName );
+	MDLHandle_t h = g_pMDLCache->FindMDL( pModelName );
 	if ( h == MDLHANDLE_INVALID )
 		return NULL;
 
 	// Must have vphysics to place as a physics prop
-	studiohdr_t *pStudioHdr = mdlcache->GetStudioHdr( h );
+	studiohdr_t *pStudioHdr = g_pMDLCache->GetStudioHdr( h );
 	if ( !pStudioHdr )
 		return NULL;
 
 	// Must have vphysics to place as a physics prop
-	if ( bRequireVCollide && !mdlcache->GetVCollide( h ) )
+	if ( bRequireVCollide && !g_pMDLCache->GetVCollide( h ) )
 		return NULL;
 
 	QAngle angles( 0.0f, 0.0f, 0.0f );

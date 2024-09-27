@@ -218,7 +218,7 @@ BaseClass( parent, panelName, false, true )
 
 	m_GplAddons = new GenericPanelList( this, "GplAddons", GenericPanelList::ISM_ELEVATOR );
 	m_GplAddons->ShowScrollProgress( true );
-	m_GplAddons->SetScrollBarVisible( IsPC() );
+	m_GplAddons->SetScrollBarVisible( true );
 
 	m_LblName = new Label( this, "LblName", "" );
 	m_LblNoAddons = new Label( this, "LblNoAddons", "" );
@@ -230,7 +230,7 @@ BaseClass( parent, panelName, false, true )
 	m_pSupportRequiredPanel = NULL;
 	m_pInstallingSupportPanel = NULL;
 
-	m_pDoNotAskForAssociation = new CvarToggleCheckButton<CGameUIConVarRef>( 
+	m_pDoNotAskForAssociation = new CGameUICvarToggleCheckButton( 
 		this, 
 		"CheckButtonAssociation", 
 		"",
@@ -261,7 +261,10 @@ void Addons::Activate()
 
 	m_GplAddons->RemoveAllPanelItems();
 	m_addonInfoList.RemoveAll();
-	m_pAddonList ? m_pAddonList->deleteThis() : NULL;
+	if(m_pAddonList) {
+		m_pAddonList->deleteThis();
+		m_pAddonList = NULL;
+	}
 
 	//
 	// Get the list of addons
@@ -321,7 +324,7 @@ void Addons::Activate()
 				bProp = pAddonInfo->GetInt( "addonContent_prop" ) != 0;
 
 				// Make the addon types string based on the flags
-				addonInfo.szTypes[0] = NULL;
+				addonInfo.szTypes[0] = L'\0';
 				bCampaign ? wcsncat( addonInfo.szTypes, g_pVGuiLocalize->Find( "#L4D360UI_Addon_Type_Campaign" ), sizeof( addonInfo.szTypes ) ) : NULL;
 				bMaps ? wcsncat( addonInfo.szTypes, g_pVGuiLocalize->Find( "#L4D360UI_Addon_Type_Map" ), sizeof( addonInfo.szTypes ) ) : NULL;
 				bSkin ? wcsncat( addonInfo.szTypes, g_pVGuiLocalize->Find( "#L4D360UI_Addon_Type_Skin" ), sizeof( addonInfo.szTypes ) ) : NULL;
@@ -340,7 +343,7 @@ void Addons::Activate()
 					wchar_t *pwcComma = wcsrchr( addonInfo.szTypes, ',' );
 					if ( pwcComma )
 					{
-						*pwcComma = NULL;
+						*pwcComma = L'\0';
 					}
 				}
 			}

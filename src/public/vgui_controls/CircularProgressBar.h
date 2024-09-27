@@ -14,14 +14,6 @@
 #include <vgui_controls/Panel.h>
 #include <vgui_controls/ProgressBar.h>
 
-enum progress_textures_t
-{
-	PROGRESS_TEXTURE_FG,
-	PROGRESS_TEXTURE_BG,
-
-	NUM_PROGRESS_TEXTURES,
-};
-
 namespace vgui
 {
 

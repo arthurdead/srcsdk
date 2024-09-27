@@ -2280,7 +2280,7 @@ private:
 	CThreadMutex mutex;
 };
 
-static CShaderExtension s_shaderExtension;
+INIT_PRIORITY(65535) static CShaderExtension s_shaderExtension;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CShaderExtension, IShaderExtension, SHADEREXTENSION_INTERFACE_VERSION, s_shaderExtension );
 
 #define	PSREG_UBERLIGHT_SMOOTH_EDGE_0			33

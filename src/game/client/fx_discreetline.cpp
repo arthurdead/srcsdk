@@ -34,7 +34,7 @@ CFXDiscreetLine::CFXDiscreetLine( const char *name, const Vector& start, const V
 		return;
 
 	// Create a material...
-	m_pMaterial = materials->FindMaterial( shader, TEXTURE_GROUP_CLIENT_EFFECTS );
+	m_pMaterial = g_pMaterialSystem->FindMaterial( shader, TEXTURE_GROUP_CLIENT_EFFECTS );
 	m_pMaterial->IncrementReferenceCount();
 
 	m_vecOrigin			= start;

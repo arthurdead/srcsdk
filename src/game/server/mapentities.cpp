@@ -299,7 +299,7 @@ void SpawnAllEntities( int nEntities, HierarchicalSpawn_t *pSpawnList, bool bAct
 	if ( bActivateEntities )
 	{
 		VPROF( "MapEntity_ParseAllEntities_Activate");
-		bool bAsyncAnims = mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, false );
+		bool bAsyncAnims = g_pMDLCache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, false );
 		for (nEntity = 0; nEntity < nEntities; nEntity++)
 		{
 			CBaseEntity *pEntity = pSpawnList[nEntity].m_pEntity;
@@ -310,7 +310,7 @@ void SpawnAllEntities( int nEntities, HierarchicalSpawn_t *pSpawnList, bool bAct
 				pEntity->Activate();
 			}
 		}
-		mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, bAsyncAnims );
+		g_pMDLCache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, bAsyncAnims );
 	}
 }
 

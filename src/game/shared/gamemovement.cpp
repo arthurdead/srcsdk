@@ -539,11 +539,11 @@ void COM_Log( const char *pszFile, const char *fmt, ...)
 	Q_vsnprintf(string, sizeof( string ), fmt,argptr);
 	va_end (argptr);
 
-	fp = filesystem->Open( pfilename, "a+t");
+	fp = g_pFullFileSystem->Open( pfilename, "a+t");
 	if (fp)
 	{
-		filesystem->FPrintf(fp, "%s", string);
-		filesystem->Close(fp);
+		g_pFullFileSystem->FPrintf(fp, "%s", string);
+		g_pFullFileSystem->Close(fp);
 	}
 }
 #endif

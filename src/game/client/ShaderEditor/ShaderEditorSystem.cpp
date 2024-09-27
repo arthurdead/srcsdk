@@ -65,7 +65,7 @@ bool ShaderEditorHandler::Init()
 	FactoryList_Retrieve( factories );
 
 #ifdef SOURCE_2006
-	ConVar *pCVarDev = cvar->FindVar( "developer" );
+	ConVar *pCVarDev = g_pCVar->FindVar( "developer" );
 	bool bShowPrimDebug = pCVarDev != NULL && pCVarDev->GetInt() != 0;
 #else
 	ConVarRef devEnabled( "developer", true );
@@ -801,7 +801,7 @@ protected:
 		if( pRenderClipPlane )	
 		{
 			CMatRenderContextPtr pRenderContext( materials );
-			if( !materials->UsingFastClipping() ) //do NOT change the fast clip plane mid-scene, depth problems result. Regular user clip planes are fine though
+			if( !g_pMaterialSystem->UsingFastClipping() ) //do NOT change the fast clip plane mid-scene, depth problems result. Regular user clip planes are fine though
 				pRenderContext->PushCustomClipPlane( pRenderClipPlane );
 #if DEBUG
 			else
@@ -816,7 +816,7 @@ protected:
 			//BlurTest( pEnt, flags, false, instance );
 			view->SetCurrentlyDrawingEntity( NULL );
 
-			if( !materials->UsingFastClipping() )	
+			if( !g_pMaterialSystem->UsingFastClipping() )	
 				pRenderContext->PopCustomClipPlane();
 		}
 		else
@@ -881,7 +881,7 @@ protected:
 		if( pRenderClipPlane )	
 		{
 			CMatRenderContextPtr pRenderContext( materials );
-			if( !materials->UsingFastClipping() ) //do NOT change the fast clip plane mid-scene, depth problems result. Regular user clip planes are fine though
+			if( !g_pMaterialSystem->UsingFastClipping() ) //do NOT change the fast clip plane mid-scene, depth problems result. Regular user clip planes are fine though
 				pRenderContext->PushCustomClipPlane( pRenderClipPlane );
 #if DEBUG
 			else
@@ -892,7 +892,7 @@ protected:
 			view->SetCurrentlyDrawingEntity( pEnt->GetIClientUnknown()->GetBaseEntity() );
 			pEnt->DrawModel( flags );
 			view->SetCurrentlyDrawingEntity( NULL );
-			if( pRenderClipPlane && !materials->UsingFastClipping() )
+			if( pRenderClipPlane && !g_pMaterialSystem->UsingFastClipping() )
 				pRenderContext->PopCustomClipPlane();
 		}
 		else
@@ -1484,7 +1484,7 @@ pFnVrCallback_Declare( VrCallback_ViewModel )
 	}
 
 	int bbx, bby;
-	materials->GetBackBufferDimensions( bbx, bby );
+	g_pMaterialSystem->GetBackBufferDimensions( bbx, bby );
 
 	// Restore the matrices
 	pRenderContext->MatrixMode( MATERIAL_PROJECTION );

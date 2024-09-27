@@ -23,6 +23,6 @@ tier2_dep = declare_dependency(
 		join_paths(src_root_dir,'public','tier2')
 	),
 	link_args: [
-		'-l:tier2_no_matsys_util'+lib_ext
+		'-l:tier2_new'+lib_ext
 	]
 )

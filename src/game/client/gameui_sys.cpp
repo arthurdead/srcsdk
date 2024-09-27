@@ -5,15 +5,14 @@
 //===========================================================================//
 
 #include "cbase.h"
-#include "gameui.h"
-#include "tier1/timeutils.h"
+#include "gameui_sys.h"
+#include "movieobjects/timeutils.h"
 #include "cdll_client_int.h"
-#include "soundemittersystem/isoundemittersystembase.h"
-#include "engine/ienginesound.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
+#include "engine/IEngineSound.h"
 #include "filesystem.h"
 #include "inputsystem/iinputstacksystem.h"
-
-#include "gameui/basemodpanel.h"
+#include "game_controls/igameuisystemmgr.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -21,17 +20,12 @@
 // A logging channel used during engine initialization
 DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_GameUI, "GameUI" );
 
-LINK_GAME_CONTROLS_LIB();
-
+extern bool IsGameUIPanelVisible();
 
 // A utility function to determine if we are running as part of game ui base mod panel
 inline bool IsPartOfGameUiBaseModPanel()
 {
-	BaseModUI::CBaseModPanel *pPanel = BaseModUI::CBaseModPanel::GetSingletonPtr();
-	if ( !pPanel )
-		return false;
-
-	return pPanel->IsVisible();
+	return IsGameUIPanelVisible();
 }
 
 //-----------------------------------------------------------------------------
@@ -64,7 +58,7 @@ public:
 		// Pull data from parameters
 		CSoundParameters params;
 		HSOUNDSCRIPTHANDLE handle = SOUNDEMITTER_INVALID_HANDLE;
-		if ( !soundemitterbase->GetParametersForSoundEx( pSoundName, handle, params, GENDER_NONE, true ) )
+		if ( !g_pSoundEmitterSystem->GetParametersForSoundEx( pSoundName, handle, params, GENDER_NONE, true ) )
 		{
 			Log_Warning( LOG_GameUI, "Attempted to play invalid sound \"%s\"\n", pSoundName );
 			return NULL;
@@ -92,6 +86,7 @@ public:
 			(soundlevel_t)params.soundlevel,
 			0, // flags
 			params.pitch,
+			0,
 			NULL,
 			NULL,
 			NULL,
@@ -102,7 +97,7 @@ public:
 
 	void StopSound( void *pSoundHandle )
 	{
-		if ( !pSoundHandle || !g_pSoundSystem )
+		if ( !pSoundHandle )
 			return;
 
 		int nGuid = (int)pSoundHandle;
@@ -125,20 +120,31 @@ CGameUIGameSystem *g_pGameUIGameSystem = &s_GameUIGameSystem;
 //-----------------------------------------------------------------------------
 bool CGameUIGameSystem::Init()
 {
-	g_pGameUISystemMgr->UseGameInputSystemEventQueue( true );
-	g_pGameUISystemMgr->SetSoundPlayback( &s_InGameUISoundPlayback );
-	g_pGameUISystemMgr->SetInputContext( engine->GetInputContext( ENGINE_INPUT_CONTEXT_GAMEUI ) );
+	if(g_pGameUISystemMgr) {
+		g_pGameUISystemMgr->UseGameInputSystemEventQueue( true );
+		g_pGameUISystemMgr->SetSoundPlayback( &s_InGameUISoundPlayback );
 
+	#if 0
+		g_pGameUISystemMgr->SetInputContext( engine->GetInputContext( ENGINE_INPUT_CONTEXT_GAMEUI ) );
+	#else
+		g_pGameUISystemMgr->SetInputContext( INPUT_CONTEXT_HANDLE_INVALID );
+	#endif
+	}
+
+#if 0
 	// Register all client nugget factories
 	CUiNuggetFactoryRegistrarBase::RegisterAll();
+#endif
 
 	return true;
 }
 
 void CGameUIGameSystem::Shutdown()
 {
-	g_pGameUISystemMgr->SetSoundPlayback( NULL );
-	g_pGameUISystemMgr->SetInputContext( INPUT_CONTEXT_HANDLE_INVALID );
+	if(g_pGameUISystemMgr) {
+		g_pGameUISystemMgr->SetSoundPlayback( NULL );
+		g_pGameUISystemMgr->SetInputContext( INPUT_CONTEXT_HANDLE_INVALID );
+	}
 }
 
 
@@ -169,14 +175,14 @@ void CGameUIGameSystem::PrecacheGameUISounds()
 	for ( KeyValues *pKey = pUIGameSounds; pKey; pKey = pKey->GetNextKey() )
 	{
 		const char *pSoundName = pKey->GetName();
-		int nSoundIndex = soundemitterbase->GetSoundIndex( pSoundName );
-		if ( !soundemitterbase->IsValidIndex( nSoundIndex ) )
+		int nSoundIndex = g_pSoundEmitterSystem->GetSoundIndex( pSoundName );
+		if ( !g_pSoundEmitterSystem->IsValidIndex( nSoundIndex ) )
 		{
 			Log_Warning( LOG_GameUI, "GameUI: Unable to precache gamesound \"%s\"\n", pSoundName );
 			continue;
 		}
 
-		CSoundParametersInternal *pInternal = soundemitterbase->InternalGetParametersForSound( nSoundIndex );
+		CSoundParametersInternal *pInternal = g_pSoundEmitterSystem->InternalGetParametersForSound( nSoundIndex );
 		if ( !pInternal )
 		{
 			Log_Warning( LOG_GameUI, "GameUI: Unable to precache gamesound \"%s\"\n", pSoundName );
@@ -192,7 +198,7 @@ void CGameUIGameSystem::PrecacheGameUISounds()
 
 		for( int nWave = 0; nWave < nWaveCount; ++nWave )
 		{
-			const char *pWavName = soundemitterbase->GetWaveName( pInternal->GetSoundNames()[ nWave ].symbol );
+			const char *pWavName = g_pSoundEmitterSystem->GetWaveName( pInternal->GetSoundNames()[ nWave ].symbol );
 			enginesound->PrecacheSound( pWavName, true, true );
 		}
 	}
@@ -214,7 +220,8 @@ void CGameUIGameSystem::ReloadSounds()
 //-----------------------------------------------------------------------------
 void CGameUIGameSystem::InitRenderTargets()
 {
-	g_pGameUISystemMgr->InitRenderTargets();
+	if(g_pGameUISystemMgr)
+		g_pGameUISystemMgr->InitRenderTargets();
 }
 
 //-----------------------------------------------------------------------------
@@ -222,7 +229,7 @@ void CGameUIGameSystem::InitRenderTargets()
 //-----------------------------------------------------------------------------
 IMaterialProxy *CGameUIGameSystem::CreateProxy( const char *proxyName )
 {
-	return g_pGameUISystemMgr->CreateProxy( proxyName );
+	return g_pGameUISystemMgr ? g_pGameUISystemMgr->CreateProxy( proxyName ) : NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -230,7 +237,8 @@ IMaterialProxy *CGameUIGameSystem::CreateProxy( const char *proxyName )
 //-----------------------------------------------------------------------------
 void CGameUIGameSystem::Render( const Rect_t &viewport, float flCurrentTime )
 {
-	g_pGameUISystemMgr->Render( viewport, DmeTime_t( flCurrentTime ) );
+	if(g_pGameUISystemMgr)
+		g_pGameUISystemMgr->Render( viewport, DmeTime_t( flCurrentTime ) );
 }
 
 
@@ -239,8 +247,9 @@ void CGameUIGameSystem::Render( const Rect_t &viewport, float flCurrentTime )
 //-----------------------------------------------------------------------------
 bool CGameUIGameSystem::RegisterInputEvent( const InputEvent_t &iEvent )
 {
-	if ( !g_pGameUISystemMgr->GetGameUIVisible() )
+	if ( !g_pGameUISystemMgr || !g_pGameUISystemMgr->GetGameUIVisible() )
 		return false;
+
 	switch( iEvent.m_nType )
 	{
 	case IE_ButtonPressed:
@@ -275,7 +284,6 @@ bool CGameUIGameSystem::RegisterInputEvent( const InputEvent_t &iEvent )
 	default:
 		break;
 	}
-	
 
 	g_pGameUISystemMgr->RegisterInputEvent( iEvent );
 
@@ -295,5 +303,6 @@ void CGameUIGameSystem::Update( float frametime )
 		// base mod panel rendering and event processing
 		return;
 
-	g_pGameUISystemMgr->RunFrame();
+	if(g_pGameUISystemMgr)
+		g_pGameUISystemMgr->RunFrame();
 }

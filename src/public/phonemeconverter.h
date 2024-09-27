@@ -9,6 +9,10 @@
 #define PHONEMECONVERTER_H
 #pragma once
 
+#include "tier0/logging.h"
+
+DECLARE_LOGGING_CHANNEL( LOG_PHONEMECONVERTER );
+
 const char *ConvertPhoneme( int code );
 int TextToPhoneme( const char *text );
 float WeightForPhonemeCode( int code );

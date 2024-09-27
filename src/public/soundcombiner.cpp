@@ -107,7 +107,7 @@ bool CSoundCombiner::CreateWorkList( IFileSystem *filesystem, CUtlVector< Combin
 
 		char fullpath[ MAX_PATH ];
 		Q_strncpy( fullpath, info[ i ].wavefile, sizeof( fullpath ) );
-		filesystem->GetLocalPath( info[ i ].wavefile, fullpath, sizeof( fullpath ) );
+		g_pFullFileSystem->GetLocalPath( info[ i ].wavefile, fullpath, sizeof( fullpath ) );
 
 		if ( !LoadSentenceFromWavFile( fullpath, workitem->sentence ) )
 		{
@@ -228,7 +228,7 @@ bool CSoundCombiner::IsCombinedFileChecksumValid( IFileSystem *filesystem, char 
 
 	char fullpath[ MAX_PATH ];
 	Q_strncpy( fullpath, outfile, sizeof( fullpath ) );
-	filesystem->GetLocalPath( outfile, fullpath, sizeof( fullpath ) );
+	g_pFullFileSystem->GetLocalPath( outfile, fullpath, sizeof( fullpath ) );
 
 	CSentence sentence;
 
@@ -261,7 +261,7 @@ bool CSoundCombiner::VerifyFilesExist( IFileSystem *filesystem, CUtlVector< Comb
 	for ( int i = 0 ; i < c; ++i )
 	{
 		CombinerEntry& entry = info[ i ];
-		if ( !filesystem->FileExists( entry.wavefile ) )
+		if ( !g_pFullFileSystem->FileExists( entry.wavefile ) )
 		{
 			Warning( "CSoundCombiner::VerifyFilesExist: missing file %s\n", entry.wavefile );
 			return false;
@@ -278,7 +278,7 @@ class StdIOReadBinary : public IFileReadBinary
 public:
 	int open( const char *pFileName )
 	{
-		return (int)filesystem->Open( pFileName, "rb" );
+		return (int)g_pFullFileSystem->Open( pFileName, "rb" );
 	}
 
 	int read( void *pOutput, int size, int file )
@@ -286,7 +286,7 @@ public:
 		if ( !file )
 			return 0;
 
-		return filesystem->Read( pOutput, size, (FileHandle_t)file );
+		return g_pFullFileSystem->Read( pOutput, size, (FileHandle_t)file );
 	}
 
 	void seek( int file, int pos )
@@ -294,7 +294,7 @@ public:
 		if ( !file )
 			return;
 
-		filesystem->Seek( (FileHandle_t)file, pos, FILESYSTEM_SEEK_HEAD );
+		g_pFullFileSystem->Seek( (FileHandle_t)file, pos, FILESYSTEM_SEEK_HEAD );
 	}
 
 	unsigned int tell( int file )
@@ -302,7 +302,7 @@ public:
 		if ( !file )
 			return 0;
 
-		return filesystem->Tell( (FileHandle_t)file );
+		return g_pFullFileSystem->Tell( (FileHandle_t)file );
 	}
 
 	unsigned int size( int file )
@@ -310,7 +310,7 @@ public:
 		if ( !file )
 			return 0;
 
-		return filesystem->Size( (FileHandle_t)file );
+		return g_pFullFileSystem->Size( (FileHandle_t)file );
 	}
 
 	void close( int file )
@@ -318,7 +318,7 @@ public:
 		if ( !file )
 			return;
 
-		filesystem->Close( (FileHandle_t)file );
+		g_pFullFileSystem->Close( (FileHandle_t)file );
 	}
 };
 
@@ -327,27 +327,27 @@ class StdIOWriteBinary : public IFileWriteBinary
 public:
 	int create( const char *pFileName )
 	{
-		return (int)filesystem->Open( pFileName, "wb" );
+		return (int)g_pFullFileSystem->Open( pFileName, "wb" );
 	}
 
 	int write( void *pData, int size, int file )
 	{
-		return filesystem->Write( pData, size, (FileHandle_t)file );
+		return g_pFullFileSystem->Write( pData, size, (FileHandle_t)file );
 	}
 
 	void close( int file )
 	{
-		filesystem->Close( (FileHandle_t)file );
+		g_pFullFileSystem->Close( (FileHandle_t)file );
 	}
 
 	void seek( int file, int pos )
 	{
-		filesystem->Seek( (FileHandle_t)file, pos, FILESYSTEM_SEEK_HEAD );
+		g_pFullFileSystem->Seek( (FileHandle_t)file, pos, FILESYSTEM_SEEK_HEAD );
 	}
 
 	unsigned int tell( int file )
 	{
-		return filesystem->Tell( (FileHandle_t)file );
+		return g_pFullFileSystem->Tell( (FileHandle_t)file );
 	}
 };
 
@@ -438,19 +438,19 @@ bool CSoundCombiner::SaveSentenceToWavFile( char const *wavfile, CSentence& sent
 	Q_StripExtension( wavfile, tempfile, sizeof( tempfile ) );
 	Q_DefaultExtension( tempfile, ".tmp", sizeof( tempfile ) );
 
-	if ( filesystem->FileExists( tempfile, NULL ) )
+	if ( g_pFullFileSystem->FileExists( tempfile, NULL ) )
 	{
-		filesystem->RemoveFile( tempfile, NULL );
+		g_pFullFileSystem->RemoveFile( tempfile, NULL );
 	}
 
-	if ( !filesystem->IsFileWritable( wavfile ) )
+	if ( !g_pFullFileSystem->IsFileWritable( wavfile ) )
 	{
 		Msg( "%s is not writable, can't save sentence data to file\n", wavfile );
 		return false;
 	}
 	
 	// Rename original wavfile to temp
-	filesystem->RenameFile( wavfile, tempfile, NULL );
+	g_pFullFileSystem->RenameFile( wavfile, tempfile, NULL );
 
 	// NOTE:  Put this in it's own scope so that the destructor for outfileRFF actually closes the file!!!!
 	{
@@ -502,7 +502,7 @@ bool CSoundCombiner::SaveSentenceToWavFile( char const *wavfile, CSentence& sent
 	}
 
 	// Remove temp file
-	filesystem->RemoveFile( tempfile, NULL );
+	g_pFullFileSystem->RemoveFile( tempfile, NULL );
 
 	return true;
 }
@@ -534,7 +534,7 @@ bool CSoundCombiner::InitSplicer( IFileSystem *filesystem, int samplerate, int n
 	// Make sure the directory exists
 	char basepath[ 512 ];
 	Q_ExtractFilePath( m_szOutFile, basepath, sizeof( basepath ) );
-	filesystem->CreateDirHierarchy( basepath, "GAME" );
+	g_pFullFileSystem->CreateDirHierarchy( basepath, "GAME" );
 
 	// Create out put file
 	m_pOutRIFF = new OutFileRIFF( m_szOutFile, io_out );

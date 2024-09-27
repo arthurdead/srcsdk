@@ -5,6 +5,8 @@
 #include <dlfcn.h>
 #endif
 
+#define IAPPSYSTEMGROUP_H
+
 #include "filesystem.h"
 #include "tier0/icommandline.h"
 #include "tier1/strtools.h"
@@ -13,23 +15,33 @@
 #ifndef SWDS
 #include "video/ivideoservices.h"
 #endif
+#include "engine_hlds_api.h"
+#include "matchmaking/imatchframework.h"
 
 #include "tier1/interface.h"
 #include "tier1/utlvector.h"
 #include "tier1/utldict.h"
 #include "appframework/IAppSystem.h"
+#include "tier3/tier3.h"
+
+#undef IAPPSYSTEMGROUP_H
 
 #define private public
+#define protected public
 #include "appframework/IAppSystemGroup.h"
 #undef private
+#undef protected
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifndef SWDS
+abstract_class IEngineAPI : public IAppSystem
+{
+};
+
 static constexpr int CEngineAPI_m_StartupInfo_offset = (
-	sizeof(generic_vtable_t) +
-	sizeof(bool) +
-	3 + 
+	sizeof(CTier3AppSystem<IEngineAPI>) +
 	sizeof(void *) +
 	sizeof(bool) +
 	sizeof(bool) +
@@ -41,6 +53,11 @@ static constexpr int StartupInfo_t_m_pParentAppSystemGroup_offset = (
 	sizeof(const char *) +
 	sizeof(const char *) +
 	sizeof(const char *)
+);
+#endif
+
+static constexpr int CDedicatedServerAPI_m_pDedicatedServer_offset = (
+	sizeof(CTier3AppSystem<IDedicatedServerAPI>)
 );
 
 static CAppSystemGroup *s_pCurrentAppSystemHack = NULL;
@@ -66,6 +83,17 @@ static void *CAppSystemGroup_FindSystem( CAppSystemGroup *pthis, const char *pSy
 	}
 
 	return NULL;
+}
+
+static void CAppSystemGroup_AddSystem( CAppSystemGroup *pthis, IAppSystem *pAppSystem, const char *pInterfaceName )
+{
+	if ( !pAppSystem )
+		return;
+
+	int sysIndex = pthis->m_Systems.AddToTail( pAppSystem );
+
+	MEM_ALLOC_CREDIT();
+	pthis->m_SystemDict.Insert( pInterfaceName, sysIndex );
 }
 
 static void *AppSystemCreateInterfaceFnHack(const char *pName, int *pReturnCode)
@@ -247,7 +275,7 @@ HACKMGR_API void HackMgr_SetEnginePhysicsPtr(IPhysics *pOldInter, IPhysics *pNew
 	page_info page_access = page_info(source_vtable, vtable_mem_size);
 	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
 
-	target_vtable = vtable_from_object(&s_VideoRedirect);
+	target_vtable = vtable_from_object(&s_PhysicsRedirect);
 
 	page_access = page_info(target_vtable, vtable_mem_size);
 	page_access.protect(PROT_READ|PROT_WRITE|PROT_EXEC);
@@ -351,25 +379,73 @@ if(!pFileSystem || status != IFACE_OK) {
 char gamebin_path[MAX_PATH];
 pFileSystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
 V_StripTrailingSlash(gamebin_path);
+int gamebin_len = V_strlen(gamebin_path);
 
 pFileSystem->AddSearchPath(gamebin_path, "EXECUTABLE_PATH", PATH_ADD_TO_HEAD);
 
 if(!GetEngineInterfaceFactory())
 	return;
 
+CAppSystemGroup *ParentAppSystemGroup = NULL;
+
 status = IFACE_OK;
 #ifndef SWDS
-void *pEngineAPI = GetEngineInterfaceFactory()("VENGINE_LAUNCHER_API_VERSION004", &status);
-if(!pEngineAPI || status != IFACE_OK)
-	return;
-#else
-	#error
+if(!IsDedicatedServer()) {
+	void *pEngineAPI = GetEngineInterfaceFactory()("VENGINE_LAUNCHER_API_VERSION004", &status);
+	if(!pEngineAPI || status != IFACE_OK)
+		return;
+
+	void *StartupInfo = ((unsigned char *)pEngineAPI + CEngineAPI_m_StartupInfo_offset);
+
+	ParentAppSystemGroup = *(CAppSystemGroup **)((unsigned char *)StartupInfo + StartupInfo_t_m_pParentAppSystemGroup_offset);
+} else 
 #endif
+{
+	void *pDedicatedAPI = GetEngineInterfaceFactory()(VENGINE_HLDS_API_VERSION, &status);
+	if(!pDedicatedAPI || status != IFACE_OK)
+		return;
 
-void *StartupInfo = ((unsigned char *)pEngineAPI + CEngineAPI_m_StartupInfo_offset);
+	ParentAppSystemGroup = *(CAppSystemGroup **)((unsigned char *)pDedicatedAPI + CDedicatedServerAPI_m_pDedicatedServer_offset);
+}
 
-CAppSystemGroup *ParentAppSystemGroup = *(CAppSystemGroup **)((unsigned char *)StartupInfo + StartupInfo_t_m_pParentAppSystemGroup_offset);
 s_pCurrentAppSystemHack = ParentAppSystemGroup;
+
+const char *matchmaking_dll_name = NULL;
+#ifndef SWDS
+if(!IsDedicatedServer()) {
+	matchmaking_dll_name = "matchmaking" DLL_EXT_STRING;
+} else 
+#endif
+{
+	matchmaking_dll_name = "matchmaking_ds" DLL_EXT_STRING;
+}
+
+V_strncat(gamebin_path, CORRECT_PATH_SEPARATOR_S, sizeof(gamebin_path));
+V_strncat(gamebin_path, matchmaking_dll_name, sizeof(gamebin_path));
+
+CSysModule *pMatchMod = Sys_LoadModule(gamebin_path);
+if(pMatchMod) {
+	CreateInterfaceFn pMatchFac = Sys_GetFactory(pMatchMod);
+	if(pMatchFac) {
+		status = IFACE_OK;
+		IMatchFramework *pMatchInter = (IMatchFramework *)pMatchFac(IMATCHFRAMEWORK_VERSION_STRING, &status);
+		if(pMatchInter && status == IFACE_OK) {
+			CAppSystemGroup_AddSystem(ParentAppSystemGroup, pMatchInter, IMATCHFRAMEWORK_VERSION_STRING);
+		}
+	}
+}
+
+gamebin_path[gamebin_len] = '\0';
+
+const char *vphysics_dll_name = NULL;
+#ifndef SWDS
+if(!IsDedicatedServer()) {
+	vphysics_dll_name = "vphysics" DLL_EXT_STRING;
+} else 
+#endif
+{
+	vphysics_dll_name = "vphysics_srv" DLL_EXT_STRING;
+}
 
 char *szModuleName=new char[MAX_PATH];
 
@@ -405,16 +481,18 @@ do {
 			if(!pOldFactory && old_mod.m_pModule)
 				pOldFactory = Sys_GetFactory(old_mod.m_pModule);
 
-			if(V_stricmp(new_mod.m_pModuleName, "vphysics" DLL_EXT_STRING) == 0) {
+			if(V_stricmp(new_mod.m_pModuleName, vphysics_dll_name) == 0) {
 				app_sys_pair_t pair;
 				pair = reconnect_interface(ParentAppSystemGroup, pOldFactory, new_mod.m_Factory, VPHYSICS_INTERFACE_VERSION);
 				HackMgr_SetEnginePhysicsPtr((IPhysics *)pair.pOldInter, (IPhysics *)pair.pNewInter);
 			}
 		#ifndef SWDS
-			else if(V_stricmp(new_mod.m_pModuleName, "video_services" DLL_EXT_STRING) == 0) {
-				app_sys_pair_t pair;
-				pair = reconnect_interface(ParentAppSystemGroup, pOldFactory, new_mod.m_Factory, VIDEO_SERVICES_INTERFACE_VERSION);
-				HackMgr_SetEngineVideoServicesPtr((IVideoServices *)pair.pOldInter, (IVideoServices *)pair.pNewInter);
+			else if(!IsDedicatedServer()) {
+				if(V_stricmp(new_mod.m_pModuleName, "video_services" DLL_EXT_STRING) == 0) {
+					app_sys_pair_t pair;
+					pair = reconnect_interface(ParentAppSystemGroup, pOldFactory, new_mod.m_Factory, VIDEO_SERVICES_INTERFACE_VERSION);
+					HackMgr_SetEngineVideoServicesPtr((IVideoServices *)pair.pOldInter, (IVideoServices *)pair.pNewInter);
+				}
 			}
 		#endif
 

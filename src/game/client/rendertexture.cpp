@@ -28,7 +28,7 @@ void AddReleaseFunc( void )
 	if( !bAdded )
 	{
 		bAdded = true;
-		materials->AddReleaseFunc( ReleaseRenderTargets );
+		g_pMaterialSystem->AddReleaseFunc( ReleaseRenderTargets );
 	}
 }
 
@@ -40,7 +40,7 @@ ITexture *GetPowerOfTwoFrameBufferTexture( void )
 {
 	if ( !s_pPowerOfTwoFrameBufferTexture )
 	{
-		s_pPowerOfTwoFrameBufferTexture.Init( materials->FindTexture( "_rt_PowerOfTwoFB", TEXTURE_GROUP_RENDER_TARGET ) );
+		s_pPowerOfTwoFrameBufferTexture.Init( g_pMaterialSystem->FindTexture( "_rt_PowerOfTwoFB", TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_pPowerOfTwoFrameBufferTexture ) );
 		AddReleaseFunc();
 	}
@@ -56,7 +56,7 @@ ITexture *GetFullscreenTexture( void )
 {
 	if ( !s_pFullscreenTexture )
 	{
-		s_pFullscreenTexture.Init( materials->FindTexture( "_rt_Fullscreen", TEXTURE_GROUP_RENDER_TARGET ) );
+		s_pFullscreenTexture.Init( g_pMaterialSystem->FindTexture( "_rt_Fullscreen", TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_pFullscreenTexture ) );
 		AddReleaseFunc();
 	}
@@ -72,7 +72,7 @@ ITexture *GetCameraTexture( void )
 {
 	if ( !s_pCameraTexture )
 	{
-		s_pCameraTexture.Init( materials->FindTexture( "_rt_Camera", TEXTURE_GROUP_RENDER_TARGET ) );
+		s_pCameraTexture.Init( g_pMaterialSystem->FindTexture( "_rt_Camera", TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_pCameraTexture ) );
 		AddReleaseFunc();
 	}
@@ -88,7 +88,7 @@ ITexture *GetFullFrameDepthTexture( void )
 {
 	if ( !s_pFullFrameDepthTexture )
 	{
-		s_pFullFrameDepthTexture.Init( materials->FindTexture( "_rt_FullFrameDepth", TEXTURE_GROUP_RENDER_TARGET ) );
+		s_pFullFrameDepthTexture.Init( g_pMaterialSystem->FindTexture( "_rt_FullFrameDepth", TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_pFullFrameDepthTexture ) );
 		AddReleaseFunc();
 	}
@@ -113,7 +113,7 @@ ITexture *GetFullFrameFrameBufferTexture( int textureIndex )
 		{
 			V_strcpy_safe( name, "_rt_FullFrameFB" );
 		}
-		s_pFullFrameFrameBufferTexture[textureIndex].Init( materials->FindTexture( name, TEXTURE_GROUP_RENDER_TARGET ) );
+		s_pFullFrameFrameBufferTexture[textureIndex].Init( g_pMaterialSystem->FindTexture( name, TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_pFullFrameFrameBufferTexture[textureIndex] ) );
 		AddReleaseFunc();
 	}
@@ -130,7 +130,7 @@ ITexture *GetWaterReflectionTexture( void )
 {
 	if ( !s_pWaterReflectionTexture )
 	{
-		s_pWaterReflectionTexture.Init( materials->FindTexture( "_rt_WaterReflection", TEXTURE_GROUP_RENDER_TARGET ) );
+		s_pWaterReflectionTexture.Init( g_pMaterialSystem->FindTexture( "_rt_WaterReflection", TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_pWaterReflectionTexture ) );
 		AddReleaseFunc();
 	}
@@ -146,7 +146,7 @@ ITexture *GetWaterRefractionTexture( void )
 {
 	if ( !s_pWaterRefractionTexture )
 	{
-		s_pWaterRefractionTexture.Init( materials->FindTexture( "_rt_WaterRefraction", TEXTURE_GROUP_RENDER_TARGET ) );
+		s_pWaterRefractionTexture.Init( g_pMaterialSystem->FindTexture( "_rt_WaterRefraction", TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_pWaterRefractionTexture ) );
 		AddReleaseFunc();
 	}
@@ -162,7 +162,7 @@ ITexture *GetSmallBufferHDR0( void )
 {
 	if ( !s_pSmallBufferHDR0 )
 	{
-		s_pSmallBufferHDR0.Init( materials->FindTexture( "_rt_SmallHDR0", TEXTURE_GROUP_RENDER_TARGET ) );
+		s_pSmallBufferHDR0.Init( g_pMaterialSystem->FindTexture( "_rt_SmallHDR0", TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_pSmallBufferHDR0 ) );
 		AddReleaseFunc();
 	}
@@ -178,7 +178,7 @@ ITexture *GetSmallBufferHDR1( void )
 {
 	if ( !s_pSmallBufferHDR1 )
 	{
-		s_pSmallBufferHDR1.Init( materials->FindTexture( "_rt_SmallHDR1", TEXTURE_GROUP_RENDER_TARGET ) );
+		s_pSmallBufferHDR1.Init( g_pMaterialSystem->FindTexture( "_rt_SmallHDR1", TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_pSmallBufferHDR1 ) );
 		AddReleaseFunc();
 	}
@@ -194,7 +194,7 @@ ITexture *GetSmallBuffer0( void )
 {
 	if ( !s_pQuarterSizedFB0 )
 	{
-		s_pQuarterSizedFB0.Init( materials->FindTexture( "_rt_SmallFB0", TEXTURE_GROUP_RENDER_TARGET ) );
+		s_pQuarterSizedFB0.Init( g_pMaterialSystem->FindTexture( "_rt_SmallFB0", TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_pQuarterSizedFB0 ) );
 		AddReleaseFunc();
 	}
@@ -210,7 +210,7 @@ ITexture *GetSmallBuffer1( void )
 {
 	if ( !s_pQuarterSizedFB1 )
 	{
-		s_pQuarterSizedFB1.Init( materials->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET ) );
+		s_pQuarterSizedFB1.Init( g_pMaterialSystem->FindTexture( "_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_pQuarterSizedFB1 ) );
 		AddReleaseFunc();
 	}
@@ -230,7 +230,7 @@ ITexture *GetTeenyTexture( int which )
 	{
 		char nbuf[20];
 		sprintf( nbuf, "_rt_TeenyFB%d", which );
-		s_TeenyTextures[which].Init( materials->FindTexture( nbuf, TEXTURE_GROUP_RENDER_TARGET ) );
+		s_TeenyTextures[which].Init( g_pMaterialSystem->FindTexture( nbuf, TEXTURE_GROUP_RENDER_TARGET ) );
 		Assert( !IsErrorTexture( s_TeenyTextures[which] ) );
 		AddReleaseFunc();
 	}

@@ -2962,7 +2962,7 @@ void CBaseEntity::SetWaterType( int nType )
 		m_nWaterType |= 2;
 }
 
-ConVar	sv_alternateticks( "sv_alternateticks", "0", FCVAR_NONE, "If set, server only simulates entities on even numbered ticks.\n" );
+ConVarRef	sv_alternateticks( "sv_alternateticks" );
 
 //-----------------------------------------------------------------------------
 // Purpose: 

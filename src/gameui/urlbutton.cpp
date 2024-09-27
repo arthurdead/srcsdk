@@ -546,7 +546,7 @@ void URLButton::OnMouseReleased(MouseCode code)
 	// ensure mouse capture gets released
 	if (IsUseCaptureMouseEnabled())
 	{
-		input()->SetMouseCapture(NULL);
+		input()->SetMouseCapture(vgui::INVALID_VPANEL);
 	}
 
 	if (_activationType == ACTIVATE_ONPRESSED)
@@ -582,7 +582,7 @@ void URLButton::OnKeyCodePressed(KeyCode code)
 		OnMousePressed(MOUSE_LEFT);
 		if (IsUseCaptureMouseEnabled()) // undo the mouse capture since its a fake mouse click!
 		{
-			input()->SetMouseCapture(NULL);
+			input()->SetMouseCapture(vgui::INVALID_VPANEL);
 		}
 	}
 	else

@@ -58,7 +58,7 @@ KeyValues* CacheKeyValuesForFile( const char *pFilename )
 	if ( i == g_KeyValuesCache.InvalidIndex() )
 	{
 		KeyValues *rDat = new KeyValues( pFilename );
-		rDat->LoadFromFile( filesystem, pFilename, NULL );
+		rDat->LoadFromFile( g_pFullFileSystem, pFilename, NULL );
 		g_KeyValuesCache.Insert( pFilename, rDat );
 		return rDat;		
 	}

@@ -40,7 +40,7 @@ struct FXQuadData_t
 
 	void SetMaterial( const char *shader )	
 	{ 
-		m_pMaterial = materials->FindMaterial( shader, TEXTURE_GROUP_CLIENT_EFFECTS );
+		m_pMaterial = g_pMaterialSystem->FindMaterial( shader, TEXTURE_GROUP_CLIENT_EFFECTS );
 
 		if ( m_pMaterial != NULL )
 		{

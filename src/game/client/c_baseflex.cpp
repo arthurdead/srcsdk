@@ -491,7 +491,7 @@ const void *CFlexSceneFileManager::FindSceneFile( IHasLocalToGlobalFlexSettings 
 
 	// Load file into memory
 	void *buffer = NULL;
-	int len = filesystem->ReadFileEx( VarArgs( "expressions/%s.vfe", szFilename ), "GAME", &buffer );
+	int len = g_pFullFileSystem->ReadFileEx( VarArgs( "expressions/%s.vfe", szFilename ), "GAME", &buffer );
 
 	if ( !len )
 		return NULL;

@@ -125,6 +125,10 @@
 #include "gamepadui/igamepadui.h"
 #include "GameUI/IGameUI.h"
 #include "GameUI/IGameConsole.h"
+#include "gameui_sys.h"
+#include "game_controls/igameuisystemmgr.h"
+#include "engine/imatchmaking.h"
+#include "matchmaking/imatchframework.h"
 
 // NVNT includes
 #include "hud_macros.h"
@@ -167,12 +171,10 @@ IVEfx *effects = NULL;
 IVRenderView *render = NULL;
 IVDebugOverlay *debugoverlay = NULL;
 IMaterialSystemStub *materials_stub = NULL;
-IDataCache *datacache = NULL;
 IVModelInfoClient *modelinfo = NULL;
 IEngineVGui *enginevgui = NULL;
 INetworkStringTableContainer *networkstringtable = NULL;
 ISpatialPartition* partition = NULL;
-IFileSystem *filesystem = NULL;
 IShadowMgr *shadowmgr = NULL;
 IStaticPropMgrClient *staticpropmgr = NULL;
 IEngineSound *enginesound = NULL;
@@ -183,9 +185,8 @@ ISharedGameRules *sharedgamerules = NULL;
 IEngineTrace *enginetrace = NULL;
 IGameUIFuncs *gameuifuncs = NULL;
 IGameEventManager2 *gameeventmanager = NULL;
-ISoundEmitterSystemBase *soundemitterbase = NULL;
-IInputSystem *inputsystem = NULL;
 ISceneFileCache *scenefilecache = NULL;
+IMatchFramework *g_pMatchFramework = NULL;
 IMatchmaking *matchmaking = NULL;
 IUploadGameStats *gamestatsuploader = NULL;
 IClientReplayContext *g_pClientReplayContext = NULL;
@@ -204,127 +205,252 @@ CSysModule* gamepaduiDLL = NULL;
 IGamepadUI* g_pGamepadUI = NULL;
 
 CSysModule* gameuiDLL = NULL;
-IGameUI* g_pGameUI = NULL;
-IGameConsole* g_pGameConsole = NULL;
+
+IGameUISystemMgr *g_pGameUISystemMgr = NULL;
+
+IGameUI* g_pGameUIRedirectTarget = NULL;
+IGameUIEx* g_pGameUIEx = NULL;
+IGameUISystemMgr* g_pGameUISystemMgrRedirectTarget = NULL;
+IGameConsole* g_pGameConsoleRedirectTarget = NULL;
 
 class CGameUIRedirect : public IGameUI
 {
 public:
 	virtual void Initialize( CreateInterfaceFn appFactory )
-	{ g_pGameUI->Initialize( appFactory ); }
+	{ g_pGameUIRedirectTarget->Initialize( appFactory ); }
 	virtual void PostInit()
-	{ g_pGameUI->PostInit(); }
+	{ g_pGameUIRedirectTarget->PostInit(); }
 
 	// connect to other interfaces at the same level (gameui.dll/server.dll/client.dll)
 	virtual void Connect( CreateInterfaceFn gameFactory )
-	{ g_pGameUI->Initialize( gameFactory ); }
+	{ g_pGameUIRedirectTarget->Initialize( gameFactory ); }
 
 	virtual void Start()
-	{ g_pGameUI->Start(); }
+	{ g_pGameUIRedirectTarget->Start(); }
 	virtual void Shutdown()
-	{ g_pGameUI->Shutdown(); }
+	{ g_pGameUIRedirectTarget->Shutdown(); }
 	virtual void RunFrame()
-	{ g_pGameUI->RunFrame(); }
+	{ g_pGameUIRedirectTarget->RunFrame(); }
 
 	// notifications
 	virtual void OnGameUIActivated()
-	{ g_pGameUI->OnGameUIActivated(); }
+	{ g_pGameUIRedirectTarget->OnGameUIActivated(); }
 	virtual void OnGameUIHidden()
-	{ g_pGameUI->OnGameUIHidden(); }
+	{ g_pGameUIRedirectTarget->OnGameUIHidden(); }
 	
 	// OLD: Use OnConnectToServer2
 	virtual void DO_NOT_USE_OnConnectToServer(const char *game, int IP, int port)
-	{ g_pGameUI->DO_NOT_USE_OnConnectToServer(game, IP, port); }
+	{ g_pGameUIRedirectTarget->DO_NOT_USE_OnConnectToServer(game, IP, port); }
 	
 	virtual void DO_NOT_USE_OnDisconnectFromServer( uint8 eSteamLoginFailure, const char *username )
-	{ g_pGameUI->DO_NOT_USE_OnDisconnectFromServer(eSteamLoginFailure, username); }
+	{ g_pGameUIRedirectTarget->DO_NOT_USE_OnDisconnectFromServer(eSteamLoginFailure, username); }
 	virtual void OnLevelLoadingStarted(bool bShowProgressDialog)
-	{ g_pGameUI->OnLevelLoadingStarted(bShowProgressDialog); }
+	{ g_pGameUIRedirectTarget->OnLevelLoadingStarted(bShowProgressDialog); }
 	virtual void OnLevelLoadingFinished(bool bError, const char *failureReason, const char *extendedReason)
-	{ g_pGameUI->OnLevelLoadingFinished(bError, failureReason, extendedReason); }
+	{ g_pGameUIRedirectTarget->OnLevelLoadingFinished(bError, failureReason, extendedReason); }
 
 	// level loading progress, returns true if the screen needs updating
 	virtual bool UpdateProgressBar(float progress, const char *statusText)
-	{ return g_pGameUI->UpdateProgressBar(progress, statusText); }
+	{ return g_pGameUIRedirectTarget->UpdateProgressBar(progress, statusText); }
 	// Shows progress desc, returns previous setting... (used with custom progress bars )
 	virtual bool SetShowProgressText( bool show )
-	{ return g_pGameUI->SetShowProgressText(show); }
+	{ return g_pGameUIRedirectTarget->SetShowProgressText(show); }
 
 	// !!!!!!!!!members added after "GameUI011" initial release!!!!!!!!!!!!!!!!!!!
 	virtual void ShowNewGameDialog( int chapter )
-	{ g_pGameUI->ShowNewGameDialog(chapter); }
+	{ g_pGameUIRedirectTarget->ShowNewGameDialog(chapter); }
 
 	// inserts specified panel as background for level load dialog
 	virtual void SetLoadingBackgroundDialog( vgui::VPANEL panel )
-	{ g_pGameUI->SetLoadingBackgroundDialog(panel); }
+	{ g_pGameUIRedirectTarget->SetLoadingBackgroundDialog(panel); }
 
 	// Bonus maps interfaces
 	virtual void BonusMapUnlock( const char *pchFileName = NULL, const char *pchMapName = NULL )
-	{ g_pGameUI->BonusMapUnlock(pchFileName, pchMapName); }
+	{ g_pGameUIRedirectTarget->BonusMapUnlock(pchFileName, pchMapName); }
 	virtual void BonusMapComplete( const char *pchFileName = NULL, const char *pchMapName = NULL )
-	{ g_pGameUI->BonusMapComplete(pchFileName, pchMapName); }
+	{ g_pGameUIRedirectTarget->BonusMapComplete(pchFileName, pchMapName); }
 	virtual void BonusMapChallengeUpdate( const char *pchFileName, const char *pchMapName, const char *pchChallengeName, int iBest )
-	{ g_pGameUI->BonusMapChallengeUpdate(pchFileName, pchMapName, pchChallengeName, iBest); }
+	{ g_pGameUIRedirectTarget->BonusMapChallengeUpdate(pchFileName, pchMapName, pchChallengeName, iBest); }
 	virtual void BonusMapChallengeNames( char *pchFileName, char *pchMapName, char *pchChallengeName )
-	{ g_pGameUI->BonusMapChallengeNames(pchFileName, pchMapName, pchChallengeName); }
+	{ g_pGameUIRedirectTarget->BonusMapChallengeNames(pchFileName, pchMapName, pchChallengeName); }
 	virtual void BonusMapChallengeObjectives( int &iBronze, int &iSilver, int &iGold )
-	{ g_pGameUI->BonusMapChallengeObjectives(iBronze, iSilver, iGold); }
+	{ g_pGameUIRedirectTarget->BonusMapChallengeObjectives(iBronze, iSilver, iGold); }
 	virtual void BonusMapDatabaseSave( void )
-	{ g_pGameUI->BonusMapDatabaseSave(); }
+	{ g_pGameUIRedirectTarget->BonusMapDatabaseSave(); }
 	virtual int BonusMapNumAdvancedCompleted( void )
-	{ return g_pGameUI->BonusMapNumAdvancedCompleted(); }
+	{ return g_pGameUIRedirectTarget->BonusMapNumAdvancedCompleted(); }
 	virtual void BonusMapNumMedals( int piNumMedals[ 3 ] )
-	{ g_pGameUI->BonusMapNumMedals(piNumMedals); }
+	{ g_pGameUIRedirectTarget->BonusMapNumMedals(piNumMedals); }
 
 	virtual void OnConnectToServer(const char *game, int IP, int connectionPort, int queryPort)
-	{ g_pGameUI->OnConnectToServer(game, IP, connectionPort, queryPort); }
+	{ g_pGameUIRedirectTarget->OnConnectToServer(game, IP, connectionPort, queryPort); }
 
 	virtual void SetProgressOnStart()
-	{ g_pGameUI->SetProgressOnStart(); }
+	{ g_pGameUIRedirectTarget->SetProgressOnStart(); }
 	virtual void OnDisconnectFromServer( uint8 eSteamLoginFailure )
-	{ g_pGameUI->OnDisconnectFromServer(eSteamLoginFailure); }
+	{ g_pGameUIRedirectTarget->OnDisconnectFromServer(eSteamLoginFailure); }
 
 	virtual void OnConfirmQuit( void )
-	{ g_pGameUI->OnConfirmQuit(); }
+	{ g_pGameUIRedirectTarget->OnConfirmQuit(); }
 
 	virtual bool IsMainMenuVisible( void )
-	{ return g_pGameUI->IsMainMenuVisible(); }
+	{ return g_pGameUIRedirectTarget->IsMainMenuVisible(); }
 
 	// Client DLL is providing us with a panel that it wants to replace the main menu with
 	virtual void SetMainMenuOverride( vgui::VPANEL panel )
-	{ g_pGameUI->SetMainMenuOverride(panel); }
+	{ g_pGameUIRedirectTarget->SetMainMenuOverride(panel); }
 	// Client DLL is telling us that a main menu command was issued, probably from its custom main menu panel
 	virtual void SendMainMenuCommand( const char *pszCommand )
-	{ g_pGameUI->SendMainMenuCommand(pszCommand); }
+	{ g_pGameUIRedirectTarget->SendMainMenuCommand(pszCommand); }
 };
 
 static CGameUIRedirect g_GameUIRedirect;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CGameUIRedirect, IGameUI, GAMEUI_INTERFACE_VERSION, g_GameUIRedirect);
+
+class CGameUISystemMgrRedirect : public IGameUISystemMgr
+{
+public:
+	// Here's where the app systems get to learn about each other 
+	virtual bool Connect( CreateInterfaceFn factory )
+	{ return g_pGameUISystemMgrRedirectTarget ? g_pGameUISystemMgrRedirectTarget->Connect( factory ) : true; }
+	virtual void Disconnect()
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->Disconnect();
+	}
+
+	// Here's where systems can access other interfaces implemented by this object
+	// Returns NULL if it doesn't implement the requested interface
+	virtual void *QueryInterface( const char *pInterfaceName )
+	{
+		if (!Q_strcmp(	pInterfaceName, GAMEUISYSTEMMGR_INTERFACE_VERSION ))
+			return (IGameUISystemMgr*)this;
+
+		return g_pGameUISystemMgrRedirectTarget ? g_pGameUISystemMgrRedirectTarget->QueryInterface( pInterfaceName ) : NULL;
+	}
+
+	// Init, shutdown
+	virtual InitReturnVal_t Init()
+	{ return g_pGameUISystemMgrRedirectTarget ? g_pGameUISystemMgrRedirectTarget->Init() : INIT_OK; }
+	virtual void Shutdown()
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->Shutdown();
+	}
+
+	virtual void SetGameUIVisible( bool bVisible )
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->SetGameUIVisible( bVisible );
+	}
+	virtual bool GetGameUIVisible()
+	{ return g_pGameUISystemMgrRedirectTarget ? g_pGameUISystemMgrRedirectTarget->GetGameUIVisible() : false; }
+
+	// Load the game UI menu screen
+	// key values are owned and released by caller
+	virtual IGameUISystem * LoadGameUIScreen( KeyValues *kvScreenLoadSettings )
+	{ return g_pGameUISystemMgrRedirectTarget ? g_pGameUISystemMgrRedirectTarget->LoadGameUIScreen( kvScreenLoadSettings ) : NULL; }
+	virtual void ReleaseAllGameUIScreens()
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->ReleaseAllGameUIScreens();
+	}
+
+	virtual void SetSoundPlayback( IGameUISoundPlayback *pPlayback )
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->SetSoundPlayback( pPlayback );
+	}
+	virtual void UseGameInputSystemEventQueue( bool bEnable )
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->UseGameInputSystemEventQueue( bEnable );
+	}
+	virtual void SetInputContext( InputContextHandle_t hInputContext )
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->SetInputContext( hInputContext );
+	}
+	virtual void RegisterInputEvent( const InputEvent_t &iEvent )
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->RegisterInputEvent( iEvent );
+	}
+
+	virtual void RunFrame()
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->RunFrame();
+	}
+	virtual void Render( const Rect_t &viewport, DmeTime_t flCurrentTime )
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->Render( viewport, flCurrentTime );
+	}
+	virtual void Render( IRenderContext *pRenderContext, PlatWindow_t hWnd, const Rect_t &viewport, DmeTime_t flCurrentTime )
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->Render( pRenderContext, hWnd, viewport, flCurrentTime );
+	}
+
+	virtual void RegisterScreenControllerFactory( char const *szControllerName, IGameUIScreenControllerFactory *pFactory )
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->RegisterScreenControllerFactory( szControllerName, pFactory );
+	}
+	virtual IGameUIScreenControllerFactory * GetScreenControllerFactory( char const *szControllerName )
+	{ return g_pGameUISystemMgrRedirectTarget ? g_pGameUISystemMgrRedirectTarget->GetScreenControllerFactory( szControllerName ) : NULL; }
+
+	virtual void SendEventToAllScreens( KeyValues *kvGlobalEvent )
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->SendEventToAllScreens( kvGlobalEvent );
+	}
+
+	virtual IGameUISystemSurface * GetSurface()
+	{ return g_pGameUISystemMgrRedirectTarget ? g_pGameUISystemMgrRedirectTarget->GetSurface() : NULL; }
+	virtual IGameUISchemeMgr * GetSchemeMgr()
+	{ return g_pGameUISystemMgrRedirectTarget ? g_pGameUISystemMgrRedirectTarget->GetSchemeMgr() : NULL; }
+	virtual IGameUIMiscUtils * GetMiscUtils()
+	{ return g_pGameUISystemMgrRedirectTarget ? g_pGameUISystemMgrRedirectTarget->GetMiscUtils() : NULL; }
+
+	// Init any render targets needed by the UI.
+	virtual void InitRenderTargets()
+	{
+		if(g_pGameUISystemMgrRedirectTarget)
+			g_pGameUISystemMgrRedirectTarget->InitRenderTargets();
+	}
+	virtual IMaterialProxy *CreateProxy( const char *proxyName )
+	{ return g_pGameUISystemMgrRedirectTarget ? g_pGameUISystemMgrRedirectTarget->CreateProxy( proxyName ) : NULL; }
+};
+
+static CGameUISystemMgrRedirect g_GameUISystemMgrRedirect;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CGameUISystemMgrRedirect, IGameUISystemMgr, GAMEUISYSTEMMGR_INTERFACE_VERSION, g_GameUISystemMgrRedirect);
 
 class CGameConsoleRedirect : public IGameConsole
 {
 public:
 	// activates the console, makes it visible and brings it to the foreground
 	virtual void Activate()
-	{ g_pGameConsole->Activate(); }
+	{ g_pGameConsoleRedirectTarget->Activate(); }
 
 	virtual void Initialize()
-	{ g_pGameConsole->Initialize(); }
+	{ g_pGameConsoleRedirectTarget->Initialize(); }
 
 	// hides the console
 	virtual void Hide()
-	{ g_pGameConsole->Hide(); }
+	{ g_pGameConsoleRedirectTarget->Hide(); }
 
 	// clears the console
 	virtual void Clear()
-	{ g_pGameConsole->Clear(); }
+	{ g_pGameConsoleRedirectTarget->Clear(); }
 
 	// return true if the console has focus
 	virtual bool IsConsoleVisible()
-	{ return g_pGameConsole->IsConsoleVisible(); }
+	{ return g_pGameConsoleRedirectTarget->IsConsoleVisible(); }
 
-	virtual void SetParent( int parent )
-	{ g_pGameConsole->SetParent(parent); }
+	virtual void SetParent( vgui::VPANEL parent )
+	{ g_pGameConsoleRedirectTarget->SetParent(parent); }
 };
 
 static CGameConsoleRedirect g_GameConsoleRedirect;
@@ -338,7 +464,6 @@ IGameLoopback* g_pGameLoopback = NULL;
 
 CSysModule* serverDLL = NULL;
 IGameServerLoopback* g_pGameServerLoopback = NULL;
-IServerTools	*servertools = NULL;
 
 CSysModule* videoServicesDLL = NULL;
 
@@ -372,7 +497,7 @@ void ProcessCacheUsedMaterials()
 	g_bRequestCacheUsedMaterials = false;
 	if ( materials )
 	{
-        materials->CacheUsedMaterials();
+        g_pMaterialSystem->CacheUsedMaterials();
 	}
 }
 
@@ -549,6 +674,7 @@ public:
 	{
 		AddAppSystem( "soundemittersystem" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
 		AddAppSystem( "scenefilecache" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
+		AddAppSystem( "client", GAMEUISYSTEMMGR_INTERFACE_VERSION );
 		AddAppSystem( "game_shader_dx9" DLL_EXT_STRING, SHADEREXTENSION_INTERFACE_VERSION );
 		//AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
 		AddAppSystem( "server" DLL_EXT_STRING, GAMESERVERLOOPBACK_INTERFACE_VERSION );
@@ -980,7 +1106,7 @@ CClientDll::CClientDll()
 	SetDefLessFunc( m_CachedMaterials );
 }
 
-extern void InitializeCvars( void );
+extern void InitializeClientCvars( void );
 
 extern IGameSystem *ViewportClientSystem();
 
@@ -1013,6 +1139,7 @@ bool InitGameSystems( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	IGameSystem::Add( ClientEffectPrecacheSystem() );
 	IGameSystem::Add( g_pClientShadowMgr );
 	IGameSystem::Add( g_pColorCorrectionMgr );	// NOTE: This must happen prior to ClientThinkList (color correction is updated there)
+	IGameSystem::Add( g_pGameUIGameSystem );
 	IGameSystem::Add( ClientThinkList() );
 	IGameSystem::Add( ClientSoundscapeSystem() );
 	IGameSystem::Add( PerfVisualBenchmark() );
@@ -1132,13 +1259,18 @@ int CClientDll::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pG
 
 	ConnectTier1Libraries( &appSystemFactory, 1 );
 	ConnectTier2Libraries( &appSystemFactory, 1 );
-
 	ConnectTier3Libraries( &appSystemFactory, 1 );
+
+	// Connected in ConnectTier1Libraries
+	if ( g_pCVar == NULL )
+	{
+		return false;
+	}
 
 	ClientSteamContext().Activate();
 
 	// Initialize the console variables.
-	InitializeCvars();
+	InitializeClientCvars();
 
 	return true;
 }
@@ -1149,11 +1281,11 @@ int CClientDll::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pG
 //-----------------------------------------------------------------------------
 int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CGlobalVarsBase *pGlobals )
 {
-	if ( (filesystem = (IFileSystem *)appSystemFactory(FILESYSTEM_INTERFACE_VERSION, NULL)) == NULL )
+	if ( (g_pFullFileSystem = (IFileSystem *)appSystemFactory(FILESYSTEM_INTERFACE_VERSION, NULL)) == NULL )
 		return false;
 
 	char gamebin_path[MAX_PATH];
-	filesystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+	g_pFullFileSystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
 	V_AppendSlash(gamebin_path, ARRAYSIZE(gamebin_path));
 	int gamebin_length = V_strlen(gamebin_path);
 
@@ -1232,9 +1364,9 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		return false;
 	if ( (debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL )) == NULL )
 		return false;
-	if ( (datacache = (IDataCache*)appSystemFactory(DATACACHE_INTERFACE_VERSION, NULL )) == NULL )
+	if ( !g_pDataCache )
 		return false;
-	if ( !mdlcache )
+	if ( !g_pMDLCache )
 		return false;
 	if ( (modelinfo = (IVModelInfoClient *)appSystemFactory(VMODELINFO_CLIENT_INTERFACE_VERSION, NULL )) == NULL )
 		return false;
@@ -1256,14 +1388,17 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		return false;
 	if ( (gameeventmanager = (IGameEventManager2 *)appSystemFactory(INTERFACEVERSION_GAMEEVENTSMANAGER2,NULL)) == NULL )
 		return false;
-	if ( (soundemitterbase = (ISoundEmitterSystemBase *)appSystemFactory(SOUNDEMITTERSYSTEM_INTERFACE_VERSION, NULL)) == NULL )
+	if ( !g_pSoundEmitterSystem )
 		return false;
-	if ( (inputsystem = (IInputSystem *)appSystemFactory(INPUTSYSTEM_INTERFACE_VERSION, NULL)) == NULL )
+	if ( !g_pInputSystem )
 		return false;
 	if ( (scenefilecache = (ISceneFileCache *)appSystemFactory( SCENE_FILE_CACHE_INTERFACE_VERSION, NULL )) == NULL )
 		return false;
 	if ( ( gamestatsuploader = (IUploadGameStats *)appSystemFactory( INTERFACEVERSION_UPLOADGAMESTATS, NULL )) == NULL )
 		return false;
+
+	g_pMatchFramework = (IMatchFramework *)appSystemFactory( IMATCHFRAMEWORK_VERSION_STRING, NULL );
+	matchmaking = (IMatchmaking *)appSystemFactory( VENGINE_MATCHMAKING_VERSION, NULL );
 
 #if defined( REPLAY_ENABLED )
 	if ( (g_pEngineReplay = (IEngineReplay *)appSystemFactory( ENGINE_REPLAY_INTERFACE_VERSION, NULL )) == NULL )
@@ -1290,18 +1425,31 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		CreateInterfaceFn gameuiFactory = Sys_GetFactory(gameuiDLL);
 		if(gameuiFactory) {
 			int status = IFACE_OK;
-			g_pGameUI = (IGameUI *)gameuiFactory(GAMEUI_INTERFACE_VERSION, &status);
+			g_pGameUIRedirectTarget = (IGameUI *)gameuiFactory(GAMEUI_INTERFACE_VERSION, &status);
 			if(status != IFACE_OK) {
-				g_pGameUI = NULL;
+				g_pGameUIRedirectTarget = NULL;
+			}
+
+			g_pGameUIEx = (IGameUIEx *)gameuiFactory(GAMEUI_EX_INTERFACE_VERSION, &status);
+			if(status != IFACE_OK) {
+				g_pGameUIEx = NULL;
 			}
 
 			status = IFACE_OK;
-			g_pGameConsole = (IGameConsole *)gameuiFactory(GAMECONSOLE_INTERFACE_VERSION, &status);
+			g_pGameConsoleRedirectTarget = (IGameConsole *)gameuiFactory(GAMECONSOLE_INTERFACE_VERSION, &status);
 			if(status != IFACE_OK) {
-				g_pGameConsole = NULL;
+				g_pGameConsoleRedirectTarget = NULL;
+			}
+
+			status = IFACE_OK;
+			g_pGameUISystemMgrRedirectTarget = (IGameUISystemMgr *)gameuiFactory(GAMEUISYSTEMMGR_INTERFACE_VERSION, &status);
+			if(status != IFACE_OK) {
+				g_pGameUISystemMgrRedirectTarget = NULL;
 			}
 		}
 	}
+
+	g_pGameUISystemMgr = (IGameUISystemMgr*)appSystemFactory( GAMEUISYSTEMMGR_INTERFACE_VERSION, NULL );
 
 	V_strcat_safe(gamebin_path, "gamepadui" DLL_EXT_STRING);
 	Sys_LoadInterface( gamebin_path, GAMEPADUI_INTERFACE_VERSION, &gamepaduiDLL, reinterpret_cast< void** >( &g_pGamepadUI ) );
@@ -1380,18 +1528,12 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 			if(status != IFACE_OK) {
 				g_pGameServerLoopback = NULL;
 			}
-
-			status = IFACE_OK;
-			servertools = (IServerTools *)serverFactory(VSERVERTOOLS_INTERFACE_VERSION, &status);
-			if(status != IFACE_OK) {
-				servertools = NULL;
-			}
 		}
 	}
 
-	COM_TimestampedLog( "soundemitterbase->Connect" );
+	COM_TimestampedLog( "g_pSoundEmitterSystem->Connect" );
 	// Yes, both the client and game .dlls will try to Connect, the soundemittersystem.dll will handle this gracefully
-	if ( !soundemitterbase->Connect( appSystemFactory ) )
+	if ( !g_pSoundEmitterSystem->Connect( appSystemFactory ) )
 	{
 		return false;
 	}
@@ -1707,23 +1849,26 @@ void CClientDll::HudText( const char * message )
 	DispatchHudText( message );
 }
 
+bool IsGameUIPanelVisible()
+{
+	if ( !g_pGameUIEx || !g_pGameUIEx->IsPanelVisible() )
+		return false;
+
+	return true;
+}
+
 //-----------------------------------------------------------------------------
 // Handler for input events for the new game ui system
 //-----------------------------------------------------------------------------
 bool CClientDll::HandleGameUIEvent( const InputEvent_t &inputEvent )
 {
-#ifdef GAMEUI_UISYSTEM2_ENABLED
 	// TODO: when embedded UI will be used for HUD, we will need it to maintain
 	// a separate screen for HUD and a separate screen stack for pause menu & main menu.
 	// for now only render embedded UI in pause menu & main menu
-	BaseModUI::CBaseModPanel *pBaseModPanel = BaseModUI::CBaseModPanel::GetSingletonPtr();
-	if ( !pBaseModPanel || !pBaseModPanel->IsVisible() )
+	if ( !IsGameUIPanelVisible() )
 		return false;
 
 	return g_pGameUIGameSystem->RegisterInputEvent( inputEvent );
-#else
-	return false;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2461,7 +2606,7 @@ void CClientDll::PrecacheMaterial( const char *pMaterialName )
 		*pFound = 0;
 	}
 		
-	IMaterial *pMaterial = materials->FindMaterial( pTempBuf, TEXTURE_GROUP_PRECACHED );
+	IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( pTempBuf, TEXTURE_GROUP_PRECACHED );
 	if ( !IsErrorMaterial( pMaterial ) )
 	{
 		int idx = m_CachedMaterials.Find( pMaterial );
@@ -3006,11 +3151,10 @@ void CClientDll::OnScreenSizeChanged( int nOldWidth, int nOldHeight )
 
 IMaterialProxy *CClientDll::InstantiateMaterialProxy( const char *proxyName )
 {
-#ifdef GAMEUI_UISYSTEM2_ENABLED
 	IMaterialProxy *pProxy = g_pGameUIGameSystem->CreateProxy( proxyName );
 	if ( pProxy )
 		return pProxy;
-#endif
+
 	return GetMaterialProxyDict().CreateProxy( proxyName );
 }
 

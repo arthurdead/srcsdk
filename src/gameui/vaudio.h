@@ -15,8 +15,8 @@
 
 #define MAX_DYNAMIC_AUDIO_LANGUAGES 15
 
-
-typedef struct IVoiceTweak_s IVoiceTweak;
+struct IVoiceTweak_s;
+typedef IVoiceTweak_s IVoiceTweak;
 class CNB_Header_Footer;
 
 namespace BaseModUI {

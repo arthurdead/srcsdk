@@ -27,13 +27,10 @@ public:
 	}
 };
 
-CShaderLibConVarAccessor g_ConVarAccessor;
+CShaderLibConVarAccessor g_ShaderlibConVarAccessor;
 
 
 void InitShaderLibCVars( CreateInterfaceFn cvarFactory )
 {
-	if ( g_pCVar )
-	{
-		ConVar_Register( FCVAR_MATERIAL_SYSTEM_THREAD | FCVAR_CLIENTDLL, &g_ConVarAccessor );
-	}
+	ConVar_Register( FCVAR_MATERIAL_SYSTEM_THREAD | FCVAR_CLIENTDLL, &g_ShaderlibConVarAccessor );
 }

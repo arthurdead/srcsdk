@@ -42,11 +42,12 @@ bool CVAudioRedirect::Init()
 {
 	CSysModule *pTargetMod = NULL;
 
-	const char *pGameDir = CommandLine()->ParmValue("-game", "hl2");
+	const char *pGameDir = CommandLine()->ParmValue("-game", CommandLine()->ParmValue( "-defaultgamedir", "hl2" ) );
 
 	char szTargetPath[MAX_PATH];
 	V_strncpy(szTargetPath, pGameDir, sizeof(szTargetPath));
 	V_AppendSlash(szTargetPath, sizeof(szTargetPath));
+	V_strcat(szTargetPath, "bin" CORRECT_PATH_SEPARATOR_S, sizeof(szTargetPath));
 
 	if(strcmp(V_STRINGIFY(DLLNAME), "vaudio_miles") == 0) {
 		V_strcat(szTargetPath, "vaudio_minimp3" DLL_EXT_STRING, sizeof(szTargetPath));

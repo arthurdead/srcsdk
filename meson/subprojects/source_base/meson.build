@@ -87,6 +87,7 @@ source_dep = declare_dependency(
 		'-msse4.1',
 		'-msse4.2',
 		'-mlzcnt',
+		'-fvisibility=hidden',
 	],
 	include_directories: include_directories(
 		src_root_dir,

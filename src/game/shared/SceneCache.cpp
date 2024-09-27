@@ -33,7 +33,7 @@ int	CSceneCache::GetSoundCount() const
 
 char const *CSceneCache::GetSoundName( int index )
 {
-	return soundemitterbase->GetSoundName( sounds[ index ] );
+	return g_pSoundEmitterSystem->GetSoundName( sounds[ index ] );
 }
 
 void CSceneCache::Save( CUtlBuffer& buf  )
@@ -64,7 +64,7 @@ void CSceneCache::Restore( CUtlBuffer& buf  )
 		char soundname[ 512 ];
 		buf.GetString( soundname, sizeof( soundname ) );
 
-		int idx = soundemitterbase->GetSoundIndex( soundname );
+		int idx = g_pSoundEmitterSystem->GetSoundIndex( soundname );
 		if ( idx != -1 )
 		{
 			Assert( idx <= 65535 );
@@ -86,7 +86,7 @@ void CSceneCache::PrecacheSceneEvent( CChoreoEvent *event, CUtlVector< unsigned 
 	if ( !event || event->GetType() != CChoreoEvent::SPEAK )
 		return;
 
-	int idx = soundemitterbase->GetSoundIndex( event->GetParameters() );
+	int idx = g_pSoundEmitterSystem->GetSoundIndex( event->GetParameters() );
 	if ( idx != -1 )
 	{
 		MEM_ALLOC_CREDIT();
@@ -99,7 +99,7 @@ void CSceneCache::PrecacheSceneEvent( CChoreoEvent *event, CUtlVector< unsigned 
 		char tok[ CChoreoEvent::MAX_CCTOKEN_STRING ];
 		if ( event->GetPlaybackCloseCaptionToken( tok, sizeof( tok ) ) )
 		{
-			int idx = soundemitterbase->GetSoundIndex( tok );
+			int idx = g_pSoundEmitterSystem->GetSoundIndex( tok );
 			if ( idx != -1 && soundlist.Find( idx ) == soundlist.InvalidIndex() )
 			{
 				MEM_ALLOC_CREDIT();

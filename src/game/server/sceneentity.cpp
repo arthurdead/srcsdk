@@ -391,7 +391,7 @@ CSceneEntity::CSceneEntity( void )
 	m_bCompletedEarly	= false;
 
 	if ( !m_pcvSndMixahead )
-		m_pcvSndMixahead	= cvar->FindVar( "snd_mixahead" );
+		m_pcvSndMixahead	= g_pCVar->FindVar( "snd_mixahead" );
 
 	m_BusyActor			= SCENE_BUSYACTOR_DEFAULT;
 }
@@ -1403,7 +1403,7 @@ void CSceneEntity::DispatchStartSpeak( CChoreoScene *scene, CBaseFlex *actor, CC
 
 					byte byteflags = CLOSE_CAPTION_WARNIFMISSING; // warnifmissing
 					char const *pszActorModel = STRING( actor->GetModelName() );
-					gender_t gender = soundemitterbase->GetActorGender( pszActorModel );
+					gender_t gender = g_pSoundEmitterSystem->GetActorGender( pszActorModel );
 
 					char lowercase_nogender[ 256 ];
 					Q_strncpy( lowercase_nogender, lowercase, sizeof( lowercase_nogender ) );
@@ -3110,7 +3110,7 @@ CChoreoScene *CSceneEntity::LoadScene( const char *filename, IChoreoEventCallbac
 		}
 	}
 	// Next, check if it's a loose file...
-	else if (filesystem->ReadFileEx( loadfile, "MOD", &pBuffer, true ))
+	else if (g_pFullFileSystem->ReadFileEx( loadfile, "MOD", &pBuffer, true ))
 	{
 		g_TokenProcessor.SetBuffer((char*)pBuffer);
 		pScene = ChoreoLoadScene( loadfile, NULL, &g_TokenProcessor, LocalScene_Printf );
@@ -3631,7 +3631,7 @@ const char *GetFirstSoundInScene(const char *pszScene)
 	else
 	{
 		void *pBuffer = NULL;
-		if (filesystem->ReadFileEx( pszScene, "MOD", &pBuffer, true ))
+		if (g_pFullFileSystem->ReadFileEx( pszScene, "MOD", &pBuffer, true ))
 		{
 			g_TokenProcessor.SetBuffer((char*)pBuffer);
 			CChoreoScene *pScene = ChoreoLoadScene( pszScene, NULL, &g_TokenProcessor, LocalScene_Printf );
@@ -4380,7 +4380,7 @@ int SceneNameAutocomplete( char const *partial, char commands[ COMMAND_COMPLETIO
 
 	FileFindHandle_t findHandle;
 	char txtFilenameNoExtension[ MAX_PATH ];
-	const char *txtFilename = filesystem->FindFirstEx( path, "MOD", &findHandle );
+	const char *txtFilename = g_pFullFileSystem->FindFirstEx( path, "MOD", &findHandle );
 	while ( txtFilename )
 	{
 		if ( txtFilename[0] != '.' ) // skip the parent and current directories "." and ".."
@@ -4388,7 +4388,7 @@ int SceneNameAutocomplete( char const *partial, char commands[ COMMAND_COMPLETIO
 			Q_FileBase( txtFilename, txtFilenameNoExtension, sizeof( txtFilenameNoExtension ) );
 			if ( !Q_strnicmp( txtFilenameNoExtension, partial, partialLength ) )
 			{
-				if ( filesystem->FindIsDirectory( findHandle ) )
+				if ( g_pFullFileSystem->FindIsDirectory( findHandle ) )
 				{
 					// Add the directory name with a slash
 					Q_snprintf( commands[ numMatches++ ], COMMAND_COMPLETION_ITEM_LENGTH, "%s %s%s/", commandName, dirName, txtFilenameNoExtension );
@@ -4401,15 +4401,15 @@ int SceneNameAutocomplete( char const *partial, char commands[ COMMAND_COMPLETIO
 
 				if ( numMatches == COMMAND_COMPLETION_MAXITEMS )
 				{
-					filesystem->FindClose( findHandle );
+					g_pFullFileSystem->FindClose( findHandle );
 					return numMatches;
 				}
 			}
 		}
 
-		txtFilename = filesystem->FindNext( findHandle );
+		txtFilename = g_pFullFileSystem->FindNext( findHandle );
 	}
-	filesystem->FindClose( findHandle );
+	g_pFullFileSystem->FindClose( findHandle );
 
 	return numMatches;
 }
@@ -4621,7 +4621,7 @@ int GetSceneSpeechCount( char const *pszScene )
 	{
 		void *pBuffer = NULL;
 		int iNumSounds = 0;
-		if (filesystem->ReadFileEx( pszScene, "MOD", &pBuffer, true ))
+		if (g_pFullFileSystem->ReadFileEx( pszScene, "MOD", &pBuffer, true ))
 		{
 			g_TokenProcessor.SetBuffer((char*)pBuffer);
 			CChoreoScene *pScene = ChoreoLoadScene( pszScene, NULL, &g_TokenProcessor, LocalScene_Printf );

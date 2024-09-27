@@ -38,7 +38,7 @@ CModelSoundsCache::CModelSoundsCache( const CModelSoundsCache& src )
 
 char const *CModelSoundsCache::GetSoundName( int index )
 {
-	return soundemitterbase->GetSoundName( sounds[ index ] );
+	return g_pSoundEmitterSystem->GetSoundName( sounds[ index ] );
 }
 
 void CModelSoundsCache::Save( CUtlBuffer& buf  )
@@ -64,7 +64,7 @@ void CModelSoundsCache::Restore( CUtlBuffer& buf  )
 
 		buf.GetString( soundname, sizeof( soundname ) );
 
-		int idx = soundemitterbase->GetSoundIndex( soundname );
+		int idx = g_pSoundEmitterSystem->GetSoundIndex( soundname );
 		if ( idx != -1 )
 		{
 			Assert( idx <= 65535 );
@@ -105,7 +105,7 @@ void CModelSoundsCache::PrecacheSoundList()
 //-----------------------------------------------------------------------------
 void CModelSoundsCache::FindOrAddScriptSound( CUtlVector< unsigned short >& sounds, char const *soundname )
 {
-	int soundindex = soundemitterbase->GetSoundIndex( soundname );
+	int soundindex = g_pSoundEmitterSystem->GetSoundIndex( soundname );
 	if ( soundindex != -1 )
 	{
 		// Only add it once per model...

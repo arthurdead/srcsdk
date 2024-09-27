@@ -15,6 +15,36 @@
 #include "inputsystem/ButtonCode.h"
 #include "inputsystem/AnalogCode.h"
 
+///-----------------------------------------------------------------------------
+/// A handle to a cursor icon
+///-----------------------------------------------------------------------------
+DECLARE_POINTER_HANDLE( InputCursorHandle_t );
+#define INPUT_CURSOR_HANDLE_INVALID ( (InputCursorHandle_t)0 )
+
+
+///-----------------------------------------------------------------------------
+/// An enumeration describing well-known cursor icons
+///-----------------------------------------------------------------------------
+enum InputStandardCursor_t
+{
+	INPUT_CURSOR_NONE	= 0,
+	INPUT_CURSOR_ARROW,
+	INPUT_CURSOR_IBEAM,   
+	INPUT_CURSOR_HOURGLASS,
+	INPUT_CURSOR_CROSSHAIR,
+	INPUT_CURSOR_WAITARROW,
+	INPUT_CURSOR_UP,
+	INPUT_CURSOR_SIZE_NW_SE,
+	INPUT_CURSOR_SIZE_NE_SW,
+	INPUT_CURSOR_SIZE_W_E,
+	INPUT_CURSOR_SIZE_N_S,
+	INPUT_CURSOR_SIZE_ALL,
+	INPUT_CURSOR_NO,
+	INPUT_CURSOR_HAND,
+
+	INPUT_CURSOR_COUNT
+};
+
 //-----------------------------------------------------------------------------
 // Main interface for input. This is a low-level interface
 //-----------------------------------------------------------------------------

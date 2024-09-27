@@ -34,21 +34,38 @@ static CreateInterfaceFn do_load(CreateInterfaceFn &func, CSysModule *&dll, cons
 
 CreateInterfaceFn GetEngineInterfaceFactory()
 {
-	return do_load(engine_createinterface, engine_DLL, "engine" DLL_EXT_STRING);
+#ifndef SWDS
+	if(!IsDedicatedServer()) {
+		return do_load(engine_createinterface, engine_DLL, "engine" DLL_EXT_STRING);
+	} else
+#endif
+	{
+		return do_load(engine_createinterface, engine_DLL, "engine_srv" DLL_EXT_STRING);
+	}
 }
 
 CreateInterfaceFn GetFilesystemInterfaceFactory()
 {
-	return do_load(filesystem_createinterface, filesystem_DLL, "filesystem_stdio" DLL_EXT_STRING);
+#ifndef SWDS
+	if(!IsDedicatedServer()) {
+		return do_load(filesystem_createinterface, filesystem_DLL, "filesystem_stdio" DLL_EXT_STRING);
+	} else
+#endif
+	{
+		return do_load(filesystem_createinterface, filesystem_DLL, "dedicated_srv" DLL_EXT_STRING);
+	}
 }
 
 CreateInterfaceFn GetLauncherInterfaceFactory()
 {
 #ifndef SWDS
-	return do_load(launcher_createinterface, launcher_DLL, "launcher" DLL_EXT_STRING);
-#else
-	#error
+	if(!IsDedicatedServer()) {
+		return do_load(launcher_createinterface, launcher_DLL, "launcher" DLL_EXT_STRING);
+	} else
 #endif
+	{
+		return do_load(launcher_createinterface, launcher_DLL, "dedicated_srv" DLL_EXT_STRING);
+	}
 }
 
 #ifndef SWDS
@@ -60,11 +77,22 @@ CreateInterfaceFn GetMaterialSystemInterfaceFactory()
 
 CreateInterfaceFn GetVstdlibInterfaceFactory()
 {
-#ifdef __linux__
-	return do_load(vstdlib_createinterface, vstdlib_DLL, "libvstdlib" DLL_EXT_STRING);
-#else
-	return do_load(vstdlib_createinterface, vstdlib_DLL, "vstdlib" DLL_EXT_STRING);
+#ifndef SWDS
+	if(!IsDedicatedServer()) {
+	#ifdef __linux__
+		return do_load(vstdlib_createinterface, vstdlib_DLL, "libvstdlib" DLL_EXT_STRING);
+	#else
+		return do_load(vstdlib_createinterface, vstdlib_DLL, "vstdlib" DLL_EXT_STRING);
+	#endif
+	} else
 #endif
+	{
+	#ifdef __linux__
+		return do_load(vstdlib_createinterface, vstdlib_DLL, "libvstdlib_srv" DLL_EXT_STRING);
+	#else
+		return do_load(vstdlib_createinterface, vstdlib_DLL, "vstdlib_srv" DLL_EXT_STRING);
+	#endif
+	}
 }
 
 #ifndef SWDS

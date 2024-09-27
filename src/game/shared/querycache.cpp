@@ -216,14 +216,14 @@ void ProcessQueryCacheUpdate( QueryCacheUpdateRecord_t &workItem )
 
 static void PreUpdateQueryCache()
 {
-	//mdlcache->BeginCoarseLock();			// x360 only - will need to port for this in the future
-	mdlcache->BeginLock();
+	//g_pMDLCache->BeginCoarseLock();			// x360 only - will need to port for this in the future
+	g_pMDLCache->BeginLock();
 }
 
 static void PostUpdateQueryCache()
 {
-	mdlcache->EndLock();
-	//mdlcache->EndCoarseLock();			// x360 only - will need to port for this in the future
+	g_pMDLCache->EndLock();
+	//g_pMDLCache->EndCoarseLock();			// x360 only - will need to port for this in the future
 }
 
 

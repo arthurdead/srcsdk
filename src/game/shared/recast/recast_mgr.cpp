@@ -25,7 +25,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar recast_debug_mesh( "recast_debug_mesh", "HUMAN_HULL", FCVAR_REPLICATED|FCVAR_CHEAT );
+ConVar recast_debug_mesh( "recast_debug_mesh", "HUMAN", FCVAR_REPLICATED|FCVAR_CHEAT );
 
 //-----------------------------------------------------------------------------
 // Purpose: Accessor
@@ -724,7 +724,7 @@ void CRecastMgr::LoadPlaceDatabase( void )
 	m_placeCount = 0;
 
 	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
-	filesystem->ReadFile("NavPlace.db", "GAME", buf);
+	g_pFullFileSystem->ReadFile("NavPlace.db", "GAME", buf);
 
 	if (!buf.Size())
 		return;

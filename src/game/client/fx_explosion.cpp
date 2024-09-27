@@ -1018,7 +1018,7 @@ void C_WaterExplosionEffect::CreateCore( void )
 	lineData.m_flStartScale = radius*0.5f;
 	lineData.m_flEndScale = radius*2; 
 
-	lineData.m_pMaterial = materials->FindMaterial( "effects/splash3", 0, 0 );
+	lineData.m_pMaterial = g_pMaterialSystem->FindMaterial( "effects/splash3", 0, 0 );
 
 	lineData.m_vecStart = start;
 	lineData.m_vecStartVelocity = vec3_origin;
@@ -1049,7 +1049,7 @@ void C_WaterExplosionEffect::CreateCore( void )
 	lineData.m_flStartScale = radius;
 	lineData.m_flEndScale = radius*2; 
 
-	lineData.m_pMaterial = materials->FindMaterial( "effects/splash3", 0, 0 );
+	lineData.m_pMaterial = g_pMaterialSystem->FindMaterial( "effects/splash3", 0, 0 );
 
 	lineData.m_vecStart = start;
 	lineData.m_vecStartVelocity = vec3_origin;

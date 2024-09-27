@@ -613,7 +613,7 @@ void GenericPanelList::ApplySettings( KeyValues* inResourceData )
 	m_PanelItemBorder =  scheme()->GetProportionalScaledValueEx( GetScheme(), inResourceData->GetInt( "panelBorder", 4 ) );
 
 	// Never show arrows on PC.  Show arrows on 360 unless specified not to in .res file.
-	bool isArrowVisible = IsX360() ? ( inResourceData->GetInt( "arrowsVisible", 1 ) == 1 ) : false;
+	bool isArrowVisible = ( inResourceData->GetInt( "arrowsVisible", 1 ) == 1 );
 	SetScrollArrowsVisible( isArrowVisible );
 
 	m_bWrap = inResourceData->GetInt( "NoWrap", 0 ) == 0;
@@ -685,7 +685,7 @@ void GenericPanelList::UpdatePanels()
 		{
 			if( i < firstVisi || i > lastVisi )
 			{
-				panel->SetVisible( IsX360() && ( m_ItemSelectionModeMask & GenericPanelList::ISM_PERITEM ) );
+				panel->SetVisible( ( m_ItemSelectionModeMask & GenericPanelList::ISM_PERITEM ) );
 				if ( m_ItemSelectionModeMask & ISM_ALPHA_INVISIBLE )
 					panel->SetAlpha( 0 );
 			}

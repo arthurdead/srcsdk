@@ -198,7 +198,7 @@ void CDecalEmitterSystem::LoadDecalsFromScript( char const *filename )
 	if ( kv )
 	{
 		KeyValues *translation = NULL;
-		if ( kv->LoadFromFile( filesystem, filename, "GAME" ) )
+		if ( kv->LoadFromFile( g_pFullFileSystem, filename, "GAME" ) )
 		{
 			KeyValues *p = kv;
 			while ( p )

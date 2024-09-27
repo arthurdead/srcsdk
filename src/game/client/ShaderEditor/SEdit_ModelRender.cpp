@@ -377,7 +377,7 @@ int SEditModelRender::MaterialPicker( char ***szMat )
 					char tmpPath[MAX_PATH];
 					Q_snprintf( tmpPath, MAX_PATH, "%s%s\0", pSHdr->pCdtexture( p ), matName );
 					Q_FixSlashes( tmpPath );
-					IMaterial *pTempMat = materials->FindMaterial( tmpPath, TEXTURE_GROUP_MODEL );
+					IMaterial *pTempMat = g_pMaterialSystem->FindMaterial( tmpPath, TEXTURE_GROUP_MODEL );
 					if ( !IsErrorMaterial( pTempMat ) )
 					{
 						hValidMaterials.AddToTail( pTempMat );

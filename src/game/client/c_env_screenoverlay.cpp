@@ -98,7 +98,7 @@ void C_EnvScreenOverlay::PostDataUpdate( DataUpdateType_t updateType )
 		{
 			if ( m_iszOverlayNames[ i ] && m_iszOverlayNames[ i ][ 0 ] )
 			{
-				materials->FindMaterial( m_iszOverlayNames[ i ], TEXTURE_GROUP_CLIENT_EFFECTS, false );
+				g_pMaterialSystem->FindMaterial( m_iszOverlayNames[ i ], TEXTURE_GROUP_CLIENT_EFFECTS, false );
 			}
 		}
 	}
@@ -167,7 +167,7 @@ void C_EnvScreenOverlay::StartCurrentOverlay( void )
 		 m_flCurrentOverlayTime = gpGlobals->curtime + m_flOverlayTimes[m_iCurrentOverlay];
 
 	// Bring up the current overlay
-	IMaterial *pMaterial = materials->FindMaterial( m_iszOverlayNames[m_iCurrentOverlay], TEXTURE_GROUP_CLIENT_EFFECTS, false );
+	IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( m_iszOverlayNames[m_iCurrentOverlay], TEXTURE_GROUP_CLIENT_EFFECTS, false );
 	if ( !IsErrorMaterial( pMaterial ) )
 	{
 		if (m_iOverlayIndex != -1)

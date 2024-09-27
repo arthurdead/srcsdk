@@ -147,7 +147,7 @@ void Video::OpenPagedPoolMem( void )
 //=============================================================================
 void Video::SetupActivateData( void )
 {
-	const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
+	const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
 	m_iResolutionWidth = config.m_VideoMode.m_Width;
 	m_iResolutionHeight = config.m_VideoMode.m_Height;
 	m_iAspectRatio = GetScreenAspectMode( m_iResolutionWidth, m_iResolutionHeight );
@@ -410,7 +410,7 @@ void Video::Activate( bool bRecommendedSettings )
 			m_nNumAAModes++;
 
 			// Add other supported AA settings
-			if ( materials->SupportsMSAAMode(2) )
+			if ( g_pMaterialSystem->SupportsMSAAMode(2) )
 			{
 				Assert( m_nNumAAModes < MAX_DYNAMIC_AA_MODES );
 				szCurrentButton[ iCommandNumberPosition ] = m_nNumAAModes + '0';
@@ -421,7 +421,7 @@ void Video::Activate( bool bRecommendedSettings )
 				m_nNumAAModes++;
 			}
 
-			if ( materials->SupportsMSAAMode(4) )
+			if ( g_pMaterialSystem->SupportsMSAAMode(4) )
 			{
 				Assert( m_nNumAAModes < MAX_DYNAMIC_AA_MODES );
 				szCurrentButton[ iCommandNumberPosition ] = m_nNumAAModes + '0';
@@ -432,7 +432,7 @@ void Video::Activate( bool bRecommendedSettings )
 				m_nNumAAModes++;
 			}
 
-			if ( materials->SupportsMSAAMode(6) )
+			if ( g_pMaterialSystem->SupportsMSAAMode(6) )
 			{
 				Assert( m_nNumAAModes < MAX_DYNAMIC_AA_MODES );
 				szCurrentButton[ iCommandNumberPosition ] = m_nNumAAModes + '0';
@@ -443,7 +443,7 @@ void Video::Activate( bool bRecommendedSettings )
 				m_nNumAAModes++;
 			}
 
-			if ( materials->SupportsCSAAMode(4, 2) )							// nVidia CSAA			"8x"
+			if ( g_pMaterialSystem->SupportsCSAAMode(4, 2) )							// nVidia CSAA			"8x"
 			{
 				Assert( m_nNumAAModes < MAX_DYNAMIC_AA_MODES );
 				szCurrentButton[ iCommandNumberPosition ] = m_nNumAAModes + '0';
@@ -454,7 +454,7 @@ void Video::Activate( bool bRecommendedSettings )
 				m_nNumAAModes++;
 			}
 
-			if ( materials->SupportsCSAAMode(4, 4) )							// nVidia CSAA			"16x"
+			if ( g_pMaterialSystem->SupportsCSAAMode(4, 4) )							// nVidia CSAA			"16x"
 			{
 				Assert( m_nNumAAModes < MAX_DYNAMIC_AA_MODES );
 				szCurrentButton[ iCommandNumberPosition ] = m_nNumAAModes + '0';
@@ -465,7 +465,7 @@ void Video::Activate( bool bRecommendedSettings )
 				m_nNumAAModes++;
 			}
 
-			if ( materials->SupportsMSAAMode(8) )
+			if ( g_pMaterialSystem->SupportsMSAAMode(8) )
 			{
 				Assert( m_nNumAAModes < MAX_DYNAMIC_AA_MODES );
 				szCurrentButton[ iCommandNumberPosition ] = m_nNumAAModes + '0';
@@ -476,7 +476,7 @@ void Video::Activate( bool bRecommendedSettings )
 				m_nNumAAModes++;
 			}
 
-			if ( materials->SupportsCSAAMode(8, 2) )							// nVidia CSAA			"16xQ"
+			if ( g_pMaterialSystem->SupportsCSAAMode(8, 2) )							// nVidia CSAA			"16xQ"
 			{
 				Assert( m_nNumAAModes < MAX_DYNAMIC_AA_MODES );
 				szCurrentButton[ iCommandNumberPosition ] = m_nNumAAModes + '0';
@@ -1365,7 +1365,7 @@ void Video::ApplyChanges()
 	in_lock_mouse_to_window.SetValue( m_bLockMouse );
 
 	// Make sure there is a resolution change
-	const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
+	const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
 	if ( config.m_VideoMode.m_Width != m_iResolutionWidth || 
 		 config.m_VideoMode.m_Height != m_iResolutionHeight || 
 		 config.Windowed() != m_bWindowed ||

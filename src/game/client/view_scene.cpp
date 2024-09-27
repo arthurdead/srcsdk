@@ -105,7 +105,7 @@ void UpdateFullScreenDepthTexture( void )
 
 	if( r_depthoverlay.GetBool() )
 	{
-		IMaterial *pMaterial = materials->FindMaterial( "debug/showz", TEXTURE_GROUP_OTHER, true );
+		IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( "debug/showz", TEXTURE_GROUP_OTHER, true );
 		pMaterial->IncrementReferenceCount();
 		IMaterialVar *BaseTextureVar = pMaterial->FindVar( "$basetexture", NULL, false );
 		IMaterialVar *pDepthInAlpha = NULL;

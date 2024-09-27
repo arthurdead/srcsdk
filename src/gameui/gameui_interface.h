@@ -17,6 +17,7 @@
 
 class IGameClientExports;
 class CCommand;
+class CCDKeyEntryDialog;
 
 //-----------------------------------------------------------------------------
 // Purpose: Implementation of GameUI's exposed interface 
@@ -75,7 +76,6 @@ public:
  	bool IsInLevel();
  	bool IsInBackgroundLevel();
  	bool IsInMultiplayer();
- 	bool IsConsoleUI();
  	bool HasSavedThisMenuSession();
  	void SetSavedThisMenuSession( bool bState );
  
@@ -95,7 +95,6 @@ private:
 	virtual void SetSecondaryProgressBar(float progress /* range [0..1] */);
 	virtual void SetSecondaryProgressBarText(const char *statusText);
 
-	bool FindPlatformDirectory(char *platformDir, int bufferSize);
 	void GetUpdateVersion( char *pszProd, char *pszVer);
 	void ValidateCDKey();
 
@@ -103,7 +102,6 @@ private:
 
 	bool m_bTryingToLoadFriends : 1;
 	bool m_bActivatedUI : 1;
-	bool m_bIsConsoleUI : 1;
 	bool m_bHasSavedThisMenuSession : 1;
 	bool m_bOpenProgressOnStart : 1;
 
@@ -115,9 +113,8 @@ private:
 	int m_iPlayGameStartupSound;
 
 	char m_szPreviousStatusText[128];
-	char m_szPlatformDir[MAX_PATH];
 
-	vgui::DHANDLE<class CCDKeyEntryDialog> m_hCDKeyEntryDialog;
+	vgui::DHANDLE<CCDKeyEntryDialog> m_hCDKeyEntryDialog;
 };
 
 // Purpose: singleton accessor

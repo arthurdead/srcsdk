@@ -58,6 +58,7 @@ public:
 	
 	int GetNumFrames();
 	void SetFrame( int nFrame );
+	int GetFrame();
 
 	void SetRotation( int iRotation );
 

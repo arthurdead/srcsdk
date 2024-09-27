@@ -299,7 +299,7 @@ void CSpriteTrail::ComputeScreenPosition( Vector *pScreenPos )
 {
 #if SCREEN_SPACE_TRAILS
 	VMatrix	viewMatrix;
-	materials->GetMatrix( MATERIAL_VIEW, &viewMatrix );
+	g_pMaterialSystem->GetMatrix( MATERIAL_VIEW, &viewMatrix );
 	*pScreenPos = viewMatrix * GetRenderOrigin();
 #else
 	*pScreenPos = GetRenderOrigin();
@@ -418,7 +418,7 @@ int CSpriteTrail::DrawModel( int flags, const RenderableInstance_t &instance )
 
 #if SCREEN_SPACE_TRAILS
 	VMatrix	viewMatrix;
-	materials->GetMatrix( MATERIAL_VIEW, &viewMatrix );
+	g_pMaterialSystem->GetMatrix( MATERIAL_VIEW, &viewMatrix );
 	viewMatrix = viewMatrix.InverseTR();
 #endif
 

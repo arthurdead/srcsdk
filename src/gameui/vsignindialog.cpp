@@ -59,36 +59,9 @@ void SignInDialog::SetSignInTitle( const char* title )
 //=============================================================================
 void SignInDialog::OnCommand( const char *command )
 {
-	int iUser = BaseModUI::CBaseModPanel::GetSingleton().GetLastActiveUserId();
-
 	if( ! Q_strcmp( command, "Play" ) )
 	{
-		if ( iUser != (int) XBX_GetPrimaryUserId() )
-		{
-			CBaseModPanel::GetSingleton().PlayUISound( UISOUND_INVALID );
-			return;
-		}
-
 		NavigateBack( 1 );
-	}
-	else if( ! Q_strcmp( command, "PlaySplitscreen" ) )
-	{
-		NavigateBack( 2 );
-	}
-	else if( ! Q_strcmp( command, "PlayAsGuest" ) )
-	{
-		if ( iUser != (int) XBX_GetPrimaryUserId() )
-		{
-			CBaseModPanel::GetSingleton().PlayUISound( UISOUND_INVALID );
-			return;
-		}
-
-		if ( CAttractScreen* attractScreen = static_cast< CAttractScreen* >( CBaseModPanel::GetSingleton().GetWindow( WT_ATTRACTSCREEN ) ) )
-		{
-			BaseClass::NavigateBack();
-			Close();
-			attractScreen->StartGameWithTemporaryProfile_Stage1();
-		}
 	}
 	else if( ! Q_strcmp( command, "CancelSignIn" ) )
 	{

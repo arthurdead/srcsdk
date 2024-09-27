@@ -187,11 +187,11 @@ void PrecacheLoadingTipIcons()
 	for ( ; desc->m_szAchievementName; ++desc )
 	{
 		CFmtStr imageString( "vgui/achievements/%s", desc->m_szAchievementName );
-		int nImageId = vgui::surface()->DrawGetTextureId( imageString );
-		if ( nImageId == -1 )
+		vgui::HTexture nImageId = vgui::surface()->DrawGetTextureId( imageString );
+		if ( nImageId == vgui::INVALID_TEXTURE )
 		{
 			nImageId = vgui::surface()->CreateNewTextureID();
-			vgui::surface()->DrawSetTextureFile( nImageId, imageString, true, false );	
+			vgui::surface()->DrawSetTextureFile( nImageId, imageString, true, false );
 		}
 	}
 }

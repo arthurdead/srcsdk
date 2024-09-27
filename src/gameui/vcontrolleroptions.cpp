@@ -96,7 +96,7 @@ void ControllerOptions::UpdateFooter()
 	CBaseModFooterPanel *footer = BaseModUI::CBaseModPanel::GetSingleton().GetFooterPanel();
 	if ( footer )
 	{
-		footer->SetButtons( FB_ABUTTON | FB_BBUTTON, FF_AB_ONLY, IsPC() ? true : false );
+		footer->SetButtons( FB_ABUTTON | FB_BBUTTON, FF_AB_ONLY, true );
 		footer->SetButtonText( FB_ABUTTON, "#L4D360UI_Select" );
 		footer->SetButtonText( FB_BBUTTON, "#L4D360UI_Controller_Done" );
 	}
@@ -107,12 +107,6 @@ void ControllerOptions::UpdateFooter()
 void ControllerOptions::Activate()
 {
 	BaseClass::Activate();
-
-	m_iActiveUserSlot = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-
-	int iActiveController = XBX_GetUserId( m_iActiveUserSlot );
-
-	SetGameUIActiveSplitScreenPlayerSlot( m_iActiveUserSlot );
 
 #if defined ( _X360 )
 	vgui::Panel * firstPanel = FindChildByName( "BtnEditButtons" );
@@ -128,7 +122,7 @@ void ControllerOptions::Activate()
 	if ( pwcTemplate )
 	{
 		wchar_t wGamerTag[32];
-		const char *pszPlayerName = BaseModUI::CUIGameData::Get()->GetLocalPlayerName( iActiveController );
+		const char *pszPlayerName = BaseModUI::CUIGameData::Get()->GetLocalPlayerName();
 		g_pVGuiLocalize->ConvertANSIToUnicode( pszPlayerName, wGamerTag, sizeof( wGamerTag ) );
 		g_pVGuiLocalize->ConstructString( m_Title, sizeof( m_Title ), pwcTemplate, 1, wGamerTag );
 	}
@@ -279,9 +273,6 @@ void ControllerOptionsResetDefaults_Confirm( void )
 //=============================================================================
 void ControllerOptions::ResetToDefaults( void )
 {
-	int iOldSlot = engine->GetActiveSplitScreenPlayerSlot();
-	engine->SetActiveSplitScreenPlayerSlot( m_iActiveUserSlot );
-
 	engine->ExecuteClientCmd( "exec config.360.cfg" );
 
 	engine->ExecuteClientCmd( "exec joy_preset_1.cfg" );
@@ -298,8 +289,6 @@ void ControllerOptions::ResetToDefaults( void )
 	engine->ExecuteClientCmd( VarArgs( "joy_inverty %d", nYinvert ) );
 #endif
 
-	engine->SetActiveSplitScreenPlayerSlot( iOldSlot );
-
 //	ResetControlValues();
 	m_nResetControlValuesTicks = 1; // used to delay polling the values until we've flushed the command buffer 
 
@@ -309,9 +298,6 @@ void ControllerOptions::ResetToDefaults( void )
 //=============================================================================
 void ControllerOptions::OnKeyCodePressed(KeyCode code)
 {
-	if ( m_iActiveUserSlot != CBaseModPanel::GetSingleton().GetLastActiveUserId() )
-		return;
-
 	switch ( GetBaseButtonCode( code ) )
 	{
 	case KEY_XSTICK1_LEFT:
@@ -466,11 +452,9 @@ Panel* ControllerOptions::NavigateBack()
 		// We should never get to the nav back with dirty data and not ready, but this check will prevent any crasy edge cases
 		if ( CBaseModPanel::GetSingleton().IsReadyToWriteConfig() )
 		{
-			engine->ClientCmd_Unrestricted( VarArgs( "host_writeconfig_ss %d", XBX_GetUserId( m_iActiveUserSlot ) ) );
+			engine->ClientCmd_Unrestricted( "host_writeconfig" );
 		}
 	}
-
-	SetGameUIActiveSplitScreenPlayerSlot( 0 );
 
 	return BaseClass::NavigateBack();
 }

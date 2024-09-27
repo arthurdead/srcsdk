@@ -17,11 +17,16 @@ public:
 	//
 	virtual void EnableFriendsUpdate( bool bEnable ) = 0;
 
+private:
 	//
 	// GetLocalPlayer
 	//	returns a local player interface for a given controller index
 	//
-	virtual IPlayerLocal * GetLocalPlayer( int iController ) = 0;
+	virtual IPlayerLocal * DO_NOT_USE_GetLocalPlayer( int iController ) = 0;
+
+public:
+	IPlayerLocal * GetLocalPlayer()
+	{ return DO_NOT_USE_GetLocalPlayer(0); }
 
 	//
 	// GetNumFriends

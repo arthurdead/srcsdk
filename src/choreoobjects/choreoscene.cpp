@@ -85,12 +85,9 @@ void CChoreoScene::choreoprintf( int level, const char *fmt, ... )
 	{
 		if (m_pfnPrint )
 		{ 
-			 (*m_pfnPrint)( "  " );
-		} 
-		else
-		{
-			 printf( "  " );
+			(*m_pfnPrint)( "  " );
 		}
+
 		Msg( "  " );
 	}
 
@@ -98,11 +95,7 @@ void CChoreoScene::choreoprintf( int level, const char *fmt, ... )
 	{
 		(*m_pfnPrint)( string );
 	}
-	else
-	{
-		printf( "%s", string );
-	}
-	
+
 	Msg( "%s", string );
 }
 

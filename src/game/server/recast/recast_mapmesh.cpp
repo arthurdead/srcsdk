@@ -15,6 +15,7 @@
 #include "SkyCamera.h"
 #include "player.h"
 #include "ai_basenpc.h"
+#include "lightcache.h"
 
 #include "ChunkyTriMesh.h"
 
@@ -222,13 +223,15 @@ bool CMapMesh::GenerateDispVertsAndTris( void *fileContent, CUtlVector<float> &v
 	unsigned short *dispIndexToFaceIndex = (unsigned short*)stackalloc( nMemSize );
 	V_memset( dispIndexToFaceIndex, 0xFF, nMemSize );
 	
-    for( int i = 0; i < nFaces; i++ )
-    {
-        if ( faces[i].dispinfo == -1 || faces[i].dispinfo >= nDispInfo )
-            continue;
+	for( int i = 0; i < nFaces; i++ )
+	{
+		if ( faces[i].dispinfo == -1 || faces[i].dispinfo >= nDispInfo )
+			continue;
 
 		dispIndexToFaceIndex[faces[i].dispinfo] = (unsigned short)i;
-    }
+	}
+
+	Vector vCenter;
 
 	int iCurVert = 0;
 	int iCurTri = 0;
@@ -323,6 +326,14 @@ bool CMapMesh::GenerateDispVertsAndTris( void *fileContent, CUtlVector<float> &v
 				continue;
 			}
 
+			vCenter = (trisVerts[0] + trisVerts[1] + trisVerts[2]) / 3.0f;
+
+			UpdateLightIntensity( trisVerts[0] );
+			UpdateLightIntensity( trisVerts[1] );
+			UpdateLightIntensity( trisVerts[2] );
+
+			UpdateLightIntensity( vCenter );
+
 			triangles.AddToTail( iStartingVertIndex + pIndex[ i ] );
 			triangles.AddToTail( iStartingVertIndex + pIndex[ i + 1 ] );
 			triangles.AddToTail( iStartingVertIndex + pIndex[ i + 2 ] );
@@ -388,11 +399,12 @@ void CMapMesh::AddCollisionModelToMesh( const matrix3x4_t &transform, CPhysColli
 			if( !IsTriangleInValidArea( trisVerts, filterContents != CONTENTS_EMPTY ) )
 				continue;
 
+			vCenter = (trisVerts[0] + trisVerts[1] + trisVerts[2]) / 3.0f;
+
 			if( filterContents != CONTENTS_EMPTY )
 			{
 				// UGLY! used for filtering out water of the world collidable.
 				// Preferable we should just have some way to get the material.
-				vCenter = (trisVerts[0] + trisVerts[1] + trisVerts[2]) / 3.0f;
 				Vector offset(0, 0, 2.0f);
 				if( (enginetrace->GetPointContents_WorldOnly(vCenter-offset, filterContents) & filterContents) != 0 &&
 					(enginetrace->GetPointContents_WorldOnly(vCenter+offset, filterContents) & filterContents) == 0 )
@@ -400,6 +412,12 @@ void CMapMesh::AddCollisionModelToMesh( const matrix3x4_t &transform, CPhysColli
 					continue;
 				}
 			}
+
+			UpdateLightIntensity( trisVerts[0] );
+			UpdateLightIntensity( trisVerts[1] );
+			UpdateLightIntensity( trisVerts[2] );
+
+			UpdateLightIntensity( vCenter );
 
 			int iStartingVertIndex = verts.Count() / 3;
 			for ( int k = 0; k < 3; k++ )
@@ -740,7 +758,7 @@ bool CMapMesh::Load( bool bDynamicOnly )
 		V_snprintf( filename, sizeof( filename ), "maps" CORRECT_PATH_SEPARATOR_S "%s.bsp", STRING( gpGlobals->mapname ) );
 
 		CUtlBuffer fileBuffer( 4096, 1024*1024, CUtlBuffer::READ_ONLY );
-		if ( !filesystem->ReadFile( filename, "GAME", fileBuffer ) )	// this ignores .nav files embedded in the .bsp ...
+		if ( !g_pFullFileSystem->ReadFile( filename, "GAME", fileBuffer ) )	// this ignores .nav files embedded in the .bsp ...
 		{
 			Warning("Recast LoadMapData: unable to read bsp \"%s\"", filename);
 			return false;
@@ -770,6 +788,8 @@ bool CMapMesh::Load( bool bDynamicOnly )
 	// World geometry coming from entities
 	if( recast_mapmesh_loaddynamicprops.GetBool() )
 		GenerateDynamicPropData( m_Vertices, m_Triangles );
+
+	SaveLightIntensity();
 
 #if defined(_DEBUG)
 	for( int i = 0; i < m_Triangles.Count(); i++ )

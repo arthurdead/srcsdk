@@ -65,10 +65,7 @@ public:
 	virtual void NavigateTo()
 	{
 		BaseClass::NavigateTo();
-		if ( IsPC() )
-		{
-			m_pInput->RequestFocus( 0 );
-		}
+		m_pInput->RequestFocus( 0 );
 	}
 
 public:

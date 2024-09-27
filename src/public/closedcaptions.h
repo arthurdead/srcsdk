@@ -14,6 +14,8 @@
 
 FORWARD_DECLARE_HANDLE( memhandle_t );
 
+DECLARE_LOGGING_CHANNEL( LOG_CLOSEDCAPTIONS );
+
 typedef CUtlSortVector< CaptionLookup_t, CCaptionLookupLess > CaptionDictionary_t;
 struct AsyncCaption_t
 {

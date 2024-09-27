@@ -20,9 +20,7 @@ public:
 	MainMenu(vgui::Panel *parent, const char *panelName);
 	~MainMenu();
 
-#ifdef _X360
 	void Activate();
-#endif //_X360
 
 	void UpdateVisibility();
 
@@ -42,11 +40,7 @@ protected:
 	virtual void RunFrame();
 	virtual void PaintBackground();
 
-	void	Demo_DisableButtons( void );
-
 private:
-	static void AcceptCommentaryRulesCallback();
-	static void AcceptSplitscreenDisableCallback();
 	static void AcceptVersusSoftLockCallback();
 	static void AcceptQuitGameCallback();
 	void SetFooterState();

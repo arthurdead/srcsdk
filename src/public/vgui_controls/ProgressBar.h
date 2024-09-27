@@ -13,6 +13,14 @@
 #include <vgui/VGUI.h>
 #include <vgui_controls/Panel.h>
 
+enum progress_textures_t
+{
+	PROGRESS_TEXTURE_FG,
+	PROGRESS_TEXTURE_BG,
+
+	NUM_PROGRESS_TEXTURES,
+};
+
 namespace vgui
 {
 
@@ -83,6 +91,8 @@ private:
 	char *m_pszDialogVar;
 };
 
+#define NUM_CONTINUOUS_PROGRESS_BAR_TEXTURES 2
+
 //-----------------------------------------------------------------------------
 // Purpose: Non-segmented progress bar
 //-----------------------------------------------------------------------------
@@ -92,8 +102,21 @@ class ContinuousProgressBar : public ProgressBar
 
 public:
 	ContinuousProgressBar(Panel *parent, const char *panelName);
+	~ContinuousProgressBar();
+
+	void SetImage(const char *imageName, progress_textures_t iPos);
+	void SetFgImage(const char *imageName) { SetImage( imageName, PROGRESS_TEXTURE_FG ); }
+	void SetBgImage(const char *imageName) { SetImage( imageName, PROGRESS_TEXTURE_BG ); }
 
 	virtual void Paint();
+	virtual void PaintBackground();
+	virtual void ApplySettings(KeyValues *inResourceData);
+	virtual void ApplySchemeSettings( vgui::IScheme *pScheme );
+
+private:
+	HTexture m_nTextureId[NUM_PROGRESS_TEXTURES];
+	char *m_pszImageName[NUM_PROGRESS_TEXTURES];
+	int   m_lenImageName[NUM_PROGRESS_TEXTURES];
 };
 
 } // namespace vgui

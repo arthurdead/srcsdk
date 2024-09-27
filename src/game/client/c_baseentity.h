@@ -182,6 +182,8 @@ enum entity_list_ids_t
 	NUM_ENTITY_LISTS
 };
 
+DECLARE_LOGGING_CHANNEL( LOG_BASEENTITY );
+
 //-----------------------------------------------------------------------------
 // Purpose: Base client side entity object
 //-----------------------------------------------------------------------------

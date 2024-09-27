@@ -393,6 +393,28 @@ DECLARE_BUILD_FACTORY( ContinuousProgressBar );
 //-----------------------------------------------------------------------------
 ContinuousProgressBar::ContinuousProgressBar(Panel *parent, const char *panelName) : ProgressBar(parent, panelName)
 {
+	for ( int i = 0; i < NUM_PROGRESS_TEXTURES; i++ )
+	{
+		m_nTextureId[i] = INVALID_TEXTURE;
+		m_pszImageName[i] = NULL;
+		m_lenImageName[i] = 0;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void ContinuousProgressBar::PaintBackground()
+{
+	// If we don't have a Bg image, use the foreground
+	HTexture iTextureID = m_nTextureId[PROGRESS_TEXTURE_BG] != INVALID_TEXTURE ? m_nTextureId[PROGRESS_TEXTURE_BG] : m_nTextureId[PROGRESS_TEXTURE_FG];
+	vgui::surface()->DrawSetTexture( iTextureID );
+	vgui::surface()->DrawSetColor( GetBgColor() );
+
+	int wide, tall;
+	GetSize(wide, tall);
+
+	vgui::surface()->DrawTexturedRect( 0, 0, wide, tall );
 }
 
 //-----------------------------------------------------------------------------
@@ -400,10 +422,14 @@ ContinuousProgressBar::ContinuousProgressBar(Panel *parent, const char *panelNam
 //-----------------------------------------------------------------------------
 void ContinuousProgressBar::Paint()
 {
+	if ( m_nTextureId[PROGRESS_TEXTURE_FG] == INVALID_TEXTURE )
+		return;
+
 	int x = 0, y = 0;
 	int wide, tall;
 	GetSize(wide, tall);
 
+	vgui::surface()->DrawSetTexture( m_nTextureId[PROGRESS_TEXTURE_FG] );
 	surface()->DrawSetColor(GetFgColor());
 
 	switch( m_iProgressDirection )
@@ -423,5 +449,101 @@ void ContinuousProgressBar::Paint()
 	case PROGRESS_SOUTH:
 		surface()->DrawFilledRect( x, y, x + wide, y + (int)( tall * _progress ) );
 		break;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: sets an image by file name
+//-----------------------------------------------------------------------------
+void ContinuousProgressBar::SetImage(const char *imageName, progress_textures_t iPos)
+{
+	const char *pszDir = "vgui/";
+	int len = Q_strlen(imageName) + 1;
+	len += strlen(pszDir);
+	
+	if ( m_pszImageName[iPos] && ( m_lenImageName[iPos] < len ) )
+	{
+		// If we already have a buffer, but it is too short, then free the buffer
+		delete [] m_pszImageName[iPos];
+		m_pszImageName[iPos] = NULL;
+		m_lenImageName[iPos] = 0;
+	}
+
+	if ( !m_pszImageName[iPos] )
+	{
+		m_pszImageName[iPos] = new char[ len ];
+		m_lenImageName[iPos] = len;
+	}
+
+	Q_snprintf( m_pszImageName[iPos], len, "%s%s", pszDir, imageName );
+	InvalidateLayout(false, true); // force applyschemesettings to run
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Destructor
+//-----------------------------------------------------------------------------
+ContinuousProgressBar::~ContinuousProgressBar()
+{
+	for ( int i = 0; i < NUM_PROGRESS_TEXTURES; i++ )
+	{
+		if ( vgui::surface() && m_nTextureId[i] != INVALID_TEXTURE )
+		{
+			vgui::surface()->DestroyTextureID( m_nTextureId[i] );
+			m_nTextureId[i] = INVALID_TEXTURE;
+		}
+
+		delete [] m_pszImageName[i];
+		m_lenImageName[i] = 0;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void ContinuousProgressBar::ApplySettings(KeyValues *inResourceData)
+{
+	for ( int i = 0; i < NUM_PROGRESS_TEXTURES; i++ )
+	{
+		delete [] m_pszImageName[i];
+		m_pszImageName[i] = NULL;
+		m_lenImageName[i] = 0;
+	}
+
+	const char *imageName = inResourceData->GetString("fg_image", "");
+	if (*imageName)
+	{
+		SetFgImage( imageName );
+	}
+	imageName = inResourceData->GetString("bg_image", "");
+	if (*imageName)
+	{
+		SetBgImage( imageName );
+	}
+
+	BaseClass::ApplySettings( inResourceData );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void ContinuousProgressBar::ApplySchemeSettings(IScheme *pScheme)
+{
+	BaseClass::ApplySchemeSettings(pScheme);
+
+	SetFgColor(GetSchemeColor("ContinuousProgressBar.FgColor", pScheme));
+	SetBgColor(GetSchemeColor("ContinuousProgressBar.BgColor", pScheme));
+	SetBorder(NULL);
+
+	for ( int i = 0; i < NUM_PROGRESS_TEXTURES; i++ )
+	{
+		if ( m_pszImageName[i] && strlen( m_pszImageName[i] ) > 0 )
+		{
+			if ( m_nTextureId[i] == INVALID_TEXTURE )
+			{
+				m_nTextureId[i] = surface()->CreateNewTextureID();
+			}
+
+			surface()->DrawSetTextureFile( m_nTextureId[i], m_pszImageName[i], true, false);
+		}
 	}
 }

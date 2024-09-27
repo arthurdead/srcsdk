@@ -60,14 +60,13 @@ LoadingProgress::LoadingProgress(Panel *parent, const char *panelName, LoadingWi
 	m_botFlags = 0xFF;
 	
 	memset( m_PlayerNames, 0, sizeof( m_PlayerNames ) );
-	// const char *pPlayerNames[NUM_LOADING_CHARACTERS] = { "#L4D360UI_NamVet", "#L4D360UI_TeenGirl", "#L4D360UI_Biker", "#L4D360UI_Manager" };
-	const char *pPlayerNames[NUM_LOADING_CHARACTERS] = { "", "", "", "" };
+	const char *pPlayerNames[NUM_LOADING_CHARACTERS] = { "#L4D360UI_NamVet", "#L4D360UI_TeenGirl", "#L4D360UI_Biker", "#L4D360UI_Manager" };
 	for ( int k = 0; k < NUM_LOADING_CHARACTERS; ++ k )
 		Q_strncpy( m_PlayerNames[k], pPlayerNames[k], MAX_PLAYER_NAME_LENGTH );
 
-	m_textureID_LoadingBar = -1;
-	m_textureID_LoadingBarBG = -1;
-	m_textureID_DefaultPosterImage = -1;
+	m_textureID_LoadingBar = vgui::INVALID_TEXTURE;
+	m_textureID_LoadingBarBG = vgui::INVALID_TEXTURE;
+	m_textureID_DefaultPosterImage = vgui::INVALID_TEXTURE;
 
 	m_bDrawBackground = false;
 	m_bDrawPoster = false;
@@ -89,11 +88,7 @@ LoadingProgress::LoadingProgress(Panel *parent, const char *panelName, LoadingWi
 		m_pDefaultPosterDataKV = NULL;
 	}
 
-	m_pTipPanel = NULL;
-	if ( IsX360() )
-	{
-		m_pTipPanel = new CLoadingTipPanel( this );
-	}
+	m_pTipPanel = new CLoadingTipPanel( this );
 }
 
 //=============================================================================
@@ -130,7 +125,7 @@ void LoadingProgress::ApplySchemeSettings( IScheme *pScheme )
 	// purposely not freeing these, not worth the i/o hitch for something so small
 	const char *pImageName = "vgui/loadingbar";
 	m_textureID_LoadingBar = vgui::surface()->DrawGetTextureId( pImageName );
-	if ( m_textureID_LoadingBar == -1 )
+	if ( m_textureID_LoadingBar == vgui::INVALID_TEXTURE )
 	{
 		m_textureID_LoadingBar = vgui::surface()->CreateNewTextureID();
 		vgui::surface()->DrawSetTextureFile( m_textureID_LoadingBar, pImageName, true, false );	
@@ -140,7 +135,7 @@ void LoadingProgress::ApplySchemeSettings( IScheme *pScheme )
 	// purposely not freeing these, not worth the i/o hitch for something so small
 	pImageName = "vgui/loadingbar_bg";
 	m_textureID_LoadingBarBG = vgui::surface()->DrawGetTextureId( pImageName );
-	if ( m_textureID_LoadingBarBG == -1 )
+	if ( m_textureID_LoadingBarBG == vgui::INVALID_TEXTURE )
 	{
 		m_textureID_LoadingBarBG = vgui::surface()->CreateNewTextureID();
 		vgui::surface()->DrawSetTextureFile( m_textureID_LoadingBarBG, pImageName, true, false );	

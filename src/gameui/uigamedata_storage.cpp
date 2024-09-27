@@ -70,10 +70,10 @@ CAsyncCtxUIOnDeviceAttached::~CAsyncCtxUIOnDeviceAttached()
 void CAsyncCtxUIOnDeviceAttached::ExecuteAsync()
 {
 	// Asynchronously do the tasks that don't interact with the command buffer
-	g_pFullFileSystem->DiscoverDLC( GetController() );
+	g_pFullFileSystem->DiscoverDLC();
 
 	// Open user settings and save game container here
-	m_ContainerOpenResult = engine->OnStorageDeviceAttached( GetController() );
+	m_ContainerOpenResult = engine->OnStorageDeviceAttached();
 	if ( m_ContainerOpenResult != ERROR_SUCCESS )
 		return;
 }
@@ -345,8 +345,7 @@ void CChangeStorageDevice::OnDeviceSelected()
 {
 	if ( UI_IsDebug() )
 	{
-		Msg( "[GAMEUI] CChangeStorageDevice::OnDeviceSelected( 0x%08X )\n",
-			XBX_GetStorageDeviceId( GetCtrlrIndex() ) );
+		Msg( "[GAMEUI] CChangeStorageDevice::OnDeviceSelected\n" );
 	}
 
 	CUIGameData::Get()->UpdateWaitPanel( "#L4D360UI_WaitScreen_SignOnSucceded" );
@@ -356,23 +355,14 @@ void CChangeStorageDevice::AfterDeviceMounted()
 {
 	DeviceChangeCompleted( true );
 	
-	g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnProfileStorageAvailable", "iController", GetCtrlrIndex() ) );
+	g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnProfileStorageAvailable" ) );
 
 	delete this;
 }
 
 void CChangeStorageDevice::DeviceChangeCompleted( bool bChanged )
 {
-	if ( bChanged )
-	{
-		Msg( "CChangeStorageDevice::DeviceChangeCompleted for ctrlr%d device 0x%08X\n",
-			GetCtrlrIndex(), XBX_GetStorageDeviceId( GetCtrlrIndex() ) );
-	}
-	else
-	{
-		Msg( "CChangeStorageDevice::DeviceChangeCompleted - ctrlr%d is keeping device 0x%08X\n",
-			GetCtrlrIndex(), XBX_GetStorageDeviceId( GetCtrlrIndex() ) );
-	}
+	Msg( "CChangeStorageDevice::DeviceChangeCompleted\n" );
 }
 
 //=============================================================================
@@ -384,23 +374,14 @@ class CChangeStorageDeviceChained : public CChangeStorageDevice
 public:
 	typedef CChangeStorageDevice BaseClass;
 
-	explicit CChangeStorageDeviceChained( int iCtrlrs[2] ) :
-	BaseClass( iCtrlrs[0] ), m_nChainCtrlr( iCtrlrs[1] ) {}
+	explicit CChangeStorageDeviceChained() :
+	BaseClass() {}
 
 	virtual void DeviceChangeCompleted( bool bChanged )
 	{
 		// Defer to the base class
 		BaseClass::DeviceChangeCompleted( bChanged );
-
-		// If we have a chain target, then call this off again
-		if ( m_nChainCtrlr >= 0 )
-		{
-			CUIGameData::Get()->SelectStorageDevice( new CChangeStorageDevice( m_nChainCtrlr ) );
-		}
 	}
-
-private:
-	int	m_nChainCtrlr;
 };
 
 void OnStorageDevicesChangedSelectNewDevice()

@@ -100,7 +100,7 @@ void C_Sun::OnDataChanged( DataUpdateType_t updateType )
 
 	const model_t* pModel = (m_nMaterial != 0) ? modelinfo->GetModel( m_nMaterial ) : NULL;
 	const char *pModelName = pModel ? modelinfo->GetModelName( pModel ) : "";
-	m_Overlay.m_Sprites[0].m_pMaterial = materials->FindMaterial( pModelName, TEXTURE_GROUP_OTHER );
+	m_Overlay.m_Sprites[0].m_pMaterial = g_pMaterialSystem->FindMaterial( pModelName, TEXTURE_GROUP_OTHER );
 	m_Overlay.m_flProxyRadius = 0.05f; // about 1/20th of the screen
 
 	//
@@ -116,7 +116,7 @@ void C_Sun::OnDataChanged( DataUpdateType_t updateType )
 
 	pModel = (m_nOverlayMaterial != 0) ? modelinfo->GetModel( m_nOverlayMaterial ) : NULL;
 	pModelName = pModel ? modelinfo->GetModelName( pModel ) : "";
-	m_GlowOverlay.m_Sprites[0].m_pMaterial = materials->FindMaterial( pModelName, TEXTURE_GROUP_OTHER );
+	m_GlowOverlay.m_Sprites[0].m_pMaterial = g_pMaterialSystem->FindMaterial( pModelName, TEXTURE_GROUP_OTHER );
 
 	// This texture will fade away as the dot between camera and sun changes
 	m_GlowOverlay.SetModulateByDot();

@@ -287,7 +287,7 @@ void CMultiplayerAdvancedDialog::CreateControls()
 		pCtrl->pScrObj = pObj;
 		pCtrl->SetSize( 100, 28 );
 		//pCtrl->SetBorder( scheme()->GetBorder(1, "DepressedButtonBorder") );
-		m_pListPanel->AddItem( pCtrl );
+		m_pListPanel->AddItem( pCtrl->pPrompt, pCtrl );
 
 		// Link it in
 		if ( !m_pList )

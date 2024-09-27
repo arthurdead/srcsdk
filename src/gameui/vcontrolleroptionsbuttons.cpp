@@ -131,9 +131,9 @@ void ControllerOptionsButtons::UpdateFooter()
 	CBaseModFooterPanel *footer = BaseModUI::CBaseModPanel::GetSingleton().GetFooterPanel();
 	if ( footer )
 	{
-		footer->SetButtons( FB_ABUTTON, FF_AB_ONLY, IsPC() ? true : false );
+		footer->SetButtons( FB_ABUTTON, FF_AB_ONLY, true );
 		footer->SetButtonText( FB_ABUTTON, "#L4D360UI_Select" );
-	}	
+	}
 }
 
 //=============================================================================
@@ -141,23 +141,7 @@ void ControllerOptionsButtons::Activate()
 {
 	BaseClass::Activate();
 
-	m_iActiveUserSlot = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-
 	// Figure out which button should be default
-
-#if defined ( _X360 )
-	CGameUIConVarRef joy_cfg_preset("joy_cfg_preset");
-	if ( joy_cfg_preset.IsValid() )
-	{
-		int iPreset = clamp( joy_cfg_preset.GetInt(), 0, NUM_CONTROLLER_BUTTONS_SETTINGS-1 );
-
-		vgui::Panel * firstPanel = FindChildByName( pszButtonSettingsButtonName[iPreset] );
-		if ( firstPanel )
-		{
-			firstPanel->NavigateTo();
-		}
-	}
-#endif
 
 	vgui::Label *pLabel = dynamic_cast< vgui::Label * >( FindChildByName( "LblGameTitle" ) );
 	if ( pLabel )
@@ -165,8 +149,8 @@ void ControllerOptionsButtons::Activate()
 		wchar_t *pwcTemplate = g_pVGuiLocalize->Find("#L4D360UI_Controller_Buttons_Title");
 
 		if ( pwcTemplate )
-		{		
-			const char *pszPlayerName = BaseModUI::CUIGameData::Get()->GetLocalPlayerName( iActiveController );
+		{
+			const char *pszPlayerName = BaseModUI::CUIGameData::Get()->GetLocalPlayerName();
 
 			wchar_t wWelcomeMsg[128];
 			wchar_t wGamerTag[32];
@@ -185,16 +169,13 @@ void ControllerOptionsButtons::Activate()
 //=============================================================================
 void ControllerOptionsButtons::OnKeyCodePressed(KeyCode code)
 {
-	if ( m_iActiveUserSlot != CBaseModPanel::GetSingleton().GetLastActiveUserId() )
-		return;
-
 	vgui::KeyCode basecode = GetBaseButtonCode( code );
 
 	switch( basecode )
 	{
 	case KEY_XBUTTON_A:
 		// Nav back when the select one of the options
-		BaseClass::OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, CBaseModPanel::GetSingleton().GetLastActiveUserId() ) );
+		BaseClass::OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, 0 ) );
 		break;
 
 	default:
@@ -220,7 +201,7 @@ void ControllerOptionsButtons::RecalculateBindingLabels( void )
 		vgui::KeyCode code = sControllerBindings[i].m_keyCode;
 
 		//int nJoystick = m_iActiveUserSlot;
-		code = ButtonCodeToJoystickButtonCode( code, m_iActiveUserSlot );
+		code = ButtonCodeToJoystickButtonCode( code, 0 );
 
 		const char *pBinding = engine->Key_BindingForKey( code );
 		if ( !pBinding )

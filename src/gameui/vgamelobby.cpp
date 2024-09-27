@@ -157,12 +157,6 @@ void CPlayerItem::OnKeyCodePressed( KeyCode code )
 		return;
 	}
 
-	XUID xuidPlayer = pInfo->GetUint64( "xuid", 0ull );
-	xuidPlayer;
-
-	int iUserSlot = GetJoystickForCode( code );
-	BaseModUI::CBaseModPanel::GetSingleton().SetLastActiveUserId( iUserSlot );
-
 	switch ( GetBaseButtonCode( code ) )
 	{
 	case KEY_XBUTTON_A:
@@ -345,7 +339,7 @@ void CPlayerItem::SetPlayerInfo( KeyValues *pPlayer )
 		}
 	}
 
-	if ( m_pImgGamerPic && IsPC() )
+	if ( m_pImgGamerPic )
 	{
 		IImage *pSteamImage = CUIGameData::Get()->GetAvatarImage( xuid );
 

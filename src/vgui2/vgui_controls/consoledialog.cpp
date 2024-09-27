@@ -498,7 +498,7 @@ void CConsolePanel::RebuildCompletionList(const char *text)
 	if ( bNormalBuild )
 	{
 		// look through the command list for all matches
-		ConCommandBase const *cmd = (ConCommandBase const *)cvar->GetCommands();
+		ConCommandBase const *cmd = (ConCommandBase const *)g_pCVar->GetCommands();
 		while (cmd)
 		{
 			if ( cmd->IsFlagSet( FCVAR_DEVELOPMENTONLY ) || cmd->IsFlagSet( FCVAR_HIDDEN ) )

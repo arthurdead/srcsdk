@@ -82,9 +82,9 @@ private:
 	int					m_botFlags;
 	bool				m_bValid;
 
-	int					m_textureID_LoadingBar;
-	int					m_textureID_LoadingBarBG;
-	int					m_textureID_DefaultPosterImage;
+	vgui::HTexture					m_textureID_LoadingBar;
+	vgui::HTexture					m_textureID_LoadingBarBG;
+	vgui::HTexture					m_textureID_DefaultPosterImage;
 
 	bool				m_bDrawBackground;
 	bool				m_bDrawPoster;

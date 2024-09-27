@@ -17,6 +17,8 @@
 #include "utlblockmemory.h"
 #include "tier0/dbg.h"
 
+#include "tier1_logging.h"
+
 // define to enable asserts griping about things you shouldn't be doing with multilists
 // #define MULTILIST_PEDANTIC_ASSERTS 1 
 
@@ -676,7 +678,7 @@ I CUtlLinkedList<T,S,ML,I,M>::AllocInternal( bool multilist )
 			if ( !m_Memory.IsValidIterator( it ) )
 			{
 				// We rarely if ever handle alloc failure. Continuing leads to corruption.
-				Error( "CUtlLinkedList overflow! (exhausted memory allocator)\n" );
+				Log_FatalError( LOG_TIER1, "CUtlLinkedList overflow! (exhausted memory allocator)\n" );
 				return (I)InvalidIndex();
 			}
 		}
@@ -685,7 +687,7 @@ I CUtlLinkedList<T,S,ML,I,M>::AllocInternal( bool multilist )
 		if ( !IndexInRange( m_Memory.GetIndex( it ) ) )
 		{
 			// We rarely if ever handle alloc failure. Continuing leads to corruption.
-			Error( "CUtlLinkedList overflow! (exhausted index range)\n" );
+			Log_FatalError( LOG_TIER1, "CUtlLinkedList overflow! (exhausted index range)\n" );
 			return (I)InvalidIndex();
 		}
 

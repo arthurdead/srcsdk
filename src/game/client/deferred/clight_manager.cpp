@@ -46,14 +46,14 @@ CLightingManager::~CLightingManager()
 
 bool CLightingManager::Init()
 {
-	materials->AddReleaseFunc( LightingResourceRelease );
+	g_pMaterialSystem->AddReleaseFunc( LightingResourceRelease );
 	return true;
 }
 
 void CLightingManager::Shutdown()
 {
 	Assert( m_hDeferredLights.Count() == 0 );
-	materials->RemoveReleaseFunc( LightingResourceRelease );
+	g_pMaterialSystem->RemoveReleaseFunc( LightingResourceRelease );
 
 #if DEFCFG_USE_SSE
 	if( m_pSortDataX4 != NULL )
@@ -134,7 +134,7 @@ void CLightingManager::LightTearDown()
 
 void CLightingManager::OnCookieStringReceived( const char *pszString, const int &index )
 {
-	ITexture *pTexCookie = materials->FindTexture( pszString, TEXTURE_GROUP_OTHER );
+	ITexture *pTexCookie = g_pMaterialSystem->FindTexture( pszString, TEXTURE_GROUP_OTHER );
 
 	if ( IsErrorTexture( pTexCookie ) )
 		return;

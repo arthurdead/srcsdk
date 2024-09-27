@@ -23,9 +23,9 @@
 
 static void DispatchActivate( CBaseEntity *pEntity )
 {
-	bool bAsyncAnims = mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, false );
+	bool bAsyncAnims = g_pMDLCache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, false );
 	pEntity->Activate();
-	mdlcache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, bAsyncAnims );
+	g_pMDLCache->SetAsyncLoad( MDLCACHE_ANIMBLOCK, bAsyncAnims );
 }
 
 ConVar ai_inhibit_spawners( "ai_inhibit_spawners", "0", FCVAR_CHEAT );

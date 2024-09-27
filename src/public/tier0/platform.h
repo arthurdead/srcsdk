@@ -263,19 +263,35 @@ FIXME: Enable this when we no longer fear change =)
 #define __i386__	1
 #endif
 
-#elif POSIX
+#elif defined POSIX
 #if defined( OSX ) && defined( CARBON_WORKAROUND )
 #define DWORD unsigned int
 #else
 typedef unsigned int DWORD;
 #endif
 typedef unsigned short WORD;
+typedef long int LONG;
 typedef void * HINSTANCE;
 #define _MAX_PATH PATH_MAX
 #define __cdecl __attribute__((__cdecl__))
 #define __stdcall __attribute__((__stdcall__))
 #define __thiscall __attribute__((__thiscall__))
 #define __declspec(...) __attribute__((__VA_ARGS__))
+
+typedef const char* LPCSTR;
+typedef char* PSTR, *LPSTR;
+
+#define RGB(r,g,b)          ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
+
+typedef DWORD COLORREF;
+typedef DWORD* LPCOLORREF;
+
+typedef struct tagRGBQUAD {
+  BYTE rgbBlue;
+  BYTE rgbGreen;
+  BYTE rgbRed;
+  BYTE rgbReserved;
+} RGBQUAD;
 
 #endif // defined(_WIN32) && !defined(WINDED)
 
@@ -447,9 +463,12 @@ typedef void * HINSTANCE;
 #if defined( _WIN32 ) && !defined GNUC
 #define DLL_EXPORT_ATTR __declspec( dllexport )
 #define DLL_IMPORT_ATTR __declspec( dllimport )
-#else
+#elif defined GNUC && !defined __linux__
 #define DLL_EXPORT_ATTR __attribute__ ((dllexport))
 #define DLL_IMPORT_ATTR __attribute__ ((dllimport))
+#elif defined GNUC && defined __linux__
+#define DLL_EXPORT_ATTR __attribute__ ((visibility("default")))
+#define DLL_IMPORT_ATTR __attribute__ ((visibility("default")))
 #endif
 
 #ifdef GNUC
@@ -482,17 +501,17 @@ typedef void * HINSTANCE;
 
 // Used for dll exporting and importing
 #define  DLL_EXPORT   extern "C" __attribute__ ((visibility("default"),dllexport))
-#define  DLL_IMPORT   extern "C" __attribute__ ((dllimport))
+#define  DLL_IMPORT   extern "C" __attribute__ ((visibility("default"),dllimport))
 
 #define  LIB_EXPORT   extern "C" __attribute__ ((visibility("default")))
 
 // Can't use extern "C" when DLL exporting a class
 #define  DLL_CLASS_EXPORT __attribute__ ((visibility("default"),dllexport))
-#define  DLL_CLASS_IMPORT __attribute__ ((dllimport))
+#define  DLL_CLASS_IMPORT __attribute__ ((visibility("default"),dllimport))
 
 // Can't use extern "C" when DLL exporting a global
 #define  DLL_GLOBAL_EXPORT   extern __attribute ((visibility("default"), dllexport))
-#define  DLL_GLOBAL_IMPORT   extern __attribute ((dllimport))
+#define  DLL_GLOBAL_IMPORT   extern __attribute ((visibility("default"), dllimport))
 
 #define  DLL_LOCAL __attribute__ ((visibility("hidden")))
 
@@ -501,17 +520,17 @@ typedef void * HINSTANCE;
 #elif defined GNUC
 // Used for dll exporting and importing
 #define  DLL_EXPORT   extern "C" __attribute__ ((visibility("default")))
-#define  DLL_IMPORT   extern "C"
+#define  DLL_IMPORT   extern "C" __attribute__ ((visibility("default")))
 
 #define  LIB_EXPORT   extern "C" __attribute__ ((visibility("default")))
 
 // Can't use extern "C" when DLL exporting a class
 #define  DLL_CLASS_EXPORT __attribute__ ((visibility("default")))
-#define  DLL_CLASS_IMPORT
+#define  DLL_CLASS_IMPORT __attribute__ ((visibility("default")))
 
 // Can't use extern "C" when DLL exporting a global
-#define  DLL_GLOBAL_EXPORT   extern __attribute ((visibility("default")))
-#define  DLL_GLOBAL_IMPORT   extern
+#define  DLL_GLOBAL_EXPORT   extern __attribute__ ((visibility("default")))
+#define  DLL_GLOBAL_IMPORT   extern __attribute__ ((visibility("default")))
 
 #define  DLL_LOCAL __attribute__ ((visibility("hidden")))
 
@@ -980,6 +999,7 @@ FORCEINLINE void StoreLittleDWord( unsigned long *base, unsigned int dwordIndex,
 PLATFORM_INTERFACE void				Plat_SetBenchmarkMode( bool bBenchmarkMode );	
 PLATFORM_INTERFACE bool				Plat_IsInBenchmarkMode();
 
+PLATFORM_INTERFACE void				Plat_ExitProcess( int nCode );
 
 PLATFORM_INTERFACE double			Plat_FloatTime();		// Returns time in seconds since the module was loaded.
 PLATFORM_INTERFACE unsigned int		Plat_MSTime();			// Time in milliseconds.
@@ -987,6 +1007,13 @@ PLATFORM_INTERFACE char *			Plat_ctime( const time_t *timep, char *buf, size_t b
 PLATFORM_INTERFACE struct tm *		Plat_gmtime( const time_t *timep, struct tm *result );
 PLATFORM_INTERFACE time_t			Plat_timegm( struct tm *timeptr );
 PLATFORM_INTERFACE struct tm *		Plat_localtime( const time_t *timep, struct tm *result );
+
+// Get the local calendar time.
+// Same as time() followed by localtime(), but non-crash-prone and threadsafe.
+PLATFORM_INTERFACE void				Plat_GetLocalTime( struct tm *pNow );
+
+// Get a time string (same as ascstring, but threadsafe).
+PLATFORM_INTERFACE void				Plat_GetTimeString( struct tm *pTime, char *pOut, int nMaxBytes );
 
 #if defined( _WIN32 ) && defined( _MSC_VER ) && ( _MSC_VER >= 1400 )
 	extern "C" unsigned __int64 __rdtsc();
@@ -1133,13 +1160,13 @@ PLATFORM_INTERFACE void* Plat_SimpleLog( const tchar* file, int line );
 //-----------------------------------------------------------------------------
 // Returns true if debugger attached, false otherwise
 //-----------------------------------------------------------------------------
-#if defined(_WIN32) || defined(LINUX) || defined(OSX)
 PLATFORM_INTERFACE bool Plat_IsInDebugSession();
 PLATFORM_INTERFACE void Plat_DebugString( const char * );
-#else
-inline bool Plat_IsInDebugSession( bool bForceRecheck = false ) { return false; }
-#define Plat_DebugString(s) ((void)0)
-#endif
+
+//-----------------------------------------------------------------------------
+// Message Box
+//-----------------------------------------------------------------------------
+PLATFORM_INTERFACE void Plat_MessageBox( const char *pTitle, const tchar *pMessage );
 
 //-----------------------------------------------------------------------------
 // Returns true if running on a 64 bit (windows) OS

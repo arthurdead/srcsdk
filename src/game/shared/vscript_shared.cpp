@@ -79,7 +79,7 @@ HSCRIPT VScriptCompileScript( const char *pszScriptName, bool bWarnMissing )
 	}
 	else
 	{
-		bool bResult = filesystem->ReadFile( scriptPath, "GAME", bufferScript );
+		bool bResult = g_pFullFileSystem->ReadFile( scriptPath, "GAME", bufferScript );
 
 		if( !bResult )
 		{

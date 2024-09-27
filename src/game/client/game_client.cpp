@@ -6,7 +6,7 @@
 //
 //=============================================================================//
 #include "cbase.h"
-#include "game.h"
+#include "game_client.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -28,15 +28,15 @@ public:
 	}
 };
 
-static CClientDLL_ConVarAccessor g_ConVarAccessor;
+static CClientDLL_ConVarAccessor g_ClientConVarAccessor;
 
 // Register your console variables here
 // This gets called one time when the game is initialied
-void InitializeCvars( void )
+void InitializeClientCvars( void )
 {
 	// Register cvars here:
-	ConVar_Register( FCVAR_CLIENTDLL, &g_ConVarAccessor ); 
+	ConVar_Register( FCVAR_CLIENTDLL, &g_ClientConVarAccessor ); 
 
-	g_pDeveloper	= cvar->FindVar( "developer" );
+	g_pDeveloper	= g_pCVar->FindVar( "developer" );
 }
 

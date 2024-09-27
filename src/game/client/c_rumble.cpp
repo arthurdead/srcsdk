@@ -775,7 +775,7 @@ void CRumbleEffects::UpdateEffects( float curtime )
 		fRightMotor = 0.0f;
 	}
 
-	inputsystem->SetRumble( fLeftMotor, fRightMotor );
+	g_pInputSystem->SetRumble( fLeftMotor, fRightMotor );
 }
 
 //---------------------------------------------------------
@@ -784,7 +784,7 @@ void StopAllRumbleEffects( void )
 {
 	g_RumbleEffects.StopAllEffects();
 
-	inputsystem->StopRumble();
+	g_pInputSystem->StopRumble();
 }
 
 //---------------------------------------------------------

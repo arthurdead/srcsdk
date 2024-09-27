@@ -142,6 +142,7 @@ protected:
 
 	// Used internally by OneTimeInit to initialize/shutdown
 	virtual void				Init();
+	void				Init( IConCommandBaseAccessor *pAccessor );
 	void						Shutdown();
 
 	// Internal copy routine ( uses new operator from correct module )
@@ -163,15 +164,6 @@ private:
 	
 	// ConVar flags
 	int							m_nFlags;
-
-protected:
-	// ConVars add themselves to this list for the executable. 
-	// Then ConVar_Register runs through  all the console variables 
-	// and registers them into a global list stored in vstdlib.dll
-	static ConCommandBase		*s_pConCommandBases;
-
-	// ConVars in this executable use this 'global' to access values.
-	static IConCommandBaseAccessor	*s_pAccessor;
 };
 
 
@@ -399,6 +391,7 @@ private:
 
 	// Used internally by OneTimeInit to initialize.
 	virtual void				Init();
+	void				Init( IConCommandBaseAccessor *pAccessor );
 
 	ConVar_ServerBounded *GetServerBounded();
 	const ConVar_ServerBounded *GetServerBounded() const { return const_cast<ConVar *>(this)->GetServerBounded(); }

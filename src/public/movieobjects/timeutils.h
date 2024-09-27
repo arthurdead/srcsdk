@@ -64,6 +64,9 @@ private:
 #define DMETIME_MAXTIME		DmeTime_t::MaxTime()
 #define DMETIME_INVALID		DmeTime_t::InvalidTime()
 
+float GetFractionOfTimeBetween( DmeTime_t t, DmeTime_t start, DmeTime_t end, bool bClamp = false );
+float GetFractionOfTime( DmeTime_t t, DmeTime_t duration, bool bClamp = false );
+
 class DmeTime_t
 {
 public:
@@ -133,8 +136,8 @@ public:
 
 	// helper functions
 
-	friend float GetFractionOfTimeBetween( DmeTime_t t, DmeTime_t start, DmeTime_t end, bool bClamp = false );
-	friend float GetFractionOfTime( DmeTime_t t, DmeTime_t duration, bool bClamp = false );
+	friend float GetFractionOfTimeBetween( DmeTime_t t, DmeTime_t start, DmeTime_t end, bool bClamp );
+	friend float GetFractionOfTime( DmeTime_t t, DmeTime_t duration, bool bClamp );
 	friend int FrameForTime( DmeTime_t t, DmeFramerate_t framerate );
 
 
@@ -159,6 +162,16 @@ private:
 
 	int m_tms;
 };
+
+inline int DmeTime_t::RoundSecondsToTMS( float sec )
+{
+	return floor( 10000.0f * sec + 0.5f );
+}
+
+inline int DmeTime_t::RoundSecondsToTMS( double sec )
+{
+	return floor( 10000.0 * sec + 0.5 );
+}
 
 class CUtlBuffer;
 bool Serialize( CUtlBuffer &buf, const DmeTime_t &src );

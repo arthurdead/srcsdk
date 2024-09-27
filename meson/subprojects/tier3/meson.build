@@ -18,6 +18,6 @@ tier3_dep = declare_dependency(
 		join_paths(src_root_dir,'public','tier3')
 	),
 	link_args: [
-		'-l:tier3'+lib_ext
+		'-l:tier3_new'+lib_ext
 	]
 )

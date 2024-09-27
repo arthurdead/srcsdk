@@ -47,11 +47,7 @@ BaseClass(parent, panelName)
 		GameUI().PreventEngineHideGameUI();
 	}
 
-#if !defined( NO_VOICE )
 	m_pVoiceTweak = engine->GetVoiceTweakAPI();
-#else
-	m_pVoiceTweak = NULL;
-#endif
 
 	m_pHeaderFooter = new CNB_Header_Footer( this, "HeaderFooter" );
 	m_pHeaderFooter->SetTitle( "" );
@@ -582,13 +578,6 @@ void Audio::PerformLayout()
 
 void Audio::OnKeyCodePressed(KeyCode code)
 {
-	int joystick = GetJoystickForCode( code );
-	int userId = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-	if ( joystick != userId || joystick < 0 )
-	{	
-		return;
-	}
-
 	switch ( GetBaseButtonCode( code ) )
 	{
 	case KEY_XBUTTON_B:
@@ -827,21 +816,9 @@ void Audio::OnCommand(const char *command)
 			}
 		}
 	}
-	else if( !Q_strcmp( command, "Jukebox" ) )
-	{
-		if ( m_pVoiceTweak && m_pMicMeter2 )
-		{
-			if ( m_pMicMeter2->IsVisible() )
-			{
-				EndTestMicrophone();
-			}
-		}
-
-		CBaseModPanel::GetSingleton().OpenWindow( WT_JUKEBOX, this, true );
-	}
 	else if( Q_stricmp( "Back", command ) == 0 )
 	{
-		OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, CBaseModPanel::GetSingleton().GetLastActiveUserId() ) );
+		OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, 0 ) );
 	}
 	else if( Q_stricmp( "3rdPartyCredits", command ) == 0 )
 	{
@@ -926,7 +903,7 @@ Panel* Audio::NavigateBack()
 		m_pVoiceTweak->SetControlFloat( OtherSpeakerScale, flVal );
 	}
 
-	engine->ClientCmd_Unrestricted( VarArgs( "host_writeconfig_ss %d", XBX_GetPrimaryUserId() ) );
+	engine->ClientCmd_Unrestricted( "host_writeconfig" );
 
 	return BaseClass::NavigateBack();
 }
@@ -1038,7 +1015,7 @@ void Audio::AcceptLanguageChangeCallback()
 	Audio *self = static_cast< Audio * >( CBaseModPanel::GetSingleton().GetWindow( WT_AUDIO ) );
 	if( self )
 	{
-		self->BaseClass::OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, CBaseModPanel::GetSingleton().GetLastActiveUserId() ) );
+		self->BaseClass::OnKeyCodePressed( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_B, 0 ) );
 	}
 }
 

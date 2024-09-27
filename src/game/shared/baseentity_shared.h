@@ -72,7 +72,6 @@ bool IsEntityQAngleVelReasonable( const QAngle &q );
 
 #if defined( CLIENT_DLL )
 #include "c_baseentity.h"
-#include "c_baseanimating.h"
 #define CBaseEntity C_BaseEntity
 #else
 #include "baseentity.h"

@@ -10,10 +10,7 @@
 
 #include "const.h"
 #include "vgui/VGUI.h"
-
-#if !defined( _X360 )
-#include "xbox/xboxstubs.h"
-#endif
+#include "matchmaking/imatchnetworkmsg.h"
 
 class KeyValues;
 
@@ -54,6 +51,9 @@ enum SESSION_PROPS
 	SESSION_FLAG,
 };
 
+typedef unsigned long XUID;
+typedef unsigned long XNKID;
+
 struct hostData_s
 {
 	char hostName[MAX_PLAYER_NAME_LENGTH];
@@ -63,16 +63,9 @@ struct hostData_s
 	XUID xuid; 
 };
 
-struct MM_QOS_t
-{
-	int nPingMsMin;		// Minimum round-trip time in ms
-	int nPingMsMed;		// Median round-trip time in ms
-	float flBwUpKbs;	// Bandwidth upstream in kilobytes/s
-	float flBwDnKbs;	// Bandwidth downstream in kilobytes/s
-	float flLoss;		// Average packet loss in percents
-};
-
 #define NO_TIME_LIMIT	65000
+
+struct XSESSION_INFO;
 
 abstract_class IMatchmaking
 {

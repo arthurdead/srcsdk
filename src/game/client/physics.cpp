@@ -27,9 +27,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-// file system interface
-extern IFileSystem *filesystem;
-
 ConVar	cl_phys_timescale( "cl_phys_timescale", "1.0", FCVAR_CHEAT, "Sets the scale of time for client-side physics (ragdolls)" );
 static ConVar	cl_phys_maxticks( "cl_phys_maxticks", "0", FCVAR_NONE, "Sets the max number of physics ticks allowed for client-side physics (ragdolls)" );
 ConVar	cl_ragdoll_gravity( "cl_ragdoll_gravity", "386", FCVAR_CHEAT, "Sets the gravity client-side ragdolls" );
@@ -178,7 +175,7 @@ bool PhysicsDLLInit( CreateInterfaceFn physicsFactory )
 		return false;
 	}
 
-	PhysParseSurfaceData( physprops, filesystem );
+	PhysParseSurfaceData( physprops, g_pFullFileSystem );
 	return true;
 }
 

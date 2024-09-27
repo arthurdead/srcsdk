@@ -2689,7 +2689,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 			rect.width = view.width;
 			rect.height = view.height;
 
-			pRenderContext = materials->GetRenderContext();
+			pRenderContext = g_pMaterialSystem->GetRenderContext();
 
 			pRenderContext->CopyRenderTargetToTextureEx( GetFullscreenTexture(), 0, &rect, &rect );
 
@@ -2697,7 +2697,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 			m_rbTakeFreezeFrame = false;
 		}
 
-		pRenderContext = materials->GetRenderContext();
+		pRenderContext = g_pMaterialSystem->GetRenderContext();
 		pRenderContext->SetRenderTarget( saveRenderTarget );
 		pRenderContext.SafeRelease();
 
@@ -2723,8 +2723,8 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 	{
 		CMatRenderContextPtr pRenderContext( materials );
 
-		ITexture	*pFullFrameFB1 = materials->FindTexture( "_rt_FullFrameFB1", TEXTURE_GROUP_RENDER_TARGET );
-		IMaterial	*pCopyMaterial = materials->FindMaterial( "dev/upscale", TEXTURE_GROUP_OTHER );
+		ITexture	*pFullFrameFB1 = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB1", TEXTURE_GROUP_RENDER_TARGET );
+		IMaterial	*pCopyMaterial = g_pMaterialSystem->FindMaterial( "dev/upscale", TEXTURE_GROUP_OTHER );
 		pCopyMaterial->IncrementReferenceCount();
 
 		Rect_t	DownscaleRect, UpscaleRect;
@@ -2773,7 +2773,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 
 		// Get the render context out of materials to avoid some debug stuff.
 		// WARNING THIS REQUIRES THE .SafeRelease below or it'll never release the ref
-		pRenderContext = materials->GetRenderContext();
+		pRenderContext = g_pMaterialSystem->GetRenderContext();
 
 		// clear depth in the backbuffer before we push the render target
 		if( bClear )
@@ -2806,9 +2806,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 		vecHudPanels.AddToTail( VGui_GetClientDLLRootPanel() );
 		if(VGui_GetFullscreenRootVPANEL() != VGui_GetClientDLLRootPanel())
 			vecHudPanels.AddToTail( VGui_GetFullscreenRootVPANEL() );
-#if defined( TOOLFRAMEWORK_VGUI_REFACTOR )
 		vecHudPanels.AddToTail( enginevgui->GetPanel( PANEL_GAMEUIDLL ) );
-#endif
 		vecHudPanels.AddToTail( enginevgui->GetPanel( PANEL_CLIENTDLL_TOOLS ) );
 
 		// Make sure the client .dll root panel is at the proper point before doing the "SolveTraverse" calls
@@ -2829,7 +2827,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 		VGui_PostRender();
 
 		GetClientMode()->PostRenderVGui();
-		pRenderContext = materials->GetRenderContext();
+		pRenderContext = g_pMaterialSystem->GetRenderContext();
 		if (pTexture)
 		{
 			pRenderContext->OverrideAlphaWriteEnable( false, true );
@@ -3564,7 +3562,7 @@ void CViewRender::ViewDrawScene_Intro( const CViewSetupEx &view, int nClearFlags
 	// Draw quads on the screen for each screenspace pass.
 	// -----------------------------------------------------------------------
 	// Find the material that we use to render the overlays
-	IMaterial *pOverlayMaterial = materials->FindMaterial( "scripted/intro_screenspaceeffect", TEXTURE_GROUP_OTHER );
+	IMaterial *pOverlayMaterial = g_pMaterialSystem->FindMaterial( "scripted/intro_screenspaceeffect", TEXTURE_GROUP_OTHER );
 	IMaterialVar *pModeVar = pOverlayMaterial->FindVar( "$mode", NULL );
 	IMaterialVar *pAlphaVar = pOverlayMaterial->FindVar( "$alpha", NULL );
 
@@ -4471,7 +4469,7 @@ static void DrawClippedDepthBox( IClientRenderable *pEnt, float *pClipPlane )
 	CMatRenderContextPtr pRenderContext( materials );
 	
 #ifdef DEBUG_DRAWCLIPPEDDEPTHBOX
-	pRenderContext->Bind( materials->FindMaterial( "debug/debugvertexcolor", TEXTURE_GROUP_OTHER ), NULL );
+	pRenderContext->Bind( g_pMaterialSystem->FindMaterial( "debug/debugvertexcolor", TEXTURE_GROUP_OTHER ), NULL );
 #else
 	pRenderContext->Bind( g_material_WriteZ, NULL );
 #endif
@@ -4640,7 +4638,7 @@ static inline void DrawRenderable( IClientRenderable *pEnt, IClientRenderableMod
 	if( pRenderClipPlane )	
 	{
 		CMatRenderContextPtr pRenderContext( materials );
-		if( !materials->UsingFastClipping() ) //do NOT change the fast clip plane mid-scene, depth problems result. Regular user clip planes are fine though
+		if( !g_pMaterialSystem->UsingFastClipping() ) //do NOT change the fast clip plane mid-scene, depth problems result. Regular user clip planes are fine though
 			pRenderContext->PushCustomClipPlane( pRenderClipPlane );
 		else
 			DrawClippedDepthBox( pEnt, pRenderClipPlane );
@@ -4656,7 +4654,7 @@ static inline void DrawRenderable( IClientRenderable *pEnt, IClientRenderableMod
 		BlurTest( pEnt, pEntMod, flags, false, instance );
 		GetViewRenderInstance()->SetCurrentlyDrawingEntity( NULL );
 
-		if( !materials->UsingFastClipping() )	
+		if( !g_pMaterialSystem->UsingFastClipping() )	
 			pRenderContext->PopCustomClipPlane();
 	}
 	else
@@ -5405,7 +5403,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 				CMatRenderContextPtr pRenderContext( materials );
 				ITexture *pDepthTex = GetFullFrameDepthTexture();
 
-				IMaterial *pMaterial = materials->FindMaterial( "debug/showz", TEXTURE_GROUP_OTHER, true );
+				IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( "debug/showz", TEXTURE_GROUP_OTHER, true );
 				pMaterial->IncrementReferenceCount();
 				IMaterialVar *BaseTextureVar = pMaterial->FindVar( "$basetexture", NULL, false );
 				IMaterialVar *pDepthInAlpha = NULL;
@@ -5442,7 +5440,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 			break;
 
 		default:
-			materials->GetRenderContext()->SetFullScreenDepthTextureValidityFlag( false );
+			g_pMaterialSystem->GetRenderContext()->SetFullScreenDepthTextureValidityFlag( false );
 			break;
 		}
 	}
@@ -5971,7 +5969,7 @@ void CSkyboxView::DrawInternal( view_id_t iSkyBoxViewID, bool bInvokePreAndPostR
 	{
 		// draw a fullscreen quad setting destalpha to 1
 
-		IMaterial *pMat = materials->FindMaterial( "dev/clearalpha", TEXTURE_GROUP_OTHER, true );
+		IMaterial *pMat = g_pMaterialSystem->FindMaterial( "dev/clearalpha", TEXTURE_GROUP_OTHER, true );
 		if ( pMat != NULL )
 		{
 			int nWidth = 0;
@@ -6573,7 +6571,7 @@ void CBaseWorldView::SSAO_DepthPass()
 	int savedViewID = g_CurrentViewID;
 	g_CurrentViewID = VIEW_SSAO;
 
-	ITexture *pSSAO = materials->FindTexture( "_rt_ResolvedFullFrameDepth", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *pSSAO = g_pMaterialSystem->FindTexture( "_rt_ResolvedFullFrameDepth", TEXTURE_GROUP_RENDER_TARGET );
 
 	CMatRenderContextPtr pRenderContext( materials );
 
@@ -6635,8 +6633,8 @@ void CBaseWorldView::DrawDepthOfField( )
 
 	CMatRenderContextPtr pRenderContext( materials );
 
-	ITexture *pSmallFB0 = materials->FindTexture( "_rt_smallfb0", TEXTURE_GROUP_RENDER_TARGET );
-	ITexture *pSmallFB1 = materials->FindTexture( "_rt_smallfb1", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *pSmallFB0 = g_pMaterialSystem->FindTexture( "_rt_smallfb0", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *pSmallFB1 = g_pMaterialSystem->FindTexture( "_rt_smallfb1", TEXTURE_GROUP_RENDER_TARGET );
 
 	Rect_t	DestRect;
 	int w = pSmallFB0->GetActualWidth();
@@ -6648,8 +6646,8 @@ void CBaseWorldView::DrawDepthOfField( )
 
 	pRenderContext->CopyRenderTargetToTextureEx( pSmallFB0, 0, NULL, &DestRect );
 
-	IMaterial *pPyroBlurXMaterial = materials->FindMaterial( "dev/pyro_blur_filter_x", TEXTURE_GROUP_OTHER );
-	IMaterial *pPyroBlurYMaterial = materials->FindMaterial( "dev/pyro_blur_filter_y", TEXTURE_GROUP_OTHER );
+	IMaterial *pPyroBlurXMaterial = g_pMaterialSystem->FindMaterial( "dev/pyro_blur_filter_x", TEXTURE_GROUP_OTHER );
+	IMaterial *pPyroBlurYMaterial = g_pMaterialSystem->FindMaterial( "dev/pyro_blur_filter_y", TEXTURE_GROUP_OTHER );
 
 	pRenderContext->PushRenderTargetAndViewport( pSmallFB1, 0, 0, w, h );
 	pRenderContext->DrawScreenSpaceRectangle( pPyroBlurYMaterial, 0, 0, w, h, 0, 0, w - 1, h - 1, w, h );
@@ -6659,7 +6657,7 @@ void CBaseWorldView::DrawDepthOfField( )
 	pRenderContext->DrawScreenSpaceRectangle( pPyroBlurXMaterial, 0, 0, w, h, 0, 0, w - 1, h - 1, w, h );
 	pRenderContext->PopRenderTargetAndViewport();
 
-	IMaterial *pPyroDepthOfFieldMaterial = materials->FindMaterial( "dev/pyro_dof",  TEXTURE_GROUP_OTHER );
+	IMaterial *pPyroDepthOfFieldMaterial = g_pMaterialSystem->FindMaterial( "dev/pyro_dof",  TEXTURE_GROUP_OTHER );
 
 	pRenderContext->DrawScreenSpaceRectangle( pPyroDepthOfFieldMaterial, x, y, width, height, 0, 0, width-1, height-1, width, height );
 }
@@ -7077,7 +7075,7 @@ void CUnderWaterView::Setup( const CViewSetupEx &view, bool bDrawSkybox, const V
 			char const *pOverlayName = pScreenOverlayVar->GetStringValue();
 			if ( pOverlayName[0] != '0' )						// fixme!!!
 			{
-				IMaterial *pOverlayMaterial = materials->FindMaterial( pOverlayName,  TEXTURE_GROUP_OTHER );
+				IMaterial *pOverlayMaterial = g_pMaterialSystem->FindMaterial( pOverlayName,  TEXTURE_GROUP_OTHER );
 				m_pMainView->SetWaterOverlayMaterial( pOverlayMaterial );
 			}
 		}

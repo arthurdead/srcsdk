@@ -59,7 +59,7 @@ void LoadHudTextures( CUtlDict< CHudTexture *, int >& list, const char *szFilena
 {
 	KeyValues *pTemp, *pTextureSection;
 
-	KeyValues *pKeyValuesData = ReadEncryptedKVFile( filesystem, szFilenameWithoutExtension, pICEKey );
+	KeyValues *pKeyValuesData = ReadEncryptedKVFile( g_pFullFileSystem, szFilenameWithoutExtension, pICEKey );
 	if ( pKeyValuesData )
 	{
 		CUtlVector<HudTextureFileRef> hudTextureFileRefs;
@@ -472,7 +472,7 @@ void CHud::Init( void )
 	KeyValues *kv = new KeyValues( "layout" );
 	if ( kv )
 	{
-		if ( kv->LoadFromFile( filesystem, "scripts/HudLayout.res" ) )
+		if ( kv->LoadFromFile( g_pFullFileSystem, "scripts/HudLayout.res" ) )
 		{
 			int numelements = m_HudList.Size();
 

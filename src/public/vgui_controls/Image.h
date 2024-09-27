@@ -44,6 +44,7 @@ public:
 	virtual bool Evict();
 	virtual int GetNumFrames();
 	virtual void SetFrame( int nFrame );
+	virtual int GetFrame();
 	virtual HTexture GetID();
 	virtual void SetRotation( int iRotation ) { return; };
 

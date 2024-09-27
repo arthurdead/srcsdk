@@ -20,6 +20,7 @@
 #include "mapentities.h"
 #include "point_template.h"
 #include "tier0/vprof.h"
+#include "foundryhelpers_server.h"
 
 #include "tier0/memdbgon.h"
 
@@ -104,7 +105,7 @@ public:
 //-----------------------------------------------------------------------------
 static CServerTools g_ServerTools;
 IServerTools *g_pServerTools = &g_ServerTools;
-
+IServerTools *servertools = &g_ServerTools;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CServerTools, IServerTools, VSERVERTOOLS_INTERFACE_VERSION, g_ServerTools );
 
 // When bumping the version to this interface, check that our assumption is still valid and expose the older version in the same way
@@ -284,7 +285,7 @@ void HandleFoundryEntitySpawnRecords()
 		CBaseEntity *pNewEntity = ::CreateEntityByName( szClassName, nIndexToSpawn );
 		if ( !pNewEntity )
 		{
-			Warning( "HandleFoundryEntitySpawnRecords - CreateEntityByName( %s, %d ) failed\n", szClassName, pRecord->m_iEntityIndex );
+			Log_Warning( LOG_FOUNDRY, "HandleFoundryEntitySpawnRecords - CreateEntityByName( %s, %d ) failed\n", szClassName, pRecord->m_iEntityIndex );
 			continue;
 		}
 

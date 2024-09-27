@@ -366,7 +366,7 @@ void LaunchVConfig()
 
 const char* GetVProjectCmdLineValue()
 {
-	return CommandLine()->ParmValue( "-vproject", CommandLine()->ParmValue( "-game" ) );
+	return CommandLine()->ParmValue( "-vproject", CommandLine()->ParmValue( "-game", NULL ) );
 }
 
 FSReturnCode_t SetupFileSystemError( bool bRunVConfig, FSReturnCode_t retVal, const char *pMsg, ... )

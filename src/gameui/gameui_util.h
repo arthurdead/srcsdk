@@ -11,8 +11,18 @@
 #include "tier0/platform.h"
 #include "tier1/convar.h"
 
+extern const char *COM_GetModDirectory();
+
 const char	*VarArgs( PRINTF_FORMAT_STRING const char *format, ... );
 #define UTIL_VarArgs VarArgs
+
+// ScreenHeight returns the height of the screen, in pixels
+int		ScreenHeight( void );
+// ScreenWidth returns the width of the screen, in pixels
+int		ScreenWidth( void );
+
+#define XRES(x)	( x  * ( ( float )ScreenWidth() / 640.0 ) )
+#define YRES(y)	( y  * ( ( float )ScreenHeight() / 480.0 ) )
 
 void GameUI_MakeSafeName( const char *oldName, char *newName, int newNameBufSize );
 

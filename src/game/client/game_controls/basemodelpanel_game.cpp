@@ -467,12 +467,12 @@ void CModelPanel::InitCubeMaps()
 	// Deal with the default cubemap
 	if ( g_pMaterialSystemHardwareConfig->GetHDREnabled() )
 	{
-		pCubemapTexture = materials->FindTexture( "editor/cubemap.hdr", NULL, true );
+		pCubemapTexture = g_pMaterialSystem->FindTexture( "editor/cubemap.hdr", NULL, true );
 		m_DefaultHDREnvCubemap.Init( pCubemapTexture );
 	}
 	else
 	{
-		pCubemapTexture = materials->FindTexture( "editor/cubemap", NULL, true );
+		pCubemapTexture = g_pMaterialSystem->FindTexture( "editor/cubemap", NULL, true );
 		m_DefaultEnvCubemap.Init( pCubemapTexture );
 	}
 }

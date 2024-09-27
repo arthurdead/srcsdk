@@ -208,7 +208,7 @@ void CLCD::Init( void )
 	m_TextAlignments.Insert( "right", DT_RIGHT );
 
 	KeyValues *kv = new KeyValues( "G15" );
-	if ( kv->LoadFromFile( filesystem, G15_RESOURCE_FILE, "MOD" ) )
+	if ( kv->LoadFromFile( g_pFullFileSystem, G15_RESOURCE_FILE, "MOD" ) )
 	{
 		char const *title = kv->GetString( "game", "Source Engine" );
 		m_nMaxChatHistory = clamp( 1, kv->GetInt( "chatlines", m_nMaxChatHistory ), 64 );
@@ -768,7 +768,7 @@ void CLCD::ParseIconMappings( KeyValues *kv )
 		HICON hIcon = 0;
 		char const *name = icon->GetName();
 		char fullpath[ 512 ];
-		filesystem->RelativePathToFullPath( icon->GetString(), "GAME", fullpath, sizeof( fullpath ) );
+		g_pFullFileSystem->RelativePathToFullPath( icon->GetString(), "GAME", fullpath, sizeof( fullpath ) );
 #ifdef WIN32
 		hIcon = (HICON)::LoadImageA( NULL, fullpath, IMAGE_ICON, 32, 32, LR_LOADFROMFILE );
 #else

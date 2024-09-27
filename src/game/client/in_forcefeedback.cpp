@@ -436,10 +436,10 @@ static void LoadEffectFile( LPDIRECTINPUTDEVICE8 device, EffectMap_t &map )
 	context.map = &map;
 
 	// Pull out of .gcf if needed
-	filesystem->GetLocalCopy( map.effectfile );
+	g_pFullFileSystem->GetLocalCopy( map.effectfile );
 
 	char fullpath[ 512 ];
-	filesystem->GetLocalPath( map.effectfile, fullpath, sizeof( fullpath ) );
+	g_pFullFileSystem->GetLocalPath( map.effectfile, fullpath, sizeof( fullpath ) );
 
 	HRESULT hr = device->EnumEffectsInFile
 		( fullpath, 

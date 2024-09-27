@@ -13,6 +13,7 @@
 #include "tier0/icommandline.h"
 #include "mp_shareddefs.h"
 #include "usermessages.h"
+#include "filesystem.h"
 
 #ifdef CLIENT_DLL
 
@@ -175,7 +176,7 @@ ConVar nextlevel( "nextlevel",
 				  "If set to a valid map name, will trigger a changelevel to the specified map at the end of the round" );
 
 // Hook into the convar from the engine
-ConVar	skill( "skill","1", FCVAR_ARCHIVE | FCVAR_ARCHIVE, "Game skill level (1-3).", true, 1, true, 3 );			// 1 - 3
+ConVarRef	skill( "skill" );			// 1 - 3
 
 ConVar sv_weapon_respawn_time("sv_weapon_respawn_time", "20", FCVAR_GAMEDLL|FCVAR_NOTIFY);
 ConVar sv_item_respawn_time("sv_item_respawn_time", "30", FCVAR_GAMEDLL|FCVAR_NOTIFY);
@@ -200,8 +201,8 @@ ConVar log_verbose_interval( "log_verbose_interval", "3.0", FCVAR_GAMEDLL, "Dete
 #endif // CLIENT_DLL
 
 ConVar	teamplay( "mp_teamplay","0", FCVAR_NOTIFY|FCVAR_REPLICATED );
-ConVar	deathmatch( "deathmatch","0", FCVAR_NOTIFY|FCVAR_REPLICATED, "Running a deathmatch server." );	// 0, 1, or 2
-ConVar	coop( "coop","0", FCVAR_NOTIFY|FCVAR_REPLICATED, "Cooperative play." );			// 0 or 1
+ConVarRef	deathmatch( "deathmatch" );	// 0, 1, or 2
+ConVarRef	coop( "coop" );			// 0 or 1
 
 CViewVectors g_DefaultViewVectors(
 	Vector(-16, -16, 0 ),		//VEC_HULL_MIN (m_vHullMin)
@@ -681,17 +682,15 @@ void CGameRules::RefreshSkillData ( bool forceUpdate )
 		if ( GlobalEntity_IsInTable( "skill.cfg" ) )
 			return;
 	}
+
 	GlobalEntity_Add( "skill.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
-
-	char	szExec[256];
-
-	ConVarRef skill( "skill" );
 
 	ConVarRef suitcharger( "sk_suitcharger" );
 	suitcharger.SetValue( 30 );
 
 	SetSkillLevel( skill.IsValid() ? skill.GetInt() : 1 );
 
+	char	szExec[256];
 	Q_snprintf( szExec,sizeof(szExec), "exec skill%d.cfg\n", GetSkillLevel() );
 
 	engine->ServerCommand( szExec );
@@ -1118,6 +1117,7 @@ void CGameRules::CheckRestartGame()
 void CGameRules::Think()
 {
 	GetVoiceGameMgr()->Update( gpGlobals->frametime );
+
 	SetSkillLevel( skill.GetInt() );
 
 	gpGlobals->coop = IsCoOp();
@@ -2288,7 +2288,7 @@ void CGameRules::GetNextLevelName( char *pszNextMap, int bufsize, bool bRandom /
 	DetermineMapCycleFilename( mapcfile, sizeof(mapcfile), false );
 
 	// Check the time of the mapcycle file and re-populate the list of level names if the file has been modified
-	const int nMapCycleTimeStamp = filesystem->GetPathTime( mapcfile, "GAME" );
+	const int nMapCycleTimeStamp = g_pFullFileSystem->GetPathTime( mapcfile, "GAME" );
 
 	if ( 0 == nMapCycleTimeStamp )
 	{
@@ -2345,7 +2345,7 @@ void CGameRules::DetermineMapCycleFilename( char *pszResult, int nSizeResult, bo
 
 	// First, look for a mapcycle file in the cfg directory, which is preferred
 	V_strncpy( pszResult, szRecommendedName, nSizeResult );
-	if ( filesystem->FileExists( pszResult, "GAME" ) )
+	if ( g_pFullFileSystem->FileExists( pszResult, "GAME" ) )
 	{
 		if ( bForceSpew || V_stricmp( szLastResult, pszResult) )
 		{
@@ -2357,7 +2357,7 @@ void CGameRules::DetermineMapCycleFilename( char *pszResult, int nSizeResult, bo
 
 	// Nope?  Try the root.
 	V_strncpy( pszResult, pszVar, nSizeResult );
-	if ( filesystem->FileExists( pszResult, "GAME" ) )
+	if ( g_pFullFileSystem->FileExists( pszResult, "GAME" ) )
 	{
 		if ( bForceSpew || V_stricmp( szLastResult, pszResult) )
 		{
@@ -2371,7 +2371,7 @@ void CGameRules::DetermineMapCycleFilename( char *pszResult, int nSizeResult, bo
 	if ( !V_stricmp( pszVar, "mapcycle.txt" ) )
 	{
 		V_strncpy( pszResult, "cfg/mapcycle_default.txt", nSizeResult );
-		if ( filesystem->FileExists( pszResult, "GAME" ) )
+		if ( g_pFullFileSystem->FileExists( pszResult, "GAME" ) )
 		{
 			if ( bForceSpew || V_stricmp( szLastResult, pszResult) )
 			{
@@ -2399,7 +2399,7 @@ void CGameRules::LoadMapCycleFileIntoVector( const char *pszMapCycleFile, CUtlVe
 void CGameRules::RawLoadMapCycleFileIntoVector( const char *pszMapCycleFile, CUtlVector<char *> &mapList )
 {
 	CUtlBuffer buf;
-	if ( !filesystem->ReadFile( pszMapCycleFile, "GAME", buf ) )
+	if ( !g_pFullFileSystem->ReadFile( pszMapCycleFile, "GAME", buf ) )
 		return;
 	buf.PutChar( 0 );
 	V_SplitString( (char*)buf.Base(), "\n", mapList );
@@ -2502,7 +2502,7 @@ void CGameRules::LoadMapCycleFile( void )
 
 	FreeMapCycleFileVector( m_MapList );
 
-	const int nMapCycleTimeStamp = filesystem->GetPathTime( mapcfile, "GAME" );
+	const int nMapCycleTimeStamp = g_pFullFileSystem->GetPathTime( mapcfile, "GAME" );
 	m_nMapCycleTimeStamp = nMapCycleTimeStamp;
 
 	// Repopulate map list from mapcycle file
@@ -2823,7 +2823,7 @@ void CGameRules::LoadVoiceCommandScript( void )
 {
 	KeyValues *pKV = new KeyValues( "VoiceCommands" );
 
-	if ( pKV->LoadFromFile( (IBaseFileSystem *)filesystem, "scripts/voicecommands.txt", "GAME" ) )
+	if ( pKV->LoadFromFile( g_pFullFileSystem, "scripts/voicecommands.txt", "GAME" ) )
 	{
 		for ( KeyValues *menu = pKV->GetFirstSubKey(); menu != NULL; menu = menu->GetNextKey() )
 		{

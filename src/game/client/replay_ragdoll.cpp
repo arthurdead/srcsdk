@@ -234,7 +234,7 @@ void CReplayRagdollRecorder::RemoveExpiredRagdollEntries()
 		engine->Con_NPrintf( 10 + i, "entity %d: start time=%d  duration=%d  num bones=%d", m_lstRagdolls[i]->m_nEntityIndex, m_lstRagdolls[i]->m_nStartTick, m_lstRagdolls[i]->m_nDuration, m_lstRagdolls[i]->m_nNumBones );
 	}
 
-	ConVar* pReplayMovieLength = (ConVar*)cvar->FindVar( "replay_movielength" );
+	ConVar* pReplayMovieLength = (ConVar*)g_pCVar->FindVar( "replay_movielength" );
 	if ( !pReplayMovieLength || m_lstRagdolls.Count() == 0 )
 		return;
 
@@ -326,7 +326,7 @@ bool CReplayRagdollRecorder::FindEntryInRecordingList( C_BaseAnimating* pEntity,
 
 void CReplayRagdollRecorder::Record()
 {
-	ConVar* pReplayEnable = (ConVar*)cvar->FindVar( "replay_enable" );
+	ConVar* pReplayEnable = (ConVar*)g_pCVar->FindVar( "replay_enable" );
 	if ( !pReplayEnable || !pReplayEnable->GetInt() )
 		return;
 

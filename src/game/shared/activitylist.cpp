@@ -17,8 +17,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern IFileSystem *filesystem;
-
 // NOTE: If CStringRegistry allowed storing arbitrary data, we could just use that.
 // in this case we have the "isPrivate" member and the replacement rules 
 // (activityIndex can be reused by private activities), so a custom table is necessary
@@ -224,7 +222,7 @@ void UTIL_LoadActivityRemapFile( const char *filename, const char *section, CUtl
 
 	KeyValues *pkvFile = new KeyValues( section );
 
-	if ( pkvFile->LoadFromFile( filesystem, filename, NULL ) )
+	if ( pkvFile->LoadFromFile( g_pFullFileSystem, filename, NULL ) )
 	{
 		KeyValues *pTestKey = pkvFile->GetFirstSubKey();
 

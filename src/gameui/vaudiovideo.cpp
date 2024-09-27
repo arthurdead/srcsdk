@@ -33,7 +33,6 @@ BaseClass(parent, panelName)
 	m_sldBrightness = NULL;
 	m_drpColorMode = NULL;
 	m_sldFilmGrain = NULL;
-	m_drpSplitScreenDirection = NULL;
 
 	m_sldGameVolume = NULL;
 	m_sldMusicVolume = NULL;
@@ -62,11 +61,6 @@ AudioVideo::~AudioVideo()
 void AudioVideo::Activate()
 {
 	BaseClass::Activate();
-
-#ifdef _X360
-	CGameUIConVarRef mat_xbox_ishidef( "mat_xbox_ishidef" );
-	CGameUIConVarRef mat_xbox_iswidescreen( "mat_xbox_iswidescreen" );
-#endif
 
 	if ( m_sldBrightness )
 	{
@@ -97,50 +91,6 @@ void AudioVideo::Activate()
 	if ( m_sldFilmGrain )
 	{
 		m_sldFilmGrain->Reset();
-
-#ifdef _X360
-		if ( !mat_xbox_ishidef.GetBool() )
-		{
-			m_sldFilmGrain->SetEnabled( false );
-		}
-#endif
-	}
-
-	if ( m_drpSplitScreenDirection )
-	{
-		bool bWidescreen = false;
-#ifdef _X360
-		bWidescreen = mat_xbox_iswidescreen.GetBool();
-#endif
-
-		if ( !bWidescreen )
-		{
-			m_drpSplitScreenDirection->SetEnabled( false );
-			m_drpSplitScreenDirection->SetCurrentSelection( "#L4D360UI_SplitScreenDirection_Horizontal" );
-		}
-		else
-		{
-			CGameUIConVarRef ss_splitmode( "ss_splitmode" );
-			int iSplitMode = ss_splitmode.GetInt();
-
-			switch ( iSplitMode )
-			{
-			case 1:
-				m_drpSplitScreenDirection->SetCurrentSelection( "#L4D360UI_SplitScreenDirection_Horizontal" );
-				break;
-			case 2:
-				m_drpSplitScreenDirection->SetCurrentSelection( "#L4D360UI_SplitScreenDirection_Vertical" );
-				break;
-			default:
-				m_drpSplitScreenDirection->SetCurrentSelection( "#L4D360UI_SplitScreenDirection_Default" );
-			}
-		}
-
-		FlyoutMenu *pFlyout = m_drpSplitScreenDirection->GetCurrentFlyout();
-		if ( pFlyout )
-		{
-			pFlyout->SetListener( this );
-		}
 	}
 
 	if ( m_sldGameVolume )

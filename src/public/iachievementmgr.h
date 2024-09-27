@@ -27,6 +27,8 @@ public:
 	virtual bool ShouldHideUntilAchieved() = 0;
 	virtual bool ShouldShowOnHUD() = 0;
 	virtual void SetShowOnHUD( bool bShow ) = 0;
+	inline const char *GetIconPath()
+	{ return NULL; }
 };
 
 
@@ -34,6 +36,8 @@ abstract_class IAchievementMgr
 {
 public:
 	virtual IAchievement* GetAchievementByIndex( int index ) = 0;
+	inline IAchievement* GetAchievementByDisplayOrder( int orderIndex )
+	{ return GetAchievementByIndex( orderIndex ); }
 	virtual CBaseAchievement* GetAchievementByID ( int id ) = 0;
 	virtual int GetAchievementCount() = 0;
 	virtual void InitializeAchievements() = 0;
@@ -57,6 +61,7 @@ public:
 #define ACH_FILTER_ATTACKER_IS_PLAYER		0x0100
 #define ACH_FILTER_VICTIM_IS_PLAYER_ENEMY	0x0200
 #define ACH_FILTER_FULL_ROUND_ONLY			0x0400
+#define ACH_FILTER_LOCAL_PLAYER_EVENTS		0x0800		// Evaluate player-specific events only
 
 #define ACH_LISTEN_PLAYER_KILL_ENEMY_EVENTS		ACH_LISTEN_KILL_EVENTS | ACH_FILTER_ATTACKER_IS_PLAYER | ACH_FILTER_VICTIM_IS_PLAYER_ENEMY
 #define ACH_LISTEN_KILL_ENEMY_EVENTS		ACH_LISTEN_KILL_EVENTS | ACH_FILTER_VICTIM_IS_PLAYER_ENEMY

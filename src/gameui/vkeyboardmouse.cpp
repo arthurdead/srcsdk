@@ -314,13 +314,6 @@ void KeyboardMouse::OnThink()
 
 void KeyboardMouse::OnKeyCodePressed(KeyCode code)
 {
-	int joystick = GetJoystickForCode( code );
-	int userId = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-	if ( joystick != userId || joystick < 0 )
-	{	
-		return;
-	}
-
 	switch ( GetBaseButtonCode( code ) )
 	{
 	case KEY_XBUTTON_B:
@@ -387,14 +380,7 @@ void KeyboardMouse::OnCommand(const char *command)
 			// The joystick is being enabled, and this is a state change
 			// rather than a redundant execution of this code. Enable
 			// the gamepad controls by execing a config file.
-			if ( IsPC() )
-			{
-				engine->ClientCmd_Unrestricted( "exec 360controller_pc.cfg" );
-			}
-			else if ( IsX360() )
-			{
-				engine->ClientCmd_Unrestricted( "exec 360controller_xbox.cfg" );
-			}
+			engine->ClientCmd_Unrestricted( "exec 360controller.cfg" );
 		}
 
 		joystick.SetValue( true );
@@ -480,7 +466,7 @@ void KeyboardMouse::OnFlyoutMenuCancelled()
 //=============================================================================
 Panel* KeyboardMouse::NavigateBack()
 {
-	engine->ClientCmd_Unrestricted( VarArgs( "host_writeconfig_ss %d", XBX_GetPrimaryUserId() ) );
+	engine->ClientCmd_Unrestricted( "host_writeconfig" );
 
 	return BaseClass::NavigateBack();
 }

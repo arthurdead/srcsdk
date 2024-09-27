@@ -66,6 +66,8 @@ public:
 	// posts a message to all active modules
 	void PostMessageToAllModules(KeyValues *message);
 
+	void PostMessageToModule(const char *moduleName, KeyValues *message);
+
 	// sets the the platform should update and restart when it quits
 	void SetPlatformToRestart();
 

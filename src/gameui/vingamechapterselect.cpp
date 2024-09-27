@@ -82,7 +82,7 @@ void InGameChapterSelect::ApplySchemeSettings(vgui::IScheme *pScheme)
 
 	// Get mission and campaign info
 	KeyValues *pInfoMission = NULL;
-	KeyValues *pInfoChapter = g_pMatchExtSwarm->GetMapInfo( pGameSettings, &pInfoMission );
+	KeyValues *pInfoChapter = g_pMatchExt->GetMapInfo( pGameSettings, &pInfoMission );
 
 	// Check if this is a custom mission?
 	if ( pInfoMission && !pInfoMission->GetBool( "builtin" ) )
@@ -90,7 +90,7 @@ void InGameChapterSelect::ApplySchemeSettings(vgui::IScheme *pScheme)
 
 	if ( !pInfoMission || !pInfoChapter )
 	{
-		KeyValues *pAllMissions = g_pMatchExtSwarm->GetAllMissions();
+		KeyValues *pAllMissions = g_pMatchExt->GetAllMissions();
 		for ( pInfoMission = pAllMissions ? pAllMissions->GetFirstTrueSubKey() : NULL;
 			  pInfoMission; pInfoMission = pInfoMission->GetNextTrueSubKey() )
 		{
@@ -195,7 +195,7 @@ void InGameChapterSelect::OnCommand(const char *command)
 							{
 								pGameSettings->SetString( "game/campaign", szMissionName );
 								pGameSettings->SetInt( "game/chapter", 1 );
-								if ( !g_pMatchExtSwarm->GetMapInfo( pGameSettings ) )
+								if ( !g_pMatchExt->GetMapInfo( pGameSettings ) )
 								{
 									button->SetEnabled( false );
 								}
@@ -225,9 +225,6 @@ void InGameChapterSelect::OnCommand(const char *command)
 
 		char const *szVoteCommand = "ChangeChapter";
 
-		int iUser = GetGameUIActiveSplitScreenPlayerSlot();
-		GAMEUI_ACTIVE_SPLITSCREEN_PLAYER_GUARD( iUser );
-
 		Panel *pDrpChapter = FindChildByName( "DrpChapter" );
 		if ( !pDrpChapter || !pDrpChapter->IsEnabled() )
 		{
@@ -236,7 +233,7 @@ void InGameChapterSelect::OnCommand(const char *command)
 
 			engine->ClientCmd( CFmtStr( "callvote %s %s;", szVoteCommand, m_chCampaign ) );
 		}
-		else if ( KeyValues *pInfoMap = g_pMatchExtSwarm->GetMapInfo( pGameSettings ) )
+		else if ( KeyValues *pInfoMap = g_pMatchExt->GetMapInfo( pGameSettings ) )
 		{
 			engine->ClientCmd( CFmtStr( "callvote %s %s;", szVoteCommand, pInfoMap->GetString( "map" ) ) );
 		}

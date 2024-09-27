@@ -26,17 +26,27 @@
 // Statically constructed list of ConCommandBases, 
 // used for registering them with the ICVar interface
 //-----------------------------------------------------------------------------
-ConCommandBase			*ConCommandBase::s_pConCommandBases = NULL;
-IConCommandBaseAccessor	*ConCommandBase::s_pAccessor = NULL;
+
+// ConVars add themselves to this list for the executable. 
+// Then ConVar_Register runs through  all the console variables 
+// and registers them into a global list stored in vstdlib.dll
+static ConCommandBase		*s_pConCommandBases = NULL;
+
+// ConVars in this executable use this 'global' to access values.
+static IConCommandBaseAccessor	*s_pAccessor = NULL;
+
 static int s_nCVarFlag = 0;
 static int s_nDLLIdentifier = -1;	// A unique identifier indicating which DLL this convar came from
 static bool s_bRegistered = false;
 
 bool CDefaultAccessor::RegisterConCommandBase( ConCommandBase *pVar )
 {
-	if(cvar->FindCommandBase(pVar->GetName()) != NULL) {
+#ifdef _DEBUG
+	ConCommandBase *pOldVar = g_pCVar->FindCommandBase(pVar->GetName());
+	if(pOldVar != NULL && (!pOldVar->IsFlagSet(FCVAR_REPLICATED) || !pVar->IsFlagSet(FCVAR_REPLICATED))) {
 		DevMsg("%s dll tried to re-register con var/command named %s\n", modulename::dll, pVar->GetName());
 	}
+#endif
 
 	// Link to engine's list instead
 	g_pCVar->RegisterConCommand( pVar );
@@ -69,28 +79,35 @@ static void ModifyFlags(int &flags)
 //-----------------------------------------------------------------------------
 void ConVar_Register( int nCVarFlag, IConCommandBaseAccessor *pAccessor )
 {
+	if( !pAccessor )
+		pAccessor = &s_DefaultAccessor;
+
 	if ( !g_pCVar || s_bRegistered )
 		return;
 
-	Assert( s_nDLLIdentifier < 0 );
-	s_bRegistered = true;
+	s_pAccessor = pAccessor;
 	s_nCVarFlag = nCVarFlag;
+	Assert( s_nDLLIdentifier < 0 );
 	s_nDLLIdentifier = g_pCVar->AllocateDLLIdentifier();
+#ifdef _DEBUG
+	Msg("%s got dll identifier %i\n", modulename::dll, s_nDLLIdentifier);
+#endif
 
 	ConCommandBase *pCur, *pNext;
 
-	ConCommandBase::s_pAccessor = pAccessor ? pAccessor : &s_DefaultAccessor;
-	pCur = ConCommandBase::s_pConCommandBases;
+	pCur = s_pConCommandBases;
 	while ( pCur )
 	{
 		pNext = pCur->m_pNext;
-		pCur->AddFlags( s_nCVarFlag );
-		pCur->Init();
+		pCur->AddFlags( nCVarFlag );
+		if ( !pCur->IsFlagSet(FCVAR_UNREGISTERED) )
+			pCur->Init( pAccessor );
 		pCur = pNext;
 	}
 
 	g_pCVar->ProcessQueuedMaterialThreadConVarSets();
-	ConCommandBase::s_pConCommandBases = NULL;
+
+	s_bRegistered = true;
 }
 
 void ConVar_Unregister( )
@@ -100,7 +117,9 @@ void ConVar_Unregister( )
 
 	Assert( s_nDLLIdentifier >= 0 );
 	g_pCVar->UnregisterConCommands( s_nDLLIdentifier );
+	s_nCVarFlag = 0;
 	s_nDLLIdentifier = -1;
+	s_pAccessor = NULL;
 	s_bRegistered = false;
 }
 
@@ -175,22 +194,16 @@ void ConCommandBase::CreateBase( const char *pName, const char *pHelpString /*= 
 	m_nFlags = flags;
 	ModifyFlags( m_nFlags );
 
-	if ( !IsFlagSet(FCVAR_UNREGISTERED) )
-	{
-		m_pNext = s_pConCommandBases;
-		s_pConCommandBases = this;
-	}
-	else
-	{
-		// It's unregistered
-		m_pNext = NULL;
-	}
+	m_pNext = s_pConCommandBases;
+	s_pConCommandBases = this;
 
 	// If s_pAccessor is already set (this ConVar is not a global variable),
 	//  register it.
-	if ( s_pAccessor )
+	if ( s_bRegistered )
 	{
-		Init();
+		AddFlags( s_nCVarFlag );
+		if ( !IsFlagSet(FCVAR_UNREGISTERED) )
+			Init( s_pAccessor );
 	}
 }
 
@@ -200,10 +213,18 @@ void ConCommandBase::CreateBase( const char *pName, const char *pHelpString /*= 
 //-----------------------------------------------------------------------------
 void ConCommandBase::Init()
 {
-	if ( s_pAccessor )
-	{
-		s_pAccessor->RegisterConCommandBase( this );
-	}
+	IConCommandBaseAccessor *pAccessor = s_pAccessor;
+	if( !pAccessor )
+		pAccessor = &s_DefaultAccessor;
+
+	Init( pAccessor );
+}
+
+void ConCommandBase::Init( IConCommandBaseAccessor *pAccessor )
+{
+	Assert( pAccessor );
+
+	pAccessor->RegisterConCommandBase( this );
 }
 
 void ConCommandBase::Shutdown()
@@ -758,6 +779,11 @@ bool ConVar::IsCommand( void ) const
 void ConVar::Init()
 {
 	BaseClass::Init();
+}
+
+void ConVar::Init( IConCommandBaseAccessor *pAccessor )
+{
+	BaseClass::Init( pAccessor );
 }
 
 //-----------------------------------------------------------------------------

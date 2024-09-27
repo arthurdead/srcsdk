@@ -467,7 +467,7 @@ void CCamoMaterialProxy::LoadCamoPattern( void )
 #if 0
 	// hack - need to figure out a name to attach that isn't too long.
 	m_pCamoPatternImage = 
-		( unsigned char * )datacache->FindByName( &m_camoImageDataCache, "camopattern" );
+		( unsigned char * )g_pDataCache->FindByName( &m_camoImageDataCache, "camopattern" );
 	
 	if( m_pCamoPatternImage )
 	{
@@ -498,7 +498,7 @@ void CCamoMaterialProxy::LoadCamoPattern( void )
 	indexImageSize = ImageLoader::GetMemRequired( m_CamoPatternWidth, m_CamoPatternHeight, 1, indexImageFormat, false );
 #if 0
 	m_pCamoPatternImage = ( unsigned char * )
-		datacache->Alloc( &m_camoImageDataCache, indexImageSize, "camopattern" );
+		g_pDataCache->Alloc( &m_camoImageDataCache, indexImageSize, "camopattern" );
 #endif
 	m_pCamoPatternImage = ( unsigned char * )new unsigned char[indexImageSize];
 	if( !m_pCamoPatternImage )

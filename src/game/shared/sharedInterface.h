@@ -18,7 +18,6 @@ class CGaussianRandomStream;
 class IEngineSound;
 class IMapData;
 
-extern IFileSystem				*filesystem;
 #if defined(_STATIC_LINKED) && defined(_SUBSYSTEM) && (defined(CLIENT_DLL) || defined(GAME_DLL))
 namespace _SUBSYSTEM
 {

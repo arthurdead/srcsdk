@@ -12,6 +12,7 @@
 #include "interface.h"
 #include "materialsystem/imaterialproxy.h"
 #include "inputsystem/iinputsystem.h"
+#include "ienginevgui.h"
 
 class KeyValues;
 struct SpatializationInfo_t;
@@ -130,8 +131,8 @@ public:
 	virtual void		HostRunFrameEnd() = 0;
 
 	// See enginevgui.h for paintmode_t enum definitions
-	virtual void		VGui_PreRender( int paintMode ) = 0;
-	virtual void		VGui_PostRender( int paintMode ) = 0;
+	virtual void		VGui_PreRender( PaintMode_t paintMode ) = 0;
+	virtual void		VGui_PostRender( PaintMode_t paintMode ) = 0;
 
 	virtual void		VGui_PreSimulate() = 0;
 	virtual void		VGui_PostSimulate() = 0;

@@ -37,8 +37,8 @@ bool NPC_CheckBrushExclude( CBaseEntity *pEntity, CBaseEntity *pBrush );
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar r_visualizetraces( "r_visualizetraces", "0", FCVAR_CHEAT );
-ConVar developer("developer", "0", 0, "Set developer message level" ); // developer mode
+ConVarRef r_visualizetraces( "r_visualizetraces" );
+ConVarRef developer("developer" ); // developer mode
 
 float UTIL_VecToYaw( const Vector &vec )
 {
@@ -1691,10 +1691,9 @@ void UTIL_CalculateHolidays()
 	V_strncpy(s_SharedHolidaysStrings[0], "birthday", MAX_HOLIDAY_STRING);
 	V_strncpy(s_SharedHolidaysStrings[1], "halloween", MAX_HOLIDAY_STRING);
 	V_strncpy(s_SharedHolidaysStrings[2], "christmas", MAX_HOLIDAY_STRING);
-	V_strncpy(s_SharedHolidaysStrings[3], "community_update", MAX_HOLIDAY_STRING);
-	V_strncpy(s_SharedHolidaysStrings[4], "valentines", MAX_HOLIDAY_STRING);
-	V_strncpy(s_SharedHolidaysStrings[5], "fullmoon", MAX_HOLIDAY_STRING);
-	V_strncpy(s_SharedHolidaysStrings[6], "april_fools", MAX_HOLIDAY_STRING);
+	V_strncpy(s_SharedHolidaysStrings[3], "valentines", MAX_HOLIDAY_STRING);
+	V_strncpy(s_SharedHolidaysStrings[4], "fullmoon", MAX_HOLIDAY_STRING);
+	V_strncpy(s_SharedHolidaysStrings[5], "april_fools", MAX_HOLIDAY_STRING);
 
 	for ( int i = 0; i < NUM_SHARED_HOLIDAYS; ++i )
 	{
@@ -2187,12 +2186,21 @@ bool UTIL_FindClosestPassableSpace( CBaseEntity *pEntity, const Vector &vIndecis
 // Purpose: Retrieves the MOD directory for the active game (ie. "hl2")
 //-----------------------------------------------------------------------------
 
+const char *COM_GetModDirectory()
+{
+	static char modDir[MAX_PATH]{'\0'};
+	if(modDir[0] == '\0')
+		UTIL_GetModDir( modDir, sizeof(modDir) );
+	return modDir;
+}
+
 bool UTIL_GetModDir( char *lpszTextOut, unsigned int nSize )
 {
 	// Must pass in a buffer at least large enough to hold the desired string
-	const char *pGameDir = CommandLine()->ParmValue( "-game", "hl2" );
-	Assert( strlen(pGameDir) <= nSize );
-	if ( strlen(pGameDir) > nSize )
+	const char *pGameDir = CommandLine()->ParmValue( "-game", CommandLine()->ParmValue( "-defaultgamedir", "hl2" ) );
+	int nGameDirLen = Q_strlen( pGameDir );
+	Assert( nGameDirLen <= nSize );
+	if ( nGameDirLen > nSize )
 		return false;
 
 	Q_strncpy( lpszTextOut, pGameDir, nSize );
@@ -2203,7 +2211,7 @@ bool UTIL_GetModDir( char *lpszTextOut, unsigned int nSize )
 
 		// Find the difference in string lengths and take that difference from the original string as the mod dir
 		int dirlen = Q_strlen( lpszTextOut );
-		Q_strncpy( lpszTextOut, pGameDir + dirlen, Q_strlen( pGameDir ) - dirlen + 1 );
+		Q_strncpy( lpszTextOut, pGameDir + dirlen, nGameDirLen - dirlen + 1 );
 	}
 
 	return true;

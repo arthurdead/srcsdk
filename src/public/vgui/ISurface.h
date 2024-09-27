@@ -14,6 +14,7 @@
 #include <vgui/IHTML.h> // CreateHTML, PaintHTML 
 #include "tier1/interface.h"
 #include "bitmap/imageformat.h"
+#include "hackmgr/hackmgr.h"
 
 #include "appframework/IAppSystem.h"
 #include "mathlib/vector2d.h"  // must be before the namespace line
@@ -106,6 +107,34 @@ struct IntRect
 	int y1;
 };
 
+struct DrawTexturedRectParms_t
+{
+	DrawTexturedRectParms_t()
+	{
+		s0 = t0 = 0;
+		s1 = t1 = 1.0f;
+		alpha_ul = alpha_ur = alpha_lr = alpha_ll = 255;
+		angle = 0;
+	}
+
+	int x0;
+	int	y0;
+	int x1;
+	int y1;
+
+	float s0;
+	float t0;
+	float s1; 
+	float t1;
+
+	unsigned char alpha_ul;
+	unsigned char alpha_ur;
+	unsigned char alpha_lr;
+	unsigned char alpha_ll;
+
+	float angle;
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Wraps contextless windows system functions
 //-----------------------------------------------------------------------------
@@ -161,6 +190,8 @@ public:
 	virtual bool DrawGetTextureFile(HTexture id, char *filename, int maxlen ) = 0;
 	virtual void DrawSetTextureFile(HTexture id, const char *filename, int hardwareFilter, bool forceReload) = 0;
 	virtual void DrawSetTextureRGBA(HTexture id, const unsigned char *rgba, int wide, int tall, int hardwareFilter, bool forceReload)=0;
+	inline void DrawSetTextureRGBA(HTexture id, const unsigned char *rgba, int wide, int tall)
+	{ DrawSetTextureRGBA(id, rgba, wide, tall, 0, false); }
 	virtual void DrawSetTexture(HTexture id) = 0;
 	virtual void DrawGetTextureSize(HTexture id, int &wide, int &tall) = 0;
 	virtual void DrawTexturedRect(int x0, int y0, int x1, int y1) = 0;
@@ -389,11 +420,7 @@ public:
 	virtual void SetSoftwareCursor( bool bUseSoftwareCursor ) = 0;
 	virtual void PaintSoftwareCursor() = 0;
 
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// !! WARNING! YOU MUST NOT ADD YOUR NEW METHOD HERE OR YOU WILL BREAK MODS !!
-	// !! Add your new stuff to the bottom of IMatSystemSurface instead.        !!
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	HACKMGR_CLASS_API void DrawTexturedRectEx( DrawTexturedRectParms_t *pDrawParms );
 };
 
 }

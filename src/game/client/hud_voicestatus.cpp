@@ -378,7 +378,7 @@ void CHudVoiceStatus::Paint()
 	}
 
 	if ( !sv_alltalk )
-		sv_alltalk = cvar->FindVar( "sv_alltalk" );
+		sv_alltalk = g_pCVar->FindVar( "sv_alltalk" );
 
 	//draw everyone in the list!
 	FOR_EACH_LL(m_SpeakingList, i)

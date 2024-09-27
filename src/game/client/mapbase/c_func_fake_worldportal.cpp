@@ -139,7 +139,7 @@ ITexture *C_FuncFakeWorldPortal::RenderTarget()
 		if (!m_pRenderTarget)
 		{
 			// We don't use a CTextureReference for this because we don't want to shut down the texture on removal/change
-			m_pRenderTarget = materials->FindTexture( m_iszRenderTarget, TEXTURE_GROUP_RENDER_TARGET );
+			m_pRenderTarget = g_pMaterialSystem->FindTexture( m_iszRenderTarget, TEXTURE_GROUP_RENDER_TARGET );
 		}
 
 		if (m_pRenderTarget)

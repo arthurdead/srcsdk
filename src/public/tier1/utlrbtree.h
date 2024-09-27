@@ -14,6 +14,8 @@
 #include "tier1/utlblockmemory.h"
 #include "tier1/strtools.h"
 
+#include "tier1_logging.h"
+
 //-----------------------------------------------------------------------------
 // Tool to generate a default compare function for any type that implements
 // operator<, including all simple types
@@ -686,7 +688,7 @@ I  CUtlRBTree<T, I, L, M>::NewNode()
 			Assert( m_Elements.IsValidIterator( it ) );
 			if ( !m_Elements.IsValidIterator( it ) )
 			{
-				Error( "CUtlRBTree overflow!\n" );
+				Log_FatalError( LOG_TIER1, "CUtlRBTree overflow!\n" );
 			}
 		}
 		m_LastAlloc = it;

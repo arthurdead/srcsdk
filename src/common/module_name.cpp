@@ -1,17 +1,9 @@
-#include "module_name.h"
 #include "tier0/dbg.h"
-
-#if !defined DLLNAME && !defined LIBNAME
-	#error
-#endif
+#include "module_name_shared.h"
 
 namespace modulename
 {
 #ifdef DLLNAME
-	const char *dll = V_STRINGIFY(DLLNAME);
-#endif
-
-#ifdef LIBNAME
-	const char *lib = V_STRINGIFY(LIBNAME);
+	LIB_LOCAL const char *dll = V_STRINGIFY(DLLNAME);
 #endif
 }

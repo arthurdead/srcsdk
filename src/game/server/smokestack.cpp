@@ -194,7 +194,7 @@ bool CSmokeStack::KeyValue( const char *szKeyName, const char *szValue )
 		char str[512];
 		Q_snprintf( str, sizeof( str ), "%s%d.vmt", szStrippedName, iCount );
 		
-		while ( filesystem->FileExists( UTIL_VarArgs( "materials/%s", str ) ) )
+		while ( g_pFullFileSystem->FileExists( UTIL_VarArgs( "materials/%s", str ) ) )
 		{
 			PrecacheModel( str );
 			iCount++;

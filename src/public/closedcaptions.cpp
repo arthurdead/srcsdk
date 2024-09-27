@@ -10,6 +10,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_CLOSEDCAPTIONS, "ClosedCaptions" );
+
 // Assumed to be set up by calling code
 bool AsyncCaption_t::LoadFromFile( const char *pRelativePath )
 {
@@ -21,7 +23,7 @@ bool AsyncCaption_t::LoadFromFile( const char *pRelativePath )
 
 	if ( Q_IsAbsolutePath( pRelativePath ) )
 	{
-		Warning( "AsyncCaption_t::LoadFromFile: Fullpath encountered! %s\n", pRelativePath );
+		Log_Warning( LOG_CLOSEDCAPTIONS, "AsyncCaption_t::LoadFromFile: Fullpath encountered! %s\n", pRelativePath );
 	}
 
 	FileHandle_t fh = g_pFullFileSystem->Open( pRelativePath, "rb", "GAME" );
@@ -35,11 +37,11 @@ bool AsyncCaption_t::LoadFromFile( const char *pRelativePath )
 	// Read the header
 	g_pFullFileSystem->Read( &m_Header, sizeof( m_Header ), fh );
 	if ( m_Header.magic != COMPILED_CAPTION_FILEID )
-		Error( "Invalid file id for %s\n", pRelativePath );
+		Log_FatalError( LOG_CLOSEDCAPTIONS, "Invalid file id for %s\n", pRelativePath );
 	if ( m_Header.version != COMPILED_CAPTION_VERSION )
-		Error( "Invalid file version for %s\n", pRelativePath );
+		Log_FatalError( LOG_CLOSEDCAPTIONS, "Invalid file version for %s\n", pRelativePath );
 	if ( m_Header.directorysize < 0 || m_Header.directorysize > 64 * 1024 )
-		Error( "Invalid directory size %d for %s\n", m_Header.directorysize, pRelativePath );
+		Log_FatalError( LOG_CLOSEDCAPTIONS, "Invalid directory size %d for %s\n", m_Header.directorysize, pRelativePath );
 	//if ( m_Header.blocksize != MAX_BLOCK_SIZE )
 	//	Error( "Invalid block size %d, expecting %d for %s\n", m_Header.blocksize, MAX_BLOCK_SIZE, pchFullPath );
 

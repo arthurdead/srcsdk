@@ -41,7 +41,7 @@ fi
 
 _jobs=6
 
-samu -j $_jobs -C "$builddir_linux/everything" -k 0
+ninja -j $_jobs -C "$builddir_linux/everything" -k 0
 if [[ $? != 0 ]]; then
 	exit 1
 fi

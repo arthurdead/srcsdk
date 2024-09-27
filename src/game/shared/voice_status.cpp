@@ -170,7 +170,7 @@ int CVoiceStatus::Init(
 	g_pInternalVoiceStatus = this;
 
 
-	m_pHeadLabelMaterial = materials->FindMaterial( "voice/icntlk_pl", TEXTURE_GROUP_VGUI );
+	m_pHeadLabelMaterial = g_pMaterialSystem->FindMaterial( "voice/icntlk_pl", TEXTURE_GROUP_VGUI );
 	m_pHeadLabelMaterial->IncrementReferenceCount();
 
 	m_bInSquelchMode = false;
@@ -637,6 +637,6 @@ void CVoiceStatus::SetHeadLabelMaterial( const char *pszMaterial )
 		m_pHeadLabelMaterial = NULL;
 	}
 
-	m_pHeadLabelMaterial = materials->FindMaterial( pszMaterial, TEXTURE_GROUP_VGUI );
+	m_pHeadLabelMaterial = g_pMaterialSystem->FindMaterial( pszMaterial, TEXTURE_GROUP_VGUI );
 	m_pHeadLabelMaterial->IncrementReferenceCount();
 }

@@ -13,7 +13,6 @@
 #include "appframework/IAppSystem.h"
 #include "tier1/convar.h"
 
-
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
@@ -29,7 +28,6 @@ class IProcessUtils;
 //-----------------------------------------------------------------------------
 
 // These are marked DLL_EXPORT for Linux.
-DLL_EXPORT ICvar *cvar;
 extern ICvar *g_pCVar;
 extern IProcessUtils *g_pProcessUtils;
 

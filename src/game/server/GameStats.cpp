@@ -165,13 +165,13 @@ void CBaseGameStats::StatsLog( char const *fmt, ... )
 	{
 		if ( FILESYSTEM_INVALID_HANDLE == g_LogFileHandle )
 		{
-			g_LogFileHandle = filesystem->Open( GAMESTATS_LOG_FILE, "a", GAMESTATS_PATHID );
+			g_LogFileHandle = g_pFullFileSystem->Open( GAMESTATS_LOG_FILE, "a", GAMESTATS_PATHID );
 		}
 
 		if ( FILESYSTEM_INVALID_HANDLE != g_LogFileHandle )
 		{
-			filesystem->FPrintf( g_LogFileHandle, "[GS %s - %7.2f] %s", timeString, gpGlobals->realtime, buf );
-			filesystem->Flush( g_LogFileHandle );
+			g_pFullFileSystem->FPrintf( g_LogFileHandle, "[GS %s - %7.2f] %s", timeString, gpGlobals->realtime, buf );
+			g_pFullFileSystem->Flush( g_LogFileHandle );
 		}
 	}
 }
@@ -201,7 +201,7 @@ const char *CBaseGameStats::GetUserPseudoUniqueID( void )
 void CBaseGameStats::Event_Init( void )
 {
 	SetHL2UnlockedChapterStatistic();
-	SetSteamStatistic( filesystem->IsSteam() );
+	SetSteamStatistic( g_pFullFileSystem->IsSteam() );
 	SetCyberCafeStatistic( gamestatsuploader->IsCyberCafeUser() );
 	ConVarRef pDXLevel( "mat_dxlevel" );
 	if( pDXLevel.IsValid() )
@@ -242,7 +242,7 @@ void CBaseGameStats::Event_LevelInit( void )
 		SetHDRStatistic( gamestatsuploader->IsHDREnabled() );
 
 		SetSkillStatistic( skill.GetInt() );
-		SetSteamStatistic( filesystem->IsSteam() );
+		SetSteamStatistic( g_pFullFileSystem->IsSteam() );
 		SetCyberCafeStatistic( gamestatsuploader->IsCyberCafeUser() );
 	}
 }
@@ -370,9 +370,9 @@ bool CBaseGameStats::SaveToFileNOW( bool bForceSyncWrite /* = false */ )
 	gamestats->AppendCustomDataToSaveBuffer( buf );
 
 	char fullpath[ 512 ] = { 0 };
-	if ( filesystem->FileExists( GetStatSaveFileName(), GAMESTATS_PATHID ) )
+	if ( g_pFullFileSystem->FileExists( GetStatSaveFileName(), GAMESTATS_PATHID ) )
 	{
-		filesystem->RelativePathToFullPath( GetStatSaveFileName(), GAMESTATS_PATHID, fullpath, sizeof( fullpath ) );
+		g_pFullFileSystem->RelativePathToFullPath( GetStatSaveFileName(), GAMESTATS_PATHID, fullpath, sizeof( fullpath ) );
 	}
 	else
 	{
@@ -389,7 +389,7 @@ bool CBaseGameStats::SaveToFileNOW( bool bForceSyncWrite /* = false */ )
 
 	if( CBGSDriver.m_bShuttingDown || bForceSyncWrite ) //write synchronously
 	{
-		filesystem->WriteFile( fullpath, GAMESTATS_PATHID, buf );
+		g_pFullFileSystem->WriteFile( fullpath, GAMESTATS_PATHID, buf );
 
 		StatsLog( "Shut down wrote to '%s'\n", fullpath );
 	}
@@ -402,7 +402,7 @@ bool CBaseGameStats::SaveToFileNOW( bool bForceSyncWrite /* = false */ )
 		statsBuffer.Put( buf.Base(), nBufferSize );
 
 		// Write data async
-		filesystem->AsyncWrite( fullpath, statsBuffer.Base(), statsBuffer.TellPut(), true, false );
+		g_pFullFileSystem->AsyncWrite( fullpath, statsBuffer.Base(), statsBuffer.TellPut(), true, false );
 	}
 
 	return true;
@@ -472,7 +472,7 @@ bool CBaseGameStats::UploadStatsFileNOW( void )
 		return false;
 	}
 
-	if ( !filesystem->FileExists( gamestats->GetStatSaveFileName(), GAMESTATS_PATHID ) )
+	if ( !g_pFullFileSystem->FileExists( gamestats->GetStatSaveFileName(), GAMESTATS_PATHID ) )
 	{
 		StatsLog( "UploadStatsFileNOW: can't find stats file, not uploading file\n" );
 		return false;
@@ -491,7 +491,7 @@ bool CBaseGameStats::UploadStatsFileNOW( void )
 #endif
 
 	CUtlBuffer buf;
-	filesystem->ReadFile( GetStatSaveFileName(), GAMESTATS_PATHID, buf );
+	g_pFullFileSystem->ReadFile( GetStatSaveFileName(), GAMESTATS_PATHID, buf );
 	unsigned int uBlobSize = buf.TellPut();
 	if ( uBlobSize == 0 )
 	{
@@ -523,15 +523,15 @@ void CBaseGameStats::LoadingEvent_PlayerIDDifferentThanLoadedStats( void )
 
 bool CBaseGameStats::LoadFromFile( void )
 {
-	if ( filesystem->FileExists( gamestats->GetStatSaveFileName(), GAMESTATS_PATHID ) )
+	if ( g_pFullFileSystem->FileExists( gamestats->GetStatSaveFileName(), GAMESTATS_PATHID ) )
 	{
 		char fullpath[ 512 ];
-		filesystem->RelativePathToFullPath( gamestats->GetStatSaveFileName(), GAMESTATS_PATHID, fullpath, sizeof( fullpath ) );
+		g_pFullFileSystem->RelativePathToFullPath( gamestats->GetStatSaveFileName(), GAMESTATS_PATHID, fullpath, sizeof( fullpath ) );
 		StatsLog( "Loading stats from '%s'\n", fullpath );
 	}
 	
 	CUtlBuffer buf; 
-	if ( filesystem->ReadFile( gamestats->GetStatSaveFileName(), GAMESTATS_PATHID, buf ) )
+	if ( g_pFullFileSystem->ReadFile( gamestats->GetStatSaveFileName(), GAMESTATS_PATHID, buf ) )
 	{
 		bool bRetVal = true;
 
@@ -550,8 +550,8 @@ bool CBaseGameStats::LoadFromFile( void )
 			if ( Q_stricmp( CBGSDriver.m_szLoadedUserID, s_szPseudoUniqueID ) )
 			{
 				//UserID changed, blow away log!!!
-				filesystem->RemoveFile( gamestats->GetStatSaveFileName(), GAMESTATS_PATHID );
-				filesystem->RemoveFile( GAMESTATS_LOG_FILE, GAMESTATS_PATHID );
+				g_pFullFileSystem->RemoveFile( gamestats->GetStatSaveFileName(), GAMESTATS_PATHID );
+				g_pFullFileSystem->RemoveFile( GAMESTATS_LOG_FILE, GAMESTATS_PATHID );
 				Warning( "Userid changed, clearing stats file\n" );
 				CBGSDriver.m_szLoadedUserID[0] = '\0';
 				CBGSDriver.m_iLoadedVersion = -1;
@@ -598,15 +598,17 @@ bool CBaseGameStats::LoadFromFile( void )
 	}
 	else
 	{
-		filesystem->RemoveFile( GAMESTATS_LOG_FILE, GAMESTATS_PATHID );
+		g_pFullFileSystem->RemoveFile( GAMESTATS_LOG_FILE, GAMESTATS_PATHID );
 	}
 
 	return false;	
 }
 
+extern const char *COM_GetModDirectory();
+
 bool CBaseGameStats_Driver::Init()
 {
-	const char *pGameDir = CommandLine()->ParmValue( "-game", "hl2" );
+	const char *pGameDir = COM_GetModDirectory();
 
 	//standardizing is a good thing
 	char szLoweredGameDir[256];
@@ -634,7 +636,7 @@ bool CBaseGameStats_Driver::Init()
 
 #if 0
 	// This should only impact us internally!!!
-	if ( IsPC() && !filesystem->IsSteam() )
+	if ( IsPC() && !g_pFullFileSystem->IsSteam() )
 	{
 		Warning( "Forcing gamestats logging to file, remove before shipping!!!\n" );
 		gamestats->m_bLoggingToFile = true;
@@ -696,7 +698,7 @@ void CBaseGameStats_Driver::Shutdown()
 
 	if ( FILESYSTEM_INVALID_HANDLE != g_LogFileHandle )
 	{
-		filesystem->Close( g_LogFileHandle );
+		g_pFullFileSystem->Close( g_LogFileHandle );
 		g_LogFileHandle = FILESYSTEM_INVALID_HANDLE;
 	}
 }
@@ -734,8 +736,8 @@ void CBaseGameStats_Driver::LevelInitPreEntity()
 		// "unknown" means this is a dedicated server and we weren't able to generate a unique ID (e.g. Linux server).
 		// Change the unique ID to be a hash of IP & port.  We couldn't do this earlier because IP is not known until level
 		// init time.
-		ConVar *hostip = cvar->FindVar( "hostip" );
-		ConVar *hostport = cvar->FindVar( "hostport" );
+		ConVar *hostip = g_pCVar->FindVar( "hostip" );
+		ConVar *hostport = g_pCVar->FindVar( "hostport" );
 		if ( hostip && hostport )
 		{
 			int crcInput[2];
@@ -969,17 +971,17 @@ void CBaseGameStats::SetHL2UnlockedChapterStatistic( void )
 	engine->GetGameDir( gamedir, 256 );
 	Q_snprintf( fullpath, sizeof( fullpath ), "%s/../hl2/%s", gamedir, relative );
 
-	if ( filesystem->FileExists( fullpath ) )
+	if ( g_pFullFileSystem->FileExists( fullpath ) )
 	{
-		FileHandle_t fh = filesystem->Open( fullpath, "rb" );
+		FileHandle_t fh = g_pFullFileSystem->Open( fullpath, "rb" );
 		if ( FILESYSTEM_INVALID_HANDLE != fh )
 		{
 			// read file into memory
-			int size = filesystem->Size(fh);
+			int size = g_pFullFileSystem->Size(fh);
 			char *configBuffer = new char[ size + 1 ];
-			filesystem->Read( configBuffer, size, fh );
+			g_pFullFileSystem->Read( configBuffer, size, fh );
 			configBuffer[size] = 0;
-			filesystem->Close( fh );
+			g_pFullFileSystem->Close( fh );
 
 			// loop through looking for all the cvars to apply
 			const char *search = Q_stristr(configBuffer, "sv_unlockedchapters" );

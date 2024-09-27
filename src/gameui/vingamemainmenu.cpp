@@ -90,19 +90,11 @@ void ShowPlayerList();
 //=============================================================================
 void InGameMainMenu::OnCommand( const char *command )
 {
-	int iUserSlot = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-
 	if ( UI_IsDebug() )
 	{
-		Msg("[GAMEUI] Handling ingame menu command %s from user%d ctrlr%d\n",
-			command, iUserSlot, XBX_GetUserId( iUserSlot ) );
+		Msg("[GAMEUI] Handling ingame menu command %s\n",
+			command );
 	}
-
-	int iOldSlot = GetGameUIActiveSplitScreenPlayerSlot();
-
-	SetGameUIActiveSplitScreenPlayerSlot( iUserSlot );
-
-	GAMEUI_ACTIVE_SPLITSCREEN_PLAYER_GUARD( iUserSlot );
 
 	if ( !Q_strcmp( command, "ReturnToGame" ) )
 	{
@@ -122,11 +114,11 @@ void InGameMainMenu::OnCommand( const char *command )
 		CBaseModPanel::GetSingleton().OpenWindow(WT_INGAMEKICKPLAYERLIST, this, true );
 #endif
 	}
-	else if ( !Q_strcmp(command, "ChangeScenario") && !demo_ui_enable.GetString()[0] )
+	else if ( !Q_strcmp(command, "ChangeScenario") )
 	{
 		CBaseModPanel::GetSingleton().OpenWindow(WT_INGAMECHAPTERSELECT, this, true );
 	}
-	else if ( !Q_strcmp( command, "ChangeChapter" ) && !demo_ui_enable.GetString()[0] )
+	else if ( !Q_strcmp( command, "ChangeChapter" ) )
 	{
 		CBaseModPanel::GetSingleton().OpenWindow( WT_INGAMECHAPTERSELECT, this, true );
 	}
@@ -146,14 +138,7 @@ void InGameMainMenu::OnCommand( const char *command )
 	}
 	else if ( char const *szInviteType = StringAfterPrefix( command, "InviteUI_" ) )
 	{
-		if ( IsX360() )
-		{
-			CUIGameData::Get()->OpenInviteUI( szInviteType );
-		}
-		else
-		{
-			CUIGameData::Get()->ExecuteOverlayCommand( "LobbyInvite" );
-		}
+		CUIGameData::Get()->ExecuteOverlayCommand( "LobbyInvite" );
 	}
 	else if ( !Q_strcmp( command, "StatsAndAchievements" ) )
 	{
@@ -220,15 +205,8 @@ void InGameMainMenu::OnCommand( const char *command )
 	}
 	else if (!Q_strcmp(command, "Storage"))
 	{
-#ifdef _X360
-		if ( XBX_GetUserIsGuest( iUserSlot ) )
-		{
-			CBaseModPanel::GetSingleton().PlayUISound( UISOUND_INVALID );
-			return;
-		}
-#endif
 		// Trigger storage device selector
-		CUIGameData::Get()->SelectStorageDevice( new CChangeStorageDevice( XBX_GetUserId( iUserSlot ) ) );
+		CUIGameData::Get()->SelectStorageDevice( new CChangeStorageDevice() );
 	}
 	else if (!Q_strcmp(command, "Audio"))
 	{
@@ -270,22 +248,6 @@ void InGameMainMenu::OnCommand( const char *command )
 		m_ActiveControl->NavigateFrom( );
 		CBaseModPanel::GetSingleton().OpenWindow(WT_CLOUD, this, true );
 	}
-	else if ( !Q_strcmp( command, "EnableSplitscreen" ) || !Q_strcmp( command, "DisableSplitscreen" ) )
-	{
-		GenericConfirmation* confirmation = 
-			static_cast< GenericConfirmation* >( CBaseModPanel::GetSingleton().OpenWindow( WT_GENERICCONFIRMATION, this, true ) );
-
-		GenericConfirmation::Data_t data;
-
-		data.pWindowTitle = "#L4D360UI_LeaveMultiplayerConf";
-		data.pMessageText = "#L4D360UI_MainMenu_SplitscreenChangeConfMsg";
-
-		data.bOkButtonEnabled = true;
-		data.pfnOkCallback = &LeaveGameOkCallback;
-		data.bCancelButtonEnabled = true;
-
-		confirmation->SetUsageData(data);
-	}
 	else if( !Q_strcmp( command, "ExitToMainMenu" ) )
 	{
 		GenericConfirmation* confirmation = 
@@ -308,17 +270,6 @@ void InGameMainMenu::OnCommand( const char *command )
 	else
 	{
 		const char *pchCommand = command;
-#ifdef _X360
-		{
-			if ( !Q_strcmp(command, "FlmOptionsFlyout") )
-			{
-				if ( XBX_GetPrimaryUserIsGuest() )
-				{
-					pchCommand = "FlmOptionsGuestFlyout";
-				}
-			}
-		}
-#endif
 
 		if ( !Q_strcmp( command, "FlmVoteFlyout" ) )
 		{
@@ -373,16 +324,11 @@ void InGameMainMenu::OnCommand( const char *command )
 			}
 		}
 	}
-
-	SetGameUIActiveSplitScreenPlayerSlot( iOldSlot );
 }
 
 //=============================================================================
 void InGameMainMenu::OnKeyCodePressed( KeyCode code )
 {
-	int userId = GetJoystickForCode( code );
-	BaseModUI::CBaseModPanel::GetSingleton().SetLastActiveUserId( userId );
-
 	switch( GetBaseButtonCode( code ) )
 	{
 	case KEY_XBUTTON_START:
@@ -401,14 +347,7 @@ void InGameMainMenu::ApplySchemeSettings( vgui::IScheme *pScheme )
 {
 	BaseClass::ApplySchemeSettings( pScheme );
 
-	if ( demo_ui_enable.GetString()[0] )
-	{
-		LoadControlSettings( CFmtStr( "Resource/UI/BaseModUI/InGameMainMenu_%s.res", demo_ui_enable.GetString() ) );
-	}
-	else
-	{
-		LoadControlSettings( "Resource/UI/BaseModUI/InGameMainMenu.res" );
-	}
+	LoadControlSettings( "Resource/UI/BaseModUI/InGameMainMenu.res" );
 
 	SetPaintBackgroundEnabled( true );
 
@@ -434,10 +373,6 @@ void InGameMainMenu::OnClose()
 
 void InGameMainMenu::OnThink()
 {
-	int iSlot = GetGameUIActiveSplitScreenPlayerSlot();
-
-	GAMEUI_ACTIVE_SPLITSCREEN_PLAYER_GUARD( iSlot );
-
 	IMatchSession *pIMatchSession = g_pMatchFramework->GetMatchSession();
 	KeyValues *pGameSettings = pIMatchSession ? pIMatchSession->GetSessionSettings() : NULL;
 	
@@ -455,38 +390,6 @@ void InGameMainMenu::OnThink()
 
 	SetControlEnabled( "BtnInviteFriends", bCanInvite );
 	SetControlEnabled( "BtnLeaderboard", CUIGameData::Get()->SignedInToLive() && !Q_stricmp( szGameMode, "survival" ) );
-
-	{
-		BaseModHybridButton *button = dynamic_cast< BaseModHybridButton* >( FindChildByName( "BtnOptions" ) );
-		if ( button )
-		{
-			BaseModUI::FlyoutMenu *flyout = dynamic_cast< FlyoutMenu* >( FindChildByName( "FlmOptionsFlyout" ) );
-
-			if ( flyout )
-			{
-#ifdef _X360
-				bool bIsSplitscreen = ( XBX_GetNumGameUsers() > 1 );
-#else
-				bool bIsSplitscreen = false;
-#endif
-
-				Button *pButton = flyout->FindChildButtonByCommand( "EnableSplitscreen" );
-				if ( pButton )
-				{
-					pButton->SetVisible( !bIsSplitscreen );
-#ifdef _X360
-					pButton->SetEnabled( !XBX_GetPrimaryUserIsGuest() && Q_strcmp( engine->GetLevelName(), "maps/credits.360.bsp" ) != 0 );
-#endif
-				}
-
-				pButton = flyout->FindChildButtonByCommand( "DisableSplitscreen" );
-				if ( pButton )
-				{
-					pButton->SetVisible( bIsSplitscreen );
-				}
-			}
-		}
-	}
 
 	bool bCanGoIdle = !Q_stricmp( "campaign", szGameMode ) || !Q_stricmp( "single_mission", szGameMode );
 
@@ -513,14 +416,11 @@ void InGameMainMenu::OnThink()
 
 	SetControlEnabled( "BtnGoIdle", bCanGoIdle );
 
-	if ( IsPC() )
+	FlyoutMenu *pFlyout = dynamic_cast< FlyoutMenu* >( FindChildByName( "FlmOptionsFlyout" ) );
+	if ( pFlyout )
 	{
-		FlyoutMenu *pFlyout = dynamic_cast< FlyoutMenu* >( FindChildByName( "FlmOptionsFlyout" ) );
-		if ( pFlyout )
-		{
-			const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
-			pFlyout->SetControlEnabled( "BtnBrightness", !config.Windowed() );
-		}
+		const MaterialSystem_Config_t &config = g_pMaterialSystem->GetCurrentConfigForVideoCard();
+		pFlyout->SetControlEnabled( "BtnBrightness", !config.Windowed() );
 	}
 
 	BaseClass::OnThink();
@@ -553,22 +453,10 @@ void InGameMainMenu::PerformLayout( void )
 
 	bool bPlayOffline = !Q_stricmp( "offline", szNetwork );
 
-	bool bInCommentary = engine->IsInCommentaryMode();
-
 	bool bCanInvite = !Q_stricmp( "LIVE", szNetwork );
 	SetControlEnabled( "BtnInviteFriends", bCanInvite );
 
 	bool bCanVote = true;
-
-	if ( bInCommentary )
-	{
-		bCanVote = false;
-	}
-
-	if ( gpGlobals->maxClients <= 1 )
-	{
-		bCanVote = false;
-	}
 
 	// Do not allow voting in credits map
 	if ( !Q_stricmp( pGameSettings->GetString( "game/campaign" ), "credits" ) )
@@ -631,10 +519,6 @@ void InGameMainMenu::PerformLayout( void )
 		flyout->SetListener( this );
 		
 		bool bSinglePlayer = true;
-
-#ifdef _X360
-		bSinglePlayer = ( XBX_GetNumGameUsers() == 1 );
-#endif
 
 		Button *pButton = flyout->FindChildButtonByCommand( "ReturnToLobby" );
 		if ( pButton )

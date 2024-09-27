@@ -68,7 +68,6 @@ public:
 	virtual bool IsTopmostEnabledContext( InputContextHandle_t hContext ) const = 0;
 };
 
-DECLARE_TIER2_INTERFACE( IInputStackSystem, g_pInputStackSystem );
-
+extern IInputStackSystem *g_pInputStackSystem;
 
 #endif // IINPUTCLIENTSTACK_H
