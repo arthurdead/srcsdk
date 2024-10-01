@@ -311,20 +311,10 @@ static app_sys_pair_t reconnect_interface(CAppSystemGroup *ParentAppSystemGroup,
 		pOldInter->Disconnect();
 	}
 
+	status = IFACE_OK;
 	IAppSystem *pNewInter = pNewFactory ? (IAppSystem *)pNewFactory(name, &status) : NULL;
 	if(status != IFACE_OK) {
 		pNewInter = NULL;
-	} else if(pNewInter) {
-		if(!pNewInter->Connect(AppSystemCreateInterfaceFnHack)) {
-			pNewInter->Disconnect();
-			pNewInter = NULL;
-		} else {
-			if(pNewInter->Init() != INIT_OK) {
-				pNewInter->Shutdown();
-				pNewInter->Disconnect();
-				pNewInter = NULL;
-			}
-		}
 	}
 
 	int sys_idx = pOldInter ? ParentAppSystemGroup->m_Systems.Find(pOldInter) : ParentAppSystemGroup->m_Systems.InvalidIndex();
@@ -423,14 +413,41 @@ if(!IsDedicatedServer()) {
 V_strncat(gamebin_path, CORRECT_PATH_SEPARATOR_S, sizeof(gamebin_path));
 V_strncat(gamebin_path, matchmaking_dll_name, sizeof(gamebin_path));
 
+struct connect_info_t
+{
+	connect_info_t(connect_info_t &&) = default;
+	connect_info_t &operator=(connect_info_t &&) = default;
+	connect_info_t(const connect_info_t &) = delete;
+	connect_info_t &operator=(const connect_info_t &) = delete;
+
+	connect_info_t() = default;
+
+	connect_info_t(CAppSystemGroup *group_)
+		: group(group_)
+	{
+	}
+
+	CAppSystemGroup *group;
+	CUtlVector<IAppSystem *> apps;
+};
+
+CUtlVector<connect_info_t> connect_later;
+
+int connect_idx = connect_later.AddToTail();
+connect_later[connect_idx].group = ParentAppSystemGroup;
+
 CSysModule *pMatchMod = Sys_LoadModule(gamebin_path);
 if(pMatchMod) {
 	CreateInterfaceFn pMatchFac = Sys_GetFactory(pMatchMod);
 	if(pMatchFac) {
 		status = IFACE_OK;
 		IMatchFramework *pMatchInter = (IMatchFramework *)pMatchFac(IMATCHFRAMEWORK_VERSION_STRING, &status);
-		if(pMatchInter && status == IFACE_OK) {
+		if(status != IFACE_OK)
+			pMatchInter = NULL;
+
+		if(pMatchInter) {
 			CAppSystemGroup_AddSystem(ParentAppSystemGroup, pMatchInter, IMATCHFRAMEWORK_VERSION_STRING);
+			connect_later[connect_idx].apps.AddToTail(pMatchInter);
 		}
 	}
 }
@@ -485,6 +502,8 @@ do {
 				app_sys_pair_t pair;
 				pair = reconnect_interface(ParentAppSystemGroup, pOldFactory, new_mod.m_Factory, VPHYSICS_INTERFACE_VERSION);
 				HackMgr_SetEnginePhysicsPtr((IPhysics *)pair.pOldInter, (IPhysics *)pair.pNewInter);
+				if(pair.pNewInter)
+					connect_later[connect_idx].apps.AddToTail(pair.pNewInter);
 			}
 		#ifndef SWDS
 			else if(!IsDedicatedServer()) {
@@ -492,6 +511,8 @@ do {
 					app_sys_pair_t pair;
 					pair = reconnect_interface(ParentAppSystemGroup, pOldFactory, new_mod.m_Factory, VIDEO_SERVICES_INTERFACE_VERSION);
 					HackMgr_SetEngineVideoServicesPtr((IVideoServices *)pair.pOldInter, (IVideoServices *)pair.pNewInter);
+					if(pair.pNewInter)
+						connect_later[connect_idx].apps.AddToTail(pair.pNewInter);
 				}
 			}
 		#endif
@@ -523,6 +544,7 @@ do {
 										continue;
 									} else {
 										ParentAppSystemGroup->m_Systems[i] = pNewInter;
+										connect_later[connect_idx].apps.AddToTail(pNewInter);
 										++i;
 										++j;
 										remove = false;
@@ -553,10 +575,34 @@ do {
 			old_mod = new_mod;
 		}
 	}
+
 	ParentAppSystemGroup = ParentAppSystemGroup->m_pParentAppSystem;
 	s_pCurrentAppSystemHack = ParentAppSystemGroup;
+
+	if(ParentAppSystemGroup) {
+		connect_idx = connect_later.AddToTail();
+		connect_later[connect_idx].group = ParentAppSystemGroup;
+	}
+
 } while(ParentAppSystemGroup);
 
 delete[] szModuleName;
+
+//TODO!!!!! are the appsystems actually already initalized at this point?
+FOR_EACH_VEC(connect_later, i)
+{
+	s_pCurrentAppSystemHack = connect_later[i].group;
+
+	FOR_EACH_VEC(connect_later[i].apps, j)
+	{
+		if(connect_later[i].apps[j]->Connect(AppSystemCreateInterfaceFnHack)) {
+			if(connect_later[i].apps[j]->Init() != INIT_OK) {
+				connect_later[i].apps[j]->Shutdown();
+			}
+		} else {
+			connect_later[i].apps[j]->Disconnect();
+		}
+	}
+}
 
 HACKMGR_EXECUTE_ON_LOAD_END

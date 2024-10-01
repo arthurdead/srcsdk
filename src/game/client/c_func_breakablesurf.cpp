@@ -517,7 +517,7 @@ void C_BreakableSurface::DrawRenderList(IBrushSurface* pBrushSurface)
 	IMesh*			pMesh			= NULL;
 	int				nCurStyle		= -1;
 	int				nCurEdgeType	= -1;
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	for( unsigned short i = m_RenderList.Head(); i != m_RenderList.InvalidIndex(); i = m_RenderList.Next(i) )
 	{
 	
@@ -562,7 +562,7 @@ void C_BreakableSurface::DrawRenderListHighlights(IBrushSurface* pBrushSurface)
 	IMesh*			pMesh			= NULL;
 	int				nCurStyle		= -1;
 	int				nCurEdgeType	= -1;
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	for( unsigned short i = m_RenderList.Head(); i != m_RenderList.InvalidIndex(); i = m_RenderList.Next(i) )
 	{
 	
@@ -867,7 +867,7 @@ void C_BreakableSurface::AddToRenderList(int nWidth, int nHeight, WinSide_t nSid
 //------------------------------------------------------------------------------
 void C_BreakableSurface::DrawSolidBlocks(IBrushSurface* pBrushSurface)
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	m_pCurrentDetailTexture = m_pMaterialBoxTexture;
 

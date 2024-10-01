@@ -1442,7 +1442,7 @@ void CNetGraphPanel::DrawLineSegments()
 	if ( c <= 0 )
 		return;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	IMesh* m_pMesh = pRenderContext->GetDynamicMesh( true, NULL, NULL, m_WhiteMaterial );
 	CMeshBuilder		meshBuilder;
 	meshBuilder.Begin( m_pMesh, MATERIAL_LINES, c );

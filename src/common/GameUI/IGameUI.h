@@ -22,16 +22,6 @@ enum ESteamLoginFailure
 	STEAMLOGINFAILURE_LOGGED_IN_ELSEWHERE
 };
 
-enum ESystemNotify
-{
-	SYSTEMNOTIFY_STORAGEDEVICES_CHANGED,
-	SYSTEMNOTIFY_USER_SIGNEDIN,
-	SYSTEMNOTIFY_USER_SIGNEDOUT,
-	SYSTEMNOTIFY_XUIOPENING,
-	SYSTEMNOTIFY_XUICLOSED,
-	SYSTEMNOTIFY_INVITE_SHUTDOWN,	// Cross-game invite is causing us to shutdown
-};
-
 //-----------------------------------------------------------------------------
 // Purpose: contains all the functions that the GameUI dll exports
 //-----------------------------------------------------------------------------
@@ -55,10 +45,12 @@ public:
 	
 	// OLD: Use OnConnectToServer2
 public:
-	virtual void DO_NOT_USE_OnConnectToServer(const char *game, int IP, int port) = 0;
+	virtual void DO_NOT_USE_OnConnectToServer(const char *game, int IP, int port) final
+	{ OnConnectToServer(game, IP, port, port); }
 
 public:
-	virtual void DO_NOT_USE_OnDisconnectFromServer( uint8 eSteamLoginFailure, const char *username ) = 0;
+	virtual void DO_NOT_USE_OnDisconnectFromServer( uint8 eSteamLoginFailure, const char *username ) final
+	{ OnDisconnectFromServer(eSteamLoginFailure); }
 
 public:
 	virtual void OnLevelLoadingStarted(bool bShowProgressDialog) = 0;
@@ -102,7 +94,8 @@ private:
 	//		returns true right away if storage device has been previously selected.
 	//		otherwise returns false and will set the variable pointed by pStorageDeviceValidated to 1
 	//				  once the storage device is selected by user.
-	virtual bool DO_NOT_USE_ValidateStorageDevice( int *pStorageDeviceValidated ) { return false; }
+	virtual bool DO_NOT_USE_ValidateStorageDevice( int *pStorageDeviceValidated ) final
+	{ return false; }
 
 public:
 	virtual void SetProgressOnStart() = 0;

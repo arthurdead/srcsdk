@@ -266,7 +266,7 @@ void CVoiceStatus::DrawHeadLabels()
 		m_VoicePlayers[ localPlayer->entindex() - 1 ] = IsLocalPlayerSpeakingAboveThreshold();
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	for(int i=0; i < VOICE_MAX_PLAYERS; i++)
 	{

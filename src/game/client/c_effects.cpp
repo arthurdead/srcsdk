@@ -513,7 +513,7 @@ void CClient_Precipitation::Render()
 	CFastTimer timer;
 	timer.Start();
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 	// We want to do our calculations in view space.
 	VMatrix	tempView;

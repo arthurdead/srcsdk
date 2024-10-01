@@ -39,7 +39,7 @@ public:
 	{
 		if ( m_pVolmetricMesh != NULL )
 		{
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			pRenderContext->DestroyStaticMesh( m_pVolmetricMesh );
 			m_pVolmetricMesh = NULL;
 		}

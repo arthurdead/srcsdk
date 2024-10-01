@@ -35,7 +35,7 @@ public:
 	FORCEINLINE void *GetPixelMemory() { return m_pBase; }
 
 	FORCEINLINE void Seek( int x, int y );
-	FORCEINLINE void* SkipBytes( int n );
+	FORCEINLINE void* SkipBytes( int n ) RESTRICT;
 	FORCEINLINE void SkipPixels( int n );	
 	FORCEINLINE void WritePixel( int r, int g, int b, int a = 255 );
 	FORCEINLINE void WritePixelNoAdvance( int r, int g, int b, int a = 255 );

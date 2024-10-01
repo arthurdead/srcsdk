@@ -877,7 +877,7 @@ void CReplayRenderer::LayoffFrame( int nFrame )
 		Msg( "laying off movie frame %i\n", nFrame );
 	#endif
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 // 	pRenderContext->ReadPixelsAndStretch( &srcRect, &dstRect, (unsigned char*)m_pLayoffBuf, 
 // 		IMAGE_FORMAT_BGRA8888, dstRect.width * ImageLoader::SizeInBytes( IMAGE_FORMAT_BGRA8888 ) );
 

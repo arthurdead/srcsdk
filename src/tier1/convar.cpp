@@ -1237,9 +1237,23 @@ void ConVar::SetDefault( const char *pszDefault )
 
 ConVar_ServerBounded *ConVar::GetServerBounded()
 {
-	ConVar_ServerBounded *pServer = dynamic_cast<ConVar_ServerBounded *>(this);
-	if(!pServer && m_pParent)
-		pServer = dynamic_cast<ConVar_ServerBounded *>(m_pParent);
+	ConVar_ServerBounded *pServer = NULL;
+
+	if( (m_nFlags & FCVAR_SERVERBOUNDED) != 0 ) {
+		pServer = reinterpret_cast<ConVar_ServerBounded *>(this);
+	} else if(m_pParent && m_pParent != this) {
+		if( (m_pParent->m_nFlags & FCVAR_SERVERBOUNDED) != 0 ) {
+			pServer = reinterpret_cast<ConVar_ServerBounded *>(this);
+		}
+	}
+
+	if(!pServer) {
+		pServer = dynamic_cast<ConVar_ServerBounded *>(this);
+		if(!pServer && m_pParent && m_pParent != this) {
+			pServer = dynamic_cast<ConVar_ServerBounded *>(m_pParent);
+		}
+	}
+
 	return pServer;
 }
 
@@ -1306,7 +1320,7 @@ bool ConVar::GetBool( void ) const
 // Purpose: Return ConVar value as a string, return "" for bogus string pointer, etc.
 // Output : const char *
 //-----------------------------------------------------------------------------
-const char *ConVar::GetString( void ) const 
+const char *ConVar::GetBaseStringValue( void ) const 
 {
 	if ( IsFlagSet( FCVAR_NEVER_AS_STRING ) )
 		return "FCVAR_NEVER_AS_STRING";
@@ -1315,6 +1329,50 @@ const char *ConVar::GetString( void ) const
 		return m_pParent->m_pszString ? m_pParent->m_pszString : "";
 	else
 		return m_pszString ? m_pszString : "";
+}
+
+const char *ConVar::GetString( void ) const 
+{
+	if ( IsFlagSet( FCVAR_NEVER_AS_STRING ) )
+		return "FCVAR_NEVER_AS_STRING";
+
+	const ConVar_ServerBounded *pServer = GetServerBounded();
+	if(pServer) {
+		char tempVal[ 32 ];
+		Q_snprintf( tempVal, sizeof( tempVal ), "%f", pServer->GetFloat() );
+
+		int len = Q_strlen(tempVal) + 1;
+
+		if ( len > m_StringLength)
+		{
+			if (m_pszString)
+			{
+				delete[] m_pszString;
+			}
+
+			const_cast<ConVar *>(this)->m_pszString	= new char[len];
+			const_cast<ConVar *>(this)->m_StringLength = len;
+		}
+
+		memcpy( m_pszString, tempVal, len );
+
+		if(m_pParent && m_pParent != this) {
+			if ( len > m_pParent->m_StringLength)
+			{
+				if (m_pParent->m_pszString)
+				{
+					delete[] m_pParent->m_pszString;
+				}
+
+				m_pParent->m_pszString	= new char[len];
+				m_pParent->m_StringLength = len;
+			}
+
+			memcpy( m_pParent->m_pszString, tempVal, len );
+		}
+	}
+
+	return GetBaseStringValue();
 }
 
 void CONVAR_StringToColor( Color &color, const char *pString )
@@ -1366,8 +1424,9 @@ void ConVarRef::Init( const char *pName, bool bIgnoreMissing )
 	}
 	if( !IsValid() )
 	{
+	#if 0
 		static bool bFirst = true;
-		if ( g_pCVar || bFirst )
+		if ( bFirst )
 		{
 			if ( !bIgnoreMissing )
 			{
@@ -1375,6 +1434,9 @@ void ConVarRef::Init( const char *pName, bool bIgnoreMissing )
 			}
 			bFirst = false;
 		}
+	#else
+		Warning( "ConVarRef %s doesn't point to an existing ConVar\n", pName );
+	#endif
 	}
 }
 
@@ -1490,8 +1552,8 @@ void ConVar_PrintDescription( const ConCommandBase *pVar )
 		{
 			value = tempVal;
 			
-			int intVal = pBounded ? pBounded->GetInt() : var->GetInt();
-			float floatVal = pBounded ? pBounded->GetFloat() : var->GetFloat();
+			int intVal = pBounded ? pBounded->GetInt() : var->GetBaseIntValue();
+			float floatVal = pBounded ? pBounded->GetFloat() : var->GetBaseFloatValue();
 
 			if ( fabs( (float)intVal - floatVal ) < 0.000001 )
 			{

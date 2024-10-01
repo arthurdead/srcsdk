@@ -49,7 +49,7 @@ public:
 		Vector color;
 		VectorScale( m_vColor, shade, color );
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		IMesh *pMesh = pRenderContext->GetDynamicMesh();
 		
 		CMeshBuilder builder;
@@ -81,7 +81,7 @@ public:
 
 	virtual void		Draw( double frametime )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		// Draw it.
 		pRenderContext->Bind( m_pMaterial );
 		

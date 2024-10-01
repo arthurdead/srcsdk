@@ -41,7 +41,7 @@ void CWarpOverlay::Draw( bool bCacheFullSceneState )
 	if( m_flGlowObstructionScale == 0 )
 		return;
 	
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 	//FIXME: Allow multiple?
 	for( int iSprite=0; iSprite < m_nSprites; iSprite++ )

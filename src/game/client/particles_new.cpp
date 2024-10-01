@@ -584,7 +584,7 @@ int CNewParticleEffect::DrawModel( int flags, const RenderableInstance_t &instan
 	
 	// do distance cull check here. We do it here instead of in particles so we can easily only do
 	// it for root objects, not bothering to cull children individually
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	if ( !m_pDef->IsViewModelEffect() )
 	{

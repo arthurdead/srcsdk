@@ -12,6 +12,8 @@ public:
 	virtual KeyValues * GetAllMissions();
 	virtual KeyValues * GetMapInfo( KeyValues *pSettings, KeyValues **ppMissionInfo = NULL );
 	virtual KeyValues * GetMapInfoByBspName( KeyValues *pSettings, char const *szBspMapName, KeyValues **ppMissionInfo = NULL );
+
+	virtual KeyValues * GetMissionDetails( const char *szMissionName );
 };
 
 #endif

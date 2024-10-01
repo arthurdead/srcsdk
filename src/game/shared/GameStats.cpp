@@ -1212,7 +1212,7 @@ void CBaseGameStats_Driver::ResetData()
 	MaterialAdapterInfo_t gpu;
 	g_pMaterialSystem->GetDisplayAdapterInfo( g_pMaterialSystem->GetCurrentAdapter(), gpu );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	int dest_width,dest_height;
 	pRenderContext->GetRenderTargetDimensions( dest_width, dest_height );
 

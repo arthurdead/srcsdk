@@ -27,10 +27,15 @@ public:
 	// returns true on success, false on failure
 	virtual bool AddTextCommand(const char *text) = 0;
 
+private:
 	// runs the engine with the specified command line parameters.  Only works if !IsRunning()
 	// returns true on success, false on failure
-	virtual bool RunEngine(const char *gameDir, const char *commandLineParams) = 0;
+	virtual bool DO_NOT_USE_RunEngine(const char *gameDir, const char *commandLineParams) final
+	{
+		return false;
+	}
 
+public:
 	// returns true if the player is currently connected to a game server
 	virtual bool IsInGame() = 0;
 
@@ -60,9 +65,14 @@ public:
 	virtual unsigned int GetEngineBuildNumber() = 0;
 	virtual const char *GetProductVersionString() = 0;
 
+private:
 	// new interface to RunEngine (done so we don't have to roll the interface version)
-	virtual bool RunEngine2(const char *gameDir, const char *commandLineParams, bool isSourceGame) = 0;
+	virtual bool DO_NOT_USE_RunEngine(const char *gameDir, const char *commandLineParams, bool isSourceGame) final
+	{
+		return false;
+	}
 
+public:
 	enum ERunResult
 	{
 		k_ERunResultOkay = 0,

@@ -110,7 +110,7 @@ void CVGUIProjectable::DrawSelfToRT( ITexture *pTarget, bool bClear )
 	Frustum frustum;
 	render->Push2DView( setup, 0, pTarget, frustum );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PushRenderTargetAndViewport( pTarget );
 
 	if ( bClear )

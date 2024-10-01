@@ -18,4 +18,12 @@ HACKMGR_API void HackMgr_SetEngineVideoServicesPtr(IVideoServices *pOldInter, IV
 HACKMGR_API bool HackMgr_IsSafeToSwapPhysics();
 HACKMGR_API void HackMgr_SetEnginePhysicsPtr(IPhysics *pOldInter, IPhysics *pNewInter);
 
+#if defined CLIENT_DLL || defined GAME_DLL
+extern void HackMgr_SwapVphysics( CreateInterfaceFn &physicsFactory, CreateInterfaceFn appFactory, CSysModule *&vphysicsDLL );
+#endif
+
+#if defined CLIENT_DLL || defined GAMEUI_EXPORTS || defined GAMEPADUI_DLL
+extern void HackMgr_SwapVideoServices( CreateInterfaceFn appFactory, CSysModule *&videoServicesDLL );
+#endif
+
 #endif

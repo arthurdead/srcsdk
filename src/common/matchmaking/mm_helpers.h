@@ -12,7 +12,7 @@
 #include "tier1/KeyValues.h"
 #include "tier1/fmtstr.h"
 
-typedef unsigned long XUID;
+typedef uint64 XUID;
 
 //
 // Contains inline functions to deal with common tasks involving matchmaking and sessions

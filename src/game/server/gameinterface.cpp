@@ -86,7 +86,6 @@
 #include "tier2/tier2.h"
 #include "particles/particles.h"
 #include "gamestats.h"
-#include "engine/imatchmaking.h"
 #include "matchmaking/imatchframework.h"
 #include "particle_parse.h"
 #include "steam/steam_gameserver.h"
@@ -155,7 +154,6 @@ IServerFoundry *serverfoundry = NULL;
 #endif
 ISceneFileCache *scenefilecache = NULL;
 IMatchFramework *g_pMatchFramework = NULL;
-IMatchmaking *matchmaking = NULL;
 #if defined( REPLAY_ENABLED )
 IReplaySystem *g_pReplay = NULL;
 IServerReplayContext *g_pReplayServerContext = NULL;
@@ -505,9 +503,7 @@ static bool InitGameSystems( CreateInterfaceFn appSystemFactory )
 	return true;
 }
 
-bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, 
-		CreateInterfaceFn physicsFactory, CreateInterfaceFn fileSystemFactory, 
-		CGlobalVars *pGlobals)
+bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn fileSystemFactory, CGlobalVars *pGlobals)
 {
 	if ( (g_pFullFileSystem = (IFileSystem *)fileSystemFactory(FILESYSTEM_INTERFACE_VERSION,NULL)) == NULL )
 		return false;
@@ -517,54 +513,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	V_AppendSlash(gamebin_path, ARRAYSIZE(gamebin_path));
 	int gamebin_length = V_strlen(gamebin_path);
 
-	if(HackMgr_IsSafeToSwapPhysics()) {
-		int status = IFACE_OK;
-		IPhysics *pOldPhysics = (IPhysics *)physicsFactory( VPHYSICS_INTERFACE_VERSION, &status );
-		if(status != IFACE_OK) {
-			pOldPhysics = NULL;
-		}
-
-		V_strcat_safe(gamebin_path, "vphysics" DLL_EXT_STRING);
-		vphysicsDLL = Sys_LoadModule( gamebin_path );
-		gamebin_path[gamebin_length] = '\0';
-
-		if( vphysicsDLL != NULL )
-		{
-			CreateInterfaceFn physicsFactory2 = Sys_GetFactory( vphysicsDLL );
-			if( physicsFactory2 != NULL )
-			{
-				status = IFACE_OK;
-				IPhysics *pNewPhysics = (IPhysics *)physicsFactory2( VPHYSICS_INTERFACE_VERSION, &status );
-				if(status != IFACE_OK) {
-					pNewPhysics = NULL;
-				}
-				if(pOldPhysics && pNewPhysics && (pNewPhysics != pOldPhysics)) {
-					pOldPhysics->Shutdown();
-					pOldPhysics->Disconnect();
-
-					bool success = false;
-
-					if(pNewPhysics->Connect(appSystemFactory)) {
-						if(pNewPhysics->Init() == INIT_OK) {
-							HackMgr_SetEnginePhysicsPtr(pOldPhysics, pNewPhysics);
-							success = true;
-							physicsFactory = physicsFactory2;
-						} else {
-							pNewPhysics->Shutdown();
-							pNewPhysics->Disconnect();
-						}
-					} else {
-						pNewPhysics->Disconnect();
-					}
-
-					if(!success) {
-						pOldPhysics->Connect(appSystemFactory);
-						pOldPhysics->Init();
-					}
-				}
-			}
-		}
-	}
+	HackMgr_SwapVphysics( physicsFactory, appSystemFactory, vphysicsDLL );
 
 #ifdef SWDS
 	if(!HackMgr_Server_PreInit(this, appSystemFactory, physicsFactory, fileSystemFactory, pGlobals, true))
@@ -630,7 +579,6 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		return false;
 
 	g_pMatchFramework = (IMatchFramework *)appSystemFactory( IMATCHFRAMEWORK_VERSION_STRING, NULL );
-	matchmaking = (IMatchmaking *)appSystemFactory( VENGINE_MATCHMAKING_VERSION, NULL );
 
 #ifndef SWDS
 	// If not running dedicated, grab the engine vgui interface
@@ -3106,3 +3054,26 @@ static CGameServerLoopback s_ServerGameLoopback;
 IGameServerLoopback *g_pGameServerLoopback = &s_ServerGameLoopback;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CGameServerLoopback, IGameServerLoopback, GAMESERVERLOOPBACK_INTERFACE_VERSION, s_ServerGameLoopback );
 #endif
+
+static const char *reload_assets_cmds[] =
+{
+	"net_reloadgameevents",
+	"hud_reloadscheme",
+	"gameinstructor_reload_lessons",
+	"cl_soundemitter_flush",
+	"sv_soundemitter_flush",
+	"rr_reloadresponsesystems",
+	"cc_reload",
+	"mat_reloadallmaterials",
+	"r_flushlod",
+	"scenefilecache_reload",
+};
+
+CON_COMMAND(reload_all_assets, "")
+{
+	for(int i = 0; i < sizeof(reload_assets_cmds); ++i) {
+		engine->InsertServerCommand(reload_assets_cmds[i]);
+		engine->InsertServerCommand("wait 30");
+	}
+	engine->ServerExecute();
+}

@@ -441,7 +441,7 @@ void CRopeManager::DrawRenderCache_NonQueued( bool bShadowDepth, RopeRenderData_
 		m_pDepthWriteMaterial->IncrementReferenceCount();
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	C_RopeKeyframe::BuildRopeQueuedData_t stackQueuedData;
 	Vector vStackPredictedPositions[MAX_ROPE_SEGMENTS];	

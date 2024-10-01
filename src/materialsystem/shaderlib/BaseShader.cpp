@@ -291,7 +291,7 @@ void CBaseShader::Draw( bool bMakeActualDrawCall )
 		GetShaderSystem()->TakeSnapshot();
 
 		// Automagically add skinning + vertex lighting
-		if ( !s_pInstanceDataPtr[s_nPassCount] )
+		if ( !s_pInstanceDataPtr || !s_pInstanceDataPtr[s_nPassCount] )
 		{
 			bool bIsSkinning = CShader_IsFlag2Set( s_ppParams, MATERIAL_VAR2_SUPPORTS_HW_SKINNING );
 			bool bIsVertexLit = CShader_IsFlag2Set( s_ppParams, MATERIAL_VAR2_LIGHTING_VERTEX_LIT );
@@ -306,7 +306,7 @@ void CBaseShader::Draw( bool bMakeActualDrawCall )
 	}
 	else
 	{
-		GetShaderSystem()->DrawSnapshot( s_pInstanceDataPtr[s_nPassCount] ? 
+		GetShaderSystem()->DrawSnapshot( (s_pInstanceDataPtr && s_pInstanceDataPtr[s_nPassCount]) ? 
 			s_pInstanceDataPtr[s_nPassCount]->m_pCommandBuffer : NULL, bMakeActualDrawCall );
 	}
 

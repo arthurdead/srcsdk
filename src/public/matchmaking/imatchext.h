@@ -74,6 +74,8 @@ public:
 	virtual KeyValues * GetAllMissions() = 0;
 	virtual KeyValues * GetMapInfo( KeyValues *pSettings, KeyValues **ppMissionInfo = NULL ) = 0;
 	virtual KeyValues * GetMapInfoByBspName( KeyValues *pSettings, char const *szBspMapName, KeyValues **ppMissionInfo = NULL ) = 0;
+
+	virtual KeyValues * GetMissionDetails( const char *szMissionName ) = 0;
 };
 
 extern IMatchExt *g_pMatchExt;

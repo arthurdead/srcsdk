@@ -133,7 +133,7 @@ void def_light_t::DestroyMeshes()
 	if ( IsPoint() )
 		return;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	if ( pMesh_World )
 		pRenderContext->DestroyStaticMesh( pMesh_World );
@@ -155,7 +155,7 @@ void def_light_t::DestroyMeshes()
 
 void def_light_t::ShutdownSharedMeshes()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	if ( pMeshUnitSphere )
 		pRenderContext->DestroyStaticMesh( pMeshUnitSphere );
@@ -623,7 +623,7 @@ void def_light_t::UpdateRenderMesh()
 		return;
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 #if DEBUG
 	if ( pMesh_Debug != NULL )
@@ -695,7 +695,7 @@ void def_light_t::UpdateVolumetrics()
 		return;
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 #if DEBUG
 	if ( pMesh_Debug_Volumetrics != NULL )

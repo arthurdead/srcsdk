@@ -1,0 +1,5 @@
+[wrap-git]
+url = https://github.com/mikke89/RmlUi.git
+revision = head
+depth = 1
+method = cmake

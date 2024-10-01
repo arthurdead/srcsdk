@@ -291,7 +291,7 @@ public:
 	// If pTexCoordDimensions is *not* specified, we assume all coordinates
 	// are 2-dimensional
 	virtual void VertexShaderVertexFormat( unsigned int nFlags, 
-			int nTexCoordCount, int* pTexCoordDimensions, int nUserDataSize ) = 0;
+			int nTexCoordCount, const int* pTexCoordDimensions, int nUserDataSize ) = 0;
 
 	// Pixel and vertex shader methods
 	virtual void SetVertexShader( const char* pFileName, int nStaticVshIndex ) = 0;

@@ -510,7 +510,7 @@ void CEngineSprite::DrawFrameOfSize( RenderMode_t nRenderMode, int frame, int x,
 
 	SetFrame( nRenderMode, frame );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( true, NULL, NULL, GetMaterial( nRenderMode ) );
 
 	CMeshBuilder meshBuilder;

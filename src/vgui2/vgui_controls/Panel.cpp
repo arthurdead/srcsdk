@@ -1145,7 +1145,7 @@ void Panel::PaintTraverse( bool repaint, bool allowForce )
 	bool bPushedViewport = false;
 	if( GetForceStereoRenderToFrameBuffer()  )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		if( pRenderContext->GetRenderTarget() )
 		{
 			surface()->PushFullscreenViewport();

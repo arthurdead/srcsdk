@@ -43,7 +43,7 @@ void AddCoolLine( const Vector &v1, const Vector &v2, unsigned long iExtraFadeOf
 	if ( !pBeamMaterial )
 		pBeamMaterial = g_pMaterialSystem->FindMaterial( "effects/laser1", TEXTURE_GROUP_OTHER );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 
 	// Draw the solid underlying lines.

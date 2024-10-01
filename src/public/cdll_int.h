@@ -64,11 +64,13 @@ class IDemoRecorder;
 struct AudioState_t;
 class IMaterialProxy;
 struct InputEvent_t;
+struct IVoiceTweak_s;
 
 typedef void * XUSER_CONTEXT;
 typedef void * XUSER_PROPERTY;
 
-typedef struct player_info_s player_info_t;
+struct player_info_s;
+typedef player_info_s player_info_t;
 
 //-----------------------------------------------------------------------------
 // Hearing info
@@ -355,7 +357,7 @@ public:
 	virtual int	GetLevelVersion( void ) = 0;
 
 	// Obtain access to the voice tweaking API
-	virtual struct IVoiceTweak_s *GetVoiceTweakAPI( void ) = 0;
+	virtual IVoiceTweak_s *GetVoiceTweakAPI( void ) = 0;
 
 	// Tell engine stats gathering system that the rendering frame is beginning/ending
 	virtual void		EngineStats_BeginFrame( void ) = 0;
@@ -526,8 +528,8 @@ private:
 	{
 	}
 
-public:
-	virtual void			StartXboxExitingProcess() = 0;
+private:
+	virtual void			DO_NOT_USE_StartXboxExitingProcess() = 0;
 
 private:
 	virtual bool			DO_NOT_USE_IsSaveInProgress() final
@@ -535,10 +537,11 @@ private:
 		return false;
 	}
 
-public:
-	virtual uint			OnStorageDeviceAttached( void ) = 0;
-	virtual void			OnStorageDeviceDetached( void ) = 0;
+private:
+	virtual uint			DO_NOT_USE_OnStorageDeviceAttached( void ) = 0;
+	virtual void			DO_NOT_USE_OnStorageDeviceDetached( void ) = 0;
 
+public:
 	virtual void			ResetDemoInterpolation( void ) = 0;
 
 	// Methods to set/get a gamestats data container so client & server running in same process can send combined data

@@ -296,7 +296,7 @@ void ReplacementSystem::Enable()
 	DevMsg("Enabled material replacement system\n");
 
 	// Replace material system
-	m_MatSysPassTru.InitPassThru( materials );
+	m_MatSysPassTru.InitPassThru( g_pMaterialSystem );
 
 	m_pOldMaterialSystem = materials;
 	materials = &m_MatSysPassTru;

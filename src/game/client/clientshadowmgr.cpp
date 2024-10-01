@@ -1214,7 +1214,7 @@ const VisibleShadowInfo_t &CVisibleShadowList::GetVisibleBlobbyShadow( int i ) c
 //-----------------------------------------------------------------------------
 float CVisibleShadowList::ComputeScreenArea( const Vector &vecCenter, float r ) const
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	float flScreenDiameter = pRenderContext->ComputePixelDiameterOfSphere( vecCenter, r );
 	return flScreenDiameter * flScreenDiameter;
 }
@@ -1560,7 +1560,7 @@ void CClientShadowMgr::InitRenderTargets()
 
 void CClientShadowMgr::ShutdownRenderTargets( void )
 {
-	if ( materials )										// ugh - this gets called during program shutdown, but with no mat system
+	if ( g_pMaterialSystem )										// ugh - this gets called during program shutdown, but with no mat system
 	{
 		g_pMaterialSystem->RemoveRestoreFunc( ShadowRestoreFunc );
 	}
@@ -2087,7 +2087,7 @@ void CClientShadowMgr::RenderShadowTexture( int w, int h )
 {
 	if (m_RenderToTextureActive)
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->Bind( m_RenderShadow );
 		IMesh* pMesh = pRenderContext->GetDynamicMesh( true );
 
@@ -4437,7 +4437,7 @@ void CClientShadowMgr::UpdateShadow( ClientShadowHandle_t handle, bool force )
 		VectorCopy( origin, shadow.m_LastOrigin );
 		VectorCopy( angles, shadow.m_LastAngles );
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		const model_t *pModel = pRenderable->GetModel();
 		MaterialFogMode_t fogMode = pRenderContext->GetFogMode();
 		pRenderContext->FogMode( MATERIAL_FOG_NONE );
@@ -5015,7 +5015,7 @@ bool CClientShadowMgr::DrawShadowHierarchy( IClientRenderable *pRenderable, cons
 		}
 		else if ( bDrawModelShadow )
 		{
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			CMatRenderDataReference lock( pRenderContext );
 			DrawModelInfo_t info;
 			matrix3x4_t *pBoneToWorld = modelrender->DrawModelShadowSetup( pRenderable, pRenderable->GetBody(), pRenderable->GetSkin(), &info );
@@ -5101,7 +5101,7 @@ bool CClientShadowMgr::DrawRenderToTextureShadow( ClientShadowHandle_t clientSha
 		// shadow to be redrawn; for now, we'll always do it.
 		IClientRenderable *pRenderable = ClientEntityList().GetClientRenderableFromHandle( shadow.m_Entity );
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		
 		// Sets the viewport state
 		int x, y, w, h;
@@ -5415,7 +5415,7 @@ void CClientShadowMgr::ComputeShadowDepthTextures( const CViewSetup &viewSetup )
 
 	VPROF_BUDGET( "CClientShadowMgr::ComputeShadowDepthTextures", VPROF_BUDGETGROUP_SHADOW_DEPTH_TEXTURING );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	PIXEVENT( pRenderContext, "Shadow Depth Textures" );
 
 	// Build list of active render-to-texture shadows
@@ -5517,7 +5517,7 @@ void CClientShadowMgr::ComputeShadowDepthTextures( const CViewSetup &viewSetup )
 		}
 
 		// Set depth bias factors specific to this flashlight
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->SetShadowDepthBiasFactors( flashlightState.m_flShadowSlopeScaleDepthBias, flashlightState.m_flShadowDepthBias );
 
 		shadowView.m_bRenderFlashlightDepthTranslucents = flashlightStateMod.m_bGlobalLight;
@@ -5573,7 +5573,7 @@ void CClientShadowMgr::ComputeShadowTextures( const CViewSetup &view, int leafCo
 	// FIXME: Add heuristics based on distance, etc. to futz with
 	// the shadow allocator + to select blobby shadows
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	PIXEVENT( pRenderContext, "Render-To-Texture Shadows" );
 

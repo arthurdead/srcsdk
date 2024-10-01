@@ -289,7 +289,7 @@ private:
 
 CPixelVisibilityQuery::CPixelVisibilityQuery()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	SetView( 0xFFFF );
 	m_queryHandle = pRenderContext->CreateOcclusionQueryObject();
 	m_queryHandleCount = pRenderContext->CreateOcclusionQueryObject();
@@ -297,7 +297,7 @@ CPixelVisibilityQuery::CPixelVisibilityQuery()
 
 CPixelVisibilityQuery::~CPixelVisibilityQuery()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	if ( m_queryHandle != INVALID_OCCLUSION_QUERY_OBJECT_HANDLE )
 	{
 		pRenderContext->DestroyOcclusionQueryObject( m_queryHandle );
@@ -321,7 +321,7 @@ void CPixelVisibilityQuery::ResetOcclusionQueries()
 	// which makes queries have an invalid value for the first frame
 
 	// This will mark the occlusion query objects as not ever having been read from before
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	if ( m_queryHandle != INVALID_OCCLUSION_QUERY_OBJECT_HANDLE )
 	{
 		pRenderContext->ResetOcclusionQueryObject( m_queryHandle );
@@ -353,7 +353,7 @@ float CPixelVisibilityQuery::GetFractionVisible( float fadeTimeInv )
 
 	if ( !m_wasQueriedThisFrame )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		m_wasQueriedThisFrame = true;
 		int pixels = -1;
 		int pixelsPossible = -1;
@@ -549,7 +549,7 @@ void CPixelVisibilitySystem::LevelInitPreEntity()
 #endif
 	if ( m_hwCanTestGlows )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 		OcclusionQueryObjectHandle_t query = pRenderContext->CreateOcclusionQueryObject();
 		if ( query != INVALID_OCCLUSION_QUERY_OBJECT_HANDLE )
@@ -611,7 +611,7 @@ void CPixelVisibilitySystem::EndView()
 	if ( m_setList.Head( m_activeSetsList ) == m_setList.InvalidIndex() )
 		return;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	IMaterial *pProxy = m_drawQueries ? m_pDrawMaterial : m_pProxyMaterial;
 	pRenderContext->Bind( pProxy );
@@ -970,7 +970,7 @@ COcclusionQuerySet::~COcclusionQuerySet( void )
 	{
 		//destroy query handles
 		{
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			OcclusionQueryHiddenData_t &data = s_OcclusionQueries[iIndex];
 			for( int j = 0; j != data.occlusionHandles.Count(); ++j )
 			{
@@ -1081,7 +1081,7 @@ int COcclusionQuerySet::QueryNumPixelsRenderedForAllViewsLastFrame( )
 	OcclusionQueryHiddenData_t *pData = (OcclusionQueryHiddenData_t *)m_pManagedData;
 	int iMatchFrame = gpGlobals->framecount - 1;
 	int iResult = 0;
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 	for( int i = 0; i != pData->occlusionHandles.Count(); ++i )
 	{

@@ -6,8 +6,11 @@ cpp_ld = 'gold'
 ar = '/usr/bin/gcc-ar'
 strip = '/usr/bin/strip'
 cmake = '/usr/bin/cmake'
-pkg-config = '/usr/bin/pkgconf'
+pkg-config = '/usr/bin/i686-pc-linux-gnu-pkg-config'
 llvm-config = '/usr/bin/llvm-config32'
+
+[properties]
+cmake_defaults = false
 
 [cmake]
 CMAKE_C_COMPILER = '/usr/bin/gcc'

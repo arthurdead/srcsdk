@@ -32,7 +32,7 @@ void InitSmokeFogOverlay()
 	
 	g_SmokeFogOverlayAlpha = 0;
 
-	if(materials)
+	if(g_pMaterialSystem)
 	{
 		g_pSmokeFogMaterial = g_pMaterialSystem->FindMaterial( "particle/screenspace_fog", TEXTURE_GROUP_CLIENT_EFFECTS );
 		if(g_pSmokeFogMaterial)
@@ -53,7 +53,7 @@ void TermSmokeFogOverlay()
 
 void DrawSmokeFogOverlay()
 {
-	if(g_SmokeFogOverlayAlpha == 0 || !g_pSmokeFogMaterial || !materials)
+	if(g_SmokeFogOverlayAlpha == 0 || !g_pSmokeFogMaterial || !g_pMaterialSystem)
 		return;
 
 	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
@@ -61,7 +61,7 @@ void DrawSmokeFogOverlay()
 	// Hard-coded for now..
 	g_SmokeFogOverlayColor.Init( 0.3, 0.3, 0.3 );
 	
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
 	pRenderContext->LoadIdentity();

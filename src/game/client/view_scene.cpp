@@ -97,7 +97,7 @@ void UpdateFullScreenDepthTexture( void )
 		return;
 
 	ITexture *pDepthTex = GetFullFrameDepthTexture();
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->CopyRenderTargetToTextureEx( pDepthTex, 0, NULL, NULL );
 

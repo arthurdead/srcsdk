@@ -18,13 +18,10 @@
 #include <vgui_controls/ProgressBar.h>
 #include <vgui_controls/Label.h>
 #include <vgui_controls/Button.h>
-#include <vgui_controls/HTML.h>
 #include <vgui_controls/RichText.h>
 #include "tier0/icommandline.h"
 
-#include "gameui_interface.h"
-#include "modinfo.h"
-#include "basepanel.h"
+#include "gameui.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -42,7 +39,7 @@ CLoadingDialog::CLoadingDialog( vgui::Panel *parent ) : Frame(parent, "LoadingDi
 	SetTitle( "#GameUI_Loading", true );
 
 	// center the loading dialog, unless we have another dialog to show in the background
-	m_bCenter = !GameUI().HasLoadingBackgroundDialog();
+	m_bCenter = !g_GameUI.HasLoadingBackgroundDialog();
 
 	m_bShowingSecondaryProgress = false;
 	m_flSecondaryProgress = 0.0f;
@@ -82,12 +79,6 @@ CLoadingDialog::~CLoadingDialog()
 
 void CLoadingDialog::PaintBackground()
 {
-	if ( !m_bConsoleStyle )
-	{
-		BaseClass::PaintBackground();
-		return;
-	}
-
 	// draw solid progress bar with curved endcaps
 	int panelWide, panelTall;
 	GetSize( panelWide, panelTall );
@@ -107,10 +98,7 @@ void CLoadingDialog::PaintBackground()
 		m_pLoadingBackground->SetPaintBackgroundEnabled( true );
 	}
 	
-	if ( ModInfo().IsSinglePlayerOnly() )
-	{
-		DrawBox( x, y, barWide, barTall, Color( 0, 0, 0, 255 ), 1.0f );
-	}
+	DrawBox( x, y, barWide, barTall, Color( 0, 0, 0, 255 ), 1.0f );
 
 	DrawBox( x+2, y+2, barWide-4, barTall-4, Color( 100, 100, 100, 255 ), 1.0f );
 
@@ -188,11 +176,11 @@ void CLoadingDialog::HideOtherDialogs( bool bHide )
 {
 	if ( bHide )
 	{
-		if ( GameUI().HasLoadingBackgroundDialog() )
+		if ( g_GameUI.HasLoadingBackgroundDialog() )
 		{
 			// if we have a loading background dialog, hide any other dialogs by moving the full-screen background dialog to the
 			// front, then moving ourselves in front of it
-			GameUI().ShowLoadingBackgroundDialog();
+			g_GameUI.ShowLoadingBackgroundDialog();
 			vgui::ipanel()->MoveToFront( GetVPanel() );
 			vgui::input()->SetAppModalSurface( GetVPanel() );
 		}
@@ -204,9 +192,9 @@ void CLoadingDialog::HideOtherDialogs( bool bHide )
 	}
 	else
 	{
-		if ( GameUI().HasLoadingBackgroundDialog() )
+		if ( g_GameUI.HasLoadingBackgroundDialog() )
 		{
-			GameUI().HideLoadingBackgroundDialog();
+			g_GameUI.HideLoadingBackgroundDialog();
 			vgui::input()->SetAppModalSurface( vgui::INVALID_VPANEL );
 		}
 		else
@@ -322,7 +310,7 @@ void CLoadingDialog::OnThink()
 {
 	BaseClass::OnThink();
 
-	if ( !m_bConsoleStyle && m_bShowingSecondaryProgress )
+	if ( m_bShowingSecondaryProgress )
 	{
 		// calculate the time remaining string
 		wchar_t unicode[512];
@@ -348,30 +336,7 @@ void CLoadingDialog::OnThink()
 //-----------------------------------------------------------------------------
 void CLoadingDialog::PerformLayout()
 {
-	if ( m_bConsoleStyle )
-	{
-		// place in lower center
-		int screenWide, screenTall;
-		surface()->GetScreenSize( screenWide, screenTall );
-		int wide,tall;
-		GetSize( wide, tall );
-		int x = 0;
-		int y = 0;
-
-		if ( ModInfo().IsSinglePlayerOnly() )
-		{
-			x = ( screenWide - wide ) * 0.50f;
-			y = ( screenTall - tall ) * 0.86f;
-		}
-		else
-		{
-			x = ( screenWide - ( wide * 1.30f ) );
-			y = ( ( screenTall * 0.875f ) );
-		}
-
-		SetPos( x, y );
-	}
-	else if ( m_bCenter )
+	if ( m_bCenter )
 	{
 		MoveToCenterOfScreen();
 	}
@@ -402,20 +367,15 @@ void CLoadingDialog::PerformLayout()
 //-----------------------------------------------------------------------------
 bool CLoadingDialog::SetProgressPoint( float fraction )
 {
-	if ( m_bConsoleStyle )
+	if ( fraction >= 0.99f )
 	{
-		if ( fraction >= 0.99f )
-		{
-			// show the progress artifically completed to fill in 100%
-			fraction = 1.0f;
-		}
-		fraction = clamp( fraction, 0.0f, 1.0f );
-		if ( (int)(fraction * 25) != (int)(m_flProgressFraction * 25) )
-		{
-			m_flProgressFraction = fraction;
-			return true;
-		}
-		return false;
+		// show the progress artifically completed to fill in 100%
+		fraction = 1.0f;
+	}
+	fraction = clamp( fraction, 0.0f, 1.0f );
+	if ( (int)(fraction * 25) != (int)(m_flProgressFraction * 25) )
+	{
+		m_flProgressFraction = fraction;
 	}
 
 	if ( !m_bShowingVACInfo && gameuifuncs->IsConnectedToVACSecureServer() )
@@ -516,13 +476,4 @@ void CLoadingDialog::OnKeyCodePressed(KeyCode code)
 	{
 		BaseClass::OnKeyCodePressed(code);
 	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Singleton accessor
-//-----------------------------------------------------------------------------
-extern vgui::DHANDLE<CLoadingDialog> g_hLoadingDialog;
-CLoadingDialog *LoadingDialog()
-{
-	return g_hLoadingDialog.Get();
 }

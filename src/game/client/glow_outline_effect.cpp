@@ -33,7 +33,7 @@ void CGlowObjectManager::RenderGlowEffects( const CViewSetupEx *pSetup )
 		{
 			m_bRenderingGlowEffects = true;
 
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 			int nX, nY, nWidth, nHeight;
 			pRenderContext->GetViewport( nX, nY, nWidth, nHeight );
@@ -48,7 +48,7 @@ void CGlowObjectManager::RenderGlowEffects( const CViewSetupEx *pSetup )
 
 static void SetRenderTargetAndViewPort( ITexture *rt, int w, int h )
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetRenderTarget(rt);
 	pRenderContext->Viewport(0,0,w,h);
 }

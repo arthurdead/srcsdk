@@ -1178,7 +1178,7 @@ public:
 
 	// creates a texture suitable for use with materials from a raw stream of bits.
 	// The bits will be retained by the material system and can be freed upon return.
-	virtual ITexture*			CreateTextureFromBits(int w, int h, int mips, ImageFormat fmt, int srcBufferSize, byte* srcBits) = 0;
+	virtual ITexture*			CreateTextureFromBits(int w, int h, int mips, ImageFormat fmt, int srcBufferSize, const byte* srcBits) = 0;
 
 	// Lie to the material system to pretend to be in render target allocation mode at the beginning of time.
 	// This was a thing that mattered a lot to old hardware, but doesn't matter at all to new hardware,
@@ -1195,7 +1195,7 @@ public:
 
 	// creates a texture suitable for use with materials from a raw stream of bits.
 	// The bits will be retained by the material system and can be freed upon return.
-	virtual ITexture*			CreateNamedTextureFromBitsEx( const char* pName, const char *pTextureGroupName, int w, int h, int mips, ImageFormat fmt, int srcBufferSize, byte* srcBits, int nFlags ) = 0;
+	virtual ITexture*			CreateNamedTextureFromBitsEx( const char* pName, const char *pTextureGroupName, int w, int h, int mips, ImageFormat fmt, int srcBufferSize, const byte* srcBits, int nFlags = 0 ) = 0;
 };
 
 
@@ -1952,7 +1952,6 @@ static void DoMatSysQueueMark( IMaterialSystem *pMaterialSystem, const char *psz
 
 //-----------------------------------------------------------------------------
 
-extern IMaterialSystem *materials;
 extern IMaterialSystem *g_pMaterialSystem;
 
 #endif // IMATERIALSYSTEM_H

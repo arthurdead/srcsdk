@@ -821,7 +821,7 @@ static inline unsigned long BuildEngineDrawWorldListFlags( unsigned nDrawFlags )
 void SetClearColorToFogColor()
 {
 	unsigned char ucFogColor[3];
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->GetFogColor( ucFogColor );
 	if( g_pMaterialSystemHardwareConfig->GetHDRType() == HDR_TYPE_INTEGER )
 	{
@@ -958,7 +958,7 @@ void SetupCurrentView( const Vector &vecOrigin, const QAngle &angles, view_id_t 
 	GetViewRenderInstance()->GetScreenFadeDistances( &flScreenFadeMinSize, &flScreenFadeMaxSize );
 	modelinfo->SetViewScreenFadeRange( flScreenFadeMinSize, flScreenFadeMaxSize );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 #ifdef PORTAL
 	if ( g_pPortalRender->GetViewRecursionLevel() == 0 )
 	{
@@ -1127,7 +1127,7 @@ void CViewRender::DrawViewModels( const CViewSetupEx &view, bool drawViewmodel )
 	g_pPortalRender->UpdateDepthDoublerTexture( view );
 #endif
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	PIXEVENT( pRenderContext, "DrawViewModels" );
 
@@ -1350,7 +1350,7 @@ void CViewRender::PerformScreenOverlay( int x, int y, int w, int h )
 			UpdateRefractTexture( x, y, w, h, true );
 
 			// Now draw the entire screen using the material...
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			ITexture *pTexture = GetPowerOfTwoFrameBufferTexture( );
 			int sw = pTexture->GetActualWidth();
 			int sh = pTexture->GetActualHeight();
@@ -1385,7 +1385,7 @@ void CViewRender::PerformScreenOverlay( int x, int y, int w, int h )
 				UpdateRefractTexture( x, y, w, h, true );
 
 				// Now draw the entire screen using the material...
-				CMatRenderContextPtr pRenderContext( materials );
+				CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 				ITexture *pTexture = GetPowerOfTwoFrameBufferTexture( );
 				int sw = pTexture->GetActualWidth();
 				int sh = pTexture->GetActualHeight();
@@ -1410,7 +1410,7 @@ void CViewRender::DrawUnderwaterOverlay( void )
 	{
 		tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 		int x, y, w, h;
 
@@ -1426,7 +1426,7 @@ void CViewRender::DrawUnderwaterOverlay( void )
 			UpdateRefractTexture( x, y, w, h, true );
 
 			// Now draw the entire screen using the material...
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			ITexture *pTexture = GetPowerOfTwoFrameBufferTexture( );
 			int sw = pTexture->GetActualWidth();
 			int sh = pTexture->GetActualHeight();
@@ -1538,7 +1538,7 @@ bool CViewRender::UpdateShadowDepthTexture( ITexture *pRenderTarget, ITexture *p
 {
 	VPROF_INCREMENT_COUNTER( "shadow depth textures rendered", 1 );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 #ifdef PIX_ENABLE
 	char szPIXEventName[128];
@@ -1573,7 +1573,7 @@ void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxV
 	{
 		g_pClientShadowMgr->ComputeShadowDepthTextures( view );
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 		// GSTRINGMIGRATION
 		if ( g_pCSMEnvLight != NULL && g_pCSMEnvLight->IsCascadedShadowMappingEnabled() )
@@ -1663,7 +1663,7 @@ void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxV
 	}
 
 	// Set int rendering parameters back to defaults
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_ENABLE_FIXED_LIGHTING, 0 );
 }
 
@@ -2092,7 +2092,7 @@ void CViewRender::DisableFog( void )
 {
 	VPROF("CViewRander::DisableFog()");
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->FogMode( MATERIAL_FOG_NONE );
 }
 
@@ -2155,7 +2155,7 @@ void CViewRender::SetupMain3DView( const CViewSetupEx &view, const CViewSetupEx 
 		}
 		else
 		{
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_BACK_BUFFER_INDEX, BACK_BUFFER_INDEX_HDR );
 			pRenderContext.SafeRelease(); // don't want to hold for long periods in case in a locking active share thread mode
 			render->Push3DView( view, nClearFlags, NULL, GetFrustum() );
@@ -2183,7 +2183,7 @@ void CViewRender::CleanupMain3DView( const CViewSetupEx &view )
 	// Make sure we reset from the HDR rendertarget back to the main backbuffer
 	if( g_pMaterialSystemHardwareConfig->GetHDRType() == HDR_TYPE_FLOAT )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_BACK_BUFFER_INDEX, BACK_BUFFER_INDEX_DEFAULT );
 		pRenderContext.SafeRelease(); // don't want to hold for long periods in case in a locking active share thread mode
 	}
@@ -2206,7 +2206,7 @@ void CViewRender::UpdateCascadedShadow( const CViewSetupEx &view )
 	}
 
 	ITexture *pDepthTexture = s_CascadedShadowDepthTexture;
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetIntRenderingParameter( INT_CASCADED_DEPTHTEXTURE, int( pDepthTexture ) );
 
 	QAngle angCascadedAngles;
@@ -2458,7 +2458,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 		Warning( "This game has a minimum requirement of Shader Model 2.0 to run properly.\n" );
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	ITexture *saveRenderTarget = pRenderContext->GetRenderTarget();
 	pRenderContext.SafeRelease(); // don't want to hold for long periods in case in a locking active share thread mode
 
@@ -2515,7 +2515,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 		// Send the current tonemap scalar to the material system
 		UpdateMaterialSystemTonemapScalar();
 
-		pRenderContext.GetFrom( materials );
+		pRenderContext.GetFrom( g_pMaterialSystem );
 		pRenderContext->TurnOnToneMapping();
 		pRenderContext.SafeRelease();
 
@@ -2585,7 +2585,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 		{
 			if ( IsDepthOfFieldEnabled() )
 			{
-				pRenderContext.GetFrom( materials );
+				pRenderContext.GetFrom( g_pMaterialSystem );
 				{
 					PIXEVENT( pRenderContext, "DoDepthOfField()" );
 					DoDepthOfField( view );
@@ -2595,7 +2595,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 
 			if ( ( view.m_nMotionBlurMode != MOTION_BLUR_DISABLE ) && ( mat_motion_blur_enabled.GetInt() ) && ( g_pMaterialSystemHardwareConfig->GetDXSupportLevel() >= 90 ) )
 			{
-				pRenderContext.GetFrom( materials );
+				pRenderContext.GetFrom( g_pMaterialSystem );
 				{
 					PIXEVENT( pRenderContext, "DoImageSpaceMotionBlur" );
 					DoImageSpaceMotionBlur( view, view.x, view.y, view.width, view.height );
@@ -2632,7 +2632,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 
 		if ( g_pMaterialSystemHardwareConfig->GetHDRType() != HDR_TYPE_NONE )
 		{
-			pRenderContext.GetFrom( materials );
+			pRenderContext.GetFrom( g_pMaterialSystem );
 			pRenderContext->SetToneMappingScaleLinear( Vector( 1, 1, 1 ) );
 			pRenderContext.SafeRelease();
 		}
@@ -2642,14 +2642,14 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 
 		if ( g_pMaterialSystemHardwareConfig->GetHDRType() != HDR_TYPE_NONE )
 		{
-			pRenderContext.GetFrom( materials );
+			pRenderContext.GetFrom( g_pMaterialSystem );
 			pRenderContext->SetToneMappingScaleLinear(Vector(1,1,1));
 			pRenderContext.SafeRelease();
 		}
 	
 		if ( !building_cubemaps.GetBool() && view.m_bDoBloomAndToneMapping )
 		{
-			pRenderContext.GetFrom( materials );
+			pRenderContext.GetFrom( g_pMaterialSystem );
 			{
 				PIXEVENT( pRenderContext, "DoEnginePostProcessing" );
 
@@ -2721,7 +2721,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 
 	if ( mat_viewportupscale.GetBool() && mat_viewportscale.GetFloat() < 1.0f ) 
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 		ITexture	*pFullFrameFB1 = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB1", TEXTURE_GROUP_RENDER_TARGET );
 		IMaterial	*pCopyMaterial = g_pMaterialSystem->FindMaterial( "dev/upscale", TEXTURE_GROUP_OTHER );
@@ -3127,7 +3127,7 @@ static void SetLightmapScaleForWater(void)
 {
 	if (g_pMaterialSystemHardwareConfig->GetHDRType()==HDR_TYPE_INTEGER)
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		SavedLinearLightMapScale=pRenderContext->GetToneMappingScaleLinear();
 		Vector t25=SavedLinearLightMapScale;
 		t25*=0.25;
@@ -3148,7 +3148,7 @@ bool DoesViewPlaneIntersectWater( float waterZ, int leafWaterDataID )
 		return g_pPortalRender->DoesExitPortalViewIntersectWaterPlane( waterZ, leafWaterDataID );
 #endif
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 	VMatrix viewMatrix, projectionMatrix, viewProjectionMatrix, inverseViewProjectionMatrix;
 	pRenderContext->GetMatrix( MATERIAL_VIEW, &viewMatrix );
@@ -3380,7 +3380,7 @@ void CViewRender::ViewDrawScene_Intro( const CViewSetupEx &view, int nClearFlags
 {
 	VPROF( "CViewRender::ViewDrawScene" );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	// this allows the refract texture to be updated once per *scene* on 360
 	// (e.g. once for a monitor scene and once for the main scene)
@@ -3748,7 +3748,7 @@ bool CViewRender::DrawOneMonitor( ITexture *pRenderTarget, int cameraNum, C_Poin
 		Frustum frustum;
 		render->Push3DView( monitorView, VIEW_CLEAR_DEPTH, pRenderTarget, (VPlane *)frustum );
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->PushRenderTargetAndViewport( pRenderTarget );
 		pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_WRITE_DEPTH_TO_DESTALPHA, 1 );
 		if ( pRenderTarget )
@@ -3908,7 +3908,7 @@ bool CViewRender::DrawFakeWorldPortal( ITexture *pRenderTarget, C_FuncFakeWorldP
 		- flLocalPlaneDist // portal plane distance on the brush. This distance needs to be accounted for while placing the exit target
 		- 0.1;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PushCustomClipPlane( plane.Base() );
 
 	ViewDrawScene( bDrew3dSkybox, nSkyMode, monitorView, nClearFlags, VIEW_MONITOR );
@@ -4466,7 +4466,7 @@ static void DrawClippedDepthBox( IClientRenderable *pEnt, float *pClipPlane )
 	}
 
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 #ifdef DEBUG_DRAWCLIPPEDDEPTHBOX
 	pRenderContext->Bind( g_pMaterialSystem->FindMaterial( "debug/debugvertexcolor", TEXTURE_GROUP_OTHER ), NULL );
@@ -4637,7 +4637,7 @@ static inline void DrawRenderable( IClientRenderable *pEnt, IClientRenderableMod
 
 	if( pRenderClipPlane )	
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		if( !g_pMaterialSystem->UsingFastClipping() ) //do NOT change the fast clip plane mid-scene, depth problems result. Regular user clip planes are fine though
 			pRenderContext->PushCustomClipPlane( pRenderClipPlane );
 		else
@@ -5327,7 +5327,7 @@ static void UpdateNecessaryRenderTargets( int nRenderFlags )
 {
 	if ( nRenderFlags )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		ITexture *rt = pRenderContext->GetRenderTarget();
 
 		// supress refract update
@@ -5400,7 +5400,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 
 			if( r_depthoverlay.GetBool() )
 			{
-				CMatRenderContextPtr pRenderContext( materials );
+				CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 				ITexture *pDepthTex = GetFullFrameDepthTexture();
 
 				IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( "debug/showz", TEXTURE_GROUP_OTHER, true );
@@ -5424,7 +5424,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 		else
 		{
 			//done recursing in, time to go back out and do translucents
-			CMatRenderContextPtr pRenderContext( materials );		
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );		
 
 			UpdateFullScreenDepthTexture();
 		}
@@ -5529,7 +5529,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 							continue;
 						}
 
-						CMatRenderContextPtr pRenderContext( materials );
+						CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 						ITexture *rt = pRenderContext->GetRenderTarget();
 
 						if ( rt && bUsesFullFB )
@@ -5614,7 +5614,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 void CRendering3dView::EnableWorldFog( void )
 {
 	VPROF("CViewRender::EnableWorldFog");
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	fogparams_t *pFogParams = NULL;
 	C_BasePlayer *pbp = C_BasePlayer::GetLocalPlayer();
@@ -5723,7 +5723,7 @@ void CSkyboxView::Enable3dSkyboxFog( void )
 	}
 	CPlayerLocalData	*local		= &pbp->m_Local;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	if( GetSkyboxFogEnable() )
 	{
@@ -5975,7 +5975,7 @@ void CSkyboxView::DrawInternal( view_id_t iSkyBoxViewID, bool bInvokePreAndPostR
 			int nWidth = 0;
 			int nHeight = 0;
 			int nDummy = 0;
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			pRenderContext->GetViewport( nDummy, nDummy, nWidth, nHeight );
 
 			pRenderContext->DrawScreenSpaceRectangle(
@@ -6019,7 +6019,7 @@ bool CSkyboxView::Setup( const CViewSetupEx &view, int *pClearFlags, SkyboxVisib
 
 		color32 color = m_pSky3dParams->skycolor.Get();
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->ClearColor4ub( color.r, color.g, color.b, color.a );
 		pRenderContext.SafeRelease();
 	}
@@ -6083,7 +6083,7 @@ void CPortalSkyboxView::Draw()
 	Frustum FrustumBackup;
 	memcpy( FrustumBackup, GetFrustum(), sizeof( Frustum ) );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	bool bClippingEnabled = pRenderContext->EnableClipping( false );
 
@@ -6137,7 +6137,7 @@ void CShadowDepthView::Draw()
 	unsigned int visFlags;
 	m_pMainView->SetupVis( (*this), visFlags );  // @MULTICORE (toml 8/9/2006): Portal problem, not sending custom vis down
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->ClearColor3ub(0xFF, 0xFF, 0xFF);
 
@@ -6191,7 +6191,7 @@ void CShadowDepthView::Draw()
 
 	m_DrawFlags = 0;
 
-	pRenderContext.GetFrom( materials );
+	pRenderContext.GetFrom( g_pMaterialSystem );
 
 	pRenderContext->PopRenderTargetAndViewport();
 
@@ -6226,7 +6226,7 @@ void CFreezeFrameView::Setup( const CViewSetupEx &shadowViewIn )
 //-----------------------------------------------------------------------------
 void CFreezeFrameView::Draw( void )
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->DrawScreenSpaceRectangle( m_pFreezeFrame, x, y, width, height,
 		m_nSubRect[ 0 ], m_nSubRect[ 1 ], m_nSubRect[ 0 ] + m_nSubRect[ 2 ] - 1, m_nSubRect[ 1 ] + m_nSubRect[ 3 ] - 1, m_nScreenSize[ 0 ], m_nScreenSize[ 1 ] );
@@ -6322,7 +6322,7 @@ void CBaseWorldView::PushView( float waterHeight )
 		}
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	if( m_DrawFlags & DF_RENDER_REFRACTION )
 	{
@@ -6382,7 +6382,7 @@ void CBaseWorldView::PushView( float waterHeight )
 //-----------------------------------------------------------------------------
 void CBaseWorldView::PopView()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->SetHeightClipMode( MATERIAL_HEIGHTCLIPMODE_DISABLE );
 	if( m_DrawFlags & (DF_RENDER_REFRACTION | DF_RENDER_REFLECTION) )
@@ -6497,7 +6497,7 @@ void CBaseWorldView::DrawExecute( float waterHeight, view_id_t viewID, float wat
 
 	PushView( waterHeight );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	ITexture *pSaveFrameBufferCopyTexture = pRenderContext->GetFrameBufferCopyTexture( 0 );
 	if ( engine->GetDXSupportLevel() >= 80 )
@@ -6548,7 +6548,7 @@ void CBaseWorldView::DrawExecute( float waterHeight, view_id_t viewID, float wat
 		PixelVisibility_EndCurrentView();
 	}
 
-	pRenderContext.GetFrom( materials );
+	pRenderContext.GetFrom( g_pMaterialSystem );
 	pRenderContext->SetFrameBufferCopyTexture( pSaveFrameBufferCopyTexture );
 	PopView();
 
@@ -6573,7 +6573,7 @@ void CBaseWorldView::SSAO_DepthPass()
 
 	ITexture *pSSAO = g_pMaterialSystem->FindTexture( "_rt_ResolvedFullFrameDepth", TEXTURE_GROUP_RENDER_TARGET );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->ClearColor4ub( 255, 255, 255, 255 );
 
@@ -6613,7 +6613,7 @@ void CBaseWorldView::SSAO_DepthPass()
 
 	m_DrawFlags &= ~DF_SSAO_DEPTH_PASS;
 
-	pRenderContext.GetFrom( materials );
+	pRenderContext.GetFrom( g_pMaterialSystem );
 
 	render->PopView( GetFrustum() );
 
@@ -6631,7 +6631,7 @@ void CBaseWorldView::DrawDepthOfField( )
 		return;
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	ITexture *pSmallFB0 = g_pMaterialSystem->FindTexture( "_rt_smallfb0", TEXTURE_GROUP_RENDER_TARGET );
 	ITexture *pSmallFB1 = g_pMaterialSystem->FindTexture( "_rt_smallfb1", TEXTURE_GROUP_RENDER_TARGET );
@@ -6715,7 +6715,7 @@ void CSimpleWorldView::Draw()
 {
 	VPROF( "CViewRender::ViewDrawScene_NoWater" );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	PIXEVENT( pRenderContext, "CSimpleWorldView::Draw" );
 
 	pRenderContext.SafeRelease();
@@ -6732,7 +6732,7 @@ void CSimpleWorldView::Draw()
 
 		SetFogVolumeState( m_fogInfo, false );
 
-		pRenderContext.GetFrom( materials );
+		pRenderContext.GetFrom( g_pMaterialSystem );
 
 		unsigned char ucFogColor[3];
 		pRenderContext->GetFogColor( ucFogColor );
@@ -6743,7 +6743,7 @@ void CSimpleWorldView::Draw()
 
 	DrawExecute( 0, CurrentViewID(), 0 );
 
-	pRenderContext.GetFrom( materials );
+	pRenderContext.GetFrom( g_pMaterialSystem );
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
 }
 
@@ -6856,7 +6856,7 @@ void CAboveWaterView::Draw()
 
 	// eye is outside of water
 	
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 	// render the reflection
 	if( m_waterInfo.m_bReflect )
@@ -6976,7 +6976,7 @@ void CAboveWaterView::CReflectionView::Draw()
 	SetupCurrentView( origin, angles, ( view_id_t )nSaveViewID );
 
 	// This is here for multithreading
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->Flush();
 }
 
@@ -7024,7 +7024,7 @@ void CAboveWaterView::CRefractionView::Draw()
 	SetupCurrentView( origin, angles, ( view_id_t )nSaveViewID );
 
 	// This is here for multithreading
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
 	pRenderContext->Flush();
 }
@@ -7050,7 +7050,7 @@ void CAboveWaterView::CIntersectionView::Draw()
 	SetFogVolumeState( GetOuter()->m_fogInfo, true );
 	SetClearColorToFogColor( );
 	DrawExecute( GetOuter()->m_fogInfo.m_flWaterHeight, VIEW_NONE, 0 );
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
 }
 
@@ -7115,7 +7115,7 @@ void CUnderWaterView::Draw()
 
 	VPROF( "CViewRender::ViewDrawScene_EyeUnderWater" );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	// render refraction (out of water)
 	if ( m_waterInfo.m_bRefract )
@@ -7175,7 +7175,7 @@ void CUnderWaterView::CRefractionView::Setup()
 //-----------------------------------------------------------------------------
 void CUnderWaterView::CRefractionView::Draw()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	SetFogVolumeState( GetOuter()->m_fogInfo, true );
 	unsigned char ucFogColor[3];
 	pRenderContext->GetFogColor( ucFogColor );
@@ -7254,13 +7254,13 @@ void CReflectiveGlassView::PushView( float waterHeight )
 	VectorCopy( m_ReflectionPlane.normal, plane.AsVector3D() );
 	plane.w = m_ReflectionPlane.dist + 0.1f;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PushCustomClipPlane( plane.Base() );
 }
 
 void CReflectiveGlassView::PopView( )
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PopCustomClipPlane( );
 	render->PopView( GetFrustum() );
 }
@@ -7273,7 +7273,7 @@ void CReflectiveGlassView::Draw()
 {
 	VPROF( "CReflectiveGlassView::Draw" );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	PIXEVENT( pRenderContext, "CReflectiveGlassView::Draw" );
 
 	// Store off view origin and angles and set the new view
@@ -7332,14 +7332,14 @@ void CRefractiveGlassView::PushView( float waterHeight )
 	VectorMultiply( m_ReflectionPlane.normal, -1, plane.AsVector3D() );
 	plane.w = -m_ReflectionPlane.dist + 0.1f;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PushCustomClipPlane( plane.Base() );
 }
 
 
 void CRefractiveGlassView::PopView( )
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PopCustomClipPlane( );
 	render->PopView( GetFrustum() );
 }
@@ -7353,7 +7353,7 @@ void CRefractiveGlassView::Draw()
 {
 	VPROF( "CRefractiveGlassView::Draw" );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	PIXEVENT( pRenderContext, "CRefractiveGlassView::Draw" );
 
 	// Store off view origin and angles and set the new view

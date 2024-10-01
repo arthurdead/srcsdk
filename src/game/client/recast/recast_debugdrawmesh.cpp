@@ -35,7 +35,7 @@ void DebugDrawMesh::texture(bool state)
 
 void DebugDrawMesh::begin(duDebugDrawPrimitives prim, int num, float size)
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	m_pMesh = pRenderContext->GetDynamicMesh( true, NULL, NULL, m_mat );
 
 	if( num == 0 )

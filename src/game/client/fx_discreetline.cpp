@@ -29,7 +29,7 @@ CFXDiscreetLine::CFXDiscreetLine( const char *name, const Vector& start, const V
 	float velocity, float length, float clipLength, float scale, float life, const char *shader )
 : CClientSideEffect( name )
 {
-	assert( materials );
+	assert( g_pMaterialSystem );
 	if ( materials == NULL )
 		return;
 
@@ -108,7 +108,7 @@ void CFXDiscreetLine::Draw( double frametime )
 	CMeshBuilder meshBuilder;
 	IMesh *pMesh;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		
 	// Better, more visible tracers
 	if ( tracer_extra.GetBool() )

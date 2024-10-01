@@ -3,10 +3,12 @@
 #ifndef _IPLAYERMANAGER_H_
 #define _IPLAYERMANAGER_H_
 
+#include "tier0/platform.h"
+
 class IPlayer;
 class IPlayerFriend;
 class IPlayerLocal;
-typedef unsigned long XUID;
+typedef uint64 XUID;
 
 abstract_class IPlayerManager
 {

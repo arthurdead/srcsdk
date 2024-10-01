@@ -309,7 +309,7 @@ void CExampleEffect::Render( int x, int y, int w, int h )
 	UpdateScreenEffectTexture( 0, x, y, w, h, false, &actualRect );
 	ITexture *pTexture = GetFullFrameFrameBufferTexture( 0 );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->DrawScreenSpaceRectangle( m_Material, x, y, w, h,
 											actualRect.x, actualRect.y, actualRect.x+actualRect.width-1, actualRect.y+actualRect.height-1, 

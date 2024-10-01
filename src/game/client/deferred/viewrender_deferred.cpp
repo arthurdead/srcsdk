@@ -562,7 +562,7 @@ void CBaseWorldViewDeferred::DrawExecute( float waterHeight, view_id_t viewID, f
 
 	PushView( waterHeight );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	ITexture *pSaveFrameBufferCopyTexture = pRenderContext->GetFrameBufferCopyTexture( 0 );
 	if ( engine->GetDXSupportLevel() >= 80 )
@@ -593,7 +593,7 @@ void CBaseWorldViewDeferred::DrawExecute( float waterHeight, view_id_t viewID, f
 		}
 	}
 
-	pRenderContext.GetFrom( materials );
+	pRenderContext.GetFrom( g_pMaterialSystem );
 	pRenderContext->SetFrameBufferCopyTexture( pSaveFrameBufferCopyTexture );
 	PopView();
 
@@ -627,7 +627,7 @@ void CBaseWorldViewDeferred::PushView( float waterHeight )
 		}
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	if( m_DrawFlags & DF_RENDER_REFRACTION )
 	{
@@ -681,7 +681,7 @@ void CBaseWorldViewDeferred::PushView( float waterHeight )
 
 void CBaseWorldViewDeferred::PopView()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->SetHeightClipMode( MATERIAL_HEIGHTCLIPMODE_DISABLE );
 	if( m_DrawFlags & (DF_RENDER_REFRACTION | DF_RENDER_REFLECTION) )
@@ -702,14 +702,14 @@ void CBaseWorldViewDeferred::DrawOpaqueRenderablesDeferred()
 
 void CBaseWorldViewDeferred::PushComposite()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_RENDER_STAGE,
 		DEFERRED_RENDER_STAGE_COMPOSITION );
 }
 
 void CBaseWorldViewDeferred::PopComposite()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_RENDER_STAGE,
 		DEFERRED_RENDER_STAGE_INVALID );
 }
@@ -764,7 +764,7 @@ void CSimpleWorldViewDeferred::Draw()
 {
 	VPROF( "CViewRender::ViewDrawScene_NoWater" );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	PIXEVENT( pRenderContext, "CSimpleWorldView::Draw" );
 
 	pRenderContext.SafeRelease();
@@ -783,7 +783,7 @@ void CSimpleWorldViewDeferred::Draw()
 
 		SetFogVolumeState( m_fogInfo, false );
 
-		pRenderContext.GetFrom( materials );
+		pRenderContext.GetFrom( g_pMaterialSystem );
 
 		unsigned char ucFogColor[3];
 		pRenderContext->GetFogColor( ucFogColor );
@@ -796,7 +796,7 @@ void CSimpleWorldViewDeferred::Draw()
 	
 	PopComposite();
 
-	pRenderContext.GetFrom( materials );
+	pRenderContext.GetFrom( g_pMaterialSystem );
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
 }
 
@@ -823,7 +823,7 @@ void CGBufferView::Draw()
 {
 	VPROF( "CViewRender::ViewDrawScene_NoWater" );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	PIXEVENT( pRenderContext, "CSimpleWorldViewDeferred::Draw" );
 
 	SetupCurrentView( origin, angles, VIEW_DEFERRED_GBUFFER );
@@ -833,7 +833,7 @@ void CGBufferView::Draw()
 	const bool bOptimizedGbuffer = DEFCFG_DEFERRED_SHADING == 0;
 	DrawExecute( 0, CurrentViewID(), 0, bOptimizedGbuffer );
 
-	pRenderContext.GetFrom( materials );
+	pRenderContext.GetFrom( g_pMaterialSystem );
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
 }
 
@@ -852,7 +852,7 @@ void CGBufferView::PushGBuffer( bool bInitial, float zScale, bool bClearDepth )
 	ITexture *pNormals = GetDefRT_Normals();
 	ITexture *pDepth = GetDefRT_Depth();
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->ClearColor4ub( 0, 0, 0, 0 );
 
@@ -900,7 +900,7 @@ void CGBufferView::PushGBuffer( bool bInitial, float zScale, bool bClearDepth )
 
 void CGBufferView::PopGBuffer()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_RENDER_STAGE,
 		DEFERRED_RENDER_STAGE_INVALID );
 
@@ -944,7 +944,7 @@ void CSkyboxViewDeferred::Enable3dSkyboxFog( void )
 	}
 	CPlayerLocalData *local = &pbp->m_Local;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	if( GetSkyboxFogEnable() )
 	{
@@ -1155,7 +1155,7 @@ void CPostLightingView::Draw()
 {
 	VPROF( "CViewRender::ViewDrawScene_NoWater" );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	PIXEVENT( pRenderContext, "CSimpleWorldViewDeferred::Draw" );
 
 	ITexture *pTexAlbedo = GetDefRT_Albedo();
@@ -1172,7 +1172,7 @@ void CPostLightingView::Draw()
 
 	PopComposite();
 
-	pRenderContext.GetFrom( materials );
+	pRenderContext.GetFrom( g_pMaterialSystem );
 	pRenderContext->PopRenderTargetAndViewport();
 }
 
@@ -1209,13 +1209,13 @@ void CPostLightingView::DrawOpaqueRenderablesDeferred()
 
 void CPostLightingView::PushDeferredShadingFrameBuffer()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PushRenderTargetAndViewport( GetDefRT_Albedo() );
 }
 
 void CPostLightingView::PopDeferredShadingFrameBuffer()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PopRenderTargetAndViewport();
 }
 
@@ -1248,7 +1248,7 @@ void CBaseShadowView::Draw()
 	const int oldViewID = g_CurrentViewID;
 	SetupCurrentView( origin, angles, VIEW_DEFERRED_SHADOW );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_RENDER_STAGE,
 		DEFERRED_RENDER_STAGE_SHADOWPASS );
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_SHADOW_MODE,
@@ -1261,7 +1261,7 @@ void CBaseShadowView::Draw()
 
 	DrawExecute( 0, CurrentViewID(), 0, true );
 
-	pRenderContext.GetFrom( materials );
+	pRenderContext.GetFrom( g_pMaterialSystem );
 		pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_SHADOW_RADIOSITY,
 		0 );
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_RENDER_STAGE,
@@ -1281,7 +1281,7 @@ void CBaseShadowView::PushView( float waterHeight )
 {
 	render->Push3DView( *this, 0, m_pDummyTexture, GetFrustum(), m_pDepthTexture );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PushRenderTargetAndViewport( m_pDummyTexture, m_pDepthTexture, x, y, width, height );
 
 #if defined( DEBUG ) || defined( SHADOWMAPPING_USE_COLOR )
@@ -1303,7 +1303,7 @@ void CBaseShadowView::PushView( float waterHeight )
 
 void CBaseShadowView::PopView()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PopRenderTargetAndViewport();
 
 	render->PopView( GetFrustum() );
@@ -1436,7 +1436,7 @@ void COrthoShadowView::CommitData()
 
 	QUEUE_FIRE( sendShadowDataOrtho, Fire, shadowData );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_SHADOW_INDEX, iCascadeIndex );
 }
 
@@ -1525,7 +1525,7 @@ void CSpotLightShadowView::CommitData()
 
 	QUEUE_FIRE( sendShadowDataProj, Fire, data );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_SHADOW_INDEX, m_iIndex );
 }
 
@@ -1615,7 +1615,7 @@ void CAboveWaterDeferredView::Draw()
 
 	// eye is outside of water
 	
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 	// render the reflection
 	if( m_waterInfo.m_bReflect )
@@ -1719,7 +1719,7 @@ void CAboveWaterDeferredView::CReflectionView::Draw()
 	SetupCurrentView( origin, angles, ( view_id_t )nSaveViewID );
 
 	// This is here for multithreading
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->Flush();
 }
 
@@ -1754,7 +1754,7 @@ void CAboveWaterDeferredView::CRefractionView::Draw()
 	SetupCurrentView( origin, angles, ( view_id_t )nSaveViewID );
 
 	// This is here for multithreading
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
 	pRenderContext->Flush();
 }
@@ -1774,7 +1774,7 @@ void CAboveWaterDeferredView::CIntersectionView::Draw()
 	SetFogVolumeState( GetOuter()->m_fogInfo, true );
 	SetClearColorToFogColor( );
 	DrawExecute( GetOuter()->m_fogInfo.m_flWaterHeight, VIEW_NONE, 0 );
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
 
 	PopComposite();
@@ -1830,7 +1830,7 @@ void CUnderWaterDeferredView::Draw()
 
 	VPROF( "CViewRender::ViewDrawScene_EyeUnderWater" );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	// render refraction (out of water)
 	if ( m_waterInfo.m_bRefract )
@@ -1889,7 +1889,7 @@ void CUnderWaterDeferredView::CRefractionView::Setup()
 //-----------------------------------------------------------------------------
 void CUnderWaterDeferredView::CRefractionView::Draw()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	SetFogVolumeState( GetOuter()->m_fogInfo, true );
 	unsigned char ucFogColor[3];
 	pRenderContext->GetFogColor( ucFogColor );
@@ -1922,7 +1922,7 @@ CDeferredViewRender::CDeferredViewRender()
 
 void CDeferredViewRender::Shutdown()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	for ( IMesh* &mesh : m_pMesh_RadiosityScreenGrid)
 	{
 		if ( mesh != NULL )
@@ -2029,7 +2029,7 @@ void CDeferredViewRender::ViewDrawSceneDeferred( const CViewSetup &view, int nCl
 	FinishCurrentView();
 
 	// Set int rendering parameters back to defaults
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_ENABLE_FIXED_LIGHTING, 0 );
 }
 
@@ -2125,7 +2125,7 @@ void CDeferredViewRender::ViewCombineDeferredShading( const CViewSetup &view, vi
 	pPostLightingView->Setup( view );
 	AddViewToScene( pPostLightingView );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->ClearBuffers( false, true );
 
 #else
@@ -2286,7 +2286,7 @@ void CDeferredViewRender::PerformLighting( const CViewSetup &view )
 	if ( building_cubemaps.GetBool() )
 		engine->GetScreenSize( lightingView.width, lightingView.height );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PushRenderTargetAndViewport( GetDefRT_Lightaccum() );
 
 	if ( bResetLightAccum )
@@ -2304,7 +2304,7 @@ void CDeferredViewRender::PerformLighting( const CViewSetup &view )
 	if ( bRadiosityEnabled )
 		EndRadiosity( view );
 
-	pRenderContext.GetFrom( materials );
+	pRenderContext.GetFrom( g_pMaterialSystem );
 	pRenderContext->PopRenderTargetAndViewport();
 }
 
@@ -2354,7 +2354,7 @@ void CDeferredViewRender::BeginRadiosity( const CViewSetup &view )
 		const int clearSizeY = RADIOSITY_BUFFER_RES_Y / 2;
 		const int clearOffset = (iCascade == 1) ? clearSizeY : 0;
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 		pRenderContext->PushRenderTargetAndViewport( GetDefRT_RadiosityBuffer( iSourceBuffer ), NULL,
 			0, clearOffset, RADIOSITY_BUFFER_RES_X, clearSizeY );
@@ -2414,7 +2414,7 @@ void CDeferredViewRender::PerformRadiosityGlobal( const int iRadiosityCascade, c
 	const int iSourceBuffer = GetSourceRadBufferIndex( iRadiosityCascade );
 	const int iOffsetY = (iRadiosityCascade == 1) ? RADIOSITY_BUFFER_RES_Y/2 : 0;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_RADIOSITY_CASCADE, iRadiosityCascade );
 
 	pRenderContext->PushRenderTargetAndViewport( GetDefRT_RadiosityBuffer( iSourceBuffer ), NULL,
@@ -2452,7 +2452,7 @@ void CDeferredViewRender::EndRadiosity( const CViewSetup &view )
 		for ( int i = 0; i < iNumPropagateSteps[iCascade]; i++ )
 		{
 			const int index = bSecondDestBuffer ? 1 : 0;
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			pRenderContext->PushRenderTargetAndViewport( GetDefRT_RadiosityBuffer( index ), NULL,
 				0, iOffsetY, RADIOSITY_BUFFER_VIEWPORT_SX, RADIOSITY_BUFFER_VIEWPORT_SY );
 			pRenderContext->SetRenderTargetEx( 1, GetDefRT_RadiosityNormal( index ) );
@@ -2468,7 +2468,7 @@ void CDeferredViewRender::EndRadiosity( const CViewSetup &view )
 		for ( int i = 0; i < iNumBlurSteps[iCascade]; i++ )
 		{
 			const int index = bSecondDestBuffer ? 1 : 0;
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			pRenderContext->PushRenderTargetAndViewport( GetDefRT_RadiosityBuffer( index ), NULL,
 				0, iOffsetY, RADIOSITY_BUFFER_VIEWPORT_SX, RADIOSITY_BUFFER_VIEWPORT_SY );
 			pRenderContext->SetRenderTargetEx( 1, GetDefRT_RadiosityNormal( index ) );
@@ -2550,7 +2550,7 @@ void CDeferredViewRender::DebugRadiosity( const CViewSetup &view )
 			const float flUVOffsetY = bFar ? 0.5f : 0.0f;
 
 			int nMaxVerts, nMaxIndices;
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			CMeshBuilder meshBuilder;
 
 			IMesh *pMesh = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
@@ -2613,7 +2613,7 @@ void CDeferredViewRender::DebugRadiosity( const CViewSetup &view )
 		}
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->Bind( pMatDbgRadGrid );
 
 	for ( int iCascade = 0; iCascade < 2; iCascade++ )
@@ -2724,7 +2724,7 @@ void CDeferredViewRender::DrawViewModels( const CViewSetup &view, bool drawViewm
 	bool bShouldDrawPlayerViewModel = ShouldDrawViewModel( drawViewmodel );
 	bool bShouldDrawToolViewModels = ToolsEnabled();
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	PIXEVENT( pRenderContext, "DrawViewModels" );
 
@@ -2859,7 +2859,7 @@ void CDeferredViewRender::RenderView( const CViewSetup &view, int nClearFlags, i
 	VPROF( "CViewRender::RenderView" );
 	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	ITexture *saveRenderTarget = pRenderContext->GetRenderTarget();
 	pRenderContext.SafeRelease(); // don't want to hold for long periods in case in a locking active share thread mode
 
@@ -2868,7 +2868,7 @@ void CDeferredViewRender::RenderView( const CViewSetup &view, int nClearFlags, i
 	// Must be first 
 	render->SceneBegin();
 
-	pRenderContext.GetFrom( materials );
+	pRenderContext.GetFrom( g_pMaterialSystem );
 	pRenderContext->TurnOnToneMapping();
 	pRenderContext.SafeRelease();
 
@@ -2915,7 +2915,7 @@ void CDeferredViewRender::RenderView( const CViewSetup &view, int nClearFlags, i
 	{
 		if ( ( mat_motion_blur_enabled.GetInt() ) && ( g_pMaterialSystemHardwareConfig->GetDXSupportLevel() >= 90 ) )
 		{
-			pRenderContext.GetFrom( materials );
+			pRenderContext.GetFrom( g_pMaterialSystem );
 			{
 				PIXEVENT( pRenderContext, "DoImageSpaceMotionBlur" );
 				DoImageSpaceMotionBlur( worldView, worldView.x, worldView.y, worldView.width, worldView.height );
@@ -2948,7 +2948,7 @@ void CDeferredViewRender::RenderView( const CViewSetup &view, int nClearFlags, i
 	
 	if ( !building_cubemaps.GetBool() && worldView.m_bDoBloomAndToneMapping )
 	{
-		pRenderContext.GetFrom( materials );
+		pRenderContext.GetFrom( g_pMaterialSystem );
 		{
 			PIXEVENT( pRenderContext, "DoEnginePostProcessing" );
 
@@ -2980,7 +2980,7 @@ void CDeferredViewRender::RenderView( const CViewSetup &view, int nClearFlags, i
 
 	if ( g_pMaterialSystemHardwareConfig->GetHDRType() == HDR_TYPE_INTEGER )
 	{
-		pRenderContext.GetFrom( materials );
+		pRenderContext.GetFrom( g_pMaterialSystem );
 		pRenderContext->SetToneMappingScaleLinear(Vector(1,1,1));
 		pRenderContext.SafeRelease();
 	}
@@ -3008,7 +3008,7 @@ void CDeferredViewRender::RenderView( const CViewSetup &view, int nClearFlags, i
 
 	if ( mat_viewportupscale.GetBool() && mat_viewportscale.GetFloat() < 1.0f ) 
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 		ITexture	*pFullFrameFB1 = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB1", TEXTURE_GROUP_RENDER_TARGET );
 		IMaterial	*pCopyMaterial = g_pMaterialSystem->FindMaterial( "dev/upscale", TEXTURE_GROUP_OTHER );
@@ -3327,7 +3327,7 @@ IMesh *CDeferredViewRender::CreateRadiosityScreenGrid( const Vector2D &vecViewpo
 		0, flLocalCoordSingle,
 	};
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	IMesh *pRet = pRenderContext->CreateStaticMesh(
 		format, TEXTURE_GROUP_OTHER );
 	

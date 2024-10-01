@@ -98,7 +98,8 @@ if build_libs
 
 	hackmgr_base_dep = declare_dependency(
 		sources: files(
-			join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp')
+			join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp'),
+			join_paths(public_dir,'hackmgr','dlloverride.cpp'),
 		),
 	)
 
@@ -118,7 +119,8 @@ if build_libs
 else
 	hackmgr_base_dep = declare_dependency(
 		sources: files(
-			join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp')
+			join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp'),
+			join_paths(public_dir,'hackmgr','dlloverride.cpp'),
 		),
 	)
 

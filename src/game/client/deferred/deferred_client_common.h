@@ -59,7 +59,7 @@ void OnCookieTableChanged( void *object, INetworkStringTable *stringTable, int s
 
 
 #define QUEUE_FIRE( helperName, functionName, varName ){\
-		CMatRenderContextPtr pRenderContext( materials );\
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );\
 		ICallQueue *pCallQueue = pRenderContext->GetCallQueue();\
 		if ( pCallQueue )\
 			pCallQueue->QueueCall( helperName::functionName, varName );\
@@ -71,7 +71,7 @@ void OnCookieTableChanged( void *object, INetworkStringTable *stringTable, int s
 
 inline void DrawLightPassFullscreen( IMaterial *pMaterial, int w, int t )
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->DrawScreenSpaceRectangle( pMaterial,
 		0, 0, w, t,
 		0, 0, w - 1.0f, t - 1.0f,

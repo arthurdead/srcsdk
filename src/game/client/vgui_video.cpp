@@ -331,7 +331,7 @@ void VideoPanel::Paint( void )
 	}
 
 	// Draw the polys to draw this out
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 	pRenderContext->MatrixMode( MATERIAL_VIEW );
 	pRenderContext->PushMatrix();

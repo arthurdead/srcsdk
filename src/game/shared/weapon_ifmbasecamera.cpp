@@ -200,7 +200,7 @@ int CWeaponIFMBaseCamera::DrawModel( int flags )
 		VectorMA( vecEndPoint[1], -2.0f * ey, vecUp, vecEndPoint[2] );
 		VectorMA( vecEndPoint[2], 2.0f * ex, vecRight, vecEndPoint[3] );
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->Bind( m_FrustumMaterial );
 		IMesh* pMesh = pRenderContext->GetDynamicMesh( true );
 

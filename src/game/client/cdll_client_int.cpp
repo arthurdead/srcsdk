@@ -127,7 +127,6 @@
 #include "GameUI/IGameConsole.h"
 #include "gameui_sys.h"
 #include "game_controls/igameuisystemmgr.h"
-#include "engine/imatchmaking.h"
 #include "matchmaking/imatchframework.h"
 
 // NVNT includes
@@ -187,7 +186,6 @@ IGameUIFuncs *gameuifuncs = NULL;
 IGameEventManager2 *gameeventmanager = NULL;
 ISceneFileCache *scenefilecache = NULL;
 IMatchFramework *g_pMatchFramework = NULL;
-IMatchmaking *matchmaking = NULL;
 IUploadGameStats *gamestatsuploader = NULL;
 IClientReplayContext *g_pClientReplayContext = NULL;
 #if defined( REPLAY_ENABLED )
@@ -237,13 +235,7 @@ public:
 	{ g_pGameUIRedirectTarget->OnGameUIActivated(); }
 	virtual void OnGameUIHidden()
 	{ g_pGameUIRedirectTarget->OnGameUIHidden(); }
-	
-	// OLD: Use OnConnectToServer2
-	virtual void DO_NOT_USE_OnConnectToServer(const char *game, int IP, int port)
-	{ g_pGameUIRedirectTarget->DO_NOT_USE_OnConnectToServer(game, IP, port); }
-	
-	virtual void DO_NOT_USE_OnDisconnectFromServer( uint8 eSteamLoginFailure, const char *username )
-	{ g_pGameUIRedirectTarget->DO_NOT_USE_OnDisconnectFromServer(eSteamLoginFailure, username); }
+
 	virtual void OnLevelLoadingStarted(bool bShowProgressDialog)
 	{ g_pGameUIRedirectTarget->OnLevelLoadingStarted(bShowProgressDialog); }
 	virtual void OnLevelLoadingFinished(bool bError, const char *failureReason, const char *extendedReason)
@@ -1289,54 +1281,7 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	V_AppendSlash(gamebin_path, ARRAYSIZE(gamebin_path));
 	int gamebin_length = V_strlen(gamebin_path);
 
-	if(HackMgr_IsSafeToSwapPhysics()) {
-		int status = IFACE_OK;
-		IPhysics *pOldPhysics = (IPhysics *)physicsFactory( VPHYSICS_INTERFACE_VERSION, &status );
-		if(status != IFACE_OK) {
-			pOldPhysics = NULL;
-		}
-
-		V_strcat_safe(gamebin_path, "vphysics" DLL_EXT_STRING);
-		vphysicsDLL = Sys_LoadModule( gamebin_path );
-		gamebin_path[gamebin_length] = '\0';
-
-		if( vphysicsDLL != NULL )
-		{
-			CreateInterfaceFn physicsFactory2 = Sys_GetFactory( vphysicsDLL );
-			if( physicsFactory2 != NULL )
-			{
-				status = IFACE_OK;
-				IPhysics *pNewPhysics = (IPhysics *)physicsFactory2( VPHYSICS_INTERFACE_VERSION, &status );
-				if(status != IFACE_OK) {
-					pNewPhysics = NULL;
-				}
-				if(pOldPhysics && pNewPhysics && (pNewPhysics != pOldPhysics)) {
-					pOldPhysics->Shutdown();
-					pOldPhysics->Disconnect();
-
-					bool success = false;
-
-					if(pNewPhysics->Connect(appSystemFactory)) {
-						if(pNewPhysics->Init() == INIT_OK) {
-							HackMgr_SetEnginePhysicsPtr(pOldPhysics, pNewPhysics);
-							success = true;
-							physicsFactory = physicsFactory2;
-						} else {
-							pNewPhysics->Shutdown();
-							pNewPhysics->Disconnect();
-						}
-					} else {
-						pNewPhysics->Disconnect();
-					}
-
-					if(!success) {
-						pOldPhysics->Connect(appSystemFactory);
-						pOldPhysics->Init();
-					}
-				}
-			}
-		}
-	}
+	HackMgr_SwapVphysics( physicsFactory, appSystemFactory, vphysicsDLL );
 
 	if(!HackMgr_Client_PreInit(this, appSystemFactory, physicsFactory, pGlobals))
 		return false;
@@ -1398,7 +1343,6 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		return false;
 
 	g_pMatchFramework = (IMatchFramework *)appSystemFactory( IMATCHFRAMEWORK_VERSION_STRING, NULL );
-	matchmaking = (IMatchmaking *)appSystemFactory( VENGINE_MATCHMAKING_VERSION, NULL );
 
 #if defined( REPLAY_ENABLED )
 	if ( (g_pEngineReplay = (IEngineReplay *)appSystemFactory( ENGINE_REPLAY_INTERFACE_VERSION, NULL )) == NULL )
@@ -1417,6 +1361,8 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		return false;
 	InitFbx();
 #endif
+
+	HackMgr_SwapVideoServices( appSystemFactory, videoServicesDLL );
 
 	V_strcat_safe(gamebin_path, "GameUI" DLL_EXT_STRING);
 	gameuiDLL = Sys_LoadModule(gamebin_path);
@@ -1457,56 +1403,6 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 	if(g_pGamepadUI) {
 		g_pGamepadUI->Initialize(appSystemFactory);
-	}
-
-	if(HackMgr_IsSafeToSwapVideoServices()) {
-		int status = IFACE_OK;
-		IVideoServices *pOldVideo = (IVideoServices *)appSystemFactory( VIDEO_SERVICES_INTERFACE_VERSION, &status );
-		if(status != IFACE_OK) {
-			pOldVideo = NULL;
-		}
-
-		V_strcat_safe(gamebin_path, "video_services" DLL_EXT_STRING);
-		videoServicesDLL = Sys_LoadModule( gamebin_path );
-		gamebin_path[gamebin_length] = '\0';
-
-		if ( videoServicesDLL != NULL )
-		{
-			CreateInterfaceFn VideoServicesFactory = Sys_GetFactory( videoServicesDLL );
-			if ( VideoServicesFactory != NULL )
-			{
-				status = IFACE_OK;
-				IVideoServices *pNewVideo = (IVideoServices *)VideoServicesFactory( VIDEO_SERVICES_INTERFACE_VERSION, &status );
-				if(status != IFACE_OK) {
-					pNewVideo = NULL;
-				}
-				if ( pNewVideo && pOldVideo && (pOldVideo != pNewVideo) )
-				{
-					bool success = false;
-
-					pOldVideo->Shutdown();
-					pOldVideo->Disconnect();
-
-					if( pNewVideo->Connect( appSystemFactory ) ) {
-						if( pNewVideo->Init() == INIT_OK ) {
-							HackMgr_SetEngineVideoServicesPtr(pOldVideo, pNewVideo);
-							g_pVideo = pNewVideo;
-							success = true;
-						} else {
-							pNewVideo->Shutdown();
-							pNewVideo->Disconnect();
-						}
-					} else {
-						pNewVideo->Disconnect();
-					}
-
-					if(!success) {
-						pOldVideo->Connect(appSystemFactory);
-						pOldVideo->Init();
-					}
-				}
-			}
-		}
 	}
 
 	V_strcat_safe(gamebin_path, "game_shader_dx9" DLL_EXT_STRING);
@@ -1871,6 +1767,8 @@ bool CClientDll::HandleGameUIEvent( const InputEvent_t &inputEvent )
 	return g_pGameUIGameSystem->RegisterInputEvent( inputEvent );
 }
 
+static ConVar cl_dropdown_console("cl_dropdown_console", "0", FCVAR_ARCHIVE);
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -1886,7 +1784,7 @@ bool CClientDll::ShouldDrawDropdownConsole()
 	}
 #endif
 
-	return true;
+	return cl_dropdown_console.GetBool();
 }
 
 //-----------------------------------------------------------------------------

@@ -7,7 +7,6 @@
 #include <stdio.h>
 
 #include "vguisystemmoduleloader.h"
-#include "sys_utils.h"
 #include "IVGuiModule.h"
 #include "ServerBrowser/IServerBrowser.h"
 
@@ -20,27 +19,19 @@
 #include <vgui_controls/Controls.h>
 #include <vgui_controls/Panel.h>
 
+#include "ienginevgui.h"
+
 #include "filesystem.h"
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
-
-// instance of class
-CVGuiSystemModuleLoader g_VModuleLoader;
-
-#ifdef GAMEUI_EXPORTS
-extern vgui::VPANEL GetGameUIBasePanel();
-#else
-#include "../SteamUI/PlatformMainPanel.h"
-extern CPlatformMainPanel *g_pMainPanel;
-#endif
-
-bool bSteamCommunityFriendsVersion = false;
 
 #include <tier0/dbg.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
+
+extern IEngineVGui *enginevguifuncs;
+
+// instance of class
+CVGuiSystemModuleLoader g_VModuleLoader;
 
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CVGuiSystemModuleLoader, IVGuiModuleLoader, VGUIMODULELOADER_INTERFACE_VERSION, g_VModuleLoader);
 
@@ -102,12 +93,10 @@ bool CVGuiSystemModuleLoader::InitializeAllModules(CreateInterfaceFn *factorylis
 			bSuccess = false;
 			Error("Platform Error: module failed to initialize\n");
 		}
-		
-#ifdef GAMEUI_EXPORTS
-		m_Modules[i].moduleInterface->SetParent(GetGameUIBasePanel());
-#else
-		m_Modules[i].moduleInterface->SetParent(g_pMainPanel->GetVPanel());
-#endif
+
+		vgui::VPANEL gameui_vpanel = enginevguifuncs->GetPanel( PANEL_GAMEUIDLL );
+
+		m_Modules[i].moduleInterface->SetParent(gameui_vpanel);
 	}
 
 	m_bModulesInitialized = true;
@@ -140,7 +129,7 @@ bool CVGuiSystemModuleLoader::LoadPlatformModules(CreateInterfaceFn *factorylist
 		const char *pchInterface = it->GetString("interface");
 
 		// don't load friends if we are using Steam Community
-		if ( !Q_stricmp( pchInterface, "VGuiModuleTracker001" ) && bSteamCommunityFriendsVersion )
+		if ( !Q_stricmp( pchInterface, "VGuiModuleTracker001" ) )
 			continue;
 
 		// get copy out of steam cache

@@ -435,7 +435,7 @@ protected:
 
 		PushView( waterHeight );
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 		ITexture *pSaveFrameBufferCopyTexture = pRenderContext->GetFrameBufferCopyTexture( 0 );
 		if ( engine->GetDXSupportLevel() >= 80 )
@@ -476,7 +476,7 @@ protected:
 		if ( CurrentViewID() != VIEW_MAIN && CurrentViewID() != VIEW_INTRO_CAMERA )
 			PixelVisibility_EndCurrentView();
 
-		pRenderContext.GetFrom( materials );
+		pRenderContext.GetFrom( g_pMaterialSystem );
 		pRenderContext->SetFrameBufferCopyTexture( pSaveFrameBufferCopyTexture );
 		PopView();
 
@@ -511,7 +511,7 @@ protected:
 			}
 		}
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 		if ( m_ClearFlags & ( VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR | VIEW_CLEAR_STENCIL ) )
 		{
@@ -534,7 +534,7 @@ protected:
 
 	virtual void	PopView()
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->SetHeightClipMode( MATERIAL_HEIGHTCLIPMODE_DISABLE );
 	};
 
@@ -800,7 +800,7 @@ protected:
 
 		if( pRenderClipPlane )	
 		{
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			if( !g_pMaterialSystem->UsingFastClipping() ) //do NOT change the fast clip plane mid-scene, depth problems result. Regular user clip planes are fine though
 				pRenderContext->PushCustomClipPlane( pRenderClipPlane );
 #if DEBUG
@@ -880,7 +880,7 @@ protected:
 
 		if( pRenderClipPlane )	
 		{
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			if( !g_pMaterialSystem->UsingFastClipping() ) //do NOT change the fast clip plane mid-scene, depth problems result. Regular user clip planes are fine though
 				pRenderContext->PushCustomClipPlane( pRenderClipPlane );
 #if DEBUG
@@ -1117,7 +1117,7 @@ public:
 	{
 		DrawSetup( 0, m_DrawFlags, 0 );
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 		pRenderContext->ClearColor4ub( (unsigned char)settings.iClearColorR,
 			(unsigned char)settings.iClearColorG,
@@ -1149,7 +1149,7 @@ public:
 
 			SetFogVolumeState( m_fogInfo, false );
 
-			pRenderContext.GetFrom( materials );
+			pRenderContext.GetFrom( g_pMaterialSystem );
 
 			unsigned char ucFogColor[3];
 			pRenderContext->GetFogColor( ucFogColor );
@@ -1160,7 +1160,7 @@ public:
 
 		DrawExecute( 0, CurrentViewID(), 0 );
 
-		pRenderContext.GetFrom( materials );
+		pRenderContext.GetFrom( g_pMaterialSystem );
 		pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
 
 		m_pMainView->DisableFog();
@@ -1454,7 +1454,7 @@ pFnVrCallback_Declare( VrCallback_ViewModel )
 	CViewRender *pCView = assert_cast< CViewRender* >( view );
 	Assert( pCView->GetViewSetup() != NULL );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	static ConVarRef drawVM( "r_drawviewmodel" );
 

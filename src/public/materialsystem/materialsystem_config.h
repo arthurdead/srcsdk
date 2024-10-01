@@ -31,7 +31,8 @@ enum MaterialSystem_Config_Flags_t
 	MATSYS_VIDCFG_FLAGS_SCALE_TO_OUTPUT_RESOLUTION  = ( 1 << 14 ),
 	MATSYS_VIDCFG_FLAGS_USING_MULTIPLE_WINDOWS      = ( 1 << 15 ),
 	MATSYS_VIDCFG_FLAGS_DISABLE_PHONG               = ( 1 << 16 ),
-	MATSYS_VIDCFG_FLAGS_VR_MODE						= ( 1 << 17 ),
+	MATSYS_VIDCFG_FLAGS_RESERVED1                   = ( 1 << 17 ),
+	MATSYS_VIDCFG_FLAGS_NO_WINDOW_BORDER			= ( 1 << 18 ),
 };
 
 struct MaterialSystemHardwareIdentifier_t
@@ -44,12 +45,9 @@ struct MaterialSystemHardwareIdentifier_t
 struct MaterialSystem_Config_t
 {
 	bool Windowed() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_WINDOWED ) != 0; }
+	bool NoWindowBorder() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_NO_WINDOW_BORDER ) != 0; }
 	bool Resizing() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_RESIZING ) != 0; }
-#ifdef CSS_PERF_TEST
-	bool WaitForVSync() const { return false; }//( m_Flags & MATSYS_VIDCFG_FLAGS_NO_WAIT_FOR_VSYNC ) == 0; }
-#else
 	bool WaitForVSync() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_NO_WAIT_FOR_VSYNC ) == 0; }
-#endif
 	bool Stencil() const { return (m_Flags & MATSYS_VIDCFG_FLAGS_STENCIL ) != 0; }
 	bool ForceTrilinear() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_FORCE_TRILINEAR ) != 0; }
 	bool ForceHWSync() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_FORCE_HWSYNC ) != 0; }
@@ -63,7 +61,6 @@ struct MaterialSystem_Config_t
 	bool ScaleToOutputResolution() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_SCALE_TO_OUTPUT_RESOLUTION ) != 0; }
 	bool UsingMultipleWindows() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_USING_MULTIPLE_WINDOWS ) != 0; }
 	bool UsePhong() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_DISABLE_PHONG ) == 0; }
-	bool VRMode() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_VR_MODE) != 0; }
 	bool ShadowDepthTexture() const { return m_bShadowDepthTexture; }
 	bool MotionBlur() const { return m_bMotionBlur; }
 	bool SupportFlashlight() const { return m_bSupportFlashlight; }
@@ -119,7 +116,7 @@ struct MaterialSystem_Config_t
 	bool bShowDiffuse;  // This is the fast version that doesn't require reloading materials
 
 	// misc
-	int m_nReserved;	// Currently unused
+	int m_nReserved1;	// Currently unused
 
 	// No depth bias
 	float m_SlopeScaleDepthBias_Normal;
@@ -140,7 +137,7 @@ struct MaterialSystem_Config_t
 	bool m_bMotionBlur;
 	bool m_bSupportFlashlight;
 
-	int m_nVRModeAdapter;
+	int m_nReserved2;
 
 	MaterialSystem_Config_t()
 	{
@@ -148,6 +145,7 @@ struct MaterialSystem_Config_t
 
 		// video config defaults
 		SetFlag( MATSYS_VIDCFG_FLAGS_WINDOWED, false );
+		SetFlag( MATSYS_VIDCFG_FLAGS_NO_WINDOW_BORDER, false );
 		SetFlag( MATSYS_VIDCFG_FLAGS_RESIZING, false );
 		SetFlag( MATSYS_VIDCFG_FLAGS_NO_WAIT_FOR_VSYNC, true );
 		SetFlag( MATSYS_VIDCFG_FLAGS_STENCIL, false );
@@ -162,7 +160,7 @@ struct MaterialSystem_Config_t
 		SetFlag( MATSYS_VIDCFG_FLAGS_SCALE_TO_OUTPUT_RESOLUTION, false );
 		SetFlag( MATSYS_VIDCFG_FLAGS_USING_MULTIPLE_WINDOWS, false );
 		SetFlag( MATSYS_VIDCFG_FLAGS_DISABLE_PHONG, false );
-		SetFlag( MATSYS_VIDCFG_FLAGS_VR_MODE, false );
+		SetFlag( MATSYS_VIDCFG_FLAGS_RESERVED1, false );
 
 		m_VideoMode.m_Width = 640;
 		m_VideoMode.m_Height = 480;
@@ -185,7 +183,7 @@ struct MaterialSystem_Config_t
 		m_bMotionBlur = false;
 		m_bSupportFlashlight = true;
 
-		m_nVRModeAdapter = -1;
+		m_nReserved2 = -1;
 
 		// misc defaults
 		bAllowCheats = false;

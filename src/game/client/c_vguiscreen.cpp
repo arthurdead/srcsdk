@@ -590,7 +590,7 @@ void C_VGuiScreen::ComputePanelToWorld()
 //-----------------------------------------------------------------------------
 void C_VGuiScreen::DrawScreenOverlay()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->MatrixMode( MATERIAL_MODEL );
 	pRenderContext->PushMatrix();
 	pRenderContext->LoadMatrix( m_PanelToWorld );

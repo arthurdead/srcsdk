@@ -10,8 +10,28 @@
 #pragma once
 
 #include "GameUI/IGameConsole.h"
+#include "vgui_controls/consoledialog.h"
+#include <Color.h>
+#include "utlvector.h"
+#include "vgui_controls/Frame.h"
 
-class CGameConsoleDialog;
+//-----------------------------------------------------------------------------
+// Purpose: Game/dev console dialog
+//-----------------------------------------------------------------------------
+class CGameConsoleDialog : public vgui::CConsoleDialog
+{
+	DECLARE_CLASS_SIMPLE( CGameConsoleDialog, vgui::CConsoleDialog );
+
+public:
+	CGameConsoleDialog();
+
+private:
+	MESSAGE_FUNC( OnClosedByHittingTilde, "ClosedByHittingTilde" );
+	MESSAGE_FUNC_CHARPTR( OnCommandSubmitted, "CommandSubmitted", command );
+
+	virtual void OnKeyCodeTyped( vgui::KeyCode code );
+	virtual void OnCommand( const char *command );
+};
 
 //-----------------------------------------------------------------------------
 // Purpose: VGui implementation of the game/dev console
@@ -41,12 +61,12 @@ public:
 	void SetParent( vgui::VPANEL parent );
 
 	static void OnCmdCondump();
-private:
 
+private:
 	bool m_bInitialized;
 	CGameConsoleDialog *m_pConsole;
 };
 
-extern CGameConsole &GameConsole();
+extern CGameConsole g_GameConsole;
 
 #endif // GAMECONSOLE_H

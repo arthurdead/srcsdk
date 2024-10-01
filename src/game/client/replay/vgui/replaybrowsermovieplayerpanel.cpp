@@ -174,7 +174,7 @@ void CMoviePlayerPanel::Paint()
 	GetPosRelativeToAncestor( NULL, x, y );
 	GetSize( w,h );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->Bind( m_pMaterial );
 
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( true );

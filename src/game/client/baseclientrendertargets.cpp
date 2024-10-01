@@ -69,15 +69,16 @@ void CBaseClientRenderTargets::InitClientRenderTargets( IMaterialSystem* pMateri
 
 void CBaseClientRenderTargets::SetupClientRenderTargets( IMaterialSystem* pMaterialSystem, IMaterialSystemHardwareConfig* pHardwareConfig, int iWaterTextureSize, int iCameraTextureSize )
 {
-	IMaterialSystem *pSave = materials;
+	IMaterialSystem *pMatSysSave = g_pMaterialSystem;
+	IMaterialSystemHardwareConfig *pMatSysConfigSave = g_pMaterialSystemHardwareConfig;
 
 	// Make sure our config is loaded before we try to init rendertargets
 	ConfigureCurrentSystemLevel();
 
 	// Water effects
-	materials = pMaterialSystem;							// in case not initted yet for mat system util
 	g_pMaterialSystem = pMaterialSystem;
 	g_pMaterialSystemHardwareConfig = pHardwareConfig;
+
 	if ( iWaterTextureSize && !cl_disable_water_render_targets.GetBool() )
 	{
 		m_WaterReflectionTexture.Init( CreateWaterReflectionTexture( pMaterialSystem, iWaterTextureSize ) );
@@ -95,7 +96,8 @@ void CBaseClientRenderTargets::SetupClientRenderTargets( IMaterialSystem* pMater
 	g_pClientShadowMgr->InitRenderTargets();
 	g_pGameUIGameSystem->InitRenderTargets();
 
-	materials = pSave;
+	g_pMaterialSystem = pMatSysSave;
+	g_pMaterialSystemHardwareConfig = pMatSysConfigSave;
 }
 
 //-----------------------------------------------------------------------------

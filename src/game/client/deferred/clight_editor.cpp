@@ -202,7 +202,7 @@ void CLightingEditor::OnRender()
 
 void CLightingEditor::RenderSprites()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->Bind( m_matSprite_Light );
 
 	CUtlVector< def_light_t* > hSortedLights;
@@ -228,7 +228,7 @@ void CLightingEditor::RenderSprites()
 
 void CLightingEditor::RenderSelection()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->Bind( m_matSelect );
 
 	CUtlVector< def_light_t* > hSelectedLights;
@@ -315,7 +315,7 @@ void CLightingEditor::RenderHelpers()
 
 void CLightingEditor::RenderTranslate()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->Bind( m_matHelper );
 
 	const bool bMultiSelected = (GetNumSelected() > 1);
@@ -523,7 +523,7 @@ void CLightingEditor::RenderTranslate()
 
 void CLightingEditor::RenderRotate()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->Bind( m_matHelper );
 
 	const int iSubDiv = 64.0f;

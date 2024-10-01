@@ -389,7 +389,7 @@ int C_BaseViewModel::DrawModel( int flags, const RenderableInstance_t &instance 
 //-----------------------------------------------------------------------------
 int C_BaseViewModel::InternalDrawModel( int flags, const RenderableInstance_t &instance )
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	if ( ShouldFlipViewModel() )
 		pRenderContext->CullMode( MATERIAL_CULLMODE_CW );
 

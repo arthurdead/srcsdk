@@ -44,7 +44,7 @@ inline void UpdateRefractTexture( int x, int y, int w, int h, bool bForceUpdate 
 	if ( !r_updaterefracttexture.GetBool() )
 		return;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	ITexture *pTexture = GetPowerOfTwoFrameBufferTexture();
 	if ( bForceUpdate || g_bAllowMultipleRefractUpdatesPerScenePerFrame || (gpGlobals->framecount != g_viewscene_refractUpdateFrame) )
 	{
@@ -65,7 +65,7 @@ inline void UpdateRefractTexture( bool bForceUpdate = false )
 {
 	Assert( !DrawingShadowDepthView() );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	int x,y,w,h;
 	pRenderContext->GetViewport( x, y, w, h );
@@ -80,7 +80,7 @@ inline void UpdateScreenEffectTexture( int textureIndex, int x, int y, int w, in
 	srcRect.width = w;
 	srcRect.height = h;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	ITexture *pTexture = GetFullFrameFrameBufferTexture( textureIndex );
 	int nSrcWidth, nSrcHeight;
 	pRenderContext->GetRenderTargetDimensions( nSrcWidth, nSrcHeight );
@@ -125,7 +125,7 @@ inline void DrawScreenEffectMaterial( IMaterial *pMaterial, int x, int y, int w,
 	UpdateScreenEffectTexture( 0, x, y, w, h, false, &actualRect );
 	ITexture *pTexture = GetFullFrameFrameBufferTexture( 0 );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->DrawScreenSpaceRectangle( pMaterial, x, y, w, h,
 		actualRect.x, actualRect.y, actualRect.x+actualRect.width-1, actualRect.y+actualRect.height-1, 

@@ -10,6 +10,10 @@ pkg-config = '/usr/bin/i686-w64-mingw32-pkg-config'
 llvm-config = '/usr/bin/llvm-config32'
 exe_wrapper = '/usr/bin/i686-w64-mingw32-wine'
 
+[properties]
+cmake_toolchain_file = '/usr/share/mingw/toolchain-i686-w64-mingw32.cmake'
+cmake_defaults = false
+
 [cmake]
 CMAKE_C_COMPILER = '/usr/bin/i686-w64-mingw32-gcc'
 CMAKE_CXX_COMPILER = '/usr/bin/i686-w64-mingw32-g++'

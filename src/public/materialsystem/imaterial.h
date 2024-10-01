@@ -26,7 +26,7 @@ class Vector;
 //-----------------------------------------------------------------------------
 // Flags for GetVertexFormat
 //-----------------------------------------------------------------------------
-#define	VERTEX_POSITION					0x0001
+#define	VERTEX_POSITION3D				0x0001
 #define	VERTEX_NORMAL					0x0002
 #define	VERTEX_COLOR					0x0004
 #define	VERTEX_SPECULAR					0x0008
@@ -133,7 +133,7 @@ enum VertexElement_t
 	// Deliberately explicitly numbered so it's a pain in the ass to change, so you read this:
 	// #!#!#NOTE#!#!# update GetVertexElementSize, VertexElementToDeclType and
 	//                CVBAllocTracker (elementTable) when you update this!
-	VERTEX_ELEMENT_POSITION		= 0,
+	VERTEX_ELEMENT_POSITION3D	= 0,
 	VERTEX_ELEMENT_NORMAL		= 1,
 	VERTEX_ELEMENT_COLOR		= 2,
 	VERTEX_ELEMENT_SPECULAR		= 3,
@@ -192,7 +192,7 @@ inline void Detect_VertexElement_t_Changes( VertexElement_t element ) // GREPs f
 	Assert( VERTEX_ELEMENT_NUMELEMENTS == 48 );
 	switch ( element )
 	{
-		case VERTEX_ELEMENT_POSITION:		Assert( VERTEX_ELEMENT_POSITION		== 0	); break;
+		case VERTEX_ELEMENT_POSITION3D:		Assert( VERTEX_ELEMENT_POSITION3D	== 0	); break;
 		case VERTEX_ELEMENT_NORMAL:			Assert( VERTEX_ELEMENT_NORMAL		== 1	); break;
 		case VERTEX_ELEMENT_COLOR:			Assert( VERTEX_ELEMENT_COLOR		== 2	); break;
 		case VERTEX_ELEMENT_SPECULAR:		Assert( VERTEX_ELEMENT_SPECULAR		== 3	); break;
@@ -288,7 +288,7 @@ inline int GetVertexElementSize( VertexElement_t element, VertexCompressionType_
 	// Uncompressed-vertex element sizes
 	switch ( element )
 	{
-		case VERTEX_ELEMENT_POSITION:		return ( 3 * sizeof( float ) );
+		case VERTEX_ELEMENT_POSITION3D:		return ( 3 * sizeof( float ) );
 		case VERTEX_ELEMENT_NORMAL:			return ( 3 * sizeof( float ) );
 		case VERTEX_ELEMENT_COLOR:			return ( 4 * sizeof( unsigned char ) );
 		case VERTEX_ELEMENT_SPECULAR:		return ( 4 * sizeof( unsigned char ) );

@@ -32,6 +32,9 @@ typedef struct IVoiceTweak_s
 	float			(*GetControlFloat)(VoiceTweakControl iControl);
 
 	bool			(*IsStillTweaking)(); // This can return false if the user restarts the sound system during voice tweak mode
+
+	inline bool			IsControlFound(VoiceTweakControl iControl)
+	{ return true; }
 } IVoiceTweak;
 
 

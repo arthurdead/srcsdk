@@ -59,7 +59,7 @@ void CFXLine::Draw( double frametime )
 
 	VectorNormalize( cross );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 	//Bind the material
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( true, NULL, NULL, m_FXData.m_pMaterial );
@@ -159,7 +159,7 @@ void FX_DrawLine( const Vector &start, const Vector &end, float scale, IMaterial
 
 	VectorNormalize( cross );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 	//Bind the material
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( true, NULL, NULL, pMaterial );
@@ -222,7 +222,7 @@ void FX_DrawLineFade( const Vector &start, const Vector &end, float scale, IMate
 
 	VectorNormalize( cross );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	//Bind the material
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( true, NULL, NULL, pMaterial );

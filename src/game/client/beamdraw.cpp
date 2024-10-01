@@ -43,7 +43,7 @@ CEngineSprite *Draw_SetSpriteTexture( const model_t *pSpriteModel, int frame, in
 	if( !material )
 		return NULL;
 	
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	if ( ShouldDrawInWireFrameMode() || r_DrawBeams.GetInt() == 2 )
 	{
 		if ( !g_pBeamWireframeMaterial )
@@ -78,7 +78,7 @@ void DrawHalo(IMaterial* pMaterial, const Vector& source, float scale, float con
 		}
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( );
 
 	CMeshBuilder meshBuilder;
@@ -154,7 +154,7 @@ void DrawSprite( const Vector &vecOrigin, float flWidth, float flHeight, color32
 
 	CMeshBuilder meshBuilder;
 	Vector point;
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( );
 
 	meshBuilder.Begin( pMesh, MATERIAL_QUADS, 1 );
@@ -1048,7 +1048,7 @@ void DrawDisk( int noise_divisions, float *prgNoise, const model_t* spritemodel,
 
 	w = freq * delta[2];
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( );
 
 	CMeshBuilder meshBuilder;
@@ -1144,7 +1144,7 @@ void DrawCylinder( int noise_divisions, float *prgNoise, const model_t* spritemo
 	vLast = fmod(freq*speed,1);	// Scroll speed 3.5 -- initial texture position, scrolls 3.5/sec (1.0 is entire texture)
 	scale = scale * length;
 	
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( );
 
 	CMeshBuilder meshBuilder;
@@ -1269,7 +1269,7 @@ void DrawRing( int noise_divisions, float *prgNoise, void (*pfnNoise)( float *no
 
 	j = segments / 8;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( );
 
 	CMeshBuilder meshBuilder;
@@ -1413,7 +1413,7 @@ void DrawBeamFollow( const model_t* spritemodel, BeamTrail_t* pHead, int frame, 
 		pTraverse = pTraverse->next;
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( );
 
 	CMeshBuilder meshBuilder;

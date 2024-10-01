@@ -516,6 +516,9 @@ public:
 #endif
 
 	// position setting
+	void Position2f( float x, float y );
+	void Position2fv( const float *v );
+
 	void Position3f( float x, float y, float z );
 	void Position3fv( const float *v );
 
@@ -862,6 +865,12 @@ inline void CVertexBuilder::Begin( IVertexBuffer *pVertexBuffer, int nVertexCoun
 	Reset();
 }
 
+inline void CVertexBuilder::Begin( IVertexBuffer *pVertexBuffer, int nVertexCount, int *nFirstVertex )
+{
+	Begin( pVertexBuffer, nVertexCount );
+
+	*nFirstVertex = m_nFirstVertex * VertexSize();
+}
 
 //-----------------------------------------------------------------------------
 // Use this when you're done modifying the mesh
@@ -1601,6 +1610,25 @@ inline float* CVertexBuilder::BoneMatrix() const
 //-----------------------------------------------------------------------------
 // Position setting methods
 //-----------------------------------------------------------------------------
+inline void	CVertexBuilder::Position2f( float x, float y )
+{
+	Assert( m_pPosition && m_pCurrPosition );
+	Assert( IsFinite(x) && IsFinite(y) );
+	float *pDst = m_pCurrPosition;
+	*pDst++ = x;
+	*pDst = y;
+}
+
+inline void	CVertexBuilder::Position2fv( const float *v )
+{
+	Assert(v);
+	Assert( m_pPosition && m_pCurrPosition );
+
+	float *pDst = m_pCurrPosition;
+	*pDst++ = *v++;
+	*pDst = *v;
+}
+
 inline void	CVertexBuilder::Position3f( float x, float y, float z )
 {
 	Assert( m_pPosition && m_pCurrPosition );
@@ -3040,11 +3068,6 @@ public:
 	void Begin( IMesh *pMesh, MaterialPrimitiveType_t type, int nVertexCount, int nIndexCount, int *nFirstVertex );
 	void Begin( IMesh *pMesh, MaterialPrimitiveType_t type, int nVertexCount, int nIndexCount );
 
-	// forward compat
-	void Begin( IVertexBuffer *pVertexBuffer, MaterialPrimitiveType_t type, int numPrimitives );
-	void Begin( IVertexBuffer *pVertexBuffer, IIndexBuffer *pIndexBuffer, MaterialPrimitiveType_t type, int nVertexCount, int nIndexCount, int *nFirstVertex );
-	void Begin( IVertexBuffer *pVertexBuffer, IIndexBuffer *pIndexBuffer, MaterialPrimitiveType_t type, int nVertexCount, int nIndexCount );
-
 	// Use this when you're done writing
 	// Set bDraw to true to call m_pMesh->Draw automatically.
 	void End( bool bSpewData = false, bool bDraw = false );
@@ -3118,6 +3141,9 @@ public:
 	unsigned short const *Index() const; 
 
 	// position setting
+	void Position2f( float x, float y );
+	void Position2fv( const float *v );
+
 	void Position3f( float x, float y, float z );
 	void Position3fv( const float *v );
 
@@ -3254,29 +3280,6 @@ private:
 	CIndexBuilder	m_IndexBuilder;
 	CVertexBuilder	m_VertexBuilder;
 };
-
-
-//-----------------------------------------------------------------------------
-// Forward compat
-//-----------------------------------------------------------------------------
-inline void CMeshBuilder::Begin( IVertexBuffer* pVertexBuffer, MaterialPrimitiveType_t type, int numPrimitives )
-{
-	Assert( 0 );
-	//	Begin( pVertexBuffer->GetMesh(), type, numPrimitives );
-}
-
-inline void CMeshBuilder::Begin( IVertexBuffer* pVertexBuffer, IIndexBuffer *pIndexBuffer, MaterialPrimitiveType_t type, int nVertexCount, int nIndexCount, int *nFirstVertex )
-{
-	Assert( 0 );
-	//	Begin( pVertexBuffer->GetMesh(), type, nVertexCount, nIndexCount, nFirstVertex );
-}
-
-inline void CMeshBuilder::Begin( IVertexBuffer* pVertexBuffer, IIndexBuffer *pIndexBuffer, MaterialPrimitiveType_t type, int nVertexCount, int nIndexCount )
-{
-	Assert( 0 );
-	//	Begin( pVertexBuffer->GetMesh(), type, nVertexCount, nIndexCount );
-}
-
 
 //-----------------------------------------------------------------------------
 // Constructor
@@ -3835,6 +3838,16 @@ FORCEINLINE void CMeshBuilder::FastQuadVertexSSE( const QuadTessVertex_t &vertex
 //-----------------------------------------------------------------------------
 // Vertex field setting methods
 //-----------------------------------------------------------------------------
+FORCEINLINE void CMeshBuilder::Position2f( float x, float y )
+{
+	m_VertexBuilder.Position2f( x, y );
+}
+
+FORCEINLINE void CMeshBuilder::Position2fv( const float *v )
+{
+	m_VertexBuilder.Position2fv( v );
+}
+
 FORCEINLINE void CMeshBuilder::Position3f( float x, float y, float z )
 {
 	m_VertexBuilder.Position3f( x, y, z );

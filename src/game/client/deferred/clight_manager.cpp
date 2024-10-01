@@ -823,7 +823,7 @@ FORCEINLINE void CLightingManager::DrawVolumePrepass( bool bDoModelTransform, co
 
 	Assert( l->pMesh_VolumPrepass != NULL );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PushRenderTargetAndViewport( GetDefRT_VolumePrepass(), 0, 0, view.width / 4, view.height / 4 );
 	pRenderContext->ClearColor3ub( 0, 0, 0 );
 	pRenderContext->ClearBuffers( true, false );
@@ -929,7 +929,7 @@ void CLightingManager::RenderLights( const CViewSetup &view, CDeferredViewRender
 
 	if ( m_bDrawVolumetrics )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->PushRenderTargetAndViewport( pVolumBuffer0 );
 		pRenderContext->ClearColor3ub( 0, 0, 0 );
 		pRenderContext->ClearBuffers( true, false );
@@ -1125,7 +1125,7 @@ void CLightingManager::RenderLights( const CViewSetup &view, CDeferredViewRender
 
 						DrawVolumePrepass( true, view, entry.pLight );
 
-						CMatRenderContextPtr pRenderContext( materials );
+						CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 						pRenderContext->PushRenderTargetAndViewport( pVolumBuffer0 );
 
 						DrawLightPassFullscreen( lightTypes[i].pMatVolumeFullscreen,
@@ -1151,7 +1151,7 @@ void CLightingManager::RenderLights( const CViewSetup &view, CDeferredViewRender
 	for ( int i = 0; i < iNumLightTypes; i++ )
 	{
 #if DEFCFG_EXTRA_SORT
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->Bind( lightTypes[i].pMatPassWorld );
 		pRenderContext->MatrixMode( MATERIAL_MODEL );
 
@@ -1374,7 +1374,7 @@ void CLightingManager::RenderLights( const CViewSetup &view, CDeferredViewRender
 			if ( !bShadow && !bCookie )
 				iDrawnSimple++;
 
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			pRenderContext->MatrixMode( MATERIAL_MODEL );
 			pRenderContext->PushMatrix();
 			pRenderContext->LoadMatrix( l->worldTransform );
@@ -1503,7 +1503,7 @@ void CLightingManager::RenderVolumetrics( const CViewSetup &view )
 	ITexture *pVolumBuffer0 = GetDefRT_VolumetricsBuffer( 0 );
 	ITexture *pVolumBuffer1 = GetDefRT_VolumetricsBuffer( 1 );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->PushRenderTargetAndViewport( pVolumBuffer1 );
 	pRenderContext->DrawScreenSpaceRectangle( GetDeferredManager()->GetDeferredMaterial( DEF_MAT_BLUR_G6_X ),
@@ -1535,7 +1535,7 @@ void CLightingManager::DoSceneDebug()
 #if DEBUG
 	if ( deferred_lightmanager_debug.GetInt() >= 2 )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->ClearBuffers( false, true );
 
 		DebugLights_Draw_DebugMeshes();
@@ -1579,7 +1579,7 @@ void CLightingManager::DebugLights_Draw_Boundingboxes()
 #if DEBUG
 void CLightingManager::DebugLights_Draw_DebugMeshes()
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->Bind( GetDeferredManager()->GetDeferredMaterial( DEF_MAT_WIREFRAME_DEBUG ) );
 
 	pRenderContext->MatrixMode( MATERIAL_MODEL );

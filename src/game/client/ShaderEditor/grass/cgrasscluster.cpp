@@ -305,7 +305,7 @@ void _grassClusterData::Destroy()
 
 	if ( pGrassMesh )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->DestroyStaticMesh( pGrassMesh );
 		pGrassMesh = NULL;
 	}
@@ -700,7 +700,7 @@ void CGrassClusterManager::RenderClusters( bool bShadowDepth )
 		delete pListInfo;
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->Bind( pMat );
 
 	const float flCullDist = gcluster_cullDist.GetFloat();
@@ -999,7 +999,7 @@ void CGrassClusterManager::GenerateClusterData()
 {
 	m_iCurObjectsPerHint = gcluster_objectsPerHint.GetInt();
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	IMesh *pMeshDummy = pRenderContext->GetDynamicMesh( true, NULL, NULL, GetActiveMaterial() );
 	int nMaxVerts, nMaxIndices;
 	pRenderContext->GetMaxToRender( pMeshDummy, false, &nMaxVerts, &nMaxIndices );
@@ -1175,7 +1175,7 @@ void CGrassClusterManager::BuildClusterMesh( _grassClusterData &data, const CUtl
 	data.extents_min -= Vector( 40, 40, 40 );
 	data.extents_max += Vector( 40, 40, 40 );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	CMeshBuilder pMeshBuilder;
 
 	VertexFormat_t format = VERTEX_POSITION | VERTEX_NORMAL | VERTEX_COLOR |

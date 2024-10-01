@@ -12,6 +12,8 @@ public_dir = join_paths(src_root_dir,'public')
 
 tier1 = subproject('tier1')
 tier0 = subproject('tier0')
+tier2 = subproject('tier2')
+tier3 = subproject('tier3')
 hackmgr = subproject('hackmgr')
 
 if build_client
@@ -32,6 +34,8 @@ if build_client
 			hackmgr.get_variable('hackmgr_dep'),
 			tier1.get_variable('tier1_dep'),
 			tier0.get_variable('tier0_dep'),
+			tier2.get_variable('tier2_dep'),
+			tier3.get_variable('tier3_dep'),
 			source_base.get_variable('source_shared_lib_dep')
 		],
 		install: true,

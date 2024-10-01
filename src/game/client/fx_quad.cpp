@@ -93,7 +93,7 @@ void CFXQuad::Draw( double frametime )
 		return;
 	}
 	
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	//Bind the material
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( true, NULL, NULL, m_FXData.m_pMaterial );

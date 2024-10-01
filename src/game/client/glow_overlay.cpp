@@ -395,7 +395,7 @@ void CGlowOverlay::Draw( bool bCacheFullSceneState )
 	
 	bool bWireframe = ShouldDrawInWireFrameMode() || (r_drawsprites.GetInt() == 2);
 	
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	for( int iSprite=0; iSprite < m_nSprites; iSprite++ )
 	{
@@ -526,7 +526,7 @@ void CGlowOverlay::DrawOverlays( bool bCacheFullSceneState )
 {
 	VPROF("CGlowOverlay::DrawOverlays()");
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	bool bClippingEnabled = pRenderContext->EnableClipping( true );
 

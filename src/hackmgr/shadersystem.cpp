@@ -52,7 +52,7 @@ HACKMGR_API void HackMgr_ToggleShaderDLLAsMod(IShaderDLLInternal *pModDLL, bool 
 		IShaderDLLInternal *pDLL = *(IShaderDLLInternal **)(((unsigned char *)pMem) + CShaderSystem_ShaderDLLInfo_t_m_pShaderDLL_offset);
 
 		if(pDLL == pModDLL) {
-			*(bool *)(((unsigned char *)pMem) + CShaderSystem_ShaderDLLInfo_t_m_bModShaderDLL_offset) = value;;
+			*(bool *)(((unsigned char *)pMem) + CShaderSystem_ShaderDLLInfo_t_m_bModShaderDLL_offset) = value;
 
 			break;
 		}

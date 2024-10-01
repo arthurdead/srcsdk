@@ -64,7 +64,7 @@ void DrawSpriteModel( IClientEntity *baseentity, CEngineSprite *psprite, const V
 	if ( !material )
 		return;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 	if ( ShouldDrawInWireFrameMode() || r_drawsprites.GetInt() == 2 )
 	{

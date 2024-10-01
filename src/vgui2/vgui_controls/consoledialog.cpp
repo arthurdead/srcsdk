@@ -494,7 +494,7 @@ void CConsolePanel::RebuildCompletionList(const char *text)
 			item->m_pText = new CHistoryItem( commands[ i ].String() );
 		}
 	}
-				 
+
 	if ( bNormalBuild )
 	{
 		// look through the command list for all matches
@@ -523,8 +523,8 @@ void CConsolePanel::RebuildCompletionList(const char *text)
 					{
 						char strValue[512];
 						
-						int intVal = pBounded ? pBounded->GetInt() : var->GetInt();
-						float floatVal = pBounded ? pBounded->GetFloat() : var->GetFloat();
+						int intVal = pBounded ? pBounded->GetInt() : var->GetBaseIntValue();
+						float floatVal = pBounded ? pBounded->GetFloat() : var->GetBaseFloatValue();
 						
 						if ( floatVal == intVal )
 							Q_snprintf( strValue, sizeof( strValue ), "%d", intVal );

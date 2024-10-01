@@ -346,6 +346,7 @@ public:
 	float			GetBaseFloatValue( void ) const;
 	int			GetBaseIntValue( void ) const;
 	bool			GetBaseBoolValue( void ) const;
+	char const	   *GetBaseStringValue( void ) const;
 
 	float			GetFloat( void ) const;
 	int			GetInt( void ) const;

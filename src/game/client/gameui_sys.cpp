@@ -298,9 +298,9 @@ bool CGameUIGameSystem::RegisterInputEvent( const InputEvent_t &iEvent )
 //-----------------------------------------------------------------------------
 void CGameUIGameSystem::Update( float frametime )
 {
+	// Prevent double-updates during a frame when running as part of game ui
+	// base mod panel rendering and event processing
 	if ( IsPartOfGameUiBaseModPanel() )
-		// Prevent double-updates during a frame when running as part of game ui
-		// base mod panel rendering and event processing
 		return;
 
 	if(g_pGameUISystemMgr)

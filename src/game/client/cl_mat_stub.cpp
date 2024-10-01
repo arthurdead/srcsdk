@@ -16,12 +16,6 @@
 ConVar mat_stub( "mat_stub", "0", FCVAR_CHEAT );
 extern ConVar gl_clear;
 
-
-IMaterialSystemStub* GetStubMaterialSystem()
-{
-	return materials_stub;
-}
-
 // ---------------------------------------------------------------------------------------- //
 // CMatStubHandler implementation.
 // ---------------------------------------------------------------------------------------- //
@@ -30,17 +24,16 @@ CMatStubHandler::CMatStubHandler()
 {
 	if ( mat_stub.GetInt() )
 	{
-		m_pOldMaterialSystem = materials;
-
+		m_pOldMaterialSystem = g_pMaterialSystem;
 		// Replace all material system pointers with the stub.
-		GetStubMaterialSystem()->SetRealMaterialSystem( materials );
+		materials_stub->SetRealMaterialSystem( g_pMaterialSystem );
 		g_pMaterialSystem->SetInStubMode( true );
-		materials = GetStubMaterialSystem();
-		engine->Mat_Stub( materials );
+		g_pMaterialSystem = materials_stub;
+		engine->Mat_Stub( g_pMaterialSystem );
 	}
 	else
 	{
-		m_pOldMaterialSystem = 0;
+		m_pOldMaterialSystem = NULL;
 	}
 }
 
@@ -56,10 +49,11 @@ void CMatStubHandler::End()
 	// Put back the original material system pointer.
 	if ( m_pOldMaterialSystem )
 	{
-		materials = m_pOldMaterialSystem;
+		g_pMaterialSystem = m_pOldMaterialSystem;
 		g_pMaterialSystem->SetInStubMode( false );
-		engine->Mat_Stub( materials );
-		m_pOldMaterialSystem = 0;
+		engine->Mat_Stub( g_pMaterialSystem );
+		m_pOldMaterialSystem = NULL;
+
 //		if( gl_clear.GetBool() )
 		{
 			g_pMaterialSystem->ClearBuffers( true, true );

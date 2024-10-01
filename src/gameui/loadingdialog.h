@@ -10,7 +10,6 @@
 #pragma once
 
 #include <vgui_controls/Frame.h>
-#include <vgui_controls/HTML.h>
 
 //-----------------------------------------------------------------------------
 // Purpose: Dialog for displaying level loading status
@@ -41,7 +40,7 @@ protected:
 	virtual void OnClose();
 	virtual void OnKeyCodePressed(vgui::KeyCode code);
 	virtual void PaintBackground( void );
-	
+
 private:
 	void SetupControlSettings( bool bForceShowProgressText );
 	void SetupControlSettingsForErrorDisplay( const char *settingsFile );
@@ -65,9 +64,5 @@ private:
 	CPanelAnimationVar( int, m_iAdditionalIndentX, "AdditionalIndentX", "0" );
 	CPanelAnimationVar( int, m_iAdditionalIndentY, "AdditionalIndentY", "0" );
 };
-
-// singleton accessor
-CLoadingDialog *LoadingDialog();
-
 
 #endif // LOADINGDIALOG_H

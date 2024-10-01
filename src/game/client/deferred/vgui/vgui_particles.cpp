@@ -76,7 +76,7 @@ void CVGUIParticles::Paint()
 	Frustum frustum;
 	render->Push3DView( m_ViewSetup, 0, NULL, frustum );
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	FOR_EACH_VEC( m_hParticles, i )
 	{

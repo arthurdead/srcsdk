@@ -1733,7 +1733,7 @@ void CControlPointIconCapArrow::Paint( void )
 		}
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->Bind( m_pArrowMaterial );
 	IMesh* pMesh = pRenderContext->GetDynamicMesh( true );
 

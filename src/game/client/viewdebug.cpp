@@ -89,7 +89,7 @@ static void RenderMaterial( const char *pMaterialName )
 	IMaterial *pMaterial = g_pMaterialSystem->FindMaterial( pMaterialName, TEXTURE_GROUP_OTHER, false );
 	if ( !IsErrorMaterial( pMaterial ) )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->Bind( pMaterial );
 		IMesh* pMesh = pRenderContext->GetDynamicMesh( true );
 
@@ -133,7 +133,7 @@ static void OverlayWaterTexture( IMaterial *pMaterial, int xOffset, int yOffset,
 
 	if( !IsErrorMaterial( pMaterial ) )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->Bind( pMaterial );
 		IMesh* pMesh = pRenderContext->GetDynamicMesh( true );
 
@@ -181,7 +181,7 @@ void OverlayCameraRenderTarget( const char *pszMaterialName, float flX, float fl
 		// HACKHACK
 		pMaterial->IncrementReferenceCount();
 
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->Bind( pMaterial );
 		IMesh* pMesh = pRenderContext->GetDynamicMesh( true );
 
@@ -223,7 +223,7 @@ static void OverlayFrameBufferTexture( int nFrameBufferIndex )
 	pMaterial = g_pMaterialSystem->FindMaterial( buf, NULL, true );
 	if( !IsErrorMaterial( pMaterial ) )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->Bind( pMaterial );
 		IMesh* pMesh = pRenderContext->GetDynamicMesh( true );
 
@@ -275,7 +275,7 @@ static void OverlayShowTexture( const char* textureName, float scale )
 	if (!foundVar)
 		return;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	if ( textureName && textureName[0] )
 	{
@@ -429,7 +429,7 @@ void CDebugViewRender::Draw2DDebuggingInfo( const CViewSetup &view )
 	if ( mat_showframebuffertexture.GetBool() )
 	{
 		// HDRFIXME: Get rid of these rendertarget sets assuming that the assert at the top of this function is true.
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->PushRenderTargetAndViewport( NULL );
 		OverlayFrameBufferTexture( 0 );
 		OverlayFrameBufferTexture( 1 );

@@ -2345,7 +2345,7 @@ void CDetailObjectSystem::RenderFastSprites( const DistanceFadeInfo_t &info, con
 		return;
 
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->MatrixMode( MATERIAL_MODEL );
 	pRenderContext->PushMatrix();
 	pRenderContext->LoadIdentity();
@@ -2481,7 +2481,7 @@ void CDetailObjectSystem::RenderTranslucentDetailObjects( const DistanceFadeInfo
 
 	DetailPropFlashlightMode_t flashlightMode = DetailPropFlashlightMode();
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	Assert( m_pFastSortInfo );
 	ICallQueue *pQueue = pRenderContext->GetCallQueue();
 	if ( pQueue && r_ThreadedDetailProps.GetInt() )
@@ -2605,7 +2605,7 @@ void CDetailObjectSystem::RenderFastTranslucentDetailObjectsInLeaf( CFastDetailL
 		return;
 
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->MatrixMode( MATERIAL_MODEL );
 	pRenderContext->PushMatrix();
 	pRenderContext->LoadIdentity();
@@ -2724,7 +2724,7 @@ void CDetailObjectSystem::RenderTranslucentDetailObjectsInLeaf( const DistanceFa
 		ClientLeafSystem()->GetSubSystemDataInLeaf( nLeaf, CLSUBSYSTEM_DETAILOBJECTS ) );
 	if ( pData )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		Assert( m_pFastSortInfo );
 		ICallQueue *pQueue = pRenderContext->GetCallQueue();
 		Vector cpnt = viewOrigin;
@@ -2780,7 +2780,7 @@ void CDetailObjectSystem::RenderTranslucentDetailObjectsInLeaf( const DistanceFa
 	if ( m_pSortInfo[m_nFirstSprite].m_flDistance < flMinDistance )
 		return;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->MatrixMode( MATERIAL_MODEL );
 	pRenderContext->PushMatrix();
 	pRenderContext->LoadIdentity();

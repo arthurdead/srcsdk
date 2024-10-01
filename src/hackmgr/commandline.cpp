@@ -28,7 +28,6 @@ CommandLine()->AppendParm("-allowdebug", "");
 CommandLine()->RemoveParm("-nodev");
 CommandLine()->AppendParm("-dev", "");
 CommandLine()->AppendParm("-internalbuild", "");
-CommandLine()->AppendParm("-console", "");
 CommandLine()->AppendParm("-condebug", "");
 CommandLine()->AppendParm("-conclearlog", "");
 #else

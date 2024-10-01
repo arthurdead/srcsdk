@@ -11,11 +11,18 @@ KeyValues * CMatchExt::GetAllMissions()
 {
 	return NULL;
 }
+
 KeyValues * CMatchExt::GetMapInfo( KeyValues *pSettings, KeyValues **ppMissionInfo )
 {
 	return NULL;
 }
+
 KeyValues * CMatchExt::GetMapInfoByBspName( KeyValues *pSettings, char const *szBspMapName, KeyValues **ppMissionInfo )
+{
+	return NULL;
+}
+
+KeyValues * CMatchExt::GetMissionDetails( const char *szMissionName )
 {
 	return NULL;
 }

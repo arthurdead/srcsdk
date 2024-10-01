@@ -49,7 +49,7 @@ bool CDeferredManagerClient::Init()
 		{
 			g_pOldMatSystem = materials;
 
-			g_DeferredMaterialSystem.InitPassThru( materials );
+			g_DeferredMaterialSystem.InitPassThru( g_pMaterialSystem );
 			materials = &g_DeferredMaterialSystem;
 			engine->Mat_Stub( &g_DeferredMaterialSystem );
 

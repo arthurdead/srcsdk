@@ -844,7 +844,7 @@ void CViewRender::SetUpOverView()
 		oldCRC = newCRC;
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->ClearColor4ub( 0, 255, 0, 255 );
 
 	// render->DrawTopView( true );
@@ -978,7 +978,7 @@ void CViewRender::Render( vrect_t *rect )
 
     if( gl_clear_randomcolor.GetBool() )
     {
-	    CMatRenderContextPtr pRenderContext( materials );
+	    CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	    pRenderContext->ClearColor3ub( rand()%256, rand()%256, rand()%256 );
 	    pRenderContext->ClearBuffers( true, false, false );
 	    pRenderContext->Release();

@@ -559,7 +559,7 @@ void CModelPanel::Paint()
 		m_hModel->FrameAdvance( gpGlobals->frametime );
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	
 	// figure out what our viewport is right now
 	int viewportX, viewportY, viewportWidth, viewportHeight;

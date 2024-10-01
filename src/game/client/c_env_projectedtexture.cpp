@@ -446,7 +446,7 @@ int C_EnvProjectedTexture::DrawModel( int flags, const RenderableInstance_t &ins
 
 	m_FlashlightState.m_Color[ 3 ] = m_flVolumetricsMultiplier / m_iCurrentVolumetricsSubDiv * flDistanceFade;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetFlashlightMode( true );
 	pRenderContext->SetFlashlightStateEx( m_FlashlightState, shadowToUnit, pDepthTexture );
 
@@ -470,7 +470,7 @@ void C_EnvProjectedTexture::ClearVolumetricsMesh()
 {
 	if ( m_pVolmetricMesh != NULL )
 	{
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->DestroyStaticMesh( m_pVolmetricMesh );
 		m_pVolmetricMesh = NULL;
 	}
@@ -531,8 +531,8 @@ void C_EnvProjectedTexture::RebuildVolumetricMesh()
 		( farPlane[ 3 ] - farPlane[ 0 ] ),
 	};
 
-	const VertexFormat_t vertexFormat =  VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 );
-	CMatRenderContextPtr pRenderContext( materials );
+	const VertexFormat_t vertexFormat =  VERTEX_POSITION3D | VERTEX_TEXCOORD_SIZE( 0, 2 );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	m_pVolmetricMesh = pRenderContext->CreateStaticMesh( vertexFormat, TEXTURE_GROUP_OTHER, m_matVolumetricsMaterial );
 
 	const int iCvarSubDiv = volumetrics_subdiv.GetInt();

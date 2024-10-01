@@ -104,7 +104,7 @@ void CMaterialReference::Init( CMaterialReference& ref )
 //-----------------------------------------------------------------------------
 void CMaterialReference::Shutdown( bool bDeleteIfUnreferenced /*=false*/ )
 {
-	if ( m_pMaterial && materials )
+	if ( m_pMaterial )
 	{
 		m_pMaterial->DecrementReferenceCount();
 		if ( bDeleteIfUnreferenced )
@@ -212,7 +212,7 @@ void CTextureReference::InitRenderTarget( int w, int h, RenderTargetSizeMode_t s
 //-----------------------------------------------------------------------------
 void CTextureReference::Shutdown( bool bDeleteIfUnReferenced )
 {
-	if ( m_pTexture && materials )
+	if ( m_pTexture )
 	{
 		m_pTexture->DecrementReferenceCount();
 		if ( bDeleteIfUnReferenced )

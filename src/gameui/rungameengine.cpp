@@ -7,15 +7,13 @@
 
 
 #include "IRunGameEngine.h"
-#include "engineinterface.h"
 #include "tier1/strtools.h"
 #include "IGameUIFuncs.h"
 #include "tier1/convar.h"
-#include "gameui_util.h"
+#include "engineinterface.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface to running the engine from the UI dlls
@@ -35,18 +33,6 @@ public:
 	{
 		engine->ClientCmd_Unrestricted((char *)text);
 		return true;
-	}
-
-	// runs the engine with the specified command line parameters.  Only works if !IsRunning()
-	// returns true on success, false on failure
-	virtual bool RunEngine(const char *gameName, const char *commandLineParams)
-	{
-		return false;
-	}
-
-	virtual bool RunEngine2(const char *gameDir, const char *commandLineParams, bool isSourceGame)
-	{
-		return false;
 	}
 
 	virtual ERunResult RunEngine( int iAppID, const char *gameDir, const char *commandLineParams )
@@ -73,7 +59,7 @@ public:
 		gameuifuncs->SetFriendsID(trackerID, trackerName);
 
 		// update the player's name if necessary
-		CGameUIConVarRef name( "name" );
+		ConVarRef name( "name" );
 		if ( name.IsValid() && trackerName && *trackerName && !Q_strcmp( name.GetString(), "unnamed" ) )
 		{
 			name.SetValue(trackerName);

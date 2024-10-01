@@ -192,7 +192,7 @@ static void DrawClippedScreenSpaceRectangle(
 			height = clipbox->m_maxy - desty;
 		}
 	}
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->DrawScreenSpaceRectangle( pMaterial, destx, desty, width, height, src_texture_x0,
 											  src_texture_y0, src_texture_x1, src_texture_y1,
 											  src_texture_width, src_texture_height, pClientRenderable );
@@ -203,7 +203,7 @@ void ApplyPostProcessingPasses(PostProcessingPass *pass_list, // table of effect
 							   ClipBox const *clipbox=0,	// clipping box for these effects
 							   ClipBox *dest_coords_out=0)	// receives dest coords of last blit
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	ITexture *pSaveRenderTarget = pRenderContext->GetRenderTarget();
 	int pcount=0;
 	if ( debug_postproc.GetInt() == 1 ) 
@@ -355,7 +355,7 @@ void SetRenderTargetAndViewPort(ITexture *rt)
 	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
 
 	if(rt) {
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->SetRenderTarget(rt);
 		pRenderContext->Viewport(0,0,rt->GetActualWidth(),rt->GetActualHeight());
 	}
@@ -393,7 +393,7 @@ static void DrawScreenSpaceRectangleWithSlop(
 	width = slopwidth;
 	height = slopheight;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->DrawScreenSpaceRectangle( pMaterial, destx, desty, width, height,
 											  src_texture_x0, src_texture_y0,
 											  src_texture_x1, src_texture_y1,
@@ -433,7 +433,7 @@ public:
 
 void CHistogramBucket::IssueQuery( int nFrameNum )
 {
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	if ( !m_hOcclusionQueryHandle )
 	{
 		m_hOcclusionQueryHandle = pRenderContext->CreateOcclusionQueryObject();
@@ -647,7 +647,7 @@ void CTonemapSystem::IssueAndReceiveBucketQueries()
 			case HESTATE_QUERY_IN_FLIGHT:
 				if ( m_nCurrentQueryFrame > m_histogramBucketArray[i].m_nFrameQueued + 2 )
 				{
-					CMatRenderContextPtr pRenderContext( materials );
+					CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 					int np = pRenderContext->OcclusionQuery_GetNumPixelsRendered(
 						m_histogramBucketArray[i].m_hOcclusionQueryHandle );
 					if ( np != -1 ) // -1 = Query not finished...wait until next time
@@ -778,7 +778,7 @@ float CTonemapSystem::ComputeTargetTonemapScalar( bool bGetIdealTargetForDebugMo
 		}
 
 		// Apply this against last frames scalar
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		float flLastScale = m_flCurrentTonemapScale;
 		flTargetScalar *= flLastScale;
 
@@ -1001,7 +1001,7 @@ void CTonemapSystem::DisplayHistogram()
 		return;
 
 	// Get render context
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->PushRenderTargetAndViewport();
 
 	// Prep variables for drawing histogram
@@ -1184,7 +1184,7 @@ void CTonemapSystem::UpdateMaterialSystemTonemapScalar()
 			ResetTonemappingScale( flForcedTonemapScale );
 
 			// Send this value to the material system
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			pRenderContext->SetToneMappingScaleLinear( Vector( m_flCurrentTonemapScale, m_flCurrentTonemapScale, m_flCurrentTonemapScale ) );
 			return;
 		}
@@ -1200,19 +1200,19 @@ void CTonemapSystem::UpdateMaterialSystemTonemapScalar()
 			ResetTonemappingScale( fScale );
 
 			// Send this value to the material system
-			CMatRenderContextPtr pRenderContext( materials );
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 			pRenderContext->SetToneMappingScaleLinear( Vector( m_flCurrentTonemapScale, m_flCurrentTonemapScale, m_flCurrentTonemapScale ) );
 			return;
 		}
 
 		// Send this value to the material system
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->SetToneMappingScaleLinear( Vector( m_flCurrentTonemapScale, m_flCurrentTonemapScale, m_flCurrentTonemapScale ) );
 	}
 	else
 	{
 		// Send 1.0 to the material system since HDR is disabled
-		CMatRenderContextPtr pRenderContext( materials );
+		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 		pRenderContext->SetToneMappingScaleLinear( Vector( 1.0f, 1.0f, 1.0f ) );
 	}
 }
@@ -1290,7 +1290,7 @@ void ResetToneMapping( float flTonemappingScale )
 	GetCurrentTonemappingSystem()->ResetTonemappingScale( flTonemappingScale );
 
 	// Send this value to the material system
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	pRenderContext->SetToneMappingScaleLinear( Vector( flTonemappingScale, flTonemappingScale, flTonemappingScale ) );
 }
 
@@ -1877,7 +1877,7 @@ void DumpTGAofRenderTarget( const int width, const int height, const char *pFile
 		return;
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	// Get the data from the render target and save to disk bitmap bits
 	unsigned char *pImage = ( unsigned char * )malloc( width * 4 * height );
@@ -2641,7 +2641,7 @@ void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, b
 		return;
 	}
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	if ( g_bDumpRenderTargets )
 	{
@@ -3055,7 +3055,7 @@ void DoBlurFade( float flStrength, float flDesaturate, int x, int y, int w, int 
 
 	UpdateScreenEffectTexture();
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	Generate8BitBloomTexture( pRenderContext, x, y, w, h, false, false );
 
 	int nViewportX, nViewportY, nViewportWidth, nViewportHeight;
@@ -3524,7 +3524,7 @@ void DoImageSpaceMotionBlur( const CViewSetupEx &view, int x, int y, int w, int 
 	//=============================================================================================//
 	// Render quad and let material proxy pick up the g_vMotionBlurValues[4] values just set above //
 	//=============================================================================================//
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 	//pRenderContext->PushRenderTargetAndViewport();
 	pSrc = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
 	int nSrcWidth = pSrc->GetActualWidth();
@@ -3679,7 +3679,7 @@ void DoDepthOfField( const CViewSetupEx &view )
 	// Copy from backbuffer to _rt_FullFrameFB
 	UpdateScreenEffectTexture( 0, view.x, view.y, view.width, view.height, false ); // Do we need to check if we already did this?
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	ITexture *pSrc = g_pMaterialSystem->FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
 	int nSrcWidth = pSrc->GetActualWidth();
@@ -3894,7 +3894,7 @@ void BlurEntity( IClientRenderable *pRenderable, IClientRenderableMod *pRenderab
 	// Copy from backbuffer to _rt_FullFrameFB
 	UpdateScreenEffectTexture( 0, x, y, w, h, true ); // Do we need to check if we already did this?
 
-	CMatRenderContextPtr pRenderContext( materials );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
 	pRenderContext->PushRenderTargetAndViewport();
 

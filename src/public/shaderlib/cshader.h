@@ -353,14 +353,14 @@ inline bool CShader_IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag
 #define DECLARE_DYNAMIC_PIXEL_SHADER( shader ) \
 	int declaredynpixshader_ ## shader ## _missingcurlybraces = 0; \
 	NOTE_UNUSED( declaredynpixshader_ ## shader ## _missingcurlybraces ); \
-	shader ## _Dynamic_Index _pshIndex; \
+	shader ## _Dynamic_Index _pshIndex( pShaderAPI ); \
 	int psh ## shader = 0
 
 // vsh ## shader is used here to generate a warning if you don't ever call SET_DYNAMIC_VERTEX_SHADER
 #define DECLARE_DYNAMIC_VERTEX_SHADER( shader ) \
 	int declaredynvertshader_ ## shader ## _missingcurlybraces = 0; \
 	NOTE_UNUSED( declaredynvertshader_ ## shader ## _missingcurlybraces ); \
-	shader ## _Dynamic_Index _vshIndex; \
+	shader ## _Dynamic_Index _vshIndex( pShaderAPI ); \
 	int vsh ## shader = 0
 
 
@@ -368,14 +368,14 @@ inline bool CShader_IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag
 #define DECLARE_STATIC_PIXEL_SHADER( shader ) \
 	int declarestaticpixshader_ ## shader ## _missingcurlybraces = 0; \
 	NOTE_UNUSED( declarestaticpixshader_ ## shader ## _missingcurlybraces ); \
-	shader ## _Static_Index _pshIndex; \
+	shader ## _Static_Index _pshIndex( pShaderShadow, params ); \
 	int psh ## shader = 0
 
 // vsh ## shader is used here to generate a warning if you don't ever call SET_STATIC_VERTEX_SHADER
 #define DECLARE_STATIC_VERTEX_SHADER( shader ) \
 	int declarestaticvertshader_ ## shader ## _missingcurlybraces = 0; \
 	NOTE_UNUSED( declarestaticvertshader_ ## shader ## _missingcurlybraces ); \
-	shader ## _Static_Index _vshIndex; \
+	shader ## _Static_Index _vshIndex( pShaderShadow, params ); \
 	int vsh ## shader = 0
 
 
