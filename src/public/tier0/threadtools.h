@@ -669,7 +669,7 @@ private:
 			return false;
 
 		ThreadMemoryBarrier();
-		++m_depth;
+		m_depth = m_depth+1;
 		return true;
 	}
 
@@ -730,7 +730,7 @@ public:
 			DebuggerBreak();
 #endif
 
-		--m_depth;
+		m_depth=m_depth-1;
 		if ( !m_depth )
 		{
 			ThreadMemoryBarrier();

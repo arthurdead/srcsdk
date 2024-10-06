@@ -208,46 +208,109 @@ Rml::FontFaceHandle RmlFontInterface::GetFontFaceHandle(const Rml::String& famil
 RmlRenderInterface::RmlRenderInterface()
 {
 	m_pMaterial = NULL;
+	m_rectScissors.MakeInvalid();
+	m_bScissorsEnabled = false;
+	m_bRendering = false;
+}
+
+#if 0
+#define RML_SHADER "UI"
+#define RML_VERTEX_FMT (VERTEX_POSITION3D|VERTEX_COLOR|VERTEX_TEXCOORD_SIZE(0,2))
+#else
+#define RML_SHADER "UnlitGeneric"
+#define RML_VERTEX_FMT (VERTEX_POSITION3D|VERTEX_NORMAL|VERTEX_COLOR|VERTEX_TEXCOORD_SIZE(0,2))
+#endif
+
+KeyValues *RmlRenderInterface::CreateMaterial()
+{
+	KeyValues *pVMTKeyValues = new KeyValues( RML_SHADER );
+	pVMTKeyValues->SetInt( "$vertexcolor", 1 );
+	pVMTKeyValues->SetInt( "$vertexalpha", 1 );
+	pVMTKeyValues->SetInt( "$ignorez", 1 );
+	pVMTKeyValues->SetInt( "$translucent", 1 );
+	pVMTKeyValues->SetInt( "$nocull", 1 );
+	return pVMTKeyValues;
 }
 
 void RmlRenderInterface::Initialize()
 {
-	KeyValues *pVMTKeyValues = new KeyValues( "UnlitGeneric" );
-	pVMTKeyValues->SetInt( "$vertexcolor", 1 );
-	pVMTKeyValues->SetInt( "$vertexalpha", 1 );
-	pVMTKeyValues->SetInt( "$ignorez", 1 );
-	pVMTKeyValues->SetString( "$basetexture", "white" );
+	m_pRenderContext = g_pMaterialSystem->GetRenderContext();
+	m_pRenderContext->AddRef();
+
+	KeyValues *pVMTKeyValues = CreateMaterial();
+	pVMTKeyValues->SetString( "$basetexture", "error" );
 	m_pMaterial = g_pMaterialSystem->CreateMaterial( "Rml_material_default", pVMTKeyValues );
 	m_pMaterial->Refresh();
 }
 
+void RmlRenderInterface::BeginRender(int x, int y, int wide, int tall)
+{
+	m_pRenderContext->BeginRender();
+
+	m_bRendering = true;
+
+	m_pRenderContext->Viewport(x, y, wide, tall);
+
+	m_pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	m_pRenderContext->PushMatrix();
+	m_pRenderContext->LoadIdentity();
+
+	m_pRenderContext->Scale( 1, -1, 1 );
+	m_pRenderContext->Ortho( 0, 0, wide, tall, -1, 1 );
+
+	m_pRenderContext->MatrixMode( MATERIAL_VIEW );
+	m_pRenderContext->PushMatrix();
+	m_pRenderContext->LoadIdentity();
+}
+
+void RmlRenderInterface::EndRender()
+{
+	m_pRenderContext->SetScissorRect( -1, -1, -1, -1, false );
+	m_bScissorsEnabled = false;
+	m_rectScissors.MakeInvalid();
+
+	m_pRenderContext->MatrixMode( MATERIAL_VIEW );
+	m_pRenderContext->PopMatrix();
+
+	m_pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	m_pRenderContext->PopMatrix();
+
+	m_pRenderContext->EndRender();
+
+	m_bRendering = false;
+}
+
 Rml::CompiledGeometryHandle RmlRenderInterface::CompileGeometry(Rml::Span<const Rml::Vertex> vertices, Rml::Span<const int> indices)
 {
-	IMatRenderContext *pRenderContext = g_pMaterialSystem->GetRenderContext();
-
 	RmlMesh_t *info = new RmlMesh_t;
 
 	info->vertexCount = vertices.size();
 	info->indexCount = indices.size();
 
-	info->vertexBuffer = pRenderContext->CreateStaticVertexBuffer( VERTEX_POSITION3D|VERTEX_NORMAL|VERTEX_COLOR|VERTEX_TEXCOORD_SIZE(0,2), vertices.size(), TEXTURE_GROUP_VGUI );
+	info->vertexBuffer = m_pRenderContext->CreateStaticVertexBuffer( RML_VERTEX_FMT, vertices.size(), TEXTURE_GROUP_VGUI );
 	CVertexBuilder vertexBuilder;
 	vertexBuilder.Begin( info->vertexBuffer, vertices.size() );
 	for(const auto &it : vertices) {
 		vertexBuilder.Position3f( it.position.x, it.position.y, 0 );
+	#if RML_VERTEX_FMT & VERTEX_NORMAL
 		vertexBuilder.Normal3f( 0, 0, 0 );
+	#endif
 		vertexBuilder.TexCoord2fv( 0, it.tex_coord );
 		vertexBuilder.Color4ubv( it.colour );
-		vertexBuilder.AdvanceVertex();
+	#if RML_VERTEX_FMT & VERTEX_NORMAL
+		vertexBuilder.AdvanceVertexF<VTX_HAVEPOS|VTX_HAVENORMAL|VTX_HAVECOLOR, 1>();
+	#else
+		vertexBuilder.AdvanceVertexF<VTX_HAVEPOS|VTX_HAVECOLOR, 1>();
+	#endif
 	}
 	vertexBuilder.End();
 
-	info->indexBuffer = pRenderContext->CreateStaticIndexBuffer( MATERIAL_INDEX_FORMAT_16BIT, indices.size(), TEXTURE_GROUP_VGUI );
+	info->indexBuffer = m_pRenderContext->CreateStaticIndexBuffer( MATERIAL_INDEX_FORMAT_16BIT, indices.size(), TEXTURE_GROUP_VGUI );
 	CIndexBuilder indexBuilder;
 	indexBuilder.Begin( info->indexBuffer, indices.size(), 0 );
-	//for(int i = indices.size() - 1; i >= 0; --i)
-	for(int i = 0; i < indices.size(); ++i)
-		indexBuilder.FastIndex(indices[i]);
+	for(int it : indices) {
+		indexBuilder.FastIndex(it);
+	}
 	indexBuilder.End();
 
 	return (Rml::CompiledGeometryHandle)info;
@@ -257,18 +320,11 @@ void RmlRenderInterface::RenderGeometry(Rml::CompiledGeometryHandle geometry, Rm
 {
 	auto info = (RmlMesh_t *)geometry;
 
-	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+	Assert( m_bRendering );
 
-	ICallQueue *pCallQueue = pRenderContext->GetCallQueue();
-	if ( pCallQueue )
-	{
-		pCallQueue->QueueCall( this, &RmlRenderInterface::RenderGeometry, geometry, translation, texture_handle );
-		return;
-	}
-
-	pRenderContext->MatrixMode( MATERIAL_MODEL );
-	pRenderContext->PushMatrix();
-	pRenderContext->LoadIdentity();
+	m_pRenderContext->MatrixMode( MATERIAL_MODEL );
+	m_pRenderContext->PushMatrix();
+	m_pRenderContext->LoadIdentity();
 
 	IMaterial *material = NULL;
 
@@ -278,24 +334,22 @@ void RmlRenderInterface::RenderGeometry(Rml::CompiledGeometryHandle geometry, Rm
 		material = m_pMaterial;
 	}
 
-	pRenderContext->Translate(translation.x, translation.y, 0);
-	pRenderContext->Bind( material, NULL );
-	pRenderContext->BindVertexBuffer( 0, info->vertexBuffer, 0, 0, info->vertexCount, VERTEX_POSITION3D|VERTEX_NORMAL|VERTEX_COLOR|VERTEX_TEXCOORD_SIZE(0,2), 1 );
-	pRenderContext->BindIndexBuffer( info->indexBuffer, 0 );
-	pRenderContext->Draw( MATERIAL_TRIANGLES, 0, info->indexCount );
+	m_pRenderContext->Translate(translation.x, translation.y, 0);
+	m_pRenderContext->Bind( material, NULL );
+	m_pRenderContext->BindVertexBuffer( 0, info->vertexBuffer, 0, 0, info->vertexCount, RML_VERTEX_FMT, 1 );
+	m_pRenderContext->BindIndexBuffer( info->indexBuffer, 0 );
+	m_pRenderContext->Draw( MATERIAL_TRIANGLES, 0, info->indexCount );
 
-	pRenderContext->MatrixMode( MATERIAL_MODEL );
-	pRenderContext->PopMatrix();
+	m_pRenderContext->MatrixMode( MATERIAL_MODEL );
+	m_pRenderContext->PopMatrix();
 }
 
 void RmlRenderInterface::ReleaseGeometry(Rml::CompiledGeometryHandle geometry)
 {
 	auto info = (RmlMesh_t *)geometry;
 
-	IMatRenderContext *pRenderContext = g_pMaterialSystem->GetRenderContext();
-
-	pRenderContext->DestroyIndexBuffer(info->indexBuffer);
-	pRenderContext->DestroyVertexBuffer(info->vertexBuffer);
+	m_pRenderContext->DestroyIndexBuffer(info->indexBuffer);
+	m_pRenderContext->DestroyVertexBuffer(info->vertexBuffer);
 
 	delete info;
 }
@@ -308,6 +362,7 @@ Rml::TextureHandle RmlRenderInterface::LoadTexture(Rml::Vector2i& texture_dimens
 
 	texture->texture = NULL;
 
+	//TODO!!!! re-structure this
 	if(source.ends_with(".tga"sv)) {
 		char path[MAX_PATH];
 		g_pFullFileSystem->RelativePathToFullPath(source.c_str(), "GAME", path, sizeof(path));
@@ -366,10 +421,9 @@ Rml::TextureHandle RmlRenderInterface::LoadTexture(Rml::Vector2i& texture_dimens
 		texture->texture = g_pMaterialSystem->FindTexture("error", TEXTURE_GROUP_VGUI);
 	}
 
-	KeyValues *pVMTKeyValues = new KeyValues( "UnlitGeneric" );
-	pVMTKeyValues->SetInt( "$vertexcolor", 1 );
-	pVMTKeyValues->SetInt( "$vertexalpha", 1 );
-	pVMTKeyValues->SetInt( "$ignorez", 1 );
+	texture->texture->IncrementReferenceCount();
+
+	KeyValues *pVMTKeyValues = CreateMaterial();
 	pVMTKeyValues->SetString( "$basetexture", source.c_str() );
 
 	char name[256];
@@ -381,8 +435,6 @@ Rml::TextureHandle RmlRenderInterface::LoadTexture(Rml::Vector2i& texture_dimens
 	texture_dimensions.x = texture->texture->GetActualWidth();
 	texture_dimensions.y = texture->texture->GetActualHeight();
 
-	texture->texture->IncrementReferenceCount();
-
 	Msg("%s\n", source.c_str());
 
 	return (Rml::TextureHandle)texture;
@@ -390,21 +442,20 @@ Rml::TextureHandle RmlRenderInterface::LoadTexture(Rml::Vector2i& texture_dimens
 
 Rml::TextureHandle RmlRenderInterface::GenerateTexture(Rml::Span<const Rml::byte> source, Rml::Vector2i source_dimensions)
 {
+	unsigned int id = HashBlock(source.data(), source.size());
+
 	char name[256];
-	V_sprintf_safe(name, "Rml_texture_%i", HashBlock(source.data(), source.size()));
+	V_sprintf_safe(name, "Rml_texture_%u", id);
 
 	RmlTexture_t *texture = new RmlTexture_t;
 
 	texture->texture = g_pMaterialSystem->CreateNamedTextureFromBitsEx(
 		name, TEXTURE_GROUP_VGUI, source_dimensions.x, source_dimensions.y, 1, IMAGE_FORMAT_RGBA8888, source.size(), (const byte *)source.data(), TEXTUREFLAGS_NOLOD|TEXTUREFLAGS_NOMIP);
 
-	KeyValues *pVMTKeyValues = new KeyValues( "UnlitGeneric" );
-	pVMTKeyValues->SetInt( "$vertexcolor", 1 );
-	pVMTKeyValues->SetInt( "$vertexalpha", 1 );
-	pVMTKeyValues->SetInt( "$ignorez", 1 );
+	KeyValues *pVMTKeyValues = CreateMaterial();
 	pVMTKeyValues->SetString( "$basetexture", name );
 
-	V_sprintf_safe(name, "Rml_material_%i", HashBlock(source.data(), source.size()));
+	V_sprintf_safe(name, "Rml_material_%u", id);
 
 	texture->material = g_pMaterialSystem->CreateMaterial( name, pVMTKeyValues );
 	texture->material->Refresh();
@@ -432,12 +483,28 @@ void RmlRenderInterface::ReleaseTexture(Rml::TextureHandle handle)
 
 void RmlRenderInterface::EnableScissorRegion(bool enable)
 {
+	m_bScissorsEnabled = enable;
 
+	Assert( m_bRendering );
+
+	if(enable && m_rectScissors.Valid()) {
+		m_pRenderContext->SetScissorRect( m_rectScissors.Left(), m_rectScissors.Top(), m_rectScissors.Right(), m_rectScissors.Bottom(), true );
+	} else {
+		m_pRenderContext->SetScissorRect( -1, -1, -1, -1, false );
+	}
 }
 
 void RmlRenderInterface::SetScissorRegion(Rml::Rectanglei region)
 {
+	m_rectScissors = region;
 
+	Assert( m_bRendering );
+
+	if(m_bScissorsEnabled && region.Valid()) {
+		m_pRenderContext->SetScissorRect( m_rectScissors.Left(), m_rectScissors.Top(), m_rectScissors.Right(), m_rectScissors.Bottom(), true );
+	} else {
+		m_pRenderContext->SetScissorRect( -1, -1, -1, -1, false );
+	}
 }
 
 void RmlRenderInterface::EnableClipMask(bool enable)

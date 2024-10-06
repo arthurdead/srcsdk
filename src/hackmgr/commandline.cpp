@@ -30,6 +30,7 @@ CommandLine()->AppendParm("-dev", "");
 CommandLine()->AppendParm("-internalbuild", "");
 CommandLine()->AppendParm("-condebug", "");
 CommandLine()->AppendParm("-conclearlog", "");
+CommandLine()->AppendParm("-vguimessages", "");
 #else
 CommandLine()->RemoveParm("-allowdebug");
 CommandLine()->RemoveParm("-dev");
@@ -37,6 +38,7 @@ CommandLine()->AppendParm("-nodev", "");
 CommandLine()->RemoveParm("-internalbuild");
 CommandLine()->RemoveParm("-profile");
 CommandLine()->AppendParm("-conclearlog", "");
+CommandLine()->RemoveParm("-vguimessages");
 #endif
 
 #ifndef SWDS

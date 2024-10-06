@@ -217,7 +217,10 @@ void CGameConsoleDialog::OnClosedByHittingTilde()
 {
 	if ( !g_GameUI.HasLoadingBackgroundDialog() )
 	{
-		g_GameUI.HideGameUI();
+		if( g_GameUI.IsInLevel() )
+			g_GameUI.HideGameUI();
+		else
+			g_GameUI.ActivateGameUI();
 	}
 	else
 	{

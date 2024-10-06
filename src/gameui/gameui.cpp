@@ -67,6 +67,11 @@ public:
 
 CGameUIConVarAccessor g_GameUIConVarAccessor;
 
+const char *CGameUI::GetName()
+{
+	return "Rml Root";
+}
+
 const char *CGameUI::GetModuleName()
 {
 	return vgui::GetControlsModuleName();
@@ -132,7 +137,9 @@ void CGameUI::Initialize( CreateInterfaceFn appFactory )
 
 	vgui::ipanel()->SetPos( m_VPanel, 0, 0 );
 	vgui::ipanel()->SetSize( m_VPanel, 640, 480 );
-	vgui::ipanel()->SetVisible( m_VPanel, true );
+
+	ActivateGameUI();
+
 	vgui::ipanel()->SetMouseInputEnabled( m_VPanel, false );
 	vgui::ipanel()->SetKeyBoardInputEnabled( m_VPanel, false );
 
@@ -147,13 +154,14 @@ void CGameUI::Initialize( CreateInterfaceFn appFactory )
 		Error( "CGameUI::Initialize() failed to Initialise Rml\n" );
 	}
 
-	Rml::LoadFontFace("LatoLatin-Bold.ttf");
-	Rml::LoadFontFace("LatoLatin-BoldItalic.ttf");
-	Rml::LoadFontFace("LatoLatin-Italic.ttf");
-	Rml::LoadFontFace("LatoLatin-Regular.ttf");
-	Rml::LoadFontFace("NotoEmoji-Regular.ttf");
+	Rml::LoadFontFace("Resource/LatoLatin-Bold.ttf");
+	Rml::LoadFontFace("Resource/LatoLatin-BoldItalic.ttf");
+	Rml::LoadFontFace("Resource/LatoLatin-Italic.ttf");
+	Rml::LoadFontFace("Resource/LatoLatin-Regular.ttf");
+	Rml::LoadFontFace("Resource/NotoEmoji-Regular.ttf");
 
-	//context->SetDensityIndependentPixelRatio( vgui::scheme()->GetProportionalScaledValue( 100 ) / 250.f );
+	RmlContext *test = new RmlContext("test", 0, 0, 1600, 900);
+	test->ctx()->LoadDocument("Resource/gameconsole.rml")->Show();
 }
 
 void CGameUI::PostInit()
@@ -188,6 +196,11 @@ void CGameUI::Shutdown()
 	DisconnectTier1Libraries();
 }
 
+void CGameUI::GetClipRect(int &x0, int &y0, int &x1, int &y1)
+{
+	vgui::ipanel()->GetClipRect(m_VPanel, x0, y0, x1, y1);
+}
+
 void CGameUI::PaintTraverse(bool forceRepaint, bool allowForce)
 {
 	if ( !vgui::ipanel()->IsVisible( m_VPanel ) )
@@ -209,38 +222,49 @@ void CGameUI::PaintTraverse(bool forceRepaint, bool allowForce)
 
 	if ( forceRepaint )
 	{
-		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
-
 		vgui::surface()->PushMakeCurrent( m_VPanel, false );
 
-		int wide, tall;
-		vgui::ipanel()->GetSize(m_VPanel, wide, tall);
-		int x, y;
-		vgui::ipanel()->GetPos(m_VPanel, x, y);
-
-		pRenderContext->Viewport(x, y, wide, tall);
-
-		pRenderContext->MatrixMode( MATERIAL_PROJECTION );
-		pRenderContext->PushMatrix();
-		pRenderContext->LoadIdentity();
-
-		pRenderContext->Rotate(180, 0, 0, 1);
-		pRenderContext->Ortho( 0, 0, wide, tall, -1, 1 );
-
-		pRenderContext->MatrixMode( MATERIAL_VIEW );
-		pRenderContext->PushMatrix();
-		pRenderContext->LoadIdentity();
-
-		//context->Render();
-
-		pRenderContext->MatrixMode( MATERIAL_VIEW );
-		pRenderContext->PopMatrix();
-
-		pRenderContext->MatrixMode( MATERIAL_PROJECTION );
-		pRenderContext->PopMatrix();
+		
 
 		vgui::surface()->PopMakeCurrent( m_VPanel );
 	}
+
+	int wide, tall;
+	vgui::ipanel()->GetSize(m_VPanel, wide, tall);
+	int x, y;
+	vgui::ipanel()->GetPos(m_VPanel, x, y);
+
+	g_RmlRenderInterface.BeginRender(x, y, wide, tall);
+
+	// traverse and paint all our children
+	CUtlVector< vgui::VPANEL > &children = vgui::ipanel()->GetChildren( m_VPanel );
+	int childCount = children.Count();
+	for (int i = 0; i < childCount; i++)
+	{
+		vgui::VPANEL child = children[ i ];
+		bool bVisible = vgui::ipanel()->IsVisible( child );
+
+		if ( vgui::surface()->ShouldPaintChildPanel( child ) )
+		{
+			if ( bVisible )
+			{
+				vgui::ipanel()->PaintTraverse( child, forceRepaint, allowForce );
+			}
+		}
+		else
+		{
+			// Invalidate the child panel so that it gets redrawn
+			vgui::surface()->Invalidate( child );
+
+			// keep traversing the tree, just don't allow anyone to paint after here
+			if ( bVisible )
+			{
+				vgui::ipanel()->PaintTraverse( child, false, false );
+			}
+		}
+	}
+
+	g_RmlRenderInterface.EndRender();
 
 	vgui::surface()->DrawSetAlphaMultiplier( oldAlphaMultiplier );
 
@@ -253,6 +277,30 @@ void CGameUI::Repaint()
 	m_bNeedsRepaint = true;
 }
 
+bool CGameUI::RequestInfo(KeyValues *outputData)
+{
+	if(V_strcmp(outputData->GetName(), "alpha") == 0) {
+		outputData->SetInt("alpha", 255);
+		return true;
+	}
+	return false;
+}
+
+void CGameUI::OnMessage(const KeyValues *params, vgui::VPANEL ifromPanel)
+{
+	
+}
+
+void CGameUI::Think()
+{
+
+}
+
+void CGameUI::OnTick()
+{
+
+}
+
 void CGameUI::RunFrame()
 {
 	int wide, tall;
@@ -260,8 +308,6 @@ void CGameUI::RunFrame()
 	vgui::ipanel()->SetSize(m_VPanel,wide,tall);
 
 	vgui::GetAnimationController()->UpdateAnimations( engine->Time() );
-
-	//context->Update();
 
 	// Run frames
 	g_VModuleLoader.RunFrame();
@@ -271,7 +317,8 @@ void CGameUI::OnGameUIActivated()
 {
 	m_bActivatedUI = true;
 
-	engine->ClientCmd_Unrestricted( "setpause nomsg" );
+	if( IsInLevel() )
+		engine->ClientCmd_Unrestricted( "setpause nomsg" );
 
 	vgui::ipanel()->SetVisible( m_VPanel, true );
 }
@@ -280,7 +327,8 @@ void CGameUI::OnGameUIHidden()
 {
 	m_bActivatedUI = false;
 
-	engine->ClientCmd_Unrestricted( "unpause nomsg" );
+	if( IsInLevel() )
+		engine->ClientCmd_Unrestricted( "unpause nomsg" );
 
 	vgui::ipanel()->SetVisible( m_VPanel, false );
 }

@@ -195,6 +195,9 @@ public:
 
 	void Initialize();
 
+	void BeginRender(int x, int y, int wide, int tall);
+	void EndRender();
+
 	/**
 	    @name Required functions for basic rendering.
 	 */
@@ -308,6 +311,8 @@ public:
 	virtual void ReleaseShader(Rml::CompiledShaderHandle shader);
 
 private:
+	static KeyValues *CreateMaterial();
+
 	struct RmlMesh_t
 	{
 		IIndexBuffer *indexBuffer;
@@ -323,6 +328,13 @@ private:
 	};
 
 	IMaterial *m_pMaterial;
+
+	bool m_bRendering;
+
+	Rml::Rectanglei m_rectScissors;
+	bool m_bScissorsEnabled;
+
+	IMatRenderContext *m_pRenderContext;
 };
 
 extern RmlRenderInterface g_RmlRenderInterface;

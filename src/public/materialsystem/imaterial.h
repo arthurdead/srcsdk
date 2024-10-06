@@ -74,15 +74,7 @@ class Vector;
 #define VERTEX_BONEWEIGHT( _n )				((_n) << VERTEX_BONE_WEIGHT_BIT)
 #define VERTEX_USERDATA_SIZE( _n )			((_n) << USER_DATA_SIZE_BIT)
 #define VERTEX_TEXCOORD_MASK( _coord )		(( 0x7ULL ) << ( TEX_COORD_SIZE_BIT + 3 * (_coord) ))
-
-inline VertexFormat_t VERTEX_TEXCOORD_SIZE( int nIndex, int nNumCoords )
-{
-	uint64 n64=nNumCoords;
-	uint64 nShift=TEX_COORD_SIZE_BIT + (3*nIndex);
-	return n64 << nShift;
-}
-
-
+#define VERTEX_TEXCOORD_SIZE(nIndex, nNumCoords) (nNumCoords << (TEX_COORD_SIZE_BIT + (3*(nIndex))))
 
 //-----------------------------------------------------------------------------
 // Gets at various vertex format info...

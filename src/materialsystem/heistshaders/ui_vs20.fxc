@@ -1,0 +1,26 @@
+struct VS_INPUT
+{
+	float3 pos : POSITION;
+	float3 texCoord : TEXCOORD;
+	float4 color : COLOR;
+};
+
+struct VS_OUTPUT
+{
+	float4 pos : POSITION;
+	float3 texCoord : TEXCOORD;
+	float4 color : COLOR;
+};
+
+const float4x4 cModelViewProj : register(c4);
+
+VS_OUTPUT main( const VS_INPUT input )
+{
+	VS_OUTPUT output = ( VS_OUTPUT )0;
+
+	output.pos.xyzw = mul( float4( input.pos.xyz, 1.0f ), cModelViewProj );  
+	output.texCoord = input.texCoord;
+	output.color.rgba = input.color.rgba;
+
+	return output;
+}

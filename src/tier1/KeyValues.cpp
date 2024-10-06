@@ -963,6 +963,11 @@ KeyValues *KeyValues::FindKey(int keySymbol) const
 //			Set bCreate to true to create the key if it doesn't already exist 
 //			(which ensures a valid pointer will be returned)
 //-----------------------------------------------------------------------------
+KeyValues *KeyValues::FindKey(const char *keyName) const
+{
+	return const_cast<KeyValues *>(this)->FindKey(keyName, false);
+}
+
 KeyValues *KeyValues::FindKey(const char *keyName, bool bCreate)
 {
 	// return the current key if a NULL subkey is asked for
@@ -1270,9 +1275,9 @@ KeyValues* KeyValues::GetNextValue()
 // Purpose: Get the integer value of a keyName. Default value is returned
 //			if the keyName can't be found.
 //-----------------------------------------------------------------------------
-int KeyValues::GetInt( const char *keyName, int defaultValue )
+int KeyValues::GetInt( const char *keyName, int defaultValue ) const
 {
-	KeyValues *dat = FindKey( keyName, false );
+	KeyValues *dat = FindKey( keyName );
 	if ( dat )
 	{
 		switch ( dat->m_iDataType )
@@ -1300,9 +1305,9 @@ int KeyValues::GetInt( const char *keyName, int defaultValue )
 // Purpose: Get the integer value of a keyName. Default value is returned
 //			if the keyName can't be found.
 //-----------------------------------------------------------------------------
-uint64 KeyValues::GetUint64( const char *keyName, uint64 defaultValue )
+uint64 KeyValues::GetUint64( const char *keyName, uint64 defaultValue ) const
 {
-	KeyValues *dat = FindKey( keyName, false );
+	KeyValues *dat = FindKey( keyName );
 	if ( dat )
 	{
 		switch ( dat->m_iDataType )
@@ -1328,9 +1333,9 @@ uint64 KeyValues::GetUint64( const char *keyName, uint64 defaultValue )
 // Purpose: Get the pointer value of a keyName. Default value is returned
 //			if the keyName can't be found.
 //-----------------------------------------------------------------------------
-void *KeyValues::GetPtr( const char *keyName, void *defaultValue )
+void *KeyValues::GetPtr( const char *keyName, void *defaultValue ) const
 {
-	KeyValues *dat = FindKey( keyName, false );
+	KeyValues *dat = FindKey( keyName );
 	if ( dat )
 	{
 		switch ( dat->m_iDataType )
@@ -1356,7 +1361,12 @@ void *KeyValues::GetPtr( const char *keyName, void *defaultValue )
 //-----------------------------------------------------------------------------
 float KeyValues::GetFloat( const char *keyName, float defaultValue )
 {
-	KeyValues *dat = FindKey( keyName, false );
+	return static_cast<const KeyValues *>(this)->GetFloat(keyName, defaultValue);
+}
+
+float KeyValues::GetFloat( const char *keyName, float defaultValue ) const
+{
+	KeyValues *dat = FindKey( keyName );
 	if ( dat )
 	{
 		switch ( dat->m_iDataType )
@@ -1388,9 +1398,14 @@ float KeyValues::GetFloat( const char *keyName, float defaultValue )
 // Purpose: Get the string pointer of a keyName. Default value is returned
 //			if the keyName can't be found.
 //-----------------------------------------------------------------------------
+const char *KeyValues::GetString( const char *keyName, const char *defaultValue ) const
+{
+	return const_cast<KeyValues *>(this)->GetString(keyName, defaultValue);
+}
+
 const char *KeyValues::GetString( const char *keyName, const char *defaultValue )
 {
-	KeyValues *dat = FindKey( keyName, false );
+	KeyValues *dat = FindKey( keyName );
 	if ( dat )
 	{
 		// convert the data to string form then return it
@@ -1441,10 +1456,14 @@ const char *KeyValues::GetString( const char *keyName, const char *defaultValue 
 	return defaultValue;
 }
 
+const wchar_t *KeyValues::GetWString( const char *keyName, const wchar_t *defaultValue) const
+{
+	return const_cast<KeyValues *>(this)->GetWString(keyName, defaultValue);
+}
 
 const wchar_t *KeyValues::GetWString( const char *keyName, const wchar_t *defaultValue)
 {
-	KeyValues *dat = FindKey( keyName, false );
+	KeyValues *dat = FindKey( keyName );
 	if ( dat )
 	{
 		wchar_t wbuf[64];
@@ -1500,9 +1519,10 @@ const wchar_t *KeyValues::GetWString( const char *keyName, const wchar_t *defaul
 //-----------------------------------------------------------------------------
 // Purpose: Get a bool interpretation of the key.
 //-----------------------------------------------------------------------------
-bool KeyValues::GetBool( const char *keyName, bool defaultValue, bool* optGotDefault )
+bool KeyValues::GetBool( const char *keyName, bool defaultValue, bool* optGotDefault ) const
 {
-	if ( FindKey( keyName ) )
+	KeyValues *dat = FindKey( keyName );
+	if ( dat )
     {
         if ( optGotDefault )
             (*optGotDefault) = false;
@@ -1518,10 +1538,10 @@ bool KeyValues::GetBool( const char *keyName, bool defaultValue, bool* optGotDef
 //-----------------------------------------------------------------------------
 // Purpose: Gets a color
 //-----------------------------------------------------------------------------
-Color KeyValues::GetColor( const char *keyName )
+Color KeyValues::GetColor( const char *keyName ) const
 {
 	Color color(0, 0, 0, 0);
-	KeyValues *dat = FindKey( keyName, false );
+	KeyValues *dat = FindKey( keyName );
 	if ( dat )
 	{
 		if ( dat->m_iDataType == TYPE_COLOR )
@@ -1977,9 +1997,9 @@ KeyValues *KeyValues::MakeCopy( bool copySiblings ) const
 //-----------------------------------------------------------------------------
 // Purpose: Check if a keyName has no value assigned to it.
 //-----------------------------------------------------------------------------
-bool KeyValues::IsEmpty(const char *keyName)
+bool KeyValues::IsEmpty(const char *keyName) const
 {
-	KeyValues *dat = FindKey(keyName, false);
+	KeyValues *dat = FindKey(keyName);
 	if (!dat)
 		return true;
 

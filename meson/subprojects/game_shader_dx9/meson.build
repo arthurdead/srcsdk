@@ -38,6 +38,48 @@ shader = custom_target('shader',
 )
 '''
 
+ui_ps20 = custom_target('ui_ps20',
+	input: files(
+		join_paths(gameshaders_src_dir,'ui_ps20b.fxc')
+	),
+	command: [
+		compileshader_script,
+		'@INPUT@',
+		gameshaders_src_dir,
+		'@OUTDIR@'
+	],
+	output: [
+		'@BASENAME@.inc',
+		'@BASENAME@.vcs',
+	],
+	install: true,
+	install_dir: [
+		false,
+		join_paths(game_dir,'game','shaders','fxc'),
+	]
+)
+
+ui_vs20 = custom_target('ui_vs20',
+	input: files(
+		join_paths(gameshaders_src_dir,'ui_vs20.fxc')
+	),
+	command: [
+		compileshader_script,
+		'@INPUT@',
+		gameshaders_src_dir,
+		'@OUTDIR@'
+	],
+	output: [
+		'@BASENAME@.inc',
+		'@BASENAME@.vcs',
+	],
+	install: true,
+	install_dir: [
+		false,
+		join_paths(game_dir,'game','shaders','fxc'),
+	]
+)
+
 if build_client
 	shared_library('game_shader_dx9',name_prefix:'',
 		cpp_args: [
@@ -46,11 +88,15 @@ if build_client
 		],
 		sources: [
 			#add shaders targets here
+			ui_ps20,
+			ui_vs20,
 		] + files(
 			#add shader cpp sources here
+			join_paths(gameshaders_src_dir,'ui.cpp'),
 		),
 		include_directories: include_directories(
-			stdshaders_src_dir
+			gameshaders_src_dir,
+			stdshaders_src_dir,
 		),
 		dependencies: [
 			game_shader_base.get_variable('game_shader_base_dep')
