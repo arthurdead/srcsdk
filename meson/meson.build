@@ -22,6 +22,7 @@ if build_libs
 	subproject('recastnavigation_game')
 	#subproject('vphysics')
 	subproject('matchmaking')
+	subproject('shadercompiler')
 endif
 if build_client or build_listen_server
 	subproject('game_loopback')

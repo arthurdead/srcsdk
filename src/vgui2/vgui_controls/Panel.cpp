@@ -5037,7 +5037,9 @@ void PreparePanelMessageMap(PanelMessageMap *panelMap)
 	}
 }
 
-
+void Panel::OnMovedPopupToFront()
+{
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Handles a message

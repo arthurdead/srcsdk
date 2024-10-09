@@ -14,6 +14,7 @@
 #include "tier1/generichash.h"
 #include "tier1/callqueue.h"
 #include "bitmap/tgaloader.h"
+#include "rmlcontext.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -23,6 +24,7 @@ DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_Rml, "Rml" );
 RmlFileInterface g_RmlFileInterface;
 RmlSystemInterface g_RmlSystemInterface;
 RmlRenderInterface g_RmlRenderInterface;
+RmlFactory g_RmlFactory;
 
 double RmlSystemInterface::GetElapsedTime()
 {
@@ -207,10 +209,12 @@ Rml::FontFaceHandle RmlFontInterface::GetFontFaceHandle(const Rml::String& famil
 
 RmlRenderInterface::RmlRenderInterface()
 {
-	m_pMaterial = NULL;
+	m_pErrorTexture = NULL;
+	m_pDefaultMaterial = NULL;
 	m_rectScissors.MakeInvalid();
 	m_bScissorsEnabled = false;
 	m_bRendering = false;
+	m_pRenderContext = NULL;
 }
 
 #if 0
@@ -221,7 +225,7 @@ RmlRenderInterface::RmlRenderInterface()
 #define RML_VERTEX_FMT (VERTEX_POSITION3D|VERTEX_NORMAL|VERTEX_COLOR|VERTEX_TEXCOORD_SIZE(0,2))
 #endif
 
-KeyValues *RmlRenderInterface::CreateMaterial()
+KeyValues *RmlRenderInterface::CreateMaterialVMT()
 {
 	KeyValues *pVMTKeyValues = new KeyValues( RML_SHADER );
 	pVMTKeyValues->SetInt( "$vertexcolor", 1 );
@@ -237,19 +241,34 @@ void RmlRenderInterface::Initialize()
 	m_pRenderContext = g_pMaterialSystem->GetRenderContext();
 	m_pRenderContext->AddRef();
 
-	KeyValues *pVMTKeyValues = CreateMaterial();
-	pVMTKeyValues->SetString( "$basetexture", "error" );
-	m_pMaterial = g_pMaterialSystem->CreateMaterial( "Rml_material_default", pVMTKeyValues );
-	m_pMaterial->Refresh();
+	m_pErrorTexture = g_pMaterialSystem->FindTexture("error", TEXTURE_GROUP_VGUI);
+	if(!m_pErrorTexture) {
+		Error("failed to get error texture\n");
+	}
+	m_pErrorTexture->IncrementReferenceCount();
+
+	KeyValues *pVMTKeyValues = CreateMaterialVMT();
+	pVMTKeyValues->SetString( "$basetexture", "white" );
+	m_pDefaultMaterial = g_pMaterialSystem->CreateMaterial( "Rml_material_default", pVMTKeyValues );
+	if(!m_pDefaultMaterial) {
+		Error("failed to get create defaul rml material\n");
+	}
+	m_pDefaultMaterial->Refresh();
+	m_pDefaultMaterial->IncrementReferenceCount();
 }
 
 void RmlRenderInterface::BeginRender(int x, int y, int wide, int tall)
 {
 	m_pRenderContext->BeginRender();
-
 	m_bRendering = true;
 
+	m_pRenderContext->CullMode( MATERIAL_CULLMODE_CW );
+
 	m_pRenderContext->Viewport(x, y, wide, tall);
+
+	m_pRenderContext->MatrixMode( MATERIAL_VIEW );
+	m_pRenderContext->PushMatrix();
+	m_pRenderContext->LoadIdentity();
 
 	m_pRenderContext->MatrixMode( MATERIAL_PROJECTION );
 	m_pRenderContext->PushMatrix();
@@ -258,25 +277,29 @@ void RmlRenderInterface::BeginRender(int x, int y, int wide, int tall)
 	m_pRenderContext->Scale( 1, -1, 1 );
 	m_pRenderContext->Ortho( 0, 0, wide, tall, -1, 1 );
 
-	m_pRenderContext->MatrixMode( MATERIAL_VIEW );
+	m_pRenderContext->MatrixMode( MATERIAL_MODEL );
 	m_pRenderContext->PushMatrix();
 	m_pRenderContext->LoadIdentity();
 }
 
 void RmlRenderInterface::EndRender()
 {
-	m_pRenderContext->SetScissorRect( -1, -1, -1, -1, false );
-	m_bScissorsEnabled = false;
-	m_rectScissors.MakeInvalid();
-
-	m_pRenderContext->MatrixMode( MATERIAL_VIEW );
+	m_pRenderContext->MatrixMode( MATERIAL_MODEL );
 	m_pRenderContext->PopMatrix();
 
 	m_pRenderContext->MatrixMode( MATERIAL_PROJECTION );
 	m_pRenderContext->PopMatrix();
 
-	m_pRenderContext->EndRender();
+	m_pRenderContext->MatrixMode( MATERIAL_VIEW );
+	m_pRenderContext->PopMatrix();
 
+	m_pRenderContext->SetScissorRect( -1, -1, -1, -1, false );
+	m_bScissorsEnabled = false;
+	m_rectScissors.MakeInvalid();
+
+	m_pRenderContext->CullMode( MATERIAL_CULLMODE_CCW );
+
+	m_pRenderContext->EndRender();
 	m_bRendering = false;
 }
 
@@ -318,34 +341,35 @@ Rml::CompiledGeometryHandle RmlRenderInterface::CompileGeometry(Rml::Span<const 
 
 void RmlRenderInterface::RenderGeometry(Rml::CompiledGeometryHandle geometry, Rml::Vector2f translation, Rml::TextureHandle texture_handle)
 {
+	if(geometry == (Rml::CompiledGeometryHandle)0)
+		return;
+
 	auto info = (RmlMesh_t *)geometry;
 
 	Assert( m_bRendering );
-
-	m_pRenderContext->MatrixMode( MATERIAL_MODEL );
-	m_pRenderContext->PushMatrix();
-	m_pRenderContext->LoadIdentity();
 
 	IMaterial *material = NULL;
 
 	if(texture_handle != (Rml::TextureHandle)0) {
 		material = ((RmlTexture_t *)texture_handle)->material;
 	} else {
-		material = m_pMaterial;
+		material = m_pDefaultMaterial;
 	}
 
+	m_pRenderContext->MatrixMode( MATERIAL_MODEL );
 	m_pRenderContext->Translate(translation.x, translation.y, 0);
+
 	m_pRenderContext->Bind( material, NULL );
 	m_pRenderContext->BindVertexBuffer( 0, info->vertexBuffer, 0, 0, info->vertexCount, RML_VERTEX_FMT, 1 );
 	m_pRenderContext->BindIndexBuffer( info->indexBuffer, 0 );
 	m_pRenderContext->Draw( MATERIAL_TRIANGLES, 0, info->indexCount );
-
-	m_pRenderContext->MatrixMode( MATERIAL_MODEL );
-	m_pRenderContext->PopMatrix();
 }
 
 void RmlRenderInterface::ReleaseGeometry(Rml::CompiledGeometryHandle geometry)
 {
+	if(geometry == (Rml::CompiledGeometryHandle)0)
+		return;
+
 	auto info = (RmlMesh_t *)geometry;
 
 	m_pRenderContext->DestroyIndexBuffer(info->indexBuffer);
@@ -418,24 +442,32 @@ Rml::TextureHandle RmlRenderInterface::LoadTexture(Rml::Vector2i& texture_dimens
 	}
 
 	if(!texture->texture) {
-		texture->texture = g_pMaterialSystem->FindTexture("error", TEXTURE_GROUP_VGUI);
+		texture->texture = m_pErrorTexture;
 	}
 
 	texture->texture->IncrementReferenceCount();
 
-	KeyValues *pVMTKeyValues = CreateMaterial();
-	pVMTKeyValues->SetString( "$basetexture", source.c_str() );
+	KeyValues *pVMTKeyValues = CreateMaterialVMT();
+	pVMTKeyValues->SetString( "$basetexture", texture->texture->GetName() );
 
-	char name[256];
-	V_sprintf_safe(name, "Rml_material_%i", HashBlock(source.data(), source.size()));
+	char name[MAX_PATH];
+	V_strncpy(name, "Rml_", sizeof(name));
+	V_strncat(name, source.c_str(), sizeof(name));
+	V_StripExtension(source.c_str(), name, sizeof(name));
 
 	texture->material = g_pMaterialSystem->CreateMaterial( name, pVMTKeyValues );
+	if(!texture->material) {
+		texture->texture->DecrementReferenceCount();
+		texture->texture->DeleteIfUnreferenced();
+		delete texture;
+		return (Rml::TextureHandle)0;
+	}
+
 	texture->material->Refresh();
+	texture->material->IncrementReferenceCount();
 
 	texture_dimensions.x = texture->texture->GetActualWidth();
 	texture_dimensions.y = texture->texture->GetActualHeight();
-
-	Msg("%s\n", source.c_str());
 
 	return (Rml::TextureHandle)texture;
 }
@@ -444,7 +476,7 @@ Rml::TextureHandle RmlRenderInterface::GenerateTexture(Rml::Span<const Rml::byte
 {
 	unsigned int id = HashBlock(source.data(), source.size());
 
-	char name[256];
+	char name[MAX_PATH];
 	V_sprintf_safe(name, "Rml_texture_%u", id);
 
 	RmlTexture_t *texture = new RmlTexture_t;
@@ -452,15 +484,27 @@ Rml::TextureHandle RmlRenderInterface::GenerateTexture(Rml::Span<const Rml::byte
 	texture->texture = g_pMaterialSystem->CreateNamedTextureFromBitsEx(
 		name, TEXTURE_GROUP_VGUI, source_dimensions.x, source_dimensions.y, 1, IMAGE_FORMAT_RGBA8888, source.size(), (const byte *)source.data(), TEXTUREFLAGS_NOLOD|TEXTUREFLAGS_NOMIP);
 
-	KeyValues *pVMTKeyValues = CreateMaterial();
-	pVMTKeyValues->SetString( "$basetexture", name );
+	if(!texture->texture) {
+		texture->texture = m_pErrorTexture;
+	}
+
+	texture->texture->IncrementReferenceCount();
+
+	KeyValues *pVMTKeyValues = CreateMaterialVMT();
+	pVMTKeyValues->SetString( "$basetexture", texture->texture->GetName() );
 
 	V_sprintf_safe(name, "Rml_material_%u", id);
 
 	texture->material = g_pMaterialSystem->CreateMaterial( name, pVMTKeyValues );
-	texture->material->Refresh();
+	if(!texture->material) {
+		texture->texture->DecrementReferenceCount();
+		texture->texture->DeleteIfUnreferenced();
+		delete texture;
+		return (Rml::TextureHandle)0;
+	}
 
-	Msg("%s\n", texture->texture->GetName());
+	texture->material->Refresh();
+	texture->material->IncrementReferenceCount();
 
 	return (Rml::TextureHandle)texture;
 }
@@ -570,4 +614,14 @@ void RmlRenderInterface::RenderShader(Rml::CompiledShaderHandle shader, Rml::Com
 void RmlRenderInterface::ReleaseShader(Rml::CompiledShaderHandle shader)
 {
 
+}
+
+Rml::ContextPtr RmlFactory::InstanceContext(const Rml::String& name, Rml::RenderManager* render_manager, Rml::TextInputHandler* text_input_handler)
+{
+	return Rml::ContextPtr(new RmlContext(name, render_manager, text_input_handler));
+}
+
+void RmlFactory::ReleaseContext(Rml::Context* context)
+{
+	delete context;
 }

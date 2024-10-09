@@ -106,14 +106,29 @@ public:
 		Node_t node;
 		node.key = key;
 		node.elem = insert;
-		return m_Tree.Insert( node );
+		return m_Tree.Insert( Move(node) );
+	}
+
+	IndexType_t  Insert( KeyType_t &&key, ElemType_t &&insert )
+	{
+		Node_t node;
+		node.key = Move(key);
+		node.elem = Move(insert);
+		return m_Tree.Insert( Move(node) );
 	}
 	
 	IndexType_t  Insert( const KeyType_t &key )
 	{
 		Node_t node;
 		node.key = key;
-		return m_Tree.Insert( node );
+		return m_Tree.Insert( Move(node) );
+	}
+
+	IndexType_t  Insert( KeyType_t &&key )
+	{
+		Node_t node;
+		node.key = Move(key);
+		return m_Tree.Insert( Move(node) );
 	}
 
 	// Find method
@@ -180,6 +195,12 @@ public:
 		Node_t( const Node_t &from )
 		  : key( from.key ),
 			elem( from.elem )
+		{
+		}
+
+		Node_t( Node_t &&from )
+		  : key( Move(from.key) ),
+			elem( Move(from.elem) )
 		{
 		}
 

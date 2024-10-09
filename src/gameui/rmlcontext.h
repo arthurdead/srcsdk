@@ -4,21 +4,18 @@
 #pragma once
 
 #include <vgui/IClientPanel.h>
+#include <tier1/utlvector.h>
 
 #pragma push_macro("Assert")
 #undef Assert
 #include <RmlUi/Core/Context.h>
 #pragma pop_macro("Assert")
 
-class RmlContext : public vgui::IClientPanel
+class RmlContext : public Rml::Context, public vgui::IClientPanel
 {
 public:
-	RmlContext(const char *name, int width, int height);
-	RmlContext(const char *name, int x, int y, int width, int height);
+	RmlContext(const Rml::String& name, Rml::RenderManager* render_manager, Rml::TextInputHandler* text_input_handler);
 	~RmlContext();
-
-	Rml::Context *ctx()
-	{ return context; }
 
 	virtual vgui::VPANEL GetVPanel() { return m_VPanel; }
 
@@ -67,9 +64,6 @@ public:
 	virtual void OnTick();
 
 private:
-	void UpdateNow();
-
-	Rml::Context *context;
 	vgui::VPANEL m_VPanel;
 	bool m_bNeedsRepaint;
 };

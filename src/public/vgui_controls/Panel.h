@@ -798,6 +798,8 @@ private:
 	MESSAGE_FUNC( InternalMove, "Move" );
 	virtual void InternalFocusChanged(bool lost);	// called when the focus gets changed
 
+	MESSAGE_FUNC( OnMovedPopupToFront, "OnMovedPopupToFront" );
+
 	void PreparePanelMap( PanelMap_t *panelMap );
 
 	bool InternalRequestInfo( PanelAnimationMap *map, KeyValues *outputData );

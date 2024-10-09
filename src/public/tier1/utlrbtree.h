@@ -207,6 +207,7 @@ public:
 
 	// Insert method (inserts in order)
 	I  Insert( T const &insert );
+	I  Insert( T &&insert );
 	void Insert( const T *pArray, int nItems );
 	I  InsertIfNotFound( T const &insert );
 
@@ -1509,6 +1510,17 @@ I CUtlRBTree<T, I, L, M>::Insert( T const &insert )
 	return newNode;
 }
 
+template < class T, class I, typename L, class M > 
+I CUtlRBTree<T, I, L, M>::Insert( T &&insert )
+{
+	// use copy constructor to copy it in
+	I parent;
+	bool leftchild;
+	FindInsertionPosition( insert, parent, leftchild );
+	I newNode = InsertAt( parent, leftchild );
+	MoveConstruct( &Element( newNode ), Move(insert) );
+	return newNode;
+}
 
 template < class T, class I, typename L, class M > 
 void CUtlRBTree<T, I, L, M>::Insert( const T *pArray, int nItems )

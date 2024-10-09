@@ -107,7 +107,7 @@ public:
 	// auto-deletion
 	virtual bool IsAutoDeleteSet() { return false; }
 	// deletes this
-	virtual void DeletePanel() {}
+	virtual void DeletePanel();
 
 	// interfaces
 	virtual void *QueryInterface(vgui::EInterfaceID id);
@@ -131,6 +131,9 @@ public:
 	// Toggle allowing the engine to hide the game UI with the escape key
 	void PreventEngineHideGameUI();
 	void AllowEngineHideGameUI();
+
+	void PreventEngineShowGameUI();
+	void AllowEngineShowGameUI();
 
 	// state
 	bool IsInLevel();

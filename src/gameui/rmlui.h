@@ -11,6 +11,7 @@
 #include <RmlUi/Core/SystemInterface.h>
 #include <RmlUi/Core/FontEngineInterface.h>
 #include <RmlUi/Core/RenderInterface.h>
+#include <RmlUi/Core/ContextInstancer.h>
 #pragma pop_macro("Assert")
 
 #if 0
@@ -311,7 +312,7 @@ public:
 	virtual void ReleaseShader(Rml::CompiledShaderHandle shader);
 
 private:
-	static KeyValues *CreateMaterial();
+	static KeyValues *CreateMaterialVMT();
 
 	struct RmlMesh_t
 	{
@@ -327,7 +328,8 @@ private:
 		IMaterial *material;
 	};
 
-	IMaterial *m_pMaterial;
+	ITexture *m_pErrorTexture;
+	IMaterial *m_pDefaultMaterial;
 
 	bool m_bRendering;
 
@@ -338,5 +340,24 @@ private:
 };
 
 extern RmlRenderInterface g_RmlRenderInterface;
+
+class RmlFactory : public Rml::ContextInstancer
+{
+public:
+	/// Instances a context.
+	/// @param[in] name Name of this context.
+	/// @param[in] render_manager The render manager used for this context.
+	/// @param[in] text_input_handler The text input handler used for this context.
+	/// @return The instanced context.
+	virtual Rml::ContextPtr InstanceContext(const Rml::String& name, Rml::RenderManager* render_manager, Rml::TextInputHandler* text_input_handler);
+
+	/// Releases a context previously created by this context.
+	/// @param[in] context The context to release.
+	virtual void ReleaseContext(Rml::Context* context);
+
+	virtual void Release() {}
+};
+
+extern RmlFactory g_RmlFactory;
 
 #endif

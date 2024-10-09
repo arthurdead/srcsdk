@@ -1,6 +1,7 @@
 #include <RmlUi/Core/Core.h>
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/ElementDocument.h>
+#include <RmlUi/Core/Factory.h>
 #include "gameui.h"
 #include "tier3/tier3.h"
 #include "vgui/IPanel.h"
@@ -138,6 +139,7 @@ void CGameUI::Initialize( CreateInterfaceFn appFactory )
 	vgui::ipanel()->SetPos( m_VPanel, 0, 0 );
 	vgui::ipanel()->SetSize( m_VPanel, 640, 480 );
 
+	AllowEngineShowGameUI();
 	ActivateGameUI();
 
 	vgui::ipanel()->SetMouseInputEnabled( m_VPanel, false );
@@ -149,6 +151,8 @@ void CGameUI::Initialize( CreateInterfaceFn appFactory )
 	Rml::SetSystemInterface(&g_RmlSystemInterface);
 	Rml::SetFileInterface(&g_RmlFileInterface);
 
+	Rml::Factory::RegisterContextInstancer(&g_RmlFactory);
+
 	if(!Rml::Initialise())
 	{
 		Error( "CGameUI::Initialize() failed to Initialise Rml\n" );
@@ -159,9 +163,6 @@ void CGameUI::Initialize( CreateInterfaceFn appFactory )
 	Rml::LoadFontFace("Resource/LatoLatin-Italic.ttf");
 	Rml::LoadFontFace("Resource/LatoLatin-Regular.ttf");
 	Rml::LoadFontFace("Resource/NotoEmoji-Regular.ttf");
-
-	RmlContext *test = new RmlContext("test", 0, 0, 1600, 900);
-	test->ctx()->LoadDocument("Resource/gameconsole.rml")->Show();
 }
 
 void CGameUI::PostInit()
@@ -286,9 +287,30 @@ bool CGameUI::RequestInfo(KeyValues *outputData)
 	return false;
 }
 
+void CGameUI::DeletePanel()
+{
+	if(m_VPanel != vgui::INVALID_VPANEL) {
+		vgui::ivgui()->FreePanel(m_VPanel);
+		m_VPanel = vgui::INVALID_VPANEL;
+	}
+}
+
 void CGameUI::OnMessage(const KeyValues *params, vgui::VPANEL ifromPanel)
 {
-	
+	const char *title = params->GetName();
+	if(V_strcmp(title, "Delete") == 0) {
+		DeletePanel();
+	} else {
+		static int s_bDebugMessages = -1;
+		if ( s_bDebugMessages == -1 )
+		{
+			s_bDebugMessages = CommandLine()->FindParm( "-vguimessages" ) ? 1 : 0;
+		}
+		if ( s_bDebugMessages == 1 )
+		{
+			vgui::ivgui()->DPrintf( "Message '%s' not handled by panel '%s'\n", params->GetName(), GetName() );
+		}
+	}
 }
 
 void CGameUI::Think()
@@ -503,6 +525,16 @@ void CGameUI::PreventEngineHideGameUI()
 void CGameUI::AllowEngineHideGameUI()
 {
 	engine->ExecuteClientCmd("gameui_allowescape");
+}
+
+void CGameUI::PreventEngineShowGameUI()
+{
+	engine->ExecuteClientCmd("gameui_preventescapetoshow");
+}
+
+void CGameUI::AllowEngineShowGameUI()
+{
+	engine->ExecuteClientCmd("gameui_allowescapetoshow");
 }
 
 //-----------------------------------------------------------------------------

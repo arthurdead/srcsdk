@@ -55,6 +55,7 @@ public:
 	
 	// Copy the array.
 	CUtlVector<T, A>& operator=( const CUtlVector<T, A> &other );
+	CUtlVector<T, A>& operator=( CUtlVector<T, A> &&other );
 
 	// element access
 	T& operator[]( int i );
@@ -591,6 +592,14 @@ inline CUtlVector<T, A>& CUtlVector<T, A>::operator=( const CUtlVector<T, A> &ot
 	{
 		(*this)[ i ] = other[ i ];
 	}
+	return *this;
+}
+
+template< typename T, class A >
+inline CUtlVector<T, A>& CUtlVector<T, A>::operator=( CUtlVector<T, A> &&other )
+{
+	m_Size = 0;
+	Swap( other );
 	return *this;
 }
 

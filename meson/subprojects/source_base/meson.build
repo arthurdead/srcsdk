@@ -135,6 +135,16 @@ source_shared_lib_dep_base = declare_dependency(
 	)
 )
 
+source_executable_dep_base = declare_dependency(
+	dependencies: [
+		source_dep
+	],
+	sources: files(
+		join_paths(common_dir,'module_name.cpp'),
+		join_paths(common_dir,'debug_dll_check.cpp'),
+	)
+)
+
 source_linux_dep = declare_dependency(
 	compile_args: [
 		'-DGNUC',
@@ -185,6 +195,13 @@ source_static_lib_dep = declare_dependency(
 source_shared_lib_dep = declare_dependency(
 	dependencies: [
 		source_shared_lib_dep_base,
+		os_dep
+	],
+)
+
+source_executable_dep = declare_dependency(
+	dependencies: [
+		source_executable_dep_base,
 		os_dep
 	],
 )

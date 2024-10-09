@@ -1182,6 +1182,37 @@ PLATFORM_INTERFACE bool Is64BitOS();
 // Methods to invoke the constructor, copy constructor, and destructor
 //-----------------------------------------------------------------------------
 
+namespace valve_type_traits
+{
+	template <typename T>
+	struct rem_ref;
+
+	template <typename T>
+	struct rem_ref
+	{
+		using type = T;
+	};
+
+	template <typename T>
+	struct rem_ref<T &>
+	{
+		using type = T;
+	};
+
+	template <typename T>
+	struct rem_ref<T &&>
+	{
+		using type = T;
+	};
+
+	template <typename T>
+	using rem_ref_t = typename rem_ref<T>::type;
+}
+
+template <typename T>
+inline valve_type_traits::rem_ref_t<T> &&Move(T &&x)
+{ return static_cast<valve_type_traits::rem_ref_t<T> &&>(x); }
+
 template <class T>
 inline T* Construct( T* pMemory )
 {
@@ -1224,6 +1255,12 @@ inline void ConstructOneArg( T* pMemory, P const& arg)
 	::new( pMemory ) T(arg);
 }
 
+template <class T, class P>
+inline void ConstructOneArg( T* pMemory, P && arg)
+{
+	::new( pMemory ) T(Move(arg));
+}
+
 template <class T, class P1, class P2 >
 inline void ConstructTwoArg( T* pMemory, P1 const& arg1, P2 const& arg2)
 {
@@ -1240,6 +1277,12 @@ template <class T>
 inline T* CopyConstruct( T* pMemory, T const& src )
 {
 	return ::new( pMemory ) T(src);
+}
+
+template <class T>
+inline T* MoveConstruct( T* pMemory, T && src )
+{
+	return ::new( pMemory ) T(Move(src));
 }
 
 template <class T>

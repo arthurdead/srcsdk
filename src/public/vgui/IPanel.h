@@ -13,6 +13,7 @@
 #include <vgui/VGUI.h>
 #include "tier1/interface.h"
 #include "tier1/utlvector.h"
+#include "hackmgr/hackmgr.h"
 
 #ifdef SendMessage
 #undef SendMessage
@@ -127,6 +128,9 @@ public:
 	// sibling pins
 	virtual void SetSiblingPin(VPANEL vguiPanel, VPANEL newSibling, byte iMyCornerToPin = 0, byte iSiblingCornerToPinTo = 0 ) = 0;
 
+	HACKMGR_CLASS_API vgui::IClientPanel *Client(vgui::VPANEL vguiPanel);
+
+	HACKMGR_CLASS_API const char *GetModuleName(vgui::VPANEL vguiPanel);
 };
 
 #define VGUI_PANEL_INTERFACE_VERSION "VGUI_Panel009"
