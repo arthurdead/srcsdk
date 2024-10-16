@@ -25,46 +25,9 @@ extern ServerClass *g_pServerClassHead;
 class ServerClass
 {
 public:
-				ServerClass( const char *pNetworkName, SendTable *pTable )
-				{
-					m_pNetworkName = pNetworkName;
-					m_pTable = pTable;
-					m_InstanceBaselineIndex = INVALID_STRING_INDEX;
-					// g_pServerClassHead is sorted alphabetically, so find the correct place to insert
-					if ( !g_pServerClassHead )
-					{
-						g_pServerClassHead = this;
-						m_pNext = NULL;
-					}
-					else
-					{
-						ServerClass *p1 = g_pServerClassHead;
-						ServerClass *p2 = p1->m_pNext;
-
-						// use _stricmp because Q_stricmp isn't hooked up properly yet
-						if ( V_stricmp( p1->GetName(), pNetworkName ) > 0)
-						{
-							m_pNext = g_pServerClassHead;
-							g_pServerClassHead = this;
-							p1 = NULL;
-						}
-
-						while( p1 )
-						{
-							if ( p2 == NULL || V_stricmp( p2->GetName(), pNetworkName ) > 0)
-							{
-								m_pNext = p2;
-								p1->m_pNext = this;
-								break;
-							}
-							p1 = p2;
-							p2 = p2->m_pNext;
-						}	
-					}
-				}
+	ServerClass( const char *pNetworkName, SendTable *pTable );
 
 	const char*	GetName()		{ return m_pNetworkName; }
-
 
 public:
 	const char					*m_pNetworkName;
@@ -110,7 +73,7 @@ class CBaseNetworkable;
 		template <typename T> int CheckDeclareClass_Access(T *); \
 		template <> int CheckDeclareClass_Access<sendTable::ignored>(sendTable::ignored *, const char *pIgnored) \
 		{ \
-			return DLLClassName::CheckDeclareClass( #DLLClassName ); \
+			return DLLClassName::CheckDeclareClass( V_STRINGIFY(DLLClassName) ); \
 		} \
 		namespace sendTable \
 		{ \
@@ -128,15 +91,15 @@ class CBaseNetworkable;
 		extern SendTable g_SendTable; \
 	} \
 	CHECK_DECLARE_CLASS( DLLClassName, sendTable ) \
-	static ServerClass g_##DLLClassName##_ClassReg(\
-		#DLLClassName, \
+	static ServerClass V_CONCAT3(g_, DLLClassName, _ClassReg)(\
+		V_STRINGIFY(DLLClassName), \
 		&sendTable::g_SendTable\
 	); \
 	\
 	ServerClass* DLLClassName::GetServerClass() { \
 		if(!IsNetworked()) \
 			return NULL; \
-		return &g_##DLLClassName##_ClassReg; \
+		return &V_CONCAT3(g_, DLLClassName, _ClassReg); \
 	} \
 	SendTable *DLLClassName::m_pClassSendTable = &sendTable::g_SendTable;\
 	int DLLClassName::YouForgotToImplementOrDeclareServerClass() {return 0;}

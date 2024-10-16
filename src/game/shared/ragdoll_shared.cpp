@@ -666,7 +666,7 @@ bool RagdollIsAsleep( const ragdoll_t &ragdoll )
 	return true;
 }
 
-void RagdollSolveSeparation( ragdoll_t &ragdoll, CBaseEntity *pEntity )
+void RagdollSolveSeparation( ragdoll_t &ragdoll, CSharedBaseEntity *pEntity )
 {
 	byte needsFix[256];
 	int fixCount = 0;
@@ -764,7 +764,7 @@ void CRagdollLRURetirement::LevelInitPreEntity( void )
 	m_LRU.RemoveAll();
 }
 
-bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
+bool ShouldRemoveThisRagdoll( CSharedBaseAnimating *pRagdoll )
 {
 #ifdef CLIENT_DLL
 
@@ -845,7 +845,7 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 	for ( i = m_LRU.Head(); i < m_LRU.InvalidIndex(); i = next )
 	{
 		next = m_LRU.Next(i);
-		CBaseAnimating *pRagdoll = m_LRU[i].Get();
+		CSharedBaseAnimating *pRagdoll = m_LRU[i].Get();
 		if ( pRagdoll )
 		{
 			m_iRagdollCount++;
@@ -893,7 +893,7 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 	
 		for ( i = m_LRU.Head(); i < m_LRU.InvalidIndex(); i = next )
 		{
-			CBaseAnimating *pRagdoll = m_LRU[i].Get();
+			CSharedBaseAnimating *pRagdoll = m_LRU[i].Get();
 
 			next = m_LRU.Next(i);
 			IPhysicsObject *pObject = pRagdoll->VPhysicsGetObject();
@@ -918,7 +918,7 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 			}
 		}
 
-		CBaseAnimating *pRemoveRagdoll = m_LRU[ furthestOne ].Get();
+		CSharedBaseAnimating *pRemoveRagdoll = m_LRU[ furthestOne ].Get();
 
 #ifdef CLIENT_DLL
 		pRemoveRagdoll->SUB_Remove();
@@ -936,7 +936,7 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 
 			next = m_LRU.Next(i);
 
-			CBaseAnimating *pRagdoll = m_LRU[i].Get();
+			CSharedBaseAnimating *pRagdoll = m_LRU[i].Get();
 
 			//Just ignore it until we're done burning/dissolving.
 			IPhysicsObject *pObject = pRagdoll->VPhysicsGetObject();
@@ -964,7 +964,7 @@ ConVar g_ragdoll_important_maxcount( "g_ragdoll_important_maxcount", "2", FCVAR_
 //-----------------------------------------------------------------------------
 // Move it to the top of the LRU
 //-----------------------------------------------------------------------------
-void CRagdollLRURetirement::MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImportant, float flForcedRetireTime )
+void CRagdollLRURetirement::MoveToTopOfLRU( CSharedBaseAnimating *pRagdoll, bool bImportant, float flForcedRetireTime )
 {
 	if ( bImportant )
 	{
@@ -974,7 +974,7 @@ void CRagdollLRURetirement::MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImpo
 		{
 			int iIndex = m_LRUImportantRagdolls.Head();
 
-			CBaseAnimating *pRagdoll = m_LRUImportantRagdolls[iIndex].Get();
+			CSharedBaseAnimating *pRagdoll = m_LRUImportantRagdolls[iIndex].Get();
 
 			if ( pRagdoll )
 			{

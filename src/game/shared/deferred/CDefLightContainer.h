@@ -1,6 +1,8 @@
 #ifndef CDEF_LIGHT_CONTAINER_H
 #define CDEF_LIGHT_CONTAINER_H
 
+#pragma once
+
 class CDeferredLight;
 
 class CDeferredLightContainer : public CBaseEntity

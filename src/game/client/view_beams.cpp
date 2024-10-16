@@ -1503,7 +1503,7 @@ void CViewRenderBeams::UpdateBeam( Beam_t *pbeam, float frametime, C_Beam *pcbea
 			return;
 
 		// clip if requested
-		if ( pcbeam && pcbeam->GetClipStyle() != CBeam::kNOCLIP )
+		if ( pcbeam && pcbeam->GetClipStyle() != C_Beam::kNOCLIP )
 		{
 			ClipBeam( pcbeam, pbeam );
 		}
@@ -2203,7 +2203,7 @@ void CViewRenderBeams::DrawBeam( C_Beam* pbeam, const RenderableInstance_t &inst
 	else
 		rayBeam.Init( vRayEndPoint, vRayStartPoint );
 
-	CBaseEntity *pStartEntity = pbeam->GetStartEntityPtr();
+	C_BaseEntity *pStartEntity = pbeam->GetStartEntityPtr();
 
 	CTraceFilterSkipClassname traceFilter( pStartEntity, "prop_energy_ball", COLLISION_GROUP_NONE );
 

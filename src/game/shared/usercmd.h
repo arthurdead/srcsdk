@@ -18,14 +18,6 @@
 class bf_read;
 class bf_write;
 
-class CEntityGroundContact
-{
-public:
-	int					entindex;
-	float				minheight;
-	float				maxheight;
-};
-
 class CUserCmd
 {
 public:
@@ -56,9 +48,6 @@ public:
 		mousedy = 0;
 
 		hasbeenpredicted = false;
-#if defined( HL2_DLL ) || defined( HL2_CLIENT_DLL )
-		entitygroundcontact.RemoveAll();
-#endif
 	}
 
 	CUserCmd& operator =( const CUserCmd& src )
@@ -84,10 +73,6 @@ public:
 		mousedy				= src.mousedy;
 
 		hasbeenpredicted	= src.hasbeenpredicted;
-
-#if defined( HL2_DLL ) || defined( HL2_CLIENT_DLL )
-		entitygroundcontact			= src.entitygroundcontact;
-#endif
 
 		return *this;
 	}
@@ -164,15 +149,9 @@ public:
 
 	// Client only, tracks whether we've predicted this command at least once
 	bool	hasbeenpredicted;
-
-	// Back channel to communicate IK state
-#if defined( HL2_DLL ) || defined( HL2_CLIENT_DLL )
-	CUtlVector< CEntityGroundContact > entitygroundcontact;
-#endif
-
 };
 
-void ReadUsercmd( bf_read *buf, CUserCmd *move, CUserCmd *from, CBasePlayer *pPlayer );
+void ReadUsercmd( bf_read *buf, CUserCmd *move, CUserCmd *from, CSharedBasePlayer *pPlayer );
 void WriteUsercmd( bf_write *buf, const CUserCmd *to, const CUserCmd *from );
 
 #endif // USERCMD_H

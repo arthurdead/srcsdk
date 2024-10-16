@@ -1,7 +1,10 @@
 #ifndef _INCLUDED_C_ENV_AMBIENT_LIGHT_H
 #define _INCLUDED_C_ENV_AMBIENT_LIGHT_H
 
+#pragma once
+
 #include "c_spatialentity.h"
+#include "util_shared.h"
 
 //------------------------------------------------------------------------------
 // Purpose : Ambient light controller entity with radial falloff

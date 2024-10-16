@@ -59,7 +59,7 @@ private:
 	CUtlString m_VTFName;
 	CTextureReference m_PreviewTexture;
 	CMaterialReference m_PreviewMaterial;
-	int m_nTextureID;
+	vgui::HTexture m_nTextureID;
 	Vector m_vecCameraDirection;
 	float m_flLastRotationTime;
 };

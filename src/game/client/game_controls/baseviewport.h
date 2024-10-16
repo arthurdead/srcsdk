@@ -8,6 +8,8 @@
 #ifndef BASEVIEWPORT_H
 #define BASEVIEWPORT_H
 
+#pragma once
+
 // viewport interface for the rest of the dll
 #include <game/client/iviewport.h>
 

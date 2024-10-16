@@ -15,9 +15,10 @@
 
 #ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
 #else
-#define CBaseEntity C_BaseEntity
 class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
 #endif
 
 class IPhysics;
@@ -76,7 +77,7 @@ extern const objectparams_t g_PhysDefaultObjectParams;
 struct friction_t
 {
 	CSoundPatch	*patch;
-	CBaseEntity	*pObject;
+	CSharedBaseEntity	*pObject;
 	float		flLastUpdateTime;
 	float		flLastEffectTime;
 };
@@ -89,8 +90,8 @@ enum
 
 struct touchevent_t
 {
-	CBaseEntity *pEntity0;
-	CBaseEntity *pEntity1;
+	CSharedBaseEntity *pEntity0;
+	CSharedBaseEntity *pEntity1;
 	int			touchType;
 	Vector		endPoint;	//sv
 	Vector		normal;		//sv
@@ -102,9 +103,9 @@ struct fluidevent_t
 	float			impactTime;
 };
 
-void PhysFrictionSound( CBaseEntity *pEntity, IPhysicsObject *pObject, float energy, int surfaceProps, int surfacePropsHit );
-void PhysFrictionSound( CBaseEntity *pEntity, IPhysicsObject *pObject, const char *pSoundName, HSOUNDSCRIPTHANDLE& handle, float flVolume );
-void PhysCleanupFrictionSounds( CBaseEntity *pEntity );
+void PhysFrictionSound( CSharedBaseEntity *pEntity, IPhysicsObject *pObject, float energy, int surfaceProps, int surfacePropsHit );
+void PhysFrictionSound( CSharedBaseEntity *pEntity, IPhysicsObject *pObject, const char *pSoundName, HSOUNDSCRIPTHANDLE& handle, float flVolume );
+void PhysCleanupFrictionSounds( CSharedBaseEntity *pEntity );
 void PhysFrictionEffect( Vector &vecPos, Vector vecVel, float energy, int surfaceProps, int surfacePropsHit );
 
 // Convenience routine
@@ -129,46 +130,46 @@ inline unsigned short PhysClearGameFlags( IPhysicsObject *pPhys, unsigned short 
 
 
 // Create a vphysics object based on a model
-IPhysicsObject *PhysModelCreate( CBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles, solid_t *pSolid = NULL );
+IPhysicsObject *PhysModelCreate( CSharedBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles, solid_t *pSolid = NULL );
 
-IPhysicsObject *PhysModelCreateBox( CBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, bool isStatic );
-IPhysicsObject *PhysModelCreateOBB( CBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, const QAngle &angle, bool isStatic );
+IPhysicsObject *PhysModelCreateBox( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, bool isStatic );
+IPhysicsObject *PhysModelCreateOBB( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, const QAngle &angle, bool isStatic );
 
-IPhysicsObject *PhysModelCreateSphere( CBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic );
+IPhysicsObject *PhysModelCreateSphere( CSharedBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic );
 
 // Create a vphysics object based on a BSP model (unmoveable)
-IPhysicsObject *PhysModelCreateUnmoveable( CBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles );
+IPhysicsObject *PhysModelCreateUnmoveable( CSharedBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles );
 
 // Create a vphysics object based on an existing collision model
-IPhysicsObject *PhysModelCreateCustom( CBaseEntity *pEntity, const CPhysCollide *pModel, const Vector &origin, const QAngle &angles, const char *pName, bool isStatic, solid_t *pSolid = NULL );
+IPhysicsObject *PhysModelCreateCustom( CSharedBaseEntity *pEntity, const CPhysCollide *pModel, const Vector &origin, const QAngle &angles, const char *pName, bool isStatic, solid_t *pSolid = NULL );
 
 // Create a bbox collision model (these may be shared among entities, they are auto-deleted at end of level. do not manage)
 CPhysCollide *PhysCreateBbox( const Vector &mins, const Vector &maxs );
 
 // Create a vphysics sphere object
-IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic, solid_t &solid );
+IPhysicsObject *PhysSphereCreate( CSharedBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic, solid_t &solid );
 
 // Create a vphysics sphere object
-IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vector &origin, solid_t &solid );
+IPhysicsObject *PhysSphereCreate( CSharedBaseEntity *pEntity, float radius, const Vector &origin, solid_t &solid );
 
 // Destroy a physics object created using PhysModelCreate...()
-void PhysDestroyObject( IPhysicsObject *pObject, CBaseEntity *pEntity = NULL );
+void PhysDestroyObject( IPhysicsObject *pObject, CSharedBaseEntity *pEntity = NULL );
 
 void PhysDisableObjectCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObject1 );
 void PhysDisableEntityCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObject1 );
-void PhysDisableEntityCollisions( CBaseEntity *pEntity0, CBaseEntity *pEntity1 );
+void PhysDisableEntityCollisions( CSharedBaseEntity *pEntity0, CSharedBaseEntity *pEntity1 );
 void PhysEnableObjectCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObject1 );
 void PhysEnableEntityCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObject1 );
-void PhysEnableEntityCollisions( CBaseEntity *pEntity0, CBaseEntity *pEntity1 );
-bool PhysEntityCollisionsAreDisabled( CBaseEntity *pEntity0, CBaseEntity *pEntity1 );
+void PhysEnableEntityCollisions( CSharedBaseEntity *pEntity0, CSharedBaseEntity *pEntity1 );
+bool PhysEntityCollisionsAreDisabled( CSharedBaseEntity *pEntity0, CSharedBaseEntity *pEntity1 );
 
 // create the world physics objects
-IPhysicsObject *PhysCreateWorld_Shared( CBaseEntity *pWorld, vcollide_t *pWorldCollide, const objectparams_t &defaultParams );
+IPhysicsObject *PhysCreateWorld_Shared( CSharedBaseEntity *pWorld, vcollide_t *pWorldCollide, const objectparams_t &defaultParams );
 
 // parse the parameters for a single solid from the model's collision data
-bool PhysModelParseSolid( solid_t &solid, CBaseEntity *pEntity, int modelIndex );
+bool PhysModelParseSolid( solid_t &solid, CSharedBaseEntity *pEntity, int modelIndex );
 // parse the parameters for a solid matching a particular index
-bool PhysModelParseSolidByIndex( solid_t &solid, CBaseEntity *pEntity, int modelIndex, int solidIndex );
+bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, int modelIndex, int solidIndex );
 
 void PhysParseSurfaceData( class IPhysicsSurfaceProps *pProps, class IFileSystem *pFileSystem );
 

@@ -52,7 +52,7 @@ CHintSystem::~CHintSystem( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CHintSystem::Init( CBasePlayer *pPlayer, int iMaxHintTypes, const char **pszHintStrings )
+void CHintSystem::Init( CSharedBasePlayer *pPlayer, int iMaxHintTypes, const char **pszHintStrings )
 {
 	m_pPlayer = pPlayer;	
 	m_bShowHints = true;

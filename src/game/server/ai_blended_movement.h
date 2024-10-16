@@ -8,6 +8,8 @@
 #ifndef AI_BLENDED_MOVEMENT_H
 #define AI_BLENDED_MOVEMENT_H
 
+#pragma once
+
 #include "ai_basenpc.h"
 #include "ai_motor.h"
 #include "ai_navigator.h"

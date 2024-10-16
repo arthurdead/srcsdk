@@ -1,10 +1,15 @@
 #ifndef _ISEARCHMANAGER_H_
 #define _ISEARCHMANAGER_H_
 
+#pragma once
+
 class IMatchSearchResult;
 class ISearchManager;
 
 #include "imatchsystem.h"
+#include "tier0/platform.h"
+
+typedef uint64 XUID;
 
 abstract_class IMatchSearchResult
 {

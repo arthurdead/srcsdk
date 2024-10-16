@@ -10,6 +10,12 @@
 #ifndef RAGDOLL_INTERFACE_H
 #define RAGDOLL_INTERFACE_H
 
+#pragma once
+
+#include "tier0/platform.h"
+#include "mathlib/mathlib.h"
+#include "datamap.h"
+#include "ragdoll_shared.h"
 
 class C_BaseEntity;
 class CStudioHdr;

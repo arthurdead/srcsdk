@@ -145,7 +145,6 @@ WEAPON_FILE_INFO_HANDLE GetInvalidWeaponInfoHandle( void )
 	return (WEAPON_FILE_INFO_HANDLE)m_WeaponInfoDatabase.InvalidIndex();
 }
 
-#if 0
 void ResetFileWeaponInfoDatabase( void )
 {
 	int c = m_WeaponInfoDatabase.Count(); 
@@ -159,16 +158,12 @@ void ResetFileWeaponInfoDatabase( void )
 	memset(g_bUsedWeaponSlots, 0, sizeof(g_bUsedWeaponSlots));
 #endif
 }
-#endif
 
-void PrecacheFileWeaponInfoDatabase( IFileSystem *filesystem, const unsigned char *pICEKey )
+void PrecacheModFileWeaponInfoDatabase( IFileSystem *filesystem, const unsigned char *pICEKey, const char *filename )
 {
-	if ( m_WeaponInfoDatabase.Count() )
-		return;
-
 	KeyValues *manifest = new KeyValues( "weaponscripts" );
 	manifest->UsesEscapeSequences( true );
-	if ( manifest->LoadFromFile( filesystem, "scripts/weapon_manifest.txt", "GAME" ) )
+	if ( manifest->LoadFromFile( filesystem, filename, "MOD" ) )
 	{
 		for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL ; sub = sub->GetNextKey() )
 		{
@@ -178,7 +173,7 @@ void PrecacheFileWeaponInfoDatabase( IFileSystem *filesystem, const unsigned cha
 				Q_FileBase( sub->GetString(), fileBase, sizeof(fileBase) );
 				WEAPON_FILE_INFO_HANDLE tmp;
 #ifdef CLIENT_DLL
-				if ( ReadWeaponDataFromFileForSlot( filesystem, fileBase, &tmp, pICEKey ) )
+				if ( ReadModWeaponDataFromFileForSlot( filesystem, fileBase, &tmp, pICEKey ) )
 				{
 					gWR.LoadWeaponSprites( tmp );
 				}
@@ -186,78 +181,61 @@ void PrecacheFileWeaponInfoDatabase( IFileSystem *filesystem, const unsigned cha
 				ReadWeaponDataFromFileForSlot( filesystem, fileBase, &tmp, pICEKey );
 #endif
 			}
+			else if ( !Q_stricmp( sub->GetName(), "manifest" ) )
+			{
+				PrecacheModFileWeaponInfoDatabase( filesystem, pICEKey, sub->GetString() );
+			}
 			else
 			{
-				Error( "Expecting 'file', got %s\n", sub->GetName() );
+				Error( "Expecting 'file' or 'manifest', got %s\n", sub->GetName() );
 			}
 		}
+	}
+	else
+	{
+		Warning( "Failed to read weapon manifest file '%s'\n", filename );
 	}
 	manifest->deleteThis();
 }
 
-KeyValues* ReadEncryptedKVFile( IFileSystem *filesystem, const char *szFilenameWithoutExtension, const unsigned char *pICEKey, bool bForceReadEncryptedFile /*= false*/ )
+void PrecacheMapFileWeaponInfoDatabase( IFileSystem *filesystem, const char *filename )
 {
-	Assert( strchr( szFilenameWithoutExtension, '.' ) == NULL );
-	char szFullName[512];
-
-	const char *pSearchPath = "MOD";
-
-	if ( pICEKey == NULL )
+	KeyValues *manifest = new KeyValues( "weaponscripts" );
+	manifest->UsesEscapeSequences( true );
+	if ( !manifest->LoadFromFile( filesystem, filename, "GAME" ) )
 	{
-		pSearchPath = "GAME";
+		if( !manifest->LoadFromFile( filesystem, filename, "BSP" ) )
+		{
+			Warning( "Failed to read weapon manifest file '%s'\n", filename );
+			manifest->deleteThis();
+			return;
+		}
 	}
 
-	// Open the weapon data file, and abort if we can't
-	KeyValues *pKV = new KeyValues( "WeaponDatafile" );
-	pKV->UsesEscapeSequences( true );
-
-	Q_snprintf(szFullName,sizeof(szFullName), "%s.txt", szFilenameWithoutExtension);
-
-	if ( bForceReadEncryptedFile || !pKV->LoadFromFile( filesystem, szFullName, pSearchPath ) ) // try to load the normal .txt file first
+	for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL ; sub = sub->GetNextKey() )
 	{
-		if ( pICEKey )
+		if ( !Q_stricmp( sub->GetName(), "file" ) )
 		{
-			Q_snprintf(szFullName,sizeof(szFullName), "%s.ctx", szFilenameWithoutExtension); // fall back to the .ctx file
-
-			FileHandle_t f = g_pFullFileSystem->Open( szFullName, "rb", pSearchPath );
-
-			if (!f)
+			char fileBase[512];
+			Q_FileBase( sub->GetString(), fileBase, sizeof(fileBase) );
+			WEAPON_FILE_INFO_HANDLE tmp;
+#ifdef CLIENT_DLL
+			if ( ReadMapWeaponDataFromFileForSlot( filesystem, fileBase, &tmp ) )
 			{
-				pKV->deleteThis();
-				return NULL;
+				gWR.LoadWeaponSprites( tmp );
 			}
-			// load file into a null-terminated buffer
-			int fileSize = g_pFullFileSystem->Size(f);
-			char *buffer = (char*)MemAllocScratch(fileSize + 1);
-		
-			Assert(buffer);
-		
-			g_pFullFileSystem->Read(buffer, fileSize, f); // read into local buffer
-			buffer[fileSize] = 0; // null terminate file as EOF
-			g_pFullFileSystem->Close( f );	// close file after reading
-
-			UTIL_DecodeICE( (unsigned char*)buffer, fileSize, pICEKey );
-
-			bool retOK = pKV->LoadFromBuffer( szFullName, buffer, filesystem );
-
-			MemFreeScratch();
-
-			if ( !retOK )
-			{
-				pKV->deleteThis();
-				return NULL;
-			}
+#else
+			ReadMapWeaponDataFromFileForSlot( filesystem, fileBase, &tmp );
+#endif
 		}
 		else
 		{
-			pKV->deleteThis();
-			return NULL;
+			Error( "Expecting 'file', got %s\n", sub->GetName() );
 		}
 	}
 
-	return pKV;
+	manifest->deleteThis();
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Read data on weapon from script file
@@ -277,32 +255,21 @@ bool ReadWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeapo
 	FileWeaponInfo_t *pFileInfo = GetFileWeaponInfoFromHandle( *phandle );
 	Assert( pFileInfo );
 
-	if ( pFileInfo->bParsedScript && !pFileInfo->bCustom )
+	if ( pFileInfo->nParsedScript == WEAPONINFO_PARSED_MOD_ENCRYPTED ||
+		pFileInfo->nParsedScript == WEAPONINFO_PARSED_MOD_MAP_OVERWRITTEN ||
+		pFileInfo->nParsedScript == WEAPONINFO_PARSED_MAP )
 		return true;
 
-	char sz[128];
-	Q_snprintf( sz, sizeof( sz ), "scripts/%s", szWeaponName );
+	if ( pFileInfo->nParsedScript == WEAPONINFO_PARSED_MOD )
+		return true;
 
-	KeyValues *pKV = ReadEncryptedKVFile( filesystem, sz, pICEKey,
-#if defined( DOD_DLL )
-		true			// Only read .ctx files!
-#else
-		false
-#endif
-		);
-
-	if ( !pKV )
-		return false;
-
-	pFileInfo->bCustom = false;
-	pFileInfo->Parse( pKV, szWeaponName );
-
-	pKV->deleteThis();
-
-	return true;
+	return (
+		ReadMapWeaponDataFromFileForSlot( filesystem, szWeaponName, phandle ) ||
+		ReadModWeaponDataFromFileForSlot( filesystem, szWeaponName, phandle, pICEKey )
+	);
 }
 
-bool ReadCustomWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeaponName, WEAPON_FILE_INFO_HANDLE *phandle, const unsigned char *pICEKey )
+bool ReadModWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeaponName, WEAPON_FILE_INFO_HANDLE *phandle, const unsigned char *pICEKey )
 {
 	if ( !phandle )
 	{
@@ -314,10 +281,53 @@ bool ReadCustomWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *s
 	FileWeaponInfo_t *pFileInfo = GetFileWeaponInfoFromHandle( *phandle );
 	Assert( pFileInfo );
 
-	// Just parse the custom script anyway even if it was already loaded. This is because after one is loaded,
-	// there's no way of distinguishing between maps with no custom scripts and maps with their own new custom scripts.
-	//if ( pFileInfo->bParsedScript && pFileInfo->bCustom )
-	//	return true;
+	if ( pFileInfo->nParsedScript == WEAPONINFO_PARSED_MOD ||
+		pFileInfo->nParsedScript == WEAPONINFO_PARSED_MOD_ENCRYPTED )
+		return true;
+
+	char sz[128];
+	Q_snprintf( sz, sizeof( sz ), "scripts/%s", szWeaponName );
+
+	bool bReadEncrypted;
+	KeyValues *pKV = ReadEncryptedKVFile( filesystem, sz, "MOD", pICEKey, false, &bReadEncrypted );
+
+	if ( !pKV )
+	{
+		return false;
+	}
+
+#ifdef CLIENT_DLL
+	if(pFileInfo->pKeyValuesData) {
+		pFileInfo->pKeyValuesData->deleteThis();
+	}
+	pFileInfo->pKeyValuesData = pKV;
+#endif
+
+	pFileInfo->nParsedScript = (bReadEncrypted ? WEAPONINFO_PARSED_MOD_ENCRYPTED : WEAPONINFO_PARSED_MOD);
+
+	pFileInfo->Parse( pKV, szWeaponName );
+
+	return true;
+}
+
+bool ReadMapWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeaponName, WEAPON_FILE_INFO_HANDLE *phandle )
+{
+	if ( !phandle )
+	{
+		Assert( 0 );
+		return false;
+	}
+	
+	*phandle = FindWeaponInfoSlot( szWeaponName );
+	FileWeaponInfo_t *pFileInfo = GetFileWeaponInfoFromHandle( *phandle );
+	Assert( pFileInfo );
+
+	if ( pFileInfo->nParsedScript == WEAPONINFO_PARSED_MOD_ENCRYPTED )
+		return false;
+
+	if ( pFileInfo->nParsedScript == WEAPONINFO_PARSED_MAP ||
+		pFileInfo->nParsedScript == WEAPONINFO_PARSED_MOD_MAP_OVERWRITTEN )
+		return true;
 
 	char sz[128];
 #ifdef GAME_DLL
@@ -329,21 +339,35 @@ bool ReadCustomWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *s
 	Q_snprintf( sz, sizeof( sz ), "maps/%s_%s", mapname, szWeaponName );
 #endif
 
-	KeyValues *pKV = ReadEncryptedKVFile( filesystem, sz, pICEKey,
-#if defined( DOD_DLL )
-		true			// Only read .ctx files!
-#else
-		false
-#endif
-		);
+	KeyValues *pKV = ReadKVFile( filesystem, sz, "GAME" );
 
 	if ( !pKV )
+	{
+		pKV = ReadKVFile( filesystem, sz, "BSP" );
+	}
+
+	if ( !pKV )
+	{
 		return false;
+	}
 
-	pFileInfo->bCustom = true;
+	if ( pFileInfo->nParsedScript == WEAPONINFO_PARSED_MOD )
+	{
+		pFileInfo->nParsedScript = WEAPONINFO_PARSED_MOD_MAP_OVERWRITTEN;
+	}
+	else
+	{
+		pFileInfo->nParsedScript = WEAPONINFO_PARSED_MAP;
+	}
+
+#ifdef CLIENT_DLL
+	if(pFileInfo->pKeyValuesData) {
+		pFileInfo->pKeyValuesData->deleteThis();
+	}
+	pFileInfo->pKeyValuesData = pKV;
+#endif
+
 	pFileInfo->Parse( pKV, szWeaponName );
-
-	pKV->deleteThis();
 
 	return true;
 }
@@ -354,7 +378,10 @@ bool ReadCustomWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *s
 
 FileWeaponInfo_t::FileWeaponInfo_t()
 {
-	bParsedScript = false;
+#ifdef CLIENT_DLL
+	pKeyValuesData = NULL;
+#endif
+	nParsedScript = WEAPONINFO_UNPARSED;
 	bLoadedHudElements = false;
 	szClassName[0] = 0;
 	szPrintName[0] = 0;
@@ -414,9 +441,6 @@ const char* pWeaponRestrictions[NUM_WEAPON_RESTRICTION_TYPES] = {
 
 void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponName )
 {
-	// Okay, we tried at least once to look this up...
-	bParsedScript = true;
-
 	// Classname
 	Q_strncpy( szClassName, szWeaponName, MAX_WEAPON_STRING );
 	// Printable name

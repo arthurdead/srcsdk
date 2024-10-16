@@ -484,7 +484,7 @@ static void Validate( bool bServer, int nCommandNumber )
 	}
 }
 
-void CGameMovement::DiffPrint( char const *fmt, ... )
+void CSharedGameMovement::DiffPrint( char const *fmt, ... )
 {
 	if ( !player )
 		return;
@@ -513,7 +513,7 @@ static void Validate( bool bServer, int nCommandNumber )
 
 #define CheckV( tick, ctx, vel )
 
-void CGameMovement::DiffPrint( char const *fmt, ... )
+void CSharedGameMovement::DiffPrint( char const *fmt, ... )
 {
 }
 
@@ -615,10 +615,14 @@ void DrawDispCollPlane( CBaseTrace *pTrace )
 }
 #endif
 
+#ifdef CLIENT_DLL
+	#define CGameMovement C_GameMovement
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: Constructs GameMovement interface
 //-----------------------------------------------------------------------------
-CGameMovement::CGameMovement( void )
+CSharedGameMovement::CGameMovement( void )
 {
 	m_nOldWaterLevel	= WL_NotInWater;
 	m_flWaterEntryTime	= 0;
@@ -634,13 +638,17 @@ CGameMovement::CGameMovement( void )
 //-----------------------------------------------------------------------------
 // Purpose: Destructor
 //-----------------------------------------------------------------------------
-CGameMovement::~CGameMovement( void )
+CSharedGameMovement::~CGameMovement( void )
 {
 	if ( m_pTraceListData )
 	{
 		delete m_pTraceListData;
 	}
 }
+
+#ifdef CLIENT_DLL
+	#undef CGameMovement
+#endif
 
 enum
 {
@@ -650,7 +658,7 @@ enum
 static CTraceFilterSkipTwoEntities s_TraceFilter[MAX_NESTING];
 static int s_nTraceFilterCount = 0;
 
-ITraceFilter *CGameMovement::LockTraceFilter( int collisionGroup )
+ITraceFilter *CSharedGameMovement::LockTraceFilter( int collisionGroup )
 {
 	// If this assertion triggers, you forgot to call UnlockTraceFilter
 	Assert( s_nTraceFilterCount < MAX_NESTING );
@@ -664,7 +672,7 @@ ITraceFilter *CGameMovement::LockTraceFilter( int collisionGroup )
 	return pFilter;
 }
 
-void CGameMovement::UnlockTraceFilter( ITraceFilter *&pFilter )
+void CSharedGameMovement::UnlockTraceFilter( ITraceFilter *&pFilter )
 {
 	Assert( s_nTraceFilterCount > 0 );
 	--s_nTraceFilterCount;
@@ -675,7 +683,7 @@ void CGameMovement::UnlockTraceFilter( ITraceFilter *&pFilter )
 //-----------------------------------------------------------------------------
 // Purpose: Allow bots etc to use slightly different solid masks
 //-----------------------------------------------------------------------------
-unsigned int CGameMovement::PlayerSolidMask( bool brushOnly, CBasePlayer *testPlayer ) const
+unsigned int CSharedGameMovement::PlayerSolidMask( bool brushOnly, CSharedBasePlayer *testPlayer ) const
 {
 	return ( brushOnly ) ? MASK_PLAYERSOLID_BRUSHONLY : MASK_PLAYERSOLID;
 }
@@ -685,7 +693,7 @@ unsigned int CGameMovement::PlayerSolidMask( bool brushOnly, CBasePlayer *testPl
 // Input  : type - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CGameMovement::GetCheckInterval( IntervalType_t type )
+int CSharedGameMovement::GetCheckInterval( IntervalType_t type )
 {
 	int tickInterval = 1;
 	switch ( type )
@@ -729,7 +737,7 @@ int CGameMovement::GetCheckInterval( IntervalType_t type )
 // Input  : type - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CGameMovement::CheckInterval( IntervalType_t type )
+bool CSharedGameMovement::CheckInterval( IntervalType_t type )
 {
 	int tickInterval = GetCheckInterval( type );
 
@@ -749,7 +757,7 @@ bool CGameMovement::CheckInterval( IntervalType_t type )
 // Input  : ducked - 
 // Output : const Vector
 //-----------------------------------------------------------------------------
-Vector CGameMovement::GetPlayerMins( bool ducked ) const
+Vector CSharedGameMovement::GetPlayerMins( bool ducked ) const
 {
 	return ducked ? VEC_DUCK_HULL_MIN_SCALED( player ) : VEC_HULL_MIN_SCALED( player );
 }
@@ -759,7 +767,7 @@ Vector CGameMovement::GetPlayerMins( bool ducked ) const
 // Input  : ducked - 
 // Output : const Vector
 //-----------------------------------------------------------------------------
-Vector CGameMovement::GetPlayerMaxs( bool ducked ) const
+Vector CSharedGameMovement::GetPlayerMaxs( bool ducked ) const
 {	
 	return ducked ? VEC_DUCK_HULL_MAX_SCALED( player ) : VEC_HULL_MAX_SCALED( player );
 }
@@ -769,7 +777,7 @@ Vector CGameMovement::GetPlayerMaxs( bool ducked ) const
 // Input  : 
 // Output : const Vector
 //-----------------------------------------------------------------------------
-Vector CGameMovement::GetPlayerMins( void ) const
+Vector CSharedGameMovement::GetPlayerMins( void ) const
 {
 	if ( player->IsObserver() )
 	{
@@ -786,7 +794,7 @@ Vector CGameMovement::GetPlayerMins( void ) const
 // Input  : 
 // Output : const Vector
 //-----------------------------------------------------------------------------
-Vector CGameMovement::GetPlayerMaxs( void ) const
+Vector CSharedGameMovement::GetPlayerMaxs( void ) const
 {	
 	if ( player->IsObserver() )
 	{
@@ -803,7 +811,7 @@ Vector CGameMovement::GetPlayerMaxs( void ) const
 // Input  : ducked - 
 // Output : const Vector
 //-----------------------------------------------------------------------------
-Vector CGameMovement::GetPlayerViewOffset( bool ducked ) const
+Vector CSharedGameMovement::GetPlayerViewOffset( bool ducked ) const
 {
 	return ducked ? VEC_DUCK_VIEW_SCALED( player ) : VEC_VIEW_SCALED( player );
 }
@@ -812,9 +820,9 @@ Vector CGameMovement::GetPlayerViewOffset( bool ducked ) const
 //-----------------------------------------------------------------------------
 // Traces player movement + position
 //-----------------------------------------------------------------------------
-inline void CGameMovement::TracePlayerBBox( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm )
+inline void CSharedGameMovement::TracePlayerBBox( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm )
 {
-	VPROF( "CGameMovement::TracePlayerBBox" );
+	VPROF( "CSharedGameMovement::TracePlayerBBox" );
 
 	Ray_t ray;
 	ray.Init( start, end, GetPlayerMins(), GetPlayerMaxs() );
@@ -822,7 +830,7 @@ inline void CGameMovement::TracePlayerBBox( const Vector& start, const Vector& e
 }
 #endif
 
-EHANDLE CGameMovement::TestPlayerPosition( const Vector& pos, int collisionGroup, trace_t& pm )
+EHANDLE CSharedGameMovement::TestPlayerPosition( const Vector& pos, int collisionGroup, trace_t& pm )
 {
 	++m_nTraceCount;
 	Ray_t ray;
@@ -844,7 +852,7 @@ EHANDLE CGameMovement::TestPlayerPosition( const Vector& pos, int collisionGroup
 /*
 
 // FIXME FIXME:  Does this need to be hooked up?
-bool CGameMovement::IsWet() const
+bool CSharedGameMovement::IsWet() const
 {
 	return ((pev->flags & FL_INRAIN) != 0) || (m_WetTime >= gpGlobals->time);
 }
@@ -854,7 +862,7 @@ bool CGameMovement::IsWet() const
 //-----------------------------------------------------------------------------
 
 #define PLAYER_HALFWIDTH 12
-void CGameMovement::PlantFootprint( surfacedata_t *psurface )
+void CSharedGameMovement::PlantFootprint( surfacedata_t *psurface )
 {
 	// Can't plant footprints on fake materials (ladders, wading)
 	if ( psurface->gameMaterial != 'X' )
@@ -962,7 +970,7 @@ void CBasePlayer::UpdateWetness()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::CategorizeGroundSurface( trace_t &pm )
+void CSharedGameMovement::CategorizeGroundSurface( trace_t &pm )
 {
 	IPhysicsSurfaceProps *physprops = MoveHelper()->GetSurfaceProps();
 	player->m_surfaceProps = pm.surface.surfaceProps;
@@ -979,7 +987,7 @@ void CGameMovement::CategorizeGroundSurface( trace_t &pm )
 	player->m_chTextureType = player->m_pSurfaceData->game.material;
 }
 
-bool CGameMovement::IsDead( void ) const
+bool CSharedGameMovement::IsDead( void ) const
 {
 	return ( player->GetHealth() <= 0 && !player->IsAlive() );
 }
@@ -987,7 +995,7 @@ bool CGameMovement::IsDead( void ) const
 //-----------------------------------------------------------------------------
 // Figures out how the constraint should slow us down
 //-----------------------------------------------------------------------------
-float CGameMovement::ComputeConstraintSpeedFactor( void )
+float CSharedGameMovement::ComputeConstraintSpeedFactor( void )
 {
 	// If we have a constraint, slow down because of that too.
 	if ( !mv || mv->m_flConstraintRadius == 0.0f )
@@ -1025,7 +1033,7 @@ float CGameMovement::ComputeConstraintSpeedFactor( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::CheckParameters( void )
+void CSharedGameMovement::CheckParameters( void )
 {
 	QAngle	v_angle;
 
@@ -1132,7 +1140,7 @@ void CGameMovement::CheckParameters( void )
 	}
 }
 
-void CGameMovement::ReduceTimers( void )
+void CSharedGameMovement::ReduceTimers( void )
 {
 	float frame_msec = 1000.0f * gpGlobals->frametime;
 
@@ -1172,7 +1180,7 @@ void CGameMovement::ReduceTimers( void )
 
 // get a conservative bounds for this player's movement traces
 // This allows gamemovement to optimize those traces
-void CGameMovement::SetupMovementBounds( CMoveData *move )
+void CSharedGameMovement::SetupMovementBounds( CMoveData *move )
 {
 	if ( m_pTraceListData )
 	{
@@ -1187,7 +1195,7 @@ void CGameMovement::SetupMovementBounds( CMoveData *move )
 		return;
 	}
 
-	CBasePlayer *pPlayer = (CBasePlayer *)move->m_nPlayerHandle.Get();
+	CSharedBasePlayer *pPlayer = (CSharedBasePlayer *)move->m_nPlayerHandle.Get();
 
 	Vector moveMins, moveMaxs;
 	ClearBounds( moveMins, moveMaxs );
@@ -1211,7 +1219,7 @@ void CGameMovement::SetupMovementBounds( CMoveData *move )
 // Purpose: 
 // Input  : *pMove - 
 //-----------------------------------------------------------------------------
-void CGameMovement::ProcessMovement( CBasePlayer *pPlayer, CMoveData *pMove )
+void CSharedGameMovement::ProcessMovement( CSharedBasePlayer *pPlayer, CMoveData *pMove )
 {
 	m_nTraceCount = 0;
 
@@ -1267,12 +1275,12 @@ void CGameMovement::ProcessMovement( CBasePlayer *pPlayer, CMoveData *pMove )
 // 	player = NULL;
 }
 
-void CGameMovement::Reset( void )
+void CSharedGameMovement::Reset( void )
 {
 	player = NULL;
 }
 
-void CGameMovement::StartTrackPredictionErrors( CBasePlayer *pPlayer )
+void CSharedGameMovement::StartTrackPredictionErrors( CSharedBasePlayer *pPlayer )
 {
 	if ( pPlayer->IsBot() )
 		return;
@@ -1284,7 +1292,7 @@ void CGameMovement::StartTrackPredictionErrors( CBasePlayer *pPlayer )
 #endif
 }
 
-void CGameMovement::FinishTrackPredictionErrors( CBasePlayer *pPlayer )
+void CSharedGameMovement::FinishTrackPredictionErrors( CSharedBasePlayer *pPlayer )
 {
 	if ( pPlayer->IsBot() )
 		return;
@@ -1302,7 +1310,7 @@ void CGameMovement::FinishTrackPredictionErrors( CBasePlayer *pPlayer )
 //-----------------------------------------------------------------------------
 // Purpose: Sets ground entity
 //-----------------------------------------------------------------------------
-void CGameMovement::FinishMove( void )
+void CSharedGameMovement::FinishMove( void )
 {
 	mv->m_nOldButtons = mv->m_nButtons;
 }
@@ -1315,7 +1323,7 @@ void CGameMovement::FinishMove( void )
 // Purpose: Decays the punchangle toward 0,0,0.
 //			Modelled as a damped spring
 //-----------------------------------------------------------------------------
-void CGameMovement::DecayPunchAngle( void )
+void CSharedGameMovement::DecayPunchAngle( void )
 {
 	if ( player->m_Local.m_vecPunchAngle->LengthSqr() > 0.001 || player->m_Local.m_vecPunchAngleVel->LengthSqr() > 0.001 )
 	{
@@ -1350,7 +1358,7 @@ void CGameMovement::DecayPunchAngle( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::StartGravity( void )
+void CSharedGameMovement::StartGravity( void )
 {
 	float ent_gravity;
 	
@@ -1374,7 +1382,7 @@ void CGameMovement::StartGravity( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::CheckWaterJump( void )
+void CSharedGameMovement::CheckWaterJump( void )
 {
 	Vector	flatforward;
 	Vector forward;
@@ -1452,7 +1460,7 @@ void CGameMovement::CheckWaterJump( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::WaterJump( void )
+void CSharedGameMovement::WaterJump( void )
 {
 	if (player->m_flWaterJumpTime > 10000)
 		player->m_flWaterJumpTime = 10000;
@@ -1475,7 +1483,7 @@ void CGameMovement::WaterJump( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::WaterMove( void )
+void CSharedGameMovement::WaterMove( void )
 {
 	int		i;
 	Vector	wishvel;
@@ -1619,7 +1627,7 @@ void CGameMovement::WaterMove( void )
 //          the mv->GetAbsOrigin() and mv->m_vecVelocity.  It returns a new
 //          new mv->GetAbsOrigin(), mv->m_vecVelocity, and mv->m_outStepHeight.
 //-----------------------------------------------------------------------------
-void CGameMovement::StepMove( Vector &vecDestination, trace_t &trace )
+void CSharedGameMovement::StepMove( Vector &vecDestination, trace_t &trace )
 {
 	Vector vecEndPos;
 	VectorCopy( vecDestination, vecEndPos );
@@ -1714,7 +1722,7 @@ void CGameMovement::StepMove( Vector &vecDestination, trace_t &trace )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::Friction( void )
+void CSharedGameMovement::Friction( void )
 {
 	float	speed, newspeed, control;
 	float	friction;
@@ -1768,7 +1776,7 @@ void CGameMovement::Friction( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::FinishGravity( void )
+void CSharedGameMovement::FinishGravity( void )
 {
 	float ent_gravity;
 
@@ -1791,7 +1799,7 @@ void CGameMovement::FinishGravity( void )
 // Input  : wishdir - 
 //			accel - 
 //-----------------------------------------------------------------------------
-void CGameMovement::AirAccelerate( Vector& wishdir, float wishspeed, float accel )
+void CSharedGameMovement::AirAccelerate( Vector& wishdir, float wishspeed, float accel )
 {
 	int i;
 	float addspeed, accelspeed, currentspeed;
@@ -1837,7 +1845,7 @@ void CGameMovement::AirAccelerate( Vector& wishdir, float wishspeed, float accel
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::AirMove( void )
+void CSharedGameMovement::AirMove( void )
 {
 	int			i;
 	Vector		wishvel;
@@ -1886,7 +1894,7 @@ void CGameMovement::AirMove( void )
 }
 
 
-bool CGameMovement::CanAccelerate()
+bool CSharedGameMovement::CanAccelerate()
 {
 	// Dead players don't accelerate.
 	if (player->pl.deadflag)
@@ -1906,7 +1914,7 @@ bool CGameMovement::CanAccelerate()
 //			wishspeed - 
 //			accel - 
 //-----------------------------------------------------------------------------
-void CGameMovement::Accelerate( Vector& wishdir, float wishspeed, float accel )
+void CSharedGameMovement::Accelerate( Vector& wishdir, float wishspeed, float accel )
 {
 	int i;
 	float addspeed, accelspeed, currentspeed;
@@ -1943,7 +1951,7 @@ void CGameMovement::Accelerate( Vector& wishdir, float wishspeed, float accel )
 //-----------------------------------------------------------------------------
 // Purpose: Try to keep a walking player on the ground when running down slopes etc
 //-----------------------------------------------------------------------------
-void CGameMovement::StayOnGround( void )
+void CSharedGameMovement::StayOnGround( void )
 {
 	trace_t trace;
 	Vector start( mv->GetAbsOrigin() );
@@ -1979,7 +1987,7 @@ void CGameMovement::StayOnGround( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::WalkMove( void )
+void CSharedGameMovement::WalkMove( void )
 {
 	int i;
 
@@ -1995,7 +2003,7 @@ void CGameMovement::WalkMove( void )
 
 	AngleVectors (mv->m_vecViewAngles, &forward, &right, &up);  // Determine movement angles
 
-	CHandle< CBaseEntity > oldground;
+	CHandle< CSharedBaseEntity > oldground;
 	oldground = player->GetGroundEntity();
 	
 	// Copy movement amounts
@@ -2109,7 +2117,7 @@ void CGameMovement::WalkMove( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::FullWalkMove( )
+void CSharedGameMovement::FullWalkMove( )
 {
 	if ( !CheckWater() ) 
 	{
@@ -2230,13 +2238,13 @@ void CGameMovement::FullWalkMove( )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::FullObserverMove( void )
+void CSharedGameMovement::FullObserverMove( void )
 {
 	int mode = player->GetObserverMode();
 
 	if ( mode == OBS_MODE_IN_EYE || mode == OBS_MODE_CHASE || mode == OBS_MODE_POI )
 	{
-		CBaseEntity * target = player->GetObserverTarget();
+		CSharedBaseEntity * target = player->GetObserverTarget();
 
 		if ( target != NULL )
 		{
@@ -2340,7 +2348,7 @@ void CGameMovement::FullObserverMove( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::FullNoClipMove( float factor, float maxacceleration )
+void CSharedGameMovement::FullNoClipMove( float factor, float maxacceleration )
 {
 	Vector wishvel;
 	Vector forward, right, up;
@@ -2429,7 +2437,7 @@ void CGameMovement::FullNoClipMove( float factor, float maxacceleration )
 //-----------------------------------------------------------------------------
 // Checks to see if we should actually jump 
 //-----------------------------------------------------------------------------
-void CGameMovement::PlaySwimSound()
+void CSharedGameMovement::PlaySwimSound()
 {
 	MoveHelper()->StartSound( mv->GetAbsOrigin(), "Player.Swim" );
 }
@@ -2438,7 +2446,7 @@ void CGameMovement::PlaySwimSound()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CGameMovement::CheckJumpButton( void )
+bool CSharedGameMovement::CheckJumpButton( void )
 {
 	if (player->pl.deadflag)
 	{
@@ -2617,7 +2625,7 @@ bool CGameMovement::CheckJumpButton( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::FullLadderMove()
+void CSharedGameMovement::FullLadderMove()
 {
 	CheckWater();
 
@@ -2641,7 +2649,7 @@ void CGameMovement::FullLadderMove()
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CGameMovement::TryPlayerMove( Vector *pFirstDest, trace_t *pFirstTrace )
+int CSharedGameMovement::TryPlayerMove( Vector *pFirstDest, trace_t *pFirstTrace )
 {
 	int			bumpcount, numbumps;
 	Vector		dir;
@@ -2904,7 +2912,7 @@ int CGameMovement::TryPlayerMove( Vector *pFirstDest, trace_t *pFirstTrace )
 //-----------------------------------------------------------------------------
 // Purpose: Determine whether or not the player is on a ladder (physprop or world).
 //-----------------------------------------------------------------------------
-inline bool CGameMovement::OnLadder( trace_t &trace )
+inline bool CSharedGameMovement::OnLadder( trace_t &trace )
 {
 	if ( trace.contents & CONTENTS_LADDER )
 		return true;
@@ -2936,7 +2944,7 @@ ConVar sv_ladder_angle( "sv_ladder_angle", "-0.707", FCVAR_REPLICATED, "Cos of a
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CGameMovement::LadderMove( void )
+bool CSharedGameMovement::LadderMove( void )
 {
 	trace_t pm;
 	bool onFloor;
@@ -3131,7 +3139,7 @@ const char *DescribeAxis( int axis );
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::CheckVelocity( void )
+void CSharedGameMovement::CheckVelocity( void )
 {
 	int i;
 
@@ -3174,7 +3182,7 @@ void CGameMovement::CheckVelocity( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::AddGravity( void )
+void CSharedGameMovement::AddGravity( void )
 {
 	float ent_gravity;
 
@@ -3202,7 +3210,7 @@ void CGameMovement::AddGravity( void )
 // Input  : push - 
 // Output : trace_t
 //-----------------------------------------------------------------------------
-void CGameMovement::PushEntity( Vector& push, trace_t *pTrace )
+void CSharedGameMovement::PushEntity( Vector& push, trace_t *pTrace )
 {
 	Vector	end;
 		
@@ -3227,7 +3235,7 @@ void CGameMovement::PushEntity( Vector& push, trace_t *pTrace )
 //			overbounce - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CGameMovement::ClipVelocity( Vector& in, Vector& normal, Vector& out, float overbounce )
+int CSharedGameMovement::ClipVelocity( Vector& in, Vector& normal, Vector& out, float overbounce )
 {
 	float	backoff;
 	float	change;
@@ -3272,7 +3280,7 @@ int CGameMovement::ClipVelocity( Vector& in, Vector& normal, Vector& out, float 
 //			rollspeed - 
 // Output : float 
 //-----------------------------------------------------------------------------
-float CGameMovement::CalcRoll ( const QAngle &angles, const Vector &velocity, float rollangle, float rollspeed )
+float CSharedGameMovement::CalcRoll ( const QAngle &angles, const Vector &velocity, float rollangle, float rollspeed )
 {
 	float   sign;
 	float   side;
@@ -3433,7 +3441,7 @@ extern void CreateStuckTable( void );
 //			offset - 
 // Output : int
 //-----------------------------------------------------------------------------
-int GetRandomStuckOffsets( CBasePlayer *pPlayer, Vector& offset)
+int GetRandomStuckOffsets( CSharedBasePlayer *pPlayer, Vector& offset)
 {
  // Last time we did a full
 	int idx;
@@ -3449,7 +3457,7 @@ int GetRandomStuckOffsets( CBasePlayer *pPlayer, Vector& offset)
 // Input  : nIndex - 
 //			server - 
 //-----------------------------------------------------------------------------
-void ResetStuckOffsets( CBasePlayer *pPlayer )
+void ResetStuckOffsets( CSharedBasePlayer *pPlayer )
 {
 	pPlayer->m_StuckLast = 0;
 }
@@ -3457,7 +3465,7 @@ void ResetStuckOffsets( CBasePlayer *pPlayer )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CGameMovement::IsMovingPlayerStuck( void ) const
+bool CSharedGameMovement::IsMovingPlayerStuck( void ) const
 {
 	return m_bProcessingMovement && !m_bInStuckTest && player && player->m_StuckLast > 0;
 }
@@ -3465,13 +3473,13 @@ bool CGameMovement::IsMovingPlayerStuck( void ) const
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CBasePlayer *CGameMovement::GetMovingPlayer( void ) const
+CSharedBasePlayer *CSharedGameMovement::GetMovingPlayer( void ) const
 {
 	return m_bProcessingMovement ? player : NULL;
 }
 
 //--------------------------------------------------------------------------------------------------------
-void CGameMovement::UnblockPusher( CBasePlayer *pPlayer, CBaseEntity *pPusher )
+void CSharedGameMovement::UnblockPusher( CSharedBasePlayer *pPlayer, CSharedBaseEntity *pPusher )
 {
 	// TODO
 }
@@ -3485,7 +3493,7 @@ static ConVar cl_pred_checkstuck( "cl_pred_checkstuck", "0", FCVAR_DEVELOPMENTON
 // Input  : &input - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CGameMovement::CheckStuck( void )
+int CSharedGameMovement::CheckStuck( void )
 {
 #if defined( CLIENT_DLL )
 	// Don't bother trying to jitter the player on the client, the server position will fix any true "stuck" issues and
@@ -3588,13 +3596,13 @@ int CGameMovement::CheckStuck( void )
 // Purpose: 
 // Output : bool
 //-----------------------------------------------------------------------------
-bool CGameMovement::InWater( void )
+bool CSharedGameMovement::InWater( void )
 {
 	return ( player->GetWaterLevel() > WL_Feet );
 }
 
 
-void CGameMovement::ResetGetPointContentsCache()
+void CSharedGameMovement::ResetGetPointContentsCache()
 {
 	for ( int slot = 0; slot < MAX_PC_CACHE_SLOTS; ++slot )
 	{
@@ -3605,7 +3613,7 @@ void CGameMovement::ResetGetPointContentsCache()
 	}
 }
 
-void CGameMovement::ResetGetWaterContentsForPointCache()
+void CSharedGameMovement::ResetGetWaterContentsForPointCache()
 {
 	for ( int slot = 0; slot < MAX_PC_CACHE_SLOTS; ++slot )
 	{
@@ -3616,7 +3624,7 @@ void CGameMovement::ResetGetWaterContentsForPointCache()
 	}
 }
 
-int CGameMovement::GetWaterContentsForPointCached( const Vector &point, int slot )
+int CSharedGameMovement::GetWaterContentsForPointCached( const Vector &point, int slot )
 {
 	if ( g_bMovementOptimizations ) 
 	{
@@ -3639,7 +3647,7 @@ int CGameMovement::GetWaterContentsForPointCached( const Vector &point, int slot
 	}
 }
 
-int CGameMovement::GetPointContentsCached( const Vector &point, int slot )
+int CSharedGameMovement::GetPointContentsCached( const Vector &point, int slot )
 {
 	if ( g_bMovementOptimizations ) 
 	{
@@ -3665,7 +3673,7 @@ int CGameMovement::GetPointContentsCached( const Vector &point, int slot )
 //-----------------------------------------------------------------------------
 // Purpose: returns the height to check for water
 //-----------------------------------------------------------------------------
-void CGameMovement::GetWaterCheckPosition( int waterLevel, Vector *pos )
+void CSharedGameMovement::GetWaterCheckPosition( int waterLevel, Vector *pos )
 {
 	(*pos)[0] = mv->GetAbsOrigin()[0] + (GetPlayerMins()[0] + GetPlayerMaxs()[0]) * 0.5;
 	(*pos)[1] = mv->GetAbsOrigin()[1] + (GetPlayerMins()[1] + GetPlayerMaxs()[1]) * 0.5;
@@ -3690,7 +3698,7 @@ void CGameMovement::GetWaterCheckPosition( int waterLevel, Vector *pos )
 // Input  : &input - 
 // Output : bool
 //-----------------------------------------------------------------------------
-bool CGameMovement::CheckWater( void )
+bool CSharedGameMovement::CheckWater( void )
 {
 	Vector	point;
 	int		cont;
@@ -3768,11 +3776,11 @@ bool CGameMovement::CheckWater( void )
 	return ( player->GetWaterLevel() > WL_Feet );
 }
 
-void CGameMovement::SetGroundEntity( trace_t *pm )
+void CSharedGameMovement::SetGroundEntity( trace_t *pm )
 {
-	CBaseEntity *newGround = pm ? pm->m_pEnt : NULL;
+	CSharedBaseEntity *newGround = pm ? pm->m_pEnt : NULL;
 
-	CBaseEntity *oldGround = player->GetGroundEntity();
+	CSharedBaseEntity *oldGround = player->GetGroundEntity();
 	Vector vecBaseVelocity = player->GetBaseVelocity();
 
 	if ( !oldGround && newGround )
@@ -3918,9 +3926,9 @@ void TracePlayerBBoxForGround( CTraceListData *pTraceListData, const Vector& sta
 // move the player down to the new floor and get stuck on a leaning wall that
 // the original trace hit first.
 //-----------------------------------------------------------------------------
-void CGameMovement::TryTouchGroundInQuadrants( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm )
+void CSharedGameMovement::TryTouchGroundInQuadrants( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm )
 {
-	VPROF( "CGameMovement::TryTouchGroundInQuadrants" );
+	VPROF( "CSharedGameMovement::TryTouchGroundInQuadrants" );
 
 	Vector mins, maxs;
 	Vector minsSrc = GetPlayerMins();
@@ -3981,7 +3989,7 @@ void CGameMovement::TryTouchGroundInQuadrants( const Vector& start, const Vector
 // Purpose: 
 // Input  : &input - 
 //-----------------------------------------------------------------------------
-void CGameMovement::CategorizePosition( void )
+void CSharedGameMovement::CategorizePosition( void )
 {
 	Vector point;
 	trace_t pm;
@@ -4031,7 +4039,7 @@ void CGameMovement::CategorizePosition( void )
 		// We need to account for standing on a moving ground object in that case in order to determine if we really 
 		//  are moving away from the object we are standing on at too rapid a speed.  Note that CheckJump already sets
 		//  ground entity to NULL, so this wouldn't have any effect unless we are moving up rapidly not from the jump button.
-		CBaseEntity *ground = player->GetGroundEntity();
+		CSharedBaseEntity *ground = player->GetGroundEntity();
 		if ( ground )
 		{
 			flGroundEntityVelZ = ground->GetAbsVelocity().z;
@@ -4126,7 +4134,7 @@ void CGameMovement::CategorizePosition( void )
 // Purpose: Determine if the player has hit the ground while falling, apply
 //			damage, and play the appropriate impact sound.
 //-----------------------------------------------------------------------------
-void CGameMovement::CheckFalling( void )
+void CSharedGameMovement::CheckFalling( void )
 {
 	// this function really deals with landing, not falling, so early out otherwise
 	if ( player->GetGroundEntity() == NULL || player->m_Local.m_flFallVelocity <= 0 )
@@ -4202,7 +4210,7 @@ void CGameMovement::CheckFalling( void )
 	}
 }
 
-void CGameMovement::PlayerRoughLandingEffects( float fvol )
+void CSharedGameMovement::PlayerRoughLandingEffects( float fvol )
 {
 	if ( fvol > 0.0 )
 	{
@@ -4235,7 +4243,7 @@ void CGameMovement::PlayerRoughLandingEffects( float fvol )
 //			scale - 
 // Output : float
 //-----------------------------------------------------------------------------
-float CGameMovement::SplineFraction( float value, float scale )
+float CSharedGameMovement::SplineFraction( float value, float scale )
 {
 	float valueSquared;
 
@@ -4250,7 +4258,7 @@ float CGameMovement::SplineFraction( float value, float scale )
 // Purpose: Determine if crouch/uncrouch caused player to get stuck in world
 // Input  : direction - 
 //-----------------------------------------------------------------------------
-void CGameMovement::FixPlayerCrouchStuck( bool upward )
+void CSharedGameMovement::FixPlayerCrouchStuck( bool upward )
 {
 	EntityHandle_t hitent;
 	int i;
@@ -4277,7 +4285,7 @@ void CGameMovement::FixPlayerCrouchStuck( bool upward )
 	mv->SetAbsOrigin( test ); // Failed
 }
 
-bool CGameMovement::CanUnduck()
+bool CSharedGameMovement::CanUnduck()
 {
 	int i;
 	trace_t trace;
@@ -4316,7 +4324,7 @@ bool CGameMovement::CanUnduck()
 //-----------------------------------------------------------------------------
 // Purpose: Stop ducking
 //-----------------------------------------------------------------------------
-void CGameMovement::FinishUnDuck( void )
+void CSharedGameMovement::FinishUnDuck( void )
 {
 	int i;
 	trace_t trace;
@@ -4369,7 +4377,7 @@ void CGameMovement::FinishUnDuck( void )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CGameMovement::UpdateDuckJumpEyeOffset( void )
+void CSharedGameMovement::UpdateDuckJumpEyeOffset( void )
 {
 	if ( player->m_Local.m_flDuckJumpTime != 0.0f )
 	{
@@ -4391,7 +4399,7 @@ void CGameMovement::UpdateDuckJumpEyeOffset( void )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CGameMovement::FinishUnDuckJump( trace_t &trace )
+void CSharedGameMovement::FinishUnDuckJump( trace_t &trace )
 {
 	Vector vecNewOrigin;
 	VectorCopy( mv->GetAbsOrigin(), vecNewOrigin );
@@ -4427,7 +4435,7 @@ void CGameMovement::FinishUnDuckJump( trace_t &trace )
 //-----------------------------------------------------------------------------
 // Purpose: Finish ducking
 //-----------------------------------------------------------------------------
-void CGameMovement::FinishDuck( void )
+void CSharedGameMovement::FinishDuck( void )
 {
 	if ( player->GetFlags() & FL_DUCKING )
 		return;
@@ -4479,7 +4487,7 @@ void CGameMovement::FinishDuck( void )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CGameMovement::StartUnDuckJump( void )
+void CSharedGameMovement::StartUnDuckJump( void )
 {
 	player->AddFlag( FL_DUCKING );
 	player->m_Local.m_bDucked = true;
@@ -4506,7 +4514,7 @@ void CGameMovement::StartUnDuckJump( void )
 // Purpose: 
 // Input  : duckFraction - 
 //-----------------------------------------------------------------------------
-void CGameMovement::SetDuckedEyeOffset( float duckFraction )
+void CSharedGameMovement::SetDuckedEyeOffset( float duckFraction )
 {
  	Vector vDuckHullMin = GetPlayerMins( true );
 	Vector vStandHullMin = GetPlayerMins( false );
@@ -4527,7 +4535,7 @@ void CGameMovement::SetDuckedEyeOffset( float duckFraction )
 //          bInAir - is the player in air
 //    NOTE: Only crop player speed once.
 //-----------------------------------------------------------------------------
-void CGameMovement::HandleDuckingSpeedCrop( void )
+void CSharedGameMovement::HandleDuckingSpeedCrop( void )
 {
 	if ( !( m_iSpeedCropped & SPEED_CROPPED_DUCK ) && ( player->GetFlags() & FL_DUCKING ) && ( player->GetGroundEntity() != NULL ) )
 	{
@@ -4542,7 +4550,7 @@ void CGameMovement::HandleDuckingSpeedCrop( void )
 //-----------------------------------------------------------------------------
 // Purpose: Check to see if we are in a situation where we can unduck jump.
 //-----------------------------------------------------------------------------
-bool CGameMovement::CanUnDuckJump( trace_t &trace )
+bool CSharedGameMovement::CanUnDuckJump( trace_t &trace )
 {
 	// Trace down to the stand position and see if we can stand.
 	Vector vecEnd( mv->GetAbsOrigin() );
@@ -4569,7 +4577,7 @@ bool CGameMovement::CanUnDuckJump( trace_t &trace )
 //-----------------------------------------------------------------------------
 // Purpose: See if duck button is pressed and do the appropriate things
 //-----------------------------------------------------------------------------
-void CGameMovement::Duck( void )
+void CSharedGameMovement::Duck( void )
 {
 	int buttonsChanged	= ( mv->m_nOldButtons ^ mv->m_nButtons );	// These buttons have changed this frame
 	int buttonsPressed	=  buttonsChanged & mv->m_nButtons;			// The changed ones still down are "pressed"
@@ -4772,9 +4780,9 @@ static ConVar sv_optimizedmovement( "sv_optimizedmovement", "1", FCVAR_REPLICATE
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::PlayerMove( void )
+void CSharedGameMovement::PlayerMove( void )
 {
-	VPROF( "CGameMovement::PlayerMove" );
+	VPROF( "CSharedGameMovement::PlayerMove" );
 
 	CheckParameters();
 	
@@ -4917,7 +4925,7 @@ void CGameMovement::PlayerMove( void )
 //-----------------------------------------------------------------------------
 // Performs the collision resolution for fliers.
 //-----------------------------------------------------------------------------
-void CGameMovement::PerformFlyCollisionResolution( trace_t &pm, Vector &move )
+void CSharedGameMovement::PerformFlyCollisionResolution( trace_t &pm, Vector &move )
 {
 	Vector base;
 	float vel;
@@ -4986,7 +4994,7 @@ void CGameMovement::PerformFlyCollisionResolution( trace_t &pm, Vector &move )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameMovement::FullTossMove( void )
+void CSharedGameMovement::FullTossMove( void )
 {
 	trace_t pm;
 	Vector move;
@@ -5090,7 +5098,7 @@ void CGameMovement::FullTossMove( void )
 
 #pragma warning (disable : 4701)
 
-void CGameMovement::IsometricMove( void )
+void CSharedGameMovement::IsometricMove( void )
 {
 	int i;
 	Vector wishvel;
@@ -5126,7 +5134,7 @@ void CGameMovement::IsometricMove( void )
 #pragma warning (default : 4701)
 
 
-bool CGameMovement::GameHasLadders() const
+bool CSharedGameMovement::GameHasLadders() const
 {
 	return true;
 }
@@ -5134,9 +5142,9 @@ bool CGameMovement::GameHasLadders() const
 //-----------------------------------------------------------------------------
 // Purpose: Traces player movement + position
 //-----------------------------------------------------------------------------
-void CGameMovement::TracePlayerBBox( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm )
+void CSharedGameMovement::TracePlayerBBox( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm )
 {
-	VPROF( "CGameMovement::TracePlayerBBox" );
+	VPROF( "CSharedGameMovement::TracePlayerBBox" );
 
 	Ray_t ray;
 	ray.Init( start, end, GetPlayerMins(), GetPlayerMaxs() );
@@ -5149,9 +5157,9 @@ void CGameMovement::TracePlayerBBox( const Vector& start, const Vector& end, uns
 //-----------------------------------------------------------------------------
 // Purpose: overridded by game classes to limit results (to standable objects for example)
 //-----------------------------------------------------------------------------
-void  CGameMovement::TryTouchGround( const Vector& start, const Vector& end, const Vector& mins, const Vector& maxs, unsigned int fMask, int collisionGroup, trace_t& pm )
+void  CSharedGameMovement::TryTouchGround( const Vector& start, const Vector& end, const Vector& mins, const Vector& maxs, unsigned int fMask, int collisionGroup, trace_t& pm )
 {
-	VPROF( "CGameMovement::TryTouchGround" );
+	VPROF( "CSharedGameMovement::TryTouchGround" );
 
 	Ray_t ray;
 	ray.Init( start, end, mins, maxs );

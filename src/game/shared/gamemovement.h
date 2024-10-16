@@ -34,20 +34,41 @@ enum
 
 struct surfacedata_t;
 
+#ifdef GAME_DLL
 class CBasePlayer;
+typedef CBasePlayer CSharedBasePlayer;
+#else
+class C_BasePlayer;
+typedef C_BasePlayer CSharedBasePlayer;
+#endif
+
+#ifdef CLIENT_DLL
+class C_GameMovement;
+typedef C_GameMovement CSharedGameMovement;
+#else
+class CGameMovement;
+typedef CGameMovement CSharedGameMovement;
+#endif
+
+#ifdef CLIENT_DLL
+	#define CGameMovement C_GameMovement
+#endif
 
 class CGameMovement : public IGameMovement
 {
 public:
 	DECLARE_CLASS_NOBASE( CGameMovement );
-	
 	CGameMovement( void );
-	virtual			~CGameMovement( void );
+	virtual ~CGameMovement( void );
 
-	virtual void	ProcessMovement( CBasePlayer *pPlayer, CMoveData *pMove );
+#ifdef CLIENT_DLL
+	#undef CGameMovement
+#endif
+
+	virtual void	ProcessMovement( CSharedBasePlayer *pPlayer, CMoveData *pMove );
 	virtual void	Reset( void );
-	virtual void	StartTrackPredictionErrors( CBasePlayer *pPlayer );
-	virtual void	FinishTrackPredictionErrors( CBasePlayer *pPlayer );
+	virtual void	StartTrackPredictionErrors( CSharedBasePlayer *pPlayer );
+	virtual void	FinishTrackPredictionErrors( CSharedBasePlayer *pPlayer );
 	virtual void	DiffPrint( PRINTF_FORMAT_STRING char const *fmt, ... );
 	virtual Vector 	GetPlayerMins( bool ducked ) const;
 	virtual Vector 	GetPlayerMaxs( bool ducked ) const;
@@ -55,8 +76,8 @@ public:
 	virtual void SetupMovementBounds( CMoveData *pMove );
 
 	virtual bool		IsMovingPlayerStuck( void ) const;
-	virtual CBasePlayer *GetMovingPlayer( void ) const;
-	virtual void		UnblockPusher( CBasePlayer *pPlayer, CBaseEntity *pPusher );
+	virtual CSharedBasePlayer *GetMovingPlayer( void ) const;
+	virtual void		UnblockPusher( CSharedBasePlayer *pPlayer, CSharedBaseEntity *pPusher );
 
 // For sanity checking getting stuck on CMoveData::SetAbsOrigin
 	virtual void	TracePlayerBBox( const Vector& start, const Vector& end, unsigned int fMask, int collisionGroup, trace_t& pm );
@@ -66,8 +87,8 @@ public:
 
 
 #define BRUSH_ONLY true
-	virtual unsigned int PlayerSolidMask( bool brushOnly = false, CBasePlayer *testPlayer = NULL ) const;	///< returns the solid mask for the given player, so bots can have a more-restrictive set
-	CBasePlayer		*player;
+	virtual unsigned int PlayerSolidMask( bool brushOnly = false, CSharedBasePlayer *testPlayer = NULL ) const;	///< returns the solid mask for the given player, so bots can have a more-restrictive set
+	CSharedBasePlayer		*player;
 	CMoveData *GetMoveData() { return mv; }
 protected:
 	// Input/Output for this movement

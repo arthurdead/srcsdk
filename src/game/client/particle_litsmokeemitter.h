@@ -8,10 +8,7 @@
 #define PARTICLE_LITSMOKEEMITTER_H
 #pragma once
 
-
 #include "particles_simple.h"
-
-#include "tier0/memdbgon.h"
 
 //==================================================
 // CLitSmokeEmitter
@@ -36,10 +33,7 @@ public:
 	virtual	void	SetDirectionalLight( Vector position, Vector color, float intensity );
 	virtual	void	SetLight( Vector position, Vector color, float intensity );
 
-	static CSmartPtr<CLitSmokeEmitter> Create( const char *pDebugName )
-	{
-		return new CLitSmokeEmitter( pDebugName );
-	}
+	static CSmartPtr<CLitSmokeEmitter> Create( const char *pDebugName );
 
 	CParticleSphereRenderer	m_Renderer;
 

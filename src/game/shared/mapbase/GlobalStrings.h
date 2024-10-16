@@ -13,9 +13,10 @@
 
 #ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
 #else
-#define CBaseEntity C_BaseEntity
 class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
 #endif
 
 // -------------------------------------------------------------
@@ -54,7 +55,7 @@ extern string_t gm_isz_name_activator;
 // Does the classname of this entity match the string_t?
 // 
 // This function is for comparing global strings and allows us to change how we compare them quickly.
-bool EntIsClass( CBaseEntity *ent, string_t str2 );
+bool EntIsClass( CSharedBaseEntity *ent, string_t str2 );
 
 // -------------------------------------------------------------
 

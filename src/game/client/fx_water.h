@@ -11,8 +11,6 @@
 #include "particles_simple.h"
 #include "fx.h"
 
-#include "tier0/memdbgon.h"
-
 class CSplashParticle : public CSimpleEmitter
 {
 public:
@@ -20,10 +18,7 @@ public:
 	CSplashParticle( const char *pDebugName ) : CSimpleEmitter( pDebugName ), m_bUseClipHeight( false ) {}
 	
 	// Create
-	static CSplashParticle *Create( const char *pDebugName )
-	{
-		return new CSplashParticle( pDebugName );
-	}
+	static CSplashParticle *Create( const char *pDebugName );
 
 	// Roll
 	virtual	float UpdateRoll( SimpleParticle *pParticle, float timeDelta );
@@ -70,7 +65,5 @@ extern void FX_GunshotSlimeSplash( const Vector &origin, const Vector &normal, f
 //			*luminosity - adjusted luminosity at this point
 //-----------------------------------------------------------------------------
 void FX_GetSplashLighting( const Vector &position, Vector *color, float *luminosity );
-
-#include "tier0/memdbgoff.h"
 
 #endif // FX_WATER_H

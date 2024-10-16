@@ -3,12 +3,15 @@
 #ifndef _IMATCHSYSTEM_H_
 #define _IMATCHSYSTEM_H_
 
+#pragma once
+
 class IPlayerManager;
 class IGameManager;
 class IServerManager;
 class ISearchManager;
 class IMatchVoice;
 class IDatacenter;
+class KeyValues;
 
 class IMatchSystem
 {

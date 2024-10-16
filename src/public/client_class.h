@@ -47,41 +47,9 @@ typedef IClientNetworkable*	(*CreateEventFn)();
 class ClientClass
 {
 public:
-	ClientClass( const char *pNetworkName, CreateClientClassFn createFn, RecvTable *pRecvTable )
-	{
-		m_pNetworkName	= pNetworkName;
-		m_pCreateFn		= createFn;
-		m_pCreateEventFn= NULL;
-		m_pRecvTable	= pRecvTable;
-		
-		// Link it in
-		m_pNext				= g_pClientClassHead;
-		g_pClientClassHead	= this;
-	}
-
-	ClientClass( const char *pNetworkName, CreateEventFn createEventFn, RecvTable *pRecvTable )
-	{
-		m_pNetworkName	= pNetworkName;
-		m_pCreateFn		= NULL;
-		m_pCreateEventFn= createEventFn;
-		m_pRecvTable	= pRecvTable;
-		
-		// Link it in
-		m_pNext				= g_pClientClassHead;
-		g_pClientClassHead	= this;
-	}
-
-	ClientClass( const char *pNetworkName, RecvTable *pRecvTable )
-	{
-		m_pNetworkName	= pNetworkName;
-		m_pCreateFn		= NULL;
-		m_pCreateEventFn= NULL;
-		m_pRecvTable	= pRecvTable;
-		
-		// Link it in
-		m_pNext				= g_pClientClassHead;
-		g_pClientClassHead	= this;
-	}
+	ClientClass( const char *pNetworkName, CreateClientClassFn createFn, RecvTable *pRecvTable );
+	ClientClass( const char *pNetworkName, CreateEventFn createEventFn, RecvTable *pRecvTable );
+	ClientClass( const char *pNetworkName, RecvTable *pRecvTable );
 
 	const char* GetName()
 	{
@@ -117,7 +85,7 @@ public:
 // networkName must match the network name of a class registered on the server.
 #define IMPLEMENT_CLIENTCLASS(clientClassName, dataTable, serverClassName) \
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName) \
-	static IClientNetworkable* _##clientClassName##_CreateObject( int entnum, int serialNum ) \
+	static IClientNetworkable* V_CONCAT3(_, clientClassName, _CreateObject)( int entnum, int serialNum ) \
 	{ \
 		clientClassName *pRet = new clientClassName; \
 		if(!pRet->PostConstructor( NULL )) { \
@@ -130,7 +98,7 @@ public:
 		} \
 		return pRet; \
 	} \
-	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
+	ClientClass V_CONCAT3(__g_, clientClassName, ClientClass)(V_STRINGIFY(serverClassName), \
 													_##clientClassName##_CreateObject, \
 													&dataTable::g_RecvTable);
 
@@ -138,7 +106,7 @@ public:
 // (or make it a singleton).
 #define IMPLEMENT_CLIENTCLASS_FACTORY(clientClassName, dataTable, serverClassName, factory) \
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName) \
-	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
+	ClientClass V_CONCAT3(__g_, clientClassName, ClientClass)(V_STRINGIFY(serverClassName), \
 													factory, \
 													&dataTable::g_RecvTable);
 
@@ -157,8 +125,8 @@ public:
 #define IMPLEMENT_CLIENTCLASS_EVENT(clientClassName, dataTable, serverClassName)\
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName)\
 	static clientClassName __g_##clientClassName; \
-	static IClientNetworkable* _##clientClassName##_CreateObject() {return &__g_##clientClassName;}\
-	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
+	static IClientNetworkable* V_CONCAT3(_, clientClassName, _CreateObject)() {return &__g_##clientClassName;}\
+	ClientClass V_CONCAT3(__g_, clientClassName, ClientClass)(V_STRINGIFY(serverClassName), \
 													_##clientClassName##_CreateObject, \
 													&dataTable::g_RecvTable);
 
@@ -173,18 +141,18 @@ public:
 // uses some other global object (so you must use Initializers so you're constructed afterwards).
 #define IMPLEMENT_CLIENTCLASS_EVENT_POINTER(clientClassName, dataTable, serverClassName, ptr)\
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName)\
-	static IClientNetworkable* _##clientClassName##_CreateObject() {return ptr;}\
-	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
+	static IClientNetworkable* V_CONCAT3(_, clientClassName, _CreateObject)() {return ptr;}\
+	ClientClass V_CONCAT3(__g_, clientClassName, ClientClass)(V_STRINGIFY(serverClassName), \
 													_##clientClassName##_CreateObject, \
 													&dataTable::g_RecvTable);
 
 #define IMPLEMENT_CLIENTCLASS_NULL(clientClassName, dataTable, serverClassName)\
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName)\
-	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
+	ClientClass V_CONCAT3(__g_, clientClassName, ClientClass)(V_STRINGIFY(serverClassName), \
 													&dataTable::g_RecvTable);
 
 #define IMPLEMENT_CLIENTCLASS_EVENT_NONSINGLETON(clientClassName, dataTable, serverClassName)\
-	static IClientNetworkable* _##clientClassName##_CreateObject() \
+	static IClientNetworkable* V_CONCAT3(_, clientClassName, _CreateObject)() \
 	{ \
 		clientClassName *p = new clientClassName; \
 		if(!p->PostConstructor( NULL )) { \
@@ -197,21 +165,21 @@ public:
 		} \
 		return p; \
 	} \
-	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
-													_##clientClassName##_CreateObject, \
+	ClientClass V_CONCAT3(__g_, clientClassName, ClientClass)(V_STRINGIFY(serverClassName), \
+													V_CONCAT3(_, clientClassName, _CreateObject), \
 													&dataTable::g_RecvTable);
 
 
 // Used internally..
 #define INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName) \
 	namespace dataTable {extern RecvTable g_RecvTable;}\
-	extern ClientClass __g_##clientClassName##ClientClass;\
+	extern ClientClass V_CONCAT3(__g_, clientClassName, ClientClass);\
 	RecvTable*		clientClassName::m_pClassRecvTable = &dataTable::g_RecvTable;\
 	int				clientClassName::YouForgotToImplementOrDeclareClientClass() {return 0;}\
 	ClientClass*	clientClassName::GetClientClass() { \
 		if(!IsNetworked()) \
 			return NULL; \
-		return &__g_##clientClassName##ClientClass; \
+		return &V_CONCAT3(__g_, clientClassName, ClientClass); \
 	}
 
 #endif // CLIENT_CLASS_H

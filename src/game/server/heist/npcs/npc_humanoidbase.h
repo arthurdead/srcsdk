@@ -4,10 +4,6 @@
 #pragma once
 
 #include "ai_baseactor.h"
-#include "ai_heist.h"
-#include "suspicioner.h"
-
-class CHeistPlayer;
 
 class CNPC_HumanoidBase : public CAI_BaseActor
 {
@@ -24,7 +20,7 @@ private:
 	void SuspicionThink();
 
 protected:
-	CNetworkVarEmbedded(CSuspicioner, m_Suspicioner)
+	
 };
 
 #endif

@@ -721,6 +721,7 @@ void Panel::Init( int x, int y, int wide, int tall )
 	REGISTER_COLOR_AS_OVERRIDABLE( _fgColor, "fgcolor_override" );
 	REGISTER_COLOR_AS_OVERRIDABLE( _bgColor, "bgcolor_override" );
 
+	m_unused1 = false;
 	m_NavUp = NULL;
 	m_NavDown = NULL;
 	m_NavLeft = NULL;
@@ -5037,9 +5038,11 @@ void PreparePanelMessageMap(PanelMessageMap *panelMap)
 	}
 }
 
+#if 0
 void Panel::OnMovedPopupToFront()
 {
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Handles a message
@@ -5590,6 +5593,11 @@ void Panel::OnDelete()
 // Purpose: Panel handle implementation
 //			Returns a pointer to a valid panel, NULL if the panel has been deleted
 //-----------------------------------------------------------------------------
+Panel *PHandle::Get()
+{
+	return static_cast<const PHandle *>(this)->Get();
+}
+
 Panel *PHandle::Get() const
 {
 	if (m_iPanelID != INVALID_PANEL)

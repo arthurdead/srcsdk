@@ -19,6 +19,7 @@ if build_libs
 	game_loopback_lib = shared_library('game_loopback',name_prefix:'',
 		cpp_args: [
 			'-DDLLNAME=game_loopback',
+			'-DMEMOVERRIDE_MODULE=game_loopback',
 		],
 		sources: files(
 			join_paths(game_loopback_src_dir,'game_loopback.cpp'),

@@ -10,6 +10,8 @@
 
 #include "ehandle.h"
 
+class IPhysicsObject;
+
 // inherit from this interface to be able to call WatchPositionChanges
 abstract_class IWatcherCallback
 {
@@ -20,26 +22,26 @@ public:
 abstract_class IPositionWatcher : public IWatcherCallback
 {
 public:
-	virtual void NotifyPositionChanged( CBaseEntity *pEntity ) = 0;
+	virtual void NotifyPositionChanged( CSharedBaseEntity *pEntity ) = 0;
 };
 
 // NOTE: The table of watchers is NOT saved/loaded!  Recreate these links on restore
-void ReportPositionChanged( CBaseEntity *pMovedEntity );
-void WatchPositionChanges( CBaseEntity *pWatcher, CBaseEntity *pMovingEntity );
-void RemovePositionWatcher( CBaseEntity *pWatcher, CBaseEntity *pMovingEntity );
+void ReportPositionChanged( CSharedBaseEntity *pMovedEntity );
+void WatchPositionChanges( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pMovingEntity );
+void RemovePositionWatcher( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pMovingEntity );
 
 
 // inherit from this interface to be able to call WatchPositionChanges
 abstract_class IVPhysicsWatcher : public IWatcherCallback
 {
 public:
-	virtual void NotifyVPhysicsStateChanged( IPhysicsObject *pPhysics, CBaseEntity *pEntity, bool bAwake ) = 0;
+	virtual void NotifyVPhysicsStateChanged( IPhysicsObject *pPhysics, CSharedBaseEntity *pEntity, bool bAwake ) = 0;
 };
 
 // NOTE: The table of watchers is NOT saved/loaded!  Recreate these links on restore
-void ReportVPhysicsStateChanged( IPhysicsObject *pPhysics, CBaseEntity *pEntity, bool bAwake );
-void WatchVPhysicsStateChanges( CBaseEntity *pWatcher, CBaseEntity *pPhysicsEntity );
-void RemoveVPhysicsStateWatcher( CBaseEntity *pWatcher, CBaseEntity *pPhysicsEntity );
+void ReportVPhysicsStateChanged( IPhysicsObject *pPhysics, CSharedBaseEntity *pEntity, bool bAwake );
+void WatchVPhysicsStateChanges( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pPhysicsEntity );
+void RemoveVPhysicsStateWatcher( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pPhysicsEntity );
 
 
 #endif // POSITIONWATCHER_H

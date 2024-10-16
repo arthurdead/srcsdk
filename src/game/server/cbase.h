@@ -53,6 +53,8 @@
 
 #include "dt_send.h"
 
+#include "shared_classnames.h"
+
 // Shared header between the client DLL and the game DLLs
 #include "shareddefs.h"
 #include "ehandle.h"

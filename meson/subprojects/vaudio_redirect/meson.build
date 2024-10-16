@@ -33,7 +33,8 @@ vaudio_redirect_lib = declare_dependency(
 if build_client
 	shared_library('vaudio_miles',name_prefix:'',
 		cpp_args: [
-			'-DDLLNAME=vaudio_miles'
+			'-DDLLNAME=vaudio_miles',
+			'-DMEMOVERRIDE_MODULE=vaudio_miles',
 		],
 		dependencies: [
 			vaudio_redirect_lib,

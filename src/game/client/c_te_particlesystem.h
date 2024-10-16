@@ -14,6 +14,7 @@
 #ifndef C_TE_PARTICLESYSTEM_H
 #define C_TE_PARTICLESYSTEM_H
 
+#pragma once
 
 #include "particlemgr.h"
 #include "c_basetempentity.h"

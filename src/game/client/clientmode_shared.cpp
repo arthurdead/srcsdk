@@ -1364,7 +1364,7 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 		//If we're in the spectator team then we should be getting whatever messages the person I'm spectating gets.
 		if ( bValidTeam == false )
 		{
-			CBasePlayer *pSpectatorTarget = UTIL_PlayerByIndex( GetSpectatorTarget() );
+			C_BasePlayer *pSpectatorTarget = UTIL_PlayerByIndex( GetSpectatorTarget() );
 
 			if ( pSpectatorTarget && (GetSpectatorMode() == OBS_MODE_IN_EYE || GetSpectatorMode() == OBS_MODE_CHASE || GetSpectatorMode() == OBS_MODE_POI) )
 			{

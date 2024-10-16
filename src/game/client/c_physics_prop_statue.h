@@ -35,7 +35,7 @@ public:
 
 public:
 
-	CHandle<CBaseAnimating>		m_hInitBaseAnimating;
+	CHandle<C_BaseAnimating>		m_hInitBaseAnimating;
 
 	bool	m_bShatter;
 	int		m_nShatterFlags;

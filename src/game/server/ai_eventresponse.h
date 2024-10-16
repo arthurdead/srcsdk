@@ -7,7 +7,10 @@
 #ifndef	AI_EVENTRESPONSE_H
 #define	AI_EVENTRESPONSE_H
 
+#pragma once
+
 #include "utldict.h"
+#include "igamesystem.h"
 
 #define NPCEVENTRESPONSE_DISTANCE_SQR		(768 * 768) // Maximum distance for responding to NPCs
 #define NPCEVENTRESPONSE_REFIRE_TIME		15.0		// Time after giving a response before giving any more

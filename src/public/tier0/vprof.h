@@ -8,6 +8,8 @@
 #ifndef VPROF_H
 #define VPROF_H
 
+#pragma once
+
 #include "tier0/dbg.h"
 #include "tier0/fasttimer.h"
 #include "tier0/l2cache.h"

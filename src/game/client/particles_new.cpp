@@ -31,14 +31,14 @@ extern int g_cl_particle_show_bbox_cost;
 //-----------------------------------------------------------------------------
 // Constructor, destructor
 //-----------------------------------------------------------------------------
-CNewParticleEffect::CNewParticleEffect( CBaseEntity *pOwner, CParticleSystemDefinition *pEffect )
+CNewParticleEffect::CNewParticleEffect( C_BaseEntity *pOwner, CParticleSystemDefinition *pEffect )
 {
 	m_hOwner = pOwner;
 	Init( pEffect );
 	Construct();
 }
 
-CNewParticleEffect::CNewParticleEffect( CBaseEntity *pOwner, const char* pEffectName )
+CNewParticleEffect::CNewParticleEffect( C_BaseEntity *pOwner, const char* pEffectName )
 {
 	m_hOwner = pOwner;
 	Init( pEffectName );
@@ -198,7 +198,7 @@ void CNewParticleEffect::SetDormant( bool bDormant )
 	CParticleCollection::SetDormant( bDormant );
 }
 
-void CNewParticleEffect::SetControlPointEntity( int nWhichPoint, CBaseEntity *pEntity )
+void CNewParticleEffect::SetControlPointEntity( int nWhichPoint, C_BaseEntity *pEntity )
 {
 	if ( m_bRecord && m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID && clienttools->IsInRecordingMode() )
 	{

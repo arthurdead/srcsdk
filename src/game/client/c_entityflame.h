@@ -8,6 +8,8 @@
 #ifndef C_ENTITY_FLAME_H
 #define C_ENTITY_FLAME_H
 
+#pragma once
+
 #include "c_baseentity.h"
 
 //
@@ -25,7 +27,7 @@ public:
 	C_EntityFlame( void );
 	virtual ~C_EntityFlame( void );
 
-	static C_EntityFlame	*Create( CBaseEntity *pTarget, float flLifetime, float flSize = 0.0f );
+	static C_EntityFlame	*Create( C_BaseEntity *pTarget, float flLifetime, float flSize = 0.0f );
 
 	virtual bool	Simulate( void );
 	virtual void	UpdateOnRemove( void );
@@ -33,7 +35,7 @@ public:
 	void	RemoveThink( void );
 
 	// Pure client side flame entities only functions
-	void	AttachToEntity( CBaseEntity *pTarget );
+	void	AttachToEntity( C_BaseEntity *pTarget );
 	void	SetLifetime( float lifetime );
 
 	EHANDLE				m_hEntAttached;		// The entity that we are burning (attached to).
@@ -51,7 +53,7 @@ private:
 	float m_flLifetime;
 };
 
-inline void C_EntityFlame::AttachToEntity( CBaseEntity *pTarget )
+inline void C_EntityFlame::AttachToEntity( C_BaseEntity *pTarget )
 {
 	m_hEntAttached = pTarget;
 }

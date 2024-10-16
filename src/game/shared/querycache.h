@@ -77,11 +77,11 @@ struct QueryCacheEntry_t
 
 
 
-bool IsLineOfSightBetweenTwoEntitiesClear( CBaseEntity *pSrcEntity,
+bool IsLineOfSightBetweenTwoEntitiesClear( CSharedBaseEntity *pSrcEntity,
 										   EEntityOffsetMode_t nSrcOffsetMode,
-										   CBaseEntity *pDestEntity,
+										   CSharedBaseEntity *pDestEntity,
 										   EEntityOffsetMode_t nDestOffsetMode,
-										   CBaseEntity *pSkipEntity,
+										   CSharedBaseEntity *pSkipEntity,
 										   int nCollisionGroup,
 										   unsigned int nTraceMask,
 										   ShouldHitFunc_t pTraceFilterCallback,

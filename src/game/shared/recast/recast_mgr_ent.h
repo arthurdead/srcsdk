@@ -21,20 +21,33 @@
 // 
 //-----------------------------------------------------------------------------
 #if defined( CLIENT_DLL )
+class C_RecastMgrEnt;
+typedef C_RecastMgrEnt CSharedRecastMgrEnt;
+#else
+class CRecastMgrEnt;
+typedef CRecastMgrEnt CSharedRecastMgrEnt;
+#endif
+
+#if defined( CLIENT_DLL )
 #define CRecastMgrEnt C_RecastMgrEnt
 #endif
-class CRecastMgrEnt : public CPointEntity
+
+class CRecastMgrEnt : public CSharedPointEntity
 {
 public:
-	DECLARE_CLASS( CRecastMgrEnt, CPointEntity );
-	DECLARE_NETWORKCLASS();
-
+	DECLARE_CLASS( CRecastMgrEnt, CSharedPointEntity );
 	CRecastMgrEnt();
 	~CRecastMgrEnt();
+
+#if defined( CLIENT_DLL )
+	#undef CRecastMgrEnt
+#endif
+
+	DECLARE_NETWORKCLASS();
 
 	virtual void Spawn();
 };
 
-CRecastMgrEnt *GetRecastMgrEnt();
+CSharedRecastMgrEnt *GetRecastMgrEnt();
 
 #endif // RECAST_MGR_ENT_H

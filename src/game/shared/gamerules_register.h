@@ -10,45 +10,43 @@
 
 #ifdef GAME_DLL
 class CGameRules;
+typedef CGameRules CSharedGameRules;
 #else
-#define CGameRules C_GameRules
 class C_GameRules;
+typedef C_GameRules CSharedGameRules;
 #endif
 
 // Each game rules class must register using this in it's .cpp file.
-#if !defined(_STATIC_LINKED)
-#define REGISTER_GAMERULES_CLASS( className ) \
-	CGameRules *__CreateGameRules_##className() { \
-		CGameRules *pRules = new className; \
-		if(!pRules->PostConstructor( #className )) { \
+#if defined(_STATIC_LINKED)
+	#error
+#endif
+
+#define REGISTER_GAMERULES_CLASS_INTERNAL( className, name ) \
+	CSharedGameRules * V_CONCAT2(__CreateGameRules_, className)() { \
+		CSharedGameRules *pRules = new className; \
+		if(!pRules->PostConstructor( V_STRINGIFY(className) )) { \
 			UTIL_Remove(pRules); \
 			return NULL; \
 		} \
 		return pRules; \
 	} \
-	static CGameRulesRegister __g_GameRulesRegister_##className( #className, __CreateGameRules_##className );
+	static CGameRulesRegister V_CONCAT2(__g_GameRulesRegister_, className)( name, V_CONCAT2(__CreateGameRules_, className) );
+
+#ifdef GAME_DLL
+#define REGISTER_GAMERULES_CLASS_ALIASED( className ) REGISTER_GAMERULES_CLASS_INTERNAL( C##className, #className )
 #else
-#define REGISTER_GAMERULES_CLASS( className ) \
-	CGameRules * MAKE_NAME_UNIQUE(__CreateGameRules_)##className() { \
-		CGameRules *pRules = new className; \
-		if(!pRules->PostConstructor( #className )) { \
-			UTIL_Remove(pRules); \
-			return NULL; \
-		} \
-		return pRules; \
-	} \
-	static CGameRulesRegister __g_GameRulesRegister_##className( #className, MAKE_NAME_UNIQUE(__CreateGameRules_)##className );
+#define REGISTER_GAMERULES_CLASS_ALIASED( className ) REGISTER_GAMERULES_CLASS_INTERNAL( C_##className, #className )
 #endif
 
 class CGameRulesRegister
 {
 public:
-	typedef CGameRules * (*CreateGameRulesFn)();
+	typedef CSharedGameRules * (*CreateGameRulesFn)();
 
 	CGameRulesRegister( const char *pClassName, CreateGameRulesFn fn );
 
 	// Allocates the gamerules object associated with this class.
-	CGameRules *CreateGameRules();
+	CSharedGameRules *CreateGameRules();
 
 	static CGameRulesRegister* FindByName( const char *pName );
 
@@ -61,22 +59,22 @@ private:
 
 };
 
-void UTIL_Remove( CGameRules *pGameRules );
+void UTIL_Remove( CSharedGameRules *pGameRules );
 
 #ifdef CLIENT_DLL
 
-	// The client forwards this call so the game rules manager can create the appropriate
-	// game rules class.
-	void InstallStringTableCallback_GameRules();
+// The client forwards this call so the game rules manager can create the appropriate
+// game rules class.
+void InstallStringTableCallback_GameRules();
 
 #else
 
-	// Server calls this at startup.
-	void CreateNetworkStringTables_GameRules();
-	
-	// Server calls this to install a specific game rules object. The class should have been registered
-	// with REGISTER_GAMERULES_CLASS.
-	void CreateGameRulesObject( const char *pClassName );
+// Server calls this at startup.
+void CreateNetworkStringTables_GameRules();
+
+// Server calls this to install a specific game rules object. The class should have been registered
+// with REGISTER_GAMERULES_CLASS.
+void CreateGameRulesObject( const char *pClassName );
 
 #endif
 

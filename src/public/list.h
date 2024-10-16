@@ -8,6 +8,8 @@
 #ifndef __LIST_H__
 #define __LIST_H__
 
+#pragma once
+
 // TODO:
 // GetPositionAtIndex needs to keep a cache of the previous call so 
 // that it doesn't do a linear search every time.

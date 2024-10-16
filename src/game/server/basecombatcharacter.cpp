@@ -2072,7 +2072,7 @@ void CBaseCombatCharacter::SetLightingOriginRelative( CBaseEntity *pLightingOrig
 // Purpose:	Gives character new weapon and equips it
 // Input  : New weapon
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::Weapon_Equip( CBaseCombatWeapon *pWeapon )
+void CBaseCombatCharacter::Weapon_Equip( CBaseCombatWeapon *pWeapon, bool bDeploy )
 {
 	Weapon_HandleEquip(pWeapon);
 
@@ -2285,7 +2285,7 @@ void CBaseCombatCharacter::Weapon_HandleEquip( CBaseCombatWeapon *pWeapon )
 	pWeapon->SetLightingOriginRelative( GetLightingOriginRelative() );
 
 	//if (m_aliveTimer.IsLessThen(0.01f))
-		m_OnWeaponEquip.FireOutput(pWeapon, this);
+	m_OnWeaponEquip.FireOutput(pWeapon, this);
 }
 
 //-----------------------------------------------------------------------------

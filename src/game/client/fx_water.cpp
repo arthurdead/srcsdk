@@ -670,3 +670,10 @@ void CSplashParticle::SimulateParticles( CParticleSimulateIterator *pIterator )
 		pParticle = (SimpleParticle*)pIterator->GetNext();
 	}
 }
+
+// Create
+CSplashParticle *CSplashParticle::Create( const char *pDebugName )
+{
+	return new CSplashParticle( pDebugName );
+}
+

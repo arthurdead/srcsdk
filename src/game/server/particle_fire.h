@@ -9,6 +9,7 @@
 #ifndef PARTICLE_FIRE_H
 #define PARTICLE_FIRE_H
 
+#pragma once
 
 #include "baseparticleentity.h"
 
@@ -20,7 +21,7 @@ public:
 
 	DECLARE_CLASS( CParticleFire, CBaseParticleEntity );
 
-					DECLARE_SERVERCLASS();
+	DECLARE_SERVERCLASS();
 
 	// The client shoots a ray out and starts creating fire where it hits.
 	CNetworkVector( m_vOrigin );

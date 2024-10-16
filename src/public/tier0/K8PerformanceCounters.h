@@ -8,6 +8,8 @@
 #ifndef K8PERFORMANCECOUNTERS_H
 #define K8PERFORMANCECOUNTERS_H
 
+#pragma once
+
 /*
  * AMD K8 events.
  *

@@ -8,6 +8,9 @@
 #include "obstacle_pushaway.h"
 #include "props_shared.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
 //-----------------------------------------------------------------------------------------------------
 ConVar sv_pushaway_force( "sv_pushaway_force", "30000", FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY, "How hard physics objects are pushed away from the players on the server." );
 ConVar sv_pushaway_min_player_speed( "sv_pushaway_min_player_speed", "75", FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY, "If a player is moving slower than this, don't push away physics objects (enables ducking behind things)." );
@@ -23,8 +26,101 @@ ConVar sv_turbophysics( "sv_turbophysics", "0", FCVAR_REPLICATED, "Turns on turb
 extern ConVar sv_turbophysics;
 #endif
 
+IterationRetval_t CPushAwayEnumerator::EnumElement( IHandleEntity *pHandleEntity )
+{
+#ifdef CLIENT_DLL
+	C_BaseEntity *pEnt = ClientEntityList().GetBaseEntityFromHandle( pHandleEntity->GetRefEHandle() );
+#else
+	CBaseEntity *pEnt = gEntList.GetBaseEntity( pHandleEntity->GetRefEHandle() );
+#endif // CLIENT_DLL
+
+	if ( IsPushAwayEntity( pEnt ) && m_nAlreadyHit < m_nMaxHits )
+	{
+		m_AlreadyHit[m_nAlreadyHit] = pEnt;
+		m_nAlreadyHit++;
+	}
+
+	return ITERATION_CONTINUE;
+}
+
+#ifndef CLIENT_DLL
+IterationRetval_t CBotBreakableEnumerator::EnumElement( IHandleEntity *pHandleEntity )
+{
+	CBaseEntity *pEnt = gEntList.GetBaseEntity( pHandleEntity->GetRefEHandle() );
+
+	if ( !IsBreakableEntity( pEnt ) )
+		return ITERATION_CONTINUE;
+
+	// ignore breakables parented to doors
+	if ( pEnt->GetParent() &&
+		( FClassnameIs( pEnt->GetParent(), "func_door*" ) ||
+		FClassnameIs( pEnt, "prop_door*" ) ) )
+		return ITERATION_CONTINUE;
+
+	if ( m_nAlreadyHit < m_nMaxHits )
+	{
+		m_AlreadyHit[m_nAlreadyHit] = pEnt;
+		m_nAlreadyHit++;
+	}
+
+	return ITERATION_CONTINUE;
+}
+
+IterationRetval_t CBotDoorEnumerator::EnumElement( IHandleEntity *pHandleEntity )
+{
+	CBaseEntity *pEnt = gEntList.GetBaseEntity( pHandleEntity->GetRefEHandle() );
+
+	if ( pEnt == NULL )
+		return ITERATION_CONTINUE;
+
+	if ( ( pEnt->ObjectCaps() & FCAP_IMPULSE_USE ) == 0 )
+	{
+		return ITERATION_CONTINUE;
+	}
+
+	if ( FClassnameIs( pEnt, "func_door*" ) )
+	{
+		CBaseDoor *door = dynamic_cast<CBaseDoor *>(pEnt);
+		if ( !door )
+		{
+			return ITERATION_CONTINUE;
+		}
+
+		if ( door->m_toggle_state == TS_GOING_UP || door->m_toggle_state == TS_GOING_DOWN )
+		{
+			return ITERATION_CONTINUE;
+		}
+	}
+	else if ( FClassnameIs( pEnt, "prop_door*" ) )
+	{
+		CBasePropDoor *door = dynamic_cast<CBasePropDoor *>(pEnt);
+		if ( !door )
+		{
+			return ITERATION_CONTINUE;
+		}
+
+		if ( door->IsDoorOpening() || door->IsDoorClosing() )
+		{
+			return ITERATION_CONTINUE;
+		}
+	}
+	else
+	{
+		return ITERATION_CONTINUE;
+	}
+
+	if ( m_nAlreadyHit < m_nMaxHits )
+	{
+		m_AlreadyHit[m_nAlreadyHit] = pEnt;
+		m_nAlreadyHit++;
+	}
+
+	return ITERATION_CONTINUE;
+}
+#endif
+
 //-----------------------------------------------------------------------------------------------------
-bool IsPushAwayEntity( CBaseEntity *pEnt )
+bool IsPushAwayEntity( CSharedBaseEntity *pEnt )
 {
 	if ( pEnt == NULL )
 		return false;
@@ -70,7 +166,7 @@ bool IsPushAwayEntity( CBaseEntity *pEnt )
 }
 
 //-----------------------------------------------------------------------------------------------------
-bool IsPushableEntity( CBaseEntity *pEnt )
+bool IsPushableEntity( CSharedBaseEntity *pEnt )
 {
 	if ( pEnt == NULL )
 		return false;
@@ -157,7 +253,7 @@ bool IsBreakableEntity( CBaseEntity *pEnt )
 #endif // !CLIENT_DLL
 
 //-----------------------------------------------------------------------------------------------------
-int GetPushawayEnts( CBaseCombatCharacter *pPushingEntity, CBaseEntity **ents, int nMaxEnts, float flPlayerExpand, int PartitionMask, CPushAwayEnumerator *enumerator )
+int GetPushawayEnts( CSharedBaseCombatCharacter *pPushingEntity, CSharedBaseEntity **ents, int nMaxEnts, float flPlayerExpand, int PartitionMask, CPushAwayEnumerator *enumerator )
 {
 	
 	Vector vExpand( flPlayerExpand, flPlayerExpand, flPlayerExpand );
@@ -182,7 +278,7 @@ int GetPushawayEnts( CBaseCombatCharacter *pPushingEntity, CBaseEntity **ents, i
 	return numHit;
 }
 
-void AvoidPushawayProps( CBaseCombatCharacter *pPlayer, CUserCmd *pCmd )
+void AvoidPushawayProps( CSharedBaseCombatCharacter *pPlayer, CUserCmd *pCmd )
 {
 	// Figure out what direction we're moving and the extents of the box we're going to sweep 
 	// against physics objects.
@@ -190,7 +286,7 @@ void AvoidPushawayProps( CBaseCombatCharacter *pPlayer, CUserCmd *pCmd )
 	Vector rightdir;
 	AngleVectors( pCmd->viewangles, &currentdir, &rightdir, NULL );
 
-	CBaseEntity *props[512];
+	CSharedBaseEntity *props[512];
 #ifdef CLIENT_DLL
 	int nEnts = GetPushawayEnts( pPlayer, props, ARRAYSIZE( props ), 0.0f, PARTITION_CLIENT_SOLID_EDICTS, NULL );
 #else
@@ -270,14 +366,14 @@ void AvoidPushawayProps( CBaseCombatCharacter *pPlayer, CUserCmd *pCmd )
 }
 
 //-----------------------------------------------------------------------------------------------------
-void PerformObstaclePushaway( CBaseCombatCharacter *pPushingEntity )
+void PerformObstaclePushaway( CSharedBaseCombatCharacter *pPushingEntity )
 {
 	if (  pPushingEntity->m_lifeState != LIFE_ALIVE )
 		return;
 
 	// Give a push to any barrels that we're touching.
 	// The client handles adjusting our usercmd to push us away.
-	CBaseEntity *props[256];
+	CSharedBaseEntity *props[256];
 
 #ifdef CLIENT_DLL
 	// if sv_pushaway_clientside is disabled, clientside phys objects don't bounce away
@@ -285,7 +381,7 @@ void PerformObstaclePushaway( CBaseCombatCharacter *pPushingEntity )
 		return;
 
 	// if sv_pushaway_clientside is 1, only local player can push them
-	CBasePlayer *pPlayer = pPushingEntity->IsPlayer() ? (dynamic_cast< CBasePlayer * >(pPushingEntity)) : NULL;
+	CSharedBasePlayer *pPlayer = pPushingEntity->IsPlayer() ? (dynamic_cast< CSharedBasePlayer * >(pPushingEntity)) : NULL;
 	if ( (sv_pushaway_clientside.GetInt() == 1) && (!pPlayer || !pPlayer->IsLocalPlayer()) )
 		return;
 

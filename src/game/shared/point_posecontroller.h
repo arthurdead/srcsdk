@@ -3,7 +3,10 @@
 // Purpose: Controls the pose parameters of a model
 //
 //===========================================================================//
+#ifndef POINT_POSECONTROLLER_H
+#define POINT_POSECONTROLLER_H
 
+#pragma once
 
 #define MAX_POSE_CONTROLLED_PROPS 4		// Number of entities by the same name that can be controlled
 
@@ -99,6 +102,7 @@ private:
 	CNetworkVar( float, m_fFModAmplitude );
 };
 
+typedef CPoseController CSharedPoseController;
 
 #else //#ifndef CLIENT_DLL
 //-----------------------------------------------------------------------------
@@ -147,5 +151,8 @@ private:
 	CInterpolatedValue	m_PoseTransitionValue;
 };
 
+typedef C_PoseController CSharedPoseController;
 
 #endif //#ifndef CLIENT_DLL
+
+#endif

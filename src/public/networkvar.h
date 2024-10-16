@@ -206,7 +206,8 @@ static inline void DispatchNetworkStateChanged( T *pObj, void *pVar )
 #define DECLARE_EMBEDDED_NETWORKVAR() \
 	template <typename T> friend int ServerClassInit(T *);	\
 	template <typename T> friend int ClientClassInit(T *); \
-	virtual void NetworkStateChanged() {}  virtual void NetworkStateChanged( void *pProp ) {}
+	virtual void NetworkStateChanged() {} \
+	virtual void NetworkStateChanged( void *pProp ) {}
 
 // NOTE: Assignment operator is disabled because it doesn't call copy constructors of scalar types within the aggregate, so they are not marked changed
 #define CNetworkVarEmbedded( type, name ) \
@@ -214,10 +215,15 @@ static inline void DispatchNetworkStateChanged( T *pObj, void *pVar )
 	friend class NetworkVar_##name; \
 	static inline int GetOffset_##name() { return MyOffsetOf(ThisClass,name); } \
 	typedef ThisClass ThisClass_##name; \
-	class NetworkVar_##name : public type \
+	class NetworkVar_##name final : public type \
 	{ \
-		template< class T > NetworkVar_##name& operator=( const T &val ) { *((type*)this) = val; return *this; } \
+	private: \
+		template< class T > \
+		NetworkVar_##name& operator=( const T &val ) \
+		{ *((type*)this) = val; return *this; } \
 	public: \
+		type *operator&() { return ((type *)this); } \
+		const type *operator&() const { return ((type *)this); } \
 		void CopyFrom( const type &src ) { *((type *)this) = src; NetworkStateChanged(); } \
 		type & GetForModify( void ) { NetworkStateChanged(); return *((type *)this); } \
 		virtual void NetworkStateChanged() \
@@ -861,58 +867,52 @@ public:
 	using CNetworkHandleBaseImpl<Type, Changer>::operator!=;
 	using CNetworkHandleBaseImpl<Type, Changer>::Set;
 
-	bool operator==( const CBaseEntity *val ) const 
+	bool operator==( const CGameBaseEntity *val ) const 
 	{
 		return this->m_Value.Get() == val; 
 	}
 
-	bool operator!=( const CBaseEntity *val ) const 
+	bool operator!=( const CGameBaseEntity *val ) const 
 	{
 		return this->m_Value.Get() != val;
 	}
 
-	bool operator==( CBaseEntity *val ) const 
+	bool operator==( CGameBaseEntity *val ) const 
 	{
 		return this->m_Value.Get() == val; 
 	}
 
-	bool operator!=( CBaseEntity *val ) const 
+	bool operator!=( CGameBaseEntity *val ) const 
 	{
 		return this->m_Value.Get() != val;
 	}
 };
 
 template< class Changer >
-class CNetworkHandleBase<CBaseEntity, Changer> : public CNetworkHandleBaseImpl<CBaseEntity, Changer>
+class CNetworkHandleBase<CGameBaseEntity, Changer> : public CNetworkHandleBaseImpl<CGameBaseEntity, Changer>
 {
 public:
-	using CNetworkHandleBaseImpl<CBaseEntity, Changer>::CNetworkHandleBaseImpl;
-	using CNetworkHandleBaseImpl<CBaseEntity, Changer>::operator=;
-	using CNetworkHandleBaseImpl<CBaseEntity, Changer>::operator==;
-	using CNetworkHandleBaseImpl<CBaseEntity, Changer>::operator!=;
-	using CNetworkHandleBaseImpl<CBaseEntity, Changer>::Set;
+	using CNetworkHandleBaseImpl<CGameBaseEntity, Changer>::CNetworkHandleBaseImpl;
+	using CNetworkHandleBaseImpl<CGameBaseEntity, Changer>::operator=;
+	using CNetworkHandleBaseImpl<CGameBaseEntity, Changer>::operator==;
+	using CNetworkHandleBaseImpl<CGameBaseEntity, Changer>::operator!=;
+	using CNetworkHandleBaseImpl<CGameBaseEntity, Changer>::Set;
 };
 
 template< class Type, class Changer >
-class CNetworkVarBase<CHandle<Type>, Changer> : public CNetworkHandleBase<Type, Changer>
+class CNetworkVarBase<CHandle<Type>, Changer> final
 {
-public:
-	using CNetworkHandleBase<Type, Changer>::CNetworkHandleBase;
-	using CNetworkHandleBase<Type, Changer>::operator=;
-	using CNetworkHandleBase<Type, Changer>::operator==;
-	using CNetworkHandleBase<Type, Changer>::operator!=;
-	using CNetworkHandleBase<Type, Changer>::Set;
+private:
+	CNetworkVarBase() = delete;
+	~CNetworkVarBase() = delete;
 };
 
 template< class Changer >
-class CNetworkVarBase<CBaseHandle, Changer> : public CNetworkHandleBase<CBaseEntity, Changer>
+class CNetworkVarBase<CBaseHandle, Changer> final
 {
-public:
-	using CNetworkHandleBase<CBaseEntity, Changer>::CNetworkHandleBase;
-	using CNetworkHandleBase<CBaseEntity, Changer>::operator=;
-	using CNetworkHandleBase<CBaseEntity, Changer>::operator==;
-	using CNetworkHandleBase<CBaseEntity, Changer>::operator!=;
-	using CNetworkHandleBase<CBaseEntity, Changer>::Set;
+private:
+	CNetworkVarBase() = delete;
+	~CNetworkVarBase() = delete;
 };
 
 #define CNetworkHandle( type, name ) CNetworkHandleInternal( type, name, NetworkStateChanged )
@@ -920,6 +920,7 @@ public:
 #define CNetworkHandleInternal( type, name, stateChangedFn ) \
 	NETWORK_VAR_START( type, name ) \
 	NETWORK_VAR_END( type, name, CNetworkHandleBase, stateChangedFn )
+
 #endif
 
 
@@ -932,45 +933,45 @@ public:
 // Use this macro when you have a base class with a variable, and it doesn't have that variable in a SendTable,
 // but a derived class does. Then, the entity is only flagged as changed when the variable is changed in
 // an entity that wants to transmit the variable.
-	#define CNetworkVarForDerived( type, name ) \
-		virtual void NetworkStateChanged_##name() {} \
-		virtual void NetworkStateChanged_##name( void *pVar ) {} \
-		NETWORK_VAR_START( type, name ) \
-		NETWORK_VAR_END( type, name, CNetworkVarBase, NetworkStateChanged_##name )
+#define CNetworkVarForDerived( type, name ) \
+	virtual void NetworkStateChanged_##name() {} \
+	virtual void NetworkStateChanged_##name( void *pVar ) {} \
+	NETWORK_VAR_START( type, name ) \
+	NETWORK_VAR_END( type, name, CNetworkVarBase, NetworkStateChanged_##name )
 
-	#define CNetworkVectorForDerived( name ) \
-		virtual void NetworkStateChanged_##name() {} \
-		virtual void NetworkStateChanged_##name( void *pVar ) {} \
-		CNetworkVectorInternal( Vector, name, NetworkStateChanged_##name )
-		
-	#define CNetworkHandleForDerived( type, name ) \
-		virtual void NetworkStateChanged_##name() {} \
-		virtual void NetworkStateChanged_##name( void *pVar ) {} \
-		CNetworkHandleInternal( type, name, NetworkStateChanged_##name )
-		
-	#define CNetworkArrayForDerived( type, name, count ) \
-		virtual void NetworkStateChanged_##name() {} \
-		virtual void NetworkStateChanged_##name( void *pVar ) {} \
-		CNetworkArrayInternal( type, name, count, NetworkStateChanged_##name )
+#define CNetworkVectorForDerived( name ) \
+	virtual void NetworkStateChanged_##name() {} \
+	virtual void NetworkStateChanged_##name( void *pVar ) {} \
+	CNetworkVectorInternal( Vector, name, NetworkStateChanged_##name )
+	
+#define CNetworkHandleForDerived( type, name ) \
+	virtual void NetworkStateChanged_##name() {} \
+	virtual void NetworkStateChanged_##name( void *pVar ) {} \
+	CNetworkHandleInternal( type, name, NetworkStateChanged_##name )
+	
+#define CNetworkArrayForDerived( type, name, count ) \
+	virtual void NetworkStateChanged_##name() {} \
+	virtual void NetworkStateChanged_##name( void *pVar ) {} \
+	CNetworkArrayInternal( type, name, count, NetworkStateChanged_##name )
 
-	#define IMPLEMENT_NETWORK_VAR_FOR_DERIVED( name ) \
-		virtual void NetworkStateChanged_##name() { CHECK_USENETWORKVARS NetworkStateChanged(); } \
-		virtual void NetworkStateChanged_##name( void *pVar ) { CHECK_USENETWORKVARS NetworkStateChanged( pVar ); }
+#define IMPLEMENT_NETWORK_VAR_FOR_DERIVED( name ) \
+	virtual void NetworkStateChanged_##name() { CHECK_USENETWORKVARS NetworkStateChanged(); } \
+	virtual void NetworkStateChanged_##name( void *pVar ) { CHECK_USENETWORKVARS NetworkStateChanged( pVar ); }
 
 
 // This virtualizes the change detection on the variable, but it is ON by default.
 // Use this when you have a base class in which MOST of its derived classes use this variable
 // in their SendTables, but there are a couple that don't (and they
 // can use DISABLE_NETWORK_VAR_FOR_DERIVED).
-	#define CNetworkVarForDerived_OnByDefault( type, name ) \
-		virtual void NetworkStateChanged_##name() { CHECK_USENETWORKVARS NetworkStateChanged(); } \
-		virtual void NetworkStateChanged_##name( void *pVar ) { CHECK_USENETWORKVARS NetworkStateChanged( pVar ); } \
-		NETWORK_VAR_START( type, name ) \
-		NETWORK_VAR_END( type, name, CNetworkVarBase, NetworkStateChanged_##name )
+#define CNetworkVarForDerived_OnByDefault( type, name ) \
+	virtual void NetworkStateChanged_##name() { CHECK_USENETWORKVARS NetworkStateChanged(); } \
+	virtual void NetworkStateChanged_##name( void *pVar ) { CHECK_USENETWORKVARS NetworkStateChanged( pVar ); } \
+	NETWORK_VAR_START( type, name ) \
+	NETWORK_VAR_END( type, name, CNetworkVarBase, NetworkStateChanged_##name )
 
-	#define DISABLE_NETWORK_VAR_FOR_DERIVED( name ) \
-		virtual void NetworkStateChanged_##name() {} \
-		virtual void NetworkStateChanged_##name( void *pVar ) {}
+#define DISABLE_NETWORK_VAR_FOR_DERIVED( name ) \
+	virtual void NetworkStateChanged_##name() {} \
+	virtual void NetworkStateChanged_##name( void *pVar ) {}
 
 
 

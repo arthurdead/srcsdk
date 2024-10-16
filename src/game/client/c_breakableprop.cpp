@@ -62,7 +62,7 @@ void C_BreakableProp::OnDataChanged( DataUpdateType_t type )
 }
 
 //IPlayerPickupVPhysics
-bool C_BreakableProp::HasPreferredCarryAnglesForPlayer( CBasePlayer *pPlayer )
+bool C_BreakableProp::HasPreferredCarryAnglesForPlayer( C_BasePlayer *pPlayer )
 {
 	return (m_qPreferredPlayerCarryAngles.x < FLT_MAX);
 }

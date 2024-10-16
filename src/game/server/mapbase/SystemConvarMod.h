@@ -4,9 +4,12 @@
 //
 // $NoKeywords: $
 //=============================================================================//
+#ifndef SYSTEMCONVARMOD_H
+#define SYSTEMCONVARMOD_H
 
-#include "cbase.h"
+#pragma once
 
+#include "baseentity.h"
 
 // Convar restoration save/restore
 #define MAX_MODIFIED_CONVAR_STRING		128
@@ -47,3 +50,5 @@ public:
 
 	DECLARE_DATADESC();
 };
+
+#endif

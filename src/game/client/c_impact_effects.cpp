@@ -1123,3 +1123,60 @@ void TE_GaussExplosion( IRecipientFilter& filter, float delay, const Vector &pos
 	FX_GaussExplosion( pos, dir, type );
 }
 
+CDustParticle *CDustParticle::Create( const char *pDebugName )
+{
+	return new CDustParticle( pDebugName );
+}
+
+//Roll
+float CDustParticle::UpdateRoll( SimpleParticle *pParticle, float timeDelta )
+{
+	pParticle->m_flRoll += pParticle->m_flRollDelta * timeDelta;
+	
+	pParticle->m_flRollDelta += pParticle->m_flRollDelta * ( timeDelta * -8.0f );
+
+	if ( fabs( pParticle->m_flRollDelta ) < 0.5f )
+	{
+		pParticle->m_flRollDelta = ( pParticle->m_flRollDelta > 0.0f ) ? 0.5f : -0.5f;
+	}
+
+	return pParticle->m_flRoll;
+}
+
+//Velocity
+void CDustParticle::UpdateVelocity( SimpleParticle *pParticle, float timeDelta )
+{
+	Vector	saveVelocity = pParticle->m_vecVelocity;
+
+	//Decellerate
+	static float dtime;
+	static float decay;
+
+	if ( dtime != timeDelta )
+	{
+		dtime = timeDelta;
+		float expected = 0.5;
+		decay = exp( log( 0.0001f ) * dtime / expected );
+	}
+
+	pParticle->m_vecVelocity = pParticle->m_vecVelocity * decay;
+
+	if ( pParticle->m_vecVelocity.LengthSqr() < (32.0f*32.0f) )
+	{
+		VectorNormalize( saveVelocity );
+		pParticle->m_vecVelocity = saveVelocity * 32.0f;
+	}
+}
+
+//Alpha
+float CDustParticle::UpdateAlpha( const SimpleParticle *pParticle )
+{
+	float	tLifetime = pParticle->m_flLifetime / pParticle->m_flDieTime;
+	float	ramp = 1.0f - tLifetime;
+
+	//Non-linear fade
+	if ( ramp < 0.75f )
+		ramp *= ramp;
+
+	return ramp;
+}

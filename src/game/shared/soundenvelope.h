@@ -18,9 +18,10 @@
 
 #ifdef GAME_DLL
 class CBasePlayer;
+typedef CBasePlayer CSharedBasePlayer;
 #else
-#define CBasePlayer C_BasePlayer
 class C_BasePlayer;
+typedef C_BasePlayer CSharedBasePlayer;
 #endif
 
 class CSoundPatch;
@@ -83,7 +84,7 @@ public:
 	virtual float		SoundPlayEnvelope( CSoundPatch *pSound, soundcommands_t soundCommand, envelopePoint_t *points, int numPoints ) = 0;
 	virtual float		SoundPlayEnvelope( CSoundPatch *pSound, soundcommands_t soundCommand, envelopeDescription_t *envelope ) = 0;
 
-	virtual void		CheckLoopingSoundsForPlayer( CBasePlayer *pPlayer ) = 0;
+	virtual void		CheckLoopingSoundsForPlayer( CSharedBasePlayer *pPlayer ) = 0;
 
 	virtual string_t	SoundGetName( CSoundPatch *pSound ) = 0;
 	virtual string_t	SoundGetScriptName( CSoundPatch *pSound ) = 0;

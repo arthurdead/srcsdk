@@ -8,6 +8,7 @@
 #ifndef SENDPROXY_H
 #define SENDPROXY_H
 
+#pragma once
 
 #include "dt_send.h"
 

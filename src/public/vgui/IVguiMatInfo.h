@@ -8,6 +8,8 @@
 #ifndef IVGUIMATINFO_H
 #define IVGUIMATINFO_H
 
+#pragma once
+
 #include "IVguiMatInfoVar.h"
 
 // wrapper for IMaterial

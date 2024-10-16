@@ -4,7 +4,9 @@
 //
 //=============================================================================//
 #ifndef BLACKBOX_HELPER_H
-#define BLACKBOX_HELPER_H 1
+#define BLACKBOX_HELPER_H
+
+#pragma once
 
 void BlackBox_Record(const char * type, const char *fmt, ...);
 

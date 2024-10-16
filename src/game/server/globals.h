@@ -8,6 +8,8 @@
 #define GLOBALS_H
 #pragma once
 
+#include "mathlib/vector.h"
+#include "tier1/convar.h"
 
 extern Vector g_vecAttackDir;
 extern int g_iSkillLevel;

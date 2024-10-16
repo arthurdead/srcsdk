@@ -2235,7 +2235,7 @@ void CClientDll::LevelShutdown( void )
 	g_bLevelInitialized = false;
 
 	// Disable abs recomputations when everything is shutting down
-	CBaseEntity::EnableAbsRecomputations( false );
+	C_BaseEntity::EnableAbsRecomputations( false );
 
 	// Level shutdown sequence.
 	// First do the pre-entity shutdown of all systems
@@ -3158,8 +3158,8 @@ bool GetSteamIDForPlayerIndex( int iPlayerIndex, CSteamID &steamid )
 //-----------------------------------------------------------------------------
 void CClientDll::MarkEntitiesAsTouching( IClientEntity *e1, IClientEntity *e2 )
 {
-	CBaseEntity *entity = e1->GetBaseEntity();
-	CBaseEntity *entityTouched = e2->GetBaseEntity();
+	C_BaseEntity *entity = e1->GetBaseEntity();
+	C_BaseEntity *entityTouched = e2->GetBaseEntity();
 	if ( entity && entityTouched )
 	{
 		trace_t tr;

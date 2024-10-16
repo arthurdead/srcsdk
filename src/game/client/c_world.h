@@ -10,10 +10,6 @@
 
 #include "c_baseentity.h"
 
-#if defined( CLIENT_DLL )
-#define CWorld C_World
-#endif
-
 class C_World : public C_BaseEntity
 {
 public:
@@ -69,6 +65,8 @@ public:
 private:
 	char	m_iszDetailSpriteMaterial[MAX_DETAIL_SPRITE_MATERIAL_NAME_LENGTH];
 };
+
+typedef C_World CSharedWorld;
 
 inline float C_World::GetWaveHeight() const
 {

@@ -12,11 +12,14 @@
 	#include "util.h"
 #endif
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
 //--------------------------------------------------------------------------------------------------------
 /**
 * Simple utility function to allocate memory and duplicate a string
 */
-inline char *CloneString( const char *str )
+char *CloneString( const char *str )
 {
 	char *cloneStr = new char [ strlen(str)+1 ];
 	strcpy( cloneStr, str );
@@ -82,7 +85,7 @@ bool CHintMessage::IsEquivalent( const char *hintString, CUtlVector< const char 
 }
 
 //--------------------------------------------------------------------------------------------------------------
-void CHintMessage::Send( CBasePlayer * client )
+void CHintMessage::Send( CSharedBasePlayer * client )
 {
 	if ( !client )
 		return;
@@ -101,7 +104,7 @@ void CHintMessage::Send( CBasePlayer * client )
 }
 
 //--------------------------------------------------------------------------------------------------------------
-CHintMessageQueue::CHintMessageQueue( CBasePlayer *pPlayer )
+CHintMessageQueue::CHintMessageQueue( CSharedBasePlayer *pPlayer )
 {
 	m_pPlayer = pPlayer;
 }

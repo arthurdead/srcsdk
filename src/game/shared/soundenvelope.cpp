@@ -175,7 +175,7 @@ public:
 		return (m_Flags & FLAG_INIT_MESSAGE) != 0;
 	}
 
-	virtual bool AddRecipient( CBasePlayer *player )
+	virtual bool AddRecipient( CSharedBasePlayer *player )
 	{
 		Assert( player );
 
@@ -205,7 +205,6 @@ private:
 };
 
 
-#include "tier0/memdbgoff.h"
 // This is the a basic sound controller, a "patch"
 // It has envelopes for pitch and volume and can manage state changes to those
 class CSoundPatch
@@ -227,7 +226,7 @@ public:
 		g_SoundPatchCount--;
 	}
 
-	void	Init( IRecipientFilter *pFilter, CBaseEntity *pEnt, int channel, const char *pSoundName, 
+	void	Init( IRecipientFilter *pFilter, CSharedBaseEntity *pEnt, int channel, const char *pSoundName, 
 				soundlevel_t iSoundLevel, const Vector *pSoundOrigin, float scriptVolume = 1.0f );
 	void	ChangePitch( float pitchTarget, float deltaTime );
 	void	ChangeVolume( float volumeTarget, float deltaTime );
@@ -248,7 +247,7 @@ public:
 	void	ResumeSound( void );
 	int		IsPlaying( void ) { return m_isPlaying; }
 	float	GetShutdownTime( void ) const { return m_shutdownTime; } // TERROR: debugging
-	void	AddPlayerPost( CBasePlayer *pPlayer );
+	void	AddPlayerPost( CSharedBasePlayer *pPlayer );
 	void	SetCloseCaptionDuration( float flDuration ) { m_flCloseCaptionDuration = flDuration; }
 
 	void	SetBaseFlags( int iFlags ) { m_baseFlags = iFlags; }
@@ -292,7 +291,6 @@ private:
 
 	DECLARE_FIXEDSIZE_ALLOCATOR(CSoundPatch);
 };
-#include "tier0/memdbgon.h"
 
 int CSoundPatch::g_SoundPatchCount = 0;
 
@@ -318,7 +316,7 @@ DEFINE_FIXEDSIZE_ALLOCATOR( CSoundPatch, 64, CUtlMemoryPool::GROW_FAST );
 //			*pSoundName - sound script string name
 //			attenuation - attenuation of this sound (not animated)
 //-----------------------------------------------------------------------------
-void CSoundPatch::Init( IRecipientFilter *pFilter, CBaseEntity *pEnt, int channel, const char *pSoundName, 
+void CSoundPatch::Init( IRecipientFilter *pFilter, CSharedBaseEntity *pEnt, int channel, const char *pSoundName, 
 			soundlevel_t soundlevel, const Vector *pSoundOrigin , float scriptVolume )
 {
 	m_hEnt = pEnt;
@@ -330,7 +328,7 @@ void CSoundPatch::Init( IRecipientFilter *pFilter, CBaseEntity *pEnt, int channe
 	// Get the volume from the script
 	CSoundParameters params;
 	if ( !Q_stristr( pSoundName, ".wav" ) && !Q_stristr( pSoundName, ".mp3" ) &&
-		CBaseEntity::GetParametersForSound( pSoundName, params, NULL ) )
+		CSharedBaseEntity::GetParametersForSound( pSoundName, params, NULL ) )
 	{
 		m_flScriptVolume = params.volume;
 		// This has to be the actual .wav because rndwave would cause a bunch of new .wavs to play... bad...
@@ -493,7 +491,7 @@ void CSoundPatch::Shutdown( void )
 		// BUGBUG: Don't crash in release mode
 		if ( entIndex >= 0 )
 		{
-			CBaseEntity::StopSound( entIndex, m_entityChannel, STRING( m_iszSoundName ) );
+			CSharedBaseEntity::StopSound( entIndex, m_entityChannel, STRING( m_iszSoundName ) );
 		}
 		m_isPlaying = false;
 	}
@@ -560,7 +558,7 @@ bool CSoundPatch::Update( float time, float deltaTime )
 		if( IsWorld() )
 			ep.m_pOrigin = &m_soundOrigin;
 
-		CBaseEntity::EmitSound( m_Filter, EntIndex(), ep );
+		CSharedBaseEntity::EmitSound( m_Filter, EntIndex(), ep );
 
 		m_flags = 0;
 	}
@@ -621,12 +619,12 @@ void CSoundPatch::StartSound( float flStartTime )
 		else
 #endif
 		{
-			CBaseEntity::EmitSound( m_Filter, EntIndex(), ep );
+			CSharedBaseEntity::EmitSound( m_Filter, EntIndex(), ep );
 #ifdef CLIENT_DLL
 			m_guid = enginesound->GetGuidForLastSoundEmitted();
 #endif
 		}
-		CBaseEntity::EmitCloseCaption( m_Filter, EntIndex(), STRING( m_iszSoundScriptName ), ep.m_UtlVecSoundOrigin, m_flCloseCaptionDuration, true );
+		CSharedBaseEntity::EmitCloseCaption( m_Filter, EntIndex(), STRING( m_iszSoundScriptName ), ep.m_UtlVecSoundOrigin, m_flCloseCaptionDuration, true );
 	}
 	m_isPlaying = true;
 }
@@ -653,7 +651,7 @@ void CSoundPatch::ResumeSound( void )
 			if( IsWorld() )
 				ep.m_pOrigin = &m_soundOrigin;
 
-			CBaseEntity::EmitSound( m_Filter, EntIndex(), ep );
+			CSharedBaseEntity::EmitSound( m_Filter, EntIndex(), ep );
 		}
 		else
 		{
@@ -669,7 +667,7 @@ void CSoundPatch::ResumeSound( void )
 //-----------------------------------------------------------------------------
 // Purpose: A new player's entered the game. See if we need to restart our sound.
 //-----------------------------------------------------------------------------
-void CSoundPatch::AddPlayerPost( CBasePlayer *pPlayer )
+void CSoundPatch::AddPlayerPost( CSharedBasePlayer *pPlayer )
 {
 	if ( m_Filter.IsActive() && m_Filter.AddRecipient(pPlayer) )
 	{
@@ -689,7 +687,7 @@ void CSoundPatch::AddPlayerPost( CBasePlayer *pPlayer )
 		if( IsWorld() )
 			ep.m_pOrigin = &m_soundOrigin;
 
-		CBaseEntity::EmitSound( filter, EntIndex(), ep );
+		CSharedBaseEntity::EmitSound( filter, EntIndex(), ep );
 	}
 }
 
@@ -797,7 +795,7 @@ public:
 	float			SoundPlayEnvelope( CSoundPatch *pSound, soundcommands_t soundCommand, envelopePoint_t *points, int numPoints );
 	float			SoundPlayEnvelope( CSoundPatch *pSound, soundcommands_t soundCommand, envelopeDescription_t *envelope );
 
-	void			CheckLoopingSoundsForPlayer( CBasePlayer *pPlayer );
+	void			CheckLoopingSoundsForPlayer( CSharedBasePlayer *pPlayer );
 
 	// Inserts the command into the list, sorted by time
 	void			CommandInsert( SoundCommand_t *pCommand );
@@ -1226,7 +1224,7 @@ float CSoundControllerImp::SoundPlayEnvelope( CSoundPatch *pSound, soundcommands
 //			In singleplayer, the player's not ready to receive sounds then, so restart 
 //			and SoundPatches that are active and have no receivers.
 //-----------------------------------------------------------------------------
-void CSoundControllerImp::CheckLoopingSoundsForPlayer( CBasePlayer *pPlayer )
+void CSoundControllerImp::CheckLoopingSoundsForPlayer( CSharedBasePlayer *pPlayer )
 {
 	for ( int i = m_soundList.Count()-1; i >=0; i-- )
 	{

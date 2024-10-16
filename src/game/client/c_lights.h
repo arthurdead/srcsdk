@@ -1,6 +1,8 @@
 #ifndef C_LIGHTS_H
 #define C_LIGHTS_H
 
+#pragma once
+
 #include "c_baseentity.h"
 
 class C_EnvLight : public C_BaseEntity

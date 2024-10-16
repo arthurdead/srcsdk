@@ -685,12 +685,17 @@ enum
 	NUM_DATAOBJECT_TYPES,
 };
 
+#ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
+#elif defined CLIENT_DLL
+class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
+#endif
 
 //-----------------------------------------------------------------------------
 // Bullet firing information
 //-----------------------------------------------------------------------------
-class CBaseEntity;
 
 enum FireBulletsFlags_t
 {
@@ -752,7 +757,7 @@ struct FireBulletsInfo_t
 		m_pIgnoreEntList = NULL;
 	}
 
-	FireBulletsInfo_t( int cShots, const Vector &vecSrc, const Vector &vecDirShooting, const Vector &vecSpread, float flDistance, int iAmmoType, int iTracerFreq, float flDamage, CBaseEntity *pAttacker, bool bFirstShotAccurate, bool bPrimaryAttack )
+	FireBulletsInfo_t( int cShots, const Vector &vecSrc, const Vector &vecDirShooting, const Vector &vecSpread, float flDistance, int iAmmoType, int iTracerFreq, float flDamage, CSharedBaseEntity *pAttacker, bool bFirstShotAccurate, bool bPrimaryAttack )
 	{
 		m_iShots = cShots;
 		m_vecSrc = vecSrc;
@@ -786,8 +791,8 @@ struct FireBulletsInfo_t
 	float m_flPlayerDamage;	// Damage to be used instead of m_flDamage if we hit a player
 	int m_nFlags;			// See FireBulletsFlags_t
 	float m_flDamageForceScale;
-	CBaseEntity *m_pAttacker;
-	CBaseEntity *m_pAdditionalIgnoreEnt;
+	CSharedBaseEntity *m_pAttacker;
+	CSharedBaseEntity *m_pAdditionalIgnoreEnt;
 	bool m_bPrimaryAttack;
 	bool m_bUseServerRandomSeed;
 
@@ -796,7 +801,7 @@ struct FireBulletsInfo_t
 	// After much trial and error, I decided to just add more excluded entities to the bullet firing info.
 	// It could've just been a single entity called "m_pAdditionalIgnoreEnt2", but since these are just pointers,
 	// I planned ahead and made it a CUtlVector instead.
-	CUtlVector<CBaseEntity*> *m_pIgnoreEntList;
+	CUtlVector<CSharedBaseEntity*> *m_pIgnoreEntList;
 
 	int GetShots() { return m_iShots; }
 	void SetShots( int value ) { m_iShots = value; }

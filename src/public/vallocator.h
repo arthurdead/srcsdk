@@ -19,6 +19,7 @@
 #ifndef VALLOCATOR_H
 #define VALLOCATOR_H
 
+#pragma once
 
 class VAllocator
 {

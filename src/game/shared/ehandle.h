@@ -29,9 +29,10 @@ namespace std
 
 #ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
 #else
 class C_BaseEntity;
-#define CBaseEntity C_BaseEntity
+typedef C_BaseEntity CSharedBaseEntity;
 #endif
 
 class IHandleEntity;
@@ -110,32 +111,32 @@ public:
 	using CHandleImpl<T>::operator!=;
 	using CHandleImpl<T>::Set;
 
-	CHandle( const CBaseEntity *pVal ) = delete;
-	CHandle( CBaseEntity *pVal ) = delete;
+	CHandle( const CSharedBaseEntity *pVal ) = delete;
+	CHandle( CSharedBaseEntity *pVal ) = delete;
 
-	CBaseHandle& operator=( const CBaseEntity *pEntity ) = delete;
+	CBaseHandle& operator=( const CSharedBaseEntity *pEntity ) = delete;
 
-	bool operator !=( const CHandleImpl<CBaseEntity> &other ) const;
-	bool operator ==( const CHandleImpl<CBaseEntity> &other ) const;
+	bool operator !=( const CHandleImpl<CSharedBaseEntity> &other ) const;
+	bool operator ==( const CHandleImpl<CSharedBaseEntity> &other ) const;
 
-	explicit operator CBaseEntity*() const;
-	explicit operator const CBaseEntity*() const;
+	explicit operator CSharedBaseEntity*() const;
+	explicit operator const CSharedBaseEntity*() const;
 
-	bool	operator==( const CBaseEntity *val ) const;
-	bool	operator!=( const CBaseEntity *val ) const;
-	bool	operator==( CBaseEntity *val ) const;
-	bool	operator!=( CBaseEntity *val ) const;
+	bool	operator==( const CSharedBaseEntity *val ) const;
+	bool	operator!=( const CSharedBaseEntity *val ) const;
+	bool	operator==( CSharedBaseEntity *val ) const;
+	bool	operator!=( CSharedBaseEntity *val ) const;
 };
 
 template<>
-class CHandle<CBaseEntity> : public CHandleImpl<CBaseEntity>
+class CHandle<CSharedBaseEntity> : public CHandleImpl<CSharedBaseEntity>
 {
 public:
-	using CHandleImpl<CBaseEntity>::CHandleImpl;
-	using CHandleImpl<CBaseEntity>::operator=;
-	using CHandleImpl<CBaseEntity>::operator==;
-	using CHandleImpl<CBaseEntity>::operator!=;
-	using CHandleImpl<CBaseEntity>::Set;
+	using CHandleImpl<CSharedBaseEntity>::CHandleImpl;
+	using CHandleImpl<CSharedBaseEntity>::operator=;
+	using CHandleImpl<CSharedBaseEntity>::operator==;
+	using CHandleImpl<CSharedBaseEntity>::operator!=;
+	using CHandleImpl<CSharedBaseEntity>::Set;
 };
 
 #ifdef GAME_DLL
@@ -229,13 +230,13 @@ inline CHandleImpl<T>::operator IHandleEntity *() const
 }
 
 template<class T>
-inline CHandle<T>::operator const CBaseEntity *() const
+inline CHandle<T>::operator const CSharedBaseEntity *() const
 { 
 	return this->Get( ); 
 }
 
 template<class T>
-inline CHandle<T>::operator CBaseEntity *() const
+inline CHandle<T>::operator CSharedBaseEntity *() const
 { 
 	return this->Get( ); 
 }
@@ -283,13 +284,13 @@ inline bool CHandleImpl<T>::operator!=( const CHandleImpl &other ) const
 }
 
 template<class T>
-inline bool CHandle<T>::operator==( const CHandleImpl<CBaseEntity> &other ) const
+inline bool CHandle<T>::operator==( const CHandleImpl<CSharedBaseEntity> &other ) const
 {
 	return CBaseHandle::operator==( static_cast<const CBaseHandle &>(other) );
 }
 
 template<class T>
-inline bool CHandle<T>::operator!=( const CHandleImpl<CBaseEntity> &other ) const
+inline bool CHandle<T>::operator!=( const CHandleImpl<CSharedBaseEntity> &other ) const
 {
 	return CBaseHandle::operator!=( static_cast<const CBaseHandle &>(other) );
 }
@@ -319,25 +320,25 @@ inline bool CHandleImpl<T>::operator!=( T *val ) const
 }
 
 template<class T>
-inline bool CHandle<T>::operator==( const CBaseEntity *val ) const
+inline bool CHandle<T>::operator==( const CSharedBaseEntity *val ) const
 {
 	return this->Get() == val;
 }
 
 template<class T>
-inline bool CHandle<T>::operator!=( const CBaseEntity *val ) const
+inline bool CHandle<T>::operator!=( const CSharedBaseEntity *val ) const
 {
 	return this->Get() != val;
 }
 
 template<class T>
-inline bool CHandle<T>::operator==( CBaseEntity *val ) const
+inline bool CHandle<T>::operator==( CSharedBaseEntity *val ) const
 {
 	return this->Get() == val;
 }
 
 template<class T>
-inline bool CHandle<T>::operator!=( CBaseEntity *val ) const
+inline bool CHandle<T>::operator!=( CSharedBaseEntity *val ) const
 {
 	return this->Get() != val;
 }

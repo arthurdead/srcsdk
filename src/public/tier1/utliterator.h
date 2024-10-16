@@ -7,6 +7,8 @@
 #ifndef UTLITERATOR_H
 #define UTLITERATOR_H
 
+#pragma once
+
 #include "tier0/dbg.h"
 
 //-----------------------------------------------------------------------------

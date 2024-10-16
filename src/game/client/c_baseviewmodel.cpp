@@ -192,7 +192,7 @@ bool C_BaseViewModel::Interpolate( float currentTime )
 bool C_BaseViewModel::ShouldFlipViewModel()
 {
 	// If cl_righthand is set, then we want them all right-handed.
-	CBaseCombatWeapon *pWeapon = m_hWeapon.Get();
+	C_BaseCombatWeapon *pWeapon = m_hWeapon.Get();
 	if ( pWeapon )
 	{
 		const FileWeaponInfo_t *pInfo = &pWeapon->GetWpnData();
@@ -516,7 +516,7 @@ void C_BaseViewModel::PostDataUpdate( DataUpdateType_t updateType )
 	OnLatchInterpolatedVariables( LATCH_ANIMATION_VAR );
 }
 
-CBasePlayer *C_BaseViewModel::GetPredictionOwner()
+C_BasePlayer *C_BaseViewModel::GetPredictionOwner()
 {
 	return ToBasePlayer( GetOwner() );
 }

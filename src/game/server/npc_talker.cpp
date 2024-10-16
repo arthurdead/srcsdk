@@ -15,6 +15,8 @@
 #include "tier0/memdbgon.h"
 
 
+CAI_Expresser *CNPCSimpleTalker::CreateExpresser() { return new CNPCSimpleTalkerExpresser(this); }
+
 // array of friend names
 const char *CNPCSimpleTalker::m_szFriends[TLK_CFRIENDS] = 
 {

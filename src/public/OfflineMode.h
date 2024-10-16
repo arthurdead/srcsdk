@@ -3,6 +3,10 @@
 // Purpose: 
 //
 //=============================================================================//
+#ifndef OFFLINEMODE_H
+#define OFFLINEMODE_H
+
+#pragma once
 
 #include <vgui/ISystem.h>
 #include <vgui_controls/Controls.h>
@@ -16,7 +20,9 @@ inline bool IsSteamInOfflineMode()
 	int offline = 0;
 	vgui::system()->GetRegistryInteger( STEAM_OFFLINE_MODE, offline );
 	return ( offline == 1 );
-}inline bool IsSteamInAuthenticationFailSafeMode()
+}
+
+inline bool IsSteamInAuthenticationFailSafeMode()
 {
 	int offline = 0;
 	vgui::system()->GetRegistryInteger( STEAM_AFS_MODE, offline );
@@ -27,3 +33,5 @@ inline bool IsSteamGameServerBrowsingEnabled()
 {
 	return (IsSteamInAuthenticationFailSafeMode() || !IsSteamInOfflineMode());
 }
+
+#endif

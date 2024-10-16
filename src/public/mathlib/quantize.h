@@ -8,6 +8,8 @@
 #ifndef QUANTIZE_H
 #define QUANTIZE_H
 
+#pragma once
+
 #ifndef STRING_H
 #include <string.h>
 #endif

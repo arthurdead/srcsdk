@@ -7,6 +7,8 @@
 #ifndef AI_SQUAD_H
 #define AI_SQUAD_H
 
+#pragma once
+
 #include "ai_memory.h"
 #include "ai_squadslot.h"
 #include "bitstring.h"

@@ -4,7 +4,6 @@
 //
 //=============================================================================
 
-
 #include "ai_behavior_template_generate.h"
 
 AI_BEHAVIOR_METHOD_0V( PrescheduleThink );

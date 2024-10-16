@@ -1,6 +1,8 @@
 #ifndef VGUI_PROJECTABLE_H
 #define VGUI_PROJECTABLE_H
 
+#pragma once
+
 #include "vgui_controls/Controls.h"
 #include "vgui_controls/Panel.h"
 

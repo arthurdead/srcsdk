@@ -14,19 +14,16 @@
 
 #ifdef GAME_DLL
 #include "team_control_point.h"
-	extern ConVar mp_respawnwavetime;
-	extern ConVar mp_showroundtransitions;
-	extern ConVar mp_enableroundwaittime;
-	extern ConVar mp_showcleanedupents;
-	extern ConVar mp_bonusroundtime;
-	extern ConVar mp_restartround;
-	extern ConVar mp_winlimit;
-	extern ConVar mp_maxrounds;
-	extern ConVar mp_stalemate_timelimit;
-	extern ConVar mp_stalemate_enable;
-#else
-	#define CTeamplayRoundBasedRules C_TeamplayRoundBasedRules
-	#define CTeamplayRoundBasedRulesProxy C_TeamplayRoundBasedRulesProxy
+extern ConVar mp_respawnwavetime;
+extern ConVar mp_showroundtransitions;
+extern ConVar mp_enableroundwaittime;
+extern ConVar mp_showcleanedupents;
+extern ConVar mp_bonusroundtime;
+extern ConVar mp_restartround;
+extern ConVar mp_winlimit;
+extern ConVar mp_maxrounds;
+extern ConVar mp_stalemate_timelimit;
+extern ConVar mp_stalemate_enable;
 #endif
 
 extern ConVar	tf_arena_use_queue;

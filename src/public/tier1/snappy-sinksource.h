@@ -29,6 +29,8 @@
 #ifndef UTIL_SNAPPY_SNAPPY_SINKSOURCE_H_
 #define UTIL_SNAPPY_SNAPPY_SINKSOURCE_H_
 
+#pragma once
+
 #include <stddef.h>
 
 

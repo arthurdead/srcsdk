@@ -3,10 +3,13 @@ project('source_base','cpp')
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 
 src_root_dir = get_option('src_root_dir')
+funny_src_root_dir = join_paths(src_root_dir,'..','src_funny')
+
 src_engine_dir = get_option('src_engine_dir')
 game_dir = get_option('game_dir')
 
 common_dir = join_paths(src_root_dir,'common')
+public_dir = join_paths(src_root_dir,'public')
 
 source_debug_dep = declare_dependency(
 	compile_args: [
@@ -29,10 +32,12 @@ source_release_dep = declare_dependency(
 target_system = target_machine.system()
 if target_system == 'linux' or target_system == 'gnu'
 	lib_folder = join_paths(src_root_dir,'lib','public','linux32')
+	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public','linux32')
 	lib_ext = '.a'
 	sharedlib_ext = '.so'
 elif target_system == 'windows'
 	lib_folder = join_paths(src_root_dir,'lib','public')
+	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public')
 	lib_ext = '.lib'
 	sharedlib_ext = '.dll'
 else
@@ -132,6 +137,7 @@ source_shared_lib_dep_base = declare_dependency(
 	sources: files(
 		join_paths(common_dir,'module_name.cpp'),
 		join_paths(common_dir,'debug_dll_check.cpp'),
+		join_paths(public_dir,'tier0','memoverride.cpp'),
 	)
 )
 
@@ -142,6 +148,7 @@ source_executable_dep_base = declare_dependency(
 	sources: files(
 		join_paths(common_dir,'module_name.cpp'),
 		join_paths(common_dir,'debug_dll_check.cpp'),
+		join_paths(public_dir,'tier0','memoverride.cpp'),
 	)
 )
 
@@ -158,8 +165,6 @@ source_linux_dep = declare_dependency(
 		'-DDX_TO_GL_ABSTRACTION',
 		'-DGL_GLEXT_PROTOTYPES',
 		'-DBINK_VIDEO',
-		'-DNO_MALLOC_OVERRIDE',
-		'-DNO_HOOK_MALLOC'
 	]
 )
 
@@ -171,9 +176,6 @@ source_windows_dep = declare_dependency(
 		'-D_WIN32',
 		'-D_DLL_EXT=.dll',
 		'-DBINK_VIDEO',
-
-		'-DNO_MALLOC_OVERRIDE',
-		'-DNO_HOOK_MALLOC'
 	]
 )
 

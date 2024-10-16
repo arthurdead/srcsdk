@@ -641,7 +641,7 @@ bool C_BasePlayer::IsReplay() const
 #endif
 }
 
-CBaseEntity	*C_BasePlayer::GetObserverTarget() const	// returns players target or NULL
+C_BaseEntity	*C_BasePlayer::GetObserverTarget() const	// returns players target or NULL
 {
 	if ( IsHLTV() )
 	{
@@ -670,7 +670,7 @@ static void UpdateViewmodelVisibility( C_BasePlayer *player )
 	// Update view model visibility
 	for ( int i = 0; i < MAX_VIEWMODELS; i++ )
 	{
-		CBaseViewModel *vm = player->GetViewModel( i );
+		C_BaseViewModel *vm = player->GetViewModel( i );
 		if ( !vm )
 			continue;
 		vm->UpdateVisibility();
@@ -1232,7 +1232,7 @@ void C_BasePlayer::ThinkIDTarget()
 	AngleVectors(GetLocalAngles(), &vForward);
 
 	for(int iClient = 1; iClient <= gpGlobals->maxClients; ++iClient) {
-		CBaseEntity *pEnt = UTIL_PlayerByIndex( iClient );
+		C_BaseEntity *pEnt = UTIL_PlayerByIndex( iClient );
 		if(!pEnt || !pEnt->IsPlayer()) {
 			continue;
 		}
@@ -1445,7 +1445,7 @@ bool C_BasePlayer::CreateMove( float flInputSampleTime, CUserCmd *pCmd )
 			}
 		}
 
-		CBaseCombatWeapon *pWeapon = GetActiveWeapon();
+		C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
 		if ( pWeapon )
 		{
 			pWeapon->CreateMove( flInputSampleTime, pCmd, m_vecOldViewAngles );
@@ -1835,7 +1835,7 @@ PlayerRenderMode_t C_BasePlayer::GetPlayerRenderMode()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-Vector C_BasePlayer::GetChaseCamViewOffset( CBaseEntity *target )
+Vector C_BasePlayer::GetChaseCamViewOffset( C_BaseEntity *target )
 {
 	C_BasePlayer *player = ToBasePlayer( target );
 	
@@ -2154,7 +2154,7 @@ float C_BasePlayer::GetDeathCamInterpolationTime()
 
 void C_BasePlayer::CalcDeathCamView(Vector& eyeOrigin, QAngle& eyeAngles, float& fov)
 {
-	CBaseEntity	* pKiller = NULL; 
+	C_BaseEntity	* pKiller = NULL; 
 
 	if ( mp_forcecamera.GetInt() == OBS_ALLOW_ALL )
 	{
@@ -2270,7 +2270,7 @@ void C_BasePlayer::ThirdPersonSwitch( bool bThirdperson )
 		}
 		
 		//Notify weapon.
-		CBaseCombatWeapon *pWeapon = GetActiveWeapon();
+		C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
 		if ( pWeapon )
 		{
 			pWeapon->ThirdPersonSwitch( bThirdperson );
@@ -2721,7 +2721,7 @@ void C_BasePlayer::PhysicsSimulate( void )
 {
 	VPROF( "C_BasePlayer::PhysicsSimulate" );
 	// If we've got a moveparent, we must simulate that first.
-	CBaseEntity *pMoveParent = GetMoveParent();
+	C_BaseEntity *pMoveParent = GetMoveParent();
 	if (pMoveParent)
 	{
 		pMoveParent->PhysicsSimulate();
@@ -2800,7 +2800,7 @@ void C_BasePlayer::SetSwimSoundTime( float flSwimSoundTime )
 //-----------------------------------------------------------------------------
 // Purpose: Return true if this object can be +used by the player
 //-----------------------------------------------------------------------------
-bool C_BasePlayer::IsUseableEntity( CBaseEntity *pEntity, unsigned int requiredCaps )
+bool C_BasePlayer::IsUseableEntity( C_BaseEntity *pEntity, unsigned int requiredCaps )
 {
 	return false;
 }

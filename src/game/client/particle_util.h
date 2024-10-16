@@ -9,6 +9,8 @@
 #ifndef PARTICLE_UTIL_H
 #define PARTICLE_UTIL_H
 
+#pragma once
+
 #include "materialsystem/imesh.h"
 #include "particledraw.h"
 #include "particlemgr.h"

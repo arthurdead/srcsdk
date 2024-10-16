@@ -63,6 +63,6 @@ private:
 	bool m_bImportanRagdoll;
 };
 
-#define CAI_BaseNPC C_AI_BaseNPC
+typedef C_AI_BaseNPC CShared_AI_BaseNPC;
 
 #endif // C_AI_BASENPC_H

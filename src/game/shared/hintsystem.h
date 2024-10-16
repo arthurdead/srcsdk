@@ -19,7 +19,7 @@
 class CHintMessageQueue;
 class CHintMessageTimers;
 
-typedef bool (*HintTimerCallback)( CBasePlayer *pOnPlayer );
+typedef bool (*HintTimerCallback)( CSharedBasePlayer *pOnPlayer );
 
 //-----------------------------------------------------------------------------
 // Purpose: A class embedded in players to provide hints to that player
@@ -34,7 +34,7 @@ public:
 
 	//-----------------------------------------------------
 	// Call this from your player constructor
-	void Init( CBasePlayer *pPlayer, int iMaxHintTypes, const char **pszHintStrings );
+	void Init( CSharedBasePlayer *pPlayer, int iMaxHintTypes, const char **pszHintStrings );
 
 	//-----------------------------------------------------
 	// CBasePlayer calls these for you, if you fall back to its 
@@ -82,7 +82,7 @@ private:
 	void				ReAddHintTimerIfNotDisplayed( int iHintID, float flTimerDuration );
 
 private:
-	CBasePlayer			*m_pPlayer;
+	CSharedBasePlayer			*m_pPlayer;
 
 	float				m_flLastHintPlayedAt;
 	bool				m_bShowHints;

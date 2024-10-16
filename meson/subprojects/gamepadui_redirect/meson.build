@@ -20,6 +20,7 @@ if build_client
 	shared_library('gamepadui',name_prefix:'',
 		cpp_args: [
 			'-DDLLNAME=gamepadui',
+			'-DMEMOVERRIDE_MODULE=gamepadui',
 			'-DGAMEPADUI_DLL',
 		],
 		sources: files(

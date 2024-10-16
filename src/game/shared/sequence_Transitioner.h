@@ -12,9 +12,10 @@
 
 #ifdef GAME_DLL
 class CAnimationLayer;
+typedef CAnimationLayer CSharedAnimationLayer;
 #else
-#define CAnimationLayer C_AnimationLayer
 class C_AnimationLayer;
+typedef C_AnimationLayer CSharedAnimationLayer;
 #endif
 
 // ------------------------------------------------------------------------------------------------ //
@@ -48,7 +49,7 @@ public:
 	void RemoveAll( void ) { m_animationQueue.RemoveAll(); };
 
 public:
-	CUtlVector< CAnimationLayer >	m_animationQueue;
+	CUtlVector< CSharedAnimationLayer >	m_animationQueue;
 };
 
 #endif // SEQUENCE_TRANSITIONER_H

@@ -101,6 +101,7 @@ if build_client
 	shared_library('video_services',name_prefix:'',
 		cpp_args: [
 			'-DDLLNAME=video_services',
+			'-DMEMOVERRIDE_MODULE=video_services',
 			'-DMPI',
 			'-DPROTECTED_THINGS_DISABLE'
 		],

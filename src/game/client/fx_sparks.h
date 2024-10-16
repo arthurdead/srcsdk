@@ -12,12 +12,12 @@
 //=============================================================================//
 #ifndef FX_SPARKS_H
 #define FX_SPARKS_H
+#pragma once
+
 #include "particles_simple.h"
 #include "particlemgr.h"
 #include "c_pixel_visibility.h"
 #include "fx_fleck.h"
-
-#include "tier0/memdbgon.h"
 
 #define	bitsPARTICLE_TRAIL_VELOCITY_DAMPEN	0x00000001	//Dampen the velocity as the particles move
 #define	bitsPARTICLE_TRAIL_COLLIDE			0x00000002	//Do collision with simulation
@@ -77,7 +77,7 @@ class CTrailParticles : public CSimpleEmitter
 public:
 	CTrailParticles( const char *pDebugName );
 	
-	static CTrailParticles	*Create( const char *pDebugName )	{	return new CTrailParticles( pDebugName );	}
+	static CTrailParticles	*Create( const char *pDebugName );
 
 	virtual void RenderParticles( CParticleRenderIterator *pIterator );
 	virtual void SimulateParticles( CParticleSimulateIterator *pIterator );
@@ -166,5 +166,4 @@ private:
 	CSimpleGlowEmitter( const CSimpleGlowEmitter & ); // not defined, not accessible
 };
 
-#include "tier0/memdbgoff.h"
 #endif

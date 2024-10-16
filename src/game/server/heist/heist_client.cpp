@@ -46,7 +46,7 @@ void GameStartFrame()
 
 void InstallGameRules()
 {
-	CreateGameRulesObject( "CHeistGamerules" );
+	CreateGameRulesObject( "HeistGamerules" );
 }
 
 void ClientFullyConnect( edict_t *pEntity )

@@ -22,8 +22,8 @@ client_game_ctrls_src_dir = join_paths(client_src_dir,'game_controls')
 client_base_dep = declare_dependency(
 	compile_args: [
 		'-DDLLNAME=client',
+		'-DMEMOVERRIDE_MODULE=client',
 		'-DCLIENT_DLL',
-		'-DNO_STRING_T',
 	],
 	sources: files(
 		join_paths(client_src_dir,'default','clientmode_default.cpp'),
@@ -337,12 +337,14 @@ client_base_dep = declare_dependency(
 		join_paths(client_src_dir,'foundryhelpers_client.cpp'),
 		join_paths(client_src_dir,'modelrendersystem.cpp'),
 		join_paths(client_src_dir,'gameui_sys.cpp'),
+		join_paths(client_src_dir,'hudelement.cpp'),
 		join_paths(shared_src_dir,'toolframework_shared.cpp'),
 		join_paths(client_src_dir,'recast','recast_debugdraw.cpp'),
 		join_paths(client_src_dir,'recast','recast_debugdrawmesh.cpp'),
 		join_paths(client_src_dir,'recast','recast_detourdebugdraw.cpp'),
 		join_paths(client_src_dir,'recast','recast_recastdebugdraw.cpp'),
 		join_paths(client_src_dir,'mapbase','c_func_fake_worldportal.cpp'),
+		join_paths(client_src_dir,'mdlbrowser.cpp'),
 		join_paths(client_game_ctrls_src_dir,'baseviewport.cpp'),
 		join_paths(client_game_ctrls_src_dir,'basemodelpanel_matsys.cpp'),
 		join_paths(client_game_ctrls_src_dir,'basemodelpanel_game.cpp'),

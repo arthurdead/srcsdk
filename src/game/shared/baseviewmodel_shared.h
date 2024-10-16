@@ -16,39 +16,46 @@
 
 #ifdef GAME_DLL
 class CBaseCombatWeapon;
+typedef CBaseCombatWeapon CSharedBaseCombatWeapon;
 class CBaseCombatCharacter;
+typedef CBaseCombatCharacter CSharedBaseCombatCharacter;
 #else
-#define CBaseCombatWeapon C_BaseCombatWeapon
-#define CBaseCombatCharacter C_BaseCombatCharacter
 class C_BaseCombatWeapon;
+typedef C_BaseCombatWeapon CSharedBaseCombatWeapon;
 class C_BaseCombatCharacter;
+typedef C_BaseCombatCharacter CSharedBaseCombatCharacter;
 #endif
 
 #ifdef GAME_DLL
 class CVGuiScreen;
+typedef CVGuiScreen CSharedVGuiScreen;
 #else
-#define CVGuiScreen C_VGuiScreen
 class C_VGuiScreen;
-#endif
-
-#if defined( CLIENT_DLL )
-#define CBaseViewModel C_BaseViewModel
-#define CBaseCombatWeapon C_BaseCombatWeapon
+typedef C_VGuiScreen CSharedVGuiScreen;
 #endif
 
 #define VIEWMODEL_INDEX_BITS 1
 
-class CBaseViewModel : public CBaseAnimating
-{
-	DECLARE_CLASS( CBaseViewModel, CBaseAnimating );
-public:
+#ifdef CLIENT_DLL
+	#define CBaseViewModel C_BaseViewModel
+#endif
 
+class CBaseViewModel : public CSharedBaseAnimating
+{
+public:
+	DECLARE_CLASS( CBaseViewModel, CSharedBaseAnimating );
+	CBaseViewModel( void );
+	~CBaseViewModel( void );
+private:
+	CBaseViewModel( const CBaseViewModel & ); // not defined, not accessible
+
+#ifdef CLIENT_DLL
+	#undef CBaseViewModel
+#endif
+
+public:
 	DECLARE_NETWORKCLASS();
 	DECLARE_PREDICTABLE();
-
-							CBaseViewModel( void );
-							~CBaseViewModel( void );
-
 
 	bool IsViewable(void) { return false; }
 
@@ -56,15 +63,15 @@ public:
 
 	// Weapon client handling
 	virtual void			SendViewModelMatchingSequence( int sequence );
-	virtual void			SetWeaponModel( const char *pszModelname, CBaseCombatWeapon *weapon );
+	virtual void			SetWeaponModel( const char *pszModelname, CSharedBaseCombatWeapon *weapon );
 
 	virtual void			CalcViewModelLag( Vector& origin, QAngle& angles, QAngle& original_angles );
-	virtual void			CalcViewModelView( CBasePlayer *owner, const Vector& eyePosition, 
+	virtual void			CalcViewModelView( CSharedBasePlayer *owner, const Vector& eyePosition, 
 								const QAngle& eyeAngles );
-	virtual void			AddViewModelBob( CBasePlayer *owner, Vector& eyePosition, QAngle& eyeAngles ) {};
+	virtual void			AddViewModelBob( CSharedBasePlayer *owner, Vector& eyePosition, QAngle& eyeAngles ) {};
 
 	// Initializes the viewmodel for use							
-	void					SetOwner( CBaseEntity *pEntity );
+	void					SetOwner( CSharedBaseEntity *pEntity );
 	void					SetIndex( int nIndex );
 	// Returns which viewmodel it is
 	int						ViewModelIndex( ) const;
@@ -73,7 +80,7 @@ public:
 
 	virtual void			Spawn( void );
 
-	virtual CBaseEntity *GetOwner( void ) { return m_hOwner.Get(); };
+	virtual CSharedBaseEntity *GetOwner( void ) { return m_hOwner.Get(); };
 
 	virtual void			AddEffects( int nEffects );
 	virtual void			RemoveEffects( int nEffects );
@@ -83,12 +90,12 @@ public:
 	void					SetControlPanelsActive( bool bState );
 	void					ShowControlPanells( bool show );
 
-	virtual CBaseCombatWeapon *GetOwningWeapon( void );
+	virtual CSharedBaseCombatWeapon *GetOwningWeapon( void );
 
 	virtual bool			IsViewModel() const { return true; }
 	virtual bool			IsViewModelOrAttachment() const { return true; }
 	
-	virtual CBaseEntity	*GetOwnerViaInterface( void ) { return GetOwner(); }
+	virtual CSharedBaseEntity	*GetOwnerViaInterface( void ) { return GetOwner(); }
 
 	virtual bool			IsSelfAnimating()
 	{
@@ -159,7 +166,7 @@ public:
 	// (inherited from C_BaseAnimating)
 	virtual void			FormatViewModelAttachment( int nAttachment, matrix3x4_t &attachmentToWorld );
 
-	CBaseCombatWeapon		*GetWeapon() const { return m_hWeapon.Get(); }
+	CSharedBaseCombatWeapon		*GetWeapon() const { return m_hWeapon.Get(); }
 
 #ifdef CLIENT_DLL
 	virtual bool			ShouldResetSequenceOnNewModel( void ) { return false; }
@@ -172,14 +179,11 @@ public:
 	virtual bool			GetAttachmentVelocity( int number, Vector &originVel, Quaternion &angleVel );
 #endif
 
-private:
-	CBaseViewModel( const CBaseViewModel & ); // not defined, not accessible
-
 #endif
 
 private:
 	CNetworkVar( int, m_nViewModelIndex );		// Which viewmodel is it?
-	CNetworkHandle( CBaseEntity, m_hOwner );				// Player or AI carrying this weapon
+	CNetworkHandle( CSharedBaseEntity, m_hOwner );				// Player or AI carrying this weapon
 
 	// soonest time Update will call WeaponIdle
 	float					m_flTimeWeaponIdle;							
@@ -205,21 +209,27 @@ private:
 
 #endif
 
-	CNetworkHandle( CBaseCombatWeapon, m_hWeapon );
+	CNetworkHandle( CSharedBaseCombatWeapon, m_hWeapon );
 
 	// Control panel
-	typedef CHandle<CVGuiScreen>	ScreenHandle_t;
+	typedef CHandle<CSharedVGuiScreen>	ScreenHandle_t;
 	CUtlVector<ScreenHandle_t>	m_hScreens;
 };
 
-inline CBaseViewModel *ToBaseViewModel( CBaseAnimating *pAnim )
+#ifdef GAME_DLL
+typedef CBaseViewModel CSharedBaseViewModel;
+#else
+typedef C_BaseViewModel CSharedBaseViewModel;
+#endif
+
+inline CSharedBaseViewModel *ToBaseViewModel( CSharedBaseAnimating *pAnim )
 {
 	if ( pAnim && pAnim->IsViewModel() )
-		return assert_cast<CBaseViewModel *>(pAnim);
+		return assert_cast<CSharedBaseViewModel *>(pAnim);
 	return NULL;
 }
 
-inline CBaseViewModel *ToBaseViewModel( CBaseEntity *pEntity )
+inline CSharedBaseViewModel *ToBaseViewModel( CSharedBaseEntity *pEntity )
 {
 	if ( !pEntity )
 		return NULL;

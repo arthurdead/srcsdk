@@ -8,7 +8,10 @@
 #ifndef C_ENV_FOG_CONTROLLER_H
 #define C_ENV_FOG_CONTROLLER_H
 
-#define CFogController C_FogController
+#pragma once
+
+#include "c_baseentity.h"
+#include "playernet_vars.h"
 
 //=============================================================================
 //
@@ -29,5 +32,6 @@ public:
 	fogparams_t				m_fog;
 };
 
+typedef C_FogController CSharedFogController;
 
 #endif // C_ENV_FOG_CONTROLLER_H

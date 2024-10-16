@@ -9,6 +9,8 @@
 #ifndef CLIENTMODE_H
 #define CLIENTMODE_H
 
+#pragma once
+
 #include "iclientmode.h"
 
 typedef struct

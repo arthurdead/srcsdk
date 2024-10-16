@@ -4,11 +4,12 @@
 //
 // $NoKeywords: $
 //=====================================================================================//
+#ifndef CVISIBILITYMONITOR_H
+#define CVISIBILITYMONITOR_H
 
-#include "cbase.h"
+#pragma once
 
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+#include "baseentity.h"
 
 // A callback which will automatically be used instead of generating the generic
 // 'on_entity_visible' game event. Often used so that the entity can generate
@@ -23,3 +24,5 @@ typedef bool (*VisibilityMonitorEvaluator)( CBaseEntity *pVisibleEntity, CBasePl
 
 extern void VisibilityMonitor_AddEntity( CBaseEntity *pEntity, float flMinDist, VisibilityMonitorCallback pfnCallback, VisibilityMonitorEvaluator pfnEvaluator );
 extern void VisibilityMonitor_RemoveEntity( CBaseEntity *pEntity );
+
+#endif

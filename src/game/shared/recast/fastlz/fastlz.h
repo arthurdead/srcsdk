@@ -27,6 +27,8 @@
 #ifndef FASTLZ_H
 #define FASTLZ_H
 
+#pragma once
+
 #define FASTLZ_VERSION 0x000100
 
 #define FASTLZ_VERSION_MAJOR     0

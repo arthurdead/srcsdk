@@ -9,6 +9,8 @@
 #ifndef VIEWCONEIMAGE_H
 #define VIEWCONEIMAGE_H
 
+#pragma once
+
 #include "shareddefs.h"
 #include "vgui_bitmapimage.h"
 

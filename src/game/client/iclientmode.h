@@ -9,6 +9,8 @@
 #ifndef ICLIENTMODE_H
 #define ICLIENTMODE_H
 
+#pragma once
+
 #include <vgui/VGUI.h>
 #include "inputsystem/ButtonCode.h"
 #include "cdll_int.h"

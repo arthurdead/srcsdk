@@ -9,6 +9,7 @@
 #ifndef MOVIE_EXPLOSION_H
 #define MOVIE_EXPLOSION_H
 
+#pragma once
 
 #include "baseparticleentity.h"
 

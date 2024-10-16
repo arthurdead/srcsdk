@@ -26,8 +26,6 @@
 
 extern ConVar default_fov;
 
-#define CPropVehicleDriveable C_PropVehicleDriveable
-
 #endif // CLIENT_DLL
 
 extern ConVar r_VehicleViewDampen;
@@ -185,7 +183,7 @@ void RemapViewAngles( ViewSmoothingData_t *pData, QAngle &vehicleEyeAngles )
 //-----------------------------------------------------------------------------
 // Purpose: Vehicle dampening shared between server and client
 //-----------------------------------------------------------------------------
-void SharedVehicleViewSmoothing(CBasePlayer *pPlayer, 
+void SharedVehicleViewSmoothing(CSharedBasePlayer *pPlayer, 
 								Vector *pAbsOrigin, QAngle *pAbsAngles, 
 								bool bEnterAnimOn, bool bExitAnimOn, 
 								const Vector &vecEyeExitEndpoint, 
@@ -203,7 +201,7 @@ void SharedVehicleViewSmoothing(CBasePlayer *pPlayer,
 	*pAbsAngles = pPlayer->EyeAngles();
 	if ( r_VehicleViewDampen.GetInt() && pData->bDampenEyePosition )
 	{
-		CPropVehicleDriveable *pDriveable = assert_cast<CPropVehicleDriveable*>(pData->pVehicle);
+		CSharedPropVehicleDriveable *pDriveable = assert_cast<CSharedPropVehicleDriveable*>(pData->pVehicle);
 		pDriveable->DampenEyePosition( vehicleEyeOrigin, vehicleEyeAngles );
 	}
 

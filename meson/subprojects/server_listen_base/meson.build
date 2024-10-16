@@ -19,6 +19,7 @@ shared_src_dir = join_paths(src_root_dir,'game','shared')
 server_listen_base_dep = declare_dependency(
 	compile_args: [
 		'-DDLLNAME=server',
+		'-DMEMOVERRIDE_MODULE=server',
 	],
 	sources: files(
 		join_paths(server_src_dir,'vgui_gamedll_int.cpp'),

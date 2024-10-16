@@ -391,8 +391,8 @@ public:
 private:
 	C_ServerRagdoll( const C_ServerRagdoll &src );
 
-	typedef CHandle<C_BaseAnimating> CBaseAnimatingHandle;
-	CNetworkVar( CBaseAnimatingHandle, m_hUnragdoll );
+	typedef CHandle<C_BaseAnimating> BaseAnimatingHandle;
+	CNetworkHandle( C_BaseAnimating, m_hUnragdoll );
 	CNetworkVar( float, m_flBlendWeight );
 	float m_flBlendWeightCurrent;
 	CNetworkVar( int, m_nOverlaySequence );

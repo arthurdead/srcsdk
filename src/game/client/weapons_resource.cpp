@@ -71,9 +71,10 @@ void WeaponsResource::LoadAllWeaponSprites( void )
 
 	for (int i = 0; i < MAX_WEAPONS; i++)
 	{
-		if ( player->GetWeapon(i) )
+		C_BaseCombatWeapon *pWeapon = player->GetWeapon(i);
+		if ( pWeapon )
 		{
-			LoadWeaponSprites( player->GetWeapon(i)->GetWeaponFileInfoHandle() );
+			LoadWeaponSprites( pWeapon->GetWeaponFileInfoHandle() );
 		}
 	}
 }
@@ -91,7 +92,14 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 
 	// Already parsed the hud elements?
 	if ( pWeaponInfo->bLoadedHudElements )
+	{
+		if(pWeaponInfo->pKeyValuesData) {
+			pWeaponInfo->pKeyValuesData->deleteThis();
+			pWeaponInfo->pKeyValuesData = NULL;
+		}
+
 		return;
+	}
 
 	pWeaponInfo->bLoadedHudElements = true;
 
@@ -103,12 +111,12 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 	pWeaponInfo->iconAutoaim = NULL;
 	pWeaponInfo->iconSmall = NULL;
 
-	char sz[128];
-	Q_snprintf(sz, sizeof( sz ), "scripts/%s", pWeaponInfo->szClassName);
-
 	CUtlDict< CHudTexture *, int > tempList;
 
-	LoadHudTextures( tempList, sz, GameRules()->GetEncryptionKey() );
+	LoadHudTextures( tempList, pWeaponInfo->pKeyValuesData );
+
+	pWeaponInfo->pKeyValuesData->deleteThis();
+	pWeaponInfo->pKeyValuesData = NULL;
 
 	if ( !tempList.Count() )
 	{

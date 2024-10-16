@@ -13,8 +13,8 @@
 #include "c_baseanimating.h"
 
 // For shared code.
-#define CBaseAnimatingOverlay C_BaseAnimatingOverlay
-
+class C_BaseAnimatingOverlay;
+typedef C_BaseAnimatingOverlay CSharedBaseAnimatingOverlay;
 
 class C_BaseAnimatingOverlay : public C_BaseAnimating
 {

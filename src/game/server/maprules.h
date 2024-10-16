@@ -9,6 +9,7 @@
 #ifndef MAPRULES_H
 #define MAPRULES_H
 
+#pragma once
 
 
 #endif		// MAPRULES_H

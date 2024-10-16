@@ -34,7 +34,7 @@ ConVar mp_slammoveyaw( "mp_slammoveyaw", "0", FCVAR_REPLICATED | FCVAR_DEVELOPME
 // Input  : *pPlayer - 
 //			&movementData - 
 //-----------------------------------------------------------------------------
-CPlayerAnimState::CPlayerAnimState( CBasePlayer *pPlayer, PlayerMovementData_t &movementData )
+CPlayerAnimState::CPlayerAnimState( CSharedBasePlayer *pPlayer, PlayerMovementData_t &movementData )
 #ifdef CLIENT_DLL
 	: m_iv_flMaxGroundSpeed( "CPlayerAnimState::m_iv_flMaxGroundSpeed" )
 #endif
@@ -112,7 +112,7 @@ CPlayerAnimState::~CPlayerAnimState()
 // Input  : *pPlayer - 
 //			&movementData - 
 //-----------------------------------------------------------------------------
-void CPlayerAnimState::Init( CBasePlayer *pPlayer, PlayerMovementData_t &movementData )
+void CPlayerAnimState::Init( CSharedBasePlayer *pPlayer, PlayerMovementData_t &movementData )
 {
 	// Get the player this animation data works on.
 	m_pPlayer = pPlayer;
@@ -349,7 +349,7 @@ bool CPlayerAnimState::InitGestureSlots( void )
 	}
 
 	// Get the base player.
-	CBasePlayer *pPlayer = GetBasePlayer();
+	CSharedBasePlayer *pPlayer = GetBasePlayer();
 
 	// Set the number of animation overlays we will use.
 	pPlayer->SetNumAnimOverlays( GESTURE_SLOT_COUNT );
@@ -414,7 +414,7 @@ void CPlayerAnimState::ResetGestureSlot( int iGestureSlot )
 		pGestureSlot->m_bActive = false;
 		if ( pGestureSlot->m_pAnimLayer )
 		{
-			pGestureSlot->m_pAnimLayer->SetOrder( CBaseAnimatingOverlay::MAX_OVERLAYS );
+			pGestureSlot->m_pAnimLayer->SetOrder( CSharedBaseAnimatingOverlay::MAX_OVERLAYS );
 #ifdef CLIENT_DLL
 			pGestureSlot->m_pAnimLayer->Reset();
 #endif
@@ -429,7 +429,7 @@ void CPlayerAnimState::ResetGestureSlot( int iGestureSlot )
 //-----------------------------------------------------------------------------
 void CPlayerAnimState::RunGestureSlotAnimEventsToCompletion( GestureSlot_t *pGesture )
 {
-	CBasePlayer *pPlayer = GetBasePlayer();
+	CSharedBasePlayer *pPlayer = GetBasePlayer();
 	if( !pPlayer )
 		return;
 
@@ -489,7 +489,7 @@ bool CPlayerAnimState::VerifyAnimLayerInSlot( int iGestureSlot )
 		return false;
 	}
 
-	CAnimationLayer *pExpected = GetBasePlayer()->GetAnimOverlay( iGestureSlot );
+	CSharedAnimationLayer *pExpected = GetBasePlayer()->GetAnimOverlay( iGestureSlot );
 	if ( m_aGestureSlots[iGestureSlot].m_pAnimLayer != pExpected )
 	{
 		AssertMsg3( false, "Gesture slot %d pointing to wrong address %p. Updating to new address %p.", iGestureSlot, m_aGestureSlots[iGestureSlot].m_pAnimLayer, pExpected );
@@ -558,7 +558,7 @@ void CPlayerAnimState::AddToGestureSlot( int iGestureSlot, Activity iGestureActi
 	// Sanity Check
 	Assert( iGestureSlot >= 0 && iGestureSlot < GESTURE_SLOT_COUNT );
 
-	CBasePlayer *pPlayer = GetBasePlayer();
+	CSharedBasePlayer *pPlayer = GetBasePlayer();
 	if ( !pPlayer )
 		return;
 
@@ -635,7 +635,7 @@ void CPlayerAnimState::AddVCDSequenceToGestureSlot( int iGestureSlot, int iGestu
 	// Sanity Check
 	Assert( iGestureSlot >= 0 && iGestureSlot < GESTURE_SLOT_COUNT );
 
-	CBasePlayer *pPlayer = GetBasePlayer();
+	CSharedBasePlayer *pPlayer = GetBasePlayer();
 	if ( !pPlayer )
 		return;
 
@@ -705,7 +705,7 @@ void CPlayerAnimState::AddVCDSequenceToGestureSlot( int iGestureSlot, int iGestu
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CAnimationLayer* CPlayerAnimState::GetGestureSlotLayer( int iGestureSlot )
+CSharedAnimationLayer* CPlayerAnimState::GetGestureSlotLayer( int iGestureSlot )
 {
 	return m_aGestureSlots[iGestureSlot].m_pAnimLayer;
 }
@@ -731,7 +731,7 @@ int CPlayerAnimState::SelectWeightedSequence( Activity activity )
 //-----------------------------------------------------------------------------
 void CPlayerAnimState::RestartMainSequence( void )
 {
-	CBaseAnimatingOverlay *pPlayer = GetBasePlayer();
+	CSharedBaseAnimatingOverlay *pPlayer = GetBasePlayer();
 	if ( pPlayer )
 	{
 		pPlayer->SetAnimTime( gpGlobals->curtime );
@@ -961,7 +961,7 @@ Activity CPlayerAnimState::TranslateActivity( Activity actDesired )
 		}
 	}
 
-	CBaseCombatWeapon *pActiveWep = GetBasePlayer()->GetActiveWeapon();
+	CSharedBaseCombatWeapon *pActiveWep = GetBasePlayer()->GetActiveWeapon();
 	if(pActiveWep) {
 		actDesired = pActiveWep->ActivityOverride(actDesired, nullptr);
 	}
@@ -1092,7 +1092,7 @@ void CPlayerAnimState::ComputeMainSequence()
 {
 	VPROF( "CBasePlayerAnimState::ComputeMainSequence" );
 
-	CBaseAnimatingOverlay *pPlayer = GetBasePlayer();
+	CSharedBaseAnimatingOverlay *pPlayer = GetBasePlayer();
 
 	// Have our class or the mod-specific class determine what the current activity is.
 	Activity idealActivity = CalcMainActivity();
@@ -1221,7 +1221,7 @@ void CPlayerAnimState::UpdateGestureLayer( CStudioHdr *pStudioHdr, GestureSlot_t
 	if ( !pStudioHdr || !pGesture )
 		return;
 
-	CBasePlayer *pPlayer = GetBasePlayer();
+	CSharedBasePlayer *pPlayer = GetBasePlayer();
 	if( !pPlayer )
 		return;
 
@@ -1925,7 +1925,7 @@ void CPlayerAnimState::DebugShowAnimStateForPlayer()
 	{
 #ifdef CLIENT_DLL
 		C_AnimationLayer *pLayer = GetBasePlayer()->GetAnimOverlay( iAnim );
-		if ( pLayer && ( pLayer->m_nOrder != CBaseAnimatingOverlay::MAX_OVERLAYS ) )
+		if ( pLayer && ( pLayer->m_nOrder != C_BaseAnimatingOverlay::MAX_OVERLAYS ) )
 		{
 			Anim_StatePrintf( iLine++, "Layer %s: Weight: %.2f, Cycle: %.2f", GetSequenceName( GetBasePlayer()->GetModelPtr(), pLayer->m_nSequence ), (float)pLayer->m_flWeight, (float)pLayer->m_flCycle );
 		}
@@ -2036,9 +2036,9 @@ void CPlayerAnimState::DebugShowAnimState( int iStartLine )
 	{
 		C_AnimationLayer *pLayer = GetBasePlayer()->GetAnimOverlay( i /*i+1?*/ );
 		Anim_StatePrintf( iLine++, "%s, weight: %.2f, cycle: %.2f, aim (%d)", 
-			pLayer->m_nOrder == CBaseAnimatingOverlay::MAX_OVERLAYS ? "--" : GetSequenceName( GetBasePlayer()->GetModelPtr(), pLayer->m_nSequence ), 
-			pLayer->m_nOrder == CBaseAnimatingOverlay::MAX_OVERLAYS ? -1 :(float)pLayer->m_flWeight, 
-			pLayer->m_nOrder == CBaseAnimatingOverlay::MAX_OVERLAYS ? -1 :(float)pLayer->m_flCycle, 
+			pLayer->m_nOrder == C_BaseAnimatingOverlay::MAX_OVERLAYS ? "--" : GetSequenceName( GetBasePlayer()->GetModelPtr(), pLayer->m_nSequence ), 
+			pLayer->m_nOrder == C_BaseAnimatingOverlay::MAX_OVERLAYS ? -1 :(float)pLayer->m_flWeight, 
+			pLayer->m_nOrder == C_BaseAnimatingOverlay::MAX_OVERLAYS ? -1 :(float)pLayer->m_flCycle, 
 			i
 			);
 	}
@@ -2085,7 +2085,7 @@ const char *s_aGestureSlotNames[GESTURE_SLOT_COUNT] =
 //-----------------------------------------------------------------------------
 void CPlayerAnimState::DebugGestureInfo( void )
 {
-	CBasePlayer *pPlayer = GetBasePlayer();
+	CSharedBasePlayer *pPlayer = GetBasePlayer();
 	if ( !pPlayer )
 		return;
 

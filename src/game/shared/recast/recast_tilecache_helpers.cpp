@@ -76,8 +76,14 @@ void* LinearAllocator::alloc(const size_t size)
 	top += size;
 	return mem;
 }
-	
+
+#pragma push_macro("free")
+#undef free
+
 void LinearAllocator::free(void* /*ptr*/)
+
+#pragma pop_macro("free")
+
 {
 	// Empty
 }

@@ -3,6 +3,10 @@
 // Purpose: 
 //
 //=============================================================================//
+#ifndef VIEWANGLEANIM_H
+#define VIEWANGLEANIM_H
+
+#pragma once
 
 #include "utlvector.h"
 #include "c_baseentity.h"
@@ -74,3 +78,5 @@ private:
 
 	ViewAnimCompleteCallback m_pAnimCompleteCallback;
 };
+
+#endif

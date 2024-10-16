@@ -2,6 +2,8 @@
 #ifndef ISHADER_DECLARATIONS_HDR
 #define ISHADER_DECLARATIONS_HDR
 
+#pragma once
+
 //-----------------------------------------------------------------------------
 // Standard vertex shader constants
 //-----------------------------------------------------------------------------

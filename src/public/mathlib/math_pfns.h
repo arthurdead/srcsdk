@@ -7,6 +7,8 @@
 #ifndef _MATH_PFNS_H_
 #define _MATH_PFNS_H_
 
+#pragma once
+
 // These globals are initialized by mathlib and redirected based on available fpu features
 extern float (*pfSqrt)(float x);
 extern float (*pfRSqrt)(float x);

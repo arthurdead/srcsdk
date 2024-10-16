@@ -9,6 +9,8 @@
 #ifndef GAME_CLIENT_H
 #define GAME_CLIENT_H
 
+#pragma once
+
 class ConVar;
 
 extern void GameDLLInit( void );

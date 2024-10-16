@@ -70,6 +70,8 @@ public:
 	bool				m_bIgnorePredictionCull;
 };
 
+typedef C_RecipientFilter CSharedRecipientFilter;
+
 //-----------------------------------------------------------------------------
 // Purpose: Simple class to create a filter for a single player
 //-----------------------------------------------------------------------------

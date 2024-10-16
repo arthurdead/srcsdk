@@ -10,8 +10,8 @@
 #pragma once
 
 #include <string.h>
-#include "cbase.h"
 #include "GameEventListener.h"
+#include "baseentity.h"
 
 // Spawn Flags
 #define SF_COLORCORRECTION_MASTER		0x0001

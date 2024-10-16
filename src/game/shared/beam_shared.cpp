@@ -74,7 +74,7 @@ LINK_ENTITY_TO_CLASS( info_target, CInfoTarget );
 //-----------------------------------------------------------------------------
 // Purpose: Returns true if the given entity is a fixed target for lightning.
 //-----------------------------------------------------------------------------
-bool IsStaticPointEntity( CBaseEntity *pEnt )
+bool IsStaticPointEntity( CSharedBaseEntity *pEnt )
 {
 	if ( pEnt->GetMoveParent() )
 		return false;
@@ -90,7 +90,7 @@ bool IsStaticPointEntity( CBaseEntity *pEnt )
 }
 
 #if defined( CLIENT_DLL )
-extern bool ComputeBeamEntPosition( CBaseEntity *pEnt, int nAttachment, bool bInterpretAttachmentIndexAsHitboxIndex, Vector& pt );
+extern bool ComputeBeamEntPosition( C_BaseEntity *pEnt, int nAttachment, bool bInterpretAttachmentIndexAsHitboxIndex, Vector& pt );
 
 void RecvProxy_Beam_ScrollSpeed( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
@@ -137,12 +137,12 @@ void* SendProxy_SendPredictableId( const SendProp *pProp, const void *pStruct, c
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableId );
 #endif
 
-LINK_ENTITY_TO_CLASS( beam, CBeam );
+LINK_ENTITY_TO_CLASS_ALIASED( beam, Beam );
 
 // This table encodes the CBeam data.
 IMPLEMENT_NETWORKCLASS_ALIASED( Beam, DT_Beam )
 
-BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_BeamPredictableId )
+BEGIN_NETWORK_TABLE_NOBASE( CSharedBeam, DT_BeamPredictableId )
 #if !defined( CLIENT_DLL )
 	SendPropPredictableId( SENDINFO( m_PredictableID ) ),
 	SendPropInt( SENDINFO( m_bIsPlayerSimulated ), 1, SPROP_UNSIGNED ),
@@ -152,7 +152,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_BeamPredictableId )
 #endif
 END_NETWORK_TABLE()
 
-BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_Beam )
+BEGIN_NETWORK_TABLE_NOBASE( CSharedBeam, DT_Beam )
 #if !defined( CLIENT_DLL )
 	SendPropInt		(SENDINFO(m_nBeamType),		Q_log2(NUM_BEAM_TYPES)+1,	SPROP_UNSIGNED ),
 	SendPropInt		(SENDINFO(m_nBeamFlags),	NUM_BEAM_FLAGS,	SPROP_UNSIGNED ),
@@ -178,7 +178,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CBeam, DT_Beam )
 	SendPropFloat	(SENDINFO(m_flFrameRate),	10, SPROP_ROUNDUP, -25.0f, 25.0f ),
 	SendPropFloat	(SENDINFO(m_flHDRColorScale),	0, SPROP_NOSCALE, 0.0f, 100.0f ),
 	SendPropFloat	(SENDINFO(m_flFrame),		20, SPROP_ROUNDDOWN | SPROP_CHANGES_OFTEN,	0.0f,   256.0f),
-	SendPropInt		(SENDINFO(m_nClipStyle), CBeam::kBEAMCLIPSTYLE_NUMBITS+1, SPROP_UNSIGNED ),
+	SendPropInt		(SENDINFO(m_nClipStyle), CSharedBeam::kBEAMCLIPSTYLE_NUMBITS+1, SPROP_UNSIGNED ),
 	SendPropVector	(SENDINFO(m_vecEndPos),		-1,	SPROP_COORD ),
 #ifdef PORTAL
 	SendPropBool	(SENDINFO(m_bDrawInMainRender) ),
@@ -254,7 +254,7 @@ END_MAPENTITY()
 
 #else
 
-BEGIN_PREDICTION_DATA( CBeam )
+BEGIN_PREDICTION_DATA( C_Beam )
 
 	DEFINE_PRED_FIELD( m_nBeamType, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	
@@ -292,10 +292,14 @@ END_PREDICTION_DATA()
 
 #endif
 
+#if defined( CLIENT_DLL )
+#define CBeam C_Beam
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CBeam::CBeam( void )
+CSharedBeam::CBeam( void )
 {
 #ifdef _DEBUG
 	// necessary since in debug, we initialize vectors to NAN for debugging
@@ -321,11 +325,15 @@ CBeam::CBeam( void )
 #endif
 }
 
+#if defined( CLIENT_DLL )
+#undef CBeam
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *szModelName - 
 //-----------------------------------------------------------------------------
-void CBeam::SetModel( const char *szModelName )
+void CSharedBeam::SetModel( const char *szModelName )
 {
 	int modelIndex = modelinfo->GetModelIndex( szModelName );
 	const model_t *model = modelinfo->GetModel( modelIndex );
@@ -341,7 +349,7 @@ void CBeam::SetModel( const char *szModelName )
 }
 
 
-void CBeam::Spawn( void )
+void CSharedBeam::Spawn( void )
 {
 	SetMoveType( MOVETYPE_NONE );
 	SetSolid( SOLID_NONE );							// Remove model & collisions
@@ -354,7 +362,7 @@ void CBeam::Spawn( void )
 }
 
 
-void CBeam::Precache( void )
+void CSharedBeam::Precache( void )
 {
 	if ( GetOwnerEntity() )
 	{
@@ -368,34 +376,34 @@ void CBeam::Precache( void )
 }
 
 
-void CBeam::SetType( int type )		
+void CSharedBeam::SetType( int type )		
 { 
 	Assert( type < NUM_BEAM_TYPES );
 	m_nBeamType = type;
 }
 
-void CBeam::SetBeamFlags( int flags )	
+void CSharedBeam::SetBeamFlags( int flags )	
 { 
 	Assert( flags < (1 << NUM_BEAM_FLAGS) );
 	m_nBeamFlags = flags;
 }
 
-void CBeam::SetBeamFlag( int flag )		
+void CSharedBeam::SetBeamFlag( int flag )		
 { 
 	m_nBeamFlags |= flag;
 }
 
-int CBeam::GetType( void ) const 
+int CSharedBeam::GetType( void ) const 
 { 
 	return m_nBeamType;
 }
 
-int CBeam::GetBeamFlags( void ) const
+int CSharedBeam::GetBeamFlags( void ) const
 { 
 	return m_nBeamFlags;
 }
 
-void CBeam::SetStartEntity( CBaseEntity *pEntity )
+void CSharedBeam::SetStartEntity( CSharedBaseEntity *pEntity )
 { 
 	Assert( m_nNumBeamEnts >= 2 );
 	m_hAttachEntity.Set( 0, pEntity );
@@ -405,7 +413,7 @@ void CBeam::SetStartEntity( CBaseEntity *pEntity )
 		pEntity->AddEFlags( EFL_FORCE_CHECK_TRANSMIT );
 }
 
-void CBeam::SetEndEntity( CBaseEntity *pEntity ) 
+void CSharedBeam::SetEndEntity( CSharedBaseEntity *pEntity ) 
 { 
 	Assert( m_nNumBeamEnts >= 2 );
 	m_hAttachEntity.Set( m_nNumBeamEnts-1, pEntity );
@@ -419,7 +427,7 @@ void CBeam::SetEndEntity( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // This will change things so the abs position matches the requested spot
 //-----------------------------------------------------------------------------
-void CBeam::SetAbsStartPos( const Vector &pos )
+void CSharedBeam::SetAbsStartPos( const Vector &pos )
 {
 	if (!GetMoveParent())
 	{
@@ -434,7 +442,7 @@ void CBeam::SetAbsStartPos( const Vector &pos )
 	SetStartPos( vecLocalPos );
 }
 
-void CBeam::SetAbsEndPos( const Vector &pos )
+void CSharedBeam::SetAbsEndPos( const Vector &pos )
 {
 	if (!GetMoveParent())
 	{
@@ -452,7 +460,7 @@ void CBeam::SetAbsEndPos( const Vector &pos )
 #if !defined( CLIENT_DLL )
 
 // These don't take attachments into account
-const Vector &CBeam::GetAbsStartPos( void ) const
+const Vector &CSharedBeam::GetAbsStartPos( void ) const
 {
 	if ( GetType() == BEAM_ENTS && GetStartEntity() )
 	{
@@ -468,7 +476,7 @@ const Vector &CBeam::GetAbsStartPos( void ) const
 }
 
 
-const Vector &CBeam::GetAbsEndPos( void ) const
+const Vector &CSharedBeam::GetAbsEndPos( void ) const
 {
 	if ( GetType() != BEAM_POINTS && GetType() != BEAM_HOSE && GetEndEntity() ) 
 	{
@@ -523,10 +531,10 @@ const Vector &C_Beam::GetAbsEndPos( void ) const
 }
 #endif
 
-CBeam *CBeam::BeamCreate( const char *pSpriteName, float width )
+CSharedBeam *CSharedBeam::BeamCreate( const char *pSpriteName, float width )
 {
 	// Create a new entity with CBeam private data
-	CBeam *pBeam  = CREATE_ENTITY( CBeam, "beam" );
+	CSharedBeam *pBeam  = CREATE_ENTITY( CSharedBeam, "beam" );
 	pBeam->BeamInit( pSpriteName, width );
 
 	return pBeam;
@@ -539,9 +547,9 @@ CBeam *CBeam::BeamCreate( const char *pSpriteName, float width )
 //			animate - 
 // Output : CSprite
 //-----------------------------------------------------------------------------
-CBeam *CBeam::BeamCreatePredictable( const char *module, int line, const char *pSpriteName, float width, CBasePlayer *pOwner )
+CSharedBeam *CSharedBeam::BeamCreatePredictable( const char *module, int line, const char *pSpriteName, float width, CSharedBasePlayer *pOwner )
 {
-	CBeam *pBeam = ( CBeam * )CBaseEntity::CreatePredicted( module, line, "beam", vec3_origin, vec3_angle, pOwner );
+	CSharedBeam *pBeam = ( CSharedBeam * )CSharedBaseEntity::CreatePredicted( module, line, "beam", vec3_origin, vec3_angle, pOwner );
 	if ( pBeam )
 	{
 		pBeam->BeamInit( pSpriteName, width );
@@ -551,7 +559,7 @@ CBeam *CBeam::BeamCreatePredictable( const char *module, int line, const char *p
 	return pBeam;
 }
 
-void CBeam::BeamInit( const char *pSpriteName, float width )
+void CSharedBeam::BeamInit( const char *pSpriteName, float width )
 {
 	SetColor( 255, 255, 255 );
 	SetBrightness( 255 );
@@ -576,7 +584,7 @@ void CBeam::BeamInit( const char *pSpriteName, float width )
 }
 
 
-void CBeam::PointsInit( const Vector &start, const Vector &end )
+void CSharedBeam::PointsInit( const Vector &start, const Vector &end )
 {
 	SetType( BEAM_POINTS );
 	m_nNumBeamEnts = 2;
@@ -588,7 +596,7 @@ void CBeam::PointsInit( const Vector &start, const Vector &end )
 }
 
 
-void CBeam::HoseInit( const Vector &start, const Vector &direction )
+void CSharedBeam::HoseInit( const Vector &start, const Vector &direction )
 {
 	SetType( BEAM_HOSE );
 	m_nNumBeamEnts = 2;
@@ -600,7 +608,7 @@ void CBeam::HoseInit( const Vector &start, const Vector &direction )
 }
 
 
-void CBeam::PointEntInit( const Vector &start, CBaseEntity *pEndEntity )
+void CSharedBeam::PointEntInit( const Vector &start, CSharedBaseEntity *pEndEntity )
 {
 	SetType( BEAM_ENTPOINT );
 	m_nNumBeamEnts = 2;
@@ -611,7 +619,7 @@ void CBeam::PointEntInit( const Vector &start, CBaseEntity *pEndEntity )
 	RelinkBeam();
 }
 
-void CBeam::EntsInit( CBaseEntity *pStartEntity, CBaseEntity *pEndEntity )
+void CSharedBeam::EntsInit( CSharedBaseEntity *pStartEntity, CSharedBaseEntity *pEndEntity )
 {
 	SetType( BEAM_ENTS );
 	m_nNumBeamEnts = 2;
@@ -622,7 +630,7 @@ void CBeam::EntsInit( CBaseEntity *pStartEntity, CBaseEntity *pEndEntity )
 	RelinkBeam();
 }
 
-void CBeam::LaserInit( CBaseEntity *pStartEntity, CBaseEntity *pEndEntity )
+void CSharedBeam::LaserInit( CSharedBaseEntity *pStartEntity, CSharedBaseEntity *pEndEntity )
 {
 	SetType( BEAM_LASER );
 	m_nNumBeamEnts = 2;
@@ -633,7 +641,7 @@ void CBeam::LaserInit( CBaseEntity *pStartEntity, CBaseEntity *pEndEntity )
 	RelinkBeam();
 }
 
-void CBeam::SplineInit( int nNumEnts, CBaseEntity** pEntList, int *attachment )
+void CSharedBeam::SplineInit( int nNumEnts, CSharedBaseEntity** pEntList, int *attachment )
 {
 	if (nNumEnts < 2)
 	{
@@ -655,7 +663,7 @@ void CBeam::SplineInit( int nNumEnts, CBaseEntity** pEntList, int *attachment )
 }
 
 
-void CBeam::RelinkBeam( void )
+void CSharedBeam::RelinkBeam( void )
 {
 	// FIXME: Why doesn't this just define the absbox too?
 	// It seems that we don't need to recompute the absbox
@@ -699,7 +707,7 @@ void CBeam::RelinkBeam( void )
 }
 
 
-CBaseEntity *CBeam::RandomTargetname( const char *szName )
+CSharedBaseEntity *CSharedBeam::RandomTargetname( const char *szName )
 {
 #if !defined( CLIENT_DLL )
 	int total = 0;
@@ -719,7 +727,7 @@ CBaseEntity *CBeam::RandomTargetname( const char *szName )
 }
 
 
-void CBeam::DoSparks( const Vector &start, const Vector &end )
+void CSharedBeam::DoSparks( const Vector &start, const Vector &end )
 {
 #if !defined( CLIENT_DLL )
 	if ( HasSpawnFlags(SF_BEAM_SPARKSTART|SF_BEAM_SPARKEND) )
@@ -741,7 +749,7 @@ void CBeam::DoSparks( const Vector &start, const Vector &end )
 // Purpose: Damages anything in the beam.
 // Input  : ptr - 
 //-----------------------------------------------------------------------------
-void CBeam::BeamDamage( trace_t *ptr )
+void CSharedBeam::BeamDamage( trace_t *ptr )
 {
 	RelinkBeam();
 #if !defined( CLIENT_DLL )
@@ -782,7 +790,7 @@ void CBeam::BeamDamage( trace_t *ptr )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBeam::TurnOn( void )
+void CSharedBeam::TurnOn( void )
 {
 	AddEffects( EF_NODRAW );
 }
@@ -790,7 +798,7 @@ void CBeam::TurnOn( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBeam::TurnOff( void )
+void CSharedBeam::TurnOff( void )
 {
 	RemoveEffects( EF_NODRAW );
 }
@@ -801,36 +809,36 @@ void CBeam::TurnOff( void )
 //			beam width.
 // Input  : Beam width in tenths of world units.
 //-----------------------------------------------------------------------------
-void CBeam::InputWidth( inputdata_t &inputdata )
+void CSharedBeam::InputWidth( inputdata_t &inputdata )
 {
 	SetWidth( inputdata.value.Float() );
 	SetEndWidth( inputdata.value.Float() );
 }
 
-void CBeam::InputColorRedValue( inputdata_t &inputdata )
+void CSharedBeam::InputColorRedValue( inputdata_t &inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt(inputdata.value.Float()), 0, 255 );
 	SetColor( nNewColor, GetRenderColorG(), GetRenderColorB() );
 }
 
-void CBeam::InputColorGreenValue( inputdata_t &inputdata )
+void CSharedBeam::InputColorGreenValue( inputdata_t &inputdata )
 {
 	int nNewColor =clamp( FastFloatToSmallInt(inputdata.value.Float()), 0, 255 );
 	SetColor( GetRenderColorR(), nNewColor, GetRenderColorB() );
 }
 
-void CBeam::InputColorBlueValue( inputdata_t &inputdata )
+void CSharedBeam::InputColorBlueValue( inputdata_t &inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt(inputdata.value.Float()), 0, 255 );
 	SetColor( GetRenderColorR(), GetRenderColorG(), nNewColor );
 }
 
-void CBeam::InputNoise( inputdata_t &inputdata )
+void CSharedBeam::InputNoise( inputdata_t &inputdata )
 {
 	SetNoise( inputdata.value.Float() );
 }
 
-int CBeam::UpdateTransmitState( void )
+int CSharedBeam::UpdateTransmitState( void )
 {
 	// we must call ShouldTransmit() if we have a move parent
 	if ( GetMoveParent() )
@@ -839,7 +847,7 @@ int CBeam::UpdateTransmitState( void )
 	return BaseClass::UpdateTransmitState( );
 }
 
-void CBeam::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways )
+void CSharedBeam::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways )
 {
 	// Are we already marked for transmission?
 	if ( pInfo->m_pTransmitEdict->Get( entindex() ) )
@@ -857,7 +865,7 @@ void CBeam::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways )
 	}
 }
 
-int CBeam::ShouldTransmit( const CCheckTransmitInfo *pInfo )
+int CSharedBeam::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 {
 	if ( IsEffectActive( EF_NODRAW ) )
 		return FL_EDICT_DONTSEND;
@@ -877,7 +885,7 @@ int CBeam::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 // Purpose: Draw any debug text overlays.
 // Output : Returns the new text offset from the top.
 //-----------------------------------------------------------------------------
-int CBeam::DrawDebugTextOverlays(void)
+int CSharedBeam::DrawDebugTextOverlays(void)
 {
 #if !defined( CLIENT_DLL )
 	int text_offset = BaseClass::DrawDebugTextOverlays();
@@ -907,11 +915,11 @@ int CBeam::DrawDebugTextOverlays(void)
 //			*predicted - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBeam::OnPredictedEntityRemove( bool isbeingremoved, C_BaseEntity *predicted )
+bool CSharedBeam::OnPredictedEntityRemove( bool isbeingremoved, C_BaseEntity *predicted )
 {
 	BaseClass::OnPredictedEntityRemove( isbeingremoved, predicted );
 
-	CBeam *beam = dynamic_cast< CBeam * >( predicted );
+	CSharedBeam *beam = dynamic_cast< CSharedBeam * >( predicted );
 	if ( !beam )
 	{
 		// Hrm, we didn't link up to correct type!!!
@@ -934,7 +942,7 @@ bool CBeam::OnPredictedEntityRemove( bool isbeingremoved, C_BaseEntity *predicte
 extern bool g_bRenderingScreenshot;
 extern ConVar r_drawviewmodel;
 
-int CBeam::DrawModel( int flags, const RenderableInstance_t &instance )
+int CSharedBeam::DrawModel( int flags, const RenderableInstance_t &instance )
 {
 	if ( !ReadyToDraw() )
 		return 0;
@@ -972,7 +980,7 @@ int CBeam::DrawModel( int flags, const RenderableInstance_t &instance )
 	return 0;
 }
 
-void CBeam::OnDataChanged( DataUpdateType_t updateType )
+void CSharedBeam::OnDataChanged( DataUpdateType_t updateType )
 {
 	MarkMessageReceived();
 
@@ -1008,12 +1016,12 @@ void CBeam::OnDataChanged( DataUpdateType_t updateType )
 	AddToEntityList( ENTITY_LIST_SIMULATE );
 }
 
-RenderableTranslucencyType_t CBeam::ComputeTranslucencyType() 
+RenderableTranslucencyType_t CSharedBeam::ComputeTranslucencyType() 
 { 
 	return RENDERABLE_IS_TRANSLUCENT; 
 }
 
-bool CBeam::ShouldDraw()
+bool CSharedBeam::ShouldDraw()
 {
 	if ( m_nMinDXLevel != 0 )
 	{
@@ -1026,7 +1034,7 @@ bool CBeam::ShouldDraw()
 //-----------------------------------------------------------------------------
 // Purpose: Adds to beam entity list
 //-----------------------------------------------------------------------------
-bool CBeam::Simulate( void )
+bool CSharedBeam::Simulate( void )
 {
 	bool bRet = false;
 	// If set to invisible, skip. Do this before resetting the entity pointer so it has 
@@ -1053,7 +1061,7 @@ bool CBeam::Simulate( void )
 //-----------------------------------------------------------------------------
 // Computes the bounding box of a beam local to the origin of the beam
 //-----------------------------------------------------------------------------
-void CBeam::ComputeBounds( Vector& mins, Vector& maxs )
+void CSharedBeam::ComputeBounds( Vector& mins, Vector& maxs )
 {
 	Vector vecAbsStart = GetAbsStartPos();
 	Vector vecAbsEnd = GetAbsEndPos();

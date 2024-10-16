@@ -595,3 +595,44 @@ void HunterDamageCallback( const CEffectData &data )
 }
 
 DECLARE_CLIENT_EFFECT( HunterDamage, HunterDamageCallback );
+
+CBloodSprayEmitter *CBloodSprayEmitter::Create( const char *pDebugName )
+{
+	return new CBloodSprayEmitter( pDebugName );
+}
+
+float CBloodSprayEmitter::UpdateRoll( SimpleParticle *pParticle, float timeDelta )
+{
+	pParticle->m_flRoll += pParticle->m_flRollDelta * timeDelta;
+	
+	pParticle->m_flRollDelta += pParticle->m_flRollDelta * ( timeDelta * -4.0f );
+
+	//Cap the minimum roll
+	/*
+	if ( fabs( pParticle->m_flRollDelta ) < 0.5f )
+	{
+		pParticle->m_flRollDelta = ( pParticle->m_flRollDelta > 0.0f ) ? 0.5f : -0.5f;
+	}
+	*/
+
+	return pParticle->m_flRoll;
+}
+
+void CBloodSprayEmitter::UpdateVelocity( SimpleParticle *pParticle, float timeDelta )
+{
+	if ( !( pParticle->m_iFlags & SIMPLE_PARTICLE_FLAG_NO_VEL_DECAY ) )
+	{
+		//Decelerate
+		static float dtime;
+		static float decay;
+
+		if ( dtime != timeDelta )
+		{
+			decay = ExponentialDecay( 0.1, 0.4f, dtime );
+			dtime = timeDelta;
+		}
+
+		pParticle->m_vecVelocity *= decay;
+		pParticle->m_vecVelocity[2] -= ( m_flGravity * timeDelta );
+	}
+}

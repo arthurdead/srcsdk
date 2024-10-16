@@ -71,7 +71,7 @@ public:
 	virtual void ObjectEnterTrigger( IPhysicsObject *pTrigger, IPhysicsObject *pObject ) {}
 	virtual void ObjectLeaveTrigger( IPhysicsObject *pTrigger, IPhysicsObject *pObject ) {}
 
-	float	DeltaTimeSinceLastFluid( CBaseEntity *pEntity );
+	float	DeltaTimeSinceLastFluid( C_BaseEntity *pEntity );
 	void	FrameUpdate( void );
 
 	void	UpdateFluidEvents( void );
@@ -118,7 +118,7 @@ public:
 	}
 
 
-	friction_t *FindFriction( CBaseEntity *pObject );
+	friction_t *FindFriction( C_BaseEntity *pObject );
 	void ShutdownFriction( friction_t &friction );
 	void UpdateFrictionSounds();
 	bool IsInCallback() { return m_inCallback > 0 ? true : false; }
@@ -215,17 +215,17 @@ void PhysicsReset()
 	physenv->ResetSimulationClock();
 }
 
-static CBaseEntity *FindPhysicsBlocker( IPhysicsObject *pPhysics )
+static C_BaseEntity *FindPhysicsBlocker( IPhysicsObject *pPhysics )
 {
 	IPhysicsFrictionSnapshot *pSnapshot = pPhysics->CreateFrictionSnapshot();
-	CBaseEntity *pBlocker = NULL;
+	C_BaseEntity *pBlocker = NULL;
 	float maxVel = 10.0f;
 	while ( pSnapshot->IsValid() )
 	{
 		IPhysicsObject *pOther = pSnapshot->GetObject(1);
 		if ( pOther->IsMoveable() )
 		{
-			CBaseEntity *pOtherEntity = static_cast<CBaseEntity *>(pOther->GetGameData());
+			C_BaseEntity *pOtherEntity = static_cast<C_BaseEntity *>(pOther->GetGameData());
 			// dot with this if you have a direction
 			//Vector normal;
 			//pSnapshot->GetSurfaceNormal(normal);
@@ -370,7 +370,7 @@ int CCollisionEvent::ShouldSolvePenetration( IPhysicsObject *pObj0, IPhysicsObje
 	if ( pEntity0 > pEntity1 )
 	{
 		// swap sort
-		CBaseEntity *pTmp = pEntity0;
+		C_BaseEntity *pTmp = pEntity0;
 		pEntity0 = pEntity1;
 		pEntity1 = pTmp;
 		IPhysicsObject *pTmpObj = pObj0;
@@ -906,7 +906,7 @@ void CCollisionEvent::Friction( IPhysicsObject *pObject, float energy, int surfa
 	pData->GetContactPoint( vecPos );
 	pObject->GetVelocityAtPoint( vecPos, &vecVel );
 
-	CBaseEntity *pEntity = reinterpret_cast<CBaseEntity *>(pObject->GetGameData());
+	C_BaseEntity *pEntity = reinterpret_cast<C_BaseEntity *>(pObject->GetGameData());
 		
 	if ( pEntity  )
 	{
@@ -932,7 +932,7 @@ void CCollisionEvent::Friction( IPhysicsObject *pObject, float energy, int surfa
 	PhysFrictionEffect( vecPos, vecVel, energy, surfaceProps, surfacePropsHit );
 }
 
-friction_t *CCollisionEvent::FindFriction( CBaseEntity *pObject )
+friction_t *CCollisionEvent::FindFriction( C_BaseEntity *pObject )
 {
 	friction_t *pFree = NULL;
 
@@ -1002,7 +1002,7 @@ static int BestAxisMatchingNormal( matrix3x4_t &matrix, const Vector &normal )
 //			*pObject - 
 //			*pEntity - 
 //-----------------------------------------------------------------------------
-void PhysicsSplash( IPhysicsFluidController *pFluid, IPhysicsObject *pObject, CBaseEntity *pEntity )
+void PhysicsSplash( IPhysicsFluidController *pFluid, IPhysicsObject *pObject, C_BaseEntity *pEntity )
 {
 	//FIXME: For now just allow ragdolls for E3 - jdw
 	if ( ( pObject->GetGameFlags() & FVPHYSICS_PART_OF_RAGDOLL ) == false )
@@ -1157,7 +1157,7 @@ void CCollisionEvent::UpdateFluidEvents( void )
 // Input  : *pEntity - 
 // Output : float
 //-----------------------------------------------------------------------------
-float CCollisionEvent::DeltaTimeSinceLastFluid( CBaseEntity *pEntity )
+float CCollisionEvent::DeltaTimeSinceLastFluid( C_BaseEntity *pEntity )
 {
 	for ( int i = m_fluidEvents.Count()-1; i >= 0; --i )
 	{
@@ -1184,7 +1184,7 @@ void CCollisionEvent::FluidStartTouch( IPhysicsObject *pObject, IPhysicsFluidCon
 	if ( ( pObject == NULL ) || ( pFluid == NULL ) )
 		return;
 
-	CBaseEntity *pEntity = static_cast<CBaseEntity *>(pObject->GetGameData());
+	C_BaseEntity *pEntity = static_cast<C_BaseEntity *>(pObject->GetGameData());
 	
 	if ( pEntity )
 	{
@@ -1220,7 +1220,7 @@ IPhysicsObject *GetWorldPhysObject ( void )
 	return g_PhysWorldObject;
 }
 
-void PhysFrictionSound( CBaseEntity *pEntity, IPhysicsObject *pObject, const char *pSoundName, HSOUNDSCRIPTHANDLE& handle, float flVolume )
+void PhysFrictionSound( C_BaseEntity *pEntity, IPhysicsObject *pObject, const char *pSoundName, HSOUNDSCRIPTHANDLE& handle, float flVolume )
 {
 	if ( !pEntity )
 		return;
@@ -1235,7 +1235,7 @@ void PhysFrictionSound( CBaseEntity *pEntity, IPhysicsObject *pObject, const cha
 			return;
 
 		CSoundParameters params;
-		if ( !CBaseEntity::GetParametersForSound( pSoundName, handle, params, NULL ) )
+		if ( !C_BaseEntity::GetParametersForSound( pSoundName, handle, params, NULL ) )
 			return;
 
 		if ( !pFriction->pObject )
@@ -1268,7 +1268,7 @@ void PhysFrictionSound( CBaseEntity *pEntity, IPhysicsObject *pObject, const cha
 	}
 }
 
-void PhysCleanupFrictionSounds( CBaseEntity *pEntity )
+void PhysCleanupFrictionSounds( C_BaseEntity *pEntity )
 {
 	friction_t *pFriction = g_Collisions.FindFriction( pEntity );
 	if ( pFriction && pFriction->patch )

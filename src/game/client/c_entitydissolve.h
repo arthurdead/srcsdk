@@ -8,7 +8,10 @@
 #ifndef C_ENTITY_DISSOLVE_H
 #define C_ENTITY_DISSOLVE_H
 
-#include "cbase.h"
+#pragma once
+
+#include "c_baseentity.h"
+#include "vphysics_interface.h"
 
 //-----------------------------------------------------------------------------
 // Entity Dissolve, client-side implementation

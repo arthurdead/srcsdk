@@ -6,6 +6,8 @@
 #ifndef TACTICAL_MISSION_H
 #define TACTICAL_MISSION_H
 
+#pragma once
+
 #include "GameEventListener.h"
 #include "tier1/utlvector.h"
 

@@ -17,10 +17,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#if defined( CBaseCombatCharacter )
-#undef CBaseCombatCharacter	
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -76,7 +72,7 @@ void C_BaseCombatCharacter::OnDataChanged( DataUpdateType_t updateType )
 	BaseClass::OnDataChanged( updateType );
 }
 
-void C_BaseCombatCharacter::TraceAttack(const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator)
+void C_BaseCombatCharacter::TraceAttack(const C_TakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator)
 {
 	BaseClass::TraceAttack(info, vecDir, ptr, pAccumulator);
 }
@@ -117,98 +113,6 @@ Vector C_BaseCombatCharacter::Weapon_ShootPosition( )
 
 	return vecSrc;
 }
-
-#ifdef USE_NAV_MESH
-//-----------------------------------------------------------------------------
-// Purpose: Invoke this to update our last known nav area 
-// (since there is no think method chained to CBaseCombatCharacter)
-//-----------------------------------------------------------------------------
-void C_BaseCombatCharacter::UpdateLastKnownArea( void )
-{
-	VPROF_BUDGET( "CBaseCombatCharacter::UpdateLastKnownArea", "NextBot" );
-
-#if 0
-	if ( TheNavMesh->IsGenerating() )
-	{
-		ClearLastKnownArea();
-		return;
-	}
-
-	// find the area we are directly standing in
-	CNavArea *area = TheNavMesh->GetNearestNavArea( this, GETNAVAREA_CHECK_GROUND | GETNAVAREA_CHECK_LOS, 50.0f );
-	if ( !area )
-		return;
-
-	// make sure we can actually use this area - if not, consider ourselves off the mesh
-	if ( !IsAreaTraversable( area ) )
-		return;
-
-	if ( area != m_lastNavArea )
-	{
-		// player entered a new nav area
-		if ( m_lastNavArea )
-		{
-			m_lastNavArea->DecrementPlayerCount( m_registeredNavTeam, entindex() );
-			m_lastNavArea->OnExit( this, area );
-		}
-
-		m_registeredNavTeam = GetTeamNumber();
-		area->IncrementPlayerCount( m_registeredNavTeam, entindex() );
-		area->OnEnter( this, m_lastNavArea );
-
-		OnNavAreaChanged( area, m_lastNavArea );
-
-		m_lastNavArea = area;
-	}
-#endif
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Return true if we can use (walk through) the given area 
-//-----------------------------------------------------------------------------
-bool C_BaseCombatCharacter::IsAreaTraversable( const CNavArea *area ) const
-{
-#if 0
-	return area ? !area->IsBlocked( GetTeamNumber() ) : false;
-#else
-	return false;
-#endif
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Leaving the nav mesh
-//-----------------------------------------------------------------------------
-void C_BaseCombatCharacter::ClearLastKnownArea( void )
-{
-#if 0
-	OnNavAreaChanged( NULL, m_lastNavArea );
-
-	if ( m_lastNavArea )
-	{
-		m_lastNavArea->DecrementPlayerCount( m_registeredNavTeam, entindex() );
-		m_lastNavArea->OnExit( this, NULL );
-		m_lastNavArea = NULL;
-		m_registeredNavTeam = TEAM_INVALID;
-	}
-#endif
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Handling editor removing the area we're standing upon
-//-----------------------------------------------------------------------------
-void C_BaseCombatCharacter::OnNavAreaRemoved( CNavArea *removedArea )
-{
-#if 0
-	if ( m_lastNavArea == removedArea )
-	{
-		ClearLastKnownArea();
-	}
-#endif
-}
-#endif // USE_NAV_MESH
 
 IMPLEMENT_CLIENTCLASS(C_BaseCombatCharacter, DT_BaseCombatCharacter, CBaseCombatCharacter);
 

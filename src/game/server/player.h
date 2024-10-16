@@ -189,7 +189,6 @@ enum PlayerConnectedState
 	PlayerDisconnected,
 };
 
-extern bool gInitHUD;
 extern ConVar *sv_cheats;
 
 enum AimResults
@@ -448,9 +447,9 @@ public:
 	// Weapon stuff
 	virtual Vector			Weapon_ShootPosition( );
 	virtual bool			Weapon_CanUse( CBaseCombatWeapon *pWeapon );
-	virtual void			Weapon_Equip( CBaseCombatWeapon *pWeapon );
+	virtual void			Weapon_Equip( CBaseCombatWeapon *pWeapon, bool bDeploy = true );
 	virtual	void			Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget /* = NULL */, const Vector *pVelocity /* = NULL */ );
-	virtual	bool			Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = 0 );		// Switch to given weapon if has ammo (false if failed)
+	virtual	bool			Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = 0, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
 	virtual void			Weapon_SetLast( CBaseCombatWeapon *pWeapon );
 	virtual bool			Weapon_ShouldSetLast( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon ) { return true; }
 	virtual bool			Weapon_ShouldSelectItem( CBaseCombatWeapon *pWeapon );
@@ -558,7 +557,7 @@ public:
 	
 	void					AddPoints( int score, bool bAllowNegativeScore );
 	void					AddPointsToTeam( int score, bool bAllowNegativeScore );
-	virtual bool			BumpWeapon( CBaseCombatWeapon *pWeapon );
+	virtual bool			BumpWeapon( CBaseCombatWeapon *pWeapon, bool bDeploy = true );
 	bool					RemovePlayerItem( CBaseCombatWeapon *pItem );
 	CBaseEntity				*HasNamedPlayerItem( const char *pszItemName );
 	bool 					HasWeapons( void );// do I have ANY weapons?
@@ -566,7 +565,7 @@ public:
 	virtual void 			SelectItem( const char *pstr, int iSubType = 0 );
 	void					ItemPreFrame( void );
 	virtual void			ItemPostFrame( void );
-	virtual CBaseEntity		*GiveNamedItem( const char *szName, int iSubType = 0, bool removeIfNotCarried = true );
+	virtual CBaseEntity		*GiveNamedItem( const char *szName, int iSubType = 0, bool bDeploy = true );
 	void					EnableControl(bool fControl);
 	virtual void			CheckTrainUpdate( void );
 	void					AbortReload( void );
@@ -1099,6 +1098,8 @@ private:
 	bool					m_fInitHUD;				// True when deferred HUD restart msg needs to be sent
 	bool					m_fGameHUDInitialized;
 	bool					m_fWeapon;				// Set this to FALSE to force a reset of the current weapon HUD info
+
+	bool					m_bTitleDisplayed;
 
 	int						m_iUpdateTime;		// stores the number of frame ticks before sending HUD update messages
 	int						m_iClientBattery;	// the Battery currently known by the client.  If this changes, send a new

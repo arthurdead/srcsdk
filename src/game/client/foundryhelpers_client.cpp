@@ -104,7 +104,7 @@ void AddCoolLine( const Vector &v1, const Vector &v2, unsigned long iExtraFadeOf
 
 void FoundryHelpers_DrawEntityHighlightEffect( C_BaseEntity *pEnt )
 {
-	CCollisionProperty *pCollision = pEnt->CollisionProp();
+	C_CollisionProperty *pCollision = pEnt->CollisionProp();
 
 	// Transform the OBB corners into world space.
 	const Vector &vMins = pCollision->OBBMins();

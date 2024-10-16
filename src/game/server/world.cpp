@@ -687,7 +687,7 @@ void CWorld::UpdateOnRemove( void )
 	BaseClass::UpdateOnRemove();
 }
 
-bool CWorld::GetDisplayTitle() const
+bool CWorld::ShouldDisplayTitle() const
 {
 	return m_bDisplayTitle;
 }
@@ -695,11 +695,6 @@ bool CWorld::GetDisplayTitle() const
 bool CWorld::GetStartDark() const
 {
 	return m_bStartDark;
-}
-
-void CWorld::SetDisplayTitle( bool display )
-{
-	m_bDisplayTitle = display;
 }
 
 void CWorld::SetStartDark( bool startdark )

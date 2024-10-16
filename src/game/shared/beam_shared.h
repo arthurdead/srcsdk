@@ -13,6 +13,8 @@
 #include "baseplayer_shared.h"
 #if !defined( CLIENT_DLL )
 #include "entityoutput.h"
+#else
+#include "c_pixel_visibility.h"
 #endif
 
 #include "beam_flags.h"
@@ -37,21 +39,32 @@
 #define ATTACHMENT_INDEX_MASK	((1 << ATTACHMENT_INDEX_BITS) - 1)
 
 #if defined( CLIENT_DLL )
-#define CBeam C_Beam
-#include "c_pixel_visibility.h"
+class C_Beam;
+typedef C_Beam CSharedBeam;
+#else
+class CBeam;
+typedef CBeam CSharedBeam;
 #endif
 
-class CBeam : public CBaseEntity
+#if defined( CLIENT_DLL )
+#define CBeam C_Beam
+#endif
+
+class CBeam : public CSharedBaseEntity
 {
-	DECLARE_CLASS( CBeam, CBaseEntity );
 public:
+	DECLARE_CLASS( CBeam, CSharedBaseEntity );
+	CBeam();
+
+#if defined( CLIENT_DLL )
+	#undef CBeam
+#endif
+
 	DECLARE_NETWORKCLASS();
 	DECLARE_PREDICTABLE();
 #if !defined( CLIENT_DLL )
 	DECLARE_MAPENTITY();
 #endif
-
-	CBeam();
 
 	virtual void SetModel( const char *szModelName );
 
@@ -83,8 +96,8 @@ public:
 	const Vector &GetAbsStartPos( void ) const;
 	const Vector &GetAbsEndPos( void ) const;
 
-	void SetStartEntity( CBaseEntity *pEntity );
-	void SetEndEntity( CBaseEntity *pEntity );
+	void SetStartEntity( CSharedBaseEntity *pEntity );
+	void SetEndEntity( CSharedBaseEntity *pEntity );
 
 	void SetStartAttachment( int attachment );
 	void SetEndAttachment( int attachment );
@@ -110,9 +123,9 @@ public:
 
 	int	GetType( void ) const;
 	int	GetBeamFlags( void ) const;
-	CBaseEntity* GetStartEntityPtr( void ) const;
+	CSharedBaseEntity* GetStartEntityPtr( void ) const;
 	int	GetStartEntity( void ) const;
-	CBaseEntity* GetEndEntityPtr( void ) const;
+	CSharedBaseEntity* GetEndEntityPtr( void ) const;
 	int	GetEndEntity( void ) const;
 	int GetStartAttachment() const;
 	int GetEndAttachment() const;
@@ -135,21 +148,21 @@ public:
 	void		RelinkBeam( void );
 
 	void		DoSparks( const Vector &start, const Vector &end );
-	CBaseEntity *RandomTargetname( const char *szName );
+	CSharedBaseEntity *RandomTargetname( const char *szName );
 	void		BeamDamage( trace_t *ptr );
 	// Init after BeamCreate()
 	void		BeamInit( const char *pSpriteName, float width );
 	void		PointsInit( const Vector &start, const Vector &end );
-	void		PointEntInit( const Vector &start, CBaseEntity *pEndEntity );
-	void		EntsInit( CBaseEntity *pStartEntity, CBaseEntity *pEndEntity );
-	void		LaserInit( CBaseEntity *pStartEntity, CBaseEntity *pEndEntity );
+	void		PointEntInit( const Vector &start, CSharedBaseEntity *pEndEntity );
+	void		EntsInit( CSharedBaseEntity *pStartEntity, CSharedBaseEntity *pEndEntity );
+	void		LaserInit( CSharedBaseEntity *pStartEntity, CSharedBaseEntity *pEndEntity );
 	void		HoseInit( const Vector &start, const Vector &direction );
-	void		SplineInit( int nNumEnts, CBaseEntity** pEntList, int *attachment  );
+	void		SplineInit( int nNumEnts, CSharedBaseEntity** pEntList, int *attachment  );
 
 	// Input handlers
 
-	static CBeam *BeamCreate( const char *pSpriteName, float width );
-	static CBeam *BeamCreatePredictable( const char *module, int line, const char *pSpriteName, float width, CBasePlayer *pOwner );
+	static CSharedBeam *BeamCreate( const char *pSpriteName, float width );
+	static CSharedBeam *BeamCreatePredictable( const char *module, int line, const char *pSpriteName, float width, CSharedBasePlayer *pOwner );
 
 	void LiveForTime( float time );
 	void BeamDamageInstant( trace_t *ptr, float damage );
@@ -261,13 +274,13 @@ public:
 //-----------------------------------------------------------------------------
 // Inline methods 
 //-----------------------------------------------------------------------------
-inline int CBeam::ObjectCaps( void )
+inline int CSharedBeam::ObjectCaps( void )
 { 
 	return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); 
 }
 #endif
 
-inline void	CBeam::SetFireTime( float flFireTime )		
+inline void	CSharedBeam::SetFireTime( float flFireTime )		
 { 
 	m_flFireTime = flFireTime; 
 }
@@ -275,7 +288,7 @@ inline void	CBeam::SetFireTime( float flFireTime )
 //-----------------------------------------------------------------------------
 // NOTE: Start + End Pos are specified in *relative* coordinates 
 //-----------------------------------------------------------------------------
-inline void CBeam::SetStartPos( const Vector &pos ) 
+inline void CSharedBeam::SetStartPos( const Vector &pos ) 
 { 
 #if defined( CLIENT_DLL )
 	SetNetworkOrigin( pos );
@@ -283,13 +296,13 @@ inline void CBeam::SetStartPos( const Vector &pos )
 	SetLocalOrigin( pos );
 }
 
-inline void CBeam::SetEndPos( const Vector &pos ) 
+inline void CSharedBeam::SetEndPos( const Vector &pos ) 
 { 
 	m_vecEndPos = pos; 
 }
 	 
  // center point of beam
-inline const Vector &CBeam::WorldSpaceCenter( void ) const 
+inline const Vector &CSharedBeam::WorldSpaceCenter( void ) const 
 {
 	Vector &vecResult = AllocTempVector();
 	VectorAdd( GetAbsStartPos(), GetAbsEndPos(), vecResult );
@@ -297,173 +310,173 @@ inline const Vector &CBeam::WorldSpaceCenter( void ) const
 	return vecResult;
 }
 
-inline void CBeam::SetStartAttachment( int attachment )	
+inline void CSharedBeam::SetStartAttachment( int attachment )	
 {
 	Assert( (attachment & ~ATTACHMENT_INDEX_MASK) == 0 );
 	m_nAttachIndex.Set( 0, attachment );
 }
 
-inline void CBeam::SetEndAttachment( int attachment )		
+inline void CSharedBeam::SetEndAttachment( int attachment )		
 { 
 	Assert( (attachment & ~ATTACHMENT_INDEX_MASK) == 0 );
 	m_nAttachIndex.Set( m_nNumBeamEnts-1, attachment );
 }
 
-inline void CBeam::SetTexture( int spriteIndex )		
+inline void CSharedBeam::SetTexture( int spriteIndex )		
 { 
 	SetModelIndex( spriteIndex ); 
 }
 
-inline void CBeam::SetHaloTexture( int spriteIndex )	
+inline void CSharedBeam::SetHaloTexture( int spriteIndex )	
 { 
 	m_nHaloIndex = spriteIndex; 
 }
 
-inline void CBeam::SetHaloScale( float haloScale )		
+inline void CSharedBeam::SetHaloScale( float haloScale )		
 { 
 	m_fHaloScale = haloScale; 
 }
 
-inline void CBeam::SetWidth( float width )				
+inline void CSharedBeam::SetWidth( float width )				
 {
 	Assert( width <= MAX_BEAM_WIDTH );
 	m_fWidth = MIN( MAX_BEAM_WIDTH, width );
 }
 
-inline void CBeam::SetEndWidth( float endWidth )		
+inline void CSharedBeam::SetEndWidth( float endWidth )		
 { 
 	Assert( endWidth <= MAX_BEAM_WIDTH );
 	m_fEndWidth	= MIN( MAX_BEAM_WIDTH, endWidth );
 }
 
-inline void CBeam::SetFadeLength( float fadeLength )	
+inline void CSharedBeam::SetFadeLength( float fadeLength )	
 { 
 	m_fFadeLength = fadeLength; 
 }
 
-inline void CBeam::SetNoise( float amplitude )			
+inline void CSharedBeam::SetNoise( float amplitude )			
 { 
 	m_fAmplitude = amplitude; 
 }
 
-inline void CBeam::SetColor( int r, int g, int b )		
+inline void CSharedBeam::SetColor( int r, int g, int b )		
 { 
 	SetRenderColor( r, g, b );
 }
 
-inline void CBeam::SetBrightness( int brightness )		
+inline void CSharedBeam::SetBrightness( int brightness )		
 { 
 	SetRenderAlpha( brightness ); 
 }
 
-inline void CBeam::SetFrame( float frame )				
+inline void CSharedBeam::SetFrame( float frame )				
 { 
 	m_fStartFrame = frame; 
 }
 
-inline void CBeam::SetScrollRate( float speed )			
+inline void CSharedBeam::SetScrollRate( float speed )			
 { 
 	m_fSpeed = speed; 
 }
 
-inline CBaseEntity* CBeam::GetStartEntityPtr( void ) const 
+inline CSharedBaseEntity* CSharedBeam::GetStartEntityPtr( void ) const 
 { 
 	return m_hAttachEntity[0].Get(); 
 }
 
-inline int CBeam::GetStartEntity( void ) const 
+inline int CSharedBeam::GetStartEntity( void ) const 
 { 
-	CBaseEntity *pEntity = m_hAttachEntity[0].Get();
+	CSharedBaseEntity *pEntity = m_hAttachEntity[0].Get();
 	return pEntity ? pEntity->entindex() : 0; 
 }
 
-inline CBaseEntity* CBeam::GetEndEntityPtr( void ) const 
+inline CSharedBaseEntity* CSharedBeam::GetEndEntityPtr( void ) const 
 { 
 	return m_hAttachEntity[1].Get(); 
 }
 
-inline int CBeam::GetEndEntity( void ) const	
+inline int CSharedBeam::GetEndEntity( void ) const	
 { 
-	CBaseEntity *pEntity = m_hAttachEntity[m_nNumBeamEnts-1].Get();
+	CSharedBaseEntity *pEntity = m_hAttachEntity[m_nNumBeamEnts-1].Get();
 	return pEntity ? pEntity->entindex() : 0; 
 }
 
-inline int CBeam::GetStartAttachment() const
+inline int CSharedBeam::GetStartAttachment() const
 {
 	return m_nAttachIndex[0] & ATTACHMENT_INDEX_MASK;
 }
 
-inline int CBeam::GetEndAttachment() const
+inline int CSharedBeam::GetEndAttachment() const
 {
 	return m_nAttachIndex[m_nNumBeamEnts-1] & ATTACHMENT_INDEX_MASK;
 }
 
-inline int CBeam::GetTexture( void ) const		
+inline int CSharedBeam::GetTexture( void ) const		
 { 
 	return GetModelIndex(); 
 }
 
-inline float CBeam::GetWidth( void ) const		
+inline float CSharedBeam::GetWidth( void ) const		
 {
 	return m_fWidth; 
 }
 
-inline float CBeam::GetEndWidth( void ) const	
+inline float CSharedBeam::GetEndWidth( void ) const	
 { 
 	return m_fEndWidth; 
 }
 
-inline float CBeam::GetFadeLength( void ) const	
+inline float CSharedBeam::GetFadeLength( void ) const	
 { 
 	return m_fFadeLength; 
 }
 
-inline float CBeam::GetNoise( void ) const		
+inline float CSharedBeam::GetNoise( void ) const		
 { 
 	return m_fAmplitude; 
 }
 
-inline int CBeam::GetBrightness( void ) const	
+inline int CSharedBeam::GetBrightness( void ) const	
 { 
 	return GetRenderAlpha();
 }
 
-inline float CBeam::GetFrame( void ) const		
+inline float CSharedBeam::GetFrame( void ) const		
 { 
 	return m_fStartFrame; 
 }
 
-inline float CBeam::GetScrollRate( void ) const	
+inline float CSharedBeam::GetScrollRate( void ) const	
 {
 	return m_fSpeed; 
 }
 
-inline float CBeam::GetHDRColorScale( void ) const
+inline float CSharedBeam::GetHDRColorScale( void ) const
 {
 	return m_flHDRColorScale;
 }
 
-inline void CBeam::LiveForTime( float time ) 
+inline void CSharedBeam::LiveForTime( float time ) 
 { 
-	SetThink(&CBeam::SUB_Remove); 
+	SetThink(&CSharedBeam::SUB_Remove); 
 	SetNextThink( gpGlobals->curtime + time ); 
 }
 
-inline void	CBeam::BeamDamageInstant( trace_t *ptr, float damage ) 
+inline void	CSharedBeam::BeamDamageInstant( trace_t *ptr, float damage ) 
 { 
 	m_flDamage = damage; 
 	m_flFireTime = gpGlobals->curtime - 1;
 	BeamDamage(ptr); 
 }
 
-bool IsStaticPointEntity( CBaseEntity *pEnt );
+bool IsStaticPointEntity( CSharedBaseEntity *pEnt );
 
 // Macro to wrap creation
 #define BEAM_CREATE_PREDICTABLE( ... ) \
-	CBeam::BeamCreatePredictable( __FILE__, __LINE__, __VA_ARGS__ )
+	CSharedBeam::BeamCreatePredictable( __FILE__, __LINE__, __VA_ARGS__ )
 
 #define BEAM_CREATE_PREDICTABLE_AT( ... ) \
-	CBeam::BeamCreatePredictable( file, line, __VA_ARGS__ )
+	CSharedBeam::BeamCreatePredictable( file, line, __VA_ARGS__ )
 
 // Start/End Entity is encoded as 12 bits of entity index, and 4 bits of attachment (4:12)
 #define BEAMENT_ENTITY(x)		((x)&0xFFF)

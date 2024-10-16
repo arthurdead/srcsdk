@@ -9,6 +9,9 @@
 #ifndef L4D_TIER0_MINIPROFILER_HDR
 #define L4D_TIER0_MINIPROFILER_HDR
 
+#pragma once
+
+#include "tier0/platform.h"
 #include <tier0/cache_hints.h>
 
 #ifdef IS_WINDOWS_PC

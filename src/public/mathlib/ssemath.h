@@ -6,6 +6,8 @@
 #ifndef SSEMATH_H
 #define SSEMATH_H
 
+#pragma once
+
 #include <xmmintrin.h>
 
 #include <mathlib/vector.h>

@@ -37,7 +37,7 @@ void C_StatueProp::Spawn( void )
 
 void C_StatueProp::ComputeWorldSpaceSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
 {
-	CBaseAnimating *pBaseAnimating = m_hInitBaseAnimating;
+	C_BaseAnimating *pBaseAnimating = m_hInitBaseAnimating;
 
 	if ( pBaseAnimating )
 	{

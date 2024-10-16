@@ -12,7 +12,6 @@
 
 // I wish I didn't have to #include all this, but I don't really have a choice.
 // I guess something similar to CAI_BehaviorHost's backbridges could be tried.
-#include "cbase.h"
 #include "ai_basenpc.h"
 #include "npcevent.h"
 #include "grenade_frag.h"

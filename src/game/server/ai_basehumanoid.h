@@ -8,6 +8,8 @@
 #ifndef AI_BASEHUMANOID_H
 #define AI_BASEHUMANOID_H
 
+#pragma once
+
 #include "ai_behavior.h"
 #include "ai_blended_movement.h"
 

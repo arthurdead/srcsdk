@@ -37,10 +37,6 @@ void RecvProxy_ForcedClientTime( const CRecvProxyData *pData, void *pStruct, voi
 	pScene->OnResetClientTime();
 }
 
-#if defined( CSceneEntity )
-#undef CSceneEntity
-#endif
-
 IMPLEMENT_CLIENTCLASS_DT(C_SceneEntity, DT_SceneEntity, CSceneEntity)
 	RecvPropInt(RECVINFO(m_nSceneStringIndex)),
 	RecvPropBool(RECVINFO(m_bIsPlayingBack)),
@@ -1004,7 +1000,7 @@ void C_SceneEntity::DispatchEndGesture( CChoreoScene *scene, C_BaseFlex *actor, 
 // Purpose: 
 // Input  : *actor - 
 //-----------------------------------------------------------------------------
-void C_SceneEntity::DispatchStartSequence( CChoreoScene *scene, CBaseFlex *actor, CChoreoEvent *event )
+void C_SceneEntity::DispatchStartSequence( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event )
 {
 	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() || IsMultiplayer(), this );
 }
@@ -1013,7 +1009,7 @@ void C_SceneEntity::DispatchStartSequence( CChoreoScene *scene, CBaseFlex *actor
 // Purpose: 
 // Input  : *actor - 
 //-----------------------------------------------------------------------------
-void C_SceneEntity::DispatchProcessSequence( CChoreoScene *scene, CBaseFlex *actor, CChoreoEvent *event )
+void C_SceneEntity::DispatchProcessSequence( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event )
 {
 	actor->RemoveSceneEvent( scene, event, false );
 	actor->AddSceneEvent( scene, event, NULL, IsClientOnly() );
@@ -1023,7 +1019,7 @@ void C_SceneEntity::DispatchProcessSequence( CChoreoScene *scene, CBaseFlex *act
 // Purpose: 
 // Input  : *actor - 
 //-----------------------------------------------------------------------------
-void C_SceneEntity::DispatchEndSequence( CChoreoScene *scene, CBaseFlex *actor, CChoreoEvent *event )
+void C_SceneEntity::DispatchEndSequence( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event )
 {
 	actor->RemoveSceneEvent( scene, event, false );
 }
@@ -1127,7 +1123,7 @@ void C_SceneEntity::PrefetchAnimBlocks( CChoreoScene *pScene )
 		return;
 
 	// Build a fast lookup, too
-	CUtlMap<CChoreoActor*,CBaseFlex*> actorMap( 0, 0, DefLessFunc( CChoreoActor* ) );
+	CUtlMap<CChoreoActor*,C_BaseFlex*> actorMap( 0, 0, DefLessFunc( CChoreoActor* ) );
 
 	int nSpew = 0;
 	int nResident = 0;
@@ -1151,7 +1147,7 @@ void C_SceneEntity::PrefetchAnimBlocks( CChoreoScene *pScene )
 				CChoreoActor *pActor = pEvent->GetActor();
 				if ( pActor )
 				{
-					CBaseFlex *pFlex = NULL;
+					C_BaseFlex *pFlex = NULL;
 					int idx = actorMap.Find( pActor );
 					if ( idx == actorMap.InvalidIndex() )
 					{

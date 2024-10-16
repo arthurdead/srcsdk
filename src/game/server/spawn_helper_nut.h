@@ -1,6 +1,3 @@
-#include "cbase.h"
-
-
 static unsigned char g_Script_spawn_helper[] = {
 "//=========================================================\n"
 "// An spawner on the server is getting ready to\n"

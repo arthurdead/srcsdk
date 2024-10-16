@@ -9,6 +9,8 @@
 #ifndef VSTDLIB_RANDOM_H
 #define VSTDLIB_RANDOM_H
 
+#pragma once
+
 #include "vstdlib/vstdlib.h"
 #include "tier0/basetypes.h"
 #include "tier0/threadtools.h"

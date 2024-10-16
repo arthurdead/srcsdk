@@ -16,13 +16,10 @@
 #include "predictable_entity.h"
 #include "interpolatedvar.h"
 
-#ifdef CLIENT_DLL
-#define CPostProcessController C_PostProcessController
-#define CColorCorrection C_ColorCorrection
-#endif
-
-class CPostProcessController;
-class CColorCorrection;
+class C_PostProcessController;
+typedef C_PostProcessController CSharedPostProcessController;
+class C_ColorCorrection;
+typedef C_ColorCorrection CSharedColorCorrection;
 
 //-----------------------------------------------------------------------------
 // Purpose: Player specific data ( sent only to local player, too )

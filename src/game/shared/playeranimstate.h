@@ -14,13 +14,16 @@
 #include "interpolatedvar.h"
 //#include "player.h"
 
-struct CAnimationLayer;
-
 #ifdef GAME_DLL
 class CBaseCombatWeapon;
+typedef CBaseCombatWeapon CSharedBaseCombatWeapon;
+struct CAnimationLayer;
+typedef CAnimationLayer CSharedAnimationLayer;
 #else
-#define CBaseCombatWeapon C_BaseCombatWeapon
 class C_BaseCombatWeapon;
+typedef C_BaseCombatWeapon CSharedBaseCombatWeapon;
+struct C_AnimationLayer;
+typedef C_AnimationLayer CSharedAnimationLayer;
 #endif
 
 typedef enum
@@ -32,9 +35,10 @@ typedef enum
 
 #if defined( CLIENT_DLL )
 class C_BasePlayer;
-#define CBasePlayer C_BasePlayer
+typedef C_BasePlayer CSharedBasePlayer;
 #else
 class CBasePlayer;
+typedef CBasePlayer CSharedBasePlayer;
 #endif
 
 enum PlayerAnimEvent_t : int
@@ -108,7 +112,7 @@ struct GestureSlot_t
 	Activity			m_iActivity;
 	bool				m_bAutoKill;
 	bool				m_bActive;
-	CAnimationLayer		*m_pAnimLayer;
+	CSharedAnimationLayer		*m_pAnimLayer;
 };
 
 inline bool IsCustomPlayerAnimEvent( PlayerAnimEvent_t event )
@@ -192,7 +196,7 @@ public:
 
 	// Creation/Destruction
 	CPlayerAnimState() {}
-	CPlayerAnimState( CBasePlayer *pPlayer, PlayerMovementData_t &movementData );
+	CPlayerAnimState( CSharedBasePlayer *pPlayer, PlayerMovementData_t &movementData );
 	virtual ~CPlayerAnimState();
 
 	// This is called by both the client and the server in the same way to trigger events for
@@ -223,7 +227,7 @@ public:
 	void	ResetGestureSlots( void );
 	void	ResetGestureSlot( int iGestureSlot );
 	void AddVCDSequenceToGestureSlot( int iGestureSlot, int iGestureSequence, float flCycle = 0.0f, bool bAutoKill = true );
-	CAnimationLayer* GetGestureSlotLayer( int iGestureSlot );
+	CSharedAnimationLayer* GetGestureSlotLayer( int iGestureSlot );
 	bool	IsGestureSlotActive( int iGestureSlot );
 	bool	VerifyAnimLayerInSlot( int iGestureSlot );
 
@@ -236,8 +240,8 @@ public:
 
 protected:
 
-	virtual void Init( CBasePlayer *pPlayer, PlayerMovementData_t &movementData ); 
-	CBasePlayer *GetBasePlayer( void )				{ return m_pPlayer; }
+	virtual void Init( CSharedBasePlayer *pPlayer, PlayerMovementData_t &movementData ); 
+	CSharedBasePlayer *GetBasePlayer( void )				{ return m_pPlayer; }
 
 	// Allow inheriting classes to override SelectWeightedSequence
 	virtual int SelectWeightedSequence( Activity activity );
@@ -314,7 +318,7 @@ protected:
 
 protected:
 
-	CBasePlayer	*m_pPlayer;
+	CSharedBasePlayer	*m_pPlayer;
 
 	QAngle				m_angRender;
 
@@ -354,7 +358,7 @@ protected:
 	int		m_nSpecificMainSequence;
 
 	// Weapon data.
-	CHandle<CBaseCombatWeapon>	m_hActiveWeapon;
+	CHandle<CSharedBaseCombatWeapon>	m_hActiveWeapon;
 
 	// Ground speed interpolators.
 #ifdef CLIENT_DLL

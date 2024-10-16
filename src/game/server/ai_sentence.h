@@ -8,6 +8,8 @@
 #ifndef AI_SENTENCE_H
 #define AI_SENTENCE_H
 
+#pragma once
+
 #include "ai_component.h"
 #include "ai_basenpc.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"

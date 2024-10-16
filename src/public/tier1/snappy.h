@@ -39,6 +39,8 @@
 #ifndef UTIL_SNAPPY_SNAPPY_H__
 #define UTIL_SNAPPY_SNAPPY_H__
 
+#pragma once
+
 // fletcherd@valvesoftware.com: Added this kludge.  We really need to stop #defining this in our code.
 #undef min
 #undef max

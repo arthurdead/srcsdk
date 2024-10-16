@@ -12,7 +12,13 @@
 #include "eventlist.h"
 #include "studio.h"
 
+#ifdef GAME_DLL
 class CBaseAnimating;
+typedef CBaseAnimating CSharedBaseAnimating;
+#else
+class C_BaseAnimating;
+typedef C_BaseAnimating CSharedBaseAnimating;
+#endif
 
 struct animevent_t
 {
@@ -24,7 +30,7 @@ public:
 	const char		*options;
 	float			cycle;
 	float			eventtime;
-	CBaseAnimating	*pSource;
+	CSharedBaseAnimating	*pSource;
 
 	Animevent Event( void ) const
 	{

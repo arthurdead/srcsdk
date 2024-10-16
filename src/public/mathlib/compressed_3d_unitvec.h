@@ -8,6 +8,9 @@
 #ifndef _3D_UNITVEC_H
 #define _3D_UNITVEC_H
 
+#pragma once
+
+#include "vector.h"
 
 #define UNITVEC_DECLARE_STATICS \
    float cUnitVector::mUVAdjustment[0x2000]; \

@@ -188,7 +188,7 @@ bool CRecastMgr::Load()
 
 	char filename[256];
 #ifdef CLIENT_DLL
-	V_snprintf( filename, sizeof( filename ), "%s", STRING( engine->GetLevelName() ) );
+	V_snprintf( filename, sizeof( filename ), "%s", engine->GetLevelName() );
 	V_StripExtension( filename, filename, 256 );
 	V_snprintf( filename, sizeof( filename ), "%s.%s", filename, EXT_NAVFILE );
 #else
@@ -197,7 +197,7 @@ bool CRecastMgr::Load()
 
 	bool navIsInBsp = false;
 	CUtlBuffer fileBuffer( 4096, 1024*1024, CUtlBuffer::READ_ONLY );
-	if ( !g_pFullFileSystem->ReadFile( filename, "MOD", fileBuffer ) )	// this ignores .nav files embedded in the .bsp ...
+	if ( !g_pFullFileSystem->ReadFile( filename, "GAME", fileBuffer ) )	// this ignores .nav files embedded in the .bsp ...
 	{
 		navIsInBsp = true;
 		if ( !g_pFullFileSystem->ReadFile( filename, "BSP", fileBuffer ) )	// ... and this looks for one if it's the only one around.
@@ -295,8 +295,10 @@ bool CRecastMesh::Save( CUtlBuffer &fileBuffer )
 	Msg( "Saving mesh %s with cell size %f, cell height %f, tile size %f\n", 
 		GetName(), m_cellSize, m_cellHeight, m_tileSize );
 
-	int nameLen = V_strlen( GetName() );
-	fileBuffer.Put( GetName(), nameLen );
+	const char *szName = GetName();
+	int nameLen = V_strlen( szName );
+	fileBuffer.Put( &nameLen, sizeof(int) );
+	fileBuffer.Put( szName, nameLen );
 
 	// Store header.
 	TileCacheSetHeader header;
@@ -399,7 +401,7 @@ bool CRecastMgr::Save()
 		meshesToSave[i]->Save( fileBuffer );
 	}
 
-	if ( !g_pFullFileSystem->WriteFile( filename, "MOD", fileBuffer ) )
+	if ( !g_pFullFileSystem->WriteFile( filename, "GAME", fileBuffer ) )
 	{
 		Warning( "Unable to save %d bytes to %s\n", fileBuffer.Size(), filename );
 		return false;

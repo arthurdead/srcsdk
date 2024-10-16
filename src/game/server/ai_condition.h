@@ -14,6 +14,8 @@
 #ifndef	CONDITION_H
 #define	CONDITION_H
 
+#pragma once
+
 // NOTE: Changing this constant will break save files!!! (changes type of CAI_ScheduleBits)
 #ifndef MAX_CONDITIONS
 #define	MAX_CONDITIONS 32*8

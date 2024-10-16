@@ -1,7 +1,10 @@
 #ifndef DEFERRED_SHARED_COMMON
 #define DEFERRED_SHARED_COMMON
 
+#pragma once
 
+#include "mathlib/vector.h"
+#include "mathlib/mathlib.h"
 
 #define FOR_EACH_VEC_FAST( vecType, vecName, keyName ) { vecType *keyName##_p = vecName.Base();\
 	for ( int keyName##_size = vecName.Count(); keyName##_size > 0; keyName##_size--, keyName##_p++ )\

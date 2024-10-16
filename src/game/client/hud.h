@@ -223,7 +223,10 @@ CHudIcons &HudIcons();
 //-----------------------------------------------------------------------------
 extern vgui::HFont g_hFontTrebuchet24;
 
-void LoadHudTextures( CUtlDict< CHudTexture *, int >& list, const char *szFilenameWithoutExtension, const unsigned char *pICEKey );
+class KeyValues;
+
+void LoadHudTextures( CUtlDict< CHudTexture *, int >& list, const char *szFilenameWithoutExtension );
+void LoadHudTextures( CUtlDict< CHudTexture *, int >& list, KeyValues *pKeyValuesData );
 
 void GetHudSize( int& w, int &h );
 

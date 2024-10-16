@@ -10,6 +10,8 @@
 #ifndef UTLSTACK_H
 #define UTLSTACK_H
 
+#pragma once
+
 #include <assert.h>
 #include <string.h>
 #include "utlmemory.h"

@@ -8,6 +8,8 @@
 #ifndef EXPLODE_H
 #define EXPLODE_H
 
+#pragma once
+
 #include "mathlib/vector.h"
 #include "ehandle.h"
 #include "shareddefs.h"

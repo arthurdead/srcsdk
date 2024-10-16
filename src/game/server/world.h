@@ -54,10 +54,9 @@ public:
 		return (float)m_flWaveHeight;
 	}
 
-	bool GetDisplayTitle() const;
-	bool GetStartDark() const;
+	bool ShouldDisplayTitle() const;
 
-	void SetDisplayTitle( bool display );
+	bool GetStartDark() const;
 	void SetStartDark( bool startdark );
 
 	int GetTimeOfDay() const;

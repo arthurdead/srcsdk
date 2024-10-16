@@ -8,7 +8,8 @@
 #ifndef LOGICRANDOMOUTPUTS_H
 #define LOGICRANDOMOUTPUTS_H
 
-#include "cbase.h"
+#pragma once
+
 #include "entityinput.h"
 #include "entityoutput.h"
 #include "eventqueue.h"

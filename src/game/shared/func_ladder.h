@@ -15,44 +15,67 @@
 #endif
 
 #if defined( CLIENT_DLL )
-#define CFuncLadder C_FuncLadder
+class C_InfoLadderDismount;
+typedef C_InfoLadderDismount CSharedInfoLadderDismount;
+class C_FuncLadder;
+typedef C_FuncLadder CSharedFuncLadder;
+#else
+class CInfoLadderDismount;
+typedef CInfoLadderDismount CSharedInfoLadderDismount;
+class CFuncLadder;
+typedef CFuncLadder CSharedFuncLadder;
+#endif
+
+#if defined( CLIENT_DLL )
 #define CInfoLadderDismount C_InfoLadderDismount
 #endif
 
-class CInfoLadderDismount : public CBaseEntity
+class CInfoLadderDismount : public CSharedBaseEntity
 {
 public:
-	DECLARE_CLASS( CInfoLadderDismount, CBaseEntity );
+	DECLARE_CLASS( CInfoLadderDismount, CSharedBaseEntity );
+
+#if defined( CLIENT_DLL )
+	#undef CInfoLadderDismount
+#endif
+
 	DECLARE_NETWORKCLASS();
 
 	virtual void DrawDebugGeometryOverlays();
 };
 
-typedef CHandle< CInfoLadderDismount > CInfoLadderDismountHandle;
+typedef CHandle< CSharedInfoLadderDismount > InfoLadderDismountHandle;
 
 // Spawnflags
 #define SF_LADDER_DONTGETON			1			// Set for ladders that are acting as automount points, but not really ladders
 
+#if defined( CLIENT_DLL )
+#define CFuncLadder C_FuncLadder
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: A player-climbable ladder
 //-----------------------------------------------------------------------------
-class CFuncLadder : public CBaseEntity
+class CFuncLadder : public CSharedBaseEntity
 {
 public:
-
-	DECLARE_CLASS( CFuncLadder, CBaseEntity );
-	DECLARE_NETWORKCLASS();
-	DECLARE_MAPENTITY();
-
+	DECLARE_CLASS( CFuncLadder, CSharedBaseEntity );
 	CFuncLadder();
 	~CFuncLadder();
+
+#if defined( CLIENT_DLL )
+	#undef CFuncLadder
+#endif
+
+	DECLARE_NETWORKCLASS();
+	DECLARE_MAPENTITY();
 
 	virtual void Spawn();
 
 	virtual void DrawDebugGeometryOverlays(void);
 
 	int					GetDismountCount() const;
-	CInfoLadderDismount	*GetDismount( int index );
+	CSharedInfoLadderDismount	*GetDismount( int index );
 
 	void	GetTopPosition( Vector& org );
 	void	GetBottomPosition( Vector& org );
@@ -70,19 +93,19 @@ public:
 
 	bool	IsEnabled() const;
 
-	void	PlayerGotOn( CBasePlayer *pPlayer );
-	void	PlayerGotOff( CBasePlayer *pPlayer );
+	void	PlayerGotOn( CSharedBasePlayer *pPlayer );
+	void	PlayerGotOff( CSharedBasePlayer *pPlayer );
 
 	virtual void Activate();
 
 	bool	DontGetOnLadder( void ) const;
 
 	static int GetLadderCount();
-	static CFuncLadder *GetLadder( int index );
-	static CUtlVector< CFuncLadder * >	s_Ladders;
+	static CSharedFuncLadder *GetLadder( int index );
+	static CUtlVector< CSharedFuncLadder * >	s_Ladders;
 public:
 
-	void FindNearbyDismountPoints( const Vector& origin, float radius, CUtlVector< CInfoLadderDismountHandle >& list );
+	void FindNearbyDismountPoints( const Vector& origin, float radius, CUtlVector< InfoLadderDismountHandle >& list );
 	const char *GetSurfacePropName();
 
 private:
@@ -94,7 +117,7 @@ private:
 	CNetworkVector( m_vecLadderDir );
 
 	// Dismount points near top/bottom of ladder, precomputed
-	CUtlVector< CInfoLadderDismountHandle > m_Dismounts;
+	CUtlVector< InfoLadderDismountHandle > m_Dismounts;
 
 	// Endpoints for checking for mount/dismount
 	CNetworkVector( m_vecPlayerMountPositionTop );
@@ -115,11 +138,11 @@ private:
 #endif
 };
 
-inline bool CFuncLadder::IsEnabled() const
+inline bool CSharedFuncLadder::IsEnabled() const
 {
 	return !m_bDisabled;
 }
 
-const char *FuncLadder_GetSurfaceprops(CBaseEntity *pLadderEntity);
+const char *FuncLadder_GetSurfaceprops(CSharedBaseEntity *pLadderEntity);
 
 #endif // FUNC_LADDER_H

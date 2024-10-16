@@ -8,7 +8,6 @@
 #define TEAM_TRAIN_WATCHER_H
 #pragma once
 
-#include "cbase.h"
 #include "trigger_area_capture.h"
 #include "shareddefs.h"
 #include "envspark.h"

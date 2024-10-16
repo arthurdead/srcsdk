@@ -89,7 +89,7 @@ void PrecacheChoreoScene( CChoreoScene *scene )
 				// Defined in SoundEmitterSystem.cpp
 				// NOTE:  The script entries associated with .vcds are forced to preload to avoid
 				//  loading hitches during triggering
-				CBaseEntity::PrecacheScriptSound( event->GetParameters() );
+				CSharedBaseEntity::PrecacheScriptSound( event->GetParameters() );
 
 				if ( event->GetCloseCaptionType() == CChoreoEvent::CC_MASTER && 
 					 event->GetNumSlaves() > 0 )
@@ -97,7 +97,7 @@ void PrecacheChoreoScene( CChoreoScene *scene )
 					char tok[ CChoreoEvent::MAX_CCTOKEN_STRING ];
 					if ( event->GetPlaybackCloseCaptionToken( tok, sizeof( tok ) ) )
 					{
-						CBaseEntity::PrecacheScriptSound( tok );
+						CSharedBaseEntity::PrecacheScriptSound( tok );
 					}
 				}
 			}

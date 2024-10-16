@@ -12,6 +12,8 @@
 #ifndef _FISH_H_
 #define _FISH_H_
 
+#pragma once
+
 #include "baseanimating.h"
 #include "GameEventListener.h"
 

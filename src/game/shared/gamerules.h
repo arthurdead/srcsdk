@@ -10,8 +10,15 @@
 #pragma once
 
 #ifdef CLIENT_DLL
-	#define CGameRules C_GameRules
-	#define CGameRulesProxy C_GameRulesProxy
+class C_GameRules;
+typedef C_GameRules CSharedGameRules;
+class C_GameRulesProxy;
+typedef C_GameRulesProxy CSharedGameRulesProxy;
+#else
+class CGameRules;
+typedef CGameRules CSharedGameRules;
+class CGameRulesProxy;
+typedef CGameRulesProxy CSharedGameRulesProxy;
 #endif
 
 #ifdef CLIENT_DLL
@@ -31,18 +38,23 @@
 
 #ifdef GAME_DLL
 class CBaseCombatWeapon;
+typedef CBaseCombatWeapon CSharedBaseCombatWeapon;
 class CBaseCombatCharacter;
+typedef CBaseCombatCharacter CSharedBaseCombatCharacter;
 class CBasePlayer;
+typedef CBasePlayer CSharedBasePlayer;
 class CItem;
 #else
 class C_BaseCombatWeapon;
-#define CBaseCombatWeapon C_BaseCombatWeapon
+typedef C_BaseCombatWeapon CSharedBaseCombatWeapon;
 class C_BaseCombatCharacter;
-#define CBaseCombatCharacter C_BaseCombatCharacter
+typedef C_BaseCombatCharacter CSharedBaseCombatCharacter;
 class C_BasePlayer;
-#define CBasePlayer C_BasePlayer
+typedef C_BasePlayer CSharedBasePlayer;
 #endif
+
 class CAmmoDef;
+
 #ifdef GAME_DLL
 class CTacticalMissionManager;
 class CBaseExpresserPlayer;
@@ -95,8 +107,6 @@ typedef struct
 
 extern ConVar mp_timelimit;
 
-class CGameRules;
-
 class CSameTeamGroup
 {
 public:
@@ -104,10 +114,10 @@ public:
 	CSameTeamGroup( const CSameTeamGroup &src );
 
 	// Different users will require different logic for whom to add (e.g., all SplitScreen players on same team, or all Steam Friends on same team)
-	virtual void Build( CGameRules *pGameRules, CBasePlayer *pl ) = 0;
-	virtual void MaybeAddPlayer( CBasePlayer *pl ) = 0;
+	virtual void Build( CSharedGameRules *pGameRules, CSharedBasePlayer *pl ) = 0;
+	virtual void MaybeAddPlayer( CSharedBasePlayer *pl ) = 0;
 
-	CBasePlayer *GetPlayer( int idx );
+	CSharedBasePlayer *GetPlayer( int idx );
 
 	int						Count() const;
 	int						Score() const;
@@ -116,7 +126,7 @@ public:
 
 protected:
 
-	CUtlVector< CBasePlayer * >				m_Players;
+	CUtlVector< CSharedBasePlayer * >				m_Players;
 	int										m_nScore;
 };
 
@@ -161,15 +171,23 @@ enum
 	GR_NEUTRAL,
 };
 
+#ifdef CLIENT_DLL
+	#define CGameRulesProxy C_GameRulesProxy
+#endif
+
 // This class has the data tables and gets the CGameRules data to the client.
-class CGameRulesProxy : public CLogicalEntity
+class CGameRulesProxy : public CSharedLogicalEntity
 {
 public:
-	DECLARE_CLASS( CGameRulesProxy, CLogicalEntity );
-	DECLARE_NETWORKCLASS();
-
+	DECLARE_CLASS( CGameRulesProxy, CSharedLogicalEntity );
 	CGameRulesProxy();
 	~CGameRulesProxy();
+
+#ifdef CLIENT_DLL
+	#undef CGameRulesProxy
+#endif
+
+	DECLARE_NETWORKCLASS();
 
 	virtual void Spawn( void );
 
@@ -178,23 +196,40 @@ public:
 	static void NotifyNetworkStateChanged();
 
 private:
+#ifdef CLIENT_DLL
+	friend class C_GameRules;
+#else
 	friend class CGameRules;
+#endif
 };
 
-extern CGameRulesProxy *g_pGameRulesProxy;
+#ifdef CLIENT_DLL
+typedef C_GameRulesProxy CSharedGameRulesProxy;
+#else
+typedef CGameRulesProxy CSharedGameRulesProxy;
+#endif
+
+extern CSharedGameRulesProxy *g_pGameRulesProxy;
+
+#ifdef CLIENT_DLL
+	#define CGameRules C_GameRules
+#endif
 
 abstract_class CGameRules : public CMemZeroOnNew, public CAutoGameSystemPerFrame, public CGameEventListener
 {
 public:
 	DECLARE_CLASS_GAMEROOT( CGameRules, CAutoGameSystemPerFrame );
-	DECLARE_NETWORKCLASS();
-
-	virtual char const *Name() { return "CGameRules"; }
-
-	// Stuff shared between client and server.
-
 	CGameRules(void);
 	virtual ~CGameRules( void );
+	virtual char const *Name() { return V_STRINGIFY(CGameRules); }
+
+#ifdef CLIENT_DLL
+	#undef CGameRules
+#endif
+
+	DECLARE_NETWORKCLASS();
+
+	// Stuff shared between client and server.
 
 	virtual	bool	Init();
 
@@ -222,8 +257,8 @@ public:
 // Ammo Definitions
 	//CAmmoDef* GetAmmoDef();
 
-	virtual bool SwitchToNextBestWeapon( CBaseCombatCharacter *pPlayer, CBaseCombatWeapon *pCurrentWeapon ); // Switch to the next best weapon
-	virtual CBaseCombatWeapon *GetNextBestWeapon( CBaseCombatCharacter *pPlayer, CBaseCombatWeapon *pCurrentWeapon ); // I can't use this weapon anymore, get me the next best one.
+	virtual bool SwitchToNextBestWeapon( CSharedBaseCombatCharacter *pPlayer, CSharedBaseCombatWeapon *pCurrentWeapon ); // Switch to the next best weapon
+	virtual CSharedBaseCombatWeapon *GetNextBestWeapon( CSharedBaseCombatCharacter *pPlayer, CSharedBaseCombatWeapon *pCurrentWeapon ); // I can't use this weapon anymore, get me the next best one.
 	virtual bool ShouldCollide( int collisionGroup0, int collisionGroup1 );
 
 	virtual int DefaultFOV( void ) { return 90; }
@@ -232,20 +267,20 @@ public:
 	inline void NetworkStateChanged()
 	{
 		// Forward the call to the entity that will send the data.
-		CGameRulesProxy::NotifyNetworkStateChanged();
+		CSharedGameRulesProxy::NotifyNetworkStateChanged();
 	}
 
 	inline void NetworkStateChanged( void *pVar )
 	{
 		// Forward the call to the entity that will send the data.
-		CGameRulesProxy::NotifyNetworkStateChanged();
+		CSharedGameRulesProxy::NotifyNetworkStateChanged();
 	}
 
 	// Get the view vectors for this mod.
 	virtual const CViewVectors* GetViewVectors() const;
 
 // Damage rules for ammo types
-	virtual float GetAmmoDamage( CBaseEntity *pAttacker, CBaseEntity *pVictim, int nAmmoType );
+	virtual float GetAmmoDamage( CSharedBaseEntity *pAttacker, CSharedBaseEntity *pVictim, int nAmmoType );
     virtual float GetDamageMultiplier( void ) { return 1.0f; }    
 
 	virtual const unsigned char *GetEncryptionKey() { return NULL; }
@@ -255,7 +290,7 @@ public:
 
 	// IsConnectedUserInfoChangeAllowed allows the clients to change
 	// cvars with the FCVAR_NOT_CONNECTED rule if it returns true
-	virtual bool IsConnectedUserInfoChangeAllowed( CBasePlayer *pPlayer )
+	virtual bool IsConnectedUserInfoChangeAllowed( CSharedBasePlayer *pPlayer )
 	{ 
 		return true; 
 	}
@@ -440,7 +475,6 @@ public:
 	virtual const char *GetIndexedTeamName( Team_t teamIndex );
 	virtual bool IsValidTeam( const char *pTeamName ) { return GetTeamIndex(pTeamName) != TEAM_INVALID; }
 	virtual void ChangePlayerTeam( CBasePlayer *pPlayer, const char *pTeamName, bool bKill, bool bGib );
-	virtual const char *SetDefaultPlayerTeam( CBasePlayer *pPlayer );
 	virtual void UpdateClientData( CBasePlayer *pPlayer ) { };
 
 // Sounds
@@ -610,6 +644,6 @@ extern ConVar g_Language;
 // Gets us at the game rules
 //-----------------------------------------------------------------------------
 
-CGameRules* GameRules();
+CSharedGameRules* GameRules();
 
 #endif // GAMERULES_H

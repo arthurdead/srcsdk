@@ -1,7 +1,10 @@
 #ifndef SSEMATH_EXT_H
 #define SSEMATH_EXT_H
 
-#include "mathlib\ssemath.h"
+#pragma once
+
+#include "tier0/platform.h"
+#include "mathlib/ssemath.h"
 
 FORCEINLINE float Dot4SIMD2( const fltx4 &a, const fltx4 &b )
 {

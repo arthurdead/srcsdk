@@ -1,13 +1,11 @@
 #include "cbase.h"
 #include "npc_humanoidbase.h"
-#include "heist_player.h"
-#include "heist_gamerules.h"
+#include "heist_director.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 IMPLEMENT_SERVERCLASS_ST(CNPC_HumanoidBase, DT_NPCHumanoidBase)
-	SendPropDataTable(SENDINFO_DT(m_Suspicioner), &REFERENCE_SEND_TABLE(DT_Suspicioner)),
 END_SEND_TABLE()
 
 CNPC_HumanoidBase::CNPC_HumanoidBase()
@@ -22,8 +20,6 @@ CNPC_HumanoidBase::~CNPC_HumanoidBase()
 void CNPC_HumanoidBase::Spawn()
 {
 	BaseClass::Spawn();
-
-	m_Suspicioner.Init(this);
 
 	CapabilitiesAdd(bits_CAP_TURN_HEAD|bits_CAP_ANIMATEDFACE);
 
@@ -46,19 +42,19 @@ void CNPC_HumanoidBase::Spawn()
 	m_flFieldOfView = 0.5f;
 	NPCInit();
 
-	if(!HeistGameRules()->AnyoneSpotted()) {
+	if(MissionDirector()->GetMissionState() == MISSION_STATE_CASING) {
 		SetContextThink(&CNPC_HumanoidBase::SuspicionThink, gpGlobals->curtime + 0.2f, "SuspicionThink");
 	}
 }
 
 void CNPC_HumanoidBase::SuspicionThink()
 {
-	if(HeistGameRules()->AnyoneSpotted()) {
+	if(MissionDirector()->GetMissionState() != MISSION_STATE_CASING) {
 		SetNextThink(TICK_NEVER_THINK, "SuspicionThink");
 		return;
 	}
 
-	m_Suspicioner.Update();
+	
 
 	SetNextThink(gpGlobals->curtime + 0.2f, "SuspicionThink");
 }

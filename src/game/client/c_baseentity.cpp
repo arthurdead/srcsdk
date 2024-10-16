@@ -370,7 +370,7 @@ void RecvProxy_SimulationTime( const CRecvProxyData *pData, void *pStruct, void 
 
 void C_BaseEntity::RecvProxy_CellBits( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
 
 	if ( pEnt->SetCellBits( pData->m_Value.m_Int ) )
 	{
@@ -385,7 +385,7 @@ void C_BaseEntity::RecvProxy_CellBits( const CRecvProxyData *pData, void *pStruc
 
 void C_BaseEntity::RecvProxy_CellX( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
 
 	int *cellX = (int *)pOut;
 	Assert( cellX == &pEnt->m_cellX );
@@ -401,7 +401,7 @@ void C_BaseEntity::RecvProxy_CellX( const CRecvProxyData *pData, void *pStruct, 
 
 void C_BaseEntity::RecvProxy_CellY( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
 
 	int *cellY = (int *)pOut;
 	Assert( cellY == &pEnt->m_cellY );
@@ -417,7 +417,7 @@ void C_BaseEntity::RecvProxy_CellY( const CRecvProxyData *pData, void *pStruct, 
 
 void C_BaseEntity::RecvProxy_CellZ( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
 
 	int *cellZ = (int *)pOut;
 	Assert( cellZ == &pEnt->m_cellZ );
@@ -433,7 +433,7 @@ void C_BaseEntity::RecvProxy_CellZ( const CRecvProxyData *pData, void *pStruct, 
 
 void C_BaseEntity::RecvProxy_CellOrigin( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
 
 	Vector *vecNetworkOrigin = (Vector *)pOut;
 
@@ -454,7 +454,7 @@ void C_BaseEntity::RecvProxy_CellOrigin( const CRecvProxyData *pData, void *pStr
 
 void C_BaseEntity::RecvProxy_CellOriginXY( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
 
 	Vector *vecNetworkOrigin = (Vector *)pOut;
 
@@ -474,7 +474,7 @@ void C_BaseEntity::RecvProxy_CellOriginXY( const CRecvProxyData *pData, void *pS
 
 void C_BaseEntity::RecvProxy_CellOriginZ( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
 
 	float *vecNetworkOriginZ = (float *)pOut;
 
@@ -492,7 +492,7 @@ void C_BaseEntity::RecvProxy_CellOriginZ( const CRecvProxyData *pData, void *pSt
 
 void RecvProxy_LocalVelocity( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
 
 	Vector vecVelocity;
 	
@@ -508,7 +508,7 @@ void RecvProxy_ToolRecording( const CRecvProxyData *pData, void *pStruct, void *
 	if ( !ToolsEnabled() )
 		return;
 
-	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
+	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
 	pEnt->SetToolRecording( pData->m_Value.m_Int != 0 );
 }
 
@@ -689,7 +689,7 @@ const float coordTolerance = 2.0f / (float)( 1 << COORD_FRACTIONAL_BITS );
 BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 
 	// These have a special proxy to handle send/receive
-	DEFINE_PRED_TYPEDESCRIPTION( m_Collision, CCollisionProperty ),
+	DEFINE_PRED_TYPEDESCRIPTION( m_Collision, C_CollisionProperty ),
 
 	DEFINE_PRED_FIELD( m_MoveType, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_MoveCollide, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
@@ -3000,17 +3000,17 @@ void C_BaseEntity::HierarchySetParent( C_BaseEntity *pNewParent )
 #endif
 
 	// iterate the hierarchy using a ring buffer
-	CBaseEntity *list[1024];	// assume power of 2 elements
+	C_BaseEntity *list[1024];	// assume power of 2 elements
 	int listReadIndex = 0;
 	int listWriteIndex = 1;
 	list[0] = this;
 
 	while ( listReadIndex != listWriteIndex )
 	{
-		CBaseEntity *pParent = list[listReadIndex];
+		C_BaseEntity *pParent = list[listReadIndex];
 		pParent->InvalidateAttachments();
 		listReadIndex = (listReadIndex+1) & (ARRAYSIZE(list)-1);
-		for (CBaseEntity *pChild = pParent->FirstMoveChild(); pChild; pChild = pChild->NextMovePeer())
+		for (C_BaseEntity *pChild = pParent->FirstMoveChild(); pChild; pChild = pChild->NextMovePeer())
 		{
 			list[listWriteIndex] = pChild;
 			listWriteIndex = (listWriteIndex+1) & (ARRAYSIZE(list)-1);
@@ -3438,7 +3438,7 @@ void C_BaseEntity::OnLatchInterpolatedVariables( int flags )
 	}
 }
 
-int CBaseEntity::BaseInterpolatePart1( float &currentTime, Vector &oldOrigin, QAngle &oldAngles, Vector &oldVel, int &bNoMoreChanges )
+int C_BaseEntity::BaseInterpolatePart1( float &currentTime, Vector &oldOrigin, QAngle &oldAngles, Vector &oldVel, int &bNoMoreChanges )
 {
 	// Don't mess with the world!!!
 	bNoMoreChanges = 1;
@@ -3791,7 +3791,7 @@ bool C_BaseEntity::IsFollowingEntity()
 	return IsEffectActive(EF_BONEMERGE) && (GetMoveType() == MOVETYPE_NONE) && GetMoveParent();
 }
 
-C_BaseEntity *CBaseEntity::GetFollowedEntity()
+C_BaseEntity *C_BaseEntity::GetFollowedEntity()
 {
 	if (!IsFollowingEntity())
 		return NULL;
@@ -4760,7 +4760,7 @@ void C_BaseEntity::BoneMergeFastCullBloat( Vector &localMins, Vector &localMaxs,
 
 matrix3x4_t& C_BaseEntity::GetParentToWorldTransform( matrix3x4_t &tempMatrix )
 {
-	CBaseEntity *pMoveParent = GetMoveParent();
+	C_BaseEntity *pMoveParent = GetMoveParent();
 	if ( !pMoveParent )
 	{
 		Assert( false );
@@ -4881,7 +4881,7 @@ void C_BaseEntity::CalcAbsoluteVelocity()
 
 	m_iEFlags &= ~EFL_DIRTY_ABSVELOCITY;
 
-	CBaseEntity *pMoveParent = GetMoveParent();
+	C_BaseEntity *pMoveParent = GetMoveParent();
 	if ( !pMoveParent )
 	{
 		m_vecAbsVelocity = m_vecVelocity;
@@ -4915,7 +4915,7 @@ void C_BaseEntity::CalcAbsoluteAngularVelocity()
 
 	m_iEFlags &= ~EFL_DIRTY_ABSANGVELOCITY;
 
-	CBaseEntity *pMoveParent = GetMoveParent();
+	C_BaseEntity *pMoveParent = GetMoveParent();
 	if ( !pMoveParent )
 	{
 		m_vecAbsAngVelocity = m_vecAngVelocity;
@@ -5238,7 +5238,7 @@ bool EntityNamesMatch( const char *pszQuery, string_t nameToMatch )
 	return Matcher_NamesMatch(pszQuery, STRING(nameToMatch));
 }
 
-bool CBaseEntity::NameMatchesComplex( const char *pszNameOrWildcard )
+bool C_BaseEntity::NameMatchesComplex( const char *pszNameOrWildcard )
 {
 	if ( !Q_stricmp( "!player", pszNameOrWildcard) )
 		return IsPlayer();
@@ -5246,7 +5246,7 @@ bool CBaseEntity::NameMatchesComplex( const char *pszNameOrWildcard )
 	return Matcher_NamesMatch( pszNameOrWildcard, m_iName );
 }
 
-bool CBaseEntity::ClassMatchesComplex( const char *pszClassOrWildcard )
+bool C_BaseEntity::ClassMatchesComplex( const char *pszClassOrWildcard )
 {
 	return Matcher_NamesMatch( pszClassOrWildcard, GetClassname() );
 }
@@ -6025,7 +6025,7 @@ void C_BaseEntity::SUB_Remove( void )
 	UTIL_Remove( this );
 }
 
-CBaseEntity *FindEntityInFrontOfLocalPlayer()
+C_BaseEntity *FindEntityInFrontOfLocalPlayer()
 {
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 	if ( pPlayer )
@@ -6048,7 +6048,7 @@ CBaseEntity *FindEntityInFrontOfLocalPlayer()
 //-----------------------------------------------------------------------------
 static void RemoveDecals_f( void )
 {
-	CBaseEntity *pHit = FindEntityInFrontOfLocalPlayer();
+	C_BaseEntity *pHit = FindEntityInFrontOfLocalPlayer();
 	if ( pHit )
 	{
 		pHit->RemoveAllDecals();
@@ -6085,7 +6085,7 @@ void C_BaseEntity::ToggleBBoxVisualization( int fVisFlags )
 //-----------------------------------------------------------------------------
 static void ToggleBBoxVisualization( int fVisFlags, const CCommand &args )
 {
-	CBaseEntity *pHit;
+	C_BaseEntity *pHit;
 
 	int iEntity = -1;
 	if ( args.ArgC() >= 2 )
@@ -6113,7 +6113,7 @@ static void ToggleBBoxVisualization( int fVisFlags, const CCommand &args )
 //-----------------------------------------------------------------------------
 CON_COMMAND_F( cl_ent_bbox, "Displays the client's bounding box for the entity under the crosshair.", FCVAR_CHEAT )
 {
-	ToggleBBoxVisualization( CBaseEntity::VISUALIZE_COLLISION_BOUNDS, args );
+	ToggleBBoxVisualization( C_BaseEntity::VISUALIZE_COLLISION_BOUNDS, args );
 }
 
 
@@ -6122,7 +6122,7 @@ CON_COMMAND_F( cl_ent_bbox, "Displays the client's bounding box for the entity u
 //-----------------------------------------------------------------------------
 CON_COMMAND_F( cl_ent_absbox, "Displays the client's absbox for the entity under the crosshair.", FCVAR_CHEAT )
 {
-	ToggleBBoxVisualization( CBaseEntity::VISUALIZE_SURROUNDING_BOUNDS, args );
+	ToggleBBoxVisualization( C_BaseEntity::VISUALIZE_SURROUNDING_BOUNDS, args );
 }
 
 
@@ -6131,7 +6131,7 @@ CON_COMMAND_F( cl_ent_absbox, "Displays the client's absbox for the entity under
 //-----------------------------------------------------------------------------
 CON_COMMAND_F( cl_ent_rbox, "Displays the client's render box for the entity under the crosshair.", FCVAR_CHEAT )
 {
-	ToggleBBoxVisualization( CBaseEntity::VISUALIZE_RENDER_BOUNDS, args );
+	ToggleBBoxVisualization( C_BaseEntity::VISUALIZE_RENDER_BOUNDS, args );
 }
 
 //-----------------------------------------------------------------------------
@@ -6162,12 +6162,12 @@ void C_BaseEntity::DrawBBoxVisualizations( void )
 	}
 }
 
-RenderMode_t CBaseEntity::GetRenderMode() const
+RenderMode_t C_BaseEntity::GetRenderMode() const
 {
 	return m_pClientAlphaProperty->GetRenderMode();
 }
 
-RenderFx_t CBaseEntity::GetRenderFX() const
+RenderFx_t C_BaseEntity::GetRenderFX() const
 {
 	return m_pClientAlphaProperty->GetRenderFX();
 }
@@ -6183,7 +6183,7 @@ void C_BaseEntity::SetRenderMode( RenderMode_t nRenderMode )
 	}
 }
 
-void CBaseEntity::SetRenderFX( RenderFx_t nRenderFX, float flStartTime, float flDuration )
+void C_BaseEntity::SetRenderFX( RenderFx_t nRenderFX, float flStartTime, float flDuration )
 {
 	bool bStartTimeUnspecified = ( flStartTime == FLT_MAX );
 	if ( nRenderFX != GetRenderFX() || !bStartTimeUnspecified )
@@ -7052,7 +7052,7 @@ bool C_BaseEntity::ShouldRegenerateOriginFromCellBits() const
 // Purpose: 
 // Output : IResponseSystem
 //-----------------------------------------------------------------------------
-IResponseSystem *CBaseEntity::GetResponseSystem()
+IResponseSystem *C_BaseEntity::GetResponseSystem()
 {
 	extern IResponseSystem *g_pResponseSystem;
 	return g_pResponseSystem;

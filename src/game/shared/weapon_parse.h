@@ -66,6 +66,15 @@ enum WeaponUsageRestricions_e
 	NUM_WEAPON_RESTRICTION_TYPES
 };
 
+enum
+{
+	WEAPONINFO_UNPARSED,
+	WEAPONINFO_PARSED_MOD,
+	WEAPONINFO_PARSED_MOD_ENCRYPTED,
+	WEAPONINFO_PARSED_MAP,
+	WEAPONINFO_PARSED_MOD_MAP_OVERWRITTEN,
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Contains the data read from the weapon's script file. 
 // It's cached so we only read each weapon's script file once.
@@ -82,11 +91,14 @@ public:
 	virtual void Parse( KeyValues *pKeyValuesData, const char *szWeaponName );
 
 	
-public:	
-	bool					bParsedScript;
+public:
+#ifdef CLIENT_DLL
+	KeyValues *pKeyValuesData;
+#endif
+
+	int					nParsedScript;
+
 	bool					bLoadedHudElements;
-	// Indicates the currently loaded data is from a map-specific script and should be flushed.
-	bool					bCustom;
 
 // SHARED
 	char					szClassName[MAX_WEAPON_STRING];
@@ -152,34 +164,25 @@ public:
 
 // SERVER DLL
 	float m_flWeaponFOV;		//Tony; added weapon fov, SDK uses models from a couple different games, so FOV is different.
-
 };
 
 // The weapon parse function
 bool ReadWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeaponName, 
-	WEAPON_FILE_INFO_HANDLE *phandle, const unsigned char *pICEKey = NULL );
+	WEAPON_FILE_INFO_HANDLE *phandle, const unsigned char *pICEKey );
 
-// For map-specific weapon data
-bool ReadCustomWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeaponName,
-	WEAPON_FILE_INFO_HANDLE *phandle, const unsigned char *pICEKey = NULL );
+bool ReadModWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeaponName, 
+	WEAPON_FILE_INFO_HANDLE *phandle, const unsigned char *pICEKey );
+bool ReadMapWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeaponName, 
+	WEAPON_FILE_INFO_HANDLE *phandle );
 
 // If weapon info has been loaded for the specified class name, this returns it.
 WEAPON_FILE_INFO_HANDLE LookupWeaponInfoSlot( const char *name );
 
 FileWeaponInfo_t *GetFileWeaponInfoFromHandle( WEAPON_FILE_INFO_HANDLE handle );
 WEAPON_FILE_INFO_HANDLE GetInvalidWeaponInfoHandle( void );
-void PrecacheFileWeaponInfoDatabase( IFileSystem *filesystem, const unsigned char *pICEKey );
 
-
-// 
-// Read a possibly-encrypted KeyValues file in. 
-// If pICEKey is NULL, then it appends .txt to the filename and loads it as an unencrypted file.
-// If pICEKey is non-NULL, then it appends .ctx to the filename and loads it as an encrypted file.
-//
-// (This should be moved into a more appropriate place).
-//
-KeyValues* ReadEncryptedKVFile( IFileSystem *filesystem, const char *szFilenameWithoutExtension, const unsigned char *pICEKey, bool bForceReadEncryptedFile = false );
-
+void PrecacheModFileWeaponInfoDatabase( IFileSystem *filesystem, const unsigned char *pICEKey, const char *filename );
+void PrecacheMapFileWeaponInfoDatabase( IFileSystem *filesystem, const char *filename );
 
 // Each game implements this. It can return a derived class and override Parse() if it wants.
 extern FileWeaponInfo_t* CreateWeaponInfo();

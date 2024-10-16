@@ -31,8 +31,6 @@
 
 #elif defined POSIX
 
-#define __cdecl
-
 #endif
 
 #include <cstdlib>
@@ -45,6 +43,8 @@
 #include "minidump.h"
 #include "memalloc.h"
 
+#include "module_name.h"
+
 #include "memdbgoff.h"
 
 #if defined( _WIN32 )
@@ -53,9 +53,9 @@
 
 inline void __cdecl VPurecallHandler()
 {
-    DebuggerBreakIfDebugging();	// give the debugger a chance to catch first
-    WriteMiniDump();
-    ExitProcess( EXIT_FAILURE );
+	DebuggerBreakIfDebugging();	// give the debugger a chance to catch first
+	WriteMiniDump();
+	Plat_ExitProcess( EXIT_FAILURE );
 }
 
 #if defined( _WIN32 )
@@ -612,17 +612,17 @@ ALLOC_CALL void * __cdecl _aligned_malloc( size_t size, size_t align )
 
 ALLOC_CALL void *__cdecl _aligned_realloc(void *memblock, size_t size, size_t align)
 {
-    return _aligned_realloc_base(memblock, size, align);
+	return _aligned_realloc_base(memblock, size, align);
 }
 
 ALLOC_CALL void * __cdecl _aligned_recalloc( void * memblock, size_t count, size_t size, size_t align )
 {
-    return _aligned_recalloc_base(memblock, count * size, align);
+	return _aligned_recalloc_base(memblock, count * size, align);
 }
 
 FREE_CALL void __cdecl _aligned_free( void *memblock )
 {
-    _aligned_free_base(memblock);
+	_aligned_free_base(memblock);
 }
 
 // aligned offset base
@@ -647,17 +647,17 @@ ALLOC_CALL void * __cdecl _aligned_offset_recalloc_base( void * memblock, size_t
 // aligned offset
 ALLOC_CALL void *__cdecl _aligned_offset_malloc(size_t size, size_t align, size_t offset)
 {
-    return _aligned_offset_malloc_base( size, align, offset );
+	return _aligned_offset_malloc_base( size, align, offset );
 }
 
 ALLOC_CALL void *__cdecl _aligned_offset_realloc(void *memblock, size_t size, size_t align, size_t offset)
 {
-    return _aligned_offset_realloc_base( memblock, size, align, offset );
+	return _aligned_offset_realloc_base( memblock, size, align, offset );
 }
 
 ALLOC_CALL void * __cdecl _aligned_offset_recalloc( void * memblock, size_t count, size_t size, size_t align, size_t offset )
 {
-    return _aligned_offset_recalloc_base( memblock, count * size, align, offset );
+	return _aligned_offset_recalloc_base( memblock, count * size, align, offset );
 }
 
 #endif // _MSC_VER >= 1400
@@ -743,7 +743,7 @@ int __cdecl _CrtCheckMemory( void )
 }
 
 int __cdecl _CrtIsMemoryBlock( const void *pMem, unsigned int nSize,
-    long *plRequestNumber, char **ppFileName, int *pnLine )
+	long *plRequestNumber, char **ppFileName, int *pnLine )
 {
 	DebuggerBreak();
 	return 1;
@@ -798,13 +798,13 @@ _CRT_REPORT_HOOK __cdecl _CrtSetReportHook( _CRT_REPORT_HOOK pfnNewHook )
 }
 
 int __cdecl _CrtDbgReport( int nRptType, const char * szFile,
-        int nLine, const char * szModule, const char * szFormat, ... )
+		int nLine, const char * szModule, const char * szFormat, ... )
 {
 	static char output[1024];
 	va_list args;
 	va_start( args, szFormat );
 	//V_tier0_sprintf_s( output, sizeof( output ), szFormat, args );
-    snprintf( output, sizeof( output ), szFormat, args );
+	snprintf( output, sizeof( output ), szFormat, args );
 	va_end( args );
 
 	return g_pMemAlloc->CrtDbgReport( nRptType, szFile, nLine, szModule, output );
@@ -817,7 +817,7 @@ int __cdecl _CrtDbgReport( int nRptType, const char * szFile,
 // wrapper which passes no debug info; not available in debug
 void __cdecl _invalid_parameter_noinfo(void)
 {
-    Assert(0);
+	Assert(0);
 }
 
 #endif /* defined( _DEBUG ) */
@@ -832,14 +832,14 @@ int __cdecl __crtMessageWindowW( int nRptType, const wchar_t * szFile, const wch
 }
 
 int __cdecl _CrtDbgReportV( int nRptType, const wchar_t *szFile, int nLine, 
-						    const wchar_t *szModule, const wchar_t *szFormat, va_list arglist )
+							const wchar_t *szModule, const wchar_t *szFormat, va_list arglist )
 {
 	//Assert(0);
 	return 0;
 }
 
 int __cdecl _CrtDbgReportW( int nRptType, const wchar_t *szFile, int nLine, 
-						    const wchar_t *szModule, const wchar_t *szFormat, ...)
+							const wchar_t *szModule, const wchar_t *szFormat, ...)
 {
 	//Assert(0);
 	return 0;
@@ -847,7 +847,7 @@ int __cdecl _CrtDbgReportW( int nRptType, const wchar_t *szFile, int nLine,
 
 #if ( defined(_MSC_VER) && _MSC_VER >= 1900)
 int __cdecl _VCrtDbgReportA(int nRptType, void *pReturnAddr, const char* szFile, int nLine,
-                            const char *szModule, const char *szFormat, va_list arglist)
+							const char *szModule, const char *szFormat, va_list arglist)
 {
 	Assert(0);
 	return 0;
@@ -874,13 +874,13 @@ extern "C" int __crtDebugCheckCount = FALSE;
 
 extern "C" int __cdecl _CrtSetCheckCount( int fCheckCount )
 {
-    int oldCheckCount = __crtDebugCheckCount;
-    return oldCheckCount;
+	int oldCheckCount = __crtDebugCheckCount;
+	return oldCheckCount;
 }
 
 extern "C" int __cdecl _CrtGetCheckCount( void )
 {
-    return __crtDebugCheckCount;
+	return __crtDebugCheckCount;
 }
 
 // aligned offset debug
@@ -898,7 +898,7 @@ extern "C" void * __cdecl _aligned_offset_recalloc_dbg( void * memblock, size_t 
 
 extern "C" void * __cdecl _aligned_recalloc_dbg( void *memblock, size_t count, size_t size, size_t align, const char * f_name, int line_n )
 {
-    return _aligned_offset_recalloc_dbg(memblock, count, size, align, 0, f_name, line_n);
+	return _aligned_offset_recalloc_dbg(memblock, count, size, align, 0, f_name, line_n);
 }
 
 extern "C" void * __cdecl _recalloc_dbg ( void * memblock, size_t count, size_t size, int nBlockUse, const char * szFileName, int nLine )
@@ -941,7 +941,7 @@ size_t __crtDebugFillThreshold = 0;
 
 extern "C" void * __cdecl _heap_alloc_base (size_t size) 
 {
-    Assert(0);
+	Assert(0);
 	return nullptr;
 }
 
@@ -961,7 +961,7 @@ static void * __cdecl realloc_help( void * pUserData, size_t * pnNewSize, int nB
 }
 #else
 static void * __cdecl realloc_help( void * pUserData, size_t nNewSize, int nBlockUse, const char * szFileName,
-                  int nLine, int fRealloc)
+				  int nLine, int fRealloc)
 {
 		Assert(0); // Shouldn't be needed
 		return nullptr;
@@ -971,31 +971,31 @@ static void * __cdecl realloc_help( void * pUserData, size_t nNewSize, int nBloc
 void __cdecl _free_nolock( void * pUserData)
 {
 		// I don't think the second param is used in memoverride
-        _free_dbg(pUserData, 0);
+		_free_dbg(pUserData, 0);
 }
 
 void __cdecl _free_dbg_nolock( void * pUserData, int nBlockUse)
 {
-        _free_dbg(pUserData, 0);
+		_free_dbg(pUserData, 0);
 }
 
 _CRT_ALLOC_HOOK __cdecl _CrtGetAllocHook ( void)
 {
 		Assert(0); 
-        return nullptr;
+		return nullptr;
 }
 
 static int __cdecl CheckBytes( unsigned char * pb, unsigned char bCheck, size_t nSize)
 {
-        int bOkay = TRUE;
-        return bOkay;
+		int bOkay = TRUE;
+		return bOkay;
 }
 
 
 _CRT_DUMP_CLIENT __cdecl _CrtGetDumpClient ( void)
 {
 		Assert(0); 
-        return nullptr;
+		return nullptr;
 }
 
 #if _MSC_VER >= 1400
@@ -1009,37 +1009,37 @@ static void __cdecl _CrtMemDumpAllObjectsSince_stat( const _CrtMemState * state,
 #endif
 void * __cdecl _aligned_malloc_dbg( size_t size, size_t align, const char * f_name, int line_n)
 {
-    return _aligned_malloc(size, align);
+	return _aligned_malloc(size, align);
 }
 
 void * __cdecl _aligned_realloc_dbg( void *memblock, size_t size, size_t align,
-               const char * f_name, int line_n)
+			   const char * f_name, int line_n)
 {
-    return _aligned_realloc(memblock, size, align);
+	return _aligned_realloc(memblock, size, align);
 }
 
 void * __cdecl _aligned_offset_malloc_dbg( size_t size, size_t align, size_t offset,
-              const char * f_name, int line_n)
+			  const char * f_name, int line_n)
 {
-    return _aligned_offset_malloc(size, align, offset);
+	return _aligned_offset_malloc(size, align, offset);
 }
 
 void * __cdecl _aligned_offset_realloc_dbg( void * memblock, size_t size, size_t align, 
-                 size_t offset, const char * f_name, int line_n)
+				 size_t offset, const char * f_name, int line_n)
 {
-    return _aligned_offset_realloc(memblock, size, align, offset);
+	return _aligned_offset_realloc(memblock, size, align, offset);
 }
 
 void __cdecl _aligned_free_dbg( void * memblock)
 {
-    _aligned_free(memblock);
+	_aligned_free(memblock);
 }
 
 #if _MSC_VER < 1900
 size_t __cdecl _CrtSetDebugFillThreshold( size_t _NewDebugFillThreshold)
 {
 	Assert(0);
-    return 0;
+	return 0;
 }
 #endif
 
@@ -1137,24 +1137,24 @@ wchar_t * __cdecl _wcsdup ( const wchar_t * string )
 // Copied from C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\crt\src\mtdll.h
 #ifndef _SETLOC_STRUCT_DEFINED
 struct _is_ctype_compatible {
-        unsigned long id;
-        int is_clike;
+		unsigned long id;
+		int is_clike;
 };
 
 typedef struct setloc_struct {
-    /* getqloc static variables */
-    wchar_t *pchLanguage;
-    wchar_t *pchCountry;
-    int iLocState;
-    int iPrimaryLen;
-    BOOL bAbbrevLanguage;
-    BOOL bAbbrevCountry;
-    UINT        _cachecp;
-    wchar_t     _cachein[MAX_LC_LEN];
-    wchar_t     _cacheout[MAX_LC_LEN];
-    /* _setlocale_set_cat (LC_CTYPE) static variable */
-    struct _is_ctype_compatible _Loc_c[5];
-    wchar_t _cacheLocaleName[LOCALE_NAME_MAX_LENGTH];
+	/* getqloc static variables */
+	wchar_t *pchLanguage;
+	wchar_t *pchCountry;
+	int iLocState;
+	int iPrimaryLen;
+	BOOL bAbbrevLanguage;
+	BOOL bAbbrevCountry;
+	UINT        _cachecp;
+	wchar_t     _cachein[MAX_LC_LEN];
+	wchar_t     _cacheout[MAX_LC_LEN];
+	/* _setlocale_set_cat (LC_CTYPE) static variable */
+	struct _is_ctype_compatible _Loc_c[5];
+	wchar_t _cacheLocaleName[LOCALE_NAME_MAX_LENGTH];
 } _setloc_struct, *_psetloc_struct;
 #define _SETLOC_STRUCT_DEFINED
 #endif  /* _SETLOC_STRUCT_DEFINED */
@@ -1167,211 +1167,211 @@ _CRTIMP extern uintptr_t __cdecl __threadhandle(void);
 /* Structure for each thread's data */
 
 struct _tiddata {
-    unsigned long   _tid;       /* thread ID */
+	unsigned long   _tid;       /* thread ID */
 
 
-    uintptr_t _thandle;         /* thread handle */
+	uintptr_t _thandle;         /* thread handle */
 
-    int     _terrno;            /* errno value */
-    unsigned long   _tdoserrno; /* _doserrno value */
-    unsigned int    _fpds;      /* Floating Point data segment */
-    unsigned long   _holdrand;  /* rand() seed value */
-    char *      _token;         /* ptr to strtok() token */
-    wchar_t *   _wtoken;        /* ptr to wcstok() token */
-    unsigned char * _mtoken;    /* ptr to _mbstok() token */
+	int     _terrno;            /* errno value */
+	unsigned long   _tdoserrno; /* _doserrno value */
+	unsigned int    _fpds;      /* Floating Point data segment */
+	unsigned long   _holdrand;  /* rand() seed value */
+	char *      _token;         /* ptr to strtok() token */
+	wchar_t *   _wtoken;        /* ptr to wcstok() token */
+	unsigned char * _mtoken;    /* ptr to _mbstok() token */
 
-    /* following pointers get malloc'd at runtime */
-    char *      _errmsg;        /* ptr to strerror()/_strerror() buff */
-    wchar_t *   _werrmsg;       /* ptr to _wcserror()/__wcserror() buff */
-    char *      _namebuf0;      /* ptr to tmpnam() buffer */
-    wchar_t *   _wnamebuf0;     /* ptr to _wtmpnam() buffer */
-    char *      _namebuf1;      /* ptr to tmpfile() buffer */
-    wchar_t *   _wnamebuf1;     /* ptr to _wtmpfile() buffer */
-    char *      _asctimebuf;    /* ptr to asctime() buffer */
-    wchar_t *   _wasctimebuf;   /* ptr to _wasctime() buffer */
-    void *      _gmtimebuf;     /* ptr to gmtime() structure */
-    char *      _cvtbuf;        /* ptr to ecvt()/fcvt buffer */
-    unsigned char _con_ch_buf[MB_LEN_MAX];
-                                /* ptr to putch() buffer */
-    unsigned short _ch_buf_used;   /* if the _con_ch_buf is used */
+	/* following pointers get malloc'd at runtime */
+	char *      _errmsg;        /* ptr to strerror()/_strerror() buff */
+	wchar_t *   _werrmsg;       /* ptr to _wcserror()/__wcserror() buff */
+	char *      _namebuf0;      /* ptr to tmpnam() buffer */
+	wchar_t *   _wnamebuf0;     /* ptr to _wtmpnam() buffer */
+	char *      _namebuf1;      /* ptr to tmpfile() buffer */
+	wchar_t *   _wnamebuf1;     /* ptr to _wtmpfile() buffer */
+	char *      _asctimebuf;    /* ptr to asctime() buffer */
+	wchar_t *   _wasctimebuf;   /* ptr to _wasctime() buffer */
+	void *      _gmtimebuf;     /* ptr to gmtime() structure */
+	char *      _cvtbuf;        /* ptr to ecvt()/fcvt buffer */
+	unsigned char _con_ch_buf[MB_LEN_MAX];
+								/* ptr to putch() buffer */
+	unsigned short _ch_buf_used;   /* if the _con_ch_buf is used */
 
-    /* following fields are needed by _beginthread code */
-    void *      _initaddr;      /* initial user thread address */
-    void *      _initarg;       /* initial user thread argument */
+	/* following fields are needed by _beginthread code */
+	void *      _initaddr;      /* initial user thread address */
+	void *      _initarg;       /* initial user thread argument */
 
-    /* following three fields are needed to support signal handling and
-     * runtime errors */
-    void *      _pxcptacttab;   /* ptr to exception-action table */
-    void *      _tpxcptinfoptrs; /* ptr to exception info pointers */
-    int         _tfpecode;      /* float point exception code */
+	/* following three fields are needed to support signal handling and
+	 * runtime errors */
+	void *      _pxcptacttab;   /* ptr to exception-action table */
+	void *      _tpxcptinfoptrs; /* ptr to exception info pointers */
+	int         _tfpecode;      /* float point exception code */
 
 #if ( defined( _MSC_VER ) && _MSC_VER >= 1900)
 	void *ptmbcinfo_dummy;
 	void *ptlocinfo_dummy;
 #else
-    /* pointer to the copy of the multibyte character information used by
-     * the thread */
-    pthreadmbcinfo  ptmbcinfo;
+	/* pointer to the copy of the multibyte character information used by
+	 * the thread */
+	pthreadmbcinfo  ptmbcinfo;
 
-    /* pointer to the copy of the locale informaton used by the thead */
-    pthreadlocinfo  ptlocinfo;
+	/* pointer to the copy of the locale informaton used by the thead */
+	pthreadlocinfo  ptlocinfo;
 #endif
 
-    int         _ownlocale;     /* if 1, this thread owns its own locale */
+	int         _ownlocale;     /* if 1, this thread owns its own locale */
 
-    /* following field is needed by NLG routines */
-    unsigned long   _NLG_dwCode;
+	/* following field is needed by NLG routines */
+	unsigned long   _NLG_dwCode;
 
-    /*
-     * Per-Thread data needed by C++ Exception Handling
-     */
-    void *      _terminate;     /* terminate() routine */
-    void *      _unexpected;    /* unexpected() routine */
-    void *      _translator;    /* S.E. translator */
-    void *      _purecall;      /* called when pure virtual happens */
-    void *      _curexception;  /* current exception */
-    void *      _curcontext;    /* current exception context */
-    int         _ProcessingThrow; /* for uncaught_exception */
-    void *      _curexcspec;    /* for handling exceptions thrown from std::unexpected */
+	/*
+	 * Per-Thread data needed by C++ Exception Handling
+	 */
+	void *      _terminate;     /* terminate() routine */
+	void *      _unexpected;    /* unexpected() routine */
+	void *      _translator;    /* S.E. translator */
+	void *      _purecall;      /* called when pure virtual happens */
+	void *      _curexception;  /* current exception */
+	void *      _curcontext;    /* current exception context */
+	int         _ProcessingThrow; /* for uncaught_exception */
+	void *      _curexcspec;    /* for handling exceptions thrown from std::unexpected */
 #if defined (_M_X64) || defined (_M_ARM)
-    void *      _pExitContext;
-    void *      _pUnwindContext;
-    void *      _pFrameInfoChain;
+	void *      _pExitContext;
+	void *      _pUnwindContext;
+	void *      _pFrameInfoChain;
 #if defined (_WIN64)
-    unsigned __int64    _ImageBase;
-    unsigned __int64    _ThrowImageBase;
+	unsigned __int64    _ImageBase;
+	unsigned __int64    _ThrowImageBase;
 #else  /* defined (_WIN64) */
-    unsigned __int32    _ImageBase;
-    unsigned __int32    _ThrowImageBase;
+	unsigned __int32    _ImageBase;
+	unsigned __int32    _ThrowImageBase;
 #endif  /* defined (_WIN64) */
-    void *      _pForeignException;
+	void *      _pForeignException;
 #elif defined (_M_IX86)
-    void *      _pFrameInfoChain;
+	void *      _pFrameInfoChain;
 #endif  /* defined (_M_IX86) */
-    _setloc_struct _setloc_data;
+	_setloc_struct _setloc_data;
 
-    void *      _reserved1;     /* nothing */
-    void *      _reserved2;     /* nothing */
-    void *      _reserved3;     /* nothing */
+	void *      _reserved1;     /* nothing */
+	void *      _reserved2;     /* nothing */
+	void *      _reserved3;     /* nothing */
 #ifdef _M_IX86
-    void *      _reserved4;     /* nothing */
-    void *      _reserved5;     /* nothing */
+	void *      _reserved4;     /* nothing */
+	void *      _reserved5;     /* nothing */
 #endif  /* _M_IX86 */
 
-    int _cxxReThrow;        /* Set to True if it's a rethrown C++ Exception */
+	int _cxxReThrow;        /* Set to True if it's a rethrown C++ Exception */
 
-    unsigned long __initDomain;     /* initial domain used by _beginthread[ex] for managed function */
+	unsigned long __initDomain;     /* initial domain used by _beginthread[ex] for managed function */
 };
 #else // _MSC_VER >= 1700 // VS 11 (VS 2012)
 struct _is_ctype_compatible {
-        unsigned long id;
-        int is_clike;
+		unsigned long id;
+		int is_clike;
 };
 typedef struct setloc_struct {
-    /* getqloc static variables */
-    char *pchLanguage;
-    char *pchCountry;
-    int iLcidState;
-    int iPrimaryLen;
-    BOOL bAbbrevLanguage;
-    BOOL bAbbrevCountry;
-    LCID lcidLanguage;
-    LCID lcidCountry;
-    /* expand_locale static variables */
-    LC_ID       _cacheid;
-    UINT        _cachecp;
-    char        _cachein[MAX_LC_LEN];
-    char        _cacheout[MAX_LC_LEN];
-    /* _setlocale_set_cat (LC_CTYPE) static variable */
-    struct _is_ctype_compatible _Lcid_c[5];
+	/* getqloc static variables */
+	char *pchLanguage;
+	char *pchCountry;
+	int iLcidState;
+	int iPrimaryLen;
+	BOOL bAbbrevLanguage;
+	BOOL bAbbrevCountry;
+	LCID lcidLanguage;
+	LCID lcidCountry;
+	/* expand_locale static variables */
+	LC_ID       _cacheid;
+	UINT        _cachecp;
+	char        _cachein[MAX_LC_LEN];
+	char        _cacheout[MAX_LC_LEN];
+	/* _setlocale_set_cat (LC_CTYPE) static variable */
+	struct _is_ctype_compatible _Lcid_c[5];
 } _setloc_struct, *_psetloc_struct;
 
 struct _tiddata {
-    unsigned long   _tid;       /* thread ID */
+	unsigned long   _tid;       /* thread ID */
 
 
-    uintptr_t _thandle;         /* thread handle */
+	uintptr_t _thandle;         /* thread handle */
 
-    int     _terrno;            /* errno value */
-    unsigned long   _tdoserrno; /* _doserrno value */
-    unsigned int    _fpds;      /* Floating Point data segment */
-    unsigned long   _holdrand;  /* rand() seed value */
-    char *      _token;         /* ptr to strtok() token */
-    wchar_t *   _wtoken;        /* ptr to wcstok() token */
-    unsigned char * _mtoken;    /* ptr to _mbstok() token */
+	int     _terrno;            /* errno value */
+	unsigned long   _tdoserrno; /* _doserrno value */
+	unsigned int    _fpds;      /* Floating Point data segment */
+	unsigned long   _holdrand;  /* rand() seed value */
+	char *      _token;         /* ptr to strtok() token */
+	wchar_t *   _wtoken;        /* ptr to wcstok() token */
+	unsigned char * _mtoken;    /* ptr to _mbstok() token */
 
-    /* following pointers get malloc'd at runtime */
-    char *      _errmsg;        /* ptr to strerror()/_strerror() buff */
-    wchar_t *   _werrmsg;       /* ptr to _wcserror()/__wcserror() buff */
-    char *      _namebuf0;      /* ptr to tmpnam() buffer */
-    wchar_t *   _wnamebuf0;     /* ptr to _wtmpnam() buffer */
-    char *      _namebuf1;      /* ptr to tmpfile() buffer */
-    wchar_t *   _wnamebuf1;     /* ptr to _wtmpfile() buffer */
-    char *      _asctimebuf;    /* ptr to asctime() buffer */
-    wchar_t *   _wasctimebuf;   /* ptr to _wasctime() buffer */
-    void *      _gmtimebuf;     /* ptr to gmtime() structure */
-    char *      _cvtbuf;        /* ptr to ecvt()/fcvt buffer */
-    unsigned char _con_ch_buf[MB_LEN_MAX];
-                                /* ptr to putch() buffer */
-    unsigned short _ch_buf_used;   /* if the _con_ch_buf is used */
+	/* following pointers get malloc'd at runtime */
+	char *      _errmsg;        /* ptr to strerror()/_strerror() buff */
+	wchar_t *   _werrmsg;       /* ptr to _wcserror()/__wcserror() buff */
+	char *      _namebuf0;      /* ptr to tmpnam() buffer */
+	wchar_t *   _wnamebuf0;     /* ptr to _wtmpnam() buffer */
+	char *      _namebuf1;      /* ptr to tmpfile() buffer */
+	wchar_t *   _wnamebuf1;     /* ptr to _wtmpfile() buffer */
+	char *      _asctimebuf;    /* ptr to asctime() buffer */
+	wchar_t *   _wasctimebuf;   /* ptr to _wasctime() buffer */
+	void *      _gmtimebuf;     /* ptr to gmtime() structure */
+	char *      _cvtbuf;        /* ptr to ecvt()/fcvt buffer */
+	unsigned char _con_ch_buf[MB_LEN_MAX];
+								/* ptr to putch() buffer */
+	unsigned short _ch_buf_used;   /* if the _con_ch_buf is used */
 
-    /* following fields are needed by _beginthread code */
-    void *      _initaddr;      /* initial user thread address */
-    void *      _initarg;       /* initial user thread argument */
+	/* following fields are needed by _beginthread code */
+	void *      _initaddr;      /* initial user thread address */
+	void *      _initarg;       /* initial user thread argument */
 
-    /* following three fields are needed to support signal handling and
-     * runtime errors */
-    void *      _pxcptacttab;   /* ptr to exception-action table */
-    void *      _tpxcptinfoptrs; /* ptr to exception info pointers */
-    int         _tfpecode;      /* float point exception code */
+	/* following three fields are needed to support signal handling and
+	 * runtime errors */
+	void *      _pxcptacttab;   /* ptr to exception-action table */
+	void *      _tpxcptinfoptrs; /* ptr to exception info pointers */
+	int         _tfpecode;      /* float point exception code */
 
-    /* pointer to the copy of the multibyte character information used by
-     * the thread */
-    pthreadmbcinfo  ptmbcinfo;
+	/* pointer to the copy of the multibyte character information used by
+	 * the thread */
+	pthreadmbcinfo  ptmbcinfo;
 
-    /* pointer to the copy of the locale informaton used by the thead */
-    pthreadlocinfo  ptlocinfo;
-    int         _ownlocale;     /* if 1, this thread owns its own locale */
+	/* pointer to the copy of the locale informaton used by the thead */
+	pthreadlocinfo  ptlocinfo;
+	int         _ownlocale;     /* if 1, this thread owns its own locale */
 
-    /* following field is needed by NLG routines */
-    unsigned long   _NLG_dwCode;
+	/* following field is needed by NLG routines */
+	unsigned long   _NLG_dwCode;
 
-    /*
-     * Per-Thread data needed by C++ Exception Handling
-     */
-    void *      _terminate;     /* terminate() routine */
-    void *      _unexpected;    /* unexpected() routine */
-    void *      _translator;    /* S.E. translator */
-    void *      _purecall;      /* called when pure virtual happens */
-    void *      _curexception;  /* current exception */
-    void *      _curcontext;    /* current exception context */
-    int         _ProcessingThrow; /* for uncaught_exception */
-    void *              _curexcspec;    /* for handling exceptions thrown from std::unexpected */
+	/*
+	 * Per-Thread data needed by C++ Exception Handling
+	 */
+	void *      _terminate;     /* terminate() routine */
+	void *      _unexpected;    /* unexpected() routine */
+	void *      _translator;    /* S.E. translator */
+	void *      _purecall;      /* called when pure virtual happens */
+	void *      _curexception;  /* current exception */
+	void *      _curcontext;    /* current exception context */
+	int         _ProcessingThrow; /* for uncaught_exception */
+	void *              _curexcspec;    /* for handling exceptions thrown from std::unexpected */
 #if defined (_M_IA64) || defined (_M_AMD64)
-    void *      _pExitContext;
-    void *      _pUnwindContext;
-    void *      _pFrameInfoChain;
-    unsigned __int64    _ImageBase;
+	void *      _pExitContext;
+	void *      _pUnwindContext;
+	void *      _pFrameInfoChain;
+	unsigned __int64    _ImageBase;
 #if defined (_M_IA64)
-    unsigned __int64    _TargetGp;
+	unsigned __int64    _TargetGp;
 #endif  /* defined (_M_IA64) */
-    unsigned __int64    _ThrowImageBase;
-    void *      _pForeignException;
+	unsigned __int64    _ThrowImageBase;
+	void *      _pForeignException;
 #elif defined (_M_IX86)
-    void *      _pFrameInfoChain;
+	void *      _pFrameInfoChain;
 #endif  /* defined (_M_IX86) */
-    _setloc_struct _setloc_data;
+	_setloc_struct _setloc_data;
 
-    void *      _encode_ptr;    /* EncodePointer() routine */
-    void *      _decode_ptr;    /* DecodePointer() routine */
+	void *      _encode_ptr;    /* EncodePointer() routine */
+	void *      _decode_ptr;    /* DecodePointer() routine */
 
-    void *      _reserved1;     /* nothing */
-    void *      _reserved2;     /* nothing */
-    void *      _reserved3;     /* nothing */
+	void *      _reserved1;     /* nothing */
+	void *      _reserved2;     /* nothing */
+	void *      _reserved3;     /* nothing */
 
-    int _cxxReThrow;        /* Set to True if it's a rethrown C++ Exception */
+	int _cxxReThrow;        /* Set to True if it's a rethrown C++ Exception */
 
-    unsigned long __initDomain;     /* initial domain used by _beginthread[ex] for managed function */
+	unsigned long __initDomain;     /* initial domain used by _beginthread[ex] for managed function */
 };
 #endif // _MSC_VER >= 1700 // VS 11 (VS 2012)
 
@@ -1382,43 +1382,43 @@ typedef struct _tiddata * _ptiddata;
 #else
 class _LocaleUpdate
 {
-    _locale_tstruct localeinfo;
-    _ptiddata ptd;
-    bool updated;
-    public:
-    _LocaleUpdate(_locale_t plocinfo)
-        : updated(false)
-    {
+	_locale_tstruct localeinfo;
+	_ptiddata ptd;
+	bool updated;
+	public:
+	_LocaleUpdate(_locale_t plocinfo)
+		: updated(false)
+	{
 		/*
-        if (plocinfo == nullptr)
-        {
-            ptd = _getptd();
-            localeinfo.locinfo = ptd->ptlocinfo;
-            localeinfo.mbcinfo = ptd->ptmbcinfo;
+		if (plocinfo == nullptr)
+		{
+			ptd = _getptd();
+			localeinfo.locinfo = ptd->ptlocinfo;
+			localeinfo.mbcinfo = ptd->ptmbcinfo;
 
-            __UPDATE_LOCALE(ptd, localeinfo.locinfo);
-            __UPDATE_MBCP(ptd, localeinfo.mbcinfo);
-            if (!(ptd->_ownlocale & _PER_THREAD_LOCALE_BIT))
-            {
-                ptd->_ownlocale |= _PER_THREAD_LOCALE_BIT;
-                updated = true;
-            }
-        }
-        else
-        {
-            localeinfo=*plocinfo;
-        }
+			__UPDATE_LOCALE(ptd, localeinfo.locinfo);
+			__UPDATE_MBCP(ptd, localeinfo.mbcinfo);
+			if (!(ptd->_ownlocale & _PER_THREAD_LOCALE_BIT))
+			{
+				ptd->_ownlocale |= _PER_THREAD_LOCALE_BIT;
+				updated = true;
+			}
+		}
+		else
+		{
+			localeinfo=*plocinfo;
+		}
 		*/
-    }
-    ~_LocaleUpdate()
-    {
+	}
+	~_LocaleUpdate()
+	{
 //        if (updated)
 //	        ptd->_ownlocale = ptd->_ownlocale & ~_PER_THREAD_LOCALE_BIT;
-    }
-    _locale_t GetLocaleT()
-    {
-        return &localeinfo;
-    }
+	}
+	_locale_t GetLocaleT()
+	{
+		return &localeinfo;
+	}
 };
 #endif //_MSC_VER
 
@@ -1432,52 +1432,52 @@ class _LocaleUpdate
 
 namespace _NATIVE_STARTUP_NAMESPACE
 {
-    class NativeDll
-    {
-    private:
-        static const unsigned int ProcessDetach   = 0;
-        static const unsigned int ProcessAttach   = 1;
-        static const unsigned int ThreadAttach    = 2;
-        static const unsigned int ThreadDetach    = 3;
-        static const unsigned int ProcessVerifier = 4;
+	class NativeDll
+	{
+	private:
+		static const unsigned int ProcessDetach   = 0;
+		static const unsigned int ProcessAttach   = 1;
+		static const unsigned int ThreadAttach    = 2;
+		static const unsigned int ThreadDetach    = 3;
+		static const unsigned int ProcessVerifier = 4;
 
-    public:
+	public:
 
-        inline static bool IsInDllMain()
-        {
-            return false;
-        }
+		inline static bool IsInDllMain()
+		{
+			return false;
+		}
 
-        inline static bool IsInProcessAttach()
-        {
-            return false;
-        }
+		inline static bool IsInProcessAttach()
+		{
+			return false;
+		}
 
-        inline static bool IsInProcessDetach()
-        {
-            return false;
-        }
+		inline static bool IsInProcessDetach()
+		{
+			return false;
+		}
 
-        inline static bool IsInVcclrit()
-        {
-            return false;
-        }
+		inline static bool IsInVcclrit()
+		{
+			return false;
+		}
 
-        inline static bool IsSafeForManagedCode()
-        {
-            if (!IsInDllMain())
-            {
-                return true;
-            }
+		inline static bool IsSafeForManagedCode()
+		{
+			if (!IsInDllMain())
+			{
+				return true;
+			}
 
-            if (IsInVcclrit())
-            {
-                return true;
-            }
+			if (IsInVcclrit())
+			{
+				return true;
+			}
 
-            return !IsInProcessAttach() && !IsInProcessDetach();
-        }
-    };
+			return !IsInProcessAttach() && !IsInProcessDetach();
+		}
+	};
 }
 #pragma warning(pop)
 

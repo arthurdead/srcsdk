@@ -8,6 +8,8 @@
 #ifndef C_FIRE_SMOKE_H
 #define C_FIRE_SMOKE_H
 
+#pragma once
+
 #include "particles_simple.h"
 #include "tempent.h"
 #include "glow_overlay.h"

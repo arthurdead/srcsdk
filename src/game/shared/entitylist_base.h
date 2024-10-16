@@ -19,15 +19,16 @@ COMPILE_TIME_ASSERT(GAME_NUM_ENT_ENTRIES > ENGINE_NUM_ENT_ENTRIES);
 
 #ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
 #else
-#define CBaseEntity C_BaseEntity
 class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
 #endif
 
 class CEntInfo
 {
 public:
-	CBaseEntity *m_pBaseEnt;
+	CSharedBaseEntity *m_pBaseEnt;
 	int				m_SerialNumber;
 	CEntInfo		*m_pPrev;
 	CEntInfo		*m_pNext;
@@ -45,8 +46,8 @@ public:
 	// Add and remove entities. iForcedSerialNum should only be used on the client. The server
 	// gets to dictate what the networkable serial numbers are on the client so it can send
 	// ehandles over and they work.
-	EHANDLE AddNetworkableEntity( CBaseEntity *pEnt, int index, int iForcedSerialNum = -1 );
-	EHANDLE AddNonNetworkableEntity( CBaseEntity *pEnt );
+	EHANDLE AddNetworkableEntity( CSharedBaseEntity *pEnt, int index, int iForcedSerialNum = -1 );
+	EHANDLE AddNonNetworkableEntity( CSharedBaseEntity *pEnt );
 	void RemoveEntity( CBaseHandle handle );
 
 	// Get an ehandle from a networkable entity's index (note: if there is no entity in that slot,
@@ -54,8 +55,8 @@ public:
 	EHANDLE GetNetworkableHandle( int iEntity ) const;
 
 	// ehandles use this in their Get() function to produce a pointer to the entity.
-	CBaseEntity* LookupEntity( const CBaseHandle &handle ) const;
-	CBaseEntity* LookupEntityByNetworkIndex( int edictIndex ) const;
+	CSharedBaseEntity* LookupEntity( const CBaseHandle &handle ) const;
+	CSharedBaseEntity* LookupEntityByNetworkIndex( int edictIndex ) const;
 
 	// Use these to iterate over all the entities.
 	EHANDLE FirstHandle() const;
@@ -75,16 +76,16 @@ public:
 protected:
 
 	// These are notifications to the derived class. It can cache info here if it wants.
-	virtual void OnAddEntity( CBaseEntity *pEnt, EHANDLE handle ) = 0;
+	virtual void OnAddEntity( CSharedBaseEntity *pEnt, EHANDLE handle ) = 0;
 	
 	// It is safe to delete the entity here. We won't be accessing the pointer after
 	// calling OnRemoveEntity.
-	virtual void OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle ) = 0;
+	virtual void OnRemoveEntity( CSharedBaseEntity *pEnt, EHANDLE handle ) = 0;
 
 
 private:
 
-	EHANDLE AddEntityAtSlot( CBaseEntity *pEnt, int iSlot, int iForcedSerialNum );
+	EHANDLE AddEntityAtSlot( CSharedBaseEntity *pEnt, int iSlot, int iForcedSerialNum );
 	void RemoveEntityAtSlot( int iSlot );
 
 	
@@ -144,7 +145,7 @@ inline EHANDLE CBaseEntityList::GetNetworkableHandle( int iEntity ) const
 }
 
 
-inline CBaseEntity* CBaseEntityList::LookupEntity( const CBaseHandle &handle ) const
+inline CSharedBaseEntity* CBaseEntityList::LookupEntity( const CBaseHandle &handle ) const
 {
 	if ( handle.m_Index == INVALID_EHANDLE_INDEX )
 		return NULL;
@@ -157,7 +158,7 @@ inline CBaseEntity* CBaseEntityList::LookupEntity( const CBaseHandle &handle ) c
 }
 
 
-inline CBaseEntity* CBaseEntityList::LookupEntityByNetworkIndex( int edictIndex ) const
+inline CSharedBaseEntity* CBaseEntityList::LookupEntityByNetworkIndex( int edictIndex ) const
 {
 	// (Legacy support).
 	if ( edictIndex < 0 )

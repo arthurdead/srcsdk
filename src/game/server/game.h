@@ -9,8 +9,10 @@
 #ifndef GAME_H
 #define GAME_H
 
+#pragma once
 
 #include "globals.h"
+#include "tier1/convar.h"
 
 extern void GameDLLInit( void );
 

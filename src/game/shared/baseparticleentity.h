@@ -12,28 +12,45 @@
 #ifndef PARTICLE_BASEEFFECT_H
 #define PARTICLE_BASEEFFECT_H
 
+#pragma once
+
 #include "predictable_entity.h"
 #include "baseentity_shared.h"
 
 #if defined( CLIENT_DLL )
-#define CBaseParticleEntity C_BaseParticleEntity
+class C_BaseParticleEntity;
+typedef C_BaseParticleEntity CSharedBaseParticleEntity;
 
 #include "particlemgr.h"
 
+#else
+class CBaseParticleEntity;
+typedef CBaseParticleEntity CSharedBaseParticleEntity;
 #endif 
 
-class CBaseParticleEntity : public CBaseEntity
+#if defined( CLIENT_DLL )
+	#define CBaseParticleEntity C_BaseParticleEntity
+#endif
+
+class CBaseParticleEntity : public CSharedBaseEntity
 #if defined( CLIENT_DLL )
 , public IParticleEffect
 #endif
 {
 public:
-	DECLARE_CLASS( CBaseParticleEntity, CBaseEntity );
-	DECLARE_PREDICTABLE();
-	DECLARE_NETWORKCLASS();
-
+	DECLARE_CLASS( CBaseParticleEntity, CSharedBaseEntity );
 	CBaseParticleEntity();
 	virtual ~CBaseParticleEntity();
+private:
+	CBaseParticleEntity( const CBaseParticleEntity & ); // not defined, not accessible
+public:
+
+#if defined( CLIENT_DLL )
+	#undef CBaseParticleEntity
+#endif
+
+	DECLARE_PREDICTABLE();
+	DECLARE_NETWORKCLASS();
 
 	// CBaseEntity overrides.
 public:
@@ -69,25 +86,22 @@ private:
 #endif
 
 public:
-	void			FollowEntity(CBaseEntity *pEntity);
+	void			FollowEntity(CSharedBaseEntity *pEntity);
 	
 	// UTIL_Remove will be called after the specified amount of time.
 	// If you pass in -1, the entity will never go away automatically.
 	void			SetLifetime(float lifetime);
-
-private:
-	CBaseParticleEntity( const CBaseParticleEntity & ); // not defined, not accessible
 };
 
 
 #if defined( CLIENT_DLL )
 
-inline int CBaseParticleEntity::GetToolParticleEffectId() const
+inline int C_BaseParticleEntity::GetToolParticleEffectId() const
 {
 	return m_nToolParticleEffectId;
 }
 
-inline int CBaseParticleEntity::AllocateToolParticleEffectId()
+inline int C_BaseParticleEntity::AllocateToolParticleEffectId()
 {
 	m_nToolParticleEffectId = ParticleMgr()->AllocateToolParticleEffectId();
 	return m_nToolParticleEffectId;

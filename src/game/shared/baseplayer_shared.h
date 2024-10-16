@@ -79,10 +79,11 @@ void CopySoundNameWithModifierToken( char *pchDest, const char *pchSource, int n
 
 // Shared header file for players
 #if defined( CLIENT_DLL )
-#define CBasePlayer C_BasePlayer
 #include "c_baseplayer.h"
+typedef C_BasePlayer CSharedBasePlayer;
 #else
 #include "player.h"
+typedef CBasePlayer CSharedBasePlayer;
 #endif
 
 #endif // BASEPLAYER_SHARED_H

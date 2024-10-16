@@ -7,6 +7,8 @@
 #ifndef _BITMAPFONTFILE_H_
 #define _BITMAPFONTFILE_H_
 
+#pragma once
+
 #include "datamap.h"
 
 #define BITMAPFONT_ID		(('T'<<24)|('N'<<16)|('F'<<8)|('V'))

@@ -15,7 +15,7 @@ else
 	error('unsupported system')
 endif
 
-bitmap_dep = declare_dependency(
+appframework_dep = declare_dependency(
 	include_directories: include_directories(
 		join_paths(src_root_dir,'public','appframework')
 	),

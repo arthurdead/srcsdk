@@ -19,17 +19,21 @@
 
 IMPLEMENT_NETWORKCLASS_ALIASED( BaseParticleEntity, DT_BaseParticleEntity )
 
-BEGIN_NETWORK_TABLE( CBaseParticleEntity, DT_BaseParticleEntity )
+BEGIN_NETWORK_TABLE( CSharedBaseParticleEntity, DT_BaseParticleEntity )
 END_NETWORK_TABLE()
 
-BEGIN_PREDICTION_DATA(	CBaseParticleEntity )
+#ifdef CLIENT_DLL
+BEGIN_PREDICTION_DATA(	C_BaseParticleEntity )
 END_PREDICTION_DATA()
 
-#ifdef CLIENT_DLL
-REGISTER_EFFECT( CBaseParticleEntity );
+REGISTER_EFFECT( C_BaseParticleEntity );
 #endif
 
-CBaseParticleEntity::CBaseParticleEntity( void )
+#if defined( CLIENT_DLL )
+	#define CBaseParticleEntity C_BaseParticleEntity
+#endif
+
+CSharedBaseParticleEntity::CBaseParticleEntity( void )
 {
 #if defined( CLIENT_DLL )
 	m_bSimulate = true;
@@ -37,7 +41,7 @@ CBaseParticleEntity::CBaseParticleEntity( void )
 #endif
 }
 
-CBaseParticleEntity::~CBaseParticleEntity( void )
+CSharedBaseParticleEntity::~CBaseParticleEntity( void )
 {
 #if defined( CLIENT_DLL )
 	if ( ToolsEnabled() && ( m_nToolParticleEffectId != TOOLPARTICLESYSTEMID_INVALID ) && clienttools->IsInRecordingMode() )
@@ -49,8 +53,12 @@ CBaseParticleEntity::~CBaseParticleEntity( void )
 #endif
 }
 
+#if defined( CLIENT_DLL )
+	#undef CBaseParticleEntity
+#endif
+
 #if !defined( CLIENT_DLL )
-int CBaseParticleEntity::UpdateTransmitState( void )
+int CSharedBaseParticleEntity::UpdateTransmitState( void )
 {
 	if ( IsEffectActive( EF_NODRAW ) )
 		return SetTransmitState( FL_EDICT_DONTSEND );
@@ -63,7 +71,7 @@ int CBaseParticleEntity::UpdateTransmitState( void )
 }
 #endif
 
-void CBaseParticleEntity::Activate()
+void CSharedBaseParticleEntity::Activate()
 {
 #if !defined( CLIENT_DLL )
 	BaseClass::Activate();
@@ -71,20 +79,20 @@ void CBaseParticleEntity::Activate()
 }	
 
 
-void CBaseParticleEntity::Think()
+void CSharedBaseParticleEntity::Think()
 {
 	UTIL_Remove( this );
 }
 
 
-void CBaseParticleEntity::FollowEntity(CBaseEntity *pEntity)
+void CSharedBaseParticleEntity::FollowEntity(CSharedBaseEntity *pEntity)
 {
 	BaseClass::FollowEntity( pEntity );
 	SetLocalOrigin( vec3_origin );
 }
 
 
-void CBaseParticleEntity::SetLifetime(float lifetime)
+void CSharedBaseParticleEntity::SetLifetime(float lifetime)
 {
 	if(lifetime == -1)
 		SetNextThink( TICK_NEVER_THINK );
@@ -93,20 +101,20 @@ void CBaseParticleEntity::SetLifetime(float lifetime)
 }
 
 #if defined( CLIENT_DLL )
-const Vector &CBaseParticleEntity::GetSortOrigin()
+const Vector &CSharedBaseParticleEntity::GetSortOrigin()
 {
 	// By default, we do the cheaper behavior of getting the root parent's abs origin, so we don't have to
 	// setup any bones along the way. If this screws anything up, we can always make it an option.
 	return GetRootMoveParent()->GetAbsOrigin();
 }
 
-void CBaseParticleEntity::SimulateParticles( CParticleSimulateIterator *pIterator )
+void CSharedBaseParticleEntity::SimulateParticles( CParticleSimulateIterator *pIterator )
 {
 	// If you derive from CBaseParticleEntity, you must implement simulation and rendering.
 	Assert( false );
 }
 
-void CBaseParticleEntity::RenderParticles( CParticleRenderIterator *pIterator )
+void CSharedBaseParticleEntity::RenderParticles( CParticleRenderIterator *pIterator )
 {
 	// If you derive from CBaseParticleEntity, you must implement simulation and rendering.
 	Assert( false );

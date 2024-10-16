@@ -7,6 +7,8 @@
 #ifndef INFO_CAMERA_LINK_H
 #define INFO_CAMERA_LINK_H
 
+#pragma once
+
 #include "baseentity.h"
 
 //-----------------------------------------------------------------------------

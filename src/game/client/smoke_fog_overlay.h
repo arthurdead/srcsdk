@@ -9,6 +9,7 @@
 #ifndef SMOKE_FOG_OVERLAY_H
 #define SMOKE_FOG_OVERLAY_H
 
+#pragma once
 
 #include "basetypes.h"
 #include "mathlib/vector.h"

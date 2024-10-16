@@ -2,6 +2,9 @@
 
 #define PANEL_H
 #define EDITABLEPANEL_H
+#define LABEL_H
+#define TREEVIEW_H
+#define VGUI_FRAME_H
 #include "tier1/utlflags.h"
 #include "vgui/VGUI.h"
 #include "vgui/Dar.h"
@@ -23,9 +26,24 @@
 #include "vgui_controls/Panel.h"
 #undef protected
 
+#undef LABEL_H
+#define protected public
+#include "vgui_controls/Label.h"
+#undef protected
+
+#undef TREEVIEW_H
+#define protected public
+#include "vgui_controls/TreeView.h"
+#undef protected
+
 #undef EDITABLEPANEL_H
 #define protected public
 #include "vgui_controls/EditablePanel.h"
+#undef protected
+
+#undef VGUI_FRAME_H
+#define protected public
+#include "vgui_controls/Frame.h"
 #undef protected
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -68,4 +86,15 @@ extern "C"
 	{ pthis->EditablePanel::OnDefaultButtonSet((vgui::VPANEL)pane); }
 	LIB_LOCAL SELECTANY void THISCALL _ZN4vgui13EditablePanel25OnCurrentDefaultButtonSetEj(vgui::EditablePanel *pthis, unsigned int pane)
 	{ pthis->EditablePanel::OnCurrentDefaultButtonSet((vgui::VPANEL)pane); }
+
+	LIB_LOCAL SELECTANY void THISCALL _ZN4vgui5Label7SetFontEm(vgui::Label *pthis, unsigned long fnt)
+	{ pthis->Label::SetFont((vgui::HFont)fnt); }
+	LIB_LOCAL SELECTANY void THISCALL _ZN4vgui5Label14OnRequestFocusEjj(vgui::Label *pthis, unsigned int pane, unsigned int pane2)
+	{ pthis->Label::OnRequestFocus((vgui::VPANEL)pane, (vgui::VPANEL)pane2); }
+
+	LIB_LOCAL SELECTANY void THISCALL _ZN4vgui8TreeView7SetFontEm(vgui::TreeView *pthis, unsigned long fnt)
+	{ pthis->TreeView::SetFont((vgui::HFont)fnt); }
+
+	LIB_LOCAL SELECTANY void THISCALL _ZN4vgui5Frame12OnChildAddedEj(vgui::Frame *pthis, unsigned int pane)
+	{ pthis->Frame::OnChildAdded((vgui::VPANEL)pane); }
 }

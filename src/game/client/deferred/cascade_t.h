@@ -1,6 +1,8 @@
 #ifndef CASCADE_T_H
 #define CASCADE_T_H
 
+#pragma once
+
 #include "deferred/deferred_shared_common.h"
 
 struct cascade_t

@@ -317,6 +317,16 @@ typedef struct tagRGBQUAD {
 #define offsetof(s,m)	(size_t)&(((s *)0)->m)
 #endif
 
+#define V_CONCAT2_INTERNAL(x1,x2) x1##x2
+#define V_CONCAT2(x1,x2) V_CONCAT2_INTERNAL(x1,x2)
+
+#define V_CONCAT3_INTERNAL(x1,x2,x3) x1##x2##x3
+#define V_CONCAT3(x1,x2,x3) V_CONCAT3_INTERNAL(x1,x2,x3)
+
+// Stringify a number
+#define V_STRINGIFY_INTERNAL(x) #x
+// Extra level of indirection needed when passing in a macro to avoid getting the macro name instead of value
+#define V_STRINGIFY(x) V_STRINGIFY_INTERNAL(x)
 
 #define ALIGN_VALUE( val, alignment ) ( ( val + alignment - 1 ) & ~( alignment - 1 ) ) //  need macro for constant expression
 

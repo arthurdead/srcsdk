@@ -1,7 +1,7 @@
 #ifndef CDEFERRED_MANAGER_SERVER_H
 #define CDEFERRED_MANAGER_SERVER_H
 
-
+#pragma once
 
 class CDeferredLight;
 

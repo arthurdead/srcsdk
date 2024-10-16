@@ -8,6 +8,8 @@
 #ifndef SMOKE_TRAIL_H
 #define SMOKE_TRAIL_H
 
+#pragma once
+
 #include "baseparticleentity.h"
 
 //==================================================

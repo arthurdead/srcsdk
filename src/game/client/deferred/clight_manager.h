@@ -1,6 +1,8 @@
 #ifndef C_LIGHT_MANAGER_H
 #define C_LIGHT_MANAGER_H
 
+#pragma once
+
 class CViewSetup;
 class CDeferredViewRender;
 #if DEFCFG_USE_SSE

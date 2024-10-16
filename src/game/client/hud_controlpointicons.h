@@ -8,7 +8,6 @@
 #define HUD_CONTROLPOINTICONS_H
 #pragma once
 
-#include "cbase.h"
 #include "hudelement.h"
 #include <vgui_controls/Panel.h>
 #include <vgui_controls/Label.h>

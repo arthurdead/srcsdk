@@ -150,6 +150,9 @@ bool CAI_Enemies::ShouldDiscardMemory( AI_EnemyInfo_t *pMemory )
 		CAI_BaseNPC *pEnemyNPC = pEnemy->MyNPCPointer();
 		if ( pEnemyNPC )
 		{
+			if ( pEnemyNPC->IsMarkedForDeletion() )
+				return true;
+
 			if ( pEnemyNPC->GetState() == NPC_STATE_DEAD )
 				return true;
 

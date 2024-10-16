@@ -5,6 +5,8 @@
 #ifndef VGUI_CLIENTSCHEMEVISUALIZER_H
 #define VGUI_CLIENTSCHEMEVISUALIZER_H
 
+#pragma once
+
 //----------------------------------------------------------------------------------------
 
 #include "vgui_controls/Frame.h"

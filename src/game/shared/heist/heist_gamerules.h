@@ -3,32 +3,56 @@
 
 #pragma once
 
-#ifdef CLIENT_DLL
-	#define CHeistGameRules C_HeistGameRules
-	#define CHeistGameRulesProxy C_HeistGameRulesProxy
-#endif
-
 #include "gamerules.h"
 #include "heist_shareddefs.h"
 
-class CHeistGameRulesProxy : public CGameRulesProxy
+#ifdef CLIENT_DLL
+class C_HeistGameRulesProxy;
+typedef C_HeistGameRulesProxy CSharedHeistGameRulesProxy;
+class C_HeistGameRules;
+typedef C_HeistGameRules CSharedHeistGameRules;
+#else
+class CHeistGameRulesProxy;
+typedef CHeistGameRulesProxy CSharedHeistGameRulesProxy;
+class CHeistGameRules;
+typedef CHeistGameRules CSharedHeistGameRules;
+#endif
+
+#ifdef CLIENT_DLL
+	#define CHeistGameRulesProxy C_HeistGameRulesProxy
+#endif
+
+class CHeistGameRulesProxy : public CSharedGameRulesProxy
 {
 public:
-	DECLARE_CLASS( CHeistGameRulesProxy, CGameRulesProxy );
+	DECLARE_CLASS( CHeistGameRulesProxy, CSharedGameRulesProxy );
+
+#ifdef CLIENT_DLL
+	#undef CHeistGameRulesProxy
+#endif
+
 	DECLARE_NETWORKCLASS();
 };
 
-class CHeistGameRules : public CGameRules
+#ifdef CLIENT_DLL
+	#define CHeistGameRules C_HeistGameRules
+#endif
+
+class CHeistGameRules : public CSharedGameRules
 {
 public:
-	DECLARE_CLASS(CHeistGameRules, CGameRules);
-	DECLARE_NETWORKCLASS();
-
+	DECLARE_CLASS(CHeistGameRules, CSharedGameRules);
 	CHeistGameRules();
 	~CHeistGameRules() override;
+	const char *Name() override { return V_STRINGIFY(CHeistGameRules); }
 
-	const unsigned char *GetEncryptionKey() override
-	{ return (unsigned char *)"x9Ke0BY7"; }
+#ifdef CLIENT_DLL
+	#undef CHeistGameRules
+#endif
+
+	DECLARE_NETWORKCLASS();
+
+	const unsigned char *GetEncryptionKey() override;
 
 #ifndef CLIENT_DLL
 	virtual CGameRulesProxy *AllocateProxy();
@@ -47,18 +71,20 @@ public:
 	virtual const char *GetGameDescription( void ) { return "Heist"; }
 #endif
 
-	void SetSpotted(bool value);
-
-	bool AnyoneSpotted() const
-	{ return m_bHeistersSpotted; }
+#ifdef CLIENT_DLL
+	int GetMissionState() const
+	{ return m_nMissionState; }
+#endif
 
 private:
-	CNetworkVar(bool, m_bHeistersSpotted);
+	friend class CMissionDirector;
+
+	CNetworkVar(int, m_nMissionState);
 };
 
-inline CHeistGameRules *HeistGameRules()
+inline CSharedHeistGameRules *HeistGameRules()
 {
-	return static_cast<CHeistGameRules*>(GameRules());
+	return static_cast<CSharedHeistGameRules*>(GameRules());
 }
 
 #endif

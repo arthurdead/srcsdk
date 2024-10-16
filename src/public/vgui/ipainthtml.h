@@ -7,6 +7,8 @@
 #ifndef IPAINTHTML_H
 #define IPAINTHTML_H
 
+#pragma once
+
 class IPaintHTML
 {
 public:

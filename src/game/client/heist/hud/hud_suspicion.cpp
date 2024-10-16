@@ -3,7 +3,6 @@
 #include "hud_element_helper.h"
 #include "vgui_controls/Panel.h"
 #include "iclientmode.h"
-#include "suspicioner.h"
 #include "heist_gamerules.h"
 #include "tier1/utlmap.h"
 #include "view.h"
@@ -58,7 +57,7 @@ bool CHudSuspicion::ShouldDraw()
 		return false;
 	}
 
-	if(HeistGameRules() && HeistGameRules()->AnyoneSpotted()) {
+	if(HeistGameRules() && HeistGameRules()->GetMissionState() != MISSION_STATE_CASING) {
 		return false;
 	}
 
@@ -82,26 +81,9 @@ void CHudSuspicion::OnThink()
 {
 	BasePanel::OnThink();
 
-	if(HeistGameRules() && HeistGameRules()->AnyoneSpotted()) {
+	if(HeistGameRules() && HeistGameRules()->GetMissionState() != MISSION_STATE_CASING) {
 		return;
 	}
 
-	auto &suspicioner_list = C_Suspicioner::List();
-	FOR_EACH_VEC(suspicioner_list, i) {
-		const C_Suspicioner &suspicioner = *suspicioner_list[i];
-
-		EHANDLE entity = suspicioner.GetOwner();
-		if(!entity.IsValid()) {
-			continue;
-		}
-
-		auto meter_idx = m_Meters.Find(entity);
-		if(meter_idx == m_Meters.InvalidIndex()) {
-		#if 0
-			meter_idx = m_Meters.Insert(entity, 
-				CREATE_PANEL(SuspicionMeter)
-			);
-		#endif
-		}
-	}
+	
 }

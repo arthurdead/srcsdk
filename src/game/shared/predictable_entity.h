@@ -62,19 +62,19 @@ class SendTable;
 		template <typename T> friend datamap_t *PredMapInit(T *)
 
 #define BEGIN_PREDICTION_DATA( className ) \
-	datamap_t className::m_PredMap = { 0, 0, #className, &BaseClass::m_PredMap }; \
+	datamap_t className::m_PredMap = { 0, 0, V_STRINGIFY(className), &BaseClass::m_PredMap }; \
 	datamap_t *className::GetPredDescMap( void ) { return &m_PredMap; } \
 	BEGIN_PREDICTION_DATA_GUTS( className )
 
 #define BEGIN_PREDICTION_DATA_NO_BASE( className ) \
-	datamap_t className::m_PredMap = { 0, 0, #className, NULL }; \
+	datamap_t className::m_PredMap = { 0, 0, V_STRINGIFY(className), NULL }; \
 	datamap_t *className::GetPredDescMap( void ) { return &m_PredMap; } \
 	BEGIN_PREDICTION_DATA_GUTS( className )
 
 #define BEGIN_PREDICTION_DATA_GUTS( className ) \
 	template <typename T> datamap_t *PredMapInit(T *); \
 	template <> datamap_t *PredMapInit<className>( className * ); \
-	namespace className##_PredDataDescInit \
+	namespace V_CONCAT2(className, _PredDataDescInit) \
 	{ \
 		datamap_t *g_PredMapHolder = PredMapInit( (className *)NULL ); /* This can/will be used for some clean up duties later */ \
 	} \
@@ -131,7 +131,7 @@ class SendTable;
 	public:																	\
 		C##localName##Foo( void )											\
 		{																	\
-			GetClassMap().Add( #localName, #className, sizeof( className ),	\
+			GetClassMap().Add( #localName, V_STRINGIFY(className), sizeof( className ),	\
 				&C##localName##Factory );									\
 		}																	\
 	};																		\
@@ -141,6 +141,8 @@ class SendTable;
 #define BEGIN_NETWORK_TABLE_NOBASE( className, tableName ) BEGIN_RECV_TABLE_NOBASE( className, tableName )
 
 #define END_NETWORK_TABLE	END_RECV_TABLE
+
+#define LINK_ENTITY_TO_CLASS_ALIASED( localName, className ) LINK_ENTITY_TO_CLASS( localName, C_##className )
 
 #define IMPLEMENT_NETWORKCLASS_ALIASED(className, dataTable)			\
 	IMPLEMENT_CLIENTCLASS( C_##className, dataTable, C##className )
@@ -156,6 +158,8 @@ class SendTable;
 
 #define END_NETWORK_TABLE	END_SEND_TABLE
 
+#define LINK_ENTITY_TO_CLASS_ALIASED( localName, className ) LINK_ENTITY_TO_CLASS( localName, C##className )
+
 #define IMPLEMENT_NETWORKCLASS_ALIASED(className, dataTable)			\
 	IMPLEMENT_SERVERCLASS( C##className, dataTable )
 #define IMPLEMENT_NETWORKCLASS(className, dataTable)			\
@@ -170,7 +174,7 @@ abstract_class IPredictableList
 {
 public:
 	// Get predictables by index
-	virtual CBaseEntity		*GetPredictable( int slot ) = 0;
+	virtual CSharedBaseEntity		*GetPredictable( int slot ) = 0;
 	// Get count of predictables
 	virtual int				GetPredictableCount( void ) const = 0;
 };

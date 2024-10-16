@@ -1275,6 +1275,11 @@ KeyValues* KeyValues::GetNextValue()
 // Purpose: Get the integer value of a keyName. Default value is returned
 //			if the keyName can't be found.
 //-----------------------------------------------------------------------------
+int KeyValues::GetInt( const char *keyName, int defaultValue )
+{
+	return static_cast<const KeyValues *>(this)->GetInt( keyName, defaultValue );
+}
+
 int KeyValues::GetInt( const char *keyName, int defaultValue ) const
 {
 	KeyValues *dat = FindKey( keyName );
@@ -1333,6 +1338,11 @@ uint64 KeyValues::GetUint64( const char *keyName, uint64 defaultValue ) const
 // Purpose: Get the pointer value of a keyName. Default value is returned
 //			if the keyName can't be found.
 //-----------------------------------------------------------------------------
+void *KeyValues::GetPtr( const char *keyName, void *defaultValue )
+{
+	return static_cast<const KeyValues *>(this)->GetPtr( keyName, defaultValue );
+}
+
 void *KeyValues::GetPtr( const char *keyName, void *defaultValue ) const
 {
 	KeyValues *dat = FindKey( keyName );
@@ -1538,6 +1548,11 @@ bool KeyValues::GetBool( const char *keyName, bool defaultValue, bool* optGotDef
 //-----------------------------------------------------------------------------
 // Purpose: Gets a color
 //-----------------------------------------------------------------------------
+Color KeyValues::GetColor( const char *keyName )
+{
+	return static_cast<const KeyValues *>(this)->GetColor(keyName);
+}
+
 Color KeyValues::GetColor( const char *keyName ) const
 {
 	Color color(0, 0, 0, 0);

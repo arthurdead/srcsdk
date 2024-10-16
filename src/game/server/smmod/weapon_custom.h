@@ -1,6 +1,8 @@
 #ifndef	WEAPONCUSTOM_H
 #define	WEAPONCUSTOM_H
 
+#pragma once
+
 #include "smmod/weapon_parse_custom_weapon.h"
 
 #ifdef HL2_DLL

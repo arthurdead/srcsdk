@@ -11,10 +11,6 @@
 #include "c_baseentity.h"
 #include "c_basetoggle.h"
 
-#if defined( CLIENT_DLL )
-#define CBaseDoor C_BaseDoor
-#endif
-
 class C_BaseDoor : public C_BaseToggle
 {
 public:
@@ -27,5 +23,7 @@ public:
 public:
 	float		m_flWaveHeight;
 };
+
+typedef C_BaseDoor CSharedBaseDoor;
 
 #endif // C_BASEDOOR_H

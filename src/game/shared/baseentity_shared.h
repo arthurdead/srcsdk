@@ -72,28 +72,29 @@ bool IsEntityQAngleVelReasonable( const QAngle &q );
 
 #if defined( CLIENT_DLL )
 #include "c_baseentity.h"
-#define CBaseEntity C_BaseEntity
+typedef C_BaseEntity CSharedBaseEntity;
 #else
 #include "baseentity.h"
+typedef CBaseEntity CSharedBaseEntity;
 #endif
 
 // CBaseEntity inlines
-inline bool CBaseEntity::IsPlayerSimulated( void ) const
+inline bool CSharedBaseEntity::IsPlayerSimulated( void ) const
 {
 	return m_bIsPlayerSimulated;
 }
 
-inline CBasePlayer *CBaseEntity::GetSimulatingPlayer( void )
+inline CSharedBasePlayer *CSharedBaseEntity::GetSimulatingPlayer( void )
 {
 	return m_hPlayerSimulationOwner.Get();
 }
 
-inline MoveType_t CBaseEntity::GetMoveType() const
+inline MoveType_t CSharedBaseEntity::GetMoveType() const
 {
 	return (MoveType_t)(unsigned char)m_MoveType;
 }
 
-inline MoveCollide_t CBaseEntity::GetMoveCollide() const
+inline MoveCollide_t CSharedBaseEntity::GetMoveCollide() const
 {
 	return (MoveCollide_t)(unsigned char)m_MoveCollide;
 }
@@ -101,32 +102,32 @@ inline MoveCollide_t CBaseEntity::GetMoveCollide() const
 //-----------------------------------------------------------------------------
 // Collision group accessors
 //-----------------------------------------------------------------------------
-inline int CBaseEntity::GetCollisionGroup() const
+inline int CSharedBaseEntity::GetCollisionGroup() const
 {
 	return m_CollisionGroup;
 }
 
-inline int	CBaseEntity::GetFlags( void ) const
+inline int	CSharedBaseEntity::GetFlags( void ) const
 {
 	return m_fFlags;
 }
 
-inline bool CBaseEntity::IsAlive( void )
+inline bool CSharedBaseEntity::IsAlive( void )
 {
 	return m_lifeState == LIFE_ALIVE; 
 }
 
-inline CBaseEntity	*CBaseEntity::GetOwnerEntity() const
+inline CSharedBaseEntity	*CSharedBaseEntity::GetOwnerEntity() const
 {
 	return m_hOwnerEntity.Get();
 }
 
-inline CBaseEntity	*CBaseEntity::GetEffectEntity() const
+inline CSharedBaseEntity	*CSharedBaseEntity::GetEffectEntity() const
 {
 	return m_hEffectEntity.Get();
 }
 
-inline int CBaseEntity::GetPredictionRandomSeed( bool bUseUnSyncedServerPlatTime )
+inline int CSharedBaseEntity::GetPredictionRandomSeed( bool bUseUnSyncedServerPlatTime )
 {
 #ifdef GAME_DLL
 	return bUseUnSyncedServerPlatTime ? m_nPredictionRandomSeedServer : m_nPredictionRandomSeed;
@@ -135,28 +136,28 @@ inline int CBaseEntity::GetPredictionRandomSeed( bool bUseUnSyncedServerPlatTime
 #endif
 }
 
-inline CBasePlayer *CBaseEntity::GetPredictionPlayer( void )
+inline CSharedBasePlayer *CSharedBaseEntity::GetPredictionPlayer( void )
 {
 	return m_pPredictionPlayer;
 }
 
-inline void CBaseEntity::SetPredictionPlayer( CBasePlayer *player )
+inline void CSharedBaseEntity::SetPredictionPlayer( CSharedBasePlayer *player )
 {
 	m_pPredictionPlayer = player;
 }
 
 
-inline bool CBaseEntity::IsSimulatedEveryTick() const
+inline bool CSharedBaseEntity::IsSimulatedEveryTick() const
 {
 	return m_bSimulatedEveryTick;
 }
 
-inline bool CBaseEntity::IsAnimatedEveryTick() const
+inline bool CSharedBaseEntity::IsAnimatedEveryTick() const
 {
 	return m_bAnimatedEveryTick;
 }
 
-inline void CBaseEntity::SetSimulatedEveryTick( bool sim )
+inline void CSharedBaseEntity::SetSimulatedEveryTick( bool sim )
 {
 	if ( m_bSimulatedEveryTick != sim )
 	{
@@ -167,7 +168,7 @@ inline void CBaseEntity::SetSimulatedEveryTick( bool sim )
 	}
 }
 
-inline void CBaseEntity::SetAnimatedEveryTick( bool anim )
+inline void CSharedBaseEntity::SetAnimatedEveryTick( bool anim )
 {
 	if ( m_bAnimatedEveryTick != anim )
 	{
@@ -178,32 +179,32 @@ inline void CBaseEntity::SetAnimatedEveryTick( bool anim )
 	}
 }
 
-inline float CBaseEntity::GetAnimTime() const
+inline float CSharedBaseEntity::GetAnimTime() const
 {
 	return m_flAnimTime;
 }
 
-inline float CBaseEntity::GetSimulationTime() const
+inline float CSharedBaseEntity::GetSimulationTime() const
 {
 	return m_flSimulationTime;
 }
 
-inline void CBaseEntity::SetAnimTime( float at )
+inline void CSharedBaseEntity::SetAnimTime( float at )
 {
 	m_flAnimTime = at;
 }
 
-inline void CBaseEntity::SetSimulationTime( float st )
+inline void CSharedBaseEntity::SetSimulationTime( float st )
 {
 	m_flSimulationTime = st;
 }
 
-inline int CBaseEntity::GetEffects( void ) const
+inline int CSharedBaseEntity::GetEffects( void ) const
 { 
 	return m_fEffects; 
 }
 
-inline void CBaseEntity::RemoveEffects( int nEffects ) 
+inline void CSharedBaseEntity::RemoveEffects( int nEffects ) 
 { 
 #if !defined( CLIENT_DLL )
 #ifdef HL2_EPISODIC
@@ -230,7 +231,7 @@ inline void CBaseEntity::RemoveEffects( int nEffects )
 	}
 }
 
-inline void CBaseEntity::ClearEffects( void ) 
+inline void CSharedBaseEntity::ClearEffects( void ) 
 { 
 #if !defined( CLIENT_DLL )
 #ifdef HL2_EPISODIC
@@ -253,7 +254,7 @@ inline void CBaseEntity::ClearEffects( void )
 #endif
 }
 
-inline bool CBaseEntity::IsEffectActive( int nEffects ) const
+inline bool CSharedBaseEntity::IsEffectActive( int nEffects ) const
 { 
 	return (m_fEffects & nEffects) != 0; 
 }
@@ -261,19 +262,19 @@ inline bool CBaseEntity::IsEffectActive( int nEffects ) const
 // convenience functions for fishing out the vectors of this object
 // equivalent to GetVectors(), but doesn't need an intermediate stack 
 // variable (which might cause an LHS anyway)
-inline Vector	CBaseEntity::Forward() const RESTRICT  ///< get my forward (+x) vector
+inline Vector	CSharedBaseEntity::Forward() const RESTRICT  ///< get my forward (+x) vector
 {
 	const matrix3x4_t &mat = EntityToWorldTransform();
 	return Vector( mat[0][0], mat[1][0], mat[2][0] );
 }
 
-inline Vector	CBaseEntity::Left() const RESTRICT     ///< get my left    (+y) vector
+inline Vector	CSharedBaseEntity::Left() const RESTRICT     ///< get my left    (+y) vector
 {
 	const matrix3x4_t &mat = EntityToWorldTransform();
 	return Vector( mat[0][1], mat[1][1], mat[2][1] );
 }
 
-inline Vector	CBaseEntity::Up() const  RESTRICT      ///< get my up      (+z) vector
+inline Vector	CSharedBaseEntity::Up() const  RESTRICT      ///< get my up      (+z) vector
 {
 	const matrix3x4_t &mat = EntityToWorldTransform();
 	return Vector( mat[0][2], mat[1][2], mat[2][2] );

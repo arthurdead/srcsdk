@@ -1,6 +1,7 @@
 #ifndef PROJECTABLE_FACTORY_H
 #define PROJECTABLE_FACTORY_H
 
+#pragma once
 
 #include "deferred/vgui/vgui_deferred.h"
 

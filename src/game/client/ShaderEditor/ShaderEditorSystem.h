@@ -1,7 +1,7 @@
 #ifndef SHEDITSYSTEM_H
 #define SHEDITSYSTEM_H
 
-#include "cbase.h"
+#pragma once
 
 #include "datacache/imdlcache.h"
 

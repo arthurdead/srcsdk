@@ -34,7 +34,15 @@
 //-----------------------------------------------------------------------------
 class KeyValues;
 class CGameTrace;
+
+#if defined( CLIENT_DLL )
+class C_BasePlayer;
+typedef C_BasePlayer CSharedBasePlayer;
+#else
 class CBasePlayer;
+typedef CBasePlayer CSharedBasePlayer;
+#endif
+
 typedef CGameTrace trace_t;
 
 extern ConVarRef developer;	// developer mode
@@ -78,7 +86,7 @@ bool StandardFilterRules( IHandleEntity *pHandleEntity, int fContentsMask );
 //-----------------------------------------------------------------------------
 // Converts an IHandleEntity to an CBaseEntity
 //-----------------------------------------------------------------------------
-inline const CBaseEntity *EntityFromEntityHandle( const IHandleEntity *pConstHandleEntity )
+inline const CSharedBaseEntity *EntityFromEntityHandle( const IHandleEntity *pConstHandleEntity )
 {
 	IHandleEntity *pHandleEntity = const_cast<IHandleEntity*>(pConstHandleEntity);
 
@@ -94,7 +102,7 @@ inline const CBaseEntity *EntityFromEntityHandle( const IHandleEntity *pConstHan
 #endif
 }
 
-inline CBaseEntity *EntityFromEntityHandle( IHandleEntity *pHandleEntity )
+inline CSharedBaseEntity *EntityFromEntityHandle( IHandleEntity *pHandleEntity )
 {
 #ifdef CLIENT_DLL
 	IClientUnknown *pUnk = (IClientUnknown*)pHandleEntity;
@@ -343,17 +351,17 @@ inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask,
 	}
 }
 
-unsigned int UTIL_MaskForEntity( CBaseEntity *pEntity, bool brush_only = false );
-unsigned int UTIL_CollisionGroupForEntity( CBaseEntity *pEntity );
+unsigned int UTIL_MaskForEntity( CSharedBaseEntity *pEntity, bool brush_only = false );
+unsigned int UTIL_CollisionGroupForEntity( CSharedBaseEntity *pEntity );
 
 // Sweeps a particular entity through the world
-void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, unsigned int mask, trace_t *ptr );
-void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
+void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, unsigned int mask, trace_t *ptr );
+void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 					  unsigned int mask, ITraceFilter *pFilter, trace_t *ptr );
-void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
+void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 					  unsigned int mask, const IHandleEntity *ignore, int collisionGroup, trace_t *ptr );
 
-bool UTIL_EntityHasMatchingRootParent( CBaseEntity *pRootParent, CBaseEntity *pEntity );
+bool UTIL_EntityHasMatchingRootParent( CSharedBaseEntity *pRootParent, CSharedBaseEntity *pEntity );
 
 inline int UTIL_PointContents( const Vector &vec, int contentsMask )
 {
@@ -362,7 +370,7 @@ inline int UTIL_PointContents( const Vector &vec, int contentsMask )
 
 // Sweeps against a particular model, using collision rules 
 void UTIL_TraceModel( const Vector &vecStart, const Vector &vecEnd, const Vector &hullMin, 
-					  const Vector &hullMax, CBaseEntity *pentModel, int collisionGroup, trace_t *ptr );
+					  const Vector &hullMax, CSharedBaseEntity *pentModel, int collisionGroup, trace_t *ptr );
 
 void UTIL_ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, unsigned int mask, ITraceFilter *filter, trace_t *tr );
 
@@ -378,8 +386,18 @@ void		UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color,
 void		UTIL_BloodImpact( const Vector &pos, const Vector &dir, int color, int amount );
 void		UTIL_BloodDecalTrace( trace_t *pTrace, int bloodColor );
 void		UTIL_DecalTrace( trace_t *pTrace, char const *decalName );
-bool		UTIL_IsSpaceEmpty( CBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax );
-bool		UTIL_IsSpaceEmpty( CBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax, unsigned int mask, ITraceFilter *pFilter );
+bool		UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax );
+bool		UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax, unsigned int mask, ITraceFilter *pFilter );
+
+// 
+// Read a possibly-encrypted KeyValues file in. 
+// If pICEKey is NULL, then it appends .txt to the filename and loads it as an unencrypted file.
+// If pICEKey is non-NULL, then it appends .ctx to the filename and loads it as an encrypted file.
+//
+// (This should be moved into a more appropriate place).
+//
+KeyValues* ReadEncryptedKVFile( IFileSystem *filesystem, const char *szFilenameWithoutExtension, const char *pSearchPath, const unsigned char *pICEKey, bool bForceReadEncryptedFile, bool *bReadEncrypted );
+KeyValues* ReadKVFile( IFileSystem *filesystem, const char *szFilenameWithoutExtension, const char *pSearchPath );
 
 void		UTIL_DecodeICE( unsigned char * buffer, int size, const unsigned char *key );
 void		UTIL_EncodeICE( unsigned char * buffer, unsigned int size, const unsigned char *key );
@@ -394,8 +412,8 @@ unsigned short UTIL_GetAchievementEventMask( void );
 #define FL_AXIS_DIRECTION_NZ	( 1 << 5 )
 
 bool		UTIL_FindClosestPassableSpace( const Vector &vCenter, const Vector &vExtents, const Vector &vIndecisivePush, ITraceFilter *pTraceFilter, unsigned int fMask, unsigned int iIterations, Vector &vCenterOut, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
-bool		UTIL_FindClosestPassableSpace( CBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, unsigned int iIterations, Vector &vOriginOut, Vector *pStartingPosition = NULL, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
-bool		UTIL_FindClosestPassableSpace( CBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, Vector *pStartingPosition = NULL, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
+bool		UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, unsigned int iIterations, Vector &vOriginOut, Vector *pStartingPosition = NULL, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
+bool		UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, Vector *pStartingPosition = NULL, int nAxisRestrictionFlags = FL_AXIS_DIRECTION_NONE );
 
 void		UTIL_StringToVector( float *pVector, const char *pString );
 void		UTIL_StringToIntArray( int *pVector, int count, const char *pString );
@@ -408,13 +426,13 @@ void		UTIL_StringToIntArray_PreserveArray( int *pVector, int count, const char *
 // Version of UTIL_StringToFloatArray that doesn't set all untouched array elements to 0.
 void		UTIL_StringToFloatArray_PreserveArray( float *pVector, int count, const char *pString );
 
-CBasePlayer *UTIL_PlayerByIndex( int entindex );
+CSharedBasePlayer *UTIL_PlayerByIndex( int entindex );
 
 //=============================================================================
 // HPE_BEGIN:
 // [menglish] Added UTIL function for events in client win_panel which transmit the player as a user ID
 //=============================================================================
-CBasePlayer *UTIL_PlayerByUserId( int userID );
+CSharedBasePlayer *UTIL_PlayerByUserId( int userID );
 //=============================================================================
 // HPE_END
 //=============================================================================
@@ -818,17 +836,17 @@ int UTIL_StringFieldToInt( const char *szValue, const char **pValueStrings, int 
 class CFlaggedEntitiesEnum : public IPartitionEnumerator
 {
 public:
-	CFlaggedEntitiesEnum( CBaseEntity **pList, int listMax, int flagMask );
+	CFlaggedEntitiesEnum( CSharedBaseEntity **pList, int listMax, int flagMask );
 
 	// This gets called	by the enumeration methods with each element
 	// that passes the test.
 	virtual IterationRetval_t EnumElement( IHandleEntity *pHandleEntity );
 
 	int GetCount() { return m_count; }
-	bool AddToList( CBaseEntity *pEntity );
+	bool AddToList( CSharedBaseEntity *pEntity );
 
 private:
-	CBaseEntity		**m_pList;
+	CSharedBaseEntity		**m_pList;
 	int				m_listMax;
 	int				m_flagMask;
 	int				m_count;
@@ -837,24 +855,24 @@ private:
 class CHurtableEntitiesEnum : public IPartitionEnumerator
 {
 public:
-	CHurtableEntitiesEnum( CBaseEntity **pList, int listMax );
+	CHurtableEntitiesEnum( CSharedBaseEntity **pList, int listMax );
 
 	// This gets called	by the enumeration methods with each element
 	// that passes the test.
 	virtual IterationRetval_t EnumElement( IHandleEntity *pHandleEntity );
 
 	int GetCount() { return m_count; }
-	bool AddToList( CBaseEntity *pEntity );
+	bool AddToList( CSharedBaseEntity *pEntity );
 
 private:
-	CBaseEntity		**m_pList;
+	CSharedBaseEntity		**m_pList;
 	int				m_listMax;
 	int				m_count;
 };
 
 int			UTIL_EntitiesAlongRay( const Ray_t &ray, CFlaggedEntitiesEnum *pEnum  );
 
-inline int UTIL_EntitiesAlongRay( CBaseEntity **pList, int listMax, const Ray_t &ray, int flagMask )
+inline int UTIL_EntitiesAlongRay( CSharedBaseEntity **pList, int listMax, const Ray_t &ray, int flagMask )
 {
 	CFlaggedEntitiesEnum rayEnum( pList, listMax, flagMask );
 	return UTIL_EntitiesAlongRay( ray, &rayEnum );

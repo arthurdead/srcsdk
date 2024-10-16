@@ -5,6 +5,8 @@
 #ifndef _FUNCTOR_UTILS_H_
 #define _FUNCTOR_UTILS_H_
 
+#pragma once
+
 #ifdef NEXT_BOT
 #include "NextBotInterface.h"
 #include "NextBotManager.h"

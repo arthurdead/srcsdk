@@ -107,7 +107,7 @@ static QueryCacheEntry_t *FindOrAllocateCacheEntry( QueryCacheKey_t const &entry
 }
 
 static QueryCacheEntry_t *FindOrAllocateCacheEntry( EQueryType_t nType,
-													CBaseEntity *pEntity1, CBaseEntity *pEntity2,
+													CSharedBaseEntity *pEntity1, CSharedBaseEntity *pEntity2,
 													EEntityOffsetMode_t nMode1, EEntityOffsetMode_t nMode2,
 													unsigned int nTraceMask )
 {
@@ -144,7 +144,7 @@ bool QueryCacheKey_t::Matches( QueryCacheKey_t const *pNode ) const
 	return true;
 }
 
-static void CalculateOffsettedPosition( CBaseEntity *pEntity, EEntityOffsetMode_t nMode, Vector *pVecOut  )
+static void CalculateOffsettedPosition( CSharedBaseEntity *pEntity, EEntityOffsetMode_t nMode, Vector *pVecOut  )
 {
 	switch( nMode )
 	{
@@ -268,7 +268,7 @@ void QueryCacheEntry_t::IssueQuery( void )
 {
 	for( int i = 0 ; i < m_QueryParams.m_nNumValidPoints; i++ )
 	{
-		CBaseEntity *pEntity = m_QueryParams.m_pEntities[i];
+		CSharedBaseEntity *pEntity = m_QueryParams.m_pEntities[i];
 		if (! pEntity )
 		{
 			m_QueryParams.m_Type = EQUERY_INVALID;
@@ -291,11 +291,11 @@ void QueryCacheEntry_t::IssueQuery( void )
 }
 
 
-bool IsLineOfSightBetweenTwoEntitiesClear( CBaseEntity *pSrcEntity,
+bool IsLineOfSightBetweenTwoEntitiesClear( CSharedBaseEntity *pSrcEntity,
 										   EEntityOffsetMode_t nSrcOffsetMode,
-										   CBaseEntity *pDestEntity,
+										   CSharedBaseEntity *pDestEntity,
 										   EEntityOffsetMode_t nDestOffsetMode,
-										   CBaseEntity *pSkipEntity,
+										   CSharedBaseEntity *pSkipEntity,
 										   int nCollisionGroup,
 										   unsigned int nTraceMask,
 										   ShouldHitFunc_t pTraceFilterCallback,

@@ -48,7 +48,7 @@ void SendProxy_CropFlagsToPlayerFlagBitsLength( const SendProp *pProp, const voi
 
 IMPLEMENT_NETWORKCLASS_ALIASED( BaseGrenade, DT_BaseGrenade )
 
-BEGIN_NETWORK_TABLE( CBaseGrenade, DT_BaseGrenade )
+BEGIN_NETWORK_TABLE( CSharedBaseGrenade, DT_BaseGrenade )
 #if !defined( CLIENT_DLL )
 	// Excludes
 	SendPropExclude( "DT_BaseEntity", "m_angRotation" ),
@@ -79,11 +79,11 @@ BEGIN_NETWORK_TABLE( CBaseGrenade, DT_BaseGrenade )
 #endif
 END_NETWORK_TABLE()
 
-LINK_ENTITY_TO_CLASS( grenade, CBaseGrenade );
+LINK_ENTITY_TO_CLASS_ALIASED( grenade, BaseGrenade );
 
 #if defined( CLIENT_DLL )
 
-BEGIN_PREDICTION_DATA( CBaseGrenade  )
+BEGIN_PREDICTION_DATA( C_BaseGrenade  )
 
 	DEFINE_PRED_FIELD( m_hThrower, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_bIsLive, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
@@ -105,7 +105,7 @@ END_PREDICTION_DATA()
 #define SF_DETONATE		0x0001
 
 // UNDONE: temporary scorching for PreAlpha - find a less sleazy permenant solution.
-void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
+void CSharedBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 {
 #if !defined( CLIENT_DLL )
 	
@@ -173,7 +173,7 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 
 	EmitSound( "BaseGrenade.Explode" );
 
-	SetThink( &CBaseGrenade::SUB_Remove );
+	SetThink( &CSharedBaseGrenade::SUB_Remove );
 	SetTouch( NULL );
 	SetSolid( SOLID_NONE );
 	
@@ -200,7 +200,7 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 }
 
 
-void CBaseGrenade::Smoke( void )
+void CSharedBaseGrenade::Smoke( void )
 {
 	Vector vecAbsOrigin = GetAbsOrigin();
 	if ( UTIL_PointContents ( vecAbsOrigin, MASK_WATER ) & MASK_WATER )
@@ -217,12 +217,12 @@ void CBaseGrenade::Smoke( void )
 			24 );
 	}
 #if !defined( CLIENT_DLL )
-	SetThink ( &CBaseGrenade::SUB_Remove );
+	SetThink ( &CSharedBaseGrenade::SUB_Remove );
 #endif
 	SetNextThink( gpGlobals->curtime );
 }
 
-void CBaseGrenade::Event_Killed( const CTakeDamageInfo &info )
+void CSharedBaseGrenade::Event_Killed( const CTakeDamageInfo &info )
 {
 	Detonate( );
 }
@@ -231,7 +231,7 @@ void CBaseGrenade::Event_Killed( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseGrenade::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+void CSharedBaseGrenade::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
 	// Support player pickup
 	if ( useType == USE_TOGGLE )
@@ -252,24 +252,24 @@ void CBaseGrenade::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 //-----------------------------------------------------------------------------
 // Purpose: Timed grenade, this think is called when time runs out.
 //-----------------------------------------------------------------------------
-void CBaseGrenade::DetonateUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+void CSharedBaseGrenade::DetonateUse( CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, USE_TYPE useType, float value )
 {
-	SetThink( &CBaseGrenade::Detonate );
+	SetThink( &CSharedBaseGrenade::Detonate );
 	SetNextThink( gpGlobals->curtime );
 }
 
-void CBaseGrenade::PreDetonate( void )
+void CSharedBaseGrenade::PreDetonate( void )
 {
 #if !defined( CLIENT_DLL )
 	CSoundEnt::InsertSound ( SOUND_DANGER, GetAbsOrigin(), 400, 1.5, this );
 #endif
 
-	SetThink( &CBaseGrenade::Detonate );
+	SetThink( &CSharedBaseGrenade::Detonate );
 	SetNextThink( gpGlobals->curtime + 1.5 );
 }
 
 
-void CBaseGrenade::Detonate( void )
+void CSharedBaseGrenade::Detonate( void )
 {
 	trace_t		tr;
 	Vector		vecSpot;// trace starts here!
@@ -299,7 +299,7 @@ void CBaseGrenade::Detonate( void )
 //
 // Contact grenade, explode when it touches something
 // 
-void CBaseGrenade::ExplodeTouch( CBaseEntity *pOther )
+void CSharedBaseGrenade::ExplodeTouch( CSharedBaseEntity *pOther )
 {
 	trace_t		tr;
 	Vector		vecSpot;// trace starts here!
@@ -317,7 +317,7 @@ void CBaseGrenade::ExplodeTouch( CBaseEntity *pOther )
 }
 
 
-void CBaseGrenade::DangerSoundThink( void )
+void CSharedBaseGrenade::DangerSoundThink( void )
 {
 	if (!IsInWorld())
 	{
@@ -338,7 +338,7 @@ void CBaseGrenade::DangerSoundThink( void )
 }
 
 
-void CBaseGrenade::BounceTouch( CBaseEntity *pOther )
+void CSharedBaseGrenade::BounceTouch( CSharedBaseEntity *pOther )
 {
 	if ( pOther->IsSolidFlagSet(FSOLID_TRIGGER | FSOLID_VOLUME_CONTENTS) )
 		return;
@@ -410,7 +410,7 @@ void CBaseGrenade::BounceTouch( CBaseEntity *pOther )
 
 
 
-void CBaseGrenade::SlideTouch( CBaseEntity *pOther )
+void CSharedBaseGrenade::SlideTouch( CSharedBaseEntity *pOther )
 {
 	// don't hit the guy that launched this grenade
 	if ( pOther == GetThrower() )
@@ -434,12 +434,12 @@ void CBaseGrenade::SlideTouch( CBaseEntity *pOther )
 	}
 }
 
-void CBaseGrenade ::BounceSound( void )
+void CSharedBaseGrenade::BounceSound( void )
 {
 	// Doesn't need to do anything anymore! Physics makes the sound.
 }
 
-void CBaseGrenade ::TumbleThink( void )
+void CSharedBaseGrenade::TumbleThink( void )
 {
 	if (!IsInWorld())
 	{
@@ -462,7 +462,7 @@ void CBaseGrenade ::TumbleThink( void )
 
 	if (m_flDetonateTime <= gpGlobals->curtime)
 	{
-		SetThink( &CBaseGrenade::Detonate );
+		SetThink( &CSharedBaseGrenade::Detonate );
 	}
 
 	if (GetWaterLevel() != 0)
@@ -472,7 +472,7 @@ void CBaseGrenade ::TumbleThink( void )
 	}
 }
 
-void CBaseGrenade::Precache( void )
+void CSharedBaseGrenade::Precache( void )
 {
 	BaseClass::Precache( );
 
@@ -483,9 +483,9 @@ void CBaseGrenade::Precache( void )
 // Purpose: 
 // Output : CBaseCombatCharacter
 //-----------------------------------------------------------------------------
-CBaseCombatCharacter *CBaseGrenade::GetThrower( void )
+CSharedBaseCombatCharacter *CSharedBaseGrenade::GetThrower( void )
 {
-	CBaseCombatCharacter *pResult = ToBaseCombatCharacter( m_hThrower );
+	CSharedBaseCombatCharacter *pResult = ToBaseCombatCharacter( m_hThrower );
 	if ( !pResult && GetOwnerEntity() != NULL )
 	{
 		pResult = ToBaseCombatCharacter( GetOwnerEntity() );
@@ -495,7 +495,7 @@ CBaseCombatCharacter *CBaseGrenade::GetThrower( void )
 
 //-----------------------------------------------------------------------------
 
-void CBaseGrenade::SetThrower( CBaseCombatCharacter *pThrower )
+void CSharedBaseGrenade::SetThrower( CSharedBaseCombatCharacter *pThrower )
 {
 	m_hThrower = pThrower;
 
@@ -506,12 +506,16 @@ void CBaseGrenade::SetThrower( CBaseCombatCharacter *pThrower )
 	}
 }
 
+#ifdef CLIENT_DLL
+	#define CBaseGrenade C_BaseGrenade
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: Destructor
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-CBaseGrenade::~CBaseGrenade(void)
+CSharedBaseGrenade::~CBaseGrenade(void)
 {
 };
 
@@ -520,7 +524,7 @@ CBaseGrenade::~CBaseGrenade(void)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-CBaseGrenade::CBaseGrenade(void)
+CSharedBaseGrenade::CBaseGrenade(void)
 {
 	m_hThrower			= NULL;
 	m_hOriginalThrower	= NULL;
@@ -530,14 +534,17 @@ CBaseGrenade::CBaseGrenade(void)
 	m_bHasWarnedAI		= false;
 
 	SetSimulatedEveryTick( true );
-};
+}
 
+#ifdef CLIENT_DLL
+	#undef CBaseGrenade
+#endif
 
 #ifdef GAME_DLL
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseGrenade::InputSetDamage( inputdata_t &inputdata )
+void CSharedBaseGrenade::InputSetDamage( inputdata_t &inputdata )
 {
 	SetDamage( inputdata.value.Float() );
 }
@@ -545,19 +552,8 @@ void CBaseGrenade::InputSetDamage( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseGrenade::InputDetonate( inputdata_t &inputdata )
+void CSharedBaseGrenade::InputDetonate( inputdata_t &inputdata )
 {
 	Detonate();
 }
 #endif
-
-
-
-
-
-
-
-
-
-
-

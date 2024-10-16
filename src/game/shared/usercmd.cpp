@@ -21,7 +21,7 @@
 ConVar net_showusercmd( "net_showusercmd", "0", 0, "Show user command encoding" );
 #define LogUserCmd( msg, ... ) if ( net_showusercmd.GetInt() ) { ConDMsg( msg, __VA_ARGS__ ); }
 #else
-#define LogUserCmd( msg, ... ) NULL;
+#define LogUserCmd( msg, ... ) 
 #endif
 
 //-----------------------------------------------------------------------------
@@ -104,7 +104,7 @@ static bool WriteUserCmdDeltaVec3Coord( bf_write *buf, char *what, const Vector 
 {
 	if ( from != to )
 	{
-		LogUserCmd( "\t%s %2.2f -> %2.2f\n", what, from, to );
+		LogUserCmd( "\t%s [%2.2f, %2.2f, %2.2f] -> [%2.2f, %2.2f, %2.2f]\n", what, from.x, from.y, from.z, to.x, to.y, to.z );
 
 		buf->WriteOneBit( 1 );
 		buf->WriteBitVec3Coord( to );
@@ -149,25 +149,6 @@ void WriteUsercmd( bf_write *buf, const CUserCmd *to, const CUserCmd *from )
 	// TODO: Can probably get away with fewer bits.
 	WriteUserCmdDeltaShort( buf, "mousedx", from->mousedx, to->mousedx );
 	WriteUserCmdDeltaShort( buf, "mousedy", from->mousedy, to->mousedy );
-
-#if defined( HL2_CLIENT_DLL )
-	if ( to->entitygroundcontact.Count() != 0 )
-	{
-		buf->WriteOneBit( 1 );
-		buf->WriteShort( to->entitygroundcontact.Count() );
-		int i;
-		for (i = 0; i < to->entitygroundcontact.Count(); i++)
-		{
-			buf->WriteUBitLong( to->entitygroundcontact[i].entindex, MAX_EDICT_BITS );
-			buf->WriteBitCoord( to->entitygroundcontact[i].minheight );
-			buf->WriteBitCoord( to->entitygroundcontact[i].maxheight );
-		}
-	}
-	else
-	{
-		buf->WriteOneBit( 0 );
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -177,7 +158,7 @@ void WriteUsercmd( bf_write *buf, const CUserCmd *to, const CUserCmd *from )
 //			*from - 
 // Output : static void ReadUsercmd
 //-----------------------------------------------------------------------------
-void ReadUsercmd( bf_read *buf, CUserCmd *move, CUserCmd *from, CBasePlayer *pPlayer )
+void ReadUsercmd( bf_read *buf, CUserCmd *move, CUserCmd *from, CSharedBasePlayer *pPlayer )
 {
 	// Assume no change
 	*move = *from;
@@ -269,19 +250,4 @@ void ReadUsercmd( bf_read *buf, CUserCmd *move, CUserCmd *from, CBasePlayer *pPl
 	{
 		move->mousedy = buf->ReadShort();
 	}
-
-#if defined( HL2_DLL )
-	if ( buf->ReadOneBit() )
-	{
-		move->entitygroundcontact.SetCount( buf->ReadShort() );
-
-		int i;
-		for (i = 0; i < move->entitygroundcontact.Count(); i++)
-		{
-			move->entitygroundcontact[i].entindex = buf->ReadUBitLong( MAX_EDICT_BITS );
-			move->entitygroundcontact[i].minheight = buf->ReadBitCoord( );
-			move->entitygroundcontact[i].maxheight = buf->ReadBitCoord( );
-		}
-	}
-#endif
 }

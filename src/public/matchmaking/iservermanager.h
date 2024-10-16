@@ -1,10 +1,15 @@
 #ifndef _ISERVERMANAGER_H_
 #define _ISERVERMANAGER_H_
 
+#pragma once
+
 class IServer;
 class IServerManager;
 
 #include "imatchsystem.h"
+#include "tier0/platform.h"
+
+typedef uint64 XUID;
 
 abstract_class IMatchServer
 {

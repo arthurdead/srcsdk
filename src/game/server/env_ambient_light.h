@@ -1,6 +1,8 @@
 #ifndef _INCLUDED_ENV_AMBIENT_LIGHT_H
 #define _INCLUDED_ENV_AMBIENT_LIGHT_H
 
+#pragma once
+
 #include "spatialentity.h"
 
 //------------------------------------------------------------------------------

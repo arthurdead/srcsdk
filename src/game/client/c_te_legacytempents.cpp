@@ -408,8 +408,8 @@ bool C_LocalTempEntity::Frame( float frametime, int framenumber )
 
 				if ( (flags & FTENT_COLLIDEPROPS) && trace.m_pEnt )
 				{
-					bool bIsDynamicProp = ( NULL != dynamic_cast<CDynamicProp *>( trace.m_pEnt ) );
-					bool bIsDoor = ( NULL != dynamic_cast<CBaseDoor *>( trace.m_pEnt ) );
+					bool bIsDynamicProp = ( NULL != dynamic_cast<C_DynamicProp *>( trace.m_pEnt ) );
+					bool bIsDoor = ( NULL != dynamic_cast<C_BaseDoor *>( trace.m_pEnt ) );
 					if ( !bIsDynamicProp && !bIsDoor && !trace.m_pEnt->IsWorld() ) // Die on props, doors, and the world.
 						return true;
 				}
@@ -1097,7 +1097,7 @@ void CTempEnts::PhysicsProp( int modelindex, int skin, const Vector& pos, const 
 		return;
 	}
 
-	pEntity->SetModelName( modelinfo->GetModelName(model) );
+	pEntity->SetModelName( MAKE_STRING( modelinfo->GetModelName(model) ) );
 	pEntity->SetSkin( skin );
 	pEntity->SetAbsOrigin( pos );
 	pEntity->SetAbsAngles( angles );
@@ -1149,7 +1149,7 @@ void CTempEnts::PhysicsProp( int modelindex, int skin, const Vector& pos, const 
 //			lifetime - 
 //			*pOwner - 
 //-----------------------------------------------------------------------------
-C_LocalTempEntity *CTempEnts::ClientProjectile( const Vector& vecOrigin, const Vector& vecVelocity, const Vector& vecAcceleration, int modelIndex, int lifetime, CBaseEntity *pOwner, const char *pszImpactEffect, const char *pszParticleEffect )
+C_LocalTempEntity *CTempEnts::ClientProjectile( const Vector& vecOrigin, const Vector& vecVelocity, const Vector& vecAcceleration, int modelIndex, int lifetime, C_BaseEntity *pOwner, const char *pszImpactEffect, const char *pszParticleEffect )
 {
 	C_LocalTempEntity	*pTemp;
 	const model_t		*model;

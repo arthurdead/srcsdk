@@ -89,6 +89,8 @@
 #ifndef XUNZIP_H
 #define XUNZIP_H
 
+#pragma once
+
 #if !defined( DWORD )
 #ifdef _WIN32
 typedef unsigned long DWORD;

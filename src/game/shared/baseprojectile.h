@@ -9,8 +9,6 @@
 #define BASEPROJECTILE_H
 #pragma once
 
-#include "cbase.h"
-
 #ifdef GAME_DLL
 #include "baseanimating.h"
 #else
@@ -18,26 +16,40 @@
 #endif
 
 #ifdef CLIENT_DLL
-#define CBaseProjectile C_BaseProjectile
-#endif // CLIENT_DLL
+class C_BaseProjectile;
+typedef C_BaseProjectile CSharedBaseProjectile;
+#else
+class CBaseProjectile;
+typedef CBaseProjectile CSharedBaseProjectile;
+#endif
 
 //=============================================================================
 //
 // Base Projectile.
 //
 //=============================================================================
-#ifdef CLIENT_DLL
-class CBaseProjectile : public CBaseAnimating
-#else // CLIENT_DLL
+#ifdef GAME_DLL
 DECLARE_AUTO_LIST( IBaseProjectileAutoList );
-class CBaseProjectile : public CBaseAnimating, public IBaseProjectileAutoList
-#endif // !CLIENT_DLL
+#endif
+
+#ifdef CLIENT_DLL
+	#define CBaseProjectile C_BaseProjectile
+#endif
+
+class CBaseProjectile : public CSharedBaseAnimating
+#ifdef GAME_DLL
+, public IBaseProjectileAutoList
+#endif
 {
 public:
-	DECLARE_CLASS( CBaseProjectile, CBaseAnimating );
-	DECLARE_NETWORKCLASS();
-
+	DECLARE_CLASS( CBaseProjectile, CSharedBaseAnimating );
 	CBaseProjectile();
+
+#ifdef CLIENT_DLL
+	#undef CBaseProjectile
+#endif
+
+	DECLARE_NETWORKCLASS();
 
 	virtual void Spawn();
 
@@ -53,8 +65,8 @@ public:
 
 	virtual bool IsDestroyable( void ) { return false; }
 	virtual void Destroy( bool bBlinkOut = true, bool bBreakRocket = false ) {}
-	virtual void SetLauncher( CBaseEntity *pLauncher );
-	CBaseEntity *GetOriginalLauncher() const { return m_hOriginalLauncher.Get(); }
+	virtual void SetLauncher( CSharedBaseEntity *pLauncher );
+	CSharedBaseEntity *GetOriginalLauncher() const { return m_hOriginalLauncher.Get(); }
 
 protected:
 #ifdef GAME_DLL
@@ -71,7 +83,7 @@ private:
 	bool					m_bCanCollideWithTeammates;
 #endif // GAME_DLL
 
-	CNetworkHandle( CBaseEntity, m_hOriginalLauncher );
+	CNetworkHandle( CSharedBaseEntity, m_hOriginalLauncher );
 };
 
 #endif // BASEPROJECTILE_H

@@ -1,6 +1,7 @@
 #ifndef FLASHLIGHTEFFECT_DEFERRED_H
 #define FLASHLIGHTEFFECT_DEFERRED_H
 
+#pragma once
 
 #include "flashlighteffect.h"
 

@@ -7,6 +7,11 @@
 #ifndef _SSE_H
 #define _SSE_H
 
+#pragma once
+
+#include "tier0/platform.h"
+#include "vector.h"
+
 float _SSE_Sqrt(float x);
 float _SSE_RSqrtAccurate(float a);
 float _SSE_RSqrtFast(float x);

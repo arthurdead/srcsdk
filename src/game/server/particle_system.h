@@ -8,7 +8,7 @@
 #define PARTICLE_SYSTEM_H
 #pragma once
 
-#include "cbase.h"
+#include "baseentity.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: An entity that spawns and controls a particle system

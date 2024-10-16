@@ -8,6 +8,8 @@
 #ifndef BASEANIMATEDTEXTUREPROXY
 #define BASEANIMATEDTEXTUREPROXY
 
+#pragma once
+
 #include "materialsystem/imaterialproxy.h"
 #include "imaterialproxydict.h"
 

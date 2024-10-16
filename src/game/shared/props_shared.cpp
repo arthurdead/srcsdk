@@ -34,8 +34,8 @@ ConVar props_break_max_pieces_perframe( "props_break_max_pieces_perframe", "-1",
 ConVar cl_burninggibs( "cl_burninggibs", "0", 0, "A burning player that gibs has burning gibs." );
 #endif // GAME_DLL
 
-extern bool PropBreakableCapEdictsOnCreateAll( CUtlVector<breakmodel_t> &list, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CBaseEntity *pEntity, int iPrecomputedBreakableCount = -1 );
-extern CBaseEntity *BreakModelCreateSingle( CBaseEntity *pOwner, breakmodel_t *pModel, const Vector &position, 
+extern bool PropBreakableCapEdictsOnCreateAll( CUtlVector<breakmodel_t> &list, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CSharedBaseEntity *pEntity, int iPrecomputedBreakableCount = -1 );
+extern CSharedBaseEntity *BreakModelCreateSingle( CSharedBaseEntity *pOwner, breakmodel_t *pModel, const Vector &position, 
 	const QAngle &angles, const Vector &velocity, const AngularImpulse &angVelocity, int nSkin, const breakablepropparams_t &params );
 
 static int nPropBreakablesPerFrameCount = 0;
@@ -249,7 +249,7 @@ void CPropData::ParsePropDataFile( void )
 				const char *pModel = pModelName->GetName();
 				string_t pooledName = AllocPooledString( pModel );
 				pBreakableChunk->iszChunkModels.AddToTail( pooledName );
-				CBaseEntity::PrecacheModel( STRING( pooledName ) );
+				CSharedBaseEntity::PrecacheModel( STRING( pooledName ) );
 
 				pModelName = pModelName->GetNextKey();
 			}
@@ -267,7 +267,7 @@ void CPropData::ParsePropDataFile( void )
 //			are OUTSIDE the "prop_data" KV section in the model, but may be contained WITHIN the 
 //			specified Base's "prop_data" section (i.e. in propdata.txt)
 //-----------------------------------------------------------------------------
-int CPropData::ParsePropFromKV( CBaseEntity *pProp, IBreakableWithPropData *pBreakableInterface, KeyValues *pSection, KeyValues *pInteractionSection )
+int CPropData::ParsePropFromKV( CSharedBaseEntity *pProp, IBreakableWithPropData *pBreakableInterface, KeyValues *pSection, KeyValues *pInteractionSection )
 {
 	if ( !pBreakableInterface )
 		return PARSE_FAILED_BAD_DATA;
@@ -445,7 +445,7 @@ int CPropData::ParsePropFromKV( CBaseEntity *pProp, IBreakableWithPropData *pBre
 //-----------------------------------------------------------------------------
 // Purpose: Fill out a prop's with base data parsed from the propdata file
 //-----------------------------------------------------------------------------
-int CPropData::ParsePropFromBase( CBaseEntity *pProp, IBreakableWithPropData *pBreakableInterface, const char *pszPropData )
+int CPropData::ParsePropFromBase( CSharedBaseEntity *pProp, IBreakableWithPropData *pBreakableInterface, const char *pszPropData )
 {
 	if ( !m_bPropDataLoaded )
 		return PARSE_FAILED_NO_DATA;
@@ -929,7 +929,7 @@ CGameGibManager *GetGibManager( void )
 
 #endif
 
-void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLimit, bool defaultLocation )
+void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CSharedBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLimit, bool defaultLocation )
 {
         // Check for prop breakable count reset. 
 	int nPropCount = props_break_max_pieces_perframe.GetInt(); 
@@ -964,11 +964,11 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 		return;
 
 	int nSkin = 0;
-	CBaseEntity *pOwnerEntity = pEntity;
-	CBaseAnimating *pOwnerAnim = NULL;
+	CSharedBaseEntity *pOwnerEntity = pEntity;
+	CSharedBaseAnimating *pOwnerAnim = NULL;
 	if ( pPhysics )
 	{
-		pOwnerEntity = static_cast<CBaseEntity *>(pPhysics->GetGameData());
+		pOwnerEntity = static_cast<CSharedBaseEntity *>(pPhysics->GetGameData());
 	}
 	if ( pOwnerEntity )
 	{
@@ -1130,7 +1130,7 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 			if ( nActualSkin > studioHdr.numskinfamilies() )
 				nActualSkin = 0;
 
-			CBaseEntity *pBreakable = NULL;
+			CSharedBaseEntity *pBreakable = NULL;
 			
 #ifdef GAME_DLL
 			if ( GetGibManager() == NULL || GetGibManager()->AllowedToSpawnGib() )
@@ -1232,7 +1232,7 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 				QAngle vecAngles = pEntity->GetAbsAngles();
 				int iSkin = pBreakableInterface->GetBreakableSkin();
 
-				CBaseEntity *pBreakable = NULL;
+				CSharedBaseEntity *pBreakable = NULL;
 
 #ifdef GAME_DLL
 				if ( GetGibManager() == NULL || GetGibManager()->AllowedToSpawnGib() )
@@ -1281,7 +1281,7 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 }
 
 
-void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const Vector &origin, const QAngle &angles, const Vector &velocity, const AngularImpulse &angularVelocity, float impactEnergyScale, float defBurstScale, int defCollisionGroup, CBaseEntity *pEntity, bool defaultLocation )
+void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const Vector &origin, const QAngle &angles, const Vector &velocity, const AngularImpulse &angularVelocity, float impactEnergyScale, float defBurstScale, int defCollisionGroup, CSharedBaseEntity *pEntity, bool defaultLocation )
 {
 	breakablepropparams_t params( origin, angles, velocity, angularVelocity );
 	params.impactEnergyScale = impactEnergyScale;
@@ -1312,7 +1312,7 @@ void PrecachePropsForModel( int iModel, const char *pszBlockName )
 		{
 			breakmodel_t breakModel;
 			pParse->ParseCustom( &breakModel, &breakParser );
-			CBaseEntity::PrecacheModel( breakModel.modelName );
+			CSharedBaseEntity::PrecacheModel( breakModel.modelName );
 		}
 		else
 		{
@@ -1353,7 +1353,7 @@ void BuildGibList( CUtlVector<breakmodel_t> &list, int modelindex, float defBurs
 //			bIgnoreGibLImit - 
 //			defaultLocation - 
 //-----------------------------------------------------------------------------
-CBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLimit, bool defaultLocation, CUtlVector<EHANDLE> *pGibList, bool bBurning )
+CSharedBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CSharedBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLimit, bool defaultLocation, CUtlVector<EHANDLE> *pGibList, bool bBurning )
 {
     // Check for prop breakable count reset. 
 	int nPropCount = props_break_max_pieces_perframe.GetInt(); 
@@ -1397,15 +1397,15 @@ CBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex,
 		return NULL;
 
 	int nSkin = params.nDefaultSkin;
-	CBaseEntity *pOwnerEntity = pEntity;
-	CBaseAnimating *pOwnerAnim = NULL;
+	CSharedBaseEntity *pOwnerEntity = pEntity;
+	CSharedBaseAnimating *pOwnerAnim = NULL;
 	if ( pPhysics )
 	{
-		pOwnerEntity = static_cast<CBaseEntity *>(pPhysics->GetGameData());
+		pOwnerEntity = static_cast<CSharedBaseEntity *>(pPhysics->GetGameData());
 	}
 	if ( pOwnerEntity )
 	{
-		pOwnerAnim = dynamic_cast<CBaseAnimating*>(pOwnerEntity);
+		pOwnerAnim = dynamic_cast<CSharedBaseAnimating*>(pOwnerEntity);
 		if ( pOwnerAnim )
 		{
 			nSkin = pOwnerAnim->GetSkin();
@@ -1435,7 +1435,7 @@ CBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex,
 //	CUtlVector<breakmodel_t> list;
 //	BreakModelList( list, modelindex, params.defBurstScale, params.defCollisionGroup );
 
-	CBaseEntity *pFirstBreakable = NULL;
+	CSharedBaseEntity *pFirstBreakable = NULL;
 
 	if ( list.Count() )
 	{
@@ -1539,7 +1539,7 @@ CBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex,
 			if ( nActualSkin > studioHdr.numskinfamilies() )
 				nActualSkin = 0;
 
-			CBaseEntity *pBreakable = NULL;
+			CSharedBaseEntity *pBreakable = NULL;
 			
 #ifdef GAME_DLL
 			if ( GetGibManager() == NULL || GetGibManager()->AllowedToSpawnGib() )
@@ -1658,7 +1658,7 @@ CBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex,
 				QAngle vecAngles = pEntity->GetAbsAngles();
 				int iSkin = pBreakableInterface->GetBreakableSkin();
 
-				CBaseEntity *pBreakable = NULL;
+				CSharedBaseEntity *pBreakable = NULL;
 
 #ifdef GAME_DLL
 				if ( GetGibManager() == NULL || GetGibManager()->AllowedToSpawnGib() )
@@ -1722,11 +1722,7 @@ CBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex,
 // Shared physics prop methods to help the grab controller
 //-----------------------------------------------------------------------------
 
-#if defined CLIENT_DLL
-#define CPhysicsProp C_PhysicsProp
-#endif
-
-bool CPhysicsProp::GetPropDataAngles( const char *pKeyName, QAngle &vecAngles )
+bool CSharedPhysicsProp::GetPropDataAngles( const char *pKeyName, QAngle &vecAngles )
 {
 	KeyValues *pModelKV = new KeyValues("");
 	if ( pModelKV->LoadFromBuffer( modelinfo->GetModelName( GetModel() ), modelinfo->GetModelKeyValueText( GetModel() ) ) )
@@ -1748,7 +1744,7 @@ bool CPhysicsProp::GetPropDataAngles( const char *pKeyName, QAngle &vecAngles )
 	return false;
 }
 
-float CPhysicsProp::GetCarryDistanceOffset( void )
+float CSharedPhysicsProp::GetCarryDistanceOffset( void )
 {
 	KeyValues *pModelKV = new KeyValues("");
 	if ( pModelKV->LoadFromBuffer( modelinfo->GetModelName( GetModel() ), modelinfo->GetModelKeyValueText( GetModel() ) ) )
@@ -1765,8 +1761,3 @@ float CPhysicsProp::GetCarryDistanceOffset( void )
 	pModelKV->deleteThis();
 	return 0;
 }
-
-
-#if defined CLIENT_DLL 
-#undef CPhysicsProp
-#endif

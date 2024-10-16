@@ -54,7 +54,7 @@ void InvalidateEFlagsRecursive( C_BaseEntity *pEnt, int nDirtyFlags, int nChildF
 {
 	pEnt->AddEFlags( nDirtyFlags );
 	nDirtyFlags |= nChildFlags;
-	for (CBaseEntity *pChild = pEnt->FirstMoveChild(); pChild; pChild = pChild->NextMovePeer())
+	for (C_BaseEntity *pChild = pEnt->FirstMoveChild(); pChild; pChild = pChild->NextMovePeer())
 	{
 		InvalidateEFlagsRecursive( pChild, nDirtyFlags );
 	}
@@ -701,7 +701,7 @@ void CPrediction::SetupMove( C_BasePlayer *player, CUserCmd *ucmd, IMoveHelper *
 	move->m_nImpulseCommand = ucmd->impulse;	
 	move->m_nButtons		= ucmd->buttons;
 
-	CBaseEntity *pMoveParent = player->GetMoveParent();
+	C_BaseEntity *pMoveParent = player->GetMoveParent();
 	if (!pMoveParent)
 	{
 		move->m_vecAbsViewAngles = move->m_vecViewAngles;
@@ -895,7 +895,7 @@ void CPrediction::RunPostThink( C_BasePlayer *player )
 //-----------------------------------------------------------------------------
 void CPrediction::CheckMovingGround( C_BasePlayer *player, double frametime )
 {
-	CBaseEntity	    *groundentity;
+	C_BaseEntity	    *groundentity;
 
 	if ( player->GetFlags() & FL_ONGROUND )
 	{
@@ -955,7 +955,7 @@ void CPrediction::RunCommand( C_BasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 	// Do weapon selection
 	if ( ucmd->weaponselect != 0 )
 	{
-		C_BaseCombatWeapon *weapon = ToBaseCombatWeapon( CBaseEntity::Instance( ucmd->weaponselect ) );
+		C_BaseCombatWeapon *weapon = ToBaseCombatWeapon( C_BaseEntity::Instance( ucmd->weaponselect ) );
 		if ( weapon )
 		{
 			player->SelectItem( weapon->GetClassname(), ucmd->weaponsubtype );

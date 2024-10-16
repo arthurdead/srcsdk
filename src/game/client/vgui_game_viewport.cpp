@@ -6,6 +6,7 @@
 //
 //=============================================================================//
 #include "cbase.h"
+#include "vgui_game_viewport.h"
 #include "clientmode.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

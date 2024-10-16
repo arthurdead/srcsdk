@@ -9,7 +9,7 @@
 #define CAMERA_H
 #pragma once
 
-#include "cbase.h"
+#include "baseentity.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 

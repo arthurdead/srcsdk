@@ -9,6 +9,8 @@
 #ifndef FILEIO_H
 #define FILEIO_H
 
+#pragma once
+
 #if defined (_WIN32)
 #else
 #include <sys/types.h>

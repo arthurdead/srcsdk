@@ -27,12 +27,16 @@ ConVar cl_wpn_sway_interp( "cl_wpn_sway_interp", "0.1", FCVAR_CLIENTDLL );
 ConVar cl_wpn_sway_scale( "cl_wpn_sway_scale", "1.0", FCVAR_CLIENTDLL|FCVAR_CHEAT );
 #endif
 
+#ifdef CLIENT_DLL
+	#define CBaseViewModel C_BaseViewModel
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CBaseViewModel::CBaseViewModel()
+CSharedBaseViewModel::CBaseViewModel()
 #ifdef CLIENT_DLL
-  : m_LagAnglesHistory("CBaseViewModel::m_LagAnglesHistory")
+  : m_LagAnglesHistory("CSharedBaseViewModel::m_LagAnglesHistory")
 #endif
 {
 #if defined( CLIENT_DLL )
@@ -61,11 +65,15 @@ CBaseViewModel::CBaseViewModel()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CBaseViewModel::~CBaseViewModel()
+CSharedBaseViewModel::~CBaseViewModel()
 {
 }
 
-void CBaseViewModel::UpdateOnRemove( void )
+#ifdef CLIENT_DLL
+	#undef CBaseViewModel
+#endif
+
+void CSharedBaseViewModel::UpdateOnRemove( void )
 {
 	BaseClass::UpdateOnRemove();
 
@@ -75,14 +83,14 @@ void CBaseViewModel::UpdateOnRemove( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseViewModel::Precache( void )
+void CSharedBaseViewModel::Precache( void )
 {
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseViewModel::Spawn( void )
+void CSharedBaseViewModel::Spawn( void )
 {
 	Precache( );
 	SetSize( Vector( -8, -4, -2), Vector(8, 4, 2) );
@@ -92,7 +100,7 @@ void CBaseViewModel::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseViewModel::SetControlPanelsActive( bool bState )
+void CSharedBaseViewModel::SetControlPanelsActive( bool bState )
 {
 	// Activate control panel screens
 	for ( int i = m_hScreens.Count(); --i >= 0; )
@@ -107,14 +115,14 @@ void CBaseViewModel::SetControlPanelsActive( bool bState )
 //-----------------------------------------------------------------------------
 // This is called by the base object when it's time to spawn the control panels
 //-----------------------------------------------------------------------------
-void CBaseViewModel::SpawnControlPanels()
+void CSharedBaseViewModel::SpawnControlPanels()
 {
 	char buf[64];
 
 	// Destroy existing panels
 	DestroyControlPanels();
 
-	CBaseCombatWeapon *weapon = m_hWeapon.Get();
+	CSharedBaseCombatWeapon *weapon = m_hWeapon.Get();
 
 	if ( weapon == NULL )
 	{
@@ -126,7 +134,7 @@ void CBaseViewModel::SpawnControlPanels()
 	// FIXME: Deal with dynamically resizing control panels?
 
 	// If we're attached to an entity, spawn control panels on it instead of use
-	CBaseAnimating *pEntityToSpawnOn = this;
+	CSharedBaseAnimating *pEntityToSpawnOn = this;
 	const char *pOrgLL = "controlpanel%d_ll";
 	const char *pOrgUR = "controlpanel%d_ur";
 	const char *pAttachmentNameLL = pOrgLL;
@@ -206,7 +214,7 @@ void CBaseViewModel::SpawnControlPanels()
 		float flWidth = lrlocal.x;
 		float flHeight = lrlocal.y;
 
-		CVGuiScreen *pScreen = CREATE_PREDICTED_VGUISCREEN( pScreenClassname, pScreenName, pEntityToSpawnOn, this, nLLAttachmentIndex );
+		CSharedVGuiScreen *pScreen = CREATE_PREDICTED_VGUISCREEN( pScreenClassname, pScreenName, pEntityToSpawnOn, this, nLLAttachmentIndex );
 		pScreen->ChangeTeam( GetTeamNumber() );
 		pScreen->SetActualSize( flWidth, flHeight );
 		pScreen->SetActive( false );
@@ -221,7 +229,7 @@ void CBaseViewModel::SpawnControlPanels()
 	}
 }
 
-void CBaseViewModel::DestroyControlPanels()
+void CSharedBaseViewModel::DestroyControlPanels()
 {
 	// Kill the control panels
 	int i;
@@ -236,7 +244,7 @@ void CBaseViewModel::DestroyControlPanels()
 // Purpose: 
 // Input  : *pEntity - 
 //-----------------------------------------------------------------------------
-void CBaseViewModel::SetOwner( CBaseEntity *pEntity )
+void CSharedBaseViewModel::SetOwner( CSharedBaseEntity *pEntity )
 {
 	m_hOwner = pEntity;
 #if !defined( CLIENT_DLL )
@@ -249,7 +257,7 @@ void CBaseViewModel::SetOwner( CBaseEntity *pEntity )
 // Purpose: 
 // Input  : nIndex - 
 //-----------------------------------------------------------------------------
-void CBaseViewModel::SetIndex( int nIndex )
+void CSharedBaseViewModel::SetIndex( int nIndex )
 {
 	m_nViewModelIndex = nIndex;
 	Assert( m_nViewModelIndex < (1 << VIEWMODEL_INDEX_BITS) );
@@ -258,7 +266,7 @@ void CBaseViewModel::SetIndex( int nIndex )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CBaseViewModel::ViewModelIndex( ) const
+int CSharedBaseViewModel::ViewModelIndex( ) const
 {
 	return m_nViewModelIndex;
 }
@@ -266,7 +274,7 @@ int CBaseViewModel::ViewModelIndex( ) const
 //-----------------------------------------------------------------------------
 // Purpose: Pass our visibility on to our child screens
 //-----------------------------------------------------------------------------
-void CBaseViewModel::AddEffects( int nEffects )
+void CSharedBaseViewModel::AddEffects( int nEffects )
 {
 	if ( nEffects & EF_NODRAW )
 	{
@@ -277,7 +285,7 @@ void CBaseViewModel::AddEffects( int nEffects )
 	{
 		// If using hands, apply effect changes to any viewmodel children as well
 		// (fixes hand models)
-		for (CBaseEntity *pChild = FirstMoveChild(); pChild != NULL; pChild = pChild->NextMovePeer())
+		for (CSharedBaseEntity *pChild = FirstMoveChild(); pChild != NULL; pChild = pChild->NextMovePeer())
 		{
 			if (pChild->GetClassname()[0] == 'h')
 				pChild->AddEffects( nEffects );
@@ -290,7 +298,7 @@ void CBaseViewModel::AddEffects( int nEffects )
 //-----------------------------------------------------------------------------
 // Purpose: Pass our visibility on to our child screens
 //-----------------------------------------------------------------------------
-void CBaseViewModel::RemoveEffects( int nEffects )
+void CSharedBaseViewModel::RemoveEffects( int nEffects )
 {
 	if ( nEffects & EF_NODRAW )
 	{
@@ -301,7 +309,7 @@ void CBaseViewModel::RemoveEffects( int nEffects )
 	{
 		// If using hands, apply effect changes to any viewmodel children as well
 		// (fixes hand models)
-		for (CBaseEntity *pChild = FirstMoveChild(); pChild != NULL; pChild = pChild->NextMovePeer())
+		for (CSharedBaseEntity *pChild = FirstMoveChild(); pChild != NULL; pChild = pChild->NextMovePeer())
 		{
 			if (pChild->GetClassname()[0] == 'h')
 				pChild->RemoveEffects( nEffects );
@@ -315,7 +323,7 @@ void CBaseViewModel::RemoveEffects( int nEffects )
 // Purpose: 
 // Input  : *modelname - 
 //-----------------------------------------------------------------------------
-void CBaseViewModel::SetWeaponModel( const char *modelname, CBaseCombatWeapon *weapon )
+void CSharedBaseViewModel::SetWeaponModel( const char *modelname, CSharedBaseCombatWeapon *weapon )
 {
 	m_hWeapon = weapon;
 
@@ -348,7 +356,7 @@ void CBaseViewModel::SetWeaponModel( const char *modelname, CBaseCombatWeapon *w
 
 	// If our owning weapon doesn't support hands, disable the hands viewmodel(s)
 	bool bSupportsHands = weapon != NULL ? weapon->UsesHands() : false;
-	for (CBaseEntity *pChild = FirstMoveChild(); pChild != NULL; pChild = pChild->NextMovePeer())
+	for (CSharedBaseEntity *pChild = FirstMoveChild(); pChild != NULL; pChild = pChild->NextMovePeer())
 	{
 		if (pChild->GetClassname()[0] == 'h')
 		{
@@ -361,7 +369,7 @@ void CBaseViewModel::SetWeaponModel( const char *modelname, CBaseCombatWeapon *w
 // Purpose: 
 // Output : CBaseCombatWeapon
 //-----------------------------------------------------------------------------
-CBaseCombatWeapon *CBaseViewModel::GetOwningWeapon( void )
+CSharedBaseCombatWeapon *CSharedBaseViewModel::GetOwningWeapon( void )
 {
 	return m_hWeapon.Get();
 }
@@ -370,7 +378,7 @@ CBaseCombatWeapon *CBaseViewModel::GetOwningWeapon( void )
 // Purpose: 
 // Input  : sequence - 
 //-----------------------------------------------------------------------------
-void CBaseViewModel::SendViewModelMatchingSequence( int sequence )
+void CSharedBaseViewModel::SendViewModelMatchingSequence( int sequence )
 {
 	// since all we do is send a sequence number down to the client, 
 	// set this here so other weapons code knows which sequence is playing.
@@ -398,7 +406,7 @@ void CBaseViewModel::SendViewModelMatchingSequence( int sequence )
 #include "ivieweffects.h"
 #endif
 
-void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePosition, const QAngle& eyeAngles )
+void CSharedBaseViewModel::CalcViewModelView( CSharedBasePlayer *owner, const Vector& eyePosition, const QAngle& eyeAngles )
 {
 	// UNDONE: Calc this on the server?  Disabled for now as it seems unnecessary to have this info on the server
 #if defined( CLIENT_DLL )
@@ -406,7 +414,7 @@ void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePos
 	QAngle vmangles = eyeAngles;
 	Vector vmorigin = eyePosition;
 
-	CBaseCombatWeapon *pWeapon = m_hWeapon.Get();
+	CSharedBaseCombatWeapon *pWeapon = m_hWeapon.Get();
 	//Allow weapon lagging
 	if ( pWeapon != NULL )
 	{
@@ -448,7 +456,7 @@ void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePos
 //-----------------------------------------------------------------------------
 float g_fMaxViewModelLag = 1.5f;
 
-void CBaseViewModel::CalcViewModelLag( Vector& origin, QAngle& angles, QAngle& original_angles )
+void CSharedBaseViewModel::CalcViewModelLag( Vector& origin, QAngle& angles, QAngle& original_angles )
 {
 	Vector vOriginalOrigin = origin;
 	QAngle vOriginalAngles = angles;
@@ -464,7 +472,7 @@ void CBaseViewModel::CalcViewModelLag( Vector& origin, QAngle& angles, QAngle& o
 
 		float flSpeed = 5.0f;
 
-		CBaseCombatWeapon *pWeapon = m_hWeapon.Get();
+		CSharedBaseCombatWeapon *pWeapon = m_hWeapon.Get();
 		if (pWeapon)
 		{
 			const FileWeaponInfo_t *pInfo = &pWeapon->GetWpnData();
@@ -536,14 +544,14 @@ void CBaseViewModel::CalcViewModelLag( Vector& origin, QAngle& angles, QAngle& o
 #if defined( CLIENT_DLL )
 static void RecvProxy_Weapon( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CBaseViewModel *pViewModel = ((CBaseViewModel*)pStruct);
-	CBaseCombatWeapon *pOldWeapon = pViewModel->GetOwningWeapon();
+	CSharedBaseViewModel *pViewModel = ((CSharedBaseViewModel*)pStruct);
+	CSharedBaseCombatWeapon *pOldWeapon = pViewModel->GetOwningWeapon();
 
 	// Chain through to the default recieve proxy ...
 	RecvProxy_IntToEHandle( pData, pStruct, pOut );
 
 	// ... and reset our cycle index if the server is switching weapons on us
-	CBaseCombatWeapon *pNewWeapon = pViewModel->GetOwningWeapon();
+	CSharedBaseCombatWeapon *pNewWeapon = pViewModel->GetOwningWeapon();
 	if ( pNewWeapon != pOldWeapon )
 	{
 		// Restart animation at frame 0
@@ -554,11 +562,11 @@ static void RecvProxy_Weapon( const CRecvProxyData *pData, void *pStruct, void *
 #endif
 
 
-LINK_ENTITY_TO_CLASS( viewmodel, CBaseViewModel );
+LINK_ENTITY_TO_CLASS_ALIASED( viewmodel, BaseViewModel );
 
 IMPLEMENT_NETWORKCLASS_ALIASED( BaseViewModel, DT_BaseViewModel )
 
-BEGIN_NETWORK_TABLE_NOBASE(CBaseViewModel, DT_BaseViewModel)
+BEGIN_NETWORK_TABLE_NOBASE(CSharedBaseViewModel, DT_BaseViewModel)
 #if !defined( CLIENT_DLL )
 	SendPropModelIndex(SENDINFO(m_nModelIndex)),
 	SendPropInt		(SENDINFO(m_nBody), 8),
@@ -602,7 +610,7 @@ END_NETWORK_TABLE()
 
 #ifdef CLIENT_DLL
 
-BEGIN_PREDICTION_DATA( CBaseViewModel )
+BEGIN_PREDICTION_DATA( C_BaseViewModel )
 
 	// Networked
 	DEFINE_PRED_FIELD( m_nModelIndex, FIELD_SHORT, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
@@ -625,7 +633,7 @@ END_PREDICTION_DATA()
 
 void RecvProxy_SequenceNum( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CBaseViewModel *model = (CBaseViewModel *)pStruct;
+	C_BaseViewModel *model = (C_BaseViewModel *)pStruct;
 	if (pData->m_Value.m_Int != model->GetSequence())
 	{
 		MDLCACHE_CRITICAL_SECTION();
@@ -639,7 +647,7 @@ void RecvProxy_SequenceNum( const CRecvProxyData *pData, void *pStruct, void *pO
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int	CBaseViewModel::LookupAttachment( const char *pAttachmentName )
+int	CSharedBaseViewModel::LookupAttachment( const char *pAttachmentName )
 {
 	if ( m_hWeapon.Get() && m_hWeapon.Get()->WantsToOverrideViewmodelAttachments() )
 		return m_hWeapon.Get()->LookupAttachment( pAttachmentName );
@@ -650,7 +658,7 @@ int	CBaseViewModel::LookupAttachment( const char *pAttachmentName )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CBaseViewModel::GetAttachment( int number, matrix3x4_t &matrix )
+bool CSharedBaseViewModel::GetAttachment( int number, matrix3x4_t &matrix )
 {
 	if ( m_hWeapon.Get() && m_hWeapon.Get()->WantsToOverrideViewmodelAttachments() )
 		return m_hWeapon.Get()->GetAttachment( number, matrix );
@@ -661,7 +669,7 @@ bool CBaseViewModel::GetAttachment( int number, matrix3x4_t &matrix )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CBaseViewModel::GetAttachment( int number, Vector &origin )
+bool CSharedBaseViewModel::GetAttachment( int number, Vector &origin )
 {
 	if ( m_hWeapon.Get() && m_hWeapon.Get()->WantsToOverrideViewmodelAttachments() )
 		return m_hWeapon.Get()->GetAttachment( number, origin );
@@ -672,7 +680,7 @@ bool CBaseViewModel::GetAttachment( int number, Vector &origin )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CBaseViewModel::GetAttachment( int number, Vector &origin, QAngle &angles )
+bool CSharedBaseViewModel::GetAttachment( int number, Vector &origin, QAngle &angles )
 {
 	if ( m_hWeapon.Get() && m_hWeapon.Get()->WantsToOverrideViewmodelAttachments() )
 		return m_hWeapon.Get()->GetAttachment( number, origin, angles );
@@ -683,7 +691,7 @@ bool CBaseViewModel::GetAttachment( int number, Vector &origin, QAngle &angles )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CBaseViewModel::GetAttachmentVelocity( int number, Vector &originVel, Quaternion &angleVel )
+bool CSharedBaseViewModel::GetAttachmentVelocity( int number, Vector &originVel, Quaternion &angleVel )
 {
 	if ( m_hWeapon.Get() && m_hWeapon.Get()->WantsToOverrideViewmodelAttachments() )
 		return m_hWeapon.Get()->GetAttachmentVelocity( number, originVel, angleVel );
@@ -693,50 +701,63 @@ bool CBaseViewModel::GetAttachmentVelocity( int number, Vector &originVel, Quate
 
 #endif
 
-#if defined( CLIENT_DLL )
-#define CHandViewModel C_HandViewModel
+#ifdef CLIENT_DLL
+class C_HandViewModel;
+typedef C_HandViewModel CSharedHandViewModel;
+#else
+class CHandViewModel;
+typedef CHandViewModel CSharedHandViewModel;
 #endif
 
 // ---------------------------------------
 // OzxyBox's hand viewmodel code.
 // All credit goes to him.
 // ---------------------------------------
-class CHandViewModel : public CBaseViewModel
+#ifdef CLIENT_DLL
+	#define CHandViewModel C_HandViewModel
+#endif
+
+class CHandViewModel : public CSharedBaseViewModel
 {
-	DECLARE_CLASS( CHandViewModel, CBaseViewModel );
 public:
+	DECLARE_CLASS( CHandViewModel, CSharedBaseViewModel );
+
+#ifdef CLIENT_DLL
+	#undef CHandViewModel
+#endif
+
 	DECLARE_NETWORKCLASS();
 
-	CBaseViewModel	*GetVMOwner();
+	CSharedBaseViewModel	*GetVMOwner();
 
-	CBaseCombatWeapon *GetOwningWeapon( void );
+	CSharedBaseCombatWeapon *GetOwningWeapon( void );
 
 private:
-	CHandle<CBaseViewModel> m_hVMOwner;
+	CHandle<CSharedBaseViewModel> m_hVMOwner;
 };
 
-LINK_ENTITY_TO_CLASS(hand_viewmodel, CHandViewModel);
+LINK_ENTITY_TO_CLASS_ALIASED(hand_viewmodel, HandViewModel);
 IMPLEMENT_NETWORKCLASS_ALIASED(HandViewModel, DT_HandViewModel)
 
-BEGIN_NETWORK_TABLE(CHandViewModel, DT_HandViewModel)
+BEGIN_NETWORK_TABLE(CSharedHandViewModel, DT_HandViewModel)
 END_NETWORK_TABLE()
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CBaseViewModel *CHandViewModel::GetVMOwner()
+CSharedBaseViewModel *CSharedHandViewModel::GetVMOwner()
 {
 	if (!m_hVMOwner)
-		m_hVMOwner = assert_cast<CBaseViewModel*>(GetMoveParent());
+		m_hVMOwner = assert_cast<CSharedBaseViewModel*>(GetMoveParent());
 	return m_hVMOwner;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CBaseCombatWeapon *CHandViewModel::GetOwningWeapon()
+CSharedBaseCombatWeapon *CSharedHandViewModel::GetOwningWeapon()
 {
-	CBaseViewModel *pVM = GetVMOwner();
+	CSharedBaseViewModel *pVM = GetVMOwner();
 	if (pVM)
 		return pVM->GetOwningWeapon();
 	else

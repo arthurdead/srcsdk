@@ -7,6 +7,8 @@
 #ifndef NOISE_H
 #define NOISE_H
 
+#pragma once
+
 #include <math.h>
 #include "basetypes.h"
 #include "mathlib/vector.h"

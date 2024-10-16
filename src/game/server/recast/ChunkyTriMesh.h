@@ -19,6 +19,8 @@
 #ifndef CHUNKYTRIMESH_H
 #define CHUNKYTRIMESH_H
 
+#pragma once
+
 struct rcChunkyTriMeshNode
 {
 	float bmin[2], bmax[2];

@@ -8,7 +8,6 @@
 #define BASEGLOWANIMATING_H
 #pragma once
 
-#include "cbase.h"
 #include "baseanimating.h"
 #include "baseentity.h"
 #include "entityoutput.h"

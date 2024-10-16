@@ -26,9 +26,10 @@ class IHandleEntity;
 
 #ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
 #elif defined CLIENT_DLL
 class C_BaseEntity;
-#define CBaseEntity C_BaseEntity
+typedef C_BaseEntity CSharedBaseEntity;
 #endif
 
 // -------------------------------------------------------------------------------------------------- //
@@ -48,7 +49,7 @@ public:
 	explicit CBaseHandle( const IHandleEntity *pVal );
 
 #if defined GAME_DLL || defined CLIENT_DLL
-	explicit CBaseHandle( const CBaseEntity *pVal );
+	explicit CBaseHandle( const CSharedBaseEntity *pVal );
 #endif
 
 	explicit CBaseHandle( std::nullptr_t );
@@ -70,16 +71,16 @@ public:
 	bool operator !=( const IHandleEntity* pEnt ) const;
 
 #if defined GAME_DLL || defined CLIENT_DLL
-	bool operator ==( const CBaseEntity* pEnt ) const;
-	bool operator !=( const CBaseEntity* pEnt ) const;
+	bool operator ==( const CSharedBaseEntity* pEnt ) const;
+	bool operator !=( const CSharedBaseEntity* pEnt ) const;
 #endif
 
 	bool operator ==( IHandleEntity* pEnt ) const;
 	bool operator !=( IHandleEntity* pEnt ) const;
 
 #if defined GAME_DLL || defined CLIENT_DLL
-	bool operator ==( CBaseEntity* pEnt ) const;
-	bool operator !=( CBaseEntity* pEnt ) const;
+	bool operator ==( CSharedBaseEntity* pEnt ) const;
+	bool operator !=( CSharedBaseEntity* pEnt ) const;
 #endif
 
 	bool operator ==( std::nullptr_t ) const;
@@ -89,7 +90,7 @@ public:
 	CBaseHandle& operator=( const IHandleEntity *pEntity );
 
 #if defined GAME_DLL || defined CLIENT_DLL
-	CBaseHandle& operator=( const CBaseEntity *pEntity );
+	CBaseHandle& operator=( const CSharedBaseEntity *pEntity );
 #endif
 
 	CBaseHandle& operator=( const CBaseHandle &pEntity );
@@ -99,7 +100,7 @@ public:
 	void Set( const IHandleEntity *pEntity );
 
 #if defined GAME_DLL || defined CLIENT_DLL
-	void Set( const CBaseEntity *pEntity );
+	void Set( const CSharedBaseEntity *pEntity );
 #endif
 
 	void Set( std::nullptr_t );
@@ -157,7 +158,7 @@ inline CBaseHandle::CBaseHandle( const IHandleEntity *pObj )
 }
 
 #if defined GAME_DLL || defined CLIENT_DLL
-inline CBaseHandle::CBaseHandle( const CBaseEntity *pObj )
+inline CBaseHandle::CBaseHandle( const CSharedBaseEntity *pObj )
 	: CBaseHandle((const IHandleEntity *)pObj)
 {
 }
@@ -244,14 +245,14 @@ inline bool CBaseHandle::operator !=( const IHandleEntity* pEnt ) const
 }
 
 #if defined GAME_DLL || defined CLIENT_DLL
-inline bool CBaseHandle::operator ==( const CBaseEntity* pEnt ) const
+inline bool CBaseHandle::operator ==( const CSharedBaseEntity* pEnt ) const
 {
-	return (const CBaseEntity*)Get() == pEnt;
+	return (const CSharedBaseEntity*)Get() == pEnt;
 }
 
-inline bool CBaseHandle::operator !=( const CBaseEntity* pEnt ) const
+inline bool CBaseHandle::operator !=( const CSharedBaseEntity* pEnt ) const
 {
-	return (const CBaseEntity*)Get() != pEnt;
+	return (const CSharedBaseEntity*)Get() != pEnt;
 }
 #endif
 
@@ -266,14 +267,14 @@ inline bool CBaseHandle::operator !=( IHandleEntity* pEnt ) const
 }
 
 #if defined GAME_DLL || defined CLIENT_DLL
-inline bool CBaseHandle::operator ==( CBaseEntity* pEnt ) const
+inline bool CBaseHandle::operator ==( CSharedBaseEntity* pEnt ) const
 {
-	return (const CBaseEntity*)Get() == pEnt;
+	return (const CSharedBaseEntity*)Get() == pEnt;
 }
 
-inline bool CBaseHandle::operator !=( CBaseEntity* pEnt ) const
+inline bool CBaseHandle::operator !=( CSharedBaseEntity* pEnt ) const
 {
-	return (const CBaseEntity*)Get() != pEnt;
+	return (const CSharedBaseEntity*)Get() != pEnt;
 }
 #endif
 
@@ -294,7 +295,7 @@ inline CBaseHandle& CBaseHandle::operator=( const IHandleEntity *pEntity )
 }
 
 #if defined GAME_DLL || defined CLIENT_DLL
-inline CBaseHandle& CBaseHandle::operator=( const CBaseEntity *pEntity )
+inline CBaseHandle& CBaseHandle::operator=( const CSharedBaseEntity *pEntity )
 {
 	Set( pEntity );
 	return *this;
@@ -314,7 +315,7 @@ inline CBaseHandle& CBaseHandle::operator=( std::nullptr_t )
 }
 
 #if defined GAME_DLL || defined CLIENT_DLL
-inline void CBaseHandle::Set( const CBaseEntity *pEntity ) 
+inline void CBaseHandle::Set( const CSharedBaseEntity *pEntity ) 
 { 
 	Set( (const IHandleEntity *)pEntity );
 }

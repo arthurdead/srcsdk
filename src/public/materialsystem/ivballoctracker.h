@@ -7,6 +7,8 @@
 #ifndef IVBALLOCTRACKER_H
 #define IVBALLOCTRACKER_H
 
+#pragma once
+
 #include "materialsystem/imaterialsystem.h"
 
 // By default, only enable this alloc tracking for a debug shaderapidx*.dll

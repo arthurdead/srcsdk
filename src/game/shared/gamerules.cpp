@@ -17,42 +17,40 @@
 
 #ifdef CLIENT_DLL
 
-	#include "c_team.h"
+#include "c_team.h"
 
 #else
 
-	#include "player.h"
-	#include "game.h"
-	#include "entitylist.h"
-	#include "basecombatweapon.h"
-	#include "voice_gamemgr.h"
-	#include "globalstate.h"
-	#include "player_resource.h"
-	#include "tactical_mission.h"
-	#include "gamestats.h"
-	#include "hltvdirector.h"
-	#include "viewport_panel_names.h"
-	#include "team.h"
-	#include "mapentities.h"
-	#include "gameinterface.h"
-	#include "eventqueue.h"
-	#include "iscorer.h"
-	#include "client.h"
-	#include "items.h"
+#include "player.h"
+#include "game.h"
+#include "entitylist.h"
+#include "basecombatweapon.h"
+#include "voice_gamemgr.h"
+#include "globalstate.h"
+#include "player_resource.h"
+#include "tactical_mission.h"
+#include "gamestats.h"
+#include "hltvdirector.h"
+#include "viewport_panel_names.h"
+#include "team.h"
+#include "mapentities.h"
+#include "gameinterface.h"
+#include "eventqueue.h"
+#include "iscorer.h"
+#include "client.h"
+#include "items.h"
 
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-BEGIN_NETWORK_TABLE_NOBASE(CGameRules, DT_GameRules)
+BEGIN_NETWORK_TABLE_NOBASE(CSharedGameRules, DT_GameRules)
 	PropFloat(PROPINFO(m_flGravityMultiplier), 0, SPROP_NOSCALE),
 END_NETWORK_TABLE()
 
 #ifdef CLIENT_DLL
-#undef CGameRules
-IMPLEMENT_CLIENTCLASS_NULL(C_GameRules, DT_GameRules, CGameRules)
-#define CGameRules C_GameRules
+IMPLEMENT_CLIENTCLASS_NULL( C_GameRules, DT_GameRules, CGameRules )
 #else
 IMPLEMENT_SERVERCLASS( CGameRules, DT_GameRules );
 #endif
@@ -67,26 +65,26 @@ void *NetProxy_GameRules( const SendProp *pProp, const void *pStructBase, const 
 #else
 void NetProxy_GameRules(const RecvProp *pProp, void **pOut, void *pData, int objectID)
 {
-	CGameRules *pRules = GameRules();
+	C_GameRules *pRules = GameRules();
 	Assert(pRules);
 	*pOut = pRules;
 }
 #endif
 
 // Don't send any of the CBaseEntity stuff..
-BEGIN_NETWORK_TABLE_NOBASE( CGameRulesProxy, DT_GameRulesProxy )
+BEGIN_NETWORK_TABLE_NOBASE( CSharedGameRulesProxy, DT_GameRulesProxy )
 	PropDataTable("gamerules_data", 0, 0, &REFERENCE_DATATABLE(DT_GameRules), NetProxy_GameRules)
 END_NETWORK_TABLE()
 
 IMPLEMENT_NETWORKCLASS_ALIASED( GameRulesProxy, DT_GameRulesProxy )
 
-CGameRules*	s_pGameRules = NULL;
-CGameRules* GameRules()
+CSharedGameRules*	s_pGameRules = NULL;
+CSharedGameRules* GameRules()
 {
 	return s_pGameRules;
 }
 
-REGISTER_GAMERULES_CLASS( CGameRules );
+REGISTER_GAMERULES_CLASS_ALIASED( GameRules );
 
 #ifdef CLIENT_DLL
 ConVar cl_autowepswitch("cl_autowepswitch", "1", FCVAR_ARCHIVE|FCVAR_USERINFO, "Automatically switch to picked up weapons (if more powerful)");
@@ -192,9 +190,9 @@ ConVar sv_item_respawn_time("sv_item_respawn_time", "30", FCVAR_GAMEDLL|FCVAR_NO
 extern IVoiceGameMgrHelper *g_pVoiceGameMgrHelper;
 extern bool	g_fGameOver;
 
-int CGameRules::m_nMapCycleTimeStamp = 0;
-int CGameRules::m_nMapCycleindex = 0;
-CUtlStringList CGameRules::m_MapList;
+int CSharedGameRules::m_nMapCycleTimeStamp = 0;
+int CSharedGameRules::m_nMapCycleindex = 0;
+CUtlStringList CSharedGameRules::m_MapList;
 
 ConVar log_verbose_enable( "log_verbose_enable", "0", FCVAR_GAMEDLL, "Set to 1 to enable verbose server log on the server." );
 ConVar log_verbose_interval( "log_verbose_interval", "3.0", FCVAR_GAMEDLL, "Determines the interval (in seconds) for the verbose server log." );
@@ -237,9 +235,13 @@ IVoiceGameMgrHelper *g_pVoiceGameMgrHelper = &g_VoiceGameMgrHelper;
 // CGameRulesProxy implementation.
 // ------------------------------------------------------------------------------------ //
 
-CGameRulesProxy *g_pGameRulesProxy = NULL;
+CSharedGameRulesProxy *g_pGameRulesProxy = NULL;
 
-CGameRulesProxy::CGameRulesProxy()
+#ifdef CLIENT_DLL
+	#define CGameRulesProxy C_GameRulesProxy
+#endif
+
+CSharedGameRulesProxy::CGameRulesProxy()
 {
 	// allow map placed proxy entities to overwrite the static one
 	if ( !g_pGameRulesProxy ) {
@@ -248,13 +250,17 @@ CGameRulesProxy::CGameRulesProxy()
 	}
 }
 
-CGameRulesProxy::~CGameRulesProxy()
+CSharedGameRulesProxy::~CGameRulesProxy()
 {
 	if ( g_pGameRulesProxy == this )
 		g_pGameRulesProxy = NULL;
 }
 
-void CGameRulesProxy::Spawn( void )
+#ifdef CLIENT_DLL
+	#undef CGameRulesProxy
+#endif
+
+void CSharedGameRulesProxy::Spawn( void )
 {
 	if(g_pGameRulesProxy && g_pGameRulesProxy != this) {
 		UTIL_Remove(this);
@@ -264,7 +270,7 @@ void CGameRulesProxy::Spawn( void )
 	BaseClass::Spawn();
 }
 
-void CGameRulesProxy::NotifyNetworkStateChanged()
+void CSharedGameRulesProxy::NotifyNetworkStateChanged()
 {
 	if ( g_pGameRulesProxy )
 		g_pGameRulesProxy->NetworkStateChanged();
@@ -273,7 +279,7 @@ void CGameRulesProxy::NotifyNetworkStateChanged()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CGameRules::Damage_GetTimeBased( void )
+int CSharedGameRules::Damage_GetTimeBased( void )
 {
 	int iDamage = ( DMG_PARALYZE | DMG_NERVEGAS | DMG_POISON | DMG_RADIATION | DMG_DROWNRECOVER | DMG_ACID | DMG_SLOWBURN );
 	return iDamage;
@@ -282,7 +288,7 @@ int CGameRules::Damage_GetTimeBased( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int	CGameRules::Damage_GetShouldGibCorpse( void )
+int	CSharedGameRules::Damage_GetShouldGibCorpse( void )
 {
 	int iDamage = ( DMG_CRUSH | DMG_FALL | DMG_BLAST | DMG_SONIC | DMG_CLUB );
 	return iDamage;
@@ -291,7 +297,7 @@ int	CGameRules::Damage_GetShouldGibCorpse( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CGameRules::Damage_GetShowOnHud( void )
+int CSharedGameRules::Damage_GetShowOnHud( void )
 {
 	int iDamage = ( DMG_POISON | DMG_ACID | DMG_DROWN | DMG_BURN | DMG_SLOWBURN | DMG_NERVEGAS | DMG_RADIATION | DMG_SHOCK );
 	return iDamage;
@@ -300,7 +306,7 @@ int CGameRules::Damage_GetShowOnHud( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int	CGameRules::Damage_GetNoPhysicsForce( void )
+int	CSharedGameRules::Damage_GetNoPhysicsForce( void )
 {
 	int iTimeBasedDamage = Damage_GetTimeBased();
 	int iDamage = ( DMG_FALL | DMG_BURN | DMG_PLASMA | DMG_DROWN | iTimeBasedDamage | DMG_CRUSH | DMG_PHYSGUN | DMG_PREVENT_PHYSICS_FORCE );
@@ -310,7 +316,7 @@ int	CGameRules::Damage_GetNoPhysicsForce( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int	CGameRules::Damage_GetShouldNotBleed( void )
+int	CSharedGameRules::Damage_GetShouldNotBleed( void )
 {
 	int iDamage = ( DMG_POISON | DMG_ACID );
 	return iDamage;
@@ -321,7 +327,7 @@ int	CGameRules::Damage_GetShouldNotBleed( void )
 // Input  : iDmgType - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CGameRules::Damage_IsTimeBased( int iDmgType )
+bool CSharedGameRules::Damage_IsTimeBased( int iDmgType )
 {
 	// Damage types that are time-based.
 	return ( ( iDmgType & ( DMG_PARALYZE | DMG_NERVEGAS | DMG_POISON | DMG_RADIATION | DMG_DROWNRECOVER | DMG_ACID | DMG_SLOWBURN ) ) != 0 );
@@ -332,7 +338,7 @@ bool CGameRules::Damage_IsTimeBased( int iDmgType )
 // Input  : iDmgType - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CGameRules::Damage_ShouldGibCorpse( int iDmgType )
+bool CSharedGameRules::Damage_ShouldGibCorpse( int iDmgType )
 {
 	// Damage types that gib the corpse.
 	return ( ( iDmgType & ( DMG_CRUSH | DMG_FALL | DMG_BLAST | DMG_SONIC | DMG_CLUB ) ) != 0 );
@@ -343,7 +349,7 @@ bool CGameRules::Damage_ShouldGibCorpse( int iDmgType )
 // Input  : iDmgType - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CGameRules::Damage_ShowOnHUD( int iDmgType )
+bool CSharedGameRules::Damage_ShowOnHUD( int iDmgType )
 {
 	// Damage types that have client HUD art.
 	return ( ( iDmgType & ( DMG_POISON | DMG_ACID | DMG_DROWN | DMG_BURN | DMG_SLOWBURN | DMG_NERVEGAS | DMG_RADIATION | DMG_SHOCK ) ) != 0 );
@@ -354,7 +360,7 @@ bool CGameRules::Damage_ShowOnHUD( int iDmgType )
 // Input  : iDmgType - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CGameRules::Damage_NoPhysicsForce( int iDmgType )
+bool CSharedGameRules::Damage_NoPhysicsForce( int iDmgType )
 {
 	// Damage types that don't have to supply a physics force & position.
 	int iTimeBasedDamage = Damage_GetTimeBased();
@@ -366,13 +372,13 @@ bool CGameRules::Damage_NoPhysicsForce( int iDmgType )
 // Input  : iDmgType - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CGameRules::Damage_ShouldNotBleed( int iDmgType )
+bool CSharedGameRules::Damage_ShouldNotBleed( int iDmgType )
 {
 	// Damage types that don't make the player bleed.
 	return ( ( iDmgType & ( DMG_POISON | DMG_ACID ) ) != 0 );
 }
 
-void CGameRules::SafeRemoveIfDesired()
+void CSharedGameRules::SafeRemoveIfDesired()
 {
 	if(s_pGameRules && s_pGameRules != this) {
 		UTIL_Remove(this);
@@ -382,7 +388,7 @@ void CGameRules::SafeRemoveIfDesired()
 	BaseClass::SafeRemoveIfDesired();
 }
 
-bool CGameRules::Init()
+bool CSharedGameRules::Init()
 {
 #ifdef GAME_DLL
 	// Initialize the custom response rule dictionaries.
@@ -396,7 +402,11 @@ bool CGameRules::Init()
 	return BaseClass::Init();
 }
 
-CGameRules::CGameRules() : CAutoGameSystemPerFrame( "CGameRules" ), CGameEventListener()
+#ifdef CLIENT_DLL
+	#define CGameRules C_GameRules
+#endif
+
+CSharedGameRules::CGameRules() : CAutoGameSystemPerFrame( V_STRINGIFY(CGameRules) ), CGameEventListener()
 {
 	Assert( !s_pGameRules );
 	if(!s_pGameRules)
@@ -467,9 +477,20 @@ CGameRules::CGameRules() : CAutoGameSystemPerFrame( "CGameRules" ), CGameEventLi
 	LoadVoiceCommandScript();
 }
 
+CSharedGameRules::~CGameRules()
+{
+	Assert( s_pGameRules == this );
+	if(s_pGameRules == this)
+		s_pGameRules = NULL;
+}
+
+#ifdef CLIENT_DLL
+	#undef CGameRules
+#endif
+
 #ifdef CLIENT_DLL
 
-const char *CGameRules::GetVoiceCommandSubtitle( int iMenu, int iItem )
+const char *CSharedGameRules::GetVoiceCommandSubtitle( int iMenu, int iItem )
 {
 	Assert( iMenu >= 0 && iMenu < m_VoiceCommandMenus.Count() );
 	if ( iMenu < 0 || iMenu >= m_VoiceCommandMenus.Count() )
@@ -487,7 +508,7 @@ const char *CGameRules::GetVoiceCommandSubtitle( int iMenu, int iItem )
 }
 
 // Returns false if no such menu is declared or if it's an empty menu
-bool CGameRules::GetVoiceMenuLabels( int iMenu, KeyValues *pKV )
+bool CSharedGameRules::GetVoiceMenuLabels( int iMenu, KeyValues *pKV )
 {
 	Assert( iMenu >= 0 && iMenu < m_VoiceCommandMenus.Count() );
 	if ( iMenu < 0 || iMenu >= m_VoiceCommandMenus.Count() )
@@ -507,12 +528,12 @@ bool CGameRules::GetVoiceMenuLabels( int iMenu, KeyValues *pKV )
 	return iNumItems > 0;
 }
 
-bool CGameRules::IsBonusChallengeTimeBased( void )
+bool CSharedGameRules::IsBonusChallengeTimeBased( void )
 {
 	return true;
 }
 
-bool CGameRules::IsLocalPlayer( int nEntIndex )
+bool CSharedGameRules::IsLocalPlayer( int nEntIndex )
 {
 	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
 	return ( pLocalPlayer && pLocalPlayer == ClientEntityList().GetEnt( nEntIndex ) );
@@ -523,7 +544,7 @@ bool CGameRules::IsLocalPlayer( int nEntIndex )
 //-----------------------------------------------------------------------------
 // Precache game-specific resources
 //-----------------------------------------------------------------------------
-void CGameRules::Precache( void ) 
+void CSharedGameRules::Precache( void ) 
 {
 	// Used by particle property
 	PrecacheEffect( "ParticleEffect" );
@@ -548,7 +569,7 @@ void CGameRules::Precache( void )
 //-----------------------------------------------------------------------------
 // Purpose: Return true if the specified player can carry any more of the ammo type
 //-----------------------------------------------------------------------------
-bool CGameRules::CanHaveAmmo( CBaseCombatCharacter *pPlayer, int iAmmoIndex )
+bool CSharedGameRules::CanHaveAmmo( CBaseCombatCharacter *pPlayer, int iAmmoIndex )
 {
 	if ( iAmmoIndex > -1 )
 	{
@@ -566,14 +587,14 @@ bool CGameRules::CanHaveAmmo( CBaseCombatCharacter *pPlayer, int iAmmoIndex )
 //-----------------------------------------------------------------------------
 // Purpose: Return true if the specified player can carry any more of the ammo type
 //-----------------------------------------------------------------------------
-bool CGameRules::CanHaveAmmo( CBaseCombatCharacter *pPlayer, const char *szName )
+bool CSharedGameRules::CanHaveAmmo( CBaseCombatCharacter *pPlayer, const char *szName )
 {
 	return CanHaveAmmo( pPlayer, GetAmmoDef()->Index(szName) );
 }
 
 //=========================================================
 //=========================================================
-CBaseEntity *CGameRules::GetPlayerSpawnSpot( CBasePlayer *pPlayer )
+CBaseEntity *CSharedGameRules::GetPlayerSpawnSpot( CBasePlayer *pPlayer )
 {
 	CBaseEntity *pSpawnSpot = pPlayer->EntSelectSpawnPoint();
 	Assert( pSpawnSpot );
@@ -591,7 +612,7 @@ CBaseEntity *CGameRules::GetPlayerSpawnSpot( CBasePlayer *pPlayer )
 }
 
 // checks if the spot is clear of players
-bool CGameRules::IsSpawnPointValid( CBaseEntity *pSpot, CBasePlayer *pPlayer  )
+bool CSharedGameRules::IsSpawnPointValid( CBaseEntity *pSpot, CBasePlayer *pPlayer  )
 {
 	CBaseEntity *ent = NULL;
 
@@ -612,7 +633,7 @@ bool CGameRules::IsSpawnPointValid( CBaseEntity *pSpot, CBasePlayer *pPlayer  )
 
 //=========================================================
 //=========================================================
-bool CGameRules::CanHavePlayerItem( CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon )
+bool CSharedGameRules::CanHavePlayerItem( CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon )
 {
 	if ( weaponstay.GetInt() > 0 )
 	{
@@ -651,7 +672,7 @@ bool CGameRules::CanHavePlayerItem( CBasePlayer *pPlayer, CBaseCombatWeapon *pWe
 	return TRUE;
 }
 
-void CGameRules::SetSkillLevel( int iLevel )
+void CSharedGameRules::SetSkillLevel( int iLevel )
 {
 	int oldLevel = g_iSkillLevel; 
 
@@ -675,7 +696,7 @@ void CGameRules::SetSkillLevel( int iLevel )
 //=========================================================
 // load the SkillData struct with the proper values based on the skill level.
 //=========================================================
-void CGameRules::RefreshSkillData ( bool forceUpdate )
+void CSharedGameRules::RefreshSkillData ( bool forceUpdate )
 {
 	if ( !forceUpdate )
 	{
@@ -725,7 +746,7 @@ bool IsExplosionTraceBlocked( trace_t *ptr )
 // Default implementation of radius damage
 //-----------------------------------------------------------------------------
 #define ROBUST_RADIUS_PROBE_DIST 16.0f // If a solid surface blocks the explosion, this is how far to creep along the surface looking for another way to the target
-void CGameRules::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrcIn, float flRadius, int iClassIgnore, CBaseEntity *pEntityIgnore )
+void CSharedGameRules::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrcIn, float flRadius, int iClassIgnore, CBaseEntity *pEntityIgnore )
 {
 	const int MASK_RADIUS_DAMAGE = MASK_SHOT&(~CONTENTS_HITBOX);
 	CBaseEntity *pEntity = NULL;
@@ -944,9 +965,9 @@ void CGameRules::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc
 	}
 }
 
-void CGameRules::FrameUpdatePostEntityThink()
+void CSharedGameRules::FrameUpdatePostEntityThink()
 {
-	VPROF( "CGameRules::FrameUpdatePostEntityThink" );
+	VPROF( "CSharedGameRules::FrameUpdatePostEntityThink" );
 	Think();
 
 	float flNow = Plat_FloatTime();
@@ -989,7 +1010,7 @@ void CGameRules::FrameUpdatePostEntityThink()
 	}
 }
 
-float CGameRules::GetMapRemainingTime() const
+float CSharedGameRules::GetMapRemainingTime() const
 {
 	if(mp_timelimit.GetInt() <= 0) {
 		return 0;
@@ -1069,7 +1090,7 @@ public:
 	int m_iIterator;
 };
 
-void CGameRules::CleanUpMap()
+void CSharedGameRules::CleanUpMap()
 {
 	CBaseEntity *pCur = gEntList.FirstEnt();
 	while(pCur) {
@@ -1095,7 +1116,7 @@ void CGameRules::CleanUpMap()
 	MapEntity_ParseAllEntities(engine->GetMapEntitiesString(), &filter, true);
 }
 
-void CGameRules::CheckRestartGame()
+void CSharedGameRules::CheckRestartGame()
 {
 	int iRestartDelay = mp_restartgame.GetInt();
 	if(iRestartDelay > 0) {
@@ -1114,7 +1135,7 @@ void CGameRules::CheckRestartGame()
 	}
 }
 
-void CGameRules::Think()
+void CSharedGameRules::Think()
 {
 	GetVoiceGameMgr()->Update( gpGlobals->frametime );
 
@@ -1183,7 +1204,7 @@ void CGameRules::Think()
 //=========================================================
 //AddLevelDesignerPlacedWeapon
 //=========================================================
-void CGameRules::AddLevelDesignerPlacedObject( CBaseEntity *pEntity )
+void CSharedGameRules::AddLevelDesignerPlacedObject( CBaseEntity *pEntity )
 {
 	if ( m_hRespawnableItemsAndWeapons.Find( pEntity ) == -1 )
 	{
@@ -1194,7 +1215,7 @@ void CGameRules::AddLevelDesignerPlacedObject( CBaseEntity *pEntity )
 //=========================================================
 //RemoveLevelDesignerPlacedWeapon
 //=========================================================
-void CGameRules::RemoveLevelDesignerPlacedObject( CBaseEntity *pEntity )
+void CSharedGameRules::RemoveLevelDesignerPlacedObject( CBaseEntity *pEntity )
 {
 	if ( m_hRespawnableItemsAndWeapons.Find( pEntity ) != -1 )
 	{
@@ -1202,7 +1223,7 @@ void CGameRules::RemoveLevelDesignerPlacedObject( CBaseEntity *pEntity )
 	}
 }
 
-bool CGameRules::CheckGameOver()
+bool CSharedGameRules::CheckGameOver()
 {
 	if(g_fGameOver) {
 		if(m_flIntermissionEndTime < gpGlobals->curtime) {
@@ -1215,7 +1236,7 @@ bool CGameRules::CheckGameOver()
 	return false;
 }
 
-void CGameRules::RestartGame()
+void CSharedGameRules::RestartGame()
 {
 	if(mp_timelimit.GetInt() < 0) {
 		mp_timelimit.SetValue(0);
@@ -1306,7 +1327,7 @@ bool GetObjectsOriginalParameters(CBaseEntity *pObject, Vector &vOriginalOrigin,
 	return false;
 }
 
-void CGameRules::ManageObjectRelocation( void )
+void CSharedGameRules::ManageObjectRelocation( void )
 {
 	int iTotal = m_hRespawnableItemsAndWeapons.Count();
 
@@ -1350,7 +1371,7 @@ void CGameRules::ManageObjectRelocation( void )
 //-----------------------------------------------------------------------------
 // Purpose: Called at the end of GameFrame (i.e. after all game logic has run this frame)
 //-----------------------------------------------------------------------------
-void CGameRules::EndGameFrame( void )
+void CSharedGameRules::EndGameFrame( void )
 {
 	// If you hit this assert, it means something called AddMultiDamage() and didn't ApplyMultiDamage().
 	// The g_MultiDamage.m_hAttacker & g_MultiDamage.m_hInflictor should give help you figure out the culprit.
@@ -1366,7 +1387,7 @@ void CGameRules::EndGameFrame( void )
 	}
 }
 
-void CGameRules::OnSkillLevelChanged( int iNewLevel )
+void CSharedGameRules::OnSkillLevelChanged( int iNewLevel )
 {
 	variant_t varNewLevel;
 	varNewLevel.SetInt(iNewLevel);
@@ -1391,14 +1412,14 @@ void CGameRules::OnSkillLevelChanged( int iNewLevel )
 //-----------------------------------------------------------------------------
 // trace line rules
 //-----------------------------------------------------------------------------
-float CGameRules::WeaponTraceEntity( CBaseEntity *pEntity, const Vector &vecStart, const Vector &vecEnd,
+float CSharedGameRules::WeaponTraceEntity( CBaseEntity *pEntity, const Vector &vecStart, const Vector &vecEnd,
 					 unsigned int mask, trace_t *ptr )
 {
 	UTIL_TraceEntity( pEntity, vecStart, vecEnd, mask, ptr );
 	return 1.0f;
 }
 
-CGameRulesProxy *CGameRules::AllocateProxy()
+CGameRulesProxy *CSharedGameRules::AllocateProxy()
 {
 	return new CGameRulesProxy();
 }
@@ -1436,7 +1457,7 @@ public:
 };
 static CGameRulesEntityFactory gamerulesProxyFactory;
 
-void CGameRules::CreateStandardEntities()
+void CSharedGameRules::CreateStandardEntities()
 {
 	if(g_pGameRulesProxy) {
 		UTIL_Remove(g_pGameRulesProxy);
@@ -1465,7 +1486,7 @@ void CGameRules::CreateStandardEntities()
 // Input  : filter - which client(s) to send this to
 //			iAchievementID - The enumeration value of the achievement to mark (see TODO:Kerry, what file will have the mod's achievement enum?) 
 //-----------------------------------------------------------------------------
-void CGameRules::MarkAchievement( IRecipientFilter& filter, char const *pchAchievementName )
+void CSharedGameRules::MarkAchievement( IRecipientFilter& filter, char const *pchAchievementName )
 {
 	gamestats->Event_IncrementCountedStatistic( vec3_origin, pchAchievementName, 1.0f );
 
@@ -1475,7 +1496,7 @@ void CGameRules::MarkAchievement( IRecipientFilter& filter, char const *pchAchie
 	pAchievementMgr->OnMapEvent( pchAchievementName );
 }
 
-const char *CGameRules::GetChatFormat(bool bTeamOnly, CBasePlayer *pPlayer)
+const char *CSharedGameRules::GetChatFormat(bool bTeamOnly, CBasePlayer *pPlayer)
 {
 	if(!pPlayer) {
 		return NULL;
@@ -1505,7 +1526,7 @@ const char *CGameRules::GetChatFormat(bool bTeamOnly, CBasePlayer *pPlayer)
 	return pszFormat;
 }
 
-bool CGameRules::FShouldSwitchWeapon( CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon )
+bool CSharedGameRules::FShouldSwitchWeapon( CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon )
 {
 	if(pPlayer->GetActiveWeapon() && pPlayer->IsNetClient())
 	{
@@ -1555,7 +1576,7 @@ bool CGameRules::FShouldSwitchWeapon( CBasePlayer *pPlayer, CBaseCombatWeapon *p
 	return false;
 }
 
-void CGameRules::ClientDisconnected( edict_t *pClient )
+void CSharedGameRules::ClientDisconnected( edict_t *pClient )
 {
 	if ( pClient )
 	{
@@ -1578,7 +1599,7 @@ void CGameRules::ClientDisconnected( edict_t *pClient )
 	}
 }
 
-float CGameRules::FlPlayerFallDamage( CBasePlayer *pPlayer )
+float CSharedGameRules::FlPlayerFallDamage( CBasePlayer *pPlayer )
 {
 	int iFallDamage = (int)falldamage.GetFloat();
 
@@ -1595,13 +1616,13 @@ float CGameRules::FlPlayerFallDamage( CBasePlayer *pPlayer )
 	}
 }
 
-bool CGameRules::ClientConnected( edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen )
+bool CSharedGameRules::ClientConnected( edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen )
 {
 	GetVoiceGameMgr()->ClientConnected( pEntity );
 	return true;
 }
 
-const char *CGameRules::GetChatPrefix( bool bTeamOnly, CBasePlayer *pPlayer )
+const char *CSharedGameRules::GetChatPrefix( bool bTeamOnly, CBasePlayer *pPlayer )
 {
 	if ( pPlayer && pPlayer->IsAlive() == false )
 	{
@@ -1614,7 +1635,7 @@ const char *CGameRules::GetChatPrefix( bool bTeamOnly, CBasePlayer *pPlayer )
 	return "";
 }
 
-void CGameRules::ClientSettingsChanged( CBasePlayer *pPlayer )
+void CSharedGameRules::ClientSettingsChanged( CBasePlayer *pPlayer )
 {
 	const char *pszName = engine->GetClientConVarValue( pPlayer->entindex(), "name" );
 
@@ -1650,12 +1671,12 @@ void CGameRules::ClientSettingsChanged( CBasePlayer *pPlayer )
 	}
 }
 
-CTacticalMissionManager *CGameRules::TacticalMissionManagerFactory( void )
+CTacticalMissionManager *CSharedGameRules::TacticalMissionManagerFactory( void )
 {
 	return new CTacticalMissionManager;
 }
 
-void CGameRules::SkipNextMapInCycle()
+void CSharedGameRules::SkipNextMapInCycle()
 {
 	char szSkippedMap[MAX_MAP_NAME];
 	char szNextMap[MAX_MAP_NAME];
@@ -1672,7 +1693,7 @@ void CGameRules::SkipNextMapInCycle()
 	}
 }
 
-void CGameRules::IncrementMapCycleIndex()
+void CSharedGameRules::IncrementMapCycleIndex()
 {
 	// Reset index if we've passed the end of the map list
 	if ( ++m_nMapCycleindex >= m_MapList.Count() )
@@ -1681,7 +1702,7 @@ void CGameRules::IncrementMapCycleIndex()
 	}
 }
 
-bool CGameRules::ClientCommand( CBaseEntity *pEdict, const CCommand &args )
+bool CSharedGameRules::ClientCommand( CBaseEntity *pEdict, const CCommand &args )
 {
 	CBaseExpresserPlayer *pPlayer = ToBaseExpresserPlayer( pEdict );
 
@@ -1716,7 +1737,7 @@ bool CGameRules::ClientCommand( CBaseEntity *pEdict, const CCommand &args )
 	return false;
 }
 
-void CGameRules::ClientCommandKeyValues( edict_t *pEntity, KeyValues *pKeyValues )
+void CSharedGameRules::ClientCommandKeyValues( edict_t *pEntity, KeyValues *pKeyValues )
 {
 	CBasePlayer *pPlayer = ToBasePlayer( CBaseEntity::Instance( pEntity ) );
 
@@ -1746,7 +1767,7 @@ void CGameRules::ClientCommandKeyValues( edict_t *pEntity, KeyValues *pKeyValues
 	}
 }
 
-VoiceCommandMenuItem_t *CGameRules::VoiceCommand( CBaseExpresserPlayer *pPlayer, int iMenu, int iItem )
+VoiceCommandMenuItem_t *CSharedGameRules::VoiceCommand( CBaseExpresserPlayer *pPlayer, int iMenu, int iItem )
 {
 	// have the player speak the concept that is in a particular menu slot
 	if ( !pPlayer )
@@ -1835,12 +1856,12 @@ VoiceCommandMenuItem_t *CGameRules::VoiceCommand( CBaseExpresserPlayer *pPlayer,
 	return NULL;
 }
 
-bool CGameRules::IsLoadingBugBaitReport()
+bool CSharedGameRules::IsLoadingBugBaitReport()
 {
 	return ( !engine->IsDedicatedServer()&& CommandLine()->CheckParm( "-bugbait" ) && sv_cheats->GetBool() );
 }
 
-void CGameRules::HaveAllPlayersSpeakConceptIfAllowed( int iConcept, int iTeam /* = TEAM_UNASSIGNED */, const char *modifiers /* = NULL */ )
+void CSharedGameRules::HaveAllPlayersSpeakConceptIfAllowed( int iConcept, int iTeam /* = TEAM_UNASSIGNED */, const char *modifiers /* = NULL */ )
 {
 	CBaseExpresserPlayer *pPlayer;
 	for ( int i = 1; i <= gpGlobals->maxClients; i++ )
@@ -1860,7 +1881,7 @@ void CGameRules::HaveAllPlayersSpeakConceptIfAllowed( int iConcept, int iTeam /*
 	}
 }
 
-void CGameRules::RandomPlayersSpeakConceptIfAllowed( int iConcept, int iNumRandomPlayer /*= 1*/, int iTeam /*= TEAM_UNASSIGNED*/, const char *modifiers /*= NULL*/ )
+void CSharedGameRules::RandomPlayersSpeakConceptIfAllowed( int iConcept, int iNumRandomPlayer /*= 1*/, int iTeam /*= TEAM_UNASSIGNED*/, const char *modifiers /*= NULL*/ )
 {
 	CUtlVector< CBaseExpresserPlayer* > speakCandidates;
 
@@ -1891,7 +1912,7 @@ void CGameRules::RandomPlayersSpeakConceptIfAllowed( int iConcept, int iNumRando
 	}
 }
 
-void CGameRules::GetTaggedConVarList( KeyValues *pCvarTagList )
+void CSharedGameRules::GetTaggedConVarList( KeyValues *pCvarTagList )
 {
 	// sv_gravity
 	KeyValues *pGravity = new KeyValues( "sv_gravity" );
@@ -1908,7 +1929,7 @@ void CGameRules::GetTaggedConVarList( KeyValues *pCvarTagList )
 	pCvarTagList->AddSubKey( pAllTalk );
 }
 
-void CGameRules::PlayerThink( CBasePlayer *pPlayer )
+void CSharedGameRules::PlayerThink( CBasePlayer *pPlayer )
 {
 	if ( g_fGameOver )
 	{
@@ -1919,7 +1940,7 @@ void CGameRules::PlayerThink( CBasePlayer *pPlayer )
 	}
 }
 
-void CGameRules::PlayerSpawn( CBasePlayer *pPlayer )
+void CSharedGameRules::PlayerSpawn( CBasePlayer *pPlayer )
 {
 	bool		addDefault;
 	CBaseEntity	*pWeaponEntity = NULL;
@@ -1933,7 +1954,7 @@ void CGameRules::PlayerSpawn( CBasePlayer *pPlayer )
 	}
 }
 
-CBasePlayer *CGameRules::GetDeathScorer( CBaseEntity *pKiller, CBaseEntity *pInflictor )
+CBasePlayer *CSharedGameRules::GetDeathScorer( CBaseEntity *pKiller, CBaseEntity *pInflictor )
 {
 	if ( pKiller)
 	{
@@ -1965,7 +1986,7 @@ CBasePlayer *CGameRules::GetDeathScorer( CBaseEntity *pKiller, CBaseEntity *pInf
 //-----------------------------------------------------------------------------
 // Purpose: Returns player who should receive credit for kill
 //-----------------------------------------------------------------------------
-CBasePlayer *CGameRules::GetDeathScorer( CBaseEntity *pKiller, CBaseEntity *pInflictor, CBaseEntity *pVictim )
+CBasePlayer *CSharedGameRules::GetDeathScorer( CBaseEntity *pKiller, CBaseEntity *pInflictor, CBaseEntity *pVictim )
 {
 	// if this method not overridden by subclass, just call our default implementation
 	return GetDeathScorer( pKiller, pInflictor );
@@ -1974,7 +1995,7 @@ CBasePlayer *CGameRules::GetDeathScorer( CBaseEntity *pKiller, CBaseEntity *pInf
 //=========================================================
 // PlayerKilled - someone/something killed this player
 //=========================================================
-void CGameRules::PlayerKilled( CBasePlayer *pVictim, const CTakeDamageInfo &info )
+void CSharedGameRules::PlayerKilled( CBasePlayer *pVictim, const CTakeDamageInfo &info )
 {
 	if(IsIntermission()) {
 		return;
@@ -2029,7 +2050,7 @@ void CGameRules::PlayerKilled( CBasePlayer *pVictim, const CTakeDamageInfo &info
 //=========================================================
 // Deathnotice. 
 //=========================================================
-void CGameRules::DeathNotice( CBasePlayer *pVictim, const CTakeDamageInfo &info )
+void CSharedGameRules::DeathNotice( CBasePlayer *pVictim, const CTakeDamageInfo &info )
 {
 	// Work out what killed the player, and send a message to all clients about it
 	const char *killer_weapon_name = "world";		// by default, the player is killed by the world
@@ -2113,7 +2134,7 @@ void CGameRules::DeathNotice( CBasePlayer *pVictim, const CTakeDamageInfo &info 
 // FlWeaponRespawnTime - what is the time in the future
 // at which this weapon may spawn?
 //=========================================================
-float CGameRules::FlWeaponRespawnTime( CBaseCombatWeapon *pWeapon )
+float CSharedGameRules::FlWeaponRespawnTime( CBaseCombatWeapon *pWeapon )
 {
 	if ( weaponstay.GetInt() > 0 )
 	{
@@ -2132,7 +2153,7 @@ float CGameRules::FlWeaponRespawnTime( CBaseCombatWeapon *pWeapon )
 // now,  otherwise it returns the time at which it can try
 // to spawn again.
 //=========================================================
-float CGameRules::FlWeaponTryRespawn( CBaseCombatWeapon *pWeapon )
+float CSharedGameRules::FlWeaponTryRespawn( CBaseCombatWeapon *pWeapon )
 {
 	if ( pWeapon && (pWeapon->GetWeaponFlags() & ITEM_FLAG_LIMITINWORLD) )
 	{
@@ -2150,17 +2171,17 @@ float CGameRules::FlWeaponTryRespawn( CBaseCombatWeapon *pWeapon )
 // VecWeaponRespawnSpot - where should this weapon spawn?
 // Some game variations may choose to randomize spawn locations
 //=========================================================
-Vector CGameRules::VecWeaponRespawnSpot( CBaseCombatWeapon *pWeapon )
+Vector CSharedGameRules::VecWeaponRespawnSpot( CBaseCombatWeapon *pWeapon )
 {
 	return pWeapon->GetOriginalSpawnOrigin();
 }
 
-Vector CGameRules::VecItemRespawnSpot(CItem *pItem)
+Vector CSharedGameRules::VecItemRespawnSpot(CItem *pItem)
 {
 	return pItem->GetOriginalSpawnOrigin();
 }
 
-QAngle CGameRules::VecItemRespawnAngles(CItem *pItem)
+QAngle CSharedGameRules::VecItemRespawnAngles(CItem *pItem)
 {
 	return pItem->GetOriginalSpawnAngles();
 }
@@ -2169,7 +2190,7 @@ QAngle CGameRules::VecItemRespawnAngles(CItem *pItem)
 // WeaponShouldRespawn - any conditions inhibiting the
 // respawning of this weapon?
 //=========================================================
-int CGameRules::WeaponShouldRespawn( CBaseCombatWeapon *pWeapon )
+int CSharedGameRules::WeaponShouldRespawn( CBaseCombatWeapon *pWeapon )
 {
 	if ( pWeapon->HasSpawnFlags( SF_NORESPAWN ) )
 	{
@@ -2179,12 +2200,12 @@ int CGameRules::WeaponShouldRespawn( CBaseCombatWeapon *pWeapon )
 	return GR_WEAPON_RESPAWN_YES;
 }
 
-bool CGameRules::PlayerCanHearChat( CBasePlayer *pListener, CBasePlayer *pSpeaker )
+bool CSharedGameRules::PlayerCanHearChat( CBasePlayer *pListener, CBasePlayer *pSpeaker )
 {
 	return ( PlayerRelationship( pListener, pSpeaker ) == GR_TEAMMATE );
 }
 
-int CGameRules::PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget )
+int CSharedGameRules::PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget )
 {
 	if(!pPlayer || !pTarget) {
 		return GR_NOTTEAMMATE;
@@ -2201,7 +2222,7 @@ int CGameRules::PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget )
 	return GR_NOTTEAMMATE;
 }
 
-bool CGameRules::PlayFootstepSounds( CBasePlayer *pl )
+bool CSharedGameRules::PlayFootstepSounds( CBasePlayer *pl )
 {
 	if ( footsteps.GetInt() == 0 )
 		return false;
@@ -2212,14 +2233,14 @@ bool CGameRules::PlayFootstepSounds( CBasePlayer *pl )
 	return false;
 }
 
-bool CGameRules::FAllowFlashlight( void ) 
+bool CSharedGameRules::FAllowFlashlight( void ) 
 { 
 	return flashlight.GetInt() != 0; 
 }
 
 //=========================================================
 //=========================================================
-bool CGameRules::FAllowNPCs( void )
+bool CSharedGameRules::FAllowNPCs( void )
 {
 	return ( allowNPCs.GetInt() != 0 );
 }
@@ -2227,7 +2248,7 @@ bool CGameRules::FAllowNPCs( void )
 //=========================================================
 //======== CMultiplayRules private functions ===========
 
-void CGameRules::GoToIntermission( void )
+void CSharedGameRules::GoToIntermission( void )
 {
 	if ( g_fGameOver )
 		return;
@@ -2282,7 +2303,7 @@ static void StripWhitespaceChars( char *szBuffer )
 	*szOut = '\0';
 }
 
-void CGameRules::GetNextLevelName( char *pszNextMap, int bufsize, bool bRandom /* = false */ )
+void CSharedGameRules::GetNextLevelName( char *pszNextMap, int bufsize, bool bRandom /* = false */ )
 {
 	char mapcfile[MAX_PATH];
 	DetermineMapCycleFilename( mapcfile, sizeof(mapcfile), false );
@@ -2324,7 +2345,7 @@ void CGameRules::GetNextLevelName( char *pszNextMap, int bufsize, bool bRandom /
 	Q_strncpy( pszNextMap, m_MapList[m_nMapCycleindex], bufsize);
 }
 
-void CGameRules::DetermineMapCycleFilename( char *pszResult, int nSizeResult, bool bForceSpew )
+void CSharedGameRules::DetermineMapCycleFilename( char *pszResult, int nSizeResult, bool bForceSpew )
 {
 	static char szLastResult[ MAX_PATH ];
 
@@ -2391,12 +2412,12 @@ void CGameRules::DetermineMapCycleFilename( char *pszResult, int nSizeResult, bo
 	}
 }
 
-void CGameRules::LoadMapCycleFileIntoVector( const char *pszMapCycleFile, CUtlVector<char *> &mapList )
+void CSharedGameRules::LoadMapCycleFileIntoVector( const char *pszMapCycleFile, CUtlVector<char *> &mapList )
 {
-	CGameRules::RawLoadMapCycleFileIntoVector( pszMapCycleFile, mapList );
+	CSharedGameRules::RawLoadMapCycleFileIntoVector( pszMapCycleFile, mapList );
 }
 
-void CGameRules::RawLoadMapCycleFileIntoVector( const char *pszMapCycleFile, CUtlVector<char *> &mapList )
+void CSharedGameRules::RawLoadMapCycleFileIntoVector( const char *pszMapCycleFile, CUtlVector<char *> &mapList )
 {
 	CUtlBuffer buf;
 	if ( !g_pFullFileSystem->ReadFile( pszMapCycleFile, "GAME", buf ) )
@@ -2425,7 +2446,7 @@ void CGameRules::RawLoadMapCycleFileIntoVector( const char *pszMapCycleFile, CUt
 	}
 }
 
-void CGameRules::FreeMapCycleFileVector( CUtlVector<char *> &mapList )
+void CSharedGameRules::FreeMapCycleFileVector( CUtlVector<char *> &mapList )
 {
 	// Clear out existing map list. Not using Purge() or PurgeAndDeleteAll() because they won't delete [] each element.
 	for ( int i = 0; i < mapList.Count(); i++ )
@@ -2436,7 +2457,7 @@ void CGameRules::FreeMapCycleFileVector( CUtlVector<char *> &mapList )
 	mapList.RemoveAll();
 }
 
-bool CGameRules::IsManualMapChangeOkay( const char **pszReason )
+bool CSharedGameRules::IsManualMapChangeOkay( const char **pszReason )
 {
 	if ( HLTVDirector()->IsActive() && ( HLTVDirector()->GetDelay() >= HLTV_MIN_DIRECTOR_DELAY ) )
 	{
@@ -2457,7 +2478,7 @@ bool CGameRules::IsManualMapChangeOkay( const char **pszReason )
 	return true;
 }
 
-bool CGameRules::IsMapInMapCycle( const char *pszName )
+bool CSharedGameRules::IsMapInMapCycle( const char *pszName )
 {
 	for ( int i = 0; i < m_MapList.Count(); i++ )
 	{
@@ -2470,7 +2491,7 @@ bool CGameRules::IsMapInMapCycle( const char *pszName )
 	return false;
 }
 
-void CGameRules::ChangeLevel( void )
+void CSharedGameRules::ChangeLevel( void )
 {
 	char szNextMap[MAX_MAP_NAME];
 
@@ -2487,12 +2508,12 @@ void CGameRules::ChangeLevel( void )
 	ChangeLevelToMap( szNextMap );
 }
 
-bool CGameRules::IsOfficialMap() const
+bool CSharedGameRules::IsOfficialMap() const
 {
 	return false;
 }
 
-void CGameRules::LoadMapCycleFile( void )
+void CSharedGameRules::LoadMapCycleFile( void )
 {
 	int nOldCycleIndex = m_nMapCycleindex;
 	m_nMapCycleindex = 0;
@@ -2546,7 +2567,7 @@ void CGameRules::LoadMapCycleFile( void )
 	}
 }
 
-void CGameRules::ChangeLevelToMap( const char *pszMap )
+void CSharedGameRules::ChangeLevelToMap( const char *pszMap )
 {
 	g_fGameOver = true;
 	m_flTimeLastMapChangeOrPlayerWasConnected = 0.0f;
@@ -2557,12 +2578,12 @@ void CGameRules::ChangeLevelToMap( const char *pszMap )
 //-----------------------------------------------------------------------------
 // Purpose: Wrapper allowing gamerules to change the way client-finding in PVS works
 //-----------------------------------------------------------------------------
-edict_t *CGameRules::DoFindClientInPVS( edict_t *pEdict, unsigned char *pvs, unsigned pvssize )
+edict_t *CSharedGameRules::DoFindClientInPVS( edict_t *pEdict, unsigned char *pvs, unsigned pvssize )
 {
 	return UTIL_FindClientInPVSGuts( pEdict, pvs, pvssize );
 }
 
-void CGameRules::InitDefaultAIRelationships()
+void CSharedGameRules::InitDefaultAIRelationships()
 {
 	CBaseCombatCharacter::AllocateDefaultRelationships();
 	CBaseCombatCharacter::AllocateDefaultFactionRelationships();
@@ -2582,7 +2603,7 @@ void CGameRules::InitDefaultAIRelationships()
 	}
 }
 
-Team_t CGameRules::GetTeamIndex( const char *pTeamName )
+Team_t CSharedGameRules::GetTeamIndex( const char *pTeamName )
 {
 	if(!pTeamName || *pTeamName == '\0') {
 		return TEAM_INVALID;
@@ -2607,7 +2628,7 @@ Team_t CGameRules::GetTeamIndex( const char *pTeamName )
 	return TEAM_INVALID;
 }
 
-const char *CGameRules::GetIndexedTeamName( Team_t teamIndex )
+const char *CSharedGameRules::GetIndexedTeamName( Team_t teamIndex )
 {
 	CTeam *pTeam = GetGlobalTeamByTeam( teamIndex );
 	if(pTeam) {
@@ -2624,7 +2645,7 @@ const char *CGameRules::GetIndexedTeamName( Team_t teamIndex )
 	}
 }
 
-void CGameRules::ChangePlayerTeam( CBasePlayer *pPlayer, const char *pTeamName, bool bKill, bool bGib )
+void CSharedGameRules::ChangePlayerTeam( CBasePlayer *pPlayer, const char *pTeamName, bool bKill, bool bGib )
 {
 	Team_t index = GetTeamIndex(pTeamName);
 	if(index == TEAM_INVALID) {
@@ -2638,18 +2659,7 @@ void CGameRules::ChangePlayerTeam( CBasePlayer *pPlayer, const char *pTeamName, 
 	pPlayer->ChangeTeam(index);
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *pPlayer - 
-// Output : const char
-//-----------------------------------------------------------------------------
-const char *CGameRules::SetDefaultPlayerTeam( CBasePlayer *pPlayer )
-{
-	Assert( pPlayer );
-	return "";
-}
-
-const char* CGameRules::AIClassText(Class_T classType)
+const char* CSharedGameRules::AIClassText(Class_T classType)
 {
 	switch (classType)
 	{
@@ -2659,7 +2669,7 @@ const char* CGameRules::AIClassText(Class_T classType)
 	}
 }
 
-const char* CGameRules::AIFactionText(Faction_T classType)
+const char* CSharedGameRules::AIFactionText(Faction_T classType)
 {
 	switch (classType)
 	{
@@ -2668,39 +2678,39 @@ const char* CGameRules::AIFactionText(Faction_T classType)
 	}
 }
 
-void CGameRules::InitHUD( CBasePlayer *pl )
+void CSharedGameRules::InitHUD( CBasePlayer *pl )
 {
 } 
 
 //=========================================================
 //=========================================================
-bool CGameRules::AllowDamage( CBaseEntity *pVictim, const CTakeDamageInfo &info )
+bool CSharedGameRules::AllowDamage( CBaseEntity *pVictim, const CTakeDamageInfo &info )
 {
 	return true;
 }
 
 //=========================================================
 //=========================================================
-bool CGameRules::FPlayerCanTakeDamage( CBasePlayer *pPlayer, CBaseEntity *pAttacker, const CTakeDamageInfo &info )
+bool CSharedGameRules::FPlayerCanTakeDamage( CBasePlayer *pPlayer, CBaseEntity *pAttacker, const CTakeDamageInfo &info )
 {
 	return true;
 }
 
 //=========================================================
 //=========================================================
-bool CGameRules::FPlayerCanRespawn( CBasePlayer *pPlayer )
+bool CSharedGameRules::FPlayerCanRespawn( CBasePlayer *pPlayer )
 {
 	return true;
 }
 
 //=========================================================
 //=========================================================
-float CGameRules::FlPlayerSpawnTime( CBasePlayer *pPlayer )
+float CSharedGameRules::FlPlayerSpawnTime( CBasePlayer *pPlayer )
 {
 	return gpGlobals->curtime;//now!
 }
 
-bool CGameRules::AllowAutoTargetCrosshair( void )
+bool CSharedGameRules::AllowAutoTargetCrosshair( void )
 {
 	return ( aimcrosshair.GetInt() != 0 );
 }
@@ -2709,27 +2719,27 @@ bool CGameRules::AllowAutoTargetCrosshair( void )
 // IPointsForKill - how many points awarded to anyone
 // that kills this player?
 //=========================================================
-int CGameRules::IPointsForKill( CBasePlayer *pAttacker, CBasePlayer *pKilled )
+int CSharedGameRules::IPointsForKill( CBasePlayer *pAttacker, CBasePlayer *pKilled )
 {
 	return 1;
 }
 
 //=========================================================
 //=========================================================
-bool CGameRules::CanHaveItem( CBasePlayer *pPlayer, CItem *pItem )
+bool CSharedGameRules::CanHaveItem( CBasePlayer *pPlayer, CItem *pItem )
 {
 	return true;
 }
 
 //=========================================================
 //=========================================================
-void CGameRules::PlayerGotItem( CBasePlayer *pPlayer, CItem *pItem )
+void CSharedGameRules::PlayerGotItem( CBasePlayer *pPlayer, CItem *pItem )
 {
 }
 
 //=========================================================
 //=========================================================
-int CGameRules::ItemShouldRespawn( CItem *pItem )
+int CSharedGameRules::ItemShouldRespawn( CItem *pItem )
 {
 	if ( pItem->HasSpawnFlags( SF_NORESPAWN ) )
 	{
@@ -2743,20 +2753,20 @@ int CGameRules::ItemShouldRespawn( CItem *pItem )
 //=========================================================
 // At what time in the future may this Item respawn?
 //=========================================================
-float CGameRules::FlItemRespawnTime( CItem *pItem )
+float CSharedGameRules::FlItemRespawnTime( CItem *pItem )
 {
 	return gpGlobals->curtime + sv_item_respawn_time.GetFloat();
 }
 
 //=========================================================
 //=========================================================
-void CGameRules::PlayerGotAmmo( CBaseCombatCharacter *pPlayer, char *szName, int iCount )
+void CSharedGameRules::PlayerGotAmmo( CBaseCombatCharacter *pPlayer, char *szName, int iCount )
 {
 }
 
 //=========================================================
 //=========================================================
-bool CGameRules::IsAllowedToSpawn( CBaseEntity *pEntity )
+bool CSharedGameRules::IsAllowedToSpawn( CBaseEntity *pEntity )
 {
 	return true;
 }
@@ -2764,27 +2774,27 @@ bool CGameRules::IsAllowedToSpawn( CBaseEntity *pEntity )
 
 //=========================================================
 //=========================================================
-float CGameRules::FlHealthChargerRechargeTime( void )
+float CSharedGameRules::FlHealthChargerRechargeTime( void )
 {
 	return 60;
 }
 
 
-float CGameRules::FlHEVChargerRechargeTime( void )
+float CSharedGameRules::FlHEVChargerRechargeTime( void )
 {
 	return 30;
 }
 
 //=========================================================
 //=========================================================
-int CGameRules::DeadPlayerWeapons( CBasePlayer *pPlayer )
+int CSharedGameRules::DeadPlayerWeapons( CBasePlayer *pPlayer )
 {
 	return GR_PLR_DROP_GUN_ACTIVE;
 }
 
 //=========================================================
 //=========================================================
-int CGameRules::DeadPlayerAmmo( CBasePlayer *pPlayer )
+int CSharedGameRules::DeadPlayerAmmo( CBasePlayer *pPlayer )
 {
 	return GR_PLR_DROP_AMMO_ACTIVE;
 }
@@ -2792,7 +2802,7 @@ int CGameRules::DeadPlayerAmmo( CBasePlayer *pPlayer )
 //-----------------------------------------------------------------------------
 // Gets our global friendly fire override.
 //-----------------------------------------------------------------------------
-ThreeState_t CGameRules::GlobalFriendlyFire()
+ThreeState_t CSharedGameRules::GlobalFriendlyFire()
 {
 	return GlobalEntity_IsInTable(FRIENDLY_FIRE_GLOBALNAME) ? TO_THREESTATE(GlobalEntity_GetState(FRIENDLY_FIRE_GLOBALNAME)) : TRS_NONE;
 }
@@ -2800,14 +2810,14 @@ ThreeState_t CGameRules::GlobalFriendlyFire()
 //-----------------------------------------------------------------------------
 // Sets our global friendly fire override.
 //-----------------------------------------------------------------------------
-void CGameRules::SetGlobalFriendlyFire(ThreeState_t val)
+void CSharedGameRules::SetGlobalFriendlyFire(ThreeState_t val)
 {
 	GlobalEntity_Add(MAKE_STRING(FRIENDLY_FIRE_GLOBALNAME), gpGlobals->mapname, (GLOBALESTATE)val);
 }
 
 #endif // !CLIENT_DLL
 
-void CGameRules::FireGameEvent( IGameEvent *event )
+void CSharedGameRules::FireGameEvent( IGameEvent *event )
 {
 	const char *eventName = event->GetName();
 
@@ -2819,7 +2829,7 @@ void CGameRules::FireGameEvent( IGameEvent *event )
 #endif
 }
 
-void CGameRules::LoadVoiceCommandScript( void )
+void CSharedGameRules::LoadVoiceCommandScript( void )
 {
 	KeyValues *pKV = new KeyValues( "VoiceCommands" );
 
@@ -2873,21 +2883,14 @@ void CGameRules::LoadVoiceCommandScript( void )
 // Shared CGameRules implementation.
 // ----------------------------------------------------------------------------- //
 
-CGameRules::~CGameRules()
-{
-	Assert( s_pGameRules == this );
-	if(s_pGameRules == this)
-		s_pGameRules = NULL;
-}
-
-void CGameRules::LevelShutdown( void )
+void CSharedGameRules::LevelShutdown( void )
 {
 	g_Teams.Purge();
 }
 
-bool CGameRules::SwitchToNextBestWeapon( CBaseCombatCharacter *pPlayer, CBaseCombatWeapon *pCurrentWeapon )
+bool CSharedGameRules::SwitchToNextBestWeapon( CSharedBaseCombatCharacter *pPlayer, CSharedBaseCombatWeapon *pCurrentWeapon )
 {
-	CBaseCombatWeapon *pWeapon = GetNextBestWeapon( pPlayer, pCurrentWeapon );
+	CSharedBaseCombatWeapon *pWeapon = GetNextBestWeapon( pPlayer, pCurrentWeapon );
 
 	if ( pWeapon != NULL )
 		return pPlayer->Weapon_Switch( pWeapon );
@@ -2895,10 +2898,10 @@ bool CGameRules::SwitchToNextBestWeapon( CBaseCombatCharacter *pPlayer, CBaseCom
 	return false;
 }
 
-CBaseCombatWeapon *CGameRules::GetNextBestWeapon( CBaseCombatCharacter *pPlayer, CBaseCombatWeapon *pCurrentWeapon )
+CSharedBaseCombatWeapon *CSharedGameRules::GetNextBestWeapon( CSharedBaseCombatCharacter *pPlayer, CSharedBaseCombatWeapon *pCurrentWeapon )
 {
-	CBaseCombatWeapon *pCheck;
-	CBaseCombatWeapon *pBest;// this will be used in the event that we don't find a weapon in the same category.
+	CSharedBaseCombatWeapon *pCheck;
+	CSharedBaseCombatWeapon *pBest;// this will be used in the event that we don't find a weapon in the same category.
 
 	int iCurrentWeight = -1;
 	int iBestWeight = -1;// no weapon lower than -1 can be autoswitched to
@@ -2964,26 +2967,26 @@ CBaseCombatWeapon *CGameRules::GetNextBestWeapon( CBaseCombatCharacter *pPlayer,
 
 //=========================================================
 //=========================================================
-bool CGameRules::IsDeathmatch( void )
+bool CSharedGameRules::IsDeathmatch( void )
 {
 	return deathmatch.GetInt() != 0;
 }
 
 //=========================================================
 //=========================================================
-bool CGameRules::IsCoOp( void )
+bool CSharedGameRules::IsCoOp( void )
 {
 	return coop.GetInt() != 0;
 }
 
 //=========================================================
 //=========================================================
-bool CGameRules::IsTeamplay( void )
+bool CSharedGameRules::IsTeamplay( void )
 {
 	return teamplay.GetInt() != 0;
 }
 
-bool CGameRules::ShouldCollide( int collisionGroup0, int collisionGroup1 )
+bool CSharedGameRules::ShouldCollide( int collisionGroup0, int collisionGroup1 )
 {
 	if ( collisionGroup0 > collisionGroup1 )
 	{
@@ -3119,7 +3122,7 @@ bool CGameRules::ShouldCollide( int collisionGroup0, int collisionGroup1 )
 }
 
 
-const CViewVectors* CGameRules::GetViewVectors() const
+const CViewVectors* CSharedGameRules::GetViewVectors() const
 {
 	return &g_DefaultViewVectors;
 }
@@ -3133,7 +3136,7 @@ const CViewVectors* CGameRules::GetViewVectors() const
 //			nAmmoType - What been shot out.
 // Output : How much hurt to put on dude what done got shot (pVictim).
 //-----------------------------------------------------------------------------
-float CGameRules::GetAmmoDamage( CBaseEntity *pAttacker, CBaseEntity *pVictim, int nAmmoType )
+float CSharedGameRules::GetAmmoDamage( CSharedBaseEntity *pAttacker, CSharedBaseEntity *pVictim, int nAmmoType )
 {
 	float flDamage = 0;
 	CAmmoDef *pAmmoDef = GetAmmoDef();
@@ -3175,7 +3178,7 @@ int CSameTeamGroup::Score() const
 	return m_nScore; 
 }
 
-CBasePlayer *CSameTeamGroup::GetPlayer( int idx )
+CSharedBasePlayer *CSameTeamGroup::GetPlayer( int idx )
 {
 	return m_Players[ idx ];
 }

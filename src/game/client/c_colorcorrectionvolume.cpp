@@ -120,13 +120,13 @@ bool C_ColorCorrectionVolume::ShouldDraw()
 }
 
 //--------------------------------------------------------------------------------------------------------
-void C_ColorCorrectionVolume::StartTouch( CBaseEntity *pEntity )
+void C_ColorCorrectionVolume::StartTouch( C_BaseEntity *pEntity )
 {
 	m_LastEnterTime = gpGlobals->curtime;
 	m_LastEnterWeight = m_Weight;
 }
 
-void C_ColorCorrectionVolume::EndTouch( CBaseEntity *pEntity )
+void C_ColorCorrectionVolume::EndTouch( C_BaseEntity *pEntity )
 {
 	m_LastExitTime = gpGlobals->curtime;
 	m_LastExitWeight = m_Weight;

@@ -10,10 +10,14 @@
 
 #include "utlhash.h"
 
-#include "tier0/memdbgon.h"
-
 // This is the hash key type, but it could just as easily be and int or void *
+#ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
+#else
+class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -23,9 +27,9 @@ abstract_class IEntityDataInstantiator
 public:
 	virtual ~IEntityDataInstantiator() {};
 
-	virtual void *GetDataObject( const CBaseEntity *instance ) = 0;
-	virtual void *CreateDataObject( const CBaseEntity *instance ) = 0;
-	virtual void DestroyDataObject( const CBaseEntity *instance ) = 0;
+	virtual void *GetDataObject( const CSharedBaseEntity *instance ) = 0;
+	virtual void *CreateDataObject( const CSharedBaseEntity *instance ) = 0;
+	virtual void DestroyDataObject( const CSharedBaseEntity *instance ) = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -40,55 +44,11 @@ public:
 	{
 	}
 
-	virtual void *GetDataObject( const CBaseEntity *instance )
-	{
-		UtlHashHandle_t handle; 
-		HashEntry entry;
-		entry.key = instance;
-		handle = m_HashTable.Find( entry );
+	virtual void *GetDataObject( const CSharedBaseEntity *instance );
 
-		if ( handle != m_HashTable.InvalidHandle() )
-		{
-			return (void *)m_HashTable[ handle ].data;
-		}
+	virtual void *CreateDataObject( const CSharedBaseEntity *instance );
 
-		return NULL;
-	}
-
-	virtual void *CreateDataObject( const CBaseEntity *instance )
-	{
-		UtlHashHandle_t handle; 
-		HashEntry entry;
-		entry.key = instance;
-		handle = m_HashTable.Find( entry );
-
-		// Create it if not already present
-		if ( handle == m_HashTable.InvalidHandle() )
-		{
-			handle = m_HashTable.Insert( entry );
-			Assert( handle != m_HashTable.InvalidHandle() );
-			m_HashTable[ handle ].data = new T;
-	
-			// FIXME: We'll have to remove this if any objects we instance have vtables!!!
-			Q_memset( m_HashTable[ handle ].data, 0, sizeof( T ) );
-		}
-
-		return (void *)m_HashTable[ handle ].data;
-	}
-
-	virtual void DestroyDataObject( const CBaseEntity *instance )
-	{
-		UtlHashHandle_t handle; 
-		HashEntry entry;
-		entry.key = instance;
-		handle = m_HashTable.Find( entry );
-
-		if ( handle != m_HashTable.InvalidHandle() )
-		{
-			delete m_HashTable[ handle ].data;
-			m_HashTable.Remove( handle );
-		}
-	}
+	virtual void DestroyDataObject( const CSharedBaseEntity *instance );
 
 private:
 
@@ -100,7 +60,7 @@ private:
 			data = NULL;
 		}
 
-		const CBaseEntity *key;
+		const CSharedBaseEntity *key;
 		T				*data;
 	};
 
@@ -118,6 +78,61 @@ private:
 
 	CUtlHash< HashEntry >	m_HashTable;
 };
+
+#include "tier0/memdbgon.h"
+
+template <class T>
+void *CEntityDataInstantiator<T>::GetDataObject( const CSharedBaseEntity *instance )
+{
+	UtlHashHandle_t handle; 
+	HashEntry entry;
+	entry.key = instance;
+	handle = m_HashTable.Find( entry );
+
+	if ( handle != m_HashTable.InvalidHandle() )
+	{
+		return (void *)m_HashTable[ handle ].data;
+	}
+
+	return NULL;
+}
+
+template <class T>
+void *CEntityDataInstantiator<T>::CreateDataObject( const CSharedBaseEntity *instance )
+{
+	UtlHashHandle_t handle; 
+	HashEntry entry;
+	entry.key = instance;
+	handle = m_HashTable.Find( entry );
+
+	// Create it if not already present
+	if ( handle == m_HashTable.InvalidHandle() )
+	{
+		handle = m_HashTable.Insert( entry );
+		Assert( handle != m_HashTable.InvalidHandle() );
+		m_HashTable[ handle ].data = new T;
+
+		// FIXME: We'll have to remove this if any objects we instance have vtables!!!
+		Q_memset( m_HashTable[ handle ].data, 0, sizeof( T ) );
+	}
+
+	return (void *)m_HashTable[ handle ].data;
+}
+
+template <class T>
+void CEntityDataInstantiator<T>::DestroyDataObject( const CSharedBaseEntity *instance )
+{
+	UtlHashHandle_t handle; 
+	HashEntry entry;
+	entry.key = instance;
+	handle = m_HashTable.Find( entry );
+
+	if ( handle != m_HashTable.InvalidHandle() )
+	{
+		delete m_HashTable[ handle ].data;
+		m_HashTable.Remove( handle );
+	}
+}
 
 #include "tier0/memdbgoff.h"
 

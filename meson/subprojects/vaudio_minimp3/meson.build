@@ -17,7 +17,8 @@ hackmgr = subproject('hackmgr')
 if build_client
 	shared_library('vaudio_minimp3',name_prefix:'',
 		cpp_args: [
-			'-DDLLNAME=vaudio_minimp3'
+			'-DDLLNAME=vaudio_minimp3',
+			'-DMEMOVERRIDE_MODULE=vaudio_minimp3',
 		],
 		sources: files(
 			join_paths(src_root_dir,'vaudio_minimp3','vaudio_minimp3.cpp')

@@ -35,6 +35,7 @@ class C_BaseViewModel;
 class C_FuncLadder;
 class CFlashlightEffect;
 struct Beam_t;
+class CHintSystem;
 
 extern int g_nKillCamMode;
 extern int g_nKillCamTarget1;
@@ -148,8 +149,8 @@ public:
 	virtual void	AvoidPhysicsProps( CUserCmd *pCmd );
 	
 	virtual void	PlayerUse( void );
-	CBaseEntity		*FindUseEntity( void );
-	virtual bool	IsUseableEntity( CBaseEntity *pEntity, unsigned int requiredCaps );
+	C_BaseEntity		*FindUseEntity( void );
+	virtual bool	IsUseableEntity( C_BaseEntity *pEntity, unsigned int requiredCaps );
 
 	// Data handlers
 	virtual bool	IsPlayer( void ) const { return true; }
@@ -161,7 +162,7 @@ public:
 	// observer mode
 	virtual int			GetObserverMode() const;
 	void				SetObserverMode ( int iNewMode );
-	virtual CBaseEntity	*GetObserverTarget() const;
+	virtual C_BaseEntity	*GetObserverTarget() const;
 	void			SetObserverTarget( EHANDLE hObserverTarget );
 
 	bool			AudioStateIsUnderwater( const Vector &vecMainViewOrigin ) const;
@@ -305,7 +306,7 @@ public:
 	virtual void				Weapon_SetLast( C_BaseCombatWeapon *pWeapon );
 	virtual bool				Weapon_ShouldSetLast( C_BaseCombatWeapon *pOldWeapon, C_BaseCombatWeapon *pNewWeapon ) { return true; }
 	virtual bool				Weapon_ShouldSelectItem( C_BaseCombatWeapon *pWeapon );
-	virtual	bool				Weapon_Switch( C_BaseCombatWeapon *pWeapon, int viewmodelindex = 0 );		// Switch to given weapon if has ammo (false if failed)
+	virtual	bool				Weapon_Switch( C_BaseCombatWeapon *pWeapon, int viewmodelindex = 0, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
 	virtual C_BaseCombatWeapon *GetLastWeapon( void ) { return m_hLastWeapon.Get(); }
 	void						ResetAutoaim( void );
 	virtual void 				SelectItem( const char *pstr, int iSubType = 0 );
@@ -315,7 +316,7 @@ public:
 	virtual float				GetFOV( void );	
 	int							GetDefaultFOV( void ) const;
 	virtual bool				IsZoomed( void )	{ return false; }
-	bool						SetFOV( CBaseEntity *pRequester, int FOV, float zoomRate = 0.0f, int iZoomStart = 0 );
+	bool						SetFOV( C_BaseEntity *pRequester, int FOV, float zoomRate = 0.0f, int iZoomStart = 0 );
 	void						ClearZoomOwner( void );
 
 	float						GetFOVDistanceAdjustFactor();
@@ -531,7 +532,7 @@ protected:
 	virtual void				CalcVehicleView(IClientVehicle *pVehicle, Vector& eyeOrigin, QAngle& eyeAngles,
 							float& zNear, float& zFar, float& fov );
 	virtual void		CalcObserverView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
-	virtual Vector		GetChaseCamViewOffset( CBaseEntity *target );
+	virtual Vector		GetChaseCamViewOffset( C_BaseEntity *target );
 	virtual void				CalcChaseCamView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
 	virtual void		CalcInEyeCamView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
 
@@ -614,8 +615,8 @@ private:
 	// Player flashlight dynamic light pointers
 	bool			m_bFlashlightEnabled;
 
-	typedef CHandle<C_BaseCombatWeapon> CBaseCombatWeaponHandle;
-	CNetworkVar( CBaseCombatWeaponHandle, m_hLastWeapon );
+	typedef CHandle<C_BaseCombatWeapon> BaseCombatWeaponHandle;
+	CNetworkHandle( C_BaseCombatWeapon, m_hLastWeapon );
 
 	CUtlVector< CHandle< C_BaseEntity > > m_SimulatedByThisPlayer;
 
@@ -644,8 +645,7 @@ private:
 	bool							m_bPlayerUnderwater;
 
 	friend class CPrediction;
-
-	friend class CGameMovement;
+	friend class C_GameMovement;
 	
 	// Accessors for gamemovement
 	float GetStepSize( void ) const { return m_Local.m_flStepSize; }
@@ -736,7 +736,7 @@ public:
 	const fogplayerparams_t& GetPlayerFog() const { return m_Local.m_PlayerFog; }
 
 private:
-	friend class CMoveHelperClient;
+	friend class C_MoveHelper;
 
 };
 
@@ -787,21 +787,21 @@ inline C_BaseEntity* C_BasePlayer::GetPotentialUseEntity( void ) const
 template < typename Functor >
 bool ForEachPlayer( Functor &func )
 {
-    for( int i=1; i<=gpGlobals->maxClients; ++i )
-    {
-            CBasePlayer *player = static_cast<C_BasePlayer *>( UTIL_PlayerByIndex( i ) );
+	for( int i=1; i<=gpGlobals->maxClients; ++i )
+	{
+		C_BasePlayer *player = static_cast<C_BasePlayer *>( UTIL_PlayerByIndex( i ) );
 
-            if (player == NULL)
-                    continue;
+		if (player == NULL)
+			continue;
 
-            if (!player->IsPlayer())
-                    continue;
+		if (!player->IsPlayer())
+			continue;
 
-            if (func( player ) == false)
-                    return false;
-    }
+		if (func( player ) == false)
+			return false;
+	}
 
-    return true;
+	return true;
 }
 
 inline IClientVehicle *C_BasePlayer::GetVehicle() 
@@ -826,7 +826,7 @@ inline C_CommandContext* C_BasePlayer::GetCommandContext()
 	return &m_CommandContext;
 }
 
-inline int CBasePlayer::CurrentCommandNumber() const
+inline int C_BasePlayer::CurrentCommandNumber() const
 {
 	Assert( m_pCurrentCommand );
 	if ( !m_pCurrentCommand )
@@ -834,7 +834,7 @@ inline int CBasePlayer::CurrentCommandNumber() const
 	return m_pCurrentCommand->command_number;
 }
 
-inline const CUserCmd *CBasePlayer::GetCurrentUserCommand() const
+inline const CUserCmd *C_BasePlayer::GetCurrentUserCommand() const
 {
 	Assert( m_pCurrentCommand );
 	return m_pCurrentCommand;

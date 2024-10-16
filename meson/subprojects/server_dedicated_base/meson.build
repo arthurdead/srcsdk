@@ -12,6 +12,7 @@ server_src_dir = join_paths(src_root_dir,'game','server')
 server_dedicated_base_dep = declare_dependency(
 	compile_args: [
 		'-DDLLNAME=server_srv',
+		'-DMEMOVERRIDE_MODULE=server_srv',
 		'-DDEDICATED',
 		'-DSWDS'
 	],

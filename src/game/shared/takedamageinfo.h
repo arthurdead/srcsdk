@@ -17,34 +17,54 @@
 // hasn't been modified by a user. 
 #define BASEDAMAGE_NOT_SPECIFIED	FLT_MAX
 
+#ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
+class CTakeDamageInfo;
+typedef CTakeDamageInfo CSharedTakeDamageInfo;
+class CMultiDamage;
+typedef CMultiDamage CSharedMultiDamage;
+#else
+class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
+class C_TakeDamageInfo;
+typedef C_TakeDamageInfo CSharedTakeDamageInfo;
+class C_MultiDamage;
+typedef C_MultiDamage CSharedMultiDamage;
+#endif
 
+#ifdef CLIENT_DLL
+	#define CTakeDamageInfo C_TakeDamageInfo
+#endif
 
 class CTakeDamageInfo
 {
 public:
 	DECLARE_CLASS_NOBASE( CTakeDamageInfo );
 
-					CTakeDamageInfo();
-					CTakeDamageInfo( CBaseEntity *pInflictor, CBaseEntity *pAttacker, float flDamage, int bitsDamageType, int iKillType = 0 );
-					CTakeDamageInfo( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, float flDamage, int bitsDamageType, int iKillType = 0 );
-					CTakeDamageInfo( CBaseEntity *pInflictor, CBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
-					CTakeDamageInfo( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
-	
+	CTakeDamageInfo();
+	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, int bitsDamageType, int iKillType = 0 );
+	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, int bitsDamageType, int iKillType = 0 );
+	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
+	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
+
+#ifdef CLIENT_DLL
+	#undef CTakeDamageInfo
+#endif
 
 	// Inflictor is the weapon or rocket (or player) that is dealing the damage.
-	CBaseEntity*	GetInflictor() const;
-	void			SetInflictor( CBaseEntity *pInflictor );
+	CSharedBaseEntity*	GetInflictor() const;
+	void			SetInflictor( CSharedBaseEntity *pInflictor );
 
 	// Weapon is the weapon that did the attack.
 	// For hitscan weapons, it'll be the same as the inflictor. For projectile weapons, the projectile 
 	// is the inflictor, and this contains the weapon that created the projectile.
-	CBaseEntity*	GetWeapon() const;
-	void			SetWeapon( CBaseEntity *pWeapon );
+	CSharedBaseEntity*	GetWeapon() const;
+	void			SetWeapon( CSharedBaseEntity *pWeapon );
 
 	// Attacker is the character who originated the attack (like a player or an AI).
-	CBaseEntity*	GetAttacker() const;
-	void			SetAttacker( CBaseEntity *pAttacker );
+	CSharedBaseEntity*	GetAttacker() const;
+	void			SetAttacker( CSharedBaseEntity *pAttacker );
 
 	float			GetDamage() const;
 	void			SetDamage( float flDamage );
@@ -54,8 +74,8 @@ public:
 	void			AddDamage( float flAddAmount );
 	void			SubtractDamage( float flSubtractAmount );
 	float			GetDamageBonus() const;
-	CBaseEntity		*GetDamageBonusProvider() const;
-	void			SetDamageBonus( float flBonus, CBaseEntity *pProvider = NULL );
+	CSharedBaseEntity		*GetDamageBonusProvider() const;
+	void			SetDamageBonus( float flBonus, CSharedBaseEntity *pProvider = NULL );
 
 	float			GetBaseDamage() const;
 	bool			BaseDamageIsValid() const;
@@ -95,10 +115,10 @@ public:
 	int				GetDamagedOtherPlayers() const     { return m_iDamagedOtherPlayers; }
 	void			SetDamagedOtherPlayers( int iVal ) { m_iDamagedOtherPlayers = iVal; }
 
-	void			Set( CBaseEntity *pInflictor, CBaseEntity *pAttacker, float flDamage, int bitsDamageType, int iKillType = 0 );
-	void			Set( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, float flDamage, int bitsDamageType, int iKillType = 0 );
-	void			Set( CBaseEntity *pInflictor, CBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
-	void			Set( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
+	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, int bitsDamageType, int iKillType = 0 );
+	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, int bitsDamageType, int iKillType = 0 );
+	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
+	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
 
 	void			AdjustPlayerDamageInflictedForSkillLevel();
 	void			AdjustPlayerDamageTakenForSkillLevel();
@@ -112,7 +132,7 @@ public:
 	void			CopyDamageToBaseDamage();
 
 protected:
-	void			Init( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, int bitsDamageType, int iKillType );
+	void			Init( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, int bitsDamageType, int iKillType );
 
 	Vector			m_vecDamageForce;
 	Vector			m_vecDamagePosition;
@@ -140,130 +160,138 @@ protected:
 //-----------------------------------------------------------------------------
 // Purpose: Multi damage. Used to collect multiple damages in the same frame (i.e. shotgun pellets)
 //-----------------------------------------------------------------------------
-class CMultiDamage : public CTakeDamageInfo
+#ifdef CLIENT_DLL
+	#define CMultiDamage C_MultiDamage
+#endif
+
+class CMultiDamage : public CSharedTakeDamageInfo
 {
-	DECLARE_CLASS( CMultiDamage, CTakeDamageInfo );
 public:
+	DECLARE_CLASS( CMultiDamage, CSharedTakeDamageInfo );
 	CMultiDamage();
 
-	bool			IsClear( void ) { return (m_hTarget == NULL); }
-	CBaseEntity		*GetTarget() const;
-	void			SetTarget( CBaseEntity *pTarget );
+#ifdef CLIENT_DLL
+	#undef CMultiDamage
+#endif
 
-	void			Init( CBaseEntity *pTarget, CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, int bitsDamageType, int iKillType );
+	bool			IsClear( void ) { return (m_hTarget == NULL); }
+	CSharedBaseEntity		*GetTarget() const;
+	void			SetTarget( CSharedBaseEntity *pTarget );
+
+	void			Init( CSharedBaseEntity *pTarget, CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, int bitsDamageType, int iKillType );
 
 protected:
 	EHANDLE			m_hTarget;
 };
 
-extern CMultiDamage g_MultiDamage;
+extern CSharedMultiDamage g_MultiDamage;
 
 // Multidamage accessors
 void ClearMultiDamage( void );
 void ApplyMultiDamage( void );
-void AddMultiDamage( const CTakeDamageInfo &info, CBaseEntity *pEntity );
+void AddMultiDamage( const CSharedTakeDamageInfo &info, CSharedBaseEntity *pEntity );
 
 //-----------------------------------------------------------------------------
 // Purpose: Utility functions for physics damage force calculation 
 //-----------------------------------------------------------------------------
 float ImpulseScale( float flTargetMass, float flDesiredSpeed );
-void CalculateExplosiveDamageForce( CTakeDamageInfo *info, const Vector &vecDir, const Vector &vecForceOrigin, float flScale = 1.0 );
-void CalculateBulletDamageForce( CTakeDamageInfo *info, int iBulletType, const Vector &vecBulletDir, const Vector &vecForceOrigin, float flScale = 1.0 );
-void CalculateMeleeDamageForce( CTakeDamageInfo *info, const Vector &vecMeleeDir, const Vector &vecForceOrigin, float flScale = 1.0 );
-void GuessDamageForce( CTakeDamageInfo *info, const Vector &vecForceDir, const Vector &vecForceOrigin, float flScale = 1.0 );
+void CalculateExplosiveDamageForce( CSharedTakeDamageInfo *info, const Vector &vecDir, const Vector &vecForceOrigin, float flScale = 1.0 );
+void CalculateBulletDamageForce( CSharedTakeDamageInfo *info, int iBulletType, const Vector &vecBulletDir, const Vector &vecForceOrigin, float flScale = 1.0 );
+void CalculateMeleeDamageForce( CSharedTakeDamageInfo *info, const Vector &vecMeleeDir, const Vector &vecForceOrigin, float flScale = 1.0 );
+void GuessDamageForce( CSharedTakeDamageInfo *info, const Vector &vecForceDir, const Vector &vecForceOrigin, float flScale = 1.0 );
 
 
 // -------------------------------------------------------------------------------------------------- //
 // Inlines.
 // -------------------------------------------------------------------------------------------------- //
 
-inline CBaseEntity* CTakeDamageInfo::GetInflictor() const
+inline CSharedBaseEntity* CSharedTakeDamageInfo::GetInflictor() const
 {
 	return m_hInflictor.Get();
 }
 
 
-inline void CTakeDamageInfo::SetInflictor( CBaseEntity *pInflictor )
+inline void CSharedTakeDamageInfo::SetInflictor( CSharedBaseEntity *pInflictor )
 {
 	m_hInflictor = pInflictor;
 }
 
 
-inline CBaseEntity* CTakeDamageInfo::GetAttacker() const
+inline CSharedBaseEntity* CSharedTakeDamageInfo::GetAttacker() const
 {
 	return m_hAttacker.Get();
 }
 
 
-inline void CTakeDamageInfo::SetAttacker( CBaseEntity *pAttacker )
+inline void CSharedTakeDamageInfo::SetAttacker( CSharedBaseEntity *pAttacker )
 {
 	m_hAttacker = pAttacker;
 }
 
-inline CBaseEntity* CTakeDamageInfo::GetWeapon() const
+inline CSharedBaseEntity* CSharedTakeDamageInfo::GetWeapon() const
 {
 	return m_hWeapon.Get();
 }
 
 
-inline void CTakeDamageInfo::SetWeapon( CBaseEntity *pWeapon )
+inline void CSharedTakeDamageInfo::SetWeapon( CSharedBaseEntity *pWeapon )
 {
 	m_hWeapon = pWeapon;
 }
 
 
-inline float CTakeDamageInfo::GetDamage() const
+inline float CSharedTakeDamageInfo::GetDamage() const
 {
 	return m_flDamage;
 }
 
-inline void CTakeDamageInfo::SetDamage( float flDamage )
+inline void CSharedTakeDamageInfo::SetDamage( float flDamage )
 {
 	m_flDamage = flDamage;
 }
 
-inline float CTakeDamageInfo::GetMaxDamage() const
+inline float CSharedTakeDamageInfo::GetMaxDamage() const
 {
 	return m_flMaxDamage;
 }
 
-inline void CTakeDamageInfo::SetMaxDamage( float flMaxDamage )
+inline void CSharedTakeDamageInfo::SetMaxDamage( float flMaxDamage )
 {
 	m_flMaxDamage = flMaxDamage;
 }
 
-inline void CTakeDamageInfo::ScaleDamage( float flScaleAmount )
+inline void CSharedTakeDamageInfo::ScaleDamage( float flScaleAmount )
 {
 	m_flDamage *= flScaleAmount;
 }
 
-inline void CTakeDamageInfo::AddDamage( float flAddAmount )
+inline void CSharedTakeDamageInfo::AddDamage( float flAddAmount )
 {
 	m_flDamage += flAddAmount;
 }
 
-inline void CTakeDamageInfo::SubtractDamage( float flSubtractAmount )
+inline void CSharedTakeDamageInfo::SubtractDamage( float flSubtractAmount )
 {
 	m_flDamage -= flSubtractAmount;
 }
 
-inline float CTakeDamageInfo::GetDamageBonus() const
+inline float CSharedTakeDamageInfo::GetDamageBonus() const
 {
 	return m_flDamageBonus;
 }
 
-inline CBaseEntity *CTakeDamageInfo::GetDamageBonusProvider() const
+inline CSharedBaseEntity *CSharedTakeDamageInfo::GetDamageBonusProvider() const
 {
 	return m_hDamageBonusProvider.Get();
 }
 
-inline void CTakeDamageInfo::SetDamageBonus( float flBonus, CBaseEntity *pProvider /*= NULL*/ )
+inline void CSharedTakeDamageInfo::SetDamageBonus( float flBonus, CSharedBaseEntity *pProvider /*= NULL*/ )
 {
 	m_flDamageBonus = flBonus;
 	m_hDamageBonusProvider = pProvider;
 }
 
-inline float CTakeDamageInfo::GetBaseDamage() const
+inline float CSharedTakeDamageInfo::GetBaseDamage() const
 {
 	if( BaseDamageIsValid() )
 		return m_flBaseDamage;
@@ -272,115 +300,115 @@ inline float CTakeDamageInfo::GetBaseDamage() const
 	return m_flDamage;
 }
 
-inline bool CTakeDamageInfo::BaseDamageIsValid() const
+inline bool CSharedTakeDamageInfo::BaseDamageIsValid() const
 {
 	return (m_flBaseDamage != BASEDAMAGE_NOT_SPECIFIED);
 }
 
-inline Vector CTakeDamageInfo::GetDamageForce() const
+inline Vector CSharedTakeDamageInfo::GetDamageForce() const
 {
 	return m_vecDamageForce;
 }
 
-inline void CTakeDamageInfo::SetDamageForce( const Vector &damageForce )
+inline void CSharedTakeDamageInfo::SetDamageForce( const Vector &damageForce )
 {
 	m_vecDamageForce = damageForce;
 }
 
-inline void	CTakeDamageInfo::ScaleDamageForce( float flScaleAmount )
+inline void	CSharedTakeDamageInfo::ScaleDamageForce( float flScaleAmount )
 {
 	m_vecDamageForce *= flScaleAmount;
 }
 
-inline float CTakeDamageInfo::GetDamageForForceCalc() const
+inline float CSharedTakeDamageInfo::GetDamageForForceCalc() const
 {
 	return m_flDamageForForce;
 }
 
-inline void CTakeDamageInfo::SetDamageForForceCalc( float flDamage )
+inline void CSharedTakeDamageInfo::SetDamageForForceCalc( float flDamage )
 {
 	m_flDamageForForce = flDamage;
 }
 
-inline Vector CTakeDamageInfo::GetDamagePosition() const
+inline Vector CSharedTakeDamageInfo::GetDamagePosition() const
 {
 	return m_vecDamagePosition;
 }
 
 
-inline void CTakeDamageInfo::SetDamagePosition( const Vector &damagePosition )
+inline void CSharedTakeDamageInfo::SetDamagePosition( const Vector &damagePosition )
 {
 	m_vecDamagePosition = damagePosition;
 }
 
-inline Vector CTakeDamageInfo::GetReportedPosition() const
+inline Vector CSharedTakeDamageInfo::GetReportedPosition() const
 {
 	return m_vecReportedPosition;
 }
 
 
-inline void CTakeDamageInfo::SetReportedPosition( const Vector &reportedPosition )
+inline void CSharedTakeDamageInfo::SetReportedPosition( const Vector &reportedPosition )
 {
 	m_vecReportedPosition = reportedPosition;
 }
 
 
-inline void CTakeDamageInfo::SetDamageType( int bitsDamageType )
+inline void CSharedTakeDamageInfo::SetDamageType( int bitsDamageType )
 {
 	m_bitsDamageType = bitsDamageType;
 }
 
-inline int CTakeDamageInfo::GetDamageType() const
+inline int CSharedTakeDamageInfo::GetDamageType() const
 {
 	return m_bitsDamageType;
 }
 
-inline void	CTakeDamageInfo::AddDamageType( int bitsDamageType )
+inline void	CSharedTakeDamageInfo::AddDamageType( int bitsDamageType )
 {
 	m_bitsDamageType |= bitsDamageType;
 }
 
-inline int CTakeDamageInfo::GetDamageCustom() const
+inline int CSharedTakeDamageInfo::GetDamageCustom() const
 {
 	return m_iDamageCustom;
 }
 
-inline void CTakeDamageInfo::SetDamageCustom( int iDamageCustom )
+inline void CSharedTakeDamageInfo::SetDamageCustom( int iDamageCustom )
 {
 	m_iDamageCustom = iDamageCustom;
 }
 
-inline int CTakeDamageInfo::GetDamageStats() const
+inline int CSharedTakeDamageInfo::GetDamageStats() const
 {
 	return m_iDamageStats;
 }
 
-inline void CTakeDamageInfo::SetDamageStats( int iDamageCustom )
+inline void CSharedTakeDamageInfo::SetDamageStats( int iDamageCustom )
 {
 	m_iDamageStats = iDamageCustom;
 }
 
-inline int CTakeDamageInfo::GetAmmoType() const
+inline int CSharedTakeDamageInfo::GetAmmoType() const
 {
 	return m_iAmmoType;
 }
 
-inline void CTakeDamageInfo::SetAmmoType( int iAmmoType )
+inline void CSharedTakeDamageInfo::SetAmmoType( int iAmmoType )
 {
 	m_iAmmoType = iAmmoType;
 }
 
-inline void CTakeDamageInfo::CopyDamageToBaseDamage()
+inline void CSharedTakeDamageInfo::CopyDamageToBaseDamage()
 { 
 	m_flBaseDamage = m_flDamage;
 }
 
-inline float CTakeDamageInfo::GetRadius() const
+inline float CSharedTakeDamageInfo::GetRadius() const
 {
 	return m_flRadius;
 }
 
-inline void CTakeDamageInfo::SetRadius( float flRadius )
+inline void CSharedTakeDamageInfo::SetRadius( float flRadius )
 {
 	m_flRadius = flRadius;
 }
@@ -388,12 +416,12 @@ inline void CTakeDamageInfo::SetRadius( float flRadius )
 // -------------------------------------------------------------------------------------------------- //
 // Inlines.
 // -------------------------------------------------------------------------------------------------- //
-inline CBaseEntity *CMultiDamage::GetTarget() const
+inline CSharedBaseEntity *CSharedMultiDamage::GetTarget() const
 {
 	return m_hTarget.Get();
 }
 
-inline void CMultiDamage::SetTarget( CBaseEntity *pTarget )
+inline void CSharedMultiDamage::SetTarget( CSharedBaseEntity *pTarget )
 {
 	m_hTarget = pTarget;
 }

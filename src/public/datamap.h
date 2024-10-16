@@ -530,35 +530,16 @@ inline void DataMapAccess(T *ignored, datamap_t **p)
 
 template <typename T> datamap_t* DataMapInit(T*);
 
-#include "tier0/memdbgon.h"
-
 //-----------------------------------------------------------------------------
 
 class CDatadescGeneratedNameHolder
 {
 public:
-	CDatadescGeneratedNameHolder( const char *pszBase )
-	 : m_pszBase(pszBase)
-	{
-		m_nLenBase = strlen( m_pszBase );
-	}
+	CDatadescGeneratedNameHolder( const char *pszBase );
 	
-	~CDatadescGeneratedNameHolder()
-	{
-		for ( int i = 0; i < m_Names.Count(); i++ )
-		{
-			delete m_Names[i];
-		}
-	}
+	~CDatadescGeneratedNameHolder();
 	
-	const char *GenerateName( const char *pszIdentifier )
-	{
-		char *pBuf = new char[m_nLenBase + strlen(pszIdentifier) + 1];
-		strcpy( pBuf, m_pszBase );
-		strcat( pBuf, pszIdentifier );
-		m_Names.AddToTail( pBuf );
-		return pBuf;
-	}
+	const char *GenerateName( const char *pszIdentifier );
 	
 private:
 	const char *m_pszBase;
@@ -566,7 +547,30 @@ private:
 	CUtlVector<char *> m_Names;
 };
 
-//-----------------------------------------------------------------------------
+#include "tier0/memdbgon.h"
+
+inline CDatadescGeneratedNameHolder::CDatadescGeneratedNameHolder( const char *pszBase )
+ : m_pszBase(pszBase)
+{
+	m_nLenBase = strlen( m_pszBase );
+}
+
+inline CDatadescGeneratedNameHolder::~CDatadescGeneratedNameHolder()
+{
+	for ( int i = 0; i < m_Names.Count(); i++ )
+	{
+		delete m_Names[i];
+	}
+}
+
+inline const char *CDatadescGeneratedNameHolder::GenerateName( const char *pszIdentifier )
+{
+	char *pBuf = new char[m_nLenBase + strlen(pszIdentifier) + 1];
+	strcpy( pBuf, m_pszBase );
+	strcat( pBuf, pszIdentifier );
+	m_Names.AddToTail( pBuf );
+	return pBuf;
+}
 
 #include "tier0/memdbgoff.h"
 

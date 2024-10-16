@@ -99,7 +99,7 @@ public:
 	// Events
 	void DoAnimationEvents();
 	void DoAnimationEvents( CStudioHdr *pStudioHdr, int nSeqNum, float flTime, bool bNoLoop, MDLAnimEventState_t *pEventState );
-	virtual void FireEvent( const char *pszEventName, const char *pszEventOptions ) { }
+	virtual void FireEvent( const char *pszEventName, const char *pszEventOptions );
 	void ResetAnimationEventState( MDLAnimEventState_t *pEventState );
 
 protected:

@@ -11,6 +11,8 @@
 #ifndef _SHARED_FUNCTOR_UTILS_H_
 #define _SHARED_FUNCTOR_UTILS_H_
 
+#pragma once
+
 #include "debugoverlay_shared.h"
 #include "vprof.h"
 #include "shareddefs.h"

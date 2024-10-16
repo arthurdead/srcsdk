@@ -12,8 +12,6 @@
 #include "hud_element_helper.h"
 #include "networkvar.h"
 #include "GameEventListener.h"
-#include "tier0/memdbgon.h"
-#undef new
 
 class CHud;
 
@@ -68,36 +66,19 @@ public:
 	// Return true if this HUD element expects an entry in  HudLayout.res
 	virtual bool				WantsHudLayoutEntry( void ) const { return true; }
 
+	#pragma push_macro("new")
+	#pragma push_macro("delete")
+	#undef new
+	#undef delete
+
 	// memory handling, uses calloc so members are zero'd out on instantiation
-    void *operator new( size_t stAllocateBlock )	
-	{												
-		Assert( stAllocateBlock != 0 );				
-		void *pMem = malloc( stAllocateBlock );
-		memset( pMem, 0, stAllocateBlock );
-		return pMem;												
-	}
-	
-	void* operator new( size_t stAllocateBlock, int nBlockUse, const char *pFileName, int nLine )  
-	{ 
-		Assert( stAllocateBlock != 0 );
-		void *pMem = MemAlloc_Alloc( stAllocateBlock, pFileName, nLine );
-		memset( pMem, 0, stAllocateBlock );
-		return pMem;												
-	}
+	void *operator new( size_t stAllocateBlock );
+	void* operator new( size_t stAllocateBlock, int nBlockUse, const char *pFileName, int nLine );
+	void operator delete( void *pMem );
+	void operator delete( void *pMem, int nBlockUse, const char *pFileName, int nLine );
 
-	void operator delete( void *pMem )				
-	{												
-#if defined( _DEBUG )
-		int size = _msize( pMem );					
-		memset( pMem, 0xcd, size );					
-#endif
-		free( pMem );								
-	}
-
-	void operator delete( void *pMem, int nBlockUse, const char *pFileName, int nLine )				
-	{
-		operator delete( pMem );
-	}
+	#pragma pop_macro("delete")
+	#pragma pop_macro("new")
 
 	void SetNeedsRemove( bool needsremove );
 
@@ -153,7 +134,5 @@ public:
 	bool bHidden;
 	CUtlPriorityQueue< CHudElement * >	m_pLockingElements;
 };
-
-#include "tier0/memdbgoff.h"
 
 #endif // HUDELEMENT_H

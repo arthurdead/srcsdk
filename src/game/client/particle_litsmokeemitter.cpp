@@ -138,4 +138,7 @@ void CLitSmokeEmitter::SimulateParticles( CParticleSimulateIterator *pIterator )
 	}
 }
 
-
+CSmartPtr<CLitSmokeEmitter> CLitSmokeEmitter::Create( const char *pDebugName )
+{
+	return new CLitSmokeEmitter( pDebugName );
+}

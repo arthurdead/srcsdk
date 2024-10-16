@@ -12,6 +12,7 @@
 #include "engine/ivdebugoverlay.h"
 #include "raytrace.h"
 #include "animation.h"
+#include "activitylist.h"
 
 #if defined( CLIENT_DLL )
 #include "c_pixel_visibility.h"
@@ -164,9 +165,7 @@ IParticleSystemQuery *g_pParticleSystemQuery = &s_ParticleSystemQuery;
 //-----------------------------------------------------------------------------
 // Exposes the interface (so tools can get at it)
 //-----------------------------------------------------------------------------
-#ifdef CLIENT_DLL
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CParticleSystemQuery, IParticleSystemQuery, PARTICLE_SYSTEM_QUERY_INTERFACE_VERSION, s_ParticleSystemQuery );
-#endif
 
 static CThreadFastMutex s_LightMutex;
 static CThreadFastMutex s_BoneMutex;
@@ -250,7 +249,7 @@ bool CParticleSystemQuery::MovePointInsideControllingObject(
 	Ray_t ray;
 	trace_t tr;
 	ray.Init( *pPnt, *pPnt );
-	enginetrace->ClipRayToEntity( ray, MASK_ALL, (CBaseEntity *) pObject, &tr );
+	enginetrace->ClipRayToEntity( ray, MASK_ALL, (C_BaseEntity *) pObject, &tr );
 	
 	return ( tr.startsolid );
 #endif
@@ -283,7 +282,7 @@ void CParticleSystemQuery::GetRandomPointsOnControllingObjectHitBox(
 #ifndef GAME_DLL
 
 	EHANDLE *phMoveParent = reinterpret_cast<EHANDLE *> ( pParticles->m_ControlPoints[nControlPointNumber].m_pObject );
-	CBaseEntity *pMoveParent = NULL;
+	C_BaseEntity *pMoveParent = NULL;
 	if ( phMoveParent )
 	{
 		pMoveParent = *( phMoveParent );
@@ -520,7 +519,7 @@ int CParticleSystemQuery::GetControllingObjectHitBoxInfo(
 	s_BoneMutex.Lock();
 
 	EHANDLE *phMoveParent = reinterpret_cast<EHANDLE *> ( pParticles->m_ControlPoints[nControlPointNumber].m_pObject );
-	CBaseEntity *pMoveParent = NULL;
+	C_BaseEntity *pMoveParent = NULL;
 	if ( phMoveParent )
 	{
 		pMoveParent = *( phMoveParent );
@@ -604,7 +603,7 @@ bool CParticleSystemQuery::IsPointInControllingObjectHitBox(
 #ifndef GAME_DLL
 
 	EHANDLE *phMoveParent = reinterpret_cast<EHANDLE *> ( pParticles->m_ControlPoints[nControlPointNumber].m_pObject );
-	CBaseEntity *pMoveParent = NULL;
+	C_BaseEntity *pMoveParent = NULL;
 	if ( phMoveParent )
 	{
 		pMoveParent = *( phMoveParent );
@@ -686,7 +685,7 @@ void CParticleSystemQuery::GetControllingObjectOBBox(
 #ifndef GAME_DLL
 
 	EHANDLE *phMoveParent = reinterpret_cast<EHANDLE *> ( pParticles->m_ControlPoints[ nControlPointNumber ].m_pObject );
-	CBaseEntity *pMoveParent = NULL;
+	C_BaseEntity *pMoveParent = NULL;
 	if ( phMoveParent )
 	{
 		pMoveParent = *( phMoveParent );
@@ -996,9 +995,9 @@ void CParticleSystemQuery::UpdateProjectedTexture( const int nParticleID, IMater
 
 int CParticleSystemQuery::GetActivityCount()
 {
-	return 0;
+	return ActivityList_HighestIndex();
 }
 const char* CParticleSystemQuery::GetActivityNameFromIndex( int nActivityIndex )
 {
-	return 0;
+	return ActivityList_NameForIndex( (Activity)nActivityIndex );
 }

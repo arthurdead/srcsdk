@@ -1,19 +1,20 @@
 #include "cbase.h"
 #include "heist_gamerules.h"
-#include "suspicioner.h"
 #include "dt_shared.h"
 
 #ifdef GAME_DLL
 #include "heist_player.h"
 #else
 #include "c_heist_player.h"
-#define CHeistPlayer C_HeistPlayer
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-REGISTER_GAMERULES_CLASS(CHeistGameRules);
+const unsigned char *CSharedHeistGameRules::GetEncryptionKey()
+{ return (unsigned char *)"x9Ke0BY7"; }
+
+REGISTER_GAMERULES_CLASS_ALIASED(HeistGameRules);
 
 #ifdef GAME_DLL
 void *NetProxy_HeistGameRules( const SendProp *pProp, const void *pStructBase, const void *pData, CSendProxyRecipients *pRecipients, int objectID )
@@ -25,53 +26,50 @@ void *NetProxy_HeistGameRules( const SendProp *pProp, const void *pStructBase, c
 #else
 void NetProxy_HeistGameRules(const RecvProp *pProp, void **pOut, void *pData, int objectID)
 {
-	CHeistGameRules *pRules = HeistGameRules();
+	C_HeistGameRules *pRules = HeistGameRules();
 	Assert(pRules);
 	*pOut = pRules;
 }
 #endif
 
-BEGIN_NETWORK_TABLE( CHeistGameRules, DT_HeistGameRules )
-	PropBool(PROPINFO(m_bHeistersSpotted)),
+BEGIN_NETWORK_TABLE( CSharedHeistGameRules, DT_HeistGameRules )
+	PropBool(PROPINFO(m_nMissionState)),
 END_NETWORK_TABLE()
 
 #ifdef CLIENT_DLL
-#undef CHeistGameRules
-IMPLEMENT_CLIENTCLASS_NULL(C_HeistGameRules, DT_HeistGameRules, CHeistGameRules)
-#define CHeistGameRules C_HeistGameRules
+IMPLEMENT_CLIENTCLASS_NULL( C_HeistGameRules, DT_HeistGameRules, CHeistGameRules )
 #else
 IMPLEMENT_SERVERCLASS( CHeistGameRules, DT_HeistGameRules );
 #endif
 
-BEGIN_NETWORK_TABLE( CHeistGameRulesProxy, DT_HeistGameRulesProxy )
+BEGIN_NETWORK_TABLE( CSharedHeistGameRulesProxy, DT_HeistGameRulesProxy )
 	PropDataTable("heist_gamerules_data", 0, 0, &REFERENCE_DATATABLE(DT_HeistGameRules), NetProxy_HeistGameRules)
 END_NETWORK_TABLE()
 
 IMPLEMENT_NETWORKCLASS_ALIASED(HeistGameRulesProxy, DT_HeistGameRulesProxy)
 
-CHeistGameRules::CHeistGameRules()
+#if defined( CLIENT_DLL )
+	#define CHeistGameRules C_HeistGameRules
+#endif
+
+CSharedHeistGameRules::CHeistGameRules()
 {
-	m_bHeistersSpotted = false;
+	m_nMissionState = MISSION_STATE_NONE;
 }
 
-CHeistGameRules::~CHeistGameRules()
+CSharedHeistGameRules::~CHeistGameRules()
 {
 }
 
-void CHeistGameRules::SetSpotted(bool value)
-{
-	m_bHeistersSpotted = value;
-
-	if(value) {
-		CSuspicioner::ClearAll();
-	}
-}
+#if defined( CLIENT_DLL )
+	#undef CHeistGameRules
+#endif
 
 #ifdef GAME_DLL
-CGameRulesProxy *CHeistGameRules::AllocateProxy()
-{ return new CHeistGameRulesProxy(); }
+CGameRulesProxy *CSharedHeistGameRules::AllocateProxy()
+{ return new CSharedHeistGameRulesProxy(); }
 
-const char* CHeistGameRules::AIClassText(Class_T classType)
+const char* CSharedHeistGameRules::AIClassText(Class_T classType)
 {
 	switch (classType)
 	{
@@ -82,7 +80,7 @@ const char* CHeistGameRules::AIClassText(Class_T classType)
 	}
 }
 
-const char* CHeistGameRules::AIFactionText(Faction_T classType)
+const char* CSharedHeistGameRules::AIFactionText(Faction_T classType)
 {
 	switch (classType)
 	{
@@ -93,7 +91,7 @@ const char* CHeistGameRules::AIFactionText(Faction_T classType)
 	}
 }
 
-Team_t CHeistGameRules::GetTeamIndex( const char *pTeamName )
+Team_t CSharedHeistGameRules::GetTeamIndex( const char *pTeamName )
 {
 	if(FStrEq(pTeamName, "Heisters") ||
 		FStrEq(pTeamName, "Robbers")) {
@@ -111,7 +109,7 @@ Team_t CHeistGameRules::GetTeamIndex( const char *pTeamName )
 	return BaseClass::GetTeamIndex( pTeamName );
 }
 
-const char *CHeistGameRules::GetIndexedTeamName( Team_t teamIndex )
+const char *CSharedHeistGameRules::GetIndexedTeamName( Team_t teamIndex )
 {
 	switch(teamIndex) {
 	case TEAM_HEISTERS:
@@ -125,7 +123,7 @@ const char *CHeistGameRules::GetIndexedTeamName( Team_t teamIndex )
 	}
 }
 
-void CHeistGameRules::InitDefaultAIRelationships()
+void CSharedHeistGameRules::InitDefaultAIRelationships()
 {
 	BaseClass::InitDefaultAIRelationships();
 
@@ -152,25 +150,5 @@ void CHeistGameRules::InitDefaultAIRelationships()
 	CBaseCombatCharacter::SetDefaultFactionRelationship(FACTION_HEISTERS, FACTION_CIVILIANS, D_NU, 0);
 	CBaseCombatCharacter::SetDefaultFactionRelationship(FACTION_HEISTERS, FACTION_LAW_ENFORCEMENT, D_HT, 0);
 	CBaseCombatCharacter::SetDefaultFactionRelationship(FACTION_HEISTERS, FACTION_HEISTERS, D_LI, 0);
-}
-#endif
-
-#ifdef GAME_DLL
-CON_COMMAND(heist_clear_spotted,"")
-{
-	if(!UTIL_IsCommandIssuedByServerAdmin()) {
-		return;
-	}
-
-	for(int i = 1; i <= gpGlobals->maxClients; ++i) {
-		CHeistPlayer *pPlayer = (CHeistPlayer *)UTIL_PlayerByIndex(i);
-		if(!pPlayer) {
-			continue;
-		}
-
-		pPlayer->SetSpotted(false);
-	}
-
-	HeistGameRules()->SetSpotted(false);
 }
 #endif

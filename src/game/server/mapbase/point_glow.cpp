@@ -58,7 +58,7 @@ END_DATADESC()
 
 IMPLEMENT_SERVERCLASS_ST( CPointGlow, DT_PointGlow )
 	SendPropEHandle( SENDINFO( m_hGlowTarget ) ),
-	SendPropInt( SENDINFO( m_GlowColor ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt ),
+	SendPropInt( SENDINFO( m_GlowColor ), 32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
 	SendPropBool( SENDINFO( m_bGlowDisabled ) ),
 END_SEND_TABLE()
 

@@ -9,6 +9,8 @@
 #ifndef C_TRACER_H
 #define C_TRACER_H
 
+#pragma once
+
 class Vector;
 class ParticleDraw;
 class CMeshBuilder;

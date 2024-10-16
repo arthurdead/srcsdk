@@ -20,10 +20,7 @@ CThirdPersonManager g_ThirdPersonManager;
 
 #include "input.h"
 
-
 extern const ConVar *sv_cheats;
-
-
 
 #endif
 
@@ -117,7 +114,7 @@ Vector CThirdPersonManager::GetDistanceFraction( void )
 	return Vector( flFraction, flFraction, flUpFraction );
 }
 
-void CThirdPersonManager::PositionCamera( CBasePlayer *pPlayer, const QAngle& angles )
+void CThirdPersonManager::PositionCamera( CSharedBasePlayer *pPlayer, const QAngle& angles )
 {
 	if ( pPlayer )
 	{

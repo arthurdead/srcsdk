@@ -134,6 +134,8 @@
 #ifndef _K3DMACROSINCLUDED_
 #define _K3DMACROSINCLUDED_
 
+#pragma once
+
 #if defined (__WATCOMC__)
 
 // The WATCOM C/C++ version of the 3DNow! macros.

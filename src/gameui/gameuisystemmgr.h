@@ -1,6 +1,8 @@
 #ifndef GAMEUISYSTEMMGR_H
 #define GAMEUISYSTEMMGR_H
 
+#pragma once
+
 #include "game_controls/igameuisystemmgr.h"
 
 class CGameUISystemMgr : public CBaseAppSystem<IGameUISystemMgr>

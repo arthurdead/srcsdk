@@ -64,7 +64,7 @@ void C_SpatialEntity::ClientThink()
 		return;
 	}
 
-	CBaseEntity *pPlayer = C_BasePlayer::GetLocalPlayer( 0 );
+	C_BaseEntity *pPlayer = C_BasePlayer::GetLocalPlayer( 0 );
 	if( !pPlayer )
 		return;
 

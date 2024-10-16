@@ -1,4 +1,3 @@
-#include "cbase.h"
 
 static unsigned char g_Script_vscript_client[]= {
 "//========== Copyright © 2008, Valve Corporation, All rights reserved. ========\n"

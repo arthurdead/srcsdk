@@ -9,6 +9,8 @@
 #ifndef FUNCTIONPROXY_H
 #define FUNCTIONPROXY_H
 
+#pragma once
+
 #include "materialsystem/imaterialproxy.h"
 #include "materialsystem/imaterialvar.h"
 #include "imaterialproxydict.h"

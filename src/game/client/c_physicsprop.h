@@ -70,4 +70,6 @@ protected:
 	CNetworkVector( m_collisionMaxs );
 };
 
+typedef C_PhysicsProp CSharedPhysicsProp;
+
 #endif // C_PHYSICSPROP_H 

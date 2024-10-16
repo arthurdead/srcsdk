@@ -426,7 +426,7 @@ void CClientEntityList::RemoveListenerEntity( IClientEntityListener *pListener )
 	m_entityListeners.FindAndRemove( pListener );
 }
 
-void CClientEntityList::OnAddEntity( CBaseEntity *pEnt, EHANDLE handle )
+void CClientEntityList::OnAddEntity( C_BaseEntity *pEnt, EHANDLE handle )
 {
 	int entnum = handle.GetEntryIndex();
 	EntityCacheInfo_t *pCache = &m_EntityCacheInfo[entnum];
@@ -466,7 +466,7 @@ void CClientEntityList::OnAddEntity( CBaseEntity *pEnt, EHANDLE handle )
 	}
 }
 
-void CClientEntityList::OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle )
+void CClientEntityList::OnRemoveEntity( C_BaseEntity *pEnt, EHANDLE handle )
 {
 	int entnum = handle.GetEntryIndex();
 	EntityCacheInfo_t *pCache = &m_EntityCacheInfo[entnum];

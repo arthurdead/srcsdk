@@ -1,6 +1,8 @@
 #ifndef DEFERRED_SERVER_COMMON_H
 #define DEFERRED_SERVER_COMMON_H
 
+#pragma once
+
 #ifndef DEFERRED_SHARED_COMMON
 #error must include deferred_shared_common.h instead
 #endif

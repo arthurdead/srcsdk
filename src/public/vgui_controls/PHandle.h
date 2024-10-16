@@ -25,6 +25,7 @@ class PHandle
 public:
 	PHandle() : m_iPanelID(INVALID_PANEL) {} //m_iSerialNumber(0), m_pListEntry(0) {}
 
+	Panel *Get();
 	Panel *Get() const;
 	void Set( Panel *pPanel );
 	void Set( HPanel hPanel );

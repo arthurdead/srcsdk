@@ -8,6 +8,8 @@
 #ifndef MINMAX_H
 #define MINMAX_H
 
+#pragma once
+
 #include <algorithm>
 
 using std::min;

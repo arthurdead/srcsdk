@@ -1160,8 +1160,8 @@ void CAchievementMgr::FireGameEvent( IGameEvent *event )
 #ifdef CLIENT_DLL
 	else if ( 0 == Q_strcmp( name, "player_death" ) )
 	{
-		CBaseEntity *pVictim = ClientEntityList().GetEnt( engine->GetPlayerForUserID( event->GetInt("userid") ) );
-		CBaseEntity *pAttacker = ClientEntityList().GetEnt( engine->GetPlayerForUserID( event->GetInt("attacker") ) );
+		C_BaseEntity *pVictim = ClientEntityList().GetEnt( engine->GetPlayerForUserID( event->GetInt("userid") ) );
+		C_BaseEntity *pAttacker = ClientEntityList().GetEnt( engine->GetPlayerForUserID( event->GetInt("attacker") ) );
 		OnKillEvent( pVictim, pAttacker, NULL, event );
 	}
 	else if ( 0 == Q_strcmp( name, "localplayer_changeclass" ) )
@@ -1221,7 +1221,7 @@ void CAchievementMgr::FireGameEvent( IGameEvent *event )
 //-----------------------------------------------------------------------------
 // Purpose: called when a player or character has been killed
 //-----------------------------------------------------------------------------
-void CAchievementMgr::OnKillEvent( CBaseEntity *pVictim, CBaseEntity *pAttacker, CBaseEntity *pInflictor, IGameEvent *event )
+void CAchievementMgr::OnKillEvent( CSharedBaseEntity *pVictim, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pInflictor, IGameEvent *event )
 {
 	// can have a NULL victim on client if victim has never entered local player's PVS
 	if ( !pVictim )
@@ -1748,9 +1748,9 @@ CON_COMMAND_F( achievement_mark_dirty, "Mark achievement data as dirty", FCVAR_C
 //-----------------------------------------------------------------------------
 // Purpose: helper function to get entity model name
 //-----------------------------------------------------------------------------
-const char *GetModelName( CBaseEntity *pBaseEntity )
+const char *GetModelName( CSharedBaseEntity *pBaseEntity )
 {
-	CBaseAnimating *pBaseAnimating = pBaseEntity->GetBaseAnimating();
+	CSharedBaseAnimating *pBaseAnimating = pBaseEntity->GetBaseAnimating();
 	if ( pBaseAnimating )
 	{
 		CStudioHdr *pStudioHdr = pBaseAnimating->GetModelPtr();

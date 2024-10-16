@@ -44,16 +44,16 @@ public:
 	~CWatcherList();	// frees the positionwatcher_t's to the pool
 	void Init();
 
-	void NotifyPositionChanged( CBaseEntity *pEntity );
-	void NotifyVPhysicsStateChanged( IPhysicsObject *pPhysics, CBaseEntity *pEntity, bool bAwake );
+	void NotifyPositionChanged( CSharedBaseEntity *pEntity );
+	void NotifyVPhysicsStateChanged( IPhysicsObject *pPhysics, CSharedBaseEntity *pEntity, bool bAwake );
 
-	void AddToList( CBaseEntity *pWatcher );
-	void RemoveWatcher( CBaseEntity *pWatcher );
+	void AddToList( CSharedBaseEntity *pWatcher );
+	void RemoveWatcher( CSharedBaseEntity *pWatcher );
 
 private:
 	int GetCallbackObjects( IWatcherCallback **pList, int listMax );
 
-	unsigned short Find( CBaseEntity *pEntity );
+	unsigned short Find( CSharedBaseEntity *pEntity );
 	unsigned short m_list;
 };
 
@@ -158,7 +158,7 @@ public:
 		}
 	}
 
-	void *GetDataObject( int type, const CBaseEntity *instance )
+	void *GetDataObject( int type, const CSharedBaseEntity *instance )
 	{
 		if ( !IsValidType( type ) )
 		{
@@ -168,7 +168,7 @@ public:
 		return m_Accessors[ type ]->GetDataObject( instance );
 	}
 
-	void *CreateDataObject( int type, CBaseEntity *instance )
+	void *CreateDataObject( int type, CSharedBaseEntity *instance )
 	{
 		if ( !IsValidType( type ) )
 		{
@@ -179,7 +179,7 @@ public:
 		return m_Accessors[ type ]->CreateDataObject( instance );
 	}
 
-	void DestroyDataObject( int type, CBaseEntity *instance )
+	void DestroyDataObject( int type, CSharedBaseEntity *instance )
 	{
 		if ( !IsValidType( type ) )
 		{
@@ -226,25 +226,25 @@ private:
 
 static CDataObjectAccessSystem g_DataObjectAccessSystem;
 
-bool CBaseEntity::HasDataObjectType( int type ) const
+bool CSharedBaseEntity::HasDataObjectType( int type ) const
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	return ( m_fDataObjectTypes	& (1<<type) ) ? true : false;
 }
 
-void CBaseEntity::AddDataObjectType( int type )
+void CSharedBaseEntity::AddDataObjectType( int type )
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	m_fDataObjectTypes |= (1<<type);
 }
 
-void CBaseEntity::RemoveDataObjectType( int type )
+void CSharedBaseEntity::RemoveDataObjectType( int type )
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	m_fDataObjectTypes &= ~(1<<type);
 }
 
-void *CBaseEntity::GetDataObject( int type )
+void *CSharedBaseEntity::GetDataObject( int type )
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	if ( !HasDataObjectType( type ) )
@@ -252,14 +252,14 @@ void *CBaseEntity::GetDataObject( int type )
 	return g_DataObjectAccessSystem.GetDataObject( type, this );
 }
 
-void *CBaseEntity::CreateDataObject( int type )
+void *CSharedBaseEntity::CreateDataObject( int type )
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	AddDataObjectType( type );
 	return g_DataObjectAccessSystem.CreateDataObject( type, this );
 }
 
-void CBaseEntity::DestroyDataObject( int type )
+void CSharedBaseEntity::DestroyDataObject( int type )
 {
 	Assert( type >= 0 && type < NUM_DATAOBJECT_TYPES );
 	if ( !HasDataObjectType( type ) )
@@ -304,7 +304,7 @@ int CWatcherList::GetCallbackObjects( IWatcherCallback **pList, int listMax )
 	return index;
 }
 
-void CWatcherList::NotifyPositionChanged( CBaseEntity *pEntity )
+void CWatcherList::NotifyPositionChanged( CSharedBaseEntity *pEntity )
 {
 	IWatcherCallback *pCallbacks[1024]; // HACKHACK: Assumes this list is big enough
 	int count = GetCallbackObjects( pCallbacks, ARRAYSIZE(pCallbacks) );
@@ -318,7 +318,7 @@ void CWatcherList::NotifyPositionChanged( CBaseEntity *pEntity )
 	}
 }
 
-void CWatcherList::NotifyVPhysicsStateChanged( IPhysicsObject *pPhysics, CBaseEntity *pEntity, bool bAwake )
+void CWatcherList::NotifyVPhysicsStateChanged( IPhysicsObject *pPhysics, CSharedBaseEntity *pEntity, bool bAwake )
 {
 	IWatcherCallback *pCallbacks[1024];	// HACKHACK: Assumes this list is big enough!
 	int count = GetCallbackObjects( pCallbacks, ARRAYSIZE(pCallbacks) );
@@ -332,7 +332,7 @@ void CWatcherList::NotifyVPhysicsStateChanged( IPhysicsObject *pPhysics, CBaseEn
 	}
 }
 
-unsigned short CWatcherList::Find( CBaseEntity *pEntity )
+unsigned short CWatcherList::Find( CSharedBaseEntity *pEntity )
 {
 	unsigned short next = g_WatcherList.InvalidIndex();
 	for ( unsigned short node = g_WatcherList.Head( m_list ); node != g_WatcherList.InvalidIndex(); node = next )
@@ -347,7 +347,7 @@ unsigned short CWatcherList::Find( CBaseEntity *pEntity )
 	return g_WatcherList.InvalidIndex();
 }
 
-void CWatcherList::RemoveWatcher( CBaseEntity *pEntity )
+void CWatcherList::RemoveWatcher( CSharedBaseEntity *pEntity )
 {
 	unsigned short node = Find( pEntity );
 	if ( node != g_WatcherList.InvalidIndex() )
@@ -357,7 +357,7 @@ void CWatcherList::RemoveWatcher( CBaseEntity *pEntity )
 }
 
 
-void CWatcherList::AddToList( CBaseEntity *pWatcher )
+void CWatcherList::AddToList( CSharedBaseEntity *pWatcher )
 {
 	unsigned short node = Find( pWatcher );
 	if ( node == g_WatcherList.InvalidIndex() )
@@ -374,7 +374,7 @@ void CWatcherList::AddToList( CBaseEntity *pWatcher )
 	}
 }
 
-static void AddWatcherToEntity( CBaseEntity *pWatcher, CBaseEntity *pEntity, int watcherType )
+static void AddWatcherToEntity( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pEntity, int watcherType )
 {
 	CWatcherList *pList = (CWatcherList *)pEntity->GetDataObject(watcherType);
 	if ( !pList )
@@ -389,7 +389,7 @@ static void AddWatcherToEntity( CBaseEntity *pWatcher, CBaseEntity *pEntity, int
 	pList->AddToList( pWatcher );
 }
 
-static void RemoveWatcherFromEntity( CBaseEntity *pWatcher, CBaseEntity *pEntity, int watcherType )
+static void RemoveWatcherFromEntity( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pEntity, int watcherType )
 {
 	CWatcherList *pList = (CWatcherList *)pEntity->GetDataObject(watcherType);
 	if ( pList )
@@ -398,17 +398,17 @@ static void RemoveWatcherFromEntity( CBaseEntity *pWatcher, CBaseEntity *pEntity
 	}
 }
 
-void WatchPositionChanges( CBaseEntity *pWatcher, CBaseEntity *pMovingEntity )
+void WatchPositionChanges( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pMovingEntity )
 {
 	AddWatcherToEntity( pWatcher, pMovingEntity, POSITIONWATCHER );
 }
 
-void RemovePositionWatcher( CBaseEntity *pWatcher, CBaseEntity *pMovingEntity )
+void RemovePositionWatcher( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pMovingEntity )
 {
 	RemoveWatcherFromEntity( pWatcher, pMovingEntity, POSITIONWATCHER );
 }
 
-void ReportPositionChanged( CBaseEntity *pMovedEntity )
+void ReportPositionChanged( CSharedBaseEntity *pMovedEntity )
 {
 	CWatcherList *pList = (CWatcherList *)pMovedEntity->GetDataObject(POSITIONWATCHER);
 	if ( pList )
@@ -417,17 +417,17 @@ void ReportPositionChanged( CBaseEntity *pMovedEntity )
 	}
 }
 
-void WatchVPhysicsStateChanges( CBaseEntity *pWatcher, CBaseEntity *pPhysicsEntity )
+void WatchVPhysicsStateChanges( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pPhysicsEntity )
 {
 	AddWatcherToEntity( pWatcher, pPhysicsEntity, VPHYSICSWATCHER );
 }
 
-void RemoveVPhysicsStateWatcher( CBaseEntity *pWatcher, CBaseEntity *pPhysicsEntity )
+void RemoveVPhysicsStateWatcher( CSharedBaseEntity *pWatcher, CSharedBaseEntity *pPhysicsEntity )
 {
 	AddWatcherToEntity( pWatcher, pPhysicsEntity, VPHYSICSWATCHER );
 }
 
-void ReportVPhysicsStateChanged( IPhysicsObject *pPhysics, CBaseEntity *pEntity, bool bAwake )
+void ReportVPhysicsStateChanged( IPhysicsObject *pPhysics, CSharedBaseEntity *pEntity, bool bAwake )
 {
 	CWatcherList *pList = (CWatcherList *)pEntity->GetDataObject(VPHYSICSWATCHER);
 	if ( pList )
@@ -439,7 +439,7 @@ void ReportVPhysicsStateChanged( IPhysicsObject *pPhysics, CBaseEntity *pEntity,
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseEntity::DestroyAllDataObjects( void )
+void CSharedBaseEntity::DestroyAllDataObjects( void )
 {
 	int i;
 	for ( i = 0; i < NUM_DATAOBJECT_TYPES; i++ )
@@ -486,7 +486,7 @@ void SpewLinks()
 //-----------------------------------------------------------------------------
 // Returns the actual gravity
 //-----------------------------------------------------------------------------
-static inline float GetActualGravity( CBaseEntity *pEnt )
+static inline float GetActualGravity( CSharedBaseEntity *pEnt )
 {
 	float ent_gravity = pEnt->GetGravity();
 	if ( ent_gravity == 0.0f )
@@ -602,7 +602,7 @@ inline void FreeGroundLink( groundlink_t *link )
 // Purpose: 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBaseEntity::IsCurrentlyTouching( void ) const
+bool CSharedBaseEntity::IsCurrentlyTouching( void ) const
 {
 	if ( HasDataObjectType( TOUCHLINK ) )
 	{
@@ -619,7 +619,7 @@ static bool g_bCleanupDatObject = true;
 //			have stopped touching it, and notify the entity if so.
 //			Called at the end of a frame, after all the entities have run
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsCheckForEntityUntouch( void )
+void CSharedBaseEntity::PhysicsCheckForEntityUntouch( void )
 {
 	Assert( g_pNextLink == NULL );
 
@@ -682,7 +682,7 @@ void CBaseEntity::PhysicsCheckForEntityUntouch( void )
 // Purpose: notifies an entity than another touching entity has moved out of contact.
 // Input  : *other - the entity to be acted upon
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsNotifyOtherOfUntouch( CBaseEntity *ent, CBaseEntity *other )
+void CSharedBaseEntity::PhysicsNotifyOtherOfUntouch( CSharedBaseEntity *ent, CSharedBaseEntity *other )
 {
 	if ( !other )
 		return;
@@ -718,7 +718,7 @@ void CBaseEntity::PhysicsNotifyOtherOfUntouch( CBaseEntity *ent, CBaseEntity *ot
 // Purpose: removes a toucher from the list
 // Input  : *link - the link to remove
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsRemoveToucher( CBaseEntity *otherEntity, touchlink_t *link )
+void CSharedBaseEntity::PhysicsRemoveToucher( CSharedBaseEntity *otherEntity, touchlink_t *link )
 {
 	// Every start Touch gets a corresponding end touch
 	if ( (link->flags & FTOUCHLINK_START_TOUCH) && 
@@ -739,7 +739,7 @@ void CBaseEntity::PhysicsRemoveToucher( CBaseEntity *otherEntity, touchlink_t *l
 //-----------------------------------------------------------------------------
 // Purpose: Clears all touches from the list
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsRemoveTouchedList( CBaseEntity *ent )
+void CSharedBaseEntity::PhysicsRemoveTouchedList( CSharedBaseEntity *ent )
 {
 #ifdef PORTAL
 	CPortalTouchScope scope;
@@ -779,7 +779,7 @@ void CBaseEntity::PhysicsRemoveTouchedList( CBaseEntity *ent )
 // Input  : *other - 
 // Output : groundlink_t
 //-----------------------------------------------------------------------------
-groundlink_t *CBaseEntity::AddEntityToGroundList( CBaseEntity *other )
+groundlink_t *CSharedBaseEntity::AddEntityToGroundList( CSharedBaseEntity *other )
 {
 	groundlink_t *link;
 
@@ -834,7 +834,7 @@ groundlink_t *CBaseEntity::AddEntityToGroundList( CBaseEntity *other )
 // Purpose: Called whenever two entities come in contact
 // Input  : *pentOther - the entity who it has touched
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsStartGroundContact( CBaseEntity *pentOther )
+void CSharedBaseEntity::PhysicsStartGroundContact( CSharedBaseEntity *pentOther )
 {
 	if ( !pentOther )
 		return;
@@ -849,7 +849,7 @@ void CBaseEntity::PhysicsStartGroundContact( CBaseEntity *pentOther )
 // Purpose: notifies an entity than another touching entity has moved out of contact.
 // Input  : *other - the entity to be acted upon
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsNotifyOtherOfGroundRemoval( CBaseEntity *ent, CBaseEntity *other )
+void CSharedBaseEntity::PhysicsNotifyOtherOfGroundRemoval( CSharedBaseEntity *ent, CSharedBaseEntity *other )
 {
 	if ( !other )
 		return;
@@ -883,13 +883,13 @@ void CBaseEntity::PhysicsNotifyOtherOfGroundRemoval( CBaseEntity *ent, CBaseEnti
 // Purpose: removes a toucher from the list
 // Input  : *link - the link to remove
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsRemoveGround( CBaseEntity *other, groundlink_t *link )
+void CSharedBaseEntity::PhysicsRemoveGround( CSharedBaseEntity *other, groundlink_t *link )
 {
 	// Every start Touch gets a corresponding end touch
 	if ( link->entity != NULL )
 	{
-		CBaseEntity *linkEntity = link->entity;
-		CBaseEntity *otherEntity = other;
+		CSharedBaseEntity *linkEntity = link->entity;
+		CSharedBaseEntity *otherEntity = other;
 		if ( linkEntity && otherEntity )
 		{
 			linkEntity->EndGroundContact( otherEntity );
@@ -905,7 +905,7 @@ void CBaseEntity::PhysicsRemoveGround( CBaseEntity *other, groundlink_t *link )
 // Purpose: static method to remove ground list for an entity
 // Input  : *ent - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsRemoveGroundList( CBaseEntity *ent )
+void CSharedBaseEntity::PhysicsRemoveGroundList( CSharedBaseEntity *ent )
 {
 	groundlink_t *link, *nextLink;
 
@@ -934,7 +934,7 @@ void CBaseEntity::PhysicsRemoveGroundList( CBaseEntity *ent )
 // Purpose: Called every frame that two entities are touching
 // Input  : *pentOther - the entity who it has touched
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsTouch( CBaseEntity *pentOther )
+void CSharedBaseEntity::PhysicsTouch( CSharedBaseEntity *pentOther )
 {
 	if ( pentOther )
 	{
@@ -949,7 +949,7 @@ void CBaseEntity::PhysicsTouch( CBaseEntity *pentOther )
 // Purpose: Called whenever two entities come in contact
 // Input  : *pentOther - the entity who it has touched
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsStartTouch( CBaseEntity *pentOther )
+void CSharedBaseEntity::PhysicsStartTouch( CSharedBaseEntity *pentOther )
 {
 	if ( pentOther )
 	{
@@ -970,7 +970,7 @@ void CBaseEntity::PhysicsStartTouch( CBaseEntity *pentOther )
 //			untouch we know things haven't changed.
 // Input  : *other - entity that it is in contact with
 //-----------------------------------------------------------------------------
-touchlink_t *CBaseEntity::PhysicsMarkEntityAsTouched( CBaseEntity *other )
+touchlink_t *CSharedBaseEntity::PhysicsMarkEntityAsTouched( CSharedBaseEntity *other )
 {
 	touchlink_t *link;
 
@@ -1018,7 +1018,7 @@ touchlink_t *CBaseEntity::PhysicsMarkEntityAsTouched( CBaseEntity *other )
 				// update stamp
 				link->touchStamp = m_nTouchStamp;
 				
-				if ( !CBaseEntity::sm_bDisableTouchFuncs )
+				if ( !CSharedBaseEntity::sm_bDisableTouchFuncs )
 				{
 					PhysicsTouch( other );
 				}
@@ -1059,7 +1059,7 @@ touchlink_t *CBaseEntity::PhysicsMarkEntityAsTouched( CBaseEntity *other )
 	if ( bShouldTouch && !other->IsSolidFlagSet(FSOLID_TRIGGER) )
 	{
 		link->flags |= FTOUCHLINK_START_TOUCH;
-		if ( !CBaseEntity::sm_bDisableTouchFuncs )
+		if ( !CSharedBaseEntity::sm_bDisableTouchFuncs )
 		{
 			PhysicsStartTouch( other );
 		}
@@ -1069,7 +1069,7 @@ touchlink_t *CBaseEntity::PhysicsMarkEntityAsTouched( CBaseEntity *other )
 }
 
 static trace_t g_TouchTrace;
-const trace_t &CBaseEntity::GetTouchTrace( void )
+const trace_t &CSharedBaseEntity::GetTouchTrace( void )
 {
 	return g_TouchTrace;
 }
@@ -1079,7 +1079,7 @@ const trace_t &CBaseEntity::GetTouchTrace( void )
 // Purpose: Marks the fact that two edicts are in contact
 // Input  : *other - other entity
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsMarkEntitiesAsTouching( CBaseEntity *other, trace_t &trace )
+void CSharedBaseEntity::PhysicsMarkEntitiesAsTouching( CSharedBaseEntity *other, trace_t &trace )
 {
 	g_TouchTrace = trace;
 	touchlink_t *pLink0 = PhysicsMarkEntityAsTouched( other );
@@ -1095,7 +1095,7 @@ void CBaseEntity::PhysicsMarkEntitiesAsTouching( CBaseEntity *other, trace_t &tr
 	UTIL_ClearTrace( g_TouchTrace );
 }
 
-void CBaseEntity::PhysicsMarkEntitiesAsTouchingEventDriven( CBaseEntity *other, trace_t &trace )
+void CSharedBaseEntity::PhysicsMarkEntitiesAsTouchingEventDriven( CSharedBaseEntity *other, trace_t &trace )
 {
 	g_TouchTrace = trace;
 	g_TouchTrace.m_pEnt = other;
@@ -1122,7 +1122,7 @@ void CBaseEntity::PhysicsMarkEntitiesAsTouchingEventDriven( CBaseEntity *other, 
 // Input  : *other - 
 //			*ptrace - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsImpact( CBaseEntity *other, trace_t &trace )
+void CSharedBaseEntity::PhysicsImpact( CSharedBaseEntity *other, trace_t &trace )
 {
 	if ( !other )
 	{
@@ -1143,7 +1143,7 @@ void CBaseEntity::PhysicsImpact( CBaseEntity *other, trace_t &trace )
 // Purpose: Returns the mask of what is solid for the given entity
 // Output : unsigned int
 //-----------------------------------------------------------------------------
-unsigned int CBaseEntity::PhysicsSolidMaskForEntity( void ) const
+unsigned int CSharedBaseEntity::PhysicsSolidMaskForEntity( void ) const
 {
 	return MASK_SOLID;
 }
@@ -1156,7 +1156,7 @@ static inline int GetWaterContents( const Vector &point )
 //-----------------------------------------------------------------------------
 // Computes the water level + type
 //-----------------------------------------------------------------------------
-void CBaseEntity::UpdateWaterState()
+void CSharedBaseEntity::UpdateWaterState()
 {
 	// FIXME: This computation is nonsensical for rigid child attachments
 	// Should we just grab the type + level of the parent?
@@ -1208,7 +1208,7 @@ void CBaseEntity::UpdateWaterState()
 // and sets appropriate water flags
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBaseEntity::PhysicsCheckWater( void )
+bool CSharedBaseEntity::PhysicsCheckWater( void )
 {
 	if (GetMoveParent())
 		return GetWaterLevel() > 1;
@@ -1258,7 +1258,7 @@ bool CBaseEntity::PhysicsCheckWater( void )
 //-----------------------------------------------------------------------------
 // Purpose: Bounds velocity
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsCheckVelocity( void )
+void CSharedBaseEntity::PhysicsCheckVelocity( void )
 {
 	Vector origin = GetAbsOrigin();
 	Vector vecAbsVelocity = GetAbsVelocity();
@@ -1308,7 +1308,7 @@ void CBaseEntity::PhysicsCheckVelocity( void )
 //-----------------------------------------------------------------------------
 // Purpose: Applies gravity to falling objects
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsAddGravityMove( Vector &move )
+void CSharedBaseEntity::PhysicsAddGravityMove( Vector &move )
 {
 	Vector vecAbsVelocity = GetAbsVelocity();
 
@@ -1347,7 +1347,7 @@ void CBaseEntity::PhysicsAddGravityMove( Vector &move )
 //			overbounce - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CBaseEntity::PhysicsClipVelocity( const Vector& in, const Vector& normal, Vector& out, float overbounce )
+int CSharedBaseEntity::PhysicsClipVelocity( const Vector& in, const Vector& normal, Vector& out, float overbounce )
 {
 	float	backoff;
 	float	change;
@@ -1385,7 +1385,7 @@ int CBaseEntity::PhysicsClipVelocity( const Vector& in, const Vector& normal, Ve
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CBaseEntity::ResolveFlyCollisionBounce( trace_t &trace, Vector &vecVelocity, float flMinTotalElasticity )
+void CSharedBaseEntity::ResolveFlyCollisionBounce( trace_t &trace, Vector &vecVelocity, float flMinTotalElasticity )
 {
 #ifdef HL1_DLL
 	flMinTotalElasticity = 0.3f;
@@ -1415,7 +1415,7 @@ void CBaseEntity::ResolveFlyCollisionBounce( trace_t &trace, Vector &vecVelocity
 	if ( trace.plane.normal.z > 0.7f )			// Floor
 	{
 		// Verify that we have an entity.
-		CBaseEntity *pEntity = trace.m_pEnt;
+		CSharedBaseEntity *pEntity = trace.m_pEnt;
 		Assert( pEntity );
 
 		// Are we on the ground?
@@ -1473,7 +1473,7 @@ void CBaseEntity::ResolveFlyCollisionBounce( trace_t &trace, Vector &vecVelocity
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CBaseEntity::ResolveFlyCollisionSlide( trace_t &trace, Vector &vecVelocity )
+void CSharedBaseEntity::ResolveFlyCollisionSlide( trace_t &trace, Vector &vecVelocity )
 {
 	// Get the impact surface's friction.
 	float flSurfaceFriction;
@@ -1496,7 +1496,7 @@ void CBaseEntity::ResolveFlyCollisionSlide( trace_t &trace, Vector &vecVelocity 
 	float flSpeedSqr = DotProduct( vecVelocity, vecVelocity );
 
 	// Verify that we have an entity.
-	CBaseEntity *pEntity = trace.m_pEnt;
+	CSharedBaseEntity *pEntity = trace.m_pEnt;
 	Assert( pEntity );
 
 	// Are we on the ground?
@@ -1533,7 +1533,7 @@ void CBaseEntity::ResolveFlyCollisionSlide( trace_t &trace, Vector &vecVelocity 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CBaseEntity::ResolveFlyCollisionCustom( trace_t &trace, Vector &vecVelocity )
+void CSharedBaseEntity::ResolveFlyCollisionCustom( trace_t &trace, Vector &vecVelocity )
 {
 	// Stop if on ground.
 	if ( trace.plane.normal.z > 0.7 )			// Floor
@@ -1542,7 +1542,7 @@ void CBaseEntity::ResolveFlyCollisionCustom( trace_t &trace, Vector &vecVelocity
 		VectorAdd( GetAbsVelocity(), GetBaseVelocity(), vecVelocity );
 
 		// Verify that we have an entity.
-		CBaseEntity *pEntity = trace.m_pEnt;
+		CSharedBaseEntity *pEntity = trace.m_pEnt;
 		Assert( pEntity );
 
 		// Are we on the ground?
@@ -1563,7 +1563,7 @@ void CBaseEntity::ResolveFlyCollisionCustom( trace_t &trace, Vector &vecVelocity
 //-----------------------------------------------------------------------------
 // Performs the collision resolution for fliers.
 //-----------------------------------------------------------------------------
-void CBaseEntity::PerformFlyCollisionResolution( trace_t &trace, Vector &move )
+void CSharedBaseEntity::PerformFlyCollisionResolution( trace_t &trace, Vector &move )
 {
 	switch( GetMoveCollide() )
 	{
@@ -1599,7 +1599,7 @@ void CBaseEntity::PerformFlyCollisionResolution( trace_t &trace, Vector &move )
 //-----------------------------------------------------------------------------
 // Purpose: Checks if an object has passed into or out of water and sets water info, alters velocity, plays splash sounds, etc.
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsCheckWaterTransition( void )
+void CSharedBaseEntity::PhysicsCheckWaterTransition( void )
 {
 	int oldcont = GetWaterType();
 	UpdateWaterState();
@@ -1641,7 +1641,7 @@ void CBaseEntity::PhysicsCheckWaterTransition( void )
 //-----------------------------------------------------------------------------
 // Computes new angles based on the angular velocity
 //-----------------------------------------------------------------------------
-void CBaseEntity::SimulateAngles( float flFrameTime )
+void CSharedBaseEntity::SimulateAngles( float flFrameTime )
 {
 	// move angles
 	QAngle angles;
@@ -1653,7 +1653,7 @@ void CBaseEntity::SimulateAngles( float flFrameTime )
 //-----------------------------------------------------------------------------
 // Purpose: Toss, bounce, and fly movement.  When onground, do nothing.
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsToss( void )
+void CSharedBaseEntity::PhysicsToss( void )
 {
 	trace_t	trace;
 	Vector	move;
@@ -1741,9 +1741,9 @@ void CBaseEntity::PhysicsToss( void )
 //-----------------------------------------------------------------------------
 // Simulation in local space of rigid children
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsRigidChild( void )
+void CSharedBaseEntity::PhysicsRigidChild( void )
 {
-	VPROF("CBaseEntity::PhysicsRigidChild");
+	VPROF("CSharedBaseEntity::PhysicsRigidChild");
 	// NOTE: rigidly attached children do simulation in local space
 	// Collision impulses will be handled either not at all, or by
 	// forwarding the information to the highest move parent
@@ -1754,7 +1754,7 @@ void CBaseEntity::PhysicsRigidChild( void )
 	if ( !PhysicsRunThink() )
 		return;
 
-	VPROF_SCOPE_BEGIN("CBaseEntity::PhysicsRigidChild-2");
+	VPROF_SCOPE_BEGIN("CSharedBaseEntity::PhysicsRigidChild-2");
 
 #if !defined( CLIENT_DLL )
 	// Cause touch functions to be called
@@ -1776,7 +1776,7 @@ void CBaseEntity::PhysicsRigidChild( void )
 //-----------------------------------------------------------------------------
 // Computes the base velocity
 //-----------------------------------------------------------------------------
-void CBaseEntity::UpdateBaseVelocity( void )
+void CSharedBaseEntity::UpdateBaseVelocity( void )
 {
 #if !defined( CLIENT_DLL )
 	if ( GetFlags() & FL_ONGROUND )
@@ -1806,9 +1806,9 @@ void CBaseEntity::UpdateBaseVelocity( void )
 // Purpose: Runs a frame of physics for a specific edict (and all it's children)
 // Input  : *ent - the thinking edict
 //-----------------------------------------------------------------------------
-void CBaseEntity::PhysicsSimulate( void )
+void CSharedBaseEntity::PhysicsSimulate( void )
 {
-	VPROF( "CBaseEntity::PhysicsSimulate" );
+	VPROF( "CSharedBaseEntity::PhysicsSimulate" );
 	// NOTE:  Players override PhysicsSimulate and drive through their CUserCmds at that point instead of
 	//  processng through this function call!!!  They shouldn't chain to here ever.
 	// Make sure not to simulate this guy twice per frame
@@ -1820,7 +1820,7 @@ void CBaseEntity::PhysicsSimulate( void )
 	Assert( !IsPlayer() );
 
 	// If we've got a moveparent, we must simulate that first.
-	CBaseEntity *pMoveParent = GetMoveParent();
+	CSharedBaseEntity *pMoveParent = GetMoveParent();
 
 	if ( (GetMoveType() == MOVETYPE_NONE && !pMoveParent) || (GetMoveType() == MOVETYPE_VPHYSICS ) )
 	{
@@ -1836,12 +1836,12 @@ void CBaseEntity::PhysicsSimulate( void )
 
 	if (pMoveParent)
 	{
-		VPROF( "CBaseEntity::PhysicsSimulate-MoveParent" );
+		VPROF( "CSharedBaseEntity::PhysicsSimulate-MoveParent" );
 		pMoveParent->PhysicsSimulate();
 	}
 	else
 	{
-		VPROF( "CBaseEntity::PhysicsSimulate-BaseVelocity" );
+		VPROF( "CSharedBaseEntity::PhysicsSimulate-BaseVelocity" );
 
 		UpdateBaseVelocity();
 
@@ -1861,7 +1861,7 @@ void CBaseEntity::PhysicsSimulate( void )
 	{
 	case MOVETYPE_PUSH:
 		{
-			VPROF( "CBaseEntity::PhysicsSimulate-MOVETYPE_PUSH" );
+			VPROF( "CSharedBaseEntity::PhysicsSimulate-MOVETYPE_PUSH" );
 			PhysicsPusher();
 		}
 		break;
@@ -1874,7 +1874,7 @@ void CBaseEntity::PhysicsSimulate( void )
 
 	case MOVETYPE_NONE:
 		{
-			VPROF( "CBaseEntity::PhysicsSimulate-MOVETYPE_NONE" );
+			VPROF( "CSharedBaseEntity::PhysicsSimulate-MOVETYPE_NONE" );
 			Assert(pMoveParent);
 			PhysicsRigidChild();
 		}
@@ -1882,14 +1882,14 @@ void CBaseEntity::PhysicsSimulate( void )
 
 	case MOVETYPE_NOCLIP:
 		{
-			VPROF( "CBaseEntity::PhysicsSimulate-MOVETYPE_NOCLIP" );
+			VPROF( "CSharedBaseEntity::PhysicsSimulate-MOVETYPE_NOCLIP" );
 			PhysicsNoclip();
 		}
 		break;
 
 	case MOVETYPE_STEP:
 		{
-			VPROF( "CBaseEntity::PhysicsSimulate-MOVETYPE_STEP" );
+			VPROF( "CSharedBaseEntity::PhysicsSimulate-MOVETYPE_STEP" );
 			PhysicsStep();
 		}
 		break;
@@ -1897,14 +1897,14 @@ void CBaseEntity::PhysicsSimulate( void )
 	case MOVETYPE_FLY:
 	case MOVETYPE_FLYGRAVITY:
 		{
-			VPROF( "CBaseEntity::PhysicsSimulate-MOVETYPE_FLY" );
+			VPROF( "CSharedBaseEntity::PhysicsSimulate-MOVETYPE_FLY" );
 			PhysicsToss();
 		}
 		break;
 
 	case MOVETYPE_CUSTOM:
 		{
-			VPROF( "CBaseEntity::PhysicsSimulate-MOVETYPE_CUSTOM" );
+			VPROF( "CSharedBaseEntity::PhysicsSimulate-MOVETYPE_CUSTOM" );
 			PhysicsCustom();
 		}
 		break;
@@ -1923,7 +1923,7 @@ void CBaseEntity::PhysicsSimulate( void )
 //  Returns false if the entity removed itself.
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBaseEntity::PhysicsRunThink( thinkmethods_t thinkMethod, bool bForce )
+bool CSharedBaseEntity::PhysicsRunThink( thinkmethods_t thinkMethod, bool bForce )
 {
 	if(!bForce) {
 		if ( IsEFlagSet( EFL_NO_THINK_FUNCTION ) )
@@ -1935,7 +1935,7 @@ bool CBaseEntity::PhysicsRunThink( thinkmethods_t thinkMethod, bool bForce )
 	// Don't fire the base if we're avoiding it
 	if ( thinkMethod != THINK_FIRE_ALL_BUT_BASE )
 	{
-		bAlive = PhysicsRunSpecificThink( -1, &CBaseEntity::Think, bForce );
+		bAlive = PhysicsRunSpecificThink( -1, &CSharedBaseEntity::Think, bForce );
 		if ( !bAlive )
 			return false;
 	}
@@ -2009,7 +2009,7 @@ public:
 		  m_bShouldCheck = false;
 	}
 
-	void EntityThinking( int framecount, CBaseEntity *ent, float thinktime, int thinktick )
+	void EntityThinking( int framecount, CSharedBaseEntity *ent, float thinktime, int thinktick )
 	{
 #if !defined( CLIENT_DLL )
 		if ( m_nLastFrameCount != framecount )
@@ -2049,7 +2049,7 @@ private:
 		return item1.thinktime < item2.thinktime;
 	}
 
-	ThinkSync	*FindOrAddItem( CBaseEntity *ent, float thinktime )
+	ThinkSync	*FindOrAddItem( CSharedBaseEntity *ent, float thinktime )
 	{
 		ThinkSync item;
 		item.thinktime = thinktime;
@@ -2091,7 +2091,7 @@ private:
 				EHANDLE h = p->entities[ j ];
 				int lastthinktick = 0;
 				int nextthinktick = 0;
-				CBaseEntity *e = h.Get();
+				CSharedBaseEntity *e = h.Get();
 				if ( e )
 				{
 					lastthinktick = e->m_nLastThinkTick;
@@ -2114,7 +2114,7 @@ static CThinkSyncTester g_ThinkChecker;
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CBaseEntity::PhysicsRunSpecificThink( int nContextIndex, BASEPTR thinkFunc, bool bForce )
+bool CSharedBaseEntity::PhysicsRunSpecificThink( int nContextIndex, BASEPTR thinkFunc, bool bForce )
 {
 	int thinktick = GetNextThinkTick( nContextIndex );
 
@@ -2156,7 +2156,7 @@ bool CBaseEntity::PhysicsRunSpecificThink( int nContextIndex, BASEPTR thinkFunc,
 	return ( !IsMarkedForDeletion() );
 }
 
-void CBaseEntity::SetGroundEntity( CBaseEntity *ground )
+void CSharedBaseEntity::SetGroundEntity( CSharedBaseEntity *ground )
 {
 	if ( m_hGroundEntity.Get() == ground )
 		return;
@@ -2178,7 +2178,7 @@ void CBaseEntity::SetGroundEntity( CBaseEntity *ground )
 	}
 #endif
 
-	CBaseEntity *oldGround = m_hGroundEntity;
+	CSharedBaseEntity *oldGround = m_hGroundEntity;
 	m_hGroundEntity = ground;
 
 	// Just starting to touch
@@ -2210,30 +2210,30 @@ void CBaseEntity::SetGroundEntity( CBaseEntity *ground )
 	}
 }
 
-CBaseEntity *CBaseEntity::GetGroundEntity( void )
+CSharedBaseEntity *CSharedBaseEntity::GetGroundEntity( void )
 {
 	return m_hGroundEntity;
 }
 
-void CBaseEntity::StartGroundContact( CBaseEntity *ground )
+void CSharedBaseEntity::StartGroundContact( CSharedBaseEntity *ground )
 {
 	AddFlag( FL_ONGROUND );
 //	Msg( "+++ %s starting contact with ground %s\n", GetClassname(), ground->GetClassname() );
 }
 
-void CBaseEntity::EndGroundContact( CBaseEntity *ground )
+void CSharedBaseEntity::EndGroundContact( CSharedBaseEntity *ground )
 {
 	RemoveFlag( FL_ONGROUND );
 //	Msg( "--- %s ending contact with ground %s\n", GetClassname(), ground->GetClassname() );
 }
 
 
-void CBaseEntity::SetGroundChangeTime( float flTime )
+void CSharedBaseEntity::SetGroundChangeTime( float flTime )
 {
 	m_flGroundChangeTime = flTime;
 }
 
-float CBaseEntity::GetGroundChangeTime( void )
+float CSharedBaseEntity::GetGroundChangeTime( void )
 {
 	return m_flGroundChangeTime;
 }
@@ -2244,7 +2244,7 @@ float CBaseEntity::GetGroundChangeTime( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseEntity::WakeRestingObjects()
+void CSharedBaseEntity::WakeRestingObjects()
 {
 	// Unset this as ground entity for everything resting on this object
 	//  This calls endgroundcontact for everything on the list
@@ -2255,7 +2255,7 @@ void CBaseEntity::WakeRestingObjects()
 // Purpose: 
 // Input  : *ent - 
 //-----------------------------------------------------------------------------
-bool CBaseEntity::HasNPCsOnIt( void )
+bool CSharedBaseEntity::HasNPCsOnIt( void )
 {
 	groundlink_t *link;
 	groundlink_t *root = ( groundlink_t * )GetDataObject( GROUNDLINK );

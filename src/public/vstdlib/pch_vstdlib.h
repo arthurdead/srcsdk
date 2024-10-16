@@ -10,7 +10,10 @@
 // $Workfile:     $
 // $NoKeywords: $
 //=============================================================================
+#ifndef PCH_VSTDLIB_H
+#define PCH_VSTDLIB_H
 
+#pragma once
 
 #pragma warning(disable: 4514)
 
@@ -47,5 +50,4 @@
 
 #include "tier0/memdbgon.h"
 
-
-
+#endif

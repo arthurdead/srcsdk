@@ -84,7 +84,7 @@ public:
 	virtual void FootprintDecal( IRecipientFilter& filer, float delay, const Vector *origin, const Vector* right, 
 		int entity, int index, unsigned char materialType ) = 0;
 	virtual void Fizz( IRecipientFilter& filer, float delay,
-		const CBaseEntity *ed, int modelindex, int density, int current ) = 0;
+		const CSharedBaseEntity *ed, int modelindex, int density, int current ) = 0;
 	virtual void KillPlayerAttachments( IRecipientFilter& filer, float delay,
 		int player ) = 0;
 	virtual void LargeFunnel( IRecipientFilter& filer, float delay,
@@ -122,7 +122,7 @@ public:
 	virtual void TriggerTempEntity( KeyValues *pKeyValues ) = 0;
 
 	virtual void ClientProjectile( IRecipientFilter& filter, float delay,
-		const Vector* vecOrigin, const Vector* vecVelocity, int modelindex, int lifetime, CBaseEntity *pOwner ) = 0;
+		const Vector* vecOrigin, const Vector* vecVelocity, int modelindex, int lifetime, CSharedBaseEntity *pOwner ) = 0;
 };
 
 extern ITempEntsSystem *te;

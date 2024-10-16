@@ -31,6 +31,8 @@
 #ifndef UTIL_SNAPPY_SNAPPY_INTERNAL_H_
 #define UTIL_SNAPPY_SNAPPY_INTERNAL_H_
 
+#pragma once
+
 #include "snappy-stubs-internal.h"
 
 namespace snappy {

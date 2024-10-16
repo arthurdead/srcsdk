@@ -13,25 +13,24 @@
 
 #if defined( CLIENT_DLL )
 
-	#include "iclientvehicle.h"
-	#include "prediction.h"
-	#include "c_basedoor.h"
-	#include "c_world.h"
-	#include "view.h"
-	#define CRecipientFilter C_RecipientFilter
+#include "iclientvehicle.h"
+#include "prediction.h"
+#include "c_basedoor.h"
+#include "c_world.h"
+#include "view.h"
 
 #else
 
-	#include "iservervehicle.h"
-	#include "trains.h"
-	#include "world.h"
-	#include "doors.h"
-	#include "ai_basenpc.h"
-	#include "env_zoom.h"
-	#include "ammodef.h"
+#include "iservervehicle.h"
+#include "trains.h"
+#include "world.h"
+#include "doors.h"
+#include "ai_basenpc.h"
+#include "env_zoom.h"
+#include "ammodef.h"
 
-	extern int TrainSpeed(int iSpeed, int iMax);
-	
+extern int TrainSpeed(int iSpeed, int iMax);
+
 #endif
 
 #include "in_buttons.h"
@@ -45,36 +44,30 @@
 #include "tier0/memdbgon.h"
 
 #if defined(GAME_DLL)
-	ConVar sv_infinite_ammo( "sv_infinite_ammo", "0", FCVAR_CHEAT, "Player's active weapon will never run out of ammo" );
-	
-	extern ConVar sv_pushaway_max_force;
-	extern ConVar sv_pushaway_force;
-	extern ConVar sv_turbophysics;
+ConVar sv_infinite_ammo( "sv_infinite_ammo", "0", FCVAR_CHEAT, "Player's active weapon will never run out of ammo" );
 
-	class CUsePushFilter : public CTraceFilterEntitiesOnly
+extern ConVar sv_pushaway_max_force;
+extern ConVar sv_pushaway_force;
+extern ConVar sv_turbophysics;
+
+class CUsePushFilter : public CTraceFilterEntitiesOnly
+{
+public:
+	bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
 	{
-	public:
-		bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
-		{
-			CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+		CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 
-			// Static prop case...
-			if ( !pEntity )
-				return false;
+		// Static prop case...
+		if ( !pEntity )
+			return false;
 
-			// Only impact on physics objects
-			if ( !pEntity->VPhysicsGetObject() )
-				return false;
+		// Only impact on physics objects
+		if ( !pEntity->VPhysicsGetObject() )
+			return false;
 
-#if defined( CSTRIKE_DLL )
-			// don't push the bomb!
-			if ( dynamic_cast<CC4*>( pEntity ) )
-				return false;
-#endif // CSTRIKE_DLL
-
-			return GameRules()->CanEntityBeUsePushed( pEntity );
-		}
-	};
+		return GameRules()->CanEntityBeUsePushed( pEntity );
+	}
+};
 #endif
 
 #ifdef CLIENT_DLL
@@ -125,12 +118,12 @@ void CopySoundNameWithModifierToken( char *pchDest, const char *pchSource, int n
 // Purpose: 
 // Output : float
 //-----------------------------------------------------------------------------
-float CBasePlayer::GetTimeBase( void ) const
+float CSharedBasePlayer::GetTimeBase( void ) const
 {
 	return m_nTickBase * TICK_INTERVAL;
 }
 
-float CBasePlayer::GetPlayerMaxSpeed()
+float CSharedBasePlayer::GetPlayerMaxSpeed()
 {
 	// player max speed is the lower limit of m_flMaxSpeed and sv_maxspeed
 	float fMaxSpeed = sv_maxspeed.GetFloat();
@@ -143,7 +136,7 @@ float CBasePlayer::GetPlayerMaxSpeed()
 //-----------------------------------------------------------------------------
 // Purpose: Called every usercmd by the player PreThink
 //-----------------------------------------------------------------------------
-void CBasePlayer::ItemPreFrame()
+void CSharedBasePlayer::ItemPreFrame()
 {
 	if (GetFlags() & FL_FROZEN )
 	{
@@ -156,7 +149,7 @@ void CBasePlayer::ItemPreFrame()
 	if ( gpGlobals->curtime < m_flNextAttack )
 		return;
 
-	CBaseCombatWeapon *pActive = GetActiveWeapon();
+	CSharedBaseCombatWeapon *pActive = GetActiveWeapon();
 	if (pActive)
 	{
 	#if defined( CLIENT_DLL )
@@ -171,7 +164,7 @@ void CBasePlayer::ItemPreFrame()
 	// Allow all the holstered weapons to update
 	for ( int i = 0; i < WeaponCount(); ++i )
 	{
-		CBaseCombatWeapon *pWeapon = GetWeapon( i );
+		CSharedBaseCombatWeapon *pWeapon = GetWeapon( i );
 
 		if ( pWeapon == NULL )
 			continue;
@@ -187,7 +180,7 @@ void CBasePlayer::ItemPreFrame()
 // Purpose: 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBasePlayer::UsingStandardWeaponsInVehicle( void )
+bool CSharedBasePlayer::UsingStandardWeaponsInVehicle( void )
 {
 	Assert( IsInAVehicle() );
 #if !defined( CLIENT_DLL )
@@ -214,9 +207,9 @@ bool CBasePlayer::UsingStandardWeaponsInVehicle( void )
 //-----------------------------------------------------------------------------
 // Purpose: Called every usercmd by the player PostThink
 //-----------------------------------------------------------------------------
-void CBasePlayer::ItemPostFrame()
+void CSharedBasePlayer::ItemPostFrame()
 {
-	VPROF( "CBasePlayer::ItemPostFrame" );
+	VPROF( "CSharedBasePlayer::ItemPostFrame" );
 
 	// Put viewmodels into basically correct place based on new player origin
 	CalcViewModelView( EyePosition(), EyeAngles() );
@@ -259,7 +252,7 @@ void CBasePlayer::ItemPostFrame()
 		return;
 	}
 
-    if ( gpGlobals->curtime < m_flNextAttack )
+	if ( gpGlobals->curtime < m_flNextAttack )
 	{
 		if ( GetActiveWeapon() )
 		{
@@ -310,10 +303,10 @@ void CBasePlayer::ItemPostFrame()
 //-----------------------------------------------------------------------------
 // Eye angles
 //-----------------------------------------------------------------------------
-const QAngle &CBasePlayer::EyeAngles( )
+const QAngle &CSharedBasePlayer::EyeAngles( )
 {
 	// NOTE: Viewangles are measured *relative* to the parent's coordinate system
-	CBaseEntity *pMoveParent = const_cast<CBasePlayer*>(this)->GetMoveParent();
+	CSharedBaseEntity *pMoveParent = const_cast<CSharedBasePlayer*>(this)->GetMoveParent();
 
 	if ( !pMoveParent )
 	{
@@ -336,7 +329,7 @@ const QAngle &CBasePlayer::EyeAngles( )
 }
 
 
-const QAngle &CBasePlayer::LocalEyeAngles()
+const QAngle &CSharedBasePlayer::LocalEyeAngles()
 {
 	return pl.v_angle;
 }
@@ -344,7 +337,7 @@ const QAngle &CBasePlayer::LocalEyeAngles()
 //-----------------------------------------------------------------------------
 // Actual Eye position + angles
 //-----------------------------------------------------------------------------
-Vector CBasePlayer::EyePosition( )
+Vector CSharedBasePlayer::EyePosition( )
 {
 	if ( GetVehicle() != NULL )
 	{
@@ -382,7 +375,7 @@ Vector CBasePlayer::EyePosition( )
 // Input  : 
 // Output : const Vector
 //-----------------------------------------------------------------------------
-const Vector CBasePlayer::GetPlayerMins( void ) const
+const Vector CSharedBasePlayer::GetPlayerMins( void ) const
 {
 	if ( IsObserver() )
 	{
@@ -406,7 +399,7 @@ const Vector CBasePlayer::GetPlayerMins( void ) const
 // Input  : 
 // Output : const Vector
 //-----------------------------------------------------------------------------
-const Vector CBasePlayer::GetPlayerMaxs( void ) const
+const Vector CSharedBasePlayer::GetPlayerMaxs( void ) const
 {	
 	if ( IsObserver() )
 	{
@@ -428,7 +421,7 @@ const Vector CBasePlayer::GetPlayerMaxs( void ) const
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBasePlayer::UpdateCollisionBounds( void )
+void CSharedBasePlayer::UpdateCollisionBounds( void )
 {
 	if ( GetFlags() & FL_DUCKING )
 	{
@@ -443,7 +436,7 @@ void CBasePlayer::UpdateCollisionBounds( void )
 //-----------------------------------------------------------------------------
 // Purpose: Update the vehicle view, or simply return the cached position and angles
 //-----------------------------------------------------------------------------
-void CBasePlayer::CacheVehicleView( void )
+void CSharedBasePlayer::CacheVehicleView( void )
 {
 	// If we've calculated the view this frame, then there's no need to recalculate it
 	if ( m_nVehicleViewSavedFrame == gpGlobals->framecount )
@@ -468,7 +461,7 @@ void CBasePlayer::CacheVehicleView( void )
 //-----------------------------------------------------------------------------
 // Returns eye vectors
 //-----------------------------------------------------------------------------
-void CBasePlayer::EyeVectors( Vector *pForward, Vector *pRight, Vector *pUp )
+void CSharedBasePlayer::EyeVectors( Vector *pForward, Vector *pRight, Vector *pUp )
 {
 	if ( GetVehicle() != NULL )
 	{
@@ -485,7 +478,7 @@ void CBasePlayer::EyeVectors( Vector *pForward, Vector *pRight, Vector *pUp )
 //-----------------------------------------------------------------------------
 // Purpose: Returns the eye position and angle vectors.
 //-----------------------------------------------------------------------------
-void CBasePlayer::EyePositionAndVectors( Vector *pPosition, Vector *pForward,
+void CSharedBasePlayer::EyePositionAndVectors( Vector *pPosition, Vector *pForward,
 										 Vector *pRight, Vector *pUp )
 {
 	// Handle the view in the vehicle
@@ -507,13 +500,13 @@ void CBasePlayer::EyePositionAndVectors( Vector *pPosition, Vector *pForward,
 }
 
 #ifdef CLIENT_DLL
-surfacedata_t * CBasePlayer::GetFootstepSurface( const Vector &origin, const char *surfaceName )
+surfacedata_t * CSharedBasePlayer::GetFootstepSurface( const Vector &origin, const char *surfaceName )
 {
 	return physprops->GetSurfaceData( physprops->GetSurfaceIndex( surfaceName ) );
 }
 #endif
 
-surfacedata_t *CBasePlayer::GetLadderSurface( const Vector &origin )
+surfacedata_t *CSharedBasePlayer::GetLadderSurface( const Vector &origin )
 {
 #ifdef CLIENT_DLL
 	return GetFootstepSurface( origin, "ladder" );
@@ -522,7 +515,7 @@ surfacedata_t *CBasePlayer::GetLadderSurface( const Vector &origin )
 #endif
 }
 
-void CBasePlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity )
+void CSharedBasePlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity )
 {
 	bool bWalking;
 	float fvol;
@@ -680,7 +673,7 @@ void CBasePlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOri
 //			fvol - 
 //			force - force sound to play
 //-----------------------------------------------------------------------------
-void CBasePlayer::PlayStepSound( const Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force )
+void CSharedBasePlayer::PlayStepSound( const Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force )
 {
 	if ( gpGlobals->maxClients > 1 && !sv_footsteps.GetFloat() )
 		return;
@@ -717,7 +710,7 @@ void CBasePlayer::PlayStepSound( const Vector &vecOrigin, surfacedata_t *psurfac
 		// Give child classes an opportunity to override.
 		pSoundName = GetOverrideStepSound( pSoundName );
 
-		if ( !CBaseEntity::GetParametersForSound( pSoundName, params, NULL ) )
+		if ( !CSharedBaseEntity::GetParametersForSound( pSoundName, params, NULL ) )
 			return;
 
 		// Only cache if there's one option.  Otherwise we'd never here any other sounds
@@ -728,7 +721,7 @@ void CBasePlayer::PlayStepSound( const Vector &vecOrigin, surfacedata_t *psurfac
 		}
 	}
 
-	CRecipientFilter filter;
+	CSharedRecipientFilter filter;
 	filter.AddRecipientsByPAS( vecOrigin );
 
 #ifndef CLIENT_DLL
@@ -754,7 +747,7 @@ void CBasePlayer::PlayStepSound( const Vector &vecOrigin, surfacedata_t *psurfac
 	OnEmitFootstepSound( params, vecOrigin, fvol );
 }
 
-void CBasePlayer::UpdateButtonState( int nUserCmdButtonMask )
+void CSharedBasePlayer::UpdateButtonState( int nUserCmdButtonMask )
 {
 	// Track button info so we can detect 'pressed' and 'released' buttons next frame
 	m_afButtonLast = m_nButtons;
@@ -772,7 +765,7 @@ void CBasePlayer::UpdateButtonState( int nUserCmdButtonMask )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBasePlayer::GetStepSoundVelocities( float *velwalk, float *velrun )
+void CSharedBasePlayer::GetStepSoundVelocities( float *velwalk, float *velrun )
 {
 	// UNDONE: need defined numbers for run, walk, crouch, crouch run velocities!!!!	
 	if ( ( GetFlags() & FL_DUCKING) || ( GetMoveType() == MOVETYPE_LADDER ) )
@@ -790,7 +783,7 @@ void CBasePlayer::GetStepSoundVelocities( float *velwalk, float *velrun )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBasePlayer::SetStepSoundTime( stepsoundtimes_t iStepSoundTime, bool bWalking )
+void CSharedBasePlayer::SetStepSoundTime( stepsoundtimes_t iStepSoundTime, bool bWalking )
 {
 	switch ( iStepSoundTime )
 	{
@@ -819,17 +812,17 @@ void CBasePlayer::SetStepSoundTime( stepsoundtimes_t iStepSoundTime, bool bWalki
 	}
 }
 
-Vector CBasePlayer::Weapon_ShootPosition( )
+Vector CSharedBasePlayer::Weapon_ShootPosition( )
 {
 	return EyePosition();
 }
 
-bool CBasePlayer::Weapon_CanUse( CBaseCombatWeapon *pWeapon )
+bool CSharedBasePlayer::Weapon_CanUse( CSharedBaseCombatWeapon *pWeapon )
 {
 	return true;
 }
 
-void CBasePlayer::SetAnimationExtension( const char *pExtension )
+void CSharedBasePlayer::SetAnimationExtension( const char *pExtension )
 {
 	Q_strncpy( m_szAnimExtension, pExtension, sizeof(m_szAnimExtension) );
 }
@@ -838,7 +831,7 @@ void CBasePlayer::SetAnimationExtension( const char *pExtension )
 //-----------------------------------------------------------------------------
 // Purpose: Set the weapon to switch to when the player uses the 'lastinv' command
 //-----------------------------------------------------------------------------
-void CBasePlayer::Weapon_SetLast( CBaseCombatWeapon *pWeapon )
+void CSharedBasePlayer::Weapon_SetLast( CSharedBaseCombatWeapon *pWeapon )
 {
 	m_hLastWeapon = pWeapon;
 }
@@ -848,18 +841,18 @@ void CBasePlayer::Weapon_SetLast( CBaseCombatWeapon *pWeapon )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-bool CBasePlayer::Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex /*=0*/ ) 
+bool CSharedBasePlayer::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, int viewmodelindex /*=0*/, bool bDeploy ) 
 {
-	CBaseCombatWeapon *pLastWeapon = GetActiveWeapon();
+	CSharedBaseCombatWeapon *pLastWeapon = GetActiveWeapon();
 
-	if ( BaseClass::Weapon_Switch( pWeapon, viewmodelindex ))
+	if ( BaseClass::Weapon_Switch( pWeapon, viewmodelindex, bDeploy ))
 	{
 		if ( pLastWeapon && Weapon_ShouldSetLast( pLastWeapon, GetActiveWeapon() ) )
 		{
 			Weapon_SetLast( pLastWeapon->GetLastWeapon() );
 		}
 
-		CBaseViewModel *pViewModel = GetViewModel( viewmodelindex );
+		CSharedBaseViewModel *pViewModel = GetViewModel( viewmodelindex );
 		Assert( pViewModel );
 		if ( pViewModel )
 			pViewModel->RemoveEffects( EF_NODRAW );
@@ -869,7 +862,7 @@ bool CBasePlayer::Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex 
 	return false;
 }
 
-void CBasePlayer::SelectLastItem(void)
+void CSharedBasePlayer::SelectLastItem(void)
 {
 	if ( m_hLastWeapon.Get() == NULL )
 		return;
@@ -884,7 +877,7 @@ void CBasePlayer::SelectLastItem(void)
 //-----------------------------------------------------------------------------
 // Purpose: Abort any reloads we're in
 //-----------------------------------------------------------------------------
-void CBasePlayer::AbortReload( void )
+void CSharedBasePlayer::AbortReload( void )
 {
 	if ( GetActiveWeapon() )
 	{
@@ -892,9 +885,9 @@ void CBasePlayer::AbortReload( void )
 	}
 }
 
-void CBasePlayer::AddToPlayerSimulationList( CBaseEntity *other )
+void CSharedBasePlayer::AddToPlayerSimulationList( CSharedBaseEntity *other )
 {
-	CHandle< CBaseEntity > h;
+	CHandle< CSharedBaseEntity > h;
 	h = other;
 	// Already in list
 	if ( m_SimulatedByThisPlayer.Find( h ) != m_SimulatedByThisPlayer.InvalidIndex() )
@@ -910,7 +903,7 @@ void CBasePlayer::AddToPlayerSimulationList( CBaseEntity *other )
 //  often enough!!!
 // Input  : *other - 
 //-----------------------------------------------------------------------------
-void CBasePlayer::RemoveFromPlayerSimulationList( CBaseEntity *other )
+void CSharedBasePlayer::RemoveFromPlayerSimulationList( CSharedBaseEntity *other )
 {
 	if ( !other )
 		return;
@@ -919,23 +912,23 @@ void CBasePlayer::RemoveFromPlayerSimulationList( CBaseEntity *other )
 	Assert( other->GetSimulatingPlayer() == this );
 
 
-	CHandle< CBaseEntity > h;
+	CHandle< CSharedBaseEntity > h;
 	h = other;
 
 	m_SimulatedByThisPlayer.FindAndRemove( h );
 }
 
-void CBasePlayer::SimulatePlayerSimulatedEntities( void )
+void CSharedBasePlayer::SimulatePlayerSimulatedEntities( void )
 {
 	int c = m_SimulatedByThisPlayer.Count();
 	int i;
 
 	for ( i = c - 1; i >= 0; i-- )
 	{
-		CHandle< CBaseEntity > h;
+		CHandle< CSharedBaseEntity > h;
 		
 		h = m_SimulatedByThisPlayer[ i ];
-		CBaseEntity *e = h;
+		CSharedBaseEntity *e = h;
 
 		if ( !e || !e->IsPlayerSimulated() )
 		{
@@ -960,11 +953,11 @@ void CBasePlayer::SimulatePlayerSimulatedEntities( void )
 
 	for ( i = c - 1; i >= 0; i-- )
 	{
-		CHandle< CBaseEntity > h;
+		CHandle< CSharedBaseEntity > h;
 		
 		h = m_SimulatedByThisPlayer[ i ];
 
-		CBaseEntity *e = h;
+		CSharedBaseEntity *e = h;
 		if ( !e || !e->IsPlayerSimulated() )
 		{
 			m_SimulatedByThisPlayer.Remove( i );
@@ -991,17 +984,17 @@ void CBasePlayer::SimulatePlayerSimulatedEntities( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBasePlayer::ClearPlayerSimulationList( void )
+void CSharedBasePlayer::ClearPlayerSimulationList( void )
 {
 	int c = m_SimulatedByThisPlayer.Size();
 	int i;
 
 	for ( i = c - 1; i >= 0; i-- )
 	{
-		CHandle< CBaseEntity > h;
+		CHandle< CSharedBaseEntity > h;
 		
 		h = m_SimulatedByThisPlayer[ i ];
-		CBaseEntity *e = h;
+		CSharedBaseEntity *e = h;
 		if ( e )
 		{
 			e->UnsetPlayerSimulated();
@@ -1014,7 +1007,7 @@ void CBasePlayer::ClearPlayerSimulationList( void )
 //-----------------------------------------------------------------------------
 // Purpose: Return true if we should allow selection of the specified item
 //-----------------------------------------------------------------------------
-bool CBasePlayer::Weapon_ShouldSelectItem( CBaseCombatWeapon *pWeapon )
+bool CSharedBasePlayer::Weapon_ShouldSelectItem( CSharedBaseCombatWeapon *pWeapon )
 {
 	return ( pWeapon != GetActiveWeapon() );
 }
@@ -1022,12 +1015,12 @@ bool CBasePlayer::Weapon_ShouldSelectItem( CBaseCombatWeapon *pWeapon )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBasePlayer::SelectItem( const char *pstr, int iSubType )
+void CSharedBasePlayer::SelectItem( const char *pstr, int iSubType )
 {
 	if (!pstr)
 		return;
 
-	CBaseCombatWeapon *pItem = Weapon_OwnsThisType( pstr, iSubType );
+	CSharedBaseCombatWeapon *pItem = Weapon_OwnsThisType( pstr, iSubType );
 
 	if (!pItem)
 		return;
@@ -1072,7 +1065,7 @@ float IntervalDistance( float x, float x0, float x1 )
 	return 0;
 }
 
-CBaseEntity *CBasePlayer::FindUseEntity()
+CSharedBaseEntity *CSharedBasePlayer::FindUseEntity()
 {
 	Vector forward, up;
 	EyeVectors( &forward, NULL, &up );
@@ -1090,11 +1083,11 @@ CBaseEntity *CBasePlayer::FindUseEntity()
 #endif
 
 	// UNDONE: Might be faster to just fold this range into the sphere query
-	CBaseEntity *pObject = NULL;
+	CSharedBaseEntity *pObject = NULL;
 
 	float nearestDist = FLT_MAX;
 	// try the hit entity if there is one, or the ground entity if there isn't.
-	CBaseEntity *pNearest = NULL;
+	CSharedBaseEntity *pNearest = NULL;
 
 	const int NUM_TANGENTS = 8;
 	// trace a box at successive angles down
@@ -1272,7 +1265,7 @@ CBaseEntity *CBasePlayer::FindUseEntity()
 //-----------------------------------------------------------------------------
 // Purpose: Handles USE keypress
 //-----------------------------------------------------------------------------
-void CBasePlayer::PlayerUse ( void )
+void CSharedBasePlayer::PlayerUse ( void )
 {
 #ifdef GAME_DLL
 	// Was use pressed or released?
@@ -1401,7 +1394,7 @@ ConVar	sv_suppress_viewpunch( "sv_suppress_viewpunch", "0", FCVAR_REPLICATED | F
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBasePlayer::ViewPunch( const QAngle &angleOffset )
+void CSharedBasePlayer::ViewPunch( const QAngle &angleOffset )
 {
 	//See if we're suppressing the view punching
 	if ( sv_suppress_viewpunch.GetBool() )
@@ -1417,7 +1410,7 @@ void CBasePlayer::ViewPunch( const QAngle &angleOffset )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBasePlayer::ViewPunchReset( float tolerance )
+void CSharedBasePlayer::ViewPunchReset( float tolerance )
 {
 	if ( tolerance != 0 )
 	{
@@ -1442,9 +1435,9 @@ static ConVar smoothstairs( "smoothstairs", "1", FCVAR_REPLICATED, "Smooth playe
 //-----------------------------------------------------------------------------
 // Handle view smoothing when going up or down stairs
 //-----------------------------------------------------------------------------
-void CBasePlayer::SmoothViewOnStairs( Vector& eyeOrigin )
+void CSharedBasePlayer::SmoothViewOnStairs( Vector& eyeOrigin )
 {
-	CBaseEntity *pGroundEntity = GetGroundEntity();
+	CSharedBaseEntity *pGroundEntity = GetGroundEntity();
 	float flCurrentPlayerZ = GetLocalOrigin().z;
 	float flCurrentPlayerViewOffsetZ = GetViewOffset().z;
 
@@ -1508,7 +1501,7 @@ static bool IsWaterContents( int contents )
 	return false;
 }
 
-void CBasePlayer::ResetObserverMode()
+void CSharedBasePlayer::ResetObserverMode()
 {
 
 	m_hObserverTarget.Set( NULL );
@@ -1529,7 +1522,7 @@ void CBasePlayer::ResetObserverMode()
 //			zFar - 
 //			fov - 
 //-----------------------------------------------------------------------------
-void CBasePlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, float &zFar, float &fov )
+void CSharedBasePlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, float &zFar, float &fov )
 {
 #if defined( CLIENT_DLL )
 	IClientVehicle *pVehicle; 
@@ -1582,11 +1575,11 @@ void CBasePlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, 
 }
 
 
-void CBasePlayer::CalcViewModelView( const Vector& eyeOrigin, const QAngle& eyeAngles)
+void CSharedBasePlayer::CalcViewModelView( const Vector& eyeOrigin, const QAngle& eyeAngles)
 {
 	for ( int i = 0; i < MAX_VIEWMODELS; i++ )
 	{
-		CBaseViewModel *vm = GetViewModel( i );
+		CSharedBaseViewModel *vm = GetViewModel( i );
 		if ( !vm )
 			continue;
 	
@@ -1594,7 +1587,7 @@ void CBasePlayer::CalcViewModelView( const Vector& eyeOrigin, const QAngle& eyeA
 	}
 }
 
-void CBasePlayer::CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov )
+void CSharedBasePlayer::CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov )
 {
 #if defined( CLIENT_DLL )
 	if ( !prediction->InPrediction() )
@@ -1648,7 +1641,7 @@ void CBasePlayer::CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& f
 //-----------------------------------------------------------------------------
 // Purpose: The main view setup function for vehicles
 //-----------------------------------------------------------------------------
-void CBasePlayer::CalcVehicleView( 
+void CSharedBasePlayer::CalcVehicleView( 
 #if defined( CLIENT_DLL )
 	IClientVehicle *pVehicle, 
 #else
@@ -1692,7 +1685,7 @@ void CBasePlayer::CalcVehicleView(
 }
 
 
-void CBasePlayer::CalcObserverView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov )
+void CSharedBasePlayer::CalcObserverView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov )
 {
 #if defined( CLIENT_DLL )
 	switch ( GetObserverMode() )
@@ -1730,7 +1723,7 @@ void CBasePlayer::CalcObserverView( Vector& eyeOrigin, QAngle& eyeAngles, float&
 //			rollspeed - 
 // Output : float CViewRender::CalcRoll
 //-----------------------------------------------------------------------------
-float CBasePlayer::CalcRoll (const QAngle& angles, const Vector& velocity, float rollangle, float rollspeed)
+float CSharedBasePlayer::CalcRoll (const QAngle& angles, const Vector& velocity, float rollangle, float rollspeed)
 {
     float   sign;
     float   side;
@@ -1764,7 +1757,7 @@ float CBasePlayer::CalcRoll (const QAngle& angles, const Vector& velocity, float
 //-----------------------------------------------------------------------------
 // Purpose: Determine view roll, including data kick
 //-----------------------------------------------------------------------------
-void CBasePlayer::CalcViewRoll( QAngle& eyeAngles )
+void CSharedBasePlayer::CalcViewRoll( QAngle& eyeAngles )
 {
 	if ( GetMoveType() == MOVETYPE_NOCLIP )
 		return;
@@ -1773,15 +1766,15 @@ void CBasePlayer::CalcViewRoll( QAngle& eyeAngles )
 	eyeAngles[ROLL] += side;
 }
 
-void CBasePlayer::CalcViewBob( Vector& eyeOrigin )
+void CSharedBasePlayer::CalcViewBob( Vector& eyeOrigin )
 {
 }
 
-void CBasePlayer::DoMuzzleFlash()
+void CSharedBasePlayer::DoMuzzleFlash()
 {
 	for ( int i = 0; i < MAX_VIEWMODELS; i++ )
 	{
-		CBaseViewModel *vm = GetViewModel( i );
+		CSharedBaseViewModel *vm = GetViewModel( i );
 		if ( !vm )
 			continue;
 
@@ -1792,7 +1785,7 @@ void CBasePlayer::DoMuzzleFlash()
 }
 
 
-float CBasePlayer::GetFOVDistanceAdjustFactor()
+float CSharedBasePlayer::GetFOVDistanceAdjustFactor()
 {
 	float defaultFOV	= (float)GetDefaultFOV();
 	float localFOV		= (float)GetFOV();
@@ -1814,7 +1807,7 @@ float CBasePlayer::GetFOVDistanceAdjustFactor()
 //			&tr - 
 //			iTracerType - 
 //-----------------------------------------------------------------------------
-void CBasePlayer::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType )
+void CSharedBasePlayer::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType )
 {
 	if ( GetActiveWeapon() )
 	{
@@ -1826,7 +1819,7 @@ void CBasePlayer::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int
 }
 
 
-void CBasePlayer::SharedSpawn()
+void CSharedBasePlayer::SharedSpawn()
 {
 	SetMoveType( MOVETYPE_WALK );
 	SetSolid( SOLID_BBOX );
@@ -1862,7 +1855,7 @@ void CBasePlayer::SharedSpawn()
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CBasePlayer::GetDefaultFOV( void ) const
+int CSharedBasePlayer::GetDefaultFOV( void ) const
 {
 #if defined( CLIENT_DLL )
 	if ( GetObserverMode() == OBS_MODE_IN_EYE )
@@ -1883,7 +1876,7 @@ int CBasePlayer::GetDefaultFOV( void ) const
 	return iFOV;
 }
 
-void CBasePlayer::AvoidPhysicsProps( CUserCmd *pCmd )
+void CSharedBasePlayer::AvoidPhysicsProps( CUserCmd *pCmd )
 {
 	// Don't avoid if noclipping or in movetype none
 	switch ( GetMoveType() )
@@ -1906,7 +1899,7 @@ void CBasePlayer::AvoidPhysicsProps( CUserCmd *pCmd )
 // Purpose: 
 // Output : const char
 //-----------------------------------------------------------------------------
-const char *CBasePlayer::GetTracerType( void )
+const char *CSharedBasePlayer::GetTracerType( void )
 {
 	if ( GetActiveWeapon() )
 	{
@@ -1919,7 +1912,7 @@ const char *CBasePlayer::GetTracerType( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBasePlayer::ClearZoomOwner( void )
+void CSharedBasePlayer::ClearZoomOwner( void )
 {
 	m_hZoomOwner = NULL;
 }
@@ -1929,7 +1922,7 @@ void CBasePlayer::ClearZoomOwner( void )
 // Input  : FOV - New FOV
 //			zoomRate - Amount of time (in seconds) to move between old and new FOV
 //-----------------------------------------------------------------------------
-bool CBasePlayer::SetFOV( CBaseEntity *pRequester, int FOV, float zoomRate, int iZoomStart /* = 0 */ )
+bool CSharedBasePlayer::SetFOV( CSharedBaseEntity *pRequester, int FOV, float zoomRate, int iZoomStart /* = 0 */ )
 {
 	//NOTENOTE: You MUST specify who is requesting the zoom change
 	assert( pRequester != NULL );
@@ -1979,7 +1972,7 @@ bool CBasePlayer::SetFOV( CBaseEntity *pRequester, int FOV, float zoomRate, int 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBasePlayer::UpdateUnderwaterState( void )
+void CSharedBasePlayer::UpdateUnderwaterState( void )
 {
 	if ( GetWaterLevel() == WL_Eyes )
 	{
@@ -2026,7 +2019,7 @@ void CBasePlayer::UpdateUnderwaterState( void )
 // Purpose: data accessor
 // ensure that for every emitsound there is a matching stopsound
 //-----------------------------------------------------------------------------
-void CBasePlayer::SetPlayerUnderwater( bool state )
+void CSharedBasePlayer::SetPlayerUnderwater( bool state )
 {
 	if ( m_bPlayerUnderwater != state )
 	{
@@ -2042,12 +2035,12 @@ void CBasePlayer::SetPlayerUnderwater( bool state )
 }
 
 
-void CBasePlayer::SetPreviouslyPredictedOrigin( const Vector &vecAbsOrigin )
+void CSharedBasePlayer::SetPreviouslyPredictedOrigin( const Vector &vecAbsOrigin )
 {
 	m_vecPreviouslyPredictedOrigin = vecAbsOrigin;
 }
 
-const Vector &CBasePlayer::GetPreviouslyPredictedOrigin() const
+const Vector &CSharedBasePlayer::GetPreviouslyPredictedOrigin() const
 {
 	return m_vecPreviouslyPredictedOrigin;
 }
@@ -2079,7 +2072,7 @@ bool fogparams_t::operator !=( const fogparams_t& other ) const
 //-----------------------------------------------------------------------------
 // Purpose: Strips off IN_xxx flags from the player's input
 //-----------------------------------------------------------------------------
-void CBasePlayer::ForceButtons( int nButtons )
+void CSharedBasePlayer::ForceButtons( int nButtons )
 {
 	m_afButtonForced |= nButtons;
 }
@@ -2087,17 +2080,17 @@ void CBasePlayer::ForceButtons( int nButtons )
 //-----------------------------------------------------------------------------
 // Purpose: Re-enables stripped IN_xxx flags to the player's input
 //-----------------------------------------------------------------------------
-void CBasePlayer::UnforceButtons( int nButtons )
+void CSharedBasePlayer::UnforceButtons( int nButtons )
 {
 	m_afButtonForced &= ~nButtons;
 }
 
-CBaseEntity* CBasePlayer::GetSoundscapeListener()
+CSharedBaseEntity* CSharedBasePlayer::GetSoundscapeListener()
 {
 	return this;
 }
 
-CPlayerAnimState *CBasePlayer::CreateAnimState()
+CPlayerAnimState *CSharedBasePlayer::CreateAnimState()
 {
 	PlayerMovementData_t movementData;
 	movementData.m_flBodyYawRate = 720.0f;

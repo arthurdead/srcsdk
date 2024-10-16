@@ -10,6 +10,7 @@
 #ifndef IVOICESERVER_H
 #define IVOICESERVER_H
 
+#pragma once
 
 #include "interface.h"
 

@@ -4,7 +4,6 @@
 #pragma once
 
 #include "c_ai_basenpc.h"
-#include "suspicioner.h"
 
 class C_NPC_HumanoidBase : public C_AI_BaseNPC
 {
@@ -17,7 +16,7 @@ public:
 	void Spawn() override;
 
 protected:
-	C_Suspicioner m_Suspicioner;
+	
 };
 
 #endif

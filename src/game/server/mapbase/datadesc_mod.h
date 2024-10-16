@@ -7,6 +7,8 @@
 #ifndef MAPBASE_DATADESC_MOD_H
 #define MAPBASE_DATADESC_MOD_H
 
+#pragma once
+
 #include "datamap.h"
 
 struct variant_t;

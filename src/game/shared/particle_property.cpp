@@ -68,7 +68,7 @@ CParticleProperty::~CParticleProperty()
 //-----------------------------------------------------------------------------
 // Initialization
 //-----------------------------------------------------------------------------
-void CParticleProperty::Init( CBaseEntity *pEntity )
+void CParticleProperty::Init( CSharedBaseEntity *pEntity )
 {
 	m_pOuter = pEntity;
 }
@@ -349,7 +349,7 @@ void CParticleProperty::StopEmissionAndDestroyImmediately( CNewParticleEffect *p
 // Purpose: Stop all effects that have  a control point associated with the given
 //          entity.
 //-----------------------------------------------------------------------------
-void CParticleProperty::StopParticlesInvolving( CBaseEntity *pEntity, bool bForceRemoveInstantly /* =false */ )
+void CParticleProperty::StopParticlesInvolving( CSharedBaseEntity *pEntity, bool bForceRemoveInstantly /* =false */ )
 {
 	Assert( pEntity );
 

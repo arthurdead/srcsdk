@@ -27,7 +27,7 @@ public:
 	~CHintMessage();
 
 	float GetDuration() const { return m_duration; }
-	void Send( CBasePlayer *client );
+	void Send( CSharedBasePlayer *client );
 
 	bool IsEquivalent( const char *hintString, CUtlVector< const char * > * args ) const;
 
@@ -42,7 +42,7 @@ private:
 class CHintMessageQueue
 {
 public:
-	CHintMessageQueue( CBasePlayer *pPlayer );
+	CHintMessageQueue( CSharedBasePlayer *pPlayer );
 	void		Reset();
 	void		Update();
 	bool		AddMessage( const char* message, float duration = 6.0f, CUtlVector< const char * > * args = NULL );
@@ -51,7 +51,7 @@ public:
 private:
 	float		m_tmMessageEnd;
 	CUtlVector< CHintMessage * > m_messages;
-	CBasePlayer *m_pPlayer;
+	CSharedBasePlayer *m_pPlayer;
 };
 
 //--------------------------------------------------------------------------------------------------------------

@@ -15,9 +15,10 @@
 
 #ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
 #else
-#define CBaseEntity C_BaseEntity
 class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
 #endif
 
 //-----------------------------------------------------------------------------
@@ -80,20 +81,20 @@ void ReloadParticleEffectsInList( IFileList *pFilesToReload );
 //-----------------------------------------------------------------------------
 // Particle spawning methods
 //-----------------------------------------------------------------------------
-void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, const char *pszAttachmentName, bool bResetAllParticlesOnEntity = false, IRecipientFilter *filter = NULL );
-void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity = NULL, int iAttachmentPoint = -1, bool bResetAllParticlesOnEntity = false, IRecipientFilter *filter = NULL );
-void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, CBaseEntity *pEntity = NULL );
-void DispatchParticleEffect( const char *pszParticleName, const Vector &vecOrigin, const QAngle &vecAngles, ParticleAttachment_t iAttachType, CBaseEntity *pEntity = NULL );
-void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CBaseEntity *pEntity = NULL, bool bUseColor = false, const Vector& color1 = vec3_origin, const Vector& color2 = vec3_origin );
-void DispatchParticleEffectLink( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity = NULL, CBaseEntity *pOtherEntity = NULL, int iAttachmentPoint = -1, bool bResetAllParticlesOnEntity = false, int nSplitScreenPlayerSlot = -1 );
-void DispatchParticleEffect( int iEffectIndex, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CBaseEntity *pEntity = NULL, bool bUseColor = false, const Vector& color1 = vec3_origin, const Vector& color2 = vec3_origin );
+void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CSharedBaseEntity *pEntity, const char *pszAttachmentName, bool bResetAllParticlesOnEntity = false, IRecipientFilter *filter = NULL );
+void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CSharedBaseEntity *pEntity = NULL, int iAttachmentPoint = -1, bool bResetAllParticlesOnEntity = false, IRecipientFilter *filter = NULL );
+void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, CSharedBaseEntity *pEntity = NULL );
+void DispatchParticleEffect( const char *pszParticleName, const Vector &vecOrigin, const QAngle &vecAngles, ParticleAttachment_t iAttachType, CSharedBaseEntity *pEntity = NULL );
+void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CSharedBaseEntity *pEntity = NULL, bool bUseColor = false, const Vector& color1 = vec3_origin, const Vector& color2 = vec3_origin );
+void DispatchParticleEffectLink( const char *pszParticleName, ParticleAttachment_t iAttachType, CSharedBaseEntity *pEntity = NULL, CSharedBaseEntity *pOtherEntity = NULL, int iAttachmentPoint = -1, bool bResetAllParticlesOnEntity = false, int nSplitScreenPlayerSlot = -1 );
+void DispatchParticleEffect( int iEffectIndex, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CSharedBaseEntity *pEntity = NULL, bool bUseColor = false, const Vector& color1 = vec3_origin, const Vector& color2 = vec3_origin );
 
-void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, const char *pszAttachmentName, Vector vecColor1, Vector vecColor2, bool bUseColors=true, bool bResetAllParticlesOnEntity = false );
-void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, Vector vecColor1, Vector vecColor2, bool bUseColors=true, CBaseEntity *pEntity = NULL, int iAttachType = PATTACH_CUSTOMORIGIN );
-void DispatchParticleEffect( const char *pszParticleName, const Vector& vecStart, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, const char *pszAttachmentName, bool bResetAllParticlesOnEntity = false );
+void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CSharedBaseEntity *pEntity, const char *pszAttachmentName, Vector vecColor1, Vector vecColor2, bool bUseColors=true, bool bResetAllParticlesOnEntity = false );
+void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, Vector vecColor1, Vector vecColor2, bool bUseColors=true, CSharedBaseEntity *pEntity = NULL, int iAttachType = PATTACH_CUSTOMORIGIN );
+void DispatchParticleEffect( const char *pszParticleName, const Vector& vecStart, ParticleAttachment_t iAttachType, CSharedBaseEntity *pEntity, const char *pszAttachmentName, bool bResetAllParticlesOnEntity = false );
 
-void StopParticleEffects( CBaseEntity *pEntity );
-void StopParticleEffect( CBaseEntity *pEntity, const char *pszParticleName );
+void StopParticleEffects( CSharedBaseEntity *pEntity );
+void StopParticleEffect( CSharedBaseEntity *pEntity, const char *pszParticleName );
 
 
 #endif // PARTICLE_PARSE_H

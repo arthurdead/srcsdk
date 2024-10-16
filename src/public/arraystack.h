@@ -16,7 +16,7 @@
 #pragma once
 
 #include <assert.h>
-#include "List.h"
+#include "list.h"
 
 template <class T> class ArrayStack
 {

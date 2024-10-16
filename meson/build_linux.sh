@@ -28,7 +28,18 @@ if [[ -d "$builddir_linux/everything" ]]; then
 fi
 
 if [[ ! -d "$builddir_linux/everything" ]]; then
-	meson setup --cross-file "$__script_dir__/i686-gcc-linux-gnu" "$builddir_linux/everything" --backend='ninja' -Dsrc_root_dir="$src_root_dir" -Dsrc_engine_dir="$src_engine_dir" -Dgame_dir="$game_dir" -Dbuild_libs=true -Dbuild_client=true -Dbuild_listen_server=true -Dbuild_dedicated_server=false
+	meson setup \
+	--cross-file "$__script_dir__/i686-gcc-linux-gnu" \
+	"$builddir_linux/everything" \
+	--backend='ninja' \
+	-Dsrc_root_dir="$src_root_dir" \
+	-Dsrc_engine_dir="$src_engine_dir" \
+	-Dgame_dir="$game_dir" \
+	-Dfunny=true \
+	-Dbuild_libs=true \
+	-Dbuild_client=true \
+	-Dbuild_listen_server=true \
+	-Dbuild_dedicated_server=false
 	if [[ $? != 0 ]]; then
 		exit 1
 	fi

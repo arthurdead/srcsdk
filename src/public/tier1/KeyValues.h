@@ -187,6 +187,7 @@ public:
 
 
 	// Data access
+	int   GetInt( const char *keyName = NULL, int defaultValue = 0 );
 	int   GetInt( const char *keyName = NULL, int defaultValue = 0 ) const;
 	uint64 GetUint64( const char *keyName = NULL, uint64 defaultValue = 0 ) const;
 	float GetFloat( const char *keyName = NULL, float defaultValue = 0.0f ) const;
@@ -195,8 +196,11 @@ public:
 	const wchar_t *GetWString( const char *keyName = NULL, const wchar_t *defaultValue = L"" );
 	const char *GetString( const char *keyName = NULL, const char *defaultValue = "" ) const;
 	const wchar_t *GetWString( const char *keyName = NULL, const wchar_t *defaultValue = L"" ) const;
-	void *GetPtr( const char *keyName = NULL, void *defaultValue = (void*)0 ) const;
+	void *GetPtr( const char *keyName = NULL, void *defaultValue = NULL );
+	void *GetPtr( const char *keyName = NULL, void *defaultValue = NULL ) const;
 	bool GetBool( const char *keyName = NULL, bool defaultValue = false, bool* optGotDefault = NULL ) const;
+	Color GetColor( const char *keyName = NULL /* default value is all black */);
+	Color GetColor( const char *keyName, const Color &def );
 	Color GetColor( const char *keyName = NULL /* default value is all black */) const;
 	Color GetColor( const char *keyName, const Color &def ) const;
 	bool  IsEmpty(const char *keyName = NULL) const;
@@ -206,7 +210,7 @@ public:
 	float GetFloat( int keySymbol, float defaultValue = 0.0f ) const;
 	const char *GetString( int keySymbol, const char *defaultValue = "" ) const;
 	const wchar_t *GetWString( int keySymbol, const wchar_t *defaultValue = L"" ) const;
-	void *GetPtr( int keySymbol, void *defaultValue = (void*)0 ) const;
+	void *GetPtr( int keySymbol, void *defaultValue = NULL ) const;
 	Color GetColor( int keySymbol /* default value is all black */) const;
 	bool  IsEmpty( int keySymbol ) const;
 

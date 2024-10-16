@@ -8,6 +8,10 @@
 #ifndef IGAMERESOURCES_H
 #define IGAMERESOURCES_H
 
+#pragma once
+
+#include "tier0/platform.h"
+
 class Color;
 class Vector;
 

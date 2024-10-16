@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------------
 // Purpose: Debug player by index
 //-----------------------------------------------------------------------------
-CBasePlayer *GetDebugPlayer( void )
+CSharedBasePlayer *GetDebugPlayer( void )
 {
 #if defined( CLIENT_DLL )
 	//NOTENOTE: This doesn't necessarily make sense on the client
@@ -72,9 +72,9 @@ void NDebugOverlay::SweptBox( const Vector& start, const Vector& end, const Vect
 //-----------------------------------------------------------------------------
 // Purpose: Draws a box around an entity
 //-----------------------------------------------------------------------------
-void NDebugOverlay::EntityBounds( const CBaseEntity *pEntity, int r, int g, int b, int a, float flDuration )
+void NDebugOverlay::EntityBounds( const CSharedBaseEntity *pEntity, int r, int g, int b, int a, float flDuration )
 {
-	const CCollisionProperty *pCollide = pEntity->CollisionProp();
+	const CSharedCollisionProperty *pCollide = pEntity->CollisionProp();
 	BoxAngles( pCollide->GetCollisionOrigin(), pCollide->OBBMins(), pCollide->OBBMaxs(), pCollide->GetCollisionAngles(), r, g, b, a, flDuration );
 }
 
@@ -87,7 +87,7 @@ void NDebugOverlay::Line( const Vector &origin, const Vector &target, int r, int
 	// Clip the line before sending so we 
 	// don't overflow the client message buffer
 	// --------------------------------------------------------------
-	CBasePlayer *player = GetDebugPlayer();
+	CSharedBasePlayer *player = GetDebugPlayer();
 
 	if ( player == NULL )
 		return;
@@ -121,7 +121,7 @@ void NDebugOverlay::Line( const Vector &origin, const Vector &target, int r, int
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Triangle( const Vector &p1, const Vector &p2, const Vector &p3, int r, int g, int b, int a, bool noDepthTest, float duration )
 {
-	CBasePlayer *player = GetDebugPlayer();
+	CSharedBasePlayer *player = GetDebugPlayer();
 	if ( !player )
 		return;
 
@@ -194,7 +194,7 @@ void NDebugOverlay::Grid( const Vector &vPosition )
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Text( const Vector &origin, const char *text, bool bViewCheck, float duration )
 {
-	CBasePlayer *player = GetDebugPlayer();
+	CSharedBasePlayer *player = GetDebugPlayer();
 	
 	if ( !player )
 		return;
@@ -316,7 +316,7 @@ void NDebugOverlay::Cross3DOriented( const matrix3x4_t &m, float size, int c, bo
 //--------------------------------------------------------------------------------
 void NDebugOverlay::DrawTickMarkedLine(const Vector &startPos, const Vector &endPos, float tickDist, int tickTextDist, int r, int g, int b, bool noDepthTest, float duration )
 {
-	CBasePlayer* pPlayer = GetDebugPlayer();
+	CSharedBasePlayer* pPlayer = GetDebugPlayer();
 
 	if ( !pPlayer ) 
 		return;
@@ -375,7 +375,7 @@ void NDebugOverlay::DrawTickMarkedLine(const Vector &startPos, const Vector &end
 //------------------------------------------------------------------------------
 void NDebugOverlay::DrawGroundCrossHairOverlay( void )
 {
-	CBasePlayer* pPlayer = GetDebugPlayer();
+	CSharedBasePlayer* pPlayer = GetDebugPlayer();
 
 	if ( !pPlayer ) 
 		return;
@@ -570,7 +570,7 @@ void NDebugOverlay::Sphere( const Vector &center, float radius, int r, int g, in
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Circle( const Vector &position, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration )
 {
-	CBasePlayer *player = GetDebugPlayer();
+	CSharedBasePlayer *player = GetDebugPlayer();
 	if ( player == NULL )
 		return;
 
@@ -695,7 +695,7 @@ void NDebugOverlay::Cone( const Vector & position, const Vector & axis, float an
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Cross( const Vector &position, float radius, int r, int g, int b, bool bNoDepthTest, float flDuration )
 {
-	CBasePlayer *player = GetDebugPlayer();
+	CSharedBasePlayer *player = GetDebugPlayer();
 	if ( player == NULL )
 		return;
 

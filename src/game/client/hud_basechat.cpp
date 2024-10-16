@@ -70,6 +70,15 @@ static const char *gBugTokenTable[] = {
 	NULL
 };
 
+wchar_t *CloneWString( const wchar_t *str )
+{
+	const int nLen = V_wcslen(str)+1;
+	wchar_t *cloneStr = new wchar_t [ nLen ];
+	const int nSize = nLen * sizeof( wchar_t );
+	V_wcsncpy( cloneStr, str, nSize );
+	return cloneStr;
+}
+
 // removes all color markup characters, so Msg can deal with the string properly
 // returns a pointer to str
 char* RemoveColorMarkup( char *str )
@@ -1061,7 +1070,7 @@ void CBaseHudChat::MsgFunc_VoiceSubtitle( bf_read &msg )
 
 	const char *pszSubtitle = "";
 
-	CGameRules *pGameRules = GameRules();
+	C_GameRules *pGameRules = GameRules();
 
 	if ( pGameRules )
 	{

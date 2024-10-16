@@ -13,9 +13,6 @@
 #include "lerp_functions.h"
 #include "convar.h"
 
-#include "tier0/memdbgon.h"
-
-
 #define COMPARE_HISTORY(a,b) \
 	( memcmp( m_VarHistory[a].GetValue(), m_VarHistory[b].GetValue(), sizeof(Type)*GetMaxCount() ) == 0 ) 			
 
@@ -56,28 +53,9 @@ class CInterpolationContext
 {
 public:
 	
-	CInterpolationContext()
-	{
-		m_bOldAllowExtrapolation = s_bAllowExtrapolation;
-		m_flOldLastTimeStamp = s_flLastTimeStamp;
-
-		// By default, disable extrapolation unless they call EnableExtrapolation.
-		s_bAllowExtrapolation = false;
-
-		// this is the context stack
-		m_pNext = s_pHead;
-		s_pHead = this;
-	}
+	CInterpolationContext();
 	
-	~CInterpolationContext()
-	{
-		// restore values from prev stack element
-		s_bAllowExtrapolation = m_bOldAllowExtrapolation;
-		s_flLastTimeStamp = m_flOldLastTimeStamp;
-
-		Assert( s_pHead == this );
-		s_pHead = m_pNext;
-	}
+	~CInterpolationContext();
 
 	static void EnableExtrapolation(bool state)
 	{
@@ -181,83 +159,21 @@ struct CInterpolatedVarEntryBase
 		count = 0;
 		changetime = 0;
 	}
-	~CInterpolatedVarEntryBase()
-	{
-		delete[] value;
-		value = NULL;
-	}
+	~CInterpolatedVarEntryBase();
 
 	// This will transfer the data from another varentry.  This is used to avoid allocation
 	// pointers can be transferred (only one varentry has a copy), but not trivially copied
-	void FastTransferFrom( CInterpolatedVarEntryBase &src )
-	{
-		Assert(!value);
-		value = src.value;
-		count = src.count;
-		changetime = src.changetime;
-		src.value = 0;
-		src.count = 0;
-	}
+	void FastTransferFrom( CInterpolatedVarEntryBase &src );
 
-	CInterpolatedVarEntryBase& operator=( const CInterpolatedVarEntryBase& src )
-	{
-		delete[] value;
-		value = NULL;
-		count = 0;
-		if ( src.value )
-		{
-			count = src.count;
-			value = new Type[count];
-			for ( int i = 0; i < count; i++ )
-			{
-				value[i] = src.value[i];
-			}
-		}
-		return *this;
-	}
+	CInterpolatedVarEntryBase& operator=( const CInterpolatedVarEntryBase& src );
 
 	Type *GetValue() { return value; }
 	const Type *GetValue() const { return value; }
 
-	void Init(int maxCount)
-	{
-		if ( !maxCount )
-		{
-			DeleteEntry();
-		}
-		else
-		{
-			// resize
-			if ( maxCount != count )
-			{
-				DeleteEntry();
-			}
+	void Init(int maxCount);
+	Type *NewEntry( const Type *pValue, int maxCount, float time );
 
-			if ( !value )
-			{
-				count = maxCount;
-				value = new Type[maxCount];
-			}
-		}
-		Assert(count==maxCount);
-	}
-	Type *NewEntry( const Type *pValue, int maxCount, float time )
-	{
-		changetime = time;
-		Init(maxCount);
-		if ( value && maxCount)
-		{
-			memcpy( value, pValue, maxCount*sizeof(Type) );
-		}
-		return value;
-	}
-
-	void DeleteEntry()
-	{
-		delete[] value;
-		value = NULL;
-		count = 0;
-	}
+	void DeleteEntry();
 
 	float		changetime;
 	int			count;
@@ -266,6 +182,91 @@ struct CInterpolatedVarEntryBase
 private:
 	CInterpolatedVarEntryBase( const CInterpolatedVarEntryBase &src );
 };
+
+#include "tier0/memdbgon.h"
+
+template< typename Type, bool IS_ARRAY >
+CInterpolatedVarEntryBase<Type, IS_ARRAY>::~CInterpolatedVarEntryBase()
+{
+	delete[] value;
+	value = NULL;
+}
+
+// This will transfer the data from another varentry.  This is used to avoid allocation
+// pointers can be transferred (only one varentry has a copy), but not trivially copied
+template< typename Type, bool IS_ARRAY >
+void CInterpolatedVarEntryBase<Type, IS_ARRAY>::FastTransferFrom( CInterpolatedVarEntryBase &src )
+{
+	Assert(!value);
+	value = src.value;
+	count = src.count;
+	changetime = src.changetime;
+	src.value = 0;
+	src.count = 0;
+}
+
+template< typename Type, bool IS_ARRAY >
+CInterpolatedVarEntryBase<Type, IS_ARRAY>& CInterpolatedVarEntryBase<Type, IS_ARRAY>::operator=( const CInterpolatedVarEntryBase& src )
+{
+	delete[] value;
+	value = NULL;
+	count = 0;
+	if ( src.value )
+	{
+		count = src.count;
+		value = new Type[count];
+		for ( int i = 0; i < count; i++ )
+		{
+			value[i] = src.value[i];
+		}
+	}
+	return *this;
+}
+
+template< typename Type, bool IS_ARRAY >
+void CInterpolatedVarEntryBase<Type, IS_ARRAY>::Init(int maxCount)
+{
+	if ( !maxCount )
+	{
+		DeleteEntry();
+	}
+	else
+	{
+		// resize
+		if ( maxCount != count )
+		{
+			DeleteEntry();
+		}
+
+		if ( !value )
+		{
+			count = maxCount;
+			value = new Type[maxCount];
+		}
+	}
+	Assert(count==maxCount);
+}
+template< typename Type, bool IS_ARRAY >
+Type *CInterpolatedVarEntryBase<Type, IS_ARRAY>::NewEntry( const Type *pValue, int maxCount, float time )
+{
+	changetime = time;
+	Init(maxCount);
+	if ( value && maxCount)
+	{
+		memcpy( value, pValue, maxCount*sizeof(Type) );
+	}
+	return value;
+}
+
+template< typename Type, bool IS_ARRAY >
+void CInterpolatedVarEntryBase<Type, IS_ARRAY>::DeleteEntry()
+{
+	delete[] value;
+	value = NULL;
+	count = 0;
+}
+
+#include "tier0/memdbgoff.h"
 
 template<typename Type>
 struct CInterpolatedVarEntryBase<Type, false>
@@ -280,13 +281,7 @@ struct CInterpolatedVarEntryBase<Type, false>
 	{
 		Assert(maxCount==1);
 	}
-	Type *NewEntry( const Type *pValue, int maxCount, float time )
-	{
-		Assert(maxCount==1);
-		changetime = time;
-		memcpy( &value, pValue, maxCount*sizeof(Type) );
-		return &value;
-	}
+	Type *NewEntry( const Type *pValue, int maxCount, float time );
 	void FastTransferFrom( CInterpolatedVarEntryBase &src )
 	{
 		*this = src;
@@ -298,24 +293,25 @@ struct CInterpolatedVarEntryBase<Type, false>
 	Type		value;
 };
 
+#include "tier0/memdbgon.h"
+
+template<typename Type>
+Type *CInterpolatedVarEntryBase<Type, false>::NewEntry( const Type *pValue, int maxCount, float time )
+{
+	Assert(maxCount==1);
+	changetime = time;
+	memcpy( &value, pValue, maxCount*sizeof(Type) );
+	return &value;
+}
+
+#include "tier0/memdbgoff.h"
+
 template<typename T>
 class CSimpleRingBuffer
 {
 public:
-	CSimpleRingBuffer( int startSize = 4 )
-	{
-		m_pElements = 0;
-		m_maxElement = 0;
-		m_firstElement = 0;
-		m_count = 0;
-		m_growSize = 16;
-		EnsureCapacity(startSize);
-	}
-	~CSimpleRingBuffer()
-	{
-		delete[] m_pElements;
-		m_pElements = NULL;
-	}
+	CSimpleRingBuffer( int startSize = 4 );
+	~CSimpleRingBuffer();
 
 	inline int Count() const { return m_count; }
 
@@ -325,92 +321,23 @@ public:
 	bool IsValidIndex(int i) const { return IsIdxValid(i); }
 	static int InvalidIndex() { return -1; }
 
-	T& operator[]( int i ) 
-	{ 
-		Assert( IsIdxValid(i) ); 
-		i += m_firstElement;
-		i = WrapRange(i);
-		return m_pElements[i];
-	}
+	T& operator[]( int i );
 
-	const T& operator[]( int i ) const
-	{ 
-		Assert( IsIdxValid(i) ); 
-		i += m_firstElement;
-		i = WrapRange(i);
-		return m_pElements[i];
-	}
+	const T& operator[]( int i ) const;
 
-	void EnsureCapacity( int capSize )
-	{
-		if ( capSize > m_maxElement )
-		{
-			int newMax = m_maxElement + ((capSize+m_growSize-1)/m_growSize) * m_growSize;
-			T *pNew = new T[newMax];
-			for ( int i = 0; i < m_maxElement; i++ )
-			{
-				// ------------
-				// If you wanted to make this a more generic container you'd probably want this code
-				// instead - since FastTransferFrom() is an optimization dependent on types stored
-				// here defining this operation.
-				//pNew[i] = m_pElements[WrapRange(i+m_firstElement)];
-				pNew[i].FastTransferFrom( m_pElements[WrapRange(i+m_firstElement)] );
-				// ------------
-			}
-			m_firstElement = 0;
-			m_maxElement = newMax;
-			delete[] m_pElements;
-			m_pElements = pNew;
-		}
-	}
+	void EnsureCapacity( int capSize );
 
-	int AddToHead()
-	{
-		EnsureCapacity( m_count + 1 );
-		int i = m_firstElement + m_maxElement - 1;
-		m_count++;
-		i = WrapRange(i);
-		m_firstElement = i;
-		return 0;
-	}
+	int AddToHead();
 
-	int AddToHead( const T &elem )
-	{
-		AddToHead();
-		m_pElements[m_firstElement] = elem;
-		return 0;
-	}
+	int AddToHead( const T &elem );
 
-	int AddToTail()
-	{
-		EnsureCapacity( m_count + 1 );
-		m_count++;
-		return WrapRange(m_firstElement+m_count-1);
-	}
+	int AddToTail();
 
-	void RemoveAll()
-	{
-		m_count = 0;
-		m_firstElement = 0;
-	}
+	void RemoveAll();
 
-	void RemoveAtHead()
-	{
-		if ( m_count > 0 )
-		{
-			m_firstElement = WrapRange(m_firstElement+1);
-			m_count--;
-		}
-	}
+	void RemoveAtHead();
 
-	void Truncate( int newLength )
-	{
-		if ( newLength < m_count )
-		{
-			Assert(newLength>=0);
-			m_count = newLength;
-		}
-	}
+	void Truncate( int newLength );
 
 private:
 	inline int WrapRange( int i ) const
@@ -424,6 +351,114 @@ private:
 	unsigned short m_count;
 	unsigned short m_growSize;
 };
+
+#include "tier0/memdbgon.h"
+
+template<typename T>
+CSimpleRingBuffer<T>::CSimpleRingBuffer( int startSize )
+{
+	m_pElements = 0;
+	m_maxElement = 0;
+	m_firstElement = 0;
+	m_count = 0;
+	m_growSize = 16;
+	EnsureCapacity(startSize);
+}
+template<typename T>
+CSimpleRingBuffer<T>::~CSimpleRingBuffer()
+{
+	delete[] m_pElements;
+	m_pElements = NULL;
+}
+template<typename T>
+T& CSimpleRingBuffer<T>::operator[]( int i ) 
+{ 
+	Assert( IsIdxValid(i) ); 
+	i += m_firstElement;
+	i = WrapRange(i);
+	return m_pElements[i];
+}
+template<typename T>
+const T& CSimpleRingBuffer<T>::operator[]( int i ) const
+{ 
+	Assert( IsIdxValid(i) ); 
+	i += m_firstElement;
+	i = WrapRange(i);
+	return m_pElements[i];
+}
+template<typename T>
+void CSimpleRingBuffer<T>::EnsureCapacity( int capSize )
+{
+	if ( capSize > m_maxElement )
+	{
+		int newMax = m_maxElement + ((capSize+m_growSize-1)/m_growSize) * m_growSize;
+		T *pNew = new T[newMax];
+		for ( int i = 0; i < m_maxElement; i++ )
+		{
+			// ------------
+			// If you wanted to make this a more generic container you'd probably want this code
+			// instead - since FastTransferFrom() is an optimization dependent on types stored
+			// here defining this operation.
+			//pNew[i] = m_pElements[WrapRange(i+m_firstElement)];
+			pNew[i].FastTransferFrom( m_pElements[WrapRange(i+m_firstElement)] );
+			// ------------
+		}
+		m_firstElement = 0;
+		m_maxElement = newMax;
+		delete[] m_pElements;
+		m_pElements = pNew;
+	}
+}
+template<typename T>
+int CSimpleRingBuffer<T>::AddToHead()
+{
+	EnsureCapacity( m_count + 1 );
+	int i = m_firstElement + m_maxElement - 1;
+	m_count++;
+	i = WrapRange(i);
+	m_firstElement = i;
+	return 0;
+}
+template<typename T>
+int CSimpleRingBuffer<T>::AddToHead( const T &elem )
+{
+	AddToHead();
+	m_pElements[m_firstElement] = elem;
+	return 0;
+}
+template<typename T>
+int CSimpleRingBuffer<T>::AddToTail()
+{
+	EnsureCapacity( m_count + 1 );
+	m_count++;
+	return WrapRange(m_firstElement+m_count-1);
+}
+template<typename T>
+void CSimpleRingBuffer<T>::RemoveAll()
+{
+	m_count = 0;
+	m_firstElement = 0;
+}
+template<typename T>
+void CSimpleRingBuffer<T>::RemoveAtHead()
+{
+	if ( m_count > 0 )
+	{
+		m_firstElement = WrapRange(m_firstElement+1);
+		m_count--;
+	}
+}
+template<typename T>
+void CSimpleRingBuffer<T>::Truncate( int newLength )
+{
+	if ( newLength < m_count )
+	{
+		Assert(newLength>=0);
+		m_count = newLength;
+	}
+}
+
+#include "tier0/memdbgoff.h"
 
 // -------------------------------------------------------------------------------------------------------------- //
 // CInterpolatedVarArrayBase - the main implementation of IInterpolatedVar.
@@ -571,6 +606,7 @@ protected:
 	bool								m_bDebug : 1;
 };
 
+#include "tier0/memdbgon.h"
 
 template< typename Type, bool IS_ARRAY >
 inline CInterpolatedVarArrayBase<Type, IS_ARRAY>::CInterpolatedVarArrayBase( const char *pDebugName )
@@ -1556,6 +1592,8 @@ inline bool CInterpolatedVarArrayBase<Type, IS_ARRAY>::ValidOrder()
 	return true;
 }
 
+#include "tier0/memdbgoff.h"
+
 template< typename Type, int COUNT >
 class CInterpolatedVarArray : public CInterpolatedVarArrayBase<Type, true >
 {
@@ -1582,7 +1620,5 @@ public:
 		this->SetMaxCount( 0.0f, 1 );
 	}
 };
-
-#include "tier0/memdbgoff.h"
 
 #endif // INTERPOLATEDVAR_H

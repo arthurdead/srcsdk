@@ -12,11 +12,11 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-LINK_ENTITY_TO_CLASS(env_detail_controller,	CEnvDetailController);
+LINK_ENTITY_TO_CLASS_ALIASED(env_detail_controller,	EnvDetailController);
 
 IMPLEMENT_NETWORKCLASS_ALIASED( EnvDetailController, DT_DetailController )
 
-BEGIN_NETWORK_TABLE_NOBASE( CEnvDetailController, DT_DetailController )
+BEGIN_NETWORK_TABLE_NOBASE( CSharedEnvDetailController, DT_DetailController )
 	#ifdef CLIENT_DLL
 		RecvPropFloat( RECVINFO( m_flFadeStartDist ) ),
 		RecvPropFloat( RECVINFO( m_flFadeEndDist ) ),
@@ -26,18 +26,22 @@ BEGIN_NETWORK_TABLE_NOBASE( CEnvDetailController, DT_DetailController )
 	#endif
 END_NETWORK_TABLE()
 
-static CEnvDetailController *s_detailController = NULL;
-CEnvDetailController * GetDetailController()
+static CSharedEnvDetailController *s_detailController = NULL;
+CSharedEnvDetailController * GetDetailController()
 {
 	return s_detailController;
 }
 
-CEnvDetailController::CEnvDetailController()
+#ifdef CLIENT_DLL
+	#define CEnvDetailController C_EnvDetailController
+#endif // CLIENT_DLL
+
+CSharedEnvDetailController::CEnvDetailController()
 {
 	s_detailController = this;
 }
 
-CEnvDetailController::~CEnvDetailController()
+CSharedEnvDetailController::~CEnvDetailController()
 {
 	if ( s_detailController == this )
 	{
@@ -45,8 +49,12 @@ CEnvDetailController::~CEnvDetailController()
 	}
 }
 
+#ifdef CLIENT_DLL
+	#undef CEnvDetailController
+#endif // CLIENT_DLL
+
 //--------------------------------------------------------------------------------------------------------------
-int CEnvDetailController::UpdateTransmitState()
+int CSharedEnvDetailController::UpdateTransmitState()
 {
 #ifndef CLIENT_DLL
 	// ALWAYS transmit to all clients.
@@ -58,7 +66,7 @@ int CEnvDetailController::UpdateTransmitState()
 
 #ifndef CLIENT_DLL
 
-	bool CEnvDetailController::KeyValue( const char *szKeyName, const char *szValue )
+	bool CSharedEnvDetailController::KeyValue( const char *szKeyName, const char *szValue )
 	{
 		if (FStrEq(szKeyName, "fademindist"))
 		{
@@ -78,7 +86,7 @@ int CEnvDetailController::UpdateTransmitState()
 	extern ConVar cl_detailfade;
 
 
-	void CEnvDetailController::OnDataChanged( DataUpdateType_t updateType )
+	void CSharedEnvDetailController::OnDataChanged( DataUpdateType_t updateType )
 	{
 		BaseClass::OnDataChanged( updateType );
 

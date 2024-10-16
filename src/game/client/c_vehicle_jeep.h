@@ -7,16 +7,12 @@
 #define C_VEHICLE_JEEP_H
 #pragma once
 
-#include "cbase.h"
 #include "c_prop_vehicle.h"
 //#include "movevars_shared.h"
 //#include "view.h"
 #include "flashlighteffect.h"
 //#include "c_baseplayer.h"
 //#include "c_te_effect_dispatch.h"
-
-// memdbgon must be the last include file in a .cpp file!!!
-//#include "tier0/memdbgon.h"
 
 //=============================================================================
 //

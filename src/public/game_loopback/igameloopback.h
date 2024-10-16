@@ -1,6 +1,8 @@
 #ifndef IGAMELOOPBACK_H
 #define IGAMELOOPBACK_H
 
+#pragma once
+
 #include "tier0/platform.h"
 #include "appframework/IAppSystem.h"
 #include "mathlib/vector.h"

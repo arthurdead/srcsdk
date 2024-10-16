@@ -31,6 +31,8 @@
 #ifndef UTIL_SNAPPY_OPENSOURCE_SNAPPY_STUBS_INTERNAL_H_
 #define UTIL_SNAPPY_OPENSOURCE_SNAPPY_STUBS_INTERNAL_H_
 
+#pragma once
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif

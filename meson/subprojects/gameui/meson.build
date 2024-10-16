@@ -32,6 +32,7 @@ if build_client
 	shared_library('GameUI',name_prefix:'',
 		cpp_args: [
 			'-DDLLNAME=GameUI',
+			'-DMEMOVERRIDE_MODULE=GameUI',
 			'-DGAMEUI_EXPORTS',
 			'-DGAMEPADUI_DLL',
 			'-DGAMECONTROLS_LIB',

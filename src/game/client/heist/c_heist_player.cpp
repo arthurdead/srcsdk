@@ -11,7 +11,6 @@
 LINK_ENTITY_TO_CLASS(player, C_HeistPlayer);
 
 BEGIN_RECV_TABLE_NOBASE(C_HeistPlayer, DT_HeistLocalPlayerExclusive)
-	RecvPropBool(RECVINFO(m_bSpotted))
 END_RECV_TABLE()
 
 BEGIN_RECV_TABLE_NOBASE(C_HeistPlayer, DT_HeistNonLocalPlayerExclusive)

@@ -1,7 +1,7 @@
 #ifndef GRASS_CLUSTER_H
 #define GRASS_CLUSTER_H
 
-#include "cbase.h"
+#pragma once
 
 class CFastTimer;
 

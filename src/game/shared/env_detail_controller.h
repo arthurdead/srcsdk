@@ -4,6 +4,24 @@
 //
 // $NoKeywords: $
 //=============================================================================//
+#ifndef ENVDETAILCONTROLLER_H
+#define ENVDETAILCONTROLLER_H
+
+#pragma once
+
+#ifdef GAME_DLL
+#include "baseentity.h"
+#else
+#include "c_baseentity.h"
+#endif
+
+#ifdef CLIENT_DLL
+class C_EnvDetailController;
+typedef C_EnvDetailController CSharedEnvDetailController;
+#else
+class CEnvDetailController;
+typedef CEnvDetailController CSharedEnvDetailController;
+#endif
 
 #ifdef CLIENT_DLL
 	#define CEnvDetailController C_EnvDetailController
@@ -12,14 +30,18 @@
 //-----------------------------------------------------------------------------
 // Implementation of the class that controls detail prop fade distances
 //-----------------------------------------------------------------------------
-class CEnvDetailController : public CBaseEntity
+class CEnvDetailController : public CSharedBaseEntity
 {
 public:
-	DECLARE_CLASS( CEnvDetailController, CBaseEntity );
-	DECLARE_NETWORKCLASS();
-
+	DECLARE_CLASS( CEnvDetailController, CSharedBaseEntity );
 	CEnvDetailController();
 	virtual ~CEnvDetailController();
+
+#ifdef CLIENT_DLL
+	#undef CEnvDetailController
+#endif // CLIENT_DLL
+
+	DECLARE_NETWORKCLASS();
 
 #ifndef CLIENT_DLL
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
@@ -40,4 +62,6 @@ private:
 #endif // CLIENT_DLL
 };
 
-CEnvDetailController * GetDetailController();
+CSharedEnvDetailController * GetDetailController();
+
+#endif

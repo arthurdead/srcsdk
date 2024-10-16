@@ -49,7 +49,7 @@ class C_BaseAnimating;
 class C_AI_BaseNPC;
 struct EmitSound_t;
 class C_RecipientFilter;
-class CTakeDamageInfo;
+class C_TakeDamageInfo;
 class C_BaseCombatCharacter;
 class CEntityMapData;
 class ConVar;
@@ -255,14 +255,14 @@ public:
 
 	// FireBullets uses shared code for prediction.
 	virtual void					FireBullets( const FireBulletsInfo_t &info );
-	virtual void					ModifyFireBulletsDamage( CTakeDamageInfo* dmgInfo ) {}
+	virtual void					ModifyFireBulletsDamage( C_TakeDamageInfo* dmgInfo ) {}
 	virtual bool					ShouldDrawUnderwaterBulletBubbles();
 	virtual bool					ShouldDrawWaterImpacts( void ) { return true; }
 	virtual bool					HandleShotImpactingWater( const FireBulletsInfo_t &info, 
 		const Vector &vecEnd, ITraceFilter *pTraceFilter, Vector *pVecTracerDest );
 	virtual ITraceFilter*			GetBeamTraceFilter( void );
-	virtual void					DispatchTraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator = NULL );
-	virtual void					TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator = NULL );
+	virtual void					DispatchTraceAttack( const C_TakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator = NULL );
+	virtual void					TraceAttack( const C_TakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator = NULL );
 	virtual void					DoImpactEffect( trace_t &tr, int nDamageType );
 	virtual void					MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
 	virtual int						GetTracerAttachment( void );
@@ -272,7 +272,7 @@ public:
 	virtual const char*				GetTracerType();
 
 	// called when entity is damaged by predicted attacks
-	virtual void					TakeDamage( const CTakeDamageInfo &info ) { }
+	virtual void					TakeDamage( const C_TakeDamageInfo &info ) { }
 
 protected:
 	friend int DispatchSpawn( C_BaseEntity *pEntity );
@@ -490,8 +490,8 @@ public:
 
 public:
 	// An inline version the game code can use
-	CCollisionProperty		*CollisionProp();
-	const CCollisionProperty*CollisionProp() const;
+	C_CollisionProperty		*CollisionProp();
+	const C_CollisionProperty*CollisionProp() const;
 	CParticleProperty		*ParticleProp();
 	const CParticleProperty *ParticleProp() const;
 	CClientAlphaProperty	*AlphaProp();
@@ -987,6 +987,7 @@ public:
 public:
 	void							SetSize( const Vector &vecMin, const Vector &vecMax ); // UTIL_SetSize( pev, mins, maxs );
 	virtual char const						*GetClassname( void ) final;
+	string_t GetClassnameStr();
 	bool HasClassname();
 	char const						*GetDebugName( void );
 	virtual const char				*GetPlayerName() const { return NULL; }
@@ -1020,7 +1021,7 @@ public:
 	// The player drives simulation of this entity
 	void					SetPlayerSimulated( C_BasePlayer *pOwner );
 	bool					IsPlayerSimulated( void ) const;
-	CBasePlayer				*GetSimulatingPlayer( void );
+	C_BasePlayer				*GetSimulatingPlayer( void );
 	void					UnsetPlayerSimulated( void );
 
 	// Sorry folks, here lies TF2-specific stuff that really has no other place to go
@@ -1062,15 +1063,15 @@ public:
 	static void				PhysicsNotifyOtherOfUntouch( C_BaseEntity *ent, C_BaseEntity *other );
 	static void				PhysicsRemoveToucher( C_BaseEntity *other, touchlink_t *link );
 
-	groundlink_t			*AddEntityToGroundList( CBaseEntity *other );
-	void					PhysicsStartGroundContact( CBaseEntity *pentOther );
+	groundlink_t			*AddEntityToGroundList( C_BaseEntity *other );
+	void					PhysicsStartGroundContact( C_BaseEntity *pentOther );
 
-	static void				PhysicsNotifyOtherOfGroundRemoval( CBaseEntity *ent, CBaseEntity *other );
-	static void				PhysicsRemoveGround( CBaseEntity *other, groundlink_t *link );
-	static void				PhysicsRemoveGroundList( CBaseEntity *ent );
+	static void				PhysicsNotifyOtherOfGroundRemoval( C_BaseEntity *ent, C_BaseEntity *other );
+	static void				PhysicsRemoveGround( C_BaseEntity *other, groundlink_t *link );
+	static void				PhysicsRemoveGroundList( C_BaseEntity *ent );
 
-	void					StartGroundContact( CBaseEntity *ground );
-	void					EndGroundContact( CBaseEntity *ground );
+	void					StartGroundContact( C_BaseEntity *ground );
+	void					EndGroundContact( C_BaseEntity *ground );
 
 	void					SetGroundChangeTime( float flTime );
 	float					GetGroundChangeTime( void );
@@ -1267,10 +1268,10 @@ public:
 	void				ComputeAbsDirection( const Vector &vecLocalDirection, Vector *pAbsDirection );
 
 	// These methods encapsulate MOVETYPE_FOLLOW, which became obsolete
-	void				FollowEntity( CBaseEntity *pBaseEntity, bool bBoneMerge = true );
+	void				FollowEntity( C_BaseEntity *pBaseEntity, bool bBoneMerge = true );
 	void				StopFollowingEntity( );	// will also change to MOVETYPE_NONE
 	bool				IsFollowingEntity();
-	CBaseEntity			*GetFollowedEntity();
+	C_BaseEntity			*GetFollowedEntity();
 
 	// For shadows rendering the correct body + sequence...
 	virtual int GetBody() { return 0; }
@@ -1818,7 +1819,7 @@ private:
 
 	string_t						m_ModelName;
 
-	CNetworkVarEmbedded( CCollisionProperty, m_Collision );
+	CNetworkVarEmbedded( C_CollisionProperty, m_Collision );
 	CNetworkVarEmbedded( CParticleProperty, m_Particles );
 	CClientAlphaProperty			*m_pClientAlphaProperty;
 
@@ -1890,7 +1891,7 @@ private:
 	int								m_DataChangeEventRef;
 
 	// Player who is driving my simulation
-	CHandle< CBasePlayer >			m_hPlayerSimulationOwner;
+	CHandle< C_BasePlayer >			m_hPlayerSimulationOwner;
 
 	// The owner!
 	EHANDLE							m_hOwnerEntity;
@@ -2046,8 +2047,8 @@ public:
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 };
 
-#define CPointEntity C_PointEntity
-#define CLogicalEntity C_LogicalEntity
+typedef C_PointEntity CSharedPointEntity;
+typedef C_LogicalEntity CSharedLogicalEntity;
 
 inline bool FClassnameIs( C_BaseEntity *pEntity, const char *szClassname )
 { 
@@ -2058,8 +2059,8 @@ inline bool FClassnameIs( C_BaseEntity *pEntity, const char *szClassname )
 	return !strcmp( pEntity->GetClassname(), szClassname ) ? true : false; 
 }
 
-#define SetThink( a ) ThinkSet( static_cast <void (CBaseEntity::*)(void)> (a), 0, NULL )
-#define SetContextThink( a, b, context ) ThinkSet( static_cast <void (CBaseEntity::*)(void)> (a), (b), context )
+#define SetThink( a ) ThinkSet( static_cast <void (C_BaseEntity::*)(void)> (a), 0, NULL )
+#define SetContextThink( a, b, context ) ThinkSet( static_cast <void (C_BaseEntity::*)(void)> (a), (b), context )
 
 #ifdef _DEBUG
 #define SetTouch( a ) TouchSet( static_cast <void (C_BaseEntity::*)(C_BaseEntity *)> (a), #a )
@@ -2073,12 +2074,12 @@ inline bool FClassnameIs( C_BaseEntity *pEntity, const char *szClassname )
 //-----------------------------------------------------------------------------
 // An inline version the game code can use
 //-----------------------------------------------------------------------------
-inline CCollisionProperty *C_BaseEntity::CollisionProp()
+inline C_CollisionProperty *C_BaseEntity::CollisionProp()
 {
 	return &m_Collision;
 }
 
-inline const CCollisionProperty *C_BaseEntity::CollisionProp() const
+inline const C_CollisionProperty *C_BaseEntity::CollisionProp() const
 {
 	return &m_Collision;
 }
@@ -2256,17 +2257,17 @@ inline const Vector& C_BaseEntity::WorldAlignSize( ) const
 	return CollisionProp()->OBBSize();
 }
 
-inline float CBaseEntity::BoundingRadius() const
+inline float C_BaseEntity::BoundingRadius() const
 {
 	return CollisionProp()->BoundingRadius();
 }
 
-inline float CBaseEntity::BoundingRadius2D() const
+inline float C_BaseEntity::BoundingRadius2D() const
 {
 	return CollisionProp()->BoundingRadius2D();
 }
 
-inline bool CBaseEntity::IsPointSized() const
+inline bool C_BaseEntity::IsPointSized() const
 {
 	return CollisionProp()->BoundingRadius() == 0.0f;
 }
@@ -2313,7 +2314,7 @@ inline void	C_BaseEntity::SetBaseVelocity( const Vector& v )
 	m_vecBaseVelocity = v; 
 }
 
-inline float CBaseEntity::GetFriction( void ) const
+inline float C_BaseEntity::GetFriction( void ) const
 { 
 	return m_flFriction; 
 }
@@ -2348,7 +2349,7 @@ inline float C_BaseEntity::GetElasticity( void )	const
 	return m_flElasticity; 
 }
 
-inline const color24 CBaseEntity::GetRenderColor() const
+inline const color24 C_BaseEntity::GetRenderColor() const
 {
 	return m_clrRenderRGB;
 }
@@ -2422,7 +2423,7 @@ inline int C_BaseEntity::GetMaxGPULevel( ) const
 	return m_nMaxGPULevel;
 }
 
-inline float CBaseEntity::GetOldSimulationTime() const
+inline float C_BaseEntity::GetOldSimulationTime() const
 {
 	return m_flOldSimulationTime;
 }
@@ -2445,49 +2446,25 @@ inline void C_BaseEntity::RemoveEFlags( int nEFlagMask )
 	m_iEFlags &= ~nEFlagMask;
 }
 
-inline bool CBaseEntity::IsEFlagSet( int nEFlagMask ) const
+inline bool C_BaseEntity::IsEFlagSet( int nEFlagMask ) const
 {
 	return (m_iEFlags & nEFlagMask) != 0;
 }
 
-inline unsigned char CBaseEntity::GetParentAttachment() const
+inline unsigned char C_BaseEntity::GetParentAttachment() const
 {
 	return m_iParentAttachment;
 }
 
-inline ClientRenderHandle_t CBaseEntity::GetRenderHandle() const 
+inline ClientRenderHandle_t C_BaseEntity::GetRenderHandle() const 
 { 
 	return m_hRender; 
 }
 
-inline ClientRenderHandle_t& CBaseEntity::RenderHandle()
+inline ClientRenderHandle_t& C_BaseEntity::RenderHandle()
 {
 	return m_hRender;
 }
-
-#ifdef SIXENSE
-
-inline const Vector& CBaseEntity::GetEyeOffset() const 
-{ 
-	return m_vecEyeOffset; 
-}
-
-inline void CBaseEntity::SetEyeOffset( const Vector& v ) 
-{ 
-	m_vecEyeOffset = v; 
-}
-
-inline const QAngle & CBaseEntity::GetEyeAngleOffset() const 
-{ 
-	return m_EyeAngleOffset; 
-}
-
-inline void CBaseEntity::SetEyeAngleOffset( const QAngle & qa ) 
-{ 
-	m_EyeAngleOffset = qa; 
-}
-
-#endif
 
 //-----------------------------------------------------------------------------
 // Methods to cast away const
@@ -2533,39 +2510,39 @@ inline bool C_BaseEntity::IsNoInterpolationFrame()
 	return m_ubOldInterpolationFrame != m_ubInterpolationFrame;
 }
 
-inline bool CBaseEntity::AllowNavIgnore()
+inline bool C_BaseEntity::AllowNavIgnore()
 {
 	return m_bAllowNavIgnore;
 }
 
-inline void	CBaseEntity::SetAllowNavIgnore( bool bAllowNavIgnore )
+inline void	C_BaseEntity::SetAllowNavIgnore( bool bAllowNavIgnore )
 {
 	m_bAllowNavIgnore = bAllowNavIgnore;
 }
 
-inline void	CBaseEntity::SetNavIgnore( float duration )
+inline void	C_BaseEntity::SetNavIgnore( float duration )
 {
 	float flNavIgnoreUntilTime = ( duration == FLT_MAX ) ? FLT_MAX : gpGlobals->curtime + duration;
 	if ( flNavIgnoreUntilTime > m_flNavIgnoreUntilTime )
 		m_flNavIgnoreUntilTime = flNavIgnoreUntilTime;
 }
 
-inline void	CBaseEntity::ClearNavIgnore()
+inline void	C_BaseEntity::ClearNavIgnore()
 {
 	m_flNavIgnoreUntilTime = 0;
 }
 
-inline bool	CBaseEntity::IsNavIgnored() const
+inline bool	C_BaseEntity::IsNavIgnored() const
 {
 	return ( gpGlobals->curtime <= m_flNavIgnoreUntilTime );
 }
 
-inline void	CBaseEntity::SetAlwaysNavIgnore( bool bAlwaysNavIgnore )
+inline void	C_BaseEntity::SetAlwaysNavIgnore( bool bAlwaysNavIgnore )
 {
 	m_bAlwaysIgnoreNav = bAlwaysNavIgnore;
 }
 
-inline bool CBaseEntity::AlwaysNavIgnore()
+inline bool C_BaseEntity::AlwaysNavIgnore()
 {
 	return m_bAlwaysIgnoreNav;
 }
@@ -2573,7 +2550,7 @@ inline bool CBaseEntity::AlwaysNavIgnore()
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-inline ShouldTransmitState_t CBaseEntity::GetLastShouldTransmitState() 
+inline ShouldTransmitState_t C_BaseEntity::GetLastShouldTransmitState() 
 { 
 	return m_LastShouldTransmitState; 
 }
@@ -2636,7 +2613,7 @@ inline bool C_BaseEntity::IsVisibleToAnyPlayer() const
 	return IsVisible();
 }
 
-inline int CBaseEntity::GetSpawnFlags( void ) const
+inline int C_BaseEntity::GetSpawnFlags( void ) const
 { 
 	return m_spawnflags; 
 }
@@ -2669,7 +2646,7 @@ inline const char *C_BaseEntity::GetEntityName()
 	return m_iName; 
 }
 
-inline bool CBaseEntity::NameMatches( const char *pszNameOrWildcard )
+inline bool C_BaseEntity::NameMatches( const char *pszNameOrWildcard )
 {
 	if ( IDENT_STRINGS(m_iName, pszNameOrWildcard) )
 		return true;
@@ -2677,7 +2654,7 @@ inline bool CBaseEntity::NameMatches( const char *pszNameOrWildcard )
 }
 
 #ifndef NO_STRING_T
-inline bool CBaseEntity::NameMatches( string_t nameStr )
+inline bool C_BaseEntity::NameMatches( string_t nameStr )
 {
 	if ( IDENT_STRINGS(m_iName, nameStr) )
 		return true;
@@ -2685,25 +2662,30 @@ inline bool CBaseEntity::NameMatches( string_t nameStr )
 }
 #endif
 
-inline bool CBaseEntity::ClassMatches( const char *pszClassOrWildcard )
+inline string_t C_BaseEntity::GetClassnameStr()
+{
+	return m_iClassname;
+}
+
+inline bool C_BaseEntity::ClassMatches( const char *pszClassOrWildcard )
 {
 	if ( IDENT_STRINGS(m_iClassname, pszClassOrWildcard ) )
 		return true;
 	return ClassMatchesComplex( pszClassOrWildcard );
 }
 
-inline bool CBaseEntity::NameMatchesExact( string_t nameStr )
+inline bool C_BaseEntity::NameMatchesExact( string_t nameStr )
 {
 	return IDENT_STRINGS(m_iName, nameStr);
 }
 
-inline bool CBaseEntity::ClassMatchesExact( string_t nameStr )
+inline bool C_BaseEntity::ClassMatchesExact( string_t nameStr )
 {
 	return IDENT_STRINGS(m_iClassname, nameStr );
 }
 
 #ifndef NO_STRING_T
-inline bool CBaseEntity::ClassMatches( string_t nameStr )
+inline bool C_BaseEntity::ClassMatches( string_t nameStr )
 {
 	if ( IDENT_STRINGS(m_iClassname, nameStr ) )
 		return true;
@@ -2712,7 +2694,7 @@ inline bool CBaseEntity::ClassMatches( string_t nameStr )
 #endif
 
 template <typename T>
-inline bool CBaseEntity::Downcast( string_t iszClass, T **ppResult )
+inline bool C_BaseEntity::Downcast( string_t iszClass, T **ppResult )
 {
 	if ( IDENT_STRINGS( iszClass, m_iClassname ) )
 	{

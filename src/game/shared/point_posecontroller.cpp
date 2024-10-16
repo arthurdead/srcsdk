@@ -522,19 +522,16 @@ void C_PoseController::UpdatePoseCycle( float fCycleAmount )
 	SetCurrentPose( fNewPoseValue );
 }
 
-#define CPoseController C_PoseController
-#define CBaseAnimating C_BaseAnimating
-
 
 #endif //#ifndef CLIENT_DLL
 
 
-void CPoseController::SetCurrentPose( float fCurrentPoseValue )
+void CSharedPoseController::SetCurrentPose( float fCurrentPoseValue )
 {
 	for ( int iPropNum = 0; iPropNum < MAX_POSE_CONTROLLED_PROPS; ++iPropNum )
 	{
 		// Control each model's pose parameter
-		CBaseAnimating *pProp = dynamic_cast<CBaseAnimating*>( m_hProps[ iPropNum ].Get() );
+		CSharedBaseAnimating *pProp = dynamic_cast<CSharedBaseAnimating*>( m_hProps[ iPropNum ].Get() );
 
 		if ( pProp )
 		{

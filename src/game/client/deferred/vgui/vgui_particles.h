@@ -1,6 +1,8 @@
 #ifndef VGUI_PARTICLES_H
 #define VGUI_PARTICLES_H
 
+#pragma once
+
 #include "vgui_controls/Controls.h"
 #include "deferred/vgui/vgui_projectable.h"
 #include "view_shared.h"

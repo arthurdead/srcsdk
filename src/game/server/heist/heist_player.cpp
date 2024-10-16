@@ -1,6 +1,6 @@
 #include "cbase.h"
 #include "heist_player.h"
-#include "heist_gamerules.h"
+#include "heist_director.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -8,7 +8,6 @@
 LINK_ENTITY_TO_CLASS(player, CHeistPlayer);
 
 BEGIN_SEND_TABLE_NOBASE(CHeistPlayer, DT_HeistLocalPlayerExclusive)
-	SendPropBool(SENDINFO(m_bSpotted)),
 END_SEND_TABLE()
 
 BEGIN_SEND_TABLE_NOBASE(CHeistPlayer, DT_HeistNonLocalPlayerExclusive)
@@ -40,59 +39,34 @@ void CHeistPlayer::Precache()
 	PrecacheModel("models/player/leader.mdl");
 }
 
-void CHeistPlayer::SetSpotted(bool value)
-{
-	m_bSpotted = value;
-
-	if(value) {
-		for(int i = 1; i <= gpGlobals->maxClients; ++i) {
-			CHeistPlayer *other = (CHeistPlayer *)UTIL_PlayerByIndex(i);
-			if(!other) {
-				continue;
-			}
-
-			other->m_bSpotted = true;
-		}
-
-		HeistGameRules()->SetSpotted(true);
-
-		ChangeTeam( TEAM_HEISTERS );
-		ChangeFaction( FACTION_HEISTERS );
-	} else {
-		bool any_spotted = false;
-
-		for(int i = 1; i <= gpGlobals->maxClients; ++i) {
-			CHeistPlayer *other = (CHeistPlayer *)UTIL_PlayerByIndex(i);
-			if(!other) {
-				continue;
-			}
-
-			if(other->m_bSpotted) {
-				any_spotted = true;
-				break;
-			}
-		}
-
-		if(!any_spotted) {
-			HeistGameRules()->SetSpotted(false);
-		}
-
-		ChangeTeam( TEAM_CIVILIANS );
-		ChangeFaction( FACTION_CIVILIANS );
-	}
-}
-
 void CHeistPlayer::Spawn()
 {
-	ChangeTeam( TEAM_CIVILIANS );
+	ChangeTeam( TEAM_CIVILIANS, false, false );
 	ChangeFaction( FACTION_CIVILIANS );
 
-	SetModel("models/player/leader.mdl");
+	SetModel( "models/player/leader.mdl" );
 
 	BaseClass::Spawn();
+
+	CBaseCombatWeapon *pWeapon = (CBaseCombatWeapon *)GiveNamedItem( "weapon_hl2_pistol", 0, false );
+	if( pWeapon ) {
+		GiveAmmo(99, pWeapon->m_iPrimaryAmmoType);
+	}
+
+	pWeapon = (CBaseCombatWeapon *)GiveNamedItem( "weapon_hl2_shotgun", 0, false );
+	if( pWeapon ) {
+		GiveAmmo(99, pWeapon->m_iPrimaryAmmoType);
+	}
+
+	pWeapon = (CBaseCombatWeapon *)GiveNamedItem( "weapon_hl2_smg1", 0, false );
+	if( pWeapon ) {
+		GiveAmmo(99, pWeapon->m_iPrimaryAmmoType);
+	}
+
+	MissionDirector()->PlayerSpawned(this);
 }
 
 Class_T CHeistPlayer::Classify()
 {
-	return IsSpotted() ? CLASS_HEISTER : CLASS_CIVILIAN;
+	return MissionDirector()->IsMissionLoud() ? CLASS_HEISTER : CLASS_CIVILIAN;
 }

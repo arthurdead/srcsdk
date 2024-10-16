@@ -25,9 +25,9 @@ ConVar NavObscureRange("ai_obscure_range", "400", FCVAR_CHEAT);
 // Output : Returns true if the weapon was switched, false if there was no better
 //			weapon to switch to.
 //-----------------------------------------------------------------------------
-bool CBaseCombatCharacter::SwitchToNextBestWeapon(CBaseCombatWeapon *pCurrent)
+bool CSharedBaseCombatCharacter::SwitchToNextBestWeapon(CSharedBaseCombatWeapon *pCurrent)
 {
-	CBaseCombatWeapon *pNewWeapon = GameRules()->GetNextBestWeapon(this, pCurrent);
+	CSharedBaseCombatWeapon *pNewWeapon = GameRules()->GetNextBestWeapon(this, pCurrent);
 	
 	if ( ( pNewWeapon != NULL ) && ( pNewWeapon != pCurrent ) )
 	{
@@ -42,7 +42,7 @@ bool CBaseCombatCharacter::SwitchToNextBestWeapon(CBaseCombatWeapon *pCurrent)
 // Input  :
 // Output : true is switch succeeded
 //-----------------------------------------------------------------------------
-bool CBaseCombatCharacter::Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex /*=0*/ ) 
+bool CSharedBaseCombatCharacter::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, int viewmodelindex /*=0*/, bool bDeploy ) 
 {
 	if ( pWeapon == NULL )
 		return false;
@@ -68,18 +68,21 @@ bool CBaseCombatCharacter::Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmo
 
 	m_hActiveWeapon = pWeapon;
 
-	return pWeapon->Deploy( );
+	if( bDeploy )
+		return pWeapon->Deploy( );
+	else
+		return pWeapon->Holster();
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns whether or not we can switch to the given weapon.
 // Input  : pWeapon - 
 //-----------------------------------------------------------------------------
-bool CBaseCombatCharacter::Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon )
+bool CSharedBaseCombatCharacter::Weapon_CanSwitchTo( CSharedBaseCombatWeapon *pWeapon )
 {
 	if (IsPlayer())
 	{
-		CBasePlayer *pPlayer = (CBasePlayer *)this;
+		CSharedBasePlayer *pPlayer = (CSharedBasePlayer *)this;
 #if !defined( CLIENT_DLL )
 		IServerVehicle *pVehicle = pPlayer->GetVehicle();
 #else
@@ -102,12 +105,12 @@ bool CBaseCombatCharacter::Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon )
 
 		if ( IsPlayer() )
 		{
-			CBasePlayer *pPlayer = (CBasePlayer *)this;
+			CSharedBasePlayer *pPlayer = (CSharedBasePlayer *)this;
 			// check if active weapon force the last weapon to switch
 			if ( m_hActiveWeapon->ForceWeaponSwitch() )
 			{
 				// last weapon wasn't allowed to switch, don't allow to switch to new weapon
-				CBaseCombatWeapon *pLastWeapon = pPlayer->GetLastWeapon();
+				CSharedBaseCombatWeapon *pLastWeapon = pPlayer->GetLastWeapon();
 				if ( pLastWeapon && pWeapon != pLastWeapon && !pLastWeapon->CanHolster() && !pWeapon->ForceWeaponSwitch() )
 				{
 					return false;
@@ -123,7 +126,7 @@ bool CBaseCombatCharacter::Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon )
 // Purpose: 
 // Output : CBaseCombatWeapon
 //-----------------------------------------------------------------------------
-CBaseCombatWeapon *CBaseCombatCharacter::GetActiveWeapon() const
+CSharedBaseCombatWeapon *CSharedBaseCombatCharacter::GetActiveWeapon() const
 {
 	return m_hActiveWeapon;
 }
@@ -132,7 +135,7 @@ CBaseCombatWeapon *CBaseCombatCharacter::GetActiveWeapon() const
 // Purpose: 
 // Input  : i - 
 //-----------------------------------------------------------------------------
-CBaseCombatWeapon *CBaseCombatCharacter::GetWeapon( int i ) const
+CSharedBaseCombatWeapon *CSharedBaseCombatCharacter::GetWeapon( int i ) const
 {
 	Assert( (i >= 0) && (i < MAX_WEAPONS) );
 	return m_hMyWeapons[i].Get();
@@ -143,7 +146,7 @@ CBaseCombatWeapon *CBaseCombatCharacter::GetWeapon( int i ) const
 // Input  : iCount - 
 //			iAmmoIndex - 
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::RemoveAmmo( int iCount, int iAmmoIndex )
+void CSharedBaseCombatCharacter::RemoveAmmo( int iCount, int iAmmoIndex )
 {
 	if (iCount <= 0)
 		return;
@@ -159,7 +162,7 @@ void CBaseCombatCharacter::RemoveAmmo( int iCount, int iAmmoIndex )
 	m_iAmmo.Set( iAmmoIndex, MAX( m_iAmmo[iAmmoIndex] - iCount, 0 ) );
 }
 
-void CBaseCombatCharacter::RemoveAmmo( int iCount, const char *szName )
+void CSharedBaseCombatCharacter::RemoveAmmo( int iCount, const char *szName )
 {
 	RemoveAmmo( iCount, GetAmmoDef()->Index(szName) );
 }
@@ -167,7 +170,7 @@ void CBaseCombatCharacter::RemoveAmmo( int iCount, const char *szName )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::RemoveAllAmmo( )
+void CSharedBaseCombatCharacter::RemoveAllAmmo( )
 {
 	for ( int i = 0; i < MAX_AMMO_SLOTS; i++ )
 	{
@@ -178,7 +181,7 @@ void CBaseCombatCharacter::RemoveAllAmmo( )
 //-----------------------------------------------------------------------------
 // FIXME: This is a sort of hack back-door only used by physgun!
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::SetAmmoCount( int iCount, int iAmmoIndex )
+void CSharedBaseCombatCharacter::SetAmmoCount( int iCount, int iAmmoIndex )
 {
 	// NOTE: No sound, no max check! Seems pretty bogus to me!
 	m_iAmmo.Set( iAmmoIndex, iCount );
@@ -190,7 +193,7 @@ void CBaseCombatCharacter::SetAmmoCount( int iCount, int iAmmoIndex )
 // Input  :	Ammo Index
 // Output :	The amount of ammo
 //-----------------------------------------------------------------------------
-int CBaseCombatCharacter::GetAmmoCount( int iAmmoIndex ) const
+int CSharedBaseCombatCharacter::GetAmmoCount( int iAmmoIndex ) const
 {
 	if ( iAmmoIndex == -1 )
 		return 0;
@@ -205,7 +208,7 @@ int CBaseCombatCharacter::GetAmmoCount( int iAmmoIndex ) const
 //-----------------------------------------------------------------------------
 // Purpose: Returns the amount of ammunition of the specified type the character's carrying
 //-----------------------------------------------------------------------------
-int	CBaseCombatCharacter::GetAmmoCount( char *szName ) const
+int	CSharedBaseCombatCharacter::GetAmmoCount( char *szName ) const
 {
 	return GetAmmoCount( GetAmmoDef()->Index(szName) );
 }
@@ -213,7 +216,7 @@ int	CBaseCombatCharacter::GetAmmoCount( char *szName ) const
 //-----------------------------------------------------------------------------
 // Purpose: Returns weapon if already owns a weapon of this class
 //-----------------------------------------------------------------------------
-CBaseCombatWeapon* CBaseCombatCharacter::Weapon_OwnsThisType( const char *pszWeapon, int iSubType ) const
+CSharedBaseCombatWeapon* CSharedBaseCombatCharacter::Weapon_OwnsThisType( const char *pszWeapon, int iSubType ) const
 {
 	// Check for duplicates
 	for (int i=0;i<MAX_WEAPONS;i++) 
@@ -228,7 +231,7 @@ CBaseCombatWeapon* CBaseCombatCharacter::Weapon_OwnsThisType( const char *pszWea
 	return NULL;
 }
 
-int CBaseCombatCharacter::Weapon_GetSlot( const char *pszWeapon, int iSubType ) const
+int CSharedBaseCombatCharacter::Weapon_GetSlot( const char *pszWeapon, int iSubType ) const
 {
 	for ( int i = 0; i < MAX_WEAPONS; i++ ) 
 	{
@@ -245,7 +248,7 @@ int CBaseCombatCharacter::Weapon_GetSlot( const char *pszWeapon, int iSubType ) 
 	return -1;
 }
 
-int CBaseCombatCharacter::BloodColor()
+int CSharedBaseCombatCharacter::BloodColor()
 {
 	return m_bloodColor;
 }
@@ -254,7 +257,7 @@ int CBaseCombatCharacter::BloodColor()
 //-----------------------------------------------------------------------------
 // Blood color (see BLOOD_COLOR_* macros in baseentity.h)
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::SetBloodColor( int nBloodColor )
+void CSharedBaseCombatCharacter::SetBloodColor( int nBloodColor )
 {
 	m_bloodColor = nBloodColor;
 }
@@ -286,15 +289,15 @@ public:
 	virtual void FrameUpdatePreEntityThink();
 	virtual void LevelShutdownPreEntity();
 
-	int LookupVisibility( const CBaseCombatCharacter *pChar1, CBaseCombatCharacter *pChar2 );
+	int LookupVisibility( const CSharedBaseCombatCharacter *pChar1, CSharedBaseCombatCharacter *pChar2 );
 	VisCacheResult_t HasVisibility( int iCache ) const;
 	void RegisterVisibility( int iCache, bool bChar1SeesChar2, bool bChar2SeesChar1 );
 
 private:
 	struct VisCacheEntry_t
 	{
-		CHandle< CBaseCombatCharacter >	m_hEntity1;
-		CHandle< CBaseCombatCharacter >	m_hEntity2;
+		CHandle< CSharedBaseCombatCharacter >	m_hEntity1;
+		CHandle< CSharedBaseCombatCharacter >	m_hEntity2;
 		float							m_flTime;
 		bool							m_bEntity1CanSeeEntity2;
 		bool							m_bEntity2CanSeeEntity1;
@@ -347,7 +350,7 @@ void CCombatCharVisCache::LevelShutdownPreEntity()
 	m_VisCache.Purge();
 }
 
-int CCombatCharVisCache::LookupVisibility( const CBaseCombatCharacter *pChar1, CBaseCombatCharacter *pChar2 )
+int CCombatCharVisCache::LookupVisibility( const CSharedBaseCombatCharacter *pChar1, CSharedBaseCombatCharacter *pChar2 )
 {
 	VisCacheEntry_t cacheEntry;
 	if ( pChar1 < pChar2 )
@@ -424,9 +427,9 @@ void CCombatCharVisCache::RegisterVisibility( int iCache, bool bEntity1CanSeeEnt
 
 static CCombatCharVisCache s_CombatCharVisCache;
 
-bool CBaseCombatCharacter::IsAbleToSee( const CBaseEntity *pEntity, FieldOfViewCheckType checkFOV )
+bool CSharedBaseCombatCharacter::IsAbleToSee( const CSharedBaseEntity *pEntity, FieldOfViewCheckType checkFOV )
 {
-	CBaseCombatCharacter *pBCC = const_cast<CBaseEntity *>( pEntity )->MyCombatCharacterPointer();
+	CSharedBaseCombatCharacter *pBCC = const_cast<CSharedBaseEntity *>( pEntity )->MyCombatCharacterPointer();
 	if ( pBCC )
 		return IsAbleToSee( pBCC, checkFOV );
 
@@ -458,7 +461,7 @@ bool CBaseCombatCharacter::IsAbleToSee( const CBaseEntity *pEntity, FieldOfViewC
 	return ( checkFOV != USE_FOV || IsInFieldOfView( vecTargetPosition ) );
 }
 
-static void ComputeSeeTestPosition( Vector *pEyePosition, CBaseCombatCharacter *pBCC )
+static void ComputeSeeTestPosition( Vector *pEyePosition, CSharedBaseCombatCharacter *pBCC )
 {
 #if defined(GAME_DLL) && 0
 	if ( pBCC->IsPlayer() )
@@ -473,7 +476,7 @@ static void ComputeSeeTestPosition( Vector *pEyePosition, CBaseCombatCharacter *
 	}
 }
 
-bool CBaseCombatCharacter::IsAbleToSee( CBaseCombatCharacter *pBCC, FieldOfViewCheckType checkFOV )
+bool CSharedBaseCombatCharacter::IsAbleToSee( CSharedBaseCombatCharacter *pBCC, FieldOfViewCheckType checkFOV )
 {
 	Vector vecEyePosition, vecOtherEyePosition;
 	ComputeSeeTestPosition( &vecEyePosition, this );
@@ -539,7 +542,7 @@ public:
 	{
 		if ( CTraceFilterSimple::ShouldHitEntity( pHandleEntity, contentsMask ) )
 		{
-			CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+			CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 			if ( !pEntity )
 				return false;
 
@@ -557,7 +560,7 @@ public:
 	}
 };
 
-bool CBaseCombatCharacter::ComputeLOS( const Vector &vecEyePosition, const Vector &vecTarget ) const
+bool CSharedBaseCombatCharacter::ComputeLOS( const Vector &vecEyePosition, const Vector &vecTarget ) const
 {
 	// We simply can't see because the world is in the way.
 	trace_t result;
@@ -567,7 +570,7 @@ bool CBaseCombatCharacter::ComputeLOS( const Vector &vecEyePosition, const Vecto
 }
 
 #if defined(GAME_DLL)
-bool CBaseCombatCharacter::ComputeTargetIsInDarkness( const Vector &vecEyePosition, const Vector &vecTargetPos ) const
+bool CSharedBaseCombatCharacter::ComputeTargetIsInDarkness( const Vector &vecEyePosition, const Vector &vecTargetPos ) const
 {
 	// Check light info
 	const float flMinLightIntensity = 0.1f;
@@ -600,7 +603,7 @@ bool CBaseCombatCharacter::ComputeTargetIsInDarkness( const Vector &vecEyePositi
 	Return true if our view direction is pointing at the given target, 
 	within the cosine of the angular tolerance. LINE OF SIGHT IS NOT CHECKED.
 */
-bool CBaseCombatCharacter::IsLookingTowards( const CBaseEntity *target, float cosTolerance ) const
+bool CSharedBaseCombatCharacter::IsLookingTowards( const CSharedBaseEntity *target, float cosTolerance ) const
 {
 	return IsLookingTowards( target->WorldSpaceCenter(), cosTolerance ) || IsLookingTowards( target->EyePosition(), cosTolerance ) || IsLookingTowards( target->GetAbsOrigin(), cosTolerance );
 }
@@ -611,7 +614,7 @@ bool CBaseCombatCharacter::IsLookingTowards( const CBaseEntity *target, float co
 	Return true if our view direction is pointing at the given target, 
 	within the cosine of the angular tolerance. LINE OF SIGHT IS NOT CHECKED.
 */
-bool CBaseCombatCharacter::IsLookingTowards( const Vector &target, float cosTolerance ) const
+bool CSharedBaseCombatCharacter::IsLookingTowards( const Vector &target, float cosTolerance ) const
 {
 	Vector toTarget = target - EyePosition();
 	toTarget.NormalizeInPlace();
@@ -628,9 +631,9 @@ bool CBaseCombatCharacter::IsLookingTowards( const Vector &target, float cosTole
 	Returns true if we are looking towards something within a tolerence determined 
 	by our field of view
 */
-bool CBaseCombatCharacter::IsInFieldOfView( CBaseEntity *entity ) const
+bool CSharedBaseCombatCharacter::IsInFieldOfView( CSharedBaseEntity *entity ) const
 {
-	CBasePlayer *pPlayer = ToBasePlayer( const_cast< CBaseCombatCharacter* >( this ) );
+	CSharedBasePlayer *pPlayer = ToBasePlayer( const_cast< CSharedBaseCombatCharacter* >( this ) );
 	float flTolerance = pPlayer ? cos( (float)pPlayer->GetFOV() * 0.5f ) : BCC_DEFAULT_LOOK_TOWARDS_TOLERANCE;
 
 	Vector vecForward;
@@ -661,9 +664,9 @@ bool CBaseCombatCharacter::IsInFieldOfView( CBaseEntity *entity ) const
 	Returns true if we are looking towards something within a tolerence determined 
 	by our field of view
 */
-bool CBaseCombatCharacter::IsInFieldOfView( const Vector &pos ) const
+bool CSharedBaseCombatCharacter::IsInFieldOfView( const Vector &pos ) const
 {
-	CBasePlayer *pPlayer = ToBasePlayer( const_cast< CBaseCombatCharacter* >( this ) );
+	CSharedBasePlayer *pPlayer = ToBasePlayer( const_cast< CSharedBaseCombatCharacter* >( this ) );
 
 	if ( pPlayer )
 		return IsLookingTowards( pos, cos( (float)pPlayer->GetFOV() * 0.5f ) );
@@ -676,7 +679,7 @@ bool CBaseCombatCharacter::IsInFieldOfView( const Vector &pos ) const
 	Strictly checks Line of Sight only.
 */
 
-bool CBaseCombatCharacter::IsLineOfSightClear( CBaseEntity *entity, LineOfSightCheckType checkType ) const
+bool CSharedBaseCombatCharacter::IsLineOfSightClear( CSharedBaseEntity *entity, LineOfSightCheckType checkType ) const
 {
 #ifdef CLIENT_DLL
 	if ( entity->MyCombatCharacterPointer() )
@@ -695,11 +698,11 @@ bool CBaseCombatCharacter::IsLineOfSightClear( CBaseEntity *entity, LineOfSightC
 static bool TraceFilterNoCombatCharacters( IHandleEntity *pServerEntity, int contentsMask )
 {
 	// Honor BlockLOS also to allow seeing through partially-broken doors
-	CBaseEntity *entity = EntityFromEntityHandle( pServerEntity );
+	CSharedBaseEntity *entity = EntityFromEntityHandle( pServerEntity );
 	return ( entity->MyCombatCharacterPointer() == NULL && !entity->MyCombatWeaponPointer() && entity->BlocksLOS() );
 }
 
-bool CBaseCombatCharacter::IsLineOfSightClear( const Vector &pos, LineOfSightCheckType checkType, CBaseEntity *entityToIgnore ) const
+bool CSharedBaseCombatCharacter::IsLineOfSightClear( const Vector &pos, LineOfSightCheckType checkType, CSharedBaseEntity *entityToIgnore ) const
 {
 #if defined(GAME_DLL) && defined(COUNT_BCC_LOS)
 	static int count, frame;
@@ -741,7 +744,7 @@ bool CBaseCombatCharacter::IsLineOfSightClear( const Vector &pos, LineOfSightChe
 
 /*
 //---------------------------------------------------------------------------------------------------------------------------
-surfacedata_t * CBaseCombatCharacter::GetGroundSurface( void ) const
+surfacedata_t * CSharedBaseCombatCharacter::GetGroundSurface( void ) const
 {
 	Vector start( vec3_origin );
 	Vector end( 0, 0, -64 );
@@ -762,7 +765,7 @@ surfacedata_t * CBaseCombatCharacter::GetGroundSurface( void ) const
 }
 */
 
-void CBaseCombatCharacter::Weapon_FrameUpdate( void )
+void CSharedBaseCombatCharacter::Weapon_FrameUpdate( void )
 {
 	if ( m_hActiveWeapon )
 	{

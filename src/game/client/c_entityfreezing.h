@@ -8,8 +8,9 @@
 #ifndef C_ENTITY_FREEZING_H
 #define C_ENTITY_FREEZING_H
 
-#include "cbase.h"
+#pragma once
 
+#include "c_baseentity.h"
 
 struct EntityFreezingHitboxBlobData_t
 {

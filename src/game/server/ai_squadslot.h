@@ -14,6 +14,8 @@
 #ifndef	SQUADSLOT_H
 #define	SQUADSLOT_H
 
+#pragma once
+
 #define	MAX_SQUADSLOTS 32
 
 //=========================================================

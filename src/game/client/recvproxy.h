@@ -8,6 +8,8 @@
 #ifndef RECVPROXY_H
 #define RECVPROXY_H
 
+#pragma once
+
 
 #include "dt_recv.h"
 

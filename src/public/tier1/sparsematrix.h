@@ -8,6 +8,8 @@
 #ifndef SPARSEMATRIX_H
 #define SPARSEMATRIX_H
 
+#pragma once
+
 #include "tier1/utlvector.h"
 
 /// CSparseMatrix is a matrix which compresses each row individually, not storing the zeros.  NOte,

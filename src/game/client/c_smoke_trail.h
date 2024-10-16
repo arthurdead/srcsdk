@@ -11,6 +11,8 @@
 #ifndef PARTICLE_SMOKETRAIL_H
 #define PARTICLE_SMOKETRAIL_H
 
+#pragma once
+
 #include "particlemgr.h"
 #include "particle_util.h"
 #include "particles_simple.h"

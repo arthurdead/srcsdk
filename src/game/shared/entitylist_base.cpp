@@ -171,7 +171,7 @@ CBaseEntityList::~CBaseEntityList()
 }
 
 
-EHANDLE CBaseEntityList::AddNetworkableEntity( CBaseEntity *pEnt, int index, int iForcedSerialNum )
+EHANDLE CBaseEntityList::AddNetworkableEntity( CSharedBaseEntity *pEnt, int index, int iForcedSerialNum )
 {
 	if(!pEnt)
 		return NULL_EHANDLE;
@@ -184,7 +184,7 @@ EHANDLE CBaseEntityList::AddNetworkableEntity( CBaseEntity *pEnt, int index, int
 }
 
 
-EHANDLE CBaseEntityList::AddNonNetworkableEntity( CBaseEntity *pEnt )
+EHANDLE CBaseEntityList::AddNonNetworkableEntity( CSharedBaseEntity *pEnt )
 {
 	if(!pEnt)
 		return NULL_EHANDLE;
@@ -215,7 +215,7 @@ void CBaseEntityList::RemoveEntity( CBaseHandle handle )
 }
 
 
-EHANDLE CBaseEntityList::AddEntityAtSlot( CBaseEntity *pEnt, int iSlot, int iForcedSerialNum )
+EHANDLE CBaseEntityList::AddEntityAtSlot( CSharedBaseEntity *pEnt, int iSlot, int iForcedSerialNum )
 {
 	// Init the CSerialEntity.
 	CEntInfo *pSlot = &m_EntPtrArray[iSlot];

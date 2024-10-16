@@ -24,6 +24,7 @@
 #include "KeyValues.h"
 #include "time.h"
 #include "tier0/icommandline.h"
+#include "filesystem.h"
 
 #ifdef CLIENT_DLL
 	#include "c_te_effect_dispatch.h"
@@ -152,27 +153,27 @@ static int SeedFileLineHash( int seedvalue, const char *sharedname, int addition
 
 float SharedRandomFloat( const char *sharedname, float flMinVal, float flMaxVal, int additionalSeed /*=0*/ )
 {
-	Assert( CBaseEntity::GetPredictionRandomSeed() != -1 );
+	Assert( CSharedBaseEntity::GetPredictionRandomSeed() != -1 );
 
-	int seed = SeedFileLineHash( CBaseEntity::GetPredictionRandomSeed(), sharedname, additionalSeed );
+	int seed = SeedFileLineHash( CSharedBaseEntity::GetPredictionRandomSeed(), sharedname, additionalSeed );
 	RandomSeed( seed );
 	return RandomFloat( flMinVal, flMaxVal );
 }
 
 int SharedRandomInt( const char *sharedname, int iMinVal, int iMaxVal, int additionalSeed /*=0*/ )
 {
-	Assert( CBaseEntity::GetPredictionRandomSeed() != -1 );
+	Assert( CSharedBaseEntity::GetPredictionRandomSeed() != -1 );
 
-	int seed = SeedFileLineHash( CBaseEntity::GetPredictionRandomSeed(), sharedname, additionalSeed );
+	int seed = SeedFileLineHash( CSharedBaseEntity::GetPredictionRandomSeed(), sharedname, additionalSeed );
 	RandomSeed( seed );
 	return RandomInt( iMinVal, iMaxVal );
 }
 
 Vector SharedRandomVector( const char *sharedname, float minVal, float maxVal, int additionalSeed /*=0*/ )
 {
-	Assert( CBaseEntity::GetPredictionRandomSeed() != -1 );
+	Assert( CSharedBaseEntity::GetPredictionRandomSeed() != -1 );
 
-	int seed = SeedFileLineHash( CBaseEntity::GetPredictionRandomSeed(), sharedname, additionalSeed );
+	int seed = SeedFileLineHash( CSharedBaseEntity::GetPredictionRandomSeed(), sharedname, additionalSeed );
 	RandomSeed( seed );
 	// HACK:  Can't call RandomVector/Angle because it uses rand() not vstlib Random*() functions!
 	// Get a random vector.
@@ -185,9 +186,9 @@ Vector SharedRandomVector( const char *sharedname, float minVal, float maxVal, i
 
 QAngle SharedRandomAngle( const char *sharedname, float minVal, float maxVal, int additionalSeed /*=0*/ )
 {
-	Assert( CBaseEntity::GetPredictionRandomSeed() != -1 );
+	Assert( CSharedBaseEntity::GetPredictionRandomSeed() != -1 );
 
-	int seed = SeedFileLineHash( CBaseEntity::GetPredictionRandomSeed(), sharedname, additionalSeed );
+	int seed = SeedFileLineHash( CSharedBaseEntity::GetPredictionRandomSeed(), sharedname, additionalSeed );
 	RandomSeed( seed );
 
 	// HACK:  Can't call RandomVector/Angle because it uses rand() not vstlib Random*() functions!
@@ -213,8 +214,8 @@ bool PassServerEntityFilter( const IHandleEntity *pTouch, const IHandleEntity *p
 	if ( pTouch == pPass )
 		return false;
 
-	const CBaseEntity *pEntTouch = EntityFromEntityHandle( pTouch );
-	const CBaseEntity *pEntPass = EntityFromEntityHandle( pPass );
+	const CSharedBaseEntity *pEntTouch = EntityFromEntityHandle( pTouch );
+	const CSharedBaseEntity *pEntPass = EntityFromEntityHandle( pPass );
 	if ( !pEntTouch || !pEntPass )
 		return true;
 
@@ -236,7 +237,7 @@ bool PassServerEntityFilter( const IHandleEntity *pTouch, const IHandleEntity *p
 //-----------------------------------------------------------------------------
 bool StandardFilterRules( IHandleEntity *pHandleEntity, int fContentsMask )
 {
-	CBaseEntity *pCollide = EntityFromEntityHandle( pHandleEntity );
+	CSharedBaseEntity *pCollide = EntityFromEntityHandle( pHandleEntity );
 
 	// Static prop case...
 	if ( !pCollide )
@@ -304,7 +305,7 @@ bool CTraceFilterSimple::ShouldHitEntity( IHandleEntity *pHandleEntity, int cont
 	}
 
 	// Don't test if the game code tells us we should ignore this collision...
-	CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+	CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 	if ( !pEntity )
 		return false;
 	if ( !pEntity->ShouldCollide( m_collisionGroup, contentsMask ) )
@@ -325,7 +326,7 @@ bool CTraceFilterOnlyNPCsAndPlayer::ShouldHitEntity( IHandleEntity *pHandleEntit
 {
 	if ( CTraceFilterSimple::ShouldHitEntity( pHandleEntity, contentsMask ) )
 	{
-		CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+		CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 		if ( !pEntity )
 			return false;
 		return (pEntity->IsNPC() || pEntity->IsPlayer());
@@ -340,7 +341,7 @@ bool CTraceFilterNoNPCsOrPlayer::ShouldHitEntity( IHandleEntity *pHandleEntity, 
 {
 	if ( CTraceFilterSimple::ShouldHitEntity( pHandleEntity, contentsMask ) )
 	{
-		CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+		CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 		if ( !pEntity )
 			return false;
 #if !defined CLIENT_DLL && (defined HL2_DLL || defined CSTRIKE_DLL)
@@ -431,7 +432,7 @@ CTraceFilterLOS::CTraceFilterLOS( IHandleEntity *pHandleEntity, int collisionGro
 //-----------------------------------------------------------------------------
 bool CTraceFilterLOS::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
 {
-	CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+	CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 
 	if ( !pEntity->BlocksLOS() )
 		return false;
@@ -452,7 +453,7 @@ CTraceFilterSimple( passentity, collisionGroup ), m_pchClassname( pchClassname )
 //-----------------------------------------------------------------------------
 bool CTraceFilterSkipClassname::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
 {
-	CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+	CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 	if ( !pEntity || FClassnameIs( pEntity, m_pchClassname ) )
 		return false;
 
@@ -469,7 +470,7 @@ BaseClass( passentity, pchClassname, collisionGroup ), m_pchClassname2(pchClassn
 
 bool CTraceFilterSkipTwoClassnames::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
 {
-	CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+	CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 	if ( !pEntity || FClassnameIs( pEntity, m_pchClassname2 ) )
 		return false;
 
@@ -490,7 +491,7 @@ CTraceFilterSimple( passentity, collisionGroup )
 //-----------------------------------------------------------------------------
 bool CTraceFilterSimpleClassnameList::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
 {
-	CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+	CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 	if ( !pEntity )
 		return false;
 
@@ -536,7 +537,7 @@ bool CTraceFilterChain::ShouldHitEntity( IHandleEntity *pHandleEntity, int conte
 // Sweeps against a particular model, using collision rules 
 //-----------------------------------------------------------------------------
 void UTIL_TraceModel( const Vector &vecStart, const Vector &vecEnd, const Vector &hullMin, 
-					  const Vector &hullMax, CBaseEntity *pentModel, int collisionGroup, trace_t *ptr )
+					  const Vector &hullMax, CSharedBaseEntity *pentModel, int collisionGroup, trace_t *ptr )
 {
 	// Cull it....
 	if ( pentModel && pentModel->ShouldCollide( collisionGroup, MASK_ALL ) )
@@ -552,7 +553,7 @@ void UTIL_TraceModel( const Vector &vecStart, const Vector &vecEnd, const Vector
 	}
 }
 
-bool UTIL_EntityHasMatchingRootParent( CBaseEntity *pRootParent, CBaseEntity *pEntity )
+bool UTIL_EntityHasMatchingRootParent( CSharedBaseEntity *pRootParent, CSharedBaseEntity *pEntity )
 {
 	if ( pRootParent )
 	{
@@ -573,7 +574,7 @@ class CTraceFilterEntity : public CTraceFilterSimple
 	DECLARE_CLASS( CTraceFilterEntity, CTraceFilterSimple );
 
 public:
-	CTraceFilterEntity( CBaseEntity *pEntity, int nCollisionGroup ) 
+	CTraceFilterEntity( CSharedBaseEntity *pEntity, int nCollisionGroup ) 
 		: CTraceFilterSimple( pEntity, nCollisionGroup )
 	{
 		m_pRootParent = pEntity->GetRootMoveParent();
@@ -583,7 +584,7 @@ public:
 
 	bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
 	{
-		CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+		CSharedBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
 		if ( !pEntity )
 			return false;
 
@@ -612,8 +613,8 @@ public:
 
 private:
 
-	CBaseEntity *m_pRootParent;
-	CBaseEntity *m_pEntity;
+	CSharedBaseEntity *m_pRootParent;
+	CSharedBaseEntity *m_pEntity;
 	bool		m_checkHash;
 };
 
@@ -621,7 +622,7 @@ class CTraceFilterEntityIgnoreOther : public CTraceFilterEntity
 {
 	DECLARE_CLASS( CTraceFilterEntityIgnoreOther, CTraceFilterEntity );
 public:
-	CTraceFilterEntityIgnoreOther( CBaseEntity *pEntity, const IHandleEntity *pIgnore, int nCollisionGroup ) : 
+	CTraceFilterEntityIgnoreOther( CSharedBaseEntity *pEntity, const IHandleEntity *pIgnore, int nCollisionGroup ) : 
 		CTraceFilterEntity( pEntity, nCollisionGroup ), m_pIgnoreOther( pIgnore )
 	{
 	}
@@ -638,7 +639,7 @@ private:
 	const IHandleEntity *m_pIgnoreOther;
 };
 
-unsigned int UTIL_MaskForEntity( CBaseEntity *pEntity, bool brush_only )
+unsigned int UTIL_MaskForEntity( CSharedBaseEntity *pEntity, bool brush_only )
 {
 	if(pEntity->IsPlayer()) {
 	#ifdef GAME_DLL
@@ -661,7 +662,7 @@ unsigned int UTIL_MaskForEntity( CBaseEntity *pEntity, bool brush_only )
 	return brush_only ? MASK_SOLID_BRUSHONLY : MASK_SOLID;
 }
 
-unsigned int UTIL_CollisionGroupForEntity( CBaseEntity *pEntity )
+unsigned int UTIL_CollisionGroupForEntity( CSharedBaseEntity *pEntity )
 {
 	if(pEntity->IsPlayer()) {
 		return COLLISION_GROUP_PLAYER_MOVEMENT;
@@ -677,7 +678,7 @@ unsigned int UTIL_CollisionGroupForEntity( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Sweeps a particular entity through the world 
 //-----------------------------------------------------------------------------
-void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, unsigned int mask, trace_t *ptr )
+void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, unsigned int mask, trace_t *ptr )
 {
 	ICollideable *pCollision = pEntity->GetCollideable();
 
@@ -694,7 +695,7 @@ void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Ve
 #endif
 }
 
-void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
+void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 					  unsigned int mask, const IHandleEntity *pIgnore, int nCollisionGroup, trace_t *ptr )
 {
 	ICollideable *pCollision;
@@ -713,7 +714,7 @@ void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Ve
 #endif
 }
 
-void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
+void UTIL_TraceEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 					  unsigned int mask, ITraceFilter *pFilter, trace_t *ptr )
 {
 	ICollideable *pCollision;
@@ -732,7 +733,7 @@ void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Ve
 
 // ----
 // This is basically a regular TraceLine that uses the FilterEntity filter.
-void UTIL_TraceLineFilterEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
+void UTIL_TraceLineFilterEntity( CSharedBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 					   unsigned int mask, int nCollisionGroup, trace_t *ptr )
 {
 	CTraceFilterEntity traceFilter( pEntity, nCollisionGroup );
@@ -750,7 +751,7 @@ void UTIL_ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd
 
 	for ( int k = 1; k <= gpGlobals->maxClients; ++k )
 	{
-		CBasePlayer *player = UTIL_PlayerByIndex( k );
+		CSharedBasePlayer *player = UTIL_PlayerByIndex( k );
 
 		if ( !player || !player->IsAlive() )
 			continue;
@@ -872,7 +873,7 @@ void UTIL_DecalTrace( trace_t *pTrace, char const *decalName )
 	if (pTrace->fraction == 1.0)
 		return;
 
-	CBaseEntity *pEntity = pTrace->m_pEnt;
+	CSharedBaseEntity *pEntity = pTrace->m_pEnt;
 	if ( !pEntity )
 		return;
 	pEntity->DecalTrace( pTrace, decalName );
@@ -926,7 +927,7 @@ void UTIL_BloodImpact( const Vector &pos, const Vector &dir, int color, int amou
 	DispatchEffect( "bloodimpact", data );
 }
 
-bool UTIL_IsSpaceEmpty( CBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax )
+bool UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax )
 {
 	Vector vHalfDims = ( vMax - vMin ) * 0.5f;
 	Vector vCenter = vMin + vHalfDims;
@@ -939,7 +940,7 @@ bool UTIL_IsSpaceEmpty( CBaseEntity *pMainEnt, const Vector &vMin, const Vector 
 	return bClear;
 }
 
-bool UTIL_IsSpaceEmpty( CBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax, unsigned int mask, ITraceFilter *pFilter )
+bool UTIL_IsSpaceEmpty( CSharedBaseEntity *pMainEnt, const Vector &vMin, const Vector &vMax, unsigned int mask, ITraceFilter *pFilter )
 {
 	Vector vHalfDims = ( vMax - vMin ) * 0.5f;
 	Vector vCenter = vMin + vHalfDims;
@@ -1071,6 +1072,88 @@ void UTIL_StringToIntArray_PreserveArray( int *pVector, int count, const char *p
 		pstr++;
 		pfront = pstr;
 	}
+}
+
+KeyValues* ReadKVFile( IFileSystem *filesystem, const char *szFilenameWithoutExtension, const char *pSearchPath )
+{
+	Assert( strchr( szFilenameWithoutExtension, '.' ) == NULL );
+	char szFullName[512];
+
+	// Open the weapon data file, and abort if we can't
+	KeyValues *pKV = new KeyValues( "" );
+	pKV->UsesEscapeSequences( true );
+
+	Q_snprintf(szFullName,sizeof(szFullName), "%s.txt", szFilenameWithoutExtension);
+
+	if ( !pKV->LoadFromFile( filesystem, szFullName, pSearchPath ) ) // try to load the normal .txt file first
+	{
+		pKV->deleteThis();
+		return NULL;
+	}
+
+	return pKV;
+}
+
+KeyValues* ReadEncryptedKVFile( IFileSystem *filesystem, const char *szFilenameWithoutExtension, const char *pSearchPath, const unsigned char *pICEKey, bool bForceReadEncryptedFile, bool *bReadEncrypted )
+{
+	Assert( strchr( szFilenameWithoutExtension, '.' ) == NULL );
+	char szFullName[512];
+
+	// Open the weapon data file, and abort if we can't
+	KeyValues *pKV = new KeyValues( "" );
+	pKV->UsesEscapeSequences( true );
+
+	Q_snprintf(szFullName,sizeof(szFullName), "%s.txt", szFilenameWithoutExtension);
+
+	if(bReadEncrypted)
+		*bReadEncrypted = false;
+
+	if ( bForceReadEncryptedFile || !pKV->LoadFromFile( filesystem, szFullName, pSearchPath ) ) // try to load the normal .txt file first
+	{
+		if ( pICEKey )
+		{
+			Q_snprintf(szFullName,sizeof(szFullName), "%s.ctx", szFilenameWithoutExtension); // fall back to the .ctx file
+
+			FileHandle_t f = g_pFullFileSystem->Open( szFullName, "rb", pSearchPath );
+
+			if (!f)
+			{
+				pKV->deleteThis();
+				return NULL;
+			}
+			// load file into a null-terminated buffer
+			int fileSize = g_pFullFileSystem->Size(f);
+			char *buffer = (char*)MemAllocScratch(fileSize + 1);
+		
+			Assert(buffer);
+		
+			g_pFullFileSystem->Read(buffer, fileSize, f); // read into local buffer
+			buffer[fileSize] = 0; // null terminate file as EOF
+			g_pFullFileSystem->Close( f );	// close file after reading
+
+			UTIL_DecodeICE( (unsigned char*)buffer, fileSize, pICEKey );
+
+			bool retOK = pKV->LoadFromBuffer( szFullName, buffer, filesystem );
+
+			MemFreeScratch();
+
+			if ( !retOK )
+			{
+				pKV->deleteThis();
+				return NULL;
+			}
+
+			if(bReadEncrypted)
+				*bReadEncrypted = true;
+		}
+		else
+		{
+			pKV->deleteThis();
+			return NULL;
+		}
+	}
+
+	return pKV;
 }
 
 void UTIL_DecodeICE( unsigned char * buffer, int size, const unsigned char *key)
@@ -1400,33 +1483,33 @@ void CTimeline::Compress( void )
 }
 
 #ifdef CLIENT_DLL
-	CBasePlayer *UTIL_PlayerByIndex( int entindex )
-	{
-		return ToBasePlayer( ClientEntityList().GetEnt( entindex ) );
-	}
+C_BasePlayer *UTIL_PlayerByIndex( int entindex )
+{
+	return ToBasePlayer( ClientEntityList().GetEnt( entindex ) );
+}
 
 //=============================================================================
 // HPE_BEGIN:
 // [menglish] Added UTIL function for events in client win_panel which transmit the player as a user ID
 //=============================================================================
 
-	CBasePlayer* UTIL_PlayerByUserId( int userID )
+C_BasePlayer* UTIL_PlayerByUserId( int userID )
+{
+	for (int i = 1; i<=gpGlobals->maxClients; i++ )
 	{
-		for (int i = 1; i<=gpGlobals->maxClients; i++ )
+		C_BasePlayer *pPlayer = UTIL_PlayerByIndex( i );
+
+		if ( !pPlayer )
+			continue;
+
+		if ( pPlayer->GetUserID() == userID )
 		{
-			CBasePlayer *pPlayer = UTIL_PlayerByIndex( i );
-
-			if ( !pPlayer )
-				continue;
-
-			if ( pPlayer->GetUserID() == userID )
-			{
-				return pPlayer;
-			}
+			return pPlayer;
 		}
-
-		return NULL;
 	}
+
+	return NULL;
+}
 
 //=============================================================================
 // HPE_END
@@ -2134,7 +2217,7 @@ bool UTIL_FindClosestPassableSpace( const Vector &vOriginalCenter, const Vector 
 	return false;
 }
 
-bool UTIL_FindClosestPassableSpace( CBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, unsigned int iIterations, Vector &vOriginOut, Vector *pStartingPosition, int nAxisRestrictionFlags ) //assumes the object is already in a mostly passable space
+bool UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, unsigned int iIterations, Vector &vOriginOut, Vector *pStartingPosition, int nAxisRestrictionFlags ) //assumes the object is already in a mostly passable space
 {
 	// Don't ever do this to entities with a move parent
 	if ( pEntity->GetMoveParent() )
@@ -2167,7 +2250,7 @@ bool UTIL_FindClosestPassableSpace( CBaseEntity *pEntity, const Vector &vIndecis
 }
 
 
-bool UTIL_FindClosestPassableSpace( CBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, Vector *pStartingPosition, int nAxisRestrictionFlags )
+bool UTIL_FindClosestPassableSpace( CSharedBaseEntity *pEntity, const Vector &vIndecisivePush, unsigned int fMask, Vector *pStartingPosition, int nAxisRestrictionFlags )
 {
 	Vector vNewPos;
 	bool bWorked = UTIL_FindClosestPassableSpace( pEntity, vIndecisivePush, fMask, 100, vNewPos, pStartingPosition, nAxisRestrictionFlags );
@@ -2428,7 +2511,7 @@ int UTIL_CalcFrustumThroughConvexPolygon( const Vector *pPolyVertices, int iPoly
 // class CFlaggedEntitiesEnum
 //-----------------------------------------------------------------------------
 
-CFlaggedEntitiesEnum::CFlaggedEntitiesEnum( CBaseEntity **pList, int listMax, int flagMask )
+CFlaggedEntitiesEnum::CFlaggedEntitiesEnum( CSharedBaseEntity **pList, int listMax, int flagMask )
 {
 	m_pList = pList;
 	m_listMax = listMax;
@@ -2436,7 +2519,7 @@ CFlaggedEntitiesEnum::CFlaggedEntitiesEnum( CBaseEntity **pList, int listMax, in
 	m_count = 0;
 }
 
-bool CFlaggedEntitiesEnum::AddToList( CBaseEntity *pEntity )
+bool CFlaggedEntitiesEnum::AddToList( CSharedBaseEntity *pEntity )
 {
 	if ( m_count >= m_listMax )
 	{
@@ -2473,14 +2556,14 @@ IterationRetval_t CFlaggedEntitiesEnum::EnumElement( IHandleEntity *pHandleEntit
 // class CHurtableEntitiesEnum
 //-----------------------------------------------------------------------------
 
-CHurtableEntitiesEnum::CHurtableEntitiesEnum( CBaseEntity **pList, int listMax )
+CHurtableEntitiesEnum::CHurtableEntitiesEnum( CSharedBaseEntity **pList, int listMax )
 {
 	m_pList = pList;
 	m_listMax = listMax;
 	m_count = 0;
 }
 
-bool CHurtableEntitiesEnum::AddToList( CBaseEntity *pEntity )
+bool CHurtableEntitiesEnum::AddToList( CSharedBaseEntity *pEntity )
 {
 	if ( m_count >= m_listMax )
 	{

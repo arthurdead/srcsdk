@@ -219,7 +219,7 @@ void C_ParticleSystem::ParticleThink( void )
 				{
 					for ( int i = 0 ; i < kMAXCONTROLPOINTS ; ++i )
 					{
-						CBaseEntity *pOnEntity = m_hControlPointEnts[i].Get();
+						C_BaseEntity *pOnEntity = m_hControlPointEnts[i].Get();
 						if ( pOnEntity )
 						{
 							ParticleProp()->AddControlPoint( pEffect, i + 1, pOnEntity, PATTACH_ABSORIGIN_FOLLOW );

@@ -61,11 +61,11 @@ int GetAttachTypeFromString( const char *pszString )
 // Purpose: 
 // Input  : list - 
 //-----------------------------------------------------------------------------
-void GetParticleManifest( CUtlVector<CUtlString>& list )
+void GetParticleManifest( CUtlVector<CUtlString>& list, const char *filename )
 {
 	// Open the manifest file, and read the particles specified inside it
-	KeyValues *manifest = new KeyValues( PARTICLES_MANIFEST_FILE );
-	if ( manifest->LoadFromFile( g_pFullFileSystem, PARTICLES_MANIFEST_FILE, "GAME" ) )
+	KeyValues *manifest = new KeyValues( filename );
+	if ( manifest->LoadFromFile( g_pFullFileSystem, filename, "MOD" ) )
 	{
 		for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
 		{
@@ -74,16 +74,26 @@ void GetParticleManifest( CUtlVector<CUtlString>& list )
 				list.AddToTail( sub->GetString() );
 				continue;
 			}
+			else if ( !Q_stricmp( sub->GetName(), "manifest" ) )
+			{
+				GetParticleManifest( list, sub->GetString() );
+				continue;
+			}
 
-			Warning( "CParticleMgr::Init:  Manifest '%s' with bogus file type '%s', expecting 'file'\n", PARTICLES_MANIFEST_FILE, sub->GetName() );
+			Warning( "CParticleMgr::Init:  Manifest '%s' with bogus file type '%s', expecting 'file'\n", filename, sub->GetName() );
 		}
 	}
 	else
 	{
-		Warning( "PARTICLE SYSTEM: Unable to load manifest file '%s'\n", PARTICLES_MANIFEST_FILE );
+		Warning( "PARTICLE SYSTEM: Unable to load manifest file '%s'\n", filename );
 	}
 
 	manifest->deleteThis();
+}
+
+void GetParticleManifest( CUtlVector<CUtlString>& list )
+{
+	GetParticleManifest( list, PARTICLES_MANIFEST_FILE );
 }
 
 
@@ -266,7 +276,7 @@ void PrecacheStandardParticleSystems( )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, const char *pszAttachmentName, bool bResetAllParticlesOnEntity, IRecipientFilter *filter /*= NULL*/ )
+void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CSharedBaseEntity *pEntity, const char *pszAttachmentName, bool bResetAllParticlesOnEntity, IRecipientFilter *filter /*= NULL*/ )
 {
 	int iAttachment = -1;
 	if ( pEntity && pEntity->GetBaseAnimating() )
@@ -300,7 +310,7 @@ void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t i
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, int iAttachmentPoint, bool bResetAllParticlesOnEntity, IRecipientFilter *filter /*= NULL*/ )
+void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CSharedBaseEntity *pEntity, int iAttachmentPoint, bool bResetAllParticlesOnEntity, IRecipientFilter *filter /*= NULL*/ )
 {
 	CEffectData	data;
 
@@ -350,7 +360,7 @@ void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t i
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void DispatchParticleEffectLink( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, CBaseEntity *pOtherEntity, int iAttachmentPoint, bool bResetAllParticlesOnEntity )
+void DispatchParticleEffectLink( const char *pszParticleName, ParticleAttachment_t iAttachType, CSharedBaseEntity *pEntity, CSharedBaseEntity *pOtherEntity, int iAttachmentPoint, bool bResetAllParticlesOnEntity )
 {
 	CEffectData	data;
 
@@ -395,7 +405,7 @@ void DispatchParticleEffectLink( const char *pszParticleName, ParticleAttachment
 #endif
 }
 
-void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, const char *pszAttachmentName, Vector vecColor1, Vector vecColor2, bool bUseColors, bool bResetAllParticlesOnEntity )
+void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CSharedBaseEntity *pEntity, const char *pszAttachmentName, Vector vecColor1, Vector vecColor2, bool bUseColors, bool bResetAllParticlesOnEntity )
 {
 	int iAttachment = -1;
 	if ( pEntity && pEntity->GetBaseAnimating() )
@@ -457,7 +467,7 @@ void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t i
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void DispatchParticleEffect( int iEffectIndex, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CBaseEntity *pEntity, bool bUseColor, const Vector& color1, const Vector& color2 )
+void DispatchParticleEffect( int iEffectIndex, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CSharedBaseEntity *pEntity, bool bUseColor, const Vector& color1, const Vector& color2 )
 {
 	CEffectData	data;
 
@@ -499,7 +509,7 @@ void DispatchParticleEffect( int iEffectIndex, Vector vecOrigin, Vector vecStart
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, Vector vecColor1, Vector vecColor2, bool bUseColors, CBaseEntity *pEntity, int iAttachType )
+void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, Vector vecColor1, Vector vecColor2, bool bUseColors, CSharedBaseEntity *pEntity, int iAttachType )
 {
 	int iEffectIndex = GetParticleSystemIndex( pszParticleName );
 
@@ -542,7 +552,7 @@ void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAng
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, CBaseEntity *pEntity )
+void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, CSharedBaseEntity *pEntity )
 {
 	int iIndex = GetParticleSystemIndex( pszParticleName );
 	DispatchParticleEffect( iIndex, vecOrigin, vecOrigin, vecAngles, pEntity );
@@ -551,13 +561,13 @@ void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAng
 //-----------------------------------------------------------------------------
 // Purpose: Yet another overload, lets us supply vecStart
 //-----------------------------------------------------------------------------
-void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CBaseEntity *pEntity, bool bUseColor, const Vector& color1, const Vector& color2 )
+void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CSharedBaseEntity *pEntity, bool bUseColor, const Vector& color1, const Vector& color2 )
 {
 	int iIndex = GetParticleSystemIndex( pszParticleName );
 	DispatchParticleEffect( iIndex, vecOrigin, vecStart, vecAngles, pEntity, bUseColor, color1, color2 );
 }
 
-void DispatchParticleEffect(const char *pszParticleName, const Vector& vecStart, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, const char *pszAttachmentName, bool bResetAllParticlesOnEntity)
+void DispatchParticleEffect(const char *pszParticleName, const Vector& vecStart, ParticleAttachment_t iAttachType, CSharedBaseEntity *pEntity, const char *pszAttachmentName, bool bResetAllParticlesOnEntity)
 {
 	CEffectData	data;
 	data.m_nHitBox = GetParticleSystemIndex(pszParticleName);
@@ -619,7 +629,7 @@ void DispatchParticleEffect(const char *pszParticleName, const Vector& vecStart,
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void StopParticleEffects( CBaseEntity *pEntity )
+void StopParticleEffects( CSharedBaseEntity *pEntity )
 {
 	CEffectData	data;
 
@@ -643,7 +653,7 @@ void StopParticleEffects( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void StopParticleEffect( CBaseEntity *pEntity, const char *pszParticleName )
+void StopParticleEffect( CSharedBaseEntity *pEntity, const char *pszParticleName )
 {
 	CEffectData	data;
 
@@ -668,102 +678,102 @@ void StopParticleEffect( CBaseEntity *pEntity, const char *pszParticleName )
 
 #ifndef CLIENT_DLL
 
-	extern CBaseEntity *GetNextCommandEntity( CBasePlayer *pPlayer, const char *name, CBaseEntity *ent );
+extern CBaseEntity *GetNextCommandEntity( CBasePlayer *pPlayer, const char *name, CBaseEntity *ent );
 
-	ConVar particle_test_file( "particle_test_file", "", FCVAR_CHEAT, "Name of the particle system to dynamically spawn" );
-	ConVar particle_test_attach_mode( "particle_test_attach_mode", "follow_attachment", FCVAR_CHEAT, "Possible Values: 'start_at_attachment', 'follow_attachment', 'start_at_origin', 'follow_origin'" );
-	ConVar particle_test_attach_attachment( "particle_test_attach_attachment", "0", FCVAR_CHEAT, "Attachment index for attachment mode" );
+ConVar particle_test_file( "particle_test_file", "", FCVAR_CHEAT, "Name of the particle system to dynamically spawn" );
+ConVar particle_test_attach_mode( "particle_test_attach_mode", "follow_attachment", FCVAR_CHEAT, "Possible Values: 'start_at_attachment', 'follow_attachment', 'start_at_origin', 'follow_origin'" );
+ConVar particle_test_attach_attachment( "particle_test_attach_attachment", "0", FCVAR_CHEAT, "Attachment index for attachment mode" );
 
-	void Particle_Test_Start( CBasePlayer* pPlayer, const char *name, bool bStart )
+void Particle_Test_Start( CBasePlayer* pPlayer, const char *name, bool bStart )
+{
+	if ( !pPlayer )
+		return;
+
+	int iAttachType = GetAttachTypeFromString( particle_test_attach_mode.GetString() );
+
+	if ( iAttachType < 0 )
 	{
-		if ( !pPlayer )
-			return;
-
-		int iAttachType = GetAttachTypeFromString( particle_test_attach_mode.GetString() );
-
-		if ( iAttachType < 0 )
-		{
-			Warning( "Invalid attach type specified for particle_test in cvar 'particle_test_attach_mode.\n" );
-			return;
-		}
-
-		int iAttachmentIndex = particle_test_attach_attachment.GetInt();
-
-		const char *pszParticleFile = particle_test_file.GetString();
-
-		CBaseEntity *pEntity = NULL;
-		while ( (pEntity = GetNextCommandEntity( pPlayer, name, pEntity )) != NULL )
-		{
-			/* 
-			Fire the test particle system on this entity
-			*/
-
-			DispatchParticleEffect( 
-				pszParticleFile,
-				(ParticleAttachment_t)iAttachType,
-				pEntity,
-				iAttachmentIndex,
-				true );				// stops existing particle systems
-		}
+		Warning( "Invalid attach type specified for particle_test in cvar 'particle_test_attach_mode.\n" );
+		return;
 	}
 
-	void CC_Particle_Test_Start( const CCommand& args )
+	int iAttachmentIndex = particle_test_attach_attachment.GetInt();
+
+	const char *pszParticleFile = particle_test_file.GetString();
+
+	CBaseEntity *pEntity = NULL;
+	while ( (pEntity = GetNextCommandEntity( pPlayer, name, pEntity )) != NULL )
 	{
-		Particle_Test_Start( UTIL_GetCommandClient(), args[1], true );
+		/* 
+		Fire the test particle system on this entity
+		*/
+
+		DispatchParticleEffect( 
+			pszParticleFile,
+			(ParticleAttachment_t)iAttachType,
+			pEntity,
+			iAttachmentIndex,
+			true );				// stops existing particle systems
 	}
-	static ConCommand particle_test_start("particle_test_start", CC_Particle_Test_Start, "Dispatches the test particle system with the parameters specified in particle_test_file,\n particle_test_attach_mode and particle_test_attach_param on the entity the player is looking at.\n\tArguments:   	{entity_name} / {class_name} / no argument picks what player is looking at ", FCVAR_CHEAT);
+}
+
+void CC_Particle_Test_Start( const CCommand& args )
+{
+	Particle_Test_Start( UTIL_GetCommandClient(), args[1], true );
+}
+static ConCommand particle_test_start("particle_test_start", CC_Particle_Test_Start, "Dispatches the test particle system with the parameters specified in particle_test_file,\n particle_test_attach_mode and particle_test_attach_param on the entity the player is looking at.\n\tArguments:   	{entity_name} / {class_name} / no argument picks what player is looking at ", FCVAR_CHEAT);
 
 
-	void Particle_Test_Stop( CBasePlayer* pPlayer, const char *name, bool bStart )
+void Particle_Test_Stop( CBasePlayer* pPlayer, const char *name, bool bStart )
+{
+	if ( !pPlayer )
+		return;
+
+	CBaseEntity *pEntity = NULL;
+	while ( (pEntity = GetNextCommandEntity( pPlayer, name, pEntity )) != NULL )
 	{
-		if ( !pPlayer )
-			return;
-
-		CBaseEntity *pEntity = NULL;
-		while ( (pEntity = GetNextCommandEntity( pPlayer, name, pEntity )) != NULL )
-		{
-			//Stop all particle systems on the selected entity
-			DispatchParticleEffect( "", PATTACH_ABSORIGIN, pEntity, 0, true );
-		}
+		//Stop all particle systems on the selected entity
+		DispatchParticleEffect( "", PATTACH_ABSORIGIN, pEntity, 0, true );
 	}
+}
 
-	void CC_Particle_Test_Stop( const CCommand& args )
-	{
-		Particle_Test_Stop( UTIL_GetCommandClient(), args[1], false );
-	}
-	static ConCommand particle_test_stop("particle_test_stop", CC_Particle_Test_Stop, "Stops all particle systems on the selected entities.\n\tArguments:   	{entity_name} / {class_name} / no argument picks what player is looking at ", FCVAR_CHEAT);
+void CC_Particle_Test_Stop( const CCommand& args )
+{
+	Particle_Test_Stop( UTIL_GetCommandClient(), args[1], false );
+}
+static ConCommand particle_test_stop("particle_test_stop", CC_Particle_Test_Stop, "Stops all particle systems on the selected entities.\n\tArguments:   	{entity_name} / {class_name} / no argument picks what player is looking at ", FCVAR_CHEAT);
 
 #endif	//!CLIENT_DLL
 
 #if defined( CLIENT_DLL ) && defined( STAGING_ONLY )
-	
-	void CC_DispatchParticle( const CCommand& args )
+
+void CC_DispatchParticle( const CCommand& args )
+{
+	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( !pLocalPlayer )
+		return;
+
+	if ( args.ArgC() < 2 )
 	{
-		C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
-		if ( !pLocalPlayer )
-			return;
-
-		if ( args.ArgC() < 2 )
-		{
-			DevMsg( "Use: dispatch_particle {particle_name} {surface_offset_distance}\n" );
-			return;
-		}
-
-		float flSurfaceOffsetDistance = 0.f;
-		if ( args.ArgC() == 3 )
-		{
-			flSurfaceOffsetDistance = atof( args[2] );
-		}
-
-		Vector vForward;
-		pLocalPlayer->GetVectors( &vForward, NULL, NULL );
-		trace_t tr;
-		UTIL_TraceLine( pLocalPlayer->EyePosition(), pLocalPlayer->EyePosition() + vForward * 3000, MASK_SOLID_BRUSHONLY, NULL, &tr );
-	
-		Vector vTargetDeathPos = tr.endpos;
-		DispatchParticleEffect( args[1], vTargetDeathPos + flSurfaceOffsetDistance * tr.plane.normal, vec3_angle );
+		DevMsg( "Use: dispatch_particle {particle_name} {surface_offset_distance}\n" );
+		return;
 	}
 
-	static ConCommand dispatch_particle( "dispatch_particle", CC_DispatchParticle, "Dispatch specified particle effect 50 units away from the lookat surface normal.\n\tArguments: {particle_name} {surface_offset_distance}", FCVAR_CHEAT );
+	float flSurfaceOffsetDistance = 0.f;
+	if ( args.ArgC() == 3 )
+	{
+		flSurfaceOffsetDistance = atof( args[2] );
+	}
+
+	Vector vForward;
+	pLocalPlayer->GetVectors( &vForward, NULL, NULL );
+	trace_t tr;
+	UTIL_TraceLine( pLocalPlayer->EyePosition(), pLocalPlayer->EyePosition() + vForward * 3000, MASK_SOLID_BRUSHONLY, NULL, &tr );
+
+	Vector vTargetDeathPos = tr.endpos;
+	DispatchParticleEffect( args[1], vTargetDeathPos + flSurfaceOffsetDistance * tr.plane.normal, vec3_angle );
+}
+
+static ConCommand dispatch_particle( "dispatch_particle", CC_DispatchParticle, "Dispatch specified particle effect 50 units away from the lookat surface normal.\n\tArguments: {particle_name} {surface_offset_distance}", FCVAR_CHEAT );
 
 #endif // CLIENT_DLL && STAGING_ONLY

@@ -1,6 +1,8 @@
 #ifndef DEF_COOKIE_PROJECTABLE_H
 #define DEF_COOKIE_PROJECTABLE_H
 
+#pragma once
+
 #include "deferred/deferred_shared_common.h"
 
 class CVGUIProjectable;

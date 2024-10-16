@@ -7,9 +7,13 @@
 #ifndef _C_GAMEINSTRUCTOR_H_
 #define _C_GAMEINSTRUCTOR_H_
 
+#pragma once
+
 
 #include "GameEventListener.h"
-#include "vgui_controls/phandle.h"
+#include "vgui_controls/PHandle.h"
+#include "tier1/convar.h"
+#include "igamesystem.h"
 
 class CBaseLesson;
 

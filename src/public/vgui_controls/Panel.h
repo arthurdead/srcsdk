@@ -127,6 +127,9 @@ class IForceVirtualInheritancePanel
 //			This is designed as an easy-access to the vgui-functionality; for more
 //			low-level access to vgui functions use the IPanel/IClientPanel interfaces directly
 //-----------------------------------------------------------------------------
+
+//DO NOT CHANGE THE VTABLE OR THE MEMORY LAYOUT OF ANY OF THE VGUI CONTROLS!!!! thank you
+
 class Panel : public IClientPanel, public virtual IForceVirtualInheritancePanel
 {
 	DECLARE_CLASS_SIMPLE_NOBASE( Panel );
@@ -146,11 +149,7 @@ public:
 	Panel(Panel *parent, const char *panelName);
 	Panel(Panel *parent, const char *panelName, HScheme scheme);
 
-#ifdef WIN32
-	~Panel();
-#else
 	virtual ~Panel();
-#endif
 
 	// returns pointer to Panel's vgui VPanel interface handle
 	virtual VPANEL GetVPanel() { return _vpanel; }
@@ -798,7 +797,9 @@ private:
 	MESSAGE_FUNC( InternalMove, "Move" );
 	virtual void InternalFocusChanged(bool lost);	// called when the focus gets changed
 
+#if 0
 	MESSAGE_FUNC( OnMovedPopupToFront, "OnMovedPopupToFront" );
+#endif
 
 	void PreparePanelMap( PanelMap_t *panelMap );
 
@@ -864,6 +865,7 @@ private:
 	bool			m_bIsDMXSerialized : 1; // Is this a DMX panel?
 	bool			m_bUseSchemeColors : 1; // Should we use colors from the scheme?
 	bool			m_bIsSilent : 1; // should this panel PostActionSignals?
+	bool			m_unused1 : 1;
 	bool			m_bParentNeedsCursorMoveEvents : 1;
 
 	// Sibling pinning

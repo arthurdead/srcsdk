@@ -182,7 +182,7 @@ void CBaseAchievement::SetComponentPrefix( const char *pPrefix )
 //			is the default implementation, achievements can override to
 //			do special handling
 //-----------------------------------------------------------------------------
-void CBaseAchievement::Event_EntityKilled( CBaseEntity *pVictim, CBaseEntity *pAttacker, CBaseEntity *pInflictor, IGameEvent *event )
+void CBaseAchievement::Event_EntityKilled( CSharedBaseEntity *pVictim, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pInflictor, IGameEvent *event )
 {
 	// extra paranoid check: should only get here if registered as a kill event listener
 	Assert( GetFlags() & ACH_LISTEN_KILL_EVENTS );

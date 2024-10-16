@@ -9,6 +9,8 @@
 #ifndef ISPATIALPARTITION_H
 #define ISPATIALPARTITION_H
 
+#pragma once
+
 #include "interface.h"
 
 //-----------------------------------------------------------------------------

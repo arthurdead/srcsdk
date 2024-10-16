@@ -1292,7 +1292,7 @@ void C_BaseAnimating::ParseModelEffects( KeyValues *modelKeyValues )
 				int iAttachType = GetAttachTypeFromString( pszAttachType );
 				if ( iAttachType == -1 )
 				{
-					Warning("Invalid attach type specified for particle effect in model '%s' keyvalues section. Trying to spawn effect '%s' with attach type of '%s'\n", GetModelName(), pszParticleEffect, pszAttachType );
+					Warning("Invalid attach type specified for particle effect in model '%s' keyvalues section. Trying to spawn effect '%s' with attach type of '%s'\n", STRING(GetModelName()), pszParticleEffect, pszAttachType );
 					return;
 				}
 
@@ -1304,7 +1304,7 @@ void C_BaseAnimating::ParseModelEffects( KeyValues *modelKeyValues )
 					iAttachment = LookupAttachment( pszAttachment );
 					if ( iAttachment <= 0 )
 					{
-						Warning("Failed to find attachment point specified for particle effect in model '%s' keyvalues section. Trying to spawn effect '%s' on attachment named '%s'\n", GetModelName(), pszParticleEffect, pszAttachment );
+						Warning("Failed to find attachment point specified for particle effect in model '%s' keyvalues section. Trying to spawn effect '%s' on attachment named '%s'\n", STRING(GetModelName()), pszParticleEffect, pszAttachment );
 						return;
 					}
 				}
@@ -2466,7 +2466,7 @@ void C_BaseAnimating::CalculateIKLocks( float currentTime )
 	// partition that early in the rendering loop. So we allow access right here for that special case.
 	SpatialPartitionListMask_t curSuppressed = partition->GetSuppressedLists();
 	partition->SuppressLists( PARTITION_ALL_CLIENT_EDICTS, false );
-	CBaseEntity::PushEnableAbsRecomputations( false );
+	C_BaseEntity::PushEnableAbsRecomputations( false );
 
 	Ray_t ray;
 	CTraceFilterSkipNPCsAndPlayers traceFilter( this, GetCollisionGroup() );
@@ -2696,7 +2696,7 @@ void C_BaseAnimating::CalculateIKLocks( float currentTime )
 		SetIKGroundContactInfo( minHeight, maxHeight );
 	}
 
-	CBaseEntity::PopEnableAbsRecomputations();
+	C_BaseEntity::PopEnableAbsRecomputations();
 	partition->SuppressLists( curSuppressed, true );
 }
 
@@ -6720,7 +6720,7 @@ float C_BaseAnimating::SetBoneController ( int iController, float flValue )
 
 void C_BaseAnimating::GetAimEntOrigin( IClientEntity *pAttachedTo, Vector *pAbsOrigin, QAngle *pAbsAngles )
 {
-	CBaseEntity *pMoveParent;
+	C_BaseEntity *pMoveParent;
 	if ( IsEffectActive( EF_BONEMERGE ) && IsEffectActive( EF_BONEMERGE_FASTCULL ) && (pMoveParent = GetMoveParent()) != NULL )
 	{
 		// Doing this saves a lot of CPU.

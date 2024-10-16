@@ -129,8 +129,8 @@ public:
 // CBaseEntityList overrides.
 protected:
 
-	virtual void OnAddEntity( CBaseEntity *pEnt, EHANDLE handle );
-	virtual void OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle );
+	virtual void OnAddEntity( C_BaseEntity *pEnt, EHANDLE handle );
+	virtual void OnRemoveEntity( C_BaseEntity *pEnt, EHANDLE handle );
 
 
 // Internal to client DLL.

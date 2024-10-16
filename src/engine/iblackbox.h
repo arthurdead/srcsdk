@@ -1,6 +1,8 @@
 #ifndef IBLACKBOX_H
 #define IBLACKBOX_H
 
+#pragma once
+
 #define BLACKBOX_INTERFACE_VERSION "BlackBoxVersion001"
 
 class IBlackBox 

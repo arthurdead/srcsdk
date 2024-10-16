@@ -18,11 +18,11 @@
 
 extern CMoveData *g_pMoveData;
 
-class CMoveHelperClient : public IMoveHelper
+class C_MoveHelper : public IMoveHelper
 {
 public:
-					CMoveHelperClient( void );
-	virtual			~CMoveHelperClient( void );
+	C_MoveHelper( void );
+	virtual	 ~C_MoveHelper( void );
 
 	char const*		GetName( EntityHandle_t handle ) const;
 
@@ -44,7 +44,7 @@ public:
 
 	virtual bool IsWorldEntity( const EHANDLE &handle );
 
-	void			SetHost( CBasePlayer *host );
+	void			SetHost( C_BasePlayer *host );
 
 private:
 	// results, tallied on client and server, but only used by server to run SV_Impact.
@@ -63,7 +63,7 @@ private:
 
 	CUtlVector<touchlist_t>			m_TouchList;
 
-	CBaseEntity*	m_pHost;
+	C_BaseEntity*	m_pHost;
 };	
 
 //-----------------------------------------------------------------------------
@@ -72,19 +72,19 @@ private:
 
 IMPLEMENT_MOVEHELPER();
 
-static CMoveHelperClient s_MoveHelperClient;
+static C_MoveHelper s_MoveHelperClient;
 
 
 //-----------------------------------------------------------------------------
 // Constructor 
 //-----------------------------------------------------------------------------
-CMoveHelperClient::CMoveHelperClient( void )
+C_MoveHelper::C_MoveHelper( void )
 {
 	m_pHost = NULL;
 	SetSingleton( this );
 }
 
-CMoveHelperClient::~CMoveHelperClient( void )
+C_MoveHelper::~C_MoveHelper( void )
 {
 	SetSingleton( NULL );
 }
@@ -93,7 +93,7 @@ CMoveHelperClient::~CMoveHelperClient( void )
 // Indicates which entity we're going to move
 //-----------------------------------------------------------------------------
 
-void CMoveHelperClient::SetHost( CBasePlayer *host )
+void C_MoveHelper::SetHost( C_BasePlayer *host )
 {
 	m_pHost = host;
 
@@ -105,7 +105,7 @@ void CMoveHelperClient::SetHost( CBasePlayer *host )
 // Purpose: 
 // Output : const char
 //-----------------------------------------------------------------------------
-char const* CMoveHelperClient::GetName( EntityHandle_t handle ) const
+char const* C_MoveHelper::GetName( EntityHandle_t handle ) const
 {
 	return "";
 }
@@ -114,7 +114,7 @@ char const* CMoveHelperClient::GetName( EntityHandle_t handle ) const
 // Touch list
 //-----------------------------------------------------------------------------
 
-void CMoveHelperClient::ResetTouchList( void )
+void C_MoveHelper::ResetTouchList( void )
 {
 	m_TouchList.RemoveAll();
 }
@@ -123,7 +123,7 @@ void CMoveHelperClient::ResetTouchList( void )
 // Adds to the touched list 
 //-----------------------------------------------------------------------------
 
-bool CMoveHelperClient::AddToTouched( const trace_t& tr, const Vector& impactvelocity )
+bool C_MoveHelper::AddToTouched( const trace_t& tr, const Vector& impactvelocity )
 {
 	int i;
 
@@ -143,7 +143,7 @@ bool CMoveHelperClient::AddToTouched( const trace_t& tr, const Vector& impactvel
 	return true;
 }
 
-void CMoveHelperClient::ProcessImpacts( void )
+void C_MoveHelper::ProcessImpacts( void )
 {
 	// Relink in order to build absorigin and absmin/max to reflect any changes
 	//  from prediction.  Relink will early out on SOLID_NOT
@@ -187,7 +187,7 @@ void CMoveHelperClient::ProcessImpacts( void )
 	ResetTouchList();
 }
 
-void CMoveHelperClient::StartSound( const Vector& origin, const char *soundname )
+void C_MoveHelper::StartSound( const Vector& origin, const char *soundname )
 {
 	if ( !soundname )
 		return;
@@ -202,7 +202,7 @@ void CMoveHelperClient::StartSound( const Vector& origin, const char *soundname 
 // Play a sound
 //-----------------------------------------------------------------------------
 
-void CMoveHelperClient::StartSound( const Vector& origin, int channel, 
+void C_MoveHelper::StartSound( const Vector& origin, int channel, 
 	char const* pSample, float volume, soundlevel_t soundlevel, int fFlags, int pitch )
 {
 	if ( pSample )
@@ -227,7 +227,7 @@ void CMoveHelperClient::StartSound( const Vector& origin, int channel,
 // Play a event
 //-----------------------------------------------------------------------------
 
-void CMoveHelperClient::PlaybackEventFull( int flags, int clientindex, unsigned short eventindex, float delay, Vector& origin, Vector& angles, float fparam1, float fparam2, int iparam1, int iparam2, int bparam1, int bparam2 )
+void C_MoveHelper::PlaybackEventFull( int flags, int clientindex, unsigned short eventindex, float delay, Vector& origin, Vector& angles, float fparam1, float fparam2, int iparam1, int iparam2, int bparam1, int bparam2 )
 {
 	// TODO
 	if (g_pMoveData->m_bFirstRunOfFunctions )
@@ -239,7 +239,7 @@ void CMoveHelperClient::PlaybackEventFull( int flags, int clientindex, unsigned 
 // Surface properties interface
 //-----------------------------------------------------------------------------
 
-IPhysicsSurfaceProps *CMoveHelperClient::GetSurfaceProps( void )
+IPhysicsSurfaceProps *C_MoveHelper::GetSurfaceProps( void )
 {
 	extern IPhysicsSurfaceProps *physprops;
 	return physprops;
@@ -251,7 +251,7 @@ IPhysicsSurfaceProps *CMoveHelperClient::GetSurfaceProps( void )
 //			*pFormat - 
 //			... - 
 //-----------------------------------------------------------------------------
-void CMoveHelperClient::Con_NPrintf( int idx, char const* pFormat, ...)
+void C_MoveHelper::Con_NPrintf( int idx, char const* pFormat, ...)
 {
 	va_list marker;
 	char msg[8192];
@@ -268,13 +268,13 @@ void CMoveHelperClient::Con_NPrintf( int idx, char const* pFormat, ...)
 //			damage, according to the rules in CGameMovement::CheckFalling.
 // Output : Returns true if the player survived the fall, false if they died.
 //-----------------------------------------------------------------------------
-bool CMoveHelperClient::PlayerFallingDamage(void)
+bool C_MoveHelper::PlayerFallingDamage(void)
 {
 	// Do nothing; falling damage is applied in MoveHelper_Server::PlayerFallingDamage.
 	return(true);
 }
 
-bool CMoveHelperClient::IsWorldEntity( const EHANDLE &handle )
+bool C_MoveHelper::IsWorldEntity( const EHANDLE &handle )
 {
 	if(!GetClientWorldEntity())
 		return false;

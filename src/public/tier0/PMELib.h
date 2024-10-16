@@ -8,6 +8,8 @@
 #ifndef PMELIB_H
 #define PMELIB_H
 
+#pragma once
+
 #include "Windows.h"
 #include "tier0/platform.h"
 

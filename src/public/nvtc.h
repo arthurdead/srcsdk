@@ -18,6 +18,8 @@
 #ifndef NVTC_H
 #define NVTC_H
 
+#pragma once
+
 #if defined( _WIN32 ) && !defined( _X360 )
 #include <ddraw.h>
 #endif

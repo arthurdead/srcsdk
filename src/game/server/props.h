@@ -359,6 +359,7 @@ protected:
 // Purpose: 
 //-----------------------------------------------------------------------------
 DECLARE_AUTO_LIST( IPhysicsPropAutoList );
+
 class CPhysicsProp : public CBreakableProp, public IPhysicsPropAutoList, public ISpecialPhysics
 {
 	DECLARE_CLASS( CPhysicsProp, CBreakableProp );
@@ -472,6 +473,7 @@ protected:
 	CNetworkVar( bool, m_bAwake );
 };
 
+typedef CPhysicsProp CSharedPhysicsProp;
 
 // An interface so that objects parented to props can receive collision interaction events.
 enum parentCollisionInteraction_t

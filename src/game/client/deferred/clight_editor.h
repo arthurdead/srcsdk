@@ -1,6 +1,8 @@
 #ifndef C_LIGHT_EDITOR_H
 #define C_LIGHT_EDITOR_H
 
+#pragma once
+
 #include "deferred/def_light_t.h"
 
 struct def_light_t;

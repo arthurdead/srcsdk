@@ -15,9 +15,9 @@
 	#include "enginesprite.h"
 	#include "iclientmode.h"
 	#include "c_baseviewmodel.h"
-#	ifdef PORTAL
+	#ifdef PORTAL
 		#include "c_prop_portal.h"
-#	endif //ifdef PORTAL
+	#endif //ifdef PORTAL
 #else
 	#include "baseviewmodel.h"
 #endif
@@ -28,8 +28,8 @@
 const float MAX_SPRITE_SCALE = 64.0f;
 const float MAX_GLOW_PROXY_SIZE = 64.0f;
 
-LINK_ENTITY_TO_CLASS( env_sprite, CSprite );
-LINK_ENTITY_TO_CLASS( env_sprite_oriented, CSpriteOriented );
+LINK_ENTITY_TO_CLASS_ALIASED( env_sprite, Sprite );
+LINK_ENTITY_TO_CLASS_ALIASED( env_sprite_oriented, SpriteOriented );
 
 #if !defined( CLIENT_DLL )
 BEGIN_MAPENTITY( CSprite )
@@ -55,7 +55,7 @@ END_MAPENTITY()
 
 #else
 
-BEGIN_PREDICTION_DATA( CSprite )
+BEGIN_PREDICTION_DATA( C_Sprite )
 
 	// Networked
 	DEFINE_PRED_FIELD( m_hAttachedToEntity, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
@@ -93,12 +93,12 @@ IMPLEMENT_NETWORKCLASS_ALIASED( Sprite, DT_Sprite );
 
 static void RecvProxy_SpriteScale( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	((CSprite*)pStruct)->SetSpriteScale( pData->m_Value.m_Float );
+	((C_Sprite*)pStruct)->SetSpriteScale( pData->m_Value.m_Float );
 }
 
 #endif
 
-BEGIN_NETWORK_TABLE( CSprite, DT_Sprite )
+BEGIN_NETWORK_TABLE( CSharedSprite, DT_Sprite )
 #if !defined( CLIENT_DLL )
 	SendPropEHandle( SENDINFO(m_hAttachedToEntity )),
 	SendPropInt( SENDINFO(m_nAttachment ), 8 ),
@@ -140,9 +140,12 @@ BEGIN_NETWORK_TABLE( CSprite, DT_Sprite )
 #endif
 END_NETWORK_TABLE()
 
+#if defined( CLIENT_DLL )
+	#define CSprite C_Sprite
+#endif
 
-CSprite::CSprite()
-	: CBaseEntity()
+CSharedSprite::CSprite()
+	: CSharedBaseEntity()
 #if defined( CLIENT_DLL )
 	, C_SpriteRenderer()
 #endif
@@ -156,10 +159,14 @@ CSprite::CSprite()
 #endif
 }
 
+#if defined( CLIENT_DLL )
+	#undef CSprite
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSprite::Spawn( void )
+void CSharedSprite::Spawn( void )
 {
 	SetSolid( SOLID_NONE );
 	SetMoveType( MOVETYPE_NONE );
@@ -173,7 +180,7 @@ void CSprite::Spawn( void )
 	AddEffects( EF_NOSHADOW | EF_NORECEIVESHADOW );
 
 #if defined( CLIENT_DLL )
-	SetContextThink( &CSprite::BrightnessThink, TICK_ALWAYS_THINK, "BrightnessThink" );
+	SetContextThink( &CSharedSprite::BrightnessThink, TICK_ALWAYS_THINK, "BrightnessThink" );
 #endif
 
 #if !defined( CLIENT_DLL )
@@ -231,7 +238,7 @@ void CSprite::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose: Initialize absmin & absmax to the appropriate box
 //-----------------------------------------------------------------------------
-void CSprite::EnableWorldSpaceScale( bool bEnable )
+void CSharedSprite::EnableWorldSpaceScale( bool bEnable )
 {
 	m_bWorldSpaceScale = bEnable;
 }
@@ -239,7 +246,7 @@ void CSprite::EnableWorldSpaceScale( bool bEnable )
 //-----------------------------------------------------------------------------
 // Purpose: Initialize absmin & absmax to the appropriate box
 //-----------------------------------------------------------------------------
-void CSprite::ComputeWorldSpaceSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
+void CSharedSprite::ComputeWorldSpaceSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
 {
 	float flScale = m_flSpriteScale * 0.5f;
 
@@ -262,7 +269,7 @@ void CSprite::ComputeWorldSpaceSurroundingBox( Vector *pVecWorldMins, Vector *pV
 // Purpose: 
 // Input  : *szModelName - 
 //-----------------------------------------------------------------------------
-void CSprite::SetModel( const char *szModelName )
+void CSharedSprite::SetModel( const char *szModelName )
 {
 	int index = modelinfo->GetModelIndex( szModelName );
 	const model_t *model = modelinfo->GetModel( index );
@@ -281,7 +288,7 @@ void CSprite::SetModel( const char *szModelName )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSprite::Precache( void )
+void CSharedSprite::Precache( void )
 {
 	if ( GetModelName() != NULL_STRING )
 	{
@@ -294,7 +301,7 @@ void CSprite::Precache( void )
 // Input  : *pSpriteName - 
 //			&origin - 
 //-----------------------------------------------------------------------------
-void CSprite::SpriteInit( const char *pSpriteName, const Vector &origin )
+void CSharedSprite::SpriteInit( const char *pSpriteName, const Vector &origin )
 {
 	SetModelName( MAKE_STRING(pSpriteName) );
 	SetLocalOrigin( origin );
@@ -303,7 +310,7 @@ void CSprite::SpriteInit( const char *pSpriteName, const Vector &origin )
 
 #if !defined( CLIENT_DLL )
 
-int CSprite::UpdateTransmitState( void )
+int CSharedSprite::UpdateTransmitState( void )
 {
 	if ( GetMoveParent() )
 	{
@@ -316,7 +323,7 @@ int CSprite::UpdateTransmitState( void )
 	}
 }
 
-int CSprite::ShouldTransmit( const CCheckTransmitInfo *pInfo )
+int CSharedSprite::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 {
 	// Certain entities like sprites and ropes are strewn throughout the level and they rarely change.
 	// For these entities, it's more efficient to transmit them once and then always leave them on
@@ -343,7 +350,7 @@ int CSprite::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 //			animate - 
 // Output : CSprite
 //-----------------------------------------------------------------------------
-CSprite *CSprite::SpriteCreate( const char *pSpriteName, const Vector &origin, bool animate )
+CSprite *CSharedSprite::SpriteCreate( const char *pSpriteName, const Vector &origin, bool animate )
 {
 	CSprite *pSprite = CREATE_ENTITY( CSprite, "env_sprite" );
 	pSprite->SpriteInit( pSpriteName, origin );
@@ -364,9 +371,9 @@ CSprite *CSprite::SpriteCreate( const char *pSpriteName, const Vector &origin, b
 //			animate - 
 // Output : CSprite
 //-----------------------------------------------------------------------------
-CSprite *CSprite::SpriteCreatePredictable( const char *module, int line, const char *pSpriteName, const Vector &origin, bool animate )
+CSharedSprite *CSharedSprite::SpriteCreatePredictable( const char *module, int line, const char *pSpriteName, const Vector &origin, bool animate )
 {
-	CSprite *pSprite = ( CSprite * )CBaseEntity::CreatePredicted( module, line, "env_sprite", origin, vec3_angle );
+	CSharedSprite *pSprite = ( CSharedSprite * )CSharedBaseEntity::CreatePredicted( module, line, "env_sprite", origin, vec3_angle );
 	if ( pSprite )
 	{
 		pSprite->SetModelName( MAKE_STRING(pSpriteName) );
@@ -383,7 +390,7 @@ CSprite *CSprite::SpriteCreatePredictable( const char *module, int line, const c
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSprite::AnimateThink( void )
+void CSharedSprite::AnimateThink( void )
 {
 	Animate( m_flSpriteFramerate * (gpGlobals->curtime - m_flLastTime) );
 
@@ -394,7 +401,7 @@ void CSprite::AnimateThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSprite::AnimateUntilDead( void )
+void CSharedSprite::AnimateUntilDead( void )
 {
 	if ( gpGlobals->curtime > m_flDieTime )
 	{
@@ -412,11 +419,11 @@ void CSprite::AnimateUntilDead( void )
 // Input  : scaleSpeed - 
 //			fadeSpeed - 
 //-----------------------------------------------------------------------------
-void CSprite::Expand( float scaleSpeed, float fadeSpeed )
+void CSharedSprite::Expand( float scaleSpeed, float fadeSpeed )
 {
 	m_flSpeed = scaleSpeed;
 	SetHealth( fadeSpeed );
-	SetThink( &CSprite::ExpandThink );
+	SetThink( &CSharedSprite::ExpandThink );
 
 	SetNextThink( gpGlobals->curtime );
 	m_flLastTime	= gpGlobals->curtime;
@@ -425,7 +432,7 @@ void CSprite::Expand( float scaleSpeed, float fadeSpeed )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSprite::ExpandThink( void )
+void CSharedSprite::ExpandThink( void )
 {
 	float frametime = gpGlobals->curtime - m_flLastTime;
 	SetSpriteScale( m_flSpriteScale + m_flSpeed * frametime );
@@ -448,7 +455,7 @@ void CSprite::ExpandThink( void )
 // Purpose: 
 // Input  : frames - 
 //-----------------------------------------------------------------------------
-void CSprite::Animate( float frames )
+void CSharedSprite::Animate( float frames )
 { 
 	m_flFrame += frames;
 	if ( m_flFrame > m_flMaxFrame )
@@ -470,7 +477,7 @@ void CSprite::Animate( float frames )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CSprite::SetBrightness( int brightness, float time )
+void CSharedSprite::SetBrightness( int brightness, float time )
 {
 	m_nBrightness			= brightness;	//Take our current position as our starting position
 	m_flBrightnessTime		= time;
@@ -479,7 +486,7 @@ void CSprite::SetBrightness( int brightness, float time )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSprite::SetSpriteScale( float scale )
+void CSharedSprite::SetSpriteScale( float scale )
 {
 	if ( scale != m_flSpriteScale )
 	{
@@ -489,7 +496,7 @@ void CSprite::SetSpriteScale( float scale )
 	}
 }
 
-void CSprite::SetScale( float scale, float time )
+void CSharedSprite::SetScale( float scale, float time )
 {
 	m_flScaleTime		= time;
 	SetSpriteScale( scale );
@@ -500,7 +507,7 @@ void CSprite::SetScale( float scale, float time )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSprite::TurnOff( void )
+void CSharedSprite::TurnOff( void )
 {
 	AddEffects( EF_NODRAW );
 	SetNextThink( TICK_NEVER_THINK );
@@ -509,7 +516,7 @@ void CSprite::TurnOff( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSprite::TurnOn( void )
+void CSharedSprite::TurnOn( void )
 {
 	RemoveEffects( EF_NODRAW );
 	if ( (m_flSpriteFramerate && m_flMaxFrame > 1.0)
@@ -518,7 +525,7 @@ void CSprite::TurnOn( void )
 #endif
 		)
 	{
-		SetThink( &CSprite::AnimateThink );
+		SetThink( &CSharedSprite::AnimateThink );
 		SetNextThink( gpGlobals->curtime );
 		m_flLastTime = gpGlobals->curtime;
 	}
@@ -527,7 +534,7 @@ void CSprite::TurnOn( void )
 
 #if !defined( CLIENT_DLL )
 // DVS TODO: Obsolete Use handler
-void CSprite::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+void CSharedSprite::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
 	int on = !IsEffectActive( EF_NODRAW );
 	if ( ShouldToggle( useType, on ) )
@@ -546,7 +553,7 @@ void CSprite::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useTy
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that hides the sprite.
 //-----------------------------------------------------------------------------
-void CSprite::InputHideSprite( inputdata_t &inputdata )
+void CSharedSprite::InputHideSprite( inputdata_t &inputdata )
 {
 	TurnOff();
 }
@@ -555,24 +562,24 @@ void CSprite::InputHideSprite( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that hides the sprite.
 //-----------------------------------------------------------------------------
-void CSprite::InputShowSprite( inputdata_t &inputdata )
+void CSharedSprite::InputShowSprite( inputdata_t &inputdata )
 {
 	TurnOn();
 }
 
-void CSprite::InputColorRedValue( inputdata_t &inputdata )
+void CSharedSprite::InputColorRedValue( inputdata_t &inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt( inputdata.value.Float() ), 0, 255 );
 	SetColor( nNewColor, GetRenderColorG(), GetRenderColorB() );
 }
 
-void CSprite::InputColorGreenValue( inputdata_t &inputdata )
+void CSharedSprite::InputColorGreenValue( inputdata_t &inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt( inputdata.value.Float() ), 0, 255 );
 	SetColor( GetRenderColorR(), nNewColor, GetRenderColorB() );
 }
 
-void CSprite::InputColorBlueValue( inputdata_t &inputdata )
+void CSharedSprite::InputColorBlueValue( inputdata_t &inputdata )
 {
 	int nNewColor = clamp( FastFloatToSmallInt( inputdata.value.Float() ), 0, 255 );
 	SetColor( GetRenderColorR(), GetRenderColorG(), nNewColor );
@@ -581,7 +588,7 @@ void CSprite::InputColorBlueValue( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that toggles the sprite between hidden and shown.
 //-----------------------------------------------------------------------------
-void CSprite::InputToggleSprite( inputdata_t &inputdata )
+void CSharedSprite::InputToggleSprite( inputdata_t &inputdata )
 {
 	if ( !IsEffectActive( EF_NODRAW ) )
 	{
@@ -600,7 +607,7 @@ void CSprite::InputToggleSprite( inputdata_t &inputdata )
 // Purpose: 
 // Output : float
 //-----------------------------------------------------------------------------
-float CSprite::GetRenderScale( void )
+float CSharedSprite::GetRenderScale( void )
 {
 	//See if we're done scaling
 	if ( ( m_flScaleTime == 0 ) || ( (m_flScaleTimeStart+m_flScaleTime) < gpGlobals->curtime ) )
@@ -616,7 +623,7 @@ float CSprite::GetRenderScale( void )
 //-----------------------------------------------------------------------------
 // Purpose: Get the rendered extents of the sprite
 //-----------------------------------------------------------------------------
-void CSprite::GetRenderBounds( Vector &vecMins, Vector &vecMaxs )
+void CSharedSprite::GetRenderBounds( Vector &vecMins, Vector &vecMaxs )
 {
 	float flScale = GetRenderScale() * 0.5f;
 
@@ -643,7 +650,7 @@ void CSprite::GetRenderBounds( Vector &vecMins, Vector &vecMaxs )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int	CSprite::GetRenderBrightness( void )
+int	CSharedSprite::GetRenderBrightness( void )
 {
 	//See if we're done scaling
 	if ( ( m_flBrightnessTime == 0 ) || ( (m_flBrightnessTimeStart+m_flBrightnessTime) < gpGlobals->curtime ) )
@@ -663,7 +670,7 @@ int	CSprite::GetRenderBrightness( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSprite::OnDataChanged( DataUpdateType_t updateType )
+void CSharedSprite::OnDataChanged( DataUpdateType_t updateType )
 {
 	BaseClass::OnDataChanged( updateType );
 
@@ -677,7 +684,7 @@ void CSprite::OnDataChanged( DataUpdateType_t updateType )
 
 	if ( m_flSpriteScale != m_flDestScale || m_nBrightness != m_nDestBrightness )
 	{
-		SetContextThink( &CSprite::BrightnessThink, TICK_ALWAYS_THINK, "BrightnessThink" );
+		SetContextThink( &CSharedSprite::BrightnessThink, TICK_ALWAYS_THINK, "BrightnessThink" );
 	}
 	else
 	{
@@ -685,7 +692,7 @@ void CSprite::OnDataChanged( DataUpdateType_t updateType )
 	}
 }
 
-void CSprite::BrightnessThink( void )
+void CSharedSprite::BrightnessThink( void )
 {
 	bool bDisableThink = true;
 
@@ -720,9 +727,9 @@ extern ConVar r_drawviewmodel;
 // Input  : flags - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CSprite::DrawModel( int flags, const RenderableInstance_t &instance )
+int CSharedSprite::DrawModel( int flags, const RenderableInstance_t &instance )
 {
-	VPROF_BUDGET( "CSprite::DrawModel", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
+	VPROF_BUDGET( "CSharedSprite::DrawModel", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	//See if we should draw
 	if ( !IsVisible() || ( ReadyToDraw() == false ) )
 		return 0;
@@ -788,7 +795,7 @@ int CSprite::DrawModel( int flags, const RenderableInstance_t &instance )
 }
 
 
-const Vector& CSprite::GetRenderOrigin()
+const Vector& CSharedSprite::GetRenderOrigin()
 {
 	static Vector vOrigin;
 	vOrigin = GetAbsOrigin();
@@ -817,9 +824,7 @@ const Vector& CSprite::GetRenderOrigin()
 IMPLEMENT_SERVERCLASS_ST( CSpriteOriented, DT_SpriteOriented )
 END_SEND_TABLE()
 #else
-#undef CSpriteOriented
-IMPLEMENT_CLIENTCLASS_DT(C_SpriteOriented, DT_SpriteOriented, CSpriteOriented)
-#define CSpriteOriented C_SpriteOriented
+IMPLEMENT_CLIENTCLASS_DT( C_SpriteOriented, DT_SpriteOriented, CSpriteOriented )
 END_RECV_TABLE()
 #endif
 
@@ -837,7 +842,7 @@ void CSpriteOriented::Spawn( void )
 
 #else
 
-RenderableTranslucencyType_t CSpriteOriented::ComputeTranslucencyType()
+RenderableTranslucencyType_t C_SpriteOriented::ComputeTranslucencyType()
 {
 	return RENDERABLE_IS_TRANSLUCENT;
 }

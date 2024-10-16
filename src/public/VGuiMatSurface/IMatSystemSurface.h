@@ -93,7 +93,7 @@ public:
 	virtual void DrawPanelIn3DSpace( vgui::VPANEL pRootPanel, const VMatrix &panelCenterToWorld, int nPixelWidth, int nPixelHeight, float flWorldWidth, float flWorldHeight ) = 0; 
 
 	// Binds a material to a surface texture ID
-	virtual void DrawSetTextureMaterial( int id, IMaterial *pMaterial ) = 0;
+	virtual void DrawSetTextureMaterial( vgui::HTexture id, IMaterial *pMaterial ) = 0;
 
 	// Handles an input event, returns true if the event should be filtered from the rest of the game
 	virtual bool HandleInputEvent( const InputEvent_t &event ) = 0;

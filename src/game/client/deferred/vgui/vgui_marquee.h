@@ -1,6 +1,8 @@
 #ifndef VGUI_MARQUEE_H
 #define VGUI_MARQUEE_H
 
+#pragma once
+
 #include "vgui_controls/Controls.h"
 #include "deferred/vgui/vgui_projectable.h"
 

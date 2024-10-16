@@ -11,8 +11,6 @@
 #include "c_breakableprop.h"
 #include "props_shared.h"
 
-#define CDynamicProp C_DynamicProp
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -39,6 +37,8 @@ private:
 	Vector	m_vecCachedRenderMins;
 	Vector	m_vecCachedRenderMaxs;
 };
+
+typedef C_DynamicProp CSharedDynamicProp;
 
 //-----------------------------------------------------------------------------
 // Purpose: 

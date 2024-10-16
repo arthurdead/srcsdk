@@ -193,16 +193,16 @@ CRecastMesh *CRecastMgr::FindBestMeshForRadiusHeight( float radius, float height
 //-----------------------------------------------------------------------------
 // Purpose: Determines best nav mesh for entity
 //-----------------------------------------------------------------------------
-CRecastMesh *CRecastMgr::FindBestMeshForEntity( CBaseEntity *pEntity )
+CRecastMesh *CRecastMgr::FindBestMeshForEntity( CSharedBaseEntity *pEntity )
 {
 	if( !pEntity )
 		return NULL;
 
-	CAI_BaseNPC *pNPC = pEntity->MyNPCPointer();
+	CShared_AI_BaseNPC *pNPC = pEntity->MyNPCPointer();
 	if(pNPC) {
 		return FindBestMeshForRadiusHeight( pNPC->BoundingRadius2D(), pNPC->GetHullHeight() );
 	} else if(pEntity->IsPlayer()) {
-		CBasePlayer *pPlayer = ToBasePlayer( pEntity );
+		CSharedBasePlayer *pPlayer = ToBasePlayer( pEntity );
 
 		float flRadius2D = VIEW_VECTORS->m_flRadius2D * pPlayer->GetModelScale();
 
@@ -246,7 +246,7 @@ NavMeshType_t CRecastMgr::FindBestMeshTypeForRadiusHeight( float radius, float h
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-NavMeshType_t CRecastMgr::FindBestMeshTypeForEntity( CBaseEntity *pEntity )
+NavMeshType_t CRecastMgr::FindBestMeshTypeForEntity( CSharedBaseEntity *pEntity )
 {
 	CRecastMesh *pMesh = FindBestMeshForEntity( pEntity );
 	return pMesh ? pMesh->GetType() : RECAST_NAVMESH_INVALID;
@@ -293,7 +293,7 @@ IMapMesh* CRecastMgr::GetMapMesh( MapMeshType_t type )
 //-----------------------------------------------------------------------------
 // Purpose: Adds an obstacle with radius and height for entity
 //-----------------------------------------------------------------------------
-bool CRecastMgr::AddEntRadiusObstacle( CBaseEntity *pEntity, float radius, float height )
+bool CRecastMgr::AddEntRadiusObstacle( CSharedBaseEntity *pEntity, float radius, float height )
 {
 	if( !pEntity )
 		return false;
@@ -325,7 +325,7 @@ bool CRecastMgr::AddEntRadiusObstacle( CBaseEntity *pEntity, float radius, float
 // Purpose: Adds an obstacle based on bounds and height for entity
 // TODO: 
 //-----------------------------------------------------------------------------
-bool CRecastMgr::AddEntBoxObstacle( CBaseEntity *pEntity, const Vector &mins, const Vector &maxs, float height )
+bool CRecastMgr::AddEntBoxObstacle( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs, float height )
 {
 	if( !pEntity )
 		return false;
@@ -375,7 +375,7 @@ bool CRecastMgr::AddEntBoxObstacle( CBaseEntity *pEntity, const Vector &mins, co
 //-----------------------------------------------------------------------------
 // Purpose: Removes any obstacle associated with the entity
 //-----------------------------------------------------------------------------
-bool CRecastMgr::RemoveEntObstacles( CBaseEntity *pEntity )
+bool CRecastMgr::RemoveEntObstacles( CSharedBaseEntity *pEntity )
 {
 	if( !pEntity )
 		return false;
@@ -403,18 +403,18 @@ bool CRecastMgr::RemoveEntObstacles( CBaseEntity *pEntity )
 // Purpose: Determines the area id in such a way potential touching obstacles
 //			don't have the same area id. There are about 16 available area ids.
 //-----------------------------------------------------------------------------
-unsigned char CRecastMgr::DetermineAreaID( CBaseEntity *pEntity, const Vector &mins, const Vector &maxs )
+unsigned char CRecastMgr::DetermineAreaID( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs )
 {
 	unsigned char areaId = POLYAREA_OBSTACLE_START;
 
 	// Determine areaId
 	bool usedPolyAreas[20];
 	V_memset( usedPolyAreas, 0, ARRAYSIZE(usedPolyAreas) * sizeof(bool) );
-	CBaseEntity *pEnts[256];
+	CSharedBaseEntity *pEnts[256];
 	int n = UTIL_EntitiesInBox( pEnts, 256, pEntity->GetAbsOrigin() + mins - Vector(64.0f, 64.0f, 64.0f), pEntity->GetAbsOrigin() + maxs + Vector(64.0f, 64.0f, 64.0f), 0 );
 	for( int i = 0; i < n; i++ )
 	{
-		CBaseEntity *pEnt = pEnts[i];
+		CSharedBaseEntity *pEnt = pEnts[i];
 		if( !pEnt || pEnt == pEntity || pEnt->GetNavObstacleRef() == NAV_OBSTACLE_INVALID_INDEX )
 		{
 			continue;
@@ -442,7 +442,7 @@ unsigned char CRecastMgr::DetermineAreaID( CBaseEntity *pEntity, const Vector &m
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-NavObstacleArray_t &CRecastMgr::FindOrCreateObstacle( CBaseEntity *pEntity )
+NavObstacleArray_t &CRecastMgr::FindOrCreateObstacle( CSharedBaseEntity *pEntity )
 {
 	int idx = m_Obstacles.Find( pEntity );
 	if( !m_Obstacles.IsValidIndex( idx ) )

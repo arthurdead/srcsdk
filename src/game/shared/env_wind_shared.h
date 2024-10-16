@@ -8,6 +8,8 @@
 #ifndef ENV_WIND_SHARED_H
 #define ENV_WIND_SHARED_H
 
+#pragma once
+
 #include "utllinkedlist.h"
 #include "vstdlib/random.h"
 #include "tier0/dbg.h"

@@ -21,6 +21,7 @@
 #include "materialsystem/MaterialSystemUtil.h"
 #include "trace.h"
 #include "tier1/utlsoacontainer.h"
+#include "raytrace.h"
 
 #if defined( CLIENT_DLL )
 #include "c_pixel_visibility.h"
@@ -290,7 +291,51 @@ public:
 class IParticleSystemQueryEx : public IParticleSystemQuery
 {
 public:
-	
+	virtual bool IsEditor( ) = 0;
+
+	virtual int GetRayTraceEnvironmentFromName( const char *pszRtEnvName )
+	{
+		return 0;											// == PRECIPITATION
+	}
+
+	virtual void GetControllingObjectOBBox( CParticleCollection *pParticles,
+		int nControlPointNumber,
+		Vector vecMin, Vector vecMax )
+	{
+		vecMin = vecMax = vec3_origin;
+	}
+
+	// Traces Four Rays against a defined RayTraceEnvironment
+	virtual void TraceAgainstRayTraceEnv( 
+		int envnumber, 
+		const FourRays &rays, fltx4 TMin, fltx4 TMax,
+		RayTracingResult *rslt_out, int32 skip_id ) const = 0;
+
+	virtual Vector GetCurrentViewOrigin()
+	{
+		return vec3_origin;
+	}
+
+	virtual int GetActivityCount() = 0;
+
+	virtual const char *GetActivityNameFromIndex( int nActivityIndex ) { return 0; }
+
+	virtual void PreSimulate( ) = 0;
+
+	virtual void PostSimulate( ) = 0;
+
+	virtual void DebugDrawLine(const Vector& origin, const Vector& dest, int r, int g, int b,bool noDepthTest, float duration) = 0;
+
+	virtual void *GetModel( char const *pMdlName ) { return NULL; }
+
+	virtual void DrawModel( void *pModel, const matrix3x4_t &DrawMatrix, CParticleCollection *pParticles, int nParticleNumber, int nBodyPart, int nSubModel,
+							int nAnimationSequence = 0, float flAnimationRate = 30.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f ) = 0;
+
+	virtual void BeginDrawModels( int nNumModels, Vector const &vecCenter, CParticleCollection *pParticles ) {}
+
+	virtual void FinishDrawModels( CParticleCollection *pParticles ) {}
+
+	virtual void UpdateProjectedTexture( const int nParticleID, IMaterial *pMaterial, Vector &vOrigin, float flRadius, float flRotation, float r, float g, float b, float a, void *&pUserVar ) = 0;
 };
 
 //-----------------------------------------------------------------------------

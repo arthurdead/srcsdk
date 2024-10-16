@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "c_baseentity.h"
+
 #define SPATIAL_ENTITY_FORCED_VALUE_BLEND_DISTANCE 128.0f
 
 //------------------------------------------------------------------------------

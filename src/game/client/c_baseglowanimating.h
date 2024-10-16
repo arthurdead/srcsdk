@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "cbase.h"
 #include "c_baseanimating.h"
 #include "glow_outline_effect.h"
 

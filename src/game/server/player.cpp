@@ -145,8 +145,6 @@ extern CServerGameDLL g_ServerGameDLL;
 extern bool		g_fDrawLines;
 int				gEvilImpulse101;
 
-bool gInitHUD = true;
-
 extern void respawn(CBaseEntity *pEdict, bool fCopyCorpse);
 int MapTextureTypeStepType(char chTextureType);
 extern void	SpawnBlood(Vector vecSpot, const Vector &vecDir, int bloodColor, float flDamage);
@@ -467,6 +465,8 @@ CBasePlayer::CBasePlayer( )
 	m_cycleLatchTimer.Invalidate();
 
 	ChangeTeam( 0 );
+
+	m_bTitleDisplayed = false;
 }
 
 CBasePlayer::~CBasePlayer( )
@@ -4576,6 +4576,9 @@ void CBasePlayer::InitialSpawn( void )
 {
 	m_iConnected = PlayerConnected;
 	gamestats->Event_PlayerConnected( this );
+
+	variant_t value;
+	g_EventQueue.AddEvent( "game_player_manager", "OnPlayerJoin", value, 0, this, this );
 }
 
 void CBasePlayer::ClearTonemapParams( void )
@@ -4750,9 +4753,6 @@ void CBasePlayer::Spawn( void )
 
 	m_vecAdditionalPVSOrigin = vec3_origin;
 	m_vecCameraPVSOrigin = vec3_origin;
-
-	if ( !m_fGameHUDInitialized )
-		GameRules()->SetDefaultPlayerTeam( this );
 
 	CBaseEntity *pSpawnPoint = GameRules()->GetPlayerSpawnSpot( this );
 	SpawnedAtPoint( pSpawnPoint );
@@ -4945,6 +4945,9 @@ void CBasePlayer::Spawn( void )
 		RemoveFlag(FL_FROZEN);
 	}
 
+	variant_t value;
+	g_EventQueue.AddEvent( "game_player_manager", "OnPlayerSpawn", value, 0, this, this );
+
 	DoAnimationEvent(PLAYERANIMEVENT_SPAWN);
 }
 
@@ -5024,10 +5027,6 @@ void CBasePlayer::Precache( void )
 	m_iClientBattery = -1;
 
 	m_iUpdateTime = 5;  // won't update for 1/2 a second
-
-	if ( gInitHUD )
-		m_fInitHUD = true;
-
 }
 
 //-----------------------------------------------------------------------------
@@ -5468,7 +5467,7 @@ void CBloodSplat::Think( void )
 //-----------------------------------------------------------------------------
 // Purpose: Create and give the named item to the player. Then return it.
 //-----------------------------------------------------------------------------
-CBaseEntity	*CBasePlayer::GiveNamedItem( const char *pszName, int iSubType, bool removeIfNotCarried )
+CBaseEntity	*CBasePlayer::GiveNamedItem( const char *pszName, int iSubType, bool bDeploy )
 {
 	// If I already own this type don't create one
 	if ( Weapon_OwnsThisType(pszName, iSubType) )
@@ -5515,7 +5514,7 @@ CBaseEntity	*CBasePlayer::GiveNamedItem( const char *pszName, int iSubType, bool
 
 	if ( pent != NULL && !(pent->IsMarkedForDeletion()) ) 
 	{
-		pent->Touch( this );
+		pent->MyCombatWeaponPointer()->GiveTo( this, bDeploy );
 	}
 
 	return pent;
@@ -5761,46 +5760,6 @@ void CBasePlayer::ImpulseCommands( )
 	
 	m_nImpulse = 0;
 }
-
-#ifdef HL2_EPISODIC
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-static void CreateJalopy( CBasePlayer *pPlayer )
-{
-	// Cheat to create a jeep in front of the player
-	Vector vecForward;
-	AngleVectors( pPlayer->EyeAngles(), &vecForward );
-	//SecobMod - If episodic is enabled give the jalopy not the jeep.
-	CBaseEntity *pJeep = (CBaseEntity *)CreateEntityByName( "prop_vehicle_jalopy" );
-	if ( pJeep )
-	{
-		Vector vecOrigin = pPlayer->GetAbsOrigin() + vecForward * 256 + Vector(0,0,64);
-		QAngle vecAngles( 0, pPlayer->GetAbsAngles().y - 90, 0 );
-		pJeep->SetAbsOrigin( vecOrigin );
-		pJeep->SetAbsAngles( vecAngles );
-		pJeep->KeyValue( "model", "models/vehicle.mdl" );
-		pJeep->KeyValue( "solid", "6" );
-		pJeep->KeyValue( "targetname", "jeep" );
-		pJeep->KeyValue( "vehiclescript", "scripts/vehicles/jalopy.txt" );
-		DispatchSpawn( pJeep );
-		pJeep->Activate();
-		pJeep->Teleport( &vecOrigin, &vecAngles, NULL );
-	}
-}
-
-void CC_CH_CreateJalopy( void )
-{
-	CBasePlayer *pPlayer = UTIL_GetCommandClient();
-	if ( !pPlayer )
-		return;
-	CreateJalopy( pPlayer );
-}
-
-static ConCommand ch_createjalopy("ch_createjalopy", CC_CH_CreateJalopy, "Spawn jalopy in front of the player.", FCVAR_CHEAT);
-
-#endif // HL2_EPISODIC
 
 //=========================================================
 //=========================================================
@@ -6300,7 +6259,7 @@ extern bool UTIL_ItemCanBeTouchedByPlayer( CBaseEntity *pItem, CBasePlayer *pPla
 // Input  : pWeapon - the weapon that the player bumped into.
 // Output : Returns true if player picked up the weapon
 //-----------------------------------------------------------------------------
-bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon )
+bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon, bool bDeploy )
 {
 	CBaseCombatCharacter *pOwner = pWeapon->GetOwner();
 
@@ -6394,13 +6353,21 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon )
 		pWeapon->AddSolidFlags( FSOLID_NOT_SOLID );
 		pWeapon->AddEffects( EF_NODRAW );
 
-		Weapon_Equip( pWeapon );
-
 		if ( IsInAVehicle() )
 		{
-			pWeapon->Holster();
+			bDeploy = false;
 		}
-		
+
+		if( bDeploy )
+			Weapon_Equip( pWeapon );
+		else
+			Weapon_EquipHolstered( pWeapon );
+
+		if ( !bDeploy )
+		{
+			pWeapon->Holster( NULL, true );
+		}
+
 		return true;
 	}
 }
@@ -6503,7 +6470,6 @@ void CBasePlayer::UpdateClientData( void )
 	if (m_fInitHUD)
 	{
 		m_fInitHUD = false;
-		gInitHUD = false;
 
 		UserMessageBegin( user, "ResetHUD" );
 			WRITE_BYTE( 0 );
@@ -6514,21 +6480,16 @@ void CBasePlayer::UpdateClientData( void )
 			GameRules()->InitHUD( this );
 			InitHUD();
 			m_fGameHUDInitialized = true;
-			variant_t value;
-			g_EventQueue.AddEvent( "game_player_manager", "OnPlayerJoin", value, 0, this, this );
 		}
-
-		variant_t value;
-		g_EventQueue.AddEvent( "game_player_manager", "OnPlayerSpawn", value, 0, this, this );
 	}
 
 	// HACKHACK -- send the message to display the game title
 	CWorld *world = GetWorldEntity();
-	if ( world && world->GetDisplayTitle() )
+	if ( world && world->ShouldDisplayTitle() && !m_bTitleDisplayed )
 	{
 		UserMessageBegin( user, "GameTitle" );
 		MessageEnd();
-		world->SetDisplayTitle( false );
+		m_bTitleDisplayed = true;
 	}
 
 	if (m_iArmor != m_iClientBattery)
@@ -7226,9 +7187,9 @@ ConVar player_autoswitch_on_first_pickup("player_autoswitch_on_pickup", "1", FCV
 //-----------------------------------------------------------------------------
 // Purpose: Override to add weapon to the hud
 //-----------------------------------------------------------------------------
-void CBasePlayer::Weapon_Equip( CBaseCombatWeapon *pWeapon )
+void CBasePlayer::Weapon_Equip( CBaseCombatWeapon *pWeapon, bool bDeploy )
 {
-	BaseClass::Weapon_Equip( pWeapon );
+	BaseClass::Weapon_Equip( pWeapon, bDeploy );
 
 	// BumpWeapon's code appeared to be deprecated; The same operation is already handled here, but with much more code involved.
 	// There's also an unused weighting system which was overridden by that deprecated code. The unused weighting code can be enabled
@@ -7258,7 +7219,7 @@ void CBasePlayer::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 	// should we switch to this item?
 	if ( bShouldSwitch )
 	{
-		Weapon_Switch( pWeapon );
+		Weapon_Switch( pWeapon, 0, bDeploy );
 	}
 }
 
@@ -9288,10 +9249,6 @@ const int CPlayerInfo::GetMaxHealth()
 	Assert( m_pParent );
 	return m_pParent->GetMaxHealth(); 
 }
-
-
-
-
 
 void CPlayerInfo::SetAbsOrigin( Vector & vec ) 
 { 

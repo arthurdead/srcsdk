@@ -15,7 +15,7 @@ IMPLEMENT_NETWORKCLASS_ALIASED( FogController, DT_FogController )
 //-----------------------------------------------------------------------------
 // Datatable
 //-----------------------------------------------------------------------------
-BEGIN_NETWORK_TABLE_NOBASE( CFogController, DT_FogController )
+BEGIN_NETWORK_TABLE_NOBASE( C_FogController, DT_FogController )
 	// fog data
 	RecvPropInt( RECVINFO( m_fog.enable ) ),
 	RecvPropInt( RECVINFO( m_fog.blend ) ),

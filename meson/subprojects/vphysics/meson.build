@@ -26,6 +26,7 @@ if build_libs
 	vphysics_lib = shared_library('vphysics',name_prefix:'',
 		cpp_args: [
 			'-DDLLNAME=vphysics',
+			'-DMEMOVERRIDE_MODULE=vphysics',
 			'-DGAME_SDK2013'
 		],
 		sources: files(

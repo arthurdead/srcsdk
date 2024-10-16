@@ -100,16 +100,7 @@ char* RemoveColorMarkup( char *str );
 /**
  * Simple utility function to allocate memory and duplicate a wide string
  */
-#include "tier0/memdbgon.h"
-inline wchar_t *CloneWString( const wchar_t *str )
-{
-	const int nLen = V_wcslen(str)+1;
-	wchar_t *cloneStr = new wchar_t [ nLen ];
-	const int nSize = nLen * sizeof( wchar_t );
-	V_wcsncpy( cloneStr, str, nSize );
-	return cloneStr;
-}
-#include "tier0/memdbgoff.h"
+wchar_t *CloneWString( const wchar_t *str );
 
 //-----------------------------------------------------------------------------
 // Purpose: An output/display line of the chat interface

@@ -19,9 +19,10 @@
 
 #ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
 #else
-#define CBaseEntity C_BaseEntity
 class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
 #endif
 
 class CRecastMesh;
@@ -116,11 +117,11 @@ public:
 	bool HasMeshes();
 	CRecastMesh *GetMesh( NavMeshType_t type );
 	CRecastMesh *FindBestMeshForRadiusHeight( float radius, float height );
-	CRecastMesh *FindBestMeshForEntity( CBaseEntity *pEntity );
+	CRecastMesh *FindBestMeshForEntity( CSharedBaseEntity *pEntity );
 	bool IsMeshLoaded( NavMeshType_t type );
 
 	NavMeshType_t FindBestMeshTypeForRadiusHeight( float radius, float height );
-	NavMeshType_t FindBestMeshTypeForEntity( CBaseEntity *pEntity );
+	NavMeshType_t FindBestMeshTypeForEntity( CSharedBaseEntity *pEntity );
 
 	// Used for debugging purposes on client. Don't use for anything else!
 	virtual dtNavMesh* GetNavMesh( NavMeshType_t type );
@@ -146,9 +147,9 @@ public:
 #endif // CLIENT_DLL
 
 	// Obstacle management
-	virtual bool AddEntRadiusObstacle( CBaseEntity *pEntity, float radius, float height );
-	virtual bool AddEntBoxObstacle( CBaseEntity *pEntity, const Vector &mins, const Vector &maxs, float height );
-	virtual bool RemoveEntObstacles( CBaseEntity *pEntity );
+	virtual bool AddEntRadiusObstacle( CSharedBaseEntity *pEntity, float radius, float height );
+	virtual bool AddEntBoxObstacle( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs, float height );
+	virtual bool RemoveEntObstacles( CSharedBaseEntity *pEntity );
 
 	// Debug
 #ifdef CLIENT_DLL
@@ -178,8 +179,8 @@ private:
 	virtual bool BuildMesh( CMapMesh *pMapMesh, NavMeshType_t type );
 #endif // CLIENT_DLL
 
-	NavObstacleArray_t &FindOrCreateObstacle( CBaseEntity *pEntity );
-	unsigned char DetermineAreaID( CBaseEntity *pEntity, const Vector &mins, const Vector &maxs );
+	NavObstacleArray_t &FindOrCreateObstacle( CSharedBaseEntity *pEntity );
+	unsigned char DetermineAreaID( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs );
 
 private:
 	bool m_bLoaded;

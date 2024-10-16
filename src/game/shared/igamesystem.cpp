@@ -38,7 +38,7 @@ static CUtlVector<IGameSystem*> s_GameSystems( 0, 4 );
 // List of all installed Game systems
 static CUtlVector<IGameSystemPerFrame*> s_GameSystemsPerFrame( 0, 4 );
 
-static CBasePlayer *s_pRunCommandPlayer = NULL;
+static CSharedBasePlayer *s_pRunCommandPlayer = NULL;
 static CUserCmd *s_pRunCommandUserCmd = NULL;
 
 //-----------------------------------------------------------------------------

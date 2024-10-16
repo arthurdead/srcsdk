@@ -17,7 +17,14 @@
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
+#ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
+#else
+class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
+#endif
+
 class CNewParticleEffect;
 
 // Argh: Server considers -1 to be an invalid attachment, whereas the client uses 0
@@ -72,8 +79,8 @@ public:
 	CParticleProperty();
 	~CParticleProperty();
 
-	void				Init( CBaseEntity *pEntity );
-	CBaseEntity			*GetOuter( void ) { return m_pOuter; }
+	void				Init( CSharedBaseEntity *pEntity );
+	CSharedBaseEntity			*GetOuter( void ) { return m_pOuter; }
 	int					GetAllParticleEffectRenderables( IClientRenderable **pOutput, int iMaxOutput ); //gets a list of all renderables used by this particle property
 
 	// Effect Creation
@@ -90,7 +97,7 @@ public:
 	void				StopEmissionAndDestroyImmediately( CNewParticleEffect *pEffect = NULL );
 
 	// kill all particle systems involving a given entity for their control points
-	void				StopParticlesInvolving( CBaseEntity *pEntity, bool bForceRemoveInstantly = false );
+	void				StopParticlesInvolving( CSharedBaseEntity *pEntity, bool bForceRemoveInstantly = false );
 	void				StopParticlesNamed( const char *pszEffectName, bool bForceRemoveInstantly = false, bool bInverse = false ); ///< kills all particles using the given definition name
 	void				StopParticlesWithNameAndAttachment( const char *pszEffectName, int iAttachmentPoint, bool bForceRemoveInstantly = false ); ///< kills all particles using the given definition name
 
@@ -121,11 +128,15 @@ private:
 	void				UpdateControlPoint( ParticleEffectList_t *pEffect, int iPoint, bool bInitializing );
 
 private:
-	CBaseEntity *m_pOuter;
+	CSharedBaseEntity *m_pOuter;
 	CUtlVector<ParticleEffectList_t>	m_ParticleEffects;
 	int			m_iDormancyChangedAtFrame;
 
+#ifdef GAME_DLL
 	friend class CBaseEntity;
+#else
+	friend class C_BaseEntity;
+#endif
 };
 
 #include "particle_property_inlines.h"

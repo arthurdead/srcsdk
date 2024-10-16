@@ -1,9 +1,13 @@
 #ifndef DEFERRED_COMMON_H
 #define DEFERRED_COMMON_H
 
+#pragma once
+
 #ifndef DEFERRED_SHARED_COMMON
 #error must include deferred_shared_common.h instead
 #endif
+
+#include "tier1/convar.h"
 
 #define DEFLIGHT_SPOT_ZNEAR 5.0f
 

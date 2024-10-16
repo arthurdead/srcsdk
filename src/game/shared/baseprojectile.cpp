@@ -11,7 +11,7 @@
 
 IMPLEMENT_NETWORKCLASS_ALIASED( BaseProjectile, DT_BaseProjectile )
 
-BEGIN_NETWORK_TABLE( CBaseProjectile, DT_BaseProjectile )
+BEGIN_NETWORK_TABLE( CSharedBaseProjectile, DT_BaseProjectile )
 #if !defined( CLIENT_DLL )
 	SendPropEHandle( SENDINFO( m_hOriginalLauncher ) ),
 #else
@@ -24,11 +24,14 @@ END_NETWORK_TABLE()
 IMPLEMENT_AUTO_LIST( IBaseProjectileAutoList );
 #endif // !CLIENT_DLL
 
+#ifdef CLIENT_DLL
+	#define CBaseProjectile C_BaseProjectile
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor.
 //-----------------------------------------------------------------------------
-CBaseProjectile::CBaseProjectile()
+CSharedBaseProjectile::CBaseProjectile()
 {
 #ifdef GAME_DLL
 	m_iDestroyableHitCount = 0;
@@ -38,11 +41,14 @@ CBaseProjectile::CBaseProjectile()
 	m_hOriginalLauncher = NULL;
 }
 
+#ifdef CLIENT_DLL
+	#undef CBaseProjectile
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseProjectile::SetLauncher( CBaseEntity *pLauncher )
+void CSharedBaseProjectile::SetLauncher( CSharedBaseEntity *pLauncher )
 {
 	if ( m_hOriginalLauncher == NULL )
 	{
@@ -58,7 +64,7 @@ void CBaseProjectile::SetLauncher( CBaseEntity *pLauncher )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseProjectile::Spawn()
+void CSharedBaseProjectile::Spawn()
 {
 	BaseClass::Spawn();
 
@@ -73,7 +79,7 @@ void CBaseProjectile::Spawn()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseProjectile::CollideWithTeammatesThink()
+void CSharedBaseProjectile::CollideWithTeammatesThink()
 {
 	m_bCanCollideWithTeammates = true;
 }
@@ -82,12 +88,12 @@ void CBaseProjectile::CollideWithTeammatesThink()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseProjectile::ResetCollideWithTeammates()
+void CSharedBaseProjectile::ResetCollideWithTeammates()
 {
 	// Don't collide with players on the owner's team for the first bit of our life
 	m_bCanCollideWithTeammates = false;
 	
-	SetContextThink( &CBaseProjectile::CollideWithTeammatesThink, gpGlobals->curtime + GetCollideWithTeammatesDelay(), "CollideWithTeammates" );
+	SetContextThink( &CSharedBaseProjectile::CollideWithTeammatesThink, gpGlobals->curtime + GetCollideWithTeammatesDelay(), "CollideWithTeammates" );
 }
 
 #endif // GAME_DLL

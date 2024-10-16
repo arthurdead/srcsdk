@@ -43,8 +43,13 @@ struct LinearAllocator : public dtTileCacheAlloc
 	virtual void reset();
 	
 	virtual void* alloc(const size_t size);
-	
+
+	#pragma push_macro("free")
+	#undef free
+
 	virtual void free(void* /*ptr*/);
+
+	#pragma pop_macro("free")
 };
 
 class COffMeshConnection;

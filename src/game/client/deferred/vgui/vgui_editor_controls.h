@@ -1,6 +1,7 @@
 #ifndef C_VGUI_EDITOR_CONTROLS_H
 #define C_VGUI_EDITOR_CONTROLS_H
 
+#pragma once
 
 #include "vgui_controls/Frame.h"
 

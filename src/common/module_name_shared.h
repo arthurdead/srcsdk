@@ -3,6 +3,10 @@
 
 #pragma once
 
+#if defined MEMOVERRIDE_MODULE && !defined DLLNAME
+	#define DLLNAME MEMOVERRIDE_MODULE
+#endif
+
 #ifndef DLLNAME
 	#if defined GAME_DLL || defined SERVER_DLL
 		#if defined SWDS || defined DEDICATED
@@ -23,6 +27,10 @@
 			#define DLLNAME game_shader_generic
 		#endif
 	#endif
+#endif
+
+#if !defined MEMOVERRIDE_MODULE && defined DLLNAME
+	#define MEMOVERRIDE_MODULE DLLNAME
 #endif
 
 #ifndef LIBNAME

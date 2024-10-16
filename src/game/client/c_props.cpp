@@ -11,16 +11,12 @@
 #include "c_physbox.h"
 #include "c_props.h"
 
-#define CPhysBox C_PhysBox
-#define CPhysicsProp C_PhysicsProp
-
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 IMPLEMENT_NETWORKCLASS_ALIASED( DynamicProp, DT_DynamicProp )
 
-BEGIN_NETWORK_TABLE( CDynamicProp, DT_DynamicProp )
+BEGIN_NETWORK_TABLE( C_DynamicProp, DT_DynamicProp )
 	RecvPropBool(RECVINFO(m_bUseHitboxesForRenderBox)),
 END_NETWORK_TABLE()
 
@@ -40,7 +36,7 @@ bool C_DynamicProp::TestBoneFollowers( const Ray_t &ray, unsigned int fContentsM
 	// UNDONE: There is no list of the bone followers that is networked to the client
 	// so instead we do a search for solid stuff here.  This is not really great - a list would be
 	// preferable.
-	CBaseEntity	*pList[128];
+	C_BaseEntity	*pList[128];
 	Vector mins, maxs;
 	CollisionProp()->WorldSpaceAABB( &mins, &maxs );
 	int count = UTIL_EntitiesInBox( pList, ARRAYSIZE(pList), mins, maxs, 0, PARTITION_CLIENT_SOLID_EDICTS );

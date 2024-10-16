@@ -1507,3 +1507,8 @@ void ManhackSparkCallback( const CEffectData & data )
 }
 
 DECLARE_CLIENT_EFFECT( ManhackSparks, ManhackSparkCallback );
+
+CTrailParticles	*CTrailParticles::Create( const char *pDebugName )
+{
+	return new CTrailParticles( pDebugName );
+}

@@ -113,7 +113,7 @@ public:
 
 private:
 	void FireGameEvent( IGameEvent *event );
-	void OnKillEvent( CBaseEntity *pVictim, CBaseEntity *pAttacker, CBaseEntity *pInflictor, IGameEvent *event );
+	void OnKillEvent( CSharedBaseEntity *pVictim, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pInflictor, IGameEvent *event );
 	void ResetAchievement_Internal( CBaseAchievement *pAchievement );
 	void UpdateStateFromSteam_Internal();
 
@@ -158,7 +158,7 @@ private:
 };
 
 // helper functions
-const char *GetModelName( CBaseEntity *pBaseEntity );
+const char *GetModelName( CSharedBaseEntity *pBaseEntity );
 
 #ifdef CLIENT_DLL
 bool CalcPlayersOnFriendsList( int iMinPlayers );
@@ -167,9 +167,7 @@ int	CalcPlayerCount();
 int	CalcTeammateCount();
 #endif // CLIENT
 
-class IMatchmaking;
 extern ConVar	cc_achievement_debug;
-extern IMatchmaking *matchmaking;
 
 #ifdef CLIENT_DLL
 void MsgFunc_AchievementEvent( bf_read &msg );

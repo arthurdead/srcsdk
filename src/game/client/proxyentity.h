@@ -8,6 +8,8 @@
 #ifndef PROXY_ENTITY_H
 #define PROXY_ENTITY_H
 
+#pragma once
+
 #include "materialsystem/imaterialproxy.h"
 #include "imaterialproxydict.h"
 

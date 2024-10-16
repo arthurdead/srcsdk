@@ -8,9 +8,10 @@
 #ifndef C_SLIDESHOW_DISPLAY_H
 #define C_SLIDESHOW_DISPLAY_H
 
-#include "cbase.h"
-#include "utlvector.h"
+#pragma once
 
+#include "c_baseentity.h"
+#include "utlvector.h"
 
 struct SlideMaterialList_t
 {
@@ -23,7 +24,7 @@ struct SlideMaterialList_t
 class C_SlideshowDisplay : public C_BaseEntity
 {
 public:
-	DECLARE_CLASS( C_SlideshowDisplay, CBaseEntity );
+	DECLARE_CLASS( C_SlideshowDisplay, C_BaseEntity );
 	DECLARE_CLIENTCLASS();
 
 	C_SlideshowDisplay();

@@ -55,7 +55,12 @@ extern ConVar ai_debug_shoot_positions;
 //-----------------------------------------------------------------------------
 void W_Precache(void)
 {
-	PrecacheFileWeaponInfoDatabase( g_pFullFileSystem, GameRules()->GetEncryptionKey() );
+	PrecacheModFileWeaponInfoDatabase( g_pFullFileSystem, GameRules()->GetEncryptionKey(), "scripts/weapon_manifest.txt" );
+
+	char sz[128];
+	Q_snprintf( sz, sizeof( sz ), "maps/%s_weapon_manifest.txt", STRING( gpGlobals->mapname ) );
+
+	PrecacheMapFileWeaponInfoDatabase( g_pFullFileSystem, sz );
 
 	g_sModelIndexWExplosion = CBaseEntity::PrecacheModel ("sprites/WXplo1.vmt");// underwater fireball
 	g_sModelIndexBloodSpray = CBaseEntity::PrecacheModel ("sprites/bloodspray.vmt"); // initial blood

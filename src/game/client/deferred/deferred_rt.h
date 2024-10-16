@@ -1,6 +1,8 @@
 #ifndef DEFERRED_RT_H
 #define DEFERRED_RT_H
 
+#pragma once
+
 class ITexture;
 
 float GetDepthMapDepthResolution( float zDelta );

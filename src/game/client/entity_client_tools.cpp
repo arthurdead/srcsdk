@@ -576,7 +576,7 @@ const char* CClientTools::GetClassname( HTOOLHANDLE handle )
 	HToolEntry_t &entry = m_Handles[ idx ];
 	if ( entry.m_hEntity )
 	{
-		return STRING( entry.m_hEntity->GetClassname() );
+		return entry.m_hEntity->GetClassname();
 	}
 	Assert( 0 );
 	return NULL;
@@ -606,7 +606,7 @@ bool CClientTools::IsValidHandle( HTOOLHANDLE handle )
 	return m_Handles.Find( HToolEntry_t( handle ) ) != m_Handles.InvalidIndex();
 }
 
-void CClientTools::OnEntityDeleted( CBaseEntity *pEntity )
+void CClientTools::OnEntityDeleted( C_BaseEntity *pEntity )
 {
 	HTOOLHANDLE handle = pEntity ? pEntity->GetToolHandle() : (HTOOLHANDLE)0;
 	if ( handle == (HTOOLHANDLE)0 )
@@ -623,7 +623,7 @@ void CClientTools::OnEntityDeleted( CBaseEntity *pEntity )
 	DetachFromEntity( pEntity );
 }
 
-void CClientTools::OnEntityCreated( CBaseEntity *pEntity )
+void CClientTools::OnEntityCreated( C_BaseEntity *pEntity )
 {
 	if ( !m_bInRecordingMode )
 		return;

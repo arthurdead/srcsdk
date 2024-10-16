@@ -1192,7 +1192,7 @@ AI_Waypoint_t * CRecastMesh::FindPath( dtPolyRef startRef, const Vector &vStart,
 // Purpose: Finds the path distance between two points
 // Returns: The distance, or -1 if not found.
 //-----------------------------------------------------------------------------
-float CRecastMesh::FindPathDistance( const Vector &vStart, const Vector &vEnd, CBaseEntity *pTarget, float fBeneathLimit, bool bLimitedSearch )
+float CRecastMesh::FindPathDistance( const Vector &vStart, const Vector &vEnd, CSharedBaseEntity *pTarget, float fBeneathLimit, bool bLimitedSearch )
 {
 	VPROF_BUDGET( "CRecastMesh::FindPathDistance", "RecastNav" );
 

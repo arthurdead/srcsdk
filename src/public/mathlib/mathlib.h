@@ -7,6 +7,8 @@
 #ifndef MATH_LIB_H
 #define MATH_LIB_H
 
+#pragma once
+
 #include <math.h>
 #include "tier0/basetypes.h"
 #include "tier0/commonmacros.h"

@@ -3,6 +3,8 @@
 #ifndef _IPLAYERMANAGER_H_
 #define _IPLAYERMANAGER_H_
 
+#pragma once
+
 #include "tier0/platform.h"
 
 class IPlayer;

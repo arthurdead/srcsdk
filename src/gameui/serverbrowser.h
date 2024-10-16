@@ -1,6 +1,8 @@
 #ifndef SERVERBROWSER_H
 #define SERVERBROWSER_H
 
+#pragma once
+
 #include "ServerBrowser/IServerBrowser.h"
 #include "IVGuiModule.h"
 

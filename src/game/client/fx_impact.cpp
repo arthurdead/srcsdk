@@ -505,7 +505,7 @@ void PerformCustomEffects( const Vector &vecOrigin, trace_t &tr, const Vector &s
 // Purpose: Play a sound for an impact. If tr contains a valid hit, use that. 
 //			If not, use the passed in origin & surface.
 //-----------------------------------------------------------------------------
-void PlayImpactSound( CBaseEntity *pEntity, trace_t &tr, const Vector &vecServerOrigin, int nServerSurfaceProp )
+void PlayImpactSound( C_BaseEntity *pEntity, trace_t &tr, const Vector &vecServerOrigin, int nServerSurfaceProp )
 {
 	VPROF( "PlayImpactSound" );
 	surfacedata_t *pdata;

@@ -1,6 +1,8 @@
 #ifndef DEF_LIGHT_H
 #define DEF_LIGHT_H
 
+#pragma once
+
 class CMeshBuilder;
 class IDefCookie;
 

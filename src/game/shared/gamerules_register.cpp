@@ -26,7 +26,7 @@ CGameRulesRegister::CGameRulesRegister( const char *pClassName, CreateGameRulesF
 	s_pHead = this;
 }
 
-CGameRules *CGameRulesRegister::CreateGameRules()
+CSharedGameRules *CGameRulesRegister::CreateGameRules()
 {
 	return m_pFn();
 }
@@ -47,9 +47,9 @@ CGameRulesRegister* CGameRulesRegister::FindByName( const char *pName )
 // ------------------------------------------------------------------------------------------ //
 #define GAMERULES_STRINGTABLE_NAME		"GameRulesCreation"
 
-extern CGameRules *s_pGameRules;
+extern CSharedGameRules *s_pGameRules;
 
-void UTIL_Remove( CGameRules *pGameRules )
+void UTIL_Remove( CSharedGameRules *pGameRules )
 {
 	if(!pGameRules)
 		return;
@@ -58,83 +58,82 @@ void UTIL_Remove( CGameRules *pGameRules )
 }
 
 #ifdef CLIENT_DLL
-	#include "networkstringtable_clientdll.h"
+#include "networkstringtable_clientdll.h"
 
-	INetworkStringTable *g_StringTableGameRules = NULL;
+INetworkStringTable *g_StringTableGameRules = NULL;
 
-	void OnGameRulesCreationStringChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, void const *newData )
-	{
-		// The server has created a new CGameRules object.
-		if(s_pGameRules) {
-			UTIL_Remove( s_pGameRules );
-			s_pGameRules = NULL;
-		}
-
-		const char *pClassName = (const char*)newData;
-		CGameRulesRegister *pReg = CGameRulesRegister::FindByName( pClassName );
-		if ( !pReg )
-		{
-			Error( "OnGameRulesCreationStringChanged: missing gamerules class '%s' on the client", pClassName );
-		}
-
-		// Create the new game rules object.
-		s_pGameRules = pReg->CreateGameRules();
-
-		if ( !s_pGameRules )
-		{
-			Error( "OnGameRulesCreationStringChanged: game rules entity (%s) not created", pClassName );
-		}
+void OnGameRulesCreationStringChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, void const *newData )
+{
+	// The server has created a new CGameRules object.
+	if(s_pGameRules) {
+		UTIL_Remove( s_pGameRules );
+		s_pGameRules = NULL;
 	}
 
-	// On the client, we respond to string table changes on the server.
-	void InstallStringTableCallback_GameRules()
+	const char *pClassName = (const char*)newData;
+	CGameRulesRegister *pReg = CGameRulesRegister::FindByName( pClassName );
+	if ( !pReg )
 	{
-		if ( !g_StringTableGameRules )
+		Error( "OnGameRulesCreationStringChanged: missing gamerules class '%s' on the client", pClassName );
+	}
+
+	// Create the new game rules object.
+	s_pGameRules = pReg->CreateGameRules();
+
+	if ( !s_pGameRules )
+	{
+		Error( "OnGameRulesCreationStringChanged: game rules entity (%s) not created", pClassName );
+	}
+}
+
+// On the client, we respond to string table changes on the server.
+void InstallStringTableCallback_GameRules()
+{
+	if ( !g_StringTableGameRules )
+	{
+		g_StringTableGameRules = networkstringtable->FindTable( GAMERULES_STRINGTABLE_NAME );
+		if ( g_StringTableGameRules )
 		{
-			g_StringTableGameRules = networkstringtable->FindTable( GAMERULES_STRINGTABLE_NAME );
-			if ( g_StringTableGameRules )
-			{
-				g_StringTableGameRules->SetStringChangedCallback( NULL, OnGameRulesCreationStringChanged );
-			}
+			g_StringTableGameRules->SetStringChangedCallback( NULL, OnGameRulesCreationStringChanged );
 		}
 	}
+}
 
 #else
-	#include "networkstringtable_gamedll.h"
+#include "networkstringtable_gamedll.h"
 
-	INetworkStringTable *g_StringTableGameRules = NULL;
+INetworkStringTable *g_StringTableGameRules = NULL;
 
-	void CreateNetworkStringTables_GameRules()
-	{
-		// Create the string tables
-		g_StringTableGameRules = networkstringtable->CreateStringTable( GAMERULES_STRINGTABLE_NAME, 1 );
+void CreateNetworkStringTables_GameRules()
+{
+	// Create the string tables
+	g_StringTableGameRules = networkstringtable->CreateStringTable( GAMERULES_STRINGTABLE_NAME, 1 );
+}
+
+void CreateGameRulesObject( const char *pClassName )
+{
+	// Delete the old game rules object.
+	if(s_pGameRules) {
+		UTIL_Remove( s_pGameRules );
+		s_pGameRules = NULL;
 	}
 
-	void CreateGameRulesObject( const char *pClassName )
+	// Create a new game rules object.
+	CGameRulesRegister *pReg = CGameRulesRegister::FindByName( pClassName );
+	if ( !pReg )
+		Error( "InitGameRules: missing gamerules class '%s' on the server", pClassName );
+
+	s_pGameRules = pReg->CreateGameRules();
+	if ( !s_pGameRules )
 	{
-		// Delete the old game rules object.
-		if(s_pGameRules) {
-			UTIL_Remove( s_pGameRules );
-			s_pGameRules = NULL;
-		}
-
-		// Create a new game rules object.
-		CGameRulesRegister *pReg = CGameRulesRegister::FindByName( pClassName );
-		if ( !pReg )
-			Error( "InitGameRules: missing gamerules class '%s' on the server", pClassName );
-	
-		s_pGameRules = pReg->CreateGameRules();
-		if ( !s_pGameRules )
-		{
-			Error( "InitGameRules: game rules entity (%s) not created", pClassName );
-		}
-
-		// Make sure the client gets notification to make a new game rules object.
-		Assert( g_StringTableGameRules );
-		g_StringTableGameRules->AddString( true, "classname", strlen( pClassName ) + 1, pClassName );
-
-		s_pGameRules->CreateCustomNetworkStringTables();
+		Error( "InitGameRules: game rules entity (%s) not created", pClassName );
 	}
+
+	// Make sure the client gets notification to make a new game rules object.
+	Assert( g_StringTableGameRules );
+	g_StringTableGameRules->AddString( true, "classname", strlen( pClassName ) + 1, pClassName );
+
+	s_pGameRules->CreateCustomNetworkStringTables();
+}
 
 #endif
-	

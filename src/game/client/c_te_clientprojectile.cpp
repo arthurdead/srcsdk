@@ -53,7 +53,7 @@ C_TEClientProjectile::~C_TEClientProjectile( void )
 }
 
 void TE_ClientProjectile( IRecipientFilter& filter, float delay,
-					const Vector* vecOrigin, const Vector* vecVelocity, int modelindex, int lifetime, CBaseEntity *pOwner )
+					const Vector* vecOrigin, const Vector* vecVelocity, int modelindex, int lifetime, C_BaseEntity *pOwner )
 {
 	tempents->ClientProjectile( *vecOrigin, *vecVelocity, vec3_origin, modelindex, lifetime, pOwner );
 }

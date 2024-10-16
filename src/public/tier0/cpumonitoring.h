@@ -1,6 +1,8 @@
 #ifndef CPU_MONITORING_H
 #define CPU_MONITORING_H
 
+#pragma once
+
 #include "tier0/platform.h"
 
 /*

@@ -81,7 +81,7 @@ protected:
 	CTextureReference	m_ProceduralTexture;
 	CMaterialReference	m_ProceduralMaterial;
 
-	int m_nTextureID;
+	vgui::HTexture m_nTextureID;
 	bool m_bMaintainProportions;
 	bool m_bUsePaintRect;
 };

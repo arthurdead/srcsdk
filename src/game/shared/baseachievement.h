@@ -29,7 +29,7 @@ public:
 	virtual ~CBaseAchievement();
 	virtual void Init() {}
 	virtual void ListenForEvents() {};
-	virtual void Event_EntityKilled( CBaseEntity *pVictim, CBaseEntity *pAttacker, CBaseEntity *pInflictor, IGameEvent *event );
+	virtual void Event_EntityKilled( CSharedBaseEntity *pVictim, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pInflictor, IGameEvent *event );
 
 	int GetAchievementID() { return m_iAchievementID; }
 	void SetAchievementID( int iAchievementID ) { m_iAchievementID = iAchievementID; }

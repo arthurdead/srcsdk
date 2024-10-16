@@ -39,8 +39,6 @@
 #include "ai_behavior.h"
 #include "ai_behavior_follow.h"
 
-#include "tier0/memdbgon.h"
-
 //=========================================================
 // Talking NPC base class
 // Used for scientists and barneys
@@ -103,7 +101,7 @@ public:
 	void			Precache( void );
 	virtual bool	KeyValue( const char *szKeyName, const char *szValue );
 
-	virtual CAI_Expresser *CreateExpresser() { return new CNPCSimpleTalkerExpresser(this); }
+	virtual CAI_Expresser *CreateExpresser();
 	
 	virtual void			StartFollowing( CBaseEntity *pLeader ) { m_FollowBehavior.SetFollowTarget( pLeader ); DeferSchedulingToBehavior( &m_FollowBehavior ); }
 	virtual void			StopFollowing( ) { m_FollowBehavior.SetFollowTarget( NULL ); DeferSchedulingToBehavior( NULL ); }
@@ -235,7 +233,5 @@ protected:
 
 	DEFINE_CUSTOM_AI;
 };
-
-#include "tier0/memdbgoff.h"
 
 #endif		//TALKNPC_H

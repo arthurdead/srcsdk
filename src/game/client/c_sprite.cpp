@@ -207,7 +207,7 @@ float C_SpriteRenderer::GlowBlend( CEngineSprite *psprite, const Vector& entorig
 }
 
 // since sprites can network down a glow proxy size, handle that here
-float CSprite::GlowBlend( CEngineSprite *psprite, const Vector& entorigin, int rendermode, int renderfx, int alpha, float *pscale )
+float C_Sprite::GlowBlend( CEngineSprite *psprite, const Vector& entorigin, int rendermode, int renderfx, int alpha, float *pscale )
 {
 	pixelvis_queryparams_t params;
 	float aspect = SpriteAspect(psprite);
@@ -450,7 +450,7 @@ int C_SpriteRenderer::DrawSprite(
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSprite::GetToolRecordingState( KeyValues *msg )
+void C_Sprite::GetToolRecordingState( KeyValues *msg )
 {
 	if ( !ToolsEnabled() )
 		return;

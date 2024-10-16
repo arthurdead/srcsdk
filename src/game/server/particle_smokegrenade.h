@@ -9,6 +9,7 @@
 #ifndef PARTICLE_SMOKEGRENADE_H
 #define PARTICLE_SMOKEGRENADE_H
 
+#pragma once
 
 #include "baseparticleentity.h"
 

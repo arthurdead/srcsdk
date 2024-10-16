@@ -18,6 +18,7 @@ if build_client
 	shared_library('ServerBrowser',name_prefix:'',
 		cpp_args: [
 			'-DDLLNAME=ServerBrowser',
+			'-DMEMOVERRIDE_MODULE=ServerBrowser',
 			'-DSERVERBROWSER_EXPORTS',
 		],
 		sources: files(

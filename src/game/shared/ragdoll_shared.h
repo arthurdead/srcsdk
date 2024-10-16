@@ -30,9 +30,10 @@ class CBoneAccessor;
 
 #ifdef GAME_DLL
 class CBaseAnimating;
+typedef CBaseAnimating CSharedBaseAnimating;
 #else
-#define CBaseAnimating C_BaseAnimating
 class C_BaseAnimating;
+typedef C_BaseAnimating CSharedBaseAnimating;
 #endif
 
 // UNDONE: Remove and make dynamic?
@@ -79,15 +80,15 @@ struct ragdollparams_t
 	bool		fixedConstraints;
 };
 
-typedef CHandle<CBaseAnimating> CRagdollHandle;
+typedef CHandle<CSharedBaseAnimating> CRagdollHandle;
 
 class CRagdollEntry
 {
 public:
-	CRagdollEntry( CBaseAnimating *pRagdoll, float flForcedRetireTime ) : m_hRagdoll( pRagdoll ), m_flForcedRetireTime( flForcedRetireTime )
+	CRagdollEntry( CSharedBaseAnimating *pRagdoll, float flForcedRetireTime ) : m_hRagdoll( pRagdoll ), m_flForcedRetireTime( flForcedRetireTime )
 	{
 	}
-	CBaseAnimating* Get() { return m_hRagdoll.Get(); }
+	CSharedBaseAnimating* Get() { return m_hRagdoll.Get(); }
 	float GetForcedRetireTime() { return m_flForcedRetireTime; }
 
 private:
@@ -110,7 +111,7 @@ public:
 	virtual void FrameUpdatePostEntityThink( void );
 
 	// Move it to the top of the LRU
-	void MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImportant = false, float flForcedRetireTime = 0.0f );
+	void MoveToTopOfLRU( CSharedBaseAnimating *pRagdoll, bool bImportant = false, float flForcedRetireTime = 0.0f );
 	void SetMaxRagdollCount( int iMaxCount ){ m_iMaxRagdolls = iMaxCount; }
 
 	virtual void LevelInitPreEntity( void );
@@ -154,6 +155,6 @@ void RagdollSetupAnimatedFriction( IPhysicsEnvironment *pPhysEnv, ragdoll_t *rag
 void RagdollApplyAnimationAsVelocity( ragdoll_t &ragdoll, const matrix3x4_t *pBoneToWorld );
 void RagdollApplyAnimationAsVelocity( ragdoll_t &ragdoll, const matrix3x4_t *pPrevBones, const matrix3x4_t *pCurrentBones, float dt );
 
-void RagdollSolveSeparation( ragdoll_t &ragdoll, CBaseEntity *pEntity );
+void RagdollSolveSeparation( ragdoll_t &ragdoll, CSharedBaseEntity *pEntity );
 
 #endif // RAGDOLL_SHARED_H

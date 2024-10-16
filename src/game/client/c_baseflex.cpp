@@ -1554,7 +1554,7 @@ bool C_BaseFlex::ClearSceneEvent( CSceneEventInfo *info, bool fastKill, bool can
 //			expression - 
 //			duration - 
 //-----------------------------------------------------------------------------
-void C_BaseFlex::AddSceneEvent( CChoreoScene *scene, CChoreoEvent *event, CBaseEntity *pTarget, bool bClientSide, C_SceneEntity *pSceneEntity )
+void C_BaseFlex::AddSceneEvent( CChoreoScene *scene, CChoreoEvent *event, C_BaseEntity *pTarget, bool bClientSide, C_SceneEntity *pSceneEntity )
 {
 	if ( !scene || !event )
 	{
@@ -1595,7 +1595,7 @@ void C_BaseFlex::AddSceneEvent( CChoreoScene *scene, CChoreoEvent *event, CBaseE
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool C_BaseFlex::StartSceneEvent( CSceneEventInfo *info, CChoreoScene *scene, CChoreoEvent *event, CChoreoActor *actor, CBaseEntity *pTarget )
+bool C_BaseFlex::StartSceneEvent( CSceneEventInfo *info, CChoreoScene *scene, CChoreoEvent *event, CChoreoActor *actor, C_BaseEntity *pTarget )
 {
 	switch ( event->GetType() )
 	{
@@ -1630,7 +1630,7 @@ bool C_BaseFlex::StartSceneEvent( CSceneEventInfo *info, CChoreoScene *scene, CC
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool C_BaseFlex::RequestStartSequenceSceneEvent( CSceneEventInfo *info, CChoreoScene *scene, CChoreoEvent *event, CChoreoActor *actor, CBaseEntity *pTarget )
+bool C_BaseFlex::RequestStartSequenceSceneEvent( CSceneEventInfo *info, CChoreoScene *scene, CChoreoEvent *event, CChoreoActor *actor, C_BaseEntity *pTarget )
 {
 	info->m_nSequence = LookupSequence( event->GetParameters() );
 

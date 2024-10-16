@@ -28,9 +28,10 @@ enum soundlevel_t;
 
 #ifdef GAME_DLL
 class CBasePlayer;
+typedef CBasePlayer CSharedBasePlayer;
 #else
-#define CBasePlayer C_BasePlayer
 class C_BasePlayer;
+typedef C_BasePlayer CSharedBasePlayer;
 #endif
 
 //-----------------------------------------------------------------------------
@@ -69,7 +70,7 @@ public:
 	virtual	char const*		GetName( EntityHandle_t handle ) const = 0;
 
 	// sets the entity being moved
-	virtual void	SetHost( CBasePlayer *host ) = 0;
+	virtual void	SetHost( CSharedBasePlayer *host ) = 0;
 
 	// Adds the trace result to touch list, if contact is not already in list.
 	virtual void	ResetTouchList( void ) = 0;

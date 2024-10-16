@@ -19,9 +19,10 @@
 
 #ifdef GAME_DLL
 class CBasePlayer;
+typedef CBasePlayer CSharedBasePlayer;
 #else
-#define CBasePlayer C_BasePlayer
 class C_BasePlayer;
+typedef C_BasePlayer CSharedBasePlayer;
 #endif
 
 //-----------------------------------------------------------------------------
@@ -120,10 +121,10 @@ public:
 	virtual			~IGameMovement( void ) {}
 	
 	// Process the current movement command
-	virtual void	ProcessMovement( CBasePlayer *pPlayer, CMoveData *pMove ) = 0;		
+	virtual void	ProcessMovement( CSharedBasePlayer *pPlayer, CMoveData *pMove ) = 0;		
 	virtual void	Reset( void ) = 0;
-	virtual void	StartTrackPredictionErrors( CBasePlayer *pPlayer ) = 0;
-	virtual void	FinishTrackPredictionErrors( CBasePlayer *pPlayer ) = 0;
+	virtual void	StartTrackPredictionErrors( CSharedBasePlayer *pPlayer ) = 0;
+	virtual void	FinishTrackPredictionErrors( CSharedBasePlayer *pPlayer ) = 0;
 	virtual void	DiffPrint( PRINTF_FORMAT_STRING char const *fmt, ... ) = 0;
 
 	// Allows other parts of the engine to find out the normal and ducked player bbox sizes
@@ -132,8 +133,8 @@ public:
 	virtual Vector   GetPlayerViewOffset( bool ducked ) const = 0;
 
 	virtual bool		IsMovingPlayerStuck( void ) const = 0;
-	virtual CBasePlayer *GetMovingPlayer( void ) const = 0;
-	virtual void		UnblockPusher( CBasePlayer *pPlayer, CBaseEntity *pPusher ) = 0;
+	virtual CSharedBasePlayer *GetMovingPlayer( void ) const = 0;
+	virtual void		UnblockPusher( CSharedBasePlayer *pPlayer, CSharedBaseEntity *pPusher ) = 0;
 
 	virtual void SetupMovementBounds( CMoveData *pMove ) = 0;
 

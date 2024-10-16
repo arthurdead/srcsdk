@@ -39,6 +39,7 @@ if build_libs
 	shared_library('matchmaking',name_prefix:'',
 		cpp_args: [
 			'-DDLLNAME=matchmaking',
+			'-DMEMOVERRIDE_MODULE=matchmaking',
 		],
 		dependencies: [
 			matchmaking_base_lib
@@ -51,6 +52,7 @@ if build_libs
 	shared_library('matchmaking_ds',name_prefix:'',
 		cpp_args: [
 			'-DDLLNAME=matchmaking_ds',
+			'-DMEMOVERRIDE_MODULE=matchmaking_ds',
 			'-DMATCHMAKING_DS_DLL',
 			'-DSWDS',
 			'-DDEDICATED',

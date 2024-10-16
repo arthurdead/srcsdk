@@ -5,9 +5,10 @@
 
 #ifdef GAME_DLL
 class CHeistPlayer;
+typedef CHeistPlayer CSharedHeistPlayer;
 #else
 class C_HeistPlayer;
-#define CHeistPlayer C_HeistPlayer
+typedef C_HeistPlayer CSharedHeistPlayer;
 #endif
 
 #endif

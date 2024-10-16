@@ -35,7 +35,7 @@ extern CEngineSprite *Draw_SetSpriteTexture( const model_t *pSpriteModel, int fr
 // Save/Restore
 //-----------------------------------------------------------------------------
 
-BEGIN_MAPENTITY( CSpriteTrail )
+BEGIN_MAPENTITY( CSharedSpriteTrail )
 
 	DEFINE_KEYFIELD( m_flLifeTime,			FIELD_FLOAT, "lifetime" ),
 	DEFINE_KEYFIELD( m_flStartWidth,		FIELD_FLOAT, "startwidth" ),
@@ -45,7 +45,7 @@ BEGIN_MAPENTITY( CSpriteTrail )
 
 END_MAPENTITY()
 
-LINK_ENTITY_TO_CLASS( env_spritetrail, CSpriteTrail );
+LINK_ENTITY_TO_CLASS_ALIASED( env_spritetrail, SpriteTrail );
 
 
 //-----------------------------------------------------------------------------
@@ -53,7 +53,7 @@ LINK_ENTITY_TO_CLASS( env_spritetrail, CSpriteTrail );
 //-----------------------------------------------------------------------------
 IMPLEMENT_NETWORKCLASS_ALIASED( SpriteTrail, DT_SpriteTrail );
 
-BEGIN_NETWORK_TABLE( CSpriteTrail, DT_SpriteTrail )
+BEGIN_NETWORK_TABLE( CSharedSpriteTrail, DT_SpriteTrail )
 #if !defined( CLIENT_DLL )
 	SendPropFloat( SENDINFO(m_flLifeTime),		0,	SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO(m_flStartWidth),	0,	SPROP_NOSCALE ),
@@ -78,13 +78,17 @@ END_NETWORK_TABLE()
 //-----------------------------------------------------------------------------
 // Prediction
 //-----------------------------------------------------------------------------
-BEGIN_PREDICTION_DATA( CSpriteTrail )
+BEGIN_PREDICTION_DATA( C_SpriteTrail )
 END_PREDICTION_DATA()
+
+#if defined( CLIENT_DLL )
+	#define CSpriteTrail C_SpriteTrail
+#endif
 
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-CSpriteTrail::CSpriteTrail( void )
+CSharedSpriteTrail::CSpriteTrail( void )
 {
 #ifdef CLIENT_DLL
 	m_nFirstStep = 0;
@@ -98,7 +102,11 @@ CSpriteTrail::CSpriteTrail( void )
 	m_bDrawForMoveParent = true;
 }
 
-void CSpriteTrail::Spawn( void )
+#if defined( CLIENT_DLL )
+	#undef CSpriteTrail
+#endif
+
+void CSharedSpriteTrail::Spawn( void )
 {
 #ifdef CLIENT_DLL
 	BaseClass::Spawn();
@@ -125,7 +133,7 @@ void CSpriteTrail::Spawn( void )
 //-----------------------------------------------------------------------------
 // Sets parameters of the sprite trail
 //-----------------------------------------------------------------------------
-void CSpriteTrail::Precache( void ) 
+void CSharedSpriteTrail::Precache( void ) 
 {
 	BaseClass::Precache();
 
@@ -138,42 +146,42 @@ void CSpriteTrail::Precache( void )
 //-----------------------------------------------------------------------------
 // Sets parameters of the sprite trail
 //-----------------------------------------------------------------------------
-void CSpriteTrail::SetLifeTime( float time ) 
+void CSharedSpriteTrail::SetLifeTime( float time ) 
 { 
 	m_flLifeTime = time; 
 }
 
-void CSpriteTrail::SetStartWidth( float flStartWidth )
+void CSharedSpriteTrail::SetStartWidth( float flStartWidth )
 { 
 	m_flStartWidth = flStartWidth; 
 	m_flStartWidth /= m_flSkyboxScale;
 }
 
-void CSpriteTrail::SetStartWidthVariance( float flStartWidthVariance )
+void CSharedSpriteTrail::SetStartWidthVariance( float flStartWidthVariance )
 { 
 	m_flStartWidthVariance = flStartWidthVariance; 
 	m_flStartWidthVariance /= m_flSkyboxScale;
 }
 
-void CSpriteTrail::SetEndWidth( float flEndWidth )
+void CSharedSpriteTrail::SetEndWidth( float flEndWidth )
 { 
 	m_flEndWidth = flEndWidth; 
 	m_flEndWidth /= m_flSkyboxScale;
 }
 
-void CSpriteTrail::SetTextureResolution( float flTexelsPerInch )
+void CSharedSpriteTrail::SetTextureResolution( float flTexelsPerInch )
 { 
 	m_flTextureRes = flTexelsPerInch; 
 	m_flTextureRes *= m_flSkyboxScale;
 }
 
-void CSpriteTrail::SetMinFadeLength( float flMinFadeLength )
+void CSharedSpriteTrail::SetMinFadeLength( float flMinFadeLength )
 {
 	m_flMinFadeLength = flMinFadeLength;
 	m_flMinFadeLength /= m_flSkyboxScale;
 }
 
-void CSpriteTrail::SetSkybox( const Vector &vecSkyboxOrigin, float flSkyboxScale )
+void CSharedSpriteTrail::SetSkybox( const Vector &vecSkyboxOrigin, float flSkyboxScale )
 {
 	m_flTextureRes /= m_flSkyboxScale;
 	m_flMinFadeLength *= m_flSkyboxScale;
@@ -204,7 +212,7 @@ void CSpriteTrail::SetSkybox( const Vector &vecSkyboxOrigin, float flSkyboxScale
 //-----------------------------------------------------------------------------
 // Is the trail in the skybox?
 //-----------------------------------------------------------------------------
-bool CSpriteTrail::IsInSkybox() const
+bool CSharedSpriteTrail::IsInSkybox() const
 {
 	return (m_flSkyboxScale != 1.0f) || (m_vecSkyboxOrigin != vec3_origin);
 }
@@ -217,19 +225,19 @@ bool CSpriteTrail::IsInSkybox() const
 //-----------------------------------------------------------------------------
 // On data update
 //-----------------------------------------------------------------------------
-void CSpriteTrail::OnPreDataChanged( DataUpdateType_t updateType )
+void CSharedSpriteTrail::OnPreDataChanged( DataUpdateType_t updateType )
 {
 	BaseClass::OnPreDataChanged( updateType );
 	m_vecPrevSkyboxOrigin = m_vecSkyboxOrigin;
 	m_flPrevSkyboxScale = m_flSkyboxScale;
 }
 
-void CSpriteTrail::OnDataChanged( DataUpdateType_t updateType )
+void CSharedSpriteTrail::OnDataChanged( DataUpdateType_t updateType )
 {
 	BaseClass::OnDataChanged( updateType );
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
-		SetContextThink( &CSpriteTrail::UpdateThink, TICK_ALWAYS_THINK, "UpdateThink" );
+		SetContextThink( &CSharedSpriteTrail::UpdateThink, TICK_ALWAYS_THINK, "UpdateThink" );
 	}
 	else
 	{
@@ -244,7 +252,7 @@ void CSpriteTrail::OnDataChanged( DataUpdateType_t updateType )
 //-----------------------------------------------------------------------------
 // Compute position	+ bounding box
 //-----------------------------------------------------------------------------
-void CSpriteTrail::UpdateThink()
+void CSharedSpriteTrail::UpdateThink()
 {
 	// Update the trail + bounding box
 	UpdateTrail();
@@ -255,7 +263,7 @@ void CSpriteTrail::UpdateThink()
 //-----------------------------------------------------------------------------
 // Render bounds
 //-----------------------------------------------------------------------------
-void CSpriteTrail::GetRenderBounds( Vector& mins, Vector& maxs )
+void CSharedSpriteTrail::GetRenderBounds( Vector& mins, Vector& maxs )
 {
 	mins = m_vecRenderMins;
 	maxs = m_vecRenderMaxs;
@@ -265,7 +273,7 @@ void CSpriteTrail::GetRenderBounds( Vector& mins, Vector& maxs )
 //-----------------------------------------------------------------------------
 // Converts the trail when it changes skyboxes
 //-----------------------------------------------------------------------------
-void CSpriteTrail::ConvertSkybox()
+void CSharedSpriteTrail::ConvertSkybox()
 {
 	for ( int i = 0; i < m_nStepCount; ++i )
 	{
@@ -283,7 +291,7 @@ void CSpriteTrail::ConvertSkybox()
 //-----------------------------------------------------------------------------
 // Gets at the nth item in the list
 //-----------------------------------------------------------------------------
-TrailPoint_t *CSpriteTrail::GetTrailPoint( int n )
+TrailPoint_t *CSharedSpriteTrail::GetTrailPoint( int n )
 {
 	Assert( n < MAX_SPRITE_TRAIL_POINTS );
 	COMPILE_TIME_ASSERT( (MAX_SPRITE_TRAIL_POINTS & (MAX_SPRITE_TRAIL_POINTS-1)) == 0 );
@@ -295,7 +303,7 @@ TrailPoint_t *CSpriteTrail::GetTrailPoint( int n )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSpriteTrail::ComputeScreenPosition( Vector *pScreenPos )
+void CSharedSpriteTrail::ComputeScreenPosition( Vector *pScreenPos )
 {
 #if SCREEN_SPACE_TRAILS
 	VMatrix	viewMatrix;
@@ -310,7 +318,7 @@ void CSpriteTrail::ComputeScreenPosition( Vector *pScreenPos )
 //-----------------------------------------------------------------------------
 // Compute position	+ bounding box
 //-----------------------------------------------------------------------------
-void CSpriteTrail::UpdateBoundingBox( void )
+void CSharedSpriteTrail::UpdateBoundingBox( void )
 {
 	Vector vecRenderOrigin = GetRenderOrigin();
 	m_vecRenderMins = vecRenderOrigin;
@@ -344,7 +352,7 @@ void CSpriteTrail::UpdateBoundingBox( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSpriteTrail::UpdateTrail( void )
+void CSharedSpriteTrail::UpdateTrail( void )
 {
 	// Can't update too quickly
 	if ( m_flUpdateTime > gpGlobals->curtime )
@@ -387,9 +395,9 @@ void CSpriteTrail::UpdateTrail( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CSpriteTrail::DrawModel( int flags, const RenderableInstance_t &instance )
+int CSharedSpriteTrail::DrawModel( int flags, const RenderableInstance_t &instance )
 {
-	VPROF_BUDGET( "CSpriteTrail::DrawModel", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
+	VPROF_BUDGET( "CSharedSpriteTrail::DrawModel", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	
 	// Must have at least one point
 	if ( m_nStepCount < 1 )
@@ -503,7 +511,7 @@ int CSpriteTrail::DrawModel( int flags, const RenderableInstance_t &instance )
 // Purpose: 
 // Output : Vector const&
 //-----------------------------------------------------------------------------
-const Vector &CSpriteTrail::GetRenderOrigin( void )
+const Vector &CSharedSpriteTrail::GetRenderOrigin( void )
 {
 	static Vector vOrigin;
 	vOrigin = GetAbsOrigin();
@@ -521,7 +529,7 @@ const Vector &CSpriteTrail::GetRenderOrigin( void )
 	return vOrigin;
 }
 
-const QAngle &CSpriteTrail::GetRenderAngles( void )
+const QAngle &CSharedSpriteTrail::GetRenderAngles( void )
 {
 	return vec3_angle;
 }
@@ -537,7 +545,7 @@ const QAngle &CSpriteTrail::GetRenderAngles( void )
 //			animate - 
 // Output : CSpriteTrail
 //-----------------------------------------------------------------------------
-CSpriteTrail *CSpriteTrail::SpriteTrailCreate( const char *pSpriteName, const Vector &origin, bool animate )
+CSpriteTrail *CSharedSpriteTrail::SpriteTrailCreate( const char *pSpriteName, const Vector &origin, bool animate )
 {
 	CSpriteTrail *pSprite = CREATE_ENTITY( CSpriteTrail, "env_spritetrail" );
 
@@ -559,7 +567,7 @@ CSpriteTrail *CSpriteTrail::SpriteTrailCreate( const char *pSpriteName, const Ve
 // 
 //-----------------------------------------------------------------------------
 
-int CSpriteTrail::ShouldTransmit( const CCheckTransmitInfo *pInfo )
+int CSharedSpriteTrail::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 {
 	CBaseEntity *pRecipientEntity = CBaseEntity::Instance( pInfo->m_pClientEnt );
 
@@ -601,7 +609,7 @@ const char* g_spriteWhiteList[] =
 // Purpose: TF prevents drawing of any entity attached to players that aren't items in the inventory of the player.
 //			This is to prevent servers creating fake cosmetic items and attaching them to players.
 //-----------------------------------------------------------------------------
-bool CSpriteTrail::ValidateEntityAttachedToPlayer( bool &bShouldRetry )
+bool CSharedSpriteTrail::ValidateEntityAttachedToPlayer( bool &bShouldRetry )
 {
 	bShouldRetry = false;
 	return true;

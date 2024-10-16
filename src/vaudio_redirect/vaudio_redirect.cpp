@@ -3,6 +3,7 @@
 #include "tier0/icommandline.h"
 #include "tier1/strtools.h"
 #include "vaudio/ivaudio.h"
+#include "module_name.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

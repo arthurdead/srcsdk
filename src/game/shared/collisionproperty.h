@@ -19,7 +19,15 @@
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
+
+#ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
+#elif defined CLIENT_DLL
+class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
+#endif
+
 class IHandleEntity;
 class QAngle;
 class Vector;
@@ -50,13 +58,32 @@ enum SurroundingBoundsType_t
 	SURROUNDING_TYPE_BIT_COUNT = 3
 };
 
+#ifdef CLIENT_DLL
+class C_CollisionProperty;
+typedef C_CollisionProperty CSharedCollisionProperty;
+#else
+class CCollisionProperty;
+typedef CCollisionProperty CSharedCollisionProperty;
+#endif
 
 //-----------------------------------------------------------------------------
 // Encapsulates collision representation for an entity
 //-----------------------------------------------------------------------------
+#ifdef CLIENT_DLL
+	#define CCollisionProperty C_CollisionProperty
+#endif
+
 class CCollisionProperty : public ICollideable
 {
+public:
 	DECLARE_CLASS_NOBASE( CCollisionProperty );
+	CCollisionProperty();
+	~CCollisionProperty();
+
+#ifdef CLIENT_DLL
+	#undef CCollisionProperty
+#endif
+
 	DECLARE_EMBEDDED_NETWORKVAR();
 	DECLARE_PREDICTABLE();
 
@@ -64,11 +91,7 @@ class CCollisionProperty : public ICollideable
 	DECLARE_MAPEMBEDDED();
 #endif
 
-public:
-	CCollisionProperty();
-	~CCollisionProperty();
-
-	void Init( CBaseEntity *pEntity );
+	void Init( CSharedBaseEntity *pEntity );
 
 	// Methods of ICollideable
 	virtual IHandleEntity	*GetEntityHandle();
@@ -248,11 +271,11 @@ private:
 	void UpdateServerPartitionMask( );
 
 	// Outer
-	CBaseEntity *GetOuter();
-	const CBaseEntity *GetOuter() const;
+	CSharedBaseEntity *GetOuter();
+	const CSharedBaseEntity *GetOuter() const;
 
 private:
-	CBaseEntity *m_pOuter;
+	CSharedBaseEntity *m_pOuter;
 
 	CNetworkVector( m_vecMinsPreScaled );
 	CNetworkVector( m_vecMaxsPreScaled );
@@ -293,8 +316,12 @@ private:
 
 	// pointer to the entity's physics object (vphysics.dll)
 	//IPhysicsObject	*m_pPhysicsObject;
-	
+
+#ifdef GAME_DLL
 	friend class CBaseEntity;
+#else
+	friend class C_BaseEntity;
+#endif
 };
 
 
@@ -311,12 +338,12 @@ EXTERN_SEND_TABLE( DT_CollisionProperty );
 //-----------------------------------------------------------------------------
 // Inline methods
 //-----------------------------------------------------------------------------
-inline CBaseEntity *CCollisionProperty::GetOuter()
+inline CSharedBaseEntity *CSharedCollisionProperty::GetOuter()
 {
 	return m_pOuter;
 }
 
-inline const CBaseEntity *CCollisionProperty::GetOuter() const
+inline const CSharedBaseEntity *CSharedCollisionProperty::GetOuter() const
 {
 	return m_pOuter;
 }
@@ -325,12 +352,12 @@ inline const CBaseEntity *CCollisionProperty::GetOuter() const
 //-----------------------------------------------------------------------------
 // Spatial partition
 //-----------------------------------------------------------------------------
-inline SpatialPartitionHandle_t CCollisionProperty::GetPartitionHandle() const
+inline SpatialPartitionHandle_t CSharedCollisionProperty::GetPartitionHandle() const
 {
 	return m_Partition;
 }
 
-inline SurroundingBoundsType_t CCollisionProperty::GetSurroundingBoundsType() const
+inline SurroundingBoundsType_t CSharedCollisionProperty::GetSurroundingBoundsType() const
 {
 	return (SurroundingBoundsType_t)m_nSurroundType.Get();
 }
@@ -338,7 +365,7 @@ inline SurroundingBoundsType_t CCollisionProperty::GetSurroundingBoundsType() co
 //-----------------------------------------------------------------------------
 // Methods related to size
 //-----------------------------------------------------------------------------
-inline const Vector& CCollisionProperty::OBBSize( ) const
+inline const Vector& CSharedCollisionProperty::OBBSize( ) const
 {
 	// NOTE: Could precache this, but it's not used that often..
 	Vector &temp = AllocTempVector();
@@ -350,7 +377,7 @@ inline const Vector& CCollisionProperty::OBBSize( ) const
 //-----------------------------------------------------------------------------
 // Bounding radius size
 //-----------------------------------------------------------------------------
-inline float CCollisionProperty::BoundingRadius() const
+inline float CSharedCollisionProperty::BoundingRadius() const
 {
 	return m_flRadius;
 }
@@ -359,38 +386,38 @@ inline float CCollisionProperty::BoundingRadius() const
 //-----------------------------------------------------------------------------
 // Methods relating to solid flags
 //-----------------------------------------------------------------------------
-inline bool CCollisionProperty::IsBoundsDefinedInEntitySpace() const
+inline bool CSharedCollisionProperty::IsBoundsDefinedInEntitySpace() const
 {
 	return (( m_usSolidFlags & FSOLID_FORCE_WORLD_ALIGNED ) == 0 ) &&
 			( m_nSolidType != SOLID_BBOX ) && ( m_nSolidType != SOLID_NONE );
 }
 
-inline void CCollisionProperty::ClearSolidFlags( void )
+inline void CSharedCollisionProperty::ClearSolidFlags( void )
 {
 	SetSolidFlags( 0 );
 }
 
-inline void CCollisionProperty::RemoveSolidFlags( int flags )
+inline void CSharedCollisionProperty::RemoveSolidFlags( int flags )
 {
 	SetSolidFlags( m_usSolidFlags & ~flags );
 }
 
-inline void CCollisionProperty::AddSolidFlags( int flags )
+inline void CSharedCollisionProperty::AddSolidFlags( int flags )
 {
 	SetSolidFlags( m_usSolidFlags | flags );
 }
 
-inline int CCollisionProperty::GetSolidFlags( void ) const
+inline int CSharedCollisionProperty::GetSolidFlags( void ) const
 {
 	return m_usSolidFlags;
 }
 
-inline bool CCollisionProperty::IsSolidFlagSet( int flagMask ) const
+inline bool CSharedCollisionProperty::IsSolidFlagSet( int flagMask ) const
 {
 	return (m_usSolidFlags & flagMask) != 0;
 }
 
-inline bool CCollisionProperty::IsSolid() const
+inline bool CSharedCollisionProperty::IsSolid() const
 {
 	return ::IsSolid( (SolidType_t)(unsigned char)m_nSolidType, m_usSolidFlags );
 }
@@ -399,7 +426,7 @@ inline bool CCollisionProperty::IsSolid() const
 //-----------------------------------------------------------------------------
 // Returns the center in OBB space
 //-----------------------------------------------------------------------------
-inline const Vector& CCollisionProperty::OBBCenter( ) const
+inline const Vector& CSharedCollisionProperty::OBBCenter( ) const
 {
 	Vector &vecResult = AllocTempVector();
 	VectorLerp( m_vecMins, m_vecMaxs, 0.5f, vecResult );
@@ -410,7 +437,7 @@ inline const Vector& CCollisionProperty::OBBCenter( ) const
 //-----------------------------------------------------------------------------
 // center point of entity
 //-----------------------------------------------------------------------------
-inline const Vector &CCollisionProperty::WorldSpaceCenter( ) const 
+inline const Vector &CSharedCollisionProperty::WorldSpaceCenter( ) const 
 {
 	Vector &vecResult = AllocTempVector();
 	CollisionToWorldSpace( OBBCenter(), &vecResult );
@@ -421,7 +448,7 @@ inline const Vector &CCollisionProperty::WorldSpaceCenter( ) const
 //-----------------------------------------------------------------------------
 // Transforms a point in OBB space to world space
 //-----------------------------------------------------------------------------
-inline const Vector &CCollisionProperty::CollisionToWorldSpace( const Vector &in, Vector *pResult ) const 
+inline const Vector &CSharedCollisionProperty::CollisionToWorldSpace( const Vector &in, Vector *pResult ) const 
 {
 	// Makes sure we don't re-use the same temp twice
 	if ( !IsBoundsDefinedInEntitySpace() || ( GetCollisionAngles() == vec3_angle ) )
@@ -439,7 +466,7 @@ inline const Vector &CCollisionProperty::CollisionToWorldSpace( const Vector &in
 //-----------------------------------------------------------------------------
 // Transforms a point in world space to OBB space
 //-----------------------------------------------------------------------------
-inline const Vector &CCollisionProperty::WorldToCollisionSpace( const Vector &in, Vector *pResult ) const
+inline const Vector &CSharedCollisionProperty::WorldToCollisionSpace( const Vector &in, Vector *pResult ) const
 {
 	if ( !IsBoundsDefinedInEntitySpace() || ( GetCollisionAngles() == vec3_angle ) )
 	{
@@ -456,7 +483,7 @@ inline const Vector &CCollisionProperty::WorldToCollisionSpace( const Vector &in
 //-----------------------------------------------------------------------------
 // Transforms a direction in world space to OBB space
 //-----------------------------------------------------------------------------
-inline const Vector & CCollisionProperty::WorldDirectionToCollisionSpace( const Vector &in, Vector *pResult ) const
+inline const Vector & CSharedCollisionProperty::WorldDirectionToCollisionSpace( const Vector &in, Vector *pResult ) const
 {
 	if ( !IsBoundsDefinedInEntitySpace() || ( GetCollisionAngles() == vec3_angle ) )
 	{
@@ -473,20 +500,20 @@ inline const Vector & CCollisionProperty::WorldDirectionToCollisionSpace( const 
 //-----------------------------------------------------------------------------
 // Computes a bounding box in world space surrounding the collision bounds
 //-----------------------------------------------------------------------------
-inline void CCollisionProperty::WorldSpaceAABB( Vector *pWorldMins, Vector *pWorldMaxs ) const
+inline void CSharedCollisionProperty::WorldSpaceAABB( Vector *pWorldMins, Vector *pWorldMaxs ) const
 {
 	CollisionAABBToWorldAABB( m_vecMins, m_vecMaxs, pWorldMins, pWorldMaxs );
 }
 
 
 // Get the collision space mins directly
-inline const Vector & CCollisionProperty::CollisionSpaceMins( void ) const
+inline const Vector & CSharedCollisionProperty::CollisionSpaceMins( void ) const
 {
 	return m_vecMins;
 }
 
 // Get the collision space maxs directly
-inline const Vector & CCollisionProperty::CollisionSpaceMaxs( void ) const
+inline const Vector & CSharedCollisionProperty::CollisionSpaceMaxs( void ) const
 {
 	return m_vecMaxs;
 }
@@ -494,7 +521,7 @@ inline const Vector & CCollisionProperty::CollisionSpaceMaxs( void ) const
 //-----------------------------------------------------------------------------
 // Does a rotation make us need to recompute the surrounding box?
 //-----------------------------------------------------------------------------
-inline bool CCollisionProperty::DoesSequenceChangeInvalidateSurroundingBox() const
+inline bool CSharedCollisionProperty::DoesSequenceChangeInvalidateSurroundingBox() const
 {
 	return ( m_nSurroundType == USE_ROTATION_EXPANDED_SEQUENCE_BOUNDS );
 }
@@ -502,7 +529,7 @@ inline bool CCollisionProperty::DoesSequenceChangeInvalidateSurroundingBox() con
 //-----------------------------------------------------------------------------
 // Does a rotation make us need to recompute the surrounding box?
 //-----------------------------------------------------------------------------
-inline bool CCollisionProperty::DoesRotationInvalidateSurroundingBox( ) const
+inline bool CSharedCollisionProperty::DoesRotationInvalidateSurroundingBox( ) const
 {
 	if ( IsSolidFlagSet(FSOLID_ROOT_PARENT_ALIGNED) )
 		return true;

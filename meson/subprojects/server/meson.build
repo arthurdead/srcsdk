@@ -21,6 +21,7 @@ server_dep = declare_dependency(
 		join_paths(server_game_src_dir,'heist_gameinterface.cpp'),
 		join_paths(server_game_src_dir,'heist_client.cpp'),
 		join_paths(server_game_src_dir,'heist_player.cpp'),
+		join_paths(server_game_src_dir,'heist_director.cpp'),
 		join_paths(server_game_npcs_src_dir,'npc_dev.cpp'),
 		join_paths(server_game_npcs_src_dir,'npc_humanoidbase.cpp'),
 		join_paths(server_game_npcs_src_dir,'npc_cop.cpp'),

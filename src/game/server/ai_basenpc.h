@@ -2340,6 +2340,8 @@ public:
 	virtual	bool		OnlySeeAliveEntities( void ) { return true; }
 };
 
+typedef CAI_BaseNPC CShared_AI_BaseNPC;
+
 //-------------------------------------
 
 inline bool CAI_BaseNPC::IsRunningBehavior() const

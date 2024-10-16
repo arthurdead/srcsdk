@@ -44,7 +44,7 @@ string_t gm_isz_name_activator = NULL_STRING;
 
 // -------------------------------------------------------------
 
-bool EntIsClass( CBaseEntity *ent, string_t str2 )
+bool EntIsClass( CSharedBaseEntity *ent, string_t str2 )
 {
 #ifdef NO_STRING_T
 	return ent->ClassMatches(str2);

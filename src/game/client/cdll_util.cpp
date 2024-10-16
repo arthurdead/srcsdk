@@ -133,7 +133,7 @@ int GetSpectatorTarget( void )
 
 	if ( player )
 	{
-		CBaseEntity * target = player->GetObserverTarget();
+		C_BaseEntity * target = player->GetObserverTarget();
 
 		if ( target )
 			return target->entindex();
@@ -654,7 +654,7 @@ CEntitySphereQuery::CEntitySphereQuery( const Vector &center, float radius, int 
 	m_listCount = UTIL_EntitiesInSphere( m_pList, ARRAYSIZE(m_pList), center, radius, flagMask, partitionMask );
 }
 
-CBaseEntity *CEntitySphereQuery::GetCurrentEntity()
+C_BaseEntity *CEntitySphereQuery::GetCurrentEntity()
 {
 	if ( m_listIndex < m_listCount )
 		return m_pList[m_listIndex];

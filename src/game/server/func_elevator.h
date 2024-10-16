@@ -4,6 +4,8 @@
 #ifndef FUNC_ELEVATOR_H
 #define FUNC_ELEVATOR_H
 
+#pragma once
+
 #include "basetoggle.h"
 #include "utlmap.h"
 

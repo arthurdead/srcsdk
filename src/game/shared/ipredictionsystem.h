@@ -11,7 +11,13 @@
 
 #include "predictable_entity.h"
 
+#ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
+#else
+class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Interfaces derived from this are able to filter out the local player
@@ -44,12 +50,12 @@ public:
 		m_bSuppressEvent = state;
 	}
 
-	void SetSuppressHost( CBaseEntity *host )
+	void SetSuppressHost( CSharedBaseEntity *host )
 	{
 		m_pSuppressHost = host;
 	}
 
-	CBaseEntity const *GetSuppressHost( void )
+	CSharedBaseEntity const *GetSuppressHost( void )
 	{
 		if ( DisableFiltering() )
 		{
@@ -81,7 +87,7 @@ public:
 		}
 	}
 
-	static void SuppressHostEvents( CBaseEntity *host )
+	static void SuppressHostEvents( CSharedBaseEntity *host )
 	{
 		IPredictionSystem *sys = g_pPredictionSystems;
 		while ( sys )
@@ -129,7 +135,7 @@ private:
 
 	IPredictionSystem	*m_pNextSystem;
 	bool				m_bSuppressEvent;
-	CBaseEntity			*m_pSuppressHost;
+	CSharedBaseEntity			*m_pSuppressHost;
 
 	int					m_nStatusPushed;
 

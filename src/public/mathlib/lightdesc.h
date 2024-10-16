@@ -8,6 +8,8 @@
 #ifndef LIGHTDESC_H
 #define LIGHTDESC_H
 
+#pragma once
+
 #include <mathlib/ssemath.h>
 #include <mathlib/vector.h>
 

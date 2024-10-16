@@ -50,7 +50,7 @@ public:
 	virtual void OnPreQuery( SpatialPartitionListMask_t listMask );
 	virtual void OnPostQuery( SpatialPartitionListMask_t listMask );
 
-	void AddEntity( CBaseEntity *pEntity );
+	void AddEntity( CSharedBaseEntity *pEntity );
 	
 	~CDirtySpatialPartitionEntityList();
 	void LockPartitionForRead()
@@ -136,7 +136,7 @@ void CDirtySpatialPartitionEntityList::Shutdown()
 //-----------------------------------------------------------------------------
 // Makes sure all entries in the KD tree are in the correct position
 //-----------------------------------------------------------------------------
-void CDirtySpatialPartitionEntityList::AddEntity( CBaseEntity *pEntity )
+void CDirtySpatialPartitionEntityList::AddEntity( CSharedBaseEntity *pEntity )
 {
 	m_DirtyEntities.PushItem( pEntity->GetRefEHandle() );
 }
@@ -199,7 +199,7 @@ void CDirtySpatialPartitionEntityList::OnPreQuery( SpatialPartitionListMask_t li
 #ifndef CLIENT_DLL
 				CBaseEntity *pEntity = gEntList.GetBaseEntity( handle );
 #else
-				CBaseEntity *pEntity = cl_entitylist->GetBaseEntityFromHandle( handle );
+				C_BaseEntity *pEntity = cl_entitylist->GetBaseEntityFromHandle( handle );
 #endif
 
 				if ( pEntity )
@@ -268,7 +268,7 @@ void CDirtySpatialPartitionEntityList::OnPostQuery( SpatialPartitionListMask_t l
 //-----------------------------------------------------------------------------
 // Prediction
 //-----------------------------------------------------------------------------
-BEGIN_PREDICTION_DATA_NO_BASE( CCollisionProperty )
+BEGIN_PREDICTION_DATA_NO_BASE( C_CollisionProperty )
 
 	DEFINE_PRED_FIELD( m_vecMinsPreScaled, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_vecMaxsPreScaled, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
@@ -289,24 +289,24 @@ END_PREDICTION_DATA()
 
 static void RecvProxy_Solid( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	((CCollisionProperty*)pStruct)->SetSolid( (SolidType_t)pData->m_Value.m_Int );
+	((C_CollisionProperty*)pStruct)->SetSolid( (SolidType_t)pData->m_Value.m_Int );
 }
 
 static void RecvProxy_SolidFlags( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	((CCollisionProperty*)pStruct)->SetSolidFlags( pData->m_Value.m_Int );
+	((C_CollisionProperty*)pStruct)->SetSolidFlags( pData->m_Value.m_Int );
 }
 
 static void RecvProxy_OBBMinsPreScaled( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CCollisionProperty *pProp = ((CCollisionProperty*)pStruct);
+	C_CollisionProperty *pProp = ((C_CollisionProperty*)pStruct);
 	Vector &vecMins = *((Vector*)pData->m_Value.m_Vector);
 	pProp->SetCollisionBounds( vecMins, pProp->OBBMaxsPreScaled() );
 }
 
 static void RecvProxy_OBBMaxsPreScaled( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CCollisionProperty *pProp = ((CCollisionProperty*)pStruct);
+	C_CollisionProperty *pProp = ((C_CollisionProperty*)pStruct);
 	Vector &vecMaxs = *((Vector*)pData->m_Value.m_Vector);
 	pProp->SetCollisionBounds( pProp->OBBMinsPreScaled(), vecMaxs );
 }
@@ -319,7 +319,7 @@ static void RecvProxy_VectorDirtySurround( const CRecvProxyData *pData, void *pS
 	if ( vecold != vecnew )
 	{
 		vecold = vecnew;
-		((CCollisionProperty*)pStruct)->MarkSurroundingBoundsDirty();
+		((C_CollisionProperty*)pStruct)->MarkSurroundingBoundsDirty();
 	}
 }
 
@@ -328,7 +328,7 @@ static void RecvProxy_IntDirtySurround( const CRecvProxyData *pData, void *pStru
 	if ( *((unsigned char*)pOut) != pData->m_Value.m_Int )
 	{
 		*((unsigned char*)pOut) = pData->m_Value.m_Int;
-		((CCollisionProperty*)pStruct)->MarkSurroundingBoundsDirty();
+		((C_CollisionProperty*)pStruct)->MarkSurroundingBoundsDirty();
 	}
 }
 
@@ -346,7 +346,7 @@ static void SendProxy_SolidFlags( const SendProp *pProp, const void *pStruct, co
 
 #endif
 
-BEGIN_NETWORK_TABLE_NOBASE( CCollisionProperty, DT_CollisionProperty )
+BEGIN_NETWORK_TABLE_NOBASE( CSharedCollisionProperty, DT_CollisionProperty )
 
 #ifdef CLIENT_DLL
 	RecvPropVector( RECVINFO(m_vecMinsPreScaled), 0, RecvProxy_OBBMinsPreScaled ),
@@ -378,26 +378,33 @@ BEGIN_NETWORK_TABLE_NOBASE( CCollisionProperty, DT_CollisionProperty )
 
 END_NETWORK_TABLE()
 
+#ifdef CLIENT_DLL
+	#define CCollisionProperty C_CollisionProperty
+#endif
+
 																							
 //-----------------------------------------------------------------------------
 // Constructor, destructor
 //-----------------------------------------------------------------------------
-CCollisionProperty::CCollisionProperty()
+CSharedCollisionProperty::CCollisionProperty()
 {
 	m_Partition = PARTITION_INVALID_HANDLE;
 	Init( NULL );
 }
 
-CCollisionProperty::~CCollisionProperty()
+CSharedCollisionProperty::~CCollisionProperty()
 {
 	DestroyPartitionHandle();
 }
 
+#ifdef CLIENT_DLL
+	#undef CCollisionProperty
+#endif
 
 //-----------------------------------------------------------------------------
 // Initialization
 //-----------------------------------------------------------------------------
-void CCollisionProperty::Init( CBaseEntity *pEntity )
+void CSharedCollisionProperty::Init( CSharedBaseEntity *pEntity )
 {
 	m_pOuter = pEntity;
 	m_vecMinsPreScaled.GetForModify().Init();
@@ -427,7 +434,7 @@ void CCollisionProperty::Init( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // EntityHandle
 //-----------------------------------------------------------------------------
-IHandleEntity *CCollisionProperty::GetEntityHandle()
+IHandleEntity *CSharedCollisionProperty::GetEntityHandle()
 {
 	return m_pOuter;
 }
@@ -436,13 +443,13 @@ IHandleEntity *CCollisionProperty::GetEntityHandle()
 //-----------------------------------------------------------------------------
 // Collision group
 //-----------------------------------------------------------------------------
-int CCollisionProperty::GetCollisionGroup() const
+int CSharedCollisionProperty::GetCollisionGroup() const
 {
 	return m_pOuter->GetCollisionGroup();
 }
 
 
-bool CCollisionProperty::ShouldTouchTrigger( int triggerSolidFlags ) const
+bool CSharedCollisionProperty::ShouldTouchTrigger( int triggerSolidFlags ) const
 {
 	// debris only touches certain triggers
 	if ( GetCollisionGroup() == COLLISION_GROUP_DEBRIS )
@@ -460,11 +467,11 @@ bool CCollisionProperty::ShouldTouchTrigger( int triggerSolidFlags ) const
 	return true;
 }
 
-const matrix3x4_t *CCollisionProperty::GetRootParentToWorldTransform() const
+const matrix3x4_t *CSharedCollisionProperty::GetRootParentToWorldTransform() const
 {
 	if ( IsSolidFlagSet( FSOLID_ROOT_PARENT_ALIGNED ) )
 	{
-		CBaseEntity *pEntity = m_pOuter->GetRootMoveParent();
+		CSharedBaseEntity *pEntity = m_pOuter->GetRootMoveParent();
 		Assert(pEntity);
 		if ( pEntity )
 		{
@@ -477,7 +484,7 @@ const matrix3x4_t *CCollisionProperty::GetRootParentToWorldTransform() const
 //-----------------------------------------------------------------------------
 // IClientUnknown
 //-----------------------------------------------------------------------------
-IClientUnknown* CCollisionProperty::GetIClientUnknown()
+IClientUnknown* CSharedCollisionProperty::GetIClientUnknown()
 {
 #ifdef CLIENT_DLL
 	return m_pOuter->GetIClientUnknown();
@@ -491,7 +498,7 @@ IClientUnknown* CCollisionProperty::GetIClientUnknown()
 //-----------------------------------------------------------------------------
 // Check for untouch
 //-----------------------------------------------------------------------------
-void CCollisionProperty::CheckForUntouch()
+void CSharedCollisionProperty::CheckForUntouch()
 {
 #ifndef CLIENT_DLL
 	if ( !IsSolid() && !IsSolidFlagSet(FSOLID_TRIGGER))
@@ -511,7 +518,7 @@ void CCollisionProperty::CheckForUntouch()
 //-----------------------------------------------------------------------------
 // Sets the solid type
 //-----------------------------------------------------------------------------
-void CCollisionProperty::SetSolid( SolidType_t val )
+void CSharedCollisionProperty::SetSolid( SolidType_t val )
 {
 	if ( m_nSolidType == val )
 		return;
@@ -566,7 +573,7 @@ void CCollisionProperty::SetSolid( SolidType_t val )
 #endif
 }
 
-SolidType_t CCollisionProperty::GetSolid() const
+SolidType_t CSharedCollisionProperty::GetSolid() const
 {
 	return (SolidType_t)m_nSolidType.Get();
 }
@@ -575,7 +582,7 @@ SolidType_t CCollisionProperty::GetSolid() const
 //-----------------------------------------------------------------------------
 // Sets the solid flags
 //-----------------------------------------------------------------------------
-void CCollisionProperty::SetSolidFlags( int flags )
+void CSharedCollisionProperty::SetSolidFlags( int flags )
 {
 	int oldFlags = m_usSolidFlags;
 	m_usSolidFlags = (unsigned short)(flags & 0xFFFF);
@@ -607,12 +614,12 @@ void CCollisionProperty::SetSolidFlags( int flags )
 //-----------------------------------------------------------------------------
 // Coordinate system of the collision model
 //-----------------------------------------------------------------------------
-const Vector& CCollisionProperty::GetCollisionOrigin() const
+const Vector& CSharedCollisionProperty::GetCollisionOrigin() const
 {
 	return m_pOuter->GetAbsOrigin();
 }
 
-const QAngle& CCollisionProperty::GetCollisionAngles() const
+const QAngle& CSharedCollisionProperty::GetCollisionAngles() const
 {
 	if ( IsBoundsDefinedInEntitySpace() )
 	{
@@ -622,7 +629,7 @@ const QAngle& CCollisionProperty::GetCollisionAngles() const
 	return vec3_angle;
 }
 
-const matrix3x4_t& CCollisionProperty::CollisionToWorldTransform() const
+const matrix3x4_t& CSharedCollisionProperty::CollisionToWorldTransform() const
 {
 	static matrix3x4_t s_matTemp[4];
 	static int s_nIndex = 0;
@@ -644,7 +651,7 @@ const matrix3x4_t& CCollisionProperty::CollisionToWorldTransform() const
 //-----------------------------------------------------------------------------
 // Sets the collision bounds + the size
 //-----------------------------------------------------------------------------
-void CCollisionProperty::SetCollisionBounds( const Vector &mins, const Vector &maxs )
+void CSharedCollisionProperty::SetCollisionBounds( const Vector &mins, const Vector &maxs )
 {
 	if ( ( m_vecMinsPreScaled != mins ) || ( m_vecMaxsPreScaled != maxs ) )
 	{
@@ -655,7 +662,7 @@ void CCollisionProperty::SetCollisionBounds( const Vector &mins, const Vector &m
 	bool bDirty = false;
 
 	// Check if it's a scaled model
-	CBaseAnimating *pAnim = GetOuter()->GetBaseAnimating();
+	CSharedBaseAnimating *pAnim = GetOuter()->GetBaseAnimating();
 	if ( pAnim && pAnim->GetModelScale() != 1.0f )
 	{
 		// Do the scaling
@@ -701,7 +708,7 @@ void CCollisionProperty::SetCollisionBounds( const Vector &mins, const Vector &m
 //-----------------------------------------------------------------------------
 // Rebuilds the scaled bounds from the prescaled bounds after a model's scale has changed
 //-----------------------------------------------------------------------------
-void CCollisionProperty::RefreshScaledCollisionBounds( void )
+void CSharedCollisionProperty::RefreshScaledCollisionBounds( void )
 {
 	SetCollisionBounds( m_vecMinsPreScaled, m_vecMaxsPreScaled );
 
@@ -723,7 +730,7 @@ void CCollisionProperty::RefreshScaledCollisionBounds( void )
 // Lazily calculates the 2D bounding radius. If we do this enough, we should
 // calculate this in SetCollisionBounds above and cache the results in a data member!
 //-----------------------------------------------------------------------------
-float CCollisionProperty::BoundingRadius2D() const
+float CSharedCollisionProperty::BoundingRadius2D() const
 {
 	//Vector vecSize;
 	//VectorSubtract( m_vecMaxs, m_vecMins, vecSize );
@@ -737,7 +744,7 @@ float CCollisionProperty::BoundingRadius2D() const
 //-----------------------------------------------------------------------------
 // Special trigger representation (OBB)
 //-----------------------------------------------------------------------------
-void CCollisionProperty::WorldSpaceTriggerBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs ) const
+void CSharedCollisionProperty::WorldSpaceTriggerBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs ) const
 {
 	WorldSpaceAABB( pVecWorldMins, pVecWorldMaxs );
 	if ( ( GetSolidFlags() & FSOLID_USE_TRIGGER_BOUNDS ) == 0 )
@@ -752,7 +759,7 @@ void CCollisionProperty::WorldSpaceTriggerBounds( Vector *pVecWorldMins, Vector 
 	pVecWorldMaxs->z += (float)m_triggerBloat * 0.5f;
 }
 
-void CCollisionProperty::UseTriggerBounds( bool bEnable, float flBloat )
+void CSharedCollisionProperty::UseTriggerBounds( bool bEnable, float flBloat )
 {
 	Assert( flBloat <= 127.0f );
 	m_triggerBloat = (char )flBloat;
@@ -771,12 +778,12 @@ void CCollisionProperty::UseTriggerBounds( bool bEnable, float flBloat )
 //-----------------------------------------------------------------------------
 // Collision model (BSP)
 //-----------------------------------------------------------------------------
-int CCollisionProperty::GetCollisionModelIndex()
+int CSharedCollisionProperty::GetCollisionModelIndex()
 {
 	return m_pOuter->GetModelIndex();
 }
 
-const model_t* CCollisionProperty::GetCollisionModel()
+const model_t* CSharedCollisionProperty::GetCollisionModel()
 {
 	return m_pOuter->GetModel();
 }
@@ -786,12 +793,12 @@ const model_t* CCollisionProperty::GetCollisionModel()
 // Collision methods implemented in the entity
 // FIXME: This shouldn't happen there!!
 //-----------------------------------------------------------------------------
-bool CCollisionProperty::TestCollision( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr )
+bool CSharedCollisionProperty::TestCollision( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr )
 {
 	return m_pOuter->TestCollision( ray, fContentsMask, tr );
 }
 
-bool CCollisionProperty::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr )
+bool CSharedCollisionProperty::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr )
 {
 	return m_pOuter->TestHitboxes( ray, fContentsMask, tr );
 }
@@ -800,7 +807,7 @@ bool CCollisionProperty::TestHitboxes( const Ray_t &ray, unsigned int fContentsM
 //-----------------------------------------------------------------------------
 // Computes a "normalized" point (range 0,0,0 - 1,1,1) in collision space
 //-----------------------------------------------------------------------------
-const Vector & CCollisionProperty::NormalizedToCollisionSpace( const Vector &in, Vector *pResult ) const
+const Vector & CSharedCollisionProperty::NormalizedToCollisionSpace( const Vector &in, Vector *pResult ) const
 {
 	pResult->x = Lerp( in.x, m_vecMins.Get().x, m_vecMaxs.Get().x );
 	pResult->y = Lerp( in.y, m_vecMins.Get().y, m_vecMaxs.Get().y );
@@ -812,7 +819,7 @@ const Vector & CCollisionProperty::NormalizedToCollisionSpace( const Vector &in,
 //-----------------------------------------------------------------------------
 // Transforms a point in collision space to normalized space
 //-----------------------------------------------------------------------------
-const Vector &	CCollisionProperty::CollisionToNormalizedSpace( const Vector &in, Vector *pResult ) const
+const Vector &	CSharedCollisionProperty::CollisionToNormalizedSpace( const Vector &in, Vector *pResult ) const
 {
 	Vector vecSize = OBBSize( );
 	pResult->x = ( vecSize.x != 0.0f ) ? ( in.x - m_vecMins.Get().x ) / vecSize.x : 0.5f;
@@ -825,7 +832,7 @@ const Vector &	CCollisionProperty::CollisionToNormalizedSpace( const Vector &in,
 //-----------------------------------------------------------------------------
 // Computes a "normalized" point (range 0,0,0 - 1,1,1) in world space
 //-----------------------------------------------------------------------------
-const Vector & CCollisionProperty::NormalizedToWorldSpace( const Vector &in, Vector *pResult ) const
+const Vector & CSharedCollisionProperty::NormalizedToWorldSpace( const Vector &in, Vector *pResult ) const
 {
 	Vector vecCollisionSpace;
 	NormalizedToCollisionSpace( in, &vecCollisionSpace );
@@ -837,7 +844,7 @@ const Vector & CCollisionProperty::NormalizedToWorldSpace( const Vector &in, Vec
 //-----------------------------------------------------------------------------
 // Transforms a point in world space to normalized space
 //-----------------------------------------------------------------------------
-const Vector & CCollisionProperty::WorldToNormalizedSpace( const Vector &in, Vector *pResult ) const
+const Vector & CSharedCollisionProperty::WorldToNormalizedSpace( const Vector &in, Vector *pResult ) const
 {
 	Vector vecCollisionSpace;
 	WorldToCollisionSpace( in, &vecCollisionSpace );
@@ -849,7 +856,7 @@ const Vector & CCollisionProperty::WorldToNormalizedSpace( const Vector &in, Vec
 //-----------------------------------------------------------------------------
 // Selects a random point in the bounds given the normalized 0-1 bounds 
 //-----------------------------------------------------------------------------
-void CCollisionProperty::RandomPointInBounds( const Vector &vecNormalizedMins, const Vector &vecNormalizedMaxs, Vector *pPoint) const
+void CSharedCollisionProperty::RandomPointInBounds( const Vector &vecNormalizedMins, const Vector &vecNormalizedMaxs, Vector *pPoint) const
 {
 	Vector vecNormalizedSpace;
 	vecNormalizedSpace.x = random->RandomFloat( vecNormalizedMins.x, vecNormalizedMaxs.x );
@@ -862,7 +869,7 @@ void CCollisionProperty::RandomPointInBounds( const Vector &vecNormalizedMins, c
 //-----------------------------------------------------------------------------
 // Transforms an AABB measured in entity space to a box that surrounds it in world space
 //-----------------------------------------------------------------------------
-void CCollisionProperty::CollisionAABBToWorldAABB( const Vector &entityMins, 
+void CSharedCollisionProperty::CollisionAABBToWorldAABB( const Vector &entityMins, 
 	const Vector &entityMaxs, Vector *pWorldMins, Vector *pWorldMaxs ) const
 {
 	if ( !IsBoundsDefinedInEntitySpace() || (GetCollisionAngles() == vec3_angle) )
@@ -877,7 +884,7 @@ void CCollisionProperty::CollisionAABBToWorldAABB( const Vector &entityMins,
 }
 
 /*
-void CCollisionProperty::WorldAABBToCollisionAABB( const Vector &worldMins, const Vector &worldMaxs, Vector *pEntityMins, Vector *pEntityMaxs ) const
+void CSharedCollisionProperty::WorldAABBToCollisionAABB( const Vector &worldMins, const Vector &worldMaxs, Vector *pEntityMins, Vector *pEntityMaxs ) const
 {
 	if ( !IsBoundsDefinedInEntitySpace() || (GetCollisionAngles() == vec3_angle) )
 	{
@@ -895,7 +902,7 @@ void CCollisionProperty::WorldAABBToCollisionAABB( const Vector &worldMins, cons
 //-----------------------------------------------------------------------------
 // Is a worldspace point within the bounds of the OBB?
 //-----------------------------------------------------------------------------
-bool CCollisionProperty::IsPointInBounds( const Vector &vecWorldPt ) const
+bool CSharedCollisionProperty::IsPointInBounds( const Vector &vecWorldPt ) const
 {
 	Vector vecLocalSpace;
 	WorldToCollisionSpace( vecWorldPt, &vecLocalSpace );
@@ -908,7 +915,7 @@ bool CCollisionProperty::IsPointInBounds( const Vector &vecWorldPt ) const
 //-----------------------------------------------------------------------------
 // Computes the nearest point in the OBB to a point specified in world space
 //-----------------------------------------------------------------------------
-void CCollisionProperty::CalcNearestPoint( const Vector &vecWorldPt, Vector *pVecNearestWorldPt ) const
+void CSharedCollisionProperty::CalcNearestPoint( const Vector &vecWorldPt, Vector *pVecNearestWorldPt ) const
 {
 	// Calculate physics force
 	Vector localPt, localClosestPt;
@@ -921,7 +928,7 @@ void CCollisionProperty::CalcNearestPoint( const Vector &vecWorldPt, Vector *pVe
 //-----------------------------------------------------------------------------
 // Computes the nearest point in the OBB to a point specified in world space
 //-----------------------------------------------------------------------------
-float CCollisionProperty::CalcDistanceFromPoint( const Vector &vecWorldPt ) const
+float CSharedCollisionProperty::CalcDistanceFromPoint( const Vector &vecWorldPt ) const
 {
 	// Calculate physics force
 	Vector localPt, localClosestPt;
@@ -933,7 +940,7 @@ float CCollisionProperty::CalcDistanceFromPoint( const Vector &vecWorldPt ) cons
 //-----------------------------------------------------------------------------
 // Computes the square distance of the closest point in the OBB to a point specified in world space
 //-----------------------------------------------------------------------------
-float CCollisionProperty::CalcSqrDistanceFromPoint( const Vector &vecWorldPt ) const
+float CSharedCollisionProperty::CalcSqrDistanceFromPoint( const Vector &vecWorldPt ) const
 {
 	// Calculate physics force
 	Vector localPt, localClosestPt;
@@ -945,7 +952,7 @@ float CCollisionProperty::CalcSqrDistanceFromPoint( const Vector &vecWorldPt ) c
 //-----------------------------------------------------------------------------
 // Compute the largest dot product of the OBB and the specified direction vector
 //-----------------------------------------------------------------------------
-float CCollisionProperty::ComputeSupportMap( const Vector &vecDirection ) const
+float CSharedCollisionProperty::ComputeSupportMap( const Vector &vecDirection ) const
 {
 	Vector vecCollisionDir;
 	WorldDirectionToCollisionSpace( vecDirection, &vecCollisionDir );
@@ -962,7 +969,7 @@ float CCollisionProperty::ComputeSupportMap( const Vector &vecDirection ) const
 //-----------------------------------------------------------------------------
 // Expand trigger bounds..
 //-----------------------------------------------------------------------------
-void CCollisionProperty::ComputeVPhysicsSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
+void CSharedCollisionProperty::ComputeVPhysicsSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
 {
 	bool bSetBounds = false;
 	IPhysicsObject *pPhysicsObject = GetOuter()->VPhysicsGetObject();
@@ -1004,9 +1011,9 @@ void CCollisionProperty::ComputeVPhysicsSurroundingBox( Vector *pVecWorldMins, V
 //-----------------------------------------------------------------------------
 // Expand trigger bounds..
 //-----------------------------------------------------------------------------
-bool CCollisionProperty::ComputeHitboxSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
+bool CSharedCollisionProperty::ComputeHitboxSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
 {
-	CBaseAnimating *pAnim = GetOuter()->GetBaseAnimating();
+	CSharedBaseAnimating *pAnim = GetOuter()->GetBaseAnimating();
 	if (pAnim)
 	{
 		return pAnim->ComputeHitboxSurroundingBox( pVecWorldMins, pVecWorldMaxs );
@@ -1018,9 +1025,9 @@ bool CCollisionProperty::ComputeHitboxSurroundingBox( Vector *pVecWorldMins, Vec
 //-----------------------------------------------------------------------------
 // Expand trigger bounds..
 //-----------------------------------------------------------------------------
-bool CCollisionProperty::ComputeEntitySpaceHitboxSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
+bool CSharedCollisionProperty::ComputeEntitySpaceHitboxSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
 {
-	CBaseAnimating *pAnim = GetOuter()->GetBaseAnimating();
+	CSharedBaseAnimating *pAnim = GetOuter()->GetBaseAnimating();
 	if (pAnim)
 	{
 		return pAnim->ComputeEntitySpaceHitboxSurroundingBox( pVecWorldMins, pVecWorldMaxs );
@@ -1032,7 +1039,7 @@ bool CCollisionProperty::ComputeEntitySpaceHitboxSurroundingBox( Vector *pVecWor
 //-----------------------------------------------------------------------------
 // Computes the surrounding collision bounds from the the OBB (not vphysics)
 //-----------------------------------------------------------------------------
-void CCollisionProperty::ComputeRotationExpandedBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
+void CSharedCollisionProperty::ComputeRotationExpandedBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
 {
 	if ( !IsBoundsDefinedInEntitySpace() )
 	{
@@ -1059,7 +1066,7 @@ void CCollisionProperty::ComputeRotationExpandedBounds( Vector *pVecWorldMins, V
 //-----------------------------------------------------------------------------
 // Computes the surrounding collision bounds based on the current sequence box
 //-----------------------------------------------------------------------------
-void CCollisionProperty::ComputeOBBBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
+void CSharedCollisionProperty::ComputeOBBBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
 {
 	bool bUseVPhysics = false;
 	if ( ( GetSolid() == SOLID_VPHYSICS ) && ( GetOuter()->GetMoveType() == MOVETYPE_VPHYSICS ) )
@@ -1075,9 +1082,9 @@ void CCollisionProperty::ComputeOBBBounds( Vector *pVecWorldMins, Vector *pVecWo
 //-----------------------------------------------------------------------------
 // Computes the surrounding collision bounds from the current sequence box
 //-----------------------------------------------------------------------------
-void CCollisionProperty::ComputeRotationExpandedSequenceBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
+void CSharedCollisionProperty::ComputeRotationExpandedSequenceBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
 {
-	CBaseAnimating *pAnim = GetOuter()->GetBaseAnimating();
+	CSharedBaseAnimating *pAnim = GetOuter()->GetBaseAnimating();
 	if ( !pAnim )
 	{
 		ComputeOBBBounds( pVecWorldMins, pVecWorldMaxs );
@@ -1111,7 +1118,7 @@ void CCollisionProperty::ComputeRotationExpandedSequenceBounds( Vector *pVecWorl
 //-----------------------------------------------------------------------------
 // Computes the surrounding collision bounds based on whatever algorithm we want...
 //-----------------------------------------------------------------------------
-void CCollisionProperty::ComputeCollisionSurroundingBox( bool bUseVPhysics, Vector *pVecWorldMins, Vector *pVecWorldMaxs )
+void CSharedCollisionProperty::ComputeCollisionSurroundingBox( bool bUseVPhysics, Vector *pVecWorldMins, Vector *pVecWorldMaxs )
 {
 	Assert( GetSolid() != SOLID_CUSTOM );
 
@@ -1141,7 +1148,7 @@ void CCollisionProperty::ComputeCollisionSurroundingBox( bool bUseVPhysics, Vect
 //-----------------------------------------------------------------------------
 // Computes the surrounding collision bounds based on whatever algorithm we want...
 //-----------------------------------------------------------------------------
-void CCollisionProperty::ComputeSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
+void CSharedCollisionProperty::ComputeSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs )
 {
 	if (( GetSolid() == SOLID_CUSTOM ) && (m_nSurroundType != USE_GAME_CODE ))
 	{
@@ -1228,7 +1235,7 @@ void CCollisionProperty::ComputeSurroundingBox( Vector *pVecWorldMins, Vector *p
 //-----------------------------------------------------------------------------
 // Sets the method by which the surrounding collision bounds is set
 //-----------------------------------------------------------------------------
-void CCollisionProperty::SetSurroundingBoundsType( SurroundingBoundsType_t type, const Vector *pMins, const Vector *pMaxs )
+void CSharedCollisionProperty::SetSurroundingBoundsType( SurroundingBoundsType_t type, const Vector *pMins, const Vector *pMaxs )
 {	
 	m_nSurroundType = type;
 	if (type != USE_SPECIFIED_BOUNDS)
@@ -1243,7 +1250,7 @@ void CCollisionProperty::SetSurroundingBoundsType( SurroundingBoundsType_t type,
 		m_vecSpecifiedSurroundingMaxsPreScaled = *pMaxs;
 
 		// Check if it's a scaled model
-		CBaseAnimating *pAnim = GetOuter()->GetBaseAnimating();
+		CSharedBaseAnimating *pAnim = GetOuter()->GetBaseAnimating();
 		if ( pAnim && pAnim->GetModelScale() != 1.0f )
 		{
 			// Do the scaling
@@ -1275,7 +1282,7 @@ void CCollisionProperty::SetSurroundingBoundsType( SurroundingBoundsType_t type,
 //-----------------------------------------------------------------------------
 // Marks the entity has having a dirty surrounding box
 //-----------------------------------------------------------------------------
-void CCollisionProperty::MarkSurroundingBoundsDirty()
+void CSharedCollisionProperty::MarkSurroundingBoundsDirty()
 {
 	// don't bother with the world
 	if ( m_pOuter->IsWorld() && !m_pOuter->IsEFlagSet( EFL_NOT_NETWORKED ) )
@@ -1298,7 +1305,7 @@ void CCollisionProperty::MarkSurroundingBoundsDirty()
 //-----------------------------------------------------------------------------
 // Does VPhysicsUpdate make us need to recompute the surrounding box?
 //-----------------------------------------------------------------------------
-bool CCollisionProperty::DoesVPhysicsInvalidateSurroundingBox( ) const
+bool CSharedCollisionProperty::DoesVPhysicsInvalidateSurroundingBox( ) const
 {
 	switch ( m_nSurroundType )
 	{
@@ -1329,7 +1336,7 @@ bool CCollisionProperty::DoesVPhysicsInvalidateSurroundingBox( ) const
 //-----------------------------------------------------------------------------
 // Computes the surrounding collision bounds based on whatever algorithm we want...
 //-----------------------------------------------------------------------------
-void CCollisionProperty::WorldSpaceSurroundingBounds( Vector *pVecMins, Vector *pVecMaxs )
+void CSharedCollisionProperty::WorldSpaceSurroundingBounds( Vector *pVecMins, Vector *pVecMaxs )
 {
 	const Vector &vecAbsOrigin = GetCollisionOrigin();
 	if ( GetOuter()->IsEFlagSet( EFL_DIRTY_SURROUNDING_COLLISION_BOUNDS ))
@@ -1353,7 +1360,7 @@ void CCollisionProperty::WorldSpaceSurroundingBounds( Vector *pVecMins, Vector *
 //-----------------------------------------------------------------------------
 // Spatial partition
 //-----------------------------------------------------------------------------
-void CCollisionProperty::CreatePartitionHandle()
+void CSharedCollisionProperty::CreatePartitionHandle()
 {
 	// Put the entity into the spatial partition.
 	if ( m_Partition == PARTITION_INVALID_HANDLE )
@@ -1362,7 +1369,7 @@ void CCollisionProperty::CreatePartitionHandle()
 	}
 }
 
-void CCollisionProperty::DestroyPartitionHandle()
+void CSharedCollisionProperty::DestroyPartitionHandle()
 {
 	if ( m_Partition != PARTITION_INVALID_HANDLE )
 	{
@@ -1375,7 +1382,7 @@ void CCollisionProperty::DestroyPartitionHandle()
 //-----------------------------------------------------------------------------
 // Updates the spatial partition
 //-----------------------------------------------------------------------------
-void CCollisionProperty::UpdateServerPartitionMask( )
+void CSharedCollisionProperty::UpdateServerPartitionMask( )
 {
 #ifndef CLIENT_DLL
 	SpatialPartitionHandle_t handle = GetPartitionHandle();
@@ -1427,7 +1434,7 @@ void CCollisionProperty::UpdateServerPartitionMask( )
 //-----------------------------------------------------------------------------
 // Marks the spatial partition dirty
 //-----------------------------------------------------------------------------
-void CCollisionProperty::MarkPartitionHandleDirty()
+void CSharedCollisionProperty::MarkPartitionHandleDirty()
 {
 	// don't bother with the world
 	if ( m_pOuter->IsWorld() )
@@ -1449,7 +1456,7 @@ void CCollisionProperty::MarkPartitionHandleDirty()
 //-----------------------------------------------------------------------------
 // Updates the spatial partition
 //-----------------------------------------------------------------------------
-void CCollisionProperty::UpdatePartition( )
+void CSharedCollisionProperty::UpdatePartition( )
 {
 	if ( m_pOuter->IsEFlagSet( EFL_DIRTY_SPATIAL_PARTITION ) )
 	{

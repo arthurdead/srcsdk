@@ -9,8 +9,15 @@
 #pragma once
 
 #if defined( CLIENT_DLL )
-#define CBaseFlex C_BaseFlex
-#define CSceneEntity C_SceneEntity
+class C_BaseFlex;
+typedef C_BaseFlex CSharedBaseFlex;
+class C_SceneEntity;
+typedef C_SceneEntity CSharedSceneEntity;
+#else
+class CBaseFlex;
+typedef CBaseFlex CSharedBaseFlex;
+class CSceneEntity;
+typedef CSceneEntity CSharedSceneEntity;
 #endif
 
 #include "iscenetokenprocessor.h"
@@ -18,12 +25,9 @@
 #include "tier1/convar.h"
 #include "scenetokenprocessor.h"
 
-class CBaseFlex;
-
 class CChoreoEvent;
 class CChoreoScene;
 class CChoreoActor;
-class CSceneEntity;
 struct flexsettinghdr_t;
 
 //-----------------------------------------------------------------------------
@@ -67,7 +71,7 @@ public:
 	// Current actor
 	CChoreoActor	*m_pActor;
 
-	CHandle< CSceneEntity >	m_hSceneEntity;
+	CHandle< CSharedSceneEntity >	m_hSceneEntity;
 
 	// Set after the first time the event has been configured ( allows
 	//  bumping markov index only at start of event playback, not every frame )
@@ -101,8 +105,8 @@ public:
 	// cached flex file
 	const flexsettinghdr_t *m_pExpHdr; 
 
-	void					InitWeight( CBaseFlex *pActor );
-	float					UpdateWeight( CBaseFlex *pActor );
+	void					InitWeight( CSharedBaseFlex *pActor );
+	float					UpdateWeight( CSharedBaseFlex *pActor );
 };
 
 void Scene_Printf( PRINTF_FORMAT_STRING const char *pFormat, ... );

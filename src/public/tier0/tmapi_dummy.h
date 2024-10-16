@@ -1,5 +1,9 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 // This is the null header file used to remove Telemetry calls.
+#ifndef TMAPI_DUMMY_H
+#define TMAPI_DUMMY_H
+
+#pragma once
 
 #define TMERR_DISABLED 1
 #define TMPRINTF_TOKEN_NONE 0
@@ -82,3 +86,4 @@
 
 typedef char *HTELEMETRY;
 
+#endif

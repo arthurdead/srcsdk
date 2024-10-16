@@ -19,9 +19,13 @@
 class CBasePlayer;
 
 #if defined( CLIENT_DLL )
-#define CSprite C_Sprite
-#define CSpriteOriented C_SpriteOriented
+class C_Sprite;
+typedef C_Sprite CSharedSprite;
+class C_SpriteOriented;
+typedef C_SpriteOriented CSharedSpriteOriented;
+
 #include "c_pixel_visibility.h"
+
 class CEngineSprite;
 
 class C_SpriteRenderer
@@ -76,19 +80,32 @@ protected:
 	float				m_flHDRColorScale;
 };
 
+#else
+class CSprite;
+typedef CSprite CSharedSprite;
+class CSpriteOriented;
+typedef CSpriteOriented CSharedSpriteOriented;
 #endif
 
-class CSprite : public CBaseEntity
+#if defined( CLIENT_DLL )
+	#define CSprite C_Sprite
+#endif
+
+class CSprite : public CSharedBaseEntity
 #if defined( CLIENT_DLL )
 	, public C_SpriteRenderer
 #endif
 {
-	DECLARE_CLASS( CSprite, CBaseEntity );
 public:
+	DECLARE_CLASS( CSprite, CSharedBaseEntity );
+	CSprite();
+
+#if defined( CLIENT_DLL )
+	#undef CSprite
+#endif
+
 	DECLARE_PREDICTABLE();
 	DECLARE_NETWORKCLASS();
-
-	CSprite();
 
 	virtual void SetModel( const char *szModelName );
 
@@ -136,7 +153,7 @@ public:
 	void InputColorGreenValue( inputdata_t &inputdata );
 #endif
 
-	inline void SetAttachment( CBaseEntity *pEntity, int attachment )
+	inline void SetAttachment( CSharedBaseEntity *pEntity, int attachment )
 	{
 		if ( pEntity )
 		{
@@ -173,14 +190,14 @@ public:
 	inline void FadeAndDie( float duration ) 
 	{ 
 		SetBrightness( 0, duration );
-		SetThink(&CSprite::AnimateUntilDead); 
+		SetThink(&CSharedSprite::AnimateUntilDead); 
 		m_flDieTime = gpGlobals->curtime + duration; 
 		SetNextThink( gpGlobals->curtime );  
 	}
 
 	inline void AnimateAndDie( float framerate ) 
 	{ 
-		SetThink(&CSprite::AnimateUntilDead); 
+		SetThink(&CSharedSprite::AnimateUntilDead); 
 		m_flSpriteFramerate = framerate;
 		m_flDieTime = gpGlobals->curtime + (m_flMaxFrame / m_flSpriteFramerate); 
 		SetNextThink( gpGlobals->curtime ); 
@@ -188,7 +205,7 @@ public:
 
 	inline void AnimateForTime( float framerate, float time ) 
 	{ 
-		SetThink(&CSprite::AnimateUntilDead); 
+		SetThink(&CSharedSprite::AnimateUntilDead); 
 		m_flSpriteFramerate = framerate;
 		m_flDieTime = gpGlobals->curtime + time;
 		SetNextThink( gpGlobals->curtime ); 
@@ -198,7 +215,7 @@ public:
 	// Surely there's gotta be a better way.
 	void FadeOutFromSpawn( )
 	{
-		SetThink(&CSprite::BeginFadeOutThink); 
+		SetThink(&CSharedSprite::BeginFadeOutThink); 
 		SetNextThink( gpGlobals->curtime + 0.01f ); 
 	}
 
@@ -211,9 +228,9 @@ public:
 #if !defined( CLIENT_DLL )
 	DECLARE_MAPENTITY();
 
-	static CSprite *SpriteCreate( const char *pSpriteName, const Vector &origin, bool animate );
+	static CSharedSprite *SpriteCreate( const char *pSpriteName, const Vector &origin, bool animate );
 #endif
-	static CSprite *SpriteCreatePredictable( const char *module, int line, const char *pSpriteName, const Vector &origin, bool animate );
+	static CSharedSprite *SpriteCreatePredictable( const char *module, int line, const char *pSpriteName, const Vector &origin, bool animate );
 
 #if defined( CLIENT_DLL )
 	virtual float	GetRenderScale( void );
@@ -238,7 +255,7 @@ public:
 
 #endif
 public:
-	CNetworkHandle( CBaseEntity, m_hAttachedToEntity );
+	CNetworkHandle( CSharedBaseEntity, m_hAttachedToEntity );
 	CNetworkVar( int, m_nAttachment );
 	CNetworkVar( float, m_flSpriteFramerate );
 	CNetworkVar( float, m_flFrame );
@@ -271,11 +288,19 @@ private:
 	float		m_flBrightnessTimeStart;//Real time for brightness
 };
 
+#if defined( CLIENT_DLL )
+	#define CSpriteOriented C_SpriteOriented
+#endif
 
-class CSpriteOriented : public CSprite
+class CSpriteOriented : public CSharedSprite
 {
 public:
-	DECLARE_CLASS( CSpriteOriented, CSprite );
+	DECLARE_CLASS( CSpriteOriented, CSharedSprite );
+
+#if defined( CLIENT_DLL )
+	#undef CSpriteOriented
+#endif
+
 #if !defined( CLIENT_DLL )
 	DECLARE_SERVERCLASS();
 	void Spawn( void );
@@ -289,7 +314,7 @@ public:
 
 // Macro to wrap creation
 #define SPRITE_CREATE_PREDICTABLE( ... ) \
-	CSprite::SpriteCreatePredictable( __FILE__, __LINE__ __VA_OPT__(, __VA_ARGS__) )
+	CSharedSprite::SpriteCreatePredictable( __FILE__, __LINE__ __VA_OPT__(, __VA_ARGS__) )
 
 
 #endif // SPRITE_H

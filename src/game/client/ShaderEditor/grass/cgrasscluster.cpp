@@ -850,7 +850,7 @@ void CGrassClusterManager::UpdateMorphInfo()
 		else if ( dynamic_cast< CBaseViewModel* >( pEnt ) != NULL )
 			continue;
 
-		CCollisionProperty *pCProp = pEnt->CollisionProp();
+		C_CollisionProperty *pCProp = pEnt->CollisionProp();
 
 		if ( !pCProp )
 			continue;

@@ -8,6 +8,7 @@
 #ifndef ENTITYAPI_H
 #define ENTITYAPI_H
 
+#pragma once
 
 class SendTable;
 struct edict_t;

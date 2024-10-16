@@ -7,7 +7,9 @@
 #ifndef C_MOVIE_DISPLAY_H
 #define C_MOVIE_DISPLAY_H
 
-#include "cbase.h"
+#pragma once
+
+#include "c_baseentity.h"
 
 class C_MovieDisplay : public C_BaseEntity
 {

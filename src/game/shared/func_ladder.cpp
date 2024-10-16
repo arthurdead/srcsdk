@@ -14,11 +14,16 @@
 /*static*/ ConVar sv_showladders( "sv_showladders", "0", 0, "Show bbox and dismount points for all ladders (must be set before level load.)\n" );
 #endif
 
-CUtlVector< CFuncLadder * >	CFuncLadder::s_Ladders;
+CUtlVector< CSharedFuncLadder * >	CSharedFuncLadder::s_Ladders;
+
+#if defined( CLIENT_DLL )
+#define CFuncLadder C_FuncLadder
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CFuncLadder::CFuncLadder() :
+CSharedFuncLadder::CFuncLadder() :
 	m_bDisabled( false )
 {
 	s_Ladders.AddToTail( this );
@@ -27,17 +32,21 @@ CFuncLadder::CFuncLadder() :
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CFuncLadder::~CFuncLadder()
+CSharedFuncLadder::~CFuncLadder()
 {
 	s_Ladders.FindAndRemove( this );
 }
 
-int CFuncLadder::GetLadderCount()
+#if defined( CLIENT_DLL )
+#undef CFuncLadder
+#endif
+
+int CSharedFuncLadder::GetLadderCount()
 {
 	return s_Ladders.Count();
 }
 
-CFuncLadder *CFuncLadder::GetLadder( int index )
+CSharedFuncLadder *CSharedFuncLadder::GetLadder( int index )
 {
 	if ( index < 0 || index >= s_Ladders.Count() )
 		return NULL;
@@ -48,7 +57,7 @@ CFuncLadder *CFuncLadder::GetLadder( int index )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CFuncLadder::Spawn()
+void CSharedFuncLadder::Spawn()
 {
 	BaseClass::Spawn();
 
@@ -153,7 +162,7 @@ void CFuncLadder::Spawn()
 //-----------------------------------------------------------------------------
 // Purpose: Called after all entities have spawned or after reload from .sav file
 //-----------------------------------------------------------------------------
-void CFuncLadder::Activate()
+void CSharedFuncLadder::Activate()
 {
 	// Chain to base class
 	BaseClass::Activate();
@@ -173,10 +182,10 @@ void CFuncLadder::Activate()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CFuncLadder::SearchForDismountPoints()
+void CSharedFuncLadder::SearchForDismountPoints()
 {
 #if !defined( CLIENT_DLL )
-	CUtlVector< CInfoLadderDismountHandle > allNodes;
+	CUtlVector< InfoLadderDismountHandle > allNodes;
 
 	Vector topPos;
 	Vector bottomPos;
@@ -206,7 +215,7 @@ void CFuncLadder::SearchForDismountPoints()
 #endif
 }
 
-void CFuncLadder::SetEndPoints( const Vector& p1, const Vector& p2 )
+void CSharedFuncLadder::SetEndPoints( const Vector& p1, const Vector& p2 )
 {
 	m_vecPlayerMountPositionTop = p1;
 	m_vecPlayerMountPositionBottom = p2;
@@ -244,7 +253,7 @@ void CFuncLadder::SetEndPoints( const Vector& p1, const Vector& p2 )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CFuncLadder::DrawDebugGeometryOverlays()
+void CSharedFuncLadder::DrawDebugGeometryOverlays()
 {
 #if !defined( CLIENT_DLL )
 
@@ -284,7 +293,7 @@ void CFuncLadder::DrawDebugGeometryOverlays()
 // Purpose: 
 // Input  : org - 
 //-----------------------------------------------------------------------------
-void CFuncLadder::GetTopPosition( Vector& org )
+void CSharedFuncLadder::GetTopPosition( Vector& org )
 {
 	ComputeAbsPosition( m_vecPlayerMountPositionTop + GetLocalOrigin(), &org );
 }
@@ -293,7 +302,7 @@ void CFuncLadder::GetTopPosition( Vector& org )
 // Purpose: 
 // Input  : org - 
 //-----------------------------------------------------------------------------
-void CFuncLadder::GetBottomPosition( Vector& org )
+void CSharedFuncLadder::GetBottomPosition( Vector& org )
 {
 	ComputeAbsPosition( m_vecPlayerMountPositionBottom + GetLocalOrigin(), &org );
 }
@@ -302,7 +311,7 @@ void CFuncLadder::GetBottomPosition( Vector& org )
 // Purpose: 
 // Input  : bottomToTopVec - 
 //-----------------------------------------------------------------------------
-void CFuncLadder::ComputeLadderDir( Vector& bottomToTopVec )
+void CSharedFuncLadder::ComputeLadderDir( Vector& bottomToTopVec )
 {
 	Vector top;
 	Vector bottom;
@@ -317,7 +326,7 @@ void CFuncLadder::ComputeLadderDir( Vector& bottomToTopVec )
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CFuncLadder::GetDismountCount() const
+int CSharedFuncLadder::GetDismountCount() const
 {
 	return m_Dismounts.Count();
 }
@@ -327,7 +336,7 @@ int CFuncLadder::GetDismountCount() const
 // Input  : index - 
 // Output : CInfoLadderDismountHandle
 //-----------------------------------------------------------------------------
-CInfoLadderDismount *CFuncLadder::GetDismount( int index )
+CSharedInfoLadderDismount *CSharedFuncLadder::GetDismount( int index )
 {
 	if ( index < 0 || index >= m_Dismounts.Count() )
 		return NULL;
@@ -340,7 +349,7 @@ CInfoLadderDismount *CFuncLadder::GetDismount( int index )
 //			radius - 
 //			list - 
 //-----------------------------------------------------------------------------
-void CFuncLadder::FindNearbyDismountPoints( const Vector& origin, float radius, CUtlVector< CInfoLadderDismountHandle >& list )
+void CSharedFuncLadder::FindNearbyDismountPoints( const Vector& origin, float radius, CUtlVector< InfoLadderDismountHandle >& list )
 {
 #if !defined( CLIENT_DLL )
 	CBaseEntity *pEntity = NULL;
@@ -358,7 +367,7 @@ void CFuncLadder::FindNearbyDismountPoints( const Vector& origin, float radius, 
 			}
 		}
 
-		CInfoLadderDismountHandle handle;
+		InfoLadderDismountHandle handle;
 		handle = landingspot;
 		if ( list.Find( handle ) == list.InvalidIndex() )
 		{
@@ -372,7 +381,7 @@ void CFuncLadder::FindNearbyDismountPoints( const Vector& origin, float radius, 
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CFuncLadder::InputEnable( inputdata_t &inputdata )
+void CSharedFuncLadder::InputEnable( inputdata_t &inputdata )
 {
 	m_bDisabled = false;
 }
@@ -381,7 +390,7 @@ void CFuncLadder::InputEnable( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CFuncLadder::InputDisable( inputdata_t &inputdata )
+void CSharedFuncLadder::InputDisable( inputdata_t &inputdata )
 {
 	m_bDisabled = true;
 }
@@ -391,7 +400,7 @@ void CFuncLadder::InputDisable( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CFuncLadder::InputForcePlayerOn( inputdata_t &inputdata )
+void CSharedFuncLadder::InputForcePlayerOn( inputdata_t &inputdata )
 {
 	//TODO Arthurdead!!!!
 	//static_cast<CGameMovement*>(g_pGameMovement)->ForcePlayerOntoLadder(this);
@@ -401,7 +410,7 @@ void CFuncLadder::InputForcePlayerOn( inputdata_t &inputdata )
 // Purpose: 
 // Input  : &inputdata - 
 //-----------------------------------------------------------------------------
-void CFuncLadder::InputCheckPlayerOn( inputdata_t &inputdata )
+void CSharedFuncLadder::InputCheckPlayerOn( inputdata_t &inputdata )
 {
 	//TODO Arthurdead!!!!
 	//static_cast<CGameMovement*>(g_pGameMovement)->MountPlayerOntoLadder(this);
@@ -412,7 +421,7 @@ void CFuncLadder::InputCheckPlayerOn( inputdata_t &inputdata )
 // Purpose: 
 // Input  : *pPlayer - 
 //-----------------------------------------------------------------------------
-void CFuncLadder::PlayerGotOn( CBasePlayer *pPlayer )
+void CSharedFuncLadder::PlayerGotOn( CSharedBasePlayer *pPlayer )
 {
 #if !defined( CLIENT_DLL )
 	m_OnPlayerGotOnLadder.FireOutput(this, pPlayer);
@@ -424,7 +433,7 @@ void CFuncLadder::PlayerGotOn( CBasePlayer *pPlayer )
 // Purpose: 
 // Input  : *pPlayer - 
 //-----------------------------------------------------------------------------
-void CFuncLadder::PlayerGotOff( CBasePlayer *pPlayer )
+void CSharedFuncLadder::PlayerGotOff( CSharedBasePlayer *pPlayer )
 {
 #if !defined( CLIENT_DLL )
 	m_OnPlayerGotOffLadder.FireOutput(this, pPlayer);
@@ -435,13 +444,13 @@ void CFuncLadder::PlayerGotOff( CBasePlayer *pPlayer )
 // Purpose: 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CFuncLadder::DontGetOnLadder( void ) const
+bool CSharedFuncLadder::DontGetOnLadder( void ) const
 {
 	return m_bFakeLadder;
 }
 
 #if !defined(CLIENT_DLL)
-const char *CFuncLadder::GetSurfacePropName()
+const char *CSharedFuncLadder::GetSurfacePropName()
 {
 	if ( !m_surfacePropName )
 		return NULL;
@@ -451,7 +460,7 @@ const char *CFuncLadder::GetSurfacePropName()
 
 IMPLEMENT_NETWORKCLASS_ALIASED( FuncLadder, DT_FuncLadder );
 
-BEGIN_NETWORK_TABLE( CFuncLadder, DT_FuncLadder )
+BEGIN_NETWORK_TABLE( CSharedFuncLadder, DT_FuncLadder )
 #if !defined( CLIENT_DLL )
 	SendPropVector( SENDINFO( m_vecPlayerMountPositionTop ), SPROP_COORD ),
 	SendPropVector( SENDINFO( m_vecPlayerMountPositionBottom ), SPROP_COORD ),
@@ -466,12 +475,12 @@ BEGIN_NETWORK_TABLE( CFuncLadder, DT_FuncLadder )
 #endif
 END_NETWORK_TABLE()
 
-LINK_ENTITY_TO_CLASS( func_useableladder, CFuncLadder );
+LINK_ENTITY_TO_CLASS_ALIASED( func_useableladder, FuncLadder );
 
 //---------------------------------------------------------
 // Save/Restore
 //---------------------------------------------------------
-BEGIN_MAPENTITY( CFuncLadder )
+BEGIN_MAPENTITY( CSharedFuncLadder )
 	DEFINE_KEYFIELD( m_vecPlayerMountPositionTop,	FIELD_VECTOR, "point0" ),
 	DEFINE_KEYFIELD( m_vecPlayerMountPositionBottom,	FIELD_VECTOR, "point1" ),
 
@@ -494,7 +503,7 @@ END_MAPENTITY()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CInfoLadderDismount::DrawDebugGeometryOverlays()
+void CSharedInfoLadderDismount::DrawDebugGeometryOverlays()
 {
 #if !defined( CLIENT_DLL )
 	BaseClass::DrawDebugGeometryOverlays();
@@ -507,7 +516,7 @@ void CInfoLadderDismount::DrawDebugGeometryOverlays()
 }
 
 #if defined( GAME_DLL )
-int CFuncLadder::UpdateTransmitState()
+int CSharedFuncLadder::UpdateTransmitState()
 {
 	// transmit if in PVS for clientside prediction
 	return SetTransmitState( FL_EDICT_PVSCHECK );
@@ -516,10 +525,10 @@ int CFuncLadder::UpdateTransmitState()
 
 IMPLEMENT_NETWORKCLASS_ALIASED( InfoLadderDismount, DT_InfoLadderDismount );
 
-BEGIN_NETWORK_TABLE( CInfoLadderDismount, DT_InfoLadderDismount )
+BEGIN_NETWORK_TABLE( CSharedInfoLadderDismount, DT_InfoLadderDismount )
 END_NETWORK_TABLE()
 
-LINK_ENTITY_TO_CLASS( info_ladder_dismount, CInfoLadderDismount );
+LINK_ENTITY_TO_CLASS_ALIASED( info_ladder_dismount, InfoLadderDismount );
 
 #if defined(GAME_DLL)
 const char *FuncLadder_GetSurfaceprops(CBaseEntity *pLadderEntity)

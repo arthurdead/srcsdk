@@ -227,7 +227,7 @@ void VerifySequenceIndex( CStudioHdr *pstudiohdr )
 #if !defined( MAKEXVCD )
 bool IsInPrediction()
 {
-	return CBaseEntity::GetPredictionPlayer() != NULL;
+	return CSharedBaseEntity::GetPredictionPlayer() != NULL;
 }
 
 int SelectWeightedSequence( CStudioHdr *pstudiohdr, Activity activity, int curSequence )

@@ -100,7 +100,7 @@ CPhysCollide *PhysCreateBbox( const Vector &minsIn, const Vector &maxsIn )
 //			isStatic - 
 // Output : static IPhysicsObject
 //-----------------------------------------------------------------------------
-IPhysicsObject *PhysModelCreateBox( CBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, bool isStatic )
+IPhysicsObject *PhysModelCreateBox( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, bool isStatic )
 {
 	int modelIndex = pEntity->GetModelIndex();
 	const char *pSurfaceProps = "flesh";
@@ -139,7 +139,7 @@ IPhysicsObject *PhysModelCreateBox( CBaseEntity *pEntity, const Vector &mins, co
 //			isStatic - 
 // Output : static IPhysicsObject
 //-----------------------------------------------------------------------------
-IPhysicsObject *PhysModelCreateSphere( CBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic )
+IPhysicsObject *PhysModelCreateSphere( CSharedBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic )
 {
 	int modelIndex = pEntity->GetModelIndex();
 	const char *pSurfaceProps = "flesh";
@@ -173,7 +173,7 @@ IPhysicsObject *PhysModelCreateSphere( CBaseEntity *pEntity, float radius, const
 //			isStatic - 
 // Output : static IPhysicsObject
 //-----------------------------------------------------------------------------
-IPhysicsObject *PhysModelCreateOBB( CBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, const QAngle &angle, bool isStatic )
+IPhysicsObject *PhysModelCreateOBB( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, const QAngle &angle, bool isStatic )
 {
 	int modelIndex = pEntity->GetModelIndex();
 	const char *pSurfaceProps = "flesh";
@@ -212,7 +212,7 @@ IPhysicsObject *PhysModelCreateOBB( CBaseEntity *pEntity, const Vector &mins, co
 //			solidIndex - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool PhysModelParseSolidByIndex( solid_t &solid, CBaseEntity *pEntity, int modelIndex, int solidIndex )
+bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, int modelIndex, int solidIndex )
 {
 	vcollide_t *pCollide = modelinfo->GetVCollide( modelIndex );
 	if ( !pCollide )
@@ -266,7 +266,7 @@ bool PhysModelParseSolidByIndex( solid_t &solid, CBaseEntity *pEntity, int model
 //			modelIndex - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool PhysModelParseSolid( solid_t &solid, CBaseEntity *pEntity, int modelIndex )
+bool PhysModelParseSolid( solid_t &solid, CSharedBaseEntity *pEntity, int modelIndex )
 {
 	return PhysModelParseSolidByIndex( solid, pEntity, modelIndex, -1 );
 }
@@ -279,7 +279,7 @@ bool PhysModelParseSolid( solid_t &solid, CBaseEntity *pEntity, int modelIndex )
 //			solidIndex - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool PhysModelParseSolidByIndex( solid_t &solid, CBaseEntity *pEntity, vcollide_t *pCollide, int solidIndex )
+bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, vcollide_t *pCollide, int solidIndex )
 {
 	bool parsed = false;
 
@@ -331,7 +331,7 @@ bool PhysModelParseSolidByIndex( solid_t &solid, CBaseEntity *pEntity, vcollide_
 //			*pSolid - 
 // Output : IPhysicsObject
 //-----------------------------------------------------------------------------
-IPhysicsObject *PhysModelCreate( CBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles, solid_t *pSolid )
+IPhysicsObject *PhysModelCreate( CSharedBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles, solid_t *pSolid )
 {
 	if ( !physenv )
 		return NULL;
@@ -387,7 +387,7 @@ IPhysicsObject *PhysModelCreate( CBaseEntity *pEntity, int modelIndex, const Vec
 //			&angles - 
 // Output : IPhysicsObject
 //-----------------------------------------------------------------------------
-IPhysicsObject *PhysModelCreateUnmoveable( CBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles )
+IPhysicsObject *PhysModelCreateUnmoveable( CSharedBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles )
 {
 	if ( !physenv )
 		return NULL;
@@ -443,7 +443,7 @@ IPhysicsObject *PhysModelCreateUnmoveable( CBaseEntity *pEntity, int modelIndex,
 //			*pSolid - 
 // Output : IPhysicsObject
 //-----------------------------------------------------------------------------
-IPhysicsObject *PhysModelCreateCustom( CBaseEntity *pEntity, const CPhysCollide *pModel, const Vector &origin, const QAngle &angles, const char *pName, bool isStatic, solid_t *pSolid )
+IPhysicsObject *PhysModelCreateCustom( CSharedBaseEntity *pEntity, const CPhysCollide *pModel, const Vector &origin, const QAngle &angles, const char *pName, bool isStatic, solid_t *pSolid )
 {
 	if ( !physenv )
 		return NULL;
@@ -478,7 +478,7 @@ IPhysicsObject *PhysModelCreateCustom( CBaseEntity *pEntity, const CPhysCollide 
 //			&solid - 
 // Output : IPhysicsObject
 //-----------------------------------------------------------------------------
-IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vector &origin, solid_t &solid )
+IPhysicsObject *PhysSphereCreate( CSharedBaseEntity *pEntity, float radius, const Vector &origin, solid_t &solid )
 {
 	if ( !physenv )
 		return NULL;
@@ -503,7 +503,7 @@ IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vect
 //			&solid - 
 // Output : IPhysicsObject
 //-----------------------------------------------------------------------------
-IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic, solid_t &solid )
+IPhysicsObject *PhysSphereCreate( CSharedBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic, solid_t &solid )
 {
 	int surfaceProp = -1;
 	if ( solid.surfaceprop[0] )
@@ -532,7 +532,7 @@ void PhysGetDefaultAABBSolid( solid_t &solid )
 // Purpose: Destroy a physics object
 // Input  : *pObject - 
 //-----------------------------------------------------------------------------
-void PhysDestroyObject( IPhysicsObject *pObject, CBaseEntity *pEntity )
+void PhysDestroyObject( IPhysicsObject *pObject, CSharedBaseEntity *pEntity )
 {
 	if ( pObject )
 		pObject->SetGameData( NULL );
@@ -600,7 +600,7 @@ void PhysParseSurfaceData( IPhysicsSurfaceProps *pProps, IFileSystem *pFileSyste
 	manifest->deleteThis();
 }
 
-void PhysCreateVirtualTerrain( CBaseEntity *pWorld, const objectparams_t &defaultParams )
+void PhysCreateVirtualTerrain( CSharedBaseEntity *pWorld, const objectparams_t &defaultParams )
 {
 	if ( !physenv )
 		return;
@@ -625,7 +625,7 @@ void PhysCreateVirtualTerrain( CBaseEntity *pWorld, const objectparams_t &defaul
 	}
 }
 
-IPhysicsObject *PhysCreateWorld_Shared( CBaseEntity *pWorld, vcollide_t *pWorldCollide, const objectparams_t &defaultParams )
+IPhysicsObject *PhysCreateWorld_Shared( CSharedBaseEntity *pWorld, vcollide_t *pWorldCollide, const objectparams_t &defaultParams )
 {
 	solid_t solid;
 	fluid_t fluid;
@@ -761,7 +761,7 @@ IPhysicsGameTrace *physgametrace = &g_PhysGameTrace;
 //-----------------------------------------------------------------------------
 void CPhysicsGameTrace::VehicleTraceRay( const Ray_t &ray, void *pVehicle, trace_t *pTrace )
 {
-	CBaseEntity *pBaseEntity = static_cast<CBaseEntity*>( pVehicle );
+	CSharedBaseEntity *pBaseEntity = static_cast<CSharedBaseEntity*>( pVehicle );
 	UTIL_TraceRay( ray, MASK_SOLID, pBaseEntity, COLLISION_GROUP_NONE, pTrace );
 }
 
@@ -770,7 +770,7 @@ void CPhysicsGameTrace::VehicleTraceRay( const Ray_t &ray, void *pVehicle, trace
 //-----------------------------------------------------------------------------
 void CPhysicsGameTrace::VehicleTraceRayWithWater( const Ray_t &ray, void *pVehicle, trace_t *pTrace )
 {
-	CBaseEntity *pBaseEntity = static_cast<CBaseEntity*>( pVehicle );
+	CSharedBaseEntity *pBaseEntity = static_cast<CSharedBaseEntity*>( pVehicle );
 	UTIL_TraceRay( ray, MASK_SOLID|MASK_WATER, pBaseEntity, COLLISION_GROUP_NONE, pTrace );
 }
 
@@ -799,8 +799,8 @@ void PhysEnableEntityCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObje
 	if ( !pObject0 || !pObject1 )
 		return;
 
-	CBaseEntity *pEntity0 = static_cast<CBaseEntity *>(pObject0->GetGameData());
-	CBaseEntity *pEntity1 = static_cast<CBaseEntity *>(pObject1->GetGameData());
+	CSharedBaseEntity *pEntity0 = static_cast<CSharedBaseEntity *>(pObject0->GetGameData());
+	CSharedBaseEntity *pEntity1 = static_cast<CSharedBaseEntity *>(pObject1->GetGameData());
 	g_EntityCollisionHash->RemoveObjectPair( pObject0->GetGameData(), pObject1->GetGameData() );
 	PhysRecheckObjectPair( pObject0, pObject1 );
 	pEntity0->CollisionRulesChanged();
@@ -813,8 +813,8 @@ void PhysDisableEntityCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObj
 	if ( !pObject0 || !pObject1 )
 		return;
 
-	CBaseEntity *pEntity0 = static_cast<CBaseEntity *>(pObject0->GetGameData());
-	CBaseEntity *pEntity1 = static_cast<CBaseEntity *>(pObject1->GetGameData());
+	CSharedBaseEntity *pEntity0 = static_cast<CSharedBaseEntity *>(pObject0->GetGameData());
+	CSharedBaseEntity *pEntity1 = static_cast<CSharedBaseEntity *>(pObject1->GetGameData());
 	if ( !pEntity0 || !pEntity1 )
 		return;
 
@@ -824,7 +824,7 @@ void PhysDisableEntityCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObj
 	pEntity1->CollisionRulesChanged();
 }
 
-void PhysDisableEntityCollisions( CBaseEntity *pEntity0, CBaseEntity *pEntity1 )
+void PhysDisableEntityCollisions( CSharedBaseEntity *pEntity0, CSharedBaseEntity *pEntity1 )
 {
 	if ( !pEntity0 || !pEntity1 )
 		return;
@@ -837,7 +837,7 @@ void PhysDisableEntityCollisions( CBaseEntity *pEntity0, CBaseEntity *pEntity1 )
 }
 
 
-void PhysEnableEntityCollisions( CBaseEntity *pEntity0, CBaseEntity *pEntity1 )
+void PhysEnableEntityCollisions( CSharedBaseEntity *pEntity0, CSharedBaseEntity *pEntity1 )
 {
 	if ( !pEntity0 || !pEntity1 )
 		return;
@@ -849,7 +849,7 @@ void PhysEnableEntityCollisions( CBaseEntity *pEntity0, CBaseEntity *pEntity1 )
 #endif
 }
 
-bool PhysEntityCollisionsAreDisabled( CBaseEntity *pEntity0, CBaseEntity *pEntity1 )
+bool PhysEntityCollisionsAreDisabled( CSharedBaseEntity *pEntity0, CSharedBaseEntity *pEntity1 )
 {
 	return g_EntityCollisionHash->IsObjectPairInHash( pEntity0, pEntity1 );
 }
@@ -1033,7 +1033,7 @@ void PhysFrictionEffect( Vector &vecPos, Vector vecVel, float energy, int surfac
 	}
 }
 
-void PhysFrictionSound( CBaseEntity *pEntity, IPhysicsObject *pObject, float energy, int surfaceProps, int surfacePropsHit )
+void PhysFrictionSound( CSharedBaseEntity *pEntity, IPhysicsObject *pObject, float energy, int surfaceProps, int surfacePropsHit )
 {
 	if ( !pEntity || energy < 75.0f || surfaceProps < 0 )
 		return;
@@ -1075,7 +1075,7 @@ static HSOUNDSCRIPTHANDLE PrecachePhysicsSoundByStringIndex( int idx )
 	// Only precache if a value was set in the script file...
 	if ( idx != 0 )
 	{
-		return CBaseEntity::PrecacheScriptSound( physprops->GetString( idx ) );
+		return CSharedBaseEntity::PrecacheScriptSound( physprops->GetString( idx ) );
 	}
 
 	return SOUNDEMITTER_INVALID_HANDLE;

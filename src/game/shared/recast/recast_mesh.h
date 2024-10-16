@@ -26,9 +26,10 @@
 
 #ifdef GAME_DLL
 class CBaseEntity;
+typedef CBaseEntity CSharedBaseEntity;
 #else
-#define CBaseEntity C_BaseEntity
 class C_BaseEntity;
+typedef C_BaseEntity CSharedBaseEntity;
 #endif
 
 class CMapMesh;
@@ -302,7 +303,7 @@ public:
 		bool *bIsPartial = NULL );
 #endif // CLIENT_DLL
 	bool TestRoute( const Vector &vStart, const Vector &vEnd );
-	float FindPathDistance( const Vector &vStart, const Vector &vEnd, CBaseEntity *pTarget = NULL, float fBeneathLimit = 120.0f, bool bLimitedSearch = false );
+	float FindPathDistance( const Vector &vStart, const Vector &vEnd, CSharedBaseEntity *pTarget = NULL, float fBeneathLimit = 120.0f, bool bLimitedSearch = false );
 
 	// Obstacle management
 	dtObstacleRef AddTempObstacle( const Vector &vPos, float radius, float height, unsigned char areaId );

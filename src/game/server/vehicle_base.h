@@ -300,6 +300,7 @@ protected:
 	float		m_flNoImpactDamageTime;
 };
 
+typedef CPropVehicleDriveable CSharedPropVehicleDriveable;
 
 inline bool CPropVehicleDriveable::HasGun()
 {

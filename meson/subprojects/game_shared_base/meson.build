@@ -122,6 +122,7 @@ game_shared_base_dep = declare_dependency(
 		join_paths(shared_src_dir,'recast','recast_tilecache_helpers.cpp'),
 		join_paths(shared_src_dir,'recast','fastlz','fastlz.c'),
 		join_paths(shared_src_dir,'mapbase','GlobalStrings.cpp'),
+		join_paths(shared_src_dir,'vphysics_sound.cpp'),
 		join_paths(public_dir,'interval.cpp'),
 		join_paths(public_dir,'SoundParametersInternal.cpp'),
 		join_paths(public_dir,'bone_setup.cpp'),

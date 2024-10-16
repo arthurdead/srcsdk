@@ -65,7 +65,7 @@ public:
 
 	void	Update( void );
 
-	void	PositionCamera( CBasePlayer *pPlayer, const QAngle& angles );
+	void	PositionCamera( CSharedBasePlayer *pPlayer, const QAngle& angles );
 
 	void	UseCameraOffsets( bool bUse ) { m_bUseCameraOffsets = bUse; }
 	bool	UsingCameraOffsets( void ) { return m_bUseCameraOffsets; }

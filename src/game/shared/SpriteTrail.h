@@ -11,7 +11,11 @@
 #include "Sprite.h"
 
 #if defined( CLIENT_DLL )
-#define CSpriteTrail C_SpriteTrail
+class C_SpriteTrail;
+typedef C_SpriteTrail CSharedSpriteTrail;
+#else
+class CSpriteTrail;
+typedef CSpriteTrail CSharedSpriteTrail;
 #endif
 
 
@@ -26,15 +30,23 @@ struct TrailPoint_t
 	float	m_flWidthVariance;
 };
 
-class CSpriteTrail : public CSprite
+#if defined( CLIENT_DLL )
+	#define CSpriteTrail C_SpriteTrail
+#endif
+
+class CSpriteTrail : public CSharedSprite
 {
-	DECLARE_CLASS( CSpriteTrail, CSprite );
+public:
+	DECLARE_CLASS( CSpriteTrail, CSharedSprite );
+	CSpriteTrail( void );
+
+#if defined( CLIENT_DLL )
+	#undef CSpriteTrail
+#endif
+
 	DECLARE_MAPENTITY();
 	DECLARE_NETWORKCLASS();
 	DECLARE_PREDICTABLE();
-
-public:
-	CSpriteTrail( void );
 
 	// Sets parameters of the sprite trail
 	void SetLifeTime( float time );
@@ -69,7 +81,7 @@ public:
 	// Server only code
 
 	virtual int ShouldTransmit( const CCheckTransmitInfo *pInfo );
-	static CSpriteTrail *SpriteTrailCreate( const char *pSpriteName, const Vector &origin, bool animate );
+	static CSharedSpriteTrail *SpriteTrailCreate( const char *pSpriteName, const Vector &origin, bool animate );
 
 #endif
 

@@ -2899,6 +2899,8 @@ public:
 private:
 };
 
+typedef CPointEntity CSharedPointEntity;
+
 // Has no position or size
 class CLogicalEntity : public CBaseEntity
 {
@@ -2913,6 +2915,8 @@ public:
 		return SetTransmitState( FL_EDICT_ALWAYS );
 	}
 };
+
+typedef CLogicalEntity CSharedLogicalEntity;
 
 // Has a position + size
 class CServerOnlyEntity : public CBaseEntity

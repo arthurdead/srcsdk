@@ -8,7 +8,11 @@
 #ifndef MATRIXMATH_H
 #define MATRIXMATH_H
 
+#pragma once
+
 #include <stdarg.h>
+
+#include "tier0/platform.h"
 
 // The operations in this file can perform basic matrix operations on matrices represented
 // using any class that supports the necessary operations:

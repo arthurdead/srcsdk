@@ -1,6 +1,8 @@
 #ifndef IDEF_COOKIE_H
 #define IDEF_COOKIE_H
 
+#pragma once
+
 #include "materialsystem/itexture.h"
 
 class IDefCookie

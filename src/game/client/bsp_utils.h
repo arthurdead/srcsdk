@@ -4,6 +4,10 @@
 //
 // $NoKeywords: $
 //===========================================================================//
+#ifndef BSP_UTILS_H
+#define BSP_UTILS_H
+
+#pragma once
 
 #include "../utils/common/bsplib.h"
 #include "ibsppack.h"
@@ -19,3 +23,5 @@ void BSP_BackgroundRepack( const char *pszInputMapFile,
                            const char *pszOutputMapFile,
                            IBSPPack::eRepackBSPFlags eRepackFlags = (IBSPPack::eRepackBSPFlags) ( IBSPPack::eRepackBSP_CompressLumps |
                                                                                                   IBSPPack::eRepackBSP_CompressPackfile ) );
+
+#endif

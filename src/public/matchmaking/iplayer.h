@@ -8,6 +8,8 @@
 #ifndef _IPLAYER_H_
 #define _IPLAYER_H_
 
+#pragma once
+
 #include "tier1/KeyValues.h"
 
 struct UserProfileData
@@ -29,6 +31,8 @@ struct UserProfileData
 	int32	titleachearned;
 	int32	titlecred;
 };
+
+typedef uint64 XUID;
 
 //Players are a wrapper or a networked player, as such they may not have all the information current, particularly when first created.
 abstract_class IPlayer

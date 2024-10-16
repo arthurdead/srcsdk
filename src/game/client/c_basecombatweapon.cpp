@@ -39,7 +39,15 @@ int		g_sModelIndexBloodSpray;	// holds the sprite index for splattered blood
 //-----------------------------------------------------------------------------
 void W_Precache(void)
 {
-	PrecacheFileWeaponInfoDatabase( g_pFullFileSystem, GameRules()->GetEncryptionKey() );
+	PrecacheModFileWeaponInfoDatabase( g_pFullFileSystem, GameRules()->GetEncryptionKey(), "scripts/weapon_manifest.txt" );
+
+	char sz[128];
+	char mapname[MAX_PATH];
+	V_FileBase(engine->GetLevelName(), mapname, sizeof(mapname));
+
+	Q_snprintf( sz, sizeof( sz ), "maps/%s_weapon_manifest.txt", mapname );
+
+	PrecacheMapFileWeaponInfoDatabase( g_pFullFileSystem, sz );
 
 	g_sModelIndexFireball = modelinfo->GetModelIndex ("sprites/zerogxplode.vmt");// fireball
 	g_sModelIndexWExplosion = modelinfo->GetModelIndex ("sprites/WXplo1.vmt");// underwater fireball

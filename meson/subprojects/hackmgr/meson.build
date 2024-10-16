@@ -43,6 +43,7 @@ if build_libs
 			join_paths(hackmgr_src_dir,'filesystem.cpp'),
 			join_paths(hackmgr_src_dir,'dbg.cpp'),
 			join_paths(hackmgr_src_dir,'cpumonitoring.cpp'),
+			join_paths(hackmgr_src_dir,'memalloc.cpp'),
 			join_paths(public_dir,'SoundParametersInternal.cpp'),
 			join_paths(public_dir,'interval.cpp'),
 		),
@@ -64,6 +65,7 @@ if build_libs
 	hackmgr_lib = shared_library('hackmgr',name_prefix:'',
 		cpp_args: [
 			'-DDLLNAME=hackmgr',
+			'-DMEMOVERRIDE_MODULE=hackmgr',
 		],
 		sources: [
 			join_paths(hackmgr_src_dir,'istudiorender.cpp'),
@@ -85,6 +87,7 @@ if build_libs
 	hackmgr_ds_lib = shared_library('hackmgr_ds',name_prefix:'',
 		cpp_args: [
 			'-DDLLNAME=hackmgr_ds',
+			'-DMEMOVERRIDE_MODULE=hackmgr_ds',
 			'-DDEDICATED',
 			'-DSWDS',
 		],

@@ -19,6 +19,8 @@
 #ifndef INITIALIZER_H
 #define INITIALIZER_H
 
+#pragma once
+
 
 typedef void* (*CreateInitializerObjectFn)();
 typedef void (*DeleteInitializerObjectFn)(void *ptr);

@@ -113,7 +113,7 @@ int	CAmmoDef::NPCDamage(int nAmmoIndex)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int	CAmmoDef::MaxCarry(int nAmmoIndex, const CBaseCombatCharacter *owner)
+int	CAmmoDef::MaxCarry(int nAmmoIndex, const CSharedBaseCombatCharacter *owner)
 {
 	if ( nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex )
 		return 0;

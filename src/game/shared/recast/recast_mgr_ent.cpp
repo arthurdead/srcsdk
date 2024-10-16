@@ -12,31 +12,39 @@
 #include "tier0/memdbgon.h"
 
 IMPLEMENT_NETWORKCLASS_ALIASED( RecastMgrEnt, DT_RecastMgrEnt );
-BEGIN_NETWORK_TABLE( CRecastMgrEnt, DT_RecastMgrEnt )
+BEGIN_NETWORK_TABLE( CSharedRecastMgrEnt, DT_RecastMgrEnt )
 END_NETWORK_TABLE()
 
-LINK_ENTITY_TO_CLASS( recast_mgr, CRecastMgrEnt );
+LINK_ENTITY_TO_CLASS_ALIASED( recast_mgr, RecastMgrEnt );
 
-static CRecastMgrEnt *s_pRecastMgrEnt = NULL;
+static CSharedRecastMgrEnt *s_pRecastMgrEnt = NULL;
 
-CRecastMgrEnt *GetRecastMgrEnt()
+CSharedRecastMgrEnt *GetRecastMgrEnt()
 {
 	return s_pRecastMgrEnt;
 }
 
-CRecastMgrEnt::CRecastMgrEnt()
+#if defined( CLIENT_DLL )
+#define CRecastMgrEnt C_RecastMgrEnt
+#endif
+
+CSharedRecastMgrEnt::CRecastMgrEnt()
 {
 	if(!s_pRecastMgrEnt)
 		s_pRecastMgrEnt = this;
 }
 
-CRecastMgrEnt::~CRecastMgrEnt()
+CSharedRecastMgrEnt::~CRecastMgrEnt()
 {
 	if( s_pRecastMgrEnt == this )
 		s_pRecastMgrEnt = NULL;
 }
 
-void CRecastMgrEnt::Spawn()
+#if defined( CLIENT_DLL )
+#undef CRecastMgrEnt
+#endif
+
+void CSharedRecastMgrEnt::Spawn()
 {
 	if(s_pRecastMgrEnt && s_pRecastMgrEnt != this) {
 		UTIL_Remove(this);

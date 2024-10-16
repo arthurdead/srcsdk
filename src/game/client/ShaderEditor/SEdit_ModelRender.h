@@ -1,7 +1,8 @@
 #ifndef SHEDITMRENDER_H
 #define SHEDITMRENDER_H
 
-#include "cbase.h"
+#pragma once
+
 #include "shadereditor/isedit_modelrender.h"
 
 class C_BaseFlex_OverrideLod;

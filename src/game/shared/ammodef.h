@@ -14,9 +14,10 @@
 
 #ifdef GAME_DLL
 class CBaseCombatCharacter;
+typedef CBaseCombatCharacter CSharedBaseCombatCharacter;
 #else
-#define CBaseCombatCharacter C_BaseCombatCharacter
 class C_BaseCombatCharacter;
+typedef C_BaseCombatCharacter CSharedBaseCombatCharacter;
 #endif
 
 class ConVar;
@@ -87,7 +88,7 @@ public:
 	const char*			Name(int nAmmoIndex);
 	int					PlrDamage(int nAmmoIndex);
 	int					NPCDamage(int nAmmoIndex);
-	int					MaxCarry(int nAmmoIndex, const CBaseCombatCharacter *owner);
+	int					MaxCarry(int nAmmoIndex, const CSharedBaseCombatCharacter *owner);
 	bool				CanCarryInfiniteAmmo(int nAmmoIndex);
 	int					DamageType(int nAmmoIndex);
 	int					TracerType(int nAmmoIndex);

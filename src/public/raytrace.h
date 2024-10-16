@@ -4,6 +4,8 @@
 #ifndef RAYTRACE_H
 #define RAYTRACE_H
 
+#pragma once
+
 #include <tier0/platform.h>
 #include <mathlib/vector.h>
 #include <mathlib/ssemath.h>

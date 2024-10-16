@@ -6,14 +6,11 @@
 //
 //=============================================================================//
 
-#ifndef VGUI_HL2_VIEWPORT
-#define VGUI_HL2_VIEWPORT
+#ifndef VGUI_GAME_VIEWPORT
+#define VGUI_GAME_VIEWPORT
+
+#pragma once
 
 
 #endif
-
-
-
-
-
 

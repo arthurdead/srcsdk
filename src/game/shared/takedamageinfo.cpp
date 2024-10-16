@@ -14,7 +14,7 @@
 
 ConVar phys_pushscale( "phys_pushscale", "1", FCVAR_REPLICATED );
 
-void CTakeDamageInfo::Init( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, int bitsDamageType, int iCustomDamage )
+void CSharedTakeDamageInfo::Init( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, int bitsDamageType, int iCustomDamage )
 {
 	m_hInflictor = pInflictor;
 	if ( pAttacker )
@@ -48,47 +48,55 @@ void CTakeDamageInfo::Init( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBa
 	m_flRadius = 0.0f;
 }
 
-CTakeDamageInfo::CTakeDamageInfo()
+#ifdef CLIENT_DLL
+	#define CTakeDamageInfo C_TakeDamageInfo
+#endif
+
+CSharedTakeDamageInfo::CTakeDamageInfo()
 {
 	Init( NULL, NULL, NULL, vec3_origin, vec3_origin, vec3_origin, 0, 0, 0 );
 }
 
-CTakeDamageInfo::CTakeDamageInfo( CBaseEntity *pInflictor, CBaseEntity *pAttacker, float flDamage, int bitsDamageType, int iKillType )
+CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, int bitsDamageType, int iKillType )
 {
 	Set( pInflictor, pAttacker, flDamage, bitsDamageType, iKillType );
 }
 
-CTakeDamageInfo::CTakeDamageInfo( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, float flDamage, int bitsDamageType, int iKillType )
+CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, int bitsDamageType, int iKillType )
 {
 	Set( pInflictor, pAttacker, pWeapon, flDamage, bitsDamageType, iKillType );
 }
 
-CTakeDamageInfo::CTakeDamageInfo( CBaseEntity *pInflictor, CBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType, Vector *reportedPosition )
+CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType, Vector *reportedPosition )
 {
 	Set( pInflictor, pAttacker, damageForce, damagePosition, flDamage, bitsDamageType, iKillType, reportedPosition );
 }
 
-CTakeDamageInfo::CTakeDamageInfo( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType, Vector *reportedPosition )
+CSharedTakeDamageInfo::CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType, Vector *reportedPosition )
 {
 	Set( pInflictor, pAttacker, pWeapon, damageForce, damagePosition, flDamage, bitsDamageType, iKillType, reportedPosition );
 }
 
-void CTakeDamageInfo::Set( CBaseEntity *pInflictor, CBaseEntity *pAttacker, float flDamage, int bitsDamageType, int iKillType )
+#ifdef CLIENT_DLL
+	#undef CTakeDamageInfo
+#endif
+
+void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, int bitsDamageType, int iKillType )
 {
 	Init( pInflictor, pAttacker, NULL, vec3_origin, vec3_origin, vec3_origin, flDamage, bitsDamageType, iKillType );
 }
 
-void CTakeDamageInfo::Set( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, float flDamage, int bitsDamageType, int iKillType )
+void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, int bitsDamageType, int iKillType )
 {
 	Init( pInflictor, pAttacker, pWeapon, vec3_origin, vec3_origin, vec3_origin, flDamage, bitsDamageType, iKillType );
 }
 
-void CTakeDamageInfo::Set( CBaseEntity *pInflictor, CBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType, Vector *reportedPosition )
+void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType, Vector *reportedPosition )
 {
 	Set( pInflictor, pAttacker, NULL, damageForce, damagePosition, flDamage, bitsDamageType, iKillType, reportedPosition );
 }
 
-void CTakeDamageInfo::Set( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType, Vector *reportedPosition )
+void CSharedTakeDamageInfo::Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType, Vector *reportedPosition )
 {
 	Vector vecReported = vec3_origin;
 	if ( reportedPosition )
@@ -102,7 +110,7 @@ void CTakeDamageInfo::Set( CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBas
 // Squirrel the damage value away as BaseDamage, which will later be used to 
 // calculate damage force. 
 //-----------------------------------------------------------------------------
-void CTakeDamageInfo::AdjustPlayerDamageInflictedForSkillLevel()
+void CSharedTakeDamageInfo::AdjustPlayerDamageInflictedForSkillLevel()
 {
 #ifndef CLIENT_DLL
 	CopyDamageToBaseDamage();
@@ -112,7 +120,7 @@ void CTakeDamageInfo::AdjustPlayerDamageInflictedForSkillLevel()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CTakeDamageInfo::AdjustPlayerDamageTakenForSkillLevel()
+void CSharedTakeDamageInfo::AdjustPlayerDamageTakenForSkillLevel()
 {
 #ifndef CLIENT_DLL
 	CopyDamageToBaseDamage();
@@ -124,7 +132,7 @@ void CTakeDamageInfo::AdjustPlayerDamageTakenForSkillLevel()
 // Purpose: get the name of the ammo that caused damage
 // Note: returns the ammo name, or the classname of the object, or the model name in the case of physgun ammo.
 //-----------------------------------------------------------------------------
-const char *CTakeDamageInfo::GetAmmoName() const
+const char *CSharedTakeDamageInfo::GetAmmoName() const
 {
 	const char *pszAmmoType;
 
@@ -155,17 +163,25 @@ const char *CTakeDamageInfo::GetAmmoName() const
 // MultiDamage
 // Collects multiple small damages into a single damage
 // -------------------------------------------------------------------------------------------------- //
-CMultiDamage g_MultiDamage;
+CSharedMultiDamage g_MultiDamage;
 
-CMultiDamage::CMultiDamage()
+#ifdef CLIENT_DLL
+	#define CMultiDamage C_MultiDamage
+#endif
+
+CSharedMultiDamage::CMultiDamage()
 {
 	m_hTarget = NULL;
 }
 
+#ifdef CLIENT_DLL
+	#undef CMultiDamage
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CMultiDamage::Init( CBaseEntity *pTarget, CBaseEntity *pInflictor, CBaseEntity *pAttacker, CBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, int bitsDamageType, int iKillType )
+void CSharedMultiDamage::Init( CSharedBaseEntity *pTarget, CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, int bitsDamageType, int iKillType )
 {
 	m_hTarget = pTarget;
 	BaseClass::Init( pInflictor, pAttacker, pWeapon, damageForce, damagePosition, reportedPosition, flDamage, bitsDamageType, iKillType );
@@ -209,7 +225,7 @@ void ApplyMultiDamage( void )
 //-----------------------------------------------------------------------------
 // Purpose: Add damage to the existing multidamage, and apply if it won't fit
 //-----------------------------------------------------------------------------
-void AddMultiDamage( const CTakeDamageInfo &info, CBaseEntity *pEntity )
+void AddMultiDamage( const CSharedTakeDamageInfo &info, CSharedBaseEntity *pEntity )
 {
 	if ( !pEntity )
 		return;
@@ -278,7 +294,7 @@ float ImpulseScale( float flTargetMass, float flDesiredSpeed )
 //-----------------------------------------------------------------------------
 // Purpose: Fill out a takedamageinfo with a damage force for an explosive
 //-----------------------------------------------------------------------------
-void CalculateExplosiveDamageForce( CTakeDamageInfo *info, const Vector &vecDir, const Vector &vecForceOrigin, float flScale )
+void CalculateExplosiveDamageForce( CSharedTakeDamageInfo *info, const Vector &vecDir, const Vector &vecForceOrigin, float flScale )
 {
 	info->SetDamagePosition( vecForceOrigin );
 
@@ -309,7 +325,7 @@ void CalculateExplosiveDamageForce( CTakeDamageInfo *info, const Vector &vecDir,
 //-----------------------------------------------------------------------------
 // Purpose: Fill out a takedamageinfo with a damage force for a bullet impact
 //-----------------------------------------------------------------------------
-void CalculateBulletDamageForce( CTakeDamageInfo *info, int iBulletType, const Vector &vecBulletDir, const Vector &vecForceOrigin, float flScale )
+void CalculateBulletDamageForce( CSharedTakeDamageInfo *info, int iBulletType, const Vector &vecBulletDir, const Vector &vecForceOrigin, float flScale )
 {
 	info->SetDamagePosition( vecForceOrigin );
 	Vector vecForce = vecBulletDir;
@@ -324,7 +340,7 @@ void CalculateBulletDamageForce( CTakeDamageInfo *info, int iBulletType, const V
 //-----------------------------------------------------------------------------
 // Purpose: Fill out a takedamageinfo with a damage force for a melee impact
 //-----------------------------------------------------------------------------
-void CalculateMeleeDamageForce( CTakeDamageInfo *info, const Vector &vecMeleeDir, const Vector &vecForceOrigin, float flScale )
+void CalculateMeleeDamageForce( CSharedTakeDamageInfo *info, const Vector &vecMeleeDir, const Vector &vecForceOrigin, float flScale )
 {
 	info->SetDamagePosition( vecForceOrigin );
 
@@ -343,7 +359,7 @@ void CalculateMeleeDamageForce( CTakeDamageInfo *info, const Vector &vecMeleeDir
 //			This shouldn't be used for any damage where the damage force is unknown.
 //			i.e. only use it for mapmaker specified damages.
 //-----------------------------------------------------------------------------
-void GuessDamageForce( CTakeDamageInfo *info, const Vector &vecForceDir, const Vector &vecForceOrigin, float flScale )
+void GuessDamageForce( CSharedTakeDamageInfo *info, const Vector &vecForceDir, const Vector &vecForceOrigin, float flScale )
 {
 	if ( info->GetDamageType() & DMG_BULLET )
 	{
@@ -401,7 +417,7 @@ static const char * const s_DamageTypeToStrTable[] =
 };
 #define DAMAGE_TYPE_STR_TABLE_ENTRIES 31 // number of entries in table above
 
-void CTakeDamageInfo::DebugGetDamageTypeString(unsigned int damageType, char *outbuf, int outbuflength )
+void CSharedTakeDamageInfo::DebugGetDamageTypeString(unsigned int damageType, char *outbuf, int outbuflength )
 {
 	Assert(outbuflength > 0);
 

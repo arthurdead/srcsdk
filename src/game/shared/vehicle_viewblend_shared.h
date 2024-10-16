@@ -10,8 +10,17 @@
 
 #include "mathlib/vector.h"
 
+#ifdef GAME_DLL
 class CBasePlayer;
+typedef CBasePlayer CSharedBasePlayer;
 class CBaseAnimating;
+typedef CBaseAnimating CSharedBaseAnimating;
+#else
+class C_BasePlayer;
+typedef C_BasePlayer CSharedBasePlayer;
+class C_BaseAnimating;
+typedef C_BaseAnimating CSharedBaseAnimating;
+#endif
 
 // Definition for how to calculate a point on the remap curve
 enum RemapAngleRange_CurvePart_t
@@ -43,7 +52,7 @@ struct ViewLockData_t
 struct ViewSmoothingData_t
 {
 	// Fill these out in your vehicle
-	CBaseAnimating	*pVehicle;
+	CSharedBaseAnimating	*pVehicle;
 	bool	bClampEyeAngles;	// Perform eye Z clamping
 	float	flPitchCurveZero;	// Pitch values below this are clamped to zero.
 	float	flPitchCurveLinear;	// Pitch values above this are mapped directly.
@@ -70,7 +79,7 @@ struct ViewSmoothingData_t
 };
 
 // TEMP: Shared vehicle view smoothing
-void SharedVehicleViewSmoothing(CBasePlayer *pPlayer, 
+void SharedVehicleViewSmoothing(CSharedBasePlayer *pPlayer, 
 								Vector *pAbsOrigin, QAngle *pAbsAngles, 
 								bool bEnterAnimOn, bool bExitAnimOn, 
 								const Vector &vecEyeExitEndpoint, 

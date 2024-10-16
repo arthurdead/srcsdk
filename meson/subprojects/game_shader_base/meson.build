@@ -19,6 +19,7 @@ stdshaders_src_dir = join_paths(src_root_dir,'materialsystem','stdshaders')
 game_shader_base_dep = declare_dependency(
 	compile_args: [
 		'-DDLLNAME=game_shader_dx9',
+		'-DMEMOVERRIDE_MODULE=game_shader_dx9',
 		'-DSTDSHADER_DX9_DLL_EXPORT',
 		'-DFAST_MATERIALVAR_ACCESS',
 		'-DGAME_SHADER_DLL'

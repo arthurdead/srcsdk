@@ -32,7 +32,7 @@ public:
 
 	
 	//IPlayerPickupVPhysics
-	virtual bool HasPreferredCarryAnglesForPlayer( CBasePlayer *pPlayer );
+	virtual bool HasPreferredCarryAnglesForPlayer( C_BasePlayer *pPlayer );
 	virtual QAngle PreferredCarryAngles( void );
 
 	virtual void SetFadeMinMax( float fademin, float fademax );

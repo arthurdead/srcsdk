@@ -13,11 +13,15 @@
 
 #if defined( CLIENT_DLL )
 
-#define CBaseGrenade C_BaseGrenade
+class C_BaseGrenade;
+typedef C_BaseGrenade CSharedBaseGrenade;
 
 #include "c_basecombatcharacter.h"
 
 #else
+
+class CBaseGrenade;
+typedef CBaseGrenade CSharedBaseGrenade;
 
 #include "basecombatcharacter.h"
 #include "player_pickup.h"
@@ -28,17 +32,26 @@
 
 class CTakeDamageInfo;
 
-#if !defined( CLIENT_DLL )
-class CBaseGrenade : public CBaseProjectile, public CDefaultPlayerPickupVPhysics
-#else
-class CBaseGrenade : public CBaseProjectile
+#ifdef CLIENT_DLL
+	#define CBaseGrenade C_BaseGrenade
+#endif
+
+class CBaseGrenade : public CSharedBaseProjectile
+#ifdef GAME_DLL
+, public CDefaultPlayerPickupVPhysics
 #endif
 {
-	DECLARE_CLASS( CBaseGrenade, CBaseProjectile );
 public:
-
+	DECLARE_CLASS( CBaseGrenade, CSharedBaseProjectile );
 	CBaseGrenade(void);
 	~CBaseGrenade(void);
+private:
+	CBaseGrenade( const CBaseGrenade & ); // not defined, not accessible
+
+public:
+#ifdef CLIENT_DLL
+	#undef CBaseGrenade
+#endif
 
 	DECLARE_PREDICTABLE();
 	DECLARE_NETWORKCLASS();
@@ -51,13 +64,13 @@ public:
 	virtual void		Explode( trace_t *pTrace, int bitsDamageType );
 	void				Smoke( void );
 
-	void				BounceTouch( CBaseEntity *pOther );
-	void				SlideTouch( CBaseEntity *pOther );
-	void				ExplodeTouch( CBaseEntity *pOther );
+	void				BounceTouch( CSharedBaseEntity *pOther );
+	void				SlideTouch( CSharedBaseEntity *pOther );
+	void				ExplodeTouch( CSharedBaseEntity *pOther );
 	void				DangerSoundThink( void );
 	void				PreDetonate( void );
 	virtual void		Detonate( void );
-	void				DetonateUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void				DetonateUse( CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, USE_TYPE useType, float value );
 	void				TumbleThink( void );
 
 	virtual Vector		GetBlastForce() { return vec3_origin; }
@@ -95,9 +108,9 @@ public:
 		m_iszBounceSound = MAKE_STRING( pszBounceSound );
 	}
 
-	CBaseCombatCharacter *GetThrower( void );
-	void				  SetThrower( CBaseCombatCharacter *pThrower );
-	CBaseEntity *GetOriginalThrower() { return m_hOriginalThrower.Get(); }
+	CSharedBaseCombatCharacter *GetThrower( void );
+	void				  SetThrower( CSharedBaseCombatCharacter *pThrower );
+	CSharedBaseEntity *GetOriginalThrower() { return m_hOriginalThrower.Get(); }
 
 	float				GetDetonateTime() { return m_flDetonateTime; }
 	bool				HasWarnedAI() { return m_bHasWarnedAI; }
@@ -141,11 +154,8 @@ protected:
 #endif
 
 private:
-	CNetworkHandle( CBaseEntity, m_hThrower );					// Who threw this grenade
+	CNetworkHandle( CSharedBaseEntity, m_hThrower );					// Who threw this grenade
 	EHANDLE			m_hOriginalThrower;							// Who was the original thrower of this grenade
-
-	CBaseGrenade( const CBaseGrenade & ); // not defined, not accessible
-
 };
 
 #endif // BASEGRENADE_SHARED_H

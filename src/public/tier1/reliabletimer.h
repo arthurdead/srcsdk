@@ -7,6 +7,8 @@
 #ifndef RELIABLETIMER_H
 #define RELIABLETIMER_H
 
+#pragma once
+
 #include "tier0/dbg.h"
 //#include "constants.h"
 #include "tier0/fasttimer.h"

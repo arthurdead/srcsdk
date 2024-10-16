@@ -8,10 +8,13 @@
 #ifndef TOGGLETEXTUREPROXY
 #define TOGGLETEXTUREPROXY
 
+#pragma once
+
 #include "materialsystem/imaterialproxy.h"
 
 class IMaterial;
 class IMaterialVar;
+class C_BaseEntity;
 
 #pragma warning (disable : 4100)
 

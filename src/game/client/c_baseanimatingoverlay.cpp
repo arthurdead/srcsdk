@@ -21,7 +21,7 @@
 
 extern ConVar r_sequence_debug;
 
-template class CInterpolatedVar<CAnimationLayer>;
+template class CInterpolatedVar<C_AnimationLayer>;
 
 
 mstudioevent_t *GetEventIndexForSequence( mstudioseqdesc_t &seqdesc );
@@ -130,29 +130,29 @@ C_BaseAnimatingOverlay::C_BaseAnimatingOverlay()
 
 void RecvProxy_SequenceChanged( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CAnimationLayer *pLayer = (CAnimationLayer *)pStruct;
+	C_AnimationLayer *pLayer = (C_AnimationLayer *)pStruct;
 	pLayer->SetSequence( pData->m_Value.m_Int );
 }
 
 void RecvProxy_WeightChanged( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CAnimationLayer *pLayer = (CAnimationLayer *)pStruct;
+	C_AnimationLayer *pLayer = (C_AnimationLayer *)pStruct;
 	pLayer->SetWeight( pData->m_Value.m_Float );
 }
 
 void RecvProxy_CycleChanged( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CAnimationLayer *pLayer = (CAnimationLayer *)pStruct;
+	C_AnimationLayer *pLayer = (C_AnimationLayer *)pStruct;
 	pLayer->SetCycle( pData->m_Value.m_Float );
 }
 
 void RecvProxy_OrderChanged( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
-	CAnimationLayer *pLayer = (CAnimationLayer *)pStruct;
+	C_AnimationLayer *pLayer = (C_AnimationLayer *)pStruct;
 	pLayer->SetOrder( pData->m_Value.m_Int );
 }
 
-BEGIN_RECV_TABLE_NOBASE(CAnimationLayer, DT_Animationlayer)
+BEGIN_RECV_TABLE_NOBASE(C_AnimationLayer, DT_Animationlayer)
 	RecvPropInt(	RECVINFO_NAME(m_nSequence, m_nSequence), 0, RecvProxy_SequenceChanged),
 	RecvPropFloat(	RECVINFO_NAME(m_flCycle, m_flCycle), 0, RecvProxy_CycleChanged),
 	RecvPropFloat(	RECVINFO_NAME(m_flPrevCycle, m_flPrevCycle)),
@@ -742,10 +742,10 @@ void C_BaseAnimatingOverlay::CheckInterpChanges( void )
 		m_iv_AnimOverlay[i].GetInterpolationInfo( gpGlobals->curtime, &iHead, &iPrev1, &iPrev2 );
 
 		float t0;
-		CAnimationLayer *pHead = m_iv_AnimOverlay[i].GetHistoryValue( iHead, t0 );
+		C_AnimationLayer *pHead = m_iv_AnimOverlay[i].GetHistoryValue( iHead, t0 );
 
 		float t1;
-		CAnimationLayer *pPrev = m_iv_AnimOverlay[i].GetHistoryValue( iPrev1, t1 );
+		C_AnimationLayer *pPrev = m_iv_AnimOverlay[i].GetHistoryValue( iPrev1, t1 );
 
 		if ( !pHead || !pPrev )
 			continue;

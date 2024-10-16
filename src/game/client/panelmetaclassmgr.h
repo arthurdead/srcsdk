@@ -87,38 +87,45 @@ IPanelMetaClassMgr *PanelMetaClassMgr();
 // which returns true if the panel initialized successfully
 //-----------------------------------------------------------------------------
 
-#include "tier0/memdbgon.h"
-
 template< class CPanel, class CInitData >
 class CPanelFactory : public IPanelFactory
 {
 public:
-	CPanelFactory( const char *pTypeName )
-	{
-		// Hook us up baby
-		Assert( pTypeName );
-		PanelMetaClassMgr()->InstallPanelType( pTypeName, this );
-	}
+	CPanelFactory( const char *pTypeName );
 
 	// Creation, destruction methods
-	virtual vgui::Panel *Create( const char *pMetaClassName, KeyValues* pKeyValues, void *pVoidInitData, vgui::Panel *pParent )
-	{
-		// NOTE: make sure this matches the panel allocation pattern;
-		// it will break if panels are deleted differently
-		CPanel* pPanel = new CPanel( pParent, pMetaClassName ); 
-		if (pPanel)
-		{
-			// Set parent before Init; it may be needed there...
-			CInitData* pInitData = (CInitData*)(pVoidInitData); 
-			if (!pPanel->Init( pKeyValues, pInitData ))
-			{
-				delete pPanel;
-				pPanel = NULL;
-			}
-		}
-		return pPanel;
-	}
+	virtual vgui::Panel *Create( const char *pMetaClassName, KeyValues* pKeyValues, void *pVoidInitData, vgui::Panel *pParent );
 };
+
+#include "tier0/memdbgon.h"
+
+template< class CPanel, class CInitData >
+CPanelFactory<CPanel,CInitData>::CPanelFactory( const char *pTypeName )
+{
+	// Hook us up baby
+	Assert( pTypeName );
+	PanelMetaClassMgr()->InstallPanelType( pTypeName, this );
+}
+
+// Creation, destruction methods
+template< class CPanel, class CInitData >
+vgui::Panel *CPanelFactory<CPanel,CInitData>::Create( const char *pMetaClassName, KeyValues* pKeyValues, void *pVoidInitData, vgui::Panel *pParent )
+{
+	// NOTE: make sure this matches the panel allocation pattern;
+	// it will break if panels are deleted differently
+	CPanel* pPanel = new CPanel( pParent, pMetaClassName ); 
+	if (pPanel)
+	{
+		// Set parent before Init; it may be needed there...
+		CInitData* pInitData = (CInitData*)(pVoidInitData); 
+		if (!pPanel->Init( pKeyValues, pInitData ))
+		{
+			delete pPanel;
+			pPanel = NULL;
+		}
+	}
+	return pPanel;
+}
 
 #include "tier0/memdbgoff.h"
 

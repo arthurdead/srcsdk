@@ -20,11 +20,8 @@ public:
 
 	Class_T Classify() override;
 
-	void SetSpotted(bool value);
-	bool IsSpotted() const;
-
 private:
-	CNetworkVar(bool, m_bSpotted);
+
 };
 
 inline CHeistPlayer *ToHeistPlayer(CBaseEntity *pEntity)

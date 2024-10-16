@@ -12,6 +12,8 @@
 #ifndef _DATA_COLLECTOR_H_
 #define _DATA_COLLECTOR_H_
 
+#pragma once
+
 #include <igameevents.h>
 #include <KeyValues.h>
 

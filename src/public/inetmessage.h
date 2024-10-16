@@ -8,6 +8,8 @@
 #ifndef INETMESSAGE_H
 #define INETMESSAGE_H
 
+#pragma once
+
 #include "tier1/bitbuf.h"
 
 class INetMsgHandler;

@@ -20,6 +20,8 @@
 #ifndef ATI_COMPRESS
 #define ATI_COMPRESS
 
+#pragma once
+
 #define ATI_COMPRESS_VERSION_MAJOR 1
 #define ATI_COMPRESS_VERSION_MINOR 4
 

@@ -49,17 +49,19 @@ struct fogparams_t
 
 // Crappy. Needs to be here because it wants to use 
 #ifdef CLIENT_DLL
-#define CFogController C_FogController
-#endif
-
+class C_FogController;
+typedef C_FogController CSharedFogController;
+#else
 class CFogController;
+typedef CFogController CSharedFogController;
+#endif
 
 struct fogplayerparams_t
 {
 	DECLARE_CLASS_NOBASE( fogplayerparams_t );
 	DECLARE_EMBEDDED_NETWORKVAR();
 
-	CNetworkHandle( CFogController, m_hCtrl );
+	CNetworkHandle( CSharedFogController, m_hCtrl );
 	float					m_flTransitionTime;
 
 	color32					m_OldColor;
@@ -109,7 +111,7 @@ struct sky3dparams_t
 	CNetworkQAngle( angles );
 
 	// Skybox entity-based option
-	CNetworkHandle( CBaseEntity, skycamera );
+	CNetworkHandle( CSharedBaseEntity, skycamera );
 
 	// Sky clearcolor
 	CNetworkColor32( skycolor );
@@ -126,7 +128,7 @@ struct audioparams_t
 	CNetworkArray( Vector, localSound, NUM_AUDIO_LOCAL_SOUNDS )
 	CNetworkVar( int, soundscapeIndex );	// index of the current soundscape from soundscape.txt
 	CNetworkVar( int, localBits );			// if bits 0,1,2,3 are set then position 0,1,2,3 are valid/used
-	CNetworkHandle( CBaseEntity, ent );		// the entity setting the soundscape
+	CNetworkHandle( CSharedBaseEntity, ent );		// the entity setting the soundscape
 };
 
 //Tony; new tonemap information.

@@ -16,6 +16,7 @@
 #ifndef PARTICLEDRAW_H
 #define PARTICLEDRAW_H
 
+#pragma once
 
 class IMaterial;
 class CMeshBuilder;

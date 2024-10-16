@@ -47,13 +47,13 @@
 #include "tier0/memdbgon.h"
 
 #ifdef GAME_DLL
-	ConVar ent_debugkeys( "ent_debugkeys", "" );
-	extern bool ParseKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, const char *szKeyName, const char *szValue );
-	extern bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, const char *szKeyName, char *szValue, int iMaxLen );
+ConVar ent_debugkeys( "ent_debugkeys", "" );
+extern bool ParseKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, const char *szKeyName, const char *szValue );
+extern bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, const char *szKeyName, char *szValue, int iMaxLen );
 #endif
 
-bool CBaseEntity::m_bAllowPrecache = false;
-bool CBaseEntity::sm_bAccurateTriggerBboxChecks = true;	// set to false for legacy behavior in ep1
+bool CSharedBaseEntity::m_bAllowPrecache = false;
+bool CSharedBaseEntity::sm_bAccurateTriggerBboxChecks = true;	// set to false for legacy behavior in ep1
 
 // Set default max values for entities based on the existing constants from elsewhere
 float k_flMaxEntityPosCoord = MAX_COORD_FLOAT;
@@ -102,14 +102,14 @@ void SpawnBlood(Vector vecSpot, const Vector &vecDir, int bloodColor, float flDa
 //-----------------------------------------------------------------------------
 // The player drives simulation of this entity
 //-----------------------------------------------------------------------------
-void CBaseEntity::SetPlayerSimulated( CBasePlayer *pOwner )
+void CSharedBaseEntity::SetPlayerSimulated( CSharedBasePlayer *pOwner )
 {
 	m_bIsPlayerSimulated = true;
 	pOwner->AddToPlayerSimulationList( this );
 	m_hPlayerSimulationOwner = pOwner;
 }
 
-void CBaseEntity::UnsetPlayerSimulated( void )
+void CSharedBaseEntity::UnsetPlayerSimulated( void )
 {
 	if ( m_hPlayerSimulationOwner != NULL )
 	{
@@ -120,33 +120,33 @@ void CBaseEntity::UnsetPlayerSimulated( void )
 }
 
 // position of eyes
-Vector CBaseEntity::EyePosition( void )
+Vector CSharedBaseEntity::EyePosition( void )
 { 
 	return GetAbsOrigin() + GetViewOffset(); 
 }
 
-const QAngle &CBaseEntity::EyeAngles( void )
+const QAngle &CSharedBaseEntity::EyeAngles( void )
 {
 	return GetAbsAngles();
 }
 
-const QAngle &CBaseEntity::LocalEyeAngles( void )
+const QAngle &CSharedBaseEntity::LocalEyeAngles( void )
 {
 	return GetLocalAngles();
 }
 
 // position of ears
-Vector CBaseEntity::EarPosition( void )
+Vector CSharedBaseEntity::EarPosition( void )
 { 
 	return EyePosition(); 
 }
 
-void CBaseEntity::SetViewOffset( const Vector& v ) 
+void CSharedBaseEntity::SetViewOffset( const Vector& v ) 
 { 
 	m_vecViewOffset = v; 
 }
 
-const Vector& CBaseEntity::GetViewOffset() const 
+const Vector& CSharedBaseEntity::GetViewOffset() const 
 { 
 	return m_vecViewOffset; 
 }
@@ -155,7 +155,7 @@ const Vector& CBaseEntity::GetViewOffset() const
 //-----------------------------------------------------------------------------
 // center point of entity
 //-----------------------------------------------------------------------------
-const Vector &CBaseEntity::WorldSpaceCenter( ) const 
+const Vector &CSharedBaseEntity::WorldSpaceCenter( ) const 
 {
 	return CollisionProp()->WorldSpaceCenter();
 }
@@ -166,27 +166,27 @@ const Vector &CBaseEntity::WorldSpaceCenter( ) const
 #define CHANGE_FLAGS(flags,newFlags) (flags = (newFlags))
 #endif
 
-void CBaseEntity::AddFlag( int flags )
+void CSharedBaseEntity::AddFlag( int flags )
 {
 	CHANGE_FLAGS( m_fFlags, m_fFlags | flags );
 }
 
-void CBaseEntity::RemoveFlag( int flagsToRemove )
+void CSharedBaseEntity::RemoveFlag( int flagsToRemove )
 {
 	CHANGE_FLAGS( m_fFlags, m_fFlags & ~flagsToRemove );
 }
 
-void CBaseEntity::ClearFlags( void )
+void CSharedBaseEntity::ClearFlags( void )
 {
 	CHANGE_FLAGS( m_fFlags, 0 );
 }
 
-void CBaseEntity::ToggleFlag( int flagToToggle )
+void CSharedBaseEntity::ToggleFlag( int flagToToggle )
 {
 	CHANGE_FLAGS( m_fFlags, m_fFlags ^ flagToToggle );
 }
 
-void CBaseEntity::SetEffects( int nEffects )
+void CSharedBaseEntity::SetEffects( int nEffects )
 {
 	if ( nEffects != m_fEffects )
 	{
@@ -215,7 +215,7 @@ void CBaseEntity::SetEffects( int nEffects )
 	}
 }
 
-void CBaseEntity::AddEffects( int nEffects ) 
+void CSharedBaseEntity::AddEffects( int nEffects ) 
 { 
 #if !defined( CLIENT_DLL ) && 0
 	if ( (nEffects & (EF_BRIGHTLIGHT|EF_DIMLIGHT)) && !(m_fEffects & (EF_BRIGHTLIGHT|EF_DIMLIGHT)) )
@@ -247,7 +247,7 @@ void CBaseEntity::AddEffects( int nEffects )
 	}
 }
 
-void CBaseEntity::SetBlocksLOS( bool bBlocksLOS )
+void CSharedBaseEntity::SetBlocksLOS( bool bBlocksLOS )
 {
 	if ( bBlocksLOS )
 	{
@@ -259,12 +259,12 @@ void CBaseEntity::SetBlocksLOS( bool bBlocksLOS )
 	}
 }
 
-bool CBaseEntity::BlocksLOS( void ) 
+bool CSharedBaseEntity::BlocksLOS( void ) 
 { 
 	return !IsEFlagSet(EFL_DONTBLOCKLOS); 
 }
 
-void CBaseEntity::SetAIWalkable( bool bBlocksLOS )
+void CSharedBaseEntity::SetAIWalkable( bool bBlocksLOS )
 {
 	if ( bBlocksLOS )
 	{
@@ -276,7 +276,7 @@ void CBaseEntity::SetAIWalkable( bool bBlocksLOS )
 	}
 }
 
-bool CBaseEntity::IsAIWalkable( void ) 
+bool CSharedBaseEntity::IsAIWalkable( void ) 
 { 
 	return !IsEFlagSet(EFL_DONTWALKON);
 }
@@ -286,7 +286,7 @@ bool CBaseEntity::IsAIWalkable( void )
 // Purpose: Handles keys and outputs from the BSP.
 // Input  : mapData - Text block of keys and values from the BSP.
 //-----------------------------------------------------------------------------
-void CBaseEntity::ParseMapData( CEntityMapData *mapData )
+void CSharedBaseEntity::ParseMapData( CEntityMapData *mapData )
 {
 	char keyName[MAPKEY_MAXLENGTH];
 	char value[MAPKEY_MAXLENGTH];
@@ -313,7 +313,7 @@ void CBaseEntity::ParseMapData( CEntityMapData *mapData )
 //-----------------------------------------------------------------------------
 // Parse data from a map file
 //-----------------------------------------------------------------------------
-bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue ) 
+bool CSharedBaseEntity::KeyValue( const char *szKeyName, const char *szValue ) 
 {
 	//!! temp hack, until worldcraft is fixed
 	// strip the # tokens from (duplicate) key names
@@ -558,7 +558,7 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 	return false;
 }
 
-bool CBaseEntity::KeyValue( const char *szKeyName, float flValue ) 
+bool CSharedBaseEntity::KeyValue( const char *szKeyName, float flValue ) 
 {
 	char	string[256];
 
@@ -567,7 +567,7 @@ bool CBaseEntity::KeyValue( const char *szKeyName, float flValue )
 	return KeyValue( szKeyName, string );
 }
 
-bool CBaseEntity::KeyValue( const char *szKeyName, const Vector &vecValue ) 
+bool CSharedBaseEntity::KeyValue( const char *szKeyName, const Vector &vecValue ) 
 {
 	char	string[256];
 
@@ -576,7 +576,7 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const Vector &vecValue )
 	return KeyValue( szKeyName, string );
 }
 
-bool CBaseEntity::KeyValue( const char *szKeyName, int nValue ) 
+bool CSharedBaseEntity::KeyValue( const char *szKeyName, int nValue ) 
 {
 	char	string[256];
 
@@ -591,7 +591,7 @@ bool CBaseEntity::KeyValue( const char *szKeyName, int nValue )
 // Output :
 //-----------------------------------------------------------------------------
 
-bool CBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen )
+bool CSharedBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen )
 {
 	if ( FStrEq( szKeyName, "rendercolor" ) )
 	{
@@ -715,7 +715,7 @@ bool CBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen
 // Input  : collisionGroup - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBaseEntity::ShouldCollide( int collisionGroup, int contentsMask ) const
+bool CSharedBaseEntity::ShouldCollide( int collisionGroup, int contentsMask ) const
 {
 	if ( m_CollisionGroup == COLLISION_GROUP_DEBRIS )
 	{
@@ -730,7 +730,7 @@ bool CBaseEntity::ShouldCollide( int collisionGroup, int contentsMask ) const
 // Purpose: 
 // Input  : seed - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::SetPredictionRandomSeed( const CUserCmd *cmd )
+void CSharedBaseEntity::SetPredictionRandomSeed( const CUserCmd *cmd )
 {
 	if ( !cmd )
 	{
@@ -752,7 +752,7 @@ void CBaseEntity::SetPredictionRandomSeed( const CUserCmd *cmd )
 //------------------------------------------------------------------------------
 // Purpose : Base implimentation for entity handling decals
 //------------------------------------------------------------------------------
-void CBaseEntity::DecalTrace( trace_t *pTrace, char const *decalName )
+void CSharedBaseEntity::DecalTrace( trace_t *pTrace, char const *decalName )
 {
 	int index = decalsystem->GetDecalIndexForName( decalName );
 	if ( index < 0 )
@@ -768,13 +768,13 @@ void CBaseEntity::DecalTrace( trace_t *pTrace, char const *decalName )
 //-----------------------------------------------------------------------------
 // Purpose: Base handling for impacts against entities
 //-----------------------------------------------------------------------------
-void CBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName )
+void CSharedBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName )
 {
-	VPROF( "CBaseEntity::ImpactTrace" );
+	VPROF( "CSharedBaseEntity::ImpactTrace" );
 	Assert( pTrace->m_pEnt );
 
-	CBaseEntity *pEntity = pTrace->m_pEnt;
- 
+	CSharedBaseEntity *pEntity = pTrace->m_pEnt;
+
 	// Build the impact data
 	CEffectData data;
 	data.m_vOrigin = pTrace->endpos;
@@ -808,7 +808,7 @@ void CBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCu
 // Input  : bitsDamageType - the damage type
 // Output : the index of the damage decal to use
 //-----------------------------------------------------------------------------
-char const *CBaseEntity::DamageDecal( int bitsDamageType, int gameMaterial )
+char const *CSharedBaseEntity::DamageDecal( int bitsDamageType, int gameMaterial )
 {
 	if ( GetRenderMode() == kRenderTransAlpha )
 		return "";
@@ -826,7 +826,7 @@ char const *CBaseEntity::DamageDecal( int bitsDamageType, int gameMaterial )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int	CBaseEntity::GetIndexForThinkContext( const char *pszContext )
+int	CSharedBaseEntity::GetIndexForThinkContext( const char *pszContext )
 {
 	for ( int i = 0; i < m_aThinkFunctions.Size(); i++ )
 	{
@@ -840,7 +840,7 @@ int	CBaseEntity::GetIndexForThinkContext( const char *pszContext )
 //-----------------------------------------------------------------------------
 // Purpose: Get a fresh think context for this entity
 //-----------------------------------------------------------------------------
-int CBaseEntity::RegisterThinkContext( const char *szContext )
+int CSharedBaseEntity::RegisterThinkContext( const char *szContext )
 {
 	int iIndex = GetIndexForThinkContext( szContext );
 	if ( iIndex != NO_THINK_CONTEXT )
@@ -860,7 +860,7 @@ int CBaseEntity::RegisterThinkContext( const char *szContext )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-BASEPTR	CBaseEntity::ThinkSet( BASEPTR func, float thinkTime, const char *szContext )
+BASEPTR	CSharedBaseEntity::ThinkSet( BASEPTR func, float thinkTime, const char *szContext )
 {
 #if !defined( CLIENT_DLL )
 #ifdef _DEBUG
@@ -918,7 +918,7 @@ BASEPTR	CBaseEntity::ThinkSet( BASEPTR func, float thinkTime, const char *szCont
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseEntity::SetNextThink( float thinkTime, const char *szContext )
+void CSharedBaseEntity::SetNextThink( float thinkTime, const char *szContext )
 {
 	int thinkTick;
 
@@ -963,7 +963,7 @@ void CBaseEntity::SetNextThink( float thinkTime, const char *szContext )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-float CBaseEntity::GetNextThink( const char *szContext )
+float CSharedBaseEntity::GetNextThink( const char *szContext )
 {
 	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
 		return TICK_NEVER_THINK;
@@ -1003,7 +1003,7 @@ float CBaseEntity::GetNextThink( const char *szContext )
 		return m_aThinkFunctions[ iIndex ].m_nNextThinkTick * TICK_INTERVAL;
 }
 
-int	CBaseEntity::GetNextThinkTick( const char *szContext /*= NULL*/ )
+int	CSharedBaseEntity::GetNextThinkTick( const char *szContext /*= NULL*/ )
 {
 	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
 		return TICK_NEVER_THINK;
@@ -1048,7 +1048,7 @@ int	CBaseEntity::GetNextThinkTick( const char *szContext /*= NULL*/ )
 		return m_aThinkFunctions[ iIndex ].m_nNextThinkTick;
 }
 
-bool	CBaseEntity::AlwaysThink( const char *szContext /*= NULL*/ )
+bool	CSharedBaseEntity::AlwaysThink( const char *szContext /*= NULL*/ )
 {
 	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
 		return false;
@@ -1083,7 +1083,7 @@ bool	CBaseEntity::AlwaysThink( const char *szContext /*= NULL*/ )
 	return (m_aThinkFunctions[ iIndex ].m_nNextThinkTick == TICK_ALWAYS_THINK);
 }
 
-bool	CBaseEntity::NeverThink( const char *szContext /*= NULL*/ )
+bool	CSharedBaseEntity::NeverThink( const char *szContext /*= NULL*/ )
 {
 	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
 		return true;
@@ -1121,7 +1121,7 @@ bool	CBaseEntity::NeverThink( const char *szContext /*= NULL*/ )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-float CBaseEntity::GetLastThink( const char *szContext )
+float CSharedBaseEntity::GetLastThink( const char *szContext )
 {
 	// Are we currently in a think function with a context?
 	int iIndex = 0;
@@ -1154,7 +1154,7 @@ float CBaseEntity::GetLastThink( const char *szContext )
 		return m_aThinkFunctions[ iIndex ].m_nLastThinkTick * TICK_INTERVAL;
 }
 	
-int CBaseEntity::GetLastThinkTick( const char *szContext /*= NULL*/ )
+int CSharedBaseEntity::GetLastThinkTick( const char *szContext /*= NULL*/ )
 {
 	// Are we currently in a think function with a context?
 	int iIndex = 0;
@@ -1187,7 +1187,7 @@ int CBaseEntity::GetLastThinkTick( const char *szContext /*= NULL*/ )
 		return m_aThinkFunctions[ iIndex ].m_nLastThinkTick;
 }
 
-bool CBaseEntity::WillThink()
+bool CSharedBaseEntity::WillThink()
 {
 	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
 		return false;
@@ -1207,7 +1207,7 @@ bool CBaseEntity::WillThink()
 #if !defined( CLIENT_DLL )
 
 // Rebase all the current ticks in the think functions as delta ticks or from delta ticks to absolute ticks
-void CBaseEntity::RebaseThinkTicks( bool bMakeDeltas )
+void CSharedBaseEntity::RebaseThinkTicks( bool bMakeDeltas )
 {
 	int nCurTick = TIME_TO_TICKS( gpGlobals->curtime );
 	for ( int i = 0; i < m_aThinkFunctions.Count(); i++ )
@@ -1234,7 +1234,7 @@ void CBaseEntity::RebaseThinkTicks( bool bMakeDeltas )
 
 // returns the first tick the entity will run any think function
 // returns TICK_NEVER_THINK if no think functions are scheduled
-int CBaseEntity::GetFirstThinkTick()
+int CSharedBaseEntity::GetFirstThinkTick()
 {
 	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
 		return TICK_NEVER_THINK;
@@ -1262,7 +1262,7 @@ int CBaseEntity::GetFirstThinkTick()
 }
 
 // NOTE: pass in the isThinking hint so we have to search the think functions less
-void CBaseEntity::CheckHasThinkFunction( int thinkTick )
+void CSharedBaseEntity::CheckHasThinkFunction( int thinkTick )
 {
 	bool isThinking = (thinkTick != TICK_NEVER_THINK);
 
@@ -1294,7 +1294,7 @@ void CBaseEntity::CheckHasThinkFunction( int thinkTick )
 #endif
 }
 
-bool CBaseEntity::WillSimulateGamePhysics()
+bool CSharedBaseEntity::WillSimulateGamePhysics()
 {
 	// players always simulate game physics
 	if ( !IsPlayer() )
@@ -1314,7 +1314,7 @@ bool CBaseEntity::WillSimulateGamePhysics()
 	return true;
 }
 
-void CBaseEntity::CheckHasGamePhysicsSimulation()
+void CSharedBaseEntity::CheckHasGamePhysicsSimulation()
 {
 	bool isSimulating = WillSimulateGamePhysics();
 	if ( isSimulating != IsEFlagSet(EFL_NO_GAME_PHYSICS_SIMULATION) )
@@ -1335,7 +1335,7 @@ void CBaseEntity::CheckHasGamePhysicsSimulation()
 //-----------------------------------------------------------------------------
 // Sets/Gets the next think based on context index
 //-----------------------------------------------------------------------------
-void CBaseEntity::SetNextThink( int nContextIndex, float thinkTime )
+void CSharedBaseEntity::SetNextThink( int nContextIndex, float thinkTime )
 {
 	int thinkTick;
 
@@ -1357,7 +1357,7 @@ void CBaseEntity::SetNextThink( int nContextIndex, float thinkTime )
 	CheckHasThinkFunction( thinkTick );
 }
 
-void CBaseEntity::SetLastThink( int nContextIndex, float thinkTime )
+void CSharedBaseEntity::SetLastThink( int nContextIndex, float thinkTime )
 {
 	int thinkTick;
 
@@ -1378,7 +1378,7 @@ void CBaseEntity::SetLastThink( int nContextIndex, float thinkTime )
 	}
 }
 
-float CBaseEntity::GetNextThink( int nContextIndex ) const
+float CSharedBaseEntity::GetNextThink( int nContextIndex ) const
 {
 	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
 		return TICK_NEVER_THINK;
@@ -1401,7 +1401,7 @@ float CBaseEntity::GetNextThink( int nContextIndex ) const
 		return m_aThinkFunctions[nContextIndex].m_nNextThinkTick * TICK_INTERVAL; 
 }
 
-int	CBaseEntity::GetNextThinkTick( int nContextIndex ) const
+int	CSharedBaseEntity::GetNextThinkTick( int nContextIndex ) const
 {
 	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
 		return TICK_NEVER_THINK;
@@ -1424,7 +1424,7 @@ int	CBaseEntity::GetNextThinkTick( int nContextIndex ) const
 		return m_aThinkFunctions[nContextIndex].m_nNextThinkTick;
 }
 
-bool	CBaseEntity::AlwaysThink( int nContextIndex ) const
+bool	CSharedBaseEntity::AlwaysThink( int nContextIndex ) const
 {
 	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
 		return false;
@@ -1437,7 +1437,7 @@ bool	CBaseEntity::AlwaysThink( int nContextIndex ) const
 	return (m_aThinkFunctions[nContextIndex].m_nNextThinkTick == TICK_NEVER_THINK);
 }
 
-bool	CBaseEntity::NeverThink( int nContextIndex ) const
+bool	CSharedBaseEntity::NeverThink( int nContextIndex ) const
 {
 	if(IsEFlagSet( EFL_NO_THINK_FUNCTION ))
 		return true;
@@ -1476,7 +1476,7 @@ int CheckEntityVelocity( Vector &v )
 //-----------------------------------------------------------------------------
 // Purpose: My physics object has been updated, react or extract data
 //-----------------------------------------------------------------------------
-void CBaseEntity::VPhysicsUpdate( IPhysicsObject *pPhysics )
+void CSharedBaseEntity::VPhysicsUpdate( IPhysicsObject *pPhysics )
 {
 	switch( GetMoveType() )
 	{
@@ -1555,7 +1555,7 @@ void CBaseEntity::VPhysicsUpdate( IPhysicsObject *pPhysics )
 //-----------------------------------------------------------------------------
 // Purpose: Init this object's physics as a static
 //-----------------------------------------------------------------------------
-IPhysicsObject *CBaseEntity::VPhysicsInitStatic( void )
+IPhysicsObject *CSharedBaseEntity::VPhysicsInitStatic( void )
 {
 	if ( !VPhysicsInitSetup() )
 		return NULL;
@@ -1596,7 +1596,7 @@ IPhysicsObject *CBaseEntity::VPhysicsInitStatic( void )
 // Purpose: 
 // Input  : *pPhysics - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::VPhysicsSetObject( IPhysicsObject *pPhysics )
+void CSharedBaseEntity::VPhysicsSetObject( IPhysicsObject *pPhysics )
 {
 	if ( m_pPhysicsObject && pPhysics )
 	{
@@ -1624,7 +1624,7 @@ void CBaseEntity::VPhysicsSetObject( IPhysicsObject *pPhysics )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBaseEntity::VPhysicsDestroyObject( void )
+void CSharedBaseEntity::VPhysicsDestroyObject( void )
 {
 	if ( m_pPhysicsObject )
 	{
@@ -1639,7 +1639,7 @@ void CBaseEntity::VPhysicsDestroyObject( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CBaseEntity::VPhysicsInitSetup()
+bool CSharedBaseEntity::VPhysicsInitSetup()
 {
 #ifndef CLIENT_DLL
 	// don't support logical ents
@@ -1660,7 +1660,7 @@ bool CBaseEntity::VPhysicsInitSetup()
 //			physics alone determines where it goes (gravity, friction, etc)
 //			and the entity receives updates from vphysics.  SetAbsOrigin(), etc do not affect the object!
 //-----------------------------------------------------------------------------
-IPhysicsObject *CBaseEntity::VPhysicsInitNormal( SolidType_t solidType, int nSolidFlags, bool createAsleep, solid_t *pSolid )
+IPhysicsObject *CSharedBaseEntity::VPhysicsInitNormal( SolidType_t solidType, int nSolidFlags, bool createAsleep, solid_t *pSolid )
 {
 	if ( !VPhysicsInitSetup() )
 		return NULL;
@@ -1693,7 +1693,7 @@ IPhysicsObject *CBaseEntity::VPhysicsInitNormal( SolidType_t solidType, int nSol
 }
 
 // This creates a vphysics object with a shadow controller that follows the AI
-IPhysicsObject *CBaseEntity::VPhysicsInitShadow( bool allowPhysicsMovement, bool allowPhysicsRotation, solid_t *pSolid )
+IPhysicsObject *CSharedBaseEntity::VPhysicsInitShadow( bool allowPhysicsMovement, bool allowPhysicsRotation, solid_t *pSolid )
 {
 	if ( !VPhysicsInitSetup() )
 		return NULL;
@@ -1738,12 +1738,12 @@ IPhysicsObject *CBaseEntity::VPhysicsInitShadow( bool allowPhysicsMovement, bool
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CBaseEntity::CreateVPhysics()
+bool CSharedBaseEntity::CreateVPhysics()
 {
 	return false;
 }
 
-bool CBaseEntity::IsStandable() const
+bool CSharedBaseEntity::IsStandable() const
 {
 	if (GetSolidFlags() & FSOLID_NOT_STANDABLE) 
 		return false;
@@ -1754,7 +1754,7 @@ bool CBaseEntity::IsStandable() const
 	return IsBSPModel( ); 
 }
 
-bool CBaseEntity::IsBSPModel() const
+bool CSharedBaseEntity::IsBSPModel() const
 {
 	if ( GetSolid() == SOLID_BSP )
 		return true;
@@ -1771,7 +1771,7 @@ bool CBaseEntity::IsBSPModel() const
 //-----------------------------------------------------------------------------
 // Invalidates the abs state of all children
 //-----------------------------------------------------------------------------
-void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
+void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 {
 	// Main entry point for dirty flag setting for the 90% case
 	// 1) If the origin changes, then we have to update abstransform, Shadow projection, PVS, KD-tree, 
@@ -1880,7 +1880,7 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 
 	AddEFlags( nDirtyFlags );
 
-	for (CBaseEntity *pChild = FirstMoveChild(); pChild; pChild = pChild->NextMovePeer())
+	for (CSharedBaseEntity *pChild = FirstMoveChild(); pChild; pChild = pChild->NextMovePeer())
 	{
 		// If this is due to the parent animating, only invalidate children that are parented to an attachment
 		// Entities that are following also access attachments points on parents and must be invalidated.
@@ -1899,7 +1899,7 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 
 	if ( (nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | ANIMATION_CHANGED)) != 0 )
 	{
-		CBaseAnimating *pAnim = GetBaseAnimating();
+		CSharedBaseAnimating *pAnim = GetBaseAnimating();
 		if ( pAnim )
 			pAnim->InvalidateBoneCache();
 	}
@@ -1910,10 +1910,10 @@ void CBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 //-----------------------------------------------------------------------------
 // Returns the highest parent of an entity
 //-----------------------------------------------------------------------------
-CBaseEntity *CBaseEntity::GetRootMoveParent()
+CSharedBaseEntity *CSharedBaseEntity::GetRootMoveParent()
 {
-	CBaseEntity *pEntity = this;
-	CBaseEntity *pParent = this->GetMoveParent();
+	CSharedBaseEntity *pEntity = this;
+	CSharedBaseEntity *pParent = this->GetMoveParent();
 	while ( pParent )
 	{
 		pEntity = pParent;
@@ -1927,7 +1927,7 @@ CBaseEntity *CBaseEntity::GetRootMoveParent()
 // Purpose: static method
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBaseEntity::IsPrecacheAllowed()
+bool CSharedBaseEntity::IsPrecacheAllowed()
 {
 	return m_bAllowPrecache;
 }
@@ -1936,7 +1936,7 @@ bool CBaseEntity::IsPrecacheAllowed()
 // Purpose: static method
 // Input  : allow - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::SetAllowPrecache( bool allow )
+void CSharedBaseEntity::SetAllowPrecache( bool allow )
 {
 	m_bAllowPrecache = allow;
 }
@@ -1977,7 +1977,7 @@ public:
 typedef CTraceFilterSimpleList CBulletsTraceFilter;
 #endif
 
-void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
+void CSharedBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 {
 	static int	tracerCount;
 	trace_t		tr;
@@ -2020,7 +2020,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 	}
 
 	// the default attacker is ourselves
-	CBaseEntity *pAttacker = info.m_pAttacker ? info.m_pAttacker : this;
+	CSharedBaseEntity *pAttacker = info.m_pAttacker ? info.m_pAttacker : this;
 
 	// Make sure we don't have a dangling damage target from a recursive call
 	if ( g_MultiDamage.GetTarget() != NULL )
@@ -2070,7 +2070,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 	int iSeed = 0;
 	if ( IsPlayer() )
 	{
-		iSeed = CBaseEntity::GetPredictionRandomSeed( info.m_bUseServerRandomSeed ) & 255;
+		iSeed = CSharedBaseEntity::GetPredictionRandomSeed( info.m_bUseServerRandomSeed ) & 255;
 	}
 
 #if defined( HL2MP ) && defined( GAME_DLL )
@@ -2214,7 +2214,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 
 		// Now hit all triggers along the ray that respond to shots...
 		// Clip the ray to the first collided solid returned from traceline
-		CTakeDamageInfo triggerInfo( pAttacker, pAttacker, info.m_flDamage, nDamageType );
+		CSharedTakeDamageInfo triggerInfo( pAttacker, pAttacker, info.m_flDamage, nDamageType );
 		CalculateBulletDamageForce( &triggerInfo, info.m_iAmmoType, vecDir, tr.endpos );
 		triggerInfo.ScaleDamageForce( info.m_flDamageForceScale );
 		triggerInfo.SetAmmoType( info.m_iAmmoType );
@@ -2283,7 +2283,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 			if ( !bHitWater || ((info.m_nFlags & FIRE_BULLETS_DONT_HIT_UNDERWATER) == 0) )
 			{
 				// Damage specified by function parameter
-				CTakeDamageInfo dmgInfo( this, pAttacker, flActualDamage, nActualDamageType );
+				CSharedTakeDamageInfo dmgInfo( this, pAttacker, flActualDamage, nActualDamageType );
 				ModifyFireBulletsDamage( &dmgInfo );
 				CalculateBulletDamageForce( &dmgInfo, info.m_iAmmoType, vecDir, tr.endpos );
 				dmgInfo.ScaleDamageForce( info.m_flDamageForceScale );
@@ -2445,7 +2445,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 //-----------------------------------------------------------------------------
 // Should we draw bubbles underwater?
 //-----------------------------------------------------------------------------
-bool CBaseEntity::ShouldDrawUnderwaterBulletBubbles()
+bool CSharedBaseEntity::ShouldDrawUnderwaterBulletBubbles()
 {
 #if defined( HL2_DLL ) && defined( GAME_DLL )
 	CBaseEntity *pPlayer = UTIL_GetNearestVisiblePlayer(this); 
@@ -2459,7 +2459,7 @@ bool CBaseEntity::ShouldDrawUnderwaterBulletBubbles()
 //-----------------------------------------------------------------------------
 // Handle shot entering water
 //-----------------------------------------------------------------------------
-bool CBaseEntity::HandleShotImpactingWater( const FireBulletsInfo_t &info, 
+bool CSharedBaseEntity::HandleShotImpactingWater( const FireBulletsInfo_t &info, 
 	const Vector &vecEnd, ITraceFilter *pTraceFilter, Vector *pVecTracerDest )
 {
 	trace_t	waterTrace;
@@ -2509,12 +2509,12 @@ bool CBaseEntity::HandleShotImpactingWater( const FireBulletsInfo_t &info,
 }
 
 
-ITraceFilter* CBaseEntity::GetBeamTraceFilter( void )
+ITraceFilter* CSharedBaseEntity::GetBeamTraceFilter( void )
 {
 	return NULL;
 }
 
-void CBaseEntity::DispatchTraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
+void CSharedBaseEntity::DispatchTraceAttack( const CSharedTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 #ifdef GAME_DLL
 	// Make sure our damage filter allows the damage.
@@ -2527,7 +2527,7 @@ void CBaseEntity::DispatchTraceAttack( const CTakeDamageInfo &info, const Vector
 	TraceAttack( info, vecDir, ptr, pAccumulator );
 }
 
-void CBaseEntity::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
+void CSharedBaseEntity::TraceAttack( const CSharedTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	Vector vecOrigin = ptr->endpos - vecDir * 4;
 
@@ -2544,7 +2544,7 @@ void CBaseEntity::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir
 			AddMultiDamage( info, this );
 		}
 
-		CBaseEntity *pAttacker = info.GetAttacker();
+		CSharedBaseEntity *pAttacker = info.GetAttacker();
 
 		if(pAttacker) {
 			if(GameRules()->IsTeamplay() && pAttacker->InSameTeam(this) == true) {
@@ -2570,7 +2570,7 @@ void CBaseEntity::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir
 //-----------------------------------------------------------------------------
 // Allows the shooter to change the impact effect of his bullets
 //-----------------------------------------------------------------------------
-void CBaseEntity::DoImpactEffect( trace_t &tr, int nDamageType )
+void CSharedBaseEntity::DoImpactEffect( trace_t &tr, int nDamageType )
 {
 	// give shooter a chance to do a custom impact.
 	UTIL_ImpactTrace( &tr, nDamageType );
@@ -2580,13 +2580,13 @@ void CBaseEntity::DoImpactEffect( trace_t &tr, int nDamageType )
 //-----------------------------------------------------------------------------
 // Computes the tracer start position
 //-----------------------------------------------------------------------------
-void CBaseEntity::ComputeTracerStartPosition( const Vector &vecShotSrc, Vector *pVecTracerStart )
+void CSharedBaseEntity::ComputeTracerStartPosition( const Vector &vecShotSrc, Vector *pVecTracerStart )
 {
 	if ( IsPlayer() )
 	{
 		// adjust tracer position for player
 		Vector forward, right;
-		CBasePlayer *pPlayer = ToBasePlayer( this );
+		CSharedBasePlayer *pPlayer = ToBasePlayer( this );
 		pPlayer->EyeVectors( &forward, &right, NULL );
 		*pVecTracerStart = vecShotSrc + Vector ( 0 , 0 , -4 ) + right * 2 + forward * 16;
 	}
@@ -2594,10 +2594,10 @@ void CBaseEntity::ComputeTracerStartPosition( const Vector &vecShotSrc, Vector *
 	{
 		*pVecTracerStart = vecShotSrc;
 
-		CBaseCombatCharacter *pBCC = MyCombatCharacterPointer();
+		CSharedBaseCombatCharacter *pBCC = MyCombatCharacterPointer();
 		if ( pBCC != NULL )
 		{
-			CBaseCombatWeapon *pWeapon = pBCC->GetActiveWeapon();
+			CSharedBaseCombatWeapon *pWeapon = pBCC->GetActiveWeapon();
 
 			if ( pWeapon != NULL )
 			{
@@ -2625,7 +2625,7 @@ void CBaseEntity::ComputeTracerStartPosition( const Vector &vecShotSrc, Vector *
 //
 // Output :
 //-----------------------------------------------------------------------------
-void CBaseEntity::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType )
+void CSharedBaseEntity::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType )
 {
 	const char *pszTracerName = GetTracerType();
 
@@ -2648,14 +2648,14 @@ void CBaseEntity::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int
 //-----------------------------------------------------------------------------
 // Default tracer attachment
 //-----------------------------------------------------------------------------
-int CBaseEntity::GetTracerAttachment( void )
+int CSharedBaseEntity::GetTracerAttachment( void )
 {
 	int iAttachment = TRACER_DONT_USE_ATTACHMENT;
 
 	return iAttachment;
 }
 
-float CBaseEntity::HealthFraction() const
+float CSharedBaseEntity::HealthFraction() const
 {
 	if ( GetMaxHealth() == 0 )
 		return 1.0f;
@@ -2665,13 +2665,13 @@ float CBaseEntity::HealthFraction() const
 	return flFraction;
 }
 
-int CBaseEntity::BloodColor()
+int CSharedBaseEntity::BloodColor()
 {
 	return DONT_BLEED; 
 }
 
 
-void CBaseEntity::TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, int bitsDamageType )
+void CSharedBaseEntity::TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, int bitsDamageType )
 {
 	if ((BloodColor() == DONT_BLEED) || (BloodColor() == BLOOD_COLOR_MECH))
 	{
@@ -2743,12 +2743,12 @@ void CBaseEntity::TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr
 }
 
 
-const char* CBaseEntity::GetTracerType()
+const char* CSharedBaseEntity::GetTracerType()
 {
 	return NULL;
 }
 
-void CBaseEntity::ModifyEmitSoundParams( EmitSound_t &params )
+void CSharedBaseEntity::ModifyEmitSoundParams( EmitSound_t &params )
 {
 #ifdef CLIENT_DLL
 	if ( GameRules() )
@@ -2759,7 +2759,7 @@ void CBaseEntity::ModifyEmitSoundParams( EmitSound_t &params )
 }
 
 #if defined(GAME_DLL)
-void CBaseEntity::ModifySentenceParams( int &iSentenceIndex, int &iChannel, float &flVolume, soundlevel_t &iSoundlevel, int &iFlags, int &iPitch,
+void CSharedBaseEntity::ModifySentenceParams( int &iSentenceIndex, int &iChannel, float &flVolume, soundlevel_t &iSoundlevel, int &iFlags, int &iPitch,
 	const Vector **pOrigin, const Vector **pDirection, bool &bUpdatePositions, float &soundtime, int &iSpecialDSP, int &iSpeakerIndex )
 {
 
@@ -2769,7 +2769,7 @@ void CBaseEntity::ModifySentenceParams( int &iSentenceIndex, int &iChannel, floa
 //-----------------------------------------------------------------------------
 // These methods encapsulate MOVETYPE_FOLLOW, which became obsolete
 //-----------------------------------------------------------------------------
-void CBaseEntity::FollowEntity( CBaseEntity *pBaseEntity, bool bBoneMerge )
+void CSharedBaseEntity::FollowEntity( CSharedBaseEntity *pBaseEntity, bool bBoneMerge )
 {
 	if (pBaseEntity)
 	{
@@ -2789,7 +2789,7 @@ void CBaseEntity::FollowEntity( CBaseEntity *pBaseEntity, bool bBoneMerge )
 	}
 }
 
-void CBaseEntity::SetEffectEntity( CBaseEntity *pEffectEnt )
+void CSharedBaseEntity::SetEffectEntity( CSharedBaseEntity *pEffectEnt )
 {
 	if ( m_hEffectEntity.Get() != pEffectEnt )
 	{
@@ -2797,7 +2797,7 @@ void CBaseEntity::SetEffectEntity( CBaseEntity *pEffectEnt )
 	}
 }
 
-void CBaseEntity::ApplyLocalVelocityImpulse( const Vector &inVecImpulse )
+void CSharedBaseEntity::ApplyLocalVelocityImpulse( const Vector &inVecImpulse )
 {
 	// NOTE: Don't have to use GetVelocity here because local values
 	// are always guaranteed to be correct, unlike abs values which may 
@@ -2840,7 +2840,7 @@ void CBaseEntity::ApplyLocalVelocityImpulse( const Vector &inVecImpulse )
 	}
 }
 
-void CBaseEntity::ApplyAbsVelocityImpulse( const Vector &inVecImpulse )
+void CSharedBaseEntity::ApplyAbsVelocityImpulse( const Vector &inVecImpulse )
 {
 	if ( inVecImpulse != vec3_origin )
 	{
@@ -2880,7 +2880,7 @@ void CBaseEntity::ApplyAbsVelocityImpulse( const Vector &inVecImpulse )
 	}
 }
 
-void CBaseEntity::ApplyLocalAngularVelocityImpulse( const AngularImpulse &angImpulse )
+void CSharedBaseEntity::ApplyLocalAngularVelocityImpulse( const AngularImpulse &angImpulse )
 {
 	if (angImpulse != vec3_origin )
 	{
@@ -2911,7 +2911,7 @@ void CBaseEntity::ApplyLocalAngularVelocityImpulse( const AngularImpulse &angImp
 	}
 }
 
-void CBaseEntity::SetCollisionGroup( int collisionGroup )
+void CSharedBaseEntity::SetCollisionGroup( int collisionGroup )
 {
 	if ( (int)m_CollisionGroup != collisionGroup )
 	{
@@ -2921,7 +2921,7 @@ void CBaseEntity::SetCollisionGroup( int collisionGroup )
 }
 
 
-void CBaseEntity::CollisionRulesChanged()
+void CSharedBaseEntity::CollisionRulesChanged()
 {
 	// ivp maintains state based on recent return values from the collision filter, so anything
 	// that can change the state that a collision filter will return (like m_Solid) needs to call RecheckCollisionFilter.
@@ -2943,7 +2943,7 @@ void CBaseEntity::CollisionRulesChanged()
 	}
 }
 
-int CBaseEntity::GetWaterType() const
+int CSharedBaseEntity::GetWaterType() const
 {
 	int out = 0;
 	if ( m_nWaterType & 1 )
@@ -2953,7 +2953,7 @@ int CBaseEntity::GetWaterType() const
 	return out;
 }
 
-void CBaseEntity::SetWaterType( int nType )
+void CSharedBaseEntity::SetWaterType( int nType )
 {
 	m_nWaterType = 0;
 	if ( nType & CONTENTS_WATER )
@@ -2968,7 +2968,7 @@ ConVarRef	sv_alternateticks( "sv_alternateticks" );
 // Purpose: 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBaseEntity::IsSimulatingOnAlternateTicks()
+bool CSharedBaseEntity::IsSimulatingOnAlternateTicks()
 {
 	return sv_alternateticks.GetBool();
 }
@@ -2979,7 +2979,7 @@ bool CBaseEntity::IsSimulatingOnAlternateTicks()
 // Input  :  - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBaseEntity::IsToolRecording() const
+bool CSharedBaseEntity::IsToolRecording() const
 {
 	return m_bToolRecording;
 }
@@ -2989,7 +2989,7 @@ bool CBaseEntity::IsToolRecording() const
 extern void TouchTriggerPlayerMovement( C_BaseEntity *pEntity );
 #endif
 
-void CBaseEntity::PhysicsTouchTriggers( const Vector *pPrevAbsOrigin )
+void CSharedBaseEntity::PhysicsTouchTriggers( const Vector *pPrevAbsOrigin )
 {
 #if defined( CLIENT_DLL )
 	Assert( !pPrevAbsOrigin );
@@ -3033,7 +3033,7 @@ void CBaseEntity::PhysicsTouchTriggers( const Vector *pPrevAbsOrigin )
 // Purpose: 
 // Input  : set - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
+void CSharedBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 {
 	// TODO
 	// Append chapter/day?

@@ -18,7 +18,11 @@
 #include "sharedInterface.h"
 
 #if defined( CLIENT_DLL )
-#define CBaseCombatWeapon C_BaseCombatWeapon
+class C_BaseCombatWeapon;
+typedef C_BaseCombatWeapon CSharedBaseCombatWeapon;
+#else
+class CBaseCombatWeapon;
+typedef CBaseCombatWeapon CSharedBaseCombatWeapon;
 #endif
 
 #if !defined( CLIENT_DLL )
@@ -30,16 +34,20 @@ void *SendProxy_SendLocalWeaponDataTable( const SendProp *pProp, const void *pSt
 
 #ifdef GAME_DLL
 class CBasePlayer;
+typedef CBasePlayer CSharedBasePlayer;
 class CBaseCombatCharacter;
+typedef CBaseCombatCharacter CSharedBaseCombatCharacter;
 class CBaseViewModel;
+typedef CBaseViewModel CSharedBaseViewModel;
 #else
-#define CBasePlayer C_BasePlayer
-#define CBaseCombatCharacter C_BaseCombatCharacter
-#define CBaseViewModel C_BaseViewModel
 class C_BasePlayer;
+typedef C_BasePlayer CSharedBasePlayer;
 class C_BaseCombatCharacter;
+typedef C_BaseCombatCharacter CSharedBaseCombatCharacter;
 class C_BaseViewModel;
+typedef C_BaseViewModel CSharedBaseViewModel;
 #endif
+
 class IPhysicsConstraint;
 class CUserCmd;
 
@@ -203,19 +211,24 @@ private:
 
 };
 
-//-----------------------------------------------------------------------------
-// Purpose: Client side rep of CBaseTFCombatWeapon 
-//-----------------------------------------------------------------------------
-// Hacky
-class CBaseCombatWeapon : public CBaseAnimating
+#ifdef CLIENT_DLL
+	#define CBaseCombatWeapon C_BaseCombatWeapon
+#endif
+
+class CBaseCombatWeapon : public CSharedBaseAnimating
 {
 public:
-	DECLARE_CLASS( CBaseCombatWeapon, CBaseAnimating );
+	DECLARE_CLASS( CBaseCombatWeapon, CSharedBaseAnimating );
+	CBaseCombatWeapon();
+	virtual ~CBaseCombatWeapon();
+
+#ifdef CLIENT_DLL
+	#undef CBaseCombatWeapon
+#endif
+
+public:
 	DECLARE_NETWORKCLASS();
 	DECLARE_PREDICTABLE();
-
-							CBaseCombatWeapon();
-	virtual 				~CBaseCombatWeapon();
 
 	// Get unique weapon ID
 	// FIXMEL4DTOMAINMERGE
@@ -223,7 +236,7 @@ public:
 	virtual int GetWeaponID( void ) const		{ return 0; }
 
 	virtual bool			IsBaseCombatWeapon( void ) const { return true; }
-	virtual CBaseCombatWeapon *MyCombatWeaponPointer( void ) { return this; }
+	virtual CSharedBaseCombatWeapon *MyCombatWeaponPointer( void ) { return this; }
 
 	// A derived weapon class should return true here so that weapon sounds, etc, can
 	//  apply the proper filter
@@ -250,10 +263,10 @@ public:
 	virtual int				GetSubType( void ) { return m_iSubType; }
 	virtual void			SetSubType( int iType ) { m_iSubType = iType; }
 
-	virtual void			Equip( CBaseCombatCharacter *pOwner );
+	virtual void			Equip( CSharedBaseCombatCharacter *pOwner );
 	virtual void			Drop( const Vector &vecVelocity );
 
-	virtual	int				UpdateClientData( CBasePlayer *pPlayer );
+	virtual	int				UpdateClientData( CSharedBasePlayer *pPlayer );
 
 	virtual bool			IsAllowedToSwitch( void );
 	virtual bool			CanBeSelected( void );
@@ -262,8 +275,8 @@ public:
 
 	// Weapon Pickup For Player
 	virtual void			SetPickupTouch( void );
-	virtual void 			DefaultTouch( CBaseEntity *pOther );	// default weapon touch
-	virtual void			GiveTo( CBaseEntity *pOther );
+	virtual void 			DefaultTouch( CSharedBaseEntity *pOther );	// default weapon touch
+	virtual void			GiveTo( CSharedBaseEntity *pOther, bool bDeploy = true );
 
 	// HUD Hints
 	virtual bool			ShouldDisplayAltFireHUDHint();
@@ -299,14 +312,14 @@ public:
 	virtual bool			DefaultDeploy( char *szViewModel, char *szWeaponModel, int iActivity, char *szAnimExt );
 	virtual bool			CanDeploy( void ) { return true; }			// return true if the weapon's allowed to deploy
 	virtual bool			Deploy( void );								// returns true is deploy was successful
-	virtual bool			Holster( CBaseCombatWeapon *pSwitchingTo = NULL );
-	virtual CBaseCombatWeapon *GetLastWeapon( void ) { return this; }
+	virtual bool			Holster( CSharedBaseCombatWeapon *pSwitchingTo = NULL, bool bInstant = false );
+	virtual CSharedBaseCombatWeapon *GetLastWeapon( void ) { return this; }
 	virtual void			SetWeaponVisible( bool visible );
 	virtual bool			IsWeaponVisible( void );
 	virtual bool			ReloadOrSwitchWeapons( void );
 	virtual void			OnActiveStateChanged( int iOldState ) { return; }
 	virtual bool			HolsterOnDetach() { return false; }
-	virtual bool			IsHolstered(){ return false; }
+	virtual bool			IsHolstered(){ return m_bHolstered; }
 	virtual void			Detach() {}
 
 	// Weapon behaviour
@@ -348,9 +361,9 @@ public:
 	virtual void			UpdateAutoFire( void );
 
 	// Weapon firing
-	virtual void			PrimaryAttack( void );						// do "+ATTACK"
+	virtual bool			PrimaryAttack( void );						// do "+ATTACK"
 	virtual void			SecondaryAttack( void ) { return; }			// do "+ATTACK2"
-	virtual void			BaseForceFire( CBaseCombatCharacter *pOperator, CBaseEntity *pTarget = NULL );
+	virtual void			BaseForceFire( CSharedBaseCombatCharacter *pOperator, CSharedBaseEntity *pTarget = NULL );
 
 	// Firing animations
 	virtual Activity		GetPrimaryAttackActivity( void );
@@ -392,12 +405,12 @@ public:
 
 	virtual const char			*GetDeathNoticeName( void );	// Get the string to print death notices with
 
-	CBaseCombatCharacter	*GetOwner() const;
-	CBasePlayer *GetPlayerOwner() const;
-	void					SetOwner( CBaseCombatCharacter *owner );
-	virtual void			OnPickedUp( CBaseCombatCharacter *pNewOwner );
+	CSharedBaseCombatCharacter	*GetOwner() const;
+	CSharedBasePlayer *GetPlayerOwner() const;
+	void					SetOwner( CSharedBaseCombatCharacter *owner );
+	virtual void			OnPickedUp( CSharedBaseCombatCharacter *pNewOwner );
 
-	virtual void			AddViewmodelBob( CBaseViewModel *viewmodel, Vector &origin, QAngle &angles ) {};
+	virtual void			AddViewmodelBob( CSharedBaseViewModel *viewmodel, Vector &origin, QAngle &angles ) {};
 	virtual float			CalcViewmodelBob( void ) { return 0.0f; };
 
 	// Returns information about the various control panels
@@ -406,8 +419,8 @@ public:
 
 	virtual bool			ShouldShowControlPanels( void ) { return true; }
 
-	void					Lock( float lockTime, CBaseEntity *pLocker );
-	bool					IsLocked( CBaseEntity *pAsker );
+	void					Lock( float lockTime, CSharedBaseEntity *pLocker );
+	bool					IsLocked( CSharedBaseEntity *pAsker );
 
 	//All weapons can be picked up by NPCs by default
 	virtual bool			CanBePickedUpByNPCs( void );
@@ -484,7 +497,7 @@ public:
 
 	virtual void			Activate( void );
 
-	virtual void			Operator_FrameUpdate( CBaseCombatCharacter  *pOperator );
+	virtual void			Operator_FrameUpdate( CSharedBaseCombatCharacter  *pOperator );
 
 	// Gets the weapon script name to load.
 	virtual const char*		GetWeaponScriptName();
@@ -600,7 +613,7 @@ public:
 	virtual void			RestartParticleEffect( void ) {}
 
 	virtual void			Redraw(void);
-	virtual void			ViewModelDrawn( CBaseViewModel *pViewModel );
+	virtual void			ViewModelDrawn( CSharedBaseViewModel *pViewModel );
 	// Get the position that bullets are seen coming out. Note: the returned values are different
 	// for first person and third person.
 	bool					GetShootPosition( Vector &vOrigin, QAngle &vAngles );
@@ -646,7 +659,7 @@ public:
 	bool					WantsToOverrideViewmodelAttachments( void ) { return false; }
 
 	virtual IClientModelRenderable*	GetClientModelRenderable();
-	static CUtlLinkedList< CBaseCombatWeapon * >& GetWeaponList( void );
+	static CUtlLinkedList< CSharedBaseCombatWeapon * >& GetWeaponList( void );
 	virtual int				LookupAttachment( const char *pAttachmentName );
 
 	//Tony; notifications of any third person switches.
@@ -665,8 +678,8 @@ public:
 	virtual bool			CanReload( void );
 
 private:
-	typedef CHandle< CBaseCombatCharacter > CBaseCombatCharacterHandle;
-	CNetworkVar( CBaseCombatCharacterHandle, m_hOwner );				// Player carrying this weapon
+	typedef CHandle< CSharedBaseCombatCharacter > CBaseCombatCharacterHandle;
+	CNetworkHandle( CSharedBaseCombatCharacter, m_hOwner );				// Player carrying this weapon
 
 protected:
 	// Regulate crit frequency to reduce client-side seed hacking
@@ -687,6 +700,9 @@ public:
 	CNetworkVar( float, m_flNextPrimaryAttack );						// soonest time ItemPostFrame will call PrimaryAttack
 	CNetworkVar( float, m_flNextSecondaryAttack );					// soonest time ItemPostFrame will call SecondaryAttack
 	CNetworkVar( float, m_flTimeWeaponIdle );							// soonest time ItemPostFrame will call WeaponIdle
+
+	CNetworkVar( bool,		m_bHolstered );
+
 	// Weapon state
 	bool					m_bInReload;			// Are we in the middle of a reload;
 	bool					m_bFireOnEmpty;			// True when the gun is empty and the player is still holding down the attack key(s)
@@ -790,7 +806,7 @@ protected:
 //-----------------------------------------------------------------------------
 // Inline methods
 //-----------------------------------------------------------------------------
-inline CBaseCombatWeapon *ToBaseCombatWeapon( CBaseEntity *pEntity )
+inline CSharedBaseCombatWeapon *ToBaseCombatWeapon( CSharedBaseEntity *pEntity )
 {
 	if ( !pEntity )
 		return NULL;

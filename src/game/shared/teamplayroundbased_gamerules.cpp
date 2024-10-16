@@ -14,7 +14,6 @@
 	#include <igameevents.h>
 	#include "c_team.h"
 	#include "c_playerresource.h"
-	#define CTeam C_Team
 
 #else
 	#include "viewport_panel_names.h"

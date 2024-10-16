@@ -16,6 +16,7 @@
 #include "ai_activity.h"
 
 class CBaseAnimatingOverlay;
+typedef CBaseAnimatingOverlay CSharedBaseAnimatingOverlay;
 
 class CAnimationLayer : public CMemZeroOnNew
 {

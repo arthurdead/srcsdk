@@ -392,7 +392,7 @@ void PrecacheInstancedScene( char const *pszScene )
 		for ( int i = 0; i < sceneData.numSounds; ++i )
 		{
 			short stringId = scenefilecache->GetSceneCachedSound( sceneData.sceneId, i );
-			CBaseEntity::PrecacheScriptSound( scenefilecache->GetSceneString( stringId ) );
+			CSharedBaseEntity::PrecacheScriptSound( scenefilecache->GetSceneString( stringId ) );
 		}
 	}
 	else
@@ -487,7 +487,7 @@ void CGameResponseSystem::Precache()
 				break;
 			case RESPONSE_SPEAK:
 				{
-					CBaseEntity::PrecacheScriptSound( response.value );
+					CSharedBaseEntity::PrecacheScriptSound( response.value );
 				}
 				break;
 			}

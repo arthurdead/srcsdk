@@ -9,6 +9,8 @@
 #ifndef RENDERTARGETS_H
 #define RENDERTARGETS_H
 
+#pragma once
+
 #include "materialsystem/itexture.h"
 
 ITexture *GetPowerOfTwoFrameBufferTexture( void );

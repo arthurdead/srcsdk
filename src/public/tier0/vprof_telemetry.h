@@ -8,6 +8,8 @@
 #ifndef VPROF_TELEMETRY_H
 #define VPROF_TELEMETRY_H
 
+#pragma once
+
 #if !defined( MAKE_VPC )
 
 #if !defined( RAD_TELEMETRY_DISABLED ) && ( defined( IS_WINDOWS_PC ) || defined( _LINUX ) )

@@ -18,21 +18,19 @@ public:
 	static C_HeistPlayer *GetLocalHeistPlayer()
 	{ return (C_HeistPlayer *)C_BasePlayer::GetLocalPlayer(); }
 
-	bool IsSpotted() const;
-
 private:
 	C_HeistPlayer(const C_HeistPlayer &);
-
-	bool m_bSpotted;
 };
 
-inline C_HeistPlayer *ToHeistPlayer(CBaseEntity *pEntity)
+inline C_HeistPlayer *ToHeistPlayer(C_BaseEntity *pEntity)
 {
 	if(!pEntity || !pEntity->IsPlayer()) {
 		return NULL;
 	}
 
-	return dynamic_cast<C_HeistPlayer *>(pEntity);
+	return assert_cast<C_HeistPlayer *>(pEntity);
 }
+
+typedef C_HeistPlayer CSharedHeistPlayer;
 
 #endif

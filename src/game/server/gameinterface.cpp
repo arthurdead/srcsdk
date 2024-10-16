@@ -440,7 +440,8 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CServerGameDLL, IServerGameDLL, INTERFACEVERSI
 // When bumping the version to this interface, check that our assumption is still valid and expose the older version in the same way
 COMPILE_TIME_ASSERT( INTERFACEVERSION_SERVERGAMEDLL_INT == 10 );
 
-static ConVar sv_threaded_init("sv_threaded_init", "1");
+//this causes issues if you have a map on autoexec or +map on the commandline
+static ConVar sv_threaded_init("sv_threaded_init", "0");
 
 static bool InitGameSystems( CreateInterfaceFn appSystemFactory )
 {
