@@ -149,6 +149,10 @@ public:
 	Panel(Panel *parent, const char *panelName);
 	Panel(Panel *parent, const char *panelName, HScheme scheme);
 
+	Panel(VPANEL parent);
+	Panel(VPANEL parent, const char *panelName);
+	Panel(VPANEL parent, const char *panelName, HScheme scheme);
+
 	virtual ~Panel();
 
 	// returns pointer to Panel's vgui VPanel interface handle

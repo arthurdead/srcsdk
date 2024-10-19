@@ -18,6 +18,8 @@ public:
 	static C_HeistPlayer *GetLocalHeistPlayer()
 	{ return (C_HeistPlayer *)C_BasePlayer::GetLocalPlayer(); }
 
+	void PostThink() override;
+
 private:
 	C_HeistPlayer(const C_HeistPlayer &);
 };

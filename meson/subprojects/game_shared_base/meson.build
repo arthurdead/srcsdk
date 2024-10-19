@@ -130,7 +130,6 @@ game_shared_base_dep = declare_dependency(
 		join_paths(public_dir,'collisionutils.cpp'),
 		join_paths(public_dir,'dt_shared.cpp'),
 		join_paths(public_dir,'dt_utlvector_common.cpp'),
-		join_paths(public_dir,'editor_sendcommand.cpp'),
 		join_paths(public_dir,'filesystem_helpers.cpp'),
 		join_paths(public_dir,'interpolatortypes.cpp'),
 		join_paths(public_dir,'keyframe','keyframe.cpp'),

@@ -14,7 +14,7 @@
 #include "tier0/memdbgon.h"
 
 // Keeps us from doing strcmps in the tracefilter.
-extern string_t g_iszPhysicsPropClassname;
+extern string_t gm_isz_class_PropPhysics;
 
 enum Touch_t
 {
@@ -548,7 +548,7 @@ public:
 		CBaseEntity *pEntity = EntityFromEntityHandle( pServerEntity );
 		if ( pEntity )
 		{
-			if ( pEntity->IsPlayer() || pEntity->MyNPCPointer() || pEntity->GetClassnameStr() == g_iszPhysicsPropClassname )
+			if ( pEntity->IsPlayer() || pEntity->MyNPCPointer() || pEntity->GetClassnameStr() == gm_isz_class_PropPhysics )
 				return true;
 		}
 
@@ -585,7 +585,7 @@ bool CEnvBeam::PassesTouchFilters(CBaseEntity *pOther)
 
 	if( m_TouchType == touch_player_or_npc_or_physicsprop )
 	{
-		if( pOther->GetClassnameStr() == g_iszPhysicsPropClassname )
+		if( pOther->GetClassnameStr() == gm_isz_class_PropPhysics )
 		{
 			fPassedSoFar = true;
 		}

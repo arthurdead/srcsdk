@@ -3,6 +3,8 @@
 // Purpose: 
 //
 //===========================================================================//
+#include "tier0/platform.h"
+
 #if defined( _WIN32 )
 #include <windows.h>
 #endif
@@ -72,7 +74,7 @@ void Sys_SetCreateInterfaceHook(CreateInterfaceFn hook)
 void* CreateInterfaceInternal( const char *pName, int *pReturnCode )
 {
 	InterfaceReg *pCur;
-	
+
 	for (pCur=InterfaceReg::s_pInterfaceRegs; pCur; pCur=pCur->m_pNext)
 	{
 		if (strcmp(pCur->m_pName, pName) == 0)
@@ -106,7 +108,7 @@ void* CreateInterface( const char *pName, int *pReturnCode )
 
 #ifdef POSIX
 // Linux doesn't have this function so this emulates its functionality
-void *GetModuleHandle(const char *name)
+HMODULE GetModuleHandle(const char *name)
 {
 	void *handle;
 
@@ -128,7 +130,7 @@ void *GetModuleHandle(const char *name)
 	// in short dlopen() inc a ref count
 	// so dec the ref count by performing the close
 	dlclose(handle);
-	return handle;
+	return (HMODULE)handle;
 }
 #endif
 
@@ -142,7 +144,7 @@ void *GetModuleHandle(const char *name)
 // Input  : pModuleName - module name
 //			*pName - proc name
 //-----------------------------------------------------------------------------
-static void *Sys_GetProcAddress( const char *pModuleName, const char *pName )
+void *Sys_GetProcAddress( const char *pModuleName, const char *pName )
 {
 	HMODULE hModule = (HMODULE)GetModuleHandle( pModuleName );
 #ifdef WIN32
@@ -152,16 +154,14 @@ static void *Sys_GetProcAddress( const char *pModuleName, const char *pName )
 #endif
 }
 
-#if !defined(LINUX)
-static void *Sys_GetProcAddress( HMODULE hModule, const char *pName )
+void *Sys_GetProcAddress( CSysModule *hModule, const char *pName )
 {
 #ifdef WIN32
-	return (void *)GetProcAddress( hModule, pName );
+	return (void *)GetProcAddress( (HMODULE)hModule, pName );
 #else
 	return (void *)dlsym( (void *)hModule, pName );
 #endif
 }
-#endif
 
 bool Sys_IsDebuggerPresent()
 {
@@ -320,9 +320,8 @@ CSysModule *Sys_LoadModule( const char *pModuleName, Sys_Flags flags /* = SYS_NO
 #endif // DEBUG
 	}
 
-#if !defined(LINUX)
 	// If running in the debugger, assume debug binaries are okay, otherwise they must run with -allowdebug
-	if ( Sys_GetProcAddress( hDLL, "BuiltDebug" ) )
+	if ( Sys_GetProcAddress( (CSysModule *)hDLL, "BuiltDebug" ) )
 	{
 		if ( hDLL && 
 			 !CommandLine()->FindParm( "-allowdebug" ) && 
@@ -347,7 +346,6 @@ CSysModule *Sys_LoadModule( const char *pModuleName, Sys_Flags flags /* = SYS_NO
 #endif
 		}
 	}
-#endif
 
 	return reinterpret_cast<CSysModule *>(hDLL);
 }
@@ -416,7 +414,7 @@ CreateInterfaceFn Sys_GetFactory( CSysModule *pModule )
 	//pointer-to-function and pointer-to-object
 	//
 	// so lets get around it :)
-	return (CreateInterfaceFn)(GetProcAddress( (void *)hDLL, CREATEINTERFACE_PROCNAME ));
+	return (CreateInterfaceFn)(dlsym( (void *)hDLL, CREATEINTERFACE_PROCNAME ));
 #endif
 }
 

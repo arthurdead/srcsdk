@@ -8,6 +8,8 @@
 
 #if !defined(STEAM) && !defined(NO_MALLOC_OVERRIDE)
 
+#include "platform.h"
+
 #ifdef QT_DLL
 #define NO_MEMOVERRIDE_NEW_DELETE
 #endif
@@ -37,7 +39,6 @@
 #include <cstring>
 #include <cstdio>
 
-#include "platform.h"
 #include "basetypes.h"
 #include "dbg.h"
 #include "minidump.h"

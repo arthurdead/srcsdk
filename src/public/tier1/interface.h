@@ -38,7 +38,7 @@
 #include <dlfcn.h> // dlopen,dlclose, et al
 #include <unistd.h>
 
-#define GetProcAddress dlsym
+//#define GetProcAddress dlsym
 
 #ifdef _snprintf
 #undef _snprintf
@@ -159,7 +159,7 @@ enum
 //-----------------------------------------------------------------------------
 DLL_EXPORT void* CreateInterface(const char *pName, int *pReturnCode);
 
-void Sys_SetCreateInterfaceHook(CreateInterfaceFn hook);
+extern void Sys_SetCreateInterfaceHook(CreateInterfaceFn hook);
 
 //-----------------------------------------------------------------------------
 // UNDONE: This is obsolete, use the module load/unload/get instead!!!
@@ -181,6 +181,9 @@ enum Sys_Flags
 //-----------------------------------------------------------------------------
 extern CSysModule			*Sys_LoadModule( const char *pModuleName, Sys_Flags flags = SYS_NOFLAGS );
 extern void					Sys_UnloadModule( CSysModule *pModule );
+
+extern void *Sys_GetProcAddress( const char *pModuleName, const char *pName );
+extern void *Sys_GetProcAddress( CSysModule *hModule, const char *pName );
 
 // This is a helper function to load a module, get its factory, and get a specific interface.
 // You are expected to free all of these things.

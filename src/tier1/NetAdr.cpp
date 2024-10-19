@@ -5,7 +5,9 @@
 // NetAdr.cpp: implementation of the CNetAdr class.
 //
 //===========================================================================//
-#if defined( _WIN32 ) && !defined( _X360 )
+#include "tier0/platform.h"
+
+#if defined( _WIN32 )
 #include <windows.h>
 #endif
 

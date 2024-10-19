@@ -15,7 +15,7 @@
 #include "tier0/dbg.h"
 #include "tier0/vcrmode.h"
 
-#ifdef PLATFORM_WINDOWS_PC
+#if defined PLATFORM_WINDOWS_PC && !defined LINUX
 #include <intrin.h>
 #endif
 
@@ -104,7 +104,7 @@ extern "C" unsigned long DLL_IMPORT_ATTR STDCALL GetCurrentThreadId();
 
 inline void ThreadPause()
 {
-#if defined( PLATFORM_WINDOWS_PC )
+#if defined( PLATFORM_WINDOWS_PC ) && !defined LINUX
 	// Intrinsic for __asm pause; from <intrin.h>
 	_mm_pause();
 #elif POSIX

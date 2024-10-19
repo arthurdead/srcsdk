@@ -27,6 +27,9 @@ public:
 	EditablePanel(Panel *parent, const char *panelName);
 	EditablePanel(Panel *parent, const char *panelName, HScheme hScheme);
 
+	EditablePanel(VPANEL parent, const char *panelName);
+	EditablePanel(VPANEL parent, const char *panelName, HScheme hScheme);
+
 	virtual ~EditablePanel();
 
 	// Load the control settings - should be done after all the children are added
@@ -91,6 +94,7 @@ public:
 	// Get the panel with the specified hotkey
 	virtual Panel *HasHotkey(wchar_t key);
 
+	virtual void OnKeyCodeTyped(KeyCode code);
 	virtual void OnKeyCodePressed( KeyCode code );
 
 	// Handle information requests

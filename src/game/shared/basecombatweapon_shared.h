@@ -289,7 +289,7 @@ public:
 
 	// Weapon client handling
 	virtual void			SetViewModelIndex( int index = 0 );
-	virtual bool			SendWeaponAnim( int iActivity );
+	virtual bool			SendWeaponAnim( Activity iActivity );
 	virtual void			SendViewModelAnim( int nSequence );
 	virtual float					GetViewModelSequenceDuration();	// Return how long the current view model sequence is.
 	virtual bool					IsViewModelSequenceFinished( void ) const; // Returns if the viewmodel's current animation is finished
@@ -309,7 +309,7 @@ public:
 	void					GiveDefaultAmmo( void );
 	
 	virtual bool			CanHolster( void ) const { return TRUE; };		// returns true if the weapon can be holstered
-	virtual bool			DefaultDeploy( char *szViewModel, char *szWeaponModel, int iActivity, char *szAnimExt );
+	virtual bool			DefaultDeploy( const char *szViewModel, const char *szWeaponModel, Activity iActivity, const char *szAnimExt );
 	virtual bool			CanDeploy( void ) { return true; }			// return true if the weapon's allowed to deploy
 	virtual bool			Deploy( void );								// returns true is deploy was successful
 	virtual bool			Holster( CSharedBaseCombatWeapon *pSwitchingTo = NULL, bool bInstant = false );
@@ -352,7 +352,7 @@ public:
 	virtual void			FinishReload( void );
 	virtual void			AbortReload( void );
 	virtual bool			Reload( void );
-	bool					DefaultReload( int iClipSize1, int iClipSize2, int iActivity );
+	bool					DefaultReload( int iClipSize1, int iClipSize2, Activity iActivity );
 	bool					ReloadsSingly( void ) const;
 	// Originally created for the crossbow, can be used to add special NPC reloading behavior
 	virtual void			Reload_NPC( bool bPlaySound = true );
@@ -417,7 +417,7 @@ public:
 	virtual void 			GetControlPanelInfo( int nPanelIndex, const char *&pPanelName );
 	virtual void			GetControlPanelClassName( int nPanelIndex, const char *&pPanelName );
 
-	virtual bool			ShouldShowControlPanels( void ) { return true; }
+	virtual bool			ShouldShowControlPanels( void ) { return false; }
 
 	void					Lock( float lockTime, CSharedBaseEntity *pLocker );
 	bool					IsLocked( CSharedBaseEntity *pAsker );

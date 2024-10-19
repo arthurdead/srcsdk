@@ -8,14 +8,13 @@
 
 #ifndef TIER1_STRTOOLS_H
 #define TIER1_STRTOOLS_H
+#pragma once
 
 #include "tier0/platform.h"
 
 #include <ctype.h>
 #include <stdarg.h>
-#ifdef _WIN32
-#pragma once
-#elif POSIX
+#ifdef POSIX
 #include <wchar.h>
 #include <math.h>
 #include <wctype.h>

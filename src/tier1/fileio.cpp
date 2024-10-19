@@ -6,6 +6,8 @@
 //
 //=============================================================================
 
+#include "tier0/platform.h"
+
 #if defined(_WIN32)
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0502		// ReadDirectoryChangesW

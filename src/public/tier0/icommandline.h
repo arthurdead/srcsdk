@@ -40,6 +40,9 @@ public:
 	virtual void SetParm( int nIndex, char const *pNewParm ) =0;
 
 	virtual const char *ParmValueByIndex( int nIndex, const char *pDefaultVal = NULL ) const = 0;
+
+	inline bool HasParm( const char *psz ) const
+	{ return FindParm(psz) > 0; }
 };
 
 //-----------------------------------------------------------------------------

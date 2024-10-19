@@ -11,20 +11,17 @@
 class CMdlBrowser : public CMDLPickerFrame
 {
 public:
-	CMdlBrowser();
+	CMdlBrowser( vgui::VPANEL parent );
 	~CMdlBrowser();
 };
 
-static CMdlBrowser *g_pMdlBrowser;
+static CMdlBrowser *g_pMdlBrowser = NULL;
 
-CMdlBrowser::CMdlBrowser()
-	: CMDLPickerFrame( NULL, "Mdl Browser" )
+CMdlBrowser::CMdlBrowser( vgui::VPANEL parent )
+	: CMDLPickerFrame( parent, "Mdl Browser" )
 {
 	if(!g_pMdlBrowser)
 		g_pMdlBrowser = this;
-
-	vgui::VPANEL clientroot = enginevgui->GetPanel( PANEL_GAMEUIDLL );
-	SetParent( clientroot );
 
 	SetSize( 1230, 740 );
 
@@ -48,5 +45,7 @@ CON_COMMAND(mdlbrowser, "")
 		return;
 	}
 
-	g_pMdlBrowser = CREATE_PANEL(CMdlBrowser);
+	vgui::VPANEL clientroot = enginevgui->GetPanel( PANEL_GAMEUIDLL );
+
+	g_pMdlBrowser = CREATE_PANEL(CMdlBrowser, clientroot);
 }

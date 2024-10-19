@@ -57,6 +57,9 @@ typedef wchar_t wchar;
 
 #ifdef _WIN32
 #include <tchar.h>
+#ifdef LINUX
+#define __TEXT(s) s
+#endif
 #else
 #define _tcsstr strstr
 #define _tcsicmp stricmp

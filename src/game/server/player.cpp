@@ -249,7 +249,7 @@ inline bool ShouldRunCommandsInContext( const CCommandContext *ctx )
 // Purpose: 
 // Output : CBaseViewModel
 //-----------------------------------------------------------------------------
-CBaseViewModel *CBasePlayer::GetViewModel( int index /*= 0*/, bool bObserverOK )
+CBaseViewModel *CBasePlayer::GetViewModel( int index /*= VIEWMODEL_WEAPON*/, bool bObserverOK )
 {
 	Assert( index >= 0 && index < MAX_VIEWMODELS );
 	return m_hViewModel[ index ].Get();
@@ -258,7 +258,7 @@ CBaseViewModel *CBasePlayer::GetViewModel( int index /*= 0*/, bool bObserverOK )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBasePlayer::CreateViewModel( int index /*=0*/ )
+void CBasePlayer::CreateViewModel( int index /*=VIEWMODEL_WEAPON*/ )
 {
 	Assert( index >= 0 && index < MAX_VIEWMODELS );
 
@@ -297,33 +297,46 @@ void CBasePlayer::DestroyViewModels( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CBasePlayer::CreateHandModel(int index, int iOtherVm)
+void CBasePlayer::CreateHandModel( int index, int parentIndex )
 {
-	Assert(index >= 0 && index < MAX_VIEWMODELS && iOtherVm >= 0 && iOtherVm < MAX_VIEWMODELS );
+	Assert( index >= 0 && index < MAX_VIEWMODELS );
+	Assert( parentIndex >= 0 && parentIndex < MAX_VIEWMODELS );
 
-	if (GetViewModel( index ))
+	CBaseViewModel *parentvm = GetViewModel( parentIndex );
+	CBaseViewModel *vm = GetViewModel( index );
+
+	if ( !parentvm )
 	{
+		CreateViewModel( parentIndex );
+
+		parentvm = GetViewModel( parentIndex );
+	}
+
+	Assert( parentvm );
+
+	if ( vm )
+	{
+		CBaseCombatWeapon *activeWeapon = GetActiveWeapon();
 		// This can happen if the player respawns
 		// Don't draw unless we're already using a hands weapon
-		if ( !GetActiveWeapon() || !GetActiveWeapon()->UsesHands() )
-			GetViewModel( index )->AddEffects( EF_NODRAW );
+		if ( !activeWeapon || !activeWeapon->UsesHands() )
+			vm->AddEffects( EF_NODRAW );
 		return;
 	}
 
-	CBaseViewModel *vm = (CBaseViewModel *)CreateEntityByName("hand_viewmodel");
-	if (vm)
+	vm = ( CBaseViewModel * )CreateEntityByName( "hand_viewmodel" );
+	if ( vm )
 	{
-		vm->SetAbsOrigin(GetAbsOrigin());
-		vm->SetOwner(this);
-		vm->SetIndex(index);
+		vm->SetAbsOrigin( GetAbsOrigin() );
+		vm->SetOwner( this );
+		vm->SetIndex( index );
 
 		vm->SetModel( "models/weapons/v_hands.mdl" );
-		vm->SetSkin( 0 );
-		vm->SetBody( 0 );
 
-		DispatchSpawn(vm);
-		vm->FollowEntity(GetViewModel(iOtherVm), true);
-		m_hViewModel.Set(index, vm);
+		DispatchSpawn( vm );
+		vm->FollowEntity( parentvm );
+		m_hViewModel.Set( index, vm );
+
 		vm->AddEffects( EF_NODRAW );
 	}
 }

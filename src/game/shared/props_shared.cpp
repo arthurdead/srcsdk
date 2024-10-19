@@ -347,7 +347,7 @@ int CPropData::ParsePropFromKV( CSharedBaseEntity *pProp, IBreakableWithPropData
 	pBreakableInterface->SetDmgModExplosive( pSection->GetFloat( "dmg.explosive", pBreakableInterface->GetDmgModExplosive() ) );
 
 	// Get the health (unless this is an override prop)
-	if ( !FClassnameIs( pProp, "prop_physics_override" ) && !FClassnameIs( pProp, "prop_dynamic_override" ) )
+	if ( !FClassnameIs( pProp, gm_isz_class_PropPhysicsOverride ) && !FClassnameIs( pProp, "prop_dynamic_override" ) )
 	{
 		pProp->SetHealth( pSection->GetInt( "health", pProp->GetHealth() ) );
 

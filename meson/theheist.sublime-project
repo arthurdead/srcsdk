@@ -17,6 +17,7 @@
 				"enabled": true,
 				"initializationOptions": {
 					"clangd.compile-commands-dir": "$project_path/build_linux/everything",
+					//"clangd.compile-commands-dir": "$project_path/build_linux/hammer_dll",
 				},
 			},
 		},

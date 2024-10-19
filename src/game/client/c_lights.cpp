@@ -224,12 +224,11 @@ void CPrecisionSlider::OnMouseWheeled( int delta )
 	}
 }
 
-CCSMTweakPanel::CCSMTweakPanel( vgui::VPANEL parent ): Frame( NULL, "CCSMTweakPanel" )
+CCSMTweakPanel::CCSMTweakPanel( vgui::VPANEL parent ): Frame( parent, "CCSMTweakPanel" )
 {
 	if(!g_pCSMTweak)
 		g_pCSMTweak = this;
 
-	SetParent( parent );
 	near.pOrthoSize = new CPrecisionSlider( this, "nearOrthoSize" );
 	near.pOrthoSize->SetRange( 0, 1024 );
 	near.pForwardOffset = new CPrecisionSlider( this, "nearForwardOffset" );

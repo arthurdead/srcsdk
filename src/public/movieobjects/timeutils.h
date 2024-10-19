@@ -12,6 +12,8 @@
 #include <math.h>
 #include "tier0/dbg.h"
 
+#define DMETIME_TO_SECONDS( t ) ((t) * 0.0001f)
+
 enum RoundStyle_t
 {
 	ROUND_NEAREST,
@@ -123,7 +125,7 @@ public:
 	// conversions between other time representations
 
 	int GetTenthsOfMS() const { return m_tms; }
-	float GetSeconds() const { return m_tms * 0.0001f; }
+	float GetSeconds() const { return DMETIME_TO_SECONDS( m_tms ); }
 	void SetTenthsOfMS( int tms ) { m_tms = tms; }
 	void SetSeconds( float sec ) { m_tms = RoundSecondsToTMS( sec ); }
 
@@ -148,7 +150,9 @@ public:
 
 	// framerate-dependent conversions to/from frames
 
+	int CurrentFrame( DmeFramerate_t framerate, bool bRoundDown = true ) const;
 	int CurrentFrame( DmeFramerate_t framerate, RoundStyle_t roundStyle = ROUND_DOWN ) const;
+	DmeTime_t TimeAtCurrentFrame( DmeFramerate_t framerate, bool bRoundDown = true ) const;
 	DmeTime_t TimeAtCurrentFrame( DmeFramerate_t framerate, RoundStyle_t roundStyle = ROUND_DOWN ) const;
 	DmeTime_t TimeAtNextFrame( DmeFramerate_t framerate ) const;
 	DmeTime_t TimeAtPrevFrame( DmeFramerate_t framerate ) const;
@@ -165,12 +169,12 @@ private:
 
 inline int DmeTime_t::RoundSecondsToTMS( float sec )
 {
-	return floor( 10000.0f * sec + 0.5f );
+	return floor( 10000.0f * sec + 0.5f ); // round at half-tms boundary
 }
 
 inline int DmeTime_t::RoundSecondsToTMS( double sec )
 {
-	return floor( 10000.0 * sec + 0.5 );
+	return floor( 10000.0 * sec + 0.5 ); // round at half-tms boundary
 }
 
 class CUtlBuffer;

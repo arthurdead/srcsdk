@@ -76,4 +76,9 @@ if build_client
 		install_dir: join_paths(game_dir,'bin'),
 		install_rpath: '$ORIGIN'
 	)
+
+	install_data(
+		join_paths(gameui_src_dir,'platformmenu.vdf'),
+		install_dir: join_paths(game_dir,'bin'),
+	)
 endif

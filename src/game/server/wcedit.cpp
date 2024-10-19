@@ -40,23 +40,21 @@ extern float			GetFloorZ(const Vector &origin);
 bool NWCEdit::IsWCVersionValid(void)
 {
 	int status = Editor_CheckVersion(STRING(gpGlobals->mapname), gpGlobals->mapversion, false);
-	if (!status)
+	if (status == Editor_NotRunning)
 	{
-		return true;
-	}
-	else if (status == Editor_NotRunning)
-	{
-		Msg("\nAborting map_edit\nWorldcraft not running...\n\n");
-		UTIL_CenterPrintAll( "Worldcraft not running..." );
+		Msg("\nAborting map_edit\nHammer not running...\n\n");
+		UTIL_CenterPrintAll( "Hammer not running..." );
+		engine->ServerCommand("kickall \"Hammer not running...\"\n");
 		engine->ServerCommand("disconnect\n");
 	}
-	else
+	else if (status == Editor_BadCommand)
 	{
-		Msg("\nAborting map_edit\nWC/Engine map versions different...\n\n");
-		UTIL_CenterPrintAll( "WC/Engine map versions different..." );
+		Msg("\nAborting map_edit\nHammer/Engine map versions different...\n\n");
+		UTIL_CenterPrintAll( "Hammer/Engine map versions different..." );
+		engine->ServerCommand("kickall \"Hammer/Engine map versions different...\"\n");
 		engine->ServerCommand("disconnect\n");
 	}
-	return false;
+	return true;
 }
 
 Vector *g_EntityPositions = NULL;

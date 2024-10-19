@@ -15,6 +15,7 @@
 #include "mathlib/vector.h"
 #include "shareddefs.h"
 #include "Color.h"
+#include "string_t.h"
 
 #include "shake.h"
 #include "bitmap/imageformat.h"
@@ -162,6 +163,13 @@ T *_CreateEntity( T *newClass, const char *className )
 inline bool FStrEq(const char *sz1, const char *sz2)
 {
 	return (V_stricmp(sz1, sz2) == 0);
+}
+
+inline bool FStrEq( string_t str1, string_t str2 )
+{
+	// now that these are pooled, we can compare them with 
+	// integer equality
+	return IDENT_STRINGS( str1, str2 );
 }
 
 // Given a vector, clamps the scalar axes to MAX_COORD_FLOAT ranges from worldsize.h

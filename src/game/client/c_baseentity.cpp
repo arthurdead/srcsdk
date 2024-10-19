@@ -6503,7 +6503,7 @@ END_MAPENTITY()
 
 void C_BaseEntity::SetClassname( const char *className )
 {
-	m_iClassname = MAKE_STRING( className );
+	m_iClassname = AllocPooledString( className );
 }
 
 //-----------------------------------------------------------------------------

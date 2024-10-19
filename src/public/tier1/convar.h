@@ -662,15 +662,51 @@ private:
    static ConCommand name##_command( #name, name##_callback, description ); \
    static void name##_callback( const CCommand &args )
 
+#ifdef CLIENT_DLL
+	#define CON_COMMAND_SHARED( name, description ) \
+		static void name( const CCommand &args ); \
+		static ConCommand name##_command_client( #name "_client", name, description ); \
+		static void name( const CCommand &args )
+#else
+	#define CON_COMMAND_SHARED( name, description ) \
+		static void name( const CCommand &args ); \
+		static ConCommand name##_command( #name, name, description ); \
+		static void name( const CCommand &args )
+#endif
+
 #define CON_COMMAND_F( name, description, flags ) \
    static void name##_callback( const CCommand &args ); \
    static ConCommand name##_command( #name, name##_callback, description, flags ); \
    static void name##_callback( const CCommand &args )
 
+#ifdef CLIENT_DLL
+	#define CON_COMMAND_F_SHARED( name, description, flags ) \
+		static void name( const CCommand &args ); \
+		static ConCommand name##_command_client( #name "_client", name, description, flags ); \
+		static void name( const CCommand &args )
+#else
+	#define CON_COMMAND_F_SHARED( name, description, flags ) \
+		static void name( const CCommand &args ); \
+		static ConCommand name##_command( #name, name, description, flags ); \
+		static void name( const CCommand &args )
+#endif
+
 #define CON_COMMAND_F_COMPLETION( name, description, flags, completion ) \
 	static void name##_callback( const CCommand &args ); \
 	static ConCommand name##_command( #name, name##_callback, description, flags, completion ); \
 	static void name##_callback( const CCommand &args )
+
+#ifdef CLIENT_DLL
+	#define CON_COMMAND_F_COMPLETION_SHARED( name, description, flags, completion ) \
+		static void name( const CCommand &args ); \
+		static ConCommand name##_command_client( #name "_client", name, description, flags, completion ); \
+		static void name( const CCommand &args )
+#else
+	#define CON_COMMAND_F_COMPLETION_SHARED( name, description, flags, completion ) \
+		static void name( const CCommand &args ); \
+		static ConCommand name##_command( #name, name, description, flags, completion ); \
+		static void name( const CCommand &args )
+#endif
 
 #define CON_COMMAND_EXTERN( name, _funcname, description ) \
 	void _funcname( const CCommand &args ); \

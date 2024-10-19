@@ -29,6 +29,7 @@ public:
 	virtual						~CHudElement();
 
 	virtual void				SetHud( CHud *pHud );
+	CHud *Hud() { return m_pHud; }
 
 	// called when the Hud is initialised (whenever the DLL is loaded)
 	virtual void				Init( void ) { return; }
@@ -90,6 +91,9 @@ public:
 	// For now, CHUdElements declare a single priority value. They will only be hidden 
 	// by panels with a lower priority and will only lock out panels with a lower priority
 	virtual int	GetRenderGroupPriority();
+
+	const CUtlVector< int > &GetRenderGroups() const
+	{ return m_HudRenderGroups; }
 
 public: // IGameEventListener Interface
 	

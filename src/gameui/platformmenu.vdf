@@ -1,0 +1,15 @@
+// this file defines the contents of the platform menu
+"Platform"
+{
+	"Menu"
+	{
+		"Servers"
+		{
+			"dll" "ServerBrowser.dll"
+			"dll_osx" "ServerBrowser.dylib"
+			"dll_linux" "ServerBrowser.so"
+			"interface" "VGuiModuleServerBrowser001"
+			"MenuName" "#App_Servers"
+		}
+	}
+}

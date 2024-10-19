@@ -115,7 +115,7 @@ public:
 
 	void	SetAnimationExtension( const char *pExtension );
 
-	C_BaseViewModel		*GetViewModel( int viewmodelindex = 0, bool bObserverOK=true );
+	C_BaseViewModel		*GetViewModel( int viewmodelindex = VIEWMODEL_WEAPON, bool bObserverOK=true );
 	C_BaseCombatWeapon	*GetActiveWeapon( void ) const;
 	const char			*GetTracerType( void );
 

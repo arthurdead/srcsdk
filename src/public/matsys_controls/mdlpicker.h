@@ -143,6 +143,8 @@ class CMDLPickerFrame : public CBaseAssetPickerFrame
 
 public:
 	CMDLPickerFrame( vgui::Panel *pParent, const char *pTitle, int nFlags = CMDLPicker::PAGE_ALL );
+	CMDLPickerFrame( vgui::VPANEL pParent, const char *pTitle, int nFlags = CMDLPicker::PAGE_ALL );
+
 	virtual ~CMDLPickerFrame();
 
 	// Allows external apps to select a MDL

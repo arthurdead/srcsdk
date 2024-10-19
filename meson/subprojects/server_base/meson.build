@@ -71,7 +71,6 @@ server_base_dep = declare_dependency(
 		join_paths(server_src_dir,'ai_task.cpp'),
 		join_paths(server_src_dir,'ai_trackpather.cpp'),
 		join_paths(server_src_dir,'ai_utils.cpp'),
-		join_paths(server_src_dir,'wcedit.cpp'),
 		join_paths(server_src_dir,'base_transmit_proxy.cpp'),
 		join_paths(server_src_dir,'baseanimating.cpp'),
 		join_paths(server_src_dir,'BaseAnimatingOverlay.cpp'),

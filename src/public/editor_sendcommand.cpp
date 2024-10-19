@@ -65,39 +65,6 @@ EditorSendResult_t Editor_CreateEntity(const char *pszEntity, float x, float y, 
 	return(Editor_SendCommand(szCommand, bShowUI));
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: Sends a command to the editor (if running) to create an entity at
-//			a given (x, y, z) coordinate.
-// Input  : pszNodeClass - Class name of node to create, ie "info_node".
-//			nID - Unique ID to assign the node.
-//			x, y, z - World coordinates at which to create node.
-// Output : Returns Editor_OK on success, an error code on failure.
-//-----------------------------------------------------------------------------
-EditorSendResult_t Editor_CreateNode(const char *pszNodeClass, int nID, float x, float y,  float z, bool bShowUI)
-{
-	char szCommand[MAX_COMMAND_BUFFER];
-	Q_snprintf(szCommand,sizeof(szCommand), "node_create %s %d %g %g %g", pszNodeClass, nID, x, y, z);
-	return(Editor_SendCommand(szCommand, bShowUI));
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Sends a command to the editor (if running) to create an entity at
-//			a given (x, y, z) coordinate.
-// Input  : pszNodeClass - Class name of node to create, ie "info_node".
-//			nID - Unique ID to assign the node.
-//			x, y, z - World coordinates at which to create node.
-// Output : Returns Editor_OK on success, an error code on failure.
-//-----------------------------------------------------------------------------
-EditorSendResult_t Editor_CreateNodeLink(int nStartID, int nEndID, bool bShowUI)
-{
-	char szCommand[MAX_COMMAND_BUFFER];
-	Q_snprintf(szCommand,sizeof(szCommand), "nodelink_create %d %d", nStartID, nEndID);
-	return(Editor_SendCommand(szCommand, bShowUI));
-}
-
-
 //-----------------------------------------------------------------------------
 // Purpose: Sends a command to the editor (if running) to delete an entity at
 //			a given (x, y, z) coordinate.
@@ -129,34 +96,6 @@ EditorSendResult_t Editor_RotateEntity(const char *pszEntity, float x, float y, 
 	Q_snprintf(szCommand,sizeof(szCommand), "entity_rotate_incremental %s %f %f %f %f %f %f", pszEntity, x, y, z, incrementalRotation.x, incrementalRotation.y, incrementalRotation.z );
 	return(Editor_SendCommand(szCommand, bShowUI));
 }
-//-----------------------------------------------------------------------------
-// Purpose: Sends a command to the editor (if running) to delete an entity at
-//			a given (x, y, z) coordinate.
-// Input  : nID - unique ID of node to delete.
-// Output : Returns Editor_OK on success, an error code on failure.
-//-----------------------------------------------------------------------------
-EditorSendResult_t Editor_DeleteNode(int nID, bool bShowUI)
-{
-	char szCommand[MAX_COMMAND_BUFFER];
-	Q_snprintf(szCommand,sizeof(szCommand), "node_delete %d", nID);
-	return(Editor_SendCommand(szCommand, bShowUI));
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Sends a command to the editor (if running) to delete an entity at
-//			a given (x, y, z) coordinate.
-// Input  : nStartID - unique ID of one node that the link is connected to.
-//			nEndID - unique ID of the other node that the link is connected to.
-// Output : Returns Editor_OK on success, an error code on failure.
-//-----------------------------------------------------------------------------
-EditorSendResult_t Editor_DeleteNodeLink(int nStartID, int nEndID, bool bShowUI)
-{
-	char szCommand[MAX_COMMAND_BUFFER];
-	Q_snprintf(szCommand,sizeof(szCommand), "nodelink_delete %d %d", nStartID, nEndID);
-	return(Editor_SendCommand(szCommand, bShowUI));
-}
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Sends a command to the editor (if running) to end the current remote
@@ -198,7 +137,7 @@ EditorSendResult_t Editor_SendCommand(const char *pszCommand, bool bShowUI)
 			if (bShowUI)
 			{
 				char szError[1024];
-				Q_snprintf(szError,sizeof(szError), "Worldcraft did not accept the command: \n\n\"%s\"\n\n Make sure the command is valid and that Worldcraft is still running properly.", pszCommand);
+				Q_snprintf(szError,sizeof(szError), "Hammer did not accept the command: \n\n\"%s\"\n\n Make sure the command is valid and that Hammer is still running properly.", pszCommand);
 				MessageBox(NULL, szError, "Editor_SendCommand Error", MB_OK);
 			}
 		
@@ -210,7 +149,7 @@ EditorSendResult_t Editor_SendCommand(const char *pszCommand, bool bShowUI)
 		if (bShowUI)
 		{
 			char szError[1024];
-			Q_snprintf(szError,sizeof(szError), "Could not contact Worldcraft to send the command: \n\n\"%s\"\n\n Worldcraft does not appear to be running.", pszCommand);
+			Q_snprintf(szError,sizeof(szError), "Could not contact Hammer to send the command: \n\n\"%s\"\n\n Hammer does not appear to be running.", pszCommand);
 			MessageBox(NULL, szError, "Editor_SendCommand Error", MB_OK);
 		}
 
@@ -218,7 +157,7 @@ EditorSendResult_t Editor_SendCommand(const char *pszCommand, bool bShowUI)
 	}
 #endif
 
-	return(Editor_OK);
+	return(Editor_NotRunning);
 }
 
 #endif // !_STATIC_LINKED || _SHARED_LIB

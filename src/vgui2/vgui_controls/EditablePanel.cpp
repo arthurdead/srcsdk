@@ -12,6 +12,7 @@
 #include <vgui/ILocalize.h>
 #include <KeyValues.h>
 #include "vgui/IVGui.h"
+#include "vgui/IInput.h"
 
 #include <vgui_controls/BuildGroup.h>
 #include <vgui_controls/BuildModeDialog.h>
@@ -42,6 +43,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
+extern IFileSystem *g_pFullFileSystem;
+
 using namespace vgui;
 
 DECLARE_BUILD_FACTORY( EditablePanel );
@@ -51,7 +54,20 @@ DECLARE_BUILD_FACTORY( EditablePanel );
 //-----------------------------------------------------------------------------
 #pragma warning( disable : 4355 )
 
-EditablePanel::EditablePanel(Panel *parent, const char *panelName) : Panel(parent, panelName), m_NavGroup(this)
+EditablePanel::EditablePanel(Panel *parent, const char *panelName)
+	: EditablePanel(parent ? parent->GetVPanel() : INVALID_VPANEL, panelName)
+{
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Constructor
+//-----------------------------------------------------------------------------
+EditablePanel::EditablePanel(Panel *parent, const char *panelName, HScheme hScheme)
+	: EditablePanel(parent ? parent->GetVPanel() : INVALID_VPANEL, panelName, hScheme)
+{
+}
+
+EditablePanel::EditablePanel(VPANEL parent, const char *panelName) : Panel(parent, panelName), m_NavGroup(this)
 {
 	_buildGroup = new BuildGroup(this, this);
 	m_pszConfigName = NULL;
@@ -66,7 +82,7 @@ EditablePanel::EditablePanel(Panel *parent, const char *panelName) : Panel(paren
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-EditablePanel::EditablePanel(Panel *parent, const char *panelName, HScheme hScheme) : Panel(parent, panelName, hScheme), m_NavGroup(this)
+EditablePanel::EditablePanel(VPANEL parent, const char *panelName, HScheme hScheme) : Panel(parent, panelName, hScheme), m_NavGroup(this)
 {
 	_buildGroup = new BuildGroup(this, this);
 	m_pszConfigName = NULL;
@@ -113,6 +129,46 @@ void EditablePanel::OnChildAdded(VPANEL child)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+void EditablePanel::OnKeyCodeTyped(KeyCode keycode)
+{
+	vgui::KeyCode code = GetBaseButtonCode( keycode );
+
+	bool shift = (input()->IsKeyDown(KEY_LSHIFT) || input()->IsKeyDown(KEY_RSHIFT));
+	bool ctrl = (input()->IsKeyDown(KEY_LCONTROL) || input()->IsKeyDown(KEY_RCONTROL));
+	bool alt = (input()->IsKeyDown(KEY_LALT) || input()->IsKeyDown(KEY_RALT));
+
+	if ( ctrl && shift && alt && code == KEY_B)
+	{
+		// enable build mode
+		ActivateBuildMode();
+	}
+	else if ( ctrl && shift && alt && code == KEY_V)
+	{
+		_buildGroup->SetEnabled(false);
+	}
+	else if (ctrl && shift && alt && code == KEY_R)
+	{
+		// reload the scheme
+		VPANEL top = surface()->GetEmbeddedPanel();
+		if (top != INVALID_VPANEL)
+		{
+			// reload the data file
+			scheme()->ReloadSchemes();
+
+			Panel *panel = ipanel()->GetPanel(top, GetModuleName());
+			if (panel)
+			{
+				// make the top-level panel reload it's scheme, it will chain down to all the child panels
+				panel->InvalidateLayout(false, true);
+			}
+		}
+	}
+	else
+	{
+		BaseClass::OnKeyCodeTyped( keycode );
+	}
+}
+
 void EditablePanel::OnKeyCodePressed( KeyCode code )
 {
 	static ConVarRef vgui_nav_lock_default_button( "vgui_nav_lock_default_button" );
@@ -564,14 +620,10 @@ void EditablePanel::ActivateBuildMode()
 //-----------------------------------------------------------------------------
 void EditablePanel::LoadControlSettings(const char *resourceName, const char *pathID, KeyValues *pKeyValues, KeyValues *pConditions)
 {
-#if defined( DBGFLAG_ASSERT ) && !defined(OSX) && !defined(LINUX)
-	extern IFileSystem *g_pFullFileSystem;
-	// Since nobody wants to fix this assert, I'm making it a Msg instead:
-	//     editablepanel.cpp (535) : Resource file "resource\DebugOptionsPanel.res" not found on disk!
-	// AssertMsg( g_pFullFileSystem->FileExists( resourceName ), CFmtStr( "Resource file \"%s\" not found on disk!", resourceName ).Access() );
+#if defined( DBGFLAG_ASSERT )
 	if ( !g_pFullFileSystem->FileExists( resourceName ) )
 	{
-		Msg( "Resource file \"%s\" not found on disk!", resourceName );
+		AssertMsg( g_pFullFileSystem->FileExists( resourceName ), "Resource file \"%s\" not found on disk!", resourceName );
 	}
 #endif
 	_buildGroup->LoadControlSettings(resourceName, pathID, pKeyValues, pConditions);

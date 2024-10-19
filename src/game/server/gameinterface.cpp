@@ -71,6 +71,7 @@
 #include "ai_basenpc.h"
 #include "ai_squad.h"
 #include "world.h"
+#include "editor_sendcommand.h"
 
 #ifndef SWDS
 #include "ienginevgui.h"
@@ -1087,6 +1088,38 @@ void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edictCount, int cl
 	{
 		think_limit.SetValue( 0 );
 	}
+
+#ifndef SWDS
+	if(!engine->IsDedicatedServer()) {
+		// --------------------------------------------------------
+		// If in edit mode start WC session and make sure we are
+		// running the same map in WC and the engine
+		// --------------------------------------------------------
+		if (engine->IsInEditMode())
+		{
+			int status = Editor_BeginSession(STRING(gpGlobals->mapname), gpGlobals->mapversion, false);
+			if (status == Editor_NotRunning)
+			{
+				DevMsg("\nAborting map_edit\nHammer not running...\n\n");
+				UTIL_CenterPrintAll( "Hammer not running...\n" );
+				engine->ServerCommand("kickall \"Hammer not running...\"\n");
+				engine->ServerCommand("disconnect\n");
+			}
+			else if (status == Editor_BadCommand)
+			{
+				DevMsg("\nAborting map_edit\nHammer/Engine map versions different...\n\n");
+				UTIL_CenterPrintAll( "Hammer/Engine map versions different...\n" );
+				engine->ServerCommand("kickall \"Hammer/Engine map versions different...\"\n");
+				engine->ServerCommand("disconnect\n");
+			}
+			else
+			{
+				// Increment version number when session begins
+				gpGlobals->mapversion++;
+			}
+		}
+	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1318,6 +1351,14 @@ void CServerGameDLL::OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_
 // Called when a level is shutdown (including changing levels)
 void CServerGameDLL::LevelShutdown( void )
 {
+#ifndef SWDS
+	if(!engine->IsDedicatedServer()) {
+		// If in edit mode tell Hammer I'm ending my session. This re-enables
+		// the Hammer UI so they can continue editing the map.
+		Editor_EndSession(false);
+	}
+#endif
+
 	HackMgr_SetGamePaused( false );
 	m_bWasPaused = false;
 
@@ -2743,15 +2784,23 @@ void UserMessageBegin( IRecipientFilter& filter, const char *messagename )
 	
 	if ( msg_type == -1 )
 	{
-		Error( "UserMessageBegin:  Unregistered message '%s'\n", messagename );
+		Warning( "UserMessageBegin:  Unregistered message '%s'\n", messagename );
+		g_pMsgBuffer = NULL;
 	}
-
-	g_pMsgBuffer = engine->UserMessageBegin( &filter, msg_type );
+	else
+	{
+		g_pMsgBuffer = engine->UserMessageBegin( &filter, msg_type );
+	}
 }
 
 void MessageEnd( void )
 {
 	Assert( g_pMsgBuffer );
+
+	if( !g_pMsgBuffer ) {
+		Warning( "MessageEnd called with no active message\n" );
+		return;
+	}
 
 	engine->MessageEnd();
 
@@ -2760,96 +2809,120 @@ void MessageEnd( void )
 
 void MessageWriteByte( int iValue)
 {
-	if (!g_pMsgBuffer)
-		Error( "WRITE_BYTE called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WRITE_BYTE called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteByte( iValue );
 }
 
 void MessageWriteBytes( const void *pBuf, int nBytes )
 {
-	if (!g_pMsgBuffer)
-		Error("WRITE_BYTES called with no active message\n");
+	if (!g_pMsgBuffer) {
+		Warning("WRITE_BYTES called with no active message\n");
+		return;
+	}
 
 	g_pMsgBuffer->WriteBytes( pBuf, nBytes );
 }
 
 void MessageWriteChar( int iValue)
 {
-	if (!g_pMsgBuffer)
-		Error( "WRITE_CHAR called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WRITE_CHAR called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteChar( iValue );
 }
 
 void MessageWriteShort( int iValue)
 {
-	if (!g_pMsgBuffer)
-		Error( "WRITE_SHORT called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WRITE_SHORT called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteShort( iValue );
 }
 
 void MessageWriteWord( int iValue )
 {
-	if (!g_pMsgBuffer)
-		Error( "WRITE_WORD called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WRITE_WORD called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteWord( iValue );
 }
 
 void MessageWriteLong( long iValue)
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteLong called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteLong called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteLong( iValue );
 }
 
 void MessageWriteFloat( float flValue)
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteFloat called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteFloat called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteFloat( flValue );
 }
 
 void MessageWriteAngle( float flValue)
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteAngle called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteAngle called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteBitAngle( flValue, 8 );
 }
 
 void MessageWriteCoord( float flValue)
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteCoord called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteCoord called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteBitCoord( flValue );
 }
 
 void MessageWriteVec3Coord( const Vector& rgflValue)
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteVec3Coord called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteVec3Coord called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteBitVec3Coord( rgflValue );
 }
 
 void MessageWriteVec3Normal( const Vector& rgflValue)
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteVec3Normal called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteVec3Normal called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteBitVec3Normal( rgflValue );
 }
 
 void MessageWriteBitVecIntegral( const Vector& vecValue )
 {
-	if (!g_pMsgBuffer)
-		Error( "MessageWriteBitVecIntegral called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "MessageWriteBitVecIntegral called with no active message\n" );
+		return;
+	}
 
 	for ( int i = 0; i < 3; ++i )
 	{
@@ -2859,32 +2932,40 @@ void MessageWriteBitVecIntegral( const Vector& vecValue )
 
 void MessageWriteAngles( const QAngle& rgflValue)
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteVec3Normal called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteVec3Normal called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteBitAngles( rgflValue );
 }
 
 void MessageWriteString( const char *sz )
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteString called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteString called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteString( sz );
 }
 
 void MessageWriteEntity( int iValue)
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteEntity called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteEntity called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteShort( iValue );
 }
 
 void MessageWriteEHandle( CBaseEntity *pEntity )
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteEHandle called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteEHandle called with no active message\n" );
+		return;
+	}
 
 	long iEncodedEHandle;
 	
@@ -2906,32 +2987,40 @@ void MessageWriteEHandle( CBaseEntity *pEntity )
 // bitwise
 void MessageWriteBool( bool bValue )
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteBool called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteBool called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteOneBit( bValue ? 1 : 0 );
 }
 
 void MessageWriteUBitLong( unsigned int data, int numbits )
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteUBitLong called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteUBitLong called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteUBitLong( data, numbits );
 }
 
 void MessageWriteSBitLong( int data, int numbits )
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteSBitLong called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteSBitLong called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteSBitLong( data, numbits );
 }
 
 void MessageWriteBits( const void *pIn, int nBits )
 {
-	if (!g_pMsgBuffer)
-		Error( "WriteBits called with no active message\n" );
+	if (!g_pMsgBuffer) {
+		Warning( "WriteBits called with no active message\n" );
+		return;
+	}
 
 	g_pMsgBuffer->WriteBits( pIn, nBits );
 }

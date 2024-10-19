@@ -50,7 +50,7 @@ bool CSharedBaseCombatCharacter::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon
 	// Already have it out?
 	if ( m_hActiveWeapon.Get() == pWeapon )
 	{
-		if ( !m_hActiveWeapon->IsWeaponVisible() || m_hActiveWeapon->IsHolstered() )
+		if ( m_hActiveWeapon->IsHolstered() )
 			return m_hActiveWeapon->Deploy( );
 		return false;
 	}
@@ -71,7 +71,7 @@ bool CSharedBaseCombatCharacter::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon
 	if( bDeploy )
 		return pWeapon->Deploy( );
 	else
-		return pWeapon->Holster();
+		return pWeapon->Holster( NULL, true );
 }
 
 //-----------------------------------------------------------------------------

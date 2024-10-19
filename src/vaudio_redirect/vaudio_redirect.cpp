@@ -18,7 +18,7 @@ public:
 	CVAudioRedirect();
 	~CVAudioRedirect();
 
-	bool Init();
+	bool GetRedirectTarget();
 
 	IAudioStream *CreateMP3StreamDecoder(IAudioStreamEvent *pEventHandler) override;
 	void DestroyMP3StreamDecoder(IAudioStream *pDecoder) override;
@@ -39,7 +39,7 @@ CVAudioRedirect::~CVAudioRedirect()
 	}
 }
 
-bool CVAudioRedirect::Init()
+bool CVAudioRedirect::GetRedirectTarget()
 {
 	CSysModule *pTargetMod = NULL;
 
@@ -90,7 +90,7 @@ void *CreateAudioRedirect()
 	static CVAudioRedirect *pVAudio = NULL;
 	if(!pVAudio) {
 		pVAudio = new CVAudioRedirect;
-		if(!pVAudio->Init()) {
+		if(!pVAudio->GetRedirectTarget()) {
 			delete pVAudio;
 			return NULL;
 		}

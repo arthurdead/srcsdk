@@ -1,0 +1,9 @@
+"enginetools"
+{
+	"library" "actbusy"
+	"library" "foundry"
+	"library" "gameevents"
+	"library" "pet"
+	"library" "vcdblock"
+	"library" "vmt"
+}

@@ -414,7 +414,7 @@ bool C_BaseCombatWeapon::GetShootPosition( Vector &vOrigin, QAngle &vAngles )
 	if ( IsActiveByLocalPlayer() && ShouldDrawLocalPlayerViewModel() )
 	{
 		C_BasePlayer *player = ToBasePlayer( pEnt );
-		C_BaseViewModel *vm = player ? player->GetViewModel( 0 ) : NULL;
+		C_BaseViewModel *vm = player ? player->GetViewModel( VIEWMODEL_WEAPON ) : NULL;
 		if ( vm )
 		{
 			int iAttachment = vm->LookupAttachment( "muzzle" );

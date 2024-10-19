@@ -2227,7 +2227,7 @@ C_BaseAnimating* C_BasePlayer::GetRenderedWeaponModel()
 	}
 	else
 	{
-		return GetViewModel();
+		return GetViewModel( VIEWMODEL_WEAPON );
 	}
 }
 

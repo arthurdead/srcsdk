@@ -243,7 +243,7 @@ IterationRetval_t CFireSphere::EnumElement( IHandleEntity *pHandleEntity )
 	{
 		// UNDONE: Measure which of these is faster
 //		CFire *pFire = dynamic_cast<CFire *>(pEntity);
-		if ( !EntIsClass( pEntity, gm_isz_class_EnvFire ) )
+		if ( !FClassnameIs( pEntity, gm_isz_class_EnvFire ) )
 			return ITERATION_CONTINUE;
 
 		CFire *pFire = static_cast<CFire *>(pEntity);
@@ -980,7 +980,7 @@ void CFire::Update( float simTime )
 		{
 			continue;
 		}
-		else if ( EntIsClass( pOther, gm_isz_class_EnvFire ) )
+		else if ( FClassnameIs( pOther, gm_isz_class_EnvFire ) )
 		{
 			if ( fireCount < ARRAYSIZE(pFires) )
 			{

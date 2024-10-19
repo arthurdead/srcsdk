@@ -3074,7 +3074,7 @@ void CPhysicsProp::Spawn( )
 	m_flFrozenThawRate = 0.1f;
 
 	// Now condense all classnames to one
-	if ( EntIsClass( this, gm_isz_class_PropPhysicsOverride ) )
+	if ( FClassnameIs( this, gm_isz_class_PropPhysicsOverride ) )
 	{
 		SetClassname( gm_isz_class_PropPhysics );
 	}
@@ -3333,7 +3333,7 @@ bool CPhysicsProp::CanBePickedUpByPhyscannon( void )
 //-----------------------------------------------------------------------------
 bool CPhysicsProp::OverridePropdata( void )
 {
-	return EntIsClass(this, gm_isz_class_PropPhysicsOverride);
+	return FClassnameIs(this, gm_isz_class_PropPhysicsOverride);
 }
 
 //-----------------------------------------------------------------------------

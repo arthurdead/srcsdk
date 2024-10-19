@@ -60,6 +60,10 @@ if(!pCvar || status != IFACE_OK) {
 	return;
 }
 
+g_pCVar = pCvar;
+
+ConVar_Register( 0, NULL );
+
 ConVar *r_hunkalloclightmaps = pCvar->FindVar("r_hunkalloclightmaps");
 if(r_hunkalloclightmaps) {
 	r_hunkalloclightmaps->SetValue(false);

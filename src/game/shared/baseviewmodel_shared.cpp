@@ -287,7 +287,7 @@ void CSharedBaseViewModel::AddEffects( int nEffects )
 		// (fixes hand models)
 		for (CSharedBaseEntity *pChild = FirstMoveChild(); pChild != NULL; pChild = pChild->NextMovePeer())
 		{
-			if (pChild->GetClassname()[0] == 'h')
+			if (FClassnameIs(pChild, gm_isz_class_HandViewmodel))
 				pChild->AddEffects( nEffects );
 		}
 	}
@@ -311,7 +311,7 @@ void CSharedBaseViewModel::RemoveEffects( int nEffects )
 		// (fixes hand models)
 		for (CSharedBaseEntity *pChild = FirstMoveChild(); pChild != NULL; pChild = pChild->NextMovePeer())
 		{
-			if (pChild->GetClassname()[0] == 'h')
+			if (FClassnameIs(pChild, gm_isz_class_HandViewmodel))
 				pChild->RemoveEffects( nEffects );
 		}
 	}
@@ -358,9 +358,12 @@ void CSharedBaseViewModel::SetWeaponModel( const char *modelname, CSharedBaseCom
 	bool bSupportsHands = weapon != NULL ? weapon->UsesHands() : false;
 	for (CSharedBaseEntity *pChild = FirstMoveChild(); pChild != NULL; pChild = pChild->NextMovePeer())
 	{
-		if (pChild->GetClassname()[0] == 'h')
+		if (FClassnameIs(pChild, gm_isz_class_HandViewmodel))
 		{
-			bSupportsHands ? pChild->RemoveEffects( EF_NODRAW ) : pChild->AddEffects( EF_NODRAW );
+			if(bSupportsHands)
+				pChild->RemoveEffects( EF_NODRAW );
+			else
+				pChild->AddEffects( EF_NODRAW );
 		}
 	}
 }

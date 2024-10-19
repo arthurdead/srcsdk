@@ -3326,7 +3326,7 @@ CBaseFlex *CSceneEntity::FindNamedActor( const char *name )
 //-----------------------------------------------------------------------------
 CBaseEntity *CSceneEntity::FindNamedTarget( string_t iszTarget, bool bBaseFlexOnly )
 {
-	if ( !stricmp( STRING(iszTarget), "!activator" ) )
+	if ( !IDENT_STRINGS( iszTarget, gm_isz_name_activator ) )
 		return m_hActivator;
 
 	// If we don't have a wildcard in the target, just return the first entity found
@@ -4030,56 +4030,56 @@ void CSceneEntity::AddListManager( CSceneListManager *pManager )
 //-----------------------------------------------------------------------------
 void CSceneEntity::ClearActivatorTargets( void )
 {
-	if ( !stricmp( STRING(m_iszTarget1), "!activator" ) )
+	if ( !IDENT_STRINGS( m_iszTarget1, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
 		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget1 = NULL;
 	}
-	if ( !stricmp( STRING(m_iszTarget2), "!activator" ) )
+	if ( IDENT_STRINGS( m_iszTarget2, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
 		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget2 = NULL;
 	}
-	if ( !stricmp( STRING(m_iszTarget3), "!activator" ) )
+	if ( IDENT_STRINGS( m_iszTarget3, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
 		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget3 = NULL;
 	}
-	if ( !stricmp( STRING(m_iszTarget4), "!activator" ) )
+	if ( IDENT_STRINGS( m_iszTarget4, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
 		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget4 = NULL;
 	}
-	if ( !stricmp( STRING(m_iszTarget5), "!activator" ) )
+	if ( IDENT_STRINGS( m_iszTarget5, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
 		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget5 = NULL;
 	}
-	if ( !stricmp( STRING(m_iszTarget6), "!activator" ) )
+	if ( IDENT_STRINGS( m_iszTarget6, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
 		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget6 = NULL;
 	}
-	if ( !stricmp( STRING(m_iszTarget7), "!activator" ) )
+	if ( IDENT_STRINGS( m_iszTarget7, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
 		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget7 = NULL;
 	}
-	if ( !stricmp( STRING(m_iszTarget8), "!activator" ) )
+	if ( IDENT_STRINGS( m_iszTarget8, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();

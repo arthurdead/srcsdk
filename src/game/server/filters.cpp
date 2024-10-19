@@ -1267,7 +1267,7 @@ public:
 
 		// Assume no string = use activator
 		if (m_iszVolumeTester == NULL_STRING)
-			m_iszVolumeTester = AllocPooledString("!activator");
+			m_iszVolumeTester = gm_isz_name_activator;
 	}
 
 	bool PassesFilterImpl( CBaseEntity *pCaller, CBaseEntity *pEntity )
@@ -1570,7 +1570,7 @@ public:
 
 		// Assume no string = use activator
 		if (m_target == NULL_STRING)
-			m_target = AllocPooledString("!activator");
+			m_target = gm_isz_name_activator;
 
 		// A number less than or equal to 0 is always synonymous with no limit
 		if (m_iMaxEntities <= 0)

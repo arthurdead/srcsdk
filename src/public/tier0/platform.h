@@ -11,6 +11,15 @@
 
 #pragma once
 
+#ifdef __WINE__
+#undef WIN32
+#undef _WIN32
+#undef __WIN32
+#undef __WIN32__
+#undef __WINNT
+#undef __WINNT__
+#endif
+
 #if defined(__x86_64__) || defined(_WIN64)
 #define PLATFORM_64BITS 1
 #endif
@@ -113,7 +122,8 @@ typedef signed char int8;
 		typedef int					intp;
 		typedef unsigned int		uintp;
 	#endif
-	typedef void *HWND;
+	struct HWND__;
+	typedef HWND__ *HWND;
 
 	// Avoid redefinition warnings if a previous header defines this.
 	#undef OVERRIDE
@@ -267,11 +277,12 @@ FIXME: Enable this when we no longer fear change =)
 #if defined( OSX ) && defined( CARBON_WORKAROUND )
 #define DWORD unsigned int
 #else
-typedef unsigned int DWORD;
+typedef unsigned long DWORD;
 #endif
 typedef unsigned short WORD;
 typedef long int LONG;
-typedef void * HINSTANCE;
+struct HINSTANCE__;
+typedef HINSTANCE__ * HINSTANCE;
 #define _MAX_PATH PATH_MAX
 #define __cdecl __attribute__((__cdecl__))
 #define __stdcall __attribute__((__stdcall__))
@@ -286,12 +297,7 @@ typedef char* PSTR, *LPSTR;
 typedef DWORD COLORREF;
 typedef DWORD* LPCOLORREF;
 
-typedef struct tagRGBQUAD {
-  BYTE rgbBlue;
-  BYTE rgbGreen;
-  BYTE rgbRed;
-  BYTE rgbReserved;
-} RGBQUAD;
+typedef struct tagRGBQUAD RGBQUAD;
 
 #endif // defined(_WIN32) && !defined(WINDED)
 
@@ -332,6 +338,10 @@ typedef struct tagRGBQUAD {
 
 // Used to step into the debugger
 #if defined( _WIN32 )
+#ifndef _MSC_VER
+#define __debugbreak() __asm__ __volatile__ ("int $3")
+#endif
+
 #define DebuggerBreak()  __debugbreak()
 #else
 	// On OSX, SIGTRAP doesn't really stop the thread cold when debugging.
@@ -690,7 +700,7 @@ typedef struct tagRGBQUAD {
 #undef _snprintf
 #endif
 #define _snprintf snprintf
-#define GetProcAddress dlsym
+//#define GetProcAddress dlsym
 #define _chdir chdir
 #define _strnicmp strnicmp
 #define strnicmp strncasecmp
@@ -707,7 +717,10 @@ typedef struct tagRGBQUAD {
 #define _wtoi(arg) wcstol(arg, NULL, 10)
 #define _wtoi64(arg) wcstoll(arg, NULL, 10)
 
-typedef void * HMODULE;
+struct HINSTANCE__;
+typedef HINSTANCE__ * HINSTANCE;
+
+typedef HINSTANCE HMODULE;
 typedef void *HANDLE;
 #endif
 

@@ -572,7 +572,7 @@ CON_COMMAND_F( recast_readd_phys_props, "", FCVAR_CHEAT )
 {
 	for( CBaseEntity *pEntity = gEntList.FirstEnt(); pEntity != NULL; pEntity = gEntList.NextEnt( pEntity ) )
 	{
-		if( FClassnameIs( pEntity, "prop_physics" ) )
+		if( FClassnameIs( pEntity, gm_isz_class_PropPhysics ) )
 		{
 			CBaseProp *pProp = dynamic_cast< CBaseProp * >( pEntity );
 			if( pProp )

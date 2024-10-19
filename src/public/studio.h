@@ -911,6 +911,16 @@ struct mstudioseqdesc_t
 		activity_client = nActivity;
 	#endif
 	}
+#else
+	int Activity( void ) const
+	{
+		return activity_server;
+	}
+	void Activity( int nActivity )
+	{
+		activity_server = nActivity;
+		activity_client = nActivity;
+	}
 #endif
 
 	int					actweight;

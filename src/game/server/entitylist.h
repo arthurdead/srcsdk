@@ -18,6 +18,7 @@
 #include "edict.h"
 #include "iserverunknown.h"
 #include "ehandle.h"
+#include "iserverentitylist.h"
 
 class CBaseEntity;
 
@@ -86,7 +87,7 @@ public:
 // Purpose: a global list of all the entities in the game.  All iteration through
 //			entities is done through this object.
 //-----------------------------------------------------------------------------
-class CGlobalEntityList : public CBaseEntityList
+class CGlobalEntityList : public CBaseEntityList, public IServerEntityList
 {
 public:
 private:
@@ -98,6 +99,22 @@ private:
 	CUtlVector<IEntityListener *>	m_entityListeners;
 
 public:
+	// Get IServerNetworkable interface for specified entity
+	virtual IServerNetworkable*	GetServerNetworkable( int entnum );
+	virtual IServerNetworkable*	GetServerNetworkableFromHandle( CBaseHandle hEnt );
+	virtual IServerUnknown*		GetServerUnknownFromHandle( CBaseHandle hEnt );
+
+	// NOTE: This function is only a convenience wrapper.
+	// It returns GetClientNetworkable( entnum )->GetIServerEntity().
+	virtual IServerEntity*		GetServerEntity( int entnum );
+	virtual IServerEntity*		GetServerEntityFromHandle( CBaseHandle hEnt );
+
+	// Returns number of entities currently in use
+	virtual int					NumberOfEntities( bool bIncludeNonNetworkable );
+
+	// Returns highest index actually used
+	virtual int					GetHighestEntityIndex( void );
+
 	IServerNetworkable* GetServerNetworkable( CBaseHandle hEnt ) const;
 	CBaseNetworkable* GetBaseNetworkable( CBaseHandle hEnt ) const;
 	CBaseEntity* GetBaseEntity( CBaseHandle hEnt ) const;
@@ -110,6 +127,8 @@ public:
 	
 	int NumberOfEntities( void );
 	int NumberOfEdicts( void );
+
+	CBaseEntity*			GetListedEntity( int entnum );
 
 	// mark an entity as deleted
 	void AddToDeleteList( CBaseEntity *ent );
@@ -198,6 +217,8 @@ protected:
 
 	virtual void OnAddEntity( CBaseEntity *pEnt, EHANDLE handle );
 	virtual void OnRemoveEntity( CBaseEntity *pEnt, EHANDLE handle );
+
+private:
 
 };
 

@@ -155,6 +155,8 @@ class CBaseAssetPickerFrame : public vgui::Frame
 
 public:
 	CBaseAssetPickerFrame( vgui::Panel *pParent );
+	CBaseAssetPickerFrame( vgui::VPANEL pParent );
+
 	~CBaseAssetPickerFrame();
 
 	// Inherited from Frame

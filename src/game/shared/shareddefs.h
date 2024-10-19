@@ -356,6 +356,9 @@ typedef int Team_t;
 //  than two, sigh
 #define MAX_VIEWMODELS			2
 
+#define VIEWMODEL_WEAPON 0
+#define VIEWMODEL_HANDS 1
+
 #define MAX_BEAM_ENTS			10
 
 #define TRACER_TYPE_DEFAULT		0x00000001

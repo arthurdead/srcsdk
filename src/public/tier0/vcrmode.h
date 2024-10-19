@@ -11,12 +11,11 @@
 //===========================================================================//
 #ifndef VCRMODE_H
 #define VCRMODE_H
+#pragma once
 
-#ifdef _WIN32
+#if defined _WIN32 && !defined LINUX
 #include <process.h>
 #endif
-
-#pragma once
 
 #include "tier0/platform.h"
 #include "tier0/vcr_shared.h"

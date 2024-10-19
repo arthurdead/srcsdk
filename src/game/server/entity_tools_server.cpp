@@ -39,7 +39,7 @@ static CUtlLinkedList<CFoundryEntitySpawnRecord*,int> g_FoundryEntitySpawnRecord
 //-----------------------------------------------------------------------------
 // Interface from engine to tools for manipulating entities
 //-----------------------------------------------------------------------------
-class CServerTools : public IServerTools
+class CServerTools : public IServerToolsEx
 {
 public:
 	// Inherited from IServerTools
@@ -106,7 +106,9 @@ public:
 static CServerTools g_ServerTools;
 IServerTools *g_pServerTools = &g_ServerTools;
 IServerTools *servertools = &g_ServerTools;
+IServerToolsEx *servertools_ex = &g_ServerTools;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CServerTools, IServerTools, VSERVERTOOLS_INTERFACE_VERSION, g_ServerTools );
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CServerTools, IServerToolsEx, VSERVERTOOLS_EX_INTERFACE_VERSION, g_ServerTools );
 
 // When bumping the version to this interface, check that our assumption is still valid and expose the older version in the same way
 COMPILE_TIME_ASSERT( VSERVERTOOLS_INTERFACE_VERSION_INT == 3 );

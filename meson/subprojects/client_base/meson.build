@@ -345,6 +345,8 @@ client_base_dep = declare_dependency(
 		join_paths(client_src_dir,'recast','recast_recastdebugdraw.cpp'),
 		join_paths(client_src_dir,'mapbase','c_func_fake_worldportal.cpp'),
 		join_paths(client_src_dir,'mdlbrowser.cpp'),
+		join_paths(client_src_dir,'hud_weaponselection.cpp'),
+		#join_paths(shared_src_dir,'entityinspector.cpp'),
 		join_paths(client_game_ctrls_src_dir,'baseviewport.cpp'),
 		join_paths(client_game_ctrls_src_dir,'basemodelpanel_matsys.cpp'),
 		join_paths(client_game_ctrls_src_dir,'basemodelpanel_game.cpp'),

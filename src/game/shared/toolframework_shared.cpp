@@ -3,10 +3,7 @@
 #include "toolframework/itoolsystem.h"
 #include "utlvector.h"
 #include "vgui/ILocalize.h"
-#include "vgui/ISurface.h"
-#include "vgui/IVGui.h"
 #include "vgui_controls/Controls.h"
-#include "vgui_controls/EditablePanel.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -41,6 +38,9 @@ IToolSystem *CToolDictionary::GetTool( int index )
 
 void *CToolDictionary::QueryInterface( const char *pInterfaceName )
 {
+	if ( !V_strcmp( pInterfaceName, VTOOLDICTIONARY_INTERFACE_VERSION ) )
+		return (IToolDictionary*)this;
+
 	return NULL;
 }
 
@@ -49,14 +49,15 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR( IToolDictionary, CToolDictionary, VTOOLDICTIO
 
 #ifndef GAME_DLL
 IServerTools	*servertools = NULL;
-#else
-extern IServerTools	*servertools;
+IServerToolsEx	*servertools_ex = NULL;
+IServerEntityList	*sv_entitylist = NULL;
 #endif
 
 #ifndef CLIENT_DLL
 IClientTools	*clienttools = NULL;
-#else
-extern IClientTools	*clienttools;
+IClientToolsEx	*clienttools_ex = NULL;
+IClientEntityList	*cl_entitylist = NULL;
+IClientEntityListEx	*cl_entitylist_ex = NULL;
 #endif
 
 class CGameToolSystem : public IToolSystem
@@ -177,8 +178,6 @@ public:
 	virtual void		VGui_PostSimulate();
 
 private:
-	EditablePanel *m_pPanel;
-
 	bool m_bActive;
 };
 
@@ -192,7 +191,6 @@ void CToolDictionary::CreateTools()
 CGameToolSystem::CGameToolSystem()
 {
 	m_bActive = false;
-	m_pPanel = NULL;
 }
 
 const char *CGameToolSystem::GetToolName()
@@ -210,34 +208,19 @@ bool CGameToolSystem::Init()
 	g_pVGuiLocalize->AddFile( "resource/toolshared_%language%.txt" );
 	g_pVGuiLocalize->AddFile( "resource/boxrocket_%language%.txt" );
 
-	//TODO!!!!!!!!!!!
-	m_pPanel = CREATE_PANEL(EditablePanel, NULL, GetToolName());
-
-	int w, h;
-	surface()->GetScreenSize( w, h );
-
-	m_pPanel->SetBounds( 0, 0, w, h );
-	m_pPanel->SetPaintBackgroundEnabled( true );
-	m_pPanel->SetPaintBorderEnabled( false );
-	m_pPanel->SetPaintEnabled( false );
-	m_pPanel->SetCursor( vgui::dc_none );
-	m_pPanel->SetVisible( false );
-
 	return true;
 }
 
 void CGameToolSystem::Shutdown()
 {
-	if(m_pPanel) {
-		m_pPanel->DeletePanel();
-		m_pPanel = NULL;
-	}
 }
 
 bool CGameToolSystem::ServerInit( CreateInterfaceFn serverFactory )
 {
 #ifndef GAME_DLL
 	servertools = ( IServerTools * )serverFactory( VSERVERTOOLS_INTERFACE_VERSION, NULL );
+	servertools_ex = ( IServerToolsEx * )serverFactory( VSERVERTOOLS_EX_INTERFACE_VERSION, NULL );
+	sv_entitylist = ( IServerEntityList * )serverFactory( VSERVERENTITYLIST_INTERFACE_VERSION, NULL );
 #endif
 
 	return true;
@@ -247,6 +230,9 @@ bool CGameToolSystem::ClientInit( CreateInterfaceFn clientFactory )
 {
 #ifndef CLIENT_DLL
 	clienttools = ( IClientTools * )clientFactory( VCLIENTTOOLS_INTERFACE_VERSION, NULL );
+	clienttools_ex = ( IClientToolsEx * )clientFactory( VCLIENTTOOLS_EX_INTERFACE_VERSION, NULL );
+	cl_entitylist = ( IClientEntityList * )clientFactory( VCLIENTENTITYLIST_INTERFACE_VERSION, NULL );
+	cl_entitylist_ex = ( IClientEntityListEx * )clientFactory( VCLIENTENTITYLIST_EX_INTERFACE_VERSION, NULL );
 #endif
 
 	return true;
@@ -256,6 +242,8 @@ void CGameToolSystem::ServerShutdown()
 {
 #ifndef GAME_DLL
 	servertools = NULL;
+	servertools_ex = NULL;
+	sv_entitylist = NULL;
 #endif
 }
 
@@ -263,6 +251,9 @@ void CGameToolSystem::ClientShutdown()
 {
 #ifndef CLIENT_DLL
 	clienttools = NULL;
+	clienttools_ex = NULL;
+	cl_entitylist = NULL;
+	cl_entitylist_ex = NULL;
 #endif
 }
 
@@ -377,21 +368,11 @@ IMaterialProxy *CGameToolSystem::LookupProxy( const char *proxyName )
 void CGameToolSystem::OnToolActivate()
 {
 	m_bActive = true;
-
-	if(m_pPanel) {
-		m_pPanel->SetMouseInputEnabled( true );
-		m_pPanel->SetVisible( false );
-	}
 }
 
 void CGameToolSystem::OnToolDeactivate()
 {
 	m_bActive = false;
-
-	if(m_pPanel) {
-		m_pPanel->SetMouseInputEnabled( false );
-		m_pPanel->SetVisible( true );
-	}
 }
 
 bool CGameToolSystem::TrapKey( ButtonCode_t key, bool down )

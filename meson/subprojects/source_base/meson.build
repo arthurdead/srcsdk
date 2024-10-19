@@ -97,6 +97,7 @@ source_dep = declare_dependency(
 	include_directories: include_directories(
 		src_root_dir,
 		join_paths(src_root_dir,'public'),
+		join_paths(funny_src_root_dir,'public'),
 		join_paths(src_root_dir,'common'),
 		join_paths(src_root_dir,'utils','common')
 	),

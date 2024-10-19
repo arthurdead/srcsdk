@@ -160,7 +160,7 @@ void CLogicExternalData::SetBlock(string_t iszNewTarget, CBaseEntity *pActivator
 	{
 		if (FStrEq(STRING(iszNewTarget), "!self"))
 			iszNewTarget = GetEntityName();
-		else if (pActivator && FStrEq(STRING(iszNewTarget), "!activator"))
+		else if (pActivator && IDENT_STRINGS(iszNewTarget, gm_isz_name_activator))
 			iszNewTarget = pActivator->GetEntityName();
 		else if (pCaller && FStrEq(STRING(iszNewTarget), "!caller"))
 			iszNewTarget = pCaller->GetEntityName();

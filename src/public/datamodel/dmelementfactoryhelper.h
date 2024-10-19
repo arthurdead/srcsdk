@@ -149,6 +149,12 @@ private:
 	CDmElementFactoryHelper g_##className##_Helper( #lookupName, &g_##className##_Factory, true );	\
 	className *g_##className##LinkerHack = NULL;
 
+#define IMPLEMENT_ELEMENT_FACTORY_TEMPLATE( lookupName, className )	\
+	IMPLEMENT_ELEMENT_TEMPLATE( className )							\
+	CDmElementFactory< className > g_##className##_Factory( #lookupName );							\
+	CDmElementFactoryHelper g_##className##_Helper( #lookupName, &g_##className##_Factory, true );	\
+	className *g_##className##LinkerHack = NULL;
+
 #define IMPLEMENT_ABSTRACT_ELEMENT( lookupName, className )	\
 	IMPLEMENT_ELEMENT( className )							\
 	CDmAbstractElementFactory< className > g_##className##_Factory;									\
@@ -159,6 +165,12 @@ private:
 
 #define IMPLEMENT_ELEMENT_FACTORY( lookupName, className )	\
 	IMPLEMENT_ELEMENT( className )							\
+	CDmElementFactory< className > g_##className##_Factory( #lookupName );						\
+	CDmElementFactoryHelper g_##className##_Helper( #lookupName, &g_##className##_Factory, false );	\
+	className *g_##className##LinkerHack = NULL;
+
+#define IMPLEMENT_ELEMENT_FACTORY_TEMPLATE( lookupName, className )	\
+	IMPLEMENT_ELEMENT_TEMPLATE( className )							\
 	CDmElementFactory< className > g_##className##_Factory( #lookupName );						\
 	CDmElementFactoryHelper g_##className##_Helper( #lookupName, &g_##className##_Factory, false );	\
 	className *g_##className##LinkerHack = NULL;

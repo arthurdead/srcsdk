@@ -20,6 +20,7 @@ game_shared_dep = declare_dependency(
 		join_paths(shared_game_src_dir,'heist_player_shared.cpp'),
 		join_paths(shared_game_src_dir,'heist_ammodef.cpp'),
 		join_paths(shared_game_weapons_src_dir,'dev_hl2_weapons.cpp'),
+		join_paths(shared_game_weapons_src_dir,'weapon_base_heist.cpp'),
 	),
 	include_directories: include_directories(
 		shared_game_src_dir,

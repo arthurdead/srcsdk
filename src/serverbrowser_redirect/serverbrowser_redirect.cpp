@@ -34,7 +34,7 @@ public:
 	virtual void CloseAllGameInfoDialogs()
 	{ m_pTarget->CloseAllGameInfoDialogs(); }
 
-	bool Init();
+	bool GetRedirectTarget();
 
  private:
 	IServerBrowser *m_pTarget;
@@ -81,13 +81,13 @@ public:
 	virtual void SetParent(vgui::VPANEL parent)
 	{ m_pTarget->SetParent(parent); }
 
-	bool Init();
+	bool GetRedirectTarget();
 
  private:
 	IVGuiModule *m_pTarget;
 };
 
-bool CServerBrowserRedirect::Init()
+bool CServerBrowserRedirect::GetRedirectTarget()
 {
 	CSysModule *pTargetMod = NULL;
 
@@ -117,7 +117,7 @@ bool CServerBrowserRedirect::Init()
 	return m_pTarget != NULL;
 }
 
-bool CServerBrowserVGUIModuleRedirect::Init()
+bool CServerBrowserVGUIModuleRedirect::GetRedirectTarget()
 {
 	CSysModule *pTargetMod = NULL;
 
@@ -152,7 +152,7 @@ void *CreateServerBrowser()
 	static CServerBrowserRedirect *pServerBrowser = NULL;
 	if(!pServerBrowser) {
 		pServerBrowser = new CServerBrowserRedirect;
-		if(!pServerBrowser->Init()) {
+		if(!pServerBrowser->GetRedirectTarget()) {
 			delete pServerBrowser;
 			return NULL;
 		}
@@ -165,7 +165,7 @@ void *CreateServerBrowserVGUIModule()
 	static CServerBrowserVGUIModuleRedirect *pServerBrowserVGUIModule = NULL;
 	if(!pServerBrowserVGUIModule) {
 		pServerBrowserVGUIModule = new CServerBrowserVGUIModuleRedirect;
-		if(!pServerBrowserVGUIModule->Init()) {
+		if(!pServerBrowserVGUIModule->GetRedirectTarget()) {
 			delete pServerBrowserVGUIModule;
 			return NULL;
 		}

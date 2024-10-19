@@ -31,6 +31,8 @@ class Frame : public EditablePanel
 
 public:
 	Frame(Panel *parent, const char *panelName, bool showTaskbarIcon = true, bool bPopup = true );
+	Frame(VPANEL parent, const char *panelName, bool showTaskbarIcon = true, bool bPopup = true );
+
 	virtual ~Frame();
 
 	// Set the text in the title bar.  Set surfaceTitle=true if you want this to be the taskbar text as well.

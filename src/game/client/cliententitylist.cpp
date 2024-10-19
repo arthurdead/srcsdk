@@ -24,10 +24,12 @@
 // Create interface
 static CClientEntityList s_EntityList;
 CBaseEntityList *g_pEntityList = &s_EntityList;
-IClientEntityListEx *entitylist = &s_EntityList;
+IClientEntityList *entitylist = &s_EntityList;
+IClientEntityListEx *entitylist_ex = &s_EntityList;
 
 // Expose list to engine
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CClientEntityList, IClientEntityList, VCLIENTENTITYLIST_INTERFACE_VERSION, s_EntityList );
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CClientEntityList, IClientEntityListEx, VCLIENTENTITYLIST_EX_INTERFACE_VERSION, s_EntityList );
 
 // Store local pointer to interface for rest of client .dll only 
 //  (CClientEntityList instead of IClientEntityList )

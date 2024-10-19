@@ -14,6 +14,7 @@ hackmgr_src_dir = join_paths(src_root_dir,'hackmgr')
 tier1 = subproject('tier1')
 tier0 = subproject('tier0')
 vstdlib = subproject('vstdlib')
+sdl2 = dependency('SDL2', required: false)
 
 install_data(
 	files(
@@ -78,10 +79,22 @@ if build_libs
 		],
 		dependencies: [
 			hackmgr_base_lib,
+			sdl2,
 		],
 		install: true,
 		install_dir: join_paths(game_dir,'bin'),
 		install_rpath: '$ORIGIN'
+	)
+
+	install_data(
+		join_paths(src_root_dir,'tools','enginetools.txt'),
+		install_dir: join_paths(game_dir,'bin'),
+	)
+
+	install_data(
+		join_paths(src_root_dir,'tools','enginetools.txt'),
+		rename: 'sdkenginetools.txt',
+		install_dir: join_paths(game_dir,'bin'),
 	)
 
 	hackmgr_ds_lib = shared_library('hackmgr_ds',name_prefix:'',

@@ -353,7 +353,7 @@ CRegistry::~CRegistry( void )
 //-----------------------------------------------------------------------------
 int CRegistry::ReadInt( const char *key, int defaultValue /*= 0*/ )
 {
-	return 0;
+	return defaultValue;
 }
 
 //-----------------------------------------------------------------------------
@@ -373,7 +373,7 @@ void CRegistry::WriteInt( const char *key, int value )
 //-----------------------------------------------------------------------------
 const char *CRegistry::ReadString( const char *key, const char *defaultValue /* = NULL */ )
 {
-	return 0;
+	return defaultValue;
 }
 
 //-----------------------------------------------------------------------------

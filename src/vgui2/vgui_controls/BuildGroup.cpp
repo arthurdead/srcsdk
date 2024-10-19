@@ -877,11 +877,13 @@ void BuildGroup::LoadControlSettings(const char *controlResourceName, const char
 
 		// check the skins directory first, if an explicit pathID hasn't been set
 		bool bSuccess = false;
+	#if 0
 		if (!pathID)
 		{
 			bSuccess = rDat->LoadFromFile(g_pFullFileSystem, controlResourceName, "SKIN");
 		}
 		if (!bSuccess)
+	#endif
 		{
 			bSuccess = rDat->LoadFromFile(g_pFullFileSystem, controlResourceName, pathID);
 		}

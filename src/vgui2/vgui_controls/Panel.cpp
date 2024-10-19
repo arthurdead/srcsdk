@@ -628,6 +628,30 @@ Panel::Panel()
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
 Panel::Panel(Panel *parent)
+	: Panel(parent ? parent->GetVPanel() : INVALID_VPANEL)
+{
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Constructor
+//-----------------------------------------------------------------------------
+Panel::Panel(Panel *parent, const char *panelName)
+	: Panel(parent ? parent->GetVPanel() : INVALID_VPANEL, panelName)
+{
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Constructor
+//-----------------------------------------------------------------------------
+Panel::Panel( Panel *parent, const char *panelName, HScheme scheme )
+	: Panel(parent ? parent->GetVPanel() : INVALID_VPANEL, panelName, scheme)
+{
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Constructor
+//-----------------------------------------------------------------------------
+Panel::Panel(VPANEL parent)
 {
 	Init(0, 0, 64, 24);
 	SetParent(parent);
@@ -636,7 +660,7 @@ Panel::Panel(Panel *parent)
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-Panel::Panel(Panel *parent, const char *panelName)
+Panel::Panel(VPANEL parent, const char *panelName)
 {
 	Init(0, 0, 64, 24);
 	SetName(panelName);
@@ -647,7 +671,7 @@ Panel::Panel(Panel *parent, const char *panelName)
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-Panel::Panel( Panel *parent, const char *panelName, HScheme scheme )
+Panel::Panel(VPANEL parent, const char *panelName, HScheme scheme )
 {
 	Init(0, 0, 64, 24);
 	SetName(panelName);

@@ -529,6 +529,8 @@ public:
 	bool		ClassMatches( string_t nameStr );
 	bool		NameMatchesExact( string_t nameStr );
 	bool		ClassMatchesExact( string_t nameStr );
+	bool		ClassMatchesExact( const char *nameStr );
+	bool		ClassMatchesExact( const CGameString &nameStr );
 
 	template <typename T>
 	bool		Downcast( string_t iszClass, T **ppResult );
@@ -2141,6 +2143,19 @@ inline bool CBaseEntity::ClassMatchesExact( string_t nameStr )
 	return IDENT_STRINGS(m_iClassname, nameStr );
 }
 
+inline bool CBaseEntity::ClassMatchesExact( const CGameString &nameStr )
+{
+	string_t tmp = nameStr.Get();
+	return IDENT_STRINGS(m_iClassname, tmp);
+}
+
+inline bool CBaseEntity::ClassMatchesExact( const char *nameStr )
+{
+	if ( IDENT_STRINGS(m_iClassname, nameStr ) )
+		return true;
+	return V_strcmp( STRING(m_iClassname), nameStr ) == 0;
+}
+
 inline const char* CBaseEntity::GetClassname()
 {
 	return STRING(m_iClassname);
@@ -2878,7 +2893,17 @@ inline const ResponseContext_t	*CBaseEntity::GetContextData( int index ) const
 
 inline bool FClassnameIs(CBaseEntity *pEntity, const char *szClassname)
 { 
-	return pEntity->ClassMatches(szClassname); 
+	return pEntity->ClassMatchesExact(szClassname); 
+}
+
+inline bool FClassnameIs(CBaseEntity *pEntity, string_t szClassname)
+{ 
+	return pEntity->ClassMatchesExact(szClassname); 
+}
+
+inline bool FClassnameIs(CBaseEntity *pEntity, const CGameString &szClassname)
+{ 
+	return pEntity->ClassMatchesExact(szClassname); 
 }
 
 #include "baseentity_shared.h"

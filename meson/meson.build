@@ -10,36 +10,45 @@ build_libs = get_option('build_libs')
 src_engine_dir = get_option('src_engine_dir')
 game_dir = get_option('game_dir')
 
-if build_libs
-	subproject('choreoobjects')
-	subproject('mathlib')
-	subproject('tier1')
-	subproject('raytrace')
-	subproject('responserules')
-	subproject('vgui_controls')
-	subproject('hackmgr')
-	subproject('shaderlib')
-	subproject('recastnavigation_game')
-	#subproject('vphysics')
-	subproject('matchmaking')
-	subproject('shadercompiler')
+if get_option('funny')
+	subdir('funny')
 endif
-if build_client or build_listen_server
-	subproject('game_loopback')
-endif
-if build_client
-	subproject('vaudio_minimp3')
-	subproject('vaudio_redirect')
-	#subproject('video_services')
-	subproject('game_shader_dx9')
-	subproject('gameui')
-	subproject('gamepadui_redirect')
-	subproject('serverbrowser_redirect')
-	subproject('client')
-endif
-if build_listen_server
-	subproject('server_listen')
-endif
-if build_dedicated_server
-	#subproject('server_dedicated')
+
+if meson.get_compiler('cpp').has_define('__WINE__')
+	subproject('linux_hammer_ipc')
+else
+	if build_libs
+		subproject('choreoobjects')
+		subproject('mathlib')
+		subproject('tier1')
+		subproject('raytrace')
+		subproject('responserules')
+		subproject('vgui_controls')
+		subproject('hackmgr')
+		subproject('shaderlib')
+		subproject('recastnavigation_game')
+		#subproject('vphysics')
+		subproject('matchmaking')
+		subproject('shadercompiler')
+	endif
+	if build_client or build_listen_server
+		subproject('game_loopback')
+	endif
+	if build_client
+		subproject('hammer_redirect')
+		subproject('vaudio_minimp3')
+		subproject('vaudio_redirect')
+		#subproject('video_services')
+		subproject('game_shader_dx9')
+		subproject('gameui')
+		subproject('gamepadui_redirect')
+		subproject('serverbrowser_redirect')
+		subproject('client')
+	endif
+	if build_listen_server
+		subproject('server_listen')
+	endif
+	if build_dedicated_server
+		#subproject('server_dedicated')
+	endif
 endif

@@ -26,13 +26,13 @@ public:
 	void VidInit() override
 	{ m_pTarget->VidInit(); }
 
-	bool Init();
+	bool GetRedirectTarget();
 
  private:
 	IGamepadUI *m_pTarget;
 };
 
-bool CGamepadUIRedirect::Init()
+bool CGamepadUIRedirect::GetRedirectTarget()
 {
 	CSysModule *pTargetMod = NULL;
 
@@ -67,7 +67,7 @@ void *CreateGamepadUI()
 	static CGamepadUIRedirect *pGamepadUI = NULL;
 	if(!pGamepadUI) {
 		pGamepadUI = new CGamepadUIRedirect;
-		if(!pGamepadUI->Init()) {
+		if(!pGamepadUI->GetRedirectTarget()) {
 			delete pGamepadUI;
 			return NULL;
 		}

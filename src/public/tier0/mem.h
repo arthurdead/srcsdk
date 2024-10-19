@@ -41,6 +41,9 @@ MEM_INTERFACE void *MemAllocScratch( int nMemSize );
 MEM_INTERFACE void MemFreeScratch();
 
 #ifdef _LINUX
+#ifdef ZeroMemory
+#undef ZeroMemory
+#endif
 MEM_INTERFACE void ZeroMemory( void *mem, size_t length );
 #endif
 

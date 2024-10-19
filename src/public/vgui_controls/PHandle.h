@@ -31,6 +31,8 @@ public:
 	void Set( HPanel hPanel );
 	void Set( std::nullptr_t ) { Set(INVALID_PANEL); }
 
+	void Term() { Set(INVALID_PANEL); }
+
 	operator Panel *() const						{ return Get(); }
 	Panel * operator ->() const					{ return Get(); }
 	PHandle & operator = (Panel *pPanel)		{ Set(pPanel); return *this; }
@@ -57,6 +59,8 @@ public:
 	void Set( VPANEL pPanel );
 	void Set( std::nullptr_t );
 
+	void Term() { Set(INVALID_VPANEL); }
+
 	operator VPANEL () const						{ return Get(); }
 	VPanelHandle &operator = (VPANEL pPanel)		{ Set(pPanel); return *this; }
 	VPanelHandle &operator = (std::nullptr_t)		{ Set(INVALID_VPANEL); return *this; }
@@ -80,6 +84,8 @@ public:
 	PanelType *Get() const					{ return (PanelType *)PHandle::Get(); }
 	void Set( PanelType *pPanel )	{ PHandle::Set(pPanel); }
 	void Set( std::nullptr_t)		{ PHandle::Set(INVALID_PANEL); }
+
+	void Term() { PHandle::Set(INVALID_PANEL); }
 
 	operator PanelType *() const						{ return (PanelType *)PHandle::Get(); }
 	PanelType * operator ->() const					{ return (PanelType *)PHandle::Get(); }

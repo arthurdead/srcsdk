@@ -33,6 +33,7 @@
 #include "tier0/threadtools.h"
 //#include "clientalphaproperty.h"
 #include "map_entity.h"
+#include "gamestringpool.h"
 
 class C_Team;
 class IPhysicsObject;
@@ -1467,6 +1468,10 @@ public:
 #endif
 	bool		NameMatchesExact( string_t nameStr );
 	bool		ClassMatchesExact( string_t nameStr );
+#ifndef NO_STRING_T
+	bool		ClassMatchesExact( const char *nameStr );
+#endif
+	bool		ClassMatchesExact( const CGameString &nameStr );
 
 	template <typename T>
 	bool		Downcast( string_t iszClass, T **ppResult );
@@ -2056,7 +2061,27 @@ inline bool FClassnameIs( C_BaseEntity *pEntity, const char *szClassname )
 	if ( pEntity == NULL )
 		return false;
 
-	return !strcmp( pEntity->GetClassname(), szClassname ) ? true : false; 
+	return pEntity->ClassMatchesExact( szClassname );
+}
+
+#ifndef NO_STRING_T
+inline bool FClassnameIs( C_BaseEntity *pEntity, string_t szClassname )
+{ 
+	Assert( pEntity );
+	if ( pEntity == NULL )
+		return false;
+
+	return pEntity->ClassMatchesExact( szClassname );
+}
+#endif
+
+inline bool FClassnameIs( C_BaseEntity *pEntity, const CGameString &szClassname )
+{ 
+	Assert( pEntity );
+	if ( pEntity == NULL )
+		return false;
+
+	return pEntity->ClassMatchesExact( szClassname );
 }
 
 #define SetThink( a ) ThinkSet( static_cast <void (C_BaseEntity::*)(void)> (a), 0, NULL )
@@ -2682,6 +2707,19 @@ inline bool C_BaseEntity::NameMatchesExact( string_t nameStr )
 inline bool C_BaseEntity::ClassMatchesExact( string_t nameStr )
 {
 	return IDENT_STRINGS(m_iClassname, nameStr );
+}
+
+inline bool C_BaseEntity::ClassMatchesExact( const CGameString &nameStr )
+{
+	string_t tmp = nameStr.Get();
+	return IDENT_STRINGS(m_iClassname, tmp);
+}
+
+inline bool C_BaseEntity::ClassMatchesExact( const char *nameStr )
+{
+	if ( IDENT_STRINGS(m_iClassname, nameStr ) )
+		return true;
+	return V_strcmp( STRING(m_iClassname), nameStr ) == 0;
 }
 
 #ifndef NO_STRING_T

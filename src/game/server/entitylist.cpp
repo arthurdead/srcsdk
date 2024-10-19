@@ -34,6 +34,10 @@ static CUtlVector<CBaseEntity*> g_DeleteList;
 
 CGlobalEntityList gEntList;
 CBaseEntityList *g_pEntityList = &gEntList;
+IServerEntityList *entitylist = &gEntList;
+
+// Expose list to engine
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CGlobalEntityList, IServerEntityList, VSERVERENTITYLIST_INTERFACE_VERSION, gEntList );
 
 class CAimTargetManager : public IEntityListener
 {
@@ -557,6 +561,50 @@ void CGlobalEntityList::AddPostClientMessageEntity( CBaseEntity *pEntity )
 void CGlobalEntityList::PostClientMessagesSent()
 {
 	g_PostClientManager.PostClientMessagesSent();
+}
+
+IServerNetworkable*	CGlobalEntityList::GetServerNetworkable( int entnum )
+{
+	CBaseEntity *pUnk = static_cast<CBaseEntity*>(LookupEntityByNetworkIndex( entnum ));
+	if ( pUnk && pUnk->GetNetworkable() )
+		return pUnk->GetNetworkable();
+	else
+		return NULL;
+}
+
+IServerNetworkable* CGlobalEntityList::GetServerNetworkableFromHandle( CBaseHandle hEnt )
+{
+	return GetServerNetworkable( hEnt );
+}
+
+IServerUnknown* CGlobalEntityList::GetServerUnknownFromHandle( CBaseHandle hEnt )
+{
+	return LookupEntity( hEnt );
+}
+
+IServerEntity* CGlobalEntityList::GetServerEntity( int entnum )
+{
+	return LookupEntityByNetworkIndex( entnum );
+}
+
+IServerEntity* CGlobalEntityList::GetServerEntityFromHandle( CBaseHandle hEnt )
+{
+	return LookupEntity( hEnt );
+}
+
+int CGlobalEntityList::NumberOfEntities( bool bIncludeNonNetworkable )
+{
+	return bIncludeNonNetworkable ? NumberOfEntities() : NumberOfEdicts();
+}
+
+CBaseEntity* CGlobalEntityList::GetListedEntity( int entnum )
+{
+	return LookupEntityByNetworkIndex( entnum );
+}
+
+int CGlobalEntityList::GetHighestEntityIndex( void )
+{
+	return m_iHighestEnt;
 }
 
 edict_t* CGlobalEntityList::GetEdict( CBaseHandle hEnt ) const

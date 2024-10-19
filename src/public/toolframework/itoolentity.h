@@ -111,7 +111,7 @@ public:
 	virtual const char*		GetModelName ( HTOOLHANDLE handle ) = 0;
 	virtual const char*		GetClassname ( HTOOLHANDLE handle ) = 0;
 
-private:
+public:
 	virtual void			DO_NOT_USE_AddClientRenderable( IClientRenderable *pRenderable, int renderGroup ) = 0;
 public:
 	virtual void			RemoveClientRenderable( IClientRenderable *pRenderable ) = 0;
@@ -263,6 +263,7 @@ inline void IClientToolsEx::DO_NOT_USE_AddClientRenderable( IClientRenderable *p
 }
 
 #define VCLIENTTOOLS_INTERFACE_VERSION "VCLIENTTOOLS001"
+#define VCLIENTTOOLS_EX_INTERFACE_VERSION "VCLIENTTOOLSEX001"
 
 class CEntityRespawnInfo
 {
@@ -359,6 +360,7 @@ public:
 
 #define VSERVERTOOLS_INTERFACE_VERSION		"VSERVERTOOLS003"
 #define VSERVERTOOLS_INTERFACE_VERSION_INT	3
+#define VSERVERTOOLS_EX_INTERFACE_VERSION		"VSERVERTOOLSEX001"
 
 //-----------------------------------------------------------------------------
 // Purpose: Client side tool interace (right now just handles IClientRenderables).

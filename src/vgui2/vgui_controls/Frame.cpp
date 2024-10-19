@@ -754,7 +754,12 @@ public:
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-Frame::Frame(Panel *parent, const char *panelName, bool showTaskbarIcon /*=true*/, bool bPopup /*=true*/ ) : EditablePanel(parent, panelName)
+Frame::Frame(Panel *parent, const char *panelName, bool showTaskbarIcon /*=true*/, bool bPopup /*=true*/ )
+	: Frame(parent ? parent->GetVPanel() : INVALID_VPANEL, panelName, showTaskbarIcon, bPopup)
+{
+}
+
+Frame::Frame(VPANEL parent, const char *panelName, bool showTaskbarIcon /*=true*/, bool bPopup /*=true*/ ) : EditablePanel(parent, panelName)
 {
 	// frames start invisible, to avoid having window flicker in on taskbar
 	SetVisible(false);
@@ -787,7 +792,7 @@ Frame::Frame(Panel *parent, const char *panelName, bool showTaskbarIcon /*=true*
 	m_bPrimed = false;
 	m_hCustomTitleFont = INVALID_FONT;
 
-	SetTitle("#Frame_Untitled", parent ? false : true);
+	SetTitle("#Frame_Untitled", parent != INVALID_VPANEL ? false : true);
 	
 	// add ourselves to the build group
 	SetBuildGroup(GetBuildGroup());
@@ -833,7 +838,7 @@ Frame::Frame(Panel *parent, const char *panelName, bool showTaskbarIcon /*=true*
 		SetMaximizeButtonVisible(false);
 	}
 
-	if (parent)
+	if (parent != INVALID_VPANEL)
 	{
 		// vgui doesn't support subwindow minimization
 		SetMinimizeButtonVisible(false);
@@ -2124,29 +2129,7 @@ void Frame::OnKeyCodeTyped(KeyCode code)
 	bool ctrl = (input()->IsKeyDown(KEY_LCONTROL) || input()->IsKeyDown(KEY_RCONTROL));
 	bool alt = (input()->IsKeyDown(KEY_LALT) || input()->IsKeyDown(KEY_RALT));
 
-	if ( ctrl && shift && alt && code == KEY_B)
-	{
-		// enable build mode
-		ActivateBuildMode();
-	}
-	else if (ctrl && shift && alt && code == KEY_R)
-	{
-		// reload the scheme
-		VPANEL top = surface()->GetEmbeddedPanel();
-		if (top != INVALID_VPANEL)
-		{
-			// reload the data file
-			scheme()->ReloadSchemes();
-
-			Panel *panel = ipanel()->GetPanel(top, GetModuleName());
-			if (panel)
-			{
-				// make the top-level panel reload it's scheme, it will chain down to all the child panels
-				panel->InvalidateLayout(false, true);
-			}
-		}
-	}
-	else if (alt && code == KEY_F4)
+	if (alt && code == KEY_F4)
 	{
 		// user has hit the close
 		PostMessage(this, new KeyValues("CloseFrameButtonPressed"));

@@ -581,7 +581,7 @@ void DispatchParticleEffect(const char *pszParticleName, const Vector& vecStart,
 			C_BasePlayer *player = ToBasePlayer(pWpn->GetOwner());
 
 			// Use GetRenderedWeaponModel() instead?
-			C_BaseViewModel *pViewModel = player ? player->GetViewModel(0) : NULL;
+			C_BaseViewModel *pViewModel = player ? player->GetViewModel(VIEWMODEL_WEAPON) : NULL;
 			if (pViewModel)
 			{
 				pEntity = pViewModel;

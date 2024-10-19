@@ -23,7 +23,7 @@ string_t AllocPooledString_StaticConstantStringPointer( const char *pszGlobalCon
 string_t FindPooledString( const char *pszValue );
 
 #define AssertIsValidString( s )	AssertMsg( s == NULL_STRING || s == FindPooledString( STRING(s) ), "Invalid string " #s );
-		 
+
 #ifndef GC
 //-----------------------------------------------------------------------------
 // String system accessor

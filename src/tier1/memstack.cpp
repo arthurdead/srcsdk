@@ -3,6 +3,7 @@
 // Purpose:
 //
 //=============================================================================//
+#include "tier0/platform.h"
 
 #if defined( _WIN32 )
 #define WIN_32_LEAN_AND_MEAN

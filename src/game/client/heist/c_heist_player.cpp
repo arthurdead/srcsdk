@@ -28,3 +28,13 @@ C_HeistPlayer::C_HeistPlayer()
 C_HeistPlayer::~C_HeistPlayer()
 {
 }
+
+void C_HeistPlayer::PostThink()
+{
+	BaseClass::PostThink();
+
+	C_BaseViewModel *pViewModel = GetViewModel(VIEWMODEL_WEAPON, false);
+	if(pViewModel && !pViewModel->IsEffectActive(EF_NODRAW)) {
+		//pViewModel->StudioFrameAdvance();
+	}
+}

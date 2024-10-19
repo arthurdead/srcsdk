@@ -331,7 +331,7 @@ void C_ReplayCamera::CalcInEyeCamView( Vector& eyeOrigin, QAngle& eyeAngles, flo
 
 	pPlayer->CalcViewModelView( eyeOrigin, eyeAngles);
 
-	C_BaseViewModel *pViewModel = pPlayer->GetViewModel( 0 );
+	C_BaseViewModel *pViewModel = pPlayer->GetViewModel( VIEWMODEL_WEAPON );
 
 	if ( pViewModel )
 	{

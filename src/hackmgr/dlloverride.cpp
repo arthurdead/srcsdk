@@ -1,5 +1,6 @@
 #include "hackmgr/hackmgr.h"
 #include "hackmgr_internal.h"
+#include "commandline.h"
 
 #ifdef __linux__
 #include <dlfcn.h>
@@ -17,6 +18,9 @@
 #endif
 #include "engine_hlds_api.h"
 #include "matchmaking/imatchframework.h"
+#ifndef SWDS
+#include "IHammer.h"
+#endif
 
 #include "tier1/interface.h"
 #include "tier1/utlvector.h"
@@ -61,6 +65,7 @@ static constexpr int CDedicatedServerAPI_m_pDedicatedServer_offset = (
 );
 
 static CAppSystemGroup *s_pCurrentAppSystemHack = NULL;
+static CAppSystemGroup *s_pLauncherAppSystem = NULL;
 
 static void *CAppSystemGroup_FindSystem( CAppSystemGroup *pthis, const char *pSystemName )
 {
@@ -94,6 +99,16 @@ static void CAppSystemGroup_AddSystem( CAppSystemGroup *pthis, IAppSystem *pAppS
 
 	MEM_ALLOC_CREDIT();
 	pthis->m_SystemDict.Insert( pInterfaceName, sysIndex );
+}
+
+void *Launcher_AppSystemCreateInterface(const char *pName, int *pReturnCode)
+{
+	void *pInterface = s_pLauncherAppSystem ? CAppSystemGroup_FindSystem( s_pLauncherAppSystem, pName ) : NULL;
+	if ( pReturnCode )
+	{
+		*pReturnCode = pInterface ? IFACE_OK : IFACE_FAILED;
+	}
+	return pInterface;
 }
 
 static void *AppSystemCreateInterfaceFnHack(const char *pName, int *pReturnCode)
@@ -347,7 +362,9 @@ static app_sys_pair_t reconnect_interface(CAppSystemGroup *ParentAppSystemGroup,
 	return ret;
 }
 
-HACKMGR_EXECUTE_ON_LOAD_BEGIN(0)
+HACKMGR_EXECUTE_ON_LOAD_BEGIN(1)
+
+HackMgr_InitCommandLine();
 
 #if defined __GNUC__ && defined __linux__
 #ifndef SWDS
@@ -371,7 +388,30 @@ pFileSystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_pat
 V_StripTrailingSlash(gamebin_path);
 int gamebin_len = V_strlen(gamebin_path);
 
-pFileSystem->AddSearchPath(gamebin_path, "EXECUTABLE_PATH", PATH_ADD_TO_HEAD);
+#ifndef SWDS
+if(!IsDedicatedServer()) {
+	V_strncat(gamebin_path, CORRECT_PATH_SEPARATOR_S, sizeof(gamebin_path));
+	++gamebin_len;
+
+	V_strncat(gamebin_path, "tools", sizeof(gamebin_path));
+
+	pFileSystem->AddSearchPath(gamebin_path, "EXECUTABLE_PATH", PATH_ADD_TO_HEAD);
+	pFileSystem->AddSearchPath(gamebin_path, "GAMEBIN", PATH_ADD_TO_TAIL);
+
+	gamebin_path[gamebin_len-1] = '\0';
+
+	pFileSystem->AddSearchPath(gamebin_path, "EXECUTABLE_PATH", PATH_ADD_TO_HEAD);
+
+	gamebin_path[gamebin_len-1] = CORRECT_PATH_SEPARATOR;
+	gamebin_path[gamebin_len] = '\0';
+} else
+#endif
+{
+	pFileSystem->AddSearchPath(gamebin_path, "EXECUTABLE_PATH", PATH_ADD_TO_HEAD);
+
+	V_strncat(gamebin_path, CORRECT_PATH_SEPARATOR_S, sizeof(gamebin_path));
+	++gamebin_len;
+}
 
 if(!GetEngineInterfaceFactory())
 	return;
@@ -398,20 +438,8 @@ if(!IsDedicatedServer()) {
 	ParentAppSystemGroup = *(CAppSystemGroup **)((unsigned char *)pDedicatedAPI + CDedicatedServerAPI_m_pDedicatedServer_offset);
 }
 
+s_pLauncherAppSystem = ParentAppSystemGroup;
 s_pCurrentAppSystemHack = ParentAppSystemGroup;
-
-const char *matchmaking_dll_name = NULL;
-#ifndef SWDS
-if(!IsDedicatedServer()) {
-	matchmaking_dll_name = "matchmaking" DLL_EXT_STRING;
-} else 
-#endif
-{
-	matchmaking_dll_name = "matchmaking_ds" DLL_EXT_STRING;
-}
-
-V_strncat(gamebin_path, CORRECT_PATH_SEPARATOR_S, sizeof(gamebin_path));
-V_strncat(gamebin_path, matchmaking_dll_name, sizeof(gamebin_path));
 
 struct connect_info_t
 {
@@ -436,6 +464,18 @@ CUtlVector<connect_info_t> connect_later;
 int connect_idx = connect_later.AddToTail();
 connect_later[connect_idx].group = ParentAppSystemGroup;
 
+const char *matchmaking_dll_name = NULL;
+#ifndef SWDS
+if(!IsDedicatedServer()) {
+	matchmaking_dll_name = "matchmaking" DLL_EXT_STRING;
+} else 
+#endif
+{
+	matchmaking_dll_name = "matchmaking_ds" DLL_EXT_STRING;
+}
+
+V_strncat(gamebin_path, matchmaking_dll_name, sizeof(gamebin_path));
+
 CSysModule *pMatchMod = Sys_LoadModule(gamebin_path);
 if(pMatchMod) {
 	CreateInterfaceFn pMatchFac = Sys_GetFactory(pMatchMod);
@@ -453,6 +493,37 @@ if(pMatchMod) {
 }
 
 gamebin_path[gamebin_len] = '\0';
+
+#ifndef SWDS
+if(!IsDedicatedServer()) {
+	if(CommandLine()->HasParm("-edit") ||
+	#ifdef __linux__
+		CommandLine()->HasParm("-edit_linux") ||
+	#endif
+		CommandLine()->HasParm("-foundrymode")) {
+		V_strncat(gamebin_path, "hammer_dll" DLL_EXT_STRING, sizeof(gamebin_path));
+
+		CSysModule *pHammerMod = Sys_LoadModule(gamebin_path);
+		if(pHammerMod) {
+			CreateInterfaceFn pHammerFac = Sys_GetFactory(pHammerMod);
+			if(pHammerFac) {
+				status = IFACE_OK;
+				IHammer *pHammerInter = (IHammer *)pHammerFac(INTERFACEVERSION_HAMMER, &status);
+				__asm__ __volatile__ ("int $3");
+				if(status != IFACE_OK)
+					pHammerInter = NULL;
+
+				if(pHammerInter) {
+					CAppSystemGroup_AddSystem(ParentAppSystemGroup, pHammerInter, INTERFACEVERSION_HAMMER);
+					connect_later[connect_idx].apps.AddToTail(pHammerInter);
+				}
+			}
+		}
+
+		gamebin_path[gamebin_len] = '\0';
+	}
+}
+#endif
 
 const char *vphysics_dll_name = NULL;
 #ifndef SWDS
@@ -511,6 +582,12 @@ do {
 					app_sys_pair_t pair;
 					pair = reconnect_interface(ParentAppSystemGroup, pOldFactory, new_mod.m_Factory, VIDEO_SERVICES_INTERFACE_VERSION);
 					HackMgr_SetEngineVideoServicesPtr((IVideoServices *)pair.pOldInter, (IVideoServices *)pair.pNewInter);
+					if(pair.pNewInter)
+						connect_later[connect_idx].apps.AddToTail(pair.pNewInter);
+				}
+				else if(V_stricmp(new_mod.m_pModuleName, "hammer_dll" DLL_EXT_STRING) == 0) {
+					app_sys_pair_t pair;
+					pair = reconnect_interface(ParentAppSystemGroup, pOldFactory, new_mod.m_Factory, INTERFACEVERSION_HAMMER);
 					if(pair.pNewInter)
 						connect_later[connect_idx].apps.AddToTail(pair.pNewInter);
 				}

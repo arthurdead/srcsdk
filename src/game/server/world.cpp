@@ -597,12 +597,6 @@ CWorld::CWorld( )
 CWorld::~CWorld( )
 {
 	if(g_WorldEntity == this) {
-		// If in edit mode tell Hammer I'm ending my session. This re-enables
-		// the Hammer UI so they can continue editing the map.
-	#ifdef _WIN32
-		Editor_EndSession(false);
-	#endif
-
 		g_WorldEntity = NULL;
 	}
 }

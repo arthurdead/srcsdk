@@ -36,13 +36,6 @@ EditorSendResult_t Editor_DeleteEntity(const char *pszEntity, float x, float y, 
 EditorSendResult_t Editor_SetKeyValue(const char *pszEntity, float x, float y, float z, const char *pKey, const char *pValue, bool bShowUI = false);
 EditorSendResult_t Editor_RotateEntity(const char *pszEntity, float x, float y, float z, const QAngle &incrementalRotation, bool bShowUI = false);
 
-EditorSendResult_t Editor_CreateNode(const char *pszNodeClass, int nID, float x, float y,  float z, bool bShowUI = false);
-EditorSendResult_t Editor_DeleteNode(int nID, bool bShowUI = false);
-
-EditorSendResult_t Editor_CreateNodeLink(int nStartID, int nEndID, bool bShowUI = false);
-EditorSendResult_t Editor_DeleteNodeLink(int nStartID, int nEndID, bool bShowUI = false);
-
-
 //
 // Actually does the work. All the above commands route through this.
 //

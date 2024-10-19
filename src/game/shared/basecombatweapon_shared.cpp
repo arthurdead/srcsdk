@@ -101,6 +101,8 @@ CSharedBaseCombatWeapon::CBaseCombatWeapon()
 
 	m_flNextResetCheckTime = 0.0f;
 #endif
+
+	m_bHolstered = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -1362,7 +1364,7 @@ void CSharedBaseCombatWeapon::SetViewModel()
 // Purpose: Set the desired activity for the weapon and its viewmodel counterpart
 // Input  : iActivity - activity to play
 //-----------------------------------------------------------------------------
-bool CSharedBaseCombatWeapon::SendWeaponAnim( int iActivity )
+bool CSharedBaseCombatWeapon::SendWeaponAnim( Activity iActivity )
 {
 	//iActivity = TranslateViewmodelHandActivity( (Activity)iActivity );
 
@@ -1565,7 +1567,7 @@ bool CSharedBaseCombatWeapon::ReloadOrSwitchWeapons( void )
 //			*szAnimExt - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CSharedBaseCombatWeapon::DefaultDeploy( char *szViewModel, char *szWeaponModel, int iActivity, char *szAnimExt )
+bool CSharedBaseCombatWeapon::DefaultDeploy( const char *szViewModel, const char *szWeaponModel, Activity iActivity, const char *szAnimExt )
 {
 	// Msg( "deploy %s at %f\n", GetClassname(), gpGlobals->curtime );
 
@@ -1602,13 +1604,6 @@ bool CSharedBaseCombatWeapon::DefaultDeploy( char *szViewModel, char *szWeaponMo
 
 	SetWeaponVisible( true );
 
-/*
-
-This code is disabled for now, because moving through the weapons in the carousel 
-selects and deploys each weapon as you pass it. (sjb)
-
-*/
-
 	SetContextThink( NULL, 0, HIDEWEAPON_THINK_CONTEXT );
 
 	m_bHolstered = false;
@@ -1621,8 +1616,11 @@ selects and deploys each weapon as you pass it. (sjb)
 //-----------------------------------------------------------------------------
 bool CSharedBaseCombatWeapon::Deploy( )
 {
+	if ( !CanDeploy() )
+		return false;
+
 	MDLCACHE_CRITICAL_SECTION();
-	bool bResult = DefaultDeploy( (char*)GetViewModel(), (char*)GetWorldModel(), GetDrawActivity(), (char*)GetAnimPrefix() );
+	bool bResult = DefaultDeploy( GetViewModel(), GetWorldModel(), GetDrawActivity(), GetAnimPrefix() );
 
 	// override pose parameters
 	PoseParameterOverride( false );
@@ -1640,6 +1638,9 @@ Activity CSharedBaseCombatWeapon::GetDrawActivity( void )
 //-----------------------------------------------------------------------------
 bool CSharedBaseCombatWeapon::Holster( CSharedBaseCombatWeapon *pSwitchingTo, bool bInstant )
 { 
+	if ( !CanHolster() )
+		return false;
+
 	MDLCACHE_CRITICAL_SECTION();
 
 	// cancel any reload in progress.
@@ -2125,7 +2126,7 @@ void CSharedBaseCombatWeapon::StopWeaponSound( WeaponSound_t sound_type )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-bool CSharedBaseCombatWeapon::DefaultReload( int iClipSize1, int iClipSize2, int iActivity )
+bool CSharedBaseCombatWeapon::DefaultReload( int iClipSize1, int iClipSize2, Activity iActivity )
 {
 	CSharedBaseCombatCharacter *pOwner = GetOwner();
 	if (!pOwner)
