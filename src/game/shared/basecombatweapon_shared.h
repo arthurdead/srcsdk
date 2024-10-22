@@ -417,7 +417,7 @@ public:
 	virtual void 			GetControlPanelInfo( int nPanelIndex, const char *&pPanelName );
 	virtual void			GetControlPanelClassName( int nPanelIndex, const char *&pPanelName );
 
-	virtual bool			ShouldShowControlPanels( void ) { return false; }
+	virtual bool			ShouldShowControlPanels( void ) { return true; }
 
 	void					Lock( float lockTime, CSharedBaseEntity *pLocker );
 	bool					IsLocked( CSharedBaseEntity *pAsker );

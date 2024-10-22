@@ -67,7 +67,7 @@ public:
 
 	virtual C_BaseCombatWeapon*	Weapon_OwnsThisType( const char *pszWeapon, int iSubType = 0 ) const;  // True if already owns a weapon of this class
 	virtual int			Weapon_GetSlot( const char *pszWeapon, int iSubType = 0 ) const;  // Returns -1 if they don't have one
-	virtual	bool		Weapon_Switch( C_BaseCombatWeapon *pWeapon, int viewmodelindex = 0, bool bDeploy = true );
+	virtual	int		Weapon_Switch( C_BaseCombatWeapon *pWeapon, int viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );
 	virtual bool		Weapon_CanSwitchTo(C_BaseCombatWeapon *pWeapon);
 	
 	// I can't use my current weapon anymore. Switch me to the next best weapon.

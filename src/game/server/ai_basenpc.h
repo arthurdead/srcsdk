@@ -36,6 +36,8 @@
 #include "recast/recast_mesh.h"
 #include "ai_pathfinder.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_BASENPC );
+
 #define PLAYER_SQUADNAME "player_squad"
 
 class CAI_Schedule;

@@ -30,6 +30,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_HUD, "Hud" );
+
 static 	CClassMemoryPool< CHudTexture >	 g_HudTextureMemoryPool( 128 );
 
 //-----------------------------------------------------------------------------
@@ -144,7 +146,7 @@ void LoadHudTextures( CUtlDict< CHudTexture *, int >& list, const char *szFilena
 	}
 	else
 	{
-		Warning( "Unable to read script %s.\n", szFilenameWithoutExtension );
+		Log_Warning( LOG_HUD,"Unable to read script %s.\n", szFilenameWithoutExtension );
 	}
 }
 
@@ -292,6 +294,16 @@ void CHudElement::SetNeedsRemove( bool needsremove )
 void CHudElement::SetHiddenBits( int iBits )
 {
 	m_iHiddenBits = iBits;
+}
+
+void CHudElement::AddHiddenBits( int iBits )
+{
+	SetHiddenBits( GetHiddenBits() | iBits );
+}
+
+void CHudElement::RemoveHiddenBits( int iBits )
+{
+	SetHiddenBits( GetHiddenBits() & ~iBits );
 }
 
 //-----------------------------------------------------------------------------
@@ -487,21 +499,21 @@ void CHud::Init( void )
 				vgui::Panel *pPanel = m_HudPanelList[i];
 				if ( !pPanel )
 				{
-					Msg( "Non-vgui hud element %s\n", m_HudList[i]->GetName() );
+					Log_Error( LOG_HUD, "Non-vgui hud element %s\n", m_HudList[i]->GetName() );
 					continue;
 				}
 
 				KeyValues *key = kv->FindKey( pPanel->GetName(), false );
 				if ( !key )
 				{
-					Msg( "Hud element '%s' doesn't have an entry '%s' in scripts/HudLayout.res\n", m_HudList[i]->GetName(), pPanel->GetName() );
+					Log_Warning( LOG_VGUIRESOURCE,"Hud element '%s' doesn't have an entry '%s' in scripts/HudLayout.res\n", m_HudList[i]->GetName(), pPanel->GetName() );
 				}
 
 				// Note:  When a panel is parented to the module root, it's "parent" is returned as NULL.
 				if ( !element->IsParentedToClientDLLRootPanel() && 
 					 !pPanel->GetParent() )
 				{
-					DevMsg( "Hud element '%s'/'%s' doesn't have a parent\n", m_HudList[i]->GetName(), pPanel->GetName() );
+					Log_Error( LOG_HUD,"Hud element '%s'/'%s' doesn't have a parent\n", m_HudList[i]->GetName(), pPanel->GetName() );
 				}
 			}
 		}
@@ -1060,7 +1072,7 @@ CHudElement *CHud::FindElement( const char *pName )
 			return m_HudList[i];
 	}
 
-	DevWarning(1, "Could not find Hud Element: %s\n", pName );
+	Log_Warning(LOG_HUD, "Could not find Hud Element: %s\n", pName );
 	Assert(0);
 	return NULL;
 }
@@ -1076,7 +1088,7 @@ void CHud::AddHudElement( CHudElement *pHudElement )
 	vgui::Panel *pPanel = dynamic_cast< vgui::Panel * >( pHudElement );
 	if ( !pPanel )
 	{
-		Error( "All hud elements must derive from vgui::Panel * (%s)\n", pHudElement->GetName() );
+		Log_FatalError( LOG_HUD,"All hud elements must derive from vgui::Panel * (%s)\n", pHudElement->GetName() );
 	}
 
 	m_HudPanelList.AddToTail( pPanel );

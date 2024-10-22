@@ -33,7 +33,7 @@ void NetProxy_HeistGameRules(const RecvProp *pProp, void **pOut, void *pData, in
 #endif
 
 BEGIN_NETWORK_TABLE( CSharedHeistGameRules, DT_HeistGameRules )
-	PropBool(PROPINFO(m_nMissionState)),
+	PropInt(PROPINFO(m_nMissionState)),
 END_NETWORK_TABLE()
 
 #ifdef CLIENT_DLL

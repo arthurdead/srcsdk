@@ -31,7 +31,7 @@ bool CSharedBaseCombatCharacter::SwitchToNextBestWeapon(CSharedBaseCombatWeapon 
 	
 	if ( ( pNewWeapon != NULL ) && ( pNewWeapon != pCurrent ) )
 	{
-		return Weapon_Switch( pNewWeapon );
+		return Weapon_Switch( pNewWeapon ) != WEAPON_SWITCH_FAILED;
 	}
 
 	return false;
@@ -42,36 +42,49 @@ bool CSharedBaseCombatCharacter::SwitchToNextBestWeapon(CSharedBaseCombatWeapon 
 // Input  :
 // Output : true is switch succeeded
 //-----------------------------------------------------------------------------
-bool CSharedBaseCombatCharacter::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, int viewmodelindex /*=0*/, bool bDeploy ) 
+int CSharedBaseCombatCharacter::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, int viewmodelindex /*=VIEWMODEL_WEAPON*/, bool bDeploy ) 
 {
 	if ( pWeapon == NULL )
-		return false;
+		return WEAPON_SWITCH_FAILED;
 
 	// Already have it out?
 	if ( m_hActiveWeapon.Get() == pWeapon )
 	{
-		if ( m_hActiveWeapon->IsHolstered() )
-			return m_hActiveWeapon->Deploy( );
-		return false;
+		if ( bDeploy && m_hActiveWeapon->CanDeploy() ) {
+			if( m_hActiveWeapon->Deploy( ) ) {
+				return WEAPON_SWITCH_DEPLOYED;
+			} else {
+				return WEAPON_SWITCH_FAILED;
+			}
+		} else {
+			m_hActiveWeapon->Holster( NULL, true );
+			return WEAPON_SWITCH_HOLSTERED;
+		}
 	}
 
 	if (!Weapon_CanSwitchTo(pWeapon))
 	{
-		return false;
+		return WEAPON_SWITCH_FAILED;
 	}
 
 	if ( m_hActiveWeapon )
 	{
 		if ( !m_hActiveWeapon->Holster( pWeapon ) )
-			return false;
+			return WEAPON_SWITCH_FAILED;
 	}
 
 	m_hActiveWeapon = pWeapon;
 
-	if( bDeploy )
-		return pWeapon->Deploy( );
-	else
-		return pWeapon->Holster( NULL, true );
+	if( bDeploy && pWeapon->CanDeploy() ) {
+		if( pWeapon->Deploy() ) {
+			return WEAPON_SWITCH_DEPLOYED;
+		} else {
+			return WEAPON_SWITCH_FAILED;
+		}
+	} else {
+		pWeapon->Holster( NULL, true );
+		return WEAPON_SWITCH_HOLSTERED;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -93,9 +106,6 @@ bool CSharedBaseCombatCharacter::Weapon_CanSwitchTo( CSharedBaseCombatWeapon *pW
 	}
 
 	if ( !pWeapon->HasAnyAmmo() && !GetAmmoCount( pWeapon->m_iPrimaryAmmoType ) && !pWeapon->HasSpawnFlags(SF_WEAPON_NO_AUTO_SWITCH_WHEN_EMPTY) )
-		return false;
-
-	if ( !pWeapon->CanDeploy() )
 		return false;
 	
 	if ( m_hActiveWeapon )

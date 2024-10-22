@@ -16,7 +16,7 @@
 #include "bspflags.h"
 #include "hackmgr/hackmgr.h"
 
-DECLARE_DLL_LOGGING_CHANNEL( LOG_TRACE );
+DECLARE_LOGGING_CHANNEL( LOG_TRACE );
 
 class Vector;
 class IHandleEntity;

@@ -35,6 +35,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_KEYVALUES, "KeyValues" );
+
 static const char * s_LastFileLoadingFrom = "unknown"; // just needed for error messages
 
 // Statics for the growable string table
@@ -2215,14 +2217,14 @@ bool EvaluateConditional( const char *str, const char *file )
 	if ( Q_stristr( str, "$X360" ) )
 	{
 		//if this hits change the file
-		Msg("Remove conditional $X360 from file \"%s\".\n", file);
+		Log_Warning(LOG_KEYVALUES,"Remove conditional $X360 from file \"%s\".\n", file);
 		return false ^ bNot;
 	}
 	
 	if ( Q_stristr( str, "$WIN32" ) )
 	{
 		//if this hits change the file
-		Msg("Remove conditional $WIN32 from file \"%s\".\n", file);
+		Log_Warning(LOG_KEYVALUES,"Remove conditional $WIN32 from file \"%s\".\n", file);
 		return true ^ bNot; // hack hack - for now WIN32 really means IsPC
 	}
 

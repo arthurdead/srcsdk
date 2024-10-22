@@ -63,6 +63,8 @@ public:
 
 	// Weapon client handling
 	virtual void			SendViewModelMatchingSequence( int sequence );
+	void			SendViewModelMatchingActivity( Activity activity )
+	{ SendViewModelMatchingSequence( SelectWeightedSequence(activity) ); }
 	virtual void			SetWeaponModel( const char *pszModelname, CSharedBaseCombatWeapon *weapon );
 
 	virtual void			CalcViewModelLag( Vector& origin, QAngle& angles, QAngle& original_angles );

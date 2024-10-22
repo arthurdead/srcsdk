@@ -13,10 +13,30 @@
 
 //hl2 weapons to use while developing, remove when there's actual weapons
 
-class CWeaponHL2Pistol : public CBaseHeistWeapon
+#ifdef CLIENT_DLL
+class C_WeaponHL2Pistol;
+typedef C_WeaponHL2Pistol CSharedWeaponHL2Pistol;
+class C_WeaponHL2Shotgun;
+typedef C_WeaponHL2Shotgun CSharedWeaponHL2Shotgun;
+class C_WeaponHL2Smg;
+typedef C_WeaponHL2Smg CSharedWeaponHL2Smg;
+#else
+class CWeaponHL2Pistol;
+typedef CWeaponHL2Pistol CSharedWeaponHL2Pistol;
+class CWeaponHL2Shotgun;
+typedef CWeaponHL2Shotgun CSharedWeaponHL2Shotgun;
+class CWeaponHL2Smg;
+typedef CWeaponHL2Smg CSharedWeaponHL2Smg;
+#endif
+
+#ifdef CLIENT_DLL
+	#define CWeaponHL2Pistol C_WeaponHL2Pistol
+#endif
+
+class CWeaponHL2Pistol : public CSharedBaseHeistWeapon
 {
 public:
-	DECLARE_CLASS(CWeaponHL2Pistol, CBaseHeistWeapon);
+	DECLARE_CLASS(CWeaponHL2Pistol, CSharedBaseHeistWeapon);
 
 	CWeaponHL2Pistol()
 	{
@@ -25,6 +45,13 @@ public:
 		m_fMinRange2		= 24;
 		m_fMaxRange2		= 200;
 	}
+
+#ifdef CLIENT_DLL
+	#undef CWeaponHL2Pistol
+#endif
+
+	DECLARE_NETWORKCLASS();
+	DECLARE_PREDICTABLE();
 
 	virtual float			GetFireRate( void ) { return 0.5f; }
 
@@ -61,7 +88,7 @@ public:
 	DECLARE_ACTTABLE();
 };
 
-acttable_t	CWeaponHL2Pistol::m_acttable[] = 
+acttable_t	CSharedWeaponHL2Pistol::m_acttable[] = 
 {
 	{ ACT_IDLE,						ACT_IDLE_PISTOL,				true },
 	{ ACT_IDLE_ANGRY,				ACT_IDLE_ANGRY_PISTOL,			true },
@@ -79,14 +106,18 @@ acttable_t	CWeaponHL2Pistol::m_acttable[] =
 	{ ACT_RUN,						ACT_RUN_PISTOL,					false },
 };
 
-IMPLEMENT_ACTTABLE( CWeaponHL2Pistol );
+IMPLEMENT_ACTTABLE( CSharedWeaponHL2Pistol );
 
-LINK_ENTITY_TO_CLASS(weapon_hl2_pistol, CWeaponHL2Pistol);
+LINK_ENTITY_TO_CLASS_ALIASED(weapon_hl2_pistol, WeaponHL2Pistol);
 
-class CWeaponHL2Shotgun : public CBaseHeistWeapon
+#ifdef CLIENT_DLL
+	#define CWeaponHL2Shotgun C_WeaponHL2Shotgun
+#endif
+
+class CWeaponHL2Shotgun : public CSharedBaseHeistWeapon
 {
 public:
-	DECLARE_CLASS(CWeaponHL2Shotgun, CBaseHeistWeapon);
+	DECLARE_CLASS(CWeaponHL2Shotgun, CSharedBaseHeistWeapon);
 
 	CWeaponHL2Shotgun()
 	{
@@ -97,6 +128,13 @@ public:
 		m_fMinRange2		= 0.0;
 		m_fMaxRange2		= 200;
 	}
+
+#ifdef CLIENT_DLL
+	#undef CWeaponHL2Shotgun
+#endif
+
+	DECLARE_NETWORKCLASS();
+	DECLARE_PREDICTABLE();
 
 	virtual float			GetFireRate( void ) { return 0.7f; }
 
@@ -119,7 +157,7 @@ public:
 	DECLARE_ACTTABLE();
 };
 
-acttable_t	CWeaponHL2Shotgun::m_acttable[] = 
+acttable_t	CSharedWeaponHL2Shotgun::m_acttable[] = 
 {
 	{ ACT_IDLE,						ACT_IDLE_SMG1,					true },	// FIXME: hook to shotgun unique
 
@@ -168,20 +206,31 @@ acttable_t	CWeaponHL2Shotgun::m_acttable[] =
 	{ ACT_GESTURE_RELOAD,			ACT_GESTURE_RELOAD_SHOTGUN,			false },
 };
 
-IMPLEMENT_ACTTABLE( CWeaponHL2Shotgun );
+IMPLEMENT_ACTTABLE( CSharedWeaponHL2Shotgun );
 
-LINK_ENTITY_TO_CLASS(weapon_hl2_shotgun, CWeaponHL2Shotgun);
+LINK_ENTITY_TO_CLASS_ALIASED(weapon_hl2_shotgun, WeaponHL2Shotgun);
 
-class CWeaponHL2Smg : public CBaseHeistWeapon
+#ifdef CLIENT_DLL
+	#define CWeaponHL2Smg C_WeaponHL2Smg
+#endif
+
+class CWeaponHL2Smg : public CSharedBaseHeistWeapon
 {
 public:
-	DECLARE_CLASS(CWeaponHL2Smg, CBaseHeistWeapon);
+	DECLARE_CLASS(CWeaponHL2Smg, CSharedBaseHeistWeapon);
 
 	CWeaponHL2Smg()
 	{
 		m_fMinRange1		= 0;// No minimum range. 
 		m_fMaxRange1		= 1400;
 	}
+
+#ifdef CLIENT_DLL
+	#undef CWeaponHL2Smg
+#endif
+
+	DECLARE_NETWORKCLASS();
+	DECLARE_PREDICTABLE();
 
 	virtual float			GetFireRate( void ) { return 0.075f; }
 
@@ -204,7 +253,7 @@ public:
 	DECLARE_ACTTABLE();
 };
 
-acttable_t	CWeaponHL2Smg::m_acttable[] = 
+acttable_t	CSharedWeaponHL2Smg::m_acttable[] = 
 {
 	{ ACT_RANGE_ATTACK1,			ACT_RANGE_ATTACK_SMG1,			true },
 	{ ACT_RELOAD,					ACT_RELOAD_SMG1,				true },
@@ -256,6 +305,30 @@ acttable_t	CWeaponHL2Smg::m_acttable[] =
 	{ ACT_GESTURE_RELOAD,			ACT_GESTURE_RELOAD_SMG1,		true },
 };
 
-IMPLEMENT_ACTTABLE( CWeaponHL2Smg );
+IMPLEMENT_ACTTABLE( CSharedWeaponHL2Smg );
 
-LINK_ENTITY_TO_CLASS(weapon_hl2_smg1, CWeaponHL2Smg);
+LINK_ENTITY_TO_CLASS_ALIASED(weapon_hl2_smg1, WeaponHL2Smg);
+
+BEGIN_NETWORK_TABLE(CSharedWeaponHL2Pistol, DT_WeaponHL2Pistol)
+END_NETWORK_TABLE()
+
+IMPLEMENT_NETWORKCLASS_ALIASED(WeaponHL2Pistol, DT_WeaponHL2Pistol)
+
+BEGIN_NETWORK_TABLE(CSharedWeaponHL2Shotgun, DT_WeaponHL2Shotgun)
+END_NETWORK_TABLE()
+
+IMPLEMENT_NETWORKCLASS_ALIASED(WeaponHL2Shotgun, DT_WeaponHL2Shotgun)
+
+BEGIN_NETWORK_TABLE(CSharedWeaponHL2Smg, DT_WeaponHL2Smg)
+END_NETWORK_TABLE()
+
+IMPLEMENT_NETWORKCLASS_ALIASED(WeaponHL2Smg, DT_WeaponHL2Smg)
+
+BEGIN_PREDICTION_DATA( C_WeaponHL2Pistol )
+END_PREDICTION_DATA()
+
+BEGIN_PREDICTION_DATA( C_WeaponHL2Shotgun )
+END_PREDICTION_DATA()
+
+BEGIN_PREDICTION_DATA( C_WeaponHL2Smg )
+END_PREDICTION_DATA()

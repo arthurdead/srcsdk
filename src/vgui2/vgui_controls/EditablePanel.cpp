@@ -43,6 +43,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_VGUIRESOURCE, "VGUI Resource file" );
+
 extern IFileSystem *g_pFullFileSystem;
 
 using namespace vgui;
@@ -620,12 +622,10 @@ void EditablePanel::ActivateBuildMode()
 //-----------------------------------------------------------------------------
 void EditablePanel::LoadControlSettings(const char *resourceName, const char *pathID, KeyValues *pKeyValues, KeyValues *pConditions)
 {
-#if defined( DBGFLAG_ASSERT )
 	if ( !g_pFullFileSystem->FileExists( resourceName ) )
 	{
-		AssertMsg( g_pFullFileSystem->FileExists( resourceName ), "Resource file \"%s\" not found on disk!", resourceName );
+		Log_Error( LOG_VGUIRESOURCE, "Resource file \"%s\" not found on disk!", resourceName );
 	}
-#endif
 	_buildGroup->LoadControlSettings(resourceName, pathID, pKeyValues, pConditions);
 	ForceSubPanelsToUpdateWithNewDialogVariables();
 	InvalidateLayout();

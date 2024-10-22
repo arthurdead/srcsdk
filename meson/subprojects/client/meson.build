@@ -31,6 +31,7 @@ if build_client
 			join_paths(client_game_src_dir,'c_heist_player.cpp'),
 			join_paths(client_game_hud_src_dir,'hud_suspicion.cpp'),
 			join_paths(client_game_npcs_src_dir,'c_npc_humanoidbase.cpp'),
+			join_paths(client_game_src_dir,'heist_clientmode.cpp'),
 		),
 		include_directories: include_directories(
 			client_game_src_dir,
@@ -41,7 +42,7 @@ if build_client
 		dependencies: [
 			client_base.get_variable('client_base_dep'),
 			game_shared.get_variable('game_shared_dep'),
-			coplay.get_variable('coplay_dep')
+			#coplay.get_variable('coplay_dep')
 		],
 		install: true,
 		install_dir: join_paths(game_dir,'bin'),

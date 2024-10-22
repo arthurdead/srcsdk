@@ -19,6 +19,8 @@
 
 // #pragma optimize( "", off )
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_RESPONSERULES, "ResponseRules" );
+
 using namespace ResponseRules;
 static void CC_RR_Debug_ResponseConcept_Exclude( const CCommand &args );
 static ConCommand rr_debug_responseconcept_exclude( "rr_debugresponseconcept_exclude", CC_RR_Debug_ResponseConcept_Exclude, "Set a list of concepts to exclude from rr_debugresponseconcept. Separate multiple concepts with spaces. Call with no arguments to see current list. Call 'rr_debug_responseconcept_exclude !' to reset.");
@@ -1465,7 +1467,7 @@ void CResponseSystem::LoadFromBuffer( const char *scriptfile, const char *buffer
 
 	if( rr_dumpresponses.GetBool() )
 	{
-		DevMsg("Reading: %s\n", scriptfile );
+		Log_Msg(LOG_RESPONSERULES,"Reading: %s\n", scriptfile );
 	}
 
 	while ( 1 )
@@ -1482,7 +1484,7 @@ void CResponseSystem::LoadFromBuffer( const char *scriptfile, const char *buffer
 		{
 			int byteoffset = m_ScriptStack[ 0 ].currenttoken - (const char *)m_ScriptStack[ 0 ].buffer;
 
-			Error( "CResponseSystem::LoadFromBuffer:  Unknown entry type '%s', expecting 'response', 'criterion', 'enumeration' or 'rules' in file %s(offset:%i)\n", 
+			Log_Error( LOG_RESPONSERULES,"CResponseSystem::LoadFromBuffer:  Unknown entry type '%s', expecting 'response', 'criterion', 'enumeration' or 'rules' in file %s(offset:%i)\n", 
 				token, scriptfile, byteoffset );
 			break;
 		}
@@ -1492,7 +1494,7 @@ void CResponseSystem::LoadFromBuffer( const char *scriptfile, const char *buffer
 	{
 		char cur[ 256 ];
 		GetCurrentScript( cur, sizeof( cur ) );
-		DevMsg( 1, "CResponseSystem:  %s (%i rules, %i criteria, and %i responses)\n",
+		Log_Msg( LOG_RESPONSERULES, "CResponseSystem:  %s (%i rules, %i criteria, and %i responses)\n",
 			cur, m_RulePartitions.Count(), m_Criteria.Count(), m_Responses.Count() );
 
 		if( rr_dumpresponses.GetBool() )

@@ -55,11 +55,11 @@ public:
 	{
 	#ifdef _DEBUG
 		if(g_pCVar->FindCommandBase(pCommand->GetName()) != NULL) {
-			DevMsg("server dll tried to re-register con var/command named %s\n", pCommand->GetName());
+			Log_Warning(LOG_CONVAR,"server dll tried to re-register con var/command named %s\n", pCommand->GetName());
 		}
 
 		if(pCommand->IsFlagSet(FCVAR_CLIENTDLL))
-			DevMsg("server dll tried to register client con var/command named %s\n", pCommand->GetName());
+			Log_Warning(LOG_CONVAR,"server dll tried to register client con var/command named %s\n", pCommand->GetName());
 	#endif
 
 		// Remember "unlinked" default value for replicated cvars

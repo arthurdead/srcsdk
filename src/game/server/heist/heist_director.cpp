@@ -11,8 +11,17 @@ static CMissionDirector s_Director;
 CMissionDirector *MissionDirector()
 { return &s_Director; }
 
+CMissionDirector::CMissionDirector()
+{
+	m_AssaultStatus = ASSAULT_INVALID;
+	m_AssaultSpawned = 0;
+}
+
 void CMissionDirector::MakeMissionLoud()
 {
+	if(HeistGameRules()->m_nMissionState == MISSION_STATE_LOUD)
+		return;
+
 	HeistGameRules()->m_nMissionState = MISSION_STATE_LOUD;
 
 	//make all players heisters
@@ -55,6 +64,9 @@ void CMissionDirector::MakeMissionLoud()
 			ppNpcs[i]->GetEnemies()->UpdateMemory(pPlayer, pPlayer->GetAbsOrigin(), 0.0f, true);
 		}
 	}
+
+	m_AssaultStatus = ASSAULT_WAITING;
+	m_AssaultTimer.Start( 5.0f );
 }
 
 int CMissionDirector::GetMissionState() const
@@ -67,6 +79,9 @@ void CMissionDirector::mission_casing(const CCommand &args)
 	if(!UTIL_IsCommandIssuedByServerAdmin()) {
 		return;
 	}
+
+	if(HeistGameRules()->m_nMissionState == MISSION_STATE_CASING)
+		return;
 
 	CAI_BaseNPC **ppNpcs = g_AI_Manager.AccessAIs();
 
@@ -108,4 +123,49 @@ void CMissionDirector::mission_loud(const CCommand &args)
 void CMissionDirector::PlayerSpawned(CHeistPlayer *pPlayer)
 {
 	
+}
+
+void CMissionDirector::LevelInitPostEntity()
+{
+	m_AssaultID = 0;
+}
+
+void CMissionDirector::FrameUpdatePostEntityThink()
+{
+	if(HeistGameRules()->m_nMissionState != MISSION_STATE_LOUD)
+		return;
+
+	if(m_AssaultTimer.HasStarted() && m_AssaultTimer.IsElapsed()) {
+		if(m_AssaultStatus == ASSAULT_WAITING) {
+			m_AssaultStatus = ASSAULT_WAITING_ALL_TO_SPAWN;
+		} else if(m_AssaultStatus == ASSAULT_WAITING_ALL_TO_SPAWN) {
+			if(m_AssaultSpawned < 25) {
+				if(m_SpawnTimer.IsElapsed()) {
+					CAI_BaseNPC *pNPC = (CAI_BaseNPC *)CreateEntityByName( "npc_cop" );
+
+					CBaseEntity *pSpawnSpot = GameRules()->GetPlayerSpawnSpot( pNPC );
+					Assert( pSpawnSpot );
+					if ( pSpawnSpot != NULL )
+					{
+						pNPC->SetLocalOrigin( pSpawnSpot->GetAbsOrigin() + Vector(0,0,1) );
+						pNPC->SetAbsVelocity( vec3_origin );
+						pNPC->SetLocalAngles( pSpawnSpot->GetLocalAngles() );
+					}
+
+					DispatchSpawn( pNPC );
+
+					m_SpawnTimer.Start( 1.0f );
+
+					++m_AssaultSpawned;
+				}
+			} else {
+				m_AssaultStatus = ASSAULT_WAITING_ALL_TO_DIE;
+			}
+		} else if(m_AssaultStatus == ASSAULT_WAITING_ALL_TO_DIE) {
+			if(g_AI_Manager.NumAIs() == 0) {
+				m_AssaultStatus = ASSAULT_WAITING;
+				m_AssaultTimer.Start( 5.0f );
+			}
+		}
+	}
 }

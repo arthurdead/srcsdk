@@ -22,6 +22,8 @@
 #include "tier0/memdbgon.h"
 #include "common/module_name.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_CONVAR, "ConVar" );
+
 //-----------------------------------------------------------------------------
 // Statically constructed list of ConCommandBases, 
 // used for registering them with the ICVar interface
@@ -44,7 +46,7 @@ bool CDefaultAccessor::RegisterConCommandBase( ConCommandBase *pVar )
 #ifdef _DEBUG
 	ConCommandBase *pOldVar = g_pCVar->FindCommandBase(pVar->GetName());
 	if(pOldVar != NULL && (!pOldVar->IsFlagSet(FCVAR_REPLICATED) || !pVar->IsFlagSet(FCVAR_REPLICATED))) {
-		DevMsg("%s dll tried to re-register con var/command named %s\n", modulename::dll, pVar->GetName());
+		Log_Warning(LOG_CONVAR,"%s dll tried to re-register con var/command named %s\n", modulename::dll, pVar->GetName());
 	}
 #endif
 
@@ -90,7 +92,7 @@ void ConVar_Register( int nCVarFlag, IConCommandBaseAccessor *pAccessor )
 	Assert( s_nDLLIdentifier < 0 );
 	s_nDLLIdentifier = g_pCVar->AllocateDLLIdentifier();
 #ifdef _DEBUG
-	Msg("%s got dll identifier %i\n", modulename::dll, s_nDLLIdentifier);
+	Log_Msg(LOG_CONVAR,"%s got dll identifier %i\n", modulename::dll, s_nDLLIdentifier);
 #endif
 
 	ConCommandBase *pCur, *pNext;
@@ -1430,12 +1432,12 @@ void ConVarRef::Init( const char *pName, bool bIgnoreMissing )
 		{
 			if ( !bIgnoreMissing )
 			{
-				Warning( "ConVarRef %s doesn't point to an existing ConVar\n", pName );
+				Log_Warning( LOG_CONVAR,"ConVarRef %s doesn't point to an existing ConVar\n", pName );
 			}
 			bFirst = false;
 		}
 	#else
-		Warning( "ConVarRef %s doesn't point to an existing ConVar\n", pName );
+		Log_Warning( LOG_CONVAR,"ConVarRef %s doesn't point to an existing ConVar\n", pName );
 	#endif
 	}
 }
@@ -1464,61 +1466,61 @@ void ConVar_PrintFlags( const ConCommandBase *var )
 	bool any = false;
 	if ( var->IsFlagSet( FCVAR_GAMEDLL ) )
 	{
-		ConMsg( " game" );
+		Log_Msg( LOG_CONVAR," game" );
 		any = true;
 	}
 
 	if ( var->IsFlagSet( FCVAR_CLIENTDLL ) )
 	{
-		ConMsg( " client" );
+		Log_Msg( LOG_CONVAR, " client" );
 		any = true;
 	}
 
 	if ( var->IsFlagSet( FCVAR_ARCHIVE ) )
 	{
-		ConMsg( " archive" );
+		Log_Msg( LOG_CONVAR, " archive" );
 		any = true;
 	}
 
 	if ( var->IsFlagSet( FCVAR_NOTIFY ) )
 	{
-		ConMsg( " notify" );
+		Log_Msg( LOG_CONVAR, " notify" );
 		any = true;
 	}
 
 	if ( var->IsFlagSet( FCVAR_NOT_CONNECTED ) )
 	{
-		ConMsg( " notconnected" );
+		Log_Msg( LOG_CONVAR, " notconnected" );
 		any = true;
 	}
 
 	if ( var->IsFlagSet( FCVAR_CHEAT ) )
 	{
-		ConMsg( " cheat" );
+		Log_Msg( LOG_CONVAR, " cheat" );
 		any = true;
 	}
 
 	if ( var->IsFlagSet( FCVAR_REPLICATED ) )
 	{
-		ConMsg( " replicated" );
+		Log_Msg( LOG_CONVAR, " replicated" );
 		any = true;
 	}
 
 	if ( var->IsFlagSet( FCVAR_SERVER_CAN_EXECUTE ) )
 	{
-		ConMsg( " server_can_execute" );
+		Log_Msg( LOG_CONVAR, " server_can_execute" );
 		any = true;
 	}
 
 	if ( var->IsFlagSet( FCVAR_CLIENTCMD_CAN_EXECUTE ) )
 	{
-		ConMsg( " clientcmd_can_execute" );
+		Log_Msg( LOG_CONVAR, " clientcmd_can_execute" );
 		any = true;
 	}
 
 	if ( any )
 	{
-		ConMsg( "\n" );
+		Log_Msg( LOG_CONVAR, "\n" );
 	}
 }
 
@@ -1533,9 +1535,6 @@ void ConVar_PrintDescription( const ConCommandBase *pVar )
 	const char *pStr;
 
 	assert( pVar );
-
-	Color clr;
-	clr.SetColor( 255, 100, 100, 255 );
 
 	if ( !pVar->IsCommand() )
 	{
@@ -1571,29 +1570,29 @@ void ConVar_PrintDescription( const ConCommandBase *pVar )
 
 		if ( value )
 		{
-			ConColorMsg( clr, "\"%s\" = \"%s\"", var->GetName(), value );
+			Log_Msg( LOG_CONVAR, "\"%s\" = \"%s\"", var->GetName(), value );
 
 			if ( stricmp( value, var->GetDefault() ) )
 			{
-				ConMsg( " ( def. \"%s\" )", var->GetDefault() );
+				Log_Msg( LOG_CONVAR, " ( def. \"%s\" )", var->GetDefault() );
 			}
 		}
 
 		if ( bMin )
 		{
-			ConMsg( " min. %f", fMin );
+			Log_Msg( LOG_CONVAR, " min. %f", fMin );
 		}
 		if ( bMax )
 		{
-			ConMsg( " max. %f", fMax );
+			Log_Msg( LOG_CONVAR, " max. %f", fMax );
 		}
 
-		ConMsg( "\n" );
+		Log_Msg( LOG_CONVAR, "\n" );
 
 		// Handled virtualized cvars.
 		if ( pBounded && fabs( pBounded->GetFloat() - pBounded->GetBaseFloatValue() ) > 0.0001f )
 		{
-			ConColorMsg( clr, "** NOTE: The real value is %.3f but the server has temporarily restricted it to %.3f **\n",
+			Log_Warning( LOG_CONVAR, "** NOTE: The real value is %.3f but the server has temporarily restricted it to %.3f **\n",
 				pBounded->GetBaseFloatValue(), pBounded->GetFloat() );
 		}
 	}
@@ -1601,7 +1600,7 @@ void ConVar_PrintDescription( const ConCommandBase *pVar )
 	{
 		ConCommand *var = ( ConCommand * )pVar;
 
-		ConColorMsg( clr, "\"%s\"\n", var->GetName() );
+		Log_Msg( LOG_CONVAR, "\"%s\"\n", var->GetName() );
 	}
 
 	ConVar_PrintFlags( pVar );
@@ -1609,6 +1608,6 @@ void ConVar_PrintDescription( const ConCommandBase *pVar )
 	pStr = pVar->GetHelpText();
 	if ( pStr && pStr[0] )
 	{
-		ConMsg( " - %s\n", pStr );
+		Log_Msg( LOG_CONVAR, " - %s\n", pStr );
 	}
 }

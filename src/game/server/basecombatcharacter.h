@@ -233,7 +233,7 @@ public:
 	virtual bool		Weapon_EquipAmmoOnly( CBaseCombatWeapon *pWeapon );	// Adds weapon ammo to player, leaves weapon
 	bool				Weapon_Detach( CBaseCombatWeapon *pWeapon );		// Clear any pointers to the weapon.
 	virtual void		Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget = NULL, const Vector *pVelocity = NULL );
-	virtual	bool		Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = 0, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
+	virtual	int		Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
 	virtual	Vector		Weapon_ShootPosition( );		// gun position at current position/orientation
 	bool				Weapon_IsOnGround( CBaseCombatWeapon *pWeapon );
 	CBaseEntity*		Weapon_FindUsable( const Vector &range );			// search for a usable weapon in this range

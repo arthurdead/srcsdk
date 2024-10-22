@@ -61,7 +61,10 @@ void CClassMap::Add( const char *mapname, const char *classname, int size, DISPA
 {
 	const char *map = ClassnameToMapName( classname );
 
-	Assert( !map );
+	if(map)
+	{
+		Log_Warning(LOG_ENTITYFACTORY,"classname collision %s - %s | %s - %s\n", mapname, classname, map, classname);
+	}
 
 	if ( map && !Q_strcasecmp( mapname, map ) )
 		return;
@@ -130,7 +133,7 @@ C_BaseEntity *CClassMap::CreateEntity( const char *mapname )
 		if ( !lookup->factory )
 		{
 #if defined( _DEBUG )
-			Msg( "No factory for %s/%s\n", lookup->GetMapName(), m_ClassDict.GetElementName( i ) );
+			Log_Warning( LOG_ENTITYFACTORY,"No factory for %s/%s\n", lookup->GetMapName(), m_ClassDict.GetElementName( i ) );
 #endif
 			continue;
 		}
@@ -166,7 +169,8 @@ void DumpEntityFactories_f()
 	CClassMap &classMap = (CClassMap &)GetClassMap();
 	for ( int i = classMap.m_ClassDict.First(); i != classMap.m_ClassDict.InvalidIndex(); i = classMap.m_ClassDict.Next( i ) )
 	{
-		Msg( "%s\n", classMap.m_ClassDict.Element( i ).GetMapName() );
+		const classentry_t &entry = classMap.m_ClassDict.Element( i );
+		Log_Msg( LOG_ENTITYFACTORY,"%s - %s\n", entry.GetMapName(), classMap.m_ClassDict.GetElementName( i ) );
 	}
 }
 

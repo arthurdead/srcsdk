@@ -95,6 +95,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_SHADOWS, "Shadows" );
+
 extern ClientShadowHandle_t g_hFlashlightHandle[MAX_PLAYERS + 1];
 
 static ConVar r_flashlightdrawfrustum( "r_flashlightdrawfrustum", "0" );
@@ -1642,7 +1644,7 @@ void CClientShadowMgr::InitDepthTextureShadows()
 
 #ifdef _DEBUG
 	timer.End();
-	DevMsg("InitDepthTextureShadows took %.2f msec!\n", timer.GetDuration().GetMillisecondsF());
+	Log_Msg(LOG_SHADOWS,"InitDepthTextureShadows took %.2f msec!\n", timer.GetDuration().GetMillisecondsF());
 #endif
 }
 

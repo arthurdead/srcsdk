@@ -19,4 +19,11 @@ enum Disposition_t
 	D_NEUTRAL = D_NU,	// Neutral
 };
 
+enum
+{
+	WEAPON_SWITCH_FAILED,
+	WEAPON_SWITCH_HOLSTERED,
+	WEAPON_SWITCH_DEPLOYED,
+};
+
 #endif

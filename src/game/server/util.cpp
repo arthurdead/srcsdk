@@ -183,7 +183,7 @@ CBaseEntity *CEntityFactoryDictionary::Create( const char *pClassName )
 	IEntityFactory *pFactory = FindFactory( pClassName );
 	if ( !pFactory )
 	{
-		Warning("Attempted to create unknown entity type %s!\n", pClassName );
+		Log_Error(LOG_ENTITYFACTORY,"Attempted to create unknown entity type %s!\n", pClassName );
 		return NULL;
 	}
 #if defined(TRACK_ENTITY_MEMORY) && defined(USE_MEM_DEBUG)
@@ -208,7 +208,7 @@ void CEntityFactoryDictionary::Destroy( const char *pClassName, CBaseEntity *pNe
 	IEntityFactory *pFactory = FindFactory( pClassName );
 	if ( !pFactory )
 	{
-		Warning("Attempted to destroy unknown entity type %s!\n", pClassName );
+		Log_Error(LOG_ENTITYFACTORY,"Attempted to destroy unknown entity type %s!\n", pClassName );
 		return;
 	}
 
@@ -222,7 +222,7 @@ void CEntityFactoryDictionary::ReportEntitySizes()
 {
 	for ( int i = m_Factories.First(); i != m_Factories.InvalidIndex(); i = m_Factories.Next( i ) )
 	{
-		Msg( " %s: %llu", m_Factories.GetElementName( i ), (uint64)(m_Factories[i]->GetEntitySize()) );
+		Log_Msg( LOG_ENTITYFACTORY," %s: %llu", m_Factories.GetElementName( i ), (uint64)(m_Factories[i]->GetEntitySize()) );
 	}
 }
 
@@ -1503,7 +1503,7 @@ void UTIL_SetModel( CBaseEntity *pEntity, const char *pModelName )
 	int i = modelinfo->GetModelIndex( pModelName );
 	if ( i == -1 )	
 	{
-		Warning("%i/%s - %s:  UTIL_SetModel:  not precached: %s\n", pEntity->entindex(),
+		Log_Warning(LOG_MODEL,"%i/%s - %s:  UTIL_SetModel:  not precached: %s\n", pEntity->entindex(),
 			STRING( pEntity->GetEntityName() ),
 			pEntity->GetClassname(), pModelName);
 
@@ -1981,7 +1981,7 @@ void UTIL_PrecacheOther( const char *szClassname, const char *modelName )
 	CBaseEntity	*pEntity = CreateEntityByName( szClassname );
 	if ( !pEntity )
 	{
-		Warning( "NULL Ent in UTIL_PrecacheOther\n" );
+		Log_Warning( LOG_ENTITYFACTORY,"NULL Ent in UTIL_PrecacheOther\n" );
 		return;
 	}
 

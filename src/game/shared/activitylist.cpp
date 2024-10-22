@@ -17,6 +17,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef GAME_DLL
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_ACTIVITY, "Activity Server" );
+#else
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_ACTIVITY, "Activity Client" );
+#endif
+
 // NOTE: If CStringRegistry allowed storing arbitrary data, we could just use that.
 // in this case we have the "isPrivate" member and the replacement rules 
 // (activityIndex can be reused by private activities), so a custom table is necessary
@@ -126,7 +132,7 @@ bool ActivityList_RegisterSharedActivity( const char *pszActivityName, Activity 
 
 	if ( pList )
 	{
-		Warning( "***\nShared activity collision! %s<->%s\n***\n", pszActivityName, g_ActivityStrings.GetStringForKey( pList->stringKey ) );
+		Log_Warning( LOG_ACTIVITY,"***\nShared activity collision! %s<->%s\n***\n", pszActivityName, g_ActivityStrings.GetStringForKey( pList->stringKey ) );
 		Assert(0);
 		return false;
 	}
@@ -151,7 +157,7 @@ Activity ActivityList_RegisterPrivateActivity( const char *pszActivityName )
 		else
 		{
 			// this private activity collides with a shared activity. That is not allowed.
-			Warning( "***\nShared<->Private Activity collision!\n***\n" );
+			Log_Warning( LOG_ACTIVITY,"***\nShared<->Private Activity collision!\n***\n" );
 			Assert(0);
 			return ACT_INVALID;
 		}
@@ -288,6 +294,6 @@ CON_COMMAND(cl_dumpmodelactivites, "")
 #endif
 {
 	for(int i = 0; i < g_ActivityList.Count(); ++i) {
-		DevMsg("%s - %i %i\n", g_ActivityStrings.GetStringForKey(g_ActivityList[i].stringKey), g_ActivityList[i].activityIndex, g_ActivityList[i].isPrivate);
+		Log_Msg(LOG_ACTIVITY,"%s - %i %i\n", g_ActivityStrings.GetStringForKey(g_ActivityList[i].stringKey), g_ActivityList[i].activityIndex, g_ActivityList[i].isPrivate);
 	}
 }

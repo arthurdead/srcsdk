@@ -153,6 +153,9 @@ public:
 	virtual void	InfoPanelDisplayed() OVERRIDE { }
 	virtual bool	IsHTMLInfoPanelAllowed() OVERRIDE { return true; }
 
+	CBaseHudWeaponSelection *GetWeaponSelection()
+	{ return m_pWeaponSelection; }
+
 protected:
 	CBaseViewport			*m_pViewport;
 

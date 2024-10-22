@@ -841,11 +841,12 @@ void CSharedBasePlayer::Weapon_SetLast( CSharedBaseCombatWeapon *pWeapon )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-bool CSharedBasePlayer::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, int viewmodelindex /*=0*/, bool bDeploy ) 
+int CSharedBasePlayer::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, int viewmodelindex /*=VIEWMODEL_WEAPON*/, bool bDeploy ) 
 {
 	CSharedBaseCombatWeapon *pLastWeapon = GetActiveWeapon();
 
-	if ( BaseClass::Weapon_Switch( pWeapon, viewmodelindex, bDeploy ))
+	int res = BaseClass::Weapon_Switch( pWeapon, viewmodelindex, bDeploy );
+	if ( res != WEAPON_SWITCH_FAILED )
 	{
 		if ( pLastWeapon && Weapon_ShouldSetLast( pLastWeapon, GetActiveWeapon() ) )
 		{
@@ -854,12 +855,12 @@ bool CSharedBasePlayer::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, int vie
 
 		CSharedBaseViewModel *pViewModel = GetViewModel( viewmodelindex );
 		Assert( pViewModel );
-		if ( pViewModel )
+		if ( pViewModel && res == WEAPON_SWITCH_DEPLOYED )
 			pViewModel->RemoveEffects( EF_NODRAW );
 		ResetAutoaim( );
-		return true;
+		return res;
 	}
-	return false;
+	return WEAPON_SWITCH_FAILED;
 }
 
 void CSharedBasePlayer::SelectLastItem(void)

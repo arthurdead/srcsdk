@@ -20,10 +20,11 @@ public:
 
 	Class_T Classify() override;
 
-	void EquipSuit(bool bPlayEffects = true) override;
-	void RemoveSuit() override;
-
 	void PostThink() override;
+
+	void SelectItem( const char *pstr, int iSubType ) override;
+
+	void EquipMask();
 
 private:
 

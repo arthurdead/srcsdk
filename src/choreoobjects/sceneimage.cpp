@@ -18,7 +18,8 @@
 #include "tier1/UtlSortVector.h"
 
 #include "scriplib.h"
-#include "cmdlib.h"
+//#include "cmdlib.h"
+#include "filesystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

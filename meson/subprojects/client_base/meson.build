@@ -26,7 +26,7 @@ client_base_dep = declare_dependency(
 		'-DCLIENT_DLL',
 	],
 	sources: files(
-		join_paths(client_src_dir,'default','clientmode_default.cpp'),
+		#join_paths(client_src_dir,'default','clientmode_default.cpp'),
 		join_paths(client_src_dir,'default','prediction_default.cpp'),
 		join_paths(client_src_dir,'default','input_default.cpp'),
 		join_paths(client_src_dir,'default','viewrender_default.cpp'),

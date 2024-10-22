@@ -12,6 +12,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_LIGHTS, "Lights Server" );
+
 static const char *g_DefaultLightstyles[] =
 {
 	// 0 normal
@@ -387,7 +389,7 @@ bool CEnvLight::KeyValue( const char *szKeyName, const char *szValue )
 		}
 
 		m_vecLight = ConvertLightmapGammaToLinear( iParsed );
-		Msg( "Parsed light_environment light: %i %i %i %i\n",
+		Log_Msg( LOG_LIGHTS,"Parsed light_environment light: %i %i %i %i\n",
 			 iParsed[0], iParsed[1], iParsed[2], iParsed[3] );
 	}
 	else if ( FStrEq( szKeyName, "_ambient" ) || FStrEq( szKeyName, "_ambientHDR" ) )
@@ -410,7 +412,7 @@ bool CEnvLight::KeyValue( const char *szKeyName, const char *szValue )
 		}
 
 		m_vecAmbient = ConvertLightmapGammaToLinear( iParsed );
-		Msg( "Parsed light_environment ambient: %i %i %i %i\n",
+		Log_Msg( LOG_LIGHTS,"Parsed light_environment ambient: %i %i %i %i\n",
 			 iParsed[0], iParsed[1], iParsed[2], iParsed[3] );
 	}
 	else

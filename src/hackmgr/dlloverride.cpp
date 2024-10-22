@@ -1,3 +1,4 @@
+#include "dlloverride_internal.h"
 #include "hackmgr/hackmgr.h"
 #include "hackmgr_internal.h"
 #include "commandline.h"
@@ -385,6 +386,10 @@ if(!pFileSystem || status != IFACE_OK) {
 
 char gamebin_path[MAX_PATH];
 pFileSystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+char *comma = V_strstr(gamebin_path,";");
+if(comma) {
+	*comma = '\0';
+}
 V_StripTrailingSlash(gamebin_path);
 int gamebin_len = V_strlen(gamebin_path);
 

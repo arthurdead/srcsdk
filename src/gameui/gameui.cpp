@@ -125,6 +125,8 @@ void CGameUI::Initialize( CreateInterfaceFn appFactory )
 	vgui::VGui_InitInterfacesList( "GameUI", &appFactory, 1 );
 	vgui::VGui_InitMatSysInterfacesList( "GameUI", &appFactory, 1 );
 
+	g_pVGuiLocalize->AddFile( "Resource/vgui_%language%.txt", "MOD", false );
+	g_pVGuiLocalize->AddFile( "Resource/platform_%language%.txt", "MOD", false );
 	g_pVGuiLocalize->AddFile( "Resource/gameui_%language%.txt", "MOD", false );
 	g_pVGuiLocalize->AddFile( "Resource/valve_%language%.txt", "MOD", false );
 	g_pVGuiLocalize->AddFile( "Resource/deck_%language%.txt", "MOD", false );

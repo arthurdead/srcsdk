@@ -47,6 +47,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_VGUIPANEL, "VGUI Panel" );
+
 using namespace vgui;
 
 #define TRIPLE_PRESS_MSEC	300
@@ -292,7 +294,7 @@ public:
 	{
 		if ( !panel->GetName() || !panel->GetName()[ 0 ] )
 		{
-			Warning( "Can't add Keybindings Context for unnamed panels\n" );
+			Log_Warning( LOG_VGUIPANEL,"Can't add Keybindings Context for unnamed panels\n" );
 			return;
 		}
 
@@ -517,7 +519,7 @@ void Panel::SaveKeyBindingsToFile( KeyBindingContextHandle_t handle, char const 
 	if ( g_pFullFileSystem->FileExists( filename, pathID ) &&
 		!g_pFullFileSystem->IsFileWritable( filename, pathID ) )
 	{
-		Warning( "Panel::SaveKeyBindings '%s' is read-only!!!\n", filename );
+		Log_Warning( LOG_VGUIPANEL,"Panel::SaveKeyBindings '%s' is read-only!!!\n", filename );
 	}
 
 	FileHandle_t h = g_pFullFileSystem->Open( filename, "wb", pathID );
@@ -566,7 +568,7 @@ void Panel::LoadKeyBindingsForOnePanel( KeyBindingContextHandle_t handle, Panel 
 			KeyValues *subKey = kv->FindKey( panelName, false );
 			if ( !subKey )
 			{
-				Warning( "Panel::ReloadKeyBindings:  Can't find entry for panel '%s'\n", panelName );
+				Log_Warning( LOG_VGUIPANEL,"Panel::ReloadKeyBindings:  Can't find entry for panel '%s'\n", panelName );
 				continue;
 			}
 			
@@ -604,7 +606,7 @@ void Panel::ReloadKeyBindings( KeyBindingContextHandle_t handle )
 			KeyValues *subKey = kv->FindKey( panelName, false );
 			if ( !subKey )
 			{
-				Warning( "Panel::ReloadKeyBindings:  Can't find entry for panel '%s'\n", panelName );
+				Log_Warning( LOG_VGUIPANEL,"Panel::ReloadKeyBindings:  Can't find entry for panel '%s'\n", panelName );
 				continue;
 			}
 			
@@ -2593,7 +2595,7 @@ bool Panel::ParseKeyBindings( KeyValues *kv )
 		}
 		else
 		{
-			Warning( "KeyBinding for panel '%s' contained unknown binding '%s'\n", GetName() ? GetName() : "???", bindingName );
+			Log_Warning( LOG_VGUIPANEL,"KeyBinding for panel '%s' contained unknown binding '%s'\n", GetName() ? GetName() : "???", bindingName );
 		}
 	}
 
@@ -2618,7 +2620,7 @@ bool Panel::ParseKeyBindings( KeyValues *kv )
 					KeyBindingMap_t *alreadyBound = LookupBindingByKeyCode( (KeyCode)defaultKey->keycode, defaultKey->modifiers );
 					if ( alreadyBound )
 					{
-						Warning( "No binding for '%s', defautl key already bound to '%s'\n", binding->bindingname, alreadyBound->bindingname );
+						Log_Warning( LOG_VGUIPANEL,"No binding for '%s', defautl key already bound to '%s'\n", binding->bindingname, alreadyBound->bindingname );
 					}
 					else
 					{
@@ -4069,7 +4071,7 @@ void Panel::ApplyAutoResizeSettings(KeyValues *inResourceData)
 			if ( GetParent() != lastWarningParent )
 			{
 				lastWarningParent = GetParent();
-				Warning( "Resize parent (panel(%s) -> parent(%s)) not sized yet!!!\n", GetName(), GetParent()->GetName() );
+				Log_Warning( LOG_VGUIPANEL, "Resize parent (panel(%s) -> parent(%s)) not sized yet!!!\n", GetName(), GetParent()->GetName() );
 			}
 		}
 #endif
@@ -4165,7 +4167,7 @@ int Panel::ComputeWide( KeyValues *inResourceData, int nParentWide, int nParentT
 				wstr++;
 				if ( bComputingOther )
 				{
-					Warning( "Wide and Tall of panel %s are set to be each other!\n", GetName() );
+					Log_Warning( LOG_VGUIPANEL, "Wide and Tall of panel %s are set to be each other!\n", GetName() );
 					return 0;
 				}
 
@@ -4239,7 +4241,7 @@ int Panel::ComputeTall( KeyValues *inResourceData, int nParentWide, int nParentT
 				tstr++;
 				if ( bComputingOther )
 				{
-					Warning( "Wide and Tall of panel %s are set to be each other!\n", GetName() );
+					Log_Warning( LOG_VGUIPANEL, "Wide and Tall of panel %s are set to be each other!\n", GetName() );
 					return 0;
 				}
 

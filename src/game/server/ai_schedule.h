@@ -11,14 +11,15 @@
 // $NoKeywords: $
 //=============================================================================//
 
-#include "bitstring.h"
-
 #ifndef AI_SCHEDULE_H
 #define AI_SCHEDULE_H
 #pragma once
 
 #include "ai_npcstate.h"
 #include "ai_condition.h"
+#include "bitstring.h"
+
+DECLARE_LOGGING_CHANNEL( LOG_SCHEDULE );
 
 class	CStringRegistry;
 class   CAI_ClassScheduleIdSpace;

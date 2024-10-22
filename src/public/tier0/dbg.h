@@ -18,10 +18,12 @@
 #include "icommandline.h"
 #include "consoleio.h"
 #include "logging.h"
+#include "hackmgr/hackmgr.h"
 
 #define printf USE_THE_LOGGING_SYSTEM
 
 class Color;
+class CValidator;
 
 //-----------------------------------------------------------------------------
 // dll export stuff
@@ -158,7 +160,14 @@ DBG_INTERFACE bool ShouldUseNewAssertDialog();
 DBG_INTERFACE bool SetupConsoleIO();
 
 // Returns true if they want to break in the debugger.
+
+//this is broken on my PC idk why
+#ifndef __linux__
 DBG_INTERFACE bool DoNewAssertDialog( const tchar *pFile, int line, const tchar *pExpression );
+#else
+HACKMGR_API bool HackMgr_DoNewAssertDialog( const tchar *pFile, int line, const tchar *pExpression );
+#define DoNewAssertDialog HackMgr_DoNewAssertDialog
+#endif
 
 // Allows the assert dialogs to be turned off from code
 DBG_INTERFACE bool AreAllAssertsDisabled();
@@ -170,7 +179,7 @@ DBG_INTERFACE void SetAssertFailedNotifyFunc( AssertFailedNotifyFunc_t func );
 DBG_INTERFACE void CallAssertFailedNotifyFunc( const char *pchFile, int nLine, const char *pchMessage );
 
 /* True if -hushasserts was passed on command line. */
-DBG_INTERFACE SELECTANY bool HushAsserts();
+DBG_INTERFACE bool HushAsserts();
 
 #if defined( USE_SDL )
 struct SDL_Window;
@@ -352,7 +361,7 @@ DBG_INTERFACE SDL_Window * GetAssertDialogParent();
 // #pragma MESSAGE("Some message")
 #define MESSAGE(msg) message(__FILE__ "(" V_STRINGIFY(__LINE__) "): " msg)
 
-DECLARE_DLL_LOGGING_CHANNEL( LOG_TIER0 );
+DECLARE_LOGGING_CHANNEL( LOG_TIER0 );
 
 //////////////////////////////////////////////////////////////////////////
 // Legacy Logging System
@@ -361,20 +370,67 @@ DECLARE_DLL_LOGGING_CHANNEL( LOG_TIER0 );
 // Channels which map the legacy logging system to the new system.
 
 // Channel for all default Msg/Warning/Error commands.
-DECLARE_DLL_LOGGING_CHANNEL( LOG_GENERAL );
+DECLARE_LOGGING_CHANNEL( LOG_GENERAL );
 // Channel for all asserts.
-DECLARE_DLL_LOGGING_CHANNEL( LOG_ASSERT );
+DECLARE_LOGGING_CHANNEL( LOG_ASSERT );
 // Channel for all ConMsg and ConColorMsg commands.
-DECLARE_DLL_LOGGING_CHANNEL( LOG_CONSOLE );
+DECLARE_LOGGING_CHANNEL( LOG_CONSOLE );
 // Channel for all DevMsg and DevWarning commands with level < 2.
-DECLARE_DLL_LOGGING_CHANNEL( LOG_DEVELOPER );
+DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER );
 // Channel for ConDMsg commands.
-DECLARE_DLL_LOGGING_CHANNEL( LOG_DEVELOPER_CONSOLE );
+DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER_CONSOLE );
 // Channel for all DevMsg and DevWarning commands with level >= 2.
-DECLARE_DLL_LOGGING_CHANNEL( LOG_DEVELOPER_VERBOSE );
+DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER_VERBOSE );
 
-//TODO!!!!!! remove this
+//TODO!!!!! remove
+#define TIER0_ENABLE_LEGACY_DBG
+#ifdef TIER0_ENABLE_LEGACY_DBG
 #include "dbg_legacy.h"
+#else
+//use the logging system instead
+
+inline void Msg( PRINTF_FORMAT_STRING const tchar* pMsg, ... ) { DebuggerBreak(); }
+inline void DMsg( const tchar *pGroupName, int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void MsgV( PRINTF_FORMAT_STRING const tchar *pMsg, va_list arglist ) { DebuggerBreak(); }
+
+inline void Warning( PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void DWarning( const tchar *pGroupName, int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void WarningV( PRINTF_FORMAT_STRING const tchar *pMsg, va_list arglist ) { DebuggerBreak(); }
+
+inline void Log( PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void DLog( const tchar *pGroupName, int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void LogV( PRINTF_FORMAT_STRING const tchar *pMsg, va_list arglist ) { DebuggerBreak(); }
+
+inline void Error( PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void ErrorV( PRINTF_FORMAT_STRING const tchar *pMsg, va_list arglist ) { DebuggerBreak(); }
+
+inline void DevMsg( int level, PRINTF_FORMAT_STRING const tchar* pMsg, ... ) { DebuggerBreak(); }
+inline void DevWarning( int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void DevLog( int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+
+inline void DevMsg( PRINTF_FORMAT_STRING const tchar* pMsg, ... ) { DebuggerBreak(); }
+inline void DevWarning( PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void DevLog( PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+
+inline void ConColorMsg( int level, const Color& clr, PRINTF_FORMAT_STRING const tchar* pMsg, ... ) { DebuggerBreak(); }
+inline void ConMsg( int level, PRINTF_FORMAT_STRING const tchar* pMsg, ... ) { DebuggerBreak(); }
+inline void ConWarning( int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void ConLog( int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+
+inline void ConColorMsg( const Color& clr, PRINTF_FORMAT_STRING const tchar* pMsg, ... ) { DebuggerBreak(); }
+inline void ConMsg( PRINTF_FORMAT_STRING const tchar* pMsg, ... ) { DebuggerBreak(); }
+inline void ConWarning( PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void ConLog( PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+
+inline void ConDColorMsg( const Color& clr, PRINTF_FORMAT_STRING const tchar* pMsg, ... ) { DebuggerBreak(); }
+inline void ConDMsg( PRINTF_FORMAT_STRING const tchar* pMsg, ... ) { DebuggerBreak(); }
+inline void ConDWarning( PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void ConDLog( PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+
+inline void NetMsg( int level, PRINTF_FORMAT_STRING const tchar* pMsg, ... ) { DebuggerBreak(); }
+inline void NetWarning( int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+inline void NetLog( int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) { DebuggerBreak(); }
+#endif
 
 DBG_INTERFACE void COM_TimestampedLog( PRINTF_FORMAT_STRING char const *fmt, ... ) FMTFUNCTION( 1, 2 );
 

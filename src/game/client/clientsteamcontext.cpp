@@ -5,6 +5,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_STEAM, "Steam" );
+
+
 static CClientSteamContext g_ClientSteamContext;
 CClientSteamContext  &ClientSteamContext()
 {
@@ -15,12 +18,10 @@ CSteamAPIContext *steamapicontext = &g_ClientSteamContext;
 
 //-----------------------------------------------------------------------------
 CClientSteamContext::CClientSteamContext() 
-#if !defined(NO_STEAM)
 :
 	m_CallbackSteamServersDisconnected( this, &CClientSteamContext::OnSteamServersDisconnected ),
 	m_CallbackSteamServerConnectFailure( this, &CClientSteamContext::OnSteamServerConnectFailure ),
 	m_CallbackSteamServersConnected( this, &CClientSteamContext::OnSteamServersConnected )
-#endif
 {
 	m_bActive = false;
 	m_bLoggedOn = false;
@@ -45,9 +46,8 @@ void CClientSteamContext::Shutdown()
 
 	m_bActive = false;
 	m_bLoggedOn = false;
-#if !defined( NO_STEAM )
+
 	Clear(); // Steam API context shutdown
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -60,14 +60,12 @@ void CClientSteamContext::Activate()
 
 	m_bActive = true;
 
-#if !defined( NO_STEAM )
 	SteamAPI_InitSafe(); // ignore failure, that will fall out later when they don't get a valid logon cookie
 	SteamAPI_SetTryCatchCallbacks( false ); // We don't use exceptions, so tell steam not to use try/catch in callback handlers
 	Init(); // Steam API context init
 	
 	UpdateLoggedOnState();
-	Msg( "CClientSteamContext logged on = %d\n", m_bLoggedOn );
-#endif
+	Log_Msg( LOG_STEAM,"CClientSteamContext logged on = %d\n", m_bLoggedOn );
 }
 
 void CClientSteamContext::UpdateLoggedOnState()
@@ -93,25 +91,23 @@ void CClientSteamContext::UpdateLoggedOnState()
 	}
 }
 
-#if !defined(NO_STEAM)
 void CClientSteamContext::OnSteamServersDisconnected( SteamServersDisconnected_t *pDisconnected )
 {
 	UpdateLoggedOnState();
-	Msg( "CClientSteamContext OnSteamServersDisconnected logged on = %d\n", m_bLoggedOn );
+	Log_Msg( LOG_STEAM, "CClientSteamContext OnSteamServersDisconnected logged on = %d\n", m_bLoggedOn );
 }
 
 void CClientSteamContext::OnSteamServerConnectFailure( SteamServerConnectFailure_t *pConnectFailure )
 {
 	UpdateLoggedOnState();
-	Msg( "CClientSteamContext OnSteamServerConnectFailure logged on = %d\n", m_bLoggedOn );
+	Log_Msg( LOG_STEAM, "CClientSteamContext OnSteamServerConnectFailure logged on = %d\n", m_bLoggedOn );
 }
 
 void CClientSteamContext::OnSteamServersConnected( SteamServersConnected_t *pConnected )
 {
 	UpdateLoggedOnState();
-	Msg( "CClientSteamContext OnSteamServersConnected logged on = %d\n", m_bLoggedOn );
+	Log_Msg( LOG_STEAM, "CClientSteamContext OnSteamServersConnected logged on = %d\n", m_bLoggedOn );
 }
-#endif // !defined(NO_STEAM)
 
 void CClientSteamContext::InstallCallback( CUtlDelegate< void ( const SteamLoggedOnChange_t & ) > delegate )
 {

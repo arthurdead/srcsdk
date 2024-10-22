@@ -12,6 +12,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef GAME_DLL
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_ANIMEVENT, "AnimEvent Server" );
+#else
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_ANIMEVENT, "AnimEvent Client" );
+#endif
+
 // NOTE: If CStringRegistry allowed storing arbitrary data, we could just use that.
 // in this case we have the "isPrivate" member and the replacement rules 
 // (eventIndex can be reused by private activities), so a custom table is necessary
@@ -133,7 +139,7 @@ bool EventList_RegisterSharedEvent( const char *pszEventName, Animevent iEventIn
 	//Already in list.
 	if ( pList )
 	{
-		Warning( "***\nShared event collision! %s<->%s\n***\n", pszEventName, g_EventStrings.GetStringForKey( pList->stringKey ) );
+		Log_Warning( LOG_ANIMEVENT,"***\nShared event collision! %s<->%s\n***\n", pszEventName, g_EventStrings.GetStringForKey( pList->stringKey ) );
 		Assert(0);
 		return false;
 	}
@@ -157,7 +163,7 @@ Animevent EventList_RegisterPrivateEvent( const char *pszEventName )
 		else
 		{
 			// this private activity collides with a shared activity. That is not allowed.
-			Warning( "***\nShared<->Private Event collision!\n***\n" );
+			Log_Warning( LOG_ANIMEVENT, "***\nShared<->Private Event collision!\n***\n" );
 			Assert(0);
 			return AE_INVALID;
 		}
@@ -216,25 +222,25 @@ CON_COMMAND(cl_dumpmodelevents, "")
 #endif
 {
 	for(int i = 0; i < g_EventList.Count(); ++i) {
-		DevMsg("%s - %i ", g_EventStrings.GetStringForKey(g_EventList[i].stringKey), g_EventList[i].eventIndex);
+		Log_Msg(LOG_ANIMEVENT,"%s - %i ", g_EventStrings.GetStringForKey(g_EventList[i].stringKey), g_EventList[i].eventIndex);
 		if((g_EventList[i].iType & AE_TYPE_SERVER) != 0) {
-			DevMsg("AE_TYPE_SERVER|");
+			Log_Msg(LOG_ANIMEVENT,"AE_TYPE_SERVER|");
 		}
 		if((g_EventList[i].iType & AE_TYPE_SCRIPTED) != 0) {
-			DevMsg("AE_TYPE_SCRIPTED|");
+			Log_Msg(LOG_ANIMEVENT,"AE_TYPE_SCRIPTED|");
 		}
 		if((g_EventList[i].iType & AE_TYPE_SHARED) != 0) {
-			DevMsg("AE_TYPE_SHARED|");
+			Log_Msg(LOG_ANIMEVENT,"AE_TYPE_SHARED|");
 		}
 		if((g_EventList[i].iType & AE_TYPE_WEAPON) != 0) {
-			DevMsg("AE_TYPE_WEAPON|");
+			Log_Msg(LOG_ANIMEVENT,"AE_TYPE_WEAPON|");
 		}
 		if((g_EventList[i].iType & AE_TYPE_CLIENT) != 0) {
-			DevMsg("AE_TYPE_CLIENT|");
+			Log_Msg(LOG_ANIMEVENT,"AE_TYPE_CLIENT|");
 		}
 		if((g_EventList[i].iType & AE_TYPE_FACEPOSER) != 0) {
-			DevMsg("AE_TYPE_FACEPOSER|");
+			Log_Msg(LOG_ANIMEVENT,"AE_TYPE_FACEPOSER|");
 		}
-		DevMsg(" %i\n", g_EventList[i].isPrivate);
+		Log_Msg(LOG_ANIMEVENT," %i\n", g_EventList[i].isPrivate);
 	}
 }

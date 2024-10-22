@@ -4,6 +4,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+//TEMP while developing remove later
+LINK_ENTITY_TO_CLASS(npc_citizen, CNPC_Civilian);
+
 LINK_ENTITY_TO_CLASS(npc_civilian, CNPC_Civilian);
 
 static const char *g_pszCivilianModels[]{

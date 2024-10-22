@@ -88,7 +88,7 @@ bool CRecastMesh::Load( CUtlBuffer &fileBuffer, CMapMesh *pMapMesh )
 	fileBuffer.Get( &header, sizeof( header ) );
 	if( !fileBuffer.IsValid() )
 	{
-		Msg( "Failed to read mesh header.\n" );
+		Log_Error(LOG_RECAST, "Failed to read mesh header.\n" );
 		return false;
 	}
 
@@ -98,7 +98,7 @@ bool CRecastMesh::Load( CUtlBuffer &fileBuffer, CMapMesh *pMapMesh )
 
 	Init();
 
-	DevMsg( 2, "Loading mesh %s with cell size %f, cell height %f, tile size %f\n", 
+	Log_Msg( LOG_RECAST, "Loading mesh %s with cell size %f, cell height %f, tile size %f\n", 
 		GetName(), m_cellSize, m_cellHeight, m_tileSize );
 
 	m_navMesh = dtAllocNavMesh();
@@ -121,7 +121,7 @@ bool CRecastMesh::Load( CUtlBuffer &fileBuffer, CMapMesh *pMapMesh )
 	status = m_tileCache->init(&header.cacheParams, m_talloc, m_tcomp, m_tmproc);
 	if (dtStatusFailed(status))
 	{
-		Warning("Failed to init tile cache\n");
+		Log_Error(LOG_RECAST,"Failed to init tile cache\n");
 		return false;
 	}
 		
@@ -155,14 +155,14 @@ bool CRecastMesh::Load( CUtlBuffer &fileBuffer, CMapMesh *pMapMesh )
 	status = m_navQuery->init( m_navMesh, RECAST_NAVQUERY_MAX_NODES );
 	if( dtStatusFailed(status) )
 	{
-		Warning("Could not init Detour navmesh query\n");
+		Log_Error(LOG_RECAST,"Could not init Detour navmesh query\n");
 		return false;
 	}
 
 	status = m_navQueryLimitedNodes->init( m_navMesh, RECAST_NAVQUERY_LIMITED_NODES );
 	if (dtStatusFailed(status))
 	{
-		Warning("Could not init Detour navmesh query");
+		Log_Error(LOG_RECAST,"Could not init Detour navmesh query");
 		return false;
 	}
 
@@ -212,14 +212,14 @@ bool CRecastMgr::Load()
 	fileBuffer.Get( &header, sizeof( header ) );
 	if ( !fileBuffer.IsValid() || header.magic != NAVMESHSET_MAGIC )
 	{
-		Msg( "Invalid navigation file '%s'.\n", filename );
+		Log_Error(LOG_RECAST, "Invalid navigation file '%s'.\n", filename );
 		return false;
 	}
 
 	// read file version number
 	if ( !fileBuffer.IsValid() || header.version > NAVMESHSET_VERSION )
 	{
-		Msg( "Unknown navigation file version.\n" );
+		Log_Error(LOG_RECAST, "Unknown navigation file version.\n" );
 		return false;
 	}
 
@@ -227,7 +227,7 @@ bool CRecastMgr::Load()
 	char *bspFilename = RecastGetBspFilename( filename );
 	if ( bspFilename == NULL )
 	{
-		Msg( "CRecastMgr::Load: Could not get bsp file name\n" );
+		Log_Error(LOG_RECAST, "CRecastMgr::Load: Could not get bsp file name\n" );
 		return false;
 	}
 
@@ -238,12 +238,12 @@ bool CRecastMgr::Load()
 		if ( engine->IsDedicatedServer() )
 		{
 			// Warning doesn't print to the dedicated server console, so we'll use Msg instead
-			DevMsg( "The Navigation Mesh was built using a different version of this map.\n" );
+			Log_Warning( LOG_RECAST, "The Navigation Mesh was built using a different version of this map.\n" );
 		}
 		else
 #endif // CLIENT_DLL
 		{
-			DevWarning( "The Navigation Mesh was built using a different version of this map.\n" );
+			Log_Warning( LOG_RECAST,"The Navigation Mesh was built using a different version of this map.\n" );
 		}
 	}
 
@@ -257,7 +257,7 @@ bool CRecastMgr::Load()
 
 		if( lenName > 2048 )
 		{
-			Msg( "Mesh name too long. Invalid mesh file?\n" );
+			Log_Error( LOG_RECAST, "Mesh name too long. Invalid mesh file?\n" );
 			return false;
 		}
 
@@ -284,7 +284,7 @@ bool CRecastMgr::Load()
 	}
 	
 	m_bLoaded = true;
-	DevMsg( "CRecastMgr: Loaded %d nav meshes in %f seconds\n", numLoaded, Plat_FloatTime() - fStartTime );
+	Log_Msg( LOG_RECAST,"CRecastMgr: Loaded %d nav meshes in %f seconds\n", numLoaded, Plat_FloatTime() - fStartTime );
 
 	return true;
 }

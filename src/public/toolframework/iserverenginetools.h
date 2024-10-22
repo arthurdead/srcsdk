@@ -9,6 +9,7 @@
 #pragma once
 
 #include "interface.h"
+#include "hackmgr/hackmgr.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: exposed from engine to game .dll
@@ -41,6 +42,8 @@ public:
 	virtual void PreSetupVisibilityAllTools() = 0;
 
 	virtual bool InToolMode() = 0;
+
+	HACKMGR_CLASS_API void* QueryInterface( const char *pInterfaceName );
 };
 
 #define VSERVERENGINETOOLS_INTERFACE_VERSION "VSERVERENGINETOOLS001"

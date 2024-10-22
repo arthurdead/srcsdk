@@ -12,6 +12,7 @@
 #include <utlvector.h>
 #include <bitbuf.h>
 
+DECLARE_LOGGING_CHANNEL( LOG_USERMSG );
 
 // Client dispatch function for usermessages
 typedef void (*pfnUserMsgHook)(bf_read &msg);

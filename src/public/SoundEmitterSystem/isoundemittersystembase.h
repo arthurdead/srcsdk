@@ -16,6 +16,8 @@
 #include "appframework/IAppSystem.h"
 #include "hackmgr/hackmgr.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_SOUND );
+
 #define SOUNDEMITTERSYSTEM_INTERFACE_VERSION	"VSoundEmitter002"
 
 #define SOUNDGENDER_MACRO "$gender"

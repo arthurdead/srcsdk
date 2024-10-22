@@ -14,6 +14,8 @@
 #include "dt_common.h"
 #include "tier0/dbg.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_RECVPROP );
+
 #ifdef GNUC
 #undef offsetof
 #define offsetof(s,m)	__builtin_offsetof(s,m)

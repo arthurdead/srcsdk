@@ -12,6 +12,8 @@
 #include <KeyValues.h>
 #include "ai_activity.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_ACTIVITY );
+
 typedef struct activityentry_s activityentry_t;
 
 class CActivityRemap

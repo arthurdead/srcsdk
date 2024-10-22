@@ -471,7 +471,7 @@ bool CMapMesh::GenerateStaticPropData( void *fileContent, CUtlVector<float> &ver
 		CUtlBuffer staticPropData( (void *)((char *)fileContent + staticPropLumpHeader->fileofs), staticPropLumpHeader->filelen, CUtlBuffer::READ_ONLY );
 		int dictEntries = staticPropData.GetInt();
 		if( m_bLog )
-			Msg("Listening %d static prop dict entries\n", dictEntries);
+			Log_Msg(LOG_RECAST, "Listening %d static prop dict entries\n", dictEntries);
 		StaticPropDictLump_t staticPropDictLump;
 
 		CUtlVector<vcollide_t *> modelsVCollides;
@@ -481,7 +481,7 @@ bool CMapMesh::GenerateStaticPropData( void *fileContent, CUtlVector<float> &ver
 		{
 			staticPropData.Get( &staticPropDictLump, sizeof( staticPropDictLump ) );
 			if( m_bLog )
-				Msg("%d: %s\n", i, staticPropDictLump.m_Name);
+				Log_Msg(LOG_RECAST, "%d: %s\n", i, staticPropDictLump.m_Name);
 
 			vcollide_t *vcollide = LoadModelPhysCollide( staticPropDictLump.m_Name );
 			if( !vcollide )
@@ -496,7 +496,7 @@ bool CMapMesh::GenerateStaticPropData( void *fileContent, CUtlVector<float> &ver
 		int leafEntries = staticPropData.GetInt();
 		StaticPropLeafLump_t staticPropLeaf;
 		if( m_bLog )
-			Msg("Listening %d static prop leaf entries\n", leafEntries);
+			Log_Msg(LOG_RECAST, "Listening %d static prop leaf entries\n", leafEntries);
 		for( int i = 0; i < leafEntries; i++ )
 		{
 			staticPropData.Get( &staticPropLeaf, sizeof( staticPropLeaf ) );
@@ -579,11 +579,11 @@ bool CMapMesh::GenerateStaticPropData( void *fileContent, CUtlVector<float> &ver
 		}
 
 		if( m_bLog )
-			Msg("Listened %d static prop entries, of which %d have vphysics, and %d bbox\n", staticPropEntries, propsWithCollision, propsWithCollisionBB);
+			Log_Msg(LOG_RECAST, "Listened %d static prop entries, of which %d have vphysics, and %d bbox\n", staticPropEntries, propsWithCollision, propsWithCollisionBB);
 	}
 	else
 	{
-		Warning("CMapMesh::GenerateStaticPropData: Could not find static prop lump!\n");
+		Log_Warning(LOG_RECAST, "CMapMesh::GenerateStaticPropData: Could not find static prop lump!\n");
 	}
 
 	return true;
@@ -781,7 +781,7 @@ bool CMapMesh::Load( bool bDynamicOnly )
 		if( m_bLog )
 		{
 			BSPHeader_t *header = (BSPHeader_t *)fileContent;
-			Msg( "Recast Load static map data for %s: %d verts and %d tris (bsp size: %d, version: %d)\n", filename, GetNumVerts(), GetNumTris(), length, header->version );
+			Log_Msg( LOG_RECAST, "Recast Load static map data for %s: %d verts and %d tris (bsp size: %d, version: %d)\n", filename, GetNumVerts(), GetNumTris(), length, header->version );
 		}
 	}
 
@@ -802,7 +802,7 @@ bool CMapMesh::Load( bool bDynamicOnly )
 #endif // _DEBUG
 
 	if( m_bLog )
-		Msg( "Recast Load static + dynamic map data: %d verts and %d tris\n", GetNumVerts(), GetNumTris() );
+		Log_Msg( LOG_RECAST, "Recast Load static + dynamic map data: %d verts and %d tris\n", GetNumVerts(), GetNumTris() );
 
 	if( recast_mapmesh_calc_normals.GetBool() )
 	{

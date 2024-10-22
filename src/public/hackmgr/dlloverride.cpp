@@ -17,6 +17,10 @@ void HackMgr_SwapVphysics( CreateInterfaceFn &physicsFactory, CreateInterfaceFn 
 {
 	char gamebin_path[MAX_PATH];
 	g_pFullFileSystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+	char *comma = V_strstr(gamebin_path,";");
+	if(comma) {
+		*comma = '\0';
+	}
 	V_AppendSlash(gamebin_path, ARRAYSIZE(gamebin_path));
 	int gamebin_length = V_strlen(gamebin_path);
 
@@ -76,6 +80,10 @@ void HackMgr_SwapVideoServices( CreateInterfaceFn appFactory, CSysModule *&video
 {
 	char gamebin_path[MAX_PATH];
 	g_pFullFileSystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+	char *comma = V_strstr(gamebin_path,";");
+	if(comma) {
+		*comma = '\0';
+	}
 	V_AppendSlash(gamebin_path, ARRAYSIZE(gamebin_path));
 	int gamebin_length = V_strlen(gamebin_path);
 

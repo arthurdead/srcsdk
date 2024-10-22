@@ -47,13 +47,13 @@ public:
 		switch( category )
 		{
 		case RC_LOG_PROGRESS:
-			Msg( "%s\n", msg );
+			Log_Msg( LOG_RECAST, "%s\n", msg );
 			break;
 		case RC_LOG_WARNING:
-			Warning( "%s\n", msg );
+			Log_Warning( LOG_RECAST, "%s\n", msg );
 			break;
 		case RC_LOG_ERROR:
-			Warning( "%s\n", msg );
+			Log_Error( LOG_RECAST, "%s\n", msg );
 			break;
 		}
 	}
@@ -295,7 +295,7 @@ bool CRecastMesh::RemoveUnreachablePoly( CMapMesh *pMapMesh )
 {
 	if( !pMapMesh->GetSampleOrigins().Count() )
 	{
-		Warning( "CRecastMesh: No sample points on the map, skipping removable of unreachable polygons\n" );
+		Log_Warning( LOG_RECAST, "CRecastMesh: No sample points on the map, skipping removable of unreachable polygons\n" );
 		return true;
 	}
 
@@ -332,7 +332,7 @@ bool CRecastMesh::RemoveUnreachablePoly( CMapMesh *pMapMesh )
 		}
 
 		if( !compTile ) {
-			Warning("Did not find matching compressed tile!\n");
+			Log_Warning(LOG_RECAST, "Did not find matching compressed tile!\n");
 			continue;
 		}
 
@@ -340,17 +340,17 @@ bool CRecastMesh::RemoveUnreachablePoly( CMapMesh *pMapMesh )
 		dtTileCacheLayer *pLayer = NULL;
 		status = dtDecompressTileCacheLayer( m_talloc, m_tcomp, compTile->data, compTile->dataSize, &pLayer );
 		if (dtStatusFailed(status)) {
-			Warning("Could not decompress tile! =>\n" );
+			Log_Warning(LOG_RECAST, "Could not decompress tile! =>\n" );
 			if( status & DT_FAILURE )
-				Warning("\tFailure status\n");
+				Log_Warning(LOG_RECAST,"\tFailure status\n");
 			if( status & DT_OUT_OF_MEMORY )
-				Warning("\tOut of memory status\n");
+				Log_Warning(LOG_RECAST,"\tOut of memory status\n");
 			if( status & DT_WRONG_MAGIC )
-				Warning("\tWrong magic status\n");
+				Log_Warning(LOG_RECAST,"\tWrong magic status\n");
 			if( status & DT_WRONG_VERSION )
-				Warning("\tWrong version status\n");
+				Log_Warning(LOG_RECAST,"\tWrong version status\n");
 			if( status & DT_INVALID_PARAM )
-				Warning("\tInvalid param status\n");
+				Log_Warning(LOG_RECAST, "\tInvalid param status\n");
 			continue;
 		}
 	
@@ -388,11 +388,11 @@ bool CRecastMesh::RemoveUnreachablePoly( CMapMesh *pMapMesh )
 			// Write back the updated tile with disabled areas
 			status = dtBuildTileCacheLayer( m_tcomp, pLayer->header, pLayer->heights, pLayer->areas, pLayer->cons, &compTile->data, &compTile->dataSize );
 			if (dtStatusFailed(status)) {
-				Warning("Could not rebuild compressed tile cache layer! =>\n" );
+				Log_Warning(LOG_RECAST,"Could not rebuild compressed tile cache layer! =>\n" );
 				if( status & DT_FAILURE )
-					Warning("\tFailure status\n");
+					Log_Warning(LOG_RECAST,"\tFailure status\n");
 				if( status & DT_OUT_OF_MEMORY )
-					Warning("\tOut of memory status\n");
+					Log_Warning(LOG_RECAST,"\tOut of memory status\n");
 			}
 
 			updatedTiles++;
@@ -401,7 +401,7 @@ bool CRecastMesh::RemoveUnreachablePoly( CMapMesh *pMapMesh )
 		dtFreeTileCacheLayer( m_talloc, pLayer );
 	}
 
-	Msg( "Removed %d tiles, Updated tiles: %d, total tiles: %d\n", removedTiles, updatedTiles, m_navMesh->getMaxTiles() );
+	Log_Msg( LOG_RECAST, "Removed %d tiles, Updated tiles: %d, total tiles: %d\n", removedTiles, updatedTiles, m_navMesh->getMaxTiles() );
 
 	return true;
 }
@@ -588,7 +588,7 @@ bool CRecastMesh::Build( CMapMesh *pMapMesh )
 
 	PostLoad();
 
-	DevMsg( "CRecastMesh: Generated navigation mesh %s in %f seconds\n", GetName(), Plat_FloatTime() - fStartTime );
+	Log_Msg( LOG_RECAST, "CRecastMesh: Generated navigation mesh %s in %f seconds\n", GetName(), Plat_FloatTime() - fStartTime );
 
 	return true;
 }
@@ -666,7 +666,7 @@ bool CRecastMesh::RebuildPartial( CMapMesh *pMapMesh, const Vector &vMins, const
 	}
 
 	if( recast_build_partial_debug.GetBool() )
-		DevMsg( "CRecastMesh: Generated partial mesh update %s in %f seconds\n", GetName(), Plat_FloatTime() - fStartTime );
+		Log_Msg( LOG_RECAST, "CRecastMesh: Generated partial mesh update %s in %f seconds\n", GetName(), Plat_FloatTime() - fStartTime );
 
 	return true;
 }
@@ -678,7 +678,7 @@ bool CRecastMgr::LoadMapMesh( MapMeshType_t type, bool bLog, bool bDynamicOnly, 
 {
 	if( bDynamicOnly && !m_pMapMeshes[type] )
 	{
-		Warning("CRecastMesh::LoadMapMesh: load dynamic specified, but no existing static map mesh data!\n");
+		Log_Warning(LOG_RECAST,"CRecastMesh::LoadMapMesh: load dynamic specified, but no existing static map mesh data!\n");
 		return false;
 	}
 
@@ -703,12 +703,12 @@ bool CRecastMgr::LoadMapMesh( MapMeshType_t type, bool bLog, bool bDynamicOnly, 
 	m_pMapMeshes[type]->SetBounds( vMinBounds, vMaxBounds );
 	if( !m_pMapMeshes[type]->Load( bDynamicOnly ) )
 	{
-		Warning("CRecastMesh::LoadMapMesh: failed to load map data!\n");
+		Log_Error(LOG_RECAST,"CRecastMesh::LoadMapMesh: failed to load map data!\n");
 		return false;
 	}
 
 	if( bLog )
-		DevMsg( "CRecastMgr: Loaded map mesh in %f seconds\n", Plat_FloatTime() - fStartTime );
+		Log_Msg( LOG_RECAST, "CRecastMgr: Loaded map mesh in %f seconds\n", Plat_FloatTime() - fStartTime );
 	return true;
 }
 
@@ -774,7 +774,7 @@ bool CRecastMgr::Build( bool loadMeshes )
 	for(int i = 0; i < RECAST_MAPMESH_NUM; ++i) {
 		if( !LoadMapMesh( (MapMeshType_t)i ) )
 		{
-			Warning("CRecastMesh::Build: failed to load map data!\n");
+			Log_Error(LOG_RECAST,"CRecastMesh::Build: failed to load map data!\n");
 			return false;
 		}
 	}
@@ -814,7 +814,7 @@ bool CRecastMgr::Build( bool loadMeshes )
 	}
 
 	m_bLoaded = true;
-	DevMsg( "CRecastMgr: Finished generating %d meshes in %f seconds\n", meshesToBuild.Count(), Plat_FloatTime() - fStartTime );
+	Log_Msg( LOG_RECAST, "CRecastMgr: Finished generating %d meshes in %f seconds\n", meshesToBuild.Count(), Plat_FloatTime() - fStartTime );
 	return true;
 }
 
@@ -850,14 +850,14 @@ void CRecastMgr::UpdateRebuildPartial()
 
 	if( recast_build_partial_debug.GetBool() && nMerges > 0 )
 	{
-		DevMsg( "CRecastMgr::UpdateRebuildPartial: Merged multiple updates (%d) into one\n", nMerges+1 );
+		Log_Msg( LOG_RECAST, "CRecastMgr::UpdateRebuildPartial: Merged multiple updates (%d) into one\n", nMerges+1 );
 	}
 
 	// Load map mesh
 	for(int i = 0; i < RECAST_MAPMESH_NUM; ++i) {
 		if( !LoadMapMesh( (MapMeshType_t)i, recast_build_partial_debug.GetBool(), true, curUpdate.vMins, curUpdate.vMaxs ) )
 		{
-			Warning( "CRecastMgr::UpdateRebuildPartial: failed to load map data!\n" );
+			Log_Error( LOG_RECAST, "CRecastMgr::UpdateRebuildPartial: failed to load map data!\n" );
 			return;
 		}
 	}
@@ -903,14 +903,14 @@ CON_COMMAND( recast_mesh_setcellsize, "" )
 	NavMeshType_t type = NAI_Hull::LookupId( args[1] );
 	if( type == RECAST_NAVMESH_INVALID )
 	{
-		Warning("recast_mesh_setcellsize: unknown name \"%s\"\n", args[1] );
+		Log_Warning(LOG_RECAST, "recast_mesh_setcellsize: unknown name \"%s\"\n", args[1] );
 		return;
 	}
 
 	CRecastMesh *pMesh = RecastMgr().GetMesh( type );
 	if( !pMesh )
 	{
-		Warning("recast_mesh_setcellsize: could not find mesh \"%s\"\n", args[1] );
+		Log_Warning(LOG_RECAST, "recast_mesh_setcellsize: could not find mesh \"%s\"\n", args[1] );
 		return;
 	}
 	pMesh->SetCellSize( atof( args[2] ) );
@@ -926,14 +926,14 @@ CON_COMMAND( recast_mesh_setcellheight, "" )
 	NavMeshType_t type = NAI_Hull::LookupId( args[1] );
 	if( type == RECAST_NAVMESH_INVALID )
 	{
-		Warning("recast_mesh_setcellheight: unknown name \"%s\"\n", args[1] );
+		Log_Warning(LOG_RECAST, "recast_mesh_setcellheight: unknown name \"%s\"\n", args[1] );
 		return;
 	}
 
 	CRecastMesh *pMesh = RecastMgr().GetMesh( type );
 	if( !pMesh )
 	{
-		Warning("recast_mesh_setcellheight: could not find mesh \"%s\"\n", args[1] );
+		Log_Warning(LOG_RECAST, "recast_mesh_setcellheight: could not find mesh \"%s\"\n", args[1] );
 		return;
 	}
 
@@ -950,14 +950,14 @@ CON_COMMAND( recast_mesh_settilesize, "" )
 	NavMeshType_t type = NAI_Hull::LookupId( args[1] );
 	if( type == RECAST_NAVMESH_INVALID )
 	{
-		Warning("recast_mesh_settilesize: unknown name \"%s\"\n", args[1] );
+		Log_Warning(LOG_RECAST, "recast_mesh_settilesize: unknown name \"%s\"\n", args[1] );
 		return;
 	}
 
 	CRecastMesh *pMesh = RecastMgr().GetMesh( type );
 	if( !pMesh )
 	{
-		Warning("recast_mesh_settilesize: could not find mesh \"%s\"\n", args[1] );
+		Log_Warning(LOG_RECAST, "recast_mesh_settilesize: could not find mesh \"%s\"\n", args[1] );
 		return;
 	}
 

@@ -15,6 +15,8 @@
 #include "string_t.h"
 #include "sharedInterface.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_SQUAD );
+
 class CAI_BaseNPC;
 class CAI_Squad;
 class CBaseCombatCharacter;

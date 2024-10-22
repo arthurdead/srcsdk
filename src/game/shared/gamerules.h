@@ -10,18 +10,6 @@
 #pragma once
 
 #ifdef CLIENT_DLL
-class C_GameRules;
-typedef C_GameRules CSharedGameRules;
-class C_GameRulesProxy;
-typedef C_GameRulesProxy CSharedGameRulesProxy;
-#else
-class CGameRules;
-typedef CGameRules CSharedGameRules;
-class CGameRulesProxy;
-typedef CGameRulesProxy CSharedGameRulesProxy;
-#endif
-
-#ifdef CLIENT_DLL
 	#include "c_baseentity.h"
 #else
 	#include "baseentity.h"
@@ -35,6 +23,20 @@ typedef CGameRulesProxy CSharedGameRulesProxy;
 #include "dt_shared.h"
 
 //#include "items.h"
+
+DECLARE_LOGGING_CHANNEL( LOG_GAMERULES );
+
+#ifdef CLIENT_DLL
+class C_GameRules;
+typedef C_GameRules CSharedGameRules;
+class C_GameRulesProxy;
+typedef C_GameRulesProxy CSharedGameRulesProxy;
+#else
+class CGameRules;
+typedef CGameRules CSharedGameRules;
+class CGameRulesProxy;
+typedef CGameRulesProxy CSharedGameRulesProxy;
+#endif
 
 #ifdef GAME_DLL
 class CBaseCombatWeapon;
@@ -398,8 +400,8 @@ public:
 	virtual void PlayerThink( CBasePlayer *pPlayer ); // called by CBasePlayer::PreThink every frame, before physics are run and after keys are accepted
 	virtual bool FPlayerCanRespawn( CBasePlayer *pPlayer );// is this player allowed to respawn now?
 	virtual float FlPlayerSpawnTime( CBasePlayer *pPlayer );// When in the future will this player be able to spawn?
-	virtual CBaseEntity *GetPlayerSpawnSpot( CBasePlayer *pPlayer );// Place this player on their spawnspot and face them the proper direction.
-	virtual bool IsSpawnPointValid( CBaseEntity *pSpot, CBasePlayer *pPlayer );
+	virtual CBaseEntity *GetPlayerSpawnSpot( CBaseCombatCharacter *pPlayer );
+	virtual bool IsSpawnPointValid( CBaseEntity *pSpot, CBaseCombatCharacter *pPlayer );
 	virtual void ClientSpawned( edict_t * pPlayer ) { return; }
 
 	virtual bool AllowAutoTargetCrosshair( void );

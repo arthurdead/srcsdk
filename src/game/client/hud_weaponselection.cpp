@@ -1303,6 +1303,23 @@ C_BaseCombatWeapon *CHudWeaponSelection::GetWeaponInSlot( int iSlot, int iSlotPo
 	return NULL;
 }
 
+#ifdef STAGING_ONLY
+CON_COMMAND(cl_debug_weaponlist, "")
+{
+	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( !pPlayer )
+		return;
+
+	for(int i = 0; i < MAX_WEAPONS; ++i) {
+		C_BaseCombatWeapon *pWeapon = pPlayer->GetWeapon(i);
+		if(!pWeapon)
+			continue;
+
+		Msg("%i - %s, %s; %i, %i\n", i, pWeapon->GetClassname(), pWeapon->GetWeaponScriptName(), pWeapon->GetSlot(), pWeapon->GetPosition());
+	}
+}
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: Opens the next weapon in the slot
 //-----------------------------------------------------------------------------
@@ -1334,8 +1351,6 @@ void CHudWeaponSelection::FastWeaponSwitch( int iWeaponSlot )
 		// just look for any weapon in this slot
 		pNextWeapon = FindNextWeaponInWeaponSelection(iWeaponSlot, -1);
 	}
-
-	Msg("CHudWeaponSelection::FastWeaponSwitch %i %i %p\n", iPosition, iWeaponSlot, pNextWeapon);
 
 	// see if we found a weapon that's different from the current and in the selected slot
 	if ( pNextWeapon && pNextWeapon != pActiveWeapon && pNextWeapon->GetSlot() == iWeaponSlot )
@@ -1448,8 +1463,6 @@ void CHudWeaponSelection::SelectWeaponSlot( int iSlot )
 {
 	// iSlot is one higher than it should be, since it's the number key, not the 0-based index into the weapons
 	--iSlot;
-
-	Msg("CHudWeaponSelection::SelectSlot %i\n", iSlot);
 
 	// Get the local player.
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();

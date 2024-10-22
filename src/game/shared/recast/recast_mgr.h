@@ -17,6 +17,8 @@
 #include "tier1/utlbuffer.h"
 #include "tier1/convar.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_RECAST );
+
 #ifdef GAME_DLL
 class CBaseEntity;
 typedef CBaseEntity CSharedBaseEntity;

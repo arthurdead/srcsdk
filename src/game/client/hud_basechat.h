@@ -18,6 +18,8 @@
 #include <vgui_controls/Button.h>
 #include <vgui_controls/CheckButton.h>
 
+DECLARE_LOGGING_CHANNEL( LOG_CHAT );
+
 class CBaseHudChatInputLine;
 class CBaseHudChatEntry;
 class CHudChatFilterPanel;

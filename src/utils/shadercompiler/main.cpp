@@ -17,6 +17,8 @@
 #include <unordered_set>
 #include <charconv>
 #include <algorithm>
+#include <array>
+#include <utility>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -34,7 +36,7 @@ struct path_pair
 
 enum class shader_model : unsigned char
 {
-	ps2x,
+	ps20,
 	ps20b,
 	ps30,
 	vs20,
@@ -73,14 +75,15 @@ struct shader_pass
 
 	shader_pass(std::string &&name_, size_t low_, size_t high_, shader_pass_type type_);
 
+	size_t total() const
+	{ return ((high - low)+1); }
+
 	const std::string name;
 	const size_t low;
 	const size_t high;
 	const shader_pass_type type;
 	const size_t hash;
 };
-
-struct shader_combo;
 
 struct hash_shader_pass
 {
@@ -96,12 +99,8 @@ struct hash_shader_pass
 		return value;
 	}
 
-	static size_t hash(const shader_combo &combo);
-
 	size_t operator()(const shader_pass &pass) const
 	{ return pass.hash; }
-
-	size_t operator()(const shader_combo &combo) const;
 };
 
 shader_pass::shader_pass(std::string &&name_, size_t low_, size_t high_, shader_pass_type type_)
@@ -113,76 +112,47 @@ struct equal_shader_pass
 {
 	bool operator()(const shader_pass &rhs, const shader_pass &lhs) const
 	{ return rhs.hash == lhs.hash; }
-
-	bool operator()(const shader_combo &rhs, const shader_combo &lhs) const;
 };
 
-struct shader_combo
-{
-	shader_combo() = default;
-	shader_combo(const shader_combo &) = default;
-	shader_combo &operator=(const shader_combo &) = default;
-	shader_combo(shader_combo &&) = default;
-	shader_combo &operator=(shader_combo &&) = default;
-
-	void calculate();
-
-	std::unordered_set<shader_pass, hash_shader_pass, equal_shader_pass> passes;
-	size_t num_combos;
-	size_t hash;
-};
-
-size_t hash_shader_pass::hash(const shader_combo &combo)
-{
-	size_t value(0);
-
-	for(const auto &it : combo.passes) {
-		value ^= hash(it) + 0x9e3779b9 + (value<<6) + (value>>2);
-	}
-
-	return value;
-}
-
-size_t hash_shader_pass::operator()(const shader_combo &combo) const
-{ return combo.hash; }
-
-bool equal_shader_pass::operator()(const shader_combo &rhs, const shader_combo &lhs) const
-{ return rhs.hash == lhs.hash; }
-
-static std::unordered_set<shader_combo, hash_shader_pass, equal_shader_pass> combos;
-
-void shader_combo::calculate()
-{
-	hash = 0;
-	for(const auto &it : passes) {
-		hash ^= it.hash + 0x9e3779b9 + (hash<<6) + (hash>>2);
-	}
-
-	num_combos = 1;
-	for(const auto &it : passes) {
-		num_combos *= ((it.high - it.low)+1);
-	}
-
-	if(!combos.contains(*this)) {
-		combos.emplace(static_cast<const shader_combo &>(*this));
-	}
-}
+using shader_passes_t = std::unordered_set<shader_pass, hash_shader_pass, equal_shader_pass>;
 
 struct shader_source : path_pair
 {
 	shader_model model;
-	std::size_t output_index;
+	std::size_t output_dir_index;
+	path_pair obj_output;
+	path_pair inc_output;
 	std::vector<std::string> defines;
-	shader_combo combo;
+	shader_passes_t passes;
 };
 
-static void do_all_combos(const shader_source &shader, typename decltype(shader_combo::passes)::const_iterator skip_it)
+static void compile_shader(const shader_source &info, size_t combo_hash, const std::pair<char *, size_t> *extra_defines, std::size_t num_extra_defines);
+
+#define DEBUGBREAK __asm__ __volatile__ ("int $3");
+
+struct passes_totals
 {
-	std::cout << shader.combo.num_combos << '\n';
+	size_t overall;
+	size_t dynamic;
+	size_t static_;
+};
+
+#include "do_passes.h"
+
+static passes_totals do_all_passes(const shader_source &info)
+{
+	return do_passes(info.passes.size(), info.passes.cbegin(), info.passes,
+		[&info = std::as_const(info)]
+		(size_t num_passes, size_t combo_hash, size_t combo_index, const auto &its, const auto &values, const auto &defines) -> void {
+			compile_shader(info, combo_hash, defines.data(), std::size(defines));
+		}
+	);
 }
 
+static std::filesystem::path wine_path;
+
 static char winepath_buffer[PATH_MAX];
-std::filesystem::path get_windows_path(const std::filesystem::path &wine_path, const std::filesystem::path &path)
+std::filesystem::path get_windows_path(const std::filesystem::path &path)
 {
 	int stdout_pipes[2];
 	if(pipe(stdout_pipes) == -1) {
@@ -221,10 +191,10 @@ std::filesystem::path get_windows_path(const std::filesystem::path &wine_path, c
 	char *buffer_it(buffer_start);
 
 	int status;
-	while(waitpid(wine_pid, &status, WNOHANG) == 0) {
-		if(read(stdout_pipes[0], buffer_it, 1) == 1 && buffer_it < buffer_end) {
-			++buffer_it;
-		}
+	waitpid(wine_pid, &status, 0);
+
+	while(read(stdout_pipes[0], buffer_it, 1) == 1 && buffer_it < buffer_end) {
+		++buffer_it;
 	}
 
 	close(stdout_pipes[0]);
@@ -241,10 +211,9 @@ std::filesystem::path get_windows_path(const std::filesystem::path &wine_path, c
 	return std::filesystem::path(std::move(filename_str));
 }
 
-static std::vector<path_pair> outputs;
+static std::vector<path_pair> output_dirs;
 
 static std::filesystem::path fxc_path;
-static std::filesystem::path wine_path;
 
 static size_t higest_define_count(0);
 
@@ -256,6 +225,7 @@ static std::vector<shader_source> sources;
 static bool werror(false);
 static bool debug(false);
 static bool strict(false);
+static bool dry(false);
 
 static char opt_arg[]("/O?");
 static size_t opt_level(3);
@@ -263,9 +233,10 @@ static size_t opt_level(3);
 constexpr size_t fxc_argv_model_index(5);
 constexpr size_t fxc_argv_model_define_index(7);
 constexpr size_t fxc_argv_path_index(9);
+constexpr size_t fxc_argv_output_index(11);
 
 static const char **fxc_argv;
-static size_t fxc_argc(10);
+static size_t fxc_argc(12);
 static size_t fxc_argc_it(fxc_argc);
 
 static void setup_fxc_argv()
@@ -301,6 +272,7 @@ static void setup_fxc_argv()
 	fxc_argv[4] = "/T";
 	fxc_argv[6] = "/D";
 	fxc_argv[8] = "/Emain";
+	fxc_argv[10] = "/Fo";
 
 	for(const auto &it : defines) {
 		fxc_argv[fxc_argc_it++] = "/D";
@@ -325,23 +297,20 @@ static void setup_fxc_argv()
 		fxc_argv[fxc_argc_it++] = "/Ges";
 		fxc_argv[fxc_argc_it++] = "/Gis";
 	}
-
-	fxc_argv[fxc_argc_it++] = nullptr;
 }
 
-static void setup_fxc_argv_for_shader(const shader_source &info, size_t argc_it)
+static void setup_fxc_argv_for_shader(const shader_source &info, size_t &argc_it)
 {
 	for(const auto &it : info.defines) {
 		fxc_argv[argc_it++] = "/D";
 		fxc_argv[argc_it++] = it.c_str();
 	}
-
-	fxc_argv[argc_it++] = nullptr;
 }
 
 static char fxc_out_buffer[4096];
 static char fxc_err_buffer[4096];
-void compile_shader(const std::filesystem::path &wine_path, const std::filesystem::path &fxc_path, const shader_source &info)
+static char fxc_filename_buffer[PATH_MAX];
+static void compile_shader(const shader_source &info, size_t combo_hash, const std::pair<char *, size_t> *extra_defines, std::size_t num_extra_defines)
 {
 	int stdout_pipes[2];
 	if(pipe(stdout_pipes) == -1) {
@@ -375,19 +344,57 @@ void compile_shader(const std::filesystem::path &wine_path, const std::filesyste
 		fxc_argv[fxc_argv_model_define_index] = opt_model_define[static_cast<size_t>(info.model)];
 		fxc_argv[fxc_argv_path_index] = info.windows_path.c_str();
 
-		setup_fxc_argv_for_shader(info, fxc_argc_it);
+		std::filesystem::path output(info.obj_output.linux_path);
 
-		std::cout << "executing "sv;
-		for(size_t i(0); i < fxc_argc; ++i) {
-			std::cout << fxc_argv[i] << ' ';
+		std::filesystem::path filename_noext(output.filename());
+		filename_noext.replace_extension();
+
+		std::strncpy(fxc_filename_buffer, filename_noext.c_str(), filename_noext.native().length());
+		fxc_filename_buffer[filename_noext.native().length()] = '_';
+
+		char *num_begin(fxc_filename_buffer+filename_noext.native().length()+1);
+		char *num_end(fxc_filename_buffer+std::size(fxc_filename_buffer)-filename_noext.native().length()+1);
+
+		std::to_chars_result tc(std::to_chars(num_begin, num_end, combo_hash));
+		if(tc.ec != std::errc()) {
+			std::cout << "failed to convert number to string\n"sv;
+			_exit(EXIT_FAILURE);
 		}
-		std::cout << '\n';
+
+		size_t len(filename_noext.native().length()+1+(tc.ptr-num_begin));
+
+		output.replace_filename(std::string_view(fxc_filename_buffer, len));
+
+		output.replace_extension(".dxbc"sv);
+
+		output = get_windows_path(output);
+
+		fxc_argv[fxc_argv_output_index] = output.c_str();
+
+		size_t argc_it(fxc_argc_it);
+
+		setup_fxc_argv_for_shader(info, argc_it);
+
+		for(size_t i(0); i < num_extra_defines; ++i) {
+			fxc_argv[argc_it++] = "/D";
+			fxc_argv[argc_it++] = extra_defines[i].first;
+		}
+
+		fxc_argv[argc_it++] = nullptr;
+
 	#if 0
-		execve(wine_path.c_str(), const_cast<char **>(fxc_argv), environ);
-		_exit(EXIT_FAILURE);
-	#else
-		_exit(EXIT_SUCCESS);
+		if(!dry) {
+			execve(wine_path.c_str(), const_cast<char **>(fxc_argv), environ);
+			_exit(EXIT_FAILURE);
+		} else
 	#endif
+		{
+			for(size_t i(1); i < fxc_argc; ++i) {
+				std::cout << fxc_argv[i] << ' ';
+			}
+			std::cout << '\n';
+			_exit(EXIT_SUCCESS);
+		}
 	} else if(wine_pid == -1) {
 		std::cout << "failed to execute fxc\n"sv;
 		exit(EXIT_FAILURE);
@@ -406,13 +413,13 @@ void compile_shader(const std::filesystem::path &wine_path, const std::filesyste
 	char *err_buffer_it(err_buffer_start);
 
 	int status;
-	while(waitpid(wine_pid, &status, WNOHANG) == 0) {
-		if(read(stdout_pipes[0], out_buffer_it, 1) == 1 && out_buffer_it < out_buffer_end) {
-			++out_buffer_it;
-		}
-		if(read(stderr_pipes[0], err_buffer_it, 1) == 1 && err_buffer_it < err_buffer_end) {
-			++err_buffer_it;
-		}
+	waitpid(wine_pid, &status, 0);
+
+	while(read(stdout_pipes[0], out_buffer_it, 1) == 1 && out_buffer_it < out_buffer_end) {
+		++out_buffer_it;
+	}
+	while(read(stderr_pipes[0], err_buffer_it, 1) == 1 && err_buffer_it < err_buffer_end) {
+		++err_buffer_it;
 	}
 
 	close(stdout_pipes[0]);
@@ -424,19 +431,42 @@ void compile_shader(const std::filesystem::path &wine_path, const std::filesyste
 		std::cout << err_buffer_start;
 		exit(EXIT_FAILURE);
 	}
+
+	std::cout << out_buffer_start;
+}
+
+static void print_help()
+{
+	std::cout << "shadercompiler [options] <files>\n"sv;
+	std::cout << "\nfiles must follow the naming convention of <name>_<model>.[v]fxc\n"sv;
+	std::cout << "\nModels:\n"sv;
+	std::cout << "ps20  = pixel shader 2.0\n"sv;
+	std::cout << "ps20b = pixel shader 2.0b\n"sv;
+	std::cout << "ps2x  = pixel shader 2.0b\n"sv;
+	std::cout << "ps30  = pixel shader 3.0\n"sv;
+	std::cout << "vs20  = vertex shader 2.0\n"sv;
+	std::cout << "vs30  = vertex shader 3.0\n"sv;
+	std::cout << "\nmaximum number of passes supported: "sv << MAX_SUPPORTED_PASSES << '\n';
+	std::cout << "\nOptions:\n"sv;
+	std::cout << "-h, -?, --help              | print help\n"sv;
+	std::cout << "-I<dir>, -I <dir>           | add include directory\n"sv;
+	std::cout << "-o<dir>, -o <dir>           | output directory\n"sv;
+	std::cout << "-W                          | treat warnings as errors\n"sv;
+	std::cout << "-G                          | enable debug info\n"sv;
+	std::cout << "-S                          | conformance mode\n"sv;
+	std::cout << "-d                          | dry run, only print the command that were going to be executed\n"sv;
+	std::cout << "-D<define>, -D <define>     | add a preprocessor definition\n"sv;
+	std::cout << "-O<0,1,2,3,d>               | set optimization level, d means disabled, 0 does not\n"sv;
 }
 
 int main(int argc, char *argv[], char *envp[])
 {
 	if(argc == 1) {
-		std::cout << "no arguments\n"sv;
+		print_help();
 		return EXIT_FAILURE;
 	}
 
 	fxc_path = std::filesystem::current_path();
-
-	fxc_path /= "winsdk_10.0.22621.0"sv;
-	fxc_path /= "x86"sv;
 	fxc_path /= "fxc.exe"sv;
 
 	if(!std::filesystem::exists(fxc_path)) {
@@ -456,6 +486,52 @@ int main(int argc, char *argv[], char *envp[])
 		return EXIT_FAILURE;
 	}
 
+	std::filesystem::path wineserver_path;
+	auto wineserver_env(getenv("WINESERVER"));
+	if(wineserver_env && wineserver_env[0] != '\0') {
+		wineserver_path = wineserver_env;
+	} else {
+		wineserver_path = "/usr/bin/wineserver"s;
+	}
+
+	if(!std::filesystem::exists(wineserver_path)) {
+		std::cout << "wineserver not found in '"sv << wineserver_path << "'\n"sv;
+		return EXIT_FAILURE;
+	}
+
+#if 0
+	{
+		pid_t wineserver_pid(vfork());
+		if(wineserver_pid == 0) {
+			const char *wineserver_argv[]{
+				wineserver_path.c_str(),
+				"-p",
+				nullptr
+			};
+			execve(wineserver_path.c_str(), const_cast<char **>(wineserver_argv), environ);
+			_exit(EXIT_FAILURE);
+		} else if(wineserver_pid == -1) {
+			std::cout << "failed to execute wineserver\n"sv;
+			exit(EXIT_FAILURE);
+		}
+
+		int status;
+		waitpid(wineserver_pid, &status, 0);
+
+		if(!WIFEXITED(status) || WEXITSTATUS(status) != EXIT_SUCCESS) {
+			std::cout << "failed to execute wineserver\n"sv;
+			return EXIT_FAILURE;
+		}
+	}
+#endif
+
+	for(size_t i(1); i < static_cast<size_t>(argc); ++i) {
+		if(std::strcmp(argv[i], "-h") == 0 || std::strcmp(argv[i], "-?") == 0 || std::strcmp(argv[i], "--help") == 0) {
+			print_help();
+			return EXIT_SUCCESS;
+		}
+	}
+
 	for(size_t i(1); i < static_cast<size_t>(argc); ++i) {
 		if(std::strncmp(argv[i], "-I", 2) == 0) {
 			if(*(argv[i]+2) == '\0') {
@@ -463,25 +539,37 @@ int main(int argc, char *argv[], char *envp[])
 					std::cout << "invalid argument syntax\n"sv;
 					return EXIT_FAILURE;
 				} else {
-					std::filesystem::path linux_path(argv[i++]);
+					std::filesystem::path linux_path(argv[++i]);
 					if(std::filesystem::exists(linux_path)) {
-						std::filesystem::path windows_path(get_windows_path(wine_path, linux_path));
-						auto &inc(includes.emplace_back());
-						inc.linux_path = std::move(linux_path);
-						inc.windows_path = std::move(windows_path);
+						if(std::filesystem::is_directory(linux_path)) {
+							std::filesystem::path windows_path(get_windows_path(linux_path));
+							auto &inc(includes.emplace_back());
+							inc.linux_path = std::move(linux_path);
+							inc.windows_path = std::move(windows_path);
+						} else {
+							std::cout << "path '"sv << linux_path << "' is not a directory\n"sv;
+							return EXIT_FAILURE;
+						}
 					} else {
 						std::cout << "path '"sv << linux_path << "' does not exist\n"sv;
+						return EXIT_FAILURE;
 					}
 				}
 			} else {
 				std::filesystem::path linux_path(argv[i]+2);
 				if(std::filesystem::exists(linux_path)) {
-					std::filesystem::path windows_path(get_windows_path(wine_path, linux_path));
-					auto &inc(includes.emplace_back());
-					inc.linux_path = std::move(linux_path);
-					inc.windows_path = std::move(windows_path);
+					if(std::filesystem::is_directory(linux_path)) {
+						std::filesystem::path windows_path(get_windows_path(linux_path));
+						auto &inc(includes.emplace_back());
+						inc.linux_path = std::move(linux_path);
+						inc.windows_path = std::move(windows_path);
+					} else {
+						std::cout << "path '"sv << linux_path << "' is not a directory\n"sv;
+						return EXIT_FAILURE;
+					}
 				} else {
 					std::cout << "path '"sv << linux_path << "' does not exist\n"sv;
+					return EXIT_FAILURE;
 				}
 			}
 		} else if(std::strncmp(argv[i], "-o", 2) == 0) {
@@ -490,25 +578,37 @@ int main(int argc, char *argv[], char *envp[])
 					std::cout << "invalid argument syntax\n"sv;
 					return EXIT_FAILURE;
 				} else {
-					std::filesystem::path linux_path(argv[i++]);
+					std::filesystem::path linux_path(argv[++i]);
 					if(std::filesystem::exists(linux_path)) {
-						std::filesystem::path windows_path(get_windows_path(wine_path, linux_path));
-						auto &out(outputs.emplace_back());
-						out.linux_path = std::move(linux_path);
-						out.windows_path = std::move(windows_path);
+						if(std::filesystem::is_directory(linux_path)) {
+							std::filesystem::path windows_path(get_windows_path(linux_path));
+							auto &out(output_dirs.emplace_back());
+							out.linux_path = std::move(linux_path);
+							out.windows_path = std::move(windows_path);
+						} else {
+							std::cout << "path '"sv << linux_path << "' is not a directory\n"sv;
+							return EXIT_FAILURE;
+						}
 					} else {
 						std::cout << "path '"sv << linux_path << "' does not exist\n"sv;
+						return EXIT_FAILURE;
 					}
 				}
 			} else {
 				std::filesystem::path linux_path(argv[i]+2);
 				if(std::filesystem::exists(linux_path)) {
-					std::filesystem::path windows_path(get_windows_path(wine_path, linux_path));
-					auto &out(outputs.emplace_back());
-					out.linux_path = std::move(linux_path);
-					out.windows_path = std::move(windows_path);
+					if(std::filesystem::is_directory(linux_path)) {
+						std::filesystem::path windows_path(get_windows_path(linux_path));
+						auto &out(output_dirs.emplace_back());
+						out.linux_path = std::move(linux_path);
+						out.windows_path = std::move(windows_path);
+					} else {
+						std::cout << "path '"sv << linux_path << "' is not a directory\n"sv;
+						return EXIT_FAILURE;
+					}
 				} else {
 					std::cout << "path '"sv << linux_path << "' does not exist\n"sv;
+					return EXIT_FAILURE;
 				}
 			}
 		} else if(std::strcmp(argv[i], "-W") == 0) {
@@ -517,6 +617,10 @@ int main(int argc, char *argv[], char *envp[])
 			debug = true;
 		} else if(std::strcmp(argv[i], "-S") == 0) {
 			strict = true;
+		} else if(std::strcmp(argv[i], "-d") == 0) {
+			dry = true;
+		} else if(std::strcmp(argv[i], "-h") == 0 || std::strcmp(argv[i], "-?") == 0 || std::strcmp(argv[i], "--help") == 0) {
+			continue;
 		} else if(std::strcmp(argv[i], "-D") == 0) {
 			if(*(argv[i]+2) == '\0') {
 				if(i >= (argc-1)) {
@@ -549,7 +653,7 @@ int main(int argc, char *argv[], char *envp[])
 			if(std::filesystem::exists(linux_path)) {
 				std::filesystem::path ext(linux_path.extension());
 
-				if(ext != ".fxc"sv) {
+				if(ext != ".fxc"sv && ext != ".vfxc"sv) {
 					std::cout << "file is not a shader: '"sv << linux_path << "'\n"sv;
 					return EXIT_FAILURE;
 				}
@@ -561,9 +665,11 @@ int main(int argc, char *argv[], char *envp[])
 
 				shader_model model;
 
-				if(filename_str.ends_with("_ps2x"sv)) {
-					model = shader_model::ps2x;
+				if(filename_str.ends_with("_ps20"sv)) {
+					model = shader_model::ps20;
 				} else if(filename_str.ends_with("_ps20b"sv)) {
+					model = shader_model::ps20b;
+				} else if(filename_str.ends_with("_ps2x"sv)) {
 					model = shader_model::ps20b;
 				} else if(filename_str.ends_with("_ps30"sv)) {
 					model = shader_model::ps30;
@@ -576,17 +682,17 @@ int main(int argc, char *argv[], char *envp[])
 					return EXIT_FAILURE;
 				}
 
-				std::filesystem::path windows_path(get_windows_path(wine_path, linux_path));
+				std::filesystem::path windows_path(get_windows_path(linux_path));
 
 				auto &shader(sources.emplace_back());
 				shader.model = model;
 				shader.linux_path = std::move(linux_path);
 				shader.windows_path = std::move(windows_path);
 
-				if(outputs.empty()) {
-					shader.output_index = static_cast<size_t>(-1);
+				if(output_dirs.empty()) {
+					shader.output_dir_index = static_cast<size_t>(-1);
 				} else {
-					shader.output_index = outputs.size()-1;
+					shader.output_dir_index = output_dirs.size()-1;
 				}
 			} else {
 				std::cout << "path '"sv << linux_path << "' does not exist\n"sv;
@@ -594,12 +700,15 @@ int main(int argc, char *argv[], char *envp[])
 		}
 	}
 
-	if(sources.size() == 0) {
+	if(sources.empty()) {
 		std::cout << "no files\n"sv;
 		return EXIT_FAILURE;
 	}
 
-	setup_fxc_argv();
+	if(output_dirs.empty()) {
+		std::cout << "no output directories specified\n"sv;
+		return EXIT_FAILURE;
+	}
 
 	for(auto &it : sources) {
 		auto fd(open(it.linux_path.c_str(), O_RDONLY));
@@ -923,10 +1032,10 @@ int main(int argc, char *argv[], char *envp[])
 					continue;
 				}
 
-				if(std::find_if(it.combo.passes.cbegin(), it.combo.passes.cend(),
+				if(std::find_if(it.passes.cbegin(), it.passes.cend(),
 				[pass_name = std::string_view(pass_name)](const shader_pass &pass) -> bool {
 					return (pass.name == pass_name);
-				}) != it.combo.passes.cend()) {
+				}) != it.passes.cend()) {
 					std::cout << it.linux_path << ':' << line << ':' << column << ": "sv << type_str << " pass '"sv << pass_name << "' was already registered, line will be ignored\n"sv;
 					SKIP_NEWLINE_WRAP
 					continue;
@@ -940,9 +1049,8 @@ int main(int argc, char *argv[], char *envp[])
 					if(quote == '"') {
 						SKIP_WHITESPACE_WRAP
 					} else {
-						std::cout << it.linux_path << ':' << line << ':' << column << ": "sv << type_str << " pass '"sv << pass_name << "' has unclosed quote, pass will be discarted\n"sv;
-						SKIP_NEWLINE_WRAP
-						continue;
+						std::cout << it.linux_path << ':' << line << ':' << column << ": "sv << type_str << " pass '"sv << pass_name << "' has unclosed quote\n"sv;
+						return EXIT_FAILURE;
 					}
 				}
 
@@ -958,13 +1066,11 @@ int main(int argc, char *argv[], char *envp[])
 				READ_NUM_WRAP(low, low_str)
 
 				if(ret == 2) {
-					std::cout << it.linux_path << ':' << line << ':' << column << ": "sv << type_str << " pass '"sv << pass_name << "' low value doesn't start with a number, pass will be discarted\n"sv;
-					SKIP_NEWLINE_WRAP
-					continue;
+					std::cout << it.linux_path << ':' << line << ':' << column << ": "sv << type_str << " pass '"sv << pass_name << "' low value doesn't start with a number\n"sv;
+					return EXIT_FAILURE;
 				} else if(ret == 3) {
-					std::cout << it.linux_path << ':' << line << ':' << column << ": failed to read "sv << type_str << " pass '"sv << pass_name << "' low value, pass will be discarted\n"sv;
-					SKIP_NEWLINE_WRAP
-					continue;
+					std::cout << it.linux_path << ':' << line << ':' << column << ": failed to read "sv << type_str << " pass '"sv << pass_name << "' low value\n"sv;
+					return EXIT_FAILURE;
 				}
 
 				SKIP_WHITESPACE_WRAP
@@ -975,32 +1081,27 @@ int main(int argc, char *argv[], char *envp[])
 					SKIP_WHITESPACE_WRAP
 				} else {
 					size_t len(std::strlen(cmt));
-					std::cout << it.linux_path << ':' << line << '-' << (column-len) << ": "sv << type_str << " pass '"sv << pass_name << "' expected '..' but found '"sv << std::string_view(cmt, len) << "', pass will be discarted\n"sv;
-					SKIP_NEWLINE_WRAP
-					continue;
+					std::cout << it.linux_path << ':' << line << '-' << (column-len) << ": "sv << type_str << " pass '"sv << pass_name << "' expected '..' but found '"sv << std::string_view(cmt, len) << "'\n"sv;
+					return EXIT_FAILURE;
 				}
 
 				ssize_t hi; std::string hi_str;
 				READ_NUM_WRAP(hi, hi_str)
 
 				if(ret == 2) {
-					std::cout << it.linux_path << ':' << line << ':' << column << ": "sv << type_str << " pass '"sv << pass_name << "' high value doesn't start with a number, pass will be discarted\n"sv;
-					SKIP_NEWLINE_WRAP
-					continue;
+					std::cout << it.linux_path << ':' << line << ':' << column << ": "sv << type_str << " pass '"sv << pass_name << "' high value doesn't start with a number\n"sv;
+					return EXIT_FAILURE;
 				} else if(ret == 3) {
-					std::cout << it.linux_path << ':' << line << ':' << column << ": failed to read "sv << type_str << " pass '"sv << pass_name << "' high value, pass will be discarted\n"sv;
-					SKIP_NEWLINE_WRAP
-					continue;
+					std::cout << it.linux_path << ':' << line << ':' << column << ": failed to read "sv << type_str << " pass '"sv << pass_name << "' high value\n"sv;
+					return EXIT_FAILURE;
 				}
 
 				if(low > hi) {
-					std::cout << it.linux_path << ": "sv << type_str << " pass '"sv << pass_name << "' low value is higher than high value, pass will be discarted\n"sv;
-					SKIP_NEWLINE_WRAP
-					continue;
+					std::cout << it.linux_path << ": "sv << type_str << " pass '"sv << pass_name << "' low value is higher than high value\n"sv;
+					return EXIT_FAILURE;
 				} else if(hi < low) {
-					std::cout << it.linux_path << ": "sv << type_str << " pass '"sv << pass_name << "' high value is lower than low value, pass will be discarted\n"sv;
-					SKIP_NEWLINE_WRAP
-					continue;
+					std::cout << it.linux_path << ": "sv << type_str << " pass '"sv << pass_name << "' high value is lower than low value\n"sv;
+					return EXIT_FAILURE;
 				} else if(hi == low) {
 					std::cout << it.linux_path << ": "sv << type_str << " pass '"sv << pass_name << "' high value is equal to low value, pass will be converted to define\n"sv;
 
@@ -1009,10 +1110,6 @@ int main(int argc, char *argv[], char *envp[])
 					define += std::move(low_str);
 
 					it.defines.emplace_back(std::move(define));
-
-					if(it.defines.size() > higest_define_count) {
-						higest_define_count = it.defines.size();
-					}
 
 					SKIP_NEWLINE_WRAP
 					continue;
@@ -1026,26 +1123,28 @@ int main(int argc, char *argv[], char *envp[])
 					if(quote == '"') {
 						SKIP_EMPTYSPACE_WRAP
 					} else {
-						std::cout << it.linux_path << ':' << line << ':' << column << ": "sv << type_str << " pass '"sv << pass_name << "' has unclosed quote, pass will be discarted\n"sv;
-						SKIP_NEWLINE_WRAP
-						continue;
+						std::cout << it.linux_path << ':' << line << ':' << column << ": "sv << type_str << " pass '"sv << pass_name << "' has unclosed quote\n"sv;
+						return EXIT_FAILURE;
 					}
 				} else {
 					SKIP_EMPTYSPACE_WRAP
 				}
 
 				shader_pass pass(std::move(pass_name), low, hi, static_cast<shader_pass_type>(type));
-				it.combo.passes.emplace(std::move(pass));
+				it.passes.emplace(std::move(pass));
+
+				if(it.passes.size() >= MAX_SUPPORTED_PASSES) {
+					std::cout << it.linux_path << ':' << line << ':' << column << ": shader exceeded maximum number of supported passes\n"sv;
+					return EXIT_FAILURE;
+				}
 
 				SKIP_NEWLINE_WRAP
 			} else if(type == parse_type::skip) {
 				std::cout << it.linux_path << ": skip directive is not supported yet\n"sv;
-
 				SKIP_NEWLINE_WRAP
 			} else if(type == parse_type::centroid) {
 				std::cout << it.linux_path << ": centroid directive is not supported yet\n"sv;
-
-				SKIP_NEWLINE_WRAP
+				return EXIT_FAILURE;
 			}
 		}
 
@@ -1053,9 +1152,61 @@ int main(int argc, char *argv[], char *envp[])
 	}
 
 	for(auto &it : sources) {
-		it.combo.calculate();
+		size_t define_count(0);
 
-		do_all_combos(it, it.combo.passes.cend());
+		define_count += it.defines.size();
+		define_count += it.passes.size();
+
+		if(define_count > higest_define_count) {
+			higest_define_count = define_count;
+		}
+
+		std::filesystem::path ouput_dir;
+
+		if(it.output_dir_index != static_cast<size_t>(-1)) {
+			ouput_dir = output_dirs[it.output_dir_index].linux_path.c_str();
+		} else {
+			ouput_dir = output_dirs[0].linux_path.c_str();
+		}
+
+		it.obj_output.linux_path = ouput_dir;
+		it.obj_output.linux_path /= it.linux_path.filename();
+		it.obj_output.linux_path.replace_extension(".vcs"sv);
+
+		it.obj_output.windows_path = get_windows_path(it.obj_output.linux_path);
+	}
+
+	setup_fxc_argv();
+
+	for(const auto &it : sources) {
+		std::cout << "compiling "sv << it.linux_path << '\n';
+
+		auto total(do_all_passes(it));
+
+		auto fd(open(it.obj_output.linux_path.c_str(), O_WRONLY|O_CREAT|O_TRUNC));
+		if(fd == -1) {
+			const char *err(strerror(errno));
+			std::cout << "failed to open '"sv << it.obj_output.linux_path << "': "sv << err << '\n';
+			return EXIT_FAILURE;
+		}
+
+		constexpr int version(6);
+		if(write(fd, &version, sizeof(int)) == -1) {
+			
+		}
+
+		write(fd, &total.overall, sizeof(int));
+		write(fd, &total.dynamic, sizeof(int));
+
+		unsigned int flags(0);
+		write(fd, &flags, sizeof(unsigned int));
+
+		unsigned int centroid(0);
+		write(fd, &centroid, sizeof(unsigned int));
+
+		write(fd, &total.static_, sizeof(unsigned int));
+
+		close(fd);
 	}
 
 	return EXIT_SUCCESS;

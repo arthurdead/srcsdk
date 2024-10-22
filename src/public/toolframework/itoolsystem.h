@@ -138,6 +138,12 @@ public:
 	virtual void		VGui_PostSimulate() = 0;
 };
 
+class IToolSystemEx : public IToolSystem
+{
+public:
+	virtual void* QueryInterface( const char *pInterfaceName ) = 0;
+};
+
 // Pointer to a member method of IGameSystem
 typedef void (IToolSystem::*ToolSystemFunc_t)();
 typedef void (IToolSystem::*ToolSystemFunc_Int_t)( int arg );

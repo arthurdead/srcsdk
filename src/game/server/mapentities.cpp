@@ -22,6 +22,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_MAPPARSE, "MapParse Server" );
 
 static CStringRegistry *g_pClassnameSpawnPriority = NULL;
 extern edict_t *g_pForceAttachEdict;
@@ -48,7 +49,7 @@ CBaseEntity *CreateEntityByName( const char *className, int iForceEdictIndex, bo
 		if(!g_pForceAttachEdict) {
 			g_pForceAttachEdict = engine->CreateEdict( iForceEdictIndex );
 			if ( !g_pForceAttachEdict ) {
-				Error( "CreateEntityByName( %s, %d ) - CreateEdict failed.", className, iForceEdictIndex );
+				Log_FatalError( LOG_ENTITYFACTORY,"CreateEntityByName( %s, %d ) - CreateEdict failed.", className, iForceEdictIndex );
 			}
 		}
 	}
@@ -140,7 +141,7 @@ static int ComputeSpawnHierarchyDepth_r( CBaseEntity *pEntity )
 	
 	if (pParent == pEntity)
 	{
-		Warning( "LEVEL DESIGN ERROR: Entity %s is parented to itself!\n", pEntity->GetDebugName() );
+		Log_Warning( LOG_MAPPARSE,"LEVEL DESIGN ERROR: Entity %s is parented to itself!\n", pEntity->GetDebugName() );
 		return 1;
 	}
 
@@ -485,7 +486,7 @@ void CMapEntitySpawner::PurgeRemovedEntities()
 			// Catch a specific error that bit us
 			if ( dynamic_cast< CGameRulesProxy * >( m_pSpawnList[i].m_pEntity ) != NULL )
 			{
-				Warning( "Map-placed game rules entity is being deleted; does the map contain more than one?\n" );
+				Log_Warning( LOG_MAPPARSE,"Map-placed game rules entity is being deleted; does the map contain more than one?\n" );
 			}
 #endif
 			m_pSpawnList[i].m_pEntity = NULL;
@@ -531,7 +532,7 @@ void MapEntity_ParseAllEntities(const char *pMapData, IMapEntityFilter *pFilter,
 
 		if (token[0] != '{')
 		{
-			Error( "MapEntity_ParseAllEntities: found %s when expecting {", token);
+			Log_FatalError( LOG_MAPPARSE,"MapEntity_ParseAllEntities: found %s when expecting {", token);
 			continue;
 		}
 
@@ -586,7 +587,7 @@ void MapEntity_PrecacheEntity( const char *pEntData, int &nStringSize )
 	
 	if (!entData.ExtractValue("classname", className))
 	{
-		Error( "classname missing from entity!\n" );
+		Log_FatalError( LOG_MAPPARSE,"classname missing from entity!\n" );
 	}
 
 	// Construct via the LINK_ENTITY_TO_CLASS factory.
@@ -618,7 +619,7 @@ const char *MapEntity_ParseEntity(CBaseEntity *&pEntity, const char *pEntData, I
 	
 	if (!entData.ExtractValue("classname", className))
 	{
-		Error( "classname missing from entity!\n" );
+		Log_FatalError( LOG_MAPPARSE,"classname missing from entity!\n" );
 	}
 
 	pEntity = GetSingletonOfClassname( className );
@@ -646,7 +647,7 @@ const char *MapEntity_ParseEntity(CBaseEntity *&pEntity, const char *pEntData, I
 	}
 	else
 	{
-		Warning("Can't init %s\n", className);
+		Log_Warning(LOG_MAPPARSE,"Can't init %s\n", className);
 
 		// Just skip past all the keys.
 		char keyName[MAPKEY_MAXLENGTH];

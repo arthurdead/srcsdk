@@ -19,6 +19,8 @@
 #include "engine/SndInfo.h"
 #include "hackmgr/hackmgr.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_SOUND );
+
 //-----------------------------------------------------------------------------
 // forward declaration
 //-----------------------------------------------------------------------------

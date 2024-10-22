@@ -13,6 +13,8 @@
 
 #include "igamesystem.h" // CAutoGameSystem
 
+DECLARE_LOGGING_CHANNEL( LOG_LIGHTS );
+
 class Vector;
 struct dworldlight_t;
 

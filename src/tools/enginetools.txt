@@ -6,4 +6,6 @@
 	"library" "pet"
 	"library" "vcdblock"
 	"library" "vmt"
+	"library" "client"
+	"library" "server"
 }

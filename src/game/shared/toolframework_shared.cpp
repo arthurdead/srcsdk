@@ -4,9 +4,16 @@
 #include "utlvector.h"
 #include "vgui/ILocalize.h"
 #include "vgui_controls/Controls.h"
+#ifdef GAME_DLL
+#include "eiface.h"
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+#ifdef GAME_DLL
+extern IServerGameDLLEx *serverGameDLLEx;
+#endif
 
 using namespace vgui;
 
@@ -45,7 +52,7 @@ void *CToolDictionary::QueryInterface( const char *pInterfaceName )
 }
 
 static CToolDictionary g_ToolDictionary;
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR( IToolDictionary, CToolDictionary, VTOOLDICTIONARY_INTERFACE_VERSION, g_ToolDictionary );
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CToolDictionary, IToolDictionary, VTOOLDICTIONARY_INTERFACE_VERSION, g_ToolDictionary );
 
 #ifndef GAME_DLL
 IServerTools	*servertools = NULL;
@@ -60,7 +67,7 @@ IClientEntityList	*cl_entitylist = NULL;
 IClientEntityListEx	*cl_entitylist_ex = NULL;
 #endif
 
-class CGameToolSystem : public IToolSystem
+class CGameToolSystem : public IToolSystemEx
 {
 public:
 	CGameToolSystem();
@@ -113,6 +120,8 @@ public:
 
 	// Used to allow the tool to spawn different entities when it's active
 	virtual const char* GetEntityData( const char *pActualEntityData );
+
+	virtual void* QueryInterface( const char *pInterfaceName );
 
 // Client calls:
 	// Level init, shutdown
@@ -207,6 +216,10 @@ bool CGameToolSystem::Init()
 	g_pVGuiLocalize->AddFile( "resource/dmecontrols_%language%.txt" );
 	g_pVGuiLocalize->AddFile( "resource/toolshared_%language%.txt" );
 	g_pVGuiLocalize->AddFile( "resource/boxrocket_%language%.txt" );
+
+#ifdef GAME_DLL
+	serverGameDLLEx->PostToolsInit();
+#endif
 
 	return true;
 }
@@ -305,6 +318,11 @@ void CGameToolSystem::ServerPreSetupVisibility()
 const char *CGameToolSystem::GetEntityData( const char *pActualEntityData )
 {
 	return pActualEntityData;
+}
+
+void* CGameToolSystem::QueryInterface( const char *pInterfaceName )
+{
+	return NULL;
 }
 
 void CGameToolSystem::ClientLevelInitPreEntity()

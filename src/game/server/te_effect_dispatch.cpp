@@ -18,6 +18,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_EFFECTS, "Effects Server" );
+
 //-----------------------------------------------------------------------------
 // Purpose: This TE provides a simple interface to dispatch effects by name using DispatchEffect().
 //-----------------------------------------------------------------------------

@@ -9,6 +9,10 @@
 #define EVENTLIST_H
 #pragma once
 
+#include "tier0/logging.h"
+
+DECLARE_LOGGING_CHANNEL( LOG_ANIMEVENT );
+
 #define AE_TYPE_SERVER			( 1 << 0 )
 #define AE_TYPE_SCRIPTED		( 1 << 1 )		// see scriptevent.h
 #define AE_TYPE_SHARED			( 1 << 2 )

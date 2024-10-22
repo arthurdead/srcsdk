@@ -11,6 +11,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_FOUNDRY, "Foundry Server" );
+
 //-----------------------------------------------------------------------------
 // Purpose: This just marshalls certain FoundryHelpers_ calls to the client.
 //-----------------------------------------------------------------------------

@@ -25,6 +25,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef GAME_DLL
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_RECAST, "Recast Server" );
+#else
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_RECAST, "Recast Client" );
+#endif
+
 ConVar recast_debug_mesh( "recast_debug_mesh", "HUMAN", FCVAR_REPLICATED|FCVAR_CHEAT );
 
 //-----------------------------------------------------------------------------
@@ -492,7 +498,7 @@ void CRecastMgr::DebugListMeshes()
 		if(!pMesh)
 			continue;
 
-		Msg( "%d: %s (agent radius: %f, height: %f, climb: %f, slope: %f, cell size: %f, cell height: %f)\n", i, 
+		Log_Msg( LOG_RECAST, "%d: %s (agent radius: %f, height: %f, climb: %f, slope: %f, cell size: %f, cell height: %f)\n", i, 
 			pMesh->GetName(),
 			pMesh->GetAgentRadius(), pMesh->GetAgentHeight(), pMesh->GetAgentMaxClimb(), pMesh->GetAgentMaxSlope(),
 			pMesh->GetCellSize(), pMesh->GetCellHeight());
@@ -877,7 +883,7 @@ void CRecastMgr::PrintAllPlaces( void ) const
 {
 	if (m_placeCount == 0)
 	{
-		Msg( "There are no entries in the Place database.\n" );
+		Log_Warning( LOG_RECAST, "There are no entries in the Place database.\n" );
 		return;
 	}
 
@@ -893,13 +899,13 @@ void CRecastMgr::PrintAllPlaces( void ) const
 	for( i=0; i<(unsigned int)placeNames.Count(); ++i )
 	{
 		if (NameToPlace( placeNames[i] ) == GetNavPlace())
-			Msg( "--> %-26s", placeNames[i] );
+			Log_Msg( LOG_RECAST, "--> %-26s", placeNames[i] );
 		else
-			Msg( "%-30s", placeNames[i] );
+			Log_Msg( LOG_RECAST, "%-30s", placeNames[i] );
 
 		if ((i+1) % 3 == 0)
-			Msg( "\n" );
+			Log_Msg( LOG_RECAST, "\n" );
 	}
 
-	Msg( "\n" );
+	Log_Msg( LOG_RECAST, "\n" );
 }

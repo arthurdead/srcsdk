@@ -4454,134 +4454,6 @@ Vector CBasePlayer::GetSmoothedVelocity( void )
 	return m_vecSmoothedVelocity;
 }
 
-
-CBaseEntity	*g_pLastSpawn = NULL;
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Finds a player start entity of the given classname. If any entity of
-//			of the given classname has the SF_PLAYER_START_MASTER flag set, that
-//			is the entity that will be returned. Otherwise, the first entity of
-//			the given classname is returned.
-// Input  : pszClassName - should be "info_player_start", "info_player_coop", or
-//			"info_player_deathmatch"
-//-----------------------------------------------------------------------------
-CBaseEntity *FindPlayerStart(const char *pszClassName)
-{
-	#define SF_PLAYER_START_MASTER	1
-	
-	CBaseEntity *pStart = gEntList.FindEntityByClassname(NULL, pszClassName);
-	CBaseEntity *pStartFirst = pStart;
-	while (pStart != NULL)
-	{
-		if (pStart->HasSpawnFlags(SF_PLAYER_START_MASTER))
-		{
-			return pStart;
-		}
-
-		pStart = gEntList.FindEntityByClassname(pStart, pszClassName);
-	}
-
-	return pStartFirst;
-}
-
-/*
-============
-EntSelectSpawnPoint
-
-Returns the entity to spawn at
-
-USES AND SETS GLOBAL g_pLastSpawn
-============
-*/
-CBaseEntity *CBasePlayer::EntSelectSpawnPoint()
-{
-	CBaseEntity *pSpot;
-	edict_t		*player;
-
-	player = edict();
-
-// choose a info_player_deathmatch point
-	if (GameRules()->IsCoOp())
-	{
-		pSpot = gEntList.FindEntityByClassname( g_pLastSpawn, "info_player_coop");
-		if ( pSpot )
-			goto ReturnSpot;
-		pSpot = gEntList.FindEntityByClassname( g_pLastSpawn, "info_player_start");
-		if ( pSpot ) 
-			goto ReturnSpot;
-	}
-	else if ( GameRules()->IsDeathmatch() )
-	{
-		pSpot = g_pLastSpawn;
-		// Randomize the start spot
-		for ( int i = random->RandomInt(1,5); i > 0; i-- )
-			pSpot = gEntList.FindEntityByClassname( pSpot, "info_player_deathmatch" );
-		if ( !pSpot )  // skip over the null point
-			pSpot = gEntList.FindEntityByClassname( pSpot, "info_player_deathmatch" );
-
-		CBaseEntity *pFirstSpot = pSpot;
-
-		do 
-		{
-			if ( pSpot )
-			{
-				// check if pSpot is valid
-				if ( GameRules()->IsSpawnPointValid( pSpot, this ) )
-				{
-					if ( pSpot->GetLocalOrigin() == vec3_origin )
-					{
-						pSpot = gEntList.FindEntityByClassname( pSpot, "info_player_deathmatch" );
-						continue;
-					}
-
-					// if so, go to pSpot
-					goto ReturnSpot;
-				}
-			}
-			// increment pSpot
-			pSpot = gEntList.FindEntityByClassname( pSpot, "info_player_deathmatch" );
-		} while ( pSpot != pFirstSpot ); // loop if we're not back to the start
-
-		// we haven't found a place to spawn yet,  so kill any guy at the first spawn point and spawn there
-		if ( pSpot )
-		{
-			CBaseEntity *ent = NULL;
-			for ( CEntitySphereQuery sphere( pSpot->GetAbsOrigin(), 128 ); (ent = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
-			{
-				// if ent is a client, kill em (unless they are ourselves)
-				if ( ent->IsPlayer() && !(ent->edict() == player) )
-					ent->TakeDamage( CTakeDamageInfo( GetContainingEntity(INDEXENT(0)), GetContainingEntity(INDEXENT(0)), 300, DMG_GENERIC ) );
-			}
-			goto ReturnSpot;
-		}
-	}
-
-	// If startspot is set, (re)spawn there.
-	if ( !gpGlobals->startspot || !strlen(STRING(gpGlobals->startspot)))
-	{
-		pSpot = FindPlayerStart( "info_player_start" );
-		if ( pSpot )
-			goto ReturnSpot;
-	}
-	else
-	{
-		pSpot = gEntList.FindEntityByName( NULL, gpGlobals->startspot );
-		if ( pSpot )
-			goto ReturnSpot;
-	}
-
-ReturnSpot:
-	if ( !pSpot  )
-	{
-		Warning( "PutClientInServer: no info_player_start on level\n");
-		return CBaseEntity::Instance( INDEXENT( 0 ) );
-	}
-
-	g_pLastSpawn = pSpot;
-	return pSpot;
-}
-
 //-----------------------------------------------------------------------------
 // Purpose: Called the first time the player's created
 //-----------------------------------------------------------------------------
@@ -4767,8 +4639,19 @@ void CBasePlayer::Spawn( void )
 	m_vecAdditionalPVSOrigin = vec3_origin;
 	m_vecCameraPVSOrigin = vec3_origin;
 
-	CBaseEntity *pSpawnPoint = GameRules()->GetPlayerSpawnSpot( this );
-	SpawnedAtPoint( pSpawnPoint );
+	CBaseEntity *pSpawnSpot = GameRules()->GetPlayerSpawnSpot( this );
+	Assert( pSpawnSpot );
+	if ( pSpawnSpot != NULL )
+	{
+		SetLocalOrigin( pSpawnSpot->GetAbsOrigin() + Vector(0,0,1) );
+		SetAbsVelocity( vec3_origin );
+		SetLocalAngles( pSpawnSpot->GetLocalAngles() );
+		m_Local.m_vecPunchAngle = vec3_angle;
+		m_Local.m_vecPunchAngleVel = vec3_angle;
+		SnapEyeAngles( pSpawnSpot->GetLocalAngles() );
+
+		SpawnedAtPoint( pSpawnSpot );
+	}
 
 	m_Local.m_bDucked = false;// This will persist over round restart if you hold duck otherwise. 
 	m_Local.m_bDucking = false;
@@ -7232,7 +7115,7 @@ void CBasePlayer::Weapon_Equip( CBaseCombatWeapon *pWeapon, bool bDeploy )
 	// should we switch to this item?
 	if ( bShouldSwitch )
 	{
-		Weapon_Switch( pWeapon, 0, bDeploy );
+		Weapon_Switch( pWeapon, VIEWMODEL_WEAPON, bDeploy );
 	}
 }
 

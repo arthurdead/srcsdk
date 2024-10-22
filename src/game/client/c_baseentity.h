@@ -338,7 +338,10 @@ public:
 
 	virtual Class_T					Classify( void ) { return CLASS_NONE; }
 
+private:
 	string_t						m_iClassname;
+
+	char m_szRTTIClassname[64];
 
 // IClientUnknown overrides.
 public:

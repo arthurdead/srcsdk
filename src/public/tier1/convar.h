@@ -21,6 +21,8 @@
 #include "icvar.h"
 #include "Color.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_CONVAR );
+
 #ifdef _WIN32
 #define FORCEINLINE_CVAR FORCEINLINE
 #elif POSIX

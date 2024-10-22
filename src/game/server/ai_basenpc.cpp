@@ -102,6 +102,8 @@ extern ConVar sk_healthkit;
 
 //#define DEBUG_LOOK
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_BASENPC, "BaseNPC Server" );
+
 bool RagdollManager_SaveImportant( CAI_BaseNPC *pNPC );
 
 #define	MIN_PHYSICS_FLINCH_DAMAGE	5.0f
@@ -8118,7 +8120,7 @@ bool CAI_BaseNPC::InitSquad( void )
 	{
 		if ( !m_SquadName )
 		{
-			DevMsg(2, "Found %s that isn't in a squad\n",GetClassname());
+			Log_Warning( LOG_SQUAD, "Found %s that isn't in a squad\n",GetClassname());
 		}
 		else
 		{

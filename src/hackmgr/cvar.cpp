@@ -18,8 +18,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-static ICvar *pCvar = NULL;
-
 void FindCmdCB( const CCommand &args )
 {
 	const char *search;
@@ -35,7 +33,7 @@ void FindCmdCB( const CCommand &args )
 	search = args[1];
 
 	// Loop through vars and print out findings
-	for ( var = pCvar->GetCommands(); var; var=var->GetNext() )
+	for ( var = g_pCVar->GetCommands(); var; var=var->GetNext() )
 	{
 		if ( var->IsFlagSet(FCVAR_DEVELOPMENTONLY) || var->IsFlagSet(FCVAR_HIDDEN) )
 			continue;
@@ -55,21 +53,19 @@ if(!VStdLib_GetICVarFactory()) {
 }
 
 int status = IFACE_OK;
-pCvar = (ICvar *)VStdLib_GetICVarFactory()(CVAR_INTERFACE_VERSION, &status);
-if(!pCvar || status != IFACE_OK) {
+g_pCVar = (ICvar *)VStdLib_GetICVarFactory()(CVAR_INTERFACE_VERSION, &status);
+if(!g_pCVar || status != IFACE_OK) {
 	return;
 }
 
-g_pCVar = pCvar;
-
 ConVar_Register( 0, NULL );
 
-ConVar *r_hunkalloclightmaps = pCvar->FindVar("r_hunkalloclightmaps");
+ConVar *r_hunkalloclightmaps = g_pCVar->FindVar("r_hunkalloclightmaps");
 if(r_hunkalloclightmaps) {
 	r_hunkalloclightmaps->SetValue(false);
 }
 
-ConVar *developer = pCvar->FindVar("developer");
+ConVar *developer = g_pCVar->FindVar("developer");
 if(developer) {
 #ifdef _DEBUG
 	developer->SetValue(4);
@@ -78,7 +74,7 @@ if(developer) {
 #endif
 }
 
-ConVar *sv_cheats = pCvar->FindVar("sv_cheats");
+ConVar *sv_cheats = g_pCVar->FindVar("sv_cheats");
 if(sv_cheats) {
 #ifdef _DEBUG
 	sv_cheats->SetValue(true);
@@ -87,7 +83,7 @@ if(sv_cheats) {
 #endif
 }
 
-ConCommand *pFindCmd = pCvar->FindCommand("find");
+ConCommand *pFindCmd = g_pCVar->FindCommand("find");
 if(pFindCmd) {
 	/*
 	pFindCmd->m_fnCommandCallback = FindCmdCB;

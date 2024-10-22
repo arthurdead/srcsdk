@@ -8,6 +8,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+//TEMP while developing remove later
+LINK_ENTITY_TO_CLASS(npc_metropolice, CNPC_Cop);
+
 LINK_ENTITY_TO_CLASS(npc_cop, CNPC_Cop);
 
 static const char *g_pszCopModels[]{

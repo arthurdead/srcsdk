@@ -118,7 +118,7 @@ void CWorldLights::LevelInitPreEntity()
 	FileHandle_t hFile = g_pFullFileSystem->Open( engine->GetLevelName(), "rb" );
 	if ( !hFile )
 	{
-		Warning( "CWorldLights: unable to open map\n" );
+		Log_Error( LOG_LIGHTS, "CWorldLights: unable to open map\n" );
 		return;
 	}
 
@@ -134,7 +134,7 @@ void CWorldLights::LevelInitPreEntity()
 	// then the BSP format changed and we're unaware
 	if ( lightLump.filelen % sizeof( dworldlight_t ) )
 	{
-		Warning( "CWorldLights: broken world light lump with size of %d, epcected to be multiple of %u\n", lightLump.filelen, sizeof( dworldlight_t ) );
+		Log_Error( LOG_LIGHTS, "CWorldLights: broken world light lump with size of %d, epcected to be multiple of %u\n", lightLump.filelen, sizeof( dworldlight_t ) );
 
 		// Close file
 		g_pFullFileSystem->Close( hFile );
@@ -151,7 +151,7 @@ void CWorldLights::LevelInitPreEntity()
 	g_pFullFileSystem->Read( m_pWorldLights, lightLump.filelen, hFile );
 	g_pFullFileSystem->Close( hFile );
 
-	DevMsg( "CWorldLights: load successful (%d lights at 0x%p)\n", m_nWorldLights, m_pWorldLights );
+	Log_Msg( LOG_LIGHTS,"CWorldLights: load successful (%d lights at 0x%p)\n", m_nWorldLights, m_pWorldLights );
 
 	// Now that the lights have been gathered, begin separating them into lists for each PVS cluster.
 	// This code is adapted from the soundscape cluster list code (see soundscape_system.cpp) and is intended to

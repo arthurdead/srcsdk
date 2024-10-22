@@ -26,6 +26,9 @@
 #include "vgui_controls/BuildGroup.h"
 #include "tier1/KeyValues.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_VGUIPANEL );
+DECLARE_LOGGING_CHANNEL( LOG_VGUIRESOURCE );
+
 // undefine windows function macros that overlap 
 #ifdef PostMessage
 #undef PostMessage

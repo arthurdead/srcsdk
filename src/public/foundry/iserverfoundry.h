@@ -12,7 +12,7 @@
 #include "mathlib/vector.h"
 #include "tier1/utlvector.h"
 
-DECLARE_DLL_LOGGING_CHANNEL( LOG_FOUNDRY );
+DECLARE_LOGGING_CHANNEL( LOG_FOUNDRY );
 
 //-----------------------------------------------------------------------------
 // Purpose: exposed from Foundry (Hammer) to game DLL

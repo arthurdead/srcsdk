@@ -16,6 +16,8 @@
 #include "hackmgr/hackmgr.h"
 #include "engine/ivmodelrender.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_SHADOWS );
+
 //-----------------------------------------------------------------------------
 // forward declarations
 //-----------------------------------------------------------------------------

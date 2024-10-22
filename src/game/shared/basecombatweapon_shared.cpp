@@ -277,7 +277,7 @@ void CSharedBaseCombatWeapon::Precache( void )
 			m_iPrimaryAmmoType = GetAmmoDef()->Index( GetWpnData().szAmmo1 );
 			if (m_iPrimaryAmmoType == -1)
 			{
-				Msg("ERROR: Weapon (%s) using undefined primary ammo type (%s)\n",GetClassname(), GetWpnData().szAmmo1);
+				Log_Error(LOG_WEAPONPARSE,"ERROR: Weapon (%s) using undefined primary ammo type (%s)\n",GetClassname(), GetWpnData().szAmmo1);
 			}
  		}
 		if ( GetWpnData().szAmmo2[0] )
@@ -285,7 +285,7 @@ void CSharedBaseCombatWeapon::Precache( void )
 			m_iSecondaryAmmoType = GetAmmoDef()->Index( GetWpnData().szAmmo2 );
 			if (m_iSecondaryAmmoType == -1)
 			{
-				Msg("ERROR: Weapon (%s) using undefined secondary ammo type (%s)\n",GetClassname(),GetWpnData().szAmmo2);
+				Log_Error(LOG_WEAPONPARSE,"ERROR: Weapon (%s) using undefined secondary ammo type (%s)\n",GetClassname(),GetWpnData().szAmmo2);
 			}
 
 		}
@@ -325,7 +325,7 @@ void CSharedBaseCombatWeapon::Precache( void )
 	else
 	{
 		// Couldn't read data file, remove myself
-		Warning( "Error reading weapon data file for: %s\n", GetWeaponScriptName() );
+		Log_Error(LOG_WEAPONPARSE, "Error reading weapon data file for: %s\n", GetWeaponScriptName() );
 	//	Remove( );	//don't remove, this gets released soon!
 	}
 
@@ -906,9 +906,11 @@ void CSharedBaseCombatWeapon::MakeTracer( const Vector &vecTracerSrc, const trac
 	}
 
 	const char *pszTracerName = GetTracerType();
+	int iParticleID = 0;
 	if ( !pszTracerName )
 	{
-		 pszTracerName = "weapon_tracers";
+		 pszTracerName = "ParticleTracer";
+		 iParticleID = GetParticleSystemIndex( "weapon_tracers" );
 	}
 
 	Vector vNewSrc = vecTracerSrc;
@@ -928,7 +930,7 @@ void CSharedBaseCombatWeapon::MakeTracer( const Vector &vecTracerSrc, const trac
 
 	int iAttachment = GetTracerAttachment();
 
-	UTIL_Tracer( vNewSrc, tr.endpos, iEntIndex, iAttachment, 0.0f, true, pszTracerName );
+	UTIL_Tracer( vNewSrc, tr.endpos, iEntIndex, iAttachment, 0.0f, true, pszTracerName, iParticleID );
 }
 
 void CSharedBaseCombatWeapon::GiveTo( CSharedBaseEntity *pOther, bool bDeploy )
@@ -1616,9 +1618,6 @@ bool CSharedBaseCombatWeapon::DefaultDeploy( const char *szViewModel, const char
 //-----------------------------------------------------------------------------
 bool CSharedBaseCombatWeapon::Deploy( )
 {
-	if ( !CanDeploy() )
-		return false;
-
 	MDLCACHE_CRITICAL_SECTION();
 	bool bResult = DefaultDeploy( GetViewModel(), GetWorldModel(), GetDrawActivity(), GetAnimPrefix() );
 
@@ -1637,10 +1636,7 @@ Activity CSharedBaseCombatWeapon::GetDrawActivity( void )
 // Purpose: 
 //-----------------------------------------------------------------------------
 bool CSharedBaseCombatWeapon::Holster( CSharedBaseCombatWeapon *pSwitchingTo, bool bInstant )
-{ 
-	if ( !CanHolster() )
-		return false;
-
+{
 	MDLCACHE_CRITICAL_SECTION();
 
 	// cancel any reload in progress.
@@ -2191,12 +2187,6 @@ bool CSharedBaseCombatWeapon::ReloadsSingly( void ) const
 //-----------------------------------------------------------------------------
 bool CSharedBaseCombatWeapon::Reload( void )
 {
-	if( IsHolstered() )
-	{
-		Deploy();
-		return false;
-	}
-
 	return DefaultReload( GetMaxClip1(), GetMaxClip2(), ACT_VM_RELOAD );
 }
 
@@ -2416,19 +2406,6 @@ void CSharedBaseCombatWeapon::UpdateAutoFire( void )
 //-----------------------------------------------------------------------------
 bool CSharedBaseCombatWeapon::PrimaryAttack( void )
 {
-	if( IsHolstered() )
-	{
-		Deploy();
-		return false;
-	}
-
-	// If my clip is empty (and I use clips) start reload
-	if ( UsesClipsForAmmo1() && !m_iClip1 ) 
-	{
-		Reload();
-		return false;
-	}
-
 	// Only the player fires this way so we can cast
 	CSharedBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 

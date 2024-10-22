@@ -12,6 +12,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_RECVPROP, "RecvProp" );
+
 #if !defined(_STATIC_LINKED) || defined(CLIENT_DLL)
 
 const char *s_ClientElementNames[MAX_ARRAY_ELEMENTS] =

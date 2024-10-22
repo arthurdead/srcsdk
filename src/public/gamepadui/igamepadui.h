@@ -7,6 +7,8 @@
 #include "mathlib/vector.h"
 #include "ivrenderview.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_GAMEPADUI );
+
 abstract_class IGamepadUI : public IBaseInterface
 {
 public:
@@ -23,6 +25,8 @@ public:
 
 #define GAMEPADUI_INTERFACE_VERSION "GamepadUI001"
 
-#define GamepadUI_Log(...) ConColorMsg( Color( 255, 134, 44, 255 ), "[GamepadUI] " __VA_ARGS__ )
+#define GamepadUI_Msg(...) Log_Msg( LOG_GAMEPADUI, "[GamepadUI] " __VA_ARGS__ )
+
+#define GamepadUI_Log(...) GamepadUI_Msg( __VA_ARGS__ )
 
 #endif // IGAMEPADUI_H

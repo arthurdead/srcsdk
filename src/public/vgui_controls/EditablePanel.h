@@ -13,6 +13,8 @@
 #include <vgui_controls/Panel.h>
 #include <vgui_controls/FocusNavGroup.h>
 
+DECLARE_LOGGING_CHANNEL( LOG_VGUIRESOURCE );
+
 namespace vgui
 {
 

@@ -16,7 +16,12 @@
 #include "iclientrenderable.h"
 
 class IClientNetworkable;
+#ifdef CLIENT_DLL
 class C_BaseEntity;
+typedef C_BaseEntity CClientBaseEntity;
+#else
+class CClientBaseEntity;
+#endif
 class IClientRenderable;
 class IClientRenderableMod;
 class ICollideable;
@@ -37,7 +42,7 @@ public:
 	virtual IClientNetworkable*	GetClientNetworkable() = 0;
 	virtual IClientRenderable*	GetClientRenderable() = 0;
 	virtual IClientEntity*		GetIClientEntity() = 0;
-	virtual C_BaseEntity*		GetBaseEntity() = 0;
+	virtual CClientBaseEntity*		GetBaseEntity() = 0;
 	virtual IClientThinkable*	GetClientThinkable() = 0;
 };
 

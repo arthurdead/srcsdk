@@ -45,6 +45,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef GAME_DLL
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_GAMERULES, "GameRules Server" );
+#else
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_GAMERULES, "GameRules Client" );
+#endif
+
 BEGIN_NETWORK_TABLE_NOBASE(CSharedGameRules, DT_GameRules)
 	PropFloat(PROPINFO(m_flGravityMultiplier), 0, SPROP_NOSCALE),
 END_NETWORK_TABLE()
@@ -196,6 +202,9 @@ CUtlStringList CSharedGameRules::m_MapList;
 
 ConVar log_verbose_enable( "log_verbose_enable", "0", FCVAR_GAMEDLL, "Set to 1 to enable verbose server log on the server." );
 ConVar log_verbose_interval( "log_verbose_interval", "3.0", FCVAR_GAMEDLL, "Determines the interval (in seconds) for the verbose server log." );
+
+CBaseEntity	*g_pLastSpawn = NULL;
+
 #endif // CLIENT_DLL
 
 ConVar	teamplay( "mp_teamplay","0", FCVAR_NOTIFY|FCVAR_REPLICATED );
@@ -430,46 +439,6 @@ CSharedGameRules::CGameRules() : CAutoGameSystemPerFrame( V_STRINGIFY(CGameRules
 	m_flNextVerboseLogOutput = 0.0f;
 
 	m_flTimeLastMapChangeOrPlayerWasConnected = 0.0f;
-
-	// 11/8/98
-	// Modified by YWB:  Server .cfg file is now a cvar, so that 
-	//  server ops can run multiple game servers, with different server .cfg files,
-	//  from a single installed directory.
-	// Mapcyclefile is already a cvar.
-
-	// 3/31/99
-	// Added lservercfg file cvar, since listen and dedicated servers should not
-	// share a single config file. (sjb)
-	if ( engine->IsDedicatedServer() )
-	{
-		// dedicated server
-		const char *cfgfile = servercfgfile.GetString();
-
-		if ( cfgfile && cfgfile[0] )
-		{
-			char szCommand[MAX_PATH];
-
-			Log( "Executing dedicated server config file %s\n", cfgfile );
-			Q_snprintf( szCommand,sizeof(szCommand), "exec %s\n", cfgfile );
-			engine->ServerCommand( szCommand );
-		}
-	}
-	else
-	{
-		// listen server
-		const char *cfgfile = lservercfgfile.GetString();
-
-		if ( cfgfile && cfgfile[0] )
-		{
-			char szCommand[MAX_PATH];
-
-			Log( "Executing listen server config file %s\n", cfgfile );
-			Q_snprintf( szCommand,sizeof(szCommand), "exec %s\n", cfgfile );
-			engine->ServerCommand( szCommand );
-		}
-	}
-
-	nextlevel.SetValue( "" );
 #endif
 
 	ListenForGameEvent( "recalculate_holidays" );
@@ -594,37 +563,132 @@ bool CSharedGameRules::CanHaveAmmo( CBaseCombatCharacter *pPlayer, const char *s
 
 //=========================================================
 //=========================================================
-CBaseEntity *CSharedGameRules::GetPlayerSpawnSpot( CBasePlayer *pPlayer )
+
+//-----------------------------------------------------------------------------
+// Purpose: Finds a player start entity of the given classname. If any entity of
+//			of the given classname has the SF_PLAYER_START_MASTER flag set, that
+//			is the entity that will be returned. Otherwise, the first entity of
+//			the given classname is returned.
+// Input  : pszClassName - should be "info_player_start", "info_player_coop", or
+//			"info_player_deathmatch"
+//-----------------------------------------------------------------------------
+CBaseEntity *FindPlayerStart(const char *pszClassName)
 {
-	CBaseEntity *pSpawnSpot = pPlayer->EntSelectSpawnPoint();
-	Assert( pSpawnSpot );
-	if ( pSpawnSpot == NULL )
-		return NULL;
+	#define SF_PLAYER_START_MASTER	1
+	
+	CBaseEntity *pStart = gEntList.FindEntityByClassname(NULL, pszClassName);
+	CBaseEntity *pStartFirst = pStart;
+	while (pStart != NULL)
+	{
+		if (pStart->HasSpawnFlags(SF_PLAYER_START_MASTER))
+		{
+			return pStart;
+		}
 
-	pPlayer->SetLocalOrigin( pSpawnSpot->GetAbsOrigin() + Vector(0,0,1) );
-	pPlayer->SetAbsVelocity( vec3_origin );
-	pPlayer->SetLocalAngles( pSpawnSpot->GetLocalAngles() );
-	pPlayer->m_Local.m_vecPunchAngle = vec3_angle;
-	pPlayer->m_Local.m_vecPunchAngleVel = vec3_angle;
-	pPlayer->SnapEyeAngles( pSpawnSpot->GetLocalAngles() );
+		pStart = gEntList.FindEntityByClassname(pStart, pszClassName);
+	}
 
-	return pSpawnSpot;
+	return pStartFirst;
+}
+
+CBaseEntity *CSharedGameRules::GetPlayerSpawnSpot( CBaseCombatCharacter *pPlayer )
+{
+	CBaseEntity *pSpot;
+
+// choose a info_player_deathmatch point
+	if (IsCoOp())
+	{
+		pSpot = gEntList.FindEntityByClassname( g_pLastSpawn, "info_player_coop");
+		if ( pSpot )
+			goto ReturnSpot;
+		pSpot = gEntList.FindEntityByClassname( g_pLastSpawn, "info_player_start");
+		if ( pSpot ) 
+			goto ReturnSpot;
+	}
+	else if ( IsDeathmatch() )
+	{
+		pSpot = g_pLastSpawn;
+		// Randomize the start spot
+		for ( int i = random->RandomInt(1,5); i > 0; i-- )
+			pSpot = gEntList.FindEntityByClassname( pSpot, "info_player_deathmatch" );
+		if ( !pSpot )  // skip over the null point
+			pSpot = gEntList.FindEntityByClassname( pSpot, "info_player_deathmatch" );
+
+		CBaseEntity *pFirstSpot = pSpot;
+
+		do 
+		{
+			if ( pSpot )
+			{
+				// check if pSpot is valid
+				if ( !pPlayer || IsSpawnPointValid( pSpot, pPlayer ) )
+				{
+					if ( pSpot->GetLocalOrigin() == vec3_origin )
+					{
+						pSpot = gEntList.FindEntityByClassname( pSpot, "info_player_deathmatch" );
+						continue;
+					}
+
+					// if so, go to pSpot
+					goto ReturnSpot;
+				}
+			}
+			// increment pSpot
+			pSpot = gEntList.FindEntityByClassname( pSpot, "info_player_deathmatch" );
+		} while ( pSpot != pFirstSpot ); // loop if we're not back to the start
+
+		// we haven't found a place to spawn yet,  so kill any guy at the first spawn point and spawn there
+		if ( pSpot )
+		{
+			CBaseEntity *ent = NULL;
+			for ( CEntitySphereQuery sphere( pSpot->GetAbsOrigin(), 128 ); (ent = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
+			{
+				// if ent is a client, kill em (unless they are ourselves)
+				if ( ent->IsCombatCharacter() && ent != pPlayer )
+					ent->TakeDamage( CTakeDamageInfo( GetContainingEntity(INDEXENT(0)), GetContainingEntity(INDEXENT(0)), 300, DMG_GENERIC ) );
+			}
+			goto ReturnSpot;
+		}
+	}
+
+	// If startspot is set, (re)spawn there.
+	if ( !gpGlobals->startspot || !strlen(STRING(gpGlobals->startspot)))
+	{
+		pSpot = FindPlayerStart( "info_player_start" );
+		if ( pSpot )
+			goto ReturnSpot;
+	}
+	else
+	{
+		pSpot = gEntList.FindEntityByName( NULL, gpGlobals->startspot );
+		if ( pSpot )
+			goto ReturnSpot;
+	}
+
+ReturnSpot:
+	if ( !pSpot  )
+	{
+		Log_Warning( LOG_GAMERULES,"PutClientInServer: no info_player_start on level\n");
+		return CBaseEntity::Instance( INDEXENT( 0 ) );
+	}
+
+	g_pLastSpawn = pSpot;
+	return pSpot;
 }
 
 // checks if the spot is clear of players
-bool CSharedGameRules::IsSpawnPointValid( CBaseEntity *pSpot, CBasePlayer *pPlayer  )
+bool CSharedGameRules::IsSpawnPointValid( CBaseEntity *pSpot, CBaseCombatCharacter *pPlayer  )
 {
-	CBaseEntity *ent = NULL;
-
 	if ( !pSpot->IsTriggered( pPlayer ) )
 	{
 		return false;
 	}
 
+	CBaseEntity *ent = NULL;
 	for ( CEntitySphereQuery sphere( pSpot->GetAbsOrigin(), 128 ); (ent = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
 	{
 		// if ent is a client, don't spawn on 'em
-		if ( ent->IsPlayer() && ent != pPlayer )
+		if ( ent->IsCombatCharacter() && ent != pPlayer )
 			return false;
 	}
 
@@ -2407,7 +2471,7 @@ void CSharedGameRules::DetermineMapCycleFilename( char *pszResult, int nSizeResu
 	*pszResult = '\0';
 	if ( bForceSpew || V_stricmp( szLastResult, "__notfound") )
 	{
-		Msg( "Map cycle file '%s' was not found.\n", szRecommendedName );
+		Log_Msg( LOG_GAMERULES,"Map cycle file '%s' was not found.\n", szRecommendedName );
 		V_strcpy_safe( szLastResult, "__notfound" );
 	}
 }
@@ -2893,7 +2957,7 @@ bool CSharedGameRules::SwitchToNextBestWeapon( CSharedBaseCombatCharacter *pPlay
 	CSharedBaseCombatWeapon *pWeapon = GetNextBestWeapon( pPlayer, pCurrentWeapon );
 
 	if ( pWeapon != NULL )
-		return pPlayer->Weapon_Switch( pWeapon );
+		return pPlayer->Weapon_Switch( pWeapon ) != WEAPON_SWITCH_FAILED;
 	
 	return false;
 }

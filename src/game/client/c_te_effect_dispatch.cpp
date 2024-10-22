@@ -19,6 +19,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_EFFECTS, "Effects Client" );
+
 //-----------------------------------------------------------------------------
 // CClientEffectRegistration registration
 //-----------------------------------------------------------------------------
@@ -84,7 +86,7 @@ void DispatchEffectToCallback( const char *pEffectName, const CEffectData &m_Eff
 			// If the name matches, call it
 			if ( map.Defined( pReg->m_pEffectName ) )
 			{
-				Warning( "Encountered multiple different effects with the same name \"%s\"!\n", pReg->m_pEffectName );
+				Log_Warning( LOG_EFFECTS,"Encountered multiple different effects with the same name \"%s\"!\n", pReg->m_pEffectName );
 				continue;
 			}
 
@@ -97,7 +99,7 @@ void DispatchEffectToCallback( const char *pEffectName, const CEffectData &m_Eff
 	UtlSymId_t nSym = map.Find( pEffectName );
 	if ( nSym == UTL_INVAL_SYMBOL )
 	{
-		Warning("DispatchEffect: effect \"%s\" not found on client\n", pEffectName );
+		Log_Warning(LOG_EFFECTS,"DispatchEffect: effect \"%s\" not found on client\n", pEffectName );
 		return;
 	}
 

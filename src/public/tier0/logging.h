@@ -180,6 +180,8 @@ enum LoggingResponse_t
 //-----------------------------------------------------------------------------
 enum LoggingChannelFlags_t
 {
+	LCF_NONE = 0,
+
 	//-----------------------------------------------------------------------------
 	// Indicates that the spew is only relevant to interactive consoles.
 	//-----------------------------------------------------------------------------
@@ -261,26 +263,9 @@ public:
 class CSimpleLoggingListener : public ILoggingListener
 {
 public:
-	CSimpleLoggingListener( bool bQuietPrintf = false, bool bQuietDebugger = false ) : 
-	  m_bQuietPrintf( bQuietPrintf ), 
-		  m_bQuietDebugger( bQuietDebugger ) 
-	{ 
-	}
+	CSimpleLoggingListener( bool bQuietPrintf = false, bool bQuietDebugger = false );
 
-	virtual void Log( const LoggingContext_t *pContext, const tchar *pMessage )
-	{
-#ifndef _CERT
-		if ( !m_bQuietPrintf )
-		{
-			_tprintf( _T("%s"), pMessage );
-		}
-#endif
-
-		if ( !m_bQuietDebugger && Plat_IsInDebugSession() )
-		{
-			Plat_DebugString( pMessage );
-		}
-	}
+	virtual void Log( const LoggingContext_t *pContext, const tchar *pMessage );
 
 	// If set to true, does not print anything to stdout.
 	bool m_bQuietPrintf;
@@ -291,23 +276,10 @@ public:
 //-----------------------------------------------------------------------------
 // A basic logging listener for GUI applications
 //-----------------------------------------------------------------------------
-class CSimpleWindowsLoggingListener : public ILoggingListener
+class CSimpleGUIoggingListener : public ILoggingListener
 {
 public:
-	virtual void Log( const LoggingContext_t *pContext, const tchar *pMessage )
-	{
-		if ( Plat_IsInDebugSession() )
-		{
-			Plat_DebugString( pMessage );
-		}
-		if ( pContext->m_Severity == LS_FATAL_ERROR )
-		{
-			if ( Plat_IsInDebugSession() )
-				DebuggerBreak();
-
-			Plat_MessageBox( "Error", pMessage );
-		}
-	}
+	virtual void Log( const LoggingContext_t *pContext, const tchar *pMessage );
 };
 
 
@@ -322,37 +294,9 @@ public:
 class CColorizedLoggingListener : public CSimpleLoggingListener
 {
 public:
-	CColorizedLoggingListener( bool bQuietPrintf = false, bool bQuietDebugger = false ) : CSimpleLoggingListener( bQuietPrintf, bQuietDebugger )
-	{
-		InitConsoleColorContext( &m_ColorContext );
-	}
+	CColorizedLoggingListener( bool bQuietPrintf = false, bool bQuietDebugger = false );
 
-	virtual void Log( const LoggingContext_t *pContext, const tchar *pMessage )
-	{
-		if ( !m_bQuietPrintf )
-		{
-			int nPrevColor = -1;
-
-			if ( pContext->m_Color != UNSPECIFIED_LOGGING_COLOR )
-			{
-				nPrevColor = SetConsoleColor( &m_ColorContext,
-					pContext->m_Color.r(), pContext->m_Color.g(), pContext->m_Color.b(), 
-					MAX( MAX( pContext->m_Color.r(), pContext->m_Color.g() ), pContext->m_Color.b() ) > 128 );
-			}
-
-			_tprintf( _T("%s"), pMessage );
-
-			if ( nPrevColor >= 0 )
-			{
-				RestoreConsoleColor( &m_ColorContext, nPrevColor );
-			}
-		}
-
-		if ( !m_bQuietDebugger && Plat_IsInDebugSession() )
-		{
-			Plat_DebugString( pMessage );
-		}
-	}
+	virtual void Log( const LoggingContext_t *pContext, const tchar *pMessage );
 
 	ConsoleColorContext_t m_ColorContext;
 };
@@ -364,21 +308,7 @@ public:
 class CDefaultLoggingResponsePolicy : public ILoggingResponsePolicy
 {
 public:
-	virtual LoggingResponse_t OnLog( const LoggingContext_t *pContext )
-	{
-		if ( pContext->m_Severity == LS_ASSERT && !CommandLine()->FindParm( "-noassert" ) ) 
-		{
-			return LR_DEBUGGER;
-		}
-		else if ( pContext->m_Severity == LS_FATAL_ERROR )
-		{
-			return LR_ABORT;
-		}
-		else
-		{
-			return LR_CONTINUE;
-		}
-	}
+	virtual LoggingResponse_t OnLog( const LoggingContext_t *pContext );
 };
 
 //-----------------------------------------------------------------------------
@@ -387,17 +317,7 @@ public:
 class CNonFatalLoggingResponsePolicy : public ILoggingResponsePolicy
 {
 public:
-	virtual LoggingResponse_t OnLog( const LoggingContext_t *pContext )
-	{
-		if ( ( pContext->m_Severity == LS_ASSERT && !CommandLine()->FindParm( "-noassert" ) ) || pContext->m_Severity == LS_FATAL_ERROR )
-		{
-			return LR_DEBUGGER;
-		}
-		else
-		{
-			return LR_CONTINUE;
-		}
-	}
+	virtual LoggingResponse_t OnLog( const LoggingContext_t *pContext );
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -429,7 +349,7 @@ public:
 	// by a single thread. Using the logging channel definition macros ensures 
 	// that this is called on the static initialization thread.
 	//-----------------------------------------------------------------------------
-	LoggingChannelID_t RegisterLoggingChannel( const char *pChannelName, RegisterTagsFunc registerTagsFunc, int flags = 0, LoggingSeverity_t minimumSeverity = LS_MESSAGE, Color spewColor = UNSPECIFIED_LOGGING_COLOR );
+	LoggingChannelID_t RegisterLoggingChannel( const char *pChannelName, RegisterTagsFunc registerTagsFunc, LoggingChannelFlags_t flags = LCF_NONE, LoggingSeverity_t minimumSeverity = LS_MESSAGE, Color spewColor = UNSPECIFIED_LOGGING_COLOR );
 
 	//-----------------------------------------------------------------------------
 	// Gets a channel ID from a string name.
@@ -664,19 +584,24 @@ private:
 #define Log_Assert( Message, ... ) \
 	LoggingSystem_LogAssert( Message, ##__VA_ARGS__ )
 
-#define DECLARE_DLL_LOGGING_CHANNEL( Channel ) DLL_GLOBAL_IMPORT LoggingChannelID_t Channel
-
 #define DECLARE_LOGGING_CHANNEL( Channel ) extern LoggingChannelID_t Channel
 
-#define DEFINE_DLL_LOGGING_CHANNEL_NO_TAGS( Channel, ChannelName, /* [Flags], [Severity], [Color] */ ... ) \
-	DLL_EXPORT_ATTR LoggingChannelID_t Channel = LoggingSystem_RegisterLoggingChannel( ChannelName, NULL, ##__VA_ARGS__ )
-
 #define DEFINE_LOGGING_CHANNEL_NO_TAGS( Channel, ChannelName, /* [Flags], [Severity], [Color] */ ... ) \
-	LoggingChannelID_t Channel = LoggingSystem_RegisterLoggingChannel( ChannelName, NULL, ##__VA_ARGS__ )
+	LoggingChannelID_t Channel = INVALID_LOGGING_CHANNEL_ID; \
+	INIT_PRIORITY(65535) struct Channel##init_t { \
+		Channel##init_t() { \
+			Channel = LoggingSystem_RegisterLoggingChannel( ChannelName, NULL, ##__VA_ARGS__ ); \
+		} \
+	} g_##Channel##init_t
 
 #define BEGIN_DEFINE_LOGGING_CHANNEL( Channel, ChannelName, /* [Flags], [Severity], [Color] */ ... ) \
 	static void Register_##Channel##_Tags(); \
-	LoggingChannelID_t Channel = LoggingSystem_RegisterLoggingChannel( ChannelName, Register_##Channel##_Tags, ##__VA_ARGS__ ); \
+	LoggingChannelID_t Channel = INVALID_LOGGING_CHANNEL_ID; \
+	INIT_PRIORITY(65535) struct Channel##init_t { \
+		Channel##init_t() { \
+			Channel = LoggingSystem_RegisterLoggingChannel( ChannelName, Register_##Channel##_Tags, ##__VA_ARGS__ ); \
+		} \
+	} g_##Channel##init_t; \
 	void Register_##Channel##_Tags() \
 	{
 
@@ -691,7 +616,7 @@ private:
 
 // For documentation on these functions, please look at the corresponding function
 // in CLoggingSystem (unless otherwise specified).
-PLATFORM_INTERFACE LoggingChannelID_t LoggingSystem_RegisterLoggingChannel( const char *pName, RegisterTagsFunc registerTagsFunc, int flags = 0, LoggingSeverity_t severity = LS_MESSAGE, Color color = UNSPECIFIED_LOGGING_COLOR ); 
+PLATFORM_INTERFACE LoggingChannelID_t LoggingSystem_RegisterLoggingChannel( const char *pName, RegisterTagsFunc registerTagsFunc, LoggingChannelFlags_t flags = LCF_NONE, LoggingSeverity_t severity = LS_MESSAGE, Color color = UNSPECIFIED_LOGGING_COLOR ); 
 
 PLATFORM_INTERFACE void LoggingSystem_RegisterLoggingListener( ILoggingListener *pListener );
 PLATFORM_INTERFACE void LoggingSystem_ResetCurrentLoggingState();

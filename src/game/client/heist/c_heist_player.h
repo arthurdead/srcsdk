@@ -20,6 +20,10 @@ public:
 
 	void PostThink() override;
 
+	void SelectItem( const char *pstr, int iSubType ) override;
+
+	void EquipMask();
+
 private:
 	C_HeistPlayer(const C_HeistPlayer &);
 };

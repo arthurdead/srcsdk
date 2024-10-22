@@ -13,20 +13,22 @@
 
 #ifdef CLIENT_DLL
 
-	#include "dt_recv.h"
-	#include "client_class.h"
-	#include "icliententityinternal.h"
+#include "dt_recv.h"
+#include "client_class.h"
+#include "icliententityinternal.h"
 
-	EXTERN_RECV_TABLE( DT_EffectData );
+EXTERN_RECV_TABLE( DT_EffectData );
 
 #else
 
-	#include "dt_send.h"
-	#include "server_class.h"
+#include "dt_send.h"
+#include "server_class.h"
 
-	EXTERN_SEND_TABLE( DT_EffectData );
+EXTERN_SEND_TABLE( DT_EffectData );
 
 #endif
+
+DECLARE_LOGGING_CHANNEL( LOG_EFFECTS );
 
 // NOTE: These flags are specifically *not* networked; so it's placed above the max effect flag bits
 #define EFFECTDATA_NO_RECORD 0x80000000

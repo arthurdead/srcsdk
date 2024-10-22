@@ -449,7 +449,7 @@ public:
 	virtual bool			Weapon_CanUse( CBaseCombatWeapon *pWeapon );
 	virtual void			Weapon_Equip( CBaseCombatWeapon *pWeapon, bool bDeploy = true );
 	virtual	void			Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget /* = NULL */, const Vector *pVelocity /* = NULL */ );
-	virtual	bool			Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = 0, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
+	virtual	int			Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
 	virtual void			Weapon_SetLast( CBaseCombatWeapon *pWeapon );
 	virtual bool			Weapon_ShouldSetLast( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon ) { return true; }
 	virtual bool			Weapon_ShouldSelectItem( CBaseCombatWeapon *pWeapon );
@@ -538,7 +538,6 @@ public:
 	void					FirePlayerProxyOutput( const char *pszOutputName, variant_t variant, CBaseEntity *pActivator, CBaseEntity *pCaller );
 
 	virtual void			CreateCorpse( void ) { }
-	virtual CBaseEntity		*EntSelectSpawnPoint( void );
 
 	// Vehicles
 	virtual bool			IsInAVehicle( void ) const;

@@ -10,13 +10,13 @@ build_libs = get_option('build_libs')
 src_engine_dir = get_option('src_engine_dir')
 game_dir = get_option('game_dir')
 
-if get_option('funny')
-	subdir('funny')
-endif
-
 if meson.get_compiler('cpp').has_define('__WINE__')
 	subproject('linux_hammer_ipc')
 else
+	if get_option('funny')
+		subdir('funny')
+	endif
+
 	if build_libs
 		subproject('choreoobjects')
 		subproject('mathlib')

@@ -441,13 +441,6 @@ public:
 	virtual eFindMapResult FindMap( /* in/out */ char *pMapName, int nMapNameMax ) = 0;
 };
 
-// These only differ in new items added to the end
-typedef IVEngineServer IVEngineServer021;
-typedef IVEngineServer IVEngineServer022;
-
-
-#define INTERFACEVERSION_SERVERGAMEDLL_VERSION_8	"ServerGameDLL008"
-#define INTERFACEVERSION_SERVERGAMEDLL_VERSION_9	"ServerGameDLL009"
 #define INTERFACEVERSION_SERVERGAMEDLL				"ServerGameDLL010"
 #define INTERFACEVERSION_SERVERGAMEDLL_INT			10
 
@@ -696,7 +689,18 @@ private:
 		return LevelInit( pMapName, pMapEntities, pOldLevel, pLandmarkName, background );
 	}
 public:
+	// Called after tools are initialized (i.e. when Foundry is initialized so we can get IServerFoundry).
+	virtual void			PostToolsInit() = 0;
+
 	virtual void			ServerHibernationUpdate( bool bHibernating ) = 0;
+
+	// Called to apply lobby settings to a dedicated server
+	virtual void			ApplyGameSettings( KeyValues *pKV ) = 0;
+
+	// return true to disconnect client due to timeout (used to do stricter timeouts when the game is sure the client isn't loading a map)
+	virtual bool			ShouldTimeoutClient( int nUserID, float flTimeSinceLastReceived ) = 0;
+
+	virtual bool			ShouldPreferSteamAuth() = 0;
 
 	virtual IServerGameTagsEx *GetIServerGameTags() = 0;
 

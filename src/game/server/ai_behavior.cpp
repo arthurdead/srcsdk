@@ -333,7 +333,7 @@ void CAI_BehaviorBase::MaintainSchedule( int channel )
 
 				pNewSchedule = GetFailSchedule( pScheduleState );
 				pScheduleState->idealSchedule = pNewSchedule->GetId();
-				DevWarning( 2, "(%s) Schedule (%s) Failed at %d!\n", STRING( GetOuter()->GetEntityName() ), pScheduleState->pSchedule ? pScheduleState->pSchedule->GetName() : "GetCurSchedule() == NULL", pScheduleState->iCurTask );
+				Log_Warning( LOG_SCHEDULE, "(%s) Schedule (%s) Failed at %d!\n", STRING( GetOuter()->GetEntityName() ), pScheduleState->pSchedule ? pScheduleState->pSchedule->GetName() : "GetCurSchedule() == NULL", pScheduleState->iCurTask );
 				SetSchedule( channel, pNewSchedule );
 			}
 			else

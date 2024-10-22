@@ -114,6 +114,9 @@
 #include "replay/ireplaysystem.h"
 #endif
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
 extern IToolFrameworkServer *g_pToolFrameworkServer;
 extern IParticleSystemQuery *g_pParticleSystemQuery;
 
@@ -128,9 +131,6 @@ static CSteamGameServerAPIContext s_SteamGameServerAPIContext;
 CSteamGameServerAPIContext *steamgameserverapicontext = &s_SteamGameServerAPIContext;
 
 IUploadGameStats *gamestatsuploader = NULL;
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
 
 CTimedEventMgr g_NetworkPropertyEventMgr;
 
@@ -436,6 +436,7 @@ void DrawAllDebugOverlays( void )
 }
 
 CServerGameDLL g_ServerGameDLL;
+IServerGameDLLEx *serverGameDLLEx = &g_ServerGameDLL;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CServerGameDLL, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL, g_ServerGameDLL);
 
 // When bumping the version to this interface, check that our assumption is still valid and expose the older version in the same way
@@ -512,6 +513,10 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 
 	char gamebin_path[MAX_PATH];
 	g_pFullFileSystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+	char *comma = V_strstr(gamebin_path,";");
+	if(comma) {
+		*comma = '\0';
+	}
 	V_AppendSlash(gamebin_path, ARRAYSIZE(gamebin_path));
 	int gamebin_length = V_strlen(gamebin_path);
 
@@ -767,11 +772,12 @@ void CServerGameDLL::PostInit()
 
 void CServerGameDLL::PostToolsInit()
 {
+#ifndef SWDS
 	if ( serverenginetools && !engine->IsDedicatedServer() )
 	{
-		//serverfoundry = ( IServerFoundry * )serverenginetools->QueryInterface( VSERVERFOUNDRY_INTERFACE_VERSION );
-		serverfoundry = NULL;
+		serverfoundry = ( IServerFoundry * )serverenginetools->QueryInterface( VSERVERFOUNDRY_INTERFACE_VERSION );
 	}
+#endif
 }
 
 void CServerGameDLL::DLLShutdown( void )
@@ -903,6 +909,48 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 
 	HackMgr_SetGamePaused( false );
 	m_bWasPaused = false;
+
+	// 11/8/98
+	// Modified by YWB:  Server .cfg file is now a cvar, so that 
+	//  server ops can run multiple game servers, with different server .cfg files,
+	//  from a single installed directory.
+	// Mapcyclefile is already a cvar.
+
+	// 3/31/99
+	// Added lservercfg file cvar, since listen and dedicated servers should not
+	// share a single config file. (sjb)
+#ifndef SWDS
+	if ( !engine->IsDedicatedServer() )
+	{
+		// listen server
+		const char *cfgfile = lservercfgfile.GetString();
+
+		if ( cfgfile && cfgfile[0] )
+		{
+			char szCommand[MAX_PATH];
+
+			Log_Msg( LOG_GAMERULES,"Executing listen server config file %s\n", cfgfile );
+			Q_snprintf( szCommand,sizeof(szCommand), "exec %s\n", cfgfile );
+			engine->ServerCommand( szCommand );
+		}
+	}
+	else
+#endif
+	{
+		// dedicated server
+		const char *cfgfile = servercfgfile.GetString();
+
+		if ( cfgfile && cfgfile[0] )
+		{
+			char szCommand[MAX_PATH];
+
+			Log_Msg( LOG_GAMERULES,"Executing dedicated server config file %s\n", cfgfile );
+			Q_snprintf( szCommand,sizeof(szCommand), "exec %s\n", cfgfile );
+			engine->ServerCommand( szCommand );
+		}
+	}
+
+	nextlevel.SetValue( "" );
 
 	//Tony; parse custom manifest if exists!
 	ParseParticleEffectsMap( pMapName, false );
@@ -1088,6 +1136,13 @@ void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edictCount, int cl
 	{
 		think_limit.SetValue( 0 );
 	}
+
+	// Lets execute a map specific cfg file
+	// ** execute this after server.cfg!
+	char szCommand[MAX_PATH] = { 0 };
+	// Map names cannot contain quotes or control characters so this is safe but silly that we have to do it.
+	Q_snprintf( szCommand, sizeof( szCommand ), "exec \"%s.cfg\"\n", STRING( gpGlobals->mapname ) );
+	engine->ServerCommand( szCommand );
 
 #ifndef SWDS
 	if(!engine->IsDedicatedServer()) {
@@ -1670,24 +1725,24 @@ void CServerGameDLL::LoadSpecificMOTDMsg( const ConVar &convar, const char *pszS
 
 	if ( !bFound )
 	{
-		Msg( "'%s' not found; not loaded\n", szPreferredFilename );
+		Log_Warning( LOG_GAMERULES,"'%s' not found; not loaded\n", szPreferredFilename );
 		return;
 	}
 
 	if ( buf.TellPut() > 2048 )
 	{
-		Warning("'%s' is too big; not loaded\n", szResolvedFilename );
+		Log_Warning(LOG_GAMERULES,"'%s' is too big; not loaded\n", szResolvedFilename );
 		return;
 	}
 	buf.PutChar( '\0' );
 
 	if ( V_stricmp( szPreferredFilename, szResolvedFilename ) == 0)
 	{
-		Msg( "Set %s from file '%s'\n", pszStringName, szResolvedFilename );
+		Log_Msg( LOG_GAMERULES,"Set %s from file '%s'\n", pszStringName, szResolvedFilename );
 	}
 	else
 	{
-		Msg( "Set %s from file '%s'.  ('%s' was not found.)\n", pszStringName, szResolvedFilename, szPreferredFilename );
+		Log_Msg( LOG_GAMERULES, "Set %s from file '%s'.  ('%s' was not found.)\n", pszStringName, szResolvedFilename, szPreferredFilename );
 	}
 
 	g_pStringTableInfoPanel->AddString( true, pszStringName, buf.TellPut(), buf.Base() );
@@ -1772,7 +1827,7 @@ int GetParticleSystemIndex( const char *pParticleSystemName )
 		if (nIndex != INVALID_STRING_INDEX )
 			return nIndex;
 
-		DevWarning("Server: Missing precache for particle system \"%s\"!\n", pParticleSystemName );
+		Log_Warning(LOG_PARTICLES,"Server: Missing precache for particle system \"%s\"!\n", pParticleSystemName );
 	}
 
 	// This is the invalid string index
@@ -1810,7 +1865,7 @@ int GetEffectIndex( const char *pEffectName )
 		if (nIndex != INVALID_STRING_INDEX )
 			return nIndex;
 
-		DevWarning("Server: Missing precache for effect \"%s\"!\n", pEffectName );
+		Log_Warning(LOG_PARTICLES,"Server: Missing precache for effect \"%s\"!\n", pEffectName );
 	}
 
 	// This is the invalid string index
@@ -2784,7 +2839,7 @@ void UserMessageBegin( IRecipientFilter& filter, const char *messagename )
 	
 	if ( msg_type == -1 )
 	{
-		Warning( "UserMessageBegin:  Unregistered message '%s'\n", messagename );
+		Log_Error( LOG_USERMSG,"UserMessageBegin:  Unregistered message '%s'\n", messagename );
 		g_pMsgBuffer = NULL;
 	}
 	else
@@ -2798,7 +2853,7 @@ void MessageEnd( void )
 	Assert( g_pMsgBuffer );
 
 	if( !g_pMsgBuffer ) {
-		Warning( "MessageEnd called with no active message\n" );
+		Log_Error( LOG_USERMSG, "MessageEnd called with no active message\n" );
 		return;
 	}
 
@@ -2810,7 +2865,7 @@ void MessageEnd( void )
 void MessageWriteByte( int iValue)
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WRITE_BYTE called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WRITE_BYTE called with no active message\n" );
 		return;
 	}
 
@@ -2820,7 +2875,7 @@ void MessageWriteByte( int iValue)
 void MessageWriteBytes( const void *pBuf, int nBytes )
 {
 	if (!g_pMsgBuffer) {
-		Warning("WRITE_BYTES called with no active message\n");
+		Log_Error( LOG_USERMSG,"WRITE_BYTES called with no active message\n");
 		return;
 	}
 
@@ -2830,7 +2885,7 @@ void MessageWriteBytes( const void *pBuf, int nBytes )
 void MessageWriteChar( int iValue)
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WRITE_CHAR called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WRITE_CHAR called with no active message\n" );
 		return;
 	}
 
@@ -2840,7 +2895,7 @@ void MessageWriteChar( int iValue)
 void MessageWriteShort( int iValue)
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WRITE_SHORT called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WRITE_SHORT called with no active message\n" );
 		return;
 	}
 
@@ -2850,7 +2905,7 @@ void MessageWriteShort( int iValue)
 void MessageWriteWord( int iValue )
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WRITE_WORD called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WRITE_WORD called with no active message\n" );
 		return;
 	}
 
@@ -2860,7 +2915,7 @@ void MessageWriteWord( int iValue )
 void MessageWriteLong( long iValue)
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteLong called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteLong called with no active message\n" );
 		return;
 	}
 
@@ -2870,7 +2925,7 @@ void MessageWriteLong( long iValue)
 void MessageWriteFloat( float flValue)
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteFloat called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteFloat called with no active message\n" );
 		return;
 	}
 
@@ -2880,7 +2935,7 @@ void MessageWriteFloat( float flValue)
 void MessageWriteAngle( float flValue)
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteAngle called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteAngle called with no active message\n" );
 		return;
 	}
 
@@ -2890,7 +2945,7 @@ void MessageWriteAngle( float flValue)
 void MessageWriteCoord( float flValue)
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteCoord called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteCoord called with no active message\n" );
 		return;
 	}
 
@@ -2900,7 +2955,7 @@ void MessageWriteCoord( float flValue)
 void MessageWriteVec3Coord( const Vector& rgflValue)
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteVec3Coord called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteVec3Coord called with no active message\n" );
 		return;
 	}
 
@@ -2910,7 +2965,7 @@ void MessageWriteVec3Coord( const Vector& rgflValue)
 void MessageWriteVec3Normal( const Vector& rgflValue)
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteVec3Normal called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteVec3Normal called with no active message\n" );
 		return;
 	}
 
@@ -2920,7 +2975,7 @@ void MessageWriteVec3Normal( const Vector& rgflValue)
 void MessageWriteBitVecIntegral( const Vector& vecValue )
 {
 	if (!g_pMsgBuffer) {
-		Warning( "MessageWriteBitVecIntegral called with no active message\n" );
+		Log_Error( LOG_USERMSG, "MessageWriteBitVecIntegral called with no active message\n" );
 		return;
 	}
 
@@ -2933,7 +2988,7 @@ void MessageWriteBitVecIntegral( const Vector& vecValue )
 void MessageWriteAngles( const QAngle& rgflValue)
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteVec3Normal called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteVec3Normal called with no active message\n" );
 		return;
 	}
 
@@ -2943,7 +2998,7 @@ void MessageWriteAngles( const QAngle& rgflValue)
 void MessageWriteString( const char *sz )
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteString called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteString called with no active message\n" );
 		return;
 	}
 
@@ -2953,7 +3008,7 @@ void MessageWriteString( const char *sz )
 void MessageWriteEntity( int iValue)
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteEntity called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteEntity called with no active message\n" );
 		return;
 	}
 
@@ -2963,7 +3018,7 @@ void MessageWriteEntity( int iValue)
 void MessageWriteEHandle( CBaseEntity *pEntity )
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteEHandle called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteEHandle called with no active message\n" );
 		return;
 	}
 
@@ -2988,7 +3043,7 @@ void MessageWriteEHandle( CBaseEntity *pEntity )
 void MessageWriteBool( bool bValue )
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteBool called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteBool called with no active message\n" );
 		return;
 	}
 
@@ -2998,7 +3053,7 @@ void MessageWriteBool( bool bValue )
 void MessageWriteUBitLong( unsigned int data, int numbits )
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteUBitLong called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteUBitLong called with no active message\n" );
 		return;
 	}
 
@@ -3008,7 +3063,7 @@ void MessageWriteUBitLong( unsigned int data, int numbits )
 void MessageWriteSBitLong( int data, int numbits )
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteSBitLong called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteSBitLong called with no active message\n" );
 		return;
 	}
 
@@ -3018,7 +3073,7 @@ void MessageWriteSBitLong( int data, int numbits )
 void MessageWriteBits( const void *pIn, int nBits )
 {
 	if (!g_pMsgBuffer) {
-		Warning( "WriteBits called with no active message\n" );
+		Log_Error( LOG_USERMSG, "WriteBits called with no active message\n" );
 		return;
 	}
 
@@ -3144,26 +3199,3 @@ static CGameServerLoopback s_ServerGameLoopback;
 IGameServerLoopback *g_pGameServerLoopback = &s_ServerGameLoopback;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CGameServerLoopback, IGameServerLoopback, GAMESERVERLOOPBACK_INTERFACE_VERSION, s_ServerGameLoopback );
 #endif
-
-static const char *reload_assets_cmds[] =
-{
-	"net_reloadgameevents",
-	"hud_reloadscheme",
-	"gameinstructor_reload_lessons",
-	"cl_soundemitter_flush",
-	"sv_soundemitter_flush",
-	"rr_reloadresponsesystems",
-	"cc_reload",
-	"mat_reloadallmaterials",
-	"r_flushlod",
-	"scenefilecache_reload",
-};
-
-CON_COMMAND(reload_all_assets, "")
-{
-	for(int i = 0; i < sizeof(reload_assets_cmds); ++i) {
-		engine->InsertServerCommand(reload_assets_cmds[i]);
-		engine->InsertServerCommand("wait 30");
-	}
-	engine->ServerExecute();
-}

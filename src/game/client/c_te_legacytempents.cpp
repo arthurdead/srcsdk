@@ -2622,9 +2622,9 @@ void CTempEnts::LevelInit()
 {
 	m_pSpriteMuzzleFlash = (model_t *)engine->LoadModel( "sprites/muzzleflash4.vmt" );
 
-	m_pShells[SHELL_GENERIC]		= (model_t *)engine->LoadModel( "models/shells/shell_generic.mdl" );
-	m_pShells[SHELL_SHOTGUN]	= (model_t *)engine->LoadModel( "models/shells/shell_shotgun.mdl" );
-	m_pShells[SHELL_RIFLE]	= (model_t *)engine->LoadModel( "models/shells/shell_rifle.mdl" );
+	m_pShells[SHELL_GENERIC]		= (model_t *)engine->LoadModel( "models/weapons/shell.mdl" );
+	m_pShells[SHELL_SHOTGUN]	= (model_t *)engine->LoadModel( "models/weapons/shotgun_shell.mdl" );
+	m_pShells[SHELL_RIFLE]	= (model_t *)engine->LoadModel( "models/weapons/rifleshell.mdl" );
 	m_pShells[SHELL_9MM]		= (model_t *)engine->LoadModel( "models/shells/shell_9mm.mdl" );
 	m_pShells[SHELL_57]		= (model_t *)engine->LoadModel( "models/shells/shell_57.mdl" );
 	m_pShells[SHELL_12GAUGE]	= (model_t *)engine->LoadModel( "models/shells/shell_12gauge.mdl" );

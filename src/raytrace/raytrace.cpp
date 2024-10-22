@@ -3,7 +3,7 @@
 
 #include "raytrace.h"
 #include <filesystem_tools.h>
-#include <cmdlib.h>
+//#include <cmdlib.h>
 #include <stdio.h>
 
 static bool SameSign(float a, float b)

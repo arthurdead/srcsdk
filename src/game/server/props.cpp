@@ -4493,7 +4493,8 @@ void CBasePropDoor::HandleAnimEvent(animevent_t *pEvent)
 //-----------------------------------------------------------------------------
 void CBasePropDoor::CalcDoorSounds()
 {
-	ErrorIfNot( GetModel() != NULL, ( "prop_door with no model at %.2f %.2f %.2f\n", GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z ) );
+	if( GetModel() == NULL )
+		Log_FatalError( LOG_MODEL, "prop_door with no model at %.2f %.2f %.2f\n", GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z );
 
 	string_t strSoundOpen = NULL_STRING;
 	string_t strSoundClose = NULL_STRING;
@@ -4594,7 +4595,7 @@ void CBasePropDoor::CalcDoorSounds()
 	{
 		if ( m_nPhysicsMaterial == -1 )
 		{
-			Warning( "%s has Door model (%s) with no door_options or m_nPhysicsMaterial specified! Verify that SKIN is valid, and has a corresponding options block in the model QC file\n", GetDebugName(), modelinfo->GetModelName( GetModel() ) );
+			Log_Warning( LOG_MODEL, "%s has Door model (%s) with no door_options or m_nPhysicsMaterial specified! Verify that SKIN is valid, and has a corresponding options block in the model QC file\n", GetDebugName(), modelinfo->GetModelName( GetModel() ) );
 			VPhysicsGetObject()->SetMaterialIndex( physprops->GetSurfaceIndex("wood") );
 		}
 		else

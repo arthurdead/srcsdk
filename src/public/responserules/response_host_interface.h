@@ -10,6 +10,9 @@
 #pragma once
 
 #include "filesystem.h"
+
+DECLARE_LOGGING_CHANNEL( LOG_RESPONSERULES );
+
 class IUniformRandomStream;
 class ICommandLine;
 

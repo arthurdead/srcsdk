@@ -16,6 +16,8 @@
 #include <bitbuf.h>
 #include "vgui/ISurface.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_HUD );
+
 namespace vgui
 {
 	class IScheme;

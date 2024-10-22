@@ -10,6 +10,9 @@
 #pragma once
 
 #include "shareddefs.h"
+#include "tier0/logging.h"
+
+DECLARE_LOGGING_CHANNEL( LOG_WEAPONPARSE );
 
 class IFileSystem;
 

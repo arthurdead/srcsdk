@@ -2,6 +2,7 @@
 #include "eiface.h"
 #include "server_class.h"
 #include "tier1/utlstring.h"
+#include "dbg.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -25,7 +26,7 @@ static void ProcessSendProp(SendProp *pProp)
 
 	if(pProp->GetFlags() & SPROP_COORD) {
 	#ifdef _DEBUG
-		DevMsg("Replacing SPROP_COORD with SPROP_COORD_MP in:\n\"%s\"\n", path.Get());
+		Log_Warning(LOG_SENDPROP,"Replacing SPROP_COORD with SPROP_COORD_MP in:\n\"%s\"\n", path.Get());
 	#endif
 		pProp->m_Flags &= ~SPROP_COORD;
 		pProp->m_Flags |= SPROP_COORD_MP;
@@ -33,21 +34,21 @@ static void ProcessSendProp(SendProp *pProp)
 
 	if(pProp->GetFlags() & SPROP_CELL_COORD) {
 	#ifdef _DEBUG
-		DevMsg("Replacing SPROP_CELL_COORD with SPROP_COORD_MP in:\n\"%s\"\n", path.Get());
+		Log_Warning(LOG_SENDPROP,"Replacing SPROP_CELL_COORD with SPROP_COORD_MP in:\n\"%s\"\n", path.Get());
 	#endif
 		pProp->m_Flags &= ~SPROP_CELL_COORD;
 		pProp->m_Flags |= SPROP_COORD_MP;
 	}
 	if(pProp->GetFlags() & SPROP_CELL_COORD_LOWPRECISION) {
 	#ifdef _DEBUG
-		DevMsg("Replacing SPROP_CELL_COORD_LOWPRECISION with SPROP_COORD_MP_LOWPRECISION in:\n\"%s\"\n", path.Get());
+		Log_Warning(LOG_SENDPROP,"Replacing SPROP_CELL_COORD_LOWPRECISION with SPROP_COORD_MP_LOWPRECISION in:\n\"%s\"\n", path.Get());
 	#endif
 		pProp->m_Flags &= ~SPROP_CELL_COORD_LOWPRECISION;
 		pProp->m_Flags |= SPROP_COORD_MP_LOWPRECISION;
 	}
 	if(pProp->GetFlags() & SPROP_CELL_COORD_INTEGRAL) {
 	#ifdef _DEBUG
-		DevMsg("Replacing SPROP_CELL_COORD_INTEGRAL with SPROP_COORD_MP_INTEGRAL in:\n\"%s\"\n", path.Get());
+		Log_Warning(LOG_SENDPROP,"Replacing SPROP_CELL_COORD_INTEGRAL with SPROP_COORD_MP_INTEGRAL in:\n\"%s\"\n", path.Get());
 	#endif
 		pProp->m_Flags &= ~SPROP_CELL_COORD_INTEGRAL;
 		pProp->m_Flags |= SPROP_COORD_MP_INTEGRAL;
@@ -107,6 +108,8 @@ HACKMGR_API bool HackMgr_Server_PreInit(IServerGameDLL *pdll, CreateInterfaceFn 
 	#endif
 		pClasses = pClasses->m_pNext;
 	}
+
+	Install_HackMgrSpew();
 
 	return true;
 }

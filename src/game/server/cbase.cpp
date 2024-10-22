@@ -90,6 +90,8 @@ OUTPUTS:
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_ENTITYIO, "Entity I/O" );
+
 // ID Stamp used to uniquely identify every output
 int CEventAction::s_iNextIDStamp = 0;
 
@@ -296,7 +298,7 @@ void CBaseEntityOutput::FireOutput(variant_t Value, CBaseEntity *pActivator, CBa
 						ev->m_flDelay,
 						STRING(ev->m_iParameter) );
 
-			DevMsg( 2, "%s", szBuffer );
+			Log_Msg( LOG_ENTITYIO, "%s", szBuffer );
 			ADD_DEBUG_HISTORY( HISTORY_ENTITY_IO, szBuffer );
 		}
 		else
@@ -315,7 +317,7 @@ void CBaseEntityOutput::FireOutput(variant_t Value, CBaseEntity *pActivator, CBa
 						STRING(ev->m_iTargetInput),
 						STRING(ev->m_iParameter) );
 
-			DevMsg( 2, "%s", szBuffer );
+			Log_Msg( LOG_ENTITYIO, "%s", szBuffer );
 			ADD_DEBUG_HISTORY( HISTORY_ENTITY_IO, szBuffer );
 		}
 
@@ -336,7 +338,7 @@ void CBaseEntityOutput::FireOutput(variant_t Value, CBaseEntity *pActivator, CBa
 			{
 				char szBuffer[256];
 				Q_snprintf( szBuffer, sizeof(szBuffer), "Removing from action list: (%s,%s) -> (%s,%s)\n", pCaller ? pCaller->GetClassname() : "NULL", pCaller ? STRING(pCaller->GetEntityName()) : "NULL", STRING(ev->m_iTarget), STRING(ev->m_iTargetInput));
-				DevMsg( 2, "%s", szBuffer );
+				Log_Msg( LOG_ENTITYIO, "%s", szBuffer );
 				ADD_DEBUG_HISTORY( HISTORY_ENTITY_IO, szBuffer );
 				bRemove = true;
 			}
@@ -623,7 +625,7 @@ void CEventQueue::Dump( void )
 {
 	EventQueuePrioritizedEvent_t *pe = m_Events.m_pNext;
 
-	Msg("Dumping event queue. Current time is: %.2f\n",
+	Log_Msg( LOG_ENTITYIO, "Dumping event queue. Current time is: %.2f\n",
 #ifdef TF_DLL
 		engine->GetServerTime()
 #else
@@ -635,7 +637,7 @@ void CEventQueue::Dump( void )
 	{
 		EventQueuePrioritizedEvent_t *next = pe->m_pNext;
 
-		Msg("   (%.2f) Target: '%s', Input: '%s', Parameter '%s'. Activator: '%s', Caller '%s'.  \n", 
+		Log_Msg( LOG_ENTITYIO, "   (%.2f) Target: '%s', Input: '%s', Parameter '%s'. Activator: '%s', Caller '%s'.  \n", 
 			pe->m_flFireTime, 
 			STRING(pe->m_iTarget), 
 			STRING(pe->m_iTargetInput), 
@@ -646,7 +648,7 @@ void CEventQueue::Dump( void )
 		pe = next;
 	}
 
-	Msg("Finished dump.\n");
+	Log_Msg( LOG_ENTITYIO, "Finished dump.\n");
 }
 
 
@@ -841,7 +843,7 @@ void CEventQueue::ServiceEvents( void )
 			
 			char szBuffer[256];
 			Q_snprintf( szBuffer, sizeof(szBuffer), "unhandled input: (%s) -> (%s), from (%s,%s); target entity not found\n", STRING(pe->m_iTargetInput), STRING(pe->m_iTarget), pClass, pName );
-			DevMsg( 2, "%s", szBuffer );
+			Log_Warning( LOG_ENTITYIO, "%s", szBuffer );
 			ADD_DEBUG_HISTORY( HISTORY_ENTITY_IO, szBuffer );
 		}
 

@@ -23,6 +23,8 @@
 #include "utlvector.h"
 #include "Color.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_KEYVALUES );
+
 #define FOR_EACH_SUBKEY( kvRoot, kvSubKey ) \
 	for ( KeyValues * kvSubKey = kvRoot->GetFirstSubKey(); kvSubKey != NULL; kvSubKey = kvSubKey->GetNextKey() )
 

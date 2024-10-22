@@ -5,7 +5,8 @@
 #include "toolframework/itooldictionary.h"
 #include "toolframework/itoolframework.h"
 #include "toolframework/itoolsystem.h"
-#include "dlloverride.h"
+#include "toolframework/iserverenginetools.h"
+#include "dlloverride_internal.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -122,6 +123,27 @@ CON_COMMAND(toollist, "")
 	for( int i =0; i < pToolFramework->m_ToolSystems.Count(); ++i) {
 		Msg("%s\n", pToolFramework->m_ToolSystems[i]->GetToolName());
 	}
+}
+
+HACKMGR_CLASS_API void* IServerEngineTools::QueryInterface( const char *pInterfaceName )
+{
+	CToolFrameworkInternal *pthis = (CToolFrameworkInternal *)this;
+
+	int toolCount = pthis->m_ToolSystems.Count();
+	for ( int i = 0; i < toolCount; ++i )
+	{
+		IToolSystem *tool = pthis->m_ToolSystems[ i ];
+		Assert( tool );
+
+		IToolSystemEx *tool_ex = dynamic_cast<IToolSystemEx *>(tool);
+		if(!tool_ex)
+			continue;
+
+		void *pRet = tool_ex->QueryInterface( pInterfaceName );
+		if ( pRet )
+			return pRet;
+	}
+	return NULL;
 }
 
 HACKMGR_EXECUTE_ON_LOAD_BEGIN(65535)

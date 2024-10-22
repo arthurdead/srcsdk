@@ -12,6 +12,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef GAME_DLL
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_USERMSG, "UserMessages Server" );
+#else
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_USERMSG, "UserMessages Client" );
+#endif
+
 void RegisterUserMessages( void );
 
 //-----------------------------------------------------------------------------
@@ -113,7 +119,7 @@ int CUserMessages::GetUserMessageSize( int index )
 {
 	if ( index < 0 || index >= (int)m_UserMessages.Count() )
 	{
-		Error( "CUserMessages::GetUserMessageSize( %i ) out of range!!!\n", index );
+		Log_FatalError( LOG_USERMSG,"CUserMessages::GetUserMessageSize( %i ) out of range!!!\n", index );
 	}
 
 	CUserMessage *e = m_UserMessages[ index ];
@@ -129,7 +135,7 @@ const char *CUserMessages::GetUserMessageName( int index )
 {
 	if ( index < 0 || index >= (int)m_UserMessages.Count() )
 	{
-		Error( "CUserMessages::GetUserMessageName( %i ) out of range!!!\n", index );
+		Log_FatalError( LOG_USERMSG, "CUserMessages::GetUserMessageName( %i ) out of range!!!\n", index );
 	}
 
 	return m_UserMessages.GetElementName( index );
@@ -156,7 +162,7 @@ void CUserMessages::Register( const char *name, int size )
 	int idx = m_UserMessages.Find( name );
 	if ( idx != m_UserMessages.InvalidIndex() )
 	{
-		Error( "CUserMessages::Register '%s' already registered\n", name );
+		Log_FatalError( LOG_USERMSG, "CUserMessages::Register '%s' already registered\n", name );
 	}
 
 	CUserMessage * entry = new CUserMessage;
@@ -180,7 +186,7 @@ void CUserMessages::HookMessage( const char *name, pfnUserMsgHook hook )
 	int idx = m_UserMessages.Find( name );
 	if ( idx == m_UserMessages.InvalidIndex() )
 	{
-		DevMsg( "CUserMessages::HookMessage:  no such message %s\n", name );
+		Log_Error( LOG_USERMSG, "CUserMessages::HookMessage:  no such message %s\n", name );
 		Assert( 0 );
 		return;
 	}
@@ -200,7 +206,7 @@ bool CUserMessages::DispatchUserMessage( int msg_type, bf_read &msg_data )
 {
 	if ( msg_type < 0 || msg_type >= (int)m_UserMessages.Count() )
 	{
-		DevMsg( "CUserMessages::DispatchUserMessage:  Bogus msg type %i (max == %i)\n", msg_type, m_UserMessages.Count() );
+		Log_Error( LOG_USERMSG, "CUserMessages::DispatchUserMessage:  Bogus msg type %i (max == %i)\n", msg_type, m_UserMessages.Count() );
 		Assert( 0 );
 		return false;
 	}
@@ -209,14 +215,14 @@ bool CUserMessages::DispatchUserMessage( int msg_type, bf_read &msg_data )
 
 	if ( !entry )
 	{
-		DevMsg( "CUserMessages::DispatchUserMessage:  Missing client entry for msg type %i\n", msg_type );
+		Log_Error( LOG_USERMSG, "CUserMessages::DispatchUserMessage:  Missing client entry for msg type %i\n", msg_type );
 		Assert( 0 );
 		return false;
 	}
 
 	if ( entry->clienthooks.Count() == 0 )
 	{
-		DevMsg( "CUserMessages::DispatchUserMessage:  missing client hook for %s\n", GetUserMessageName(msg_type) );
+		Log_Error( LOG_USERMSG, "CUserMessages::DispatchUserMessage:  missing client hook for %s\n", GetUserMessageName(msg_type) );
 		Assert( 0 );
 		return false;
 	}

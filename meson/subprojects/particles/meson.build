@@ -14,6 +14,9 @@ else
 endif
 
 particles_dep = declare_dependency(
+	sources: [
+		join_paths(src_root_dir,'particles','logging.cpp'),
+	],
 	include_directories: include_directories(
 		join_paths(src_root_dir,'public','particles')
 	),

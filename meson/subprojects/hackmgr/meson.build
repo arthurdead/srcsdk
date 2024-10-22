@@ -15,6 +15,7 @@ tier1 = subproject('tier1')
 tier0 = subproject('tier0')
 vstdlib = subproject('vstdlib')
 sdl2 = dependency('SDL2', required: false)
+mathlib = subproject('mathlib')
 
 install_data(
 	files(
@@ -47,6 +48,10 @@ if build_libs
 			join_paths(hackmgr_src_dir,'memalloc.cpp'),
 			join_paths(public_dir,'SoundParametersInternal.cpp'),
 			join_paths(public_dir,'interval.cpp'),
+			join_paths(public_dir,'tier0','logging.cpp'),
+			join_paths(public_dir,'dt_send.cpp'),
+			join_paths(public_dir,'dt_recv.cpp'),
+			join_paths(public_dir,'dt_common.cpp'),
 		),
 		include_directories: include_directories(
 			hackmgr_src_dir,
@@ -59,6 +64,7 @@ if build_libs
 			tier1.get_variable('tier1_dep'),
 			tier0.get_variable('tier0_dep'),
 			vstdlib.get_variable('vstdlib_dep'),
+			mathlib.get_variable('mathlib_dep'),
 			source_base.get_variable('source_shared_lib_dep')
 		],
 	)
@@ -116,6 +122,7 @@ if build_libs
 		sources: files(
 			join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp'),
 			join_paths(public_dir,'hackmgr','dlloverride.cpp'),
+			join_paths(public_dir,'tier0','logging.cpp'),
 		),
 	)
 
@@ -137,6 +144,7 @@ else
 		sources: files(
 			join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp'),
 			join_paths(public_dir,'hackmgr','dlloverride.cpp'),
+			join_paths(public_dir,'tier0','logging.cpp'),
 		),
 	)
 

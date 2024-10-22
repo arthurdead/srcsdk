@@ -5,6 +5,8 @@
 
 #include "c_baseentity.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_LIGHTS );
+
 class C_EnvLight : public C_BaseEntity
 {
 public:

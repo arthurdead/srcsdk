@@ -10,9 +10,16 @@
 #include "filesystem.h"
 #include "utldict.h"
 #include "ammodef.h"
+#include "weapon_parse.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+#ifdef GAME_DLL
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_WEAPONPARSE, "WeaponParse Server" );
+#else
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_WEAPONPARSE, "WeaponParse Client" );
+#endif
 
 // The sound categories found in the weapon classname.txt files
 // This needs to match the WeaponSound_t enum in weapon_parse.h
@@ -187,13 +194,13 @@ void PrecacheModFileWeaponInfoDatabase( IFileSystem *filesystem, const unsigned 
 			}
 			else
 			{
-				Error( "Expecting 'file' or 'manifest', got %s\n", sub->GetName() );
+				Log_Error( LOG_WEAPONPARSE, "Malformed weapon manifest %s, expecting 'file' or 'manifest', got %s\n", filename, sub->GetName() );
 			}
 		}
 	}
 	else
 	{
-		Warning( "Failed to read weapon manifest file '%s'\n", filename );
+		Log_Warning( LOG_WEAPONPARSE, "Failed to read weapon manifest file '%s'\n", filename );
 	}
 	manifest->deleteThis();
 }
@@ -206,7 +213,7 @@ void PrecacheMapFileWeaponInfoDatabase( IFileSystem *filesystem, const char *fil
 	{
 		if( !manifest->LoadFromFile( filesystem, filename, "BSP" ) )
 		{
-			Warning( "Failed to read weapon manifest file '%s'\n", filename );
+			Log_Warning( LOG_WEAPONPARSE, "Failed to read weapon manifest file '%s'\n", filename );
 			manifest->deleteThis();
 			return;
 		}
@@ -230,7 +237,7 @@ void PrecacheMapFileWeaponInfoDatabase( IFileSystem *filesystem, const char *fil
 		}
 		else
 		{
-			Error( "Expecting 'file', got %s\n", sub->GetName() );
+			Log_Error( LOG_WEAPONPARSE, "Malformed weapon manifest %s, expecting 'file', got %s\n", filename, sub->GetName() );
 		}
 	}
 

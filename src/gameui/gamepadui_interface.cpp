@@ -3,6 +3,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_GAMEPADUI, "GamepadUI", LCF_NONE, LS_MESSAGE, Color( 255, 134, 44, 255 ) );
+
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( GamepadUI, IGamepadUI, GAMEPADUI_INTERFACE_VERSION, GamepadUI::GetInstance() );
 
 GamepadUI *GamepadUI::s_pGamepadUI = NULL;

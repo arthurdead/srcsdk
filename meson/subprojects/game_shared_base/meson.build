@@ -26,6 +26,13 @@ common_dir = join_paths(src_root_dir,'common')
 
 shared_src_dir = join_paths(src_root_dir,'game','shared')
 
+funny_game_shared_inc = []
+if get_option('funny')
+	funny_game_shared_inc = [include_directories(
+		join_paths(shared_src_dir,'funny')
+	)]
+endif
+
 game_shared_base_dep = declare_dependency(
 	compile_args: [
 		
@@ -129,7 +136,7 @@ game_shared_base_dep = declare_dependency(
 		join_paths(public_dir,'bone_accessor.cpp'),
 		join_paths(public_dir,'collisionutils.cpp'),
 		join_paths(public_dir,'dt_shared.cpp'),
-		join_paths(public_dir,'dt_utlvector_common.cpp'),
+		join_paths(public_dir,'dt_common.cpp'),
 		join_paths(public_dir,'filesystem_helpers.cpp'),
 		join_paths(public_dir,'interpolatortypes.cpp'),
 		join_paths(public_dir,'keyframe','keyframe.cpp'),
@@ -152,11 +159,12 @@ game_shared_base_dep = declare_dependency(
 		join_paths(public_dir,'builddisp.cpp'),
 		join_paths(public_dir,'disp_powerinfo.cpp'),
 		join_paths(public_dir,'disp_common.cpp'),
+		join_paths(public_dir,'gametrace.cpp'),
 		join_paths(common_dir,'language.cpp'),
 		join_paths(common_dir,'randoverride.cpp'),
 		join_paths(common_dir,'compiledcaptionswap.cpp'),
 	),
-	include_directories: include_directories(
+	include_directories: funny_game_shared_inc + include_directories(
 		shared_src_dir,
 	),
 	dependencies: [

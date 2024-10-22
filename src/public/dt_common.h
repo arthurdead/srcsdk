@@ -219,5 +219,13 @@ inline int NumBitsForCount( int nMaxElements )
 	return nBits;
 }
 
+// Format and allocate a string.
+char* AllocateStringHelper( PRINTF_FORMAT_STRING const char *pFormat, ... );
+
+// Allocates a string for a data table name. Data table names must be unique, so this will
+// assert if you try to allocate a duplicate.
+char* AllocateUniqueDataTableName( bool bSendTable, PRINTF_FORMAT_STRING const char *pFormat, ... );
+
+
 
 #endif // DATATABLE_COMMON_H

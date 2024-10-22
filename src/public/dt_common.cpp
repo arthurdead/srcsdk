@@ -4,7 +4,7 @@
 //
 //=============================================================================//
 
-#include "dt_utlvector_common.h"
+#include "dt_common.h"
 #include "utldict.h"
 
 #include "tier0/memdbgon.h"

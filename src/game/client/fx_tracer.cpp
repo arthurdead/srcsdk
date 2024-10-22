@@ -126,7 +126,7 @@ DECLARE_CLIENT_EFFECT( Tracer, TracerCallback );
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-static int s_nWeaponTracerIndex;
+static int s_nWeaponTracerIndex = -1;
 
 void ParticleTracerCallback( const CEffectData &data )
 {

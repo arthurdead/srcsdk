@@ -59,6 +59,8 @@ public:
 	// Hidden bits. 
 	// HIDEHUD_ flags that note when this element should be hidden in the HUD
 	virtual void				SetHiddenBits( int iBits );
+	void				RemoveHiddenBits( int iBits );
+	void				AddHiddenBits( int iBits );
 	int							GetHiddenBits() const { return m_iHiddenBits; }
 
 	bool						IsParentedToClientDLLRootPanel() const;

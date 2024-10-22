@@ -30,6 +30,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef GAME_DLL
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_SOUND, "Sound Server" );
+#else
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_SOUND, "Sound Client" );
+#endif
+
 static ConVar sv_soundemitter_trace( "sv_soundemitter_trace", "-1", FCVAR_REPLICATED, "Show all EmitSound calls including their symbolic name and the actual wave file they resolved to\n" );
 ConVar cc_showmissing( "cc_showmissing", "0", FCVAR_REPLICATED, "Show missing closecaption entries." );
 
@@ -497,7 +503,7 @@ public:
 				// Make sure we only show the message once
 				if ( !s_PrecacheScriptSoundFailures.Find( soundname ).IsValid() )
 				{
-					Warning( "PrecacheScriptSound '%s' failed, no such sound script entry\n", soundname );
+					Log_Warning( LOG_SOUND,"PrecacheScriptSound '%s' failed, no such sound script entry\n", soundname );
 					s_PrecacheScriptSoundFailures.AddString( soundname );
 				}
 			}

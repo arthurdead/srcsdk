@@ -44,6 +44,10 @@
 #include "gamestringpool.h"
 #include "recast/recast_mgr.h"
 
+#if defined __GNUC__ && defined __linux__
+#include <cxxabi.h>
+#endif
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -1579,6 +1583,19 @@ bool C_BaseEntity::PostConstructor( const char *szClassname )
 	if ( szClassname )
 	{
 		SetClassname(szClassname);
+	}
+
+	if ( GetPredDescMap() )
+	{
+		Q_strncpy( m_szRTTIClassname, GetPredDescMap()->dataClassName, sizeof( m_szRTTIClassname ) );
+	}
+	else
+	{
+	#if defined __GNUC__ && defined __linux__
+		abi::__cxa_demangle( typeid( *this ).name(), m_szRTTIClassname, NULL, NULL );
+	#else
+		Q_strncpy( m_szRTTIClassname, typeid( *this ).name(), sizeof( m_szRTTIClassname ) );
+	#endif
 	}
 
 	if(IsEFlagSet( EFL_NOT_NETWORKED )) {
@@ -5257,23 +5274,16 @@ bool C_BaseEntity::ClassMatchesComplex( const char *pszClassOrWildcard )
 //-----------------------------------------------------------------------------
 const char *C_BaseEntity::GetClassname( void )
 {
-	static char outstr[ 256 ];
-
 	if(m_iClassname != NULL_STRING)
 		return STRING(m_iClassname);
 
-	if ( GetPredDescMap() )
+	const char *mapname =  GetClassMap().ClassnameToMapName( m_szRTTIClassname );
+	if ( mapname && mapname[ 0 ] ) 
 	{
-		const char *mapname =  GetClassMap().ClassnameToMapName( GetPredDescMap()->dataClassName );
-		if ( mapname && mapname[ 0 ] ) 
-		{
-			return mapname;
-		}
+		return mapname;
 	}
 
-	Q_strncpy( outstr, typeid( *this ).name(), sizeof( outstr ) );
-
-	return outstr;
+	return m_szRTTIClassname;
 }
 
 bool C_BaseEntity::HasClassname()
@@ -5281,13 +5291,10 @@ bool C_BaseEntity::HasClassname()
 	if(m_iClassname != NULL_STRING)
 		return true;
 
-	if ( GetPredDescMap() )
+	const char *mapname =  GetClassMap().ClassnameToMapName( m_szRTTIClassname );
+	if ( mapname && mapname[ 0 ] ) 
 	{
-		const char *mapname =  GetClassMap().ClassnameToMapName( GetPredDescMap()->dataClassName );
-		if ( mapname && mapname[ 0 ] ) 
-		{
-			return true;
-		}
+		return mapname;
 	}
 
 	return false;

@@ -21,13 +21,20 @@ public:
 	// Get data by the string itself:
 	T& operator[]( const char *pString )
 	{
+		int index = ( int )Insert( pString );
+		Assert( index >=0 && index <= m_Vector.Count() );
+		return m_Vector[index];
+	}
+
+	UtlSymId_t Insert( const char *pString )
+	{
 		CUtlSymbol symbol = m_SymbolTable.AddString( pString );
 		int index = ( int )( UtlSymId_t )symbol;
 		if( m_Vector.Count() <= index )
 		{
 			m_Vector.EnsureCount( index + 1 );
 		}
-		return m_Vector[index];
+		return (UtlSymId_t)index;
 	}
 
 	// Get data by the string's symbol table ID - only used to retrieve a pre-existing symbol, not create a new one!

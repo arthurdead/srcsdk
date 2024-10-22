@@ -12,6 +12,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_FOUNDRY, "Foundry Client" );
 
 static CUtlVector<EHANDLE> g_EntityHighlightEffects;
 static ConVar cl_foundry_ShowEntityHighlights( "cl_foundry_ShowEntityHighlights", "1" );

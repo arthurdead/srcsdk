@@ -16,6 +16,8 @@
 #include "const.h"
 #include "bitvec.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_SENDPROP );
+
 #ifdef GNUC
 #undef offsetof
 #define offsetof(s,m)	__builtin_offsetof(s,m)

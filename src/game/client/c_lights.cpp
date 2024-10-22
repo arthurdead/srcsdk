@@ -9,6 +9,8 @@
 
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_LIGHTS, "Lights Client" );
+
 C_EnvLight *g_pCSMEnvLight = NULL;
 
 static ConVar r_csm_enabled( "r_csm_enabled", "2", FCVAR_HIDDEN, "0 = off, 1 = on, 2 = force" );

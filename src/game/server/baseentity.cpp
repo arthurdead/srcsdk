@@ -903,7 +903,8 @@ static void AddDataMapFieldNamesToList( KeyValueNameList_t &list, datamap_t *pDa
 
 			if ((pField->flags & (FTYPEDESC_KEY|FTYPEDESC_INPUT|FTYPEDESC_OUTPUT)) == 0)
 			{
-				DevMsg( "%s has non map data description\n", pDataMap->dataClassName);
+				Log_Warning( LOG_BASEENTITY,"%s has non map data description\n", pDataMap->dataClassName);
+				Assert(0);
 				continue;
 			}
 
@@ -5137,17 +5138,17 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 
 			if ( Q_stristr( extension, "mdl" ) )
 			{
-				DevMsg( 2, "Late precache of %s, need to rebuild modelsounds.cache\n", name );
+				Log_Warning( LOG_MODEL, "Late precache of %s, need to rebuild modelsounds.cache\n", name );
 			}
 			else
 			{
 				if ( !extension[ 0 ] )
 				{
-					Warning( "Precache of %s ambigious (no extension specified)\n", name );
+					Log_Warning( LOG_MODEL, "Precache of %s ambigious (no extension specified)\n", name );
 				}
 				else
 				{
-					Warning( "Late precache of %s (file missing?)\n", name );
+					Log_Warning( LOG_MODEL, "Late precache of %s (file missing?)\n", name );
 				}
 				return;
 			}
@@ -5230,7 +5231,7 @@ int CBaseEntity::PrecacheModel( const char *name, bool bPreload )
 	if ( !name || !*name )
 	{
 #ifdef STAGING_ONLY
-		Msg( "Attempting to precache model, but model name is NULL\n");
+		Log_Error( LOG_MODEL, "Attempting to precache model, but model name is NULL\n");
 #endif
 		return -1;
 	}
@@ -5240,7 +5241,7 @@ int CBaseEntity::PrecacheModel( const char *name, bool bPreload )
 	{
 		if ( !engine->IsModelPrecached( name ) )
 		{
-			DevMsg( "Late precache of %s -- not necessarily a bug now that we allow ~everything to be dynamically loaded.\n", name );
+			Log_Warning( LOG_MODEL, "Late precache of %s -- not necessarily a bug now that we allow ~everything to be dynamically loaded.\n", name );
 		}
 	}
 #if defined( WATCHACCESS )

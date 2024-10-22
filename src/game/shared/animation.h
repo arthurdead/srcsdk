@@ -14,6 +14,8 @@
 #include "mathlib/mathlib.h"
 #include "ai_activity.h"
 
+DECLARE_LOGGING_CHANNEL( LOG_MODEL );
+
 #define ACTIVITY_NOT_AVAILABLE		-1
 
 struct animevent_t;

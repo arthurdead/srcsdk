@@ -7,28 +7,7 @@
 #include "annotations.h"
 
 class Color;
-
-//-----------------------------------------------------------------------------
-// dll export stuff
-//-----------------------------------------------------------------------------
-#ifndef STATIC_TIER0
-
-#ifdef TIER0_DLL_EXPORT
-#define DBG_INTERFACE	DLL_EXPORT
-#define DBG_OVERLOAD	DLL_GLOBAL_EXPORT
-#define DBG_CLASS		DLL_CLASS_EXPORT
-#else
-#define DBG_INTERFACE	DLL_IMPORT
-#define DBG_OVERLOAD	DLL_GLOBAL_IMPORT
-#define DBG_CLASS		DLL_CLASS_IMPORT
-#endif
-
-#else // BUILD_AS_DLL
-
-#define DBG_INTERFACE	extern
-#define DBG_OVERLOAD	
-#define DBG_CLASS		
-#endif // BUILD_AS_DLL
+class CValidator;
 
 /* Various types of spew messages */
 // I'm sure you're asking yourself why SPEW_ instead of DBG_ ?
@@ -172,7 +151,7 @@ DBG_INTERFACE void NetMsg( int level, PRINTF_FORMAT_STRING const tchar* pMsg, ..
 DBG_INTERFACE void NetWarning( int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) FMTFUNCTION( 2, 3 );
 DBG_INTERFACE void NetLog( int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) FMTFUNCTION( 2, 3 );
 
-void ValidateSpew( class CValidator &validator );
+void ValidateSpew( CValidator &validator );
 
 #else
 

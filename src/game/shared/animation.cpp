@@ -24,6 +24,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_MODEL, "Models" );
+
 #pragma warning( disable : 4244 )
 #define iabs(i) (( (i) >= 0 ) ? (i) : -(i) )
 
@@ -85,7 +87,7 @@ void SetEventIndexForSequence( mstudioseqdesc_t &seqdesc )
 		if ( iEventIndex == AE_INVALID )
 		{
 		#ifdef _DEBUG
-			Warning( "***\nSequence tried to reference unregistered event: %s \n***\n", pEventName );
+			Log_Warning( LOG_ANIMEVENT,"***\nSequence tried to reference unregistered event: %s \n***\n", pEventName );
 		#endif
 
 			pevent->Event( EventList_RegisterPrivateEvent( pEventName ), 0 );
@@ -161,7 +163,7 @@ void SetActivityForSequence( CStudioHdr *pstudiohdr, int i )
 		if ( iActivityIndex == -1 )
 		{
 		#ifdef _DEBUG
-			Warning( "***\nModel %s tried to reference unregistered activity: %s \n***\n", pstudiohdr->pszName(), pszActivityName );
+			Log_Warning( LOG_ACTIVITY,"***\nModel %s tried to reference unregistered activity: %s \n***\n", pstudiohdr->pszName(), pszActivityName );
 		#endif
 
 			seqdesc.Activity( ActivityList_RegisterPrivateActivity( pszActivityName ) );
@@ -320,7 +322,7 @@ int CStudioHdr::CActivityToSequenceMapping::SelectWeightedSequence( CStudioHdr *
 	int randomValue = 0;
 	if ( actData->totalWeight <= 0 )
 	{
-		Warning( "Activity %s has %d sequences with a total weight of %d!", ActivityList_NameForIndex((Activity)activity), actData->count, actData->totalWeight );
+		Log_Warning( LOG_ACTIVITY,"Activity %s has %d sequences with a total weight of %d!", ActivityList_NameForIndex((Activity)activity), actData->count, actData->totalWeight );
 		return (m_pSequenceTuples + actData->startingIdx)->seqnum;
 	}
 	else if ( actData->totalWeight == 1 )
@@ -464,7 +466,7 @@ void GetEyePosition ( CStudioHdr *pstudiohdr, Vector &vecEyePosition )
 {
 	if ( !pstudiohdr )
 	{
-		Warning( "GetEyePosition() Can't get pstudiohdr ptr!\n" );
+		Log_Error( LOG_MODEL,"GetEyePosition() Can't get pstudiohdr ptr!\n" );
 		return;
 	}
 
@@ -540,7 +542,7 @@ void GetSequenceLinearMotion( CStudioHdr *pstudiohdr, int iSequence, const float
 {
 	if ( !pstudiohdr)
 	{
-		ExecuteNTimes( 20, Msg( "Bad pstudiohdr in GetSequenceLinearMotion()!\n" ) );
+		ExecuteNTimes( 20, Log_Error( LOG_MODEL,"Bad pstudiohdr in GetSequenceLinearMotion()!\n" ) );
 		return;
 	}
 
@@ -552,7 +554,7 @@ void GetSequenceLinearMotion( CStudioHdr *pstudiohdr, int iSequence, const float
 		// Don't spam on bogus model
 		if ( pstudiohdr->GetNumSeq() > 0 )
 		{
-			ExecuteNTimes( 20, Msg( "Bad sequence (%i out of %i max) in GetSequenceLinearMotion() for model '%s'!\n", iSequence, pstudiohdr->GetNumSeq(), pstudiohdr->pszName() ) );
+			ExecuteNTimes( 20, Log_Error( LOG_MODEL,"Bad sequence (%i out of %i max) in GetSequenceLinearMotion() for model '%s'!\n", iSequence, pstudiohdr->GetNumSeq(), pstudiohdr->pszName() ) );
 		}
 		pVec->Init();
 		return;
@@ -567,7 +569,7 @@ float GetSequenceLinearMotionAndDuration( CStudioHdr *pstudiohdr, int iSequence,
 	pVec->Init();
 	if ( !pstudiohdr )
 	{
-		Msg( "Bad pstudiohdr in GetSequenceLinearMotion()!\n" );
+		Log_Error( LOG_MODEL,"Bad pstudiohdr in GetSequenceLinearMotion()!\n" );
 		return 0.0f;
 	}
 
@@ -582,7 +584,7 @@ float GetSequenceLinearMotionAndDuration( CStudioHdr *pstudiohdr, int iSequence,
 			static int msgCount = 0;
 			while ( ++msgCount < 10 )
 			{
-				Msg( "Bad sequence (%i out of %i max) in GetSequenceLinearMotion() for model '%s'!\n", iSequence, pstudiohdr->GetNumSeq(), pstudiohdr->pszName() );
+				Log_Error( LOG_MODEL,"Bad sequence (%i out of %i max) in GetSequenceLinearMotion() for model '%s'!\n", iSequence, pstudiohdr->GetNumSeq(), pstudiohdr->pszName() );
 			}
 		}
 		return 0.0f;
@@ -598,7 +600,7 @@ const char *GetSequenceName( CStudioHdr *pstudiohdr, int iSequence )
 	{
 		if ( pstudiohdr )
 		{
-			Msg( "Bad sequence in GetSequenceName() for model '%s'!\n", pstudiohdr->pszName() );
+			Log_Error( LOG_MODEL,"Bad sequence in GetSequenceName() for model '%s'!\n", pstudiohdr->pszName() );
 		}
 		return "Unknown";
 	}
@@ -613,7 +615,7 @@ const char *GetSequenceActivityName( CStudioHdr *pstudiohdr, int iSequence )
 	{
 		if ( pstudiohdr )
 		{
-			Msg( "Bad sequence in GetSequenceActivityName() for model '%s'!\n", pstudiohdr->pszName() );
+			Log_Error( LOG_MODEL,"Bad sequence in GetSequenceActivityName() for model '%s'!\n", pstudiohdr->pszName() );
 		}
 		return "Unknown";
 	}
@@ -804,7 +806,7 @@ int FindTransitionSequence( CStudioHdr *pstudiohdr, int iCurrentSequence, int iG
 	}
 
 	// this means that two parts of the node graph are not connected.
-	DevMsg( 2, "error in transition graph: %s to %s\n",  pstudiohdr->pszNodeName( iEndNode ), pstudiohdr->pszNodeName( pstudiohdr->EntryNode( iGoalSequence ) ));
+	Log_Error( LOG_MODEL, "error in transition graph: %s to %s\n",  pstudiohdr->pszNodeName( iEndNode ), pstudiohdr->pszNodeName( pstudiohdr->EntryNode( iGoalSequence ) ));
 	// Go ahead and jump to the goal sequence
 	return iGoalSequence;
 }
@@ -910,7 +912,7 @@ bool GotoSequence( CStudioHdr *pstudiohdr, int iCurrentSequence, float flCurrent
 	}
 
 	// this means that two parts of the node graph are not connected.
-	DevMsg( 2, "error in transition graph: %s to %s\n",  pstudiohdr->pszNodeName( iEndNode ), pstudiohdr->pszNodeName( pstudiohdr->EntryNode( iGoalSequence ) ));
+	Log_Error( LOG_MODEL, "error in transition graph: %s to %s\n",  pstudiohdr->pszNodeName( iEndNode ), pstudiohdr->pszNodeName( pstudiohdr->EntryNode( iGoalSequence ) ));
 	return false;
 }
 

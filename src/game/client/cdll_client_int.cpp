@@ -978,10 +978,10 @@ private:
 };
 
 
-CClientDll gHLClient;
-IBaseClientDLL *clientdll = &gHLClient;
+CClientDll g_Client;
+IBaseClientDLL *clientdll = &g_Client;
 
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CClientDll, IBaseClientDLL, CLIENT_DLL_INTERFACE_VERSION, gHLClient );
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CClientDll, IBaseClientDLL, CLIENT_DLL_INTERFACE_VERSION, g_Client );
 
 
 //-----------------------------------------------------------------------------
@@ -989,7 +989,7 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CClientDll, IBaseClientDLL, CLIENT_DLL_INTERF
 //-----------------------------------------------------------------------------
 void PrecacheMaterial( const char *pMaterialName )
 {
-	gHLClient.PrecacheMaterial( pMaterialName );
+	g_Client.PrecacheMaterial( pMaterialName );
 }
 
 //-----------------------------------------------------------------------------
@@ -1212,7 +1212,7 @@ static void *ClientCreateInterfaceHook(const char *pName, int *pCode)
 		int namelen = (pProxyInterface-pName)+1;
 		V_strncpy(buffer, pName, namelen);
 		buffer[namelen] = '\0';
-		IMaterialProxy *proxy = gHLClient.InstantiateMaterialProxy(buffer);
+		IMaterialProxy *proxy = g_Client.InstantiateMaterialProxy(buffer);
 		Assert(proxy);
 		if(proxy) {
 			if(pCode)
@@ -1276,6 +1276,10 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 	char gamebin_path[MAX_PATH];
 	g_pFullFileSystem->GetSearchPath("GAMEBIN", false, gamebin_path, ARRAYSIZE(gamebin_path));
+	char *comma = V_strstr(gamebin_path,";");
+	if(comma) {
+		*comma = '\0';
+	}
 	V_AppendSlash(gamebin_path, ARRAYSIZE(gamebin_path));
 	int gamebin_length = V_strlen(gamebin_path);
 
@@ -2366,7 +2370,7 @@ void CClientDll::VoiceStatus( int entindex, qboolean bTalking )
 void OnMaterialStringTableChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, void const *newData )
 {
 	// Make sure this puppy is precached
-	gHLClient.PrecacheMaterial( newString );
+	g_Client.PrecacheMaterial( newString );
 	RequestCacheUsedMaterials();
 }
 

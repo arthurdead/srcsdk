@@ -44,8 +44,13 @@ else
 	error('unsupported system')
 endif
 
+funny_define = []
+if get_option('funny')
+	funny_define = ['-DFUNNY']
+endif
+
 source_dep = declare_dependency(
-	compile_args: [
+	compile_args: funny_define + [
 		'-DRAD_TELEMETRY_DISABLED',
 		'-DVERSION_SAFE_STEAM_API_INTERFACES',
 		'-DMOVE_CONSTRUCTOR_SUPPORT',

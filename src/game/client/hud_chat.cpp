@@ -67,7 +67,7 @@ void CHudChat::MsgFunc_SayText2( bf_read &msg )
 		// print raw chat text
 		ChatPrintf( client, CHAT_FILTER_NONE, "%s", ansiString );
 
-		Msg( "%s\n", RemoveColorMarkup(ansiString) );
+		Log_Msg( LOG_CHAT,"%s\n", RemoveColorMarkup(ansiString) );
 	}
 	else
 	{
@@ -155,7 +155,7 @@ void CHudChat::MsgFunc_TextMsg( bf_read &msg )
 	case HUD_PRINTNOTIFY:
 		psz[0] = 1;  // mark this message to go into the notify buffer
 		Q_snprintf( psz+1, sizeof( szBuf[5] ) - 1, msg_text, sstr1, sstr2, sstr3, sstr4 );
-		Msg( "%s", ConvertCRtoNL( psz ) );
+		Log_Msg( LOG_CHAT, "%s", ConvertCRtoNL( psz ) );
 		break;
 
 	case HUD_PRINTTALK:
@@ -165,7 +165,7 @@ void CHudChat::MsgFunc_TextMsg( bf_read &msg )
 
 	case HUD_PRINTCONSOLE:
 		Q_snprintf( psz, sizeof( szBuf[5] ), msg_text, sstr1, sstr2, sstr3, sstr4 );
-		Msg( "%s", ConvertCRtoNL( psz ) );
+		Log_Msg( LOG_CHAT,"%s", ConvertCRtoNL( psz ) );
 		break;
 	}
 }
