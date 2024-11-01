@@ -62,9 +62,14 @@ ITexture* CBaseClientRenderTargets::CreateCameraTexture( IMaterialSystem* pMater
 // Input  : pMaterialSystem - the engine's material system (our singleton is not yet inited at the time this is called)
 //			pHardwareConfig - the user hardware config, useful for conditional render target setup
 //-----------------------------------------------------------------------------
-void CBaseClientRenderTargets::InitClientRenderTargets( IMaterialSystem* pMaterialSystem, IMaterialSystemHardwareConfig* pHardwareConfig )
+void CBaseClientRenderTargets::InitClientRenderTargetsReal( IMaterialSystem* pMaterialSystem, IMaterialSystemHardwareConfig* pHardwareConfig )
 {
 	SetupClientRenderTargets( pMaterialSystem, pHardwareConfig );
+}
+
+void CBaseClientRenderTargets::InitClientRenderTargets( IMaterialSystem* pMaterialSystem, IMaterialSystemHardwareConfig* pHardwareConfig )
+{
+	
 }
 
 void CBaseClientRenderTargets::SetupClientRenderTargets( IMaterialSystem* pMaterialSystem, IMaterialSystemHardwareConfig* pHardwareConfig, int iWaterTextureSize, int iCameraTextureSize )
@@ -117,6 +122,6 @@ void CBaseClientRenderTargets::ShutdownClientRenderTargets()
 	g_pClientShadowMgr->ShutdownRenderTargets();
 }
 
-static CBaseClientRenderTargets g_BaseClientRenderTargets;
+CBaseClientRenderTargets g_BaseClientRenderTargets;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CBaseClientRenderTargets, IClientRenderTargets, 
 	CLIENTRENDERTARGETS_INTERFACE_VERSION, g_BaseClientRenderTargets );

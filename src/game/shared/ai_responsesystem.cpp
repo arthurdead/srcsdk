@@ -259,7 +259,7 @@ class CResponseRulesToEngineInterface : public ResponseRules::IEngineEmulator
 	/// Return a pointer to an instance of an IUniformRandomStream
 	virtual IUniformRandomStream *GetRandomStream() 
 	{
-		return random;
+		return random_valve;
 	}
 
 	/// Return a pointer to a tier0 ICommandLine

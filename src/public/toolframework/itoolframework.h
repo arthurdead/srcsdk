@@ -8,6 +8,8 @@
 #define ITOOLFRAMEWORK_H
 #pragma once
 
+#ifndef SWDS
+
 #include "appframework/IAppSystem.h"
 #include "materialsystem/imaterialproxy.h"
 #include "toolframework/itoolentity.h"
@@ -300,5 +302,7 @@ extern IToolFrameworkInternal *toolframework;
 
 // Exposed to launcher to automatically add AppSystemGroup hooks
 #define VTOOLFRAMEWORK_INTERFACE_VERSION  "VTOOLFRAMEWORKVERSION002"
+
+#endif
 
 #endif // ITOOLFRAMEWORK_H

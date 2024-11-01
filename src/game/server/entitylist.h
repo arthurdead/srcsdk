@@ -67,22 +67,6 @@ public:
 	static T *m_pClassList;
 };
 
-// Derive a class from this if you want to filter entity list searches
-abstract_class IEntityFindFilter
-{
-public:
-	virtual bool ShouldFindEntity( CBaseEntity *pEntity ) = 0;
-	virtual CBaseEntity *GetFilterResult( void ) = 0;
-};
-
-// Returns false every time. Created for some sick hack involving FindEntityProcedural looking at FindNamedEntity.
-class CNullEntityFilter : public IEntityFindFilter
-{
-public:
-	virtual bool ShouldFindEntity( CBaseEntity *pEntity ) { return false; }
-	virtual CBaseEntity *GetFilterResult( void ) { return NULL; }
-};
-
 //-----------------------------------------------------------------------------
 // Purpose: a global list of all the entities in the game.  All iteration through
 //			entities is done through this object.

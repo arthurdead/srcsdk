@@ -39,40 +39,24 @@
 
 #if defined(USE_MEM_DEBUG)
 	#if defined( POSIX )
-	
 		#define _NORMAL_BLOCK 1
-		
 		#include <cstddef>
 		#include <glob.h>
 		#include <new>
 		#include <sys/types.h>
-		#if !defined( DID_THE_OPERATOR_NEW )
-                        #define DID_THE_OPERATOR_NEW
-			// posix doesn't have a new of this form, so we impl our own
-			void* operator new( size_t nSize, int blah, const char *pFileName, int nLine );
-			void* operator new[]( size_t nSize, int blah, const char *pFileName, int nLine );
-		#endif
-	
-	#else // defined(POSIX)
-	
-		// Include crtdbg.h and make sure _DEBUG is set to 1.
-		#if !defined(_DEBUG)
-			#define _DEBUG 1
-			#include <crtdbg.h>
-			#undef _DEBUG
-		#else
-			#include <crtdbg.h>
-		#endif // !defined(_DEBUG)
-	
-	#endif // defined(POSIX)
+	#else
+		#include <crtdbg.h>
+	#endif
+
+	#if !defined( DID_THE_OPERATOR_NEW ) && !defined _MSC_VER
+		#define DID_THE_OPERATOR_NEW
+		// posix doesn't have a new of this form, so we impl our own
+		void* operator new( size_t nSize, int blah, const char *pFileName, int nLine );
+		void* operator new[]( size_t nSize, int blah, const char *pFileName, int nLine );
+	#endif
 #endif
 
 #include "tier0/memdbgoff.h"
-
-#ifdef NULL
-#undef NULL
-#endif
-#define NULL nullptr
 
 // --------------------------------------------------------
 // Debug/non-debug agnostic elements
@@ -110,6 +94,7 @@ inline void *MemAlloc_InlineCallocMemset( void *pMem, size_t nCount, size_t nEle
 #define realloc(p, s)			g_pMemAlloc->Realloc( p, s, __FILE__, __LINE__ )
 #define _aligned_malloc( s, a )	MemAlloc_AllocAligned( s, a, __FILE__, __LINE__ )
 
+#undef _malloc_dbg
 #define _malloc_dbg(s, t, f, l)	WHYCALLINGTHISDIRECTLY(s)
 
 #if !defined( LINUX )
@@ -250,9 +235,9 @@ inline wchar_t *MemAlloc_WcStrDup(const wchar_t *pString)
 // Needed for MEM_ALLOC_CREDIT(), MemAlloc_Alloc(), etc.
 #include "memalloc.h"
 
+#endif // !STEAM && !NO_MALLOC_OVERRIDE
+
 #ifdef NULL
 #undef NULL
 #endif
 #define NULL nullptr
-
-#endif // !STEAM && !NO_MALLOC_OVERRIDE

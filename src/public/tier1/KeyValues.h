@@ -12,13 +12,10 @@
 
 // #include <vgui/VGUI.h>
 
-#ifndef NULL
-#ifdef __cplusplus
-#define NULL    0
-#else
-#define NULL    ((void *)0)
+#ifdef NULL
+#undef NULL
 #endif
-#endif
+#define NULL nullptr
 
 #include "utlvector.h"
 #include "Color.h"

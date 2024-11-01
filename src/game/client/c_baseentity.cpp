@@ -43,6 +43,7 @@
 #include "cellcoord.h"
 #include "gamestringpool.h"
 #include "recast/recast_mgr.h"
+#include "collisionproperty.h"
 
 #if defined __GNUC__ && defined __linux__
 #include <cxxabi.h>
@@ -58,6 +59,7 @@ DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_BASEENTITY, "BaseEntity Client" );
 	bool g_bRestoreInterpolatedVarValues = false;
 #endif
 
+extern ConVar pwatchent;
 
 static bool g_bWasSkipping = (bool)-1;
 static bool g_bWasThreaded =(bool)-1;
@@ -67,8 +69,7 @@ static ConVar cl_interp_threadmodeticks( "cl_interp_threadmodeticks", "0", 0, "A
 
 void cc_cl_interp_all_changed( IConVar *pConVar, const char *pOldString, float flOldValue )
 {
-	ConVarRef var( pConVar );
-	if ( var.GetInt() )
+	if ( ((ConVar *)pConVar)->GetInt() )
 	{
 		C_BaseEntityIterator iterator;
 		C_BaseEntity *pEnt;
@@ -88,7 +89,7 @@ static ConVar  cl_extrapolate( "cl_extrapolate", "1", FCVAR_CHEAT, "Enable/disab
 
 static ConVar  cl_interp_npcs( "cl_interp_npcs", "0.3", FCVAR_USERINFO, "Interpolate NPC positions starting this many seconds in past (or cl_interp, if greater)" );
 static ConVar  cl_interp_all( "cl_interp_all", "0", 0, "Disable interpolation list optimizations.", 0, 0, 0, 0, cc_cl_interp_all_changed );
-ConVar  r_drawmodeldecals( "r_drawmodeldecals", "1" );
+extern ConVar  *r_drawmodeldecals;
 extern ConVar	cl_showerror;
 int C_BaseEntity::m_nPredictionRandomSeed = -1;
 C_BasePlayer *C_BaseEntity::m_pPredictionPlayer = NULL;
@@ -104,7 +105,7 @@ static bool g_bAbsRecomputationStack[8];
 static unsigned short g_iAbsRecomputationStackPos = 0;
 
 static CUtlLinkedList<C_BaseEntity*, unsigned short> g_EntityLists[NUM_ENTITY_LISTS];
-static bool s_bImmediateRemovesAllowed = true;
+bool C_BaseEntity::s_bImmediateRemovesAllowed = true;
 
 // Create singleton
 static CPredictableList g_Predictables;
@@ -378,12 +379,14 @@ void C_BaseEntity::RecvProxy_CellBits( const CRecvProxyData *pData, void *pStruc
 
 	if ( pEnt->SetCellBits( pData->m_Value.m_Int ) )
 	{
+	#ifdef DT_CELL_COORD_SUPPORTED
 		if ( pEnt->ShouldRegenerateOriginFromCellBits() )
 		{
 			pEnt->m_vecNetworkOrigin.x = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellX, pEnt->m_vecCellOrigin.x );
 			pEnt->m_vecNetworkOrigin.y = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellY, pEnt->m_vecCellOrigin.y );
 			pEnt->m_vecNetworkOrigin.z = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellZ, pEnt->m_vecCellOrigin.z );
 		}
+	#endif
 	}
 }
 
@@ -396,11 +399,13 @@ void C_BaseEntity::RecvProxy_CellX( const CRecvProxyData *pData, void *pStruct, 
 
 	*cellX = pData->m_Value.m_Int;
 
+#ifdef DT_CELL_COORD_SUPPORTED
 	// Cell changed, update world position
 	if ( pEnt->ShouldRegenerateOriginFromCellBits() )
 	{
 		pEnt->m_vecNetworkOrigin.x = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellX, pEnt->m_vecCellOrigin.x );
 	}
+#endif
 }
 
 void C_BaseEntity::RecvProxy_CellY( const CRecvProxyData *pData, void *pStruct, void *pOut )
@@ -412,11 +417,13 @@ void C_BaseEntity::RecvProxy_CellY( const CRecvProxyData *pData, void *pStruct, 
 
 	*cellY = pData->m_Value.m_Int;
 
+#ifdef DT_CELL_COORD_SUPPORTED
 	// Cell changed, update world position
 	if ( pEnt->ShouldRegenerateOriginFromCellBits() )
 	{
 		pEnt->m_vecNetworkOrigin.y = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellY, pEnt->m_vecCellOrigin.y );
 	}
+#endif
 }
 
 void C_BaseEntity::RecvProxy_CellZ( const CRecvProxyData *pData, void *pStruct, void *pOut )
@@ -428,13 +435,16 @@ void C_BaseEntity::RecvProxy_CellZ( const CRecvProxyData *pData, void *pStruct, 
 
 	*cellZ = pData->m_Value.m_Int;
 
+#ifdef DT_CELL_COORD_SUPPORTED
 	// Cell changed, update world position
 	if ( pEnt->ShouldRegenerateOriginFromCellBits() )
 	{
 		pEnt->m_vecNetworkOrigin.z = CoordFromCell( pEnt->m_cellwidth, pEnt->m_cellZ, pEnt->m_vecCellOrigin.z );
 	}
+#endif
 }
 
+#ifdef DT_CELL_COORD_SUPPORTED
 void C_BaseEntity::RecvProxy_CellOrigin( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
@@ -493,6 +503,7 @@ void C_BaseEntity::RecvProxy_CellOriginZ( const CRecvProxyData *pData, void *pSt
 		*vecNetworkOriginZ = CoordFromCell( cellwidth, pEnt->m_cellZ, pData->m_Value.m_Float );
 	}
 }
+#endif
 
 void RecvProxy_LocalVelocity( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
@@ -630,7 +641,7 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropInt( RECVINFO( m_cellY ), 0, C_BaseEntity::RecvProxy_CellY ),
 	RecvPropInt( RECVINFO( m_cellZ ), 0, C_BaseEntity::RecvProxy_CellZ ),
 
-	RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ), 0, C_BaseEntity::RecvProxy_CellOrigin ),
+	RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ), 0, RECVPROP_VECORIGIN_PROXY ),
 
 #if PREDICTION_ERROR_CHECK_LEVEL > 1 
 	RecvPropVector( RECVINFO_NAME( m_angNetworkAngles, m_angRotation ) ),
@@ -658,12 +669,13 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropInt( RECVINFO_NAME(m_hNetworkMoveParent, moveparent), 0, RecvProxy_IntToMoveParent ),
 	RecvPropInt( RECVINFO( m_iParentAttachment ) ),
 
-	RecvPropString( RECVINFO( m_iName ) ),
+	RecvPropStringT( RECVINFO( m_iName ) ),
 
 	RecvPropInt( "movetype", 0, SIZEOF_IGNORE, 0, RecvProxy_MoveType ),
 	RecvPropInt( "movecollide", 0, SIZEOF_IGNORE, 0, RecvProxy_MoveCollide ),
-	RecvPropDataTable( RECVINFO_DT( m_Collision ), 0, &REFERENCE_RECV_TABLE(DT_CollisionProperty) ),
-	
+
+	RecvPropDataTable( RECVINFO_DT( m_pCollision ), 0, &REFERENCE_RECV_TABLE(DT_CollisionProperty), DataTableRecvProxy_PointerDataTable ),
+
 	RecvPropInt( RECVINFO ( m_iTextureFrameIndex ) ),
 
 	RecvPropEHandle (RECVINFO(m_hPlayerSimulationOwner)),
@@ -688,44 +700,48 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 
 END_RECV_TABLE()
 
+IMPLEMENT_CLIENTCLASS_DT(C_LogicalEntity, DT_LogicalEntity, CLogicalEntity)
+END_RECV_TABLE()
+
+IMPLEMENT_CLIENTCLASS_DT(C_PointEntity, DT_PointEntity, CPointEntity)
+END_RECV_TABLE()
+
 const float coordTolerance = 2.0f / (float)( 1 << COORD_FRACTIONAL_BITS );
 
 BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 
 	// These have a special proxy to handle send/receive
-	DEFINE_PRED_TYPEDESCRIPTION( m_Collision, C_CollisionProperty ),
+	DEFINE_PRED_EMBEDDED_PTR_FLAGS( m_pCollision, FTYPEDESC_INSENDTABLE ),
 
-	DEFINE_PRED_FIELD( m_MoveType, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_MoveCollide, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_MoveType, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_MoveCollide, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
 
 	DEFINE_FIELD( m_vecAbsVelocity, FIELD_VECTOR ),
-	DEFINE_PRED_FIELD_TOL( m_vecVelocity, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.5f ),
-//	DEFINE_PRED_FIELD( m_fEffects, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS_TOL( m_vecVelocity, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.5f ),
+//	DEFINE_FIELD_FLAGS( m_fEffects, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 
-	//TODO!!!!! Arthurdead
-	//DEFINE_PRED_FIELD( m_nRenderMode, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
-	//DEFINE_PRED_FIELD( m_nRenderFX, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_PRED_EMBEDDED_PTR( m_pClientAlphaProperty ),
 
-//	DEFINE_PRED_FIELD( m_flAnimTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
-//	DEFINE_PRED_FIELD( m_flSimulationTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_fFlags, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD_TOL( m_vecViewOffset, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.25f ),
-	DEFINE_PRED_FIELD( m_nModelIndex, FIELD_SHORT, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
-	DEFINE_PRED_FIELD( m_flFriction, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_iTeamNum, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+//	DEFINE_FIELD_FLAGS( m_flAnimTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+//	DEFINE_FIELD_FLAGS( m_flSimulationTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_fFlags, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS_TOL( m_vecViewOffset, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.25f ),
+	DEFINE_FIELD_FLAGS( m_nModelIndex, FIELD_SHORT, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
+	DEFINE_FIELD_FLAGS( m_flFriction, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_iTeamNum, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD( m_iHealth, FIELD_INTEGER ),
-	DEFINE_PRED_FIELD( m_hOwnerEntity, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_hOwnerEntity, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
 
 //	DEFINE_FIELD( m_nSimulationTick, FIELD_INTEGER ),
 
-	DEFINE_PRED_FIELD( m_hNetworkMoveParent, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
-//	DEFINE_PRED_FIELD( m_pMoveParent, FIELD_EHANDLE ),
-//	DEFINE_PRED_FIELD( m_pMoveChild, FIELD_EHANDLE ),
-//	DEFINE_PRED_FIELD( m_pMovePeer, FIELD_EHANDLE ),
-//	DEFINE_PRED_FIELD( m_pMovePrevPeer, FIELD_EHANDLE ),
+	DEFINE_FIELD_FLAGS( m_hNetworkMoveParent, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
+//	DEFINE_FIELD_FLAGS( m_pMoveParent, FIELD_EHANDLE ),
+//	DEFINE_FIELD_FLAGS( m_pMoveChild, FIELD_EHANDLE ),
+//	DEFINE_FIELD_FLAGS( m_pMovePeer, FIELD_EHANDLE ),
+//	DEFINE_FIELD_FLAGS( m_pMovePrevPeer, FIELD_EHANDLE ),
 
-	DEFINE_PRED_FIELD_TOL( m_vecNetworkOrigin, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, coordTolerance ),
-	DEFINE_PRED_FIELD( m_angNetworkAngles, FIELD_VECTOR, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_FIELD_FLAGS_TOL( m_vecNetworkOrigin, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, coordTolerance ),
+	DEFINE_FIELD_FLAGS( m_angNetworkAngles, FIELD_VECTOR, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
 	DEFINE_FIELD( m_vecAbsOrigin, FIELD_VECTOR ),
 	DEFINE_FIELD( m_angAbsRotation, FIELD_VECTOR ),
 	DEFINE_FIELD( m_vecOrigin, FIELD_VECTOR ),
@@ -756,11 +772,11 @@ BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 //	DEFINE_FIELD( m_ModelInstance, FIELD_SHORT ),
 	DEFINE_FIELD( m_flProxyRandomValue, FIELD_FLOAT ),
 
-	DEFINE_PRED_FIELD( m_hPlayerSimulationOwner, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),	
+	DEFINE_FIELD_FLAGS( m_hPlayerSimulationOwner, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),	
 //	DEFINE_FIELD( m_PredictableID, FIELD_INTEGER ),
 //	DEFINE_FIELD( m_pPredictionContext, FIELD_POINTER ),
 	// Stuff specific to rendering and therefore not to be copied back and forth
-	// DEFINE_PRED_FIELD( m_clrRender, color32, FTYPEDESC_INSENDTABLE  ),
+	// DEFINE_FIELD_FLAGS( m_clrRender, color32, FTYPEDESC_INSENDTABLE  ),
 	// DEFINE_FIELD( m_bReadyToDraw, FIELD_BOOLEAN ),
 	// DEFINE_FIELD( anim, CLatchedAnim ),
 	// DEFINE_FIELD( mouth, CMouthInfo ),
@@ -1108,13 +1124,36 @@ inline int C_BaseEntity::Interp_Interpolate( VarMapping_t *map, float currentTim
 //-----------------------------------------------------------------------------
 // Functions.
 //-----------------------------------------------------------------------------
-C_BaseEntity::C_BaseEntity() : 
+C_BaseEntity::C_BaseEntity( int iEFlags ) : 
 	m_iv_vecOrigin( "C_BaseEntity::m_iv_vecOrigin" ),
 	m_iv_angRotation( "C_BaseEntity::m_iv_angRotation" ),
 	m_iv_vecVelocity( "C_BaseEntity::m_iv_vecVelocity" )
 {
-	CleanUpAlphaProperty();
-	m_pClientAlphaProperty = static_cast< CClientAlphaProperty * >( g_pClientAlphaPropertyMgr->CreateClientAlphaProperty( this ) );
+	m_iEFlags = 0;
+
+	if( iEFlags != 0 )
+		AddEFlags( iEFlags );
+
+	m_pPrevByClass = m_pNextByClass = NULL;
+	m_ListByClass = (UtlHashHandle_t)~0;
+
+	m_pCollision = NULL;
+
+	if( !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
+	{
+		m_pCollision = new C_CollisionProperty;
+
+		IMPLEMENT_NETWORKVAR_CHAIN( m_pCollision )
+
+		CollisionProp()->Init( this );
+	}
+
+	m_pClientAlphaProperty = NULL;
+
+	if( !IsEFlagSet( EFL_NOT_RENDERABLE ) )
+	{
+		m_pClientAlphaProperty = static_cast< CClientAlphaProperty * >( g_pClientAlphaPropertyMgr->CreateClientAlphaProperty( this ) );
+	}
 
 	m_nMinCPULevel = m_nMaxCPULevel = 0;
 	m_nMinGPULevel = m_nMaxGPULevel = 0;
@@ -1174,7 +1213,11 @@ C_BaseEntity::C_BaseEntity() :
 	{
 		m_ListEntry[i] = 0xFFFF;
 	}
-	AddToEntityList( ENTITY_LIST_PRERENDER );
+
+	if( !IsEFlagSet( EFL_NOT_RENDERABLE ) )
+	{
+		AddToEntityList( ENTITY_LIST_PRERENDER );
+	}
 
 	m_bDormant = true;
 
@@ -1186,8 +1229,6 @@ C_BaseEntity::C_BaseEntity() :
 	m_hThink = INVALID_THINK_HANDLE;
 	m_AimEntsListHandle = INVALID_AIMENTS_LIST_HANDLE;
 
-	m_nEntIndex = -1;
-	m_Collision.Init( this );
 	SetLocalOrigin( vec3_origin );
 	SetLocalAngles( vec3_angle );
 	m_pModel = NULL;
@@ -1200,19 +1241,36 @@ C_BaseEntity::C_BaseEntity() :
 	m_nModelIndex = 0;
 	m_flAnimTime = 0;
 	m_flSimulationTime = 0;
-	SetSolid( SOLID_NONE );
-	SetSolidFlags( 0 );
+
+	if( !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
+	{
+		SetSolid( SOLID_NONE );
+		SetSolidFlags( 0 );
+	}
+
 	SetMoveCollide( MOVECOLLIDE_DEFAULT );
 	SetMoveType( MOVETYPE_NONE );
 
-	SetDistanceFade( 0.0f, 0.0f );
-	SetGlobalFadeScale( 0.0f );
+	if( !IsEFlagSet( EFL_NOT_RENDERABLE ) )
+	{
+		SetDistanceFade( 0.0f, 0.0f );
+		SetGlobalFadeScale( 0.0f );
+	}
 
 	ClearEffects();
-	m_iEFlags = 0;
 	SetRenderColor( 255, 255, 255 );
-	SetRenderAlpha( 255 );
-	SetRenderFX( kRenderFxNone );
+
+	if( !IsEFlagSet( EFL_NOT_RENDERABLE ) )
+	{
+		SetRenderFX( kRenderFxNone );
+		SetRenderAlpha( 255 );
+	}
+	else
+	{
+		AddEffects( EF_NODRAW|EF_NOSHADOW|EF_NORECEIVESHADOW|EF_NOFLASHLIGHT|EF_NOSHADOWDEPTH );
+		m_bDisableFlashlight = true;
+	}
+
 	m_flFriction = 0.0f;       
 	m_flGravity = 0.0f;
 	SetCheckUntouch( false );
@@ -1247,7 +1305,7 @@ C_BaseEntity::C_BaseEntity() :
 	m_nModelIndexOverridesLength = 0;
 	m_nModelIndexOverrides = NULL;
 
-	m_bIsClientCreated = false;
+	m_bIsClientCreated = true;
 
 	m_NavObstacleRef = NAV_OBSTACLE_INVALID_INDEX;
 
@@ -1256,19 +1314,6 @@ C_BaseEntity::C_BaseEntity() :
 
 IClientNetworkable*C_BaseEntity::GetClientNetworkable()
 {
-	if ( m_pPredictionContext != NULL )
-	{
-		// For now can't be both
-		Assert( !GetPredictable() );
-		return this;
-	}
-
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
-		return NULL;
-
-	if(m_nEntIndex == -1)
-		return NULL;
-
 	return this;
 }
 
@@ -1284,7 +1329,10 @@ bool C_BaseEntity::IsNetworked( void ) const
 	if(IsEFlagSet(EFL_NOT_NETWORKED))
 		return false;
 
-	return m_nEntIndex != -1;
+	if(!m_RefEHandle.IsValid())
+		return false;
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -1299,10 +1347,10 @@ bool C_BaseEntity::IsServerEntity( void )
 		return true;
 	}
 
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
+	if(!m_RefEHandle.IsValid())
 		return false;
 
-	return m_nEntIndex != -1;
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -1321,10 +1369,10 @@ bool C_BaseEntity::IsClientCreated( void ) const
 	if(m_bIsClientCreated)
 		return true;
 
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
+	if(!m_RefEHandle.IsValid())
 		return true;
 
-	return m_nEntIndex == -1;
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -1374,15 +1422,16 @@ C_BaseEntity::~C_BaseEntity()
 
 		m_RefEHandle = INVALID_CLIENTENTITY_HANDLE;
 	}
-	
-	// Are we in the partition?
-	CollisionProp()->DestroyPartitionHandle();
 
-	// If Client side only entity index will be -1
-	if ( m_nEntIndex != -1 )
-	{
-		beams->KillDeadBeams( this );
+	if( CollisionProp() ) {
+		// Are we in the partition?
+		CollisionProp()->DestroyPartitionHandle();
+
+		delete m_pCollision;
+		m_pCollision = NULL;
 	}
+
+	beams->KillDeadBeams( this );
 
 	// Clean up the model instance
 	DestroyModelInstance();
@@ -1410,11 +1459,11 @@ C_BaseEntity::~C_BaseEntity()
 //-----------------------------------------------------------------------------
 IClientAlphaProperty* C_BaseEntity::GetClientAlphaProperty()
 {
-	return m_pClientAlphaProperty;
+	return AlphaProp();
 }
 IClientAlphaPropertyEx* C_BaseEntity::GetClientAlphaPropertyEx()
 {
-	return m_pClientAlphaProperty;
+	return AlphaProp();
 }
 
 //-----------------------------------------------------------------------------
@@ -1447,16 +1496,19 @@ bool C_BaseEntity::InitializeAsServerEntity( int entnum, int iSerialNum )
 {
 	Assert( entnum >= 0 && entnum < GAME_NUM_ENT_ENTRIES );
 
-	RemoveEFlags( EFL_NOT_NETWORKED );
-
-	m_nEntIndex = entnum;
-	m_pClientAlphaProperty->SetDesyncOffset( m_nEntIndex );
-
 	cl_entitylist->AddNetworkableEntity( this, entnum, iSerialNum );
+
+	if(!IsEFlagSet( EFL_NOT_RENDERABLE ))
+	{
+		AlphaProp()->SetDesyncOffset( entnum );
+	}
 
 	CheckHasThinkFunction( TICK_NEVER_THINK );
 
-	CollisionProp()->CreatePartitionHandle();
+	if(!IsEFlagSet( EFL_NOT_COLLIDEABLE ))
+	{
+		CollisionProp()->CreatePartitionHandle();
+	}
 
 	Interp_SetupMappings( GetVarMapping() );
 
@@ -1467,21 +1519,21 @@ bool C_BaseEntity::InitializeAsServerEntity( int entnum, int iSerialNum )
 
 bool C_BaseEntity::InitializeAsPredictedEntity( const char *className, const char *module, int line )
 {
-	RemoveEFlags( EFL_NOT_NETWORKED );
+	// Add the client entity to the master entity list.
+	cl_entitylist->AddNonNetworkableEntity( this );
+	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
 
-	m_nEntIndex = -1;
-	m_pClientAlphaProperty->SetDesyncOffset( rand() % 1024 );
-
-	if( !m_bDoNotRegisterEntity )
+	if(!IsEFlagSet( EFL_NOT_RENDERABLE ))
 	{
-		// Add the client entity to the master entity list.
-		cl_entitylist->AddNonNetworkableEntity( this );
-		Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
+		AlphaProp()->SetDesyncOffset( m_RefEHandle.GetEntryIndex() );
 	}
 
 	CheckHasThinkFunction( TICK_NEVER_THINK );
 
-	CollisionProp()->CreatePartitionHandle();
+	if(!IsEFlagSet( EFL_NOT_COLLIDEABLE ))
+	{
+		CollisionProp()->CreatePartitionHandle();
+	}
 
 	Interp_SetupMappings( GetVarMapping() );
 
@@ -1530,18 +1582,21 @@ bool C_BaseEntity::InitializeAsPredictedEntity( const char *className, const cha
 
 bool C_BaseEntity::InitializeAsEventEntity()
 {
-	RemoveEFlags( EFL_NOT_NETWORKED );
-
-	m_nEntIndex = -1;
-	m_pClientAlphaProperty->SetDesyncOffset( rand() % 1024 );
-
 	// Add the client entity to the master entity list.
 	cl_entitylist->AddNonNetworkableEntity( this );
 	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
 
+	if(!IsEFlagSet( EFL_NOT_RENDERABLE ))
+	{
+		AlphaProp()->SetDesyncOffset( m_RefEHandle.GetEntryIndex() );
+	}
+
 	CheckHasThinkFunction( TICK_NEVER_THINK );
 
-	CollisionProp()->CreatePartitionHandle();
+	if(!IsEFlagSet( EFL_NOT_COLLIDEABLE ))
+	{
+		CollisionProp()->CreatePartitionHandle();
+	}
 
 	Interp_SetupMappings( GetVarMapping() );
 
@@ -1552,16 +1607,13 @@ bool C_BaseEntity::InitializeAsEventEntity()
 
 bool C_BaseEntity::InitializeAsClientEntity()
 {
-	AddEFlags( EFL_NOT_NETWORKED );
-
-	m_nEntIndex = -1;
-	m_pClientAlphaProperty->SetDesyncOffset( rand() % 1024 );
-
 	// Add the client entity to the master entity list.
-	if( !m_bDoNotRegisterEntity )
+	cl_entitylist->AddNonNetworkableEntity( this );
+	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
+
+	if(!IsEFlagSet( EFL_NOT_RENDERABLE ))
 	{
-		cl_entitylist->AddNonNetworkableEntity( this );
-		Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
+		AlphaProp()->SetDesyncOffset( m_RefEHandle.GetEntryIndex() );
 	}
 
 	m_bIsClientCreated = true;
@@ -1569,7 +1621,10 @@ bool C_BaseEntity::InitializeAsClientEntity()
 	CheckHasThinkFunction( TICK_NEVER_THINK );
 
 	// Add the client entity to the spatial partition. (Collidable)
-	CollisionProp()->CreatePartitionHandle();
+	if(!IsEFlagSet( EFL_NOT_COLLIDEABLE ))
+	{
+		CollisionProp()->CreatePartitionHandle();
+	}
 
 	Interp_SetupMappings( GetVarMapping() );
 
@@ -1585,18 +1640,23 @@ bool C_BaseEntity::PostConstructor( const char *szClassname )
 		SetClassname(szClassname);
 	}
 
-	if ( GetPredDescMap() )
-	{
-		Q_strncpy( m_szRTTIClassname, GetPredDescMap()->dataClassName, sizeof( m_szRTTIClassname ) );
-	}
-	else
-	{
-	#if defined __GNUC__ && defined __linux__
-		abi::__cxa_demangle( typeid( *this ).name(), m_szRTTIClassname, NULL, NULL );
-	#else
-		Q_strncpy( m_szRTTIClassname, typeid( *this ).name(), sizeof( m_szRTTIClassname ) );
-	#endif
-	}
+	char *pRTTIClassname=NULL;
+#if defined __GNUC__ && defined __linux__
+	int status=0;
+	size_t len=64;
+	pRTTIClassname = (char *)malloc(len);
+	pRTTIClassname = abi::__cxa_demangle( typeid( *this ).name(), pRTTIClassname, &len, &status );
+#else
+	char szRTTIClassname[64];
+	Q_strncpy( szRTTIClassname, typeid( *this ).name(), sizeof( szRTTIClassname ) );
+	pRTTIClassname = szRTTIClassname;
+#endif
+
+	m_iRTTIClassname = AllocPooledString( pRTTIClassname );
+
+#if defined __GNUC__ && defined __linux__
+	free(pRTTIClassname);
+#endif
 
 	if(IsEFlagSet( EFL_NOT_NETWORKED )) {
 		if(!InitializeAsClientEntity()) {
@@ -1609,61 +1669,21 @@ bool C_BaseEntity::PostConstructor( const char *szClassname )
 	return true;
 }
 
-C_ClientOnlyEntity::C_ClientOnlyEntity()
- : C_BaseEntity()
+C_PointEntity::C_PointEntity( int iEFlags )
+ : C_BaseEntity( EFL_NOT_COLLIDEABLE|EFL_NOT_RENDERABLE|iEFlags )
 {
-	AddEFlags( EFL_NOT_NETWORKED );
+}
+
+C_LogicalEntity::C_LogicalEntity( int iEFlags )
+ : C_PointEntity( iEFlags )
+{
 }
 
 // Landmark class
 void C_PointEntity::Spawn( void )
 {
-	SetSolid( SOLID_NONE );
+//	SetSolid( SOLID_NONE );
 //	UTIL_SetSize(this, vec3_origin, vec3_origin);
-}
-
-bool C_PointEntity::KeyValue( const char *szKeyName, const char *szValue ) 
-{
-	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
-	{
-		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
-		return true;
-	}
-
-	return BaseClass::KeyValue( szKeyName, szValue );
-}						 
-
-bool C_LogicalEntity::KeyValue( const char *szKeyName, const char *szValue ) 
-{
-	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
-	{
-		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
-		return true;
-	}
-
-	return BaseClass::KeyValue( szKeyName, szValue );
-}
-
-bool C_ClientOnlyPointEntity::KeyValue( const char *szKeyName, const char *szValue ) 
-{
-	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
-	{
-		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
-		return true;
-	}
-
-	return BaseClass::KeyValue( szKeyName, szValue );
-}
-
-bool C_ClientOnlyLogicalEntity::KeyValue( const char *szKeyName, const char *szValue ) 
-{
-	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
-	{
-		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
-		return true;
-	}
-
-	return BaseClass::KeyValue( szKeyName, szValue );
 }
 
 void C_BaseEntity::TrackAngRotation( bool bTrack )
@@ -1733,6 +1753,7 @@ void C_BaseEntity::SetRemovalFlag( bool bRemove )
 //-----------------------------------------------------------------------------
 void C_BaseEntity::SetRenderAlpha( byte a )
 {
+	Assert( AlphaProp() );
 	if ( GetRenderAlpha() != a )
 	{
 		AlphaProp()->SetAlphaModulation( a );
@@ -1741,6 +1762,7 @@ void C_BaseEntity::SetRenderAlpha( byte a )
 
 byte C_BaseEntity::GetRenderAlpha() const
 {
+	Assert( AlphaProp() );
 	return AlphaProp()->GetAlphaModulation( );
 }
 
@@ -1750,11 +1772,13 @@ byte C_BaseEntity::GetRenderAlpha() const
 //-----------------------------------------------------------------------------
 float C_BaseEntity::GetMinFadeDist( ) const
 {
+	Assert( AlphaProp() );
 	return AlphaProp()->GetMinFadeDist();
 }
 
 float C_BaseEntity::GetMaxFadeDist( ) const
 {
+	Assert( AlphaProp() );
 	return AlphaProp()->GetMaxFadeDist();
 }
 
@@ -1767,11 +1791,13 @@ void C_BaseEntity::SetDistanceFade( float flMinDist, float flMaxDist )
 	// Specifically, I'm certain the loading logic in C_PhysPropClientside,
 	// as well as code inside of C_PhysPropClientside::Initialize
 	// will definitely not work unless I'm doing it the way I'm currently doing it.
+	Assert( AlphaProp() );
 	AlphaProp()->SetFade( GetGlobalFadeScale(), flMinDist, flMaxDist );
 }
 
 void C_BaseEntity::SetGlobalFadeScale( float flFadeScale )
 {
+	Assert( AlphaProp() );
 	int modelType = modelinfo->GetModelType( m_pModel );
 	if ( modelType == mod_studio )
 	{
@@ -1792,6 +1818,7 @@ void C_BaseEntity::SetGlobalFadeScale( float flFadeScale )
 
 float C_BaseEntity::GetGlobalFadeScale( ) const
 {
+	Assert( AlphaProp() );
 	return AlphaProp()->GetGlobalFadeScale();
 }
 
@@ -2004,6 +2031,9 @@ bool C_BaseEntity::ShouldDraw()
 	if (GetClientMode() && !GetClientMode()->ShouldDrawEntity(this) )
 		return false;
 
+	if ( IsEFlagSet( EFL_NOT_RENDERABLE ) )
+		return false;
+
 	CPULevel_t nCPULevel = GetCPULevel();
 	bool bNoDraw = ( m_nMinCPULevel && m_nMinCPULevel-1 > nCPULevel );
 	bNoDraw = bNoDraw || ( m_nMaxCPULevel && m_nMaxCPULevel-1 < nCPULevel );
@@ -2020,7 +2050,7 @@ bool C_BaseEntity::ShouldDraw()
 	if ( GetRenderMode() == kRenderNone )
 		return false;
 
-	return (m_pModel != NULL) && !IsEffectActive(EF_NODRAW) && (m_nEntIndex != 0);
+	return (m_pModel != NULL) && !IsEffectActive(EF_NODRAW) && !IsWorld();
 }
 
 bool C_BaseEntity::TestCollision( const Ray_t& ray, unsigned int mask, trace_t& trace )
@@ -2057,8 +2087,9 @@ void C_BaseEntity::ReceiveMessage( int classID, bf_read &msg )
 	int messageType = msg.ReadByte();
 	switch( messageType )
 	{
-		case BASEENTITY_MSG_REMOVE_DECALS:	RemoveAllDecals();
-											break;
+		case BASEENTITY_MSG_REMOVE_DECALS:
+			RemoveAllDecals();
+			break;
 	}
 }
 
@@ -2223,18 +2254,17 @@ IClientRenderable *C_BaseEntity::NextShadowPeer()
 //-----------------------------------------------------------------------------
 int	C_BaseEntity::entindex( void ) const
 {
-	return m_nEntIndex;
+	return m_RefEHandle.GetEntryIndex();
+}
+
+int	C_BaseEntity::entserial( void ) const
+{
+	return m_RefEHandle.GetSerialNumber();
 }
 
 int C_BaseEntity::GetSoundSourceIndex() const
 {
-#ifdef _DEBUG
-	if ( m_nEntIndex != -1 )
-	{
-		Assert( m_nEntIndex == GetRefEHandle().GetEntryIndex() );
-	}
-#endif
-	return GetRefEHandle().GetEntryIndex();
+	return entindex();
 }
 
 //-----------------------------------------------------------------------------
@@ -2688,8 +2718,8 @@ void C_BaseEntity::UpdatePartitionListEntry()
 void C_BaseEntity::NotifyShouldTransmit( ShouldTransmitState_t state )
 {
 	// Init should have been called before we get in here.
-	Assert( CollisionProp()->GetPartitionHandle() != PARTITION_INVALID_HANDLE );
-	if ( m_nEntIndex < 0 )
+	Assert( IsEFlagSet( EFL_NOT_COLLIDEABLE ) || CollisionProp()->GetPartitionHandle() != PARTITION_INVALID_HANDLE );
+	if ( !m_RefEHandle.IsValid() )
 		return;
 	
 	m_LastShouldTransmitState = state;
@@ -2700,7 +2730,10 @@ void C_BaseEntity::NotifyShouldTransmit( ShouldTransmitState_t state )
 			// We've just been sent by the server. Become active.
 			SetDormant( false );
 			
-			UpdatePartitionListEntry();
+			if(!IsEFlagSet( EFL_NOT_COLLIDEABLE ))
+			{
+				UpdatePartitionListEntry();
+			}
 
 			// Note that predictables get a chance to hook up to their server counterparts here
 			if ( m_PredictableID.IsActive() )
@@ -3218,7 +3251,7 @@ void C_BaseEntity::PostDataUpdate( DataUpdateType_t updateType )
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
 		// Construct a random value for this instance
-		m_flProxyRandomValue = random->RandomFloat( 0, 1 );
+		m_flProxyRandomValue = random_valve->RandomFloat( 0, 1 );
 
 		ResetLatched();
 
@@ -3235,7 +3268,10 @@ void C_BaseEntity::PostDataUpdate( DataUpdateType_t updateType )
 		SetPlayerSimulated( ToBasePlayer( m_hPlayerSimulationOwner ) );
 	}
 
-	UpdatePartitionListEntry();
+	if(!IsEFlagSet( EFL_NOT_COLLIDEABLE ))
+	{
+		UpdatePartitionListEntry();
+	}
 	
 	// Add the entity to the nointerp list.
 	if ( !IsClientCreated() )
@@ -3630,12 +3666,12 @@ bool C_BaseEntity::CreateLightEffects( void )
 	{
 		if (IsEffectActive(EF_BRIGHTLIGHT))
 		{
-			dl = effects->CL_AllocDlight ( m_nEntIndex );
+			dl = effects->CL_AllocDlight ( entindex() );
 			if(dl) {
 				dl->origin = GetAbsOrigin();
 				dl->origin[2] += 16;
 				dl->color.r = dl->color.g = dl->color.b = 250;
-				dl->radius = random->RandomFloat(400,431);
+				dl->radius = random_valve->RandomFloat(400,431);
 				dl->die = gpGlobals->curtime + 0.001;
 				bHasLightEffects = true;
 			}
@@ -3643,11 +3679,11 @@ bool C_BaseEntity::CreateLightEffects( void )
 
 		if (IsEffectActive(EF_DIMLIGHT))
 		{			
-			dl = effects->CL_AllocDlight ( m_nEntIndex );
+			dl = effects->CL_AllocDlight ( entindex() );
 			if(dl) {
 				dl->origin = GetAbsOrigin();
 				dl->color.r = dl->color.g = dl->color.b = 100;
-				dl->radius = random->RandomFloat(200,231);
+				dl->radius = random_valve->RandomFloat(200,231);
 				dl->die = gpGlobals->curtime + 0.001;
 				bHasLightEffects = true;
 			}
@@ -3838,7 +3874,7 @@ bool C_BaseEntity::Simulate()
 }
 
 // Defined in engine
-static ConVar cl_interpolate( "cl_interpolate", "1.0f", FCVAR_USERINFO | FCVAR_DEVELOPMENTONLY );
+extern ConVar *cl_interpolate;
 
 // (static function)
 void C_BaseEntity::InterpolateServerEntities()
@@ -3847,7 +3883,7 @@ void C_BaseEntity::InterpolateServerEntities()
 
 	bool bPrevInterpolate = s_bInterpolate;
 
-	s_bInterpolate = cl_interpolate.GetBool();
+	s_bInterpolate = cl_interpolate->GetBool();
 
 	// Don't interpolate during timedemo playback
 	if ( engine->IsPlayingTimeDemo() || engine->IsPaused() )
@@ -3966,12 +4002,15 @@ void C_BaseEntity::OnDataChanged( DataUpdateType_t type )
 		UpdateVisibility();
 	}
 
-	// These may have changed in the network update
-	AlphaProp()->SetRenderFX( GetRenderFX(), GetRenderMode(), FLT_MAX, 0.0f );
-	AlphaProp()->SetDesyncOffset( m_nEntIndex );
+	if( !IsEFlagSet( EFL_NOT_RENDERABLE ) )
+	{
+		// These may have changed in the network update
+		AlphaProp()->SetRenderFX( GetRenderFX(), GetRenderMode(), FLT_MAX, 0.0f );
+		AlphaProp()->SetDesyncOffset( entindex() );
 
-	// Copy in fade parameters
-	AlphaProp()->SetFade( GetGlobalFadeScale(), GetMinFadeDist(), GetMaxFadeDist() );
+		// Copy in fade parameters
+		AlphaProp()->SetFade( GetGlobalFadeScale(), GetMinFadeDist(), GetMaxFadeDist() );
+	}
 }
 
 ClientThinkHandle_t C_BaseEntity::GetThinkHandle()
@@ -4052,7 +4091,7 @@ void C_BaseEntity::AddStudioDecal( const Ray_t& ray, int hitbox, int decalIndex,
 	}
 
 	// Exit out after doing the trace so any other effects that want to happen can happen.
-	if ( !r_drawmodeldecals.GetBool() )
+	if ( !r_drawmodeldecals->GetBool() )
 		return;
 
 	// Found the point, now lets apply the decals
@@ -4094,7 +4133,7 @@ void C_BaseEntity::AddColoredStudioDecal( const Ray_t& ray, int hitbox, int deca
 	}
 
 	// Exit out after doing the trace so any other effects that want to happen can happen.
-	if ( !r_drawmodeldecals.GetBool() )
+	if ( !r_drawmodeldecals->GetBool() )
 		return;
 
 	// Found the point, now lets apply the decals
@@ -4133,7 +4172,7 @@ void C_BaseEntity::AddBrushModelDecal( const Ray_t& ray, const Vector& decalCent
 			return;
 	}
 
-	effects->DecalShoot( decalIndex, m_nEntIndex, 
+	effects->DecalShoot( decalIndex, entindex(), 
 		m_pModel, GetAbsOrigin(), GetAbsAngles(), decalCenter, NULL, 0 );
 }
 
@@ -4208,7 +4247,7 @@ void C_BaseEntity::AddColoredDecal( const Vector& rayStart, const Vector& rayEnd
 	case mod_brush:
 		{
 			color32 cColor32 = { (byte)cColor.r(), (byte)cColor.g(), (byte)cColor.b(), (byte)cColor.a() };
-			effects->DecalColorShoot( decalIndex, m_nEntIndex, m_pModel, GetAbsOrigin(), GetAbsAngles(), decalCenter, 0, 0, cColor32 );
+			effects->DecalColorShoot( decalIndex, entindex(), m_pModel, GetAbsOrigin(), GetAbsAngles(), decalCenter, 0, 0, cColor32 );
 		}
 		break;
 
@@ -4426,7 +4465,7 @@ void C_BaseEntity::CreateShadow()
 				flags |= SHADOW_FLAGS_ANIMATING_SOURCE;
 			if (shadowType != SHADOWS_RENDER_TO_TEXTURE_DYNAMIC_CUSTOM)
 				flags |= SHADOW_FLAGS_ANIMATING_SOURCE | SHADOW_FLAGS_CUSTOM_DRAW;
-			m_ShadowHandle = g_pClientShadowMgr->CreateShadow(GetClientHandle(), m_nEntIndex, flags);
+			m_ShadowHandle = g_pClientShadowMgr->CreateShadow(GetClientHandle(), entindex(), flags);
 		}
 	}
 }
@@ -4478,7 +4517,7 @@ void C_BaseEntity::SetDormant( bool bDormant )
 	ParticleProp()->OwnerSetDormantTo( bDormant );
 
 	OnSetDormant( bDormant );
-	cl_entitylist->SetDormant(m_nEntIndex, bDormant);
+	cl_entitylist->SetDormant(entindex(), bDormant);
 }
 
 //-----------------------------------------------------------------------------
@@ -5129,7 +5168,7 @@ bool C_BaseEntity::PostNetworkDataReceived( int commands_acknowledged )
 
 	if ( cl_showerror.GetInt() < 0 )
 	{
-		if ( m_nEntIndex == -cl_showerror.GetInt() )
+		if ( entindex() == -cl_showerror.GetInt() )
 		{
 			showthis = true;
 		}
@@ -5195,7 +5234,7 @@ void UTIL_Remove( C_BaseEntity *pEntity )
 		return;
 	pEntity->AddEFlags( EFL_KILLME );	// Make sure to ignore further calls into here or UTIL_Remove.
 
-	if ( !s_bImmediateRemovesAllowed )
+	if ( !C_BaseEntity::s_bImmediateRemovesAllowed )
 	{
 		pEntity->AddToEntityList( ENTITY_LIST_DELETE );
 		return;
@@ -5211,14 +5250,14 @@ void UTIL_RemoveImmediate( C_BaseEntity *pEntity )
 	if(!pEntity)
 		return;
 
-	bool lastallowed = s_bImmediateRemovesAllowed;
-	s_bImmediateRemovesAllowed = true;
+	bool lastallowed = C_BaseEntity::s_bImmediateRemovesAllowed;
+	C_BaseEntity::s_bImmediateRemovesAllowed = true;
 	pEntity->AddEFlags( EFL_KILLME );
 	if(!in_purge_entities) {
 		pEntity->RemoveFromEntityList( ENTITY_LIST_DELETE );
 	}
 	pEntity->DO_NOT_USE_Release();
-	s_bImmediateRemovesAllowed = lastallowed;
+	C_BaseEntity::s_bImmediateRemovesAllowed = lastallowed;
 }
 
 
@@ -5260,7 +5299,7 @@ bool C_BaseEntity::NameMatchesComplex( const char *pszNameOrWildcard )
 	if ( !Q_stricmp( "!player", pszNameOrWildcard) )
 		return IsPlayer();
 
-	return Matcher_NamesMatch( pszNameOrWildcard, m_iName );
+	return Matcher_NamesMatch( pszNameOrWildcard, STRING(m_iName) );
 }
 
 bool C_BaseEntity::ClassMatchesComplex( const char *pszClassOrWildcard )
@@ -5277,25 +5316,21 @@ const char *C_BaseEntity::GetClassname( void )
 	if(m_iClassname != NULL_STRING)
 		return STRING(m_iClassname);
 
-	const char *mapname =  GetClassMap().ClassnameToMapName( m_szRTTIClassname );
-	if ( mapname && mapname[ 0 ] ) 
-	{
-		return mapname;
-	}
+	return STRING(m_iRTTIClassname);
+}
 
-	return m_szRTTIClassname;
+string_t C_BaseEntity::GetClassnameStr()
+{
+	if(m_iClassname != NULL_STRING)
+		return m_iClassname;
+
+	return m_iRTTIClassname;
 }
 
 bool C_BaseEntity::HasClassname()
 {
 	if(m_iClassname != NULL_STRING)
 		return true;
-
-	const char *mapname =  GetClassMap().ClassnameToMapName( m_szRTTIClassname );
-	if ( mapname && mapname[ 0 ] ) 
-	{
-		return mapname;
-	}
 
 	return false;
 }
@@ -5602,6 +5637,114 @@ string_t C_BaseEntity::GetModelName( void ) const
 	return m_ModelName;
 }
 
+ICollideable *C_BaseEntity::GetCollideable()
+{
+	return CollisionProp();
+}
+
+//-----------------------------------------------------------------------------
+// Methods relating to solid type + flags
+//-----------------------------------------------------------------------------
+void C_BaseEntity::SetSolidFlags( int nFlags )
+{
+	Assert( CollisionProp() );
+	CollisionProp()->SetSolidFlags( nFlags );
+}
+
+bool C_BaseEntity::IsSolidFlagSet( int flagMask ) const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->IsSolidFlagSet( flagMask );
+}
+
+int	C_BaseEntity::GetSolidFlags( void ) const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->GetSolidFlags( );
+}
+
+void C_BaseEntity::AddSolidFlags( int nFlags )
+{
+	Assert( CollisionProp() );
+	CollisionProp()->AddSolidFlags( nFlags );
+}
+
+void C_BaseEntity::RemoveSolidFlags( int nFlags )
+{
+	Assert( CollisionProp() );
+	CollisionProp()->RemoveSolidFlags( nFlags );
+}
+
+bool C_BaseEntity::IsSolid() const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->IsSolid( );
+}
+
+void C_BaseEntity::SetSolid( SolidType_t val )
+{
+	Assert( CollisionProp() );
+	CollisionProp()->SetSolid( val );
+}
+
+SolidType_t C_BaseEntity::GetSolid( ) const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->GetSolid( );
+}
+
+void C_BaseEntity::SetCollisionBounds( const Vector& mins, const Vector &maxs )
+{
+	Assert( CollisionProp() );
+	CollisionProp()->SetCollisionBounds( mins, maxs );
+}
+
+
+//-----------------------------------------------------------------------------
+// Methods relating to bounds
+//-----------------------------------------------------------------------------
+const Vector& C_BaseEntity::WorldAlignMins( ) const
+{
+	Assert( CollisionProp() );
+	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
+	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
+	return CollisionProp()->OBBMins();
+}
+
+const Vector& C_BaseEntity::WorldAlignMaxs( ) const
+{
+	Assert( CollisionProp() );
+	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
+	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
+	return CollisionProp()->OBBMaxs();
+}
+
+const Vector& C_BaseEntity::WorldAlignSize( ) const
+{
+	Assert( CollisionProp() );
+	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
+	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
+	return CollisionProp()->OBBSize();
+}
+
+float C_BaseEntity::BoundingRadius() const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->BoundingRadius();
+}
+
+float C_BaseEntity::BoundingRadius2D() const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->BoundingRadius2D();
+}
+
+bool C_BaseEntity::IsPointSized() const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->BoundingRadius() == 0.0f;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Nothing yet, could eventually supercede Term()
 //-----------------------------------------------------------------------------
@@ -5611,7 +5754,10 @@ void C_BaseEntity::UpdateOnRemove( void )
 	if ( GetPredictable() || IsClientCreated() )
 	{
 		// Make it solid
-		AddSolidFlags( FSOLID_NOT_SOLID );
+		if(!IsEFlagSet(EFL_NOT_COLLIDEABLE))
+		{
+			AddSolidFlags( FSOLID_NOT_SOLID );
+		}
 		SetMoveType( MOVETYPE_NONE );
 	}
 
@@ -5762,10 +5908,6 @@ void C_BaseEntity::DestroyIntermediateData( void )
 //-----------------------------------------------------------------------------
 void C_BaseEntity::ShiftIntermediateDataForward( int slots_to_remove, int number_of_commands_run )
 {
-	Assert( m_pIntermediateData );
-	if ( !m_pIntermediateData )
-		return;
-
 	Assert( number_of_commands_run >= slots_to_remove );
 
 	// Just moving pointers, yeah
@@ -6171,12 +6313,14 @@ void C_BaseEntity::DrawBBoxVisualizations( void )
 
 RenderMode_t C_BaseEntity::GetRenderMode() const
 {
-	return m_pClientAlphaProperty->GetRenderMode();
+	Assert( AlphaProp() );
+	return AlphaProp()->GetRenderMode();
 }
 
 RenderFx_t C_BaseEntity::GetRenderFX() const
 {
-	return m_pClientAlphaProperty->GetRenderFX();
+	Assert( AlphaProp() );
+	return AlphaProp()->GetRenderFX();
 }
 
 //-----------------------------------------------------------------------------
@@ -6184,6 +6328,7 @@ RenderFx_t C_BaseEntity::GetRenderFX() const
 //-----------------------------------------------------------------------------
 void C_BaseEntity::SetRenderMode( RenderMode_t nRenderMode )
 {
+	Assert( AlphaProp() );
 	if ( nRenderMode != GetRenderMode() )
 	{
 		AlphaProp()->SetRenderFX( GetRenderFX(), nRenderMode, FLT_MAX, 0.0f );
@@ -6192,6 +6337,7 @@ void C_BaseEntity::SetRenderMode( RenderMode_t nRenderMode )
 
 void C_BaseEntity::SetRenderFX( RenderFx_t nRenderFX, float flStartTime, float flDuration )
 {
+	Assert( AlphaProp() );
 	bool bStartTimeUnspecified = ( flStartTime == FLT_MAX );
 	if ( nRenderFX != GetRenderFX() || !bStartTimeUnspecified )
 	{
@@ -6224,7 +6370,6 @@ int C_BaseEntity::SaveData( const char *context, int slot, int type )
 	char sz[ 64 ];
 	sz[0] = 0;
 	// don't build debug strings per entity per frame, unless we are watching the entity
-	static ConVarRef pwatchent( "pwatchent" );
 	if ( pwatchent.GetInt() == entindex() )
 	{
 		if ( slot == SLOT_ORIGINALDATA )
@@ -6273,7 +6418,6 @@ int C_BaseEntity::RestoreData( const char *context, int slot, int type )
 	char sz[ 64 ];
 	sz[0] = 0;
 	// don't build debug strings per entity per frame, unless we are watching the entity
-	static ConVarRef pwatchent( "pwatchent" );
 	if ( pwatchent.GetInt() == entindex() )
 	{
 		if ( slot == SLOT_ORIGINALDATA )
@@ -6535,6 +6679,7 @@ C_AI_BaseNPC *C_BaseEntity::MyNPCPointer( void )
 	return NULL;
 }
 
+extern ConVar *closecaption;
 
 //-----------------------------------------------------------------------------
 // Purpose: For each client (only can be local client in client .dll ) checks the client has disabled CC and if so, removes them from 
@@ -6543,8 +6688,7 @@ C_AI_BaseNPC *C_BaseEntity::MyNPCPointer( void )
 //-----------------------------------------------------------------------------
 void C_BaseEntity::RemoveRecipientsIfNotCloseCaptioning( C_RecipientFilter& filter )
 {
-	extern ConVar closecaption;
-	if ( !closecaption.GetBool() )
+	if ( !closecaption->GetBool() )
 	{
 		filter.Reset();
 	}
@@ -7009,7 +7153,7 @@ bool C_BaseEntity::PreRender()
 
 bool C_BaseEntity::IsViewEntity() const
 {
-	return render->GetViewEntity() == m_nEntIndex;
+	return render->GetViewEntity() == entindex();
 }
 
 bool C_BaseEntity::IsAbleToHaveFireEffect( void ) const

@@ -13,6 +13,7 @@
 #include "iclientrenderable.h"
 #include "iclientunknown.h"
 #include "cdll_client_int.h"
+#include "predictable_entity.h"
 
 #define CLIENT_ALPHA_DISTANCE_FADE_MODE_BIT_COUNT 1
 
@@ -42,6 +43,8 @@ public:
 
 	// Other public methods
 public:
+	DECLARE_PREDICTABLE();
+
 	CClientAlphaProperty( );
 	void Init( IClientUnknown *pUnk );
 	void Init( IClientUnknownEx *pUnk );
@@ -94,8 +97,8 @@ private:
 	IClientUnknown *m_pOuter;
 
 	ClientShadowHandle_t m_hShadowHandle;
-	uint16 m_nRenderFX : 5;
-	uint16 m_nRenderMode : 4;
+	uint16 m_nRenderFX;
+	uint16 m_nRenderMode;
 	uint16 m_bAlphaOverride : 1;
 	uint16 m_bShadowAlphaOverride : 1;
 	uint16 m_nDistanceFadeMode : CLIENT_ALPHA_DISTANCE_FADE_MODE_BIT_COUNT;

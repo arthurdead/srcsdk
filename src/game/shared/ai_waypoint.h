@@ -50,14 +50,14 @@ public:
 	AI_Waypoint_t( const Vector &vecPosition, float flYaw, Navigation_t navType, int fWaypointFlags );
 	AI_Waypoint_t( const AI_Waypoint_t &from )
 	{
-		memcpy( this, &from, sizeof(*this) );
+		memcpy( (void *)this, (void *)&from, sizeof(*this) );
 		flPathDistGoal = -1;
 		pNext = pPrev = NULL;
 	}
 
 	AI_Waypoint_t &operator=( const AI_Waypoint_t &from )
 	{
-		memcpy( this, &from, sizeof(*this) );
+		memcpy( (void *)this, (void *)&from, sizeof(*this) );
 		flPathDistGoal = -1;
 		pNext = pPrev = NULL;
 		return *this;

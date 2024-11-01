@@ -17,6 +17,7 @@
 #include "ispatialpartition.h"
 #include "collisionutils.h"
 #include "tier0/vprof.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -339,7 +340,7 @@ bool FireSystem_CanAddFire( Vector *position, float separationRadius, fireType_e
 		//TODO: If we've hit an entity here, start it on fire
 		CBaseEntity *pEntity = tr.m_pEnt;
 
-		if ( ENTINDEX( pEntity->edict() ) != 0 )
+		if ( !pEntity->IsWorld() )
 		{
 			return false;
 		}

@@ -98,9 +98,9 @@ struct Relationship_t
 //-----------------------------------------------------------------------------
 class CBaseCombatCharacter : public CBaseFlex
 {
+public:
 	DECLARE_CLASS( CBaseCombatCharacter, CBaseFlex );
 
-public:
 	CBaseCombatCharacter(void);
 	~CBaseCombatCharacter(void);
 

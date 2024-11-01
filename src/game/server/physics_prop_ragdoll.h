@@ -21,9 +21,9 @@ namespace ResponseRules { class IResponseSystem; };
 // UNDONE: Move this to a private header
 class CRagdollProp : public CBaseAnimating, public CDefaultPlayerPickupVPhysics
 {
+public:
 	DECLARE_CLASS( CRagdollProp, CBaseAnimating );
 
-public:
 	CRagdollProp( void );
 	~CRagdollProp( void );
 
@@ -151,14 +151,14 @@ private:
 	Vector				m_ragdollMaxs[RAGDOLL_MAX_ELEMENTS];
 };
 
+typedef CRagdollProp CSharedRagdollProp;
+
 CBaseEntity *CreateServerRagdoll( CBaseAnimating *pAnimating, int forceBone, const CTakeDamageInfo &info, int collisionGroup, bool bUseLRURetirement = false, const char *classname = "prop_ragdoll" );
 CRagdollProp *CreateServerRagdollAttached( CBaseAnimating *pAnimating, const Vector &vecForce, int forceBone, int collisionGroup, IPhysicsObject *pAttached, CBaseAnimating *pParentEntity, int boneAttach, const Vector &originAttached, int parentBoneAttach, const Vector &boneOrigin );
 void DetachAttachedRagdoll( CBaseEntity *pRagdollIn );
 void DetachAttachedRagdollsForEntity( CBaseEntity *pRagdollParent );
 CBaseAnimating *CreateServerRagdollSubmodel( CBaseAnimating *pOwner, const char *pModelName, const Vector &position, const QAngle &angles, int collisionGroup );
 
-bool Ragdoll_IsPropRagdoll( CBaseEntity *pEntity );
-void Ragdoll_GetAngleOverrideString( char *pOut, int size, CBaseEntity *pEntity );
 ragdoll_t *Ragdoll_GetRagdoll( CBaseEntity *pEntity );
 
 #endif // PHYSICS_PROP_RAGDOLL_H

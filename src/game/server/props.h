@@ -22,8 +22,8 @@
 //-----------------------------------------------------------------------------
 class CBaseProp : public CBaseAnimating
 {
-	DECLARE_CLASS( CBaseProp, CBaseAnimating );
 public:
+	DECLARE_CLASS( CBaseProp, CBaseAnimating );
 	virtual void UpdateOnRemove();
 
 	void Spawn( void );
@@ -283,9 +283,9 @@ private:
 //-----------------------------------------------------------------------------
 class CDynamicProp : public CBreakableProp, public IPositionWatcher
 {
+public:
 	DECLARE_CLASS( CDynamicProp, CBreakableProp );
 
-public:
 	DECLARE_SERVERCLASS();
 	DECLARE_MAPENTITY();
 
@@ -362,10 +362,10 @@ DECLARE_AUTO_LIST( IPhysicsPropAutoList );
 
 class CPhysicsProp : public CBreakableProp, public IPhysicsPropAutoList, public ISpecialPhysics
 {
+public:
 	DECLARE_CLASS( CPhysicsProp, CBreakableProp );
 	DECLARE_SERVERCLASS();
 
-public:
 	~CPhysicsProp();
 	CPhysicsProp( void );
 

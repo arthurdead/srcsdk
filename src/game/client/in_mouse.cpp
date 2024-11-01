@@ -44,7 +44,7 @@
 extern ConVar lookstrafe;
 extern ConVar cl_pitchdown;
 extern ConVar cl_pitchup;
-extern const ConVar *sv_cheats;
+extern ConVar *sv_cheats;
 
 class ConVar_m_pitch : public ConVar_ServerBounded
 {
@@ -56,12 +56,9 @@ public:
 	
 	virtual float GetFloat() const
 	{
-		if ( !sv_cheats )
-			sv_cheats = g_pCVar->FindVar( "sv_cheats" );
-
 		// If sv_cheats is on then it can be anything.
 		float flBaseValue = GetBaseFloatValue();
-		if ( !sv_cheats || sv_cheats->GetBool() )
+		if ( sv_cheats->GetBool() )
 			return flBaseValue;
 
 		// If sv_cheats is off than it can only be 0.022 or -0.022 (if they've reversed the mouse in the options).		

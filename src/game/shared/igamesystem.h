@@ -11,6 +11,7 @@
 
 #include "tier0/platform.h"
 #include "usercmd.h"
+#include "networkvar.h"
 
 #ifdef GAME_DLL
 class CBasePlayer;
@@ -130,6 +131,7 @@ public:
 class CBaseGameSystem : public IGameSystem
 {
 public:
+	DECLARE_CLASS_GAMEROOT( CBaseGameSystem, IGameSystem )
 
 	virtual char const *Name() { return "unnamed"; }
 
@@ -178,6 +180,8 @@ private:
 class CBaseGameSystemPerFrame : public IGameSystemPerFrame
 {
 public:
+	DECLARE_CLASS_GAMEROOT( CBaseGameSystemPerFrame, IGameSystemPerFrame )
+
 	virtual char const *Name() { return "unnamed"; }
 
 	// Init, shutdown
@@ -222,6 +226,8 @@ public:
 class CAutoGameSystem : public CBaseGameSystem
 {
 public:
+	DECLARE_CLASS( CAutoGameSystem, CBaseGameSystem )
+
 	CAutoGameSystem( char const *name = NULL );	// hooks in at startup, no need to explicitly add
 	CAutoGameSystem		*m_pNext;
 
@@ -237,6 +243,8 @@ private:
 class CAutoGameSystemPerFrame : public CBaseGameSystemPerFrame
 {
 public:
+	DECLARE_CLASS( CAutoGameSystemPerFrame, CBaseGameSystemPerFrame )
+
 	CAutoGameSystemPerFrame( char const *name = NULL );
 	CAutoGameSystemPerFrame *m_pNext;
 
@@ -247,6 +255,7 @@ private:
 };
 
 
+#ifndef SWDS
 //-----------------------------------------------------------------------------
 // Purpose: This interface is here to add more hooks than IGameSystemPerFrame exposes,
 // so we don't pollute it with hooks that only the tool cares about
@@ -256,5 +265,6 @@ class IToolFrameworkServer
 public:
 	virtual void PreSetupVisibility() = 0;
 };
+#endif
 
 #endif // IGAMESYSTEM_H

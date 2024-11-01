@@ -18,6 +18,10 @@
 CStringRegistry* CAI_BaseNPC::m_pActivitySR	= NULL;
 int				 CAI_BaseNPC::m_iNumActivities = 0;
 
+#ifdef _DEBUG
+static bool g_bRegisteringAliases = false;
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: Add an activity to the activity string registry and increment
 //			the acitivty counter
@@ -38,9 +42,11 @@ void CAI_BaseNPC::AddActivityToSR(const char *actName, Activity actID)
 	MEM_ALLOC_CREDIT();
 
 #ifdef _DEBUG
-	static Activity lastActID = (Activity)-2;
-	Assert( actID >= LAST_SHARED_ACTIVITY || actID == lastActID + 1 || actID == ACT_INVALID );
-	lastActID = actID;
+	if(!g_bRegisteringAliases) {
+		static Activity lastActID = (Activity)-3;
+		Assert( lastActID == (Activity)-3 || (actID < LAST_SHARED_ACTIVITY && actID == lastActID + 1) );
+		lastActID = actID;
+	}
 #endif
 
 	m_pActivitySR->AddString(actName, actID);
@@ -110,7 +116,13 @@ void CAI_BaseNPC::InitDefaultActivitySR(void)
 	#define ACTIVITY_ENUM_ALIAS(name, value) \
 		AddActivityToSR( #name, value );
 
+#ifdef _DEBUG
+	g_bRegisteringAliases = true;
+#endif
 	#include "ai_activity_enum.inc"
+#ifdef _DEBUG
+	g_bRegisteringAliases = false;
+#endif
 }
 
 //-----------------------------------------------------------------------------

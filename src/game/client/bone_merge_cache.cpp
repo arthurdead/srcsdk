@@ -78,7 +78,7 @@ void CBoneMergeCache::UpdateCache()
 			mstudiobone_t *pOwnerBones = m_pOwnerHdr->pBone( 0 );
 			
 			m_nFollowBoneSetupMask = BONE_USED_BY_BONE_MERGE;
-			const bool bDeveloperDebugPrints = developer.GetBool();
+			const bool bDeveloperDebugPrints = developer->GetBool();
 			for ( int i = 0; i < m_pOwnerHdr->numbones(); i++ )
 			{
 				int parentBoneIndex = Studio_BoneIndexByName( m_pFollowHdr, pOwnerBones[i].pszName() );

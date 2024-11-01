@@ -18,6 +18,7 @@
 #include "igamesystem.h"
 #include "utlmultilist.h"
 #include "tier1/callqueue.h"
+#include "collisionproperty.h"
 
 #ifdef PORTAL
 	#include "portal_util_shared.h"

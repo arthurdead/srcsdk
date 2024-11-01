@@ -173,6 +173,9 @@ public:
 };
 
 static CMemAlloc s_MemAlloc;
-DLL_EXPORT_ATTR SELECTANY IMemAlloc *g_pMemAlloc = &s_MemAlloc;
+
+extern "C" {
+	DLL_EXPORT_ATTR IMemAlloc *g_pMemAlloc = &s_MemAlloc;
+}
 
 #endif

@@ -95,8 +95,6 @@ private:
 	CSpotlightTraceCacheEntry *m_pCache;
 };
 
-LINK_ENTITY_TO_CLASS( beam_spotlight, C_BeamSpotLight );
-
 IMPLEMENT_CLIENTCLASS_DT( C_BeamSpotLight, DT_BeamSpotlight, CBeamSpotlight )
 	RecvPropInt(   RECVINFO(m_nHaloIndex) ),
 	RecvPropBool(  RECVINFO(m_bSpotlightOn) ),

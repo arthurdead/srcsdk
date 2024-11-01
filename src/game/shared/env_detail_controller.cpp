@@ -12,7 +12,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef GAME_DLL
 LINK_ENTITY_TO_CLASS_ALIASED(env_detail_controller,	EnvDetailController);
+#endif
 
 IMPLEMENT_NETWORKCLASS_ALIASED( EnvDetailController, DT_DetailController )
 

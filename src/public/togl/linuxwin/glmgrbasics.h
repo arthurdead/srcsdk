@@ -83,7 +83,7 @@ struct GLMRect	// follows GL convention - if coming from the D3D rect you will n
 
 // macros
 
-//#define	GLMassert(x)	assert(x)
+//#define	GLMAssert(x)	Assert(x)
 
 // forward decls
 class	GLMgr;				// singleton

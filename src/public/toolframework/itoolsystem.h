@@ -8,6 +8,8 @@
 #define ITOOLSYSTEM_H
 #pragma once
 
+#ifndef SWDS
+
 #include "itoolentity.h"
 #include "interface.h"
 #include "materialsystem/imaterialproxy.h"
@@ -147,5 +149,7 @@ public:
 // Pointer to a member method of IGameSystem
 typedef void (IToolSystem::*ToolSystemFunc_t)();
 typedef void (IToolSystem::*ToolSystemFunc_Int_t)( int arg );
+
+#endif
 
 #endif // ITOOLSYSTEM_H

@@ -51,7 +51,13 @@ END_RECV_TABLE()
 
 LINK_ENTITY_TO_CLASS(scene_clientside, C_ClientScene);
 
-C_SceneEntity::C_SceneEntity( void )
+CChoreoScene *BlockingLoadScene( const char *filename )
+{
+	return C_SceneEntity::LoadScene( filename, NULL );
+}
+
+C_SceneEntity::C_SceneEntity( int iEFlags )
+	: C_BaseEntity( iEFlags )
 {
 	m_pScene = NULL;
 	m_bMultiplayer = false;
@@ -812,6 +818,11 @@ CChoreoStringPool g_ChoreoStringPool;
 
 CChoreoScene *C_SceneEntity::LoadScene( const char *filename )
 {
+	return LoadScene( filename, this );
+}
+
+CChoreoScene *C_SceneEntity::LoadScene( const char *filename, IChoreoEventCallback *pCallback )
+{
 	char loadfile[ 512 ];
 	Q_strncpy( loadfile, filename, sizeof( loadfile ) );
 	Q_SetExtension( loadfile, ".vcd", sizeof( loadfile ) );
@@ -832,7 +843,7 @@ CChoreoScene *C_SceneEntity::LoadScene( const char *filename )
 	CChoreoScene *pScene;
 	if ( IsBufferBinaryVCD( pBuffer, bufsize ) )
 	{
-		pScene = new CChoreoScene( this );
+		pScene = new CChoreoScene( pCallback );
 		CUtlBuffer buf( pBuffer, bufsize, CUtlBuffer::READ_ONLY );
 		if ( !pScene->RestoreFromBinaryBuffer( buf, loadfile, &g_ChoreoStringPool ) )
 		{
@@ -843,13 +854,13 @@ CChoreoScene *C_SceneEntity::LoadScene( const char *filename )
 		else
 		{
 			pScene->SetPrintFunc( Scene_Printf );
-			pScene->SetEventCallbackInterface( this );
+			pScene->SetEventCallbackInterface( pCallback );
 		}
 	}
 	else
 	{
 		g_TokenProcessor.SetBuffer( pBuffer );
-		pScene = ChoreoLoadScene( loadfile, this, &g_TokenProcessor, Scene_Printf );
+		pScene = ChoreoLoadScene( loadfile, pCallback, &g_TokenProcessor, Scene_Printf );
 	}
 
 	delete[] pBuffer;

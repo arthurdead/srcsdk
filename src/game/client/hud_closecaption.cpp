@@ -31,7 +31,7 @@
 extern ISoundEmitterSystemBase *soundemitterbase;
 
 // Marked as FCVAR_USERINFO so that the server can cull CC messages before networking them down to us!!!
-ConVar closecaption( "closecaption", "0", FCVAR_ARCHIVE | FCVAR_USERINFO, "Enable close captioning." );
+extern ConVar *closecaption;
 extern ConVar cc_lang;
 static ConVar cc_linger_time( "cc_linger_time", "1.0", FCVAR_ARCHIVE, "Close caption linger time." );
 static ConVar cc_predisplay_time( "cc_predisplay_time", "0.25", FCVAR_ARCHIVE, "Close caption delay before showing caption." );
@@ -1258,7 +1258,7 @@ void CHudCloseCaption::OnTick( void )
 	}
 	else
 	{
-		SetVisible( closecaption.GetBool() );
+		SetVisible( closecaption->GetBool() );
 	}
 
 	// Pass one decay all timers
@@ -1465,7 +1465,7 @@ void CHudCloseCaption::Process( const wchar_t *stream, float duration, const cha
 {
 	if ( !direct )
 	{
-		if ( !closecaption.GetBool() )
+		if ( !closecaption->GetBool() )
 		{
 			Reset();
 			return;
@@ -2388,7 +2388,7 @@ void CHudCloseCaption::ProcessCaptionDirect( const char *tokenname, float durati
 
 void CHudCloseCaption::PlayRandomCaption()
 {
-	if ( !closecaption.GetBool() )
+	if ( !closecaption->GetBool() )
 		return;
 	CAsyncCaption *async = new CAsyncCaption;
 	async->SetIsStream( false );
@@ -2401,7 +2401,7 @@ void CHudCloseCaption::PlayRandomCaption()
 
 bool CHudCloseCaption::AddAsyncWork( const char *tokenstream, bool bIsStream, float duration, bool fromplayer, bool direct /* = false */ )
 {
-	if ( !closecaption.GetBool() && !direct )
+	if ( !closecaption->GetBool() && !direct )
 		return false;
 	bool bret = true;
 
@@ -2450,7 +2450,7 @@ bool CHudCloseCaption::AddAsyncWork( const char *tokenstream, bool bIsStream, fl
 
 bool CHudCloseCaption::AddAsyncWorkByHash( unsigned int hash, float duration, bool fromplayer, bool direct /*=false*/ )
 {
-	if ( !closecaption.GetBool() && !direct )
+	if ( !closecaption->GetBool() && !direct )
 		return false;
 	bool bret = true;
 
@@ -2844,10 +2844,10 @@ void OnCaptionLanguageChanged( IConVar *pConVar, const char *pOldString, float f
 	if ( !g_pVGuiLocalize )
 		return;
 
-	ConVarRef var( pConVar );
+	const char *pszValue = ((ConVar *)pConVar)->GetString();
 
 	char fn[ 512 ];
-	Q_snprintf( fn, sizeof( fn ), "resource/closecaption_%s.txt", var.GetString() );
+	Q_snprintf( fn, sizeof( fn ), "resource/closecaption_%s.txt", pszValue );
 
 	// Re-adding the file, even if it's "english" will overwrite the tokens as needed
 	g_pVGuiLocalize->AddFile( "resource/closecaption_%language%.txt", "GAME", true );
@@ -2859,7 +2859,7 @@ void OnCaptionLanguageChanged( IConVar *pConVar, const char *pOldString, float f
 	CHudCloseCaption *hudCloseCaption = GET_FULLSCREEN_HUDELEMENT( CHudCloseCaption );
 
 	// If it's not the default, load the language on top of the user's default language
-	if ( Q_strlen( var.GetString() ) > 0 && Q_stricmp( var.GetString(), uilanguage ) )
+	if ( Q_strlen( pszValue ) > 0 && Q_stricmp( pszValue, uilanguage ) )
 	{
 		if ( g_pFullFileSystem->FileExists( fn ) )
 		{
@@ -2877,7 +2877,7 @@ void OnCaptionLanguageChanged( IConVar *pConVar, const char *pOldString, float f
 		if ( hudCloseCaption )
 		{
 			char dbfile [ 512 ];
-			Q_snprintf( dbfile, sizeof( dbfile ), "resource/closecaption_%s.dat", var.GetString() );
+			Q_snprintf( dbfile, sizeof( dbfile ), "resource/closecaption_%s.dat", pszValue );
 			hudCloseCaption->InitCaptionDictionary( dbfile );
 		}
 	}
@@ -2890,7 +2890,7 @@ void OnCaptionLanguageChanged( IConVar *pConVar, const char *pOldString, float f
 			hudCloseCaption->InitCaptionDictionary( dbfile );
 		}
 	}
-	DevMsg( "cc_lang = %s\n", var.GetString() );
+	DevMsg( "cc_lang = %s\n", pszValue );
 }
 
 

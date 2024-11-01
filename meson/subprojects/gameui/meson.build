@@ -49,6 +49,7 @@ if build_client
 			join_paths(gameui_src_dir,'vguisystemmoduleloader.cpp'),
 			join_paths(gameui_src_dir,'rmlui.cpp'),
 			join_paths(gameui_src_dir,'rmlcontext.cpp'),
+			join_paths(public_dir,'networkvar.cpp'),
 		),
 		include_directories: include_directories(
 			gameui_src_dir,

@@ -7,6 +7,7 @@
 #include "cbase.h"
 #include "c_ai_basenpc.h"
 #include "engine/ivdebugoverlay.h"
+#include "collisionproperty.h"
 
 #if defined( HL2_DLL ) || defined( HL2_EPISODIC )
 #include "c_basehlplayer.h"
@@ -180,3 +181,6 @@ bool C_AI_BaseNPC::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matrix3x
 	return bRet;
 }
 
+float				C_AI_BaseNPC::GetHullWidth()	const		{ return CollisionProp()->Width(); }
+float				C_AI_BaseNPC::GetHullLength() const		{ return CollisionProp()->Length(); }
+float				C_AI_BaseNPC::GetHullHeight() const		{ return CollisionProp()->Height(); }

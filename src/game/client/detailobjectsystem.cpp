@@ -288,7 +288,7 @@ protected:
 	DetailModelAdvInfo_t *m_pAdvInfo;
 };
 
-static ConVar mat_fullbright( "mat_fullbright", "0", FCVAR_CHEAT ); // hook into engine's cvars..
+extern ConVar *mat_fullbright; // hook into engine's cvars..
 extern ConVar r_DrawDetailProps;
 
 
@@ -877,7 +877,7 @@ void CDetailModel::InitShapedSprite( unsigned char shapeAngle, unsigned char sha
 		m_pAdvInfo->m_flSwayAmount = (float)swayAmount / 255.0f;
 		m_pAdvInfo->m_flShapeSize = (float)shapeSize / 255.0f;
 		m_pAdvInfo->m_vecCurrentAvoid = vec3_origin;
-		m_pAdvInfo->m_flSwayYaw = random->RandomFloat( 0, 180 );
+		m_pAdvInfo->m_flSwayYaw = random_valve->RandomFloat( 0, 180 );
 	}
 
 	switch ( m_Type )
@@ -933,7 +933,7 @@ void CDetailModel::InitShapeCross( void )
 //-----------------------------------------------------------------------------
 void CDetailModel::GetColorModulation( float *color )
 {
-	if (mat_fullbright.GetInt() == 1)
+	if (mat_fullbright->GetInt() == 1)
 	{
 		color[0] = color[1] = color[2] = 1.0f;
 		return;

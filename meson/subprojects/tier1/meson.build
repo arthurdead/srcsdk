@@ -1,4 +1,6 @@
-project('tier1', 'cpp', 'c')
+project('tier1', 'cpp', 'c', default_options: [
+	'cpp_std=gnu++20'
+])
 
 assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
 assert(meson.get_compiler('c').get_argument_syntax() == 'gcc', 'only gnu compilers are supported')
@@ -9,6 +11,13 @@ build_libs = get_option('build_libs')
 tier1_src_dir = join_paths(src_root_dir,'tier1')
 
 source_base = subproject('source_base')
+
+target_system = target_machine.system()
+
+link_args = []
+if target_system == 'windows'
+	link_args = ['-lrpcrt4']
+endif
 
 if build_libs
 	tier1_lib = static_library('tier1',name_prefix:'',
@@ -79,6 +88,7 @@ if build_libs
 		include_directories: include_directories(
 			join_paths(src_root_dir,'public','tier1')
 		),
+		link_args: link_args,
 		link_with: tier1_lib
 	)
 else
@@ -86,7 +96,7 @@ else
 		include_directories: include_directories(
 			join_paths(src_root_dir,'public','tier1')
 		),
-		link_args: [
+		link_args: link_args + [
 			'-l:tier1'+source_base.get_variable('lib_ext')
 		]
 	)

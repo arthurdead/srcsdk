@@ -50,7 +50,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern ConVar mat_fullbright;
+extern ConVar *mat_fullbright;
 
 CON_COMMAND(game_shader_loaded, "Shows that game shader loaded.")
 {
@@ -588,7 +588,7 @@ void CBaseVSShader::LoadBumpLightmapCoordinateAxes_PixelShader( int pixelReg )
 	Vector4D basis[3];
 	for (int i = 0; i < 3; ++i)
 	{
-		memcpy( &basis[i], &g_localBumpBasis[i], 3 * sizeof(float) );
+		memcpy( (void *)&basis[i], (void *)&g_localBumpBasis[i], 3 * sizeof(float) );
 		basis[i][3] = 0.0f;
 	}
 	s_pShaderAPI->SetPixelShaderConstant( pixelReg, (float*)basis, 3 );
@@ -614,7 +614,7 @@ void CBaseVSShader::LoadBumpLightmapCoordinateAxes_VertexShader( int vertexReg )
 	s_pShaderAPI->SetVertexShaderConstant( vertexReg, (float*)basis, 3 );
 	for (i = 0; i < 3; ++i)
 	{
-		memcpy( &basis[i], &g_localBumpBasis[i], 3 * sizeof(float) );
+		memcpy( (void *)&basis[i], (void *)&g_localBumpBasis[i], 3 * sizeof(float) );
 		basis[i][3] = 0.0f;
 	}
 	s_pShaderAPI->SetVertexShaderConstant( vertexReg + 3, (float*)basis, 3 );
@@ -735,7 +735,7 @@ ConVar mat_envmaptintscale( "mat_envmaptintscale", "-1" );
 void CBaseVSShader::SetEnvMapTintPixelShaderDynamicState( int pixelReg, int tintVar, int alphaVar, bool bConvertFromGammaToLinear )
 {
 	float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	if( g_pConfig->bShowSpecular && mat_fullbright.GetInt() != 2 )
+	if( g_pConfig->bShowSpecular && mat_fullbright->GetInt() != 2 )
 	{
 		IMaterialVar* pAlphaVar = NULL;
 		if( alphaVar >= 0 )

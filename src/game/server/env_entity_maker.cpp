@@ -10,6 +10,7 @@
 #include "entityoutput.h"
 #include "TemplateEntities.h"
 #include "point_template.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -223,9 +224,9 @@ void CEnvEntityMaker::SpawnEntity( Vector vecAlternateOrigin, QAngle vecAlternat
 			}
 			AngleVectors( angSpawnDir, &vForward, &vRight, &vUp );
 			Vector vecShootDir = vForward;
-			vecShootDir += vRight * random->RandomFloat(-1, 1) * m_flPostSpawnDirectionVariance;
-			vecShootDir += vForward * random->RandomFloat(-1, 1) * m_flPostSpawnDirectionVariance;
-			vecShootDir += vUp * random->RandomFloat(-1, 1) * m_flPostSpawnDirectionVariance;
+			vecShootDir += vRight * random_valve->RandomFloat(-1, 1) * m_flPostSpawnDirectionVariance;
+			vecShootDir += vForward * random_valve->RandomFloat(-1, 1) * m_flPostSpawnDirectionVariance;
+			vecShootDir += vUp * random_valve->RandomFloat(-1, 1) * m_flPostSpawnDirectionVariance;
 			VectorNormalize( vecShootDir );
 			vecShootDir *= m_flPostSpawnSpeed;
 

@@ -80,6 +80,8 @@
 
 #define COMMAND_MAX_RATE 0.3f
 
+extern CBaseEntity *FindEntityForward( CBasePlayer *pMe, bool fHull );
+
 ConVar autoaim_max_dist( "autoaim_max_dist", "2160" ); // 2160 = 180 feet
 ConVar autoaim_max_deflect( "autoaim_max_deflect", "0.99" );
 
@@ -855,7 +857,7 @@ void CBasePlayer::DamageEffect(float flDamage, int fDamageType)
 		// calls are just expensive ways of returning zero. This code has always been this
 		// way and has never had any value. clang complains about the conversion from a
 		// literal floating-point number to an integer.
-		//ViewPunch(QAngle(random->RandomInt(-0.1,0.1), random->RandomInt(-0.1,0.1), random->RandomInt(-0.1,0.1)));
+		//ViewPunch(QAngle(random_valve->RandomInt(-0.1,0.1), random_valve->RandomInt(-0.1,0.1), random_valve->RandomInt(-0.1,0.1)));
 
 		// Burn sound 
 		EmitSound( "Player.PlasmaDamage" );
@@ -1197,7 +1199,7 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 			SetSuitUpdate("!HEV_HLTH2", false, SUIT_NEXT_IN_10MIN);	// health critical
 	
 		// give critical health warnings
-		if (!random->RandomInt(0,3) && flHealthPrev < 50)
+		if (!random_valve->RandomInt(0,3) && flHealthPrev < 50)
 			SetSuitUpdate("!HEV_DMG7", false, SUIT_NEXT_IN_5MIN); //seek medical attention
 	}
 
@@ -1206,7 +1208,7 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 		{
 			if (flHealthPrev < 50)
 			{
-				if (!random->RandomInt(0,3))
+				if (!random_valve->RandomInt(0,3))
 					SetSuitUpdate("!HEV_DMG7", false, SUIT_NEXT_IN_5MIN); //seek medical attention
 			}
 			else
@@ -1263,8 +1265,8 @@ void CBasePlayer::OnDamagedByExplosion( const CTakeDamageInfo &info )
 		return;
 
 	int effect = shock ? 
-		random->RandomInt( 35, 37 ) : 
-		random->RandomInt( 32, 34 );
+		random_valve->RandomInt( 35, 37 ) : 
+		random_valve->RandomInt( 32, 34 );
 
 	CSingleUserRecipientFilter user( this );
 	enginesound->SetPlayerDSP( user, effect, false );
@@ -1863,7 +1865,7 @@ void CBasePlayer::StartDeathCam( void )
 	if ( pSpot )
 	{
 		// at least one intermission spot in the world.
-		iRand = random->RandomInt( 0, 3 );
+		iRand = random_valve->RandomInt( 0, 3 );
 
 		while ( iRand > 0 )
 		{
@@ -3372,7 +3374,7 @@ void CBasePlayer::PlayerRunCommand(CUserCmd *ucmd, IMoveHelper *moveHelper)
 	// Handle FL_FROZEN.
 	// Prevent player moving for some seconds after New Game, so that they pick up everything
 	if( GetFlags() & FL_FROZEN || 
-		(developer.GetInt() == 0 && gpGlobals->eLoadType == MapLoad_NewGame && gpGlobals->curtime < 3.0 ) )
+		(developer->GetInt() == 0 && gpGlobals->eLoadType == MapLoad_NewGame && gpGlobals->curtime < 3.0 ) )
 	{
 		ucmd->forwardmove = 0;
 		ucmd->sidemove = 0;
@@ -3870,7 +3872,7 @@ void CBasePlayer::UpdateGeigerCounter( void )
 	}
 
 	// reset counter and semaphore
-	if (!random->RandomInt(0,3))
+	if (!random_valve->RandomInt(0,3))
 	{
 		m_flgeigerRange = 1000;
 	}
@@ -4007,7 +4009,7 @@ void CBasePlayer::SetSuitUpdate(const char *name, int fgroup, int iNoRepeatTime)
 	if (iNoRepeatTime)
 	{
 		if (iempty < 0)
-			iempty = random->RandomInt(0, CSUITNOREPEAT-1); // pick random slot to take over
+			iempty = random_valve->RandomInt(0, CSUITNOREPEAT-1); // pick random slot to take over
 		m_rgiSuitNoRepeat[iempty] = isentence;
 		m_rgflSuitNoRepeatTime[iempty] = iNoRepeatTime + gpGlobals->curtime;
 	}
@@ -4655,8 +4657,9 @@ void CBasePlayer::Spawn( void )
 
 	m_Local.m_bDucked = false;// This will persist over round restart if you hold duck otherwise. 
 	m_Local.m_bDucking = false;
-    SetViewOffset( VEC_VIEW_SCALED( this ) );
-    {
+	SetViewOffset( VEC_VIEW_SCALED( this ) );
+
+	{
 		VPROF_SCOPE_BEGIN( "precache" );
 		if ( IsPrecacheAllowed() )
 		{
@@ -5416,121 +5419,6 @@ CBaseEntity	*CBasePlayer::GiveNamedItem( const char *pszName, int iSubType, bool
 	return pent;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Returns the nearest COLLIBALE entity in front of the player
-//			that has a clear line of sight with the given classname
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-CBaseEntity *FindEntityClassForward( CBasePlayer *pMe, const char *classname )
-{
-	trace_t tr;
-
-	Vector forward;
-	pMe->EyeVectors( &forward );
-	UTIL_TraceLine(pMe->EyePosition(),
-		pMe->EyePosition() + forward * MAX_COORD_RANGE,
-		MASK_SOLID, pMe, COLLISION_GROUP_NONE, &tr );
-	if ( tr.fraction != 1.0 && tr.DidHitNonWorldEntity() )
-	{
-		CBaseEntity *pHit = tr.m_pEnt;
-		if (FClassnameIs( pHit,classname ) )
-		{
-			return pHit;
-		}
-	}
-	return NULL;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Returns the nearest COLLIBALE entity in front of the player
-//			that has a clear line of sight. If HULL is true, the trace will
-//			hit the collision hull of entities. Otherwise, the trace will hit
-//			hitboxes.
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-CBaseEntity *FindEntityForward( CBasePlayer *pMe, bool fHull )
-{
-	if ( pMe )
-	{
-		trace_t tr;
-		Vector forward;
-		int mask;
-
-		if( fHull )
-		{
-			mask = MASK_SOLID;
-		}
-		else
-		{
-			mask = MASK_SHOT;
-		}
-
-		pMe->EyeVectors( &forward );
-		UTIL_TraceLine(pMe->EyePosition(),
-			pMe->EyePosition() + forward * MAX_COORD_RANGE,
-			mask, pMe, COLLISION_GROUP_NONE, &tr );
-		if ( tr.fraction != 1.0 && tr.DidHitNonWorldEntity() )
-		{
-			return tr.m_pEnt;
-		}
-	}
-	return NULL;
-
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Finds the nearest entity in front of the player of the given
-//			classname, preferring collidable entities, but allows selection of 
-//			enities that are on the other side of walls or objects
-//
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-CBaseEntity *FindPickerEntityClass( CBasePlayer *pPlayer, const char *classname )
-{
-	// First try to trace a hull to an entity
-	CBaseEntity *pEntity = FindEntityClassForward( pPlayer, classname );
-
-	// If that fails just look for the nearest facing entity
-	if (!pEntity) 
-	{
-		Vector forward;
-		Vector origin;
-		pPlayer->EyeVectors( &forward );
-		origin = pPlayer->WorldSpaceCenter();		
-		pEntity = gEntList.FindEntityClassNearestFacing( origin, forward,0.95,classname);
-	}
-	return pEntity;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Finds the nearest entity in front of the player, preferring
-//			collidable entities, but allows selection of enities that are
-//			on the other side of walls or objects
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-CBaseEntity *FindPickerEntity( CBasePlayer *pPlayer )
-{
-	MDLCACHE_CRITICAL_SECTION();
-
-	// First try to trace a hull to an entity
-	CBaseEntity *pEntity = FindEntityForward( pPlayer, true );
-
-	// If that fails just look for the nearest facing entity
-	if (!pEntity && pPlayer) 
-	{
-		Vector forward;
-		Vector origin;
-		pPlayer->EyeVectors( &forward );
-		origin = pPlayer->EyePosition();		
-		pEntity = gEntList.FindEntityNearestFacing( origin, forward,0.95);
-	}
-	return pEntity;
-}
-
 /*
 ===============
 ForceClientDllUpdate
@@ -5878,7 +5766,7 @@ bool CBasePlayer::ClientCommand( const CCommand &args )
 #ifdef _DEBUG
 	if( stricmp( cmd, "test_SmokeGrenade" ) == 0 )
 	{
-		if ( sv_cheats && sv_cheats->GetBool() )
+		if ( sv_cheats->GetBool() )
 		{
 			ParticleSmokeGrenade *pSmoke = dynamic_cast<ParticleSmokeGrenade*>( CreateEntityByName(PARTICLESMOKEGRENADE_ENTITYNAME) );
 			if ( pSmoke )
@@ -6339,7 +6227,7 @@ Vector CBasePlayer::BodyTarget( const Vector &posSrc, bool bNoisy )
 	}
 	if (bNoisy)
 	{
-		return GetAbsOrigin() + (GetViewOffset() * random->RandomFloat( 0.7, 1.0 )); 
+		return GetAbsOrigin() + (GetViewOffset() * random_valve->RandomFloat( 0.7, 1.0 )); 
 	}
 	else
 	{
@@ -7764,21 +7652,16 @@ void SendProxy_ShiftPlayerSpawnflags( const SendProp *pProp, const void *pStruct
 
 	BEGIN_SEND_TABLE_NOBASE( CBasePlayer, DT_LocalPlayerExclusive )
 
-		//TODO!!!! why does this break things?
-		//SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin ),
-		SendPropVector(SENDINFO(m_vecOrigin), CELL_BASEENTITY_ORIGIN_CELL_BITS, SPROP_CELL_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, CBaseEntity::SendProxy_CellOrigin ),
+		SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin ),
 
 		SendPropFloat(SENDINFO_VECTORELEM(m_angEyeAngles, 0), 8, SPROP_CHANGES_OFTEN, -90.0f, 90.0f),
 		SendPropAngle(SENDINFO_VECTORELEM(m_angEyeAngles, 1), 10, SPROP_CHANGES_OFTEN),
 
 		SendPropDataTable	( SENDINFO_DT(m_Local), &REFERENCE_SEND_TABLE(DT_Local) ),
 		
-// If HL2_DLL is defined, then baseflex.cpp already sends these.
-#ifndef HL2_DLL
 		SendPropFloat		( SENDINFO_VECTORELEM(m_vecViewOffset, 0), 8, SPROP_ROUNDDOWN, -32.0, 32.0f),
 		SendPropFloat		( SENDINFO_VECTORELEM(m_vecViewOffset, 1), 8, SPROP_ROUNDDOWN, -32.0, 32.0f),
 		SendPropFloat		( SENDINFO_VECTORELEM(m_vecViewOffset, 2), 20, SPROP_CHANGES_OFTEN,	0.0f, 256.0f),
-#endif
 
 		SendPropFloat		( SENDINFO(m_flFriction),		8,	SPROP_ROUNDDOWN,	0.0f,	4.0f),
 
@@ -7826,7 +7709,7 @@ void SendProxy_ShiftPlayerSpawnflags( const SendProp *pProp, const void *pStruct
 	END_SEND_TABLE()
 
 	BEGIN_SEND_TABLE_NOBASE( CBasePlayer, DT_NonLocalPlayerExclusive )
-		SendPropVector(SENDINFO(m_vecOrigin), CELL_BASEENTITY_ORIGIN_CELL_BITS, SPROP_CELL_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, CBaseEntity::SendProxy_CellOrigin ),
+		SendPropVector(SENDINFO(m_vecOrigin), SENDPROP_VECORIGIN_BITS, SENDPROP_VECORIGIN_FLAGS, 0.0f, HIGH_DEFAULT, SENDPROP_VECORIGIN_PROXY ),
 		SendPropFloat( SENDINFO_VECTORELEM(m_angEyeAngles, 0), 8, SPROP_CHANGES_OFTEN, -90.0f, 90.0f ),
 		SendPropAngle( SENDINFO_VECTORELEM(m_angEyeAngles, 1), 10, SPROP_CHANGES_OFTEN ),
 		SendPropInt(SENDINFO(m_cycleLatch), 4, SPROP_UNSIGNED),
@@ -7839,19 +7722,25 @@ void SendProxy_ShiftPlayerSpawnflags( const SendProp *pProp, const void *pStruct
 	IMPLEMENT_SERVERCLASS_ST( CBasePlayer, DT_BasePlayer )
 
 		// These aren't needed either because we use client-side animation, or because they are being moved to the local/non-local table.
-		SendPropExclude( "DT_BaseEntity", "m_vecOrigin" ),
-		SendPropExclude( "DT_BaseAnimating", "m_flPoseParameter" ),
-		SendPropExclude( "DT_BaseAnimating", "m_flPlaybackRate" ),	
-		SendPropExclude( "DT_BaseAnimating", "m_nSequence" ),
-		SendPropExclude( "DT_BaseAnimating", "m_nNewSequenceParity" ),
-		SendPropExclude( "DT_BaseAnimating", "m_nResetEventsParity" ),
-		SendPropExclude( "DT_BaseEntity", "m_angRotation" ),
-		SendPropExclude( "DT_BaseAnimatingOverlay", "overlay_vars" ),
-		SendPropExclude( "DT_ServerAnimationData" , "m_flCycle" ),
-		SendPropExclude( "DT_AnimTimeMustBeFirst" , "m_flAnimTime" ),
-		SendPropExclude("DT_BaseFlex", "m_flexWeight"),
-		SendPropExclude("DT_BaseFlex", "m_blinktoggle"),
-		SendPropExclude("DT_BaseFlex", "m_viewtarget"),
+		SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_vecOrigin ) ),
+		SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_flPoseParameter ) ),
+		SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_flPlaybackRate ) ),	
+		SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nSequence ) ),
+		SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nNewSequenceParity ) ),
+		SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nResetEventsParity ) ),
+		SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_angRotation ) ),
+		SendPropExclude( SENDEXLCUDE( DT_BaseAnimatingOverlay, overlay_vars ) ),
+		SendPropExclude( SENDEXLCUDE( DT_ServerAnimationData, m_flCycle ) ),
+		SendPropExclude( SENDEXLCUDE( DT_AnimTimeMustBeFirst, m_flAnimTime ) ),
+		SendPropExclude( SENDEXLCUDE( DT_BaseFlex, m_flexWeight ) ),
+		SendPropExclude( SENDEXLCUDE( DT_BaseFlex, m_blinktoggle ) ),
+		SendPropExclude( SENDEXLCUDE( DT_BaseFlex, m_viewtarget ) ),
+		SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nBody ) ),
+		SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_bClientSideAnimation ) ),
+
+		SendPropExclude( SENDEXLCUDE_VECTORELEM( DT_BaseFlex, m_vecViewOffset, 0 ) ),
+		SendPropExclude( SENDEXLCUDE_VECTORELEM( DT_BaseFlex, m_vecViewOffset, 1 ) ),
+		SendPropExclude( SENDEXLCUDE_VECTORELEM( DT_BaseFlex, m_vecViewOffset, 2 ) ),
 
 		SendPropDataTable(SENDINFO_DT(pl), &REFERENCE_SEND_TABLE(DT_PlayerState), SendProxy_DataTableToDataTable),
 
@@ -9842,11 +9731,6 @@ void TE_PlayerAnimEvent( CBasePlayer* pPlayer, PlayerAnimEvent_t event, int nDat
 	g_TEPlayerAnimEvent.m_nData = nData;
 	g_TEPlayerAnimEvent.Create( filter, 0 );
 }
-
-int	 CBasePlayer::RequiredEdictIndex( void )
-{
-	return -1;
-} 
 
 //-----------------------------------------------------------------------------
 // Purpose: 

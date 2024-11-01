@@ -13,13 +13,12 @@
 
 // This is an ugly hack to link client classes to weapons for now
 //  these will be removed once we predict all weapons, especially TF2 weapons
-#define STUB_WEAPON_CLASS_IMPLEMENT( entityName, className )		\
+#define STUB_WEAPON_CLASS_IMPLEMENT( className )		\
 	BEGIN_PREDICTION_DATA( className )								\
-	END_PREDICTION_DATA()											\
-	LINK_ENTITY_TO_CLASS( entityName, className );
+	END_PREDICTION_DATA()
 
 
-#define STUB_WEAPON_CLASS( entityName, className, baseClassName )	\
+#define STUB_WEAPON_CLASS( className, baseClassName )	\
 	class C_##className : public baseClassName					\
 	{																\
 		DECLARE_CLASS( C_##className, baseClassName );							\
@@ -30,7 +29,7 @@
 	private:														\
 		C_##className( const C_##className & );						\
 	};																\
-	STUB_WEAPON_CLASS_IMPLEMENT( entityName, C_##className );		\
+	STUB_WEAPON_CLASS_IMPLEMENT( C_##className );		\
 	IMPLEMENT_CLIENTCLASS_DT( C_##className, DT_##className, C##className )	\
 	END_RECV_TABLE()
 

@@ -210,7 +210,7 @@ void C_SmokeStack::OnDataChanged(DataUpdateType_t updateType)
 }
 
 
-static ConVar mat_reduceparticles( "mat_reduceparticles", "0" );
+extern ConVar *mat_reduceparticles;
 
 //-----------------------------------------------------------------------------
 // Purpose: Starts the effect
@@ -256,7 +256,7 @@ void C_SmokeStack::Start(CParticleMgr *pParticleMgr)
 
 	m_iMaxFrames = iCount-1;
 
-	m_ParticleSpawn.Init( mat_reduceparticles.GetBool() ? m_Rate / 4 : m_Rate ); // Obey mat_reduceparticles in episodic
+	m_ParticleSpawn.Init( mat_reduceparticles->GetBool() ? m_Rate / 4 : m_Rate ); // Obey mat_reduceparticles in episodic
 
 	m_InvLifetime = m_Speed / m_JetLength;
 
@@ -305,7 +305,7 @@ void C_SmokeStack::Update(float fTimeDelta)
 {
 	if( !m_pParticleMgr )
 	{
-		assert(false);
+		Assert(false);
 		return;
 	}
 
@@ -319,7 +319,7 @@ void C_SmokeStack::Update(float fTimeDelta)
 		float tempDelta = fTimeDelta;
 		while(m_ParticleSpawn.NextEvent(tempDelta))
 		{
-			int iRandomFrame = random->RandomInt( 0, m_iMaxFrames );
+			int iRandomFrame = random_valve->RandomInt( 0, m_iMaxFrames );
 
 			// Make a new particle.
 			if(SmokeStackParticle *pParticle = (SmokeStackParticle*)m_ParticleEffect.AddParticle(sizeof(SmokeStackParticle), m_MaterialHandle[iRandomFrame]))
@@ -339,7 +339,7 @@ void C_SmokeStack::Update(float fTimeDelta)
 				pParticle->m_Lifetime = 0;
 				pParticle->m_flAngle = RandomFloat( 0, 360 );
 
-				pParticle->m_flRollDelta = random->RandomFloat( -m_flRollSpeed, m_flRollSpeed );
+				pParticle->m_flRollDelta = random_valve->RandomFloat( -m_flRollSpeed, m_flRollSpeed );
 				pParticle->m_flSortPos = pParticle->m_Pos.z;
 			}
 		}

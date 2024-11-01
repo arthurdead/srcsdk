@@ -13,34 +13,48 @@
 #define DECLARE_MAPENTITY()											\
 	public:																\
 		static typedescription_t m_MapTypeDesc[];							\
-		static datamap_t m_MapDataDesc;										\
+		static map_datamap_t m_MapDataDesc;										\
 		virtual datamap_t *GetMapDataDesc( void );						\
 		template <typename T> friend datamap_t *MapDataDescInit(T *)
 
 #define DECLARE_SIMPLE_MAPEMBEDDED()											\
 	public:																\
 		static typedescription_t m_MapTypeDesc[];							\
-		static datamap_t m_MapDataDesc;										\
+		static map_datamap_t m_MapDataDesc;										\
 		template <typename T> friend datamap_t *MapDataDescInit(T *)
 
 #define BEGIN_MAPENTITY( className ) \
-	datamap_t className::m_MapDataDesc = { 0, 0, #className, &BaseClass::m_MapDataDesc }; \
+	map_datamap_t className::m_MapDataDesc( V_STRINGIFY(className), &BaseClass::m_MapDataDesc ); \
 	datamap_t *className::GetMapDataDesc( void ) { return &m_MapDataDesc; } \
 	BEGIN_MAPENTITY_GUTS( className )
 
 #define BEGIN_MAPENTITY_NO_BASE( className ) \
-	datamap_t className::m_MapDataDesc = { 0, 0, #className, NULL }; \
+	map_datamap_t className::m_MapDataDesc( V_STRINGIFY(className), NULL ); \
 	datamap_t *className::GetMapDataDesc( void ) { return &m_MapDataDesc; } \
 	BEGIN_MAPENTITY_GUTS( className )
 
 #define BEGIN_SIMPLE_MAPEMBEDDED( className ) \
-	datamap_t className::m_MapDataDesc = { 0, 0, #className, NULL }; \
+	map_datamap_t className::m_MapDataDesc( V_STRINGIFY(className), NULL ); \
 	BEGIN_MAPENTITY_GUTS( className )
+
+#ifdef GAME_DLL
+#define BEGIN_MAPENTITY_ALIASED( className ) BEGIN_MAPENTITY( C##className )
+
+#define BEGIN_MAPENTITY_ALIASED_NO_BASE( className ) BEGIN_MAPENTITY_NO_BASE( C##className )
+
+#define BEGIN_SIMPLE_MAPEMBEDDED_ALIASED( className ) BEGIN_SIMPLE_MAPEMBEDDED( C##className )
+#else
+#define BEGIN_MAPENTITY_ALIASED( className ) BEGIN_MAPENTITY( C_##className )
+
+#define BEGIN_MAPENTITY_ALIASED_NO_BASE( className ) BEGIN_MAPENTITY_NO_BASE( C_##className )
+
+#define BEGIN_SIMPLE_MAPEMBEDDED_ALIASED( className ) BEGIN_SIMPLE_MAPEMBEDDED( C_##className )
+#endif
 
 #define BEGIN_MAPENTITY_GUTS( className ) \
 	template <typename T> datamap_t *MapDataDescInit(T *); \
 	template <> datamap_t *MapDataDescInit<className>( className * ); \
-	namespace className##_MapDataDescInit \
+	namespace V_CONCAT2(className, _MapDataDescInit) \
 	{ \
 		datamap_t *g_MapDataDescHolder = MapDataDescInit( (className *)NULL ); /* This can/will be used for some clean up duties later */ \
 	} \

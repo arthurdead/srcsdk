@@ -30,6 +30,8 @@ IMPLEMENT_CLIENTCLASS_DT( C_PropJeep, DT_PropJeep, CPropJeep )
 	RecvPropBool( RECVINFO( m_bHeadlightIsOn ) ),
 END_RECV_TABLE()
 
+ConVar r_JeepFOV( "r_JeepFOV", "90", FCVAR_CHEAT | FCVAR_REPLICATED );
+
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
@@ -39,7 +41,6 @@ C_PropJeep::C_PropJeep()
 	m_flViewAngleDeltaTime = 0.0f;
 	m_pHeadlight = NULL;
 	
-	ConVarRef r_JeepFOV( "r_JeepFOV" );
 	m_ViewSmoothingData.flFOV = r_JeepFOV.GetFloat();
 }
 
@@ -297,24 +298,24 @@ void WheelDustCallback( const CEffectData &data )
 	if ( pParticle != NULL )
 	{			
 		pParticle->m_flLifetime		= 0.0f;
-		pParticle->m_flDieTime		= random->RandomFloat( 0.25f, 0.5f );
+		pParticle->m_flDieTime		= random_valve->RandomFloat( 0.25f, 0.5f );
 		
 		pParticle->m_vecVelocity = RandomVector( -1.0f, 1.0f );
 		VectorNormalize( pParticle->m_vecVelocity );
-		pParticle->m_vecVelocity[2] += random->RandomFloat( 16.0f, 32.0f ) * (data.m_flScale*2.0f);
+		pParticle->m_vecVelocity[2] += random_valve->RandomFloat( 16.0f, 32.0f ) * (data.m_flScale*2.0f);
 
-		int	color = random->RandomInt( 100, 150 );
+		int	color = random_valve->RandomInt( 100, 150 );
 
 		pParticle->m_uchColor[0] = 16 + ( worldLight[0] * (float) color );
 		pParticle->m_uchColor[1] = 8 + ( worldLight[1] * (float) color );
 		pParticle->m_uchColor[2] = ( worldLight[2] * (float) color );
 
-		pParticle->m_uchStartAlpha	= random->RandomInt( 64.0f*data.m_flScale, 128.0f*data.m_flScale );
+		pParticle->m_uchStartAlpha	= random_valve->RandomInt( 64.0f*data.m_flScale, 128.0f*data.m_flScale );
 		pParticle->m_uchEndAlpha	= 0;
-		pParticle->m_uchStartSize	= random->RandomInt( 16, 24 ) * data.m_flScale;
-		pParticle->m_uchEndSize		= random->RandomInt( 32, 48 ) * data.m_flScale;
-		pParticle->m_flRoll			= random->RandomInt( 0, 360 );
-		pParticle->m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
+		pParticle->m_uchStartSize	= random_valve->RandomInt( 16, 24 ) * data.m_flScale;
+		pParticle->m_uchEndSize		= random_valve->RandomInt( 32, 48 ) * data.m_flScale;
+		pParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+		pParticle->m_flRollDelta	= random_valve->RandomFloat( -2.0f, 2.0f );
 	}
 }
 

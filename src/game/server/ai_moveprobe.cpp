@@ -164,7 +164,7 @@ void CAI_MoveProbe::TraceHull(
 #endif
 	}
 
-	if ( r_visualizetraces.GetBool() )
+	if ( r_visualizetraces->GetBool() )
 		DebugDrawLine( pResult->startpos, pResult->endpos, 255, 255, 0, true, -1.0f );
 
 	//NDebugOverlay::SweptBox( vecStart, vecEnd, hullMin, hullMax, vec3_angle, 255, 255, 0, 0, 10 );

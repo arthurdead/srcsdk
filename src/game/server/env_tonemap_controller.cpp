@@ -16,7 +16,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar mat_hdr_tonemapscale( "mat_hdr_tonemapscale", "1.0", FCVAR_CHEAT, "The HDR tonemap scale. 1 = Use autoexposure, 0 = eyes fully closed, 16 = eyes wide open." );
+extern ConVar *mat_hdr_tonemapscale;
+extern ConVar *mat_hdr_manual_tonemap_rate;
 
 // 0 - eyes fully closed / fully black
 // 1 - nominal 
@@ -101,7 +102,7 @@ void CEnvTonemapController::InputSetTonemapScale( inputdata_t &inputdata )
 		}
 	}
 
-	mat_hdr_tonemapscale.SetValue( flRemapped );
+	mat_hdr_tonemapscale->SetValue( flRemapped );
 }
 
 //-----------------------------------------------------------------------------
@@ -126,7 +127,7 @@ void CEnvTonemapController::InputBlendTonemapScale( inputdata_t &inputdata )
 		m_flBlendTonemapEnd = tonemap_end_value;
 		m_flBlendEndTime = gpGlobals->curtime + tonemap_end_time;
 		m_flBlendStartTime = gpGlobals->curtime;
-		m_flBlendTonemapStart = mat_hdr_tonemapscale.GetFloat();
+		m_flBlendTonemapStart = mat_hdr_tonemapscale->GetFloat();
 	}
 	else
 	{
@@ -188,12 +189,8 @@ void CEnvTonemapController::InputSetTonemapRate( inputdata_t &inputdata )
 	}
 
 	// TODO: There should be a better way to do this.
-	ConVarRef mat_hdr_manual_tonemap_rate( "mat_hdr_manual_tonemap_rate" );
-	if ( mat_hdr_manual_tonemap_rate.IsValid() )
-	{
-		float flTonemapRate = inputdata.value.Float();
-		mat_hdr_manual_tonemap_rate.SetValue( flTonemapRate );
-	}
+	float flTonemapRate = inputdata.value.Float();
+	mat_hdr_manual_tonemap_rate->SetValue( flTonemapRate );
 }
 
 //-----------------------------------------------------------------------------
@@ -202,7 +199,7 @@ void CEnvTonemapController::InputSetTonemapRate( inputdata_t &inputdata )
 void CEnvTonemapController::UpdateTonemapScaleBlend( void )
 { 
 	float flRemapped = RemapValClamped( gpGlobals->curtime, m_flBlendStartTime, m_flBlendEndTime, m_flBlendTonemapStart, m_flBlendTonemapEnd );
-	mat_hdr_tonemapscale.SetValue( flRemapped );
+	mat_hdr_tonemapscale->SetValue( flRemapped );
 
 	//Msg("Setting tonemap scale to %f (curtime %f, %f -> %f)\n", flRemapped, gpGlobals->curtime, m_flBlendStartTime, m_flBlendEndTime ); 
 

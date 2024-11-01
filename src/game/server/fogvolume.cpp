@@ -5,6 +5,7 @@
 #include "fogvolume.h"
 #include "collisionutils.h"
 #include "postprocesscontroller.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

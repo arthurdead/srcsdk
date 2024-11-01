@@ -28,11 +28,6 @@ IMPLEMENT_CLIENTCLASS_DT(C_PhysicsProp, DT_PhysicsProp, CPhysicsProp)
 	RecvPropVector( RECVINFO( m_collisionMaxs ) ),
 END_RECV_TABLE()
 
-LINK_ENTITY_TO_CLASS( physics_prop, C_PhysicsProp );
-LINK_ENTITY_TO_CLASS( prop_physics, C_PhysicsProp );	
-LINK_ENTITY_TO_CLASS( prop_physics_override, C_PhysicsProp );	
-LINK_ENTITY_TO_CLASS(prop_physics_multiplayer, C_PhysicsProp);
-
 ConVar r_PhysPropStaticLighting( "r_PhysPropStaticLighting", "1" );
 
 // @MULTICORE (toml 9/18/2006): this visualization will need to be implemented elsewhere

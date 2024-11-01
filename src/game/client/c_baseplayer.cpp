@@ -54,6 +54,7 @@
 #include "beamdraw.h"
 #include "iviewrender_beams.h"
 #include "clientalphaproperty.h"
+#include "ragdoll.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -225,18 +226,17 @@ END_RECV_TABLE()
 
 	BEGIN_RECV_TABLE_NOBASE( C_BasePlayer, DT_LocalPlayerExclusive )
 
-		//TODO!!!! why does this break things?
-		//RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ) ), // RECVINFO_NAME redirects the received var to m_vecNetworkOrigin for interpolation purposes
-		RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin), 0, C_BaseEntity::RecvProxy_CellOrigin ), // RECVINFO_NAME again
+		RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ) ), // RECVINFO_NAME redirects the received var to m_vecNetworkOrigin for interpolation purposes
 
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_angEyeAngles, 0 ) ),
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_angEyeAngles, 1 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_angEyeAngles, 0 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_angEyeAngles, 1 ) ),
 
 		RecvPropDataTable	( RECVINFO_DT(m_Local),0, &REFERENCE_RECV_TABLE(DT_Local) ),
 
-		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecViewOffset, 0) ),
-		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecViewOffset, 1) ),
-		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecViewOffset, 2) ),
+		RecvPropFloat		( RECVINFO_VECTORELEM(m_vecViewOffset, 0) ),
+		RecvPropFloat		( RECVINFO_VECTORELEM(m_vecViewOffset, 1) ),
+		RecvPropFloat		( RECVINFO_VECTORELEM(m_vecViewOffset, 2) ),
+
 		RecvPropFloat		( RECVINFO(m_flFriction) ),
 
 		RecvPropArray3		( RECVINFO_ARRAY(m_iAmmo), RecvPropInt( RECVINFO_ARRAYELEM(m_iAmmo, 0)) ),
@@ -249,9 +249,9 @@ END_RECV_TABLE()
 		RecvPropEHandle		( RECVINFO( m_hLastWeapon ) ),
 		RecvPropEHandle		( RECVINFO( m_hGroundEntity ) ),
 
- 		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecVelocity, 0), 0, RecvProxy_LocalVelocityX ),
- 		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecVelocity, 1), 0, RecvProxy_LocalVelocityY ),
- 		RecvPropFloat		( RECVINFO_ARRAYELEM(m_vecVelocity, 2), 0, RecvProxy_LocalVelocityZ ),
+ 		RecvPropFloat		( RECVINFO_VECTORELEM(m_vecVelocity, 0), 0, RecvProxy_LocalVelocityX ),
+ 		RecvPropFloat		( RECVINFO_VECTORELEM(m_vecVelocity, 1), 0, RecvProxy_LocalVelocityY ),
+ 		RecvPropFloat		( RECVINFO_VECTORELEM(m_vecVelocity, 2), 0, RecvProxy_LocalVelocityZ ),
 
 		RecvPropVector		( RECVINFO( m_vecBaseVelocity ) ),
 
@@ -290,9 +290,9 @@ void RecvProxy_CycleLatch(const CRecvProxyData *pData, void *pStruct, void *pOut
 }
 
 	BEGIN_RECV_TABLE_NOBASE( C_BasePlayer, DT_NonLocalPlayerExclusive )
-		RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin), 0, C_BaseEntity::RecvProxy_CellOrigin ), // RECVINFO_NAME again
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_angEyeAngles, 0 ) ),
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_angEyeAngles, 1 ) ),
+		RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin), 0, RECVPROP_VECORIGIN_PROXY ), // RECVINFO_NAME again
+		RecvPropFloat( RECVINFO_VECTORELEM( m_angEyeAngles, 0 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_angEyeAngles, 1 ) ),
 		RecvPropInt(RECVINFO(m_cycleLatch), 0, &RecvProxy_CycleLatch),
 	END_RECV_TABLE()
 	
@@ -348,7 +348,7 @@ void RecvProxy_CycleLatch(const CRecvProxyData *pData, void *pStruct, void *pOut
 
 BEGIN_PREDICTION_DATA_NO_BASE( CPlayerState )
 
-	DEFINE_PRED_FIELD(  deadflag, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS(  deadflag, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 	// DEFINE_FIELD( netname, string_t ),
 	// DEFINE_FIELD( fixangle, FIELD_INTEGER ),
 	// DEFINE_FIELD( anglechange, FIELD_FLOAT ),
@@ -363,54 +363,54 @@ BEGIN_PREDICTION_DATA_NO_BASE( CPlayerLocalData )
 	// DEFINE_PRED_TYPEDESCRIPTION( m_audio, audioparams_t ),
 	DEFINE_FIELD( m_nStepside, FIELD_INTEGER ),
 
-	DEFINE_PRED_FIELD( m_iHideHUD, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_iHideHUD, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 #if PREDICTION_ERROR_CHECK_LEVEL > 1
-	DEFINE_PRED_FIELD( m_vecPunchAngle, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_vecPunchAngleVel, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_vecPunchAngle, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_vecPunchAngleVel, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
 #else
-	DEFINE_PRED_FIELD_TOL( m_vecPunchAngle, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.125f ),
-	DEFINE_PRED_FIELD_TOL( m_vecPunchAngleVel, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.125f ),
+	DEFINE_FIELD_FLAGS_TOL( m_vecPunchAngle, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.125f ),
+	DEFINE_FIELD_FLAGS_TOL( m_vecPunchAngleVel, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.125f ),
 #endif
-	DEFINE_PRED_FIELD( m_bDrawViewmodel, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_bWearingSuit, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_bPoisoned, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_bAllowAutoMovement, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_bDrawViewmodel, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_bWearingSuit, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_bPoisoned, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_bAllowAutoMovement, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 
-	DEFINE_PRED_FIELD( m_bDucked, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_bDucking, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_bInDuckJump, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_flDucktime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_flDuckJumpTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_flJumpTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD_TOL( m_flFallVelocity, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, 0.5f ),
-//	DEFINE_PRED_FIELD( m_nOldButtons, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_bDucked, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_bDucking, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_bInDuckJump, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_flDucktime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_flDuckJumpTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_flJumpTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS_TOL( m_flFallVelocity, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, 0.5f ),
+//	DEFINE_FIELD_FLAGS( m_nOldButtons, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD( m_nOldButtons, FIELD_INTEGER ),
-	DEFINE_PRED_FIELD( m_flStepSize, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_flStepSize, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD( m_flFOVRate, FIELD_FLOAT ),
 
 END_PREDICTION_DATA()	
 
 BEGIN_PREDICTION_DATA( C_BasePlayer )
 
-	DEFINE_PRED_TYPEDESCRIPTION( m_Local, CPlayerLocalData ),
-	DEFINE_PRED_TYPEDESCRIPTION( pl, CPlayerState ),
+	DEFINE_PRED_EMBEDDED( m_Local ),
+	DEFINE_PRED_EMBEDDED( pl ),
 
-	DEFINE_PRED_FIELD( m_iFOV, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_hZoomOwner, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_flFOVTime, FIELD_FLOAT, 0 ),
-	DEFINE_PRED_FIELD( m_iFOVStart, FIELD_INTEGER, 0 ),
+	DEFINE_FIELD_FLAGS( m_iFOV, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_hZoomOwner, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_flFOVTime, FIELD_FLOAT, 0 ),
+	DEFINE_FIELD_FLAGS( m_iFOVStart, FIELD_INTEGER, 0 ),
 
-	DEFINE_PRED_FIELD( m_hVehicle, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD_TOL( m_flMaxspeed, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, 0.5f ),
-	DEFINE_PRED_FIELD( m_iHealth, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_iBonusProgress, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_iBonusChallenge, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_fOnTarget, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_nNextThinkTick, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_lifeState, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_nWaterLevel, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_hVehicle, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS_TOL( m_flMaxspeed, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, 0.5f ),
+	DEFINE_FIELD_FLAGS( m_iHealth, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_iBonusProgress, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_iBonusChallenge, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_fOnTarget, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_nNextThinkTick, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_lifeState, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_nWaterLevel, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
 	
-	DEFINE_PRED_FIELD_TOL( m_vecBaseVelocity, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.05 ),
+	DEFINE_FIELD_FLAGS_TOL( m_vecBaseVelocity, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.05 ),
 
 	DEFINE_FIELD( m_nButtons, FIELD_INTEGER ),
 	DEFINE_FIELD( m_flWaterJumpTime, FIELD_FLOAT ),
@@ -432,21 +432,21 @@ BEGIN_PREDICTION_DATA( C_BasePlayer )
 	// DEFINE_FIELD( m_pModelLight, dlight_t* ),
 	// DEFINE_FIELD( m_pEnvironmentLight, dlight_t* ),
 	// DEFINE_FIELD( m_pBrightLight, dlight_t* ),
-	DEFINE_PRED_FIELD( m_hLastWeapon, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_hLastWeapon, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
 
-	DEFINE_PRED_FIELD( m_nTickBase, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_nTickBase, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 
-	DEFINE_PRED_FIELD( m_hGroundEntity, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_hGroundEntity, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
 
-	DEFINE_PRED_ARRAY( m_hViewModel, FIELD_EHANDLE, MAX_VIEWMODELS, FTYPEDESC_INSENDTABLE ),
+	DEFINE_ARRAY_FLAGS( m_hViewModel, FIELD_EHANDLE, MAX_VIEWMODELS, FTYPEDESC_INSENDTABLE ),
 
 	DEFINE_FIELD( m_surfaceFriction, FIELD_FLOAT ),
 
-	DEFINE_PRED_FIELD( m_flCycle, FIELD_FLOAT, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
-	DEFINE_PRED_FIELD( m_nSequence, FIELD_INTEGER, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
-	DEFINE_PRED_FIELD( m_flPlaybackRate, FIELD_FLOAT, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
-	DEFINE_PRED_ARRAY_TOL( m_flEncodedController, FIELD_FLOAT, MAXSTUDIOBONECTRLS, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE, 0.02f ),
-	DEFINE_PRED_FIELD( m_nNewSequenceParity, FIELD_INTEGER, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_FIELD_FLAGS( m_flCycle, FIELD_FLOAT, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_FIELD_FLAGS( m_nSequence, FIELD_INTEGER, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_FIELD_FLAGS( m_flPlaybackRate, FIELD_FLOAT, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_ARRAY_FLAGS_TOL( m_flEncodedController, FIELD_FLOAT, MAXSTUDIOBONECTRLS, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE, 0.02f ),
+	DEFINE_FIELD_FLAGS( m_nNewSequenceParity, FIELD_INTEGER, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
 
 END_PREDICTION_DATA()
 
@@ -1699,18 +1699,18 @@ void C_BasePlayer::CreateWaterEffects( void )
 			offset.z = ( m_flWaterSurfaceZ - 8.0f );
 		}
 
-		pParticle = (SimpleParticle *) m_pWaterEmitter->AddParticle( sizeof(SimpleParticle), g_Mat_Fleck_Cement[random->RandomInt(0,1)], offset );
+		pParticle = (SimpleParticle *) m_pWaterEmitter->AddParticle( sizeof(SimpleParticle), g_Mat_Fleck_Cement[random_valve->RandomInt(0,1)], offset );
 
 		if (pParticle == NULL)
 			continue;
 
 		pParticle->m_flLifetime	= 0.0f;
-		pParticle->m_flDieTime	= random->RandomFloat( 2.0f, 4.0f );
+		pParticle->m_flDieTime	= random_valve->RandomFloat( 2.0f, 4.0f );
 
 		pParticle->m_vecVelocity = RandomVector( -2.0f, 2.0f );
 
 		//FIXME: We should tint these based on the water's fog value!
-		float color = random->RandomInt( 32, 128 );
+		float color = random_valve->RandomInt( 32, 128 );
 		pParticle->m_uchColor[0] = color;
 		pParticle->m_uchColor[1] = color;
 		pParticle->m_uchColor[2] = color;
@@ -1721,8 +1721,8 @@ void C_BasePlayer::CreateWaterEffects( void )
 		pParticle->m_uchStartAlpha	= 255;
 		pParticle->m_uchEndAlpha	= 0;
 		
-		pParticle->m_flRoll			= random->RandomInt( 0, 360 );
-		pParticle->m_flRollDelta	= random->RandomFloat( -0.5f, 0.5f );
+		pParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+		pParticle->m_flRollDelta	= random_valve->RandomFloat( -0.5f, 0.5f );
 	}
 }
 
@@ -2466,24 +2466,35 @@ void C_BasePlayer::PostThink( void )
 	if ( IsAlive())
 	{
 		// Need to do this on the client to avoid prediction errors
+		VPROF_SCOPE_BEGIN( "C_BasePlayer::PostThink-Bounds" );
 		UpdateCollisionBounds();
+		VPROF_SCOPE_END();
 		
 		// do weapon stuff
+		VPROF_SCOPE_BEGIN( "C_BasePlayer::PostThink-ItemPostFrame" );
 		ItemPostFrame();
+		VPROF_SCOPE_END();
 
 		if ( GetFlags() & FL_ONGROUND )
-		{		
+		{
 			m_Local.m_flFallVelocity = 0;
 		}
-
-		// Don't allow bogus sequence on player
-		if ( GetSequence() == -1 )
-		{
-			SetSequence( 0 );
-		}
-
-		StudioFrameAdvance();
 	}
+
+	// Don't allow bogus sequence on player
+	if ( GetSequence() == -1 )
+	{
+		SetSequence( 0 );
+	}
+
+	VPROF_SCOPE_BEGIN( "C_BasePlayer::PostThink-StudioFrameAdvance" );
+	StudioFrameAdvance();
+	VPROF_SCOPE_END();
+
+	//Let the weapon update as well
+	VPROF_SCOPE_BEGIN( "C_BasePlayer::PostThink-Weapon_FrameUpdate" );
+	Weapon_FrameUpdate();
+	VPROF_SCOPE_END();
 
 	// Even if dead simulate entities
 	SimulatePlayerSimulatedEntities();
@@ -2979,6 +2990,7 @@ void C_BasePlayer::RecvProxy_NonLocalOriginZ( const CRecvProxyData *pData, void 
 	*((float*)pOut) = pData->m_Value.m_Float;
 }
 
+#ifdef DT_CELL_COORD_SUPPORTED
 void C_BasePlayer::RecvProxy_NonLocalCellOriginXY( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	C_BasePlayer *player = (C_BasePlayer *) pStruct;
@@ -3000,6 +3012,7 @@ void C_BasePlayer::RecvProxy_NonLocalCellOriginZ( const CRecvProxyData *pData, v
 	register int const cellwidth = player->m_cellwidth; // Load it into a register
 	*((float*)pOut) = CoordFromCell( cellwidth, player->m_cellZ, pData->m_Value.m_Float );
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Remove this player from a vehicle

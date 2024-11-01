@@ -16,9 +16,8 @@ extern ConVar sv_stepsize;
 // NOTE: Moved all controller code into c_basestudiomodel
 class C_AI_BaseNPC : public C_BaseCombatCharacter
 {
-	DECLARE_CLASS( C_AI_BaseNPC, C_BaseCombatCharacter );
-
 public:
+	DECLARE_CLASS( C_AI_BaseNPC, C_BaseCombatCharacter );
 	DECLARE_CLIENTCLASS();
 
 	C_AI_BaseNPC();
@@ -43,9 +42,9 @@ public:
 
 	const Vector &		GetHullMins() const			{ return WorldAlignMins(); }
 	const Vector &		GetHullMaxs() const			{ return WorldAlignMaxs(); }
-	float				GetHullWidth()	const		{ return CollisionProp()->Width(); }
-	float				GetHullLength() const		{ return CollisionProp()->Length(); }
-	float				GetHullHeight() const		{ return CollisionProp()->Height(); }
+	float				GetHullWidth()	const;
+	float				GetHullLength() const;
+	float				GetHullHeight() const;
 
 private:
 	C_AI_BaseNPC( const C_AI_BaseNPC & ); // not defined, not accessible

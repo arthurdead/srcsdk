@@ -43,9 +43,9 @@ IMPLEMENT_CLIENTCLASS_DT(C_BaseFlex, DT_BaseFlex, CBaseFlex)
 	RecvPropBool(RECVINFO(m_blinktoggle)),
 	RecvPropVector(RECVINFO(m_viewtarget)),
 
-	RecvPropFloat( RECVINFO_ARRAYELEM(m_vecViewOffset, 0) ),
-	RecvPropFloat( RECVINFO_ARRAYELEM(m_vecViewOffset, 1) ),
-	RecvPropFloat( RECVINFO_ARRAYELEM(m_vecViewOffset, 2) ),
+	RecvPropFloat( RECVINFO_VECTORELEM(m_vecViewOffset, 0) ),
+	RecvPropFloat( RECVINFO_VECTORELEM(m_vecViewOffset, 1) ),
+	RecvPropFloat( RECVINFO_VECTORELEM(m_vecViewOffset, 2) ),
 
 	RecvPropVector(RECVINFO(m_vecLean)),
 	RecvPropVector(RECVINFO(m_vecShift)),
@@ -117,8 +117,8 @@ bool GetHWMExpressionFileName( const char *pFilename, char *pHWMFilename )
 	return true;
 }
 
-C_BaseFlex::C_BaseFlex() : 
-	C_BaseAnimatingOverlay(),
+C_BaseFlex::C_BaseFlex( int iEFlags ) : 
+	C_BaseAnimatingOverlay( iEFlags ),
 	m_iv_viewtarget( "C_BaseFlex::m_iv_viewtarget" ), 
 	m_iv_flexWeight("C_BaseFlex:m_iv_flexWeight" ),
 	m_iv_vecLean("C_BaseFlex:m_iv_vecLean" ),

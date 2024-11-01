@@ -16,6 +16,12 @@
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 
+BEGIN_PREDICTION_DATA_NO_BASE( CClientAlphaProperty )
+
+	DEFINE_FIELD_FLAGS( m_nRenderFX, FIELD_SHORT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_nRenderMode, FIELD_SHORT, FTYPEDESC_INSENDTABLE ),
+
+END_PREDICTION_DATA()
 
 //-----------------------------------------------------------------------------
 // Client alpha property starts here
@@ -289,7 +295,7 @@ void CClientAlphaProperty::ComputeAlphaBlend( )
 					m_nAlphaBlend = tmpAlpha;
 				else
 					m_nAlphaBlend = (int) ((1.0 - (dist - 100) * (1.0 / 400.0)) * tmpAlpha);
-				m_nAlphaBlend += random->RandomInt(-32,31);
+				m_nAlphaBlend += random_valve->RandomInt(-32,31);
 			}
 		}
 		break;

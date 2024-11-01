@@ -20,7 +20,7 @@ CThirdPersonManager g_ThirdPersonManager;
 
 #include "input.h"
 
-extern const ConVar *sv_cheats;
+extern ConVar *sv_cheats;
 
 #endif
 
@@ -43,18 +43,13 @@ void CThirdPersonManager::Init( void )
 	{
 		input->CAM_SetCameraThirdData( NULL, vec3_angle );
 	}
-
-	if ( !sv_cheats )
-	{
-		sv_cheats = g_pCVar->FindVar( "sv_cheats" );
-	}
 }
 
 void CThirdPersonManager::Update( void )
 {
 #ifdef CLIENT_DLL
 	bool thirdperson_allowed = (
-		(!sv_cheats || sv_cheats->GetBool()) &&
+		sv_cheats->GetBool() &&
 		(!GameRules() || GameRules()->AllowThirdPersonCamera())
 	);
 

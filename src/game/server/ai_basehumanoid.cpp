@@ -12,6 +12,7 @@
 #include "ai_blended_movement.h"
 #include "ai_navigator.h"
 #include "ai_memory.h"
+#include "collisionproperty.h"
 
 #ifdef HL2_DLL
 #include "ai_interactions.h"

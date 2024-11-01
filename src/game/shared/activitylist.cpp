@@ -108,6 +108,10 @@ static activitylist_t *ListFromActivity( Activity activityIndex )
 	return NULL;
 }
 
+#ifdef _DEBUG
+static bool g_bRegisteringAliases = false;
+#endif
+
 bool ActivityList_RegisterSharedActivity( const char *pszActivityName, Activity iActivityIndex )
 {
 	// UNDONE: Do we want to do these checks when not in developer mode? or maybe DEBUG only?
@@ -116,25 +120,29 @@ bool ActivityList_RegisterSharedActivity( const char *pszActivityName, Activity 
 
 #ifdef _DEBUG
 	// technically order isn't dependent, but it's too damn easy to forget to add new ACT_'s to all three lists.
-	static Activity lastActivityIndex = (Activity)-1;
-	Assert( iActivityIndex < LAST_SHARED_ACTIVITY && (iActivityIndex == lastActivityIndex + 1 || iActivityIndex == 0) );
-	lastActivityIndex = iActivityIndex;
+	if(!g_bRegisteringAliases) {
+		static Activity lastActivityIndex = (Activity)-3;
+		Assert( lastActivityIndex == (Activity)-3 || (iActivityIndex < LAST_SHARED_ACTIVITY && iActivityIndex == lastActivityIndex + 1) );
+		lastActivityIndex = iActivityIndex;
+	}
 #endif
 
-#if defined _DEBUG && 0 //need to allow aliases
+#ifdef _DEBUG
 	// first, check to make sure the slot we're asking for is free. It must be for 
 	// a shared activity.
-	activitylist_t *pList = ListFromString( pszActivityName );
-	if ( !pList )
-	{
-		pList = ListFromActivity( iActivityIndex );
-	}
+	if(!g_bRegisteringAliases) {
+		activitylist_t *pList = ListFromString( pszActivityName );
+		if ( !pList )
+		{
+			pList = ListFromActivity( iActivityIndex );
+		}
 
-	if ( pList )
-	{
-		Log_Warning( LOG_ACTIVITY,"***\nShared activity collision! %s<->%s\n***\n", pszActivityName, g_ActivityStrings.GetStringForKey( pList->stringKey ) );
-		Assert(0);
-		return false;
+		if ( pList )
+		{
+			Log_Warning( LOG_ACTIVITY,"***\nShared activity collision! %s<->%s\n***\n", pszActivityName, g_ActivityStrings.GetStringForKey( pList->stringKey ) );
+			Assert(0);
+			return false;
+		}
 	}
 	// ----------------------------------------------------------------
 #endif
@@ -203,15 +211,21 @@ void ActivityList_RegisterSharedActivities( void )
 
 	#include "ai_activity_enum.inc"
 
-	AssertMsg( g_HighestActivity == LAST_SHARED_ACTIVITY - 1, "Not all activities from ai_activity.h registered in activitylist.cpp" ); 
-
-	Assert(g_HighestActivity <= (Activity)(unsigned short)-1);
-
 	#define ACTIVITY_ENUM(name, ...)
 	#define ACTIVITY_ENUM_ALIAS(name, value) \
 		ActivityList_RegisterSharedActivity( #name, value );
 
+#ifdef _DEBUG
+	g_bRegisteringAliases = true;
+#endif
 	#include "ai_activity_enum.inc"
+#ifdef _DEBUG
+	g_bRegisteringAliases = false;
+#endif
+
+	AssertMsg( g_HighestActivity == LAST_SHARED_ACTIVITY - 1, "Not all activities from ai_activity.h registered in activitylist.cpp" ); 
+
+	Assert(g_HighestActivity <= (Activity)(unsigned short)-1);
 } 
 
 

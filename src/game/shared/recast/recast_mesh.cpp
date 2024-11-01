@@ -648,7 +648,7 @@ static float frand()
 {
 //	return ((float)(rand() & 0xffff)/(float)0xffff);
 //	return (float)rand()/(float)RAND_MAX;
-	return random->RandomFloat(0.0f, 1.0f);
+	return random_valve->RandomFloat(0.0f, 1.0f);
 }
 
 //-----------------------------------------------------------------------------

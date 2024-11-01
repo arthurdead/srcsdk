@@ -25,7 +25,8 @@ public:
 	DECLARE_INTERPOLATION();
 
 
-	C_BaseAnimatingOverlay();
+	C_BaseAnimatingOverlay() : C_BaseAnimatingOverlay( 0 ) {}
+	C_BaseAnimatingOverlay( int iEFlags );
 
 	virtual CStudioHdr *OnNewModel();
 
@@ -63,6 +64,7 @@ private:
 	friend void ResizeAnimationLayerCallback( void *pStruct, int offsetToUtlVector, int len );
 };
 
+typedef C_ClientOnlyWrapper<C_BaseAnimatingOverlay> C_ClientOnlyBaseAnimatingOverlay;
 
 EXTERN_RECV_TABLE(DT_BaseAnimatingOverlay);
 

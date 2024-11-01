@@ -25,8 +25,8 @@ CFXStaticLine
 CFXStaticLine::CFXStaticLine( const char *name, const Vector& start, const Vector& end, float scale, float life, const char *shader, unsigned int flags )
 : CClientSideEffect( name )
 {
-	assert( g_pMaterialSystem );
-	if ( materials == NULL )
+	Assert( g_pMaterialSystem );
+	if ( g_pMaterialSystem == NULL )
 		return;
 
 	// Create a material...

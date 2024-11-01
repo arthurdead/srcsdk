@@ -13,6 +13,7 @@
 #pragma once
 
 #include "ragdoll_shared.h"
+#include "c_baseanimating.h"
 
 #define RAGDOLL_VISUALIZE	0
 
@@ -111,6 +112,60 @@ public:
 	ragdoll_t *GetRagdoll( void ){ return &m_ragdoll; }
 };
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+class C_ServerRagdoll : public C_BaseAnimating
+{
+public:
+	DECLARE_CLASS( C_ServerRagdoll, C_BaseAnimating );
+	DECLARE_CLIENTCLASS();
+	DECLARE_INTERPOLATION();
+
+	C_ServerRagdoll( void );
+
+	// Inherited from IClientUnknown
+public:
+	virtual IClientModelRenderable*	GetClientModelRenderable();
+
+	virtual void PostDataUpdate( DataUpdateType_t updateType );
+
+	virtual int InternalDrawModel( int flags, const RenderableInstance_t &instance );
+	virtual CStudioHdr *OnNewModel( void );
+	virtual void	SetupWeights( const matrix3x4_t *pBoneToWorld, int nFlexWeightCount, float *pFlexWeights, float *pFlexDelayedWeights );
+
+	void GetRenderBounds( Vector& theMins, Vector& theMaxs );
+	virtual bool Simulate( void );
+	virtual void AccumulateLayers( IBoneSetup &boneSetup, Vector pos[], Quaternion q[], float currentTime );
+	virtual void BuildTransformations( CStudioHdr *pStudioHdr, Vector *pos, Quaternion q[], const matrix3x4_t &cameraTransform, int boneMask, CBoneBitList &boneComputed );
+	IPhysicsObject *GetElement( int elementNum );
+	virtual void UpdateOnRemove();
+	virtual float LastBoneChangedTime();
+
+	void			GetAngleOverrideFromCurrentState( char *pOut, int size );
+
+	// Incoming from network
+	Vector		m_ragPos[RAGDOLL_MAX_ELEMENTS];
+	QAngle		m_ragAngles[RAGDOLL_MAX_ELEMENTS];
+
+	CInterpolatedVarArray< Vector, RAGDOLL_MAX_ELEMENTS >	m_iv_ragPos;
+	CInterpolatedVarArray< QAngle, RAGDOLL_MAX_ELEMENTS >	m_iv_ragAngles;
+
+	int			m_elementCount;
+	int			m_boneIndex[RAGDOLL_MAX_ELEMENTS];
+
+private:
+	C_ServerRagdoll( const C_ServerRagdoll &src );
+
+	typedef CHandle<C_BaseAnimating> BaseAnimatingHandle;
+	CNetworkHandle( C_BaseAnimating, m_hUnragdoll );
+	CNetworkVar( float, m_flBlendWeight );
+	float m_flBlendWeightCurrent;
+	CNetworkVar( int, m_nOverlaySequence );
+	float m_flLastBoneChangeTime;
+};
+
+typedef C_ServerRagdoll CSharedRagdollProp;
 
 CRagdoll *CreateRagdoll( 
 	C_BaseEntity *ent, 

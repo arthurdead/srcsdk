@@ -27,9 +27,9 @@ protected:
 
 class CFlexExpresser : public CAI_ExpresserHost<CFlexExpresserShim>
 {
+public:
 	DECLARE_CLASS( CFlexExpresser, CAI_ExpresserHost<CFlexExpresserShim> );
 
-public:
 	DECLARE_MAPENTITY();
 	CFlexExpresser();
 	~CFlexExpresser();

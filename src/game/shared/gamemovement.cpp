@@ -3329,7 +3329,7 @@ void CreateStuckTable( void )
 
 	firsttime = 0;
 
-	memset(rgv3tStuckTable, 0, sizeof(rgv3tStuckTable));
+	memset((void *)rgv3tStuckTable, 0, sizeof(rgv3tStuckTable));
 
 	idx = 0;
 	// Little Moves.
@@ -3524,7 +3524,7 @@ int CSharedGameMovement::CheckStuck( void )
 
 	// Deal with stuckness...
 #ifndef DEDICATED
-	if ( developer.GetBool() )
+	if ( developer->GetBool() )
 	{
 	#ifdef GAME_DLL
 		engine->Con_NPrintf( 1, "server stuck on object %i/%s", 

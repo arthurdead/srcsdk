@@ -80,9 +80,12 @@
 
 #define SPROP_VARINT					SPROP_NORMAL	// reuse existing flag so we don't break demo. note you want to include SPROP_UNSIGNED if needed, its more efficient
 
+//#define DT_CELL_COORD_SUPPORTED
+#ifdef DT_CELL_COORD_SUPPORTED
 #define SPROP_CELL_COORD				(1<<17) // Like SPROP_COORD, but special encoding for cell coordinates that can't be negative, bit count indicate maximum value
 #define SPROP_CELL_COORD_LOWPRECISION 	(1<<18) // Like SPROP_CELL_COORD, but special handling where the fractional component only gets a 3 bits instead of 5
 #define SPROP_CELL_COORD_INTEGRAL		(1<<19) // SPROP_CELL_COORD, but coordinates are rounded to integral boundaries
+#endif
 
 #define SPROP_NUMFLAGBITS_NETWORKED		16
 
@@ -104,6 +107,21 @@
 #define REFERENCE_SEND_TABLE(tableName)	tableName::g_SendTable
 #define REFERENCE_RECV_TABLE(tableName)	tableName::g_RecvTable
 
+#define DT_VARNAME(varName) \
+	#varName
+
+#define __DT_VARNAME_VECTORELEM_x "x"
+#define __DT_VARNAME_VECTORELEM_y "y"
+#define __DT_VARNAME_VECTORELEM_z "z"
+#define __DT_VARNAME_VECTORELEM_0 "x"
+#define __DT_VARNAME_VECTORELEM_1 "y"
+#define __DT_VARNAME_VECTORELEM_2 "z"
+
+#define DT_VARNAME_VECTORELEM(varName, i) \
+	#varName "." __DT_VARNAME_VECTORELEM_##i
+
+#define DT_VARNAME_ARRAYELEM(varName, i) \
+	#varName "[" #i "]"
 
 class SendProp;
 

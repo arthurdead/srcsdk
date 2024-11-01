@@ -75,7 +75,6 @@ struct FS_LocalToGlobal_t
 	FS_LocalToGlobal_t( const FS_LocalToGlobal_t& src )
 	{
 		m_Key = src.m_Key;
-		delete m_Mapping;
 		m_Mapping = new int[ src.m_nCount ];
 		Q_memcpy( m_Mapping, src.m_Mapping, src.m_nCount * sizeof( int ) );
 
@@ -125,13 +124,14 @@ struct Emphasized_Phoneme
 //-----------------------------------------------------------------------------
 class C_BaseFlex : public C_BaseAnimatingOverlay, public IHasLocalToGlobalFlexSettings
 {
-	DECLARE_CLASS( C_BaseFlex, C_BaseAnimatingOverlay );
 public:
+	DECLARE_CLASS( C_BaseFlex, C_BaseAnimatingOverlay );
 	DECLARE_CLIENTCLASS();
 	DECLARE_PREDICTABLE();
 	DECLARE_INTERPOLATION();
 
-	C_BaseFlex();
+	C_BaseFlex() : C_BaseFlex( 0 ) {}
+	C_BaseFlex( int iEFlags );
 	virtual			~C_BaseFlex();
 
 	virtual void Spawn();
@@ -301,6 +301,7 @@ public:
 	CInterpolatedVar< Vector >	m_iv_vecShift;
 };
 
+typedef C_ClientOnlyWrapper<C_BaseFlex> C_ClientOnlyBaseFlex;
 
 //-----------------------------------------------------------------------------
 // Purpose:

@@ -426,9 +426,9 @@ void CCamoMaterialProxy::GenerateCamoTexture( ITexture* pTexture, IVTFTexture *p
 		for( x = 0; x < width; x++ )
 		{
 			int offset = 3 * ( x + y * width );
-			assert( offset < width * height * 3 );
+			Assert( offset < width * height * 3 );
 			int paletteID = m_pCamoPatternImage[x + y * width];
-			assert( paletteID < 256 );
+			Assert( paletteID < 256 );
 #if 1
 			imageData[offset + 0] = camoPalette[paletteID][0];
 			imageData[offset + 1] = camoPalette[paletteID][1];
@@ -557,9 +557,9 @@ void CCamoMaterialProxy::GenerateRandomPointsInNormalizedCube( void )
 	int i;
 	for( i = 0; i < m_CamoPatternNumColors; i++ )
 	{
-		m_pointsInNormalizedBox[i][0] = random->RandomFloat( m_SubBoundingBoxMin[0], m_SubBoundingBoxMax[0] );
-		m_pointsInNormalizedBox[i][1] = random->RandomFloat( m_SubBoundingBoxMin[1], m_SubBoundingBoxMax[1] );
-		m_pointsInNormalizedBox[i][2] = random->RandomFloat( m_SubBoundingBoxMin[2], m_SubBoundingBoxMax[2] );
+		m_pointsInNormalizedBox[i][0] = random_valve->RandomFloat( m_SubBoundingBoxMin[0], m_SubBoundingBoxMax[0] );
+		m_pointsInNormalizedBox[i][1] = random_valve->RandomFloat( m_SubBoundingBoxMin[1], m_SubBoundingBoxMax[1] );
+		m_pointsInNormalizedBox[i][2] = random_valve->RandomFloat( m_SubBoundingBoxMin[2], m_SubBoundingBoxMax[2] );
 	}
 }
 

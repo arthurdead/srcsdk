@@ -247,8 +247,8 @@ void UTIL_EmitSoundSuit(edict_t *entity, const char *sample)
 	int pitch = PITCH_NORM;
 
 	fvol = suitvolume.GetFloat();
-	if (random->RandomInt(0,1))
-		pitch = random->RandomInt(0,6) + 98;
+	if (random_valve->RandomInt(0,1))
+		pitch = random_valve->RandomInt(0,6) + 98;
 
 	// If friendlies are talking, reduce the volume of the suit
 	if ( !g_AIFriendliesTalkSemaphore.IsAvailable( GetContainingEntity( entity ) ) )
@@ -281,8 +281,8 @@ int UTIL_EmitGroupIDSuit(edict_t *entity, int isentenceg)
 	int sentenceIndex = -1;
 
 	fvol = suitvolume.GetFloat();
-	if (random->RandomInt(0,1))
-		pitch = random->RandomInt(0,6) + 98;
+	if (random_valve->RandomInt(0,1))
+		pitch = random_valve->RandomInt(0,6) + 98;
 
 	// If friendlies are talking, reduce the volume of the suit
 	if ( !g_AIFriendliesTalkSemaphore.IsAvailable( GetContainingEntity( entity ) ) )
@@ -305,8 +305,8 @@ int UTIL_EmitGroupnameSuit(edict_t *entity, const char *groupname)
 	int sentenceIndex = -1;
 
 	fvol = suitvolume.GetFloat();
-	if (random->RandomInt(0,1))
-		pitch = random->RandomInt(0,6) + 98;
+	if (random_valve->RandomInt(0,1))
+		pitch = random_valve->RandomInt(0,6) + 98;
 
 	// If friendlies are talking, reduce the volume of the suit
 	if ( !g_AIFriendliesTalkSemaphore.IsAvailable( GetContainingEntity( entity ) ) )

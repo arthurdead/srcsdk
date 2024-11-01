@@ -17,7 +17,7 @@
 #include "icommandline.h"
 #include "mapentities_shared.h"
 #include "TemplateEntities.h"
-#include "mapentities.h"
+#include "mapentities_shared.h"
 #include "point_template.h"
 #include "tier0/vprof.h"
 #include "foundryhelpers_server.h"

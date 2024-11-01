@@ -213,10 +213,10 @@ void C_TEShatterSurface::PostDataUpdate( DataUpdateType_t updateType )
 	{
 		for (int height=0;height<nNumHigh;height++)
 		{			
-			pParticle = (Particle3D *) pGlassEmitter->AddParticle( sizeof(Particle3D), hMaterial[random->RandomInt(0,1)], vCurPos );
+			pParticle = (Particle3D *) pGlassEmitter->AddParticle( sizeof(Particle3D), hMaterial[random_valve->RandomInt(0,1)], vCurPos );
 
 			Vector vForceVel = Vector(0,0,0);
-			if (random->RandomInt(0, 3) != 0)
+			if (random_valve->RandomInt(0, 3) != 0)
 			{
 				float flForceDistSqr = (vCurPos - m_vecForcePos).LengthSqr();
 				vForceVel = m_vecForce;
@@ -229,17 +229,17 @@ void C_TEShatterSurface::PostDataUpdate( DataUpdateType_t updateType )
 			// cap the Z velocity of the shards
 			if (fx_glass_velocity_cap.GetFloat() > 0 && vForceVel.z < -fx_glass_velocity_cap.GetFloat())
 			{
-				vForceVel.z = random->RandomFloat(-fx_glass_velocity_cap.GetFloat(), -(fx_glass_velocity_cap.GetFloat() * 0.66f));
+				vForceVel.z = random_valve->RandomFloat(-fx_glass_velocity_cap.GetFloat(), -(fx_glass_velocity_cap.GetFloat() * 0.66f));
 			}
 
 			if (pParticle)
 			{
-				pParticle->m_flLifeRemaining	= random->RandomFloat(GLASS_SHARD_MIN_LIFE,GLASS_SHARD_MAX_LIFE);
+				pParticle->m_flLifeRemaining	= random_valve->RandomFloat(GLASS_SHARD_MIN_LIFE,GLASS_SHARD_MAX_LIFE);
 				pParticle->m_vecVelocity		= vForceVel;
 				pParticle->m_vecVelocity	   += RandomVector(-25,25);
-				pParticle->m_uchSize			= m_flShardSize + random->RandomFloat(-0.5*m_flShardSize,0.5*m_flShardSize);
+				pParticle->m_uchSize			= m_flShardSize + random_valve->RandomFloat(-0.5*m_flShardSize,0.5*m_flShardSize);
 				pParticle->m_vAngles			= m_vecAngles;
-				pParticle->m_flAngSpeed			= random->RandomFloat(-400,400);
+				pParticle->m_flAngSpeed			= random_valve->RandomFloat(-400,400);
 
 				pParticle->m_uchFrontColor[0]	= (byte)(m_uchFrontColor[0] * vecColor.x );
 				pParticle->m_uchFrontColor[1]	= (byte)(m_uchFrontColor[1] * vecColor.y );

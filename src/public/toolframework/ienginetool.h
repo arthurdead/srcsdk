@@ -8,6 +8,8 @@
 #define IENGINETOOL_H
 #pragma once
 
+#ifndef SWDS
+
 #include "interface.h"
 #include "soundflags.h"
 #include "video/ivideoservices.h"
@@ -227,5 +229,7 @@ public:
 };
 
 #define VENGINETOOL_INTERFACE_VERSION	"VENGINETOOL003"
+
+#endif
 
 #endif // IENGINETOOL_H

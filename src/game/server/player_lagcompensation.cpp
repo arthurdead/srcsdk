@@ -14,6 +14,7 @@
 #include "BaseAnimatingOverlay.h"
 #include "player_lagcompensation.h"
 #include "ai_basenpc.h"
+#include "collisionproperty.h"
 
 #include "tier0/vprof.h"
 

@@ -16,6 +16,7 @@
 
 #include "interface.h"
 #include "dt_recv.h"
+#include "networkvar.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -169,10 +170,14 @@ public:
 													V_CONCAT3(_, clientClassName, _CreateObject), \
 													&dataTable::g_RecvTable);
 
-
 // Used internally..
 #define INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName) \
-	namespace dataTable {extern RecvTable g_RecvTable;}\
+	namespace dataTable \
+	{ \
+		struct ignored; \
+		extern RecvTable g_RecvTable; \
+	} \
+	CHECK_DECLARE_CLASS_IMPL( clientClassName, dataTable ) \
 	extern ClientClass V_CONCAT3(__g_, clientClassName, ClientClass);\
 	RecvTable*		clientClassName::m_pClassRecvTable = &dataTable::g_RecvTable;\
 	int				clientClassName::YouForgotToImplementOrDeclareClientClass() {return 0;}\

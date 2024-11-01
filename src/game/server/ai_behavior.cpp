@@ -435,7 +435,7 @@ bool CAI_BehaviorBase::IsScheduleValid( AIChannelScheduleState_t *pScheduleState
 	if (!testBits.IsAllClear()) 
 	{
 		// If in developer mode save the interrupt text for debug output
-		if (developer.GetInt()) 
+		if (developer->GetInt()) 
 		{
 			// Find the first non-zero bit
 			for (int i=0;i<MAX_CONDITIONS;i++)

@@ -43,13 +43,13 @@ static ConVar mat_showcamerarendertarget_all( "mat_showcamerarendertarget_all", 
 // debugging
 //-----------------------------------------------------------------------------
 // (the engine owns this cvar).
-ConVar mat_wireframe( "mat_wireframe", "0", FCVAR_CHEAT );
-const ConVar *sv_cheats = NULL;
+extern ConVar *mat_wireframe;
+extern ConVar *sv_cheats;
 ConVar	mat_showlightmappage(  "mat_showlightmappage", "-1" ); // set this to the lightmap page that you want to see on screen, set to -1 to show nothing.
 ConVar cl_drawshadowtexture( "cl_drawshadowtexture", "0", FCVAR_CHEAT );
 ConVar cl_shadowtextureoverlaysize( "cl_shadowtextureoverlaysize", "256", FCVAR_CHEAT );
 
-static ConVar r_flashlightdrawdepth( "r_flashlightdrawdepth", "0" );
+extern ConVar *r_flashlightdrawdepth;
 
 
 //-----------------------------------------------------------------------------
@@ -66,7 +66,7 @@ public:
 		s_bCanAccessCurrentView = true;
 		Frustum frustum;
 		render->Push3DView( *this, 0, NULL, frustum );
-		BuildWorldRenderLists( this, true, true );
+		BuildWorldRenderLists( true, -1, true );
 		render->PopView( frustum );
 		s_bCanAccessCurrentView = false;
 
@@ -442,7 +442,7 @@ void CDebugViewRender::Draw2DDebuggingInfo( const CViewSetup &view )
 		OverlayShowTexture( pDrawTexture, mat_drawTextureScale.GetFloat() );
 	}
 
-	if ( r_flashlightdrawdepth.GetBool() )
+	if ( r_flashlightdrawdepth->GetBool() )
 	{
 		shadowmgr->DrawFlashlightDepthTexture( );
 	}

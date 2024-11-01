@@ -194,7 +194,7 @@ public:
 	{
 		m_nMuzzleFlashFrameCountdown = 2;
 		m_muzzleFlashTimer.Start( 0.066f );		// show muzzleflash for 2 frames or 66ms, whichever is longer
-		m_flMuzzleFlashBrightness = random->RandomFloat( 0.4f, 2.0f );
+		m_flMuzzleFlashBrightness = random_valve->RandomFloat( 0.4f, 2.0f );
 	}
 
 	const char *GetFlashlightTextureName( void ) const

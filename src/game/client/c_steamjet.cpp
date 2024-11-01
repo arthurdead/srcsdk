@@ -261,7 +261,7 @@ void C_SteamJet::Update(float fTimeDelta)
 {
 	if(!m_pParticleMgr)
 	{
-		assert(false);
+		Assert(false);
 		return;
 	}
 
@@ -314,8 +314,8 @@ void C_SteamJet::Update(float fTimeDelta)
 						pParticle->m_uchStartSize	= m_StartSize;
 						pParticle->m_uchEndSize		= m_EndSize;
 
-						pParticle->m_flRoll = random->RandomFloat( 0, 360 );
-						pParticle->m_flRollDelta = random->RandomFloat( -m_flRollSpeed, m_flRollSpeed );
+						pParticle->m_flRoll = random_valve->RandomFloat( 0, 360 );
+						pParticle->m_flRollDelta = random_valve->RandomFloat( -m_flRollSpeed, m_flRollSpeed );
 					}
 				}
 			}

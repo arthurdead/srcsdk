@@ -14,6 +14,8 @@
 #include "utllinkedlist.h"
 #include "ihandleentity.h"
 #include "ehandle.h"
+#include "string_t.h"
+#include "tier1/utlhash.h"
 
 COMPILE_TIME_ASSERT(GAME_NUM_ENT_ENTRIES > ENGINE_NUM_ENT_ENTRIES);
 
@@ -36,6 +38,52 @@ public:
 	void			ClearLinks();
 };
 
+// Derive a class from this if you want to filter entity list searches
+abstract_class IEntityFindFilter
+{
+public:
+	virtual bool ShouldFindEntity( CSharedBaseEntity *pEntity ) = 0;
+	virtual CSharedBaseEntity *GetFilterResult( void ) = 0;
+};
+
+// Returns false every time. Created for some sick hack involving FindEntityProcedural looking at FindNamedEntity.
+class CNullEntityFilter : public IEntityFindFilter
+{
+public:
+	virtual bool ShouldFindEntity( CSharedBaseEntity *pEntity ) { return false; }
+	virtual CSharedBaseEntity *GetFilterResult( void ) { return NULL; }
+};
+
+//-----------------------------------------------------------------------------
+// Entity hash tables
+//-----------------------------------------------------------------------------
+
+struct EntsByStringList_t
+{
+	string_t iszStr;
+	CSharedBaseEntity *pHead;
+};
+
+class CEntsByStringHashFuncs
+{
+public:
+	CEntsByStringHashFuncs( int ) {}
+
+	bool operator()( const EntsByStringList_t &lhs, const EntsByStringList_t &rhs ) const
+	{
+		return lhs.iszStr == rhs.iszStr;
+	}
+
+	unsigned int operator()( const EntsByStringList_t &item ) const
+	{
+		COMPILE_TIME_ASSERT( sizeof(char *) == sizeof(int) );
+		return HashInt( (int)item.iszStr.ToCStr() );
+	}
+};
+
+typedef CUtlHash<EntsByStringList_t	, CEntsByStringHashFuncs, CEntsByStringHashFuncs > CEntsByStringTable;
+
+extern CEntsByStringTable g_EntsByClassname;
 
 class CBaseEntityList
 {
@@ -82,6 +130,45 @@ protected:
 	// calling OnRemoveEntity.
 	virtual void OnRemoveEntity( CSharedBaseEntity *pEnt, EHANDLE handle ) = 0;
 
+public:
+	virtual CSharedBaseEntity *FindEntityByClassname( CSharedBaseEntity *pStartEntity, const char *szName, IEntityFindFilter *pFilter = NULL ) = 0;
+	virtual CSharedBaseEntity *FindEntityByName( CSharedBaseEntity *pStartEntity, const char *szName, CSharedBaseEntity *pSearchingEntity = NULL, CSharedBaseEntity *pActivator = NULL, CSharedBaseEntity *pCaller = NULL, IEntityFindFilter *pFilter = NULL ) = 0;
+	virtual CSharedBaseEntity *FindEntityByName( CSharedBaseEntity *pStartEntity, string_t iszName, CSharedBaseEntity *pSearchingEntity = NULL, CSharedBaseEntity *pActivator = NULL, CSharedBaseEntity *pCaller = NULL, IEntityFindFilter *pFilter = NULL )
+	{
+		return FindEntityByName( pStartEntity, STRING(iszName), pSearchingEntity, pActivator, pCaller, pFilter );
+	}
+	virtual CSharedBaseEntity *FindEntityInSphere( CSharedBaseEntity *pStartEntity, const Vector &vecCenter, float flRadius ) = 0;
+	virtual CSharedBaseEntity *FindEntityByTarget( CSharedBaseEntity *pStartEntity, const char *szName ) = 0;
+	virtual CSharedBaseEntity *FindEntityByModel( CSharedBaseEntity *pStartEntity, const char *szModelName ) = 0;
+	virtual CSharedBaseEntity	*FindEntityByOutputTarget( CSharedBaseEntity *pStartEntity, string_t iTarget ) = 0;
+
+	virtual CSharedBaseEntity *FindEntityByNameNearest( const char *szName, const Vector &vecSrc, float flRadius, CSharedBaseEntity *pSearchingEntity = NULL, CSharedBaseEntity *pActivator = NULL, CSharedBaseEntity *pCaller = NULL ) = 0;
+	virtual CSharedBaseEntity *FindEntityByNameWithin( CSharedBaseEntity *pStartEntity, const char *szName, const Vector &vecSrc, float flRadius, CSharedBaseEntity *pSearchingEntity = NULL, CSharedBaseEntity *pActivator = NULL, CSharedBaseEntity *pCaller = NULL ) = 0;
+	virtual CSharedBaseEntity *FindEntityByClassnameNearest( const char *szName, const Vector &vecSrc, float flRadius ) = 0;
+	virtual CSharedBaseEntity *FindEntityByClassnameNearest2D( const char *szName, const Vector &vecSrc, float flRadius ) = 0;
+	virtual CSharedBaseEntity *FindEntityByClassnameWithin( CSharedBaseEntity *pStartEntity , const char *szName, const Vector &vecSrc, float flRadius ) = 0;
+	virtual CSharedBaseEntity *FindEntityByClassnameWithin( CSharedBaseEntity *pStartEntity , const char *szName, const Vector &vecMins, const Vector &vecMaxs ) = 0;
+
+	virtual CSharedBaseEntity *FindEntityGeneric( CSharedBaseEntity *pStartEntity, const char *szName, CSharedBaseEntity *pSearchingEntity = NULL, CSharedBaseEntity *pActivator = NULL, CSharedBaseEntity *pCaller = NULL, IEntityFindFilter *pFilter = NULL ) = 0;
+	virtual CSharedBaseEntity *FindEntityGenericWithin( CSharedBaseEntity *pStartEntity, const char *szName, const Vector &vecSrc, float flRadius, CSharedBaseEntity *pSearchingEntity = NULL, CSharedBaseEntity *pActivator = NULL, CSharedBaseEntity *pCaller = NULL ) = 0;
+	virtual CSharedBaseEntity *FindEntityGenericNearest( const char *szName, const Vector &vecSrc, float flRadius, CSharedBaseEntity *pSearchingEntity = NULL, CSharedBaseEntity *pActivator = NULL, CSharedBaseEntity *pCaller = NULL ) = 0;
+	
+	virtual CSharedBaseEntity *FindEntityNearestFacing( const Vector &origin, const Vector &facing, float threshold) = 0;
+	virtual CSharedBaseEntity *FindEntityClassNearestFacing( const Vector &origin, const Vector &facing, float threshold, const char *classname) = 0;
+
+	virtual CSharedBaseEntity *FindEntityProcedural( const char *szName, CSharedBaseEntity *pSearchingEntity = NULL, CSharedBaseEntity *pActivator = NULL, CSharedBaseEntity *pCaller = NULL ) = 0;
+
+	// Fast versions that require a (real) string_t, and won't do wildcarding
+	virtual CSharedBaseEntity *FindEntityByClassnameFast( CSharedBaseEntity *pStartEntity, string_t iszClassname ) = 0;
+	virtual CSharedBaseEntity *FindEntityByClassnameNearestFast( string_t iszClassname, const Vector &vecSrc, float flRadius ) = 0;
+	virtual CSharedBaseEntity *FindEntityByNameFast( CSharedBaseEntity *pStartEntity, string_t iszName ) = 0;
+
+	// call this before and after each frame to delete all of the marked entities.
+	virtual void CleanupDeleteList( void ) = 0;
+
+	// returns the next entity after pCurrentEnt;  if pCurrentEnt is NULL, return the first entity
+	virtual CSharedBaseEntity *NextEnt( CSharedBaseEntity *pCurrentEnt ) = 0;
+	virtual CSharedBaseEntity *FirstEnt() = 0;
 
 private:
 

@@ -69,7 +69,7 @@ private:
 
 		if ( m_nCount >= MAX_ENTRIES )
 		{
-			// assert( 0 );
+			// Assert( 0 );
 			return NULL;
 		}
 

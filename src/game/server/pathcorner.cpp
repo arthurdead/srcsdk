@@ -14,8 +14,8 @@
 
 class CPathCorner : public CPointEntity
 {
-	DECLARE_CLASS( CPathCorner, CPointEntity );
 public:
+	DECLARE_CLASS( CPathCorner, CPointEntity );
 
 	void	Spawn( );
 	float	GetDelay( void ) { return m_flWait; }
@@ -38,6 +38,7 @@ LINK_ENTITY_TO_CLASS( path_corner, CPathCorner );
 
 class CPathCornerCrash : public CPathCorner
 {
+public:
 	DECLARE_CLASS( CPathCornerCrash, CPathCorner );
 };
 

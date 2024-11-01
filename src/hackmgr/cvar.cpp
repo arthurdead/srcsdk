@@ -18,6 +18,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+extern ConVar *developer;
+
 void FindCmdCB( const CCommand &args )
 {
 	const char *search;
@@ -25,7 +27,7 @@ void FindCmdCB( const CCommand &args )
 
 	if ( args.ArgC() != 2 )
 	{
-		ConMsg( "Usage:  find <string>\n" );
+		Log_Msg( LOG_CONVAR,"Usage:  find <string>\n" );
 		return;
 	}
 
@@ -60,36 +62,29 @@ if(!g_pCVar || status != IFACE_OK) {
 
 ConVar_Register( 0, NULL );
 
-ConVar *r_hunkalloclightmaps = g_pCVar->FindVar("r_hunkalloclightmaps");
-if(r_hunkalloclightmaps) {
-	r_hunkalloclightmaps->SetValue(false);
-}
-
-ConVar *developer = g_pCVar->FindVar("developer");
-if(developer) {
+ConVar *dtwarning = g_pCVar->FindVar("dtwarning");
 #ifdef _DEBUG
-	developer->SetValue(4);
-#else
-	developer->SetValue(0);
+dtwarning->SetValue(1);
 #endif
-}
+
+ConVar *r_hunkalloclightmaps = g_pCVar->FindVar("r_hunkalloclightmaps");
+r_hunkalloclightmaps->SetValue(false);
+
+developer = g_pCVar->FindVar("developer");
+#ifdef _DEBUG
+developer->SetValue(4);
+#endif
 
 ConVar *sv_cheats = g_pCVar->FindVar("sv_cheats");
-if(sv_cheats) {
 #ifdef _DEBUG
-	sv_cheats->SetValue(true);
-#else
-	sv_cheats->SetValue(false);
+sv_cheats->SetValue(true);
 #endif
-}
 
 ConCommand *pFindCmd = g_pCVar->FindCommand("find");
-if(pFindCmd) {
-	/*
-	pFindCmd->m_fnCommandCallback = FindCmdCB;
-	pFindCmd->m_bUsingNewCommandCallback = true;
-	pFindCmd->m_bUsingCommandCallbackInterface = false;
-	*/
-}
+/*
+pFindCmd->m_fnCommandCallback = FindCmdCB;
+pFindCmd->m_bUsingNewCommandCallback = true;
+pFindCmd->m_bUsingCommandCallbackInterface = false;
+*/
 
 HACKMGR_EXECUTE_ON_LOAD_END

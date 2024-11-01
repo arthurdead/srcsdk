@@ -159,10 +159,49 @@ public:
 
 	void					RecomputeHighestEntityUsed( void );
 
+	C_BaseEntity *FindEntityByClassname( C_BaseEntity *pStartEntity, const char *szName, IEntityFindFilter *pFilter = NULL );
+	C_BaseEntity *FindEntityByName( C_BaseEntity *pStartEntity, const char *szName, C_BaseEntity *pSearchingEntity = NULL, C_BaseEntity *pActivator = NULL, C_BaseEntity *pCaller = NULL, IEntityFindFilter *pFilter = NULL );
+	C_BaseEntity *FindEntityByName( C_BaseEntity *pStartEntity, string_t iszName, C_BaseEntity *pSearchingEntity = NULL, C_BaseEntity *pActivator = NULL, C_BaseEntity *pCaller = NULL, IEntityFindFilter *pFilter = NULL )
+	{
+		return FindEntityByName( pStartEntity, STRING(iszName), pSearchingEntity, pActivator, pCaller, pFilter );
+	}
+	C_BaseEntity *FindEntityInSphere( C_BaseEntity *pStartEntity, const Vector &vecCenter, float flRadius );
+	C_BaseEntity *FindEntityByTarget( C_BaseEntity *pStartEntity, const char *szName );
+	C_BaseEntity *FindEntityByModel( C_BaseEntity *pStartEntity, const char *szModelName );
+	C_BaseEntity	*FindEntityByOutputTarget( C_BaseEntity *pStartEntity, string_t iTarget );
+
+	C_BaseEntity *FindEntityByNameNearest( const char *szName, const Vector &vecSrc, float flRadius, C_BaseEntity *pSearchingEntity = NULL, C_BaseEntity *pActivator = NULL, C_BaseEntity *pCaller = NULL );
+	C_BaseEntity *FindEntityByNameWithin( C_BaseEntity *pStartEntity, const char *szName, const Vector &vecSrc, float flRadius, C_BaseEntity *pSearchingEntity = NULL, C_BaseEntity *pActivator = NULL, C_BaseEntity *pCaller = NULL );
+	C_BaseEntity *FindEntityByClassnameNearest( const char *szName, const Vector &vecSrc, float flRadius );
+	C_BaseEntity *FindEntityByClassnameNearest2D( const char *szName, const Vector &vecSrc, float flRadius );
+	C_BaseEntity *FindEntityByClassnameWithin( C_BaseEntity *pStartEntity , const char *szName, const Vector &vecSrc, float flRadius );
+	C_BaseEntity *FindEntityByClassnameWithin( C_BaseEntity *pStartEntity , const char *szName, const Vector &vecMins, const Vector &vecMaxs );
+
+	C_BaseEntity *FindEntityGeneric( C_BaseEntity *pStartEntity, const char *szName, C_BaseEntity *pSearchingEntity = NULL, C_BaseEntity *pActivator = NULL, C_BaseEntity *pCaller = NULL, IEntityFindFilter *pFilter = NULL );
+	C_BaseEntity *FindEntityGenericWithin( C_BaseEntity *pStartEntity, const char *szName, const Vector &vecSrc, float flRadius, C_BaseEntity *pSearchingEntity = NULL, C_BaseEntity *pActivator = NULL, C_BaseEntity *pCaller = NULL );
+	C_BaseEntity *FindEntityGenericNearest( const char *szName, const Vector &vecSrc, float flRadius, C_BaseEntity *pSearchingEntity = NULL, C_BaseEntity *pActivator = NULL, C_BaseEntity *pCaller = NULL );
+	
+	C_BaseEntity *FindEntityNearestFacing( const Vector &origin, const Vector &facing, float threshold);
+	C_BaseEntity *FindEntityClassNearestFacing( const Vector &origin, const Vector &facing, float threshold, const char *classname);
+	C_BaseEntity *FindEntityByNetname( C_BaseEntity *pStartEntity, const char *szModelName );
+
+	C_BaseEntity *FindEntityProcedural( const char *szName, C_BaseEntity *pSearchingEntity = NULL, C_BaseEntity *pActivator = NULL, C_BaseEntity *pCaller = NULL );
+
+	// Fast versions that require a (real) string_t, and won't do wildcarding
+	C_BaseEntity *FindEntityByClassnameFast( C_BaseEntity *pStartEntity, string_t iszClassname );
+	C_BaseEntity *FindEntityByClassnameNearestFast( string_t iszClassname, const Vector &vecSrc, float flRadius );
+	C_BaseEntity *FindEntityByNameFast( C_BaseEntity *pStartEntity, string_t iszName );
+
+	// call this before and after each frame to delete all of the marked entities.
+	void CleanupDeleteList( void );
 
 	// Use this to iterate over all the C_BaseEntities.
 	C_BaseEntity* FirstBaseEntity() const;
 	C_BaseEntity* NextBaseEntity( C_BaseEntity *pEnt ) const;
+
+	// returns the next entity after pCurrentEnt;  if pCurrentEnt is NULL, return the first entity
+	C_BaseEntity *NextEnt( C_BaseEntity *pCurrentEnt ) { return NextBaseEntity(pCurrentEnt); }
+	C_BaseEntity *FirstEnt() { return FirstBaseEntity(); }
 
 	class CPVSNotifyInfo
 	{

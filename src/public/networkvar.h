@@ -11,6 +11,7 @@
 
 #include "tier0/dbg.h"
 #include "convar.h"
+#include "string_t.h"
 
 #if defined( CLIENT_DLL ) || defined( GAME_DLL )
 	#include "basehandle.h"
@@ -29,7 +30,7 @@ namespace std
 
 #pragma warning( disable : 4284 ) // warning C4284: return type for 'CNetworkVarT<int>::operator ->' is 'int *' (ie; not a UDT or reference to a UDT.  Will produce errors if applied using infix notation)
 
-#define MyOffsetOf( type, var ) ( (int)&((type*)0)->var )
+#define MyOffsetOf( type, var ) offsetof(type, var)
 
 #ifdef _DEBUG
 	extern bool g_bUseNetworkVars;
@@ -75,18 +76,7 @@ public:
 	}
 };
 
-inline int InternalCheckDeclareClass( const char *pClassName, const char *pClassNameMatch, void *pTestPtr, void *pBasePtr )
-{
-	// This makes sure that casting from ThisClass to BaseClass works right. You'll get a compiler error if it doesn't
-	// work at all, and you'll get a runtime error if you use multiple inheritance.
-	Assert( pTestPtr == pBasePtr );
-	
-	// This is triggered by IMPLEMENT_SERVER_CLASS. It does DLLClassName::CheckDeclareClass( #DLLClassName ).
-	// If they didn't do a DECLARE_CLASS in DLLClassName, then it'll be calling its base class's version
-	// and the class names won't match.
-	Assert( (void*)pClassName == (void*)pClassNameMatch );
-	return 0;
-}
+extern int InternalCheckDeclareClass( const char *pClassName, const char *pClassNameMatch, void *pTestPtr, void *pBasePtr );
 
 
 template <typename T> 
@@ -96,60 +86,76 @@ inline int CheckDeclareClass_Access( T *, const char *pShouldBe )
 }
 
 #ifndef _STATIC_LINKED
-#ifdef _MSC_VER
-#if defined(_DEBUG) && (_MSC_VER > 1200 )
+#if defined(_DEBUG)
 	#define VALIDATE_DECLARE_CLASS 1
-#endif
 #endif
 #endif
 
 #ifdef  VALIDATE_DECLARE_CLASS
-
-	#define DECLARE_CLASS( className, baseClassName ) \
-		typedef baseClassName BaseClass; \
-		typedef className ThisClass; \
-		template <typename T> friend int CheckDeclareClass_Access(T *, const char *pShouldBe); \
-		static int CheckDeclareClass( const char *pShouldBe ) \
+	#define CHECK_DECLARE_CLASS_IMPL( DLLClassName, sendTable ) \
+		template <> int CheckDeclareClass_Access<sendTable::ignored>(sendTable::ignored *, const char *pIgnored) \
 		{ \
-			InternalCheckDeclareClass( pShouldBe, #className, (ThisClass*)0xFFFFF, (BaseClass*)(ThisClass*)0xFFFFF ); \
-			return CheckDeclareClass_Access( (BaseClass *)NULL, #baseClassName ); \
+			return DLLClassName::CheckDeclareClass( V_STRINGIFY( DLLClassName ) ); \
+		} \
+		namespace sendTable \
+		{ \
+			int verifyDeclareClass = ::CheckDeclareClass_Access( (sendTable::ignored*)NULL, NULL ); \
 		}
 
-	// Use this macro when you have a base class, but it's part of a library that doesn't use network vars
-	// or any of the things that use ThisClass or BaseClass.
-	#define DECLARE_CLASS_GAMEROOT( className, baseClassName ) \
-		typedef baseClassName BaseClass; \
-		typedef className ThisClass; \
-		template <typename T> friend int CheckDeclareClass_Access(T *, const char *pShouldBe); \
+	#define CHECK_DECLARE_CLASS_DECL( className, baseClassName ) \
+		template <typename X> friend int ::CheckDeclareClass_Access(X *, const char *pShouldBe); \
 		static int CheckDeclareClass( const char *pShouldBe ) \
 		{ \
-			return InternalCheckDeclareClass( pShouldBe, #className, (ThisClass*)0xFFFFF, (BaseClass*)(ThisClass*)0xFFFFF ); \
+			InternalCheckDeclareClass( pShouldBe, V_STRINGIFY( className ), (ThisClass*)0xFFFFF, (BaseClass*)(ThisClass*)0xFFFFF ); \
+			return CheckDeclareClass_Access( (BaseClass *)NULL, baseClassName::s_pClassnameStr ); \
 		}
 
-	// Deprecated macro formerly used to work around VC++98 bug
-	#define DECLARE_CLASS_NOFRIEND( className, baseClassName ) \
-		DECLARE_CLASS( className, baseClassName )
-
-	#define DECLARE_CLASS_NOBASE( className ) \
-		typedef className ThisClass; \
-		template <typename T> friend int CheckDeclareClass_Access(T *, const char *pShouldBe); \
+	#define CHECK_DECLARE_CLASS_GAMEROOT_DECL( className, baseClassName ) \
+		template <typename X> friend int ::CheckDeclareClass_Access(X *, const char *pShouldBe); \
 		static int CheckDeclareClass( const char *pShouldBe ) \
 		{ \
-			return InternalCheckDeclareClass( pShouldBe, #className, 0, 0 ); \
+			return InternalCheckDeclareClass( pShouldBe, V_STRINGIFY( className ), (ThisClass*)0xFFFFF, (BaseClass*)(ThisClass*)0xFFFFF ); \
+		}
+
+	#define CHECK_DECLARE_CLASS_NOBASE_DECL( className ) \
+		template <typename X> friend int ::CheckDeclareClass_Access(X *, const char *pShouldBe); \
+		static int CheckDeclareClass( const char *pShouldBe ) \
+		{ \
+			return InternalCheckDeclareClass( pShouldBe, V_STRINGIFY( className ), NULL, NULL ); \
 		} 
 
 #else
-	#define DECLARE_CLASS( className, baseClassName ) \
-		typedef baseClassName BaseClass; \
-		typedef className ThisClass;
+	#define CHECK_DECLARE_CLASS_IMPL( DLLClassName, sendTable )
 
-	#define DECLARE_CLASS_GAMEROOT( className, baseClassName )	DECLARE_CLASS( className, baseClassName )
-	#define DECLARE_CLASS_NOFRIEND( className, baseClassName )	DECLARE_CLASS( className, baseClassName )
+	#define CHECK_DECLARE_CLASS_DECL( className, baseClassName )
 
-	#define DECLARE_CLASS_NOBASE( className )					typedef className ThisClass;
+	#define CHECK_DECLARE_CLASS_GAMEROOT_DECL( className, baseClassName )
+
+	#define CHECK_DECLARE_CLASS_NOBASE_DECL( className )
 #endif
 
+#define DECLARE_CLASS( className, baseClassName ) \
+	typedef baseClassName BaseClass; \
+	typedef className ThisClass; \
+	static inline const char *s_pClassnameStr = V_STRINGIFY( className ); \
+	CHECK_DECLARE_CLASS_DECL( className, baseClassName )
 
+// Use this macro when you have a base class, but it's part of a library that doesn't use network vars
+// or any of the things that use ThisClass or BaseClass.
+#define DECLARE_CLASS_GAMEROOT( className, baseClassName ) \
+	typedef baseClassName BaseClass; \
+	typedef className ThisClass; \
+	static inline const char *s_pClassnameStr = V_STRINGIFY( className ); \
+	CHECK_DECLARE_CLASS_GAMEROOT_DECL( className, baseClassName )
+
+#define DECLARE_CLASS_NOBASE( className ) \
+	typedef className ThisClass; \
+	static inline const char *s_pClassnameStr = V_STRINGIFY( className ); \
+	CHECK_DECLARE_CLASS_NOBASE_DECL( className )
+
+// Deprecated macro formerly used to work around VC++98 bug
+#define DECLARE_CLASS_NOFRIEND( className, baseClassName ) \
+	DECLARE_CLASS( className, baseClassName )
 
 
 // All classes that contain CNetworkVars need a NetworkStateChanged() function. If the class is not an entity,
@@ -181,9 +187,11 @@ public:
 //TODO: Currently, these don't get the benefit of tracking changes to individual vars.
 // Would be nice if they did.
 #define DECLARE_NETWORKVAR_CHAIN() \
+	template <typename T> friend int ServerClassInit(T *);	\
+	template <typename T> friend int ClientClassInit(T *); \
 	CAutoInitEntPtr __m_pChainEntity; \
-	void NetworkStateChanged() { CHECK_USENETWORKVARS __m_pChainEntity.m_pEnt->NetworkStateChanged(); } \
-	void NetworkStateChanged( void *pVar ) { CHECK_USENETWORKVARS __m_pChainEntity.m_pEnt->NetworkStateChanged(); }
+	virtual void NetworkStateChanged() { CHECK_USENETWORKVARS { if(__m_pChainEntity.m_pEnt) { __m_pChainEntity.m_pEnt->NetworkStateChanged(); } } } \
+	virtual void NetworkStateChanged( void *pVar ) { CHECK_USENETWORKVARS { if(__m_pChainEntity.m_pEnt) { __m_pChainEntity.m_pEnt->NetworkStateChanged(); } } }
 
 #define IMPLEMENT_NETWORKVAR_CHAIN( varName ) \
 	(varName)->__m_pChainEntity.m_pEnt = this;
@@ -333,6 +341,25 @@ public:
 		Set( m_Value | ( const Type )val ); 
 		return *this;
 	}
+
+	template< class C >
+	bool operator==( const C &val ) const
+	{ return (m_Value == val); }
+	template< class C >
+	bool operator!=( const C &val ) const
+	{ return (m_Value != val); }
+	template< class C >
+	bool operator>( const C &val ) const
+	{ return (m_Value > val); }
+	template< class C >
+	bool operator<( const C &val ) const
+	{ return (m_Value < val); }
+	template< class C >
+	bool operator>=( const C &val ) const
+	{ return (m_Value >= val); }
+	template< class C >
+	bool operator<=( const C &val ) const
+	{ return (m_Value <= val); }
 
 	const Type& operator++()
 	{
@@ -923,6 +950,30 @@ private:
 
 #endif
 
+template< class Type, class Changer >
+class CNetworkStringTBaseImpl : public CNetworkVarBaseImpl< Type, Changer >
+{
+	typedef CNetworkVarBaseImpl< Type, Changer > base;
+
+public:
+	using CNetworkVarBaseImpl<Type, Changer>::CNetworkVarBaseImpl;
+	using CNetworkVarBaseImpl<Type, Changer>::operator=;
+	using CNetworkVarBaseImpl<Type, Changer>::operator==;
+	using CNetworkVarBaseImpl<Type, Changer>::operator!=;
+	using CNetworkVarBaseImpl<Type, Changer>::Set;
+};
+
+template< class Changer >
+class CNetworkVarBase<string_t, Changer> final
+{
+private:
+	CNetworkVarBase() = delete;
+	~CNetworkVarBase() = delete;
+};
+
+#define CNetworkStringT( name ) \
+	NETWORK_VAR_START( string_t, name ) \
+	NETWORK_VAR_END( string_t, name, CNetworkStringTBaseImpl, NetworkStateChanged )
 
 // Use this macro to define a network variable.
 #define CNetworkVar( type, name ) \

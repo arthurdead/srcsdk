@@ -11,6 +11,7 @@
 #include "recast/recast_mesh.h"
 #include "game_loopback/igameloopback.h"
 #include "filesystem.h"
+#include "collisionproperty.h"
 
 #ifndef CLIENT_DLL
 #include "recast/recast_mapmesh.h"

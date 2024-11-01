@@ -38,6 +38,8 @@ IEngineVGui *enginevguifuncs = NULL;
 
 CSysModule* videoServicesDLL = NULL;
 
+ConVar *name = NULL;
+
 CGameUI::CGameUI()
 {
 	m_bActivatedUI = false;
@@ -98,6 +100,8 @@ void CGameUI::Initialize( CreateInterfaceFn appFactory )
 	}
 
 	ConVar_Register( FCVAR_CLIENTDLL, &g_GameUIConVarAccessor );
+
+	name = g_pCVar->FindVar("name");
 
 	ConnectTier3Libraries( &appFactory, 1 );
 

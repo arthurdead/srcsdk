@@ -25,31 +25,7 @@
 
 C_World *g_pClientWorld = NULL;
 
-LINK_ENTITY_TO_CLASS(worldspawn, C_World);
-
-static IClientNetworkable* ClientWorldFactory( int entnum, int serialNum )
-{
-	Assert( g_pClientWorld != NULL );
-	Assert( entnum == 0 );
-
-	if(!g_pClientWorld) {
-		g_pClientWorld = (C_World *)CreateEntityByName("worldspawn");
-		g_pClientWorld->SetLocalOrigin( vec3_origin );
-		g_pClientWorld->SetLocalAngles( vec3_angle );
-		g_pClientWorld->ParseWorldMapData( engine->GetMapEntitiesString() );
-	}
-
-	if(!g_pClientWorld->InitializeAsServerEntity( 0, serialNum )) {
-		UTIL_Remove(g_pClientWorld);
-		g_pClientWorld = NULL;
-		return NULL;
-	}
-
-	return g_pClientWorld;
-}
-
-
-IMPLEMENT_CLIENTCLASS_FACTORY( C_World, DT_World, CWorld, ClientWorldFactory );
+IMPLEMENT_CLIENTCLASS( C_World, DT_World, CWorld );
 
 BEGIN_RECV_TABLE( C_World, DT_World )
 	RecvPropFloat(RECVINFO(m_flWaveHeight)),
@@ -69,42 +45,34 @@ END_RECV_TABLE()
 
 C_World::C_World( void )
 {
-	Assert( !g_pClientWorld );
-
-	g_pClientWorld = this;
+	if(!g_pClientWorld) {
+		g_pClientWorld = this;
+		AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
+	}
 
 	m_flWaveHeight = 0.0f;
-
-	m_nEntIndex = 0;
-
-	//cl_entitylist->AddNetworkableEntity( this, 0 );
-
-	m_nCreationTick = gpGlobals->tickcount;
 }
 
 C_World::~C_World( void )
 {
-	Assert( g_pClientWorld == this );
-
-	g_pClientWorld = NULL;
+	if(g_pClientWorld == this) {
+		g_pClientWorld = NULL;
+	}
 }
 
-bool C_World::InitializeAsServerEntity( int entnum, int iSerialNum )
-{
-	Assert( entnum == 0 );
-
-	//cl_entitylist->ForceEntSerialNumber( 0, iSerialNum );
-
-	//m_RefEHandle.Init( 0, iSerialNum );
-
-	cl_entitylist->AddNetworkableEntity( this, 0, iSerialNum );
-
-	return true;
-}
+//TODO!!! Arthurdead: make the world not networked
 
 void C_World::UpdateOnRemove()
 {
 	BaseClass::UpdateOnRemove();
+}
+
+bool C_World::PostConstructor( const char *szClassname )
+{
+	if(!BaseClass::PostConstructor( szClassname ))
+		return false;
+
+	return true;
 }
 
 void C_World::PreDataUpdate( DataUpdateType_t updateType )
@@ -121,12 +89,16 @@ void C_World::Precache( void )
 {
 }
 
+extern void OnWorldSpawned();
+
 void C_World::Spawn( void )
 {
 	if(g_pClientWorld && g_pClientWorld != this) {
 		UTIL_Remove(this);
 		return;
 	}
+
+	OnWorldSpawned();
 
 	Precache();
 
@@ -158,49 +130,6 @@ void C_World::Spawn( void )
 bool C_World::KeyValue( const char *szKeyName, const char *szValue ) 
 {
 	return BaseClass::KeyValue( szKeyName, szValue );
-}
-
-//-----------------------------------------------------------------------------
-// Parses worldspawn data from BSP on the client
-//-----------------------------------------------------------------------------
-void C_World::ParseWorldMapData( const char *pMapData )
-{
-	char szTokenBuffer[MAPKEY_MAXLENGTH];
-	for ( ; true; pMapData = MapEntity_SkipToNextEntity(pMapData, szTokenBuffer) )
-	{
-		//
-		// Parse the opening brace.
-		//
-		char token[MAPKEY_MAXLENGTH];
-		pMapData = MapEntity_ParseToken( pMapData, token );
-
-		//
-		// Check to see if we've finished or not.
-		//
-		if (!pMapData)
-			break;
-
-		if (token[0] != '{')
-		{
-			Error( "MapEntity_ParseAllEntities: found %s when expecting {", token);
-			continue;
-		}
-
-		CEntityMapData entData( (char*)pMapData );
-		char className[MAPKEY_MAXLENGTH];
-
-		if (!entData.ExtractValue( "classname", className ))
-		{
-			Error( "classname missing from entity!\n" );
-		}
-
-		if ( !Q_strcmp( className, "worldspawn" ) )
-		{
-			// Set up keyvalues.
-			ParseMapData( &entData );
-			return;
-		}
-	}
 }
 
 C_World *GetClientWorldEntity()

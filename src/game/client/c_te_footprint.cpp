@@ -85,7 +85,7 @@ void C_TEFootprintDecal::PostDataUpdate( DataUpdateType_t updateType )
 	VPROF( "C_TEFootprintDecal::PostDataUpdate" );
 
 	// FIXME: Make this choose the decal based on material type
-	if ( r_decals.GetInt() )
+	if ( r_decals->GetInt() )
 	{
 		C_BaseEntity *ent = cl_entitylist->GetEnt( m_nEntity );
 		if ( ent )
@@ -99,7 +99,7 @@ void C_TEFootprintDecal::PostDataUpdate( DataUpdateType_t updateType )
 void TE_FootprintDecal( IRecipientFilter& filter, float delay, const Vector *origin, const Vector* right, 
 	int entity, int index, unsigned char materialType )
 {
-	if ( r_decals.GetInt() )
+	if ( r_decals->GetInt() )
 	{
 		C_BaseEntity *ent = cl_entitylist->GetEnt( entity );
 		if ( ent )

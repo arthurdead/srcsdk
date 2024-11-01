@@ -20,14 +20,14 @@ public:
 
 	Class_T Classify() override;
 
-	void PostThink() override;
+	void Weapon_FrameUpdate() override;
 
 	void SelectItem( const char *pstr, int iSubType ) override;
 
 	void EquipMask();
 
 private:
-
+	CNetworkVar(bool, m_bMaskingUp);
 };
 
 inline CHeistPlayer *ToHeistPlayer(CBaseEntity *pEntity)

@@ -120,6 +120,9 @@ int EventList_GetEventType( Animevent eventIndex )
 	return 0;
 }
 
+#ifdef _DEBUG
+static bool g_bRegisteringAliases = false;
+#endif
 
 bool EventList_RegisterSharedEvent( const char *pszEventName, Animevent iEventIndex, int iType )
 {
@@ -130,18 +133,20 @@ bool EventList_RegisterSharedEvent( const char *pszEventName, Animevent iEventIn
 
 	// first, check to make sure the slot we're asking for is free. It must be for 
 	// a shared event.
-	eventlist_t *pList = ListFromString( pszEventName );
-	if ( !pList )
-	{
-		pList = ListFromEvent( iEventIndex );
-	}
+	if(!g_bRegisteringAliases) {
+		eventlist_t *pList = ListFromString( pszEventName );
+		if ( !pList )
+		{
+			pList = ListFromEvent( iEventIndex );
+		}
 
-	//Already in list.
-	if ( pList )
-	{
-		Log_Warning( LOG_ANIMEVENT,"***\nShared event collision! %s<->%s\n***\n", pszEventName, g_EventStrings.GetStringForKey( pList->stringKey ) );
-		Assert(0);
-		return false;
+		//Already in list.
+		if ( pList )
+		{
+			Log_Warning( LOG_ANIMEVENT,"***\nShared event collision! %s<->%s\n***\n", pszEventName, g_EventStrings.GetStringForKey( pList->stringKey ) );
+			Assert(0);
+			return false;
+		}
 	}
 	// ----------------------------------------------------------------
 #endif
@@ -209,8 +214,21 @@ void EventList_RegisterSharedEvents( void )
 {
 	#define EVENTLIST_ENUM(name, type, ...) \
 		REGISTER_SHARED_ANIMEVENT(name, type);
+	#define EVENTLIST_ENUM_REUSED(name, type, ...)
 
 	#include "eventlist_enum.inc"
+
+	#define EVENTLIST_ENUM(name, type, ...)
+	#define EVENTLIST_ENUM_REUSED(name, type, ...) \
+		REGISTER_SHARED_ANIMEVENT(name, type);
+
+#ifdef _DEBUG
+	g_bRegisteringAliases = true;
+#endif
+	#include "eventlist_enum.inc"
+#ifdef _DEBUG
+	g_bRegisteringAliases = false;
+#endif
 
 	Assert(g_HighestEvent <= (Animevent)(unsigned short)-1);
 }

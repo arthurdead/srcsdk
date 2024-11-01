@@ -15,24 +15,7 @@
 #endif
 
 #ifdef _WIN32
-
-// Slart: platform.h includes a C++ header that includes yvals.h, which includes crtdebug.h
-// sooo, do include this here and do a little crappy trick
-
-// ARG: crtdbg is necessary for certain definitions below,
-// but it also redefines malloc as a macro in release.
-// To disable this, we gotta define _DEBUG before including it.. BLEAH!
-#ifndef _DEBUG
-#define _DEBUG 1
-#endif
 #include <crtdbg.h>
-// Turn this back off in release mode.
-#ifdef NDEBUG
-#undef _DEBUG
-#endif
-
-#elif defined POSIX
-
 #endif
 
 #include <cstdlib>
@@ -274,10 +257,12 @@ size_t __cdecl _msize_base( void *pMem ) noexcept
 	return g_pMemAlloc->GetSize(pMem);
 }
 
+#ifndef __MINGW32__
 size_t _msize( void *pMem )
 {
 	return _msize_base(pMem);
 }
+#endif
 
 size_t msize( void *pMem )
 {
@@ -317,10 +302,12 @@ int __cdecl _set_sbh_threshold( size_t )
 	return 0;
 }
 
+#ifndef __MINGW32__
 int _heapchk()
 {
 	return g_pMemAlloc->heapchk();
 }
+#endif
 
 int _heapmin()
 {
@@ -519,6 +506,7 @@ void *__cdecl _nh_malloc_dbg( size_t nSize, int nFlag, int nBlockUse,
 	return MemAlloc_Alloc(nSize, pFileName, nLine);
 }
 
+#undef _malloc_dbg
 void *__cdecl _malloc_dbg( size_t nSize, int nBlockUse,
 							const char *pFileName, int nLine )
 {
@@ -534,6 +522,7 @@ void *__cdecl _calloc_dbg_impl( size_t nNum, size_t nSize, int nBlockUse,
 }
 #endif
 
+#undef _calloc_dbg
 void *__cdecl _calloc_dbg( size_t nNum, size_t nSize, int nBlockUse,
 							const char *pFileName, int nLine )
 {
@@ -543,6 +532,7 @@ void *__cdecl _calloc_dbg( size_t nNum, size_t nSize, int nBlockUse,
 	return pMem;
 }
 
+#undef _realloc_dbg
 void *__cdecl _realloc_dbg( void *pMem, size_t nNewSize, int nBlockUse,
 							const char *pFileName, int nLine )
 {
@@ -550,6 +540,7 @@ void *__cdecl _realloc_dbg( void *pMem, size_t nNewSize, int nBlockUse,
 	return g_pMemAlloc->Realloc(pMem, nNewSize, pFileName, nLine);
 }
 
+#undef _expand_dbg
 void *__cdecl _expand_dbg( void *pMem, size_t nNewSize, int nBlockUse,
 							const char *pFileName, int nLine )
 {
@@ -557,6 +548,7 @@ void *__cdecl _expand_dbg( void *pMem, size_t nNewSize, int nBlockUse,
 	return nullptr;
 }
 
+#undef _free_dbg
 void __cdecl _free_dbg( void *pMem, int nBlockUse )
 {
 	AttribIfCrt();
@@ -567,6 +559,7 @@ void __cdecl _free_dbg( void *pMem, int nBlockUse )
 #endif
 }
 
+#undef _msize_dbg
 size_t __cdecl _msize_dbg( void *pMem, int nBlockUse )
 {
 #ifdef _WIN32
@@ -675,17 +668,20 @@ ALLOC_CALL void * __cdecl _aligned_offset_recalloc( void * memblock, size_t coun
 
 extern "C"
 {
-	
+
+#undef _CrtDumpMemoryLeaks
 int _CrtDumpMemoryLeaks(void)
 {
 	return 0;
 }
 
+#undef _CrtSetDumpClient
 _CRT_DUMP_CLIENT _CrtSetDumpClient( _CRT_DUMP_CLIENT dumpClient )
 {
 	return nullptr;
 }
 
+#undef _CrtSetDbgFlag
 int _CrtSetDbgFlag( int nNewFlag )
 {
 	return g_pMemAlloc->CrtSetDbgFlag( nNewFlag );
@@ -716,33 +712,39 @@ void __cdecl _CrtSetDbgBlockType( void *pMem, int nBlockUse )
 	DebuggerBreak();
 }
 
+#undef _CrtSetAllocHook
 _CRT_ALLOC_HOOK __cdecl _CrtSetAllocHook( _CRT_ALLOC_HOOK pfnNewHook )
 {
 	DebuggerBreak();
 	return nullptr;
 }
 
+#undef _CrtSetBreakAlloc
 long __cdecl _CrtSetBreakAlloc( long lNewBreakAlloc )
 {
 	return g_pMemAlloc->CrtSetBreakAlloc( lNewBreakAlloc );
 }
-					 
+
+#undef _CrtIsValidHeapPointer
 int __cdecl _CrtIsValidHeapPointer( const void *pMem )
 {
 	return g_pMemAlloc->CrtIsValidHeapPointer( pMem );
 }
 
+#undef _CrtIsValidPointer
 int __cdecl _CrtIsValidPointer( const void *pMem, unsigned int size, int access )
 {
 	return g_pMemAlloc->CrtIsValidPointer( pMem, size, access );
 }
 
+#undef _CrtCheckMemory
 int __cdecl _CrtCheckMemory( void )
 {
 	// FIXME: Remove this when we re-implement the heap
 	return g_pMemAlloc->CrtCheckMemory( );
 }
 
+#undef _CrtIsMemoryBlock
 int __cdecl _CrtIsMemoryBlock( const void *pMem, unsigned int nSize,
 	long *plRequestNumber, char **ppFileName, int *pnLine )
 {
@@ -750,28 +752,33 @@ int __cdecl _CrtIsMemoryBlock( const void *pMem, unsigned int nSize,
 	return 1;
 }
 
+#undef _CrtMemDifference
 int __cdecl _CrtMemDifference( _CrtMemState *pState, const _CrtMemState * oldState, const _CrtMemState * newState )
 {
 	DebuggerBreak();
 	return FALSE;
 }
 
+#undef _CrtMemDumpStatistics
 void __cdecl _CrtMemDumpStatistics( const _CrtMemState *pState )
 {
 	DebuggerBreak();	
 }
 
+#undef _CrtMemCheckpoint
 void __cdecl _CrtMemCheckpoint( _CrtMemState *pState )
 {
 	// FIXME: Remove this when we re-implement the heap
 	g_pMemAlloc->CrtMemCheckpoint( pState );
 }
 
+#undef _CrtMemDumpAllObjectsSince
 void __cdecl _CrtMemDumpAllObjectsSince( const _CrtMemState *pState )
 {
 	DebuggerBreak();
 }
 
+#undef _CrtDoForAllClientObjects
 void __cdecl _CrtDoForAllClientObjects( void (*pfn)(void *, void *), void * pContext )
 {
 	DebuggerBreak();
@@ -783,19 +790,22 @@ void __cdecl _CrtDoForAllClientObjects( void (*pfn)(void *, void *), void * pCon
 //-----------------------------------------------------------------------------
 long _crtAssertBusy = -1;
 
+#undef _CrtSetReportMode
 int __cdecl _CrtSetReportMode( int nReportType, int nReportMode )
 {
 	return g_pMemAlloc->CrtSetReportMode( nReportType, nReportMode );
 }
 
+#undef _CrtSetReportFile
 _HFILE __cdecl _CrtSetReportFile( int nRptType, _HFILE hFile )
 {
 	return (_HFILE)g_pMemAlloc->CrtSetReportFile( nRptType, hFile );
 }
 
+#undef _CrtSetReportHook
 _CRT_REPORT_HOOK __cdecl _CrtSetReportHook( _CRT_REPORT_HOOK pfnNewHook )
 {
-	return (_CRT_REPORT_HOOK)g_pMemAlloc->CrtSetReportHook( pfnNewHook );
+	return (_CRT_REPORT_HOOK)g_pMemAlloc->CrtSetReportHook( (void *)pfnNewHook );
 }
 
 int __cdecl _CrtDbgReport( int nRptType, const char * szFile,
@@ -913,6 +923,8 @@ _CRT_REPORT_HOOK __cdecl _CrtGetReportHook( void )
 }
 
 #endif
+
+#undef _CrtReportBlockType
 int __cdecl _CrtReportBlockType(const void * pUserData)
 {
 	return 0;
@@ -980,6 +992,7 @@ void __cdecl _free_dbg_nolock( void * pUserData, int nBlockUse)
 		_free_dbg(pUserData, 0);
 }
 
+#undef _CrtGetAllocHook
 _CRT_ALLOC_HOOK __cdecl _CrtGetAllocHook ( void)
 {
 		Assert(0); 
@@ -993,6 +1006,7 @@ static int __cdecl CheckBytes( unsigned char * pb, unsigned char bCheck, size_t 
 }
 
 
+#undef _CrtGetDumpClient
 _CRT_DUMP_CLIENT __cdecl _CrtGetDumpClient ( void)
 {
 		Assert(0); 
@@ -1008,35 +1022,42 @@ static void __cdecl _CrtMemDumpAllObjectsSince_stat( const _CrtMemState * state,
 {
 }
 #endif
+
+#undef _aligned_malloc_dbg
 void * __cdecl _aligned_malloc_dbg( size_t size, size_t align, const char * f_name, int line_n)
 {
 	return _aligned_malloc(size, align);
 }
 
+#undef _aligned_realloc_dbg
 void * __cdecl _aligned_realloc_dbg( void *memblock, size_t size, size_t align,
 			   const char * f_name, int line_n)
 {
 	return _aligned_realloc(memblock, size, align);
 }
 
+#undef _aligned_offset_malloc_dbg
 void * __cdecl _aligned_offset_malloc_dbg( size_t size, size_t align, size_t offset,
 			  const char * f_name, int line_n)
 {
 	return _aligned_offset_malloc(size, align, offset);
 }
 
+#undef _aligned_offset_realloc_dbg
 void * __cdecl _aligned_offset_realloc_dbg( void * memblock, size_t size, size_t align, 
 				 size_t offset, const char * f_name, int line_n)
 {
 	return _aligned_offset_realloc(memblock, size, align, offset);
 }
 
+#undef _aligned_free_dbg
 void __cdecl _aligned_free_dbg( void * memblock)
 {
 	_aligned_free(memblock);
 }
 
 #if _MSC_VER < 1900
+#undef _CrtSetDebugFillThreshold
 size_t __cdecl _CrtSetDebugFillThreshold( size_t _NewDebugFillThreshold)
 {
 	Assert(0);

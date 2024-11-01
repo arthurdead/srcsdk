@@ -16,8 +16,8 @@
 //-----------------------------------------------------------------------------
 class CEnvTonemapController : public CPointEntity
 {
-	DECLARE_CLASS( CEnvTonemapController, CPointEntity );
 public:
+	DECLARE_CLASS( CEnvTonemapController, CPointEntity );
 	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 

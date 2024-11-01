@@ -162,8 +162,8 @@ void CPointSpotlight::Spawn(void)
 {
 	Precache();
 
-	UTIL_SetSize( this,vec3_origin,vec3_origin );
-	AddSolidFlags( FSOLID_NOT_SOLID );
+//	UTIL_SetSize( this,vec3_origin,vec3_origin );
+//	AddSolidFlags( FSOLID_NOT_SOLID );
 	SetMoveType( MOVETYPE_NONE );
 	m_bEfficientSpotlight = true;
 

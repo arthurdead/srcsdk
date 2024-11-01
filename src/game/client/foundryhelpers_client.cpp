@@ -8,6 +8,7 @@
 #include "foundryhelpers_client.h"
 #include "c_basetempentity.h"
 #include "tier2/beamsegdraw.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

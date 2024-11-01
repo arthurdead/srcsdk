@@ -27,7 +27,7 @@ END_RECV_TABLE()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-C_EntityFlame::C_EntityFlame( void ) : m_hEffect( NULL )
+C_EntityFlame::C_EntityFlame( int iEFlags ) : C_BaseEntity(iEFlags), m_hEffect( NULL )
 {
 	m_hOldAttached = NULL;
 	AddToEntityList( ENTITY_LIST_SIMULATE );
@@ -140,7 +140,7 @@ bool C_EntityFlame::Simulate( void )
 		dl->color.r = 254;
 		dl->color.g = 174;
 		dl->color.b = 10;
-		dl->radius = random->RandomFloat(400,431);
+		dl->radius = random_valve->RandomFloat(400,431);
 		dl->die = gpGlobals->curtime + 0.001;
 	}
 

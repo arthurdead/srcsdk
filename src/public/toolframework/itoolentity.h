@@ -8,6 +8,8 @@
 #define ITOOLENTITY_H
 #pragma once
 
+#ifndef SWDS
+
 #include "tier1/interface.h"
 #include "tier1/utlvector.h"
 #include "Color.h"
@@ -381,5 +383,7 @@ public:
 };
 
 #define VSERVERCHOREOTOOLS_INTERFACE_VERSION "VSERVERCHOREOTOOLS001"
+
+#endif
 
 #endif // ITOOLENTITY_H

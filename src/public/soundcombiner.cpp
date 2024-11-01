@@ -611,7 +611,7 @@ bool CSoundCombiner::AppendSilence( int &currentsample, float duration )
 
 	while ( --numSamples >= 0 )
 	{
-		currentValue += random->RandomInt( -MOTION_MAXSTEP, MOTION_MAXSTEP );
+		currentValue += random_valve->RandomInt( -MOTION_MAXSTEP, MOTION_MAXSTEP );
 		currentValue = min( maxValue, currentValue );
 		currentValue = max( minValue, currentValue );
 

@@ -21,7 +21,6 @@ LINK_ENTITY_TO_CLASS(gib_clientside, C_Gib)
 //-----------------------------------------------------------------------------
 C_Gib::C_Gib( void )
 {
-	AddEFlags( EFL_NOT_NETWORKED );
 }
 
 C_Gib::~C_Gib( void )

@@ -28,7 +28,9 @@ END_NETWORK_TABLE()
 BEGIN_PREDICTION_DATA( CWeaponIFMBase ) 
 END_PREDICTION_DATA()
 
+#ifdef GAME_DLL
 LINK_ENTITY_TO_CLASS( weapon_ifm_base, CWeaponIFMBase );
+#endif
 
 //-----------------------------------------------------------------------------
 // CWeaponIFMBase implementation. 

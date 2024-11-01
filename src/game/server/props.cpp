@@ -44,6 +44,7 @@
 #include "vphysics/friction.h"
 #include "collisionutils.h"
 #include "recast/recast_mgr.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -1270,12 +1271,12 @@ int CBreakableProp::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 			flFactor = flDist / MAX_BLAST_DIST;
 			const float MAX_BURN_TIME = 5.0f;
 			flBurnTime = MAX( 0.5, MAX_BURN_TIME * flFactor );
-			flBurnTime += random->RandomFloat( 0, 0.5 );
+			flBurnTime += random_valve->RandomFloat( 0, 0.5 );
 		}
 		else
 		{
 			// Very near the explosion. explode almost immediately.
-			flBurnTime = random->RandomFloat( 0.1, 0.2 );
+			flBurnTime = random_valve->RandomFloat( 0.1, 0.2 );
 		}
 
 		// Change my health so that I burn for flBurnTime seconds.
@@ -1291,12 +1292,12 @@ int CBreakableProp::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 
 	if( !bDeadly && (info.GetDamageType() & DMG_BLAST) )
 	{
-		Ignite( random->RandomFloat( 10, 15 ), false );
+		Ignite( random_valve->RandomFloat( 10, 15 ), false );
 	}
 	else if( !bDeadly && (info.GetDamageType() & DMG_BURN) )
 	{
 		// Ignite if burned, and flammable (the Ignite() function takes care of all of this).
-		Ignite( random->RandomFloat( 10, 15 ), false );
+		Ignite( random_valve->RandomFloat( 10, 15 ), false );
 	}
 	else if( !bDeadly && (info.GetDamageType() & DMG_BULLET) )
 	{
@@ -1307,7 +1308,7 @@ int CBreakableProp::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 				// Bump back up to full health so it burns longer. Magically getting health back isn't
 				// a big problem because if this item takes damage again whilst burning, it will break.
 				SetHealth( m_iMaxHealth );
-				Ignite( random->RandomFloat( 10, 15 ), false );
+				Ignite( random_valve->RandomFloat( 10, 15 ), false );
 			}
 			else if( IsOnFire() )
 			{
@@ -2091,7 +2092,7 @@ void CDynamicProp::Spawn( )
 		if ( m_bRandomAnimator )
 		{
 			SetThink( &CDynamicProp::AnimThink );
-			m_flNextRandAnim = gpGlobals->curtime + random->RandomFloat( m_flMinRandAnimTime, m_flMaxRandAnimTime );
+			m_flNextRandAnim = gpGlobals->curtime + random_valve->RandomFloat( m_flMinRandAnimTime, m_flMaxRandAnimTime );
 			SetNextThink( gpGlobals->curtime + m_flNextRandAnim + 0.1 );
 		}
 		else
@@ -2337,7 +2338,7 @@ void CDynamicProp::AnimThink( void )
 		// Fire output
 		m_pOutputAnimBegun.FireOutput( NULL,this );
 
-		m_flNextRandAnim = gpGlobals->curtime + random->RandomFloat( m_flMinRandAnimTime, m_flMaxRandAnimTime );
+		m_flNextRandAnim = gpGlobals->curtime + random_valve->RandomFloat( m_flMinRandAnimTime, m_flMaxRandAnimTime );
 	}
 
 	if ( ((m_iTransitionDirection > 0 && GetCycle() >= 0.999f) || (m_iTransitionDirection < 0 && GetCycle() <= 0.0f)) && !SequenceLoops() )
@@ -2989,22 +2990,26 @@ END_MAPENTITY()
 IMPLEMENT_SERVERCLASS_ST( CPhysicsProp, DT_PhysicsProp )
 	//--------------------------------------------------------------------------------------------------------
 	// Datatable reduction
-	SendPropExclude( "DT_BaseAnimating", "m_flPoseParameter" ),
-	SendPropExclude( "DT_BaseAnimating", "m_flPlaybackRate" ),	
-	//SendPropExclude( "DT_BaseAnimating", "m_nSequence" ),
-	//SendPropExclude( "DT_BaseAnimating", "m_nNewSequenceParity" ),
-	//SendPropExclude( "DT_BaseAnimating", "m_nResetEventsParity" ),
-	SendPropExclude( "DT_BaseAnimating", "m_nMuzzleFlashParity" ),
-	//SendPropExclude( "DT_BaseEntity", "m_angRotation" ),
-	SendPropExclude( "DT_BaseAnimatingOverlay", "overlay_vars" ),
-	SendPropExclude( "DT_BaseFlex", "m_flexWeight" ),
-	SendPropExclude( "DT_BaseFlex", "m_blinktoggle" ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_flPoseParameter ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_flPlaybackRate ) ),	
+	//SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nSequence ) ),
+	//SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nNewSequenceParity ) ),
+	//SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nResetEventsParity ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nMuzzleFlashParity ) ),
+	//SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_angRotation ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseAnimatingOverlay, overlay_vars ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseFlex, m_flexWeight ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseFlex, m_blinktoggle ) ),
 
 	// calc mins/maxs on the client, since we have all the info
-	//SendPropExclude( "DT_CollisionProperty", "m_vecMins" ),
-	//SendPropExclude( "DT_CollisionProperty", "m_vecMaxs" ),
+	//SendPropExclude( SENDEXLCUDE( DT_CollisionProperty, m_vecMins ) ),
+	//SendPropExclude( SENDEXLCUDE( DT_CollisionProperty, m_vecMaxs ) ),
 
-	//SendPropExclude( "DT_ServerAnimationData" , "m_flCycle" ),
+	//SendPropExclude( SENDEXLCUDE( DT_ServerAnimationData, m_flCycle ) ),
+
+	SendPropExclude( SENDEXLCUDE( DT_AnimTimeMustBeFirst, m_flAnimTime ) ),
+
+	SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_flPoseParameter ) ),
 
 	//--------------------------------------------------------------------------------------------------------
 
@@ -3287,7 +3292,7 @@ bool CPhysicsProp::CreateVPhysics()
 			PhysSetGameFlags( pPhysicsObject, FVPHYSICS_DMG_SLICE );
 
 #if 0
-			if( g_pDeveloper->GetInt() )
+			if( developer->GetInt() )
 			{
 				// Highlight them in developer mode.
 				m_debugOverlays |= (OVERLAY_TEXT_BIT|OVERLAY_BBOX_BIT);
@@ -4029,7 +4034,7 @@ static CBreakableProp *BreakModelCreate_Prop( CBaseEntity *pOwner, breakmodel_t 
 			else
 			{
 				// This should never happen
-				pEntity->Ignite( random->RandomFloat( 5, 10 ), false );
+				pEntity->Ignite( random_valve->RandomFloat( 5, 10 ), false );
 			}
 		}
 	}
@@ -4296,23 +4301,24 @@ END_MAPENTITY()
 IMPLEMENT_SERVERCLASS_ST(CBasePropDoor, DT_BasePropDoor)
 //--------------------------------------------------------------------------------------------------------
 	// Datatable reduction
-	SendPropExclude( "DT_BaseAnimating", "m_flPoseParameter" ),
-	SendPropExclude( "DT_BaseAnimating", "m_flPlaybackRate" ),	
-	//SendPropExclude( "DT_BaseAnimating", "m_nSequence" ),
-	//SendPropExclude( "DT_BaseAnimating", "m_nNewSequenceParity" ),
-	//SendPropExclude( "DT_BaseAnimating", "m_nResetEventsParity" ),
-	SendPropExclude( "DT_BaseAnimating", "m_nMuzzleFlashParity" ),
-	//SendPropExclude( "DT_BaseEntity", "m_angRotation" ),
-	SendPropExclude( "DT_BaseAnimatingOverlay", "overlay_vars" ),
-	SendPropExclude( "DT_BaseFlex", "m_flexWeight" ),
-	SendPropExclude( "DT_BaseFlex", "m_blinktoggle" ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_flPoseParameter ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_flPlaybackRate ) ),	
+	//SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nSequence ) ),
+	//SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nNewSequenceParity ) ),
+	//SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nResetEventsParity ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseAnimating, m_nMuzzleFlashParity ) ),
+	//SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_angRotation ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseAnimatingOverlay, overlay_vars ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseFlex, m_flexWeight ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseFlex, m_blinktoggle ) ),
 
 	// calc mins/maxs on the client, since we have all the info
-	//SendPropExclude( "DT_CollisionProperty", "m_vecMins" ),
-	//SendPropExclude( "DT_CollisionProperty", "m_vecMaxs" ),
+	//SendPropExclude( SENDEXLCUDE( DT_CollisionProperty, m_vecMins ) ),
+	//SendPropExclude( SENDEXLCUDE( DT_CollisionProperty, m_vecMaxs ) ),
 
-	//SendPropExclude( "DT_ServerAnimationData" , "m_flCycle" ),	
+	//SendPropExclude( SENDEXLCUDE( DT_ServerAnimationData, m_flCycle ) ),	
 
+	SendPropExclude( SENDEXLCUDE( DT_AnimTimeMustBeFirst, m_flAnimTime ) ),
 
 	//--------------------------------------------------------------------------------------------------------
 

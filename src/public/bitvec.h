@@ -34,14 +34,18 @@ private:
 #define LOG2_BITS_PER_INT	5
 #define BITS_PER_INT		32
 
-#if _WIN32
+#ifdef _WIN32
+#ifdef __MINGW32__
+#include <immintrin.h>
+#else
 #include <intrin.h>
+#endif
 #pragma intrinsic(_BitScanForward)
 #endif
 
 inline int FirstBitInWord( unsigned int elem, int offset )
 {
-#if _WIN32
+#if defined _WIN32 && !defined __GNUC__
 	if ( !elem )
 		return -1;
 	unsigned long out;

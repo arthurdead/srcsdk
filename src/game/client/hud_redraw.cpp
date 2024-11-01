@@ -33,10 +33,9 @@ const int CHud::HUDPB_HORIZONTAL_INV = 2;
 // Called when a ConVar changes value
 static void FovChanged_Callback( IConVar *pConVar, const char *pOldString, float flOldValue )
 {
-	ConVarRef var( pConVar );
 	if ( engine->IsInGame() )
 	{
-		engine->ServerCmd( VarArgs( "fov %f\n", var.GetFloat() ) );
+		engine->ServerCmd( VarArgs( "fov %f\n", ((ConVar *)pConVar)->GetFloat() ) );
 	}
 }
 

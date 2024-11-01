@@ -27,13 +27,14 @@
 #include "shareddefs.h"
 #include "networkvar.h"
 #include "interpolatedvar.h"
-#include "collisionproperty.h"
+//#include "collisionproperty.h"
 #include "particle_property.h"
 #include "toolframework/itoolentity.h"
 #include "tier0/threadtools.h"
 //#include "clientalphaproperty.h"
 #include "map_entity.h"
 #include "gamestringpool.h"
+#include "cliententitylist.h"
 
 class C_Team;
 class IPhysicsObject;
@@ -57,6 +58,7 @@ class ConVar;
 class CDmgAccumulator;
 class CClientAlphaProperty;
 class C_World;
+class C_CollisionProperty;
 
 struct CSoundParameters;
 
@@ -185,23 +187,30 @@ enum entity_list_ids_t
 
 DECLARE_LOGGING_CHANNEL( LOG_BASEENTITY );
 
+#ifdef DT_CELL_COORD_SUPPORTED
+#define RECVPROP_VECORIGIN_PROXY C_BaseEntity::RecvProxy_CellOrigin
+#else
+#define RECVPROP_VECORIGIN_PROXY RecvProxy_VectorToVector
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: Base client side entity object
 //-----------------------------------------------------------------------------
 class C_BaseEntity : public IClientEntityEx
 {
+public:
 // Construction
 	DECLARE_CLASS_NOBASE( C_BaseEntity );
 
 	friend class CPrediction;
 	friend void cc_cl_interp_all_changed( IConVar *pConVar, const char *pOldString, float flOldValue );
 
-public:
 	DECLARE_MAPENTITY();
 	DECLARE_CLIENTCLASS();
 	DECLARE_PREDICTABLE();
 
-	C_BaseEntity();
+	C_BaseEntity() : C_BaseEntity( 0 ) {}
+	C_BaseEntity( int iEFlags );
 
 protected:
 	// Use UTIL_Remove to delete!
@@ -247,10 +256,6 @@ public:
 		}
 	}
 
-	// returns the edict index the entity requires when used in save/restore (eg players, world)
-	// -1 means it doesn't require any special index
-	virtual int RequiredEdictIndex( void ) { return -1; } 
-
 	static void						UpdateVisibilityAllEntities();
 	virtual void					ModifyOrAppendCriteria( AI_CriteriaSet& set );
 
@@ -291,6 +296,15 @@ public:
 	virtual bool					KeyValue( const char *szKeyName, const Vector &vecValue );
 	virtual bool					GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen );
 
+	// handles an input (usually caused by outputs)
+	// returns true if the the value in the pass in should be set, false if the input is to be ignored
+	virtual bool AcceptInput( const char *szInputName, C_BaseEntity *pActivator, C_BaseEntity *pCaller, variant_t Value, int outputID );
+
+	// Verifies that the data description is valid in debug builds.
+	#ifdef _DEBUG
+	void ValidateDataDescription(void);
+	#endif // _DEBUG
+
 		// Entities block Line-Of-Sight for NPCs by default.
 	// Set this to false if you want to change this behavior.
 	void							SetBlocksLOS( bool bBlocksLOS );
@@ -306,6 +320,12 @@ public:
 	void							Interp_RestoreToLastNetworked( VarMapping_t *map );
 	void							Interp_UpdateInterpolationAmounts( VarMapping_t *map );
 	void							Interp_HierarchyUpdateInterpolationAmounts();
+
+	virtual bool	IsTemplate( void ) { return false; }
+
+	// This comes from the "id" key/value that Hammer adds to entities.
+	// It is used by Foundry to match up live (engine) entities with Hammer entities.
+	inline int		GetHammerID() const { return m_iHammerID; }
 
 	// Called by the CLIENTCLASS macros.
 protected:
@@ -338,10 +358,23 @@ public:
 
 	virtual Class_T					Classify( void ) { return CLASS_NONE; }
 
+	UtlHashHandle_t		m_ListByClass;
+	C_BaseEntity	*		m_pPrevByClass;
+	C_BaseEntity	*		m_pNextByClass;
+
 private:
 	string_t						m_iClassname;
 
-	char m_szRTTIClassname[64];
+	string_t m_iRTTIClassname;
+
+public:
+	string_t	m_target;
+
+	string_t m_iParent;	// the name of the entities parent; linked into m_pParent during Activate()
+
+	// This comes from the "id" key/value that Hammer adds to entities.
+	// It is used by Foundry to match up live (engine) entities with Hammer entities.
+	int		m_iHammerID; // Hammer unique edit id number
 
 // IClientUnknown overrides.
 public:
@@ -376,7 +409,7 @@ private:
 #endif
 
 public:
-	virtual ICollideable*			GetCollideable()		{ return &m_Collision; }
+	virtual ICollideable*			GetCollideable();
 	virtual IClientNetworkable*		GetClientNetworkable();
 	virtual IClientRenderable*		GetClientRenderable()	{ return this; }
 	virtual IClientEntity*			GetIClientEntity()		{ return this; }
@@ -458,6 +491,7 @@ public:
 	bool							IsMarkedForDeletion( void );
 
 	int						entindex( void ) const final;
+	int						entserial( void ) const;
 
 	inline int GetEntityIndex() const { return entindex(); }
 	
@@ -494,12 +528,12 @@ public:
 
 public:
 	// An inline version the game code can use
-	C_CollisionProperty		*CollisionProp();
-	const C_CollisionProperty*CollisionProp() const;
+	virtual C_CollisionProperty		*CollisionProp();
+	virtual const C_CollisionProperty*CollisionProp() const;
 	CParticleProperty		*ParticleProp();
 	const CParticleProperty *ParticleProp() const;
-	CClientAlphaProperty	*AlphaProp();
-	const CClientAlphaProperty *AlphaProp() const;
+	virtual CClientAlphaProperty	*AlphaProp();
+	virtual const CClientAlphaProperty *AlphaProp() const;
 
 	// Simply here for game shared 
 	bool					IsFloating();
@@ -780,6 +814,7 @@ public:
 	C_BaseEntity *GetRootMoveParent();
 	C_BaseEntity *FirstMoveChild( void ) const;
 	C_BaseEntity *NextMovePeer( void ) const;
+	C_BaseEntity *GetParent( void ) const;
 
 	inline ClientEntityHandle_t		GetClientHandle() const	{ return ClientEntityHandle_t( m_RefEHandle ); }
 	virtual bool						IsServerEntity( void );
@@ -1456,11 +1491,15 @@ public:
 	static void RecvProxy_CellX( const CRecvProxyData *pData, void *pStruct, void *pOut );
 	static void RecvProxy_CellY( const CRecvProxyData *pData, void *pStruct, void *pOut );
 	static void RecvProxy_CellZ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+#ifdef DT_CELL_COORD_SUPPORTED
 	static void RecvProxy_CellOrigin( const CRecvProxyData *pData, void *pStruct, void *pOut );
 	static void RecvProxy_CellOriginXY( const CRecvProxyData *pData, void *pStruct, void *pOut );
 	static void RecvProxy_CellOriginZ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+#endif
 
 	const char	*GetEntityName();
+	string_t GetEntityNameAsTStr();
+	const char *GetEntityNameAsCStr();
 
 	bool		NameMatches( const char *pszNameOrWildcard );
 	bool		ClassMatches( const char *pszClassOrWildcard );
@@ -1504,13 +1543,12 @@ protected:
 	int								m_cellX;
 	int								m_cellY;
 	int								m_cellZ;
+#ifdef DT_CELL_COORD_SUPPORTED
 	Vector							m_vecCellOrigin; // cached cell offset position
+#endif
 
 private:	
 	friend class C_World;
-
-	// Determine what entity this corresponds to
-	int								m_nEntIndex;	
 
 private:
 	// Entity flags that are only for the client (ENTCLIENTFLAG_ defines).
@@ -1541,7 +1579,7 @@ private:
 	// Effects to apply
 	int								m_fEffects;
 
-	char							m_iName[MAX_PATH];
+	string_t							m_iName;
 
 	int								m_spawnflags;
 
@@ -1777,9 +1815,11 @@ private:
 	// Timestamp of message arrival
 	float							m_flLastMessageTime;
 
+protected:
 	// If this entity is client created..
 	bool							m_bIsClientCreated;
 
+private:
 	// Base velocity
 	Vector							m_vecBaseVelocity;
 	
@@ -1827,7 +1867,8 @@ private:
 
 	string_t						m_ModelName;
 
-	CNetworkVarEmbedded( C_CollisionProperty, m_Collision );
+	friend class C_CollisionProperty;
+	C_CollisionProperty *m_pCollision;
 	CNetworkVarEmbedded( CParticleProperty, m_Particles );
 	CClientAlphaProperty			*m_pClientAlphaProperty;
 
@@ -1914,6 +1955,9 @@ private:
 	static bool						s_bAbsRecomputationEnabled;
 
 	static bool						s_bInterpolate;
+
+	friend class CClientEntityList;
+	static bool s_bImmediateRemovesAllowed;
 	
 	int								m_fDataObjectTypes;
 
@@ -1977,11 +2021,6 @@ public:
 	void SetNavObstacleRef( int ref ) { m_NavObstacleRef = ref; }
 	int GetNavObstacleRef() { return m_NavObstacleRef; }
 
-	// Hack for keeper package due edict limit
-	void SetDoNotRegisterEntity() { m_bDoNotRegisterEntity = true; }
-	// Hack for keeper package to force vphysics creation for entities without edicts (tiles/blocks)
-	void SetForceAllowVPhysics() { m_bForceAllowVPhysics = true; }
-
 private:
 	float m_fViewDistance;
 
@@ -1991,9 +2030,6 @@ private:
 	int m_NavObstacleRef;
 
 	ShouldTransmitState_t m_LastShouldTransmitState;
-
-	bool m_bDoNotRegisterEntity;
-	bool m_bForceAllowVPhysics;
 };
 
 EXTERN_RECV_TABLE(DT_BaseEntity);
@@ -2005,55 +2041,134 @@ class C_PointEntity : public C_BaseEntity
 public:
 	DECLARE_CLASS( C_PointEntity, C_BaseEntity );
 
+	C_PointEntity() : C_PointEntity( 0 ) {}
+	C_PointEntity( int iEFlags );
+
+	DECLARE_CLIENTCLASS();
+
+	virtual bool					GetShadowCastDistance( float *pDist, ShadowType_t shadowType ) const { *pDist = 0; return false; }
+	virtual bool					GetShadowCastDirection( Vector *pDirection, ShadowType_t shadowType ) const { *pDirection= vec3_origin; return false; }
+
+	virtual ModelInstanceHandle_t GetModelInstance() { return MODEL_INSTANCE_INVALID; }
+	virtual ClientShadowHandle_t GetShadowHandle() const	{ return CLIENTSHADOW_INVALID_HANDLE; }
+	virtual ClientRenderHandle_t&	RenderHandle() {
+		static ClientRenderHandle_t hndl = INVALID_CLIENT_RENDER_HANDLE;
+		hndl = INVALID_CLIENT_RENDER_HANDLE;
+		return hndl;
+	}
+
+	virtual bool		ShouldCollide( int collisionGroup, int contentsMask ) const { return false; }
+
+	virtual bool			IsCurrentlyTouching( void ) const { return false; }
+
+	virtual void			StartTouch( C_BaseEntity *pOther ) {}
+	virtual void			Touch( C_BaseEntity *pOther ) {}
+	virtual void			EndTouch( C_BaseEntity *pOther ) {}
+
+	// Should this object cast shadows?
+	virtual ShadowType_t			ShadowCastType() { return SHADOWS_NONE; }
+
+	// Should this object receive shadows?
+	virtual bool					ShouldReceiveProjectedTextures( int flags ) { return false; }
+
+	// Shadow-related methods
+	virtual bool IsShadowDirty( ) { return false; }
+	virtual void MarkShadowDirty( bool bDirty ) {}
+
+	virtual void					UpdateVisibility() {}
+
+	virtual SolidType_t				GetSolid( void ) const { return SOLID_NONE; }
+
+	virtual int			 			GetSolidFlags( void ) const { return FSOLID_NOT_SOLID; }
+
+	virtual CollideType_t			GetCollideType( void ) { return ENTITY_SHOULD_NOT_COLLIDE; }
+
+	virtual bool					ShouldDraw() { return false; }
+
+	virtual IClientRenderable*		GetClientRenderable()	{ return NULL; }
+	virtual IClientRenderableMod*	GetClientRenderableMod() { return NULL; }
+
+	virtual IClientModelRenderable*	GetClientModelRenderable()	{ return NULL; }
+	virtual IClientAlphaProperty*	GetClientAlphaProperty() { return NULL; }
+	virtual IClientAlphaPropertyEx*	GetClientAlphaPropertyEx() { return NULL; }
+
+	virtual CClientAlphaProperty	*AlphaProp() { return NULL; }
+	virtual const CClientAlphaProperty *AlphaProp() const { return NULL; }
+
+	ICollideable*			GetCollideable()		{ return NULL; }
+	C_CollisionProperty		*CollisionProp() { return NULL; }
+	const C_CollisionProperty*CollisionProp() const { return NULL; }
+
 	void	Spawn( void );
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
-private:
 };
 
 // Has no position or size
-class C_LogicalEntity : public C_BaseEntity
+class C_LogicalEntity : public C_PointEntity
 {
-	DECLARE_CLASS( C_LogicalEntity, C_BaseEntity );
-
 public:
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	DECLARE_CLASS( C_LogicalEntity, C_PointEntity );
+
+	C_LogicalEntity() : C_LogicalEntity( 0 ) {}
+	C_LogicalEntity( int iEFlags );
+
+	DECLARE_CLIENTCLASS();
+
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 };
 
-// Has a position + size
-class C_ClientOnlyEntity : public C_BaseEntity
+template <typename T>
+class C_ClientOnlyWrapper : public T
 {
-	DECLARE_CLASS( C_ClientOnlyEntity, C_BaseEntity );
 public:
-	C_ClientOnlyEntity();
+	DECLARE_CLASS( C_ClientOnlyWrapper, T );
+
+	C_ClientOnlyWrapper() : C_ClientOnlyWrapper( 0 ) {}
+	C_ClientOnlyWrapper( int iEFlags ) : T( EFL_NOT_NETWORKED|iEFlags ) {}
+
+	virtual bool InitializeAsServerEntity( int entnum, int iSerialNum ) { Assert(0); return false; }
+
+	virtual bool InitializeAsPredictedEntity( const char *className, const char *module, int line ) { Assert(0); return false; }
+
+	virtual ClientClass*	GetClientClass() { return NULL; }
+
+	virtual void			NotifyShouldTransmit( ShouldTransmitState_t state ) {}
+
+	virtual void			OnPreDataChanged( DataUpdateType_t updateType ) {}
+	virtual void			OnDataChanged( DataUpdateType_t updateType ) {}
+
+	virtual void			PreDataUpdate( DataUpdateType_t updateType ) {}
+	virtual void			PostDataUpdate( DataUpdateType_t updateType ) {}
+
+	virtual bool			IsDormant( void ) { return true; }
+
+	virtual void			ReceiveMessage( int classID, bf_read &msg ) {}
+
+	virtual void*			GetDataTableBasePtr() { return NULL; }
+
+	virtual void			SetDestroyedOnRecreateEntities( void ) {}
+
+	virtual void			OnDataUnchangedInPVS() {}
 
 	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
 	virtual	bool			IsClientCreated( void ) const { return true; }
 	virtual bool						IsServerEntity( void ) { return false; }
-	
-	virtual int ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
 };
+
+typedef C_ClientOnlyWrapper<C_BaseEntity> C_ClientOnlyEntity;
 
 typedef C_ClientOnlyEntity C_ClientEntity;
+typedef C_ClientOnlyEntity CLocalOnlyEntity;
 
 // Has only a position, no size
-class C_ClientOnlyPointEntity : public C_ClientOnlyEntity
-{
-	DECLARE_CLASS( C_ClientOnlyPointEntity, C_ClientOnlyEntity );
+typedef C_ClientOnlyWrapper<C_PointEntity> C_ClientOnlyPointEntity;
 
-public:
-	virtual bool KeyValue( const char *szKeyName, const char *szValue );
-};
+typedef C_ClientOnlyPointEntity CLocalOnlyPointEntity;
 
 // Has no position or size
-class C_ClientOnlyLogicalEntity : public C_ClientOnlyEntity
-{
-	DECLARE_CLASS( C_ClientOnlyLogicalEntity, C_ClientOnlyEntity );
+typedef C_ClientOnlyWrapper<C_LogicalEntity> C_ClientOnlyLogicalEntity;
 
-public:
-	virtual bool KeyValue( const char *szKeyName, const char *szValue );
-};
+typedef C_ClientOnlyLogicalEntity CLocalOnlyLogicalEntity;
 
 typedef C_PointEntity CSharedPointEntity;
 typedef C_LogicalEntity CSharedLogicalEntity;
@@ -2098,18 +2213,30 @@ inline bool FClassnameIs( C_BaseEntity *pEntity, const CGameString &szClassname 
 
 #endif
 
+// handling entity/edict transforms
+inline C_BaseEntity *GetContainingEntity( edict_t *pent )
+{
+	if ( pent && pent->GetUnknown() )
+	{
+		CBaseHandle hndl( pent->m_EdictIndex, pent->m_NetworkSerialNumber );
+		IClientEntity *clent = ClientEntityList().GetClientEntityFromHandle( hndl );
+		return clent ? clent->GetBaseEntity() : NULL;
+	}
+
+	return NULL;
+}
 
 //-----------------------------------------------------------------------------
 // An inline version the game code can use
 //-----------------------------------------------------------------------------
 inline C_CollisionProperty *C_BaseEntity::CollisionProp()
 {
-	return &m_Collision;
+	return m_pCollision;
 }
 
 inline const C_CollisionProperty *C_BaseEntity::CollisionProp() const
 {
-	return &m_Collision;
+	return m_pCollision;
 }
 
 inline CClientAlphaProperty *C_BaseEntity::AlphaProp()
@@ -2213,95 +2340,6 @@ inline C_BaseEntity	*C_BaseEntity::Instance( IClientEntity *ent )
 
 
 //-----------------------------------------------------------------------------
-// Methods relating to solid type + flags
-//-----------------------------------------------------------------------------
-inline void C_BaseEntity::SetSolidFlags( int nFlags )
-{
-	CollisionProp()->SetSolidFlags( nFlags );
-}
-
-inline bool C_BaseEntity::IsSolidFlagSet( int flagMask ) const
-{
-	return CollisionProp()->IsSolidFlagSet( flagMask );
-}
-
-inline int	C_BaseEntity::GetSolidFlags( void ) const
-{
-	return CollisionProp()->GetSolidFlags( );
-}
-
-inline void C_BaseEntity::AddSolidFlags( int nFlags )
-{
-	CollisionProp()->AddSolidFlags( nFlags );
-}
-
-inline void C_BaseEntity::RemoveSolidFlags( int nFlags )
-{
-	CollisionProp()->RemoveSolidFlags( nFlags );
-}
-
-inline bool C_BaseEntity::IsSolid() const
-{
-	return CollisionProp()->IsSolid( );
-}
-
-inline void C_BaseEntity::SetSolid( SolidType_t val )
-{
-	CollisionProp()->SetSolid( val );
-}
-
-inline SolidType_t C_BaseEntity::GetSolid( ) const
-{
-	return CollisionProp()->GetSolid( );
-}
-
-inline void C_BaseEntity::SetCollisionBounds( const Vector& mins, const Vector &maxs )
-{
-	CollisionProp()->SetCollisionBounds( mins, maxs );
-}
-
-
-//-----------------------------------------------------------------------------
-// Methods relating to bounds
-//-----------------------------------------------------------------------------
-inline const Vector& C_BaseEntity::WorldAlignMins( ) const
-{
-	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
-	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
-	return CollisionProp()->OBBMins();
-}
-
-inline const Vector& C_BaseEntity::WorldAlignMaxs( ) const
-{
-	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
-	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
-	return CollisionProp()->OBBMaxs();
-}
-
-inline const Vector& C_BaseEntity::WorldAlignSize( ) const
-{
-	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
-	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
-	return CollisionProp()->OBBSize();
-}
-
-inline float C_BaseEntity::BoundingRadius() const
-{
-	return CollisionProp()->BoundingRadius();
-}
-
-inline float C_BaseEntity::BoundingRadius2D() const
-{
-	return CollisionProp()->BoundingRadius2D();
-}
-
-inline bool C_BaseEntity::IsPointSized() const
-{
-	return CollisionProp()->BoundingRadius() == 0.0f;
-}
-
-
-//-----------------------------------------------------------------------------
 // Methods relating to traversing hierarchy
 //-----------------------------------------------------------------------------
 inline C_BaseEntity *C_BaseEntity::GetMoveParent( void ) const
@@ -2317,6 +2355,11 @@ inline C_BaseEntity *C_BaseEntity::FirstMoveChild( void ) const
 inline C_BaseEntity *C_BaseEntity::NextMovePeer( void ) const
 {
 	return m_pMovePeer; 
+}
+
+inline C_BaseEntity *C_BaseEntity::GetParent( void ) const
+{
+	return m_pMoveParent; 
 }
 
 //-----------------------------------------------------------------------------
@@ -2671,7 +2714,17 @@ inline void C_BaseEntity::RemoveSpawnFlags( int nFlags )
 //-----------------------------------------------------------------------------
 inline const char *C_BaseEntity::GetEntityName() 
 { 
+	return STRING(m_iName); 
+}
+
+inline string_t C_BaseEntity::GetEntityNameAsTStr() 
+{ 
 	return m_iName; 
+}
+
+inline const char *C_BaseEntity::GetEntityNameAsCStr() 
+{ 
+	return STRING(m_iName); 
 }
 
 inline bool C_BaseEntity::NameMatches( const char *pszNameOrWildcard )
@@ -2689,11 +2742,6 @@ inline bool C_BaseEntity::NameMatches( string_t nameStr )
 	return NameMatchesComplex( STRING(nameStr) );
 }
 #endif
-
-inline string_t C_BaseEntity::GetClassnameStr()
-{
-	return m_iClassname;
-}
 
 inline bool C_BaseEntity::ClassMatches( const char *pszClassOrWildcard )
 {

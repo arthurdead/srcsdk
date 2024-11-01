@@ -7,6 +7,7 @@
 
 #ifndef AI_BEHAVIOR_H
 #define AI_BEHAVIOR_H
+#pragma once
 
 #include "ai_component.h"
 #include "ai_basenpc.h"
@@ -24,9 +25,10 @@
 #pragma warning(disable:4290)
 #endif
 
-#if defined( _WIN32 )
-#pragma once
+#ifdef NULL
+#undef NULL
 #endif
+#define NULL nullptr
 
 //-----------------------------------------------------------------------------
 // CAI_Behavior...
@@ -64,8 +66,8 @@ struct AIChannelScheduleState_t
 
 class CAI_BehaviorBase : public CAI_Component, public IAI_BehaviorBridge
 {
-	DECLARE_CLASS( CAI_BehaviorBase, CAI_Component )
 public:
+	DECLARE_CLASS( CAI_BehaviorBase, CAI_Component )
 	CAI_BehaviorBase(CAI_BaseNPC *pOuter = NULL)
 	 : 	CAI_Component(pOuter),
 	 	m_pBackBridge(NULL)
@@ -364,6 +366,7 @@ typedef CAI_Behavior<> CAI_SimpleBehavior;
 template <class BASE_NPC>
 class CAI_BehaviorHostBase : public BASE_NPC
 {
+public:
 	DECLARE_CLASS( CAI_BehaviorHostBase, BASE_NPC );
 
 protected:
@@ -376,8 +379,8 @@ protected:
 template <class BASE_NPC>
 class CAI_BehaviorHost : public CAI_BehaviorHostBase<BASE_NPC>
 {
-	DECLARE_CLASS( CAI_BehaviorHost, CAI_BehaviorHostBase<BASE_NPC> );
 public:
+	DECLARE_CLASS( CAI_BehaviorHost, CAI_BehaviorHostBase<BASE_NPC> );
 
 	CAI_BehaviorHost()
 	{

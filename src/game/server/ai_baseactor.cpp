@@ -180,7 +180,7 @@ bool CAI_BaseActor::StartSceneEvent( CSceneEventInfo *info, CChoreoScene *scene,
 				Blink();
 				// don't blink for duration, or next random blink time
 				float flDuration = (event->GetEndTime() - scene->GetTime());
-				m_flBlinktime = gpGlobals->curtime + MAX( flDuration, random->RandomFloat( 1.5, 4.5 ) ); 
+				m_flBlinktime = gpGlobals->curtime + MAX( flDuration, random_valve->RandomFloat( 1.5, 4.5 ) ); 
 			}
 			else if (stricmp( event->GetParameters(), "AI_HOLSTER") == 0)
 			{
@@ -309,10 +309,10 @@ bool CAI_BaseActor::StartSceneEvent( CSceneEventInfo *info, CChoreoScene *scene,
 						}
 					}
 
-					if (pEnt && sInput)
+					if (pEnt && sInput[0])
 					{
 						variant_t variant;
-						if (bParameter && sParameter)
+						if (bParameter && sParameter[0])
 						{
 							const char *strParam = sParameter;
 							if (strParam[0] == '!')
@@ -474,7 +474,7 @@ bool CAI_BaseActor::ProcessSceneEvent( CSceneEventInfo *info, CChoreoScene *scen
 				goalYaw = CalcIdealYaw( info->m_hTarget->EyePosition() );
 			}
 
-			if (developer.GetInt() > 0 && scene_showfaceto.GetBool())
+			if (developer->GetInt() > 0 && scene_showfaceto.GetBool())
 			{
 				NDebugOverlay::YawArrow( GetAbsOrigin() + Vector( 0, 0, 1 ), goalYaw, 8 + 32 * intensity, 8, 255, 255, 255, 0, true, 0.12 );
 			}
@@ -609,10 +609,10 @@ bool CAI_BaseActor::RandomFaceFlex( CSceneEventInfo *info, CChoreoScene *scene, 
 		}
 		if ( pSettinghdr )
 		{
-			info->m_flNext = gpGlobals->curtime + random->RandomFloat( 0.3, 0.5 ) * (30.0 / pSettinghdr->numflexsettings);
+			info->m_flNext = gpGlobals->curtime + random_valve->RandomFloat( 0.3, 0.5 ) * (30.0 / pSettinghdr->numflexsettings);
 
 			flexsetting_t const *pSetting = NULL;
-			pSetting = pSettinghdr->pSetting( random->RandomInt( 0, pSettinghdr->numflexsettings - 1 ) );
+			pSetting = pSettinghdr->pSetting( random_valve->RandomInt( 0, pSettinghdr->numflexsettings - 1 ) );
 
 			flexweight_t *pWeights = NULL;
 			int truecount = pSetting->psetting( (byte *)pSettinghdr, 0, &pWeights );
@@ -649,7 +649,7 @@ bool CAI_BaseActor::RandomFaceFlex( CSceneEventInfo *info, CChoreoScene *scene, 
 
 		if (weight != m_flextarget[i])
 		{
-			float delta = (m_flextarget[i] - weight) / random->RandomFloat( 2.0, 4.0 );
+			float delta = (m_flextarget[i] - weight) / random_valve->RandomFloat( 2.0, 4.0 );
 			weight = weight + delta * intensity;
 		}
 		weight = clamp( weight, 0.0f, 1.0f );
@@ -1251,9 +1251,9 @@ float CAI_BaseActor::PickLookTarget( CAI_InterestTarget &queue, bool bExcludePla
 	AILookTargetArgs_t args;
 	
 	args.vTarget			= vec3_invalid;
-	args.flDuration			= random->RandomFloat( minTime, maxTime );
-	args.flInfluence		= random->RandomFloat( 0.3, 0.5 );
-	args.flRamp				= random->RandomFloat( 0.2, 0.4 );
+	args.flDuration			= random_valve->RandomFloat( minTime, maxTime );
+	args.flInfluence		= random_valve->RandomFloat( 0.3, 0.5 );
+	args.flRamp				= random_valve->RandomFloat( 0.2, 0.4 );
 	args.bExcludePlayers	= bExcludePlayers;
 	args.pQueue				= &queue;
 	
@@ -1297,18 +1297,18 @@ bool CAI_BaseActor::PickTacticalLookTarget( AILookTargetArgs_t *pArgs )
 
 	if (pEnemy != NULL)
 	{
-		if ( ( FVisible( pEnemy ) || random->RandomInt(0, 3) == 0 ) && ValidHeadTarget(pEnemy->EyePosition()))
+		if ( ( FVisible( pEnemy ) || random_valve->RandomInt(0, 3) == 0 ) && ValidHeadTarget(pEnemy->EyePosition()))
 		{
 			// look at enemy closer
 			pArgs->hTarget = pEnemy;
-			pArgs->flInfluence = random->RandomFloat( 0.7, 1.0 );
+			pArgs->flInfluence = random_valve->RandomFloat( 0.7, 1.0 );
 			pArgs->flRamp = 0;
 			return true;
 		}
 		else
 		{
 			// look at something else for a shorter time
-			pArgs->flDuration = random->RandomFloat( 0.5, 0.8 );
+			pArgs->flDuration = random_valve->RandomFloat( 0.5, 0.8 );
 			// move head faster
 			pArgs->flRamp = 0.2;
 		}
@@ -1320,28 +1320,28 @@ bool CAI_BaseActor::PickRandomLookTarget( AILookTargetArgs_t *pArgs )
 {
 	bool bIsNavigating = ( GetNavigator()->IsGoalActive() && GetNavigator()->IsGoalSet() );
 	
-	if ( bIsNavigating && random->RandomInt(1, 10) <= 3 )
+	if ( bIsNavigating && random_valve->RandomInt(1, 10) <= 3 )
 	{
 		Vector navLookPoint;
 		Vector delta;
 		if ( GetNavigator()->GetPointAlongPath( &navLookPoint, 12 * 12 ) && (delta = navLookPoint - GetAbsOrigin()).Length() > 8.0 * 12.0 )
 		{
-			if ( random->RandomInt(1, 10) <= 5 )
+			if ( random_valve->RandomInt(1, 10) <= 5 )
 			{
 				pArgs->vTarget = navLookPoint;
-				pArgs->flDuration = random->RandomFloat( 0.2, 0.4 );
+				pArgs->flDuration = random_valve->RandomFloat( 0.2, 0.4 );
 			}
 			else
 			{
 				pArgs->hTarget = this;
-				pArgs->flDuration = random->RandomFloat( 1.0, 2.0 );
+				pArgs->flDuration = random_valve->RandomFloat( 1.0, 2.0 );
 			}
 			pArgs->flRamp = 0.2;
 			return true;
 		}
 	}
 
-	if ( GetState() == NPC_STATE_COMBAT && random->RandomInt(1, 10) <= 8 )
+	if ( GetState() == NPC_STATE_COMBAT && random_valve->RandomInt(1, 10) <= 8 )
 	{
 		// if in combat, look forward 80% of the time?
 		pArgs->hTarget = this;
@@ -1405,11 +1405,11 @@ bool CAI_BaseActor::PickRandomLookTarget( AILookTargetArgs_t *pArgs )
 		// keep track of number of interesting things
 		iConsidered++;
 
-		if ((pEntity->GetFlags() & FL_CLIENT) && (pEntity->IsMoving() || random->RandomInt( 0, 2) == 0))
+		if ((pEntity->GetFlags() & FL_CLIENT) && (pEntity->IsMoving() || random_valve->RandomInt( 0, 2) == 0))
 		{
 			if (FVisible( pEntity ) && ValidHeadTarget(pEntity->EyePosition()))
 			{
-				pArgs->flDuration = random->RandomFloat( 1.0, 4.0 );
+				pArgs->flDuration = random_valve->RandomFloat( 1.0, 4.0 );
 				pBestEntity = pEntity;
 				break;
 			}
@@ -1424,7 +1424,7 @@ bool CAI_BaseActor::PickRandomLookTarget( AILookTargetArgs_t *pArgs )
 		iImportance = (DotProduct( delta, HeadDirection3D() );
 #else
 		// No, for now, give all targets random priority (as long as they're in front)
-		iImportance = random->RandomInt( 1, 100 );
+		iImportance = random_valve->RandomInt( 1, 100 );
 		
 #endif
 		// make other npcs, and moving npc's far more important
@@ -1449,7 +1449,7 @@ bool CAI_BaseActor::PickRandomLookTarget( AILookTargetArgs_t *pArgs )
 	}
 
 	// if there were too few things to look at, don't trust the item
-	if (iConsidered < random->RandomInt( 0, 5))
+	if (iConsidered < random_valve->RandomInt( 0, 5))
 	{
 		pBestEntity = NULL;
 	}
@@ -1479,17 +1479,17 @@ void CAI_BaseActor::MakeRandomLookTarget( AILookTargetArgs_t *pArgs, float minTi
 #ifdef HL2_EPISODIC
 	if ( MyCombatCharacterPointer() && MyCombatCharacterPointer()->IsInAVehicle() )
 	{
-		pArgs->vTarget = EyePosition() + forward * 2048 + right * random->RandomFloat(-650,650) + up * random->RandomFloat(-32,32);
+		pArgs->vTarget = EyePosition() + forward * 2048 + right * random_valve->RandomFloat(-650,650) + up * random_valve->RandomFloat(-32,32);
 	}
 	else
 #endif // HL2_EPISODIC
 	{
-		pArgs->vTarget = EyePosition() + forward * 128 + right * random->RandomFloat(-32,32) + up * random->RandomFloat(-16,16);
+		pArgs->vTarget = EyePosition() + forward * 128 + right * random_valve->RandomFloat(-32,32) + up * random_valve->RandomFloat(-16,16);
 	}
 
-	pArgs->flDuration = random->RandomFloat( minTime, maxTime );
+	pArgs->flDuration = random_valve->RandomFloat( minTime, maxTime );
 	pArgs->flInfluence = 0.01;
-	pArgs->flRamp = random->RandomFloat( 0.8, 2.8 );
+	pArgs->flRamp = random_valve->RandomFloat( 0.8, 2.8 );
 }
 
 //-----------------------------------------------------------------------------
@@ -1821,7 +1821,7 @@ void CAI_BaseActor::MaintainLookTargets( float flInterval )
 		Vector right, up;
 		VectorVectors( HeadDirection3D(), right, up );
 		// DevMsg("random view\n");
-		SetViewtarget( EyePosition() + HeadDirection3D() * 128 + right * random->RandomFloat(-32,32) + up * random->RandomFloat(-16,16) );
+		SetViewtarget( EyePosition() + HeadDirection3D() * 128 + right * random_valve->RandomFloat(-32,32) + up * random_valve->RandomFloat(-16,16) );
 	}
 
 	if ( m_hLookTarget != NULL )
@@ -1872,7 +1872,7 @@ void CAI_BaseActor::MaintainLookTargets( float flInterval )
 	if (m_flBlinktime < gpGlobals->curtime)
 	{
 		Blink();
-		m_flBlinktime = gpGlobals->curtime + random->RandomFloat( 1.5, 4.5 );
+		m_flBlinktime = gpGlobals->curtime + random_valve->RandomFloat( 1.5, 4.5 );
 	}
 
 	if ( ai_debug_looktargets.GetInt() == 1 && (m_debugOverlays & OVERLAY_NPC_SELECTED_BIT) )

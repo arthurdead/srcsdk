@@ -100,10 +100,10 @@ DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_SHADOWS, "Shadows" );
 extern ClientShadowHandle_t g_hFlashlightHandle[MAX_PLAYERS + 1];
 
 static ConVar r_flashlightdrawfrustum( "r_flashlightdrawfrustum", "0" );
-static ConVar r_flashlightdrawfrustumbbox( "r_flashlightdrawfrustumbbox", "0" );
+extern ConVar *r_flashlightdrawfrustumbbox;
 static ConVar r_flashlightmodels( "r_flashlightmodels", "1" );
-static ConVar r_shadowrendertotexture( "r_shadowrendertotexture", "1" );
-static ConVar r_flashlight_version2( "r_flashlight_version2", "0", FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY );
+extern ConVar *r_shadowrendertotexture;
+extern ConVar *r_flashlight_version2;
 
 void WorldLightCastShadowCallback(IConVar *pVar, const char *pszOldValue, float flOldValue);
 static ConVar r_worldlight_castshadows( "r_worldlight_castshadows", "1", FCVAR_CHEAT, "Allow world lights to cast shadows", true, 0, true, 1, WorldLightCastShadowCallback );
@@ -124,7 +124,7 @@ static ConVar r_shadow_rtt_mode( "r_shadow_rtt_mode", "1" );
 static ConVar r_shadow_rtt_farz( "r_shadow_rtt_farz", "100" );
 static ConVar r_shadow_pcss_scale_falloff( "r_shadow_pcss_scale_falloff", "10" );
 
-ConVar r_flashlightdepthtexture( "r_flashlightdepthtexture", "1" );
+extern ConVar *r_flashlightdepthtexture;
 ConVar r_max_shadowtextures( "r_max_shadowtextures", "8" );
 
 ConVar r_flashlight_staticprops( "r_flashlight_staticprops", "2" );
@@ -134,8 +134,8 @@ ConVar r_flashlightdepthres("r_flashlightdepthres", "4096", FCVAR_ARCHIVE, "Flas
 
 ConVar r_threaded_client_shadow_manager( "r_threaded_client_shadow_manager", "1" );
 
-ConVar mat_slopescaledepthbias_shadowmap( "mat_slopescaledepthbias_shadowmap", "16", FCVAR_CHEAT );
-ConVar mat_depthbias_shadowmap(	"mat_depthbias_shadowmap", "0.0005", FCVAR_CHEAT  );
+extern ConVar *mat_slopescaledepthbias_shadowmap;
+extern ConVar *mat_depthbias_shadowmap;
 
 #ifdef _WIN32
 #pragma warning( disable: 4701 )
@@ -731,9 +731,9 @@ void CTextureAllocator::GetTextureRect(TextureHandle_t handle, int& x, int& y, i
 #define MAX_CLIP_PLANE_COUNT 4
 #define SHADOW_CULL_TOLERANCE 0.5f
 
-static ConVar r_shadows( "r_shadows", "1" ); // hook into engine's cvars..
+extern ConVar *r_shadows; // hook into engine's cvars..
 static ConVar r_shadowmaxrendered("r_shadowmaxrendered", "32");
-static ConVar r_shadows_gamecontrol( "r_shadows_gamecontrol", "-1", FCVAR_CHEAT );	 // hook into engine's cvars..
+extern ConVar *r_shadows_gamecontrol;	 // hook into engine's cvars..
 
 //-----------------------------------------------------------------------------
 // The class responsible for dealing with shadows on the client side
@@ -854,7 +854,7 @@ public:
 
 	void SetShadowsDisabled( bool bDisabled ) 
 	{ 
-		r_shadows_gamecontrol.SetValue( bDisabled != 1 );
+		r_shadows_gamecontrol->SetValue( bDisabled != 1 );
 	}
 
 	// Toggle shadow casting from world light sources
@@ -1136,8 +1136,7 @@ IClientShadowMgr* g_pClientShadowMgr = &s_ClientShadowMgr;
 
 void ThreadedShadowMGRCallback(IConVar *var, const char *pOldValue, float flOldValue)
 {
-	const ConVarRef thread(var);
-	s_ClientShadowMgr.m_bThreaded = thread.GetBool();
+	s_ClientShadowMgr.m_bThreaded = ((ConVar *)var)->GetBool();
 }
 
 //-----------------------------------------------------------------------------
@@ -1494,12 +1493,14 @@ static void ShadowRestoreFunc( int nChangeFlags )
 	s_ClientShadowMgr.RestoreRenderState();
 }
 
+extern ConVar *r_flashlightscissor;
+
 //-----------------------------------------------------------------------------
 // Initialization, shutdown
 //-----------------------------------------------------------------------------
 bool CClientShadowMgr::Init()
 {
-	ConVarRef( "r_flashlightscissor" ).SetValue( 0 );
+	r_flashlightscissor->SetValue( 0 );
 
 	return true;
 }
@@ -1517,19 +1518,19 @@ void CClientShadowMgr::InitRenderTargets()
 
 	bool bLowEnd = ( g_pMaterialSystemHardwareConfig->GetDXSupportLevel() < 80 );
 
-	if ( !bLowEnd && r_shadowrendertotexture.GetBool() )
+	if ( !bLowEnd && r_shadowrendertotexture->GetBool() )
 	{
 		InitRenderToTextureShadows();
 	}
 
 	// If someone turned shadow depth mapping on but we can't do it, force it off
-	if ( r_flashlightdepthtexture.GetBool() && !g_pMaterialSystem->SupportsShadowDepthTextures() )
+	if ( r_flashlightdepthtexture->GetBool() && !g_pMaterialSystem->SupportsShadowDepthTextures() )
 	{
-		r_flashlightdepthtexture.SetValue( 0 );
+		r_flashlightdepthtexture->SetValue( 0 );
 		ShutdownDepthTextureShadows();	
 	}
 
-	if ( !bLowEnd && r_flashlightdepthtexture.GetBool() )
+	if ( !bLowEnd && r_flashlightdepthtexture->GetBool() )
 	{
 		InitDepthTextureShadows();
 	}
@@ -1589,7 +1590,7 @@ void CClientShadowMgr::InitDepthTextureShadows()
 	if ( m_bDepthTextureActive )
 		return;
 
-	if ( !r_flashlightdepthtexture.GetBool() )
+	if ( !r_flashlightdepthtexture->GetBool() )
 		return;
 
 	m_bDepthTextureActive = true;
@@ -1677,11 +1678,6 @@ void CClientShadowMgr::ShutdownDepthTextureShadows()
 //-----------------------------------------------------------------------------
 void CClientShadowMgr::InitRenderToTextureShadows()
 {
-	if( !GetMaterialProxyDict().ProxyExists("Shadow") ||
-		!GetMaterialProxyDict().ProxyExists("ShadowModel")) {
-		return;
-	}
-
 	if ( !m_RenderToTextureActive )
 	{
 		m_RenderToTextureActive = true;
@@ -1843,7 +1839,7 @@ void CClientShadowMgr::LevelShutdownPostEntity()
 		m_ShadowAllocator.DeallocateAllTextures();
 	}
 
-	r_shadows_gamecontrol.SetValue( -1 );
+	r_shadows_gamecontrol->SetValue( -1 );
 }
 
 
@@ -2207,7 +2203,7 @@ ClientShadowHandle_t CClientShadowMgr::CreateFlashlight( const FlashlightState_t
 	static ClientEntityHandle_t invalidHandle = INVALID_CLIENTENTITY_HANDLE;
 
 	int shadowFlags = SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_LIGHT_WORLD;
-	if( lightState.m_bEnableShadows && r_flashlightdepthtexture.GetBool() )
+	if( lightState.m_bEnableShadows && r_flashlightdepthtexture->GetBool() )
 	{
 		shadowFlags |= SHADOW_FLAGS_USE_DEPTH_TEXTURE;
 	}
@@ -2255,7 +2251,7 @@ void CClientShadowMgr::UpdateFlashlightState( ClientShadowHandle_t shadowHandle,
 {
 	VPROF_BUDGET( "CClientShadowMgr::UpdateFlashlightState", VPROF_BUDGETGROUP_SHADOW_DEPTH_TEXTURING );
 
-	if( flashlightState.m_bEnableShadows && r_flashlightdepthtexture.GetBool() )
+	if( flashlightState.m_bEnableShadows && r_flashlightdepthtexture->GetBool() )
 	{
 		m_Shadows[(uint)shadowHandle].m_Flags |= SHADOW_FLAGS_USE_DEPTH_TEXTURE;
 	}
@@ -2273,7 +2269,7 @@ void CClientShadowMgr::UpdateFlashlightState( ClientShadowHandle_t shadowHandle,
 {
 	VPROF_BUDGET( "CClientShadowMgr::UpdateFlashlightState", VPROF_BUDGETGROUP_SHADOW_DEPTH_TEXTURING );
 
-	if( flashlightState.m_bEnableShadows && r_flashlightdepthtexture.GetBool() )
+	if( flashlightState.m_bEnableShadows && r_flashlightdepthtexture->GetBool() )
 	{
 		m_Shadows[(uint)shadowHandle].m_Flags |= SHADOW_FLAGS_USE_DEPTH_TEXTURE;
 	}
@@ -3778,7 +3774,7 @@ void CClientShadowMgr::BuildFlashlight( ClientShadowHandle_t handle )
 	// For the 360, we just draw flashlights with the main geometry
 	// and bypass the entire shadow casting system.
 	ClientShadow_t &shadow = m_Shadows[(uint)handle];
-	if ( r_flashlight_version2.GetInt() )
+	if ( r_flashlight_version2->GetInt() )
 	{
 		// This will update the matrices, but not do work to add the flashlight to surfaces
 		shadowmgr->ProjectFlashlight( shadow.m_ShadowHandle, shadow.m_WorldToShadow, 0, NULL );
@@ -4046,13 +4042,13 @@ void CClientShadowMgr::ReprojectShadows()
 
 	{
 		// If someone turned shadow depth mapping on but we can't do it, force it off
-		if ( r_flashlightdepthtexture.GetBool() && !g_pMaterialSystem->SupportsShadowDepthTextures() )
+		if ( r_flashlightdepthtexture->GetBool() && !g_pMaterialSystem->SupportsShadowDepthTextures() )
 		{
-			r_flashlightdepthtexture.SetValue( 0 );
+			r_flashlightdepthtexture->SetValue( 0 );
 			ShutdownDepthTextureShadows();	
 		}
 
-		bool bDepthTextureActive     = r_flashlightdepthtexture.GetBool();
+		bool bDepthTextureActive     = r_flashlightdepthtexture->GetBool();
 		int  nDepthTextureResolution = r_flashlightdepthres.GetInt();
 		int  nDepthTextureResolutionHigh = r_flashlightdepthreshigh.GetInt();
 
@@ -4083,12 +4079,12 @@ void CClientShadowMgr::ReprojectShadows()
 	//
 	// -- Render to Texture Shadows -----------------------
 	//
-	if ( !r_shadows.GetBool() )
+	if ( !r_shadows->GetBool() )
 	{
 		return;
 	}
 
-	bool bRenderToTextureActive = r_shadowrendertotexture.GetBool() &&
+	bool bRenderToTextureActive = r_shadowrendertotexture->GetBool() &&
 		( g_pCSMEnvLight == NULL || !g_pCSMEnvLight->IsCascadedShadowMappingEnabled() );
 
 	if ( bRenderToTextureActive != m_RenderToTextureActive )
@@ -5350,7 +5346,7 @@ void CClientShadowMgr::SetViewFlashlightState( int nActiveFlashlightCount, Clien
 	// NOTE: On the 360, we render the entire scene with the flashlight state
 	// set and don't render flashlights additively in the shadow mgr at a far later time
 	// because the CPU costs are prohibitive
-	if ( !r_flashlight_version2.GetInt() )
+	if ( !r_flashlight_version2->GetInt() )
 		return;
 
 	if ( m_nMaxDepthTextureShadows > 1 )
@@ -5406,7 +5402,7 @@ void CClientShadowMgr::GetFrustumExtents( ClientShadowHandle_t handle, Vector &v
 //-----------------------------------------------------------------------------
 void CClientShadowMgr::ComputeShadowDepthTextures( const CViewSetup &viewSetup )
 {
-	if ( !r_flashlightdepthtexture.GetBool() )
+	if ( !r_flashlightdepthtexture->GetBool() )
 	{
 		// Build list of active flashlights
 		ClientShadowHandle_t pActiveFlashlights[16];
@@ -5434,7 +5430,7 @@ void CClientShadowMgr::ComputeShadowDepthTextures( const CViewSetup &viewSetup )
 
 	// Iterate over all existing textures and allocate shadow textures
 	bool bDebugFrustum = r_flashlightdrawfrustum.GetBool();
-	bool bDebugFrustumBBox = r_flashlightdrawfrustumbbox.GetBool();
+	bool bDebugFrustumBBox = r_flashlightdrawfrustumbbox->GetBool();
 	for ( int j = 0; j < nActiveDepthShadowCount; ++j )
 	{
 		ClientShadow_t& shadow = m_Shadows[ (uint)pActiveDepthShadows[j] ];
@@ -5561,7 +5557,7 @@ void CClientShadowMgr::ComputeShadowTextures( const CViewSetup &view, int leafCo
 {
 	VPROF_BUDGET( "CClientShadowMgr::ComputeShadowTextures", VPROF_BUDGETGROUP_SHADOW_RENDERING );
 
-	if ( !m_RenderToTextureActive || (r_shadows.GetInt() == 0) || r_shadows_gamecontrol.GetInt() == 0 )
+	if ( !m_RenderToTextureActive || (r_shadows->GetInt() == 0) || r_shadows_gamecontrol->GetInt() == 0 )
 		return;
 
 	m_bThreaded = ( r_threaded_client_shadow_manager.GetBool() && g_pThreadPool->NumIdleThreads() );
@@ -5882,7 +5878,7 @@ void CClientShadowMgr::UpdateShadowDirectionFromLocalLightSource( ClientShadowHa
 
 void WorldLightCastShadowCallback(IConVar *pVar, const char *pszOldValue, float flOldValue)
 {	
-	s_ClientShadowMgr.SetShadowFromWorldLightsEnabled( ConVarRef( pVar ).GetBool() );
+	s_ClientShadowMgr.SetShadowFromWorldLightsEnabled( ((ConVar *)pVar)->GetBool() );
 }
 
 void CClientShadowMgr::SetShadowFromWorldLightsEnabled( bool bEnabled )

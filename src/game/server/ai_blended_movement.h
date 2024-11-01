@@ -123,7 +123,7 @@ private:
 
 		void Init( void )
 		{
-			memset( this, 0, sizeof(*this) );
+			memset( (void *)this, 0, sizeof(*this) );
 		};
 
 		float	flTime;			// time till next entry
@@ -212,8 +212,8 @@ private:
 template <class BASE_NPC>
 class CAI_BlendingHost : public BASE_NPC
 {
-	DECLARE_CLASS_NOFRIEND( CAI_BlendingHost, BASE_NPC );
 public:
+	DECLARE_CLASS_NOFRIEND( CAI_BlendingHost, BASE_NPC );
 	const CAI_BlendedMotor *GetBlendedMotor() const { return assert_cast<const CAI_BlendedMotor *>(this->GetMotor()); }
 	CAI_BlendedMotor *		GetBlendedMotor()		{ return assert_cast<CAI_BlendedMotor *>(this->GetMotor()); }
 
@@ -252,6 +252,7 @@ public:
 // to simplify basic usage:
 class CAI_BlendedNPC : public CAI_BlendingHost<CAI_BaseNPC>
 {
+public:
 	DECLARE_CLASS( CAI_BlendedNPC, CAI_BlendingHost<CAI_BaseNPC> );
 };
 

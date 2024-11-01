@@ -38,7 +38,7 @@ if build_libs
 			join_paths(mathlib_src_dir,'color_conversion.cpp'),
 			join_paths(mathlib_src_dir,'randsse.cpp'),
 			join_paths(mathlib_src_dir,'mathlib_base.cpp'),
-			join_paths(mathlib_src_dir,'linker_fixes.cpp')
+			join_paths(mathlib_src_dir,'gcc_linker_fixes.cpp')
 		),
 		include_directories: include_directories(
 			join_paths(src_root_dir,'public','mathlib'),

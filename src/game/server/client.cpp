@@ -36,6 +36,7 @@
 #include "tier1/fmtstr.h"
 #include "EventLog.h"
 #include "playeranimstate.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -43,8 +44,6 @@
 // For not just using one big ai net
 extern CBaseEntity*	FindPickerEntity( CBasePlayer* pPlayer );
 extern CBaseEntity *FindPickerEntityClass(CBasePlayer *pPlayer, const char *classname);
-
-ConVar  *sv_cheats = NULL;
 
 ConVar sv_motd_unload_on_dismissal("sv_motd_unload_on_dismissal", "0", 0, "If enabled, the MOTD contents will be unloaded when the player closes the MOTD.");
 
@@ -59,13 +58,7 @@ eAllowPointServerCommand sAllowPointServerCommand = eAllowOfficial;
 
 void sv_allow_point_servercommand_changed( IConVar *pConVar, const char *pOldString, float flOldValue )
 {
-	ConVarRef var( pConVar );
-	if ( !var.IsValid() )
-	{
-		return;
-	}
-
-	const char *pNewValue = var.GetString();
+	const char *pNewValue = ((ConVar *)pConVar)->GetString();
 	if ( V_strcasecmp ( pNewValue, "always" ) == 0 )
 	{
 		sAllowPointServerCommand = eAllowAlways;
@@ -1701,7 +1694,7 @@ void ClientCommand( CBasePlayer *pPlayer, const CCommand &args )
 	
 	if ( FStrEq( pCmd, "killtarget" ) )
 	{
-		if ( g_pDeveloper->GetBool() && sv_cheats->GetBool() && UTIL_IsCommandIssuedByServerAdmin() )
+		if ( developer->GetBool() && sv_cheats->GetBool() && UTIL_IsCommandIssuedByServerAdmin() )
 		{
 			ConsoleKillTarget( pPlayer, args[1] );
 		}

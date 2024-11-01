@@ -16,6 +16,7 @@
 #include "engine/IStaticPropMgr.h"
 #include "c_impact_effects.h"
 #include "tier0/vprof.h"
+#include "ragdoll.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -141,7 +142,7 @@ bool Impact( const Vector &vecOrigin, const Vector &vecStart, int iMaterial, int
 	}
 
 	// Clear out the trace
-	memset( &tr, 0, sizeof(trace_t));
+	memset( (void *)&tr, 0, sizeof(trace_t));
 	tr.fraction = 1.0f;
 
 	// Setup our shot information
@@ -481,9 +482,9 @@ void PerformCustomEffects( const Vector &vecOrigin, trace_t &tr, const Vector &s
 		float	dot = shotDir.Dot( tr.plane.normal );
 		reflect = shotDir + ( tr.plane.normal * ( dot*-2.0f ) );
 
-		reflect[0] += random->RandomFloat( -0.2f, 0.2f );
-		reflect[1] += random->RandomFloat( -0.2f, 0.2f );
-		reflect[2] += random->RandomFloat( -0.2f, 0.2f );
+		reflect[0] += random_valve->RandomFloat( -0.2f, 0.2f );
+		reflect[1] += random_valve->RandomFloat( -0.2f, 0.2f );
+		reflect[2] += random_valve->RandomFloat( -0.2f, 0.2f );
 
 		FX_MetalSpark( vecOrigin, reflect, tr.plane.normal, iScale );
 	}

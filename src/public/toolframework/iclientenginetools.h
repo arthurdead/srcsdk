@@ -8,6 +8,8 @@
 #define ICLIENTENGINETOOLS_H
 #pragma once
 
+#ifndef SWDS
+
 #include "interface.h"
 #include "toolframework/itoolentity.h" // HTOOLHANDLE
 
@@ -53,5 +55,7 @@ public:
 };
 
 #define VCLIENTENGINETOOLS_INTERFACE_VERSION "VCLIENTENGINETOOLS001"
+
+#endif
 
 #endif // ICLIENTENGINETOOLS_H

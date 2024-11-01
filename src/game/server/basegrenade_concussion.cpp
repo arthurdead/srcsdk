@@ -39,21 +39,21 @@ void CBaseGrenadeConcussion::FallThink(void)
 	}
 	CSoundEnt::InsertSound ( SOUND_DANGER, GetAbsOrigin() + GetAbsVelocity() * 0.5, GetAbsVelocity().Length( ), 0.2 );
 
-	SetNextThink( gpGlobals->curtime + random->RandomFloat(0.05, 0.1) );
+	SetNextThink( gpGlobals->curtime + random_valve->RandomFloat(0.05, 0.1) );
 
 	if (GetWaterLevel() != 0)
 	{
 		SetAbsVelocity( GetAbsVelocity() * 0.5 );
 	}
 
-	Vector 	pos = GetAbsOrigin() + Vector(random->RandomFloat(-4, 4), random->RandomFloat(-4, 4), random->RandomFloat(-4, 4));
+	Vector 	pos = GetAbsOrigin() + Vector(random_valve->RandomFloat(-4, 4), random_valve->RandomFloat(-4, 4), random_valve->RandomFloat(-4, 4));
 
 	CPVSFilter filter( GetAbsOrigin() );
 
 	te->Sprite( filter, 0.0,
 		&pos,
 		m_nTrailSprite,
-		random->RandomFloat(0.5, 0.8),
+		random_valve->RandomFloat(0.5, 0.8),
 		200 );
 }
 
@@ -100,7 +100,7 @@ void CBaseGrenadeConcussion::Spawn( void )
 	SetNextThink( gpGlobals->curtime );
 	
 	// Tumble in air
-	QAngle vecAngVel( random->RandomFloat ( -100, -500 ), 0, 0 );
+	QAngle vecAngVel( random_valve->RandomFloat ( -100, -500 ), 0, 0 );
 	SetLocalAngularVelocity( vecAngVel );
 	
 	// Explode on contact

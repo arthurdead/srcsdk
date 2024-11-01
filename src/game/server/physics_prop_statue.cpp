@@ -11,6 +11,7 @@
 #include "bone_setup.h"
 #include "EntityFreezing.h"
 //#include "particle_parse.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -29,13 +30,11 @@ IMPLEMENT_SERVERCLASS_ST( CStatueProp, DT_StatueProp )
 	SendPropVector( SENDINFO( m_vShatterForce ) ),
 END_SEND_TABLE()
 
-ConVarRef *s_vcollide_wireframe = NULL;
+extern ConVar *vcollide_wireframe;
 
 
 CStatueProp::CStatueProp( void )
 {
-	static ConVarRef vcollide_wireframe( "vcollide_wireframe" );
-	s_vcollide_wireframe = &vcollide_wireframe;
 	m_pInitOBBs = NULL;
 }
 
@@ -77,7 +76,7 @@ void CStatueProp::VPhysicsUpdate( IPhysicsObject *pPhysics )
 {
 	BaseClass::VPhysicsUpdate( pPhysics );
 
-	if ( s_vcollide_wireframe->GetBool() )
+	if ( vcollide_wireframe->GetBool() )
 	{
 		const CPhysCollide *pCollide = pPhysics->GetCollide();
 

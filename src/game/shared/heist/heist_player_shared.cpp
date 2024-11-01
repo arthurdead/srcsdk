@@ -5,6 +5,7 @@
 #include "c_heist_player.h"
 #else
 #include "heist_player.h"
+#include "heist_director.h"
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -55,4 +56,41 @@ void CSharedHeistPlayer::EquipMask()
 
 	float duration = gpGlobals->curtime + pViewModel->SequenceDuration();
 	SetNextAttack(duration);
+
+	m_bMaskingUp = true;
+}
+
+void CSharedHeistPlayer::Weapon_FrameUpdate()
+{
+	BaseClass::Weapon_FrameUpdate();
+
+	CSharedBaseViewModel *pViewModel = GetViewModel(VIEWMODEL_HANDS, false);
+	if(m_bMaskingUp) {
+		pViewModel->StudioFrameAdvance();
+
+		bool finished = (pViewModel->IsSequenceFinished() || pViewModel->GetCycle() >= 0.8f);
+
+	#ifdef GAME_DLL
+		if(finished) {
+			MissionDirector()->MakeMissionLoud();
+		}
+	#endif
+
+		if(finished) {
+			pViewModel->AddEffects(EF_NODRAW);
+
+		#ifdef GAME_DLL
+			BaseClass::EquipSuit(false);
+		#endif
+
+			m_bMaskingUp = false;
+
+			CSharedBaseCombatWeapon *pWeapon = GetActiveWeapon();
+			if(pWeapon) {
+				pWeapon->Deploy();
+			} else {
+				SwitchToNextBestWeapon(NULL);
+			}
+		}
+	}
 }

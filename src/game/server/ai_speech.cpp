@@ -16,6 +16,8 @@
 #include "ai_criteria.h"
 #include "sceneentity.h"
 #include "ai_squad.h"
+#include "world.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -87,7 +89,7 @@ float CAI_Expresser::GetSemaphoreAvailableTime( CBaseEntity *pTalker )
 
 int CAI_Expresser::GetVoicePitch() const
 {
-	return m_voicePitch + random->RandomInt(0,3);
+	return m_voicePitch + random_valve->RandomInt(0,3);
 }
 
 /////////////////////////////////////////////////
@@ -454,8 +456,7 @@ bool CAI_Expresser::FindResponse( AI_Response &outResponse, AIConcept_t &concept
 	}
 	else if ( worldWritebackCriteria.GetCount() > 0 )
 	{
-		Assert( CBaseEntity::Instance( INDEXENT( 0 ) )->IsWorld( ) );
-		worldWritebackCriteria.WriteToEntity( CBaseEntity::Instance( INDEXENT( 0 ) ) );
+		worldWritebackCriteria.WriteToEntity( GetWorldEntity() );
 	}
 
 	if ( outResponse.IsEmpty() )
@@ -644,7 +645,7 @@ bool CAI_Expresser::SpeakDispatchResponse( AIConcept_t &concept, AI_Response *re
 			}
 			else
 			{
-				if ( g_pDeveloper->GetInt() > 0 )
+				if ( developer->GetInt() > 0 )
 				{
 					Vector vPrintPos;
 					GetOuter()->CollisionProp()->NormalizedToWorldSpace( Vector(0.5,0.5,1.0f), &vPrintPos );
@@ -668,7 +669,7 @@ bool CAI_Expresser::SpeakDispatchResponse( AIConcept_t &concept, AI_Response *re
 	if ( spoke )
 	{
 		m_flLastTimeAcceptedSpeak = gpGlobals->curtime;
-		if ( DebuggingSpeech() && g_pDeveloper->GetInt() > 0 && response && result->GetType() != ResponseRules::RESPONSE_PRINT )
+		if ( DebuggingSpeech() && developer->GetInt() > 0 && response[0] && result->GetType() != ResponseRules::RESPONSE_PRINT )
 		{
 			Vector vPrintPos;
 			GetOuter()->CollisionProp()->NormalizedToWorldSpace( Vector(0.5,0.5,1.0f), &vPrintPos );

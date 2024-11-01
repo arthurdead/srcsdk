@@ -10,6 +10,10 @@ PLATFORM_INTERFACE ICommandLine *CommandLine_Tier0();
 DLL_EXPORT ICommandLine *CommandLine()
 { return CommandLine_Tier0(); }
 
+#ifdef __MINGW32__
+LIB_EXPORT SYMALIAS("CommandLine") ICommandLine *_imp__CommandLine();
+#endif
+
 static bool commandline_initalized = false;
 
 void HackMgr_InitCommandLine()

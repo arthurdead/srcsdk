@@ -295,8 +295,8 @@ struct MaterialLightingState_t
 
 	MaterialLightingState_t &operator=( const MaterialLightingState_t &src )
 	{
-		memcpy( this, &src, sizeof(MaterialLightingState_t) - MATERIAL_MAX_LIGHT_COUNT * sizeof(LightDesc_t) );
-		memcpy( m_pLocalLightDesc, &src.m_pLocalLightDesc, src.m_nLocalLightCount * sizeof(LightDesc_t) );
+		memcpy( (void *)this, (void *)&src, sizeof(MaterialLightingState_t) - MATERIAL_MAX_LIGHT_COUNT * sizeof(LightDesc_t) );
+		memcpy( (void *)m_pLocalLightDesc, (void *)&src.m_pLocalLightDesc, src.m_nLocalLightCount * sizeof(LightDesc_t) );
 		return *this;
 	}
 };
@@ -307,8 +307,8 @@ struct MaterialLightingStateEx_t : public MaterialLightingState_t
 
 	MaterialLightingStateEx_t &operator=( const MaterialLightingStateEx_t &src )
 	{
-		memcpy( this, &src, sizeof(MaterialLightingStateEx_t) - MATERIAL_MAX_LIGHT_COUNT * sizeof(LightDesc_t) );
-		memcpy( m_pLocalLightDesc, &src.m_pLocalLightDesc, src.m_nLocalLightCount * sizeof(LightDesc_t) );
+		memcpy( (void *)this, (void *)&src, sizeof(MaterialLightingStateEx_t) - MATERIAL_MAX_LIGHT_COUNT * sizeof(LightDesc_t) );
+		memcpy( (void *)m_pLocalLightDesc, (void *)&src.m_pLocalLightDesc, src.m_nLocalLightCount * sizeof(LightDesc_t) );
 		return *this;
 	}
 };
@@ -1664,7 +1664,7 @@ template< class E > inline E* IMatRenderContext::LockRenderDataTyped( int nCount
 	E *pDstData = (E*)LockRenderData( nSizeInBytes );
 	if ( pSrcData && pDstData )
 	{
-		memcpy( pDstData, pSrcData, nSizeInBytes );
+		memcpy( (void *)pDstData, (void *)pSrcData, nSizeInBytes );
 	}
 	return pDstData;
 }

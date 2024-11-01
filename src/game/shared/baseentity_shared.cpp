@@ -20,6 +20,8 @@
 #include "coordsize.h"
 #include "vphysics/performance.h"
 #include "ai_criteria.h"
+#include "variant_t.h"
+#include "collisionproperty.h"
 
 #ifdef CLIENT_DLL
 	#include "c_te_effect_dispatch.h"
@@ -46,10 +48,11 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#ifdef GAME_DLL
-ConVar ent_debugkeys( "ent_debugkeys", "" );
 extern bool ParseKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, const char *szKeyName, const char *szValue );
 extern bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, const char *szKeyName, char *szValue, int iMaxLen );
+
+#ifdef GAME_DLL
+ConVar ent_debugkeys( "ent_debugkeys", "" );
 #endif
 
 bool CSharedBaseEntity::m_bAllowPrecache = false;
@@ -281,6 +284,69 @@ bool CSharedBaseEntity::IsAIWalkable( void )
 	return !IsEFlagSet(EFL_DONTWALKON);
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Verifies that this entity's data description is valid in debug builds.
+//-----------------------------------------------------------------------------
+#ifdef _DEBUG
+typedef CUtlVector< const char * >	KeyValueNameList_t;
+
+static void AddDataMapFieldNamesToList( KeyValueNameList_t &list, datamap_t *pDataMap )
+{
+	while (pDataMap != NULL)
+	{
+		for (int i = 0; i < pDataMap->dataNumFields; i++)
+		{
+			typedescription_t *pField = &pDataMap->dataDesc[i];
+
+			if (pField->fieldType == FIELD_EMBEDDED)
+			{
+				AddDataMapFieldNamesToList( list, pField->td );
+				continue;
+			}
+
+			if ((pField->flags & (FTYPEDESC_KEY|FTYPEDESC_INPUT|FTYPEDESC_OUTPUT)) == 0)
+			{
+				AssertMsg( 0,"%s has non map data description\n", pDataMap->dataClassName);
+				continue;
+			}
+
+			if ((pField->flags & FTYPEDESC_KEY) != 0)
+			{
+				list.AddToTail( pField->externalName );
+			}
+		}
+	
+		pDataMap = pDataMap->baseMap;
+	}
+}
+
+void CSharedBaseEntity::ValidateDataDescription(void)
+{
+	// Multiple key fields that have the same name are not allowed - it creates an
+	// ambiguity when trying to parse keyvalues and outputs.
+	datamap_t *pDataMap = GetMapDataDesc();
+	if ((pDataMap == NULL) || pDataMap->bValidityChecked)
+		return;
+
+	pDataMap->bValidityChecked = true;
+
+	// Let's generate a list of all keyvalue strings in the entire hierarchy...
+	KeyValueNameList_t	names(128);
+	AddDataMapFieldNamesToList( names, pDataMap );
+
+	for (int i = names.Count(); --i > 0; )
+	{
+		for (int j = i - 1; --j >= 0; )
+		{
+			if (!Q_stricmp(names[i], names[j]))
+			{
+				Log_Msg(LOG_MAPPARSE, "%s has multiple data description entries for \"%s\"\n", STRING(m_iClassname), names[i]);
+				break;
+			}
+		}
+	}
+}
+#endif // _DEBUG
 
 //-----------------------------------------------------------------------------
 // Purpose: Handles keys and outputs from the BSP.
@@ -292,9 +358,7 @@ void CSharedBaseEntity::ParseMapData( CEntityMapData *mapData )
 	char value[MAPKEY_MAXLENGTH];
 
 	#ifdef _DEBUG
-	#ifdef GAME_DLL
 	ValidateDataDescription();
-	#endif // GAME_DLL
 	#endif // _DEBUG
 
 	// loop through all keys in the data block and pass the info back into the object
@@ -308,6 +372,90 @@ void CSharedBaseEntity::ParseMapData( CEntityMapData *mapData )
 	}
 
 	OnParseMapDataFinished();
+}
+
+bool CSharedPointEntity::KeyValue( const char *szKeyName, const char *szValue ) 
+{
+	if ( FStrEq( szKeyName, "rendercolor" ))
+	{
+		return false;
+	}
+
+	if ( FStrEq( szKeyName, "rendercolor24" ))
+	{
+		return false;
+	}
+
+	if ( FStrEq( szKeyName, "rendercolor32" ))
+	{
+		return false;
+	}
+	
+	if ( FStrEq( szKeyName, "renderamt" ) )
+	{
+		return false;
+	}
+
+	if ( FStrEq( szKeyName, "disableshadows" ))
+	{
+		return false;
+	}
+
+	if (FStrEq(szKeyName, "disableshadowdepth"))
+	{
+		return false;
+	}
+
+	if ( FStrEq( szKeyName, "mins" ))
+	{
+		return false;
+	}
+
+	if ( FStrEq( szKeyName, "maxs" ))
+	{
+		return false;
+	}
+
+	if ( FStrEq( szKeyName, "disablereceiveshadows" ))
+	{
+		return false;
+	}
+
+	if (FStrEq(szKeyName, "disableflashlight"))
+	{
+		return false;
+	}
+
+	if ( FStrEq( szKeyName, "mingpulevel" ))
+	{
+		return true;
+	}
+	if ( FStrEq( szKeyName, "maxgpulevel" ))
+	{
+		return true;
+	}
+
+	return BaseClass::KeyValue( szKeyName, szValue );
+}
+
+bool CSharedLogicalEntity::KeyValue( const char *szKeyName, const char *szValue ) 
+{
+	if( FStrEq( szKeyName, "angle" ) )
+	{
+		return false;
+	}
+
+	if( FStrEq( szKeyName, "angles" ) )
+	{
+		return false;
+	}
+
+	if( FStrEq( szKeyName, "origin" ) )
+	{
+		return false;
+	}
+
+	return BaseClass::KeyValue( szKeyName, szValue );
 }
 
 //-----------------------------------------------------------------------------
@@ -475,16 +623,37 @@ bool CSharedBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 		return true;
 	}
 
-#ifdef GAME_DLL	
-	
 	if ( FStrEq( szKeyName, "targetname" ) )
 	{
 		m_iName = AllocPooledString( szValue );
 		return true;
 	}
 
+	if ( FStrEq( szKeyName, "mincpulevel" ))
+	{
+		m_nMinCPULevel = atoi( szValue );
+		return true;
+	}
+	if ( FStrEq( szKeyName, "maxcpulevel" ))
+	{
+		m_nMaxCPULevel = atoi( szValue );
+		return true;
+	}
+	if ( FStrEq( szKeyName, "mingpulevel" ))
+	{
+		m_nMinGPULevel = atoi( szValue );
+		return true;
+	}
+	if ( FStrEq( szKeyName, "maxgpulevel" ))
+	{
+		m_nMaxGPULevel = atoi( szValue );
+		return true;
+	}
+
 	// loop through the data description, and try and place the keys in
+#ifdef GAME_DLL
 	if ( !*ent_debugkeys.GetString() )
+#endif
 	{
 		for ( datamap_t *dmap = GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
 		{
@@ -492,6 +661,7 @@ bool CSharedBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 				return true;
 		}
 	}
+#ifdef GAME_DLL
 	else
 	{
 		// debug version - can be used to see what keys have been parsed in
@@ -527,31 +697,6 @@ bool CSharedBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 		if ( printKeyHits )
 			Msg( "!! (%s) key not handled: \"%s\" \"%s\"\n", STRING(m_iClassname), szKeyName, szValue );
 	}
-
-#else
-
-	// HACK: Read dxlevels for client-side entities
-	if ( FStrEq( szKeyName, "mincpulevel" ))
-	{
-		m_nMinCPULevel = atoi( szValue );
-		return true;
-	}
-	if ( FStrEq( szKeyName, "maxcpulevel" ))
-	{
-		m_nMaxCPULevel = atoi( szValue );
-		return true;
-	}
-	if ( FStrEq( szKeyName, "mingpulevel" ))
-	{
-		m_nMinGPULevel = atoi( szValue );
-		return true;
-	}
-	if ( FStrEq( szKeyName, "maxgpulevel" ))
-	{
-		m_nMaxGPULevel = atoi( szValue );
-		return true;
-	}
-
 #endif
 
 	// key hasn't been handled
@@ -1641,11 +1786,8 @@ void CSharedBaseEntity::VPhysicsDestroyObject( void )
 //-----------------------------------------------------------------------------
 bool CSharedBaseEntity::VPhysicsInitSetup()
 {
-#ifndef CLIENT_DLL
-	// don't support logical ents
-	if ( (!edict() && !m_bForceAllowVPhysics) || IsMarkedForDeletion() )
+	if ( IsMarkedForDeletion() )
 		return false;
-#endif
 
 	// If this entity already has a physics object, then it should have been deleted prior to making this call.
 	Assert(!m_pPhysicsObject);
@@ -1805,7 +1947,7 @@ void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 #endif
 
 		// NOTE: This will also mark shadow projection + client leaf dirty
-		if ( !IsWorld() )
+		if ( !IsWorld() && !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
 		{
 			CollisionProp()->MarkPartitionHandleDirty();
 		}
@@ -1819,7 +1961,7 @@ void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 	{
 		nDirtyFlags |= EFL_DIRTY_ABSTRANSFORM;
 
-		if ( !bSurroundDirty )
+		if ( !bSurroundDirty && !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
 		{
 			if ( CollisionProp()->DoesRotationInvalidateSurroundingBox() )
 			{
@@ -1834,7 +1976,7 @@ void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 
 	if ( (nChangeFlags & SEQUENCE_CHANGED) != 0 )
 	{
-		if ( !bSurroundDirty )
+		if ( !bSurroundDirty && !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
 		{
 			if ( CollisionProp()->DoesSequenceChangeInvalidateSurroundingBox() )
 			{
@@ -1855,14 +1997,14 @@ void CSharedBaseEntity::InvalidatePhysicsRecursive( int nChangeFlags )
 		nChildrenChangeFlags |= (POSITION_CHANGED | ANGLES_CHANGED | VELOCITY_CHANGED);
 	}
 
-	if( bSurroundDirty )
+	if( bSurroundDirty && !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
 	{
 		CollisionProp()->MarkSurroundingBoundsDirty();
 	}
 #ifdef CLIENT_DLL
 	else
 	{
-		if ( !IsWorld() )
+		if ( !IsWorld() && !IsEFlagSet( EFL_NOT_RENDERABLE ) )
 		{
 			if((nChangeFlags & (POSITION_CHANGED | ANGLES_CHANGED | BOUNDS_CHANGED)) != 0)
 			{
@@ -2479,7 +2621,7 @@ bool CSharedBaseEntity::HandleShotImpactingWater( const FireBulletsInfo_t &info,
 		CEffectData	data;
  		data.m_vOrigin = waterTrace.endpos;
 		data.m_vNormal = waterTrace.plane.normal;
-		data.m_flScale = random->RandomFloat( nMinSplashSize, nMaxSplashSize );
+		data.m_flScale = random_valve->RandomFloat( nMinSplashSize, nMaxSplashSize );
 		if ( waterTrace.contents & CONTENTS_SLIME )
 		{
 			data.m_fFlags |= FX_WATER_IN_SLIME;
@@ -2728,9 +2870,9 @@ void CSharedBaseEntity::TraceBleed( float flDamage, const Vector &vecDir, trace_
 	{
 		vecTraceDir = vecDir * -1;// trace in the opposite direction the shot came from (the direction the shot is going)
 
-		vecTraceDir.x += random->RandomFloat( -flNoise, flNoise );
-		vecTraceDir.y += random->RandomFloat( -flNoise, flNoise );
-		vecTraceDir.z += random->RandomFloat( -flNoise, flNoise );
+		vecTraceDir.x += random_valve->RandomFloat( -flNoise, flNoise );
+		vecTraceDir.y += random_valve->RandomFloat( -flNoise, flNoise );
+		vecTraceDir.z += random_valve->RandomFloat( -flNoise, flNoise );
 
 		// Don't bleed on grates.
 		AI_TraceLine( ptr->endpos, ptr->endpos + vecTraceDir * -flTraceDist, MASK_SOLID_BRUSHONLY & ~CONTENTS_GRATE, this, COLLISION_GROUP_NONE, &Bloodtr);
@@ -2962,7 +3104,7 @@ void CSharedBaseEntity::SetWaterType( int nType )
 		m_nWaterType |= 2;
 }
 
-ConVarRef	sv_alternateticks( "sv_alternateticks" );
+extern ConVar	*sv_alternateticks;
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -2970,7 +3112,7 @@ ConVarRef	sv_alternateticks( "sv_alternateticks" );
 //-----------------------------------------------------------------------------
 bool CSharedBaseEntity::IsSimulatingOnAlternateTicks()
 {
-	return sv_alternateticks.GetBool();
+	return sv_alternateticks->GetBool();
 }
 
 #ifdef CLIENT_DLL
@@ -3088,4 +3230,148 @@ void CSharedBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 	set.AppendCriteria("spawnflags", UTIL_VarArgs("%i", GetSpawnFlags()));
 	set.AppendCriteria("flags", UTIL_VarArgs("%i", GetFlags()));
 #endif
+}
+
+#ifdef GAME_DLL
+ConVar ent_messages_draw( "ent_messages_draw", "0", FCVAR_CHEAT, "Visualizes all entity input/output activity." );
+#endif
+
+//-----------------------------------------------------------------------------
+// Purpose: calls the appropriate message mapped function in the entity according
+//			to the fired action.
+// Input  : char *szInputName - input destination
+//			*pActivator - entity which initiated this sequence of actions
+//			*pCaller - entity from which this event is sent
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool CSharedBaseEntity::AcceptInput( const char *szInputName, CSharedBaseEntity *pActivator, CSharedBaseEntity *pCaller, variant_t Value, int outputID )
+{
+#ifdef GAME_DLL
+	if ( ent_messages_draw.GetBool() )
+	{
+		if ( pCaller != NULL )
+		{
+			NDebugOverlay::Line( pCaller->GetAbsOrigin(), GetAbsOrigin(), 255, 255, 255, false, 3 );
+			NDebugOverlay::Box( pCaller->GetAbsOrigin(), Vector(-4, -4, -4), Vector(4, 4, 4), 255, 0, 0, 0, 3 );
+		}
+
+		NDebugOverlay::Text( GetAbsOrigin(), szInputName, false, 3 );	
+		NDebugOverlay::Box( GetAbsOrigin(), Vector(-4, -4, -4), Vector(4, 4, 4), 0, 255, 0, 0, 3 );
+	}
+#endif
+
+	// loop through the data description list, restoring each data desc block
+	for ( datamap_t *dmap = GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
+	{
+		// search through all the actions in the data description, looking for a match
+		for ( int i = 0; i < dmap->dataNumFields; i++ )
+		{
+			if ( dmap->dataDesc[i].flags & FTYPEDESC_INPUT )
+			{
+				if ( !Q_stricmp(dmap->dataDesc[i].externalName, szInputName) )
+				{
+					// found a match
+
+					if(developer->GetInt() >= 2) {
+						char szBuffer[256];
+						// mapper debug message
+						if (pCaller != NULL)
+						{
+							Q_snprintf( szBuffer, sizeof(szBuffer), "(%0.2f) input %s: %s.%s(%s)\n", gpGlobals->curtime, pCaller->GetEntityNameAsCStr(), GetDebugName(), szInputName, Value.String() );
+						}
+						else
+						{
+							Q_snprintf( szBuffer, sizeof(szBuffer), "(%0.2f) input <NULL>: %s.%s(%s)\n", gpGlobals->curtime, GetDebugName(), szInputName, Value.String() );
+						}
+						Log_Msg( LOG_ENTITYIO, "%s", szBuffer );
+					}
+				#ifdef GANE_DLL
+					ADD_DEBUG_HISTORY( HISTORY_ENTITY_IO, szBuffer );
+				#endif
+
+				#ifdef GANE_DLL
+					if (m_debugOverlays & OVERLAY_MESSAGE_BIT)
+					{
+						DrawInputOverlay(szInputName,pCaller,Value);
+					}
+				#endif
+
+					// convert the value if necessary
+					if ( Value.FieldType() != dmap->dataDesc[i].fieldType )
+					{
+						if ( !(Value.FieldType() == FIELD_VOID && dmap->dataDesc[i].fieldType == FIELD_STRING) ) // allow empty strings
+						{
+							// Activator, etc. support for EHANDLE convert
+							if ( !Value.Convert( (fieldtype_t)dmap->dataDesc[i].fieldType, this, pActivator, pCaller ) )
+							{
+								bool bBadConversion = true;
+
+								// Attempt to convert to string and back.
+								// Almost all field types support being converted to a string, and many support being parsed from a string too.
+								fieldtype_t originalfield = Value.FieldType();
+								if (Value.Convert(FIELD_STRING))
+								{
+									bBadConversion = !(Value.Convert((fieldtype_t)dmap->dataDesc[i].fieldType, this, pActivator, pCaller));
+									if (!bBadConversion)
+									{
+										// Actual support should be added for each field, but if it works, it works.
+										// Warning against it only matters if you're a programmer and want to add support for each field.
+										// Only send a warning in dev mode.
+										Log_Warning(LOG_ENTITYIO,"!! Had to convert to string and back\n"
+													"!! Source Field Type: %i, Target Field Type: %i\n",
+												originalfield, dmap->dataDesc[i].fieldType);
+									}
+								}
+
+								if (bBadConversion)
+								{
+									Log_Warning(LOG_ENTITYIO, "!! ERROR: bad input/output link:\n!! Unable to convert value \"%s\" from %s (%s) to field type %i\n!! Target Entity: %s (%s), Input: %s\n", 
+										Value.GetDebug(),
+										( pCaller != NULL ) ? pCaller->GetClassname() : "<null>",
+										( pCaller != NULL ) ? pCaller->GetEntityNameAsCStr() : "<null>",
+										dmap->dataDesc[i].fieldType,
+										STRING(m_iClassname), GetDebugName(), szInputName );
+									return false;
+								}
+							}
+						}
+					}
+
+					// call the input handler, or if there is none just set the value
+					inputfunc_t pfnInput = dmap->dataDesc[i].inputFunc;
+
+					if ( pfnInput )
+					{ 
+						// Package the data into a struct for passing to the input handler.
+						inputdata_t data;
+						data.pActivator = pActivator;
+						data.pCaller = pCaller;
+						data.value = Value;
+						data.nOutputID = outputID;
+
+						(this->*pfnInput)( data );
+					}
+					else if ( dmap->dataDesc[i].flags & FTYPEDESC_KEY )
+					{
+						// set the value directly
+						Value.SetOther( ((char*)this) + dmap->dataDesc[i].fieldOffset[ TD_OFFSET_NORMAL ]);
+					
+						// TODO: if this becomes evil and causes too many full entity updates, then we should make
+						// a macro like this:
+						//
+						// define MAKE_INPUTVAR(x) void Note##x##Modified() { x.GetForModify(); }
+						//
+						// Then the datadesc points at that function and we call it here. The only pain is to add
+						// that function for all the DEFINE_INPUT calls.
+						NetworkStateChanged();
+					}
+
+					return true;
+				}
+			}
+		}
+	}
+
+	Log_Warning( LOG_ENTITYIO, "unhandled input: (%s) -> (%s,%s)\n", szInputName, GetClassname(), GetDebugName()/*,", from (%s,%s)" STRING(pCaller->m_iClassname), STRING(pCaller->m_iName)*/ );
+	return false;
 }

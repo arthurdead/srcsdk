@@ -39,7 +39,7 @@ CLIENTEFFECT_REGISTER_END()
 void FX_AddLine( const FXLineData_t &data )
 {
 	CFXLine *t = new CFXLine( "Line", data );
-	assert( t );
+	Assert( t );
 
 	//Throw it into the list
 	clienteffects->AddEffect( t );
@@ -54,7 +54,7 @@ FX_AddStaticLine
 void FX_AddStaticLine( const Vector& start, const Vector& end, float scale, float life, const char *materialName, unsigned char flags )
 {
 	CFXStaticLine	*t = new CFXStaticLine( "StaticLine", start, end, scale, life, materialName, flags );
-	assert( t );
+	Assert( t );
 
 	//Throw it into the list
 	clienteffects->AddEffect( t );
@@ -69,7 +69,7 @@ FX_AddDiscreetLine
 void FX_AddDiscreetLine( const Vector& start, const Vector& direction, float velocity, float length, float clipLength, float scale, float life, const char *shader )
 {
 	CFXDiscreetLine	*t = new CFXDiscreetLine( "Line", start, direction, velocity, length, clipLength, scale, life, shader );
-	assert( t );
+	Assert( t );
 
 	//Throw it into the list
 	clienteffects->AddEffect( t );
@@ -156,18 +156,18 @@ void FX_PlayerTracer( const Vector& start, const Vector& end )
 		return;
 
 	//Randomly place the tracer along this line, with a random length
-	VectorMA( start, TRACER_BASE_OFFSET + random->RandomFloat( -24.0f, 64.0f ), shotDir, dStart );
-	VectorMA( dStart, ( length * random->RandomFloat( 0.1f, 0.6f ) ), shotDir, dEnd );
+	VectorMA( start, TRACER_BASE_OFFSET + random_valve->RandomFloat( -24.0f, 64.0f ), shotDir, dStart );
+	VectorMA( dStart, ( length * random_valve->RandomFloat( 0.1f, 0.6f ) ), shotDir, dEnd );
 
 	//Create the line
 	CFXStaticLine	*t;
 	const char		*materialName;
 
-	//materialName = ( random->RandomInt( 0, 1 ) ) ? "effects/tracer_middle" : "effects/tracer_middle2";
+	//materialName = ( random_valve->RandomInt( 0, 1 ) ) ? "effects/tracer_middle" : "effects/tracer_middle2";
 	materialName = "effects/spark";
 
-	t = new CFXStaticLine( "Tracer", dStart, dEnd, random->RandomFloat( 0.5f, 0.75f ), 0.01f, materialName, 0 );
-	assert( t );
+	t = new CFXStaticLine( "Tracer", dStart, dEnd, random_valve->RandomFloat( 0.5f, 0.75f ), 0.01f, materialName, 0 );
+	Assert( t );
 
 	//Throw it into the list
 	clienteffects->AddEffect( t );
@@ -279,7 +279,7 @@ void FX_TracerSound( const Vector &start, const Vector &end, int iTracerType )
 	// Could use different timers for the different types.
 
 	// Don't play another bullet whiz for this client until this time has run out
-	g_BulletWhiz.m_nextWhizTime = gpGlobals->curtime + random->RandomFloat( flMinWhizTime, flMaxWhizTime );
+	g_BulletWhiz.m_nextWhizTime = gpGlobals->curtime + random_valve->RandomFloat( flMinWhizTime, flMaxWhizTime );
 }
 
 
@@ -306,11 +306,11 @@ void FX_Tracer( const Vector& start, const Vector& end, int velocity, bool makeW
 	// Don't make short tracers.
 	if ( dist >= minDist )
 	{
-		float length = random->RandomFloat( 64.0f, 128.0f );
+		float length = random_valve->RandomFloat( 64.0f, 128.0f );
 		float life = ( dist + length ) / velocity;	//NOTENOTE: We want the tail to finish its run as well
 		
 		//Add it
-		FX_AddDiscreetLine( start, dir, velocity, length, dist, random->RandomFloat( flMinWidth, flMaxWidth ), life, "effects/spark" );
+		FX_AddDiscreetLine( start, dir, velocity, length, dist, random_valve->RandomFloat( flMinWidth, flMaxWidth ), life, "effects/spark" );
 	}
 
 	if( makeWhiz )

@@ -258,7 +258,7 @@ inline CAI_Squad *CAI_SquadManager::FindCreateSquad(string_t squadName)
 inline CAI_BaseNPC *CAI_Squad::GetAnyMember()
 {
 	if ( m_SquadMembers.Count() )
-		return m_SquadMembers[random->RandomInt( 0, m_SquadMembers.Count()-1 )].Get();
+		return m_SquadMembers[random_valve->RandomInt( 0, m_SquadMembers.Count()-1 )].Get();
 	return NULL;
 }
 

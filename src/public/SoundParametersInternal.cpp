@@ -209,7 +209,7 @@ soundlevel_t TextToSoundLevel( const char *key )
 		}
 	}
 
-	DevMsg( "CSoundEmitterSystem:  Unknown sound level %s\n", key );
+	Log_Warning( LOG_SOUND,"CSoundEmitterSystem:  Unknown sound level %s\n", key );
 
 	return SNDLVL_NORM;
 }
@@ -246,7 +246,7 @@ int TextToChannel( const char *name )
 
 	// At this point, it starts with chan_ but is not recognized
 	// atoi would return 0, so just do chan auto
-	DevMsg( "CSoundEmitterSystem:  Warning, unknown channel type in sounds.txt (%s)\n", name );
+	Log_Warning( LOG_SOUND,"CSoundEmitterSystem:  Warning, unknown channel type in sounds.txt (%s)\n", name );
 
 	return CHAN_AUTO;
 }
@@ -386,7 +386,7 @@ void CSoundParametersInternal::CopyFrom( const CSoundParametersInternal& src )
 		if ( m_nSoundNames > 1 )
 		{
 			m_pSoundNames = (SoundFile*)malloc( sizeof(SoundFile)*m_nSoundNames);
-			memcpy( m_pSoundNames, src.m_pSoundNames, m_nSoundNames * sizeof(SoundFile) );
+			memcpy( (void *)m_pSoundNames, (void *)src.m_pSoundNames, m_nSoundNames * sizeof(SoundFile) );
 		}
 		else
 		{
@@ -404,7 +404,7 @@ void CSoundParametersInternal::CopyFrom( const CSoundParametersInternal& src )
 		if ( m_nConvertedNames > 1 )
 		{
 			m_pConvertedNames = (SoundFile*)malloc( sizeof(SoundFile)*m_nConvertedNames);
-			memcpy( m_pConvertedNames, src.m_pConvertedNames, m_nConvertedNames * sizeof(SoundFile) );
+			memcpy( (void *)m_pConvertedNames, (void *)src.m_pConvertedNames, m_nConvertedNames * sizeof(SoundFile) );
 		}
 		else
 		{

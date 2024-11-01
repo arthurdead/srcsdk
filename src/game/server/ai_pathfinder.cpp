@@ -17,6 +17,7 @@
 #include "ai_moveprobe.h"
 #include "bitstring.h"
 #include "ai_localnavigator.h"
+#include "collisionproperty.h"
 
 //@todo: bad dependency!
 #include "ai_navigator.h"

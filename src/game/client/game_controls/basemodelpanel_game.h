@@ -19,19 +19,11 @@
 class C_SceneEntity;
 
 
-class CModelPanelModel : public C_BaseFlex
+class CModelPanelModel : public C_ClientOnlyBaseFlex
 {
 public:
-	CModelPanelModel()
-		: C_BaseFlex()
-	{
-		AddEFlags(EFL_NOT_NETWORKED);
-	}
-	DECLARE_CLASS( CModelPanelModel, C_BaseFlex );
+	DECLARE_CLASS( CModelPanelModel, C_ClientOnlyBaseFlex );
 
-	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
-	virtual	bool			IsClientCreated( void ) const { return true; }
-	virtual bool						IsServerEntity( void ) { return false; }
 	virtual bool IsMenuModel() const{ return true; }
 };
 

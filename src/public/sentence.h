@@ -8,10 +8,7 @@
 #define SENTENCE_H
 #pragma once
 
-// X360 optimizes out the extra memory needed by the editors in these types
-#ifndef _X360
 #define PHONEME_EDITOR 1
-#endif
 
 #include "utlvector.h"
 

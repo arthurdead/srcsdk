@@ -10,7 +10,11 @@
 #pragma once
 
 #if defined _WIN32 && !defined LINUX
+#ifdef __MINGW32__
+#include <immintrin.h>
+#else
 #include <intrin.h>
+#endif
 #endif
 
 #include <assert.h>
@@ -396,7 +400,7 @@ inline int64 CFastTimer::GetClockSpeed()
 inline CCycleCount const& CFastTimer::GetDuration() const
 {
 #ifdef DEBUG_FASTTIMER
-	assert( !m_bRunning );
+	Assert( !m_bRunning );
 #endif
 	return m_Duration;
 }

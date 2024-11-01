@@ -126,11 +126,7 @@ DEFPARTICLE_ATTRIBUTE( TRACE_HIT_NORMAL, 20 );				// 0 0 0 if no hit
 #define ATTRIBUTES_WHICH_ARE_ANGLES (PARTICLE_ATTRIBUTE_ROTATION_MASK | PARTICLE_ATTRIBUTE_YAW_MASK )
 #define ATTRIBUTES_WHICH_ARE_INTS (PARTICLE_ATTRIBUTE_PARTICLE_ID_MASK | PARTICLE_ATTRIBUTE_HITBOX_INDEX_MASK )
 
-#if defined( _X360 )
-#define MAX_PARTICLES_IN_A_SYSTEM 2000
-#else
 #define MAX_PARTICLES_IN_A_SYSTEM 5000
-#endif
 
 // Set this to 1 or 0 to enable or disable particle profiling.
 // Note that this profiling is expensive on Linux, and some anti-virus

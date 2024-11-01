@@ -47,3 +47,8 @@ C_FogController::C_FogController()
 	m_fog.maxdensity = 1.0f;
 	m_fog.HDRColorScale = 1.f;
 }
+
+bool GetWorldFogParams( C_BaseCombatCharacter *character, fogparams_t &fog )
+{
+	return false;
+}

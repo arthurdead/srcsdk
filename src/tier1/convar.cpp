@@ -37,6 +37,8 @@ static ConCommandBase		*s_pConCommandBases = NULL;
 // ConVars in this executable use this 'global' to access values.
 static IConCommandBaseAccessor	*s_pAccessor = NULL;
 
+ConVar *developer=NULL;
+
 static int s_nCVarFlag = 0;
 static int s_nDLLIdentifier = -1;	// A unique identifier indicating which DLL this convar came from
 static bool s_bRegistered = false;
@@ -45,9 +47,12 @@ bool CDefaultAccessor::RegisterConCommandBase( ConCommandBase *pVar )
 {
 #ifdef _DEBUG
 	ConCommandBase *pOldVar = g_pCVar->FindCommandBase(pVar->GetName());
-	if(pOldVar != NULL && (!pOldVar->IsFlagSet(FCVAR_REPLICATED) || !pVar->IsFlagSet(FCVAR_REPLICATED))) {
-		Log_Warning(LOG_CONVAR,"%s dll tried to re-register con var/command named %s\n", modulename::dll, pVar->GetName());
-	}
+	AssertMsg( 
+		!pOldVar ||
+		(pOldVar->IsFlagSet(FCVAR_REPLICATED) && pVar->IsFlagSet(FCVAR_REPLICATED)) ||
+		(!pOldVar->IsFlagSet(FCVAR_REPLICATED) && !pVar->IsFlagSet(FCVAR_REPLICATED)), 
+		"%s dll tried to re-register con var/command named %s", modulename::dll, pVar->GetName()
+	);
 #endif
 
 	// Link to engine's list instead
@@ -86,6 +91,8 @@ void ConVar_Register( int nCVarFlag, IConCommandBaseAccessor *pAccessor )
 
 	if ( !g_pCVar || s_bRegistered )
 		return;
+
+	developer = g_pCVar->FindVar("developer");
 
 	s_pAccessor = pAccessor;
 	s_nCVarFlag = nCVarFlag;
@@ -1534,7 +1541,7 @@ void ConVar_PrintDescription( const ConCommandBase *pVar )
 	float fMin, fMax;
 	const char *pStr;
 
-	assert( pVar );
+	Assert( pVar );
 
 	if ( !pVar->IsCommand() )
 	{

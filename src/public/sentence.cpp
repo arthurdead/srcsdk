@@ -490,7 +490,7 @@ void CSentence::ParseWords( CUtlBuffer& buf )
 		end = atof( token );
 
 		CWordTag *wt = new CWordTag( word );
-		assert( wt );
+		Assert( wt );
 		wt->m_flStartTime = start;
 		wt->m_flEndTime = end;
 
@@ -524,7 +524,7 @@ void CSentence::ParseWords( CUtlBuffer& buf )
 			volume = atof( token );
 
 			CPhonemeTag *pt = new CPhonemeTag();
-			assert( pt );
+			Assert( pt );
 			pt->SetPhonemeCode( code );
 			pt->SetTag( phonemename );
 			pt->SetStartTime(startLocl);
@@ -1003,7 +1003,7 @@ void CSentence::MakeRuntimeOnly()
 		for ( int j = 0; j < pcount; ++j )
 		{
 			CPhonemeTag *phoneme = word->m_Phonemes[ j ];
-			assert( phoneme );
+			Assert( phoneme );
 
 			AddRuntimePhoneme( phoneme );
 		}
@@ -1126,7 +1126,7 @@ void CSentence::InitFromBuffer( CUtlBuffer& buf )
 	}
 	else
 	{
-		assert( 0 );
+		Assert( 0 );
 		return;
 	}
 }

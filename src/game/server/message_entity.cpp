@@ -34,9 +34,9 @@
 //-----------------------------------------------------------------------------
 class CMessageEntity : public CPointEntity
 {
+public:
 	DECLARE_CLASS( CMessageEntity, CPointEntity );
 
-public:
 	void	Spawn( void );
 	void	Activate( void );
 	void	Think( void );
@@ -147,7 +147,7 @@ void CMessageEntity::DrawOverlays(void)
 	if ( !m_drawText )
 		return;
 
-	if ( m_bDeveloperOnly && !g_pDeveloper->GetInt() )
+	if ( m_bDeveloperOnly && !developer->GetInt() )
 		return;
 
 	if ( !m_bEnabled )
@@ -306,7 +306,7 @@ void CMessageEntityLocalized::DrawOverlays(void)
 	if ( !m_drawText )
 		return;
 
-	if ( m_bDeveloperOnly && !g_pDeveloper->GetInt() )
+	if ( m_bDeveloperOnly && !developer->GetInt() )
 		return;
 
 	if ( !m_bEnabled )

@@ -9,7 +9,9 @@ END_NETWORK_TABLE()
 
 IMPLEMENT_NETWORKCLASS_ALIASED(BaseHeistWeapon, DT_BaseHeistWeapon)
 
+#ifdef GAME_DLL
 LINK_ENTITY_TO_CLASS_ALIASED(weapon_heist_base, BaseHeistWeapon);
+#endif
 
 BEGIN_PREDICTION_DATA( C_BaseHeistWeapon )
 END_PREDICTION_DATA()

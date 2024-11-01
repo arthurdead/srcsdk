@@ -33,13 +33,13 @@
 
 	BEGIN_RECV_TABLE_NOBASE( CEffectData, DT_EffectData )
 
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_vOrigin, 0 ) ),
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_vOrigin, 1 ) ),
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_vOrigin, 2 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_vOrigin, 0 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_vOrigin, 1 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_vOrigin, 2 ) ),
 
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_vStart, 0 ) ),
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_vStart, 1 ) ),
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_vStart, 2 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_vStart, 0 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_vStart, 1 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_vStart, 2 ) ),
 
 		RecvPropQAngles( RECVINFO( m_vAngles ) ),
 
@@ -69,9 +69,9 @@
 
 		RecvPropBool( RECVINFO( m_bControlPoint1 ) ),
 		RecvPropInt( RECVINFO( m_ControlPoint1.m_eParticleAttachment ) ),
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_ControlPoint1.m_vecOffset, 0 ) ),
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_ControlPoint1.m_vecOffset, 1 ) ),
-		RecvPropFloat( RECVINFO_ARRAYELEM( m_ControlPoint1.m_vecOffset, 2 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_ControlPoint1.m_vecOffset, 0 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_ControlPoint1.m_vecOffset, 1 ) ),
+		RecvPropFloat( RECVINFO_VECTORELEM( m_ControlPoint1.m_vecOffset, 2 ) ),
 
 	END_RECV_TABLE()
 
@@ -86,20 +86,20 @@
 
 		// Get half-inch precision here.
 #ifdef HL2_DLL
-		SendPropFloat( SENDINFO_NOCHECK( m_vOrigin[0] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
-		SendPropFloat( SENDINFO_NOCHECK( m_vOrigin[1] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
-		SendPropFloat( SENDINFO_NOCHECK( m_vOrigin[2] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
-		SendPropFloat( SENDINFO_NOCHECK( m_vStart[0] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
-		SendPropFloat( SENDINFO_NOCHECK( m_vStart[1] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
-		SendPropFloat( SENDINFO_NOCHECK( m_vStart[2] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vOrigin[0] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vOrigin[1] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vOrigin[2] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vStart[0] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vStart[1] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vStart[2] ), COORD_INTEGER_BITS+SUBINCH_PRECISION, 0, MIN_COORD_INTEGER, MAX_COORD_INTEGER ),
 #else
-		SendPropFloat( SENDINFO_NOCHECK_ARRAYELEM( m_vOrigin, 0 ), -1, SPROP_COORD_MP_INTEGRAL ),
-		SendPropFloat( SENDINFO_NOCHECK_ARRAYELEM( m_vOrigin, 1 ), -1, SPROP_COORD_MP_INTEGRAL ),
-		SendPropFloat( SENDINFO_NOCHECK_ARRAYELEM( m_vOrigin, 2 ), -1, SPROP_COORD_MP_INTEGRAL ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vOrigin, 0 ), -1, SPROP_COORD_MP_INTEGRAL ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vOrigin, 1 ), -1, SPROP_COORD_MP_INTEGRAL ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vOrigin, 2 ), -1, SPROP_COORD_MP_INTEGRAL ),
 
-		SendPropFloat( SENDINFO_NOCHECK_ARRAYELEM( m_vStart, 0 ), -1, SPROP_COORD_MP_INTEGRAL ),
-		SendPropFloat( SENDINFO_NOCHECK_ARRAYELEM( m_vStart, 1 ), -1, SPROP_COORD_MP_INTEGRAL ),
-		SendPropFloat( SENDINFO_NOCHECK_ARRAYELEM( m_vStart, 2 ), -1, SPROP_COORD_MP_INTEGRAL ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vStart, 0 ), -1, SPROP_COORD_MP_INTEGRAL ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vStart, 1 ), -1, SPROP_COORD_MP_INTEGRAL ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_vStart, 2 ), -1, SPROP_COORD_MP_INTEGRAL ),
 #endif
 		SendPropQAngles( SENDINFO_NOCHECK( m_vAngles ), 7 ),
 
@@ -133,9 +133,9 @@
 
 		SendPropBool( SENDINFO_NOCHECK( m_bControlPoint1) ),
 		SendPropInt( SENDINFO_NOCHECK( m_ControlPoint1.m_eParticleAttachment ), 5, SPROP_UNSIGNED ),
-		SendPropFloat( SENDINFO_NOCHECK_ARRAYELEM( m_ControlPoint1.m_vecOffset, 0 ), -1, SPROP_COORD ),
-		SendPropFloat( SENDINFO_NOCHECK_ARRAYELEM( m_ControlPoint1.m_vecOffset, 1 ), -1, SPROP_COORD ),
-		SendPropFloat( SENDINFO_NOCHECK_ARRAYELEM( m_ControlPoint1.m_vecOffset, 2 ), -1, SPROP_COORD ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_ControlPoint1.m_vecOffset, 0 ), -1, SPROP_COORD ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_ControlPoint1.m_vecOffset, 1 ), -1, SPROP_COORD ),
+		SendPropFloat( SENDINFO_NOCHECK_VECTORELEM( m_ControlPoint1.m_vecOffset, 2 ), -1, SPROP_COORD ),
 
 	END_SEND_TABLE()
 

@@ -11,7 +11,7 @@
 #include "utlvector.h"
 
 #include "ai_criteria.h"
-#include "../../public/responserules/response_types.h"
+#include "responserules/response_types.h"
 
 // using ResponseRules::IResponseFilter;
 // using ResponseRules::IResponseSystem;

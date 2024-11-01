@@ -15,7 +15,11 @@
 #include <tier0/cache_hints.h>
 
 #ifdef IS_WINDOWS_PC
+#ifdef __MINGW32__
+#include <immintrin.h>
+#else
 #include <intrin.h>	// get __rdtsc
+#endif
 #endif
 
 #if !defined(_CERT) && ( defined( WIN32 ) || defined( _X360 ) ) //	&& !defined(_LINUX)

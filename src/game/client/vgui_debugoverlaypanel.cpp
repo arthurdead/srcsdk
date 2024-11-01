@@ -77,7 +77,7 @@ void CDebugOverlay::ApplySchemeSettings(vgui::IScheme *pScheme)
 	// Use a large font
 //	m_hFont = pScheme->GetFont( "Default" );
 	m_hFont = pScheme->GetFont( "DebugOverlay" );
-	assert( m_hFont != vgui::INVALID_FONT );
+	Assert( m_hFont != vgui::INVALID_FONT );
 
 	int w, h;
 	vgui::surface()->GetScreenSize( w, h );
@@ -112,7 +112,7 @@ void CDebugOverlay::Paint()
 	OverlayText_t* pCurrText = debugoverlay->GetFirst();
 	while (pCurrText) 
 	{
-		if ( pCurrText->text != NULL ) 
+		if ( pCurrText->text[0] ) 
 		{
 			// --------------
 			// Draw the text

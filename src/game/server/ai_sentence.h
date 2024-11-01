@@ -149,9 +149,9 @@ void CAI_Sentence< NPC_CLASS >::Init( NPC_CLASS *pOuter, const char *pGameSound 
 	}
 	
 	// Select a voice pitch
-	if ( random->RandomInt(0,1) )
+	if ( random_valve->RandomInt(0,1) )
 	{
-		SetVoicePitch( random->RandomInt( m_voicePitchMin, m_voicePitchMax ) );
+		SetVoicePitch( random_valve->RandomInt( m_voicePitchMin, m_voicePitchMax ) );
 	}
 	else
 	{

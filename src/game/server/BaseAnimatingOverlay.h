@@ -187,9 +187,9 @@ inline float CAnimationLayer::GetFadeout( float flCurTime )
 
 class CBaseAnimatingOverlay : public CBaseAnimating
 {
+public:
 	DECLARE_CLASS( CBaseAnimatingOverlay, CBaseAnimating );
 
-public:
 	enum 
 	{
 		MAX_OVERLAYS = 15,

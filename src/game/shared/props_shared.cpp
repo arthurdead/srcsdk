@@ -13,6 +13,7 @@
 #include <vcollide_parse.h>
 #include <bone_setup.h>
 #include <tier0/vprof.h>
+#include "collisionproperty.h"
 
 #ifdef CLIENT_DLL
 #include "c_physicsprop.h"
@@ -824,14 +825,23 @@ END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( game_gib_manager, CGameGibManager );
 
+#ifndef SWDS
+extern ConVar *mat_dxlevel;
+#endif
 
 void CGameGibManager::Activate( void )
 {
 	m_LRU.Purge();
 
 	// Cache off the DX level for use later.
-	ConVarRef mat_dxlevel( "mat_dxlevel" );
-	m_iDXLevel = mat_dxlevel.GetInt();
+#ifndef SWDS
+	if(!engine->IsDedicatedServer()) {
+		m_iDXLevel = mat_dxlevel->GetInt();
+	} else
+#endif
+	{
+		m_iDXLevel = 90;
+	}
 
 	UpdateMaxPieces();
 

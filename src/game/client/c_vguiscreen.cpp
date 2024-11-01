@@ -79,9 +79,6 @@ void ClearKeyValuesCache()
 }
 
 
-LINK_ENTITY_TO_CLASS( vgui_screen, C_VGuiScreen );
-LINK_ENTITY_TO_CLASS( vgui_screen_team, C_VGuiScreen );
-
 IMPLEMENT_CLIENTCLASS_DT(C_VGuiScreen, DT_VGuiScreen, CVGuiScreen)
 	RecvPropFloat( RECVINFO(m_flWidth) ),
 	RecvPropFloat( RECVINFO(m_flHeight) ),

@@ -52,6 +52,7 @@ struct studiohdr_t;
 #include "c_basecombatcharacter.h"
 #include "gamerules.h"
 #include "c_baseplayer.h"
+#include "collisionproperty.h"
 #include "itempents.h"
 #include "vphysics_interface.h"
 #include "physics.h"

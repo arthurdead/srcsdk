@@ -100,7 +100,7 @@ void CAI_ShotRegulator::GetBurstInterval( float *pMinBurstInterval, float *pMaxB
 void CAI_ShotRegulator::Reset( bool bStartShooting )
 {
 	m_bDisabled = false;
-	m_nBurstShotsRemaining = random->RandomInt( m_nMinBurstShots, m_nMaxBurstShots );
+	m_nBurstShotsRemaining = random_valve->RandomInt( m_nMinBurstShots, m_nMaxBurstShots );
 	if ( bStartShooting )
 	{
 		m_flNextShotTime = gpGlobals->curtime;
@@ -108,7 +108,7 @@ void CAI_ShotRegulator::Reset( bool bStartShooting )
 	}
 	else
 	{
-		m_flNextShotTime = gpGlobals->curtime + random->RandomFloat( m_flMinRestInterval, m_flMaxRestInterval );
+		m_flNextShotTime = gpGlobals->curtime + random_valve->RandomFloat( m_flMinRestInterval, m_flMaxRestInterval );
 		m_bInRestInterval = true;
 	}
 }
@@ -180,7 +180,7 @@ void CAI_ShotRegulator::OnFiredWeapon()
 	else
 	{
 		m_bInRestInterval = false;
-		m_flNextShotTime += random->RandomFloat( m_flMinBurstInterval, m_flMaxBurstInterval );
+		m_flNextShotTime += random_valve->RandomFloat( m_flMinBurstInterval, m_flMaxBurstInterval );
 		if ( m_flNextShotTime < gpGlobals->curtime )
 		{
 			m_flNextShotTime = gpGlobals->curtime;

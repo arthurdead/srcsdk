@@ -23,7 +23,7 @@ enum
 };
 
 IClientRenderable	*g_pStudioStatsEntity = NULL;
-static ConVar	r_studio_stats( "r_studio_stats", "0", FCVAR_CHEAT );
+extern ConVar	*r_studio_stats;
 static ConVar	r_studio_stats_lock( "r_studio_stats_lock", "0", FCVAR_CHEAT, "Lock the current studio stats entity selection" );
 static ConVar	r_studio_stats_mode( "r_studio_stats_mode", "0", FCVAR_CHEAT, "Sets a mode for r_studio_stats. Modes are as follows:\n\t0 = Entity under your crosshair\n\t1 = Weapon held by player under your crosshair\n\t2 = Your viewmodel\n\t3 = The first entity attached to your viewmodel" );
 
@@ -77,7 +77,7 @@ void StudioStats_FindClosestEntity( CClientRenderablesList *pClientRenderablesLi
 		return;
 
 	g_pStudioStatsEntity = NULL;
-	if ( r_studio_stats.GetBool() == false )
+	if ( r_studio_stats->GetBool() == false )
 		return;
 
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();

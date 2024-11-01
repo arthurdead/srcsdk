@@ -632,8 +632,8 @@ FORCEINLINE float CLightingManager::DoLightStyle( def_light_t *l )
 	{
 		l->flLastRandomTime = gpGlobals->curtime + 1.0f - MIN( 1, l->flStyle_Speed );
 
-		random->SetSeed( l->iStyleSeed );
-		l->flLastRandomValue = 1.0f - random->RandomFloat( 0, MIN( 1, l->flStyle_Amount ) );
+		random_valve->SetSeed( l->iStyleSeed );
+		l->flLastRandomValue = 1.0f - random_valve->RandomFloat( 0, MIN( 1, l->flStyle_Amount ) );
 	}
 
 	float ran = l->flLastRandomValue;

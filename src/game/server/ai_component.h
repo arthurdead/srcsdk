@@ -29,6 +29,7 @@ struct edict_t;
 
 class CAI_Component
 {
+public:
 	DECLARE_CLASS_NOBASE( CAI_Component );
 protected:
 	CAI_Component( CAI_BaseNPC *pOuter = NULL )

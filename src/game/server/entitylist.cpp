@@ -12,7 +12,7 @@
 #include "collisionutils.h"
 #include "UtlSortVector.h"
 #include "tier0/vprof.h"
-#include "mapentities.h"
+#include "mapentities_shared.h"
 #include "client.h"
 #include "globalstate.h"
 #include "datacache/imdlcache.h"
@@ -23,6 +23,7 @@
 #include "soundent.h"
 #include "env_debughistory.h"
 #include "recast/recast_mgr_ent.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -183,7 +184,7 @@ public:
 
 	void OnEntityCreated( CBaseEntity *pEntity )
 	{
-		Assert( m_entinfoIndex[pEntity->GetRefEHandle().GetEntryIndex()] == 0xFFFF );
+		//Assert( m_entinfoIndex[pEntity->GetRefEHandle().GetEntryIndex()] == 0xFFFF );
 	}
 	void OnEntityDeleted( CBaseEntity *pEntity )
 	{
@@ -335,39 +336,6 @@ private:
 };
 
 static CPostClientMessageManager g_PostClientManager;
-
-//-----------------------------------------------------------------------------
-// Entity hash tables
-//-----------------------------------------------------------------------------
-
-struct EntsByStringList_t
-{
-	string_t iszStr;
-	CBaseEntity *pHead;
-};
-
-class CEntsByStringHashFuncs
-{
-public:
-	CEntsByStringHashFuncs( int ) {}
-
-	bool operator()( const EntsByStringList_t &lhs, const EntsByStringList_t &rhs ) const
-	{
-		return lhs.iszStr == rhs.iszStr;
-	}
-
-	unsigned int operator()( const EntsByStringList_t &item ) const
-	{
-		COMPILE_TIME_ASSERT( sizeof(char *) == sizeof(int) );
-		return HashInt( (int)item.iszStr.ToCStr() );
-	}
-};
-
-typedef CUtlHash<EntsByStringList_t	, CEntsByStringHashFuncs, CEntsByStringHashFuncs > CEntsByStringTable;
-
-//-------------------------------------
-
-CEntsByStringTable g_EntsByClassname( 512 );
 
 static CBaseEntityClassList *s_pClassLists = NULL;
 CBaseEntityClassList::CBaseEntityClassList()
@@ -869,7 +837,7 @@ CBaseEntity *CGlobalEntityList::FindEntityByName( CBaseEntity *pStartEntity, con
 			continue;
 		}
 
-		if ( !ent->m_iName.Get() )
+		if ( ent->m_iName.Get() == NULL_STRING )
 			continue;
 
 		if ( ent->NameMatches( szName ) )
@@ -900,7 +868,7 @@ CBaseEntity *CGlobalEntityList::FindEntityByNameFast( CBaseEntity *pStartEntity,
 			continue;
 		}
 
-		if ( !ent->m_iName.Get() )
+		if ( ent->m_iName.Get() == NULL_STRING )
 			continue;
 
 		if ( ent->m_iName.Get() == iszName )
@@ -930,7 +898,7 @@ CBaseEntity *CGlobalEntityList::FindEntityByModel( CBaseEntity *pStartEntity, co
 			continue;
 		}
 
-		if ( !ent->edict() || !ent->GetModelName() )
+		if ( ent->GetModelName() == NULL_STRING )
 			continue;
 
 		if ( FStrEq( STRING(ent->GetModelName()), szModelName ) )
@@ -994,7 +962,7 @@ CBaseEntity	*CGlobalEntityList::FindEntityByTarget( CBaseEntity *pStartEntity, c
 			continue;
 		}
 
-		if ( !ent->m_target )
+		if ( ent->m_target == NULL_STRING )
 			continue;
 
 		if ( FStrEq( STRING(ent->m_target), szName ) )
@@ -1023,9 +991,6 @@ CBaseEntity *CGlobalEntityList::FindEntityInSphere( CBaseEntity *pStartEntity, c
 			DevWarning( "NULL entity in global entity list!\n" );
 			continue;
 		}
-
-		if ( !ent->edict() )
-			continue;
 
 		Vector vecRelativeCenter;
 		ent->CollisionProp()->WorldToCollisionSpace( vecCenter, &vecRelativeCenter );
@@ -1066,9 +1031,6 @@ CBaseEntity *CGlobalEntityList::FindEntityByNameNearest( const char *szName, con
 	CBaseEntity *pSearch = NULL;
 	while ((pSearch = FindEntityByName( pSearch, szName, pSearchingEntity, pActivator, pCaller )) != NULL)
 	{
-		if ( !pSearch->edict() )
-			continue;
-
 		float flDist2 = (pSearch->GetAbsOrigin() - vecSrc).LengthSqr();
 
 		if (flMaxDist2 > flDist2)
@@ -1108,9 +1070,6 @@ CBaseEntity *CGlobalEntityList::FindEntityByNameWithin( CBaseEntity *pStartEntit
 
 	while ((pEntity = FindEntityByName( pEntity, szName, pSearchingEntity, pActivator, pCaller )) != NULL)
 	{
-		if ( !pEntity->edict() )
-			continue;
-
 		float flDist2 = (pEntity->GetAbsOrigin() - vecSrc).LengthSqr();
 
 		if (flMaxDist2 > flDist2)
@@ -1147,9 +1106,6 @@ CBaseEntity *CGlobalEntityList::FindEntityByClassnameNearest( const char *szName
 	CBaseEntity *pSearch = NULL;
 	while ((pSearch = FindEntityByClassname( pSearch, szName )) != NULL)
 	{
-		if ( !pSearch->edict() )
-			continue;
-
 		float flDist2 = (pSearch->GetAbsOrigin() - vecSrc).LengthSqr();
 
 		if (flMaxDist2 > flDist2)
@@ -1178,9 +1134,6 @@ CBaseEntity *CGlobalEntityList::FindEntityByClassnameNearestFast( string_t iszNa
 	CBaseEntity *pSearch = NULL;
 	while ((pSearch = FindEntityByClassnameFast( pSearch, iszName )) != NULL)
 	{
-		if ( !pSearch->edict() )
-			continue;
-
 		float flDist2 = (pSearch->GetAbsOrigin() - vecSrc).LengthSqr();
 
 		if (flMaxDist2 > flDist2)
@@ -1218,9 +1171,6 @@ CBaseEntity *CGlobalEntityList::FindEntityByClassnameNearest2D( const char *szNa
 	CBaseEntity *pSearch = NULL;
 	while ((pSearch = FindEntityByClassname( pSearch, szName )) != NULL)
 	{
-		if ( !pSearch->edict() )
-			continue;
-
 		float flDist2 = (pSearch->GetAbsOrigin().AsVector2D() - vecSrc.AsVector2D()).LengthSqr();
 
 		if (flMaxDist2 > flDist2)
@@ -1255,9 +1205,6 @@ CBaseEntity *CGlobalEntityList::FindEntityByClassnameWithin( CBaseEntity *pStart
 
 	while ((pEntity = FindEntityByClassname( pEntity, szName )) != NULL)
 	{
-		if ( !pEntity->edict() && !pEntity->IsEFlagSet( EFL_NOT_NETWORKED ))
-			continue;
-
 		Vector vecRelativeCenter;
 		pEntity->CollisionProp()->WorldToCollisionSpace( vecSrc, &vecRelativeCenter );
 		if ( IsBoxIntersectingSphere( pEntity->CollisionProp()->OBBMins(),	pEntity->CollisionProp()->OBBMaxs(), vecRelativeCenter, flRadius ) )
@@ -1287,9 +1234,6 @@ CBaseEntity *CGlobalEntityList::FindEntityByClassnameWithin( CBaseEntity *pStart
 
 	while ((pEntity = FindEntityByClassname( pEntity, szName )) != NULL)
 	{
-		if ( !pEntity->edict() && !pEntity->IsEFlagSet( EFL_NOT_NETWORKED ) )
-			continue;
-
 		// check if the aabb intersects the search aabb.
 		Vector entMins, entMaxs;
 		pEntity->CollisionProp()->WorldSpaceAABB( &entMins, &entMaxs );
@@ -1379,8 +1323,6 @@ CBaseEntity *CGlobalEntityList::FindEntityGenericNearest( const char *szName, co
 	return pEntity;
 } 
 
-bool IsStandardEntityClassname(const char *pClassname);
-
 //-----------------------------------------------------------------------------
 // Purpose: Find the nearest entity along the facing direction from the given origin
 //			within the angular threshold (ignores worldspawn) with the
@@ -1392,9 +1334,6 @@ bool IsStandardEntityClassname(const char *pClassname);
 //-----------------------------------------------------------------------------
 CBaseEntity *CGlobalEntityList::FindEntityClassNearestFacing( const Vector &origin, const Vector &facing, float threshold, const char *classname)
 {
-	if(IsStandardEntityClassname(classname))
-		return NULL;
-
 	float bestDot = threshold;
 	CBaseEntity *best_ent = NULL;
 
@@ -1411,9 +1350,6 @@ CBaseEntity *CGlobalEntityList::FindEntityClassNearestFacing( const Vector &orig
 
 		// FIXME: why is this skipping pointsize entities?
 		if (ent->IsPointSized() )
-			continue;
-
-		if(IsStandardEntityClassname(classname))
 			continue;
 
 		// Make vector to entity
@@ -1457,14 +1393,7 @@ CBaseEntity *CGlobalEntityList::FindEntityNearestFacing( const Vector &origin, c
 			continue;
 		}
 
-		// Ignore logical entities
-		if (!ent->edict())
-			continue;
-
 		const char *classname = ent->GetClassname();
-
-		if(IsStandardEntityClassname(classname))
-			continue;
 
 		// Make vector to entity
 		Vector	to_ent = ent->WorldSpaceCenter() - origin;
@@ -1539,7 +1468,7 @@ void CGlobalEntityList::NotifyCreateEntity( CBaseEntity *pEnt )
 
 	Assert( pEnt->m_pPrevByClass == NULL && pEnt->m_pNextByClass == NULL && pEnt->m_ListByClass == g_EntsByClassname.InvalidHandle() );
 
-	EntsByStringList_t dummyEntry = { MAKE_STRING( pEnt->GetClassname() ), 0 };
+	EntsByStringList_t dummyEntry = { pEnt->GetClassnameStr(), 0 };
 	UtlHashHandle_t hEntry = g_EntsByClassname.Insert( dummyEntry );
 
 	EntsByStringList_t *pEntry = &g_EntsByClassname[hEntry];
@@ -2113,3 +2042,114 @@ CON_COMMAND(report_simthinklist, "Lists all simulating/thinking entities")
 	list.ReportEntityList();
 }
 
+
+/////////////////////// entitylist /////////////////////
+
+CUtlMemoryPool g_EntListMemPool( sizeof(entitem_t), 256, CUtlMemoryPool::GROW_NONE, "g_EntListMemPool" );
+
+CEntityList::CEntityList()
+{
+	m_pItemList = NULL;
+	m_iNumItems = 0;
+}
+
+CEntityList::~CEntityList()
+{
+	// remove all items from the list
+	entitem_t *next, *e = m_pItemList;
+	while ( e != NULL )
+	{
+		next = e->pNext;
+		delete e;
+		e = next;
+	}
+	m_pItemList = NULL;
+}
+
+void CEntityList::AddEntity( CBaseEntity *pEnt )
+{
+	// check if it's already in the list; if not, add it
+	entitem_t *e = m_pItemList;
+	while ( e != NULL )
+	{
+		if ( e->hEnt == pEnt )
+		{
+			// it's already in the list
+			return;
+		}
+
+		if ( e->pNext == NULL )
+		{
+			// we've hit the end of the list, so tack it on
+			e->pNext = new entitem_t;
+			e->pNext->hEnt = pEnt;
+			e->pNext->pNext = NULL;
+			m_iNumItems++;
+			return;
+		}
+
+		e = e->pNext;
+	}
+	
+	// empty list
+	m_pItemList = new entitem_t;
+	m_pItemList->hEnt = pEnt;
+	m_pItemList->pNext = NULL;
+	m_iNumItems = 1;
+}
+
+void CEntityList::DeleteEntity( CBaseEntity *pEnt )
+{
+	// find the entry in the list and delete it
+	entitem_t *prev = NULL, *e = m_pItemList;
+	while ( e != NULL )
+	{
+		// delete the link if it's the matching entity OR if the link is NULL
+		if ( e->hEnt == pEnt || e->hEnt == NULL )
+		{
+			if ( prev )
+			{
+				prev->pNext = e->pNext;
+			}
+			else
+			{
+				m_pItemList = e->pNext;
+			}
+
+			delete e;
+			m_iNumItems--;
+
+			// REVISIT: Is this correct?  Is this just here to clean out dead EHANDLEs?
+			// restart the loop
+			e = m_pItemList;
+			prev = NULL;
+			continue;
+		}
+
+		prev = e;
+		e = e->pNext;
+	}
+}
+
+#pragma push_macro("new")
+#pragma push_macro("delete")
+#undef new
+#undef delete
+
+void *entitem_t::operator new( size_t stAllocateBlock )
+{
+	return g_EntListMemPool.Alloc( stAllocateBlock );
+}
+
+void *entitem_t::operator new( size_t stAllocateBlock, int nBlockUse, const char *pFileName, int nLine )
+{
+	return g_EntListMemPool.Alloc( stAllocateBlock );
+}
+
+void entitem_t::operator delete( void *pMem )
+{
+	g_EntListMemPool.Free( pMem );
+}
+
+#pragma pop_macro("delete")
+#pragma pop_macro("new")

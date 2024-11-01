@@ -253,7 +253,7 @@ Type *CInterpolatedVarEntryBase<Type, IS_ARRAY>::NewEntry( const Type *pValue, i
 	Init(maxCount);
 	if ( value && maxCount)
 	{
-		memcpy( value, pValue, maxCount*sizeof(Type) );
+		memcpy( (void *)value, (void *)pValue, maxCount*sizeof(Type) );
 	}
 	return value;
 }
@@ -300,7 +300,7 @@ Type *CInterpolatedVarEntryBase<Type, false>::NewEntry( const Type *pValue, int 
 {
 	Assert(maxCount==1);
 	changetime = time;
-	memcpy( &value, pValue, maxCount*sizeof(Type) );
+	memcpy( (void *)&value, (void *)pValue, maxCount*sizeof(Type) );
 	return &value;
 }
 
@@ -652,7 +652,7 @@ inline int CInterpolatedVarArrayBase<Type, IS_ARRAY>::GetType() const
 template< typename Type, bool IS_ARRAY >
 void CInterpolatedVarArrayBase<Type, IS_ARRAY>::NoteLastNetworkedValue()
 {
-	memcpy( m_LastNetworkedValue, m_pValue, m_nMaxCount * sizeof( Type ) );
+	memcpy( (void *)m_LastNetworkedValue, (void *)m_pValue, m_nMaxCount * sizeof( Type ) );
 	m_LastNetworkedTime = g_flLastPacketTimestamp;
 }
 
@@ -715,7 +715,7 @@ template< typename Type, bool IS_ARRAY >
 inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::RestoreToLastNetworked()
 {
 	Assert( m_pValue );
-	memcpy( m_pValue, m_LastNetworkedValue, m_nMaxCount * sizeof( Type ) );
+	memcpy( (void *)m_pValue, (void *)m_LastNetworkedValue, m_nMaxCount * sizeof( Type ) );
 }
 
 template< typename Type, bool IS_ARRAY >
@@ -780,7 +780,7 @@ inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::Reset( float currentTime 
 		AddToHead( currentTime, m_pValue, false );
 		AddToHead( currentTime, m_pValue, false );
 
-		memcpy( m_LastNetworkedValue, m_pValue, m_nMaxCount * sizeof( Type ) );
+		memcpy( (void *)m_LastNetworkedValue, (void *)m_pValue, m_nMaxCount * sizeof( Type ) );
 	}
 }
 
@@ -1325,7 +1325,7 @@ inline void	CInterpolatedVarArrayBase<Type, IS_ARRAY>::SetMaxCount( float curren
 		m_bLooping = new byte[m_nMaxCount];
 		m_LastNetworkedValue = new Type[m_nMaxCount];
 		memset( m_bLooping, 0, sizeof(byte) * m_nMaxCount);
-		memset( m_LastNetworkedValue, 0, sizeof(Type) * m_nMaxCount);
+		memset( (void *)m_LastNetworkedValue, 0, sizeof(Type) * m_nMaxCount);
 
 		Reset( currentTime );
 	}

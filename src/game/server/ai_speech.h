@@ -321,9 +321,9 @@ private:
 template <class BASE_NPC>
 class CAI_ExpresserHost : public BASE_NPC, protected CAI_ExpresserSink
 {
+public:
 	DECLARE_CLASS_NOFRIEND( CAI_ExpresserHost, BASE_NPC );
 
-public:
 	CAI_Expresser *GetSinkExpresser() { return this->GetExpresser(); }
 
 	virtual void	NoteSpeaking( float duration, float delay );

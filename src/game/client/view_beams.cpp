@@ -26,7 +26,7 @@
 	#include "prop_portal_shared.h"
 #endif
 
-ConVar r_DrawBeams( "r_DrawBeams", "1", FCVAR_CHEAT, "0=Off, 1=Normal, 2=Wireframe" );
+extern ConVar *r_DrawBeams;
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -1921,7 +1921,7 @@ void CViewRenderBeams::DrawBeam( Beam_t *pbeam )
 {
 	Assert( pbeam->delta.IsValid() );
 
-	if ( !r_DrawBeams.GetInt() )
+	if ( !r_DrawBeams->GetInt() )
 		return;
 
 	// Don't draw really short beams

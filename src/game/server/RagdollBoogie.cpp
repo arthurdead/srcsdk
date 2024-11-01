@@ -15,6 +15,7 @@
 #include "effect_dispatch_data.h"
 #include "te_effect_dispatch.h"
 #include "IEffects.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -79,7 +80,7 @@ void CRagdollBoogie::Spawn()
 
 	if ( HasSpawnFlags( SF_RAGDOLL_BOOGIE_ELECTRICAL ) )
 	{
-		SetContextThink( &CRagdollBoogie::ZapThink, gpGlobals->curtime + random->RandomFloat( 0.1f, 0.3f ), s_pZapContext ); 
+		SetContextThink( &CRagdollBoogie::ZapThink, gpGlobals->curtime + random_valve->RandomFloat( 0.1f, 0.3f ), s_pZapContext ); 
 	}
 }
 
@@ -124,7 +125,7 @@ void CRagdollBoogie::ZapThink()
 
 	EmitSound( "RagdollBoogie.Zap" );
 
-	SetContextThink( &CRagdollBoogie::ZapThink, gpGlobals->curtime + random->RandomFloat( 0.1f, 0.3f ), s_pZapContext ); 
+	SetContextThink( &CRagdollBoogie::ZapThink, gpGlobals->curtime + random_valve->RandomFloat( 0.1f, 0.3f ), s_pZapContext ); 
 }
 
 
@@ -242,7 +243,7 @@ void CRagdollBoogie::BoogieThink( void )
 
 		if ( dt < 0 )
 		{
-			SetNextThink( gpGlobals->curtime + random->RandomFloat( 0.1, 0.2f ) );
+			SetNextThink( gpGlobals->curtime + random_valve->RandomFloat( 0.1, 0.2f ) );
 			return;
 		}
 
@@ -263,7 +264,7 @@ void CRagdollBoogie::BoogieThink( void )
 		}
 	}
 
-	SetNextThink( gpGlobals->curtime + random->RandomFloat( 0.1, 0.2f ) );
+	SetNextThink( gpGlobals->curtime + random_valve->RandomFloat( 0.1, 0.2f ) );
 }
 
 //-----------------------------------------------------------------------------

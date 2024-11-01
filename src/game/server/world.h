@@ -31,8 +31,6 @@ public:
 
 	DECLARE_SERVERCLASS();
 
-	virtual int RequiredEdictIndex( void ) { return 0; }   // the world always needs to be in slot 0
-
 	virtual void PostConstructor( const char *szClassname );
 
 	virtual void Spawn( void );
@@ -77,7 +75,7 @@ private:
 	DECLARE_MAPENTITY();
 
 	// Now needs to show up on the client for RPC
-	CNetworkVar( string_t, m_iszChapterTitle );
+	CNetworkStringT( m_iszChapterTitle );
 
 	// Suppresses m_iszChapterTitle's env_message creation,
 	// allowing it to only be used for saves and RPC
@@ -90,7 +88,7 @@ private:
 	CNetworkVar( float, m_flMinOccluderArea );
 	CNetworkVar( float, m_flMinPropScreenSpaceWidth );
 	CNetworkVar( float, m_flMaxPropScreenSpaceWidth );
-	CNetworkVar( string_t, m_iszDetailSpriteMaterial );
+	CNetworkStringT( m_iszDetailSpriteMaterial );
 
 	// start flags
 	CNetworkVar( bool, m_bStartDark );

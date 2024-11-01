@@ -21,6 +21,7 @@ class C_TEEnergySplash : public C_BaseTempEntity
 {
 public:
 	DECLARE_CLIENTCLASS();
+	DECLARE_CLASS( C_TEEnergySplash, C_BaseTempEntity );
 
 					C_TEEnergySplash( void );
 	virtual			~C_TEEnergySplash( void );

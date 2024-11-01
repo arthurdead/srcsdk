@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "mapentities.h"
+#include "mapentities_shared.h"
 #include "networkstringtabledefs.h"
 #include "eiface.h"
 #include "tier1/utllinkedlist.h"
@@ -197,30 +197,6 @@ CSteam3Server &Steam3Server();
 typedef CBasePlayer* (*ClientPutInServerOverrideFn)( edict_t *pEdict, const char *playername );
 
 void ClientPutInServerOverride( ClientPutInServerOverrideFn fn );
-
-// -------------------------------------------------------------------------------------------- //
-// Entity list management stuff.
-// -------------------------------------------------------------------------------------------- //
-// These are created for map entities in order as the map entities are spawned.
-class CMapEntityRef
-{
-public:
-	int		m_iEdict;			// Which edict slot this entity got. -1 if CreateEntityByName failed.
-	int		m_iSerialNumber;	// The edict serial number. TODO used anywhere ?
-};
-
-extern CUtlLinkedList<CMapEntityRef, unsigned short> g_MapEntityRefs;
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-class CMapLoadEntityFilter : public IMapEntityFilter
-{
-public:
-	virtual bool ShouldCreateEntity( const char *pClassname ) OVERRIDE;
-
-	virtual CBaseEntity* CreateNextEntity( const char *pClassname ) OVERRIDE;
-};
 
 bool IsEngineThreaded();
 

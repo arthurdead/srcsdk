@@ -15,6 +15,7 @@
 #include "ai_basenpc.h"
 #include "ai_route.h"
 #include "ndebugoverlay.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

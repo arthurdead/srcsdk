@@ -78,6 +78,7 @@ enum ImageFormat
 	NUM_IMAGE_FORMATS
 };
 
+#if 0
 typedef enum _D3DFORMAT
 {
 	D3DFMT_INDEX16,
@@ -130,6 +131,7 @@ typedef enum _D3DFORMAT
 
 	D3DFMT_UNKNOWN
 } D3DFORMAT;
+#endif
 
 //-----------------------------------------------------------------------------
 // Color structures
@@ -148,18 +150,15 @@ struct BGRA8888_t
 	}
 };
 
-struct RGBA8888_t
+struct BGRX8888_t
 {
-	unsigned char r;		// change the order of names to change the 
+	unsigned char b;		// change the order of names to change the 
 	unsigned char g;		//  order of the output ARGB or BGRA, etc...
-	unsigned char b;		//  Last one is MSB, 1st is LSB.
-	unsigned char a;
-	inline RGBA8888_t& operator=( const BGRA8888_t& in )
+	unsigned char r;		//  Last one is MSB, 1st is LSB.
+	unsigned char x;
+	inline BGRX8888_t& operator=( const BGRX8888_t& in )
 	{
-		r = in.r;
-		g = in.g;
-		b = in.b;
-		a = in.a;
+		*( unsigned int * )this = *( unsigned int * ) &in;
 		return *this;
 	}
 };
@@ -183,6 +182,38 @@ struct RGB888_t
 	inline bool operator!=( const RGB888_t& in ) const
 	{
 		return ( r != in.r ) || ( g != in.g ) || ( b != in.b );
+	}
+};
+
+struct RGBA8888_t
+{
+	unsigned char r;		// change the order of names to change the 
+	unsigned char g;		//  order of the output ARGB or BGRA, etc...
+	unsigned char b;		//  Last one is MSB, 1st is LSB.
+	unsigned char a;
+	inline RGBA8888_t& operator=( const BGRA8888_t& in )
+	{
+		r = in.r;
+		g = in.g;
+		b = in.b;
+		a = in.a;
+		return *this;
+	}
+	inline RGBA8888_t& operator=( const RGB888_t& in )
+	{
+		r = in.r;
+		g = in.g;
+		b = in.b;
+		a = 0xFF;
+		return *this;
+	}
+	inline RGBA8888_t& operator=( const BGRX8888_t& in )
+	{
+		r = in.r;
+		g = in.g;
+		b = in.b;
+		a = 0xFF;
+		return *this;
 	}
 };
 
@@ -323,8 +354,10 @@ namespace ImageLoader
 	// convert back and forth from D3D format to ImageFormat, regardless of
 	// whether it's supported or not
 	//-----------------------------------------------------------------------------
+#if 0
 	ImageFormat D3DFormatToImageFormat( D3DFORMAT format );
 	D3DFORMAT ImageFormatToD3DFormat( ImageFormat format );
+#endif
 
 	// Flags for ResampleRGBA8888
 	enum

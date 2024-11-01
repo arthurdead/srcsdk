@@ -76,8 +76,8 @@ inline const Vector &CShotManipulator::ApplySpread( const Vector &vecSpread, flo
 
 	do
 	{
-		x = random->RandomFloat(-1,1) * flatness + random->RandomFloat(-1,1) * (1 - flatness);
-		y = random->RandomFloat(-1,1) * flatness + random->RandomFloat(-1,1) * (1 - flatness);
+		x = random_valve->RandomFloat(-1,1) * flatness + random_valve->RandomFloat(-1,1) * (1 - flatness);
+		y = random_valve->RandomFloat(-1,1) * flatness + random_valve->RandomFloat(-1,1) * (1 - flatness);
 		if ( shotBias < 0 )
 		{
 			x = ( x >= 0 ) ? 1.0 - x : -1.0 - x;
@@ -94,9 +94,9 @@ inline const Vector &CShotManipulator::ApplySpread( const Vector &vecSpread, flo
 inline const Vector &CShotManipulator::ApplyAngularSpread( const Vector &vecSpread, float bias )
 {
 	float x, y, z;
-	x = vecSpread[0] * random->RandomFloat(-0.5f, 0.5f);
-	y = vecSpread[1] * random->RandomFloat(-0.5f, 0.5f);
-	z = vecSpread[2] * random->RandomFloat(-0.5f, 0.5f);
+	x = vecSpread[0] * random_valve->RandomFloat(-0.5f, 0.5f);
+	y = vecSpread[1] * random_valve->RandomFloat(-0.5f, 0.5f);
+	z = vecSpread[2] * random_valve->RandomFloat(-0.5f, 0.5f);
 
 	matrix3x4_t matrix;
 	QAngle qa(x,y,z);

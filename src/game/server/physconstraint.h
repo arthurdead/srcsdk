@@ -32,8 +32,8 @@ struct hl_constraint_info_t
 
 abstract_class CPhysConstraint : public CLogicalEntity
 {
-	DECLARE_CLASS( CPhysConstraint, CLogicalEntity );
 public:
+	DECLARE_CLASS( CPhysConstraint, CLogicalEntity );
 
 	CPhysConstraint();
 	~CPhysConstraint();
@@ -102,8 +102,8 @@ protected:
 //-----------------------------------------------------------------------------
 class CPhysFixed : public CPhysConstraint
 {
-	DECLARE_CLASS( CPhysFixed, CPhysConstraint );
 public:
+	DECLARE_CLASS( CPhysFixed, CPhysConstraint );
 	IPhysicsConstraint *CreateConstraint( IPhysicsConstraintGroup *pGroup, const hl_constraint_info_t &info );
 
 	// just for debugging - move to the position of the reference entity

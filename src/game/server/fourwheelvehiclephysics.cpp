@@ -620,7 +620,7 @@ void CFourWheelVehiclePhysics::PlaceWheelDust( int wheelIndex, bool ignoreSpeed 
 	m_pVehicle->GetWheelContactPoint( wheelIndex, &vecPos, NULL );
 
 	vecVel.Random( -1.0f, 1.0f );
-	vecVel.z = random->RandomFloat( 0.3f, 1.0f );
+	vecVel.z = random_valve->RandomFloat( 0.3f, 1.0f );
 
 	VectorNormalize( vecVel );
 

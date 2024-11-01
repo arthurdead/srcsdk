@@ -1103,8 +1103,8 @@ AI_END_CUSTOM_SCHEDULE_PROVIDER()
 class CAI_LeadGoal : public CAI_GoalEntity,
 					 public CAI_LeadBehaviorHandler
 {
-	DECLARE_CLASS( CAI_LeadGoal, CAI_GoalEntity );
 public:
+	DECLARE_CLASS( CAI_LeadGoal, CAI_GoalEntity );
 	CAI_LeadGoal()
 	 :	m_fArrived( false )
 	{
@@ -1379,8 +1379,8 @@ const char *CAI_LeadGoal::GetConceptModifiers( const char *pszConcept )
 
 class CAI_LeadGoal_Weapon : public CAI_LeadGoal
 {
-	DECLARE_CLASS( CAI_LeadGoal_Weapon, CAI_LeadGoal );
 public:
+	DECLARE_CLASS( CAI_LeadGoal_Weapon, CAI_LeadGoal );
 
 	virtual const char *GetConceptModifiers( const char *pszConcept );
 	virtual void InputActivate( inputdata_t &inputdata );

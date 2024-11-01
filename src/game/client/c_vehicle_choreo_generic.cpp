@@ -114,7 +114,7 @@ END_RECV_TABLE()
 //-----------------------------------------------------------------------------
 C_PropVehicleChoreoGeneric::C_PropVehicleChoreoGeneric( void )
 {
-	memset( &m_ViewSmoothingData, 0, sizeof( m_ViewSmoothingData ) );
+	memset( (void *)&m_ViewSmoothingData, 0, sizeof( m_ViewSmoothingData ) );
 
 	m_ViewSmoothingData.pVehicle = this;
 	m_ViewSmoothingData.flPitchCurveZero = PITCH_CURVE_ZERO;

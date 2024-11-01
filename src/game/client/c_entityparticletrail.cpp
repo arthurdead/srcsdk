@@ -11,6 +11,7 @@
 #include "particlemgr.h"
 #include "particle_util.h"
 #include "particles_simple.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -114,9 +115,9 @@ void C_EntityParticleTrail::AddParticle( float flInitialDeltaTime, const Vector 
 {
 	// Select a random point somewhere in the hitboxes of the entity.
 	Vector vecLocalPosition, vecWorldPosition;
-	vecLocalPosition.x			= Lerp( random->RandomFloat( 0.0f, 1.0f ), vecMins.x, vecMaxs.x );
-	vecLocalPosition.y			= Lerp( random->RandomFloat( 0.0f, 1.0f ), vecMins.y, vecMaxs.y );
-	vecLocalPosition.z			= Lerp( random->RandomFloat( 0.0f, 1.0f ), vecMins.z, vecMaxs.z );
+	vecLocalPosition.x			= Lerp( random_valve->RandomFloat( 0.0f, 1.0f ), vecMins.x, vecMaxs.x );
+	vecLocalPosition.y			= Lerp( random_valve->RandomFloat( 0.0f, 1.0f ), vecMins.y, vecMaxs.y );
+	vecLocalPosition.z			= Lerp( random_valve->RandomFloat( 0.0f, 1.0f ), vecMins.z, vecMaxs.z );
 	VectorTransform( vecLocalPosition, boxToWorld, vecWorldPosition );
 
 	// Don't emit the particle unless it's inside the model
@@ -137,8 +138,8 @@ void C_EntityParticleTrail::AddParticle( float flInitialDeltaTime, const Vector 
 		return;
 
 	pParticle->m_Pos			= vecWorldPosition;
-	pParticle->m_flRoll			= random->RandomInt( 0, 360 );
-	pParticle->m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
+	pParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+	pParticle->m_flRollDelta	= random_valve->RandomFloat( -2.0f, 2.0f );
 
 	pParticle->m_flLifetime		= flInitialDeltaTime;
 	pParticle->m_flDieTime		= m_Info.m_flLifetime;
@@ -146,7 +147,7 @@ void C_EntityParticleTrail::AddParticle( float flInitialDeltaTime, const Vector 
 	pParticle->m_uchColor[0]	= 64;
 	pParticle->m_uchColor[1]	= 140;
 	pParticle->m_uchColor[2]	= 225;
-	pParticle->m_uchStartAlpha	= random->RandomInt( 64, 64 );
+	pParticle->m_uchStartAlpha	= random_valve->RandomInt( 64, 64 );
 	pParticle->m_uchEndAlpha	= 0;
 
 	pParticle->m_uchStartSize	= m_Info.m_flStartSize;
@@ -190,7 +191,7 @@ void C_EntityParticleTrail::Update( float fTimeDelta )
 	//Add new particles
 	while ( m_teParticleSpawn.NextEvent( tempDelta ) )
 	{
-		int nHitbox = random->RandomInt( 0, set->numhitboxes - 1 );
+		int nHitbox = random_valve->RandomInt( 0, set->numhitboxes - 1 );
 		mstudiobbox_t *pBox = set->pHitbox(nHitbox);
 
 		AddParticle( tempDelta, pBox->bbmin, pBox->bbmax, *hitboxbones[pBox->bone] );

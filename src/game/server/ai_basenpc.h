@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "simtimer.h" 	 	   
+#include "simtimer.h"
 #include "basecombatcharacter.h"
 #include "ai_debug.h"
 #include "ai_default.h"
@@ -538,9 +538,9 @@ class CAI_BaseNPC : public CBaseCombatCharacter,
 					public CAI_DefMovementSink,
 					public IAI_BehaviorBridge
 {
+public:
 	DECLARE_CLASS( CAI_BaseNPC, CBaseCombatCharacter );
 
-public:
 	//-----------------------------------------------------
 	//
 	// Initialization, cleanup, serialization, identity
@@ -693,11 +693,14 @@ public:
 protected:
 	// Used by derived classes to chain a task to a task that might not be the 
 	// one they are currently handling:
-	void				ChainStartTask( TaskId_t task, TaskData_t taskData )	{ Task_t tempTask = { task, taskData }; StartTask( (const Task_t *)&tempTask ); }
-	void				ChainRunTask( TaskId_t task, TaskData_t taskData )	{ Task_t tempTask = { task, taskData }; RunTask( (const Task_t *)	&tempTask );	}
+	void				ChainStartTask( TaskId_t task, const TaskData_t *taskData, int numData );
+	void				ChainRunTask( TaskId_t task, const TaskData_t *taskData, int numData );
 
-	void				ChainStartTask( TaskId_t task )	{ Task_t tempTask = { task }; StartTask( (const Task_t *)&tempTask ); }
-	void				ChainRunTask( TaskId_t task )	{ Task_t tempTask = { task }; RunTask( (const Task_t *)	&tempTask );	}
+	void				ChainStartTask( TaskId_t task, TaskData_t taskData )	{ ChainStartTask( task, &taskData, 1 ); }
+	void				ChainRunTask( TaskId_t task, TaskData_t taskData )	{ ChainRunTask( task, &taskData, 1 );	}
+
+	void				ChainStartTask( TaskId_t task )	{ ChainStartTask( task, NULL, 0 ); }
+	void				ChainRunTask( TaskId_t task )	{ ChainRunTask( task, NULL, 0 );	}
 
 	void				StartTaskOverlay();
 	virtual void				RunTaskOverlay();
@@ -2085,9 +2088,9 @@ public:
 
 	const Vector &		GetHullMins() const			{ return WorldAlignMins(); }
 	const Vector &		GetHullMaxs() const			{ return WorldAlignMaxs(); }
-	float				GetHullWidth()	const		{ return CollisionProp()->Width(); }
-	float				GetHullLength() const		{ return CollisionProp()->Length(); }
-	float				GetHullHeight() const		{ return CollisionProp()->Height(); }
+	float				GetHullWidth()	const;
+	float				GetHullLength() const;
+	float				GetHullHeight() const;
 
 	void				SetupVPhysicsHull();
 	virtual void		StartTouch( CBaseEntity *pOther );

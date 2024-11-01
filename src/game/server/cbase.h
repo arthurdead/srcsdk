@@ -117,6 +117,7 @@ class CSound;
 #include "baseanimating.h"
 #include "basecombatweapon.h"
 #include "basecombatcharacter.h"
+#include "collisionproperty.h"
 #include "gamerules.h"
 #include "entitylist.h"
 #include "basetempentity.h"

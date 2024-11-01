@@ -32,10 +32,10 @@ const float DEFAULT_SKID_THRESHOLD = 10.0f;
 //-----------------------------------------------------------------------------
 class CFourWheelServerVehicle : public CBaseServerVehicle
 {
+public:
 	DECLARE_CLASS( CFourWheelServerVehicle, CBaseServerVehicle );
 
 // IServerVehicle
-public:
 	virtual ~CFourWheelServerVehicle( void )
 	{
 	}
@@ -73,8 +73,8 @@ private:
 //-----------------------------------------------------------------------------
 class CPropVehicle : public CBaseProp, public CDefaultPlayerPickupVPhysics
 {
-	DECLARE_CLASS( CPropVehicle, CBaseProp );
 public:
+	DECLARE_CLASS( CPropVehicle, CBaseProp );
 	CPropVehicle();
 	virtual ~CPropVehicle();
 
@@ -155,10 +155,10 @@ public:
 //-----------------------------------------------------------------------------
 class CPropVehicleDriveable : public CPropVehicle, public IDrivableVehicle, public INPCPassengerCarrier
 {
+public:
 	DECLARE_CLASS( CPropVehicleDriveable, CPropVehicle );
 	DECLARE_SERVERCLASS();
 	DECLARE_MAPENTITY();
-public:
 	CPropVehicleDriveable( void );
 	~CPropVehicleDriveable( void );
 

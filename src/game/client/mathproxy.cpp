@@ -660,7 +660,7 @@ bool CUniformNoiseProxy::Init( IMaterial *pMaterial, KeyValues *pKeyValues )
 
 void CUniformNoiseProxy::OnBind( void *pC_BaseEntity )
 {
-	SetFloatResult( random->RandomFloat( m_flMinVal.GetFloat(), m_flMaxVal.GetFloat() ) );
+	SetFloatResult( random_valve->RandomFloat( m_flMinVal.GetFloat(), m_flMaxVal.GetFloat() ) );
 
 	if ( ToolsEnabled() )
 	{

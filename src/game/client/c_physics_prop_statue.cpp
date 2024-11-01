@@ -8,6 +8,7 @@
 #include "cbase.h"
 #include "c_physics_prop_statue.h"
 #include "debugoverlay_shared.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

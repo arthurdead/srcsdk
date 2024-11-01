@@ -270,13 +270,13 @@ void CDirtySpatialPartitionEntityList::OnPostQuery( SpatialPartitionListMask_t l
 //-----------------------------------------------------------------------------
 BEGIN_PREDICTION_DATA_NO_BASE( C_CollisionProperty )
 
-	DEFINE_PRED_FIELD( m_vecMinsPreScaled, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_vecMaxsPreScaled, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_vecMins, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_vecMaxs, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_nSolidType, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_usSolidFlags, FIELD_SHORT, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_triggerBloat, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_vecMinsPreScaled, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_vecMaxsPreScaled, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_vecMins, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_vecMaxs, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_nSolidType, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_usSolidFlags, FIELD_SHORT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_triggerBloat, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
 
 END_PREDICTION_DATA()
 
@@ -389,24 +389,9 @@ END_NETWORK_TABLE()
 CSharedCollisionProperty::CCollisionProperty()
 {
 	m_Partition = PARTITION_INVALID_HANDLE;
-	Init( NULL );
-}
 
-CSharedCollisionProperty::~CCollisionProperty()
-{
-	DestroyPartitionHandle();
-}
+	m_pOuter = NULL;
 
-#ifdef CLIENT_DLL
-	#undef CCollisionProperty
-#endif
-
-//-----------------------------------------------------------------------------
-// Initialization
-//-----------------------------------------------------------------------------
-void CSharedCollisionProperty::Init( CSharedBaseEntity *pEntity )
-{
-	m_pOuter = pEntity;
 	m_vecMinsPreScaled.GetForModify().Init();
 	m_vecMaxsPreScaled.GetForModify().Init();
 	m_vecMins.GetForModify().Init();
@@ -428,6 +413,23 @@ void CSharedCollisionProperty::Init( CSharedBaseEntity *pEntity )
 	m_vecSpecifiedSurroundingMaxsPreScaled.GetForModify().Init();
 	m_vecSpecifiedSurroundingMins.GetForModify().Init();
 	m_vecSpecifiedSurroundingMaxs.GetForModify().Init();
+}
+
+CSharedCollisionProperty::~CCollisionProperty()
+{
+	DestroyPartitionHandle();
+}
+
+#ifdef CLIENT_DLL
+	#undef CCollisionProperty
+#endif
+
+//-----------------------------------------------------------------------------
+// Initialization
+//-----------------------------------------------------------------------------
+void CSharedCollisionProperty::Init( CSharedBaseEntity *pEntity )
+{
+	m_pOuter = pEntity;
 }
 
 
@@ -859,9 +861,9 @@ const Vector & CSharedCollisionProperty::WorldToNormalizedSpace( const Vector &i
 void CSharedCollisionProperty::RandomPointInBounds( const Vector &vecNormalizedMins, const Vector &vecNormalizedMaxs, Vector *pPoint) const
 {
 	Vector vecNormalizedSpace;
-	vecNormalizedSpace.x = random->RandomFloat( vecNormalizedMins.x, vecNormalizedMaxs.x );
-	vecNormalizedSpace.y = random->RandomFloat( vecNormalizedMins.y, vecNormalizedMaxs.y );
-	vecNormalizedSpace.z = random->RandomFloat( vecNormalizedMins.z, vecNormalizedMaxs.z );
+	vecNormalizedSpace.x = random_valve->RandomFloat( vecNormalizedMins.x, vecNormalizedMaxs.x );
+	vecNormalizedSpace.y = random_valve->RandomFloat( vecNormalizedMins.y, vecNormalizedMaxs.y );
+	vecNormalizedSpace.z = random_valve->RandomFloat( vecNormalizedMins.z, vecNormalizedMaxs.z );
 	NormalizedToWorldSpace( vecNormalizedSpace, pPoint );
 }
 
@@ -1285,7 +1287,7 @@ void CSharedCollisionProperty::SetSurroundingBoundsType( SurroundingBoundsType_t
 void CSharedCollisionProperty::MarkSurroundingBoundsDirty()
 {
 	// don't bother with the world
-	if ( m_pOuter->IsWorld() && !m_pOuter->IsEFlagSet( EFL_NOT_NETWORKED ) )
+	if ( m_pOuter->IsWorld() )
 		return;
 
 	GetOuter()->AddEFlags( EFL_DIRTY_SURROUNDING_COLLISION_BOUNDS );
@@ -1384,6 +1386,14 @@ void CSharedCollisionProperty::DestroyPartitionHandle()
 //-----------------------------------------------------------------------------
 void CSharedCollisionProperty::UpdateServerPartitionMask( )
 {
+	// Don't bother with deleted things
+	if ( m_pOuter->IsMarkedForDeletion() )
+		return;
+
+	// don't add the world
+	if ( m_pOuter->IsWorld() )
+		return;
+
 #ifndef CLIENT_DLL
 	SpatialPartitionHandle_t handle = GetPartitionHandle();
 	if ( handle == PARTITION_INVALID_HANDLE )
@@ -1392,17 +1402,6 @@ void CSharedCollisionProperty::UpdateServerPartitionMask( )
 	// Remove it from whatever lists it may be in at the moment
 	// We'll re-add it below if we need to.
 	partition->Remove( handle );
-
-	if( !m_pOuter->IsEFlagSet( EFL_NOT_NETWORKED ) ) // Allow server only entities to have collision
-	{
-		// Don't bother with deleted things
-		if ( !m_pOuter->edict() )
-			return;
-
-		// don't add the world
-		if ( m_pOuter->IsWorld() )
-			return;		
-	}
 
 	// Make sure it's in the list of all entities
 	bool bIsSolid = IsSolid() || IsSolidFlagSet(FSOLID_TRIGGER);
@@ -1462,16 +1461,15 @@ void CSharedCollisionProperty::UpdatePartition( )
 	{
 		m_pOuter->RemoveEFlags( EFL_DIRTY_SPATIAL_PARTITION );
 
+		// Don't bother with deleted things
+		if ( m_pOuter->IsMarkedForDeletion() )
+			return;
+
+		// don't add the world
+		if ( m_pOuter->IsWorld() )
+			return;
+
 #ifndef CLIENT_DLL
-		if( !m_pOuter->IsEFlagSet( EFL_NOT_NETWORKED ) ) // Allow server only entities to have collision
-		{
-			Assert( !m_pOuter->IsWorld() );
-
-			// Don't bother with deleted things
-			if ( !m_pOuter->edict() )
-				return;
-		}
-
 		if ( GetPartitionHandle() == PARTITION_INVALID_HANDLE )
 		{
 			CreatePartitionHandle();

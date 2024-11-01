@@ -19,11 +19,9 @@ public:
 	C_World( void );
 	~C_World( void );
 
-	virtual int RequiredEdictIndex( void ) { return 0; }   // the world always needs to be in slot 0
-	
-	// Override the factory create/delete functions since the world is a singleton.
-	virtual bool InitializeAsServerEntity( int entnum, int iSerialNum );
 	virtual void UpdateOnRemove();
+
+	virtual bool PostConstructor( const char *szClassname );
 
 	virtual void Precache();
 	virtual void Spawn();
@@ -38,10 +36,6 @@ public:
 	const char *GetDetailSpriteMaterial() const;
 
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
-
-	// A special function which parses map data for the client world entity before LevelInitPreEntity().
-	// This can be used to access keyvalues early and without transmitting from the server.
-	void ParseWorldMapData( const char *pMapData );
 
 public:
 	enum

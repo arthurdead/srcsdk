@@ -33,7 +33,7 @@
 #include "hltvdirector.h"
 #include "viewport_panel_names.h"
 #include "team.h"
-#include "mapentities.h"
+#include "mapentities_shared.h"
 #include "gameinterface.h"
 #include "eventqueue.h"
 #include "iscorer.h"
@@ -180,7 +180,7 @@ ConVar nextlevel( "nextlevel",
 				  "If set to a valid map name, will trigger a changelevel to the specified map at the end of the round" );
 
 // Hook into the convar from the engine
-ConVarRef	skill( "skill" );			// 1 - 3
+extern ConVar *skill;
 
 ConVar sv_weapon_respawn_time("sv_weapon_respawn_time", "20", FCVAR_GAMEDLL|FCVAR_NOTIFY);
 ConVar sv_item_respawn_time("sv_item_respawn_time", "30", FCVAR_GAMEDLL|FCVAR_NOTIFY);
@@ -208,8 +208,8 @@ CBaseEntity	*g_pLastSpawn = NULL;
 #endif // CLIENT_DLL
 
 ConVar	teamplay( "mp_teamplay","0", FCVAR_NOTIFY|FCVAR_REPLICATED );
-ConVarRef	deathmatch( "deathmatch" );	// 0, 1, or 2
-ConVarRef	coop( "coop" );			// 0 or 1
+extern ConVar *deathmatch;
+extern ConVar *coop;
 
 CViewVectors g_DefaultViewVectors(
 	Vector(-16, -16, 0 ),		//VEC_HULL_MIN (m_vHullMin)
@@ -397,9 +397,52 @@ void CSharedGameRules::SafeRemoveIfDesired()
 	BaseClass::SafeRemoveIfDesired();
 }
 
+#ifdef GAME_DLL
+DEFINE_ENTITY_FACTORY( CGameRulesProxy );
+
+IEntityFactory *CSharedGameRules::ProxyFactory()
+{
+	return &g_CGameRulesProxyFactory;
+}
+
+class CGameRulesEntityFactory : public IEntityFactory
+{
+public:
+	CGameRulesEntityFactory()
+	{
+		EntityFactoryDictionary()->InstallFactory( this, "gamerules_proxy" );
+	}
+
+	CBaseEntity *Create( const char *pClassName )
+	{
+		return m_pTargetFactory->Create( pClassName );
+	}
+
+	void Destroy( CBaseEntity *pNetworkable )
+	{
+		m_pTargetFactory->Destroy( pNetworkable );
+	}
+
+	virtual size_t GetEntitySize()
+	{
+		return m_pTargetFactory->GetEntitySize();
+	}
+
+	virtual const char *DllClassname() const 
+	{
+		return m_pTargetFactory->DllClassname();
+	}
+
+	IEntityFactory *m_pTargetFactory;
+};
+static CGameRulesEntityFactory gamerulesProxyFactory;
+#endif
+
 bool CSharedGameRules::Init()
 {
 #ifdef GAME_DLL
+	gamerulesProxyFactory.m_pTargetFactory = ProxyFactory();
+
 	// Initialize the custom response rule dictionaries.
 	InitCustomResponseRulesDicts();
 
@@ -609,7 +652,7 @@ CBaseEntity *CSharedGameRules::GetPlayerSpawnSpot( CBaseCombatCharacter *pPlayer
 	{
 		pSpot = g_pLastSpawn;
 		// Randomize the start spot
-		for ( int i = random->RandomInt(1,5); i > 0; i-- )
+		for ( int i = random_valve->RandomInt(1,5); i > 0; i-- )
 			pSpot = gEntList.FindEntityByClassname( pSpot, "info_player_deathmatch" );
 		if ( !pSpot )  // skip over the null point
 			pSpot = gEntList.FindEntityByClassname( pSpot, "info_player_deathmatch" );
@@ -770,10 +813,7 @@ void CSharedGameRules::RefreshSkillData ( bool forceUpdate )
 
 	GlobalEntity_Add( "skill.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
 
-	ConVarRef suitcharger( "sk_suitcharger" );
-	suitcharger.SetValue( 30 );
-
-	SetSkillLevel( skill.IsValid() ? skill.GetInt() : 1 );
+	SetSkillLevel( skill->GetInt() );
 
 	char	szExec[256];
 	Q_snprintf( szExec,sizeof(szExec), "exec skill%d.cfg\n", GetSkillLevel() );
@@ -1203,7 +1243,7 @@ void CSharedGameRules::Think()
 {
 	GetVoiceGameMgr()->Update( gpGlobals->frametime );
 
-	SetSkillLevel( skill.GetInt() );
+	SetSkillLevel( skill->GetInt() );
 
 	gpGlobals->coop = IsCoOp();
 	gpGlobals->deathmatch = IsDeathmatch();
@@ -1482,44 +1522,6 @@ float CSharedGameRules::WeaponTraceEntity( CBaseEntity *pEntity, const Vector &v
 	UTIL_TraceEntity( pEntity, vecStart, vecEnd, mask, ptr );
 	return 1.0f;
 }
-
-CGameRulesProxy *CSharedGameRules::AllocateProxy()
-{
-	return new CGameRulesProxy();
-}
-
-class CGameRulesEntityFactory : public IEntityFactory
-{
-public:
-	CGameRulesEntityFactory()
-	{
-		EntityFactoryDictionary()->InstallFactory( this, "gamerules_proxy" );
-	}
-
-	CBaseEntity *Create( const char *pClassName )
-	{
-		if(!GameRules()) {
-			return NULL;
-		}
-
-		CGameRulesProxy* pEnt = GameRules()->AllocateProxy();
-		if(!pEnt)
-			return NULL;
-		pEnt->PostConstructor( pClassName );
-		return pEnt;
-	}
-
-	void Destroy( CBaseEntity *pNetworkable )
-	{
-		UTIL_Remove( pNetworkable );
-	}
-
-	virtual size_t GetEntitySize()
-	{
-		return sizeof(CGameRulesProxy);
-	}
-};
-static CGameRulesEntityFactory gamerulesProxyFactory;
 
 void CSharedGameRules::CreateStandardEntities()
 {
@@ -3033,14 +3035,14 @@ CSharedBaseCombatWeapon *CSharedGameRules::GetNextBestWeapon( CSharedBaseCombatC
 //=========================================================
 bool CSharedGameRules::IsDeathmatch( void )
 {
-	return deathmatch.GetInt() != 0;
+	return deathmatch->GetInt() != 0;
 }
 
 //=========================================================
 //=========================================================
 bool CSharedGameRules::IsCoOp( void )
 {
-	return coop.GetInt() != 0;
+	return coop->GetInt() != 0;
 }
 
 //=========================================================

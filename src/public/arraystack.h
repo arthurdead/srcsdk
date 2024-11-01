@@ -31,7 +31,7 @@ public:
 		data = new T[maxNumElements];
 		m_maxNumElements = maxNumElements;
 		m_stackDepth = 0;
-		assert( data );
+		Assert( data );
 	}
 	
 	void Push( T elem )
@@ -40,7 +40,7 @@ public:
 		if( m_stackDepth > m_maxNumElements )
 		{
 			printf( "ArrayStack overflow\n" );
-			assert( 0 );
+			Assert( 0 );
 		}
 	}
 	
@@ -49,7 +49,7 @@ public:
 		if( m_stackDepth == 0 )
 		{
 			printf( "ArrayStack underflow\n" );
-			assert( 0 );
+			Assert( 0 );
 		}
 		return data[--m_stackDepth];
 	}

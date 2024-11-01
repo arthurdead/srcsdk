@@ -50,7 +50,7 @@ CHudElementHelper::CHudElementHelper( CHudElement *( *pfnCreate )( void ), int d
 	m_iFlags = flags;
 
 	// Set attributes
-	assert( pfnCreate );
+	Assert( pfnCreate );
 	m_pfnCreate		= pfnCreate;
 }
 

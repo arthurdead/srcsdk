@@ -29,7 +29,7 @@ void CNPC_Cop::Precache()
 void CNPC_Cop::Spawn()
 {
 	if(GetModelName() == NULL_STRING) {
-		SetModel(g_pszCopModels[random->RandomInt(0, ARRAYSIZE(g_pszCopModels)-1)]);
+		SetModel(g_pszCopModels[random_valve->RandomInt(0, ARRAYSIZE(g_pszCopModels)-1)]);
 	}
 
 	UTIL_SetSize(this, NAI_Hull::Mins(RECAST_NAVMESH_HUMAN), NAI_Hull::Maxs(RECAST_NAVMESH_HUMAN));

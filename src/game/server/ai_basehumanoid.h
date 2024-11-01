@@ -21,9 +21,9 @@ typedef CAI_BlendingHost< CAI_BehaviorHost<CAI_BaseNPC> > CAI_BaseHumanoidBase;
 
 class CAI_BaseHumanoid : public CAI_BaseHumanoidBase
 {
+public:
 	DECLARE_CLASS( CAI_BaseHumanoid, CAI_BaseHumanoidBase );
 
-public:
 	bool HandleInteraction(int interactionType, void *data, CBaseCombatCharacter* sourceEnt);
 
 	// Tasks

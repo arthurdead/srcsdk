@@ -2,7 +2,15 @@
 	"folders":
 	[
 		{
-			"path": ".."
+			"path": "..",
+			"folder_exclude_patterns": [
+				"src/coplay",
+				"src/video_services",
+				"src/vphysics_jolt",
+				"src/vaudio_minimp3",
+				"meson/build_linux",
+				"meson/build_windows"
+			]
 		},
 		{
 			"path": "~/.steam/steam/steamapps/sourcemods/heist"
@@ -18,6 +26,7 @@
 				"initializationOptions": {
 					"clangd.compile-commands-dir": "$project_path/build_linux/everything",
 					//"clangd.compile-commands-dir": "$project_path/build_linux/hammer_dll",
+					//"clangd.compile-commands-dir": "$project_path/build_windows/everything",
 				},
 			},
 		},

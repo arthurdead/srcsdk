@@ -136,7 +136,7 @@ struct randomsound_t
 
 	void Init()
 	{
-		memset( this, 0, sizeof(*this) );
+		memset( (void *)this, 0, sizeof(*this) );
 	}
 };
 
@@ -409,7 +409,7 @@ bool C_SoundscapeSystem::Init()
 	V_FileBase(engine->GetLevelName(), mapname, sizeof(mapname));
 
 	const char *mapSoundscapeFilename = NULL;
-	if ( mapname && *mapname )
+	if ( *mapname )
 	{
 		mapSoundscapeFilename = VarArgs( "scripts/soundscapes_%s.txt", mapname );
 	}
@@ -1054,7 +1054,7 @@ void C_SoundscapeSystem::TouchPlayLooping( KeyValues *pAmbient )
 
 Vector C_SoundscapeSystem::GenerateRandomSoundPosition()
 {
-	float angle = random->RandomFloat( -180, 180 );
+	float angle = random_valve->RandomFloat( -180, 180 );
 	float sinAngle, cosAngle;
 	SinCos( angle, &sinAngle, &cosAngle );
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
@@ -1492,7 +1492,7 @@ void C_SoundscapeSystem::PlayRandomSound( randomsound_t &sound )
 {
 	Assert( sound.waveCount > 0 );
 
-	int waveId = random->RandomInt( 0, sound.waveCount-1 );
+	int waveId = random_valve->RandomInt( 0, sound.waveCount-1 );
 	KeyValues *pWaves = sound.pWaves;
 	while ( waveId > 0 && pWaves )
 	{

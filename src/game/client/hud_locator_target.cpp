@@ -965,8 +965,6 @@ void CLocatorPanel::CollectGarbage()
 //-----------------------------------------------------------------------------
 void CLocatorPanel::AnimateIconSize( int flags, int *wide, int *tall, float fPulseStart )
 {
-	static ConVarRef ss_verticalsplit( "ss_verticalsplit" );
-
 	float flScale = MIN_ICON_SCALE;
 	float scaleDelta = MAX_ICON_SCALE - MIN_ICON_SCALE;
 

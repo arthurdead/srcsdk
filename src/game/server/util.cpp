@@ -36,6 +36,7 @@
 #include "cdll_int.h"
 #include "filesystem.h"
 #include "tier1/fmtstr.h"
+#include "collisionproperty.h"
 
 #ifdef PORTAL
 #include "PortalSimulation.h"
@@ -44,6 +45,8 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+extern edict_t *g_pForceAttachEdict;
 
 extern short		g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
 extern short		g_sModelIndexBloodDrop;		// (in combatweapon.cpp) holds the sprite index for the initial blood
@@ -75,12 +78,9 @@ public:
 
 	virtual void InstallFactory( IEntityFactory *pFactory, const char *pClassName );
 	virtual void RemoveFactory( const char *pClassName );
-	virtual bool HasFactory( IEntityFactory *pFactory, const char *pClassName );
 	virtual CBaseEntity *Create( const char *pClassName );
 	virtual void Destroy( const char *pClassName, CBaseEntity *pNetworkable );
-	virtual const char *GetCannonicalName( const char *pClassName );
 	void ReportEntitySizes();
-	virtual void UninstallFactory(const char* pClassName);
 
 private:
 	IEntityFactory *FindFactory( const char *pClassName );
@@ -107,12 +107,12 @@ void DumpEntityFactories_f()
 	{
 		for ( int i = dict->m_Factories.First(); i != dict->m_Factories.InvalidIndex(); i = dict->m_Factories.Next( i ) )
 		{
-			Msg( "%s\n", dict->m_Factories.GetElementName( i ) );
+			Log_Msg( LOG_ENTITYFACTORY,"%s - %s\n", dict->m_Factories.GetElementName( i ), dict->m_Factories.Element( i )->DllClassname() );
 		}
 	}
 }
 
-static ConCommand dumpentityfactories( "dumpserverentityfactories", DumpEntityFactories_f, "Lists all entity factory names.", FCVAR_GAMEDLL );
+static ConCommand dumpentityfactories( "dumpentityfactories", DumpEntityFactories_f, "Lists all entity factory names.", FCVAR_GAMEDLL );
 
 
 //-----------------------------------------------------------------------------
@@ -130,7 +130,7 @@ CON_COMMAND( dump_entity_sizes, "Print sizeof(entclass)" )
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-CEntityFactoryDictionary::CEntityFactoryDictionary() : m_Factories( true, 0, 128 )
+CEntityFactoryDictionary::CEntityFactoryDictionary() : m_Factories( k_eDictCompareTypeCaseInsensitive, 0, 128 )
 {
 }
 
@@ -166,16 +166,6 @@ void CEntityFactoryDictionary::RemoveFactory( const char *pClassName )
 }
 
 //-----------------------------------------------------------------------------
-// DeInstall a new factory
-//-----------------------------------------------------------------------------
-bool CEntityFactoryDictionary::HasFactory( IEntityFactory *pFactory, const char *pClassName )
-{
-	if( pFactory == NULL )
-		return FindFactory( pClassName ) != NULL;
-	return FindFactory( pClassName ) == pFactory;
-}
-
-//-----------------------------------------------------------------------------
 // Instantiate something using a factory
 //-----------------------------------------------------------------------------
 CBaseEntity *CEntityFactoryDictionary::Create( const char *pClassName )
@@ -183,21 +173,13 @@ CBaseEntity *CEntityFactoryDictionary::Create( const char *pClassName )
 	IEntityFactory *pFactory = FindFactory( pClassName );
 	if ( !pFactory )
 	{
-		Log_Error(LOG_ENTITYFACTORY,"Attempted to create unknown entity type %s!\n", pClassName );
+		AssertMsg(0,"Attempted to create unknown entity type %s!", pClassName );
 		return NULL;
 	}
 #if defined(TRACK_ENTITY_MEMORY) && defined(USE_MEM_DEBUG)
 	MEM_ALLOC_CREDIT_( m_Factories.GetElementName( m_Factories.Find( pClassName ) ) );
 #endif
 	return pFactory->Create( pClassName );
-}
-
-//-----------------------------------------------------------------------------
-// 
-//-----------------------------------------------------------------------------
-const char *CEntityFactoryDictionary::GetCannonicalName( const char *pClassName )
-{
-	return m_Factories.GetElementName( m_Factories.Find( pClassName ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -208,7 +190,7 @@ void CEntityFactoryDictionary::Destroy( const char *pClassName, CBaseEntity *pNe
 	IEntityFactory *pFactory = FindFactory( pClassName );
 	if ( !pFactory )
 	{
-		Log_Error(LOG_ENTITYFACTORY,"Attempted to destroy unknown entity type %s!\n", pClassName );
+		AssertMsg(0,"Attempted to destroy unknown entity type %s!\n", pClassName );
 		return;
 	}
 
@@ -224,11 +206,6 @@ void CEntityFactoryDictionary::ReportEntitySizes()
 	{
 		Log_Msg( LOG_ENTITYFACTORY," %s: %llu", m_Factories.GetElementName( i ), (uint64)(m_Factories[i]->GetEntitySize()) );
 	}
-}
-
-void CEntityFactoryDictionary::UninstallFactory(const char* pClassName)
-{
-	m_Factories.Remove(pClassName);
 }
 
 int EntityFactory_AutoComplete( const char *cmdname, CUtlVector< CUtlString > &commands, CUtlRBTree< CUtlString > &symbols, char *substring, int checklen = 0 )
@@ -267,6 +244,46 @@ int EntityFactory_AutoComplete( const char *cmdname, CUtlVector< CUtlString > &c
 	}
 
 	return symbols.Count();
+}
+
+// creates an entity by string name, but does not spawn it
+CBaseEntity *CreateEntityByName( const char *className, int iForceEdictIndex, bool bNotify )
+{
+	if ( iForceEdictIndex != -1 )
+	{
+		CBaseEntity *pOldEntity = gEntList.LookupEntityByNetworkIndex( iForceEdictIndex );
+		Assert(!pOldEntity);
+		if( pOldEntity ) {
+			if(!g_pForceAttachEdict)
+				g_pForceAttachEdict = pOldEntity->NetworkProp()->DetachEdict();
+			else
+				pOldEntity->NetworkProp()->ReleaseEdict();
+			UTIL_Remove( pOldEntity );
+		} else {
+			if( !g_pForceAttachEdict ) {
+				g_pForceAttachEdict = INDEXENT(iForceEdictIndex);
+			}
+		}
+
+		if(!g_pForceAttachEdict) {
+			g_pForceAttachEdict = engine->CreateEdict( iForceEdictIndex );
+			if ( !g_pForceAttachEdict ) {
+				Log_FatalError( LOG_ENTITYFACTORY,"CreateEntityByName( %s, %d ) - CreateEdict failed.", className, iForceEdictIndex );
+			}
+		}
+	}
+
+	CBaseEntity *pEntity = EntityFactoryDictionary()->Create( className );
+	g_pForceAttachEdict = NULL;
+
+	if ( !pEntity )
+		return NULL;
+
+	if ( bNotify )
+	{
+		gEntList.NotifyCreateEntity( pEntity );
+	}
+	return pEntity;
 }
 
 //-----------------------------------------------------------------------------
@@ -1458,7 +1475,7 @@ void UTIL_SetTrace(trace_t& trace, const Ray_t &ray, edict_t *ent, float fractio
 
 void UTIL_ClearTrace( trace_t &trace )
 {
-	memset( &trace, 0, sizeof(trace));
+	memset( (void *)&trace, 0, sizeof(trace));
 	trace.fraction = 1.f;
 	trace.fractionleftsolid = 0;
 	trace.surface = g_NullSurface;
@@ -1613,9 +1630,9 @@ Vector UTIL_RandomBloodVector( void )
 {
 	Vector direction;
 
-	direction.x = random->RandomFloat ( -1, 1 );
-	direction.y = random->RandomFloat ( -1, 1 );
-	direction.z = random->RandomFloat ( 0, 1 );
+	direction.x = random_valve->RandomFloat ( -1, 1 );
+	direction.y = random_valve->RandomFloat ( -1, 1 );
+	direction.z = random_valve->RandomFloat ( 0, 1 );
 
 	return direction;
 }
@@ -1981,7 +1998,6 @@ void UTIL_PrecacheOther( const char *szClassname, const char *modelName )
 	CBaseEntity	*pEntity = CreateEntityByName( szClassname );
 	if ( !pEntity )
 	{
-		Log_Warning( LOG_ENTITYFACTORY,"NULL Ent in UTIL_PrecacheOther\n" );
 		return;
 	}
 

@@ -41,8 +41,8 @@ public:
 //-----------------------------------------------------------------------------
 class CBaseFlex : public CBaseAnimatingOverlay
 {
-	DECLARE_CLASS( CBaseFlex, CBaseAnimatingOverlay );
 public:
+	DECLARE_CLASS( CBaseFlex, CBaseAnimatingOverlay );
 	DECLARE_SERVERCLASS();
 	DECLARE_PREDICTABLE();
 
@@ -207,7 +207,6 @@ private:
 		FS_LocalToGlobal_t( const FS_LocalToGlobal_t& src )
 		{
 			m_Key = src.m_Key;
-			delete m_Mapping;
 			m_Mapping = new LocalFlexController_t[ src.m_nCount ];
 			Q_memcpy( m_Mapping, src.m_Mapping, src.m_nCount * sizeof( int ) );
 

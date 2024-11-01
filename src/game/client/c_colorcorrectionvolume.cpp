@@ -11,6 +11,7 @@
 #include "materialsystem/MaterialSystemUtil.h"
 #include "colorcorrectionmgr.h"
 #include "c_triggers.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -66,7 +67,7 @@ IMPLEMENT_CLIENTCLASS_DT(C_ColorCorrectionVolume, DT_ColorCorrectionVolume, CCol
 END_RECV_TABLE()
 
 BEGIN_PREDICTION_DATA( C_ColorCorrectionVolume )
-	DEFINE_PRED_FIELD( m_Weight, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_Weight, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 END_PREDICTION_DATA()
 
 

@@ -72,6 +72,7 @@
 #include "ai_squad.h"
 #include "world.h"
 #include "editor_sendcommand.h"
+#include "ModelSoundsCache.h"
 
 #ifndef SWDS
 #include "ienginevgui.h"
@@ -117,7 +118,10 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifndef SWDS
 extern IToolFrameworkServer *g_pToolFrameworkServer;
+#endif
+
 extern IParticleSystemQuery *g_pParticleSystemQuery;
 
 // this context is not available on dedicated servers
@@ -134,20 +138,20 @@ IUploadGameStats *gamestatsuploader = NULL;
 
 CTimedEventMgr g_NetworkPropertyEventMgr;
 
-CUtlLinkedList<CMapEntityRef, unsigned short> g_MapEntityRefs;
-
 // Engine interfaces.
 IVEngineServer	*engine = NULL;
 IVoiceServer	*g_pVoiceServer = NULL;
 INetworkStringTableContainer *networkstringtable = NULL;
 IStaticPropMgrServer *staticpropmgr = NULL;
-IUniformRandomStream *random = NULL;
+IUniformRandomStream *random_valve = NULL;
 IEngineSound *enginesound = NULL;
 ISpatialPartition *partition = NULL;
 IVModelInfo *modelinfo = NULL;
 IEngineTrace *enginetrace = NULL;
 IGameEventManager2 *gameeventmanager = NULL;
+#ifndef SWDS
 IVDebugOverlay * debugoverlay = NULL;
+#endif
 IServerPluginHelpers *serverpluginhelpers = NULL;
 #ifndef SWDS
 IServerEngineTools *serverenginetools = NULL;
@@ -176,9 +180,6 @@ CSysModule* vphysicsDLL = NULL;
 
 IGameSystem *SoundEmitterSystem();
 void SoundSystemPreloadSounds( void );
-
-bool ModelSoundsCacheInit();
-void ModelSoundsCacheShutdown();
 
 void SceneManager_ClientActive( CBasePlayer *player );
 
@@ -210,9 +211,9 @@ extern ConVar sv_noclipduringpause;
 ConVar sv_massreport( "sv_massreport", "0" );
 ConVar sv_force_transmit_ents( "sv_force_transmit_ents", "0", FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY, "Will transmit all entities to client, regardless of PVS conditions (will still skip based on transmit flags, however)." );
 
-ConVar *sv_maxreplay = NULL;
-static ConVar *g_pcv_ThreadMode = NULL;
-static ConVar *g_pcv_hideServer = NULL;
+extern ConVar *sv_maxreplay;
+extern ConVar *host_thread_mode;
+extern ConVar *hide_server;
 
 // String tables
 INetworkStringTable *g_pStringTableParticleEffectNames = NULL;
@@ -394,7 +395,7 @@ void DrawAllDebugOverlays( void )
 	UTIL_DrawOverlayLines();
 
 	// PERFORMANCE: only do this in developer mode
-	if ( g_pDeveloper->GetInt() && !engine->IsDedicatedServer() )
+	if ( developer->GetInt() && !engine->IsDedicatedServer() )
 	{
 		// iterate through all objects for debug overlays
 		const CEntInfo *pInfo = gEntList.FirstEntInfo();
@@ -442,7 +443,6 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CServerGameDLL, IServerGameDLL, INTERFACEVERSI
 // When bumping the version to this interface, check that our assumption is still valid and expose the older version in the same way
 COMPILE_TIME_ASSERT( INTERFACEVERSION_SERVERGAMEDLL_INT == 10 );
 
-//this causes issues if you have a map on autoexec or +map on the commandline
 static ConVar sv_threaded_init("sv_threaded_init", "0");
 
 static bool InitGameSystems( CreateInterfaceFn appSystemFactory )
@@ -503,6 +503,21 @@ static bool InitGameSystems( CreateInterfaceFn appSystemFactory )
 
 	RecastMgr().Init();
 
+	// init the gamestatsupload connection
+	gamestatsuploader->InitConnection();
+
+	// UNDONE: Make most of these things server systems or precache_registers
+	// =================================================
+	//	Activities
+	// =================================================
+	ActivityList_Free();
+	ActivityList_Init();
+	ActivityList_RegisterSharedActivities();
+
+	EventList_Free();
+	EventList_Init();
+	EventList_RegisterSharedEvents();
+
 	return true;
 }
 
@@ -560,7 +575,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 		return false;
 	if ( (staticpropmgr = (IStaticPropMgrServer *)appSystemFactory(INTERFACEVERSION_STATICPROPMGR_SERVER,NULL)) == NULL )
 		return false;
-	if ( (random = (IUniformRandomStream *)appSystemFactory(VENGINE_SERVER_RANDOM_INTERFACE_VERSION, NULL)) == NULL )
+	if ( (random_valve = (IUniformRandomStream *)appSystemFactory(VENGINE_SERVER_RANDOM_INTERFACE_VERSION, NULL)) == NULL )
 		return false;
 	if ( (enginesound = (IEngineSound *)appSystemFactory(IENGINESOUND_SERVER_INTERFACE_VERSION, NULL)) == NULL )
 		return false;
@@ -669,20 +684,15 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 		return false;
 	}
 
-	sv_cheats = g_pCVar->FindVar( "sv_cheats" );
-	if ( !sv_cheats )
-		return false;
-
-	g_pcv_ThreadMode = g_pCVar->FindVar( "host_thread_mode" );
-	g_pcv_hideServer = g_pCVar->FindVar( "hide_server" );
-
-	sv_maxreplay = g_pCVar->FindVar( "sv_maxreplay" );
+	HackMgr_SetGamePaused( false );
+	m_bWasPaused = false;
 
 	bool bInitSuccess = false;
 	if ( sv_threaded_init.GetBool() )
 	{
 		CFunctorJob *pGameJob = new CFunctorJob( CreateFunctor( ParseParticleEffects, false, false ) );
 		g_pThreadPool->AddJob( pGameJob );
+
 		bInitSuccess = InitGameSystems( appSystemFactory );
 
 		// FIXME: This method is a bit of a hack.
@@ -700,12 +710,14 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 
 			ThreadSleep( 0 );
 		}
+
 		pGameJob->Release();
 	}
 	else
 	{
 		COM_TimestampedLog( "ParseParticleEffects" );
 		ParseParticleEffects( false, false );
+
 		COM_TimestampedLog( "InitGameSystems - Start" );
 		bInitSuccess = InitGameSystems( appSystemFactory );
 		COM_TimestampedLog( "InitGameSystems - Finish" );
@@ -714,31 +726,6 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 	if(!bInitSuccess)
 		return false;
 
-#ifndef SWDS
-	if(!engine->IsDedicatedServer()) {
-		// try to get debug overlay, may be NULL if on HLDS
-		debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL );
-	}
-#endif
-
-	// init the gamestatsupload connection
-	gamestatsuploader->InitConnection();
-
-	HackMgr_SetGamePaused( false );
-	m_bWasPaused = false;
-
-	// UNDONE: Make most of these things server systems or precache_registers
-	// =================================================
-	//	Activities
-	// =================================================
-	ActivityList_Free();
-	ActivityList_Init();
-	ActivityList_RegisterSharedActivities();
-
-	EventList_Free();
-	EventList_Init();
-	EventList_RegisterSharedEvents();
-
 	g_AI_SchedulesManager.CreateStringRegistries();
 
 	// =================================================
@@ -746,6 +733,13 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 	// =================================================
 	COM_TimestampedLog( "LoadAllSchedules" );
 	g_AI_SchedulesManager.LoadAllSchedules();
+
+#ifndef SWDS
+	if(!engine->IsDedicatedServer()) {
+		// try to get debug overlay, may be NULL if on HLDS
+		debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL );
+	}
+#endif
 
 	return true;
 }
@@ -895,6 +889,8 @@ void Game_SetOneWayTransition( void )
 
 extern void SetupDefaultLightstyle();
 
+extern ConVar *room_type;
+
 extern CWorld *g_WorldEntity;
 extern CBaseEntity				*g_pLastSpawn;
 extern void InitBodyQue(void);
@@ -975,8 +971,7 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 
 	sv_stepsize.Revert();
 
-	ConVarRef roomtype( "room_type" );
-	roomtype.SetValue( 0 );
+	room_type->SetValue( 0 );
 
 	// Set up game rules
 	Assert( !GameRules() );
@@ -1132,7 +1127,7 @@ void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edictCount, int cl
 	RecastMgr().Load();
 
 	// only display the think limit when the game is run with "developer" mode set
-	if ( !g_pDeveloper->GetInt() )
+	if ( !developer->GetInt() )
 	{
 		think_limit.SetValue( 0 );
 	}
@@ -1219,6 +1214,10 @@ void CServerGameDLL::GameServerSteamAPIShutdown( void )
 //-----------------------------------------------------------------------------
 ConVar  trace_report( "trace_report", "0" );
 
+extern void GameStartFrame( void );
+extern void ServiceEventQueue( void );
+extern void Physics_RunThinkFunctions( bool simulating );
+
 void CServerGameDLL::GameFrame( bool simulating )
 {
 	VPROF( "CServerGameDLL::GameFrame" );
@@ -1266,10 +1265,6 @@ void CServerGameDLL::GameFrame( bool simulating )
 	g_bUseNetworkVars = s_UseNetworkVars.GetBool();
 #endif
 
-	extern void GameStartFrame( void );
-	extern void ServiceEventQueue( void );
-	extern void Physics_RunThinkFunctions( bool simulating );
-
 	// Delete anything that was marked for deletion
 	//  outside of server frameloop (e.g., in response to concommand)
 	gEntList.CleanupDeleteList();
@@ -1284,11 +1279,12 @@ void CServerGameDLL::GameFrame( bool simulating )
 		VPROF( "gamestatsuploader->UpdateConnection" );
 		gamestatsuploader->UpdateConnection();
 	}
+
 	{
 		VPROF( "UpdateQueryCache" );
 		UpdateQueryCache();
 	}
-	
+
 	{
 		VPROF( "g_pServerBenchmark->UpdateBenchmark" );
 		g_pServerBenchmark->UpdateBenchmark();
@@ -1531,7 +1527,7 @@ CStandardSendProxies* CServerGameDLL::GetStandardSendProxies()
 //-----------------------------------------------------------------------------
 bool CServerGameDLL::ShouldHideServer( void )
 {
-	if ( g_pcv_hideServer && g_pcv_hideServer->GetBool() )
+	if ( hide_server && hide_server->GetBool() )
 		return true;
 
 	if ( gpGlobals && gpGlobals->eLoadType == MapLoad_Background )
@@ -1594,7 +1590,7 @@ bool CServerGameDLL::ShouldPreferSteamAuth()
 
 bool CServerGameDLL::SupportsRandomMaps()
 {
-	return true;
+	return false;
 }
 
 // return true to disconnect client due to timeout (used to do stricter timeouts when the game is sure the client isn't loading a map)
@@ -1675,10 +1671,10 @@ static bool IsValidPath( const char *pszFilename )
 
 static void ValidateMOTDFilename( IConVar *pConVar, const char *oldValue, float flOldValue )
 {
-	ConVarRef var( pConVar );
-	if ( !IsValidPath( var.GetString() ) )
+	ConVar *var = (ConVar *)pConVar;
+	if ( !IsValidPath( var->GetString() ) )
 	{
-		var.SetValue( var.GetDefault() );
+		var->SetValue( var->GetDefault() );
 	}
 }
 
@@ -1887,11 +1883,7 @@ const char *GetEffectNameFromIndex( int nEffectIndex )
 //-----------------------------------------------------------------------------
 bool IsEngineThreaded()
 {
-	if ( g_pcv_ThreadMode )
-	{
-		return g_pcv_ThreadMode->GetBool();
-	}
-	return false;
+	return host_thread_mode->GetBool();
 }
 
 class CServerGameEnts : public IServerGameEnts
@@ -2154,35 +2146,6 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 	}
 
 //	Msg("A:%i, N:%i, F: %i, P: %i\n", always, dontSend, fullCheck, PVS );
-}
-
-extern bool IsStandardEntityClassname(const char *pClassname);
-
-bool CMapLoadEntityFilter::ShouldCreateEntity( const char *pClassname )
-{
-	if(IsStandardEntityClassname(pClassname))
-		return false;
-
-	return true;
-}
-
-CBaseEntity* CMapLoadEntityFilter::CreateNextEntity( const char *pClassname )
-{
-	CBaseEntity *pRet = CreateEntityByName( pClassname );
-
-	CMapEntityRef ref;
-	ref.m_iEdict = -1;
-	ref.m_iSerialNumber = -1;
-
-	if ( pRet )
-	{
-		ref.m_iEdict = pRet->entindex();
-		if ( pRet->edict() )
-			ref.m_iSerialNumber = pRet->edict()->m_NetworkSerialNumber;
-	}
-
-	g_MapEntityRefs.AddToTail( ref );
-	return pRet;
 }
 
 //-----------------------------------------------------------------------------
@@ -2491,7 +2454,11 @@ void CServerGameClients::ClientSetupVisibility( edict_t *pViewEntity, edict_t *p
 	// Reset the PVS!!!
 	engine->ResetPVS( pvs, pvssize );
 
-	g_pToolFrameworkServer->PreSetupVisibility();
+#ifndef SWDS
+	if(!engine->IsDedicatedServer()) {
+		g_pToolFrameworkServer->PreSetupVisibility();
+	}
+#endif
 
 	// Find the client's PVS
 	CBaseEntity *pVE = NULL;

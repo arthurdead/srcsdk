@@ -298,6 +298,8 @@ public:
 	virtual void				PreThink( void );
 	virtual void				PostThink( void );
 
+	virtual void		  SetViewOffset( const Vector& v );
+
 	virtual void				ItemPreFrame( void );
 	virtual void				ItemPostFrame( void );
 	virtual void				AbortReload( void );
@@ -464,8 +466,10 @@ public:
 	static void RecvProxy_LocalOriginZ( const CRecvProxyData *pData, void *pStruct, void *pOut );
 	static void RecvProxy_NonLocalOriginXY( const CRecvProxyData *pData, void *pStruct, void *pOut );
 	static void RecvProxy_NonLocalOriginZ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+#ifdef DT_CELL_COORD_SUPPORTED
 	static void RecvProxy_NonLocalCellOriginXY( const CRecvProxyData *pData, void *pStruct, void *pOut );
 	static void RecvProxy_NonLocalCellOriginZ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+#endif
 
 	virtual bool ShouldRegenerateOriginFromCellBits() const;
 

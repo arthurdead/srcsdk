@@ -4,20 +4,24 @@ assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compi
 
 src_root_dir = get_option('src_root_dir')
 
-target_system = target_machine.system()
-if target_system == 'linux' or target_system == 'gnu'
-	lib_ext = '.a'
-elif target_system == 'windows'
-	lib_ext = '.lib'
+if get_option('funny')
+	subdir('funny')
 else
-	error('unsupported system')
-endif
+	target_system = target_machine.system()
+	if target_system == 'linux' or target_system == 'gnu'
+		lib_ext = '.a'
+	elif target_system == 'windows'
+		lib_ext = '.lib'
+	else
+		error('unsupported system')
+	endif
 
-vtf_dep = declare_dependency(
-	include_directories: include_directories(
-		join_paths(src_root_dir,'public','vtf')
-	),
-	link_args: [
-		'-l:vtf'+lib_ext
-	]
-)
+	vtf_dep = declare_dependency(
+		include_directories: include_directories(
+			join_paths(src_root_dir,'public','vtf')
+		),
+		link_args: [
+			'-l:vtf'+lib_ext
+		]
+	)
+endif

@@ -16,8 +16,8 @@
 //-----------------------------------------------------------------------------
 class C_DynamicProp : public C_BreakableProp
 {
-	DECLARE_CLASS( C_DynamicProp, C_BreakableProp );
 public:
+	DECLARE_CLASS( C_DynamicProp, C_BreakableProp );
 	DECLARE_NETWORKCLASS();
 
 	// constructor, destructor
@@ -45,8 +45,8 @@ typedef C_DynamicProp CSharedDynamicProp;
 //-----------------------------------------------------------------------------
 class C_BasePropDoor : public C_DynamicProp
 {
-	DECLARE_CLASS( C_BasePropDoor, C_DynamicProp );
 public:
+	DECLARE_CLASS( C_BasePropDoor, C_DynamicProp );
 	DECLARE_CLIENTCLASS();
 
 	// constructor, destructor

@@ -123,6 +123,8 @@ protected:
 	CNetworkVar( float, m_fMass );
 };
 
+typedef CPhysBox CSharedPhysBox;
+
 // ---------------------------------------------------------------------
 //
 // CPhysExplosion -- physically simulated explosion

@@ -12,6 +12,16 @@
 
 #include <vgui/VGUI.h>
 
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL    nullptr
+
+namespace std
+{
+	using nullptr_t = decltype(nullptr);
+}
+
 namespace vgui
 {
 

@@ -13,11 +13,11 @@
 
 class C_FuncPhysicsRespawnZone;
 
-class C_PhysPropClientside : public C_BreakableProp, public IBreakableWithPropData, public ISpecialPhysics
+class C_PhysPropClientside : public C_ClientOnlyBreakableProp, public IBreakableWithPropData, public ISpecialPhysics
 {
 	
 public:
-	DECLARE_CLASS( C_PhysPropClientside, C_BreakableProp );
+	DECLARE_CLASS( C_PhysPropClientside, C_ClientOnlyBreakableProp );
 	
 	C_PhysPropClientside();
 	virtual ~C_PhysPropClientside();
@@ -135,9 +135,9 @@ protected:
 //-----------------------------------------------------------------------------
 // Purpose: A clientside zone that respawns physics props in it when the player leaves the PVS
 //-----------------------------------------------------------------------------
-class C_FuncPhysicsRespawnZone : public C_BaseEntity
+class C_FuncPhysicsRespawnZone : public C_ClientOnlyEntity
 {
-	DECLARE_CLASS( C_FuncPhysicsRespawnZone, C_BaseEntity );
+	DECLARE_CLASS( C_FuncPhysicsRespawnZone, C_ClientOnlyEntity );
 public:
 
 	C_FuncPhysicsRespawnZone( void );

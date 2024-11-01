@@ -23,6 +23,8 @@
 #include "materialsystem/MaterialSystemUtil.h"
 #include "vgui/VGUI.h"
 
+#include "iclassmap.h"
+
 class Vector;
 class QAngle;
 class IMaterial;
@@ -137,9 +139,13 @@ private:
 	C_BaseEntity *m_pList[MAX_SPHERE_QUERY];
 };
 
+DECLARE_LOGGING_CHANNEL( LOG_ENTITYFACTORY );
+
 C_BaseEntity *CreateEntityByName( const char *className );
+
 // calls the spawn functions for an entity
 int DispatchSpawn( C_BaseEntity *pEntity );
+
 // creates an entity by name, and ensure it's correctness
 // does not spawn the entity
 // use the CREATE_ENTITY() macro which wraps this, instead of using it directly
@@ -149,15 +155,44 @@ T *_CreateEntity( T *newClass, const char *className )
 	T *newEnt = dynamic_cast<T*>( CreateEntityByName(className) );
 	if ( !newEnt )
 	{
-		Warning( "classname %s used to create wrong class type\n", className );
+		Log_Error( LOG_ENTITYFACTORY,"classname %s used to create wrong class type\n", className );
 		Assert(0);
 	}
 
 	return newEnt;
 }
 
+#include "tier0/memdbgon.h"
+
+// entity creation
+// creates an entity that has not been linked to a classname
+template< class T >
+T *_CreateEntityTemplate( T *newEnt, const char *className )
+{
+	MEM_ALLOC_CREDIT_("Entities");
+	newEnt = new T; // this is the only place 'new' should be used!
+	newEnt->PostConstructor( className );
+	return newEnt;
+}
+
+#include "tier0/memdbgoff.h"
+
 #define CREATE_ENTITY( newClass, className ) _CreateEntity( (newClass*)NULL, className )
 #define CREATE_UNSAVED_ENTITY( newClass, className ) _CreateEntityTemplate( (newClass*)NULL, className )
+
+#define LINK_ENTITY_TO_CLASS(mapClassName,DLLClassName) \
+	class C##mapClassName##Factory : public CEntityFactory<DLLClassName> \
+	{ \
+		typedef CEntityFactory<DLLClassName> BaseClass; \
+	public: \
+		C##mapClassName##Factory( const char *pClassName ) \
+			: BaseClass( pClassName ) \
+		{ \
+		} \
+		const char *DllClassname() const \
+		{ return V_STRINGIFY(DLLClassName); } \
+	}; \
+	INIT_PRIORITY(65535) static C##mapClassName##Factory g_##mapClassName##Factory( #mapClassName );
 
 // Misc useful
 inline bool FStrEq(const char *sz1, const char *sz2)
@@ -194,5 +229,11 @@ void		UTIL_ClearTrace			( trace_t &trace );
 
 // Returns true if the user has loaded any maps, false otherwise.
 bool UTIL_HasLoadedAnyMap();
+
+int UTIL_GetCommandClientIndex( void );
+C_BasePlayer *UTIL_GetCommandClient( void );
+
+//- lighting ----------------------------------------------------------------------------------------
+float GetLightIntensity( const Vector &pos );			// returns a 0..1 light intensity for the given point
 
 #endif // !UTIL_H

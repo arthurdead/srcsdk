@@ -17,6 +17,8 @@
 
 #pragma once
 
+#ifndef SWDS
+
 #include "tier0/platform.h"
 #include "hackmgr/hackmgr.h"
 
@@ -64,5 +66,6 @@ private:
 	inline void AddTextOverlay(const Vector& origin, int line_offset, float duration, int r, int g, int b, int a, PRINTF_FORMAT_STRING const char *format, ...) {} /* catch improper use of bad interface. Needed because '0' duration can be resolved by compiler to NULL format string (i.e., compiles but calls wrong function) */
 };
 
+#endif
 
 #endif // IVDEBUGOVERLAY_H

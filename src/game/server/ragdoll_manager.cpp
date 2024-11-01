@@ -83,6 +83,10 @@ int CRagdollManager::UpdateTransmitState()
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
 
+#ifndef SWDS
+extern ConVar *mat_dxlevel;
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -91,8 +95,14 @@ void CRagdollManager::Activate()
 	BaseClass::Activate();
 
 	// Cache off the DX level for use later.
-	ConVarRef mat_dxlevel( "mat_dxlevel" );
-	m_iDXLevel = mat_dxlevel.GetInt();
+#ifndef SWDS
+	if(!engine->IsDedicatedServer()) {
+		m_iDXLevel = mat_dxlevel->GetInt();
+	} else
+#endif
+	{
+		m_iDXLevel = 90;
+	}
 	
 	UpdateCurrentMaxRagDollCount();
 }

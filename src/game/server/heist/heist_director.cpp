@@ -3,6 +3,7 @@
 #include "heist_player.h"
 #include "ai_basenpc.h"
 #include "ai_memory.h"
+#include "con_nprint.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -13,8 +14,6 @@ CMissionDirector *MissionDirector()
 
 CMissionDirector::CMissionDirector()
 {
-	m_AssaultStatus = ASSAULT_INVALID;
-	m_AssaultSpawned = 0;
 }
 
 void CMissionDirector::MakeMissionLoud()
@@ -127,45 +126,83 @@ void CMissionDirector::PlayerSpawned(CHeistPlayer *pPlayer)
 
 void CMissionDirector::LevelInitPostEntity()
 {
+	m_AssaultTimer.Reset();
+	m_SpawnTimer.Reset();
+
+	m_AssaultStatus = ASSAULT_INVALID;
+	m_AssaultSpawned = 0;
+
 	m_AssaultID = 0;
 }
 
 void CMissionDirector::FrameUpdatePostEntityThink()
 {
+	con_nprint_s nxPrn = { 0 };
+	nxPrn.time_to_live = -1;
+	nxPrn.color[0] = 0.9f, nxPrn.color[1] = 1.0f, nxPrn.color[2] = 0.9f;
+	nxPrn.fixed_width_font = true;
+
+	nxPrn.index = 20;
+
+	switch(m_AssaultStatus) {
+	case ASSAULT_WAITING:
+		engine->Con_NXPrintf( &nxPrn, "Assault in %.2f", m_AssaultTimer.GetRemainingTime() );
+		++nxPrn.index;
+		break;
+	case ASSAULT_WAITING_ALL_TO_SPAWN:
+		engine->Con_NXPrintf( &nxPrn, "Assault in progress" );
+		++nxPrn.index;
+		break;
+	case ASSAULT_WAITING_ALL_TO_DIE:
+		engine->Con_NXPrintf( &nxPrn, "Assault in progress" );
+		++nxPrn.index;
+		break;
+	}
+
 	if(HeistGameRules()->m_nMissionState != MISSION_STATE_LOUD)
 		return;
 
-	if(m_AssaultTimer.HasStarted() && m_AssaultTimer.IsElapsed()) {
-		if(m_AssaultStatus == ASSAULT_WAITING) {
+	if(m_AssaultStatus == ASSAULT_WAITING) {
+		if(m_AssaultTimer.HasStarted() && m_AssaultTimer.IsElapsed()) {
 			m_AssaultStatus = ASSAULT_WAITING_ALL_TO_SPAWN;
-		} else if(m_AssaultStatus == ASSAULT_WAITING_ALL_TO_SPAWN) {
-			if(m_AssaultSpawned < 25) {
-				if(m_SpawnTimer.IsElapsed()) {
-					CAI_BaseNPC *pNPC = (CAI_BaseNPC *)CreateEntityByName( "npc_cop" );
+		}
+	} else if(m_AssaultStatus == ASSAULT_WAITING_ALL_TO_SPAWN) {
+		if(m_AssaultSpawned < 10) {
+			if(m_SpawnTimer.IsElapsed()) {
+				CAI_BaseNPC *pNPC = (CAI_BaseNPC *)CreateEntityByName( "npc_cop" );
 
-					CBaseEntity *pSpawnSpot = GameRules()->GetPlayerSpawnSpot( pNPC );
-					Assert( pSpawnSpot );
-					if ( pSpawnSpot != NULL )
-					{
-						pNPC->SetLocalOrigin( pSpawnSpot->GetAbsOrigin() + Vector(0,0,1) );
-						pNPC->SetAbsVelocity( vec3_origin );
-						pNPC->SetLocalAngles( pSpawnSpot->GetLocalAngles() );
+				CBaseEntity *pSpawnSpot = GameRules()->GetPlayerSpawnSpot( pNPC );
+				Assert( pSpawnSpot );
+				if ( pSpawnSpot != NULL )
+				{
+					pNPC->SetLocalOrigin( pSpawnSpot->GetAbsOrigin() + Vector(0,0,1) );
+					pNPC->SetAbsVelocity( vec3_origin );
+					pNPC->SetLocalAngles( pSpawnSpot->GetLocalAngles() );
+				}
+
+				DispatchSpawn( pNPC );
+
+				for(int j = 1; j <= gpGlobals->maxClients; ++j) {
+					CHeistPlayer *pPlayer = (CHeistPlayer *)UTIL_PlayerByIndex(j);
+					if(!pPlayer || !pPlayer->IsAlive() || pPlayer->GetTeamNumber() != TEAM_HEISTERS) {
+						continue;
 					}
 
-					DispatchSpawn( pNPC );
-
-					m_SpawnTimer.Start( 1.0f );
-
-					++m_AssaultSpawned;
+					pNPC->GetEnemies()->UpdateMemory(pPlayer, pPlayer->GetAbsOrigin(), 0.0f, true);
 				}
-			} else {
-				m_AssaultStatus = ASSAULT_WAITING_ALL_TO_DIE;
+
+				m_SpawnTimer.Start( 1.0f );
+
+				++m_AssaultSpawned;
 			}
-		} else if(m_AssaultStatus == ASSAULT_WAITING_ALL_TO_DIE) {
-			if(g_AI_Manager.NumAIs() == 0) {
-				m_AssaultStatus = ASSAULT_WAITING;
-				m_AssaultTimer.Start( 5.0f );
-			}
+		} else {
+			m_AssaultStatus = ASSAULT_WAITING_ALL_TO_DIE;
+			m_AssaultSpawned = 0;
+		}
+	} else if(m_AssaultStatus == ASSAULT_WAITING_ALL_TO_DIE) {
+		if(g_AI_Manager.NumAIs() == 0) {
+			m_AssaultStatus = ASSAULT_WAITING;
+			m_AssaultTimer.Start( 5.0f );
 		}
 	}
 }

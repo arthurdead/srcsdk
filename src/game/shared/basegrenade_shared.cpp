@@ -51,10 +51,10 @@ IMPLEMENT_NETWORKCLASS_ALIASED( BaseGrenade, DT_BaseGrenade )
 BEGIN_NETWORK_TABLE( CSharedBaseGrenade, DT_BaseGrenade )
 #if !defined( CLIENT_DLL )
 	// Excludes
-	SendPropExclude( "DT_BaseEntity", "m_angRotation" ),
-	SendPropExclude( "DT_BaseEntity", "m_hOwnerEntity" ), // Already got m_hThrower
-	SendPropExclude( "DT_ServerAnimationData" , "m_flCycle" ),	
-	SendPropExclude( "DT_AnimTimeMustBeFirst" , "m_flAnimTime" ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_angRotation ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_hOwnerEntity ) ), // Already got m_hThrower
+	SendPropExclude( SENDEXLCUDE( DT_ServerAnimationData, m_flCycle ) ),	
+	SendPropExclude( SENDEXLCUDE( DT_AnimTimeMustBeFirst, m_flAnimTime ) ),
 
 	SendPropFloat( SENDINFO( m_flDamage ), 10, SPROP_ROUNDDOWN, 0.0, 256.0f ),
 	SendPropFloat( SENDINFO( m_DmgRadius ), 10, SPROP_ROUNDDOWN, 0.0, 1024.0f ),
@@ -73,26 +73,28 @@ BEGIN_NETWORK_TABLE( CSharedBaseGrenade, DT_BaseGrenade )
 //	RecvPropTime( RECVINFO( m_flDetonateTime ) ),
 	RecvPropEHandle( RECVINFO( m_hThrower ) ),
 
-	RecvPropFloat( RECVINFO_NAME_ARRAYELEM( m_angNetworkAngles, 0, m_angRotation[0] ) ),
-	RecvPropFloat( RECVINFO_NAME_ARRAYELEM( m_angNetworkAngles, 1, m_angRotation[1] ) ),
-	RecvPropFloat( RECVINFO_NAME_ARRAYELEM( m_angNetworkAngles, 2, m_angRotation[2] ) ),
+	RecvPropFloat( RECVINFO_VECTORELEM_NAME_VECTORELEM( m_angNetworkAngles, 0, m_angRotation, 0 ) ),
+	RecvPropFloat( RECVINFO_VECTORELEM_NAME_VECTORELEM( m_angNetworkAngles, 1, m_angRotation, 1 ) ),
+	RecvPropFloat( RECVINFO_VECTORELEM_NAME_VECTORELEM( m_angNetworkAngles, 2, m_angRotation, 2 ) ),
 #endif
 END_NETWORK_TABLE()
 
+#ifdef GAME_DLL
 LINK_ENTITY_TO_CLASS_ALIASED( grenade, BaseGrenade );
+#endif
 
 #if defined( CLIENT_DLL )
 
 BEGIN_PREDICTION_DATA( C_BaseGrenade  )
 
-	DEFINE_PRED_FIELD( m_hThrower, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_bIsLive, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_DmgRadius, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
-//	DEFINE_PRED_FIELD_TOL( m_flDetonateTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, TD_MSECTOLERANCE ),
-	DEFINE_PRED_FIELD( m_flDamage, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_hThrower, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_bIsLive, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_DmgRadius, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+//	DEFINE_FIELD_FLAGS_TOL( m_flDetonateTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, TD_MSECTOLERANCE ),
+	DEFINE_FIELD_FLAGS( m_flDamage, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 
-	DEFINE_PRED_FIELD_TOL( m_vecVelocity, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.5f ),
-	DEFINE_PRED_FIELD_TOL( m_flNextAttack, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, TD_MSECTOLERANCE ),
+	DEFINE_FIELD_FLAGS_TOL( m_vecVelocity, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.5f ),
+	DEFINE_FIELD_FLAGS_TOL( m_flNextAttack, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, TD_MSECTOLERANCE ),
 
 //	DEFINE_FIELD( m_fRegisteredSound, FIELD_BOOLEAN ),
 //	DEFINE_FIELD( m_iszBounceSound, FIELD_STRING ),
@@ -393,7 +395,7 @@ void CSharedBaseGrenade::BounceTouch( CSharedBaseEntity *pOther )
 		// add a bit of static friction
 //		SetAbsVelocity( GetAbsVelocity() * 0.8 );
 
-		// SetSequence( random->RandomInt( 1, 1 ) ); // FIXME: missing tumble animations
+		// SetSequence( random_valve->RandomInt( 1, 1 ) ); // FIXME: missing tumble animations
 	}
 	else
 	{

@@ -25,7 +25,7 @@ DEFINE_FIXEDSIZE_ALLOCATOR( AI_Waypoint_t, WAYPOINT_POOL_SIZE, CUtlMemoryPool::G
 
 AI_Waypoint_t::AI_Waypoint_t()
 {
-	memset( this, 0, sizeof(AI_Waypoint_t) );
+	memset( (void *)this, 0, sizeof(AI_Waypoint_t) );
 	vecLocation	= vec3_invalid;
 	polyRef = 0;
 	meshType = RECAST_NAVMESH_INVALID;
@@ -36,7 +36,7 @@ AI_Waypoint_t::AI_Waypoint_t()
 
 AI_Waypoint_t::AI_Waypoint_t( const Vector &initPosition, float initYaw, Navigation_t initNavType, int initWaypointFlags, dtPolyRef initPolyRef, NavMeshType_t initMeshType )
 {
-	memset( this, 0, sizeof(AI_Waypoint_t) );
+	memset( (void *)this, 0, sizeof(AI_Waypoint_t) );
 
 	// A Route of length one to the endpoint
 	vecLocation	= initPosition;

@@ -125,7 +125,7 @@ void CAmbientGeneric::Spawn( void )
 		return;
 	}
 
-	SetSolid( SOLID_NONE );
+//	SetSolid( SOLID_NONE );
 	SetMoveType( MOVETYPE_NONE );
 
 	// Set up think function for dynamic modification 
@@ -580,7 +580,7 @@ void CAmbientGeneric::RampThink( void )
 			break;
 		case LFO_RANDOM:
 			if (pos == 255)
-				m_dpv.lfomult = random->RandomInt(0, 255);
+				m_dpv.lfomult = random_valve->RandomInt(0, 255);
 			break;
 		case LFO_TRIANGLE:
 		default: 

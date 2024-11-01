@@ -64,7 +64,7 @@ END_MAPENTITY()
 void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 //--------------------------------------------------------------------------------------------------------
 IMPLEMENT_SERVERCLASS_ST(CFuncElevator, DT_FuncElevator)
-	SendPropExclude( "DT_BaseEntity", "m_vecOrigin" ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_vecOrigin ) ),
 	SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin ),
 	SendPropFloat( SENDINFO( m_acceleration ), 0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO( m_currentSpeed ), 0, SPROP_NOSCALE ),

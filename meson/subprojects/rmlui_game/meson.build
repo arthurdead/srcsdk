@@ -38,10 +38,13 @@ rmlui_opts.set_override_option('build_by_default','false')
 rmlui_base = cmake.subproject('RmlUi', options: rmlui_opts)
 
 rmlui_core = shared_library('rmlui_core',
-	cpp_args : ['-DRMLUI_CORE_EXPORTS', '-Drmlui_core_EXPORTS'],
+	cpp_args : ['-DRMLUI_CORE_EXPORTS', '-Drmlui_core_EXPORTS','-DRMLUI_FONT_ENGINE_FREETYPE'],
 	include_directories: rmlui_base.get_variable('rmlui_core_inc'),
 	sources: rmlui_base.get_variable('rmlui_core_src'),
-	dependencies: [dependency('freetype2')]
+	dependencies: [dependency('freetype2')],
+	install: true,
+	install_dir: join_paths(game_dir,'bin'),
+	install_rpath: '$ORIGIN'
 )
 
 rmlui_core_dep = declare_dependency(

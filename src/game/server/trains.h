@@ -55,10 +55,10 @@ enum TrainOrientationType_t
 
 class CFuncTrackTrain : public CBaseEntity
 {
+public:
 	DECLARE_CLASS( CFuncTrackTrain, CBaseEntity );
 	DECLARE_SERVERCLASS();
 
-public:
 	CFuncTrackTrain();
 
 	void Spawn( void );

@@ -11,7 +11,11 @@
 #pragma once
 
 #ifdef PLATFORM_WINDOWS_PC
+#ifdef __MINGW32__
+#include <cpuid.h>
+#else
 #include <intrin.h>
+#endif
 #endif
 
 /*
@@ -69,10 +73,10 @@ public:
 
 	struct misc_t
 	{
-		byte	Brand;
-		byte	CLFLUSH;
-		byte	Reserved;
-		byte	APICId;
+		::byte	Brand;
+		::byte	CLFLUSH;
+		::byte	Reserved;
+		::byte	APICId;
 	};
 
 	struct feature_t
@@ -119,7 +123,7 @@ public:
 	version_t version;
 	misc_t misc;
 	feature_t feature;
-	byte *cache;
+	::byte *cache;
 
 	ia32detect ()
 	{
@@ -134,7 +138,7 @@ public:
 #ifdef COMPILER_MSVC64
 			__cpuid((int *) (d + (i-1) * 4), i);
 
-#else
+#elif defined _MSC_VER
 			uint32 *t = d + (i - 1) * 4;
 
 			__asm
@@ -149,6 +153,8 @@ public:
 				mov dword ptr [esi + 0x8], ecx;
 				mov dword ptr [esi + 0xC], edx;
 			}
+#else
+	#error
 #endif
 		}
 
@@ -244,7 +250,11 @@ private:
 		tchar * s1;
 
 		s1 = (tchar *) &data[1];
+	#ifdef _MSC_VER
 		__cpuid(data, 0);
+	#else
+		#error
+	#endif
 		data[4] = 0;
 		// Returns something like this:
 		//  data[0] = 0x0000000b
@@ -275,7 +285,7 @@ private:
 				c[(d >> i) & 0xFF] = true;
 	}
 
-	void init2 (byte count)
+	void init2 (::byte count)
 	{
 		uint32 d[4];
 		bool c[256];
@@ -287,7 +297,7 @@ private:
 		{
 #ifdef COMPILER_MSVC64
 			__cpuid((int *) d, 2);
-#else
+#elif defined _MSC_VER
 			__asm
 			{
 				mov	eax, 2;
@@ -298,6 +308,8 @@ private:
 				mov [esi + 0x8], ecx;
 				mov [esi + 0xC], edx;
 			}
+#else
+	#error
 #endif
 
 			if (i == 0)
@@ -315,7 +327,7 @@ private:
 			if (c[ci2])
 				m++;
 
-		cache = new byte[m];
+		cache = new ::byte[m];
 
 		m = 0;
 
@@ -334,13 +346,15 @@ private:
 		int data[4];
 		__cpuid(data, 0x80000000);
 		m = data[0];
-#else
+#elif defined _MSC_VER
 		__asm
 		{
 			mov	eax, 0x80000000;
 			cpuid;
 			mov m, eax
 		}
+#else
+	#error
 #endif
 
 		if ((m & 0x80000000) != 0)
@@ -353,7 +367,7 @@ private:
 
 #ifdef COMPILER_MSVC64
 				__cpuid((int *) (d + (i - 0x80000001) * 4), i);
-#else
+#elif defined _MSC_VER
 				__asm
 				{
 					mov	eax, i;
@@ -364,6 +378,8 @@ private:
 					mov dword ptr [esi + 0x8], ecx;
 					mov dword ptr [esi + 0xC], edx;
 				}
+#else
+	#error
 #endif
 			}
 

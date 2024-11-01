@@ -14,6 +14,8 @@
 #include "datacache/imdlcache.h"
 #include "view.h"
 #include "tier0/vprof.h"
+#include "ragdoll.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -56,10 +58,8 @@ C_PhysPropClientside *C_PhysPropClientside::CreateNew( bool bForce )
 }
 
 C_PhysPropClientside::C_PhysPropClientside()
-	: C_BreakableProp()
+	: C_ClientOnlyBreakableProp()
 {
-	AddEFlags( EFL_NOT_NETWORKED );
-
 	m_fDeathTime = -1;
 	m_impactEnergyScale = 1.0f;
 	m_iHealth = 0;
@@ -935,8 +935,6 @@ LINK_ENTITY_TO_CLASS(func_proprrespawnzone_clientside, C_FuncPhysicsRespawnZone)
 
 C_FuncPhysicsRespawnZone::C_FuncPhysicsRespawnZone( void )
 {
-	AddEFlags( EFL_NOT_NETWORKED );
-
 	s_RespawnZoneList.AddToTail( this );
 }
 

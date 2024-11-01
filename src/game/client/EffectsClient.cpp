@@ -74,7 +74,7 @@ static CEffectsClient s_EffectClient;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CEffectsClient, IEffects, IEFFECTS_INTERFACE_VERSION, s_EffectClient);
 IEffects *g_pEffects = &s_EffectClient;
 
-ConVar r_decals( "r_decals", "2048" );
+extern ConVar *r_decals;
 
 //-----------------------------------------------------------------------------
 // constructor, destructor
@@ -127,7 +127,7 @@ void CEffectsClient::Smoke( const Vector &vecOrigin, int modelIndex, float scale
 	CPVSFilter filter( vecOrigin );
 	if ( !SuppressTE( filter ) )
 	{
-		int iColor = random->RandomInt(20,35);
+		int iColor = random_valve->RandomInt(20,35);
 		color32 color;
 		color.r = iColor;
 		color.g = iColor;

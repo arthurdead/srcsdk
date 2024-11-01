@@ -24,6 +24,7 @@ client_base_dep = declare_dependency(
 		'-DDLLNAME=client',
 		'-DMEMOVERRIDE_MODULE=client',
 		'-DCLIENT_DLL',
+		'-DTOOL_DLL',
 	],
 	sources: files(
 		#join_paths(client_src_dir,'default','clientmode_default.cpp'),
@@ -32,6 +33,7 @@ client_base_dep = declare_dependency(
 		join_paths(client_src_dir,'default','viewrender_default.cpp'),
 		join_paths(client_src_dir,'default','modemanager_default.cpp'),
 		join_paths(client_src_dir,'default','vgui_int_default.cpp'),
+		join_paths(client_src_dir,'default','cdll_client_int_default.cpp'),
 
 		join_paths(client_src_dir,'C_Func_Monitor.cpp'),
 		join_paths(client_src_dir,'history_resource.cpp'),
@@ -265,7 +267,6 @@ client_base_dep = declare_dependency(
 		join_paths(client_src_dir,'c_smoke_trail.cpp'),
 		join_paths(client_src_dir,'c_smokestack.cpp'),
 		join_paths(client_src_dir,'c_steamjet.cpp'),
-		join_paths(client_src_dir,'c_stickybolt.cpp'),
 		join_paths(client_src_dir,'c_te.cpp'),
 		join_paths(client_src_dir,'c_te_armorricochet.cpp'),
 		join_paths(client_src_dir,'c_te_basebeam.cpp'),
@@ -346,6 +347,8 @@ client_base_dep = declare_dependency(
 		join_paths(client_src_dir,'mapbase','c_func_fake_worldportal.cpp'),
 		join_paths(client_src_dir,'mdlbrowser.cpp'),
 		join_paths(client_src_dir,'hud_weaponselection.cpp'),
+		join_paths(public_dir,'editor_sendcommand.cpp'),
+		join_paths(shared_src_dir,'wcedit.cpp'),
 		#join_paths(shared_src_dir,'entityinspector.cpp'),
 		join_paths(client_game_ctrls_src_dir,'baseviewport.cpp'),
 		join_paths(client_game_ctrls_src_dir,'basemodelpanel_matsys.cpp'),

@@ -29,39 +29,19 @@
 #define	bitsFIRESMOKE_ACTIVE			0x00000001
 
 
-class C_PlasmaSprite : public C_Sprite
+class C_PlasmaSprite : public C_ClientOnlySprite
 {
 public:
-	DECLARE_CLASS( C_PlasmaSprite, C_Sprite );
-
-	C_PlasmaSprite()
-		: C_Sprite()
-	{
-		AddEFlags(EFL_NOT_NETWORKED);
-	}
-
-	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
-	virtual	bool			IsClientCreated( void ) const { return true; }
-	virtual bool						IsServerEntity( void ) { return false; }
+	DECLARE_CLASS( C_PlasmaSprite, C_ClientOnlySprite );
 
 public:
 	Vector	m_vecMoveDir;
 };
 
-class C_PlasmaGlow : public C_Sprite
+class C_PlasmaGlow : public C_ClientOnlySprite
 {
 public:
-	DECLARE_CLASS( C_PlasmaGlow, C_Sprite );
-
-	C_PlasmaGlow()
-		: C_Sprite()
-	{
-		AddEFlags(EFL_NOT_NETWORKED);
-	}
-
-	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
-	virtual	bool			IsClientCreated( void ) const { return true; }
-	virtual bool						IsServerEntity( void ) { return false; }
+	DECLARE_CLASS( C_PlasmaGlow, C_ClientOnlySprite );
 };
 
 LINK_ENTITY_TO_CLASS(plasmaglow_clientside, C_PlasmaGlow);
@@ -365,7 +345,7 @@ void C_Plasma::Start( void )
 	{
 		//Setup our offset angles
 		offset[0] = 0.0f;
-		offset[1] = random->RandomFloat( 0, 360 );
+		offset[1] = random_valve->RandomFloat( 0, 360 );
 		offset[2] = 0.0f;
 
 		bool created = false;
@@ -385,8 +365,8 @@ void C_Plasma::Start( void )
 		// Setup all the information for the client entity
 		m_pEntFlames[i]->SetModelByIndex( nModelIndex );
 		m_pEntFlames[i]->SetLocalOrigin( GetLocalOrigin() );
-		m_pEntFlames[i]->m_flFrame			= random->RandomInt( 0.0f, maxFrames );
-		m_pEntFlames[i]->m_flSpriteFramerate	= (float) random->RandomInt( 15, 20 );
+		m_pEntFlames[i]->m_flFrame			= random_valve->RandomInt( 0.0f, maxFrames );
+		m_pEntFlames[i]->m_flSpriteFramerate	= (float) random_valve->RandomInt( 15, 20 );
 		m_pEntFlames[i]->SetScale( m_flStartScale );
 		m_pEntFlames[i]->SetRenderMode( kRenderTransAddFrameBlend );
 		m_pEntFlames[i]->SetRenderFX( kRenderFxNone );

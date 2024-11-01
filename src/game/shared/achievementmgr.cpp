@@ -365,7 +365,7 @@ void CAchievementMgr::InitializeAchievements()
 }
 
 #ifdef CLIENT_DLL
-extern const ConVar *sv_cheats;
+extern ConVar *sv_cheats;
 #endif
 
 #ifdef GAME_DLL
@@ -380,18 +380,11 @@ void CAchievementMgr::FrameUpdatePostEntityThink()
 //-----------------------------------------------------------------------------
 void CAchievementMgr::Update( float frametime )
 {
-#ifdef CLIENT_DLL
-	if ( !sv_cheats )
-	{
-		sv_cheats = g_pCVar->FindVar( "sv_cheats" );
-	}
-#endif
-
 #ifndef _DEBUG
 	// keep track if cheats have ever been turned on during this level
 	if ( !WereCheatsEverOn() )
 	{
-		if ( sv_cheats && sv_cheats->GetBool() )
+		if ( sv_cheats->GetBool() )
 		{
 			m_bCheatsEverOn = true;
 		}
@@ -887,7 +880,7 @@ bool CAchievementMgr::CheckAchievementsEnabled()
 	{
 		// Cheats get turned on automatically if you run with -dev which many people do internally, so allow cheats if developer is turned on and we're not running
 		// on Steam public
-		if ( developer.GetInt() == 0 || !SteamUtils() || (k_EUniversePublic == SteamUtils()->GetConnectedUniverse()) )
+		if ( developer->GetInt() == 0 || !SteamUtils() || (k_EUniversePublic == SteamUtils()->GetConnectedUniverse()) )
 		{
 			Msg( "Achievements disabled: cheats turned on in this app session.\n" );
 			return false;

@@ -25,8 +25,10 @@
 // CWeaponIFMSteadyCam tables.
 //-----------------------------------------------------------------------------
 IMPLEMENT_NETWORKCLASS_ALIASED( WeaponIFMSteadyCam, DT_WeaponIFMSteadyCam )
+
+#ifdef GAME_DLL
 LINK_ENTITY_TO_CLASS( weapon_ifm_steadycam, CWeaponIFMSteadyCam );
-#if !( defined( TF_CLIENT_DLL ) || defined( TF_DLL ) )
+
 PRECACHE_WEAPON_REGISTER( weapon_ifm_steadycam );
 #endif
 
@@ -36,15 +38,15 @@ END_NETWORK_TABLE()
 #ifdef CLIENT_DLL
 
 BEGIN_PREDICTION_DATA( CWeaponIFMSteadyCam ) 
-	DEFINE_PRED_FIELD( m_bIsLocked, FIELD_BOOLEAN, 0 ),
-	DEFINE_PRED_FIELD( m_bInSpringMode, FIELD_BOOLEAN, 0 ),
-	DEFINE_PRED_FIELD( m_bInDirectMode, FIELD_BOOLEAN, 0 ),
-	DEFINE_PRED_FIELD( m_vecOffset, FIELD_VECTOR, 0 ),
-	DEFINE_PRED_FIELD( m_hLockTarget, FIELD_EHANDLE, 0 ),
-	DEFINE_PRED_FIELD( m_vec2DVelocity, FIELD_VECTOR, 0 ),
-	DEFINE_PRED_FIELD( m_vecActualViewOffset, FIELD_VECTOR, 0 ),
-	DEFINE_PRED_FIELD( m_vecViewOffset, FIELD_VECTOR, 0 ),
-	DEFINE_PRED_FIELD( m_flFOVOffsetY, FIELD_FLOAT, 0 ),
+	DEFINE_FIELD_FLAGS( m_bIsLocked, FIELD_BOOLEAN, 0 ),
+	DEFINE_FIELD_FLAGS( m_bInSpringMode, FIELD_BOOLEAN, 0 ),
+	DEFINE_FIELD_FLAGS( m_bInDirectMode, FIELD_BOOLEAN, 0 ),
+	DEFINE_FIELD_FLAGS( m_vecOffset, FIELD_VECTOR, 0 ),
+	DEFINE_FIELD_FLAGS( m_hLockTarget, FIELD_EHANDLE, 0 ),
+	DEFINE_FIELD_FLAGS( m_vec2DVelocity, FIELD_VECTOR, 0 ),
+	DEFINE_FIELD_FLAGS( m_vecActualViewOffset, FIELD_VECTOR, 0 ),
+	DEFINE_FIELD_FLAGS( m_vecViewOffset, FIELD_VECTOR, 0 ),
+	DEFINE_FIELD_FLAGS( m_flFOVOffsetY, FIELD_FLOAT, 0 ),
 END_PREDICTION_DATA()
 
 #endif

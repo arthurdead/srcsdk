@@ -20,13 +20,14 @@ server_listen_base_dep = declare_dependency(
 	compile_args: [
 		'-DDLLNAME=server',
 		'-DMEMOVERRIDE_MODULE=server',
+		'-DTOOL_DLL',
 	],
 	sources: files(
 		join_paths(server_src_dir,'vgui_gamedll_int.cpp'),
 		join_paths(server_src_dir,'ndebugoverlay.cpp'),
 		join_paths(server_src_dir,'foundryhelpers_server.cpp'),
 		join_paths(public_dir,'editor_sendcommand.cpp'),
-		join_paths(server_src_dir,'wcedit.cpp'),
+		join_paths(shared_src_dir,'wcedit.cpp'),
 		join_paths(server_src_dir,'entity_tools_server.cpp'),
 		join_paths(server_src_dir,'toolframework_server.cpp'),
 		join_paths(shared_src_dir,'toolframework_shared.cpp'),

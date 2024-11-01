@@ -197,7 +197,7 @@ void CEnvWindShared::UpdateWindSound( float flTotalWindSpeed )
 {
 	if (!g_pEffects->IsServer())
 	{
-		float flDuration = random->RandomFloat( 1.0f, 2.0f );
+		float flDuration = random_valve->RandomFloat( 1.0f, 2.0f );
 
 		// FIXME: Tweak with these numbers
 		float flNormalizedWindSpeed = flTotalWindSpeed / 150.0f;

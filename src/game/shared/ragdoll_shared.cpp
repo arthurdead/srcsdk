@@ -20,6 +20,7 @@
 #include "c_entityflame.h"
 #include "c_entitydissolve.h"
 #include "engine/IEngineSound.h"
+#include "ragdoll.h"
 #endif
 
 //SERVER
@@ -27,6 +28,7 @@
 #include "util.h"
 #include "EntityFlame.h"
 #include "EntityDissolve.h"
+#include "physics_prop_ragdoll.h"
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -229,7 +231,7 @@ static void RagdollCreateObjects( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragd
 	ragdoll.listCount = 0;
 	ragdoll.pGroup = NULL;
 	ragdoll.allowStretch = params.allowStretch;
-	memset( ragdoll.list, 0, sizeof(ragdoll.list) );
+	memset( (void *)ragdoll.list, 0, sizeof(ragdoll.list) );
 	memset( &ragdoll.animfriction, 0, sizeof(ragdoll.animfriction) );
 	
 	if ( !params.pCollide || params.pCollide->solidCount > RAGDOLL_MAX_ELEMENTS )
@@ -280,7 +282,7 @@ static void RagdollCreateDestrObjects( IPhysicsEnvironment *pPhysEnv, ragdoll_t 
 	ragdoll.listCount = 0;
 	ragdoll.pGroup = NULL;
 	ragdoll.allowStretch = params.allowStretch;
-	memset( ragdoll.list, 0, sizeof( ragdoll.list ) );
+	memset( (void *)ragdoll.list, 0, sizeof( ragdoll.list ) );
 	memset( &ragdoll.animfriction, 0, sizeof( ragdoll.animfriction ) );
 
 	if ( !params.pCollide || params.pCollide->solidCount > RAGDOLL_MAX_ELEMENTS )
@@ -1012,21 +1014,7 @@ void CRagdollLRURetirement::MoveToTopOfLRU( CSharedBaseAnimating *pRagdoll, bool
 #define DEFAULT_MODEL_FADE_LENGTH 0.1f
 #define DEFAULT_FADEIN_LENGTH 1.0f
 
-class C_ClientEntityDissolve : public C_EntityDissolve
-{
-public:
-	DECLARE_CLASS( C_ClientEntityDissolve, C_EntityDissolve );
-
-	C_ClientEntityDissolve()
-		: C_EntityDissolve()
-	{
-		AddEFlags(EFL_NOT_NETWORKED);
-	}
-
-	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
-	virtual	bool			IsClientCreated( void ) const { return true; }
-	virtual bool						IsServerEntity( void ) { return false; }
-};
+typedef C_ClientOnlyWrapper<C_EntityDissolve> C_ClientEntityDissolve;
 
 LINK_ENTITY_TO_CLASS(client_dissolve, C_ClientEntityDissolve);
 
@@ -1068,21 +1056,7 @@ C_EntityDissolve *DissolveEffect( C_BaseEntity *pTarget, float flTime )
 
 }
 
-class C_ClientEntityFlame : public C_EntityFlame
-{
-public:
-	DECLARE_CLASS( C_ClientEntityFlame, C_EntityFlame );
-
-	C_ClientEntityFlame()
-		: C_EntityFlame()
-	{
-		AddEFlags(EFL_NOT_NETWORKED);
-	}
-
-	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
-	virtual	bool			IsClientCreated( void ) const { return true; }
-	virtual bool						IsServerEntity( void ) { return false; }
-};
+typedef C_ClientOnlyWrapper<C_EntityFlame> C_ClientEntityFlame;
 
 LINK_ENTITY_TO_CLASS(client_fire, C_ClientEntityFlame);
 
@@ -1227,3 +1201,19 @@ void CBaseAnimating::TransferDissolveFrom( CBaseAnimating *pAnim )
 }
 
 #endif
+
+bool Ragdoll_IsPropRagdoll( CSharedBaseEntity *pEntity )
+{
+	if ( dynamic_cast<CSharedRagdollProp *>(pEntity) != NULL )
+		return true;
+	return false;
+}
+
+void Ragdoll_GetAngleOverrideString( char *pOut, int size, CSharedBaseEntity *pEntity )
+{
+	CSharedRagdollProp *pRagdoll = dynamic_cast<CSharedRagdollProp *>(pEntity);
+	if ( pRagdoll )
+	{
+		pRagdoll->GetAngleOverrideFromCurrentState( pOut, size );
+	}
+}

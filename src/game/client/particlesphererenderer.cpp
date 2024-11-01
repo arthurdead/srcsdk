@@ -14,8 +14,8 @@
 CParticleSphereRenderer::CParticleSphereRenderer()
 {
 	m_vBaseColor.Init();
-	memset( &m_AmbientLight, 0, sizeof( m_AmbientLight ) );
-	memset( &m_DirectionalLight, 0, sizeof( m_DirectionalLight ) );
+	memset( (void *)&m_AmbientLight, 0, sizeof( m_AmbientLight ) );
+	memset( (void *)&m_DirectionalLight, 0, sizeof( m_DirectionalLight ) );
 
 	m_bUsingPixelShaders = false;
 	m_iLastTickStartRenderCalled = -1;

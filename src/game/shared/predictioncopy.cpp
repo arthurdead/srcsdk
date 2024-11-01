@@ -1321,8 +1321,8 @@ typedescription_t *FindFieldByName( const char *fieldname, datamap_t *dmap )
 	return FindFieldByName_R( fieldname, dmap );
 }
 
-static ConVar pwatchent( "pwatchent", "-1", FCVAR_CHEAT, "Entity to watch for prediction system changes." );
-static ConVar pwatchvar( "pwatchvar", "", FCVAR_CHEAT, "Entity variable to watch in prediction system for changes." );
+ConVar pwatchent( "pwatchent", "-1", FCVAR_CHEAT, "Entity to watch for prediction system changes." );
+ConVar pwatchvar( "pwatchvar", "", FCVAR_CHEAT, "Entity variable to watch in prediction system for changes." );
 
 //-----------------------------------------------------------------------------
 // Purpose: 

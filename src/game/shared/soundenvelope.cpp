@@ -289,7 +289,15 @@ private:
 	string_t		m_iszClassName;
 #endif
 
+	#pragma push_macro("new")
+	#pragma push_macro("delete")
+	#undef new
+	#undef delete
+
 	DECLARE_FIXEDSIZE_ALLOCATOR(CSoundPatch);
+
+	#pragma pop_macro("delete")
+	#pragma pop_macro("new")
 };
 
 int CSoundPatch::g_SoundPatchCount = 0;
@@ -1177,7 +1185,7 @@ float CSoundControllerImp::SoundPlayEnvelope( CSoundPatch *pSound, soundcommands
 		// See if we're keeping our last amplitude for this new point
 		if ( ( points[i].amplitudeMin != -1.0f ) || ( points[i].amplitudeMax != -1.0f ) )
 		{
-			amplitude = random->RandomFloat( points[i].amplitudeMin, points[i].amplitudeMax );
+			amplitude = random_valve->RandomFloat( points[i].amplitudeMin, points[i].amplitudeMax );
 		}
 		else if ( i == 0 )
 		{
@@ -1188,7 +1196,7 @@ float CSoundControllerImp::SoundPlayEnvelope( CSoundPatch *pSound, soundcommands
 		// See if we're keeping our last duration for this new point
 		if ( ( points[i].durationMin != -1.0f ) || ( points[i].durationMax != -1.0f ) )
 		{
-			duration = random->RandomFloat( points[i].durationMin, points[i].durationMax );	
+			duration = random_valve->RandomFloat( points[i].durationMin, points[i].durationMax );	
 			//duration = points[i].durationMin;
 		}
 		else if ( i == 0 )

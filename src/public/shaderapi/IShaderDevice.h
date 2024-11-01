@@ -34,7 +34,7 @@ class KeyValues;
 
 struct ShaderDisplayMode_t
 {
-	ShaderDisplayMode_t() { memset( this, 0, sizeof(ShaderDisplayMode_t) ); m_nVersion = SHADER_DISPLAY_MODE_VERSION; }
+	ShaderDisplayMode_t() { memset( (void *)this, 0, sizeof(ShaderDisplayMode_t) ); m_nVersion = SHADER_DISPLAY_MODE_VERSION; }
 
 	int m_nVersion;
 	int m_nWidth;					// 0 when running windowed means use desktop resolution
@@ -52,7 +52,7 @@ struct ShaderDisplayMode_t
 
 struct ShaderDeviceInfo_t
 {
-	ShaderDeviceInfo_t() { memset( this, 0, sizeof(ShaderDeviceInfo_t) ); m_nVersion = SHADER_DEVICE_INFO_VERSION; m_DisplayMode.m_nVersion = SHADER_DISPLAY_MODE_VERSION; }
+	ShaderDeviceInfo_t() { memset( (void *)this, 0, sizeof(ShaderDeviceInfo_t) ); m_nVersion = SHADER_DEVICE_INFO_VERSION; m_DisplayMode.m_nVersion = SHADER_DISPLAY_MODE_VERSION; }
 
 	int m_nVersion;
 	ShaderDisplayMode_t m_DisplayMode;

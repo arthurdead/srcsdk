@@ -43,6 +43,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
+extern ConVar *cl_hud_minmode;
+
 using namespace vgui;
 
 //-----------------------------------------------------------------------------
@@ -890,8 +892,7 @@ void BuildGroup::LoadControlSettings(const char *controlResourceName, const char
 
 		if ( bSuccess )
 		{
-			ConVarRef cl_hud_minmode( "cl_hud_minmode", true );
-			if ( cl_hud_minmode.IsValid() && cl_hud_minmode.GetBool() )
+			if ( cl_hud_minmode->GetBool() )
 			{
 				rDat->ProcessResolutionKeys( "_minmode" );
 			}

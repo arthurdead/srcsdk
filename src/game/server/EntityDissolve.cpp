@@ -14,6 +14,7 @@
 #include "baseanimating.h"
 #include "physics_prop_ragdoll.h"
 #include "ai_basenpc.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -373,6 +374,6 @@ void CEntityDissolve::ElectrocuteThink( void )
 		pRagdollPhys->list[j].pObject->ApplyForceCenter( vecForce ); 
 	}
 
-	SetContextThink( &CEntityDissolve::ElectrocuteThink, gpGlobals->curtime + random->RandomFloat( 0.1, 0.2f ), 
+	SetContextThink( &CEntityDissolve::ElectrocuteThink, gpGlobals->curtime + random_valve->RandomFloat( 0.1, 0.2f ), 
 		s_pElectroThinkContext );
 }

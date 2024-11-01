@@ -11,6 +11,7 @@
 #pragma once
 
 #include "tier1/utlvector.h"
+#include "networkvar.h"
 
 // more flexible than default pointers to members code required for casting member function pointers
 //#pragma pointers_to_members( full_generality, virtual_inheritance )
@@ -132,8 +133,10 @@ public:								\
 	DECLARE_PANELMESSAGEMAP( className ); \
 	DECLARE_PANELANIMATION( className ); \
 	DECLARE_KEYBINDINGMAP( className ); \
-	static char const *GetPanelClassName() { return #className; } \
-	static char const *GetPanelBaseClassName() { return #baseClassName; }
+	static inline const char *s_pClassnameStr = V_STRINGIFY( className ); \
+	static char const *GetPanelClassName() { return V_STRINGIFY( className ); } \
+	static char const *GetPanelBaseClassName() { return V_STRINGIFY( baseClassName ); } \
+	CHECK_DECLARE_CLASS_DECL( className, baseClassName )
 
 #define DECLARE_CLASS_SIMPLE_NOBASE( className ) \
 	typedef className ThisClass;	\
@@ -141,8 +144,10 @@ public:							\
 	DECLARE_PANELMESSAGEMAP( className ); \
 	DECLARE_PANELANIMATION( className ); \
 	DECLARE_KEYBINDINGMAP( className ); \
-	static char const *GetPanelClassName() { return #className; } \
-	static char const *GetPanelBaseClassName() { return NULL; }
+	static inline const char *s_pClassnameStr = V_STRINGIFY( className ); \
+	static char const *GetPanelClassName() { return V_STRINGIFY( className ); } \
+	static char const *GetPanelBaseClassName() { return NULL; } \
+	CHECK_DECLARE_CLASS_NOBASE_DECL( className )
 
 #define _MessageFuncCommon( name, scriptname, paramCount, p1type, p1name, p2type, p2name )	\
 	class PanelMessageFunc_##name; \

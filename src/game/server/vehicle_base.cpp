@@ -1100,7 +1100,7 @@ void CPropVehicleDriveable::Event_KilledOther( CBaseEntity *pVictim, const CTake
 CFourWheelServerVehicle::CFourWheelServerVehicle( void )
 {
 	// Setup our smoothing data
-	memset( &m_ViewSmoothing, 0, sizeof( m_ViewSmoothing ) );
+	memset( (void *)&m_ViewSmoothing, 0, sizeof( m_ViewSmoothing ) );
 
 	m_ViewSmoothing.bClampEyeAngles		= true;
 	m_ViewSmoothing.bDampenEyePosition	= true;

@@ -25,6 +25,7 @@
 #include "tier0/vcrmode.h"
 #include "pushentity.h"
 #include "gamemovement.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -978,6 +979,8 @@ CBaseEntity *CPhysicsPushedEntities::PerformLinearPush( CBaseEntity *pRoot, floa
 #define THINK_TRACE_COUNTER_COMPILE_FUNCTIONS_SERVER
 #include "engine/thinktracecounter.h"
 
+extern ConVar *think_trace_limit;
+
 //-----------------------------------------------------------------------------
 // Purpose: Called when it's time for a physically moved objects (plats, doors, etc)
 //			to run it's game code.
@@ -987,7 +990,7 @@ void CBaseEntity::PhysicsDispatchThink( BASEPTR thinkFunc )
 {
 	VPROF_ENTER_SCOPE( ( !vprof_scope_entity_thinks.GetBool() ) ? 
 						"CBaseEntity::PhysicsDispatchThink" : 
-						EntityFactoryDictionary()->GetCannonicalName( GetClassname() ) );
+						GetClassname() );
 
 	float thinkLimit = think_limit.GetFloat();
 	
@@ -1013,8 +1016,7 @@ void CBaseEntity::PhysicsDispatchThink( BASEPTR thinkFunc )
 	{
 		MDLCACHE_CRITICAL_SECTION();
 #ifdef THINK_TRACE_COUNTER_COMPILED
-		static ConVarRef think_trace_limit( "think_trace_limit" );
-		const int tracelimit = abs(think_trace_limit.GetInt());
+		const int tracelimit = abs(think_trace_limit ? think_trace_limit->GetInt() : 0);
 		const bool bThinkTraceAllowed = DEBUG_THINK_TRACE_COUNTER_ALLOWED();
 
 		(this->*thinkFunc)();

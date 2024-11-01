@@ -32,6 +32,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+typedef unsigned long DWORD;
+
 // Control like a joystick
 #define JOY_ABSOLUTE_AXIS	0x00000000		
 // Control like a mouse, spinner, trackball

@@ -14,18 +14,13 @@
 
 extern ISoundEmitterSystemBase *soundemitterbase;
 
-CStudioHdr *ModelSoundsCache_LoadModel( char const *filename );
-void ModelSoundsCache_PrecacheScriptSound( const char *soundname );
-void ModelSoundsCache_FinishModel( CStudioHdr *hdr );
+extern void VerifySequenceIndex( CStudioHdr *pstudiohdr );
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *hdr - 
 // Output : static void
 //-----------------------------------------------------------------------------
-
-void VerifySequenceIndex( CStudioHdr *pstudiohdr );
-
-extern ISoundEmitterSystemBase *soundemitterbase;
 
 CModelSoundsCache::CModelSoundsCache()
 {
@@ -202,3 +197,92 @@ void CModelSoundsCache::BuildAnimationEventSoundList( CStudioHdr *hdr, CUtlVecto
 		}
 	}
 }
+
+CStudioHdr *ModelSoundsCache_LoadModel( const char *filename )
+{
+	// Load the file
+#ifdef GAME_DLL
+	int idx = engine->PrecacheModel( filename, true );
+#else
+	int idx = modelinfo->GetModelIndex( filename );
+#endif
+	if ( idx != -1 )
+	{
+		model_t *mdl = (model_t *)modelinfo->GetModel( idx );
+		if ( mdl )
+		{
+			CStudioHdr *studioHdr = new CStudioHdr( modelinfo->GetStudiomodel( mdl ), g_pMDLCache ); 
+			if ( studioHdr->IsValid() )
+			{
+				return studioHdr;
+			}
+		}
+	}
+	return NULL;
+}
+
+void ModelSoundsCache_FinishModel( CStudioHdr *hdr )
+{
+	Assert( hdr );
+	delete hdr;
+}
+
+void ModelSoundsCache_PrecacheScriptSound( const char *soundname )
+{
+	CSharedBaseEntity::PrecacheScriptSound( soundname );
+}
+
+CUtlCachedFileData< CModelSoundsCache > g_ModelSoundsCache( 
+#ifdef GAME_DLL
+	"modelsounds_server.cache"
+#else
+	"modelsounds_client.cache"
+#endif
+	, MODELSOUNDSCACHE_VERSION, 0, UTL_CACHED_FILE_USE_FILESIZE, false );																  
+
+void ClearModelSoundsCache()
+{
+	g_ModelSoundsCache.Reload();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool ModelSoundsCacheInit()
+{
+	return g_ModelSoundsCache.Init();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void ModelSoundsCacheShutdown()
+{
+	g_ModelSoundsCache.Shutdown();
+}
+
+static CUtlSymbolTable g_ModelSoundsSymbolHelper( 0, 32, true );
+class CModelSoundsCacheSaver: public CAutoGameSystem
+{
+public:
+	CModelSoundsCacheSaver( const char *name ) : CAutoGameSystem( name )
+	{
+	}
+	virtual void LevelInitPostEntity()
+	{
+		if ( g_ModelSoundsCache.IsDirty() )
+		{
+			g_ModelSoundsCache.Save();
+		}
+	}
+	virtual void LevelShutdownPostEntity()
+	{
+		if ( g_ModelSoundsCache.IsDirty() )
+		{
+			g_ModelSoundsCache.Save();
+		}
+	}
+};
+
+static CModelSoundsCacheSaver g_ModelSoundsCacheSaver( "CModelSoundsCacheSaver" );

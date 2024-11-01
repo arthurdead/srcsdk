@@ -143,6 +143,8 @@ enum P4OverflowInterrupt
     OverflowInterruptEnable,
 };
 
+class PME;
+
 // Turn off the no return value warning in ReadCounter.
 #pragma warning( disable : 4035 )
 class P4BaseEvent
@@ -196,7 +198,7 @@ public:
 
     void ClearCounter()
     {
-        pme->WriteMSR( counterPort, 0ui64 ); // clear
+        pme->WriteMSR( counterPort, 0ull ); // clear
     }
 
     void WriteCounter( int64 value )

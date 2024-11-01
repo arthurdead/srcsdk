@@ -431,12 +431,12 @@ void CNPCSimpleTalker::HandleAnimEvent( animevent_t *pEvent )
 	switch( pEvent->event )
 	{		
 	case SCRIPT_EVENT_SENTENCE_RND1:		// Play a named sentence group 25% of the time
-		if (random->RandomInt(0,99) < 75)
+		if (random_valve->RandomInt(0,99) < 75)
 			break;
 		// fall through...
 	case SCRIPT_EVENT_SENTENCE:				// Play a named sentence group
 		ShutUpFriends();
-		PlaySentence( pEvent->options, random->RandomFloat(2.8, 3.4) );
+		PlaySentence( pEvent->options, random_valve->RandomFloat(2.8, 3.4) );
 		//Msg( "script event speak\n");
 		break;
 
@@ -471,7 +471,7 @@ void CNPCSimpleTalker::IdleRespond( void )
 	// play response
 	SpeakAnswerFriend( GetSpeechTarget() );
 
-	DeferAllIdleSpeech( random->RandomFloat( TALKER_DEFER_IDLE_SPEAK_MIN, TALKER_DEFER_IDLE_SPEAK_MAX ) );
+	DeferAllIdleSpeech( random_valve->RandomFloat( TALKER_DEFER_IDLE_SPEAK_MIN, TALKER_DEFER_IDLE_SPEAK_MAX ) );
 }
 
 bool CNPCSimpleTalker::IsOkToSpeak( void )
@@ -533,7 +533,7 @@ void CNPCSimpleTalker::SayHelloToPlayer( CBaseEntity *pPlayer )
 	SetSpeechTarget( pPlayer );
 
 	Speak( TLK_HELLO );
-	DeferAllIdleSpeech( random->RandomFloat( 5, 10 ) );
+	DeferAllIdleSpeech( random_valve->RandomFloat( 5, 10 ) );
 
 	CAI_BaseNPC **ppAIs = g_AI_Manager.AccessAIs();
 	CAI_PlayerAlly *pTalker;
@@ -639,7 +639,7 @@ int CNPCSimpleTalker::FIdleSpeak( void )
 	CBaseEntity *pFriend = FindNearestFriend(false);
 
 	// 75% chance of talking to another citizen if one is available.
-	if (pFriend && !(pFriend->IsMoving()) && random->RandomInt( 0, 3 ) != 0 )
+	if (pFriend && !(pFriend->IsMoving()) && random_valve->RandomInt( 0, 3 ) != 0 )
 	{
 		if ( SpeakQuestionFriend( pFriend ) )
 		{
@@ -655,7 +655,7 @@ int CNPCSimpleTalker::FIdleSpeak( void )
 			}
 
 			// Don't let anyone else butt in.
-			DeferAllIdleSpeech( random->RandomFloat( TALKER_DEFER_IDLE_SPEAK_MIN, TALKER_DEFER_IDLE_SPEAK_MAX ), pTalkNPC );
+			DeferAllIdleSpeech( random_valve->RandomFloat( TALKER_DEFER_IDLE_SPEAK_MIN, TALKER_DEFER_IDLE_SPEAK_MAX ), pTalkNPC );
 			return true;
 		}
 	}
@@ -679,7 +679,7 @@ int CNPCSimpleTalker::FIdleSpeak( void )
 
 		if ( Speak( TLK_IDLE ) )
 		{
-			DeferAllIdleSpeech( random->RandomFloat( TALKER_DEFER_IDLE_SPEAK_MIN, TALKER_DEFER_IDLE_SPEAK_MAX ) );
+			DeferAllIdleSpeech( random_valve->RandomFloat( TALKER_DEFER_IDLE_SPEAK_MIN, TALKER_DEFER_IDLE_SPEAK_MAX ) );
 			m_nSpeak++;
 		}
 		else
@@ -747,7 +747,7 @@ int CNPCSimpleTalker::PlayScriptedSentence( const char *pszSentence, float delay
 	m_useTime = gpGlobals->curtime + delay;
 
 	// Stop all idle speech until after the sentence has completed
-	DeferAllIdleSpeech( delay + random->RandomInt( 3.0f, 5.0f ) );
+	DeferAllIdleSpeech( delay + random_valve->RandomInt( 3.0f, 5.0f ) );
 
 	return sentenceIndex;
 }
@@ -804,7 +804,7 @@ int CNPCSimpleTalker::SelectNonCombatSpeechSchedule()
 	}
 	
 	// failed to speak, so look at the player if he's around
-	if ( GetExpresser()->CanSpeak() && HasCondition ( COND_SEE_PLAYER ) && random->RandomInt( 0, 6 ) == 0 ) 
+	if ( GetExpresser()->CanSpeak() && HasCondition ( COND_SEE_PLAYER ) && random_valve->RandomInt( 0, 6 ) == 0 ) 
 	{ 
 		CBasePlayer *pPlayer = UTIL_GetNearestVisiblePlayer(this); 
 		if ( pPlayer )
@@ -1109,7 +1109,7 @@ bool CNPCSimpleTalker::ShouldSpeakRandom( int iChance, float flModifier )
 		iChance = floor( (float)iChance / flModifier );
 	}
 
-	return (random->RandomInt(0,iChance) == 0);
+	return (random_valve->RandomInt(0,iChance) == 0);
 }
 
 

@@ -74,6 +74,8 @@ extern ConVar sensitivity;
 
 ConVar zoom_sensitivity_ratio( "zoom_sensitivity_ratio", "1.0", 0, "Additional mouse sensitivity scale factor applied when FOV is zoomed in." );
 
+extern ConVar *sv_restrict_aspect_ratio_fov;
+
 CViewRender s_DefaultViewRender;
 
 #if _DEBUG
@@ -101,7 +103,7 @@ ConVar mat_viewportscale( "mat_viewportscale", "1.0", FCVAR_ARCHIVE, "Scale down
 ConVar mat_viewportupscale( "mat_viewportupscale", "1", FCVAR_ARCHIVE, "Scale the viewport back up" );
 ConVar cl_leveloverview( "cl_leveloverview", "0", FCVAR_CHEAT );
 
-static ConVar cl_camera_follow_bone_index( "cl_camera_follow_bone_index"  , "-2", FCVAR_CHEAT, "Index of the bone to follow.  -2 == disabled.  -1 == root bone.  0+ is bone index." );
+ConVar cl_camera_follow_bone_index( "cl_camera_follow_bone_index"  , "-2", FCVAR_CHEAT, "Index of the bone to follow.  -2 == disabled.  -1 == root bone.  0+ is bone index." );
 Vector g_cameraFollowPos;
 
 ConVar r_mapextents( "r_mapextents", "16384", FCVAR_CHEAT, 
@@ -929,11 +931,10 @@ void CViewRender::Render( vrect_t *rect )
 		}
 	}
 
-    static ConVarRef sv_restrict_aspect_ratio_fov( "sv_restrict_aspect_ratio_fov" );
     float aspectRatio = engine->GetScreenAspectRatio() * 0.75f;	 // / (4/3)
     float limitedAspectRatio = aspectRatio;
-    if ( ( sv_restrict_aspect_ratio_fov.GetInt() > 0 && engine->IsWindowedMode() && gpGlobals->maxClients > 1 ) ||
-	    sv_restrict_aspect_ratio_fov.GetInt() == 2 )
+    if ( ( sv_restrict_aspect_ratio_fov->GetInt() > 0 && engine->IsWindowedMode() && gpGlobals->maxClients > 1 ) ||
+	    sv_restrict_aspect_ratio_fov->GetInt() == 2 )
     {
 	    limitedAspectRatio = MIN( aspectRatio, 1.85f * 0.75f ); // cap out the FOV advantage at a 1.85:1 ratio (about the widest any legit user should be)
     }

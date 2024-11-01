@@ -96,7 +96,7 @@ void C_EnvScreenOverlay::PostDataUpdate( DataUpdateType_t updateType )
 	{
 		for ( int i = 0; i < MAX_SCREEN_OVERLAYS; ++i )
 		{
-			if ( m_iszOverlayNames[ i ] && m_iszOverlayNames[ i ][ 0 ] )
+			if ( m_iszOverlayNames[ i ][ 0 ] )
 			{
 				g_pMaterialSystem->FindMaterial( m_iszOverlayNames[ i ], TEXTURE_GROUP_CLIENT_EFFECTS, false );
 			}
@@ -153,7 +153,7 @@ void C_EnvScreenOverlay::HandleOverlaySwitch( void )
 //-----------------------------------------------------------------------------
 void C_EnvScreenOverlay::StartCurrentOverlay( void )
 {
-	if ( m_iCurrentOverlay == MAX_SCREEN_OVERLAYS || !m_iszOverlayNames[m_iCurrentOverlay] || !m_iszOverlayNames[m_iCurrentOverlay][0] )
+	if ( m_iCurrentOverlay == MAX_SCREEN_OVERLAYS || !m_iszOverlayNames[m_iCurrentOverlay][0] )
 	{
 		// Hit the end of our overlays, so stop.
 		m_flStartTime = 0;

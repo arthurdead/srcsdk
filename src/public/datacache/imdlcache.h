@@ -191,6 +191,7 @@ public:
 	virtual void MarkFrame() = 0;
 };
 
+extern IMDLCache *g_pMDLCache;
 
 //-----------------------------------------------------------------------------
 // Critical section helper code

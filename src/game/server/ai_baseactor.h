@@ -37,12 +37,11 @@ struct AILookTargetArgs_t
 
 class CAI_BaseActor : public CAI_ExpresserHost<CAI_BaseHumanoid>
 {
+public:
 	DECLARE_CLASS( CAI_BaseActor, CAI_ExpresserHost<CAI_BaseHumanoid> );
 
 	//friend CPoseParameter;
 	//friend CFlexWeight;
-
-public:
 
 	// FIXME: this method is lame, isn't there some sort of template thing that would get rid of the Outer pointer?
 

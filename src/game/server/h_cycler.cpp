@@ -386,7 +386,7 @@ void CWreckage::Think( void )
 			UTIL_Remove( this );
 			return;
 		}
-		else if (random->RandomFloat( 0, m_flDieTime - m_flStartTime ) > m_flDieTime - gpGlobals->curtime)
+		else if (random_valve->RandomFloat( 0, m_flDieTime - m_flStartTime ) > m_flDieTime - gpGlobals->curtime)
 		{
 			return;
 		}
@@ -397,8 +397,8 @@ void CWreckage::Think( void )
 	CPVSFilter filter( vecSrc );
 	te->Smoke( filter, 0.0, 
 		&vecSrc, g_sModelIndexSmoke,
-		random->RandomFloat(0,4.9) + 5.0,
-		random->RandomInt(0, 3) + 8 );
+		random_valve->RandomFloat(0,4.9) + 5.0,
+		random_valve->RandomInt(0, 3) + 8 );
 }
 
 // BlendingCycler

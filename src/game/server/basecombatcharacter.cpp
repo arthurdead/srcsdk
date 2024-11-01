@@ -37,6 +37,7 @@
 #include "rumble_shared.h"
 #include "rope.h"
 #include "lightcache.h"
+#include "collisionproperty.h"
 
 #ifdef PORTAL
 	#include "portal_util_shared.h"
@@ -57,6 +58,9 @@ ConVar ai_show_hull_attacks( "ai_show_hull_attacks", "0" );
 ConVar ai_force_serverside_ragdoll( "ai_force_serverside_ragdoll", "0" );
 
 ConVar ai_use_visibility_cache( "ai_use_visibility_cache", "1" );
+
+extern ConVar *violence_hgibs;
+extern ConVar *violence_agibs;
 
 BEGIN_MAPENTITY( CBaseCombatCharacter )
 
@@ -918,7 +922,7 @@ Activity CBaseCombatCharacter::GetDeathActivity ( void )
 	if (IsPlayer())
 	{
 		// die in an interesting way
-		switch( random->RandomInt(0,7) )
+		switch( random_valve->RandomInt(0,7) )
 		{
 		case 0:	return ACT_DIESIMPLE;
 		case 1: return ACT_DIEBACKWARD;
@@ -1331,16 +1335,14 @@ bool  CBaseCombatCharacter::Event_Gibbed( const CTakeDamageInfo &info )
 
 	if ( HasHumanGibs() )
 	{
-		ConVarRef violence_hgibs( "violence_hgibs" );
-		if ( violence_hgibs.IsValid() && violence_hgibs.GetInt() == 0 )
+		if ( violence_hgibs->GetInt() == 0 )
 		{
 			fade = true;
 		}
 	}
 	else if ( HasAlienGibs() )
 	{
-		ConVarRef violence_agibs( "violence_agibs" );
-		if ( violence_agibs.IsValid() && violence_agibs.GetInt() == 0 )
+		if ( violence_agibs->GetInt() == 0 )
 		{
 			fade = true;
 		}
@@ -1376,7 +1378,7 @@ Vector CBaseCombatCharacter::CalcDamageForceVector( const CTakeDamageInfo &info 
 			// This simulates features that usually vary from
 			// person-to-person variables such as bodyweight,
 			// which are all indentical for characters using the same model.
-			float scale = random->RandomFloat( 0.85, 1.15 );
+			float scale = random_valve->RandomFloat( 0.85, 1.15 );
 			Vector force = info.GetDamageForce();
 			force.x *= scale;
 			force.y *= scale;
@@ -1414,10 +1416,10 @@ Vector CBaseCombatCharacter::CalcDamageForceVector( const CTakeDamageInfo &info 
 			// taking damage from self?  Take a little random force, but still try to collapse on the spot.
 			if ( this == pForce )
 			{
-				forceVector.x = random->RandomFloat( -1.0f, 1.0f );
-				forceVector.y = random->RandomFloat( -1.0f, 1.0f );
+				forceVector.x = random_valve->RandomFloat( -1.0f, 1.0f );
+				forceVector.y = random_valve->RandomFloat( -1.0f, 1.0f );
 				forceVector.z = 0.0;
-				forceScale = random->RandomFloat( 1000.0f, 2000.0f );
+				forceScale = random_valve->RandomFloat( 1000.0f, 2000.0f );
 			}
 			else
 			{
@@ -1781,12 +1783,12 @@ void CBaseCombatCharacter::ThrowDirForWeaponStrip( CBaseCombatWeapon *pWeapon, c
 {
 	// Nowhere in particular; just drop it.
 	VMatrix zRot;
-	MatrixBuildRotateZ( zRot, random->RandomFloat( -60.0f, 60.0f ) );
+	MatrixBuildRotateZ( zRot, random_valve->RandomFloat( -60.0f, 60.0f ) );
 
 	Vector vecThrow;
 	Vector3DMultiply( zRot, vecForward, *pVecThrowDir );
 
-	pVecThrowDir->z = random->RandomFloat( -0.5f, 0.5f );
+	pVecThrowDir->z = random_valve->RandomFloat( -0.5f, 0.5f );
 	VectorNormalize( *pVecThrowDir );
 }
 
@@ -1817,7 +1819,7 @@ void CBaseCombatCharacter::DropWeaponForWeaponStrip( CBaseCombatWeapon *pWeapon,
 		VectorMA( vecOrigin, flDiameter, vecThrow, vecOffsetOrigin );
 	}
 
-	vecThrow *= random->RandomFloat( 400.0f, 600.0f );
+	vecThrow *= random_valve->RandomFloat( 400.0f, 600.0f );
 
 	pWeapon->SetAbsOrigin( vecOrigin );
 	pWeapon->SetAbsAngles( vecAngles );
@@ -1893,7 +1895,7 @@ void CBaseCombatCharacter::Weapon_DropAll( bool bDisallowWeaponPickup )
 		ThrowDirForWeaponStrip( pActiveWeapon, vecForward, &vecThrow );
 
 		// Throw a little more vigorously; it starts closer to the player
-		vecThrow *= random->RandomFloat( 800.0f, 1000.0f );
+		vecThrow *= random_valve->RandomFloat( 800.0f, 1000.0f );
 
 		Weapon_Drop( pActiveWeapon, NULL, &vecThrow );
 		pActiveWeapon->SetRemoveable( false );
@@ -2036,7 +2038,7 @@ void CBaseCombatCharacter::Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector
 		else
 		{
 			// Nowhere in particular; just drop it.
-			float throwForce = ( IsPlayer() ) ? 400.0f : random->RandomInt( 64, 128 );
+			float throwForce = ( IsPlayer() ) ? 400.0f : random_valve->RandomInt( 64, 128 );
 			vecThrow = BodyDirection3D() * throwForce;
 		}
 	}
@@ -2584,7 +2586,7 @@ int CBaseCombatCharacter::OnTakeDamage( const CTakeDamageInfo &info )
 	if ( info.GetDamageType() & DMG_SHOCK )
 	{
 		g_pEffects->Sparks( info.GetDamagePosition(), 2, 2 );
-		UTIL_Smoke( info.GetDamagePosition(), random->RandomInt( 10, 15 ), 10 );
+		UTIL_Smoke( info.GetDamagePosition(), random_valve->RandomInt( 10, 15 ), 10 );
 	}
 
 	// track damage history
@@ -2944,7 +2946,8 @@ void CBaseCombatCharacter::AddFactionRelationship(Faction_T nFaction, Dispositio
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CBaseCombatCharacter::ChangeFaction( Faction_T nNewFaction ) {
+void CBaseCombatCharacter::ChangeFaction( Faction_T nNewFaction )
+{
 	int nOldFaction = m_nFaction;
 
 	if ( ( m_nFaction != FACTION_NONE ) && ( m_aFactions.Count() != 0 ) )
@@ -2988,7 +2991,8 @@ void CBaseCombatCharacter::ChangeFaction( Faction_T nNewFaction ) {
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int CBaseCombatCharacter::GetNumFactions( void ) {
+int CBaseCombatCharacter::GetNumFactions( void )
+{
 	if ( !m_aFactions.Count() )
 	{
 		AllocateDefaultFactionRelationships();
@@ -3002,7 +3006,8 @@ int CBaseCombatCharacter::GetNumFactions( void ) {
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-CUtlVector<EHANDLE> *CBaseCombatCharacter::GetEntitiesInFaction( Faction_T nFaction ) {
+CUtlVector<EHANDLE> *CBaseCombatCharacter::GetEntitiesInFaction( Faction_T nFaction )
+{
 	if ( !m_aFactions.Count() )
 	{
 		return NULL;
@@ -3898,7 +3903,7 @@ CBaseEntity *CBaseCombatCharacter::FindMissTarget( void )
 	if( numMissCandidates == 0 )
 		return NULL;
 
-	return pMissCandidates[ random->RandomInt( 0, numMissCandidates - 1 ) ];
+	return pMissCandidates[ random_valve->RandomInt( 0, numMissCandidates - 1 ) ];
 }
 
 //-----------------------------------------------------------------------------
@@ -4107,123 +4112,6 @@ void CBaseCombatCharacter::InputSwitchToWeapon( inputdata_t &inputdata )
 	}
 }
 
-#define FINDNAMEDENTITY_MAX_ENTITIES	32
-//-----------------------------------------------------------------------------
-// Purpose: FindNamedEntity has been moved from CAI_BaseNPC to CBaseCombatCharacter so players can use it.
-//			Coincidentally, everything that it did on NPCs could be done on BaseCombatCharacters with no consequences.
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-CBaseEntity *CBaseCombatCharacter::FindNamedEntity( const char *szName, IEntityFindFilter *pFilter )
-{
-	const char *name = szName;
-	if (name[0] == '!')
-		name++;
-
-	if ( !stricmp( name, "player" ))
-	{
-		return NULL;
-	}
-	else if ( !stricmp( name, "enemy" ) )
-	{
-		return GetEnemy();
-	}
-	else if ( !stricmp( name, "self" ) || !stricmp( name, "target1" ) )
-	{
-		return this;
-	}
-	else if ( !stricmp( name, "nearestfriend" ) || !strnicmp( name, "friend", 6 ) )
-	{
-		// Just look for the nearest friendly NPC within 500 units
-		// (most of this was stolen from CAI_PlayerAlly::FindSpeechTarget())
-		const Vector &	vAbsOrigin = GetAbsOrigin();
-		float 			closestDistSq = Square(500.0);
-		CBaseEntity *	pNearest = NULL;
-		float			distSq;
-		int				i;
-		for ( i = 0; i < g_AI_Manager.NumAIs(); i++ )
-		{
-			CAI_BaseNPC *pNPC = (g_AI_Manager.AccessAIs())[i];
-
-			if ( pNPC == this )
-				continue;
-
-			distSq = ( vAbsOrigin - pNPC->GetAbsOrigin() ).LengthSqr();
-				
-			if ( distSq > closestDistSq )
-				continue;
-
-			if ( IRelationType( pNPC ) == D_LI )
-			{
-				closestDistSq = distSq;
-				pNearest = pNPC;
-			}
-		}
-
-		if (stricmp(name, "friend_npc") != 0)
-		{
-			// Okay, find the nearest friendly client.
-			for ( i = 1; i <= gpGlobals->maxClients; i++ )
-			{
-				CBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
-				if ( pPlayer )
-				{
-					// Don't get players with notarget
-					if (pPlayer->GetFlags() & FL_NOTARGET)
-						continue;
-
-					distSq = ( vAbsOrigin - pPlayer->GetAbsOrigin() ).LengthSqr();
-					
-					if ( distSq > closestDistSq )
-						continue;
-
-					if ( IRelationType( pPlayer ) == D_LI )
-					{
-						closestDistSq = distSq;
-						pNearest = pPlayer;
-					}
-				}
-			}
-		}
-
-		return pNearest;
-	}
-	else if (!stricmp( name, "weapon" ))
-	{
-		return GetActiveWeapon();
-	}
-
-	// HACKHACK: FindEntityProcedural can go through this now, so running this code could cause an infinite loop.
-	// As a result, FindEntityProcedural currently identifies itself with this entity filter.
-	else if (!pFilter || !dynamic_cast<CNullEntityFilter*>(pFilter))
-	{
-		// search for up to 32 entities with the same name and choose one randomly
-		CBaseEntity *entityList[ FINDNAMEDENTITY_MAX_ENTITIES ];
-		CBaseEntity *entity;
-		int	iCount;
-
-		entity = NULL;
-		for( iCount = 0; iCount < FINDNAMEDENTITY_MAX_ENTITIES; iCount++ )
-		{
-			entity = gEntList.FindEntityByName( entity, szName, this, NULL, NULL, pFilter );
-			if ( !entity )
-			{
-				break;
-			}
-			entityList[ iCount ] = entity;
-		}
-
-		if ( iCount > 0 )
-		{
-			int index = RandomInt( 0, iCount - 1 );
-			entity = entityList[ index ];
-			return entity;
-		}
-	}
-
-	return NULL;
-}
-
 //-----------------------------------------------------------------------------
 // Purpose: Overload our muzzle flash and send it to any actively held weapon
 //-----------------------------------------------------------------------------
@@ -4240,136 +4128,6 @@ void CBaseCombatCharacter::DoMuzzleFlash()
 	{
 		BaseClass::DoMuzzleFlash();
 	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: return true if given target cant be seen because of fog
-//-----------------------------------------------------------------------------
-bool CBaseCombatCharacter::IsHiddenByFog( const Vector &target ) const
-{
-	float range = EyePosition().DistTo( target );
-	return IsHiddenByFog( range );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: return true if given target cant be seen because of fog
-//-----------------------------------------------------------------------------
-bool CBaseCombatCharacter::IsHiddenByFog( CBaseEntity *target ) const
-{
-	if ( !target )
-		return false;
-
-	float range = EyePosition().DistTo( target->WorldSpaceCenter() );
-	return IsHiddenByFog( range );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: return true if given target cant be seen because of fog
-//-----------------------------------------------------------------------------
-bool CBaseCombatCharacter::IsHiddenByFog( float range ) const
-{
-	if ( GetFogObscuredRatio( range ) >= 1.0f )
-		return true;
-
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: return 0-1 ratio where zero is not obscured, and 1 is completely obscured
-//-----------------------------------------------------------------------------
-float CBaseCombatCharacter::GetFogObscuredRatio( const Vector &target ) const
-{
-	float range = EyePosition().DistTo( target );
-	return GetFogObscuredRatio( range );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: return 0-1 ratio where zero is not obscured, and 1 is completely obscured
-//-----------------------------------------------------------------------------
-float CBaseCombatCharacter::GetFogObscuredRatio( CBaseEntity *target ) const
-{
-	if ( !target )
-		return false;
-
-	float range = EyePosition().DistTo( target->WorldSpaceCenter() );
-	return GetFogObscuredRatio( range );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: return 0-1 ratio where zero is not obscured, and 1 is completely obscured
-//-----------------------------------------------------------------------------
-float CBaseCombatCharacter::GetFogObscuredRatio( float range ) const
-{
-	fogparams_t fog;
-	GetFogParams( &fog );
-
-	if ( !fog.enable )
-		return 0.0f;
-
-	if ( range <= fog.start )
-		return 0.0f;
-
-	if ( range >= fog.end )
-		return 1.0f;
-
-	float ratio = (range - fog.start) / (fog.end - fog.start);
-	ratio = MIN( ratio, fog.maxdensity.Get() );
-	return ratio;
-}
-
-extern bool GetWorldFogParams( CBaseCombatCharacter *character, fogparams_t &fog );
-bool CBaseCombatCharacter::GetFogParams( fogparams_t *fog ) const
-{
-	if ( !fog )
-		return false;
-
-	return GetWorldFogParams( const_cast< CBaseCombatCharacter * >( this ), *fog );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: track the last trigger_fog touched by this character
-//-----------------------------------------------------------------------------
-void CBaseCombatCharacter::OnFogTriggerStartTouch( CBaseEntity *fogTrigger )
-{
-	m_hTriggerFogList.AddToHead( fogTrigger );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: track the last trigger_fog touched by this character
-//-----------------------------------------------------------------------------
-void CBaseCombatCharacter::OnFogTriggerEndTouch( CBaseEntity *fogTrigger )
-{
-	m_hTriggerFogList.FindAndRemove( fogTrigger );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: track the last trigger_fog touched by this character
-//-----------------------------------------------------------------------------
-CBaseEntity *CBaseCombatCharacter::GetFogTrigger( void )
-{
-	float bestDist = 999999.0f;
-	CBaseEntity *bestTrigger = NULL;
-
-	for ( int i=0; i<m_hTriggerFogList.Count(); ++i )
-	{
-		CBaseEntity *fogTrigger = m_hTriggerFogList[i];
-		if ( fogTrigger != NULL )
-		{
-			float dist = WorldSpaceCenter().DistTo( fogTrigger->WorldSpaceCenter() );
-			if ( dist < bestDist )
-			{
-				bestDist = dist;
-				bestTrigger = fogTrigger;
-			}
-		}
-	}
-
-	if ( bestTrigger )
-	{
-		m_hLastFogTrigger = bestTrigger;
-	}
-
-	return m_hLastFogTrigger;
 }
 
 //-----------------------------------------------------------------------------

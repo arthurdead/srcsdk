@@ -8,6 +8,8 @@
 #define ISERVERENGINETOOLS_H
 #pragma once
 
+#ifndef SWDS
+
 #include "interface.h"
 #include "hackmgr/hackmgr.h"
 
@@ -47,5 +49,7 @@ public:
 };
 
 #define VSERVERENGINETOOLS_INTERFACE_VERSION "VSERVERENGINETOOLS001"
+
+#endif
 
 #endif // ISERVERENGINETOOLS_H

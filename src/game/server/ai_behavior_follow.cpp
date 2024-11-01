@@ -52,7 +52,7 @@ struct AI_Follower_t
 	AI_Follower_t()
 	{
 		slot = -1;
-		memset( &navInfo, 0, sizeof(navInfo) );
+		memset( (void *)&navInfo, 0, sizeof(navInfo) );
 		pGroup = NULL;
 	}
 
@@ -187,7 +187,7 @@ int AIGetNumFollowers( CBaseEntity *pEntity, string_t iszClassname )
 
 CAI_FollowBehavior::CAI_FollowBehavior( const AI_FollowParams_t &params )
 {
-	memset( &m_FollowNavGoal, 0, sizeof( m_FollowNavGoal ) );
+	memset( (void *)&m_FollowNavGoal, 0, sizeof( m_FollowNavGoal ) );
 	
 	m_FollowDelay.Set( 1.0, 3.0 );
 	m_hFollowManagerInfo.m_pGroup = NULL;
@@ -1158,7 +1158,7 @@ void CAI_FollowBehavior::StartTask( const Task_t *pTask )
 					}
 					else
 					{
-						int roll = random->RandomInt(1, 4);
+						int roll = random_valve->RandomInt(1, 4);
 						if ( roll == 1 )
 						{
 							GetFollowTargetViewLoc( &faceTarget );
@@ -1178,7 +1178,7 @@ void CAI_FollowBehavior::StartTask( const Task_t *pTask )
 								float flSlice = 360.0 / (count + 1);
 
 								// Add one to slots so then are 1 to N instead of 0 to N - 1.
-								int slot = random->RandomInt( 0, count );
+								int slot = random_valve->RandomInt( 0, count );
 
 								QAngle angle = m_hFollowTarget->GetAbsAngles();
 
@@ -2429,7 +2429,7 @@ void CAI_FollowManager::CalculateFieldsFromSlot( AI_FollowSlot_t *pSlot, AI_Foll
 	//Assert( pSlot->tolerance == AIN_DEF_TOLERANCE );
 
 	pFollowerInfo->position		= pSlot->position;
-	pFollowerInfo->range 		= random->RandomFloat( pSlot->rangeMin, pSlot->rangeMax );
+	pFollowerInfo->range 		= random_valve->RandomFloat( pSlot->rangeMin, pSlot->rangeMax );
 	pFollowerInfo->Zrange		= pSlot->Zrange;
 	pFollowerInfo->tolerance 	= pSlot->tolerance;
 }

@@ -25,7 +25,7 @@
 class CBasePanel : public vgui::Panel
 {
 public:
-	DECLARE_CLASS_GAMEROOT( CBasePanel, vgui::Panel );
+	DECLARE_CLASS( CBasePanel, vgui::Panel );
 
 					CBasePanel( vgui::Panel *pParent, const char *panelName );
 					CBasePanel( vgui::Panel *pParent, const char *panelName, int x, int y, int w, int h );

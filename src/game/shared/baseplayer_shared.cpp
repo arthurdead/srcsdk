@@ -10,6 +10,7 @@
 #include "util_shared.h"
 #include "datacache/imdlcache.h"
 #include "playeranimstate.h"
+#include "collisionproperty.h"
 
 #if defined( CLIENT_DLL )
 
@@ -369,6 +370,10 @@ Vector CSharedBasePlayer::EyePosition( )
 	}
 }
 
+void CSharedBasePlayer::SetViewOffset( const Vector& v ) 
+{ 
+	BaseClass::SetViewOffset( v );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1515,6 +1520,10 @@ void CSharedBasePlayer::ResetObserverMode()
 #endif
 }
 
+#if defined( CLIENT_DLL )
+extern ConVar cl_camera_follow_bone_index;
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : eyeOrigin - 
@@ -1550,15 +1559,12 @@ void CSharedBasePlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &z
 
 #if defined( CLIENT_DLL )
 // Set the follow bone if necessary
-	static ConVarRef cvFollowBoneIndexVar( "cl_camera_follow_bone_index" );
-
 	CStudioHdr const* pHdr = GetModelPtr();
 
 	if ( pHdr &&
-		 cvFollowBoneIndexVar.IsValid() && 
 		 C_BasePlayer::GetLocalPlayer() == this )
 	{
-		int boneIdx = cvFollowBoneIndexVar.GetInt();
+		int boneIdx = cl_camera_follow_bone_index.GetInt();
 		if ( boneIdx >= -1 && boneIdx <	pHdr->numbones() )
 		{
 			extern Vector g_cameraFollowPos;
@@ -1926,7 +1932,7 @@ void CSharedBasePlayer::ClearZoomOwner( void )
 bool CSharedBasePlayer::SetFOV( CSharedBaseEntity *pRequester, int FOV, float zoomRate, int iZoomStart /* = 0 */ )
 {
 	//NOTENOTE: You MUST specify who is requesting the zoom change
-	assert( pRequester != NULL );
+	Assert( pRequester != NULL );
 	if ( pRequester == NULL )
 		return false;
 

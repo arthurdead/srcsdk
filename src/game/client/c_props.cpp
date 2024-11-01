@@ -10,6 +10,7 @@
 #include "c_physicsprop.h"
 #include "c_physbox.h"
 #include "c_props.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -19,8 +20,6 @@ IMPLEMENT_NETWORKCLASS_ALIASED( DynamicProp, DT_DynamicProp )
 BEGIN_NETWORK_TABLE( C_DynamicProp, DT_DynamicProp )
 	RecvPropBool(RECVINFO(m_bUseHitboxesForRenderBox)),
 END_NETWORK_TABLE()
-
-LINK_ENTITY_TO_CLASS( prop_dynamic, C_DynamicProp );
 
 C_DynamicProp::C_DynamicProp( void )
 {

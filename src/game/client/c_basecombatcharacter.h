@@ -20,8 +20,8 @@ class C_BaseCombatWeapon;
 
 class C_BaseCombatCharacter : public C_BaseFlex
 {
-	DECLARE_CLASS( C_BaseCombatCharacter, C_BaseFlex );
 public:
+	DECLARE_CLASS( C_BaseCombatCharacter, C_BaseFlex );
 	DECLARE_CLIENTCLASS();
 	DECLARE_PREDICTABLE();
 
@@ -55,6 +55,20 @@ public:
 	virtual bool IsLineOfSightClear( C_BaseEntity *entity, LineOfSightCheckType checkType = IGNORE_NOTHING ) const;// strictly LOS check with no other considerations
 	virtual bool IsLineOfSightClear( const Vector &pos, LineOfSightCheckType checkType = IGNORE_NOTHING, C_BaseEntity *entityToIgnore = NULL ) const;
 
+	// -----------------------
+	// Fog
+	// -----------------------
+	void				OnFogTriggerStartTouch( C_BaseEntity *fogTrigger );
+	void				OnFogTriggerEndTouch( C_BaseEntity *fogTrigger );
+	C_BaseEntity *		GetFogTrigger( void );
+
+	virtual bool		IsHiddenByFog( const Vector &target ) const;	///< return true if given target cant be seen because of fog
+	virtual bool		IsHiddenByFog( C_BaseEntity *target ) const;		///< return true if given target cant be seen because of fog
+	virtual bool		IsHiddenByFog( float range ) const;				///< return true if given distance is too far to see through the fog
+	virtual float		GetFogObscuredRatio( const Vector &target ) const;///< return 0-1 ratio where zero is not obscured, and 1 is completely obscured
+	virtual float		GetFogObscuredRatio( C_BaseEntity *target ) const;	///< return 0-1 ratio where zero is not obscured, and 1 is completely obscured
+	virtual float		GetFogObscuredRatio( float range ) const;		///< return 0-1 ratio where zero is not obscured, and 1 is completely obscured
+	virtual bool		GetFogParams( struct fogparams_t *fog ) const;			///< return the current fog parameters
 
 	// -----------------------
 	// Ammo
@@ -100,6 +114,8 @@ public:
 	void				Weapon_SetActivity( Activity newActivity, float duration );
 	virtual void		Weapon_FrameUpdate( void );
 
+	virtual	C_BaseEntity *FindNamedEntity( const char *pszName, IEntityFindFilter *pFilter = NULL );
+
 public:
 
 	float			m_flNextAttack;
@@ -113,11 +129,17 @@ public:
 
 private:
 	bool				ComputeLOS( const Vector &vecEyePosition, const Vector &vecTarget ) const;
+	bool ComputeTargetIsInDarkness( const Vector &vecEyePosition, const Vector &vecTargetPos ) const;
 
 	CNetworkArray( int, m_iAmmo, MAX_AMMO_TYPES );
 
 	CHandle<C_BaseCombatWeapon>		m_hMyWeapons[MAX_WEAPONS];
 	CHandle< C_BaseCombatWeapon > m_hActiveWeapon;
+
+	// Used by trigger_fog to manage when the character is touching multiple fog triggers simultaneously.
+	// The one at the HEAD of the list is always the current fog trigger for the character.
+	CUtlVector<EHANDLE> m_hTriggerFogList;
+	EHANDLE m_hLastFogTrigger;
 
 private:
 	C_BaseCombatCharacter( const C_BaseCombatCharacter & ); // not defined, not accessible

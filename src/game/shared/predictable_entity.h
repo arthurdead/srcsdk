@@ -17,10 +17,7 @@
 // CLIENT DLL includes
 #if defined( CLIENT_DLL )
 
-#include "iclassmap.h"
 #include "recvproxy.h"
-
-class SendTable;
 
 // Game DLL includes
 #else
@@ -34,7 +31,7 @@ class SendTable;
 #endif
 #define NULL nullptr
 
-#if defined( CLIENT_DLL ) || defined( TOOL_DLL )
+#if defined( CLIENT_DLL )
 
 #define DECLARE_NETWORKCLASS()											\
 		DECLARE_CLIENTCLASS()
@@ -57,17 +54,17 @@ class SendTable;
 #define DECLARE_PREDICTABLE()											\
 	public:																\
 		static typedescription_t m_PredDesc[];							\
-		static datamap_t m_PredMap;										\
+		static pred_datamap_t m_PredMap;										\
 		virtual datamap_t *GetPredDescMap( void );						\
 		template <typename T> friend datamap_t *PredMapInit(T *)
 
 #define BEGIN_PREDICTION_DATA( className ) \
-	datamap_t className::m_PredMap = { 0, 0, V_STRINGIFY(className), &BaseClass::m_PredMap }; \
+	pred_datamap_t className::m_PredMap( V_STRINGIFY(className), &BaseClass::m_PredMap ); \
 	datamap_t *className::GetPredDescMap( void ) { return &m_PredMap; } \
 	BEGIN_PREDICTION_DATA_GUTS( className )
 
 #define BEGIN_PREDICTION_DATA_NO_BASE( className ) \
-	datamap_t className::m_PredMap = { 0, 0, V_STRINGIFY(className), NULL }; \
+	pred_datamap_t className::m_PredMap( V_STRINGIFY(className), NULL ); \
 	datamap_t *className::GetPredDescMap( void ) { return &m_PredMap; } \
 	BEGIN_PREDICTION_DATA_GUTS( className )
 
@@ -116,33 +113,12 @@ class SendTable;
 // On the client .dll this creates a mapping between a classname and
 //  a client side class.  Probably could be templatized at some point.
 
-#define LINK_ENTITY_TO_CLASS( localName, className )						\
-	static C_BaseEntity *C##localName##Factory( const char *pClassName )						\
-	{																		\
-		C_BaseEntity *pEnt = static_cast< C_BaseEntity * >( new className ); \
-		if(!pEnt->PostConstructor( pClassName )) { \
-			UTIL_Remove( pEnt ); \
-			return NULL; \
-		} \
-		return pEnt;				\
-	};																		\
-	class C##localName##Foo													\
-	{																		\
-	public:																	\
-		C##localName##Foo( void )											\
-		{																	\
-			GetClassMap().Add( #localName, V_STRINGIFY(className), sizeof( className ),	\
-				&C##localName##Factory );									\
-		}																	\
-	};																		\
-	INIT_PRIORITY(65535) static C##localName##Foo g_C##localName##Foo;
-
 #define BEGIN_NETWORK_TABLE( className, tableName ) BEGIN_RECV_TABLE( className, tableName )
 #define BEGIN_NETWORK_TABLE_NOBASE( className, tableName ) BEGIN_RECV_TABLE_NOBASE( className, tableName )
 
 #define END_NETWORK_TABLE	END_RECV_TABLE
 
-#define LINK_ENTITY_TO_CLASS_ALIASED( localName, className ) LINK_ENTITY_TO_CLASS( localName, C_##className )
+#define LINK_ENTITY_TO_CLASS_ALIASED( localName, className ) LINK_ENTITY_TO_CLASS( localName##_clientside, C_##className )
 
 #define IMPLEMENT_NETWORKCLASS_ALIASED(className, dataTable)			\
 	IMPLEMENT_CLIENTCLASS( C_##className, dataTable, C##className )

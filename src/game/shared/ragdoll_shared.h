@@ -157,4 +157,7 @@ void RagdollApplyAnimationAsVelocity( ragdoll_t &ragdoll, const matrix3x4_t *pPr
 
 void RagdollSolveSeparation( ragdoll_t &ragdoll, CSharedBaseEntity *pEntity );
 
+bool Ragdoll_IsPropRagdoll( CSharedBaseEntity *pEntity );
+void Ragdoll_GetAngleOverrideString( char *pOut, int size, CSharedBaseEntity *pEntity );
+
 #endif // RAGDOLL_SHARED_H

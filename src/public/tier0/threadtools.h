@@ -16,7 +16,11 @@
 #include "tier0/vcrmode.h"
 
 #if defined PLATFORM_WINDOWS_PC && !defined LINUX
+#ifdef __MINGW32__
+#include <immintrin.h>
+#else
 #include <intrin.h>
+#endif
 #endif
 
 #ifdef POSIX
@@ -176,7 +180,7 @@ inline int ThreadWaitForObject( HANDLE handle, bool bWaitAll = true, unsigned ti
 #endif
 
 #if defined(_WIN32)
-	#if ( _MSC_VER >= 1310 )
+	#if ( _MSC_VER >= 1310 ) || defined __MINGW32__
 		#define USE_INTRINSIC_INTERLOCKED
 	#endif
 #endif
@@ -441,6 +445,7 @@ class CInterlockedIntT
 public:
 	CInterlockedIntT() : m_value( 0 ) 				{ COMPILE_TIME_ASSERT( sizeof(T) == sizeof(long) ); }
 	CInterlockedIntT( T value ) : m_value( value ) 	{}
+	CInterlockedIntT( const CInterlockedIntT &value ) : m_value( value.GetRaw() ) 	{}
 
 	T GetRaw() const				{ return m_value; }
 
@@ -458,25 +463,29 @@ public:
 
 	bool AssignIf( T conditionValue, T newValue )	{ return ThreadInterlockedAssignIf( (long *)&m_value, (long)newValue, (long)conditionValue ); }
 
-	T operator=( T newValue )		{ ThreadInterlockedExchange((long *)&m_value, newValue); return m_value; }
+	CInterlockedIntT &operator=( T newValue )		{ ThreadInterlockedExchange((long *)&m_value, newValue); return *this; }
 
-	void operator+=( T add )		{ ThreadInterlockedExchangeAdd( (long *)&m_value, (long)add ); }
-	void operator-=( T subtract )	{ operator+=( -subtract ); }
-	void operator*=( T multiplier )	{ 
+	CInterlockedIntT &operator=( const CInterlockedIntT &newValue )		{ operator=( newValue.GetRaw() ); return *this; }
+
+	CInterlockedIntT &operator+=( T add )		{ ThreadInterlockedExchangeAdd( (long *)&m_value, (long)add ); return *this; }
+	CInterlockedIntT &operator-=( T subtract )	{ operator+=( -subtract ); return *this; }
+	CInterlockedIntT &operator*=( T multiplier )	{ 
 		T original, result; 
 		do 
 		{ 
 			original = m_value; 
 			result = original * multiplier; 
 		} while ( !AssignIf( original, result ) );
+		return *this;
 	}
-	void operator/=( T divisor )	{ 
+	CInterlockedIntT &operator/=( T divisor )	{ 
 		T original, result; 
 		do 
 		{ 
 			original = m_value; 
 			result = original / divisor;
 		} while ( !AssignIf( original, result ) );
+		return *this;
 	}
 
 	T operator+( T rhs ) const		{ return m_value + rhs; }
@@ -1119,7 +1128,7 @@ private:
 class ALIGN8 PLATFORM_CLASS CThreadSpinRWLock
 {
 public:
-	CThreadSpinRWLock()	{ COMPILE_TIME_ASSERT( sizeof( LockInfo_t ) == sizeof( int64 ) ); Assert( (intp)this % 8 == 0 ); memset( this, 0, sizeof( *this ) ); }
+	CThreadSpinRWLock()	{ COMPILE_TIME_ASSERT( sizeof( LockInfo_t ) == sizeof( int64 ) ); Assert( (intp)this % 8 == 0 ); memset( (void *)this, 0, sizeof( *this ) ); }
 
 	bool TryLockForWrite();
 	bool TryLockForRead();
@@ -1138,10 +1147,10 @@ public:
 
 private:
 	struct LockInfo_t
-		{
-			uint32	m_writerId;
-			int		m_nReaders;
-		};
+	{
+		uint32	m_writerId;
+		int		m_nReaders;
+	};
 
 	bool AssignIf( const LockInfo_t &newValue, const LockInfo_t &comperand );
 	bool TryLockForWrite( const uint32 threadId );

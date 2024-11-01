@@ -44,10 +44,10 @@ inline PixRGBAF PixRGBA8_to_F( PixRGBA8 const &x )
 inline PixRGBA8 PixRGBAF_to_8( PixRGBAF const &f )
 {
 	PixRGBA8 x;
-	x.Red = max( 0, min( 255.0,255.0*f.Red ) );
-	x.Green = max( 0, min( 255.0,255.0*f.Green ) );
-	x.Blue = max( 0, min( 255.0,255.0*f.Blue ) );
-	x.Alpha = max( 0, min( 255.0,255.0*f.Alpha ) );
+	x.Red = max( 0.0, min( 255.0,255.0*f.Red ) );
+	x.Green = max( 0.0, min( 255.0,255.0*f.Green ) );
+	x.Blue = max( 0.0, min( 255.0,255.0*f.Blue ) );
+	x.Alpha = max( 0.0, min( 255.0,255.0*f.Alpha ) );
 	return x;
 }
 

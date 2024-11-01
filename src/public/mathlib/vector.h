@@ -20,10 +20,8 @@
 // For rand(). We really need a library!
 #include <stdlib.h>
 
-#ifndef _X360
 // For MMX intrinsics
 #include <xmmintrin.h>
-#endif
 
 #include "tier0/dbg.h"
 #include "tier0/threadtools.h"

@@ -28,7 +28,7 @@
 #include "vgui_int.h"
 #include "igameresources.h"
 #include "voice_status.h"
-extern const ConVar *sv_cheats;
+extern ConVar *sv_cheats;
 #include "steam/steam_api.h"
 #endif
 
@@ -72,7 +72,7 @@ static inline char const *SafeString( char const *pStr )
 
 static CBaseGameStats s_GameStats_Singleton;
 CBaseGameStats *gamestats = &s_GameStats_Singleton; //start out pointing at the basic version which does nothing by default
-extern ConVarRef skill;
+extern ConVar *skill;
 void OverWriteCharsWeHate( char *pStr );
 
 bool StatsTrackingIsFullyEnabled( void );
@@ -230,16 +230,23 @@ const char *CBaseGameStats::GetUserPseudoUniqueID( void )
 	return s_szPseudoUniqueID;
 }
 
+#ifndef SWDS
+extern ConVar *mat_dxlevel;
+#endif
+
 void CBaseGameStats::Event_Init( void )
 {
 #ifdef GAME_DLL
 	SetHL2UnlockedChapterStatistic();
 	SetSteamStatistic( g_pFullFileSystem->IsSteam() );
 	SetCyberCafeStatistic( gamestatsuploader->IsCyberCafeUser() );
-	ConVarRef pDXLevel( "mat_dxlevel" );
-	if( pDXLevel.IsValid() )
+	#ifndef SWDS
+	if(!engine->IsDedicatedServer()) {
+		SetDXLevelStatistic( mat_dxlevel->GetInt() );
+	} else
+	#endif
 	{
-		SetDXLevelStatistic( pDXLevel.GetInt() );
+		SetDXLevelStatistic( 90 );
 	}
 	++m_BasicStats.m_Summary.m_nCount;
 
@@ -261,6 +268,8 @@ void CBaseGameStats::Event_MapChange( const char *szOldMapName, const char *szNe
 	StatsLog( "CBaseGameStats::Event_MapChange to [%s]\n", szNewMapName );
 }
 
+extern ConVar *closecaption;
+
 void CBaseGameStats::Event_LevelInit( void )
 {
 #ifdef GAME_DLL
@@ -272,13 +281,11 @@ void CBaseGameStats::Event_LevelInit( void )
 	// HACK HACK:  Punching this hole through only works in single player!!!
 	if ( gpGlobals->maxClients == 1 )
 	{
-		ConVarRef closecaption( "closecaption" );
-		if( closecaption.IsValid() )
-			SetCaptionsStatistic( closecaption.GetBool() );
+		SetCaptionsStatistic( closecaption->GetBool() );
 
 		SetHDRStatistic( gamestatsuploader->IsHDREnabled() );
 
-		SetSkillStatistic( skill.GetInt() );
+		SetSkillStatistic( skill->GetInt() );
 		SetSteamStatistic( g_pFullFileSystem->IsSteam() );
 		SetCyberCafeStatistic( gamestatsuploader->IsCyberCafeUser() );
 	}
@@ -1058,6 +1065,8 @@ void CBaseGameStats_Driver::SendData()
 }
 
 #ifdef CLIENT_DLL
+	extern ConVar *dev_loadtime_map_elapsed;
+
 	// Adds the main menu load time to the specified key values, but only ever does the work once.
 	static void AddLoadTimeMainMenu( KeyValues* pKV )
 	{
@@ -1073,16 +1082,17 @@ void CBaseGameStats_Driver::SendData()
 	// Adds the map load time to the specified key values, but clears the elapsed data to 0.0 for next computation.
 	static void AddLoadTimeMap(KeyValues* pKV)
 	{
-		static ConVarRef dev_loadtime_map_elapsed( "dev_loadtime_map_elapsed" );
-		float loadTimeMap = dev_loadtime_map_elapsed.GetFloat();
+		float loadTimeMap = dev_loadtime_map_elapsed->GetFloat();
 		if ( loadTimeMap > 0.0f )
 		{
 			pKV->SetFloat( "LoadTimeMap", loadTimeMap );
-			dev_loadtime_map_elapsed.SetValue( 0.0f );
+			dev_loadtime_map_elapsed->SetValue( 0.0f );
 		}
 	}
 
 #endif
+
+extern ConVar *closecaption;
 
 bool CBaseGameStats_Driver::AddBaseDataForSend( KeyValues *pKV, StatSendType_t sendType )
 {
@@ -1142,8 +1152,7 @@ bool CBaseGameStats_Driver::AddBaseDataForSend( KeyValues *pKV, StatSendType_t s
 
 			pKV->SetInt( "UsedVoice", m_bDidVoiceChat );
 
-			extern ConVar closecaption;
-			pKV->SetInt( "Caption", closecaption.GetInt() );
+			pKV->SetInt( "Caption", closecaption->GetInt() );
 
 			// We can now get the game language from steam :)
 			if ( steamapicontext && steamapicontext->SteamApps() )
@@ -1155,11 +1164,8 @@ bool CBaseGameStats_Driver::AddBaseDataForSend( KeyValues *pKV, StatSendType_t s
 			// We need to filter out client side dev work from playtest work for the stat reporting.
 			// The simplest way is to check for sv_cheats, since we also do NOT want client stat reports
 			// where the player has cheated.
-			if ( NULL != sv_cheats )
-			{
-				int iCheats = sv_cheats->GetInt();
-				pKV->SetInt( "Cheats", iCheats );
-			}
+			int iCheats = sv_cheats->GetInt();
+			pKV->SetInt( "Cheats", iCheats );
 
 			int mapTime = gpGlobals->realtime - m_flLevelStartTime;
 			pKV->SetInt( "MapTime", mapTime );
@@ -1216,7 +1222,7 @@ void CBaseGameStats_Driver::ResetData()
 	int dest_width,dest_height;
 	pRenderContext->GetRenderTargetDimensions( dest_width, dest_height );
 
-	if ( gpu.m_pDriverName )
+	if ( gpu.m_pDriverName[0] )
 	{
 		OverWriteCharsWeHate( gpu.m_pDriverName );
 	}
@@ -1505,8 +1511,9 @@ BEGIN_MAPENTITY( CPointGamestatsCounter )
 
 END_MAPENTITY()
 
+#ifdef GAME_DLL
 LINK_ENTITY_TO_CLASS( point_gamestats_counter, CPointGamestatsCounter )
-
+#endif
 
 CPointGamestatsCounter::CPointGamestatsCounter() :
 	m_strStatisticName( NULL_STRING ),

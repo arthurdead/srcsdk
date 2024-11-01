@@ -729,7 +729,7 @@ bool KeyValues::SaveToFile( IBaseFileSystem *filesystem, const char *resourceNam
 
 	if ( f == FILESYSTEM_INVALID_HANDLE )
 	{
-		DevMsg(1, "KeyValues::SaveToFile: couldn't open file \"%s\" in path \"%s\".\n",
+		Log_Error(LOG_KEYVALUES, "KeyValues::SaveToFile: couldn't open file \"%s\" in path \"%s\".\n",
 			resourceName?resourceName:"NULL", pathID?pathID:"NULL" );
 		return false;
 	}
@@ -938,7 +938,7 @@ void KeyValues::SaveKeyToFile( KeyValues *dat, IBaseFileSystem *filesystem, File
 				break;
 			}
 		case TYPE_COLOR:
-			DevMsg(1, "KeyValues::RecursiveSaveToFile: TODO, missing code for TYPE_COLOR.\n");
+			Log_Error(LOG_KEYVALUES, "KeyValues::RecursiveSaveToFile: TODO, missing code for TYPE_COLOR.\n");
 			break;
 
 		default:
@@ -2132,13 +2132,13 @@ void KeyValues::ParseIncludedKeys( char const *resourceName, const char *filetoi
 		}
 		else
 		{
-			DevMsg( "KeyValues::ParseIncludedKeys: Couldn't load included keyvalue file %s\n", fullpath );
+			Log_Warning( LOG_KEYVALUES, "KeyValues::ParseIncludedKeys: Couldn't load included keyvalue file %s\n", fullpath );
 			newKV->deleteThis();
 		}
 	}
 	else
 	{
-		DevMsg( "KeyValues::ParseIncludedKeys: Couldn't load included keyvalue file %s\n", fullpath );
+		Log_Warning( LOG_KEYVALUES,"KeyValues::ParseIncludedKeys: Couldn't load included keyvalue file %s\n", fullpath );
 	}
 
 	// s_CurrentFileSymbol = save;
@@ -3241,11 +3241,11 @@ bool IKeyValuesDumpContextAsText::KvWriteIndent( int nIndentLevel )
 	return KvWriteText( pchIndent );
 }
 
+extern ConVar *developer;
 
 bool CKeyValuesDumpContextAsDevMsg::KvBeginKey( KeyValues *pKey, int nIndentLevel )
 {
-	static ConVarRef r_developer( "developer" );
-	if ( r_developer.IsValid() && r_developer.GetInt() < m_nDeveloperLevel )
+	if ( developer->GetInt() < m_nDeveloperLevel )
 		// If "developer" is not the correct level, then avoid evaluating KeyValues tree early
 		return false;
 	else
@@ -3256,11 +3256,12 @@ bool CKeyValuesDumpContextAsDevMsg::KvWriteText( char const *szText )
 {
 	if ( m_nDeveloperLevel > 0 )
 	{
-		DevMsg( m_nDeveloperLevel, "%s", szText );
+		if ( developer->GetInt() < m_nDeveloperLevel )
+			Log_Msg( LOG_KEYVALUES, "%s", szText );
 	}
 	else
 	{
-		Msg( "%s", szText );
+		Log_Msg( LOG_KEYVALUES,"%s", szText );
 	}
 	return true;
 }

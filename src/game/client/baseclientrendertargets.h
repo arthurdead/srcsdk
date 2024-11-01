@@ -33,6 +33,8 @@ class CBaseClientRenderTargets : public IClientRenderTargets
 	// no networked vars
 	DECLARE_CLASS_GAMEROOT( CBaseClientRenderTargets, IClientRenderTargets );
 public:
+	void InitClientRenderTargetsReal( IMaterialSystem* pMaterialSystem, IMaterialSystemHardwareConfig* pHardwareConfig );
+
 	// Interface called by engine during material system startup.
 	virtual void InitClientRenderTargets ( IMaterialSystem* pMaterialSystem, IMaterialSystemHardwareConfig* pHardwareConfig );
 	// Shutdown all custom render targets here.
@@ -60,5 +62,7 @@ protected:
 	ITexture* CreateCameraTexture( IMaterialSystem* pMaterialSystem, int iSize = 256 );
 
 };
+
+extern CBaseClientRenderTargets g_BaseClientRenderTargets;
 
 #endif // CLIENTRENDERTARTETS_H_

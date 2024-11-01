@@ -29,13 +29,13 @@ else
 		subproject('recastnavigation_game')
 		#subproject('vphysics')
 		subproject('matchmaking')
-		subproject('shadercompiler')
+		#subproject('shadercompiler')
 	endif
 	if build_client or build_listen_server
 		subproject('game_loopback')
 	endif
 	if build_client
-		subproject('hammer_redirect')
+		#subproject('hammer_redirect')
 		subproject('vaudio_minimp3')
 		subproject('vaudio_redirect')
 		#subproject('video_services')

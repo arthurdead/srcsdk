@@ -18,6 +18,7 @@
 #include "engine/IStaticPropMgr.h"
 #include "tier0/vprof.h"
 #include "c_te_effect_dispatch.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -179,7 +180,7 @@ static void CreateFleckParticles( const Vector& origin, const Vector &color, tra
 	float	colorRamp;
 
 	float fScale = g_pParticleSystemMgr->ParticleThrottleScaling() * (float)iScale;
-	int	numFlecks = (int)( 0.5f + fScale * (float)( random->RandomInt( 4, 16 ) ) );
+	int	numFlecks = (int)( 0.5f + fScale * (float)( random_valve->RandomInt( 4, 16 ) ) );
 
 	FleckParticle	*pFleckParticle;
 
@@ -187,7 +188,7 @@ static void CreateFleckParticles( const Vector& origin, const Vector &color, tra
 	int i;
 	for ( i = 0; i < numFlecks; i++ )
 	{
-		pFleckParticle = (FleckParticle *) fleckEmitter->AddParticle( sizeof(FleckParticle), hMaterial[random->RandomInt(0,1)], spawnOffset );
+		pFleckParticle = (FleckParticle *) fleckEmitter->AddParticle( sizeof(FleckParticle), hMaterial[random_valve->RandomInt(0,1)], spawnOffset );
 
 		if ( pFleckParticle == NULL )
 			break;
@@ -195,18 +196,18 @@ static void CreateFleckParticles( const Vector& origin, const Vector &color, tra
 		pFleckParticle->m_flLifetime	= 0.0f;
 		pFleckParticle->m_flDieTime		= 3.0f;
 
-		dir[0] = trace->plane.normal[0] + random->RandomFloat( -flAngularSpray, flAngularSpray );
-		dir[1] = trace->plane.normal[1] + random->RandomFloat( -flAngularSpray, flAngularSpray );
-		dir[2] = trace->plane.normal[2] + random->RandomFloat( -flAngularSpray, flAngularSpray );
+		dir[0] = trace->plane.normal[0] + random_valve->RandomFloat( -flAngularSpray, flAngularSpray );
+		dir[1] = trace->plane.normal[1] + random_valve->RandomFloat( -flAngularSpray, flAngularSpray );
+		dir[2] = trace->plane.normal[2] + random_valve->RandomFloat( -flAngularSpray, flAngularSpray );
 
-		pFleckParticle->m_uchSize		= random->RandomInt( 1, 2 );
+		pFleckParticle->m_uchSize		= random_valve->RandomInt( 1, 2 );
 
-		pFleckParticle->m_vecVelocity	= dir * ( random->RandomFloat( FLECK_MIN_SPEED, flMaxSpeed) * ( 3 - pFleckParticle->m_uchSize ) );
+		pFleckParticle->m_vecVelocity	= dir * ( random_valve->RandomFloat( FLECK_MIN_SPEED, flMaxSpeed) * ( 3 - pFleckParticle->m_uchSize ) );
 
-		pFleckParticle->m_flRoll		= random->RandomFloat( 0, 360 );
-		pFleckParticle->m_flRollDelta	= random->RandomFloat( 0, 360 );
+		pFleckParticle->m_flRoll		= random_valve->RandomFloat( 0, 360 );
+		pFleckParticle->m_flRollDelta	= random_valve->RandomFloat( 0, 360 );
 
-		colorRamp = random->RandomFloat( 0.75f, 1.25f );
+		colorRamp = random_valve->RandomFloat( 0.75f, 1.25f );
 
 		pFleckParticle->m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
 		pFleckParticle->m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
@@ -256,23 +257,23 @@ void FX_DebrisFlecks( const Vector& origin, trace_t *tr, char materialType, int 
 		newParticle.m_flDieTime	= 1.0f;
 
 		Vector dir;
-		dir[0] = tr->plane.normal[0] + random->RandomFloat( -0.8f, 0.8f );
-		dir[1] = tr->plane.normal[1] + random->RandomFloat( -0.8f, 0.8f );
-		dir[2] = tr->plane.normal[2] + random->RandomFloat( -0.8f, 0.8f );
+		dir[0] = tr->plane.normal[0] + random_valve->RandomFloat( -0.8f, 0.8f );
+		dir[1] = tr->plane.normal[1] + random_valve->RandomFloat( -0.8f, 0.8f );
+		dir[2] = tr->plane.normal[2] + random_valve->RandomFloat( -0.8f, 0.8f );
 
-		newParticle.m_uchStartSize	= random->RandomInt( 2, 4 ) * iScale;
+		newParticle.m_uchStartSize	= random_valve->RandomInt( 2, 4 ) * iScale;
 		newParticle.m_uchEndSize	= newParticle.m_uchStartSize * 8 * iScale;
 
-		newParticle.m_vecVelocity = dir * random->RandomFloat( 2.0f, 24.0f )*(i+1);
-		newParticle.m_vecVelocity[2] -= random->RandomFloat( 8.0f, 32.0f )*(i+1);
+		newParticle.m_vecVelocity = dir * random_valve->RandomFloat( 2.0f, 24.0f )*(i+1);
+		newParticle.m_vecVelocity[2] -= random_valve->RandomFloat( 8.0f, 32.0f )*(i+1);
 
-		newParticle.m_uchStartAlpha	= random->RandomInt( 100, 200 );
+		newParticle.m_uchStartAlpha	= random_valve->RandomInt( 100, 200 );
 		newParticle.m_uchEndAlpha	= 0;
 
-		newParticle.m_flRoll			= random->RandomFloat( 0, 360 );
-		newParticle.m_flRollDelta	= random->RandomFloat( -1, 1 );
+		newParticle.m_flRoll			= random_valve->RandomFloat( 0, 360 );
+		newParticle.m_flRollDelta	= random_valve->RandomFloat( -1, 1 );
 
-		float colorRamp = random->RandomFloat( 0.5f, 1.25f );
+		float colorRamp = random_valve->RandomFloat( 0.5f, 1.25f );
 
 		newParticle.m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
 		newParticle.m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
@@ -287,26 +288,26 @@ void FX_DebrisFlecks( const Vector& origin, trace_t *tr, char materialType, int 
 		newParticle.m_Pos = offset;
 
 		newParticle.m_flLifetime	= 0.0f;
-		newParticle.m_flDieTime	= random->RandomFloat( 0.25f, 0.5f );
+		newParticle.m_flDieTime	= random_valve->RandomFloat( 0.25f, 0.5f );
 
 		Vector dir;
-		dir[0] = tr->plane.normal[0] + random->RandomFloat( -0.8f, 0.8f );
-		dir[1] = tr->plane.normal[1] + random->RandomFloat( -0.8f, 0.8f );
-		dir[2] = tr->plane.normal[2] + random->RandomFloat( -0.8f, 0.8f );
+		dir[0] = tr->plane.normal[0] + random_valve->RandomFloat( -0.8f, 0.8f );
+		dir[1] = tr->plane.normal[1] + random_valve->RandomFloat( -0.8f, 0.8f );
+		dir[2] = tr->plane.normal[2] + random_valve->RandomFloat( -0.8f, 0.8f );
 
-		newParticle.m_uchStartSize	= random->RandomInt( 1, 4 );
+		newParticle.m_uchStartSize	= random_valve->RandomInt( 1, 4 );
 		newParticle.m_uchEndSize	= newParticle.m_uchStartSize * 4;
 
-		newParticle.m_vecVelocity = dir * random->RandomFloat( 8.0f, 32.0f );
-		newParticle.m_vecVelocity[2] -= random->RandomFloat( 8.0f, 64.0f );
+		newParticle.m_vecVelocity = dir * random_valve->RandomFloat( 8.0f, 32.0f );
+		newParticle.m_vecVelocity[2] -= random_valve->RandomFloat( 8.0f, 64.0f );
 
 		newParticle.m_uchStartAlpha	= 255;
 		newParticle.m_uchEndAlpha	= 0;
 
-		newParticle.m_flRoll			= random->RandomFloat( 0, 360 );
-		newParticle.m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
+		newParticle.m_flRoll			= random_valve->RandomFloat( 0, 360 );
+		newParticle.m_flRollDelta	= random_valve->RandomFloat( -2.0f, 2.0f );
 
-		float colorRamp = random->RandomFloat( 0.5f, 1.25f );
+		float colorRamp = random_valve->RandomFloat( 0.5f, 1.25f );
 
 		newParticle.m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
 		newParticle.m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
@@ -321,26 +322,26 @@ void FX_DebrisFlecks( const Vector& origin, trace_t *tr, char materialType, int 
 	newParticle.m_Pos = offset;
 
 	newParticle.m_flLifetime		= 0.0f;
-	newParticle.m_flDieTime		= random->RandomFloat( 1.0f, 1.5f );
+	newParticle.m_flDieTime		= random_valve->RandomFloat( 1.0f, 1.5f );
 
 	Vector dir;
-	dir[0] = tr->plane.normal[0] + random->RandomFloat( -0.8f, 0.8f );
-	dir[1] = tr->plane.normal[1] + random->RandomFloat( -0.8f, 0.8f );
-	dir[2] = tr->plane.normal[2] + random->RandomFloat( -0.8f, 0.8f );
+	dir[0] = tr->plane.normal[0] + random_valve->RandomFloat( -0.8f, 0.8f );
+	dir[1] = tr->plane.normal[1] + random_valve->RandomFloat( -0.8f, 0.8f );
+	dir[2] = tr->plane.normal[2] + random_valve->RandomFloat( -0.8f, 0.8f );
 
-	newParticle.m_uchStartSize	= random->RandomInt( 4, 8 );
+	newParticle.m_uchStartSize	= random_valve->RandomInt( 4, 8 );
 	newParticle.m_uchEndSize		= newParticle.m_uchStartSize * 4.0f;
 
-	newParticle.m_vecVelocity = dir * random->RandomFloat( 2.0f, 24.0f );
-	newParticle.m_vecVelocity[2] = random->RandomFloat( -2.0f, 2.0f );
+	newParticle.m_vecVelocity = dir * random_valve->RandomFloat( 2.0f, 24.0f );
+	newParticle.m_vecVelocity[2] = random_valve->RandomFloat( -2.0f, 2.0f );
 
-	newParticle.m_uchStartAlpha	= random->RandomInt( 100, 200 );
+	newParticle.m_uchStartAlpha	= random_valve->RandomInt( 100, 200 );
 	newParticle.m_uchEndAlpha	= 0;
 
-	newParticle.m_flRoll			= random->RandomFloat( 0, 360 );
-	newParticle.m_flRollDelta	= random->RandomFloat( -2, 2 );
+	newParticle.m_flRoll			= random_valve->RandomFloat( 0, 360 );
+	newParticle.m_flRollDelta	= random_valve->RandomFloat( -2, 2 );
 
-	float colorRamp = random->RandomFloat( 0.5f, 1.25f );
+	float colorRamp = random_valve->RandomFloat( 0.5f, 1.25f );
 
 	newParticle.m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
 	newParticle.m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
@@ -372,7 +373,7 @@ void FX_GlassImpact( const Vector &pos, const Vector &normal )
 	// HACK: Blend a little toward white to match the materials...
 	VectorLerp( vecColor, Vector( 1, 1, 1 ), 0.3, vecColor );
 
-	float flShardSize	= random->RandomFloat( 2.0f, 6.0f );
+	float flShardSize	= random_valve->RandomFloat( 2.0f, 6.0f );
 
 	unsigned char color[3] = { 200, 200, 210 };
 
@@ -380,25 +381,25 @@ void FX_GlassImpact( const Vector &pos, const Vector &normal )
 	// Create glass shards
 	// ----------------------
 
-	int numShards = random->RandomInt( 2, 4 );
+	int numShards = random_valve->RandomInt( 2, 4 );
 
 	for ( int i = 0; i < numShards; i++ )
 	{
 		Particle3D *pParticle;
 		
-		pParticle = (Particle3D *) pGlassEmitter->AddParticle( sizeof(Particle3D), g_Mat_Fleck_Glass[random->RandomInt(0,1)], pos );
+		pParticle = (Particle3D *) pGlassEmitter->AddParticle( sizeof(Particle3D), g_Mat_Fleck_Glass[random_valve->RandomInt(0,1)], pos );
 
 		if ( pParticle )
 		{
-			pParticle->m_flLifeRemaining	= random->RandomFloat(GLASS_SHARD_MIN_LIFE,GLASS_SHARD_MAX_LIFE);
+			pParticle->m_flLifeRemaining	= random_valve->RandomFloat(GLASS_SHARD_MIN_LIFE,GLASS_SHARD_MAX_LIFE);
 
-			pParticle->m_vecVelocity[0]		= ( normal[0] + random->RandomFloat( -0.8f, 0.8f ) ) * random->RandomFloat( GLASS_SHARD_MIN_SPEED, GLASS_SHARD_MAX_SPEED );
-			pParticle->m_vecVelocity[1]		= ( normal[1] + random->RandomFloat( -0.8f, 0.8f ) ) * random->RandomFloat( GLASS_SHARD_MIN_SPEED, GLASS_SHARD_MAX_SPEED );
-			pParticle->m_vecVelocity[2]		= ( normal[2] + random->RandomFloat( -0.8f, 0.8f ) ) * random->RandomFloat( GLASS_SHARD_MIN_SPEED, GLASS_SHARD_MAX_SPEED );
+			pParticle->m_vecVelocity[0]		= ( normal[0] + random_valve->RandomFloat( -0.8f, 0.8f ) ) * random_valve->RandomFloat( GLASS_SHARD_MIN_SPEED, GLASS_SHARD_MAX_SPEED );
+			pParticle->m_vecVelocity[1]		= ( normal[1] + random_valve->RandomFloat( -0.8f, 0.8f ) ) * random_valve->RandomFloat( GLASS_SHARD_MIN_SPEED, GLASS_SHARD_MAX_SPEED );
+			pParticle->m_vecVelocity[2]		= ( normal[2] + random_valve->RandomFloat( -0.8f, 0.8f ) ) * random_valve->RandomFloat( GLASS_SHARD_MIN_SPEED, GLASS_SHARD_MAX_SPEED );
 
-			pParticle->m_uchSize			= flShardSize + random->RandomFloat(-0.5*flShardSize,0.5*flShardSize);
+			pParticle->m_uchSize			= flShardSize + random_valve->RandomFloat(-0.5*flShardSize,0.5*flShardSize);
 			pParticle->m_vAngles			= RandomAngle( 0, 360 );
-			pParticle->m_flAngSpeed			= random->RandomFloat(-800,800);
+			pParticle->m_flAngSpeed			= random_valve->RandomFloat(-800,800);
 
 			pParticle->m_uchFrontColor[0]	= (byte)(color[0] * vecColor.x);
 			pParticle->m_uchFrontColor[1]	= (byte)(color[1] * vecColor.y);
@@ -430,25 +431,25 @@ void FX_GlassImpact( const Vector &pos, const Vector &normal )
 		newParticle.m_Pos = offset;
 
 		newParticle.m_flLifetime= 0.0f;
-		newParticle.m_flDieTime	= random->RandomFloat( 0.1f, 0.25f );
+		newParticle.m_flDieTime	= random_valve->RandomFloat( 0.1f, 0.25f );
 		
-		dir[0] = normal[0] + random->RandomFloat( -0.8f, 0.8f );
-		dir[1] = normal[1] + random->RandomFloat( -0.8f, 0.8f );
-		dir[2] = normal[2] + random->RandomFloat( -0.8f, 0.8f );
+		dir[0] = normal[0] + random_valve->RandomFloat( -0.8f, 0.8f );
+		dir[1] = normal[1] + random_valve->RandomFloat( -0.8f, 0.8f );
+		dir[2] = normal[2] + random_valve->RandomFloat( -0.8f, 0.8f );
 
-		newParticle.m_uchStartSize	= random->RandomInt( 1, 4 );
+		newParticle.m_uchStartSize	= random_valve->RandomInt( 1, 4 );
 		newParticle.m_uchEndSize	= newParticle.m_uchStartSize * 8;
 
-		newParticle.m_vecVelocity	= dir * random->RandomFloat( 8.0f, 16.0f )*(i+1);
-		newParticle.m_vecVelocity[2] -= random->RandomFloat( 16.0f, 32.0f )*(i+1);
+		newParticle.m_vecVelocity	= dir * random_valve->RandomFloat( 8.0f, 16.0f )*(i+1);
+		newParticle.m_vecVelocity[2] -= random_valve->RandomFloat( 16.0f, 32.0f )*(i+1);
 
-		newParticle.m_uchStartAlpha	= random->RandomInt( 128, 255 );
+		newParticle.m_uchStartAlpha	= random_valve->RandomInt( 128, 255 );
 		newParticle.m_uchEndAlpha	= 0;
 		
-		newParticle.m_flRoll		= random->RandomFloat( 0, 360 );
-		newParticle.m_flRollDelta	= random->RandomFloat( -1, 1 );
+		newParticle.m_flRoll		= random_valve->RandomFloat( 0, 360 );
+		newParticle.m_flRollDelta	= random_valve->RandomFloat( -1, 1 );
 
-		colorRamp = random->RandomFloat( 0.5f, 1.25f );
+		colorRamp = random_valve->RandomFloat( 0.5f, 1.25f );
 
 		newParticle.m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
 		newParticle.m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
@@ -463,25 +464,25 @@ void FX_GlassImpact( const Vector &pos, const Vector &normal )
 	newParticle.m_Pos = offset;
 
 	newParticle.m_flLifetime		= 0.0f;
-	newParticle.m_flDieTime		= random->RandomFloat( 1.0f, 1.5f );
+	newParticle.m_flDieTime		= random_valve->RandomFloat( 1.0f, 1.5f );
 
-	dir[0] = normal[0] + random->RandomFloat( -0.8f, 0.8f );
-	dir[1] = normal[1] + random->RandomFloat( -0.8f, 0.8f );
-	dir[2] = normal[2] + random->RandomFloat( -0.8f, 0.8f );
+	dir[0] = normal[0] + random_valve->RandomFloat( -0.8f, 0.8f );
+	dir[1] = normal[1] + random_valve->RandomFloat( -0.8f, 0.8f );
+	dir[2] = normal[2] + random_valve->RandomFloat( -0.8f, 0.8f );
 
-	newParticle.m_uchStartSize	= random->RandomInt( 4, 8 );
+	newParticle.m_uchStartSize	= random_valve->RandomInt( 4, 8 );
 	newParticle.m_uchEndSize		= newParticle.m_uchStartSize * 4.0f;
 
-	newParticle.m_vecVelocity = dir * random->RandomFloat( 2.0f, 8.0f );
-	newParticle.m_vecVelocity[2] = random->RandomFloat( -2.0f, 2.0f );
+	newParticle.m_vecVelocity = dir * random_valve->RandomFloat( 2.0f, 8.0f );
+	newParticle.m_vecVelocity[2] = random_valve->RandomFloat( -2.0f, 2.0f );
 
-	newParticle.m_uchStartAlpha	= random->RandomInt( 32, 64 );
+	newParticle.m_uchStartAlpha	= random_valve->RandomInt( 32, 64 );
 	newParticle.m_uchEndAlpha	= 0;
 	
-	newParticle.m_flRoll			= random->RandomFloat( 0, 360 );
-	newParticle.m_flRollDelta	= random->RandomFloat( -2, 2 );
+	newParticle.m_flRoll			= random_valve->RandomFloat( 0, 360 );
+	newParticle.m_flRollDelta	= random_valve->RandomFloat( -2, 2 );
 
-	colorRamp = random->RandomFloat( 0.5f, 1.25f );
+	colorRamp = random_valve->RandomFloat( 0.5f, 1.25f );
 
 	newParticle.m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
 	newParticle.m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
@@ -545,7 +546,7 @@ void FX_AlienInsectImpact( const Vector &pos, trace_t *trace )
 	Vector	color = Vector( 1, 0.9, 0.75 );
 	float	colorRamp;
 
-	int	numFlecks = random->RandomInt( 8, 16 );
+	int	numFlecks = random_valve->RandomInt( 8, 16 );
 
 	Particle3D *pFleckParticle;
 
@@ -553,21 +554,21 @@ void FX_AlienInsectImpact( const Vector &pos, trace_t *trace )
 	int i;
 	for ( i = 0; i < numFlecks; i++ )
 	{
-		pFleckParticle = (Particle3D *) fleckEmitter->AddParticle( sizeof(Particle3D), g_Mat_Fleck_AlienInsect[random->RandomInt(0,1)], spawnOffset );
+		pFleckParticle = (Particle3D *) fleckEmitter->AddParticle( sizeof(Particle3D), g_Mat_Fleck_AlienInsect[random_valve->RandomInt(0,1)], spawnOffset );
 		if ( pFleckParticle == NULL )
 			break;
 
 		pFleckParticle->m_flLifeRemaining = 3.0f;
 
-		dir[0] = shotDir[0] + random->RandomFloat( -flAngularSpray, flAngularSpray );
-		dir[1] = shotDir[1] + random->RandomFloat( -flAngularSpray, flAngularSpray );
-		dir[2] = shotDir[2] + random->RandomFloat( -flAngularSpray, flAngularSpray );
+		dir[0] = shotDir[0] + random_valve->RandomFloat( -flAngularSpray, flAngularSpray );
+		dir[1] = shotDir[1] + random_valve->RandomFloat( -flAngularSpray, flAngularSpray );
+		dir[2] = shotDir[2] + random_valve->RandomFloat( -flAngularSpray, flAngularSpray );
 
-		pFleckParticle->m_uchSize		= random->RandomInt( 1, 6 );
+		pFleckParticle->m_uchSize		= random_valve->RandomInt( 1, 6 );
 
-		pFleckParticle->m_vecVelocity	= dir * random->RandomFloat( FLECK_MIN_SPEED, flMaxSpeed);
+		pFleckParticle->m_vecVelocity	= dir * random_valve->RandomFloat( FLECK_MIN_SPEED, flMaxSpeed);
 		pFleckParticle->m_vAngles.Random( 0, 360 );
-		pFleckParticle->m_flAngSpeed	= random->RandomFloat(-800,800);
+		pFleckParticle->m_flAngSpeed	= random_valve->RandomFloat(-800,800);
 
 		pFleckParticle->m_uchFrontColor[0] = 255;
 		pFleckParticle->m_uchFrontColor[1] = 255;
@@ -603,22 +604,22 @@ void FX_AlienInsectImpact( const Vector &pos, trace_t *trace )
 		pParticle->m_flLifetime	= 0.0f;
 		pParticle->m_flDieTime	= 1.0f;
 		
-		dir[0] = shotDir[0] + random->RandomFloat( -0.8f, 0.8f );
-		dir[1] = shotDir[1] + random->RandomFloat( -0.8f, 0.8f );
-		dir[2] = shotDir[2] + random->RandomFloat( -0.8f, 0.8f );
+		dir[0] = shotDir[0] + random_valve->RandomFloat( -0.8f, 0.8f );
+		dir[1] = shotDir[1] + random_valve->RandomFloat( -0.8f, 0.8f );
+		dir[2] = shotDir[2] + random_valve->RandomFloat( -0.8f, 0.8f );
 
-		pParticle->m_uchStartSize	= random->RandomInt( 8, 16 );
+		pParticle->m_uchStartSize	= random_valve->RandomInt( 8, 16 );
 		pParticle->m_uchEndSize		= pParticle->m_uchStartSize * 4.0f;
 
-		pParticle->m_vecVelocity = dir * random->RandomFloat( 4.0f, 64.0f );
+		pParticle->m_vecVelocity = dir * random_valve->RandomFloat( 4.0f, 64.0f );
 
-		pParticle->m_uchStartAlpha	= random->RandomInt( 32, 64);
+		pParticle->m_uchStartAlpha	= random_valve->RandomInt( 32, 64);
 		pParticle->m_uchEndAlpha	= 0;
 		
-		pParticle->m_flRoll			= random->RandomFloat( 0, 2.0f*M_PI );
-		pParticle->m_flRollDelta	= random->RandomFloat( -0.5f, 0.5f );
+		pParticle->m_flRoll			= random_valve->RandomFloat( 0, 2.0f*M_PI );
+		pParticle->m_flRollDelta	= random_valve->RandomFloat( -0.5f, 0.5f );
 
-		colorRamp = random->RandomFloat( 0.5f, 1.0f );
+		colorRamp = random_valve->RandomFloat( 0.5f, 1.0f );
 
 		pParticle->m_uchColor[0] = MIN( 1.0f, color[0]*colorRamp )*255.0f;
 		pParticle->m_uchColor[1] = MIN( 1.0f, color[1]*colorRamp )*255.0f;
@@ -652,9 +653,9 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 	pSimple->GetBinding().SetBBox( pos-Vector(32,32,32), pos+Vector(32,32,32), true );
 
 	Vector	vDir;
-	vDir[0] = dir[0] + random->RandomFloat( -2.0f, 2.0f );
-	vDir[1] = dir[1] + random->RandomFloat( -2.0f, 2.0f );
-	vDir[2] = dir[2] + random->RandomFloat( -2.0f, 2.0f );
+	vDir[0] = dir[0] + random_valve->RandomFloat( -2.0f, 2.0f );
+	vDir[1] = dir[1] + random_valve->RandomFloat( -2.0f, 2.0f );
+	vDir[2] = dir[2] + random_valve->RandomFloat( -2.0f, 2.0f );
 
 	VectorNormalize( vDir );
 
@@ -669,7 +670,7 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 		sParticle->m_flLifetime		= 0.0f;
 		sParticle->m_flDieTime		= 0.25f;
 			
-		float	speed = random->RandomFloat( 32.0f, 150.0f );
+		float	speed = random_valve->RandomFloat( 32.0f, 150.0f );
 
 		sParticle->m_vecVelocity	= vDir * -speed;
 		sParticle->m_vecVelocity[2] -= 32.0f;
@@ -679,10 +680,10 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 		sParticle->m_uchColor[2]	= 32;
 		sParticle->m_uchStartAlpha	= 255;
 		sParticle->m_uchEndAlpha	= 0;
-		sParticle->m_uchStartSize	= random->RandomInt( 1, 2 );
-		sParticle->m_uchEndSize		= sParticle->m_uchStartSize*random->RandomInt( 1, 4 );
-		sParticle->m_flRoll			= random->RandomInt( 0, 360 );
-		sParticle->m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
+		sParticle->m_uchStartSize	= random_valve->RandomInt( 1, 2 );
+		sParticle->m_uchEndSize		= sParticle->m_uchStartSize*random_valve->RandomInt( 1, 4 );
+		sParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+		sParticle->m_flRollDelta	= random_valve->RandomFloat( -2.0f, 2.0f );
 	}
 
 	for ( i = 0; i < NUM_BUG_BLOOD2; i++ )
@@ -695,9 +696,9 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 		}
 
 		sParticle->m_flLifetime		= 0.0f;
-		sParticle->m_flDieTime		= random->RandomFloat( 0.25f, 0.5f );
+		sParticle->m_flDieTime		= random_valve->RandomFloat( 0.25f, 0.5f );
 			
-		float	speed = random->RandomFloat( 8.0f, 255.0f );
+		float	speed = random_valve->RandomFloat( 8.0f, 255.0f );
 
 		sParticle->m_vecVelocity	= vDir * -speed;
 		sParticle->m_vecVelocity[2] -= 16.0f;
@@ -705,12 +706,12 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 		sParticle->m_uchColor[0]	= 255;
 		sParticle->m_uchColor[1]	= 200;
 		sParticle->m_uchColor[2]	= 32;
-		sParticle->m_uchStartAlpha	= random->RandomInt( 16, 32 );
+		sParticle->m_uchStartAlpha	= random_valve->RandomInt( 16, 32 );
 		sParticle->m_uchEndAlpha	= 0;
-		sParticle->m_uchStartSize	= random->RandomInt( 1, 3 );
-		sParticle->m_uchEndSize		= sParticle->m_uchStartSize*random->RandomInt( 1, 4 );
-		sParticle->m_flRoll			= random->RandomInt( 0, 360 );
-		sParticle->m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
+		sParticle->m_uchStartSize	= random_valve->RandomInt( 1, 3 );
+		sParticle->m_uchEndSize		= sParticle->m_uchStartSize*random_valve->RandomInt( 1, 4 );
+		sParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+		sParticle->m_flRollDelta	= random_valve->RandomFloat( -2.0f, 2.0f );
 	}
 
 	Vector	offset;
@@ -728,7 +729,7 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 		}
 		
 		sParticle->m_flLifetime		= 0.0f;
-		sParticle->m_flDieTime		= random->RandomFloat( 0.25f, 0.5f );
+		sParticle->m_flDieTime		= random_valve->RandomFloat( 0.25f, 0.5f );
 			
 		float speed = 75.0f * ((i/(float)NUM_BUG_SPLATS)+1);
 
@@ -742,10 +743,10 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 		sParticle->m_uchColor[2]	= 32;
 		sParticle->m_uchStartAlpha	= 255;
 		sParticle->m_uchEndAlpha	= 0;
-		sParticle->m_uchStartSize	= random->RandomInt( 1, 2 );
+		sParticle->m_uchStartSize	= random_valve->RandomInt( 1, 2 );
 		sParticle->m_uchEndSize		= sParticle->m_uchStartSize*4;
-		sParticle->m_flRoll			= random->RandomInt( 0, 360 );
-		sParticle->m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
+		sParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+		sParticle->m_flRollDelta	= random_valve->RandomFloat( -2.0f, 2.0f );
 	}
 }
 
@@ -764,9 +765,9 @@ void FX_Blood( const Vector &pos, const Vector &dir, float r, float g, float b, 
 
 	Vector	vDir;
 
-	vDir[0] = dir[0] + random->RandomFloat( -1.0f, 1.0f );
-	vDir[1] = dir[1] + random->RandomFloat( -1.0f, 1.0f );
-	vDir[2] = dir[2] + random->RandomFloat( -1.0f, 1.0f );
+	vDir[0] = dir[0] + random_valve->RandomFloat( -1.0f, 1.0f );
+	vDir[1] = dir[1] + random_valve->RandomFloat( -1.0f, 1.0f );
+	vDir[2] = dir[2] + random_valve->RandomFloat( -1.0f, 1.0f );
 
 	VectorNormalize( vDir );
 
@@ -781,12 +782,12 @@ void FX_Blood( const Vector &pos, const Vector &dir, float r, float g, float b, 
 		}
 
 		sParticle->m_flLifetime		= 0.0f;
-		sParticle->m_flDieTime		= random->RandomFloat( 0.25f, 0.5f );
+		sParticle->m_flDieTime		= random_valve->RandomFloat( 0.25f, 0.5f );
 			
-		float	speed = random->RandomFloat( 2.0f, 8.0f );
+		float	speed = random_valve->RandomFloat( 2.0f, 8.0f );
 
 		sParticle->m_vecVelocity	= vDir * (speed*i);
-		sParticle->m_vecVelocity[2] += random->RandomFloat( -32.0f, -16.0f );
+		sParticle->m_vecVelocity[2] += random_valve->RandomFloat( -32.0f, -16.0f );
 
 		sParticle->m_uchColor[0]	= r;
 		sParticle->m_uchColor[1]	= g;
@@ -795,8 +796,8 @@ void FX_Blood( const Vector &pos, const Vector &dir, float r, float g, float b, 
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchStartSize	= 2;
 		sParticle->m_uchEndSize		= sParticle->m_uchStartSize*4;
-		sParticle->m_flRoll			= random->RandomInt( 0, 360 );
-		sParticle->m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
+		sParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+		sParticle->m_flRollDelta	= random_valve->RandomFloat( -2.0f, 2.0f );
 	}
 
 	for ( i = 0; i < 2; i++ )
@@ -811,7 +812,7 @@ void FX_Blood( const Vector &pos, const Vector &dir, float r, float g, float b, 
 		sParticle->m_flLifetime		= 0.0f;
 		sParticle->m_flDieTime		= 0.5f;
 			
-		float	speed = random->RandomFloat( 4.0f, 16.0f );
+		float	speed = random_valve->RandomFloat( 4.0f, 16.0f );
 
 		sParticle->m_vecVelocity	= vDir * (speed*i);
 
@@ -822,8 +823,8 @@ void FX_Blood( const Vector &pos, const Vector &dir, float r, float g, float b, 
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchStartSize	= 2;
 		sParticle->m_uchEndSize		= sParticle->m_uchStartSize*4;
-		sParticle->m_flRoll			= random->RandomInt( 0, 360 );
-		sParticle->m_flRollDelta	= random->RandomFloat( -4.0f, 4.0f );
+		sParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+		sParticle->m_flRollDelta	= random_valve->RandomFloat( -4.0f, 4.0f );
 	}
 }
 
@@ -871,35 +872,35 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 		if ( pParticle != NULL )
 		{
 			pParticle->m_flLifetime = 0.0f;
-			pParticle->m_flDieTime	= random->RandomFloat( 0.5f, 1.0f );
+			pParticle->m_flDieTime	= random_valve->RandomFloat( 0.5f, 1.0f );
 
 			pParticle->m_vecVelocity.Random( -spread, spread );
-			pParticle->m_vecVelocity += ( tr->plane.normal * random->RandomFloat( 1.0f, 6.0f ) );
+			pParticle->m_vecVelocity += ( tr->plane.normal * random_valve->RandomFloat( 1.0f, 6.0f ) );
 			
 			VectorNormalize( pParticle->m_vecVelocity );
 
-			float	fForce = random->RandomFloat( 250, 500 ) * nId;
+			float	fForce = random_valve->RandomFloat( 250, 500 ) * nId;
 
 			// scaled
 			pParticle->m_vecVelocity *= fForce * flScale;
 			
-			colorRamp = random->RandomFloat( 0.75f, 1.25f );
+			colorRamp = random_valve->RandomFloat( 0.75f, 1.25f );
 
 			pParticle->m_uchColor[0]	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
 			pParticle->m_uchColor[1]	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
 			pParticle->m_uchColor[2]	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
 			
 			// scaled
-			pParticle->m_uchStartSize	= ( unsigned char )( flScale * random->RandomInt( 3, 4 ) * (nId+1) );
+			pParticle->m_uchStartSize	= ( unsigned char )( flScale * random_valve->RandomInt( 3, 4 ) * (nId+1) );
 
 			// scaled
 			pParticle->m_uchEndSize		= ( unsigned char )( flScale * pParticle->m_uchStartSize * 4 );
 			
-			pParticle->m_uchStartAlpha	= random->RandomInt( 32, 255 );
+			pParticle->m_uchStartAlpha	= random_valve->RandomInt( 32, 255 );
 			pParticle->m_uchEndAlpha	= 0;
 			
-			pParticle->m_flRoll			= random->RandomInt( 0, 360 );
-			pParticle->m_flRollDelta	= random->RandomFloat( -8.0f, 8.0f );
+			pParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+			pParticle->m_flRollDelta	= random_valve->RandomFloat( -8.0f, 8.0f );
 		}
 	}			
 
@@ -913,31 +914,31 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 		if ( pParticle != NULL )
 		{
 			pParticle->m_flLifetime = 0.0f;
-			pParticle->m_flDieTime	= random->RandomFloat( 0.25f, 0.75f );
+			pParticle->m_flDieTime	= random_valve->RandomFloat( 0.25f, 0.75f );
 
 			pParticle->m_vecVelocity.Random( -spread, spread );
-			pParticle->m_vecVelocity += ( tr->plane.normal * random->RandomFloat( 1.0f, 6.0f ) );
+			pParticle->m_vecVelocity += ( tr->plane.normal * random_valve->RandomFloat( 1.0f, 6.0f ) );
 			
 			VectorNormalize( pParticle->m_vecVelocity );
 
-			float	fForce = random->RandomFloat( 250, 500 ) * nId;
+			float	fForce = random_valve->RandomFloat( 250, 500 ) * nId;
 
 			pParticle->m_vecVelocity *= fForce;
 			
-			colorRamp = random->RandomFloat( 0.75f, 1.25f );
+			colorRamp = random_valve->RandomFloat( 0.75f, 1.25f );
 
 			pParticle->m_uchColor[0]	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
 			pParticle->m_uchColor[1]	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
 			pParticle->m_uchColor[2]	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
 			
-			pParticle->m_uchStartSize	= random->RandomInt( 2, 4 ) * (nId+1);
+			pParticle->m_uchStartSize	= random_valve->RandomInt( 2, 4 ) * (nId+1);
 			pParticle->m_uchEndSize		= pParticle->m_uchStartSize * 2;
 			
 			pParticle->m_uchStartAlpha	= 255;
 			pParticle->m_uchEndAlpha	= 0;
 			
-			pParticle->m_flRoll			= random->RandomInt( 0, 360 );
-			pParticle->m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
+			pParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+			pParticle->m_flRollDelta	= random_valve->RandomFloat( -2.0f, 2.0f );
 		}
 	}
 
@@ -951,11 +952,11 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 		if ( pParticle != NULL )
 		{
 			offset = origin;
-			offset[0] += random->RandomFloat( -8.0f, 8.0f );
-			offset[1] += random->RandomFloat( -8.0f, 8.0f );
+			offset[0] += random_valve->RandomFloat( -8.0f, 8.0f );
+			offset[1] += random_valve->RandomFloat( -8.0f, 8.0f );
 
 			pParticle->m_flLifetime = 0.0f;
-			pParticle->m_flDieTime	= random->RandomFloat( 0.5f, 1.0f );
+			pParticle->m_flDieTime	= random_valve->RandomFloat( 0.5f, 1.0f );
 
 			spread = 1.0f;
 
@@ -964,24 +965,24 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 			
 			VectorNormalize( pParticle->m_vecVelocity );
 
-			float	fForce = random->RandomFloat( 0, 50 );
+			float	fForce = random_valve->RandomFloat( 0, 50 );
 
 			pParticle->m_vecVelocity *= fForce;
 			
-			colorRamp = random->RandomFloat( 0.75f, 1.25f );
+			colorRamp = random_valve->RandomFloat( 0.75f, 1.25f );
 
 			pParticle->m_uchColor[0]	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
 			pParticle->m_uchColor[1]	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
 			pParticle->m_uchColor[2]	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
 			
-			pParticle->m_uchStartSize	= random->RandomInt( 1, 4 );
+			pParticle->m_uchStartSize	= random_valve->RandomInt( 1, 4 );
 			pParticle->m_uchEndSize		= pParticle->m_uchStartSize * 4;
 			
-			pParticle->m_uchStartAlpha	= random->RandomInt( 32, 64 );
+			pParticle->m_uchStartAlpha	= random_valve->RandomInt( 32, 64 );
 			pParticle->m_uchEndAlpha	= 0;
 			
-			pParticle->m_flRoll			= random->RandomInt( 0, 360 );
-			pParticle->m_flRollDelta	= random->RandomFloat( -16.0f, 16.0f );
+			pParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+			pParticle->m_flRollDelta	= random_valve->RandomFloat( -16.0f, 16.0f );
 		}
 	}			
 }
@@ -1004,9 +1005,9 @@ void FX_GaussExplosion( const Vector &pos, const Vector &dir, int type )
 {
 	Vector	vDir;
 
-	vDir[0] = dir[0] + random->RandomFloat( -1.0f, 1.0f );
-	vDir[1] = dir[1] + random->RandomFloat( -1.0f, 1.0f );
-	vDir[2] = dir[2] + random->RandomFloat( -1.0f, 1.0f );
+	vDir[0] = dir[0] + random_valve->RandomFloat( -1.0f, 1.0f );
+	vDir[1] = dir[1] + random_valve->RandomFloat( -1.0f, 1.0f );
+	vDir[2] = dir[2] + random_valve->RandomFloat( -1.0f, 1.0f );
 
 	VectorNormalize( vDir );
 
@@ -1033,7 +1034,7 @@ void FX_GaussExplosion( const Vector &pos, const Vector &dir, int type )
 	//Setup our collision information
 	pSparkEmitter->m_ParticleCollision.Setup( pos, &vDir, 0.8f, 128, 512, 800, 0.3f );
 
-	int numSparks = random->RandomInt( 16, 32 );
+	int numSparks = random_valve->RandomInt( 16, 32 );
 	TrailParticle	*pParticle;
 
 	// Dump out sparks
@@ -1050,11 +1051,11 @@ void FX_GaussExplosion( const Vector &pos, const Vector &dir, int type )
 		vDir += dir;
 		VectorNormalize( vDir );
 
-		pParticle->m_flWidth		= random->RandomFloat( 1.0f, 4.0f );
-		pParticle->m_flLength		= random->RandomFloat( 0.01f, 0.1f );
-		pParticle->m_flDieTime		= random->RandomFloat( 0.25f, 1.0f );
+		pParticle->m_flWidth		= random_valve->RandomFloat( 1.0f, 4.0f );
+		pParticle->m_flLength		= random_valve->RandomFloat( 0.01f, 0.1f );
+		pParticle->m_flDieTime		= random_valve->RandomFloat( 0.25f, 1.0f );
 
-		pParticle->m_vecVelocity	= vDir * random->RandomFloat( 128, 512 );
+		pParticle->m_vecVelocity	= vDir * random_valve->RandomFloat( 128, 512 );
 
 		Color32Init( pParticle->m_color, 255, 255, 255, 255 );
 	}

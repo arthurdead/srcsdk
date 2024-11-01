@@ -13,42 +13,17 @@
 
 DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_ENTITYFACTORY, "EntityFactory Client" );
 
-class classentry_t
-{
-public:
-	classentry_t()
-	{
-		mapname[ 0 ] = 0;
-		factory = 0;
-		size = -1;
-	}
-
-	char const *GetMapName() const
-	{
-		return mapname;
-	}
-
-	void SetMapName( char const *newname )
-	{
-		Q_strncpy( mapname, newname, sizeof( mapname ) );
-	}
-
-	DISPATCHFUNCTION	factory;
-	int					size;
-private:
-	char				mapname[ 40 ];
-};
-
 class CClassMap : public IClassMap
 {
 public:
-	virtual void			Add( const char *mapname, const char *classname, int size, DISPATCHFUNCTION factory /*= 0*/ );
-	virtual const char		*ClassnameToMapName( const char *classname );
-	virtual const char		*MapNameToClassname( const char *mapname );
+	CClassMap();
+
+	virtual void			Add( const char *mapname, IEntityFactory *factory );
 	virtual C_BaseEntity	*CreateEntity( const char *mapname );
 	virtual int				GetClassSize( const char *classname );
+	virtual IEntityFactory *FindFactory( const char *pClassName );
 
-	CUtlDict< classentry_t, unsigned short > m_ClassDict;
+	CUtlDict< IEntityFactory *, unsigned short > m_ClassDict;
 };
 
 INIT_PRIORITY(101) static CClassMap g_Classmap;
@@ -57,111 +32,52 @@ IClassMap& GetClassMap( void )
 	return g_Classmap;
 }
 
-void CClassMap::Add( const char *mapname, const char *classname, int size, DISPATCHFUNCTION factory = 0 )
+//-----------------------------------------------------------------------------
+// Constructor
+//-----------------------------------------------------------------------------
+CClassMap::CClassMap() : m_ClassDict( true, 0, 128 )
 {
-	const char *map = ClassnameToMapName( classname );
-
-	if(map)
-	{
-		Log_Warning(LOG_ENTITYFACTORY,"classname collision %s - %s | %s - %s\n", mapname, classname, map, classname);
-	}
-
-	if ( map && !Q_strcasecmp( mapname, map ) )
-		return;
-
-	if ( map )
-	{
-		int index = m_ClassDict.Find( classname );
-		Assert( index != m_ClassDict.InvalidIndex() );
-		m_ClassDict.RemoveAt( index );
-	}
-
-	classentry_t element;
-	element.SetMapName( mapname );
-	element.factory = factory;
-	element.size = size;
-	m_ClassDict.Insert( classname, element );
 }
 
-const char *CClassMap::ClassnameToMapName( const char *classname )
+void CClassMap::Add( const char *mapname, IEntityFactory *factory )
 {
-	unsigned short index;
-	static classentry_t lookup; 
-
-	index = m_ClassDict.Find( classname );
-	if ( index == m_ClassDict.InvalidIndex() )
-		return NULL;
-
-	lookup = m_ClassDict.Element( index );
-	return lookup.GetMapName();
-}
-
-const char *CClassMap::MapNameToClassname( const char *mapname )
-{
-	int c = m_ClassDict.Count();
-	int i;
-
-	for ( i = 0; i < c; i++ )
-	{
-		classentry_t *lookup = &m_ClassDict[ i ];
-		if ( !lookup )
-			continue;
-
-		if ( Q_stricmp( lookup->GetMapName(), mapname ) )
-			continue;
-
-		return m_ClassDict.GetElementName( i );
-	}
-
-	return NULL;
+	Assert( FindFactory( mapname ) == NULL );
+	m_ClassDict.Insert( mapname, factory );
 }
 
 C_BaseEntity *CClassMap::CreateEntity( const char *mapname )
 {
-	int c = m_ClassDict.Count();
-	int i;
-
-	for ( i = 0; i < c; i++ )
+	IEntityFactory *pFactory = FindFactory( mapname );
+	if ( !pFactory )
 	{
-		classentry_t *lookup = &m_ClassDict[ i ];
-		if ( !lookup )
-			continue;
-
-		if ( Q_stricmp( lookup->GetMapName(), mapname ) )
-			continue;
-
-		if ( !lookup->factory )
-		{
-#if defined( _DEBUG )
-			Log_Warning( LOG_ENTITYFACTORY,"No factory for %s/%s\n", lookup->GetMapName(), m_ClassDict.GetElementName( i ) );
-#endif
-			continue;
-		}
-
-		return ( *lookup->factory )( mapname );
+		Log_Error(LOG_ENTITYFACTORY,"Attempted to create unknown entity type %s!\n", mapname );
+		return NULL;
 	}
+#if defined(TRACK_ENTITY_MEMORY) && defined(USE_MEM_DEBUG)
+	MEM_ALLOC_CREDIT_( m_ClassDict.GetElementName( m_ClassDict.Find( mapname ) ) );
+#endif
+	return pFactory->Create( mapname );
+}
 
-	return NULL;
+//-----------------------------------------------------------------------------
+// Finds a new factory
+//-----------------------------------------------------------------------------
+IEntityFactory *CClassMap::FindFactory( const char *pClassName )
+{
+	unsigned short nIndex = m_ClassDict.Find( pClassName );
+	if ( nIndex == m_ClassDict.InvalidIndex() )
+		return NULL;
+	return m_ClassDict[nIndex];
 }
 
 int CClassMap::GetClassSize( const char *classname )
 {
-	int c = m_ClassDict.Count();
-	int i;
-
-	for ( i = 0; i < c; i++ )
+	IEntityFactory *pFactory = FindFactory( classname );
+	if ( !pFactory )
 	{
-		classentry_t *lookup = &m_ClassDict[ i ];
-		if ( !lookup )
-			continue;
-
-		if ( Q_strcmp( lookup->GetMapName(), classname ) )
-			continue;
-
-		return lookup->size;
+		return -1;
 	}
-
-	return -1;
+	return pFactory->GetEntitySize();
 }
 
 void DumpEntityFactories_f()
@@ -169,9 +85,8 @@ void DumpEntityFactories_f()
 	CClassMap &classMap = (CClassMap &)GetClassMap();
 	for ( int i = classMap.m_ClassDict.First(); i != classMap.m_ClassDict.InvalidIndex(); i = classMap.m_ClassDict.Next( i ) )
 	{
-		const classentry_t &entry = classMap.m_ClassDict.Element( i );
-		Log_Msg( LOG_ENTITYFACTORY,"%s - %s\n", entry.GetMapName(), classMap.m_ClassDict.GetElementName( i ) );
+		Log_Msg( LOG_ENTITYFACTORY,"%s - %s\n", classMap.m_ClassDict.GetElementName( i ), classMap.m_ClassDict.Element( i )->DllClassname() );
 	}
 }
 
-static ConCommand dumpentityfactories( "dumpcliententityfactories", DumpEntityFactories_f, "Lists all entity factory names.", FCVAR_CLIENTDLL );
+static ConCommand dumpentityfactories( "dumpentityfactories_client", DumpEntityFactories_f, "Lists all entity factory names.", FCVAR_CLIENTDLL );

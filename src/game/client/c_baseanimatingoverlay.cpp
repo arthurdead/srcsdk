@@ -112,8 +112,8 @@ void C_AnimationLayer::SetWeight( float flWeight )
 	m_flWeight = flWeight;
 }
 
-C_BaseAnimatingOverlay::C_BaseAnimatingOverlay()
-	: C_BaseAnimating()
+C_BaseAnimatingOverlay::C_BaseAnimatingOverlay( int iEFlags )
+	: C_BaseAnimating( iEFlags )
 {
 	// FIXME: where does this initialization go now?
 	//for ( int i=0; i < MAX_OVERLAYS; i++ )

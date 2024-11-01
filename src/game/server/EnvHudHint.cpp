@@ -122,7 +122,7 @@ void CEnvHudHint::InputHideHudHint( inputdata_t &inputdata )
 		CReliableBroadcastRecipientFilter user;
 		UserMessageBegin( user, "KeyHintText" );
 		WRITE_BYTE( 1 );	// one message
-		WRITE_STRING( STRING(NULL_STRING) );
+		WRITE_STRING( "" );
 		MessageEnd();
 	}
 	else
@@ -145,7 +145,7 @@ void CEnvHudHint::InputHideHudHint( inputdata_t &inputdata )
 		user.MakeReliable();
 		UserMessageBegin( user, "KeyHintText" );
 		WRITE_BYTE( 1 );	// one message
-		WRITE_STRING( STRING(NULL_STRING) );
+		WRITE_STRING( "" );
 		MessageEnd();
 	}
 }

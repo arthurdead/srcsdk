@@ -13,7 +13,7 @@
 #include "c_baseentity.h"
 #include "studio.h"
 #include "utlvector.h"
-#include "ragdoll.h"
+//#include "ragdoll.h"
 #include "mouthinfo.h"
 // Shared activities
 #include "ai_activity.h"
@@ -38,6 +38,7 @@ class C_BaseClientShader
 */
 
 class IRagdoll;
+class CRagdoll;
 class C_ClientRagdoll;
 class CIKContext;
 class CIKState;
@@ -107,7 +108,8 @@ public:
 
 	virtual bool GetRenderData( void *pData, ModelDataCategory_t nCategory );
 
-	C_BaseAnimating();
+	C_BaseAnimating() : C_BaseAnimating( 0 ) {}
+	C_BaseAnimating( int iEFlags );
 	~C_BaseAnimating();
 
 	virtual C_BaseAnimating*		GetBaseAnimating() { return this; }
@@ -753,20 +755,7 @@ private:
 	Vector					m_vCustomLightingOffset;
 };
 
-class C_ClientAnimating : public C_BaseAnimating
-{
-public:
-	C_ClientAnimating()
-		: C_BaseAnimating()
-	{
-		AddEFlags(EFL_NOT_NETWORKED);
-	}
-	DECLARE_CLASS( C_ClientAnimating, C_BaseAnimating );
-
-	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
-	virtual	bool			IsClientCreated( void ) const { return true; }
-	virtual bool						IsServerEntity( void ) { return false; }
-};
+typedef C_ClientOnlyWrapper<C_BaseAnimating> C_ClientOnlyAnimating;
 
 enum 
 {
@@ -776,6 +765,8 @@ enum
 	RAGDOLL_FRICTION_HOLD,
 	RAGDOLL_FRICTION_OUT,
 };
+
+typedef C_ClientOnlyAnimating C_ClientAnimating;
 
 class C_ClientRagdoll : public C_ClientAnimating, public IPVSNotify
 {

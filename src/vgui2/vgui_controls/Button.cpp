@@ -24,6 +24,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
+extern ConVar *vgui_nav_lock;
+
 using namespace vgui;
 
 // global list of all the names of all the sounds played by buttons
@@ -263,10 +265,9 @@ void Button::DoClick()
 	FireActionSignal();
 	PlayButtonReleasedSound();
 
-	static ConVarRef vgui_nav_lock( "vgui_nav_lock" );
-	if ( ( !vgui_nav_lock.IsValid() || vgui_nav_lock.GetInt() == 0 ) && NavigateActivate() )
+	if ( vgui_nav_lock->GetInt() == 0 && NavigateActivate() )
 	{
-		vgui_nav_lock.SetValue( 1 );
+		vgui_nav_lock->SetValue( 1 );
 	}
 
 	if ( !m_bStaySelectedOnClick )

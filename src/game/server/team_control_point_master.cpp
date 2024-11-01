@@ -575,7 +575,7 @@ bool CTeamControlPointMaster::GetControlPointRoundToPlay( void )
 	}
 
 	// pick one to play but try to avoid picking one that we have recently played if there are other rounds to play
-	int index = random->RandomInt( 0, nRounds.Count() - 1 );
+	int index = random_valve->RandomInt( 0, nRounds.Count() - 1 );
 	
 	// only need to check this if we have more than one round with this priority value
 	if ( pRules && nRounds.Count() > 1 )
@@ -586,7 +586,7 @@ bool CTeamControlPointMaster::GetControlPointRoundToPlay( void )
 				nRounds.Count() > 1 )
 		{
 			nRounds.Remove( index ); // we have played this round recently so get it out of the list
-			index = random->RandomInt( 0, nRounds.Count() - 1 );
+			index = random_valve->RandomInt( 0, nRounds.Count() - 1 );
 		}
 	}
 
@@ -801,7 +801,7 @@ void CTeamControlPointMaster::HandleRandomOwnerControlPoints( void )
 
 		if ( pPoint )
 		{
-			int index = random->RandomInt( 0, vecTeams.Count() - 1 );
+			int index = random_valve->RandomInt( 0, vecTeams.Count() - 1 );
 			pPoint->ForceOwner( vecTeams[index] );
 
 			vecTeams.Remove( index );

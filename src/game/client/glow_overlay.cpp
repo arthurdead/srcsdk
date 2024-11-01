@@ -124,7 +124,7 @@ bool CGlowOverlay::Update()
 	return true;
 }
 
-ConVar building_cubemaps( "building_cubemaps", "0" );
+extern ConVar *building_cubemaps;
 
 float CGlowOverlay::CalcGlowAspect() const
 {
@@ -281,7 +281,7 @@ void CGlowOverlay::UpdateGlowObstruction( const Vector &vToGlow, bool bCacheFull
 
 	if ( bFade )
 	{
-		if ( building_cubemaps.GetBool() )
+		if ( building_cubemaps->GetBool() )
 		{
 			m_flGlowObstructionScale = 0.0f;
 		}
@@ -293,7 +293,7 @@ void CGlowOverlay::UpdateGlowObstruction( const Vector &vToGlow, bool bCacheFull
 	}
 	else
 	{
-		if ( building_cubemaps.GetBool() )
+		if ( building_cubemaps->GetBool() )
 		{
 			m_flGlowObstructionScale = 1.0f;
 		}

@@ -12,10 +12,6 @@
 
 #include "eiface.h"
 
-#ifdef POSIX
-#define random random_valve// stdlib.h defined random()..., and so does vstdlib/random.h
-#endif
-
 class IFileSystem;				// include filesystem.h
 class IUniformRandomStream;		// include vstdlib/random.h
 class IEngineSound;				// include engine/IEngineSound.h

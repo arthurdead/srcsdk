@@ -200,3 +200,35 @@ RecvProp RecvPropPredictableId(
 {
 	return RecvPropInt( pVarName, offset, sizeofVar, 0, RecvProxy_IntToPredictableId );
 }
+
+void RecvProxy_StringT_From_String( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	char pStrOut[DT_MAX_STRING_BUFFERSIZE];
+	if ( pData->m_pRecvProp->m_StringBufferSize <= 0 )
+	{
+		return;
+	}
+
+	for ( int i=0; i < pData->m_pRecvProp->m_StringBufferSize; i++ )
+	{
+		pStrOut[i] = pData->m_Value.m_pString[i];
+		if ( pStrOut[i] == 0 )
+			break;
+	}
+
+	pStrOut[pData->m_pRecvProp->m_StringBufferSize-1] = 0;
+
+	string_t *pTStr = (string_t*)pOut;
+	*pTStr = AllocPooledString( pStrOut );
+}
+
+RecvProp RecvPropStringT(
+	const char *pVarName, 
+	int offset, 
+	int sizeofVar )
+{
+	// Make sure it's the right type.
+	Assert( sizeofVar == sizeof( string_t ) );
+
+	return RecvPropString( pVarName, offset, DT_MAX_STRING_BUFFERSIZE, 0, RecvProxy_StringT_From_String );
+}

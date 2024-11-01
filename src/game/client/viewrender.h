@@ -208,8 +208,8 @@ FrustumCache_t *FrustumCache( void );
 class CBase3dView : public CRefCounted<>,
 					protected CViewSetupEx
 {
-	DECLARE_CLASS_NOBASE( CBase3dView );
 public:
+	DECLARE_CLASS_NOBASE( CBase3dView );
 	CBase3dView( CViewRender *pMainView );
 
 	VPlane *		GetFrustum();
@@ -230,8 +230,8 @@ protected:
 //-----------------------------------------------------------------------------
 class CRendering3dView : public CBase3dView
 {
-	DECLARE_CLASS( CRendering3dView, CBase3dView );
 public:
+	DECLARE_CLASS( CRendering3dView, CBase3dView );
 	CRendering3dView( CViewRender *pMainView );
 	virtual ~CRendering3dView() { ReleaseLists(); }
 
@@ -309,8 +309,8 @@ protected:
 
 class CRenderExecutor
 {
-	DECLARE_CLASS_NOBASE( CRenderExecutor );
 public:
+	DECLARE_CLASS_NOBASE( CRenderExecutor );
 	virtual void AddView( CRendering3dView *pView ) = 0;
 	virtual void Execute() = 0;
 
@@ -325,8 +325,8 @@ protected:
 
 class CSimpleRenderExecutor : public CRenderExecutor
 {
-	DECLARE_CLASS( CSimpleRenderExecutor, CRenderExecutor );
 public:
+	DECLARE_CLASS( CSimpleRenderExecutor, CRenderExecutor );
 	CSimpleRenderExecutor( CViewRender *pMainView ) : CRenderExecutor( pMainView ) {}
 
 	void AddView( CRendering3dView *pView );
@@ -340,8 +340,8 @@ public:
 class CViewRender : public IViewRender,
 					public IReplayScreenshotSystem
 {
-	DECLARE_CLASS_NOBASE( CViewRender );
 public:
+	DECLARE_CLASS_NOBASE( CViewRender );
 	virtual void	Init( void );
 	virtual void	Shutdown( void );
 

@@ -74,7 +74,7 @@ void CAI_BaseNPC::START_TASK_RANDOMIZE_FRAMERATE( const Task_t *pTask )
 	float newRate = GetPlaybackRate();
 	float percent = pTask->data[0].AsFloat() / 100.0f;
 
-	newRate += ( newRate * random->RandomFloat(-percent, percent) );
+	newRate += ( newRate * random_valve->RandomFloat(-percent, percent) );
 
 	SetPlaybackRate(newRate);
 
@@ -2086,12 +2086,12 @@ void CAI_BaseNPC::START_TASK_GET_PATH_AWAY_FROM_BEST_SOUND( const Task_t *pTask 
 	}
 
 	GetMotor()->SetIdealYawToTarget( pBestSound->GetSoundOrigin() );
-	ChainStartTask( TASK_MOVE_AWAY_PATH, pTask->data );
+	ChainStartTask( TASK_MOVE_AWAY_PATH, pTask->data, pTask->numData );
 	LockBestSound();
 }
 void CAI_BaseNPC::RUN_TASK_GET_PATH_AWAY_FROM_BEST_SOUND( const Task_t *pTask )
 {
-	ChainRunTask( TASK_MOVE_AWAY_PATH, pTask->data );
+	ChainRunTask( TASK_MOVE_AWAY_PATH, pTask->data, pTask->numData );
 	if ( GetNavigator()->IsGoalActive() )
 	{
 		Vector vecDest = GetNavigator()->GetGoalPos();
@@ -2509,7 +2509,7 @@ void CAI_BaseNPC::START_TASK_SMALL_FLINCH( const Task_t *pTask )
 {
 	Remember(bits_MEMORY_FLINCHED);
 	SetIdealActivity( GetFlinchActivity( false, false ) );
-	m_flNextFlinchTime = gpGlobals->curtime + random->RandomFloat( 3, 5 );
+	m_flNextFlinchTime = gpGlobals->curtime + random_valve->RandomFloat( 3, 5 );
 }
 void CAI_BaseNPC::RUN_TASK_SMALL_FLINCH( const Task_t *pTask )
 {
@@ -2523,7 +2523,7 @@ void CAI_BaseNPC::START_TASK_BIG_FLINCH( const Task_t *pTask )
 {
 	Remember(bits_MEMORY_FLINCHED);
 	SetIdealActivity( GetFlinchActivity( true, false ) );
-	m_flNextFlinchTime = gpGlobals->curtime + random->RandomFloat( 3, 5 );
+	m_flNextFlinchTime = gpGlobals->curtime + random_valve->RandomFloat( 3, 5 );
 }
 BASENPC_RUN_TASK_ALIAS(TASK_BIG_FLINCH, TASK_SMALL_FLINCH)
 

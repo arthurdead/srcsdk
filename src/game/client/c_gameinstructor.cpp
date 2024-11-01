@@ -886,7 +886,7 @@ C_BasePlayer * C_GameInstructor::GetLocalPlayer( void )
 	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
 
 	// If we're not a developer, don't do the special spectator hook ups
-	if ( !developer.GetBool() )
+	if ( !developer->GetBool() )
 		return pLocalPlayer;
 
 	// If there is no local player and we're not spectating, just return that

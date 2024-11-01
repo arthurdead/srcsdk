@@ -15,7 +15,15 @@ class CHudSuspicion : public CHudElement, public vgui::Panel
 	typedef vgui::Panel BasePanel;
 
 public:
+	#pragma push_macro("new")
+	#pragma push_macro("delete")
+	#undef new
+	#undef delete
+
 	IMPLEMENT_OPERATORS_NEW_AND_DELETE();
+
+	#pragma pop_macro("delete")
+	#pragma pop_macro("new")
 
 	CHudSuspicion(const char *pElementName);
 

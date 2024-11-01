@@ -126,7 +126,7 @@ void CCenterStringLabel::ApplySchemeSettings(vgui::IScheme *pScheme)
 
 	// Use a large font
 	m_hFont = pScheme->GetFont( "Trebuchet24" );
-	assert( m_hFont != vgui::INVALID_FONT );
+	Assert( m_hFont != vgui::INVALID_FONT );
 	SetFont( m_hFont );
 
 	int w, h;

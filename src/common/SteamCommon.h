@@ -20,10 +20,7 @@
 
 #ifndef INCLUDED_STEAM_COMMON_STEAMCOMMON_H
 #define INCLUDED_STEAM_COMMON_STEAMCOMMON_H
-
-#if defined(_MSC_VER) && (_MSC_VER > 1000)
 #pragma once
-#endif
 
 
 #ifdef __cplusplus

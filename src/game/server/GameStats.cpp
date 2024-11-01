@@ -198,15 +198,22 @@ const char *CBaseGameStats::GetUserPseudoUniqueID( void )
 	return s_szPseudoUniqueID;
 }
 
+#ifndef SWDS
+extern ConVar *mat_dxlevel;
+#endif
+
 void CBaseGameStats::Event_Init( void )
 {
 	SetHL2UnlockedChapterStatistic();
 	SetSteamStatistic( g_pFullFileSystem->IsSteam() );
 	SetCyberCafeStatistic( gamestatsuploader->IsCyberCafeUser() );
-	ConVarRef pDXLevel( "mat_dxlevel" );
-	if( pDXLevel.IsValid() )
+#ifndef SWDS
+	if(!engine->IsDedicatedServer()) {
+		SetDXLevelStatistic( mat_dxlevel->GetInt() );
+	} else
+#endif
 	{
-		SetDXLevelStatistic( pDXLevel.GetInt() );
+		SetDXLevelStatistic( 90 );
 	}
 	++m_BasicStats.m_Summary.m_nCount;
 
@@ -225,6 +232,8 @@ void CBaseGameStats::Event_MapChange( const char *szOldMapName, const char *szNe
 	StatsLog( "CBaseGameStats::Event_MapChange to [%s]\n", szNewMapName );
 }
 
+extern ConVar *closecaption;
+
 void CBaseGameStats::Event_LevelInit( void )
 {
 	StatsLog( "CBaseGameStats::Event_LevelInit [%s]\n", CBGSDriver.m_PrevMapName.String() );
@@ -235,9 +244,7 @@ void CBaseGameStats::Event_LevelInit( void )
 	// HACK HACK:  Punching this hole through only works in single player!!!
 	if ( gpGlobals->maxClients == 1 )
 	{
-		ConVarRef closecaption( "closecaption" );
-		if( closecaption.IsValid() )
-			SetCaptionsStatistic( closecaption.GetBool() );
+		SetCaptionsStatistic( closecaption->GetBool() );
 
 		SetHDRStatistic( gamestatsuploader->IsHDREnabled() );
 

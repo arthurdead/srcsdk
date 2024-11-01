@@ -32,6 +32,12 @@
 #define UINT32_MAX   (0xFFFFFFFFu)
 #endif
 
+
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL nullptr
+
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------

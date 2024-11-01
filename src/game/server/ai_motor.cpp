@@ -594,7 +594,7 @@ void CAI_Motor::MoveStart()
 
 void CAI_Motor::MoveStop()
 { 
-	memset( &m_vecVelocity, 0, sizeof(m_vecVelocity) ); 
+	memset( (void *)&m_vecVelocity, 0, sizeof(m_vecVelocity) ); 
 	GetOuter()->GetLocalNavigator()->ResetMoveCalculations();
 }
 
@@ -935,7 +935,7 @@ void CAI_Motor::SetIdealYawToTarget( const Vector &target, float noise, float of
 	if ( noise > 0 )
 	{
 		noise *= 0.5;
-		base += random->RandomFloat( -noise, noise );
+		base += random_valve->RandomFloat( -noise, noise );
 		if ( base < 0 )
 			base += 360;
 		else if ( base >= 360 )

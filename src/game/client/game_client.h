@@ -16,5 +16,5 @@ class ConVar;
 extern void GameDLLInit( void );
 
 // Engine Cvars
-extern const ConVar *g_pDeveloper;
+extern ConVar *developer;
 #endif		// GAME_H

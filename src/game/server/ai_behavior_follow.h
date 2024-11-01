@@ -6,6 +6,7 @@
 
 #ifndef AI_BEHAVIOR_FOLLOW_H
 #define AI_BEHAVIOR_FOLLOW_H
+#pragma once
 
 #include "simtimer.h"
 #include "ai_behavior.h"
@@ -16,8 +17,6 @@
 #ifdef HL2_EPISODIC
 	#include "hl2_gamerules.h"
 #endif
-
-#pragma once
 
 
 //-----------------------------------------------------------------------------
@@ -56,9 +55,8 @@ enum AI_FollowFormationFlags_t
 
 class CAI_FollowGoal : public CAI_GoalEntity
 {
-	DECLARE_CLASS( CAI_FollowGoal, CAI_GoalEntity );
-
 public:
+	DECLARE_CLASS( CAI_FollowGoal, CAI_GoalEntity );
 
 	virtual void EnableGoal( CAI_BaseNPC *pAI );
 	virtual void DisableGoal( CAI_BaseNPC *pAI  );
@@ -119,8 +117,8 @@ struct AI_FollowParams_t
 
 class CAI_FollowBehavior : public CAI_SimpleBehavior
 {
-	DECLARE_CLASS( CAI_FollowBehavior, CAI_SimpleBehavior );
 public:
+	DECLARE_CLASS( CAI_FollowBehavior, CAI_SimpleBehavior );
 	CAI_FollowBehavior( const AI_FollowParams_t &params = AIF_SIMPLE );
 	~CAI_FollowBehavior();
 

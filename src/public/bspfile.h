@@ -845,9 +845,6 @@ struct dfaceid_t
 #define LEAF_FLAGS_SKY2D		0x04		// This leaf has 2D sky in its PVS
 #define LEAF_FLAGS_CONTAINS_DETAILOBJECTS 0x08				// this leaf has at least one detail object in it (set by loader).
 
-#if defined( _X360 )
-#pragma bitfield_order( push, lsb_to_msb )
-#endif
 #pragma warning( disable:4201 )	// C4201: nonstandard extension used: nameless struct/union
 struct dleaf_version_0_t
 {
@@ -901,9 +898,6 @@ struct dleaf_t
 //	CompressedLightCube m_AmbientLighting;
 };
 #pragma warning( default:4201 )	// C4201: nonstandard extension used: nameless struct/union
-#if defined( _X360 )
-#pragma bitfield_order( pop )
-#endif
 
 // each leaf contains N samples of the ambient lighting
 // each sample contains a cube of ambient light projected on to each axis

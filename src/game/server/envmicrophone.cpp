@@ -26,6 +26,8 @@
 
 //#define DEBUG_MICROPHONE
 
+extern ConVar *dsp_speaker;
+
 const float MICROPHONE_SETTLE_EPSILON = 0.005;
 
 // List of env_microphones who want to be told whenever a sound is started
@@ -166,18 +168,14 @@ void CEnvMicrophone::ActivateSpeaker( void )
 	// If we're enabled, set the dsp_speaker preset to my specified one
 	if ( !m_bDisabled )
 	{
-		ConVarRef dsp_speaker( "dsp_speaker" );
-		if ( dsp_speaker.IsValid() )
+		int iDSPPreset = m_iSpeakerDSPPreset;
+		if ( !iDSPPreset )
 		{
-			int iDSPPreset = m_iSpeakerDSPPreset;
-			if ( !iDSPPreset )
-			{
-				// Reset it to the default
-				iDSPPreset = atoi( dsp_speaker.GetDefault() );
-			}
-			DevMsg( 2, "Microphone %s set dsp_speaker to %d.\n", STRING(GetEntityName()), iDSPPreset);
-			dsp_speaker.SetValue( m_iSpeakerDSPPreset );
+			// Reset it to the default
+			iDSPPreset = atoi( dsp_speaker->GetDefault() );
 		}
+		DevMsg( 2, "Microphone %s set dsp_speaker to %d.\n", STRING(GetEntityName()), iDSPPreset);
+		dsp_speaker->SetValue( m_iSpeakerDSPPreset );
 	}
 
 	if ( m_iszSpeakerName != NULL_STRING )

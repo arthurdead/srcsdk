@@ -15,6 +15,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+extern ConVar *name;
+
 //-----------------------------------------------------------------------------
 // Purpose: Interface to running the engine from the UI dlls
 //-----------------------------------------------------------------------------
@@ -59,10 +61,9 @@ public:
 		gameuifuncs->SetFriendsID(trackerID, trackerName);
 
 		// update the player's name if necessary
-		ConVarRef name( "name" );
-		if ( name.IsValid() && trackerName && *trackerName && !Q_strcmp( name.GetString(), "unnamed" ) )
+		if ( trackerName && *trackerName && !Q_strcmp( name->GetString(), "unnamed" ) )
 		{
-			name.SetValue(trackerName);
+			name->SetValue(trackerName);
 		}
 	}
 

@@ -6,11 +6,10 @@
 
 #ifndef AI_GOALENTITY_H
 #define AI_GOALENTITY_H
+#pragma once
 
 #include "ai_basenpc.h"
 #include "utlvector.h"
-
-#pragma once
 
 //-----------------------------------------------------------------------------
 //
@@ -24,8 +23,8 @@
 class CAI_GoalEntity : public CBaseEntity,
 					   public IEntityListener
 {
-	DECLARE_CLASS( CAI_GoalEntity, CBaseEntity );
 public:
+	DECLARE_CLASS( CAI_GoalEntity, CBaseEntity );
 	CAI_GoalEntity()
 	 :	m_iszActor(NULL_STRING),
 	 	m_iszGoal(NULL_STRING),

@@ -9,6 +9,7 @@
 #include "in_buttons.h"
 #include "c_func_brush.h"
 #include "collisionutils.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

@@ -192,7 +192,7 @@ void C_ParticleFire::Update(float fTimeDelta)
 {
 	if(!m_pParticleMgr)
 	{
-		assert(false);
+		Assert(false);
 		return;
 	}
 

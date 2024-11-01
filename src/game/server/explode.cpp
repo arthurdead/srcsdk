@@ -42,9 +42,9 @@ void CShower::Spawn( void )
 	AngleVectors( GetLocalAngles(), &vecForward );
 
 	Vector vecNewVelocity;
-	vecNewVelocity = random->RandomFloat( 200, 300 ) * vecForward;
-	vecNewVelocity.x += random->RandomFloat(-100.f,100.f);
-	vecNewVelocity.y += random->RandomFloat(-100.f,100.f);
+	vecNewVelocity = random_valve->RandomFloat( 200, 300 ) * vecForward;
+	vecNewVelocity.x += random_valve->RandomFloat(-100.f,100.f);
+	vecNewVelocity.y += random_valve->RandomFloat(-100.f,100.f);
 	if ( vecNewVelocity.z >= 0 )
 		vecNewVelocity.z += 200;
 	else
@@ -57,7 +57,7 @@ void CShower::Spawn( void )
 	SetSolid( SOLID_NONE );
 	UTIL_SetSize(this, vec3_origin, vec3_origin );
 	AddEffects( EF_NODRAW );
-	m_flSpeed = random->RandomFloat( 0.5, 1.5 );
+	m_flSpeed = random_valve->RandomFloat( 0.5, 1.5 );
 
 	SetLocalAngles( vec3_angle );
 }
@@ -369,7 +369,7 @@ void CEnvExplosion::InputExplode( inputdata_t &inputdata )
 		// draw sparks
 		if ( !( m_spawnflags & SF_ENVEXPLOSION_NOSPARKS ) )
 		{
-			int sparkCount = random->RandomInt(0,3);
+			int sparkCount = random_valve->RandomInt(0,3);
 
 			for ( int i = 0; i < sparkCount; i++ )
 			{

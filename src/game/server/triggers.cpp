@@ -30,6 +30,7 @@
 #include "ai_behavior_lead.h"
 #include "gameinterface.h"
 #include "ilagcompensationmanager.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -700,7 +701,7 @@ void CTriggerHurt::Spawn( void )
 	if (m_bitsDamageInflict & DMG_RADIATION)
 	{
 		SetThink ( &CTriggerHurtShim::RadiationThinkShim );
-		SetNextThink( gpGlobals->curtime + random->RandomFloat(0.0, 0.5) );
+		SetNextThink( gpGlobals->curtime + random_valve->RandomFloat(0.0, 0.5) );
 	}
 }
 
@@ -1021,8 +1022,8 @@ void CTriggerMultiple::MultiWaitOver( void )
 // ##################################################################################
 class CTriggerOnce : public CTriggerMultiple
 {
-	DECLARE_CLASS( CTriggerOnce, CTriggerMultiple );
 public:
+	DECLARE_CLASS( CTriggerOnce, CTriggerMultiple );
 
 	void Spawn( void );
 };
@@ -1048,8 +1049,8 @@ void CTriggerOnce::Spawn( void )
 
 class CTriggerLook : public CTriggerOnce
 {
-	DECLARE_CLASS( CTriggerLook, CTriggerOnce );
 public:
+	DECLARE_CLASS( CTriggerLook, CTriggerOnce );
 
 	CUtlVector<EHANDLE> m_hLookTargets;
 	float m_flFieldOfView;
@@ -1620,7 +1621,7 @@ void CChangeLevel::WarnAboutActiveLead( void )
 
 void CChangeLevel::ChangeLevelNow( CBaseEntity *pActivator )
 {
-	CBaseEntity	*pLandmark;
+	CBaseEntity	*pLandmark=NULL;
 
 	Assert(!FStrEq(m_szMapName, ""));
 
@@ -3703,8 +3704,8 @@ void CTriggerWind::WindThink( void )
 		m_bSwitch = false;
 
 		// Set new target direction and speed
-		m_nSpeedTarget = m_nSpeedBase + random->RandomInt( -m_nSpeedNoise, m_nSpeedNoise );
-		m_nDirTarget = UTIL_AngleMod( m_nDirBase + random->RandomInt(-m_nDirNoise, m_nDirNoise) );
+		m_nSpeedTarget = m_nSpeedBase + random_valve->RandomInt( -m_nSpeedNoise, m_nSpeedNoise );
+		m_nDirTarget = UTIL_AngleMod( m_nDirBase + random_valve->RandomInt(-m_nDirNoise, m_nDirNoise) );
 	}
 	else
 	{
@@ -3726,7 +3727,7 @@ void CTriggerWind::WindThink( void )
 		if (bDone)
 		{
 			m_nSpeedCurrent = m_nSpeedTarget;
-			SetContextThink( &CTriggerWind::WindThink, m_nHoldBase + random->RandomFloat(-m_nHoldNoise,m_nHoldNoise), WIND_THINK_CONTEXT );
+			SetContextThink( &CTriggerWind::WindThink, m_nHoldBase + random_valve->RandomFloat(-m_nHoldNoise,m_nHoldNoise), WIND_THINK_CONTEXT );
 			m_bSwitch = true;
 		}
 	}

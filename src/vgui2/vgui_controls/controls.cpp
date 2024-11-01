@@ -13,6 +13,10 @@
 
 extern int g_nYou_Must_Add_Public_Vgui_Controls_Vgui_ControlsCpp_To_Your_Project;
 
+ConVar *vgui_nav_lock=NULL;
+ConVar *vgui_nav_lock_default_button=NULL;
+ConVar *cl_hud_minmode=NULL;
+
 namespace vgui
 {
 
@@ -54,6 +58,10 @@ bool VGui_InitInterfacesList( const char *moduleName, CreateInterfaceFn *factory
 		Warning( "vgui_controls is missing a required interface!\n" );
 		return false;
 	}
+
+	vgui_nav_lock = g_pCVar->FindVar("vgui_nav_lock");
+	vgui_nav_lock_default_button = g_pCVar->FindVar("vgui_nav_lock_default_button");
+	cl_hud_minmode = g_pCVar->FindVar("cl_hud_minmode");
 
 	return true;
 }

@@ -35,7 +35,11 @@
 
 //----------------------------------------------------------------------------------------
 
-#define BUILD_CURL					( defined( WIN32 ) && !defined( _X360 ) ) || defined( POSIX )
+#if defined( WIN32 ) || defined( POSIX )
+#define BUILD_CURL					1
+#else
+#define BUILD_CURL					0
+#endif
 
 //----------------------------------------------------------------------------------------
 

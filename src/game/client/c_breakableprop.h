@@ -15,11 +15,12 @@
 //-----------------------------------------------------------------------------
 class C_BreakableProp : public C_BaseAnimating
 {
-	DECLARE_CLASS( C_BreakableProp, C_BaseAnimating );
 public:
+	DECLARE_CLASS( C_BreakableProp, C_BaseAnimating );
 	DECLARE_CLIENTCLASS();
 
-	C_BreakableProp();
+	C_BreakableProp() : C_BreakableProp( 0 ) {}
+	C_BreakableProp( int iEFlags );
 
 	virtual bool IsProp( void ) const
 	{
@@ -46,5 +47,7 @@ public:
 protected:
 	QAngle m_qPreferredPlayerCarryAngles;
 };
+
+typedef C_ClientOnlyWrapper<C_BreakableProp> C_ClientOnlyBreakableProp;
 
 #endif // C_BREAKABLEPROP_H

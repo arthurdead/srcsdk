@@ -22,6 +22,11 @@
 #include <string>
 #include "tier0/valve_minmax_on.h"	// GCC 4.2.2 headers screw up our min/max defs.
 
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL nullptr
+
 #ifdef _WIN32
 #pragma warning(pop)
 #endif

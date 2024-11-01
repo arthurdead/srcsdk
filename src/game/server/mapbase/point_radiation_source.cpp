@@ -64,7 +64,7 @@ void CPointRadiationSource::Spawn( void )
 	if (!m_bDisabled)
 	{
 		SetThink( &CPointRadiationSource::RadiationThink );
-		SetNextThink( gpGlobals->curtime + random->RandomFloat(0.0, 0.5) );
+		SetNextThink( gpGlobals->curtime + random_valve->RandomFloat(0.0, 0.5) );
 	}
 }
 

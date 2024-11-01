@@ -87,7 +87,7 @@ if build_libs
 			join_paths(vgui_controls_src_dir,'URLLabel.cpp'),
 			join_paths(vgui_controls_src_dir,'WizardPanel.cpp'),
 			join_paths(vgui_controls_src_dir,'WizardSubPanel.cpp'),
-			join_paths(vgui_controls_src_dir,'linker_fixes.cpp'),
+			join_paths(vgui_controls_src_dir,'gcc_linker_fixes.cpp'),
 			join_paths(src_root_dir,'vgui2','src','vgui_key_translation.cpp'),
 			join_paths(public_dir,'filesystem_helpers.cpp')
 		),

@@ -20,7 +20,7 @@
 #include "tier0/memdbgon.h"
 
 extern ConVar r_drawsprites;
-extern ConVar r_DrawBeams;
+extern ConVar *r_DrawBeams;
 
 static IMaterial *g_pBeamWireframeMaterial;
 
@@ -44,7 +44,7 @@ CEngineSprite *Draw_SetSpriteTexture( const model_t *pSpriteModel, int frame, in
 		return NULL;
 	
 	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
-	if ( ShouldDrawInWireFrameMode() || r_DrawBeams.GetInt() == 2 )
+	if ( ShouldDrawInWireFrameMode() || r_DrawBeams->GetInt() == 2 )
 	{
 		if ( !g_pBeamWireframeMaterial )
 			g_pBeamWireframeMaterial = g_pMaterialSystem->FindMaterial( "debug/debugwireframevertexcolor", TEXTURE_GROUP_OTHER );

@@ -522,6 +522,8 @@ IMPLEMENT_SERVERCLASS_ST(CWorld, DT_WORLD)
 	SendPropStringT (SENDINFO(m_iszChapterTitle) ),
 END_SEND_TABLE()
 
+extern ConVar sv_skyname;
+
 //
 // Just to ignore the "wad" field.
 //
@@ -530,8 +532,7 @@ bool CWorld::KeyValue( const char *szKeyName, const char *szValue )
 	if ( FStrEq(szKeyName, "skyname") )
 	{
 		// Sent over net now.
-		ConVarRef skyname( "sv_skyname" );
-		skyname.SetValue( szValue );
+		sv_skyname.SetValue( szValue );
 	}
 	else if ( FStrEq(szKeyName, "newunit") )
 	{
@@ -573,6 +574,13 @@ CWorld* GetWorldEntity()
 	return g_WorldEntity;
 }
 
+//TODO!!! Arthurdead: make the world not networked
+
+void CWorld::UpdateOnRemove( void )
+{
+	BaseClass::UpdateOnRemove();
+}
+
 void CWorld::PostConstructor( const char *szClassname )
 {
 	BaseClass::PostConstructor( szClassname );
@@ -580,10 +588,10 @@ void CWorld::PostConstructor( const char *szClassname )
 
 CWorld::CWorld( )
 {
-	if(!g_WorldEntity)
+	if(!g_WorldEntity) {
 		g_WorldEntity = this;
-
-	AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
+		AddEFlags( EFL_KEEP_ON_RECREATE_ENTITIES );
+	}
 
 	SetSolid( SOLID_BSP );
 	SetMoveType( MOVETYPE_NONE );
@@ -676,10 +684,6 @@ void CWorld::Precache( void )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CWorld::UpdateOnRemove( void )
-{
-	BaseClass::UpdateOnRemove();
-}
 
 bool CWorld::ShouldDisplayTitle() const
 {

@@ -373,6 +373,7 @@ enum
 	MUZZLEFLASH_PISTOL,
 	MUZZLEFLASH_357,
 	MUZZLEFLASH_RPG,
+	MUZZLEFLASH_SMG1,
 
 	MUZZLEFLASH_FIRSTPERSON		= 0x100,
 };
@@ -629,7 +630,7 @@ enum
 	// if they don't have a model.
 	EFL_FORCE_CHECK_TRANSMIT =	(1<<7),
 
-	EFL_BOT_FROZEN =			(1<<8),	// This is set on bots that are frozen.
+	EFL_NOT_RENDERABLE =			(1<<8),	// This is set on bots that are frozen.
 	EFL_NOT_NETWORKED =			(1<<9),	// Non-networked entity.
 	
 	// Some dirty bits with respect to abs computations
@@ -638,7 +639,7 @@ enum
 	EFL_DIRTY_ABSANGVELOCITY =	(1<<13),
 	EFL_DIRTY_SURROUNDING_COLLISION_BOUNDS	= (1<<14),
 	EFL_DIRTY_SPATIAL_PARTITION = (1<<15),
-//	UNUSED						= (1<<16),
+	EFL_NOT_COLLIDEABLE						= (1<<16),
 
 	EFL_IN_SKYBOX =				(1<<17),	// This is set if the entity detects that it's in the skybox.
 											// This forces it to pass the "in PVS" for transmission.

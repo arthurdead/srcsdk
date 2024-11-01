@@ -19,8 +19,7 @@ public:
 	virtual bool	RegisterConCommandBase( ConCommandBase *pCommand )
 	{
 	#ifdef _DEBUG
-		if(pCommand->IsFlagSet(FCVAR_GAMEDLL))
-			DevMsg("shader dll tried to register server con var/command named %s\n", pCommand->GetName());
+		AssertMsg( !pCommand->IsFlagSet(FCVAR_GAMEDLL), "shader dll tried to register server con var/command named %s", pCommand->GetName() );
 	#endif
 
 		return CDefaultAccessor::RegisterConCommandBase( pCommand );
@@ -29,8 +28,11 @@ public:
 
 CShaderLibConVarAccessor g_ShaderlibConVarAccessor;
 
+ConVar* mat_fullbright=NULL;
 
 void InitShaderLibCVars( CreateInterfaceFn cvarFactory )
 {
 	ConVar_Register( FCVAR_MATERIAL_SYSTEM_THREAD | FCVAR_CLIENTDLL, &g_ShaderlibConVarAccessor );
+
+	mat_fullbright = g_pCVar->FindVar("mat_fullbright");
 }

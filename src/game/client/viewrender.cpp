@@ -98,10 +98,10 @@ static ConCommand test_freezeframe( "test_freezeframe", testfreezeframe_f, "Test
 
 //-----------------------------------------------------------------------------
 
-ConVar r_visocclusion( "r_visocclusion", "0", FCVAR_CHEAT );
-extern ConVar r_flashlightdepthtexture;
+extern ConVar *r_visocclusion;
+extern ConVar *r_flashlightdepthtexture;
 extern ConVar vcollide_wireframe;
-extern ConVar mat_motion_blur_enabled;
+extern ConVar *mat_motion_blur_enabled;
 extern ConVar r_depthoverlay;
 extern ConVar mat_viewportscale;
 extern ConVar mat_viewportupscale;
@@ -116,7 +116,7 @@ ConVar r_entityclips( "r_entityclips", "1" ); //FIXME: Nvidia drivers before 81.
 
 // Matches the version in the engine
 ConVar r_drawopaqueworld( "r_drawopaqueworld", "1", FCVAR_CHEAT );
-ConVar r_drawtranslucentworld( "r_drawtranslucentworld", "1", FCVAR_CHEAT );
+extern ConVar *r_drawtranslucentworld;
 ConVar r_3dsky( "r_3dsky","1", 0, "Enable the rendering of 3d sky boxes" );
 ConVar r_skybox( "r_skybox","1", FCVAR_CHEAT, "Enable the rendering of sky boxes" );
 ConVar r_drawviewmodel( "r_drawviewmodel","1", FCVAR_CHEAT );
@@ -174,8 +174,7 @@ static void FogOverrideCallback( IConVar *pConVar, char const *, float )
 	if ( !localPlayer )
 		return;
 
-	ConVarRef var( pConVar );
-	if ( var.GetInt() == -1 )
+	if ( ((ConVar *)pConVar)->GetInt() == -1 )
 	{
 		fogparams_t *pFogParams = localPlayer->GetFogParams();
 
@@ -201,8 +200,8 @@ static void FogOverrideCallback( IConVar *pConVar, char const *, float )
 // Water-related convars
 //-----------------------------------------------------------------------------
 static ConVar r_debugcheapwater( "r_debugcheapwater", "0", FCVAR_CHEAT );
-static ConVar r_waterforceexpensive( "r_waterforceexpensive", "0", FCVAR_ARCHIVE );
-static ConVar r_waterforcereflectentities( "r_waterforcereflectentities", "0" );
+extern ConVar *r_waterforceexpensive;
+extern ConVar *r_waterforcereflectentities;
 static ConVar r_WaterDrawRefraction( "r_WaterDrawRefraction", "1", 0, "Enable water refraction" );
 static ConVar r_WaterDrawReflection( "r_WaterDrawReflection", "1", 0, "Enable water reflection" );
 ConVar r_ForceWaterLeaf( "r_ForceWaterLeaf", "1", 0, "Enable for optimization to water - considers view in leaf under water for purposes of culling" );
@@ -222,7 +221,7 @@ ConVar r_eyewaterepsilon( "r_eyewaterepsilon", "10.0f", FCVAR_CHEAT );
 static ConVar pyro_dof( "pyro_dof", "1", FCVAR_ARCHIVE );
 #endif
 
-ConVar r_fastzreject( "r_fastzreject", "0", 0, "Activate/deactivates a fast z-setting algorithm to take advantage of hardware with fast z reject. Use -1 to default to hardware settings" );
+extern ConVar *r_fastzreject;
 
 extern ConVar cl_leveloverview;
 
@@ -420,8 +419,8 @@ void FlushWorldLists()
 //-----------------------------------------------------------------------------
 class CSkyboxView : public CRendering3dView
 {
-	DECLARE_CLASS( CSkyboxView, CRendering3dView );
 public:
+	DECLARE_CLASS( CSkyboxView, CRendering3dView );
 	CSkyboxView(CViewRender *pMainView) : 
 		CRendering3dView( pMainView ),
 		m_pSky3dParams( NULL )
@@ -480,8 +479,8 @@ private:
 //-----------------------------------------------------------------------------
 class CShadowDepthView : public CRendering3dView
 {
-	DECLARE_CLASS( CShadowDepthView, CRendering3dView );
 public:
+	DECLARE_CLASS( CShadowDepthView, CRendering3dView );
 	CShadowDepthView(CViewRender *pMainView) : CRendering3dView( pMainView ) {}
 
 	void Setup( const CViewSetupEx &shadowViewIn, ITexture *pRenderTarget, ITexture *pDepthTexture );
@@ -497,8 +496,8 @@ private:
 //-----------------------------------------------------------------------------
 class CFreezeFrameView : public CRendering3dView
 {
-	DECLARE_CLASS( CFreezeFrameView, CRendering3dView );
 public:
+	DECLARE_CLASS( CFreezeFrameView, CRendering3dView );
 	CFreezeFrameView(CViewRender *pMainView) : CRendering3dView( pMainView ) {}
 
 	void Setup( const CViewSetupEx &view );
@@ -517,6 +516,7 @@ private:
 //-----------------------------------------------------------------------------
 class CBaseWorldView : public CRendering3dView
 {
+public:
 	DECLARE_CLASS( CBaseWorldView, CRendering3dView );
 protected:
 	CBaseWorldView(CViewRender *pMainView) : CRendering3dView( pMainView ) {}
@@ -542,8 +542,8 @@ protected:
 //-----------------------------------------------------------------------------
 class CSimpleWorldView : public CBaseWorldView
 {
-	DECLARE_CLASS( CSimpleWorldView, CBaseWorldView );
 public:
+	DECLARE_CLASS( CSimpleWorldView, CBaseWorldView );
 	CSimpleWorldView(CViewRender *pMainView) : CBaseWorldView( pMainView ) {}
 
 	void			Setup( const CViewSetupEx &view, int nClearFlags, bool bDrawSkybox, const VisibleFogVolumeInfo_t &fogInfo, const WaterRenderInfo_t& info, ViewCustomVisibility_t *pCustomVisibility = NULL );
@@ -560,8 +560,8 @@ private:
 //-----------------------------------------------------------------------------
 class CBaseWaterView : public CBaseWorldView
 {
-	DECLARE_CLASS( CBaseWaterView, CBaseWorldView );
 public:
+	DECLARE_CLASS( CBaseWaterView, CBaseWorldView );
 	CBaseWaterView(CViewRender *pMainView) : 
 		CBaseWorldView( pMainView ),
 		m_SoftwareIntersectionView( pMainView )
@@ -602,8 +602,8 @@ protected:
 //-----------------------------------------------------------------------------
 class CAboveWaterView : public CBaseWaterView
 {
-	DECLARE_CLASS( CAboveWaterView, CBaseWaterView );
 public:
+	DECLARE_CLASS( CAboveWaterView, CBaseWaterView );
 	CAboveWaterView(CViewRender *pMainView) : 
 		CBaseWaterView( pMainView ),
 		m_ReflectionView( pMainView ),
@@ -671,8 +671,8 @@ public:
 //-----------------------------------------------------------------------------
 class CUnderWaterView : public CBaseWaterView
 {
-	DECLARE_CLASS( CUnderWaterView, CBaseWaterView );
 public:
+	DECLARE_CLASS( CUnderWaterView, CBaseWaterView );
 	CUnderWaterView(CViewRender *pMainView) : 
 		CBaseWaterView( pMainView ),
 		m_RefractionView( pMainView )
@@ -707,8 +707,8 @@ public:
 //-----------------------------------------------------------------------------
 class CReflectiveGlassView : public CSimpleWorldView
 {
-	DECLARE_CLASS( CReflectiveGlassView, CSimpleWorldView );
 public:
+	DECLARE_CLASS( CReflectiveGlassView, CSimpleWorldView );
 	CReflectiveGlassView( CViewRender *pMainView ) : BaseClass( pMainView )
 	{
 	}
@@ -727,8 +727,8 @@ public:
 
 class CRefractiveGlassView : public CSimpleWorldView
 {
-	DECLARE_CLASS( CRefractiveGlassView, CSimpleWorldView );
 public:
+	DECLARE_CLASS( CRefractiveGlassView, CSimpleWorldView );
 	CRefractiveGlassView( CViewRender *pMainView ) : BaseClass( pMainView )
 	{
 	}
@@ -1569,7 +1569,7 @@ void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxV
 	g_pClientShadowMgr->PreRender();
 
 	// Shadowed flashlights supported on ps_2_b and up...
-	if ( r_flashlightdepthtexture.GetBool() && (viewID == VIEW_MAIN) && ( !view.m_bDrawWorldNormal ) )
+	if ( r_flashlightdepthtexture->GetBool() && (viewID == VIEW_MAIN) && ( !view.m_bDrawWorldNormal ) )
 	{
 		g_pClientShadowMgr->ComputeShadowDepthTextures( view );
 
@@ -1657,7 +1657,7 @@ void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxV
 	FinishCurrentView();
 
 	// Free shadow depth textures for use in future view
-	if ( r_flashlightdepthtexture.GetBool() && ( !view.m_bDrawWorldNormal ) )
+	if ( r_flashlightdepthtexture->GetBool() && ( !view.m_bDrawWorldNormal ) )
 	{
 		g_pClientShadowMgr->UnlockAllShadowDepthTextures();
 	}
@@ -2581,7 +2581,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 		RenderPlayerSprites();
 
 		// Image-space motion blur
-		if ( !building_cubemaps.GetBool() /*&& view.m_bDoBloomAndToneMapping*/ ) // We probably should use a different view. variable here
+		if ( !building_cubemaps->GetBool() /*&& view.m_bDoBloomAndToneMapping*/ ) // We probably should use a different view. variable here
 		{
 			if ( IsDepthOfFieldEnabled() )
 			{
@@ -2593,7 +2593,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 				pRenderContext.SafeRelease();
 			}
 
-			if ( ( view.m_nMotionBlurMode != MOTION_BLUR_DISABLE ) && ( mat_motion_blur_enabled.GetInt() ) && ( g_pMaterialSystemHardwareConfig->GetDXSupportLevel() >= 90 ) )
+			if ( ( view.m_nMotionBlurMode != MOTION_BLUR_DISABLE ) && ( mat_motion_blur_enabled->GetInt() ) && ( g_pMaterialSystemHardwareConfig->GetDXSupportLevel() >= 90 ) )
 			{
 				pRenderContext.GetFrom( g_pMaterialSystem );
 				{
@@ -2647,7 +2647,7 @@ void CViewRender::RenderView( const CViewSetupEx &view, const CViewSetupEx &hudV
 			pRenderContext.SafeRelease();
 		}
 	
-		if ( !building_cubemaps.GetBool() && view.m_bDoBloomAndToneMapping )
+		if ( !building_cubemaps->GetBool() && view.m_bDoBloomAndToneMapping )
 		{
 			pRenderContext.GetFrom( g_pMaterialSystem );
 			{
@@ -2910,8 +2910,8 @@ void CViewRender::DetermineWaterRenderInfo( const VisibleFogVolumeInfo_t &fogVol
 		return;
 	}
 
-	bool bForceExpensive = r_waterforceexpensive.GetBool();
-	bool bForceReflectEntities = r_waterforcereflectentities.GetBool();
+	bool bForceExpensive = r_waterforceexpensive->GetBool();
+	bool bForceReflectEntities = r_waterforcereflectentities->GetBool();
 
 #ifdef PORTAL
 	switch( g_pPortalRender->ShouldForceCheaperWaterLevel() )
@@ -3444,7 +3444,7 @@ void CViewRender::ViewDrawScene_Intro( const CViewSetupEx &view, int nClearFlags
 		g_pClientShadowMgr->PreRender();
 
 		// Shadowed flashlights supported on ps_2_b and up...
-		if ( r_flashlightdepthtexture.GetBool() )
+		if ( r_flashlightdepthtexture->GetBool() )
 		{
 			g_pClientShadowMgr->ComputeShadowDepthTextures( playerView );
 		}
@@ -3479,7 +3479,7 @@ void CViewRender::ViewDrawScene_Intro( const CViewSetupEx &view, int nClearFlags
 		render->PopView( GetFrustum() );
 
 		// Free shadow depth textures for use in future view
-		if ( r_flashlightdepthtexture.GetBool() )
+		if ( r_flashlightdepthtexture->GetBool() )
 		{
 			g_pClientShadowMgr->UnlockAllShadowDepthTextures();
 		}
@@ -3505,7 +3505,7 @@ void CViewRender::ViewDrawScene_Intro( const CViewSetupEx &view, int nClearFlags
 	g_pClientShadowMgr->PreRender();
 
 	// Shadowed flashlights supported on ps_2_b and up...
-	if ( r_flashlightdepthtexture.GetBool() )
+	if ( r_flashlightdepthtexture->GetBool() )
 	{
 		g_pClientShadowMgr->ComputeShadowDepthTextures( view );
 	}
@@ -3639,7 +3639,7 @@ void CViewRender::ViewDrawScene_Intro( const CViewSetupEx &view, int nClearFlags
 	FinishCurrentView();
 
 	// Free shadow depth textures for use in future view
-	if ( r_flashlightdepthtexture.GetBool() )
+	if ( r_flashlightdepthtexture->GetBool() )
 	{
 		g_pClientShadowMgr->UnlockAllShadowDepthTextures();
 	}
@@ -4070,7 +4070,7 @@ CRendering3dView::CRendering3dView(CViewRender *pMainView) :
 void CRendering3dView::Setup( const CViewSetupEx &setup )
 {
 	// @MULTICORE (toml 8/15/2006): don't reset if parameters don't require it. For now, just reset
-	memcpy( static_cast<CViewSetupEx *>(this), &setup, sizeof( setup ) );
+	memcpy( (void *)static_cast<CViewSetupEx *>(this), (void *)&setup, sizeof( setup ) );
 	ReleaseLists();
 
 	m_pRenderablesList = new CClientRenderablesList; 
@@ -4711,7 +4711,7 @@ static inline void DrawOpaqueRenderable( IClientRenderable *pEnt, IClientRendera
 ConVar r_drawopaquestaticpropslast( "r_drawopaquestaticpropslast", "0", 0, "Whether opaque static props are rendered after non-npcs" );
 
 #ifdef STAGING_ONLY
-#define DEBUG_BUCKETS 1
+#define DEBUG_BUCKETS 0
 #else
 #define DEBUG_BUCKETS 0
 #endif
@@ -5446,7 +5446,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 	}
 #endif
 
-	if ( !r_drawtranslucentworld.GetBool() )
+	if ( !r_drawtranslucentworld->GetBool() )
 	{
 		DrawTranslucentRenderablesNoWorld( bInSkybox );
 		return;
@@ -6145,7 +6145,7 @@ void CShadowDepthView::Draw()
 
 	render->Push3DView( (*this), VIEW_CLEAR_DEPTH, m_pRenderTarget, GetFrustum(), m_pDepthTexture );
 
-	pRenderContext.GetFrom(materials);
+	pRenderContext.GetFrom(g_pMaterialSystem);
 	pRenderContext->PushRenderTargetAndViewport( m_pRenderTarget, m_pDepthTexture, x, y, width, height );
 	pRenderContext.SafeRelease();
 
@@ -6957,15 +6957,15 @@ void CAboveWaterView::CReflectionView::Draw()
 	SetupCurrentView( origin, angles, VIEW_REFLECTION );
 
 	// Disable occlusion visualization in reflection
-	bool bVisOcclusion = r_visocclusion.GetBool();
-	r_visocclusion.SetValue( 0 );
+	bool bVisOcclusion = r_visocclusion->GetBool();
+	r_visocclusion->SetValue( 0 );
 
 	DrawSetup( GetOuter()->m_fogInfo.m_flWaterHeight, m_DrawFlags, 0.0f, GetOuter()->m_fogInfo.m_nVisibleFogVolumeLeaf );
 
 	EnableWorldFog();
 	DrawExecute( GetOuter()->m_fogInfo.m_flWaterHeight, VIEW_REFLECTION, 0.0f );
 
-	r_visocclusion.SetValue( bVisOcclusion );
+	r_visocclusion->SetValue( bVisOcclusion );
 	
 #ifdef PORTAL
 	// deal with stencil
@@ -7281,8 +7281,8 @@ void CReflectiveGlassView::Draw()
 	SetupCurrentView( origin, angles, VIEW_REFLECTION );
 
 	// Disable occlusion visualization in reflection
-	bool bVisOcclusion = r_visocclusion.GetBool();
-	r_visocclusion.SetValue( 0 );
+	bool bVisOcclusion = r_visocclusion->GetBool();
+	r_visocclusion->SetValue( 0 );
 				   
 
 	int lastView = g_CurrentViewID;
@@ -7290,7 +7290,7 @@ void CReflectiveGlassView::Draw()
 	BaseClass::Draw();
 	g_CurrentViewID = lastView;
 
-	r_visocclusion.SetValue( bVisOcclusion );
+	r_visocclusion->SetValue( bVisOcclusion );
 
 	// finish off the view.  restore the previous view.
 	SetupCurrentView( origin, angles, (view_id_t)nSaveViewID );

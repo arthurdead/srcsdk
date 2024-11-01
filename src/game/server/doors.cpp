@@ -14,6 +14,7 @@
 #include "physics_npc_solver.h"
 #include "filters.h"
 #include "KeyValues.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -24,8 +25,6 @@ BEGIN_MAPENTITY( CBaseDoor )
 
 	DEFINE_KEYFIELD( m_vecMoveDir, FIELD_VECTOR, "movedir" ),
 
-	DEFINE_FIELD( m_bLockedSentence, FIELD_CHARACTER ),
-	DEFINE_FIELD( m_bUnlockedSentence, FIELD_CHARACTER ),	
 	DEFINE_KEYFIELD( m_NoiseMoving, FIELD_SOUNDNAME, "noise1" ),
 	DEFINE_KEYFIELD( m_NoiseArrived, FIELD_SOUNDNAME, "noise2" ),
 	DEFINE_KEYFIELD( m_NoiseMovingClosed, FIELD_SOUNDNAME, "startclosesound" ),
@@ -34,13 +33,11 @@ BEGIN_MAPENTITY( CBaseDoor )
 
 	DEFINE_KEYFIELD( m_ls.sLockedSound, FIELD_SOUNDNAME, "locked_sound" ),
 	DEFINE_KEYFIELD( m_ls.sUnlockedSound, FIELD_SOUNDNAME, "unlocked_sound" ),
-	DEFINE_FIELD( m_bLocked, FIELD_BOOLEAN ),
 	DEFINE_KEYFIELD( m_flWaveHeight, FIELD_FLOAT, "WaveHeight" ),
 	DEFINE_KEYFIELD( m_flBlockDamage, FIELD_FLOAT, "dmg" ),
 	DEFINE_KEYFIELD( m_eSpawnPosition, FIELD_INTEGER, "spawnpos" ),
 
 	DEFINE_KEYFIELD( m_bForceClosed, FIELD_BOOLEAN, "forceclosed" ),
-	DEFINE_FIELD( m_bDoorGroup, FIELD_BOOLEAN ),
 
 	DEFINE_KEYFIELD( m_iBlockFilterName,	FIELD_STRING,	"filtername" ),
 

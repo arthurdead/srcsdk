@@ -24,6 +24,9 @@
 #include "positionwatcher.h"
 #include "vphysics/constraints.h"
 #include "vphysics/friction.h"
+#include "ragdoll.h"
+#include "collisionproperty.h"
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -182,7 +185,7 @@ bool PhysicsDLLInit( CreateInterfaceFn physicsFactory )
 void PhysicsLevelInit( void )
 {
 	physenv = physics->CreateEnvironment();
-	assert( physenv );
+	Assert( physenv );
 #ifdef PORTAL
 	physenv_main = physenv;
 #endif
@@ -806,7 +809,7 @@ void CCollisionEvent::StartTouch( IPhysicsObject *pObject1, IPhysicsObject *pObj
 void CCollisionEvent::DispatchStartTouch( C_BaseEntity *pEntity0, C_BaseEntity *pEntity1, const Vector &point, const Vector &normal )
 {
 	trace_t trace;
-	memset( &trace, 0, sizeof(trace) );
+	memset( (void *)&trace, 0, sizeof(trace) );
 	trace.endpos = point;
 	trace.plane.dist = DotProduct( point, normal );
 	trace.plane.normal = normal;
@@ -1098,11 +1101,11 @@ void PhysicsSplash( IPhysicsFluidController *pFluid, IPhysicsObject *pObject, C_
 	{
 		if ( bInSlime )
 		{
-			FX_GunshotSlimeSplash( centerPoint, normal, random->RandomFloat( 8, 10 ) );
+			FX_GunshotSlimeSplash( centerPoint, normal, random_valve->RandomFloat( 8, 10 ) );
 		}
 		else
 		{
-			FX_GunshotSplash( centerPoint, normal, random->RandomFloat( 8, 10 ) );
+			FX_GunshotSplash( centerPoint, normal, random_valve->RandomFloat( 8, 10 ) );
 		}
 	}
 	else if ( !bInSlime )
@@ -1124,16 +1127,16 @@ void PhysicsSplash( IPhysicsFluidController *pFluid, IPhysicsObject *pObject, C_
 		{
 			if ( bInSlime )
 			{
-				FX_GunshotSlimeSplash( centerPoint, normal, random->RandomFloat( 4, 6 ) );
+				FX_GunshotSlimeSplash( centerPoint, normal, random_valve->RandomFloat( 4, 6 ) );
 			}
 			else
 			{
-				FX_GunshotSplash( centerPoint, normal, random->RandomFloat( 4, 6 ) );
+				FX_GunshotSplash( centerPoint, normal, random_valve->RandomFloat( 4, 6 ) );
 			}
 		}
 		else if ( !bInSlime )
 		{
-			FX_WaterRipple( point, random->RandomFloat( 0.25f, 0.5f ), &color, luminosity, random->RandomFloat( 0.5f, 1.0f ) );
+			FX_WaterRipple( point, random_valve->RandomFloat( 0.25f, 0.5f ), &color, luminosity, random_valve->RandomFloat( 0.5f, 1.0f ) );
 		}
 	}
 }

@@ -39,7 +39,7 @@ CRR_Response::CRR_Response( const CRR_Response &from ) : m_fMatchScore(0)
 {
 	// Assert( (void*)(&m_Type) == (void*)this );
 	Invalidate();
-	memcpy( this, &from, sizeof(*this) );
+	memcpy( (void *)this, (void *)&from, sizeof(*this) );
 	m_szContext = NULL;
 	SetContext( from.m_szContext );
 	m_iContextFlags = from.m_iContextFlags;
@@ -51,7 +51,7 @@ CRR_Response &CRR_Response::operator=( const CRR_Response &from )
 {
 	// Assert( (void*)(&m_Type) == (void*)this );
 	Invalidate();
-	memcpy( this, &from, sizeof(*this) );
+	memcpy( (void *)this, &from, sizeof(*this) );
 	m_szContext = NULL;
 	SetContext( from.m_szContext );
 	m_iContextFlags = from.m_iContextFlags;

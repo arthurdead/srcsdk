@@ -155,7 +155,7 @@ public:
 
 	CViewSetupEx &operator=(const CViewSetup &other)
 	{
-		memcpy(this, &other, sizeof(CViewSetup));
+		memcpy((void *)this, &other, sizeof(CViewSetup));
 
 		m_flNearBlurDepth = 20.0;
 		m_flNearFocusDepth = 100.0;

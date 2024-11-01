@@ -6,8 +6,12 @@
 
 #include "cbase.h"
 
-#ifdef _MSC_VER
+#ifdef _WIN32
+#ifdef __MINGW32__
+#include <immintrin.h>
+#else
 #include <intrin.h>
+#endif
 #pragma intrinsic(__popcnt)
 #pragma intrinsic(_tzcnt_u32)
 #endif
@@ -25,6 +29,7 @@
 #include "time.h"
 #include "tier0/icommandline.h"
 #include "filesystem.h"
+#include "collisionproperty.h"
 
 #ifdef CLIENT_DLL
 	#include "c_te_effect_dispatch.h"
@@ -38,8 +43,8 @@ bool NPC_CheckBrushExclude( CBaseEntity *pEntity, CBaseEntity *pBrush );
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVarRef r_visualizetraces( "r_visualizetraces" );
-ConVarRef developer("developer" ); // developer mode
+extern ConVar* r_visualizetraces;
+extern ConVar* developer; // developer mode
 
 float UTIL_VecToYaw( const Vector &vec )
 {
@@ -548,7 +553,7 @@ void UTIL_TraceModel( const Vector &vecStart, const Vector &vecEnd, const Vector
 	}
 	else
 	{
-		memset( ptr, 0, sizeof(trace_t) );
+		memset( (void *)ptr, 0, sizeof(trace_t) );
 		ptr->fraction = 1.0f;
 	}
 }
@@ -571,9 +576,8 @@ bool UTIL_EntityHasMatchingRootParent( CSharedBaseEntity *pRootParent, CSharedBa
 //-----------------------------------------------------------------------------
 class CTraceFilterEntity : public CTraceFilterSimple
 {
-	DECLARE_CLASS( CTraceFilterEntity, CTraceFilterSimple );
-
 public:
+	DECLARE_CLASS( CTraceFilterEntity, CTraceFilterSimple );
 	CTraceFilterEntity( CSharedBaseEntity *pEntity, int nCollisionGroup ) 
 		: CTraceFilterSimple( pEntity, nCollisionGroup )
 	{
@@ -620,8 +624,8 @@ private:
 
 class CTraceFilterEntityIgnoreOther : public CTraceFilterEntity
 {
-	DECLARE_CLASS( CTraceFilterEntityIgnoreOther, CTraceFilterEntity );
 public:
+	DECLARE_CLASS( CTraceFilterEntityIgnoreOther, CTraceFilterEntity );
 	CTraceFilterEntityIgnoreOther( CSharedBaseEntity *pEntity, const IHandleEntity *pIgnore, int nCollisionGroup ) : 
 		CTraceFilterEntity( pEntity, nCollisionGroup ), m_pIgnoreOther( pIgnore )
 	{
@@ -845,9 +849,9 @@ void UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, 
 	if (color == BLOOD_COLOR_MECH)
 	{
 		g_pEffects->Sparks(origin);
-		if (random->RandomFloat(0, 2) >= 1)
+		if (random_valve->RandomFloat(0, 2) >= 1)
 		{
-			UTIL_Smoke(origin, random->RandomInt(10, 15), 10);
+			UTIL_Smoke(origin, random_valve->RandomInt(10, 15), 10);
 		}
 	}
 	else
@@ -1230,7 +1234,7 @@ END_NETWORK_TABLE()
 
 #ifdef CLIENT_DLL
 BEGIN_PREDICTION_DATA_NO_BASE( IntervalTimer )
-	DEFINE_PRED_FIELD( m_timestamp, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_timestamp, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 END_PREDICTION_DATA()	
 #endif
 
@@ -1241,8 +1245,8 @@ BEGIN_RECV_TABLE_NOBASE( CountdownTimer, DT_CountdownTimer )
 	RecvPropFloat(RECVINFO(m_timestamp)),
 END_RECV_TABLE()
 BEGIN_PREDICTION_DATA_NO_BASE( CountdownTimer )
-	DEFINE_PRED_FIELD( m_duration, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_timestamp, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_duration, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_timestamp, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 END_PREDICTION_DATA()	
 #else
 BEGIN_SEND_TABLE_NOBASE( CountdownTimer, DT_CountdownTimer )
@@ -1480,6 +1484,121 @@ void CTimeline::Compress( void )
 	m_flInterval *= 2.0f;
 
 	m_nBucketCount = j;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns the nearest COLLIBALE entity in front of the player
+//			that has a clear line of sight with the given classname
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+CSharedBaseEntity *FindEntityClassForward( CSharedBasePlayer *pMe, const char *classname )
+{
+	trace_t tr;
+
+	Vector forward;
+	pMe->EyeVectors( &forward );
+	UTIL_TraceLine(pMe->EyePosition(),
+		pMe->EyePosition() + forward * MAX_COORD_RANGE,
+		MASK_SOLID, pMe, COLLISION_GROUP_NONE, &tr );
+	if ( tr.fraction != 1.0 && tr.DidHitNonWorldEntity() )
+	{
+		CSharedBaseEntity *pHit = tr.m_pEnt;
+		if (FClassnameIs( pHit,classname ) )
+		{
+			return pHit;
+		}
+	}
+	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns the nearest COLLIBALE entity in front of the player
+//			that has a clear line of sight. If HULL is true, the trace will
+//			hit the collision hull of entities. Otherwise, the trace will hit
+//			hitboxes.
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+CSharedBaseEntity *FindEntityForward( CSharedBasePlayer *pMe, bool fHull )
+{
+	if ( pMe )
+	{
+		trace_t tr;
+		Vector forward;
+		int mask;
+
+		if( fHull )
+		{
+			mask = MASK_SOLID;
+		}
+		else
+		{
+			mask = MASK_SHOT;
+		}
+
+		pMe->EyeVectors( &forward );
+		UTIL_TraceLine(pMe->EyePosition(),
+			pMe->EyePosition() + forward * MAX_COORD_RANGE,
+			mask, pMe, COLLISION_GROUP_NONE, &tr );
+		if ( tr.fraction != 1.0 && tr.DidHitNonWorldEntity() )
+		{
+			return tr.m_pEnt;
+		}
+	}
+	return NULL;
+
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Finds the nearest entity in front of the player of the given
+//			classname, preferring collidable entities, but allows selection of 
+//			enities that are on the other side of walls or objects
+//
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+CSharedBaseEntity *FindPickerEntityClass( CSharedBasePlayer *pPlayer, const char *classname )
+{
+	// First try to trace a hull to an entity
+	CSharedBaseEntity *pEntity = FindEntityClassForward( pPlayer, classname );
+
+	// If that fails just look for the nearest facing entity
+	if (!pEntity) 
+	{
+		Vector forward;
+		Vector origin;
+		pPlayer->EyeVectors( &forward );
+		origin = pPlayer->WorldSpaceCenter();		
+		pEntity = g_pEntityList->FindEntityClassNearestFacing( origin, forward,0.95,classname);
+	}
+	return pEntity;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Finds the nearest entity in front of the player, preferring
+//			collidable entities, but allows selection of enities that are
+//			on the other side of walls or objects
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+CSharedBaseEntity *FindPickerEntity( CSharedBasePlayer *pPlayer )
+{
+	MDLCACHE_CRITICAL_SECTION();
+
+	// First try to trace a hull to an entity
+	CSharedBaseEntity *pEntity = FindEntityForward( pPlayer, true );
+
+	// If that fails just look for the nearest facing entity
+	if (!pEntity && pPlayer) 
+	{
+		Vector forward;
+		Vector origin;
+		pPlayer->EyeVectors( &forward );
+		origin = pPlayer->EyePosition();		
+		pEntity = g_pEntityList->FindEntityNearestFacing( origin, forward,0.95);
+	}
+	return pEntity;
 }
 
 #ifdef CLIENT_DLL
@@ -2352,7 +2471,7 @@ int UTIL_CalcFrustumThroughConvexPolygon( const Vector *pPolyVertices, int iPoly
 		{
 			//we'll need to reduce our output frustum, copy the input polygon
 			pClippedVerts = (Vector *)stackalloc( sizeof( Vector ) * iPolyVertCount );
-			memcpy( pClippedVerts, pPolyVertices, sizeof( Vector ) * iPolyVertCount );
+			memcpy( (void *)pClippedVerts, (void *)pPolyVertices, sizeof( Vector ) * iPolyVertCount );
 		}
 		else
 		{
@@ -2454,7 +2573,7 @@ int UTIL_CalcFrustumThroughConvexPolygon( const Vector *pPolyVertices, int iPoly
 				int iElementShift = (iOldVertCount - i4);
 
 				//eliminate p3, we merged p2+p3 and already stored the result in p2
-				memmove( p3, p4, sizeof( Vector ) * iElementShift );
+				memmove( (void *)p3, (void *)p4, sizeof( Vector ) * iElementShift );
 				memmove( &fLineLengthSqr[i3], &fLineLengthSqr[i4], sizeof( float ) * iElementShift );
 			}
 		}
@@ -2499,7 +2618,7 @@ int UTIL_CalcFrustumThroughConvexPolygon( const Vector *pPolyVertices, int iPoly
 	//preserve input planes on request
 	if( iPreserveCount > 0 )
 	{
-		memcpy( &pOutputFrustumPlanes[iClippedVertCount], &pInputFrustumPlanes[iInputFrustumPlanes - iPreserveCount], sizeof( VPlane ) * iPreserveCount );
+		memcpy( (void *)&pOutputFrustumPlanes[iClippedVertCount], (void *)&pInputFrustumPlanes[iInputFrustumPlanes - iPreserveCount], sizeof( VPlane ) * iPreserveCount );
 	}
 
 	return (iClippedVertCount + iPreserveCount);

@@ -231,7 +231,7 @@ CBaseEntity *CTeam::SpawnPlayer( CBasePlayer *pPlayer )
 		return NULL;
 
 	// Randomize the start spot
-	int iSpawn = m_iLastSpawn + random->RandomInt( 1,3 );
+	int iSpawn = m_iLastSpawn + random_valve->RandomInt( 1,3 );
 	if ( iSpawn >= m_aSpawnPoints.Size() )
 		iSpawn -= m_aSpawnPoints.Size();
 	int iStartingSpawn = iSpawn;

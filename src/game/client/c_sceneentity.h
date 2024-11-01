@@ -23,7 +23,8 @@ public:
 	DECLARE_CLASS( C_SceneEntity, C_BaseEntity );
 	DECLARE_CLIENTCLASS();
 
-	C_SceneEntity( void );
+	C_SceneEntity( void ) : C_SceneEntity( 0 ) {}
+	C_SceneEntity( int iEFlags );
 	~C_SceneEntity( void );
 
 	// From IChoreoEventCallback
@@ -56,6 +57,8 @@ private:
 	void					ResetActorFlexesForScene();
 
 	// Scene load/unload
+	friend CChoreoScene *BlockingLoadScene( const char *filename );
+	static CChoreoScene			*LoadScene( const char *filename, IChoreoEventCallback *pCallback );
 	CChoreoScene			*LoadScene( const char *filename );
 	void					LoadSceneFromFile( const char *filename );
 	void					UnloadScene( void );
@@ -117,20 +120,7 @@ private:
 	CUtlVector< QueuedEvents_t > m_QueuedEvents;
 };
 
-class C_ClientScene : public C_SceneEntity
-{
-public:
-	C_ClientScene()
-		: C_SceneEntity()
-	{
-		AddEFlags(EFL_NOT_NETWORKED);
-	}
-	DECLARE_CLASS( C_ClientScene, C_SceneEntity );
-
-	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
-	virtual	bool			IsClientCreated( void ) const { return true; }
-	virtual bool						IsServerEntity( void ) { return false; }
-};
+typedef C_ClientOnlyWrapper<C_SceneEntity> C_ClientScene;
 
 //-----------------------------------------------------------------------------
 // Binary compiled VCDs get their strings from a pool

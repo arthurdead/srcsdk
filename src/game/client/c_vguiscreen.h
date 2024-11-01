@@ -39,9 +39,8 @@ struct VGuiScreenInitData_t
 //-----------------------------------------------------------------------------
 class CVGuiScreenPanel : public vgui::EditablePanel
 {
-	DECLARE_CLASS_GAMEROOT( CVGuiScreenPanel, vgui::EditablePanel );
-
 public:
+	DECLARE_CLASS( CVGuiScreenPanel, vgui::EditablePanel );
 	CVGuiScreenPanel( vgui::Panel *parent, const char *panelName );
 	CVGuiScreenPanel( vgui::Panel *parent, const char *panelName, vgui::HScheme hScheme );
 	virtual bool Init( KeyValues* pKeyValues, VGuiScreenInitData_t* pInitData );
@@ -60,8 +59,8 @@ private:
 //-----------------------------------------------------------------------------
 class C_VGuiScreen : public C_BaseEntity
 {
-	DECLARE_CLASS( C_VGuiScreen, C_BaseEntity );
 public:
+	DECLARE_CLASS( C_VGuiScreen, C_BaseEntity );
 	DECLARE_CLIENTCLASS();
 
 	C_VGuiScreen();

@@ -18,9 +18,13 @@
 // NOTE: This must be the last file included!!!
 #include "tier0/memdbgon.h"
 
-#if _WIN32
+#if defined _WIN32 && !defined __GNUC__
 #define FAST_BIT_SCAN 1
+#ifdef __MINGW32__
+#include <immintrin.h>
+#else
 #include <intrin.h>
+#endif
 #pragma intrinsic(_BitScanReverse)
 #pragma intrinsic(_BitScanForward)
 
@@ -545,6 +549,21 @@ void bf_write::WriteBitAngle( float fAngle, int numbits )
 	WriteUBitLong((unsigned int)d, numbits);
 }
 
+void bf_write::WriteBitCoordMP( const float f, EBitCoordType coordType )
+{
+	switch( coordType ) {
+	case kCW_LowPrecision:
+		WriteBitCoordMP( f, false, true );
+		break;
+	case kCW_Integral:
+		WriteBitCoordMP( f, true, false );
+		break;
+	case kCW_None:
+		WriteBitCoordMP( f, false, false );
+		break;
+	}
+}
+
 void bf_write::WriteBitCoordMP( const float f, bool bIntegral, bool bLowPrecision )
 {
 #if defined( BB_PROFILING )
@@ -596,6 +615,33 @@ void bf_write::WriteBitCoordMP( const float f, bool bIntegral, bool bLowPrecisio
 	}
 
 	WriteUBitLong( bits, numbits );
+}
+
+void bf_write::WriteBitCellCoord( const float f, int bits, EBitCoordType coordType )
+{
+#if defined( BB_PROFILING )
+	VPROF( "bf_write::WriteBitCellCoord" );
+#endif
+	Assert( f >= 0.0f ); // cell coords can't be negative
+	Assert( f < ( 1 << bits ) );
+
+	bool bIntegral = ( coordType == kCW_Integral );
+	bool bLowPrecision = ( coordType == kCW_LowPrecision );  
+
+	int		intval = (int)abs(f);
+	int		fractval = bLowPrecision ? 
+		( abs((int)(f*COORD_DENOMINATOR_LOWPRECISION)) & (COORD_DENOMINATOR_LOWPRECISION-1) ) :
+		( abs((int)(f*COORD_DENOMINATOR)) & (COORD_DENOMINATOR-1) );
+
+	if ( bIntegral )
+	{
+		WriteUBitLong( (unsigned int)intval, bits );
+	}
+	else
+	{
+		WriteUBitLong( (unsigned int)intval, bits );
+		WriteUBitLong( (unsigned int)fractval, bLowPrecision ? COORD_FRACTIONAL_BITS_MP_LOWPRECISION : COORD_FRACTIONAL_BITS );
+	}
 }
 
 void bf_write::WriteBitCoord (const float f)
@@ -972,7 +1018,7 @@ unsigned int bf_read::PeekUBitLong( int numbits )
 	return r;
 }
 
-unsigned int bf_read::ReadUBitLongNoInline( int numbits )
+unsigned int bf_read::ReadUBitLongNoInline( int numbits ) RESTRICT
 {
 	return ReadUBitLong( numbits );
 }
@@ -1101,6 +1147,47 @@ float bf_read::ReadBitCoord (void)
 	}
 
 	return value;
+}
+
+float bf_read::ReadBitCellCoord( int bits, EBitCoordType coordType )
+{
+#if defined( BB_PROFILING )
+	VPROF( "bf_write::ReadBitCoordMP" );
+#endif
+	bool bIntegral = ( coordType == kCW_Integral );
+	bool bLowPrecision = ( coordType == kCW_LowPrecision );  
+
+	int		intval=0,fractval=0;
+	float	value = 0.0;
+
+	if ( bIntegral )
+	{
+		value = ReadUBitLong( bits );
+	}
+	else
+	{
+		intval = ReadUBitLong( bits );
+
+		// If there's a fraction, read it in
+		fractval = ReadUBitLong( bLowPrecision ? COORD_FRACTIONAL_BITS_MP_LOWPRECISION : COORD_FRACTIONAL_BITS );
+
+		// Calculate the correct floating point value
+		value = intval + ((float)fractval * ( bLowPrecision ? COORD_RESOLUTION_LOWPRECISION : COORD_RESOLUTION ) );
+	}
+
+	return value;
+}
+
+float bf_read::ReadBitCoordMP( EBitCoordType coordType )
+{
+	switch( coordType ) {
+	case kCW_LowPrecision:
+		return ReadBitCoordMP( false, true );
+	case kCW_Integral:
+		return ReadBitCoordMP( true, false );
+	case kCW_None:
+		return ReadBitCoordMP( false, false );
+	}
 }
 
 float bf_read::ReadBitCoordMP( bool bIntegral, bool bLowPrecision )

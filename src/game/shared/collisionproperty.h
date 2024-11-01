@@ -15,6 +15,11 @@
 #include "ispatialpartition.h"
 #include "predictable_entity.h"
 #include "map_entity.h"
+#ifdef GAME_DLL
+#include "baseentity.h"
+#else
+#include "c_baseentity.h"
+#endif
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -84,7 +89,8 @@ public:
 	#undef CCollisionProperty
 #endif
 
-	DECLARE_EMBEDDED_NETWORKVAR();
+	DECLARE_NETWORKVAR_CHAIN()
+
 	DECLARE_PREDICTABLE();
 
 #ifdef GAME_DLL

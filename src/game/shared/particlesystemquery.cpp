@@ -13,6 +13,7 @@
 #include "raytrace.h"
 #include "animation.h"
 #include "activitylist.h"
+#include "collisionproperty.h"
 
 #if defined( CLIENT_DLL )
 #include "c_pixel_visibility.h"
@@ -227,7 +228,7 @@ void CParticleSystemQuery::TraceLine( const Vector& vecAbsStart,
 	{
 		trace_t tempTrace;
 		UTIL_TraceLine( vecAbsStart, vecAbsEnd, mask, ignore, collisionGroup, &tempTrace );
-		memcpy( ptr, &tempTrace, sizeof ( CBaseTrace ) );
+		memcpy( (void *)ptr, &tempTrace, sizeof ( CBaseTrace ) );
 	}
 	else
 	{
@@ -973,7 +974,7 @@ void CParticleSystemQuery::UpdateProjectedTexture( const int nParticleID, IMater
 	if ( pInfo == NULL )
 	{
 		pUserVar = pInfo = new TProjectedTextureInfo;
-		memset( pInfo, 0, sizeof( *pInfo ) );
+		memset( (void *)pInfo, 0, sizeof( *pInfo ) );
 		m_ProjectedInfoAdds.PushItem( pInfo );
 	}
 

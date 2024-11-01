@@ -67,8 +67,12 @@
 
 #ifdef _WIN32
 	#define PLATFORM_WINDOWS 1 // Windows PC or Xbox 360
+	#ifndef IS_WINDOWS_PC
 	#define IS_WINDOWS_PC
+	#endif
+	#ifndef PLATFORM_WINDOWS_PC
 	#define PLATFORM_WINDOWS_PC 1 // Windows PC
+	#endif
 	#ifdef _WIN64
 		#define PLATFORM_WINDOWS_PC64 1
 	#else
@@ -157,7 +161,6 @@ typedef double				float64;
 typedef unsigned int		uint;
 
 #ifdef _MSC_VER
-#pragma once
 // Ensure that everybody has the right compiler version installed. The version
 // number can be obtained by looking at the compiler output when you type 'cl'
 // and removing the last two digits and the periods: 16.00.40219.01 becomes 160040219
@@ -338,7 +341,7 @@ typedef struct tagRGBQUAD RGBQUAD;
 
 // Used to step into the debugger
 #if defined( _WIN32 )
-#ifndef _MSC_VER
+#if !defined _MSC_VER && !defined __MINGW32__
 #define __debugbreak() __asm__ __volatile__ ("int $3")
 #endif
 
@@ -484,8 +487,8 @@ typedef struct tagRGBQUAD RGBQUAD;
 #define DLL_EXPORT_ATTR __declspec( dllexport )
 #define DLL_IMPORT_ATTR __declspec( dllimport )
 #elif defined GNUC && !defined __linux__
-#define DLL_EXPORT_ATTR __attribute__ ((dllexport))
-#define DLL_IMPORT_ATTR __attribute__ ((dllimport))
+#define DLL_EXPORT_ATTR __attribute__ ((visibility("default"),dllexport))
+#define DLL_IMPORT_ATTR __attribute__ ((visibility("default"),dllimport))
 #elif defined GNUC && defined __linux__
 #define DLL_EXPORT_ATTR __attribute__ ((visibility("default")))
 #define DLL_IMPORT_ATTR __attribute__ ((visibility("default")))
@@ -503,8 +506,6 @@ typedef struct tagRGBQUAD RGBQUAD;
 #define DLL_EXPORT				extern "C" __declspec( dllexport )
 #define DLL_IMPORT				extern "C" __declspec( dllimport )
 
-#define LIB_EXPORT				extern "C"
-
 // Can't use extern "C" when DLL exporting a class
 #define DLL_CLASS_EXPORT		__declspec( dllexport )
 #define DLL_CLASS_IMPORT		__declspec( dllimport )
@@ -512,6 +513,15 @@ typedef struct tagRGBQUAD RGBQUAD;
 // Can't use extern "C" when DLL exporting a global
 #define DLL_GLOBAL_EXPORT		extern __declspec( dllexport )
 #define DLL_GLOBAL_IMPORT		extern __declspec( dllimport )
+
+#define LIB_EXPORT				extern "C" 
+#define LIB_IMPORT				extern "C" 
+
+#define LIB_CLASS_EXPORT		
+#define LIB_CLASS_IMPORT		
+
+#define LIB_GLOBAL_EXPORT		extern 
+#define LIB_GLOBAL_IMPORT		extern 
 
 #define DLL_LOCAL
 
@@ -523,15 +533,22 @@ typedef struct tagRGBQUAD RGBQUAD;
 #define  DLL_EXPORT   extern "C" __attribute__ ((visibility("default"),dllexport))
 #define  DLL_IMPORT   extern "C" __attribute__ ((visibility("default"),dllimport))
 
-#define  LIB_EXPORT   extern "C" __attribute__ ((visibility("default")))
-
 // Can't use extern "C" when DLL exporting a class
 #define  DLL_CLASS_EXPORT __attribute__ ((visibility("default"),dllexport))
 #define  DLL_CLASS_IMPORT __attribute__ ((visibility("default"),dllimport))
 
 // Can't use extern "C" when DLL exporting a global
-#define  DLL_GLOBAL_EXPORT   extern __attribute ((visibility("default"), dllexport))
-#define  DLL_GLOBAL_IMPORT   extern __attribute ((visibility("default"), dllimport))
+#define  DLL_GLOBAL_EXPORT   extern __attribute__ ((visibility("default"), dllexport))
+#define  DLL_GLOBAL_IMPORT   extern __attribute__ ((visibility("default"), dllimport))
+
+#define  LIB_EXPORT   extern "C" __attribute__ ((visibility("default")))
+#define  LIB_IMPORT   extern "C" __attribute__ ((visibility("default")))
+
+#define  LIB_CLASS_EXPORT __attribute__ ((visibility("default")))
+#define  LIB_CLASS_IMPORT __attribute__ ((visibility("default")))
+
+#define  LIB_GLOBAL_EXPORT   extern __attribute__ ((visibility("default")))
+#define  LIB_GLOBAL_IMPORT   extern __attribute__ ((visibility("default")))
 
 #define  DLL_LOCAL __attribute__ ((visibility("hidden")))
 
@@ -542,8 +559,6 @@ typedef struct tagRGBQUAD RGBQUAD;
 #define  DLL_EXPORT   extern "C" __attribute__ ((visibility("default")))
 #define  DLL_IMPORT   extern "C" __attribute__ ((visibility("default")))
 
-#define  LIB_EXPORT   extern "C" __attribute__ ((visibility("default")))
-
 // Can't use extern "C" when DLL exporting a class
 #define  DLL_CLASS_EXPORT __attribute__ ((visibility("default")))
 #define  DLL_CLASS_IMPORT __attribute__ ((visibility("default")))
@@ -551,6 +566,15 @@ typedef struct tagRGBQUAD RGBQUAD;
 // Can't use extern "C" when DLL exporting a global
 #define  DLL_GLOBAL_EXPORT   extern __attribute__ ((visibility("default")))
 #define  DLL_GLOBAL_IMPORT   extern __attribute__ ((visibility("default")))
+
+#define  LIB_EXPORT   extern "C" __attribute__ ((visibility("default")))
+#define  LIB_IMPORT   extern "C" __attribute__ ((visibility("default")))
+
+#define  LIB_CLASS_EXPORT __attribute__ ((visibility("default")))
+#define  LIB_CLASS_IMPORT __attribute__ ((visibility("default")))
+
+#define  LIB_GLOBAL_EXPORT   extern __attribute__ ((visibility("default")))
+#define  LIB_GLOBAL_IMPORT   extern __attribute__ ((visibility("default")))
 
 #define  DLL_LOCAL __attribute__ ((visibility("hidden")))
 
@@ -581,8 +605,8 @@ typedef struct tagRGBQUAD RGBQUAD;
 	#ifdef _LINUX_DEBUGGABLE
 		#define  FORCEINLINE
 	#else
-			#define  FORCEINLINE inline __attribute__ ((always_inline))
-		#endif
+		#define  FORCEINLINE inline __attribute__ ((always_inline))
+	#endif
 	// GCC 3.4.1 has a bug in supporting forced inline of templated functions
 	// this macro lets us not force inlining in that case
 	#define FORCEINLINE_TEMPLATE	inline
@@ -1014,7 +1038,6 @@ FORCEINLINE void StoreLittleDWord( unsigned long *base, unsigned int dwordIndex,
 
 #endif	// BUILD_AS_DLL
 
-
 // When in benchmark mode, the timer returns a simple incremented value each time you call it.
 //
 // It should not be changed after startup unless you really know what you're doing. The only place
@@ -1081,7 +1104,7 @@ inline uint64 Plat_Rdtsc()
 	public:												\
 		_classname &operator=( const _classname &src )	\
 		{												\
-			memcpy( this, &src, sizeof(_classname) );	\
+			memcpy( (void *)this, (void *)&src, sizeof(_classname) );	\
 			return *this;								\
 		}
 

@@ -323,7 +323,7 @@ inline size_t MemAlloc_GetSizeAligned( void *pMemBlock )
 
 	// pAlloc is the pointer to the start of memory block
 	pAlloc = *((void **)pAlloc );
-	return g_pMemAlloc->GetSize( pAlloc ) - ( (byte *)pMemBlock - (byte *)pAlloc );
+	return g_pMemAlloc->GetSize( pAlloc ) - ( (::byte *)pMemBlock - (::byte *)pAlloc );
 }
 
 //-----------------------------------------------------------------------------
@@ -385,7 +385,7 @@ public:
 	// MEM_DEBUG_CLASSNAME is opt-in.
 	// Note: typeid().name() is not threadsafe, so if the project needs to access it in multiple threads
 	// simultaneously, it'll need a mutex.
-	#if defined(_CPPRTTI) && defined(MEM_DEBUG_CLASSNAME)
+	#if (defined(_CPPRTTI) || defined __GXX_RTTI) && defined(MEM_DEBUG_CLASSNAME)
 		#define MEM_ALLOC_CREDIT_CLASS()	MEM_ALLOC_CREDIT_( typeid(*this).name() )
 		#define MEM_ALLOC_CLASSNAME(type) (typeid((type*)(0)).name())
 	#else
@@ -394,7 +394,7 @@ public:
 	#endif
 
 	// MEM_ALLOC_CREDIT_FUNCTION is used when no this pointer is available ( inside 'new' overloads, for example )
-	#ifdef _MSC_VER
+	#if defined _MSC_VER || defined __MINGW32__
 		#define MEM_ALLOC_CREDIT_FUNCTION()		MEM_ALLOC_CREDIT_( __FUNCTION__ )
 	#else
 		#define MEM_ALLOC_CREDIT_FUNCTION() (__FILE__)

@@ -13,6 +13,7 @@
 #include "tier1/strtools.h"
 #include "buttons.h"
 #include "eventqueue.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -462,7 +463,7 @@ string_t MakeButtonSound( int sound )
 void CBaseButton::ButtonSpark ( void )
 {
 	SetThink ( &CBaseButton::ButtonSpark );
-	SetNextThink( gpGlobals->curtime + 0.1 + random->RandomFloat ( 0, 1.5 ) );// spark again at random interval
+	SetNextThink( gpGlobals->curtime + 0.1 + random_valve->RandomFloat ( 0, 1.5 ) );// spark again at random interval
 
 	DoSpark( this, WorldSpaceCenter(), 1, 1, true, vec3_origin );
 }

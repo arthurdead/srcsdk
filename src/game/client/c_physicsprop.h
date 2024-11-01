@@ -16,8 +16,8 @@
 //-----------------------------------------------------------------------------
 class C_PhysicsProp : public C_BreakableProp, public ISpecialPhysics
 {
-	DECLARE_CLASS( C_PhysicsProp, C_BreakableProp );
 public:
+	DECLARE_CLASS( C_PhysicsProp, C_BreakableProp );
 	DECLARE_CLIENTCLASS();
 
 	// Inherited from IClientUnknown

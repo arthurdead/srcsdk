@@ -45,7 +45,7 @@ typedef CBasePlayer CSharedBasePlayer;
 
 typedef CGameTrace trace_t;
 
-extern ConVarRef developer;	// developer mode
+extern ConVar *developer;	// developer mode
 
 
 //-----------------------------------------------------------------------------
@@ -266,7 +266,7 @@ private:
 // helper
 void DebugDrawLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, int r, int g, int b, bool test, float duration );
 
-extern ConVarRef r_visualizetraces;
+extern ConVar* r_visualizetraces;
 
 inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, unsigned int mask, 
 					 const IHandleEntity *ignore, int collisionGroup, trace_t *ptr )
@@ -277,7 +277,7 @@ inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, 
 
 	enginetrace->TraceRay( ray, mask, &traceFilter, ptr );
 
-	if( r_visualizetraces.GetBool() )
+	if( r_visualizetraces->GetBool() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 0, 0, true, -1.0f );
 	}
@@ -291,7 +291,7 @@ inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, 
 
 	enginetrace->TraceRay( ray, mask, pFilter, ptr );
 
-	if( r_visualizetraces.GetBool() )
+	if( r_visualizetraces->GetBool() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 0, 0, true, -1.0f );
 	}
@@ -307,7 +307,7 @@ inline void UTIL_TraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 
 	enginetrace->TraceRay( ray, mask, &traceFilter, ptr );
 
-	if( r_visualizetraces.GetBool() )
+	if( r_visualizetraces->GetBool() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 255, 0, true, -1.0f );
 	}
@@ -321,7 +321,7 @@ inline void UTIL_TraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 
 	enginetrace->TraceRay( ray, mask, pFilter, ptr );
 
-	if( r_visualizetraces.GetBool() )
+	if( r_visualizetraces->GetBool() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 255, 0, true, -1.0f );
 	}
@@ -334,7 +334,7 @@ inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask,
 
 	enginetrace->TraceRay( ray, mask, &traceFilter, ptr );
 	
-	if( r_visualizetraces.GetBool() )
+	if( r_visualizetraces->GetBool() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 0, 0, true, -1.0f );
 	}
@@ -345,7 +345,7 @@ inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask,
 {
 	enginetrace->TraceRay( ray, mask, pFilter, ptr );
 
-	if( r_visualizetraces.GetBool() )
+	if( r_visualizetraces->GetBool() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 0, 0, true, -1.0f );
 	}
@@ -427,6 +427,10 @@ void		UTIL_StringToIntArray_PreserveArray( int *pVector, int count, const char *
 void		UTIL_StringToFloatArray_PreserveArray( float *pVector, int count, const char *pString );
 
 CSharedBasePlayer *UTIL_PlayerByIndex( int entindex );
+
+// For not just using one big ai net
+extern CSharedBaseEntity*	FindPickerEntity( CSharedBasePlayer* pPlayer );
+extern CSharedBaseEntity *FindPickerEntityClass(CSharedBasePlayer *pPlayer, const char *classname);
 
 //=============================================================================
 // HPE_BEGIN:

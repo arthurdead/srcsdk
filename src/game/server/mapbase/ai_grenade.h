@@ -225,9 +225,9 @@ void CAI_GrenadeUser<BASE_NPC>::HandleAnimEvent( animevent_t *pEvent )
 	if ( pEvent->event == COMBINE_AE_GREN_TOSS )
 	{
 		Vector vecSpin;
-		vecSpin.x = random->RandomFloat( -1000.0, 1000.0 );
-		vecSpin.y = random->RandomFloat( -1000.0, 1000.0 );
-		vecSpin.z = random->RandomFloat( -1000.0, 1000.0 );
+		vecSpin.x = random_valve->RandomFloat( -1000.0, 1000.0 );
+		vecSpin.y = random_valve->RandomFloat( -1000.0, 1000.0 );
+		vecSpin.z = random_valve->RandomFloat( -1000.0, 1000.0 );
 
 		Vector vecStart;
 		this->GetAttachment( GetGrenadeAttachment(), vecStart );
@@ -750,9 +750,9 @@ void CAI_GrenadeUser<BASE_NPC>::DropGrenadeItemsOnDeath( const CTakeDamageInfo &
 					if ( pObj )
 					{
 						Vector			vel;
-						vel.x = random->RandomFloat( -100.0f, 100.0f );
-						vel.y = random->RandomFloat( -100.0f, 100.0f );
-						vel.z = random->RandomFloat( 800.0f, 1200.0f );
+						vel.x = random_valve->RandomFloat( -100.0f, 100.0f );
+						vel.y = random_valve->RandomFloat( -100.0f, 100.0f );
+						vel.z = random_valve->RandomFloat( 800.0f, 1200.0f );
 						AngularImpulse	angImp	= RandomAngularImpulse( -300.0f, 300.0f );
 
 						vel[2] = 0.0f;

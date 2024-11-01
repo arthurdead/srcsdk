@@ -68,7 +68,7 @@ static bool s_bBuildingInstanceCommandBuffer = false;
 static CInstanceCommandBufferBuilder< CFixedCommandStorageBuffer< 512 > > s_InstanceCommandBuffer;
 
 bool g_shaderConfigDumpEnable = false; //true;		//DO NOT CHECK IN ENABLED FIXME
-ConVar mat_fullbright( "mat_fullbright","0", FCVAR_CHEAT );
+extern ConVar* mat_fullbright;
 	
 //-----------------------------------------------------------------------------
 // constructor
@@ -835,7 +835,7 @@ void CBaseShader::ComputeModulationColor(float *color)
 		color[2] = 0.0f;
 	}
 
-	if(mat_fullbright.GetInt() == 2) {
+	if(mat_fullbright->GetInt() == 2) {
 		color[0] = 1.0f;
 		color[1] = 1.0f;
 		color[2] = 1.0f;

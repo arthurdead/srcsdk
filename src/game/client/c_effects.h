@@ -35,7 +35,102 @@ class CClient_Precipitation;
 //===========
 // Snow fall
 //===========
-class CSnowFallManager;
+class SnowFallEffect : public CSimpleEmitter
+{
+public:
+
+	SnowFallEffect( const char *pDebugName ) : CSimpleEmitter( pDebugName ) {}
+	static CSmartPtr<SnowFallEffect> Create( const char *pDebugName );
+
+	void UpdateVelocity( SimpleParticle *pParticle, float timeDelta ) OVERRIDE;
+
+	void SimulateParticles( CParticleSimulateIterator *pIterator ) OVERRIDE;
+
+	int	GetParticleCount( void );
+
+	void SetBounds( const Vector &vecMin, const Vector &vecMax );
+
+	RenderableTranslucencyType_t ComputeTranslucencyType( void ) { return RENDERABLE_IS_OPAQUE; }
+
+private:
+
+	SnowFallEffect( const SnowFallEffect & );
+};
+
+class CSnowFallManager : public C_ClientOnlyLogicalEntity
+{
+public:
+	DECLARE_CLASS(CSnowFallManager, C_ClientOnlyLogicalEntity)
+
+	CSnowFallManager();
+	~CSnowFallManager();
+
+	bool CreateEmitter( void );
+
+	void Spawn( void ) OVERRIDE;
+	void Think() OVERRIDE;
+
+	void AddSnowFallEntity( CClient_Precipitation *pSnowEntity );
+
+	// Snow Effect
+	enum
+	{
+		SNOWFALL_NONE = 0,
+		SNOWFALL_AROUND_PLAYER,
+		SNOWFALL_IN_ENTITY,
+	};
+
+	RenderableTranslucencyType_t ComputeTranslucencyType( void ) { return RENDERABLE_IS_OPAQUE; }
+
+private:
+
+	bool CreateSnowFallEmitter( void );
+	void CreateSnowFall( void );
+	void CreateSnowFallParticles( float flCurrentTime, float flRadius, const Vector &vecEyePos, const Vector &vecForward, float flZoomScale, C_BasePlayer *pLocalPlayer );
+	void CreateOutsideVolumeSnowParticles( float flCurrentTime, float flRadius, float flZoomScale, C_BasePlayer *pLocalPlayer );
+	void CreateInsideVolumeSnowParticles( float flCurrentTime, float flRadius, const Vector &vecEyePos, const Vector &vecForward, float flZoomScale, C_BasePlayer *pLocalPlayer );
+	void CreateSnowParticlesSphere( float flRadius, C_BasePlayer *pLocalPlayer );
+	void CreateSnowParticlesRay( float flRadius, const Vector &vecEyePos, const Vector &vecForward, C_BasePlayer *pLocalPlayer );
+	void CreateSnowFallParticle( const Vector &vecParticleSpawn, int iBBox, C_BasePlayer *pLocalPlayer );
+
+	int StandingInSnowVolume( const Vector &vecPoint );
+	void FindSnowVolumes( const Vector &vecCenter, float flRadius, const Vector &vecEyePos, const Vector &vecForward );
+
+	void UpdateBounds( const Vector &vecSnowMin, const Vector &vecSnowMax );
+
+private:
+
+	enum { MAX_SNOW_PARTICLES = 500 };
+	enum { MAX_SNOW_LIST = 32 };
+
+	TimedEvent						m_tSnowFallParticleTimer;
+	TimedEvent						m_tSnowFallParticleTraceTimer;
+
+	int								m_iSnowFallArea;
+	CSmartPtr<SnowFallEffect>		m_pSnowFallEmitter;
+	Vector							m_vecSnowFallEmitOrigin;
+	float							m_flSnowRadius;
+
+	Vector							m_vecMin;
+	Vector							m_vecMax;
+
+	int								m_nActiveSnowCount;
+	int								m_aActiveSnow[MAX_SNOW_LIST];
+
+	bool							m_bRayParticles;
+
+	struct SnowFall_t
+	{
+		PMaterialHandle			m_hMaterial;
+		CClient_Precipitation	*m_pEntity;
+		CSmartPtr<SnowFallEffect> m_pEffect;
+		Vector					m_vecMin;
+		Vector					m_vecMax;
+	};
+
+	CUtlVector<SnowFall_t>		m_aSnow;
+};
+
 extern CSnowFallManager *s_pSnowFallMgr;
 extern bool SnowFallManagerCreate( CClient_Precipitation *pSnowEntity );
 extern void SnowFallManagerDestroy( void );
@@ -80,7 +175,8 @@ public:
 	DECLARE_CLASS( CClient_Precipitation, C_BaseEntity );
 	DECLARE_CLIENTCLASS();
 	
-	CClient_Precipitation();
+	CClient_Precipitation() : CClient_Precipitation( 0 ) {}
+	CClient_Precipitation( int iEFlags );
 	virtual ~CClient_Precipitation();
 
 	// Inherited from C_BaseEntity

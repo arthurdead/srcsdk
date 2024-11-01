@@ -6,6 +6,11 @@ src_root_dir = get_option('src_root_dir')
 game_dir = get_option('game_dir')
 build_client = get_option('build_client')
 
+target_system = target_machine.system()
+assert(target_system == 'linux' or target_system == 'gnu')
+
+assert(meson.get_compiler('cpp').has_define('__WINE__'))
+
 if build_client
 	linux_hammer_ipc_exe = executable('linux_hammer_ipc',name_suffix:'exe',
 		win_subsystem: 'console',
@@ -14,7 +19,6 @@ if build_client
 		),
 		include_directories: include_directories(
 			join_paths(src_root_dir,'hammer_redirect'),
-			'/usr/include/wine/windows',
 		),
 		install: true,
 		install_dir: join_paths(game_dir,'bin'),

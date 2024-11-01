@@ -35,6 +35,7 @@ AI_EnemyInfo_t::AI_EnemyInfo_t(void)
 	timeLastReceivedDamageFrom = 0;
 	timeAtFirstHand = AI_INVALID_TIME;
 	nFaction		= FACTION_NONE;
+	nTeam		= TEAM_UNASSIGNED;
 	bDangerMemory = 0;
 	bEludedMe = 0;
 	bUnforgettable = 0;
@@ -158,6 +159,9 @@ bool CAI_Enemies::ShouldDiscardMemory( AI_EnemyInfo_t *pMemory )
 
 			// forget about the enemy if he changes faction
 			if ( pEnemyNPC->GetFaction() != pMemory->nFaction )
+				return true;
+
+			if ( pEnemyNPC->GetTeamNumber() != pMemory->nTeam )
 				return true;
 		}
 	}
@@ -299,9 +303,11 @@ bool CAI_Enemies::UpdateMemory(CBaseEntity *pEnemy, const Vector &vPosition, flo
 
 	if ( pEnemy )
 	{
-		CAI_BaseNPC *pEnemyNPC = pEnemy->MyNPCPointer();
+		CBaseCombatCharacter *pEnemyNPC = pEnemy->MyCombatCharacterPointer();
 		if ( pEnemyNPC )
 			pAddMemory->nFaction = pEnemyNPC->GetFaction();
+
+		pAddMemory->nTeam = pEnemy->GetTeamNumber();
 	}
 
 	// add to the list

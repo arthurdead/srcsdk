@@ -9,6 +9,9 @@
 #define ENGINE_ICOLLIDEABLE_H
 #pragma once
 
+#include "tier0/platform.h"
+#include "const.h"
+#include "mathlib/mathlib.h"
 
 enum SolidType_t;
 class IHandleEntity;

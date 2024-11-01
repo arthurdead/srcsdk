@@ -68,9 +68,9 @@ int		gSparkRamp[ SPARK_COLORCOUNT ][3] =
 // ------------------------------------------------------------------------ //
 
 IMPLEMENT_CLIENTCLASS_DT(C_TEParticleSystem, DT_TEParticleSystem, CTEParticleSystem)
-	RecvPropFloat( RECVINFO_ARRAYELEM(m_vecOrigin, 0) ),
-	RecvPropFloat( RECVINFO_ARRAYELEM(m_vecOrigin, 1) ),
-	RecvPropFloat( RECVINFO_ARRAYELEM(m_vecOrigin, 2) ),
+	RecvPropFloat( RECVINFO_VECTORELEM(m_vecOrigin, 0) ),
+	RecvPropFloat( RECVINFO_VECTORELEM(m_vecOrigin, 1) ),
+	RecvPropFloat( RECVINFO_VECTORELEM(m_vecOrigin, 2) ),
 END_RECV_TABLE()
 
 
@@ -259,7 +259,7 @@ void CTEParticleRenderer::SimulateParticles( CParticleSimulateIterator *pIterato
 				pParticle->m_Velocity[1] -= pParticle->m_Velocity[1]*0.5*ft;
 				pParticle->m_Velocity[2] -= grav * 5;
 
-				if ( random->RandomInt(0,3) )
+				if ( random_valve->RandomInt(0,3) )
 				{
 					SetParticleType(pParticle, pt_blob);
 					pParticle->SetAlpha(0);

@@ -15,6 +15,7 @@
 #include "vstdlib/random.h"
 #include "ai_utils.h"
 #include "EntityFlame.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -47,26 +48,26 @@ void CGib::SpawnStickyGibs( CBaseEntity *pVictim, Vector vecOrigin, int cGibs )
 		CGib *pGib = (CGib *)CreateEntityByName( "gib" );
 
 		pGib->Spawn( "models/stickygib.mdl" );
-		pGib->SetBody( random->RandomInt(0,2) );
+		pGib->SetBody( random_valve->RandomInt(0,2) );
 
 		if ( pVictim )
 		{
 			pGib->SetLocalOrigin(
-				Vector( vecOrigin.x + random->RandomFloat( -3, 3 ),
-						vecOrigin.y + random->RandomFloat( -3, 3 ),
-						vecOrigin.z + random->RandomFloat( -3, 3 ) ) );
+				Vector( vecOrigin.x + random_valve->RandomFloat( -3, 3 ),
+						vecOrigin.y + random_valve->RandomFloat( -3, 3 ),
+						vecOrigin.z + random_valve->RandomFloat( -3, 3 ) ) );
 
 			// make the gib fly away from the attack vector
 			Vector vecNewVelocity = g_vecAttackDir * -1;
 
 			// mix in some noise
-			vecNewVelocity.x += random->RandomFloat ( -0.15, 0.15 );
-			vecNewVelocity.y += random->RandomFloat ( -0.15, 0.15 );
-			vecNewVelocity.z += random->RandomFloat ( -0.15, 0.15 );
+			vecNewVelocity.x += random_valve->RandomFloat ( -0.15, 0.15 );
+			vecNewVelocity.y += random_valve->RandomFloat ( -0.15, 0.15 );
+			vecNewVelocity.z += random_valve->RandomFloat ( -0.15, 0.15 );
 
 			vecNewVelocity *= 900;
 
-			QAngle vecAngVelocity( random->RandomFloat ( 250, 400 ), random->RandomFloat ( 250, 400 ), 0 );
+			QAngle vecAngVelocity( random_valve->RandomFloat ( 250, 400 ), random_valve->RandomFloat ( 250, 400 ), 0 );
 			pGib->SetLocalAngularVelocity( vecAngVelocity );
 
 			// copy owner's blood color
@@ -100,7 +101,7 @@ void CGib::SpawnHeadGib( CBaseEntity *pVictim )
 		
 		edict_t *pentPlayer = UTIL_FindClientInPVS( pGib->edict() );
 		
-		if ( random->RandomInt ( 0, 100 ) <= 5 && pentPlayer )
+		if ( random_valve->RandomInt ( 0, 100 ) <= 5 && pentPlayer )
 		{
 			// 5% chance head will be thrown at player's face.
 			CBasePlayer *player = (CBasePlayer *)CBaseEntity::Instance( pentPlayer );
@@ -114,12 +115,12 @@ void CGib::SpawnHeadGib( CBaseEntity *pVictim )
 		}
 		else
 		{
-			vecNewVelocity = Vector (random->RandomFloat(-100,100), random->RandomFloat(-100,100), random->RandomFloat(200,300));
+			vecNewVelocity = Vector (random_valve->RandomFloat(-100,100), random_valve->RandomFloat(-100,100), random_valve->RandomFloat(200,300));
 		}
 
 		QAngle vecNewAngularVelocity = pGib->GetLocalAngularVelocity();
-		vecNewAngularVelocity.x = random->RandomFloat ( 100, 200 );
-		vecNewAngularVelocity.y = random->RandomFloat ( 100, 300 );
+		vecNewAngularVelocity.x = random_valve->RandomFloat ( 100, 200 );
+		vecNewAngularVelocity.y = random_valve->RandomFloat ( 100, 300 );
 		pGib->SetLocalAngularVelocity( vecNewAngularVelocity );
 
 		// copy owner's blood color
@@ -182,15 +183,15 @@ void CGib::InitGib( CBaseEntity *pVictim, float fMinVelocity, float fMaxVelocity
 		Vector vecNewVelocity =	 g_vecAttackDir * -1;
 
 		// mix in some noise
-		vecNewVelocity.x += random->RandomFloat ( -0.25, 0.25 );
-		vecNewVelocity.y += random->RandomFloat ( -0.25, 0.25 );
-		vecNewVelocity.z += random->RandomFloat ( -0.25, 0.25 );
+		vecNewVelocity.x += random_valve->RandomFloat ( -0.25, 0.25 );
+		vecNewVelocity.y += random_valve->RandomFloat ( -0.25, 0.25 );
+		vecNewVelocity.z += random_valve->RandomFloat ( -0.25, 0.25 );
 
-		vecNewVelocity *= random->RandomFloat ( fMaxVelocity, fMinVelocity );
+		vecNewVelocity *= random_valve->RandomFloat ( fMaxVelocity, fMinVelocity );
 
 		QAngle vecNewAngularVelocity = GetLocalAngularVelocity();
-		vecNewAngularVelocity.x = random->RandomFloat ( 100, 200 );
-		vecNewAngularVelocity.y = random->RandomFloat ( 100, 300 );
+		vecNewAngularVelocity.x = random_valve->RandomFloat ( 100, 200 );
+		vecNewAngularVelocity.y = random_valve->RandomFloat ( 100, 300 );
 		SetLocalAngularVelocity( vecNewAngularVelocity );
 		
 		// copy owner's blood color
@@ -268,12 +269,12 @@ void CGib::SpawnRandomGibs( CBaseEntity *pVictim, int cGibs, GibType_e eGibType 
 		case GIB_HUMAN:
 			// human pieces
 			pGib->Spawn( "models/gibs/hgibs.mdl" );
-			pGib->SetBody( random->RandomInt(1,HUMAN_GIB_COUNT-1) );// start at one to avoid throwing random amounts of skulls (0th gib)
+			pGib->SetBody( random_valve->RandomInt(1,HUMAN_GIB_COUNT-1) );// start at one to avoid throwing random amounts of skulls (0th gib)
 			break;
 		case GIB_ALIEN:
 			// alien pieces
 			pGib->Spawn( "models/gibs/agibs.mdl" );
-			pGib->SetBody( random->RandomInt(0,ALIEN_GIB_COUNT-1) );
+			pGib->SetBody( random_valve->RandomInt(0,ALIEN_GIB_COUNT-1) );
 			break;
 		}
 		pGib->InitGib( pVictim, 300, 400);
@@ -315,7 +316,7 @@ void CGib::WaitTillLand ( void )
 			{
 				//Adrian - Why am I doing this? Check InitPointGib for the answer!
 				if ( m_lifeTime == 0 )
-					m_lifeTime = random->RandomFloat( 1, 3 );
+					m_lifeTime = random_valve->RandomFloat( 1, 3 );
 
 				pSprite->FadeAndDie( m_lifeTime );
 			}
@@ -455,7 +456,7 @@ void CGib::BounceGibTouch ( CBaseEntity *pOther )
 	if ( pPhysics )
 		 return;
 	
-	//if ( random->RandomInt(0,1) )
+	//if ( random_valve->RandomInt(0,1) )
 	//	return;// don't bleed everytime
 	if (GetFlags() & FL_ONGROUND)
 	{
@@ -482,7 +483,7 @@ void CGib::BounceGibTouch ( CBaseEntity *pOther )
 			m_cBloodDecals--; 
 		}
 
-		if ( m_material != matNone && random->RandomInt(0,2) == 0 )
+		if ( m_material != matNone && random_valve->RandomInt(0,2) == 0 )
 		{
 			float volume;
 			float zvel = fabs(GetAbsVelocity().z);
@@ -596,7 +597,7 @@ CBaseEntity *CreateRagGib( const char *szModel, const Vector &vecOrigin, const Q
 		CBaseAnimating *pAnimating = pGib->GetBaseAnimating();
 		if (pAnimating != NULL )
 		{
-			pAnimating->Ignite( random->RandomFloat( 8.0, 12.0 ), false );
+			pAnimating->Ignite( random_valve->RandomFloat( 8.0, 12.0 ), false );
 		}
 	}
 

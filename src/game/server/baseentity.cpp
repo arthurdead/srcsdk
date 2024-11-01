@@ -66,6 +66,7 @@
 #include "recast/recast_mgr.h"
 #include "tier1/mapbase_matchers_base.h"
 #include "mapbase/datadesc_mod.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -295,6 +296,7 @@ void CBaseEntity::SendProxy_CellZ( const SendProp *pProp, const void *pStruct, c
 	}
 }
 
+#ifdef DT_CELL_COORD_SUPPORTED
 //--------------------------------------------------------------------------------------------------------
 // The origin is adjusted to be relative to current cell
 //--------------------------------------------------------------------------------------------------------
@@ -391,6 +393,7 @@ void CBaseEntity::SendProxy_CellOriginZ( const SendProp *pProp, const void *pStr
 	Assert( pOut->m_Float >= 0.0f );
 	Assert( fabs( CoordFromCell( cellwidth, cell[2], pOut->m_Float ) - v->z ) < cellEpsilon );
 }
+#endif
 
 void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
@@ -467,12 +470,12 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropInt			(SENDINFO(m_cellY), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellY, SENDPROP_CELL_INFO_PRIORITY ),
 	SendPropInt			(SENDINFO(m_cellZ), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_ENCODED_AGAINST_TICKCOUNT, CBaseEntity::SendProxy_CellZ, SENDPROP_CELL_INFO_PRIORITY ),
 
-	SendPropVector		(SENDINFO(m_vecOrigin), CELL_BASEENTITY_ORIGIN_CELL_BITS, SENDPROP_VECORIGIN_FLAGS, 0.0f, HIGH_DEFAULT, CBaseEntity::SendProxy_CellOrigin ),
+	SendPropVector		(SENDINFO(m_vecOrigin), SENDPROP_VECORIGIN_BITS, SENDPROP_VECORIGIN_FLAGS, 0.0f, HIGH_DEFAULT, SENDPROP_VECORIGIN_PROXY ),
 
 	SendPropInt		(SENDINFO( m_ubInterpolationFrame ), NOINTERP_PARITY_MAX_BITS, SPROP_UNSIGNED ),
 	SendPropModelIndex(SENDINFO(m_nModelIndex)),
 
-	SendPropDataTable( SENDINFO_DT( m_Collision ), &REFERENCE_SEND_TABLE(DT_CollisionProperty) ),
+	SendPropDataTable( SENDINFO_DT( m_pCollision ), &REFERENCE_SEND_TABLE(DT_CollisionProperty), SendProxy_DataTablePtrToDataTable ),
 
 	SendPropInt		(SENDINFO(m_nRenderFX),		8, SPROP_UNSIGNED ),
 	SendPropInt		(SENDINFO(m_nRenderMode),	8, SPROP_UNSIGNED ),
@@ -483,8 +486,8 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropBool	(SENDINFO(m_bDisableFlashlight) ),
 	SendPropInt		(SENDINFO(m_iTeamNum),		TEAMNUM_NUM_BITS, 0),
 	SendPropInt		(SENDINFO(m_CollisionGroup), 6, SPROP_UNSIGNED),
-	SendPropFloat	(SENDINFO(m_flElasticity), 0, SPROP_COORD),
-	SendPropFloat	(SENDINFO(m_flShadowCastDistance), 12, SPROP_UNSIGNED ),
+	SendPropFloat	(SENDINFO(m_flElasticity), 0, SPROP_NOSCALE),
+	SendPropFloat	(SENDINFO(m_flShadowCastDistance), 12, SPROP_NOSCALE ),
 	SendPropEHandle (SENDINFO(m_hOwnerEntity)),
 	SendPropEHandle (SENDINFO(m_hEffectEntity)),
 	SendPropEHandle (SENDINFO_NAME(m_hMoveParent, moveparent)),
@@ -495,9 +498,9 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropInt		(SENDINFO_NAME( m_MoveType, movetype ), MOVETYPE_MAX_BITS, SPROP_UNSIGNED ),
 	SendPropInt		(SENDINFO_NAME( m_MoveCollide, movecollide ), MOVECOLLIDE_MAX_BITS, SPROP_UNSIGNED ),
 #if PREDICTION_ERROR_CHECK_LEVEL > 1 
-	SendPropVector	(SENDINFO(m_angRotation), -1, SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0, HIGH_DEFAULT, SendProxy_Angles ),
+	SendPropVector	(SENDINFO(m_angRotation), SENDPROP_ANGROTATION_DEFAULT_BITS, SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0, HIGH_DEFAULT, SendProxy_Angles ),
 #else
-	SendPropQAngles	(SENDINFO(m_angRotation), 13, SPROP_CHANGES_OFTEN, SendProxy_Angles ),
+	SendPropQAngles	(SENDINFO(m_angRotation), SENDPROP_ANGROTATION_DEFAULT_BITS, SPROP_CHANGES_OFTEN, SendProxy_Angles ),
 #endif
 
 	SendPropInt		( SENDINFO( m_iTextureFrameIndex ),		8, SPROP_UNSIGNED ),
@@ -514,7 +517,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropArray3( SENDINFO_ARRAY3(m_nModelIndexOverrides), SendPropInt( SENDINFO_ARRAY(m_nModelIndexOverrides), SP_MODEL_INDEX_BITS, 0 ) ),
 #endif
 
-	SendPropFloat(SENDINFO(m_fViewDistance),				0, SPROP_COORD),
+	SendPropFloat(SENDINFO(m_fViewDistance),				0, SPROP_NOSCALE),
 
 	// Fading
 	SendPropFloat( SENDINFO( m_fadeMinDist ),			0, SPROP_NOSCALE ),
@@ -528,6 +531,38 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 
 END_SEND_TABLE()
 
+IMPLEMENT_SERVERCLASS_ST( CPointEntity, DT_PointEntity )
+	SendPropExclude( SENDEXLCUDE(DT_BaseEntity, m_pCollision) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_CollisionGroup ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_fadeMinDist ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_fadeMaxDist ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_flFadeScale ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_nMinGPULevel ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_nMaxGPULevel ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_flShadowCastDistance ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_bDisableFlashlight ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_nModelIndex ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_iViewHideFlags ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_iTextureFrameIndex ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_nRenderFX ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_nRenderMode ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_clrRender ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_hEffectEntity ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_bAnimatedEveryTick ) ),
+END_SEND_TABLE()
+
+IMPLEMENT_SERVERCLASS_ST( CLogicalEntity, DT_LogicalEntity )
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_cellbits ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_cellX ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_cellY ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_cellZ ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_vecOrigin ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_ubInterpolationFrame ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_angRotation ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_MoveType ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_MoveCollide ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_hMoveParent ) ),
+END_SEND_TABLE()
 
 // dynamic models
 class CBaseEntityModelLoadProxy
@@ -562,16 +597,63 @@ void CBaseEntityModelLoadProxy::Handler::OnModelLoadComplete( const model_t *pMo
 }
 
 
-CBaseEntity::CBaseEntity()
+CBaseEntity::CBaseEntity( int iEFlags )
 {
-	m_Network = NULL;
-
 	COMPILE_TIME_ASSERT( MOVETYPE_LAST < (1 << MOVETYPE_MAX_BITS) );
 	COMPILE_TIME_ASSERT( MOVECOLLIDE_COUNT < (1 << MOVECOLLIDE_MAX_BITS) );
 
 	// Fix CPU_LEVEL_BIT_COUNT/GPU_LEVEL_BIT_COUNT here if necessary
 	COMPILE_TIME_ASSERT( CPU_LEVEL_PC_COUNT+1 <= (1 << CPU_LEVEL_BIT_COUNT) );
 	COMPILE_TIME_ASSERT( GPU_LEVEL_PC_COUNT+1 <= (1 << GPU_LEVEL_BIT_COUNT) );
+
+	if( iEFlags != 0 )
+		AddEFlags( iEFlags );
+
+	m_Network = NULL;
+	m_pCollision = NULL;
+
+	m_pPrevByClass = m_pNextByClass = NULL;
+	m_ListByClass = (UtlHashHandle_t)~0;
+
+	// Possibly get an edict, and add self to global list of entites.
+	if ( !IsEFlagSet( EFL_NOT_NETWORKED ) )
+	{
+		m_Network = new CServerNetworkProperty;
+
+		NetworkProp()->Init( this );
+
+		// Certain entities set up their edicts in the constructor
+		if(!g_pForceAttachEdict) {
+			g_pForceAttachEdict = engine->CreateEdict(-1);
+			if ( !g_pForceAttachEdict ) {
+				Error( "CBaseEntity::CBaseEntity CreateEdict failed.\n" );
+			}
+		}
+
+		NetworkProp()->AttachEdict( g_pForceAttachEdict );
+		
+		// Some ents like the player override the AttachEdict function and do it at a different time.
+		// While precaching, they don't ever have an edict, so we don't need to add them to
+		// the entity list in that case.
+		if ( edict() )
+		{
+			// Cache our IServerNetworkable pointer for the engine for fast access.
+			edict()->m_pNetworkable = NetworkProp();
+		}
+
+		NetworkProp()->MarkPVSInformationDirty();
+	}
+
+	g_pForceAttachEdict = NULL;
+
+	if( !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
+	{
+		m_pCollision = new CCollisionProperty;
+
+		IMPLEMENT_NETWORKVAR_CHAIN( m_pCollision )
+
+		CollisionProp()->Init( this );
+	}
 
 #ifdef _DEBUG
 	// necessary since in debug, we initialize vectors to NAN for debugging
@@ -589,7 +671,6 @@ CBaseEntity::CBaseEntity()
 	m_bAlternateSorting = false;
 	m_CollisionGroup = COLLISION_GROUP_NONE;
 	m_iParentAttachment = 0;
-	CollisionProp()->Init( this );
 
 	m_fadeMinDist = 0;
 	m_fadeMaxDist = 0;
@@ -605,7 +686,19 @@ CBaseEntity::CBaseEntity()
 	m_flElasticity   = 1.0f;
 	m_flShadowCastDistance = m_flDesiredShadowCastDistance = 0;
 	SetRenderColor( 255, 255, 255 );
-	SetRenderAlpha( 255 );
+
+	if( !IsEFlagSet( EFL_NOT_RENDERABLE ) )
+	{
+		SetRenderAlpha( 255 );
+	}
+	else
+	{
+		SetRenderAlpha( 0 );
+		AddEffects( EF_NODRAW|EF_NOSHADOW|EF_NORECEIVESHADOW|EF_NOFLASHLIGHT|EF_NOSHADOWDEPTH );
+		m_bDisableFlashlight = true;
+		SetRenderMode( kRenderNone );
+	}
+
 	m_iTeamNum = m_iInitialTeamNum = TEAM_UNASSIGNED;
 	m_nLastThinkTick = gpGlobals->tickcount;
 	m_nSimulationTick = -1;
@@ -616,8 +709,11 @@ CBaseEntity::CBaseEntity()
 #endif
 	m_nWaterTouch = m_nSlimeTouch = 0;
 
-	SetSolid( SOLID_NONE );
-	ClearSolidFlags();
+	if( !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
+	{
+		SetSolid( SOLID_NONE );
+		ClearSolidFlags();
+	}
 
 	m_nModelIndex = 0;
 	m_bDynamicModelAllowed = false;
@@ -631,15 +727,17 @@ CBaseEntity::CBaseEntity()
 	SetModelName( NULL_STRING );
 	m_nTransmitStateOwnedCounter = 0;
 
-	SetCollisionBounds( vec3_origin, vec3_origin );
+	if( !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
+	{
+		SetCollisionBounds( vec3_origin, vec3_origin );
+	}
+
 	ClearFlags();
 
 	SetFriction( 1.0f );
 
 	AddEFlags( EFL_USE_PARTITION_WHEN_NOT_SOLID );
 
-	m_pPrevByClass = m_pNextByClass = NULL;
-	m_ListByClass = (UtlHashHandle_t)~0;
 	SetNetworkQuantizeOriginAngAngles( false );
 
 	m_flCreateTime = 0.0f;
@@ -702,6 +800,11 @@ CBaseEntity::~CBaseEntity( )
 		gEntList.RemoveEntity( GetRefEHandle() );
 	}
 
+	if( CollisionProp() ) {
+		delete m_pCollision;
+		m_pCollision = NULL;
+	}
+
 	if(m_Network)
 		delete m_Network;
 }
@@ -718,132 +821,63 @@ void CBaseEntity::PostConstructor( const char *szClassname )
 	// Possibly get an edict, and add self to global list of entites.
 	if ( IsEFlagSet( EFL_NOT_NETWORKED ) )
 	{
-		if( !m_bDoNotRegisterEntity )
-			gEntList.AddNonNetworkableEntity( this );
+		gEntList.AddNonNetworkableEntity( this );
 	}
 	else
 	{
-		m_Network = new CServerNetworkProperty;
-
-		NetworkProp()->Init( this );
-
-		// Certain entities set up their edicts in the constructor
-		if(!g_pForceAttachEdict) {
-			int iForceEdictIndex = RequiredEdictIndex();
-			if(iForceEdictIndex != -1) {
-				CBaseEntity *pOldEntity = gEntList.LookupEntityByNetworkIndex( iForceEdictIndex );
-				Assert(!pOldEntity);
-				if( pOldEntity ) {
-					UTIL_Remove( pOldEntity );
-					pOldEntity->NetworkProp()->DetachEdict();
-				} else {
-					g_pForceAttachEdict = INDEXENT(iForceEdictIndex);
-				}
-
-				if(!g_pForceAttachEdict) {
-					g_pForceAttachEdict = engine->CreateEdict(iForceEdictIndex);
-					if ( !g_pForceAttachEdict ) {
-						Error( "CBaseEntity::PostConstructor( %s, %d ) - CreateEdict failed.", szClassname, iForceEdictIndex );
-					}
-				}
-			} else {
-				g_pForceAttachEdict = engine->CreateEdict(-1);
-				if ( !g_pForceAttachEdict ) {
-					Error( "CBaseEntity::PostConstructor( %s, %d ) - CreateEdict failed.", szClassname, iForceEdictIndex );
-				}
-			}
-		}
-
-		NetworkProp()->AttachEdict( g_pForceAttachEdict );
-		
-		// Some ents like the player override the AttachEdict function and do it at a different time.
-		// While precaching, they don't ever have an edict, so we don't need to add them to
-		// the entity list in that case.
-		if ( edict() )
-		{
-			gEntList.AddNetworkableEntity( this, entindex() );
-			
-			// Cache our IServerNetworkable pointer for the engine for fast access.
-			if ( edict() )
-				edict()->m_pNetworkable = NetworkProp();
-		}
-
-		NetworkProp()->MarkPVSInformationDirty();
+		gEntList.AddNetworkableEntity( this, ENTINDEX( edict() ) );
 	}
-
-	g_pForceAttachEdict = NULL;
 
 	CheckHasThinkFunction( TICK_NEVER_THINK );
 	CheckHasGamePhysicsSimulation();
 }
 
-CServerOnlyEntity::CServerOnlyEntity()
- : CBaseEntity()
+CPointEntity::CPointEntity( int iEFlags )
+ : CBaseEntity( EFL_NOT_COLLIDEABLE|EFL_NOT_RENDERABLE|iEFlags )
 {
-	AddEFlags( EFL_NOT_NETWORKED );
+}
+
+CLogicalEntity::CLogicalEntity( int iEFlags )
+ : CPointEntity( iEFlags )
+{
 }
 
 edict_t *CBaseEntity::edict( void )
 {
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
-		return NULL;
-
-	if(!NetworkProp())
-		return NULL;
-
 	return NetworkProp()->edict();
 }
 const edict_t *CBaseEntity::edict( void ) const
 {
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
-		return NULL;
-
-	if(!NetworkProp())
-		return NULL;
-
 	return NetworkProp()->edict();
 }
 
 int CBaseEntity::GetSoundSourceIndex() const
 {
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
-		return SOUND_FROM_WORLD;
-
 	return entindex();
 }
 
 int CBaseEntity::entindex( ) const
 {
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
-		return -1;
+	return m_RefEHandle.GetEntryIndex();
+}
 
-	if(!m_Network)
-		return -1;;
-
-	return m_Network->entindex();
+int CBaseEntity::entserial( ) const
+{
+	return m_RefEHandle.GetSerialNumber();
 }
 
 IServerNetworkable *CBaseEntity::GetNetworkable()
 {
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
-		return NULL;
-
 	return m_Network;
 }
 
 CServerNetworkProperty *CBaseEntity::NetworkProp()
 {
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
-		return NULL;
-
 	return m_Network;
 }
 
 const CServerNetworkProperty *CBaseEntity::NetworkProp() const
 {
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
-		return NULL;
-
 	return m_Network;
 }
 
@@ -852,11 +886,8 @@ const CServerNetworkProperty *CBaseEntity::NetworkProp() const
 //-----------------------------------------------------------------------------
 void	CBaseEntity::NetworkStateChanged()
 {
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
-		return;
-
-	if( NetworkProp() )
-		NetworkProp()->NetworkStateChanged();
+	Assert( NetworkProp() );
+	NetworkProp()->NetworkStateChanged();
 }
 
 void	CBaseEntity::NetworkStateChanged( void *pVar )
@@ -865,13 +896,10 @@ void	CBaseEntity::NetworkStateChanged( void *pVar )
 	Assert( (char*)pVar > (char*)this );
 	Assert( (char*)pVar - (char*)this < 32768 );
 
-	if(IsEFlagSet(EFL_NOT_NETWORKED))
-		return;
-
 	// Good, they passed an offset so we can track this variable's change
 	// and avoid sending the whole entity.
-	if( NetworkProp() )
-		NetworkProp()->NetworkStateChanged( (char*)pVar - (char*)this );
+	Assert( NetworkProp() );
+	NetworkProp()->NetworkStateChanged( (char*)pVar - (char*)this );
 }
 
 //-----------------------------------------------------------------------------
@@ -881,80 +909,14 @@ void CBaseEntity::PostClientActive( void )
 {
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Verifies that this entity's data description is valid in debug builds.
-//-----------------------------------------------------------------------------
-#ifdef _DEBUG
-typedef CUtlVector< const char * >	KeyValueNameList_t;
-
-static void AddDataMapFieldNamesToList( KeyValueNameList_t &list, datamap_t *pDataMap )
-{
-	while (pDataMap != NULL)
-	{
-		for (int i = 0; i < pDataMap->dataNumFields; i++)
-		{
-			typedescription_t *pField = &pDataMap->dataDesc[i];
-
-			if (pField->fieldType == FIELD_EMBEDDED)
-			{
-				AddDataMapFieldNamesToList( list, pField->td );
-				continue;
-			}
-
-			if ((pField->flags & (FTYPEDESC_KEY|FTYPEDESC_INPUT|FTYPEDESC_OUTPUT)) == 0)
-			{
-				Log_Warning( LOG_BASEENTITY,"%s has non map data description\n", pDataMap->dataClassName);
-				Assert(0);
-				continue;
-			}
-
-			if ((pField->flags & FTYPEDESC_KEY) != 0)
-			{
-				list.AddToTail( pField->externalName );
-			}
-		}
-	
-		pDataMap = pDataMap->baseMap;
-	}
-}
-
-void CBaseEntity::ValidateDataDescription(void)
-{
-	// Multiple key fields that have the same name are not allowed - it creates an
-	// ambiguity when trying to parse keyvalues and outputs.
-	datamap_t *pDataMap = GetMapDataDesc();
-	if ((pDataMap == NULL) || pDataMap->bValidityChecked)
-		return;
-
-	pDataMap->bValidityChecked = true;
-
-	// Let's generate a list of all keyvalue strings in the entire hierarchy...
-	KeyValueNameList_t	names(128);
-	AddDataMapFieldNamesToList( names, pDataMap );
-
-	for (int i = names.Count(); --i > 0; )
-	{
-		for (int j = i - 1; --j >= 0; )
-		{
-			if (!Q_stricmp(names[i], names[j]))
-			{
-				DevMsg( "%s has multiple data description entries for \"%s\"\n", STRING(m_iClassname), names[i]);
-				break;
-			}
-		}
-
-
-	}
-}
-#endif // _DEBUG
-
 
 //-----------------------------------------------------------------------------
 // Sets the collision bounds + the size
 //-----------------------------------------------------------------------------
 void CBaseEntity::SetCollisionBounds( const Vector& mins, const Vector &maxs )
 {
-	m_Collision.SetCollisionBounds( mins, maxs );
+	Assert( CollisionProp() );
+	CollisionProp()->SetCollisionBounds( mins, maxs );
 }
 
 
@@ -987,7 +949,7 @@ CBaseEntity *CBaseEntity::GetFollowedEntity()
 
 void CBaseEntity::SetClassname( const char *className )
 {
-	m_iClassname = AllocPooledString( className );
+	SetClassname( AllocPooledString( className ) );
 }
 
 void CBaseEntity::SetClassname( string_t className )
@@ -1153,15 +1115,12 @@ void CBaseEntity::DrawAbsBoxOverlay()
 		green = 120;
 	}
 
-	if (edict())
-	{
-		// Surrounding boxes are axially aligned, so ignore angles
-		Vector vecSurroundMins, vecSurroundMaxs;
-		CollisionProp()->WorldSpaceSurroundingBounds( &vecSurroundMins, &vecSurroundMaxs );
-		Vector center = 0.5f * (vecSurroundMins + vecSurroundMaxs);
-		Vector extents = vecSurroundMaxs - center;
-		NDebugOverlay::Box(center, -extents, extents, red, green, 0, 0 ,0);
-	}
+	// Surrounding boxes are axially aligned, so ignore angles
+	Vector vecSurroundMins, vecSurroundMaxs;
+	CollisionProp()->WorldSpaceSurroundingBounds( &vecSurroundMins, &vecSurroundMaxs );
+	Vector center = 0.5f * (vecSurroundMins + vecSurroundMaxs);
+	Vector extents = vecSurroundMaxs - center;
+	NDebugOverlay::Box(center, -extents, extents, red, green, 0, 0 ,0);
 }
 
 void CBaseEntity::DrawRBoxOverlay()
@@ -1174,10 +1133,7 @@ void CBaseEntity::DrawRBoxOverlay()
 //-----------------------------------------------------------------------------
 void CBaseEntity::SendDebugPivotOverlay( void )
 {
-	if ( edict() )
-	{
-		NDebugOverlay::Axis( GetAbsOrigin(), GetAbsAngles(), 20, true, 0 );
-	}
+	NDebugOverlay::Axis( GetAbsOrigin(), GetAbsAngles(), 20, true, 0 );
 }
 
 //------------------------------------------------------------------------------
@@ -1193,16 +1149,16 @@ void CBaseEntity::EntityText( int text_offset, const char *text, float duration,
 	Vector origin;
 	Vector vecLocalCenter;
 
-	VectorAdd( m_Collision.OBBMins(), m_Collision.OBBMaxs(), vecLocalCenter );
+	VectorAdd( WorldAlignMins(), WorldAlignMaxs(), vecLocalCenter );
 	vecLocalCenter *= 0.5f;
 
-	if ( ( m_Collision.GetCollisionAngles() == vec3_angle ) || ( vecLocalCenter == vec3_origin ) )
+	if ( ( CollisionProp()->GetCollisionAngles() == vec3_angle ) || ( vecLocalCenter == vec3_origin ) )
 	{
-		VectorAdd( vecLocalCenter, m_Collision.GetCollisionOrigin(), origin );
+		VectorAdd( vecLocalCenter, CollisionProp()->GetCollisionOrigin(), origin );
 	}
 	else
 	{
-		VectorTransform( vecLocalCenter, m_Collision.CollisionToWorldTransform(), origin );
+		VectorTransform( vecLocalCenter, CollisionProp()->CollisionToWorldTransform(), origin );
 	}
 
 	NDebugOverlay::EntityTextAtPosition( origin, text_offset, text, duration, r, g, b, a );
@@ -1671,41 +1627,40 @@ void CBaseEntity::SetParent( CBaseEntity *pParentEntity, int iAttachment )
 		}
 	}
 	// set the move parent if we have one
-	if ( edict() )
+
+	// add ourselves to the list
+	LinkChild( m_pParent, this );
+
+	m_iParentAttachment = (char)iAttachment;
+
+	EntityMatrix matrix, childMatrix;
+	matrix.InitFromEntity( const_cast<CBaseEntity *>(pParentEntity), m_iParentAttachment ); // parent->world
+	childMatrix.InitFromEntityLocal( this ); // child->world
+	Vector localOrigin = matrix.WorldToLocal( GetLocalOrigin() );
+	
+	// I have the axes of local space in world space. (childMatrix)
+	// I want to compute those world space axes in the parent's local space
+	// and set that transform (as angles) on the child's object so the net
+	// result is that the child is now in parent space, but still oriented the same way
+	VMatrix tmp = matrix.Transpose(); // world->parent
+	tmp.MatrixMul( childMatrix, matrix ); // child->parent
+	QAngle angles;
+	MatrixToAngles( matrix, angles );
+	SetLocalAngles( angles );
+	UTIL_SetOrigin( this, localOrigin );
+
+	// Move our step data into the correct space
+	if ( bWasNotParented )
 	{
-		// add ourselves to the list
-		LinkChild( m_pParent, this );
-
-		m_iParentAttachment = (char)iAttachment;
-
-		EntityMatrix matrix, childMatrix;
-		matrix.InitFromEntity( const_cast<CBaseEntity *>(pParentEntity), m_iParentAttachment ); // parent->world
-		childMatrix.InitFromEntityLocal( this ); // child->world
-		Vector localOrigin = matrix.WorldToLocal( GetLocalOrigin() );
-		
-		// I have the axes of local space in world space. (childMatrix)
-		// I want to compute those world space axes in the parent's local space
-		// and set that transform (as angles) on the child's object so the net
-		// result is that the child is now in parent space, but still oriented the same way
-		VMatrix tmp = matrix.Transpose(); // world->parent
-		tmp.MatrixMul( childMatrix, matrix ); // child->parent
-		QAngle angles;
-		MatrixToAngles( matrix, angles );
-		SetLocalAngles( angles );
-		UTIL_SetOrigin( this, localOrigin );
-
-		// Move our step data into the correct space
-		if ( bWasNotParented )
-		{
-			// Transform step data from world to parent-space
-			TransformStepData_WorldToParent( this );
-		}
-		else
-		{
-			// Transform step data between parent-spaces
-			TransformStepData_ParentToParent( pOldParent, this );
-		}
+		// Transform step data from world to parent-space
+		TransformStepData_WorldToParent( this );
 	}
+	else
+	{
+		// Transform step data between parent-spaces
+		TransformStepData_ParentToParent( pOldParent, this );
+	}
+
 	if ( VPhysicsGetObject() )
 	{
 		if ( VPhysicsGetObject()->IsStatic())
@@ -1862,7 +1817,7 @@ void CBaseEntity::Activate( void )
 // Returns the amount of health actually taken.
 int CBaseEntity::TakeHealth( float flHealth, int bitsDamageType )
 {
-	if ( (!edict() && !IsEFlagSet( EFL_NOT_NETWORKED )) || m_takedamage < DAMAGE_YES )
+	if ( m_takedamage < DAMAGE_YES )
 		return 0;
 
 	int iMax = GetMaxHealth();
@@ -1887,7 +1842,7 @@ int CBaseEntity::OnTakeDamage( const CTakeDamageInfo &info )
 {
 	Vector			vecTemp;
 
-	if ( (!edict() && !IsEFlagSet( EFL_NOT_NETWORKED )) || !m_takedamage )
+	if ( !m_takedamage )
 		return 0;
 
 	if ( info.GetInflictor() )
@@ -2431,10 +2386,7 @@ void CBaseEntity::UpdateOnRemove( void )
 	// Notifies entity listeners, etc
 	gEntList.NotifyRemoveEntity( this );
 
-	if ( edict() )
-	{
-		AddFlag( FL_KILLME );
-	}
+	AddFlag( FL_KILLME );
 
 	if ( m_iGlobalname != NULL_STRING )
 	{
@@ -2459,7 +2411,7 @@ void CBaseEntity::UpdateOnRemove( void )
 	GetAllChildren( this, childrenList );
 	if ( childrenList.Count() )
 	{
-		DevMsg( 2, "Warning: Deleting orphaned children of %s\n", GetClassname() );
+		Log_Msg( LOG_BASEENTITY, "Warning: Deleting orphaned children of %s\n", GetClassname() );
 		for ( int i = childrenList.Count()-1; i >= 0; --i )
 		{
 			UTIL_Remove( childrenList[i] );
@@ -3540,7 +3492,6 @@ CBaseEntity *CBaseEntity::Create( const char *szName, const Vector &vecOrigin, c
 	CBaseEntity *pEntity = CreateNoSpawn( szName, vecOrigin, vecAngles, pOwner );
 	if ( !pEntity )
 	{
-		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
 		return NULL;
 	}
 
@@ -3559,7 +3510,6 @@ CBaseEntity * CBaseEntity::CreateNoSpawn( const char *szName, const Vector &vecO
 	CBaseEntity *pEntity = CreateEntityByName( szName, -1 );
 	if ( !pEntity )
 	{
-		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
 		return NULL;
 	}
 
@@ -3593,7 +3543,6 @@ CBaseEntity * CBaseEntity::CreatePredictedNoSpawn( const char *module, int line,
 	CBaseEntity *pEntity = CreateEntityByName( szName, -1 );
 	if ( !pEntity )
 	{
-		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
 		return NULL;
 	}
 
@@ -3614,7 +3563,6 @@ CBaseEntity *CBaseEntity::CreatePredicted( const char *module, int line, const c
 	CBaseEntity *pEntity = CreateNoSpawn( szName, vecOrigin, vecAngles, pOwner );
 	if ( !pEntity )
 	{
-		Assert( !"CreateNoSpawn: only works for CBaseEntities" );
 		return NULL;
 	}
 
@@ -4183,142 +4131,6 @@ void CBaseEntity::OnEntityEvent( EntityEvent_t event, void *pEventData )
 
 	SetWaterLevel( 1 );
 	SetWaterType( nNewContents );
-}
-
-
-ConVar ent_messages_draw( "ent_messages_draw", "0", FCVAR_CHEAT, "Visualizes all entity input/output activity." );
-
-
-//-----------------------------------------------------------------------------
-// Purpose: calls the appropriate message mapped function in the entity according
-//			to the fired action.
-// Input  : char *szInputName - input destination
-//			*pActivator - entity which initiated this sequence of actions
-//			*pCaller - entity from which this event is sent
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool CBaseEntity::AcceptInput( const char *szInputName, CBaseEntity *pActivator, CBaseEntity *pCaller, variant_t Value, int outputID )
-{
-	if ( ent_messages_draw.GetBool() )
-	{
-		if ( pCaller != NULL )
-		{
-			NDebugOverlay::Line( pCaller->GetAbsOrigin(), GetAbsOrigin(), 255, 255, 255, false, 3 );
-			NDebugOverlay::Box( pCaller->GetAbsOrigin(), Vector(-4, -4, -4), Vector(4, 4, 4), 255, 0, 0, 0, 3 );
-		}
-
-		NDebugOverlay::Text( GetAbsOrigin(), szInputName, false, 3 );	
-		NDebugOverlay::Box( GetAbsOrigin(), Vector(-4, -4, -4), Vector(4, 4, 4), 0, 255, 0, 0, 3 );
-	}
-
-	// loop through the data description list, restoring each data desc block
-	for ( datamap_t *dmap = GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
-	{
-		// search through all the actions in the data description, looking for a match
-		for ( int i = 0; i < dmap->dataNumFields; i++ )
-		{
-			if ( dmap->dataDesc[i].flags & FTYPEDESC_INPUT )
-			{
-				if ( !Q_stricmp(dmap->dataDesc[i].externalName, szInputName) )
-				{
-					// found a match
-
-					char szBuffer[256];
-					// mapper debug message
-					if (pCaller != NULL)
-					{
-						Q_snprintf( szBuffer, sizeof(szBuffer), "(%0.2f) input %s: %s.%s(%s)\n", gpGlobals->curtime, STRING(pCaller->m_iName.Get()), GetDebugName(), szInputName, Value.String() );
-					}
-					else
-					{
-						Q_snprintf( szBuffer, sizeof(szBuffer), "(%0.2f) input <NULL>: %s.%s(%s)\n", gpGlobals->curtime, GetDebugName(), szInputName, Value.String() );
-					}
-					DevMsg( 2, "%s", szBuffer );
-					ADD_DEBUG_HISTORY( HISTORY_ENTITY_IO, szBuffer );
-
-					if (m_debugOverlays & OVERLAY_MESSAGE_BIT)
-					{
-						DrawInputOverlay(szInputName,pCaller,Value);
-					}
-
-					// convert the value if necessary
-					if ( Value.FieldType() != dmap->dataDesc[i].fieldType )
-					{
-						if ( !(Value.FieldType() == FIELD_VOID && dmap->dataDesc[i].fieldType == FIELD_STRING) ) // allow empty strings
-						{
-							// Activator, etc. support for EHANDLE convert
-							if ( !Value.Convert( (fieldtype_t)dmap->dataDesc[i].fieldType, this, pActivator, pCaller ) )
-							{
-								bool bBadConversion = true;
-
-								// Attempt to convert to string and back.
-								// Almost all field types support being converted to a string, and many support being parsed from a string too.
-								fieldtype_t originalfield = Value.FieldType();
-								if (Value.Convert(FIELD_STRING))
-								{
-									bBadConversion = !(Value.Convert((fieldtype_t)dmap->dataDesc[i].fieldType, this, pActivator, pCaller));
-									if (!bBadConversion)
-									{
-										// Actual support should be added for each field, but if it works, it works.
-										// Warning against it only matters if you're a programmer and want to add support for each field.
-										// Only send a warning in dev mode.
-										DevWarning("!! Had to convert to string and back\n"
-													"!! Source Field Type: %i, Target Field Type: %i\n",
-												originalfield, dmap->dataDesc[i].fieldType);
-									}
-								}
-
-								if (bBadConversion)
-								{
-									Warning( "!! ERROR: bad input/output link:\n!! Unable to convert value \"%s\" from %s (%s) to field type %i\n!! Target Entity: %s (%s), Input: %s\n", 
-										Value.GetDebug(),
-										( pCaller != NULL ) ? STRING(pCaller->m_iClassname) : "<null>",
-										( pCaller != NULL ) ? STRING(pCaller->m_iName.Get()) : "<null>",
-										dmap->dataDesc[i].fieldType,
-										STRING(m_iClassname), GetDebugName(), szInputName );
-									return false;
-								}
-							}
-						}
-					}
-
-					// call the input handler, or if there is none just set the value
-					inputfunc_t pfnInput = dmap->dataDesc[i].inputFunc;
-
-					if ( pfnInput )
-					{ 
-						// Package the data into a struct for passing to the input handler.
-						inputdata_t data;
-						data.pActivator = pActivator;
-						data.pCaller = pCaller;
-						data.value = Value;
-						data.nOutputID = outputID;
-
-						(this->*pfnInput)( data );
-					}
-					else if ( dmap->dataDesc[i].flags & FTYPEDESC_KEY )
-					{
-						// set the value directly
-						Value.SetOther( ((char*)this) + dmap->dataDesc[i].fieldOffset[ TD_OFFSET_NORMAL ]);
-					
-						// TODO: if this becomes evil and causes too many full entity updates, then we should make
-						// a macro like this:
-						//
-						// define MAKE_INPUTVAR(x) void Note##x##Modified() { x.GetForModify(); }
-						//
-						// Then the datadesc points at that function and we call it here. The only pain is to add
-						// that function for all the DEFINE_INPUT calls.
-						NetworkStateChanged();
-					}
-
-					return true;
-				}
-			}
-		}
-	}
-
-	DevMsg( 2, "unhandled input: (%s) -> (%s,%s)\n", szInputName, STRING(m_iClassname), GetDebugName()/*,", from (%s,%s)" STRING(pCaller->m_iClassname), STRING(pCaller->m_iName)*/ );
-	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -4959,85 +4771,6 @@ void CBaseEntity::SetSize( const Vector &vecMin, const Vector &vecMax )
 	UTIL_SetSize( this, vecMin, vecMax );
 }
 
-CStudioHdr *ModelSoundsCache_LoadModel( const char *filename )
-{
-	// Load the file
-	int idx = engine->PrecacheModel( filename, true );
-	if ( idx != -1 )
-	{
-		model_t *mdl = (model_t *)modelinfo->GetModel( idx );
-		if ( mdl )
-		{
-			CStudioHdr *studioHdr = new CStudioHdr( modelinfo->GetStudiomodel( mdl ), g_pMDLCache ); 
-			if ( studioHdr->IsValid() )
-			{
-				return studioHdr;
-			}
-		}
-	}
-	return NULL;
-}
-
-void ModelSoundsCache_FinishModel( CStudioHdr *hdr )
-{
-	Assert( hdr );
-	delete hdr;
-}
-
-void ModelSoundsCache_PrecacheScriptSound( const char *soundname )
-{
-	CBaseEntity::PrecacheScriptSound( soundname );
-}
-
-static CUtlCachedFileData< CModelSoundsCache > g_ModelSoundsCache( "modelsounds_server.cache", MODELSOUNDSCACHE_VERSION, 0, UTL_CACHED_FILE_USE_FILESIZE, false );																  
-
-void ClearModelSoundsCache()
-{
-	g_ModelSoundsCache.Reload();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool ModelSoundsCacheInit()
-{
-	return g_ModelSoundsCache.Init();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void ModelSoundsCacheShutdown()
-{
-	g_ModelSoundsCache.Shutdown();
-}
-
-static CUtlSymbolTable g_ModelSoundsSymbolHelper( 0, 32, true );
-class CModelSoundsCacheSaver: public CAutoGameSystem
-{
-public:
-	CModelSoundsCacheSaver( const char *name ) : CAutoGameSystem( name )
-	{
-	}
-	virtual void LevelInitPostEntity()
-	{
-		if ( g_ModelSoundsCache.IsDirty() )
-		{
-			g_ModelSoundsCache.Save();
-		}
-	}
-	virtual void LevelShutdownPostEntity()
-	{
-		if ( g_ModelSoundsCache.IsDirty() )
-		{
-			g_ModelSoundsCache.Save();
-		}
-	}
-};
-
-static CModelSoundsCacheSaver g_ModelSoundsCacheSaver( "CModelSoundsCacheSaver" );
-
 //#define WATCHACCESS
 #if defined( WATCHACCESS )
 
@@ -5106,13 +4839,6 @@ private:
 };
 
 static CModelPrecacheSystem g_ModelPrecacheSystem;
-
-// HACK:  This must match the #define in cl_animevent.h in the client .dll code!!!
-#define CL_EVENT_SOUND				5004
-#define CL_EVENT_FOOTSTEP_LEFT		6004
-#define CL_EVENT_FOOTSTEP_RIGHT		6005
-#define CL_EVENT_MFOOTSTEP_LEFT		6006
-#define CL_EVENT_MFOOTSTEP_RIGHT	6007
 
 //-----------------------------------------------------------------------------
 // Precache model components
@@ -6226,6 +5952,115 @@ model_t *CBaseEntity::GetModel( void )
 	return (model_t *)modelinfo->GetModel( GetModelIndex() );
 }
 
+void CBaseEntity::ClearSolidFlags( void )
+{
+	Assert( CollisionProp() );
+	CollisionProp()->ClearSolidFlags();
+}
+
+void CBaseEntity::RemoveSolidFlags( int flags )
+{
+	Assert( CollisionProp() );
+	CollisionProp()->RemoveSolidFlags( flags );
+}
+
+void CBaseEntity::AddSolidFlags( int flags )
+{
+	Assert( CollisionProp() );
+	CollisionProp()->AddSolidFlags( flags );
+}
+
+int CBaseEntity::GetSolidFlags( void ) const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->GetSolidFlags();
+}
+
+bool CBaseEntity::IsSolidFlagSet( int flagMask ) const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->IsSolidFlagSet( flagMask );
+}
+
+bool CBaseEntity::IsSolid() const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->IsSolid( );
+}
+
+void CBaseEntity::SetSolid( SolidType_t val )
+{
+	Assert( CollisionProp() );
+	CollisionProp()->SetSolid( val );
+}
+
+void CBaseEntity::SetSolidFlags( int flags )
+{
+	Assert( CollisionProp() );
+	CollisionProp()->SetSolidFlags( flags );
+}
+
+SolidType_t CBaseEntity::GetSolid() const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->GetSolid();
+}
+
+		 	 			 
+//-----------------------------------------------------------------------------
+// Methods related to IServerUnknown
+//-----------------------------------------------------------------------------
+ICollideable *CBaseEntity::GetCollideable()
+{
+	return CollisionProp();
+}
+
+//-----------------------------------------------------------------------------
+// Methods relating to bounds
+//-----------------------------------------------------------------------------
+const Vector& CBaseEntity::WorldAlignMins( ) const
+{
+	Assert( CollisionProp() );
+	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
+	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
+	return CollisionProp()->OBBMins();
+}
+
+const Vector& CBaseEntity::WorldAlignMaxs( ) const
+{
+	Assert( CollisionProp() );
+	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
+	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
+	return CollisionProp()->OBBMaxs();
+}
+
+const Vector& CBaseEntity::WorldAlignSize( ) const
+{
+	Assert( CollisionProp() );
+	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
+	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
+	return CollisionProp()->OBBSize();
+}
+
+// Returns a radius of a sphere *centered at the world space center*
+// bounding the collision representation of the entity
+float CBaseEntity::BoundingRadius() const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->BoundingRadius();
+}
+
+float CBaseEntity::BoundingRadius2D() const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->BoundingRadius2D();
+}
+
+bool CBaseEntity::IsPointSized() const
+{
+	Assert( CollisionProp() );
+	return CollisionProp()->BoundingRadius() == 0.0f;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Calculates the absolute position of an edict in the world
@@ -7220,7 +7055,7 @@ void CBaseEntity::InputFireOutput( inputdata_t& inputdata )
 {
 	char sParameter[MAX_PATH];
 	Q_strncpy( sParameter, inputdata.value.String(), sizeof(sParameter) );
-	if ( sParameter )
+	if ( sParameter[0] )
 	{
 		int iter = 0;
 		char *data[5] = {sParameter};
@@ -7315,7 +7150,7 @@ void CBaseEntity::InputReplaceOutput( inputdata_t& inputdata )
 {
 	char sParameter[128];
 	Q_strncpy( sParameter, inputdata.value.String(), sizeof(sParameter) );
-	if (!sParameter)
+	if (!sParameter[0])
 		return;
 
 	int iter = 0;
@@ -7402,7 +7237,7 @@ void CBaseEntity::InputAcceptInput( inputdata_t& inputdata )
 {
 	char sParameter[MAX_PATH];
 	Q_strncpy( sParameter, inputdata.value.String(), sizeof(sParameter) );
-	if ( sParameter )
+	if ( sParameter[0] )
 	{
 		int iter = 0;
 		char *data[5] = {sParameter};
@@ -8383,50 +8218,6 @@ void CBaseEntity::SetRefEHandle( const CBaseHandle &handle )
 	}
 }
 
-bool CPointEntity::KeyValue( const char *szKeyName, const char *szValue ) 
-{
-	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
-	{
-		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
-		return true;
-	}
-
-	return BaseClass::KeyValue( szKeyName, szValue );
-}
-
-bool CLogicalEntity::KeyValue( const char *szKeyName, const char *szValue ) 
-{
-	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
-	{
-		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
-		return true;
-	}
-
-	return BaseClass::KeyValue( szKeyName, szValue );
-}
-
-bool CServerOnlyPointEntity::KeyValue( const char *szKeyName, const char *szValue ) 
-{
-	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
-	{
-		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
-		return true;
-	}
-
-	return BaseClass::KeyValue( szKeyName, szValue );
-}
-
-bool CServerOnlyLogicalEntity::KeyValue( const char *szKeyName, const char *szValue ) 
-{
-	if ( FStrEq( szKeyName, "mins" ) || FStrEq( szKeyName, "maxs" ) )
-	{
-		Warning("Warning! Can't specify mins/maxs for point entities! (%s)\n", GetClassname() );
-		return true;
-	}
-
-	return BaseClass::KeyValue( szKeyName, szValue );
-}
-
 //-----------------------------------------------------------------------------
 // Purpose: Sets the entity invisible, and makes it remove itself on the next frame
 //-----------------------------------------------------------------------------
@@ -8711,6 +8502,7 @@ void CBaseEntity::NetworkQuantize( Vector &org, QAngle &angles )
 	if ( !m_bNetworkQuantizeOriginAndAngles )
 		return;
 
+#ifdef DT_CELL_COORD_SUPPORTED
 	if ( !( SENDPROP_VECORIGIN_FLAGS & SPROP_NOSCALE ) )
 	{
 		COMPILE_TIME_ASSERT( SENDPROP_VECORIGIN_FLAGS & ( SPROP_COORD | SPROP_CELL_COORD ) );
@@ -8723,6 +8515,7 @@ void CBaseEntity::NetworkQuantize( Vector &org, QAngle &angles )
 			org[ i ] = (float)tmp * COORD_RESOLUTION;
 		}
 	}
+#endif
 
 	if ( SENDPROP_ANGROTATION_DEFAULT_BITS != -1 )
 	{

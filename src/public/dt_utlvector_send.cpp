@@ -56,7 +56,7 @@ void SendProxy_UtlVectorElement(
 	if ( iElement >= pUtlVec->Count() )
 	{
 		// Pass in zero value.
-		memset( pOut, 0, sizeof( *pOut ) );
+		memset( (void *)pOut, 0, sizeof( *pOut ) );
 	}
 	else
 	{

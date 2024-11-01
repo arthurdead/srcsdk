@@ -24,6 +24,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef GAME_DLL
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_PHYSICS, "Physics Server" );
+#else
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_PHYSICS, "Physics Client" );
+#endif
+
 //
 IPhysics			*physics = NULL;
 IPhysicsObject		*g_PhysWorldObject = NULL;
@@ -220,7 +226,7 @@ bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, int
 
 	bool parsed = false;
 
-	memset( &solid, 0, sizeof(solid) );
+	memset( (void *)&solid, 0, sizeof(solid) );
 	solid.params = g_PhysDefaultObjectParams;
 
 	IVPhysicsKeyParser *pParse = physcollision->VPhysicsKeyParserCreate( pCollide->pKeyValues );
@@ -230,7 +236,7 @@ bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, int
 		if ( !strcmpi( pBlock, "solid" ) )
 		{
 			solid_t tmpSolid;
-			memset( &tmpSolid, 0, sizeof(tmpSolid) );
+			memset( (void *)&tmpSolid, 0, sizeof(tmpSolid) );
 			tmpSolid.params = g_PhysDefaultObjectParams;
 
 			pParse->ParseSolid( &tmpSolid, &g_SolidSetup );
@@ -283,7 +289,7 @@ bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, vco
 {
 	bool parsed = false;
 
-	memset( &solid, 0, sizeof(solid) );
+	memset( (void *)&solid, 0, sizeof(solid) );
 	solid.params = g_PhysDefaultObjectParams;
 
 	IVPhysicsKeyParser *pParse = physcollision->VPhysicsKeyParserCreate( pCollide->pKeyValues );
@@ -293,7 +299,7 @@ bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, vco
 		if ( !strcmpi( pBlock, "solid" ) )
 		{
 			solid_t tmpSolid;
-			memset( &tmpSolid, 0, sizeof(tmpSolid) );
+			memset( (void *)&tmpSolid, 0, sizeof(tmpSolid) );
 			tmpSolid.params = g_PhysDefaultObjectParams;
 
 			pParse->ParseSolid( &tmpSolid, &g_SolidSetup );
@@ -570,7 +576,7 @@ void AddSurfacepropFile( const char *pFileName, IPhysicsSurfaceProps *pProps, IF
 	}
 	else
 	{
-		Error( "Unable to load surface prop file '%s' (referenced by manifest file '%s')\n", pFileName, SURFACEPROP_MANIFEST_FILE );
+		Log_Error( LOG_PHYSICS,"Unable to load surface prop file '%s' (referenced by manifest file '%s')\n", pFileName, SURFACEPROP_MANIFEST_FILE );
 	}
 }
 
@@ -588,13 +594,13 @@ void PhysParseSurfaceData( IPhysicsSurfaceProps *pProps, IFileSystem *pFileSyste
 				continue;
 			}
 
-			Warning( "surfaceprops::Init:  Manifest '%s' with bogus file type '%s', expecting 'file'\n", 
+			Log_Error( LOG_PHYSICS,"surfaceprops::Init:  Manifest '%s' with bogus file type '%s', expecting 'file'\n", 
 				SURFACEPROP_MANIFEST_FILE, sub->GetName() );
 		}
 	}
 	else
 	{
-		Error( "Unable to load manifest file '%s'\n", SURFACEPROP_MANIFEST_FILE );
+		Log_Error( LOG_PHYSICS,"Unable to load manifest file '%s'\n", SURFACEPROP_MANIFEST_FILE );
 	}
 
 	manifest->deleteThis();

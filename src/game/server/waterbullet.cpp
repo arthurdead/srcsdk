@@ -70,8 +70,8 @@ void CWaterBullet::BulletThink()
 
 /*
 	QAngle angles = GetAbsAngles();
-	angles.x += random->RandomInt( -6, 6 );
-	angles.y += random->RandomInt( -6, 6 );
+	angles.x += random_valve->RandomInt( -6, 6 );
+	angles.y += random_valve->RandomInt( -6, 6 );
 	SetAbsAngles( angles );
 */
 

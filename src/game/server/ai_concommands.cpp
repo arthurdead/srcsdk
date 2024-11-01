@@ -11,6 +11,7 @@
 #include "ndebugoverlay.h"
 #include "datacache/imdlcache.h"
 #include "ai_addon.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

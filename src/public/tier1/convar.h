@@ -477,6 +477,7 @@ class ConVarRef
 public:
 	ConVarRef( const char *pName ) { Init( pName ); }
 	ConVarRef( const char *pName, bool bIgnoreMissing ) { Init( pName, bIgnoreMissing ); }
+	ConVarRef( const char *pName, const char * ) = delete;
 	ConVarRef( IConVar *pConVar );
 	ConVarRef( ConVar *pConVar );
 

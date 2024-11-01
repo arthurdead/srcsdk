@@ -45,6 +45,8 @@
 
 DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_VGUIRESOURCE, "VGUI Resource file" );
 
+extern ConVar *vgui_nav_lock_default_button;
+
 extern IFileSystem *g_pFullFileSystem;
 
 using namespace vgui;
@@ -173,8 +175,7 @@ void EditablePanel::OnKeyCodeTyped(KeyCode keycode)
 
 void EditablePanel::OnKeyCodePressed( KeyCode code )
 {
-	static ConVarRef vgui_nav_lock_default_button( "vgui_nav_lock_default_button" );
-	if ( !vgui_nav_lock_default_button.IsValid() || vgui_nav_lock_default_button.GetInt() == 0 )
+	if ( vgui_nav_lock_default_button->GetInt() == 0 )
 	{
 		ButtonCode_t nButtonCode = GetBaseButtonCode( code );
 
@@ -202,7 +203,7 @@ void EditablePanel::OnKeyCodePressed( KeyCode code )
 			case KEY_RIGHT:
 			case KEY_XBUTTON_B:
 				// Navigating menus
-				vgui_nav_lock_default_button.SetValue( 1 );
+				vgui_nav_lock_default_button->SetValue( 1 );
 				PostMessage( panel, new KeyValues( "KeyCodePressed", "code", code ) );
 				return;
 			
@@ -624,7 +625,7 @@ void EditablePanel::LoadControlSettings(const char *resourceName, const char *pa
 {
 	if ( !g_pFullFileSystem->FileExists( resourceName ) )
 	{
-		Log_Error( LOG_VGUIRESOURCE, "Resource file \"%s\" not found on disk!", resourceName );
+		Log_Error( LOG_VGUIRESOURCE, "Resource file \"%s\" not found on disk!\n", resourceName );
 	}
 	_buildGroup->LoadControlSettings(resourceName, pathID, pKeyValues, pConditions);
 	ForceSubPanelsToUpdateWithNewDialogVariables();

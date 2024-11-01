@@ -66,8 +66,10 @@ CSharedHeistGameRules::~CHeistGameRules()
 #endif
 
 #ifdef GAME_DLL
-CGameRulesProxy *CSharedHeistGameRules::AllocateProxy()
-{ return new CSharedHeistGameRulesProxy(); }
+DEFINE_ENTITY_FACTORY( CSharedHeistGameRulesProxy );
+
+IEntityFactory *CSharedHeistGameRules::ProxyFactory()
+{ return &g_CSharedHeistGameRulesProxyFactory; }
 
 const char* CSharedHeistGameRules::AIClassText(Class_T classType)
 {

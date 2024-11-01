@@ -15,7 +15,6 @@
 #include "basetypes.h"
 #include "tempentity.h"
 #include "string_t.h"
-#include "gamestringpool.h"
 #include "engine/IEngineTrace.h"
 #include "worldsize.h"
 #include "dt_send.h"
@@ -26,6 +25,12 @@
 #include "vstdlib/random.h"
 #include <string.h>
 
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL nullptr
+
+#include "gamestringpool.h"
 #include "utlvector.h"
 #include "util_shared.h"
 #include "shareddefs.h"
@@ -190,12 +195,9 @@ abstract_class IEntityFactoryDictionary
 public:
 	virtual void InstallFactory( IEntityFactory *pFactory, const char *pClassName ) = 0;
 	virtual void RemoveFactory( const char *pClassName ) = 0;
-	virtual bool HasFactory( IEntityFactory *pFactory, const char *pClassName ) = 0;
 	virtual CBaseEntity *Create( const char *pClassName ) = 0;
 	virtual void Destroy( const char *pClassName, CBaseEntity *pNetworkable ) = 0;
 	virtual IEntityFactory *FindFactory( const char *pClassName ) = 0;
-	virtual const char *GetCannonicalName( const char *pClassName ) = 0;
-	virtual void UninstallFactory(const char* pClassName) = 0;
 };
 
 IEntityFactoryDictionary *EntityFactoryDictionary();
@@ -211,12 +213,17 @@ public:
 	virtual CBaseEntity *Create( const char *pClassName ) = 0;
 	virtual void Destroy( CBaseEntity *pNetworkable ) = 0;
 	virtual size_t GetEntitySize() = 0;
+	virtual const char *DllClassname() const  = 0;
 };
 
 template <class T>
 class CEntityFactory : public IEntityFactory
 {
 public:
+	CEntityFactory()
+	{
+	}
+
 	CEntityFactory( const char *pClassName )
 	{
 		EntityFactoryDictionary()->InstallFactory( this, pClassName );
@@ -241,8 +248,33 @@ public:
 	}
 };
 
+#define DEFINE_ENTITY_FACTORY(DLLClassName) \
+	class C##DLLClassName##Factory : public CEntityFactory<DLLClassName> \
+	{ \
+		typedef CEntityFactory<DLLClassName> BaseClass; \
+	public: \
+		C##DLLClassName##Factory() \
+			: BaseClass() \
+		{ \
+		} \
+		const char *DllClassname() const \
+		{ return V_STRINGIFY(DLLClassName); } \
+	}; \
+	INIT_PRIORITY(65535) static C##DLLClassName##Factory g_##DLLClassName##Factory;
+
 #define LINK_ENTITY_TO_CLASS(mapClassName,DLLClassName) \
-	INIT_PRIORITY(65535) static CEntityFactory<DLLClassName> mapClassName##Factory( #mapClassName );
+	class C##mapClassName##Factory : public CEntityFactory<DLLClassName> \
+	{ \
+		typedef CEntityFactory<DLLClassName> BaseClass; \
+	public: \
+		C##mapClassName##Factory( const char *pClassName ) \
+			: BaseClass( pClassName ) \
+		{ \
+		} \
+		const char *DllClassname() const \
+		{ return V_STRINGIFY(DLLClassName); } \
+	}; \
+	INIT_PRIORITY(65535) static C##mapClassName##Factory g_##mapClassName##Factory( #mapClassName );
 
 
 //

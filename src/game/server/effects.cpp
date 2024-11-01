@@ -36,6 +36,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+extern ConVar *violence_hgibs;
+
 #define SF_FUNNEL_REVERSE			1 // funnel effect repels particles instead of attracting them.
 #define SF_FUNNEL_DONT_REMOVE		2
 
@@ -427,8 +429,7 @@ void CGibShooter::Spawn( void )
 
 CGib *CGibShooter::CreateGib ( void )
 {
-	ConVarRef violence_hgibs( "violence_hgibs" );
-	if ( violence_hgibs.IsValid() && !violence_hgibs.GetInt() )
+	if ( !violence_hgibs->GetInt() )
 		return NULL;
 
 	CGib *pGib = CREATE_ENTITY( CGib, "gib" );
@@ -440,7 +441,7 @@ CGib *CGibShooter::CreateGib ( void )
 		DevWarning( 2, "GibShooter Body is <= 1!\n" );
 	}
 
-	pGib->SetBody( random->RandomInt ( 1, m_nMaxGibModelFrame - 1 ) );// avoid throwing random amounts of the 0th gib. (skull).
+	pGib->SetBody( random_valve->RandomInt ( 1, m_nMaxGibModelFrame - 1 ) );// avoid throwing random amounts of the 0th gib. (skull).
 
 	if ( m_iszLightingOrigin != NULL_STRING )
 	{
@@ -459,12 +460,12 @@ void CGibShooter::InitPointGib( CGib *pGib, const Vector &vecShootDir, float flS
 		pGib->SetLocalOrigin( GetAbsOrigin() );
 		pGib->SetAbsVelocity( vecShootDir * flSpeed );
 
-		QAngle angVel( random->RandomFloat ( 100, 200 ), random->RandomFloat ( 100, 300 ), 0 );
+		QAngle angVel( random_valve->RandomFloat ( 100, 200 ), random_valve->RandomFloat ( 100, 300 ), 0 );
 		pGib->SetLocalAngularVelocity( angVel );
 
 		float thinkTime = ( pGib->GetNextThink() - gpGlobals->curtime );
 
-		pGib->m_lifeTime = (m_flGibLife * random->RandomFloat( 0.95, 1.05 ));	// +/- 5%
+		pGib->m_lifeTime = (m_flGibLife * random_valve->RandomFloat( 0.95, 1.05 ));	// +/- 5%
 
 		// HL1 gibs always die after a certain time, other games have to opt-in
 		if( HasSpawnFlags( SF_SHOOTER_STRICT_REMOVE ) )
@@ -522,7 +523,7 @@ CBaseEntity *CGibShooter::SpawnGib( const Vector &vecShootDir, float flSpeed )
 				pGib->SetAbsOrigin( GetAbsOrigin() );
 				pGib->SetAbsAngles( m_angGibRotation );
 
-				pGib->m_lifeTime = (m_flGibLife * random->RandomFloat( 0.95, 1.05 ));	// +/- 5%
+				pGib->m_lifeTime = (m_flGibLife * random_valve->RandomFloat( 0.95, 1.05 ));	// +/- 5%
 
 				pGib->SetCollisionGroup( COLLISION_GROUP_DEBRIS );
 				IPhysicsObject *pPhysicsObject = pGib->VPhysicsInitNormal( SOLID_VPHYSICS, pGib->GetSolidFlags(), false );
@@ -535,8 +536,8 @@ CBaseEntity *CGibShooter::SpawnGib( const Vector &vecShootDir, float flSpeed )
 					pPhysicsObject->AddVelocity(&vVel, NULL);
 
 					AngularImpulse torque;
-					torque.x = m_flGibAngVelocity * random->RandomFloat( 0.1f, 1.0f );
-					torque.y = m_flGibAngVelocity * random->RandomFloat( 0.1f, 1.0f );
+					torque.x = m_flGibAngVelocity * random_valve->RandomFloat( 0.1f, 1.0f );
+					torque.y = m_flGibAngVelocity * random_valve->RandomFloat( 0.1f, 1.0f );
 					torque.z = 0.0f;
 					torque *= pPhysicsObject->GetMass();
 
@@ -586,9 +587,9 @@ void CGibShooter::ShootThink ( void )
 	Vector vecShootDir, vForward,vRight,vUp;
 	AngleVectors( GetAbsAngles(), &vForward, &vRight, &vUp );
 	vecShootDir = vForward;
-	vecShootDir = vecShootDir + vRight * random->RandomFloat( -1, 1) * m_flVariance;
-	vecShootDir = vecShootDir + vForward * random->RandomFloat( -1, 1) * m_flVariance;
-	vecShootDir = vecShootDir + vUp * random->RandomFloat( -1, 1) * m_flVariance;
+	vecShootDir = vecShootDir + vRight * random_valve->RandomFloat( -1, 1) * m_flVariance;
+	vecShootDir = vecShootDir + vForward * random_valve->RandomFloat( -1, 1) * m_flVariance;
+	vecShootDir = vecShootDir + vUp * random_valve->RandomFloat( -1, 1) * m_flVariance;
 
 	VectorNormalize( vecShootDir );
 
@@ -717,7 +718,7 @@ CGib *CEnvShooter::CreateGib ( void )
 
 	if ( m_nMaxGibModelFrame > 1 )
 	{
-		bodyPart = random->RandomInt( 0, m_nMaxGibModelFrame-1 );
+		bodyPart = random_valve->RandomInt( 0, m_nMaxGibModelFrame-1 );
 	}
 
 	pGib->SetBody( bodyPart );
@@ -842,7 +843,7 @@ CBaseEntity *CRotorWashShooter::DoWashPush( float flWashStartTime, const Vector 
 	}
 
 	m_flLastWashStartTime = flWashStartTime;
-	m_flNextGibTime	= gpGlobals->curtime + m_flTimeUnderRotor + random->RandomFloat( -1, 1) * m_flTimeUnderRotorVariance;
+	m_flNextGibTime	= gpGlobals->curtime + m_flTimeUnderRotor + random_valve->RandomFloat( -1, 1) * m_flTimeUnderRotorVariance;
 	if ( m_flNextGibTime <= gpGlobals->curtime )
 	{
 		m_flNextGibTime = gpGlobals->curtime + 0.01f;
@@ -853,9 +854,9 @@ CBaseEntity *CRotorWashShooter::DoWashPush( float flWashStartTime, const Vector 
 	Vector vecShootDir = vecForce;
 	VectorNormalize( vecShootDir );
 
-	vecShootDir.x += random->RandomFloat( -1, 1 ) * m_flVariance;
-	vecShootDir.y += random->RandomFloat( -1, 1 ) * m_flVariance;
-	vecShootDir.z += random->RandomFloat( -1, 1 ) * m_flVariance;
+	vecShootDir.x += random_valve->RandomFloat( -1, 1 ) * m_flVariance;
+	vecShootDir.y += random_valve->RandomFloat( -1, 1 ) * m_flVariance;
+	vecShootDir.z += random_valve->RandomFloat( -1, 1 ) * m_flVariance;
 
 	VectorNormalize( vecShootDir );
 
@@ -1009,7 +1010,7 @@ Vector CBlood::BloodPosition( CBaseEntity *pActivator )
 
 		if ( player )
 		{
-			return (player->EyePosition()) + Vector( random->RandomFloat(-10,10), random->RandomFloat(-10,10), random->RandomFloat(-10,10) );
+			return (player->EyePosition()) + Vector( random_valve->RandomFloat(-10,10), random_valve->RandomFloat(-10,10), random_valve->RandomFloat(-10,10) );
 		}
 	}
 
@@ -1236,7 +1237,7 @@ void CEnvBeverage::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 	if ( m_nBeverageType == 6 )
 	{
 		// random
-		pCan->SetSkin( random->RandomInt( 0, 5 ) );
+		pCan->SetSkin( random_valve->RandomInt( 0, 5 ) );
 	}
 	else
 	{
@@ -2119,7 +2120,7 @@ void CEnvGunfire::Activate( void )
 //-----------------------------------------------------------------------------
 void CEnvGunfire::StartShooting()
 {
-	m_iShotsRemaining = random->RandomInt( m_iMinBurstSize, m_iMaxBurstSize );
+	m_iShotsRemaining = random_valve->RandomInt( m_iMinBurstSize, m_iMaxBurstSize );
 
 	SetThink( &CEnvGunfire::ShootThink );
 	SetNextThink( gpGlobals->curtime );
@@ -2212,7 +2213,7 @@ void CEnvGunfire::ShootThink()
 		else
 		{
 			StartShooting();
-			SetNextThink( gpGlobals->curtime + random->RandomFloat( m_flMinBurstDelay, m_flMaxBurstDelay ) );
+			SetNextThink( gpGlobals->curtime + random_valve->RandomFloat( m_flMinBurstDelay, m_flMaxBurstDelay ) );
 		}
 	}
 }

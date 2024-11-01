@@ -43,7 +43,7 @@ ConVar cc_showmissing( "cc_showmissing", "0", FCVAR_REPLICATED, "Show missing cl
 static ConVar sv_snd_filter( "sv_snd_filter", "", FCVAR_REPLICATED, "Filters out all sounds not containing the specified string before being emitted\n" );
 #endif // STAGING_ONLY
 
-static ConVar *g_pClosecaption = NULL;
+extern ConVar *closecaption;
 
 static bool g_bPermitDirectSoundPrecache = false;
 
@@ -302,8 +302,6 @@ public:
 #if !defined( CLIENT_DLL )
 		m_bLogPrecache = CommandLine()->CheckParm( "-makereslists" ) ? true : false;
 #endif
-		g_pClosecaption = g_pCVar->FindVar("closecaption");
-		Assert(g_pClosecaption);
 
 #if !defined( CLIENT_DLL )
 		// Server keys off of english file!!!
@@ -921,7 +919,7 @@ public:
 	void EmitCloseCaption( IRecipientFilter& filter, int entindex, const CSoundParameters & params, const EmitSound_t & ep )
 	{
 		// No close captions in multiplayer...
-		if ( gpGlobals->maxClients > 1 || (gpGlobals->maxClients==1 && !g_pClosecaption->GetBool()))
+		if ( gpGlobals->maxClients > 1 || (gpGlobals->maxClients==1 && !closecaption->GetBool()))
 		{
 			return;
 		}

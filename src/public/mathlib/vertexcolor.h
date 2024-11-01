@@ -41,12 +41,7 @@ struct VertexColor_t
 	bool operator==( const VertexColor_t &src ) const;
 	bool operator!=( const VertexColor_t &src ) const;
 
-#ifdef PLATFORM_X360
-	// 360 is little endian
-	uint8 a, b, g, r;
-#else
 	uint8 r, g, b, a;
-#endif
 };
 
 

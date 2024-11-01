@@ -565,7 +565,7 @@ void CTeamplayRoundBasedRules::LevelInitPostEntity( void )
 	BaseClass::LevelInitPostEntity();
 
 #ifdef GAME_DLL
-	m_bCheatsEnabledDuringLevel = sv_cheats && sv_cheats->GetBool();
+	m_bCheatsEnabledDuringLevel = sv_cheats->GetBool();
 #endif // GAME_DLL
 }
 
@@ -653,7 +653,7 @@ void CTeamplayRoundBasedRules::Think( void )
 	}
 
 	// Watch dog for cheats ever being enabled during a level
-	if ( !m_bCheatsEnabledDuringLevel && sv_cheats && sv_cheats->GetBool() )
+	if ( !m_bCheatsEnabledDuringLevel && sv_cheats->GetBool() )
 	{
 		m_bCheatsEnabledDuringLevel = true;
 	}

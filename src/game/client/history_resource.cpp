@@ -310,7 +310,7 @@ void CHudHistoryResource::Paint( void )
 			if ( m_PickupHistory[i].DisplayTime <= gpGlobals->curtime )
 			{  
 				// pic drawing time has expired
-				memset( &m_PickupHistory[i], 0, sizeof(HIST_ITEM) );
+				memset( (void *)&m_PickupHistory[i], 0, sizeof(HIST_ITEM) );
 				CheckClearHistory();
 				continue;
 			}

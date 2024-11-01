@@ -1028,7 +1028,8 @@ void C_RopeKeyframe::CPhysicsDelegate::ApplyConstraints( CSimplePhysics::CNode *
 // C_RopeKeyframe
 // ------------------------------------------------------------------------------------ //
 
-C_RopeKeyframe::C_RopeKeyframe()
+C_RopeKeyframe::C_RopeKeyframe( int iEFlags )
+	: C_BaseEntity( iEFlags )
 {
 	m_bEndPointAttachmentPositionsDirty = true;
 	m_bEndPointAttachmentAnglesDirty = true;
@@ -1069,21 +1070,7 @@ C_RopeKeyframe::~C_RopeKeyframe()
 	}
 }
 
-class C_ClientRopeKeyframe : public C_RopeKeyframe
-{
-public:
-	DECLARE_CLASS( C_ClientRopeKeyframe, C_RopeKeyframe );
-
-	C_ClientRopeKeyframe()
-		: C_RopeKeyframe()
-	{
-		AddEFlags(EFL_NOT_NETWORKED);
-	}
-
-	virtual IClientNetworkable*		GetClientNetworkable() { return NULL; }
-	virtual	bool			IsClientCreated( void ) const { return true; }
-	virtual bool						IsServerEntity( void ) { return false; }
-};
+typedef C_ClientOnlyWrapper<C_RopeKeyframe> C_ClientRopeKeyframe;
 
 LINK_ENTITY_TO_CLASS(client_keyframerope, C_ClientRopeKeyframe);
 

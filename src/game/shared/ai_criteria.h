@@ -12,7 +12,7 @@
 #include "tier1/utlsymbol.h"
 #include "tier2/interval.h"
 #include "mathlib/compressed_vector.h"
-#include "../../public/responserules/response_types.h"
+#include "responserules/response_types.h"
 
 
 using ResponseRules::ResponseType_t;

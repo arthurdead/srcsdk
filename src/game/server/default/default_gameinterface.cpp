@@ -84,7 +84,7 @@ void CServerGameDLL::ApplyGameSettings( KeyValues *pKV )
 	{
 		// Vitaliy: Disable cheats as part of reservation in case they were enabled (unless we are on Steam Beta)
 		if ( sv_force_transmit_ents.IsFlagSet( FCVAR_DEVELOPMENTONLY ) &&	// any convar with FCVAR_DEVELOPMENTONLY flag will be sufficient here
-			sv_cheats && sv_cheats->GetBool() )
+			sv_cheats->GetBool() )
 		{
 			sv_cheats->SetValue( 0 );
 		}

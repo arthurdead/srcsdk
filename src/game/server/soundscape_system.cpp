@@ -70,7 +70,7 @@ void CSoundscapeSystem::AddSoundscapeFile( const char *filename )
 		{
 			if ( pKeys->GetFirstSubKey() )
 			{
-				if ( g_pDeveloper->GetBool() )
+				if ( developer->GetBool() )
 				{
 					if ( strstr( pKeys->GetName(), "{" ) )
 					{

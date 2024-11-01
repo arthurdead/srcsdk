@@ -19,7 +19,7 @@
 #define SUPPORT_DX8 0
 #define SUPPORT_DX7 0
 
-extern ConVar mat_fullbright;
+extern ConVar *mat_fullbright;
 
 //-----------------------------------------------------------------------------
 // Helper macro for vertex shaders

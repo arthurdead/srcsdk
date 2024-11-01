@@ -51,6 +51,8 @@
 #include "studio_stats.h"
 #include "tier1/callqueue.h"
 #include "glow_outline_effect.h"
+#include "ragdoll.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -233,35 +235,35 @@ END_RECV_TABLE()
 
 BEGIN_PREDICTION_DATA( C_BaseAnimating )
 
-	DEFINE_PRED_FIELD( m_nSkin, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_nBody, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-//	DEFINE_PRED_FIELD( m_nHitboxSet, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-//	DEFINE_PRED_FIELD( m_flModelScale, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_nSequence, FIELD_INTEGER, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
-	DEFINE_PRED_FIELD( m_flPlaybackRate, FIELD_FLOAT, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
-	DEFINE_PRED_FIELD( m_flCycle, FIELD_FLOAT, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
-//	DEFINE_PRED_ARRAY( m_flPoseParameter, FIELD_FLOAT, MAXSTUDIOPOSEPARAM, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_ARRAY_TOL( m_flEncodedController, FIELD_FLOAT, MAXSTUDIOBONECTRLS, FTYPEDESC_INSENDTABLE, 0.02f ),
+	DEFINE_FIELD_FLAGS( m_nSkin, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_nBody, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+//	DEFINE_FIELD_FLAGS( m_nHitboxSet, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+//	DEFINE_FIELD_FLAGS( m_flModelScale, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_nSequence, FIELD_INTEGER, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_FIELD_FLAGS( m_flPlaybackRate, FIELD_FLOAT, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_FIELD_FLAGS( m_flCycle, FIELD_FLOAT, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
+//	DEFINE_ARRAY_FLAGS( m_flPoseParameter, FIELD_FLOAT, MAXSTUDIOPOSEPARAM, FTYPEDESC_INSENDTABLE ),
+	DEFINE_ARRAY_FLAGS_TOL( m_flEncodedController, FIELD_FLOAT, MAXSTUDIOBONECTRLS, FTYPEDESC_INSENDTABLE, 0.02f ),
 
 	DEFINE_FIELD( m_nPrevSequence, FIELD_INTEGER ),
 	//DEFINE_FIELD( m_flPrevEventCycle, FIELD_FLOAT ),
 	//DEFINE_FIELD( m_flEventCycle, FIELD_FLOAT ),
 	//DEFINE_FIELD( m_nEventSequence, FIELD_INTEGER ),
 
-	DEFINE_PRED_FIELD( m_nNewSequenceParity, FIELD_INTEGER, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
-	DEFINE_PRED_FIELD( m_nResetEventsParity, FIELD_INTEGER, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
-	// DEFINE_PRED_FIELD( m_nPrevResetEventsParity, FIELD_INTEGER, 0 ),
+	DEFINE_FIELD_FLAGS( m_nNewSequenceParity, FIELD_INTEGER, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_FIELD_FLAGS( m_nResetEventsParity, FIELD_INTEGER, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
+	// DEFINE_FIELD_FLAGS( m_nPrevResetEventsParity, FIELD_INTEGER, 0 ),
 
-	DEFINE_PRED_FIELD( m_nMuzzleFlashParity, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_nMuzzleFlashParity, FIELD_CHARACTER, FTYPEDESC_INSENDTABLE ),
 	//DEFINE_FIELD( m_nOldMuzzleFlashParity, FIELD_CHARACTER ),
 
 	//DEFINE_FIELD( m_nPrevNewSequenceParity, FIELD_INTEGER ),
 	//DEFINE_FIELD( m_nPrevResetEventsParity, FIELD_INTEGER ),
 
-	// DEFINE_PRED_FIELD( m_vecForce, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
-	// DEFINE_PRED_FIELD( m_nForceBone, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-	// DEFINE_PRED_FIELD( m_bClientSideAnimation, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
-	// DEFINE_PRED_FIELD( m_bClientSideFrameReset, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	// DEFINE_FIELD_FLAGS( m_vecForce, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
+	// DEFINE_FIELD_FLAGS( m_nForceBone, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	// DEFINE_FIELD_FLAGS( m_bClientSideAnimation, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	// DEFINE_FIELD_FLAGS( m_bClientSideFrameReset, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 	
 	// DEFINE_FIELD( m_pRagdollInfo, RagdollInfo_t ),
 	// DEFINE_FIELD( m_CachedBones, CUtlVector < CBoneCacheEntry > ),
@@ -284,8 +286,6 @@ LINK_ENTITY_TO_CLASS( client_ragdoll, C_ClientRagdoll );
 C_ClientRagdoll::C_ClientRagdoll()
 	: C_ClientAnimating()
 {
-	AddEFlags(EFL_NOT_NETWORKED);
-
 	m_iCurrentFriction = 0;
 	m_iFrictionAnimState = RAGDOLL_FRICTION_NONE;
 	m_bReleaseRagdoll = false;
@@ -612,8 +612,8 @@ LINK_ENTITY_TO_CLASS( prop_clientside, C_ClientAnimating );
 //-----------------------------------------------------------------------------
 // Purpose: convert axis rotations to a quaternion
 //-----------------------------------------------------------------------------
-C_BaseAnimating::C_BaseAnimating() :
-	C_BaseEntity(),
+C_BaseAnimating::C_BaseAnimating( int iEFlags ) :
+	C_BaseEntity( iEFlags ),
 	m_iv_flCycle( "C_BaseAnimating::m_iv_flCycle" ),
 	m_iv_flPoseParameter( "C_BaseAnimating::m_iv_flPoseParameter" ),
 	m_iv_flEncodedController("C_BaseAnimating::m_iv_flEncodedController")
@@ -1754,7 +1754,7 @@ void C_BaseAnimating::SaveRagdollInfo( int numbones, const matrix3x4_t &cameraTr
 			Msg( "Memory allocation of RagdollInfo_t failed!\n" );
 			return;
 		}
-		memset( m_pRagdollInfo, 0, sizeof( *m_pRagdollInfo ) );
+		memset( (void *)m_pRagdollInfo, 0, sizeof( *m_pRagdollInfo ) );
 	}
 
 	mstudiobone_t *pbones = hdr->pBone( 0 );
@@ -3234,8 +3234,8 @@ bool C_BaseAnimating::SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, i
 #if defined(FP_EXCEPTIONS_ENABLED) || defined(DBGFLAG_ASSERT)
 			// Having these uninitialized means that some bugs are very hard
 			// to reproduce. A memset of 0xFF is a simple way of getting NaNs.
-			memset( pos, 0xFF, sizeof(pos) );
-			memset( q, 0xFF, sizeof(q) );
+			memset( (void *)pos, 0xFF, sizeof(pos) );
+			memset( (void *)q, 0xFF, sizeof(q) );
 #endif
 
 			int bonesMaskNeedRecalc = boneMask | oldReadableBones; // Hack to always recalc bones, to fix the arm jitter in the new CS player anims until Ken makes the real fix
@@ -3630,7 +3630,7 @@ bool C_BaseAnimating::HitboxToWorldTransforms( matrix3x4_t *pHitboxToWorld[MAXST
 //----------------------------------------------------------------------------
 // Hooks into the fast path render system
 //----------------------------------------------------------------------------
-static ConVar r_drawmodelstatsoverlay( "r_drawmodelstatsoverlay", "0", FCVAR_CHEAT );
+extern ConVar *r_drawmodelstatsoverlay;
 
 IClientModelRenderable*	C_BaseAnimating::GetClientModelRenderable()
 { 
@@ -3638,7 +3638,7 @@ IClientModelRenderable*	C_BaseAnimating::GetClientModelRenderable()
 	if ( !m_bCanUseFastPath || m_bIsUsingRelativeLighting || !IsVisible() )
 		return NULL;
 	
-	if ( r_drawothermodels.GetInt() != 1 || r_drawmodelstatsoverlay.GetInt() != 0 || mat_wireframe.GetInt() != 0 )
+	if ( r_drawothermodels.GetInt() != 1 || r_drawmodelstatsoverlay->GetInt() != 0 || mat_wireframe->GetInt() != 0 )
 		return NULL;
 
 	if ( IsFollowingEntity() && !FindFollowedEntity() )
@@ -3859,7 +3859,7 @@ void C_BaseAnimating::ProcessMuzzleFlashEvent()
 				return;
 
 			dl->origin = vAttachment;
-			dl->radius = random->RandomInt( 32, 64 ); 
+			dl->radius = random_valve->RandomInt( 32, 64 ); 
 			dl->decay = dl->radius / 0.05f;
 			dl->die = gpGlobals->curtime + 0.05f;
 			dl->color.r = 255;
@@ -4099,10 +4099,14 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 		{
 			weaponType = MUZZLEFLASH_RPG;
 		}
+		else if ( Q_stricmp( token, "SMG1" ) == 0 )
+		{
+			weaponType = MUZZLEFLASH_SMG1;
+		}
 		else
 		{
 			//NOTENOTE: This means you specified an invalid muzzleflash type, check your spelling?
-			Assert( 0 );
+			AssertMsg( 0, "unknown muzzleflash type %s", token );
 		}
 	}
 	else
@@ -4126,7 +4130,8 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 		if ( attachmentIndex <= 0 )
 		{
 			//NOTENOTE: This means that the attachment you're trying to use is invalid
-			Assert( 0 );
+			AssertMsg( 0, "Couldn't find attachment %s for object %s\n",
+				token, GetDebugName() );
 			return false;
 		}
 	}

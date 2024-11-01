@@ -18,7 +18,7 @@ public:
 	static C_HeistPlayer *GetLocalHeistPlayer()
 	{ return (C_HeistPlayer *)C_BasePlayer::GetLocalPlayer(); }
 
-	void PostThink() override;
+	void Weapon_FrameUpdate() override;
 
 	void SelectItem( const char *pstr, int iSubType ) override;
 
@@ -26,6 +26,8 @@ public:
 
 private:
 	C_HeistPlayer(const C_HeistPlayer &);
+
+	bool m_bMaskingUp;
 };
 
 inline C_HeistPlayer *ToHeistPlayer(C_BaseEntity *pEntity)

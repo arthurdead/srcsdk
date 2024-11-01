@@ -116,8 +116,8 @@ LINK_ENTITY_TO_CLASS( info_constraint_anchor, CConstraintAnchor );
 
 class CPhysConstraintSystem : public CLogicalEntity
 {
-	DECLARE_CLASS( CPhysConstraintSystem, CLogicalEntity );
 public:
+	DECLARE_CLASS( CPhysConstraintSystem, CLogicalEntity );
 
 	void Spawn();
 	~CPhysConstraintSystem();

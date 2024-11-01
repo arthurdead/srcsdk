@@ -77,6 +77,14 @@ inline int BitByte( int bits )
 }
 
 //-----------------------------------------------------------------------------
+enum EBitCoordType
+{
+	kCW_None,
+	kCW_LowPrecision,
+	kCW_Integral
+};
+
+//-----------------------------------------------------------------------------
 // namespaced helpers
 //-----------------------------------------------------------------------------
 namespace bitbuf
@@ -209,6 +217,8 @@ public:
 	void			WriteBitAngle( float fAngle, int numbits );
 	void			WriteBitCoord (const float f);
 	void			WriteBitCoordMP( const float f, bool bIntegral, bool bLowPrecision );
+	void			WriteBitCoordMP( const float f, EBitCoordType coordType );
+	void 			WriteBitCellCoord( const float f, int bits, EBitCoordType coordType );
 	void			WriteBitFloat(float val);
 	void			WriteBitVec3Coord( const Vector& fa );
 	void			WriteBitNormal( float f );
@@ -584,6 +594,8 @@ public:
 
 	float			ReadBitCoord();
 	float			ReadBitCoordMP( bool bIntegral, bool bLowPrecision );
+	float			ReadBitCoordMP( EBitCoordType coordType );
+	float 			ReadBitCellCoord( int bits, EBitCoordType coordType );
 	float			ReadBitFloat();
 	float			ReadBitNormal();
 	void			ReadBitVec3Coord( Vector& fa );

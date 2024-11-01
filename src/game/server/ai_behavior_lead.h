@@ -10,6 +10,7 @@
 
 #include "simtimer.h"
 #include "ai_behavior.h"
+#include "ai_speech.h"
 
 // Speak concepts
 #define TLK_LEAD_START				"TLK_LEAD_START"
@@ -84,8 +85,8 @@ struct AI_LeadArgs_t
 
 class CAI_LeadBehavior : public CAI_SimpleBehavior
 {
-	DECLARE_CLASS( CAI_LeadBehavior, CAI_SimpleBehavior );
 public:
+	DECLARE_CLASS( CAI_LeadBehavior, CAI_SimpleBehavior );
 	CAI_LeadBehavior()
 	 :	m_pSink(NULL),
 		m_LostTimer( 3.0, 4.0 ),

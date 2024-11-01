@@ -820,7 +820,7 @@ void C_BreakableSurface::AddToRenderList(int nWidth, int nHeight, WinSide_t nSid
 	}
 	else
 	{
-		nStyle = random->RandomInt(0,NUM_EDGE_STYLES-1);
+		nStyle = random_valve->RandomInt(0,NUM_EDGE_STYLES-1);
 	}
 		
 	if ( forceStyle != -1 )

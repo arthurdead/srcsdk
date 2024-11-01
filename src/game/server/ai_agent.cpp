@@ -480,7 +480,7 @@ void CAI_Agent::TaskFail( AI_TaskFailureCode_t code )
 	//}
 
 	// If in developer mode save the fail text for debug output
-	if (g_pDeveloper->GetInt())
+	if (developer->GetInt())
 	{
 		m_failText = TaskFailureToString( code );
 
@@ -1017,7 +1017,7 @@ bool CAI_Agent::IsScheduleValid()
 	if (!testBits.IsAllClear()) 
 	{
 		// If in developer mode save the interrupt text for debug output
-		if (g_pDeveloper->GetInt()) 
+		if (developer->GetInt()) 
 		{
 			// Reset memory of failed schedule 
 			m_failedSchedule   = NULL;
@@ -1147,7 +1147,7 @@ void CAI_Agent::MaintainSchedule ( void )
 
 #if defined( VPROF_ENABLED )
 #if defined(DISABLE_DEBUG_HISTORY)
-	bool bDebugTaskNames = ( developer.GetBool() || ( VProfAI() && g_VProfCurrentProfile.IsEnabled() ) );
+	bool bDebugTaskNames = ( developer->GetBool() || ( VProfAI() && g_VProfCurrentProfile.IsEnabled() ) );
 #else
 	bool bDebugTaskNames = true;
 #endif
@@ -1155,7 +1155,7 @@ void CAI_Agent::MaintainSchedule ( void )
 	bool bDebugTaskNames = false;
 #endif
 
-	memset( g_AIAgentTaskTimings, 0, sizeof(g_AIAgentTaskTimings) );
+	memset( (void *)g_AIAgentTaskTimings, 0, sizeof(g_AIAgentTaskTimings) );
 
 	g_nAIAgentTasksRun = 0;
 

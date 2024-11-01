@@ -20,7 +20,14 @@ extern CTimedEventMgr g_NetworkPropertyEventMgr;
 //-----------------------------------------------------------------------------
 CServerNetworkProperty::CServerNetworkProperty()
 {
-	Init( NULL );
+	m_pPev = NULL;
+	m_pOuter = NULL;
+	m_pServerClass = NULL;
+//	m_pTransmitProxy = NULL;
+	m_bPendingStateChange = false;
+	m_PVSInfo.m_nClusterCount = 0;
+	m_TimerEvent.Init( &g_NetworkPropertyEventMgr, this );
+
 	m_bDestroyed = false;
 }
 
@@ -45,13 +52,7 @@ CServerNetworkProperty::~CServerNetworkProperty()
 //-----------------------------------------------------------------------------
 void CServerNetworkProperty::Init( CBaseEntity *pEntity )
 {
-	m_pPev = NULL;
 	m_pOuter = pEntity;
-	m_pServerClass = NULL;
-//	m_pTransmitProxy = NULL;
-	m_bPendingStateChange = false;
-	m_PVSInfo.m_nClusterCount = 0;
-	m_TimerEvent.Init( &g_NetworkPropertyEventMgr, this );
 }
 
 

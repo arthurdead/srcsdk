@@ -220,7 +220,7 @@ extern CSharedGameRulesProxy *g_pGameRulesProxy;
 abstract_class CGameRules : public CMemZeroOnNew, public CAutoGameSystemPerFrame, public CGameEventListener
 {
 public:
-	DECLARE_CLASS_GAMEROOT( CGameRules, CAutoGameSystemPerFrame );
+	DECLARE_CLASS( CGameRules, CAutoGameSystemPerFrame );
 	CGameRules(void);
 	virtual ~CGameRules( void );
 	virtual char const *Name() { return V_STRINGIFY(CGameRules); }
@@ -495,7 +495,8 @@ public:
 
 	// Setup g_pPlayerResource (some mods use a different entity type here).
 	virtual void CreateStandardEntities();
-	virtual CGameRulesProxy *AllocateProxy();
+
+	virtual IEntityFactory *ProxyFactory();
 
 	// Team name, etc shown in chat and dedicated server console
 	virtual const char *GetChatPrefix( bool bTeamOnly, CBasePlayer *pPlayer );

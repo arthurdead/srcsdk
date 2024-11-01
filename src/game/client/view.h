@@ -80,33 +80,23 @@ bool IsCurrentViewAccessAllowed();
 bool R_CullSphere( const VPlane *pPlanes, int nPlanes, const Vector *pCenter, float radius );
 float ScaleFOVByWidthRatio( float fovDegrees, float ratio );
 
-extern ConVar mat_wireframe;
+extern ConVar *mat_wireframe;
 
-extern const ConVar *sv_cheats;
+extern ConVar *sv_cheats;
 
 
 static inline int WireFrameMode( void )
 {
-	if ( !sv_cheats )
-	{
-		sv_cheats = g_pCVar->FindVar( "sv_cheats" );
-	}
-
-	if ( sv_cheats && sv_cheats->GetBool() )
-		return mat_wireframe.GetInt();
+	if ( sv_cheats->GetBool() )
+		return mat_wireframe->GetInt();
 	else
 		return 0;
 }
 
 static inline bool ShouldDrawInWireFrameMode( void )
 {
-	if ( !sv_cheats )
-	{
-		sv_cheats = g_pCVar->FindVar( "sv_cheats" );
-	}
-
-	if ( sv_cheats && sv_cheats->GetBool() )
-		return ( mat_wireframe.GetInt() != 0 );
+	if ( sv_cheats->GetBool() )
+		return ( mat_wireframe->GetInt() != 0 );
 	else
 		return false;
 }

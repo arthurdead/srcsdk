@@ -28,7 +28,7 @@ CAI_LocalNavigator::CAI_LocalNavigator(CAI_BaseNPC *pOuter) : CAI_Component( pOu
 	m_pPlaneSolver = new CAI_PlaneSolver( pOuter );
 
 	m_fLastWasClear = false;
-	memset( &m_LastMoveGoal, 0, sizeof(m_LastMoveGoal) );
+	memset( (void *)&m_LastMoveGoal, 0, sizeof(m_LastMoveGoal) );
 }
 
 //-------------------------------------

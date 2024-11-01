@@ -21,6 +21,7 @@
 #include "hierarchy.h"
 #include "particle_parse.h"
 #include "decals.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -564,7 +565,7 @@ void CRagdollProp::HandleFirstCollisionInteractions( int index, gamevcollisionev
 		trace_t tr;
 		UTIL_TraceLine( vecPos, vecPos + pEvent->preVelocity[0] * 1.5, MASK_SHOT, this, COLLISION_GROUP_NONE, &tr );
 
-		switch( random->RandomInt( 1, 3 ) )
+		switch( random_valve->RandomInt( 1, 3 ) )
 		{
 		case 1:
 			UTIL_DecalTrace( &tr, "PaintSplatBlue" );
@@ -1223,8 +1224,8 @@ void CRagdollProp::SetUnragdoll( CBaseAnimating *pOther )
 //===============================================================================================================
 class CRagdollPropAttached : public CRagdollProp
 {
-	DECLARE_CLASS( CRagdollPropAttached, CRagdollProp );
 public:
+	DECLARE_CLASS( CRagdollPropAttached, CRagdollProp );
 
 	CRagdollPropAttached()
 	{
@@ -1624,13 +1625,6 @@ void DetachAttachedRagdollsForEntity( CBaseEntity *pRagdollParent )
 	}
 }
 
-bool Ragdoll_IsPropRagdoll( CBaseEntity *pEntity )
-{
-	if ( dynamic_cast<CRagdollProp *>(pEntity) != NULL )
-		return true;
-	return false;
-}
-
 ragdoll_t *Ragdoll_GetRagdoll( CBaseEntity *pEntity )
 {
 	CRagdollProp *pProp = dynamic_cast<CRagdollProp *>(pEntity);
@@ -1752,19 +1746,10 @@ void CRagdollProp::InputFadeAndRemove( inputdata_t &inputdata )
 	FadeOut( 0.0f, flFadeDuration );
 }
 
-void Ragdoll_GetAngleOverrideString( char *pOut, int size, CBaseEntity *pEntity )
-{
-	CRagdollProp *pRagdoll = dynamic_cast<CRagdollProp *>(pEntity);
-	if ( pRagdoll )
-	{
-		pRagdoll->GetAngleOverrideFromCurrentState( pOut, size );
-	}
-}
-
 class CDynamicDestrProp : public CRagdollProp
 {
-	DECLARE_CLASS( CDynamicDestrProp, CRagdollProp );
 public:
+	DECLARE_CLASS( CDynamicDestrProp, CRagdollProp );
 	CDynamicDestrProp();
 
 	virtual int		OnTakeDamage( const CTakeDamageInfo &info );

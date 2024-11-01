@@ -11,6 +11,10 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+//-------------------------------------
+
+CEntsByStringTable g_EntsByClassname( 512 );
+
 enum
 {
 	SERIAL_MASK = 0x7fff // the max value of a serial number, rolls back to 0 when it hits this limit
@@ -176,8 +180,7 @@ EHANDLE CBaseEntityList::AddNetworkableEntity( CSharedBaseEntity *pEnt, int inde
 	if(!pEnt)
 		return NULL_EHANDLE;
 
-	if(LookupEntity(pEnt->GetRefEHandle()) != NULL)
-		return pEnt->GetRefEHandle();
+	Assert( LookupEntity(pEnt->GetRefEHandle()) == NULL );
 
 	Assert( index >= 0 && index < MAX_EDICTS );
 	return AddEntityAtSlot( pEnt, index, iForcedSerialNum );
@@ -189,8 +192,7 @@ EHANDLE CBaseEntityList::AddNonNetworkableEntity( CSharedBaseEntity *pEnt )
 	if(!pEnt)
 		return NULL_EHANDLE;
 
-	if(LookupEntity(pEnt->GetRefEHandle()) != NULL)
-		return pEnt->GetRefEHandle();
+	Assert( LookupEntity(pEnt->GetRefEHandle()) == NULL );
 
 	// Find a slot for it.
 	CEntInfo *pSlot = m_freeNonNetworkableList.Head();

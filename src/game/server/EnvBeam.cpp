@@ -365,7 +365,7 @@ void CEnvBeam::StrikeThink( void )
 	if ( m_life != 0 )
 	{
 		if ( m_spawnflags & SF_BEAM_RANDOM )
-			SetNextThink( gpGlobals->curtime + m_life + random->RandomFloat( 0, m_restrike ) );
+			SetNextThink( gpGlobals->curtime + m_life + random_valve->RandomFloat( 0, m_restrike ) );
 		else
 			SetNextThink( gpGlobals->curtime + m_life + m_restrike );
 	}
@@ -688,7 +688,7 @@ void CEnvBeam::RandomArea( void )
 	{
 		Vector vecSrc = GetAbsOrigin();
 
-		Vector vecDir1 = Vector( random->RandomFloat( -1.0, 1.0 ), random->RandomFloat( -1.0, 1.0 ),random->RandomFloat( -1.0, 1.0 ) );
+		Vector vecDir1 = Vector( random_valve->RandomFloat( -1.0, 1.0 ), random_valve->RandomFloat( -1.0, 1.0 ),random_valve->RandomFloat( -1.0, 1.0 ) );
 		VectorNormalize( vecDir1 );
 		trace_t	tr1;
 		UTIL_TraceLine( vecSrc, vecSrc + vecDir1 * m_radius, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr1 );
@@ -698,7 +698,7 @@ void CEnvBeam::RandomArea( void )
 
 		Vector vecDir2;
 		do {
-			vecDir2 = Vector( random->RandomFloat( -1.0, 1.0 ), random->RandomFloat( -1.0, 1.0 ),random->RandomFloat( -1.0, 1.0 ) );
+			vecDir2 = Vector( random_valve->RandomFloat( -1.0, 1.0 ), random_valve->RandomFloat( -1.0, 1.0 ),random_valve->RandomFloat( -1.0, 1.0 ) );
 		} while (DotProduct(vecDir1, vecDir2 ) > 0);
 		VectorNormalize( vecDir2 );
 		trace_t	tr2;
@@ -732,7 +732,7 @@ void CEnvBeam::RandomPoint( const Vector &vecSrc )
 
 	for (iLoops = 0; iLoops < 10; iLoops++)
 	{
-		Vector vecDir1 = Vector( random->RandomFloat( -1.0, 1.0 ), random->RandomFloat( -1.0, 1.0 ),random->RandomFloat( -1.0, 1.0 ) );
+		Vector vecDir1 = Vector( random_valve->RandomFloat( -1.0, 1.0 ), random_valve->RandomFloat( -1.0, 1.0 ),random_valve->RandomFloat( -1.0, 1.0 ) );
 		VectorNormalize( vecDir1 );
 		trace_t	tr1;
 		UTIL_TraceLine( vecSrc, vecSrc + vecDir1 * m_radius, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr1 );

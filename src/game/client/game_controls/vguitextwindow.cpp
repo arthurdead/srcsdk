@@ -504,7 +504,7 @@ void CTextWindow::ShowPanel( bool bShow )
 	m_pViewPort->ShowBackGround( bShow );
 
 	m_bMiniMode = false;
-	if ( m_szMessage && m_szMessage[0] )
+	if ( m_szMessage[0] )
 	{
 		if ( !Q_strncmp( m_szMessage, "hostfile", 8 ) )
 		{

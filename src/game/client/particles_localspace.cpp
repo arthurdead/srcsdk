@@ -7,6 +7,7 @@
 #include "cbase.h"
 #include "particles_simple.h"
 #include "particles_localspace.h"
+#include "collisionproperty.h"
 
 #include "tier0/memdbgon.h"
 

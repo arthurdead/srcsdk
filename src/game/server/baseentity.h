@@ -14,7 +14,7 @@
 #include "entitylist.h"
 #include "entityoutput.h"
 #include "networkvar.h"
-#include "collisionproperty.h"
+//#include "collisionproperty.h"
 #include "ServerNetworkProperty.h"
 #include "shareddefs.h"
 #include "engine/ivmodelinfo.h"
@@ -95,19 +95,9 @@ class CEntityMapData;
 class CWorld;
 typedef unsigned int UtlHashHandle_t;
 class CGlobalEvent;
+class CCollisionProperty;
 
 typedef CUtlVector< CBaseEntity* > EntityList_t;
-
-//
-// Structure passed to input handlers.
-//
-struct inputdata_t
-{
-	CBaseEntity *pActivator;		// The entity that initially caused this chain of output events.
-	CBaseEntity *pCaller;			// The entity that fired this particular output.
-	variant_t value;				// The data parameter for this output.
-	int nOutputID;					// The unique ID of the output that was fired.
-};
 
 // Serializable list of context as set by entity i/o and used for deducing proper
 //  speech state, et al.
@@ -232,10 +222,30 @@ struct rotatingpushmove_t;
 
 #if PREDICTION_ERROR_CHECK_LEVEL > 1 
 const int SENDPROP_ANGROTATION_DEFAULT_BITS = -1;
-const int SENDPROP_VECORIGIN_FLAGS = SPROP_NOSCALE|SPROP_CHANGES_OFTEN;
 #else
 const int SENDPROP_ANGROTATION_DEFAULT_BITS = 13;
+#endif
+
+#if PREDICTION_ERROR_CHECK_LEVEL > 1 
+const int SENDPROP_VECORIGIN_FLAGS = SPROP_NOSCALE|SPROP_CHANGES_OFTEN;
+#else
+#ifdef DT_CELL_COORD_SUPPORTED
 const int SENDPROP_VECORIGIN_FLAGS = SPROP_CELL_COORD|SPROP_CHANGES_OFTEN;
+#else
+const int SENDPROP_VECORIGIN_FLAGS = SPROP_COORD_MP|SPROP_CHANGES_OFTEN;
+#endif
+#endif
+
+#ifdef DT_CELL_COORD_SUPPORTED
+#define SENDPROP_VECORIGIN_BITS CELL_BASEENTITY_ORIGIN_CELL_BITS
+#else
+#define SENDPROP_VECORIGIN_BITS -1
+#endif
+
+#ifdef DT_CELL_COORD_SUPPORTED
+#define SENDPROP_VECORIGIN_PROXY CBaseEntity::SendProxy_CellOrigin
+#else
+#define SENDPROP_VECORIGIN_PROXY SendProxy_Origin
 #endif
 
 #define CREATE_PREDICTED_ENTITY( className, ... )	\
@@ -273,7 +283,8 @@ public:
 public:
 	// If bServerOnly is true, then the ent never goes to the client. This is used
 	// by logical entities.
-	CBaseEntity();
+	CBaseEntity() : CBaseEntity(0) {}
+	CBaseEntity( int iEFlags );
 	virtual ~CBaseEntity();
 
 	// prediction system
@@ -321,8 +332,8 @@ public:
 	// non-virtual methods. Don't override these!
 public:
 	// An inline version the game code can use
-	CCollisionProperty		*CollisionProp();
-	const CCollisionProperty*CollisionProp() const;
+	virtual CCollisionProperty		*CollisionProp();
+	virtual const CCollisionProperty*CollisionProp() const;
 	virtual CServerNetworkProperty *NetworkProp();
 	virtual const CServerNetworkProperty *NetworkProp() const;
 
@@ -447,6 +458,7 @@ public:
 	virtual edict_t			*edict( void );
 	virtual const edict_t	*edict( void ) const;
 	virtual int				entindex( ) const;
+	int				entserial( ) const;
 	int				GetSoundSourceIndex() const;
 
 	void	SetFadeDistance( float minFadeDist, float maxFadeDist );
@@ -520,6 +532,7 @@ public:
 	int			GetParentAttachment();
 
 	string_t	GetEntityName();
+	string_t	GetEntityNameAsTStr();
 	const char *GetEntityNameAsCStr();	// This method is temporary for VSCRIPT functionality until we figure out what to do with string_t (sjb)
 	const char *GetPreTemplateName(); // Not threadsafe. Get the name stripped of template unique decoration
 
@@ -726,15 +739,11 @@ public:
 
 public:
 	// Networking related methods
-	void	NetworkStateChanged();
-	void	NetworkStateChanged( void *pVar );
+	virtual void	NetworkStateChanged();
+	virtual void	NetworkStateChanged( void *pVar );
 
 public:
  	void CalcAbsolutePosition();
-
-	// returns the edict index the entity requires when used in save/restore (eg players, world)
-	// -1 means it doesn't require any special index
-	virtual int RequiredEdictIndex( void ) { return -1; } 
 
 	// interface function pts
 	void (CBaseEntity::*m_pfnMoveDone)(void);
@@ -816,7 +825,7 @@ public:
 	// This was partly inspired by Underhell's keyvalue that allows entities to only render in mirrors and cameras.
 	CNetworkVar( int, m_iViewHideFlags );
 
-private:
+protected:
 	// Disables receiving projected textures. Based on a keyvalue from later Source games.
 	CNetworkVar( bool, m_bDisableFlashlight );
 
@@ -1391,9 +1400,11 @@ public:
 	static void SendProxy_CellX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
 	static void SendProxy_CellY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
 	static void SendProxy_CellZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
+#ifdef DT_CELL_COORD_SUPPORTED
 	static void SendProxy_CellOrigin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 	static void SendProxy_CellOriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 	static void SendProxy_CellOriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+#endif
 	static void SendProxy_AnglesX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 	static void SendProxy_AnglesY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 	static void SendProxy_AnglesZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
@@ -1698,7 +1709,7 @@ private:
 	// was pev->flags
 	CNetworkVarForDerived( int, m_fFlags );
 
-	CNetworkVar( string_t, m_iName ); // name used to identify this entity
+	CNetworkStringT( m_iName ); // name used to identify this entity
 
 	// Damage modifiers
 	friend class CDamageModifier;
@@ -1721,7 +1732,7 @@ private:
 
 	friend class CCollisionProperty;
 	friend class CServerNetworkProperty;
-	CNetworkVarEmbedded( CCollisionProperty, m_Collision );
+	CCollisionProperty *m_pCollision;
 
 	CNetworkHandle( CBaseEntity, m_hOwnerEntity );	// only used to point to an edict it won't collide with
 	CNetworkHandle( CBaseEntity, m_hEffectEntity );	// Fire/Dissolve entity.
@@ -1946,16 +1957,8 @@ public:
 	int GetNavObstacleRef() { return m_NavObstacleRef; }
 	float						GetViewDistance();
 	void						SetViewDistance( float dist );
-	
-	// Hack for keeper package due edict limit
-	void SetDoNotRegisterEntity() { m_bDoNotRegisterEntity = true; }
-	// Hack for keeper package to force vphysics creation for entities without edicts (tiles/blocks)
-	void SetForceAllowVPhysics() { m_bForceAllowVPhysics = true; }
 
 private:
-	bool m_bDoNotRegisterEntity;
-	bool m_bForceAllowVPhysics;
-
 	bool					m_bAllowNavIgnore;
 	int						m_NavObstacleRef;
 	CNetworkVar( float,		m_fViewDistance );
@@ -2083,6 +2086,11 @@ inline int CBaseEntity::GetParentAttachment()
 // Inline methods
 //-----------------------------------------------------------------------------
 inline string_t CBaseEntity::GetEntityName() 
+{ 
+	return m_iName; 
+}
+
+inline string_t CBaseEntity::GetEntityNameAsTStr() 
 { 
 	return m_iName; 
 }
@@ -2652,66 +2660,12 @@ inline void	CBaseEntity::EyePositionZOnly( Vector *pPosition )
 //-----------------------------------------------------------------------------
 inline CCollisionProperty *CBaseEntity::CollisionProp()
 {
-	return &m_Collision;
+	return m_pCollision;
 }
 
 inline const CCollisionProperty *CBaseEntity::CollisionProp() const
 {
-	return &m_Collision;
-}
-
-inline void CBaseEntity::ClearSolidFlags( void )
-{
-	CollisionProp()->ClearSolidFlags();
-}
-
-inline void CBaseEntity::RemoveSolidFlags( int flags )
-{
-	CollisionProp()->RemoveSolidFlags( flags );
-}
-
-inline void CBaseEntity::AddSolidFlags( int flags )
-{
-	CollisionProp()->AddSolidFlags( flags );
-}
-
-inline int CBaseEntity::GetSolidFlags( void ) const
-{
-	return CollisionProp()->GetSolidFlags();
-}
-
-inline bool CBaseEntity::IsSolidFlagSet( int flagMask ) const
-{
-	return CollisionProp()->IsSolidFlagSet( flagMask );
-}
-
-inline bool CBaseEntity::IsSolid() const
-{
-	return CollisionProp()->IsSolid( );
-}
-
-inline void CBaseEntity::SetSolid( SolidType_t val )
-{
-	CollisionProp()->SetSolid( val );
-}
-
-inline void CBaseEntity::SetSolidFlags( int flags )
-{
-	CollisionProp()->SetSolidFlags( flags );
-}
-
-inline SolidType_t CBaseEntity::GetSolid() const
-{
-	return CollisionProp()->GetSolid();
-}
-
-		 	 			 
-//-----------------------------------------------------------------------------
-// Methods related to IServerUnknown
-//-----------------------------------------------------------------------------
-inline ICollideable *CBaseEntity::GetCollideable()
-{
-	return &m_Collision;
+	return m_pCollision;
 }
 
 inline CBaseEntity *CBaseEntity::GetBaseEntity()
@@ -2751,47 +2705,6 @@ inline void CBaseEntity::SetAIAddOn( string_t addonName )
 inline string_t CBaseEntity::GetAIAddOn( void ) const
 {
 	return m_AIAddOn;
-}
-
-//-----------------------------------------------------------------------------
-// Methods relating to bounds
-//-----------------------------------------------------------------------------
-inline const Vector& CBaseEntity::WorldAlignMins( ) const
-{
-	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
-	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
-	return CollisionProp()->OBBMins();
-}
-
-inline const Vector& CBaseEntity::WorldAlignMaxs( ) const
-{
-	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
-	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
-	return CollisionProp()->OBBMaxs();
-}
-
-inline const Vector& CBaseEntity::WorldAlignSize( ) const
-{
-	Assert( !CollisionProp()->IsBoundsDefinedInEntitySpace() );
-	Assert( CollisionProp()->GetCollisionAngles() == vec3_angle );
-	return CollisionProp()->OBBSize();
-}
-
-// Returns a radius of a sphere *centered at the world space center*
-// bounding the collision representation of the entity
-inline float CBaseEntity::BoundingRadius() const
-{
-	return CollisionProp()->BoundingRadius();
-}
-
-inline float CBaseEntity::BoundingRadius2D() const
-{
-	return CollisionProp()->BoundingRadius2D();
-}
-
-inline bool CBaseEntity::IsPointSized() const
-{
-	return CollisionProp()->BoundingRadius() == 0.0f;
 }
 
 inline void CBaseEntity::SetRenderMode( RenderMode_t nRenderMode )
@@ -2912,43 +2825,54 @@ class CPointEntity : public CBaseEntity
 {
 public:
 	DECLARE_CLASS( CPointEntity, CBaseEntity );
+	DECLARE_SERVERCLASS();
+
+	CPointEntity() : CPointEntity( 0 ) {}
+	CPointEntity( int iEFlags );
+
+	ICollideable	*GetCollideable() { return NULL; }
+	CCollisionProperty		*CollisionProp() { return NULL; }
+	const CCollisionProperty*CollisionProp() const { return NULL; }
 
 	void	Spawn( void );
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 
 	int UpdateTransmitState()
 	{
 		return SetTransmitState( FL_EDICT_ALWAYS );
 	}
-private:
 };
 
 typedef CPointEntity CSharedPointEntity;
 
 // Has no position or size
-class CLogicalEntity : public CBaseEntity
+class CLogicalEntity : public CPointEntity
 {
-	DECLARE_CLASS( CLogicalEntity, CBaseEntity );
-
 public:
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
-	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+	DECLARE_CLASS( CLogicalEntity, CPointEntity );
 
-	int UpdateTransmitState()
-	{
-		return SetTransmitState( FL_EDICT_ALWAYS );
-	}
+	DECLARE_SERVERCLASS();
+
+	CLogicalEntity() : CLogicalEntity( 0 ) {}
+	CLogicalEntity( int iEFlags );
+
+	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 };
 
 typedef CLogicalEntity CSharedLogicalEntity;
 
-// Has a position + size
-class CServerOnlyEntity : public CBaseEntity
+template <typename T>
+class CServerOnlyWrapper : public T
 {
-	DECLARE_CLASS( CServerOnlyEntity, CBaseEntity );
 public:
-	CServerOnlyEntity();
+	DECLARE_CLASS( CServerOnlyWrapper, T );
+	CServerOnlyWrapper() : CServerOnlyWrapper( 0 ) {}
+	CServerOnlyWrapper( int iEFlags ) : T( EFL_NOT_NETWORKED|iEFlags ) {}
+
+	virtual void	NetworkStateChanged() {}
+	virtual void	NetworkStateChanged( void *pVar ) {}
+
+	virtual ServerClass* GetServerClass() { return NULL; }
 
 	virtual IServerNetworkable *GetNetworkable() { return NULL; }
 
@@ -2957,29 +2881,28 @@ public:
 
 	edict_t			*edict( void ) { return NULL; }
 	const edict_t	*edict( void ) const { return NULL; }
-	int				entindex( ) const { return -1; }
 
-	virtual int ObjectCaps( void ) { return (BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION); }
+	virtual int				ShouldTransmit( const CCheckTransmitInfo *pInfo ) { return FL_EDICT_DONTSEND; }
+
+	int UpdateTransmitState()
+	{
+		return FL_EDICT_DONTSEND;
+	}
 };
+
+typedef CServerOnlyWrapper<CBaseEntity> CServerOnlyEntity;
+
+typedef CServerOnlyEntity CLocalOnlyEntity;
 
 // Has only a position, no size
-class CServerOnlyPointEntity : public CServerOnlyEntity
-{
-	DECLARE_CLASS( CServerOnlyPointEntity, CServerOnlyEntity );
+typedef CServerOnlyWrapper<CPointEntity> CServerOnlyPointEntity;
 
-public:
-	virtual bool KeyValue( const char *szKeyName, const char *szValue );
-};
+typedef CServerOnlyPointEntity CLocalOnlyPointEntity;
 
 // Has no position or size
-class CServerOnlyLogicalEntity : public CServerOnlyEntity
-{
-	DECLARE_CLASS( CServerOnlyLogicalEntity, CServerOnlyEntity );
+typedef CServerOnlyWrapper<CLogicalEntity> CServerOnlyLogicalEntity;
 
-public:
-	virtual bool KeyValue( const char *szKeyName, const char *szValue );
-};
-
+typedef CServerOnlyLogicalEntity CLocalOnlyLogicalEntity;
 
 // Network proxy functions
 

@@ -94,8 +94,7 @@ void VoxCallback( IConVar *var, const char *oldString, float oldFloat )
 {
 	if ( engine && engine->IsConnected() )
 	{
-		ConVarRef voice_vox( var->GetName() );
-		if ( voice_vox.GetBool() && voice_modenable.GetBool() )
+		if ( ((ConVar *)var)->GetBool() && voice_modenable.GetBool() )
 		{
 			engine->ClientCmd_Unrestricted( "voicerecord_toggle on\n" );
 		}
@@ -106,6 +105,12 @@ void VoxCallback( IConVar *var, const char *oldString, float oldFloat )
 	}
 }
 ConVar voice_vox( "voice_vox", "0", FCVAR_ARCHIVE, "Voice chat uses a vox-style always on", true, 0, true, 1, VoxCallback );
+
+void HUDMinModeChangedCallBack( IConVar *var, const char *pOldString, float flOldValue )
+{
+	engine->ExecuteClientCmd( "hud_reloadscheme" );
+}
+extern ConVar *cl_hud_minmode;
 
 // --------------------------------------------------------------------------------- //
 // CVoxManager.

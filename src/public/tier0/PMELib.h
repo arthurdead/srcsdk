@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "Windows.h"
+#include "windows.h"
 #include "tier0/platform.h"
 
 // Get rid of a bunch of STL warnings!
@@ -54,7 +54,9 @@ _asm mov DWORD PTR var+4,edx
 #define EVENT_TYPE(mode) EventType##mode
 #define EVENT_MASK(mode) EventMask##mode
 
+#ifdef _MSC_VER
 #include "ia32detect.h"    
+#endif
 
 enum ProcessPriority
 {
@@ -87,6 +89,7 @@ enum CompareState
     CompareEnable,  // 
 };
 
+#ifdef _MSC_VER
 // Singletion Class
 class PME : public ia32detect
 {
@@ -170,6 +173,9 @@ public:
 #endif // DBGFLAG_VALIDATE
 
 };
+#else
+class PME;
+#endif
 
 #include "P5P6PerformanceCounters.h"    
 #include "P4PerformanceCounters.h"    

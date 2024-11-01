@@ -237,7 +237,7 @@ void CAI_AddOn::StartTask( const Task_t *pTask )
 		Assert( pTask->numData == 1 );
 		Assert( pTask->data[0].CanBeFloat() );
 
-		m_flWaitFinished = gpGlobals->curtime + random->RandomFloat( 0.1f, pTask->data[0].AsFloat() );
+		m_flWaitFinished = gpGlobals->curtime + random_valve->RandomFloat( 0.1f, pTask->data[0].AsFloat() );
 		break;
 
 	default:

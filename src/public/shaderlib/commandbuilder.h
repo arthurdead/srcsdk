@@ -18,6 +18,7 @@
 #include "tier1/convar.h"
 #include "shaderapi/ishaderapi.h"
 
+extern ConVar* mat_fullbright;
 
 #ifdef DBGFLAG_ASSERT
 #define TRACK_STORAGE 1
@@ -355,8 +356,7 @@ public:
 	FORCEINLINE void SetEnvMapTintPixelShaderDynamicState( int pixelReg, int tintVar )
 	{
 #ifdef _WIN32
-		extern ConVar mat_fullbright;
-		if( g_pConfig->bShowSpecular && mat_fullbright.GetInt() != 2 )
+		if( g_pConfig->bShowSpecular && mat_fullbright->GetInt() != 2 )
 		{
 			SetPixelShaderConstant( pixelReg, this->Param( tintVar)->GetVecValue() );
 		}
@@ -370,8 +370,7 @@ public:
 	FORCEINLINE void SetEnvMapTintPixelShaderDynamicStateGammaToLinear( int pixelReg, int tintVar, float fAlphaVal = 1.0f )
 	{
 #ifdef _WIN32
-		extern ConVar mat_fullbright;
-		if( g_pConfig->bShowSpecular && mat_fullbright.GetInt() != 2 )
+		if( g_pConfig->bShowSpecular && mat_fullbright->GetInt() != 2 )
 		{
 			float color[4];
 			color[3] = fAlphaVal;

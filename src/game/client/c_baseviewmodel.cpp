@@ -257,8 +257,8 @@ bool C_BaseViewModel::ShouldDraw()
 #endif
 	else
 	{
-		Assert( !IsEffectActive( EF_NODRAW ) );
-		Assert(	GetRenderMode() != kRenderNone );
+		//Assert( !IsEffectActive( EF_NODRAW ) );
+		//Assert(	GetRenderMode() != kRenderNone );
 
 		if ( vm_draw_always.GetBool() )
 			return true;

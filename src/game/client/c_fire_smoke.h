@@ -198,7 +198,7 @@ public:
 	{
 		m_pOwner	= owner;
 		m_flScale	= 0.0f;
-		m_nGUID		= random->RandomInt( -999999, 999999 );
+		m_nGUID		= random_valve->RandomInt( -999999, 999999 );
 	}
 
 	//-----------------------------------------------------------------------------

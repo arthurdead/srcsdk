@@ -140,7 +140,7 @@ CMovieDisplayScreen::~CMovieDisplayScreen( void )
 //-----------------------------------------------------------------------------
 void CMovieDisplayScreen::ApplySchemeSettings( IScheme *pScheme )
 {
-	assert( pScheme );
+	Assert( pScheme );
 
 	m_cDefault = Color( 255, 255, 255, 255 );
 	m_cInvisible = Color( 0, 0, 0, 0 );	

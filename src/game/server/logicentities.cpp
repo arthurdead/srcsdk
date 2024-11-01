@@ -309,7 +309,7 @@ void CTimerEntity::ResetTimer( void )
 
 	if ( m_iUseRandomTime )
 	{
-		m_flRefireTime = random->RandomFloat( m_flLowerRandomBound, m_flUpperRandomBound );
+		m_flRefireTime = random_valve->RandomFloat( m_flLowerRandomBound, m_flUpperRandomBound );
 	}
 
 	SetNextThink( gpGlobals->curtime + m_flRefireTime );
@@ -1366,7 +1366,7 @@ void CMultiSource::Register(void)
 	CBaseEntity *pTarget = NULL;
 
 	m_iTotal = 0;
-	memset( m_rgEntities, 0, MS_MAX_TARGETS * sizeof(EHANDLE) );
+	memset( (void *)m_rgEntities, 0, MS_MAX_TARGETS * sizeof(EHANDLE) );
 
 	SetThink(&CMultiSource::SUB_DoNothing);
 
@@ -1401,6 +1401,7 @@ void CMultiSource::Register(void)
 //-----------------------------------------------------------------------------
 class CMathCounter : public CLogicalEntity
 {
+public:
 	DECLARE_CLASS( CMathCounter, CLogicalEntity );
 protected:
 	float m_flMin;		// Minimum clamp value. If min and max are BOTH zero, no clamping is done.
@@ -1809,6 +1810,7 @@ void CMathCounter::UpdateOutValue(CBaseEntity *pActivator, float fNewValue)
 //-----------------------------------------------------------------------------
 class CMathCounterAdvanced : public CMathCounter
 {
+public:
 	DECLARE_CLASS( CMathCounterAdvanced, CMathCounter );
 private:
 
@@ -2395,7 +2397,7 @@ void CLogicCase::InputPickRandom( inputdata_t &inputdata )
 	//
 	if ( nNumCases > 0 )
 	{
-		int nRandom = random->RandomInt(0, nNumCases - 1);
+		int nRandom = random_valve->RandomInt(0, nNumCases - 1);
 		int nCase = (unsigned char)uchCaseMap[nRandom];
 
 		Assert(nCase < MAX_LOGIC_CASES);
@@ -2451,7 +2453,7 @@ void CLogicCase::InputPickRandomShuffle( inputdata_t &inputdata )
 	//
 	if ( nCaseCount > 0 )
 	{
-		int nRandom = random->RandomInt( 0, nCaseCount - 1 );
+		int nRandom = random_valve->RandomInt( 0, nCaseCount - 1 );
 
 		int nCase = m_uchShuffleCaseMap[nRandom];
 		Assert(nCase < MAX_LOGIC_CASES);
@@ -3199,9 +3201,9 @@ public:
 
 	// TODO: Replace "append" with variable arguments?
 	inline void LCMsg(const char *msg, const char *append = NULL) { ConColorMsg(m_MsgColor, msg, append); }
-	inline void LCDevMsg(int lvl, const char *msg, const char *append = NULL) { developer.GetInt() >= lvl ? ConColorMsg(m_MsgColor, msg, append) : (void)0; }
+	inline void LCDevMsg(int lvl, const char *msg, const char *append = NULL) { developer->GetInt() >= lvl ? ConColorMsg(m_MsgColor, msg, append) : (void)0; }
 	inline void LCWarning(const char *msg, const char *append = NULL) { ConColorMsg(m_WarningColor, msg, append); }
-	inline void LCDevWarning(int lvl, const char *msg, const char *append = NULL) { developer.GetInt() >= lvl ? ConColorMsg(m_WarningColor, msg, append) : (void)0; }
+	inline void LCDevWarning(int lvl, const char *msg, const char *append = NULL) { developer->GetInt() >= lvl ? ConColorMsg(m_WarningColor, msg, append) : (void)0; }
 
 	//inline void LCMsg(const char *msg, const char *append = NULL) { ColorSpewMessage(SPEW_MESSAGE, &m_MsgColor, msg, append); }
 	//inline void LCDevMsg(int lvl, const char *msg, const char *append = NULL) { developer.GetInt() >= lvl ? ColorSpewMessage(SPEW_MESSAGE, &m_MsgColor, msg, append) : (void)0; }
@@ -3502,6 +3504,7 @@ void CLogicFormat::FormatString(const char *szStringToFormat, char *szOutput, in
 //-----------------------------------------------------------------------------
 class CLogicKeyfieldAccessor : public CLogicalEntity
 {
+public:
 	DECLARE_CLASS(CLogicKeyfieldAccessor, CLogicalEntity);
 
 protected:
@@ -4813,6 +4816,7 @@ int CMathVector::DrawDebugTextOverlays( void )
 //-----------------------------------------------------------------------------
 class CLogicFieldAccessor : public CLogicKeyfieldAccessor
 {
+public:
 	DECLARE_CLASS(CLogicFieldAccessor, CLogicKeyfieldAccessor);
 
 private:
@@ -6226,7 +6230,7 @@ CGaussianRandomStream CMathGenerate::m_GaussianStream;
 //-----------------------------------------------------------------------------
 CMathGenerate::CMathGenerate()
 {
-	m_GaussianStream.AttachToStream( random );
+	m_GaussianStream.AttachToStream( random_valve );
 }
 
 //-----------------------------------------------------------------------------
@@ -6527,7 +6531,7 @@ void CMathGenerate::GenerateUniformNoise()
 {
 	// CUniformNoiseProxy in mathproxy.cpp
 
-	UpdateOutValue( random->RandomFloat( m_flMin, m_flMax ) );
+	UpdateOutValue( random_valve->RandomFloat( m_flMin, m_flMax ) );
 
 	SetNextThink( gpGlobals->curtime + TICK_INTERVAL );
 }

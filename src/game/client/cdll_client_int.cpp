@@ -128,6 +128,13 @@
 #include "gameui_sys.h"
 #include "game_controls/igameuisystemmgr.h"
 #include "matchmaking/imatchframework.h"
+#include "mapentities_shared.h"
+#include "toolframework/iserverenginetools.h"
+#include "ModelSoundsCache.h"
+#include "querycache.h"
+#include "point_template.h"
+#include "baseclientrendertargets.h"
+#include "viewpostprocess.h"
 
 // NVNT includes
 #include "hud_macros.h"
@@ -163,6 +170,8 @@ extern vgui::IInputInternal *g_InputInternal;
 
 extern IClientMode *GetClientModeNormal();
 
+extern ConVar *dsp_room;
+
 // IF YOU ADD AN INTERFACE, EXTERN IT IN THE HEADER FILE.
 IVEngineClient	*engine = NULL;
 IVModelRender *modelrender = NULL;
@@ -177,7 +186,7 @@ ISpatialPartition* partition = NULL;
 IShadowMgr *shadowmgr = NULL;
 IStaticPropMgrClient *staticpropmgr = NULL;
 IEngineSound *enginesound = NULL;
-IUniformRandomStream *random = NULL;
+IUniformRandomStream *random_valve = NULL;
 static CGaussianRandomStream s_GaussianRandomStream;
 CGaussianRandomStream *randomgaussian = &s_GaussianRandomStream;
 ISharedGameRules *sharedgamerules = NULL;
@@ -198,6 +207,7 @@ IEngineReplay *g_pEngineReplay = NULL;
 IEngineClientReplay *g_pEngineClientReplay = NULL;
 IReplaySystem *g_pReplay = NULL;
 #endif
+IServerEngineTools *serverenginetools = NULL;
 
 CSysModule* gamepaduiDLL = NULL;
 IGamepadUI* g_pGamepadUI = NULL;
@@ -487,7 +497,7 @@ void ProcessCacheUsedMaterials()
 		return;
 
 	g_bRequestCacheUsedMaterials = false;
-	if ( materials )
+	if ( g_pMaterialSystem )
 	{
         g_pMaterialSystem->CacheUsedMaterials();
 	}
@@ -553,9 +563,8 @@ static ConVar s_cl_team("cl_team", "default", FCVAR_USERINFO|FCVAR_ARCHIVE, "Def
 static ConVar s_cl_class("cl_class", "default", FCVAR_USERINFO|FCVAR_ARCHIVE, "Default class when joining a game");
 
 // Physics system
-bool g_bLevelInitialized;
+bool g_bLevelInitialized = false;
 bool g_bTextMode = false;
-class IClientPurchaseInterfaceV2 *g_pClientPurchaseInterface = (class IClientPurchaseInterfaceV2 *)(&g_bTextMode + 156);
 
 static ConVar *g_pcv_ThreadMode = NULL;
 
@@ -814,169 +823,6 @@ void DisplayBoneSetupEnts()
 #endif
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: engine to client .dll interface
-//-----------------------------------------------------------------------------
-class CClientDll : public IBaseClientDLL
-{
-public:
-	CClientDll();
-
-	virtual int						Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGlobals );
-	virtual int						Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CGlobalVarsBase *pGlobals );
-
-	virtual void					PostInit();
-	virtual void					Shutdown( void );
-
-	virtual bool					ReplayInit( CreateInterfaceFn fnReplayFactory );
-	virtual bool					ReplayPostInit();
-
-	virtual void					LevelInitPreEntity( const char *pMapName );
-	virtual void					LevelInitPostEntity();
-	virtual void					LevelShutdown( void );
-
-	virtual ClientClass				*GetAllClasses( void );
-
-	virtual int						HudVidInit( void );
-	virtual void					HudProcessInput( bool bActive );
-	virtual void					HudUpdate( bool bActive );
-	virtual void					HudReset( void );
-	virtual void					HudText( const char * message );
-
-	// Mouse Input Interfaces
-	virtual void					IN_ActivateMouse( void );
-	virtual void					IN_DeactivateMouse( void );
-	virtual void					IN_Accumulate( void );
-	virtual void					IN_ClearStates( void );
-	virtual bool					IN_IsKeyDown( const char *name, bool& isdown );
-	virtual void					IN_OnMouseWheeled( int nDelta );
-	// Raw signal
-	virtual int						IN_KeyEvent( int eventcode, ButtonCode_t keynum, const char *pszCurrentBinding );
-	virtual void					IN_SetSampleTime( float frametime );
-	// Create movement command
-	virtual void					CreateMove ( int sequence_number, float input_sample_frametime, bool active );
-	virtual void					ExtraMouseSample( float frametime, bool active );
-	virtual bool					WriteUsercmdDeltaToBuffer( bf_write *buf, int from, int to, bool isnewcommand );	
-	virtual void					EncodeUserCmdToBuffer( bf_write& buf, int slot );
-	virtual void					DecodeUserCmdFromBuffer( bf_read& buf, int slot );
-
-
-	virtual void					View_Render( vrect_t *rect );
-	virtual void					RenderView( const CViewSetup &view, int nClearFlags, int whatToDraw );
-	virtual void					View_Fade( ScreenFade_t *pSF );
-	
-	virtual void					SetCrosshairAngle( const QAngle& angle );
-
-	virtual void					InitSprite( CEngineSprite *pSprite, const char *loadname );
-	virtual void					ShutdownSprite( CEngineSprite *pSprite );
-
-	virtual int						GetSpriteSize( void ) const;
-
-	virtual void					VoiceStatus( int entindex, qboolean bTalking );
-
-	virtual void					InstallStringTableCallback( const char *tableName );
-
-	virtual void					FrameStageNotify( ClientFrameStage_t curStage );
-
-	virtual bool					DispatchUserMessage( int msg_type, bf_read &msg_data );
-
-	// Given a list of "S(wavname) S(wavname2)" tokens, look up the localized text and emit
-	//  the appropriate close caption if running with closecaption = 1
-	virtual void			EmitSentenceCloseCaption( char const *tokenstream );
-	virtual void			EmitCloseCaption( char const *captionname, float duration );
-
-	virtual CStandardRecvProxies* GetStandardRecvProxies();
-
-	virtual bool			CanRecordDemo( char *errorMsg, int length ) const;
-
-	virtual void			OnDemoRecordStart( char const* pDemoBaseName );
-	virtual void			OnDemoRecordStop();
-	virtual void			OnDemoPlaybackStart( char const* pDemoBaseName );
-	virtual void			OnDemoPlaybackStop();
-
-	virtual void			RecordDemoPolishUserInput( int nCmdIndex );
-
-	// Cache replay ragdolls
-	virtual bool			CacheReplayRagdolls( const char* pFilename, int nStartTick );
-
-	virtual bool			ShouldDrawDropdownConsole();
-
-	// Get client screen dimensions
-	virtual int				GetScreenWidth();
-	virtual int				GetScreenHeight();
-
-	// Gets the location of the player viewpoint
-	virtual bool			GetPlayerView( CViewSetup &playerView );
-
-	// Matchmaking
-	virtual void			SetupGameProperties( CUtlVector< XUSER_CONTEXT > &contexts, CUtlVector< XUSER_PROPERTY > &properties );
-	virtual uint			GetPresenceID( const char *pIDName );
-	virtual const char		*GetPropertyIdString( const uint id );
-	virtual void			GetPropertyDisplayString( uint id, uint value, char *pOutput, int nBytes );
-	virtual void			StartStatsReporting( HANDLE handle, bool bArbitrated );
-
-	virtual void			InvalidateMdlCache();
-
-	virtual void			ReloadFilesInList( IFileList *pFilesToReload );
-
-	// Let the client handle UI toggle - if this function returns false, the UI will toggle, otherwise it will not.
-	virtual bool			HandleUiToggle();
-
-	// Allow the console to be shown?
-	virtual bool			ShouldAllowConsole();
-
-	// Get renamed recv tables
-	virtual CRenamedRecvTableInfo	*GetRenamedRecvTableInfos();
-
-	virtual bool			ShouldHideLoadingPlaque( void );
-
-	// Get the mouthinfo for the sound being played inside UI panels
-	virtual CMouthInfo		*GetClientUIMouthInfo();
-
-	// Notify the client that a file has been received from the game server
-	virtual void			FileReceived( const char * fileName, unsigned int transferID );
-
-	virtual const char* TranslateEffectForVisionFilter( const char *pchEffectType, const char *pchEffectName );
-	
-	virtual void			ClientAdjustStartSoundParams( struct StartSoundParams_t& params );
-	
-	// Returns true if the disconnect command has been handled by the client
-	virtual bool DisconnectAttempt( void );
-
-	virtual void			CenterStringOff();
-
-	virtual void			OnScreenSizeChanged( int nOldWidth, int nOldHeight );
-	virtual IMaterialProxy *InstantiateMaterialProxy( const char *proxyName );
-
-	virtual vgui::VPANEL	GetFullscreenClientDLLVPanel( void );
-	virtual void			MarkEntitiesAsTouching( IClientEntity *e1, IClientEntity *e2 );
-	virtual void			OnKeyBindingChanged( ButtonCode_t buttonCode, char const *pchKeyName, char const *pchNewBinding );
-	virtual bool			HandleGameUIEvent( const InputEvent_t &event );
-
-public:
-	void PrecacheMaterial( const char *pMaterialName );
-
-	virtual bool IsConnectedUserInfoChangeAllowed( IConVar *pCvar );
-
-	virtual void			SetBlurFade( float scale );
-	
-	virtual void			ResetHudCloseCaption();
-
-	virtual bool			SupportsRandomMaps();
-
-private:
-	void UncacheAllMaterials( );
-	void ResetStringTablePointers();
-
-	CUtlRBTree< IMaterial * > m_CachedMaterials;
-
-	CHudCloseCaption		*m_pHudCloseCaption;
-
-	bool m_bWasPaused;
-	float m_fPauseTime;
-	int m_nPauseTick;
-};
-
 
 CClientDll g_Client;
 IBaseClientDLL *clientdll = &g_Client;
@@ -1102,11 +948,11 @@ extern void InitializeClientCvars( void );
 
 extern IGameSystem *ViewportClientSystem();
 
-static ConVar cl_threaded_init("cl_threaded_init", "1");
+static ConVar cl_threaded_init("cl_threaded_init", "0");
 
 bool InitParticleManager()
 {
-	if (!ParticleMgr()->Init(MAX_TOTAL_PARTICLES, materials))
+	if (!ParticleMgr()->Init(MAX_TOTAL_PARTICLES, g_pMaterialSystem))
 		return false;
 
 	return true;
@@ -1170,6 +1016,12 @@ bool InitGameSystems( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	if ( !IGameSystem::InitAllSystems() )
 		return false;
 
+	// Due to dependencies, these are not autogamesystems
+	if ( !ModelSoundsCacheInit() )
+	{
+		return false;
+	}
+
 	if(GetClientMode() != GetFullscreenClientMode()) {
 		GetClientMode()->Enable();
 	}
@@ -1199,6 +1051,25 @@ bool InitGameSystems( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 	if ( !PhysicsDLLInit( physicsFactory ) )
 		return false;
+	
+	InvalidateQueryCache();
+
+	RecastMgr().Init();
+
+	// UNDONE: Make most of these things server systems or precache_registers
+	// =================================================
+	//	Activities
+	// =================================================
+	ActivityList_Free();
+	ActivityList_Init();
+	ActivityList_RegisterSharedActivities();
+
+	EventList_Free();
+	EventList_Init();
+	EventList_RegisterSharedEvents();
+
+	COM_TimestampedLog( "C_BaseAnimating::InitBoneSetupThreadPool" );
+	C_BaseAnimating::InitBoneSetupThreadPool();
 
 	return true;
 }
@@ -1261,6 +1132,12 @@ int CClientDll::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pG
 
 	// Initialize the console variables.
 	InitializeClientCvars();
+
+	g_pMaterialSystem->BeginRenderTargetAllocation();
+	g_BaseClientRenderTargets.InitClientRenderTargetsReal( g_pMaterialSystem, g_pMaterialSystemHardwareConfig );
+	g_pMaterialSystem->EndRenderTargetAllocation();
+
+	GetCurrentTonemappingSystem()->UpdateBucketRanges();
 
 	return true;
 }
@@ -1329,7 +1206,7 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		return false;
 	if ( (enginesound = (IEngineSound *)appSystemFactory(IENGINESOUND_CLIENT_INTERFACE_VERSION, NULL)) == NULL )
 		return false;
-	if ( (random = (IUniformRandomStream *)appSystemFactory(VENGINE_CLIENT_RANDOM_INTERFACE_VERSION, NULL)) == NULL )
+	if ( (random_valve = (IUniformRandomStream *)appSystemFactory(VENGINE_CLIENT_RANDOM_INTERFACE_VERSION, NULL)) == NULL )
 		return false;
 	if ( (gameuifuncs = (IGameUIFuncs * )appSystemFactory( VENGINE_GAMEUIFUNCS_VERSION, NULL )) == NULL )
 		return false;
@@ -1355,6 +1232,9 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 	if (!g_pMatSystemSurface)
 		return false;
+
+	// This interface is optional, and is only valid when running with -tools
+	serverenginetools = ( IServerEngineTools * )appSystemFactory( VSERVERENGINETOOLS_INTERFACE_VERSION, NULL );
 
 #ifdef WORKSHOP_IMPORT_ENABLED
 	if ( !ConnectDataModel( appSystemFactory ) )
@@ -1449,12 +1329,18 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		return false;
 
 	// Hook up the gaussian random number generator
-	s_GaussianRandomStream.AttachToStream( random );
+	s_GaussianRandomStream.AttachToStream( random_valve );
 
 	g_pcv_ThreadMode = g_pCVar->FindVar( "host_thread_mode" );
 
 	if (!Initializer::InitializeAllObjects())
 		return false;
+
+	engine->SetRestrictServerCommands(true);
+	engine->SetRestrictClientCommands(true);
+
+	HackMgr_SetGamePaused( false );
+	m_bWasPaused = false;
 
 	bool bInitSuccess = false;
 	if ( cl_threaded_init.GetBool() )
@@ -1469,6 +1355,7 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		COM_TimestampedLog( "ParticleMgr()->Init" );
 		if (!InitParticleManager())
 			return false;
+
 		COM_TimestampedLog( "InitGameSystems - Start" );
 		bInitSuccess = InitGameSystems( appSystemFactory, physicsFactory );
 		COM_TimestampedLog( "InitGameSystems - End" );
@@ -1476,26 +1363,6 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 	if(!bInitSuccess)
 		return false;
-
-	HackMgr_SetGamePaused( false );
-	m_bWasPaused = false;
-
-		// UNDONE: Make most of these things server systems or precache_registers
-	// =================================================
-	//	Activities
-	// =================================================
-	ActivityList_Free();
-	ActivityList_Init();
-	ActivityList_RegisterSharedActivities();
-
-	EventList_Free();
-	EventList_Init();
-	EventList_RegisterSharedEvents();
-
-	COM_TimestampedLog( "C_BaseAnimating::InitBoneSetupThreadPool" );
-	C_BaseAnimating::InitBoneSetupThreadPool();
-
-	RecastMgr().Init();
 
 	// This is a fullscreen element, so only lives on slot 0!!!
 	m_pHudCloseCaption = GET_FULLSCREEN_HUDELEMENT( CHudCloseCaption );
@@ -1548,8 +1415,7 @@ void CClientDll::PostInit()
 	IGameSystem::PostInitAllSystems();
 	COM_TimestampedLog( "IGameSystem::PostInitAllSystems - Finish" );
 
-	ConVarRef dsp_room( "dsp_room" );
-	dsp_room.SetValue( 1 );
+	dsp_room->SetValue( 1 );
 }
 
 void VGui_ClearVideoPanels();
@@ -1559,12 +1425,12 @@ void VGui_ClearVideoPanels();
 //-----------------------------------------------------------------------------
 void CClientDll::Shutdown( void )
 {
-    if (g_pAchievementsAndStatsInterface)
-    {
-        g_pAchievementsAndStatsInterface->ReleasePanel();
-    }
+	if (g_pAchievementsAndStatsInterface)
+	{
+		g_pAchievementsAndStatsInterface->ReleasePanel();
+	}
 
-    VGui_ClearVideoPanels();
+	VGui_ClearVideoPanels();
 
 	if ( g_pVideo )
 	{
@@ -1604,6 +1470,9 @@ void CClientDll::Shutdown( void )
 	RopeManager()->Shutdown();
 
 	ParticleMgr()->Term();
+
+	// Due to dependencies, these are not autogamesystems
+	ModelSoundsCacheShutdown();
 
 	if(g_pGamepadUI) {
 		g_pGamepadUI->Shutdown();
@@ -1679,6 +1548,8 @@ void CClientDll::HudProcessInput( bool bActive )
 	GetClientMode()->ProcessInput( bActive );
 }
 
+extern void ServiceEventQueue( void );
+
 //-----------------------------------------------------------------------------
 // Purpose: Called when shared data gets changed, allows dll to modify data
 // Input  : bActive - 
@@ -1711,6 +1582,11 @@ void CClientDll::HudUpdate( bool bActive )
 	GetClientVoiceMgr()->Frame( frametime );
 
 	GetHud().UpdateHud( bActive );
+
+	{
+		VPROF( "UpdateQueryCache" );
+		UpdateQueryCache();
+	}
 
 	{
 		C_BaseAnimating::AutoAllowBoneAccess boneaccess( true, false ); 
@@ -1769,7 +1645,8 @@ bool CClientDll::HandleGameUIEvent( const InputEvent_t &inputEvent )
 	return g_pGameUIGameSystem->RegisterInputEvent( inputEvent );
 }
 
-static ConVar cl_dropdown_console("cl_dropdown_console", "0", FCVAR_ARCHIVE);
+extern ConVar hud_freezecamhide;
+extern bool IsTakingAFreezecamScreenshot();
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1777,16 +1654,13 @@ static ConVar cl_dropdown_console("cl_dropdown_console", "0", FCVAR_ARCHIVE);
 bool CClientDll::ShouldDrawDropdownConsole()
 {
 #if defined( REPLAY_ENABLED )
-	extern ConVar hud_freezecamhide;
-	extern bool IsTakingAFreezecamScreenshot();
-
 	if ( hud_freezecamhide.GetBool() && IsTakingAFreezecamScreenshot() )
 	{
 		return false;
 	}
 #endif
 
-	return cl_dropdown_console.GetBool();
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -2091,18 +1965,16 @@ GPUMemLevel_t GetGPUMemLevel()
 	return nSystemLevel;
 }
 
+extern ConVar *mat_dxlevel;
+
 void ConfigureCurrentSystemLevel()
 {
 	// Check if the user supports at least pixel shader 2.0b
-	ConVarRef mat_dxlevel("mat_dxlevel");
-
-	if(mat_dxlevel.IsValid() && g_pMaterialSystemHardwareConfig) {
-		int nMaxDXLevel = g_pMaterialSystemHardwareConfig->GetMaxDXSupportLevel();
-		if( mat_dxlevel.GetInt() < 95 )
-		{
-			Warning( "Your graphics card does not seem to support shader model 3.0 or higher. Reported dx level: %d (max setting: %d).\n", 
-					mat_dxlevel.GetInt(), nMaxDXLevel );
-		}
+	int nMaxDXLevel = g_pMaterialSystemHardwareConfig ? g_pMaterialSystemHardwareConfig->GetMaxDXSupportLevel() : 90;
+	if( mat_dxlevel && mat_dxlevel->GetInt() < 95 )
+	{
+		Warning( "Your graphics card does not seem to support shader model 3.0 or higher. Reported dx level: %d (max setting: %d).\n", 
+				mat_dxlevel->GetInt(), nMaxDXLevel );
 	}
 
 	C_BaseEntity::UpdateVisibilityAllEntities();
@@ -2115,6 +1987,36 @@ void ConfigureCurrentSystemLevel()
 extern C_World *g_pClientWorld;
 
 extern void W_Precache(void);
+
+static bool g_bLevelParsed = false;
+
+void OnWorldSpawned()
+{
+	if(g_bLevelParsed)
+		return;
+
+	char const *pMapEntities = engine->GetMapEntitiesString();
+
+	// Clear out entity references, and parse the entities into it.
+	g_MapEntityRefs.Purge();
+	CMapLoadEntityFilter filter;
+	MapEntity_ParseAllEntities( pMapEntities, &filter );
+
+	// Now call the mod specific parse
+	g_Client.LevelInit_ParseAllEntities( pMapEntities );
+
+	// Sometimes an ent will Remove() itself during its precache, so RemoveImmediate won't happen.
+	// This makes sure those ents get cleaned up.
+	cl_entitylist->CleanupDeleteList();
+
+	// Now that all of the active entities have been loaded in, precache any entities who need point_template parameters
+	//  to be parsed (the above code has loaded all point_template entities)
+	PrecachePointTemplates();
+
+	DebuggerBreak();
+
+	g_bLevelParsed = true;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Per level init
@@ -2159,18 +2061,13 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 	// Call all registered precachers.
 	CPrecacheRegister::Precache();
 
-	IGameSystem::LevelInitPreEntityAllSystems();
-
-	g_pClientWorld = (C_World *)CreateEntityByName("worldspawn");
-	g_pClientWorld->SetLocalOrigin( vec3_origin );
-	g_pClientWorld->SetLocalAngles( vec3_angle );
-	g_pClientWorld->ParseWorldMapData( engine->GetMapEntitiesString() );
-
 	// don't set direct because of FCVAR_USERINFO
 	if ( !cl_predict->GetInt() )
 	{
 		engine->ClientCmd( "cl_predict 1" );
 	}
+
+	IGameSystem::LevelInitPreEntityAllSystems();
 
 	RecastMgr().Load();
 
@@ -2235,6 +2132,7 @@ void CClientDll::LevelShutdown( void )
 	}
 
 	g_bLevelInitialized = false;
+	g_bLevelParsed = false;
 
 	// Disable abs recomputations when everything is shutting down
 	C_BaseEntity::EnableAbsRecomputations( false );
@@ -2260,6 +2158,8 @@ void CClientDll::LevelShutdown( void )
 		pClassList->LevelShutdown();
 		pClassList = pClassList->m_pNextClassList;
 	}
+
+	InvalidateQueryCache();
 
 	// Now do the post-entity shutdown of all systems
 	IGameSystem::LevelShutdownPostEntityAllSystems();
@@ -2554,6 +2454,10 @@ void SimulateEntities()
   	ClientThinkList()->PerformThinkFunctions();
 
 	C_BaseEntity::SimulateEntities();
+
+	// UNDONE: Make these systems IGameSystems and move these calls into FrameUpdatePostEntityThink()
+	// service event queue, firing off any actions whos time has come
+	ServiceEventQueue();
 }
 
 
@@ -2902,13 +2806,13 @@ void CClientDll::FrameStageNotify( ClientFrameStage_t curStage )
 	}
 }
 
+extern ConVar *closecaption;
+
 // Given a list of "S(wavname) S(wavname2)" tokens, look up the localized text and emit
 //  the appropriate close caption if running with closecaption = 1
 void CClientDll::EmitSentenceCloseCaption( char const *tokenstream )
 {
-	extern ConVar closecaption;
-	
-	if ( !closecaption.GetBool() )
+	if ( !closecaption->GetBool() )
 		return;
 
 	if ( m_pHudCloseCaption )
@@ -2920,9 +2824,7 @@ void CClientDll::EmitSentenceCloseCaption( char const *tokenstream )
 
 void CClientDll::EmitCloseCaption( char const *captionname, float duration )
 {
-	extern ConVar closecaption;
-
-	if ( !closecaption.GetBool() )
+	if ( !closecaption->GetBool() )
 		return;
 
 	if ( m_pHudCloseCaption )

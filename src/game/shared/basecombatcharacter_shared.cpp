@@ -10,14 +10,15 @@
 #include "querycache.h"
 #ifdef GAME_DLL
 #include "lightcache.h"
+#include "ai_basenpc.h"
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#ifdef GAME_DLL
-ConVar NavObscureRange("ai_obscure_range", "400", FCVAR_CHEAT);
-#endif
+extern bool GetWorldFogParams( CSharedBaseCombatCharacter *character, fogparams_t &fog );
+
+ConVar NavObscureRange("ai_obscure_range", "400", FCVAR_CHEAT|FCVAR_REPLICATED);
 
 //-----------------------------------------------------------------------------
 // Purpose: Switches to the best weapon that is also better than the given weapon.
@@ -447,7 +448,6 @@ bool CSharedBaseCombatCharacter::IsAbleToSee( const CSharedBaseEntity *pEntity, 
 	Vector vecEyePosition = EyePosition();
 	Vector vecTargetPosition = pEntity->WorldSpaceCenter();
 
-#ifdef GAME_DLL
 	Vector vecEyeToTarget;
 	VectorSubtract( vecTargetPosition, vecEyePosition, vecEyeToTarget );
 	float flDistToOther = VectorNormalize( vecEyeToTarget ); 
@@ -455,18 +455,15 @@ bool CSharedBaseCombatCharacter::IsAbleToSee( const CSharedBaseEntity *pEntity, 
 	// We can't see because they are too far in the fog
 	if ( IsHiddenByFog( flDistToOther ) )
 		return false;
-#endif
 
 	if ( !ComputeLOS( vecEyePosition, vecTargetPosition ) )
 		return false;
 
-#if defined(GAME_DLL)
 	if ( flDistToOther > NavObscureRange.GetFloat() )
 	{
 		if ( ComputeTargetIsInDarkness( vecEyePosition, vecTargetPosition ) )
 			return false;
 	}
-#endif
 
 	return ( checkFOV != USE_FOV || IsInFieldOfView( vecTargetPosition ) );
 }
@@ -492,7 +489,6 @@ bool CSharedBaseCombatCharacter::IsAbleToSee( CSharedBaseCombatCharacter *pBCC, 
 	ComputeSeeTestPosition( &vecEyePosition, this );
 	ComputeSeeTestPosition( &vecOtherEyePosition, pBCC );
 
-#if defined GAME_DLL
 	Vector vecEyeToTarget;
 	VectorSubtract( vecOtherEyePosition, vecEyePosition, vecEyeToTarget );
 	float flDistToOther = VectorNormalize( vecEyeToTarget ); 
@@ -504,7 +500,6 @@ bool CSharedBaseCombatCharacter::IsAbleToSee( CSharedBaseCombatCharacter *pBCC, 
 
 	// Check this every time also, it's cheap; check to see if the enemy is in an obscured area.
 	bool bIsInNavObscureRange = ( flDistToOther > NavObscureRange.GetFloat() );
-#endif
 
 	// Check if we have a cached-off visibility
 	int iCache = s_CombatCharVisCache.LookupVisibility( this, pBCC );
@@ -516,14 +511,12 @@ bool CSharedBaseCombatCharacter::IsAbleToSee( CSharedBaseCombatCharacter *pBCC, 
 		bool bThisCanSeeOther = false, bOtherCanSeeThis = false;
 		if ( ComputeLOS( vecEyePosition, vecOtherEyePosition ) )
 		{
-#if defined(GAME_DLL)
 			if ( bIsInNavObscureRange )
 			{
 				bThisCanSeeOther = !ComputeTargetIsInDarkness( vecEyePosition, vecOtherEyePosition );
 				bOtherCanSeeThis = !ComputeTargetIsInDarkness( vecOtherEyePosition, vecEyePosition );
 			}
 			else
-#endif
 			{
 				bThisCanSeeOther = true;
 				bOtherCanSeeThis = true;
@@ -579,7 +572,6 @@ bool CSharedBaseCombatCharacter::ComputeLOS( const Vector &vecEyePosition, const
 	return ( result.fraction == 1.0f );
 }
 
-#if defined(GAME_DLL)
 bool CSharedBaseCombatCharacter::ComputeTargetIsInDarkness( const Vector &vecEyePosition, const Vector &vecTargetPos ) const
 {
 	// Check light info
@@ -605,7 +597,6 @@ bool CSharedBaseCombatCharacter::ComputeTargetIsInDarkness( const Vector &vecEye
 
 	return false;
 }
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -691,14 +682,11 @@ bool CSharedBaseCombatCharacter::IsInFieldOfView( const Vector &pos ) const
 
 bool CSharedBaseCombatCharacter::IsLineOfSightClear( CSharedBaseEntity *entity, LineOfSightCheckType checkType ) const
 {
-#ifdef CLIENT_DLL
-	if ( entity->MyCombatCharacterPointer() )
-		return IsLineOfSightClear( entity->EyePosition(), checkType, entity );
-	return IsLineOfSightClear( entity->WorldSpaceCenter(), checkType, entity );
-#else
-	// FIXME: Should we do the same check here as the client does?
-	return IsLineOfSightClear( entity->WorldSpaceCenter(), checkType, entity ) || IsLineOfSightClear( entity->EyePosition(), checkType, entity ) || IsLineOfSightClear( entity->GetAbsOrigin(), checkType, entity );
-#endif
+	return
+		IsLineOfSightClear( entity->WorldSpaceCenter(), checkType, entity ) ||
+		IsLineOfSightClear( entity->EyePosition(), checkType, entity ) ||
+		IsLineOfSightClear( entity->GetAbsOrigin(), checkType, entity )
+	;
 }
 
 //-----------------------------------------------------------------------------
@@ -728,18 +716,10 @@ bool CSharedBaseCombatCharacter::IsLineOfSightClear( const Vector &pos, LineOfSi
 	if( checkType == IGNORE_ACTORS )
 	{
 		// use the query cache unless it causes problems
-#if defined(GAME_DLL)
-		return IsLineOfSightBetweenTwoEntitiesClear( const_cast<CBaseCombatCharacter *>(this), EOFFSET_MODE_EYEPOSITION,
+		return IsLineOfSightBetweenTwoEntitiesClear( const_cast<CSharedBaseCombatCharacter *>(this), EOFFSET_MODE_EYEPOSITION,
 			entityToIgnore, EOFFSET_MODE_WORLDSPACE_CENTER,
 			entityToIgnore, COLLISION_GROUP_NONE,
 			MASK_AI_VISION, TraceFilterNoCombatCharacters, 1.0 );
-#else
-		trace_t trace;
-		CTraceFilterNoCombatCharacters traceFilter( entityToIgnore, COLLISION_GROUP_NONE );
-		UTIL_TraceLine( EyePosition(), pos, MASK_OPAQUE | CONTENTS_IGNORE_NODRAW_OPAQUE | CONTENTS_MONSTER, &traceFilter, &trace );
-
-		return trace.fraction == 1.0f;
-#endif
 	}
 	else
 	{
@@ -781,4 +761,252 @@ void CSharedBaseCombatCharacter::Weapon_FrameUpdate( void )
 	{
 		m_hActiveWeapon->Operator_FrameUpdate( this );
 	}
+}
+
+#define FINDNAMEDENTITY_MAX_ENTITIES	32
+//-----------------------------------------------------------------------------
+// Purpose: FindNamedEntity has been moved from CAI_BaseNPC to CBaseCombatCharacter so players can use it.
+//			Coincidentally, everything that it did on NPCs could be done on BaseCombatCharacters with no consequences.
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+CSharedBaseEntity *CSharedBaseCombatCharacter::FindNamedEntity( const char *szName, IEntityFindFilter *pFilter )
+{
+	const char *name = szName;
+	if (name[0] == '!')
+		name++;
+
+	if ( !stricmp( name, "player" ))
+	{
+		return NULL;
+	}
+	else if ( !stricmp( name, "self" ) || !stricmp( name, "target1" ) )
+	{
+		return this;
+	}
+#ifdef GAME_DLL
+	else if ( !stricmp( name, "enemy" ) )
+	{
+		return GetEnemy();
+	}
+	else if ( !stricmp( name, "nearestfriend" ) || !strnicmp( name, "friend", 6 ) )
+	{
+		// Just look for the nearest friendly NPC within 500 units
+		// (most of this was stolen from CAI_PlayerAlly::FindSpeechTarget())
+		const Vector &	vAbsOrigin = GetAbsOrigin();
+		float 			closestDistSq = Square(500.0);
+		CSharedBaseEntity *	pNearest = NULL;
+		float			distSq;
+		int				i;
+		for ( i = 0; i < g_AI_Manager.NumAIs(); i++ )
+		{
+			CAI_BaseNPC *pNPC = (g_AI_Manager.AccessAIs())[i];
+
+			if ( pNPC == this )
+				continue;
+
+			distSq = ( vAbsOrigin - pNPC->GetAbsOrigin() ).LengthSqr();
+				
+			if ( distSq > closestDistSq )
+				continue;
+
+			if ( IRelationType( pNPC ) == D_LI )
+			{
+				closestDistSq = distSq;
+				pNearest = pNPC;
+			}
+		}
+
+		if (stricmp(name, "friend_npc") != 0)
+		{
+			// Okay, find the nearest friendly client.
+			for ( i = 1; i <= gpGlobals->maxClients; i++ )
+			{
+				CSharedBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
+				if ( pPlayer )
+				{
+					// Don't get players with notarget
+					if (pPlayer->GetFlags() & FL_NOTARGET)
+						continue;
+
+					distSq = ( vAbsOrigin - pPlayer->GetAbsOrigin() ).LengthSqr();
+					
+					if ( distSq > closestDistSq )
+						continue;
+
+					if ( IRelationType( pPlayer ) == D_LI )
+					{
+						closestDistSq = distSq;
+						pNearest = pPlayer;
+					}
+				}
+			}
+		}
+
+		return pNearest;
+	}
+#endif
+	else if (!stricmp( name, "weapon" ))
+	{
+		return GetActiveWeapon();
+	}
+
+	// HACKHACK: FindEntityProcedural can go through this now, so running this code could cause an infinite loop.
+	// As a result, FindEntityProcedural currently identifies itself with this entity filter.
+	else if (!pFilter || !dynamic_cast<CNullEntityFilter*>(pFilter))
+	{
+		// search for up to 32 entities with the same name and choose one randomly
+		CSharedBaseEntity *entityList[ FINDNAMEDENTITY_MAX_ENTITIES ];
+		CSharedBaseEntity *entity;
+		int	iCount;
+
+		entity = NULL;
+		for( iCount = 0; iCount < FINDNAMEDENTITY_MAX_ENTITIES; iCount++ )
+		{
+			entity = g_pEntityList->FindEntityByName( entity, szName, this, NULL, NULL, pFilter );
+			if ( !entity )
+			{
+				break;
+			}
+			entityList[ iCount ] = entity;
+		}
+
+		if ( iCount > 0 )
+		{
+			int index = RandomInt( 0, iCount - 1 );
+			entity = entityList[ index ];
+			return entity;
+		}
+	}
+
+	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: return true if given target cant be seen because of fog
+//-----------------------------------------------------------------------------
+bool CSharedBaseCombatCharacter::IsHiddenByFog( const Vector &target ) const
+{
+	float range = EyePosition().DistTo( target );
+	return IsHiddenByFog( range );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: return true if given target cant be seen because of fog
+//-----------------------------------------------------------------------------
+bool CSharedBaseCombatCharacter::IsHiddenByFog( CSharedBaseEntity *target ) const
+{
+	if ( !target )
+		return false;
+
+	float range = EyePosition().DistTo( target->WorldSpaceCenter() );
+	return IsHiddenByFog( range );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: return true if given target cant be seen because of fog
+//-----------------------------------------------------------------------------
+bool CSharedBaseCombatCharacter::IsHiddenByFog( float range ) const
+{
+	if ( GetFogObscuredRatio( range ) >= 1.0f )
+		return true;
+
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: return 0-1 ratio where zero is not obscured, and 1 is completely obscured
+//-----------------------------------------------------------------------------
+float CSharedBaseCombatCharacter::GetFogObscuredRatio( const Vector &target ) const
+{
+	float range = EyePosition().DistTo( target );
+	return GetFogObscuredRatio( range );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: return 0-1 ratio where zero is not obscured, and 1 is completely obscured
+//-----------------------------------------------------------------------------
+float CSharedBaseCombatCharacter::GetFogObscuredRatio( CSharedBaseEntity *target ) const
+{
+	if ( !target )
+		return false;
+
+	float range = EyePosition().DistTo( target->WorldSpaceCenter() );
+	return GetFogObscuredRatio( range );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: return 0-1 ratio where zero is not obscured, and 1 is completely obscured
+//-----------------------------------------------------------------------------
+float CSharedBaseCombatCharacter::GetFogObscuredRatio( float range ) const
+{
+	fogparams_t fog;
+	GetFogParams( &fog );
+
+	if ( !fog.enable )
+		return 0.0f;
+
+	if ( range <= fog.start )
+		return 0.0f;
+
+	if ( range >= fog.end )
+		return 1.0f;
+
+	float ratio = (range - fog.start) / (fog.end - fog.start);
+	ratio = MIN( ratio, fog.maxdensity.Get() );
+	return ratio;
+}
+
+bool CSharedBaseCombatCharacter::GetFogParams( fogparams_t *fog ) const
+{
+	if ( !fog )
+		return false;
+
+	return GetWorldFogParams( const_cast< CSharedBaseCombatCharacter * >( this ), *fog );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: track the last trigger_fog touched by this character
+//-----------------------------------------------------------------------------
+void CSharedBaseCombatCharacter::OnFogTriggerStartTouch( CSharedBaseEntity *fogTrigger )
+{
+	m_hTriggerFogList.AddToHead( fogTrigger );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: track the last trigger_fog touched by this character
+//-----------------------------------------------------------------------------
+void CSharedBaseCombatCharacter::OnFogTriggerEndTouch( CSharedBaseEntity *fogTrigger )
+{
+	m_hTriggerFogList.FindAndRemove( fogTrigger );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: track the last trigger_fog touched by this character
+//-----------------------------------------------------------------------------
+CSharedBaseEntity *CSharedBaseCombatCharacter::GetFogTrigger( void )
+{
+	float bestDist = 999999.0f;
+	CSharedBaseEntity *bestTrigger = NULL;
+
+	for ( int i=0; i<m_hTriggerFogList.Count(); ++i )
+	{
+		CSharedBaseEntity *fogTrigger = m_hTriggerFogList[i];
+		if ( fogTrigger != NULL )
+		{
+			float dist = WorldSpaceCenter().DistTo( fogTrigger->WorldSpaceCenter() );
+			if ( dist < bestDist )
+			{
+				bestDist = dist;
+				bestTrigger = fogTrigger;
+			}
+		}
+	}
+
+	if ( bestTrigger )
+	{
+		m_hLastFogTrigger = bestTrigger;
+	}
+
+	return m_hLastFogTrigger;
 }

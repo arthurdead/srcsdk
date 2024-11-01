@@ -9,6 +9,7 @@
 #include "smoke_fog_overlay.h"
 #include "engine/IEngineTrace.h"
 #include "view.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -176,7 +177,6 @@ IMPLEMENT_CLIENTCLASS_DT( C_FuncSmokeVolume, DT_FuncSmokeVolume, CFuncSmokeVolum
 	RecvPropFloat( RECVINFO( m_Density ) ),
 	RecvPropFloat( RECVINFO( m_maxDrawDistance ) ),
 	RecvPropInt( RECVINFO( m_spawnflags ) ),
-	RecvPropDataTable( RECVINFO_DT( m_Collision ), 0, &REFERENCE_RECV_TABLE(DT_CollisionProperty) ),
 END_RECV_TABLE()
 
 // Helpers.
@@ -210,7 +210,7 @@ C_FuncSmokeVolume::~C_FuncSmokeVolume()
 	delete [] m_pSmokeParticleInfos;
 }
 
-static ConVar mat_reduceparticles( "mat_reduceparticles", "0" );
+extern ConVar *mat_reduceparticles;
 
 void C_FuncSmokeVolume::OnDataChanged( DataUpdateType_t updateType )
 {		
@@ -222,7 +222,7 @@ void C_FuncSmokeVolume::OnDataChanged( DataUpdateType_t updateType )
 	m_MaxColor[1] = ( 1.0f / 255.0f ) * m_Color2.g;
 	m_MaxColor[2] = ( 1.0f / 255.0f ) * m_Color2.b;
 
-	if ( mat_reduceparticles.GetBool() )
+	if ( mat_reduceparticles->GetBool() )
 	{
 		m_Density *= 0.5f;
 		m_ParticleSpacingDistance *= 1.5f;
@@ -391,7 +391,7 @@ void C_FuncSmokeVolume::Update( float fTimeDelta )
 		else
 		{
 			SmokeParticleInfo *pOther = &m_pSmokeParticleInfos[pInfo->m_TradeIndex];
-			assert(pOther->m_TradeIndex == i);
+			Assert(pOther->m_TradeIndex == i);
 			
 			// This makes sure the trade only gets updated once per frame.
 			if(pInfo < pOther)
@@ -479,7 +479,7 @@ void C_FuncSmokeVolume::RenderParticles( CParticleRenderIterator *pIterator )
 		float sortKey = 1;//tRenderPos.z;
 
 		// If we're reducing particle cost, only render sufficiently opaque particles 
-		if ( ( alpha > 0.05f ) || !mat_reduceparticles.GetBool() )
+		if ( ( alpha > 0.05f ) || !mat_reduceparticles->GetBool() )
 		{
 			RenderParticle_ColorSizeAngle(
 				pIterator->GetParticleDraw(),
@@ -550,7 +550,7 @@ void C_FuncSmokeVolume::FillVolume()
 						int testX, testY, testZ;
 						int index = GetSmokeParticleIndex(x,y,z);
 						GetParticleInfoXYZ(index, testX, testY, testZ);
-						assert(testX == x && testY == y && testZ == z);
+						Assert(testX == x && testY == y && testZ == z);
 #endif
 
 						Vector vColor = engine->GetLightForPoint(vPos, true);

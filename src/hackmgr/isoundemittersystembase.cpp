@@ -3,6 +3,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_SOUND, "Sound" );
+
 HACKMGR_CLASS_API void ISoundEmitterSystemBase::AddSoundsFromFile( const char *filename, bool bPreload, bool bIsOverride )
 {
 	Assert(0);
@@ -31,33 +33,33 @@ HACKMGR_CLASS_API void ISoundEmitterSystemBase::DescribeSound( char const *sound
 	int index = GetSoundIndex( soundname );
 	if ( index == InvalidIndex() )
 	{
-		Msg( "SoundEmitterSystemBase::DescribeSound:  No such sound %s\n", soundname );
+		Log_Msg( LOG_SOUND,"SoundEmitterSystemBase::DescribeSound:  No such sound %s\n", soundname );
 		return;
 	}
 
 	CSoundParametersInternal *p = InternalGetParametersForSound( index );
 	if ( !p )
 	{
-		Msg( "SoundEmitterSystemBase::DescribeSound:  No such sound %s\n", soundname );
+		Log_Msg( LOG_SOUND, "SoundEmitterSystemBase::DescribeSound:  No such sound %s\n", soundname );
 		return;
 	}
 
-	Msg( "\"%s\"\n{\n", GetSoundName( index ) );
+	Log_Msg( LOG_SOUND, "\"%s\"\n{\n", GetSoundName( index ) );
 
-	Msg( "\t\"channel\"\t\t\"%s\"\n", p->ChannelToString() );
-	Msg( "\t\"volume\"\t\t\"%s\"\n", p->VolumeToString() );
-	Msg( "\t\"pitch\"\t\t\t\"%s\"\n", p->PitchToString() );
-	Msg( "\n" );
-	Msg( "\t\"soundlevel\"\t\"%s\"\n", p->SoundLevelToString() );
+	Log_Msg( LOG_SOUND, "\t\"channel\"\t\t\"%s\"\n", p->ChannelToString() );
+	Log_Msg( LOG_SOUND, "\t\"volume\"\t\t\"%s\"\n", p->VolumeToString() );
+	Log_Msg( LOG_SOUND, "\t\"pitch\"\t\t\t\"%s\"\n", p->PitchToString() );
+	Log_Msg( LOG_SOUND, "\n" );
+	Log_Msg( LOG_SOUND, "\t\"soundlevel\"\t\"%s\"\n", p->SoundLevelToString() );
 
 	if ( p->OnlyPlayToOwner() )
 	{
-		Msg( "\t\"play_to_owner_only\"\t\"1\"\n" );
+		Log_Msg( LOG_SOUND, "\t\"play_to_owner_only\"\t\"1\"\n" );
 	}
 
 	if ( p->GetDelayMsec() != 0 )
 	{
-		Msg( "\t\"delay_msec\"\t\"%i\"\n", p->GetDelayMsec() );
+		Log_Msg( LOG_SOUND, "\t\"delay_msec\"\t\"%i\"\n", p->GetDelayMsec() );
 	}
 
 	int totalCount = 0;
@@ -69,22 +71,22 @@ HACKMGR_CLASS_API void ISoundEmitterSystemBase::DescribeSound( char const *sound
 
 	if  ( totalCount > 0 )
 	{
-		Msg( "\n" );
+		Log_Msg( LOG_SOUND, "\n" );
 
 		if ( waveCount == 1 )
 		{
 			Assert( p->GetSoundNames()[ 0 ].gender == GENDER_NONE );
-			Msg( "\t\"wave\"\t\t\t\"%s\"\n", GetWaveName( p->GetSoundNames()[ 0 ].symbol ) );
+			Log_Msg( LOG_SOUND, "\t\"wave\"\t\t\t\"%s\"\n", GetWaveName( p->GetSoundNames()[ 0 ].symbol ) );
 		}
 		else if ( convertedCount == 1 )
 		{
 			Assert( p->GetConvertedNames()[ 0 ].gender == GENDER_NONE );
-			Msg( "\t\"wave\"\t\t\t\"%s\"\n", GetWaveName( p->GetConvertedNames()[ 0 ].symbol ) );
+			Log_Msg( LOG_SOUND, "\t\"wave\"\t\t\t\"%s\"\n", GetWaveName( p->GetConvertedNames()[ 0 ].symbol ) );
 		}
 		else
 		{
-			Msg( "\t\"rndwave\"\n" );
-			Msg( "\t{\n" );
+			Log_Msg( LOG_SOUND, "\t\"rndwave\"\n" );
+			Log_Msg( LOG_SOUND, "\t{\n" );
 
 			int wave;
 			for ( wave = 0; wave < waveCount; wave++ )
@@ -93,16 +95,16 @@ HACKMGR_CLASS_API void ISoundEmitterSystemBase::DescribeSound( char const *sound
 				if ( p->GetSoundNames()[ wave ].gender != GENDER_NONE )
 					continue;
 
-				Msg( "\t\t\"wave\"\t\"%s\"\n", GetWaveName( p->GetSoundNames()[ wave ].symbol ) );
+				Log_Msg( LOG_SOUND, "\t\t\"wave\"\t\"%s\"\n", GetWaveName( p->GetSoundNames()[ wave ].symbol ) );
 			}
 			for ( wave = 0; wave < convertedCount; wave++ )
 			{
-				Msg( "\t\t\"wave\"\t\"%s\"\n", GetWaveName( p->GetConvertedNames()[ wave ].symbol ) );
+				Log_Msg( LOG_SOUND, "\t\t\"wave\"\t\"%s\"\n", GetWaveName( p->GetConvertedNames()[ wave ].symbol ) );
 			}
 
-			Msg( "\t}\n" );
+			Log_Msg( LOG_SOUND, "\t}\n" );
 		}
 	}
 
-	Msg( "}\n" );
+	Log_Msg( LOG_SOUND, "}\n" );
 }

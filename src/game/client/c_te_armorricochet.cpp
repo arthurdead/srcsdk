@@ -23,6 +23,7 @@ class C_TEMetalSparks : public C_BaseTempEntity
 {
 public:
 	DECLARE_CLIENTCLASS();
+	DECLARE_CLASS( C_TEMetalSparks, C_BaseTempEntity );
 
 					C_TEMetalSparks( void );
 	virtual			~C_TEMetalSparks( void );

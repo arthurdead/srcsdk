@@ -14,6 +14,8 @@
 #include "physics_npc_solver.h"
 #include "vphysics/friction.h"
 #include "hierarchy.h"
+#include "collisionproperty.h"
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -23,9 +25,9 @@ static void PlatSpawnInsideTrigger(edict_t *pevPlatform);
 
 class CBasePlatTrain : public CBaseToggle
 {
+public:
 	DECLARE_CLASS( CBasePlatTrain, CBaseToggle );
 
-public:
 	~CBasePlatTrain();
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	void Precache( void );
@@ -211,8 +213,8 @@ void CBasePlatTrain::Precache( void )
 
 class CFuncPlat : public CBasePlatTrain
 {
-	DECLARE_CLASS( CFuncPlat, CBasePlatTrain );
 public:
+	DECLARE_CLASS( CFuncPlat, CBasePlatTrain );
 	void Spawn( void );
 	void Precache( void );
 	bool CreateVPhysics();
@@ -597,8 +599,8 @@ void CFuncPlat::Blocked( CBaseEntity *pOther )
 
 class CFuncPlatRot : public CFuncPlat
 {
-	DECLARE_CLASS( CFuncPlatRot, CFuncPlat );
 public:
+	DECLARE_CLASS( CFuncPlatRot, CFuncPlat );
 	void Spawn( void );
 	void SetupRotation( void );
 
@@ -698,8 +700,8 @@ void CFuncPlatRot::RotMove( QAngle &destAngle, float time )
 
 class CFuncTrain : public CBasePlatTrain
 {
-	DECLARE_CLASS( CFuncTrain, CBasePlatTrain );
 public:
+	DECLARE_CLASS( CFuncTrain, CBasePlatTrain );
 	void Spawn( void );
 	void Precache( void );
 	void Activate( void );
@@ -2894,8 +2896,8 @@ typedef enum { TRAIN_SAFE, TRAIN_BLOCKING, TRAIN_FOLLOWING } TRAIN_CODE;
 //-----------------------------------------------------------------------------
 class CFuncTrackChange : public CFuncPlatRot
 {
-	DECLARE_CLASS( CFuncTrackChange, CFuncPlatRot );
 public:
+	DECLARE_CLASS( CFuncTrackChange, CFuncPlatRot );
 	void Spawn( void );
 	void Precache( void );
 
@@ -3266,8 +3268,8 @@ void CFuncTrackChange::HitTop( void )
 
 class CFuncTrackAuto : public CFuncTrackChange
 {
-	DECLARE_CLASS( CFuncTrackAuto, CFuncTrackChange );
 public:
+	DECLARE_CLASS( CFuncTrackAuto, CFuncTrackChange );
 	void			Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	virtual void	UpdateAutoTargets( int toggleState );
 	void			TriggerTrackChange( inputdata_t &inputdata );

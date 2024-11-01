@@ -61,7 +61,7 @@ private:
 	CNetworkVar( bool, m_bNoSky );
 	CNetworkVar( float, m_fBrightness );
 	CNetworkVar( int, m_iSkyMode );
-	CNetworkVar( string_t, m_iszRenderTarget );
+	CNetworkStringT( m_iszRenderTarget );
 
 	// Allows the mapmaker to control whether a camera is active or not
 	bool	m_bIsOn;

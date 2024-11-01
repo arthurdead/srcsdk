@@ -21,9 +21,9 @@ class CBaseFilter;
 //-----------------------------------------------------------------------------
 class CBaseTrigger : public CBaseEntity
 {
+public:
 	DECLARE_CLASS( CBaseTrigger, CBaseEntity );
 	DECLARE_SERVERCLASS();
-public:
 	CBaseTrigger();
 	
 	void Activate( void );
@@ -122,8 +122,8 @@ inline void CBaseTrigger::SetClientSidePredicted( bool bClientSidePredicted )
 //-----------------------------------------------------------------------------
 class CTriggerMultiple : public CBaseTrigger
 {
-	DECLARE_CLASS( CTriggerMultiple, CBaseTrigger );
 public:
+	DECLARE_CLASS( CTriggerMultiple, CBaseTrigger );
 	void Spawn( void );
 	void MultiTouch( CBaseEntity *pOther );
 	void MultiWaitOver( void );
@@ -148,9 +148,9 @@ extern CUtlVector< CHandle<CTriggerMultiple> >	g_hWeaponFireTriggers;
 
 class CBaseVPhysicsTrigger : public CBaseEntity
 {
+public:
 	DECLARE_CLASS( CBaseVPhysicsTrigger , CBaseEntity );
 
-public:
 	DECLARE_MAPENTITY();
 
 	virtual void Spawn();

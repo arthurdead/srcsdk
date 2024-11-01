@@ -26,6 +26,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "tier0/dbg.h"
+
 #include <algorithm>
 #ifdef _WIN32
 #pragma warning(disable:4530) // warning C4530: C++ exception handler used, but unwind semantics are not enabled. Specify /EHsc

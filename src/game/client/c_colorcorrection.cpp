@@ -11,12 +11,13 @@
 #include "colorcorrectionmgr.h"
 #include "materialsystem/MaterialSystemUtil.h"
 #include "c_colorcorrection.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 
-static ConVar mat_colcorrection_disableentities( "mat_colcorrection_disableentities", "0", FCVAR_NONE, "Disable map color-correction entities" );
+extern ConVar *mat_colcorrection_disableentities;
 static ConVar mat_colcorrection_forceentitiesclientside( "mat_colcorrection_forceentitiesclientside", "0", FCVAR_CHEAT, "Forces color correction entities to be updated on the client" );
 
 #ifdef CColorCorrection
@@ -113,7 +114,7 @@ void C_ColorCorrection::Update( C_BasePlayer *pPlayer, float ccScale )
 	if ( m_CCHandle == INVALID_CLIENT_CCHANDLE )
 		return;
 
-	if ( mat_colcorrection_disableentities.GetInt() )
+	if ( mat_colcorrection_disableentities->GetInt() )
 	{
 		// Allow the colorcorrectionui panel (or user) to turn off color-correction entities
 		g_pColorCorrectionMgr->SetColorCorrectionWeight( m_CCHandle, 0.0f, m_bExclusive );

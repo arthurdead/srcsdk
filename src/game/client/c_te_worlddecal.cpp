@@ -102,7 +102,7 @@ void C_TEWorldDecal::PostDataUpdate( DataUpdateType_t updateType )
 {
 	VPROF( "C_TEWorldDecal::PostDataUpdate" );
 
-	if ( r_decals.GetInt() )
+	if ( r_decals->GetInt() )
 	{
 		C_BaseEntity *ent = cl_entitylist->GetEnt( 0 );
 		if ( ent )
@@ -119,7 +119,7 @@ void C_TEWorldDecal::PostDataUpdate( DataUpdateType_t updateType )
 //-----------------------------------------------------------------------------
 void TE_WorldDecal( IRecipientFilter& filter, float delay, const Vector* pos, int index )
 {
-	if ( r_decals.GetInt() )
+	if ( r_decals->GetInt() )
 	{
 		C_BaseEntity *ent = cl_entitylist->GetEnt( 0 );
 		if ( ent )

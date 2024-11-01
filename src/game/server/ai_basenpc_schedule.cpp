@@ -32,6 +32,7 @@
 #include "env_debughistory.h"
 #include "global_event_log.h"
 #include "ai_behavior.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -215,7 +216,7 @@ void CAI_BaseNPC::SetSchedule( CAI_Schedule *pNewSchedule )
 			m_ScheduleHistory.Remove( SCHEDULE_HISTORY_SIZE );
 		}
 
-		assert( m_ScheduleHistory.Count() <= SCHEDULE_HISTORY_SIZE );
+		Assert( m_ScheduleHistory.Count() <= SCHEDULE_HISTORY_SIZE );
 
 		// No analysis until the vector is full!
 		if( m_ScheduleHistory.Count() == SCHEDULE_HISTORY_SIZE )
@@ -318,7 +319,7 @@ bool CAI_BaseNPC::IsScheduleValid()
 	if (!testBits.IsAllClear()) 
 	{
 		// If in developer mode save the interrupt text for debug output
-		if (g_pDeveloper->GetInt()) 
+		if (developer->GetInt()) 
 		{
 			// Reset memory of failed schedule 
 			m_failedSchedule   = NULL;
@@ -579,7 +580,7 @@ void CAI_BaseNPC::MaintainSchedule ( void )
 
 #if defined( VPROF_ENABLED )
 #if defined(DISABLE_DEBUG_HISTORY)
-	bool bDebugTaskNames = ( developer.GetBool() || ( VProfAI() && g_VProfCurrentProfile.IsEnabled() ) );
+	bool bDebugTaskNames = ( developer->GetBool() || ( VProfAI() && g_VProfCurrentProfile.IsEnabled() ) );
 #else
 	bool bDebugTaskNames = true;
 #endif
@@ -587,7 +588,7 @@ void CAI_BaseNPC::MaintainSchedule ( void )
 	bool bDebugTaskNames = false;
 #endif
 
-	memset( g_AITaskTimings, 0, sizeof(g_AITaskTimings) );
+	memset( (void *)g_AITaskTimings, 0, sizeof(g_AITaskTimings) );
 	
 	g_nAITasksRun = 0;
 
@@ -1829,7 +1830,7 @@ void CAI_BaseNPC::PlayFlinchGesture()
 
 	Activity iFlinchActivity = ACT_INVALID;
 
-	float flNextFlinch = random->RandomFloat( 0.5f, 1.0f );
+	float flNextFlinch = random_valve->RandomFloat( 0.5f, 1.0f );
 
 	// If I haven't flinched for a while, play the big flinch gesture
 	if ( !HasMemory(bits_MEMORY_FLINCHED) )

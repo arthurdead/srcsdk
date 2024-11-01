@@ -60,8 +60,8 @@ enum
 
 class CAI_MappedActivityBehavior_Temporary : public CAI_SimpleBehavior
 {
-	DECLARE_CLASS( CAI_MappedActivityBehavior_Temporary, CAI_SimpleBehavior );
 public:
+	DECLARE_CLASS( CAI_MappedActivityBehavior_Temporary, CAI_SimpleBehavior );
 	CAI_MappedActivityBehavior_Temporary( CAI_BaseNPC *pOuter = NULL ) 
 	 :	CAI_SimpleBehavior(pOuter)
 	{
@@ -80,8 +80,8 @@ private:
 
 class CAI_StandoffBehavior : public CAI_MappedActivityBehavior_Temporary
 {
-	DECLARE_CLASS( CAI_StandoffBehavior, CAI_MappedActivityBehavior_Temporary );
 public:
+	DECLARE_CLASS( CAI_StandoffBehavior, CAI_MappedActivityBehavior_Temporary );
 	CAI_StandoffBehavior( CAI_BaseNPC *pOuter = NULL );
 
 	virtual const char *GetName() {	return "Standoff"; }

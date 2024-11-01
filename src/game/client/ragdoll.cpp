@@ -8,6 +8,7 @@
 #include "cbase.h"
 #include "mathlib/vmatrix.h"
 #include "ragdoll_shared.h"
+#include "ragdoll.h"
 #include "bone_setup.h"
 #include "materialsystem/imesh.h"
 #include "engine/ivmodelinfo.h"
@@ -16,6 +17,9 @@
 #include "view.h"
 #include "vphysics/constraints.h"
 #include "clientalphaproperty.h"
+#include "tier1/fmtstr.h"
+#include "collisionproperty.h"
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -348,59 +352,8 @@ CRagdoll *CreateRagdoll(
 	return pRagdoll;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-class C_ServerRagdoll : public C_BaseAnimating
-{
-public:
-	DECLARE_CLASS( C_ServerRagdoll, C_BaseAnimating );
-	DECLARE_CLIENTCLASS();
-	DECLARE_INTERPOLATION();
-
-	C_ServerRagdoll( void );
-
-	// Inherited from IClientUnknown
-public:
-	virtual IClientModelRenderable*	GetClientModelRenderable();
-
-	virtual void PostDataUpdate( DataUpdateType_t updateType );
-
-	virtual int InternalDrawModel( int flags, const RenderableInstance_t &instance );
-	virtual CStudioHdr *OnNewModel( void );
-	virtual void	SetupWeights( const matrix3x4_t *pBoneToWorld, int nFlexWeightCount, float *pFlexWeights, float *pFlexDelayedWeights );
-
-	void GetRenderBounds( Vector& theMins, Vector& theMaxs );
-	virtual bool Simulate( void );
-	virtual void AccumulateLayers( IBoneSetup &boneSetup, Vector pos[], Quaternion q[], float currentTime );
-	virtual void BuildTransformations( CStudioHdr *pStudioHdr, Vector *pos, Quaternion q[], const matrix3x4_t &cameraTransform, int boneMask, CBoneBitList &boneComputed );
-	IPhysicsObject *GetElement( int elementNum );
-	virtual void UpdateOnRemove();
-	virtual float LastBoneChangedTime();
-
-	// Incoming from network
-	Vector		m_ragPos[RAGDOLL_MAX_ELEMENTS];
-	QAngle		m_ragAngles[RAGDOLL_MAX_ELEMENTS];
-
-	CInterpolatedVarArray< Vector, RAGDOLL_MAX_ELEMENTS >	m_iv_ragPos;
-	CInterpolatedVarArray< QAngle, RAGDOLL_MAX_ELEMENTS >	m_iv_ragAngles;
-
-	int			m_elementCount;
-	int			m_boneIndex[RAGDOLL_MAX_ELEMENTS];
-
-private:
-	C_ServerRagdoll( const C_ServerRagdoll &src );
-
-	typedef CHandle<C_BaseAnimating> BaseAnimatingHandle;
-	CNetworkHandle( C_BaseAnimating, m_hUnragdoll );
-	CNetworkVar( float, m_flBlendWeight );
-	float m_flBlendWeightCurrent;
-	CNetworkVar( int, m_nOverlaySequence );
-	float m_flLastBoneChangeTime;
-};
-
-
 EXTERN_RECV_TABLE(DT_Ragdoll);
+
 IMPLEMENT_CLIENTCLASS_DT(C_ServerRagdoll, DT_Ragdoll, CRagdollProp)
 	RecvPropArray(RecvPropQAngles(RECVINFO(m_ragAngles[0])), m_ragAngles),
 	RecvPropArray(RecvPropVector(RECVINFO(m_ragPos[0])), m_ragPos),
@@ -887,3 +840,17 @@ bool WasRagdollCreatedOnCurrentTick( C_BaseEntity *pRagdoll )
 	return gRagdolls.IsInList( pRagdoll );
 }
 
+void C_ServerRagdoll::GetAngleOverrideFromCurrentState( char *pOut, int size )
+{
+	pOut[0] = 0;
+	for ( int i = 0; i < m_elementCount; i++ )
+	{
+		if ( i != 0 )
+		{
+			Q_strncat( pOut, ",", size, COPY_ALL_CHARACTERS );
+
+		}
+		CFmtStr str("%d,%.2f %.2f %.2f", i, m_ragAngles[i].x, m_ragAngles[i].y, m_ragAngles[i].z );
+		Q_strncat( pOut, str, size, COPY_ALL_CHARACTERS );
+	}
+}

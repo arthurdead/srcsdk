@@ -74,7 +74,7 @@ void TE_BSPDecal( IRecipientFilter& filter, float delay,
 		return;
 	}
 
-	if ( r_decals.GetInt() )
+	if ( r_decals->GetInt() )
 	{
 		effects->DecalShoot( index, entity, ent->GetModel(), ent->GetAbsOrigin(), ent->GetAbsAngles(), *pos, 0, FDECAL_PERMANENT );
 	}
@@ -95,7 +95,7 @@ void C_TEBSPDecal::PostDataUpdate( DataUpdateType_t updateType )
 		return;
 	}
 
-	if ( r_decals.GetInt() )
+	if ( r_decals->GetInt() )
 	{
 		effects->DecalShoot( m_nIndex, m_nEntity, ent->GetModel(), ent->GetAbsOrigin(), ent->GetAbsAngles(), m_vecOrigin, 0, FDECAL_PERMANENT );
 	}

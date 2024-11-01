@@ -15,8 +15,8 @@
 //-----------------------------------------------------------------------------
 class CParticleSystem : public CBaseEntity
 {
-	DECLARE_CLASS( CParticleSystem, CBaseEntity );
 public:
+	DECLARE_CLASS( CParticleSystem, CBaseEntity );
 	DECLARE_SERVERCLASS();
 	DECLARE_MAPENTITY();
 
@@ -88,8 +88,8 @@ protected:
 //-----------------------------------------------------------------------------
 class CParticleSystemCoordinate : public CParticleSystem
 {
-	DECLARE_CLASS( CParticleSystemCoordinate, CParticleSystem );
 public:
+	DECLARE_CLASS( CParticleSystemCoordinate, CParticleSystem );
 	virtual bool UsesCoordinates( void ) { return true; }
 };
 

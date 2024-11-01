@@ -17,9 +17,8 @@
 
 class CFlexCycler : public CBaseFlex
 {
-private:
-	DECLARE_CLASS( CFlexCycler, CBaseFlex );
 public:
+	DECLARE_CLASS( CFlexCycler, CBaseFlex );
 
 	CFlexCycler() { m_iszSentence = NULL_STRING; m_sentence = 0; }
 	void GenericCyclerSpawn(char *szModel, Vector vecMin, Vector vecMax);

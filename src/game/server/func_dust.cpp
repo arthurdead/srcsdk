@@ -9,6 +9,7 @@
 #include "func_dust_shared.h"
 #include "te_particlesystem.h"
 #include "IEffects.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -95,7 +96,8 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CFunc_Dust, DT_Func_Dust )
 
 	SendPropModelIndex( SENDINFO(m_nModelIndex) ),
 	SendPropFloat( SENDINFO(m_FallSpeed), 0, SPROP_NOSCALE ),
-	SendPropDataTable( SENDINFO_DT( m_Collision ), &REFERENCE_SEND_TABLE(DT_CollisionProperty) ),
+
+	SendPropDataTable( SENDINFO_DT( m_pCollision ), &REFERENCE_SEND_TABLE(DT_CollisionProperty), SendProxy_DataTablePtrToDataTable ),
 END_SEND_TABLE()
 
 

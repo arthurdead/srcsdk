@@ -31,7 +31,7 @@
 // Prediction
 //-----------------------------------------------------------------------------
 BEGIN_PREDICTION_DATA_NO_BASE( CParticleProperty )
-	//DEFINE_PRED_FIELD( m_vecMins, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
+	//DEFINE_FIELD_FLAGS( m_vecMins, FIELD_VECTOR, FTYPEDESC_INSENDTABLE ),
 END_PREDICTION_DATA()
 #endif
 

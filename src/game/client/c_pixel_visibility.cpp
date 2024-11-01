@@ -37,7 +37,7 @@ ConVar r_pixelvisibility_spew( "r_pixelvisibility_spew", "0" );
 	}
 #endif
 
-extern ConVar building_cubemaps;
+extern ConVar *building_cubemaps;
 
 const float MIN_PROXY_PIXELS = 5.0f;
 
@@ -587,7 +587,7 @@ void CPixelVisibilitySystem::LevelShutdownPostEntity()
 
 float CPixelVisibilitySystem::GetFractionVisible( const pixelvis_queryparams_t &params, pixelvis_handle_t *queryHandle )
 {
-	if ( !m_hwCanTestGlows || building_cubemaps.GetBool() )
+	if ( !m_hwCanTestGlows || building_cubemaps->GetBool() )
 	{
 		return GlowSightDistance( params.position, true ) > 0 ? 1.0f : 0.0f;
 	}
@@ -784,8 +784,7 @@ CPixelVisSet *CPixelVisibilitySystem::FindOrCreatePixelVisSet( const pixelvis_qu
 
 void PixelvisDrawChanged( IConVar *pPixelvisVar, const char *pOld, float flOldValue )
 {
-	ConVarRef var( pPixelvisVar );
-	g_PixelVisibilitySystem.ShowQueries( var.GetBool() );
+	g_PixelVisibilitySystem.ShowQueries( ((ConVar *)pPixelvisVar)->GetBool() );
 }
 
 class CTraceFilterGlow : public CTraceFilterSimple

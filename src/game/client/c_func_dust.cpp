@@ -14,6 +14,7 @@
 #include "tier0/vprof.h"
 #include "clienteffectprecachesystem.h"
 #include "particles_ez.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -30,7 +31,8 @@ IMPLEMENT_CLIENTCLASS_DT_NOBASE( C_Func_Dust, DT_Func_Dust, CFunc_Dust )
 	RecvPropInt( RECVINFO(m_DistMax) ),
 	RecvPropInt( RECVINFO( m_nModelIndex ) ),
 	RecvPropFloat( RECVINFO( m_FallSpeed ) ),
-	RecvPropDataTable( RECVINFO_DT( m_Collision ), 0, &REFERENCE_RECV_TABLE(DT_CollisionProperty) ),
+
+	RecvPropDataTable( RECVINFO_DT( m_pCollision ), 0, &REFERENCE_RECV_TABLE(DT_CollisionProperty), DataTableRecvProxy_PointerDataTable ),
 END_RECV_TABLE()
 
 
@@ -284,25 +286,25 @@ void FX_Dust( const Vector &vecOrigin, const Vector &vecDirection, float flSize,
 
 		particle.m_Pos = offset;
 		particle.m_flLifetime = 0.0f;
-		particle.m_flDieTime  = random->RandomFloat( 0.4f, 1.0f );
+		particle.m_flDieTime  = random_valve->RandomFloat( 0.4f, 1.0f );
 		
-		particle.m_vecVelocity = vecDirection * random->RandomFloat( speed*0.5f, speed ) * i;
+		particle.m_vecVelocity = vecDirection * random_valve->RandomFloat( speed*0.5f, speed ) * i;
 		particle.m_vecVelocity[2] = 0.0f;
 
-		int	color = random->RandomInt( 48, 64 );
+		int	color = random_valve->RandomInt( 48, 64 );
 
 		particle.m_uchColor[0] = (color+16) + ( worldLight[0] * (float) color );
 		particle.m_uchColor[1] = (color+8) + ( worldLight[1] * (float) color );
 		particle.m_uchColor[2] = color + ( worldLight[2] * (float) color );
 
-		particle.m_uchStartAlpha= random->RandomInt( 64, 128 );
+		particle.m_uchStartAlpha= random_valve->RandomInt( 64, 128 );
 		particle.m_uchEndAlpha	= 0;
-		particle.m_uchStartSize = random->RandomInt( 2, 8 );
-		particle.m_uchEndSize	= random->RandomInt( 24, 48 );
-		particle.m_flRoll		= random->RandomInt( 0, 360 );
-		particle.m_flRollDelta	= random->RandomFloat( -0.5f, 0.5f );
+		particle.m_uchStartSize = random_valve->RandomInt( 2, 8 );
+		particle.m_uchEndSize	= random_valve->RandomInt( 24, 48 );
+		particle.m_flRoll		= random_valve->RandomInt( 0, 360 );
+		particle.m_flRollDelta	= random_valve->RandomFloat( -0.5f, 0.5f );
 
-		AddSimpleParticle( &particle, g_Mat_DustPuff[random->RandomInt(0,1)] );
+		AddSimpleParticle( &particle, g_Mat_DustPuff[random_valve->RandomInt(0,1)] );
 	}
 }
 

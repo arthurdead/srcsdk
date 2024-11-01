@@ -146,29 +146,50 @@ DECLARE_FIELD_SIZE( FIELD_MATERIALINDEX,	sizeof(int) )
 #define SIZE_OF_ARRAY(p)	_ARRAYSIZE(p)
 
 #define _FIELD(name,fieldtype,count,flags,mapname,tolerance) \
-	{ fieldtype, #name, { offsetof(classNameTypedef, name), 0 }, count, flags, mapname, NULL, NULL, NULL, sizeof(((classNameTypedef *)0)->name), NULL, 0, tolerance }
+	typedescription_t{ fieldtype, #name, { offsetof(classNameTypedef, name), 0 }, count, flags, mapname, NULL, NULL, NULL, sizeof(((classNameTypedef *)0)->name), NULL, 0, tolerance }
+
 #define _FIELD_ARRAYELEM(name,i,fieldtype,count,flags,mapname,tolerance) \
-	{ fieldtype, #name "[" #i "]", { (offsetof(classNameTypedef, name) + (sizeof(((classNameTypedef *)0)->name[i]) * i)), 0 }, count, flags, mapname, NULL, NULL, NULL, sizeof(((classNameTypedef *)0)->name[i]), NULL, 0, tolerance }
+	typedescription_t{ fieldtype, #name "[" #i "]", { (offsetof(classNameTypedef, name) + (sizeof(((classNameTypedef *)0)->name[i]) * i)), 0 }, count, flags, mapname, NULL, NULL, NULL, sizeof(((classNameTypedef *)0)->name[i]), NULL, 0, tolerance }
 #define DEFINE_FIELD_NULL \
-	{ FIELD_VOID,0, {0,0},0,0,0,0,0,0}
+	typedescription_t{ FIELD_VOID,0, {0,0},0,0,0,0,0,0}
+
 #define DEFINE_FIELD(name,fieldtype) \
 	_FIELD(name, fieldtype, 1,  0, NULL, 0 )
+#define DEFINE_FIELD_FLAGS(name,fieldtype, flags) \
+	_FIELD(name, fieldtype, 1,  flags, NULL, 0.0f )
+#define DEFINE_FIELD_FLAGS_TOL(name,fieldtype, flags,tolerance) \
+	_FIELD(name, fieldtype, 1,  flags, NULL, tolerance )
+
 #define DEFINE_KEYFIELD(name,fieldtype, mapname) \
 	_FIELD(name, fieldtype, 1,  FTYPEDESC_KEY, mapname, 0 )
+
+#define DEFINE_FIELD_NAME(localname,netname,fieldtype) \
+	_FIELD(localname, fieldtype, 1,  0, #netname, 0.0f )
+#define DEFINE_FIELD_NAME_TOL(localname,netname,fieldtolerance) \
+	_FIELD(localname, fieldtype, 1,  0, #netname, tolerance )
+
 #define DEFINE_KEYFIELD_ARRAYELEM(name,i,fieldtype, mapname) \
 	_FIELD_ARRAYELEM(name, i, fieldtype, 1,  FTYPEDESC_KEY, mapname, 0 )
 #define DEFINE_AUTO_ARRAY(name,fieldtype) \
 	_FIELD(name, fieldtype, SIZE_OF_ARRAY(((classNameTypedef *)0)->name), 0, NULL, 0 )
 #define DEFINE_AUTO_ARRAY_KEYFIELD(name,fieldtype,mapname) \
 	_FIELD(name, fieldtype, SIZE_OF_ARRAY(((classNameTypedef *)0)->name), 0, mapname, 0 )
+
 #define DEFINE_ARRAY(name,fieldtype, count) \
 	_FIELD(name, fieldtype, count, 0, NULL, 0 )
+#define DEFINE_ARRAY_FLAGS(name,fieldtype, count,flags) \
+	_FIELD(name, fieldtype, count, flags, NULL, 0.0f )
+#define DEFINE_ARRAY_FLAGS_TOL(name,fieldtype, count,flags,tolerance) \
+	_FIELD(name, fieldtype, count, flags, NULL, tolerance)
+
 #define DEFINE_ENTITY_FIELD(name,fieldtype) \
 	_FIELD(edict_t, name, fieldtype, 1,  FTYPEDESC_KEY, #name, 0 )
+
 #define DEFINE_CUSTOM_FIELD(name,datafuncs) \
-	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, datafuncs, NULL }
+	typedescription_t{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, datafuncs, NULL }
 #define DEFINE_CUSTOM_KEYFIELD(name,datafuncs,mapname) \
-	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_KEY, mapname, datafuncs, NULL }
+	typedescription_t{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_KEY, mapname, datafuncs, NULL }
+
 #define DEFINE_AUTO_ARRAY2D(name,fieldtype) \
 	_FIELD(name, fieldtype, ARRAYSIZE2D(((classNameTypedef *)0)->name), 0, NULL, 0 )
 // Used by byteswap datadescs
@@ -178,40 +199,35 @@ DECLARE_FIELD_SIZE( FIELD_MATERIALINDEX,	sizeof(int) )
 	_FIELD(name, fieldtype, 1,  FTYPEDESC_INDEX, NULL, 0 )
 
 #define DEFINE_EMBEDDED( name )						\
-	{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, NULL, NULL, &(((classNameTypedef *)0)->name.m_DataMap), sizeof( ((classNameTypedef *)0)->name ), NULL, 0, 0.0f }
+	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, NULL, NULL, &(((classNameTypedef *)0)->name.m_DataMap), sizeof( ((classNameTypedef *)0)->name ), NULL, 0, 0.0f }
+#define DEFINE_PRED_EMBEDDED( name )						\
+	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, NULL, NULL, &(((classNameTypedef *)0)->name.m_PredMap), sizeof( ((classNameTypedef *)0)->name ), NULL, 0, 0.0f }
+#define DEFINE_PRED_EMBEDDED_FLAGS( name, flags )						\
+	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, flags, NULL, NULL, NULL, &(((classNameTypedef *)0)->name.m_PredMap), sizeof( ((classNameTypedef *)0)->name ), NULL, 0, 0.0f }
 
 #define DEFINE_EMBEDDED_OVERRIDE( name, overridetype )	\
-	{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, NULL, NULL, &((overridetype *)0)->m_DataMap, sizeof( ((classNameTypedef *)0)->name ), NULL, 0, 0.0f }
+	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, NULL, NULL, &((overridetype *)0)->m_DataMap, sizeof( ((classNameTypedef *)0)->name ), NULL, 0, 0.0f }
 
-#define DEFINE_EMBEDDEDBYREF( name )					\
-	{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0 | FTYPEDESC_PTR, NULL, NULL, NULL, &(((classNameTypedef *)0)->name->m_DataMap), sizeof( *(((classNameTypedef *)0)->name) ), NULL, 0, 0.0f }
+#define DEFINE_EMBEDDED_PTR( name )					\
+	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_PTR, NULL, NULL, NULL, &(((classNameTypedef *)0)->name->m_DataMap), sizeof( *(((classNameTypedef *)0)->name) ), NULL, 0, 0.0f }
+#define DEFINE_PRED_EMBEDDED_PTR( name )					\
+	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_PTR, NULL, NULL, NULL, &(((classNameTypedef *)0)->name->m_PredMap), sizeof( *(((classNameTypedef *)0)->name) ), NULL, 0, 0.0f }
+#define DEFINE_PRED_EMBEDDED_PTR_FLAGS( name, flags )					\
+	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_PTR|flags, NULL, NULL, NULL, &(((classNameTypedef *)0)->name->m_PredMap), sizeof( *(((classNameTypedef *)0)->name) ), NULL, 0, 0.0f }
 
 #define DEFINE_EMBEDDED_ARRAY( name, count )			\
-	{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, count, 0, NULL, NULL, NULL, &(((classNameTypedef *)0)->name->m_DataMap), sizeof( ((classNameTypedef *)0)->name[0] ), NULL, 0, 0.0f  }
+	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, count, 0, NULL, NULL, NULL, &(((classNameTypedef *)0)->name->m_DataMap), sizeof( ((classNameTypedef *)0)->name[0] ), NULL, 0, 0.0f  }
 
 #define DEFINE_EMBEDDED_AUTO_ARRAY( name )			\
-	{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, SIZE_OF_ARRAY( ((classNameTypedef *)0)->name ), 0, NULL, NULL, NULL, &(((classNameTypedef *)0)->name->m_DataMap), sizeof( ((classNameTypedef *)0)->name[0] ), NULL, 0, 0.0f  }
-
-#define DEFINE_PRED_TYPEDESCRIPTION( name, fieldtype )						\
-	{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, NULL, NULL, &fieldtype::m_PredMap }
-
-#define DEFINE_PRED_TYPEDESCRIPTION_PTR( name, fieldtype )						\
-	{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_PTR, NULL, NULL, NULL, &fieldtype::m_PredMap }
-
-// Extensions to datamap.h macros for predicted entities only
-#define DEFINE_PRED_FIELD(name,fieldtype, flags)			_FIELD(name, fieldtype, 1,  flags, NULL, 0.0f )
-#define DEFINE_PRED_ARRAY(name,fieldtype, count,flags)		_FIELD(name, fieldtype, count, flags, NULL, 0.0f )
-#define DEFINE_FIELD_NAME(localname,netname,fieldtype)		_FIELD(localname, fieldtype, 1,  0, #netname, 0.0f )
-// Predictable macros, which include a tolerance for floating point values...
-#define DEFINE_PRED_FIELD_TOL(name,fieldtype, flags,tolerance)			_FIELD(name, fieldtype, 1,  flags, NULL, tolerance )
-#define DEFINE_PRED_ARRAY_TOL(name,fieldtype, count,flags,tolerance)		_FIELD(name, fieldtype, count, flags, NULL, tolerance)
-#define DEFINE_FIELD_NAME_TOL(localname,netname,fieldtolerance)		_FIELD(localname, fieldtype, 1,  0, #netname, tolerance )
+	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, SIZE_OF_ARRAY( ((classNameTypedef *)0)->name ), 0, NULL, NULL, NULL, &(((classNameTypedef *)0)->name->m_DataMap), sizeof( ((classNameTypedef *)0)->name[0] ), NULL, 0, 0.0f  }
 
 //#define DEFINE_DATA( name, fieldextname, flags ) _FIELD(name, fieldtype, 1,  flags, extname )
 
 // INPUTS
-#define DEFINE_INPUT( name, fieldtype, inputname ) { fieldtype, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_INPUT | FTYPEDESC_KEY,	inputname, NULL, NULL, NULL, sizeof( ((classNameTypedef *)0)->name ) }
-#define DEFINE_INPUTFUNC( fieldtype, inputname, inputfunc ) { fieldtype, #inputfunc, { 0, 0 }, 1, FTYPEDESC_INPUT, inputname, NULL, static_cast <inputfunc_t> (&classNameTypedef::inputfunc) }
+#define DEFINE_INPUT( name, fieldtype, inputname ) \
+	typedescription_t{ fieldtype, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_INPUT | FTYPEDESC_KEY,	inputname, NULL, NULL, NULL, sizeof( ((classNameTypedef *)0)->name ) }
+#define DEFINE_INPUTFUNC( fieldtype, inputname, inputfunc ) \
+	typedescription_t{ fieldtype, #inputfunc, { 0, 0 }, 1, FTYPEDESC_INPUT, inputname, NULL, static_cast <inputfunc_t> (&classNameTypedef::inputfunc) }
 
 // OUTPUTS
 // the variable 'name' MUST BE derived from CBaseOutput
@@ -219,16 +235,21 @@ DECLARE_FIELD_SIZE( FIELD_MATERIALINDEX,	sizeof(int) )
 
 class ICustomFieldOps;
 extern ICustomFieldOps *eventFuncs;
-#define DEFINE_OUTPUT( name, outputname )	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_OUTPUT | FTYPEDESC_KEY, outputname, eventFuncs }
+#define DEFINE_OUTPUT( name, outputname ) \
+	typedescription_t{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_OUTPUT | FTYPEDESC_KEY, outputname, eventFuncs }
 
 // Quick way to define variants in a datadesc.
 extern ICustomFieldOps *variantFuncs;
-#define DEFINE_VARIANT(name) { FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, variantFuncs, NULL }
-#define DEFINE_KEYVARIANT(name,mapname)	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_KEY, mapname, variantFuncs, NULL }
+#define DEFINE_VARIANT(name) \
+	typedescription_t{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, 0, NULL, variantFuncs, NULL }
+#define DEFINE_KEYVARIANT(name,mapname) \
+	typedescription_t{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_KEY, mapname, variantFuncs, NULL }
 
 // replaces EXPORT table for portability and non-DLL based systems (xbox)
-#define DEFINE_FUNCTION_RAW( function, func_type )			{ FIELD_VOID, nameHolder.GenerateName(#function), { NULL, NULL }, 1, FTYPEDESC_FUNCTIONTABLE, NULL, NULL, (inputfunc_t)((func_type)(&classNameTypedef::function)) }
-#define DEFINE_FUNCTION( function )			DEFINE_FUNCTION_RAW( function, inputfunc_t )
+#define DEFINE_FUNCTION_RAW( function, func_type ) \
+	typedescription_t{ FIELD_VOID, nameHolder.GenerateName(#function), { NULL, NULL }, 1, FTYPEDESC_FUNCTIONTABLE, NULL, NULL, (inputfunc_t)((func_type)(&classNameTypedef::function)) }
+#define DEFINE_FUNCTION( function ) \
+	DEFINE_FUNCTION_RAW( function, inputfunc_t )
 
 
 #define FTYPEDESC_KEY				0x0004		// This field can be requested and written to by string name at load time
@@ -390,6 +411,34 @@ struct datamap_t
 #endif // _DEBUG
 };
 
+extern datamap_t *g_pPredDatamapsHead;
+extern datamap_t *g_pMapDatamapsHead;
+
+struct pred_datamap_t : public datamap_t
+{
+	pred_datamap_t(const pred_datamap_t &) = delete;
+	pred_datamap_t &operator=(const pred_datamap_t &) = delete;
+	pred_datamap_t(pred_datamap_t &&) = delete;
+	pred_datamap_t &operator=(pred_datamap_t &&) = delete;
+
+	pred_datamap_t(const char *name);
+	pred_datamap_t(const char *name, datamap_t *base);
+
+	datamap_t *m_pNext;;
+};
+
+struct map_datamap_t : public datamap_t
+{
+	map_datamap_t(const map_datamap_t &) = delete;
+	map_datamap_t &operator=(const map_datamap_t &) = delete;
+	map_datamap_t(map_datamap_t &&) = delete;
+	map_datamap_t &operator=(map_datamap_t &&) = delete;
+
+	map_datamap_t(const char *name);
+	map_datamap_t(const char *name, datamap_t *base);
+
+	datamap_t *m_pNext;;
+};
 
 //-----------------------------------------------------------------------------
 //

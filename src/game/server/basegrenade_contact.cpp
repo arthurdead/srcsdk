@@ -50,7 +50,7 @@ void CBaseGrenadeContact::Spawn( void )
 	SetNextThink( gpGlobals->curtime );
 	
 	// Tumble in air
-	QAngle vecAngVelocity( random->RandomFloat ( -100, -500 ), 0, 0 );
+	QAngle vecAngVelocity( random_valve->RandomFloat ( -100, -500 ), 0, 0 );
 	SetLocalAngularVelocity( vecAngVelocity );
 
 	// Explode on contact

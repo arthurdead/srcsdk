@@ -7,6 +7,7 @@
 #include "cbase.h"
 #include "obstacle_pushaway.h"
 #include "props_shared.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

@@ -108,7 +108,9 @@ acttable_t	CSharedWeaponHL2Pistol::m_acttable[] =
 
 IMPLEMENT_ACTTABLE( CSharedWeaponHL2Pistol );
 
+#ifdef GAME_DLL
 LINK_ENTITY_TO_CLASS_ALIASED(weapon_hl2_pistol, WeaponHL2Pistol);
+#endif
 
 #ifdef CLIENT_DLL
 	#define CWeaponHL2Shotgun C_WeaponHL2Shotgun
@@ -208,7 +210,9 @@ acttable_t	CSharedWeaponHL2Shotgun::m_acttable[] =
 
 IMPLEMENT_ACTTABLE( CSharedWeaponHL2Shotgun );
 
+#ifdef GAME_DLL
 LINK_ENTITY_TO_CLASS_ALIASED(weapon_hl2_shotgun, WeaponHL2Shotgun);
+#endif
 
 #ifdef CLIENT_DLL
 	#define CWeaponHL2Smg C_WeaponHL2Smg
@@ -307,7 +311,9 @@ acttable_t	CSharedWeaponHL2Smg::m_acttable[] =
 
 IMPLEMENT_ACTTABLE( CSharedWeaponHL2Smg );
 
+#ifdef GAME_DLL
 LINK_ENTITY_TO_CLASS_ALIASED(weapon_hl2_smg1, WeaponHL2Smg);
+#endif
 
 BEGIN_NETWORK_TABLE(CSharedWeaponHL2Pistol, DT_WeaponHL2Pistol)
 END_NETWORK_TABLE()

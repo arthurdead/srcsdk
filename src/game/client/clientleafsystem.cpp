@@ -33,9 +33,11 @@
 
 class VMatrix;  // forward decl
 
+extern ConVar *r_occlusion;
+
 static ConVar cl_drawleaf("cl_drawleaf", "-1", FCVAR_CHEAT );
 static ConVar r_PortalTestEnts( "r_PortalTestEnts", "1", FCVAR_CHEAT, "Clip entities against portal frustums." );
-static ConVar r_portalsopenall( "r_portalsopenall", "0", FCVAR_CHEAT, "Open all portals" );
+extern ConVar *r_portalsopenall;
 static ConVar cl_threaded_client_leaf_system("cl_threaded_client_leaf_system", "1"  );
 static ConVar r_shadows_on_renderables_enable( "r_shadows_on_renderables_enable", "0", 0, "Support casting RTT shadows onto other renderables" );
 
@@ -1975,7 +1977,7 @@ short CClientLeafSystem::GetRenderableArea( ClientRenderHandle_t handle )
 
 void CClientLeafSystem::SetSubSystemDataInLeaf( int leaf, int nSubSystemIdx, CClientLeafSubSystemData *pData )
 {
-	assert( nSubSystemIdx < N_CLSUBSYSTEMS );
+	Assert( nSubSystemIdx < N_CLSUBSYSTEMS );
 	if ( m_Leaf[leaf].m_pSubSystemData[nSubSystemIdx] )
 		delete m_Leaf[leaf].m_pSubSystemData[nSubSystemIdx];
 	m_Leaf[leaf].m_pSubSystemData[nSubSystemIdx] = pData;
@@ -1983,7 +1985,7 @@ void CClientLeafSystem::SetSubSystemDataInLeaf( int leaf, int nSubSystemIdx, CCl
 
 CClientLeafSubSystemData *CClientLeafSystem::GetSubSystemDataInLeaf( int leaf, int nSubSystemIdx )
 {
-	assert( nSubSystemIdx < N_CLSUBSYSTEMS );
+	Assert( nSubSystemIdx < N_CLSUBSYSTEMS );
 	return m_Leaf[leaf].m_pSubSystemData[nSubSystemIdx];
 }
 
@@ -3636,7 +3638,7 @@ void CClientLeafSystem::ComputeBounds( int nCount, RenderableInfoAndHandle_t *pp
 //-----------------------------------------------------------------------------
 int CClientLeafSystem::ExtractCulledRenderables( int nCount, RenderableInfoAndHandle_t *ppRenderables, BuildRenderListInfo_t *pRLInfo )
 {
-	bool bPortalTestEnts = r_PortalTestEnts.GetBool() && !r_portalsopenall.GetBool();
+	bool bPortalTestEnts = r_PortalTestEnts.GetBool() && !r_portalsopenall->GetBool();
 
 	// FIXME: sort by area and inline cull. Should make it a bunch faster
 	int nUniqueCount = 0;
@@ -3695,10 +3697,8 @@ int CClientLeafSystem::ExtractCulledRenderables( int nCount, RenderableInfoAndHa
 //-----------------------------------------------------------------------------
 int CClientLeafSystem::ExtractOccludedRenderables( int nCount, RenderableInfoAndHandle_t *ppRenderables, BuildRenderListInfo_t *pRLInfo )
 {
-	static ConVarRef r_occlusion("r_occlusion");
-
 	// occlusion is off, just return
-	if ( !r_occlusion.GetBool() )
+	if ( !r_occlusion->GetBool() )
 		return nCount;
 
 	int nUniqueCount = 0;

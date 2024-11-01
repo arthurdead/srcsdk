@@ -29,8 +29,8 @@ CFXDiscreetLine::CFXDiscreetLine( const char *name, const Vector& start, const V
 	float velocity, float length, float clipLength, float scale, float life, const char *shader )
 : CClientSideEffect( name )
 {
-	assert( g_pMaterialSystem );
-	if ( materials == NULL )
+	Assert( g_pMaterialSystem );
+	if ( g_pMaterialSystem == NULL )
 		return;
 
 	// Create a material...

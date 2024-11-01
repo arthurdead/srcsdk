@@ -10,6 +10,9 @@ build_libs = get_option('build_libs')
 
 shadercompiler_src_dir = join_paths(src_root_dir,'utils','shadercompiler')
 
+target_system = target_machine.system()
+assert(target_system == 'linux' or target_system == 'gnu')
+
 if build_libs
 	m4  = find_program('m4', native: true)
 

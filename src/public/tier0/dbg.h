@@ -157,8 +157,6 @@ class CValidator;
 DBG_INTERFACE void _ExitOnFatalAssert( const tchar* pFile, int line );
 DBG_INTERFACE bool ShouldUseNewAssertDialog();
 
-DBG_INTERFACE bool SetupConsoleIO();
-
 // Returns true if they want to break in the debugger.
 
 //this is broken on my PC idk why

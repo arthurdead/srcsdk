@@ -295,8 +295,6 @@ public:
 	virtual void			CreateHandModel( int viewmodelindex = VIEWMODEL_HANDS, int parentViewmodelindex = VIEWMODEL_WEAPON );
 
 	CPlayerState			*PlayerData( void ) { return &pl; }
-	
-	int						RequiredEdictIndex( void );
 
 	void					LockPlayerInPlace( void );
 	void					UnlockPlayer( void );
@@ -394,7 +392,7 @@ public:
 	virtual bool			IsFakeClient( void ) const;
 
 	// Get the client index (entindex-1).
-	int						GetClientIndex()	{ return ENTINDEX( edict() ) - 1; }
+	int						GetClientIndex()	{ return entindex() - 1; }
 
 	// returns the player name
 	const char *			GetPlayerName() { return m_szNetname; }
@@ -697,6 +695,8 @@ public:
 	void					SetTouchedPhysics( bool bTouch );
 	bool					TouchedPhysics( void );
 	Vector					GetSmoothedVelocity( void );
+
+	virtual void		  SetViewOffset( const Vector& v );
 
 	virtual	void			RefreshCollisionBounds( void );
 	virtual void			InitVCollision( const Vector &vecAbsOrigin, const Vector &vecAbsVelocity );
@@ -1405,8 +1405,8 @@ EXTERN_SEND_TABLE(DT_BasePlayer)
 
 class CBaseExpresserPlayer : public CAI_ExpresserHost<CBasePlayer>
 {
-	DECLARE_CLASS( CBaseExpresserPlayer, CAI_ExpresserHost<CBasePlayer> );
 public:
+	DECLARE_CLASS( CBaseExpresserPlayer, CAI_ExpresserHost<CBasePlayer> );
 	CBaseExpresserPlayer();
 
 	virtual void		PostConstructor( const char *szClassname );

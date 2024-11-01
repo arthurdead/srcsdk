@@ -20,6 +20,7 @@
 #include "shaderapi/ishaderapi.h"
 #include "materialsystem/MaterialSystemUtil.h"
 #include "tier0/vprof.h"
+#include "ragdoll.h"
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
@@ -28,11 +29,11 @@
 //-----------------------------------------------------------------------------
 // Convars defined by other systems
 //-----------------------------------------------------------------------------
-ConVar r_lod( "r_lod", "-1" );
+extern ConVar *r_lod;
 //ConVar r_shadowlod( "r_shadowlod", "-1" );
-ConVar r_drawmodellightorigin( "r_DrawModelLightOrigin", "0", FCVAR_CHEAT );
+extern ConVar *r_drawmodellightorigin;
 extern ConVar g_CV_FlexSmooth;
-extern ConVar r_fastzreject;
+extern ConVar *r_fastzreject;
 
 //-----------------------------------------------------------------------------
 // Cache entry for render data
@@ -535,7 +536,7 @@ void CModelRenderSystem::ComputeModelLODs( int nModelTypeCount, ModelListByType_
 		return;
 	}
 
-	int nLOD = r_lod.GetInt();
+	int nLOD = r_lod->GetInt();
 	if ( nLOD >= 0 )
 	{
 		SlamModelLODs( nLOD, nModelTypeCount, pModelList, pModelListNode );
@@ -603,7 +604,7 @@ void CModelRenderSystem::SortModels( RenderModelInfo_t *pRenderModelInfo,
 		list.m_nSetupBoneCount = 0;
 		for ( ModelListNode_t *pNode = list.m_pFirstNode; pNode; pNode = pNode->m_pNext )
 		{
-			memset( pCurrInfo, 0, sizeof( RenderModelInfo_t ) );
+			memset( (void *)pCurrInfo, 0, sizeof( RenderModelInfo_t ) );
 			pCurrInfo->m_Entry = pNode->m_Entry;
 			pCurrInfo->m_nLOD = pNode->m_nLOD;
 			pCurrInfo->m_nSkin = pNode->m_Entry.m_pRenderable->GetSkin();
@@ -1040,7 +1041,7 @@ void CModelRenderSystem::SetupStandardLighting( LightingList_t &lightingList )
 	LightingQuery_t *pLightingQuery = (LightingQuery_t*)stackalloc( nTotalModels * sizeof(LightingQuery_t) );
 	CMatRenderData< MaterialLightingState_t > &rdLightingState = *GetCachedRenderData<MaterialLightingState_t>( m_CachedMaterialLightingStates, m_pRenderContext, nTotalModels );
 	MaterialLightingState_t *pLightingState = rdLightingState.Base();
-	memset( pLightingState, 0, nTotalModels * sizeof(MaterialLightingState_t) );
+	memset( (void *)pLightingState, 0, nTotalModels * sizeof(MaterialLightingState_t) );
 	for ( int i = 0; i < nSetupCount; ++i )
 	{
 		ModelListByType_t &list = *( ppLists[i] );
@@ -1134,7 +1135,7 @@ int CModelRenderSystem::SetupLighting( LightingList_t *pLightingList, int nModel
 	nCount += SetupPhysicsPropLighting( pLightingList[ LIGHTING_MODEL_PHYSICS_PROP ], pColorMeshHandles );
 
 	// Debugging info
-	if ( r_drawmodellightorigin.GetBool() )
+	if ( r_drawmodellightorigin->GetBool() )
 	{
 		for ( int i = 0; i < nModelTypeCount; ++i )
 		{
@@ -1346,7 +1347,7 @@ void CModelRenderSystem::SetupTranslucentData( int nModelTypeCount, ModelListByT
 			RenderModelInfo_t &info = list.m_pRenderModels[j];
 
 			StudioArrayInstanceData_t *pInstanceData = &instanceData[nCurInstance++];
-			memcpy( pInstanceData, &info, sizeof( StudioArrayInstanceData_t ) );
+			memcpy( (void *)pInstanceData, (void *)&info, sizeof( StudioArrayInstanceData_t ) );
 
 			TranslucentInstanceRenderData_t &data = pRenderData[ info.m_nInitialListIndex ];
 			data.m_pModelInfo = pModelInfo;

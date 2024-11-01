@@ -177,7 +177,7 @@ int NTreeNode<T>::GetIndexRelativeToParent()
 {
 	if( !parent )
 	{
-		assert( 0 ); // hack
+		Assert( 0 ); // hack
 		return -1;
 	}
 	GListIterator<NTreeNode<T> *> iterator( parent->list );
@@ -189,7 +189,7 @@ int NTreeNode<T>::GetIndexRelativeToParent()
 			return i;
 		}
 	}
-	assert( 0 ); // hack
+	Assert( 0 ); // hack
 	return -1;
 }
 

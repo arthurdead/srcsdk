@@ -23,8 +23,8 @@ class CAchievementMgr;
 
 class CBaseAchievement : public CGameEventListener, public IAchievement
 {
-	DECLARE_CLASS_NOBASE( CBaseAchievement );
 public:
+	DECLARE_CLASS_NOBASE( CBaseAchievement );
 	CBaseAchievement();	
 	virtual ~CBaseAchievement();
 	virtual void Init() {}

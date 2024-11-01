@@ -241,7 +241,7 @@ void RmlRenderInterface::Initialize()
 	m_pRenderContext = g_pMaterialSystem->GetRenderContext();
 	m_pRenderContext->AddRef();
 
-	m_pErrorTexture = g_pMaterialSystem->FindTexture("error", TEXTURE_GROUP_VGUI);
+	m_pErrorTexture = g_pMaterialSystem->FindTexture("debug/debugempty", TEXTURE_GROUP_VGUI);
 	if(!m_pErrorTexture) {
 		Error("failed to get error texture\n");
 	}

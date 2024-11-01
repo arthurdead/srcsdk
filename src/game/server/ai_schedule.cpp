@@ -106,7 +106,7 @@ bool CAI_SchedulesManager::LoadAllSchedules(void)
 #if 0
 		// If not in developer mode, free the string memory.  Otherwise
 		// keep it around for debugging information
-		if (!g_pDeveloper->GetInt())
+		if (!developer->GetInt())
 		{
 			ClearStringRegistries();
 		}
@@ -847,7 +847,7 @@ bool CAI_SchedulesManager::LoadSchedules( const char *pclassname, const char *pS
 
 		sched_tempInterruptMask.ClearAll();
 		sched_tempTaskNum = 0;
-		memset(sched_tempTask, 0, sizeof(sched_tempTask));
+		memset((void *)sched_tempTask, 0, sizeof(sched_tempTask));
 
 		pfile = engine->ParseFile(pfile, sched_tempbuffer, SCHED_BUFFER_STRIDE );
 		bool first = true;

@@ -25,8 +25,8 @@ class CFuncReflectiveGlass : public CFuncBrush
 	void InputSetReflectRenderTarget( inputdata_t &inputdata ) { m_iszReflectRenderTarget = inputdata.value.StringID(); }
 	void InputSetRefractRenderTarget( inputdata_t &inputdata ) { m_iszRefractRenderTarget = inputdata.value.StringID(); }
 
-	CNetworkVar( string_t, m_iszReflectRenderTarget );
-	CNetworkVar( string_t, m_iszRefractRenderTarget );
+	CNetworkStringT( m_iszReflectRenderTarget );
+	CNetworkStringT( m_iszRefractRenderTarget );
 };
 
 LINK_ENTITY_TO_CLASS( func_reflective_glass, CFuncReflectiveGlass );

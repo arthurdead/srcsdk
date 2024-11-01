@@ -550,8 +550,9 @@ bool Serialize( CUtlBuffer &buf, const CUtlString &src )
 bool Unserialize( CUtlBuffer &buf, CUtlString &dest )
 {
 	int nLen = buf.PeekDelimitedStringLength( s_pConv );
-	dest.SetLength( nLen - 1 );	// -1 because the length returned includes space for \0
-	buf.GetDelimitedString( s_pConv, dest.GetForModify(), nLen );
+	dest.SetLength( (nLen > 0) ? (nLen - 1) : 0 );	// -1 because the length returned includes space for \0
+	if( nLen )
+		buf.GetDelimitedString( s_pConv, dest.GetForModify(), nLen );
 	return buf.IsValid();
 }
 

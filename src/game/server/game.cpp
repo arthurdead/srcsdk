@@ -42,10 +42,6 @@ ConVar	teamoverride( "mp_teamoverride","1" );
 ConVar	defaultteam( "mp_defaultteam","0" );
 ConVar	allowNPCs( "mp_allowNPCs","1", FCVAR_NOTIFY );
 
-// Engine Cvars
-const ConVar	*g_pDeveloper = NULL;
-
-
 ConVar suitvolume( "suitvolume", "0.25", FCVAR_ARCHIVE );
 
 class CGameDLL_ConVarAccessor : public IConCommandBaseAccessor
@@ -54,12 +50,8 @@ public:
 	virtual bool	RegisterConCommandBase( ConCommandBase *pCommand )
 	{
 	#ifdef _DEBUG
-		if(g_pCVar->FindCommandBase(pCommand->GetName()) != NULL) {
-			Log_Warning(LOG_CONVAR,"server dll tried to re-register con var/command named %s\n", pCommand->GetName());
-		}
-
-		if(pCommand->IsFlagSet(FCVAR_CLIENTDLL))
-			Log_Warning(LOG_CONVAR,"server dll tried to register client con var/command named %s\n", pCommand->GetName());
+		AssertMsg( g_pCVar->FindCommandBase(pCommand->GetName()) == NULL, "server dll tried to re-register con var/command named %s", pCommand->GetName());
+		AssertMsg( !pCommand->IsFlagSet(FCVAR_CLIENTDLL), "server dll tried to register client con var/command named %s", pCommand->GetName() );
 	#endif
 
 		// Remember "unlinked" default value for replicated cvars
@@ -103,13 +95,51 @@ public:
 
 static CGameDLL_ConVarAccessor g_ServerConVarAccessor;
 
+ConVar *mat_hdr_tonemapscale=NULL;
+ConVar *mat_hdr_manual_tonemap_rate=NULL;
+#ifndef SWDS
+ConVar *mat_dxlevel=NULL;
+#endif
+ConVar *skill=NULL;
+ConVar *think_trace_limit=NULL;
+ConVar *vcollide_wireframe=NULL;
+ConVar *host_thread_mode=NULL;
+ConVar *hide_server=NULL;
+ConVar *sv_maxreplay=NULL;
+
+extern void InitializeSharedCvars( void );
+
 // Register your console variables here
 // This gets called one time when the game is initialied
 void InitializeServerCvars( void )
 {
+	//TODO!!! Arthurdead: this is defined somewhere else??
+	ConVar *tmp_props_break_max_pieces = g_pCVar->FindVar("props_break_max_pieces");
+	if(tmp_props_break_max_pieces) {
+		tmp_props_break_max_pieces->AddFlags( FCVAR_REPLICATED );
+	}
+
 	// Register cvars here:
 	ConVar_Register( FCVAR_GAMEDLL, &g_ServerConVarAccessor ); 
 
-	g_pDeveloper	= g_pCVar->FindVar( "developer" );
-}
+	InitializeSharedCvars();
 
+	skill = g_pCVar->FindVar("skill");
+	host_thread_mode = g_pCVar->FindVar( "host_thread_mode" );
+	hide_server = g_pCVar->FindVar( "hide_server" );
+	sv_maxreplay = g_pCVar->FindVar( "sv_maxreplay" );
+
+#ifndef SWDS
+	if(!engine->IsDedicatedServer()) {
+		mat_hdr_tonemapscale = g_pCVar->FindVar("mat_hdr_tonemapscale");
+		mat_hdr_manual_tonemap_rate = g_pCVar->FindVar("mat_hdr_manual_tonemap_rate");
+		mat_dxlevel = g_pCVar->FindVar("mat_dxlevel");
+		vcollide_wireframe = g_pCVar->FindVar("vcollide_wireframe");
+	} else
+#endif
+	{
+		mat_hdr_tonemapscale = new ConVar( "mat_hdr_tonemapscale", "1.0", FCVAR_CHEAT|FCVAR_REPLICATED, "The HDR tonemap scale. 1 = Use autoexposure, 0 = eyes fully closed, 16 = eyes wide open." );
+		mat_hdr_manual_tonemap_rate = new ConVar( "mat_hdr_manual_tonemap_rate", "1.0" );
+		vcollide_wireframe = new ConVar( "vcollide_wireframe", "0", FCVAR_CHEAT, "Render physics collision models in wireframe", NULL );
+	}
+}

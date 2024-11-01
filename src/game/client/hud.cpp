@@ -1072,8 +1072,7 @@ CHudElement *CHud::FindElement( const char *pName )
 			return m_HudList[i];
 	}
 
-	Log_Warning(LOG_HUD, "Could not find Hud Element: %s\n", pName );
-	Assert(0);
+	AssertMsg(0, "Could not find Hud Element: %s", pName );
 	return NULL;
 }
 

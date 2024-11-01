@@ -30,29 +30,72 @@ source_release_dep = declare_dependency(
 )
 
 target_system = target_machine.system()
-if target_system == 'linux' or target_system == 'gnu'
+if meson.get_compiler('cpp').has_define('__WINE__')
+	lib_folder = join_paths(src_root_dir,'lib','public','linux32_wine')
+	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public','linux32_wine')
+	lib_folders = [
+		'-L'+lib_folder,
+		'-L'+join_paths(src_root_dir,'lib','public','linux32')
+	]
+	if get_option('funny')
+		lib_folders += [
+			'-L'+funny_lib_folder,
+			'-L'+join_paths(funny_src_root_dir,'lib','public','linux32')
+		]
+	endif
+elif target_system == 'linux' or target_system == 'gnu'
 	lib_folder = join_paths(src_root_dir,'lib','public','linux32')
 	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public','linux32')
-	lib_ext = '.a'
-	sharedlib_ext = '.so'
+	lib_folders = [
+		'-L'+lib_folder
+	]
+	if get_option('funny')
+		lib_folders += [
+			'-L'+funny_lib_folder
+		]
+	endif
 elif target_system == 'windows'
-	lib_folder = join_paths(src_root_dir,'lib','public')
-	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public')
-	lib_ext = '.lib'
+	lib_folder = join_paths(src_root_dir,'lib','public','mingw32')
+	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public','mingw32')
+	lib_folders = [
+		'-L'+lib_folder,
+		'-L'+join_paths(src_root_dir,'lib','public')
+	]
+	if get_option('funny')
+		lib_folders += [
+			'-L'+funny_lib_folder,
+			'-L'+join_paths(funny_src_root_dir,'lib','public')
+		]
+	endif
+else
+	error('unsupported system')
+endif
+
+lib_ext = '.a'
+
+if target_system == 'linux' or target_system == 'gnu'
+	sharedlib_ext = '.so'
+	obj_ext = '.o'
+elif target_system == 'windows'
 	sharedlib_ext = '.dll'
+	obj_ext = '.obj'
 else
 	error('unsupported system')
 endif
 
 funny_define = []
+funny_incdir = []
+
 if get_option('funny')
 	funny_define = ['-DFUNNY']
+	funny_incdir = [
+		join_paths(funny_src_root_dir,'public'),
+		join_paths(funny_src_root_dir,'common'),
+	]
 endif
 
 source_dep = declare_dependency(
 	compile_args: funny_define + [
-		'-DRAD_TELEMETRY_DISABLED',
-		'-DVERSION_SAFE_STEAM_API_INTERFACES',
 		'-DMOVE_CONSTRUCTOR_SUPPORT',
 		'-DVALVE_RVALUE_REFS',
 		'-DVALVE_INITIALIZER_LIST_SUPPORT',
@@ -62,7 +105,7 @@ source_dep = declare_dependency(
 		'-Wno-unused-value',
 		'-Wno-sign-compare',
 		'-Wno-reorder',
-		'-Wno-class-memaccess',
+		#'-Wno-class-memaccess',
 		'-Wno-register',
 		'-Wno-misleading-indentation',
 		'-Wno-nonnull-compare',
@@ -77,15 +120,15 @@ source_dep = declare_dependency(
 		'-Wno-narrowing',
 		'-Wno-mismatched-new-delete',
 		'-Wno-nonnull',
-		'-Wno-address',
+		#'-Wno-address',
 		'-Wno-invalid-offsetof',
 		'-Wno-conversion-null',
 		'-Wno-switch',
-		'-Wno-uninitialized',
+		#'-Wno-uninitialized',
 		'-Wno-logical-not-parentheses',
 		'-Wno-int-in-bool-context',
 		'-Wno-sequence-point',
-		'-march=i386',
+		'-march=x86-64-v2',
 		'-m32',
 		'-mtune=generic',
 		'-mmmx',
@@ -97,20 +140,20 @@ source_dep = declare_dependency(
 		'-msse4.1',
 		'-msse4.2',
 		'-mlzcnt',
+		'-m3dnow',
+		'-m3dnowa',
 		'-fvisibility=hidden',
 	],
-	include_directories: include_directories(
+	include_directories: funny_incdir + include_directories(
 		src_root_dir,
 		join_paths(src_root_dir,'public'),
-		join_paths(funny_src_root_dir,'public'),
 		join_paths(src_root_dir,'common'),
 		join_paths(src_root_dir,'utils','common')
 	),
-	link_args: [
+	link_args: lib_folders + [
 		'-L'+join_paths(game_dir,'bin'),
 		'-L'+join_paths(src_engine_dir,'bin'),
-		'-L'+lib_folder,
-		'-latomic',
+		'-latomic'
 	],
 	dependencies: [
 		source_debug_dep
@@ -170,7 +213,12 @@ source_linux_dep = declare_dependency(
 		'-DUSE_SDL',
 		'-DDX_TO_GL_ABSTRACTION',
 		'-DGL_GLEXT_PROTOTYPES',
-		'-DBINK_VIDEO',
+	]
+)
+
+source_shared_lib_linux_dep = declare_dependency(
+	compile_args: [
+		'-shared',
 	]
 )
 
@@ -180,15 +228,24 @@ source_windows_dep = declare_dependency(
 		'-DCOMPILER_GCC',
 		'-DWIN32',
 		'-D_WIN32',
+		'-DIS_WINDOWS_PC',
+		'-DPLATFORM_WINDOWS_PC',
 		'-D_DLL_EXT=.dll',
-		'-DBINK_VIDEO',
+	]
+)
+
+source_shared_lib_windows_dep = declare_dependency(
+	compile_args: [
+		'-shared','-mdll',
 	]
 )
 
 if target_system == 'linux' or target_system == 'gnu'
 	os_dep = source_linux_dep
+	source_shared_lib_os_dep = source_shared_lib_linux_dep
 elif target_system == 'windows'
 	os_dep = source_windows_dep
+	source_shared_lib_os_dep = source_shared_lib_windows_dep
 else
 	error('unsupported system')
 endif
@@ -201,8 +258,12 @@ source_static_lib_dep = declare_dependency(
 )
 
 source_shared_lib_dep = declare_dependency(
+	compile_args: [
+		'-shared',
+	],
 	dependencies: [
 		source_shared_lib_dep_base,
+		source_shared_lib_os_dep,
 		os_dep
 	],
 )

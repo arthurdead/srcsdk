@@ -24,7 +24,7 @@ extern ConVar r_flashlightdepthres;
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern ConVar r_flashlightdepthtexture;
+extern ConVar *r_flashlightdepthtexture;
 
 static ConVar r_swingflashlight( "r_swingflashlight", "1", FCVAR_CHEAT );
 static ConVar r_flashlightlockposition( "r_flashlightlockposition", "0", FCVAR_CHEAT );
@@ -43,8 +43,8 @@ static ConVar r_flashlightshadowatten( "r_flashlightshadowatten", "0.35", FCVAR_
 static ConVar r_flashlightladderdist( "r_flashlightladderdist", "40.0", FCVAR_CHEAT );
 static ConVar r_flashlight_topdown( "r_flashlight_topdown", "0" );
 
-extern ConVar mat_slopescaledepthbias_shadowmap;
-extern ConVar mat_depthbias_shadowmap;
+extern ConVar *mat_slopescaledepthbias_shadowmap;
+extern ConVar *mat_depthbias_shadowmap;
 
 static ConVar r_flashlightnearoffsetscale( "r_flashlightnearoffsetscale", "1.0", FCVAR_CHEAT );
 static ConVar r_flashlighttracedistcutoff( "r_flashlighttracedistcutoff", "128" );
@@ -225,15 +225,15 @@ void CFlashlightEffect::UpdateLightTopDown(const Vector &vecPos, const Vector &v
 	state.m_Color[3] = r_flashlightambient.GetFloat();
 	state.m_NearZ = r_flashlightnear.GetFloat() + m_flCurrentPullBackDist;		// Push near plane out so that we don't clip the world when the flashlight pulls back 
 	state.m_FarZ = r_flashlightfar.GetFloat();	// Strictly speaking, these are different, but the game can treat them the same
-	state.m_bEnableShadows = state.m_bEnableShadows && r_flashlightdepthtexture.GetBool();
+	state.m_bEnableShadows = state.m_bEnableShadows && r_flashlightdepthtexture->GetBool();
 	state.m_flShadowMapResolution = r_flashlightdepthres.GetInt();
 
 	state.m_pSpotlightTexture = m_FlashlightTexture;
 	state.m_nSpotlightTextureFrame = 0;
 
 	state.m_flShadowAtten = r_flashlightshadowatten.GetFloat();
-	state.m_flShadowSlopeScaleDepthBias = mat_slopescaledepthbias_shadowmap.GetFloat();
-	state.m_flShadowDepthBias = mat_depthbias_shadowmap.GetFloat();
+	state.m_flShadowSlopeScaleDepthBias = mat_slopescaledepthbias_shadowmap->GetFloat();
+	state.m_flShadowDepthBias = mat_depthbias_shadowmap->GetFloat();
 
 	UpdateLightProjection( state );
 
@@ -479,7 +479,7 @@ bool CFlashlightEffect::UpdateDefaultFlashlightState( FlashlightState_t& state, 
 	{
 		state.m_FarZ = r_flashlightfar.GetFloat();	// Strictly speaking, these are different, but the game can treat them the same
 	}
-	state.m_bEnableShadows = castsShadows && r_flashlightdepthtexture.GetBool();
+	state.m_bEnableShadows = castsShadows && r_flashlightdepthtexture->GetBool();
 	state.m_flShadowMapResolution = r_flashlightdepthres.GetInt();
 
 	if ( m_bMuzzleFlashEnabled )
@@ -499,8 +499,8 @@ bool CFlashlightEffect::UpdateDefaultFlashlightState( FlashlightState_t& state, 
 	state.m_nSpotlightTextureFrame = 0;
 
 	state.m_flShadowAtten = r_flashlightshadowatten.GetFloat();
-	state.m_flShadowSlopeScaleDepthBias = mat_slopescaledepthbias_shadowmap.GetFloat();
-	state.m_flShadowDepthBias = mat_depthbias_shadowmap.GetFloat();
+	state.m_flShadowSlopeScaleDepthBias = mat_slopescaledepthbias_shadowmap->GetFloat();
+	state.m_flShadowDepthBias = mat_depthbias_shadowmap->GetFloat();
 
 	return true;
 }

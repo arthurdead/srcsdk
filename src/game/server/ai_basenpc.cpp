@@ -72,6 +72,7 @@
 #include "vstdlib/jobthread.h"
 #include "ai_addon.h"
 #include "recast/recast_mgr.h"
+#include "collisionproperty.h"
 
 #include "ilagcompensationmanager.h"
 
@@ -1711,9 +1712,9 @@ void CAI_BaseNPC::MakeDamageBloodDecal ( int cCount, float flNoise, trace_t *ptr
 	{
 		vecTraceDir = vecDir;
 
-		vecTraceDir.x += random->RandomFloat( -flNoise, flNoise );
-		vecTraceDir.y += random->RandomFloat( -flNoise, flNoise );
-		vecTraceDir.z += random->RandomFloat( -flNoise, flNoise );
+		vecTraceDir.x += random_valve->RandomFloat( -flNoise, flNoise );
+		vecTraceDir.y += random_valve->RandomFloat( -flNoise, flNoise );
+		vecTraceDir.z += random_valve->RandomFloat( -flNoise, flNoise );
 
 		AI_TraceLine( ptr->endpos, ptr->endpos + vecTraceDir * 172, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &Bloodtr);
 
@@ -2766,7 +2767,7 @@ CBaseEntity *CAI_BaseNPC::EyeLookTarget( void )
 		}
 		if (pBestEntity)
 		{
-			m_flNextEyeLookTime = gpGlobals->curtime + random->RandomInt(1,5);
+			m_flNextEyeLookTime = gpGlobals->curtime + random_valve->RandomInt(1,5);
 			m_hEyeLookTarget = pBestEntity;
 		}
 	}
@@ -2989,9 +2990,9 @@ void CAI_BaseNPC::MaintainLookTargets ( float flInterval )
 
 		/*
 		Vector  lookSpread	= Vector(0.82,0.82,0.22);
-		float	x			= random->RandomFloat(-0.5,0.5) + random->RandomFloat(-0.5,0.5);
-		float	y			= random->RandomFloat(-0.5,0.5) + random->RandomFloat(-0.5,0.5);
-		float	z			= random->RandomFloat(-0.5,0.5) + random->RandomFloat(-0.5,0.5);
+		float	x			= random_valve->RandomFloat(-0.5,0.5) + random_valve->RandomFloat(-0.5,0.5);
+		float	y			= random_valve->RandomFloat(-0.5,0.5) + random_valve->RandomFloat(-0.5,0.5);
+		float	z			= random_valve->RandomFloat(-0.5,0.5) + random_valve->RandomFloat(-0.5,0.5);
 
 		QAngle angles;
 		VectorAngles( vBodyDir, angles );
@@ -2999,11 +3000,11 @@ void CAI_BaseNPC::MaintainLookTargets ( float flInterval )
 		AngleVectors( angles, &forward, &right, &up );
 
 		Vector vecDir		= vBodyDir + (x * lookSpread.x * forward) + (y * lookSpread.y * right) + (z * lookSpread.z * up);
-		float  lookDist		= random->RandomInt(50,2000);
+		float  lookDist		= random_valve->RandomInt(50,2000);
 		m_vEyeLookTarget	= EyePosition() + lookDist*vecDir;
 		*/
 		m_vEyeLookTarget	= EyePosition() + 500*vBodyDir;
-		m_flNextEyeLookTime = gpGlobals->curtime + 0.5; // random->RandomInt(1,5);
+		m_flNextEyeLookTime = gpGlobals->curtime + 0.5; // random_valve->RandomInt(1,5);
 	}
 	SetHeadDirection(m_vEyeLookTarget,flInterval);
 
@@ -3751,7 +3752,7 @@ void CAI_BaseNPC::RebalanceThinks()
 		AI_PROFILE_SCOPE(AI_Think_Rebalance );
 
 		static CUtlVector<AIRebalanceInfo_t> rebalanceCandidates( 16, 64 );
-		gm_iNextThinkRebalanceTick = gpGlobals->tickcount + TIME_TO_TICKS( random->RandomFloat( 3, 5) );
+		gm_iNextThinkRebalanceTick = gpGlobals->tickcount + TIME_TO_TICKS( random_valve->RandomFloat( 3, 5) );
 
 		int i;
 
@@ -5142,7 +5143,7 @@ void CAI_BaseNPC::RunAI( void )
 	m_bConditionsGathered = false;
 	m_bSkippedChooseEnemy = false;
 
-	if ( g_pDeveloper->GetInt() && !GetNavigator()->IsOnNavMesh() )
+	if ( developer->GetInt() && !GetNavigator()->IsOnNavMesh() )
 	{
 		AddTimedOverlay( "NPC w/no reachable nodes!", 5 );
 	}
@@ -5965,7 +5966,7 @@ void CAI_BaseNPC::GatherEnemyConditions( CBaseEntity *pEnemy )
 		// Trail the enemy a bit if he's moving
 		if (pEnemy->GetSmoothedVelocity() != vec3_origin)
 		{
-			Vector vTrailPos = pEnemy->GetAbsOrigin() - pEnemy->GetSmoothedVelocity() * random->RandomFloat( -0.05, 0 );
+			Vector vTrailPos = pEnemy->GetAbsOrigin() - pEnemy->GetSmoothedVelocity() * random_valve->RandomFloat( -0.05, 0 );
 			UpdateEnemyMemory(pEnemy,vTrailPos);
 		}
 		else
@@ -7989,7 +7990,7 @@ void CAI_BaseNPC::StartNPC( void )
 		if (!GetMoveProbe()->FloorPoint( origin + Vector(0, 0, 0.1), GetAITraceMask(), 0, -2048, &origin ))
 		{
 			Warning( "NPC %s stuck in wall--level design error at (%.2f %.2f %.2f)\n", GetClassname(), GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z );
-			if ( g_pDeveloper->GetInt() > 1 )
+			if ( developer->GetInt() > 1 )
 			{
 				m_debugOverlays |= OVERLAY_BBOX_BIT;
 			}
@@ -8255,7 +8256,7 @@ void CAI_BaseNPC::TaskFail( AI_TaskFailureCode_t code )
 	//}
 
 	// If in developer mode save the fail text for debug output
-	if (g_pDeveloper->GetInt())
+	if (developer->GetInt())
 	{
 		m_failText = TaskFailureToString( code );
 
@@ -8821,7 +8822,7 @@ void CAI_BaseNPC::HandleAnimEvent( animevent_t *pEvent )
 		break;
 
 	case SCRIPT_EVENT_SENTENCE_RND1:		// Play a named sentence group 33% of the time
-		if (random->RandomInt(0,2) == 0)
+		if (random_valve->RandomInt(0,2) == 0)
 			break;
 		// fall through...
 	case SCRIPT_EVENT_SENTENCE:			// Play a named sentence group
@@ -10294,7 +10295,7 @@ Vector CAI_BaseNPC::GetActualShootTrajectory( const Vector &shootOrigin )
 	if (GetEnemy()->IsPlayer() && (GetWaterLevel() != 3) && (GetEnemy()->GetWaterLevel() == 3))
 	{
 #if 1
-		if (random->RandomInt(0, 4) < 3)
+		if (random_valve->RandomInt(0, 4) < 3)
 		{
 			Vector vecEnemyForward;
 			GetEnemy()->GetVectors( &vecEnemyForward, NULL, NULL );
@@ -10320,7 +10321,7 @@ Vector CAI_BaseNPC::GetActualShootTrajectory( const Vector &shootOrigin )
 			return vecShotDir;
 		}
 #else
-		if (random->RandomInt(0, 4) < 3)
+		if (random_valve->RandomInt(0, 4) < 3)
 		{
 			// Aim at a point a few feet in front of the player's eyes
 			Vector vecEnemyForward;
@@ -10413,8 +10414,8 @@ Vector CAI_BaseNPC::BodyTarget( const Vector &posSrc, bool bNoisy )
 	if ( bNoisy )
 	{
 		// bell curve
-		float rand1 = random->RandomFloat( 0.0, 0.5 );
-		float rand2 = random->RandomFloat( 0.0, 0.5 );
+		float rand1 = random_valve->RandomFloat( 0.0, 0.5 );
+		float rand2 = random_valve->RandomFloat( 0.0, 0.5 );
 		result = low + delta * rand1 + delta * rand2;
 	}
 	else
@@ -10949,7 +10950,7 @@ CBaseEntity *CAI_BaseNPC::DropItem ( const char *pszItemName, Vector vecPos, QAn
 		{
 			// do we want this behavior to be default?! (sjb)
 			pItem->ApplyAbsVelocityImpulse( GetAbsVelocity() );
-			pItem->ApplyLocalAngularVelocityImpulse( AngularImpulse( 0, random->RandomFloat( 0, 100 ), 0 ) );
+			pItem->ApplyLocalAngularVelocityImpulse( AngularImpulse( 0, random_valve->RandomFloat( 0, 100 ), 0 ) );
 		}
 
 		m_OnItemDrop.Set( pItem, pItem, this );
@@ -10979,7 +10980,7 @@ bool CAI_BaseNPC::ShouldFadeOnDeath( void )
 bool CAI_BaseNPC::ShouldPlayIdleSound( void )
 {
 	if ( ( m_NPCState == NPC_STATE_IDLE || m_NPCState == NPC_STATE_ALERT ) &&
-		   random->RandomInt(0,99) == 0 && !HasSpawnFlags(SF_NPC_GAG) )
+		   random_valve->RandomInt(0,99) == 0 && !HasSpawnFlags(SF_NPC_GAG) )
 	{
 		return true;
 	}
@@ -11036,12 +11037,12 @@ bool CAI_BaseNPC::FOkToMakeSound( int soundPriority )
 //-----------------------------------------------------------------------------
 void CAI_BaseNPC::JustMadeSound( int soundPriority, float flSoundLength )
 {
-	m_flSoundWaitTime = gpGlobals->curtime + flSoundLength + random->RandomFloat(1.5, 2.0);
+	m_flSoundWaitTime = gpGlobals->curtime + flSoundLength + random_valve->RandomFloat(1.5, 2.0);
 	m_nSoundPriority = soundPriority;
 
 	if (m_pSquad)
 	{
-		m_pSquad->JustMadeSound( soundPriority, gpGlobals->curtime + flSoundLength + random->RandomFloat(1.5, 2.0) );
+		m_pSquad->JustMadeSound( soundPriority, gpGlobals->curtime + flSoundLength + random_valve->RandomFloat(1.5, 2.0) );
 	}
 }
 
@@ -11099,7 +11100,6 @@ CBaseCombatCharacter* CAI_BaseNPC::GetEnemyCombatCharacterPointer()
 BEGIN_MAPENTITY( CAI_BaseNPC )
 
 	DEFINE_KEYFIELD( m_SleepState,				FIELD_INTEGER, "sleepstate" ),
-	DEFINE_FIELD( m_SleepFlags,					FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_flWakeRadius, FIELD_FLOAT, "wakeradius" ),
 	DEFINE_KEYFIELD( m_bWakeSquad, FIELD_BOOLEAN, "wakesquad" ),
 
@@ -11814,7 +11814,7 @@ void CAI_BaseNPC::InputForgetEntity( inputdata_t &inputdata )
 {
 	const char *pszEntityToForget = inputdata.value.String();
 
-	if ( g_pDeveloper->GetInt() && pszEntityToForget[strlen( pszEntityToForget ) - 1] == '*' )
+	if ( developer->GetInt() && pszEntityToForget[strlen( pszEntityToForget ) - 1] == '*' )
 		DevMsg( "InputForgetEntity does not support wildcards\n" );
 
 	CBaseEntity *pEntity = gEntList.FindEntityGeneric( NULL, pszEntityToForget, this, inputdata.pActivator, inputdata.pCaller );
@@ -12882,7 +12882,7 @@ float CAI_BaseNPC::SetWait( float minWait, float maxWait )
 			minThinks = 1;
 		int maxThinks = Ceil2Int( maxWait * 10 );
 
-		m_flWaitFinished = gpGlobals->curtime + ( 0.1 * random->RandomInt( minThinks, maxThinks ) );
+		m_flWaitFinished = gpGlobals->curtime + ( 0.1 * random_valve->RandomInt( minThinks, maxThinks ) );
 	}
 	return m_flWaitFinished;
 }
@@ -13466,7 +13466,7 @@ void CAI_BaseNPC::AddScriptedNPCInteraction( ScriptedNPCInteraction_t *pInteract
 
 	// Copy the interaction over
 	ScriptedNPCInteraction_t *pNewInt = &(m_ScriptedInteractions[nNewIndex]);
-	memcpy( pNewInt, pInteraction, sizeof(ScriptedNPCInteraction_t) );
+	memcpy( (void *)pNewInt, (void *)pInteraction, sizeof(ScriptedNPCInteraction_t) );
 
 	// Calculate the local to world matrix
 	m_ScriptedInteractions[nNewIndex].matDesiredLocalToWorld.SetupMatrixOrgAngles( pInteraction->vecRelativeOrigin, pInteraction->angRelativeAngles );
@@ -14899,4 +14899,28 @@ CRecastMesh *CAI_BaseNPC::GetNavMesh() const
 		return NULL;
 
 	return RecastMgr().GetMesh( type );
+}
+
+float				CAI_BaseNPC::GetHullWidth()	const		{ return CollisionProp()->Width(); }
+float				CAI_BaseNPC::GetHullLength() const		{ return CollisionProp()->Length(); }
+float				CAI_BaseNPC::GetHullHeight() const		{ return CollisionProp()->Height(); }
+
+void				CAI_BaseNPC::ChainStartTask( TaskId_t task, const TaskData_t *taskData, int numData )
+{
+	Task_t tempTask;
+	tempTask.iTask = task;
+	if( numData )
+		memcpy( (void *)tempTask.data, (void *)taskData, sizeof(TaskData_t) * numData );
+	tempTask.numData = numData;
+	StartTask( (const Task_t *)	&tempTask );
+}
+
+void				CAI_BaseNPC::ChainRunTask( TaskId_t task, const TaskData_t *taskData, int numData )
+{
+	Task_t tempTask;
+	tempTask.iTask = task;
+	if( numData )
+		memcpy( (void *)tempTask.data, (void *)taskData, sizeof(TaskData_t) * numData );
+	tempTask.numData = numData;
+	RunTask( (const Task_t *)	&tempTask );
 }

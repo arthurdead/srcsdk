@@ -1307,13 +1307,13 @@ void CWeaponCustom::ShootAR2EnergyBall( bool isPrimary, bool usePrimaryAmmo )
 	//Disorient the player
 	QAngle angles = pOwner->GetLocalAngles();
 
-	angles.x += random->RandomInt( -4, 4 );
-	angles.y += random->RandomInt( -4, 4 );
+	angles.x += random_valve->RandomInt( -4, 4 );
+	angles.y += random_valve->RandomInt( -4, 4 );
 	angles.z = 0;
 
 	pOwner->SnapEyeAngles( angles );
 
-	pOwner->ViewPunch( QAngle( random->RandomInt( -8, -12 ), random->RandomInt( 1, 2 ), 0 ) );
+	pOwner->ViewPunch( QAngle( random_valve->RandomInt( -8, -12 ), random_valve->RandomInt( 1, 2 ), 0 ) );
 
 	pOwner->SetAnimation( PLAYER_ATTACK1 );
 
@@ -1392,13 +1392,13 @@ void CWeaponCustom::ShootAR2EnergyBallRight( bool isPrimary, bool usePrimaryAmmo
 	//Disorient the player
 	QAngle angles = pOwner->GetLocalAngles();
 
-	angles.x += random->RandomInt( -4, 4 );
-	angles.y += random->RandomInt( -4, 4 );
+	angles.x += random_valve->RandomInt( -4, 4 );
+	angles.y += random_valve->RandomInt( -4, 4 );
 	angles.z = 0;
 
 	pOwner->SnapEyeAngles( angles );
 
-	pOwner->ViewPunch( QAngle( random->RandomInt( -8, -12 ), random->RandomInt( 1, 2 ), 0 ) );
+	pOwner->ViewPunch( QAngle( random_valve->RandomInt( -8, -12 ), random_valve->RandomInt( 1, 2 ), 0 ) );
 
 	pOwner->SetAnimation( PLAYER_ATTACK1 );
 
@@ -1478,13 +1478,13 @@ void CWeaponCustom::ShootAR2EnergyBallLeft( bool isPrimary, bool usePrimaryAmmo 
 	//Disorient the player
 	QAngle angles = pOwner->GetLocalAngles();
 
-	angles.x += random->RandomInt( -4, 4 );
-	angles.y += random->RandomInt( -4, 4 );
+	angles.x += random_valve->RandomInt( -4, 4 );
+	angles.y += random_valve->RandomInt( -4, 4 );
 	angles.z = 0;
 
 	pOwner->SnapEyeAngles( angles );
 
-	pOwner->ViewPunch( QAngle( random->RandomInt( -8, -12 ), random->RandomInt( 1, 2 ), 0 ) );
+	pOwner->ViewPunch( QAngle( random_valve->RandomInt( -8, -12 ), random_valve->RandomInt( 1, 2 ), 0 ) );
 
 	pOwner->SetAnimation( PLAYER_ATTACK1 );
 

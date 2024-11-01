@@ -24,9 +24,7 @@
 
 void CamModeChange( IConVar *pConVar, const char *pOldValue, float flOldValue )
 {
-	ConVarRef var( pConVar );
-
-	int mode = var.GetInt();
+	int mode = ((ConVar *)pConVar)->GetInt();
 	if(mode == input->CAM_Get()) {
 		return;
 	}

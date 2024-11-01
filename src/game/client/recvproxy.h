@@ -53,5 +53,11 @@ RecvProp RecvPropIntWithMinusOneFlag(
 	int sizeofVar=SIZEOF_IGNORE,
 	RecvVarProxyFn proxyFn=RecvProxy_IntSubOne );
 
+// Send a string_t as a string property.
+RecvProp RecvPropStringT(
+	const char *pVarName, 
+	int offset, 
+	int sizeofVar=SIZEOF_IGNORE );
+
 #endif // RECVPROXY_H
 

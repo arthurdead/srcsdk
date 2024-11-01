@@ -275,7 +275,7 @@ void C_TEPlayerDecal::PostDataUpdate( DataUpdateType_t updateType )
 	VPROF( "C_TEPlayerDecal::PostDataUpdate" );
 
 	// Decals disabled?
-	if ( !r_decals.GetBool() )
+	if ( !r_decals->GetBool() )
 		return;
 
 	CLocalPlayerFilter filter;

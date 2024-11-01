@@ -14,10 +14,10 @@
 
 class CBaseToggle : public CBaseEntity
 {
+public:
 	DECLARE_CLASS( CBaseToggle, CBaseEntity );
 	DECLARE_SERVERCLASS();
 
-public:
 	CBaseToggle();
 
 	virtual bool		KeyValue( const char *szKeyName, const char *szValue );

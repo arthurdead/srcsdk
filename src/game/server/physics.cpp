@@ -42,6 +42,7 @@
 #include "positionwatcher.h"
 #include "tier1/callqueue.h"
 #include "vphysics/constraints.h"
+#include "collisionproperty.h"
 
 #ifdef PORTAL
 #include "portal_physics_collisionevent.h"
@@ -779,7 +780,7 @@ static void ReportPenetration( CBaseEntity *pEntity, float duration )
 {
 	if ( pEntity->GetMoveType() == MOVETYPE_VPHYSICS )
 	{
-		if ( g_pDeveloper->GetInt() > 1 )
+		if ( developer->GetInt() > 1 )
 		{
 			pEntity->m_debugOverlays |= OVERLAY_ABSBOX_BIT;
 		}
@@ -1044,7 +1045,7 @@ int CCollisionEvent::ShouldSolvePenetration( IPhysicsObject *pObj0, IPhysicsObje
 	if ( eventTime > 3 )
 	{
 		// don't report penetrations on ragdolls with themselves, or outside of developer mode
-		if ( g_pDeveloper->GetInt() && pEntity0 != pEntity1 )
+		if ( developer->GetInt() && pEntity0 != pEntity1 )
 		{
 			ReportPenetration( pEntity0, phys_penetration_error_time.GetFloat() );
 			ReportPenetration( pEntity1, phys_penetration_error_time.GetFloat() );
@@ -1396,9 +1397,7 @@ public:
 
 	bool IsWorldEntity( CBaseEntity *pEnt )
 	{
-		if ( pEnt->edict() )
-			return pEnt->IsWorld();
-		return false;
+		return pEnt->IsWorld();
 	}
 
 	void AddLink( CBaseEntity *pEntity, CBaseEntity *pLink, bool bIsConstraint )
@@ -2117,7 +2116,7 @@ void CCollisionEvent::UpdateFrictionSounds( void )
 void CCollisionEvent::DispatchStartTouch( CBaseEntity *pEntity0, CBaseEntity *pEntity1, const Vector &point, const Vector &normal )
 {
 	trace_t trace;
-	memset( &trace, 0, sizeof(trace) );
+	memset( (void *)&trace, 0, sizeof(trace) );
 	trace.endpos = point;
 	trace.plane.dist = DotProduct( point, normal );
 	trace.plane.normal = normal;
@@ -2890,8 +2889,13 @@ void DebugDrawContactPoints(IPhysicsObject *pPhysics)
 		NDebugOverlay::Line( pt, pt - normal * 20, 0, 255, 0, false, 0 );
 		IPhysicsObject *pOther = pSnapshot->GetObject(1);
 		CBaseEntity *pEntity0 = static_cast<CBaseEntity *>(pOther->GetGameData());
-		CFmtStr str("%s (%s): %s [%0.2f]", pEntity0->GetClassname(), STRING(pEntity0->GetModelName()), pEntity0->GetDebugName(), pSnapshot->GetFrictionCoefficient() );
-		NDebugOverlay::Text( pt, str.Access(), false, 0 );
+		if(pEntity0) {
+			CFmtStr str("%s (%s): %s [%0.2f]", pEntity0->GetClassname(), STRING(pEntity0->GetModelName()), pEntity0->GetDebugName(), pSnapshot->GetFrictionCoefficient() );
+			NDebugOverlay::Text( pt, str.Access(), false, 0 );
+		} else {
+			CFmtStr str("NULL [%0.2f]", pSnapshot->GetFrictionCoefficient() );
+			NDebugOverlay::Text( pt, str.Access(), false, 0 );
+		}
 		pSnapshot->NextFrictionData();
 	}
 	pSnapshot->DeleteAllMarkedContacts( true );

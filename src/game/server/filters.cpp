@@ -128,9 +128,11 @@ enum filter_t
 
 class CFilterMultiple : public CBaseFilter
 {
+public:
 	DECLARE_CLASS( CFilterMultiple, CBaseFilter );
 	DECLARE_MAPENTITY();
 
+private:
 	filter_t	m_nFilterType;
 	string_t	m_iFilterName[MAX_FILTERS];
 	EHANDLE		m_hFilter[MAX_FILTERS];
@@ -1050,10 +1052,10 @@ END_MAPENTITY()
 // ###################################################################
 class CFilterRelationship : public CBaseFilter
 {
-	DECLARE_CLASS( CFilterKeyfield, CBaseFilter );
+public:
+	DECLARE_CLASS( CFilterRelationship, CBaseFilter );
 	DECLARE_MAPENTITY();
 
-public:
 	Disposition_t m_iDisposition;
 	string_t m_iszPriority; // string_t to support matchers
 	bool m_bInvertTarget;
@@ -1139,10 +1141,10 @@ END_MAPENTITY()
 // ###################################################################
 class CFilterClassify : public CBaseFilter
 {
+public:
 	DECLARE_CLASS( CFilterClassify, CBaseFilter );
 	DECLARE_MAPENTITY();
 
-public:
 	Class_T m_iFilterClassify;
 
 	bool PassesFilterImpl( CBaseEntity *pCaller, CBaseEntity *pEntity )
@@ -1171,10 +1173,10 @@ END_MAPENTITY()
 // ###################################################################
 class CFilterCriteria : public CBaseFilter
 {
+public:
 	DECLARE_CLASS( CFilterCriteria, CBaseFilter );
 	DECLARE_MAPENTITY();
 
-public:
 	bool m_bAny;
 	bool m_bFull; // All criteria functions are gathered
 
@@ -1255,10 +1257,10 @@ extern bool TestEntityTriggerIntersection_Accurate( CBaseEntity *pTrigger, CBase
 // ###################################################################
 class CFilterInVolume : public CBaseFilter
 {
+public:
 	DECLARE_CLASS( CFilterInVolume, CBaseFilter );
 	DECLARE_MAPENTITY();
 
-public:
 	string_t m_iszVolumeTester;
 
 	void Spawn()
@@ -1310,10 +1312,10 @@ END_MAPENTITY()
 // ###################################################################
 class CFilterSurfaceData : public CBaseFilter
 {
+public:
 	DECLARE_CLASS( CFilterSurfaceData, CBaseFilter );
 	DECLARE_MAPENTITY();
 
-public:
 	string_t m_iFilterSurface;
 	int m_iSurfaceIndex;
 
@@ -1395,9 +1397,9 @@ END_MAPENTITY()
 // ===================================================================
 class CBaseFilterRedirect : public CBaseFilter
 {
+public:
 	DECLARE_CLASS( CBaseFilterRedirect, CBaseFilter );
 
-public:
 	inline CBaseEntity *GetTargetFilter()
 	{
 		// Yes, this hijacks damage filter functionality.
@@ -1739,9 +1741,9 @@ END_MAPENTITY()
 // ###################################################################
 class CFilterDamageMod : public CBaseFilterRedirect
 {
+public:
 	DECLARE_CLASS( CFilterDamageMod, CBaseFilterRedirect );
 	DECLARE_MAPENTITY();
-public:
 	bool PassesFilterImpl( CBaseEntity *pCaller, CBaseEntity *pEntity )
 	{
 		if (GetTargetFilter() && m_iSecondaryFilterMode == REDIRECT_MUST_PASS_TO_DAMAGE_CALLER)

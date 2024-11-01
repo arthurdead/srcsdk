@@ -49,8 +49,6 @@ public:
 	CNetworkVar( float, m_fMass );
 };
 
+typedef C_PhysBox CSharedPhysBox;
 
 #endif
-
-
-

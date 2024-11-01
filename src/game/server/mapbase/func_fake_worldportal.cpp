@@ -62,7 +62,7 @@ private:
 	CNetworkQAngle( m_PlaneAngles );
 	CNetworkVar( int, m_iSkyMode );
 	CNetworkVar( float, m_flScale );
-	CNetworkVar( string_t, m_iszRenderTarget );
+	CNetworkStringT( m_iszRenderTarget );
 
 	CNetworkHandle( CBaseEntity, m_hFogController );
 	string_t m_iszFogController;

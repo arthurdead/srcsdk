@@ -31,7 +31,7 @@
 #define HACKMGR_EXECUTE_ON_LOAD_BEGIN(...) \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wprio-ctor-dtor\"") \
-	[[using __gnu__: __constructor__ __VA_OPT__(HACKMGR_OPEN_PARENTHESIS HACKMGR_OPEN_PARENTHESIS __VA_ARGS__ HACKMGR_CLOSE_PARENTHESIS HACKMGR_CLOSE_PARENTHESIS)]] inline void HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _)() {
+	[[using __gnu__: __constructor__ __VA_OPT__(HACKMGR_OPEN_PARENTHESIS HACKMGR_OPEN_PARENTHESIS __VA_ARGS__ HACKMGR_CLOSE_PARENTHESIS HACKMGR_CLOSE_PARENTHESIS)]] static void HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _)() {
 #define HACKMGR_EXECUTE_ON_LOAD_END \
 	} \
 	_Pragma("GCC diagnostic pop")
@@ -39,14 +39,14 @@
 #define HACKMGR_EXECUTE_ON_UNLOAD_BEGIN(...) \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wprio-ctor-dtor\"") \
-	[[using __gnu__: __deconstructor__ __VA_OPT__(HACKMGR_OPEN_PARENTHESIS HACKMGR_OPEN_PARENTHESIS __VA_ARGS__ HACKMGR_CLOSE_PARENTHESIS HACKMGR_CLOSE_PARENTHESIS)]] inline void HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _)() {
+	[[using __gnu__: __deconstructor__ __VA_OPT__(HACKMGR_OPEN_PARENTHESIS HACKMGR_OPEN_PARENTHESIS __VA_ARGS__ HACKMGR_CLOSE_PARENTHESIS HACKMGR_CLOSE_PARENTHESIS)]] static void HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _)() {
 #define HACKMGR_EXECUTE_ON_UNLOAD_END \
 	} \
 	_Pragma("GCC diagnostic pop")
 #else
 #define HACKMGR_EXECUTE_ON_LOAD_BEGIN(...) \
 namespace HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _) { \
-	__VA_OPT__(HACKMGR_INIT_PRIO(__VA_ARGS__)) inline struct _ { \
+	__VA_OPT__(HACKMGR_INIT_PRIO(__VA_ARGS__)) static struct _ { \
 	public: \
 		_() {
 #define HACKMGR_EXECUTE_ON_LOAD_END \
@@ -56,7 +56,7 @@ namespace HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _) { \
 
 #define HACKMGR_EXECUTE_ON_UNLOAD_BEGIN(...) \
 namespace HACKMGR_CONCAT5(_, __LINE__, _, __COUNTER__, _) { \
-	inline struct _ { \
+	static struct _ { \
 	public: \
 		~_() {
 #define HACKMGR_EXECUTE_ON_UNLOAD_END \

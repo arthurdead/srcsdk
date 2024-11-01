@@ -55,7 +55,7 @@ public:
 	const unsigned char *GetEncryptionKey() override;
 
 #ifndef CLIENT_DLL
-	virtual CGameRulesProxy *AllocateProxy();
+	virtual IEntityFactory *ProxyFactory();
 
 	virtual const char*		AIClassText(Class_T classType);
 	virtual const char*		AIFactionText(Faction_T classType);

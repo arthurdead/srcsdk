@@ -185,7 +185,7 @@ void FX_MuzzleEffect(
 	Vector			forward, offset;
 
 	AngleVectors( angles, &forward );
-	float flScale = random->RandomFloat( scale-0.25f, scale+0.25f );
+	float flScale = random_valve->RandomFloat( scale-0.25f, scale+0.25f );
 
 	if ( flScale < 0.5f )
 	{
@@ -205,7 +205,7 @@ void FX_MuzzleEffect(
 	{
 		offset = origin + (forward * (i*2.0f*scale));
 
-		pParticle = (SimpleParticle *) pSimple->AddParticle( sizeof( SimpleParticle ), pSimple->GetPMaterial( VarArgs( "effects/muzzleflash%d", random->RandomInt(1,4) ) ), offset );
+		pParticle = (SimpleParticle *) pSimple->AddParticle( sizeof( SimpleParticle ), pSimple->GetPMaterial( VarArgs( "effects/muzzleflash%d", random_valve->RandomInt(1,4) ) ), offset );
 			
 		if ( pParticle == NULL )
 			return;
@@ -231,9 +231,9 @@ void FX_MuzzleEffect(
 		pParticle->m_uchStartAlpha	= 255;
 		pParticle->m_uchEndAlpha	= 128;
 
-		pParticle->m_uchStartSize	= (random->RandomFloat( 6.0f, 9.0f ) * (12-(i))/9) * flScale;
+		pParticle->m_uchStartSize	= (random_valve->RandomFloat( 6.0f, 9.0f ) * (12-(i))/9) * flScale;
 		pParticle->m_uchEndSize		= pParticle->m_uchStartSize;
-		pParticle->m_flRoll			= random->RandomInt( 0, 360 );
+		pParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
 		pParticle->m_flRollDelta	= 0.0f;
 	}
 
@@ -249,28 +249,28 @@ void FX_MuzzleEffect(
 		if ( pParticle == NULL )
 			return;
 
-		alpha = random->RandomInt( 32, 84 );
-		color = random->RandomInt( 64, 164 );
+		alpha = random_valve->RandomInt( 32, 84 );
+		color = random_valve->RandomInt( 64, 164 );
 
 		pParticle->m_flLifetime		= 0.0f;
-		pParticle->m_flDieTime		= random->RandomFloat( 0.5f, 1.0f );
+		pParticle->m_flDieTime		= random_valve->RandomFloat( 0.5f, 1.0f );
 
 		pParticle->m_vecVelocity.Random( -0.5f, 0.5f );
 		pParticle->m_vecVelocity += forward;
 		VectorNormalize( pParticle->m_vecVelocity );
 
-		pParticle->m_vecVelocity	*= random->RandomFloat( 16.0f, 32.0f );
-		pParticle->m_vecVelocity[2] += random->RandomFloat( 4.0f, 16.0f );
+		pParticle->m_vecVelocity	*= random_valve->RandomFloat( 16.0f, 32.0f );
+		pParticle->m_vecVelocity[2] += random_valve->RandomFloat( 4.0f, 16.0f );
 
 		pParticle->m_uchColor[0]	= color;
 		pParticle->m_uchColor[1]	= color;
 		pParticle->m_uchColor[2]	= color;
 		pParticle->m_uchStartAlpha	= alpha;
 		pParticle->m_uchEndAlpha	= 0;
-		pParticle->m_uchStartSize	= random->RandomInt( 4, 8 ) * flScale;
+		pParticle->m_uchStartSize	= random_valve->RandomInt( 4, 8 ) * flScale;
 		pParticle->m_uchEndSize		= pParticle->m_uchStartSize*2;
-		pParticle->m_flRoll			= random->RandomInt( 0, 360 );
-		pParticle->m_flRollDelta	= random->RandomFloat( -4.0f, 4.0f );
+		pParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+		pParticle->m_flRollDelta	= random_valve->RandomFloat( -4.0f, 4.0f );
 	}
 	*/
 }
@@ -307,7 +307,7 @@ void FX_MuzzleEffectAttached(
 	SimpleParticle *pParticle;
 	Vector			forward(1,0,0), offset;
 
-	float flScale = random->RandomFloat( scale-0.25f, scale+0.25f );
+	float flScale = random_valve->RandomFloat( scale-0.25f, scale+0.25f );
 
 	if ( flScale < 0.5f )
 	{
@@ -327,7 +327,7 @@ void FX_MuzzleEffectAttached(
 	{
 		offset = (forward * (i*2.0f*scale));
 
-		pParticle = (SimpleParticle *) pSimple->AddParticle( sizeof( SimpleParticle ), g_Mat_Muzzleflash[random->RandomInt(0,3)], offset );
+		pParticle = (SimpleParticle *) pSimple->AddParticle( sizeof( SimpleParticle ), g_Mat_Muzzleflash[random_valve->RandomInt(0,3)], offset );
 			
 		if ( pParticle == NULL )
 			return;
@@ -353,9 +353,9 @@ void FX_MuzzleEffectAttached(
 		pParticle->m_uchStartAlpha	= 255;
 		pParticle->m_uchEndAlpha	= 128;
 
-		pParticle->m_uchStartSize	= (random->RandomFloat( 6.0f, 9.0f ) * (12-(i))/9) * flScale;
+		pParticle->m_uchStartSize	= (random_valve->RandomFloat( 6.0f, 9.0f ) * (12-(i))/9) * flScale;
 		pParticle->m_uchEndSize		= pParticle->m_uchStartSize;
-		pParticle->m_flRoll			= random->RandomInt( 0, 360 );
+		pParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
 		pParticle->m_flRollDelta	= 0.0f;
 	}
 
@@ -518,14 +518,14 @@ void FX_Smoke( const Vector &origin, const QAngle &angles, float scale, int numP
 		vecVelocity.Random( -0.5f, 0.5f );
 		vecVelocity += vecForward;
 		VectorNormalize( vecVelocity );
-		vecVelocity	*= random->RandomFloat( 16.0f, 32.0f );
-		vecVelocity[2] += random->RandomFloat( 4.0f, 16.0f );
+		vecVelocity	*= random_valve->RandomFloat( 16.0f, 32.0f );
+		vecVelocity[2] += random_valve->RandomFloat( 4.0f, 16.0f );
 
 		// Color
 		unsigned char particlecolor[3];
 		if ( !pColor )
 		{
-			int color = random->RandomInt( 64, 164 );
+			int color = random_valve->RandomInt( 64, 164 );
 			particlecolor[0] = color;
 			particlecolor[1] = color;
 			particlecolor[2] = color;
@@ -541,19 +541,19 @@ void FX_Smoke( const Vector &origin, const QAngle &angles, float scale, int numP
 		int alpha = iAlpha;
 		if ( alpha == -1 )
 		{
-			alpha = random->RandomInt( 10, 25 );
+			alpha = random_valve->RandomInt( 10, 25 );
 		}
 
 		// Scale
-		int iSize = random->RandomInt( 4, 8 ) * scale;
+		int iSize = random_valve->RandomInt( 4, 8 ) * scale;
 
 		// Roll
-		float flRoll = random->RandomInt( 0, 360 );
-		float flRollDelta = random->RandomFloat( -4.0f, 4.0f );
+		float flRoll = random_valve->RandomInt( 0, 360 );
+		float flRollDelta = random_valve->RandomFloat( -4.0f, 4.0f );
 
 		//pParticle->m_uchEndSize		= pParticle->m_uchStartSize*2;
 
-		FX_Smoke( origin, vecVelocity, iSize, 1, random->RandomFloat( 0.5f, 1.0f ), particlecolor, alpha, "particle/particle_smokegrenade", flRoll, flRollDelta );
+		FX_Smoke( origin, vecVelocity, iSize, 1, random_valve->RandomFloat( 0.5f, 1.0f ), particlecolor, alpha, "particle/particle_smokegrenade", flRoll, flRollDelta );
 	}
 }
 
@@ -644,9 +644,9 @@ public:
 				color[i][0] = MAX( 0, m_SpurtColor[i] - 64 );
 				color[i][1] = MIN( 255, m_SpurtColor[i] + 64 );
 			}
-			pParticle->m_uchColor[0] = random->RandomInt( color[0][0], color[0][1] );
-			pParticle->m_uchColor[1] = random->RandomInt( color[1][0], color[1][1] );
-			pParticle->m_uchColor[2] = random->RandomInt( color[2][0], color[2][1] );
+			pParticle->m_uchColor[0] = random_valve->RandomInt( color[0][0], color[0][1] );
+			pParticle->m_uchColor[1] = random_valve->RandomInt( color[1][0], color[1][1] );
+			pParticle->m_uchColor[2] = random_valve->RandomInt( color[2][0], color[2][1] );
 
 			pParticle->m_uchStartAlpha = m_SpurtColor[3];
 			pParticle->m_uchEndAlpha = 0;
@@ -807,10 +807,10 @@ void FX_GunshipMuzzleEffect( const Vector &origin, const QAngle &angles, float s
 
 	pParticle->m_vecVelocity.Init();
 
-	pParticle->m_uchStartSize	= random->RandomFloat( 40.0, 50.0 );
+	pParticle->m_uchStartSize	= random_valve->RandomFloat( 40.0, 50.0 );
 	pParticle->m_uchEndSize		= pParticle->m_uchStartSize;
 
-	pParticle->m_flRoll			= random->RandomInt( 0, 360 );
+	pParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
 	pParticle->m_flRollDelta	= 0.15f;
 
 	pParticle->m_uchColor[0]	= 255;
@@ -860,11 +860,11 @@ void FX_GaussTracer( const Vector& start, const Vector& end, int velocity, bool 
 	if ( totalDist <= 256 )
 		return;
 
-	float length = random->RandomFloat( 250.0f, 500.0f );
+	float length = random_valve->RandomFloat( 250.0f, 500.0f );
 	float life = ( totalDist + length ) / velocity;	//NOTENOTE: We want the tail to finish its run as well
 	
 	//Add it
-	FX_AddDiscreetLine( start, shotDir, velocity, length, totalDist, random->RandomFloat( 5.0f, 8.0f ), life, "effects/spark" );
+	FX_AddDiscreetLine( start, shotDir, velocity, length, totalDist, random_valve->RandomFloat( 5.0f, 8.0f ), life, "effects/spark" );
 }
 
 
@@ -1033,10 +1033,10 @@ void FX_BuildTeslaHitbox(
 	beamInfo.m_pszModelName = "sprites/lgtning.vmt";
 	beamInfo.m_flHaloScale = 8.0f;
 	beamInfo.m_flLife = 0.01f;
-	beamInfo.m_flWidth = random->RandomFloat( 3.0f, 6.0f );
+	beamInfo.m_flWidth = random_valve->RandomFloat( 3.0f, 6.0f );
 	beamInfo.m_flEndWidth = 0.0f;
 	beamInfo.m_flFadeLength = 0.0f;
-	beamInfo.m_flAmplitude = random->RandomInt( 16, 32 );
+	beamInfo.m_flAmplitude = random_valve->RandomInt( 16, 32 );
 	beamInfo.m_flBrightness = 255.0f;
 	beamInfo.m_flSpeed = 32.0;
 	beamInfo.m_nStartFrame = 0.0;
@@ -1074,10 +1074,10 @@ void FX_BuildTeslaHitbox(
 		beamInfo.m_pszModelName = "sprites/lgtning.vmt";
 		beamInfo.m_flHaloScale = 8.0f;
 		beamInfo.m_flLife = 0.05f;
-		beamInfo.m_flWidth = random->RandomFloat( 2.0f, 6.0f );
+		beamInfo.m_flWidth = random_valve->RandomFloat( 2.0f, 6.0f );
 		beamInfo.m_flEndWidth = 0.0f;
 		beamInfo.m_flFadeLength = 0.0f;
-		beamInfo.m_flAmplitude = random->RandomInt( 16, 32 );
+		beamInfo.m_flAmplitude = random_valve->RandomInt( 16, 32 );
 		beamInfo.m_flBrightness = 255.0f;
 		beamInfo.m_flSpeed = 32.0;
 		beamInfo.m_nStartFrame = 0.0;
@@ -1108,7 +1108,7 @@ void FX_BuildTeslaHitbox(
 		el->color.b = 255;
 		el->color.exponent = 4;
 
-		el->radius	= random->RandomInt( 32, 128 );
+		el->radius	= random_valve->RandomInt( 32, 128 );
 		el->decay	= el->radius / 0.1f;
 		el->die		= gpGlobals->curtime + 0.1f;
 	}
@@ -1147,9 +1147,9 @@ void FX_BuildTeslaHitbox( const CEffectData &data )
 	int nBeamCount = (int)(data.m_flMagnitude + 0.5f);
 	for ( int i = 0; i < nBeamCount; ++i )
 	{
-		int nStartHitBox = random->RandomInt( 1, set->numhitboxes );
-		int nEndHitBox = random->RandomInt( 1, set->numhitboxes );
-		FX_BuildTeslaHitbox( pEntity, nStartHitBox, nEndHitBox, data.m_flScale, vColor, random->RandomFloat( 0.05f, 0.2f ) );
+		int nStartHitBox = random_valve->RandomInt( 1, set->numhitboxes );
+		int nEndHitBox = random_valve->RandomInt( 1, set->numhitboxes );
+		FX_BuildTeslaHitbox( pEntity, nStartHitBox, nEndHitBox, data.m_flScale, vColor, random_valve->RandomFloat( 0.05f, 0.2f ) );
 	}
 }
 

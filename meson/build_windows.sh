@@ -2,50 +2,76 @@
 
 __script_dir__=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 
-builddir_linux="$__script_dir__/build_windows"
+builddir="$__script_dir__/build_windows"
+
+mesondir="$__script_dir__"
 
 src_root_dir=$(realpath "$__script_dir__/../src")
 src_engine_dir=~/'.steam/steam/steamapps/common/Source SDK Base 2013 Multiplayer'
 game_dir=~/'.steam/steam/steamapps/sourcemods/heist'
 
-export CC='/usr/bin/i686-w64-mingw32-gcc'
-export CXX='/usr/bin/i686-w64-mingw32-g++'
+cd "$mesondir"
+
+_jobs=6
+
+export CCACHE_COMPILERTYPE='gcc'
+export CCACHE_COMPILER=
+
+export CC='/usr/lib/ccache/bin/i686-w64-mingw32-gcc'
+export CC_LD='bfd'
+export CXX='/usr/lib/ccache/bin/i686-w64-mingw32-g++'
+export CXX_LD='bfd'
 
 export CMAKE_C_COMPILER='/usr/bin/i686-w64-mingw32-gcc'
-unset CMAKE_C_COMPILER_LAUNCHER
+export CMAKE_C_COMPILER_LAUNCHER='/usr/bin/ccache'
 export CMAKE_CXX_COMPILER='/usr/bin/i686-w64-mingw32-g++'
-unset CMAKE_CXX_COMPILER_LAUNCHER
+export CMAKE_CXX_COMPILER_LAUNCHER='/usr/bin/ccache'
 
 export CMAKE_LINKER_TYPE='BFD'
 
-if [[ -d "$builddir_linux/everything" ]]; then
-	if [[ ! -f "$builddir_linux/everything/build.ninja" ]]; then
-		rm -rf "$builddir_linux/everything"
+if [[ -d "$builddir/everything" ]]; then
+	if [[ ! -f "$builddir/everything/build.ninja" ]]; then
+		rm -rf "$builddir/everything"
 	fi
 fi
 
-if [[ ! -d "$builddir_linux/everything" ]]; then
-	meson setup --cross-file "$__script_dir__/i686-w64-mingw32" "$builddir_linux/everything" --backend='ninja' -Dsrc_root_dir="$src_root_dir" -Dsrc_engine_dir="$src_engine_dir" -Dgame_dir="$game_dir" -Dbuild_libs=true -Dbuild_client=true -Dbuild_listen_server=true -Dbuild_dedicated_server=false
+if [[ ! -d "$builddir/everything" ]]; then
+	meson setup \
+	--cross-file "$__script_dir__/i686-mingw-windows" \
+	"$builddir/everything" \
+	"$mesondir" \
+	--backend='ninja' \
+	-Dsrc_root_dir="$src_root_dir" \
+	-Dsrc_engine_dir="$src_engine_dir" \
+	-Dgame_dir="$game_dir" \
+	-Dfunny=true \
+	-Dbuild_libs=true \
+	-Dbuild_client=true \
+	-Dbuild_listen_server=true \
+	-Dbuild_dedicated_server=false
 	if [[ $? != 0 ]]; then
 		exit 1
 	fi
 fi
 
-if [[ ! -d "$builddir_linux/everything" ]]; then
+if [[ ! -d "$builddir/everything" ]]; then
 	echo 'no builddir'
 	exit 1
 fi
 
-_jobs=6
-
-samu -j $_jobs -C "$builddir_linux/everything" -k 0
-if [[ $? != 0 ]]; then
+ninja -j $_jobs -C "$builddir/everything" -k 0
+_code=$?
+if [[ $_code != 0 ]]; then
 	exit 1
 fi
 
-meson install -C "$builddir_linux/everything" --no-rebuild
-if [[ $? != 0 ]]; then
+meson install -C "$builddir/everything" --no-rebuild
+_code=$?
+if [[ $_code != 0 ]]; then
 	exit 1
 fi
+
+rm "$game_dir/bin/"*".dll.a"
+rm "$game_dir/bin/tools/"*".dll.a"
 
 exit 0

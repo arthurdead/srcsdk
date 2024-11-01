@@ -47,6 +47,10 @@ public:
 	// Left at growSize = 0, the memory will first allocate 1 element and double in size
 	// at each increment.
 	CUtlDict( int compareType = k_eDictCompareTypeCaseInsensitive, int growSize = 0, int initSize = 0 );
+	CUtlDict( bool compareType, int growSize = 0, int initSize = 0 )
+		: CUtlDict( compareType ? k_eDictCompareTypeCaseInsensitive : k_eDictCompareTypeCaseSensitive, growSize, initSize )
+	{
+	}
 	~CUtlDict( );
 
 	void EnsureCapacity( int );

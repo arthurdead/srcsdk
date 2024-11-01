@@ -20,10 +20,8 @@
 //
 class C_PropJeep : public C_PropVehicleDriveable
 {
-
-	DECLARE_CLASS( C_PropJeep, C_PropVehicleDriveable );
-
 public:
+	DECLARE_CLASS( C_PropJeep, C_PropVehicleDriveable );
 
 	DECLARE_CLIENTCLASS();
 	DECLARE_INTERPOLATION();

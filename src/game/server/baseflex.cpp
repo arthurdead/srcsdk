@@ -1532,7 +1532,7 @@ bool CBaseFlex::ProcessMoveToSceneEvent( CSceneEventInfo *info, CChoreoScene *sc
 					// Msg("actor %s unable to build route\n", STRING( myNpc->GetEntityName() ) );
 					// Assert(0);
 
-					if (developer.GetInt() > 0 && scene_showmoveto.GetBool())
+					if (developer->GetInt() > 0 && scene_showmoveto.GetBool())
 					{
 						Vector vTestPoint;
 						myNpc->GetMoveProbe()->FloorPoint( info->m_hTarget->EyePosition(), myNpc->GetAITraceMask(), 0, -64, &vTestPoint );
@@ -1564,7 +1564,7 @@ bool CBaseFlex::ProcessMoveToSceneEvent( CSceneEventInfo *info, CChoreoScene *sc
 	}
 
 	// show movement target
-	if (developer.GetInt() > 0 && scene_showmoveto.GetBool() && IsMoving())
+	if (developer->GetInt() > 0 && scene_showmoveto.GetBool() && IsMoving())
 	{
 		Vector vecStart, vTestPoint;
 		vecStart = myNpc->GetNavigator()->GetGoalPos();
@@ -1618,7 +1618,7 @@ bool CBaseFlex::ProcessLookAtSceneEvent( CSceneEventInfo *info, CChoreoScene *sc
 		intensity = clamp( intensity, 0.0f, flMaxIntensity );
 
 		myNpc->AddLookTarget( info->m_hTarget, intensity, 0.1 );
-		if (developer.GetInt() > 0 && scene_showlook.GetBool() && info->m_hTarget)
+		if (developer->GetInt() > 0 && scene_showlook.GetBool() && info->m_hTarget)
 		{
 			Vector tmp = info->m_hTarget->EyePosition() - myNpc->EyePosition();
 			VectorNormalize( tmp );
@@ -2315,9 +2315,8 @@ float CSceneEventInfo::UpdateWeight( CBaseFlex *pActor )
 
 class CFlexCycler : public CBaseFlex
 {
-private:
-	DECLARE_CLASS( CFlexCycler, CBaseFlex );
 public:
+	DECLARE_CLASS( CFlexCycler, CBaseFlex );
 	DECLARE_MAPENTITY();
 
 	CFlexCycler() { m_iszSentence = NULL_STRING; m_sentence = 0; }
@@ -2431,7 +2430,7 @@ void CFlexCycler::Spawn( )
 
 	ResetSequenceInfo( );
 
-	m_flCycle = random->RandomFloat( 0, 1.0 );
+	m_flCycle = random_valve->RandomFloat( 0, 1.0 );
 }
 
 const char *predef_flexcontroller_names[] = { 
@@ -2497,7 +2496,7 @@ int CFlexCycler::OnTakeDamage( const CTakeDamageInfo &info )
 
 void CFlexCycler::SetFlexTarget( LocalFlexController_t flexnum )
 {
-	m_flextarget[flexnum] = random->RandomFloat( 0.5, 1.0 );
+	m_flextarget[flexnum] = random_valve->RandomFloat( 0.5, 1.0 );
 
 	const char *pszType = GetFlexControllerType( flexnum );
 
@@ -2656,8 +2655,8 @@ void CFlexCycler::Think( void )
 		else if (m_flextime < gpGlobals->curtime)
 		{
 			// m_flextime = gpGlobals->curtime + 1.0; // RandomFloat( 0.1, 0.5 );
-			m_flextime = gpGlobals->curtime + random->RandomFloat( 0.3, 0.5 ) * (30.0 / GetNumFlexControllers());
-			m_flexnum = (LocalFlexController_t)random->RandomInt( 0, GetNumFlexControllers() - 1 );
+			m_flextime = gpGlobals->curtime + random_valve->RandomFloat( 0.3, 0.5 ) * (30.0 / GetNumFlexControllers());
+			m_flexnum = (LocalFlexController_t)random_valve->RandomInt( 0, GetNumFlexControllers() - 1 );
 
 			// m_flexnum = (pflex->num + 1) % r_psubmodel->numflexes;
 
@@ -2703,7 +2702,7 @@ void CFlexCycler::Think( void )
 
 			if (weight != m_flextarget[i])
 			{
-				weight = weight + (m_flextarget[i] - weight) / random->RandomFloat( 2.0, 4.0 );
+				weight = weight + (m_flextarget[i] - weight) / random_valve->RandomFloat( 2.0, 4.0 );
 			}
 			weight = clamp( weight, 0.0f, 1.0f );
 			SetFlexWeight( i, weight );
@@ -2756,11 +2755,11 @@ void CFlexCycler::Think( void )
 				if (m_istalking)
 				{
 					m_looktime = gpGlobals->curtime - 1.0;
-					m_speaktime = gpGlobals->curtime + random->RandomFloat( 0.5, 2.0 );
+					m_speaktime = gpGlobals->curtime + random_valve->RandomFloat( 0.5, 2.0 );
 				}
 				else
 				{
-					m_speaktime = gpGlobals->curtime + random->RandomFloat( 1.0, 3.0 );
+					m_speaktime = gpGlobals->curtime + random_valve->RandomFloat( 1.0, 3.0 );
 				}
 			}
 
@@ -2771,10 +2770,10 @@ void CFlexCycler::Think( void )
 
 			if (m_istalking)
 			{
-				m_flextime = gpGlobals->curtime + random->RandomFloat( 0.0, 0.2 );
-				m_flexWeight[random->RandomInt(m_phoneme, GetNumFlexControllers()-1)] = random->RandomFloat( 0.5, 1.0 );
-				float mouth = random->RandomFloat( 0.0, 1.0 );
-				float jaw = random->RandomFloat( 0.0, 1.0 );
+				m_flextime = gpGlobals->curtime + random_valve->RandomFloat( 0.0, 0.2 );
+				m_flexWeight[random_valve->RandomInt(m_phoneme, GetNumFlexControllers()-1)] = random_valve->RandomFloat( 0.5, 1.0 );
+				float mouth = random_valve->RandomFloat( 0.0, 1.0 );
+				float jaw = random_valve->RandomFloat( 0.0, 1.0 );
 
 				m_flexWeight[m_phoneme - 2] = jaw * (mouth);
 				m_flexWeight[m_phoneme - 1] = jaw * (1.0 - mouth);
@@ -2790,7 +2789,7 @@ void CFlexCycler::Think( void )
 		if (m_blinktime < gpGlobals->curtime)
 		{
 			Blink();
-			m_blinktime = gpGlobals->curtime + random->RandomFloat( 1.5, 4.5 );
+			m_blinktime = gpGlobals->curtime + random_valve->RandomFloat( 1.5, 4.5 );
 		}
 	}
 
@@ -2805,14 +2804,14 @@ void CFlexCycler::Think( void )
 		if (pPlayer->GetSmoothedVelocity().Length() != 0 && DotProduct( forward, pPlayer->EyePosition() - EyePosition()) > 0.5)
 		{
 			m_lookTarget = pPlayer->EyePosition();
-			m_looktime = gpGlobals->curtime + random->RandomFloat(2.0,4.0);
+			m_looktime = gpGlobals->curtime + random_valve->RandomFloat(2.0,4.0);
 		}
 		else if (m_looktime < gpGlobals->curtime)
 		{
-			if ((!m_istalking) && random->RandomInt( 0, 1 ) == 0)
+			if ((!m_istalking) && random_valve->RandomInt( 0, 1 ) == 0)
 			{
-				m_lookTarget = EyePosition() + forward * 128 + right * random->RandomFloat(-64,64) + up * random->RandomFloat(-32,32);
-				m_looktime = gpGlobals->curtime + random->RandomFloat(0.3,1.0);
+				m_lookTarget = EyePosition() + forward * 128 + right * random_valve->RandomFloat(-64,64) + up * random_valve->RandomFloat(-32,32);
+				m_looktime = gpGlobals->curtime + random_valve->RandomFloat(0.3,1.0);
 
 				if (m_blinktime - 0.5 < gpGlobals->curtime)
 				{
@@ -2822,7 +2821,7 @@ void CFlexCycler::Think( void )
 			else
 			{
 				m_lookTarget = pPlayer->EyePosition();
-				m_looktime = gpGlobals->curtime + random->RandomFloat(1.0,4.0);
+				m_looktime = gpGlobals->curtime + random_valve->RandomFloat(1.0,4.0);
 			}
 		}
 

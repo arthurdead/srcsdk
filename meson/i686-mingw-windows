@@ -1,0 +1,44 @@
+[binaries]
+c = '/usr/lib/ccache/bin/i686-w64-mingw32-gcc'
+c_ld = 'bfd'
+cpp = '/usr/lib/ccache/bin/i686-w64-mingw32-g++'
+cpp_ld = 'bfd'
+ar = '/usr/bin/i686-w64-mingw32-gcc-ar'
+strip = '/usr/bin/i686-w64-mingw32-strip'
+cmake = '/usr/bin/i686-w64-mingw32-cmake'
+pkg-config = '/usr/bin/i686-w64-mingw32-pkg-config'
+llvm-config = '/usr/bin/llvm-config32'
+gendef = '/usr/bin/gendef'
+dlltool = '/usr/bin/i686-w64-mingw32-dlltool'
+exe_wrapper = '/usr/bin/i686-w64-mingw32-wine'
+
+[properties]
+cmake_toolchain_file = '/usr/share/mingw/toolchain-i686-w64-mingw32.cmake'
+cmake_defaults = false
+
+[cmake]
+CMAKE_C_COMPILER = '/usr/bin/i686-w64-mingw32-gcc'
+CMAKE_C_COMPILER_LAUNCHER = '/usr/bin/ccache'
+CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES = '/usr/i686-w64-mingw32/include'
+CMAKE_CXX_COMPILER = '/usr/bin/i686-w64-mingw32-g++'
+CMAKE_CXX_COMPILER_LAUNCHER = '/usr/bin/ccache'
+CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES = '/usr/i686-w64-mingw32/include'
+CMAKE_LINKER_TYPE = 'BFD'
+CMAKE_TOOLCHAIN_FILE = '/usr/share/mingw/toolchain-i686-w64-mingw32.cmake'
+CMAKE_CROSSCOMPILING_EMULATOR = '/usr/bin/i686-w64-mingw32-wine'
+
+[built-in options]
+c_args = ['-m32','-mwin32']
+c_link_args = ['-m32']
+cpp_args = ['-m32','-mwin32']
+cpp_link_args = ['-m32']
+pkg_config_path = ['/usr/lib32/pkgconfig']
+prefix = '/usr'
+libdir = 'lib32'
+bindir = 'bin'
+
+[host_machine]
+system = 'windows'
+cpu_family = 'x86'
+cpu = 'i686'
+endian = 'little'

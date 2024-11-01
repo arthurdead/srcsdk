@@ -98,7 +98,8 @@ class CSprite : public CSharedBaseEntity
 {
 public:
 	DECLARE_CLASS( CSprite, CSharedBaseEntity );
-	CSprite();
+	CSprite() : CSprite( 0 ) {}
+	CSprite( int iEFlags );
 
 #if defined( CLIENT_DLL )
 	#undef CSprite
@@ -288,6 +289,10 @@ private:
 	float		m_flBrightnessTimeStart;//Real time for brightness
 };
 
+#ifdef CLIENT_DLL
+typedef C_ClientOnlyWrapper<C_Sprite> C_ClientOnlySprite;
+#endif
+
 #if defined( CLIENT_DLL )
 	#define CSpriteOriented C_SpriteOriented
 #endif
@@ -310,7 +315,9 @@ public:
 #endif
 };
 
-
+#ifdef CLIENT_DLL
+typedef C_ClientOnlyWrapper<C_SpriteOriented> C_ClientOnlySpriteOriented;
+#endif
 
 // Macro to wrap creation
 #define SPRITE_CREATE_PREDICTABLE( ... ) \

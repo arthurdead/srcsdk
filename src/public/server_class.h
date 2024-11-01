@@ -14,7 +14,7 @@
 #include "tier0/dbg.h"
 #include "dt_send.h"
 #include "networkstringtabledefs.h"
-
+#include "networkvar.h"
 
 class ServerClass;
 class SendTable;
@@ -67,30 +67,13 @@ class CBaseNetworkable;
 	IMPLEMENT_SERVERCLASS_INTERNAL( DLLClassName, sendTable )\
 	BEGIN_SEND_TABLE_NOBASE( DLLClassName, sendTable )
 
-
-#ifdef VALIDATE_DECLARE_CLASS
-	#define CHECK_DECLARE_CLASS( DLLClassName, sendTable ) \
-		template <typename T> int CheckDeclareClass_Access(T *); \
-		template <> int CheckDeclareClass_Access<sendTable::ignored>(sendTable::ignored *, const char *pIgnored) \
-		{ \
-			return DLLClassName::CheckDeclareClass( V_STRINGIFY(DLLClassName) ); \
-		} \
-		namespace sendTable \
-		{ \
-			int verifyDeclareClass = CheckDeclareClass_Access( (sendTable::ignored*)0 ); \
-		}
-#else
-	#define CHECK_DECLARE_CLASS( DLLClassName, sendTable )
-#endif
-
-
 #define IMPLEMENT_SERVERCLASS_INTERNAL( DLLClassName, sendTable ) \
 	namespace sendTable \
 	{ \
 		struct ignored; \
 		extern SendTable g_SendTable; \
 	} \
-	CHECK_DECLARE_CLASS( DLLClassName, sendTable ) \
+	CHECK_DECLARE_CLASS_IMPL( DLLClassName, sendTable ) \
 	static ServerClass V_CONCAT3(g_, DLLClassName, _ClassReg)(\
 		V_STRINGIFY(DLLClassName), \
 		&sendTable::g_SendTable\

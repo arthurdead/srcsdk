@@ -228,7 +228,7 @@ void CSoundEnt::Spawn( void )
 		return;
 	}
 
-	SetSolid( SOLID_NONE );
+//	SetSolid( SOLID_NONE );
 	Initialize();
 
 	SetNextThink( gpGlobals->curtime + 1 );
@@ -396,7 +396,7 @@ int CSoundEnt::IAllocSound( void )
 	if ( m_iFreeSound == SOUNDLIST_EMPTY )
 	{
 		// no free sound!
-		if ( developer.GetInt() >= 2 )
+		if ( developer->GetInt() >= 2 )
 			Msg( "Free Sound List is full!\n" );
 
 		return SOUNDLIST_EMPTY;

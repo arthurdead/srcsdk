@@ -235,7 +235,7 @@ CNetGraphPanel::CNetGraphPanel( VPANEL parent )
 
 	cl_updaterate = g_pCVar->FindVar( "cl_updaterate" );
 	cl_cmdrate = g_pCVar->FindVar( "cl_cmdrate" );
-	assert( cl_updaterate && cl_cmdrate );
+	Assert( cl_updaterate && cl_cmdrate );
 
 	memset( sendcolor, 0, 3 );
 	memset( holdcolor, 0, 3 );

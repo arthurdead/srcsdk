@@ -1,5 +1,11 @@
 #define TIER0_ENABLE_LEGACY_DBG
 
+#include "tier0/platform.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "hackmgr/hackmgr.h"
 #include "tier0/dbg.h"
 #include "tier1/strtools.h"
@@ -7,6 +13,7 @@
 #include "tier1/utlstring.h"
 #include "tier1/utlmap.h"
 #include "vstdlib/cvar.h"
+#include "dbg_internal.h"
 
 #include "dbg_legacy.h"
 
@@ -22,22 +29,74 @@
 
 #undef printf
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_DEVELOPER, "Developer" );
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_CONSOLE, "Console" );
+
+#ifdef _WIN32
+PLATFORM_INTERFACE bool SetupWin32ConsoleIO();
+typedef ConsoleColorContext_t Win32ConsoleColorContext_t;
+PLATFORM_INTERFACE void InitWin32ConsoleColorContext( Win32ConsoleColorContext_t *pContext );
+PLATFORM_INTERFACE uint16 SetWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, int nRed, int nGreen, int nBlue, int nIntensity );
+PLATFORM_INTERFACE void RestoreWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, uint16 prevColor );
+#endif
+
+DLL_EXPORT bool SetupConsoleIO()
+{
+#ifdef _WIN32
+	return SetupWin32ConsoleIO();
+#else
+	return false;
+#endif
+}
+
 DLL_EXPORT void InitConsoleColorContext( ConsoleColorContext_t *pContext )
 {
-
+#ifdef _WIN32
+	InitWin32ConsoleColorContext( pContext );
+#endif
 }
 
 DLL_EXPORT uint16 SetConsoleColor( ConsoleColorContext_t *pContext, int nRed, int nGreen, int nBlue, int nIntensity )
 {
+#ifdef _WIN32
+	return SetWin32ConsoleColor( pContext, nRed, nGreen, nBlue, nIntensity );
+#else
 	return -1;
+#endif
 }
 
 DLL_EXPORT void RestoreConsoleColor( ConsoleColorContext_t *pContext, uint16 prevColor )
 {
+#ifdef _WIN32
+	RestoreWin32ConsoleColor( pContext, prevColor );
+#endif
+}
+
+#ifdef __MINGW32__
+LIB_EXPORT SYMALIAS("InitConsoleColorContext") void _imp__InitConsoleColorContext( ConsoleColorContext_t *pContext );
+LIB_EXPORT SYMALIAS("SetConsoleColor") uint16 _imp__SetConsoleColor( ConsoleColorContext_t *pContext, int nRed, int nGreen, int nBlue, int nIntensity );
+LIB_EXPORT SYMALIAS("RestoreConsoleColor") void _imp__RestoreConsoleColor( ConsoleColorContext_t *pContext, uint16 prevColor );
+#endif
+
+#ifdef _WIN32
+DLL_EXPORT void InitWin32ConsoleColorContext( Win32ConsoleColorContext_t *pContext )
+{
 
 }
 
-DLL_EXPORT SELECTANY bool HushAsserts()
+DLL_EXPORT uint16 SetWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, int nRed, int nGreen, int nBlue, int nIntensity )
+{
+	return -1;
+}
+
+DLL_EXPORT void RestoreWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, uint16 prevColor )
+{
+
+}
+#endif
+
+#if 0
+DLL_EXPORT bool HushAsserts()
 {
 #ifdef DBGFLAG_ASSERT
 	static bool s_bHushAsserts = !!CommandLine()->FindParm( "-hushasserts" );
@@ -46,6 +105,7 @@ DLL_EXPORT SELECTANY bool HushAsserts()
 	return true;
 #endif
 }
+#endif
 
 INIT_PRIORITY(101) static CLoggingSystem s_LoggingSystem;
 
@@ -216,6 +276,21 @@ DLL_EXPORT LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, Lo
 	return s_LoggingSystem.LogDirect( channelID, severity, UNSPECIFIED_LOGGING_COLOR, formattedMessage );
 }
 
+DLL_GLOBAL_EXPORT LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, const char *pMessageFormat, ... )
+{
+	if ( !s_LoggingSystem.IsChannelEnabled( channelID, severity ) )
+		return LR_CONTINUE;
+
+	tchar formattedMessage[MAX_LOGGING_MESSAGE_LENGTH];
+
+	va_list args;
+	va_start( args, pMessageFormat );
+	_vsntprintf( formattedMessage, MAX_LOGGING_MESSAGE_LENGTH, pMessageFormat, args );
+	va_end( args );
+
+	return s_LoggingSystem.LogDirect( channelID, severity, spewColor, formattedMessage );
+}
+
 DLL_EXPORT LoggingResponse_t LoggingSystem_LogAssert( const char *pMessageFormat, ... ) 
 {
 	if ( !s_LoggingSystem.IsChannelEnabled( LOG_ASSERT, LS_ASSERT ) )
@@ -230,6 +305,13 @@ DLL_EXPORT LoggingResponse_t LoggingSystem_LogAssert( const char *pMessageFormat
 
 	return s_LoggingSystem.LogDirect( LOG_ASSERT, LS_ASSERT, UNSPECIFIED_LOGGING_COLOR, formattedMessage );
 }
+
+#ifdef __MINGW32__
+LIB_EXPORT SYMALIAS("LoggingSystem_IsChannelEnabled") bool _imp__LoggingSystem_IsChannelEnabled( LoggingChannelID_t channelID, LoggingSeverity_t severity );
+LIB_EXPORT SYMALIAS("LoggingSystem_RegisterLoggingChannel") LoggingChannelID_t _imp__LoggingSystem_RegisterLoggingChannel( const char *pName, RegisterTagsFunc registerTagsFunc, LoggingChannelFlags_t flags, LoggingSeverity_t severity, Color color );
+LIB_EXPORT SYMALIAS("LoggingSystem_Log") LoggingResponse_t _imp__LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const char *pMessageFormat, ... );
+LIB_EXPORT SYMALIAS("LoggingSystem_LogAssert") LoggingResponse_t _imp__LoggingSystem_LogAssert( const char *pMessageFormat, ... );
+#endif
 
 //the normal DoNewAssertDialog is broken on my PC
 #ifdef __linux__
@@ -357,9 +439,13 @@ DLL_EXPORT void Plat_MessageBox( const char *pTitle, const tchar *pMessage )
 	int status;
 	waitpid(pid, &status, 0);
 #else
-	#error
+	MessageBox( NULL, pMessage, pTitle, MB_OK );
 #endif
 }
+
+#ifdef __MINGW32__
+LIB_EXPORT SYMALIAS("Plat_MessageBox") void _imp__Plat_MessageBox( const char *pTitle, const tchar *pMessage );
+#endif
 
 static SpewRetval_t HackMgr_SpewOutput( SpewType_t spewType, const tchar *pMsg )
 {
@@ -413,7 +499,6 @@ static SpewRetval_t HackMgr_SpewOutput( SpewType_t spewType, const tchar *pMsg )
 	{
 	#ifdef __linux__
 		_tprintf( _T("\033[38;2;%i;%i;%im%s\033[0m"), color.r(), color.g(), color.b(), pMsg );
-		fsync(STDOUT_FILENO);
 	#else
 		_tprintf( _T("%s"), pMsg );
 	#endif

@@ -63,7 +63,7 @@ C_PropVehicleDriveable::C_PropVehicleDriveable() :
 {
 	m_hPrevPlayer = NULL;
 
-	memset( &m_ViewSmoothingData, 0, sizeof( m_ViewSmoothingData ) );
+	memset( (void *)&m_ViewSmoothingData, 0, sizeof( m_ViewSmoothingData ) );
 
 	m_ViewSmoothingData.pVehicle = this;
 	m_ViewSmoothingData.bClampEyeAngles = true;

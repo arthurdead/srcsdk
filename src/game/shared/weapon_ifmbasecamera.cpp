@@ -24,7 +24,10 @@ bool ToolFramework_SetupEngineView( Vector &origin, QAngle &angles, float &fov )
 // CWeaponIFMBaseCamera tables.
 //-----------------------------------------------------------------------------
 IMPLEMENT_NETWORKCLASS_ALIASED( WeaponIFMBaseCamera, DT_WeaponIFMBaseCamera )
+
+#ifdef GAME_DLL
 LINK_ENTITY_TO_CLASS( weapon_ifm_base_camera, CWeaponIFMBaseCamera );
+#endif
 
 BEGIN_NETWORK_TABLE( CWeaponIFMBaseCamera, DT_WeaponIFMBaseCamera )	
 #if !defined( CLIENT_DLL )
@@ -45,11 +48,11 @@ END_NETWORK_TABLE()
 #ifdef CLIENT_DLL
 
 BEGIN_PREDICTION_DATA( CWeaponIFMBaseCamera ) 
-	DEFINE_PRED_FIELD( m_flFOV, FIELD_FLOAT, 0 ),
-	DEFINE_PRED_FIELD( m_flArmLength, FIELD_FLOAT, 0 ),
-	DEFINE_PRED_FIELD( m_vecRelativePosition, FIELD_VECTOR, 0 ),
-	DEFINE_PRED_FIELD( m_angRelativeAngles, FIELD_VECTOR, 0 ),
-	DEFINE_PRED_FIELD( m_bFullScreen, FIELD_BOOLEAN, 0 ),
+	DEFINE_FIELD_FLAGS( m_flFOV, FIELD_FLOAT, 0 ),
+	DEFINE_FIELD_FLAGS( m_flArmLength, FIELD_FLOAT, 0 ),
+	DEFINE_FIELD_FLAGS( m_vecRelativePosition, FIELD_VECTOR, 0 ),
+	DEFINE_FIELD_FLAGS( m_angRelativeAngles, FIELD_VECTOR, 0 ),
+	DEFINE_FIELD_FLAGS( m_bFullScreen, FIELD_BOOLEAN, 0 ),
 END_PREDICTION_DATA()
 
 #endif

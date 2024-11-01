@@ -10,8 +10,10 @@
 #pragma once
 
 #include "ai_navtype.h"
+#include "mathlib/vector.h"
 
 class CAI_Path;
+class CBaseEntity;
 
 //-----------------------------------------------------------------------------
 // Debugging code
@@ -75,7 +77,7 @@ struct AIMoveTrace_t
 {
 	AIMoveTrace_t()
 	{
-		memset( this, 0, sizeof(*this) );
+		memset( (void *)this, 0, sizeof(*this) );
 	}
 	
 	AIMoveResult_t 	fStatus;				// See AIMoveResult_t
@@ -122,7 +124,7 @@ struct AILocalMoveGoal_t
 {
 	AILocalMoveGoal_t()
 	{
-		memset( this, 0, sizeof(*this) );
+		memset( (void *)this, 0, sizeof(*this) );
 	}
 	
 	// Object of the goal

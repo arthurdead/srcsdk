@@ -39,6 +39,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+
+DECLARE_LOGGING_CHANNEL( LOG_TIER1 );
+
 // ------------------------------------------------------------------------------------ //
 // InterfaceReg.
 // ------------------------------------------------------------------------------------ //
@@ -327,10 +330,10 @@ CSysModule *Sys_LoadModule( const char *pModuleName, Sys_Flags flags /* = SYS_NO
 			 !CommandLine()->FindParm( "-allowdebug" ) && 
 			 !Sys_IsDebuggerPresent() )
 		{
-			Error( "Module %s is a debug build\n", pModuleName );
+			Log_FatalError( LOG_TIER1,"Module %s is a debug build\n", pModuleName );
 		}
 
-		DevWarning( "Module %s is a debug build\n", pModuleName );
+		Log_Warning( LOG_TIER1,"Module %s is a debug build\n", pModuleName );
 
 		if ( !s_bRunningWithDebugModules )
 		{

@@ -9,6 +9,8 @@
 
 #pragma once
 
+#ifndef SWDS
+
 #include "appframework/IAppSystem.h"
 
 //-----------------------------------------------------------------------------
@@ -33,5 +35,7 @@ public:
 };
 
 #define VTOOLDICTIONARY_INTERFACE_VERSION "VTOOLDICTIONARY002"
+
+#endif
 
 #endif // ITOOLDICTIONARY_H

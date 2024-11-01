@@ -20,6 +20,7 @@
 #include "c_entitydissolve.h"
 #include "movevars_shared.h"
 #include "clienteffectprecachesystem.h"
+#include "collisionproperty.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -52,7 +53,8 @@ PMaterialHandle g_Material_Glow = NULL;
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-C_EntityDissolve::C_EntityDissolve( void )
+C_EntityDissolve::C_EntityDissolve( int iEFlags )
+	: C_BaseEntity( iEFlags )
 {
 	m_bLinkedToServerEnt = true;
 	m_pController = NULL;
@@ -163,8 +165,8 @@ static void FX_BuildTesla( C_BaseEntity *pEntity, Vector &vecOrigin, Vector &vec
 	beamInfo.m_vecEnd = vecEnd;
 	beamInfo.m_pszModelName = "sprites/lgtning.vmt";
 	beamInfo.m_flHaloScale = 0.0;
-	beamInfo.m_flLife = random->RandomFloat( 0.25f, 1.0f );
-	beamInfo.m_flWidth = random->RandomFloat( 8.0f, 14.0f );
+	beamInfo.m_flLife = random_valve->RandomFloat( 0.25f, 1.0f );
+	beamInfo.m_flWidth = random_valve->RandomFloat( 8.0f, 14.0f );
 	beamInfo.m_flEndWidth = 1.0f;
 	beamInfo.m_flFadeLength = 0.5f;
 	beamInfo.m_flAmplitude = 24;
@@ -400,7 +402,7 @@ void C_EntityDissolve::DoSparks( mstudiohitboxset_t *set, matrix3x4_t *hitboxbon
 	float flYawOffset = RandomFloat(0,360);
 	for ( int i = 0; i < iTotalBeams; i++ )
 	{
-		int nHitbox = random->RandomInt( 0, set->numhitboxes - 1 );
+		int nHitbox = random_valve->RandomInt( 0, set->numhitboxes - 1 );
 		mstudiobbox_t *pBox = set->pHitbox(nHitbox);
 
 		float flActualYawOffset = 0;
@@ -674,10 +676,10 @@ int C_EntityDissolve::DrawModel( int flags, const RenderableInstance_t &instance
 		for ( int j = 0; j < iTempParts; j++ )
 		{
 			// Skew the origin
-			offset = xDir * random->RandomFloat( -xScale*0.5f, xScale*0.5f ) + yDir * random->RandomFloat( -yScale*0.5f, yScale*0.5f );
+			offset = xDir * random_valve->RandomFloat( -xScale*0.5f, xScale*0.5f ) + yDir * random_valve->RandomFloat( -yScale*0.5f, yScale*0.5f );
 			offset += vecSkew;
 
-			if ( random->RandomInt( 0, 2 ) != 0 )
+			if ( random_valve->RandomInt( 0, 2 ) != 0 )
 				continue;
 
 			sParticle = (SimpleParticle *) m_pEmitter->AddParticle( sizeof(SimpleParticle), g_Material_Spark, vecAbsOrigin + offset );
@@ -685,7 +687,7 @@ int C_EntityDissolve::DrawModel( int flags, const RenderableInstance_t &instance
 			if ( sParticle == NULL )
 				return 1;
 
-			sParticle->m_vecVelocity	= Vector( random->RandomFloat( -4.0f, 4.0f ), random->RandomFloat( -4.0f, 4.0f ), random->RandomFloat( 16.0f, 64.0f ) );
+			sParticle->m_vecVelocity	= Vector( random_valve->RandomFloat( -4.0f, 4.0f ), random_valve->RandomFloat( -4.0f, 4.0f ), random_valve->RandomFloat( 16.0f, 64.0f ) );
 			
 			if ( m_nDissolveType == ENTITY_DISSOLVE_CORE )
 			{
@@ -699,39 +701,39 @@ int C_EntityDissolve::DrawModel( int flags, const RenderableInstance_t &instance
 
 			if ( sParticle->m_vecVelocity.z > 0 )
 			{
-				sParticle->m_uchStartSize	= random->RandomFloat( 4, 6 ) * spriteScale;
+				sParticle->m_uchStartSize	= random_valve->RandomFloat( 4, 6 ) * spriteScale;
 			}
 			else
 			{
 				sParticle->m_uchStartSize	= 2 * spriteScale;
 			}
 
-			sParticle->m_flDieTime = random->RandomFloat( 0.4f, 0.5f );
+			sParticle->m_flDieTime = random_valve->RandomFloat( 0.4f, 0.5f );
 			
 			// If we're the last particles, last longer
 			if ( numParticles == 0 )
 			{
 				sParticle->m_flDieTime *= 2.0f;
 				sParticle->m_uchStartSize = 2 * spriteScale;
-				sParticle->m_flRollDelta	= random->RandomFloat( -4.0f, 4.0f );
+				sParticle->m_flRollDelta	= random_valve->RandomFloat( -4.0f, 4.0f );
 
 				if ( m_nDissolveType == ENTITY_DISSOLVE_CORE )
 				{
 					if ( m_bCoreExplode == true )
 					{
 						sParticle->m_flDieTime *= 2.0f;
-						sParticle->m_flRollDelta	= random->RandomFloat( -1.0f, 1.0f );
+						sParticle->m_flRollDelta	= random_valve->RandomFloat( -1.0f, 1.0f );
 					}
 				}
 			}
 			else
 			{
-				sParticle->m_flRollDelta	= random->RandomFloat( -8.0f, 8.0f );
+				sParticle->m_flRollDelta	= random_valve->RandomFloat( -8.0f, 8.0f );
 			}
 			
 			sParticle->m_flLifetime		= 0.0f;
 
-			sParticle->m_flRoll			= random->RandomInt( 0, 360 );
+			sParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
 
 			float alpha = 255;
 
@@ -745,7 +747,7 @@ int C_EntityDissolve::DrawModel( int flags, const RenderableInstance_t &instance
 			
 		for ( int j = 0; j < numParticles; j++ )
 		{
-			offset = xDir * random->RandomFloat( -xScale*0.5f, xScale*0.5f ) + yDir * random->RandomFloat( -yScale*0.5f, yScale*0.5f );
+			offset = xDir * random_valve->RandomFloat( -xScale*0.5f, xScale*0.5f ) + yDir * random_valve->RandomFloat( -yScale*0.5f, yScale*0.5f );
 			offset += vecSkew;
 
 			sParticle = (SimpleParticle *) m_pEmitter->AddParticle( sizeof(SimpleParticle), g_Material_Glow, vecAbsOrigin + offset );
@@ -753,13 +755,13 @@ int C_EntityDissolve::DrawModel( int flags, const RenderableInstance_t &instance
 			if ( sParticle == NULL )
 				return 1;
 			
-			sParticle->m_vecVelocity	= Vector( random->RandomFloat( -4.0f, 4.0f ), random->RandomFloat( -4.0f, 4.0f ), random->RandomFloat( -64.0f, 128.0f ) );
-			sParticle->m_uchStartSize	= random->RandomFloat( 8, 12 ) * spriteScale;
+			sParticle->m_vecVelocity	= Vector( random_valve->RandomFloat( -4.0f, 4.0f ), random_valve->RandomFloat( -4.0f, 4.0f ), random_valve->RandomFloat( -64.0f, 128.0f ) );
+			sParticle->m_uchStartSize	= random_valve->RandomFloat( 8, 12 ) * spriteScale;
 			sParticle->m_flDieTime		= 0.1f;
 			sParticle->m_flLifetime		= 0.0f;
 
-			sParticle->m_flRoll			= random->RandomInt( 0, 360 );
-			sParticle->m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
+			sParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
+			sParticle->m_flRollDelta	= random_valve->RandomFloat( -2.0f, 2.0f );
 
 			float alpha = 255;
 

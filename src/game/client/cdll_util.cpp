@@ -1347,8 +1347,46 @@ wchar_t *UTIL_GetLocalizedKeyString( const char *command, const char *fmt, const
 
 void UTIL_ClearTrace( trace_t &trace )
 {
-	memset( &trace, 0, sizeof(trace));
+	memset( (void *)&trace, 0, sizeof(trace));
 	trace.fraction = 1.f;
 	trace.fractionleftsolid = 0;
 	trace.surface = g_NullSurface;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : int
+//-----------------------------------------------------------------------------
+int UTIL_GetCommandClientIndex( void )
+{
+	// -1 == unknown,dedicated server console
+	// 0  == player 1
+
+	return C_BasePlayer::GetLocalPlayer() ? (C_BasePlayer::GetLocalPlayer()->entindex()-1) : -1;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : CBasePlayer
+//-----------------------------------------------------------------------------
+C_BasePlayer *UTIL_GetCommandClient( void )
+{
+	return C_BasePlayer::GetLocalPlayer();
+}
+
+float GetLightIntensity( const Vector &pos )
+{
+	Vector light( 0, 0, 0 );
+	light = engine->GetLightForPoint( pos, true );
+
+	Vector ambientColor;
+	engine->GetAmbientLightColor( ambientColor );
+
+	float ambientIntensity = ambientColor.x + ambientColor.y + ambientColor.z;
+	float lightIntensity = light.x + light.y + light.z;
+	lightIntensity = clamp( lightIntensity, 0.f, 1.f );	// sum can go well over 1.0, but it's the lower region we care about.  if it's bright, we don't need to know *how* bright.
+
+	lightIntensity = MAX( lightIntensity, ambientIntensity );
+
+	return lightIntensity;
 }

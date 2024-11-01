@@ -36,7 +36,7 @@ class CInGameUISoundPlayback : public IGameUISoundPlayback
 public:
 	void *EmitSound( const char *pSoundName )
 	{
-		if ( developer.GetBool() )
+		if ( developer->GetBool() )
 		{
 			// Ensure the sound is valid
 			int nSoundIndex = g_pSoundEmitterSystem->GetSoundIndex( pSoundName );

@@ -22,8 +22,8 @@
 
 float C_EnvProjectedTexture::m_flVisibleBBoxMinHeight = -FLT_MAX;
 
-static ConVar mat_slopescaledepthbias_shadowmap( "mat_slopescaledepthbias_shadowmap", "4", FCVAR_CHEAT );
-static ConVar mat_depthbias_shadowmap(	"mat_depthbias_shadowmap", "0.00001", FCVAR_CHEAT  );
+extern ConVar *mat_slopescaledepthbias_shadowmap;
+extern ConVar *mat_depthbias_shadowmap;
 
 static ConVar volumetrics_fade_range( "volumetrics_fade_range", "128.0", FCVAR_CHEAT  );
 ConVar volumetrics_enabled( "volumetrics_enabled", "1", FCVAR_ARCHIVE );
@@ -289,8 +289,8 @@ void C_EnvProjectedTexture::UpdateLight( bool bForceUpdate )
 	m_FlashlightState.m_Color[3] = 0.0f; // fixme: need to make ambient work m_flAmbient;
 	m_FlashlightState.m_NearZ = m_flNearZ;
 	m_FlashlightState.m_FarZ = m_flFarZ;
-	m_FlashlightState.m_flShadowSlopeScaleDepthBias = mat_slopescaledepthbias_shadowmap.GetFloat();
-	m_FlashlightState.m_flShadowDepthBias = mat_depthbias_shadowmap.GetFloat();
+	m_FlashlightState.m_flShadowSlopeScaleDepthBias = mat_slopescaledepthbias_shadowmap->GetFloat();
+	m_FlashlightState.m_flShadowDepthBias = mat_depthbias_shadowmap->GetFloat();
 	m_FlashlightState.m_flShadowFilterSize = 1.0f;
 	m_FlashlightState.m_bEnableShadows = m_bEnableShadows;
 	m_FlashlightState.m_pSpotlightTexture = m_SpotlightTexture;
