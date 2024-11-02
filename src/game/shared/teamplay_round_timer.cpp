@@ -93,9 +93,7 @@ static void RecvProxy_TimerPaused( const CRecvProxyData *pData, void *pStruct, v
 
 #endif
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS( team_round_timer, CTeamRoundTimer );
-#endif
+LINK_ENTITY_TO_SERVERCLASS( team_round_timer, CTeamRoundTimer );
 
 PRECACHE_REGISTER( team_round_timer );
 

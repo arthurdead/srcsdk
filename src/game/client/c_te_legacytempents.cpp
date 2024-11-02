@@ -96,10 +96,6 @@ C_LocalTempEntity::C_LocalTempEntity()
 //-----------------------------------------------------------------------------
 void C_LocalTempEntity::Prepare( const model_t *pmodel, float time )
 {
-	Interp_SetupMappings( GetVarMapping() );
-
-	InitializeAsClientEntity();
-
 	// Use these to set per-frame and termination conditions / actions
 	flags = FTENT_NONE;		
 	die = time + 0.75;
@@ -2231,22 +2227,14 @@ C_LocalTempEntity *CTempEnts::TempEntAlloc( const Vector& org, const model_t *mo
 	pTemp->priority = TENTPRIORITY_LOW;
 	pTemp->SetAbsOrigin( org );
 
-	pTemp->AddToLeafSystem( false );
-
-	if ( CommandLine()->CheckParm( "-tools" ) != NULL )
-	{
-#ifdef _DEBUG
-		static bool first = true;
-		if ( first )
-		{
-			Msg( "Currently not recording tempents, since recording them as entites causes them to be deleted as entities, even though they were allocated through the tempent pool. (crash)\n" );
-			first = false;
-		}
-#endif
-//		ClientEntityList().AddNonNetworkableEntity(	pTemp );
-	}
-
 	return pTemp;
+}
+
+void					C_LocalTempEntity::UpdateOnRemove( void )
+{
+	BaseClass::UpdateOnRemove();
+
+	OnRemoveTempEntity();
 }
 
 //-----------------------------------------------------------------------------
@@ -2260,6 +2248,7 @@ C_LocalTempEntity *CTempEnts::TempEntAlloc()
 
 	MEM_ALLOC_CREDIT();
 	C_LocalTempEntity *pTemp = m_TempEntsPool.AllocZero();
+	pTemp->PostConstructor( NULL );
 	return pTemp;
 }
 
@@ -2271,9 +2260,6 @@ void CTempEnts::TempEntFree( int index )
 		// Remove from the active list.
 		m_TempEnts.Remove( index );
 
-		// Cleanup its data.
-		pTemp->RemoveFromLeafSystem();
-
 		// Remove the tempent from the ClientEntityList before removing it from the pool.
 		if ( ( pTemp->flags & FTENT_CLIENTSIDEPARTICLES ) )
 		{			
@@ -2282,11 +2268,10 @@ void CTempEnts::TempEntFree( int index )
 			{
 				pTemp->ParticleProp()->StopEmission();
 			}
-			ClientEntityList().RemoveEntity( pTemp->GetRefEHandle() );
 		}
 
-		pTemp->OnRemoveTempEntity();
-	
+		UTIL_Remove( pTemp );
+
 		m_TempEntsPool.Free( pTemp );
 	}
 }
@@ -2355,13 +2340,6 @@ C_LocalTempEntity *CTempEnts::TempEntAllocHigh( const Vector& org, const model_t
 
 	pTemp->priority = TENTPRIORITY_HIGH;
 	pTemp->SetLocalOrigin( org );
-
-	pTemp->AddToLeafSystem( false );
-
-	if ( CommandLine()->CheckParm( "-tools" ) != NULL )
-	{
-		ClientEntityList().AddNonNetworkableEntity(	pTemp );
-	}
 
 	return pTemp;
 }
@@ -2515,14 +2493,14 @@ void CTempEnts::PlaySound ( C_LocalTempEntity *pTemp, float damp )
 // Input  : *pEntity - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CTempEnts::AddVisibleTempEntity( C_LocalTempEntity *pEntity )
+bool CTempEnts::IsVisibleTempEntity( C_LocalTempEntity *pEntity )
 {
 	int i;
 	Vector mins, maxs;
 	Vector model_mins, model_maxs;
 
 	if ( !pEntity->GetModel() )
-		return 0;
+		return false;
 
 	modelinfo->GetModelBounds( pEntity->GetModel(), model_mins, model_maxs );
 
@@ -2532,21 +2510,12 @@ int CTempEnts::AddVisibleTempEntity( C_LocalTempEntity *pEntity )
 		maxs[i] = pEntity->GetAbsOrigin()[i] + model_maxs[i];
 	}
 
-	// FIXME: Vis isn't setup by the time we get here, so this call fails if 
-	//		  you try to add a tempent before the first frame is drawn, and it's
-	//		  one frame behind the rest of the time. Fix this.
 	// does the box intersect a visible leaf?
-	//if ( engine->IsBoxInViewCluster( mins, maxs ) )
+	if ( engine->IsBoxInViewCluster( mins, maxs ) )
 	{
-		// Temporary entities have no corresponding element in cl_entitylist
-		pEntity->InitializeAsClientEntity();
-		
-		// Add to list
-		pEntity->AddToLeafSystem( false );
-
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -2575,16 +2544,7 @@ void CTempEnts::Update(void)
 	// one COLLIDEALL ent for this update. (often are).
 
 	// !!! Don't simulate while paused....  This is sort of a hack, revisit.
-	if ( frametime == 0 )
-	{
-		FOR_EACH_LL( m_TempEnts, i )
-		{
-			C_LocalTempEntity *current = m_TempEnts[ i ];
-
-			AddVisibleTempEntity( current );
-		}
-	}
-	else
+	if ( frametime != 0 )
 	{
 		int next = 0;
 		for( int i = m_TempEnts.Head(); i != m_TempEnts.InvalidIndex(); i = next )
@@ -2601,7 +2561,7 @@ void CTempEnts::Update(void)
 			else
 			{
 				// Cull to PVS (not frustum cull, just PVS)
-				if ( !AddVisibleTempEntity( current ) )
+				if ( !IsVisibleTempEntity( current ) )
 				{
 					if ( !( current->flags & FTENT_PERSIST ) ) 
 					{

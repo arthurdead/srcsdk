@@ -29,10 +29,8 @@
 const float MAX_SPRITE_SCALE = 64.0f;
 const float MAX_GLOW_PROXY_SIZE = 64.0f;
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS_ALIASED( env_sprite, Sprite );
-LINK_ENTITY_TO_CLASS_ALIASED( env_sprite_oriented, SpriteOriented );
-#endif
+LINK_ENTITY_TO_SERVERCLASS( env_sprite, CSprite );
+LINK_ENTITY_TO_SERVERCLASS( env_sprite_oriented, CSpriteOriented );
 
 #if !defined( CLIENT_DLL )
 BEGIN_MAPENTITY( CSprite )

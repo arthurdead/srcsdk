@@ -1511,9 +1511,7 @@ BEGIN_MAPENTITY( CPointGamestatsCounter )
 
 END_MAPENTITY()
 
-#ifdef GAME_DLL
 LINK_ENTITY_TO_CLASS( point_gamestats_counter, CPointGamestatsCounter )
-#endif
 
 CPointGamestatsCounter::CPointGamestatsCounter() :
 	m_strStatisticName( NULL_STRING ),

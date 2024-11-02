@@ -570,7 +570,13 @@ void SpawnAllEntities( int nEntities, HierarchicalSpawn_t *pSpawnList, bool bAct
 				}
 			}
 		}
-		if ( pEntity )
+		if (
+			pEntity &&
+			pSpawnList[nEntity].m_bSpawn
+		#ifdef CLIENT_DLL
+			&& !pEntity->IsServerEntity()
+		#endif
+		)
 		{
 			if (DispatchSpawn(pEntity) < 0)
 			{
@@ -599,7 +605,7 @@ void SpawnAllEntities( int nEntities, HierarchicalSpawn_t *pSpawnList, bool bAct
 		{
 			CSharedBaseEntity *pEntity = pSpawnList[nEntity].m_pEntity;
 
-			if ( pEntity )
+			if ( pEntity && pSpawnList[nEntity].m_bActivate )
 			{
 				MDLCACHE_CRITICAL_SECTION();
 				pEntity->Activate();
@@ -627,7 +633,7 @@ CMapEntitySpawner::~CMapEntitySpawner()
 	delete [] m_pSpawnList;
 }
 
-void CMapEntitySpawner::AddEntity( CSharedBaseEntity *pEntity, const char *pCurMapData, int iMapDataLength )
+void CMapEntitySpawner::AddEntity( CSharedBaseEntity *pEntity, bool bCreated, const char *pCurMapData, int iMapDataLength )
 {
 	if (pEntity->IsTemplate())
 	{
@@ -653,7 +659,14 @@ void CMapEntitySpawner::AddEntity( CSharedBaseEntity *pEntity, const char *pCurM
 
 		pEntity->m_iParent = NULL_STRING;	// don't allow a parent on the first entity (worldspawn)
 
-		DispatchSpawn(pEntity);
+		if(
+			bCreated
+		#ifdef CLIENT_DLL
+			&& !pEntity->IsServerEntity()
+		#endif
+		) {
+			DispatchSpawn(pEntity);
+		}
 		return;
 	}
 
@@ -687,6 +700,13 @@ void CMapEntitySpawner::AddEntity( CSharedBaseEntity *pEntity, const char *pCurM
 		m_pSpawnList[m_nEntities].m_nDepth = 0;
 		m_pSpawnList[m_nEntities].m_pDeferredParentAttachment = NULL;
 		m_pSpawnList[m_nEntities].m_pDeferredParent = NULL;
+		m_pSpawnList[m_nEntities].m_bSpawn = (
+			bCreated
+		#ifdef CLIENT_DLL
+			&& !pEntity->IsServerEntity()
+		#endif
+		);
+		m_pSpawnList[m_nEntities].m_bActivate = true;
 
 		m_pSpawnMapData[m_nEntities].m_pMapData = pCurMapData;
 		m_pSpawnMapData[m_nEntities].m_iMapDataLength = iMapDataLength;
@@ -835,12 +855,13 @@ void MapEntity_ParseAllEntities(const char *pMapData, IMapEntityFilter *pFilter,
 		// Parse the entity and add it to the spawn list.
 		//
 		CSharedBaseEntity *pEntity;
+		bool bCreated;
 		const char *pCurMapData = pMapData;
-		pMapData = MapEntity_ParseEntity(pEntity, pMapData, pFilter);
+		pMapData = MapEntity_ParseEntity(pEntity, bCreated, pMapData, pFilter);
 		if (pEntity == NULL)
 			continue;
 
-		spawner.AddEntity( pEntity, pCurMapData, pMapData - pCurMapData + 2 );
+		spawner.AddEntity( pEntity, bCreated, pCurMapData, pMapData - pCurMapData + 2 );
 	}
 
 	spawner.HandleTemplates();
@@ -906,7 +927,7 @@ void MapEntity_PrecacheEntity( const char *pEntData, int &nStringSize )
 //			pEntData - Data block to parse to extract entity keys.
 // Output : Returns the current position in the entity data block.
 //-----------------------------------------------------------------------------
-const char *MapEntity_ParseEntity(CSharedBaseEntity *&pEntity, const char *pEntData, IMapEntityFilter *pFilter)
+const char *MapEntity_ParseEntity(CSharedBaseEntity *&pEntity, bool &bCreated, const char *pEntData, IMapEntityFilter *pFilter)
 {
 	CEntityMapData entData( (char*)pEntData );
 	char className[MAPKEY_MAXLENGTH];
@@ -915,6 +936,8 @@ const char *MapEntity_ParseEntity(CSharedBaseEntity *&pEntity, const char *pEntD
 	{
 		Log_FatalError( LOG_MAPPARSE,"classname missing from entity!\n" );
 	}
+
+	bCreated = false;
 
 	pEntity = GetSingletonOfClassname( className );
 	if( !pEntity )
@@ -925,10 +948,12 @@ const char *MapEntity_ParseEntity(CSharedBaseEntity *&pEntity, const char *pEntD
 		if ( !pFilter )
 		{
 			pEntity = CreateEntityByName(className);
+			bCreated = true;
 		}
 		else if ( pFilter->ShouldCreateEntity( className ) )
 		{
 			pEntity = pFilter->CreateNextEntity( className );
+			bCreated = true;
 		}
 	}
 

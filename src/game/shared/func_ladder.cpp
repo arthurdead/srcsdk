@@ -475,9 +475,7 @@ BEGIN_NETWORK_TABLE( CSharedFuncLadder, DT_FuncLadder )
 #endif
 END_NETWORK_TABLE()
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS_ALIASED( func_useableladder, FuncLadder );
-#endif
+LINK_ENTITY_TO_SERVERCLASS( func_useableladder, CFuncLadder );
 
 //---------------------------------------------------------
 // Save/Restore
@@ -530,9 +528,7 @@ IMPLEMENT_NETWORKCLASS_ALIASED( InfoLadderDismount, DT_InfoLadderDismount );
 BEGIN_NETWORK_TABLE( CSharedInfoLadderDismount, DT_InfoLadderDismount )
 END_NETWORK_TABLE()
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS_ALIASED( info_ladder_dismount, InfoLadderDismount );
-#endif
+LINK_ENTITY_TO_SERVERCLASS( info_ladder_dismount, CInfoLadderDismount );
 
 #if defined(GAME_DLL)
 const char *FuncLadder_GetSurfaceprops(CBaseEntity *pLadderEntity)

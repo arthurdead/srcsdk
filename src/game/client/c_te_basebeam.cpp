@@ -60,7 +60,7 @@ void C_TEBaseBeam::PostDataUpdate( DataUpdateType_t updateType )
 }
 
 
-IMPLEMENT_CLIENTCLASS(C_TEBaseBeam, DT_BaseBeam, CTEBaseBeam);
+IMPLEMENT_CLIENTCLASS_NULL(C_TEBaseBeam, DT_BaseBeam, CTEBaseBeam);
 
 BEGIN_RECV_TABLE_NOBASE( C_TEBaseBeam, DT_BaseBeam )
 	RecvPropInt( RECVINFO(m_nModelIndex)),

@@ -30,7 +30,6 @@ class Vector;
 class QAngle;
 class ITempEntsSystem;
 class IEntityFactoryDictionary;
-class CBaseTempEntity;
 class CGlobalEntityList;
 class IEntityFindFilter;
 
@@ -38,13 +37,16 @@ class IEntityFindFilter;
 class CBaseEntity;
 class CBaseAnimating;
 class CTakeDamageInfo;
+class CBaseTempEntity;
 typedef CBaseEntity CServerBaseEntity;
 typedef CBaseAnimating CServerBaseAnimating;
 typedef CTakeDamageInfo CServerTakeDamageInfo;
+typedef CBaseTempEntity CServerBaseTempEntity;
 #else
 class CServerBaseEntity;
 class CServerBaseAnimating;
 class CServerTakeDamageInfo;
+class CServerBaseTempEntity;
 #endif
 
 //-----------------------------------------------------------------------------
@@ -327,7 +329,7 @@ public:
 	virtual void RadiusDamage( const CServerTakeDamageInfo &info, const Vector &vecSrc, float flRadius, int iClassIgnore, CServerBaseEntity *pEntityIgnore ) = 0;
 
 	virtual ITempEntsSystem *GetTempEntsSystem( void ) = 0;
-	virtual CBaseTempEntity *GetTempEntList( void ) = 0;
+	virtual CServerBaseTempEntity *GetTempEntList( void ) = 0;
 
 	virtual CGlobalEntityList *GetEntityList( void ) = 0;
 	virtual bool IsEntityPtr( void *pTest ) = 0;

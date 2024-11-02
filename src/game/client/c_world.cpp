@@ -25,6 +25,8 @@
 
 C_World *g_pClientWorld = NULL;
 
+LINK_ENTITY_TO_SERVERCLASS( worldspawn, CWorld );
+
 IMPLEMENT_CLIENTCLASS( C_World, DT_World, CWorld );
 
 BEGIN_RECV_TABLE( C_World, DT_World )

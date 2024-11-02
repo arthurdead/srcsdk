@@ -299,7 +299,7 @@ void HandleFoundryEntitySpawnRecords()
 
 		pNewEntity->m_iHammerID = pRecord->m_iHammerID;
 
-		spawner.AddEntity( pNewEntity, pBaseMapDataForThisEntity, (entData.CurrentBufferPosition() - pBaseMapDataForThisEntity) + 2 );
+		spawner.AddEntity( pNewEntity, true, pBaseMapDataForThisEntity, (entData.CurrentBufferPosition() - pBaseMapDataForThisEntity) + 2 );
 	}
 
 	spawner.HandleTemplates();

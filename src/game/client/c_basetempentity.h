@@ -52,7 +52,7 @@ public:
 // IClientNetworkable overrides.
 private:
 
-	virtual void					DO_NOT_USE_Release();	
+	virtual void					DO_NOT_USE_Release() final;	
 
 public:
 	virtual void					NotifyShouldTransmit( ShouldTransmitState_t state );
@@ -74,21 +74,16 @@ public:
 	void NetworkStateChanged() {}
 	void NetworkStateChanged( void *pVar ) {}
 
-	virtual bool					InitializeAsServerEntity(int entnum, int iSerialNum);
+	bool InitializeAsEventEntity();
 
-	virtual bool					PostConstructor( const char * ) { return true; }
+	bool					PostConstructor( const char *classname );
 
 	virtual void					Precache( void );
-
-	// For dynamic entities, return true to allow destruction
-	virtual bool					ShouldDestroy( void ) { return m_bShouldDelete; };
 
 	C_BaseTempEntity				*GetNext( void );
 
 	// Get list of tempentities
 	static C_BaseTempEntity			*GetList( void );
-
-	C_BaseTempEntity				*GetNextDynamic( void );
 
 	// Determine the color modulation amount
 	void	GetColorModulation( float* color )
@@ -97,36 +92,22 @@ public:
 		color[0] = color[1] = color[2] = 1.0f;
 	}
 
-	// Should this object be able to have shadows cast onto it?
-	virtual bool	ShouldReceiveProjectedTextures( int flags ) { return false; }
-
 // Static members
 public:
-	// List of dynamically allocated temp entis
-	static C_BaseTempEntity			*GetDynamicList();
-
 	// Called at startup to allow temp entities to precache any models/sounds that they need
 	static void						PrecacheTempEnts( void );
-
-	static void						ClearDynamicTempEnts( void );
-
-	static void						CheckDynamicTempEnts( void );
 
 private:
 
 	// Next in chain
 	C_BaseTempEntity		*m_pNext;
-	C_BaseTempEntity		*m_pNextDynamic;
-
-	bool m_bShouldDelete;
 
 	// TEs add themselves to this list for the executable.
 	static C_BaseTempEntity	*s_pTempEntities;
-	static C_BaseTempEntity *s_pDynamicEntities;
 };
 
-void UTIL_Remove( C_BaseTempEntity *pEntity );
-void UTIL_RemoveImmediate( C_BaseTempEntity *pEntity );
+void UTIL_Remove( C_BaseTempEntity *pEntity ) = delete;
+void UTIL_RemoveImmediate( C_BaseTempEntity *pEntity ) = delete;
 
 
 #endif // C_BASETEMPENTITY_H

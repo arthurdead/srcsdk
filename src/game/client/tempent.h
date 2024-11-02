@@ -57,12 +57,14 @@ typedef int (*pfnDrawHelper)( C_LocalTempEntity *entity, int flags, const Render
 //-----------------------------------------------------------------------------
 // Purpose: Should this derive from some other class
 //-----------------------------------------------------------------------------
-class C_LocalTempEntity : public C_BaseAnimating, public C_SpriteRenderer
+class C_LocalTempEntity : public C_ClientOnlyAnimating, public C_SpriteRenderer
 {
 public:
-	DECLARE_CLASS( C_LocalTempEntity, C_BaseAnimating );
+	DECLARE_CLASS( C_LocalTempEntity, C_ClientOnlyAnimating );
 
 	C_LocalTempEntity();
+
+	virtual void					UpdateOnRemove( void );
 
 	virtual void					Prepare( const model_t *pmodel, float time );
 

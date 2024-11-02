@@ -25,9 +25,7 @@ bool ToolFramework_SetupEngineView( Vector &origin, QAngle &angles, float &fov )
 //-----------------------------------------------------------------------------
 IMPLEMENT_NETWORKCLASS_ALIASED( WeaponIFMBaseCamera, DT_WeaponIFMBaseCamera )
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS( weapon_ifm_base_camera, CWeaponIFMBaseCamera );
-#endif
+LINK_ENTITY_TO_SERVERCLASS( weapon_ifm_base_camera, CWeaponIFMBaseCamera );
 
 BEGIN_NETWORK_TABLE( CWeaponIFMBaseCamera, DT_WeaponIFMBaseCamera )	
 #if !defined( CLIENT_DLL )

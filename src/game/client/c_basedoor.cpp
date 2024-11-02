@@ -14,6 +14,8 @@
 #undef CBaseDoor
 #endif
 
+LINK_ENTITY_TO_SERVERCLASS( func_door, CBaseDoor );
+
 IMPLEMENT_CLIENTCLASS_DT(C_BaseDoor, DT_BaseDoor, CBaseDoor)
 	RecvPropFloat(RECVINFO(m_flWaveHeight)),
 END_RECV_TABLE()

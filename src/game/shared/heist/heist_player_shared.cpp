@@ -48,6 +48,9 @@ void CSharedHeistPlayer::SelectItem( const char *pstr, int iSubType )
 void CSharedHeistPlayer::EquipMask()
 {
 	CSharedBaseViewModel *pViewModel = GetViewModel(VIEWMODEL_HANDS, false);
+	if(!pViewModel)
+		return;
+
 	if(!pViewModel->IsEffectActive(EF_NODRAW))
 		return;
 
@@ -64,32 +67,34 @@ void CSharedHeistPlayer::Weapon_FrameUpdate()
 {
 	BaseClass::Weapon_FrameUpdate();
 
-	CSharedBaseViewModel *pViewModel = GetViewModel(VIEWMODEL_HANDS, false);
 	if(m_bMaskingUp) {
-		pViewModel->StudioFrameAdvance();
+		CSharedBaseViewModel *pViewModel = GetViewModel(VIEWMODEL_HANDS, false);
+		if(pViewModel) {
+			pViewModel->StudioFrameAdvance();
 
-		bool finished = (pViewModel->IsSequenceFinished() || pViewModel->GetCycle() >= 0.8f);
-
-	#ifdef GAME_DLL
-		if(finished) {
-			MissionDirector()->MakeMissionLoud();
-		}
-	#endif
-
-		if(finished) {
-			pViewModel->AddEffects(EF_NODRAW);
+			bool finished = (pViewModel->IsSequenceFinished() || pViewModel->GetCycle() >= 0.8f);
 
 		#ifdef GAME_DLL
-			BaseClass::EquipSuit(false);
+			if(finished) {
+				MissionDirector()->MakeMissionLoud();
+			}
 		#endif
 
-			m_bMaskingUp = false;
+			if(finished) {
+				pViewModel->AddEffects(EF_NODRAW);
 
-			CSharedBaseCombatWeapon *pWeapon = GetActiveWeapon();
-			if(pWeapon) {
-				pWeapon->Deploy();
-			} else {
-				SwitchToNextBestWeapon(NULL);
+			#ifdef GAME_DLL
+				BaseClass::EquipSuit(false);
+			#endif
+
+				m_bMaskingUp = false;
+
+				CSharedBaseCombatWeapon *pWeapon = GetActiveWeapon();
+				if(pWeapon) {
+					pWeapon->Deploy();
+				} else {
+					SwitchToNextBestWeapon(NULL);
+				}
 			}
 		}
 	}

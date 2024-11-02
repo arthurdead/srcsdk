@@ -89,7 +89,7 @@ public:
 	static IClientNetworkable* V_CONCAT3(_, clientClassName, _CreateObject)( int entnum, int serialNum ) \
 	{ \
 		clientClassName *pRet = new clientClassName; \
-		if(!pRet->PostConstructor( NULL )) { \
+		if(!pRet->PostConstructor( GetClassMap().LookupMapping( V_STRINGIFY(serverClassName) ) )) { \
 			UTIL_Remove( pRet ); \
 			return NULL; \
 		} \
@@ -100,7 +100,7 @@ public:
 		return pRet; \
 	} \
 	ClientClass V_CONCAT3(__g_, clientClassName, ClientClass)(V_STRINGIFY(serverClassName), \
-													_##clientClassName##_CreateObject, \
+													V_CONCAT3(_, clientClassName, _CreateObject), \
 													&dataTable::g_RecvTable);
 
 // Implement a client class and provide a factory so you can allocate and delete it yourself
@@ -116,6 +116,10 @@ public:
 	IMPLEMENT_CLIENTCLASS(clientClassName, dataTable, serverClassName)\
 	BEGIN_RECV_TABLE(clientClassName, dataTable)
 
+#define IMPLEMENT_CLIENTCLASS_DT_NULL(clientClassName, dataTable, serverClassName)\
+	IMPLEMENT_CLIENTCLASS_NULL(clientClassName, dataTable, serverClassName)\
+	BEGIN_RECV_TABLE(clientClassName, dataTable)
+
 #define IMPLEMENT_CLIENTCLASS_DT_NOBASE(clientClassName, dataTable, serverClassName)\
 	IMPLEMENT_CLIENTCLASS(clientClassName, dataTable, serverClassName)\
 	BEGIN_RECV_TABLE_NOBASE(clientClassName, dataTable)
@@ -125,10 +129,19 @@ public:
 // is responsible for freeing itself.
 #define IMPLEMENT_CLIENTCLASS_EVENT(clientClassName, dataTable, serverClassName)\
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName)\
-	static clientClassName __g_##clientClassName; \
-	static IClientNetworkable* V_CONCAT3(_, clientClassName, _CreateObject)() {return &__g_##clientClassName;}\
+	class V_CONCAT2(clientClassName, Event) : public clientClassName \
+	{ \
+	public: \
+		DECLARE_CLASS( V_CONCAT2(clientClassName, Event), clientClassName ); \
+		V_CONCAT2(clientClassName, Event)() : clientClassName() { \
+			PostConstructor( GetClassMap().LookupMapping( V_STRINGIFY(serverClassName) ) ); \
+			InitializeAsEventEntity(); \
+		} \
+	}; \
+	static V_CONCAT2(clientClassName, Event) V_CONCAT2(__g_, clientClassName); \
+	static IClientNetworkable* V_CONCAT3(_, clientClassName, _CreateObject)() {return &V_CONCAT2(__g_, clientClassName);}\
 	ClientClass V_CONCAT3(__g_, clientClassName, ClientClass)(V_STRINGIFY(serverClassName), \
-													_##clientClassName##_CreateObject, \
+													V_CONCAT3(_, clientClassName, _CreateObject), \
 													&dataTable::g_RecvTable);
 
 #define IMPLEMENT_CLIENTCLASS_EVENT_DT(clientClassName, dataTable, serverClassName)\
@@ -142,32 +155,14 @@ public:
 // uses some other global object (so you must use Initializers so you're constructed afterwards).
 #define IMPLEMENT_CLIENTCLASS_EVENT_POINTER(clientClassName, dataTable, serverClassName, ptr)\
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName)\
-	static IClientNetworkable* V_CONCAT3(_, clientClassName, _CreateObject)() {return ptr;}\
+	static IClientNetworkable* V_CONCAT3(_, clientClassName, _CreateObject)() {return (ptr);}\
 	ClientClass V_CONCAT3(__g_, clientClassName, ClientClass)(V_STRINGIFY(serverClassName), \
-													_##clientClassName##_CreateObject, \
+													V_CONCAT3(_, clientClassName, _CreateObject), \
 													&dataTable::g_RecvTable);
 
 #define IMPLEMENT_CLIENTCLASS_NULL(clientClassName, dataTable, serverClassName)\
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName)\
 	ClientClass V_CONCAT3(__g_, clientClassName, ClientClass)(V_STRINGIFY(serverClassName), \
-													&dataTable::g_RecvTable);
-
-#define IMPLEMENT_CLIENTCLASS_EVENT_NONSINGLETON(clientClassName, dataTable, serverClassName)\
-	static IClientNetworkable* V_CONCAT3(_, clientClassName, _CreateObject)() \
-	{ \
-		clientClassName *p = new clientClassName; \
-		if(!p->PostConstructor( NULL )) { \
-			UTIL_Remove( pRet ); \
-			return NULL; \
-		} \
-		if(!p->InitializeAsEventEntity()) { \
-			UTIL_Remove( p ); \
-			return NULL; \
-		} \
-		return p; \
-	} \
-	ClientClass V_CONCAT3(__g_, clientClassName, ClientClass)(V_STRINGIFY(serverClassName), \
-													V_CONCAT3(_, clientClassName, _CreateObject), \
 													&dataTable::g_RecvTable);
 
 // Used internally..

@@ -159,7 +159,6 @@ void CViewAngleAnimation::Spawn( void )
 
 	m_bFinished = true;	// don't run right away
 
-	ClientEntityList().AddNonNetworkableEntity(	this );
 	SetContextThink( &CViewAngleAnimation::AnimThink, TICK_ALWAYS_THINK, "AnimThink" );
 }
 

@@ -1615,7 +1615,7 @@ void CClientLeafSystem::SetModelType( ClientRenderHandle_t handle, RenderableMod
 			nModelType = RENDERABLE_MODEL_STUDIOMDL;
 			break;
 		default:
-			Assert(0);
+			AssertMsg(0, "invalid modeltype %i", nType);
 			break;
 		}
 	}

@@ -198,5 +198,7 @@ public:
 	DECLARE_CLIENTCLASS();
 };
 
+LINK_ENTITY_TO_SERVERCLASS(prop_door_rotating, CPropDoorRotating);
+
 IMPLEMENT_CLIENTCLASS_DT(C_PropDoorRotating, DT_PropDoorRotating, CPropDoorRotating)
 END_RECV_TABLE()

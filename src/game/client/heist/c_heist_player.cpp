@@ -4,6 +4,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+LINK_ENTITY_TO_SERVERCLASS(player, CHeistPlayer);
+
 BEGIN_RECV_TABLE_NOBASE(C_HeistPlayer, DT_HeistLocalPlayerExclusive)
 	RecvPropBool(RECVINFO(m_bMaskingUp))
 END_RECV_TABLE()

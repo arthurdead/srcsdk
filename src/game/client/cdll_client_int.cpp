@@ -1456,7 +1456,6 @@ void CClientDll::Shutdown( void )
 	GetFullscreenClientMode()->Shutdown();
 
 	input->Shutdown_All();
-	C_BaseTempEntity::ClearDynamicTempEnts();
 	TermSmokeFogOverlay();
 	GetViewRenderInstance()->Shutdown();
 	g_pParticleSystemMgr->UncacheAllParticleSystems();
@@ -1600,10 +1599,6 @@ void CClientDll::HudUpdate( bool bActive )
 
 	hudlcd->SetGlobalStat( "(time_int)", VarArgs( "%d", (int)gpGlobals->curtime ) );
 	hudlcd->SetGlobalStat( "(time_float)", VarArgs( "%.2f", gpGlobals->curtime ) );
-
-	// I don't think this is necessary any longer, but I will leave it until
-	// I can check into this further.
-	C_BaseTempEntity::CheckDynamicTempEnts();
 }
 
 //-----------------------------------------------------------------------------
@@ -2013,8 +2008,6 @@ void OnWorldSpawned()
 	//  to be parsed (the above code has loaded all point_template entities)
 	PrecachePointTemplates();
 
-	DebuggerBreak();
-
 	g_bLevelParsed = true;
 }
 
@@ -2046,7 +2039,6 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 
 	hudlcd->SetGlobalStat( "(mapname)", pMapName );
 
-	C_BaseTempEntity::ClearDynamicTempEnts();
 	clienteffects->Flush();
 	GetViewRenderInstance()->LevelInit();
 	tempents->LevelInit();

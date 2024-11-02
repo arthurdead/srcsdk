@@ -126,6 +126,9 @@ void CMissionDirector::PlayerSpawned(CHeistPlayer *pPlayer)
 
 void CMissionDirector::LevelInitPostEntity()
 {
+	//TODO!!!! move this somewhere else when waiting for players is supported
+	HeistGameRules()->m_nMissionState = MISSION_STATE_NONE;;
+
 	m_AssaultTimer.Reset();
 	m_SpawnTimer.Reset();
 

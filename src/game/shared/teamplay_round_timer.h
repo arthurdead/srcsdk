@@ -19,14 +19,19 @@
 #define CTeamRoundTimer C_TeamRoundTimer
 #endif
 
-class CTeamRoundTimer : public CBaseEntity
+class CTeamRoundTimer : public CSharedBaseEntity
 {
 public:
-	DECLARE_CLASS( CTeamRoundTimer, CBaseEntity );
-	DECLARE_NETWORKCLASS();
+	DECLARE_CLASS( CTeamRoundTimer, CSharedBaseEntity );
 
 	CTeamRoundTimer();
 	virtual ~CTeamRoundTimer();
+
+#ifdef CLIENT_DLL
+	#undef CTeamRoundTimer
+#endif
+
+	DECLARE_NETWORKCLASS();
 
 	virtual void Spawn( void );
 	virtual void Precache( void );

@@ -26,9 +26,9 @@
 //-----------------------------------------------------------------------------
 IMPLEMENT_NETWORKCLASS_ALIASED( WeaponIFMSteadyCam, DT_WeaponIFMSteadyCam )
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS( weapon_ifm_steadycam, CWeaponIFMSteadyCam );
+LINK_ENTITY_TO_SERVERCLASS( weapon_ifm_steadycam, CWeaponIFMSteadyCam );
 
+#ifdef GAME_DLL
 PRECACHE_WEAPON_REGISTER( weapon_ifm_steadycam );
 #endif
 

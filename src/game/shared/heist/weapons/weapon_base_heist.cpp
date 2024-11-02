@@ -1,5 +1,6 @@
 #include "weapon_base_heist.h"
 #include "predictable_entity.h"
+#include "heist_gamerules.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -8,10 +9,6 @@ BEGIN_NETWORK_TABLE(CSharedBaseHeistWeapon, DT_BaseHeistWeapon)
 END_NETWORK_TABLE()
 
 IMPLEMENT_NETWORKCLASS_ALIASED(BaseHeistWeapon, DT_BaseHeistWeapon)
-
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS_ALIASED(weapon_heist_base, BaseHeistWeapon);
-#endif
 
 BEGIN_PREDICTION_DATA( C_BaseHeistWeapon )
 END_PREDICTION_DATA()

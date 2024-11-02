@@ -23,7 +23,11 @@ public:
 	virtual int				GetClassSize( const char *classname );
 	virtual IEntityFactory *FindFactory( const char *pClassName );
 
+	virtual void			AddMapping( const char *mapname, const char *classname );
+	virtual char const		*LookupMapping( const char *classname );
+
 	CUtlDict< IEntityFactory *, unsigned short > m_ClassDict;
+	CUtlStringMap< CUtlString > m_ClassMapping;
 };
 
 INIT_PRIORITY(101) static CClassMap g_Classmap;
@@ -35,8 +39,27 @@ IClassMap& GetClassMap( void )
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-CClassMap::CClassMap() : m_ClassDict( true, 0, 128 )
+CClassMap::CClassMap() : m_ClassDict( true, 0, 128 ), m_ClassMapping( true )
 {
+}
+
+void CClassMap::AddMapping( const char *mapname, const char *classname )
+{
+	const char *map = LookupMapping( classname );
+
+	AssertMsg( !map, "duplicate mapping found for %s", classname );
+
+	if ( map && !Q_strcasecmp( mapname, map ) )
+		return;
+
+	if ( map )
+	{
+		int index = m_ClassDict.Find( classname );
+		Assert( index != m_ClassDict.InvalidIndex() );
+		m_ClassDict.RemoveAt( index );
+	}
+
+	m_ClassMapping[classname].Set( mapname );
 }
 
 void CClassMap::Add( const char *mapname, IEntityFactory *factory )
@@ -45,12 +68,23 @@ void CClassMap::Add( const char *mapname, IEntityFactory *factory )
 	m_ClassDict.Insert( mapname, factory );
 }
 
+const char *CClassMap::LookupMapping( const char *classname )
+{
+	UtlSymId_t index;
+
+	index = m_ClassMapping.Find( classname );
+	if ( index == m_ClassMapping.InvalidIndex() )
+		return NULL;
+
+	return m_ClassMapping[ index ];
+}
+
 C_BaseEntity *CClassMap::CreateEntity( const char *mapname )
 {
 	IEntityFactory *pFactory = FindFactory( mapname );
 	if ( !pFactory )
 	{
-		Log_Error(LOG_ENTITYFACTORY,"Attempted to create unknown entity type %s!\n", mapname );
+		AssertMsg(0,"Attempted to create unknown entity type %s!", mapname );
 		return NULL;
 	}
 #if defined(TRACK_ENTITY_MEMORY) && defined(USE_MEM_DEBUG)

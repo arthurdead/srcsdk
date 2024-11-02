@@ -15,9 +15,7 @@ IMPLEMENT_NETWORKCLASS_ALIASED( RecastMgrEnt, DT_RecastMgrEnt );
 BEGIN_NETWORK_TABLE( CSharedRecastMgrEnt, DT_RecastMgrEnt )
 END_NETWORK_TABLE()
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS_ALIASED( recast_mgr, RecastMgrEnt );
-#endif
+LINK_ENTITY_TO_SERVERCLASS( recast_mgr, CRecastMgrEnt );
 
 static CSharedRecastMgrEnt *s_pRecastMgrEnt = NULL;
 

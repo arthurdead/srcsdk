@@ -334,7 +334,7 @@ public:
 	virtual bool InitializeAsServerEntity( int entnum, int iSerialNum );
 protected:
 	virtual bool InitializeAsPredictedEntity( const char *className, const char *module, int line );
-	virtual bool InitializeAsEventEntity();
+	virtual bool InitializeAsEventEntity() final = delete;
 public:
 	virtual bool InitializeAsClientEntity();
 
@@ -1842,6 +1842,7 @@ private:
 	// Object movetype
 	unsigned char					m_MoveType;
 	unsigned char					m_MoveCollide;
+	friend void RecvProxy_ParentAttachment( const CRecvProxyData *pData, void *pStruct, void *pOut );
 	unsigned char					m_iParentAttachment; // 0 if we're relative to the parent's absorigin and absangles.
 	unsigned char					m_iOldParentAttachment;
 

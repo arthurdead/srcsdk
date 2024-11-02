@@ -21,6 +21,8 @@
 
 using namespace vgui;
 
+LINK_ENTITY_TO_SERVERCLASS( vgui_text_display, CVGuiTextDisplay );
+
 //-----------------------------------------------------------------------------
 // vgui_text_display
 //-----------------------------------------------------------------------------

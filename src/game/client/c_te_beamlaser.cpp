@@ -17,8 +17,8 @@
 //-----------------------------------------------------------------------------
 class C_TEBeamLaser : public C_TEBaseBeam
 {
-	DECLARE_CLASS( C_TEBeamLaser, C_TEBaseBeam );
 public:
+	DECLARE_CLASS( C_TEBeamLaser, C_TEBaseBeam );
 	DECLARE_CLIENTCLASS();
 
 	C_TEBeamLaser( void );

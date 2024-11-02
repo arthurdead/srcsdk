@@ -65,7 +65,7 @@ public:
 // entities like the world entity need to be left intact.
 void MapEntity_ParseAllEntities( const char *pMapData, IMapEntityFilter *pFilter=NULL, bool bActivateEntities=false );
 
-const char *MapEntity_ParseEntity( CSharedBaseEntity *&pEntity, const char *pEntData, IMapEntityFilter *pFilter );
+const char *MapEntity_ParseEntity( CSharedBaseEntity *&pEntity, bool &bCreated, const char *pEntData, IMapEntityFilter *pFilter );
 void MapEntity_PrecacheEntity( const char *pEntData, int &nStringSize );
 
 
@@ -78,6 +78,8 @@ struct HierarchicalSpawn_t
 	int			m_nDepth;
 	CSharedBaseEntity	*m_pDeferredParent;			// attachment parents can't be set until the parents are spawned
 	const char	*m_pDeferredParentAttachment; // so defer setting them up until the second pass
+	bool m_bSpawn;
+	bool m_bActivate;
 };
 
 struct HierarchicalSpawnMapData_t
@@ -93,7 +95,7 @@ public:
 	CMapEntitySpawner();
 	~CMapEntitySpawner();
 	
-	void AddEntity( CSharedBaseEntity *pEntity, const char *pMapData, int iMapDataLength );
+	void AddEntity( CSharedBaseEntity *pEntity, bool bCreated, const char *pMapData, int iMapDataLength );
 	void HandleTemplates();
 	void SpawnAndActivate( bool bActivateEntities );
 	void PurgeRemovedEntities();

@@ -298,6 +298,16 @@ static void AddDataMapFieldNamesToList( KeyValueNameList_t &list, datamap_t *pDa
 		{
 			typedescription_t *pField = &pDataMap->dataDesc[i];
 
+			if(i == 0 &&
+				pField->fieldType == FIELD_VOID &&
+				pField->fieldOffset[0] == 0 &&
+				pField->fieldSize == 0 &&
+				pField->fieldSizeInBytes == 0 &&
+				pField->flags == 0 &&
+				pField->fieldName == NULL) {
+				continue;
+			}
+
 			if (pField->fieldType == FIELD_EMBEDDED)
 			{
 				AddDataMapFieldNamesToList( list, pField->td );

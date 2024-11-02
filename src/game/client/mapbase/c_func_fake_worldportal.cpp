@@ -13,6 +13,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+LINK_ENTITY_TO_SERVERCLASS( func_fake_worldportal, CFuncFakeWorldPortal );
+
 IMPLEMENT_CLIENTCLASS_DT( C_FuncFakeWorldPortal, DT_FuncFakeWorldPortal, CFuncFakeWorldPortal )
 
 	RecvPropEHandle( RECVINFO( m_hTargetPlane ) ),

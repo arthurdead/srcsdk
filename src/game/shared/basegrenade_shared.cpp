@@ -79,9 +79,7 @@ BEGIN_NETWORK_TABLE( CSharedBaseGrenade, DT_BaseGrenade )
 #endif
 END_NETWORK_TABLE()
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS_ALIASED( grenade, BaseGrenade );
-#endif
+LINK_ENTITY_TO_SERVERCLASS( grenade, CBaseGrenade );
 
 #if defined( CLIENT_DLL )
 

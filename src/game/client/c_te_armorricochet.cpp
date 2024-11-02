@@ -114,8 +114,8 @@ void TE_MetalSparks( IRecipientFilter& filter, float delay,
 //-----------------------------------------------------------------------------
 class C_TEArmorRicochet : public C_TEMetalSparks
 {
-	DECLARE_CLASS( C_TEArmorRicochet, C_TEMetalSparks );
 public:
+	DECLARE_CLASS( C_TEArmorRicochet, C_TEMetalSparks );
 	DECLARE_CLIENTCLASS();
 	virtual void	PostDataUpdate( DataUpdateType_t updateType );
 };

@@ -233,8 +233,6 @@ void C_BeamSpotLight::SpotlightCreate(void)
 	{
 		//C_Beam *beam = CBeam::BeamCreate( "sprites/spotlight.vmt", m_flSpotlightGoalWidth );
 		C_Beam *beam = C_Beam::BeamCreate( "sprites/glow_test02.vmt", m_flSpotlightGoalWidth );
-		// Beam only exists client side
-		ClientEntityList().AddNonNetworkableEntity( beam );
 		m_hSpotlight = beam;
 	}
 

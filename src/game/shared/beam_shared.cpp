@@ -137,9 +137,7 @@ void* SendProxy_SendPredictableId( const SendProp *pProp, const void *pStruct, c
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableId );
 #endif
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS_ALIASED( beam, Beam );
-#endif
+LINK_ENTITY_TO_SERVERCLASS( beam, CBeam );
 
 // This table encodes the CBeam data.
 IMPLEMENT_NETWORKCLASS_ALIASED( Beam, DT_Beam )

@@ -45,9 +45,7 @@ BEGIN_MAPENTITY( CSharedSpriteTrail )
 
 END_MAPENTITY()
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS_ALIASED( env_spritetrail, SpriteTrail );
-#endif
+LINK_ENTITY_TO_SERVERCLASS( env_spritetrail, CSpriteTrail );
 
 //-----------------------------------------------------------------------------
 // Networking

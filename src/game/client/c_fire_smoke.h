@@ -123,9 +123,6 @@ public:
 	void	Start( void );
 	bool	Simulate( void );
 
-	void	StartClientOnly( void );
-	void	RemoveClientOnly( void );
-
 protected:
 	void	Update( void );
 	void	UpdateAnimation( void );

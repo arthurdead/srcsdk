@@ -327,6 +327,7 @@ bool CSharedPointTemplate::CreateInstance( const Vector &vecOrigin, const QAngle
 	for ( i = 0; i < iTemplates; i++ )
 	{
 		CSharedBaseEntity *pEntity = NULL;
+		bool bCreated;
 		const char *pMapData;
 		int iTemplateIndex = m_hTemplates[i].iTemplateIndex;
 
@@ -346,7 +347,7 @@ bool CSharedPointTemplate::CreateInstance( const Vector &vecOrigin, const QAngle
 		}
 
 		// Create the entity from the mapdata
-		MapEntity_ParseEntity( pEntity, pMapData, NULL );
+		MapEntity_ParseEntity( pEntity, bCreated, pMapData, NULL );
 		if ( pEntity == NULL )
 		{
 			Msg("Failed to initialize templated entity with mapdata: %s\n", pMapData );
@@ -369,6 +370,13 @@ bool CSharedPointTemplate::CreateInstance( const Vector &vecOrigin, const QAngle
 		pEntity->SetAbsAngles( vecNewAngles );
 
 		pSpawnList[i].m_pEntity = pEntity;
+		pSpawnList[i].m_bSpawn = (
+			bCreated
+		#ifdef CLIENT_DLL
+			&& !pEntity->IsServerEntity()
+		#endif
+		);
+		pSpawnList[i].m_bActivate = true;
 		pSpawnList[i].m_nDepth = 0;
 		pSpawnList[i].m_pDeferredParent = NULL;
 	}
@@ -420,6 +428,7 @@ bool CSharedPointTemplate::CreateSpecificInstance( int iTemplate, const Vector &
 	Templates_StartUniqueInstance();
 
 	CSharedBaseEntity *pEntity = NULL;
+	bool bCreated;
 	const char *pMapData;
 	int iTemplateIndex = m_hTemplates[iTemplate].iTemplateIndex;
 
@@ -439,7 +448,7 @@ bool CSharedPointTemplate::CreateSpecificInstance( int iTemplate, const Vector &
 	}
 
 	// Create the entity from the mapdata
-	MapEntity_ParseEntity( pEntity, pMapData, NULL );
+	MapEntity_ParseEntity( pEntity, bCreated, pMapData, NULL );
 	if ( pEntity == NULL )
 	{
 		Msg("Failed to initialize templated entity with mapdata: %s\n", pMapData );
@@ -462,7 +471,14 @@ bool CSharedPointTemplate::CreateSpecificInstance( int iTemplate, const Vector &
 	pEntity->SetAbsAngles( vecNewAngles );
 
 	// Spawn it
-	DispatchSpawn( pEntity );
+	if(
+		bCreated
+	#ifdef CLIENT_DLL
+		&& !pEntity->IsServerEntity()
+	#endif
+	) {
+		DispatchSpawn( pEntity );
+	}
 
 	if (pOutEntity)
 	{

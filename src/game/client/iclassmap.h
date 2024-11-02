@@ -35,6 +35,9 @@ public:
 	virtual C_BaseEntity	*CreateEntity( const char *mapname ) = 0;
 	virtual int				GetClassSize( const char *mapname ) = 0;
 	virtual IEntityFactory *FindFactory( const char *pClassName ) = 0;
+
+	virtual void			AddMapping( const char *mapname, const char *classname ) = 0;
+	virtual char const		*LookupMapping( const char *classname ) = 0;
 };
 
 extern IClassMap& GetClassMap();

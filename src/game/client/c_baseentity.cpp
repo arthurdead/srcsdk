@@ -44,6 +44,7 @@
 #include "gamestringpool.h"
 #include "recast/recast_mgr.h"
 #include "collisionproperty.h"
+#include "tempent.h"
 
 #if defined __GNUC__ && defined __linux__
 #include <cxxabi.h>
@@ -667,7 +668,7 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropEHandle( RECVINFO(m_hOwnerEntity) ),
 	RecvPropEHandle( RECVINFO(m_hEffectEntity) ),
 	RecvPropInt( RECVINFO_NAME(m_hNetworkMoveParent, moveparent), 0, RecvProxy_IntToMoveParent ),
-	RecvPropInt( RECVINFO( m_iParentAttachment ) ),
+	RecvPropInt( RECVINFO( m_iParentAttachment ), 0 ),
 
 	RecvPropStringT( RECVINFO( m_iName ) ),
 
@@ -1496,23 +1497,16 @@ bool C_BaseEntity::InitializeAsServerEntity( int entnum, int iSerialNum )
 {
 	Assert( entnum >= 0 && entnum < GAME_NUM_ENT_ENTRIES );
 
+	m_bIsClientCreated = false;
+
 	cl_entitylist->AddNetworkableEntity( this, entnum, iSerialNum );
+
+	CheckHasThinkFunction( TICK_NEVER_THINK );
 
 	if(!IsEFlagSet( EFL_NOT_RENDERABLE ))
 	{
 		AlphaProp()->SetDesyncOffset( entnum );
 	}
-
-	CheckHasThinkFunction( TICK_NEVER_THINK );
-
-	if(!IsEFlagSet( EFL_NOT_COLLIDEABLE ))
-	{
-		CollisionProp()->CreatePartitionHandle();
-	}
-
-	Interp_SetupMappings( GetVarMapping() );
-
-	m_nCreationTick = gpGlobals->tickcount;
 
 	return true;
 }
@@ -1523,21 +1517,12 @@ bool C_BaseEntity::InitializeAsPredictedEntity( const char *className, const cha
 	cl_entitylist->AddNonNetworkableEntity( this );
 	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
 
+	CheckHasThinkFunction( TICK_NEVER_THINK );
+
 	if(!IsEFlagSet( EFL_NOT_RENDERABLE ))
 	{
 		AlphaProp()->SetDesyncOffset( m_RefEHandle.GetEntryIndex() );
 	}
-
-	CheckHasThinkFunction( TICK_NEVER_THINK );
-
-	if(!IsEFlagSet( EFL_NOT_COLLIDEABLE ))
-	{
-		CollisionProp()->CreatePartitionHandle();
-	}
-
-	Interp_SetupMappings( GetVarMapping() );
-
-	m_nCreationTick = gpGlobals->tickcount;
 
 	C_BasePlayer *player = C_BaseEntity::GetPredictionPlayer();
 
@@ -1580,55 +1565,18 @@ bool C_BaseEntity::InitializeAsPredictedEntity( const char *className, const cha
 	return true;
 }
 
-bool C_BaseEntity::InitializeAsEventEntity()
-{
-	// Add the client entity to the master entity list.
-	cl_entitylist->AddNonNetworkableEntity( this );
-	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
-
-	if(!IsEFlagSet( EFL_NOT_RENDERABLE ))
-	{
-		AlphaProp()->SetDesyncOffset( m_RefEHandle.GetEntryIndex() );
-	}
-
-	CheckHasThinkFunction( TICK_NEVER_THINK );
-
-	if(!IsEFlagSet( EFL_NOT_COLLIDEABLE ))
-	{
-		CollisionProp()->CreatePartitionHandle();
-	}
-
-	Interp_SetupMappings( GetVarMapping() );
-
-	m_nCreationTick = gpGlobals->tickcount;
-
-	return true;
-}
-
 bool C_BaseEntity::InitializeAsClientEntity()
 {
 	// Add the client entity to the master entity list.
 	cl_entitylist->AddNonNetworkableEntity( this );
 	Assert( GetClientHandle() != ClientEntityList().InvalidHandle() );
 
+	CheckHasThinkFunction( TICK_NEVER_THINK );
+
 	if(!IsEFlagSet( EFL_NOT_RENDERABLE ))
 	{
 		AlphaProp()->SetDesyncOffset( m_RefEHandle.GetEntryIndex() );
 	}
-
-	m_bIsClientCreated = true;
-
-	CheckHasThinkFunction( TICK_NEVER_THINK );
-
-	// Add the client entity to the spatial partition. (Collidable)
-	if(!IsEFlagSet( EFL_NOT_COLLIDEABLE ))
-	{
-		CollisionProp()->CreatePartitionHandle();
-	}
-
-	Interp_SetupMappings( GetVarMapping() );
-
-	m_nCreationTick = gpGlobals->tickcount;
 
 	return true;
 }
@@ -1658,13 +1606,24 @@ bool C_BaseEntity::PostConstructor( const char *szClassname )
 	free(pRTTIClassname);
 #endif
 
+	AssertMsg( szClassname, "missing classname for %s", STRING(m_iRTTIClassname) );
+
+	CheckHasGamePhysicsSimulation();
+
+	if(!IsEFlagSet( EFL_NOT_COLLIDEABLE ))
+	{
+		CollisionProp()->CreatePartitionHandle();
+	}
+
+	Interp_SetupMappings( GetVarMapping() );
+
+	m_nCreationTick = gpGlobals->tickcount;
+
 	if(IsEFlagSet( EFL_NOT_NETWORKED )) {
 		if(!InitializeAsClientEntity()) {
 			return false;
 		}
 	}
-
-	CheckHasGamePhysicsSimulation();
 
 	return true;
 }
@@ -1712,7 +1671,9 @@ void C_BaseEntity::DO_NOT_USE_Release()
 {
 	UpdateOnRemove();
 
-	delete this;
+	if(dynamic_cast<C_LocalTempEntity *>(this) == NULL) {
+		delete this;
+	}
 }
 
 
@@ -2304,6 +2265,7 @@ void C_BaseEntity::GetRenderBounds( Vector& theMins, Vector& theMaxs )
 	}
 	else
 	{
+		Assert( CollisionProp() );
 		// By default, we'll just snack on the collision bounds, transform
 		// them into entity-space, and call it a day.
 		if ( GetRenderAngles() == CollisionProp()->GetCollisionAngles() )
@@ -5337,7 +5299,19 @@ bool C_BaseEntity::HasClassname()
 
 const char *C_BaseEntity::GetDebugName( void )
 {
-	return GetClassname();
+	if ( m_iName != NULL_STRING ) 
+	{
+		return STRING(m_iName);
+	}
+	else
+	{
+		if ( ToBasePlayer( this ) )
+		{
+			return ToBasePlayer( this )->GetPlayerName();
+		}
+
+		return GetClassname();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -5353,7 +5327,6 @@ C_BaseEntity *CreateEntityByName( const char *className )
 		return ent;
 	}
 
-	Warning( "Can't find factory for entity: %s\n", className );
 	return NULL;
 }
 

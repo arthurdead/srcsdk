@@ -118,7 +118,20 @@
 
 #define END_NETWORK_TABLE	END_RECV_TABLE
 
-#define LINK_ENTITY_TO_CLASS_ALIASED( localName, className ) LINK_ENTITY_TO_CLASS( localName##_clientside, C_##className )
+#define LINK_ENTITY_TO_SERVERCLASS( localName, className )						\
+	class localName##Mapping													\
+	{																		\
+	public:																	\
+		localName##Mapping( void )											\
+		{																	\
+			GetClassMap().AddMapping( V_STRINGIFY(localName), V_STRINGIFY(className) );			\
+		}																	\
+	};																		\
+	static localName##Mapping g_##localName##Mapping;
+
+#define LINK_ENTITY_TO_CLASS_ALIASED( localName, className ) \
+	LINK_ENTITY_TO_SERVERCLASS( localName, C##className ) \
+	LINK_ENTITY_TO_CLASS( localName##_clientside, C_##className )
 
 #define IMPLEMENT_NETWORKCLASS_ALIASED(className, dataTable)			\
 	IMPLEMENT_CLIENTCLASS( C_##className, dataTable, C##className )
@@ -135,6 +148,7 @@
 #define END_NETWORK_TABLE	END_SEND_TABLE
 
 #define LINK_ENTITY_TO_CLASS_ALIASED( localName, className ) LINK_ENTITY_TO_CLASS( localName, C##className )
+#define LINK_ENTITY_TO_SERVERCLASS( localName, className ) LINK_ENTITY_TO_CLASS( localName, className )
 
 #define IMPLEMENT_NETWORKCLASS_ALIASED(className, dataTable)			\
 	IMPLEMENT_SERVERCLASS( C##className, dataTable )

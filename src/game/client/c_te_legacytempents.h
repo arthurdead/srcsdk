@@ -165,7 +165,7 @@ private:
 	C_LocalTempEntity		*TempEntAlloc();	
 	bool					FreeLowPriorityTempEnt();
 
-	int						AddVisibleTempEntity( C_LocalTempEntity *pEntity );
+	bool						IsVisibleTempEntity( C_LocalTempEntity *pEntity );
 
 	void					MuzzleFlash_Shotgun_Firstperson( ClientEntityHandle_t hEntity, int attachmentIndex );
 	void					MuzzleFlash_Shotgun_Thirdperson( ClientEntityHandle_t hEntity, int attachmentIndex );

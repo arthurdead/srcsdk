@@ -71,10 +71,8 @@ public:
 	virtual const char *GetGameDescription( void ) { return "Heist"; }
 #endif
 
-#ifdef CLIENT_DLL
 	int GetMissionState() const
 	{ return m_nMissionState; }
-#endif
 
 private:
 	friend class CMissionDirector;

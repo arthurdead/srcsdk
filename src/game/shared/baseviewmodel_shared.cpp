@@ -566,9 +566,7 @@ static void RecvProxy_Weapon( const CRecvProxyData *pData, void *pStruct, void *
 }
 #endif
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS_ALIASED( viewmodel, BaseViewModel );
-#endif
+LINK_ENTITY_TO_SERVERCLASS( viewmodel, CBaseViewModel );
 
 IMPLEMENT_NETWORKCLASS_ALIASED( BaseViewModel, DT_BaseViewModel )
 
@@ -742,9 +740,7 @@ private:
 	CHandle<CSharedBaseViewModel> m_hVMOwner;
 };
 
-#ifdef GAME_DLL
-LINK_ENTITY_TO_CLASS_ALIASED(hand_viewmodel, HandViewModel);
-#endif
+LINK_ENTITY_TO_SERVERCLASS(hand_viewmodel, CHandViewModel);
 
 IMPLEMENT_NETWORKCLASS_ALIASED(HandViewModel, DT_HandViewModel)
 
