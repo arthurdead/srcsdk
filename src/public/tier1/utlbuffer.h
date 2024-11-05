@@ -239,7 +239,7 @@ public:
 	void			EatWhiteSpace();
 
 	// Eats C++ style comments
-	bool			EatCPPComment();
+	int			EatCPPComment();
 
 	// (For text buffers only)
 	// Parse a token from the buffer:

@@ -63,8 +63,6 @@ if build_libs
 		),
 		dependencies: [
 			tier1.get_variable('tier1_dep'),
-			tier0.get_variable('tier0_dep'),
-			vstdlib.get_variable('vstdlib_dep'),
 			mathlib.get_variable('mathlib_dep'),
 			source_base.get_variable('source_shared_lib_dep')
 		],
@@ -88,6 +86,9 @@ if build_libs
 		dependencies: [
 			hackmgr_base_lib,
 			sdl2,
+			tier0.get_variable('tier0_dep'),
+			vstdlib.get_variable('vstdlib_dep'),
+			source_base.get_variable('source_cl_dep')
 		],
 		install: true,
 		install_dir: join_paths(game_dir,'bin'),
@@ -109,11 +110,12 @@ if build_libs
 		cpp_args: [
 			'-DDLLNAME=hackmgr_ds',
 			'-DMEMOVERRIDE_MODULE=hackmgr_ds',
-			'-DDEDICATED',
-			'-DSWDS',
 		],
 		dependencies: [
 			hackmgr_base_lib,
+			source_base.get_variable('source_ds_dep'),
+			tier0.get_variable('tier0_ds_dep'),
+			vstdlib.get_variable('vstdlib_ds_dep'),
 		],
 		install: true,
 		install_dir: join_paths(game_dir,'bin'),

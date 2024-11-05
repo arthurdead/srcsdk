@@ -30,8 +30,9 @@ IMPLEMENT_SERVERCLASS_ST( CStatueProp, DT_StatueProp )
 	SendPropVector( SENDINFO( m_vShatterForce ) ),
 END_SEND_TABLE()
 
+#ifndef SWDS
 extern ConVar *vcollide_wireframe;
-
+#endif
 
 CStatueProp::CStatueProp( void )
 {
@@ -76,40 +77,44 @@ void CStatueProp::VPhysicsUpdate( IPhysicsObject *pPhysics )
 {
 	BaseClass::VPhysicsUpdate( pPhysics );
 
-	if ( vcollide_wireframe->GetBool() )
-	{
-		const CPhysCollide *pCollide = pPhysics->GetCollide();
-
-		Vector vecOrigin;
-		QAngle angAngles;
-
-		pPhysics->GetPosition( &vecOrigin, &angAngles );
-
-		if ( pCollide )
+#ifndef SWDS
+	if( !engine->IsDedicatedServer() ) {
+		if ( vcollide_wireframe->GetBool() )
 		{
-			Vector *outVerts;
-			int vertCount = physcollision->CreateDebugMesh( pCollide, &outVerts );
-			int triCount = vertCount / 3;
-			int vert = 0;
+			const CPhysCollide *pCollide = pPhysics->GetCollide();
 
-			VMatrix tmp = SetupMatrixOrgAngles( vecOrigin, angAngles );
-			int i;
-			for ( i = 0; i < vertCount; i++ )
+			Vector vecOrigin;
+			QAngle angAngles;
+
+			pPhysics->GetPosition( &vecOrigin, &angAngles );
+
+			if ( pCollide )
 			{
-				outVerts[i] = tmp.VMul4x3( outVerts[i] );
-			}
+				Vector *outVerts;
+				int vertCount = physcollision->CreateDebugMesh( pCollide, &outVerts );
+				int triCount = vertCount / 3;
+				int vert = 0;
 
-			for ( i = 0; i < triCount; i++ )
-			{
-				NDebugOverlay::Line( outVerts[ vert + 0 ], outVerts[ vert + 1 ], 0, 255, 255, false, 0.0f );
-				NDebugOverlay::Line( outVerts[ vert + 1 ], outVerts[ vert + 2 ], 0, 255, 255, false, 0.0f );
-				NDebugOverlay::Line( outVerts[ vert + 2 ], outVerts[ vert + 0 ], 0, 255, 255, false, 0.0f );
-				vert += 3;
-			}
+				VMatrix tmp = SetupMatrixOrgAngles( vecOrigin, angAngles );
+				int i;
+				for ( i = 0; i < vertCount; i++ )
+				{
+					outVerts[i] = tmp.VMul4x3( outVerts[i] );
+				}
 
-			physcollision->DestroyDebugMesh( vertCount, outVerts );
+				for ( i = 0; i < triCount; i++ )
+				{
+					NDebugOverlay::Line( outVerts[ vert + 0 ], outVerts[ vert + 1 ], 0, 255, 255, false, 0.0f );
+					NDebugOverlay::Line( outVerts[ vert + 1 ], outVerts[ vert + 2 ], 0, 255, 255, false, 0.0f );
+					NDebugOverlay::Line( outVerts[ vert + 2 ], outVerts[ vert + 0 ], 0, 255, 255, false, 0.0f );
+					vert += 3;
+				}
+
+				physcollision->DestroyDebugMesh( vertCount, outVerts );
+			}
 		}
 	}
+#endif
 }
 
 void CStatueProp::ComputeWorldSpaceSurroundingBox( Vector *pMins, Vector *pMaxs )

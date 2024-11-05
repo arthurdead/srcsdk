@@ -876,7 +876,7 @@ void CSharedBasePlayer::SelectLastItem(void)
 	if ( GetActiveWeapon() && !GetActiveWeapon()->CanHolster() )
 		return;
 
-	SelectItem( m_hLastWeapon.Get()->GetClassname(), m_hLastWeapon.Get()->GetSubType() );
+	SelectItem( m_hLastWeapon.Get() );
 }
 
 
@@ -1021,16 +1021,8 @@ bool CSharedBasePlayer::Weapon_ShouldSelectItem( CSharedBaseCombatWeapon *pWeapo
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CSharedBasePlayer::SelectItem( const char *pstr, int iSubType )
+void CSharedBasePlayer::SelectItem( CSharedBaseCombatWeapon *pItem )
 {
-	if (!pstr)
-		return;
-
-	CSharedBaseCombatWeapon *pItem = Weapon_OwnsThisType( pstr, iSubType );
-
-	if (!pItem)
-		return;
-
 	if( GetObserverMode() != OBS_MODE_NONE )
 		return;// Observers can't select things.
 
@@ -1048,6 +1040,19 @@ void CSharedBasePlayer::SelectItem( const char *pstr, int iSubType )
 	}
 
 	Weapon_Switch( pItem );
+}
+
+void CSharedBasePlayer::SelectItem( const char *pstr, int iSubType )
+{
+	if (!pstr)
+		return;
+
+	CSharedBaseCombatWeapon *pItem = Weapon_OwnsThisType( pstr, iSubType );
+
+	if (!pItem)
+		return;
+
+	SelectItem( pItem );
 }
 
 //-----------------------------------------------------------------------------

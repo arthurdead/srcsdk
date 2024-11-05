@@ -29,9 +29,7 @@ if build_libs
 			join_paths(src_root_dir,'matchmaking')
 		),
 		dependencies: [
-			hackmgr.get_variable('hackmgr_dep'),
 			tier1.get_variable('tier1_dep'),
-			tier0.get_variable('tier0_dep'),
 			source_base.get_variable('source_shared_lib_dep')
 		],
 	)
@@ -42,7 +40,10 @@ if build_libs
 			'-DMEMOVERRIDE_MODULE=matchmaking',
 		],
 		dependencies: [
-			matchmaking_base_lib
+			matchmaking_base_lib,
+			hackmgr.get_variable('hackmgr_dep'),
+			tier0.get_variable('tier0_dep'),
+			source_base.get_variable('source_cl_dep')
 		],
 		install: true,
 		install_dir: join_paths(game_dir,'bin'),
@@ -54,11 +55,12 @@ if build_libs
 			'-DDLLNAME=matchmaking_ds',
 			'-DMEMOVERRIDE_MODULE=matchmaking_ds',
 			'-DMATCHMAKING_DS_DLL',
-			'-DSWDS',
-			'-DDEDICATED',
 		],
 		dependencies: [
-			matchmaking_base_lib
+			matchmaking_base_lib,
+			hackmgr.get_variable('hackmgr_ds_dep'),
+			tier0.get_variable('tier0_ds_dep'),
+			source_base.get_variable('source_ds_dep'),
 		],
 		install: true,
 		install_dir: join_paths(game_dir,'bin'),

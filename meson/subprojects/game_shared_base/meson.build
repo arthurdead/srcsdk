@@ -179,18 +179,15 @@ game_shared_base_dep = declare_dependency(
 	dependencies: [
 		source_base.get_variable('source_slop_dep'),
 		source_base.get_variable('source_shared_lib_dep'),
-		tier0.get_variable('tier0_dep'),
 		tier1.get_variable('tier1_dep'),
 		mathlib.get_variable('mathlib_dep'),
 		raytrace.get_variable('raytrace_dep'),
-		vstdlib.get_variable('vstdlib_dep'),
 		choreoobjects.get_variable('choreoobjects_dep'),
 		responserules.get_variable('responserules_runtime_dep'),
 		dmxloader.get_variable('dmxloader_dep'),
 		particles.get_variable('particles_dep'),
 		tier2.get_variable('tier2_dep'),
 		tier3.get_variable('tier3_dep'),
-		steamworks.get_variable('steamworks_dep'),
 		recastnavigation_game.get_variable('recastnavigation_game_dep'),
 	]
 )

@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "heist_player_shared.h"
+#include "heist_gamerules.h"
 
 #ifdef CLIENT_DLL
 #include "c_heist_player.h"
@@ -11,47 +12,48 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-void CSharedHeistPlayer::SelectItem( const char *pstr, int iSubType )
+bool CSharedHeistPlayer::Weapon_ShouldSelectItem( CSharedBaseCombatWeapon *pWeapon )
 {
-	if (!pstr)
+	return BaseClass::Weapon_ShouldSelectItem( pWeapon );
+}
+
+void CSharedHeistPlayer::SelectItem( CSharedBaseCombatWeapon *pWeapon )
+{
+	// Observers can't select things.
+	if( GetObserverMode() != OBS_MODE_NONE ) {
 		return;
+	}
 
-	CSharedBaseCombatWeapon *pItem = Weapon_OwnsThisType( pstr, iSubType );
-
-	if (!pItem)
-		return;
-
-	if( GetObserverMode() != OBS_MODE_NONE )
-		return;// Observers can't select things.
-
-	if ( !Weapon_ShouldSelectItem( pItem ) )
+	if ( !Weapon_ShouldSelectItem( pWeapon ) )
 		return;
 
 	// FIX, this needs to queue them up and delay
 	// Make sure the current weapon can be holstered
 	if ( GetActiveWeapon() )
 	{
-		if ( !GetActiveWeapon()->CanHolster() && !pItem->ForceWeaponSwitch() )
+		if ( !GetActiveWeapon()->CanHolster() && !pWeapon->ForceWeaponSwitch() )
 			return;
 
 		ResetAutoaim( );
 	}
 
 	if( IsSuitEquipped() ) {
-		Weapon_Switch( pItem, VIEWMODEL_WEAPON, true );
+		Weapon_Switch( pWeapon, VIEWMODEL_WEAPON, true );
 	} else {
-		Weapon_Switch( pItem, VIEWMODEL_WEAPON, false );
-		EquipMask();
+		Weapon_Switch( pWeapon, VIEWMODEL_WEAPON, false );
+		if(HeistGameRules()->GetMissionState() != MISSION_STATE_NONE) {
+			EquipMask();
+		}
 	}
 }
 
 void CSharedHeistPlayer::EquipMask()
 {
-	CSharedBaseViewModel *pViewModel = GetViewModel(VIEWMODEL_HANDS, false);
-	if(!pViewModel)
+	if(m_bMaskingUp)
 		return;
 
-	if(!pViewModel->IsEffectActive(EF_NODRAW))
+	CSharedBaseViewModel *pViewModel = GetViewModel(VIEWMODEL_HANDS, false);
+	if(!pViewModel)
 		return;
 
 	pViewModel->RemoveEffects(EF_NODRAW);
@@ -72,7 +74,7 @@ void CSharedHeistPlayer::Weapon_FrameUpdate()
 		if(pViewModel) {
 			pViewModel->StudioFrameAdvance();
 
-			bool finished = (pViewModel->IsSequenceFinished() || pViewModel->GetCycle() >= 0.8f);
+			bool finished = pViewModel->IsSequenceFinished();
 
 		#ifdef GAME_DLL
 			if(finished) {

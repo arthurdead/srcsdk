@@ -6,6 +6,7 @@ src_root_dir = get_option('src_root_dir')
 funny_src_root_dir = join_paths(src_root_dir,'..','src_funny')
 
 src_engine_dir = get_option('src_engine_dir')
+src_dedicated_engine_dir = get_option('src_dedicated_engine_dir')
 game_dir = get_option('game_dir')
 
 common_dir = join_paths(src_root_dir,'common')
@@ -152,12 +153,27 @@ source_dep = declare_dependency(
 	),
 	link_args: lib_folders + [
 		'-L'+join_paths(game_dir,'bin'),
-		'-L'+join_paths(src_engine_dir,'bin'),
 		'-latomic'
 	],
 	dependencies: [
 		source_debug_dep
 	]
+)
+
+source_cl_dep = declare_dependency(
+	link_args: [
+		'-L'+join_paths(src_engine_dir,'bin'),
+	],
+)
+
+source_ds_dep = declare_dependency(
+	compile_args: [
+		'-DSWDS',
+		'-DDEDICATED',
+	],
+	link_args: [
+		'-L'+join_paths(src_dedicated_engine_dir,'bin'),
+	],
 )
 
 source_slop_dep = declare_dependency(

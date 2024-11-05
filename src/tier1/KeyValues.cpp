@@ -554,7 +554,10 @@ const char *KeyValues::ReadToken( CUtlBuffer &buf, bool &wasQuoted, bool &wasCon
 			return NULL;	// file ends after reading whitespaces
 
 		// stop if it's not a comment; a new token starts here
-		if ( !buf.EatCPPComment() )
+		int cmt = buf.EatCPPComment();
+		if ( cmt == 2 )
+			return NULL;
+		else if ( cmt == 0 )
 			break;
 	}
 
@@ -3091,14 +3094,14 @@ bool KeyValues::Dump( IKeyValuesDumpContext *pDump, int nIndentLevel /* = 0 */ )
 		return false;
 	
 	// Dump values
-	for ( KeyValues *val = this ? GetFirstValue() : NULL; val; val = val->GetNextValue() )
+	for ( KeyValues *val = GetFirstValue(); val; val = val->GetNextValue() )
 	{
 		if ( !pDump->KvWriteValue( val, nIndentLevel + 1 ) )
 			return false;
 	}
 
 	// Dump subkeys
-	for ( KeyValues *sub = this ? GetFirstTrueSubKey() : NULL; sub; sub = sub->GetNextTrueSubKey() )
+	for ( KeyValues *sub = GetFirstTrueSubKey(); sub; sub = sub->GetNextTrueSubKey() )
 	{
 		if ( !sub->Dump( pDump, nIndentLevel + 1 ) )
 			return false;

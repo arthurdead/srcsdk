@@ -403,27 +403,61 @@ void CUtlBuffer::EatWhiteSpace()
 //-----------------------------------------------------------------------------
 // Eats C++ style comments
 //-----------------------------------------------------------------------------
-bool CUtlBuffer::EatCPPComment()
+int CUtlBuffer::EatCPPComment()
 {
 	if ( IsText() && IsValid() )
 	{
 		// If we don't have a a c++ style comment next, we're done
 		const char *pPeek = (const char *)PeekGet( 2 * sizeof(char), 0 );
-		if ( !pPeek || ( pPeek[0] != '/' ) || ( pPeek[1] != '/' ) )
-			return false;
+		if ( !pPeek )
+			return 0;
 
-		// Deal with c++ style comments
-		m_Get += 2;
-
-		// read complete line
-		for ( char c = GetChar(); IsValid(); c = GetChar() )
+		if ( ( pPeek[0] == '/' ) && ( pPeek[1] == '/' ) )
 		{
-			if ( c == '\n' )
-				break;
+			// Deal with c style comments
+			m_Get += 2;
+
+			// read complete line
+			for ( ; ; )
+			{
+				if( !IsValid() )
+					return 1;
+
+				char c = GetChar();
+				if ( c == '\n' || c == '\0' )
+					break;
+			}
+			return 1;
 		}
-		return true;
+
+		if ( ( pPeek[0] == '/' ) && ( pPeek[1] == '*' ) )
+		{
+			// Deal with c++ style comments
+			m_Get += 2;
+
+			// read complete line
+			for ( ; ; )
+			{
+				if( !IsValid() )
+					return 2;
+
+				pPeek = (const char *)PeekGet( 2 * sizeof(char), 0 );
+				if ( !pPeek )
+					return 2;
+
+				if ( ( pPeek[0] == '*' ) && ( pPeek[1] == '/' ) )
+				{
+					m_Get += 2;
+					return 1;
+				}
+
+				m_Get += 1;
+			}
+
+			return 2;
+		}
 	}
-	return false;
+	return 0;
 }
 
 	

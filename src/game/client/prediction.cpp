@@ -958,7 +958,7 @@ void CPrediction::RunCommand( C_BasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 		C_BaseCombatWeapon *weapon = ToBaseCombatWeapon( C_BaseEntity::Instance( ucmd->weaponselect ) );
 		if ( weapon )
 		{
-			player->SelectItem( weapon->GetClassname(), ucmd->weaponsubtype );
+			player->SelectItem( weapon );
 		}
 	}
 

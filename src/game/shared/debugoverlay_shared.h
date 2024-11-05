@@ -8,6 +8,8 @@
 #define DEBUGOVERLAY_SHARED_H
 #pragma once
 
+#if !defined SWDS || 1
+
 #include "engine/ivdebugoverlay.h"
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
@@ -61,5 +63,7 @@ namespace NDebugOverlay
 	void	Cross( const Vector &position, float radius, int r, int g, int b, bool bNoDepthTest, float flDuration );
 	void	PurgeTextOverlays();
 };
+
+#endif
 
 #endif // DEBUGOVERLAY_SHARED_H

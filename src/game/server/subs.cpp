@@ -22,10 +22,10 @@ void CPointEntity::Spawn( void )
 }
 
 
-class CNullEntity : public CServerOnlyEntity
+class CNullEntity : public CServerOnlyPointEntity
 {
 public:
-	DECLARE_CLASS( CNullEntity, CServerOnlyEntity );
+	DECLARE_CLASS( CNullEntity, CServerOnlyPointEntity );
 
 	void Spawn( void );
 };

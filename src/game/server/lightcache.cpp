@@ -7,7 +7,7 @@
 #include "tier1/generichash.h"
 #include "tier1/utlhashtable.h"
 #ifndef SWDS
-#include "game_loopback/igameloopback.h"
+#include "game_loopback/igameclientloopback.h"
 #endif
 #include "con_nprint.h"
 

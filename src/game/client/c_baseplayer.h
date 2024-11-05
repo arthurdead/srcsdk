@@ -311,7 +311,8 @@ public:
 	virtual	int				Weapon_Switch( C_BaseCombatWeapon *pWeapon, int viewmodelindex = VIEWMODEL_WEAPON, bool bDeploy = true );		// Switch to given weapon if has ammo (false if failed)
 	virtual C_BaseCombatWeapon *GetLastWeapon( void ) { return m_hLastWeapon.Get(); }
 	void						ResetAutoaim( void );
-	virtual void 				SelectItem( const char *pstr, int iSubType = 0 );
+	virtual void 				SelectItem( const char *pstr, int iSubType = 0 ) final;
+	virtual void 				SelectItem( C_BaseCombatWeapon *pItem );
 
 	virtual void				UpdateClientData( void );
 

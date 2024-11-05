@@ -26,7 +26,9 @@
 
 //#define DEBUG_MICROPHONE
 
+#ifndef SWDS
 extern ConVar *dsp_speaker;
+#endif
 
 const float MICROPHONE_SETTLE_EPSILON = 0.005;
 
@@ -172,10 +174,22 @@ void CEnvMicrophone::ActivateSpeaker( void )
 		if ( !iDSPPreset )
 		{
 			// Reset it to the default
-			iDSPPreset = atoi( dsp_speaker->GetDefault() );
+		#ifndef SWDS
+			if( !engine->IsDedicatedServer() ) {
+				iDSPPreset = atoi( dsp_speaker->GetDefault() );
+			} else
+		#endif
+			{
+				iDSPPreset = 50;
+			}
 		}
 		DevMsg( 2, "Microphone %s set dsp_speaker to %d.\n", STRING(GetEntityName()), iDSPPreset);
-		dsp_speaker->SetValue( m_iSpeakerDSPPreset );
+
+	#ifndef SWDS
+		if( !engine->IsDedicatedServer() ) {
+			dsp_speaker->SetValue( m_iSpeakerDSPPreset );
+		}
+	#endif
 	}
 
 	if ( m_iszSpeakerName != NULL_STRING )

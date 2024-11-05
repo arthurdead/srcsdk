@@ -942,7 +942,7 @@ int CUtlVector<T, A>::AddToTail( T&& src )
 	Assert( ( &src < Base() ) || ( &src >= ( Base() + Count() ) ) );
 	int elem = m_Size;
 	GrowVector();
-	CopyConstruct( &Element( elem ), std::forward<T>( src ) );
+	MoveConstruct( &Element( elem ), Move( src ) );
 	return elem;
 }
 
@@ -1248,6 +1248,12 @@ void CUtlVector<T, A>::Validate( CValidator &validator, char *pchName )
 template<class T> class CUtlVectorAutoPurge : public CUtlVector< T, CUtlMemory< T, int> >
 {
 public:
+	using CUtlVector< T, CUtlMemory< T, int> >::CUtlVector;
+	using CUtlVector< T, CUtlMemory< T, int> >::operator=;
+
+	CUtlVectorAutoPurge( CUtlVectorAutoPurge&& src );
+	CUtlVectorAutoPurge& operator=( CUtlVectorAutoPurge &&other );
+
 	~CUtlVectorAutoPurge( void )
 	{
 		this->PurgeAndDeleteElements();
@@ -1255,11 +1261,32 @@ public:
 
 };
 
+template< typename T >
+inline CUtlVectorAutoPurge<T>::CUtlVectorAutoPurge( CUtlVectorAutoPurge<T>&& src )
+{
+	this->m_Size = 0;
+	Swap( src );
+}
+
+template< typename T >
+inline CUtlVectorAutoPurge<T>& CUtlVectorAutoPurge<T>::operator=( CUtlVectorAutoPurge<T> &&other )
+{
+	this->m_Size = 0;
+	Swap( other );
+	return *this;
+}
+
 // easy string list class with dynamically allocated strings. For use with V_SplitString, etc.
 // Frees the dynamic strings in destructor.
 class CUtlStringList : public CUtlVectorAutoPurge< char *>
 {
 public:
+	using CUtlVectorAutoPurge< char *>::CUtlVectorAutoPurge;
+	using CUtlVectorAutoPurge< char *>::operator=;
+
+	CUtlStringList( CUtlStringList&& src );
+	CUtlStringList& operator=( CUtlStringList &&other );
+
 	void CopyAndAddToTail( char const *pString )			// clone the string and add to the end
 	{
 		char *pNewStr = new char[1 + strlen( pString )];
@@ -1287,7 +1314,18 @@ public:
 	}
 };
 
+inline CUtlStringList::CUtlStringList( CUtlStringList&& src )
+{
+	m_Size = 0;
+	Swap( src );
+}
 
+inline CUtlStringList& CUtlStringList::operator=( CUtlStringList &&other )
+{
+	m_Size = 0;
+	Swap( other );
+	return *this;
+}
 
 // <Sergiy> placing it here a few days before Cert to minimize disruption to the rest of codebase
 class CSplitString: public CUtlVector<char*, CUtlMemory<char*, int> >

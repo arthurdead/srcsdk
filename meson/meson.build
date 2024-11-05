@@ -49,6 +49,6 @@ else
 		subproject('server_listen')
 	endif
 	if build_dedicated_server
-		#subproject('server_dedicated')
+		subproject('server_dedicated')
 	endif
 endif

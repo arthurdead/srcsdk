@@ -26,7 +26,8 @@ vaudio_redirect_lib = declare_dependency(
 	dependencies: [
 		tier1.get_variable('tier1_dep'),
 		tier0.get_variable('tier0_dep'),
-		source_base.get_variable('source_shared_lib_dep')
+		source_base.get_variable('source_shared_lib_dep'),
+		source_base.get_variable('source_cl_dep')
 	]
 )
 

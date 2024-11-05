@@ -58,7 +58,6 @@ typedef C_BasePlayer CSharedBasePlayer;
 class CAmmoDef;
 
 #ifdef GAME_DLL
-class CTacticalMissionManager;
 class CBaseExpresserPlayer;
 #endif
 
@@ -525,9 +524,6 @@ public:
 
 	// Assume the game doesn't care
 	virtual int GetMaxHumanPlayers() const { return -1; }
-
-	// game-specific factories
-	virtual CTacticalMissionManager *TacticalMissionManagerFactory( void );
 
 	virtual void ProcessVerboseLogOutput( void ){}
 

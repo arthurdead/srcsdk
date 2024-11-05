@@ -17,6 +17,8 @@
 
 #include "tier0/logging.h"
 
+#ifndef SWDS
+
 DECLARE_LOGGING_CHANNEL( LOG_FOUNDRY );
 
 #ifdef GAME_DLL
@@ -36,5 +38,7 @@ namespace NWCEdit
 	void	RememberEntityPosition( CSharedBaseEntity *pEntity );
 	void	UpdateEntityPosition( CSharedBaseEntity *pEntity );
 };
+
+#endif
 
 #endif // WCEDIT_H

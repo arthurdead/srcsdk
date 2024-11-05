@@ -197,10 +197,13 @@ bool CRecastMgr::Load()
 
 	bool navIsInBsp = false;
 	CUtlBuffer fileBuffer( 4096, 1024*1024, CUtlBuffer::READ_ONLY );
-	if ( !g_pFullFileSystem->ReadFile( filename, "GAME", fileBuffer ) )	// this ignores .nav files embedded in the .bsp ...
+	if ( g_pFullFileSystem->ReadFile( filename, "BSP", fileBuffer ) )
 	{
 		navIsInBsp = true;
-		if ( !g_pFullFileSystem->ReadFile( filename, "BSP", fileBuffer ) )	// ... and this looks for one if it's the only one around.
+	}
+	else
+	{
+		if ( !g_pFullFileSystem->ReadFile( filename, "GAME_NOBSP", fileBuffer ) )
 		{
 			InitMeshes();
 			return false;
@@ -234,17 +237,7 @@ bool CRecastMgr::Load()
 	unsigned int bspSize = g_pFullFileSystem->Size( bspFilename );
 	if ( bspSize != header.bspSize && !navIsInBsp )
 	{
-#ifndef CLIENT_DLL
-		if ( engine->IsDedicatedServer() )
-		{
-			// Warning doesn't print to the dedicated server console, so we'll use Msg instead
-			Log_Warning( LOG_RECAST, "The Navigation Mesh was built using a different version of this map.\n" );
-		}
-		else
-#endif // CLIENT_DLL
-		{
-			Log_Warning( LOG_RECAST,"The Navigation Mesh was built using a different version of this map.\n" );
-		}
+		Log_Warning( LOG_RECAST,"The Navigation Mesh was built using a different version of this map.\n" );
 	}
 
 	int numLoaded = 0;

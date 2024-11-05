@@ -2060,12 +2060,12 @@ void CPlayerAnimState::DebugShowAnimState( int iStartLine )
 	angles[YAW] = m_flEyeYaw;
 	Vector vForward, vRight, vUp;
 	AngleVectors( angles, &vForward, &vRight, &vUp );
-	debugoverlay->AddTriangleOverlay( vBasePos+vRight*flBaseSize/2, vBasePos-vRight*flBaseSize/2, vBasePos+vForward*flHeight, 255, 0, 0, 255, false, 0.01 );
+	NDebugOverlay::Triangle( vBasePos+vRight*flBaseSize/2, vBasePos-vRight*flBaseSize/2, vBasePos+vForward*flHeight, 255, 0, 0, 255, false, 0.01 );
 
 	// Draw a blue triangle on the ground for the body yaw.
 	angles[YAW] = m_angRender[YAW];
 	AngleVectors( angles, &vForward, &vRight, &vUp );
-	debugoverlay->AddTriangleOverlay( vBasePos+vRight*flBaseSize/2, vBasePos-vRight*flBaseSize/2, vBasePos+vForward*flHeight, 0, 0, 255, 255, false, 0.01 );	
+	NDebugOverlay::Triangle( vBasePos+vRight*flBaseSize/2, vBasePos-vRight*flBaseSize/2, vBasePos+vForward*flHeight, 0, 0, 255, 255, false, 0.01 );	
 }
 
 // Debug!

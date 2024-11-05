@@ -20,7 +20,8 @@ public:
 
 	void Weapon_FrameUpdate() override;
 
-	void SelectItem( const char *pstr, int iSubType ) override;
+	void SelectItem( C_BaseCombatWeapon *pWeapon ) override;
+	bool Weapon_ShouldSelectItem( C_BaseCombatWeapon *pWeapon ) override;
 
 	void EquipMask();
 

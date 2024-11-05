@@ -125,6 +125,7 @@ if build_client
 			vstdlib.get_variable('vstdlib_dep'),
 			hackmgr.get_variable('hackmgr_dep'),
 			source_base.get_variable('source_shared_lib_dep'),
+			source_base.get_variable('source_cl_dep'),
 			vpx,
 			opus,
 			vorbis,

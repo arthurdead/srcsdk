@@ -14,6 +14,7 @@
 #include "animation.h"
 #include "activitylist.h"
 #include "collisionproperty.h"
+#include "debugoverlay_shared.h"
 
 #if defined( CLIENT_DLL )
 #include "c_pixel_visibility.h"
@@ -825,7 +826,7 @@ float CParticleSystemQuery::GetPixelVisibility( int *pQueryHandle, const Vector 
 
 void CParticleSystemQuery::DebugDrawLine( const Vector &origin, const Vector &target, int r, int g, int b, bool noDepthTest, float duration )
 {
-	debugoverlay->AddLineOverlay( origin, target, r, g, b, noDepthTest, duration );
+	NDebugOverlay::Line( origin, target, r, g, b, noDepthTest, duration );
 }
 
 

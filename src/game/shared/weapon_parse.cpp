@@ -209,9 +209,9 @@ void PrecacheMapFileWeaponInfoDatabase( IFileSystem *filesystem, const char *fil
 {
 	KeyValues *manifest = new KeyValues( "weaponscripts" );
 	manifest->UsesEscapeSequences( true );
-	if ( !manifest->LoadFromFile( filesystem, filename, "GAME" ) )
+	if ( !manifest->LoadFromFile( filesystem, filename, "BSP" ) )
 	{
-		if( !manifest->LoadFromFile( filesystem, filename, "BSP" ) )
+		if( !manifest->LoadFromFile( filesystem, filename, "GAME_NOBSP" ) )
 		{
 			Log_Warning( LOG_WEAPONPARSE, "Failed to read weapon manifest file '%s'\n", filename );
 			manifest->deleteThis();
@@ -346,11 +346,11 @@ bool ReadMapWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWe
 	Q_snprintf( sz, sizeof( sz ), "maps/%s_%s", mapname, szWeaponName );
 #endif
 
-	KeyValues *pKV = ReadKVFile( filesystem, sz, "GAME" );
+	KeyValues *pKV = ReadKVFile( filesystem, sz, "BSP" );
 
 	if ( !pKV )
 	{
-		pKV = ReadKVFile( filesystem, sz, "BSP" );
+		pKV = ReadKVFile( filesystem, sz, "GAME_NOBSP" );
 	}
 
 	if ( !pKV )

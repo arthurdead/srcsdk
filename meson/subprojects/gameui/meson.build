@@ -66,6 +66,7 @@ if build_client
 			vstdlib.get_variable('vstdlib_dep'),
 			steamworks.get_variable('steamworks_dep'),
 			source_base.get_variable('source_shared_lib_dep'),
+			source_base.get_variable('source_cl_dep'),
 			hackmgr.get_variable('hackmgr_dep'),
 			vgui_controls.get_variable('vgui_controls_dep'),
 			matsys_controls.get_variable('matsys_controls_dep'),

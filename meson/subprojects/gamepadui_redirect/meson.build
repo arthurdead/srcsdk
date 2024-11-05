@@ -37,7 +37,8 @@ if build_client
 			tier0.get_variable('tier0_dep'),
 			tier2.get_variable('tier2_dep'),
 			tier3.get_variable('tier3_dep'),
-			source_base.get_variable('source_shared_lib_dep')
+			source_base.get_variable('source_shared_lib_dep'),
+			source_base.get_variable('source_cl_dep'),
 		],
 		install: true,
 		install_dir: join_paths(game_dir,'bin'),

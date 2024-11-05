@@ -37,6 +37,20 @@ public:
 		return (UtlSymId_t)index;
 	}
 
+	UtlSymId_t Insert( const char *pString, const T &value )
+	{
+		UtlSymId_t sym = Insert( pString );
+		m_Vector[ (int)sym ] = value;
+		return sym;
+	}
+
+	UtlSymId_t Insert( const char *pString, T &&value )
+	{
+		UtlSymId_t sym = Insert( pString );
+		m_Vector[ (int)sym ] = Move(value);
+		return sym;
+	}
+
 	// Get data by the string's symbol table ID - only used to retrieve a pre-existing symbol, not create a new one!
 	T& operator[]( UtlSymId_t n )
 	{
@@ -52,12 +66,14 @@ public:
 
 	bool Defined( const char *pString ) const
 	{
-		return m_SymbolTable.Find( pString ).IsValid();
+		CUtlSymbol sym = m_SymbolTable.Find( pString );
+		return sym.IsValid();
 	}
 
 	UtlSymId_t Find( const char *pString ) const
 	{
-		return m_SymbolTable.Find( pString );
+		CUtlSymbol sym = m_SymbolTable.Find( pString );
+		return sym;
 	}
 
 	static UtlSymId_t InvalidIndex()
@@ -70,7 +86,7 @@ public:
 		return m_SymbolTable.GetNumStrings();
 	}
 
-	const char *String( int n )	const
+	const char *String( UtlSymId_t n ) const
 	{
 		return m_SymbolTable.String( n );
 	}
@@ -93,8 +109,6 @@ public:
 		m_Vector.PurgeAndDeleteElements();
 		m_SymbolTable.RemoveAll();
 	}
-
-
 
 private:
 	CUtlVector<T> m_Vector;

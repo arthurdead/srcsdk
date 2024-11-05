@@ -88,12 +88,15 @@ public:
 	class AutoDelete
 	{
 	public:
-		explicit inline AutoDelete( KeyValues *pKeyValues ) : m_pKeyValues( pKeyValues ) {}
-		explicit inline AutoDelete( const char *pchKVName ) : m_pKeyValues( new KeyValues( pchKVName ) ) {}
+		inline AutoDelete( KeyValues *pKeyValues ) : m_pKeyValues( pKeyValues ) {}
+		inline AutoDelete( const char *pchKVName ) : m_pKeyValues( new KeyValues( pchKVName ) ) {}
 		inline ~AutoDelete( void ) { if( m_pKeyValues ) m_pKeyValues->deleteThis(); }
+		void deleteThis() { if( m_pKeyValues ) m_pKeyValues->deleteThis(); m_pKeyValues = NULL; }
 		inline void Assign( KeyValues *pKeyValues ) { m_pKeyValues = pKeyValues; }
+		inline AutoDelete &operator=( KeyValues *pKeyValues ) { m_pKeyValues = pKeyValues; return *this; }
 		KeyValues *operator->()	{ return m_pKeyValues; }
 		operator KeyValues *()	{ return m_pKeyValues; }
+		inline KeyValues * Get() const { return m_pKeyValues; }
 	private:
 		AutoDelete( AutoDelete const &x ); // forbid
 		AutoDelete & operator= ( AutoDelete const &x ); // forbid
@@ -107,13 +110,7 @@ public:
 	// You can also pass temporary KeyValues object as an argument to a function by wrapping it into KeyValues::AutoDeleteInline
 	// instance:   call_my_function( KeyValues::AutoDeleteInline( new KeyValues( "test" ) ) )
 	//
-	class AutoDeleteInline : public AutoDelete
-	{
-	public:
-		explicit inline AutoDeleteInline( KeyValues *pKeyValues ) : AutoDelete( pKeyValues ) {}
-		inline operator KeyValues *() const { return m_pKeyValues; }
-		inline KeyValues * Get() const { return m_pKeyValues; }
-	};
+	typedef AutoDelete AutoDeleteInline;
 
 	// Quick setup constructors
 	KeyValues( const char *setName, const char *firstKey, const char *firstValue );

@@ -1,5 +1,7 @@
 #include "hackmgr/hackmgr.h"
 #include "createinterface.h"
+#include "eiface.h"
+#include "dlloverride_internal.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -52,7 +54,16 @@ CreateInterfaceFn GetFilesystemInterfaceFactory()
 	} else
 #endif
 	{
-		return do_load(filesystem_createinterface, filesystem_DLL, "dedicated_srv" DLL_EXT_STRING);
+		if( !filesystem_createinterface ) {
+			CAppSystemGroup *ParentAppSystemGroup = GetLauncherAppSystem();
+			if( !ParentAppSystemGroup )
+				return NULL;
+
+			filesystem_DLL = NULL;
+			filesystem_createinterface = Launcher_AppSystemCreateInterface;
+		}
+
+		return filesystem_createinterface;
 	}
 }
 
@@ -98,7 +109,6 @@ CreateInterfaceFn GetVstdlibInterfaceFactory()
 #ifndef SWDS
 bool IsDedicatedServer()
 {
-	//TODO!!!!
 	return false;
 }
 #endif

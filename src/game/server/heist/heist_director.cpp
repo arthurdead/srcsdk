@@ -8,6 +8,10 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_MISSION, "Missions" );
+
+ConVar sv_heist_missionfile("sv_heist_missionfile", "default");
+
 static CMissionDirector s_Director;
 CMissionDirector *MissionDirector()
 { return &s_Director; }
@@ -18,7 +22,7 @@ CMissionDirector::CMissionDirector()
 
 void CMissionDirector::MakeMissionLoud()
 {
-	if(HeistGameRules()->m_nMissionState == MISSION_STATE_LOUD)
+	if(IsMissionLoud())
 		return;
 
 	HeistGameRules()->m_nMissionState = MISSION_STATE_LOUD;
@@ -63,14 +67,11 @@ void CMissionDirector::MakeMissionLoud()
 			ppNpcs[i]->GetEnemies()->UpdateMemory(pPlayer, pPlayer->GetAbsOrigin(), 0.0f, true);
 		}
 	}
-
-	m_AssaultStatus = ASSAULT_WAITING;
-	m_AssaultTimer.Start( 5.0f );
 }
 
 int CMissionDirector::GetMissionState() const
 {
-	return HeistGameRules()->m_nMissionState;
+	return HeistGameRules()->GetMissionState();
 }
 
 void CMissionDirector::mission_casing(const CCommand &args)
@@ -79,7 +80,7 @@ void CMissionDirector::mission_casing(const CCommand &args)
 		return;
 	}
 
-	if(HeistGameRules()->m_nMissionState == MISSION_STATE_CASING)
+	if(GetMissionState() == MISSION_STATE_CASING)
 		return;
 
 	CAI_BaseNPC **ppNpcs = g_AI_Manager.AccessAIs();
@@ -126,86 +127,203 @@ void CMissionDirector::PlayerSpawned(CHeistPlayer *pPlayer)
 
 void CMissionDirector::LevelInitPostEntity()
 {
-	//TODO!!!! move this somewhere else when waiting for players is supported
-	HeistGameRules()->m_nMissionState = MISSION_STATE_NONE;;
+	//TODO!!!! remove this when lobby/waiting for players is supported
+	HeistGameRules()->m_nMissionState = MISSION_STATE_CASING;
 
-	m_AssaultTimer.Reset();
-	m_SpawnTimer.Reset();
+	LoadMissionFile();
 
-	m_AssaultStatus = ASSAULT_INVALID;
-	m_AssaultSpawned = 0;
+	for(int i = 0; i < m_Locations.GetNumStrings(); ++i) {
+		MissionLocation &loc = m_Locations[i];
 
-	m_AssaultID = 0;
+		CBaseEntity *pEntity = g_pEntityList->FindEntityByNameFast( NULL, loc.targetname );
+		if( pEntity ) {
+			loc.origin = pEntity->GetAbsOrigin();
+			loc.angles = pEntity->GetAbsAngles();
+		} else {
+			Log_Warning(LOG_MISSION, "entity '%s' not found\n", STRING(loc.targetname));
+		}
+	}
 }
 
 void CMissionDirector::FrameUpdatePostEntityThink()
 {
-	con_nprint_s nxPrn = { 0 };
-	nxPrn.time_to_live = -1;
-	nxPrn.color[0] = 0.9f, nxPrn.color[1] = 1.0f, nxPrn.color[2] = 0.9f;
-	nxPrn.fixed_width_font = true;
-
-	nxPrn.index = 20;
-
-	switch(m_AssaultStatus) {
-	case ASSAULT_WAITING:
-		engine->Con_NXPrintf( &nxPrn, "Assault in %.2f", m_AssaultTimer.GetRemainingTime() );
-		++nxPrn.index;
-		break;
-	case ASSAULT_WAITING_ALL_TO_SPAWN:
-		engine->Con_NXPrintf( &nxPrn, "Assault in progress" );
-		++nxPrn.index;
-		break;
-	case ASSAULT_WAITING_ALL_TO_DIE:
-		engine->Con_NXPrintf( &nxPrn, "Assault in progress" );
-		++nxPrn.index;
-		break;
-	}
-
-	if(HeistGameRules()->m_nMissionState != MISSION_STATE_LOUD)
+	if(!IsMissionLoud())
 		return;
 
-	if(m_AssaultStatus == ASSAULT_WAITING) {
-		if(m_AssaultTimer.HasStarted() && m_AssaultTimer.IsElapsed()) {
-			m_AssaultStatus = ASSAULT_WAITING_ALL_TO_SPAWN;
-		}
-	} else if(m_AssaultStatus == ASSAULT_WAITING_ALL_TO_SPAWN) {
-		if(m_AssaultSpawned < 10) {
-			if(m_SpawnTimer.IsElapsed()) {
-				CAI_BaseNPC *pNPC = (CAI_BaseNPC *)CreateEntityByName( "npc_cop" );
+	
+}
 
-				CBaseEntity *pSpawnSpot = GameRules()->GetPlayerSpawnSpot( pNPC );
-				Assert( pSpawnSpot );
-				if ( pSpawnSpot != NULL )
-				{
-					pNPC->SetLocalOrigin( pSpawnSpot->GetAbsOrigin() + Vector(0,0,1) );
-					pNPC->SetAbsVelocity( vec3_origin );
-					pNPC->SetLocalAngles( pSpawnSpot->GetLocalAngles() );
-				}
+bool CMissionDirector::Init()
+{
+	RegisterSpawnerFactory( "BasicSpawner", DefaultSpawnerAllocator<CBasicMissionSpawner> );
 
-				DispatchSpawn( pNPC );
+	return true;
+}
 
-				for(int j = 1; j <= gpGlobals->maxClients; ++j) {
-					CHeistPlayer *pPlayer = (CHeistPlayer *)UTIL_PlayerByIndex(j);
-					if(!pPlayer || !pPlayer->IsAlive() || pPlayer->GetTeamNumber() != TEAM_HEISTERS) {
-						continue;
-					}
+void CMissionDirector::RegisterSpawnerFactory( const char *name, AllocSpawner_t func )
+{
+	m_SpawnerAllocators[name] = func;
+}
 
-					pNPC->GetEnemies()->UpdateMemory(pPlayer, pPlayer->GetAbsOrigin(), 0.0f, true);
-				}
+bool CMissionDirector::LoadMissionFile()
+{
+	char missionfile[MAX_PATH];
 
-				m_SpawnTimer.Start( 1.0f );
+	KeyValues::AutoDelete misison_kv = new KeyValues("Mission");
 
-				++m_AssaultSpawned;
-			}
-		} else {
-			m_AssaultStatus = ASSAULT_WAITING_ALL_TO_DIE;
-			m_AssaultSpawned = 0;
-		}
-	} else if(m_AssaultStatus == ASSAULT_WAITING_ALL_TO_DIE) {
-		if(g_AI_Manager.NumAIs() == 0) {
-			m_AssaultStatus = ASSAULT_WAITING;
-			m_AssaultTimer.Start( 5.0f );
+	V_snprintf(missionfile, sizeof(missionfile), "maps/%s_mission.txt", STRING(gpGlobals->mapname));
+	if(!misison_kv->LoadFromFile(g_pFullFileSystem, missionfile, "BSP")) {
+		V_snprintf(missionfile, sizeof(missionfile), "scripts/missions/%s.txt", sv_heist_missionfile.GetString());
+		if(!misison_kv->LoadFromFile(g_pFullFileSystem, missionfile, "GAME_NOBSP")) {
+			Log_Error(LOG_MISSION,"unable to load mission file\n");
+			return false;
 		}
 	}
+
+	struct ParseSpawnerLater_t
+	{
+		CUtlString name;
+		IMissionSpawner *spawner;
+		KeyValues *params;
+	};
+
+	CUtlVector< ParseSpawnerLater_t > spawners;
+
+	struct ParseSetLater_t
+	{
+		CUtlString name;
+		CUtlStringList spawners;
+	};
+
+	CUtlVector< ParseSetLater_t > spawner_sets;
+
+	struct ParseAssaultLater_t
+	{
+		float time;
+		CUtlString set;
+	};
+
+	CUtlVector< ParseAssaultLater_t > assaults;
+
+	FOR_EACH_SUBKEY(misison_kv, mission_section) {
+		const char *section_name = mission_section->GetName();
+		if(V_stricmp(section_name, "Objectives") == 0) {
+
+		} else if(V_stricmp(section_name, "Locations") == 0) {
+			FOR_EACH_SUBKEY(mission_section, loc_kv) {
+				MissionLocation loc;
+
+				const char *loc_name = loc_kv->GetName();
+				FOR_EACH_VALUE(loc_kv, loc_section) {
+					const char *key_name = loc_section->GetName();
+					if(V_stricmp(key_name, "Entity") == 0) {
+						loc.targetname = AllocPooledString( loc_section->GetString() );
+					} else {
+						Log_Warning(LOG_MISSION, "'%s': unrecognized key '%s' in location '%s'\n", missionfile, key_name, loc_name);
+					}
+				}
+
+				m_Locations.Insert( loc_name, Move(loc) );
+			}
+		} else if(V_stricmp(section_name, "Spawners") == 0) {
+			FOR_EACH_SUBKEY(mission_section, spawner_kv) {
+				const char *spawner_name = spawner_kv->GetName();
+				KeyValues *spawner_section = spawner_kv->GetFirstSubKey();
+				if(spawner_section) {
+					const char *key_name = spawner_section->GetName();
+					UtlSymId_t idx = m_SpawnerAllocators.Find( key_name );
+					if(idx != m_SpawnerAllocators.InvalidIndex()) {
+						ParseSpawnerLater_t late;
+						late.name = spawner_name;
+						late.spawner = m_SpawnerAllocators[idx]();
+						late.params = spawner_section;
+						spawners.AddToTail(Move(late));
+					} else {
+						Log_Warning(LOG_MISSION, "'%s': unrecognized spawner class '%s'\n", missionfile, key_name);
+					}
+
+					if(spawner_section->GetNextKey()) {
+						Log_Warning(LOG_MISSION, "'%s': '%s' multiple spawner class\n", missionfile, spawner_name);
+					}
+				} else {
+					Log_Warning(LOG_MISSION, "'%s': '%s' missing spawner class\n", missionfile, spawner_name);
+				}
+			}
+		} else if(V_stricmp(section_name, "SpawnerSets") == 0) {
+			FOR_EACH_SUBKEY(mission_section, set_kv) {
+				const char *set_name = set_kv->GetName();
+				ParseSetLater_t later;
+				later.name = set_name;
+				FOR_EACH_VALUE(set_kv, spawner_kv) {
+					const char *spawner = spawner_kv->GetString();
+					later.spawners.CopyAndAddToTail( spawner );
+				}
+				spawner_sets.AddToTail( Move(later) );
+			}
+		} else if(V_stricmp(section_name, "Assaults") == 0) {
+			FOR_EACH_VALUE(mission_section, assault_kv) {
+				ParseAssaultLater_t later;
+				later.time = V_atof( assault_kv->GetName() );
+				later.set = assault_kv->GetString();
+				assaults.AddToTail( Move(later) );
+			}
+		} else {
+			Log_Warning(LOG_MISSION, "'%s': unrecognized section '%s'\n", missionfile, section_name);
+		}
+	}
+
+	for(int i = 0; i < spawners.Count(); ++i) {
+		if(!spawners[i].spawner->Parse( spawners[i].params )) {
+			return false;
+		}
+
+		m_Spawners.Insert( spawners[i].name, spawners[i].spawner );
+	}
+
+	for(int i = 0; i < spawner_sets.Count(); ++i) {
+		UtlSymId_t set_idx = m_SpawnerSets.Insert( spawner_sets[i].name );
+
+		for(int j = 0; j < spawner_sets[i].spawners.Count(); ++j) {
+			UtlSymId_t spawner_idx = m_Spawners.Find( spawner_sets[i].spawners[j] );
+			if(spawner_idx != m_Spawners.InvalidIndex()) {
+				m_SpawnerSets[set_idx].AddToTail( m_Spawners[spawner_idx] );
+			} else {
+				Log_Warning(LOG_MISSION, "'%s': unknown spawner '%s'\n", missionfile, spawner_sets[i].spawners[j] );
+			}
+		}
+	}
+
+	assaults.Sort(
+		[](const ParseAssaultLater_t *rhs, const ParseAssaultLater_t *lhs) -> int {
+			return (rhs->time > lhs->time);
+		}
+	);
+
+	for(int i = 0; i < assaults.Count(); ++i) {
+		UtlSymId_t set_idx = m_SpawnerSets.Find( assaults[i].set );
+		if(set_idx != m_SpawnerSets.InvalidIndex()) {
+			MissionAssault assault;
+			assault.m_StartTime = assaults[i].time;
+			assault.m_SpawnerSet = &m_SpawnerSets[set_idx];
+			m_Assaults.AddToTail( Move(assault) );
+		} else {
+			Log_Warning(LOG_MISSION, "'%s': unknown set '%s'\n", missionfile, assaults[i].set.Get() );
+		}
+	}
+
+	return true;
+}
+
+bool CBasicMissionSpawner::Parse(KeyValues *params)
+{
+	FOR_EACH_TRUE_SUBKEY(params, param) {
+
+	}
+
+	return true;
+}
+
+void CBasicMissionSpawner::Update()
+{
+
 }

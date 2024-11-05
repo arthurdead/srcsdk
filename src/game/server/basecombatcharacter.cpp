@@ -3164,7 +3164,7 @@ Relationship_t *CBaseCombatCharacter::FindEntityRelationship( CBaseEntity *pTarg
 {
 	if ( !pTarget )
 	{
-		static Relationship_t dummy; 
+		static Relationship_t dummy{ NULL, CLASS_NONE, FACTION_NONE, D_NU, 0 }; 
 		return &dummy;
 	}
 
@@ -3254,19 +3254,19 @@ void CBaseCombatCharacter::AddRelationship( const char *pszRelationship, CBaseEn
 		Disposition_t disposition = D_NU;
 		if ( dispositionString )
 		{
-			if (!stricmp(dispositionString,"D_HT"))
+			if (!stricmp(dispositionString,"D_HT") || !stricmp(dispositionString,"D_HATE"))
 			{
 				disposition = D_HT;
 			}
-			else if (!stricmp(dispositionString,"D_FR"))
+			else if (!stricmp(dispositionString,"D_FR") || !stricmp(dispositionString,"D_FEAR"))
 			{
 				disposition = D_FR;
 			}
-			else if (!stricmp(dispositionString,"D_LI"))
+			else if (!stricmp(dispositionString,"D_LI") || !stricmp(dispositionString,"D_LIKE"))
 			{
 				disposition = D_LI;
 			}
-			else if (!stricmp(dispositionString,"D_NU"))
+			else if (!stricmp(dispositionString,"D_NU") || !stricmp(dispositionString,"D_NEUTRAL"))
 			{
 				disposition = D_NU;
 			}

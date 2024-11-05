@@ -2322,12 +2322,6 @@ void CTeamplayRoundBasedRules::SetWinningTeam( int team, int iWinReason, bool bF
 		if ( IsInArenaMode() || IsInTournamentMode() || ShouldSkipAutoScramble() )
 			return;
 
-#ifndef DEBUG
-		// Don't bother on a listen server - usually not desirable
-		if ( !engine->IsDedicatedServer() )
-			return;
-#endif // DEBUG
-
 		// Skip if we have a nextlevel set
 		if ( !FStrEq( nextlevel.GetString(), "" ) )
 			return;

@@ -1,3 +1,5 @@
+#define IAPPSYSTEMGROUP_H
+
 #include "dlloverride_internal.h"
 #include "hackmgr/hackmgr.h"
 #include "hackmgr_internal.h"
@@ -6,8 +8,6 @@
 #ifdef __linux__
 #include <dlfcn.h>
 #endif
-
-#define IAPPSYSTEMGROUP_H
 
 #include "filesystem.h"
 #include "tier0/icommandline.h"
@@ -363,6 +363,34 @@ static app_sys_pair_t reconnect_interface(CAppSystemGroup *ParentAppSystemGroup,
 	return ret;
 }
 
+CAppSystemGroup *GetLauncherAppSystem()
+{
+	if( s_pLauncherAppSystem )
+		return s_pLauncherAppSystem;
+
+	int status = IFACE_OK;
+#ifndef SWDS
+	if(!IsDedicatedServer()) {
+		void *pEngineAPI = GetEngineInterfaceFactory()("VENGINE_LAUNCHER_API_VERSION004", &status);
+		if(!pEngineAPI || status != IFACE_OK)
+			return NULL;
+
+		void *StartupInfo = ((unsigned char *)pEngineAPI + CEngineAPI_m_StartupInfo_offset);
+
+		s_pLauncherAppSystem = *(CAppSystemGroup **)((unsigned char *)StartupInfo + StartupInfo_t_m_pParentAppSystemGroup_offset);
+	} else 
+#endif
+	{
+		void *pDedicatedAPI = GetEngineInterfaceFactory()(VENGINE_HLDS_API_VERSION, &status);
+		if(!pDedicatedAPI || status != IFACE_OK)
+			return NULL;
+
+		s_pLauncherAppSystem = *(CAppSystemGroup **)((unsigned char *)pDedicatedAPI + CDedicatedServerAPI_m_pDedicatedServer_offset);
+	}
+
+	return s_pLauncherAppSystem;
+}
+
 HACKMGR_EXECUTE_ON_LOAD_BEGIN(1)
 
 HackMgr_InitCommandLine();
@@ -418,32 +446,10 @@ if(!IsDedicatedServer()) {
 	++gamebin_len;
 }
 
-if(!GetEngineInterfaceFactory())
+CAppSystemGroup *ParentAppSystemGroup = GetLauncherAppSystem();
+if( !ParentAppSystemGroup )
 	return;
 
-CAppSystemGroup *ParentAppSystemGroup = NULL;
-
-status = IFACE_OK;
-#ifndef SWDS
-if(!IsDedicatedServer()) {
-	void *pEngineAPI = GetEngineInterfaceFactory()("VENGINE_LAUNCHER_API_VERSION004", &status);
-	if(!pEngineAPI || status != IFACE_OK)
-		return;
-
-	void *StartupInfo = ((unsigned char *)pEngineAPI + CEngineAPI_m_StartupInfo_offset);
-
-	ParentAppSystemGroup = *(CAppSystemGroup **)((unsigned char *)StartupInfo + StartupInfo_t_m_pParentAppSystemGroup_offset);
-} else 
-#endif
-{
-	void *pDedicatedAPI = GetEngineInterfaceFactory()(VENGINE_HLDS_API_VERSION, &status);
-	if(!pDedicatedAPI || status != IFACE_OK)
-		return;
-
-	ParentAppSystemGroup = *(CAppSystemGroup **)((unsigned char *)pDedicatedAPI + CDedicatedServerAPI_m_pDedicatedServer_offset);
-}
-
-s_pLauncherAppSystem = ParentAppSystemGroup;
 s_pCurrentAppSystemHack = ParentAppSystemGroup;
 
 struct connect_info_t

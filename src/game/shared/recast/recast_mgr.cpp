@@ -9,7 +9,7 @@
 #include "cbase.h"
 #include "recast/recast_mgr.h"
 #include "recast/recast_mesh.h"
-#include "game_loopback/igameloopback.h"
+#include "game_loopback/igameserverloopback.h"
 #include "filesystem.h"
 #include "collisionproperty.h"
 

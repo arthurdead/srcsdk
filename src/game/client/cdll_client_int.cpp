@@ -118,6 +118,8 @@
 #include "keybindinglistener.h"
 #include "vgui_int.h"
 #include "hackmgr/hackmgr.h"
+#include "game_loopback/igameserverloopback.h"
+#include "game_loopback/igameclientloopback.h"
 #include "game_loopback/igameloopback.h"
 #include "hackmgr/dlloverride.h"
 #include "recast/recast_mgr.h"

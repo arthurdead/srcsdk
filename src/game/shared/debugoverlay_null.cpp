@@ -3,13 +3,11 @@
 // Purpose: 
 //
 //=============================================================================//
-#pragma once
-
 #include "cbase.h"
 #include "engine/ivdebugoverlay.h"
 #include "mathlib/vector.h"
-
 #include "mathlib/mathlib.h"
+#include "debugoverlay_shared.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -23,11 +21,11 @@ namespace NDebugOverlay
 	void	BoxDirection(const Vector &origin, const Vector &mins, const Vector &maxs, const Vector &forward, int r, int g, int b, int a, float flDuration) {}
 	void	BoxAngles(const Vector &origin, const Vector &mins, const Vector &maxs, const QAngle &angles, int r, int g, int b, int a, float flDuration) {}
 	void	SweptBox(const Vector& start, const Vector& end, const Vector& mins, const Vector& maxs, const QAngle & angles, int r, int g, int b, int a, float flDuration) {}
-	void	EntityBounds( const CBaseEntity *pEntity, int r, int g, int b, int a, float flDuration ) {}
+	void	EntityBounds( const CSharedBaseEntity *pEntity, int r, int g, int b, int a, float flDuration ) {}
 	void	Line( const Vector &origin, const Vector &target, int r, int g, int b, bool noDepthTest, float flDuration ) {}
 	void	Triangle( const Vector &p1, const Vector &p2, const Vector &p3, int r, int g, int b, int a, bool noDepthTest, float duration ) {}
-	void	EntityText( int entityID, int text_offset, const char *text, float flDuration, int r = 255, int g = 255, int b = 255, int a = 255) {}
-	void	EntityTextAtPosition( const Vector &origin, int text_offset, const char *text, float flDuration, int r = 255, int g = 255, int b = 255, int a = 255) {}
+	void	EntityText( int entityID, int text_offset, const char *text, float flDuration, int r, int g, int b, int a) {}
+	void	EntityTextAtPosition( const Vector &origin, int text_offset, const char *text, float flDuration, int r, int g, int b, int a) {}
 	void	Grid( const Vector &vPosition ) {}
 	void	Text( const Vector &origin, const char *text, bool bViewCheck, float flDuration ) {}
 	void	ScreenText( float fXpos, float fYpos, const char *text, int r, int g, int b, int a, float flDuration) {}
@@ -35,11 +33,27 @@ namespace NDebugOverlay
 	void	Cross3D(const Vector &position, float size, int r, int g, int b, bool noDepthTest, float flDuration ) {}
 	void	Cross3DOriented( const Vector &position, const QAngle &angles, float size, int r, int g, int b, bool noDepthTest, float flDuration ) {}
 	void	Cross3DOriented( const matrix3x4_t &m, float size, int c, bool noDepthTest, float flDuration ) {}
-	void	DrawOverlayLines(void){}
+	void	DrawOverlayLines(void) {}
 	void	DrawTickMarkedLine(const Vector &startPos, const Vector &endPos, float tickDist, int tickTextDist, int r, int g, int b, bool noDepthTest, float flDuration ) {}
 	void	DrawGroundCrossHairOverlay() {}
 	void	HorzArrow( const Vector &startPos, const Vector &endPos, float width, int r, int g, int b, int a, bool noDepthTest, float flDuration) {}
 	void	YawArrow( const Vector &startPos, float yaw, float length, float width, int r, int g, int b, int a, bool noDepthTest, float flDuration) {}
 	void	VertArrow( const Vector &startPos, const Vector &endPos, float width, int r, int g, int b, int a, bool noDepthTest, float flDuration) {}
+	void	Axis( const Vector &position, const QAngle &angles, float size, bool noDepthTest, float flDuration ) {}
+	void	Sphere( const Vector &center, float radius, int r, int g, int b, bool noDepthTest, float flDuration ) {}
+	void	Circle( const Vector &position, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration ) {}
+	void	Circle( const Vector &position, const QAngle &angles, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration ) {}
+	void	Circle( const Vector &position, const Vector &xAxis, const Vector &yAxis, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration ) {}
+	void	Sphere( const Vector &position, const QAngle &angles, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration ) {}
+	void	Cone( const Vector &position, const Vector &axis, float angleRadians, float length, int r, int g, int b, int a, bool bNoDepthTest, float flDuration ) {}
+	void	Cross( const Vector &position, float radius, int r, int g, int b, bool bNoDepthTest, float flDuration ) {}
+	void	PurgeTextOverlays() {}
 };
 
+void UTIL_AddDebugLine(const Vector &startPos, const Vector &endPos, bool noDepthTest, bool testLOS) 
+{
+}
+
+void DebugDrawLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, int r, int g, int b, bool test, float duration )
+{
+}

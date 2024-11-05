@@ -102,7 +102,9 @@ ConVar *mat_dxlevel=NULL;
 #endif
 ConVar *skill=NULL;
 ConVar *think_trace_limit=NULL;
+#ifndef SWDS
 ConVar *vcollide_wireframe=NULL;
+#endif
 ConVar *host_thread_mode=NULL;
 ConVar *hide_server=NULL;
 ConVar *sv_maxreplay=NULL;
@@ -128,18 +130,15 @@ void InitializeServerCvars( void )
 	host_thread_mode = g_pCVar->FindVar( "host_thread_mode" );
 	hide_server = g_pCVar->FindVar( "hide_server" );
 	sv_maxreplay = g_pCVar->FindVar( "sv_maxreplay" );
+	mat_hdr_manual_tonemap_rate = g_pCVar->FindVar("mat_hdr_manual_tonemap_rate");
+	mat_hdr_tonemapscale = g_pCVar->FindVar("mat_hdr_tonemapscale");
 
 #ifndef SWDS
 	if(!engine->IsDedicatedServer()) {
-		mat_hdr_tonemapscale = g_pCVar->FindVar("mat_hdr_tonemapscale");
-		mat_hdr_manual_tonemap_rate = g_pCVar->FindVar("mat_hdr_manual_tonemap_rate");
 		mat_dxlevel = g_pCVar->FindVar("mat_dxlevel");
 		vcollide_wireframe = g_pCVar->FindVar("vcollide_wireframe");
 	} else
 #endif
 	{
-		mat_hdr_tonemapscale = new ConVar( "mat_hdr_tonemapscale", "1.0", FCVAR_CHEAT|FCVAR_REPLICATED, "The HDR tonemap scale. 1 = Use autoexposure, 0 = eyes fully closed, 16 = eyes wide open." );
-		mat_hdr_manual_tonemap_rate = new ConVar( "mat_hdr_manual_tonemap_rate", "1.0" );
-		vcollide_wireframe = new ConVar( "vcollide_wireframe", "0", FCVAR_CHEAT, "Render physics collision models in wireframe", NULL );
 	}
 }

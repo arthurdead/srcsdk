@@ -3,6 +3,9 @@
 
 #pragma once
 
+class CAppSystemGroup;
+
+extern CAppSystemGroup *GetLauncherAppSystem();
 extern void *Launcher_AppSystemCreateInterface(const char *pName, int *pReturnCode);
 
 #endif

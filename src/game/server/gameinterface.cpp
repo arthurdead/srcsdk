@@ -97,6 +97,8 @@
 #include "globalstate.h"
 #include "hackmgr/hackmgr.h"
 #ifndef SWDS
+#include "game_loopback/igameserverloopback.h"
+#include "game_loopback/igameclientloopback.h"
 #include "game_loopback/igameloopback.h"
 #endif
 #include "recast/recast_mgr.h"
@@ -363,6 +365,7 @@ void DrawMeasuredSections(void)
 }
 #endif
 
+#ifndef SWDS
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
@@ -395,7 +398,7 @@ void DrawAllDebugOverlays( void )
 	UTIL_DrawOverlayLines();
 
 	// PERFORMANCE: only do this in developer mode
-	if ( developer->GetInt() && !engine->IsDedicatedServer() )
+	if ( developer->GetInt() )
 	{
 		// iterate through all objects for debug overlays
 		const CEntInfo *pInfo = gEntList.FirstEntInfo();
@@ -435,6 +438,7 @@ void DrawAllDebugOverlays( void )
 	// A hack to draw point_message entities w/o developer required
 	DrawMessageEntities();
 }
+#endif
 
 CServerGameDLL g_ServerGameDLL;
 IServerGameDLLEx *serverGameDLLEx = &g_ServerGameDLL;
@@ -889,7 +893,9 @@ void Game_SetOneWayTransition( void )
 
 extern void SetupDefaultLightstyle();
 
+#ifndef SWDS
 extern ConVar *room_type;
+#endif
 
 extern CWorld *g_WorldEntity;
 extern CBaseEntity				*g_pLastSpawn;
@@ -971,7 +977,10 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 
 	sv_stepsize.Revert();
 
-	room_type->SetValue( 0 );
+#ifndef SWDS
+	if( !engine->IsDedicatedServer() )
+		room_type->SetValue( 0 );
+#endif
 
 	// Set up game rules
 	Assert( !GameRules() );
@@ -1177,14 +1186,16 @@ void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edictCount, int cl
 //-----------------------------------------------------------------------------
 void CServerGameDLL::GameServerSteamAPIActivated( void )
 {
-#ifndef NO_STEAM
 	steamgameserverapicontext->Clear();
 	steamgameserverapicontext->Init();
-	if ( steamgameserverapicontext->SteamGameServer() && engine->IsDedicatedServer() )
+
+	if ( steamgameserverapicontext->SteamGameServer() )
 	{
-		steamgameserverapicontext->SteamGameServer()->GetGameplayStats();
+	#ifndef SWDS
+		if( engine->IsDedicatedServer() )
+	#endif
+			steamgameserverapicontext->SteamGameServer()->GetGameplayStats();
 	}
-#endif
 
 #ifdef TF_DLL
 	GCClientSystem()->GameServerActivate();
@@ -1198,12 +1209,11 @@ void CServerGameDLL::GameServerSteamAPIActivated( void )
 //-----------------------------------------------------------------------------
 void CServerGameDLL::GameServerSteamAPIShutdown( void )
 {
-#if !defined( NO_STEAM )
 	if ( steamgameserverapicontext )
 	{
 		steamgameserverapicontext->Clear();
 	}
-#endif
+
 #ifdef TF_DLL
 	GCClientSystem()->Shutdown();
 #endif
@@ -1235,7 +1245,10 @@ void CServerGameDLL::GameFrame( bool simulating )
 		gpGlobals->tickcount = m_nPauseTick;
 	}
 
-	if( engine->IsDedicatedServer() || gpGlobals->maxClients > 1 ) {
+#ifndef SWDS
+	if( engine->IsDedicatedServer() || gpGlobals->maxClients > 1 )
+#endif
+	{
 		HackMgr_SetGamePaused( engine->IsPaused() );
 	}
 
@@ -1268,7 +1281,11 @@ void CServerGameDLL::GameFrame( bool simulating )
 	// Delete anything that was marked for deletion
 	//  outside of server frameloop (e.g., in response to concommand)
 	gEntList.CleanupDeleteList();
-	HandleFoundryEntitySpawnRecords();
+
+#ifndef SWDS
+	if( !engine->IsDedicatedServer() )
+		HandleFoundryEntitySpawnRecords();
+#endif
 
 	IGameSystem::FrameUpdatePreEntityThinkAllSystems();
 	GameStartFrame();
@@ -1350,8 +1367,9 @@ void CServerGameDLL::PreClientUpdate( bool simulating )
 	}
 	*/
 
-#ifdef _DEBUG
-	DrawAllDebugOverlays();
+#if defined _DEBUG && !defined SWDS
+	if( !engine->IsDedicatedServer() )
+		DrawAllDebugOverlays();
 #endif
 
 	IGameSystem::PreClientUpdateAllSystems();
@@ -1562,7 +1580,7 @@ void CServerGameDLL::ServerHibernationUpdate( bool bHibernating )
 {
 	m_bIsHibernating = bHibernating;
 
-	if ( engine && engine->IsDedicatedServer() && m_bIsHibernating && GameRules() )
+	if ( engine && m_bIsHibernating && GameRules() )
 	{
 		GameRules()->OnServerHibernating();
 	}
@@ -3047,16 +3065,35 @@ void MessageWriteBits( const void *pIn, int nBits )
 	g_pMsgBuffer->WriteBits( pIn, nBits );
 }
 
+#ifndef SWDS
+static bool IsDedicatedServer()
+{
+	if( engine )
+		return engine->IsDedicatedServer();
+
+	return false;
+}
+#endif
+
 class CServerDLLSharedAppSystems : public IServerDLLSharedAppSystems
 {
 public:
 	CServerDLLSharedAppSystems()
 	{
-		AddAppSystem( "soundemittersystem" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
-		AddAppSystem( "scenefilecache" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
 	#ifndef SWDS
-		//AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
-		if(!engine || !engine->IsDedicatedServer()) {
+		if(!IsDedicatedServer()) {
+			AddAppSystem( "soundemittersystem" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
+			AddAppSystem( "scenefilecache" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
+		} else
+	#endif
+		{
+			AddAppSystem( "soundemittersystem_srv" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
+			AddAppSystem( "scenefilecache_srv" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
+		}
+
+	#ifndef SWDS
+		if(!IsDedicatedServer()) {
+			//AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
 			AddAppSystem( "client" DLL_EXT_STRING, GAMECLIENTLOOPBACK_INTERFACE_VERSION );
 		}
 	#endif

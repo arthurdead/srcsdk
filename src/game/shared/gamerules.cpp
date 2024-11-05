@@ -28,7 +28,6 @@
 #include "voice_gamemgr.h"
 #include "globalstate.h"
 #include "player_resource.h"
-#include "tactical_mission.h"
 #include "gamestats.h"
 #include "hltvdirector.h"
 #include "viewport_panel_names.h"
@@ -1737,11 +1736,6 @@ void CSharedGameRules::ClientSettingsChanged( CBasePlayer *pPlayer )
 	}
 }
 
-CTacticalMissionManager *CSharedGameRules::TacticalMissionManagerFactory( void )
-{
-	return new CTacticalMissionManager;
-}
-
 void CSharedGameRules::SkipNextMapInCycle()
 {
 	char szSkippedMap[MAX_MAP_NAME];
@@ -1924,7 +1918,11 @@ VoiceCommandMenuItem_t *CSharedGameRules::VoiceCommand( CBaseExpresserPlayer *pP
 
 bool CSharedGameRules::IsLoadingBugBaitReport()
 {
-	return ( !engine->IsDedicatedServer()&& CommandLine()->CheckParm( "-bugbait" ) && sv_cheats->GetBool() );
+#ifndef SWDS
+	return ( !engine->IsDedicatedServer() && CommandLine()->CheckParm( "-bugbait" ) && sv_cheats->GetBool() );
+#else
+	return false;
+#endif
 }
 
 void CSharedGameRules::HaveAllPlayersSpeakConceptIfAllowed( int iConcept, int iTeam /* = TEAM_UNASSIGNED */, const char *modifiers /* = NULL */ )

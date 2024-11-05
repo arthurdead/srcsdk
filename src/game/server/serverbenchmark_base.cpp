@@ -190,11 +190,13 @@ public:
 
 	virtual bool IsLocalBenchmarkPlayer( CBasePlayer *pPlayer )
 	{
+	#ifndef SWDS
 		if ( m_BenchmarkState != BENCHMARKSTATE_NOT_RUNNING )
 		{
 			if( !engine->IsDedicatedServer() && pPlayer->entindex() == 1 )
 				return true;
 		}
+	#endif
 		
 		return false;
 	}

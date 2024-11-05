@@ -291,10 +291,12 @@ void Host_Say( edict_t *pEdict, const CCommand &args, bool teamonly )
 		}
 	}
 
+#ifndef SWDS
 	// echo to server console
 	// Adrian: Only do this if we're running a dedicated server since we already print to console on the client.
 	if ( engine->IsDedicatedServer() )
 		 Msg( "%s", text );
+#endif
 
 	Assert( p );
 

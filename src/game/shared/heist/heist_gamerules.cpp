@@ -4,6 +4,7 @@
 
 #ifdef GAME_DLL
 #include "heist_player.h"
+#include "heist_director.h"
 #else
 #include "c_heist_player.h"
 #endif

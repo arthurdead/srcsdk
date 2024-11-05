@@ -362,9 +362,15 @@ bool CEntityMapData::SetValue( const char *keyName, char *NewValue, int nKeyInst
 	return false;
 }
 
+#ifndef SWDS
 // this is a hook for edit mode
 void RememberInitialEntityPositions( int nEntities, HierarchicalSpawn_t *pSpawnList )
 {
+#ifdef GAME_DLL
+	if(engine->IsDedicatedServer())
+		return;
+#endif
+
 	for (int nEntity = 0; nEntity < nEntities; nEntity++)
 	{
 		CSharedBaseEntity *pEntity = pSpawnList[nEntity].m_pEntity;
@@ -375,6 +381,7 @@ void RememberInitialEntityPositions( int nEntities, HierarchicalSpawn_t *pSpawnL
 		}
 	}
 }
+#endif
 
 void FreeContainingEntity( edict_t *ed )
 {
@@ -824,11 +831,17 @@ void MapEntity_ParseAllEntities(const char *pMapData, IMapEntityFilter *pFilter,
 
 	char szTokenBuffer[MAPKEY_MAXLENGTH];
 
+#ifndef SWDS
 	// Allow the tools to spawn different things
+	#ifdef GAME_DLL
+	if ( !engine->IsDedicatedServer() && serverenginetools )
+	#else
 	if ( serverenginetools )
+	#endif
 	{
 		pMapData = serverenginetools->GetEntityData( pMapData );
 	}
+#endif
 
 	//  Loop through all entities in the map data, creating each.
 	for ( ; true; pMapData = MapEntity_SkipToNextEntity(pMapData, szTokenBuffer) )
@@ -878,11 +891,17 @@ void SpawnHierarchicalList( int nEntities, HierarchicalSpawn_t *pSpawnList, bool
 	// it can properly set up anything that relies on hierarchy.
 	SortSpawnListByHierarchy( nEntities, pSpawnList );
 
+#ifndef SWDS
 	// save off entity positions if in edit mode
+	#ifdef GAME_DLL
+	if ( !engine->IsDedicatedServer() && engine->IsInEditMode() )
+	#else
 	if ( engine->IsInEditMode() )
+	#endif
 	{
 		RememberInitialEntityPositions( nEntities, pSpawnList );
 	}
+#endif
 
 	// Set up entity movement hierarchy in reverse hierarchy depth order. This allows each entity
 	// to use its parent's world spawn origin to calculate its local origin.
@@ -921,6 +940,17 @@ void MapEntity_PrecacheEntity( const char *pEntData, int &nStringSize )
 	}
 }
 
+bool ShouldCreateEntity( const char *className )
+{
+	if( V_stricmp(className, "info_null") == 0 )
+		return false;
+
+	if( V_stricmp(className, "func_null") == 0 )
+		return false;
+
+	return true;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Takes a block of character data as the input
 // Input  : pEntity - Receives the newly constructed entity, NULL on failure.
@@ -938,22 +968,26 @@ const char *MapEntity_ParseEntity(CSharedBaseEntity *&pEntity, bool &bCreated, c
 	}
 
 	bCreated = false;
+	pEntity = NULL;
 
-	pEntity = GetSingletonOfClassname( className );
-	if( !pEntity )
+	if( ShouldCreateEntity( className ) )
 	{
-		//
-		// Construct via the LINK_ENTITY_TO_CLASS factory.
-		//
-		if ( !pFilter )
+		pEntity = GetSingletonOfClassname( className );
+		if( !pEntity )
 		{
-			pEntity = CreateEntityByName(className);
-			bCreated = true;
-		}
-		else if ( pFilter->ShouldCreateEntity( className ) )
-		{
-			pEntity = pFilter->CreateNextEntity( className );
-			bCreated = true;
+			//
+			// Construct via the LINK_ENTITY_TO_CLASS factory.
+			//
+			if ( !pFilter )
+			{
+				pEntity = CreateEntityByName(className);
+				bCreated = true;
+			}
+			else if ( pFilter->ShouldCreateEntity( className ) )
+			{
+				pEntity = pFilter->CreateNextEntity( className );
+				bCreated = true;
+			}
 		}
 	}
 

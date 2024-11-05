@@ -215,7 +215,6 @@ server_base_dep = declare_dependency(
 		join_paths(server_src_dir,'spotlightend.cpp'),
 		join_paths(server_src_dir,'subs.cpp'),
 		join_paths(server_src_dir,'sun.cpp'),
-		join_paths(server_src_dir,'tactical_mission.cpp'),
 		join_paths(server_src_dir,'tanktrain.cpp'),
 		join_paths(server_src_dir,'team.cpp'),
 		join_paths(server_src_dir,'tesla.cpp'),

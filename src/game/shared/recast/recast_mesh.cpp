@@ -34,7 +34,7 @@
 #include "DetourNavMeshBuilder.h"
 #include "DetourCommon.h"
 
-#include "game_loopback/igameloopback.h"
+#include "game_loopback/igameserverloopback.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

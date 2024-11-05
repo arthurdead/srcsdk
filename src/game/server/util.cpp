@@ -33,7 +33,6 @@
 #include "engine/ivdebugoverlay.h"
 #include "datacache/imdlcache.h"
 #include "util.h"
-#include "cdll_int.h"
 #include "filesystem.h"
 #include "tier1/fmtstr.h"
 #include "collisionproperty.h"
@@ -3422,6 +3421,7 @@ void CC_KDTreeTest( const CCommand &args )
 
 static ConCommand kdtree_test( "kdtree_test", CC_KDTreeTest, "Tests spatial partition for entities queries.", FCVAR_CHEAT );
 
+#ifndef SWDS
 void CC_VoxelTreeView( void )
 {
 	if(!UTIL_IsCommandIssuedByServerAdmin())
@@ -3560,8 +3560,7 @@ void CC_VoxelTreeSphere( const CCommand &args )
 }
 
 static ConCommand voxeltree_sphere( "voxeltree_sphere", CC_VoxelTreeSphere, "View entities in the voxel-tree inside sphere <Vector(center), float(radius)>.", FCVAR_CHEAT );
-
-
+#endif
 
 #define NUM_COLLISION_TESTS 2500
 void CC_CollisionTest( const CCommand &args )

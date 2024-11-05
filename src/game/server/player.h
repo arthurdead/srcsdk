@@ -559,7 +559,8 @@ public:
 	CBaseEntity				*HasNamedPlayerItem( const char *pszItemName );
 	bool 					HasWeapons( void );// do I have ANY weapons?
 	virtual void			SelectLastItem(void);
-	virtual void 			SelectItem( const char *pstr, int iSubType = 0 );
+	virtual void 			SelectItem( const char *pstr, int iSubType = 0 ) final;
+	virtual void 			SelectItem( CBaseCombatWeapon *pItem );
 	void					ItemPreFrame( void );
 	virtual void			ItemPostFrame( void );
 	virtual CBaseEntity		*GiveNamedItem( const char *szName, int iSubType = 0, bool bDeploy = true );

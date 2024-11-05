@@ -33,6 +33,7 @@ if build_client
 			tier0.get_variable('tier0_dep'),
 			source_base.get_variable('source_shared_lib_dep'),
 			hackmgr.get_variable('hackmgr_dep'),
+			source_base.get_variable('source_cl_dep')
 		],
 		install: true,
 		install_dir: join_paths(game_dir,'bin'),

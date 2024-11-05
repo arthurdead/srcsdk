@@ -17,7 +17,7 @@ bool CSharedBaseHeistWeapon::CanDeploy()
 {
 	CSharedBasePlayer *pOwner = GetPlayerOwner();
 	if(pOwner) {
-		if(!pOwner->IsSuitEquipped()) {
+		if(!pOwner->IsSuitEquipped() || HeistGameRules()->GetMissionState() == MISSION_STATE_NONE) {
 			return false;
 		}
 	}
@@ -29,7 +29,7 @@ bool CSharedBaseHeistWeapon::ShouldBlockPrimaryFire()
 {
 	CSharedBasePlayer *pOwner = GetPlayerOwner();
 	if(pOwner) {
-		if(!pOwner->IsSuitEquipped()) {
+		if(!pOwner->IsSuitEquipped() || HeistGameRules()->GetMissionState() == MISSION_STATE_NONE) {
 			return true;
 		}
 	}
@@ -41,7 +41,7 @@ bool CSharedBaseHeistWeapon::CanReload()
 {
 	CSharedBasePlayer *pOwner = GetPlayerOwner();
 	if(pOwner) {
-		if(!pOwner->IsSuitEquipped()) {
+		if(!pOwner->IsSuitEquipped() || HeistGameRules()->GetMissionState() == MISSION_STATE_NONE) {
 			return false;
 		}
 	}
@@ -53,7 +53,7 @@ bool CSharedBaseHeistWeapon::CanPerformSecondaryAttack() const
 {
 	CSharedBasePlayer *pOwner = GetPlayerOwner();
 	if(pOwner) {
-		if(!pOwner->IsSuitEquipped()) {
+		if(!pOwner->IsSuitEquipped() || HeistGameRules()->GetMissionState() == MISSION_STATE_NONE) {
 			return false;
 		}
 	}

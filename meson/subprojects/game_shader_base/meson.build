@@ -32,6 +32,7 @@ game_shader_base_dep = declare_dependency(
 	),
 	dependencies: [
 		source_base.get_variable('source_shared_lib_dep'),
+		source_base.get_variable('source_cl_dep'),
 		tier0.get_variable('tier0_dep'),
 		tier1.get_variable('tier1_dep'),
 		mathlib.get_variable('mathlib_dep'),

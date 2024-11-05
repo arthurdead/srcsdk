@@ -93,10 +93,31 @@ public:
 	virtual int			IsMapValid( const char *filename ) = 0;
 
 	// Is this a dedicated server?
-	virtual bool		IsDedicatedServer( void ) = 0;
+private:
+	virtual bool		ACTUAL_IsDedicatedServer( void ) = 0;
 
 	// Is in Hammer editing mode?
-	virtual int			IsInEditMode( void ) = 0;
+	virtual int			ACTUAL_IsInEditMode( void ) = 0;
+
+public:
+	bool		IsDedicatedServer( void )
+	{
+	#if defined SWDS || defined DEDICATED
+		return true;
+	#else
+		return ACTUAL_IsDedicatedServer();
+	#endif
+	}
+
+	// Is in Hammer editing mode?
+	int			IsInEditMode( void )
+	{
+	#if defined SWDS || defined DEDICATED
+		return false;
+	#else
+		return ACTUAL_IsInEditMode();
+	#endif
+	}
 
 	// Add to the server/client lookup/precache table, the specified string is given a unique index
 	// NOTE: The indices for PrecacheModel are 1 based
