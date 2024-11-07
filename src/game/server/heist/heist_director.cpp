@@ -67,6 +67,8 @@ void CMissionDirector::MakeMissionLoud()
 			ppNpcs[i]->GetEnemies()->UpdateMemory(pPlayer, pPlayer->GetAbsOrigin(), 0.0f, true);
 		}
 	}
+
+	m_AssaultTimer.Start();
 }
 
 int CMissionDirector::GetMissionState() const
@@ -82,6 +84,11 @@ void CMissionDirector::mission_casing(const CCommand &args)
 
 	if(GetMissionState() == MISSION_STATE_CASING)
 		return;
+
+	m_AssaultTimer.Invalidate();
+	m_nAssaultFSM = ASSAULT_FSM_INVALID;
+	m_iCurrentAssault = -1;
+	m_iCurrentSpawner = -1;
 
 	CAI_BaseNPC **ppNpcs = g_AI_Manager.AccessAIs();
 
@@ -130,6 +137,11 @@ void CMissionDirector::LevelInitPostEntity()
 	//TODO!!!! remove this when lobby/waiting for players is supported
 	HeistGameRules()->m_nMissionState = MISSION_STATE_CASING;
 
+	m_AssaultTimer.Invalidate();
+	m_nAssaultFSM = ASSAULT_FSM_INVALID;
+	m_iCurrentAssault = -1;
+	m_iCurrentSpawner = -1;
+
 	LoadMissionFile();
 
 	for(int i = 0; i < m_Locations.GetNumStrings(); ++i) {
@@ -150,7 +162,66 @@ void CMissionDirector::FrameUpdatePostEntityThink()
 	if(!IsMissionLoud())
 		return;
 
-	
+	if(m_Assaults.IsEmpty())
+		return;
+
+	float time = m_AssaultTimer.GetElapsedTime();
+
+	if(m_nAssaultFSM != ASSAULT_FSM_SWITCH_TO_NEXT) {
+		if(m_iCurrentAssault < (m_Assaults.Count()-1)) {
+			int next = m_iCurrentAssault+1;
+			if(time >= m_Assaults[next].m_StartTime) {
+				m_nAssaultFSM = ASSAULT_FSM_SWITCH_TO_NEXT;
+			}
+		}
+	}
+
+	if(m_nAssaultFSM != ASSAULT_FSM_INVALID) {
+		if(m_iCurrentAssault == -1 && m_nAssaultFSM == ASSAULT_FSM_SWITCH_TO_NEXT) {
+			for(int i = 0; i < m_Assaults.Count(); ++i) {
+				if(m_Assaults[i].m_SpawnerSet && !m_Assaults[i].m_SpawnerSet->IsEmpty()) {
+					m_iCurrentAssault = i;
+					m_iCurrentSpawner = -1;
+					m_nAssaultFSM = ASSAULT_FSM_ACTIVE;
+				}
+			}
+		}
+
+		if(m_iCurrentAssault != -1) {
+			const MissionAssault &assault = m_Assaults[m_iCurrentAssault];
+
+			IMissionSpawner *spawner = NULL;
+
+			if(m_iCurrentSpawner == -1) {
+				m_iCurrentSpawner = 0;
+				spawner = (*assault.m_SpawnerSet)[m_iCurrentSpawner];
+				spawner->Start();
+			} else {
+				spawner = (*assault.m_SpawnerSet)[m_iCurrentSpawner];
+			}
+
+			spawner->Update();
+
+			if(spawner->IsDone()) {
+				if(m_nAssaultFSM == ASSAULT_FSM_SWITCH_TO_NEXT) {
+					for(int i = m_iCurrentAssault; i < m_Assaults.Count(); ++i) {
+						if(m_Assaults[i].m_SpawnerSet && !m_Assaults[i].m_SpawnerSet->IsEmpty()) {
+							m_iCurrentAssault = i;
+							m_iCurrentSpawner = -1;
+							m_nAssaultFSM = ASSAULT_FSM_ACTIVE;
+						}
+					}
+				} else {
+					if(++m_iCurrentSpawner == assault.m_SpawnerSet->Count()) {
+						m_iCurrentSpawner = 0;
+					}
+
+					spawner = (*assault.m_SpawnerSet)[m_iCurrentSpawner];
+					spawner->Start();
+				}
+			}
+		}
+	}
 }
 
 bool CMissionDirector::Init()
@@ -314,13 +385,59 @@ bool CMissionDirector::LoadMissionFile()
 	return true;
 }
 
+const MissionLocation *CMissionDirector::FindLocation( const char *name ) const
+{
+	UtlSymId_t idx = m_Locations.Find(name);
+	if(idx == m_Locations.InvalidIndex()) {
+		return NULL;
+	}
+
+	return &m_Locations[idx];
+}
+
 bool CBasicMissionSpawner::Parse(KeyValues *params)
 {
-	FOR_EACH_TRUE_SUBKEY(params, param) {
+	FOR_EACH_TRUE_SUBKEY(params, param_kv) {
+		const char *param_name = param_kv->GetName();
+		if(V_stricmp(param_name, "Locations") == 0) {
+			FOR_EACH_VALUE(param_kv, locs_kv) {
+				const char *loc_name = locs_kv->GetString();
+				const MissionLocation *loc = MissionDirector()->FindLocation( loc_name );
+				if(loc) {
+					m_Locations.AddToTail( loc );
+				} else {
+					Log_Warning(LOG_MISSION, "BasicSpawner: unknown location '%s'\n", loc_name);
+				}
+			}
+		} else if(V_stricmp(param_name, "Entities") == 0) {
+			FOR_EACH_TRUE_SUBKEY(param_kv, entity_kv) {
+				const char *classname = STRING( AllocPooledString( entity_kv->GetName() ) );
 
+				EntityInfo info;
+				info.keyvalues = entity_kv->MakeCopy();
+
+				m_Entities.Insert( classname, Move(info) );
+			}
+		} else {
+			Log_Warning(LOG_MISSION, "BasicSpawner: unknown param '%s'\n", param_name );
+		}
+	}
+
+	FOR_EACH_VALUE(params, param) {
+		Log_Msg(LOG_MISSION,"value %s %s\n", param->GetName(), param->GetString());
 	}
 
 	return true;
+}
+
+bool CBasicMissionSpawner::IsDone() const
+{
+	return false;
+}
+
+void CBasicMissionSpawner::Start()
+{
+
 }
 
 void CBasicMissionSpawner::Update()

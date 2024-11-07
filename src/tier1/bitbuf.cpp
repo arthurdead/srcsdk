@@ -1185,6 +1185,7 @@ float bf_read::ReadBitCoordMP( EBitCoordType coordType )
 		return ReadBitCoordMP( false, true );
 	case kCW_Integral:
 		return ReadBitCoordMP( true, false );
+	default:
 	case kCW_None:
 		return ReadBitCoordMP( false, false );
 	}

@@ -1253,6 +1253,23 @@ namespace valve_type_traits
 
 	template <typename T>
 	using rem_ref_t = typename rem_ref<T>::type;
+
+	template <typename T>
+	struct rem_const;
+
+	template <typename T>
+	struct rem_const
+	{
+		using type = T;
+	};
+
+	template <typename T>
+	struct rem_const<const T>
+	{
+		using type = T;
+	};
+	template <typename T>
+	using rem_const_t = typename rem_const<T>::type;
 }
 
 template <typename T>

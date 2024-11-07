@@ -88,18 +88,21 @@ public:
 	class AutoDelete
 	{
 	public:
+		inline AutoDelete() : m_pKeyValues( NULL ) {}
 		inline AutoDelete( KeyValues *pKeyValues ) : m_pKeyValues( pKeyValues ) {}
-		inline AutoDelete( const char *pchKVName ) : m_pKeyValues( new KeyValues( pchKVName ) ) {}
-		inline ~AutoDelete( void ) { if( m_pKeyValues ) m_pKeyValues->deleteThis(); }
-		void deleteThis() { if( m_pKeyValues ) m_pKeyValues->deleteThis(); m_pKeyValues = NULL; }
+		AutoDelete( const char *pchKVName );
+		AutoDelete( AutoDelete &&other );
+		~AutoDelete( void );
+		void deleteThis();
 		inline void Assign( KeyValues *pKeyValues ) { m_pKeyValues = pKeyValues; }
-		inline AutoDelete &operator=( KeyValues *pKeyValues ) { m_pKeyValues = pKeyValues; return *this; }
+		AutoDelete &operator=( KeyValues *pKeyValues );
+		AutoDelete &operator=( AutoDelete &&other );
 		KeyValues *operator->()	{ return m_pKeyValues; }
 		operator KeyValues *()	{ return m_pKeyValues; }
 		inline KeyValues * Get() const { return m_pKeyValues; }
 	private:
-		AutoDelete( AutoDelete const &x ); // forbid
-		AutoDelete & operator= ( AutoDelete const &x ); // forbid
+		AutoDelete( AutoDelete const &x ) = delete; // forbid
+		AutoDelete & operator= ( AutoDelete const &x ) = delete; // forbid
 	protected:
 		KeyValues *m_pKeyValues;
 	};

@@ -110,8 +110,10 @@ public:
 
 	// Adds multiple elements, uses default constructor
 	int AddMultipleToHead( int num );
-	int AddMultipleToTail( int num, const T *pToCopy=NULL );	   
-	int InsertMultipleBefore( int elem, int num, const T *pToCopy=NULL );	// If pToCopy is set, then it's an array of length 'num' and
+	int AddMultipleToTail( int num, const T *pToCopy );	   
+	int AddMultipleToTail( int num );	   
+	int InsertMultipleBefore( int elem, int num, const T *pToCopy );	// If pToCopy is set, then it's an array of length 'num' and
+	int InsertMultipleBefore( int elem, int num );	// If pToCopy is set, then it's an array of length 'num' and
 	int InsertMultipleAfter( int elem, int num );
 
 	// Calls RemoveAll() then AddMultipleToTail.
@@ -956,6 +958,12 @@ inline int CUtlVector<T, A>::AddMultipleToHead( int num )
 }
 
 template< typename T, class A >
+inline int CUtlVector<T, A>::AddMultipleToTail( int num )
+{
+	return InsertMultipleBefore( m_Size, num );
+}
+
+template< typename T, class A >
 inline int CUtlVector<T, A>::AddMultipleToTail( int num, const T *pToCopy )
 {
 	// Can't insert something that's in the list... reallocation may hose us
@@ -1034,7 +1042,7 @@ int CUtlVector<T, A>::AddVectorToTail( CUtlVector const &src )
 }
 
 template< typename T, class A >
-inline int CUtlVector<T, A>::InsertMultipleBefore( int elem, int num, const T *pToInsert )
+inline int CUtlVector<T, A>::InsertMultipleBefore( int elem, int num )
 {
 	if( num == 0 )
 		return elem;
@@ -1048,6 +1056,17 @@ inline int CUtlVector<T, A>::InsertMultipleBefore( int elem, int num, const T *p
 	// Invoke default constructors
 	for (int i = 0; i < num; ++i )
 		Construct( &Element( elem+i ) );
+
+	return elem;
+}
+
+template< typename T, class A >
+inline int CUtlVector<T, A>::InsertMultipleBefore( int elem, int num, const T *pToInsert )
+{
+	if( num == 0 )
+		return elem;
+
+	InsertMultipleBefore( elem, num );
 
 	// Copy stuff in?
 	if ( pToInsert )

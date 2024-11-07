@@ -3268,3 +3268,40 @@ bool CKeyValuesDumpContextAsDevMsg::KvWriteText( char const *szText )
 	}
 	return true;
 }
+
+KeyValues::AutoDelete::AutoDelete( const char *pchKVName )
+: m_pKeyValues( new KeyValues( pchKVName ) )
+{
+}
+
+KeyValues::AutoDelete::AutoDelete( AutoDelete &&other )
+: m_pKeyValues( other.m_pKeyValues )
+{
+	other.m_pKeyValues = NULL;
+}
+
+KeyValues::AutoDelete::~AutoDelete( void )
+{ 
+	if( m_pKeyValues )
+		m_pKeyValues->deleteThis();
+}
+
+void KeyValues::AutoDelete::deleteThis()
+{
+	if( m_pKeyValues )
+		m_pKeyValues->deleteThis();
+	m_pKeyValues = NULL;
+}
+
+KeyValues::AutoDelete &KeyValues::AutoDelete::operator=( KeyValues *pKeyValues )
+{
+	m_pKeyValues = pKeyValues;
+	return *this;
+}
+
+KeyValues::AutoDelete &KeyValues::AutoDelete::operator=( AutoDelete &&other )
+{
+	m_pKeyValues = other.m_pKeyValues;
+	other.m_pKeyValues = NULL;
+	return *this;
+}

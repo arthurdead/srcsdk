@@ -18,6 +18,10 @@ class IMissionSpawner
 {
 public:
 	virtual bool Parse(KeyValues *params) = 0;
+
+	virtual bool IsDone() const = 0;
+
+	virtual void Start() = 0;
 	virtual void Update() = 0;
 };
 
@@ -31,7 +35,7 @@ struct MissionLocation
 struct MissionAssault
 {
 	float m_StartTime;
-	CUtlVector<IMissionSpawner *> *m_SpawnerSet;
+	const CUtlVector<IMissionSpawner *> *m_SpawnerSet;
 };
 
 using AllocSpawner_t = IMissionSpawner *(*)();
@@ -59,11 +63,26 @@ public:
 
 	void RegisterSpawnerFactory( const char *name, AllocSpawner_t func );
 
+	const MissionLocation *FindLocation( const char *name ) const;
+
 private:
 	CON_COMMAND_MEMBER_F(CMissionDirector, "mission_casing", mission_casing, "", FCVAR_NONE)
 	CON_COMMAND_MEMBER_F(CMissionDirector, "mission_loud", mission_loud, "", FCVAR_NONE)
 
 	bool LoadMissionFile();
+
+	enum
+	{
+		ASSAULT_FSM_INVALID,
+		ASSAULT_FSM_ACTIVE,
+		ASSAULT_FSM_SWITCH_TO_NEXT,
+	};
+
+	int m_nAssaultFSM;
+	int m_iCurrentAssault;
+	int m_iCurrentSpawner;
+
+	IntervalTimer m_AssaultTimer;
 
 	CUtlStringMap< AllocSpawner_t > m_SpawnerAllocators;
 
@@ -80,11 +99,21 @@ class CBasicMissionSpawner : public IMissionSpawner
 {
 public:
 	bool Parse(KeyValues *params) override;
+
+	bool IsDone() const override;
+
+	void Start() override;
 	void Update() override;
 
 private:
-	CUtlVector< MissionLocation * > m_Locations;
-	CUtlVector<IMissionSpawner *> *m_SpawnerSet;
+	CUtlVector< const MissionLocation * > m_Locations;
+
+	struct EntityInfo
+	{
+		KeyValues::AutoDelete keyvalues;
+	};
+
+	CUtlStringMap< EntityInfo > m_Entities;
 };
 
 #include "tier0/memdbgon.h"

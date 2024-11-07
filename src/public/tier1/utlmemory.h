@@ -46,7 +46,7 @@ class CUtlMemory
 public:
 	// constructor, destructor
 	CUtlMemory( int nGrowSize = 0, int nInitSize = 0 );
-	CUtlMemory( T* pMemory, int numElements );
+	CUtlMemory( valve_type_traits::rem_const_t<T>* pMemory, int numElements );
 	CUtlMemory( const T* pMemory, int numElements );
 	CUtlMemory( CUtlMemory<T, I>&& src );
 	~CUtlMemory();
@@ -88,7 +88,7 @@ public:
 	const T* Base() const;
 
 	// Attaches the buffer to external memory....
-	void SetExternalBuffer( T* pMemory, int numElements );
+	void SetExternalBuffer( valve_type_traits::rem_const_t<T>* pMemory, int numElements );
 	void SetExternalBuffer( const T* pMemory, int numElements );
 	// Takes ownership of the passed memory, including freeing it when this buffer is destroyed.
 	void AssumeMemory( T *pMemory, int nSize );
@@ -422,7 +422,7 @@ CUtlMemory<T,I>::CUtlMemory( int nGrowSize, int nInitAllocationCount ) : m_pMemo
 }
 
 template< class T, class I >
-CUtlMemory<T,I>::CUtlMemory( T* pMemory, int numElements ) : m_pMemory(pMemory),
+CUtlMemory<T,I>::CUtlMemory( valve_type_traits::rem_const_t<T>* pMemory, int numElements ) : m_pMemory(pMemory),
 	m_nAllocationCount( numElements )
 {
 	// Special marker indicating externally supplied modifyable memory
@@ -514,7 +514,7 @@ void CUtlMemory<T,I>::ConvertToGrowableMemory( int nGrowSize )
 // Attaches the buffer to external memory....
 //-----------------------------------------------------------------------------
 template< class T, class I >
-void CUtlMemory<T,I>::SetExternalBuffer( T* pMemory, int numElements )
+void CUtlMemory<T,I>::SetExternalBuffer( valve_type_traits::rem_const_t<T>* pMemory, int numElements )
 {
 	// Blow away any existing allocated memory
 	Purge();
