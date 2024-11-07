@@ -1,0 +1,12 @@
+#ifndef HACKMGR_ENGINE_TARGET_H
+#define HACKMGR_ENGINE_TARGET_H
+
+#pragma once
+
+#define HACKMGR_ENGINE_TARGET_SDK2013MP 0
+
+#ifndef HACKMGR_ENGINE_TARGET
+	#error
+#endif
+
+#endif

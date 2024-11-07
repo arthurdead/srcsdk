@@ -25,6 +25,14 @@ install_data(
 	install_dir: join_paths(game_dir,'bin')
 )
 
+hackmgr_base_dep = declare_dependency(
+	sources: files(
+		join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp'),
+		join_paths(public_dir,'hackmgr','dlloverride.cpp'),
+		join_paths(public_dir,'tier0','logging.cpp'),
+	),
+)
+
 if build_libs
 	hackmgr_base_lib = declare_dependency(
 		compile_args: [
@@ -122,14 +130,6 @@ if build_libs
 		install_rpath: '$ORIGIN'
 	)
 
-	hackmgr_base_dep = declare_dependency(
-		sources: files(
-			join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp'),
-			join_paths(public_dir,'hackmgr','dlloverride.cpp'),
-			join_paths(public_dir,'tier0','logging.cpp'),
-		),
-	)
-
 	hackmgr_dep = declare_dependency(
 		dependencies: [
 			hackmgr_base_dep,
@@ -144,14 +144,6 @@ if build_libs
 		link_with: hackmgr_ds_lib
 	)
 else
-	hackmgr_base_dep = declare_dependency(
-		sources: files(
-			join_paths(public_dir,'hackmgr','depend_on_hackmgr.cpp'),
-			join_paths(public_dir,'hackmgr','dlloverride.cpp'),
-			join_paths(public_dir,'tier0','logging.cpp'),
-		),
-	)
-
 	hackmgr_dep = declare_dependency(
 		dependencies: [
 			hackmgr_base_dep,

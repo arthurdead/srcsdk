@@ -1,6 +1,7 @@
 option('src_root_dir', type: 'string', yield: true)
 option('src_engine_dir', type: 'string', yield: true)
 option('src_dedicated_engine_dir', type: 'string', yield: true)
+option('src_engine_target', type: 'string', yield: true)
 option('game_dir', type: 'string', yield: true)
 option('build_libs', type: 'boolean', value: true, yield: true)
 option('build_client', type: 'boolean', value: true, yield: true)

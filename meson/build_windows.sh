@@ -7,8 +7,16 @@ builddir="$__script_dir__/build_windows"
 mesondir="$__script_dir__"
 
 src_root_dir=$(realpath "$__script_dir__/../src")
-src_engine_dir=~/'.steam/steam/steamapps/common/Source SDK Base 2013 Multiplayer'
-src_dedicated_engine_dir=~/'.steam/steam/steamapps/common/Source SDK Base 2013 Dedicated Server'
+
+src_engine_target='sdk2013mp'
+if [[ "$src_engine_target" == 'sdk2013mp' ]]; then
+	src_engine_dir=~/'.steam/steam/steamapps/common/Source SDK Base 2013 Multiplayer'
+	src_dedicated_engine_dir=~/'.steam/steam/steamapps/common/Source SDK Base 2013 Dedicated Server'
+else
+	echo "unknown engine target"
+	exit 1
+fi
+
 game_dir=~/'.steam/steam/steamapps/sourcemods/heist'
 
 cd "$mesondir"
@@ -45,6 +53,7 @@ if [[ ! -d "$builddir/everything" ]]; then
 	-Dsrc_root_dir="$src_root_dir" \
 	-Dsrc_engine_dir="$src_engine_dir" \
 	-Dsrc_dedicated_engine_dir="$src_dedicated_engine_dir" \
+	-Dsrc_engine_target="$src_engine_target" \
 	-Dgame_dir="$game_dir" \
 	-Dfunny=true \
 	-Dbuild_libs=true \

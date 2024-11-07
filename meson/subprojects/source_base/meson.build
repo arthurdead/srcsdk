@@ -8,6 +8,7 @@ funny_src_root_dir = join_paths(src_root_dir,'..','src_funny')
 src_engine_dir = get_option('src_engine_dir')
 src_dedicated_engine_dir = get_option('src_dedicated_engine_dir')
 game_dir = get_option('game_dir')
+src_engine_target = get_option('src_engine_target')
 
 common_dir = join_paths(src_root_dir,'common')
 public_dir = join_paths(src_root_dir,'public')
@@ -32,8 +33,23 @@ source_release_dep = declare_dependency(
 
 target_system = target_machine.system()
 if meson.get_compiler('cpp').has_define('__WINE__')
-	lib_folder = join_paths(src_root_dir,'lib','public','linux32_wine')
-	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public','linux32_wine')
+	lib_folder = join_paths(src_root_dir,'lib','public','linux32_wine',src_engine_target)
+	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public','linux32_wine',src_engine_target)
+	lib_folders = [
+		'-L'+lib_folder,
+		'-L'+join_paths(src_root_dir,'lib','public','linux32',src_engine_target),
+		'-L'+join_paths(src_root_dir,'lib','public','linux32'),
+	]
+	if get_option('funny')
+		lib_folders += [
+			'-L'+funny_lib_folder,
+			'-L'+join_paths(funny_src_root_dir,'lib','public','linux32',src_engine_target),
+			'-L'+join_paths(funny_src_root_dir,'lib','public','linux32')
+		]
+	endif
+elif target_system == 'linux' or target_system == 'gnu'
+	lib_folder = join_paths(src_root_dir,'lib','public','linux32',src_engine_target)
+	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public','linux32',src_engine_target)
 	lib_folders = [
 		'-L'+lib_folder,
 		'-L'+join_paths(src_root_dir,'lib','public','linux32')
@@ -44,27 +60,18 @@ if meson.get_compiler('cpp').has_define('__WINE__')
 			'-L'+join_paths(funny_src_root_dir,'lib','public','linux32')
 		]
 	endif
-elif target_system == 'linux' or target_system == 'gnu'
-	lib_folder = join_paths(src_root_dir,'lib','public','linux32')
-	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public','linux32')
-	lib_folders = [
-		'-L'+lib_folder
-	]
-	if get_option('funny')
-		lib_folders += [
-			'-L'+funny_lib_folder
-		]
-	endif
 elif target_system == 'windows'
-	lib_folder = join_paths(src_root_dir,'lib','public','mingw32')
-	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public','mingw32')
+	lib_folder = join_paths(src_root_dir,'lib','public','mingw32',src_engine_target)
+	funny_lib_folder = join_paths(funny_src_root_dir,'lib','public','mingw32',src_engine_target)
 	lib_folders = [
 		'-L'+lib_folder,
+		'-L'+join_paths(src_root_dir,'lib','public',src_engine_target),
 		'-L'+join_paths(src_root_dir,'lib','public')
 	]
 	if get_option('funny')
 		lib_folders += [
 			'-L'+funny_lib_folder,
+			'-L'+join_paths(funny_src_root_dir,'lib','public',src_engine_target),
 			'-L'+join_paths(funny_src_root_dir,'lib','public')
 		]
 	endif
@@ -95,8 +102,18 @@ if get_option('funny')
 	]
 endif
 
+engine_args = []
+
+if src_engine_target == 'sdk2013mp'
+	engine_args = [
+		'-DHACKMGR_ENGINE_TARGET=HACKMGR_ENGINE_TARGET_SDK2013MP'
+	]
+else
+	error('unknown engine target')
+endif
+
 source_dep = declare_dependency(
-	compile_args: funny_define + [
+	compile_args: engine_args + funny_define + [
 		'-DMOVE_CONSTRUCTOR_SUPPORT',
 		'-DVALVE_RVALUE_REFS',
 		'-DVALVE_INITIALIZER_LIST_SUPPORT',

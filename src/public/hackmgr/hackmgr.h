@@ -4,6 +4,7 @@
 #pragma once
 
 #include "tier0/platform.h"
+#include "engine_target.h"
 #include "tier1/interface.h"
 #include "globalvars_base.h"
 
