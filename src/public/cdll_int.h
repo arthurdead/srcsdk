@@ -26,7 +26,6 @@
 // forward declarations
 //-----------------------------------------------------------------------------
 FORWARD_DECLARE_HANDLE( InputContextHandle_t );
-class CSteamAPIContext;
 struct adsp_auto_params_t;
 class ClientClass;
 struct model_t;

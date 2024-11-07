@@ -29,8 +29,6 @@ class IMDLCache;
 class IServerFoundry;
 class IServerEngineTools;
 #endif
-class CSteamAPIContext;
-class CSteamGameServerAPIContext;
 #ifndef SWDS
 class IGameLoopback;
 class IGameServerLoopback;
@@ -50,8 +48,6 @@ extern IVDebugOverlay			*debugoverlay;
 extern IServerEngineTools		*serverenginetools;
 extern IServerFoundry			*serverfoundry;
 #endif
-extern CSteamAPIContext			*steamapicontext; // available on game clients
-extern CSteamGameServerAPIContext *steamgameserverapicontext; //available on game servers
 #ifndef SWDS
 extern IGameLoopback* g_pGameLoopback;
 extern IGameServerLoopback* g_pGameServerLoopback;

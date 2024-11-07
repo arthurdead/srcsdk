@@ -5,6 +5,7 @@ assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compi
 src_root_dir = get_option('src_root_dir')
 src_engine_dir = get_option('src_engine_dir')
 src_dedicated_engine_dir = get_option('src_dedicated_engine_dir')
+build_dedicated_server = get_option('build_dedicated_server')
 
 source_base = subproject('source_base')
 
@@ -51,29 +52,31 @@ elif target_system == 'windows'
 		link_with: tier0_lib
 	)
 
-	tier0_ds_dll = join_paths(src_engine_dir,'bin','tier0_srv.dll')
+	if build_dedicated_server
+		tier0_ds_dll = join_paths(src_dedicated_engine_dir,'bin','tier0_srv.dll')
 
-	tier0_ds_def = custom_target('tier0.def',
-		command: [gendef,'-','@INPUT@'],
-		capture: true,
-		input: tier0_ds_dll,
-		output: '@BASENAME@.def'
-	)
+		tier0_ds_def = custom_target('tier0.def',
+			command: [gendef,'-','@INPUT@'],
+			capture: true,
+			input: tier0_ds_dll,
+			output: '@BASENAME@.def'
+		)
 
-	tier0_ds_lib = custom_target('libtier0_srv.a',
-		command: [dlltool,'-D','@INPUT0@','-d','@INPUT1@','-l','@OUTPUT@'],
-		input: [tier0_ds_dll,tier0_ds_def],
-		output: 'libtier0_srv.a',
-		install: true,
-		install_dir: source_base.get_variable('lib_folder'),
-	)
+		tier0_ds_lib = custom_target('libtier0_srv.a',
+			command: [dlltool,'-D','@INPUT0@','-d','@INPUT1@','-l','@OUTPUT@'],
+			input: [tier0_ds_dll,tier0_ds_def],
+			output: 'libtier0_srv.a',
+			install: true,
+			install_dir: source_base.get_variable('lib_folder'),
+		)
 
-	tier0_ds_dep = declare_dependency(
-		include_directories: include_directories(
-			join_paths(src_root_dir,'public','tier0')
-		),
-		link_with: tier0_ds_lib
-	)
+		tier0_ds_dep = declare_dependency(
+			include_directories: include_directories(
+				join_paths(src_root_dir,'public','tier0')
+			),
+			link_with: tier0_ds_lib
+		)
+	endif
 else
 	error('unsupported system')
 endif

@@ -50,6 +50,12 @@ class CValidator;
 #define DBG_CLASS		
 #endif // BUILD_AS_DLL
 
+#if HACKMGR_ENGINE_TARGET == HACKMGR_ENGINE_TARGET_SDK2013MP
+	#define DBG_INTERFACE_ABI_1 DBG_INTERFACE
+#else
+	#define DBG_INTERFACE_ABI_1 HACKMGR_API
+#endif
+
 //-----------------------------------------------------------------------------
 // Usage model for the Dbg library
 //
@@ -177,7 +183,7 @@ DBG_INTERFACE void SetAssertFailedNotifyFunc( AssertFailedNotifyFunc_t func );
 DBG_INTERFACE void CallAssertFailedNotifyFunc( const char *pchFile, int nLine, const char *pchMessage );
 
 /* True if -hushasserts was passed on command line. */
-DBG_INTERFACE bool HushAsserts();
+DBG_INTERFACE_ABI_1 bool HushAsserts();
 
 #if defined( USE_SDL )
 struct SDL_Window;

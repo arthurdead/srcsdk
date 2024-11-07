@@ -6,6 +6,7 @@ src_root_dir = get_option('src_root_dir')
 build_libs = get_option('build_libs')
 
 source_base = subproject('source_base')
+steamworks = subproject('steamworks')
 
 public_dir = join_paths(src_root_dir,'public')
 vgui_controls_src_dir = join_paths(src_root_dir,'vgui2','vgui_controls')
@@ -91,13 +92,13 @@ if build_libs
 			join_paths(src_root_dir,'vgui2','src','vgui_key_translation.cpp'),
 			join_paths(public_dir,'filesystem_helpers.cpp')
 		),
-		include_directories: include_directories(
+		include_directories: [steamworks.get_variable('steamworks_sdk_inc'), include_directories(
 			join_paths(public_dir,'tier0'),
 			join_paths(public_dir,'tier1'),
-			join_paths(public_dir,'vgui_controls')
-		),
+			join_paths(public_dir,'vgui_controls'),
+		)],
 		dependencies: [
-			source_base.get_variable('source_static_lib_dep')
+			source_base.get_variable('source_static_lib_dep'),
 		],
 		install: true,
 		install_dir: source_base.get_variable('lib_folder')
@@ -107,9 +108,9 @@ if build_libs
 		sources: files(
 			join_paths(public_dir,'vgui_controls','vgui_controls.cpp')
 		),
-		include_directories: include_directories(
+		include_directories: [steamworks.get_variable('steamworks_sdk_inc'), include_directories(
 			join_paths(public_dir,'vgui_controls')
-		),
+		)],
 		link_with: vgui_controls_lib
 	)
 else
@@ -117,9 +118,9 @@ else
 		sources: files(
 			join_paths(public_dir,'vgui_controls','vgui_controls.cpp')
 		),
-		include_directories: include_directories(
+		include_directories: [steamworks.get_variable('steamworks_sdk_inc'), include_directories(
 			join_paths(public_dir,'vgui_controls')
-		),
+		)],
 		link_args: [
 			'-l:vgui_controls'+source_base.get_variable('lib_ext')
 		]

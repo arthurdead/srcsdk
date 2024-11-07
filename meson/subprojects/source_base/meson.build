@@ -108,6 +108,10 @@ if src_engine_target == 'sdk2013mp'
 	engine_args = [
 		'-DHACKMGR_ENGINE_TARGET=HACKMGR_ENGINE_TARGET_SDK2013MP'
 	]
+elif src_engine_target == 'sdk2013sp'
+	engine_args = [
+		'-DHACKMGR_ENGINE_TARGET=HACKMGR_ENGINE_TARGET_SDK2013SP'
+	]
 else
 	error('unknown engine target')
 endif
@@ -212,28 +216,6 @@ source_static_lib_dep_base = declare_dependency(
 	)
 )
 
-source_shared_lib_dep_base = declare_dependency(
-	dependencies: [
-		source_dep
-	],
-	sources: files(
-		join_paths(common_dir,'module_name.cpp'),
-		join_paths(common_dir,'debug_dll_check.cpp'),
-		join_paths(public_dir,'tier0','memoverride.cpp'),
-	)
-)
-
-source_executable_dep_base = declare_dependency(
-	dependencies: [
-		source_dep
-	],
-	sources: files(
-		join_paths(common_dir,'module_name.cpp'),
-		join_paths(common_dir,'debug_dll_check.cpp'),
-		join_paths(public_dir,'tier0','memoverride.cpp'),
-	)
-)
-
 source_linux_dep = declare_dependency(
 	compile_args: [
 		'-DGNUC',
@@ -264,6 +246,11 @@ source_windows_dep = declare_dependency(
 		'-DIS_WINDOWS_PC',
 		'-DPLATFORM_WINDOWS_PC',
 		'-D_DLL_EXT=.dll',
+
+		#TODO!!! investigate this
+		'-DNO_MALLOC_OVERRIDE',
+		'-DNO_HOOK_MALLOC',
+		'-DNO_MEMOVERRIDE_NEW_DELETE',
 	]
 )
 
@@ -273,15 +260,41 @@ source_shared_lib_windows_dep = declare_dependency(
 	]
 )
 
+memoverride_src = []
+
 if target_system == 'linux' or target_system == 'gnu'
 	os_dep = source_linux_dep
 	source_shared_lib_os_dep = source_shared_lib_linux_dep
+	memoverride_src = files(
+		join_paths(public_dir,'tier0','memoverride.cpp'),
+	)
 elif target_system == 'windows'
 	os_dep = source_windows_dep
 	source_shared_lib_os_dep = source_shared_lib_windows_dep
+	memoverride_src = []
 else
 	error('unsupported system')
 endif
+
+source_shared_lib_dep_base = declare_dependency(
+	dependencies: [
+		source_dep
+	],
+	sources: memoverride_src + files(
+		join_paths(common_dir,'module_name.cpp'),
+		join_paths(common_dir,'debug_dll_check.cpp'),
+	)
+)
+
+source_executable_dep_base = declare_dependency(
+	dependencies: [
+		source_dep
+	],
+	sources: memoverride_src + files(
+		join_paths(common_dir,'module_name.cpp'),
+		join_paths(common_dir,'debug_dll_check.cpp'),
+	)
+)
 
 source_static_lib_dep = declare_dependency(
 	dependencies: [

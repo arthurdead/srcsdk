@@ -108,7 +108,6 @@
 #include "matsys_controls/matsyscontrols.h"
 #include "gamestats.h"
 #include "particle_parse.h"
-#include "clientsteamcontext.h"
 #include "renamed_recvtable_compat.h"
 #include "mouthinfo.h"
 #include "vgui/IInputInternal.h"
@@ -1130,8 +1129,6 @@ int CClientDll::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pG
 		return false;
 	}
 
-	ClientSteamContext().Activate();
-
 	// Initialize the console variables.
 	InitializeClientCvars();
 
@@ -1501,8 +1498,6 @@ void CClientDll::Shutdown( void )
 		Sys_UnloadModule( vphysicsDLL );
 	
 	ClearKeyValuesCache();
-
-	ClientSteamContext().Shutdown();
 
 #ifdef WORKSHOP_IMPORT_ENABLED
 	ShutdownDataModel();
@@ -3035,13 +3030,13 @@ bool CClientDll::IsConnectedUserInfoChangeAllowed( IConVar *pCvar )
 bool GetSteamIDForPlayerIndex( int iPlayerIndex, CSteamID &steamid )
 {
 	player_info_t pi;
-	if ( steamapicontext && steamapicontext->SteamUtils() )
+	if ( SteamUtils() )
 	{
 		if ( engine->GetPlayerInfo( iPlayerIndex, &pi ) )
 		{
 			if ( pi.friendsID )
 			{
-				steamid = CSteamID( pi.friendsID, 1, steamapicontext->SteamUtils()->GetConnectedUniverse(), k_EAccountTypeIndividual );
+				steamid = CSteamID( pi.friendsID, 1, SteamUtils()->GetConnectedUniverse(), k_EAccountTypeIndividual );
 				return true;
 			}
 		}

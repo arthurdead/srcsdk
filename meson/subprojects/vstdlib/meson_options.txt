@@ -1,3 +1,4 @@
 option('src_root_dir', type: 'string', yield: true)
 option('src_engine_dir', type: 'string', yield: true)
 option('src_dedicated_engine_dir', type: 'string', yield: true)
+option('build_dedicated_server', type: 'boolean', value: false, yield: true)

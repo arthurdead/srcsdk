@@ -447,7 +447,7 @@ struct VTFFileHeaderV7_1_t : public VTFFileBaseHeader_t
 	unsigned int	flags;
 	unsigned short	numFrames;
 	unsigned short	startFrame;
-#if !defined( POSIX )
+#if !defined( GNUC )
 	VectorAligned	reflectivity;
 #else
 	// must manually align in order to maintain pack(1) expected layout with existing binaries

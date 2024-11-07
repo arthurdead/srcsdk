@@ -616,39 +616,39 @@ private:
 
 // For documentation on these functions, please look at the corresponding function
 // in CLoggingSystem (unless otherwise specified).
-PLATFORM_INTERFACE LoggingChannelID_t LoggingSystem_RegisterLoggingChannel( const char *pName, RegisterTagsFunc registerTagsFunc, LoggingChannelFlags_t flags = LCF_NONE, LoggingSeverity_t severity = LS_MESSAGE, Color color = UNSPECIFIED_LOGGING_COLOR ); 
+PLATFORM_INTERFACE_ABI_2 LoggingChannelID_t LoggingSystem_RegisterLoggingChannel( const char *pName, RegisterTagsFunc registerTagsFunc, LoggingChannelFlags_t flags = LCF_NONE, LoggingSeverity_t severity = LS_MESSAGE, Color color = UNSPECIFIED_LOGGING_COLOR ); 
 
-PLATFORM_INTERFACE void LoggingSystem_RegisterLoggingListener( ILoggingListener *pListener );
-PLATFORM_INTERFACE void LoggingSystem_ResetCurrentLoggingState();
-PLATFORM_INTERFACE void LoggingSystem_SetLoggingResponsePolicy( ILoggingResponsePolicy *pResponsePolicy );
+PLATFORM_INTERFACE_ABI_2 void LoggingSystem_RegisterLoggingListener( ILoggingListener *pListener );
+PLATFORM_INTERFACE_ABI_2 void LoggingSystem_ResetCurrentLoggingState();
+PLATFORM_INTERFACE_ABI_2 void LoggingSystem_SetLoggingResponsePolicy( ILoggingResponsePolicy *pResponsePolicy );
 // NOTE: PushLoggingState() saves the current logging state on a stack and results in a new clear state
 // (no listeners, default logging response policy).
-PLATFORM_INTERFACE void LoggingSystem_PushLoggingState( bool bThreadLocal = false, bool bClearState = true );
-PLATFORM_INTERFACE void LoggingSystem_PopLoggingState( bool bThreadLocal = false );
+PLATFORM_INTERFACE_ABI_2 void LoggingSystem_PushLoggingState( bool bThreadLocal = false, bool bClearState = true );
+PLATFORM_INTERFACE_ABI_2 void LoggingSystem_PopLoggingState( bool bThreadLocal = false );
 
-PLATFORM_INTERFACE void LoggingSystem_AddTagToCurrentChannel( const char *pTagName );
+PLATFORM_INTERFACE_ABI_2 void LoggingSystem_AddTagToCurrentChannel( const char *pTagName );
 
 // Returns INVALID_LOGGING_CHANNEL_ID if not found
-PLATFORM_INTERFACE LoggingChannelID_t LoggingSystem_FindChannel( const char *pChannelName );
-PLATFORM_INTERFACE int LoggingSystem_GetChannelCount();
-PLATFORM_INTERFACE LoggingChannelID_t LoggingSystem_GetFirstChannelID();
+PLATFORM_INTERFACE_ABI_2 LoggingChannelID_t LoggingSystem_FindChannel( const char *pChannelName );
+PLATFORM_INTERFACE_ABI_2 int LoggingSystem_GetChannelCount();
+PLATFORM_INTERFACE_ABI_2 LoggingChannelID_t LoggingSystem_GetFirstChannelID();
 // Returns INVALID_LOGGING_CHANNEL_ID when there are no channels remaining.
-PLATFORM_INTERFACE LoggingChannelID_t LoggingSystem_GetNextChannelID( LoggingChannelID_t channelID );
-PLATFORM_INTERFACE const CLoggingSystem::LoggingChannel_t *LoggingSystem_GetChannel( LoggingChannelID_t channelID );
+PLATFORM_INTERFACE_ABI_2 LoggingChannelID_t LoggingSystem_GetNextChannelID( LoggingChannelID_t channelID );
+PLATFORM_INTERFACE_ABI_2 const CLoggingSystem::LoggingChannel_t *LoggingSystem_GetChannel( LoggingChannelID_t channelID );
 
-PLATFORM_INTERFACE bool LoggingSystem_HasTag( LoggingChannelID_t channelID, const char *pTag );
+PLATFORM_INTERFACE_ABI_2 bool LoggingSystem_HasTag( LoggingChannelID_t channelID, const char *pTag );
 
-PLATFORM_INTERFACE bool LoggingSystem_IsChannelEnabled( LoggingChannelID_t channelID, LoggingSeverity_t severity );
-PLATFORM_INTERFACE void LoggingSystem_SetChannelSpewLevel( LoggingChannelID_t channelID, LoggingSeverity_t minimumSeverity );
-PLATFORM_INTERFACE void LoggingSystem_SetChannelSpewLevelByName( const char *pName, LoggingSeverity_t minimumSeverity );
-PLATFORM_INTERFACE void LoggingSystem_SetChannelSpewLevelByTag( const char *pTag, LoggingSeverity_t minimumSeverity );
+PLATFORM_INTERFACE_ABI_2 bool LoggingSystem_IsChannelEnabled( LoggingChannelID_t channelID, LoggingSeverity_t severity );
+PLATFORM_INTERFACE_ABI_2 void LoggingSystem_SetChannelSpewLevel( LoggingChannelID_t channelID, LoggingSeverity_t minimumSeverity );
+PLATFORM_INTERFACE_ABI_2 void LoggingSystem_SetChannelSpewLevelByName( const char *pName, LoggingSeverity_t minimumSeverity );
+PLATFORM_INTERFACE_ABI_2 void LoggingSystem_SetChannelSpewLevelByTag( const char *pTag, LoggingSeverity_t minimumSeverity );
 
 // Color is represented as an int32 due to C-linkage restrictions
-PLATFORM_INTERFACE int32 LoggingSystem_GetChannelColor( LoggingChannelID_t channelID );
-PLATFORM_INTERFACE void LoggingSystem_SetChannelColor( LoggingChannelID_t channelID, int color );
+PLATFORM_INTERFACE_ABI_2 int32 LoggingSystem_GetChannelColor( LoggingChannelID_t channelID );
+PLATFORM_INTERFACE_ABI_2 void LoggingSystem_SetChannelColor( LoggingChannelID_t channelID, int color );
 
-PLATFORM_INTERFACE LoggingChannelFlags_t LoggingSystem_GetChannelFlags( LoggingChannelID_t channelID );
-PLATFORM_INTERFACE void LoggingSystem_SetChannelFlags( LoggingChannelID_t channelID, LoggingChannelFlags_t flags );
+PLATFORM_INTERFACE_ABI_2 LoggingChannelFlags_t LoggingSystem_GetChannelFlags( LoggingChannelID_t channelID );
+PLATFORM_INTERFACE_ABI_2 void LoggingSystem_SetChannelFlags( LoggingChannelID_t channelID, LoggingChannelFlags_t flags );
 
 //-----------------------------------------------------------------------------
 // Logs a variable-argument to a given channel with the specified severity.
@@ -657,11 +657,11 @@ PLATFORM_INTERFACE void LoggingSystem_SetChannelFlags( LoggingChannelID_t channe
 // Therefore, you need to ensure that the parameters are in the same general 
 // order and that there are no ambiguities with the overload.
 //-----------------------------------------------------------------------------
-PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const char *pMessageFormat, ... ) FMTFUNCTION( 3, 4 );
-PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, const char *pMessageFormat, ... ) FMTFUNCTION( 4, 5 );
+PLATFORM_INTERFACE_ABI_2 LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const char *pMessageFormat, ... ) FMTFUNCTION( 3, 4 );
+PLATFORM_OVERLOAD_ABI_2 LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, const char *pMessageFormat, ... ) FMTFUNCTION( 4, 5 );
 
-PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, const char *pMessage );
-PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_LogAssert( const char *pMessageFormat, ... ) FMTFUNCTION( 1, 2 );
+PLATFORM_INTERFACE_ABI_2 LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, const char *pMessage );
+PLATFORM_INTERFACE_ABI_2 LoggingResponse_t LoggingSystem_LogAssert( const char *pMessageFormat, ... ) FMTFUNCTION( 1, 2 );
 
 #define printf USE_THE_LOGGING_SYSTEM
 

@@ -100,7 +100,7 @@ public:
 	bool CheckAchievementsEnabled();
 	bool LoggedIntoSteam() 
 	{ 
-		return ( steamapicontext->SteamUser() && steamapicontext->SteamUserStats() && steamapicontext->SteamUser()->BLoggedOn() ); 
+		return ( SteamUser() && SteamUserStats() && SteamUser()->BLoggedOn() ); 
 	}
 	float GetTimeLastUpload() { return m_flTimeLastSaved; }			// time we last uploaded to Steam
 

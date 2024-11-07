@@ -17,6 +17,7 @@
 #endif
 
 #include "tier0/platform.h"
+#include "hackmgr/hackmgr.h"
 
 #if !defined(STATIC_TIER0) && !defined(_STATIC_LINKED)
 
@@ -31,6 +32,12 @@
 #define MEM_INTERFACE extern
 
 #endif // BUILD_AS_DLL
+
+#if !defined __linux__
+	#define MEM_INTERFACE_ABI_1 MEM_INTERFACE
+#else
+	#define MEM_INTERFACE_ABI_1 HACKMGR_API
+#endif
 
 //-----------------------------------------------------------------------------
 // DLL-exported methods for particular kinds of memory

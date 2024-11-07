@@ -39,7 +39,6 @@
 
 #if defined(USE_MEM_DEBUG)
 	#if defined( POSIX )
-		#define _NORMAL_BLOCK 1
 		#include <cstddef>
 		#include <glob.h>
 		#include <new>
@@ -97,14 +96,12 @@ inline void *MemAlloc_InlineCallocMemset( void *pMem, size_t nCount, size_t nEle
 #undef _malloc_dbg
 #define _malloc_dbg(s, t, f, l)	WHYCALLINGTHISDIRECTLY(s)
 
-#if !defined( LINUX )
 #if defined(__AFX_H__) && defined(DEBUG_NEW)
 	#define new DEBUG_NEW
 #else
 	#undef new
 	#define MEMALL_DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 	#define new MEMALL_DEBUG_NEW
-#endif
 #endif
 
 #undef _strdup

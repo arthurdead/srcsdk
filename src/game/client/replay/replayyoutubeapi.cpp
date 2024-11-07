@@ -239,17 +239,17 @@ public:
 				UploadOgsData( m_pMovie, true, "completed" );
 
 				// share on Steam Community
-				if ( steamapicontext && steamapicontext->SteamRemoteStorage() )
+				if ( steamapicontext && SteamRemoteStorage() )
 				{					
 					CUtlString strPreviewFileName;
-					AppId_t nConsumerAppId = steamapicontext->SteamUtils()->GetAppID();
+					AppId_t nConsumerAppId = SteamUtils()->GetAppID();
 					ERemoteStoragePublishedFileVisibility eVisibility = k_ERemoteStoragePublishedFileVisibilityPublic;
 					SteamParamStringArray_t tags;
 					tags.m_ppStrings = NULL;
 					tags.m_nNumStrings = 0;
 
 					// don't bother waiting for result
-					SteamAPICall_t hSteamAPICall = steamapicontext->SteamRemoteStorage()->PublishVideo(
+					SteamAPICall_t hSteamAPICall = SteamRemoteStorage()->PublishVideo(
 						k_EWorkshopVideoProviderNone, "", 
 						strURLToVideo.Get(),
 						strPreviewFileName.Get(), 
@@ -352,9 +352,9 @@ public:
 	{
 		if ( !Q_strnicmp( command, "register", 8 ) )
 		{
-			if ( steamapicontext && steamapicontext->SteamFriends() )
+			if ( steamapicontext && SteamFriends() )
 			{
-				steamapicontext->SteamFriends()->ActivateGameOverlayToWebPage( "http://www.youtube.com/create_account?next=/" );
+				SteamFriends()->ActivateGameOverlayToWebPage( "http://www.youtube.com/create_account?next=/" );
 			}
 		}		
 		else if ( !Q_strnicmp( command, "confirm", 7 ) )
@@ -382,7 +382,7 @@ protected:
 
 	void Login( const char* pUserName, const char *pPassword )
 	{
-		const bool bOnSteamPublic = steamapicontext && steamapicontext->SteamUtils() && steamapicontext->SteamUtils()->GetConnectedUniverse() == k_EUniversePublic;
+		const bool bOnSteamPublic = steamapicontext && SteamUtils() && SteamUtils()->GetConnectedUniverse() == k_EUniversePublic;
 		const char *pGameDir = COM_GetModDirectory();
 		const char *pSource = NULL;
 		const char *pDeveloperTag = NULL;
@@ -486,9 +486,9 @@ public:
 	{
 		if ( !Q_strnicmp( command, "termsofservice", 14 ) )
 		{
-			if ( steamapicontext && steamapicontext->SteamFriends() )
+			if ( steamapicontext && SteamFriends() )
 			{
-				steamapicontext->SteamFriends()->ActivateGameOverlayToWebPage( "http://www.youtube.com/t/terms" );
+				SteamFriends()->ActivateGameOverlayToWebPage( "http://www.youtube.com/t/terms" );
 			}
 		}		
 		else if ( !Q_strnicmp( command, "confirm", 7 ) )
@@ -517,9 +517,9 @@ public:
 			const char *pCategory = "Games";
 
 			// add steam profile to the description for verification if necessary
-			EUniverse eSteamUniverse = steamapicontext && steamapicontext->SteamUtils() ? steamapicontext->SteamUtils()->GetConnectedUniverse() : k_EUniverseDev;
+			EUniverse eSteamUniverse = steamapicontext && SteamUtils() ? SteamUtils()->GetConnectedUniverse() : k_EUniverseDev;
 			CUtlString description( szDesc );
-			if ( steamapicontext && steamapicontext->SteamUser() )
+			if ( steamapicontext && SteamUser() )
 			{
 				const char *pchCommunityURL = "http://steamcommunity.com/";
 				switch ( eSteamUniverse )
@@ -534,7 +534,7 @@ public:
 				default:
 					pchCommunityURL = "http://steamcommunity.com/";
 				}
-				description.Format( "%s\n\n%sprofiles/%llu", szDesc, pchCommunityURL, steamapicontext->SteamUser()->GetSteamID().ConvertToUint64() );
+				description.Format( "%s\n\n%sprofiles/%llu", szDesc, pchCommunityURL, SteamUser()->GetSteamID().ConvertToUint64() );
 			}
 
 			const char *pShortGameName = NULL;

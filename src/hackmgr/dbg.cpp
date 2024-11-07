@@ -35,9 +35,9 @@ DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_CONSOLE, "Console" );
 #ifdef _WIN32
 PLATFORM_INTERFACE bool SetupWin32ConsoleIO();
 typedef ConsoleColorContext_t Win32ConsoleColorContext_t;
-PLATFORM_INTERFACE void InitWin32ConsoleColorContext( Win32ConsoleColorContext_t *pContext );
-PLATFORM_INTERFACE uint16 SetWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, int nRed, int nGreen, int nBlue, int nIntensity );
-PLATFORM_INTERFACE void RestoreWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, uint16 prevColor );
+PLATFORM_INTERFACE_ABI_2 void InitWin32ConsoleColorContext( Win32ConsoleColorContext_t *pContext );
+PLATFORM_INTERFACE_ABI_2 uint16 SetWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, int nRed, int nGreen, int nBlue, int nIntensity );
+PLATFORM_INTERFACE_ABI_2 void RestoreWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, uint16 prevColor );
 #endif
 
 DLL_EXPORT bool SetupConsoleIO()
@@ -95,7 +95,22 @@ DLL_EXPORT void RestoreWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, 
 }
 #endif
 
-#if 0
+#if HACKMGR_ENGINE_TARGET == HACKMGR_ENGINE_TARGET_SDK2013SP
+DLL_EXPORT void Plat_ExitProcess( int nCode )
+{
+#if defined( _WIN32 )
+	if ( nCode )
+	{
+		int *x = NULL;
+		*x = 1;
+	}
+
+	TerminateProcess( GetCurrentProcess(), nCode );
+#else
+	_exit( nCode );
+#endif
+}
+
 DLL_EXPORT bool HushAsserts()
 {
 #ifdef DBGFLAG_ASSERT
@@ -105,6 +120,11 @@ DLL_EXPORT bool HushAsserts()
 	return true;
 #endif
 }
+
+#ifdef __MINGW32__
+LIB_EXPORT SYMALIAS("HushAsserts") bool _imp__HushAsserts();
+LIB_EXPORT SYMALIAS("Plat_ExitProcess") void _imp__Plat_ExitProcess( int nCode );
+#endif
 #endif
 
 INIT_PRIORITY(101) static CLoggingSystem s_LoggingSystem;

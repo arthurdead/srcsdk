@@ -18,6 +18,5 @@
 extern IVEngineClient *engine;
 extern IGameUIFuncs *gameuifuncs;
 extern IEngineVGui *enginevguifuncs;
-extern CSteamAPIContext *steamapicontext;
 
 #endif // ENGINEINTERFACE_H

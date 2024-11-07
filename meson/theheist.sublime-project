@@ -8,6 +8,7 @@
 				"src/video_services",
 				"src/vphysics_jolt",
 				"src/vaudio_minimp3",
+				"src/thirdparty",
 				"meson/build_linux",
 				"meson/build_windows"
 			]

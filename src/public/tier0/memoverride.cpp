@@ -35,6 +35,16 @@
 #include "winlite.h"
 #endif
 
+#ifdef POSIX
+typedef void(*_CRT_DUMP_CLIENT)();
+typedef void(*_CRT_ALLOC_HOOK)();
+typedef void(*_CRT_REPORT_HOOK)();
+typedef HANDLE _HFILE;
+typedef int errno_t;
+struct _locale_t {};
+#define _CRTDBG_ALLOC_MEM_DF 0
+#endif
+
 inline void __cdecl VPurecallHandler()
 {
 	DebuggerBreakIfDebugging();	// give the debugger a chance to catch first
@@ -60,7 +70,7 @@ extern "C" void __cxa_pure_virtual() { VPurecallHandler(); }
 #endif
 
 #if defined(USE_LIGHT_MEM_DEBUG) || defined(USE_MEM_DEBUG)
-const char *g_pszModule = MKSTRING( MEMOVERRIDE_MODULE );
+const char *g_pszModule = V_STRINGIFY( MEMOVERRIDE_MODULE );
 #endif
 
 inline void *AllocUnattributed( size_t nSize )
@@ -87,17 +97,11 @@ inline void *ReallocUnattributed( void *pMem, size_t nSize )
 //-----------------------------------------------------------------------------
 // Standard functions in the CRT that we're going to override to call our allocator
 //-----------------------------------------------------------------------------
-#if defined(_WIN32) && !defined(_STATIC_LINKED)
 
 // this magic only works under win32
 // under linux this malloc() overrides the libc malloc() and so we
 // end up in a recursion (as MemAlloc_Alloc() calls malloc)
-#if _MSC_VER >= 1400
-
-#if _MSC_VER >= 1900
-#define _CRTNOALIAS
-#endif
-
+#if defined _MSC_VER
 #define ALLOC_CALL _CRTNOALIAS _CRTRESTRICT 
 #define FREE_CALL _CRTNOALIAS 
 #else
@@ -107,7 +111,7 @@ inline void *ReallocUnattributed( void *pMem, size_t nSize )
 
 extern "C"
 {
-	
+
 ALLOC_CALL void *malloc( size_t nSize )
 {
 	return AllocUnattributed( nSize );
@@ -287,10 +291,8 @@ void *__cdecl _expand( void *pMem, size_t nSize )
 
 unsigned int _amblksiz = 16; //BYTES_PER_PARA;
 
-#if _MSC_VER >= 1400
 HANDLE _crtheap = (HANDLE)1;	// PatM Can't be 0 or CRT pukes
 int __active_heap = 1;
-#endif //  _MSC_VER >= 1400
 
 size_t __cdecl _get_sbh_threshold( void )
 {
@@ -329,12 +331,12 @@ size_t __cdecl _heapused( size_t *, size_t * )
 	return 0;
 }
 
-#ifdef _WIN32
+struct _HEAPINFO;
+
 int __cdecl _heapwalk( _HEAPINFO * )
 {
 	return 0;
 }
-#endif
 
 } // end extern "C"
 
@@ -347,7 +349,7 @@ int __cdecl _heapwalk( _HEAPINFO * )
 
 extern "C"
 {
-	
+
 void *malloc_db( size_t nSize, const char *pFileName, int nLine )
 {
 	return MemAlloc_Alloc(nSize, pFileName, nLine);
@@ -362,7 +364,7 @@ void *realloc_db( void *pMem, size_t nSize, const char *pFileName, int nLine )
 {
 	return g_pMemAlloc->Realloc(pMem, nSize, pFileName, nLine);
 }
-	
+
 } // end extern "C"
 
 //-----------------------------------------------------------------------------
@@ -381,7 +383,6 @@ extern "C"
 	}
 
 }
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -459,8 +460,6 @@ void __cdecl operator delete[] ( void *pMem ) throw()
 // NOTE: These have to be here for release + debug builds in case we
 // link to a debug static lib!!!
 //-----------------------------------------------------------------------------
-#ifndef _STATIC_LINKED
-#ifdef _WIN32
 
 // This here just hides the internal file names, etc of allocations
 // made in the c runtime library
@@ -491,14 +490,11 @@ private:
 
 
 #define AttribIfCrt() CAttibCRT _attrib(nBlockUse)
-#elif defined(POSIX) || defined( _PS3 )
-#define AttribIfCrt()
-#endif // _WIN32
 
 
 extern "C"
 {
-	
+
 void *__cdecl _nh_malloc_dbg( size_t nSize, int nFlag, int nBlockUse,
 								const char *pFileName, int nLine )
 {
@@ -514,14 +510,6 @@ void *__cdecl _malloc_dbg( size_t nSize, int nBlockUse,
 	return MemAlloc_Alloc(nSize, pFileName, nLine);
 }
 
-#if ( defined(_MSC_VER) && ( _MSC_VER >= 1600 ) ) || defined( _X360 )
-void *__cdecl _calloc_dbg_impl( size_t nNum, size_t nSize, int nBlockUse, 
-								const char * szFileName, int nLine, int * errno_tmp )
-{
-	return _calloc_dbg( nNum, nSize, nBlockUse, szFileName, nLine );
-}
-#endif
-
 #undef _calloc_dbg
 void *__cdecl _calloc_dbg( size_t nNum, size_t nSize, int nBlockUse,
 							const char *pFileName, int nLine )
@@ -530,6 +518,12 @@ void *__cdecl _calloc_dbg( size_t nNum, size_t nSize, int nBlockUse,
 	void *pMem = MemAlloc_Alloc(nSize * nNum, pFileName, nLine);
 	memset(pMem, 0, nSize * nNum);
 	return pMem;
+}
+
+void *__cdecl _calloc_dbg_impl( size_t nNum, size_t nSize, int nBlockUse, 
+								const char * szFileName, int nLine, int * errno_tmp )
+{
+	return _calloc_dbg( nNum, nSize, nBlockUse, szFileName, nLine );
 }
 
 #undef _realloc_dbg
@@ -564,17 +558,12 @@ size_t __cdecl _msize_dbg( void *pMem, int nBlockUse )
 {
 #ifdef _WIN32
 	return _msize(pMem);
-#elif POSIX || _PS3
+#elif POSIX
 	Assert( "_msize_dbg unsupported" );
 	return 0;
 #endif
 }
 
-
-#ifdef _WIN32
-
-#if defined(_DEBUG) && _MSC_VER >= 1300
-// X360TBD: aligned and offset allocations may be important on the 360
 
 // aligned base
 ALLOC_CALL void *__cdecl _aligned_malloc_base( size_t size, size_t align )
@@ -622,19 +611,19 @@ FREE_CALL void __cdecl _aligned_free( void *memblock )
 // aligned offset base
 ALLOC_CALL void * __cdecl _aligned_offset_malloc_base( size_t size, size_t align, size_t offset )
 {
-	Assert( IsPC() || 0 );
+	Assert( 0 );
 	return nullptr;
 }
 
 ALLOC_CALL void * __cdecl _aligned_offset_realloc_base( void * memblock, size_t size, size_t align, size_t offset)
 {
-	Assert( IsPC() || 0 );
+	Assert( 0 );
 	return nullptr;
 }
 
 ALLOC_CALL void * __cdecl _aligned_offset_recalloc_base( void * memblock, size_t size, size_t align, size_t offset)
 {
-	Assert( IsPC() || 0 );
+	Assert( 0 );
 	return nullptr;
 }
 
@@ -654,9 +643,28 @@ ALLOC_CALL void * __cdecl _aligned_offset_recalloc( void * memblock, size_t coun
 	return _aligned_offset_recalloc_base( memblock, count * size, align, offset );
 }
 
-#endif // _MSC_VER >= 1400
+// aligned offset debug
+void * __cdecl _aligned_offset_recalloc_dbg( void * memblock, size_t count, size_t size, size_t align, size_t offset, const char * f_name, int line_n )
+{
+	Assert( 0 );
+	void *pMem = ReallocUnattributed( memblock, size * count );
+	if (!memblock)
+	{
+		memset(pMem, 0, size * count);
+	}
 
-#endif
+	return pMem;
+}
+
+void * __cdecl _aligned_recalloc_dbg( void *memblock, size_t count, size_t size, size_t align, const char * f_name, int line_n )
+{
+	return _aligned_offset_recalloc_dbg(memblock, count, size, align, 0, f_name, line_n);
+}
+
+void * __cdecl _recalloc_dbg ( void * memblock, size_t count, size_t size, int nBlockUse, const char * szFileName, int nLine )
+{
+	return _aligned_offset_recalloc_dbg(memblock, count, size, 0, 0, szFileName, nLine);
+}
 
 } // end extern "C"
 
@@ -664,8 +672,6 @@ ALLOC_CALL void * __cdecl _aligned_offset_recalloc( void * memblock, size_t coun
 //-----------------------------------------------------------------------------
 // Override some the _CRT debugging allocation methods in MSVC
 //-----------------------------------------------------------------------------
-#ifdef _WIN32
-
 extern "C"
 {
 
@@ -691,9 +697,6 @@ int _CrtSetDbgFlag( int nNewFlag )
 #define AFNAME(var) __p_ ## var
 #define AFRET(var)  &var
 
-#if ( defined( _MSC_VER ) && _MSC_VER >= 1900)
-//Do we need to do anything here for VS2015?
-#else
 int _crtDbgFlag = _CRTDBG_ALLOC_MEM_DF;
 int* AFNAME(_crtDbgFlag)(void)
 {
@@ -705,7 +708,6 @@ long* AFNAME(_crtBreakAlloc) (void)
 {
 	return AFRET(_crtBreakAlloc);
 }
-#endif
 
 void __cdecl _CrtSetDbgBlockType( void *pMem, int nBlockUse )
 {
@@ -821,19 +823,11 @@ int __cdecl _CrtDbgReport( int nRptType, const char * szFile,
 	return g_pMemAlloc->CrtDbgReport( nRptType, szFile, nLine, szModule, output );
 }
 
-#if _MSC_VER >= 1400
-
-#if defined( _DEBUG ) && _MSC_VER < 1900
- 
 // wrapper which passes no debug info; not available in debug
 void __cdecl _invalid_parameter_noinfo(void)
 {
 	Assert(0);
 }
-
-#endif /* defined( _DEBUG ) */
-
-#if defined( _DEBUG ) || defined( USE_MEM_DEBUG )
 
 int __cdecl __crtMessageWindowW( int nRptType, const wchar_t * szFile, const wchar_t * szLine,
 								 const wchar_t * szModule, const wchar_t * szUserMessage )
@@ -877,44 +871,18 @@ int __cdecl _CrtSetReportHook2( int mode, _CRT_REPORT_HOOK pfnNewHook )
 	_CrtSetReportHook( pfnNewHook );
 	return 0;
 }
- 
 
-#endif  /* defined( _DEBUG ) || defined( USE_MEM_DEBUG ) */
+int __crtDebugCheckCount = FALSE;
 
-extern "C" int __crtDebugCheckCount = FALSE;
-
-extern "C" int __cdecl _CrtSetCheckCount( int fCheckCount )
+int __cdecl _CrtSetCheckCount( int fCheckCount )
 {
 	int oldCheckCount = __crtDebugCheckCount;
 	return oldCheckCount;
 }
 
-extern "C" int __cdecl _CrtGetCheckCount( void )
+int __cdecl _CrtGetCheckCount( void )
 {
 	return __crtDebugCheckCount;
-}
-
-// aligned offset debug
-extern "C" void * __cdecl _aligned_offset_recalloc_dbg( void * memblock, size_t count, size_t size, size_t align, size_t offset, const char * f_name, int line_n )
-{
-	Assert( IsPC() || 0 );
-	void *pMem = ReallocUnattributed( memblock, size * count );
-	if (!memblock)
-	{
-		memset(pMem, 0, size * count);
-	}
-
-	return pMem;
-}
-
-extern "C" void * __cdecl _aligned_recalloc_dbg( void *memblock, size_t count, size_t size, size_t align, const char * f_name, int line_n )
-{
-	return _aligned_offset_recalloc_dbg(memblock, count, size, align, 0, f_name, line_n);
-}
-
-extern "C" void * __cdecl _recalloc_dbg ( void * memblock, size_t count, size_t size, int nBlockUse, const char * szFileName, int nLine )
-{
-	return _aligned_offset_recalloc_dbg(memblock, count, size, 0, 0, szFileName, nLine);
 }
 
 _CRT_REPORT_HOOK __cdecl _CrtGetReportHook( void )
@@ -922,34 +890,25 @@ _CRT_REPORT_HOOK __cdecl _CrtGetReportHook( void )
 	return nullptr;
 }
 
-#endif
-
 #undef _CrtReportBlockType
 int __cdecl _CrtReportBlockType(const void * pUserData)
 {
 	return 0;
 }
 
-
 } // end extern "C"
-#endif // _WIN32
 
 // Most files include this file, so when it's used it adds an extra .ValveDbg section,
 // to help identify debug binaries.
-#ifdef _WIN32
-	#ifndef NDEBUG // _DEBUG
-		#pragma data_seg("ValveDBG") 
-		volatile const char* DBG = "*** DEBUG STUB ***";                     
-	#endif
+#ifdef _MSC_VER
+	#pragma data_seg("ValveDBG") 
 #endif
-
-#endif
+volatile const char* DBG = "*** DEBUG STUB ***";
 
 // Extras added prevent dbgheap.obj from being included - DAL
-#ifdef _WIN32
-
 extern "C"
 {
+
 size_t __crtDebugFillThreshold = 0;
 
 extern "C" void * __cdecl _heap_alloc_base (size_t size) 
@@ -1013,7 +972,8 @@ _CRT_DUMP_CLIENT __cdecl _CrtGetDumpClient ( void)
 		return nullptr;
 }
 
-#if _MSC_VER >= 1400
+struct _CrtMemBlockHeader;
+
 static void __cdecl _printMemBlockData( _locale_t plocinfo, _CrtMemBlockHeader * pHead)
 {
 }
@@ -1021,7 +981,6 @@ static void __cdecl _printMemBlockData( _locale_t plocinfo, _CrtMemBlockHeader *
 static void __cdecl _CrtMemDumpAllObjectsSince_stat( const _CrtMemState * state, _locale_t plocinfo)
 {
 }
-#endif
 
 #undef _aligned_malloc_dbg
 void * __cdecl _aligned_malloc_dbg( size_t size, size_t align, const char * f_name, int line_n)
@@ -1056,19 +1015,15 @@ void __cdecl _aligned_free_dbg( void * memblock)
 	_aligned_free(memblock);
 }
 
-#if _MSC_VER < 1900
 #undef _CrtSetDebugFillThreshold
 size_t __cdecl _CrtSetDebugFillThreshold( size_t _NewDebugFillThreshold)
 {
 	Assert(0);
 	return 0;
 }
-#endif
 
 //===========================================
 // NEW!!! 64-bit
-
-#if (_MSC_VER < 1900) || !defined( _DEBUG )
 
 char * __cdecl _strdup ( const char * string )
 {
@@ -1079,9 +1034,6 @@ char * __cdecl _strdup ( const char * string )
 	return pCopy;
 }
 
-#endif
-
-#if 0
 _TSCHAR * __cdecl _tfullpath_dbg ( _TSCHAR *UserBuf, const _TSCHAR *path, size_t maxlen, int nBlockUse, const char * szFileName, int nLine )
 {
 	Assert(0);
@@ -1106,7 +1058,7 @@ _TSCHAR * __cdecl _tgetdcwd_nolock ( int drive, _TSCHAR *pnbuf, int maxlen )
 	return nullptr;
 }
 
-errno_t __cdecl _tdupenv_s_helper ( _TSCHAR **pBuffer, size_t *pBufferSizeInTChars, const _TSCHAR *varname, int nBlockUse, const char * szFileName, int nLine )
+errno_t __cdecl _tdupenv_s_helper_dbg ( _TSCHAR **pBuffer, size_t *pBufferSizeInTChars, const _TSCHAR *varname, int nBlockUse, const char * szFileName, int nLine )
 {
 	Assert(0);
 	return 0;
@@ -1141,10 +1093,10 @@ wchar_t * __cdecl _wcsdup ( const wchar_t * string )
 	Assert(0);
 	return 0;
 }
-#endif
+
 } // end extern "C"
 
-#if _MSC_VER >= 1400
+#if defined _MSC_VER && _MSC_VER >= 1400
 
 //-----------------------------------------------------------------------------
 // 	XBox Memory Allocator Override
@@ -1506,5 +1458,3 @@ namespace _NATIVE_STARTUP_NAMESPACE
 #endif // _MSC_VER >= 1400
 
 #endif // !STEAM && !NO_MALLOC_OVERRIDE
-
-#endif // _WIN32

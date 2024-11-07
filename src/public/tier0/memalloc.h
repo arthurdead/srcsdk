@@ -12,17 +12,13 @@
 
 #pragma once
 
-// These memory debugging switches aren't relevant under Linux builds since memoverride.cpp
-// isn't built into Linux projects
-#ifndef POSIX
-// Define this in release to get memory tracking even in release builds
-//#define USE_MEM_DEBUG 1
-#endif
-
-#if defined( _MEMTEST )
-#ifdef _WIN32
+#if defined( _MEMTEST ) || defined( _DEBUG )
 #define USE_MEM_DEBUG 1
 #endif
+
+#ifdef POSIX
+#define _NORMAL_BLOCK 1
+#define _CRT_BLOCK 2
 #endif
 
 // Undefine this if using a compiler lacking threadsafe RTTI (like vc6)
@@ -34,6 +30,7 @@
 #endif
 
 #include "tier0/mem.h"
+#include "tier0/platform_funcs.h"
 
 #if !defined(STEAM) && !defined(NO_MALLOC_OVERRIDE)
 
@@ -127,7 +124,7 @@ public:
 //-----------------------------------------------------------------------------
 // Singleton interface
 //-----------------------------------------------------------------------------
-MEM_INTERFACE IMemAlloc *g_pMemAlloc;
+MEM_INTERFACE_ABI_1 IMemAlloc *g_pMemAlloc;
 
 //-----------------------------------------------------------------------------
 
@@ -328,7 +325,7 @@ inline size_t MemAlloc_GetSizeAligned( void *pMemBlock )
 
 //-----------------------------------------------------------------------------
 
-#if (defined(_DEBUG) || defined(USE_MEM_DEBUG))
+#if defined(USE_MEM_DEBUG)
 #define MEM_ALLOC_CREDIT_(tag)	CMemAllocAttributeAlloction memAllocAttributeAlloction( tag, __LINE__ )
 #define MemAlloc_PushAllocDbgInfo( pszFile, line ) g_pMemAlloc->PushAllocDbgInfo( pszFile, line )
 #define MemAlloc_PopAllocDbgInfo() g_pMemAlloc->PopAllocDbgInfo()
@@ -376,7 +373,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-#if defined(_WIN32) && ( defined(_DEBUG) || defined(USE_MEM_DEBUG) )
+#if defined(USE_MEM_DEBUG)
 
 	#pragma warning(disable:4290)
 	#pragma warning(push)
@@ -385,7 +382,7 @@ public:
 	// MEM_DEBUG_CLASSNAME is opt-in.
 	// Note: typeid().name() is not threadsafe, so if the project needs to access it in multiple threads
 	// simultaneously, it'll need a mutex.
-	#if (defined(_CPPRTTI) || defined __GXX_RTTI) && defined(MEM_DEBUG_CLASSNAME)
+	#if (defined(_CPPRTTI) || defined(__GXX_RTTI)) && defined(MEM_DEBUG_CLASSNAME)
 		#define MEM_ALLOC_CREDIT_CLASS()	MEM_ALLOC_CREDIT_( typeid(*this).name() )
 		#define MEM_ALLOC_CLASSNAME(type) (typeid((type*)(0)).name())
 	#else
@@ -394,11 +391,7 @@ public:
 	#endif
 
 	// MEM_ALLOC_CREDIT_FUNCTION is used when no this pointer is available ( inside 'new' overloads, for example )
-	#if defined _MSC_VER || defined __MINGW32__
-		#define MEM_ALLOC_CREDIT_FUNCTION()		MEM_ALLOC_CREDIT_( __FUNCTION__ )
-	#else
-		#define MEM_ALLOC_CREDIT_FUNCTION() (__FILE__)
-	#endif
+	#define MEM_ALLOC_CREDIT_FUNCTION()		MEM_ALLOC_CREDIT_( __FUNCTION__ )
 
 	#pragma warning(pop)
 #else
@@ -409,7 +402,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-#if (defined(_DEBUG) || defined(USE_MEM_DEBUG))
+#if defined(USE_MEM_DEBUG)
 struct MemAllocFileLine_t
 {
 	const char *pszFile;

@@ -126,16 +126,6 @@ extern IToolFrameworkServer *g_pToolFrameworkServer;
 
 extern IParticleSystemQuery *g_pParticleSystemQuery;
 
-// this context is not available on dedicated servers
-// WARNING! always check if interfaces are available before using
-static CSteamAPIContext s_SteamAPIContext;	
-CSteamAPIContext *steamapicontext = &s_SteamAPIContext;
-
-// this context is not available on a pure client connected to a remote server.
-// WARNING! always check if interfaces are available before using
-static CSteamGameServerAPIContext s_SteamGameServerAPIContext;
-CSteamGameServerAPIContext *steamgameserverapicontext = &s_SteamGameServerAPIContext;
-
 IUploadGameStats *gamestatsuploader = NULL;
 
 CTimedEventMgr g_NetworkPropertyEventMgr;
@@ -187,23 +177,6 @@ void SceneManager_ClientActive( CBasePlayer *player );
 
 class IMaterialSystem;
 class IStudioRender;
-
-//-----------------------------------------------------------------------------
-// Purpose: singleton accessor
-//-----------------------------------------------------------------------------
-static CSteam3Server s_Steam3Server;
-CSteam3Server  &Steam3Server()
-{
-	return s_Steam3Server;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Constructor
-//-----------------------------------------------------------------------------
-CSteam3Server::CSteam3Server() 
-{
-	m_bInitialized = false;
-}
 
 #ifdef _DEBUG
 static ConVar s_UseNetworkVars( "UseNetworkVars", "1", FCVAR_CHEAT, "For profiling, toggle network vars." );
@@ -561,13 +534,6 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 	if ( g_pCVar == NULL )
 		return false;
 
-#ifndef SWDS
-	SteamAPI_InitSafe();
-	s_SteamAPIContext.Init();
-#endif
-
-	s_SteamGameServerAPIContext.Init();
-
 	COM_TimestampedLog( "Factories - Start" );
 
 	// init each (seperated for ease of debugging)
@@ -817,9 +783,6 @@ void CServerGameDLL::DLLShutdown( void )
 
 	// reset (shutdown) the gamestatsupload connection
 	gamestatsuploader->InitConnection();
-
-	s_SteamAPIContext.Clear(); // Steam API context shutdown
-	s_SteamGameServerAPIContext.Clear();
 
 	gameeventmanager = NULL;
 	
@@ -1186,15 +1149,12 @@ void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edictCount, int cl
 //-----------------------------------------------------------------------------
 void CServerGameDLL::GameServerSteamAPIActivated( void )
 {
-	steamgameserverapicontext->Clear();
-	steamgameserverapicontext->Init();
-
-	if ( steamgameserverapicontext->SteamGameServer() )
+	if ( SteamGameServer() )
 	{
 	#ifndef SWDS
 		if( engine->IsDedicatedServer() )
 	#endif
-			steamgameserverapicontext->SteamGameServer()->GetGameplayStats();
+			SteamGameServer()->GetGameplayStats();
 	}
 
 #ifdef TF_DLL
@@ -1209,11 +1169,6 @@ void CServerGameDLL::GameServerSteamAPIActivated( void )
 //-----------------------------------------------------------------------------
 void CServerGameDLL::GameServerSteamAPIShutdown( void )
 {
-	if ( steamgameserverapicontext )
-	{
-		steamgameserverapicontext->Clear();
-	}
-
 #ifdef TF_DLL
 	GCClientSystem()->Shutdown();
 #endif
@@ -1254,10 +1209,7 @@ void CServerGameDLL::GameFrame( bool simulating )
 
 	// All the calls to us from the engine prior to gameframe (like LevelInit & ServerActivate)
 	// are done before the engine has got the Steam API connected, so we have to wait until now to connect ourselves.
-	if ( Steam3Server().CheckInitialized() )
-	{
-		GameRules()->UpdateGameplayStatsFromSteam();
-	}
+	GameRules()->UpdateGameplayStatsFromSteam();
 
 	if ( CBaseEntity::IsSimulatingOnAlternateTicks() )
 	{
@@ -1432,7 +1384,6 @@ void CServerGameDLL::LevelShutdown( void )
 	m_bWasPaused = false;
 
 	IGameSystem::LevelShutdownPreClearSteamAPIContextAllSystems();
-	steamgameserverapicontext->Clear();
 
 	MDLCACHE_CRITICAL_SECTION();
 	IGameSystem::LevelShutdownPreEntityAllSystems();

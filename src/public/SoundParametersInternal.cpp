@@ -572,7 +572,7 @@ void CSoundParametersInternal::AddToTail( SoundFile **pDest, uint16 *pDestCount,
 			*pDest = NULL;
 		}
 
-		*pDest = (SoundFile *)realloc( *pDest, (*pDestCount) * sizeof(SoundFile) );
+		*pDest = (SoundFile *)realloc( (void *)*pDest, (*pDestCount) * sizeof(SoundFile) );
 		(*pDest)[ *pDestCount - 1 ] = source;
 
 		if ( *pDestCount == 2 )

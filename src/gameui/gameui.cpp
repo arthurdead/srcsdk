@@ -29,9 +29,6 @@ CGameUI g_GameUI;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CGameUI, IGameUI, GAMEUI_INTERFACE_VERSION, g_GameUI);
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CGameUI, IGameUIEx, GAMEUI_EX_INTERFACE_VERSION, g_GameUI);
 
-static CSteamAPIContext s_SteamAPIContext;
-CSteamAPIContext *steamapicontext = &s_SteamAPIContext;
-
 IGameUIFuncs *gameuifuncs = NULL;
 IVEngineClient *engine = NULL;
 IEngineVGui *enginevguifuncs = NULL;
@@ -121,9 +118,6 @@ void CGameUI::Initialize( CreateInterfaceFn appFactory )
 		Error( "CGameUI::Initialize() failed to get necessary interfaces\n" );
 	}
 
-	SteamAPI_InitSafe();
-	steamapicontext->Init();
-
 	MathLib_Init( 2.2f, 2.2f, 0.0f, 2.0f );
 
 	vgui::VGui_InitInterfacesList( "GameUI", &appFactory, 1 );
@@ -193,9 +187,6 @@ void CGameUI::Shutdown()
 
 	if ( videoServicesDLL )
 		Sys_UnloadModule( videoServicesDLL );
-
-	steamapicontext->Clear();
-	// SteamAPI_Shutdown(); << Steam shutdown is controlled by engine
 
 	ConVar_Unregister();
 	DisconnectTier3Libraries();

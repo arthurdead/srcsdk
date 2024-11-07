@@ -594,11 +594,11 @@ private:
 //
 //-----------------------------------------------------------------------------
 
-class PLATFORM_CLASS CThreadMutex
+class CThreadMutex
 {
 public:
-	CThreadMutex();
-	~CThreadMutex();
+	PLATFORM_CLASS CThreadMutex();
+	PLATFORM_CLASS ~CThreadMutex();
 
 	//------------------------------------------------------
 	// Mutex acquisition/release. Const intentionally defeated.
@@ -608,7 +608,7 @@ public:
 	void Unlock();
 	void Unlock() const		{ (const_cast<CThreadMutex *>(this))->Unlock(); }
 
-	bool TryLock();
+	PLATFORM_CLASS bool TryLock();
 	bool TryLock() const	{ return (const_cast<CThreadMutex *>(this))->TryLock(); }
 
 	//------------------------------------------------------
@@ -1088,15 +1088,15 @@ inline int ThreadWaitForEvents( int nEvents, CThreadEvent * const *pEvents, bool
 //
 //-----------------------------------------------------------------------------
 
-class PLATFORM_CLASS CThreadRWLock
+class CThreadRWLock
 {
 public:
 	CThreadRWLock();
 
 	void LockForRead();
 	void UnlockRead();
-	void LockForWrite();
-	void UnlockWrite();
+	PLATFORM_CLASS void LockForWrite();
+	PLATFORM_CLASS void UnlockWrite();
 
 	void LockForRead() const { const_cast<CThreadRWLock *>(this)->LockForRead(); }
 	void UnlockRead() const { const_cast<CThreadRWLock *>(this)->UnlockRead(); }
@@ -1104,7 +1104,7 @@ public:
 	void UnlockWrite() const { const_cast<CThreadRWLock *>(this)->UnlockWrite(); }
 
 private:
-	void WaitForRead();
+	PLATFORM_CLASS void WaitForRead();
 
 #ifdef WIN32
 	CThreadFastMutex m_mutex;
@@ -1125,7 +1125,7 @@ private:
 //
 //-----------------------------------------------------------------------------
 
-class ALIGN8 PLATFORM_CLASS CThreadSpinRWLock
+class ALIGN8 CThreadSpinRWLock
 {
 public:
 	CThreadSpinRWLock()	{ COMPILE_TIME_ASSERT( sizeof( LockInfo_t ) == sizeof( int64 ) ); Assert( (intp)this % 8 == 0 ); memset( (void *)this, 0, sizeof( *this ) ); }
@@ -1133,10 +1133,10 @@ public:
 	bool TryLockForWrite();
 	bool TryLockForRead();
 
-	void LockForRead();
-	void UnlockRead();
+	PLATFORM_CLASS void LockForRead();
+	PLATFORM_CLASS void UnlockRead();
 	void LockForWrite();
-	void UnlockWrite();
+	PLATFORM_CLASS void UnlockWrite();
 
 	bool TryLockForWrite() const { return const_cast<CThreadSpinRWLock *>(this)->TryLockForWrite(); }
 	bool TryLockForRead() const { return const_cast<CThreadSpinRWLock *>(this)->TryLockForRead(); }
@@ -1154,7 +1154,7 @@ private:
 
 	bool AssignIf( const LockInfo_t &newValue, const LockInfo_t &comperand );
 	bool TryLockForWrite( const uint32 threadId );
-	void SpinLockForWrite( const uint32 threadId );
+	PLATFORM_CLASS void SpinLockForWrite( const uint32 threadId );
 
 	volatile LockInfo_t m_lockInfo;
 	CInterlockedInt m_nWriters;

@@ -229,31 +229,31 @@
 // A node in the call graph hierarchy
 //
 
-class DBG_CLASS CVProfNode 
+class CVProfNode 
 {
 friend class CVProfRecorder;
 friend class CVProfile;
 
 public:
 	CVProfNode( const tchar * pszName, int detailLevel, CVProfNode *pParent, const tchar *pBudgetGroupName, int budgetFlags );
-	~CVProfNode();
+	DBG_CLASS ~CVProfNode();
 	
-	CVProfNode *GetSubNode( const tchar *pszName, int detailLevel, const tchar *pBudgetGroupName, int budgetFlags );
-	CVProfNode *GetSubNode( const tchar *pszName, int detailLevel, const tchar *pBudgetGroupName );
+	DBG_CLASS CVProfNode *GetSubNode( const tchar *pszName, int detailLevel, const tchar *pBudgetGroupName, int budgetFlags );
+	DBG_CLASS CVProfNode *GetSubNode( const tchar *pszName, int detailLevel, const tchar *pBudgetGroupName );
 	CVProfNode *GetParent();
 	CVProfNode *GetSibling();		
 	CVProfNode *GetPrevSibling();	
 	CVProfNode *GetChild();		
 	
-	void MarkFrame();
-	void ResetPeak();
+	DBG_CLASS void MarkFrame();
+	DBG_CLASS void ResetPeak();
 	
-	void Pause();
-	void Resume();
-	void Reset();
+	DBG_CLASS void Pause();
+	DBG_CLASS void Resume();
+	DBG_CLASS void Reset();
 
-	void EnterScope();
-	bool ExitScope();
+	DBG_CLASS void EnterScope();
+	DBG_CLASS bool ExitScope();
 
 	const tchar *GetName();
 
@@ -288,7 +288,7 @@ public:
 	int GetL2CacheMisses();
 
 	// Not used in the common case...
-	void SetCurFrameTime( unsigned long milliseconds );
+	DBG_CLASS void SetCurFrameTime( unsigned long milliseconds );
 	
 	void SetClientData( int iClientData )	{ m_iClientData = iClientData; }
 	int GetClientData() const				{ return m_iClientData; }

@@ -344,8 +344,8 @@ void CGenericClassBasedReplay::AddKillStatFromFriendIds( CUtlVector< GenericStat
 bool CGenericClassBasedReplay::GetFriendIdFromUserId( int nPlayerIndex, uint32 &nFriendIdOut ) const
 {
 	player_info_t pi;
-	if ( !steamapicontext->SteamFriends() ||
-		 !steamapicontext->SteamUtils() ||
+	if ( !SteamFriends() ||
+		 !SteamUtils() ||
 		 !engine->GetPlayerInfo( nPlayerIndex, &pi ) )
 	{
 		AssertMsg( 0, "REPLAY: Failed to add domination" );

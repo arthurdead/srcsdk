@@ -161,37 +161,6 @@ private:
 
 extern ConVar sv_force_transmit_ents;
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-class CSteam3Server : public CSteamGameServerAPIContext
-{
-public:
-	CSteam3Server();
-
-	void Shutdown( void )
-	{
-		Clear();
-		m_bInitialized = false;
-	}
-
-	bool CheckInitialized( void )
-	{
-		if ( !m_bInitialized )
-		{
-			Init();
-			m_bInitialized = true;
-			return true;
-		}
-
-		return false;
-	}
-
-private:
-	bool	m_bInitialized;
-};
-CSteam3Server &Steam3Server();
-
 // Normally, when the engine calls ClientPutInServer, it calls a global function in the game DLL
 // by the same name. Use this to override the function that it calls. This is used for bots.
 typedef CBasePlayer* (*ClientPutInServerOverrideFn)( edict_t *pEdict, const char *playername );

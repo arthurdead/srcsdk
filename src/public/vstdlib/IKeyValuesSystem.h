@@ -9,6 +9,7 @@
 #pragma once
 
 #include "vstdlib/vstdlib.h"
+#include "hackmgr/engine_target.h"
 
 // handle to a KeyValues key name symbol
 typedef int HKeySymbol;

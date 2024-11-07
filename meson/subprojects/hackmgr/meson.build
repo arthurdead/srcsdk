@@ -5,6 +5,7 @@ assert(meson.get_compiler('cpp').get_argument_syntax() == 'gcc', 'only gnu compi
 src_root_dir = get_option('src_root_dir')
 game_dir = get_option('game_dir')
 build_libs = get_option('build_libs')
+build_dedicated_server = get_option('build_dedicated_server')
 
 source_base = subproject('source_base')
 
@@ -16,6 +17,7 @@ tier0 = subproject('tier0')
 vstdlib = subproject('vstdlib')
 sdl2 = dependency('SDL2', required: false)
 mathlib = subproject('mathlib')
+steamworks = subproject('steamworks')
 
 install_data(
 	files(
@@ -53,6 +55,7 @@ if build_libs
 			join_paths(hackmgr_src_dir,'dbg.cpp'),
 			join_paths(hackmgr_src_dir,'cpumonitoring.cpp'),
 			join_paths(hackmgr_src_dir,'memalloc.cpp'),
+			join_paths(hackmgr_src_dir,'steam.cpp'),
 			join_paths(src_root_dir,'tier0','mingw_linker_fixes.cpp'),
 			join_paths(src_root_dir,'vstdlib','mingw_linker_fixes.cpp'),
 			join_paths(public_dir,'SoundParametersInternal.cpp'),
@@ -96,34 +99,8 @@ if build_libs
 			sdl2,
 			tier0.get_variable('tier0_dep'),
 			vstdlib.get_variable('vstdlib_dep'),
-			source_base.get_variable('source_cl_dep')
-		],
-		install: true,
-		install_dir: join_paths(game_dir,'bin'),
-		install_rpath: '$ORIGIN'
-	)
-
-	install_data(
-		join_paths(src_root_dir,'tools','enginetools.txt'),
-		install_dir: join_paths(game_dir,'bin'),
-	)
-
-	install_data(
-		join_paths(src_root_dir,'tools','enginetools.txt'),
-		rename: 'sdkenginetools.txt',
-		install_dir: join_paths(game_dir,'bin'),
-	)
-
-	hackmgr_ds_lib = shared_library('hackmgr_ds',name_prefix:'',
-		cpp_args: [
-			'-DDLLNAME=hackmgr_ds',
-			'-DMEMOVERRIDE_MODULE=hackmgr_ds',
-		],
-		dependencies: [
-			hackmgr_base_lib,
-			source_base.get_variable('source_ds_dep'),
-			tier0.get_variable('tier0_ds_dep'),
-			vstdlib.get_variable('vstdlib_ds_dep'),
+			source_base.get_variable('source_cl_dep'),
+			steamworks.get_variable('steamworks_dep'),
 		],
 		install: true,
 		install_dir: join_paths(game_dir,'bin'),
@@ -137,12 +114,42 @@ if build_libs
 		link_with: hackmgr_lib
 	)
 
-	hackmgr_ds_dep = declare_dependency(
-		dependencies: [
-			hackmgr_base_dep,
-		],
-		link_with: hackmgr_ds_lib
+	install_data(
+		join_paths(src_root_dir,'tools','enginetools.txt'),
+		install_dir: join_paths(game_dir,'bin'),
 	)
+
+	install_data(
+		join_paths(src_root_dir,'tools','enginetools.txt'),
+		rename: 'sdkenginetools.txt',
+		install_dir: join_paths(game_dir,'bin'),
+	)
+
+	if build_dedicated_server
+		hackmgr_ds_lib = shared_library('hackmgr_ds',name_prefix:'',
+			cpp_args: [
+				'-DDLLNAME=hackmgr_ds',
+				'-DMEMOVERRIDE_MODULE=hackmgr_ds',
+			],
+			dependencies: [
+				hackmgr_base_lib,
+				source_base.get_variable('source_ds_dep'),
+				tier0.get_variable('tier0_ds_dep'),
+				vstdlib.get_variable('vstdlib_ds_dep'),
+				steamworks.get_variable('steamworks_ds_dep'),
+			],
+			install: true,
+			install_dir: join_paths(game_dir,'bin'),
+			install_rpath: '$ORIGIN'
+		)
+
+		hackmgr_ds_dep = declare_dependency(
+			dependencies: [
+				hackmgr_base_dep,
+			],
+			link_with: hackmgr_ds_lib
+		)
+	endif
 else
 	hackmgr_dep = declare_dependency(
 		dependencies: [

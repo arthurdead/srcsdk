@@ -9,7 +9,7 @@
 #pragma once
 
 #include "tier0/platform.h"
-
+#include "tier0/platform_funcs.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface to engine command line
@@ -50,7 +50,7 @@ public:
 // NOTE: The #define trickery here is necessary for backwards compat:
 // this interface used to lie in the vstdlib library.
 //-----------------------------------------------------------------------------
-PLATFORM_INTERFACE ICommandLine *CommandLine();
+HACKMGR_API ICommandLine *CommandLine();
 
 #endif // TIER0_ICOMMANDLINE_H
 

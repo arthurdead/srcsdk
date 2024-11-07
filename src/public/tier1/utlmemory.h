@@ -739,7 +739,7 @@ void CUtlMemory<T,I>::Grow( int num )
 	if (m_pMemory)
 	{
 		MEM_ALLOC_CREDIT_CLASS();
-		m_pMemory = (T*)realloc( m_pMemory, m_nAllocationCount * sizeof(T) );
+		m_pMemory = (T*)realloc( (void *)m_pMemory, m_nAllocationCount * sizeof(T) );
 		Assert( m_pMemory );
 	}
 	else
@@ -776,7 +776,7 @@ inline void CUtlMemory<T,I>::EnsureCapacity( int num )
 	if (m_pMemory)
 	{
 		MEM_ALLOC_CREDIT_CLASS();
-		m_pMemory = (T*)realloc( m_pMemory, m_nAllocationCount * sizeof(T) );
+		m_pMemory = (T*)realloc( (void *)m_pMemory, m_nAllocationCount * sizeof(T) );
 	}
 	else
 	{

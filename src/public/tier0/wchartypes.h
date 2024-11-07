@@ -79,11 +79,13 @@ typedef wchar_t wchar;
 
 #if defined(_UNICODE)
 typedef wchar tchar;
+typedef wchar_t _TSCHAR;
 #define tstring wstring
 #define __TFILE__ __WFILE__
 #define TCHAR_IS_WCHAR
 #else
 typedef char tchar;
+typedef signed char _TSCHAR;
 #define tstring string
 #define __TFILE__ __FILE__
 #define TCHAR_IS_CHAR

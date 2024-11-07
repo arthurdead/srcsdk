@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include "tier0/platform.h"
+#include "tier0/platform_funcs.h"
 
 PLATFORM_INTERFACE uint64 g_ClockSpeed;
 

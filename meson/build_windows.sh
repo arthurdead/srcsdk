@@ -8,9 +8,12 @@ mesondir="$__script_dir__"
 
 src_root_dir=$(realpath "$__script_dir__/../src")
 
-src_engine_target='sdk2013mp'
+src_engine_target='sdk2013sp'
 if [[ "$src_engine_target" == 'sdk2013mp' ]]; then
 	src_engine_dir=~/'.steam/steam/steamapps/common/Source SDK Base 2013 Multiplayer'
+	src_dedicated_engine_dir=~/'.steam/steam/steamapps/common/Source SDK Base 2013 Dedicated Server'
+elif [[ "$src_engine_target" == 'sdk2013sp' ]]; then
+	src_engine_dir=~/'.steam/steam/steamapps/common/Source SDK Base 2013 Singleplayer'
 	src_dedicated_engine_dir=~/'.steam/steam/steamapps/common/Source SDK Base 2013 Dedicated Server'
 else
 	echo "unknown engine target"

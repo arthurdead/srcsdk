@@ -138,7 +138,6 @@ client_base_dep = declare_dependency(
 		join_paths(client_src_dir,'clientshadowmgr.cpp'),
 		join_paths(client_src_dir,'clientsideeffects.cpp'),
 		join_paths(client_src_dir,'clientsideeffects_test.cpp'),
-		join_paths(client_src_dir,'clientsteamcontext.cpp'),
 		join_paths(client_src_dir,'colorcorrectionmgr.cpp'),
 		join_paths(client_src_dir,'detailobjectsystem.cpp'),
 		join_paths(client_src_dir,'EffectsClient.cpp'),

@@ -307,12 +307,12 @@ CDominationsPanel::CDominationsPanel( Panel *pParent, ReplayHandle_t hReplay )
 	m_pNumDominationsImage->SetImage( szImage );
 	
 	// Add avatars for each person dominated
-	if ( steamapicontext && steamapicontext->SteamUtils() && steamapicontext->SteamUtils()->GetConnectedUniverse() )
+	if ( steamapicontext && SteamUtils() && SteamUtils()->GetConnectedUniverse() )
 	{
 		for ( int i = 0; i < nNumDominations; ++i )
 		{
 			CAvatarImage *pAvatar = new CAvatarImage();
-			CSteamID id( pReplay->GetDomination( i )->m_nVictimFriendId, 1, steamapicontext->SteamUtils()->GetConnectedUniverse(), k_EAccountTypeIndividual );
+			CSteamID id( pReplay->GetDomination( i )->m_nVictimFriendId, 1, SteamUtils()->GetConnectedUniverse(), k_EAccountTypeIndividual );
 			pAvatar->SetAvatarSteamID( id );
 			pAvatar->SetAvatarSize( 32, 32 );
 			pAvatar->UpdateFriendStatus();
@@ -1807,9 +1807,9 @@ void CReplayDetailsPanel::OnCommand( const char *pCommand )
 
 	else if ( FStrEq( pCommand, "viewyoutube" ) )
 	{
-		if ( steamapicontext && steamapicontext->SteamFriends() && m_pYouTubeResponseHandler->m_strVideoURL.IsEmpty() == false )
+		if ( steamapicontext && SteamFriends() && m_pYouTubeResponseHandler->m_strVideoURL.IsEmpty() == false )
 		{
-			steamapicontext->SteamFriends()->ActivateGameOverlayToWebPage( m_pYouTubeResponseHandler->m_strVideoURL.Get() );
+			SteamFriends()->ActivateGameOverlayToWebPage( m_pYouTubeResponseHandler->m_strVideoURL.Get() );
 		}
 	}
 
