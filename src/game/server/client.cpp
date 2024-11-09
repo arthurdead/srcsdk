@@ -1185,7 +1185,6 @@ void EnableNoClip( CBasePlayer *pPlayer )
 	pPlayer->SetParent( NULL );
 	pPlayer->SetMoveType( MOVETYPE_NOCLIP );
 	ClientPrint( pPlayer, HUD_PRINTCONSOLE, "noclip ON\n");
-	pPlayer->AddEFlags( EFL_NOCLIP_ACTIVE );
 	pPlayer->NoClipStateChanged();
 
 	UTIL_LogPrintf( "%s entered NOCLIP mode\n", GameLogSystem()->FormatPlayer( pPlayer ) );
@@ -1196,7 +1195,6 @@ void DisableNoClip( CBasePlayer *pPlayer )
 	CPlayerState *pl = pPlayer->PlayerData();
 	Assert( pl );
 
-	pPlayer->RemoveEFlags( EFL_NOCLIP_ACTIVE );
 	pPlayer->SetMoveType( MOVETYPE_WALK );
 
 	ClientPrint( pPlayer, HUD_PRINTCONSOLE, "noclip OFF\n");

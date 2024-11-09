@@ -1,9 +1,14 @@
 #include "cbase.h"
 #include "map_entity.h"
 #include "gamestringpool.h"
+#include "mapentities_shared.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+#ifdef GAME_DLL
+extern ConVar ent_debugkeys;
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: iterates through a typedescript data block, so it can insert key/value data into the block
@@ -61,6 +66,10 @@ bool ParseKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields, c
 
 			case FIELD_SHORT:
 				(*(short *)((char *)pObject + fieldOffset)) = (short)atoi( szValue );
+				return true;
+
+			case FIELD_INTEGER64:
+				(*(int64 *)((char *)pObject + fieldOffset)) = strtoull( szValue, NULL, 10 );
 				return true;
 
 			case FIELD_INTEGER:
@@ -173,6 +182,10 @@ bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields,
 				Q_snprintf( szValue, iMaxLen, "%d", (*(short *)((char *)pObject + fieldOffset)) );
 				return true;
 
+			case FIELD_INTEGER64:
+				Q_snprintf( szValue, iMaxLen, "%lli", (*(int64 *)((char *)pObject + fieldOffset)) );
+				return true;
+
 			case FIELD_INTEGER:
 			case FIELD_TICK:
 				Q_snprintf( szValue, iMaxLen, "%d", (*(int *)((char *)pObject + fieldOffset)) );
@@ -234,4 +247,120 @@ bool ExtractKeyvalue( void *pObject, typedescription_t *pFields, int iNumFields,
 	}
 
 	return false;
+}
+
+#ifdef _DEBUG
+extern void ValidateDataDescription(datamap_t *pDataMap, const char *classname);
+#endif
+
+BEGIN_MAPKVPARSER_NO_BASE(CMapKVParser)
+END_MAPKVPARSER()
+
+CUtlDict<CMapKVParser *, unsigned short> CMapKVParser::s_Parsers;
+
+CMapKVParser::CMapKVParser( const char *classname )
+{
+	m_iClassname = AllocPooledString( classname );
+
+	s_Parsers.Insert( STRING(m_iClassname) );
+}
+
+void CMapKVParser::ParseMapData( CEntityMapData *mapData )
+{
+	char keyName[MAPKEY_MAXLENGTH];
+	char value[MAPKEY_MAXLENGTH];
+
+	#ifdef _DEBUG
+	datamap_t *pDataMap = GetMapDataDesc();
+	::ValidateDataDescription(pDataMap, STRING(m_iClassname));
+	#endif // _DEBUG
+
+	// loop through all keys in the data block and pass the info back into the object
+	if ( mapData->GetFirstKey(keyName, value) )
+	{
+		do 
+		{
+			KeyValue( keyName, value );
+		} 
+		while ( mapData->GetNextKey(keyName, value) );
+	}
+
+	OnParseMapDataFinished();
+}
+
+bool CMapKVParser::KeyValue( const char *szKeyName, const char *szValue ) 
+{
+	//!! temp hack, until worldcraft is fixed
+	// strip the # tokens from (duplicate) key names
+	char *s = (char *)strchr( szKeyName, '#' );
+	if ( s )
+	{
+		*s = '\0';
+	}
+
+	// loop through the data description, and try and place the keys in
+#ifdef GAME_DLL
+	if ( !*ent_debugkeys.GetString() )
+#endif
+	{
+		for ( datamap_t *dmap = GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
+		{
+			if ( ::ParseKeyvalue(this, dmap->dataDesc, dmap->dataNumFields, szKeyName, szValue) )
+				return true;
+		}
+	}
+#ifdef GAME_DLL
+	else
+	{
+		// debug version - can be used to see what keys have been parsed in
+		bool printKeyHits = false;
+		const char *debugName = "";
+
+		if ( *ent_debugkeys.GetString() && !Q_stricmp(ent_debugkeys.GetString(), STRING(m_iClassname)) )
+		{
+			// Msg( "-- found entity of type %s\n", STRING(m_iClassname) );
+			printKeyHits = true;
+			debugName = STRING(m_iClassname);
+		}
+
+		// loop through the data description, and try and place the keys in
+		for ( datamap_t *dmap = GetMapDataDesc(); dmap != NULL; dmap = dmap->baseMap )
+		{
+			if ( !printKeyHits && *ent_debugkeys.GetString() && !Q_stricmp(dmap->dataClassName, ent_debugkeys.GetString()) )
+			{
+				// Msg( "-- found class of type %s\n", dmap->dataClassName );
+				printKeyHits = true;
+				debugName = dmap->dataClassName;
+			}
+
+			if ( ::ParseKeyvalue(this, dmap->dataDesc, dmap->dataNumFields, szKeyName, szValue) )
+			{
+				if ( printKeyHits )
+					Msg( "(%s) key: %-16s value: %s\n", debugName, szKeyName, szValue );
+				
+				return true;
+			}
+		}
+
+		if ( printKeyHits )
+			Msg( "!! (%s) key not handled: \"%s\" \"%s\"\n", STRING(m_iClassname), szKeyName, szValue );
+	}
+#endif
+
+	// key hasn't been handled
+	return false;
+}
+
+void CMapKVParser::OnParseMapDataFinished()
+{
+}
+
+CMapKVParser *CMapKVParser::Find( const char *classname )
+{
+	int idx = s_Parsers.Find( classname );
+	if(idx == s_Parsers.InvalidIndex()) {
+		return NULL;
+	}
+
+	return s_Parsers[idx];
 }

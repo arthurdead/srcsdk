@@ -260,7 +260,7 @@ public:
 		const char *DllClassname() const \
 		{ return V_STRINGIFY(DLLClassName); } \
 	}; \
-	INIT_PRIORITY(65535) static C##DLLClassName##Factory g_##DLLClassName##Factory;
+	INIT_PRIORITY(65535) C##DLLClassName##Factory g_##DLLClassName##Factory;
 
 #define LINK_ENTITY_TO_CLASS(mapClassName,DLLClassName) \
 	class C##mapClassName##Factory : public CEntityFactory<DLLClassName> \
@@ -274,7 +274,7 @@ public:
 		const char *DllClassname() const \
 		{ return V_STRINGIFY(DLLClassName); } \
 	}; \
-	INIT_PRIORITY(65535) static C##mapClassName##Factory g_##mapClassName##Factory( #mapClassName );
+	INIT_PRIORITY(65535) C##mapClassName##Factory g_##mapClassName##Factory( #mapClassName );
 
 
 //

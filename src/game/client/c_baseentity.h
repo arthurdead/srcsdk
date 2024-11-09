@@ -273,7 +273,7 @@ public:
 	virtual void					MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
 	virtual int						GetTracerAttachment( void );
 	void							ComputeTracerStartPosition( const Vector &vecShotSrc, Vector *pVecTracerStart );
-	void							TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, int bitsDamageType );
+	void							TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, uint64 bitsDamageType );
 	virtual int						BloodColor();
 	virtual const char*				GetTracerType();
 
@@ -481,11 +481,10 @@ public:
 	// an uncompressed update that's caused it to destroy all entities & recreate them.
 	virtual void					SetDestroyedOnRecreateEntities( void );
 
-	virtual int				GetEFlags() const;
-	virtual void			SetEFlags( int iEFlags );
-	void					AddEFlags( int nEFlagMask );
-	void					RemoveEFlags( int nEFlagMask );
-	bool					IsEFlagSet( int nEFlagMask ) const;
+	virtual uint64				GetEFlags() const;
+	void					AddEFlags( uint64 nEFlagMask );
+	void					RemoveEFlags( uint64 nEFlagMask );
+	bool					IsEFlagSet( uint64 nEFlagMask ) const;
 
 	// checks to see if the entity is marked for deletion
 	bool							IsMarkedForDeletion( void );
@@ -670,10 +669,10 @@ public:
 	void							SetAbsOrigin( const Vector& origin );
  	void							SetAbsAngles( const QAngle& angles );
 
-	void							AddFlag( int flags );
-	void							RemoveFlag( int flagsToRemove );
-	void							ToggleFlag( int flagToToggle );
-	int								GetFlags( void ) const;
+	void							AddFlag( uint64 flags );
+	void							RemoveFlag( uint64 flagsToRemove );
+	void							ToggleFlag( uint64 flagToToggle );
+	uint64								GetFlags( void ) const;
 	void							ClearFlags();
 
 	void							SetDistanceFade( float flMinDist, float flMaxDist );
@@ -1837,7 +1836,7 @@ private:
 
 	ClientThinkHandle_t				m_hThink;
 
-	int								m_iEFlags;	// entity flags EFL_*
+	uint64								m_iEFlags;	// entity flags EFL_*
 
 	// Object movetype
 	unsigned char					m_MoveType;
@@ -1907,7 +1906,7 @@ private:
 	QAngle							m_angNetworkAngles;
 
 	// Behavior flags
-	int								m_fFlags;
+	uint64								m_fFlags;
 
 	// used to cull collision tests
 	int								m_CollisionGroup;
@@ -2508,17 +2507,24 @@ inline bool C_BaseEntity::IsMarkedForDeletion( void )
 	return (m_iEFlags & EFL_KILLME); 
 }
 
-inline void C_BaseEntity::AddEFlags( int nEFlagMask )
+inline void C_BaseEntity::AddEFlags( uint64 nEFlagMask )
 {
 	m_iEFlags |= nEFlagMask;
 }
 
-inline void C_BaseEntity::RemoveEFlags( int nEFlagMask )
+inline void C_BaseEntity::RemoveEFlags( uint64 nEFlagMask )
 {
+	nEFlagMask &= ~(
+		EFL_KILLME|
+		EFL_NOT_RENDERABLE|
+		EFL_NOT_NETWORKED|
+		EFL_NOT_COLLIDEABLE
+	);
+
 	m_iEFlags &= ~nEFlagMask;
 }
 
-inline bool C_BaseEntity::IsEFlagSet( int nEFlagMask ) const
+inline bool C_BaseEntity::IsEFlagSet( uint64 nEFlagMask ) const
 {
 	return (m_iEFlags & nEFlagMask) != 0;
 }

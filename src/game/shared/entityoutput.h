@@ -208,6 +208,7 @@ public:
 // useful typedefs for allowed output data types
 typedef CEntityOutputTemplate<variant_t,FIELD_INPUT>		COutputVariant;
 typedef CEntityOutputTemplate<int,FIELD_INTEGER>			COutputInt;
+typedef CEntityOutputTemplate<int64,FIELD_INTEGER64>			COutputInt64;
 typedef CEntityOutputTemplate<float,FIELD_FLOAT>			COutputFloat;
 typedef CEntityOutputTemplate<string_t,FIELD_STRING>		COutputString;
 typedef CEntityOutputTemplate<EHANDLE,FIELD_EHANDLE>		COutputEHANDLE;

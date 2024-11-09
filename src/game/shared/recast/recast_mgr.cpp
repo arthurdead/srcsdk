@@ -129,6 +129,16 @@ bool CRecastMgr::InitMeshes()
 	return true;
 }
 
+CRecastMesh *CRecastMgr::GetMesh( NavMeshType_t type )
+{
+	if(type == RECAST_NAVMESH_INVALID)
+		return NULL;
+	int idx = FindMeshIndex( type );
+	if( idx != -1 )
+		return GetMeshByIndex( idx );
+	return NULL;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------

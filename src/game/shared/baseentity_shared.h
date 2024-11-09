@@ -107,7 +107,7 @@ inline int CSharedBaseEntity::GetCollisionGroup() const
 	return m_CollisionGroup;
 }
 
-inline int	CSharedBaseEntity::GetFlags( void ) const
+inline uint64	CSharedBaseEntity::GetFlags( void ) const
 {
 	return m_fFlags;
 }

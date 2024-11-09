@@ -1000,15 +1000,20 @@ const char *MapEntity_ParseEntity(CSharedBaseEntity *&pEntity, bool &bCreated, c
 	}
 	else
 	{
-		// Just skip past all the keys.
-		char keyName[MAPKEY_MAXLENGTH];
-		char value[MAPKEY_MAXLENGTH];
-		if ( entData.GetFirstKey(keyName, value) )
-		{
-			do 
+		CMapKVParser *parser = CMapKVParser::Find( className );
+		if(parser) {
+			parser->ParseMapData(&entData);
+		} else {
+			// Just skip past all the keys.
+			char keyName[MAPKEY_MAXLENGTH];
+			char value[MAPKEY_MAXLENGTH];
+			if ( entData.GetFirstKey(keyName, value) )
 			{
-			} 
-			while ( entData.GetNextKey(keyName, value) );
+				do 
+				{
+				} 
+				while ( entData.GetNextKey(keyName, value) );
+			}
 		}
 	}
 

@@ -347,10 +347,10 @@ public:
 
 	virtual void			PreThink( void );
 	virtual void			PostThink( void );
-	virtual int				TakeHealth( float flHealth, int bitsDamageType );
+	virtual int				TakeHealth( float flHealth, uint64 bitsDamageType );
 	virtual void			TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	virtual int				OnTakeDamage( const CTakeDamageInfo &info );
-	virtual void			DamageEffect(float flDamage, int fDamageType);
+	virtual void			DamageEffect(float flDamage, uint64 fDamageType);
 
 	virtual void			OnDamagedByExplosion( const CTakeDamageInfo &info );
 
@@ -1013,7 +1013,7 @@ protected:
 	Vector					m_DmgOrigin;
 	float					m_DmgTake;
 	float					m_DmgSave;
-	int						m_bitsDamageType;	// what types of damage has player taken
+	uint64						m_bitsDamageType;	// what types of damage has player taken
 	int						m_bitsHUDDamage;	// Damage bits for the current fame. These get sent to the hud via gmsgDamage
 
 	CNetworkVar( float, m_flDeathTime );		// the time at which the player died  (used in PlayerDeathThink())

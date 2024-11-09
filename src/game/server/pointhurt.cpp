@@ -36,7 +36,7 @@ public:
 	DECLARE_MAPENTITY();
 
 	int			m_nDamage;
-	int			m_bitsDamageType;
+	uint64			m_bitsDamageType;
 	float		m_flRadius;
 	float		m_flDelay;
 	string_t	m_strTarget;
@@ -48,7 +48,7 @@ BEGIN_MAPENTITY( CPointHurt )
 	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "DamageRadius" ),
 	DEFINE_KEYFIELD( m_nDamage, FIELD_INTEGER, "Damage" ),
 	DEFINE_KEYFIELD( m_flDelay, FIELD_FLOAT, "DamageDelay" ),
-	DEFINE_KEYFIELD( m_bitsDamageType, FIELD_INTEGER, "DamageType" ),
+	DEFINE_KEYFIELD( m_bitsDamageType, FIELD_INTEGER64, "DamageType" ),
 	DEFINE_KEYFIELD( m_strTarget, FIELD_STRING, "DamageTarget" ),
 	
 	// Inputs
@@ -185,7 +185,7 @@ bool CPointHurt::KeyValue( const char *szKeyName, const char *szValue )
 	// Additional OR flags
 	if (FStrEq( szKeyName, "damageor" ) || FStrEq( szKeyName, "damagepresets" ))
 	{
-		m_bitsDamageType |= atoi(szValue);
+		m_bitsDamageType |= strtoull(szValue, NULL, 10);
 	}
 	else
 		return BaseClass::KeyValue( szKeyName, szValue );

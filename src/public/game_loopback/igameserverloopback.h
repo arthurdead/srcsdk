@@ -17,6 +17,10 @@ abstract_class IGameServerLoopback : public IAppSystem
 public:
 	// Way of accessing the server recast mesh on the client (for debugging/visualization)
 	virtual IRecastMgr *GetRecastMgr() = 0;
+
+#ifdef _DEBUG
+	virtual const char *GetEntityClassname( int entnum, int iSerialNum ) = 0;
+#endif
 };
 
 #endif

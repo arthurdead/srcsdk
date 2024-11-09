@@ -148,9 +148,9 @@ bool CPointDamageInfo::KeyValue( const char *szKeyName, const char *szValue )
 		m_info.SetDamageBonus(atof(szValue));
 
 	else if (FStrEq(szKeyName, "DamageType") || FStrEq(szKeyName, "DamagePresets"))
-		m_info.AddDamageType(atoi(szValue));
+		m_info.AddDamageType(strtoull(szValue, NULL, 10));
 	else if (FStrEq(szKeyName, "DamageOr"))
-		m_info.AddDamageType(atoi(szValue));
+		m_info.AddDamageType(strtoull(szValue, NULL, 10));
 	else if (FStrEq(szKeyName, "DamageCustom"))
 		m_info.SetDamageCustom(atoi(szValue));
 	else if (FStrEq(szKeyName, "DamageStats"))
@@ -221,7 +221,7 @@ bool CPointDamageInfo::GetKeyValue( const char *szKeyName, char *szValue, int iM
 		Q_snprintf(szValue, iMaxLen, "%f", m_info.GetDamageBonus());
 
 	else if (FStrEq(szKeyName, "DamageType"))
-		Q_snprintf(szValue, iMaxLen, "%i", m_info.GetDamageType());
+		Q_snprintf(szValue, iMaxLen, "%llu", m_info.GetDamageType());
 	else if (FStrEq(szKeyName, "DamageCustom"))
 		Q_snprintf(szValue, iMaxLen, "%i", m_info.GetDamageCustom());
 	else if (FStrEq(szKeyName, "DamageStats"))

@@ -12,6 +12,56 @@
 static CUtlDict<int,int> *g_STDict = 0;
 static CUtlDict<int,int> *g_RTDict = 0;
 
+const char *DVariant::ToString()
+{
+	static char text[128];
+
+	switch ( m_Type )
+	{
+	case DPT_Int : 
+		Q_snprintf( text, sizeof(text), "%i", m_Int );
+		break;
+	case DPT_Float :
+		Q_snprintf( text, sizeof(text), "%.3f", m_Float );
+		break;
+	case DPT_Vector :
+		Q_snprintf( text, sizeof(text), "(%.3f,%.3f,%.3f)", 
+			m_Vector[0], m_Vector[1], m_Vector[2] );
+		break;
+	case DPT_VectorXY :
+		Q_snprintf( text, sizeof(text), "(%.3f,%.3f)", 
+			m_Vector[0], m_Vector[1] );
+		break;
+#ifdef DT_QUATERNION_SUPPORTED
+	case DPT_Quaternion :
+		Q_snprintf( text, sizeof(text), "(%.3f,%.3f,%.3f %.3f)", 
+			m_Vector[0], m_Vector[1], m_Vector[2], m_Vector[3] );
+		break;
+#endif
+	case DPT_String : 
+		if ( m_pString ) 
+			return m_pString;
+		else
+			return "NULL";
+		break;
+	case DPT_Array :
+		Q_snprintf( text, sizeof(text), "Array" ); 
+		break;
+	case DPT_DataTable :
+		Q_snprintf( text, sizeof(text), "DataTable" ); 
+		break;
+#ifdef DT_INT64_SUPPORTED
+	case DPT_Int64:
+		Q_snprintf( text, sizeof(text), "%I64d", m_Int64 );
+		break;
+#endif
+	default :
+		Q_snprintf( text, sizeof(text), "DVariant type %i unknown", m_Type ); 
+		break;
+	}
+
+	return text;
+}
 
 char* AllocateStringHelper2( const char *pFormat, va_list marker )
 {

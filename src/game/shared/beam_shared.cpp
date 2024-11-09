@@ -52,7 +52,7 @@ void CInfoTarget::Spawn( void )
 
 	if ( HasSpawnFlags(0x01) )
 	{
-		SetEFlags( EFL_FORCE_CHECK_TRANSMIT );
+		AddEFlags( EFL_FORCE_CHECK_TRANSMIT );
 	}
 }
 

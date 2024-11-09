@@ -50,7 +50,7 @@ static ConVar	cl_pred_optimize_prefer_server_data( "cl_pred_optimize_prefer_serv
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void InvalidateEFlagsRecursive( C_BaseEntity *pEnt, int nDirtyFlags, int nChildFlags = 0 )
+void InvalidateEFlagsRecursive( C_BaseEntity *pEnt, uint64 nDirtyFlags, uint64 nChildFlags = 0 )
 {
 	pEnt->AddEFlags( nDirtyFlags );
 	nDirtyFlags |= nChildFlags;

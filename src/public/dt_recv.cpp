@@ -133,13 +133,20 @@ CStandardRecvProxies::CStandardRecvProxies()
 	m_FloatToFloat = RecvProxy_FloatToFloat;
 	m_VectorToVector = RecvProxy_VectorToVector;
 
-#ifdef SUPPORTS_INT64
+#ifdef DT_INT64_SUPPORTED
 	m_Int64ToInt64 = RecvProxy_Int64ToInt64;
 #endif
 }
 
-CStandardRecvProxies g_StandardRecvProxies;
-	
+CStandardRecvProxiesEx::CStandardRecvProxiesEx()
+{
+#ifndef DT_INT64_SUPPORTED
+	m_Int64ToInt64 = RecvProxy_Int64ToInt64;
+#endif
+}
+
+CStandardRecvProxiesEx g_StandardRecvProxies;
+
 
 // ---------------------------------------------------------------------- //
 // RecvProp.
@@ -271,8 +278,6 @@ RecvProp RecvPropVectorXY(
 	return ret;
 }
 
-#if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
-
 RecvProp RecvPropQuaternion(
 	const char *pVarName, 
 	int offset, 
@@ -292,13 +297,16 @@ RecvProp RecvPropQuaternion(
 
 	ret.m_pVarName = pVarName;
 	ret.SetOffset( offset );
+#ifdef DT_QUATERNION_SUPPORTED
 	ret.m_RecvType = DPT_Quaternion;
+#else
+	ret.m_RecvType = DPT_Vector;
+#endif
 	ret.m_Flags = flags;
 	ret.SetProxyFn( varProxy );
 
 	return ret;
 }
-#endif
 
 RecvProp RecvPropInt(
 	const char *pVarName, 
@@ -338,11 +346,22 @@ RecvProp RecvPropInt(
 
 	ret.m_pVarName = pVarName;
 	ret.SetOffset( offset );
-#ifdef SUPPORTS_INT64
-	ret.m_RecvType = (sizeofVar == 8) ? DPT_Int64 : DPT_Int;
-#else
-	ret.m_RecvType = DPT_Int;
-#endif
+
+	if( sizeofVar == 8 )
+	{
+	#ifdef DT_INT64_SUPPORTED
+		ret.m_RecvType = DPT_Int64;
+	#else
+		ret.m_RecvType = DPT_VectorXY;
+
+		flags |= SPROP_NOSCALE;
+	#endif
+	}
+	else
+	{
+		ret.m_RecvType = DPT_Int;
+	}
+
 	ret.m_Flags = flags;
 	ret.SetProxyFn( varProxy );
 

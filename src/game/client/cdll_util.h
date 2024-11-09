@@ -192,7 +192,7 @@ T *_CreateEntityTemplate( T *newEnt, const char *className )
 		const char *DllClassname() const \
 		{ return V_STRINGIFY(DLLClassName); } \
 	}; \
-	INIT_PRIORITY(65535) static C##mapClassName##Factory g_##mapClassName##Factory( #mapClassName );
+	INIT_PRIORITY(65535) C##mapClassName##Factory g_##mapClassName##Factory( #mapClassName );
 
 // Misc useful
 inline bool FStrEq(const char *sz1, const char *sz2)

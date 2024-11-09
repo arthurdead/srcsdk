@@ -43,10 +43,10 @@ public:
 	DECLARE_CLASS_NOBASE( CTakeDamageInfo );
 
 	CTakeDamageInfo();
-	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, int bitsDamageType, int iKillType = 0 );
-	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, int bitsDamageType, int iKillType = 0 );
-	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
-	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
+	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, uint64 bitsDamageType, int iKillType = 0 );
+	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, uint64 bitsDamageType, int iKillType = 0 );
+	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, uint64 bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
+	CTakeDamageInfo( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, uint64 bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
 
 #ifdef CLIENT_DLL
 	#undef CTakeDamageInfo
@@ -92,9 +92,9 @@ public:
 	Vector			GetReportedPosition() const;
 	void			SetReportedPosition( const Vector &reportedPosition );
 
-	int				GetDamageType() const;
-	void			SetDamageType( int bitsDamageType );
-	void			AddDamageType( int bitsDamageType );
+	uint64				GetDamageType() const;
+	void			SetDamageType( uint64 bitsDamageType );
+	void			AddDamageType( uint64 bitsDamageType );
 	int				GetDamageCustom( void ) const;
 	void			SetDamageCustom( int iDamageCustom );
 	int				GetDamageStats( void ) const;
@@ -115,24 +115,24 @@ public:
 	int				GetDamagedOtherPlayers() const     { return m_iDamagedOtherPlayers; }
 	void			SetDamagedOtherPlayers( int iVal ) { m_iDamagedOtherPlayers = iVal; }
 
-	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, int bitsDamageType, int iKillType = 0 );
-	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, int bitsDamageType, int iKillType = 0 );
-	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
-	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, int bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
+	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, float flDamage, uint64 bitsDamageType, int iKillType = 0 );
+	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, float flDamage, uint64 bitsDamageType, int iKillType = 0 );
+	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, const Vector &damageForce, const Vector &damagePosition, float flDamage, uint64 bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
+	void			Set( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, float flDamage, uint64 bitsDamageType, int iKillType = 0, Vector *reportedPosition = NULL );
 
 	void			AdjustPlayerDamageInflictedForSkillLevel();
 	void			AdjustPlayerDamageTakenForSkillLevel();
 
 	// Given a damage type (composed of the #defines above), fill out a string with the appropriate text.
 	// For designer debug output.
-	static void		DebugGetDamageTypeString(unsigned int DamageType, char *outbuf, int outbuflength );
+	static void		DebugGetDamageTypeString(uint64 DamageType, char *outbuf, int outbuflength );
 
 
 //private:
 	void			CopyDamageToBaseDamage();
 
 protected:
-	void			Init( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, int bitsDamageType, int iKillType );
+	void			Init( CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, uint64 bitsDamageType, int iKillType );
 
 	Vector			m_vecDamageForce;
 	Vector			m_vecDamagePosition;
@@ -143,7 +143,7 @@ protected:
 	float			m_flDamage;
 	float			m_flMaxDamage;
 	float			m_flBaseDamage;			// The damage amount before skill leve adjustments are made. Used to get uniform damage forces.
-	int				m_bitsDamageType;
+	uint64				m_bitsDamageType;
 	int				m_iDamageCustom;
 	int				m_iDamageStats;
 	int				m_iAmmoType;			// AmmoType of the weapon used to cause this damage, if any
@@ -178,7 +178,7 @@ public:
 	CSharedBaseEntity		*GetTarget() const;
 	void			SetTarget( CSharedBaseEntity *pTarget );
 
-	void			Init( CSharedBaseEntity *pTarget, CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, int bitsDamageType, int iKillType );
+	void			Init( CSharedBaseEntity *pTarget, CSharedBaseEntity *pInflictor, CSharedBaseEntity *pAttacker, CSharedBaseEntity *pWeapon, const Vector &damageForce, const Vector &damagePosition, const Vector &reportedPosition, float flDamage, uint64 bitsDamageType, int iKillType );
 
 protected:
 	EHANDLE			m_hTarget;
@@ -353,17 +353,17 @@ inline void CSharedTakeDamageInfo::SetReportedPosition( const Vector &reportedPo
 }
 
 
-inline void CSharedTakeDamageInfo::SetDamageType( int bitsDamageType )
+inline void CSharedTakeDamageInfo::SetDamageType( uint64 bitsDamageType )
 {
 	m_bitsDamageType = bitsDamageType;
 }
 
-inline int CSharedTakeDamageInfo::GetDamageType() const
+inline uint64 CSharedTakeDamageInfo::GetDamageType() const
 {
 	return m_bitsDamageType;
 }
 
-inline void	CSharedTakeDamageInfo::AddDamageType( int bitsDamageType )
+inline void	CSharedTakeDamageInfo::AddDamageType( uint64 bitsDamageType )
 {
 	m_bitsDamageType |= bitsDamageType;
 }

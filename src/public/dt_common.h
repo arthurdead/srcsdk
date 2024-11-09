@@ -126,7 +126,8 @@
 class SendProp;
 
 // The day we do this, we break all mods until they recompile.
-//#define SUPPORTS_INT64
+//#define DT_INT64_SUPPORTED
+//#define DT_QUATERNION_SUPPORTED
 
 typedef enum
 {
@@ -137,11 +138,12 @@ typedef enum
 	DPT_String,
 	DPT_Array,	// An array of the base types (can't be of datatables).
 	DPT_DataTable,
-#if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
+
+#ifdef DT_QUATERNION_SUPPORTED
 	DPT_Quaternion,
 #endif
 
-#ifdef SUPPORTS_INT64
+#ifdef DT_INT64_SUPPORTED
 	DPT_Int64,
 #endif
 
@@ -153,59 +155,10 @@ typedef enum
 class DVariant
 {
 public:
-				DVariant()				{m_Type = DPT_Float;}
-				DVariant(float val)		{m_Type = DPT_Float; m_Float = val;}
-				
-				const char *ToString()
-				{
-					static char text[128];
-
-					switch ( m_Type )
-					{
-						case DPT_Int : 
-							Q_snprintf( text, sizeof(text), "%i", m_Int );
-							break;
-						case DPT_Float :
-							Q_snprintf( text, sizeof(text), "%.3f", m_Float );
-							break;
-						case DPT_Vector :
-							Q_snprintf( text, sizeof(text), "(%.3f,%.3f,%.3f)", 
-								m_Vector[0], m_Vector[1], m_Vector[2] );
-							break;
-						case DPT_VectorXY :
-							Q_snprintf( text, sizeof(text), "(%.3f,%.3f)", 
-								m_Vector[0], m_Vector[1] );
-							break;
-#if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
-						case DPT_Quaternion :
-							Q_snprintf( text, sizeof(text), "(%.3f,%.3f,%.3f %.3f)", 
-								m_Vector[0], m_Vector[1], m_Vector[2], m_Vector[3] );
-							break;
-#endif
-						case DPT_String : 
-							if ( m_pString ) 
-								return m_pString;
-							else
-								return "NULL";
-							break;
-						case DPT_Array :
-							Q_snprintf( text, sizeof(text), "Array" ); 
-							break;
-						case DPT_DataTable :
-							Q_snprintf( text, sizeof(text), "DataTable" ); 
-							break;
-#ifdef SUPPORTS_INT64
-						case DPT_Int64:
-							Q_snprintf( text, sizeof(text), "%I64d", m_Int64 );
-							break;
-#endif
-						default :
-							Q_snprintf( text, sizeof(text), "DVariant type %i unknown", m_Type ); 
-							break;
-					}
-
-					return text;
-				}
+	DVariant()				{m_Type = DPT_Float;}
+	DVariant(float val)		{m_Type = DPT_Float; m_Float = val;}
+	
+	const char *ToString();
 
 	union
 	{
@@ -213,7 +166,7 @@ public:
 		int		m_Int;
 		const char	*m_pString;
 		void	*m_pData;	// For DataTables.
-#if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
+#ifdef DT_QUATERNION_SUPPORTED
 		float	m_Vector[4];
 #else
 		float	m_Vector[3];

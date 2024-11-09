@@ -339,8 +339,7 @@ bool CBaseCombatCharacter::FVisible( CBaseEntity *pEntity, int traceMask, CBaseE
 {
 	VPROF( "CBaseCombatCharacter::FVisible" );
 
-	if ( traceMask != MASK_BLOCKLOS || !ShouldUseVisibilityCache( pEntity ) || pEntity == this || !ai_use_visibility_cache.GetBool()
-		 )
+	if ( traceMask != MASK_BLOCKLOS || !ShouldUseVisibilityCache( pEntity ) || pEntity == this || !ai_use_visibility_cache.GetBool() )
 	{
 		return BaseClass::FVisible( pEntity, traceMask, ppBlocker );
 	}

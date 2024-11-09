@@ -34,6 +34,7 @@ class variant_t
 		bool bVal;
 		string_t iszVal;
 		int iVal;
+		int64 iVal64;
 		short hVal;
 		char cVal;
 		float flVal;
@@ -58,6 +59,7 @@ public:
 	inline const char *String( void ) const				{ return( fieldType == FIELD_STRING ) ? STRING(iszVal) : ToString(); }
 	inline string_t StringID( void ) const				{ return( fieldType == FIELD_STRING ) ? iszVal : NULL_STRING; }
 	inline int Int( void ) const						{ return( fieldType == FIELD_INTEGER ) ? iVal : 0; }
+	inline int64 Int64( void ) const					{ return( fieldType == FIELD_INTEGER64 ) ? iVal64 : 0; }
 	inline float Float( void ) const					{ return( fieldType == FIELD_FLOAT ) ? flVal : 0; }
 	inline const EHANDLE &Entity(void) const;
 	inline color32 Color32(void) const					{ return rgbaVal; }
@@ -70,6 +72,7 @@ public:
 	void SetBool( bool b ) { bVal = b; fieldType = FIELD_BOOLEAN; }
 	void SetString( string_t str ) { iszVal = str, fieldType = FIELD_STRING; }
 	void SetInt( int val ) { iVal = val, fieldType = FIELD_INTEGER; }
+	void SetInt64( int64 val ) { iVal64 = val, fieldType = FIELD_INTEGER64; }
 	void SetFloat( float val ) { flVal = val, fieldType = FIELD_FLOAT; }
 	void SetEntity( CSharedBaseEntity *val );
 	void SetVector3D( const Vector &val ) { vecVal[0] = val[0]; vecVal[1] = val[1]; vecVal[2] = val[2]; fieldType = FIELD_VECTOR; }
@@ -90,6 +93,7 @@ public:
 
 	static typedescription_t m_SaveBool[];
 	static typedescription_t m_SaveInt[];
+	static typedescription_t m_SaveInt64[];
 	static typedescription_t m_SaveFloat[];
 	static typedescription_t m_SaveEHandle[];
 	static typedescription_t m_SaveString[];

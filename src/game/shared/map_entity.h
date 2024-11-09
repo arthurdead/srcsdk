@@ -4,6 +4,8 @@
 #pragma once
 
 #include "datamap.h"
+#include "string_t.h"
+#include "tier1/utldict.h"
 
 #ifdef NULL
 #undef NULL
@@ -85,5 +87,42 @@
 #define DECLARE_MAPEMBEDDED() DECLARE_MAPENTITY()
 #define BEGIN_MAPEMBEDDED_NO_BASE BEGIN_MAPENTITY_NO_BASE
 #define END_MAPEMBEDDED END_MAPENTITY
+
+#define DECLARE_MAPKVPARSER() DECLARE_MAPENTITY()
+#define BEGIN_MAPKVPARSER_NO_BASE BEGIN_MAPENTITY_NO_BASE
+#define END_MAPKVPARSER END_MAPENTITY
+
+class CEntityMapData;
+
+class CMapKVParser
+{
+public:
+	DECLARE_MAPKVPARSER();
+
+	CMapKVParser( const char *classname );
+
+	virtual void ParseMapData( CEntityMapData *mapData );
+	virtual bool KeyValue( const char *szKeyName, const char *szValue );
+	virtual void OnParseMapDataFinished();
+
+	static CMapKVParser *Find( const char *classname );
+
+private:
+	string_t m_iClassname;
+
+	static CUtlDict<CMapKVParser *, unsigned short> s_Parsers;
+};
+
+#define LINK_ENTITY_TO_KVPARSER(mapClassName,DLLClassName) \
+	class C##mapClassName##Factory : public DLLClassName \
+	{ \
+		typedef DLLClassName BaseClass; \
+	public: \
+		C##mapClassName##Factory( const char *pClassName ) \
+			: BaseClass( pClassName ) \
+		{ \
+		} \
+	}; \
+	INIT_PRIORITY(65535) C##mapClassName##Factory g_##mapClassName##Factory( #mapClassName );
 
 #endif

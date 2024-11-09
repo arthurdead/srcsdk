@@ -78,12 +78,22 @@ public:
 	RecvVarProxyFn m_Int32ToInt32;
 	RecvVarProxyFn m_FloatToFloat;
 	RecvVarProxyFn m_VectorToVector;
-#ifdef SUPPORTS_INT64
+#ifdef DT_INT64_SUPPORTED
 	RecvVarProxyFn m_Int64ToInt64;
 #endif
 };
-extern CStandardRecvProxies g_StandardRecvProxies;
 
+class CStandardRecvProxiesEx : public CStandardRecvProxies
+{
+public:
+	CStandardRecvProxiesEx();
+
+#ifndef DT_INT64_SUPPORTED
+	RecvVarProxyFn m_Int64ToInt64;
+#endif
+};
+
+extern CStandardRecvProxiesEx g_StandardRecvProxies;
 
 class CRecvDecoder;
 

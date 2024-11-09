@@ -1523,9 +1523,11 @@ bool CAI_PlayerAlly::IsOkToSpeak( ConceptCategory_t category, bool fRespondingTo
 	if ( ( m_NPCState == NPC_STATE_SCRIPT ) && !m_bCanSpeakWhileScripting )
 		return false;
 
+#ifdef HL2_DLL
 	// Don't speak if being eaten by a barnacle
 	if ( IsEFlagSet( EFL_IS_BEING_LIFTED_BY_BARNACLE ) )
 		return false;
+#endif
 
 	if ( IsInAScript() && !m_bCanSpeakWhileScripting )
 		return false;

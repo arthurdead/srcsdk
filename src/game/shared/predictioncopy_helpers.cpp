@@ -100,6 +100,9 @@ void CValueChangeTracker::GetValue( char *buf, size_t bufsize )
 	case FIELD_BOOLEAN:
 		Q_snprintf( buf, bufsize, "%s", (*(const bool *)pInputData) ? "true" : "false" );
 		break;
+	case FIELD_INTEGER64:
+		Q_snprintf( buf, bufsize, "%lli", *(const int64*)pInputData );
+		break;
 	case FIELD_INTEGER:
 	case FIELD_TICK:
 	case FIELD_MODELINDEX:

@@ -148,8 +148,8 @@ private:
 
 // Internal methods also available to children
 protected:
-	C_LocalTempEntity		*TempEntAlloc( const Vector& org, const model_t *model );
-	C_LocalTempEntity		*TempEntAllocHigh( const Vector& org, const model_t *model );
+	C_LocalTempEntity		*TempEntAlloc( const Vector& org, const model_t *model, const char *classname );
+	C_LocalTempEntity		*TempEntAllocHigh( const Vector& org, const model_t *model, const char *classname );
 
 // Material handle caches
 private:
@@ -162,7 +162,7 @@ private:
 	CTempEnts( const CTempEnts & );
 
 	void					TempEntFree( int index );
-	C_LocalTempEntity		*TempEntAlloc();	
+	C_LocalTempEntity		*TempEntAlloc( const char *classname );	
 	bool					FreeLowPriorityTempEnt();
 
 	bool						IsVisibleTempEntity( C_LocalTempEntity *pEntity );

@@ -37,16 +37,16 @@ extern int	g_sModelIndexFireball;
 extern int	g_sModelIndexSmoke;
 
 void ExplosionCreate( const Vector &center, const QAngle &angles, 
-	CBaseEntity *pOwner, int magnitude, int radius, bool doDamage, float flExplosionForce = 0.0f, bool bSurfaceOnly = false, bool bSilent = false, int iCustomDamageType = -1 );
+	CBaseEntity *pOwner, int magnitude, int radius, bool doDamage, float flExplosionForce = 0.0f, bool bSurfaceOnly = false, bool bSilent = false, uint64 iCustomDamageType = -1 );
 
 void ExplosionCreate( const Vector &center, const QAngle &angles, 
 					 CBaseEntity *pOwner, int magnitude, int radius, int nSpawnFlags, 
-					 float flExplosionForce = 0.0f, CBaseEntity *pInflictor = NULL, int iCustomDamageType = -1,  const EHANDLE *ignoredEntity = NULL, Class_T ignoredClass = CLASS_NONE);
+					 float flExplosionForce = 0.0f, CBaseEntity *pInflictor = NULL, uint64 iCustomDamageType = -1,  const EHANDLE *ignoredEntity = NULL, Class_T ignoredClass = CLASS_NONE);
 
 // this version lets you specify classes or entities to be ignored
 void ExplosionCreate( const Vector &center, const QAngle &angles, 
 					 CBaseEntity *pOwner, int magnitude, int radius, bool doDamage, 
 					 const EHANDLE *ignoredEntity, Class_T ignoredClass,
-					 float flExplosionForce = 0.0f, bool bSurfaceOnly = false, bool bSilent = false, int iCustomDamageType = -1 );
+					 float flExplosionForce = 0.0f, bool bSurfaceOnly = false, bool bSilent = false, uint64 iCustomDamageType = -1 );
 
 #endif			//EXPLODE_H

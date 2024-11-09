@@ -715,7 +715,9 @@ void CAI_BaseNPC::Event_Killed( const CTakeDamageInfo &info )
 	// i.e. The barnacle does this because it's already got a ragdoll for us.
 	if ( info.GetDamageType() & DMG_REMOVENORAGDOLL )
 	{
+	#ifdef HL2_DLL
 		if ( !IsEFlagSet( EFL_IS_BEING_LIFTED_BY_BARNACLE ) )
+	#endif
 		{
 			// Go away
 			RemoveDeferred();
@@ -14728,7 +14730,7 @@ void CAI_BaseNPC::ModifyOrAppendDamageCriteria( AI_CriteriaSet& set, const CTake
 	else
 		set.AppendCriteria("attacker", "");
 
-	set.AppendCriteria("damagetype", UTIL_VarArgs("%i", info.GetDamageType()));
+	set.AppendCriteria("damagetype", UTIL_VarArgs("%llu", info.GetDamageType()));
 }
 
 /*

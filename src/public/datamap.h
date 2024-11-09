@@ -81,6 +81,10 @@ typedef enum _fieldtypes
 	
 	FIELD_VECTOR2D,			// 2 floats
 
+	FIELD_INTEGER64,		// 64bit integer
+
+	FIELD_VECTOR4D,			// 4 floats
+
 	FIELD_TYPECOUNT,		// MUST BE LAST
 } fieldtype_t;
 
@@ -112,8 +116,10 @@ DECLARE_FIELD_SIZE( FIELD_FLOAT,		sizeof(float) )
 DECLARE_FIELD_SIZE( FIELD_STRING,		sizeof(int) )
 DECLARE_FIELD_SIZE( FIELD_VECTOR,		3 * sizeof(float) )
 DECLARE_FIELD_SIZE( FIELD_VECTOR2D,		2 * sizeof(float) )
+DECLARE_FIELD_SIZE( FIELD_VECTOR4D,		4 * sizeof( float ) )
 DECLARE_FIELD_SIZE( FIELD_QUATERNION,	4 * sizeof(float))
 DECLARE_FIELD_SIZE( FIELD_INTEGER,		sizeof(int))
+DECLARE_FIELD_SIZE( FIELD_INTEGER64,	sizeof(int64))
 DECLARE_FIELD_SIZE( FIELD_BOOLEAN,		sizeof(char))
 DECLARE_FIELD_SIZE( FIELD_SHORT,		sizeof(short))
 DECLARE_FIELD_SIZE( FIELD_CHARACTER,	sizeof(char))
@@ -210,6 +216,8 @@ DECLARE_FIELD_SIZE( FIELD_MATERIALINDEX,	sizeof(int) )
 
 #define DEFINE_EMBEDDED_PTR( name )					\
 	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_PTR, NULL, NULL, NULL, &(((classNameTypedef *)0)->name->m_DataMap), sizeof( *(((classNameTypedef *)0)->name) ), NULL, 0, 0.0f }
+#define DEFINE_MAP_EMBEDDED_PTR( name )					\
+	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_PTR, NULL, NULL, NULL, &(((classNameTypedef *)0)->name->m_MapDataDesc), sizeof( *(((classNameTypedef *)0)->name) ), NULL, 0, 0.0f }
 #define DEFINE_PRED_EMBEDDED_PTR( name )					\
 	typedescription_t{ FIELD_EMBEDDED, #name, { offsetof(classNameTypedef, name), 0 }, 1, FTYPEDESC_PTR, NULL, NULL, NULL, &(((classNameTypedef *)0)->name->m_PredMap), sizeof( *(((classNameTypedef *)0)->name) ), NULL, 0, 0.0f }
 #define DEFINE_PRED_EMBEDDED_PTR_FLAGS( name, flags )					\

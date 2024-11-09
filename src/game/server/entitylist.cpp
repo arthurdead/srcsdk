@@ -500,16 +500,16 @@ CBaseEntity *CGlobalEntityList::NextEnt( CBaseEntity *pCurrentEnt )
 }
 
 
-void CGlobalEntityList::ReportEntityFlagsChanged( CBaseEntity *pEntity, unsigned int flagsOld, unsigned int flagsNow )
+void CGlobalEntityList::ReportEntityFlagsChanged( CBaseEntity *pEntity, uint64 flagsOld, uint64 flagsNow )
 {
 	if ( pEntity->IsMarkedForDeletion() )
 		return;
 	// UNDONE: Move this into IEntityListener instead?
-	unsigned int flagsChanged = flagsOld ^ flagsNow;
+	uint64 flagsChanged = flagsOld ^ flagsNow;
 	if ( flagsChanged & FL_AIMTARGET )
 	{
-		unsigned int flagsAdded = flagsNow & flagsChanged;
-		unsigned int flagsRemoved = flagsOld & flagsChanged;
+		uint64 flagsAdded = flagsNow & flagsChanged;
+		uint64 flagsRemoved = flagsOld & flagsChanged;
 
 		if ( flagsAdded & FL_AIMTARGET )
 		{

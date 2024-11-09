@@ -152,7 +152,7 @@ bool CAmmoDef::CanCarryInfiniteAmmo(int nAmmoIndex)
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-int	CAmmoDef::DamageType(int nAmmoIndex)
+uint64	CAmmoDef::DamageType(int nAmmoIndex)
 {
 	if (nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex)
 		return 0;
@@ -225,7 +225,7 @@ float CAmmoDef::DamageForce(int nAmmoIndex)
 // Does not increment m_nAmmoIndex because the functions below do so and 
 //  are the only entry point.
 //-----------------------------------------------------------------------------
-bool CAmmoDef::AddAmmoType(char const* name, int damageType, int tracerType, int nFlags, int minSplashSize, int maxSplashSize )
+bool CAmmoDef::AddAmmoType(char const* name, uint64 damageType, int tracerType, int nFlags, int minSplashSize, int maxSplashSize )
 {
 	if (m_nAmmoIndex == MAX_AMMO_TYPES)
 		return false;
@@ -245,7 +245,7 @@ bool CAmmoDef::AddAmmoType(char const* name, int damageType, int tracerType, int
 //-----------------------------------------------------------------------------
 // Purpose: Add an ammo type with it's damage & carrying capability specified via cvars
 //-----------------------------------------------------------------------------
-void CAmmoDef::AddAmmoType(char const* name, int damageType, int tracerType, 
+void CAmmoDef::AddAmmoType(char const* name, uint64 damageType, int tracerType, 
 	char const* plr_cvar, char const* npc_cvar, char const* carry_cvar, 
 	float physicsForceImpulse, int nFlags, int minSplashSize, int maxSplashSize)
 {
@@ -286,7 +286,7 @@ void CAmmoDef::AddAmmoType(char const* name, int damageType, int tracerType,
 //-----------------------------------------------------------------------------
 // Purpose: Add an ammo type with it's damage & carrying capability specified via integers
 //-----------------------------------------------------------------------------
-void CAmmoDef::AddAmmoType(char const* name, int damageType, int tracerType, 
+void CAmmoDef::AddAmmoType(char const* name, uint64 damageType, int tracerType, 
 	int plr_dmg, int npc_dmg, int carry, float physicsForceImpulse, 
 	int nFlags, int minSplashSize, int maxSplashSize )
 {

@@ -156,6 +156,10 @@ static void CalculateOffsettedPosition( CSharedBaseEntity *pEntity, EEntityOffse
 			*pVecOut = pEntity->EyePosition();
 			break;
 
+		case EOFFSET_MODE_ABSORIGIN:
+			*pVecOut = pEntity->GetAbsOrigin();
+			break;
+
 		case EOFFSET_MODE_NONE:
 			pVecOut->Init();
 			break;

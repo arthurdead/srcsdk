@@ -223,7 +223,7 @@ void MeshProcess::process(struct dtNavMeshCreateParams* params,
 		}
 		else if (polyAreas[i] >= POLYAREA_OBSTACLE_START && polyAreas[i] <= POLYAREA_OBSTACLE_END )
 		{
-			polyFlags[i] = POLYFLAGS_OBSTACLE_START << (polyAreas[i] - POLYAREA_OBSTACLE_START);
+			polyFlags[i] = (POLYFLAGS_OBSTACLE_START << (polyAreas[i] - POLYAREA_OBSTACLE_START));
 		}
 	}
 

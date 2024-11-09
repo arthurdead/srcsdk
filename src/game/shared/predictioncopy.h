@@ -58,6 +58,7 @@ public:
 
 	void	CopyShort( difftype_t dt, short *outvalue, const short *invalue, int count );
 	void	CopyInt( difftype_t dt, int *outvalue, const int *invalue, int count );		// Copy an int
+	void	CopyInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count );		// Copy an int
 	void	CopyBool( difftype_t dt, bool *outvalue, const bool *invalue, int count );		// Copy a bool
 	void	CopyFloat( difftype_t dt, float *outvalue, const float *invalue, int count );	// Copy a float
 	void	CopyString( difftype_t dt, char *outstring, const char *instring );			// Copy a null-terminated string
@@ -89,6 +90,7 @@ private:
 
 	difftype_t	CompareShort( short *outvalue, const short *invalue, int count );
 	difftype_t	CompareInt( int *outvalue, const int *invalue, int count );		// Compare an int
+	difftype_t	CompareInt64( int64 *outvalue, const int64 *invalue, int count );		// Compare an int
 	difftype_t	CompareBool( bool *outvalue, const bool *invalue, int count );		// Compare a bool
 	difftype_t	CompareFloat( float *outvalue, const float *invalue, int count );	// Compare a float
 	difftype_t	CompareData( int size, char *outdata, const char *indata );		// Compare a binary data block
@@ -101,6 +103,7 @@ private:
 
 	void	DescribeShort( difftype_t dt, short *outvalue, const short *invalue, int count );
 	void	DescribeInt( difftype_t dt, int *outvalue, const int *invalue, int count );		// Compare an int
+	void	DescribeInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count );		// Compare an int
 	void	DescribeBool( difftype_t dt, bool *outvalue, const bool *invalue, int count );		// Compare a bool
 	void	DescribeFloat( difftype_t dt, float *outvalue, const float *invalue, int count );	// Compare a float
 	void	DescribeData( difftype_t dt, int size, char *outdata, const char *indata );		// Compare a binary data block
@@ -113,6 +116,7 @@ private:
 
 	void	WatchShort( difftype_t dt, short *outvalue, const short *invalue, int count );
 	void	WatchInt( difftype_t dt, int *outvalue, const int *invalue, int count );		// Compare an int
+	void	WatchInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count );		// Compare an int
 	void	WatchBool( difftype_t dt, bool *outvalue, const bool *invalue, int count );		// Compare a bool
 	void	WatchFloat( difftype_t dt, float *outvalue, const float *invalue, int count );	// Compare a float
 	void	WatchData( difftype_t dt, int size, char *outdata, const char *indata );		// Compare a binary data block
@@ -170,6 +174,7 @@ public:
 
 	void	DescribeShort( const short *invalue, int count );
 	void	DescribeInt( const int *invalue, int count );		
+	void	DescribeInt64( const int64 *invalue, int count );		
 	void	DescribeBool( const bool *invalue, int count );	
 	void	DescribeFloat( const float *invalue, int count );	
 	void	DescribeData( int size, const char *indata );		

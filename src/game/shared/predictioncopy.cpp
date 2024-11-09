@@ -40,6 +40,7 @@ static const char *g_FieldTypes[ FIELD_TYPECOUNT ] =
 	"FIELD_SHORT",			// FIELD_SHORT
 	"FIELD_CHARACTER",		// FIELD_CHARACTER
 	"FIELD_COLOR32",		// FIELD_COLOR32
+	"FIELD_COLOR24",		// FIELD_COLOR24
 	"FIELD_EMBEDDED",		// FIELD_EMBEDDED	(handled specially)
 	"FIELD_CUSTOM",			// FIELD_CUSTOM		(handled specially)
 	"FIELD_CLASSPTR",		// FIELD_CLASSPTR
@@ -56,7 +57,11 @@ static const char *g_FieldTypes[ FIELD_TYPECOUNT ] =
 	"FIELD_VMATRIX_WORLDSPACE",
 	"FIELD_MATRIX3X4_WORLDSPACE",
 	"FIELD_INTERVAL",		// FIELD_INTERVAL
-	"FIELD_MODELINDEX"		// FIELD_MODELINDEX
+	"FIELD_MODELINDEX",		// FIELD_MODELINDEX
+	"FIELD_MATERIALINDEX",		// FIELD_MATERIALINDEX
+	"FIELD_VECTOR2D",		// FIELD_VECTOR2D
+	"FIELD_INTEGER64",		// FIELD_INTEGER64
+	"FIELD_VECTOR4D",		// FIELD_VECTOR4D
 };
 
 CPredictionCopy::CPredictionCopy( int type, void *dest, bool dest_packed, void const *src, bool src_packed, 
@@ -322,6 +327,20 @@ void CPredictionCopy::DescribeInt( difftype_t dt, int *outvalue, const int *inva
 #endif
 }
 
+void CPredictionCopy::DescribeInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count )
+{
+	if ( !m_bErrorCheck )
+		return;
+
+	if ( dt == DIFFERS )
+	{
+		int i = 0;
+		ReportFieldsDiffer( "int64 differs (net %lli pred %lli) diff(%lli)\n", invalue[i], outvalue[i], outvalue[i] - invalue[i] );
+	}
+
+	DescribeFields( dt, "integer64 (%lli)\n", outvalue[0] );
+}
+
 void CPredictionCopy::WatchInt( difftype_t dt, int *outvalue, const int *invalue, int count )
 {
 	if ( m_pWatchField != m_pCurrentField )
@@ -351,6 +370,14 @@ void CPredictionCopy::WatchInt( difftype_t dt, int *outvalue, const int *invalue
 #else
 	WatchMsg( "integer (%i)", outvalue[0] );
 #endif
+}
+
+void CPredictionCopy::WatchInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count )
+{
+	if ( m_pWatchField != m_pCurrentField )
+		return;
+
+	WatchMsg( "integer64 (%lli)", outvalue[0] );
 }
 
 void CPredictionCopy::DescribeBool( difftype_t dt, bool *outvalue, const bool *invalue, int count )
@@ -647,6 +674,17 @@ void CPredictionCopy::CopyInt( difftype_t dt, int *outvalue, const int *invalue,
 	CopyData( dt, sizeof(int) * count, (char *)outvalue, (const char *)invalue );
 }
 
+void CPredictionCopy::CopyInt64( difftype_t dt, int64 *outvalue, const int64 *invalue, int count )
+{
+	if ( !m_bPerformCopy )
+		return;
+
+	if ( dt == IDENTICAL )
+		return;
+
+	CopyData( dt, sizeof(int64) * count, (char *)outvalue, (const char *)invalue );
+}
+
 CPredictionCopy::difftype_t CPredictionCopy::CompareInt( int *outvalue, const int *invalue, int count )
 {
 	if ( !m_bErrorCheck )
@@ -660,6 +698,26 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareInt( int *outvalue, const in
 				continue;
 
 			ReportFieldsDiffer( "int differs (net %i pred %i) diff(%i)\n", invalue[i], outvalue[i], outvalue[i] - invalue[i] );
+			return DIFFERS;
+		}
+	}
+
+	return IDENTICAL;
+}
+
+CPredictionCopy::difftype_t CPredictionCopy::CompareInt64( int64 *outvalue, const int64 *invalue, int count )
+{
+	if ( !m_bErrorCheck )
+		return DIFFERS;
+
+	if ( CanCheck() )
+	{
+		for ( int i = 0; i < count; i++ )
+		{
+			if ( outvalue[ i ] == invalue[ i ] )
+				continue;
+
+			ReportFieldsDiffer( "int64 differs (net %lli pred %lli) diff(%lli)\n", invalue[i], outvalue[i], outvalue[i] - invalue[i] );
 			return DIFFERS;
 		}
 	}
@@ -1165,6 +1223,15 @@ void CPredictionCopy::CopyFields( int chain_count, datamap_t *pRootMap, typedesc
 			}
 			break;
 
+		case FIELD_INTEGER64:
+			{
+				difftype = CompareInt64( (int64 *)pOutputData, (int64 const *)pInputData, fieldSize );
+				CopyInt64( difftype, (int64 *)pOutputData, (int64 const *)pInputData, fieldSize );
+				if ( m_bErrorCheck && m_bShouldDescribe ) DescribeInt64( difftype, (int64 *)pOutputData, (int64 const *)pInputData, fieldSize );
+				if ( bShouldWatch ) WatchInt64( difftype, (int64 *)pOutputData, (int64 const *)pInputData, fieldSize );
+			}
+			break;
+
 		case FIELD_INTEGER:
 			{
 				difftype = CompareInt( (int *)pOutputData, (int const *)pInputData, fieldSize );
@@ -1547,6 +1614,14 @@ void CPredictionDescribeData::DescribeInt( const int *invalue, int count )
 	}
 }
 
+void CPredictionDescribeData::DescribeInt64( const int64 *invalue, int count )
+{
+	for ( int i = 0; i < count; ++i )
+	{
+		Describe( "[%i] integer64 (%lli)\n", i, invalue[i] );
+	}
+}
+
 void CPredictionDescribeData::DescribeBool( const bool *invalue, int count )
 {
 	Describe( "bool (%s)\n", (invalue[0]) ? "true" : "false" );
@@ -1700,6 +1775,9 @@ void CPredictionDescribeData::DescribeFields_R( int chain_count, datamap_t *pRoo
 		case FIELD_BOOLEAN:
 			DescribeBool( (bool const *)pInputData, fieldSize );
 			break;
+		case FIELD_INTEGER64:
+			DescribeInt64( (int64 const *)pInputData, fieldSize );
+			break;
 		case FIELD_INTEGER:
 			DescribeInt( (int const *)pInputData, fieldSize );
 			break;
@@ -1839,6 +1917,9 @@ void CValueChangeTracker::GetValue( char *buf, size_t bufsize )
 
 	case FIELD_BOOLEAN:
 		Q_snprintf( buf, bufsize, "%s", (*(const bool *)pInputData) ? "true" : "false" );
+		break;
+	case FIELD_INTEGER64:
+		Q_snprintf( buf, bufsize, "%lli", *(const int64*)pInputData );
 		break;
 	case FIELD_INTEGER:
 	case FIELD_TICK:

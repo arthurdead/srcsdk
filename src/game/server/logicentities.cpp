@@ -3327,7 +3327,7 @@ const char *CLogicConvar::GetConVarString( inputdata_t &inputdata )
 			if (FStrEq( pszCVar, "notarget" ))
 				return (pPlayer->GetFlags() & FL_NOTARGET) ? "1" : "0";
 			if (FStrEq( pszCVar, "noclip" ))
-				return (pPlayer->IsEFlagSet(EFL_NOCLIP_ACTIVE)) ? "1" : "0";
+				return (pPlayer->GetMoveType() == MOVETYPE_NOCLIP) ? "1" : "0";
 
 			// It might be a client convar
 			// This function returns a blank string if the convar doesn't exist, so we have to put this at the end

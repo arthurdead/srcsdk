@@ -127,7 +127,7 @@
 			GetClassMap().AddMapping( V_STRINGIFY(localName), V_STRINGIFY(className) );			\
 		}																	\
 	};																		\
-	static localName##Mapping g_##localName##Mapping;
+	localName##Mapping g_##localName##Mapping;
 
 #define LINK_ENTITY_TO_CLASS_ALIASED( localName, className ) \
 	LINK_ENTITY_TO_SERVERCLASS( localName, C##className ) \

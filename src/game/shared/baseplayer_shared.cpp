@@ -859,7 +859,7 @@ int CSharedBasePlayer::Weapon_Switch( CSharedBaseCombatWeapon *pWeapon, int view
 		}
 
 		CSharedBaseViewModel *pViewModel = GetViewModel( viewmodelindex );
-		Assert( pViewModel );
+		AssertMsg( pViewModel, "viewmodel %i is NULL", viewmodelindex );
 		if ( pViewModel && res == WEAPON_SWITCH_DEPLOYED )
 			pViewModel->RemoveEffects( EF_NODRAW );
 		ResetAutoaim( );

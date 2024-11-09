@@ -563,6 +563,34 @@ public:
 	}
 };
 
+class CTraceFilterSkipTwoEntitiesNoCombatCharacters : public CTraceFilterNoCombatCharacters
+{
+public:
+	// It does have a base, but we'll never network anything below here..
+	DECLARE_CLASS( CTraceFilterSkipTwoEntitiesNoCombatCharacters, CTraceFilterNoCombatCharacters );
+	
+	CTraceFilterSkipTwoEntitiesNoCombatCharacters( const IHandleEntity *passentity = NULL, const IHandleEntity *passentity2 = NULL, int collisionGroup = COLLISION_GROUP_NONE );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+	virtual void SetPassEntity2( const IHandleEntity *pPassEntity2 ) { m_pPassEnt2 = pPassEntity2; }
+
+private:
+	const IHandleEntity *m_pPassEnt2;
+};
+
+CTraceFilterSkipTwoEntitiesNoCombatCharacters::CTraceFilterSkipTwoEntitiesNoCombatCharacters( const IHandleEntity *passentity, const IHandleEntity *passentity2, int collisionGroup ) :
+	BaseClass( passentity, collisionGroup ), m_pPassEnt2(passentity2)
+{
+}
+
+bool CTraceFilterSkipTwoEntitiesNoCombatCharacters::ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+{
+	Assert( pHandleEntity );
+	if ( !PassServerEntityFilter( pHandleEntity, m_pPassEnt2 ) )
+		return false;
+
+	return BaseClass::ShouldHitEntity( pHandleEntity, contentsMask );
+}
+
 bool CSharedBaseCombatCharacter::ComputeLOS( const Vector &vecEyePosition, const Vector &vecTarget ) const
 {
 	// We simply can't see because the world is in the way.
@@ -675,24 +703,6 @@ bool CSharedBaseCombatCharacter::IsInFieldOfView( const Vector &pos ) const
 	return IsLookingTowards( pos );
 }
 
-//-----------------------------------------------------------------------------
-/**
-	Strictly checks Line of Sight only.
-*/
-
-bool CSharedBaseCombatCharacter::IsLineOfSightClear( CSharedBaseEntity *entity, LineOfSightCheckType checkType ) const
-{
-	return
-		IsLineOfSightClear( entity->WorldSpaceCenter(), checkType, entity ) ||
-		IsLineOfSightClear( entity->EyePosition(), checkType, entity ) ||
-		IsLineOfSightClear( entity->GetAbsOrigin(), checkType, entity )
-	;
-}
-
-//-----------------------------------------------------------------------------
-/**
-	Strictly checks Line of Sight only.
-*/
 static bool TraceFilterNoCombatCharacters( IHandleEntity *pServerEntity, int contentsMask )
 {
 	// Honor BlockLOS also to allow seeing through partially-broken doors
@@ -700,6 +710,61 @@ static bool TraceFilterNoCombatCharacters( IHandleEntity *pServerEntity, int con
 	return ( entity->MyCombatCharacterPointer() == NULL && !entity->MyCombatWeaponPointer() && entity->BlocksLOS() );
 }
 
+//-----------------------------------------------------------------------------
+/**
+	Strictly checks Line of Sight only.
+*/
+
+bool CSharedBaseCombatCharacter::IsLineOfSightClear( CSharedBaseEntity *entity, LineOfSightCheckType checkType ) const
+{
+	if( checkType == IGNORE_ACTORS )
+	{
+		if( IsLineOfSightBetweenTwoEntitiesClear( const_cast<CSharedBaseCombatCharacter *>(this), EOFFSET_MODE_EYEPOSITION,
+			entity, EOFFSET_MODE_WORLDSPACE_CENTER,
+			const_cast<CSharedBaseCombatCharacter *>(this), COLLISION_GROUP_NONE,
+			MASK_OPAQUE | CONTENTS_IGNORE_NODRAW_OPAQUE | CONTENTS_MONSTER, TraceFilterNoCombatCharacters, 1.0 ) )
+			return true;
+
+		if( IsLineOfSightBetweenTwoEntitiesClear( const_cast<CSharedBaseCombatCharacter *>(this), EOFFSET_MODE_EYEPOSITION,
+			entity, EOFFSET_MODE_EYEPOSITION,
+			const_cast<CSharedBaseCombatCharacter *>(this), COLLISION_GROUP_NONE,
+			MASK_OPAQUE | CONTENTS_IGNORE_NODRAW_OPAQUE | CONTENTS_MONSTER, TraceFilterNoCombatCharacters, 1.0 ) )
+			return true;
+
+		if( IsLineOfSightBetweenTwoEntitiesClear( const_cast<CSharedBaseCombatCharacter *>(this), EOFFSET_MODE_EYEPOSITION,
+			entity, EOFFSET_MODE_ABSORIGIN,
+			const_cast<CSharedBaseCombatCharacter *>(this), COLLISION_GROUP_NONE,
+			MASK_OPAQUE | CONTENTS_IGNORE_NODRAW_OPAQUE | CONTENTS_MONSTER, TraceFilterNoCombatCharacters, 1.0 ) )
+			return true;
+	}
+	else
+	{
+		if( IsLineOfSightBetweenTwoEntitiesClear( const_cast<CSharedBaseCombatCharacter *>(this), EOFFSET_MODE_EYEPOSITION,
+			entity, EOFFSET_MODE_WORLDSPACE_CENTER,
+			const_cast<CSharedBaseCombatCharacter *>(this), COLLISION_GROUP_NONE,
+			MASK_OPAQUE | CONTENTS_IGNORE_NODRAW_OPAQUE, NULL, 1.0 ) )
+			return true;
+
+		if( IsLineOfSightBetweenTwoEntitiesClear( const_cast<CSharedBaseCombatCharacter *>(this), EOFFSET_MODE_EYEPOSITION,
+			entity, EOFFSET_MODE_EYEPOSITION,
+			const_cast<CSharedBaseCombatCharacter *>(this), COLLISION_GROUP_NONE,
+			MASK_OPAQUE | CONTENTS_IGNORE_NODRAW_OPAQUE, NULL, 1.0 ) )
+			return true;
+
+		if( IsLineOfSightBetweenTwoEntitiesClear( const_cast<CSharedBaseCombatCharacter *>(this), EOFFSET_MODE_EYEPOSITION,
+			entity, EOFFSET_MODE_ABSORIGIN,
+			const_cast<CSharedBaseCombatCharacter *>(this), COLLISION_GROUP_NONE,
+			MASK_OPAQUE | CONTENTS_IGNORE_NODRAW_OPAQUE, NULL, 1.0 ) )
+			return true;
+	}
+
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+/**
+	Strictly checks Line of Sight only.
+*/
 bool CSharedBaseCombatCharacter::IsLineOfSightClear( const Vector &pos, LineOfSightCheckType checkType, CSharedBaseEntity *entityToIgnore ) const
 {
 #if defined(GAME_DLL) && defined(COUNT_BCC_LOS)
@@ -715,11 +780,11 @@ bool CSharedBaseCombatCharacter::IsLineOfSightClear( const Vector &pos, LineOfSi
 
 	if( checkType == IGNORE_ACTORS )
 	{
-		// use the query cache unless it causes problems
-		return IsLineOfSightBetweenTwoEntitiesClear( const_cast<CSharedBaseCombatCharacter *>(this), EOFFSET_MODE_EYEPOSITION,
-			entityToIgnore, EOFFSET_MODE_WORLDSPACE_CENTER,
-			entityToIgnore, COLLISION_GROUP_NONE,
-			MASK_AI_VISION, TraceFilterNoCombatCharacters, 1.0 );
+		trace_t trace;
+		CTraceFilterSkipTwoEntitiesNoCombatCharacters traceFilter( this, entityToIgnore, COLLISION_GROUP_NONE );
+		UTIL_TraceLine( EyePosition(), pos, MASK_OPAQUE | CONTENTS_IGNORE_NODRAW_OPAQUE | CONTENTS_MONSTER, &traceFilter, &trace );
+
+		return trace.fraction == 1.0f;
 	}
 	else
 	{

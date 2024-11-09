@@ -227,7 +227,7 @@ CPathKeyFrame *CPathKeyFrame::InsertNewKey( Vector newPos, QAngle newAngles )
 	newKey->SetKeyAngles( newAngles );
 	newKey->m_Origin = newPos;
 	newKey->m_flSpeed = m_flSpeed;
-	newKey->SetEFlags( GetEFlags() );
+	newKey->AddEFlags( GetEFlags() );
 	if ( m_iParent != NULL_STRING )
 	{
 		newKey->SetParent( m_iParent, NULL );

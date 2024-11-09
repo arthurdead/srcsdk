@@ -220,14 +220,4 @@ inline bool CRecastMgr::HasMeshes()
 	return m_bLoaded;
 }
 
-inline CRecastMesh *CRecastMgr::GetMesh( NavMeshType_t type )
-{
-	if(type == RECAST_NAVMESH_INVALID)
-		return NULL;
-	int idx = FindMeshIndex( type );
-	if( idx != -1 )
-		return GetMeshByIndex( idx );
-	return NULL;
-}
-
 #endif // RECAST_MGR_H

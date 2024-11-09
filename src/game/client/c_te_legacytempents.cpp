@@ -803,7 +803,7 @@ void CTempEnts::FizzEffect( C_BaseEntity *pent, int modelIndex, int density, int
 		origin[0] = mins[0] + random_valve->RandomInt(0,width-1);
 		origin[1] = mins[1] + random_valve->RandomInt(0,depth-1);
 		origin[2] = mins[2];
-		pTemp = TempEntAlloc( origin, model );
+		pTemp = TempEntAlloc( origin, model, "te_legacy_fizz" );
 		if (!pTemp)
 			return;
 
@@ -854,7 +854,7 @@ void CTempEnts::Bubbles( const Vector &mins, const Vector &maxs, float height, i
 		origin[0] = random_valve->RandomInt( mins[0], maxs[0] );
 		origin[1] = random_valve->RandomInt( mins[1], maxs[1] );
 		origin[2] = random_valve->RandomInt( mins[2], maxs[2] );
-		pTemp = TempEntAlloc( origin, model );
+		pTemp = TempEntAlloc( origin, model, "te_legacy_bubbles" );
 		if (!pTemp)
 			return;
 
@@ -908,7 +908,7 @@ void CTempEnts::BubbleTrail( const Vector &start, const Vector &end, float flWat
 	{
 		dist = random_valve->RandomFloat( 0, 1.0 );
 		VectorLerp( start, end, dist, origin );
-		pTemp = TempEntAlloc( origin, model );
+		pTemp = TempEntAlloc( origin, model, "te_legacy_bubblestrail" );
 		if (!pTemp)
 			return;
 
@@ -1019,7 +1019,7 @@ void CTempEnts::BreakModel( const Vector &pos, const QAngle &angles, const Vecto
 		vecLocalSpot[2] = random_valve->RandomFloat(-0.5,0.5) * size[2];
 		VectorTransform( vecLocalSpot, transform, vecSpot );
 
-		pTemp = TempEntAlloc(vecSpot, pModel);
+		pTemp = TempEntAlloc(vecSpot, pModel, "te_legacy_breakableprop");
 		
 		if (!pTemp)
 			return;
@@ -1160,7 +1160,7 @@ C_LocalTempEntity *CTempEnts::ClientProjectile( const Vector& vecOrigin, const V
 		return NULL;
 	}
 
-	pTemp = TempEntAlloc( vecOrigin, model );
+	pTemp = TempEntAlloc( vecOrigin, model, "te_legacy_projectile" );
 	if (!pTemp)
 		return NULL;
 
@@ -1219,7 +1219,7 @@ C_LocalTempEntity *CTempEnts::TempSprite( const Vector &pos, const Vector &dir, 
 
 	frameCount = modelinfo->GetModelFrameCount( model );
 
-	pTemp = TempEntAlloc( pos, model );
+	pTemp = TempEntAlloc( pos, model, "te_legacy_sprite" );
 	if (!pTemp)
 		return NULL;
 
@@ -1286,7 +1286,7 @@ void CTempEnts::Sprite_Spray( const Vector &pos, const Vector &dir, int modelInd
 
 	for ( i = 0; i < count; i++ )
 	{
-		pTemp = TempEntAlloc( pos, pModel );
+		pTemp = TempEntAlloc( pos, pModel, "te_legacy_spritespray" );
 		if (!pTemp)
 			return;
 
@@ -1355,7 +1355,7 @@ void CTempEnts::Sprite_Trail( const Vector &vecStart, const Vector &vecEnd, int 
 			VectorMA( vecStart, i / (nCount - 1.0), vecDelta, vecPos );
 		}
 
-		pTemp = TempEntAlloc( vecPos, pModel );
+		pTemp = TempEntAlloc( vecPos, pModel, "te_legacy_spritetrail" );
 		if (!pTemp)
 			return;
 
@@ -1418,7 +1418,7 @@ void CTempEnts::AttachTentToPlayer( int client, int modelIndex, float zoffset, f
 	VectorCopy( clientClass->GetAbsOrigin(), position );
 	position[ 2 ] += zoffset;
 
-	pTemp = TempEntAllocHigh( position, pModel );
+	pTemp = TempEntAllocHigh( position, pModel, "te_legacy_attachprop" );
 	if (!pTemp)
 	{
 		Warning("No temp ent.\n");
@@ -1494,7 +1494,7 @@ void CTempEnts::RicochetSprite( const Vector &pos, model_t *pmodel, float durati
 {
 	C_LocalTempEntity	*pTemp;
 
-	pTemp = TempEntAlloc( pos, pmodel );
+	pTemp = TempEntAlloc( pos, pmodel, "te_legacy_ricochetsprite" );
 	if (!pTemp)
 		return;
 
@@ -1535,7 +1535,7 @@ void CTempEnts::BloodSprite( const Vector &org, int r, int g, int b, int a, int 
 		int						frameCount = modelinfo->GetModelFrameCount( model );
 
 		//Large, single blood sprite is a high-priority tent
-		if ( ( pTemp = TempEntAllocHigh( org, model ) ) != NULL )
+		if ( ( pTemp = TempEntAllocHigh( org, model, "te_legacy_bloodsprite" ) ) != NULL )
 		{
 			pTemp->SetRenderMode( kRenderTransTexture );
 			pTemp->SetRenderFX( kRenderFxNone );
@@ -1585,7 +1585,7 @@ C_LocalTempEntity *CTempEnts::DefaultSprite( const Vector &pos, int spriteIndex,
 
 	frameCount = modelinfo->GetModelFrameCount( pSprite );
 
-	pTemp = TempEntAlloc( pos, pSprite );
+	pTemp = TempEntAlloc( pos, pSprite, "te_legacy_sprite" );
 	if (!pTemp)
 		return NULL;
 
@@ -1641,7 +1641,7 @@ void CTempEnts::EjectBrass( const Vector &pos1, const QAngle &angles, const QAng
 	if ( pModel == NULL )
 		return;
 
-	C_LocalTempEntity	*pTemp = TempEntAlloc( pos1, pModel );
+	C_LocalTempEntity	*pTemp = TempEntAlloc( pos1, pModel, "te_legacy_brasseject" );
 
 	if ( pTemp == NULL )
 		return;
@@ -1691,7 +1691,7 @@ C_LocalTempEntity * CTempEnts::SpawnTempModel( const model_t *pModel, const Vect
 	Assert( pModel );
 
 	// Alloc a new tempent
-	C_LocalTempEntity *pTemp = TempEntAlloc( vecOrigin, pModel );
+	C_LocalTempEntity *pTemp = TempEntAlloc( vecOrigin, pModel, "te_legacy_physicsprop" );
 	if ( !pTemp )
 		return NULL;
 
@@ -2202,7 +2202,7 @@ C_LocalTempEntity *CTempEnts::FindTempEntByID( int nID, int nSubID )
 //			*model - 
 // Output : C_LocalTempEntity
 //-----------------------------------------------------------------------------
-C_LocalTempEntity *CTempEnts::TempEntAlloc( const Vector& org, const model_t *model )
+C_LocalTempEntity *CTempEnts::TempEntAlloc( const Vector& org, const model_t *model, const char *classname )
 {
 	C_LocalTempEntity		*pTemp;
 
@@ -2212,7 +2212,7 @@ C_LocalTempEntity *CTempEnts::TempEntAlloc( const Vector& org, const model_t *mo
 		return NULL;
 	}
 
-	pTemp = TempEntAlloc();
+	pTemp = TempEntAlloc(classname);
 
 	if ( !pTemp )
 	{
@@ -2241,14 +2241,14 @@ void					C_LocalTempEntity::UpdateOnRemove( void )
 // Purpose: 
 // Output : C_LocalTempEntity
 //-----------------------------------------------------------------------------
-C_LocalTempEntity *CTempEnts::TempEntAlloc()
+C_LocalTempEntity *CTempEnts::TempEntAlloc( const char *classname )
 {
 	if ( m_TempEnts.Count() >= MAX_TEMP_ENTITIES )
 		return NULL;
 
 	MEM_ALLOC_CREDIT();
 	C_LocalTempEntity *pTemp = m_TempEntsPool.AllocZero();
-	pTemp->PostConstructor( NULL );
+	pTemp->PostConstructor( classname );
 	return pTemp;
 }
 
@@ -2305,7 +2305,7 @@ bool CTempEnts::FreeLowPriorityTempEnt()
 //			*model - 
 // Output : C_LocalTempEntity
 //-----------------------------------------------------------------------------
-C_LocalTempEntity *CTempEnts::TempEntAllocHigh( const Vector& org, const model_t *model )
+C_LocalTempEntity *CTempEnts::TempEntAllocHigh( const Vector& org, const model_t *model, const char *classname )
 {
 	C_LocalTempEntity		*pTemp;
 
@@ -2315,14 +2315,14 @@ C_LocalTempEntity *CTempEnts::TempEntAllocHigh( const Vector& org, const model_t
 		return NULL;
 	}
 
-	pTemp = TempEntAlloc();
+	pTemp = TempEntAlloc( classname );
 	if ( !pTemp )
 	{
 		// no temporary ents free, so find the first active low-priority temp ent 
 		// and overwrite it.
 		FreeLowPriorityTempEnt();
 
-		pTemp = TempEntAlloc();
+		pTemp = TempEntAlloc( classname );
 	}
 
 	
@@ -2669,7 +2669,7 @@ void CTempEnts::RocketFlare( const Vector& pos )
 
 	nframeCount = modelinfo->GetModelFrameCount( model );
 
-	pTemp = TempEntAlloc( pos, model );
+	pTemp = TempEntAlloc( pos, model, "te_legacy_rocketflare" );
 	if ( !pTemp )
 		return;
 

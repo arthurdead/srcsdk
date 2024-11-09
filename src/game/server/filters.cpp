@@ -670,8 +670,8 @@ protected:
 			case 1:		return (info.GetDamageType() & m_iDamageType) != 0;
 			case 2:
 			{
-				int iRecvDT = info.GetDamageType();
-				int iOurDT = m_iDamageType;
+				uint64 iRecvDT = info.GetDamageType();
+				uint64 iOurDT = m_iDamageType;
 				while (iRecvDT)
 				{
 					if (iRecvDT & iOurDT)
@@ -696,7 +696,7 @@ protected:
 	{
 		if (FStrEq( szKeyName, "damageor" ) || FStrEq( szKeyName, "damagepresets" ))
 		{
-			m_iDamageType |= atoi( szValue );
+			m_iDamageType |= strtoull( szValue, NULL, 10 );
 		}
 		else
 			return BaseClass::KeyValue( szKeyName, szValue );
@@ -704,7 +704,7 @@ protected:
 		return true;
 	}
 
-	int m_iDamageType;
+	uint64 m_iDamageType;
 	int m_iFilterType;
 };
 
@@ -1816,8 +1816,8 @@ public:
 
 	float m_flDamageMultiplier	= 1.0f;
 	float m_flDamageAddend;
-	int m_iDamageBitsAdded;
-	int m_iDamageBitsRemoved;
+	uint64 m_iDamageBitsAdded;
+	uint64 m_iDamageBitsRemoved;
 
 	string_t m_iszNewAttacker;		EHANDLE m_hNewAttacker;
 	string_t m_iszNewInflictor;		EHANDLE m_hNewInflictor;
@@ -1840,8 +1840,8 @@ BEGIN_MAPENTITY( CFilterDamageMod )
 
 	DEFINE_INPUT( m_flDamageMultiplier,	FIELD_FLOAT, "SetDamageMultiplier" ),
 	DEFINE_INPUT( m_flDamageAddend,		FIELD_FLOAT, "SetDamageAddend" ),
-	DEFINE_INPUT( m_iDamageBitsAdded,	FIELD_INTEGER, "SetDamageBitsAdded" ),
-	DEFINE_INPUT( m_iDamageBitsRemoved,	FIELD_INTEGER, "SetDamageBitsRemoved" ),
+	DEFINE_INPUT( m_iDamageBitsAdded,	FIELD_INTEGER64, "SetDamageBitsAdded" ),
+	DEFINE_INPUT( m_iDamageBitsRemoved,	FIELD_INTEGER64, "SetDamageBitsRemoved" ),
 
 	DEFINE_KEYFIELD( m_iSecondaryFilterMode,	FIELD_INTEGER, "SecondaryFilterMode" ),
 
@@ -1924,7 +1924,7 @@ public:
 	COutputFloat	m_OutMaxDamage;
 	COutputFloat	m_OutBaseDamage;
 
-	COutputInt		m_OutDamageType;
+	COutputInt64		m_OutDamageType;
 	COutputInt		m_OutDamageCustom;
 	COutputInt		m_OutDamageStats;
 	COutputInt		m_OutAmmoType;

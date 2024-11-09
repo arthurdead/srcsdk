@@ -3148,6 +3148,17 @@ public:
 	{
 		return &RecastMgr();
 	}
+
+#ifdef _DEBUG
+	virtual const char *GetEntityClassname( int entnum, int iSerialNum )
+	{
+		CBaseEntity *pEnt = g_pEntityList->LookupEntityByNetworkIndex( entnum );
+		if(pEnt)
+			return pEnt->GetClassname();
+
+		return NULL;
+	}
+#endif
 };
 
 static CGameServerLoopback s_ServerGameLoopback;

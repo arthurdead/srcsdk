@@ -1477,7 +1477,7 @@ int CBaseEntity::DrawDebugTextOverlays(void)
 			}
 		}
 
-		Q_snprintf(tempstr, sizeof(tempstr), "Flags :%d", GetFlags() );
+		Q_snprintf(tempstr, sizeof(tempstr), "Flags :%llu", GetFlags() );
 		EntityText(offset,tempstr,0);
 		offset++;
 
@@ -2177,6 +2177,8 @@ BEGIN_MAPENTITY_NO_BASE( CBaseEntity )
 
 	DEFINE_KEYFIELD( m_MoveType, FIELD_CHARACTER, "MoveType" ),
 
+	DEFINE_MAP_EMBEDDED_PTR( m_pCollision ),
+
 	DEFINE_KEYFIELD( m_CollisionGroup, FIELD_INTEGER, "CollisionGroup" ),
 
 	DEFINE_INPUT( m_iInitialTeamNum, FIELD_INTEGER, "TeamNum" ),
@@ -2281,7 +2283,7 @@ BEGIN_MAPENTITY_NO_BASE( CBaseEntity )
 	DEFINE_KEYFIELD( m_hOwnerEntity, FIELD_EHANDLE, "OwnerEntity" ),
 
 	// You know, m_fFlags access
-	DEFINE_KEYFIELD( m_fFlags, FIELD_INTEGER, "m_fFlags" ),
+	DEFINE_KEYFIELD( m_fFlags, FIELD_INTEGER64, "m_fFlags" ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "ChangeVariable", InputChangeVariable ),
 
@@ -2323,8 +2325,8 @@ BEGIN_MAPENTITY_NO_BASE( CBaseEntity )
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableDraw", InputUndrawEntity ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableReceivingFlashlight", InputEnableReceivingFlashlight ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableReceivingFlashlight", InputDisableReceivingFlashlight ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "AddEFlags", InputAddEFlags ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "RemoveEFlags", InputRemoveEFlags ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER64, "AddEFlags", InputAddEFlags ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER64, "RemoveEFlags", InputRemoveEFlags ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "AddSolidFlags", InputAddSolidFlags ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "RemoveSolidFlags", InputRemoveSolidFlags ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetMoveType", InputSetMoveType ),
@@ -2386,7 +2388,7 @@ void CBaseEntity::UpdateOnRemove( void )
 	// Notifies entity listeners, etc
 	gEntList.NotifyRemoveEntity( this );
 
-	AddFlag( FL_KILLME );
+	AddEFlags( EFL_KILLME );
 
 	if ( m_iGlobalname != NULL_STRING )
 	{
@@ -3686,11 +3688,6 @@ void CBaseEntity::SetMoveType( MoveType_t val, MoveCollide_t moveCollide )
 		return;
 	}
 
-	if ( m_MoveType == MOVETYPE_NOCLIP && val != m_MoveType )
-	{
-		RemoveEFlags( EFL_NOCLIP_ACTIVE );
-	}
-
 	// This is needed to the removal of MOVETYPE_FOLLOW:
 	// We can't transition from follow to a different movetype directly
 	// or the leaf code will break.
@@ -4011,6 +4008,10 @@ void CBaseEntity::DrawInputOverlay(const char *szInputName, CBaseEntity *pCaller
 	{
 		Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s,%d) <-- (%s)\n", gpGlobals->curtime, szInputName, Value.Int(), pCaller ? pCaller->GetDebugName() : NULL);
 	}
+	else if ( Value.FieldType() == FIELD_INTEGER64 )
+	{
+		Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s,%lli) <-- (%s)\n", gpGlobals->curtime, szInputName, Value.Int64(), pCaller ? pCaller->GetDebugName() : NULL);
+	}
 	else if ( Value.FieldType() == FIELD_STRING )
 	{
 		Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s,%s) <-- (%s)\n", gpGlobals->curtime, szInputName, Value.String(), pCaller ? pCaller->GetDebugName() : NULL);
@@ -4024,6 +4025,10 @@ void CBaseEntity::DrawInputOverlay(const char *szInputName, CBaseEntity *pCaller
 	if ( Value.FieldType() == FIELD_INTEGER )
 	{
 		DevMsg( 2, "input: (%s,%d) -> (%s,%s), from (%s)\n", szInputName, Value.Int(), STRING(m_iClassname), GetDebugName(), pCaller ? pCaller->GetDebugName() : NULL);
+	}
+	else if ( Value.FieldType() == FIELD_INTEGER64 )
+	{
+		DevMsg( 2, "input: (%s,%lli) -> (%s,%s), from (%s)\n", szInputName, Value.Int64(), STRING(m_iClassname), GetDebugName(), pCaller ? pCaller->GetDebugName() : NULL);
 	}
 	else if ( Value.FieldType() == FIELD_STRING )
 	{
@@ -4586,7 +4591,7 @@ bool CBaseEntity::IsInAnyTeam( void ) const
 //-----------------------------------------------------------------------------
 // Purpose: Returns the type of damage that this entity inflicts.
 //-----------------------------------------------------------------------------
-int CBaseEntity::GetDamageType() const
+uint64 CBaseEntity::GetDamageType() const
 {
 	return DMG_GENERIC;
 }
@@ -5371,6 +5376,10 @@ void DumpEntity( CBasePlayer *pPlayer, CBaseEntity *ent )
 				case FIELD_INTEGER:
 					if ( var.Int() )
 						Q_snprintf( buf,sizeof(buf), "%d", var.Int() );
+					break;
+				case FIELD_INTEGER64:
+					if ( var.Int64() )
+						Q_snprintf( buf,sizeof(buf), "%lli", var.Int64() );
 					break;
 				case FIELD_FLOAT:
 					if ( var.Float() )
@@ -7456,7 +7465,7 @@ void CBaseEntity::InputDisableReceivingFlashlight( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 void CBaseEntity::InputAddEFlags( inputdata_t& inputdata )
 {
-	AddEFlags(inputdata.value.Int());
+	AddEFlags(inputdata.value.Int64());
 }
 
 //-----------------------------------------------------------------------------
@@ -7464,7 +7473,7 @@ void CBaseEntity::InputAddEFlags( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 void CBaseEntity::InputRemoveEFlags( inputdata_t& inputdata )
 {
-	RemoveEFlags(inputdata.value.Int());
+	RemoveEFlags(inputdata.value.Int64());
 }
 
 //-----------------------------------------------------------------------------
@@ -8318,8 +8327,13 @@ bool CBaseEntity::SUB_AllowedToFade( void )
 {
 	if( VPhysicsGetObject() )
 	{
-		if( VPhysicsGetObject()->GetGameFlags() & FVPHYSICS_PLAYER_HELD || GetEFlags() & EFL_IS_BEING_LIFTED_BY_BARNACLE )
+		if( VPhysicsGetObject()->GetGameFlags() & FVPHYSICS_PLAYER_HELD
+		#ifdef HL2_DLL
+			|| GetEFlags() & EFL_IS_BEING_LIFTED_BY_BARNACLE
+		#endif
+		) {
 			return false;
+		}
 	}
 
 

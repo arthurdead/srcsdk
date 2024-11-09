@@ -45,6 +45,7 @@
 #include "recast/recast_mgr.h"
 #include "collisionproperty.h"
 #include "tempent.h"
+#include "game_loopback/igameserverloopback.h"
 
 #if defined __GNUC__ && defined __linux__
 #include <cxxabi.h>
@@ -725,7 +726,7 @@ BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 
 //	DEFINE_FIELD_FLAGS( m_flAnimTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 //	DEFINE_FIELD_FLAGS( m_flSimulationTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
-	DEFINE_FIELD_FLAGS( m_fFlags, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_fFlags, FIELD_INTEGER64, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD_FLAGS_TOL( m_vecViewOffset, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.25f ),
 	DEFINE_FIELD_FLAGS( m_nModelIndex, FIELD_SHORT, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
 	DEFINE_FIELD_FLAGS( m_flFriction, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
@@ -768,7 +769,7 @@ BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 //	DEFINE_FIELD( current_position, FIELD_INTEGER ),
 //	DEFINE_FIELD( m_flLastMessageTime, FIELD_FLOAT ),
 	DEFINE_FIELD( m_vecBaseVelocity, FIELD_VECTOR ),
-	DEFINE_FIELD( m_iEFlags, FIELD_INTEGER ),
+	DEFINE_FIELD( m_iEFlags, FIELD_INTEGER64 ),
 	DEFINE_FIELD( m_flGravity, FIELD_FLOAT ),
 //	DEFINE_FIELD( m_ModelInstance, FIELD_SHORT ),
 	DEFINE_FIELD( m_flProxyRandomValue, FIELD_FLOAT ),
@@ -1508,6 +1509,18 @@ bool C_BaseEntity::InitializeAsServerEntity( int entnum, int iSerialNum )
 		AlphaProp()->SetDesyncOffset( entnum );
 	}
 
+#ifdef _DEBUG
+	if( g_pGameServerLoopback )
+	{
+		const char *sv_classname = g_pGameServerLoopback->GetEntityClassname( entnum, iSerialNum );
+
+		if(sv_classname)
+			AssertMsg( m_iClassname != NULL_STRING, "missing classname for %s (%s)", STRING(m_iRTTIClassname), sv_classname );
+		else
+			AssertMsg( m_iClassname != NULL_STRING, "missing classname for %s", STRING(m_iRTTIClassname) );
+	}
+#endif
+
 	return true;
 }
 
@@ -1606,7 +1619,12 @@ bool C_BaseEntity::PostConstructor( const char *szClassname )
 	free(pRTTIClassname);
 #endif
 
-	AssertMsg( szClassname, "missing classname for %s", STRING(m_iRTTIClassname) );
+#ifdef _DEBUG
+	if( IsEFlagSet( EFL_NOT_NETWORKED ) || !g_pGameServerLoopback )
+	{
+		AssertMsg( szClassname, "missing classname for %s", STRING(m_iRTTIClassname) );
+	}
+#endif
 
 	CheckHasGamePhysicsSimulation();
 
@@ -3339,16 +3357,10 @@ bool C_BaseEntity::IsSelfAnimating()
 //-----------------------------------------------------------------------------
 // EFlags.. 
 //-----------------------------------------------------------------------------
-int C_BaseEntity::GetEFlags() const
+uint64 C_BaseEntity::GetEFlags() const
 {
 	return m_iEFlags;
 }
-
-void C_BaseEntity::SetEFlags( int iEFlags )
-{
-	m_iEFlags = iEFlags;
-}
-
 
 //-----------------------------------------------------------------------------
 // Sets the model... 
@@ -5986,6 +5998,7 @@ static int g_FieldSizes[FIELD_TYPECOUNT] =
 	sizeof(short),		// FIELD_SHORT
 	sizeof(char),		// FIELD_CHARACTER
 	sizeof(color32),	// FIELD_COLOR32
+	sizeof(color24),	// FIELD_COLOR24
 	sizeof(int),		// FIELD_EMBEDDED	(handled specially)
 	sizeof(int),		// FIELD_CUSTOM		(handled specially)
 	
@@ -6013,6 +6026,10 @@ static int g_FieldSizes[FIELD_TYPECOUNT] =
 	sizeof(matrix3x4_t),// FIELD_MATRIX3X4_WORLDSPACE	// NOTE: Use array(FIELD_FLOAT, 12) for matrix3x4_t NOT in worldspace
 	sizeof(interval_t), // FIELD_INTERVAL
 	sizeof(int),		// FIELD_MODELINDEX
+	sizeof(int),		// FIELD_MATERIALINDEX
+	sizeof(Vector2D),		// FIELD_VECTOR2D
+	sizeof(int64),		// FIELD_INTEGER64
+	sizeof(Vector4D),		// FIELD_VECTOR4D
 };
 
 //-----------------------------------------------------------------------------
@@ -6088,8 +6105,11 @@ int C_BaseEntity::ComputePackedSize_R( datamap_t *map )
 
 		case FIELD_FLOAT:
 		case FIELD_VECTOR:
+		case FIELD_VECTOR2D:
 		case FIELD_QUATERNION:
+		case FIELD_VECTOR4D:
 		case FIELD_INTEGER:
+		case FIELD_INTEGER64:
 		case FIELD_EHANDLE:
 			{
 				// These should be dword aligned
@@ -6112,6 +6132,7 @@ int C_BaseEntity::ComputePackedSize_R( datamap_t *map )
 
 		case FIELD_STRING:
 		case FIELD_COLOR32:
+		case FIELD_COLOR24:
 		case FIELD_BOOLEAN:
 		case FIELD_CHARACTER:
 			{
@@ -6404,8 +6425,8 @@ int C_BaseEntity::RestoreData( const char *context, int slot, int type )
 	}
 
 	// some flags shouldn't be predicted - as we find them, add them to the savedEFlagsMask
-	const int savedEFlagsMask = EFL_DIRTY_SHADOWUPDATE | EFL_DIRTY_SPATIAL_PARTITION;
-	int savedEFlags = GetEFlags() & savedEFlagsMask;
+	const uint64 savedEFlagsMask = EFL_DIRTY_SHADOWUPDATE | EFL_DIRTY_SPATIAL_PARTITION;
+	uint64 savedEFlags = GetEFlags() & savedEFlagsMask;
 
 	// model index needs to be set manually for dynamic model refcounting purposes
 	int oldModelIndex = m_nModelIndex;

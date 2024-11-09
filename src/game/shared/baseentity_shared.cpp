@@ -164,17 +164,17 @@ const Vector &CSharedBaseEntity::WorldSpaceCenter( ) const
 }
 
 #if !defined( CLIENT_DLL )
-#define CHANGE_FLAGS(flags,newFlags) { unsigned int old = flags; flags = (newFlags); gEntList.ReportEntityFlagsChanged( this, old, flags ); }
+#define CHANGE_FLAGS(flags,newFlags) { uint64 old = flags; flags = (newFlags); gEntList.ReportEntityFlagsChanged( this, old, flags ); }
 #else
 #define CHANGE_FLAGS(flags,newFlags) (flags = (newFlags))
 #endif
 
-void CSharedBaseEntity::AddFlag( int flags )
+void CSharedBaseEntity::AddFlag( uint64 flags )
 {
 	CHANGE_FLAGS( m_fFlags, m_fFlags | flags );
 }
 
-void CSharedBaseEntity::RemoveFlag( int flagsToRemove )
+void CSharedBaseEntity::RemoveFlag( uint64 flagsToRemove )
 {
 	CHANGE_FLAGS( m_fFlags, m_fFlags & ~flagsToRemove );
 }
@@ -184,7 +184,7 @@ void CSharedBaseEntity::ClearFlags( void )
 	CHANGE_FLAGS( m_fFlags, 0 );
 }
 
-void CSharedBaseEntity::ToggleFlag( int flagToToggle )
+void CSharedBaseEntity::ToggleFlag( uint64 flagToToggle )
 {
 	CHANGE_FLAGS( m_fFlags, m_fFlags ^ flagToToggle );
 }
@@ -330,11 +330,8 @@ static void AddDataMapFieldNamesToList( KeyValueNameList_t &list, datamap_t *pDa
 	}
 }
 
-void CSharedBaseEntity::ValidateDataDescription(void)
+void ValidateDataDescription(datamap_t *pDataMap, const char *classname)
 {
-	// Multiple key fields that have the same name are not allowed - it creates an
-	// ambiguity when trying to parse keyvalues and outputs.
-	datamap_t *pDataMap = GetMapDataDesc();
 	if ((pDataMap == NULL) || pDataMap->bValidityChecked)
 		return;
 
@@ -350,11 +347,19 @@ void CSharedBaseEntity::ValidateDataDescription(void)
 		{
 			if (!Q_stricmp(names[i], names[j]))
 			{
-				Log_Msg(LOG_MAPPARSE, "%s has multiple data description entries for \"%s\"\n", STRING(m_iClassname), names[i]);
+				Log_Msg(LOG_MAPPARSE, "%s has multiple data description entries for \"%s\"\n", classname, names[i]);
 				break;
 			}
 		}
 	}
+}
+
+void CSharedBaseEntity::ValidateDataDescription(void)
+{
+	// Multiple key fields that have the same name are not allowed - it creates an
+	// ambiguity when trying to parse keyvalues and outputs.
+	datamap_t *pDataMap = GetMapDataDesc();
+	::ValidateDataDescription(pDataMap, STRING(m_iClassname));
 }
 #endif // _DEBUG
 
@@ -629,7 +634,7 @@ bool CSharedBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 	if ( FStrEq( szKeyName, "eflags" ) )
 	{
 		// Can't use DEFINE_KEYFIELD since eflags might be set before KV are parsed
-		AddEFlags( atoi( szValue ) );
+		AddEFlags( strtoull( szValue, NULL, 10 ) );
 		return true;
 	}
 
@@ -2134,7 +2139,7 @@ void CSharedBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 	static int	tracerCount;
 	trace_t		tr;
 	CAmmoDef*	pAmmoDef	= GetAmmoDef();
-	int			nDamageType	= pAmmoDef->DamageType(info.m_iAmmoType);
+	uint64			nDamageType	= pAmmoDef->DamageType(info.m_iAmmoType);
 	int			nAmmoFlags	= pAmmoDef->Flags(info.m_iAmmoType);
 	
 	bool bDoServerEffects = true;
@@ -2823,7 +2828,7 @@ int CSharedBaseEntity::BloodColor()
 }
 
 
-void CSharedBaseEntity::TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, int bitsDamageType )
+void CSharedBaseEntity::TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, uint64 bitsDamageType )
 {
 	if ((BloodColor() == DONT_BLEED) || (BloodColor() == BLOOD_COLOR_MECH))
 	{
@@ -3238,7 +3243,7 @@ void CSharedBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 
 	// Append base stuff
 	set.AppendCriteria("spawnflags", UTIL_VarArgs("%i", GetSpawnFlags()));
-	set.AppendCriteria("flags", UTIL_VarArgs("%i", GetFlags()));
+	set.AppendCriteria("flags", UTIL_VarArgs("%llu", GetFlags()));
 #endif
 }
 

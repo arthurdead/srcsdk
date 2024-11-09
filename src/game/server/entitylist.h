@@ -130,7 +130,7 @@ public:
 	void AddListenerEntity( IEntityListener *pListener );
 	void RemoveListenerEntity( IEntityListener *pListener );
 
-	void ReportEntityFlagsChanged( CBaseEntity *pEntity, unsigned int flagsOld, unsigned int flagsNow );
+	void ReportEntityFlagsChanged( CBaseEntity *pEntity, uint64 flagsOld, uint64 flagsNow );
 
 	// Schedule this entity for notification once client messages have been sent
 	void AddPostClientMessageEntity( CBaseEntity *pEntity );

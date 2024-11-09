@@ -159,20 +159,28 @@ CStandardSendProxiesV1::CStandardSendProxiesV1()
 	m_FloatToFloat = SendProxy_FloatToFloat;
 	m_VectorToVector = SendProxy_VectorToVector;
 
-#ifdef SUPPORTS_INT64
+#ifdef DT_INT64_SUPPORTED
 	m_Int64ToInt64 = SendProxy_Int64ToInt64;
 	m_UInt64ToInt64 = SendProxy_UInt64ToInt64;
 #endif
 }
 
 CStandardSendProxies::CStandardSendProxies()
-{	
+{
 	m_DataTableToDataTable = SendProxy_DataTableToDataTable;
 	m_SendLocalDataTable = SendProxy_SendLocalDataTable;
 	m_ppNonModifiedPointerProxies = &s_pNonModifiedPointerProxyHead;
-	
 }
-CStandardSendProxies g_StandardSendProxies;
+
+CStandardSendProxiesEx::CStandardSendProxiesEx()
+{
+#ifndef DT_INT64_SUPPORTED
+	m_Int64ToInt64 = SendProxy_Int64ToInt64;
+	m_UInt64ToInt64 = SendProxy_UInt64ToInt64;
+#endif
+}
+
+CStandardSendProxiesEx g_StandardSendProxies;
 
 
 // ---------------------------------------------------------------------- //
@@ -219,7 +227,6 @@ void SendProxy_VectorXYToVectorXY( const SendProp *pProp, const void *pStruct, c
 	pOut->m_Vector[1] = v[1];
 }
 
-#if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
 void SendProxy_QuaternionToQuaternion( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	Quaternion& q = *(Quaternion*)pData;
@@ -229,7 +236,6 @@ void SendProxy_QuaternionToQuaternion( const SendProp *pProp, const void *pStruc
 	pOut->m_Vector[2] = q[2];
 	pOut->m_Vector[3] = q[3];
 }
-#endif
 
 void SendProxy_Int8ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
@@ -505,7 +511,6 @@ SendProp SendPropVectorXY(
 	return ret;
 }
 
-#if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
 SendProp SendPropQuaternion(
 	const char *pVarName,
 	int offset,
@@ -527,7 +532,12 @@ SendProp SendPropQuaternion(
 	if ( nBits == 32 )
 		flags |= SPROP_NOSCALE;
 
+#ifdef DT_QUATERNION_SUPPORTED
 	ret.m_Type = DPT_Quaternion;
+#else
+	ret.m_Type = DPT_Vector;
+#endif
+
 	ret.m_pVarName = pVarName;
 	ret.SetOffset( offset );
 	ret.m_nBits = nBits;
@@ -541,7 +551,6 @@ SendProp SendPropQuaternion(
 
 	return ret;
 }
-#endif
 
 SendProp SendPropAngle(
 	const char *pVarName,
@@ -651,16 +660,25 @@ SendProp SendPropInt(
 	// Figure out # of bits if the want us to.
 	if ( nBits <= 0 )
 	{
-		Assert( sizeofVar == 1 || sizeofVar == 2 || sizeofVar == 4 );
+		Assert( sizeofVar == 1 || sizeofVar == 2 || sizeofVar == 4 || sizeofVar == 8 );
 		nBits = sizeofVar * 8;
 	}
 
-#ifdef SUPPORTS_INT64
-	ret.m_Type = (sizeofVar == 8) ? DPT_Int64 : DPT_Int;
-#else
-	ret.m_Type = DPT_Int;
-#endif
-	
+	if( sizeofVar == 8 )
+	{
+	#ifdef DT_INT64_SUPPORTED
+		ret.m_Type = DPT_Int64;
+	#else
+		ret.m_Type = DPT_VectorXY;
+
+		flags |= SPROP_NOSCALE;
+	#endif
+	}
+	else
+	{
+		ret.m_Type = DPT_Int;
+	}
+
 	ret.m_pVarName = pVarName;
 	ret.SetOffset( offset );
 	ret.m_nBits = nBits;

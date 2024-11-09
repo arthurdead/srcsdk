@@ -111,7 +111,7 @@ Vector GetVelocityFromDamageForce( const CTakeDamageInfo &info, const CBaseEntit
 float GetBreakableDamage( const CTakeDamageInfo &inputInfo, IBreakableWithPropData *pProp )
 {
 	float flDamage = inputInfo.GetDamage();
-	int iDmgType = inputInfo.GetDamageType();
+	uint64 iDmgType = inputInfo.GetDamageType();
 
 	// Bullet damage?
 	if ( iDmgType & DMG_BULLET )

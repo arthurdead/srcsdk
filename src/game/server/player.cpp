@@ -707,14 +707,14 @@ void CBasePlayer::DeathSound( const CTakeDamageInfo &info )
 // override takehealth
 // bitsDamageType indicates type of damage healed. 
 
-int CBasePlayer::TakeHealth( float flHealth, int bitsDamageType )
+int CBasePlayer::TakeHealth( float flHealth, uint64 bitsDamageType )
 {
 	// clear out any damage types we healed.
 	// UNDONE: generic health should not heal any
 	// UNDONE: time-based damage
 	if (m_takedamage)
 	{
-		int bitsDmgTimeBased = GameRules()->Damage_GetTimeBased();
+		uint64 bitsDmgTimeBased = GameRules()->Damage_GetTimeBased();
 		m_bitsDamageType &= ~( bitsDamageType & ~bitsDmgTimeBased );
 	}
 
@@ -827,7 +827,7 @@ void CBasePlayer::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &v
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-void CBasePlayer::DamageEffect(float flDamage, int fDamageType)
+void CBasePlayer::DamageEffect(float flDamage, uint64 fDamageType)
 {
 	if (fDamageType & DMG_CRUSH)
 	{
@@ -891,7 +891,7 @@ void CBasePlayer::DamageEffect(float flDamage, int fDamageType)
 int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 {
 	// have suit diagnose the problem - ie: report damage type
-	int bitsDamage = inputInfo.GetDamageType();
+	uint64 bitsDamage = inputInfo.GetDamageType();
 	int ffound = true;
 	int fmajor;
 	int fcritical;
@@ -1044,7 +1044,7 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	{
 		// Make sure the damage type is really time-based.
 		// This is kind of hacky but necessary until we setup DamageType as an enum.
-		int iDamage = ( DMG_PARALYZE << i );
+		uint64 iDamage = ( DMG_PARALYZE << i );
 		if ( ( info.GetDamageType() & iDamage ) && GameRules()->Damage_IsTimeBased( iDamage ) )
 		{
 			m_rgbTimeBasedDamage[i] = 0;
@@ -4759,12 +4759,10 @@ void CBasePlayer::Spawn( void )
 	if(!IsObserver()) {
 		SetParent(NULL);
 		SetMoveType(MOVETYPE_NOCLIP);
-		AddEFlags(EFL_NOCLIP_ACTIVE);
 
 		CPlayerState *pl2 = PlayerData();
 		Assert( pl2 );
 
-		RemoveEFlags(EFL_NOCLIP_ACTIVE);
 		SetMoveType(MOVETYPE_WALK);
 
 		Vector oldorigin = GetAbsOrigin();
@@ -5100,9 +5098,11 @@ bool CBasePlayer::CanEnterVehicle( IServerVehicle *pVehicle, int nRole )
 	if ( IsAlive() == false )
 		return false;
 
+#ifdef HL2_DLL
 	// Can't be pulled by a barnacle
 	if ( IsEFlagSet( EFL_IS_BEING_LIFTED_BY_BARNACLE ) )
 		return false;
+#endif
 
 	return true;
 }

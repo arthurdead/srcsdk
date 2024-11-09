@@ -347,11 +347,10 @@ public:
 	SolidType_t				GetSolid() const;
 	int			 			GetSolidFlags( void ) const;
 
-	int						GetEFlags() const;
-	void					SetEFlags( int iEFlags );
-	void					AddEFlags( int nEFlagMask );
-	void					RemoveEFlags( int nEFlagMask );
-	bool					IsEFlagSet( int nEFlagMask ) const;
+	uint64						GetEFlags() const;
+	void					AddEFlags( uint64 nEFlagMask );
+	void					RemoveEFlags( uint64 nEFlagMask );
+	bool					IsEFlagSet( uint64 nEFlagMask ) const;
 
 	// Quick way to ask if we have a player entity as a child anywhere in our hierarchy.
 	void					RecalcHasPlayerChildBit();
@@ -975,7 +974,7 @@ public:
 	// UNDONE: Make this data?
 	virtual int				BloodColor( void );
 
-	void					TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, int bitsDamageType );
+	void					TraceBleed( float flDamage, const Vector &vecDir, trace_t *ptr, uint64 bitsDamageType );
 	virtual bool			IsTriggered( CBaseEntity *pActivator ) {return true;}
 	virtual bool			IsNPC( void ) const { return false; }
 	virtual CAI_BaseNPC				*MyNPCPointer( void ); 
@@ -1226,7 +1225,7 @@ public:
 	void			CollisionRulesChanged();
 
 	// Damage accessors
-	virtual int		GetDamageType() const;
+	virtual uint64		GetDamageType() const;
 	virtual float	GetDamage() { return 0; }
 	virtual void	SetDamage(float flDamage) {}
 
@@ -1418,10 +1417,10 @@ public:
 	// When OBBs get in, this can probably go away.
 	virtual Vector			GetSoundEmissionOrigin() const;
 
-	void					AddFlag( int flags );
-	void					RemoveFlag( int flagsToRemove );
-	void					ToggleFlag( int flagToToggle );
-	int						GetFlags( void ) const;
+	void					AddFlag( uint64 flags );
+	void					RemoveFlag( uint64 flagsToRemove );
+	void					ToggleFlag( uint64 flagToToggle );
+	uint64						GetFlags( void ) const;
 	void					ClearFlags( void );
 
 	// Sets the local position from a transform
@@ -1705,9 +1704,9 @@ protected:
 	CNetworkVar( int, m_spawnflags );
 
 private:
-	int		m_iEFlags;	// entity flags EFL_*
+	uint64		m_iEFlags;	// entity flags EFL_*
 	// was pev->flags
-	CNetworkVarForDerived( int, m_fFlags );
+	CNetworkVarForDerived( uint64, m_fFlags );
 
 	CNetworkStringT( m_iName ); // name used to identify this entity
 
@@ -2237,22 +2236,12 @@ inline void CBaseEntity::MarkForDeletion()
 //-----------------------------------------------------------------------------
 // EFlags
 //-----------------------------------------------------------------------------
-inline int CBaseEntity::GetEFlags() const
+inline uint64 CBaseEntity::GetEFlags() const
 {
 	return m_iEFlags;
 }
 
-inline void CBaseEntity::SetEFlags( int iEFlags )
-{
-	m_iEFlags = iEFlags;
-
-	if ( iEFlags & ( EFL_FORCE_CHECK_TRANSMIT | EFL_IN_SKYBOX ) )
-	{
-		DispatchUpdateTransmitState();
-	}
-}
-
-inline void CBaseEntity::AddEFlags( int nEFlagMask )
+inline void CBaseEntity::AddEFlags( uint64 nEFlagMask )
 {
 	m_iEFlags |= nEFlagMask;
 
@@ -2262,15 +2251,22 @@ inline void CBaseEntity::AddEFlags( int nEFlagMask )
 	}
 }
 
-inline void CBaseEntity::RemoveEFlags( int nEFlagMask )
+inline void CBaseEntity::RemoveEFlags( uint64 nEFlagMask )
 {
+	nEFlagMask &= ~(
+		EFL_KILLME|
+		EFL_NOT_RENDERABLE|
+		EFL_NOT_NETWORKED|
+		EFL_NOT_COLLIDEABLE
+	);
+
 	m_iEFlags &= ~nEFlagMask;
 	
 	if ( nEFlagMask & ( EFL_FORCE_CHECK_TRANSMIT | EFL_IN_SKYBOX ) )
 		DispatchUpdateTransmitState();
 }
 
-inline bool CBaseEntity::IsEFlagSet( int nEFlagMask ) const
+inline bool CBaseEntity::IsEFlagSet( uint64 nEFlagMask ) const
 {
 	return (m_iEFlags & nEFlagMask) != 0;
 }

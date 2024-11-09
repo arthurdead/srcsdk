@@ -351,8 +351,13 @@ bool CGib::SUB_AllowedToFade( void )
 {
 	if( VPhysicsGetObject() )
 	{
-		if( VPhysicsGetObject()->GetGameFlags() & FVPHYSICS_PLAYER_HELD || GetEFlags() & EFL_IS_BEING_LIFTED_BY_BARNACLE )
+		if( VPhysicsGetObject()->GetGameFlags() & FVPHYSICS_PLAYER_HELD
+		#ifdef HL2_DLL
+			|| GetEFlags() & EFL_IS_BEING_LIFTED_BY_BARNACLE
+		#endif
+		) {
 			return false;
+		}
 	}
 
 	CBasePlayer *pPlayer = UTIL_GetNearestVisiblePlayer(this); 

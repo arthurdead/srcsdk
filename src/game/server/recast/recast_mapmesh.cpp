@@ -851,9 +851,10 @@ bool CMapMesh::Load( bool bDynamicOnly )
 	}
 
 	// Origins for testing reachability of polygons
-	AddSampleOrigins( m_sampleOrigins, "info_player_start" );
-	AddSampleOrigins( m_sampleOrigins, "info_player_coop" );
-	AddSampleOrigins( m_sampleOrigins, "info_player_deathmatch" );
+	AddSampleOrigins( m_sampleOrigins, "info_player_*" );
+
+	AddSampleOrigins( m_sampleOrigins, "item_*" );
+	AddSampleOrigins( m_sampleOrigins, "weapon_*" );
 
 	for(int i = 1; i <= gpGlobals->maxClients; ++i) {
 		CBasePlayer *pPlayer = UTIL_PlayerByIndex(i);

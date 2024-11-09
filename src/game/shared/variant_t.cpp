@@ -25,6 +25,9 @@ variant_t &variant_t::operator=(const variant_t &rhs)
 	case FIELD_INTEGER:
 		iVal = rhs.iVal;
 		break;
+	case FIELD_INTEGER64:
+		iVal64 = rhs.iVal64;
+		break;
 	case FIELD_BOOLEAN:
 		bVal = rhs.bVal;
 		break;
@@ -92,6 +95,7 @@ const char *variant_t::GetDebug()
 	case FIELD_FLOAT:			fieldtype = "Float"; break;
 	case FIELD_STRING:			fieldtype = "String"; break;
 	case FIELD_INTEGER:			fieldtype = "Integer"; break;
+	case FIELD_INTEGER64:			fieldtype = "Integer64"; break;
 	case FIELD_BOOLEAN:			fieldtype = "Boolean"; break;
 	case FIELD_EHANDLE:			fieldtype = "Entity"; break;
 	case FIELD_CLASSPTR:		fieldtype = "EntityPtr"; break;
@@ -213,6 +217,7 @@ bool Variant_Equal(variant_t val1, variant_t val2, bool bLenAllowed)
 	switch (val1.FieldType())
 	{
 	case FIELD_INTEGER:
+	case FIELD_INTEGER64:
 	case FIELD_FLOAT:
 	{
 		VariantToFloat(val1, val2, bLenAllowed);
@@ -243,6 +248,7 @@ bool Variant_Greater(variant_t val1, variant_t val2, bool bLenAllowed)
 	switch (val1.FieldType())
 	{
 	case FIELD_INTEGER:
+	case FIELD_INTEGER64:
 	case FIELD_FLOAT:
 	{
 		VariantToFloat(val1, val2, bLenAllowed);
@@ -271,6 +277,7 @@ bool Variant_GreaterOrEqual(variant_t val1, variant_t val2, bool bLenAllowed)
 	switch (val1.FieldType())
 	{
 	case FIELD_INTEGER:
+	case FIELD_INTEGER64:
 	case FIELD_FLOAT:
 	{
 		VariantToFloat(val1, val2, bLenAllowed);
@@ -303,6 +310,7 @@ void variant_t::Set( fieldtype_t ftype, void *data )
 	case FIELD_CHARACTER:	iVal = *((char *)data);				break;
 	case FIELD_SHORT:		iVal = *((short *)data);			break;
 	case FIELD_INTEGER:		iVal = *((int *)data);				break;
+	case FIELD_INTEGER64:		iVal = *((int64 *)data);				break;
 	case FIELD_STRING:		iszVal = *((string_t *)data);		break;
 	case FIELD_FLOAT:		flVal = *((float *)data);			break;
 	case FIELD_COLOR32:		rgbaVal = *((color32 *)data);		break;
@@ -355,6 +363,7 @@ void variant_t::SetOther( void *data )
 	case FIELD_CHARACTER:	*((char *)data) = iVal;				break;
 	case FIELD_SHORT:		*((short *)data) = iVal;			break;
 	case FIELD_INTEGER:		*((int *)data) = iVal;				break;
+	case FIELD_INTEGER64:		*((int64 *)data) = iVal;				break;
 	case FIELD_STRING:		*((string_t *)data) = iszVal;		break;
 	case FIELD_FLOAT:		*((float *)data) = flVal;			break;
 	case FIELD_COLOR32:		*((color32 *)data) = rgbaVal;		break;
@@ -442,6 +451,25 @@ bool variant_t::Convert( fieldtype_t newType )
 			break;
 		}
 
+		case FIELD_INTEGER64:
+		{
+			switch ( newType )
+			{
+				case FIELD_FLOAT:
+				{
+					SetFloat( (float) iVal64 );
+					return true;
+				}
+
+				case FIELD_BOOLEAN:
+				{
+					SetBool( iVal64 != 0 );
+					return true;
+				}
+			}
+			break;
+		}
+
 		case FIELD_FLOAT:
 		{
 			switch ( newType )
@@ -449,6 +477,12 @@ bool variant_t::Convert( fieldtype_t newType )
 				case FIELD_INTEGER:
 				{
 					SetInt( (int) flVal );
+					return true;
+				}
+
+				case FIELD_INTEGER64:
+				{
+					SetInt64( (int64) flVal );
 					return true;
 				}
 
@@ -478,6 +512,19 @@ bool variant_t::Convert( fieldtype_t newType )
 					else
 					{
 						SetInt(0);
+					}
+					return true;
+				}
+
+				case FIELD_INTEGER64:
+				{
+					if (iszVal != NULL_STRING)
+					{
+						SetInt64(strtoull(STRING(iszVal), NULL, 10));
+					}
+					else
+					{
+						SetInt64(0);
 					}
 					return true;
 				}
@@ -643,6 +690,12 @@ const char *variant_t::ToString( void ) const
 			return(szBuf);
 		}
 
+	case FIELD_INTEGER64:
+		{
+			Q_snprintf( szBuf, sizeof( szBuf ), "%lli", iVal64 );
+			return(szBuf);
+		}
+
 	case FIELD_FLOAT:
 		{
 			Q_snprintf(szBuf,sizeof(szBuf), "%g", flVal);
@@ -688,6 +741,10 @@ typedescription_t variant_t::m_SaveBool[] =
 typedescription_t variant_t::m_SaveInt[] =
 {
 	DEFINE_FIELD( iVal, FIELD_INTEGER ),
+};
+typedescription_t variant_t::m_SaveInt64[] =
+{
+	DEFINE_FIELD( iVal64, FIELD_INTEGER64 ),
 };
 typedescription_t variant_t::m_SaveFloat[] =
 {

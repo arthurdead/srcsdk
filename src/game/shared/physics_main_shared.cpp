@@ -1132,7 +1132,7 @@ void CSharedBaseEntity::PhysicsImpact( CSharedBaseEntity *other, trace_t &trace 
 
 	// If either of the entities is flagged to be deleted, 
 	//  don't call the touch functions
-	if ( ( GetFlags() | other->GetFlags() ) & FL_KILLME )
+	if ( ( GetEFlags() | other->GetEFlags() ) & EFL_KILLME )
 	{
 		return;
 	}
