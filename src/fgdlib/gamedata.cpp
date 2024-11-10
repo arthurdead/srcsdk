@@ -289,7 +289,7 @@ BOOL GameData::Load(const char *pszFilename)
 		return FALSE;
 #else
 	struct stat s;
-	if(::stat(pszFilename, &s) == 0)
+	if(::stat(pszFilename, &s) == -1)
 		return FALSE;
 #endif
 
