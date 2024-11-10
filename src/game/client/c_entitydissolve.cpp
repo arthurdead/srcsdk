@@ -53,7 +53,7 @@ PMaterialHandle g_Material_Glow = NULL;
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-C_EntityDissolve::C_EntityDissolve( int iEFlags )
+C_EntityDissolve::C_EntityDissolve( uint64 iEFlags )
 	: C_BaseEntity( iEFlags )
 {
 	m_bLinkedToServerEnt = true;

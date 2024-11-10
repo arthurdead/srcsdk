@@ -145,7 +145,7 @@ END_NETWORK_TABLE()
 	#define CSprite C_Sprite
 #endif
 
-CSharedSprite::CSprite( int iEFlags )
+CSharedSprite::CSprite( uint64 iEFlags )
 	: CSharedBaseEntity(iEFlags)
 #if defined( CLIENT_DLL )
 	, C_SpriteRenderer()

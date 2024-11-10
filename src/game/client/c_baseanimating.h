@@ -109,7 +109,7 @@ public:
 	virtual bool GetRenderData( void *pData, ModelDataCategory_t nCategory );
 
 	C_BaseAnimating() : C_BaseAnimating( 0 ) {}
-	C_BaseAnimating( int iEFlags );
+	C_BaseAnimating( uint64 iEFlags );
 	~C_BaseAnimating();
 
 	virtual C_BaseAnimating*		GetBaseAnimating() { return this; }

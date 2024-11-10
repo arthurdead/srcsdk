@@ -14,6 +14,7 @@ hackmgr = subproject('hackmgr')
 steamworks = subproject('steamworks')
 tier0 = subproject('tier0')
 vstdlib = subproject('vstdlib')
+fgdlib = subproject('fgdlib')
 
 public_dir = join_paths(src_root_dir,'public')
 common_dir = join_paths(src_root_dir,'common')
@@ -390,6 +391,7 @@ client_base_dep = declare_dependency(
 		source_base.get_variable('source_cl_dep'),
 		steamworks.get_variable('steamworks_dep'),
 		tier0.get_variable('tier0_dep'),
+		fgdlib.get_variable('fgdlib_dep'),
 		vstdlib.get_variable('vstdlib_dep'),
 	]
 )

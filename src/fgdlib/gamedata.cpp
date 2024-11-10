@@ -2,16 +2,20 @@
 //
 //=============================================================================
 
+#ifdef _WIN32
 #include <windows.h>
-#include <tier0/dbg.h>
 #include <io.h>
-#include <WorldSize.h>
-#include "fgdlib/GameData.h"
-#include "fgdlib/HelperInfo.h"
-#include "KeyValues.h"
+#else
+#include <sys/stat.h>
+#endif
+#include <tier0/dbg.h>
+#include <worldsize.h>
+#include "fgdlib/gamedata.h"
+#include "fgdlib/helperinfo.h"
+#include "tier1/KeyValues.h"
 #include "filesystem_tools.h"
 #include "tier1/strtools.h"
-#include "utlmap.h"
+#include "tier1/utlmap.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -280,8 +284,14 @@ BOOL GameData::Load(const char *pszFilename)
 {
 	TokenReader tr;
 
+#ifdef _WIN32
 	if(GetFileAttributes(pszFilename) == 0xffffffff)
 		return FALSE;
+#else
+	struct stat s;
+	if(::stat(pszFilename, &s) == 0)
+		return FALSE;
+#endif
 
 	if(!tr.Open(pszFilename))
 		return FALSE;

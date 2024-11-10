@@ -612,7 +612,7 @@ LINK_ENTITY_TO_CLASS( prop_clientside, C_ClientAnimating );
 //-----------------------------------------------------------------------------
 // Purpose: convert axis rotations to a quaternion
 //-----------------------------------------------------------------------------
-C_BaseAnimating::C_BaseAnimating( int iEFlags ) :
+C_BaseAnimating::C_BaseAnimating( uint64 iEFlags ) :
 	C_BaseEntity( iEFlags ),
 	m_iv_flCycle( "C_BaseAnimating::m_iv_flCycle" ),
 	m_iv_flPoseParameter( "C_BaseAnimating::m_iv_flPoseParameter" ),

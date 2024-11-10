@@ -3293,8 +3293,17 @@ void KeyValues::AutoDelete::deleteThis()
 	m_pKeyValues = NULL;
 }
 
+void KeyValues::AutoDelete::Assign( KeyValues *pKeyValues )
+{
+	if( m_pKeyValues )
+		m_pKeyValues->deleteThis();
+	m_pKeyValues = pKeyValues;
+}
+
 KeyValues::AutoDelete &KeyValues::AutoDelete::operator=( KeyValues *pKeyValues )
 {
+	if( m_pKeyValues )
+		m_pKeyValues->deleteThis();
 	m_pKeyValues = pKeyValues;
 	return *this;
 }

@@ -27,7 +27,7 @@ END_RECV_TABLE()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-C_EntityFlame::C_EntityFlame( int iEFlags ) : C_BaseEntity(iEFlags), m_hEffect( NULL )
+C_EntityFlame::C_EntityFlame( uint64 iEFlags ) : C_BaseEntity(iEFlags), m_hEffect( NULL )
 {
 	m_hOldAttached = NULL;
 	AddToEntityList( ENTITY_LIST_SIMULATE );

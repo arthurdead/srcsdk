@@ -557,7 +557,7 @@ void CClient_Precipitation::Render()
 // Constructor, destructor
 //-----------------------------------------------------------------------------
 
-CClient_Precipitation::CClient_Precipitation( int iEFlags ) : C_BaseEntity(iEFlags), m_Remainder(0.0f)
+CClient_Precipitation::CClient_Precipitation( uint64 iEFlags ) : C_BaseEntity(iEFlags), m_Remainder(0.0f)
 {
 	m_nPrecipType = PRECIPITATION_TYPE_RAIN;
 	m_MatHandle = INVALID_MATERIAL_HANDLE;

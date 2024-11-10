@@ -23,7 +23,7 @@ public:
 	DECLARE_CLASS( C_EntityDissolve, C_BaseEntity );
 
 	C_EntityDissolve( void ) : C_EntityDissolve( 0 ) {}
-	C_EntityDissolve( int iEFlags );
+	C_EntityDissolve( uint64 iEFlags );
 
 	// Inherited from C_BaseEntity
 	virtual void	GetRenderBounds( Vector& theMins, Vector& theMaxs );

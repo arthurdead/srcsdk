@@ -24,7 +24,7 @@ public:
 	DECLARE_CLIENTCLASS();
 
 	C_SceneEntity( void ) : C_SceneEntity( 0 ) {}
-	C_SceneEntity( int iEFlags );
+	C_SceneEntity( uint64 iEFlags );
 	~C_SceneEntity( void );
 
 	// From IChoreoEventCallback

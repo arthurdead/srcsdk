@@ -9,8 +9,8 @@
 #define GDVAR_H
 #pragma once
 
-#include <utlvector.h>
-#include <TokenReader.h> // dvs: for MAX_STRING. Fix.
+#include <tier1/utlvector.h>
+#include <tier1/tokenreader.h> // dvs: for MAX_STRING. Fix.
 
 
 class MDkeyvalue;

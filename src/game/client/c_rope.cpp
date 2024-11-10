@@ -1028,7 +1028,7 @@ void C_RopeKeyframe::CPhysicsDelegate::ApplyConstraints( CSimplePhysics::CNode *
 // C_RopeKeyframe
 // ------------------------------------------------------------------------------------ //
 
-C_RopeKeyframe::C_RopeKeyframe( int iEFlags )
+C_RopeKeyframe::C_RopeKeyframe( uint64 iEFlags )
 	: C_BaseEntity( iEFlags )
 {
 	m_bEndPointAttachmentPositionsDirty = true;

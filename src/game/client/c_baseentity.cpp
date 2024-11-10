@@ -1126,7 +1126,7 @@ inline int C_BaseEntity::Interp_Interpolate( VarMapping_t *map, float currentTim
 //-----------------------------------------------------------------------------
 // Functions.
 //-----------------------------------------------------------------------------
-C_BaseEntity::C_BaseEntity( int iEFlags ) : 
+C_BaseEntity::C_BaseEntity( uint64 iEFlags ) : 
 	m_iv_vecOrigin( "C_BaseEntity::m_iv_vecOrigin" ),
 	m_iv_angRotation( "C_BaseEntity::m_iv_angRotation" ),
 	m_iv_vecVelocity( "C_BaseEntity::m_iv_vecVelocity" )
@@ -1646,12 +1646,12 @@ bool C_BaseEntity::PostConstructor( const char *szClassname )
 	return true;
 }
 
-C_PointEntity::C_PointEntity( int iEFlags )
+C_PointEntity::C_PointEntity( uint64 iEFlags )
  : C_BaseEntity( EFL_NOT_COLLIDEABLE|EFL_NOT_RENDERABLE|iEFlags )
 {
 }
 
-C_LogicalEntity::C_LogicalEntity( int iEFlags )
+C_LogicalEntity::C_LogicalEntity( uint64 iEFlags )
  : C_PointEntity( iEFlags )
 {
 }

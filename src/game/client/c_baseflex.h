@@ -131,7 +131,7 @@ public:
 	DECLARE_INTERPOLATION();
 
 	C_BaseFlex() : C_BaseFlex( 0 ) {}
-	C_BaseFlex( int iEFlags );
+	C_BaseFlex( uint64 iEFlags );
 	virtual			~C_BaseFlex();
 
 	virtual void Spawn();

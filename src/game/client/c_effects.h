@@ -176,7 +176,7 @@ public:
 	DECLARE_CLIENTCLASS();
 	
 	CClient_Precipitation() : CClient_Precipitation( 0 ) {}
-	CClient_Precipitation( int iEFlags );
+	CClient_Precipitation( uint64 iEFlags );
 	virtual ~CClient_Precipitation();
 
 	// Inherited from C_BaseEntity

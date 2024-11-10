@@ -25,7 +25,7 @@ public:
 	DECLARE_CLASS( C_EntityFlame, C_BaseEntity );
 
 	C_EntityFlame( void ) : C_EntityFlame( 0 ) {}
-	C_EntityFlame( int iEFlags );
+	C_EntityFlame( uint64 iEFlags );
 	virtual ~C_EntityFlame( void );
 
 	static C_EntityFlame	*Create( C_BaseEntity *pTarget, float flLifetime, float flSize = 0.0f );

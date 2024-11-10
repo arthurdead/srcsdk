@@ -20,7 +20,7 @@ public:
 	DECLARE_CLIENTCLASS();
 
 	C_BreakableProp() : C_BreakableProp( 0 ) {}
-	C_BreakableProp( int iEFlags );
+	C_BreakableProp( uint64 iEFlags );
 
 	virtual bool IsProp( void ) const
 	{

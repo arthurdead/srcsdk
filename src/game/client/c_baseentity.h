@@ -210,7 +210,7 @@ public:
 	DECLARE_PREDICTABLE();
 
 	C_BaseEntity() : C_BaseEntity( 0 ) {}
-	C_BaseEntity( int iEFlags );
+	C_BaseEntity( uint64 iEFlags );
 
 protected:
 	// Use UTIL_Remove to delete!
@@ -2042,7 +2042,7 @@ public:
 	DECLARE_CLASS( C_PointEntity, C_BaseEntity );
 
 	C_PointEntity() : C_PointEntity( 0 ) {}
-	C_PointEntity( int iEFlags );
+	C_PointEntity( uint64 iEFlags );
 
 	DECLARE_CLIENTCLASS();
 
@@ -2110,7 +2110,7 @@ public:
 	DECLARE_CLASS( C_LogicalEntity, C_PointEntity );
 
 	C_LogicalEntity() : C_LogicalEntity( 0 ) {}
-	C_LogicalEntity( int iEFlags );
+	C_LogicalEntity( uint64 iEFlags );
 
 	DECLARE_CLIENTCLASS();
 
@@ -2124,7 +2124,7 @@ public:
 	DECLARE_CLASS( C_ClientOnlyWrapper, T );
 
 	C_ClientOnlyWrapper() : C_ClientOnlyWrapper( 0 ) {}
-	C_ClientOnlyWrapper( int iEFlags ) : T( EFL_NOT_NETWORKED|iEFlags ) {}
+	C_ClientOnlyWrapper( uint64 iEFlags ) : T( EFL_NOT_NETWORKED|iEFlags ) {}
 
 	virtual bool InitializeAsServerEntity( int entnum, int iSerialNum ) { Assert(0); return false; }
 

@@ -284,7 +284,7 @@ public:
 	// If bServerOnly is true, then the ent never goes to the client. This is used
 	// by logical entities.
 	CBaseEntity() : CBaseEntity(0) {}
-	CBaseEntity( int iEFlags );
+	CBaseEntity( uint64 iEFlags );
 	virtual ~CBaseEntity();
 
 	// prediction system
@@ -2824,7 +2824,7 @@ public:
 	DECLARE_SERVERCLASS();
 
 	CPointEntity() : CPointEntity( 0 ) {}
-	CPointEntity( int iEFlags );
+	CPointEntity( uint64 iEFlags );
 
 	ICollideable	*GetCollideable() { return NULL; }
 	CCollisionProperty		*CollisionProp() { return NULL; }
@@ -2850,7 +2850,7 @@ public:
 	DECLARE_SERVERCLASS();
 
 	CLogicalEntity() : CLogicalEntity( 0 ) {}
-	CLogicalEntity( int iEFlags );
+	CLogicalEntity( uint64 iEFlags );
 
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 };
@@ -2863,7 +2863,7 @@ class CServerOnlyWrapper : public T
 public:
 	DECLARE_CLASS( CServerOnlyWrapper, T );
 	CServerOnlyWrapper() : CServerOnlyWrapper( 0 ) {}
-	CServerOnlyWrapper( int iEFlags ) : T( EFL_NOT_NETWORKED|iEFlags ) {}
+	CServerOnlyWrapper( uint64 iEFlags ) : T( EFL_NOT_NETWORKED|iEFlags ) {}
 
 	virtual void	NetworkStateChanged() {}
 	virtual void	NetworkStateChanged( void *pVar ) {}

@@ -7,7 +7,7 @@
 #pragma once
 
 #include <tier0/dbg.h>
-#include <utlvector.h>
+#include <tier1/utlvector.h>
 
 
 #define MAX_HELPER_NAME_LEN			256

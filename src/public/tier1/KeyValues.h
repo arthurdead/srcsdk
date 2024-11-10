@@ -94,7 +94,7 @@ public:
 		AutoDelete( AutoDelete &&other );
 		~AutoDelete( void );
 		void deleteThis();
-		inline void Assign( KeyValues *pKeyValues ) { m_pKeyValues = pKeyValues; }
+		void Assign( KeyValues *pKeyValues );
 		AutoDelete &operator=( KeyValues *pKeyValues );
 		AutoDelete &operator=( AutoDelete &&other );
 		KeyValues *operator->()	{ return m_pKeyValues; }

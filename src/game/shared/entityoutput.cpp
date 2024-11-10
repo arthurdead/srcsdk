@@ -2,7 +2,7 @@
 #include "eventqueue.h"
 #include "entityinput.h"
 #include "gamestringpool.h"
-#include "entitydefs.h"
+#include "fgdlib/entitydefs.h"
 #include "tier0/vprof.h"
 #include "datacache/imdlcache.h"
 

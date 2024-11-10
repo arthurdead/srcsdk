@@ -117,7 +117,7 @@ bool GetHWMExpressionFileName( const char *pFilename, char *pHWMFilename )
 	return true;
 }
 
-C_BaseFlex::C_BaseFlex( int iEFlags ) : 
+C_BaseFlex::C_BaseFlex( uint64 iEFlags ) : 
 	C_BaseAnimatingOverlay( iEFlags ),
 	m_iv_viewtarget( "C_BaseFlex::m_iv_viewtarget" ), 
 	m_iv_flexWeight("C_BaseFlex:m_iv_flexWeight" ),

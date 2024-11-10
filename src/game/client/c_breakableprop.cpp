@@ -33,7 +33,7 @@ END_RECV_TABLE()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-C_BreakableProp::C_BreakableProp( int iEFlags )
+C_BreakableProp::C_BreakableProp( uint64 iEFlags )
 	: C_BaseAnimating( iEFlags )
 {
 	m_takedamage = DAMAGE_YES;

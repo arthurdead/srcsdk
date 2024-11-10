@@ -26,7 +26,7 @@ public:
 
 
 	C_BaseAnimatingOverlay() : C_BaseAnimatingOverlay( 0 ) {}
-	C_BaseAnimatingOverlay( int iEFlags );
+	C_BaseAnimatingOverlay( uint64 iEFlags );
 
 	virtual CStudioHdr *OnNewModel();
 

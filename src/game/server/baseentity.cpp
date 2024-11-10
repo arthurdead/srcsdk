@@ -597,7 +597,7 @@ void CBaseEntityModelLoadProxy::Handler::OnModelLoadComplete( const model_t *pMo
 }
 
 
-CBaseEntity::CBaseEntity( int iEFlags )
+CBaseEntity::CBaseEntity( uint64 iEFlags )
 {
 	COMPILE_TIME_ASSERT( MOVETYPE_LAST < (1 << MOVETYPE_MAX_BITS) );
 	COMPILE_TIME_ASSERT( MOVECOLLIDE_COUNT < (1 << MOVECOLLIDE_MAX_BITS) );
@@ -832,12 +832,12 @@ void CBaseEntity::PostConstructor( const char *szClassname )
 	CheckHasGamePhysicsSimulation();
 }
 
-CPointEntity::CPointEntity( int iEFlags )
+CPointEntity::CPointEntity( uint64 iEFlags )
  : CBaseEntity( EFL_NOT_COLLIDEABLE|EFL_NOT_RENDERABLE|iEFlags )
 {
 }
 
-CLogicalEntity::CLogicalEntity( int iEFlags )
+CLogicalEntity::CLogicalEntity( uint64 iEFlags )
  : CPointEntity( iEFlags )
 {
 }

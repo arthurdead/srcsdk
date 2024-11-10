@@ -12,12 +12,12 @@
 #pragma warning(disable:4701 4702 4530)
 #include <fstream>
 #pragma warning(pop)
-#include "TokenReader.h"
-#include "GDClass.h"
-#include "InputOutput.h"
-#include "UtlString.h"
-#include "utlvector.h"
-
+#include "tier1/tokenreader.h"
+#include "gdclass.h"
+#include "inputoutput.h"
+#include "tier1/utlstring.h"
+#include "tier1/utlvector.h"
+#include "ieditortexture.h"
 
 class MDkeyvalue;
 class GameData;

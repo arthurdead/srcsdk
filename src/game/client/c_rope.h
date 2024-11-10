@@ -49,7 +49,7 @@ private:
 public:
 
 	C_RopeKeyframe() : C_RopeKeyframe( 0 ) {}
-	C_RopeKeyframe( int iEFlags );
+	C_RopeKeyframe( uint64 iEFlags );
 	~C_RopeKeyframe();
 
 	// This can be used for client-only ropes.

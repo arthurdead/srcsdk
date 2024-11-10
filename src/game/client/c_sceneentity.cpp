@@ -56,7 +56,7 @@ CChoreoScene *BlockingLoadScene( const char *filename )
 	return C_SceneEntity::LoadScene( filename, NULL );
 }
 
-C_SceneEntity::C_SceneEntity( int iEFlags )
+C_SceneEntity::C_SceneEntity( uint64 iEFlags )
 	: C_BaseEntity( iEFlags )
 {
 	m_pScene = NULL;

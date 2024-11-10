@@ -7,8 +7,8 @@
 #pragma once
 
 
-#include <utlvector.h>
-#include "fgdlib/EntityDefs.h"
+#include <tier1/utlvector.h>
+#include "fgdlib/entitydefs.h"
 
 
 enum InputOutputType_t

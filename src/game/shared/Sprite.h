@@ -99,7 +99,7 @@ class CSprite : public CSharedBaseEntity
 public:
 	DECLARE_CLASS( CSprite, CSharedBaseEntity );
 	CSprite() : CSprite( 0 ) {}
-	CSprite( int iEFlags );
+	CSprite( uint64 iEFlags );
 
 #if defined( CLIENT_DLL )
 	#undef CSprite
