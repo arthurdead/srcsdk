@@ -61,7 +61,7 @@ inline bool IsPowerOfTwo( T value )
 #if defined(__cplusplus) && \
     !defined(MIDL_PASS) && \
     !defined(RC_INVOKED) && \
-    (_MSC_FULL_VER >= 13009466) && \
+    (defined __GNUC__ || (defined _MSC_FULL_VER && _MSC_FULL_VER >= 13009466)) && \
     !defined(SORTPP_PASS)
 
 // From crtdefs.h
@@ -72,6 +72,8 @@ inline bool IsPowerOfTwo( T value )
 #define UNALIGNED
 #endif
 #endif
+
+using size_t = decltype(sizeof(unsigned long long));
 
 // RtlpNumberOf is a function that takes a reference to an array of N Ts.
 //

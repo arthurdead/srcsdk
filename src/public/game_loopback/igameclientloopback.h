@@ -7,6 +7,8 @@
 #include "appframework/IAppSystem.h"
 #include "mathlib/vector.h"
 
+struct map_datamap_t;
+
 #ifndef SWDS
 
 #define GAMECLIENTLOOPBACK_INTERFACE_VERSION "IGameClientLoopback001"
@@ -37,6 +39,8 @@ public:
 
 	// Returns the color of the ambient light
 	virtual void		GetAmbientLightColor( Vector& color ) = 0;
+
+	virtual map_datamap_t *GetMapDatamaps() = 0;
 };
 
 #endif

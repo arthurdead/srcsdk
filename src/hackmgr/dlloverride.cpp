@@ -4,6 +4,9 @@
 #include "hackmgr/hackmgr.h"
 #include "hackmgr_internal.h"
 #include "commandline.h"
+#ifndef SWDS
+#include "game_loopback/igameloopback.h"
+#endif
 
 #ifdef __linux__
 #include <dlfcn.h>
@@ -487,23 +490,47 @@ if(!IsDedicatedServer()) {
 
 V_strncat(gamebin_path, matchmaking_dll_name, sizeof(gamebin_path));
 
-CSysModule *pMatchMod = Sys_LoadModule(gamebin_path);
-if(pMatchMod) {
-	CreateInterfaceFn pMatchFac = Sys_GetFactory(pMatchMod);
-	if(pMatchFac) {
+CSysModule *pTmpMod = Sys_LoadModule(gamebin_path);
+if(pTmpMod) {
+	CreateInterfaceFn pTmpFac = Sys_GetFactory(pTmpMod);
+	if(pTmpFac) {
 		status = IFACE_OK;
-		IMatchFramework *pMatchInter = (IMatchFramework *)pMatchFac(IMATCHFRAMEWORK_VERSION_STRING, &status);
+		IMatchFramework *pTmpInter = (IMatchFramework *)pTmpFac(IMATCHFRAMEWORK_VERSION_STRING, &status);
 		if(status != IFACE_OK)
-			pMatchInter = NULL;
+			pTmpInter = NULL;
 
-		if(pMatchInter) {
-			CAppSystemGroup_AddSystem(ParentAppSystemGroup, pMatchInter, IMATCHFRAMEWORK_VERSION_STRING);
-			connect_later[connect_idx].apps.AddToTail(pMatchInter);
+		if(pTmpInter) {
+			CAppSystemGroup_AddSystem(ParentAppSystemGroup, pTmpInter, IMATCHFRAMEWORK_VERSION_STRING);
+			connect_later[connect_idx].apps.AddToTail(pTmpInter);
 		}
 	}
 }
 
 gamebin_path[gamebin_len] = '\0';
+
+#ifndef SWDS
+if(!IsDedicatedServer()) {
+	V_strncat(gamebin_path, "game_loopback" DLL_EXT_STRING, sizeof(gamebin_path));
+
+	pTmpMod = Sys_LoadModule(gamebin_path);
+	if(pTmpMod) {
+		CreateInterfaceFn pTmpFac = Sys_GetFactory(pTmpMod);
+		if(pTmpFac) {
+			status = IFACE_OK;
+			IGameLoopback *pTmpInter = (IGameLoopback *)pTmpFac(GAMELOOPBACK_INTERFACE_VERSION, &status);
+			if(status != IFACE_OK)
+				pTmpInter = NULL;
+
+			if(pTmpInter) {
+				CAppSystemGroup_AddSystem(ParentAppSystemGroup, pTmpInter, GAMELOOPBACK_INTERFACE_VERSION);
+				connect_later[connect_idx].apps.AddToTail(pTmpInter);
+			}
+		}
+	}
+
+	gamebin_path[gamebin_len] = '\0';
+}
+#endif
 
 #ifndef SWDS
 if(!IsDedicatedServer()) {

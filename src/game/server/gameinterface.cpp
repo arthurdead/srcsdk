@@ -190,6 +190,10 @@ extern ConVar *sv_maxreplay;
 extern ConVar *host_thread_mode;
 extern ConVar *hide_server;
 
+#ifndef SWDS
+bool g_bTextMode = false;
+#endif
+
 // String tables
 INetworkStringTable *g_pStringTableParticleEffectNames = NULL;
 INetworkStringTable *g_pStringTableEffectDispatch = NULL;
@@ -573,8 +577,13 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 	g_pMatchFramework = (IMatchFramework *)appSystemFactory( IMATCHFRAMEWORK_VERSION_STRING, NULL );
 
 #ifndef SWDS
+	if ( CommandLine()->FindParm( "-textmode" ) || engine->IsDedicatedServer() )
+		g_bTextMode = true;
+#endif
+
+#ifndef SWDS
 	// If not running dedicated, grab the engine vgui interface
-	if ( !engine->IsDedicatedServer() )
+	if ( !engine->IsDedicatedServer() && !g_bTextMode )
 	{
 		// This interface is optional, and is only valid when running with -tools
 		serverenginetools = ( IServerEngineTools * )appSystemFactory( VSERVERENGINETOOLS_INTERFACE_VERSION, NULL );
@@ -583,7 +592,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 
 #ifndef SWDS
 	// If not running dedicated, grab the engine vgui interface
-	if ( !engine->IsDedicatedServer() )
+	if ( !engine->IsDedicatedServer() && !g_bTextMode )
 	{
 		if ( ( enginevgui = ( IEngineVGui * )appSystemFactory(VENGINE_VGUI_VERSION, NULL)) == NULL )
 			return false;
@@ -705,7 +714,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 	g_AI_SchedulesManager.LoadAllSchedules();
 
 #ifndef SWDS
-	if(!engine->IsDedicatedServer()) {
+	if(!engine->IsDedicatedServer() && !g_bTextMode) {
 		// try to get debug overlay, may be NULL if on HLDS
 		debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL );
 	}
@@ -724,7 +733,7 @@ void CServerGameDLL::PostInit()
 	IGameSystem::PostInitAllSystems();
 
 #ifndef SWDS
-	if ( !engine->IsDedicatedServer() && enginevgui )
+	if ( !engine->IsDedicatedServer() && enginevgui && !g_bTextMode )
 	{
 		if ( VGui_PostInit() )
 		{
@@ -737,7 +746,7 @@ void CServerGameDLL::PostInit()
 void CServerGameDLL::PostToolsInit()
 {
 #ifndef SWDS
-	if ( serverenginetools && !engine->IsDedicatedServer() )
+	if ( serverenginetools && !engine->IsDedicatedServer() && !g_bTextMode )
 	{
 		serverfoundry = ( IServerFoundry * )serverenginetools->QueryInterface( VSERVERFOUNDRY_INTERFACE_VERSION );
 	}
@@ -875,6 +884,17 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 	HackMgr_SetGamePaused( false );
 	m_bWasPaused = false;
 
+	// IGameSystem::LevelInitPreEntityAllSystems() is called when the world is precached
+	// That happens either in LoadGameState() or in MapEntity_ParseAllEntities()
+	if ( background )
+	{
+		gpGlobals->eLoadType = MapLoad_Background;
+	}
+	else
+	{
+		gpGlobals->eLoadType = MapLoad_NewGame;
+	}
+
 	// 11/8/98
 	// Modified by YWB:  Server .cfg file is now a cvar, so that 
 	//  server ops can run multiple game servers, with different server .cfg files,
@@ -919,17 +939,6 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 
 	//Tony; parse custom manifest if exists!
 	ParseParticleEffectsMap( pMapName, false );
-
-	// IGameSystem::LevelInitPreEntityAllSystems() is called when the world is precached
-	// That happens either in LoadGameState() or in MapEntity_ParseAllEntities()
-	if ( background )
-	{
-		gpGlobals->eLoadType = MapLoad_Background;
-	}
-	else
-	{
-		gpGlobals->eLoadType = MapLoad_NewGame;
-	}
 
 	g_fGameOver = false;
 	g_pLastSpawn = NULL;
@@ -1112,7 +1121,7 @@ void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edictCount, int cl
 	engine->ServerCommand( szCommand );
 
 #ifndef SWDS
-	if(!engine->IsDedicatedServer()) {
+	if(!engine->IsDedicatedServer() && !g_bTextMode) {
 		// --------------------------------------------------------
 		// If in edit mode start WC session and make sure we are
 		// running the same map in WC and the engine
@@ -1235,7 +1244,7 @@ void CServerGameDLL::GameFrame( bool simulating )
 	gEntList.CleanupDeleteList();
 
 #ifndef SWDS
-	if( !engine->IsDedicatedServer() )
+	if( !engine->IsDedicatedServer() && !g_bTextMode )
 		HandleFoundryEntitySpawnRecords();
 #endif
 
@@ -1320,42 +1329,45 @@ void CServerGameDLL::PreClientUpdate( bool simulating )
 	*/
 
 #if defined _DEBUG && !defined SWDS
-	if( !engine->IsDedicatedServer() )
+	if( !engine->IsDedicatedServer() && !g_bTextMode )
 		DrawAllDebugOverlays();
 #endif
 
 	IGameSystem::PreClientUpdateAllSystems();
 
-#ifdef _DEBUG
-	if ( sv_showhitboxes.GetInt() == -1 )
-		return;
-
-	if ( sv_showhitboxes.GetInt() == 0 )
+#if defined _DEBUG && !defined SWDS
+	if( !engine->IsDedicatedServer() && !g_bTextMode )
 	{
-		// assume it's text
-		CBaseEntity *pEntity = NULL;
+		if ( sv_showhitboxes.GetInt() == -1 )
+			return;
 
-		while (1)
+		if ( sv_showhitboxes.GetInt() == 0 )
 		{
-			pEntity = gEntList.FindEntityByName( pEntity, sv_showhitboxes.GetString() );
-			if ( !pEntity )
-				break;
+			// assume it's text
+			CBaseEntity *pEntity = NULL;
 
-			CBaseAnimating *anim = dynamic_cast< CBaseAnimating * >( pEntity );
-
-			if (anim)
+			while (1)
 			{
-				anim->DrawServerHitboxes();
+				pEntity = gEntList.FindEntityByName( pEntity, sv_showhitboxes.GetString() );
+				if ( !pEntity )
+					break;
+
+				CBaseAnimating *anim = dynamic_cast< CBaseAnimating * >( pEntity );
+
+				if (anim)
+				{
+					anim->DrawServerHitboxes();
+				}
 			}
+			return;
 		}
-		return;
+
+		CBaseAnimating *anim = dynamic_cast< CBaseAnimating * >( CBaseEntity::Instance( engine->PEntityOfEntIndex( sv_showhitboxes.GetInt() ) ) );
+		if ( !anim )
+			return;
+
+		anim->DrawServerHitboxes();
 	}
-
-	CBaseAnimating *anim = dynamic_cast< CBaseAnimating * >( CBaseEntity::Instance( engine->PEntityOfEntIndex( sv_showhitboxes.GetInt() ) ) );
-	if ( !anim )
-		return;
-
-	anim->DrawServerHitboxes();
 #endif
 }
 
@@ -3044,7 +3056,7 @@ public:
 
 	#ifndef SWDS
 		if(!IsDedicatedServer()) {
-			//AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
+			AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
 			AddAppSystem( "client" DLL_EXT_STRING, GAMECLIENTLOOPBACK_INTERFACE_VERSION );
 		}
 	#endif
@@ -3145,9 +3157,10 @@ class CGameServerLoopback : public CBaseAppSystem< IGameServerLoopback >
 {
 public:
 	virtual IRecastMgr *GetRecastMgr()
-	{
-		return &RecastMgr();
-	}
+	{ return &RecastMgr(); }
+
+	virtual map_datamap_t *GetMapDatamaps()
+	{ return g_pMapDatamapsHead; }
 
 #ifdef _DEBUG
 	virtual const char *GetEntityClassname( int entnum, int iSerialNum )

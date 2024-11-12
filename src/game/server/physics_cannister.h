@@ -17,9 +17,10 @@ class CSteamJet;
 
 class CThrustController : public IMotionEvent
 {
+public:
+	DECLARE_CLASS_NOBASE(CThrustController);
 	DECLARE_SIMPLE_MAPEMBEDDED();
 
-public:
 	IMotionEvent::simresult_e Simulate( IPhysicsMotionController *pController, IPhysicsObject *pObject, float deltaTime, Vector &linear, AngularImpulse &angular )
 	{
 		angular = m_torqueVector;
@@ -43,8 +44,8 @@ public:
 
 class CPhysicsCannister : public CBaseCombatCharacter, public CDefaultPlayerPickupVPhysics
 {
-	DECLARE_CLASS( CPhysicsCannister, CBaseCombatCharacter );
 public:
+	DECLARE_CLASS( CPhysicsCannister, CBaseCombatCharacter );
 	~CPhysicsCannister( void );
 
 	void Spawn( void );

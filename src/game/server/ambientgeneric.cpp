@@ -85,7 +85,7 @@ dynpitchvol_t rgdpvpreset[CDPVPRESETMAX] =
 
 LINK_ENTITY_TO_CLASS( ambient_generic, CAmbientGeneric );
 
-BEGIN_MAPENTITY( CAmbientGeneric )
+BEGIN_MAPENTITY( CAmbientGeneric, MAPENT_POINTCLASS )
 
 DEFINE_KEYFIELD( m_iszSound, FIELD_SOUNDNAME, "message" ),
 DEFINE_KEYFIELD( m_radius,			FIELD_FLOAT, "radius" ),

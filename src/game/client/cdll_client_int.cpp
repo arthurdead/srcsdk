@@ -677,9 +677,13 @@ public:
 		AddAppSystem( "soundemittersystem" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
 		AddAppSystem( "scenefilecache" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
 		AddAppSystem( "client", GAMEUISYSTEMMGR_INTERFACE_VERSION );
-		AddAppSystem( "game_shader_dx9" DLL_EXT_STRING, SHADEREXTENSION_INTERFACE_VERSION );
-		//AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
-		AddAppSystem( "server" DLL_EXT_STRING, GAMESERVERLOOPBACK_INTERFACE_VERSION );
+		if(!CommandLine()->HasParm("-textmode")) {
+			AddAppSystem( "game_shader_dx9" DLL_EXT_STRING, SHADEREXTENSION_INTERFACE_VERSION );
+		}
+		AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
+		if(!CommandLine()->HasParm("-nogamedll")) {
+			AddAppSystem( "server" DLL_EXT_STRING, GAMESERVERLOOPBACK_INTERFACE_VERSION );
+		}
 	}
 
 	virtual int	Count()
@@ -1111,6 +1115,9 @@ INIT_PRIORITY(101) struct ClientCreateInterfaceHookInit {
 
 int CClientDll::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGlobals )
 {
+	if ( CommandLine()->FindParm( "-textmode" ) )
+		g_bTextMode = true;
+
 	InitCRTMemDebug();
 	MathLib_Init( 2.2f, 2.2f, 0.0f, 2.0f );
 
@@ -1132,9 +1139,11 @@ int CClientDll::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pG
 	// Initialize the console variables.
 	InitializeClientCvars();
 
-	g_pMaterialSystem->BeginRenderTargetAllocation();
-	g_BaseClientRenderTargets.InitClientRenderTargetsReal( g_pMaterialSystem, g_pMaterialSystemHardwareConfig );
-	g_pMaterialSystem->EndRenderTargetAllocation();
+	if(!g_bTextMode) {
+		g_pMaterialSystem->BeginRenderTargetAllocation();
+		g_BaseClientRenderTargets.InitClientRenderTargetsReal( g_pMaterialSystem, g_pMaterialSystemHardwareConfig );
+		g_pMaterialSystem->EndRenderTargetAllocation();
+	}
 
 	GetCurrentTonemappingSystem()->UpdateBucketRanges();
 
@@ -1243,67 +1252,71 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	InitFbx();
 #endif
 
-	HackMgr_SwapVideoServices( appSystemFactory, videoServicesDLL );
+	if(!g_bTextMode) {
+		HackMgr_SwapVideoServices( appSystemFactory, videoServicesDLL );
 
-	V_strcat_safe(gamebin_path, "GameUI" DLL_EXT_STRING);
-	gameuiDLL = Sys_LoadModule(gamebin_path);
-	gamebin_path[gamebin_length] = '\0';
-	if(gameuiDLL) {
-		CreateInterfaceFn gameuiFactory = Sys_GetFactory(gameuiDLL);
-		if(gameuiFactory) {
-			int status = IFACE_OK;
-			g_pGameUIRedirectTarget = (IGameUI *)gameuiFactory(GAMEUI_INTERFACE_VERSION, &status);
-			if(status != IFACE_OK) {
-				g_pGameUIRedirectTarget = NULL;
-			}
+		V_strcat_safe(gamebin_path, "GameUI" DLL_EXT_STRING);
+		gameuiDLL = Sys_LoadModule(gamebin_path);
+		gamebin_path[gamebin_length] = '\0';
+		if(gameuiDLL) {
+			CreateInterfaceFn gameuiFactory = Sys_GetFactory(gameuiDLL);
+			if(gameuiFactory) {
+				int status = IFACE_OK;
+				g_pGameUIRedirectTarget = (IGameUI *)gameuiFactory(GAMEUI_INTERFACE_VERSION, &status);
+				if(status != IFACE_OK) {
+					g_pGameUIRedirectTarget = NULL;
+				}
 
-			g_pGameUIEx = (IGameUIEx *)gameuiFactory(GAMEUI_EX_INTERFACE_VERSION, &status);
-			if(status != IFACE_OK) {
-				g_pGameUIEx = NULL;
-			}
+				g_pGameUIEx = (IGameUIEx *)gameuiFactory(GAMEUI_EX_INTERFACE_VERSION, &status);
+				if(status != IFACE_OK) {
+					g_pGameUIEx = NULL;
+				}
 
-			status = IFACE_OK;
-			g_pGameConsoleRedirectTarget = (IGameConsole *)gameuiFactory(GAMECONSOLE_INTERFACE_VERSION, &status);
-			if(status != IFACE_OK) {
-				g_pGameConsoleRedirectTarget = NULL;
-			}
+				status = IFACE_OK;
+				g_pGameConsoleRedirectTarget = (IGameConsole *)gameuiFactory(GAMECONSOLE_INTERFACE_VERSION, &status);
+				if(status != IFACE_OK) {
+					g_pGameConsoleRedirectTarget = NULL;
+				}
 
-			status = IFACE_OK;
-			g_pGameUISystemMgrRedirectTarget = (IGameUISystemMgr *)gameuiFactory(GAMEUISYSTEMMGR_INTERFACE_VERSION, &status);
-			if(status != IFACE_OK) {
-				g_pGameUISystemMgrRedirectTarget = NULL;
+				status = IFACE_OK;
+				g_pGameUISystemMgrRedirectTarget = (IGameUISystemMgr *)gameuiFactory(GAMEUISYSTEMMGR_INTERFACE_VERSION, &status);
+				if(status != IFACE_OK) {
+					g_pGameUISystemMgrRedirectTarget = NULL;
+				}
 			}
 		}
+
+		g_pGameUISystemMgr = (IGameUISystemMgr*)appSystemFactory( GAMEUISYSTEMMGR_INTERFACE_VERSION, NULL );
+
+		V_strcat_safe(gamebin_path, "gamepadui" DLL_EXT_STRING);
+		Sys_LoadInterface( gamebin_path, GAMEPADUI_INTERFACE_VERSION, &gamepaduiDLL, reinterpret_cast< void** >( &g_pGamepadUI ) );
+		gamebin_path[gamebin_length] = '\0';
+
+		if(g_pGamepadUI) {
+			g_pGamepadUI->Initialize(appSystemFactory);
+		}
+
+		V_strcat_safe(gamebin_path, "game_shader_dx9" DLL_EXT_STRING);
+		Sys_LoadInterface( gamebin_path, SHADEREXTENSION_INTERFACE_VERSION, &shaderDLL, reinterpret_cast< void** >( &g_pShaderExtension ) );
+		gamebin_path[gamebin_length] = '\0';
 	}
-
-	g_pGameUISystemMgr = (IGameUISystemMgr*)appSystemFactory( GAMEUISYSTEMMGR_INTERFACE_VERSION, NULL );
-
-	V_strcat_safe(gamebin_path, "gamepadui" DLL_EXT_STRING);
-	Sys_LoadInterface( gamebin_path, GAMEPADUI_INTERFACE_VERSION, &gamepaduiDLL, reinterpret_cast< void** >( &g_pGamepadUI ) );
-	gamebin_path[gamebin_length] = '\0';
-
-	if(g_pGamepadUI) {
-		g_pGamepadUI->Initialize(appSystemFactory);
-	}
-
-	V_strcat_safe(gamebin_path, "game_shader_dx9" DLL_EXT_STRING);
-	Sys_LoadInterface( gamebin_path, SHADEREXTENSION_INTERFACE_VERSION, &shaderDLL, reinterpret_cast< void** >( &g_pShaderExtension ) );
-	gamebin_path[gamebin_length] = '\0';
 
 	V_strcat_safe(gamebin_path, "game_loopback" DLL_EXT_STRING);
 	Sys_LoadInterface( gamebin_path, GAMELOOPBACK_INTERFACE_VERSION, &game_loopbackDLL, reinterpret_cast< void** >( &g_pGameLoopback ) );
 	gamebin_path[gamebin_length] = '\0';
 
-	V_strcat_safe(gamebin_path, "server" DLL_EXT_STRING);
-	serverDLL = Sys_LoadModule(gamebin_path);
-	gamebin_path[gamebin_length] = '\0';
-	if(serverDLL) {
-		CreateInterfaceFn serverFactory = Sys_GetFactory(serverDLL);
-		if(serverFactory) {
-			int status = IFACE_OK;
-			g_pGameServerLoopback = (IGameServerLoopback *)serverFactory(GAMESERVERLOOPBACK_INTERFACE_VERSION, &status);
-			if(status != IFACE_OK) {
-				g_pGameServerLoopback = NULL;
+	if(!CommandLine()->HasParm("-nogamedll")) {
+		V_strcat_safe(gamebin_path, "server" DLL_EXT_STRING);
+		serverDLL = Sys_LoadModule(gamebin_path);
+		gamebin_path[gamebin_length] = '\0';
+		if(serverDLL) {
+			CreateInterfaceFn serverFactory = Sys_GetFactory(serverDLL);
+			if(serverFactory) {
+				int status = IFACE_OK;
+				g_pGameServerLoopback = (IGameServerLoopback *)serverFactory(GAMESERVERLOOPBACK_INTERFACE_VERSION, &status);
+				if(status != IFACE_OK) {
+					g_pGameServerLoopback = NULL;
+				}
 			}
 		}
 	}
@@ -1314,9 +1327,6 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	{
 		return false;
 	}
-
-	if ( CommandLine()->FindParm( "-textmode" ) )
-		g_bTextMode = true;
 
 	if ( CommandLine()->FindParm( "-makedevshots" ) )
 		g_MakingDevShots = true;
@@ -1567,8 +1577,10 @@ void CClientDll::HudUpdate( bool bActive )
 		gpGlobals->tickcount = m_nPauseTick;
 	}
 
-	if(g_pGamepadUI) {
-		g_pGamepadUI->OnUpdate(frametime);
+	if(!g_bTextMode) {
+		if(g_pGamepadUI) {
+			g_pGamepadUI->OnUpdate(frametime);
+		}
 	}
 
 #if defined( TF_CLIENT_DLL )
@@ -1591,8 +1603,10 @@ void CClientDll::HudUpdate( bool bActive )
 
 	RecastMgr().Update( frametime );
 
-	// run vgui animations
-	vgui::GetAnimationController()->UpdateAnimations( engine->Time() );
+	if(!g_bTextMode) {
+		// run vgui animations
+		vgui::GetAnimationController()->UpdateAnimations( engine->Time() );
+	}
 
 	hudlcd->SetGlobalStat( "(time_int)", VarArgs( "%d", (int)gpGlobals->curtime ) );
 	hudlcd->SetGlobalStat( "(time_float)", VarArgs( "%.2f", gpGlobals->curtime ) );
@@ -1645,6 +1659,9 @@ extern bool IsTakingAFreezecamScreenshot();
 //-----------------------------------------------------------------------------
 bool CClientDll::ShouldDrawDropdownConsole()
 {
+	if(g_bTextMode)
+		return false;
+
 #if defined( REPLAY_ENABLED )
 	if ( hud_freezecamhide.GetBool() && IsTakingAFreezecamScreenshot() )
 	{
@@ -1814,6 +1831,9 @@ void CClientDll::DecodeUserCmdFromBuffer( bf_read& buf, int slot )
 void CClientDll::View_Render( vrect_t *rect )
 {
 	VPROF( "View_Render" );
+
+	if(g_bTextMode)
+		return;
 
 	// UNDONE: This gets hit at startup sometimes, investigate - will cause NaNs in calcs inside Render()
 	if ( rect->width == 0 || rect->height == 0 )
@@ -3223,6 +3243,9 @@ public:
 	// Returns the color of the ambient light
 	virtual void		GetAmbientLightColor( Vector& color )
 	{ engine->GetAmbientLightColor( color); }
+
+	virtual map_datamap_t *GetMapDatamaps()
+	{ return g_pMapDatamapsHead; }
 };
 
 static CGameClientLoopback s_ClientGameLoopback;

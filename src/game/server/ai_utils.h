@@ -215,6 +215,8 @@ private:
 
 struct AI_FreePassParams_t
 {
+	DECLARE_CLASS_NOBASE(AI_FreePassParams_t);
+
 	float timeToTrigger;		// How long after not detected to issue pass
 	float duration;				// How long in the open pass before revoked
 	float moveTolerance;		// How far in open needed to move to revoke pass

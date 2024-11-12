@@ -1727,7 +1727,7 @@ bool CAI_FollowBehavior::ShouldAlwaysThink()
 //
 //-----------------------------------------------------------------------------
 
-BEGIN_MAPENTITY( CAI_FollowGoal )
+BEGIN_MAPENTITY( CAI_FollowGoal, MAPENT_POINTCLASS )
 	DEFINE_KEYFIELD(	m_iFormation, FIELD_INTEGER, "Formation" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "OutsideTransition",	InputOutsideTransition ),

@@ -79,6 +79,8 @@ public:
 	virtual void RemoveFactory( const char *pClassName );
 	virtual CBaseEntity *Create( const char *pClassName );
 	virtual void Destroy( const char *pClassName, CBaseEntity *pNetworkable );
+	virtual int GetFactoryCount() const { return m_Factories.Count(); }
+	virtual IEntityFactory *GetFactory( int idx ) { return m_Factories[idx]; }
 	void ReportEntitySizes();
 
 private:

@@ -332,7 +332,7 @@ CAI_AllySpeechManager *GetAllySpeechManager()
 //
 //-----------------------------------------------------------------------------
 
-BEGIN_MAPENTITY( CAI_PlayerAlly )
+BEGIN_MAPENTITY( CAI_PlayerAlly, MAPENT_NPCCLASS )
 
 	DEFINE_KEYFIELD( m_bGameEndAlly, FIELD_BOOLEAN, "GameEndAlly" ),
 

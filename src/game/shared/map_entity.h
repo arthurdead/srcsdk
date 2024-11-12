@@ -6,11 +6,23 @@
 #include "datamap.h"
 #include "string_t.h"
 #include "tier1/utldict.h"
+#include "networkvar.h"
 
 #ifdef NULL
 #undef NULL
 #endif
 #define NULL nullptr
+
+enum
+{
+	MAPENT_INVALIDCLASS = -1,
+	MAPENT_SOLIDCLASS,
+	MAPENT_NPCCLASS,
+	MAPENT_MOVECLASS,
+	MAPENT_KEYFRAMECLASS,
+	MAPENT_FILTERCLASS,
+	MAPENT_POINTCLASS,
+};
 
 #define DECLARE_MAPENTITY()											\
 	public:																\
@@ -25,30 +37,30 @@
 		static map_datamap_t m_MapDataDesc;										\
 		template <typename T> friend datamap_t *MapDataDescInit(T *)
 
-#define BEGIN_MAPENTITY( className ) \
-	map_datamap_t className::m_MapDataDesc( V_STRINGIFY(className), &BaseClass::m_MapDataDesc ); \
+#define BEGIN_MAPENTITY( className, ... ) \
+	map_datamap_t className::m_MapDataDesc( className::s_pClassnameStr, &BaseClass::m_MapDataDesc __VA_OPT__(, __VA_ARGS__) ); \
 	datamap_t *className::GetMapDataDesc( void ) { return &m_MapDataDesc; } \
 	BEGIN_MAPENTITY_GUTS( className )
 
-#define BEGIN_MAPENTITY_NO_BASE( className ) \
-	map_datamap_t className::m_MapDataDesc( V_STRINGIFY(className), NULL ); \
+#define BEGIN_MAPENTITY_NO_BASE( className, ... ) \
+	map_datamap_t className::m_MapDataDesc( className::s_pClassnameStr, (datamap_t *)NULL __VA_OPT__(, __VA_ARGS__) ); \
 	datamap_t *className::GetMapDataDesc( void ) { return &m_MapDataDesc; } \
 	BEGIN_MAPENTITY_GUTS( className )
 
 #define BEGIN_SIMPLE_MAPEMBEDDED( className ) \
-	map_datamap_t className::m_MapDataDesc( V_STRINGIFY(className), NULL ); \
+	map_datamap_t className::m_MapDataDesc( className::s_pClassnameStr, (datamap_t *)NULL ); \
 	BEGIN_MAPENTITY_GUTS( className )
 
 #ifdef GAME_DLL
-#define BEGIN_MAPENTITY_ALIASED( className ) BEGIN_MAPENTITY( C##className )
+#define BEGIN_MAPENTITY_ALIASED( className, ... ) BEGIN_MAPENTITY( C##className __VA_OPT__(, __VA_ARGS__) )
 
-#define BEGIN_MAPENTITY_ALIASED_NO_BASE( className ) BEGIN_MAPENTITY_NO_BASE( C##className )
+#define BEGIN_MAPENTITY_ALIASED_NO_BASE( className, ... ) BEGIN_MAPENTITY_NO_BASE( C##className __VA_OPT__(, __VA_ARGS__) )
 
 #define BEGIN_SIMPLE_MAPEMBEDDED_ALIASED( className ) BEGIN_SIMPLE_MAPEMBEDDED( C##className )
 #else
-#define BEGIN_MAPENTITY_ALIASED( className ) BEGIN_MAPENTITY( C_##className )
+#define BEGIN_MAPENTITY_ALIASED( className, ... ) BEGIN_MAPENTITY( C_##className __VA_OPT__(, __VA_ARGS__) )
 
-#define BEGIN_MAPENTITY_ALIASED_NO_BASE( className ) BEGIN_MAPENTITY_NO_BASE( C_##className )
+#define BEGIN_MAPENTITY_ALIASED_NO_BASE( className, ... ) BEGIN_MAPENTITY_NO_BASE( C_##className __VA_OPT__(, __VA_ARGS__) )
 
 #define BEGIN_SIMPLE_MAPEMBEDDED_ALIASED( className ) BEGIN_SIMPLE_MAPEMBEDDED( C_##className )
 #endif
@@ -66,7 +78,7 @@
 		typedef className classNameTypedef; \
 		static typedescription_t mapTypeDesc[] = \
 		{ \
-		{ FIELD_VOID,0, {0,0},0,0,0,0,0,0}, /* so you can define "empty" tables */
+		typedescription_t(), /* so you can define "empty" tables */
 
 #define END_MAPENTITY() \
 		}; \
@@ -97,6 +109,7 @@ class CEntityMapData;
 class CMapKVParser
 {
 public:
+	DECLARE_CLASS_NOBASE(CMapKVParser);
 	DECLARE_MAPKVPARSER();
 
 	CMapKVParser( const char *classname );
@@ -108,7 +121,7 @@ public:
 	static CMapKVParser *Find( const char *classname );
 
 private:
-	string_t m_iClassname;
+	const char *m_pClassname;
 
 	static CUtlDict<CMapKVParser *, unsigned short> s_Parsers;
 };

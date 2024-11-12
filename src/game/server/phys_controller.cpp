@@ -429,9 +429,10 @@ void CPhysTorque::SetupForces( IPhysicsObject *pPhys, Vector &linear, AngularImp
 //-----------------------------------------------------------------------------
 class CMotorController : public IMotionEvent
 {
+public:
+	DECLARE_CLASS_NOBASE(CMotorController);
 	DECLARE_SIMPLE_MAPEMBEDDED();
 
-public:
 	IMotionEvent::simresult_e Simulate( IPhysicsMotionController *pController, IPhysicsObject *pObject, float deltaTime, Vector &linear, AngularImpulse &angular );
 	float		m_speed;
 	float		m_maxTorque;

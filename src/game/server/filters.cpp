@@ -18,7 +18,7 @@
 // ###################################################################
 LINK_ENTITY_TO_CLASS(filter_base, CBaseFilter);
 
-BEGIN_MAPENTITY( CBaseFilter )
+BEGIN_MAPENTITY( CBaseFilter, MAPENT_FILTERCLASS )
 
 	DEFINE_KEYFIELD(m_bNegated, FIELD_BOOLEAN, "Negated"),
 	DEFINE_KEYFIELD(m_bPassCallerWhenTested, FIELD_BOOLEAN, "PassCallerWhenTested"),
@@ -148,7 +148,7 @@ private:
 
 LINK_ENTITY_TO_CLASS(filter_multi, CFilterMultiple);
 
-BEGIN_MAPENTITY( CFilterMultiple )
+BEGIN_MAPENTITY( CFilterMultiple, MAPENT_FILTERCLASS )
 
 	// Keys
 	DEFINE_KEYFIELD(m_nFilterType, FIELD_INTEGER, "FilterType"),
@@ -436,7 +436,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_name, CFilterName );
 
-BEGIN_MAPENTITY( CFilterName )
+BEGIN_MAPENTITY( CFilterName, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterName,	FIELD_STRING,	"filtername" ),
@@ -476,7 +476,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_model, CFilterModel );
 
-BEGIN_MAPENTITY( CFilterModel )
+BEGIN_MAPENTITY( CFilterModel, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterModel,	FIELD_STRING,	"model" ),
@@ -538,7 +538,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_context, CFilterContext );
 
-BEGIN_MAPENTITY( CFilterContext )
+BEGIN_MAPENTITY( CFilterContext, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_bAny,	FIELD_BOOLEAN,	"any" ),
@@ -570,7 +570,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_class, CFilterClass );
 
-BEGIN_MAPENTITY( CFilterClass )
+BEGIN_MAPENTITY( CFilterClass, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterClass,	FIELD_STRING,	"filterclass" ),
@@ -581,9 +581,9 @@ END_MAPENTITY()
 // ###################################################################
 //	> FilterTeam
 // ###################################################################
-class FilterTeam : public CBaseFilter
+class CFilterTeam : public CBaseFilter
 {
-	DECLARE_CLASS( FilterTeam, CBaseFilter );
+	DECLARE_CLASS( CFilterTeam, CBaseFilter );
 	DECLARE_MAPENTITY();
 
 public:
@@ -601,9 +601,9 @@ public:
 	}
 };
 
-LINK_ENTITY_TO_CLASS( filter_activator_team, FilterTeam );
+LINK_ENTITY_TO_CLASS( filter_activator_team, CFilterTeam );
 
-BEGIN_MAPENTITY( FilterTeam )
+BEGIN_MAPENTITY( CFilterTeam, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterTeam,	FIELD_INTEGER,	"filterteam" ),
@@ -639,7 +639,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_mass_greater, CFilterMassGreater );
 
-BEGIN_MAPENTITY( CFilterMassGreater )
+BEGIN_MAPENTITY( CFilterMassGreater, MAPENT_FILTERCLASS )
 
 // Keyfields
 DEFINE_KEYFIELD( m_fFilterMass,	FIELD_FLOAT,	"filtermass" ),
@@ -650,9 +650,9 @@ END_MAPENTITY()
 // ###################################################################
 //	> FilterDamageType
 // ###################################################################
-class FilterDamageType : public CBaseFilter
+class CFilterDamageType : public CBaseFilter
 {
-	DECLARE_CLASS( FilterDamageType, CBaseFilter );
+	DECLARE_CLASS( CFilterDamageType, CBaseFilter );
 	DECLARE_MAPENTITY();
 
 protected:
@@ -708,9 +708,9 @@ protected:
 	int m_iFilterType;
 };
 
-LINK_ENTITY_TO_CLASS( filter_damage_type, FilterDamageType );
+LINK_ENTITY_TO_CLASS( filter_damage_type, CFilterDamageType );
 
-BEGIN_MAPENTITY( FilterDamageType )
+BEGIN_MAPENTITY( CFilterDamageType, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iDamageType,	FIELD_INTEGER,	"damagetype" ),
@@ -950,7 +950,7 @@ bool CFilterEnemy::PassesMobbedFilter( CBaseEntity *pCaller, CBaseEntity *pEnemy
 
 LINK_ENTITY_TO_CLASS( filter_enemy, CFilterEnemy );
 
-BEGIN_MAPENTITY( CFilterEnemy )
+BEGIN_MAPENTITY( CFilterEnemy, MAPENT_FILTERCLASS )
 	
 	DEFINE_KEYFIELD( m_iszEnemyName, FIELD_STRING, "filtername" ),
 	DEFINE_KEYFIELD( m_flRadius, FIELD_FLOAT, "filter_radius" ),
@@ -1001,7 +1001,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_squad, CFilterSquad );
 
-BEGIN_MAPENTITY( CFilterSquad )
+BEGIN_MAPENTITY( CFilterSquad, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterName,	FIELD_STRING,	"filtername" ),
@@ -1039,7 +1039,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_keyfield, CFilterKeyfield );
 
-BEGIN_MAPENTITY( CFilterKeyfield )
+BEGIN_MAPENTITY( CFilterKeyfield , MAPENT_FILTERCLASS)
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterKey,	FIELD_STRING,	"keyname" ),
@@ -1125,7 +1125,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_relationship, CFilterRelationship );
 
-BEGIN_MAPENTITY( CFilterRelationship )
+BEGIN_MAPENTITY( CFilterRelationship, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iDisposition,	FIELD_INTEGER,	"disposition" ),
@@ -1161,7 +1161,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_classify, CFilterClassify );
 
-BEGIN_MAPENTITY( CFilterClassify )
+BEGIN_MAPENTITY( CFilterClassify, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterClassify,	FIELD_INTEGER,	"filterclassify" ),
@@ -1241,7 +1241,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_criteria, CFilterCriteria );
 
-BEGIN_MAPENTITY( CFilterCriteria )
+BEGIN_MAPENTITY( CFilterCriteria, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_bAny,	FIELD_BOOLEAN,	"any" ),
@@ -1300,7 +1300,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_involume, CFilterInVolume );
 
-BEGIN_MAPENTITY( CFilterInVolume )
+BEGIN_MAPENTITY( CFilterInVolume, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iszVolumeTester,	FIELD_STRING,	"tester" ),
@@ -1382,7 +1382,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_activator_surfacedata, CFilterSurfaceData );
 
-BEGIN_MAPENTITY( CFilterSurfaceData )
+BEGIN_MAPENTITY( CFilterSurfaceData, MAPENT_FILTERCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterSurface,	FIELD_STRING,	"filterstring" ),
@@ -1679,7 +1679,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_damage_transfer, CFilterDamageTransfer );
 
-BEGIN_MAPENTITY( CFilterDamageTransfer )
+BEGIN_MAPENTITY( CFilterDamageTransfer, MAPENT_FILTERCLASS )
 
 	//DEFINE_FIELD( m_hTarget,	FIELD_EHANDLE ),
 	DEFINE_KEYFIELD( m_bAdjustDamagePosition,	FIELD_BOOLEAN, "AdjustDamagePosition" ),
@@ -1725,7 +1725,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_blood_control, CFilterBloodControl );
 
-BEGIN_MAPENTITY( CFilterBloodControl )
+BEGIN_MAPENTITY( CFilterBloodControl, MAPENT_FILTERCLASS )
 
 	DEFINE_KEYFIELD( m_bBloodDisabled,	FIELD_BOOLEAN, "BloodDisabled" ),
 	DEFINE_KEYFIELD( m_bSecondaryFilterIsDamageFilter,	FIELD_BOOLEAN, "SecondaryFilterMode" ),
@@ -1829,7 +1829,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_damage_mod, CFilterDamageMod );
 
-BEGIN_MAPENTITY( CFilterDamageMod )
+BEGIN_MAPENTITY( CFilterDamageMod, MAPENT_FILTERCLASS )
 
 	DEFINE_KEYFIELD( m_iszNewAttacker, FIELD_STRING, "NewAttacker" ),
 	DEFINE_KEYFIELD( m_iszNewInflictor, FIELD_STRING, "NewInflictor" ),
@@ -1937,7 +1937,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( filter_damage_logic, CFilterDamageLogic );
 
-BEGIN_MAPENTITY( CFilterDamageLogic )
+BEGIN_MAPENTITY( CFilterDamageLogic, MAPENT_FILTERCLASS )
 
 	DEFINE_KEYFIELD( m_iSecondaryFilterMode, FIELD_INTEGER, "SecondaryFilterMode" ),
 

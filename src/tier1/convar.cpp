@@ -109,8 +109,7 @@ void ConVar_Register( int nCVarFlag, IConCommandBaseAccessor *pAccessor )
 	{
 		pNext = pCur->m_pNext;
 		pCur->AddFlags( nCVarFlag );
-		if ( !pCur->IsFlagSet(FCVAR_UNREGISTERED) )
-			pCur->Init( pAccessor );
+		pCur->Init( pAccessor );
 		pCur = pNext;
 	}
 
@@ -144,17 +143,6 @@ ConCommandBase::ConCommandBase( void )
 
 	m_nFlags = 0;
 	m_pNext  = NULL;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: The base console invoked command/cvar interface
-// Input  : *pName - name of variable/command
-//			*pHelpString - help text
-//			flags - flags
-//-----------------------------------------------------------------------------
-ConCommandBase::ConCommandBase( const char *pName, const char *pHelpString /*=0*/, int flags /*= 0*/ )
-{
-	CreateBase( pName, pHelpString, flags );
 }
 
 //-----------------------------------------------------------------------------
@@ -211,8 +199,7 @@ void ConCommandBase::CreateBase( const char *pName, const char *pHelpString /*= 
 	if ( s_bRegistered )
 	{
 		AddFlags( s_nCVarFlag );
-		if ( !IsFlagSet(FCVAR_UNREGISTERED) )
-			Init( s_pAccessor );
+		Init( s_pAccessor );
 	}
 }
 
@@ -229,11 +216,62 @@ void ConCommandBase::Init()
 	Init( pAccessor );
 }
 
+void ConCommandLinked::CreateBase( const char *pName, const char *pHelpString, int flags )
+{
+	m_pParent = NULL;
+
+	ConCommand::CreateBase(pName, pHelpString, FCVAR_REPLICATED|flags);
+}
+
+void ConCommandLinked::Dispatch( const CCommand &command )
+{
+	ConCommand::Dispatch( command );
+
+	if( m_pParent )
+		m_pParent->ConCommand::Dispatch( command );
+}
+
 void ConCommandBase::Init( IConCommandBaseAccessor *pAccessor )
 {
 	Assert( pAccessor );
 
-	pAccessor->RegisterConCommandBase( this );
+	bool should_reg = !IsFlagSet(FCVAR_UNREGISTERED);
+	bool is_cmd = IsCommand();
+	bool is_repl = IsFlagSet(FCVAR_REPLICATED);
+
+	if( is_cmd && is_repl )
+	{
+		Assert( IsFlagSet(FCVAR_GAMEDLL) || IsFlagSet(FCVAR_CLIENTDLL) );
+
+		ConCommand *pOther = g_pCVar->FindCommand( GetName() );
+		if( pOther )
+		{
+			pOther->m_nFlags |= (m_nFlags & FCVAR_GAMEDLL);
+			pOther->m_nFlags |= (m_nFlags & FCVAR_CLIENTDLL);
+
+			ConCommandLinked *pLink = dynamic_cast<ConCommandLinked *>(pOther);
+			if( pLink )
+				pLink->m_pParent = (ConCommand *)this;
+
+			should_reg = false;
+			m_nFlags |= FCVAR_UNREGISTERED;
+		}
+		else
+		{
+			if( should_reg )
+				m_nFlags &= ~FCVAR_REPLICATED;
+		}
+	}
+
+	if ( should_reg )
+	{
+		pAccessor->RegisterConCommandBase( this );
+
+		if( is_cmd && is_repl )
+		{
+			m_nFlags |= FCVAR_REPLICATED;
+		}
+	}
 }
 
 void ConCommandBase::Shutdown()
@@ -576,6 +614,45 @@ ConCommand::ConCommand( const char *pName, ICommandCallback *pCallback, const ch
 
 	// Setup the rest
 	BaseClass::CreateBase( pName, pHelpString, flags );
+}
+
+ConCommandLinked::ConCommandLinked( const char *pName, FnCommandCallbackVoid_t callback, const char *pHelpString /*= 0*/, int flags /*= 0*/, FnCommandCompletionCallback completionFunc /*= 0*/ )
+{
+	// Set the callback
+	m_fnCommandCallbackV1 = callback;
+	m_bUsingNewCommandCallback = false;
+	m_bUsingCommandCallbackInterface = false;
+	m_fnCompletionCallback = completionFunc ? completionFunc : DefaultCompletionFunc;
+	m_bHasCompletionCallback = completionFunc != 0 ? true : false;
+
+	// Setup the rest
+	CreateBase( pName, pHelpString, flags );
+}
+
+ConCommandLinked::ConCommandLinked( const char *pName, FnCommandCallback_t callback, const char *pHelpString /*= 0*/, int flags /*= 0*/, FnCommandCompletionCallback completionFunc /*= 0*/ )
+{
+	// Set the callback
+	m_fnCommandCallback = callback;
+	m_bUsingNewCommandCallback = true;
+	m_fnCompletionCallback = completionFunc ? completionFunc : DefaultCompletionFunc;
+	m_bHasCompletionCallback = completionFunc != 0 ? true : false;
+	m_bUsingCommandCallbackInterface = false;
+
+	// Setup the rest
+	CreateBase( pName, pHelpString, flags );
+}
+
+ConCommandLinked::ConCommandLinked( const char *pName, ICommandCallback *pCallback, const char *pHelpString /*= 0*/, int flags /*= 0*/, ICommandCompletionCallback *pCompletionCallback /*= 0*/ )
+{
+	// Set the callback
+	m_pCommandCallback = pCallback;
+	m_bUsingNewCommandCallback = false;
+	m_pCommandCompletionCallback = pCompletionCallback;
+	m_bHasCompletionCallback = ( pCompletionCallback != 0 );
+	m_bUsingCommandCallbackInterface = true;
+
+	// Setup the rest
+	CreateBase( pName, pHelpString, flags );
 }
 
 //-----------------------------------------------------------------------------

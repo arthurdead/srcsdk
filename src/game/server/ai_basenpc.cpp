@@ -11099,7 +11099,7 @@ CBaseCombatCharacter* CAI_BaseNPC::GetEnemyCombatCharacterPointer()
 // This should be an exact copy of the var's in the header.  Fields
 // that aren't save/restored are commented out
 
-BEGIN_MAPENTITY( CAI_BaseNPC )
+BEGIN_MAPENTITY( CAI_BaseNPC, MAPENT_NPCCLASS )
 
 	DEFINE_KEYFIELD( m_SleepState,				FIELD_INTEGER, "sleepstate" ),
 	DEFINE_KEYFIELD( m_flWakeRadius, FIELD_FLOAT, "wakeradius" ),

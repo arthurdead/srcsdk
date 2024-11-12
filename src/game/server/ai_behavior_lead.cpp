@@ -1174,7 +1174,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( ai_goal_lead, CAI_LeadGoal );
 
-BEGIN_MAPENTITY( CAI_LeadGoal )
+BEGIN_MAPENTITY( CAI_LeadGoal, MAPENT_POINTCLASS )
 
 	DEFINE_KEYFIELD(m_flWaitDistance, 		FIELD_FLOAT, 	"WaitDistance"),
 	DEFINE_KEYFIELD(m_iszWaitPointName, 	FIELD_STRING, 	"WaitPointName"),
@@ -1399,7 +1399,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( ai_goal_lead_weapon, CAI_LeadGoal_Weapon );
 
-BEGIN_MAPENTITY( CAI_LeadGoal_Weapon )
+BEGIN_MAPENTITY( CAI_LeadGoal_Weapon, MAPENT_POINTCLASS )
 
 	DEFINE_KEYFIELD( m_iszWeaponName, 		FIELD_STRING, 	"WeaponName"),
 	DEFINE_KEYFIELD( m_iszMissingWeaponConceptModifier, FIELD_STRING, 	"MissingWeaponConceptModifier"),

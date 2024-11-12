@@ -18,7 +18,7 @@ ConVar ai_debug_assault("ai_debug_assault", "0");
 CGameString g_AssaultPointString( "assault_assaultpoint" );
 CGameString g_RallyPointString( "assault_rallypoint" );
 
-BEGIN_MAPENTITY( CRallyPoint )
+BEGIN_MAPENTITY( CRallyPoint, MAPENT_POINTCLASS )
 	DEFINE_KEYFIELD( m_AssaultPointName, FIELD_STRING, "assaultpoint" ),
 	DEFINE_KEYFIELD( m_RallySequenceName, FIELD_STRING, "rallysequence" ),
 	DEFINE_KEYFIELD( m_flAssaultDelay, FIELD_FLOAT, "assaultdelay" ),
@@ -129,7 +129,7 @@ bool CRallyPoint::IsExclusive()
 }
 
 
-BEGIN_MAPENTITY( CAssaultPoint )
+BEGIN_MAPENTITY( CAssaultPoint, MAPENT_POINTCLASS )
 
 	DEFINE_KEYFIELD( m_NextAssaultPointName, FIELD_STRING, "nextassaultpoint" ),
 	DEFINE_KEYFIELD( m_flAssaultTimeout, FIELD_FLOAT, "assaulttimeout" ),
@@ -1564,7 +1564,7 @@ int CAI_AssaultBehavior::SelectSchedule()
 //			
 //
 //-----------------------------------------------------------------------------
-BEGIN_MAPENTITY( CAI_AssaultGoal )
+BEGIN_MAPENTITY( CAI_AssaultGoal, MAPENT_POINTCLASS )
 	DEFINE_KEYFIELD( m_RallyPoint, FIELD_STRING, "rallypoint" ),
 	DEFINE_KEYFIELD( m_AssaultCue, FIELD_INTEGER, "AssaultCue" ),
 	DEFINE_KEYFIELD( m_RallySelectMethod, FIELD_INTEGER, "RallySelectMethod" ),

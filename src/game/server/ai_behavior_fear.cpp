@@ -399,7 +399,7 @@ void CAI_FearBehavior::SetParameters( CAI_FearGoal *pGoal, string_t target )
 //=============================================================================
 LINK_ENTITY_TO_CLASS( ai_goal_fear, CAI_FearGoal );
 
-BEGIN_MAPENTITY( CAI_FearGoal )
+BEGIN_MAPENTITY( CAI_FearGoal, MAPENT_POINTCLASS )
 	//DEFINE_KEYFIELD( m_iSomething, FIELD_INTEGER, "something" ),
 
 	// Inputs

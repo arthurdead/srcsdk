@@ -27,7 +27,7 @@
 
 LINK_ENTITY_TO_CLASS_ALIASED(point_template, PointTemplate);
 
-BEGIN_MAPENTITY_ALIASED( PointTemplate )
+BEGIN_MAPENTITY_ALIASED( PointTemplate, MAPENT_POINTCLASS )
 	// Keys
 
 	DEFINE_KEYFIELD( m_iszTemplateEntityNames[0], FIELD_STRING, "Template01"),

@@ -25,6 +25,13 @@ void HackMgr_InitCommandLine()
 	CommandLine()->AppendParm("-enable_keyvalues_cache", "");
 
 	#ifndef SWDS
+	if(IsDedicatedServer())
+	#endif
+	{
+		CommandLine()->AppendParm("-textmode", "");
+	}
+
+	#ifndef SWDS
 	if(!IsDedicatedServer()) {
 		CommandLine()->AppendParm("-gameuidll", "");
 		CommandLine()->RemoveParm("-nogamepadui");
@@ -50,12 +57,23 @@ void HackMgr_InitCommandLine()
 	CommandLine()->RemoveParm("-vguimessages");
 	#endif
 
-	#ifdef __linux__
-	if(CommandLine()->HasParm("-edit_linux")) {
-		if(!CommandLine()->HasParm("-edit")) {
-			CommandLine()->AppendParm("-edit", "");
+	#ifndef SWDS
+	if(!IsDedicatedServer()) {
+		if(CommandLine()->HasParm("-textmode")) {
+			CommandLine()->RemoveParm("-edit_linux");
+			CommandLine()->RemoveParm("-tools");
+			CommandLine()->RemoveParm("-edit");
+			CommandLine()->RemoveParm("-foundrymode");
 		}
-		CommandLine()->RemoveParm("-edit_linux");
+	}
+	#endif
+
+	#if !defined SWDS && defined __linux__
+	if(!IsDedicatedServer()) {
+		if(CommandLine()->HasParm("-edit_linux")) {
+			CommandLine()->AppendParm("-edit", "");
+			CommandLine()->RemoveParm("-edit_linux");
+		}
 	}
 	#endif
 
@@ -71,6 +89,7 @@ void HackMgr_InitCommandLine()
 	{
 		CommandLine()->RemoveParm("-tools");
 		CommandLine()->RemoveParm("-edit");
+		CommandLine()->RemoveParm("-edit_linux");
 		CommandLine()->RemoveParm("-foundrymode");
 	}
 

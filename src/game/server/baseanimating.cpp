@@ -57,7 +57,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( info_lighting_relative, CInfoLightingRelative );
 
-BEGIN_MAPENTITY( CInfoLightingRelative )
+BEGIN_MAPENTITY( CInfoLightingRelative, MAPENT_POINTCLASS )
 	DEFINE_KEYFIELD( m_strLightingLandmark, FIELD_STRING, "LightingLandmark" ),
 END_MAPENTITY()
 

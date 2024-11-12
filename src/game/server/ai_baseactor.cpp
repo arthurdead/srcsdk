@@ -28,7 +28,7 @@ ConVar ai_debug_expressions( "ai_debug_expressions", "0", FCVAR_NONE, "Show rand
 static ConVar scene_showfaceto( "scene_showfaceto", "0", FCVAR_ARCHIVE, "When playing back, show the directions of faceto events." );
 
 
-BEGIN_MAPENTITY( CAI_BaseActor )
+BEGIN_MAPENTITY( CAI_BaseActor, MAPENT_NPCCLASS )
 
 	DEFINE_KEYFIELD( m_bDontUseSemaphore, FIELD_BOOLEAN, "DontUseSpeechSemaphore" ),
 

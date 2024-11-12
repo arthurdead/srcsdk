@@ -22,6 +22,8 @@ public:
 	virtual C_BaseEntity	*CreateEntity( const char *mapname );
 	virtual int				GetClassSize( const char *classname );
 	virtual IEntityFactory *FindFactory( const char *pClassName );
+	virtual int GetFactoryCount() const { return m_ClassDict.Count(); }
+	virtual IEntityFactory *GetFactory( int idx ) { return m_ClassDict[idx]; }
 
 	virtual void			AddMapping( const char *mapname, const char *classname );
 	virtual char const		*LookupMapping( const char *classname );

@@ -1267,7 +1267,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( ai_goal_standoff, CAI_StandoffGoal );
 
-BEGIN_MAPENTITY( CAI_StandoffGoal )
+BEGIN_MAPENTITY( CAI_StandoffGoal, MAPENT_POINTCLASS )
 	DEFINE_KEYFIELD( m_aggressiveness,				FIELD_INTEGER, 	"Aggressiveness" ),
 
 	DEFINE_KEYFIELD( m_TactChangeReaction,			FIELD_INTEGER, 	"TactChangeReaction" ),

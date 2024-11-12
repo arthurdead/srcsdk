@@ -609,7 +609,7 @@ void CPointClientCommand::InputCommand( inputdata_t& inputdata )
 	engine->ClientCommand( pClient, "%s\n", inputdata.value.String() );
 }
 
-BEGIN_MAPENTITY( CPointClientCommand )
+BEGIN_MAPENTITY( CPointClientCommand, MAPENT_POINTCLASS )
 	DEFINE_INPUTFUNC( FIELD_STRING, "Command", InputCommand ),
 END_MAPENTITY()
 
@@ -651,7 +651,7 @@ void CPointServerCommand::InputCommand( inputdata_t& inputdata )
 	}
 }
 
-BEGIN_MAPENTITY( CPointServerCommand )
+BEGIN_MAPENTITY( CPointServerCommand, MAPENT_POINTCLASS )
 	DEFINE_INPUTFUNC( FIELD_STRING, "Command", InputCommand ),
 END_MAPENTITY()
 
@@ -691,7 +691,7 @@ void CPointBroadcastClientCommand::InputCommand( inputdata_t& inputdata )
 	}
 }
 
-BEGIN_MAPENTITY( CPointBroadcastClientCommand )
+BEGIN_MAPENTITY( CPointBroadcastClientCommand, MAPENT_POINTCLASS )
 DEFINE_INPUTFUNC( FIELD_STRING, "Command", InputCommand ),
 END_MAPENTITY()
 

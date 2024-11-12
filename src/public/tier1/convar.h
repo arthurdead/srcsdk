@@ -107,10 +107,12 @@ class ConCommandBase
 	// FIXME: Remove when ConVar changes are done
 	friend class CDefaultCvar;
 
-public:
+protected:
 	ConCommandBase( void );
+
+public:
 	ConCommandBase( const char *pName, const char *pHelpString = 0, 
-		int flags = 0 );
+		int flags = 0 ) = delete;
 
 	virtual						~ConCommandBase( void );
 
@@ -259,6 +261,13 @@ friend class CCvar;
 public:
 	typedef ConCommandBase BaseClass;
 
+protected:
+	ConCommand( void ) = default;
+
+public:
+	ConCommand( const char *pName, const char *pHelpString = 0, 
+		int flags = 0 ) = delete;
+
 	ConCommand( const char *pName, FnCommandCallbackVoid_t callback, 
 		const char *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 );
 	ConCommand( const char *pName, FnCommandCallback_t callback, 
@@ -277,7 +286,7 @@ public:
 	// Invoke the function
 	virtual void Dispatch( const CCommand &command );
 
-private:
+protected:
 	// NOTE: To maintain backward compat, we have to be very careful:
 	// All public virtual methods must appear in the same order always
 	// since engine code will be calling into this code, which *does not match*
@@ -303,6 +312,31 @@ private:
 	bool m_bHasCompletionCallback : 1;
 	bool m_bUsingNewCommandCallback : 1;
 	bool m_bUsingCommandCallbackInterface : 1;
+};
+
+class ConCommandLinked : public ConCommand
+{
+public:
+	ConCommandLinked( void ) = delete;
+	ConCommandLinked( const char *pName, const char *pHelpString = 0, 
+		int flags = 0 ) = delete;
+
+	ConCommandLinked( const char *pName, FnCommandCallbackVoid_t callback, 
+		const char *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 );
+	ConCommandLinked( const char *pName, FnCommandCallback_t callback, 
+		const char *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 );
+	ConCommandLinked( const char *pName, ICommandCallback *pCallback, 
+		const char *pHelpString = 0, int flags = 0, ICommandCompletionCallback *pCommandCompletionCallback = 0 );
+
+	virtual void				CreateBase( const char *pName, const char *pHelpString = 0, 
+									int flags = 0 );
+
+	virtual void Dispatch( const CCommand &command );
+
+private:
+	friend class ConCommandBase;
+
+	ConCommand *m_pParent;
 };
 
 class ConVar_ServerBounded;
@@ -665,10 +699,15 @@ private:
    static ConCommand name##_command( #name, name##_callback, description ); \
    static void name##_callback( const CCommand &args )
 
+#define CON_COMMAND_LINKED( name, description ) \
+   static void name##_callback( const CCommand &args ); \
+   static ConCommandLinked name##_command( #name, name##_callback, description ); \
+   static void name##_callback( const CCommand &args )
+
 #ifdef CLIENT_DLL
 	#define CON_COMMAND_SHARED( name, description ) \
 		static void name( const CCommand &args ); \
-		static ConCommand name##_command_client( #name "_client", name, description ); \
+		static ConCommand name##_command_client( V_STRINGIFY( name##_client ), name, description ); \
 		static void name( const CCommand &args )
 #else
 	#define CON_COMMAND_SHARED( name, description ) \
@@ -685,7 +724,7 @@ private:
 #ifdef CLIENT_DLL
 	#define CON_COMMAND_F_SHARED( name, description, flags ) \
 		static void name( const CCommand &args ); \
-		static ConCommand name##_command_client( #name "_client", name, description, flags ); \
+		static ConCommand name##_command_client( V_STRINGIFY( name##_client ), name, description, flags ); \
 		static void name( const CCommand &args )
 #else
 	#define CON_COMMAND_F_SHARED( name, description, flags ) \
@@ -702,7 +741,7 @@ private:
 #ifdef CLIENT_DLL
 	#define CON_COMMAND_F_COMPLETION_SHARED( name, description, flags, completion ) \
 		static void name( const CCommand &args ); \
-		static ConCommand name##_command_client( #name "_client", name, description, flags, completion ); \
+		static ConCommand name##_command_client( V_STRINGIFY( name##_client ), name, description, flags, completion ); \
 		static void name( const CCommand &args )
 #else
 	#define CON_COMMAND_F_COMPLETION_SHARED( name, description, flags, completion ) \

@@ -422,14 +422,24 @@ public:
 		m_pTargetFactory->Destroy( pNetworkable );
 	}
 
-	virtual size_t GetEntitySize()
+	size_t GetEntitySize()
 	{
 		return m_pTargetFactory->GetEntitySize();
 	}
 
-	virtual const char *DllClassname() const 
+	const char *DllClassname() const 
 	{
 		return m_pTargetFactory->DllClassname();
+	}
+
+	const char *MapClassname() const
+	{
+		return "gamerules_proxy";
+	}
+
+	map_datamap_t *GetMapDataDesc() const
+	{
+		return m_pTargetFactory->GetMapDataDesc();
 	}
 
 	IEntityFactory *m_pTargetFactory;

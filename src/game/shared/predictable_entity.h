@@ -64,7 +64,7 @@
 	BEGIN_PREDICTION_DATA_GUTS( className )
 
 #define BEGIN_PREDICTION_DATA_NO_BASE( className ) \
-	pred_datamap_t className::m_PredMap( V_STRINGIFY(className), NULL ); \
+	pred_datamap_t className::m_PredMap( V_STRINGIFY(className), (datamap_t *)NULL ); \
 	datamap_t *className::GetPredDescMap( void ) { return &m_PredMap; } \
 	BEGIN_PREDICTION_DATA_GUTS( className )
 
@@ -81,7 +81,7 @@
 		typedef className classNameTypedef; \
 		static typedescription_t predDesc[] = \
 		{ \
-		{ FIELD_VOID,0, {0,0},0,0,0,0,0,0}, /* so you can define "empty" tables */
+		typedescription_t(), /* so you can define "empty" tables */
 
 #define END_PREDICTION_DATA() \
 		}; \

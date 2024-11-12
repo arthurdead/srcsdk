@@ -485,7 +485,7 @@ bool CProjectedDecal::KeyValue( const char *szKeyName, const char *szValue )
 //=======================
 LINK_ENTITY_TO_CLASS( worldspawn, CWorld );
 
-BEGIN_MAPENTITY( CWorld )
+BEGIN_MAPENTITY( CWorld, MAPENT_POINTCLASS )
 
 	// keyvalues are parsed from map, but not saved/loaded
 	DEFINE_KEYFIELD( m_iszChapterTitle, FIELD_STRING, "chaptertitle" ),

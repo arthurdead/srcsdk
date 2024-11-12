@@ -91,7 +91,7 @@ public:
 	bool	IsOn( void );
 };
 
-BEGIN_MAPENTITY( CFuncWallToggle )
+BEGIN_MAPENTITY( CFuncWallToggle, MAPENT_SOLIDCLASS )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
 
@@ -184,7 +184,7 @@ public:
 private:
 };
 
-BEGIN_MAPENTITY( CFuncVehicleClip )
+BEGIN_MAPENTITY( CFuncVehicleClip, MAPENT_SOLIDCLASS )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -270,7 +270,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( func_conveyor, CFuncConveyor );
 
-BEGIN_MAPENTITY( CFuncConveyor )
+BEGIN_MAPENTITY( CFuncConveyor, MAPENT_SOLIDCLASS )
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "ToggleDirection", InputToggleDirection ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "SetSpeed", InputSetSpeed ),
@@ -353,8 +353,8 @@ void CFuncConveyor::GetGroundVelocityToApply( Vector &vecGroundVel )
 // A simple entity that looks solid but lets you walk through it.
 class CFuncIllusionary : public CBaseEntity 
 {
-	DECLARE_CLASS( CFuncIllusionary, CBaseEntity );
 public:
+	DECLARE_CLASS( CFuncIllusionary, CBaseEntity );
 	void Spawn( void );
 };
 
@@ -382,8 +382,8 @@ void CFuncIllusionary::Spawn( void )
 //-----------------------------------------------------------------------------
 class CFuncRotating : public CBaseEntity
 {
-	DECLARE_CLASS( CFuncRotating, CBaseEntity );
 public:
+	DECLARE_CLASS( CFuncRotating, CBaseEntity );
 	// basic functions
 	void Spawn( void  );
 	void Precache( void  );
@@ -448,7 +448,7 @@ public:
 LINK_ENTITY_TO_CLASS( func_rotating, CFuncRotating );
 
 
-BEGIN_MAPENTITY( CFuncRotating )
+BEGIN_MAPENTITY( CFuncRotating, MAPENT_SOLIDCLASS )
 
 	DEFINE_KEYFIELD( m_flMaxSpeed, FIELD_FLOAT, "maxspeed" ),
 	DEFINE_KEYFIELD( m_flBlockDamage, FIELD_FLOAT, "dmg" ),
@@ -1362,7 +1362,7 @@ private:
 };
 
 // Global Savedata for base trigger
-BEGIN_MAPENTITY( CFuncVPhysicsClip )
+BEGIN_MAPENTITY( CFuncVPhysicsClip, MAPENT_SOLIDCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_iFilterName,	FIELD_STRING,	"filtername" ),

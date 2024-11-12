@@ -32,6 +32,7 @@ struct CUserCmd;
 class CFourWheelVehiclePhysics
 {
 public:
+	DECLARE_CLASS_NOBASE(CFourWheelVehiclePhysics);
 	DECLARE_MAPEMBEDDED();
 
 	CFourWheelVehiclePhysics( CBaseAnimating *pOuter );

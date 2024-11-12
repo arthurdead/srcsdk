@@ -198,6 +198,8 @@ public:
 	virtual CBaseEntity *Create( const char *pClassName ) = 0;
 	virtual void Destroy( const char *pClassName, CBaseEntity *pNetworkable ) = 0;
 	virtual IEntityFactory *FindFactory( const char *pClassName ) = 0;
+	virtual int GetFactoryCount() const = 0;
+	virtual IEntityFactory *GetFactory( int idx ) = 0;
 };
 
 IEntityFactoryDictionary *EntityFactoryDictionary();
@@ -213,7 +215,9 @@ public:
 	virtual CBaseEntity *Create( const char *pClassName ) = 0;
 	virtual void Destroy( CBaseEntity *pNetworkable ) = 0;
 	virtual size_t GetEntitySize() = 0;
-	virtual const char *DllClassname() const  = 0;
+	virtual const char *MapClassname() const = 0;
+	virtual const char *DllClassname() const = 0;
+	virtual map_datamap_t *GetMapDataDesc() const = 0;
 };
 
 template <class T>
@@ -225,6 +229,7 @@ public:
 	}
 
 	CEntityFactory( const char *pClassName )
+		: m_pClassname( pClassName )
 	{
 		EntityFactoryDictionary()->InstallFactory( this, pClassName );
 	}
@@ -242,10 +247,23 @@ public:
 		UTIL_Remove( pNetworkable );
 	}
 
-	virtual size_t GetEntitySize()
+	size_t GetEntitySize()
 	{
 		return sizeof(T);
 	}
+
+	const char *MapClassname() const
+	{
+		return m_pClassname;
+	}
+
+	map_datamap_t *GetMapDataDesc() const
+	{
+		return &T::m_MapDataDesc;
+	}
+
+private:
+	const char *m_pClassname;
 };
 
 #define DEFINE_ENTITY_FACTORY(DLLClassName) \

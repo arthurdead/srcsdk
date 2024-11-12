@@ -17,7 +17,7 @@
 // CAI_GoalEntity implementation
 //
 
-BEGIN_MAPENTITY( CAI_GoalEntity )
+BEGIN_MAPENTITY( CAI_GoalEntity, MAPENT_POINTCLASS )
 
 	DEFINE_KEYFIELD(	m_iszActor,				FIELD_STRING, 	"Actor"					),
 	DEFINE_KEYFIELD(	m_iszGoal,				FIELD_STRING, 	"Goal"					),

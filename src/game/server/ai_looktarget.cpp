@@ -12,7 +12,7 @@
 // Mothballing this entity to get rid of it. info_hint does its job better (sjb)
 LINK_ENTITY_TO_CLASS( ai_looktarget, CAI_LookTarget );
 
-BEGIN_MAPENTITY( CAI_LookTarget )
+BEGIN_MAPENTITY( CAI_LookTarget, MAPENT_POINTCLASS )
 
 	// Keyfields
 	DEFINE_KEYFIELD( m_bDisabled, FIELD_BOOLEAN, "StartDisabled" ),
