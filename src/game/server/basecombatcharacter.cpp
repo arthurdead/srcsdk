@@ -751,6 +751,8 @@ CBaseCombatCharacter::CBaseCombatCharacter( void )
 	m_bForceServerRagdoll = ai_force_serverside_ragdoll.GetBool();
 
 	m_navMeshType = RECAST_NAVMESH_INVALID;
+
+	DensityMap()->SetType( DENSITY_GAUSSIAN );
 }
 
 //------------------------------------------------------------------------------

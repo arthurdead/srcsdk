@@ -1174,7 +1174,7 @@ void CHud::ProcessInput( bool bActive )
 {
 	if ( bActive )
 	{
-		m_iKeyBits = input->GetButtonBits( 0 );
+		m_iKeyBits = input->GetButtonBits( false );
 
 		// Weaponbits need to be sent down as a UserMsg now.
 		Think();

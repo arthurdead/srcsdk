@@ -24,6 +24,93 @@ ConVar net_showusercmd( "net_showusercmd", "0", 0, "Show user command encoding" 
 #define LogUserCmd( msg, ... ) 
 #endif
 
+void CUserCmd::Reset()
+{
+	command_number = 0;
+	tick_count = 0;
+	viewangles.Init();
+	forwardmove = 0.0f;
+	sidemove = 0.0f;
+	upmove = 0.0f;
+	buttons = 0;
+	impulse = 0;
+	weaponselect = 0;
+	weaponsubtype = 0;
+	random_seed = 0;
+#ifdef GAME_DLL
+	server_random_seed = 0;
+#endif
+	mousedx = 0;
+	mousedy = 0;
+
+#ifdef CLIENT_DLL
+	hasbeenpredicted = false;
+#endif
+}
+
+CUserCmd& CUserCmd::operator =( const CUserCmd& src )
+{
+	if ( this == &src )
+		return *this;
+
+	command_number		= src.command_number;
+	tick_count			= src.tick_count;
+	viewangles			= src.viewangles;
+	forwardmove			= src.forwardmove;
+	sidemove			= src.sidemove;
+	upmove				= src.upmove;
+	buttons				= src.buttons;
+	impulse				= src.impulse;
+	weaponselect		= src.weaponselect;
+	weaponsubtype		= src.weaponsubtype;
+	random_seed			= src.random_seed;
+#ifdef GAME_DLL
+	server_random_seed = src.server_random_seed;
+#endif
+	mousedx				= src.mousedx;
+	mousedy				= src.mousedy;
+
+#ifdef CLIENT_DLL
+	hasbeenpredicted	= src.hasbeenpredicted;
+#endif
+
+	return *this;
+}
+
+CRC32_t CUserCmd::GetChecksum( void ) const
+{
+	CRC32_t crc;
+
+	CRC32_Init( &crc );
+	CRC32_ProcessBuffer( &crc, &command_number, sizeof( command_number ) );
+	CRC32_ProcessBuffer( &crc, &tick_count, sizeof( tick_count ) );
+	CRC32_ProcessBuffer( &crc, &viewangles, sizeof( viewangles ) );    
+	CRC32_ProcessBuffer( &crc, &forwardmove, sizeof( forwardmove ) );   
+	CRC32_ProcessBuffer( &crc, &sidemove, sizeof( sidemove ) );      
+	CRC32_ProcessBuffer( &crc, &upmove, sizeof( upmove ) );         
+	CRC32_ProcessBuffer( &crc, &buttons, sizeof( buttons ) );		
+	CRC32_ProcessBuffer( &crc, &impulse, sizeof( impulse ) );        
+	CRC32_ProcessBuffer( &crc, &weaponselect, sizeof( weaponselect ) );	
+	CRC32_ProcessBuffer( &crc, &weaponsubtype, sizeof( weaponsubtype ) );
+	CRC32_ProcessBuffer( &crc, &random_seed, sizeof( random_seed ) );
+	CRC32_ProcessBuffer( &crc, &mousedx, sizeof( mousedx ) );
+	CRC32_ProcessBuffer( &crc, &mousedy, sizeof( mousedy ) );
+	CRC32_Final( &crc );
+
+	return crc;
+}
+
+// Allow command, but negate gameplay-affecting values
+void CUserCmd::MakeInert( void )
+{
+	viewangles = vec3_angle;
+	forwardmove = 0.f;
+	sidemove = 0.f;
+	upmove = 0.f;
+	buttons = 0;
+	impulse = 0;
+}
+
 //-----------------------------------------------------------------------------
 static bool WriteUserCmdDeltaInt( bf_write *buf, char *what, int from, int to, int bits = 32 )
 {
@@ -33,6 +120,21 @@ static bool WriteUserCmdDeltaInt( bf_write *buf, char *what, int from, int to, i
 
 		buf->WriteOneBit( 1 );
 		buf->WriteUBitLong( to, bits );
+		return true;
+	}
+
+	buf->WriteOneBit( 0 );
+	return false;
+}
+
+static bool WriteUserCmdDeltaLongLong( bf_write *buf, char *what, int from, int to )
+{
+	if ( from != to )
+	{
+		LogUserCmd( "\t%s %d -> %d\n", what, from, to );
+
+		buf->WriteOneBit( 1 );
+		buf->WriteLongLong( to );
 		return true;
 	}
 
@@ -136,7 +238,7 @@ void WriteUsercmd( bf_write *buf, const CUserCmd *to, const CUserCmd *from )
 	WriteUserCmdDeltaFloat( buf, "forwardmove", from->forwardmove, to->forwardmove );
 	WriteUserCmdDeltaFloat( buf, "sidemove", from->sidemove, to->sidemove );
 	WriteUserCmdDeltaFloat( buf, "upmove", from->upmove, to->upmove );
-	WriteUserCmdDeltaInt( buf, "buttons", from->buttons, to->buttons, 32 );
+	WriteUserCmdDeltaLongLong( buf, "buttons", from->buttons, to->buttons );
 	WriteUserCmdDeltaInt( buf, "impulse", from->impulse, to->impulse, 8 );
 
 
@@ -220,7 +322,7 @@ void ReadUsercmd( bf_read *buf, CUserCmd *move, CUserCmd *from, CSharedBasePlaye
 	// read buttons
 	if ( buf->ReadOneBit() )
 	{
-		move->buttons = buf->ReadUBitLong( 32 );
+		move->buttons = buf->ReadULongLong();
 	}
 
 	if ( buf->ReadOneBit() )

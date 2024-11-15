@@ -26,6 +26,7 @@
 #include "irecipientfilter.h"
 #include "map_entity.h"
 #include "vphysics_interface.h"
+#include "density_weight_map.h"
 
 class CDamageModifier;
 class CDmgAccumulator;
@@ -1951,6 +1952,11 @@ public:
 	virtual bool ShouldBlockNav() const { return true; }
 
 public:
+	// Density map
+	virtual float GetDensityMultiplier() { return 1.0f; }
+	DensityWeightsMap *DensityMap();
+	void SetDensityMapType( int iType );
+
 	// Nav obstacle ref for recast mesh.
 	void SetNavObstacleRef( int ref ) { m_NavObstacleRef = ref; }
 	int GetNavObstacleRef() { return m_NavObstacleRef; }
@@ -1958,6 +1964,8 @@ public:
 	void						SetViewDistance( float dist );
 
 private:
+	DensityWeightsMap *m_pDensityMap;
+
 	bool					m_bAllowNavIgnore;
 	int						m_NavObstacleRef;
 	CNetworkVar( float,		m_fViewDistance );
@@ -2662,6 +2670,19 @@ inline CCollisionProperty *CBaseEntity::CollisionProp()
 inline const CCollisionProperty *CBaseEntity::CollisionProp() const
 {
 	return m_pCollision;
+}
+
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+inline DensityWeightsMap *CBaseEntity::DensityMap()
+{
+	return m_pDensityMap;
+}
+
+inline void CBaseEntity::SetDensityMapType( int iType )
+{
+	DensityMap()->SetType( iType );
 }
 
 inline CBaseEntity *CBaseEntity::GetBaseEntity()

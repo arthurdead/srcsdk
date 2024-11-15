@@ -57,5 +57,7 @@ SendProp SendPropStringT( const char *pVarName, int offset, int sizeofVar );
 //-----------------------------------------------------------------------------
 void* SendProxy_OnlyToTeam( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
 
+extern void* SendProxy_SendMinimalDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
+extern void* SendProxy_SendFullDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID );
 
 #endif // SENDPROXY_H

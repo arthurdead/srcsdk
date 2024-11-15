@@ -374,7 +374,7 @@ private:
 
 	const static float kflPosInterpTime; // seconds
 
-	int   m_nPlayerButtons;
+	uint64   m_nPlayerButtons;
 	int m_nOldTakeDamage;
 
 private:

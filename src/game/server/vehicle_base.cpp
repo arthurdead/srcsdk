@@ -581,9 +581,9 @@ void CPropVehicleDriveable::DriveVehicle( CBasePlayer *pPlayer, CUserCmd *ucmd )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropVehicleDriveable::DriveVehicle( float flFrameTime, CUserCmd *ucmd, int iButtonsDown, int iButtonsReleased )
+void CPropVehicleDriveable::DriveVehicle( float flFrameTime, CUserCmd *ucmd, uint64 iButtonsDown, uint64 iButtonsReleased )
 {
-	int iButtons = ucmd->buttons;
+	uint64 iButtons = ucmd->buttons;
 
 	m_VehiclePhysics.UpdateDriverControls( ucmd, flFrameTime );
 
@@ -1305,9 +1305,9 @@ void CFourWheelServerVehicle::NPC_DriveVehicle( void )
 	}
 #endif
 
-	int buttonsChanged = m_nPrevNPCButtons ^ m_nNPCButtons;
-	int afButtonPressed = buttonsChanged & m_nNPCButtons;		// The changed ones still down are "pressed"
-	int afButtonReleased = buttonsChanged & (~m_nNPCButtons);	// The ones not down are "released"
+	uint64 buttonsChanged = m_nPrevNPCButtons ^ m_nNPCButtons;
+	uint64 afButtonPressed = buttonsChanged & m_nNPCButtons;		// The changed ones still down are "pressed"
+	uint64 afButtonReleased = buttonsChanged & (~m_nNPCButtons);	// The ones not down are "released"
 	CUserCmd fakeCmd;
 	fakeCmd.Reset();
 	fakeCmd.buttons = m_nNPCButtons;

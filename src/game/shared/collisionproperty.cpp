@@ -703,6 +703,10 @@ void CSharedCollisionProperty::SetCollisionBounds( const Vector &mins, const Vec
 		m_flHeight = vecSize.z;
 		m_flLength = vecSize.x;
 
+	#ifndef CLIENT_DLL
+		GetOuter()->DensityMap()->OnCollisionSizeChanged();
+	#endif // CLIENT_DLL
+
 		MarkSurroundingBoundsDirty();
 	}
 }

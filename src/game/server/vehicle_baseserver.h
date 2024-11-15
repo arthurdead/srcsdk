@@ -262,8 +262,8 @@ public:
 	IDrivableVehicle 	*m_pDrivableVehicle;
 
 	// NPC Driving
-	int								m_nNPCButtons;
-	int								m_nPrevNPCButtons;
+	uint64								m_nNPCButtons;
+	uint64								m_nPrevNPCButtons;
 	float							m_flTurnDegrees;
 
 	// Entry / Exit anims

@@ -82,7 +82,7 @@ public:
 	void LoseFocus();
 
 	// Button state...
-	void SetButtonState( int nButtonState );
+	void SetButtonState( uint64 nButtonState );
 
 	// Is the screen backfaced given a view position?
 	bool IsBackfacing( const Vector &viewOrigin );
@@ -143,12 +143,12 @@ private:
 	float m_flWidth; 
 	float m_flHeight;
 	int m_nPanelName;	// The name of the panel 
-	int	m_nButtonState;
-	int m_nButtonPressed;
-	int m_nButtonReleased;
+	uint64	m_nButtonState;
+	uint64 m_nButtonPressed;
+	uint64 m_nButtonReleased;
 	int m_nOldPx;
 	int m_nOldPy;
-	int m_nOldButtonState;
+	uint64 m_nOldButtonState;
 	int m_nAttachmentIndex;
 	int m_nOverlayMaterial;
 	int m_fScreenFlags;
@@ -196,7 +196,7 @@ void DeactivateVguiScreen( C_BaseEntity *pVguiScreen );
 //-----------------------------------------------------------------------------
 // Updates vgui screen button state
 //-----------------------------------------------------------------------------
-void SetVGuiScreenButtonState( C_BaseEntity *pVguiScreen, int nButtonState );
+void SetVGuiScreenButtonState( C_BaseEntity *pVguiScreen, uint64 nButtonState );
 
 
 // Called at shutdown.

@@ -138,6 +138,7 @@ game_shared_base_dep = declare_dependency(
 		join_paths(shared_src_dir,'variant_t.cpp'),
 		join_paths(shared_src_dir,'entityoutput.cpp'),
 		join_paths(shared_src_dir,'game_shared.cpp'),
+		join_paths(shared_src_dir,'lambdawars','density_weight_map.cpp'),
 		join_paths(public_dir,'interval.cpp'),
 		join_paths(public_dir,'SoundParametersInternal.cpp'),
 		join_paths(public_dir,'bone_setup.cpp'),
@@ -175,6 +176,7 @@ game_shared_base_dep = declare_dependency(
 	),
 	include_directories: funny_game_shared_inc + include_directories(
 		shared_src_dir,
+		join_paths(shared_src_dir,'lambdawars'),
 	),
 	dependencies: [
 		source_base.get_variable('source_slop_dep'),

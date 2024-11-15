@@ -29,6 +29,9 @@ CServerNetworkProperty::CServerNetworkProperty()
 	m_TimerEvent.Init( &g_NetworkPropertyEventMgr, this );
 
 	m_bDestroyed = false;
+
+	m_UseMinimalSendTable.SetAll();
+	SetUpdateInterval( 0.4f );
 }
 
 
@@ -315,4 +318,36 @@ void CServerNetworkProperty::FireEvent()
 }
 
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CServerNetworkProperty::SetUseMinimalSendTable( int iClientIndex, bool bUseMinimalSendTable )
+{
+	if( m_UseMinimalSendTable.IsBitSet( iClientIndex ) != bUseMinimalSendTable )
+	{
+		m_UseMinimalSendTable.Set( iClientIndex, bUseMinimalSendTable );
 
+		if( !bUseMinimalSendTable )
+		{
+			// State might have changed
+			NetworkStateChanged();
+
+			// This unit is no longer using the minmal table for this player, 
+			// so if low update rate is active, then we must clear it!
+			if( TimerEventActive() )
+			{
+				SetUpdateInterval( 0 );
+			}
+		}
+		else
+		{
+			// It might be the case that we can go into low update rate if not yet
+			// This is only possible if the unit is out of view of all players
+			// We only need some (slow) updates for the minimap!
+			if( !TimerEventActive() && m_UseMinimalSendTable.IsAllSet() )
+			{
+				SetUpdateInterval( 0.4f );
+			}
+		}
+	}
+}

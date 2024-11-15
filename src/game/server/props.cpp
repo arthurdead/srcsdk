@@ -842,10 +842,20 @@ void CC_Prop_Debug( void )
 }
 static ConCommand prop_debug("prop_debug", CC_Prop_Debug, "Toggle prop debug mode. If on, props will show colorcoded bounding boxes. Red means ignore all damage. White means respond physically to damage but never break. Green maps health in the range of 100 down to 1.", FCVAR_CHEAT);
 
+void SendProxy_UnmodifiedQAngles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+{
+	QAngle *v = (QAngle*)pData;
+	pOut->m_Vector[0] = v->x;
+	pOut->m_Vector[1] = v->y;
+	pOut->m_Vector[2] = v->z;
+}
+
 //=============================================================================================================
 // BREAKABLE PROPS
 //=============================================================================================================
 IMPLEMENT_SERVERCLASS_ST(CBreakableProp, DT_BreakableProp)
+	SendPropQAngles( SENDINFO( m_qPreferredPlayerCarryAngles ), 0, SPROP_NOSCALE, SendProxy_UnmodifiedQAngles ),
+	SendPropBool( SENDINFO( m_bClientPhysics ) ),
 END_SEND_TABLE()
 
 BEGIN_MAPENTITY( CBreakableProp )
@@ -903,6 +913,8 @@ CBreakableProp::CBreakableProp()
 	
 	// This defaults to on. Most times mapmakers won't specify a punt sound to play.
 	m_bUsePuntSound = true;
+
+	m_qPreferredPlayerCarryAngles.GetForModify().Init( FLT_MAX, FLT_MAX, FLT_MAX );
 }
 
 //-----------------------------------------------------------------------------
@@ -3164,6 +3176,9 @@ void CPhysicsProp::Spawn( )
 		}
 	}
 
+	//if( !HasSpawnFlags( SF_PHYSPROP_DEBRIS ) )
+	//	DensityMap()->SetType( DENSITY_GAUSSIAN );
+
 	if ( GetCollisionGroup() == COLLISION_GROUP_NONE )
 		SetCollisionGroup( COLLISION_GROUP_PUSHAWAY );
 
@@ -3174,6 +3189,12 @@ void CPhysicsProp::Spawn( )
 	}
 
 	m_fMass = VPhysicsGetObject()->GetMass();
+
+	QAngle qPreffered;
+	if( GetPropDataAngles( "preferred_carryangles", qPreffered ) )
+	{
+		m_qPreferredPlayerCarryAngles = qPreffered;
+	}
 
 	// VPhysicsGetObject() is NULL on the client, which prevents the client from finding a decent
 	// AABB surrounding the collision bounds.  If we've got a VPhysicsGetObject()->GetCollide(), we'll
@@ -3309,6 +3330,11 @@ bool CPhysicsProp::CreateVPhysics()
 	if ( HasSpawnFlags(SF_PHYSPROP_PREVENT_PICKUP) )
 	{
 		PhysSetGameFlags(pPhysicsObject, FVPHYSICS_NO_PLAYER_PICKUP);
+	}
+
+	if ( !pPhysicsObject->IsMoveable() || pPhysicsObject->GetMass() >= VPHYSICS_LARGE_OBJECT_MASS )
+	{
+		m_bClientPhysics = true;
 	}
 
 	return true;

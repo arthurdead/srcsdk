@@ -163,7 +163,7 @@ public:
 
 public:
 
-	int							m_iKeyBits;
+	uint64							m_iKeyBits;
 
 	float						m_flMouseSensitivity;
 	float						m_flMouseSensitivityFactor;

@@ -53,8 +53,8 @@ public:
 	int				m_nImpulseCommand;	// Impulse command issued.
 	QAngle			m_vecViewAngles;	// Command view angles (local space)
 	QAngle			m_vecAbsViewAngles;	// Command view angles (world space)
-	int				m_nButtons;			// Attack buttons.
-	int				m_nOldButtons;		// From host_client->oldbuttons;
+	uint64				m_nButtons;			// Attack buttons.
+	uint64				m_nOldButtons;		// From host_client->oldbuttons;
 	float			m_flForwardMove;
 	float			m_flSideMove;
 	float			m_flUpMove;

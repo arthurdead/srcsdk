@@ -187,3 +187,36 @@ SendProp SendPropStringT( const char *pVarName, int offset, int sizeofVar )
 
 	return SendPropString( pVarName, offset, DT_MAX_STRING_BUFFERSIZE, 0, SendProxy_StringT_To_String );
 }
+
+void* SendProxy_SendMinimalDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+{
+	CBaseEntity *pUnit = (CBaseEntity*)pVarData;
+	if ( pUnit )
+	{
+		for( int i = 0; i < gpGlobals->maxClients; i++ )
+		{
+			if( !pUnit->NetworkProp()->UseMinimalSendTable( i ) )
+				pRecipients->ClearRecipient( i );
+		}
+	}
+
+	return (void*)pVarData;
+}
+REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendMinimalDataTable );
+
+void* SendProxy_SendFullDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
+{
+	// Get the unit entity
+	CBaseEntity *pUnit = (CBaseEntity*)pVarData;
+	if ( pUnit )
+	{
+		for( int i = 0; i < gpGlobals->maxClients; i++ )
+		{
+			if( pUnit->NetworkProp()->UseMinimalSendTable( i ) )
+				pRecipients->ClearRecipient( i );
+		}
+	}
+
+	return (void*)pVarData;
+}
+REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendFullDataTable );

@@ -103,6 +103,7 @@
 #endif
 #include "recast/recast_mgr.h"
 #include "hackmgr/dlloverride.h"
+#include "iclient.h"
 
 #ifndef SWDS
 #include "IGameUIFuncs.h"
@@ -1867,7 +1868,7 @@ bool IsEngineThreaded()
 	return host_thread_mode->GetBool();
 }
 
-class CServerGameEnts : public IServerGameEnts
+class CServerGameEnts : public IServerGameEntsEx
 {
 public:
 	virtual void			SetDebugEdictBase(edict_t *base);
@@ -1950,15 +1951,17 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 	// optimization which would be nice to keep.
 	edict_t *pBaseEdict = engine->PEntityOfEntIndex( 0 );
 
-	// get recipient player's skybox:
-	CBaseEntity *pRecipientEntity = CBaseEntity::Instance( pInfo->m_pClientEnt );
-
-	Assert( pRecipientEntity && pRecipientEntity->IsPlayer() );
-	if ( !pRecipientEntity )
-		return;
-	
 	MDLCACHE_CRITICAL_SECTION();
-	CBasePlayer *pRecipientPlayer = static_cast<CBasePlayer*>( pRecipientEntity );
+
+	// get recipient player's skybox:
+	CBasePlayer *pRecipientPlayer = assert_cast<CBasePlayer *>( CBaseEntity::Instance( pInfo->m_pClientEnt ) );
+
+	Assert( pRecipientPlayer );
+	if ( !pRecipientPlayer )
+		return;
+
+	int iClientIdx = ENTINDEX( pInfo->m_pClientEnt ) - 1; // Client index is 0 based
+
 	const int skyBoxArea = pRecipientPlayer->m_Local.m_skybox3d.area;
 
 	const bool bIsHLTV = pRecipientPlayer->IsHLTV();
@@ -1974,15 +1977,29 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 
 		edict_t *pEdict = &pBaseEdict[iEdict];
 		Assert( pEdict == engine->PEntityOfEntIndex( iEdict ) );
+
+		// FIXME: Would like to remove all dependencies
+		CBaseEntity *pEnt = ( CBaseEntity * )pEdict->GetIServerEntity();
+		Assert( dynamic_cast< CBaseEntity* >( pEdict->GetUnknown() ) == pEnt );
+
+		CServerNetworkProperty *netProp = static_cast<CServerNetworkProperty*>( pEdict->GetNetworkable() );
+
 		int nFlags = pEdict->m_fStateFlags & (FL_EDICT_DONTSEND|FL_EDICT_ALWAYS|FL_EDICT_PVSCHECK|FL_EDICT_FULLCHECK);
 
 		// entity needs no transmit
 		if ( nFlags & FL_EDICT_DONTSEND )
+		{
+			// When not sending, make sure it's marked as minimal table
+			// This is used for determing the low update rate mode
+			netProp->SetUseMinimalSendTable( pRecipientPlayer->GetClientIndex(), true );
 			continue;
+		}
 		
 		// entity is already marked for sending
 		if ( pInfo->m_pTransmitEdict->Get( iEdict ) )
+		{
 			continue;
+		}
 		
 		if ( nFlags & FL_EDICT_ALWAYS )
 		{
@@ -1998,7 +2015,9 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 					pInfo->m_pTransmitAlways->Set( iEdict );
 				}
 
-				CBaseEntity *pEnt = static_cast<CBaseEntity*>( pEdict->GetIServerEntity() );
+				netProp->SetUseMinimalSendTable( pRecipientPlayer->GetClientIndex(), false );
+
+				pEnt = static_cast<CBaseEntity*>( pEdict->GetIServerEntity() );
 				if ( !pEnt )
 					break;
 
@@ -2007,14 +2026,14 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 					break;
 
 				pEdict = pParent->edict();
+				Assert( pEdict == engine->PEntityOfEntIndex( iEdict ) );
+
+				netProp = static_cast<CServerNetworkProperty*>( pEdict->GetNetworkable() );
+
 				iEdict = pParent->entindex();
 			}
 			continue;
 		}
-
-		// FIXME: Would like to remove all dependencies
-		CBaseEntity *pEnt = ( CBaseEntity * )pEdict->GetIServerEntity();
-		Assert( dynamic_cast< CBaseEntity* >( pEdict->GetUnknown() ) == pEnt );
 
 		if ( nFlags == FL_EDICT_FULLCHECK )
 		{
@@ -2026,15 +2045,17 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 			if ( nFlags & FL_EDICT_ALWAYS )
 			{
 				pEnt->SetTransmit( pInfo, true );
+				netProp->SetUseMinimalSendTable( pRecipientPlayer->GetClientIndex(), false );
 				continue;
-			}	
+			}
 		}
 
 		// don't send this entity
 		if ( !( nFlags & FL_EDICT_PVSCHECK ) )
+		{
+			netProp->SetUseMinimalSendTable( pRecipientPlayer->GetClientIndex(), true );
 			continue;
-
-		CServerNetworkProperty *netProp = static_cast<CServerNetworkProperty*>( pEdict->GetNetworkable() );
+		}
 
 		if ( bIsHLTV || bIsReplay )
 		{
@@ -2047,6 +2068,7 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 			{
 				pEnt->SetTransmit( pInfo, false );
 			}
+			netProp->SetUseMinimalSendTable( pRecipientPlayer->GetClientIndex(), false );
 			continue;
 		}
 
@@ -2056,6 +2078,7 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 		if ( bSameAreaAsSky )
 		{
 			pEnt->SetTransmit( pInfo, true );
+			netProp->SetUseMinimalSendTable( pRecipientPlayer->GetClientIndex(), false );
 			continue;
 		}
 
@@ -2064,8 +2087,11 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 		{
 			// only send if entity is in PVS
 			pEnt->SetTransmit( pInfo, false );
+			netProp->SetUseMinimalSendTable( pRecipientPlayer->GetClientIndex(), false );
 			continue;
 		}
+
+		netProp->SetUseMinimalSendTable( pRecipientPlayer->GetClientIndex(), true );
 
 		// If the entity is marked "check PVS" but it's in hierarchy, walk up the hierarchy looking for the
 		//  for any parent which is also in the PVS.  If none are found, then we don't need to worry about sending ourself
@@ -2077,6 +2103,8 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
         while ( check )
 		{
 			int checkIndex = check->entindex();
+
+			CServerNetworkProperty *checkNetProp = static_cast<CServerNetworkProperty*>( check->GetNetworkable() );
 
 			// Parent already being sent
 			if ( pInfo->m_pTransmitEdict->Get( checkIndex ) )
@@ -2127,6 +2155,46 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 	}
 
 //	Msg("A:%i, N:%i, F: %i, P: %i\n", always, dontSend, fullCheck, PVS );
+
+	if( pRecipientPlayer->IsConnected() )
+	{
+		// GetEntityTransmitBitsForClient returns NULL if no previous frame exists for the client
+		// This means the client just connected or is requesting a full update due packet loss
+		const CBitVec<MAX_EDICTS>* transmitBits = engine->GetEntityTransmitBitsForClient( iClientIdx );
+		if( transmitBits == NULL )
+		{
+			pRecipientPlayer->SetIsRequestingFullUpdate( true );
+
+			PrepareForFullUpdate( pInfo->m_pClientEnt );
+		}
+		else
+		{
+			if( pRecipientPlayer->IsRequestingFullUpdate() )
+			{
+				DevMsg( "Detected player %s requesting full game update.\n", pRecipientPlayer->GetPlayerName() );
+
+				pRecipientPlayer->SetIsRequestingFullUpdate( false );
+			}
+		}
+
+		INetChannel *nc = (INetChannel *)engine->GetPlayerNetInfo( pRecipientPlayer->entindex() ); 
+		if ( nc )
+		{
+			IClient *pClient = (IClient *)nc->GetMsgHandler();
+			if( pClient )
+			{
+				int iCurAckTickCount = pClient->GetMaxAckTickCount();
+				if( iCurAckTickCount - pRecipientPlayer->GetLastAckTickCount() > 100 )
+				{
+					DevMsg( "Detected player %s not receiving new frames.\n", pRecipientPlayer->GetPlayerName() );
+
+					PrepareForFullUpdate( pInfo->m_pClientEnt );
+				}
+
+				pRecipientPlayer->SetLastAckTickCount( iCurAckTickCount );
+			}
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------

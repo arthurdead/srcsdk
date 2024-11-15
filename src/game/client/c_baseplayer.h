@@ -327,7 +327,7 @@ public:
 	virtual void				ViewPunch( const QAngle &angleOffset );
 	void						ViewPunchReset( float tolerance = 0 );
 
-	virtual void						UpdateButtonState( int nUserCmdButtonMask );
+	virtual void						UpdateButtonState( uint64 nUserCmdButtonMask );
 	int							GetImpulse( void ) const;
 
 	virtual bool				Simulate();
@@ -419,8 +419,8 @@ public:
 
 	surfacedata_t *GetSurfaceData( void ) { return m_pSurfaceData; }
 
-	void	ForceButtons( int nButtons );
-	void	UnforceButtons( int nButtons );
+	void	ForceButtons( uint64 nButtons );
+	void	UnforceButtons( uint64 nButtons );
 
 	void SetLadderNormal( const Vector &vecLadderNormal ) { m_vecLadderNormal = vecLadderNormal; }
 	const Vector &GetLadderNormal( void ) const { return m_vecLadderNormal; }
@@ -495,13 +495,13 @@ public:
 	
 	char			m_szAnimExtension[32];
 
-	int				m_afButtonLast;
-	int				m_afButtonPressed;
-	int				m_afButtonReleased;
+	uint64				m_afButtonLast;
+	uint64				m_afButtonPressed;
+	uint64				m_afButtonReleased;
 
-	int				m_afButtonForced;	// These are forced onto the player's inputs
+	uint64				m_afButtonForced;	// These are forced onto the player's inputs
 
-	int				m_nButtons;
+	uint64				m_nButtons;
 
 	int						m_nOldTickBase;
 

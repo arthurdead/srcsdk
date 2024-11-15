@@ -1798,7 +1798,7 @@ void CBasePlayer::PlayerDeathThink(void)
 	IncrementInterpolationFrame();
 	SetPlaybackRate( 0.0 );
 	
-	int fAnyButtonDown = (m_nButtons & ~IN_SCORE);
+	uint64 fAnyButtonDown = (m_nButtons & ~IN_SCORE);
 	
 	// Strip out the duck key from this check if it's toggled
 	if ( (fAnyButtonDown & IN_DUCK) && GetToggledDuckState())
@@ -3409,7 +3409,7 @@ void CBasePlayer::PlayerRunCommand(CUserCmd *ucmd, IMoveHelper *moveHelper)
 //-----------------------------------------------------------------------------
 // Purpose: Strips off IN_xxx flags from the player's input
 //-----------------------------------------------------------------------------
-void CBasePlayer::DisableButtons( int nButtons )
+void CBasePlayer::DisableButtons( uint64 nButtons )
 {
 	m_afButtonDisabled |= nButtons;
 }
@@ -3417,7 +3417,7 @@ void CBasePlayer::DisableButtons( int nButtons )
 //-----------------------------------------------------------------------------
 // Purpose: Re-enables stripped IN_xxx flags to the player's input
 //-----------------------------------------------------------------------------
-void CBasePlayer::EnableButtons( int nButtons )
+void CBasePlayer::EnableButtons( uint64 nButtons )
 {
 	m_afButtonDisabled &= ~nButtons;
 }
@@ -7287,9 +7287,9 @@ public:
 	void InputSetAdditionalButtons(inputdata_t &data);
 
 private:
-	int GetDisabledButtonMask( void );
+	uint64 GetDisabledButtonMask( void );
 
-	int m_iAdditionalButtons;
+	uint64 m_iAdditionalButtons;
 
 	DECLARE_MAPENTITY();
 };
@@ -7302,13 +7302,13 @@ BEGIN_MAPENTITY( CMovementSpeedMod )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-	DEFINE_KEYFIELD( m_iAdditionalButtons, FIELD_INTEGER, "AdditionalButtons" ),
-	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetAdditionalButtons", InputSetAdditionalButtons ),
+	DEFINE_KEYFIELD( m_iAdditionalButtons, FIELD_INTEGER64, "AdditionalButtons" ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER64, "SetAdditionalButtons", InputSetAdditionalButtons ),
 END_MAPENTITY()
 	
-int CMovementSpeedMod::GetDisabledButtonMask( void )
+uint64 CMovementSpeedMod::GetDisabledButtonMask( void )
 {
-	int nMask = 0;
+	uint64 nMask = 0;
 
 	if ( HasSpawnFlags( SF_SPEED_MOD_SUPPRESS_JUMP ) )
 	{
@@ -7529,7 +7529,7 @@ void CMovementSpeedMod::InputSetAdditionalButtons(inputdata_t &data)
 		bAlreadyDisabled = (pPlayer->m_afButtonDisabled & GetDisabledButtonMask()) != 0;
 	}
 
-	m_iAdditionalButtons = data.value.Int();
+	m_iAdditionalButtons = data.value.Int64();
 
 	// If we were already disabling buttons, re-disable them
 	if ( bAlreadyDisabled )

@@ -271,6 +271,10 @@ private:
 	EHANDLE					m_hFlareEnt;
 	string_t				m_iszPuntSound;
 	bool					m_bUsePuntSound;
+
+protected:
+	CNetworkQAngle( m_qPreferredPlayerCarryAngles );
+	CNetworkVar( bool, m_bClientPhysics );
 };
 
 // Spawnflags

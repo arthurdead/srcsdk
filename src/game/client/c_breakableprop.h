@@ -46,6 +46,9 @@ public:
 
 protected:
 	QAngle m_qPreferredPlayerCarryAngles;
+
+private:
+	bool m_bClientPhysics;
 };
 
 typedef C_ClientOnlyWrapper<C_BreakableProp> C_ClientOnlyBreakableProp;

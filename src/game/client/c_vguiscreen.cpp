@@ -360,7 +360,7 @@ void C_VGuiScreen::LoseFocus()
 	m_nOldButtonState = 0;
 }
 
-void C_VGuiScreen::SetButtonState( int nButtonState )
+void C_VGuiScreen::SetButtonState( uint64 nButtonState )
 {
 	m_nButtonState = nButtonState;
 }
@@ -430,7 +430,7 @@ void ScreenToWorld( int mousex, int mousey, float fov,
 //-----------------------------------------------------------------------------
 void C_VGuiScreen::InputThink( void )
 {
-	int nButtonsChanged = m_nOldButtonState ^ m_nButtonState;
+	uint64 nButtonsChanged = m_nOldButtonState ^ m_nButtonState;
 
 	m_nOldButtonState = m_nButtonState;
 
@@ -838,7 +838,7 @@ void ActivateVguiScreen( C_BaseEntity *pVguiScreenEnt )
 	}
 }
 
-void SetVGuiScreenButtonState( C_BaseEntity *pVguiScreenEnt, int nButtonState )
+void SetVGuiScreenButtonState( C_BaseEntity *pVguiScreenEnt, uint64 nButtonState )
 {
 	if (pVguiScreenEnt)
 	{

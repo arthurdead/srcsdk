@@ -752,14 +752,14 @@ void CSharedBasePlayer::PlayStepSound( const Vector &vecOrigin, surfacedata_t *p
 	OnEmitFootstepSound( params, vecOrigin, fvol );
 }
 
-void CSharedBasePlayer::UpdateButtonState( int nUserCmdButtonMask )
+void CSharedBasePlayer::UpdateButtonState( uint64 nUserCmdButtonMask )
 {
 	// Track button info so we can detect 'pressed' and 'released' buttons next frame
 	m_afButtonLast = m_nButtons;
 
 	// Get button states
 	m_nButtons = nUserCmdButtonMask;
- 	int buttonsChanged = m_afButtonLast ^ m_nButtons;
+ 	uint64 buttonsChanged = m_afButtonLast ^ m_nButtons;
 	
 	// Debounced button codes for pressed/released
 	// UNDONE: Do we need auto-repeat?
@@ -2084,7 +2084,7 @@ bool fogparams_t::operator !=( const fogparams_t& other ) const
 //-----------------------------------------------------------------------------
 // Purpose: Strips off IN_xxx flags from the player's input
 //-----------------------------------------------------------------------------
-void CSharedBasePlayer::ForceButtons( int nButtons )
+void CSharedBasePlayer::ForceButtons( uint64 nButtons )
 {
 	m_afButtonForced |= nButtons;
 }
@@ -2092,7 +2092,7 @@ void CSharedBasePlayer::ForceButtons( int nButtons )
 //-----------------------------------------------------------------------------
 // Purpose: Re-enables stripped IN_xxx flags to the player's input
 //-----------------------------------------------------------------------------
-void CSharedBasePlayer::UnforceButtons( int nButtons )
+void CSharedBasePlayer::UnforceButtons( uint64 nButtons )
 {
 	m_afButtonForced &= ~nButtons;
 }

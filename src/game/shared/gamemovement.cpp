@@ -4579,9 +4579,9 @@ bool CSharedGameMovement::CanUnDuckJump( trace_t &trace )
 //-----------------------------------------------------------------------------
 void CSharedGameMovement::Duck( void )
 {
-	int buttonsChanged	= ( mv->m_nOldButtons ^ mv->m_nButtons );	// These buttons have changed this frame
-	int buttonsPressed	=  buttonsChanged & mv->m_nButtons;			// The changed ones still down are "pressed"
-	int buttonsReleased	=  buttonsChanged & mv->m_nOldButtons;		// The changed ones which were previously down are "released"
+	uint64 buttonsChanged	= ( mv->m_nOldButtons ^ mv->m_nButtons );	// These buttons have changed this frame
+	uint64 buttonsPressed	=  buttonsChanged & mv->m_nButtons;			// The changed ones still down are "pressed"
+	uint64 buttonsReleased	=  buttonsChanged & mv->m_nOldButtons;		// The changed ones which were previously down are "released"
 
 	// Check to see if we are in the air.
 	bool bInAir = ( player->GetGroundEntity() == NULL );

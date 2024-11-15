@@ -101,6 +101,9 @@ public:
 
 	bool TimerEventActive();
 
+	bool UseMinimalSendTable( int iClientIndex ); // Only used by proxies
+	void SetUseMinimalSendTable( int iClientIndex, bool state );
+
 private:
 	CBaseEntity *GetOuter();
 
@@ -120,9 +123,15 @@ private:
 	CEventRegister	m_TimerEvent;
 	bool m_bPendingStateChange : 1;
 
+	CEnginePlayerBitVec m_UseMinimalSendTable;
+
 //	friend class CBaseTransmitProxy;
 };
 
+inline bool CServerNetworkProperty::UseMinimalSendTable( int iClientIndex )
+{
+	return m_UseMinimalSendTable.IsBitSet( iClientIndex );
+}
 
 //-----------------------------------------------------------------------------
 // inline methods // TODOMO does inline work on virtual functions ?

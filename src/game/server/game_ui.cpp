@@ -83,9 +83,9 @@ public:
 	COutputFloat		m_attack2axis;
 
 	bool				m_bForceUpdate;
-	int					m_nLastButtonState;
+	uint64					m_nLastButtonState;
 
-	COutputInt			m_OutButtons;
+	COutputInt64			m_OutButtons;
 
 	CHandle<CBasePlayer>	m_player;
 };
@@ -337,7 +337,7 @@ void CGameUI::Think( void )
 	}
 
 	// Determine what's different
-	int nButtonsChanged = ( pPlayer->m_nButtons ^ m_nLastButtonState );
+	uint64 nButtonsChanged = ( pPlayer->m_nButtons ^ m_nLastButtonState );
 
 	//
 	// Handle all our possible input triggers

@@ -193,7 +193,7 @@ public:
 
 	// Driving
 	void	DriveVehicle( CBasePlayer *pPlayer, CUserCmd *ucmd );	// Player driving entrypoint
-	virtual void DriveVehicle( float flFrameTime, CUserCmd *ucmd, int iButtonsDown, int iButtonsReleased ); // Driving Button handling
+	virtual void DriveVehicle( float flFrameTime, CUserCmd *ucmd, uint64 iButtonsDown, uint64 iButtonsReleased ); // Driving Button handling
 
 	virtual bool IsOverturned( void );
 	virtual bool IsVehicleBodyInWater( void ) { return false; }

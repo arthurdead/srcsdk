@@ -767,6 +767,13 @@ public:
 	virtual void			CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned short *pEdictIndices, int nEdicts ) = 0;
 };
 
+abstract_class IServerGameEntsEx : public IServerGameEnts
+{
+public:
+	// TERROR: Perform any PVS cleanup before a full update
+	virtual void			PrepareForFullUpdate( edict_t *pEdict ) = 0;
+};
+
 #define INTERFACEVERSION_SERVERGAMECLIENTS				"ServerGameClients004"
 
 //-----------------------------------------------------------------------------

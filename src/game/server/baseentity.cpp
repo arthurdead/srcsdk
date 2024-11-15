@@ -457,6 +457,14 @@ void CBaseEntity::SendProxy_AnglesZ( const SendProp *pProp, const void *pStruct,
 	pOut->m_Float = anglemod( a->z );
 }
 
+// Table used when out of "PVS". This table is send when DT_FullTable is not send!
+BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_MinimalTable )
+END_SEND_TABLE()
+
+// Table used when the unit is in "PVS". This table is send when DT_MinimalTable is not send!
+BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_FullTable )
+END_SEND_TABLE()
+
 // This table encodes the CBaseEntity data.
 IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropDataTable( "AnimTimeMustBeFirst", 0, &REFERENCE_SEND_TABLE(DT_AnimTimeMustBeFirst), SendProxy_ClientSideAnimation ),
@@ -529,10 +537,16 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropInt( SENDINFO(m_nMinGPULevel),				GPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nMaxGPULevel),				GPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
 
+	// Data that gets sent when unit is outside the pvs (and no other table is send)
+	SendPropDataTable( "minimaldata", 0, &REFERENCE_SEND_TABLE(DT_MinimalTable), SendProxy_SendMinimalDataTable ),
+	// Data that gets sent when unit is inside the pvs
+	SendPropDataTable( "fulldata", 0, &REFERENCE_SEND_TABLE(DT_FullTable), SendProxy_SendFullDataTable ),
+
 END_SEND_TABLE()
 
 IMPLEMENT_SERVERCLASS_ST( CPointEntity, DT_PointEntity )
-	SendPropExclude( SENDEXLCUDE(DT_BaseEntity, m_pCollision) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, AnimTimeMustBeFirst ) ),
+	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_pCollision ) ),
 	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_CollisionGroup ) ),
 	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_fadeMinDist ) ),
 	SendPropExclude( SENDEXLCUDE( DT_BaseEntity, m_fadeMaxDist ) ),
@@ -653,6 +667,8 @@ CBaseEntity::CBaseEntity( uint64 iEFlags )
 		IMPLEMENT_NETWORKVAR_CHAIN( m_pCollision )
 
 		CollisionProp()->Init( this );
+
+		DensityMap()->Init( this );
 	}
 
 #ifdef _DEBUG
@@ -3861,13 +3877,10 @@ int CBaseEntity::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 //		return FL_EDICT_ALWAYS;
 //	}
 
-	CBaseEntity *pRecipientEntity = CBaseEntity::Instance( pInfo->m_pClientEnt );
+	CBasePlayer *pRecipientPlayer = assert_cast<CBasePlayer *>( CBaseEntity::Instance( pInfo->m_pClientEnt ) );
 
-	Assert( pRecipientEntity->IsPlayer() );
+	Assert( pRecipientPlayer );
 	
-	CBasePlayer *pRecipientPlayer = static_cast<CBasePlayer*>( pRecipientEntity );
-
-
 	// FIXME: Refactor once notion of "team" is moved into HL2 code
 	// Team rules may tell us that we should
 	if ( pRecipientPlayer->GetTeam() ) 

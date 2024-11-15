@@ -615,6 +615,7 @@ public:
 	BITBUF_INLINE int	ReadWord() { return ReadUBitLong(16); }
 	BITBUF_INLINE long ReadLong() { return ReadUBitLong(32); }
 	int64			ReadLongLong();
+	uint64			ReadULongLong();
 	float			ReadFloat();
 	bool			ReadBytes(void *pOut, int nBytes);
 

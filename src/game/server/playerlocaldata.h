@@ -55,7 +55,7 @@ public:
 	// Velocity at time when we hit ground
 	CNetworkVar( float, m_flFallVelocity );
 	// Previous button state
-	int m_nOldButtons;
+	uint64 m_nOldButtons;
 	class CSkyCamera *m_pOldSkyCamera;
 	// Base velocity that was passed in to server physics so 
 	//  client can predict conveyors correctly.  Server zeroes it, so we need to store here, too.

@@ -44,7 +44,7 @@ public:
 	virtual	void		Init_All( void ) = 0;
 	virtual void		Shutdown_All( void ) = 0;
 	// Latching button states
-	virtual int			GetButtonBits( bool bResetState ) = 0;
+	virtual uint64			GetButtonBits( bool bResetState ) = 0;
 	// Create movement command
 	virtual void		CreateMove ( int sequence_number, float input_sample_frametime, bool active ) = 0;
 	virtual void		ExtraMouseSample( float frametime, bool active ) = 0;
@@ -113,7 +113,7 @@ public:
 	virtual void		LevelInit( void ) = 0;
 
 	// Causes an input to have to be re-pressed to become active
-	virtual void		ClearInputButton( int bits ) = 0;
+	virtual void		ClearInputButton( uint64 bits ) = 0;
 
 	virtual	void		CAM_SetCameraThirdData( CameraThirdData_t *pCameraData, const QAngle &vecCameraOffset ) = 0;
 	virtual void		CAM_CameraThirdThink( void ) = 0;

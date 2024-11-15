@@ -417,12 +417,12 @@ public:
 	void					ShowViewModel( bool bShow );
 	void					ShowCrosshair( bool bShow );
 
-	int						GetButtons() { return m_nButtons; }
-	int						GetButtonPressed() { return m_afButtonPressed; }
-	int						GetButtonReleased() { return m_afButtonReleased; }
-	int						GetButtonLast() { return m_afButtonLast; }
-	int						GetButtonDisabled() { return m_afButtonDisabled; }
-	int						GetButtonForced() { return m_afButtonForced; }
+	uint64						GetButtons() { return m_nButtons; }
+	uint64						GetButtonPressed() { return m_afButtonPressed; }
+	uint64						GetButtonReleased() { return m_afButtonReleased; }
+	uint64						GetButtonLast() { return m_afButtonLast; }
+	uint64						GetButtonDisabled() { return m_afButtonDisabled; }
+	uint64						GetButtonForced() { return m_afButtonForced; }
 
 	// View model prediction setup
 	void					CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, float &zFar, float &fov );
@@ -640,6 +640,12 @@ public:
 	CUserCmd *				GetCurrentCommand( void )	{ return m_pCurrentCommand; }
 	float					GetTimeSinceLastUserCommand( void ) { return ( !IsConnected() || IsFakeClient() || IsBot() ) ? 0.f : gpGlobals->curtime - m_flLastUserCommandTime; }
 
+	// AckTickCount
+	void					SetLastAckTickCount( int iAckTickCount ) { m_iLastAckTickCount = iAckTickCount; }
+	int						GetLastAckTickCount( void ) { return m_iLastAckTickCount; }
+	void					SetIsRequestingFullUpdate( bool bRequestingFullUpdate ) { m_bRequestingFullUpdate = bRequestingFullUpdate; }
+	bool					IsRequestingFullUpdate( void ) { return m_bRequestingFullUpdate; }
+
 	// Team Handling
 	virtual void			ChangeTeam( Team_t iTeamNum ) { ChangeTeam(iTeamNum,false, false); }
 	virtual void			ChangeTeam( Team_t iTeamNum, bool bAutoTeam, bool bSilent );
@@ -821,10 +827,10 @@ public:
 	void	NotePlayerTalked() { m_fLastPlayerTalkTime = gpGlobals->curtime; }
 	float	LastTimePlayerTalked() { return m_fLastPlayerTalkTime; }
 
-	void	DisableButtons( int nButtons );
-	void	EnableButtons( int nButtons );
-	void	ForceButtons( int nButtons );
-	void	UnforceButtons( int nButtons );
+	void	DisableButtons( uint64 nButtons );
+	void	EnableButtons( uint64 nButtons );
+	void	ForceButtons( uint64 nButtons );
+	void	UnforceButtons( uint64 nButtons );
 
 	//---------------------------------
 	// Inputs
@@ -938,12 +944,12 @@ public:
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_vecVelocity );
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_nWaterLevel );
 	
-	int						m_nButtons;
-	int						m_afButtonPressed;
-	int						m_afButtonReleased;
-	int						m_afButtonLast;
-	int						m_afButtonDisabled;	// A mask of input flags that are cleared automatically
-	int						m_afButtonForced;	// These are forced onto the player's inputs
+	uint64						m_nButtons;
+	uint64						m_afButtonPressed;
+	uint64						m_afButtonReleased;
+	uint64						m_afButtonLast;
+	uint64						m_afButtonDisabled;	// A mask of input flags that are cleared automatically
+	uint64						m_afButtonForced;	// These are forced onto the player's inputs
 
 	CNetworkVar( bool, m_fOnTarget );		//Is the crosshair on a target?
 
@@ -1001,7 +1007,7 @@ protected:
 
 	int						m_iVehicleAnalogBias;
 
-	void					UpdateButtonState( int nUserCmdButtonMask );
+	void					UpdateButtonState( uint64 nUserCmdButtonMask );
 
 	bool	m_bPauseBonusProgress;
 	CNetworkVar( int, m_iBonusProgress );
@@ -1118,6 +1124,10 @@ private:
 
 	// Multiplayer handling
 	PlayerConnectedState	m_iConnected;
+
+	// Acknowledge tick
+	int m_iLastAckTickCount;
+	bool m_bRequestingFullUpdate;
 
 	// from edict_t
 	// CBasePlayer doesn't send this but CCSPlayer does.

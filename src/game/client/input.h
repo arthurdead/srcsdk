@@ -51,7 +51,7 @@ public:
 
 	virtual		void		Init_All( void );
 	virtual		void		Shutdown_All( void );
-	virtual		int			GetButtonBits( bool bResetState );
+	virtual		uint64			GetButtonBits( bool bResetState );
 	virtual		void		CreateMove ( int sequence_number, float input_sample_frametime, bool active );
 	virtual		void		ExtraMouseSample( float frametime, bool active );
 	virtual		bool		WriteUsercmdDeltaToBuffer( bf_write *buf, int from, int to, bool isnewcommand );
@@ -88,7 +88,7 @@ public:
 	virtual		float		Joystick_GetSide( void );
 	virtual		float		Joystick_GetPitch( void );
 	virtual		float		Joystick_GetYaw( void );
-	virtual		void		ClearInputButton( int bits );
+	virtual		void		ClearInputButton( uint64 bits );
 
 	virtual		void		CAM_Think( void );
 
@@ -258,7 +258,7 @@ private:
 	float m_flPreviousJoystickPitch;
 	float m_flPreviousJoystickYaw;
 
-	int			m_nClearInputState;
+	uint64			m_nClearInputState;
 				
 	CUserCmd	*m_pCommands;
 	CVerifiedUserCmd *m_pVerifiedCommands;

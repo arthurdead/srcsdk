@@ -1347,7 +1347,7 @@ CUserCmd *CInput::GetUserCmd( int sequence_number )
 //			reset - 
 // Output : static void
 //-----------------------------------------------------------------------------
-static void CalcButtonBits( int& bits, int in_button, int in_ignore, kbutton_t *button, bool reset )
+static void CalcButtonBits( uint64& bits, uint64 in_button, uint64 in_ignore, kbutton_t *button, bool reset )
 {
 	// Down or still down?
 	if ( button->state & 3 )
@@ -1378,9 +1378,9 @@ Returns appropriate button info for keyboard and mouse state
 Set bResetState to 1 to clear old state info
 ============
 */
-int CInput::GetButtonBits( bool bResetState )
+uint64 CInput::GetButtonBits( bool bResetState )
 {
-	int bits = 0;
+	uint64 bits = 0;
 
 	CalcButtonBits( bits, IN_SPEED, m_nClearInputState, &in_speed, bResetState );
 	CalcButtonBits( bits, IN_WALK, m_nClearInputState, &in_walk, bResetState );
@@ -1441,7 +1441,7 @@ int CInput::GetButtonBits( bool bResetState )
 //-----------------------------------------------------------------------------
 // Causes an input to have to be re-pressed to become active
 //-----------------------------------------------------------------------------
-void CInput::ClearInputButton( int bits )
+void CInput::ClearInputButton( uint64 bits )
 {
 	m_nClearInputState |= bits;
 }

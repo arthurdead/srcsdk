@@ -1423,6 +1423,20 @@ int64 bf_read::ReadLongLong()
 	return retval;
 }
 
+uint64 bf_read::ReadULongLong()
+{
+	uint64 retval;
+	uint *pLongs = (uint*)&retval;
+
+	// Read the two DWORDs according to network endian
+	const short endianIndex = 0x0100;
+	byte *idx = (byte*)&endianIndex;
+	pLongs[*idx++] = ReadUBitLong(sizeof(long) << 3);
+	pLongs[*idx] = ReadUBitLong(sizeof(long) << 3);
+
+	return retval;
+}
+
 float bf_read::ReadFloat()
 {
 	float ret;

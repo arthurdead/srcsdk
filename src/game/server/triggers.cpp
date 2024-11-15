@@ -3212,7 +3212,7 @@ void CTriggerCamera::Move()
 
 			if ( pPlayer  )
 			{
-				int buttonsChanged = m_nPlayerButtons ^ pPlayer->m_nButtons;
+				uint64 buttonsChanged = m_nPlayerButtons ^ pPlayer->m_nButtons;
 
 				if ( buttonsChanged && pPlayer->m_nButtons )
 				{
