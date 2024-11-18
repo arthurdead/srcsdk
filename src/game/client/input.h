@@ -127,6 +127,8 @@ public:
 
 // Private Implementation
 protected:
+	virtual void CalcModButtonBits(uint64 &bits, bool bResetState);
+
 	// Implementation specific initialization
 	virtual void		Init_Camera( void );
 	void		Init_Keyboard( void );
@@ -289,6 +291,21 @@ extern class ConVar joy_autosprint;
 extern void KeyDown( kbutton_t *b, const char *c );
 extern void KeyUp( kbutton_t *b, const char *c );
 
+extern void CalcButtonBits( uint64& bits, uint64 in_button, uint64 in_ignore, kbutton_t *button, bool reset );
+
+//TODO!!! better name?
+#define DECLARE_KEY_PRESS_COMMAND(name) \
+	DECLARE_KEY_PRESS_COMMAND_NAMED(name, name)
+#define DECLARE_KEY_PRESS_COMMAND_NAMED(name, cmd) \
+	static kbutton_t in_##name; \
+	static void IN_##name##Down( const CCommand &args ) \
+	{ KeyDown( &in_##name, args[1] ); } \
+	static void IN_##name##Up( const CCommand &args ) \
+	{ KeyUp( &in_##name, args[1] ); } \
+	static ConCommand start##name("+" #cmd, IN_##name##Down); \
+	static ConCommand end##name("-" #cmd, IN_##name##Up);
+
+#define CALC_KEY_PRESS(name) \
+	CalcButtonBits( bits, IN_##name, m_nClearInputState, &in_##name, bResetState );
 
 #endif // INPUT_H
-	

@@ -25,10 +25,14 @@ public:
 
 	void EquipMask();
 
+	float CalcRoll(const QAngle& angles, const Vector& velocity, float rollangle, float rollspeed) override;
+	void CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov ) override;
+
 private:
 	C_HeistPlayer(const C_HeistPlayer &);
 
 	bool m_bMaskingUp;
+	float m_flLeaning;
 };
 
 inline C_HeistPlayer *ToHeistPlayer(C_BaseEntity *pEntity)

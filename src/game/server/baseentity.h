@@ -26,7 +26,7 @@
 #include "irecipientfilter.h"
 #include "map_entity.h"
 #include "vphysics_interface.h"
-#include "density_weight_map.h"
+//#include "density_weight_map.h"
 
 class CDamageModifier;
 class CDmgAccumulator;
@@ -97,6 +97,7 @@ class CWorld;
 typedef unsigned int UtlHashHandle_t;
 class CGlobalEvent;
 class CCollisionProperty;
+class DensityWeightsMap;
 
 typedef CUtlVector< CBaseEntity* > EntityList_t;
 
@@ -2678,11 +2679,6 @@ inline const CCollisionProperty *CBaseEntity::CollisionProp() const
 inline DensityWeightsMap *CBaseEntity::DensityMap()
 {
 	return m_pDensityMap;
-}
-
-inline void CBaseEntity::SetDensityMapType( int iType )
-{
-	DensityMap()->SetType( iType );
 }
 
 inline CBaseEntity *CBaseEntity::GetBaseEntity()

@@ -22,6 +22,9 @@ public:
 
 	void Weapon_FrameUpdate() override;
 
+	void PreThink() override;
+	void PostThink() override;
+
 	void SelectItem( CBaseCombatWeapon *pWeapon ) override;
 	bool Weapon_ShouldSelectItem( CBaseCombatWeapon *pWeapon ) override;
 
@@ -29,6 +32,7 @@ public:
 
 private:
 	CNetworkVar(bool, m_bMaskingUp);
+	CNetworkVar(float, m_flLeaning);
 };
 
 inline CHeistPlayer *ToHeistPlayer(CBaseEntity *pEntity)

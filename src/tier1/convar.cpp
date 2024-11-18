@@ -203,6 +203,13 @@ void ConCommandBase::CreateBase( const char *pName, const char *pHelpString /*= 
 	}
 }
 
+void ConCommandLower::CreateBase( const char *pName, const char *pHelpString, int flags )
+{
+	V_strncpy(m_szNameLower, pName, sizeof(m_szNameLower));
+	V_strlower(m_szNameLower);
+
+	ConCommand::CreateBase(m_szNameLower, pHelpString, flags);
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Used internally by OneTimeInit to initialize.
@@ -643,6 +650,45 @@ ConCommandLinked::ConCommandLinked( const char *pName, FnCommandCallback_t callb
 }
 
 ConCommandLinked::ConCommandLinked( const char *pName, ICommandCallback *pCallback, const char *pHelpString /*= 0*/, int flags /*= 0*/, ICommandCompletionCallback *pCompletionCallback /*= 0*/ )
+{
+	// Set the callback
+	m_pCommandCallback = pCallback;
+	m_bUsingNewCommandCallback = false;
+	m_pCommandCompletionCallback = pCompletionCallback;
+	m_bHasCompletionCallback = ( pCompletionCallback != 0 );
+	m_bUsingCommandCallbackInterface = true;
+
+	// Setup the rest
+	CreateBase( pName, pHelpString, flags );
+}
+
+ConCommandLower::ConCommandLower( const char *pName, FnCommandCallbackVoid_t callback, const char *pHelpString /*= 0*/, int flags /*= 0*/, FnCommandCompletionCallback completionFunc /*= 0*/ )
+{
+	// Set the callback
+	m_fnCommandCallbackV1 = callback;
+	m_bUsingNewCommandCallback = false;
+	m_bUsingCommandCallbackInterface = false;
+	m_fnCompletionCallback = completionFunc ? completionFunc : DefaultCompletionFunc;
+	m_bHasCompletionCallback = completionFunc != 0 ? true : false;
+
+	// Setup the rest
+	CreateBase( pName, pHelpString, flags );
+}
+
+ConCommandLower::ConCommandLower( const char *pName, FnCommandCallback_t callback, const char *pHelpString /*= 0*/, int flags /*= 0*/, FnCommandCompletionCallback completionFunc /*= 0*/ )
+{
+	// Set the callback
+	m_fnCommandCallback = callback;
+	m_bUsingNewCommandCallback = true;
+	m_fnCompletionCallback = completionFunc ? completionFunc : DefaultCompletionFunc;
+	m_bHasCompletionCallback = completionFunc != 0 ? true : false;
+	m_bUsingCommandCallbackInterface = false;
+
+	// Setup the rest
+	CreateBase( pName, pHelpString, flags );
+}
+
+ConCommandLower::ConCommandLower( const char *pName, ICommandCallback *pCallback, const char *pHelpString /*= 0*/, int flags /*= 0*/, ICommandCompletionCallback *pCompletionCallback /*= 0*/ )
 {
 	// Set the callback
 	m_pCommandCallback = pCallback;

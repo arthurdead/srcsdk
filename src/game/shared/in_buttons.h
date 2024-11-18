@@ -41,7 +41,12 @@ enum : uint64
 	IN_ATTACK3 = (1 << 25),
 	IN_LOOKSPIN = (1 << 26),
 
+	//TODO!!! remove this garbage
 	IN_VALIDVGUIINPUT = (1 << 27), //bitflag for vgui fix
+
+	//ALWAYS KEEP THESE UPDATED
+	IN_LAST_SHARED_BUTTON_BIT = 27,
+	IN_LAST_SHARED_BUTTON = (1 << IN_LAST_SHARED_BUTTON_BIT),
 };
 
 #endif // IN_BUTTONS_H

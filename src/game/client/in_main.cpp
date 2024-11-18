@@ -1347,7 +1347,7 @@ CUserCmd *CInput::GetUserCmd( int sequence_number )
 //			reset - 
 // Output : static void
 //-----------------------------------------------------------------------------
-static void CalcButtonBits( uint64& bits, uint64 in_button, uint64 in_ignore, kbutton_t *button, bool reset )
+void CalcButtonBits( uint64& bits, uint64 in_button, uint64 in_ignore, kbutton_t *button, bool reset )
 {
 	// Down or still down?
 	if ( button->state & 3 )
@@ -1404,6 +1404,8 @@ uint64 CInput::GetButtonBits( bool bResetState )
 	CalcButtonBits( bits, IN_GRENADE2, m_nClearInputState, &in_grenade2, bResetState );
 	CalcButtonBits( bits, IN_ATTACK3, m_nClearInputState, &in_attack3, bResetState );
 	CalcButtonBits( bits, IN_LOOKSPIN, m_nClearInputState, &in_lookspin, bResetState );
+
+	CalcModButtonBits(bits, bResetState);
 
 	if ( KeyState(&in_ducktoggle) )
 	{

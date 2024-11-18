@@ -32,6 +32,7 @@ if build_client
 			join_paths(client_game_hud_src_dir,'hud_suspicion.cpp'),
 			join_paths(client_game_npcs_src_dir,'c_npc_humanoidbase.cpp'),
 			join_paths(client_game_src_dir,'heist_clientmode.cpp'),
+			join_paths(client_game_src_dir,'in_heist.cpp'),
 		),
 		include_directories: include_directories(
 			client_game_src_dir,

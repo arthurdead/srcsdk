@@ -38,6 +38,7 @@
 #include "rope.h"
 #include "lightcache.h"
 #include "collisionproperty.h"
+#include "density_weight_map.h"
 
 #ifdef PORTAL
 	#include "portal_util_shared.h"

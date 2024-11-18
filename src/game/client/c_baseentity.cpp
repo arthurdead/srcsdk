@@ -630,6 +630,12 @@ void RecvProxy_FadeScale( const CRecvProxyData *pData, void *pStruct, void *pOut
 	pEnt->SetGlobalFadeScale( pData->m_Value.m_Float );
 }
 
+BEGIN_RECV_TABLE_NOBASE( C_BaseEntity, DT_MinimalTable )
+END_RECV_TABLE()
+
+BEGIN_RECV_TABLE_NOBASE( C_BaseEntity, DT_FullTable )
+END_RECV_TABLE()
+
 BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropDataTable( "AnimTimeMustBeFirst", 0, 0, &REFERENCE_RECV_TABLE(DT_AnimTimeMustBeFirst) ),
 	RecvPropInt( RECVINFO(m_flSimulationTime), 0, RecvProxy_SimulationTime ),
@@ -699,6 +705,9 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropFloat( RECVINFO( m_fViewDistance ) ),
 
 	RecvPropArray2( RecvProxyArrayLength_ModelIndexesOverrides,	RecvPropInt( RECVINFO_ARRAYELEM(m_nModelIndexOverrides, 0) ), NUM_SHARED_VISION_FILTERS, sizeof(int), m_nModelIndexOverrides ),
+
+	RecvPropDataTable( "minimaldata", 0, 0, &REFERENCE_RECV_TABLE(DT_MinimalTable) ),
+	RecvPropDataTable( "fulldata", 0, 0, &REFERENCE_RECV_TABLE(DT_FullTable) ),
 
 END_RECV_TABLE()
 

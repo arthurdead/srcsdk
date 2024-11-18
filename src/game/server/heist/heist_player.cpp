@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "heist_player.h"
 #include "heist_director.h"
+#include "in_buttons_heist.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -15,6 +16,8 @@ BEGIN_SEND_TABLE_NOBASE(CHeistPlayer, DT_HeistNonLocalPlayerExclusive)
 END_SEND_TABLE()
 
 IMPLEMENT_SERVERCLASS_ST(CHeistPlayer, DT_Heist_Player)
+	SendPropFloat(SENDINFO(m_flLeaning), 6, 0, -1.0f, 1.0f),
+
 	SendPropDataTable("heistlocaldata", 0, &REFERENCE_SEND_TABLE(DT_HeistLocalPlayerExclusive), SendProxy_SendLocalDataTable),
 	SendPropDataTable("heistnonlocaldata", 0, &REFERENCE_SEND_TABLE(DT_HeistNonLocalPlayerExclusive), SendProxy_SendNonLocalDataTable),
 END_SEND_TABLE()
@@ -70,4 +73,28 @@ void CHeistPlayer::Spawn()
 Class_T CHeistPlayer::Classify()
 {
 	return MissionDirector()->IsMissionLoud() ? CLASS_HEISTER : CLASS_CIVILIAN;
+}
+
+ConVar sv_heist_lean_speed("sv_heist_lean_speed", "0.2");
+
+void CHeistPlayer::PreThink()
+{
+	BaseClass::PreThink();
+
+	const float lean_speed = sv_heist_lean_speed.GetFloat();
+
+	if(m_nButtons & IN_LEAN_LEFT) {
+		m_flLeaning = Approach(-1.0f, m_flLeaning, lean_speed);
+	} else if(m_nButtons & IN_LEAN_RIGHT) {
+		m_flLeaning = Approach(1.0f, m_flLeaning, lean_speed);
+	} else {
+		m_flLeaning = Approach(0.0f, m_flLeaning, lean_speed);
+	}
+}
+
+void CHeistPlayer::PostThink()
+{
+	BaseClass::PostThink();
+
+
 }

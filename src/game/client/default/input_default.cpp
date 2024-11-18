@@ -6,3 +6,7 @@
 
 static CInput g_Input;
 IInput *input = ( IInput * )&g_Input;
+
+void CInput::CalcModButtonBits(uint64 &bits, bool bResetState)
+{
+}

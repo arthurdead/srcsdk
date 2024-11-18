@@ -11,6 +11,7 @@
 #include "utlvector.h"
 #include "tier0/threadtools.h"
 #include "tier0/tslist.h"
+#include "density_weight_map.h"
 
 #ifdef CLIENT_DLL
 

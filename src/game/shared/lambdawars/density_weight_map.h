@@ -11,6 +11,13 @@
 
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
+#include "networkvar.h"
+
+#ifdef GAME_DLL
+#include "baseentity.h"
+#else
+#include "c_baseentity.h"
+#endif
 
 #ifdef GAME_DLL
 class CBaseEntity;
@@ -30,8 +37,11 @@ enum density_type_t
 class DensityWeightsMap
 {
 public:
+	DECLARE_CLASS_NOBASE( DensityWeightsMap );
 	DensityWeightsMap();
 	~DensityWeightsMap();
+
+	DECLARE_NETWORKVAR_CHAIN();
 
 	void Init( CSharedBaseEntity *pOuter );
 	void Destroy();

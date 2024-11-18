@@ -67,6 +67,7 @@
 #include "tier1/mapbase_matchers_base.h"
 #include "mapbase/datadesc_mod.h"
 #include "collisionproperty.h"
+#include "density_weight_map.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -663,11 +664,11 @@ CBaseEntity::CBaseEntity( uint64 iEFlags )
 	if( !IsEFlagSet( EFL_NOT_COLLIDEABLE ) )
 	{
 		m_pCollision = new CCollisionProperty;
-
 		IMPLEMENT_NETWORKVAR_CHAIN( m_pCollision )
-
 		CollisionProp()->Init( this );
 
+		m_pDensityMap = new DensityWeightsMap;
+		IMPLEMENT_NETWORKVAR_CHAIN( m_pDensityMap )
 		DensityMap()->Init( this );
 	}
 
@@ -761,6 +762,11 @@ CBaseEntity::CBaseEntity( uint64 iEFlags )
 	m_pEvent = NULL;
 
 	m_NavObstacleRef = NAV_OBSTACLE_INVALID_INDEX;
+}
+
+void CBaseEntity::SetDensityMapType( int iType )
+{
+	DensityMap()->SetType( iType );
 }
 
 //-----------------------------------------------------------------------------

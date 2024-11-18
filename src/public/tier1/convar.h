@@ -314,6 +314,27 @@ protected:
 	bool m_bUsingCommandCallbackInterface : 1;
 };
 
+class ConCommandLower : public ConCommand
+{
+public:
+	ConCommandLower( void ) = delete;
+	ConCommandLower( const char *pName, const char *pHelpString = 0, 
+		int flags = 0 ) = delete;
+
+	ConCommandLower( const char *pName, FnCommandCallbackVoid_t callback, 
+		const char *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 );
+	ConCommandLower( const char *pName, FnCommandCallback_t callback, 
+		const char *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 );
+	ConCommandLower( const char *pName, ICommandCallback *pCallback, 
+		const char *pHelpString = 0, int flags = 0, ICommandCompletionCallback *pCommandCompletionCallback = 0 );
+
+	virtual void				CreateBase( const char *pName, const char *pHelpString = 0, 
+									int flags = 0 );
+
+private:
+	char m_szNameLower[64];
+};
+
 class ConCommandLinked : public ConCommand
 {
 public:
