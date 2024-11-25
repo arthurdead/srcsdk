@@ -21,7 +21,7 @@ server_dedicated_base_dep = declare_dependency(
 		'-DSWDS'
 	],
 	sources: files(
-		join_paths(shared_src_dir,'debugoverlay_null.cpp'),
+		
 	),
 	dependencies: [
 		hackmgr.get_variable('hackmgr_ds_dep'),

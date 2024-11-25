@@ -127,14 +127,14 @@ static bool WriteUserCmdDeltaInt( bf_write *buf, char *what, int from, int to, i
 	return false;
 }
 
-static bool WriteUserCmdDeltaLongLong( bf_write *buf, char *what, int from, int to )
+static bool WriteUserCmdDeltaULongLong( bf_write *buf, char *what, uint64 from, uint64 to )
 {
 	if ( from != to )
 	{
-		LogUserCmd( "\t%s %d -> %d\n", what, from, to );
+		LogUserCmd( "\t%s %lli -> %lli\n", what, from, to );
 
 		buf->WriteOneBit( 1 );
-		buf->WriteLongLong( to );
+		buf->WriteULongLong( to );
 		return true;
 	}
 
@@ -238,7 +238,7 @@ void WriteUsercmd( bf_write *buf, const CUserCmd *to, const CUserCmd *from )
 	WriteUserCmdDeltaFloat( buf, "forwardmove", from->forwardmove, to->forwardmove );
 	WriteUserCmdDeltaFloat( buf, "sidemove", from->sidemove, to->sidemove );
 	WriteUserCmdDeltaFloat( buf, "upmove", from->upmove, to->upmove );
-	WriteUserCmdDeltaLongLong( buf, "buttons", from->buttons, to->buttons );
+	WriteUserCmdDeltaULongLong( buf, "buttons", from->buttons, to->buttons );
 	WriteUserCmdDeltaInt( buf, "impulse", from->impulse, to->impulse, 8 );
 
 

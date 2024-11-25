@@ -15,7 +15,9 @@
 #include "recast/recast_mesh.h"
 
 struct AIMoveTrace_t;
+#ifndef SWDS
 struct OverlayLine_t;
+#endif
 struct AI_Waypoint_t;
 class CAI_Pathfinder;
 class CAI_Navigator;
@@ -97,8 +99,10 @@ public:
 						float flDistToBlocker, CBaseEntity const *pTargetEnt, Vector *pApex );
 						
 	// --------------------------------
-	
+
+#if !defined SWDS || 1
 	void DrawDebugGeometryOverlays( int m_debugOverlays );
+#endif
 
 protected:
 	virtual bool	CanUseLocalNavigation() { return true; }
@@ -148,6 +152,7 @@ private:
 	// --------------------------------
 	// Debugging fields and functions
 
+#ifndef SWDS
 	class CTriDebugOverlay
 	{
 	public:
@@ -167,6 +172,7 @@ private:
 	};
 
 	CTriDebugOverlay m_TriDebugOverlay;
+#endif
 };
 
 //-----------------------------------------------------------------------------

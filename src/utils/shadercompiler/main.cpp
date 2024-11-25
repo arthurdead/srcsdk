@@ -2,10 +2,6 @@
 	#error
 #endif
 
-#ifdef __x86_64__
-	#error
-#endif
-
 #include <vector>
 #include <string>
 #include <filesystem>
@@ -19,6 +15,7 @@
 #include <algorithm>
 #include <array>
 #include <utility>
+#include <functional>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -116,6 +113,141 @@ struct equal_shader_pass
 
 using shader_passes_t = std::unordered_set<shader_pass, hash_shader_pass, equal_shader_pass>;
 
+enum class skip_operator : unsigned char
+{
+	equal,
+	not_equal,
+
+	bitwise_not,
+	logical_not,
+
+	bitwise_and,
+	logical_and,
+
+	bitwise_or,
+	logical_or,
+
+	xor_,
+
+	lesser,
+	lesser_equal,
+
+	greater,
+	greater_equal,
+
+	plus,
+	minus,
+	divide,
+	multiply,
+	modulo,
+
+	shift_left,
+	shift_right,
+};
+
+enum skip_token_type : unsigned char
+{
+	null,
+	identifier,
+	integer,
+	operator_,
+	expression,
+};
+
+struct skip_token
+{
+	skip_token()
+		: type(skip_token_type::null)
+	{
+	}
+
+	~skip_token()
+	{
+		if(type == skip_token_type::identifier) {
+			id.~basic_string();
+		} else if(type == skip_token_type::expression) {
+			toks.~vector();
+		}
+	}
+
+	skip_token(skip_token &&other)
+		: type(other.type)
+	{
+		if(other.type == skip_token_type::identifier) {
+			new (&id) std::string(std::move(other.id));
+		} else if(other.type == skip_token_type::expression) {
+			new (&toks) std::vector<skip_token>(std::move(other.toks));
+		} else {
+			val = other.val;
+		}
+
+		other.type = skip_token_type::null;
+	}
+
+	skip_token &operator=(skip_token &&other)
+	{
+		if(other.type == skip_token_type::identifier) {
+			if(type == skip_token_type::identifier) {
+				id = std::move(other.id);
+			} else {
+				if(type == skip_token_type::expression) {
+					toks.~vector();
+				}
+
+				new (&id) std::string(std::move(other.id));
+			}
+		} else if(other.type == skip_token_type::expression) {
+			if(type == skip_token_type::expression) {
+				toks = std::move(other.toks);
+			} else {
+				if(type == skip_token_type::identifier) {
+					id.~basic_string();
+				}
+
+				new (&toks) std::vector<skip_token>(std::move(other.toks));
+			}
+		} else {
+			val = other.val;
+		}
+
+		type = other.type;
+		other.type = skip_token_type::null;
+
+		return *this;
+	}
+
+	skip_token(const skip_token &) = delete;
+	skip_token &operator=(const skip_token &) = delete;
+
+	skip_token(std::string &&id_)
+		: type(skip_token_type::identifier), id(std::move(id_))
+	{
+	}
+
+	skip_token(ssize_t num_)
+		: type(skip_token_type::integer), val(num_)
+	{
+	}
+
+	skip_token(skip_operator op_)
+		: type(skip_token_type::operator_), op(op_)
+	{
+	}
+
+	skip_token(std::vector<skip_token> &&toks_)
+		: type(skip_token_type::expression), toks(std::move(toks_))
+	{
+	}
+
+	skip_token_type type;
+	union {
+		std::string id;
+		ssize_t val;
+		skip_operator op;
+		std::vector<skip_token> toks;
+	};
+};
+
 struct shader_source : path_pair
 {
 	shader_model model;
@@ -126,25 +258,35 @@ struct shader_source : path_pair
 	shader_passes_t passes;
 };
 
-static void compile_shader(const shader_source &info, size_t combo_hash, const std::pair<char *, size_t> *extra_defines, std::size_t num_extra_defines);
+static char *compile_shader(const shader_source &info, size_t combo_hash, const std::pair<char *, size_t> *extra_defines, std::size_t num_extra_defines);
 
 #define DEBUGBREAK __asm__ __volatile__ ("int $3");
 
-struct passes_totals
+struct pass_bytecode
 {
-	size_t overall;
-	size_t dynamic;
-	size_t static_;
+	char *bytecode;
+	shader_pass_type type;
+};
+
+struct shader_combo
+{
+	size_t total_overall;
+	size_t total_dynamic;
+	size_t total_static;
+	std::vector<pass_bytecode> bytecodes;
 };
 
 #include "do_passes.h"
 
-static passes_totals do_all_passes(const shader_source &info)
+static shader_combo do_all_passes(const shader_source &info)
 {
 	return do_passes(info.passes.size(), info.passes.cbegin(), info.passes,
 		[&info = std::as_const(info)]
-		(size_t num_passes, size_t combo_hash, size_t combo_index, const auto &its, const auto &values, const auto &defines) -> void {
-			compile_shader(info, combo_hash, defines.data(), std::size(defines));
+		(shader_combo &combo, size_t combo_hash, shader_pass_type type, const auto &defines) -> void {
+			pass_bytecode bytecode;
+			bytecode.bytecode = compile_shader(info, combo_hash, defines.data(), std::size(defines));
+			bytecode.type = type;
+			combo.bytecodes.emplace_back(std::move(bytecode));
 		}
 	);
 }
@@ -233,10 +375,9 @@ static size_t opt_level(3);
 constexpr size_t fxc_argv_model_index(5);
 constexpr size_t fxc_argv_model_define_index(7);
 constexpr size_t fxc_argv_path_index(9);
-constexpr size_t fxc_argv_output_index(11);
 
 static const char **fxc_argv;
-static size_t fxc_argc(12);
+static size_t fxc_argc(11);
 static size_t fxc_argc_it(fxc_argc);
 
 static void setup_fxc_argv()
@@ -307,10 +448,9 @@ static void setup_fxc_argv_for_shader(const shader_source &info, size_t &argc_it
 	}
 }
 
-static char fxc_out_buffer[4096];
+static char *fxc_out_buffer;
 static char fxc_err_buffer[4096];
-static char fxc_filename_buffer[PATH_MAX];
-static void compile_shader(const shader_source &info, size_t combo_hash, const std::pair<char *, size_t> *extra_defines, std::size_t num_extra_defines)
+static char *compile_shader(const shader_source &info, size_t combo_hash, const std::pair<char *, size_t> *extra_defines, std::size_t num_extra_defines)
 {
 	int stdout_pipes[2];
 	if(pipe(stdout_pipes) == -1) {
@@ -344,33 +484,6 @@ static void compile_shader(const shader_source &info, size_t combo_hash, const s
 		fxc_argv[fxc_argv_model_define_index] = opt_model_define[static_cast<size_t>(info.model)];
 		fxc_argv[fxc_argv_path_index] = info.windows_path.c_str();
 
-		std::filesystem::path output(info.obj_output.linux_path);
-
-		std::filesystem::path filename_noext(output.filename());
-		filename_noext.replace_extension();
-
-		std::strncpy(fxc_filename_buffer, filename_noext.c_str(), filename_noext.native().length());
-		fxc_filename_buffer[filename_noext.native().length()] = '_';
-
-		char *num_begin(fxc_filename_buffer+filename_noext.native().length()+1);
-		char *num_end(fxc_filename_buffer+std::size(fxc_filename_buffer)-filename_noext.native().length()+1);
-
-		std::to_chars_result tc(std::to_chars(num_begin, num_end, combo_hash));
-		if(tc.ec != std::errc()) {
-			std::cout << "failed to convert number to string\n"sv;
-			_exit(EXIT_FAILURE);
-		}
-
-		size_t len(filename_noext.native().length()+1+(tc.ptr-num_begin));
-
-		output.replace_filename(std::string_view(fxc_filename_buffer, len));
-
-		output.replace_extension(".dxbc"sv);
-
-		output = get_windows_path(output);
-
-		fxc_argv[fxc_argv_output_index] = output.c_str();
-
 		size_t argc_it(fxc_argc_it);
 
 		setup_fxc_argv_for_shader(info, argc_it);
@@ -382,13 +495,10 @@ static void compile_shader(const shader_source &info, size_t combo_hash, const s
 
 		fxc_argv[argc_it++] = nullptr;
 
-	#if 0
 		if(!dry) {
 			execve(wine_path.c_str(), const_cast<char **>(fxc_argv), environ);
 			_exit(EXIT_FAILURE);
-		} else
-	#endif
-		{
+		} else {
 			for(size_t i(1); i < fxc_argc; ++i) {
 				std::cout << fxc_argv[i] << ' ';
 			}
@@ -403,10 +513,13 @@ static void compile_shader(const shader_source &info, size_t combo_hash, const s
 	close(stdout_pipes[1]);
 	close(stderr_pipes[1]);
 
+	constexpr size_t fxc_out_buffer_len(4096);
+	fxc_out_buffer = new char[fxc_out_buffer_len];
+
 	char *const out_buffer_start(fxc_out_buffer);
 	char *const err_buffer_start(fxc_err_buffer);
 
-	char *out_buffer_end(out_buffer_start + sizeof(fxc_out_buffer));
+	char *out_buffer_end(out_buffer_start + fxc_out_buffer_len);
 	char *out_buffer_it(out_buffer_start);
 
 	char *err_buffer_end(err_buffer_start + sizeof(fxc_err_buffer));
@@ -429,10 +542,11 @@ static void compile_shader(const shader_source &info, size_t combo_hash, const s
 		std::cout << "failed to execute fxc\n"sv;
 		std::cout << out_buffer_start;
 		std::cout << err_buffer_start;
+		delete[] fxc_out_buffer;
 		exit(EXIT_FAILURE);
 	}
 
-	std::cout << out_buffer_start;
+	return out_buffer_start;
 }
 
 static void print_help()
@@ -1140,8 +1254,153 @@ int main(int argc, char *argv[], char *envp[])
 
 				SKIP_NEWLINE_WRAP
 			} else if(type == parse_type::skip) {
-				std::cout << it.linux_path << ": skip directive is not supported yet\n"sv;
-				SKIP_NEWLINE_WRAP
+				char open_paren;
+				READ_WRAP(&open_paren, 1)
+
+				if(open_paren != '(') {
+					lseek(fd, -1, SEEK_CUR);
+				}
+
+				SKIP_WHITESPACE_WRAP
+
+				std::vector<skip_token> skip;
+
+				std::function<ssize_t(std::vector<skip_token> &)> read_expression;
+
+				read_expression = [&read_expression,&it,fd,&line,&column,&read_identifier,&read_number](std::vector<skip_token> &toks) -> ssize_t {
+					ssize_t ret;
+
+					for(;;) {
+						char peek;
+						READ_WRAP(&peek, 1)
+						if(peek == '$') {
+							std::string id;
+							READ_ID_WRAP(id)
+
+							skip_token tok(std::move(id));
+							toks.emplace_back(std::move(tok));
+						} else if(peek >= '0' && peek <= '9') {
+							lseek(fd, -1, SEEK_CUR);
+
+							std::string str;
+							ssize_t num;
+							READ_NUM_WRAP(num, str)
+
+							skip_token tok(num);
+							toks.emplace_back(std::move(tok));
+						} else if((peek >= 'a' && peek <= 'a') || (peek >= 'A' && peek <= 'Z') || (peek == '_')) {
+							lseek(fd, -1, SEEK_CUR);
+
+							std::string id;
+							READ_ID_WRAP(id)
+
+							skip_token tok(std::move(id));
+							toks.emplace_back(std::move(tok));
+						} else if(peek == '~') {
+							skip_token tok(skip_operator::bitwise_not);
+							toks.emplace_back(std::move(tok));
+						} else if(peek == '^') {
+							skip_token tok(skip_operator::xor_);
+							toks.emplace_back(std::move(tok));
+						} else if(peek == '+') {
+							skip_token tok(skip_operator::plus);
+							toks.emplace_back(std::move(tok));
+						} else if(peek == '-') {
+							skip_token tok(skip_operator::minus);
+							toks.emplace_back(std::move(tok));
+						} else if(peek == '*') {
+							skip_token tok(skip_operator::multiply);
+							toks.emplace_back(std::move(tok));
+						} else if(peek == '/') {
+							skip_token tok(skip_operator::divide);
+							toks.emplace_back(std::move(tok));
+						} else if(peek == '&') {
+							READ_WRAP(&peek, 1)
+
+							if(peek == '&') {
+								skip_token tok(skip_operator::logical_and);
+								toks.emplace_back(std::move(tok));
+							} else {
+								lseek(fd, -1, SEEK_CUR);
+
+								skip_token tok(skip_operator::bitwise_and);
+								toks.emplace_back(std::move(tok));
+							}
+						} else if(peek == '|') {
+							READ_WRAP(&peek, 1)
+
+							if(peek == '|') {
+								skip_token tok(skip_operator::logical_or);
+								toks.emplace_back(std::move(tok));
+							} else {
+								lseek(fd, -1, SEEK_CUR);
+
+								skip_token tok(skip_operator::bitwise_or);
+								toks.emplace_back(std::move(tok));
+							}
+						} else if(peek == '%') {
+							skip_token tok(skip_operator::modulo);
+							toks.emplace_back(std::move(tok));
+						} else if(peek == '<') {
+							READ_WRAP(&peek, 1)
+
+							if(peek == '=') {
+								skip_token tok(skip_operator::lesser_equal);
+								toks.emplace_back(std::move(tok));
+							} else if(peek == '>') {
+								skip_token tok(skip_operator::shift_left);
+								toks.emplace_back(std::move(tok));
+							} else {
+								lseek(fd, -1, SEEK_CUR);
+
+								skip_token tok(skip_operator::lesser);
+								toks.emplace_back(std::move(tok));
+							}
+						} else if(peek == '>') {
+							READ_WRAP(&peek, 1)
+
+							if(peek == '=') {
+								skip_token tok(skip_operator::greater_equal);
+								toks.emplace_back(std::move(tok));
+							} else if(peek == '>') {
+								skip_token tok(skip_operator::shift_right);
+								toks.emplace_back(std::move(tok));
+							} else {
+								lseek(fd, -1, SEEK_CUR);
+
+								skip_token tok(skip_operator::greater);
+								toks.emplace_back(std::move(tok));
+							}
+						} else if(peek == '!') {
+							READ_WRAP(&peek, 1)
+
+							if(peek == '=') {
+								skip_token tok(skip_operator::not_equal);
+								toks.emplace_back(std::move(tok));
+							} else {
+								lseek(fd, -1, SEEK_CUR);
+
+								skip_token tok(skip_operator::logical_not);
+								toks.emplace_back(std::move(tok));
+							}
+						} else if(peek == '=') {
+							READ_WRAP(&peek, 1)
+
+							if(peek != '=') {
+								return -1;
+							}
+
+							skip_token tok(skip_operator::equal);
+							toks.emplace_back(std::move(tok));
+						} else {
+							return -1;
+						}
+					}
+
+					return ret;
+				};
+
+				read_expression(skip);
 			} else if(type == parse_type::centroid) {
 				std::cout << it.linux_path << ": centroid directive is not supported yet\n"sv;
 				return EXIT_FAILURE;
@@ -1181,7 +1440,25 @@ int main(int argc, char *argv[], char *envp[])
 	for(const auto &it : sources) {
 		std::cout << "compiling "sv << it.linux_path << '\n';
 
-		auto total(do_all_passes(it));
+		std::cout << "global defines:\n"sv;
+		for(const auto &def : defines) {
+			std::cout << def << '\n';
+		}
+		std::cout << "shader defines:\n"sv;
+		for(const auto &def : it.defines) {
+			std::cout << def << '\n';
+		}
+
+		size_t num(1);
+		std::cout << "passes:\n"sv;
+		for(const auto &pass : it.passes) {
+			std::cout << pass.name << ' ' << pass.low << " ... "sv << pass.high << '\n';
+			num *= pass.total();
+		}
+
+		std::cout << "expected to run "sv << num << " times\n"sv;
+
+		auto combo(do_all_passes(it));
 
 		auto fd(open(it.obj_output.linux_path.c_str(), O_WRONLY|O_CREAT|O_TRUNC));
 		if(fd == -1) {
@@ -1195,8 +1472,8 @@ int main(int argc, char *argv[], char *envp[])
 			
 		}
 
-		write(fd, &total.overall, sizeof(int));
-		write(fd, &total.dynamic, sizeof(int));
+		write(fd, &combo.total_overall, sizeof(int));
+		write(fd, &combo.total_dynamic, sizeof(int));
 
 		unsigned int flags(0);
 		write(fd, &flags, sizeof(unsigned int));
@@ -1204,7 +1481,10 @@ int main(int argc, char *argv[], char *envp[])
 		unsigned int centroid(0);
 		write(fd, &centroid, sizeof(unsigned int));
 
-		write(fd, &total.static_, sizeof(unsigned int));
+		write(fd, &combo.total_static, sizeof(unsigned int));
+
+		unsigned int crc(0);
+		write(fd, &crc, sizeof(unsigned int));
 
 		close(fd);
 	}

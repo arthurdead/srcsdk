@@ -8,8 +8,6 @@
 #define DEBUGOVERLAY_SHARED_H
 #pragma once
 
-#if !defined SWDS || 1
-
 #include "engine/ivdebugoverlay.h"
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
@@ -26,11 +24,17 @@ class C_BasePlayer;
 typedef C_BasePlayer CSharedBasePlayer;
 #endif
 
+#ifndef SWDS
+extern bool g_bTextMode;
+#endif
+
 //=============================================================================
 // NDebugOverlay
 //=============================================================================
 namespace NDebugOverlay
 {
+	bool IsEnabled();
+#if !defined SWDS || 1
 	void	Box(const Vector &origin, const Vector &mins, const Vector &maxs, int r, int g, int b, int a, float flDuration);
 	void	BoxDirection(const Vector &origin, const Vector &mins, const Vector &maxs, const Vector &forward, int r, int g, int b, int a, float flDuration);
 	void	BoxAngles(const Vector &origin, const Vector &mins, const Vector &maxs, const QAngle &angles, int r, int g, int b, int a, float flDuration);
@@ -61,9 +65,8 @@ namespace NDebugOverlay
 	void	Sphere( const Vector &position, const QAngle &angles, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration );
 	void	Cone( const Vector &position, const Vector &axis, float angleRadians, float length, int r, int g, int b, int a, bool bNoDepthTest, float flDuration );
 	void	Cross( const Vector &position, float radius, int r, int g, int b, bool bNoDepthTest, float flDuration );
+#endif
 	void	PurgeTextOverlays();
 };
-
-#endif
 
 #endif // DEBUGOVERLAY_SHARED_H

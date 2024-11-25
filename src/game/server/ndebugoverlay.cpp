@@ -16,6 +16,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+extern IVDebugOverlay *debugoverlay;
+
+#ifndef SWDS
 
 #define		NUM_DEBUG_OVERLAY_LINES		20
 
@@ -87,56 +90,15 @@ void UTIL_AddDebugLine(const Vector &startPos, const Vector &endPos, bool noDept
 	debugLine->b = 255;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Returns z value of floor below given point (up to 384 inches below)
-//-----------------------------------------------------------------------------
-float GetLongFloorZ(const Vector &origin) 
-{
-	// trace to the ground, then pop up 8 units and place node there to make it
-	// easier for them to connect (think stairs, chairs, and bumps in the floor).
-	// After the routing is done, push them back down.
-	//
-	trace_t	tr;
-	UTIL_TraceLine ( origin,
-					 origin - Vector ( 0, 0, 2048 ),
-					 MASK_NPCSOLID_BRUSHONLY,
-					 NULL,
-					 COLLISION_GROUP_NONE,
-					 &tr );
-
-	// This trace is ONLY used if we hit an entity flagged with FL_WORLDBRUSH
-	trace_t	trEnt;
-	UTIL_TraceLine ( origin,
-					 origin - Vector ( 0, 0, 2048 ),
-					 MASK_NPCSOLID,
-					 NULL,
-					 COLLISION_GROUP_NONE,
-					 &trEnt );
-
-	
-	// Did we hit something closer than the floor?
-	if ( trEnt.fraction < tr.fraction )
-	{
-		// If it was a world brush entity, copy the node location
-		if ( trEnt.m_pEnt )
-		{
-			CBaseEntity *e = trEnt.m_pEnt;
-			if ( e && (e->GetFlags() & FL_WORLDBRUSH) )
-			{
-				tr.endpos = trEnt.endpos;
-			}
-		}
-	}
-
-	return tr.endpos.z;
-}
-
 //------------------------------------------------------------------------------
 // Purpose : Draws a large crosshair at flCrossDistance from the debug player
 //			 with tick marks
 //------------------------------------------------------------------------------
 void UTIL_DrawPositioningOverlay( float flCrossDistance )
 {
+	if(!NDebugOverlay::IsEnabled())
+		return;
+
 	CBasePlayer* pPlayer = UTIL_PlayerByIndex(CBaseEntity::m_nDebugPlayer);
 
 	if (!pPlayer) 
@@ -232,6 +194,7 @@ void DebugDrawLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, int r, i
 {
 	NDebugOverlay::Line( vecAbsStart + Vector( 0,0,0.1), vecAbsEnd + Vector( 0,0,0.1), r,g,b, test, duration );
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Allow all debug overlays to be cleared at once

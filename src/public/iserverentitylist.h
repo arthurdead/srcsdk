@@ -34,10 +34,10 @@ public:
 	virtual int					GetHighestEntityIndex( void ) = 0;
 };
 
-#ifdef CLIENT_DLL
-extern IServerEntityList *sv_entitylist;
-#else
+#ifdef GAME_DLL
 extern IServerEntityList *entitylist;
+#else
+extern IServerEntityList *sv_entitylist;
 #endif
 
 #define VSERVERENTITYLIST_INTERFACE_VERSION	"VServerEntityList001"

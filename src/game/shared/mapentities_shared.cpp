@@ -366,11 +366,6 @@ bool CEntityMapData::SetValue( const char *keyName, char *NewValue, int nKeyInst
 // this is a hook for edit mode
 void RememberInitialEntityPositions( int nEntities, HierarchicalSpawn_t *pSpawnList )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	for (int nEntity = 0; nEntity < nEntities; nEntity++)
 	{
 		CSharedBaseEntity *pEntity = pSpawnList[nEntity].m_pEntity;
@@ -833,12 +828,7 @@ void MapEntity_ParseAllEntities(const char *pMapData, IMapEntityFilter *pFilter,
 
 #ifndef SWDS
 	// Allow the tools to spawn different things
-	#ifdef GAME_DLL
-	if ( !engine->IsDedicatedServer() && serverenginetools )
-	#else
-	if ( serverenginetools )
-	#endif
-	{
+	if ( !g_bTextMode && serverenginetools ) {
 		pMapData = serverenginetools->GetEntityData( pMapData );
 	}
 #endif
@@ -893,12 +883,7 @@ void SpawnHierarchicalList( int nEntities, HierarchicalSpawn_t *pSpawnList, bool
 
 #ifndef SWDS
 	// save off entity positions if in edit mode
-	#ifdef GAME_DLL
-	if ( !engine->IsDedicatedServer() && engine->IsInEditMode() )
-	#else
-	if ( engine->IsInEditMode() )
-	#endif
-	{
+	if ( !g_bTextMode && engine->IsInEditMode() ) {
 		RememberInitialEntityPositions( nEntities, pSpawnList );
 	}
 #endif

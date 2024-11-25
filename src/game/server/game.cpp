@@ -95,9 +95,9 @@ public:
 
 static CGameDLL_ConVarAccessor g_ServerConVarAccessor;
 
+#ifndef SWDS
 ConVar *mat_hdr_tonemapscale=NULL;
 ConVar *mat_hdr_manual_tonemap_rate=NULL;
-#ifndef SWDS
 ConVar *mat_dxlevel=NULL;
 #endif
 ConVar *skill=NULL;
@@ -108,6 +108,9 @@ ConVar *vcollide_wireframe=NULL;
 ConVar *host_thread_mode=NULL;
 ConVar *hide_server=NULL;
 ConVar *sv_maxreplay=NULL;
+#ifndef SWDS
+ConVar* r_visualizetraces=NULL;
+#endif
 
 extern void InitializeSharedCvars( void );
 
@@ -130,13 +133,14 @@ void InitializeServerCvars( void )
 	host_thread_mode = g_pCVar->FindVar( "host_thread_mode" );
 	hide_server = g_pCVar->FindVar( "hide_server" );
 	sv_maxreplay = g_pCVar->FindVar( "sv_maxreplay" );
-	mat_hdr_manual_tonemap_rate = g_pCVar->FindVar("mat_hdr_manual_tonemap_rate");
-	mat_hdr_tonemapscale = g_pCVar->FindVar("mat_hdr_tonemapscale");
 
 #ifndef SWDS
-	if(!engine->IsDedicatedServer()) {
+	if(!g_bTextMode) {
+		mat_hdr_manual_tonemap_rate = g_pCVar->FindVar("mat_hdr_manual_tonemap_rate");
+		mat_hdr_tonemapscale = g_pCVar->FindVar("mat_hdr_tonemapscale");
 		mat_dxlevel = g_pCVar->FindVar("mat_dxlevel");
 		vcollide_wireframe = g_pCVar->FindVar("vcollide_wireframe");
+		r_visualizetraces = g_pCVar->FindVar("r_visualizetraces");
 	} else
 #endif
 	{

@@ -96,7 +96,7 @@ void CRagdollManager::Activate()
 
 	// Cache off the DX level for use later.
 #ifndef SWDS
-	if(!engine->IsDedicatedServer()) {
+	if(!g_bTextMode) {
 		m_iDXLevel = mat_dxlevel->GetInt();
 	} else
 #endif

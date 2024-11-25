@@ -116,6 +116,9 @@ public:
 
 	void Save()
 	{
+		if(gpGlobals->mapname == NULL_STRING)
+			return;
+
 		char filename[MAX_PATH];
 		V_sprintf_safe(filename, "maps" CORRECT_PATH_SEPARATOR_S "%s.lightcache", STRING(gpGlobals->mapname));
 
@@ -151,7 +154,7 @@ static CLightCacheSystem lightcache;
 void UpdateLightIntensity( const Vector &pos )
 {
 #ifndef SWDS
-	if(!engine->IsDedicatedServer() && g_pGameClientLoopback) {
+	if(!g_bDedicatedServer && g_pGameClientLoopback) {
 		Vector light( 0, 0, 0 );
 		light = g_pGameClientLoopback->GetLightForPoint( pos, true );
 
@@ -177,7 +180,7 @@ void UpdateLightIntensity( const Vector &pos )
 float GetLightIntensity( const Vector &pos )
 {
 #ifndef SWDS
-	if(!engine->IsDedicatedServer() && g_pGameClientLoopback) {
+	if(!g_bDedicatedServer && g_pGameClientLoopback) {
 		Vector light( 0, 0, 0 );
 		light = g_pGameClientLoopback->GetLightForPoint( pos, true );
 

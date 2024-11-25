@@ -20,6 +20,7 @@
 #ifdef GAME_DLL
 #include "enginecallback.h"
 #endif
+#include "debugoverlay_shared.h"
 
 #ifdef CLIENT_DLL
 #include "cdll_client_int.h"
@@ -263,10 +264,28 @@ private:
 	ITraceFilter	*m_pTraceFilter2;
 };
 
+#ifndef SWDS
 // helper
 void DebugDrawLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, int r, int g, int b, bool test, float duration );
+#endif
+
+#ifndef SWDS
+extern bool g_bTextMode;
 
 extern ConVar* r_visualizetraces;
+#endif
+
+inline bool VisualizeTraces()
+{
+#ifndef SWDS
+	if( !NDebugOverlay::IsEnabled() )
+		return false;
+
+	return r_visualizetraces->GetBool();
+#else
+	return false;
+#endif
+}
 
 inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, unsigned int mask, 
 					 const IHandleEntity *ignore, int collisionGroup, trace_t *ptr )
@@ -277,10 +296,12 @@ inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, 
 
 	enginetrace->TraceRay( ray, mask, &traceFilter, ptr );
 
-	if( r_visualizetraces->GetBool() )
+#ifndef SWDS
+	if( VisualizeTraces() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 0, 0, true, -1.0f );
 	}
+#endif
 }
 
 inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, unsigned int mask, 
@@ -291,10 +312,12 @@ inline void UTIL_TraceLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, 
 
 	enginetrace->TraceRay( ray, mask, pFilter, ptr );
 
-	if( r_visualizetraces->GetBool() )
+#ifndef SWDS
+	if( VisualizeTraces() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 0, 0, true, -1.0f );
 	}
+#endif
 }
 
 inline void UTIL_TraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, const Vector &hullMin, 
@@ -307,10 +330,12 @@ inline void UTIL_TraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 
 	enginetrace->TraceRay( ray, mask, &traceFilter, ptr );
 
-	if( r_visualizetraces->GetBool() )
+#ifndef SWDS
+	if( VisualizeTraces() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 255, 0, true, -1.0f );
 	}
+#endif
 }
 
 inline void UTIL_TraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, const Vector &hullMin, 
@@ -321,10 +346,12 @@ inline void UTIL_TraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 
 	enginetrace->TraceRay( ray, mask, pFilter, ptr );
 
-	if( r_visualizetraces->GetBool() )
+#ifndef SWDS
+	if( VisualizeTraces() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 255, 0, true, -1.0f );
 	}
+#endif
 }
 
 inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask, 
@@ -333,11 +360,13 @@ inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask,
 	CTraceFilterSimple traceFilter( ignore, collisionGroup, pExtraShouldHitCheckFn );
 
 	enginetrace->TraceRay( ray, mask, &traceFilter, ptr );
-	
-	if( r_visualizetraces->GetBool() )
+
+#ifndef SWDS
+	if( VisualizeTraces() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 0, 0, true, -1.0f );
 	}
+#endif
 }
 
 inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask, 
@@ -345,11 +374,18 @@ inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask,
 {
 	enginetrace->TraceRay( ray, mask, pFilter, ptr );
 
-	if( r_visualizetraces->GetBool() )
+#ifndef SWDS
+	if( VisualizeTraces() )
 	{
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 0, 0, true, -1.0f );
 	}
+#endif
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns z value of floor below given point (up to 384 inches below)
+//-----------------------------------------------------------------------------
+float GetLongFloorZ(const Vector &origin);
 
 unsigned int UTIL_MaskForEntity( CSharedBaseEntity *pEntity, bool brush_only = false );
 unsigned int UTIL_CollisionGroupForEntity( CSharedBaseEntity *pEntity );

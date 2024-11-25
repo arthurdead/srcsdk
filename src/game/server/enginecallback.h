@@ -22,7 +22,6 @@ class ISpatialPartition;
 class IVModelInfo;
 class IEngineTrace;
 class IGameEventManager2;
-class IVDebugOverlay;
 class IDataCache;
 class IMDLCache;
 #ifndef SWDS
@@ -35,6 +34,11 @@ class IGameServerLoopback;
 class IGameClientLoopback;
 #endif
 
+#ifndef SWDS
+extern bool g_bTextMode;
+extern bool g_bDedicatedServer;
+#endif
+
 extern IVEngineServer			*engine;
 extern IVoiceServer				*g_pVoiceServer;
 extern IStaticPropMgrServer		*staticpropmgr;
@@ -43,7 +47,6 @@ extern IEngineSound				*enginesound;
 extern IVModelInfo				*modelinfo;
 extern IEngineTrace				*enginetrace;
 extern IGameEventManager2		*gameeventmanager;
-extern IVDebugOverlay			*debugoverlay;
 #ifndef SWDS
 extern IServerEngineTools		*serverenginetools;
 extern IServerFoundry			*serverfoundry;

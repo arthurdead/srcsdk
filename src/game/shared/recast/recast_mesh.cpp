@@ -417,6 +417,7 @@ void CRecastMesh::Init()
 
 	// Per type
 	m_agentMaxSlope = 45.573; // Default slope for units
+
 	m_tileSize = 48;
 
 	m_agentHeight = NAI_Hull::Height( m_Type );
@@ -425,9 +426,9 @@ void CRecastMesh::Init()
 	//m_agentMaxClimb = 18.0f;
 	m_agentMaxClimb = 25.0f;
 
-	m_cellSize = round( m_agentRadius / 3.0f );
+	m_cellSize = ( m_agentRadius / 3.0f );
 
-	m_cellHeight = round( m_cellSize / 2.0f );
+	m_cellHeight = ( m_cellSize / 2.0f );
 }
 
 //-----------------------------------------------------------------------------

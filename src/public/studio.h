@@ -876,6 +876,92 @@ struct mstudioactivitymodifier_t
 	inline char			*pszName() { return (sznameindex) ? (char *)(((byte *)this) + sznameindex ) : NULL; }
 };
 
+#define STUDIO_CONST	1	// get float
+#define STUDIO_FETCH1	2	// get Flexcontroller value
+#define STUDIO_FETCH2	3	// get flex weight
+#define STUDIO_ADD		4
+#define STUDIO_SUB		5
+#define STUDIO_MUL		6
+#define STUDIO_DIV		7
+#define STUDIO_NEG		8	// not implemented
+#define STUDIO_EXP		9	// not implemented
+#define STUDIO_OPEN		10	// only used in token parsing
+#define STUDIO_CLOSE	11
+#define STUDIO_COMMA	12	// only used in token parsing
+#define STUDIO_MAX		13
+#define STUDIO_MIN		14
+#define STUDIO_2WAY_0	15	// Fetch a value from a 2 Way slider for the 1st value RemapVal( 0.0, 0.5, 0.0, 1.0 )
+#define STUDIO_2WAY_1	16	// Fetch a value from a 2 Way slider for the 2nd value RemapVal( 0.5, 1.0, 0.0, 1.0 )
+#define STUDIO_NWAY		17	// Fetch a value from a 2 Way slider for the 2nd value RemapVal( 0.5, 1.0, 0.0, 1.0 )
+#define STUDIO_COMBO	18	// Perform a combo operation (essentially multiply the last N values on the stack)
+#define STUDIO_DOMINATE	19	// Performs a combination domination operation
+#define STUDIO_DME_LOWER_EYELID 20	// 
+#define STUDIO_DME_UPPER_EYELID 21	// 
+
+// motion flags
+#define STUDIO_X		0x00000001
+#define STUDIO_Y		0x00000002	
+#define STUDIO_Z		0x00000004
+#define STUDIO_XR		0x00000008
+#define STUDIO_YR		0x00000010
+#define STUDIO_ZR		0x00000020
+
+#define STUDIO_LX		0x00000040
+#define STUDIO_LY		0x00000080
+#define STUDIO_LZ		0x00000100
+#define STUDIO_LXR		0x00000200
+#define STUDIO_LYR		0x00000400
+#define STUDIO_LZR		0x00000800
+
+#define STUDIO_LINEAR	0x00001000
+
+#define STUDIO_TYPES	0x0003FFFF
+#define STUDIO_RLOOP	0x00040000	// controller that wraps shortest distance
+
+// sequence and autolayer flags
+#define STUDIO_LOOPING	0x0001		// ending frame should be the same as the starting frame
+#define STUDIO_SNAP		0x0002		// do not interpolate between previous animation and this one
+#define STUDIO_DELTA	0x0004		// this sequence "adds" to the base sequences, not slerp blends
+#define STUDIO_AUTOPLAY	0x0008		// temporary flag that forces the sequence to always play
+#define STUDIO_POST		0x0010		// 
+#define STUDIO_ALLZEROS	0x0020		// this animation/sequence has no real animation data
+//						0x0040
+#define STUDIO_CYCLEPOSE 0x0080		// cycle index is taken from a pose parameter index
+#define STUDIO_REALTIME	0x0100		// cycle index is taken from a real-time clock, not the animations cycle index
+#define STUDIO_LOCAL	0x0200		// sequence has a local context sequence
+#define STUDIO_HIDDEN	0x0400		// don't show in default selection views
+#define STUDIO_OVERRIDE	0x0800		// a forward declared sequence (empty)
+#define STUDIO_ACTIVITY_SERVER	0x1000		// Has been updated at runtime to activity index
+#define STUDIO_EVENT_SERVER	0x2000		// Has been updated at runtime to event index
+#define STUDIO_WORLD	0x4000		// sequence blends in worldspace
+// autolayer flags
+//							0x0001
+//							0x0002
+//							0x0004
+//							0x0008
+#define STUDIO_AL_POST		0x0010		// 
+//							0x0020
+#define STUDIO_AL_SPLINE	0x0040		// convert layer ramp in/out curve is a spline instead of linear
+#define STUDIO_AL_XFADE		0x0080		// pre-bias the ramp curve to compense for a non-1 weight, assuming a second layer is also going to accumulate
+//							0x0100
+#define STUDIO_AL_NOBLEND	0x0200		// animation always blends at 1.0 (ignores weight)
+//							0x0400
+//							0x0800
+#define STUDIO_AL_LOCAL		0x1000		// layer is a local context sequence
+//							0x2000
+#define STUDIO_AL_POSE		0x4000		// layer blends using a pose parameter instead of parent cycle
+#define STUDIO_NOFORCELOOP 0x8000	// do not force the animation loop
+#define STUDIO_EVENT_CLIENT 0x10000	// Has been updated at runtime to event index on client
+#define STUDIO_ACTIVITY_CLIENT 0x20000	// Has been updated at runtime to event index on client
+
+#ifdef GAME_DLL
+#define STUDIO_ACTIVITY STUDIO_ACTIVITY_SERVER
+#define STUDIO_EVENT STUDIO_EVENT_SERVER
+#elif defined CLIENT_DLL
+#define STUDIO_ACTIVITY STUDIO_ACTIVITY_CLIENT
+#define STUDIO_EVENT STUDIO_EVENT_CLIENT
+#endif
+
 // sequence descriptions
 struct mstudioseqdesc_t
 {
@@ -914,12 +1000,13 @@ struct mstudioseqdesc_t
 #else
 	int Activity( void ) const
 	{
-		return activity_server;
-	}
-	void Activity( int nActivity )
-	{
-		activity_server = nActivity;
-		activity_client = nActivity;
+		if(flags & STUDIO_ACTIVITY_SERVER) {
+			return activity_server;
+		} else if(flags & STUDIO_ACTIVITY_CLIENT) {
+			return activity_client;
+		} else {
+			return -1;
+		}
 	}
 #endif
 
@@ -3105,93 +3192,6 @@ inline const mstudioflexcontroller_t *mstudioflexcontrollerui_t::pController( in
 
 	return pController();
 }
-
-
-#define STUDIO_CONST	1	// get float
-#define STUDIO_FETCH1	2	// get Flexcontroller value
-#define STUDIO_FETCH2	3	// get flex weight
-#define STUDIO_ADD		4
-#define STUDIO_SUB		5
-#define STUDIO_MUL		6
-#define STUDIO_DIV		7
-#define STUDIO_NEG		8	// not implemented
-#define STUDIO_EXP		9	// not implemented
-#define STUDIO_OPEN		10	// only used in token parsing
-#define STUDIO_CLOSE	11
-#define STUDIO_COMMA	12	// only used in token parsing
-#define STUDIO_MAX		13
-#define STUDIO_MIN		14
-#define STUDIO_2WAY_0	15	// Fetch a value from a 2 Way slider for the 1st value RemapVal( 0.0, 0.5, 0.0, 1.0 )
-#define STUDIO_2WAY_1	16	// Fetch a value from a 2 Way slider for the 2nd value RemapVal( 0.5, 1.0, 0.0, 1.0 )
-#define STUDIO_NWAY		17	// Fetch a value from a 2 Way slider for the 2nd value RemapVal( 0.5, 1.0, 0.0, 1.0 )
-#define STUDIO_COMBO	18	// Perform a combo operation (essentially multiply the last N values on the stack)
-#define STUDIO_DOMINATE	19	// Performs a combination domination operation
-#define STUDIO_DME_LOWER_EYELID 20	// 
-#define STUDIO_DME_UPPER_EYELID 21	// 
-
-// motion flags
-#define STUDIO_X		0x00000001
-#define STUDIO_Y		0x00000002	
-#define STUDIO_Z		0x00000004
-#define STUDIO_XR		0x00000008
-#define STUDIO_YR		0x00000010
-#define STUDIO_ZR		0x00000020
-
-#define STUDIO_LX		0x00000040
-#define STUDIO_LY		0x00000080
-#define STUDIO_LZ		0x00000100
-#define STUDIO_LXR		0x00000200
-#define STUDIO_LYR		0x00000400
-#define STUDIO_LZR		0x00000800
-
-#define STUDIO_LINEAR	0x00001000
-
-#define STUDIO_TYPES	0x0003FFFF
-#define STUDIO_RLOOP	0x00040000	// controller that wraps shortest distance
-
-// sequence and autolayer flags
-#define STUDIO_LOOPING	0x0001		// ending frame should be the same as the starting frame
-#define STUDIO_SNAP		0x0002		// do not interpolate between previous animation and this one
-#define STUDIO_DELTA	0x0004		// this sequence "adds" to the base sequences, not slerp blends
-#define STUDIO_AUTOPLAY	0x0008		// temporary flag that forces the sequence to always play
-#define STUDIO_POST		0x0010		// 
-#define STUDIO_ALLZEROS	0x0020		// this animation/sequence has no real animation data
-//						0x0040
-#define STUDIO_CYCLEPOSE 0x0080		// cycle index is taken from a pose parameter index
-#define STUDIO_REALTIME	0x0100		// cycle index is taken from a real-time clock, not the animations cycle index
-#define STUDIO_LOCAL	0x0200		// sequence has a local context sequence
-#define STUDIO_HIDDEN	0x0400		// don't show in default selection views
-#define STUDIO_OVERRIDE	0x0800		// a forward declared sequence (empty)
-#define STUDIO_ACTIVITY_SERVER	0x1000		// Has been updated at runtime to activity index
-#define STUDIO_EVENT_SERVER	0x2000		// Has been updated at runtime to event index
-#define STUDIO_WORLD	0x4000		// sequence blends in worldspace
-// autolayer flags
-//							0x0001
-//							0x0002
-//							0x0004
-//							0x0008
-#define STUDIO_AL_POST		0x0010		// 
-//							0x0020
-#define STUDIO_AL_SPLINE	0x0040		// convert layer ramp in/out curve is a spline instead of linear
-#define STUDIO_AL_XFADE		0x0080		// pre-bias the ramp curve to compense for a non-1 weight, assuming a second layer is also going to accumulate
-//							0x0100
-#define STUDIO_AL_NOBLEND	0x0200		// animation always blends at 1.0 (ignores weight)
-//							0x0400
-//							0x0800
-#define STUDIO_AL_LOCAL		0x1000		// layer is a local context sequence
-//							0x2000
-#define STUDIO_AL_POSE		0x4000		// layer blends using a pose parameter instead of parent cycle
-#define STUDIO_NOFORCELOOP 0x8000	// do not force the animation loop
-#define STUDIO_EVENT_CLIENT 0x10000	// Has been updated at runtime to event index on client
-#define STUDIO_ACTIVITY_CLIENT 0x20000	// Has been updated at runtime to event index on client
-
-#ifdef GAME_DLL
-#define STUDIO_ACTIVITY STUDIO_ACTIVITY_SERVER
-#define STUDIO_EVENT STUDIO_EVENT_SERVER
-#elif defined CLIENT_DLL
-#define STUDIO_ACTIVITY STUDIO_ACTIVITY_CLIENT
-#define STUDIO_EVENT STUDIO_EVENT_CLIENT
-#endif
 
 // Insert this code anywhere that you need to allow for conversion from an old STUDIO_VERSION
 // to a new one.

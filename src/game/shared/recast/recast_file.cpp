@@ -31,7 +31,7 @@
 #define EXT_NAVFILE "recast"
 
 static const int NAVMESHSET_MAGIC = 'M'<<24 | 'S'<<16 | 'E'<<8 | 'T'; //'MSET';
-static const int NAVMESHSET_VERSION = 2;
+static const int NAVMESHSET_VERSION = 3;
 
 struct NavMgrHeader
 {
@@ -98,8 +98,14 @@ bool CRecastMesh::Load( CUtlBuffer &fileBuffer, CMapMesh *pMapMesh )
 
 	Init();
 
-	Log_Msg( LOG_RECAST, "Loading mesh %s with cell size %f, cell height %f, tile size %f\n", 
-		GetName(), m_cellSize, m_cellHeight, m_tileSize );
+	if(developer->GetInt() > 1) {
+		Log_Msg( LOG_RECAST, "Loading mesh %s\n", 
+			GetName() );
+		Log_Msg( LOG_RECAST, "  cell size %f, cell height %f, tile size %f\n", 
+			m_cellSize, m_cellHeight, m_tileSize );
+		Log_Msg( LOG_RECAST, "  agent radius %f, agent height %f, agent climb %f, agent slope %f\n", 
+			m_agentRadius, m_agentHeight, m_agentMaxClimb, m_agentMaxSlope );
+	}
 
 	m_navMesh = dtAllocNavMesh();
 	if (!m_navMesh)
@@ -166,6 +172,59 @@ bool CRecastMesh::Load( CUtlBuffer &fileBuffer, CMapMesh *pMapMesh )
 		return false;
 	}
 
+	uint infoCount;
+	fileBuffer.Get( &infoCount, sizeof(uint) );
+
+	for(int i = 0; i < infoCount; ++i) {
+		dtPolyRef src_ref;
+		fileBuffer.Get( &src_ref, sizeof(dtPolyRef) );
+
+		PolyVisibilityInfo &info = m_polyVisibility[ m_polyVisibility.Insert( src_ref ) ];
+
+		uint visCount;
+		fileBuffer.Get( &visCount, sizeof(uint) );
+
+		for(int j = 0; j < visCount; ++j) {
+			dtPolyRef tgt_ref;
+			fileBuffer.Get( &tgt_ref, sizeof(dtPolyRef) );
+
+			uint vertCount;
+			fileBuffer.Get( &vertCount, sizeof(uint) );
+
+			auto vis_hndl = info.visible.Insert( tgt_ref );
+
+			for(int k = 0; k < vertCount; ++k) {
+				uint32 src_vert;
+				fileBuffer.Get( &src_vert, sizeof(uint32) );
+				uint32 dst_vert;
+				fileBuffer.Get( &dst_vert, sizeof(uint32) );
+
+				info.visible[ vis_hndl ].verts.AddToTail( PolyVisibilityInfo::VisibilityConnectionInfo::vertPair{src_vert, dst_vert} );
+			}
+		}
+
+		fileBuffer.Get( &visCount, sizeof(uint) );
+
+		for(int j = 0; j < visCount; ++j) {
+			dtPolyRef tgt_ref;
+			fileBuffer.Get( &tgt_ref, sizeof(dtPolyRef) );
+
+			uint vertCount;
+			fileBuffer.Get( &vertCount, sizeof(uint) );
+
+			auto not_vis_hndl = info.not_visible.Insert( tgt_ref );
+
+			for(int k = 0; k < vertCount; ++k) {
+				uint32 src_vert;
+				fileBuffer.Get( &src_vert, sizeof(uint32) );
+				uint32 dst_vert;
+				fileBuffer.Get( &dst_vert, sizeof(uint32) );
+
+				info.not_visible[ not_vis_hndl ].verts.AddToTail( PolyVisibilityInfo::VisibilityConnectionInfo::vertPair{src_vert, dst_vert} );
+			}
+		}
+	}
+
 	PostLoad();
 
 	return true;
@@ -220,7 +279,7 @@ bool CRecastMgr::Load()
 	}
 
 	// read file version number
-	if ( !fileBuffer.IsValid() || header.version > NAVMESHSET_VERSION )
+	if ( !fileBuffer.IsValid() || header.version != NAVMESHSET_VERSION )
 	{
 		Log_Error(LOG_RECAST, "Unknown navigation file version.\n" );
 		return false;
@@ -285,8 +344,14 @@ bool CRecastMgr::Load()
 #ifndef CLIENT_DLL
 bool CRecastMesh::Save( CUtlBuffer &fileBuffer )
 {
-	Msg( "Saving mesh %s with cell size %f, cell height %f, tile size %f\n", 
-		GetName(), m_cellSize, m_cellHeight, m_tileSize );
+	if(developer->GetInt() > 1) {
+		Log_Msg( LOG_RECAST, "Saving mesh %s\n", 
+			GetName() );
+		Log_Msg( LOG_RECAST, "  cell size %f, cell height %f, tile size %f\n", 
+			m_cellSize, m_cellHeight, m_tileSize );
+		Log_Msg( LOG_RECAST, "  agent radius %f, agent height %f, agent climb %f, agent slope %f\n", 
+			m_agentRadius, m_agentHeight, m_agentMaxClimb, m_agentMaxSlope );
+	}
 
 	const char *szName = GetName();
 	int nameLen = V_strlen( szName );
@@ -336,6 +401,56 @@ bool CRecastMesh::Save( CUtlBuffer &fileBuffer )
 		}
 	}
 
+	uint visCount = m_polyVisibility.Count();
+	fileBuffer.Put( &visCount, sizeof(uint) );
+
+	FOR_EACH_HASHTABLE( m_polyVisibility, it )
+	{
+		dtPolyRef src_ref = m_polyVisibility.Key( it );
+		fileBuffer.Put( &src_ref, sizeof(dtPolyRef) );
+
+		const PolyVisibilityInfo &info = m_polyVisibility.Element( it );
+
+		visCount = info.visible.Count();
+		fileBuffer.Put( &visCount, sizeof(uint) );
+
+		FOR_EACH_HASHTABLE( info.visible, it2 )
+		{
+			dtPolyRef tgt_ref = info.visible.Key( it2 );
+
+			const PolyVisibilityInfo::VisibilityConnectionInfo &conn_info = info.visible.Element(it2);
+
+			fileBuffer.Put( &tgt_ref, sizeof(dtPolyRef) );
+
+			visCount = conn_info.verts.Count();
+			fileBuffer.Put( &visCount, sizeof(uint) );
+
+			for(int k = 0; k < visCount; ++k) {
+				const PolyVisibilityInfo::VisibilityConnectionInfo::vertPair &vert = conn_info.verts[k];
+				fileBuffer.Put( &vert.src_vert, sizeof(uint32) );
+				fileBuffer.Put( &vert.dst_vert, sizeof(uint32) );
+			}
+		}
+
+		FOR_EACH_HASHTABLE( info.not_visible, it2 )
+		{
+			dtPolyRef tgt_ref = info.not_visible.Key( it2 );
+
+			const PolyVisibilityInfo::VisibilityConnectionInfo &conn_info = info.not_visible.Element(it2);
+
+			fileBuffer.Put( &tgt_ref, sizeof(dtPolyRef) );
+
+			visCount = conn_info.verts.Count();
+			fileBuffer.Put( &visCount, sizeof(uint) );
+
+			for(int k = 0; k < visCount; ++k) {
+				const PolyVisibilityInfo::VisibilityConnectionInfo::vertPair &vert = conn_info.verts[k];
+				fileBuffer.Put( &vert.src_vert, sizeof(uint32) );
+				fileBuffer.Put( &vert.dst_vert, sizeof(uint32) );
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -369,7 +484,7 @@ bool CRecastMgr::Save()
 	}
 
 	unsigned int bspSize  = g_pFullFileSystem->Size( bspFilename );
-	DevMsg( "Size of bsp file '%s' is %u bytes.\n", bspFilename, bspSize );
+	Log_Msg( LOG_RECAST, "Size of bsp file '%s' is %u bytes.\n", bspFilename, bspSize );
 
 	CUtlVector< CRecastMesh * > meshesToSave;
 	for ( int i = 0; i < RECAST_NAVMESH_NUM; i++ )
@@ -396,12 +511,12 @@ bool CRecastMgr::Save()
 
 	if ( !g_pFullFileSystem->WriteFile( filename, "GAME", fileBuffer ) )
 	{
-		Warning( "Unable to save %d bytes to %s\n", fileBuffer.Size(), filename );
+		Log_Warning( LOG_RECAST, "Unable to save %d bytes to %s\n", fileBuffer.Size(), filename );
 		return false;
 	}
 
 	unsigned int navSize = g_pFullFileSystem->Size( filename );
-	DevMsg( "Size of nav file '%s' is %u bytes.\n", filename, navSize );
+	Log_Msg( LOG_RECAST, "Size of nav file '%s' is %u bytes.\n", filename, navSize );
 
 	return true;
 }

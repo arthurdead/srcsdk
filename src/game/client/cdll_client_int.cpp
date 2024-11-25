@@ -677,11 +677,11 @@ public:
 		AddAppSystem( "soundemittersystem" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
 		AddAppSystem( "scenefilecache" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
 		AddAppSystem( "client", GAMEUISYSTEMMGR_INTERFACE_VERSION );
-		if(!CommandLine()->HasParm("-textmode")) {
+		if(!CommandLine()->HasParm("-textmode") && !CommandLine()->HasParm("-dedicated")) {
 			AddAppSystem( "game_shader_dx9" DLL_EXT_STRING, SHADEREXTENSION_INTERFACE_VERSION );
 		}
 		AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
-		if(!CommandLine()->HasParm("-nogamedll")) {
+		if(!CommandLine()->HasParm("-nogamedll") && !CommandLine()->HasParm("-dedicated")) {
 			AddAppSystem( "server" DLL_EXT_STRING, GAMESERVERLOOPBACK_INTERFACE_VERSION );
 		}
 	}
@@ -1115,7 +1115,7 @@ INIT_PRIORITY(101) struct ClientCreateInterfaceHookInit {
 
 int CClientDll::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGlobals )
 {
-	if ( CommandLine()->FindParm( "-textmode" ) )
+	if ( CommandLine()->HasParm( "-textmode" ) || CommandLine()->HasParm( "-dedicated" ) )
 		g_bTextMode = true;
 
 	InitCRTMemDebug();
@@ -1194,8 +1194,6 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		return false;
 	if ( (render = (IVRenderView *)appSystemFactory( VENGINE_RENDERVIEW_INTERFACE_VERSION, NULL )) == NULL )
 		return false;
-	if ( (debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL )) == NULL )
-		return false;
 	if ( !g_pDataCache )
 		return false;
 	if ( !g_pMDLCache )
@@ -1231,6 +1229,10 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 	g_pMatchFramework = (IMatchFramework *)appSystemFactory( IMATCHFRAMEWORK_VERSION_STRING, NULL );
 
+	if( !g_bTextMode ) {
+		debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL );
+	}
+
 #if defined( REPLAY_ENABLED )
 	if ( (g_pEngineReplay = (IEngineReplay *)appSystemFactory( ENGINE_REPLAY_INTERFACE_VERSION, NULL )) == NULL )
 		return false;
@@ -1241,8 +1243,10 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	if (!g_pMatSystemSurface)
 		return false;
 
-	// This interface is optional, and is only valid when running with -tools
-	serverenginetools = ( IServerEngineTools * )appSystemFactory( VSERVERENGINETOOLS_INTERFACE_VERSION, NULL );
+	if( !g_bTextMode ) {
+		// This interface is optional, and is only valid when running with -tools
+		serverenginetools = ( IServerEngineTools * )appSystemFactory( VSERVERENGINETOOLS_INTERFACE_VERSION, NULL );
+	}
 
 #ifdef WORKSHOP_IMPORT_ENABLED
 	if ( !ConnectDataModel( appSystemFactory ) )
@@ -1305,7 +1309,7 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	Sys_LoadInterface( gamebin_path, GAMELOOPBACK_INTERFACE_VERSION, &game_loopbackDLL, reinterpret_cast< void** >( &g_pGameLoopback ) );
 	gamebin_path[gamebin_length] = '\0';
 
-	if(!CommandLine()->HasParm("-nogamedll")) {
+	if(!CommandLine()->HasParm("-nogamedll") && !CommandLine()->HasParm("-dedicated")) {
 		V_strcat_safe(gamebin_path, "server" DLL_EXT_STRING);
 		serverDLL = Sys_LoadModule(gamebin_path);
 		gamebin_path[gamebin_length] = '\0';

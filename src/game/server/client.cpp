@@ -697,6 +697,7 @@ END_MAPENTITY()
 
 LINK_ENTITY_TO_CLASS( point_broadcastclientcommand, CPointBroadcastClientCommand );
 
+#ifndef SWDS
 //------------------------------------------------------------------------------
 // Purpose : Draw a line betwen two points.  White if no world collisions, red if collisions
 // Input   :
@@ -704,6 +705,9 @@ LINK_ENTITY_TO_CLASS( point_broadcastclientcommand, CPointBroadcastClientCommand
 //------------------------------------------------------------------------------
 void CC_DrawLine( const CCommand &args )
 {
+	if(!NDebugOverlay::IsEnabled())
+		return;
+
 	Vector startPos;
 	Vector endPos;
 
@@ -725,6 +729,9 @@ static ConCommand drawline("drawline", CC_DrawLine, "Draws line between two 3D P
 //------------------------------------------------------------------------------
 void CC_DrawCross( const CCommand &args )
 {
+	if(!NDebugOverlay::IsEnabled())
+		return;
+
 	Vector vPosition;
 
 	vPosition.x = atof(args[1]);
@@ -752,7 +759,7 @@ void CC_DrawCross( const CCommand &args )
 	UTIL_AddDebugLine(start,end,true,true);
 }
 static ConCommand drawcross("drawcross", CC_DrawCross, "Draws a cross at the given location\n\tArguments: x y z", FCVAR_CHEAT);
-
+#endif
 
 //------------------------------------------------------------------------------
 // helper function for kill and explode

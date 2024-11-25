@@ -12,8 +12,6 @@ extern CreateInterfaceFn GetLauncherInterfaceFactory();
 extern CreateInterfaceFn GetMaterialSystemInterfaceFactory();
 #endif
 extern CreateInterfaceFn GetVstdlibInterfaceFactory();
-#ifndef SWDS
 extern bool IsDedicatedServer();
-#endif
 
 #endif

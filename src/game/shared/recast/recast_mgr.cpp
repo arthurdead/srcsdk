@@ -525,7 +525,23 @@ CON_COMMAND_F( recast_loadmapmesh, "", FCVAR_CHEAT )
 	for(int i = 0; i < RECAST_MAPMESH_NUM; ++i)
 		s_RecastMgr.LoadMapMesh( (MapMeshType_t)i );
 }
+#endif // CLIENT_DLL
 
+#ifndef CLIENT_DLL
+CON_COMMAND_F( recast_reload, "Reload the Recast Navigation Mesh from disk on server", FCVAR_CHEAT )
+#else
+CON_COMMAND_F( cl_recast_reload, "Reload the Recast Navigation Mesh from disk on client", FCVAR_CHEAT )
+#endif // CLIENT_DLL
+{
+#ifndef CLIENT_DLL
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+#endif // CLIENT_DLL
+
+	s_RecastMgr.Load();
+}
+
+#ifndef CLIENT_DLL
 CON_COMMAND_F( recast_build, "", FCVAR_CHEAT )
 {
 	if ( !UTIL_IsCommandIssuedByServerAdmin() )
@@ -555,20 +571,6 @@ CON_COMMAND_F( recast_save, "", FCVAR_CHEAT )
 	}
 }
 #endif // CLIENT_DLL
-
-#ifndef CLIENT_DLL
-CON_COMMAND_F( recast_reload, "Reload the Recast Navigation Mesh from disk on server", FCVAR_CHEAT )
-#else
-CON_COMMAND_F( cl_recast_reload, "Reload the Recast Navigation Mesh from disk on client", FCVAR_CHEAT )
-#endif // CLIENT_DLL
-{
-#ifndef CLIENT_DLL
-	if ( !UTIL_IsCommandIssuedByServerAdmin() )
-		return;
-#endif // CLIENT_DLL
-
-	s_RecastMgr.Load();
-}
 
 #ifndef CLIENT_DLL
 CON_COMMAND_F( recast_listmeshes, "", FCVAR_CHEAT )

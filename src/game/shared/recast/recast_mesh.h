@@ -16,6 +16,7 @@
 #include "tier1/utlvector.h"
 #include "tier1/utlbuffer.h"
 #include "tier1/utlstring.h"
+#include "tier1/utlhashtable.h"
 #include "ai_waypoint.h"
 #include "recast/recast_imgr.h"
 #include "mathlib/extent.h"
@@ -217,6 +218,23 @@ struct SpotOrder
 	};
 };
 typedef CUtlVector< SpotOrder > SpotOrderVector;
+
+struct PolyVisibilityInfo
+{
+	struct VisibilityConnectionInfo
+	{
+		struct vertPair
+		{
+			uint32 src_vert;
+			uint32 dst_vert;
+		};
+
+		CUtlVectorConservative<vertPair> verts;
+	};
+
+	CUtlHashtable<dtPolyRef, VisibilityConnectionInfo> visible;
+	CUtlHashtable<dtPolyRef, VisibilityConnectionInfo> not_visible;
+};
 
 class CRecastMesh
 {
@@ -420,6 +438,8 @@ private:
 	pathfind_resultdata_t m_pathfindData;
 
 	HidingSpotVector m_HidingSpots;
+
+	CUtlHashtable<dtPolyRef, PolyVisibilityInfo> m_polyVisibility;
 };
 
 //--------------------------------------------------------------------------------------------------------------

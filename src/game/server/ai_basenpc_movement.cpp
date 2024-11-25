@@ -39,18 +39,23 @@ void CAI_BaseNPC::ForceSelectedGo(CBaseEntity *pPlayer, const Vector &targetPos,
 		{
 			Vector chasePosition = targetPos;
 			npc->TranslateNavGoal( pPlayer, chasePosition );
-			// It it legal to drop me here
-			Vector	vUpBit = chasePosition;
-			vUpBit.z += 1;
 
-			trace_t tr;
-			AI_TraceHull( chasePosition, vUpBit, npc->GetHullMins(), 
-				npc->GetHullMaxs(), MASK_NPCSOLID, npc, COLLISION_GROUP_NONE, &tr );
-			if (tr.startsolid || tr.fraction != 1.0 )
-			{
-				NDebugOverlay::BoxAngles(chasePosition, npc->GetHullMins(), 
-					npc->GetHullMaxs(), npc->GetAbsAngles(), 255,0,0,20,0.5);
+		#ifndef SWDS
+			if(NDebugOverlay::IsEnabled()) {
+				// It it legal to drop me here
+				Vector	vUpBit = chasePosition;
+				vUpBit.z += 1;
+
+				trace_t tr;
+				AI_TraceHull( chasePosition, vUpBit, npc->GetHullMins(), 
+					npc->GetHullMaxs(), MASK_NPCSOLID, npc, COLLISION_GROUP_NONE, &tr );
+				if (tr.startsolid || tr.fraction != 1.0 )
+				{
+					NDebugOverlay::BoxAngles(chasePosition, npc->GetHullMins(), 
+						npc->GetHullMaxs(), npc->GetAbsAngles(), 255,0,0,20,0.5);
+				}
 			}
+		#endif
 
 			npc->m_vecLastPosition = chasePosition;
 

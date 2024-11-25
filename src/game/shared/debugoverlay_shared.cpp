@@ -15,6 +15,17 @@
 
 #define	MAX_OVERLAY_DIST_SQR	90000000
 
+extern IVDebugOverlay *debugoverlay;
+
+bool NDebugOverlay::IsEnabled()
+{
+#ifndef SWDS
+	return !g_bTextMode;
+#else
+	return false;
+#endif
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Debug player by index
 //-----------------------------------------------------------------------------
@@ -28,16 +39,13 @@ CSharedBasePlayer *GetDebugPlayer( void )
 #endif
 }
 
+#if !defined SWDS || 1
+
 //-----------------------------------------------------------------------------
 // Purpose: Draw a box with no orientation
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Box(const Vector &origin, const Vector &mins, const Vector &maxs, int r, int g, int b, int a, float flDuration)
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	BoxAngles( origin, mins, maxs, vec3_angle, r, g, b, a, flDuration );
 }
 
@@ -46,11 +54,6 @@ void NDebugOverlay::Box(const Vector &origin, const Vector &mins, const Vector &
 //-----------------------------------------------------------------------------
 void NDebugOverlay::BoxDirection(const Vector &origin, const Vector &mins, const Vector &maxs, const Vector &orientation, int r, int g, int b, int a, float duration)
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	// convert forward vector to angles
 	QAngle f_angles = vec3_angle;
 	f_angles.y = UTIL_VecToYaw( orientation );
@@ -63,15 +66,7 @@ void NDebugOverlay::BoxDirection(const Vector &origin, const Vector &mins, const
 //-----------------------------------------------------------------------------
 void NDebugOverlay::BoxAngles(const Vector &origin, const Vector &mins, const Vector &maxs, const QAngle &angles, int r, int g, int b, int a, float duration)
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
-	if ( debugoverlay )
-	{
-		debugoverlay->AddBoxOverlay( origin, mins, maxs, angles, r, g, b, a, duration );
-	}
+	debugoverlay->AddBoxOverlay( origin, mins, maxs, angles, r, g, b, a, duration );
 }
 
 //-----------------------------------------------------------------------------
@@ -79,15 +74,7 @@ void NDebugOverlay::BoxAngles(const Vector &origin, const Vector &mins, const Ve
 //-----------------------------------------------------------------------------
 void NDebugOverlay::SweptBox( const Vector& start, const Vector& end, const Vector& mins, const Vector& maxs, const QAngle & angles, int r, int g, int b, int a, float flDuration)
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
-	if ( debugoverlay )
-	{
-		debugoverlay->AddSweptBoxOverlay( start, end, mins, maxs, angles, r, g, b, a, flDuration );
-	}
+	debugoverlay->AddSweptBoxOverlay( start, end, mins, maxs, angles, r, g, b, a, flDuration );
 }
 
 //-----------------------------------------------------------------------------
@@ -95,11 +82,6 @@ void NDebugOverlay::SweptBox( const Vector& start, const Vector& end, const Vect
 //-----------------------------------------------------------------------------
 void NDebugOverlay::EntityBounds( const CSharedBaseEntity *pEntity, int r, int g, int b, int a, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	const CSharedCollisionProperty *pCollide = pEntity->CollisionProp();
 	BoxAngles( pCollide->GetCollisionOrigin(), pCollide->OBBMins(), pCollide->OBBMaxs(), pCollide->GetCollisionAngles(), r, g, b, a, flDuration );
 }
@@ -109,11 +91,6 @@ void NDebugOverlay::EntityBounds( const CSharedBaseEntity *pEntity, int r, int g
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Line( const Vector &origin, const Vector &target, int r, int g, int b, bool noDepthTest, float duration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	// --------------------------------------------------------------
 	// Clip the line before sending so we 
 	// don't overflow the client message buffer
@@ -140,10 +117,7 @@ void NDebugOverlay::Line( const Vector &origin, const Vector &target, int r, int
 	if (dotOrigin < 0 && dotTarget < 0) 
 		return;
 
-	if ( debugoverlay )
-	{
-		debugoverlay->AddLineOverlay( origin, target, r, g, b, noDepthTest, duration );
-	}
+	debugoverlay->AddLineOverlay( origin, target, r, g, b, noDepthTest, duration );
 }
 
 
@@ -152,11 +126,6 @@ void NDebugOverlay::Line( const Vector &origin, const Vector &target, int r, int
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Triangle( const Vector &p1, const Vector &p2, const Vector &p3, int r, int g, int b, int a, bool noDepthTest, float duration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	CSharedBasePlayer *player = GetDebugPlayer();
 	if ( !player )
 		return;
@@ -184,10 +153,7 @@ void NDebugOverlay::Triangle( const Vector &p1, const Vector &p2, const Vector &
 	if (dot1 < 0 && dot2 < 0 && dot3 < 0) 
 		return;
 
-	if ( debugoverlay )
-	{
-		debugoverlay->AddTriangleOverlay( p1, p2, p3, r, g, b, a, noDepthTest, duration );
-	}
+	debugoverlay->AddTriangleOverlay( p1, p2, p3, r, g, b, a, noDepthTest, duration );
 }
 
 //-----------------------------------------------------------------------------
@@ -195,17 +161,9 @@ void NDebugOverlay::Triangle( const Vector &p1, const Vector &p2, const Vector &
 //-----------------------------------------------------------------------------
 void NDebugOverlay::EntityText( int entityID, int text_offset, const char *text, float duration, int r, int g, int b, int a )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
-	if ( debugoverlay )
-	{
-		debugoverlay->AddEntityTextOverlay( entityID, text_offset, duration, 
-			(int)clamp(r * 255.f,0.f,255.f), (int)clamp(g * 255.f,0.f,255.f), (int)clamp(b * 255.f,0.f,255.f), 
-			(int)clamp(a * 255.f,0.f,255.f), text );
-	}
+	debugoverlay->AddEntityTextOverlay( entityID, text_offset, duration, 
+		(int)clamp(r * 255.f,0.f,255.f), (int)clamp(g * 255.f,0.f,255.f), (int)clamp(b * 255.f,0.f,255.f), 
+		(int)clamp(a * 255.f,0.f,255.f), text );
 }
 
 //-----------------------------------------------------------------------------
@@ -213,15 +171,7 @@ void NDebugOverlay::EntityText( int entityID, int text_offset, const char *text,
 //-----------------------------------------------------------------------------
 void NDebugOverlay::EntityTextAtPosition( const Vector &origin, int text_offset, const char *text, float duration, int r, int g, int b, int a )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
-	if ( debugoverlay )
-	{
-		debugoverlay->AddTextOverlayRGB( origin, text_offset, duration, r, g, b, a, "%s", text );
-	}
+	debugoverlay->AddTextOverlayRGB( origin, text_offset, duration, r, g, b, a, "%s", text );
 }
 
 //-----------------------------------------------------------------------------
@@ -229,15 +179,7 @@ void NDebugOverlay::EntityTextAtPosition( const Vector &origin, int text_offset,
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Grid( const Vector &vPosition )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
-	if ( debugoverlay )
-	{
-		debugoverlay->AddGridOverlay( vPosition );
-	}
+	debugoverlay->AddGridOverlay( vPosition );
 }
 
 //-----------------------------------------------------------------------------
@@ -245,11 +187,6 @@ void NDebugOverlay::Grid( const Vector &vPosition )
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Text( const Vector &origin, const char *text, bool bViewCheck, float duration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	CSharedBasePlayer *player = GetDebugPlayer();
 	
 	if ( !player )
@@ -279,10 +216,7 @@ void NDebugOverlay::Text( const Vector &origin, const char *text, bool bViewChec
 			return;
 	}
 
-	if ( debugoverlay )
-	{
-		debugoverlay->AddTextOverlay( origin, duration, "%s", text );
-	}	
+	debugoverlay->AddTextOverlay( origin, duration, "%s", text );
 }
 
 //-----------------------------------------------------------------------------
@@ -290,15 +224,7 @@ void NDebugOverlay::Text( const Vector &origin, const char *text, bool bViewChec
 //-----------------------------------------------------------------------------
 void NDebugOverlay::ScreenText( float flXpos, float flYpos, const char *text, int r, int g, int b, int a, float duration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
-	if ( debugoverlay )
-	{
-		debugoverlay->AddScreenTextOverlay( flXpos, flYpos, duration, r, g, b, a, text );
-	}
+	debugoverlay->AddScreenTextOverlay( flXpos, flYpos, duration, r, g, b, a, text );
 }
 
 //-----------------------------------------------------------------------------
@@ -306,11 +232,6 @@ void NDebugOverlay::ScreenText( float flXpos, float flYpos, const char *text, in
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Cross3D(const Vector &position, const Vector &mins, const Vector &maxs, int r, int g, int b, bool noDepthTest, float fDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	Vector start = mins + position;
 	Vector end   = maxs + position;
 	Line(start,end, r, g, b, noDepthTest,fDuration);
@@ -333,11 +254,6 @@ void NDebugOverlay::Cross3D(const Vector &position, const Vector &mins, const Ve
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Cross3D(const Vector &position, float size, int r, int g, int b, bool noDepthTest, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	Line( position + Vector(size,0,0), position - Vector(size,0,0), r, g, b, noDepthTest, flDuration );
 	Line( position + Vector(0,size,0), position - Vector(0,size,0), r, g, b, noDepthTest, flDuration );
 	Line( position + Vector(0,0,size), position - Vector(0,0,size), r, g, b, noDepthTest, flDuration );
@@ -348,11 +264,6 @@ void NDebugOverlay::Cross3D(const Vector &position, float size, int r, int g, in
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Cross3DOriented( const Vector &position, const QAngle &angles, float size, int r, int g, int b, bool noDepthTest, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	Vector forward, right, up;
 	AngleVectors( angles, &forward, &right, &up );
 
@@ -370,11 +281,6 @@ void NDebugOverlay::Cross3DOriented( const Vector &position, const QAngle &angle
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Cross3DOriented( const matrix3x4_t &m, float size, int c, bool noDepthTest, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	Vector forward, left, up, position;
 
 	MatrixGetColumn( m, 0, forward );
@@ -397,11 +303,6 @@ void NDebugOverlay::Cross3DOriented( const matrix3x4_t &m, float size, int c, bo
 //--------------------------------------------------------------------------------
 void NDebugOverlay::DrawTickMarkedLine(const Vector &startPos, const Vector &endPos, float tickDist, int tickTextDist, int r, int g, int b, bool noDepthTest, float duration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	CSharedBasePlayer* pPlayer = GetDebugPlayer();
 
 	if ( !pPlayer ) 
@@ -461,11 +362,6 @@ void NDebugOverlay::DrawTickMarkedLine(const Vector &startPos, const Vector &end
 //------------------------------------------------------------------------------
 void NDebugOverlay::DrawGroundCrossHairOverlay( void )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	CSharedBasePlayer* pPlayer = GetDebugPlayer();
 
 	if ( !pPlayer ) 
@@ -498,11 +394,6 @@ void NDebugOverlay::DrawGroundCrossHairOverlay( void )
 //--------------------------------------------------------------------------------
 void NDebugOverlay::HorzArrow( const Vector &startPos, const Vector &endPos, float width, int r, int g, int b, int a, bool noDepthTest, float flDuration)
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	Vector	lineDir		= (endPos - startPos);
 	VectorNormalize( lineDir );
 	Vector  upVec		= Vector( 0, 0, 1 );
@@ -546,11 +437,6 @@ void NDebugOverlay::HorzArrow( const Vector &startPos, const Vector &endPos, flo
 //-----------------------------------------------------------------------------
 void NDebugOverlay::YawArrow( const Vector &startPos, float yaw, float length, float width, int r, int g, int b, int a, bool noDepthTest, float flDuration)
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	Vector forward = UTIL_YawToVector( yaw );
 
 	HorzArrow( startPos, startPos + forward * length, width, r, g, b, a, noDepthTest, flDuration );
@@ -561,11 +447,6 @@ void NDebugOverlay::YawArrow( const Vector &startPos, float yaw, float length, f
 //--------------------------------------------------------------------------------
 void NDebugOverlay::VertArrow( const Vector &startPos, const Vector &endPos, float width, int r, int g, int b, int a, bool noDepthTest, float flDuration)
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	Vector	lineDir		= (endPos - startPos);
 	VectorNormalize( lineDir );
 	Vector  upVec;
@@ -609,11 +490,6 @@ void NDebugOverlay::VertArrow( const Vector &startPos, const Vector &endPos, flo
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Axis( const Vector &position, const QAngle &angles, float size, bool noDepthTest, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	Vector xvec, yvec, zvec;
 	AngleVectors( angles, &xvec, &yvec, &zvec );
 	
@@ -631,11 +507,6 @@ void NDebugOverlay::Axis( const Vector &position, const QAngle &angles, float si
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Sphere( const Vector &center, float radius, int r, int g, int b, bool noDepthTest, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	Vector edge, lastEdge;
 
 	float axisSize = radius;
@@ -686,11 +557,6 @@ void NDebugOverlay::Sphere( const Vector &center, float radius, int r, int g, in
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Circle( const Vector &position, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	CSharedBasePlayer *player = GetDebugPlayer();
 	if ( player == NULL )
 		return;
@@ -710,11 +576,6 @@ void NDebugOverlay::Circle( const Vector &position, float radius, int r, int g, 
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Circle( const Vector &position, const QAngle &angles, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	// Setup our transform matrix
 	matrix3x4_t xform;
 	AngleMatrix( angles, position, xform );
@@ -727,11 +588,6 @@ void NDebugOverlay::Circle( const Vector &position, const QAngle &angles, float 
 
 void NDebugOverlay::Circle( const Vector &position, const Vector &xAxis, const Vector &yAxis, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	const unsigned int nSegments = 16;
 	const float flRadStep = (M_PI*2.0f) / (float) nSegments;
 
@@ -766,11 +622,6 @@ void NDebugOverlay::Circle( const Vector &position, const Vector &xAxis, const V
 
 void NDebugOverlay::Sphere( const Vector &position, const QAngle &angles, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	// Setup our transform matrix
 	matrix3x4_t xform;
 	AngleMatrix( angles, position, xform );
@@ -789,11 +640,6 @@ void NDebugOverlay::Sphere( const Vector &position, const QAngle &angles, float 
 #define NUM_CONE_CIRCLES 3
 void NDebugOverlay::Cone( const Vector & position, const Vector & axis, float angleRadians, float length, int r, int g, int b, int a, bool bNoDepthTest, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	//draw lines down the length of the cone.
 	float radiusStep = ( M_PI * 2.0f ) / NUM_CONE_LINES;
 	float sinHalfAngle = sinf( angleRadians * 0.5f ); 
@@ -836,11 +682,6 @@ void NDebugOverlay::Cone( const Vector & position, const Vector & axis, float an
 //-----------------------------------------------------------------------------
 void NDebugOverlay::Cross( const Vector &position, float radius, int r, int g, int b, bool bNoDepthTest, float flDuration )
 {
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
-#endif
-
 	CSharedBasePlayer *player = GetDebugPlayer();
 	if ( player == NULL )
 		return;
@@ -854,13 +695,10 @@ void NDebugOverlay::Cross( const Vector &position, float radius, int r, int g, i
 	Line( position - radius * clientUp, position + radius * clientUp, r, g, b, bNoDepthTest, flDuration );
 }
 
-void NDebugOverlay::PurgeTextOverlays()
-{
-#ifdef GAME_DLL
-	if(engine->IsDedicatedServer())
-		return;
 #endif
 
+void NDebugOverlay::PurgeTextOverlays()
+{
 	if ( debugoverlay )
 	{
 		debugoverlay->PurgeTextOverlays();

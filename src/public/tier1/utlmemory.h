@@ -287,6 +287,7 @@ public:
 #endif
 
 	}
+	CUtlMemoryConservative( CUtlMemoryConservative<T>&& src );
 	CUtlMemoryConservative( T* pMemory, int numElements )								{ Assert( 0 ); }
 	~CUtlMemoryConservative()								{ if ( m_pMemory ) free( m_pMemory ); }
 
@@ -313,6 +314,9 @@ public:
 
 	// Attaches the buffer to external memory....
 	void SetExternalBuffer( T* pMemory, int numElements )	{ Assert( 0 ); }
+
+	// Fast swap
+	void Swap( CUtlMemoryConservative< T > &mem );
 
 	// Size
 	FORCEINLINE void RememberAllocSize( size_t sz )
@@ -448,6 +452,18 @@ CUtlMemory<T, I>::CUtlMemory( CUtlMemory<T, I>&& src )
 	Swap( src );
 }
 
+template< class T >
+CUtlMemoryConservative<T>::CUtlMemoryConservative( CUtlMemoryConservative<T>&& src )
+{
+	// Default init this so when we destruct src it doesn't do anything.
+	m_pMemory = 0;
+#ifdef REMEMBER_ALLOC_SIZE_FOR_VALGRIND
+	m_nCurAllocSize = 0;
+#endif
+
+	Swap( src );
+}
+
 template< class T, class I >
 CUtlMemory<T,I>::~CUtlMemory()
 {
@@ -482,6 +498,14 @@ void CUtlMemory<T,I>::Swap( CUtlMemory<T,I> &mem )
 	V_swap( m_nAllocationCount, mem.m_nAllocationCount );
 }
 
+template< class T >
+void CUtlMemoryConservative<T>::Swap( CUtlMemoryConservative<T> &mem )
+{
+	V_swap( m_pMemory, mem.m_pMemory );
+#ifdef REMEMBER_ALLOC_SIZE_FOR_VALGRIND
+	V_swap( m_nCurAllocSize, mem.m_nCurAllocSize );
+#endif
+}
 
 //-----------------------------------------------------------------------------
 // Switches the buffer from an external memory buffer to a reallocatable buffer

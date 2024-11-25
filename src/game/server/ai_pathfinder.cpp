@@ -1060,9 +1060,11 @@ bool CAI_Pathfinder::TestTriangulationRoute( Navigation_t navType, const Vector&
 		}
 	}
 
+#ifndef SWDS
 	// Debug mode: display the tested path...
-	if (GetOuter()->m_debugOverlays & OVERLAY_NPC_TRIANGULATE_BIT) 
+	if ( NDebugOverlay::IsEnabled() && GetOuter()->m_debugOverlays & OVERLAY_NPC_TRIANGULATE_BIT) 
 		m_TriDebugOverlay.AddTriOverlayLines( vecStart, vecApex, vecEnd, *pStartTrace, endTrace, bPathClear);
+#endif
 
 	return bPathClear;
 }
@@ -1136,10 +1138,12 @@ bool CAI_Pathfinder::Triangulate( Navigation_t navType, const Vector &vecStart, 
 	// in order to help select an apex point that insures that the NPC is 
 	// sufficiently past the obstacle before trying to turn back onto its original course.
 
-	if (GetOuter()->m_debugOverlays & OVERLAY_NPC_TRIANGULATE_BIT) 
+#ifndef SWDS
+	if ( NDebugOverlay::IsEnabled() && GetOuter()->m_debugOverlays & OVERLAY_NPC_TRIANGULATE_BIT) 
 	{
 		m_TriDebugOverlay.FadeTriOverlayLines();
 	}
+#endif
 
 	float flApexDist = flDistToBlocker + sizeX;
 	if (flApexDist > flTotalDist) 
@@ -1216,11 +1220,19 @@ bool CAI_Pathfinder::Triangulate( Navigation_t navType, const Vector &vecStart, 
 // Purpose: Triangulation debugging 
 //-----------------------------------------------------------------------------
 
+#if !defined SWDS || 1
 void CAI_Pathfinder::DrawDebugGeometryOverlays(int npcDebugOverlays) 
 {
-	m_TriDebugOverlay.Draw(npcDebugOverlays);
-}
+#ifndef SWDS
+	if(!NDebugOverlay::IsEnabled())
+		return;
 
+	m_TriDebugOverlay.Draw(npcDebugOverlays);
+#endif
+}
+#endif
+
+#ifndef SWDS
 void CAI_Pathfinder::CTriDebugOverlay::Draw(int npcDebugOverlays) 
 {
 	if (m_debugTriOverlayLine) 
@@ -1250,6 +1262,9 @@ void CAI_Pathfinder::CTriDebugOverlay::Draw(int npcDebugOverlays)
 
 void CAI_Pathfinder::CTriDebugOverlay::AddTriOverlayLines( const Vector &vecStart, const Vector &vecApex, const Vector &vecEnd, const AIMoveTrace_t &startTrace, const AIMoveTrace_t &endTrace, bool bPathClear )
 {
+	if(!NDebugOverlay::IsEnabled())
+		return;
+
 	static unsigned char s_TriangulationColor[2][3] = 
 	{
 		{ 255,   0, 0 },
@@ -1315,6 +1330,9 @@ void CAI_Pathfinder::CTriDebugOverlay::FadeTriOverlayLines(void)
 }
 void CAI_Pathfinder::CTriDebugOverlay::AddTriOverlayLine(const Vector &origin, const Vector &dest, int r, int g, int b, bool noDepthTest)
 {
+	if(!NDebugOverlay::IsEnabled())
+		return;
+
 	if (!m_debugTriOverlayLine)
 	{
 		m_debugTriOverlayLine = new OverlayLine_t*[NUM_NPC_DEBUG_OVERLAYS];
@@ -1340,5 +1358,5 @@ void CAI_Pathfinder::CTriDebugOverlay::AddTriOverlayLine(const Vector &origin, c
 	overCounter++;
 
 }
-
+#endif
 //-----------------------------------------------------------------------------

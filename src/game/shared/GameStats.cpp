@@ -241,7 +241,7 @@ void CBaseGameStats::Event_Init( void )
 	SetSteamStatistic( g_pFullFileSystem->IsSteam() );
 	SetCyberCafeStatistic( gamestatsuploader->IsCyberCafeUser() );
 	#ifndef SWDS
-	if(!engine->IsDedicatedServer()) {
+	if(!g_bTextMode) {
 		SetDXLevelStatistic( mat_dxlevel->GetInt() );
 	} else
 	#endif
@@ -268,7 +268,9 @@ void CBaseGameStats::Event_MapChange( const char *szOldMapName, const char *szNe
 	StatsLog( "CBaseGameStats::Event_MapChange to [%s]\n", szNewMapName );
 }
 
+#ifndef SWDS
 extern ConVar *closecaption;
+#endif
 
 void CBaseGameStats::Event_LevelInit( void )
 {
@@ -281,7 +283,14 @@ void CBaseGameStats::Event_LevelInit( void )
 	// HACK HACK:  Punching this hole through only works in single player!!!
 	if ( gpGlobals->maxClients == 1 )
 	{
-		SetCaptionsStatistic( closecaption->GetBool() );
+	#ifndef SWDS
+		if( !g_bTextMode ) {
+			SetCaptionsStatistic( closecaption->GetBool() );
+		} else
+	#endif
+		{
+			SetCaptionsStatistic( false );
+		}
 
 		SetHDRStatistic( gamestatsuploader->IsHDREnabled() );
 
@@ -1092,7 +1101,9 @@ void CBaseGameStats_Driver::SendData()
 
 #endif
 
+#ifndef SWDS
 extern ConVar *closecaption;
+#endif
 
 bool CBaseGameStats_Driver::AddBaseDataForSend( KeyValues *pKV, StatSendType_t sendType )
 {
@@ -1152,7 +1163,14 @@ bool CBaseGameStats_Driver::AddBaseDataForSend( KeyValues *pKV, StatSendType_t s
 
 			pKV->SetInt( "UsedVoice", m_bDidVoiceChat );
 
-			pKV->SetInt( "Caption", closecaption->GetInt() );
+		#ifndef SWDS
+			if( !g_bTextMode ) {
+				pKV->SetInt( "Caption", closecaption->GetInt() );
+			} else
+		#endif
+			{
+				pKV->SetInt( "Caption", 0 );
+			}
 
 			// We can now get the game language from steam :)
 			if ( SteamApps() )

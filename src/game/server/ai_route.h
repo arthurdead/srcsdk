@@ -14,7 +14,9 @@
 #include "ai_waypoint.h"
 
 struct AI_Waypoint_t;
+#ifndef SWDS
 struct OverlayLine_t;
+#endif
 
 class CAI_BaseNPC;
 

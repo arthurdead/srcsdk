@@ -142,9 +142,7 @@ ISpatialPartition *partition = NULL;
 IVModelInfo *modelinfo = NULL;
 IEngineTrace *enginetrace = NULL;
 IGameEventManager2 *gameeventmanager = NULL;
-#ifndef SWDS
 IVDebugOverlay * debugoverlay = NULL;
-#endif
 IServerPluginHelpers *serverpluginhelpers = NULL;
 #ifndef SWDS
 IServerEngineTools *serverenginetools = NULL;
@@ -193,6 +191,7 @@ extern ConVar *hide_server;
 
 #ifndef SWDS
 bool g_bTextMode = false;
+bool g_bDedicatedServer = false;
 #endif
 
 // String tables
@@ -349,8 +348,6 @@ void DrawMeasuredSections(void)
 //-----------------------------------------------------------------------------
 void DrawAllDebugOverlays( void ) 
 {
-	NDebugOverlay::PurgeTextOverlays();
-
 	// If in debug select mode print the selection entities name or classname
 	if (CBaseEntity::m_bInDebugSelect)
 	{
@@ -454,7 +451,7 @@ static bool InitGameSystems( CreateInterfaceFn appSystemFactory )
 
 #ifndef SWDS
 	// Startup vgui
-	if ( enginevgui && !engine->IsDedicatedServer() )
+	if ( !g_bTextMode )
 	{
 		if(!VGui_Startup( appSystemFactory ))
 			return false;
@@ -578,13 +575,16 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 	g_pMatchFramework = (IMatchFramework *)appSystemFactory( IMATCHFRAMEWORK_VERSION_STRING, NULL );
 
 #ifndef SWDS
-	if ( CommandLine()->FindParm( "-textmode" ) || engine->IsDedicatedServer() )
+	if ( CommandLine()->HasParm( "-dedicated" ) || engine->IsDedicatedServer() )
+		g_bDedicatedServer = true;
+
+	if ( CommandLine()->HasParm( "-textmode" ) || g_bDedicatedServer )
 		g_bTextMode = true;
 #endif
 
 #ifndef SWDS
 	// If not running dedicated, grab the engine vgui interface
-	if ( !engine->IsDedicatedServer() && !g_bTextMode )
+	if ( !g_bTextMode )
 	{
 		// This interface is optional, and is only valid when running with -tools
 		serverenginetools = ( IServerEngineTools * )appSystemFactory( VSERVERENGINETOOLS_INTERFACE_VERSION, NULL );
@@ -593,7 +593,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 
 #ifndef SWDS
 	// If not running dedicated, grab the engine vgui interface
-	if ( !engine->IsDedicatedServer() && !g_bTextMode )
+	if ( !g_bTextMode )
 	{
 		if ( ( enginevgui = ( IEngineVGui * )appSystemFactory(VENGINE_VGUI_VERSION, NULL)) == NULL )
 			return false;
@@ -603,7 +603,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 #endif // SERVER_USES_VGUI
 
 #ifndef SWDS
-	if(!engine->IsDedicatedServer()) {
+	if( !g_bDedicatedServer ) {
 		V_strcat_safe(gamebin_path, "game_loopback" DLL_EXT_STRING);
 		Sys_LoadInterface( gamebin_path, GAMELOOPBACK_INTERFACE_VERSION, &game_loopbackDLL, reinterpret_cast< void** >( &g_pGameLoopback ) );
 		gamebin_path[gamebin_length] = '\0';
@@ -715,8 +715,8 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, CreateInterfac
 	g_AI_SchedulesManager.LoadAllSchedules();
 
 #ifndef SWDS
-	if(!engine->IsDedicatedServer() && !g_bTextMode) {
-		// try to get debug overlay, may be NULL if on HLDS
+	// try to get debug overlay, may be NULL if on HLDS
+	if( !g_bTextMode ) {
 		debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL );
 	}
 #endif
@@ -734,7 +734,7 @@ void CServerGameDLL::PostInit()
 	IGameSystem::PostInitAllSystems();
 
 #ifndef SWDS
-	if ( !engine->IsDedicatedServer() && enginevgui && !g_bTextMode )
+	if ( !g_bTextMode )
 	{
 		if ( VGui_PostInit() )
 		{
@@ -747,7 +747,7 @@ void CServerGameDLL::PostInit()
 void CServerGameDLL::PostToolsInit()
 {
 #ifndef SWDS
-	if ( serverenginetools && !engine->IsDedicatedServer() && !g_bTextMode )
+	if ( serverenginetools && !g_bTextMode )
 	{
 		serverfoundry = ( IServerFoundry * )serverenginetools->QueryInterface( VSERVERFOUNDRY_INTERFACE_VERSION );
 	}
@@ -774,7 +774,7 @@ void CServerGameDLL::DLLShutdown( void )
 	IGameSystem::ShutdownAllSystems();
 
 #ifndef SWDS
-	if ( enginevgui && !engine->IsDedicatedServer() )
+	if ( !g_bTextMode )
 	{
 		VGui_Shutdown();
 	}
@@ -906,7 +906,7 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 	// Added lservercfg file cvar, since listen and dedicated servers should not
 	// share a single config file. (sjb)
 #ifndef SWDS
-	if ( !engine->IsDedicatedServer() )
+	if ( !g_bDedicatedServer )
 	{
 		// listen server
 		const char *cfgfile = lservercfgfile.GetString();
@@ -1122,7 +1122,7 @@ void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edictCount, int cl
 	engine->ServerCommand( szCommand );
 
 #ifndef SWDS
-	if(!engine->IsDedicatedServer() && !g_bTextMode) {
+	if( !g_bTextMode ) {
 		// --------------------------------------------------------
 		// If in edit mode start WC session and make sure we are
 		// running the same map in WC and the engine
@@ -1211,7 +1211,7 @@ void CServerGameDLL::GameFrame( bool simulating )
 	}
 
 #ifndef SWDS
-	if( engine->IsDedicatedServer() || gpGlobals->maxClients > 1 )
+	if( g_bDedicatedServer || gpGlobals->maxClients > 1 )
 #endif
 	{
 		HackMgr_SetGamePaused( engine->IsPaused() );
@@ -1245,7 +1245,7 @@ void CServerGameDLL::GameFrame( bool simulating )
 	gEntList.CleanupDeleteList();
 
 #ifndef SWDS
-	if( !engine->IsDedicatedServer() && !g_bTextMode )
+	if( !g_bTextMode )
 		HandleFoundryEntitySpawnRecords();
 #endif
 
@@ -1329,15 +1329,17 @@ void CServerGameDLL::PreClientUpdate( bool simulating )
 	}
 	*/
 
+	NDebugOverlay::PurgeTextOverlays();
+
 #if defined _DEBUG && !defined SWDS
-	if( !engine->IsDedicatedServer() && !g_bTextMode )
+	if( NDebugOverlay::IsEnabled() )
 		DrawAllDebugOverlays();
 #endif
 
 	IGameSystem::PreClientUpdateAllSystems();
 
 #if defined _DEBUG && !defined SWDS
-	if( !engine->IsDedicatedServer() && !g_bTextMode )
+	if( NDebugOverlay::IsEnabled() )
 	{
 		if ( sv_showhitboxes.GetInt() == -1 )
 			return;
@@ -1386,7 +1388,7 @@ void CServerGameDLL::OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_
 void CServerGameDLL::LevelShutdown( void )
 {
 #ifndef SWDS
-	if(!engine->IsDedicatedServer()) {
+	if( !g_bTextMode ) {
 		// If in edit mode tell Hammer I'm ending my session. This re-enables
 		// the Hammer UI so they can continue editing the map.
 		Editor_EndSession(false);
@@ -2504,7 +2506,7 @@ void CServerGameClients::ClientSetupVisibility( edict_t *pViewEntity, edict_t *p
 	engine->ResetPVS( pvs, pvssize );
 
 #ifndef SWDS
-	if(!engine->IsDedicatedServer()) {
+	if( !g_bTextMode ) {
 		g_pToolFrameworkServer->PreSetupVisibility();
 	}
 #endif
@@ -2620,7 +2622,7 @@ float CServerGameClients::ProcessUsercmds( edict_t *player, bf_read *buf, int nu
 	int dropped_packets, bool ignore, bool paused )
 {
 #ifndef SWDS
-	if(!engine->IsDedicatedServer()) {
+	if( !g_bDedicatedServer ) {
 		if( gpGlobals->maxClients == 1 ) {
 			HackMgr_SetGamePaused( paused );
 		}
@@ -3096,7 +3098,6 @@ void MessageWriteBits( const void *pIn, int nBits )
 	g_pMsgBuffer->WriteBits( pIn, nBits );
 }
 
-#ifndef SWDS
 static bool IsDedicatedServer()
 {
 	if( engine )
@@ -3104,26 +3105,22 @@ static bool IsDedicatedServer()
 
 	return false;
 }
-#endif
 
 class CServerDLLSharedAppSystems : public IServerDLLSharedAppSystems
 {
 public:
 	CServerDLLSharedAppSystems()
 	{
-	#ifndef SWDS
 		if(!IsDedicatedServer()) {
 			AddAppSystem( "soundemittersystem" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
 			AddAppSystem( "scenefilecache" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
-		} else
-	#endif
-		{
+		} else {
 			AddAppSystem( "soundemittersystem_srv" DLL_EXT_STRING, SOUNDEMITTERSYSTEM_INTERFACE_VERSION );
 			AddAppSystem( "scenefilecache_srv" DLL_EXT_STRING, SCENE_FILE_CACHE_INTERFACE_VERSION );
 		}
 
 	#ifndef SWDS
-		if(!IsDedicatedServer()) {
+		if(!IsDedicatedServer() && !CommandLine()->HasParm("-dedicated")) {
 			AddAppSystem( "game_loopback" DLL_EXT_STRING, GAMELOOPBACK_INTERFACE_VERSION );
 			AddAppSystem( "client" DLL_EXT_STRING, GAMECLIENTLOOPBACK_INTERFACE_VERSION );
 		}

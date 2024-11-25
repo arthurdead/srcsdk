@@ -78,7 +78,7 @@ void CStatueProp::VPhysicsUpdate( IPhysicsObject *pPhysics )
 	BaseClass::VPhysicsUpdate( pPhysics );
 
 #ifndef SWDS
-	if( !engine->IsDedicatedServer() ) {
+	if( NDebugOverlay::IsEnabled() ) {
 		if ( vcollide_wireframe->GetBool() )
 		{
 			const CPhysCollide *pCollide = pPhysics->GetCollide();

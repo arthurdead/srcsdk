@@ -164,8 +164,10 @@ void CAI_MoveProbe::TraceHull(
 #endif
 	}
 
-	if ( r_visualizetraces->GetBool() )
+#ifndef SWDS
+	if ( VisualizeTraces() )
 		DebugDrawLine( pResult->startpos, pResult->endpos, 255, 255, 0, true, -1.0f );
+#endif
 
 	//NDebugOverlay::SweptBox( vecStart, vecEnd, hullMin, hullMax, vec3_angle, 255, 255, 0, 0, 10 );
 	// Just to make sure; I'm not sure that this is always the case but it should be

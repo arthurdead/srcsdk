@@ -12,6 +12,8 @@
 #include "mathlib/vector.h"
 #include "tier1/utlvector.h"
 
+#ifndef SWDS
+
 DECLARE_LOGGING_CHANNEL( LOG_FOUNDRY );
 
 //-----------------------------------------------------------------------------
@@ -42,5 +44,7 @@ public:
 };
 
 #define VSERVERFOUNDRY_INTERFACE_VERSION "VSERVERFOUNDRY001"
+
+#endif
 
 #endif // ISERVERFOUNDRY_H

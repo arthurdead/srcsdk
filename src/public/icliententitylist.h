@@ -66,12 +66,12 @@ public:
 	virtual ClientEntityCacheInfo_t	*GetClientNetworkableArray() = 0;
 };
 
-#ifdef GAME_DLL
-extern IClientEntityList *cl_entitylist;
-extern IClientEntityListEx *cl_entitylist_ex;
-#else
+#ifdef CLIENT_DLL
 extern IClientEntityList *entitylist;
 extern IClientEntityListEx *entitylist_ex;
+#else
+extern IClientEntityList *cl_entitylist;
+extern IClientEntityListEx *cl_entitylist_ex;
 #endif
 
 #define VCLIENTENTITYLIST_INTERFACE_VERSION	"VClientEntityList003"

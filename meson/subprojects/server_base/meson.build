@@ -323,6 +323,7 @@ server_base_dep = declare_dependency(
 		join_paths(server_src_dir,'recast','recast_build.cpp'),
 		join_paths(server_src_dir,'recast','recast_mapmesh.cpp'),
 		join_paths(server_src_dir,'recast','recast_offmesh_connection.cpp'),
+		join_paths(server_src_dir,'ndebugoverlay.cpp'),
 		join_paths(shared_src_dir,'voice_gamemgr.cpp'),
 		join_paths(public_dir,'dt_utlvector_send.cpp'),
 		join_paths(public_dir,'dt_send.cpp'),

@@ -36,7 +36,7 @@ public:
 	bool SetupAudioState( AudioState_t &audioState );
 	bool IsThirdPersonCamera();
 
-	IClientEngineTools	*m_pTools;
+	IClientEngineTools	*m_pTools = NULL;
 };
 
 
@@ -58,6 +58,9 @@ IGameSystem *ToolFrameworkClientSystem()
 
 bool CToolFrameworkClient::Init()
 {
+	if( g_bTextMode )
+		return false;
+
 	factorylist_t list;
 	FactoryList_Retrieve( list );
 

@@ -1078,6 +1078,7 @@ float CBaseEntity::GetGlobalFadeScale() const
 	return m_flFadeScale;
 }
 
+#if !defined SWDS || 1
 struct TimedOverlay_t
 {
 	char 			*msg;
@@ -1093,6 +1094,9 @@ struct TimedOverlay_t
 //-----------------------------------------------------------------------------
 void CBaseEntity::AddTimedOverlay( const char *msg, int endTime )
 {
+	if(!NDebugOverlay::IsEnabled())
+		return;
+
 	TimedOverlay_t *pNewTO = new TimedOverlay_t;
 	int len = strlen(msg);
 	pNewTO->msg = new char[len + 1];
@@ -1110,18 +1114,15 @@ void CBaseEntity::AddTimedOverlay( const char *msg, int endTime )
 //-----------------------------------------------------------------------------
 void CBaseEntity::DrawBBoxOverlay( float flDuration )
 {
-	if (edict())
-	{
-		NDebugOverlay::EntityBounds(this, 255, 100, 0, 0, flDuration );
+	NDebugOverlay::EntityBounds(this, 255, 100, 0, 0, flDuration );
 
-		if ( CollisionProp()->IsSolidFlagSet( FSOLID_USE_TRIGGER_BOUNDS ) )
-		{
-			Vector vecTriggerMins, vecTriggerMaxs;
-			CollisionProp()->WorldSpaceTriggerBounds( &vecTriggerMins, &vecTriggerMaxs );
-			Vector center = 0.5f * (vecTriggerMins + vecTriggerMaxs);
-			Vector extents = vecTriggerMaxs - center;
-			NDebugOverlay::Box(center, -extents, extents, 0, 255, 255, 0, flDuration );
-		}
+	if ( CollisionProp()->IsSolidFlagSet( FSOLID_USE_TRIGGER_BOUNDS ) )
+	{
+		Vector vecTriggerMins, vecTriggerMaxs;
+		CollisionProp()->WorldSpaceTriggerBounds( &vecTriggerMins, &vecTriggerMaxs );
+		Vector center = 0.5f * (vecTriggerMins + vecTriggerMaxs);
+		Vector extents = vecTriggerMaxs - center;
+		NDebugOverlay::Box(center, -extents, extents, 0, 255, 255, 0, flDuration );
 	}
 }
 
@@ -1168,6 +1169,9 @@ void CBaseEntity::SendDebugPivotOverlay( void )
 //------------------------------------------------------------------------------
 void CBaseEntity::EntityText( int text_offset, const char *text, float duration, int r, int g, int b, int a )
 {
+	if(!NDebugOverlay::IsEnabled())
+		return;
+
 	Vector origin;
 	Vector vecLocalCenter;
 
@@ -1515,7 +1519,7 @@ int CBaseEntity::DrawDebugTextOverlays(void)
 
 	return offset;
 }
-
+#endif
 
 void CBaseEntity::SetParent( string_t newParent, CBaseEntity *pActivator, int iAttachment )
 {
@@ -1813,7 +1817,7 @@ void CBaseEntity::Activate( void )
 	if (m_iInitialTeamNum)
 	{
 		ChangeTeam( m_iInitialTeamNum );
-	}	
+	}
 
 	// Get a handle to my damage filter entity if there is one.
 	if ( m_iszDamageFilterName != NULL_STRING )
@@ -4022,39 +4026,43 @@ const char *CBaseEntity::GetDebugName(void)
 //------------------------------------------------------------------------------
 void CBaseEntity::DrawInputOverlay(const char *szInputName, CBaseEntity *pCaller, variant_t Value)
 {
-	char bigstring[1024];
-	if ( Value.FieldType() == FIELD_INTEGER )
-	{
-		Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s,%d) <-- (%s)\n", gpGlobals->curtime, szInputName, Value.Int(), pCaller ? pCaller->GetDebugName() : NULL);
+#ifndef SWDS
+	if( NDebugOverlay::IsEnabled() ) {
+		char bigstring[1024];
+		if ( Value.FieldType() == FIELD_INTEGER )
+		{
+			Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s,%d) <-- (%s)\n", gpGlobals->curtime, szInputName, Value.Int(), pCaller ? pCaller->GetDebugName() : NULL);
+		}
+		else if ( Value.FieldType() == FIELD_INTEGER64 )
+		{
+			Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s,%lli) <-- (%s)\n", gpGlobals->curtime, szInputName, Value.Int64(), pCaller ? pCaller->GetDebugName() : NULL);
+		}
+		else if ( Value.FieldType() == FIELD_STRING )
+		{
+			Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s,%s) <-- (%s)\n", gpGlobals->curtime, szInputName, Value.String(), pCaller ? pCaller->GetDebugName() : NULL);
+		}
+		else
+		{
+			Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s) <-- (%s)\n", gpGlobals->curtime, szInputName, pCaller ? pCaller->GetDebugName() : NULL);
+		}
+		AddTimedOverlay(bigstring, 10.0);
 	}
-	else if ( Value.FieldType() == FIELD_INTEGER64 )
-	{
-		Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s,%lli) <-- (%s)\n", gpGlobals->curtime, szInputName, Value.Int64(), pCaller ? pCaller->GetDebugName() : NULL);
-	}
-	else if ( Value.FieldType() == FIELD_STRING )
-	{
-		Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s,%s) <-- (%s)\n", gpGlobals->curtime, szInputName, Value.String(), pCaller ? pCaller->GetDebugName() : NULL);
-	}
-	else
-	{
-		Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s) <-- (%s)\n", gpGlobals->curtime, szInputName, pCaller ? pCaller->GetDebugName() : NULL);
-	}
-	AddTimedOverlay(bigstring, 10.0);
+#endif
 
 	if ( Value.FieldType() == FIELD_INTEGER )
 	{
-		DevMsg( 2, "input: (%s,%d) -> (%s,%s), from (%s)\n", szInputName, Value.Int(), STRING(m_iClassname), GetDebugName(), pCaller ? pCaller->GetDebugName() : NULL);
+		Log_Msg( LOG_ENTITYIO, "input: (%s,%d) -> (%s,%s), from (%s)\n", szInputName, Value.Int(), STRING(m_iClassname), GetDebugName(), pCaller ? pCaller->GetDebugName() : NULL);
 	}
 	else if ( Value.FieldType() == FIELD_INTEGER64 )
 	{
-		DevMsg( 2, "input: (%s,%lli) -> (%s,%s), from (%s)\n", szInputName, Value.Int64(), STRING(m_iClassname), GetDebugName(), pCaller ? pCaller->GetDebugName() : NULL);
+		Log_Msg( LOG_ENTITYIO, "input: (%s,%lli) -> (%s,%s), from (%s)\n", szInputName, Value.Int64(), STRING(m_iClassname), GetDebugName(), pCaller ? pCaller->GetDebugName() : NULL);
 	}
 	else if ( Value.FieldType() == FIELD_STRING )
 	{
-		DevMsg( 2, "input: (%s,%s) -> (%s,%s), from (%s)\n", szInputName, Value.String(), STRING(m_iClassname), GetDebugName(), pCaller ? pCaller->GetDebugName() : NULL);
+		Log_Msg( LOG_ENTITYIO, "input: (%s,%s) -> (%s,%s), from (%s)\n", szInputName, Value.String(), STRING(m_iClassname), GetDebugName(), pCaller ? pCaller->GetDebugName() : NULL);
 	}
 	else
-		DevMsg( 2, "input: (%s) -> (%s,%s), from (%s)\n", szInputName, STRING(m_iClassname), GetDebugName(), pCaller ? pCaller->GetDebugName() : NULL);
+		Log_Msg( LOG_ENTITYIO, "input: (%s) -> (%s,%s), from (%s)\n", szInputName, STRING(m_iClassname), GetDebugName(), pCaller ? pCaller->GetDebugName() : NULL);
 }
 
 //------------------------------------------------------------------------------
@@ -4064,29 +4072,32 @@ void CBaseEntity::DrawInputOverlay(const char *szInputName, CBaseEntity *pCaller
 //------------------------------------------------------------------------------
 void CBaseEntity::DrawOutputOverlay(CEventAction *ev)
 {
-	// Print to entity
-	char bigstring[1024];
-	if ( ev->m_flDelay )
-	{
-		Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s) --> (%s),%.1f) \n", gpGlobals->curtime, STRING(ev->m_iTargetInput), STRING(ev->m_iTarget), ev->m_flDelay);
+#ifndef SWDS
+	if( NDebugOverlay::IsEnabled() ) {
+		// Print to entity
+		char bigstring[1024];
+		if ( ev->m_flDelay )
+		{
+			Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s) --> (%s),%.1f) \n", gpGlobals->curtime, STRING(ev->m_iTargetInput), STRING(ev->m_iTarget), ev->m_flDelay);
+		}
+		else
+		{
+			Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s) --> (%s)\n", gpGlobals->curtime,  STRING(ev->m_iTargetInput), STRING(ev->m_iTarget));
+		}
+		AddTimedOverlay(bigstring, 10.0);
 	}
-	else
-	{
-		Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s) --> (%s)\n", gpGlobals->curtime,  STRING(ev->m_iTargetInput), STRING(ev->m_iTarget));
-	}
-	AddTimedOverlay(bigstring, 10.0);
+#endif
 
 	// Now print to the console
 	if ( ev->m_flDelay )
 	{
-		DevMsg( 2, "output: (%s,%s) -> (%s,%s,%.1f)\n", STRING(m_iClassname), GetDebugName(), STRING(ev->m_iTarget), STRING(ev->m_iTargetInput), ev->m_flDelay );
+		Log_Msg( LOG_ENTITYIO, "output: (%s,%s) -> (%s,%s,%.1f)\n", STRING(m_iClassname), GetDebugName(), STRING(ev->m_iTarget), STRING(ev->m_iTargetInput), ev->m_flDelay );
 	}
 	else
 	{
-		DevMsg( 2, "output: (%s,%s) -> (%s,%s)\n", STRING(m_iClassname), GetDebugName(), STRING(ev->m_iTarget), STRING(ev->m_iTargetInput) );
+		Log_Msg( LOG_ENTITYIO, "output: (%s,%s) -> (%s,%s)\n", STRING(m_iClassname), GetDebugName(), STRING(ev->m_iTarget), STRING(ev->m_iTargetInput) );
 	}
 }
-
 
 //-----------------------------------------------------------------------------
 // Entity events... these are events targetted to a particular entity

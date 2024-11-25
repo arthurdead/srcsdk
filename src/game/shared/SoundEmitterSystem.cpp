@@ -30,6 +30,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+extern bool g_bTextMode;
+
 #ifdef GAME_DLL
 DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_SOUND, "Sound Server" );
 #else
@@ -43,7 +45,9 @@ ConVar cc_showmissing( "cc_showmissing", "0", FCVAR_REPLICATED, "Show missing cl
 static ConVar sv_snd_filter( "sv_snd_filter", "", FCVAR_REPLICATED, "Filters out all sounds not containing the specified string before being emitted\n" );
 #endif // STAGING_ONLY
 
+#ifndef SWDS
 extern ConVar *closecaption;
+#endif
 
 static bool g_bPermitDirectSoundPrecache = false;
 
@@ -918,12 +922,6 @@ public:
 
 	void EmitCloseCaption( IRecipientFilter& filter, int entindex, const CSoundParameters & params, const EmitSound_t & ep )
 	{
-		// No close captions in multiplayer...
-		if ( gpGlobals->maxClients > 1 || (gpGlobals->maxClients==1 && !closecaption->GetBool()))
-		{
-			return;
-		}
-
 		bool bForceSubtitle = false;
 
 		if ( TestSoundChar( params.soundname, CHAR_SUBTITLED ) )
@@ -1040,7 +1038,6 @@ public:
 			CUtlVector< Vector > dummy;
 			EmitCloseCaption( filter, entindex, false, soundname, dummy, soundduration, false );
 		}
-
 	}
 
 	void StopSoundByHandle( int entindex, const char *soundname, HSOUNDSCRIPTHANDLE& handle, bool bIsStoppingSpeakerSound = false )

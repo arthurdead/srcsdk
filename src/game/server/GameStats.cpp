@@ -208,7 +208,7 @@ void CBaseGameStats::Event_Init( void )
 	SetSteamStatistic( g_pFullFileSystem->IsSteam() );
 	SetCyberCafeStatistic( gamestatsuploader->IsCyberCafeUser() );
 #ifndef SWDS
-	if(!engine->IsDedicatedServer()) {
+	if(!g_bTextMode) {
 		SetDXLevelStatistic( mat_dxlevel->GetInt() );
 	} else
 #endif

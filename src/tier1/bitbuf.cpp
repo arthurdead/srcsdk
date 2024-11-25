@@ -769,15 +769,27 @@ void bf_write::WriteLong(long val)
 	WriteSBitLong(val, sizeof(long) << 3);
 }
 
-void bf_write::WriteLongLong(int64 val)
+void bf_write::WriteLongLong(uint *pLongs)
 {
-	uint *pLongs = (uint*)&val;
-
 	// Insert the two DWORDS according to network endian
 	const short endianIndex = 0x0100;
 	byte *idx = (byte*)&endianIndex;
 	WriteUBitLong(pLongs[*idx++], sizeof(long) << 3);
 	WriteUBitLong(pLongs[*idx], sizeof(long) << 3);
+}
+
+void bf_write::WriteLongLong(int64 val)
+{
+	uint *pLongs = (uint*)&val;
+
+	WriteLongLong(pLongs);
+}
+
+void bf_write::WriteULongLong(uint64 val)
+{
+	uint *pLongs = (uint*)&val;
+
+	WriteLongLong(pLongs);
 }
 
 void bf_write::WriteFloat(float val)
@@ -1409,16 +1421,21 @@ void bf_read::ReadBitAngles( QAngle& fa )
 	fa.Init( tmp.x, tmp.y, tmp.z );
 }
 
-int64 bf_read::ReadLongLong()
+void bf_read::ReadLongLong(uint *pLongs)
 {
-	int64 retval;
-	uint *pLongs = (uint*)&retval;
-
 	// Read the two DWORDs according to network endian
 	const short endianIndex = 0x0100;
 	byte *idx = (byte*)&endianIndex;
 	pLongs[*idx++] = ReadUBitLong(sizeof(long) << 3);
 	pLongs[*idx] = ReadUBitLong(sizeof(long) << 3);
+}
+
+int64 bf_read::ReadLongLong()
+{
+	int64 retval;
+	uint *pLongs = (uint*)&retval;
+
+	ReadLongLong(pLongs);
 
 	return retval;
 }
@@ -1428,11 +1445,7 @@ uint64 bf_read::ReadULongLong()
 	uint64 retval;
 	uint *pLongs = (uint*)&retval;
 
-	// Read the two DWORDs according to network endian
-	const short endianIndex = 0x0100;
-	byte *idx = (byte*)&endianIndex;
-	pLongs[*idx++] = ReadUBitLong(sizeof(long) << 3);
-	pLongs[*idx] = ReadUBitLong(sizeof(long) << 3);
+	ReadLongLong(pLongs);
 
 	return retval;
 }

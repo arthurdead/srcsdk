@@ -28,6 +28,13 @@ void HackMgr_InitCommandLine()
 	if(IsDedicatedServer())
 	#endif
 	{
+		CommandLine()->AppendParm("-dedicated", "");
+	}
+
+	#ifndef SWDS
+	if(IsDedicatedServer() || CommandLine()->HasParm("-dedicated"))
+	#endif
+	{
 		CommandLine()->AppendParm("-textmode", "");
 	}
 
@@ -59,7 +66,7 @@ void HackMgr_InitCommandLine()
 
 	#ifndef SWDS
 	if(!IsDedicatedServer()) {
-		if(CommandLine()->HasParm("-textmode")) {
+		if(CommandLine()->HasParm("-textmode") || CommandLine()->HasParm("-dedicated")) {
 			CommandLine()->RemoveParm("-edit_linux");
 			CommandLine()->RemoveParm("-tools");
 			CommandLine()->RemoveParm("-edit");
@@ -71,14 +78,16 @@ void HackMgr_InitCommandLine()
 	#if !defined SWDS && defined __linux__
 	if(!IsDedicatedServer()) {
 		if(CommandLine()->HasParm("-edit_linux")) {
-			CommandLine()->AppendParm("-edit", "");
+			if(!CommandLine()->HasParm("-dedicated")) {
+				CommandLine()->AppendParm("-edit", "");
+			}
 			CommandLine()->RemoveParm("-edit_linux");
 		}
 	}
 	#endif
 
 	#ifndef SWDS
-	if(!IsDedicatedServer()) {
+	if(!IsDedicatedServer() && !CommandLine()->HasParm("-dedicated")) {
 		if(CommandLine()->HasParm("-edit") && !CommandLine()->HasParm("-foundrymode")) {
 			CommandLine()->AppendParm("-foundrymode", "");
 		} else if(CommandLine()->HasParm("-foundrymode") && !CommandLine()->HasParm("-edit")) {

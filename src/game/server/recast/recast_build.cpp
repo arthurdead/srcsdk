@@ -14,6 +14,7 @@
 #include "recast/recast_mgr_ent.h"
 #include "vstdlib/jobthread.h"
 #include "collisionutils.h"
+#include "movevars_shared.h"
 
 #include "DetourNavMesh.h"
 #include "DetourNavMeshBuilder.h"
@@ -406,6 +407,8 @@ bool CRecastMesh::RemoveUnreachablePoly( CMapMesh *pMapMesh )
 	return true;
 }
 
+ConVar recast_max_view_distance( "recast_max_view_distance", "6000", FCVAR_CHEAT, "Maximum range for precomputed nav mesh visibility" );
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -586,9 +589,78 @@ bool CRecastMesh::Build( CMapMesh *pMapMesh )
 			navmeshMemUsage += tile->dataSize;
 	}
 
-	PostLoad();
-
 	Log_Msg( LOG_RECAST, "CRecastMesh: Generated navigation mesh %s in %f seconds\n", GetName(), Plat_FloatTime() - fStartTime );
+
+	fStartTime = Plat_FloatTime();
+
+	for(int i = 0; i < m_navMesh->getMaxTiles(); ++i) {
+		const dtMeshTile *src_tile = static_cast<const dtNavMesh *>(m_navMesh)->getTile(i);
+		if(!src_tile->header) {
+			continue;
+		}
+
+		for(int j = 0; j < src_tile->header->polyCount; ++j) {
+			const dtPoly &src_poly = src_tile->polys[j];
+			dtPolyRef src_polyRef = m_navMesh->encodePolyId(src_tile->salt, i, j);
+
+			int numPolys;
+			dtPolyRef polys[RECASTMESH_MAX_POLYS];
+			if(dtStatusSucceed(m_navQuery->findLocalNeighbourhood(src_polyRef, NULL, recast_max_view_distance.GetFloat(), &defaultQueryFilter, polys, NULL, &numPolys, ARRAYSIZE(polys))))
+			{
+				float stepsize = 1.0f;
+
+				PolyVisibilityInfo &info = m_polyVisibility[ m_polyVisibility.Insert( src_polyRef ) ];
+
+				for(int k = 0; k < numPolys; ++k) {
+					dtPolyRef tgt_polyRef = polys[k];
+
+					const dtMeshTile *tgt_tile;
+					const dtPoly *tgt_poly;
+					m_navMesh->getTileAndPolyByRefUnsafe(tgt_polyRef, &tgt_tile, &tgt_poly);
+
+					auto vis_hndl = info.visible.Insert( tgt_polyRef );
+					auto not_vis_hndl = info.not_visible.Insert( tgt_polyRef );
+
+					for(int l = 0; l < src_poly.vertCount; ++l) {
+						const float *src_pos_ptr = &src_tile->verts[src_poly.verts[l]];
+						Vector src_pos( src_pos_ptr[0], src_pos_ptr[1], src_pos_ptr[2] + stepsize );
+
+						for(int n = 0; n < tgt_poly->vertCount; ++n) {
+							const float *tgt_pos_ptr = &tgt_tile->verts[tgt_poly->verts[n]];
+							Vector tgt_pos( tgt_pos_ptr[0], tgt_pos_ptr[1], tgt_pos_ptr[2] + stepsize );
+
+							CTraceFilterNoNPCsOrPlayer traceFilter( NULL, COLLISION_GROUP_NONE );
+
+							trace_t result;
+							UTIL_TraceLine( src_pos, tgt_pos, MASK_AI_VISION, &traceFilter, &result );
+
+							if (result.fraction >= 1.0f)
+							{
+								info.visible[ vis_hndl ].verts.AddToTail( PolyVisibilityInfo::VisibilityConnectionInfo::vertPair{l, n} );
+							}
+							else
+							{
+								info.not_visible[ not_vis_hndl ].verts.AddToTail( PolyVisibilityInfo::VisibilityConnectionInfo::vertPair{l, n} );
+							}
+						}
+					}
+
+					if(info.visible[ vis_hndl ].verts.IsEmpty())
+						info.visible.Remove( tgt_polyRef );
+
+					if(info.not_visible[ not_vis_hndl ].verts.IsEmpty())
+						info.not_visible.Remove( tgt_polyRef );
+				}
+
+				if(info.visible.Count() == 0 && info.not_visible.Count() == 0)
+					m_polyVisibility.Remove( src_polyRef );
+			}
+		}
+	}
+
+	Log_Msg( LOG_RECAST, "CRecastMesh: Calculated navigation mesh %s visibility in %f seconds\n", GetName(), Plat_FloatTime() - fStartTime );
+
+	PostLoad();
 
 	return true;
 }

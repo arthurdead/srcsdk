@@ -13,7 +13,7 @@ template <size_t N>
 struct do_passes_impl
 {
 	template <typename F>
-	static passes_totals exec(typename shader_passes_t::const_iterator start_it, const shader_passes_t &passes, F &&func) = delete;
+	static shader_combo exec(typename shader_passes_t::const_iterator start_it, const shader_passes_t &passes, F &&func) = delete;
 };
 
 m4_define(`M4_DO_PASSES_IMPL', `
@@ -51,14 +51,14 @@ for(values[`$2'] = its[`$2']->low; values[`$2'] <= static_cast<ssize_t>(its[`$2'
 	combo_hash ^= std::hash<size_t>()(values[m4_defn(`M4_P')]) + 0x9e3779b9 + (combo_hash<<6) + (combo_hash>>2);
 	')
 
-	func(std::size(its), combo_hash, 0, its, values, defines);
+	func(combo, combo_hash, its[`$2']->type, defines);
 
-	++totals.overall;
+	++combo.total_overall;
 
 	if(its[`$2']->type == shader_pass_type::dynamic) {
-		++totals.dynamic;
+		++combo.total_dynamic;
 	} else {
-		++totals.static_;
+		++combo.total_static;
 	}
 	')
 }
@@ -71,7 +71,7 @@ template <>
 struct do_passes_impl<m4_defn(`M4_I')>
 {
 	template <typename F>
-	static passes_totals exec(typename shader_passes_t::const_iterator start_it, const shader_passes_t &passes, F &&func)
+	static shader_combo exec(typename shader_passes_t::const_iterator start_it, const shader_passes_t &passes, F &&func)
 	{
 		std::array<typename shader_passes_t::const_iterator, m4_defn(`M4_I')> its;
 		std::array<ssize_t, m4_defn(`M4_I')> values;
@@ -104,11 +104,11 @@ struct do_passes_impl<m4_defn(`M4_I')>
 		name_hashes[m4_defn(`M4_K')] = std::hash<std::string>{}(its[m4_defn(`M4_K')]->name);
 		')
 
-		passes_totals totals;
+		shader_combo combo;
 
-		totals.overall = 0;
-		totals.dynamic = 0;
-		totals.static_ = 0;
+		combo.total_overall = 0;
+		combo.total_dynamic = 0;
+		combo.total_static = 0;
 
 		M4_DO_PASSES_IMPL(`start_it', 0, m4_defn(`M4_I'))
 
@@ -116,14 +116,14 @@ struct do_passes_impl<m4_defn(`M4_I')>
 		std::free(defines[m4_defn(`M4_L')].first);
 		')
 
-		return totals;
+		return combo;
 	}
 };
 
 ')
 
 template <typename F>
-static passes_totals do_passes(size_t N, typename shader_passes_t::const_iterator start_it, const shader_passes_t &passes, F &&func)
+static shader_combo do_passes(size_t N, typename shader_passes_t::const_iterator start_it, const shader_passes_t &passes, F &&func)
 {
 	switch(N) {
 M4_FORLOOP(`M4_I', `1', m4_defn(`MAX_SUPPORTED_PASSES'), `

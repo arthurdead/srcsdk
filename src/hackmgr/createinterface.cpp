@@ -36,24 +36,18 @@ static CreateInterfaceFn do_load(CreateInterfaceFn &func, CSysModule *&dll, cons
 
 CreateInterfaceFn GetEngineInterfaceFactory()
 {
-#ifndef SWDS
 	if(!IsDedicatedServer()) {
 		return do_load(engine_createinterface, engine_DLL, "engine" DLL_EXT_STRING);
-	} else
-#endif
-	{
+	} else {
 		return do_load(engine_createinterface, engine_DLL, "engine_srv" DLL_EXT_STRING);
 	}
 }
 
 CreateInterfaceFn GetFilesystemInterfaceFactory()
 {
-#ifndef SWDS
 	if(!IsDedicatedServer()) {
 		return do_load(filesystem_createinterface, filesystem_DLL, "filesystem_stdio" DLL_EXT_STRING);
-	} else
-#endif
-	{
+	} else {
 		if( !filesystem_createinterface ) {
 			CAppSystemGroup *ParentAppSystemGroup = GetLauncherAppSystem();
 			if( !ParentAppSystemGroup )
@@ -69,12 +63,9 @@ CreateInterfaceFn GetFilesystemInterfaceFactory()
 
 CreateInterfaceFn GetLauncherInterfaceFactory()
 {
-#ifndef SWDS
 	if(!IsDedicatedServer()) {
 		return do_load(launcher_createinterface, launcher_DLL, "launcher" DLL_EXT_STRING);
-	} else
-#endif
-	{
+	} else {
 		return do_load(launcher_createinterface, launcher_DLL, "dedicated_srv" DLL_EXT_STRING);
 	}
 }
@@ -88,16 +79,13 @@ CreateInterfaceFn GetMaterialSystemInterfaceFactory()
 
 CreateInterfaceFn GetVstdlibInterfaceFactory()
 {
-#ifndef SWDS
 	if(!IsDedicatedServer()) {
 	#ifdef __linux__
 		return do_load(vstdlib_createinterface, vstdlib_DLL, "libvstdlib" DLL_EXT_STRING);
 	#else
 		return do_load(vstdlib_createinterface, vstdlib_DLL, "vstdlib" DLL_EXT_STRING);
 	#endif
-	} else
-#endif
-	{
+	} else {
 	#ifdef __linux__
 		return do_load(vstdlib_createinterface, vstdlib_DLL, "libvstdlib_srv" DLL_EXT_STRING);
 	#else
@@ -106,9 +94,7 @@ CreateInterfaceFn GetVstdlibInterfaceFactory()
 	}
 }
 
-#ifndef SWDS
 bool IsDedicatedServer()
 {
 	return false;
 }
-#endif

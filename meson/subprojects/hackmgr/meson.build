@@ -56,6 +56,7 @@ if build_libs
 			join_paths(hackmgr_src_dir,'cpumonitoring.cpp'),
 			join_paths(hackmgr_src_dir,'memalloc.cpp'),
 			join_paths(hackmgr_src_dir,'steam.cpp'),
+			join_paths(hackmgr_src_dir,'ivdebugoverlay.cpp'),
 			join_paths(src_root_dir,'tier0','mingw_linker_fixes.cpp'),
 			join_paths(src_root_dir,'vstdlib','mingw_linker_fixes.cpp'),
 			join_paths(public_dir,'SoundParametersInternal.cpp'),
@@ -92,7 +93,6 @@ if build_libs
 			join_paths(hackmgr_src_dir,'shadersystem.cpp'),
 			join_paths(hackmgr_src_dir,'toolframework.cpp'),
 			join_paths(hackmgr_src_dir,'vgui.cpp'),
-			join_paths(hackmgr_src_dir,'ivdebugoverlay.cpp'),
 		],
 		dependencies: [
 			hackmgr_base_lib,

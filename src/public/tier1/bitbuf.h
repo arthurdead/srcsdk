@@ -234,7 +234,12 @@ public:
 	void			WriteShort(int val);
 	void			WriteWord(int val);
 	void			WriteLong(long val);
+private:
+	void			WriteLongLong(uint *pLongs);
+public:
 	void			WriteLongLong(int64 val);
+	void			WriteULongLong(uint64 val);
+public:
 	void			WriteFloat(float val);
 	bool			WriteBytes( const void *pBuf, int nBytes );
 
@@ -614,8 +619,12 @@ public:
 	BITBUF_INLINE int	ReadShort() { return (short)ReadUBitLong(16); }
 	BITBUF_INLINE int	ReadWord() { return ReadUBitLong(16); }
 	BITBUF_INLINE long ReadLong() { return ReadUBitLong(32); }
+private:
+	void			ReadLongLong(uint *pLongs);
+public:
 	int64			ReadLongLong();
 	uint64			ReadULongLong();
+public:
 	float			ReadFloat();
 	bool			ReadBytes(void *pOut, int nBytes);
 

@@ -43,8 +43,51 @@ bool NPC_CheckBrushExclude( CBaseEntity *pEntity, CBaseEntity *pBrush );
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifndef SWDS
 extern ConVar* r_visualizetraces;
+#endif
 extern ConVar* developer; // developer mode
+
+float GetLongFloorZ(const Vector &origin) 
+{
+	// trace to the ground, then pop up 8 units and place node there to make it
+	// easier for them to connect (think stairs, chairs, and bumps in the floor).
+	// After the routing is done, push them back down.
+	//
+	trace_t	tr;
+	UTIL_TraceLine ( origin,
+					 origin - Vector ( 0, 0, 2048 ),
+					 MASK_NPCSOLID_BRUSHONLY,
+					 NULL,
+					 COLLISION_GROUP_NONE,
+					 &tr );
+
+	// This trace is ONLY used if we hit an entity flagged with FL_WORLDBRUSH
+	trace_t	trEnt;
+	UTIL_TraceLine ( origin,
+					 origin - Vector ( 0, 0, 2048 ),
+					 MASK_NPCSOLID,
+					 NULL,
+					 COLLISION_GROUP_NONE,
+					 &trEnt );
+
+	
+	// Did we hit something closer than the floor?
+	if ( trEnt.fraction < tr.fraction )
+	{
+		// If it was a world brush entity, copy the node location
+		if ( trEnt.m_pEnt )
+		{
+			CSharedBaseEntity *e = trEnt.m_pEnt;
+			if ( e && (e->GetFlags() & FL_WORLDBRUSH) )
+			{
+				tr.endpos = trEnt.endpos;
+			}
+		}
+	}
+
+	return tr.endpos.z;
+}
 
 float UTIL_VecToYaw( const Vector &vec )
 {

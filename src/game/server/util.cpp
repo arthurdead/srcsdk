@@ -806,7 +806,7 @@ bool UTIL_IsCommandIssuedByServerAdmin( void )
 
 	if ( engine->IsDedicatedServer() )
 	{
-		if( issuingPlayerIndex == 0 )
+		if( issuingPlayerIndex == -1 )
 			return true;
 
 		CBasePlayer *player = UTIL_PlayerByIndex( issuingPlayerIndex );
@@ -3424,9 +3424,14 @@ void CC_KDTreeTest( const CCommand &args )
 static ConCommand kdtree_test( "kdtree_test", CC_KDTreeTest, "Tests spatial partition for entities queries.", FCVAR_CHEAT );
 
 #ifndef SWDS
+extern IVDebugOverlay *debugoverlay;
+
 void CC_VoxelTreeView( void )
 {
 	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
+	if(!NDebugOverlay::IsEnabled())
 		return;
 
 	Msg( "VoxelTreeView\n" );
@@ -3438,6 +3443,9 @@ static ConCommand voxeltree_view( "voxeltree_view", CC_VoxelTreeView, "View enti
 void CC_VoxelTreePlayerView( void )
 {
 	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
+	if(!NDebugOverlay::IsEnabled())
 		return;
 
 	Msg( "VoxelTreePlayerView\n" );
@@ -3455,6 +3463,9 @@ static ConCommand voxeltree_playerview( "voxeltree_playerview", CC_VoxelTreePlay
 void CC_VoxelTreeBox( const CCommand &args )
 {
 	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
+	if(!NDebugOverlay::IsEnabled())
 		return;
 
 	Vector vecMin, vecMax;
@@ -3509,6 +3520,9 @@ static ConCommand voxeltree_box( "voxeltree_box", CC_VoxelTreeBox, "View entitie
 void CC_VoxelTreeSphere( const CCommand &args )
 {
 	if(!UTIL_IsCommandIssuedByServerAdmin())
+		return;
+
+	if(!NDebugOverlay::IsEnabled())
 		return;
 
 	Vector vecCenter;

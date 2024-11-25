@@ -149,11 +149,7 @@ void SetActivityForSequence( CStudioHdr *pstudiohdr, int i )
 	const char *pszActivityName;
 	mstudioseqdesc_t &seqdesc = pstudiohdr->pSeqdesc( i );
 
-#ifdef GAME_DLL
-	seqdesc.flags |= STUDIO_ACTIVITY_SERVER;
-#else
-	seqdesc.flags |= STUDIO_ACTIVITY_CLIENT;
-#endif
+	seqdesc.flags |= STUDIO_ACTIVITY;
 
 	pszActivityName = GetSequenceActivityName( pstudiohdr, i );
 	if ( pszActivityName[0] != '\0' )

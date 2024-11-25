@@ -33,7 +33,7 @@ public:
 	virtual void PreSetupVisibility();
 
 
-	IServerEngineTools	*m_pTools;
+	IServerEngineTools	*m_pTools = NULL;
 };
 
 // Singleton
@@ -42,18 +42,20 @@ IToolFrameworkServer *g_pToolFrameworkServer = &g_ToolFrameworkServer;
 
 bool ToolsEnabled()
 {
-	return g_ToolFrameworkServer.m_pTools && g_ToolFrameworkServer.m_pTools->InToolMode() && !engine->IsDedicatedServer();
+	return g_ToolFrameworkServer.m_pTools && g_ToolFrameworkServer.m_pTools->InToolMode();
 }
 
 bool CToolFrameworkServer::Init()
 {
+	if( g_bTextMode )
+		return false;
+
 	factorylist_t list;
 	FactoryList_Retrieve( list );
 
 	// Latch onto internal interface
 	m_pTools = ( IServerEngineTools * )list.engineFactory( VSERVERENGINETOOLS_INTERFACE_VERSION, NULL );
-
-	if ( !m_pTools && !engine->IsDedicatedServer() )
+	if ( !m_pTools )
 	{
 		return false;
 	}

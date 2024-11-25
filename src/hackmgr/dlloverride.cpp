@@ -425,7 +425,7 @@ V_StripTrailingSlash(gamebin_path);
 int gamebin_len = V_strlen(gamebin_path);
 
 #ifndef SWDS
-if(!IsDedicatedServer()) {
+if(!IsDedicatedServer() && !CommandLine()->HasParm("-dedicated") && !CommandLine()->HasParm("-textmode")) {
 	V_strncat(gamebin_path, CORRECT_PATH_SEPARATOR_S, sizeof(gamebin_path));
 	++gamebin_len;
 
@@ -480,7 +480,7 @@ connect_later[connect_idx].group = ParentAppSystemGroup;
 
 const char *matchmaking_dll_name = NULL;
 #ifndef SWDS
-if(!IsDedicatedServer()) {
+if(!IsDedicatedServer() && !CommandLine()->HasParm("-dedicated")) {
 	matchmaking_dll_name = "matchmaking" DLL_EXT_STRING;
 } else 
 #endif
@@ -509,7 +509,7 @@ if(pTmpMod) {
 gamebin_path[gamebin_len] = '\0';
 
 #ifndef SWDS
-if(!IsDedicatedServer()) {
+if(!IsDedicatedServer() && !CommandLine()->HasParm("-dedicated")) {
 	V_strncat(gamebin_path, "game_loopback" DLL_EXT_STRING, sizeof(gamebin_path));
 
 	pTmpMod = Sys_LoadModule(gamebin_path);
@@ -533,7 +533,7 @@ if(!IsDedicatedServer()) {
 #endif
 
 #ifndef SWDS
-if(!IsDedicatedServer()) {
+if(!IsDedicatedServer() && !CommandLine()->HasParm("-dedicated") && !CommandLine()->HasParm("-textmode")) {
 	if(CommandLine()->HasParm("-edit") ||
 	#ifdef __linux__
 		CommandLine()->HasParm("-edit_linux") ||
@@ -547,7 +547,6 @@ if(!IsDedicatedServer()) {
 			if(pHammerFac) {
 				status = IFACE_OK;
 				IHammer *pHammerInter = (IHammer *)pHammerFac(INTERFACEVERSION_HAMMER, &status);
-				__asm__ __volatile__ ("int $3");
 				if(status != IFACE_OK)
 					pHammerInter = NULL;
 
@@ -564,12 +563,9 @@ if(!IsDedicatedServer()) {
 #endif
 
 const char *vphysics_dll_name = NULL;
-#ifndef SWDS
 if(!IsDedicatedServer()) {
 	vphysics_dll_name = "vphysics" DLL_EXT_STRING;
-} else 
-#endif
-{
+} else {
 	vphysics_dll_name = "vphysics_srv" DLL_EXT_STRING;
 }
 
@@ -615,7 +611,7 @@ do {
 					connect_later[connect_idx].apps.AddToTail(pair.pNewInter);
 			}
 		#ifndef SWDS
-			else if(!IsDedicatedServer()) {
+			else if(!IsDedicatedServer() && !CommandLine()->HasParm("-dedicated") && !CommandLine()->HasParm("-textmode")) {
 				if(V_stricmp(new_mod.m_pModuleName, "video_services" DLL_EXT_STRING) == 0) {
 					app_sys_pair_t pair;
 					pair = reconnect_interface(ParentAppSystemGroup, pOldFactory, new_mod.m_Factory, VIDEO_SERVICES_INTERFACE_VERSION);

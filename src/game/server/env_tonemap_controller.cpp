@@ -16,8 +16,13 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+static float s_hdr_tonemapscale = 1.0f;
+static float s_hdr_manual_tonemap_rate = 1.0f;
+
+#ifndef SWDS
 extern ConVar *mat_hdr_tonemapscale;
 extern ConVar *mat_hdr_manual_tonemap_rate;
+#endif
 
 // 0 - eyes fully closed / fully black
 // 1 - nominal 
@@ -102,7 +107,12 @@ void CEnvTonemapController::InputSetTonemapScale( inputdata_t &inputdata )
 		}
 	}
 
-	mat_hdr_tonemapscale->SetValue( flRemapped );
+	s_hdr_tonemapscale = flRemapped;
+
+#ifndef SWDS
+	if( !g_bTextMode )
+		mat_hdr_tonemapscale->SetValue( flRemapped );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -127,7 +137,15 @@ void CEnvTonemapController::InputBlendTonemapScale( inputdata_t &inputdata )
 		m_flBlendTonemapEnd = tonemap_end_value;
 		m_flBlendEndTime = gpGlobals->curtime + tonemap_end_time;
 		m_flBlendStartTime = gpGlobals->curtime;
-		m_flBlendTonemapStart = mat_hdr_tonemapscale->GetFloat();
+
+	#ifndef SWDS
+		if( !g_bTextMode ) {
+			m_flBlendTonemapStart = mat_hdr_tonemapscale->GetFloat();
+		} else
+	#endif
+		{
+			m_flBlendTonemapStart = s_hdr_tonemapscale;
+		}
 	}
 	else
 	{
@@ -190,7 +208,13 @@ void CEnvTonemapController::InputSetTonemapRate( inputdata_t &inputdata )
 
 	// TODO: There should be a better way to do this.
 	float flTonemapRate = inputdata.value.Float();
-	mat_hdr_manual_tonemap_rate->SetValue( flTonemapRate );
+
+	s_hdr_manual_tonemap_rate = flTonemapRate;
+
+#ifndef SWDS
+	if( !g_bTextMode )
+		mat_hdr_manual_tonemap_rate->SetValue( flTonemapRate );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -199,7 +223,13 @@ void CEnvTonemapController::InputSetTonemapRate( inputdata_t &inputdata )
 void CEnvTonemapController::UpdateTonemapScaleBlend( void )
 { 
 	float flRemapped = RemapValClamped( gpGlobals->curtime, m_flBlendStartTime, m_flBlendEndTime, m_flBlendTonemapStart, m_flBlendTonemapEnd );
-	mat_hdr_tonemapscale->SetValue( flRemapped );
+
+	s_hdr_tonemapscale = flRemapped;
+
+#ifndef SWDS
+	if( !g_bTextMode )
+		mat_hdr_tonemapscale->SetValue( flRemapped );
+#endif
 
 	//Msg("Setting tonemap scale to %f (curtime %f, %f -> %f)\n", flRemapped, gpGlobals->curtime, m_flBlendStartTime, m_flBlendEndTime ); 
 
