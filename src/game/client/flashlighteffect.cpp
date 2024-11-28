@@ -24,7 +24,7 @@ extern ConVar r_flashlightdepthres;
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern ConVar *r_flashlightdepthtexture;
+extern ConVarBase *r_flashlightdepthtexture;
 
 static ConVar r_swingflashlight( "r_swingflashlight", "1", FCVAR_CHEAT );
 static ConVar r_flashlightlockposition( "r_flashlightlockposition", "0", FCVAR_CHEAT );
@@ -43,8 +43,8 @@ static ConVar r_flashlightshadowatten( "r_flashlightshadowatten", "0.35", FCVAR_
 static ConVar r_flashlightladderdist( "r_flashlightladderdist", "40.0", FCVAR_CHEAT );
 static ConVar r_flashlight_topdown( "r_flashlight_topdown", "0" );
 
-extern ConVar *mat_slopescaledepthbias_shadowmap;
-extern ConVar *mat_depthbias_shadowmap;
+extern ConVarBase *mat_slopescaledepthbias_shadowmap;
+extern ConVarBase *mat_depthbias_shadowmap;
 
 static ConVar r_flashlightnearoffsetscale( "r_flashlightnearoffsetscale", "1.0", FCVAR_CHEAT );
 static ConVar r_flashlighttracedistcutoff( "r_flashlighttracedistcutoff", "128" );

@@ -48,6 +48,13 @@ CVGuiSystemModuleLoader::CVGuiSystemModuleLoader()
 //-----------------------------------------------------------------------------
 // Purpose: Destructor
 //-----------------------------------------------------------------------------
+#ifdef __MINGW32__
+void CVGuiSystemModuleLoader::__DTOR__()
+{
+	this->~CVGuiSystemModuleLoader();
+}
+#endif
+
 CVGuiSystemModuleLoader::~CVGuiSystemModuleLoader()
 {
 }

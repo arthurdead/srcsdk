@@ -41,6 +41,11 @@ static CUtlLinkedList<CFoundryEntitySpawnRecord*,int> g_FoundryEntitySpawnRecord
 //-----------------------------------------------------------------------------
 class CServerTools : public IServerToolsEx
 {
+#ifdef __MINGW32__
+private:
+	void __DTOR__();
+#endif
+
 public:
 	// Inherited from IServerTools
 	virtual IServerEntity *GetIServerEntity( IClientEntity *pClientEntity );
@@ -113,6 +118,12 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CServerTools, IServerToolsEx, VSERVERTOOLS_EX
 // When bumping the version to this interface, check that our assumption is still valid and expose the older version in the same way
 COMPILE_TIME_ASSERT( VSERVERTOOLS_INTERFACE_VERSION_INT == 3 );
 
+#ifdef __MINGW32__
+void CServerTools::__DTOR__()
+{
+	this->~CServerTools();
+}
+#endif
 
 IServerEntity *CServerTools::GetIServerEntity( IClientEntity *pClientEntity )
 {
@@ -607,6 +618,14 @@ CBaseEntity *CServerTools::FindEntityProcedural( const char *szName, CBaseEntity
 // Interface from engine to tools for manipulating entities
 class CServerChoreoTools : public IServerChoreoTools
 {
+#ifdef __MINGW32__
+private:
+	void __DTOR__()
+	{
+		this->~CServerChoreoTools();
+	}
+#endif
+
 public:
 	// Iterates through ALL entities (separate list for client vs. server)
 	virtual EntitySearchResult	NextChoreoEntity( EntitySearchResult currentEnt )

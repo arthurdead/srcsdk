@@ -3119,7 +3119,7 @@ void CSharedBaseEntity::SetWaterType( int nType )
 		m_nWaterType |= 2;
 }
 
-extern ConVar	*sv_alternateticks;
+extern ConVarBase	*sv_alternateticks;
 
 //-----------------------------------------------------------------------------
 // Purpose: 

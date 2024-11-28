@@ -80,9 +80,9 @@ bool IsCurrentViewAccessAllowed();
 bool R_CullSphere( const VPlane *pPlanes, int nPlanes, const Vector *pCenter, float radius );
 float ScaleFOVByWidthRatio( float fovDegrees, float ratio );
 
-extern ConVar *mat_wireframe;
+extern ConVarBase *mat_wireframe;
 
-extern ConVar *sv_cheats;
+extern ConVarBase *sv_cheats;
 
 
 static inline int WireFrameMode( void )

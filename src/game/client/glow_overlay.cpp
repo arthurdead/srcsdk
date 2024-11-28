@@ -124,7 +124,7 @@ bool CGlowOverlay::Update()
 	return true;
 }
 
-extern ConVar *building_cubemaps;
+extern ConVarBase *building_cubemaps;
 
 float CGlowOverlay::CalcGlowAspect() const
 {

@@ -42,6 +42,12 @@ public:
 	CGameConsole();
 	~CGameConsole();
 
+#ifdef __MINGW32__
+private:
+	void __DTOR__();
+#endif
+
+public:
 	// sets up the console for use
 	void Initialize();
 

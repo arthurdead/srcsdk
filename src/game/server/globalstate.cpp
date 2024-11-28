@@ -262,7 +262,7 @@ void ShowServerGameTime()
 	Msg( "Server game time: %f\n", gpGlobals->curtime );
 }
 
-CON_COMMAND(server_game_time, "Gives the game time in seconds (server's curtime)")
+CON_COMMAND_F(server_game_time, "Gives the game time in seconds (server's curtime)", FCVAR_NONE)
 {
 	if ( !UTIL_IsCommandIssuedByServerAdmin() )
 		return;

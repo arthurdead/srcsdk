@@ -17,6 +17,13 @@ GamepadUI& GamepadUI::GetInstance()
 	return *s_pGamepadUI;
 }
 
+#ifdef __MINGW32__
+void GamepadUI::__DTOR__()
+{
+	this->~GamepadUI();
+}
+#endif
+
 void GamepadUI::Initialize( CreateInterfaceFn factory )
 {
 }

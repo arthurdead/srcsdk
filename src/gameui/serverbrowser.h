@@ -8,6 +8,11 @@
 
 class CServerBrowser : public IServerBrowser, public IVGuiModule
 {
+#ifdef __MINGW32__
+private:
+	void __DTOR__();
+#endif
+
 public:
 	// activates the server browser window, brings it to the foreground
 	virtual bool Activate();

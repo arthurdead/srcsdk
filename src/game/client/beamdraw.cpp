@@ -20,7 +20,7 @@
 #include "tier0/memdbgon.h"
 
 extern ConVar r_drawsprites;
-extern ConVar *r_DrawBeams;
+extern ConVarBase *r_DrawBeams;
 
 static IMaterial *g_pBeamWireframeMaterial;
 

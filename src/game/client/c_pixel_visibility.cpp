@@ -20,7 +20,7 @@
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 
-static void PixelvisDrawChanged( IConVar *pPixelvisVar, const char *pOld, float flOldValue );
+static void PixelvisDrawChanged( IConVarRef pPixelvisVar, const char *pOld, float flOldValue );
 
 ConVar r_pixelvisibility_partial( "r_pixelvisibility_partial", "1" );
 ConVar r_dopixelvisibility( "r_dopixelvisibility", "1" );
@@ -37,7 +37,7 @@ ConVar r_pixelvisibility_spew( "r_pixelvisibility_spew", "0" );
 	}
 #endif
 
-extern ConVar *building_cubemaps;
+extern ConVarBase *building_cubemaps;
 
 const float MIN_PROXY_PIXELS = 5.0f;
 
@@ -782,9 +782,9 @@ CPixelVisSet *CPixelVisibilitySystem::FindOrCreatePixelVisSet( const pixelvis_qu
 }
 
 
-void PixelvisDrawChanged( IConVar *pPixelvisVar, const char *pOld, float flOldValue )
+void PixelvisDrawChanged( IConVarRef pPixelvisVar, const char *pOld, float flOldValue )
 {
-	g_PixelVisibilitySystem.ShowQueries( ((ConVar *)pPixelvisVar)->GetBool() );
+	g_PixelVisibilitySystem.ShowQueries( pPixelvisVar.GetBool() );
 }
 
 class CTraceFilterGlow : public CTraceFilterSimple

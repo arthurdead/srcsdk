@@ -77,7 +77,7 @@ static IPhysicsObject *PhysCreateWorld( CBaseEntity *pWorld );
 static void PhysFrame( float deltaTime );
 static bool IsDebris( int collisionGroup );
 
-void TimescaleChanged( IConVar *var, const char *pOldString, float flOldValue )
+void TimescaleChanged( IConVarRef var, const char *pOldString, float flOldValue )
 {
 	if ( physenv )
 	{

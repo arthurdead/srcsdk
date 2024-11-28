@@ -180,7 +180,7 @@ inline int ThreadWaitForObject( HANDLE handle, bool bWaitAll = true, unsigned ti
 #endif
 
 #if defined(_WIN32)
-	#if ( _MSC_VER >= 1310 ) || defined __MINGW32__
+	#if ( defined _MSC_VER && _MSC_VER >= 1310 ) || defined __MINGW32__
 		#define USE_INTRINSIC_INTERLOCKED
 	#endif
 #endif
@@ -291,7 +291,7 @@ PLATFORM_INTERFACE void ThreadNotifySyncReleasing(void *p);
 
 #ifndef NO_THREAD_LOCAL
 
-#if defined(_LINUX) && !defined(OSX)
+#if defined(__GNUC__) && !defined(OSX)
 // linux totally supports compiler thread locals, even across dll's.
 #define PLAT_COMPILER_SUPPORTED_THREADLOCALS 1
 #define CTHREADLOCALINTEGER( typ ) __thread int
@@ -301,7 +301,7 @@ PLATFORM_INTERFACE void ThreadNotifySyncReleasing(void *p);
 #define GETLOCAL( x ) ( x )
 #endif // _LINUX && !OSX
 
-#if defined(WIN32) || defined(OSX)
+#if (!defined(__GNUC__) && defined(WIN32)) || defined(OSX)
 #ifndef __AFXTLS_H__ // not compatible with some Windows headers
 #define CTHREADLOCALINT CThreadLocalInt<int>
 #define CTHREADLOCALINTEGER( typ ) CThreadLocalInt<typ>

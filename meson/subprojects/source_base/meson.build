@@ -247,10 +247,7 @@ source_windows_dep = declare_dependency(
 		'-DPLATFORM_WINDOWS_PC',
 		'-D_DLL_EXT=.dll',
 
-		#TODO!!! investigate this
 		'-DNO_MALLOC_OVERRIDE',
-		'-DNO_HOOK_MALLOC',
-		'-DNO_MEMOVERRIDE_NEW_DELETE',
 	]
 )
 
@@ -260,18 +257,16 @@ source_shared_lib_windows_dep = declare_dependency(
 	]
 )
 
-memoverride_src = []
+memoverride_src = files(
+	join_paths(public_dir,'tier0','memoverride.cpp'),
+)
 
 if target_system == 'linux' or target_system == 'gnu'
 	os_dep = source_linux_dep
 	source_shared_lib_os_dep = source_shared_lib_linux_dep
-	memoverride_src = files(
-		join_paths(public_dir,'tier0','memoverride.cpp'),
-	)
 elif target_system == 'windows'
 	os_dep = source_windows_dep
 	source_shared_lib_os_dep = source_shared_lib_windows_dep
-	memoverride_src = []
 else
 	error('unsupported system')
 endif

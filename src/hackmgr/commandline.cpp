@@ -11,7 +11,9 @@ DLL_EXPORT ICommandLine *CommandLine()
 { return CommandLine_Tier0(); }
 
 #ifdef __MINGW32__
-LIB_EXPORT SYMALIAS("CommandLine") ICommandLine *_imp__CommandLine();
+extern "C" {
+LIB_CLASS_EXPORT decltype(&CommandLine_Tier0) _imp__CommandLine = CommandLine_Tier0;
+}
 #endif
 
 static bool commandline_initalized = false;

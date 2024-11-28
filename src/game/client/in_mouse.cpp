@@ -44,7 +44,7 @@
 extern ConVar lookstrafe;
 extern ConVar cl_pitchdown;
 extern ConVar cl_pitchup;
-extern ConVar *sv_cheats;
+extern ConVarBase *sv_cheats;
 
 class ConVar_m_pitch : public ConVar_ServerBounded
 {

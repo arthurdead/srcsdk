@@ -98,10 +98,10 @@ static ConCommand test_freezeframe( "test_freezeframe", testfreezeframe_f, "Test
 
 //-----------------------------------------------------------------------------
 
-extern ConVar *r_visocclusion;
-extern ConVar *r_flashlightdepthtexture;
+extern ConVarBase *r_visocclusion;
+extern ConVarBase *r_flashlightdepthtexture;
 extern ConVar vcollide_wireframe;
-extern ConVar *mat_motion_blur_enabled;
+extern ConVarBase *mat_motion_blur_enabled;
 extern ConVar r_depthoverlay;
 extern ConVar mat_viewportscale;
 extern ConVar mat_viewportupscale;
@@ -116,7 +116,7 @@ ConVar r_entityclips( "r_entityclips", "1" ); //FIXME: Nvidia drivers before 81.
 
 // Matches the version in the engine
 ConVar r_drawopaqueworld( "r_drawopaqueworld", "1", FCVAR_CHEAT );
-extern ConVar *r_drawtranslucentworld;
+extern ConVarBase *r_drawtranslucentworld;
 ConVar r_3dsky( "r_3dsky","1", 0, "Enable the rendering of 3d sky boxes" );
 ConVar r_skybox( "r_skybox","1", FCVAR_CHEAT, "Enable the rendering of sky boxes" );
 ConVar r_drawviewmodel( "r_drawviewmodel","1", FCVAR_CHEAT );
@@ -152,7 +152,7 @@ float GetSkyboxFogStart( bool ignoreOverride = false );
 static float GetSkyboxFogEnd( bool ignoreOverride = false );
 float GetSkyboxFogMaxDensity( bool ignoreOverride = false );
 void GetSkyboxFogColor( float *pColor, bool ignoreOverride = false, bool ignoreHDRColorScale = false );
-static void FogOverrideCallback( IConVar *pConVar, char const *, float );
+static void FogOverrideCallback( IConVarRef pConVar, char const *, float );
 static ConVar fog_override( "fog_override", "0", FCVAR_CHEAT, "", FogOverrideCallback );
 // set any of these to use the maps fog
 static ConVar fog_start( "fog_start", "-1", FCVAR_CHEAT );
@@ -168,13 +168,13 @@ static ConVar fog_maxdensity( "fog_maxdensity", "-1", FCVAR_CHEAT );
 static ConVar fog_hdrcolorscale( "fog_hdrcolorscale", "-1", FCVAR_CHEAT );
 static ConVar fog_hdrcolorscaleskybox( "fog_hdrcolorscaleskybox", "-1", FCVAR_CHEAT );
 
-static void FogOverrideCallback( IConVar *pConVar, char const *, float )
+static void FogOverrideCallback( IConVarRef pConVar, char const *, float )
 {
 	C_BasePlayer *localPlayer = C_BasePlayer::GetLocalPlayer();
 	if ( !localPlayer )
 		return;
 
-	if ( ((ConVar *)pConVar)->GetInt() == -1 )
+	if ( pConVar.GetInt() == -1 )
 	{
 		fogparams_t *pFogParams = localPlayer->GetFogParams();
 
@@ -200,8 +200,8 @@ static void FogOverrideCallback( IConVar *pConVar, char const *, float )
 // Water-related convars
 //-----------------------------------------------------------------------------
 static ConVar r_debugcheapwater( "r_debugcheapwater", "0", FCVAR_CHEAT );
-extern ConVar *r_waterforceexpensive;
-extern ConVar *r_waterforcereflectentities;
+extern ConVarBase *r_waterforceexpensive;
+extern ConVarBase *r_waterforcereflectentities;
 static ConVar r_WaterDrawRefraction( "r_WaterDrawRefraction", "1", 0, "Enable water refraction" );
 static ConVar r_WaterDrawReflection( "r_WaterDrawReflection", "1", 0, "Enable water reflection" );
 ConVar r_ForceWaterLeaf( "r_ForceWaterLeaf", "1", 0, "Enable for optimization to water - considers view in leaf under water for purposes of culling" );
@@ -215,13 +215,13 @@ ConVar mat_clipz( "mat_clipz", "1" );
 static ConVar r_screenfademinsize( "r_screenfademinsize", "0" );
 static ConVar r_screenfademaxsize( "r_screenfademaxsize", "0" );
 static ConVar cl_drawmonitors( "cl_drawmonitors", "1" );
-ConVar r_eyewaterepsilon( "r_eyewaterepsilon", "10.0f", FCVAR_CHEAT );
+ConVar r_eyewaterepsilon( "r_eyewaterepsilon", "10.0", FCVAR_CHEAT );
 
 #ifdef TF_CLIENT_DLL
 static ConVar pyro_dof( "pyro_dof", "1", FCVAR_ARCHIVE );
 #endif
 
-extern ConVar *r_fastzreject;
+extern ConVarBase *r_fastzreject;
 
 extern ConVar cl_leveloverview;
 
@@ -1023,6 +1023,7 @@ CViewRender::CViewRender()
 	m_bAllowViewAccess = false;
 }
 
+extern ConVarBase *r_drawentities;
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1030,7 +1031,7 @@ CViewRender::CViewRender()
 //-----------------------------------------------------------------------------
 inline bool CViewRender::ShouldDrawEntities( void )
 {
-	return ( !m_pDrawEntities || (m_pDrawEntities->GetInt() != 0) );
+	return (r_drawentities->GetInt() != 0);
 }
 
 
@@ -1217,6 +1218,7 @@ void CViewRender::DrawViewModels( const CViewSetupEx &view, bool drawViewmodel )
 	pRenderContext->PopMatrix();
 }
 
+extern ConVarBase *r_drawbrushmodels;
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1224,7 +1226,7 @@ void CViewRender::DrawViewModels( const CViewSetupEx &view, bool drawViewmodel )
 //-----------------------------------------------------------------------------
 bool CViewRender::ShouldDrawBrushModels( void )
 {
-	if ( m_pDrawBrushModels && !m_pDrawBrushModels->GetInt() )
+	if ( !r_drawbrushmodels->GetInt() )
 		return false;
 
 	return true;
@@ -4921,6 +4923,7 @@ void CRendering3dView::DrawOpaqueRenderables( ERenderDepthMode DepthMode )
 			{
 				ModelRenderSystemData_t data;
 				data.m_pRenderable = itEntity->m_pRenderable;
+				data.m_pRenderableMod = itEntity->m_pRenderableMod;
 				data.m_pModelRenderable = pModelRenderable;
 				data.m_InstanceData = itEntity->m_InstanceData;
 
@@ -4971,6 +4974,7 @@ void CRendering3dView::DrawOpaqueRenderables( ERenderDepthMode DepthMode )
 				{
 					ModelRenderSystemData_t data;
 					data.m_pRenderable = itProp->m_pRenderable;
+					data.m_pRenderableMod = itProp->m_pRenderableMod;
 					data.m_pModelRenderable = pModelRenderable;
 					data.m_InstanceData = itProp->m_InstanceData;
 

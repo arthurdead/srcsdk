@@ -254,6 +254,8 @@ public:
 	{ return m_RenderableInstance; }
 	RenderableInstance_t &GetDefaultRenderableInstance()
 	{ return m_RenderableInstance; }
+
+	virtual IMaterial *GetShadowDrawMaterial() = 0;
 };
 
 abstract_class IClientRenderableEx : public IClientRenderable, public IClientRenderableMod

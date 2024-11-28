@@ -101,7 +101,7 @@ static ConVar joy_inverty_default( "joy_inverty_default", "0", FCVAR_NONE );				
 static ConVar joy_movement_stick_default( "joy_movement_stick_default", "0", FCVAR_NONE );	// Extracted & saved from profile
 static ConVar sv_stickysprint_default( "sv_stickysprint_default", "0", FCVAR_NONE );
 
-void joy_movement_stick_Callback( IConVar *var, const char *pOldString, float flOldValue )
+void joy_movement_stick_Callback( IConVarRef var, const char *pOldString, float flOldValue )
 {
 	engine->ClientCmd( "joyadvancedupdate silent\n" );
 }

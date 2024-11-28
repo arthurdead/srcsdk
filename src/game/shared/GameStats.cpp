@@ -28,7 +28,7 @@
 #include "vgui_int.h"
 #include "igameresources.h"
 #include "voice_status.h"
-extern ConVar *sv_cheats;
+extern ConVarBase *sv_cheats;
 #include "steam/steam_api.h"
 #endif
 
@@ -72,7 +72,7 @@ static inline char const *SafeString( char const *pStr )
 
 static CBaseGameStats s_GameStats_Singleton;
 CBaseGameStats *gamestats = &s_GameStats_Singleton; //start out pointing at the basic version which does nothing by default
-extern ConVar *skill;
+extern ConVarBase *skill;
 void OverWriteCharsWeHate( char *pStr );
 
 bool StatsTrackingIsFullyEnabled( void );
@@ -231,7 +231,7 @@ const char *CBaseGameStats::GetUserPseudoUniqueID( void )
 }
 
 #ifndef SWDS
-extern ConVar *mat_dxlevel;
+extern ConVarBase *mat_dxlevel;
 #endif
 
 void CBaseGameStats::Event_Init( void )
@@ -269,7 +269,7 @@ void CBaseGameStats::Event_MapChange( const char *szOldMapName, const char *szNe
 }
 
 #ifndef SWDS
-extern ConVar *closecaption;
+extern ConVarBase *closecaption;
 #endif
 
 void CBaseGameStats::Event_LevelInit( void )
@@ -855,32 +855,32 @@ void CBaseGameStats_Driver::PossibleMapChange( void )
 #endif
 }
 
-
+#ifdef GAME_DLL
+extern ConVarBase *hostip;
+extern ConVarBase *hostport;
+#endif
 
 void CBaseGameStats_Driver::LevelInitPreEntity()
 {
 	m_bInLevel = true;
 	m_bFirstLevel = false;
 
+#ifdef GAME_DLL
 	if ( Q_stricmp( s_szPseudoUniqueID, "unknown" ) == 0 )
 	{
 		// "unknown" means this is a dedicated server and we weren't able to generate a unique ID (e.g. Linux server).
 		// Change the unique ID to be a hash of IP & port.  We couldn't do this earlier because IP is not known until level
 		// init time.
-		ConVar *hostip = g_pCVar->FindVar( "hostip" );
-		ConVar *hostport = g_pCVar->FindVar( "hostport" );
-		if ( hostip && hostport )
+		int crcInput[2];
+		crcInput[0] = hostip->GetInt();
+		crcInput[1] = hostport->GetInt();
+		if ( crcInput[0] && crcInput[1] )
 		{
-			int crcInput[2];
-			crcInput[0] = hostip->GetInt();
-			crcInput[1] = hostport->GetInt();
-			if ( crcInput[0] && crcInput[1] )
-			{
-				CRC32_t crc = CRC32_ProcessSingleBuffer( crcInput, sizeof( crcInput ) );
-				Q_snprintf( s_szPseudoUniqueID, ARRAYSIZE( s_szPseudoUniqueID ), "H:%x", crc );
-			}
+			CRC32_t crc = CRC32_ProcessSingleBuffer( crcInput, sizeof( crcInput ) );
+			Q_snprintf( s_szPseudoUniqueID, ARRAYSIZE( s_szPseudoUniqueID ), "H:%x", crc );
 		}
 	}
+#endif
 
 	PossibleMapChange();
 
@@ -1074,7 +1074,7 @@ void CBaseGameStats_Driver::SendData()
 }
 
 #ifdef CLIENT_DLL
-	extern ConVar *dev_loadtime_map_elapsed;
+	extern ConVarBase *dev_loadtime_map_elapsed;
 
 	// Adds the main menu load time to the specified key values, but only ever does the work once.
 	static void AddLoadTimeMainMenu( KeyValues* pKV )
@@ -1102,7 +1102,7 @@ void CBaseGameStats_Driver::SendData()
 #endif
 
 #ifndef SWDS
-extern ConVar *closecaption;
+extern ConVarBase *closecaption;
 #endif
 
 bool CBaseGameStats_Driver::AddBaseDataForSend( KeyValues *pKV, StatSendType_t sendType )

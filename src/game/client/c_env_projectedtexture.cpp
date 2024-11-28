@@ -22,13 +22,13 @@
 
 float C_EnvProjectedTexture::m_flVisibleBBoxMinHeight = -FLT_MAX;
 
-extern ConVar *mat_slopescaledepthbias_shadowmap;
-extern ConVar *mat_depthbias_shadowmap;
+extern ConVarBase *mat_slopescaledepthbias_shadowmap;
+extern ConVarBase *mat_depthbias_shadowmap;
 
 static ConVar volumetrics_fade_range( "volumetrics_fade_range", "128.0", FCVAR_CHEAT  );
 ConVar volumetrics_enabled( "volumetrics_enabled", "1", FCVAR_ARCHIVE );
 
-static void volumetrics_subdiv_Callback( IConVar *var, const char *, float )
+static void volumetrics_subdiv_Callback( IConVarRef var, const char *, float )
 {
 	for ( C_BaseEntity *pEnt = ClientEntityList().FirstBaseEntity(); pEnt != NULL;
 		pEnt = ClientEntityList().NextBaseEntity( pEnt ) )

@@ -92,7 +92,7 @@ public:
 };
 
 void FX_Tesla( const CTeslaInfo &teslaInfo );
-extern ConVar *r_decals;
+extern ConVarBase *r_decals;
 
 extern void FX_CacheMaterialHandles( void );
 

@@ -39,6 +39,12 @@ class CClientTools : public IClientToolsEx, public IClientEntityListener
 public:
 	CClientTools();
 
+#ifdef __MINGW32__
+private:
+	void __DTOR__();
+#endif
+
+public:
 	virtual HTOOLHANDLE		AttachToEntity( EntitySearchResult entityToAttach );
 	virtual void			DetachFromEntity( EntitySearchResult entityToDetach );
 	virtual EntitySearchResult	GetEntity( HTOOLHANDLE handle );
@@ -193,6 +199,12 @@ CClientTools::CClientTools() : m_Handles( 0, 0, HandleLessFunc )
 	cl_entitylist->AddListenerEntity( this );
 }
 
+#ifdef __MINGW32__
+void CClientTools::__DTOR__()
+{
+	this->~CClientTools();
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Global toggle for recording

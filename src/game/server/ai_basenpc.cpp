@@ -3879,16 +3879,12 @@ void CAI_BaseNPC::RebalanceThinks()
 static float g_NpcTimeThisFrame;
 static float g_StartTimeCurThink;
 
+extern ConVarBase *host_timescale;
+
 bool CAI_BaseNPC::PreNPCThink()
 {
 	static int iPrevFrame = -1;
 	static float frameTimeLimit = FLT_MAX;
-	static const ConVar *pHostTimescale;
-
-	if ( frameTimeLimit == FLT_MAX )
-	{
-		pHostTimescale = g_pCVar->FindVar( "host_timescale" );
-	}
 
 	bool bUseThinkLimits = ( !m_bInChoreo && ShouldUseFrameThinkLimits() );
 
@@ -3911,7 +3907,7 @@ bool CAI_BaseNPC::PreNPCThink()
 		else if ( gpGlobals->framecount != iPrevFrame )
 		{
 			DbgFrameLimitMsg( "--- FRAME: %d (%d)\n", this, gpGlobals->framecount );
-			float timescale = pHostTimescale->GetFloat();
+			float timescale = host_timescale->GetFloat();
 			if ( timescale < 1 )
 				timescale = 1;
 

@@ -16,6 +16,10 @@
 class CSceneListManager;
 class CBaseFlex;
 
+#ifndef SWDS
+extern ConVarBase *snd_mixahead;
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: FIXME, need to deal with save/restore
 //-----------------------------------------------------------------------------
@@ -302,8 +306,6 @@ private:
 
 	CChoreoScene			*m_pScene;
 	CNetworkVar( int, m_nSceneStringIndex );
-
-	static const ConVar			*m_pcvSndMixahead;
 
 	COutputEvent			m_OnStart;
 	COutputEvent			m_OnCompletion;

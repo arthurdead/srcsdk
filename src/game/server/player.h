@@ -189,7 +189,7 @@ enum PlayerConnectedState
 	PlayerDisconnected,
 };
 
-extern ConVar *sv_cheats;
+extern ConVarBase *sv_cheats;
 
 enum AimResults
 {

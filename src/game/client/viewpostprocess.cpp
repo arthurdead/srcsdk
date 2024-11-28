@@ -52,30 +52,30 @@ bool g_bFlashlightIsOn = false;
 
 // hdr parameters
 ConVar mat_bloomscale( "mat_bloomscale", "1" );
-extern ConVar *mat_hdr_level;
+extern ConVarBase *mat_hdr_level;
 
-ConVar mat_bloomamount_rate( "mat_bloomamount_rate", "0.05f", FCVAR_CHEAT );
+ConVar mat_bloomamount_rate( "mat_bloomamount_rate", "0.05", FCVAR_CHEAT );
 static ConVar debug_postproc( "mat_debug_postprocessing_effects", "0", FCVAR_NONE, "0 = off, 1 = show post-processing passes in quadrants of the screen, 2 = only apply post-processing to the centre of the screen" );
 static ConVar split_postproc( "mat_debug_process_halfscreen", "0", FCVAR_CHEAT );
 static ConVar mat_postprocessing_combine( "mat_postprocessing_combine", "1", FCVAR_NONE, "Combine bloom, software anti-aliasing and color correction into one post-processing pass" );
-extern ConVar *mat_dynamic_tonemapping;
-extern ConVar *mat_show_ab_hdr;
-extern ConVar *mat_tonemapping_occlusion_use_stencil;
+extern ConVarBase *mat_dynamic_tonemapping;
+extern ConVarBase *mat_show_ab_hdr;
+extern ConVarBase *mat_tonemapping_occlusion_use_stencil;
 ConVar mat_debug_autoexposure("mat_debug_autoexposure","0", FCVAR_CHEAT);
 static ConVar mat_autoexposure_max( "mat_autoexposure_max", "2" );
 static ConVar mat_autoexposure_min( "mat_autoexposure_min", "0.5" );
 static ConVar mat_show_histogram( "mat_show_histogram", "0" );
-extern ConVar *mat_hdr_tonemapscale;
+extern ConVarBase *mat_hdr_tonemapscale;
 ConVar mat_hdr_uncapexposure( "mat_hdr_uncapexposure", "0", FCVAR_CHEAT );
 ConVar mat_force_bloom("mat_force_bloom","0", FCVAR_CHEAT);
 ConVar mat_disable_bloom("mat_disable_bloom","0");
 ConVar mat_debug_bloom("mat_debug_bloom","0", FCVAR_CHEAT);
-extern ConVar *mat_colorcorrection;
+extern ConVarBase *mat_colorcorrection;
 
-extern ConVar *mat_queue_mode;
+extern ConVarBase *mat_queue_mode;
 
-extern ConVar *mat_accelerate_adjust_exposure_down;
-extern ConVar *mat_hdr_manual_tonemap_rate;
+extern ConVarBase *mat_accelerate_adjust_exposure_down;
+extern ConVarBase *mat_hdr_manual_tonemap_rate;
 
 // fudge factor to make non-hdr bloom more closely match hdr bloom. Because of auto-exposure, high
 // bloomscales don't blow out as much in hdr. this factor was derived by comparing images in a
@@ -95,12 +95,12 @@ ConVar mat_exposure_center_region_y( "mat_exposure_center_region_y","0.85", FCVA
 ConVar mat_exposure_center_region_x_flashlight( "mat_exposure_center_region_x_flashlight","0.9", FCVAR_CHEAT );
 ConVar mat_exposure_center_region_y_flashlight( "mat_exposure_center_region_y_flashlight","0.85", FCVAR_CHEAT );
 
-extern ConVar *mat_tonemap_algorithm;
+extern ConVarBase *mat_tonemap_algorithm;
 ConVar mat_tonemap_percent_target( "mat_tonemap_percent_target", "60.0", FCVAR_CHEAT );
 ConVar mat_tonemap_percent_bright_pixels( "mat_tonemap_percent_bright_pixels", "2.0", FCVAR_CHEAT );
 ConVar mat_tonemap_min_avglum( "mat_tonemap_min_avglum", "3.0", FCVAR_CHEAT );
-extern ConVar *mat_force_tonemap_scale;
-extern ConVar *mat_fullbright;
+extern ConVarBase *mat_force_tonemap_scale;
+extern ConVarBase *mat_fullbright;
 
 ConVar mat_grain_enable( "mat_grain_enable", "0" );
 ConVar mat_vignette_enable( "mat_vignette_enable", "0" );
@@ -3088,7 +3088,7 @@ EXPOSE_MATERIAL_PROXY( CMotionBlurMaterialProxy, MotionBlur );
 //=====================================================================================================================
 // Image-space Motion Blur ============================================================================================
 //=====================================================================================================================
-extern ConVar *mat_motion_blur_enabled;
+extern ConVarBase *mat_motion_blur_enabled;
 ConVar mat_motion_blur_forward_enabled( "mat_motion_blur_forward_enabled", "0" );
 ConVar mat_motion_blur_falling_min( "mat_motion_blur_falling_min", "10.0" );
 ConVar mat_motion_blur_falling_max( "mat_motion_blur_falling_max", "20.0" );

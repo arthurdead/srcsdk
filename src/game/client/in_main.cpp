@@ -63,7 +63,7 @@ ConVar cl_backspeed( "cl_backspeed", "450", FCVAR_REPLICATED | FCVAR_CHEAT );
 ConVar lookspring( "lookspring", "0", FCVAR_ARCHIVE );
 ConVar lookstrafe( "lookstrafe", "0", FCVAR_ARCHIVE );
 
-void IN_JoystickChangedCallback_f( IConVar *pConVar, const char *pOldString, float flOldValue );
+void IN_JoystickChangedCallback_f( IConVarRef pConVar, const char *pOldString, float flOldValue );
 ConVar in_joystick( "joystick","0", FCVAR_ARCHIVE, "True if the joystick is enabled, false otherwise.", IN_JoystickChangedCallback_f );
 
 static ConVar cl_lagcomp_errorcheck( "cl_lagcomp_errorcheck", "0", 0, "Player index of other player to check for position errors." );
@@ -165,7 +165,7 @@ void IN_Joystick_Advanced_f (const CCommand& args)
 	::input->Joystick_Advanced(args.ArgC() == 2);
 }
 
-void IN_JoystickChangedCallback_f( IConVar *pConVar, const char *pOldString, float flOldValue )
+void IN_JoystickChangedCallback_f( IConVarRef pConVar, const char *pOldString, float flOldValue )
 {
 	::input->Joystick_Advanced( true );
 }

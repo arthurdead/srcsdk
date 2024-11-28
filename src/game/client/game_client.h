@@ -13,8 +13,14 @@
 
 class ConVar;
 
+#ifndef __MINGW32__
+typedef ConVar ConVarBase;
+#else
+class ConVarBase;
+#endif
+
 extern void GameDLLInit( void );
 
 // Engine Cvars
-extern ConVar *developer;
+extern ConVarBase *developer;
 #endif		// GAME_H

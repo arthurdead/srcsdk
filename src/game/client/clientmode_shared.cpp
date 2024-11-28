@@ -90,11 +90,11 @@ CON_COMMAND( cl_reload_localization_files, "Reloads all localization files" )
 	g_pVGuiLocalize->ReloadLocalizationFiles();
 }
 
-void VoxCallback( IConVar *var, const char *oldString, float oldFloat )
+void VoxCallback( IConVarRef var, const char *oldString, float oldFloat )
 {
 	if ( engine && engine->IsConnected() )
 	{
-		if ( ((ConVar *)var)->GetBool() && voice_modenable.GetBool() )
+		if ( var.GetBool() && voice_modenable.GetBool() )
 		{
 			engine->ClientCmd_Unrestricted( "voicerecord_toggle on\n" );
 		}
@@ -106,11 +106,11 @@ void VoxCallback( IConVar *var, const char *oldString, float oldFloat )
 }
 ConVar voice_vox( "voice_vox", "0", FCVAR_ARCHIVE, "Voice chat uses a vox-style always on", true, 0, true, 1, VoxCallback );
 
-void HUDMinModeChangedCallBack( IConVar *var, const char *pOldString, float flOldValue )
+void HUDMinModeChangedCallBack( IConVarRef var, const char *pOldString, float flOldValue )
 {
 	engine->ExecuteClientCmd( "hud_reloadscheme" );
 }
-extern ConVar *cl_hud_minmode;
+extern ConVarBase *cl_hud_minmode;
 
 // --------------------------------------------------------------------------------- //
 // CVoxManager.

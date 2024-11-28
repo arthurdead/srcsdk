@@ -20,8 +20,8 @@ static float s_hdr_tonemapscale = 1.0f;
 static float s_hdr_manual_tonemap_rate = 1.0f;
 
 #ifndef SWDS
-extern ConVar *mat_hdr_tonemapscale;
-extern ConVar *mat_hdr_manual_tonemap_rate;
+extern ConVarBase *mat_hdr_tonemapscale;
+extern ConVarBase *mat_hdr_manual_tonemap_rate;
 #endif
 
 // 0 - eyes fully closed / fully black

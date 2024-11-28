@@ -31,7 +31,7 @@
 extern ISoundEmitterSystemBase *soundemitterbase;
 
 // Marked as FCVAR_USERINFO so that the server can cull CC messages before networking them down to us!!!
-extern ConVar *closecaption;
+extern ConVarBase *closecaption;
 extern ConVar cc_lang;
 static ConVar cc_linger_time( "cc_linger_time", "1.0", FCVAR_ARCHIVE, "Close caption linger time." );
 static ConVar cc_predisplay_time( "cc_predisplay_time", "0.25", FCVAR_ARCHIVE, "Close caption delay before showing caption." );
@@ -2839,12 +2839,12 @@ CON_COMMAND( cc_showblocks, "Toggles showing which blocks are pending/loaded asy
 	}
 }
 
-void OnCaptionLanguageChanged( IConVar *pConVar, const char *pOldString, float flOldValue )
+void OnCaptionLanguageChanged( IConVarRef pConVar, const char *pOldString, float flOldValue )
 {
 	if ( !g_pVGuiLocalize )
 		return;
 
-	const char *pszValue = ((ConVar *)pConVar)->GetString();
+	const char *pszValue = pConVar.GetString();
 
 	char fn[ 512 ];
 	Q_snprintf( fn, sizeof( fn ), "resource/closecaption_%s.txt", pszValue );

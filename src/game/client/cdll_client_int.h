@@ -250,7 +250,7 @@ public:
 public:
 	void PrecacheMaterial( const char *pMaterialName );
 
-	virtual bool IsConnectedUserInfoChangeAllowed( IConVar *pCvar );
+	virtual bool IsConnectedUserInfoChangeAllowed( IConVarRef pCvar );
 
 	virtual void			SetBlurFade( float scale );
 	

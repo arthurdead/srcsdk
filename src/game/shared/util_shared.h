@@ -46,7 +46,7 @@ typedef CBasePlayer CSharedBasePlayer;
 
 typedef CGameTrace trace_t;
 
-extern ConVar *developer;	// developer mode
+extern ConVarBase *developer;	// developer mode
 
 
 //-----------------------------------------------------------------------------
@@ -272,7 +272,7 @@ void DebugDrawLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, int r, i
 #ifndef SWDS
 extern bool g_bTextMode;
 
-extern ConVar* r_visualizetraces;
+extern ConVarBase* r_visualizetraces;
 #endif
 
 inline bool VisualizeTraces()

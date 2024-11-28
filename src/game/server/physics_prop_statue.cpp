@@ -31,7 +31,7 @@ IMPLEMENT_SERVERCLASS_ST( CStatueProp, DT_StatueProp )
 END_SEND_TABLE()
 
 #ifndef SWDS
-extern ConVar *vcollide_wireframe;
+extern ConVarBase *vcollide_wireframe;
 #endif
 
 CStatueProp::CStatueProp( void )

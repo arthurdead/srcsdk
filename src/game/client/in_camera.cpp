@@ -22,9 +22,9 @@
 
 //-------------------------------------------------- Global Variables
 
-void CamModeChange( IConVar *pConVar, const char *pOldValue, float flOldValue )
+void CamModeChange( IConVarRef pConVar, const char *pOldValue, float flOldValue )
 {
-	int mode = ((ConVar *)pConVar)->GetInt();
+	int mode = pConVar.GetInt();
 	if(mode == input->CAM_Get()) {
 		return;
 	}
@@ -34,7 +34,7 @@ void CamModeChange( IConVar *pConVar, const char *pOldValue, float flOldValue )
 	{
 		int oldmode = V_atoi(pOldValue);
 		if(oldmode != CAM_FIRSTPERSON) {
-			pConVar->SetValue( pOldValue );
+			pConVar.SetValue( pOldValue );
 		}
 		return;
 	}

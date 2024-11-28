@@ -10,6 +10,8 @@ build_libs = get_option('build_libs')
 src_engine_dir = get_option('src_engine_dir')
 game_dir = get_option('game_dir')
 
+target_system = target_machine.system()
+
 if meson.get_compiler('cpp').has_define('__WINE__')
 	subproject('linux_hammer_ipc')
 else
@@ -29,7 +31,9 @@ else
 		subproject('recastnavigation_game')
 		#subproject('vphysics')
 		subproject('matchmaking')
-		subproject('shadercompiler')
+		if target_system == 'linux' or target_system == 'gnu'
+			subproject('shadercompiler')
+		endif
 	endif
 	if build_client or build_listen_server
 		subproject('game_loopback')

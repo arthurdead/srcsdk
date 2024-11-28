@@ -60,8 +60,8 @@ ConVar ai_force_serverside_ragdoll( "ai_force_serverside_ragdoll", "0" );
 
 ConVar ai_use_visibility_cache( "ai_use_visibility_cache", "1" );
 
-extern ConVar *violence_hgibs;
-extern ConVar *violence_agibs;
+extern ConVarBase *violence_hgibs;
+extern ConVarBase *violence_agibs;
 
 BEGIN_MAPENTITY( CBaseCombatCharacter )
 

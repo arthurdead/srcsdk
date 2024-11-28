@@ -44,9 +44,9 @@ bool NPC_CheckBrushExclude( CBaseEntity *pEntity, CBaseEntity *pBrush );
 #include "tier0/memdbgon.h"
 
 #ifndef SWDS
-extern ConVar* r_visualizetraces;
+extern ConVarBase* r_visualizetraces;
 #endif
-extern ConVar* developer; // developer mode
+extern ConVarBase* developer; // developer mode
 
 float GetLongFloorZ(const Vector &origin) 
 {

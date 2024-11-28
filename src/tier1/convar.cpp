@@ -37,7 +37,7 @@ static ConCommandBase		*s_pConCommandBases = NULL;
 // ConVars in this executable use this 'global' to access values.
 static IConCommandBaseAccessor	*s_pAccessor = NULL;
 
-ConVar *developer=NULL;
+ConVarBase *developer=NULL;
 
 static int s_nCVarFlag = 0;
 static int s_nDLLIdentifier = -1;	// A unique identifier indicating which DLL this convar came from
@@ -61,7 +61,7 @@ bool CDefaultAccessor::RegisterConCommandBase( ConCommandBase *pVar )
 	char const *pValue = g_pCVar->GetCommandLineValue( pVar->GetName() );
 	if( pValue && !pVar->IsCommand() )
 	{
-		( ( ConVar * )pVar )->SetValue( pValue );
+		( ( ConVarBase * )pVar )->SetValue( pValue );
 	}
 
 	return true;
@@ -92,7 +92,7 @@ void ConVar_Register( int nCVarFlag, IConCommandBaseAccessor *pAccessor )
 	if ( !g_pCVar || s_bRegistered )
 		return;
 
-	developer = g_pCVar->FindVar("developer");
+	developer = g_pCVar->FindVarBase("developer");
 
 	s_pAccessor = pAccessor;
 	s_nCVarFlag = nCVarFlag;
@@ -109,7 +109,9 @@ void ConVar_Register( int nCVarFlag, IConCommandBaseAccessor *pAccessor )
 	{
 		pNext = pCur->m_pNext;
 		pCur->AddFlags( nCVarFlag );
-		pCur->Init( pAccessor );
+		if(!pCur->IsFlagSet(FCVAR_UNREGISTERED)) {
+			pCur->Init( pAccessor );
+		}
 		pCur = pNext;
 	}
 
@@ -148,6 +150,13 @@ ConCommandBase::ConCommandBase( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+#ifdef __MINGW32__
+void ConCommandBase::__DTOR__( void )
+{
+	this->~ConCommandBase();
+}
+#endif
+
 ConCommandBase::~ConCommandBase( void )
 {
 }
@@ -191,15 +200,21 @@ void ConCommandBase::CreateBase( const char *pName, const char *pHelpString /*= 
 	m_nFlags = flags;
 	ModifyFlags( m_nFlags );
 
-	m_pNext = s_pConCommandBases;
-	s_pConCommandBases = this;
+	if(!IsFlagSet(FCVAR_UNREGISTERED)) {
+		m_pNext = s_pConCommandBases;
+		s_pConCommandBases = this;
+	} else {
+		m_pNext = NULL;
+	}
 
 	// If s_pAccessor is already set (this ConVar is not a global variable),
 	//  register it.
 	if ( s_bRegistered )
 	{
 		AddFlags( s_nCVarFlag );
-		Init( s_pAccessor );
+		if( !IsFlagSet(FCVAR_UNREGISTERED) ) {
+			Init( s_pAccessor );
+		}
 	}
 }
 
@@ -704,6 +719,13 @@ ConCommandLower::ConCommandLower( const char *pName, ICommandCallback *pCallback
 //-----------------------------------------------------------------------------
 // Destructor
 //-----------------------------------------------------------------------------
+#ifdef __MINGW32__
+void ConCommand::__DTOR__( void )
+{
+	this->~ConCommand();
+}
+#endif
+
 ConCommand::~ConCommand( void )
 {
 }
@@ -799,6 +821,12 @@ bool ConCommand::CanAutoComplete( void )
 //-----------------------------------------------------------------------------
 // Various constructors
 //-----------------------------------------------------------------------------
+#ifdef __MINGW32__
+ConVarBase::ConVarBase()
+{
+}
+#endif
+
 ConVar::ConVar( const char *pName, const char *pDefaultValue, int flags /* = 0 */ )
 {
 	Create( pName, pDefaultValue, flags );
@@ -824,11 +852,11 @@ ConVar::ConVar( const char *pName, const char *pDefaultValue, int flags, const c
 	Create( pName, pDefaultValue, flags, pHelpString, bMin, fMin, bMax, fMax, callback );
 }
 
+#ifdef __MINGW32__
+	#define ConVar ConVarBase
+#endif
 
-//-----------------------------------------------------------------------------
-// Destructor
-//-----------------------------------------------------------------------------
-ConVar::~ConVar( void )
+ConVarBase::~ConVar( void )
 {
 	if ( m_pszString )
 	{
@@ -837,6 +865,30 @@ ConVar::~ConVar( void )
 	}
 }
 
+#ifdef __MINGW32__
+	#undef ConVar
+#endif
+
+#ifdef __MINGW32__
+ConVar::~ConVar( void )
+{
+}
+#endif
+
+//-----------------------------------------------------------------------------
+// Destructor
+//-----------------------------------------------------------------------------
+#ifdef __MINGW32__
+void ConVarBase::__DTOR__( void )
+{
+	this->~ConVarBase();
+}
+
+void ConVar::__DTOR__( void )
+{
+	this->~ConVar();
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Install a change callback (there shouldn't already be one....)
@@ -846,27 +898,31 @@ void ConVar::InstallChangeCallback( FnChangeCallback_t callback )
 	Assert( !m_fnChangeCallback || !callback );
 	m_fnChangeCallback = callback;
 
-	if(!m_pParent || m_pParent == this) {
+	if(IsRootVar()) {
 		if ( m_fnChangeCallback )
 		{
+			IConVarRef thisIVarRef( this );
+
 			// Call it immediately to set the initial value...
-			m_fnChangeCallback( this, m_pszString, m_fValue );
+			m_fnChangeCallback( thisIVarRef, m_pszString, m_fValue );
 		}
 	} else {
 		if ( m_fnChangeCallback )
 		{
+			IConVarRef parentIVarRef( (ConVar *)m_pParent );
+
 			// Call it immediately to set the initial value...
-			m_fnChangeCallback( m_pParent, m_pParent->m_pszString, m_pParent->m_fValue );
+			m_fnChangeCallback( parentIVarRef, m_pParent->m_pszString, m_pParent->m_fValue );
 		}
 	}
 }
 
-bool ConVar::IsFlagSet( int flag ) const
+bool ConVarBase::IsFlagSet( int flag ) const
 {
 	return ( flag & GetFlags() ) ? true : false;
 }
 
-const char *ConVar::GetHelpText( void ) const
+const char *ConVarBase::GetHelpText( void ) const
 {
 	if(m_pParent)
 		return m_pParent->m_pszHelpString;
@@ -874,23 +930,23 @@ const char *ConVar::GetHelpText( void ) const
 		return m_pszHelpString;
 }
 
-void ConVar::AddFlags( int flags )
+void ConVarBase::AddFlags( int flags )
 {
 	m_nFlags |= flags;
 	ModifyFlags( m_nFlags );
 
-	if(m_pParent && m_pParent != this) {
+	if(!IsRootVar()) {
 		m_pParent->m_nFlags |= flags;
 		ModifyFlags( m_pParent->m_nFlags );
 	}
 }
 
-bool ConVar::IsRegistered( void ) const
+bool ConVarBase::IsRegistered( void ) const
 {
 	return m_bRegistered;
 }
 
-const char *ConVar::GetName( void ) const
+const char *ConVarBase::GetName( void ) const
 {
 	return m_pszName;
 }
@@ -899,7 +955,7 @@ const char *ConVar::GetName( void ) const
 // Purpose: 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool ConVar::IsCommand( void ) const
+bool ConVarBase::IsCommand( void ) const
 { 
 	return false;
 }
@@ -908,12 +964,12 @@ bool ConVar::IsCommand( void ) const
 // Purpose: 
 // Input  : 
 //-----------------------------------------------------------------------------
-void ConVar::Init()
+void ConVarBase::Init()
 {
 	BaseClass::Init();
 }
 
-void ConVar::Init( IConCommandBaseAccessor *pAccessor )
+void ConVarBase::Init( IConCommandBaseAccessor *pAccessor )
 {
 	BaseClass::Init( pAccessor );
 }
@@ -922,7 +978,7 @@ void ConVar::Init( IConCommandBaseAccessor *pAccessor )
 // Purpose: 
 // Input  : *value - 
 //-----------------------------------------------------------------------------
-void ConVar::InternalSetValue( const char *value )
+void ConVarBase::InternalSetValue( const char *value )
 {
 	if ( IsFlagSet( FCVAR_MATERIAL_THREAD_MASK ) )
 	{
@@ -955,7 +1011,7 @@ void ConVar::InternalSetValue( const char *value )
 	m_fValue		= fNewValue;
 	m_nValue		= ( int )( fNewValue );
 
-	if(m_pParent && m_pParent != this) {
+	if(!IsRootVar()) {
 		m_pParent->m_fValue		= m_fValue;
 		m_pParent->m_nValue		= m_nValue;
 	}
@@ -994,7 +1050,7 @@ void ConVar::ChangeStringValue( const char *tempVal, float flOldValue )
 
 		memcpy( m_pszString, tempVal, len );
 
-		if(m_pParent && m_pParent != this) {
+		if(!IsRootVar()) {
 			if ( len > m_pParent->m_StringLength)
 			{
 				if (m_pParent->m_pszString)
@@ -1013,19 +1069,21 @@ void ConVar::ChangeStringValue( const char *tempVal, float flOldValue )
 	{
 		*m_pszString = 0;
 
-		if(m_pParent && m_pParent != this) {
+		if(!IsRootVar()) {
 			*m_pParent->m_pszString = 0;
 		}
 	}
 
-	if(!m_pParent || m_pParent == this) {
+	if(IsRootVar()) {
 		// If nothing has changed, don't do the callbacks.
 		if (V_strcmp(pszOldValue, m_pszString) != 0)
 		{
 			// Invoke any necessary callback function
 			if ( m_fnChangeCallback )
 			{
-				m_fnChangeCallback( this, pszOldValue, flOldValue );
+				IConVarRef thisIVarRef( this );
+
+				m_fnChangeCallback( thisIVarRef, pszOldValue, flOldValue );
 			}
 
 			/*
@@ -1045,15 +1103,17 @@ void ConVar::ChangeStringValue( const char *tempVal, float flOldValue )
 	} else {
 		if (V_strcmp(pszOldValue, m_pParent->m_pszString) != 0)
 		{
+			IConVarRef parentIVarRef( (ConVar *)m_pParent );
+
 			// Invoke any necessary callback function
 			if ( m_fnChangeCallback )
 			{
-				m_fnChangeCallback( m_pParent, pszOldValue, flOldValue );
+				m_fnChangeCallback( parentIVarRef, pszOldValue, flOldValue );
 			}
 
 			if ( m_pParent->m_fnChangeCallback && m_pParent->m_fnChangeCallback != m_fnChangeCallback )
 			{
-				m_pParent->m_fnChangeCallback( m_pParent, pszOldValue, flOldValue );
+				m_pParent->m_fnChangeCallback( parentIVarRef, pszOldValue, flOldValue );
 			}
 
 			g_pCVar->CallGlobalChangeCallbacks( m_pParent, pszOldValue, flOldValue );
@@ -1068,7 +1128,7 @@ void ConVar::ChangeStringValue( const char *tempVal, float flOldValue )
 // Input  : value - 
 // Output : Returns true if value changed
 //-----------------------------------------------------------------------------
-bool ConVar::ClampValue( float& value )
+bool ConVarBase::ClampValue( float& value )
 {
 	if(m_pParent) {
 		if ( m_pParent->m_bHasMin && ( value < m_pParent->m_fMinVal ) )
@@ -1103,7 +1163,7 @@ bool ConVar::ClampValue( float& value )
 // Purpose: 
 // Input  : *value - 
 //-----------------------------------------------------------------------------
-void ConVar::InternalSetFloatValue( float fNewValue )
+void ConVarBase::InternalSetFloatValue( float fNewValue )
 {
 	if ( fNewValue == (m_pParent ? m_pParent->m_fValue : m_fValue) )
 		return;
@@ -1125,7 +1185,7 @@ void ConVar::InternalSetFloatValue( float fNewValue )
 	m_fValue		= fNewValue;
 	m_nValue		= ( int )m_fValue;
 
-	if(m_pParent && m_pParent != this) {
+	if(!IsRootVar()) {
 		m_pParent->m_fValue		= m_fValue;
 		m_pParent->m_nValue		= m_nValue;
 	}
@@ -1146,7 +1206,7 @@ void ConVar::InternalSetFloatValue( float fNewValue )
 // Purpose: 
 // Input  : *value - 
 //-----------------------------------------------------------------------------
-void ConVar::InternalSetIntValue( int nValue )
+void ConVarBase::InternalSetIntValue( int nValue )
 {
 	if ( nValue == (m_pParent ? m_pParent->m_nValue : m_nValue) )
 		return;
@@ -1171,7 +1231,7 @@ void ConVar::InternalSetIntValue( int nValue )
 	m_fValue		= fValue;
 	m_nValue		= nValue;
 
-	if(m_pParent && m_pParent != this) {
+	if(!IsRootVar()) {
 		m_pParent->m_fValue = m_fValue;
 		m_pParent->m_nValue = m_nValue;
 	}
@@ -1188,7 +1248,7 @@ void ConVar::InternalSetIntValue( int nValue )
 	}
 }
 
-void ConVar::InternalSetBoolValue( bool nValue )
+void ConVarBase::InternalSetBoolValue( bool nValue )
 {
 	if ( nValue == (m_pParent ? m_pParent->m_nValue : m_nValue) )
 		return;
@@ -1216,7 +1276,7 @@ void ConVar::InternalSetBoolValue( bool nValue )
 	m_fValue		= fValue;
 	m_nValue		= nValue;
 
-	if(m_pParent && m_pParent != this) {
+	if(!IsRootVar()) {
 		m_pParent->m_fValue = m_fValue;
 		m_pParent->m_nValue = m_nValue;
 	}
@@ -1240,7 +1300,11 @@ void ConVar::Create( const char *pName, const char *pDefaultValue, int flags /*=
 	const char *pHelpString /*= NULL*/, bool bMin /*= false*/, float fMin /*= 0.0*/,
 	bool bMax /*= false*/, float fMax /*= false*/, FnChangeCallback_t callback /*= NULL*/ )
 {
-	m_pParent = this;
+#ifdef __MINGW32__
+	m_pIConVar = static_cast<DO_NOT_USE_IConVar *>(this);
+#endif
+
+	m_pParent = (ConVarBase *)this;
 
 	// Name should be static data
 	SetDefault( pDefaultValue );
@@ -1277,7 +1341,7 @@ void ConVar::Create( const char *pName, const char *pDefaultValue, int flags /*=
 // Purpose: 
 // Input  : *value - 
 //-----------------------------------------------------------------------------
-void ConVar::SetValue(const char *value)
+void ConVarBase::SetValue(const char *value)
 {
 	InternalSetValue( value );
 }
@@ -1286,7 +1350,7 @@ void ConVar::SetValue(const char *value)
 // Purpose: 
 // Input  : value - 
 //-----------------------------------------------------------------------------
-void ConVar::SetValue( float value )
+void ConVarBase::SetValue( float value )
 {
 	InternalSetFloatValue( value );
 }
@@ -1295,12 +1359,12 @@ void ConVar::SetValue( float value )
 // Purpose: 
 // Input  : value - 
 //-----------------------------------------------------------------------------
-void ConVar::SetValue( int value )
+void ConVarBase::SetValue( int value )
 {
 	InternalSetIntValue( value );
 }
 
-void ConVar::SetValue( bool value )
+void ConVarBase::SetValue( bool value )
 {
 	InternalSetBoolValue( value );
 }
@@ -1308,7 +1372,7 @@ void ConVar::SetValue( bool value )
 //-----------------------------------------------------------------------------
 // Purpose: Reset to default value
 //-----------------------------------------------------------------------------
-void ConVar::Revert( void )
+void ConVarBase::Revert( void )
 {
 	// Force default value again
 	SetValue( m_pParent ? m_pParent->m_pszDefaultValue : m_pszDefaultValue );
@@ -1319,7 +1383,7 @@ void ConVar::Revert( void )
 // Input  : minVal - 
 // Output : true if there is a min set
 //-----------------------------------------------------------------------------
-bool ConVar::GetMin( float& minVal ) const
+bool ConVarBase::GetMin( float& minVal ) const
 {
 	if(m_pParent) {
 		minVal = m_pParent->m_fMinVal;
@@ -1334,7 +1398,7 @@ bool ConVar::GetMin( float& minVal ) const
 // Purpose: 
 // Input  : maxVal - 
 //-----------------------------------------------------------------------------
-bool ConVar::GetMax( float& maxVal ) const
+bool ConVarBase::GetMax( float& maxVal ) const
 {
 	if(m_pParent) {
 		maxVal = m_pParent->m_fMaxVal;
@@ -1349,7 +1413,7 @@ bool ConVar::GetMax( float& maxVal ) const
 // Purpose: 
 // Output : const char
 //-----------------------------------------------------------------------------
-const char *ConVar::GetDefault( void ) const
+const char *ConVarBase::GetDefault( void ) const
 {
 	if(m_pParent)
 		return m_pParent->m_pszDefaultValue;
@@ -1357,34 +1421,36 @@ const char *ConVar::GetDefault( void ) const
 		return m_pszDefaultValue;
 }
 
-void ConVar::SetDefault( const char *pszDefault ) 
+void ConVarBase::SetDefault( const char *pszDefault ) 
 { 
 	m_pszDefaultValue = pszDefault ? pszDefault : "";
 	Assert( m_pszDefaultValue );
 
-	if(m_pParent && m_pParent != this) {
+	if(!IsRootVar()) {
 		m_pParent->m_pszDefaultValue = m_pszDefaultValue;
 	}
 }
 
-ConVar_ServerBounded *ConVar::GetServerBounded()
+ConVar_ServerBounded *ConVarBase::GetServerBounded()
 {
 	ConVar_ServerBounded *pServer = NULL;
 
 	if( (m_nFlags & FCVAR_SERVERBOUNDED) != 0 ) {
 		pServer = reinterpret_cast<ConVar_ServerBounded *>(this);
-	} else if(m_pParent && m_pParent != this) {
+	} else if(!IsRootVar()) {
 		if( (m_pParent->m_nFlags & FCVAR_SERVERBOUNDED) != 0 ) {
 			pServer = reinterpret_cast<ConVar_ServerBounded *>(this);
 		}
 	}
 
+#ifndef __MINGW32__
 	if(!pServer) {
 		pServer = dynamic_cast<ConVar_ServerBounded *>(this);
-		if(!pServer && m_pParent && m_pParent != this) {
+		if(!pServer && !IsRootVar()) {
 			pServer = dynamic_cast<ConVar_ServerBounded *>(m_pParent);
 		}
 	}
+#endif
 
 	return pServer;
 }
@@ -1393,7 +1459,7 @@ ConVar_ServerBounded *ConVar::GetServerBounded()
 // Purpose: Return ConVar value as a float
 // Output : float
 //-----------------------------------------------------------------------------
-float ConVar::GetBaseFloatValue( void ) const
+float ConVarBase::GetBaseFloatValue( void ) const
 {
 	if(m_pParent)
 		return m_pParent->m_fValue;
@@ -1401,7 +1467,7 @@ float ConVar::GetBaseFloatValue( void ) const
 		return m_fValue;
 }
 
-float ConVar::GetFloat( void ) const
+float ConVarBase::GetFloat( void ) const
 {
 	const ConVar_ServerBounded *pServer = GetServerBounded();
 	if(pServer)
@@ -1414,7 +1480,7 @@ float ConVar::GetFloat( void ) const
 // Purpose: Return ConVar value as an int
 // Output : int
 //-----------------------------------------------------------------------------
-int ConVar::GetBaseIntValue( void ) const 
+int ConVarBase::GetBaseIntValue( void ) const 
 {
 	if(m_pParent)
 		return m_pParent->m_nValue;
@@ -1422,7 +1488,7 @@ int ConVar::GetBaseIntValue( void ) const
 		return m_nValue;
 }
 
-int ConVar::GetInt( void ) const 
+int ConVarBase::GetInt( void ) const 
 {
 	const ConVar_ServerBounded *pServer = GetServerBounded();
 	if(pServer)
@@ -1431,7 +1497,7 @@ int ConVar::GetInt( void ) const
 		return GetBaseIntValue();
 }
 
-bool ConVar::GetBaseBoolValue( void ) const 
+bool ConVarBase::GetBaseBoolValue( void ) const 
 {
 	if(m_pParent)
 		return m_pParent->m_nValue != 0;
@@ -1439,7 +1505,7 @@ bool ConVar::GetBaseBoolValue( void ) const
 		return m_nValue != 0;
 }
 
-bool ConVar::GetBool( void ) const 
+bool ConVarBase::GetBool( void ) const 
 {
 	const ConVar_ServerBounded *pServer = GetServerBounded();
 	if(pServer)
@@ -1452,7 +1518,7 @@ bool ConVar::GetBool( void ) const
 // Purpose: Return ConVar value as a string, return "" for bogus string pointer, etc.
 // Output : const char *
 //-----------------------------------------------------------------------------
-const char *ConVar::GetBaseStringValue( void ) const 
+const char *ConVarBase::GetBaseStringValue( void ) const 
 {
 	if ( IsFlagSet( FCVAR_NEVER_AS_STRING ) )
 		return "FCVAR_NEVER_AS_STRING";
@@ -1463,7 +1529,7 @@ const char *ConVar::GetBaseStringValue( void ) const
 		return m_pszString ? m_pszString : "";
 }
 
-const char *ConVar::GetString( void ) const 
+const char *ConVarBase::GetString( void ) const 
 {
 	if ( IsFlagSet( FCVAR_NEVER_AS_STRING ) )
 		return "FCVAR_NEVER_AS_STRING";
@@ -1482,13 +1548,13 @@ const char *ConVar::GetString( void ) const
 				delete[] m_pszString;
 			}
 
-			const_cast<ConVar *>(this)->m_pszString	= new char[len];
-			const_cast<ConVar *>(this)->m_StringLength = len;
+			const_cast<ConVarBase *>(this)->m_pszString	= new char[len];
+			const_cast<ConVarBase *>(this)->m_StringLength = len;
 		}
 
 		memcpy( m_pszString, tempVal, len );
 
-		if(m_pParent && m_pParent != this) {
+		if(!IsRootVar()) {
 			if ( len > m_pParent->m_StringLength)
 			{
 				if (m_pParent->m_pszString)
@@ -1534,7 +1600,7 @@ void CONVAR_StringToColor( Color &color, const char *pString )
 	}
 }
 
-Color ConVar::GetColor() const
+Color ConVarBase::GetColor() const
 {
 	Color clr;
 	CONVAR_StringToColor( clr, GetString() );
@@ -1549,7 +1615,7 @@ CEmptyConVar s_EmptyConVar;
 
 void ConVarRef::Init( const char *pName, bool bIgnoreMissing )
 {
-	m_pConVar = g_pCVar ? g_pCVar->FindVar( pName ) : &s_EmptyConVar;
+	m_pConVar = g_pCVar ? g_pCVar->FindVarBase( pName ) : &s_EmptyConVar;
 	if ( !m_pConVar )
 	{
 		m_pConVar = &s_EmptyConVar;
@@ -1572,12 +1638,7 @@ void ConVarRef::Init( const char *pName, bool bIgnoreMissing )
 	}
 }
 
-ConVarRef::ConVarRef( IConVar *pConVar )
-{
-	m_pConVar = (ConVar *)(pConVar ? pConVar : static_cast<IConVar *>(&s_EmptyConVar));
-}
-
-ConVarRef::ConVarRef( ConVar *pConVar )
+ConVarRef::ConVarRef( ConVarBase *pConVar )
 {
 	m_pConVar = pConVar ? pConVar : &s_EmptyConVar;
 }
@@ -1668,8 +1729,8 @@ void ConVar_PrintDescription( const ConCommandBase *pVar )
 
 	if ( !pVar->IsCommand() )
 	{
-		ConVar *var = ( ConVar * )pVar;
-		const ConVar_ServerBounded *pBounded = dynamic_cast<const ConVar_ServerBounded*>( var );
+		ConVarBase *var = ( ConVarBase * )pVar;
+		const ConVar_ServerBounded *pBounded = var->GetServerBounded();
 
 		bMin = var->GetMin( fMin );
 		bMax = var->GetMax( fMax );

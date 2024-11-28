@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include "platform.h"
 #include "logging.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

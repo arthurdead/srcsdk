@@ -14,7 +14,7 @@
 #define MAP_TILE_SIZE 8.0f // 4.0f // Tilesize of the above grid
 
 #ifndef CLIENT_DLL
-void OnDensityConVarChanged( IConVar *var, const char *pOldValue, float flOldValue )
+void OnDensityConVarChanged( IConVarRef var, const char *pOldValue, float flOldValue )
 {
 	CBaseEntity *pEnt = gEntList.FirstEnt();
 	while( pEnt )

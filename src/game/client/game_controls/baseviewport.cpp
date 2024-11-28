@@ -75,11 +75,11 @@ IViewPort *GetFullscreenViewPortInterface()
 	return s_pFullscreenViewportInterface;
 }
 
-void hud_autoreloadscript_callback( IConVar *var, const char *pOldValue, float flOldValue );
+void hud_autoreloadscript_callback( IConVarRef var, const char *pOldValue, float flOldValue );
 
 ConVar hud_autoreloadscript("hud_autoreloadscript", "0", FCVAR_NONE, "Automatically reloads the animation script each time one is ran", hud_autoreloadscript_callback);
 
-void hud_autoreloadscript_callback( IConVar *var, const char *pOldValue, float flOldValue )
+void hud_autoreloadscript_callback( IConVarRef var, const char *pOldValue, float flOldValue )
 {
 	if ( GetClientMode() && GetClientMode()->GetViewportAnimationController() )
 	{

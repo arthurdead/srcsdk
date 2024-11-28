@@ -92,7 +92,7 @@ mstudioevent_t *GetEventIndexForSequence( mstudioseqdesc_t &seqdesc );
 C_EntityDissolve *DissolveEffect( C_BaseEntity *pTarget, float flTime );
 C_EntityFlame *FireEffect( C_BaseAnimating *pTarget, C_BaseEntity *pServerFire, float *flScaleEnd, float *flTimeStart, float *flTimeEnd );
 bool NPC_IsImportantNPC( C_BaseAnimating *pAnimating );
-void VCollideWireframe_ChangeCallback( IConVar *pConVar, char const *pOldString, float flOldValue );
+void VCollideWireframe_ChangeCallback( IConVarRef pConVar, char const *pOldString, float flOldValue );
 
 ConVar vcollide_wireframe( "vcollide_wireframe", "0", FCVAR_CHEAT, "Render physics collision models in wireframe", VCollideWireframe_ChangeCallback );
 ConVar enable_skeleton_draw( "enable_skeleton_draw", "0", FCVAR_CHEAT, "Render skeletons in wireframe" );
@@ -3630,7 +3630,7 @@ bool C_BaseAnimating::HitboxToWorldTransforms( matrix3x4_t *pHitboxToWorld[MAXST
 //----------------------------------------------------------------------------
 // Hooks into the fast path render system
 //----------------------------------------------------------------------------
-extern ConVar *r_drawmodelstatsoverlay;
+extern ConVarBase *r_drawmodelstatsoverlay;
 
 IClientModelRenderable*	C_BaseAnimating::GetClientModelRenderable()
 { 
@@ -6968,7 +6968,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_BoneFollower, DT_BoneFollower, CBoneFollower )
 	RecvPropInt( RECVINFO( m_solidIndex ) ),
 END_RECV_TABLE()
 
-void VCollideWireframe_ChangeCallback( IConVar *pConVar, char const *pOldString, float flOldValue )
+void VCollideWireframe_ChangeCallback( IConVarRef pConVar, char const *pOldString, float flOldValue )
 {
 	for ( C_BaseEntity *pEntity = ClientEntityList().FirstBaseEntity(); pEntity; pEntity = ClientEntityList().NextBaseEntity(pEntity) )
 	{

@@ -170,6 +170,9 @@ Vector getVectorFromString(const char *pString)
 	return result;
 }
 
+extern ConVarBase *snd_soundmixer;
+extern ConVarBase *dsp_volume;
+
 class C_SoundscapeSystem : public CBaseGameSystemPerFrame
 {
 public:
@@ -201,14 +204,6 @@ public:
 
 	virtual void LevelInitPostEntity() 
 	{
-		if ( !m_pSoundMixerVar )
-		{
-			m_pSoundMixerVar = (ConVar *)g_pCVar->FindVar( "snd_soundmixer" );
-		}
-		if ( !m_pDSPVolumeVar )
-		{
-			m_pDSPVolumeVar = (ConVar *)g_pCVar->FindVar( "dsp_volume" );
-		}
 	}
 
 	// The level is shutdown in two parts
@@ -332,17 +327,11 @@ private:
 	int							m_loopingSoundId;		// marks when the sound was issued
 	int							m_forcedSoundscapeIndex;// >= 0 if this a "forced" soundscape? i.e. debug mode?
 	float						m_forcedSoundscapeRadius;// distance to spatialized sounds
-
-	static ConVar *m_pDSPVolumeVar;
-	static ConVar *m_pSoundMixerVar;
-
 };
 
 
 // singleton system
 C_SoundscapeSystem g_SoundscapeSystem;
-ConVar *C_SoundscapeSystem::m_pDSPVolumeVar = NULL;
-ConVar *C_SoundscapeSystem::m_pSoundMixerVar = NULL;
 
 IGameSystem *ClientSoundscapeSystem()
 {
@@ -778,11 +767,11 @@ void C_SoundscapeSystem::StartNewSoundscape( KeyValues *pSoundscape )
 
 		if ( !params.wroteDSPVolume )
 		{
-			m_pDSPVolumeVar->Revert();
+			dsp_volume->Revert();
 		}
 		if ( !params.wroteSoundMixer )
 		{
-			m_pSoundMixerVar->Revert();
+			snd_soundmixer->Revert();
 		}
 		// if we processed a fade rate, update the fade
 		// This is a little bit of a hack but since we don't pre-parse soundscapes
@@ -891,14 +880,14 @@ void C_SoundscapeSystem::ProcessSoundMixer( KeyValues *pSoundMixer, subsoundscap
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 	if ( !pPlayer || pPlayer->CanSetSoundMixer() )
 	{
-		m_pSoundMixerVar->SetValue( pSoundMixer->GetString() );
+		snd_soundmixer->SetValue( pSoundMixer->GetString() );
 		params.wroteSoundMixer = true;
 	}
 }
 
 void C_SoundscapeSystem::ProcessDSPVolume( KeyValues *pKey, subsoundscapeparams_t &params )
 {
-	m_pDSPVolumeVar->SetValue( pKey->GetFloat() );
+	dsp_volume->SetValue( pKey->GetFloat() );
 	params.wroteDSPVolume = true;
 }
 

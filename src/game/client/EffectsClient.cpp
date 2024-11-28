@@ -74,7 +74,7 @@ static CEffectsClient s_EffectClient;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CEffectsClient, IEffects, IEFFECTS_INTERFACE_VERSION, s_EffectClient);
 IEffects *g_pEffects = &s_EffectClient;
 
-extern ConVar *r_decals;
+extern ConVarBase *r_decals;
 
 //-----------------------------------------------------------------------------
 // constructor, destructor

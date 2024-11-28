@@ -171,7 +171,7 @@ extern vgui::IInputInternal *g_InputInternal;
 
 extern IClientMode *GetClientModeNormal();
 
-extern ConVar *dsp_room;
+extern ConVarBase *dsp_room;
 
 // IF YOU ADD AN INTERFACE, EXTERN IT IN THE HEADER FILE.
 IVEngineClient	*engine = NULL;
@@ -432,6 +432,14 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CGameUISystemMgrRedirect, IGameUISystemMgr, GA
 
 class CGameConsoleRedirect : public IGameConsole
 {
+#ifdef __MINGW32__
+private:
+	void __DTOR__()
+	{
+		this->~CGameConsoleRedirect();
+	}
+#endif
+
 public:
 	// activates the console, makes it visible and brings it to the foreground
 	virtual void Activate()
@@ -567,13 +575,21 @@ static ConVar s_cl_class("cl_class", "default", FCVAR_USERINFO|FCVAR_ARCHIVE, "D
 bool g_bLevelInitialized = false;
 bool g_bTextMode = false;
 
-static ConVar *g_pcv_ThreadMode = NULL;
+static ConVarBase *g_pcv_ThreadMode = NULL;
 
 //-----------------------------------------------------------------------------
 // Purpose: interface for gameui to modify voice bans
 //-----------------------------------------------------------------------------
 class CGameClientExports : public IGameClientExports
 {
+#ifdef __MINGW32__
+private:
+	void __DTOR__()
+	{
+		this->~CGameClientExports();
+	}
+#endif
+
 public:
 	// ingame voice manipulation
 	bool IsPlayerGameVoiceMuted(int playerIndex)
@@ -965,25 +981,31 @@ bool InitParticleManager()
 
 bool InitGameSystems( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory )
 {
-	if (!VGui_Startup( appSystemFactory ))
-		return false;
+	if(!g_bTextMode) {
+		if (!VGui_Startup( appSystemFactory ))
+			return false;
+	}
 
 	// Add the client systems.	
 	
 	// Client Leaf System has to be initialized first, since DetailObjectSystem uses it
 	IGameSystem::Add( GameStringSystem() );
 	IGameSystem::Add( SoundEmitterSystem() );
-	IGameSystem::Add( ToolFrameworkClientSystem() );
-	IGameSystem::Add( ClientLeafSystem() );
-	IGameSystem::Add( DetailObjectSystem() );
-	IGameSystem::Add( ViewportClientSystem() );
-	IGameSystem::Add( ClientEffectPrecacheSystem() );
-	IGameSystem::Add( g_pClientShadowMgr );
-	IGameSystem::Add( g_pColorCorrectionMgr );	// NOTE: This must happen prior to ClientThinkList (color correction is updated there)
-	IGameSystem::Add( g_pGameUIGameSystem );
+	if(!g_bTextMode) {
+		IGameSystem::Add( ToolFrameworkClientSystem() );
+		IGameSystem::Add( ClientLeafSystem() );
+		IGameSystem::Add( DetailObjectSystem() );
+		IGameSystem::Add( ViewportClientSystem() );
+		IGameSystem::Add( ClientEffectPrecacheSystem() );
+		IGameSystem::Add( g_pClientShadowMgr );
+		IGameSystem::Add( g_pColorCorrectionMgr );	// NOTE: This must happen prior to ClientThinkList (color correction is updated there)
+		IGameSystem::Add( g_pGameUIGameSystem );
+	}
 	IGameSystem::Add( ClientThinkList() );
 	IGameSystem::Add( ClientSoundscapeSystem() );
-	IGameSystem::Add( PerfVisualBenchmark() );
+	if(!g_bTextMode) {
+		IGameSystem::Add( PerfVisualBenchmark() );
+	}
 
 #if defined( TF_CLIENT_DLL )
 	IGameSystem::Add( CustomTextureToolCacheGameSystem() );
@@ -1003,15 +1025,17 @@ bool InitGameSystems( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 	modemanager->Init( );
 
-	// Load the ClientScheme just once
-	vgui::scheme()->LoadSchemeFromFileEx( VGui_GetFullscreenRootVPANEL(), "resource/ClientScheme.res", "ClientScheme");
+	if(!g_bTextMode) {
+		// Load the ClientScheme just once
+		vgui::scheme()->LoadSchemeFromFileEx( VGui_GetFullscreenRootVPANEL(), "resource/ClientScheme.res", "ClientScheme");
 
-	if(GetClientMode() != GetFullscreenClientMode()) {
-		GetClientMode()->InitViewport();
+		if(GetClientMode() != GetFullscreenClientMode()) {
+			GetClientMode()->InitViewport();
+		}
+		GetFullscreenClientMode()->InitViewport();
+
+		GetHud().Init();
 	}
-	GetFullscreenClientMode()->InitViewport();
-
-	GetHud().Init();
 
 	if(GetClientMode() != GetFullscreenClientMode()) {
 		GetClientMode()->Init();
@@ -1032,16 +1056,20 @@ bool InitGameSystems( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	}
 	GetFullscreenClientMode()->EnableWithRootPanel( VGui_GetFullscreenRootVPANEL() );
 
-	GetViewRenderInstance()->Init();
-	GetViewEffects()->Init();
+	if(!g_bTextMode) {
+		GetViewRenderInstance()->Init();
+		GetViewEffects()->Init();
+	}
 
 	C_BaseTempEntity::PrecacheTempEnts();
 
 	input->Init_All();
 
-	VGui_CreateGlobalPanels();
+	if(!g_bTextMode) {
+		VGui_CreateGlobalPanels();
 
-	InitSmokeFogOverlay();
+		InitSmokeFogOverlay();
+	}
 
 	// Register user messages..
 	CUserMessageRegister::RegisterAll();
@@ -1186,13 +1214,7 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	// please don't collapse this into one monolithic boolean expression (impossible to debug)
 	if ( (engine = (IVEngineClient *)appSystemFactory( VENGINE_CLIENT_INTERFACE_VERSION, NULL )) == NULL )
 		return false;
-	if ( (modelrender = (IVModelRender *)appSystemFactory( VENGINE_HUDMODEL_INTERFACE_VERSION, NULL )) == NULL )
-		return false;
-	if ( (effects = (IVEfx *)appSystemFactory( VENGINE_EFFECTS_INTERFACE_VERSION, NULL )) == NULL )
-		return false;
 	if ( (enginetrace = (IEngineTrace *)appSystemFactory( INTERFACEVERSION_ENGINETRACE_CLIENT, NULL )) == NULL )
-		return false;
-	if ( (render = (IVRenderView *)appSystemFactory( VENGINE_RENDERVIEW_INTERFACE_VERSION, NULL )) == NULL )
 		return false;
 	if ( !g_pDataCache )
 		return false;
@@ -1200,21 +1222,15 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		return false;
 	if ( (modelinfo = (IVModelInfoClient *)appSystemFactory(VMODELINFO_CLIENT_INTERFACE_VERSION, NULL )) == NULL )
 		return false;
-	if ( (enginevgui = (IEngineVGui *)appSystemFactory(VENGINE_VGUI_VERSION, NULL )) == NULL )
-		return false;
 	if ( (networkstringtable = (INetworkStringTableContainer *)appSystemFactory(INTERFACENAME_NETWORKSTRINGTABLECLIENT,NULL)) == NULL )
 		return false;
 	if ( (partition = (ISpatialPartition *)appSystemFactory(INTERFACEVERSION_SPATIALPARTITION, NULL)) == NULL )
-		return false;
-	if ( (shadowmgr = (IShadowMgr *)appSystemFactory(ENGINE_SHADOWMGR_INTERFACE_VERSION, NULL)) == NULL )
 		return false;
 	if ( (staticpropmgr = (IStaticPropMgrClient *)appSystemFactory(INTERFACEVERSION_STATICPROPMGR_CLIENT, NULL)) == NULL )
 		return false;
 	if ( (enginesound = (IEngineSound *)appSystemFactory(IENGINESOUND_CLIENT_INTERFACE_VERSION, NULL)) == NULL )
 		return false;
 	if ( (random_valve = (IUniformRandomStream *)appSystemFactory(VENGINE_CLIENT_RANDOM_INTERFACE_VERSION, NULL)) == NULL )
-		return false;
-	if ( (gameuifuncs = (IGameUIFuncs * )appSystemFactory( VENGINE_GAMEUIFUNCS_VERSION, NULL )) == NULL )
 		return false;
 	if ( (gameeventmanager = (IGameEventManager2 *)appSystemFactory(INTERFACEVERSION_GAMEEVENTSMANAGER2,NULL)) == NULL )
 		return false;
@@ -1226,6 +1242,21 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 		return false;
 	if ( ( gamestatsuploader = (IUploadGameStats *)appSystemFactory( INTERFACEVERSION_UPLOADGAMESTATS, NULL )) == NULL )
 		return false;
+
+	if( !g_bTextMode ) {
+		if ( (gameuifuncs = (IGameUIFuncs * )appSystemFactory( VENGINE_GAMEUIFUNCS_VERSION, NULL )) == NULL )
+			return false;
+		if ( (shadowmgr = (IShadowMgr *)appSystemFactory(ENGINE_SHADOWMGR_INTERFACE_VERSION, NULL)) == NULL )
+			return false;
+		if ( (enginevgui = (IEngineVGui *)appSystemFactory(VENGINE_VGUI_VERSION, NULL )) == NULL )
+			return false;
+		if ( (modelrender = (IVModelRender *)appSystemFactory( VENGINE_HUDMODEL_INTERFACE_VERSION, NULL )) == NULL )
+			return false;
+		if ( (effects = (IVEfx *)appSystemFactory( VENGINE_EFFECTS_INTERFACE_VERSION, NULL )) == NULL )
+			return false;
+		if ( (render = (IVRenderView *)appSystemFactory( VENGINE_RENDERVIEW_INTERFACE_VERSION, NULL )) == NULL )
+			return false;
+	}
 
 	g_pMatchFramework = (IMatchFramework *)appSystemFactory( IMATCHFRAMEWORK_VERSION_STRING, NULL );
 
@@ -1344,7 +1375,7 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	// Hook up the gaussian random number generator
 	s_GaussianRandomStream.AttachToStream( random_valve );
 
-	g_pcv_ThreadMode = g_pCVar->FindVar( "host_thread_mode" );
+	g_pcv_ThreadMode = g_pCVar->FindVarBase( "host_thread_mode" );
 
 	if (!Initializer::InitializeAllObjects())
 		return false;
@@ -1377,8 +1408,10 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 	if(!bInitSuccess)
 		return false;
 
-	// This is a fullscreen element, so only lives on slot 0!!!
-	m_pHudCloseCaption = GET_FULLSCREEN_HUDELEMENT( CHudCloseCaption );
+	if(!g_bTextMode) {
+		// This is a fullscreen element, so only lives on slot 0!!!
+		m_pHudCloseCaption = GET_FULLSCREEN_HUDELEMENT( CHudCloseCaption );
+	}
 
 	COM_TimestampedLog( "ClientDLL Init - Finish" );
 	return true;
@@ -1538,11 +1571,13 @@ void CClientDll::Shutdown( void )
 //-----------------------------------------------------------------------------
 int CClientDll::HudVidInit( void )
 {
-	if(g_pGamepadUI) {
-		g_pGamepadUI->VidInit();
-	}
+	if(!g_bTextMode) {
+		if(g_pGamepadUI) {
+			g_pGamepadUI->VidInit();
+		}
 
-	GetHud().VidInit();
+		GetHud().VidInit();
+	}
 
 	GetClientVoiceMgr()->VidInit();
 
@@ -1593,7 +1628,9 @@ void CClientDll::HudUpdate( bool bActive )
 
 	GetClientVoiceMgr()->Frame( frametime );
 
-	GetHud().UpdateHud( bActive );
+	if(!g_bTextMode) {
+		GetHud().UpdateHud( bActive );
+	}
 
 	{
 		VPROF( "UpdateQueryCache" );
@@ -1621,7 +1658,10 @@ void CClientDll::HudUpdate( bool bActive )
 //-----------------------------------------------------------------------------
 void CClientDll::HudReset( void )
 {
-	GetHud().VidInit();
+	if(!g_bTextMode) {
+		GetHud().VidInit();
+	}
+
 	PhysicsReset();
 }
 
@@ -1914,7 +1954,7 @@ void CClientDll::View_Fade( ScreenFade_t *pSF )
 // CPU level
 //-----------------------------------------------------------------------------
 void ConfigureCurrentSystemLevel( );
-void OnCPULevelChanged( IConVar *var, const char *pOldValue, float flOldValue )
+void OnCPULevelChanged( IConVarRef var, const char *pOldValue, float flOldValue )
 {
 	ConfigureCurrentSystemLevel();
 }
@@ -1935,7 +1975,7 @@ CPULevel_t GetActualCPULevel()
 //-----------------------------------------------------------------------------
 // GPU level
 //-----------------------------------------------------------------------------
-void OnGPULevelChanged( IConVar *var, const char *pOldValue, float flOldValue )
+void OnGPULevelChanged( IConVarRef var, const char *pOldValue, float flOldValue )
 {
 	ConfigureCurrentSystemLevel();
 }
@@ -1952,7 +1992,7 @@ GPULevel_t GetGPULevel()
 //-----------------------------------------------------------------------------
 // System Memory level
 //-----------------------------------------------------------------------------
-void OnMemLevelChanged( IConVar *var, const char *pOldValue, float flOldValue )
+void OnMemLevelChanged( IConVarRef var, const char *pOldValue, float flOldValue )
 {
 	ConfigureCurrentSystemLevel();
 }
@@ -1968,7 +2008,7 @@ MemLevel_t GetMemLevel()
 //-----------------------------------------------------------------------------
 // GPU Memory level
 //-----------------------------------------------------------------------------
-void OnGPUMemLevelChanged( IConVar *var, const char *pOldValue, float flOldValue )
+void OnGPUMemLevelChanged( IConVarRef var, const char *pOldValue, float flOldValue )
 {
 	ConfigureCurrentSystemLevel();
 }
@@ -1981,7 +2021,7 @@ GPUMemLevel_t GetGPUMemLevel()
 	return nSystemLevel;
 }
 
-extern ConVar *mat_dxlevel;
+extern ConVarBase *mat_dxlevel;
 
 void ConfigureCurrentSystemLevel()
 {
@@ -2047,7 +2087,9 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 
 	input->LevelInit();
 
-	GetViewEffects()->LevelInit();
+	if(!g_bTextMode) {
+		GetViewEffects()->LevelInit();
+	}
 
 	ClientVoiceMgr_LevelInit();
 
@@ -2060,10 +2102,13 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 
 	hudlcd->SetGlobalStat( "(mapname)", pMapName );
 
-	clienteffects->Flush();
-	GetViewRenderInstance()->LevelInit();
+	if(!g_bTextMode) {
+		clienteffects->Flush();
+		GetViewRenderInstance()->LevelInit();
+		ResetToneMapping(1.0);
+	}
+
 	tempents->LevelInit();
-	ResetToneMapping(1.0);
 
 	// Always force reset to normal mode upon receipt of world in new map
 	modemanager->SwitchMode( CLIENTMODE_NORMAL, true );
@@ -2084,11 +2129,13 @@ void CClientDll::LevelInitPreEntity( char const* pMapName )
 
 	RecastMgr().Load();
 
-	if(g_pGamepadUI) {
-		g_pGamepadUI->OnLevelInitializePreEntity();
-	}
+	if(!g_bTextMode) {
+		if(g_pGamepadUI) {
+			g_pGamepadUI->OnLevelInitializePreEntity();
+		}
 
-	GetHud().LevelInit();
+		GetHud().LevelInit();
+	}
 
 #if defined( REPLAY_ENABLED )
 	// Initialize replay ragdoll recorder
@@ -2111,11 +2158,13 @@ void CClientDll::LevelInitPostEntity( )
 
 	C_PhysPropClientside::RecreateAll();
 
-	if(g_pGamepadUI) {
-		g_pGamepadUI->OnLevelInitializePostEntity();
-	}
+	if(!g_bTextMode) {
+		if(g_pGamepadUI) {
+			g_pGamepadUI->OnLevelInitializePostEntity();
+		}
 
-	GetCenterPrint()->Clear();
+		GetCenterPrint()->Clear();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -2819,7 +2868,7 @@ void CClientDll::FrameStageNotify( ClientFrameStage_t curStage )
 	}
 }
 
-extern ConVar *closecaption;
+extern ConVarBase *closecaption;
 
 // Given a list of "S(wavname) S(wavname2)" tokens, look up the localized text and emit
 //  the appropriate close caption if running with closecaption = 1
@@ -3046,7 +3095,7 @@ bool CClientDll::DisconnectAttempt( void )
 	return false;
 }
 
-bool CClientDll::IsConnectedUserInfoChangeAllowed( IConVar *pCvar )
+bool CClientDll::IsConnectedUserInfoChangeAllowed( IConVarRef pCvar )
 {
 	return GameRules() ? GameRules()->IsConnectedUserInfoChangeAllowed( NULL ) : true;
 }

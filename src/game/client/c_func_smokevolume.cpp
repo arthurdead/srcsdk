@@ -210,7 +210,7 @@ C_FuncSmokeVolume::~C_FuncSmokeVolume()
 	delete [] m_pSmokeParticleInfos;
 }
 
-extern ConVar *mat_reduceparticles;
+extern ConVarBase *mat_reduceparticles;
 
 void C_FuncSmokeVolume::OnDataChanged( DataUpdateType_t updateType )
 {		

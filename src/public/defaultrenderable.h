@@ -68,6 +68,8 @@ public:
 		GetRenderBounds( mins, maxs );
 	}
 
+	virtual IMaterial *GetShadowDrawMaterial() { return NULL; }
+
 	virtual bool IsShadowDirty( )			     { return false; }
 	virtual void MarkShadowDirty( bool bDirty )  {}
 	virtual IClientRenderable *GetShadowParent() { return NULL; }

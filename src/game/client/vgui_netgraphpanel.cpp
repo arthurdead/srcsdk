@@ -40,7 +40,7 @@ static ConVar	net_graphmsecs		( "net_graphmsecs", "400", FCVAR_ARCHIVE, "The lat
 static ConVar	net_graphshowlatency( "net_graphshowlatency", "1", FCVAR_ARCHIVE, "Draw the ping/packet loss graph." );
 static ConVar	net_graphshowinterp ( "net_graphshowinterp", "1", FCVAR_ARCHIVE, "Draw the interpolation graph." );
 
-void NetgraphFontChangeCallback( IConVar *var, const char *pOldValue, float flOldValue );
+void NetgraphFontChangeCallback( IConVarRef var, const char *pOldValue, float flOldValue );
 
 static ConVar	net_graph			( "net_graph","0", FCVAR_ARCHIVE, "Draw the network usage graph, = 2 draws data on payload, = 3 draws payload legend.", NetgraphFontChangeCallback );
 static ConVar	net_graphheight		( "net_graphheight", "64", FCVAR_ARCHIVE, "Height of netgraph panel", NetgraphFontChangeCallback );
@@ -65,6 +65,9 @@ static ConVar	net_graphproportionalfont( "net_graphproportionalfont", "1", FCVAR
 #define COLOR_SKIPPED	2
 #define COLOR_CHOKED	3
 #define COLOR_NORMAL	4
+
+extern ConVarBase		*cl_updaterate;
+extern ConVarBase		*cl_cmdrate;
 
 //-----------------------------------------------------------------------------
 // Purpose: Displays the NetGraph 
@@ -133,8 +136,6 @@ private:
 	HFont			m_hFont;
 
 	HFont			m_hFontSmall;
-	const ConVar		*cl_updaterate;
-	const ConVar		*cl_cmdrate;
 
 public:
 						CNetGraphPanel( VPANEL parent );
@@ -233,10 +234,6 @@ CNetGraphPanel::CNetGraphPanel( VPANEL parent )
 
 	InitColors();
 
-	cl_updaterate = g_pCVar->FindVar( "cl_updaterate" );
-	cl_cmdrate = g_pCVar->FindVar( "cl_cmdrate" );
-	Assert( cl_updaterate && cl_cmdrate );
-
 	memset( sendcolor, 0, 3 );
 	memset( holdcolor, 0, 3 );
 	sendcolor[ 0 ] = sendcolor[ 1 ] = 255;
@@ -298,7 +295,7 @@ CNetGraphPanel::~CNetGraphPanel( void )
 	g_pNetGraphPanel = NULL;
 }
 
-void NetgraphFontChangeCallback( IConVar *var, const char *pOldValue, float flOldValue )
+void NetgraphFontChangeCallback( IConVarRef var, const char *pOldValue, float flOldValue )
 {
 	if ( g_pNetGraphPanel )
 	{

@@ -9,7 +9,7 @@
 
 #include "player_voice_listener.h"
 
-ConVar voice_player_speaking_delay_threshold( "voice_player_speaking_delay_threshold", "0.5f", FCVAR_CHEAT );
+ConVar voice_player_speaking_delay_threshold( "voice_player_speaking_delay_threshold", "0.5", FCVAR_CHEAT );
 
 inline bool IsPlayerIndexValid( int nPlayerIndex )
 {

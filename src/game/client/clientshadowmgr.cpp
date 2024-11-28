@@ -100,12 +100,12 @@ DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_SHADOWS, "Shadows" );
 extern ClientShadowHandle_t g_hFlashlightHandle[MAX_PLAYERS + 1];
 
 static ConVar r_flashlightdrawfrustum( "r_flashlightdrawfrustum", "0" );
-extern ConVar *r_flashlightdrawfrustumbbox;
+extern ConVarBase *r_flashlightdrawfrustumbbox;
 static ConVar r_flashlightmodels( "r_flashlightmodels", "1" );
-extern ConVar *r_shadowrendertotexture;
-extern ConVar *r_flashlight_version2;
+extern ConVarBase *r_shadowrendertotexture;
+extern ConVarBase *r_flashlight_version2;
 
-void WorldLightCastShadowCallback(IConVar *pVar, const char *pszOldValue, float flOldValue);
+void WorldLightCastShadowCallback(IConVarRef pVar, const char *pszOldValue, float flOldValue);
 static ConVar r_worldlight_castshadows( "r_worldlight_castshadows", "1", FCVAR_CHEAT, "Allow world lights to cast shadows", true, 0, true, 1, WorldLightCastShadowCallback );
 static ConVar r_worldlight_mincastintensity( "r_worldlight_mincastintensity", "0.0003", FCVAR_CHEAT, "Minimum brightness of a light to be classed as shadow casting", true, 0, false, 0 );
 
@@ -114,7 +114,7 @@ static ConVar r_shadowfromworldlights_debug( "r_shadowfromworldlights_debug", "0
 static ConVar r_shadowfromanyworldlight( "r_shadowfromanyworldlight", "1", FCVAR_CHEAT );
 static ConVar r_shadow_shortenfactor( "r_shadow_shortenfactor", "1.5" , FCVAR_CHEAT, "Makes shadows cast from local lights shorter" );
 
-static void HalfUpdateRateCallback( IConVar *var, const char *pOldValue, float flOldValue );
+static void HalfUpdateRateCallback( IConVarRef var, const char *pOldValue, float flOldValue );
 static ConVar r_shadow_half_update_rate( "r_shadow_half_update_rate", "0", 0, "Updates shadows at half the framerate", HalfUpdateRateCallback );
 
 static ConVar r_shadow_debug_spew( "r_shadow_debug_spew", "0", FCVAR_CHEAT );
@@ -124,7 +124,7 @@ static ConVar r_shadow_rtt_mode( "r_shadow_rtt_mode", "1" );
 static ConVar r_shadow_rtt_farz( "r_shadow_rtt_farz", "100" );
 static ConVar r_shadow_pcss_scale_falloff( "r_shadow_pcss_scale_falloff", "10" );
 
-extern ConVar *r_flashlightdepthtexture;
+extern ConVarBase *r_flashlightdepthtexture;
 ConVar r_max_shadowtextures( "r_max_shadowtextures", "8" );
 
 ConVar r_flashlight_staticprops( "r_flashlight_staticprops", "2" );
@@ -134,8 +134,8 @@ ConVar r_flashlightdepthres("r_flashlightdepthres", "4096", FCVAR_ARCHIVE, "Flas
 
 ConVar r_threaded_client_shadow_manager( "r_threaded_client_shadow_manager", "1" );
 
-extern ConVar *mat_slopescaledepthbias_shadowmap;
-extern ConVar *mat_depthbias_shadowmap;
+extern ConVarBase *mat_slopescaledepthbias_shadowmap;
+extern ConVarBase *mat_depthbias_shadowmap;
 
 #ifdef _WIN32
 #pragma warning( disable: 4701 )
@@ -731,9 +731,9 @@ void CTextureAllocator::GetTextureRect(TextureHandle_t handle, int& x, int& y, i
 #define MAX_CLIP_PLANE_COUNT 4
 #define SHADOW_CULL_TOLERANCE 0.5f
 
-extern ConVar *r_shadows; // hook into engine's cvars..
+extern ConVarBase *r_shadows; // hook into engine's cvars..
 static ConVar r_shadowmaxrendered("r_shadowmaxrendered", "32");
-extern ConVar *r_shadows_gamecontrol;	 // hook into engine's cvars..
+extern ConVarBase *r_shadows_gamecontrol;	 // hook into engine's cvars..
 
 //-----------------------------------------------------------------------------
 // The class responsible for dealing with shadows on the client side
@@ -904,7 +904,7 @@ public:
 	const ClientShadow_t& GetClientShadowInfo( ClientShadowHandle_t h );
 
 private:
-	friend void HalfUpdateRateCallback( IConVar *var, const char *pOldValue, float flOldValue );
+	friend void HalfUpdateRateCallback( IConVarRef var, const char *pOldValue, float flOldValue );
 
 	// Shadow update functions
 	void UpdateStudioShadow( IClientRenderable *pRenderable, ClientShadowHandle_t handle );
@@ -1125,7 +1125,7 @@ private:
 
 	friend class CVisibleShadowList;
 	friend class CVisibleShadowFrustumList;
-	friend void ThreadedShadowMGRCallback(IConVar *var, const char *pOldValue, float flOldValue);
+	friend void ThreadedShadowMGRCallback(IConVarRef var, const char *pOldValue, float flOldValue);
 };
 
 //-----------------------------------------------------------------------------
@@ -1134,9 +1134,9 @@ private:
 static CClientShadowMgr s_ClientShadowMgr;
 IClientShadowMgr* g_pClientShadowMgr = &s_ClientShadowMgr;
 
-void ThreadedShadowMGRCallback(IConVar *var, const char *pOldValue, float flOldValue)
+void ThreadedShadowMGRCallback(IConVarRef var, const char *pOldValue, float flOldValue)
 {
-	s_ClientShadowMgr.m_bThreaded = ((ConVar *)var)->GetBool();
+	s_ClientShadowMgr.m_bThreaded = var.GetBool();
 }
 
 //-----------------------------------------------------------------------------
@@ -1481,10 +1481,9 @@ CON_COMMAND_F( r_shadowblobbycutoff, "some shadow stuff", FCVAR_CHEAT )
 	}
 }
 
-void OnShadowFromWorldLights( IConVar *var, const char *pOldValue, float flOldValue )
+void OnShadowFromWorldLights( IConVarRef var, const char *pOldValue, float flOldValue )
 {
-	ConVar *pCVar = (ConVar *)var;
-	s_ClientShadowMgr.SuppressShadowFromWorldLights( !pCVar->GetBool() );
+	s_ClientShadowMgr.SuppressShadowFromWorldLights( !var.GetBool() );
 }
 static ConVar r_shadowfromworldlights( "r_shadowfromworldlights", "1", FCVAR_NONE, "Enable shadowing from world lights", OnShadowFromWorldLights );
 
@@ -1493,7 +1492,7 @@ static void ShadowRestoreFunc( int nChangeFlags )
 	s_ClientShadowMgr.RestoreRenderState();
 }
 
-extern ConVar *r_flashlightscissor;
+extern ConVarBase *r_flashlightscissor;
 
 //-----------------------------------------------------------------------------
 // Initialization, shutdown
@@ -4231,7 +4230,7 @@ void CClientShadowMgr::UpdateDirtyShadow( ClientShadowHandle_t handle )
 //-----------------------------------------------------------------------------
 // Convar callback
 //-----------------------------------------------------------------------------
-void HalfUpdateRateCallback( IConVar *var, const char *pOldValue, float flOldValue )
+void HalfUpdateRateCallback( IConVarRef var, const char *pOldValue, float flOldValue )
 {
 	s_ClientShadowMgr.FlushLeftOverDirtyShadows();
 }
@@ -5876,9 +5875,9 @@ void CClientShadowMgr::UpdateShadowDirectionFromLocalLightSource( ClientShadowHa
 	}
 }
 
-void WorldLightCastShadowCallback(IConVar *pVar, const char *pszOldValue, float flOldValue)
+void WorldLightCastShadowCallback(IConVarRef pVar, const char *pszOldValue, float flOldValue)
 {	
-	s_ClientShadowMgr.SetShadowFromWorldLightsEnabled( ((ConVar *)pVar)->GetBool() );
+	s_ClientShadowMgr.SetShadowFromWorldLightsEnabled( pVar.GetBool() );
 }
 
 void CClientShadowMgr::SetShadowFromWorldLightsEnabled( bool bEnabled )

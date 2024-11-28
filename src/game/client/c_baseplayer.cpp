@@ -853,6 +853,8 @@ void C_BasePlayer::PreDataUpdate( DataUpdateType_t updateType )
 	BaseClass::PreDataUpdate( updateType );
 }
 
+extern ConVarBase *snd_soundmixer;
+
 void C_BasePlayer::CheckForLocalPlayer()
 {
 	int iLocalPlayerIndex = engine->GetLocalPlayer();
@@ -868,8 +870,7 @@ void C_BasePlayer::CheckForLocalPlayer()
 
 		// Reset our sound mixed in case we were in a freeze cam when we
 		// changed level, which would cause the snd_soundmixer to be left modified.
-		ConVar *pVar = (ConVar *)g_pCVar->FindVar( "snd_soundmixer" );
-		pVar->Revert();
+		snd_soundmixer->Revert();
 	}
 }
 
@@ -962,8 +963,7 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 			}
 
 			// Force the sound mixer to the freezecam mixer
-			ConVar *pVar = (ConVar *)g_pCVar->FindVar( "snd_soundmixer" );
-			pVar->SetValue( "FreezeCam_Only" );
+			snd_soundmixer->SetValue( "FreezeCam_Only" );
 
 			// When we start, give unused textures an opportunity to unload
 			if ( cl_clean_textures_on_death.GetBool() )
@@ -979,8 +979,7 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 
 			GetViewRenderInstance()->FreezeFrame(0);
 
-			ConVar *pVar = (ConVar *)g_pCVar->FindVar( "snd_soundmixer" );
-			pVar->Revert();
+			snd_soundmixer->Revert();
 
 			m_nForceVisionFilterFlags = 0;
 			CalculateVisionUsingCurrentFlags();

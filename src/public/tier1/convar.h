@@ -100,6 +100,7 @@ class ConCommandBase
 {
 	friend class CCvar;
 	friend class ConVar;
+	friend class ConVarBase;
 	friend class ConCommand;
 	friend void ConVar_Register( int nCVarFlag, IConCommandBaseAccessor *pAccessor );
 	friend void ConVar_PublishToVXConsole();
@@ -114,7 +115,15 @@ public:
 	ConCommandBase( const char *pName, const char *pHelpString = 0, 
 		int flags = 0 ) = delete;
 
-	virtual						~ConCommandBase( void );
+#ifdef __MINGW32__
+private:
+	virtual void __DTOR__();
+protected:
+	~ConCommandBase();
+public:
+#else
+	virtual ~ConCommandBase( void );
+#endif
 
 	virtual	bool				IsCommand( void ) const;
 
@@ -275,7 +284,13 @@ public:
 	ConCommand( const char *pName, ICommandCallback *pCallback, 
 		const char *pHelpString = 0, int flags = 0, ICommandCompletionCallback *pCommandCompletionCallback = 0 );
 
-	virtual ~ConCommand( void );
+#ifdef __MINGW32__
+private:
+	void __DTOR__();
+#endif
+
+public:
+	VIRTUAL_OVERLOAD ~ConCommand( void );
 
 	virtual	bool IsCommand( void ) const;
 
@@ -365,7 +380,15 @@ class ConVar_ServerBounded;
 //-----------------------------------------------------------------------------
 // Purpose: A console variable
 //-----------------------------------------------------------------------------
-class ConVar : public ConCommandBase, public IConVar
+#ifndef __MINGW32__
+typedef ConVar ConVarBase;
+#endif
+
+#ifdef __MINGW32__
+class ConVarBase : public ConCommandBase
+#else
+class ConVar : public ConCommandBase, public DO_NOT_USE_IConVar
+#endif
 {
 friend class CCvar;
 friend class ConVarRef;
@@ -373,6 +396,11 @@ friend class ConVarRef;
 public:
 	typedef ConCommandBase BaseClass;
 
+#ifdef __MINGW32__
+	#define ConVar ConVarBase
+#endif
+
+#ifndef __MINGW32__
 	ConVar( void ) = delete;
 
 	ConVar( const char *pName, const char *pDefaultValue, int flags = 0);
@@ -386,18 +414,35 @@ public:
 	ConVar( const char *pName, const char *pDefaultValue, int flags, 
 		const char *pHelpString, bool bMin, float fMin, bool bMax, float fMax,
 		FnChangeCallback_t callback );
+#else
+protected:
+	ConVarBase( void );
+public:
+#endif
 
-	virtual						~ConVar( void );
+	VIRTUAL_OVERLOAD ~ConVar( void );
 
-	virtual bool				IsFlagSet( int flag ) const;
+#ifdef __MINGW32__
+	#undef ConVar
+#endif
+
+#ifdef __MINGW32__
+private:
+	void __DTOR__();
+#endif
+
+public:
+	VIRTUAL_OVERLOAD bool				IsFlagSet( int flag ) const;
 	virtual const char*			GetHelpText( void ) const;
 	virtual bool				IsRegistered( void ) const;
-	virtual const char			*GetName( void ) const;
+	VIRTUAL_OVERLOAD const char			*GetName( void ) const;
 	virtual void				AddFlags( int flags );
 	virtual	bool				IsCommand( void ) const;
 
+#ifndef __MINGW32__
 	// Install a change callback (there shouldn't already be one....)
 	void InstallChangeCallback( FnChangeCallback_t callback );
+#endif
 
 	// Retrieve value
 	float			GetBaseFloatValue( void ) const;
@@ -418,9 +463,9 @@ public:
 	//  from alloc/free across dll/exe boundaries.
 	
 	// These just call into the IConCommandBaseAccessor to check flags and set the var (which ends up calling InternalSetValue).
-	virtual void				SetValue( const char *value );
-	virtual void				SetValue( float value );
-	virtual void				SetValue( int value );
+	VIRTUAL_OVERLOAD void				SetValue( const char *value );
+	VIRTUAL_OVERLOAD void				SetValue( float value );
+	VIRTUAL_OVERLOAD void				SetValue( int value );
 	void				SetValue( bool value );
 	
 	// Reset to default value
@@ -441,30 +486,49 @@ private:
 	void				InternalSetBoolValue( bool nValue );
 
 	virtual bool				ClampValue( float& value );
-	virtual void				ChangeStringValue( const char *tempVal, float flOldValue );
+	virtual void				ChangeStringValue( const char *tempVal, float flOldValue )
+#ifdef __MINGW32__
+	= 0
+#endif
+	;
 
 	virtual void				Create( const char *pName, const char *pDefaultValue, int flags = 0,
 									const char *pHelpString = 0, bool bMin = false, float fMin = 0.0,
-									bool bMax = false, float fMax = false, FnChangeCallback_t callback = 0 );
+									bool bMax = false, float fMax = false, FnChangeCallback_t callback = 0 )
+#ifdef __MINGW32__
+	= 0
+#endif
+	;
 
 	// Used internally by OneTimeInit to initialize.
 	virtual void				Init();
 	void				Init( IConCommandBaseAccessor *pAccessor );
 
+public:
 	ConVar_ServerBounded *GetServerBounded();
-	const ConVar_ServerBounded *GetServerBounded() const { return const_cast<ConVar *>(this)->GetServerBounded(); }
+	const ConVar_ServerBounded *GetServerBounded() const { return const_cast<ConVarBase *>(this)->GetServerBounded(); }
 
-	ConVar *GetTarget() { return m_pParent ? m_pParent : this; }
-	const ConVar *GetTarget() const { return const_cast<ConVar *>(this)->GetTarget(); }
+	ConVarBase *GetTarget();
+	const ConVarBase *GetTarget() const;
 
-	int GetFlags() const { return m_pParent ? m_pParent->m_nFlags : m_nFlags; }
+	bool IsRootVar() const;
+
+	int GetFlags() const;
+
+protected:
+	friend class ConVar;
+	friend struct IConVarRef;
 
 private:
+#ifdef __MINGW32__
+	DO_NOT_USE_IConVar *m_pIConVar;
+#endif
 
+protected:
 	// This either points to "this" or it points to the original declaration of a ConVar.
 	// This allows ConVars to exist in separate modules, and they all use the first one to be declared.
 	// m_pParent->m_pParent must equal m_pParent (ie: m_pParent must be the root, or original, ConVar).
-	ConVar						*m_pParent;
+	ConVarBase						*m_pParent;
 
 	// Static data
 	const char					*m_pszDefaultValue;
@@ -488,38 +552,188 @@ private:
 	FnChangeCallback_t			m_fnChangeCallback;
 };
 
-FORCEINLINE_CVAR void ConVar::SetMin( float v )
+#ifdef __MINGW32__
+class ConVar : public ConVarBase, private DO_NOT_USE_IConVar
+{
+public:
+	typedef ConVarBase BaseClass;
+
+	ConVar( void ) = delete;
+
+	ConVar( const char *pName, const char *pDefaultValue, int flags = 0);
+
+	ConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString );
+	ConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, bool bMin, float fMin, bool bMax, float fMax );
+	ConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, FnChangeCallback_t callback );
+	ConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, bool bMin, float fMin, bool bMax, float fMax,
+		FnChangeCallback_t callback );
+
+	~ConVar( void );
+
+private:
+	void __DTOR__();
+
+public:
+	// Install a change callback (there shouldn't already be one....)
+	void InstallChangeCallback( FnChangeCallback_t callback );
+
+	virtual void				ChangeStringValue( const char *tempVal, float flOldValue );
+
+	virtual void				Create( const char *pName, const char *pDefaultValue, int flags = 0,
+									const char *pHelpString = 0, bool bMin = false, float fMin = 0.0,
+									bool bMax = false, float fMax = false, FnChangeCallback_t callback = 0 );
+
+	virtual bool				IsFlagSet( int flag ) const { return ConVarBase::IsFlagSet(flag); }
+	virtual const char			*GetName( void ) const { return ConVarBase::GetName(); }
+
+	virtual void				SetValue( const char *value ) { ConVarBase::SetValue(value); }
+	virtual void				SetValue( float value ) { ConVarBase::SetValue(value); }
+	virtual void				SetValue( int value ) { ConVarBase::SetValue(value); }
+};
+#endif
+
+inline ConVarBase			*ICvar::FindVarBase ( const char *var_name ) { return (ConVarBase *)DO_NOT_USE_FindVar(var_name); }
+inline const ConVarBase	*ICvar::FindVarBase ( const char *var_name ) const { return (const ConVarBase *)DO_NOT_USE_FindVar(var_name); }
+
+inline ConVarBase *ConVarBase::GetTarget()
+{
+	return m_pParent ? (ConVarBase *)m_pParent : this;
+}
+
+inline const ConVarBase *ConVarBase::GetTarget() const
+{
+	return const_cast<ConVarBase *>(this)->GetTarget();
+}
+
+inline bool ConVarBase::IsRootVar() const
+{
+	return !m_pParent || (ConVarBase *)m_pParent == this;
+}
+
+inline int ConVarBase::GetFlags() const
+{
+	return m_pParent ? m_pParent->m_nFlags : m_nFlags;
+}
+
+FORCEINLINE_CVAR void ConVarBase::SetMin( float v )
 {
 	m_bHasMin = true;
 	m_fMinVal = v;
 
-	if(m_pParent && m_pParent != this) {
+	if(!IsRootVar()) {
 		m_pParent->m_bHasMin = true;
 		m_pParent->m_fMinVal = v;
 	}
 }
 
-FORCEINLINE_CVAR void ConVar::SetMax( float v )
+FORCEINLINE_CVAR void ConVarBase::SetMax( float v )
 {
 	m_bHasMax = true;
 	m_fMaxVal = v;
 
-	if(m_pParent && m_pParent != this) {
+	if(!IsRootVar()) {
 		m_pParent->m_bHasMax = true;
 		m_pParent->m_fMaxVal = v;
 	}
 }
 
-class CEmptyConVar : public ConVar
+struct IConVarRef
 {
 public:
-	CEmptyConVar() : ConVar( "", "0" ) {}
+	IConVarRef() = delete;
+
+	IConVarRef( ConVar *var_ )
+	{ var = var_->m_pIConVar; }
+
+	~IConVarRef() {}
+
+	operator ConVar *() const = delete;
+	operator const ConVar *() const = delete;
+
+#ifdef __MINGW32__
+	operator ConVarBase *() const = delete;
+	operator const ConVarBase *() const = delete;
+#endif
+
+	void SetValue( const char *pValue ) { var->SetValue(pValue); }
+	void SetValue( float flValue ) { var->SetValue(flValue); }
+	void SetValue( int nValue ) { var->SetValue(nValue); }
+
+	// Return name of command
+	const char *GetName( void ) const { return var->GetName(); }
+
+	// Accessors.. not as efficient as using GetState()/GetInfo()
+	// if you call these methods multiple times on the same IConVar
+	bool IsFlagSet( int nFlag ) const { return var->IsFlagSet(nFlag); }
+
+	// Get/Set value
+	float GetFloat( void ) const { return GetLinkedConVarBase()->GetFloat(); }
+	int GetInt( void ) const { return GetLinkedConVarBase()->GetInt(); }
+	bool GetBool() const { return GetLinkedConVarBase()->GetBool(); }
+	const char *GetString( void ) const { return GetLinkedConVarBase()->GetString(); }
+	Color GetColor(void) const { return GetLinkedConVarBase()->GetColor(); }
+
+	void SetValue( bool bValue ) { GetLinkedConVarBase()->SetValue( bValue); }
+
+	const char *GetDefault() const { return GetLinkedConVarBase()->GetDefault(); }
+
+private:
+	ConVar *GetLinkedConVar()
+	{ return ((ConVar *)var); }
+	const ConVar *GetLinkedConVar() const
+	{ return ((ConVar *)var); }
+	ConVarBase *GetLinkedConVarBase()
+	{ return ((ConVarBase *)GetLinkedConVar()); }
+	const ConVarBase *GetLinkedConVarBase() const
+	{ return ((ConVarBase *)GetLinkedConVar()); }
+
+	DO_NOT_USE_IConVar *var;
+};
+
+COMPILE_TIME_ASSERT(sizeof(IConVarRef) == sizeof(DO_NOT_USE_IConVar *));
+
+class CEmptyConVar : public ConVar
+{
+private:
+	CEmptyConVar( const char *pName, const char *pDefaultValue, int flags = 0) = delete;
+
+	CEmptyConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString ) = delete;
+	CEmptyConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, bool bMin, float fMin, bool bMax, float fMax ) = delete;
+	CEmptyConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, FnChangeCallback_t callback ) = delete;
+	CEmptyConVar( const char *pName, const char *pDefaultValue, int flags, 
+		const char *pHelpString, bool bMin, float fMin, bool bMax, float fMax,
+		FnChangeCallback_t callback ) = delete;
+
+public:
+	CEmptyConVar()
+		: ConVar( "", "", FCVAR_UNREGISTERED|FCVAR_HIDDEN|FCVAR_DEVELOPMENTONLY, NULL, true, 0.0f, true, 0.0f )
+	{
+	}
+
 	// Used for optimal read access
+	virtual void InternalSetValue(const char *value) {}
+	virtual void InternalSetFloatValue( float fNewValue ) {}
+	virtual void InternalSetIntValue( int nValue ) {}
 	virtual void SetValue( const char *pValue ) {}
 	virtual void SetValue( float flValue ) {}
 	virtual void SetValue( int nValue ) {}
-	virtual const char *GetName( void ) const { return ""; }
-	virtual bool IsFlagSet( int nFlags ) const { return false; }
+
+	virtual bool ClampValue( float& value )
+	{ value = 0.0f; return true; }
+	virtual void ChangeStringValue( const char *tempVal, float flOldValue ) {}
+
+	virtual bool IsFlagSet( int flag ) const
+	{ return (flag & (FCVAR_UNREGISTERED|FCVAR_HIDDEN|FCVAR_DEVELOPMENTONLY)) != 0; }
+
+	virtual void AddFlags( int flags )
+	{ ConVar::AddFlags(flags & (FCVAR_UNREGISTERED|FCVAR_HIDDEN|FCVAR_DEVELOPMENTONLY)); }
 };
 
 extern CEmptyConVar s_EmptyConVar;
@@ -533,14 +747,13 @@ public:
 	ConVarRef( const char *pName ) { Init( pName ); }
 	ConVarRef( const char *pName, bool bIgnoreMissing ) { Init( pName, bIgnoreMissing ); }
 	ConVarRef( const char *pName, const char * ) = delete;
-	ConVarRef( IConVar *pConVar );
-	ConVarRef( ConVar *pConVar );
+	ConVarRef( ConVarBase *pConVar );
 
 	void Init( const char *pName, bool bIgnoreMissing );
 	void Init( const char *pName ) { Init( pName, false ); }
 	bool IsValid() const;
 	bool IsFlagSet( int nFlags ) const;
-	IConVar *GetLinkedConVar();
+	ConVarBase *GetLinkedConVar();
 
 	// Get/Set value
 	float GetFloat( void ) const;
@@ -560,7 +773,7 @@ public:
 
 private:
 	// High-speed method to read convar data
-	ConVar *m_pConVar;
+	ConVarBase *m_pConVar;
 };
 
 
@@ -572,7 +785,7 @@ FORCEINLINE_CVAR bool ConVarRef::IsFlagSet( int nFlags ) const
 	return ( m_pConVar->IsFlagSet( nFlags ) != 0 );
 }
 
-FORCEINLINE_CVAR IConVar *ConVarRef::GetLinkedConVar()
+FORCEINLINE_CVAR ConVarBase *ConVarRef::GetLinkedConVar()
 {
 	return m_pConVar;
 }

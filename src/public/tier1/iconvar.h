@@ -22,7 +22,6 @@
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
-class IConVar;
 class CCommand;
 
 
@@ -89,13 +88,15 @@ class CCommand;
 // Called when a ConVar changes value
 // NOTE: For FCVAR_NEVER_AS_STRING ConVars, pOldValue == NULL
 //-----------------------------------------------------------------------------
-typedef void ( *FnChangeCallback_t )( IConVar *var, const char *pOldValue, float flOldValue );
+struct IConVarRef;
+
+typedef void ( *FnChangeCallback_t )( IConVarRef var, const char *pOldValue, float flOldValue );
 
 
 //-----------------------------------------------------------------------------
 // Abstract interface for ConVars
 //-----------------------------------------------------------------------------
-abstract_class IConVar
+abstract_class DO_NOT_USE_IConVar
 {
 public:
 	// Value set

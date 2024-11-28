@@ -15,13 +15,21 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern ConVar *name;
+extern ConVarBase *name;
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface to running the engine from the UI dlls
 //-----------------------------------------------------------------------------
 class CRunGameEngine : public IRunGameEngine
 {
+#ifdef __MINGW32__
+private:
+	void __DTOR__()
+	{
+		this->~CRunGameEngine();
+	}
+#endif
+
 public:
 	// Returns true if the engine is running, false otherwise.
 	virtual bool IsRunning()

@@ -46,9 +46,9 @@ struct Ammo_t
 	int					pPlrDmg;		// CVar for player damage amount
 	int					pNPCDmg;		// CVar for NPC damage amount
 	int					pMaxCarry;		// CVar for maximum number can carry
-	const ConVar*		pPlrDmgCVar;	// CVar for player damage amount
-	const ConVar*		pNPCDmgCVar;	// CVar for NPC damage amount
-	const ConVar*		pMaxCarryCVar;	// CVar for maximum number can carry
+	const ConVarBase*		pPlrDmgCVar;	// CVar for player damage amount
+	const ConVarBase*		pNPCDmgCVar;	// CVar for NPC damage amount
+	const ConVarBase*		pMaxCarryCVar;	// CVar for maximum number can carry
 };
 
 // Used to tell AmmoDef to use the cvars, not the integers

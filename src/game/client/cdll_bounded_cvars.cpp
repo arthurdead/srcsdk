@@ -15,6 +15,28 @@
 
 bool g_bForceCLPredictOff = false;
 
+extern ConVarBase *cl_updaterate;
+
+ConVar  sv_client_min_interp_ratio( "sv_client_min_interp_ratio", "1", FCVAR_REPLICATED, 
+								   "This can be used to limit the value of cl_interp_ratio for connected clients "
+								   "(only while they are connected).\n"
+								   "              -1 = let clients set cl_interp_ratio to anything\n"
+								   " any other value = set minimum value for cl_interp_ratio"
+								   );
+ConVar  sv_client_max_interp_ratio( "sv_client_max_interp_ratio", "5", FCVAR_REPLICATED, 
+								   "This can be used to limit the value of cl_interp_ratio for connected clients "
+								   "(only while they are connected). If sv_client_min_interp_ratio is -1, "
+								   "then this cvar has no effect.",
+								   true, 2, false, 5);
+
+ConVar  sv_client_predict( "sv_client_predict", "-1", FCVAR_REPLICATED, 
+	"This can be used to force the value of cl_predict for connected clients "
+	"(only while they are connected).\n"
+	"   -1 = let clients set cl_predict to anything\n"
+	"    0 = force cl_predict to 0\n"
+	"    1 = force cl_predict to 1"
+	);
+
 // ------------------------------------------------------------------------------------------ //
 // cl_predict.
 // ------------------------------------------------------------------------------------------ //
@@ -36,11 +58,10 @@ public:
 		  if ( g_bForceCLPredictOff )
 			  return 0;
 
-		  static const ConVar *pClientPredict = g_pCVar->FindVar( "sv_client_predict" );
-		  if ( pClientPredict && pClientPredict->GetInt() != -1 )
+		  if ( sv_client_predict.GetInt() != -1 )
 		  {
 			  // Ok, the server wants to control this value.
-			  return pClientPredict->GetFloat();
+			  return sv_client_predict.GetFloat();
 		  }
 		  else
 		  {
@@ -71,11 +92,9 @@ public:
 
 	  virtual float GetFloat() const
 	  {
-		  static const ConVar *pMin = g_pCVar->FindVar( "sv_client_min_interp_ratio" );
-		  static const ConVar *pMax = g_pCVar->FindVar( "sv_client_max_interp_ratio" );
-		  if ( pMin && pMax && pMin->GetFloat() != -1 )
+		  if ( sv_client_min_interp_ratio.GetFloat() != -1 )
 		  {
-			  return clamp( GetBaseFloatValue(), pMin->GetFloat(), pMax->GetFloat() );
+			  return clamp( GetBaseFloatValue(), sv_client_min_interp_ratio.GetFloat(), sv_client_max_interp_ratio.GetFloat() );
 		  }
 		  else
 		  {
@@ -105,11 +124,9 @@ public:
 
 	  virtual float GetFloat() const
 	  {
-		  static const ConVar *pUpdateRate = g_pCVar->FindVar( "cl_updaterate" );
-		  static const ConVar *pMin = g_pCVar->FindVar( "sv_client_min_interp_ratio" );
-		  if ( pUpdateRate && pMin && pMin->GetFloat() != -1 )
+		  if ( sv_client_min_interp_ratio.GetFloat() != -1 )
 		  {
-			  return MAX( GetBaseFloatValue(), pMin->GetFloat() / pUpdateRate->GetFloat() );
+			  return MAX( GetBaseFloatValue(), sv_client_min_interp_ratio.GetFloat() / cl_updaterate->GetFloat() );
 		  }
 		  else
 		  {
@@ -123,20 +140,6 @@ ConVar_ServerBounded *cl_interp = &cl_interp_var;
 
 float GetClientInterpAmount()
 {
-	static const ConVar *pUpdateRate = g_pCVar->FindVar( "cl_updaterate" );
-	if ( pUpdateRate )
-	{
-		// #define FIXME_INTERP_RATIO
-		return MAX( cl_interp->GetFloat(), cl_interp_ratio->GetFloat() / pUpdateRate->GetFloat() );
-	}
-	else
-	{
-		if ( !HushAsserts() )
-		{
-			AssertMsgOnce( false, "GetInterpolationAmount: can't get cl_updaterate cvar." );
-		}
-	
-		return 0.1;
-	}
+	return MAX( cl_interp->GetFloat(), cl_interp_ratio->GetFloat() / cl_updaterate->GetFloat() );
 }
 

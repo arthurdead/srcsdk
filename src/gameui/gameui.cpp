@@ -35,7 +35,27 @@ IEngineVGui *enginevguifuncs = NULL;
 
 CSysModule* videoServicesDLL = NULL;
 
-ConVar *name = NULL;
+ConVarBase *name = NULL;
+ConVarBase*	r_showenvcubemap=NULL;
+ConVarBase*	r_eyegloss=NULL;
+ConVarBase*	r_eyemove=NULL;
+ConVarBase*	r_eyeshift_x=NULL;
+ConVarBase*	r_eyeshift_y=NULL;
+ConVarBase*	r_eyeshift_z=NULL;
+ConVarBase*	r_eyesize=NULL;
+ConVarBase*	mat_softwareskin=NULL;
+ConVarBase*	r_nohw=NULL;
+ConVarBase*	r_nosw=NULL;
+ConVarBase*	r_teeth=NULL;
+ConVarBase*	r_flex=NULL;
+ConVarBase*	r_eyes=NULL;
+ConVarBase*	r_skin=NULL;
+ConVarBase*	r_maxmodeldecal=NULL;
+ConVarBase*	r_modelwireframedecal=NULL;
+ConVarBase*	mat_normals=NULL;
+ConVarBase*	r_eyeglintlodpixels=NULL;
+ConVarBase*	r_rootlod=NULL;
+ConVarBase *cl_hud_minmode=NULL;
 
 CGameUI::CGameUI()
 {
@@ -98,7 +118,27 @@ void CGameUI::Initialize( CreateInterfaceFn appFactory )
 
 	ConVar_Register( FCVAR_CLIENTDLL, &g_GameUIConVarAccessor );
 
-	name = g_pCVar->FindVar("name");
+	name = g_pCVar->FindVarBase("name");
+	r_showenvcubemap = g_pCVar->FindVarBase("r_showenvcubemap");
+	r_eyegloss = g_pCVar->FindVarBase("r_eyegloss");
+	r_eyemove = g_pCVar->FindVarBase("r_eyemove");
+	r_eyeshift_x = g_pCVar->FindVarBase("r_eyeshift_x");
+	r_eyeshift_y = g_pCVar->FindVarBase("r_eyeshift_y");
+	r_eyeshift_z = g_pCVar->FindVarBase("r_eyeshift_z");
+	r_eyesize = g_pCVar->FindVarBase("r_eyesize");
+	mat_softwareskin = g_pCVar->FindVarBase("mat_softwareskin");
+	r_nohw = g_pCVar->FindVarBase("r_nohw");
+	r_nosw = g_pCVar->FindVarBase("r_nosw");
+	r_teeth = g_pCVar->FindVarBase("r_teeth");
+	r_flex = g_pCVar->FindVarBase("r_flex");
+	r_eyes = g_pCVar->FindVarBase("r_eyes");
+	r_skin = g_pCVar->FindVarBase("r_skin");
+	r_maxmodeldecal = g_pCVar->FindVarBase("r_maxmodeldecal");
+	r_modelwireframedecal = g_pCVar->FindVarBase("r_modelwireframedecal");
+	mat_normals = g_pCVar->FindVarBase("mat_normals");
+	r_eyeglintlodpixels = g_pCVar->FindVarBase("r_eyeglintlodpixels");
+	r_rootlod = g_pCVar->FindVarBase("r_rootlod");
+	cl_hud_minmode = g_pCVar->FindVarBase("cl_hud_minmode");
 
 	ConnectTier3Libraries( &appFactory, 1 );
 
@@ -133,17 +173,19 @@ void CGameUI::Initialize( CreateInterfaceFn appFactory )
 	vgui::VPANEL rootpanel = enginevguifuncs->GetPanel(PANEL_GAMEUIDLL);
 
 	m_VPanel = vgui::ivgui()->AllocPanel();
-	vgui::ipanel()->Init(m_VPanel, this);
-	vgui::ipanel()->SetParent(m_VPanel, rootpanel);
+	if(m_VPanel != vgui::INVALID_VPANEL) {
+		vgui::ipanel()->Init(m_VPanel, this);
+		vgui::ipanel()->SetParent(m_VPanel, rootpanel);
 
-	vgui::ipanel()->SetPos( m_VPanel, 0, 0 );
-	vgui::ipanel()->SetSize( m_VPanel, 640, 480 );
+		vgui::ipanel()->SetPos( m_VPanel, 0, 0 );
+		vgui::ipanel()->SetSize( m_VPanel, 640, 480 );
+
+		vgui::ipanel()->SetMouseInputEnabled( m_VPanel, false );
+		vgui::ipanel()->SetKeyBoardInputEnabled( m_VPanel, false );
+	}
 
 	AllowEngineShowGameUI();
 	ActivateGameUI();
-
-	vgui::ipanel()->SetMouseInputEnabled( m_VPanel, false );
-	vgui::ipanel()->SetKeyBoardInputEnabled( m_VPanel, false );
 
 	g_RmlRenderInterface.Initialize();
 
@@ -196,11 +238,17 @@ void CGameUI::Shutdown()
 
 void CGameUI::GetClipRect(int &x0, int &y0, int &x1, int &y1)
 {
+	if(m_VPanel == vgui::INVALID_VPANEL)
+		return;
+
 	vgui::ipanel()->GetClipRect(m_VPanel, x0, y0, x1, y1);
 }
 
 void CGameUI::PaintTraverse(bool forceRepaint, bool allowForce)
 {
+	if(m_VPanel == vgui::INVALID_VPANEL)
+		return;
+
 	if ( !vgui::ipanel()->IsVisible( m_VPanel ) )
 	{
 		return;
@@ -271,7 +319,8 @@ void CGameUI::PaintTraverse(bool forceRepaint, bool allowForce)
 
 void CGameUI::Repaint()
 {
-	vgui::surface()->Invalidate(m_VPanel);
+	if(m_VPanel != vgui::INVALID_VPANEL)
+		vgui::surface()->Invalidate(m_VPanel);
 	m_bNeedsRepaint = true;
 }
 
@@ -322,9 +371,11 @@ void CGameUI::OnTick()
 
 void CGameUI::RunFrame()
 {
-	int wide, tall;
-	vgui::surface()->GetScreenSize(wide, tall);
-	vgui::ipanel()->SetSize(m_VPanel,wide,tall);
+	if( m_VPanel != vgui::INVALID_VPANEL ) {
+		int wide, tall;
+		vgui::surface()->GetScreenSize(wide, tall);
+		vgui::ipanel()->SetSize(m_VPanel,wide,tall);
+	}
 
 	vgui::GetAnimationController()->UpdateAnimations( engine->Time() );
 
@@ -339,7 +390,8 @@ void CGameUI::OnGameUIActivated()
 	if( IsInLevel() )
 		engine->ClientCmd_Unrestricted( "setpause nomsg" );
 
-	vgui::ipanel()->SetVisible( m_VPanel, true );
+	if( m_VPanel != vgui::INVALID_VPANEL )
+		vgui::ipanel()->SetVisible( m_VPanel, true );
 }
 
 void CGameUI::OnGameUIHidden()
@@ -349,7 +401,8 @@ void CGameUI::OnGameUIHidden()
 	if( IsInLevel() )
 		engine->ClientCmd_Unrestricted( "unpause nomsg" );
 
-	vgui::ipanel()->SetVisible( m_VPanel, false );
+	if( m_VPanel != vgui::INVALID_VPANEL )
+		vgui::ipanel()->SetVisible( m_VPanel, false );
 }
 
 void CGameUI::OnLevelLoadingStarted(bool bShowProgressDialog)
@@ -428,6 +481,9 @@ void CGameUI::OnConfirmQuit( void )
 
 bool CGameUI::IsMainMenuVisible( void )
 {
+	if( m_VPanel == vgui::INVALID_VPANEL )
+		return m_bActivatedUI;
+
 	return vgui::ipanel()->IsVisible( m_VPanel );
 }
 
@@ -441,6 +497,9 @@ void CGameUI::SendMainMenuCommand( const char *pszCommand )
 
 bool CGameUI::IsPanelVisible()
 {
+	if( m_VPanel == vgui::INVALID_VPANEL )
+		return false;
+
 	return vgui::ipanel()->IsVisible( m_VPanel );
 }
 

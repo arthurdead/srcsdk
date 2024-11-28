@@ -14,6 +14,13 @@
 class ConCommandBase;
 class ConCommand;
 class ConVar;
+
+#ifndef __MINGW32__
+typedef ConVar ConVarBase;
+#else
+class ConVarBase;
+#endif
+
 class Color;
 
 
@@ -43,7 +50,7 @@ abstract_class ICvarQuery : public IAppSystem
 {
 public:
 	// Can these two convars be aliased?
-	virtual bool AreConVarsLinkable( const ConVar *child, const ConVar *parent ) = 0;
+	virtual bool AreConVarsLinkable( const ConVarBase *child, const ConVarBase *parent ) = 0;
 };
 
 
@@ -68,8 +75,12 @@ public:
 	// Try to find the cvar pointer by name
 	virtual ConCommandBase *FindCommandBase( const char *name ) = 0;
 	virtual const ConCommandBase *FindCommandBase( const char *name ) const = 0;
-	virtual ConVar			*FindVar ( const char *var_name ) = 0;
-	virtual const ConVar	*FindVar ( const char *var_name ) const = 0;
+private:
+	virtual ConVar			*DO_NOT_USE_FindVar ( const char *var_name ) = 0;
+	virtual const ConVar	*DO_NOT_USE_FindVar ( const char *var_name ) const = 0;
+public:
+	ConVarBase			*FindVarBase ( const char *var_name );
+	const ConVarBase	*FindVarBase ( const char *var_name ) const;
 	virtual ConCommand		*FindCommand( const char *name ) = 0;
 	virtual const ConCommand *FindCommand( const char *name ) const = 0;
 
@@ -80,7 +91,7 @@ public:
 	// Install a global change callback (to be called when any convar changes) 
 	virtual void			InstallGlobalChangeCallback( FnChangeCallback_t callback ) = 0;
 	virtual void			RemoveGlobalChangeCallback( FnChangeCallback_t callback ) = 0;
-	virtual void			CallGlobalChangeCallbacks( ConVar *var, const char *pOldString, float flOldValue ) = 0;
+	virtual void			CallGlobalChangeCallbacks( ConVarBase *var, const char *pOldString, float flOldValue ) = 0;
 
 	// Install a console printer
 	virtual void			InstallConsoleDisplayFunc( IConsoleDisplayFunc* pDisplayFunc ) = 0;
@@ -98,10 +109,10 @@ public:
 	virtual void			InstallCVarQuery( ICvarQuery *pQuery ) = 0;
 
 	virtual bool			IsMaterialThreadSetAllowed( ) const = 0;
-	virtual void			QueueMaterialThreadSetValue( ConVar *pConVar, const char *pValue ) = 0;
-	virtual void			QueueMaterialThreadSetValue( ConVar *pConVar, int nValue ) = 0;
-	virtual void			QueueMaterialThreadSetValue( ConVar *pConVar, float flValue ) = 0;
-	void			QueueMaterialThreadSetValue( ConVar *pConVar, bool nValue ) { QueueMaterialThreadSetValue( pConVar, nValue ? 1 : 0 ); }
+	virtual void			QueueMaterialThreadSetValue( ConVarBase *pConVar, const char *pValue ) = 0;
+	virtual void			QueueMaterialThreadSetValue( ConVarBase *pConVar, int nValue ) = 0;
+	virtual void			QueueMaterialThreadSetValue( ConVarBase *pConVar, float flValue ) = 0;
+	void			QueueMaterialThreadSetValue( ConVarBase *pConVar, bool nValue ) { QueueMaterialThreadSetValue( pConVar, nValue ? 1 : 0 ); }
 	virtual bool			HasQueuedMaterialThreadConVarSets() const = 0;
 	virtual int				ProcessQueuedMaterialThreadConVarSets() = 0;
 

@@ -49,7 +49,7 @@
 
 DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_VGUIPANEL, "VGUI Panel" );
 
-extern ConVar *vgui_nav_lock;
+extern ConVarBase *vgui_nav_lock;
 
 using namespace vgui;
 

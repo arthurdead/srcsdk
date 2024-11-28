@@ -826,7 +826,7 @@ END_MAPENTITY()
 LINK_ENTITY_TO_CLASS( game_gib_manager, CGameGibManager );
 
 #ifndef SWDS
-extern ConVar *mat_dxlevel;
+extern ConVarBase *mat_dxlevel;
 #endif
 
 void CGameGibManager::Activate( void )

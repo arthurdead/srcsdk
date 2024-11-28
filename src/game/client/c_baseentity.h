@@ -203,7 +203,7 @@ public:
 	DECLARE_CLASS_NOBASE( C_BaseEntity );
 
 	friend class CPrediction;
-	friend void cc_cl_interp_all_changed( IConVar *pConVar, const char *pOldString, float flOldValue );
+	friend void cc_cl_interp_all_changed( IConVarRef pConVar, const char *pOldString, float flOldValue );
 
 	DECLARE_MAPENTITY();
 	DECLARE_CLIENTCLASS();
@@ -438,6 +438,8 @@ public:
 	virtual void					GetRenderBoundsWorldspace( Vector& absMins, Vector& absMaxs );
 
 	virtual void					GetShadowRenderBounds( Vector &mins, Vector &maxs, ShadowType_t shadowType );
+
+	virtual IMaterial *GetShadowDrawMaterial() { return NULL; }
 
 	// Determine the color modulation amount
 	virtual void					GetColorModulation( float* color );

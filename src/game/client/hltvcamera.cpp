@@ -32,7 +32,8 @@ ConVar spec_autodirector( "spec_autodirector", "1", FCVAR_CLIENTDLL | FCVAR_CLIE
 
 static Vector WALL_MIN(-WALL_OFFSET,-WALL_OFFSET,-WALL_OFFSET);
 static Vector WALL_MAX(WALL_OFFSET,WALL_OFFSET,WALL_OFFSET);
-static const ConVar	*tv_transmitall = NULL;
+
+ConVar tv_transmitall( "tv_transmitall", "0", FCVAR_REPLICATED, "Transmit all entities (not only director view)" );
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -79,9 +80,6 @@ void C_HLTVCamera::Init()
 
 	m_nNumSpectators = 0;
 	m_szTitleText[0] = 0;
-
-	// get a handle to the engine convar
-	tv_transmitall = g_pCVar->FindVar( "tv_transmitall" );
 }
 
 void C_HLTVCamera::Reset()
@@ -861,15 +859,7 @@ void C_HLTVCamera::ToggleChaseAsFirstPerson()
 
 bool C_HLTVCamera::IsPVSLocked()
 {
-	if ( tv_transmitall != NULL )
-	{
-		return !tv_transmitall->GetBool();
-	}
-	else
-	{
-		//old style, assume locked unless we playback a demo
-		return !engine->IsPlayingDemo();
-	}
+	return !tv_transmitall.GetBool();
 }
 
 void C_HLTVCamera::SetAutoDirector( bool bActive )

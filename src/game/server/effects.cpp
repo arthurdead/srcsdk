@@ -36,7 +36,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern ConVar *violence_hgibs;
+extern ConVarBase *violence_hgibs;
 
 #define SF_FUNNEL_REVERSE			1 // funnel effect repels particles instead of attracting them.
 #define SF_FUNNEL_DONT_REMOVE		2

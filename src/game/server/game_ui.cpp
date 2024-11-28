@@ -28,10 +28,10 @@
 #define  SF_GAMEUI_JUMP_DEACTIVATES		256
 
 
-class CGameUI : public CBaseEntity
+class CGameInputRedirect : public CBaseEntity
 {
 public:
-	DECLARE_CLASS( CGameUI, CBaseEntity );
+	DECLARE_CLASS( CGameInputRedirect, CBaseEntity );
 
 	DECLARE_MAPENTITY();
 
@@ -91,7 +91,7 @@ public:
 };
 
 
-BEGIN_MAPENTITY( CGameUI )
+BEGIN_MAPENTITY( CGameInputRedirect )
 
 	DEFINE_KEYFIELD( m_flFieldOfView, FIELD_FLOAT, "FieldOfView" ),
 
@@ -140,13 +140,13 @@ BEGIN_MAPENTITY( CGameUI )
 END_MAPENTITY()
 
 
-LINK_ENTITY_TO_CLASS( game_ui, CGameUI );
+LINK_ENTITY_TO_CLASS( game_ui, CGameInputRedirect );
 	
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameUI::InputDeactivate( inputdata_t &inputdata )
+void CGameInputRedirect::InputDeactivate( inputdata_t &inputdata )
 {
 	Deactivate( inputdata.pActivator );
 }
@@ -155,7 +155,7 @@ void CGameUI::InputDeactivate( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameUI::Deactivate( CBaseEntity *pActivator )
+void CGameInputRedirect::Deactivate( CBaseEntity *pActivator )
 {
 	CBasePlayer *pPlayer = m_player;
 
@@ -211,7 +211,7 @@ void CGameUI::Deactivate( CBaseEntity *pActivator )
 //------------------------------------------------------------------------------
 // Purpose :
 //------------------------------------------------------------------------------
-void CGameUI::InputActivate( inputdata_t &inputdata )
+void CGameInputRedirect::InputActivate( inputdata_t &inputdata )
 {
 	CBasePlayer *pPlayer;
 
@@ -283,7 +283,7 @@ void CGameUI::InputActivate( inputdata_t &inputdata )
 // Purpose: Samples the player's inputs and fires outputs based on what buttons
 //			are currently held down.
 //------------------------------------------------------------------------------
-void CGameUI::Think( void )
+void CGameInputRedirect::Think( void )
 {
 	CBasePlayer *pPlayer = m_player;
 
@@ -548,7 +548,7 @@ void CGameUI::Think( void )
 //------------------------------------------------------------------------------
 // Purpose: Gets and outputs the player's current buttons
 //------------------------------------------------------------------------------
-void CGameUI::InputGetButtons( inputdata_t &inputdata )
+void CGameInputRedirect::InputGetButtons( inputdata_t &inputdata )
 {
 	m_OutButtons.Set(m_player ? m_player->m_nButtons : m_nLastButtonState, m_player, this);
 }

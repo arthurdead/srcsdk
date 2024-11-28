@@ -18,7 +18,7 @@
 #include "tier1/convar.h"
 #include "shaderapi/ishaderapi.h"
 
-extern ConVar* mat_fullbright;
+extern ConVarBase* mat_fullbright;
 
 #ifdef DBGFLAG_ASSERT
 #define TRACK_STORAGE 1

@@ -9,6 +9,13 @@ CServerBrowser g_ServerBrowser;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CServerBrowser, IServerBrowser, SERVERBROWSER_INTERFACE_VERSION, g_ServerBrowser);
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CServerBrowser, IVGuiModule, "VGuiModuleServerBrowser001", g_ServerBrowser);
 
+#ifdef __MINGW32__
+void CServerBrowser::__DTOR__()
+{
+	this->~CServerBrowser();
+}
+#endif
+
 bool CServerBrowser::Activate()
 {
 	return true;

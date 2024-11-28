@@ -45,7 +45,7 @@
 extern CBaseEntity*	FindPickerEntity( CBasePlayer* pPlayer );
 extern CBaseEntity *FindPickerEntityClass(CBasePlayer *pPlayer, const char *classname);
 
-ConVar sv_motd_unload_on_dismissal("sv_motd_unload_on_dismissal", "0", 0, "If enabled, the MOTD contents will be unloaded when the player closes the MOTD.");
+ConVar sv_motd_unload_on_dismissal("sv_motd_unload_on_dismissal", "0", FCVAR_NONE, "If enabled, the MOTD contents will be unloaded when the player closes the MOTD.");
 
 enum eAllowPointServerCommand {
 	eAllowNever,
@@ -56,9 +56,9 @@ enum eAllowPointServerCommand {
 // The default value here should match the default of the convar
 eAllowPointServerCommand sAllowPointServerCommand = eAllowOfficial;
 
-void sv_allow_point_servercommand_changed( IConVar *pConVar, const char *pOldString, float flOldValue )
+void sv_allow_point_servercommand_changed( IConVarRef pConVar, const char *pOldString, float flOldValue )
 {
-	const char *pNewValue = ((ConVar *)pConVar)->GetString();
+	const char *pNewValue = pConVar.GetString();
 	if ( V_strcasecmp ( pNewValue, "always" ) == 0 )
 	{
 		sAllowPointServerCommand = eAllowAlways;

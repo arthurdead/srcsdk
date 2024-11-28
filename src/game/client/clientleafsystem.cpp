@@ -33,11 +33,11 @@
 
 class VMatrix;  // forward decl
 
-extern ConVar *r_occlusion;
+extern ConVarBase *r_occlusion;
 
 static ConVar cl_drawleaf("cl_drawleaf", "-1", FCVAR_CHEAT );
 static ConVar r_PortalTestEnts( "r_PortalTestEnts", "1", FCVAR_CHEAT, "Clip entities against portal frustums." );
-extern ConVar *r_portalsopenall;
+extern ConVarBase *r_portalsopenall;
 static ConVar cl_threaded_client_leaf_system("cl_threaded_client_leaf_system", "1"  );
 static ConVar r_shadows_on_renderables_enable( "r_shadows_on_renderables_enable", "0", 0, "Support casting RTT shadows onto other renderables" );
 

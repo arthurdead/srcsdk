@@ -43,9 +43,16 @@ enum PaintMode_t
 
 abstract_class IEngineVGui
 {
+#ifdef __MINGW32__
+private:
+	virtual void __DTOR__() = 0;
+	~IEngineVGui() = delete;
+#else
 public:
 	virtual					~IEngineVGui( void ) { }
+#endif
 
+public:
 	virtual vgui::VPANEL	GetPanel( VGuiPanel_t type ) = 0;
 
 	virtual bool			IsGameUIVisible() = 0;

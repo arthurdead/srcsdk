@@ -24,7 +24,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
-extern ConVar *vgui_nav_lock;
+extern ConVarBase *vgui_nav_lock;
 
 using namespace vgui;
 

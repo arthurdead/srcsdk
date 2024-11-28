@@ -17,7 +17,7 @@
 
 #define SOUNDSCAPE_MANIFEST_FILE				"scripts/soundscapes_manifest.txt"
 
-CON_COMMAND(soundscape_flush, "Flushes the server & client side soundscapes")
+CON_COMMAND_F(soundscape_flush, "Flushes the server & client side soundscapes", FCVAR_NONE)
 {
 	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() );
 	if ( engine->IsDedicatedServer() )

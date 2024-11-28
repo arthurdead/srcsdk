@@ -100,6 +100,7 @@ extern "C++" // templates cannot be declared to have 'C' linkage
 template <typename T, size_t N>
 char (*RtlpNumberOf( UNALIGNED T (&)[N] ))[N];
 
+#undef RTL_NUMBER_OF_V2
 #ifdef _PREFAST_
 // The +0 is so that we can go:
 // size = ARRAYSIZE(array) * sizeof(array[0]) without triggering a /analyze

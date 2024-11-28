@@ -43,7 +43,7 @@
 //-----------------------------------------------------------------------------
 struct model_t;
 
-static void DetailFadeCallback( IConVar *var, const char *pOldValue, float flOldValue );
+static void DetailFadeCallback( IConVarRef var, const char *pOldValue, float flOldValue );
 ConVar cl_detaildist( "cl_detaildist", "1200", 0, "Distance at which detail props are no longer visible", DetailFadeCallback );
 ConVar cl_detailfade( "cl_detailfade", "400", 0, "Distance across which detail props fade in", DetailFadeCallback );
 
@@ -201,6 +201,7 @@ public:
 	virtual ClientShadowHandle_t	GetShadowHandle() const;
 	virtual ClientRenderHandle_t&	RenderHandle();
 	virtual void				GetShadowRenderBounds( Vector &mins, Vector &maxs, ShadowType_t shadowType );
+	virtual IMaterial *GetShadowDrawMaterial() { return NULL; }
 	virtual bool IsShadowDirty( )			     { return false; }
 	virtual void MarkShadowDirty( bool bDirty )  {}
 	virtual IClientRenderable *GetShadowParent() { return NULL; }
@@ -288,7 +289,7 @@ protected:
 	DetailModelAdvInfo_t *m_pAdvInfo;
 };
 
-extern ConVar *mat_fullbright; // hook into engine's cvars..
+extern ConVarBase *mat_fullbright; // hook into engine's cvars..
 extern ConVar r_DrawDetailProps;
 
 
@@ -560,7 +561,7 @@ IDetailObjectSystem* DetailObjectSystem()
 	return &s_DetailObjectSystem;
 }
 
-static void DetailFadeCallback( IConVar *var, const char *pOldValue, float flOldValue )
+static void DetailFadeCallback( IConVarRef var, const char *pOldValue, float flOldValue )
 {
 	s_DetailObjectSystem.UpdateDetailFadeValues();
 }

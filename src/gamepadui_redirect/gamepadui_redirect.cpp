@@ -8,6 +8,14 @@
 
 class CGamepadUIRedirect : public IGamepadUI
 {
+#ifdef __MINGW32__
+private:
+	void __DTOR__()
+	{
+		this->~CGamepadUIRedirect();
+	}
+#endif
+
 public:
 	void Initialize( CreateInterfaceFn factory ) override
 	{ m_pTarget->Initialize( factory ); }

@@ -3274,13 +3274,12 @@ bool CBaseEntity::FVisible( const Vector &vecTarget, int traceMask, CBaseEntity 
 	return true;// line of sight is valid.
 }
 
-extern ConVar ai_debug_los;
 //-----------------------------------------------------------------------------
 // Purpose: Turn on prop LOS debugging mode
 //-----------------------------------------------------------------------------
-void CC_AI_LOS_Debug( IConVar *var, const char *pOldString, float flOldValue )
+void CC_AI_LOS_Debug( IConVarRef var, const char *pOldString, float flOldValue )
 {
-	int iLOSMode = ai_debug_los.GetInt();
+	int iLOSMode = var.GetInt();
 	for ( CBaseEntity *pEntity = gEntList.FirstEnt(); pEntity != NULL; pEntity = gEntList.NextEnt(pEntity) )
 	{
 		if ( iLOSMode == 1 && pEntity->IsSolid() )

@@ -517,8 +517,8 @@ void CConsolePanel::RebuildCompletionList(const char *text)
 				if ( !cmd->IsCommand() )
 				{
 					item->m_bIsCommand = false;
-					ConVar *var = ( ConVar * )cmd;
-					ConVar_ServerBounded *pBounded = dynamic_cast<ConVar_ServerBounded*>( var );
+					ConVarBase *var = ( ConVarBase * )cmd;
+					ConVar_ServerBounded *pBounded = var->GetServerBounded();
 					if ( pBounded || var->IsFlagSet( FCVAR_NEVER_AS_STRING ) )
 					{
 						char strValue[512];

@@ -18,8 +18,8 @@
 #include "materialsystem/imaterial.h"
 #include "cdll_client_int.h"
 
-extern ConVar *mat_wireframe;
-extern ConVar *building_cubemaps;
+extern ConVarBase *mat_wireframe;
+extern ConVarBase *building_cubemaps;
 
 
 // Transform into view space (translate and rotate the camera into the origin).

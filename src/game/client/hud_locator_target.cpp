@@ -58,10 +58,10 @@ enum
 };
 
 ConVar locator_fade_time( "locator_fade_time", "0.3", FCVAR_NONE, "Number of seconds it takes for a lesson to fully fade in/out." );
-ConVar locator_lerp_speed( "locator_lerp_speed", "5.0f", FCVAR_NONE, "Speed that static lessons move along the Y axis." );
-ConVar locator_lerp_rest( "locator_lerp_rest", "2.25f", FCVAR_NONE, "Number of seconds before moving from the center." );
-ConVar locator_lerp_time( "locator_lerp_time", "1.75f", FCVAR_NONE, "Number of seconds to lerp before reaching final destination" );
-ConVar locator_pulse_time( "locator_pulse_time", "1.0f", FCVAR_NONE, "Number of seconds to pulse after changing icon or position" );
+ConVar locator_lerp_speed( "locator_lerp_speed", "5.0", FCVAR_NONE, "Speed that static lessons move along the Y axis." );
+ConVar locator_lerp_rest( "locator_lerp_rest", "2.25", FCVAR_NONE, "Number of seconds before moving from the center." );
+ConVar locator_lerp_time( "locator_lerp_time", "1.75", FCVAR_NONE, "Number of seconds to lerp before reaching final destination" );
+ConVar locator_pulse_time( "locator_pulse_time", "1.0", FCVAR_NONE, "Number of seconds to pulse after changing icon or position" );
 ConVar locator_start_at_crosshair( "locator_start_at_crosshair", "0", FCVAR_NONE, "Start position at the crosshair instead of the top middle of the screen." );
 
 ConVar locator_topdown_style( "locator_topdown_style", "0", FCVAR_NONE, "Topdown games set this to handle distance and offscreen location differently." );
@@ -82,8 +82,8 @@ ConVar locator_text_drop_shadow( "locator_text_drop_shadow", "1", FCVAR_NONE, "I
 ConVar locator_text_glow( "locator_text_glow", "0", FCVAR_NONE, "If enabled, a glow is drawn behind caption text" );
 ConVar locator_text_glow_color( "locator_text_glow_color", "255 255 255 255", FCVAR_NONE, "Color of text glow" );
 
-ConVar locator_split_maxwide_percent( "locator_split_maxwide_percent", "0.80f", FCVAR_CHEAT );
-ConVar locator_split_len( "locator_split_len", "0.5f", FCVAR_CHEAT );
+ConVar locator_split_maxwide_percent( "locator_split_maxwide_percent", "0.80", FCVAR_CHEAT );
+ConVar locator_split_len( "locator_split_len", "0.5", FCVAR_CHEAT );
 
 extern ConVar gameinstructor_default_bindingcolor;
 

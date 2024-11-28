@@ -365,7 +365,7 @@ void CAchievementMgr::InitializeAchievements()
 }
 
 #ifdef CLIENT_DLL
-extern ConVar *sv_cheats;
+extern ConVarBase *sv_cheats;
 #endif
 
 #ifdef GAME_DLL

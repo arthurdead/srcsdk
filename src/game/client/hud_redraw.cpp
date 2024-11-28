@@ -31,11 +31,11 @@ const int CHud::HUDPB_VERTICAL = 1;
 const int CHud::HUDPB_HORIZONTAL_INV = 2;
 
 // Called when a ConVar changes value
-static void FovChanged_Callback( IConVar *pConVar, const char *pOldString, float flOldValue )
+static void FovChanged_Callback( IConVarRef pConVar, const char *pOldString, float flOldValue )
 {
 	if ( engine->IsInGame() )
 	{
-		engine->ServerCmd( VarArgs( "fov %f\n", ((ConVar *)pConVar)->GetFloat() ) );
+		engine->ServerCmd( VarArgs( "fov %f\n", pConVar.GetFloat() ) );
 	}
 }
 

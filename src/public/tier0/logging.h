@@ -14,7 +14,7 @@
 
 #include "Color.h"
 #include "icommandline.h"
-#include <stdio.h>
+#include "tier0/platform.h"
 
 // Used by CColorizedLoggingListener
 #include "tier0/consoleio.h"
@@ -369,12 +369,12 @@ public:
 	//-----------------------------------------------------------------------------
 	// Returns true if the given channel has the specified tag.
 	//-----------------------------------------------------------------------------
-	bool HasTag( LoggingChannelID_t channelID, const char *pTag ) const { return GetChannel( channelID )->HasTag( pTag ); }
+	bool HasTag( LoggingChannelID_t channelID, const char *pTag ) const { return (channelID != INVALID_LOGGING_CHANNEL_ID ? GetChannel( channelID )->HasTag( pTag ) : false); }
 	
 	//-----------------------------------------------------------------------------
 	// Returns true if the given channel will spew at the given severity level.
 	//-----------------------------------------------------------------------------
-	bool IsChannelEnabled( LoggingChannelID_t channelID, LoggingSeverity_t severity ) const { return GetChannel( channelID )->IsEnabled( severity ); }
+	bool IsChannelEnabled( LoggingChannelID_t channelID, LoggingSeverity_t severity ) const { return (channelID != INVALID_LOGGING_CHANNEL_ID ? GetChannel( channelID )->IsEnabled( severity ) : true); }
 
 	//-----------------------------------------------------------------------------
 	// Functions to set the spew level of a channel either directly by ID or 
@@ -393,7 +393,7 @@ public:
 	// (The functions are not thread-safe, but the consequences are not 
 	// significant.)
 	//-----------------------------------------------------------------------------
-	Color GetChannelColor( LoggingChannelID_t channelID ) const { return GetChannel( channelID )->m_SpewColor; }
+	Color GetChannelColor( LoggingChannelID_t channelID ) const { return (channelID != INVALID_LOGGING_CHANNEL_ID ? GetChannel( channelID )->m_SpewColor : Color(255, 255, 255, 255)); }
 	void SetChannelColor( LoggingChannelID_t channelID, Color color ) { GetChannel( channelID )->m_SpewColor = color; }
 
 	//-----------------------------------------------------------------------------
@@ -401,7 +401,7 @@ public:
 	// (The functions are not thread-safe, but the consequences are not 
 	// significant.)
 	//-----------------------------------------------------------------------------
-	LoggingChannelFlags_t GetChannelFlags( LoggingChannelID_t channelID ) const { return GetChannel( channelID )->m_Flags; }
+	LoggingChannelFlags_t GetChannelFlags( LoggingChannelID_t channelID ) const { return (channelID != INVALID_LOGGING_CHANNEL_ID ? GetChannel( channelID )->m_Flags : LCF_NONE); }
 	void SetChannelFlags( LoggingChannelID_t channelID, LoggingChannelFlags_t flags ) { GetChannel( channelID )->m_Flags = flags; }
 
 	//-----------------------------------------------------------------------------

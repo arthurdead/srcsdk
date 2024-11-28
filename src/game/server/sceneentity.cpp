@@ -358,8 +358,6 @@ BEGIN_MAPENTITY( CSceneEntity )
 	DEFINE_OUTPUT( m_OnTrigger16, "OnTrigger16"),
 END_MAPENTITY()
 
-const ConVar	*CSceneEntity::m_pcvSndMixahead = NULL;
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -389,9 +387,6 @@ CSceneEntity::CSceneEntity( void )
 	m_pScene			= NULL;
 
 	m_bCompletedEarly	= false;
-
-	if ( !m_pcvSndMixahead )
-		m_pcvSndMixahead	= g_pCVar->FindVar( "snd_mixahead" );
 
 	m_BusyActor			= SCENE_BUSYACTOR_DEFAULT;
 }
@@ -529,13 +524,15 @@ void CSceneEntity::Activate()
 //-----------------------------------------------------------------------------
 float CSceneEntity::GetSoundSystemLatency( void )
 {
-	if ( m_pcvSndMixahead )
+#ifndef SWDS
+	if ( !g_bDedicatedServer ) {
+		return snd_mixahead->GetFloat();
+	} else 
+#endif
 	{
-		return m_pcvSndMixahead->GetFloat();
+		// Assume 100 msec sound system latency
+		return SOUND_SYSTEM_LATENCY_DEFAULT;
 	}
-	
-	// Assume 100 msec sound system latency
-	return SOUND_SYSTEM_LATENCY_DEFAULT;
 }
 
 //-----------------------------------------------------------------------------

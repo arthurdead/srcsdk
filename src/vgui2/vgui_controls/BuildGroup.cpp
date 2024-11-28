@@ -43,7 +43,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
-extern ConVar *cl_hud_minmode;
+extern ConVarBase *cl_hud_minmode;
 
 using namespace vgui;
 

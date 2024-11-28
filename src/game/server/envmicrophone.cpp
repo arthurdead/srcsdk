@@ -27,7 +27,7 @@
 //#define DEBUG_MICROPHONE
 
 #ifndef SWDS
-extern ConVar *dsp_speaker;
+extern ConVarBase *dsp_speaker;
 #endif
 
 const float MICROPHONE_SETTLE_EPSILON = 0.005;

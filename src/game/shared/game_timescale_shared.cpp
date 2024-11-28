@@ -9,7 +9,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern ConVar*	host_timescale;
+extern ConVarBase*	host_timescale;
 
 CGameTimescale g_GameTimescale;
 CGameTimescale* GameTimescale() { return &g_GameTimescale; }

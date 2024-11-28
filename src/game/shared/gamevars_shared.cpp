@@ -11,11 +11,11 @@
 #include "tier0/memdbgon.h"
 
 #ifdef GAME_DLL
-void MPForceCameraCallback( IConVar *var, const char *pOldString, float flOldValue )
+void MPForceCameraCallback( IConVarRef var, const char *pOldString, float flOldValue )
 {
-	if ( mp_forcecamera.GetInt() < OBS_ALLOW_ALL || mp_forcecamera.GetInt() >= OBS_ALLOW_NUM_MODES )
+	if ( var.GetInt() < OBS_ALLOW_ALL || var.GetInt() >= OBS_ALLOW_NUM_MODES )
 	{
-		mp_forcecamera.SetValue( OBS_ALLOW_TEAM );
+		var.SetValue( OBS_ALLOW_TEAM );
 	}
 }
 #endif 

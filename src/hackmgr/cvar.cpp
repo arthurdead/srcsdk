@@ -1,3 +1,7 @@
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "hackmgr/hackmgr.h"
 #include "hackmgr_internal.h"
 #include "createinterface.h"
@@ -18,7 +22,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern ConVar *developer;
+extern ConVarBase *developer;
 
 void FindCmdCB( const CCommand &args )
 {
@@ -62,23 +66,23 @@ if(!g_pCVar || status != IFACE_OK) {
 
 ConVar_Register( 0, NULL );
 
-ConVar *dtwarning = g_pCVar->FindVar("dtwarning");
+ConVarBase *dtwarning = g_pCVar->FindVarBase("dtwarning");
 #ifdef _DEBUG
-dtwarning->SetValue(1);
+dtwarning->SetValue(true);
 #endif
 
-ConVar *r_hunkalloclightmaps = g_pCVar->FindVar("r_hunkalloclightmaps");
-r_hunkalloclightmaps->SetValue(false);
-
-developer = g_pCVar->FindVar("developer");
+developer = g_pCVar->FindVarBase("developer");
 #ifdef _DEBUG
 developer->SetValue(4);
 #endif
 
-ConVar *sv_cheats = g_pCVar->FindVar("sv_cheats");
+ConVarBase *sv_cheats = g_pCVar->FindVarBase("sv_cheats");
 #ifdef _DEBUG
 sv_cheats->SetValue(true);
 #endif
+
+ConVarBase *r_hunkalloclightmaps = g_pCVar->FindVarBase("r_hunkalloclightmaps");
+r_hunkalloclightmaps->SetValue(false);
 
 ConCommand *pFindCmd = g_pCVar->FindCommand("find");
 /*

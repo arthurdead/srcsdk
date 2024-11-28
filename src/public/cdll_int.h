@@ -57,7 +57,7 @@ class KeyValues;
 class IFileList;
 class CRenamedRecvTableInfo;
 class CMouthInfo;
-class IConVar;
+struct IConVarRef;
 class ISPSharedMemory;
 class IDemoRecorder;
 struct AudioState_t;
@@ -844,7 +844,7 @@ public:
 	// Returns true if the disconnect command has been handled by the client
 	virtual bool DisconnectAttempt( void ) = 0;
 
-	virtual bool IsConnectedUserInfoChangeAllowed( IConVar *pCvar ) = 0;
+	virtual bool IsConnectedUserInfoChangeAllowed( IConVarRef pCvar ) = 0;
 };
 
 #define CLIENT_DLL_INTERFACE_VERSION		"VClient017"

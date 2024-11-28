@@ -22,6 +22,7 @@
 struct ModelRenderSystemData_t
 {
 	IClientRenderable *m_pRenderable;
+	IClientRenderableMod *m_pRenderableMod;
 	IClientModelRenderable *m_pModelRenderable;
 	RenderableInstance_t m_InstanceData;
 };

@@ -20,7 +20,9 @@
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 
-ConVar *sv_alltalk = NULL;
+// Set game rules to allow all clients to talk to each other.
+// Muted players still can't talk to each other.
+ConVar sv_alltalk( "sv_alltalk", "0", FCVAR_NOTIFY | FCVAR_REPLICATED, "Players can hear all other players, no team restrictions" );
 
 vgui::IImage* GetDefaultAvatarImage( C_BasePlayer *pPlayer )
 {
@@ -377,9 +379,6 @@ void CHudVoiceStatus::Paint()
 		iFontHeight = surface()->GetFontTall( m_NameFont );
 	}
 
-	if ( !sv_alltalk )
-		sv_alltalk = g_pCVar->FindVar( "sv_alltalk" );
-
 	//draw everyone in the list!
 	FOR_EACH_LL(m_SpeakingList, i)
 	{
@@ -398,7 +397,7 @@ void CHudVoiceStatus::Paint()
 
 		// Add the location, if any
 		bool usedLocation = false;
-		if ( sv_alltalk && !sv_alltalk->GetBool() )
+		if ( !sv_alltalk.GetBool() )
 		{
 			C_BasePlayer *pPlayer = UTIL_PlayerByIndex( playerId );
 			if ( pPlayer )

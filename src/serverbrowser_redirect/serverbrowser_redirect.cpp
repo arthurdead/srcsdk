@@ -42,6 +42,14 @@ public:
 
 class CServerBrowserVGUIModuleRedirect : public IVGuiModule
 {
+#ifdef __MINGW32__
+private:
+	void __DTOR__()
+	{
+		this->~CServerBrowserVGUIModuleRedirect();
+	}
+#endif
+
 public:
 	// called first to setup the module with the vgui
 	// returns true on success, false on failure

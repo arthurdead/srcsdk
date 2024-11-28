@@ -43,13 +43,13 @@ static ConVar mat_showcamerarendertarget_all( "mat_showcamerarendertarget_all", 
 // debugging
 //-----------------------------------------------------------------------------
 // (the engine owns this cvar).
-extern ConVar *mat_wireframe;
-extern ConVar *sv_cheats;
+extern ConVarBase *mat_wireframe;
+extern ConVarBase *sv_cheats;
 ConVar	mat_showlightmappage(  "mat_showlightmappage", "-1" ); // set this to the lightmap page that you want to see on screen, set to -1 to show nothing.
 ConVar cl_drawshadowtexture( "cl_drawshadowtexture", "0", FCVAR_CHEAT );
 ConVar cl_shadowtextureoverlaysize( "cl_shadowtextureoverlaysize", "256", FCVAR_CHEAT );
 
-extern ConVar *r_flashlightdrawdepth;
+extern ConVarBase *r_flashlightdrawdepth;
 
 
 //-----------------------------------------------------------------------------

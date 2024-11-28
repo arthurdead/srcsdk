@@ -186,8 +186,10 @@ IShadowMgr_CreateShadowEx_ptr = func_from_vtable<decltype(IShadowMgr_CreateShado
 IShadowMgr_DestroyShadow_ptr = func_from_vtable<decltype(IShadowMgr_DestroyShadow_ptr)>(vtable[IShadowMgr_DestroyShadow_index]);
 #endif
 
+#if defined __GNUC__ && defined __linux__
 vtable[IShadowMgr_CreateShadow_index] = reinterpret_cast<generic_plain_mfp_t>(IShadowMgr_CreateShadow_hook);
 vtable[IShadowMgr_CreateShadowEx_index] = reinterpret_cast<generic_plain_mfp_t>(IShadowMgr_CreateShadowEx_hook);
 vtable[IShadowMgr_DestroyShadow_index] = reinterpret_cast<generic_plain_mfp_t>(IShadowMgr_DestroyShadow_hook);
+#endif
 
 HACKMGR_EXECUTE_ON_LOAD_END

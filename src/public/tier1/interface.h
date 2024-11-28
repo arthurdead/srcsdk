@@ -52,8 +52,15 @@
 // All interfaces derive from this.
 class IBaseInterface
 {
+#ifdef __MINGW32__
+private:
+	virtual void __DTOR__() = 0;
+protected:
+	~IBaseInterface() {}
+#else
 public:
 	virtual	~IBaseInterface() {}
+#endif
 };
 
 #define CREATEINTERFACE_PROCNAME	"CreateInterface"

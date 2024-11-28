@@ -191,6 +191,13 @@ typedef unsigned int		uint;
 #define VIRTUAL_INHERITANCE
 #endif
 
+//TODO!!! the fuck do i call this?
+#ifdef __MINGW32__
+#define VIRTUAL_OVERLOAD 
+#else
+#define VIRTUAL_OVERLOAD virtual
+#endif
+
 #ifdef _MSC_VER
 #define NO_VTABLE __declspec( novtable )
 #else

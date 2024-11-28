@@ -50,7 +50,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern ConVar *mat_fullbright;
+extern ConVarBase *mat_fullbright;
 
 CON_COMMAND(game_shader_loaded, "Shows that game shader loaded.")
 {

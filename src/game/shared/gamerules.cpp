@@ -107,11 +107,11 @@ ConVar mp_chattime(
 		true, 120 );
 
 #ifdef GAME_DLL
-void MPTimeLimitCallback( IConVar *var, const char *pOldString, float flOldValue )
+void MPTimeLimitCallback( IConVarRef var, const char *pOldString, float flOldValue )
 {
-	if ( mp_timelimit.GetInt() < 0 )
+	if ( var.GetInt() < 0 )
 	{
-		mp_timelimit.SetValue( 0 );
+		var.SetValue( 0 );
 	}
 
 	if ( GameRules() )
@@ -179,7 +179,7 @@ ConVar nextlevel( "nextlevel",
 				  "If set to a valid map name, will trigger a changelevel to the specified map at the end of the round" );
 
 // Hook into the convar from the engine
-extern ConVar *skill;
+extern ConVarBase *skill;
 
 ConVar sv_weapon_respawn_time("sv_weapon_respawn_time", "20", FCVAR_GAMEDLL|FCVAR_NOTIFY);
 ConVar sv_item_respawn_time("sv_item_respawn_time", "30", FCVAR_GAMEDLL|FCVAR_NOTIFY);
@@ -207,8 +207,8 @@ CBaseEntity	*g_pLastSpawn = NULL;
 #endif // CLIENT_DLL
 
 ConVar	teamplay( "mp_teamplay","0", FCVAR_NOTIFY|FCVAR_REPLICATED );
-extern ConVar *deathmatch;
-extern ConVar *coop;
+extern ConVarBase *deathmatch;
+extern ConVarBase *coop;
 
 CViewVectors g_DefaultViewVectors(
 	Vector(-16, -16, 0 ),		//VEC_HULL_MIN (m_vHullMin)

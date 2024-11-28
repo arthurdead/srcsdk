@@ -17,7 +17,7 @@
 #include "tier0/memdbgon.h"
 
 
-extern ConVar *mat_colcorrection_disableentities;
+extern ConVarBase *mat_colcorrection_disableentities;
 static ConVar mat_colcorrection_forceentitiesclientside( "mat_colcorrection_forceentitiesclientside", "0", FCVAR_CHEAT, "Forces color correction entities to be updated on the client" );
 
 #ifdef CColorCorrection

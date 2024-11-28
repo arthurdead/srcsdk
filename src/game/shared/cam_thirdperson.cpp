@@ -20,7 +20,7 @@ CThirdPersonManager g_ThirdPersonManager;
 
 #include "input.h"
 
-extern ConVar *sv_cheats;
+extern ConVarBase *sv_cheats;
 
 #endif
 

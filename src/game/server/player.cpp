@@ -108,7 +108,7 @@ ConVar	sv_noclipduringpause( "sv_noclipduringpause", "0", FCVAR_REPLICATED | FCV
 
 extern ConVar sv_maxunlag;
 extern ConVar sv_turbophysics;
-extern ConVar *sv_maxreplay;
+extern ConVarBase *sv_maxreplay;
 
 extern CServerGameDLL g_ServerGameDLL;
 

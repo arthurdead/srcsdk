@@ -151,10 +151,12 @@ Criteria& Criteria::operator =(const Criteria& src )
 	matcher = src.matcher;
 
 	int c = src.subcriteria.Count();
-	subcriteria.EnsureCapacity( c );
-	for ( int i = 0; i < c; i++ )
-	{
-		subcriteria.AddToTail( src.subcriteria[ i ] );
+	if( c > 0 ) {
+		subcriteria.EnsureCapacity( c );
+		for ( int i = 0; i < c; i++ )
+		{
+			subcriteria.AddToTail( src.subcriteria[ i ] );
+		}
 	}
 
 	return *this;

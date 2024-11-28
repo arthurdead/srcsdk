@@ -185,9 +185,9 @@ extern ConVar sv_noclipduringpause;
 ConVar sv_massreport( "sv_massreport", "0" );
 ConVar sv_force_transmit_ents( "sv_force_transmit_ents", "0", FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY, "Will transmit all entities to client, regardless of PVS conditions (will still skip based on transmit flags, however)." );
 
-extern ConVar *sv_maxreplay;
-extern ConVar *host_thread_mode;
-extern ConVar *hide_server;
+extern ConVarBase *sv_maxreplay;
+extern ConVarBase *host_thread_mode;
+extern ConVarBase *hide_server;
 
 #ifndef SWDS
 bool g_bTextMode = false;
@@ -867,7 +867,7 @@ void Game_SetOneWayTransition( void )
 extern void SetupDefaultLightstyle();
 
 #ifndef SWDS
-extern ConVar *room_type;
+extern ConVarBase *room_type;
 #endif
 
 extern CWorld *g_WorldEntity;
@@ -1653,12 +1653,11 @@ static bool IsValidPath( const char *pszFilename )
 	return true;
 }
 
-static void ValidateMOTDFilename( IConVar *pConVar, const char *oldValue, float flOldValue )
+static void ValidateMOTDFilename( IConVarRef pConVar, const char *oldValue, float flOldValue )
 {
-	ConVar *var = (ConVar *)pConVar;
-	if ( !IsValidPath( var->GetString() ) )
+	if ( !IsValidPath( pConVar.GetString() ) && V_strcmp(pConVar.GetString(), pConVar.GetDefault()) != 0 )
 	{
-		var->SetValue( var->GetDefault() );
+		pConVar.SetValue( pConVar.GetDefault() );
 	}
 }
 
@@ -2359,6 +2358,11 @@ void CServerGameClients::ClientCommand( edict_t *pEntity, const CCommand &args )
 	::ClientCommand( pPlayer, args );
 }
 
+extern ConVarBase *sv_minupdaterate;
+extern ConVarBase *sv_maxupdaterate;
+extern ConVarBase *sv_client_min_interp_ratio;
+extern ConVarBase *sv_client_max_interp_ratio;
+
 //-----------------------------------------------------------------------------
 // Purpose: called after the player changes userinfo - gives dll a chance to modify 
 //			it before it gets sent into the rest of the engine->
@@ -2390,10 +2394,7 @@ void CServerGameClients::ClientSettingsChanged( edict_t *pEdict )
 	// its virtualized value has changed.		
 	
 	player->m_nUpdateRate = Q_atoi( QUICKGETCVARVALUE("cl_updaterate") );
-	static const ConVar *pMinUpdateRate = g_pCVar->FindVar( "sv_minupdaterate" );
-	static const ConVar *pMaxUpdateRate = g_pCVar->FindVar( "sv_maxupdaterate" );
-	if ( pMinUpdateRate && pMaxUpdateRate )
-		player->m_nUpdateRate = clamp( player->m_nUpdateRate, (int) pMinUpdateRate->GetFloat(), (int) pMaxUpdateRate->GetFloat() );
+	player->m_nUpdateRate = clamp( player->m_nUpdateRate, (int) sv_minupdaterate->GetFloat(), (int) sv_maxupdaterate->GetFloat() );
 
 	bool useInterpolation = Q_atoi( QUICKGETCVARVALUE("cl_interpolate") ) != 0;
 	if ( useInterpolation )
@@ -2403,11 +2404,9 @@ void CServerGameClients::ClientSettingsChanged( edict_t *pEdict )
 			flLerpRatio = 1.0f;
 		float flLerpAmount = Q_atof( QUICKGETCVARVALUE("cl_interp") );
 
-		static const ConVar *pMin = g_pCVar->FindVar( "sv_client_min_interp_ratio" );
-		static const ConVar *pMax = g_pCVar->FindVar( "sv_client_max_interp_ratio" );
-		if ( pMin && pMax && pMin->GetFloat() != -1 )
+		if ( sv_client_min_interp_ratio->GetFloat() != -1 )
 		{
-			flLerpRatio = clamp( flLerpRatio, pMin->GetFloat(), pMax->GetFloat() );
+			flLerpRatio = clamp( flLerpRatio, sv_client_min_interp_ratio->GetFloat(), sv_client_max_interp_ratio->GetFloat() );
 		}
 		else
 		{

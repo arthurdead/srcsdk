@@ -74,9 +74,23 @@ extern ConVar sensitivity;
 
 ConVar zoom_sensitivity_ratio( "zoom_sensitivity_ratio", "1.0", 0, "Additional mouse sensitivity scale factor applied when FOV is zoomed in." );
 
-extern ConVar *sv_restrict_aspect_ratio_fov;
+ConVar  sv_restrict_aspect_ratio_fov( "sv_restrict_aspect_ratio_fov", "1", FCVAR_REPLICATED, 
+									 "This can be used to limit the effective FOV of users using wide-screen\n"
+									 "resolutions with aspect ratios wider than 1.85:1 (slightly wider than 16:9).\n"
+									 "    0 = do not cap effective FOV\n"
+									 "    1 = limit the effective FOV on windowed mode users using resolutions\n"
+									 "        greater than 1.85:1\n"
+									 "    2 = limit the effective FOV on both windowed mode and full-screen users\n",
+									 true, 0, true, 2);
 
 CViewRender s_DefaultViewRender;
+
+#ifdef __MINGW32__
+void CViewRender::__DTOR__()
+{
+	this->~CViewRender();
+}
+#endif
 
 #if _DEBUG
 bool g_bRenderingCameraView = false;
@@ -118,10 +132,9 @@ static ConVar cl_demoviewoverride( "cl_demoviewoverride", "0", 0, "Override view
 static ConVar r_nearz( "r_nearz", "-1", FCVAR_CHEAT, "Override the near clipping plane. -1 means to use the default value (usually 7)." );
 
 
-void SoftwareCursorChangedCB( IConVar *pVar, const char *pOldValue, float fOldValue )
+void SoftwareCursorChangedCB( IConVarRef pVar, const char *pOldValue, float fOldValue )
 {
-	ConVar *pConVar = (ConVar *)pVar;
-	vgui::surface()->SetSoftwareCursor( pConVar->GetBool() );
+	vgui::surface()->SetSoftwareCursor( pVar.GetBool() );
 }
 static ConVar cl_software_cursor ( "cl_software_cursor", "0", FCVAR_ARCHIVE, "Switches the game to use a larger software cursor instead of the normal OS cursor", SoftwareCursorChangedCB );
 
@@ -267,9 +280,6 @@ void CViewRender::Init( void )
 	memset( &m_PitchDrift, 0, sizeof( m_PitchDrift ) );
 
 	m_bDrawOverlay = false;
-
-	m_pDrawEntities		= g_pCVar->FindVar( "r_drawentities" );
-	m_pDrawBrushModels	= g_pCVar->FindVar( "r_drawbrushmodels" );
 
 	beams->InitBeams();
 	tempents->Init();
@@ -933,8 +943,8 @@ void CViewRender::Render( vrect_t *rect )
 
     float aspectRatio = engine->GetScreenAspectRatio() * 0.75f;	 // / (4/3)
     float limitedAspectRatio = aspectRatio;
-    if ( ( sv_restrict_aspect_ratio_fov->GetInt() > 0 && engine->IsWindowedMode() && gpGlobals->maxClients > 1 ) ||
-	    sv_restrict_aspect_ratio_fov->GetInt() == 2 )
+    if ( ( sv_restrict_aspect_ratio_fov.GetInt() > 0 && engine->IsWindowedMode() && gpGlobals->maxClients > 1 ) ||
+	    sv_restrict_aspect_ratio_fov.GetInt() == 2 )
     {
 	    limitedAspectRatio = MIN( aspectRatio, 1.85f * 0.75f ); // cap out the FOV advantage at a 1.85:1 ratio (about the widest any legit user should be)
     }
@@ -1094,7 +1104,7 @@ static void GetPos( const CCommand &args, Vector &vecOrigin, QAngle &angles )
 	}
 }
 
-CON_COMMAND( spec_pos, "dump position and angles to the console" )
+CON_COMMAND_F( spec_pos, "dump position and angles to the console", FCVAR_NONE )
 {
 	Vector vecOrigin;
 	QAngle angles;
@@ -1103,7 +1113,7 @@ CON_COMMAND( spec_pos, "dump position and angles to the console" )
 		vecOrigin.z, angles.x, angles.y );
 }
 
-CON_COMMAND( getpos, "dump position and angles to the console" )
+CON_COMMAND_F( getpos, "dump position and angles to the console", FCVAR_NONE )
 {
 	Vector vecOrigin;
 	QAngle angles;

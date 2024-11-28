@@ -25,6 +25,12 @@ public:
 	CVGuiSystemModuleLoader();
 	~CVGuiSystemModuleLoader();
 
+#ifdef __MINGW32__
+private:
+	void __DTOR__();
+#endif
+
+public:
 	// loads all the modules in the platform
 	bool LoadPlatformModules(CreateInterfaceFn *factorylist, int factorycount, bool useSteamModules);
 

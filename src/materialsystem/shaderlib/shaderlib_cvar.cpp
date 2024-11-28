@@ -28,11 +28,11 @@ public:
 
 CShaderLibConVarAccessor g_ShaderlibConVarAccessor;
 
-ConVar* mat_fullbright=NULL;
+ConVarBase* mat_fullbright=NULL;
 
 void InitShaderLibCVars( CreateInterfaceFn cvarFactory )
 {
 	ConVar_Register( FCVAR_MATERIAL_SYSTEM_THREAD | FCVAR_CLIENTDLL, &g_ShaderlibConVarAccessor );
 
-	mat_fullbright = g_pCVar->FindVar("mat_fullbright");
+	mat_fullbright = g_pCVar->FindVarBase("mat_fullbright");
 }

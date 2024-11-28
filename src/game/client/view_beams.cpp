@@ -26,7 +26,7 @@
 	#include "prop_portal_shared.h"
 #endif
 
-extern ConVar *r_DrawBeams;
+extern ConVarBase *r_DrawBeams;
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

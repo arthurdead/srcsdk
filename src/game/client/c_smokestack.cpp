@@ -210,7 +210,7 @@ void C_SmokeStack::OnDataChanged(DataUpdateType_t updateType)
 }
 
 
-extern ConVar *mat_reduceparticles;
+extern ConVarBase *mat_reduceparticles;
 
 //-----------------------------------------------------------------------------
 // Purpose: Starts the effect

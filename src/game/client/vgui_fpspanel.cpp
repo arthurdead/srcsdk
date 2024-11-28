@@ -402,9 +402,9 @@ IFPSPanel *fps = ( IFPSPanel * )&g_FPSPanel;
 
 static ConVar cl_blocking_threshold( "cl_blocking_threshold", "0.000", 0, "If file ops take more than this amount of time, add to 'spewblocking' history list" );
 
-void ShowBlockingChanged( ConVar *var, char const *pOldString )
+void ShowBlockingChanged( IConVarRef var, char const *pOldString )
 {
-	g_pFullFileSystem->EnableBlockingFileAccessTracking( var->GetBool() );
+	g_pFullFileSystem->EnableBlockingFileAccessTracking( var.GetBool() );
 }
 
 static ConVar cl_showblocking( "cl_showblocking", "0", 0, "Show blocking i/o on top of fps panel", ShowBlockingChanged );

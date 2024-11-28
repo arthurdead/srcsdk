@@ -29,11 +29,11 @@
 //-----------------------------------------------------------------------------
 // Convars defined by other systems
 //-----------------------------------------------------------------------------
-extern ConVar *r_lod;
+extern ConVarBase *r_lod;
 //ConVar r_shadowlod( "r_shadowlod", "-1" );
-extern ConVar *r_drawmodellightorigin;
+extern ConVarBase *r_drawmodellightorigin;
 extern ConVar g_CV_FlexSmooth;
-extern ConVar *r_fastzreject;
+extern ConVarBase *r_fastzreject;
 
 //-----------------------------------------------------------------------------
 // Cache entry for render data
@@ -1307,11 +1307,8 @@ void CModelRenderSystem::RenderModels( StudioModelArrayInfo2_t *pInfo, int nMode
 	}
 	else if ( renderMode == MODEL_RENDER_MODE_RTT_SHADOWS )
 	{
-		// shouldn't get here unless the code is ported from l4d2 to drive this properly.
-		Assert(0);
-#if 0
 		// HACK: Assume all models in this batch use the same material. This only works because we submit batches of 1 model from the client shadow manager at the moment
-		IMaterial* pShadowDrawMaterial = pModelList[0].m_pFirstNode->m_Entry.m_pRenderable->GetShadowDrawMaterial();
+		IMaterial* pShadowDrawMaterial = pModelList[0].m_pFirstNode->m_Entry.m_pRenderableMod ? pModelList[0].m_pFirstNode->m_Entry.m_pRenderableMod->GetShadowDrawMaterial() : NULL;
 		g_pStudioRender->ForcedMaterialOverride( pShadowDrawMaterial ? pShadowDrawMaterial : m_ShadowBuild, OVERRIDE_BUILD_SHADOWS );
 
 		for ( int i = 0; i < nModelTypeCount; ++i )
@@ -1321,7 +1318,6 @@ void CModelRenderSystem::RenderModels( StudioModelArrayInfo2_t *pInfo, int nMode
 		}
 
 		g_pStudioRender->ForcedMaterialOverride( NULL );
-#endif
 	}
 }
 

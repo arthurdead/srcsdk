@@ -69,9 +69,9 @@ static int  g_nThreadModeTicks = 0;
 static ConVar cl_interp_threadmodeticks( "cl_interp_threadmodeticks", "0", 0, "Additional interpolation ticks to use when interpolating with threaded engine mode set." );
 
 
-void cc_cl_interp_all_changed( IConVar *pConVar, const char *pOldString, float flOldValue )
+void cc_cl_interp_all_changed( IConVarRef pConVar, const char *pOldString, float flOldValue )
 {
-	if ( ((ConVar *)pConVar)->GetInt() )
+	if ( pConVar.GetInt() )
 	{
 		C_BaseEntityIterator iterator;
 		C_BaseEntity *pEnt;
@@ -91,7 +91,7 @@ static ConVar  cl_extrapolate( "cl_extrapolate", "1", FCVAR_CHEAT, "Enable/disab
 
 static ConVar  cl_interp_npcs( "cl_interp_npcs", "0.3", FCVAR_USERINFO, "Interpolate NPC positions starting this many seconds in past (or cl_interp, if greater)" );
 static ConVar  cl_interp_all( "cl_interp_all", "0", 0, "Disable interpolation list optimizations.", 0, 0, 0, 0, cc_cl_interp_all_changed );
-extern ConVar  *r_drawmodeldecals;
+extern ConVarBase  *r_drawmodeldecals;
 extern ConVar	cl_showerror;
 int C_BaseEntity::m_nPredictionRandomSeed = -1;
 C_BasePlayer *C_BaseEntity::m_pPredictionPlayer = NULL;
@@ -3857,7 +3857,7 @@ bool C_BaseEntity::Simulate()
 }
 
 // Defined in engine
-extern ConVar *cl_interpolate;
+extern ConVarBase *cl_interpolate;
 
 // (static function)
 void C_BaseEntity::InterpolateServerEntities()
@@ -6682,7 +6682,7 @@ C_AI_BaseNPC *C_BaseEntity::MyNPCPointer( void )
 	return NULL;
 }
 
-extern ConVar *closecaption;
+extern ConVarBase *closecaption;
 
 //-----------------------------------------------------------------------------
 // Purpose: For each client (only can be local client in client .dll ) checks the client has disabled CC and if so, removes them from 

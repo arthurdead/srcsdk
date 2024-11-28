@@ -199,7 +199,7 @@ const char *CBaseGameStats::GetUserPseudoUniqueID( void )
 }
 
 #ifndef SWDS
-extern ConVar *mat_dxlevel;
+extern ConVarBase *mat_dxlevel;
 #endif
 
 void CBaseGameStats::Event_Init( void )
@@ -232,7 +232,7 @@ void CBaseGameStats::Event_MapChange( const char *szOldMapName, const char *szNe
 	StatsLog( "CBaseGameStats::Event_MapChange to [%s]\n", szNewMapName );
 }
 
-extern ConVar *closecaption;
+extern ConVarBase *closecaption;
 
 void CBaseGameStats::Event_LevelInit( void )
 {
@@ -731,7 +731,8 @@ void CBaseGameStats_Driver::PossibleMapChange( void )
 	}
 }
 
-
+extern ConVarBase *hostip;
+extern ConVarBase *hostport;
 
 void CBaseGameStats_Driver::LevelInitPreEntity()
 {
@@ -743,18 +744,13 @@ void CBaseGameStats_Driver::LevelInitPreEntity()
 		// "unknown" means this is a dedicated server and we weren't able to generate a unique ID (e.g. Linux server).
 		// Change the unique ID to be a hash of IP & port.  We couldn't do this earlier because IP is not known until level
 		// init time.
-		ConVar *hostip = g_pCVar->FindVar( "hostip" );
-		ConVar *hostport = g_pCVar->FindVar( "hostport" );
-		if ( hostip && hostport )
+		int crcInput[2];
+		crcInput[0] = hostip->GetInt();
+		crcInput[1] = hostport->GetInt();
+		if ( crcInput[0] && crcInput[1] )
 		{
-			int crcInput[2];
-			crcInput[0] = hostip->GetInt();
-			crcInput[1] = hostport->GetInt();
-			if ( crcInput[0] && crcInput[1] )
-			{
-				CRC32_t crc = CRC32_ProcessSingleBuffer( crcInput, sizeof( crcInput ) );
-				Q_snprintf( s_szPseudoUniqueID, ARRAYSIZE( s_szPseudoUniqueID ), "H:%x", crc );
-			}
+			CRC32_t crc = CRC32_ProcessSingleBuffer( crcInput, sizeof( crcInput ) );
+			Q_snprintf( s_szPseudoUniqueID, ARRAYSIZE( s_szPseudoUniqueID ), "H:%x", crc );
 		}
 	}
 

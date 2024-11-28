@@ -43,6 +43,13 @@ CGameConsole::CGameConsole()
 //-----------------------------------------------------------------------------
 // Purpose: Destructor
 //-----------------------------------------------------------------------------
+#ifdef __MINGW32__
+void CGameConsole::__DTOR__()
+{
+	this->~CGameConsole();
+}
+#endif
+
 CGameConsole::~CGameConsole()
 {
 	m_bInitialized = false;

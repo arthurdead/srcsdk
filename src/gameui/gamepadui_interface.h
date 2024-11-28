@@ -10,6 +10,12 @@ class GamepadUI : public IGamepadUI
 public:
 	static GamepadUI& GetInstance();
 
+#ifdef __MINGW32__
+private:
+	void __DTOR__();
+#endif
+
+public:
 	void Initialize( CreateInterfaceFn factory ) OVERRIDE;
 	void Shutdown() OVERRIDE;
 

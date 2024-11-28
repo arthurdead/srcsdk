@@ -12,9 +12,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-void MapCycleFileChangedCallback( IConVar *var, const char *pOldString, float flOldValue )
+void MapCycleFileChangedCallback( IConVarRef var, const char *pOldString, float flOldValue )
 {
-	if ( Q_stricmp( pOldString, mapcyclefile.GetString() ) != 0 )
+	if ( Q_stricmp( pOldString, var.GetString() ) != 0 )
 	{
 		if ( GameRules() )
 		{
@@ -59,7 +59,7 @@ public:
 		const char *defvalue = NULL;
 		if ( replicated && !pCommand->IsCommand() )
 		{
-			defvalue = ( ( ConVar * )pCommand)->GetDefault();
+			defvalue = ( ( ConVarBase * )pCommand)->GetDefault();
 		}
 
 		// Link to engine's list instead
@@ -71,7 +71,7 @@ public:
 		{
 			if ( !pCommand->IsCommand() )
 			{
-				( ( ConVar * )pCommand )->SetValue( pValue );
+				( ( ConVarBase * )pCommand )->SetValue( pValue );
 			}
 		}
 		else
@@ -84,7 +84,7 @@ public:
 			//  replicated ConVars by setting the value here after the ConVar has been linked.
 			if ( replicated && defvalue && !pCommand->IsCommand() )
 			{
-				ConVar *var = ( ConVar * )pCommand;
+				ConVarBase *var = ( ConVarBase * )pCommand;
 				var->SetValue( defvalue );
 			}
 		}
@@ -96,20 +96,53 @@ public:
 static CGameDLL_ConVarAccessor g_ServerConVarAccessor;
 
 #ifndef SWDS
-ConVar *mat_hdr_tonemapscale=NULL;
-ConVar *mat_hdr_manual_tonemap_rate=NULL;
-ConVar *mat_dxlevel=NULL;
+ConVarBase *mat_hdr_tonemapscale=NULL;
+ConVarBase *mat_hdr_manual_tonemap_rate=NULL;
+ConVarBase *mat_dxlevel=NULL;
 #endif
-ConVar *skill=NULL;
-ConVar *think_trace_limit=NULL;
+ConVarBase *skill=NULL;
+ConVarBase *think_trace_limit=NULL;
 #ifndef SWDS
-ConVar *vcollide_wireframe=NULL;
+ConVarBase *vcollide_wireframe=NULL;
 #endif
-ConVar *host_thread_mode=NULL;
-ConVar *hide_server=NULL;
-ConVar *sv_maxreplay=NULL;
+ConVarBase *host_thread_mode=NULL;
+ConVarBase *hide_server=NULL;
+ConVarBase *sv_maxreplay=NULL;
 #ifndef SWDS
-ConVar* r_visualizetraces=NULL;
+ConVarBase* r_visualizetraces=NULL;
+#endif
+ConVarBase *hostip=NULL;
+ConVarBase *hostport=NULL;
+ConVarBase *sv_minupdaterate=NULL;
+ConVarBase *sv_maxupdaterate=NULL;
+ConVarBase *sv_client_min_interp_ratio=NULL;
+ConVarBase *sv_client_max_interp_ratio=NULL;
+#ifndef SWDS
+ConVarBase*snd_mixahead = NULL;
+#endif
+
+#ifndef SWDS
+ConVarBase *cl_hud_minmode=NULL;
+ConVarBase*	r_showenvcubemap=NULL;
+ConVarBase*	r_eyegloss=NULL;
+ConVarBase*	r_eyemove=NULL;
+ConVarBase*	r_eyeshift_x=NULL;
+ConVarBase*	r_eyeshift_y=NULL;
+ConVarBase*	r_eyeshift_z=NULL;
+ConVarBase*	r_eyesize=NULL;
+ConVarBase*	mat_softwareskin=NULL;
+ConVarBase*	r_nohw=NULL;
+ConVarBase*	r_nosw=NULL;
+ConVarBase*	r_teeth=NULL;
+ConVarBase*	r_flex=NULL;
+ConVarBase*	r_eyes=NULL;
+ConVarBase*	r_skin=NULL;
+ConVarBase*	r_maxmodeldecal=NULL;
+ConVarBase*	r_modelwireframedecal=NULL;
+ConVarBase*	mat_normals=NULL;
+ConVarBase*	r_eyeglintlodpixels=NULL;
+ConVarBase*	r_rootlod=NULL;
+ConVarBase *r_drawentities = NULL;
 #endif
 
 extern void InitializeSharedCvars( void );
@@ -119,7 +152,7 @@ extern void InitializeSharedCvars( void );
 void InitializeServerCvars( void )
 {
 	//TODO!!! Arthurdead: this is defined somewhere else??
-	ConVar *tmp_props_break_max_pieces = g_pCVar->FindVar("props_break_max_pieces");
+	ConVarBase *tmp_props_break_max_pieces = g_pCVar->FindVarBase("props_break_max_pieces");
 	if(tmp_props_break_max_pieces) {
 		tmp_props_break_max_pieces->AddFlags( FCVAR_REPLICATED );
 	}
@@ -129,20 +162,64 @@ void InitializeServerCvars( void )
 
 	InitializeSharedCvars();
 
-	skill = g_pCVar->FindVar("skill");
-	host_thread_mode = g_pCVar->FindVar( "host_thread_mode" );
-	hide_server = g_pCVar->FindVar( "hide_server" );
-	sv_maxreplay = g_pCVar->FindVar( "sv_maxreplay" );
+	skill = g_pCVar->FindVarBase("skill");
+	host_thread_mode = g_pCVar->FindVarBase( "host_thread_mode" );
+	hide_server = g_pCVar->FindVarBase( "hide_server" );
+	sv_maxreplay = g_pCVar->FindVarBase( "sv_maxreplay" );
+
+	hostip = g_pCVar->FindVarBase( "hostip" );
+	hostport = g_pCVar->FindVarBase( "hostport" );
+
+	sv_minupdaterate = g_pCVar->FindVarBase( "sv_minupdaterate" );
+	sv_maxupdaterate = g_pCVar->FindVarBase( "sv_maxupdaterate" );
+	sv_client_min_interp_ratio = g_pCVar->FindVarBase( "sv_client_min_interp_ratio" );
+	sv_client_max_interp_ratio = g_pCVar->FindVarBase( "sv_client_max_interp_ratio" );
+
+#ifndef SWDS
+	if(!g_bDedicatedServer) {
+		snd_mixahead = g_pCVar->FindVarBase("snd_mixahead");
+	}
+#endif
 
 #ifndef SWDS
 	if(!g_bTextMode) {
-		mat_hdr_manual_tonemap_rate = g_pCVar->FindVar("mat_hdr_manual_tonemap_rate");
-		mat_hdr_tonemapscale = g_pCVar->FindVar("mat_hdr_tonemapscale");
-		mat_dxlevel = g_pCVar->FindVar("mat_dxlevel");
-		vcollide_wireframe = g_pCVar->FindVar("vcollide_wireframe");
-		r_visualizetraces = g_pCVar->FindVar("r_visualizetraces");
+		mat_hdr_manual_tonemap_rate = g_pCVar->FindVarBase("mat_hdr_manual_tonemap_rate");
+		mat_hdr_tonemapscale = g_pCVar->FindVarBase("mat_hdr_tonemapscale");
+		mat_dxlevel = g_pCVar->FindVarBase("mat_dxlevel");
+		vcollide_wireframe = g_pCVar->FindVarBase("vcollide_wireframe");
+		r_visualizetraces = g_pCVar->FindVarBase("r_visualizetraces");
+		r_drawentities = g_pCVar->FindVarBase("r_drawentities");
+		r_showenvcubemap = g_pCVar->FindVarBase("r_showenvcubemap");
+		r_eyegloss = g_pCVar->FindVarBase("r_eyegloss");
+		r_eyemove = g_pCVar->FindVarBase("r_eyemove");
+		r_eyeshift_x = g_pCVar->FindVarBase("r_eyeshift_x");
+		r_eyeshift_y = g_pCVar->FindVarBase("r_eyeshift_y");
+		r_eyeshift_z = g_pCVar->FindVarBase("r_eyeshift_z");
+		r_eyesize = g_pCVar->FindVarBase("r_eyesize");
+		mat_softwareskin = g_pCVar->FindVarBase("mat_softwareskin");
+		r_nohw = g_pCVar->FindVarBase("r_nohw");
+		r_nosw = g_pCVar->FindVarBase("r_nosw");
+		r_teeth = g_pCVar->FindVarBase("r_teeth");
+		r_flex = g_pCVar->FindVarBase("r_flex");
+		r_eyes = g_pCVar->FindVarBase("r_eyes");
+		r_skin = g_pCVar->FindVarBase("r_skin");
+		r_maxmodeldecal = g_pCVar->FindVarBase("r_maxmodeldecal");
+		r_modelwireframedecal = g_pCVar->FindVarBase("r_modelwireframedecal");
+		mat_normals = g_pCVar->FindVarBase("mat_normals");
+		r_eyeglintlodpixels = g_pCVar->FindVarBase("r_eyeglintlodpixels");
+		r_rootlod = g_pCVar->FindVarBase("r_rootlod");
 	} else
 #endif
 	{
 	}
+
+#ifndef SWDS
+	if(!g_bTextMode) {
+		if(!engine->IsDedicatedServer()) {
+			cl_hud_minmode = g_pCVar->FindVarBase("cl_hud_minmode");
+		} else {
+			cl_hud_minmode = new ConVar( "cl_hud_minmode", "0", FCVAR_ARCHIVE, "Set to 1 to turn on the advanced minimalist HUD mode." );
+		}
+	}
+#endif
 }

@@ -3244,7 +3244,7 @@ bool IKeyValuesDumpContextAsText::KvWriteIndent( int nIndentLevel )
 	return KvWriteText( pchIndent );
 }
 
-extern ConVar *developer;
+extern ConVarBase *developer;
 
 bool CKeyValuesDumpContextAsDevMsg::KvBeginKey( KeyValues *pKey, int nIndentLevel )
 {

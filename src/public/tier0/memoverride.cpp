@@ -331,7 +331,7 @@ size_t __cdecl _heapused( size_t *, size_t * )
 	return 0;
 }
 
-struct _HEAPINFO;
+typedef struct _heapinfo _HEAPINFO;
 
 int __cdecl _heapwalk( _HEAPINFO * )
 {
@@ -866,6 +866,7 @@ int __cdecl _VCrtDbgReportA( int nRptType, const wchar_t * szFile, int nLine,
 }
 #endif
 
+#undef _CrtSetReportHook2
 int __cdecl _CrtSetReportHook2( int mode, _CRT_REPORT_HOOK pfnNewHook )
 {
 	_CrtSetReportHook( pfnNewHook );
@@ -874,17 +875,20 @@ int __cdecl _CrtSetReportHook2( int mode, _CRT_REPORT_HOOK pfnNewHook )
 
 int __crtDebugCheckCount = FALSE;
 
+#undef _CrtSetCheckCount
 int __cdecl _CrtSetCheckCount( int fCheckCount )
 {
 	int oldCheckCount = __crtDebugCheckCount;
 	return oldCheckCount;
 }
 
+#undef _CrtGetCheckCount
 int __cdecl _CrtGetCheckCount( void )
 {
 	return __crtDebugCheckCount;
 }
 
+#undef _CrtGetReportHook
 _CRT_REPORT_HOOK __cdecl _CrtGetReportHook( void )
 {
 	return nullptr;
@@ -1034,13 +1038,14 @@ char * __cdecl _strdup ( const char * string )
 	return pCopy;
 }
 
+#undef _tfullpath_dbg
 _TSCHAR * __cdecl _tfullpath_dbg ( _TSCHAR *UserBuf, const _TSCHAR *path, size_t maxlen, int nBlockUse, const char * szFileName, int nLine )
 {
 	Assert(0);
 	return nullptr;
 }
 
-_TSCHAR * __cdecl _tfullpath ( _TSCHAR *UserBuf, const _TSCHAR *path, size_t maxlen )
+tchar * __cdecl _tfullpath ( tchar *UserBuf, const tchar *path, size_t maxlen )
 {
 	Assert(0);
 	return nullptr;
@@ -1070,18 +1075,20 @@ errno_t __cdecl _tdupenv_s_helper ( _TSCHAR **pBuffer, size_t *pBufferSizeInTCha
 	return 0;
 }
 
+#undef _ttempnam_dbg
 _TSCHAR * __cdecl _ttempnam_dbg ( const _TSCHAR *dir, const _TSCHAR *pfx, int nBlockUse, const char * szFileName, int nLine )
 {
 	Assert(0);
 	return 0;
 }
 
-_TSCHAR * __cdecl _ttempnam ( const _TSCHAR *dir, const _TSCHAR *pfx )
+tchar * __cdecl _ttempnam ( const tchar *dir, const tchar *pfx )
 {
 	Assert(0);
 	return 0;
 }
 
+#undef _wcsdup_dbg
 wchar_t * __cdecl _wcsdup_dbg ( const wchar_t * string, int nBlockUse, const char * szFileName, int nLine )
 {
 	Assert(0);

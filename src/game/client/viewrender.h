@@ -342,6 +342,13 @@ class CViewRender : public IViewRender,
 {
 public:
 	DECLARE_CLASS_NOBASE( CViewRender );
+
+#ifdef __MINGW32__
+private:
+	void __DTOR__();
+#endif
+
+public:
 	virtual void	Init( void );
 	virtual void	Shutdown( void );
 
@@ -538,10 +545,6 @@ private:
 	// VIS Overrides
 	// Set to true to turn off client side vis ( !!!! rendering will be slow since everything will draw )
 	bool			m_bForceNoVis;	
-
-	// Some cvars needed by this system
-	const ConVar	*m_pDrawEntities;
-	const ConVar	*m_pDrawBrushModels;
 
 	// Some materials used...
 	CMaterialReference	m_TranslucentSingleColor;

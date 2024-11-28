@@ -46,7 +46,7 @@ static ConVar sv_snd_filter( "sv_snd_filter", "", FCVAR_REPLICATED, "Filters out
 #endif // STAGING_ONLY
 
 #ifndef SWDS
-extern ConVar *closecaption;
+extern ConVarBase *closecaption;
 #endif
 
 static bool g_bPermitDirectSoundPrecache = false;

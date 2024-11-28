@@ -45,7 +45,7 @@
 
 DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_VGUIRESOURCE, "VGUI Resource file" );
 
-extern ConVar *vgui_nav_lock_default_button;
+extern ConVarBase *vgui_nav_lock_default_button;
 
 extern IFileSystem *g_pFullFileSystem;
 

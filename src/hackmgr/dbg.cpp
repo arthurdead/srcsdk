@@ -73,9 +73,11 @@ DLL_EXPORT void RestoreConsoleColor( ConsoleColorContext_t *pContext, uint16 pre
 }
 
 #ifdef __MINGW32__
-LIB_EXPORT SYMALIAS("InitConsoleColorContext") void _imp__InitConsoleColorContext( ConsoleColorContext_t *pContext );
-LIB_EXPORT SYMALIAS("SetConsoleColor") uint16 _imp__SetConsoleColor( ConsoleColorContext_t *pContext, int nRed, int nGreen, int nBlue, int nIntensity );
-LIB_EXPORT SYMALIAS("RestoreConsoleColor") void _imp__RestoreConsoleColor( ConsoleColorContext_t *pContext, uint16 prevColor );
+extern "C" {
+LIB_CLASS_EXPORT decltype(&InitConsoleColorContext) _imp__InitConsoleColorContext = InitConsoleColorContext;
+LIB_CLASS_EXPORT decltype(&SetConsoleColor) _imp__SetConsoleColor = SetConsoleColor;
+LIB_CLASS_EXPORT decltype(&RestoreConsoleColor) _imp__RestoreConsoleColor = RestoreConsoleColor;
+}
 #endif
 
 #ifdef _WIN32
@@ -122,8 +124,10 @@ DLL_EXPORT bool HushAsserts()
 }
 
 #ifdef __MINGW32__
-LIB_EXPORT SYMALIAS("HushAsserts") bool _imp__HushAsserts();
-LIB_EXPORT SYMALIAS("Plat_ExitProcess") void _imp__Plat_ExitProcess( int nCode );
+extern "C" {
+LIB_CLASS_EXPORT decltype(&HushAsserts) _imp__HushAsserts = HushAsserts;
+LIB_CLASS_EXPORT decltype(&Plat_ExitProcess) _imp__Plat_ExitProcess = Plat_ExitProcess;
+}
 #endif
 #endif
 
@@ -221,14 +225,10 @@ static bool RaiseOnAssert()
 
 LoggingResponse_t CLoggingSystem::LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color color, const tchar *pMessage )
 {
-	Assert( channelID != INVALID_LOGGING_CHANNEL_ID );
-	if ( channelID == INVALID_LOGGING_CHANNEL_ID )
-		return LR_DEBUGGER;
-
-	LoggingChannel_t *pChannel = GetChannel( channelID );
+	LoggingChannel_t *pChannel = (channelID != INVALID_LOGGING_CHANNEL_ID ? GetChannel( channelID ) : NULL);
 
 	if(color == UNSPECIFIED_LOGGING_COLOR) {
-		if(pChannel->m_SpewColor != UNSPECIFIED_LOGGING_COLOR) {
+		if(pChannel && pChannel->m_SpewColor != UNSPECIFIED_LOGGING_COLOR) {
 			color = pChannel->m_SpewColor;
 		} else {
 			switch (severity) {
@@ -327,10 +327,12 @@ DLL_EXPORT LoggingResponse_t LoggingSystem_LogAssert( const char *pMessageFormat
 }
 
 #ifdef __MINGW32__
-LIB_EXPORT SYMALIAS("LoggingSystem_IsChannelEnabled") bool _imp__LoggingSystem_IsChannelEnabled( LoggingChannelID_t channelID, LoggingSeverity_t severity );
-LIB_EXPORT SYMALIAS("LoggingSystem_RegisterLoggingChannel") LoggingChannelID_t _imp__LoggingSystem_RegisterLoggingChannel( const char *pName, RegisterTagsFunc registerTagsFunc, LoggingChannelFlags_t flags, LoggingSeverity_t severity, Color color );
-LIB_EXPORT SYMALIAS("LoggingSystem_Log") LoggingResponse_t _imp__LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const char *pMessageFormat, ... );
-LIB_EXPORT SYMALIAS("LoggingSystem_LogAssert") LoggingResponse_t _imp__LoggingSystem_LogAssert( const char *pMessageFormat, ... );
+extern "C" {
+LIB_CLASS_EXPORT decltype(&LoggingSystem_IsChannelEnabled) _imp__LoggingSystem_IsChannelEnabled = LoggingSystem_IsChannelEnabled;
+LIB_CLASS_EXPORT decltype(&LoggingSystem_RegisterLoggingChannel) _imp__LoggingSystem_RegisterLoggingChannel = LoggingSystem_RegisterLoggingChannel;
+LIB_CLASS_EXPORT decltype(static_cast<LoggingResponse_t(*)(LoggingChannelID_t, LoggingSeverity_t, const char *, ...)>(LoggingSystem_Log)) _imp__LoggingSystem_Log = LoggingSystem_Log;
+LIB_CLASS_EXPORT decltype(&LoggingSystem_LogAssert) _imp__LoggingSystem_LogAssert = LoggingSystem_LogAssert;
+}
 #endif
 
 //the normal DoNewAssertDialog is broken on my PC
@@ -464,7 +466,9 @@ DLL_EXPORT void Plat_MessageBox( const char *pTitle, const tchar *pMessage )
 }
 
 #ifdef __MINGW32__
-LIB_EXPORT SYMALIAS("Plat_MessageBox") void _imp__Plat_MessageBox( const char *pTitle, const tchar *pMessage );
+extern "C" {
+LIB_CLASS_EXPORT decltype(&Plat_MessageBox) _imp__Plat_MessageBox = Plat_MessageBox;
+}
 #endif
 
 static SpewRetval_t HackMgr_SpewOutput( SpewType_t spewType, const tchar *pMsg )

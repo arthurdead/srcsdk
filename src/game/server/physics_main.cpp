@@ -979,7 +979,7 @@ CBaseEntity *CPhysicsPushedEntities::PerformLinearPush( CBaseEntity *pRoot, floa
 #define THINK_TRACE_COUNTER_COMPILE_FUNCTIONS_SERVER
 #include "engine/thinktracecounter.h"
 
-extern ConVar *think_trace_limit;
+extern ConVarBase *think_trace_limit;
 
 //-----------------------------------------------------------------------------
 // Purpose: Called when it's time for a physically moved objects (plats, doors, etc)
