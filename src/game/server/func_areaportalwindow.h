@@ -53,7 +53,7 @@ public:
 	CNetworkVar( float, m_flTranslucencyLimit );
 
 	string_t 		m_iBackgroundBModelName;	// string name of background bmodel
-	CNetworkVar( int, m_iBackgroundModelIndex );
+	CNetworkModelIndex( m_iBackgroundModelIndex );
 
 	//Input handlers
 	void InputSetFadeStartDistance( inputdata_t &inputdata );

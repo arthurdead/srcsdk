@@ -612,7 +612,7 @@ bool CLagCompensationManager::BacktrackEntity( CBaseEntity *entity, float flTarg
 			int layerCount = pAnimatingOverlay->GetNumAnimOverlays();
 			for( int layerIndex = 0; layerIndex < layerCount; ++layerIndex )
 			{
-				CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlay(layerIndex);
+				CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlayForModify(layerIndex);
 				if( currentLayer )
 				{
 					restore->m_layerRecords[layerIndex].m_cycle = currentLayer->m_flCycle;
@@ -778,7 +778,7 @@ void CLagCompensationManager::RecordDataIntoTrack( CBaseEntity *entity, LagRecor
 			int layerCount = pAnimatingOverlay->GetNumAnimOverlays();
 			for( int layerIndex = 0; layerIndex < layerCount; ++layerIndex )
 			{
-				CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlay(layerIndex);
+				const CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlay(layerIndex);
 				if( currentLayer )
 				{
 					record.m_layerRecords[layerIndex].m_cycle = currentLayer->m_flCycle;
@@ -851,7 +851,7 @@ void CLagCompensationManager::RestoreEntityFromRecords( CBaseEntity *entity, Lag
 				int layerCount = pAnimatingOverlay->GetNumAnimOverlays();
 				for( int layerIndex = 0; layerIndex < layerCount; ++layerIndex )
 				{
-					CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlay(layerIndex);
+					CAnimationLayer *currentLayer = pAnimatingOverlay->GetAnimOverlayForModify(layerIndex);
 					if( currentLayer )
 					{
 						currentLayer->m_flCycle = restore->m_layerRecords[layerIndex].m_cycle;

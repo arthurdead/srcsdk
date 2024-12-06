@@ -785,7 +785,7 @@ void CSharedCollisionProperty::UseTriggerBounds( bool bEnable, float flBloat )
 //-----------------------------------------------------------------------------
 // Collision model (BSP)
 //-----------------------------------------------------------------------------
-int CSharedCollisionProperty::GetCollisionModelIndex()
+modelindex_t CSharedCollisionProperty::GetCollisionModelIndex()
 {
 	return m_pOuter->GetModelIndex();
 }

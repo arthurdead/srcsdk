@@ -65,11 +65,6 @@ bool IsEntityAngularVelocityReasonable( const Vector &q );
 // Angular velocity of each Euler angle.
 bool IsEntityQAngleVelReasonable( const QAngle &q );
 
-#endif
-
-#ifndef BASEENTITY_SHARED_INLINES_H
-#define BASEENTITY_SHARED_INLINES_H
-
 #if defined( CLIENT_DLL )
 #include "c_baseentity.h"
 typedef C_BaseEntity CSharedBaseEntity;

@@ -28,7 +28,7 @@ public:
 public:
 	CNetworkVector( m_vecOrigin );
 	CNetworkVector( m_vecVelocity );
-	CNetworkVar( int, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	CNetworkVar( int, m_nLifeTime );
 	CNetworkHandle( CBaseEntity, m_hOwner );
 };
@@ -42,7 +42,7 @@ CTEClientProjectile::CTEClientProjectile( const char *name ) :
 {
 	m_vecOrigin.Init();
 	m_vecVelocity.Init();
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nLifeTime = 0;
 	m_hOwner = NULL;
 }
@@ -104,7 +104,7 @@ static CTEClientProjectile g_TEClientProjectile( "Client Projectile" );
 //			speed - 
 //-----------------------------------------------------------------------------
 void TE_ClientProjectile( IRecipientFilter& filter, float delay,
-	const Vector* vecOrigin, const Vector* vecVelocity, int modelindex, int lifetime, CBaseEntity *pOwner )
+	const Vector* vecOrigin, const Vector* vecVelocity, modelindex_t modelindex, int lifetime, CBaseEntity *pOwner )
 {
 	g_TEClientProjectile.m_vecOrigin = *vecOrigin;
 	g_TEClientProjectile.m_vecVelocity = *vecVelocity;

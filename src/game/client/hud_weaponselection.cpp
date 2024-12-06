@@ -468,10 +468,13 @@ void CHudWeaponSelection::Paint()
 	int largeBoxWide = m_flSmallBoxSize + ((m_flLargeBoxWide - m_flSmallBoxSize) * percentageDone);
 	int largeBoxTall = m_flSmallBoxSize + ((m_flLargeBoxTall - m_flSmallBoxSize) * percentageDone);
 	Color selectedColor;
-	for (int i = 0; i < 4; i++)
-	{
-		selectedColor[i] = m_BoxColor[i] + ((m_SelectedBoxColor[i] - m_BoxColor[i]) * percentageDone);
-	}
+
+	unsigned char r = m_BoxColor.r() + ((m_SelectedBoxColor.r() - m_BoxColor.r()) * percentageDone);
+	unsigned char g = m_BoxColor.g() + ((m_SelectedBoxColor.g() - m_BoxColor.g()) * percentageDone);
+	unsigned char b = m_BoxColor.b() + ((m_SelectedBoxColor.b() - m_BoxColor.b()) * percentageDone);
+	unsigned char a = m_BoxColor.a() + ((m_SelectedBoxColor.a() - m_BoxColor.a()) * percentageDone);
+
+	selectedColor.SetColor( r, g, b, a );
 
 	switch ( hud_fastswitch.GetInt() )
 	{
@@ -761,7 +764,7 @@ void CHudWeaponSelection::DrawLargeWeaponBox( C_BaseCombatWeapon *pWeapon, bool 
 			DrawBox( xpos, ypos, boxWide, boxTall, selectedColor, alpha, number );
 
 			// draw icon
-			col[3] *= (alpha / 255.0f);
+			col.SetA( col.a() * (alpha / 255.0f) );
 			if ( pWeapon->GetSpriteActive() )
 			{
 				// find the center of the box to draw in
@@ -784,12 +787,12 @@ void CHudWeaponSelection::DrawLargeWeaponBox( C_BaseCombatWeapon *pWeapon, bool 
 				if (!pWeapon->CanBeSelected())
 				{
 					// unselectable weapon, display as such
-					col = Color(255, 0, 0, col[3]);
+					col = Color(255, 0, 0, col.a());
 				}
 				else if (bSelected)
 				{
 					// currently selected weapon, display brighter
-					col[3] = alpha;
+					col.SetA( alpha );
 
 					// draw an active version over the top
 					pWeapon->GetSpriteActive()->DrawSelf( xpos + x_offs, ypos + y_offs, col );
@@ -827,7 +830,7 @@ void CHudWeaponSelection::DrawLargeWeaponBox( C_BaseCombatWeapon *pWeapon, bool 
 			int	y_offs;
 
 			// draw icon
-			col[3] *= (alpha / 255.0f);
+			col.SetA( col.a() * (alpha / 255.0f) );
 
 			if ( pWeapon->GetSpriteInactive() )
 			{
@@ -848,7 +851,7 @@ void CHudWeaponSelection::DrawLargeWeaponBox( C_BaseCombatWeapon *pWeapon, bool 
 				if ( !pWeapon->CanBeSelected() )
 				{
 					// unselectable weapon, display as such
-					col = Color(255, 0, 0, col[3]);
+					col = Color(255, 0, 0, col.a());
 				}
 
 				// draw the inactive version
@@ -872,7 +875,7 @@ void CHudWeaponSelection::DrawLargeWeaponBox( C_BaseCombatWeapon *pWeapon, bool 
 					y_offs = (boxTall - iconHeight) / 2;
 				}
 
-				col[3] = 255;
+				col.SetA( 255 );
 				for (float fl = m_flBlur; fl > 0.0f; fl -= 1.0f)
 				{
 					if (fl >= 1.0f)
@@ -882,7 +885,7 @@ void CHudWeaponSelection::DrawLargeWeaponBox( C_BaseCombatWeapon *pWeapon, bool 
 					else
 					{
 						// draw a percentage of the last one
-						col[3] *= fl;
+						col.SetA( col.a() * fl );
 						pWeapon->GetSpriteActive()->DrawSelf( xpos + x_offs, ypos + y_offs, col );
 					}
 				}
@@ -1008,7 +1011,7 @@ void CHudWeaponSelection::DrawBox(int x, int y, int wide, int tall, Color color,
 	if (number >= 0)
 	{
 		Color numberColor = m_NumberColor;
-		numberColor[3] *= normalizedAlpha / 255.0f;
+		numberColor.SetA( numberColor.a() * (normalizedAlpha / 255.0f) );
 		surface()->DrawSetTextColor(numberColor);
 		surface()->DrawSetTextFont(m_hNumberFont);
 		wchar_t wch = '0' + number;

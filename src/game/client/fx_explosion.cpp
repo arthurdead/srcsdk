@@ -310,9 +310,11 @@ void C_BaseExplosionEffect::CreateCore( void )
 				#endif
 
 				int nColor = random_valve->RandomInt( luminosity*0.5f, luminosity );
-				pParticle->m_uchColor[0] = ( worldLight[0] * nColor );
-				pParticle->m_uchColor[1] = ( worldLight[1] * nColor );
-				pParticle->m_uchColor[2] = ( worldLight[2] * nColor );
+				unsigned char r = ( worldLight[0] * nColor );
+				unsigned char g = ( worldLight[1] * nColor );
+				unsigned char b = ( worldLight[2] * nColor );
+
+				pParticle->m_uchColor.SetColor( r, g, b );
 				
 				pParticle->m_uchStartSize	= 72  * m_flScale;
 				pParticle->m_uchEndSize		= pParticle->m_uchStartSize * 2;
@@ -361,9 +363,11 @@ void C_BaseExplosionEffect::CreateCore( void )
 				#endif
 
 				int nColor = random_valve->RandomInt( luminosity*0.5f, luminosity );
-				pParticle->m_uchColor[0] = ( worldLight[0] * nColor );
-				pParticle->m_uchColor[1] = ( worldLight[1] * nColor );
-				pParticle->m_uchColor[2] = ( worldLight[2] * nColor );
+				unsigned char r = ( worldLight[0] * nColor );
+				unsigned char g = ( worldLight[1] * nColor );
+				unsigned char b = ( worldLight[2] * nColor );
+
+				pParticle->m_uchColor.SetColor( r, g, b );
 						
 				pParticle->m_uchStartSize	= random_valve->RandomInt( 32, 64 ) * m_flScale;
 				pParticle->m_uchEndSize		= pParticle->m_uchStartSize * 2;
@@ -420,9 +424,11 @@ void C_BaseExplosionEffect::CreateCore( void )
 				#endif
 
 				int nColor = random_valve->RandomInt( luminosity*0.5f, luminosity );
-				pParticle->m_uchColor[0] = ( worldLight[0] * nColor );
-				pParticle->m_uchColor[1] = ( worldLight[1] * nColor );
-				pParticle->m_uchColor[2] = ( worldLight[2] * nColor );
+				unsigned char r = ( worldLight[0] * nColor );
+				unsigned char g = ( worldLight[1] * nColor );
+				unsigned char b = ( worldLight[2] * nColor );
+
+				pParticle->m_uchColor.SetColor( r, g, b );
 
 				pParticle->m_uchStartSize	= random_valve->RandomInt( 16, 32 ) * m_flScale;
 				pParticle->m_uchEndSize		= pParticle->m_uchStartSize * 4;
@@ -480,8 +486,9 @@ void C_BaseExplosionEffect::CreateCore( void )
 			debugoverlay->AddLineOverlay( m_vecOrigin, m_vecOrigin + pParticle->m_vecVelocity, 255, 0, 0, false, 3 );
 			#endif
 
-			int nColor = random_valve->RandomInt( 192, 255 );
-			pParticle->m_uchColor[0]	= pParticle->m_uchColor[1] = pParticle->m_uchColor[2] = nColor;
+			unsigned char nColor = random_valve->RandomInt( 192, 255 );
+
+			pParticle->m_uchColor.SetColor( nColor, nColor, nColor );
 			
 			pParticle->m_uchStartSize	= random_valve->RandomInt( 8, 16 ) * vDev;
 
@@ -538,8 +545,9 @@ void C_BaseExplosionEffect::CreateCore( void )
 			debugoverlay->AddLineOverlay( m_vecOrigin, m_vecOrigin + pParticle->m_vecVelocity, 255, 0, 0, false, 3 );
 			#endif
 
-			int nColor = random_valve->RandomInt( 128, 255 );
-			pParticle->m_uchColor[0]	= pParticle->m_uchColor[1] = pParticle->m_uchColor[2] = nColor;
+			unsigned char nColor = random_valve->RandomInt( 128, 255 );
+
+			pParticle->m_uchColor.SetColor( nColor, nColor, nColor );
 			
 			pParticle->m_uchStartSize	= random_valve->RandomInt( 32, 85 ) * vDev;
 
@@ -706,9 +714,7 @@ void C_BaseExplosionEffect::CreateDynamicLight( void )
 	
 	dl->decay	= 200;
 	dl->radius	= 255 * m_flScale;
-	dl->color.r = 255;
-	dl->color.g = 220;
-	dl->color.b = 128;
+	dl->color.SetColor( 255, 220, 128 );
 	dl->die		= gpGlobals->curtime + 0.1f;
 }
 
@@ -1391,8 +1397,9 @@ void C_MegaBombExplosionEffect::CreateCore( void )
 			debugoverlay->AddLineOverlay( m_vecOrigin, m_vecOrigin + pParticle->m_vecVelocity, 255, 0, 0, false, 3 );
 			#endif
 
-			int nColor = random_valve->RandomInt( 128, 255 );
-			pParticle->m_uchColor[0]	= pParticle->m_uchColor[1] = pParticle->m_uchColor[2] = nColor;
+			unsigned char nColor = random_valve->RandomInt( 128, 255 );
+
+			pParticle->m_uchColor.SetColor( nColor, nColor, nColor );
 			
 			pParticle->m_uchStartSize	= random_valve->RandomInt( 32, 85 ) * vDev;
 

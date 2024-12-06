@@ -91,10 +91,7 @@ C_EnvProjectedTexture *C_EnvProjectedTexture::Create( )
 	pEnt->m_bSimpleProjection = false;
 	pEnt->m_nShadowQuality = 1;
 	pEnt->m_flLightFOV = 10.0f;
-	pEnt->m_LightColor.r = 255;
-	pEnt->m_LightColor.g = 255;
-	pEnt->m_LightColor.b = 255;
-	pEnt->m_LightColor.a = 255;
+	pEnt->m_LightColor.SetColor( 255, 255, 255, 255 );
 	pEnt->m_bEnableShadows = false;
 	pEnt->m_flColorTransitionTime = 1.0f;
 	pEnt->m_bCameraSpace = false;
@@ -141,10 +138,7 @@ void C_EnvProjectedTexture::SetMaterial( IMaterial *pMaterial )
 
 void C_EnvProjectedTexture::SetLightColor( byte r, byte g, byte b, byte a )
 {
-	m_LightColor.r = r;
-	m_LightColor.g = g;
-	m_LightColor.b = b;
-	m_LightColor.a = a;
+	m_LightColor.SetColor( r, g, b, a );
 }
 
 
@@ -189,10 +183,10 @@ void UTIL_ColorToLinearFloatColor( Vector &vecColor, color32 clr )
 {
 	float tmp[4];
 
-	tmp[0] = clr.r;
-	tmp[1] = clr.g;
-	tmp[2] = clr.b;
-	tmp[3] = clr.a;
+	tmp[0] = clr.r();
+	tmp[1] = clr.g();
+	tmp[2] = clr.b();
+	tmp[3] = clr.a();
 
 	if( tmp[3] <= 0.0f )
 	{

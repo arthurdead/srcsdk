@@ -1325,7 +1325,7 @@ void CSharedGameMovement::FinishMove( void )
 //-----------------------------------------------------------------------------
 void CSharedGameMovement::DecayPunchAngle( void )
 {
-	if ( player->m_Local.m_vecPunchAngle->LengthSqr() > 0.001 || player->m_Local.m_vecPunchAngleVel->LengthSqr() > 0.001 )
+	if ( player->m_Local.m_vecPunchAngle.LengthSqr() > 0.001 || player->m_Local.m_vecPunchAngleVel.LengthSqr() > 0.001 )
 	{
 		player->m_Local.m_vecPunchAngle += player->m_Local.m_vecPunchAngleVel * gpGlobals->frametime;
 		float damping = 1 - (PUNCH_DAMPING * gpGlobals->frametime);
@@ -1344,9 +1344,9 @@ void CSharedGameMovement::DecayPunchAngle( void )
 
 		// don't wrap around
 		player->m_Local.m_vecPunchAngle.Init( 
-			clamp(player->m_Local.m_vecPunchAngle->x, -89.f, 89.f ), 
-			clamp(player->m_Local.m_vecPunchAngle->y, -179.f, 179.f ),
-			clamp(player->m_Local.m_vecPunchAngle->z, -89.f, 89.f ) );
+			clamp(player->m_Local.m_vecPunchAngle[0], -89.f, 89.f ), 
+			clamp(player->m_Local.m_vecPunchAngle[1], -179.f, 179.f ),
+			clamp(player->m_Local.m_vecPunchAngle[2], -89.f, 89.f ) );
 	}
 	else
 	{

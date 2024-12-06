@@ -32,7 +32,7 @@ public:
 	Vector			m_vecMins;
 	Vector			m_vecMaxs;
 	float			m_fHeight;
-	int				m_nModelIndex;
+	modelindex_t m_nModelIndex;
 	int				m_nCount;
 	float			m_fSpeed;
 };
@@ -45,7 +45,7 @@ C_TEBubbles::C_TEBubbles( void )
 	m_vecMins.Init();
 	m_vecMaxs.Init();
 	m_fHeight = 0.0;
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nCount = 0;
 	m_fSpeed = 0;
 }
@@ -58,7 +58,7 @@ C_TEBubbles::~C_TEBubbles( void )
 }
 
 void TE_Bubbles( IRecipientFilter& filter, float delay,
-	const Vector* mins, const Vector* maxs, float height, int modelindex, int count, float speed )
+	const Vector* mins, const Vector* maxs, float height, modelindex_t modelindex, int count, float speed )
 {
 	tempents->Bubbles( *mins, *maxs, height, modelindex, count, speed );
 }

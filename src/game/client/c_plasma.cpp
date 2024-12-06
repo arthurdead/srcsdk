@@ -80,9 +80,9 @@ public:
 	float	m_flScale;
 	float	m_flScaleTime;
 	int		m_nFlags;
-	int		m_nPlasmaModelIndex;
-	int		m_nPlasmaModelIndex2;
-	int		m_nGlowModelIndex;
+	modelindex_t		m_nPlasmaModelIndex;
+	modelindex_t		m_nPlasmaModelIndex2;
+	modelindex_t		m_nGlowModelIndex;
 
 //Client-side only
 public:
@@ -187,9 +187,9 @@ C_Plasma::C_Plasma()
 	m_flScale			= 0.0f;
 	m_flScaleTime		= 0.0f;
 	m_nFlags			= bitsFIRESMOKE_NONE;
-	m_nPlasmaModelIndex	= 0;
-	m_nPlasmaModelIndex2	= 0;
-	m_nGlowModelIndex	= 0;
+	m_nPlasmaModelIndex	= INVALID_MODEL_INDEX;
+	m_nPlasmaModelIndex2	= INVALID_MODEL_INDEX;
+	m_nGlowModelIndex	= INVALID_MODEL_INDEX;
 
 	//Client-side
 	m_flScaleRegister	= 0.0f;
@@ -357,7 +357,7 @@ void C_Plasma::Start( void )
 	
   		AngleVectors( offset, &m_pEntFlames[i]->m_vecMoveDir );
 		
-		int	nModelIndex = ( i % 2 ) ? m_nPlasmaModelIndex : m_nPlasmaModelIndex2;
+		modelindex_t	nModelIndex = ( i % 2 ) ? m_nPlasmaModelIndex : m_nPlasmaModelIndex2;
 
 		model_t *pModel	= (model_t *) modelinfo->GetModel( nModelIndex );
 		maxFrames	= modelinfo->GetModelFrameCount( pModel );

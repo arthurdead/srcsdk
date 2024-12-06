@@ -785,8 +785,7 @@ int CDetailModel::DrawModel( int flags, const RenderableInstance_t &instance )
 //-----------------------------------------------------------------------------
 CDetailModel::CDetailModel()
 {
-	m_Color.r = m_Color.g = m_Color.b = 255;
-	m_Color.exponent = 0;
+	m_Color.SetColor( 255, 255, 255, 0 );
 	m_bFlipped = 0;
 	m_bHasLightStyle = 0;
 
@@ -945,9 +944,9 @@ void CDetailModel::GetColorModulation( float *color )
 	engine->ComputeDynamicLighting( m_Origin, &normal, tmp );
 
 	float val = engine->LightStyleValue( 0 );
-	color[0] = tmp[0] + val * TexLightToLinear( m_Color.r, m_Color.exponent );
-	color[1] = tmp[1] + val * TexLightToLinear( m_Color.g, m_Color.exponent );
-	color[2] = tmp[2] + val * TexLightToLinear( m_Color.b, m_Color.exponent );
+	color[0] = tmp[0] + val * TexLightToLinear( m_Color.r(), m_Color.e() );
+	color[1] = tmp[1] + val * TexLightToLinear( m_Color.g(), m_Color.e() );
+	color[2] = tmp[2] + val * TexLightToLinear( m_Color.b(), m_Color.e() );
 
 	// Add in the lightstyles
 	if ( m_bHasLightStyle )
@@ -964,9 +963,9 @@ void CDetailModel::GetColorModulation( float *color )
 				val = engine->LightStyleValue( lighting.m_Style );
 				if (val != 0)
 				{
-					color[0] += val * TexLightToLinear( lighting.m_Lighting.r, lighting.m_Lighting.exponent ); 
-					color[1] += val * TexLightToLinear( lighting.m_Lighting.g, lighting.m_Lighting.exponent ); 
-					color[2] += val * TexLightToLinear( lighting.m_Lighting.b, lighting.m_Lighting.exponent ); 
+					color[0] += val * TexLightToLinear( lighting.m_Lighting.r(), lighting.m_Lighting.e() ); 
+					color[1] += val * TexLightToLinear( lighting.m_Lighting.g(), lighting.m_Lighting.e() ); 
+					color[2] += val * TexLightToLinear( lighting.m_Lighting.b(), lighting.m_Lighting.e() ); 
 				}
 			}
 		}
@@ -2033,9 +2032,9 @@ void CDetailObjectSystem::UnserializeFastSprite( FastSpriteX4_t *pSpritex4, int 
 	// do packed color
 	ColorRGBExp32 rgbcolor = lump.m_Lighting;
 	float color[4];
-	color[0] = TexLightToLinear( rgbcolor.r, rgbcolor.exponent );
-	color[1] = TexLightToLinear( rgbcolor.g, rgbcolor.exponent );
-	color[2] = TexLightToLinear( rgbcolor.b, rgbcolor.exponent );
+	color[0] = TexLightToLinear( rgbcolor.r(), rgbcolor.e() );
+	color[1] = TexLightToLinear( rgbcolor.g(), rgbcolor.e() );
+	color[2] = TexLightToLinear( rgbcolor.b(), rgbcolor.e() );
 	color[3] = 255;
 	engine->LinearToGamma( color, color );
 	pSpritex4->m_RGBColor[nSubField][0] = 255.0 * color[0];

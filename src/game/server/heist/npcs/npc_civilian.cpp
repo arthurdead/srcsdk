@@ -25,7 +25,7 @@ void CNPC_Civilian::Precache()
 void CNPC_Civilian::Spawn()
 {
 	if(GetModelName() == NULL_STRING) {
-		SetModel(g_pszCivilianModels[random_valve->RandomInt(0, ARRAYSIZE(g_pszCivilianModels)-1)]);
+		SetModel( g_pszCivilianModels[random_valve->RandomInt(0, ARRAYSIZE(g_pszCivilianModels)-1)] );
 	}
 
 	UTIL_SetSize(this, NAI_Hull::Mins(RECAST_NAVMESH_HUMAN), NAI_Hull::Maxs(RECAST_NAVMESH_HUMAN));

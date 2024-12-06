@@ -154,7 +154,7 @@ public:
 	CNetworkVar( bool, m_bConstrainBetweenEndpoints );
 
 	string_t m_strRopeMaterialModel;
-	CNetworkVar( int, m_iRopeMaterialModelIndex );	// Index of sprite model with the rope's material.
+	CNetworkModelIndex( m_iRopeMaterialModelIndex );	// Index of sprite model with the rope's material.
 	
 	// Number of subdivisions in between segments.
 	CNetworkVar( int, m_Subdiv );

@@ -3528,7 +3528,7 @@ public:
 };
 
 
-extern short g_sModelIndexSmoke;
+extern modelindex_t g_sModelIndexSmoke;
 extern float	GetFloorZ(const Vector &origin);
 #define WIND_THINK_CONTEXT		"WindThinkContext"
 

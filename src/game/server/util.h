@@ -482,7 +482,7 @@ void		UTIL_PredictedPosition( CBaseEntity *pTarget, float flTimeDelta, Vector *v
 void		UTIL_PredictedPosition( CBaseEntity *pTarget, const Vector &vecActualPosition, float flTimeDelta, Vector *vecPredictedPosition );
 void		UTIL_PredictedAngles( CBaseEntity *pTarget, const QAngle &angActualAngles, float flTimeDelta, QAngle *angPredictedAngles );
 
-void		UTIL_Beam( Vector &Start, Vector &End, int nModelIndex, int nHaloIndex, unsigned char FrameStart, unsigned char FrameRate,
+void		UTIL_Beam( Vector &Start, Vector &End, modelindex_t nModelIndex, modelindex_t nHaloIndex, unsigned char FrameStart, unsigned char FrameRate,
 				float Life, unsigned char Width, unsigned char EndWidth, unsigned char FadeLength, unsigned char Noise, unsigned char Red, unsigned char Green,
 				unsigned char Blue, unsigned char Brightness, unsigned char Speed);
 
@@ -574,8 +574,8 @@ typedef struct hudtextparms_s
 	float		x;
 	float		y;
 	int			effect;
-	byte		r1, g1, b1, a1;
-	byte		r2, g2, b2, a2;
+	color32 clr1;
+	color32 clr2;
 	float		fadeinTime;
 	float		fadeoutTime;
 	float		holdTime;

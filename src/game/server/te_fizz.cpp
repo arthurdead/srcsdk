@@ -35,7 +35,7 @@ public:
 
 public:
 	CNetworkVar( int, m_nEntity );
-	CNetworkVar( int, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	CNetworkVar( int, m_nDensity );
 	CNetworkVar( int, m_nCurrent );
 };
@@ -48,7 +48,7 @@ CTEFizz::CTEFizz( const char *name ) :
 	CBaseTempEntity( name )
 {
 	m_nEntity = 0;
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nDensity = 0;
 	m_nCurrent = 0;
 }
@@ -98,7 +98,7 @@ END_SEND_TABLE()
 static CTEFizz g_TEFizz( "Fizz" );
 
 void TE_Fizz( IRecipientFilter& filter, float delay,
-	const CBaseEntity *entity, int modelindex, int density, int current )
+	const CBaseEntity *entity, modelindex_t modelindex, int density, int current )
 {
 	Assert( entity );
 

@@ -952,7 +952,7 @@ void CBreakable::Die( void )
 	Vector vecSpot = WorldSpaceCenter();
 	CPVSFilter filter2( vecSpot );
 
-	int iModelIndex = 0;
+	modelindex_t iModelIndex = INVALID_MODEL_INDEX;
 	CCollisionProperty *pCollisionProp = CollisionProp();
 
 	Vector vSize = pCollisionProp->OBBSize();

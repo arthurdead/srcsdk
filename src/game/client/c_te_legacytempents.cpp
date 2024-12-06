@@ -555,9 +555,7 @@ bool C_LocalTempEntity::Frame( float frametime, int framenumber )
 		dlight_t *dl = effects->CL_AllocDlight (LIGHT_INDEX_TE_DYNAMIC);
 		VectorCopy (GetLocalOrigin(), dl->origin);
 		dl->radius = 60;
-		dl->color.r = 255;
-		dl->color.g = 120;
-		dl->color.b = 0;
+		dl->color.SetColor( 255, 120, 0 );
 		dl->die = gpGlobals->curtime + 0.01;
 	}
 
@@ -767,7 +765,7 @@ CTempEnts::~CTempEnts( void )
 //			modelIndex - 
 //			density - 
 //-----------------------------------------------------------------------------
-void CTempEnts::FizzEffect( C_BaseEntity *pent, int modelIndex, int density, int current )
+void CTempEnts::FizzEffect( C_BaseEntity *pent, modelindex_t modelIndex, int density, int current )
 {
 	C_LocalTempEntity		*pTemp;
 	const model_t	*model;
@@ -832,7 +830,7 @@ void CTempEnts::FizzEffect( C_BaseEntity *pent, int modelIndex, int density, int
 //			count - 
 //			speed - 
 //-----------------------------------------------------------------------------
-void CTempEnts::Bubbles( const Vector &mins, const Vector &maxs, float height, int modelIndex, int count, float speed )
+void CTempEnts::Bubbles( const Vector &mins, const Vector &maxs, float height, modelindex_t modelIndex, int count, float speed )
 {
 	C_LocalTempEntity			*pTemp;
 	const model_t		*model;
@@ -887,7 +885,7 @@ void CTempEnts::Bubbles( const Vector &mins, const Vector &maxs, float height, i
 //			count - 
 //			speed - 
 //-----------------------------------------------------------------------------
-void CTempEnts::BubbleTrail( const Vector &start, const Vector &end, float flWaterZ, int modelIndex, int count, float speed )
+void CTempEnts::BubbleTrail( const Vector &start, const Vector &end, float flWaterZ, modelindex_t modelIndex, int count, float speed )
 {
 	C_LocalTempEntity			*pTemp;
 	const model_t		*model;
@@ -978,7 +976,7 @@ int BreakModelDrawHelper( C_LocalTempEntity *entity, int flags, const Renderable
 //			flags - 
 //-----------------------------------------------------------------------------
 void CTempEnts::BreakModel( const Vector &pos, const QAngle &angles, const Vector &size, const Vector &dir, 
-						   float randRange, float life, int count, int modelIndex, char flags)
+						   float randRange, float life, int count, modelindex_t modelIndex, char flags)
 {
 	int					i, frameCount;
 	C_LocalTempEntity			*pTemp;
@@ -1078,7 +1076,7 @@ void CTempEnts::BreakModel( const Vector &pos, const QAngle &angles, const Vecto
 	}
 }
 
-void CTempEnts::PhysicsProp( int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects )
+void CTempEnts::PhysicsProp( modelindex_t modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects )
 {
 	C_PhysPropClientside *pEntity = C_PhysPropClientside::CreateNew();
 	
@@ -1145,7 +1143,7 @@ void CTempEnts::PhysicsProp( int modelindex, int skin, const Vector& pos, const 
 //			lifetime - 
 //			*pOwner - 
 //-----------------------------------------------------------------------------
-C_LocalTempEntity *CTempEnts::ClientProjectile( const Vector& vecOrigin, const Vector& vecVelocity, const Vector& vecAcceleration, int modelIndex, int lifetime, C_BaseEntity *pOwner, const char *pszImpactEffect, const char *pszParticleEffect )
+C_LocalTempEntity *CTempEnts::ClientProjectile( const Vector& vecOrigin, const Vector& vecVelocity, const Vector& vecAcceleration, modelindex_t modelIndex, int lifetime, C_BaseEntity *pOwner, const char *pszImpactEffect, const char *pszParticleEffect )
 {
 	C_LocalTempEntity	*pTemp;
 	const model_t		*model;
@@ -1201,7 +1199,7 @@ C_LocalTempEntity *CTempEnts::ClientProjectile( const Vector& vecOrigin, const V
 //			flags - 
 // Output : C_LocalTempEntity
 //-----------------------------------------------------------------------------
-C_LocalTempEntity *CTempEnts::TempSprite( const Vector &pos, const Vector &dir, float scale, int modelIndex, int rendermode, int renderfx, float a, float life, int flags, const Vector &normal )
+C_LocalTempEntity *CTempEnts::TempSprite( const Vector &pos, const Vector &dir, float scale, modelindex_t modelIndex, int rendermode, int renderfx, float a, float life, int flags, const Vector &normal )
 {
 	C_LocalTempEntity			*pTemp;
 	const model_t		*model;
@@ -1255,7 +1253,7 @@ C_LocalTempEntity *CTempEnts::TempSprite( const Vector &pos, const Vector &dir, 
 //			speed - 
 //			iRand - 
 //-----------------------------------------------------------------------------
-void CTempEnts::Sprite_Spray( const Vector &pos, const Vector &dir, int modelIndex, int count, int speed, int iRand )
+void CTempEnts::Sprite_Spray( const Vector &pos, const Vector &dir, modelindex_t modelIndex, int count, int speed, int iRand )
 {
 	C_LocalTempEntity			*pTemp;
 	const model_t		*pModel;
@@ -1316,7 +1314,7 @@ void CTempEnts::Sprite_Spray( const Vector &pos, const Vector &dir, int modelInd
 	}
 }
 
-void CTempEnts::Sprite_Trail( const Vector &vecStart, const Vector &vecEnd, int modelIndex, int nCount, float flLife, float flSize, float flAmplitude, int nRenderamt, float flSpeed )
+void CTempEnts::Sprite_Trail( const Vector &vecStart, const Vector &vecEnd, modelindex_t modelIndex, int nCount, float flLife, float flSize, float flAmplitude, int nRenderamt, float flSpeed )
 {
 	C_LocalTempEntity	*pTemp;
 	const model_t		*pModel;
@@ -1387,7 +1385,7 @@ void CTempEnts::Sprite_Trail( const Vector &vecStart, const Vector &vecEnd, int 
 //			zoffset - 
 //			life - 
 //-----------------------------------------------------------------------------
-void CTempEnts::AttachTentToPlayer( int client, int modelIndex, float zoffset, float life )
+void CTempEnts::AttachTentToPlayer( int client, modelindex_t modelIndex, float zoffset, float life )
 {
 	C_LocalTempEntity			*pTemp;
 	const model_t		*pModel;
@@ -1524,7 +1522,7 @@ void CTempEnts::RicochetSprite( const Vector &pos, model_t *pmodel, float durati
 //			modelIndex2 - 
 //			size - 
 //-----------------------------------------------------------------------------
-void CTempEnts::BloodSprite( const Vector &org, int r, int g, int b, int a, int modelIndex, int modelIndex2, float size )
+void CTempEnts::BloodSprite( const Vector &org, color32 clr, modelindex_t modelIndex, modelindex_t modelIndex2, float size )
 {
 	const model_t			*model;
 
@@ -1542,8 +1540,8 @@ void CTempEnts::BloodSprite( const Vector &org, int r, int g, int b, int a, int 
 			pTemp->m_flSpriteScale	= random_valve->RandomFloat( size / 25, size / 35);
 			pTemp->flags			= FTENT_SPRANIMATE;
  
-			pTemp->SetRenderColor( r, g, b );
-			pTemp->SetRenderAlpha( a );
+			pTemp->SetRenderColor( clr.r(), clr.g(), clr.b() );
+			pTemp->SetRenderAlpha( clr.a() );
 			pTemp->tempent_renderamt= pTemp->GetRenderAlpha();
 
 			pTemp->SetVelocity( vec3_origin );
@@ -1566,7 +1564,7 @@ void CTempEnts::BloodSprite( const Vector &org, int r, int g, int b, int a, int 
 //			framerate - 
 // Output : C_LocalTempEntity
 //-----------------------------------------------------------------------------
-C_LocalTempEntity *CTempEnts::DefaultSprite( const Vector &pos, int spriteIndex, float framerate )
+C_LocalTempEntity *CTempEnts::DefaultSprite( const Vector &pos, modelindex_t spriteIndex, float framerate )
 {
 	C_LocalTempEntity		*pTemp;
 	int				frameCount;

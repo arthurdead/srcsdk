@@ -273,12 +273,17 @@ BEGIN_PREDICTION_DATA( C_BaseAnimatingOverlay )
 
 END_PREDICTION_DATA()
 
-C_AnimationLayer* C_BaseAnimatingOverlay::GetAnimOverlay( int i )
+const C_AnimationLayer* C_BaseAnimatingOverlay::GetAnimOverlay( int i ) const
 {
 	Assert( i >= 0 && i < MAX_OVERLAYS );
 	return &m_AnimOverlay[i];
 }
 
+C_AnimationLayer* C_BaseAnimatingOverlay::GetAnimOverlayForModify( int i )
+{
+	Assert( i >= 0 && i < MAX_OVERLAYS );
+	return &m_AnimOverlay[i];
+}
 
 void C_BaseAnimatingOverlay::SetNumAnimOverlays( int num )
 {

@@ -49,7 +49,7 @@ C_TEBeamEnts::~C_TEBeamEnts( void )
 }
 
 void TE_BeamEnts( IRecipientFilter& filter, float delay,
-	int	start, int end, int modelindex, int haloindex, int startframe, int framerate,
+	int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 	float life, float width, float endWidth, int fadeLength, float amplitude, 
 	int r, int g, int b, int a, int speed )
 {

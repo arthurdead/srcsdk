@@ -84,7 +84,7 @@ void Image::SetSize(int wide, int tall)
 //-----------------------------------------------------------------------------
 void Image::DrawSetColor(Color col)
 {
-	surface()->DrawSetColor(col[0], col[1], col[2], col[3]);
+	surface()->DrawSetColor(col.r(), col.g(), col.b(), col.a());
 }
 
 //-----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ void Image::DrawSetTextFont(HFont font)
 //-----------------------------------------------------------------------------
 void Image::DrawSetTextColor(Color sc)
 {
-	surface()->DrawSetTextColor(sc[0], sc[1], sc[2], sc[3]);
+	surface()->DrawSetTextColor(sc.r(), sc.g(), sc.b(), sc.a());
 }
 
 //-----------------------------------------------------------------------------

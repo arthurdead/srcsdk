@@ -77,8 +77,8 @@ void CDustEffect::RenderParticles( CParticleRenderIterator *pIterator )
 			RenderParticle_Color255Size(
 				pIterator->GetParticleDraw(),
 				tPos,
-				Vector( m_pDust->m_Color.r, m_pDust->m_Color.g, m_pDust->m_Color.b ),
-				flAlpha * m_pDust->m_Color.a,
+				Vector( m_pDust->m_Color.r(), m_pDust->m_Color.g(), m_pDust->m_Color.b() ),
+				flAlpha * m_pDust->m_Color.a(),
 				flSize
 				);
 		}
@@ -291,11 +291,13 @@ void FX_Dust( const Vector &vecOrigin, const Vector &vecDirection, float flSize,
 		particle.m_vecVelocity = vecDirection * random_valve->RandomFloat( speed*0.5f, speed ) * i;
 		particle.m_vecVelocity[2] = 0.0f;
 
-		int	color = random_valve->RandomInt( 48, 64 );
+		unsigned char	color = random_valve->RandomInt( 48, 64 );
 
-		particle.m_uchColor[0] = (color+16) + ( worldLight[0] * (float) color );
-		particle.m_uchColor[1] = (color+8) + ( worldLight[1] * (float) color );
-		particle.m_uchColor[2] = color + ( worldLight[2] * (float) color );
+		unsigned char r = (color+16) + ( worldLight[0] * (float) color );
+		unsigned char g = (color+8) + ( worldLight[1] * (float) color );
+		unsigned char b = color + ( worldLight[2] * (float) color );
+
+		particle.m_uchColor.SetColor( r, g, b );
 
 		particle.m_uchStartAlpha= random_valve->RandomInt( 64, 128 );
 		particle.m_uchEndAlpha	= 0;

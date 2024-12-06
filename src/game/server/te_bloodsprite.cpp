@@ -16,8 +16,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern short		g_sModelIndexBloodDrop;		// (in combatweapon.cpp) holds the sprite index for the initial blood
-extern short		g_sModelIndexBloodSpray;	// (in combatweapon.cpp) holds the sprite index for splattered blood
+extern modelindex_t g_sModelIndexBloodDrop;		// (in combatweapon.cpp) holds the sprite index for the initial blood
+extern modelindex_t g_sModelIndexBloodSpray;	// (in combatweapon.cpp) holds the sprite index for splattered blood
 
 //-----------------------------------------------------------------------------
 // Purpose: Display's a blood sprite
@@ -37,8 +37,8 @@ public:
 public:
 	CNetworkVector( m_vecOrigin );
 	CNetworkVector( m_vecDirection );
-	CNetworkVar( int, m_nSprayModel );
-	CNetworkVar( int, m_nDropModel );
+	CNetworkModelIndex( m_nSprayModel );
+	CNetworkModelIndex( m_nDropModel );
 	CNetworkVar( int, r );
 	CNetworkVar( int, g );
 	CNetworkVar( int, b );
@@ -54,8 +54,8 @@ CTEBloodSprite::CTEBloodSprite( const char *name ) :
 	CBaseTempEntity( name )
 {
 	m_vecOrigin.Init();
-	m_nSprayModel = 0;
-	m_nDropModel = 0;
+	m_nSprayModel = INVALID_MODEL_INDEX;
+	m_nDropModel = INVALID_MODEL_INDEX;
 	r = 0;
 	g = 0;
 	b = 0;

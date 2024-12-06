@@ -203,11 +203,6 @@ template <> inline float GetComponent( const QAngle &value, int i )
 	return value[ i ];
 }
 
-template <> inline float GetComponent( const Color &value, int i )
-{
-	return value[ i ];
-}
-
 template <> inline float GetComponent( const Vector4D &value, int i )
 {
 	return value[ i ];

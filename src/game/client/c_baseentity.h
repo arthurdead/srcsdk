@@ -614,9 +614,9 @@ public:
 	void							SetModelName( string_t name );
 	string_t						GetModelName( void ) const;
 
-	int								GetModelIndex( void ) const;
-	void							SetModelIndex( int index );
-	virtual int						CalcOverrideModelIndex() { return -1; }
+	modelindex_t								GetModelIndex( void ) const;
+	void							SetModelIndex( modelindex_t index );
+	virtual modelindex_t						CalcOverrideModelIndex() { return INVALID_MODEL_INDEX; }
 
 	// These methods return a *world-aligned* box relative to the absorigin of the entity.
 	// This is used for collision purposes and is *not* guaranteed
@@ -1031,7 +1031,7 @@ public:
 	bool HasClassname();
 	char const						*GetDebugName( void );
 	virtual const char				*GetPlayerName() const { return NULL; }
-	static int						PrecacheModel( const char *name ); 
+	static modelindex_t						PrecacheModel( const char *name ); 
 	static bool						PrecacheSound( const char *name );
 	static void						PrefetchSound( const char *name );
 
@@ -1228,7 +1228,7 @@ public:
 	float				GetGravity( void ) const;
 
 	// Sets the model from a model index 
-	void				SetModelByIndex( int nModelIndex );
+	void				SetModelByIndex( modelindex_t nModelIndex );
 
 	// Set model... (NOTE: Should only be used by client-only entities
 	// Returns false if the model name is bogus or otherwise can't be loaded
@@ -1607,11 +1607,8 @@ public:
 
 private:
 	// Object model index
-	int							m_nModelIndex;
-
-	friend void RecvProxyArrayLength_ModelIndexesOverrides( void *pStruct, int objectID, int currentArrayLength );
-	int m_nModelIndexOverridesLength;
-	int	*m_nModelIndexOverrides;
+	modelindex_t							m_nModelIndex;
+	CUtlVector< VisionModelIndex_t > m_VisionModelIndexOverrides;
 
 public:
 	char							m_takedamage;
@@ -2296,7 +2293,7 @@ inline const model_t *C_BaseEntity::GetModel( void ) const
 	return m_pModel;
 }
 
-inline int C_BaseEntity::GetModelIndex( void ) const
+inline modelindex_t C_BaseEntity::GetModelIndex( void ) const
 {
 	return m_nModelIndex;
 }
@@ -2429,24 +2426,22 @@ inline const color24 C_BaseEntity::GetRenderColor() const
 
 inline byte C_BaseEntity::GetRenderColorR() const
 {
-	return m_clrRenderRGB->r;
+	return m_clrRenderRGB.GetR();
 }
 
 inline byte C_BaseEntity::GetRenderColorG() const
 {
-	return m_clrRenderRGB->g;
+	return m_clrRenderRGB.GetG();
 }
 
 inline byte C_BaseEntity::GetRenderColorB() const
 {
-	return m_clrRenderRGB->b;
+	return m_clrRenderRGB.GetB();
 }
 
 inline void C_BaseEntity::SetRenderColor( byte r, byte g, byte b )
 {
-	m_clrRenderRGB.SetR( r );
-	m_clrRenderRGB.SetG( g );
-	m_clrRenderRGB.SetB( b );
+	m_clrRenderRGB.SetColor( r, g, b );
 }
 
 inline void C_BaseEntity::SetRenderColorR( byte r )

@@ -112,7 +112,7 @@ private:
 	ragdoll_t *m_ragdoll;
 };
 
-void RagdollSetupAnimatedFriction( IPhysicsEnvironment *pPhysEnv, ragdoll_t *ragdoll, int iModelIndex )
+void RagdollSetupAnimatedFriction( IPhysicsEnvironment *pPhysEnv, ragdoll_t *ragdoll, modelindex_t iModelIndex )
 {
 	vcollide_t* pCollide = modelinfo->GetVCollide( iModelIndex );
 
@@ -260,7 +260,9 @@ static void RagdollCreateObjects( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragd
 		}
 		else if ( !strcmpi( pBlock, "collisionrules" ) )
 		{
-			IPhysicsCollisionSet *pSet = physics->FindOrCreateCollisionSet( params.modelIndex, ragdoll.listCount );
+			unsigned int collset = (unsigned int)params.modelIndex.GetRaw();
+
+			IPhysicsCollisionSet *pSet = physics->FindOrCreateCollisionSet( collset, ragdoll.listCount );
 			CRagdollCollisionRules rules(pSet);
 			pParse->ParseCustom( (void *)&rules, &rules );
 		}
@@ -305,7 +307,9 @@ static void RagdollCreateDestrObjects( IPhysicsEnvironment *pPhysEnv, ragdoll_t 
 		}
 		else if ( !strcmpi( pBlock, "collisionrules" ) )
 		{
-			IPhysicsCollisionSet *pSet = physics->FindOrCreateCollisionSet( params.modelIndex, ragdoll.listCount );
+			unsigned int collset = (unsigned int)params.modelIndex.GetRaw();
+
+			IPhysicsCollisionSet *pSet = physics->FindOrCreateCollisionSet( collset, ragdoll.listCount );
 			CRagdollCollisionRules rules( pSet );
 			pParse->ParseCustom( ( void * )&rules, &rules );
 		}
@@ -322,16 +326,18 @@ static void RagdollCreateDestrObjects( IPhysicsEnvironment *pPhysEnv, ragdoll_t 
 	physcollision->VPhysicsKeyParserDestroy( pParse );
 }
 
-void RagdollSetupCollisions( ragdoll_t &ragdoll, vcollide_t *pCollide, int modelIndex )
+void RagdollSetupCollisions( ragdoll_t &ragdoll, vcollide_t *pCollide, modelindex_t modelIndex )
 {
 	Assert(pCollide);
 	if (!pCollide)
 		return;
 
-	IPhysicsCollisionSet *pSet = physics->FindCollisionSet( modelIndex );
+	unsigned int collset = (unsigned int)modelIndex.GetRaw();
+
+	IPhysicsCollisionSet *pSet = physics->FindCollisionSet( collset );
 	if ( !pSet )
 	{
-		pSet = physics->FindOrCreateCollisionSet( modelIndex, ragdoll.listCount );
+		pSet = physics->FindOrCreateCollisionSet( collset, ragdoll.listCount );
 		if ( !pSet )
 			return;
 
@@ -343,7 +349,7 @@ void RagdollSetupCollisions( ragdoll_t &ragdoll, vcollide_t *pCollide, int model
 			const char *pBlock = pParse->GetCurrentBlockName();
 			if ( !strcmpi( pBlock, "collisionrules" ) )
 			{
-				IPhysicsCollisionSet *pSet = physics->FindOrCreateCollisionSet( modelIndex, ragdoll.listCount );
+				IPhysicsCollisionSet *pSet = physics->FindOrCreateCollisionSet( collset, ragdoll.listCount );
 				CRagdollCollisionRules rules(pSet);
 				pParse->ParseCustom( (void *)&rules, &rules );
 				bFoundRules = true;
@@ -381,7 +387,7 @@ void RagdollSetupCollisions( ragdoll_t &ragdoll, vcollide_t *pCollide, int model
 	}
 }
 
-void RagdollActivate( ragdoll_t &ragdoll, vcollide_t *pCollide, int modelIndex, bool bForceWake )
+void RagdollActivate( ragdoll_t &ragdoll, vcollide_t *pCollide, modelindex_t modelIndex, bool bForceWake )
 {
 	RagdollSetupCollisions( ragdoll, pCollide, modelIndex );
 	for ( int i = 0; i < ragdoll.listCount; i++ )
@@ -412,7 +418,7 @@ void RagdollActivate( ragdoll_t &ragdoll, vcollide_t *pCollide, int modelIndex, 
 	}
 }
 
-void RagdollActivateDestr( ragdoll_t &ragdoll, vcollide_t *pCollide, int modelIndex, bool bForceWake )
+void RagdollActivateDestr( ragdoll_t &ragdoll, vcollide_t *pCollide, modelindex_t modelIndex, bool bForceWake )
 {
 	RagdollSetupCollisions( ragdoll, pCollide, modelIndex );
 

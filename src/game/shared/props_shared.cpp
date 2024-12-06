@@ -656,7 +656,7 @@ private:
 	bool	m_wroteCollisionGroup;
 };
 
-void BuildPropList( const char *pszBlockName, CUtlVector<breakmodel_t> &list, int modelindex, float defBurstScale, int defCollisionGroup )
+void BuildPropList( const char *pszBlockName, CUtlVector<breakmodel_t> &list, modelindex_t modelindex, float defBurstScale, int defCollisionGroup )
 {
 	vcollide_t *pCollide = modelinfo->GetVCollide( modelindex );
 	if ( !pCollide )
@@ -682,7 +682,7 @@ void BuildPropList( const char *pszBlockName, CUtlVector<breakmodel_t> &list, in
 	physcollision->VPhysicsKeyParserDestroy( pParse );
 }
 
-void BreakModelList( CUtlVector<breakmodel_t> &list, int modelindex, float defBurstScale, int defCollisionGroup )
+void BreakModelList( CUtlVector<breakmodel_t> &list, modelindex_t modelindex, float defBurstScale, int defCollisionGroup )
 {
 	BuildPropList( "break", list, modelindex, defBurstScale, defCollisionGroup );
 }
@@ -939,7 +939,7 @@ CGameGibManager *GetGibManager( void )
 
 #endif
 
-void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CSharedBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLimit, bool defaultLocation )
+void PropBreakableCreateAll( modelindex_t modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CSharedBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLimit, bool defaultLocation )
 {
         // Check for prop breakable count reset. 
 	int nPropCount = props_break_max_pieces_perframe.GetInt(); 
@@ -1050,8 +1050,8 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 		for ( int i = 0; i < list.Count(); i++ )
 		{
 			const char* modelName = list[i].modelName;
-			int modelIndex = modelinfo->GetModelIndex( modelName );
-			if ( modelIndex <= 0 )
+			modelindex_t modelIndex = modelinfo->GetModelIndex( modelName );
+			if ( !modelIndex.IsValid() )
 			{
 				Warning( "Unable to create non-precached breakmodel %s\n", modelName );
 				continue;
@@ -1206,7 +1206,7 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 
 				Q_strncpy( breakModel.modelName, g_PropDataSystem.GetRandomChunkModel(STRING(pBreakableInterface->GetBreakableModel()), pBreakableInterface->GetMaxBreakableSize()), sizeof(breakModel.modelName) );
 
-				if ( modelinfo->GetModelIndex( breakModel.modelName ) == -1 )
+				if ( !modelinfo->GetModelIndex( breakModel.modelName ).IsValid() )
 				{
 					// This model doesn't exist!
 					DevWarning( "PropBreakableCreateAll: Could not create model %s\n", breakModel.modelName );
@@ -1291,7 +1291,7 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 }
 
 
-void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const Vector &origin, const QAngle &angles, const Vector &velocity, const AngularImpulse &angularVelocity, float impactEnergyScale, float defBurstScale, int defCollisionGroup, CSharedBaseEntity *pEntity, bool defaultLocation )
+void PropBreakableCreateAll( modelindex_t modelindex, IPhysicsObject *pPhysics, const Vector &origin, const QAngle &angles, const Vector &velocity, const AngularImpulse &angularVelocity, float impactEnergyScale, float defBurstScale, int defCollisionGroup, CSharedBaseEntity *pEntity, bool defaultLocation )
 {
 	breakablepropparams_t params( origin, angles, velocity, angularVelocity );
 	params.impactEnergyScale = impactEnergyScale;
@@ -1304,7 +1304,7 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const Vec
 // Purpose: 
 // Input  : modelindex - 
 //-----------------------------------------------------------------------------
-void PrecachePropsForModel( int iModel, const char *pszBlockName )
+void PrecachePropsForModel( modelindex_t iModel, const char *pszBlockName )
 {
 	vcollide_t *pCollide = modelinfo->GetVCollide( iModel );
 	if ( !pCollide )
@@ -1334,7 +1334,7 @@ void PrecachePropsForModel( int iModel, const char *pszBlockName )
 	physcollision->VPhysicsKeyParserDestroy( pParse );
 }
 
-void PrecacheGibsForModel( int iModel )
+void PrecacheGibsForModel( modelindex_t iModel )
 {
 	VPROF_BUDGET( "PrecacheGibsForModel", VPROF_BUDGETGROUP_PLAYER );
 	PrecachePropsForModel( iModel, "break" );
@@ -1347,7 +1347,7 @@ void PrecacheGibsForModel( int iModel )
 //			defBurstScale - 
 //			defCollisionGroup - 
 //-----------------------------------------------------------------------------
-void BuildGibList( CUtlVector<breakmodel_t> &list, int modelindex, float defBurstScale, int defCollisionGroup )
+void BuildGibList( CUtlVector<breakmodel_t> &list, modelindex_t modelindex, float defBurstScale, int defCollisionGroup )
 {
 	BreakModelList( list, modelindex, defBurstScale, defCollisionGroup );
 }
@@ -1363,7 +1363,7 @@ void BuildGibList( CUtlVector<breakmodel_t> &list, int modelindex, float defBurs
 //			bIgnoreGibLImit - 
 //			defaultLocation - 
 //-----------------------------------------------------------------------------
-CSharedBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CSharedBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLimit, bool defaultLocation, CUtlVector<EHANDLE> *pGibList, bool bBurning )
+CSharedBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, modelindex_t modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CSharedBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLimit, bool defaultLocation, CUtlVector<EHANDLE> *pGibList, bool bBurning )
 {
     // Check for prop breakable count reset. 
 	int nPropCount = props_break_max_pieces_perframe.GetInt(); 
@@ -1451,8 +1451,8 @@ CSharedBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int model
 	{
 		for ( int i = 0; i < list.Count(); i++ )
 		{
-			int modelIndex = modelinfo->GetModelIndex( list[i].modelName );
-			if ( modelIndex <= 0 )
+			modelindex_t modelIndex = modelinfo->GetModelIndex( list[i].modelName );
+			if ( !modelIndex.IsValid() )
 				continue;
 
 			// Skip multiplayer pieces that should be spawning on the other dll
@@ -1632,7 +1632,7 @@ CSharedBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int model
 
 				Q_strncpy( breakModel.modelName, g_PropDataSystem.GetRandomChunkModel(STRING(pBreakableInterface->GetBreakableModel()), pBreakableInterface->GetMaxBreakableSize()), sizeof(breakModel.modelName) );
 
-				if ( modelinfo->GetModelIndex( breakModel.modelName ) == -1 )
+				if ( !modelinfo->GetModelIndex( breakModel.modelName ).IsValid() )
 				{
 					// This model doesn't exist!
 					DevWarning( "PropBreakableCreateAll: Could not create model %s\n", breakModel.modelName );

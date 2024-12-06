@@ -167,7 +167,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CSharedBeam, DT_Beam )
 		SENDINFO_ARRAY3(m_nAttachIndex), 
 		SendPropInt( SENDINFO_ARRAY(m_nAttachIndex), ATTACHMENT_INDEX_BITS, SPROP_UNSIGNED)
 	),
-	SendPropInt		(SENDINFO(m_nHaloIndex),	16, SPROP_UNSIGNED ),
+	SendPropModelIndex		(SENDINFO(m_nHaloIndex) ),
 	SendPropFloat	(SENDINFO(m_fHaloScale),	0,	SPROP_NOSCALE ),
 	SendPropFloat	(SENDINFO(m_fWidth),		10,	SPROP_ROUNDUP,	0.0f, MAX_BEAM_WIDTH ),
 	SendPropFloat	(SENDINFO(m_fEndWidth),		10,	SPROP_ROUNDUP,	0.0f, MAX_BEAM_WIDTH ),
@@ -261,7 +261,7 @@ BEGIN_PREDICTION_DATA( C_Beam )
 	DEFINE_FIELD_FLAGS( m_nNumBeamEnts, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_ARRAY_FLAGS( m_hAttachEntity, FIELD_EHANDLE, MAX_BEAM_ENTS, FTYPEDESC_INSENDTABLE ),
 	DEFINE_ARRAY_FLAGS( m_nAttachIndex, FIELD_INTEGER, MAX_BEAM_ENTS, FTYPEDESC_INSENDTABLE ),
-	DEFINE_FIELD_FLAGS( m_nHaloIndex, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_FIELD_FLAGS( m_nHaloIndex, FIELD_MODELINDEX, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
 	DEFINE_FIELD_FLAGS( m_fHaloScale, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD_FLAGS( m_fWidth, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD_FLAGS( m_fEndWidth, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
@@ -282,7 +282,7 @@ BEGIN_PREDICTION_DATA( C_Beam )
 	DEFINE_FIELD_FLAGS( m_bDrawInMainRender, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD_FLAGS( m_bDrawInPortalRender, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 #endif
-	DEFINE_FIELD_FLAGS( m_nModelIndex, FIELD_INTEGER, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
+	DEFINE_FIELD_FLAGS( m_nModelIndex, FIELD_MODELINDEX, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
 	DEFINE_FIELD_FLAGS_TOL( m_vecOrigin, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.125f ),
 	
 	//DEFINE_FIELD_FLAGS( m_pMoveParent, SendProxy_MoveParent ),
@@ -335,12 +335,13 @@ CSharedBeam::CBeam( void )
 //-----------------------------------------------------------------------------
 void CSharedBeam::SetModel( const char *szModelName )
 {
-	int modelIndex = modelinfo->GetModelIndex( szModelName );
+	modelindex_t modelIndex = modelinfo->GetModelIndex( szModelName );
 	const model_t *model = modelinfo->GetModel( modelIndex );
 	if ( model && modelinfo->GetModelType( model ) != mod_sprite )
 	{
 		Msg( "Setting CBeam to non-sprite model %s\n", szModelName );
 	}
+
 #if !defined( CLIENT_DLL )
 	UTIL_SetModel( this, szModelName );
 #else
@@ -577,7 +578,7 @@ void CSharedBeam::BeamInit( const char *pSpriteName, float width )
 		m_hAttachEntity.Set( i, NULL );
 		m_nAttachIndex.Set( i, 0 );
 	}
-	m_nHaloIndex	= 0;
+	m_nHaloIndex	= INVALID_MODEL_INDEX;
 	m_fHaloScale	= BEAM_DEFAULT_HALO_SCALE;
 	m_nBeamType		= 0;
 	m_nBeamFlags    = 0;

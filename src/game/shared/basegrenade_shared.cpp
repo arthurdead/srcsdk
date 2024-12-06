@@ -21,9 +21,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern short	g_sModelIndexFireball;		// (in combatweapon.cpp) holds the index for the fireball 
-extern short	g_sModelIndexWExplosion;	// (in combatweapon.cpp) holds the index for the underwater explosion
-extern short	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
+extern modelindex_t	g_sModelIndexFireball;		// (in combatweapon.cpp) holds the index for the fireball 
+extern modelindex_t	g_sModelIndexWExplosion;	// (in combatweapon.cpp) holds the index for the underwater explosion
+extern modelindex_t	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
 
 #if !defined( CLIENT_DLL )
 

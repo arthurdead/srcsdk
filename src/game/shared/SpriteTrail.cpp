@@ -441,9 +441,9 @@ int CSharedSpriteTrail::DrawModel( int flags, const RenderableInstance_t &instan
 
 		color24 c = GetRenderColor();
 		BeamSeg_t curSeg;
-		curSeg.m_vColor.x = (float) c.r / 255.0f;
-		curSeg.m_vColor.y = (float) c.g / 255.0f;
-		curSeg.m_vColor.z = (float) c.b / 255.0f;
+		curSeg.m_vColor.x = (float) c.r() / 255.0f;
+		curSeg.m_vColor.y = (float) c.g() / 255.0f;
+		curSeg.m_vColor.z = (float) c.b() / 255.0f;
 
 		float flAlphaFade = flLifePerc;
 		if ( flTailAlphaDist > 0.0f )

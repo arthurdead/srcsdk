@@ -49,7 +49,7 @@ C_TEBeamPoints::~C_TEBeamPoints( void )
 }
 
 void TE_BeamPoints( IRecipientFilter& filter, float delay,
-	const Vector* start, const Vector* end, int modelindex, int haloindex, int startframe, int framerate,
+	const Vector* start, const Vector* end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 	float life, float width, float endWidth, int fadeLength, float amplitude, 
 	int r, int g, int b, int a, int speed )
 {

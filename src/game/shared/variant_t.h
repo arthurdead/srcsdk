@@ -33,23 +33,32 @@ class variant_t
 	{
 		bool bVal;
 		string_t iszVal;
+		modelindex_t mdlVal;
 		int iVal;
+		unsigned int uVal;
 		int64 iVal64;
+		uint64 uVal64;
 		short hVal;
+		unsigned short uhVal;
 		char cVal;
+		signed char scVal;
+		unsigned char ucVal;
 		float flVal;
-		float vecVal[3];
+		Vector vecVal;
+		QAngle angVal;
+		color24 rgbVal;
 		color32 rgbaVal;
-		EHANDLE eVal;
-		CSharedBaseEntity *pVal;
+		EHANDLE ehVal;
+		CSharedBaseEntity *epVal;
 	};
 
 	fieldtype_t fieldType;
+	fieldflags_t fieldFlags;
 
 public:
 
 	// constructor
-	variant_t() : fieldType(FIELD_VOID), iVal(0) {}
+	variant_t() : fieldType(FIELD_VOID), iVal64(0) {}
 
 	variant_t(const variant_t &rhs)
 	{ operator=(rhs); }
@@ -75,13 +84,13 @@ public:
 	void SetInt64( int64 val ) { iVal64 = val, fieldType = FIELD_INTEGER64; }
 	void SetFloat( float val ) { flVal = val, fieldType = FIELD_FLOAT; }
 	void SetEntity( CSharedBaseEntity *val );
-	void SetVector3D( const Vector &val ) { vecVal[0] = val[0]; vecVal[1] = val[1]; vecVal[2] = val[2]; fieldType = FIELD_VECTOR; }
-	void SetPositionVector3D( const Vector &val ) { vecVal[0] = val[0]; vecVal[1] = val[1]; vecVal[2] = val[2]; fieldType = FIELD_POSITION_VECTOR; }
+	void SetVector3D( const Vector &val ) { vecVal = val; fieldType = FIELD_VECTOR; }
+	void SetPositionVector3D( const Vector &val ) { vecVal = val; fieldType = FIELD_POSITION_VECTOR; }
 	// Passes in angles as a vector
-	void SetAngle3D( const QAngle &val ) { vecVal[0] = val[0]; vecVal[1] = val[1]; vecVal[2] = val[2]; fieldType = FIELD_VECTOR; }
+	void SetAngle3D( const QAngle &val ) { angVal = val; fieldType = FIELD_VECTOR; }
 
 	void SetColor32( color32 val ) { rgbaVal = val; fieldType = FIELD_COLOR32; }
-	void SetColor32( int r, int g, int b, int a ) { rgbaVal.r = r; rgbaVal.g = g; rgbaVal.b = b; rgbaVal.a = a; fieldType = FIELD_COLOR32; }
+	void SetColor32( unsigned char r, unsigned char g, unsigned char b, unsigned char a ) { rgbaVal.SetColor( r, g, b, a ); fieldType = FIELD_COLOR32; }
 	void Set( fieldtype_t ftype, void *data );
 	void SetOther( void *data );
 	bool Convert( fieldtype_t newType );
@@ -91,27 +100,12 @@ public:
 	// ex: "Otis (String)", "3 (Integer)", or "npc_combine_s (Entity)"
 	const char *GetDebug();
 
-	static typedescription_t m_SaveBool[];
-	static typedescription_t m_SaveInt[];
-	static typedescription_t m_SaveInt64[];
-	static typedescription_t m_SaveFloat[];
-	static typedescription_t m_SaveEHandle[];
-	static typedescription_t m_SaveString[];
-	static typedescription_t m_SaveColor[];
-	static typedescription_t m_SaveVector[];
-	static typedescription_t m_SavePositionVector[];
-	static typedescription_t m_SaveVMatrix[];
-	static typedescription_t m_SaveVMatrixWorldspace[];
-	static typedescription_t m_SaveMatrix3x4Worldspace[];
-
 protected:
 
 	//
 	// Returns a string representation of the value without modifying the variant.
 	//
 	const char *ToString( void ) const;
-
-	friend class CVariantSaveDataOps;
 };
 
 //
@@ -149,9 +143,9 @@ inline void variant_t::Angle3D(QAngle &ang) const
 {
 	if (( fieldType == FIELD_VECTOR ) || ( fieldType == FIELD_POSITION_VECTOR ))
 	{
-		ang[0] =  vecVal[0];
-		ang[1] =  vecVal[1];
-		ang[2] =  vecVal[2];
+		ang[0] =  angVal[0];
+		ang[1] =  angVal[1];
+		ang[2] =  angVal[2];
 	}
 	else
 	{
@@ -165,7 +159,7 @@ inline void variant_t::Angle3D(QAngle &ang) const
 inline const EHANDLE &variant_t::Entity(void) const
 {
 	if ( fieldType == FIELD_EHANDLE )
-		return eVal;
+		return ehVal;
 
 	return NULL_EHANDLE;
 }
@@ -181,15 +175,15 @@ variant_t Variant_Parse(const char *szValue);
 variant_t Variant_ParseInput(const inputdata_t &inputdata);
 
 // A simpler version of Variant_ParseInput that does not allow FIELD_EHANDLE.
-variant_t Variant_ParseString(variant_t value);
+variant_t Variant_ParseString(const variant_t &value);
 
 // val1 == val2
-bool Variant_Equal(variant_t val1, variant_t val2, bool bLenAllowed = true);
+bool Variant_Equal(const variant_t &val1, const variant_t &val2, bool bLenAllowed = true);
 
 // val1 > val2
-bool Variant_Greater(variant_t val1, variant_t val2, bool bLenAllowed = true);
+bool Variant_Greater(const variant_t &val1, const variant_t &val2, bool bLenAllowed = true);
 
 // val1 >= val2
-bool Variant_GreaterOrEqual(variant_t val1, variant_t val2, bool bLenAllowed = true);
+bool Variant_GreaterOrEqual(const variant_t &val1, const variant_t &val2, bool bLenAllowed = true);
 
 #endif // VARIANT_T_H

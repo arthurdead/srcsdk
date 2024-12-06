@@ -729,7 +729,7 @@ public:
 	/// return original countdown time
 	float GetCountdownDuration( void ) const
 	{
-		return (m_timestamp > 0.0f) ? m_duration : 0.0f;
+		return (m_timestamp > 0.0f) ? m_duration.Get() : 0.0f;
 	}
 
 	/// 1.0 for newly started, 0.0 for elapsed
@@ -940,9 +940,9 @@ const char		   *UTIL_GetHolidaysString( EHolidayFlags eHolidays );
 const char		   *UTIL_GetActiveHolidaysString();
 
 #ifdef CLIENT_DLL
-int UTIL_HolidaysToVisionFilters( EHolidayFlags eHolidays );
+unsigned int UTIL_HolidaysToVisionFilters( EHolidayFlags eHolidays );
 
-int UTIL_GetActiveHolidaysVisionFilter();
+unsigned int UTIL_GetActiveHolidaysVisionFilter();
 #endif
 
 extern bool FindInList( const char **pStrings, const char *pToFind, int size );

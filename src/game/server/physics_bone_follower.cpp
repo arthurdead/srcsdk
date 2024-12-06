@@ -212,7 +212,7 @@ END_SEND_TABLE()
 bool CBoneFollower::Init( CBaseEntity *pOwner, const char *pModelName, solid_t &solid, const Vector &position, const QAngle &orientation )
 {
 	SetOwnerEntity( pOwner );
-	UTIL_SetModel( this, pModelName );
+	SetModel( pModelName );
 
 	AddEffects( EF_NODRAW ); // invisible
 

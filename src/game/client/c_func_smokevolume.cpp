@@ -214,13 +214,13 @@ extern ConVarBase *mat_reduceparticles;
 
 void C_FuncSmokeVolume::OnDataChanged( DataUpdateType_t updateType )
 {		
-	m_MinColor[0] = ( 1.0f / 255.0f ) * m_Color1.r;
-	m_MinColor[1] = ( 1.0f / 255.0f ) * m_Color1.g;
-	m_MinColor[2] = ( 1.0f / 255.0f ) * m_Color1.b;
+	m_MinColor[0] = ( 1.0f / 255.0f ) * m_Color1.r();
+	m_MinColor[1] = ( 1.0f / 255.0f ) * m_Color1.g();
+	m_MinColor[2] = ( 1.0f / 255.0f ) * m_Color1.b();
 
-	m_MaxColor[0] = ( 1.0f / 255.0f ) * m_Color2.r;
-	m_MaxColor[1] = ( 1.0f / 255.0f ) * m_Color2.g;
-	m_MaxColor[2] = ( 1.0f / 255.0f ) * m_Color2.b;
+	m_MaxColor[0] = ( 1.0f / 255.0f ) * m_Color2.r();
+	m_MaxColor[1] = ( 1.0f / 255.0f ) * m_Color2.g();
+	m_MaxColor[2] = ( 1.0f / 255.0f ) * m_Color2.b();
 
 	if ( mat_reduceparticles->GetBool() )
 	{

@@ -277,7 +277,7 @@ void CDecal::StaticDecal( void )
 	Vector position;
 	CBaseEntity *pEntity = GetDecalEntityAndPosition(&position, true);
 	int entityIndex = 0;
-	int modelIndex = 0;
+	modelindex_t modelIndex = INVALID_MODEL_INDEX;
 
 	if ( pEntity )
 	{

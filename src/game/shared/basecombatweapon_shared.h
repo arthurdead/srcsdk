@@ -16,6 +16,7 @@
 #include "weapon_proficiency.h"
 #include "utlmap.h"
 #include "sharedInterface.h"
+#include "Color.h"
 
 #if defined( CLIENT_DLL )
 class C_BaseCombatWeapon;
@@ -135,12 +136,6 @@ struct poseparamtable_t
 	poseparamtable_t* className::PoseParamList( int &iPoseParamCount ) { iPoseParamCount = ARRAYSIZE(m_poseparamtable); return m_poseparamtable; }
 
 class CHudTexture;
-class Color;
-
-namespace vgui2
-{
-	typedef unsigned long HFont;
-}
 
 // ------------------
 // Weapon classes
@@ -342,7 +337,7 @@ public:
 
 #ifdef CLIENT_DLL
 	virtual void			CreateMove( float flInputSampleTime, CUserCmd *pCmd, const QAngle &vecOldViewAngles ) {}
-	virtual int				CalcOverrideModelIndex() OVERRIDE;
+	virtual modelindex_t				CalcOverrideModelIndex() OVERRIDE;
 #endif
 
 	virtual bool			IsWeaponZoomed() { return false; }		// Is this weapon in its 'zoomed in' mode?
@@ -641,7 +636,7 @@ public:
 	virtual void			NotifyShouldTransmit( ShouldTransmitState_t state );
 	WEAPON_FILE_INFO_HANDLE	GetWeaponFileInfoHandle() { return m_hWeaponFileInfo; }
 
-	virtual int				GetWorldModelIndex( void );
+	virtual modelindex_t				GetWorldModelIndex( void );
 
 	virtual void			GetToolRecordingState( KeyValues *msg );
 	void					EnsureCorrectRenderingModel();
@@ -708,9 +703,9 @@ public:
 	bool					m_bFireOnEmpty;			// True when the gun is empty and the player is still holding down the attack key(s)
 	bool					m_bFiringWholeClip;		// Are we in the middle of firing the whole clip;
 	// Weapon art
-	CNetworkVar( int, m_iViewModelIndex );
-	CNetworkVar( int, m_iWorldModelIndex );
-	CNetworkVar( int, m_iDroppedModelIndex );
+	CNetworkModelIndex( m_iViewModelIndex );
+	CNetworkModelIndex( m_iWorldModelIndex );
+	CNetworkModelIndex( m_iDroppedModelIndex );
 
 	// Sounds
 	float					m_flNextEmptySoundTime;				// delay on empty sound playing

@@ -3930,27 +3930,27 @@ static Color GetRouteColor(Navigation_t navType, int waypointFlags)
 //-----------------------------------------------------------------------------
 // Returns a color for debugging purposes
 //-----------------------------------------------------------------------------
-static Color GetWaypointColor(Navigation_t navType)
+static color24 GetWaypointColor(Navigation_t navType)
 {
 	switch( navType )
 	{
 	case NAV_JUMP:
-		return Color(255,90,90);
+		return color24(255,90,90);
 
 	case NAV_GROUND:
-		return Color(0,255,255);
+		return color24(0,255,255);
 
 	case NAV_CLIMB:
-		return Color(90,255,255);
+		return color24(90,255,255);
 
 	case NAV_FLY:
-		return Color(90,90,255);
+		return color24(90,90,255);
 
 	case NAV_CRAWL:
-		return Color(255,255,0);
+		return color24(255,255,0);
 
 	default:
-		return Color(255,0,0);
+		return color24(255,0,0);
 	}
 }
 
@@ -3964,14 +3964,14 @@ void CAI_Navigator::DrawDebugRouteOverlay(void)
 
 	if (waypoint)
 	{
-		Color RGB = GetRouteColor(waypoint->NavType(), waypoint->Flags());
-		NDebugOverlay::Line(GetLocalOrigin(), waypoint->GetPos(), RGB[0],RGB[1],RGB[2], true,0);
+		color24 RGB = GetRouteColor(waypoint->NavType(), waypoint->Flags());
+		NDebugOverlay::Line(GetLocalOrigin(), waypoint->GetPos(), RGB.r(),RGB.g(),RGB.b(), true,0);
 	}
 
 	while (waypoint) 
 	{
-		Color RGB = GetWaypointColor(waypoint->NavType());
-		NDebugOverlay::Box(waypoint->GetPos(), Vector(-3,-3,-3),Vector(3,3,3), RGB[0],RGB[1],RGB[2], 255,0);
+		color24 RGB = GetWaypointColor(waypoint->NavType());
+		NDebugOverlay::Box(waypoint->GetPos(), Vector(-3,-3,-3),Vector(3,3,3), RGB.r(),RGB.g(),RGB.b(), 255,0);
 
 		switch( waypoint->NavType() )
 		{
@@ -4031,8 +4031,8 @@ void CAI_Navigator::DrawDebugRouteOverlay(void)
 
 		if (waypoint->GetNext()) 
 		{
-			Color RGB = GetRouteColor(waypoint->GetNext()->NavType(), waypoint->GetNext()->Flags());
-			NDebugOverlay::Line(waypoint->GetPos(), waypoint->GetNext()->GetPos(),RGB[0],RGB[1],RGB[2], true,0);
+			color24 RGB = GetRouteColor(waypoint->GetNext()->NavType(), waypoint->GetNext()->Flags());
+			NDebugOverlay::Line(waypoint->GetPos(), waypoint->GetNext()->GetPos(),RGB.r(),RGB.g(),RGB.b(), true,0);
 		}
 		waypoint = waypoint->GetNext();
 	}

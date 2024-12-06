@@ -228,10 +228,10 @@ void CTrailParticles::RenderParticles( CParticleRenderIterator *pIterator )
 			ramp = ( 1.0f - ( pParticle->m_flLifetime / pParticle->m_flDieTime  ) );
 		}
 
-		color[0] = pParticle->m_color.r * ramp * (1.0f / 255.0f);
-		color[1] = pParticle->m_color.g * ramp * (1.0f / 255.0f);
-		color[2] = pParticle->m_color.b * ramp * (1.0f / 255.0f);
-		color[3] = pParticle->m_color.a * ramp * (1.0f / 255.0f);
+		color[0] = pParticle->m_color.r() * ramp * (1.0f / 255.0f);
+		color[1] = pParticle->m_color.g() * ramp * (1.0f / 255.0f);
+		color[2] = pParticle->m_color.b() * ramp * (1.0f / 255.0f);
+		color[3] = pParticle->m_color.a() * ramp * (1.0f / 255.0f);
 
 		float	flLength = (pParticle->m_vecVelocity * scale).Length();//( delta - pos ).Length();
 		float	flWidth	 = ( flLength < pParticle->m_flWidth ) ? flLength : pParticle->m_flWidth;
@@ -426,9 +426,7 @@ void FX_ElectricSpark( const Vector &pos, int nMagnitude, int nTrailLength, cons
 	
 	sParticle->m_vecVelocity.Init();
 
-	sParticle->m_uchColor[0]	= 255;
-	sParticle->m_uchColor[1]	= 255;
-	sParticle->m_uchColor[2]	= 255;
+	sParticle->m_uchColor.SetColor( 255, 255, 255 );
 	sParticle->m_uchStartAlpha	= 255;
 	sParticle->m_uchEndAlpha	= 255;
 	sParticle->m_uchStartSize	= nMagnitude * random_valve->RandomInt( 4, 8 );
@@ -446,10 +444,8 @@ void FX_ElectricSpark( const Vector &pos, int nMagnitude, int nTrailLength, cons
 	
 	sParticle->m_vecVelocity.Init();
 
-	float	fColor = random_valve->RandomInt( 32, 64 );
-	sParticle->m_uchColor[0]	= fColor;
-	sParticle->m_uchColor[1]	= fColor;
-	sParticle->m_uchColor[2]	= fColor;
+	unsigned char	fColor = random_valve->RandomInt( 32, 64 );
+	sParticle->m_uchColor.SetColor( fColor, fColor, fColor );
 	sParticle->m_uchStartAlpha	= fColor;
 	sParticle->m_uchEndAlpha	= 0;
 	sParticle->m_uchStartSize	= nMagnitude * random_valve->RandomInt( 32, 64 );
@@ -481,9 +477,7 @@ void FX_ElectricSpark( const Vector &pos, int nMagnitude, int nTrailLength, cons
 	sParticle->m_vecVelocity[0] = random_valve->RandomFloat( -16.0f, 16.0f );
 	sParticle->m_vecVelocity[1] = random_valve->RandomFloat( -16.0f, 16.0f );
 
-	sParticle->m_uchColor[0]	= 255;
-	sParticle->m_uchColor[1]	= 255;
-	sParticle->m_uchColor[2]	= 200;
+	sParticle->m_uchColor.SetColor( 255, 255, 200 );
 	sParticle->m_uchStartAlpha	= random_valve->RandomInt( 16, 32 );
 	sParticle->m_uchEndAlpha	= 0;
 	sParticle->m_uchStartSize	= random_valve->RandomInt( 4, 8 );
@@ -500,7 +494,7 @@ void FX_ElectricSpark( const Vector &pos, int nMagnitude, int nTrailLength, cons
 		dlight_t* dl = effects->CL_AllocDlight(0);
 
 		dl->origin = pos;
-		dl->color.r = dl->color.g = dl->color.b = 250;
+		dl->color.SetColor( 250, 250, 250 );
 		float flHalfMag = nMagnitude * .5f;
 		dl->radius = randomgaussian->RandomFloat(100.f * flHalfMag, 5.f * flHalfMag);
 		dl->die = gpGlobals->curtime + 0.05;
@@ -897,12 +891,10 @@ void FX_EnergySplash( const Vector &pos, const Vector &normal, int nFlags )
 
 		sParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
 
-		float alpha = 255;
+		unsigned char alpha = 255;
 
 		sParticle->m_flRollDelta	= random_valve->RandomFloat( -4.0f, 4.0f );
-		sParticle->m_uchColor[0]	= alpha;
-		sParticle->m_uchColor[1]	= alpha;
-		sParticle->m_uchColor[2]	= alpha;
+		sParticle->m_uchColor.SetColor( alpha, alpha, alpha );
 		sParticle->m_uchStartAlpha	= alpha;
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchEndSize		= 0;
@@ -995,9 +987,7 @@ void FX_MicroExplosion( Vector &position, Vector &normal )
 		
 		sParticle->m_vecVelocity.Init();
 
-		sParticle->m_uchColor[0]	= 255;
-		sParticle->m_uchColor[1]	= 255;
-		sParticle->m_uchColor[2]	= 255;
+		sParticle->m_uchColor.SetColor( 255, 255, 255 );
 		sParticle->m_uchStartAlpha	= random_valve->RandomInt( 128, 255 );
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchStartSize	= random_valve->RandomInt( 12, 16 );
@@ -1149,9 +1139,10 @@ void FX_Explosion( const Vector& origin, const Vector& normal, char materialType
 		pSphereParticle->m_vecVelocity		= Vector(0,0,0);
 
 		float colorRamp = random_valve->RandomFloat( 0.75f, 1.5f );
-		pSphereParticle->m_uchColor[0] = MIN( 1.0f, r*colorRamp )*255.0f;
-		pSphereParticle->m_uchColor[1] = MIN( 1.0f, g*colorRamp )*255.0f;
-		pSphereParticle->m_uchColor[2] = MIN( 1.0f, b*colorRamp )*255.0f;
+		unsigned char r2 = MIN( 1.0f, r*colorRamp )*255.0f;
+		unsigned char g2 = MIN( 1.0f, g*colorRamp )*255.0f;
+		unsigned char b2 = MIN( 1.0f, b*colorRamp )*255.0f;
+		pSphereParticle->m_uchColor.SetColor( r2, g2, b2 );
 	}
 
 	// Throw some smoke balls out around the normal
@@ -1178,9 +1169,10 @@ void FX_Explosion( const Vector& origin, const Vector& normal, char materialType
 			pParticle->m_vecVelocity = (vecRight*x + vecUp*y) * 1024.0;
 
 			float colorRamp = random_valve->RandomFloat( 0.75f, 1.5f );
-			pParticle->m_uchColor[0] = MIN( 1.0f, r*colorRamp )*255.0f;
-			pParticle->m_uchColor[1] = MIN( 1.0f, g*colorRamp )*255.0f;
-			pParticle->m_uchColor[2] = MIN( 1.0f, b*colorRamp )*255.0f;
+			unsigned char r2 = MIN( 1.0f, r*colorRamp )*255.0f;
+			unsigned char g2 = MIN( 1.0f, g*colorRamp )*255.0f;
+			unsigned char b2 = MIN( 1.0f, b*colorRamp )*255.0f;
+			pParticle->m_uchColor.SetColor( r2, g2, b2 );
 		}
 	}
 
@@ -1207,9 +1199,10 @@ void FX_Explosion( const Vector& origin, const Vector& normal, char materialType
 		pParticle->m_flRollDelta	= random_valve->RandomFloat( -1, 1 );
 
 		float colorRamp = random_valve->RandomFloat( 0.5f, 1.25f );
-		pParticle->m_uchColor[0] = MIN( 1.0f, r*colorRamp )*255.0f;
-		pParticle->m_uchColor[1] = MIN( 1.0f, g*colorRamp )*255.0f;
-		pParticle->m_uchColor[2] = MIN( 1.0f, b*colorRamp )*255.0f;
+		unsigned char r2 = MIN( 1.0f, r*colorRamp )*255.0f;
+		unsigned char g2 = MIN( 1.0f, g*colorRamp )*255.0f;
+		unsigned char b2 = MIN( 1.0f, b*colorRamp )*255.0f;
+		pParticle->m_uchColor.SetColor( r2, g2, b2 );
 	}
 }
 
@@ -1255,10 +1248,8 @@ void FX_ConcussiveExplosion( const Vector &origin, const Vector &normal )
 		pParticle->m_flRoll			= random_valve->RandomFloat( 180, 360 );
 		pParticle->m_flRollDelta	= random_valve->RandomFloat( -4, 4 );
 
-		int colorRamp = random_valve->RandomFloat( 235, 255 );
-		pParticle->m_uchColor[0] = colorRamp;
-		pParticle->m_uchColor[1] = colorRamp;
-		pParticle->m_uchColor[2] = colorRamp;
+		unsigned char colorRamp = random_valve->RandomFloat( 235, 255 );
+		pParticle->m_uchColor.SetColor( colorRamp, colorRamp, colorRamp );
 	}
 
 	//Slow lingering sprites
@@ -1284,10 +1275,8 @@ void FX_ConcussiveExplosion( const Vector &origin, const Vector &normal )
 		pParticle->m_flRoll			= random_valve->RandomFloat( 180, 360 );
 		pParticle->m_flRollDelta	= random_valve->RandomFloat( -1, 1 );
 
-		int colorRamp = random_valve->RandomFloat( 235, 255 );
-		pParticle->m_uchColor[0] = colorRamp;
-		pParticle->m_uchColor[1] = colorRamp;
-		pParticle->m_uchColor[2] = colorRamp;
+		unsigned char colorRamp = random_valve->RandomFloat( 235, 255 );
+		pParticle->m_uchColor.SetColor( colorRamp, colorRamp, colorRamp );
 	}
 	
 
@@ -1309,7 +1298,7 @@ void FX_ConcussiveExplosion( const Vector &origin, const Vector &normal )
 		pParticle->m_flRoll			= random_valve->RandomFloat( 180, 360 );
 		pParticle->m_flRollDelta	= random_valve->RandomFloat( -1, 1 );
 
-		pParticle->m_uchColor[0] = pParticle->m_uchColor[1] = pParticle->m_uchColor[2] = 128;
+		pParticle->m_uchColor.SetColor( 128, 128, 128 );
 		
 		pParticle->m_uchStartAlpha	= 255;
 		pParticle->m_uchEndAlpha	= 0;
@@ -1327,7 +1316,7 @@ void FX_ConcussiveExplosion( const Vector &origin, const Vector &normal )
 		pParticle->m_vecVelocity.Init();
 		pParticle->m_flRoll		= random_valve->RandomFloat( 180, 360 );
 		pParticle->m_flRollDelta	= random_valve->RandomFloat( -1, 1 );
-		pParticle->m_uchColor[0] = pParticle->m_uchColor[1] = pParticle->m_uchColor[2] = 32;
+		pParticle->m_uchColor.SetColor( 32, 32, 32 );
 		
 		pParticle->m_uchStartAlpha	= 64;
 		pParticle->m_uchEndAlpha	= 0;
@@ -1344,7 +1333,7 @@ void FX_ConcussiveExplosion( const Vector &origin, const Vector &normal )
 	dlight_t *dl= effects->CL_AllocDlight ( 0 );
 
 	dl->origin	= offset;
-	dl->color.r = dl->color.g = dl->color.b = 64;
+	dl->color.SetColor( 64, 64, 64 );
 	dl->radius	= random_valve->RandomFloat(128,256);
 	dl->die		= gpGlobals->curtime + 0.1;
 

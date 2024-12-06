@@ -24,6 +24,7 @@ class ICollideable;
 class IServerNetworkable;
 class Vector;
 class QAngle;
+struct modelindex_t;
 
 // This class is how the engine talks to entities in the game DLL.
 // CBaseEntity implements this interface.
@@ -33,10 +34,10 @@ public:
 	virtual					~IServerEntity() {}
 
 // Previously in pev
-	virtual int				GetModelIndex( void ) const = 0;
+	virtual modelindex_t				GetModelIndex( void ) const = 0;
  	virtual string_t		GetModelName( void ) const = 0;
 
-	virtual void			SetModelIndex( int index ) = 0;
+	virtual void			SetModelIndex( modelindex_t index ) = 0;
 };
 
 class IServerEntityMod

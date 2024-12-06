@@ -111,7 +111,7 @@ public:
 
 	virtual HTOOLHANDLE		GetToolHandleForEntityByIndex( int entindex ) = 0;
 
-	virtual int				GetModelIndex( HTOOLHANDLE handle ) = 0;
+	virtual modelindex_t				GetModelIndex( HTOOLHANDLE handle ) = 0;
 	virtual const char*		GetModelName ( HTOOLHANDLE handle ) = 0;
 	virtual const char*		GetClassname ( HTOOLHANDLE handle ) = 0;
 

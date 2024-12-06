@@ -89,7 +89,7 @@ bool SmokeTrail::KeyValue( const char *szKeyName, const char *szValue )
 	{
 		color32 tmp;
 		UTIL_StringToColor32( &tmp, szValue );
-		m_StartColor.GetForModify().Init( tmp.r / 255.0f, tmp.g / 255.0f, tmp.b / 255.0f );
+		m_StartColor.GetForModify().Init( tmp.r() / 255.0f, tmp.g() / 255.0f, tmp.b() / 255.0f );
 		return true;
 	}
 
@@ -97,7 +97,7 @@ bool SmokeTrail::KeyValue( const char *szKeyName, const char *szValue )
 	{
 		color32 tmp;
 		UTIL_StringToColor32( &tmp, szValue );
-		m_EndColor.GetForModify().Init( tmp.r / 255.0f, tmp.g / 255.0f, tmp.b / 255.0f );
+		m_EndColor.GetForModify().Init( tmp.r() / 255.0f, tmp.g() / 255.0f, tmp.b() / 255.0f );
 		return true;
 	}
 
@@ -545,7 +545,7 @@ bool DustTrail::KeyValue( const char *szKeyName, const char *szValue )
 	{
 		color32 tmp;
 		UTIL_StringToColor32( &tmp, szValue );
-		m_Color.GetForModify().Init( tmp.r / 255.0f, tmp.g / 255.0f, tmp.b / 255.0f );
+		m_Color.GetForModify().Init( tmp.r() / 255.0f, tmp.g() / 255.0f, tmp.b() / 255.0f );
 		return true;
 	}
 

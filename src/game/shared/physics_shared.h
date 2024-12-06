@@ -30,6 +30,7 @@ class IPhysicsObjectPairHash;
 class CSoundPatch;
 class IGameSystem;
 
+struct modelindex_t;
 
 extern IPhysicsObject		*g_PhysWorldObject;
 extern IPhysics				*physics;
@@ -130,7 +131,7 @@ inline unsigned short PhysClearGameFlags( IPhysicsObject *pPhys, unsigned short 
 
 
 // Create a vphysics object based on a model
-IPhysicsObject *PhysModelCreate( CSharedBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles, solid_t *pSolid = NULL );
+IPhysicsObject *PhysModelCreate( CSharedBaseEntity *pEntity, modelindex_t modelIndex, const Vector &origin, const QAngle &angles, solid_t *pSolid = NULL );
 
 IPhysicsObject *PhysModelCreateBox( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, bool isStatic );
 IPhysicsObject *PhysModelCreateOBB( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, const QAngle &angle, bool isStatic );
@@ -138,7 +139,7 @@ IPhysicsObject *PhysModelCreateOBB( CSharedBaseEntity *pEntity, const Vector &mi
 IPhysicsObject *PhysModelCreateSphere( CSharedBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic );
 
 // Create a vphysics object based on a BSP model (unmoveable)
-IPhysicsObject *PhysModelCreateUnmoveable( CSharedBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles );
+IPhysicsObject *PhysModelCreateUnmoveable( CSharedBaseEntity *pEntity, modelindex_t modelIndex, const Vector &origin, const QAngle &angles );
 
 // Create a vphysics object based on an existing collision model
 IPhysicsObject *PhysModelCreateCustom( CSharedBaseEntity *pEntity, const CPhysCollide *pModel, const Vector &origin, const QAngle &angles, const char *pName, bool isStatic, solid_t *pSolid = NULL );
@@ -167,9 +168,9 @@ bool PhysEntityCollisionsAreDisabled( CSharedBaseEntity *pEntity0, CSharedBaseEn
 IPhysicsObject *PhysCreateWorld_Shared( CSharedBaseEntity *pWorld, vcollide_t *pWorldCollide, const objectparams_t &defaultParams );
 
 // parse the parameters for a single solid from the model's collision data
-bool PhysModelParseSolid( solid_t &solid, CSharedBaseEntity *pEntity, int modelIndex );
+bool PhysModelParseSolid( solid_t &solid, CSharedBaseEntity *pEntity, modelindex_t modelIndex );
 // parse the parameters for a solid matching a particular index
-bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, int modelIndex, int solidIndex );
+bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, modelindex_t modelIndex, int solidIndex );
 
 void PhysParseSurfaceData( class IPhysicsSurfaceProps *pProps, class IFileSystem *pFileSystem );
 

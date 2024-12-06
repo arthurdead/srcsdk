@@ -117,11 +117,38 @@
 #define __DT_VARNAME_VECTORELEM_1 "y"
 #define __DT_VARNAME_VECTORELEM_2 "z"
 
+//catch wrong use of macros
+#ifdef _DEBUG
+#define DT_VARNAME_VECTORELEM(varName, i) \
+	#varName "~" __DT_VARNAME_VECTORELEM_##i
+
+#define DT_VARNAME_ARRAYELEM(varName, i) \
+	#varName "<" #i ">"
+
+#define DT_VARNAME_STRUCTELEM(structVarName, varName) \
+	#structVarName "~" #varName
+
+#define DT_VARNAME_NESTEDSTRUCTELEM(structVarName, structVarName2, varName) \
+	#structVarName "~" #structVarName2 "~" #varName
+
+#define DT_VARNAME_STRUCTELEM_ARRAYELEM(structVarName, varName, i) \
+	#structVarName "~" #varName "<" #i ">"
+#else
 #define DT_VARNAME_VECTORELEM(varName, i) \
 	#varName "." __DT_VARNAME_VECTORELEM_##i
 
 #define DT_VARNAME_ARRAYELEM(varName, i) \
 	#varName "[" #i "]"
+
+#define DT_VARNAME_STRUCTELEM(structVarName, varName) \
+	#structVarName "." #varName
+
+#define DT_VARNAME_NESTEDSTRUCTELEM(structVarName, structVarName2, varName) \
+	#structVarName "." #structVarName2 "." #varName
+
+#define DT_VARNAME_STRUCTELEM_ARRAYELEM(structVarName, varName, i) \
+	#structVarName "." #varName "[" #i "]"
+#endif
 
 class SendProp;
 

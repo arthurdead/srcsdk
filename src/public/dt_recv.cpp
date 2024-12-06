@@ -528,10 +528,12 @@ void RecvProxy_Int32ToColor32( const CRecvProxyData *pData, void *pStruct, void 
 	color32 *pOutColor = (color32*)pOut;
 	uint32 inColor = LittleDWord((uint32)pData->m_Value.m_Int);
 
-	pOutColor->r = (unsigned char)(inColor >> 24);
-	pOutColor->g = (unsigned char)((inColor >> 16) & 0xFF);
-	pOutColor->b = (unsigned char)((inColor >> 8) & 0xFF);
-	pOutColor->a = (unsigned char)(inColor & 0xFF);
+	pOutColor->SetColor(
+		(unsigned char)((inColor >> 24) & 0xFF),
+		(unsigned char)((inColor >> 16) & 0xFF),
+		(unsigned char)((inColor >> 8) & 0xFF),
+		(unsigned char)(inColor & 0xFF)
+	);
 }
 
 void RecvProxy_StringToString( const CRecvProxyData *pData, void *pStruct, void *pOut )

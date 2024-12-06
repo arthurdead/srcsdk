@@ -1582,9 +1582,18 @@ void CONVAR_StringToColor( Color &color, const char *pString )
 	const char *pfront;
 	const char* pstr = pfront = tempString;
 
+	using func_t = void(Color::*)(unsigned char);
+
+	func_t funcs[4]{
+		&Color::SetR,
+		&Color::SetG,
+		&Color::SetB,
+		&Color::SetA,
+	};
+
 	for ( j = 0; j < 4; j++ )
 	{
-		color[j] = atoi( pfront );
+		(color.*funcs[j])( atoi( pfront ) );
 
 		while ( *pstr && *pstr != ' ' )
 			pstr++;
@@ -1594,9 +1603,14 @@ void CONVAR_StringToColor( Color &color, const char *pString )
 		pfront = pstr;
 	}
 
-	for ( j++; j < 4; j++ )
+	for ( j++; j < 3; j++ )
 	{
-		color[j] = 0;
+		(color.*funcs[j])( 0 );
+	}
+
+	if( j < 4 )
+	{
+		(color.*funcs[j])( 255 );
 	}
 }
 

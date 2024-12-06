@@ -1788,6 +1788,8 @@ public:
 	vec_t operator[](int i) const;
 	vec_t& operator[](int i);
 
+	void Set(int i, vec_t val);
+
 	// Base address...
 	vec_t* Base();
 	vec_t const* Base() const;
@@ -1961,6 +1963,11 @@ inline vec_t QAngle::operator[](int i) const
 	return ((vec_t*)this)[i];
 }
 
+inline void QAngle::Set(int i, vec_t val)
+{
+	Assert( (i >= 0) && (i < 3) );
+	((vec_t*)this)[i] = val;
+}
 
 //-----------------------------------------------------------------------------
 // Base address...

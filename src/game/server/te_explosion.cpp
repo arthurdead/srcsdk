@@ -17,7 +17,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern short	g_sModelIndexFireball;			// (in combatweapon.cpp) holds the index for the smoke cloud
+extern modelindex_t g_sModelIndexFireball;			// (in combatweapon.cpp) holds the index for the smoke cloud
 
 //-----------------------------------------------------------------------------
 // Purpose: Dispatches explosion tempentity
@@ -35,7 +35,7 @@ public:
 	
 
 public:
-	CNetworkVar( int, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	CNetworkVar( float, m_fScale );
 	CNetworkVar( int, m_nFrameRate );
 	CNetworkVar( int, m_nFlags );
@@ -52,7 +52,7 @@ public:
 CTEExplosion::CTEExplosion( const char *name ) :
 	BaseClass( name )
 {
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_fScale = 0;
 	m_nFrameRate = 0;
 	m_nFlags = 0;
@@ -112,7 +112,7 @@ END_SEND_TABLE()
 static CTEExplosion g_TEExplosion( "Explosion" );
 
 void TE_Explosion( IRecipientFilter& filter, float delay,
-	const Vector* pos, int modelindex, float scale, int framerate, int flags, int radius, int magnitude, const Vector* normal, unsigned char materialType )
+	const Vector* pos, modelindex_t modelindex, float scale, int framerate, int flags, int radius, int magnitude, const Vector* normal, unsigned char materialType )
 {
 	g_TEExplosion.m_vecOrigin		= *pos;
 	g_TEExplosion.m_nModelIndex		= modelindex;	

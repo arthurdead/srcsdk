@@ -291,8 +291,8 @@ void CSharedBaseCombatWeapon::Precache( void )
 
 		}
 		// Precache models (preload to avoid hitch)
-		m_iViewModelIndex = 0;
-		m_iWorldModelIndex = 0;
+		m_iViewModelIndex = INVALID_MODEL_INDEX;
+		m_iWorldModelIndex = INVALID_MODEL_INDEX;
 		if ( GetViewModel() && GetViewModel()[0] )
 		{
 			m_iViewModelIndex = CSharedBaseEntity::PrecacheModel( GetViewModel() );
@@ -302,7 +302,7 @@ void CSharedBaseCombatWeapon::Precache( void )
 			m_iWorldModelIndex = CSharedBaseEntity::PrecacheModel( GetWorldModel() );
 		}
 
-		m_iDroppedModelIndex = 0;
+		m_iDroppedModelIndex = INVALID_MODEL_INDEX;
 		if ( GetDroppedModel() && GetDroppedModel()[0] )
 		{
 			m_iDroppedModelIndex = CSharedBaseEntity::PrecacheModel( GetDroppedModel() );
@@ -2828,8 +2828,8 @@ BEGIN_PREDICTION_DATA( C_BaseCombatWeapon )
 	DEFINE_FIELD_FLAGS( m_hOwner, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
 	// DEFINE_FIELD( m_hWeaponFileInfo, FIELD_SHORT ),
 	DEFINE_FIELD_FLAGS( m_iState, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),			 
-	DEFINE_FIELD_FLAGS( m_iViewModelIndex, FIELD_INTEGER, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
-	DEFINE_FIELD_FLAGS( m_iWorldModelIndex, FIELD_INTEGER, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
+	DEFINE_FIELD_FLAGS( m_iViewModelIndex, FIELD_MODELINDEX, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
+	DEFINE_FIELD_FLAGS( m_iWorldModelIndex, FIELD_MODELINDEX, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
 	DEFINE_FIELD_FLAGS_TOL( m_flNextPrimaryAttack, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, TD_MSECTOLERANCE ),	
 	DEFINE_FIELD_FLAGS_TOL( m_flNextSecondaryAttack, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, TD_MSECTOLERANCE ),
 	DEFINE_FIELD_FLAGS_TOL( m_flTimeWeaponIdle, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, TD_MSECTOLERANCE ),
@@ -3075,7 +3075,7 @@ int Studio_FindAttachment( const CStudioHdr *pStudioHdr, const char *pAttachment
 
 int CSharedBaseCombatWeapon::LookupAttachment( const char *pAttachmentName )
 {
-	int newIndex = GetWorldModelIndex();
+	modelindex_t newIndex = GetWorldModelIndex();
 	if ( newIndex != GetModelIndex() )
 	{
 		const model_t *pWorldModel = modelinfo->GetModel( newIndex );

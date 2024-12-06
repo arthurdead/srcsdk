@@ -44,7 +44,7 @@ public:
 // FGD properties.
 public:
 
-	CNetworkVar( color32, m_Color );
+	CNetworkColor32( m_Color );
 	CNetworkVar( int, m_SpawnRate );
 	
 	CNetworkVar( float, m_flSizeMin );
@@ -162,8 +162,7 @@ void CFunc_Dust::Spawn()
 
 	//Since keyvalues can arrive in any order, and UTIL_StringToColor32 stomps alpha,
 	//install the alpha value here.
-	color32 clr = { m_Color.m_Value.r, m_Color.m_Value.g, m_Color.m_Value.b, (byte)m_iAlpha };
-	m_Color.Set( clr );
+	m_Color.SetA( (byte)m_iAlpha );
 
 	BaseClass::Spawn();
 }

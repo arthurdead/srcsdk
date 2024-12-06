@@ -1412,7 +1412,7 @@ void Panel::PaintBuildOverlay()
 bool Panel::IsOpaque()
 {
 	// FIXME: Add code to account for the 'SkipChild' functionality in Frame
-	if ( IsVisible() && _flags.IsFlagSet( PAINT_BACKGROUND_ENABLED ) && ( _bgColor[3] == 255 ) )
+	if ( IsVisible() && _flags.IsFlagSet( PAINT_BACKGROUND_ENABLED ) && ( _bgColor.a() == 255 ) )
 		return true;
 
 	return false;
@@ -4724,10 +4724,7 @@ void Panel::ApplySettings(KeyValues *inResourceData)
 			{
 				float r = 0.0f, g = 0.0f, b = 0.0f, a = 0.0f;
 				sscanf( pColorStr, "%f %f %f %f", &r, &g, &b, &a );
-				clrDest[0] = (unsigned char)r;
-				clrDest[1] = (unsigned char)g;
-				clrDest[2] = (unsigned char)b;
-				clrDest[3] = (unsigned char)a;
+				clrDest.SetColor( (unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a );
 			}
 			else
 			{
@@ -4908,11 +4905,49 @@ void Panel::SetOverridableColor( Color *pColor, const Color &newColor )
 	*pColor = newColor;
 }
 
+class tmphack_IScheme2 : public IBaseInterface
+{
+public:
+	// gets a string from the default settings section
+	virtual const char *GetResourceString(const char *stringName) = 0;
+
+	// returns a pointer to an existing border
+	virtual IBorder *GetBorder(const char *borderName) = 0;
+
+	// returns a pointer to an existing font
+	virtual HFont GetFont(const char *fontName, bool proportional = false) = 0;
+
+	// inverse font lookup
+	virtual char const *GetFontName( const HFont& font ) = 0;
+
+	// colors
+	virtual unsigned int GetColor(const char *colorName, unsigned int defaultColor) = 0;
+	
+	// Get the number of borders
+	virtual int GetBorderCount() const = 0;
+
+	// Get the border at the given index
+	virtual IBorder *GetBorderAtIndex( int iIndex ) = 0;
+
+	// Get the number of fonts
+	virtual int GetFontCount() const = 0;
+
+	// Get the font at the given index
+	virtual HFont GetFontAtIndex( int iIndex ) = 0;	
+
+	// Get color data
+	virtual const KeyValues *GetColorData() const = 0;
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 Color Panel::GetSchemeColor(const char *keyName, IScheme *pScheme)
 {
+	unsigned int clr = ((tmphack_IScheme2 *)pScheme)->GetColor(keyName, 0);
+
+	DebuggerBreak();
+
 	return pScheme->GetColor(keyName, Color(255, 255, 255, 255));
 }
 
@@ -6409,7 +6444,7 @@ void Panel::DrawBox(int x, int y, int wide, int tall, Color color, float normali
 		return;
 	}
 
-	color[3] *= normalizedAlpha;
+	color.SetA( color.a() * normalizedAlpha );
 
 	// work out our bounds
 	int cornerWide, cornerTall;
@@ -6497,7 +6532,7 @@ void Panel::DrawBoxFade(int x, int y, int wide, int tall, Color color, float nor
 		return;
 	}
 
-	color[3] *= normalizedAlpha;
+	color.SetA( color.a() * normalizedAlpha );
 
 	// work out our bounds
 	int cornerWide, cornerTall;
@@ -6539,21 +6574,21 @@ void Panel::DrawBoxFade(int x, int y, int wide, int tall, Color color, float nor
 		surface()->DrawFilledRectFade(x + wide - cornerWide, y + cornerTall, x + wide, y + tall - cornerTall, alpha1, alpha1, bHorizontal);
 	}
 
-	float fOldAlpha = color[ 3 ];
-	int iAlpha0 = fOldAlpha * ( static_cast<float>( alpha0 ) / 255.0f );
-	int iAlpha1 = fOldAlpha * ( static_cast<float>( alpha1 ) / 255.0f );
+	float fOldAlpha = color.a();
+	unsigned char iAlpha0 = fOldAlpha * ( static_cast<float>( alpha0 ) / 255.0f );
+	unsigned char iAlpha1 = fOldAlpha * ( static_cast<float>( alpha1 ) / 255.0f );
 
 	// draw the corners
 	if ( !bHorizontal )
 	{
-		color[ 3 ] = iAlpha0;
+		color.SetA( iAlpha0 );
 		surface()->DrawSetColor( color );
 		surface()->DrawSetTexture(m_nBgTextureId1);
 		surface()->DrawTexturedRect(x, y, x + cornerWide, y + cornerTall);
 		surface()->DrawSetTexture(m_nBgTextureId2);
 		surface()->DrawTexturedRect(x + wide - cornerWide, y, x + wide, y + cornerTall);
 
-		color[ 3 ] = iAlpha1;
+		color.SetA( iAlpha1 );
 		surface()->DrawSetColor( color );
 		surface()->DrawSetTexture(m_nBgTextureId3);
 		surface()->DrawTexturedRect(x + wide - cornerWide, y + tall - cornerTall, x + wide, y + tall);
@@ -6562,14 +6597,14 @@ void Panel::DrawBoxFade(int x, int y, int wide, int tall, Color color, float nor
 	}
 	else
 	{
-		color[ 3 ] = iAlpha0;
+		color.SetA( iAlpha0 );
 		surface()->DrawSetColor( color );
 		surface()->DrawSetTexture(m_nBgTextureId1);
 		surface()->DrawTexturedRect(x, y, x + cornerWide, y + cornerTall);
 		surface()->DrawSetTexture(m_nBgTextureId4);
 		surface()->DrawTexturedRect(x + 0, y + tall - cornerTall, x + cornerWide, y + tall);
 
-		color[ 3 ] = iAlpha1;
+		color.SetA( iAlpha1 );
 		surface()->DrawSetColor( color );
 		surface()->DrawSetTexture(m_nBgTextureId2);
 		surface()->DrawTexturedRect(x + wide - cornerWide, y, x + wide, y + cornerTall);
@@ -6607,7 +6642,7 @@ void Panel::DrawHollowBox( int x, int y, int wide, int tall, Color color, float 
 		return;
 	}
 
-	color[3] *= normalizedAlpha;
+	color.SetA( color.a() * normalizedAlpha );
 
 	// draw the background in the areas not occupied by the corners
 	// draw it in three horizontal strips
@@ -6640,7 +6675,7 @@ void Panel::DrawTexturedBox(int x, int y, int wide, int tall, Color color, float
 	if ( m_nBgTextureId1 == INVALID_TEXTURE )
 		return;
 
-	color[3] *= normalizedAlpha;
+	color.SetA( color.a() * normalizedAlpha );
 
 	surface()->DrawSetColor( color );
 	surface()->DrawSetTexture(m_nBgTextureId1);

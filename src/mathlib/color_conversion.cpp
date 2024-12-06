@@ -371,9 +371,9 @@ void ColorRGBExp32ToVector( const ColorRGBExp32& in, Vector& out )
 {
 	Assert( s_bMathlibInitialized );
 	// FIXME: Why is there a factor of 255 built into this?
-	out.x = 255.0f * TexLightToLinear( in.r, in.exponent );
-	out.y = 255.0f * TexLightToLinear( in.g, in.exponent );
-	out.z = 255.0f * TexLightToLinear( in.b, in.exponent );
+	out.x = 255.0f * TexLightToLinear( in.r(), in.e() );
+	out.y = 255.0f * TexLightToLinear( in.g(), in.e() );
+	out.z = 255.0f * TexLightToLinear( in.b(), in.e() );
 }
 
 #if 0
@@ -536,22 +536,11 @@ void VectorToColorRGBExp32( const Vector& vin, ColorRGBExp32 &c )
 
 	// This awful construction is necessary to prevent VC2005 from using the 
 	// fldcw/fnstcw control words around every float-to-unsigned-char operation.
-	{
-		int red = (vin.x * scalar);
-		int green = (vin.y * scalar);
-		int blue = (vin.z * scalar);
+	unsigned char red = (vin.x * scalar);
+	unsigned char green = (vin.y * scalar);
+	unsigned char blue = (vin.z * scalar);
 
-		c.r = red;
-		c.g = green;
-		c.b = blue;
-	}
-	/*
-	c.r = ( unsigned char )(vin.x * scalar);
-	c.g = ( unsigned char )(vin.y * scalar);
-	c.b = ( unsigned char )(vin.z * scalar);
-	*/
-
-	c.exponent = ( signed char )exponent;
+	c.SetColor( red, green, blue, ( signed char )exponent );
 }
 
 #endif

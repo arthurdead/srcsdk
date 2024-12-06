@@ -35,8 +35,8 @@ public:
 	virtual void	Test( const Vector& current_origin, const QAngle& current_angles ) = 0;
 	
 public:
-	CNetworkVar( int, m_nModelIndex );
-	CNetworkVar( int, m_nHaloIndex );
+	CNetworkModelIndex( m_nModelIndex );
+	CNetworkModelIndex( m_nHaloIndex );
 	CNetworkVar( int, m_nStartFrame );
 	CNetworkVar( int, m_nFrameRate );
 	CNetworkVar( float, m_fLife );

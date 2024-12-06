@@ -62,8 +62,6 @@ void CEntityFreezing::Precache()
 	{
 		PrecacheModel( STRING( GetModelName() ) );
 	}
-
-
 }
 
 

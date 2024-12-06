@@ -325,19 +325,13 @@ bool CGameText::KeyValue( const char *szKeyName, const char *szValue )
 	{
 		int color[4];
 		UTIL_StringToIntArray( color, 4, szValue );
-		m_textParms.r1 = color[0];
-		m_textParms.g1 = color[1];
-		m_textParms.b1 = color[2];
-		m_textParms.a1 = color[3];
+		m_textParms.clr1.SetColor( color[0], color[1], color[2], color[3] );
 	}
 	else if (FStrEq(szKeyName, "color2"))
 	{
 		int color[4];
 		UTIL_StringToIntArray( color, 4, szValue );
-		m_textParms.r2 = color[0];
-		m_textParms.g2 = color[1];
-		m_textParms.b2 = color[2];
-		m_textParms.a2 = color[3];
+		m_textParms.clr2.SetColor( color[0], color[1], color[2], color[3] );
 	}
 	else if (FStrEq( szKeyName, "message" ))
 	{
@@ -394,19 +388,13 @@ void CGameText::InputSetPosY(inputdata_t &inputdata)
 void CGameText::InputSetTextColor(inputdata_t &inputdata)
 {
 	color32 clr = inputdata.value.Color32();
-	m_textParms.r1 = clr.r;
-	m_textParms.g1 = clr.g;
-	m_textParms.b1 = clr.b;
-	m_textParms.a1 = clr.a;
+	m_textParms.clr1 = clr;
 }
 
 void CGameText::InputSetTextColor2(inputdata_t &inputdata)
 {
 	color32 clr2 = inputdata.value.Color32();
-	m_textParms.r2 = clr2.r;
-	m_textParms.g2 = clr2.g;
-	m_textParms.b2 = clr2.b;
-	m_textParms.a2 = clr2.a;
+	m_textParms.clr2 = clr2;
 }
 
 void CGameText::SetText( const char* pszStr )

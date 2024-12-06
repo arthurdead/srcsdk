@@ -495,7 +495,7 @@ void C_Sprite::GetToolRecordingState( KeyValues *msg )
 	state.m_flProxyRadius = m_flGlowProxySize;
 	state.m_nRenderMode = GetRenderMode();
 	state.m_nRenderFX = GetRenderFX() ? true : false;
-	state.m_Color.SetColor( c.r, c.g, c.b, GetRenderBrightness() );
+	state.m_Color.SetColor( c.r(), c.g(), c.b(), GetRenderBrightness() );
 
 	msg->SetPtr( "sprite", &state );
 }

@@ -1695,9 +1695,9 @@ void CClientShadowMgr::InitRenderToTextureShadows()
 		m_ShadowAllocator.Reset();
 		m_bRenderTargetNeedsClear = true;
 
-		float fr = (float)m_AmbientLightColor.r / 255.0f;
-		float fg = (float)m_AmbientLightColor.g / 255.0f;
-		float fb = (float)m_AmbientLightColor.b / 255.0f;
+		float fr = (float)m_AmbientLightColor.r() / 255.0f;
+		float fg = (float)m_AmbientLightColor.g() / 255.0f;
+		float fb = (float)m_AmbientLightColor.b() / 255.0f;
 		m_RenderShadow->ColorModulate( fr, fg, fb );
 		m_RenderModelShadow->ColorModulate( fr, fg, fb );
 
@@ -1770,16 +1770,14 @@ void CClientShadowMgr::SetShadowColor( unsigned char r, unsigned char g, unsigne
 			m_RenderModelShadow->ColorModulate( fr, fg, fb );
 	}
 
-	m_AmbientLightColor.r = r;
-	m_AmbientLightColor.g = g;
-	m_AmbientLightColor.b = b;
+	m_AmbientLightColor.SetColor( r, g, b );
 }
 
 void CClientShadowMgr::GetShadowColor( unsigned char *r, unsigned char *g, unsigned char *b ) const
 {
-	*r = m_AmbientLightColor.r;
-	*g = m_AmbientLightColor.g;
-	*b = m_AmbientLightColor.b;
+	*r = m_AmbientLightColor.r();
+	*g = m_AmbientLightColor.g();
+	*b = m_AmbientLightColor.b();
 }
 
 
@@ -1854,7 +1852,7 @@ void CClientShadowMgr::RestoreRenderState()
 		m_Shadows[(uint)h].m_Flags |= SHADOW_FLAGS_TEXTURE_DIRTY;
 	}
 
-	SetShadowColor( m_AmbientLightColor.r, m_AmbientLightColor.g, m_AmbientLightColor.b );
+	SetShadowColor( m_AmbientLightColor.r(), m_AmbientLightColor.g(), m_AmbientLightColor.b() );
 	m_bRenderTargetNeedsClear = true;
 }
 

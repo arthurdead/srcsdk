@@ -108,7 +108,7 @@ public:
 	virtual void			WorldSpaceTriggerBounds( Vector *pVecWorldMins, Vector *pVecWorldMaxs ) const;
 	virtual bool			TestCollision( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr );
 	virtual bool			TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr );
-	virtual int				GetCollisionModelIndex();
+	virtual modelindex_t				GetCollisionModelIndex();
 	virtual const model_t*	GetCollisionModel();
 	virtual const Vector&	GetCollisionOrigin() const;
 	virtual const QAngle&	GetCollisionAngles() const;

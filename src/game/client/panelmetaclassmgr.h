@@ -15,12 +15,12 @@
 #include "tier0/dbg.h"
 #include "basetypes.h"
 #include <vgui/VGUI.h>
+#include "Color.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
 //-----------------------------------------------------------------------------
 class KeyValues;
-class Color;
 
 namespace vgui
 {

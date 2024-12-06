@@ -109,7 +109,7 @@ private:
 public:
 	void			AffectRagdolls( void );
 
-	int				m_nModelIndex;
+	modelindex_t m_nModelIndex;
 	float			m_fScale;
 	int				m_nFrameRate;
 	int				m_nFlags;
@@ -146,7 +146,7 @@ END_RECV_TABLE()
 C_TEExplosion::C_TEExplosion( void )
 {
 	m_bShouldAffectRagdolls = true;
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_fScale = 0;
 	m_nFrameRate = 0;
 	m_nFlags = 0;
@@ -217,7 +217,7 @@ void C_TEExplosion::RecordExplosion( )
 
 	if ( clienttools->IsInRecordingMode() )
 	{
-		const model_t* pModel = (m_nModelIndex != 0) ? modelinfo->GetModel( m_nModelIndex ) : NULL;
+		const model_t* pModel = (m_nModelIndex.IsValid()) ? modelinfo->GetModel( m_nModelIndex ) : NULL;
 		const char *pModelName = pModel ? modelinfo->GetModelName( pModel ) : "";
 
 		KeyValues *msg = new KeyValues( "TempEntity" );
@@ -294,7 +294,7 @@ void C_TEExplosion::SimulateParticles( CParticleSimulateIterator *pIterator )
 
 
 void TE_Explosion( IRecipientFilter& filter, float delay,
-	const Vector* pos, int modelindex, float scale, int framerate, int flags, int radius, int magnitude, 
+	const Vector* pos, modelindex_t modelindex, float scale, int framerate, int flags, int radius, int magnitude, 
 	const Vector* normal = NULL, unsigned char materialType = 'C', bool bShouldAffectRagdolls = true )
 {
 	// Major hack to access singleton object for doing this event (simulate receiving network message)
@@ -323,7 +323,7 @@ void TE_Explosion( IRecipientFilter& filter, float delay, KeyValues *pKeyValues 
 	vecNormal.y = pKeyValues->GetFloat( "directiony" );
 	vecNormal.z = pKeyValues->GetFloat( "directionz" );
 	const char *pModelName = pKeyValues->GetString( "model" );
-	int nModelIndex = pModelName[0] ? modelinfo->GetModelIndex( pModelName ) : 0;
+	modelindex_t nModelIndex = pModelName[0] ? modelinfo->GetModelIndex( pModelName ) : INVALID_MODEL_INDEX;
 	float flScale = pKeyValues->GetFloat( "scale" );
 	int nFrameRate = pKeyValues->GetInt( "framerate" );
 	int nFlags = pKeyValues->GetInt( "flags" );

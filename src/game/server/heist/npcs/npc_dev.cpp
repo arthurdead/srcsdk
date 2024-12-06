@@ -39,7 +39,7 @@ public:
 
 		BaseClass::Spawn();
 
-		SetModel("models/dog.mdl");
+		SetModel( "models/dog.mdl" );
 
 		pPathTarget = this;
 	}

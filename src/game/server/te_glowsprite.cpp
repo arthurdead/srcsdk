@@ -16,7 +16,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern short	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
+extern modelindex_t	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
 
 //-----------------------------------------------------------------------------
 // Purpose: Dispatches Sprite tempentity
@@ -35,7 +35,7 @@ public:
 
 public:
 	CNetworkVector( m_vecOrigin );
-	CNetworkVar( int, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	CNetworkVar( float, m_fScale );
 	CNetworkVar( float, m_fLife );
 	CNetworkVar( int, m_nBrightness );
@@ -49,7 +49,7 @@ CTEGlowSprite::CTEGlowSprite( const char *name ) :
 	CBaseTempEntity( name )
 {
 	m_vecOrigin.Init();
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_fScale = 0;
 	m_fLife = 0;
 	m_nBrightness = 0;
@@ -117,7 +117,7 @@ static CTEGlowSprite g_TEGlowSprite( "GlowSprite" );
 //			brightness - 
 //-----------------------------------------------------------------------------
 void TE_GlowSprite( IRecipientFilter& filter, float delay,
-	const Vector* pos, int modelindex, float life, float size, int brightness )
+	const Vector* pos, modelindex_t modelindex, float life, float size, int brightness )
 {
 	g_TEGlowSprite.m_vecOrigin		= *pos;
 	g_TEGlowSprite.m_nModelIndex	= modelindex;	

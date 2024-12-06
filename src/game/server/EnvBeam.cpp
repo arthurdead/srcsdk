@@ -74,7 +74,7 @@ public:
 	inline bool HasEndPointHandle() { return !m_vEndPointRelative.IsZero();  }
 
 	int		m_active;
-	int		m_spriteTexture;
+	modelindex_t		m_spriteTexture;
 
 	string_t m_iszStartEntity;
 	string_t m_iszEndEntity;
@@ -435,7 +435,7 @@ void CEnvBeam::Strike( void )
 				pointStart ? 0 : pStart->entindex(),
 				pointEnd ? 0 : pEnd->entindex(),
 				m_spriteTexture, 
-				0,	// No halo
+				INVALID_MODEL_INDEX,	// No halo
 				m_frameStart,
 				(int)m_flFrameRate,
 				m_life,
@@ -453,7 +453,7 @@ void CEnvBeam::Strike( void )
 				pointEnd ? 0 : pEnd->entindex(),
 				pointEnd ? &vEndPointLocation : NULL,
 				m_spriteTexture,
-				0,	// No halo
+				INVALID_MODEL_INDEX,	// No halo
 				m_frameStart,
 				(int)m_flFrameRate,
 				m_life,
@@ -473,7 +473,7 @@ void CEnvBeam::Strike( void )
 				pStart->entindex(), 
 				pEnd->entindex(), 
 				m_spriteTexture, 
-				0,	// No halo
+				INVALID_MODEL_INDEX,	// No halo
 				m_frameStart,
 				(int)m_flFrameRate,
 				m_life,
@@ -492,7 +492,7 @@ void CEnvBeam::Strike( void )
 				pStart->entindex(), 
 				pEnd->entindex(), 
 				m_spriteTexture,
-				0,	// No halo
+				INVALID_MODEL_INDEX,	// No halo
 				m_frameStart,
 				(int)m_flFrameRate,
 				m_life,
@@ -659,7 +659,7 @@ void CEnvBeam::Zap( const Vector &vecSrc, const Vector &vecDest )
 		&vecSrc, 
 		&vecDest, 
 		m_spriteTexture, 
-		0,	// No halo
+		INVALID_MODEL_INDEX,	// No halo
 		m_frameStart,
 		(int)m_flFrameRate,
 		m_life,

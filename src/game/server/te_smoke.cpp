@@ -16,7 +16,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern short	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
+extern modelindex_t	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
 
 //-----------------------------------------------------------------------------
 // Purpose: Dispatches smoke tempentity
@@ -35,7 +35,7 @@ public:
 
 public:
 	CNetworkVector( m_vecOrigin );
-	CNetworkVar( int, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	CNetworkVar( float, m_fScale );
 	CNetworkVar( int, m_nFrameRate );
 };
@@ -48,7 +48,7 @@ CTESmoke::CTESmoke( const char *name ) :
 	CBaseTempEntity( name )
 {
 	m_vecOrigin.Init();
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_fScale = 0;
 	m_nFrameRate = 0;
 }
@@ -100,7 +100,7 @@ END_SEND_TABLE()
 static CTESmoke g_TESmoke( "Smoke" );
 
 void TE_Smoke( IRecipientFilter& filter, float delay,
-	const Vector* pos, int modelindex, float scale, int framerate )
+	const Vector* pos, modelindex_t modelindex, float scale, int framerate )
 {
 	g_TESmoke.m_vecOrigin	= *pos;
 	g_TESmoke.m_nModelIndex = modelindex;	

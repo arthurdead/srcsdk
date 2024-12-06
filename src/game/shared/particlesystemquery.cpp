@@ -138,7 +138,7 @@ public:
 	{
 	}
 
-	virtual void DrawModel( void *pModel, const matrix3x4_t &DrawMatrix, CParticleCollection *pParticles, int nParticleNumber, int nBodyPart, int nSubModel,
+	virtual void DrawModel( const model_t *pModel, const matrix3x4_t &DrawMatrix, CParticleCollection *pParticles, int nParticleNumber, int nBodyPart, int nSubModel,
 							int nAnimationSequence = 0, float flAnimationRate = 30.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f );
 
 
@@ -146,7 +146,7 @@ public:
 	{
 	}
 
-	virtual void *GetModel( char const *pMdlName );
+	virtual const model_t *GetModel( char const *pMdlName );
 
 	virtual void UpdateProjectedTexture( const int nParticleID, IMaterial *pMaterial, Vector &vOrigin, float flRadius, float flRotation, float r, float g, float b, float a, void *&pUserVar );
 
@@ -860,14 +860,13 @@ static void SetBodygroup( studiohdr_t *pstudiohdr, int &body, int iGroup, int iV
 #endif
 
 // callback to draw models given abstract ptr
-void CParticleSystemQuery::DrawModel( void *pModel, const matrix3x4_t &DrawMatrix, CParticleCollection *pParticles, int nParticleNumber, int nBodyPart, int nSubModel,
+void CParticleSystemQuery::DrawModel( const model_t *pModel, const matrix3x4_t &DrawMatrix, CParticleCollection *pParticles, int nParticleNumber, int nBodyPart, int nSubModel,
 									  int nAnimationSequence, float flAnimationRate, float r, float g, float b, float a )
 {
 #ifdef CLIENT_DLL
-	model_t *pMDL = ( model_t * ) pModel;
-	if ( pMDL )
+	if ( pModel )
 	{
-		MDLHandle_t hStudioHdr = modelinfo->GetCacheHandle( pMDL );
+		MDLHandle_t hStudioHdr = modelinfo->GetCacheHandle( pModel );
 		studiohdr_t *pStudioHdr = g_pMDLCache->GetStudioHdr( hStudioHdr );
 
 		CMDL	MDL;
@@ -904,19 +903,18 @@ void CParticleSystemQuery::DrawModel( void *pModel, const matrix3x4_t &DrawMatri
 #endif
 }
 
-void *CParticleSystemQuery::GetModel( char const *pMdlName )
+const model_t *CParticleSystemQuery::GetModel( char const *pMdlName )
 {
 #ifdef CLIENT_DLL
-// 	int modelIndex = modelinfo->GetModelIndex( pMdlName );
+// 	modelindex_t modelIndex = modelinfo->GetModelIndex( pMdlName );
 // 	const model_t *pModel = modelinfo->GetModel( modOelIndex );
 
 	CUtlString	ModelName = "models/";
 
 	ModelName += pMdlName;
 
- 	model_t *pModel = (model_t *)engine->LoadModel( ModelName ); //, true );
- 	//pMdlName = "models/weapons/shells/shell_pistol.mdl";
-	return ( void * )pModel;
+ 	const model_t *pModel = engine->LoadModel( ModelName ); //, true );
+	return pModel;
 #else
 	return NULL;
 #endif

@@ -607,9 +607,7 @@ bool CAI_Expresser::SpeakDispatchResponse( AIConcept_t &concept, AI_Response *re
 			textParams.y = 0.6;
 			textParams.effect = 0;
 
-			textParams.r1 = 255;
-			textParams.g1 = 255;
-			textParams.b1 = 255;
+			textParams.clr1.SetColor( 255, 255, 255 );
 
 			if (ai_speech_print_mode.GetBool() && GetOuter()->GetGameTextSpeechParams( textParams ))
 			{
@@ -621,14 +619,8 @@ bool CAI_Expresser::SpeakDispatchResponse( AIConcept_t &concept, AI_Response *re
 					WRITE_BYTE ( textParams.channel & 0xFF );
 					WRITE_FLOAT( textParams.x );
 					WRITE_FLOAT( textParams.y );
-					WRITE_BYTE ( textParams.r1 );
-					WRITE_BYTE ( textParams.g1 );
-					WRITE_BYTE ( textParams.b1 );
-					WRITE_BYTE ( textParams.a1 );
-					WRITE_BYTE ( textParams.r2 );
-					WRITE_BYTE ( textParams.g2 );
-					WRITE_BYTE ( textParams.b2 );
-					WRITE_BYTE ( textParams.a2 );
+					WRITE_RGBA ( textParams.clr1 );
+					WRITE_RGBA ( textParams.clr2 );
 					WRITE_BYTE ( textParams.effect );
 					WRITE_FLOAT( textParams.fadeinTime );
 					WRITE_FLOAT( textParams.fadeoutTime );

@@ -67,7 +67,7 @@ private:
 
 private:
 
-	int		m_nHaloIndex;
+	modelindex_t m_nHaloIndex;
 	int		m_nRotationAxis;
 	float	m_flRotationSpeed;
 	

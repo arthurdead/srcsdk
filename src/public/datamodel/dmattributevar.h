@@ -26,21 +26,18 @@ class CDmaColor : public CDmaVar< Color >
 {
 public:
 	// Set methods
-	void SetColor( int r, int g, int b, int a = 0 );
-	void SetRed( int r );
-	void SetGreen( int g );
-	void SetBlue( int b );
-	void SetAlpha( int a );
-
-	// Sets the color as a 32-bit integer
-	void SetRawColor( int color );
+	void SetColor( unsigned char r, unsigned char g, unsigned char b );
+	void SetColor( unsigned char r, unsigned char g, unsigned char b, unsigned char a );
+	void SetRed( unsigned char r );
+	void SetGreen( unsigned char g );
+	void SetBlue( unsigned char b );
+	void SetAlpha( unsigned char a );
 
 	// Get methods
 	unsigned char r() const;
 	unsigned char g() const;
 	unsigned char b() const;
 	unsigned char a() const;
-	const unsigned char &operator[]( int index ) const;
 };
 
 
@@ -925,37 +922,44 @@ template< class T > inline typename CDmaVar<T>::D& CDmaVar<T>::Storage()
 // Inline methods for CDmaColor
 //
 //-----------------------------------------------------------------------------
-inline void CDmaColor::SetColor( int r, int g, int b, int a )
+inline void CDmaColor::SetColor( unsigned char r, unsigned char g, unsigned char b, unsigned char a )
 {
 	Color clr( r, g, b, a );
 	m_pAttribute->SetValue( clr );
 }
 
-inline void CDmaColor::SetRed( int r )
+inline void CDmaColor::SetColor( unsigned char r, unsigned char g, unsigned char b )
 {
 	Color org = Value();
-	org[ 0 ] = r;
+	org.SetColor( r, g, b );
 	m_pAttribute->SetValue( org );
 }
 
-inline void CDmaColor::SetGreen( int g )
+inline void CDmaColor::SetRed( unsigned char r )
 {
 	Color org = Value();
-	org[ 1 ] = g;
+	org.SetR( r );
 	m_pAttribute->SetValue( org );
 }
 
-inline void CDmaColor::SetBlue( int b )
+inline void CDmaColor::SetGreen( unsigned char g )
 {
 	Color org = Value();
-	org[ 2 ] = b;
+	org.SetG( g );
 	m_pAttribute->SetValue( org );
 }
 
-inline void CDmaColor::SetAlpha( int a )
+inline void CDmaColor::SetBlue( unsigned char b )
 {
 	Color org = Value();
-	org[ 3 ] = a;
+	org.SetB( b );
+	m_pAttribute->SetValue( org );
+}
+
+inline void CDmaColor::SetAlpha( unsigned char a )
+{
+	Color org = Value();
+	org.SetA( a );
 	m_pAttribute->SetValue( org );
 }
 
@@ -978,19 +982,6 @@ inline unsigned char CDmaColor::a() const
 {
 	return (unsigned char)Value().a();
 }
-
-inline const unsigned char &CDmaColor::operator[](int index) const
-{
-	return Value()[index];
-}
-
-inline void CDmaColor::SetRawColor( int color )
-{
-	Color clr;
-	clr.SetRawColor( color );
-	m_pAttribute->SetValue( clr );
-}
-
 
 //-----------------------------------------------------------------------------
 //

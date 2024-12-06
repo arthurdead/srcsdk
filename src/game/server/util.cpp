@@ -47,9 +47,9 @@
 
 extern edict_t *g_pForceAttachEdict;
 
-extern short		g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
-extern short		g_sModelIndexBloodDrop;		// (in combatweapon.cpp) holds the sprite index for the initial blood
-extern short		g_sModelIndexBloodSpray;	// (in combatweapon.cpp) holds the sprite index for splattered blood
+extern modelindex_t g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
+extern modelindex_t g_sModelIndexBloodDrop;		// (in combatweapon.cpp) holds the sprite index for the initial blood
+extern modelindex_t g_sModelIndexBloodSpray;	// (in combatweapon.cpp) holds the sprite index for splattered blood
 
 #ifdef	DEBUG
 void DBG_AssertFunction( bool fExpr, const char *szExpr, const char *szFile, int szLine, const char *szMessage )
@@ -1187,10 +1187,7 @@ void UTIL_ScreenFadeBuild( ScreenFade_t &fade, const color32 &color, float fadeT
 {
 	fade.duration = FixedUnsigned16( fadeTime, 1<<SCREENFADE_FRACBITS );		// 7.9 fixed
 	fade.holdTime = FixedUnsigned16( fadeHold, 1<<SCREENFADE_FRACBITS );		// 7.9 fixed
-	fade.r = color.r;
-	fade.g = color.g;
-	fade.b = color.b;
-	fade.a = color.a;
+	fade.color = color;
 	fade.fadeFlags = flags;
 }
 
@@ -1214,10 +1211,10 @@ void UTIL_ScreenFadeWrite( const ScreenFade_t &fade, CBaseEntity *pEntity )
 		WRITE_SHORT( fade.duration );		// fade lasts this long
 		WRITE_SHORT( fade.holdTime );		// fade lasts this long
 		WRITE_SHORT( fade.fadeFlags );		// fade type (in / out)
-		WRITE_BYTE( fade.r );				// fade red
-		WRITE_BYTE( fade.g );				// fade green
-		WRITE_BYTE( fade.b );				// fade blue
-		WRITE_BYTE( fade.a );				// fade blue
+		WRITE_BYTE( fade.color.r() );				// fade red
+		WRITE_BYTE( fade.color.g() );				// fade green
+		WRITE_BYTE( fade.color.b() );				// fade blue
+		WRITE_BYTE( fade.color.a() );				// fade blue
 	MessageEnd();
 }
 
@@ -1267,14 +1264,8 @@ void UTIL_HudMessage( CBasePlayer *pToPlayer, const hudtextparms_t &textparms, c
 		WRITE_BYTE ( textparms.channel & 0xFF );
 		WRITE_FLOAT( textparms.x );
 		WRITE_FLOAT( textparms.y );
-		WRITE_BYTE ( textparms.r1 );
-		WRITE_BYTE ( textparms.g1 );
-		WRITE_BYTE ( textparms.b1 );
-		WRITE_BYTE ( textparms.a1 );
-		WRITE_BYTE ( textparms.r2 );
-		WRITE_BYTE ( textparms.g2 );
-		WRITE_BYTE ( textparms.b2 );
-		WRITE_BYTE ( textparms.a2 );
+		WRITE_RGBA ( textparms.clr1 );
+		WRITE_RGBA ( textparms.clr2 );
 		WRITE_BYTE ( textparms.effect );
 		WRITE_FLOAT( textparms.fadeinTime );
 		WRITE_FLOAT( textparms.fadeoutTime );
@@ -1518,8 +1509,8 @@ void UTIL_SetSize( CBaseEntity *pEnt, const Vector &vecMin, const Vector &vecMax
 void UTIL_SetModel( CBaseEntity *pEntity, const char *pModelName )
 {
 	// check to see if model was properly precached
-	int i = modelinfo->GetModelIndex( pModelName );
-	if ( i == -1 )	
+	modelindex_t i = modelinfo->GetModelIndex( pModelName );
+	if ( !i.IsValid() )	
 	{
 		Log_Warning(LOG_MODEL,"%i/%s - %s:  UTIL_SetModel:  not precached: %s\n", pEntity->entindex(),
 			STRING( pEntity->GetEntityName() ),
@@ -1824,7 +1815,7 @@ float UTIL_FindWaterSurface( const Vector &position, float minz, float maxz )
 }
 
 
-extern short	g_sModelIndexBubbles;// holds the index for the bubbles model
+extern modelindex_t g_sModelIndexBubbles;// holds the index for the bubbles model
 
 void UTIL_Bubbles( const Vector& mins, const Vector& maxs, int count )
 {
@@ -1901,7 +1892,7 @@ void UTIL_BubbleTrail( const Vector& from, const Vector& to, int count )
 //			Brightness - 
 //			Speed - 
 //-----------------------------------------------------------------------------
-void UTIL_Beam( Vector &Start, Vector &End, int nModelIndex, int nHaloIndex, unsigned char FrameStart, unsigned char FrameRate,
+void UTIL_Beam( Vector &Start, Vector &End, modelindex_t nModelIndex, modelindex_t nHaloIndex, unsigned char FrameStart, unsigned char FrameRate,
 				float Life, unsigned char Width, unsigned char EndWidth, unsigned char FadeLength, unsigned char Noise, unsigned char Red, unsigned char Green,
 				unsigned char Blue, unsigned char Brightness, unsigned char Speed)
 {

@@ -71,7 +71,7 @@ public:
 	CNetworkVar( float, m_flTwist );
 	
 	string_t		m_strMaterialModel;
-	CNetworkVar( int, m_iMaterialModel );
+	CNetworkModelIndex( m_iMaterialModel );
 
 	int				m_WindAngle;
 	int				m_WindSpeed;

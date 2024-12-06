@@ -484,7 +484,7 @@ void CRecastMgr::DebugRender()
 	{
 		// Might be visualizing a server mesh that does not exist on the client
 		// Insert dummy mesh on the fly.
-		IRecastMgr *pRecastMgr = g_pGameServerLoopback ? g_pGameServerLoopback->GetRecastMgr() : NULL;
+		IRecastMgr *pRecastMgr = GetGameServerLoopback() ? GetGameServerLoopback()->GetRecastMgr() : NULL;
 		if( pRecastMgr && pRecastMgr->GetNavMesh( type ) )
 		{
 			CRecastMesh *pMesh = new CRecastMesh( type );

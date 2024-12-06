@@ -85,32 +85,32 @@ public:
 	virtual Beam_t		*CreateBeamCirclePoints( BeamInfo_t &beamInfo );
 	virtual Beam_t		*CreateBeamFollow( BeamInfo_t &beamInfo );
 
-	virtual	void		CreateBeamEnts( int startEnt, int endEnt, int modelIndex, int haloIndex, float haloScale, 
+	virtual	void		CreateBeamEnts( int startEnt, int endEnt, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, 
 							float life, float width, float endWidth, float fadeLength, float amplitude, 
 							float brightness, float speed, int startFrame, 
 							float framerate, float r, float g, float b, int type = -1 );
 	virtual	void		CreateBeamEntPoint( int	nStartEntity, const Vector *pStart, int nEndEntity, const Vector* pEnd,
-							int modelIndex, int haloIndex, float haloScale, 
+							modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, 
 							float life, float width, float endWidth, float fadeLength, float amplitude, 
 							float brightness, float speed, int startFrame, 
 							float framerate, float r, float g, float b );
-	virtual	void		CreateBeamPoints( Vector& start, Vector& end, int modelIndex, int haloIndex, float haloScale,   
+	virtual	void		CreateBeamPoints( Vector& start, Vector& end, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale,   
 							float life, float width, float endWidth, float fadeLength, float amplitude, 
 							float brightness, float speed, int startFrame, 
 							float framerate, float r, float g, float b );
-	virtual	void		CreateBeamRing( int startEnt, int endEnt, int modelIndex, int haloIndex, float haloScale,   
+	virtual	void		CreateBeamRing( int startEnt, int endEnt, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale,   
 							float life, float width, float endWidth, float fadeLength, float amplitude, 
 							float brightness, float speed, int startFrame, 
 							float framerate, float r, float g, float b, int flags );
-	virtual void		CreateBeamRingPoint( const Vector& center, float start_radius, float end_radius, int modelIndex, int haloIndex, float haloScale,   
+	virtual void		CreateBeamRingPoint( const Vector& center, float start_radius, float end_radius, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale,   
 							float life, float width, float m_nEndWidth, float m_nFadeLength, float amplitude, 
 							float brightness, float speed, int startFrame, 
 							float framerate, float r, float g, float b, int flags );
 	virtual	void		CreateBeamCirclePoints( int type, Vector& start, Vector& end, 
-							int modelIndex,  int haloIndex,  float haloScale, float life, float width, 
+							modelindex_t modelIndex,  modelindex_t haloIndex,  float haloScale, float life, float width, 
 							float endWidth, float fadeLength, float amplitude, float brightness, float speed, 
 							int startFrame, float framerate, float r, float g, float b );
-	virtual	void		CreateBeamFollow( int startEnt, int modelIndex, int haloIndex, float haloScale,   
+	virtual	void		CreateBeamFollow( int startEnt, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale,   
 							float life, float width, float endWidth, float fadeLength, float r, float g, float b, 
 							float brightness );
 
@@ -837,8 +837,8 @@ Beam_t *CViewRenderBeams::CreateGenericBeam( BeamInfo_t &beamInfo )
 //			BEAMENT_ENTITY(startEnt - 
 // Output : Beam_t
 //-----------------------------------------------------------------------------
-void CViewRenderBeams::CreateBeamEnts( int startEnt, int endEnt, int modelIndex, 
-	int haloIndex, float haloScale, float life, float width, float endWidth, 
+void CViewRenderBeams::CreateBeamEnts( int startEnt, int endEnt, modelindex_t modelIndex, 
+	modelindex_t haloIndex, float haloScale, float life, float width, float endWidth, 
 	float fadeLength, float amplitude, float brightness, float speed, 
 	int startFrame, float framerate, float r, float g, float b, int type )
 {
@@ -926,7 +926,7 @@ Beam_t *CViewRenderBeams::CreateBeamEnts( BeamInfo_t &beamInfo )
 // Output : Beam_t
 //-----------------------------------------------------------------------------
 void CViewRenderBeams::CreateBeamEntPoint( int nStartEntity, const Vector *pStart, int nEndEntity, const Vector* pEnd,
-										   int modelIndex, int haloIndex, float haloScale, float life,  float width, 
+										   modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, float life,  float width, 
 										   float endWidth, float fadeLength, float amplitude, float brightness, float speed, int startFrame, 
 										   float framerate, float r, float g, float b )
 {
@@ -1055,7 +1055,7 @@ Beam_t *CViewRenderBeams::CreateBeamEntPoint( BeamInfo_t &beamInfo )
 //			b - 
 // Output : Beam_t
 //-----------------------------------------------------------------------------
-void CViewRenderBeams::CreateBeamPoints( Vector& start, Vector& end, int modelIndex, int haloIndex, float haloScale, float life,  float width, 
+void CViewRenderBeams::CreateBeamPoints( Vector& start, Vector& end, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, float life,  float width, 
 										 float endWidth, float fadeLength,float amplitude, float brightness, float speed, int startFrame, 
 										 float framerate, float r, float g, float b )
 {
@@ -1135,7 +1135,7 @@ Beam_t *CViewRenderBeams::CreateBeamPoints( BeamInfo_t &beamInfo )
 //			b - 
 // Output : Beam_t
 //-----------------------------------------------------------------------------
-void CViewRenderBeams::CreateBeamCirclePoints( int type, Vector& start, Vector& end, int modelIndex, int haloIndex, float haloScale, float life, float width, 
+void CViewRenderBeams::CreateBeamCirclePoints( int type, Vector& start, Vector& end, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, float life, float width, 
 											   float endWidth, float fadeLength,float amplitude, float brightness, float speed, int startFrame, 
 											   float framerate, float r, float g, float b )
 {
@@ -1195,7 +1195,7 @@ Beam_t *CViewRenderBeams::CreateBeamCirclePoints( BeamInfo_t &beamInfo )
 //			brightness - 
 // Output : Beam_t
 //-----------------------------------------------------------------------------
-void CViewRenderBeams::CreateBeamFollow( int startEnt, int modelIndex, int haloIndex, float haloScale, float life, float width, float endWidth, 
+void CViewRenderBeams::CreateBeamFollow( int startEnt, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, float life, float width, float endWidth, 
 										 float fadeLength, float r, float g, float b, float brightness )
 {
 	BeamInfo_t beamInfo;
@@ -1261,7 +1261,7 @@ Beam_t *CViewRenderBeams::CreateBeamFollow( BeamInfo_t &beamInfo )
 // Output : Beam_t
 //-----------------------------------------------------------------------------
 void CViewRenderBeams::CreateBeamRingPoint( const Vector& center, float start_radius, float end_radius, 
-					   int modelIndex, int haloIndex, float haloScale, float life, float width, float endWidth, 
+					   modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, float life, float width, float endWidth, 
 					   float fadeLength, float amplitude, float brightness, float speed, int startFrame, float framerate, 
 					   float r, float g, float b, int nFlags )
 {
@@ -1335,7 +1335,7 @@ Beam_t *CViewRenderBeams::CreateBeamRingPoint( BeamInfo_t &beamInfo )
 //			startEnt - 
 // Output : Beam_t
 //-----------------------------------------------------------------------------
-void CViewRenderBeams::CreateBeamRing( int startEnt, int endEnt, int modelIndex, int haloIndex, float haloScale, float life, float width, float endWidth, float fadeLength, 
+void CViewRenderBeams::CreateBeamRing( int startEnt, int endEnt, modelindex_t modelIndex, modelindex_t haloIndex, float haloScale, float life, float width, float endWidth, float fadeLength, 
 					   float amplitude, float brightness, float speed, int startFrame, float framerate, 
 					   float r, float g, float b, int flags )
 {

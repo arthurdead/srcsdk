@@ -90,7 +90,7 @@ static CTEBeamFollow g_TEBeamFollow( "BeamFollow" );
 //			a - 
 //-----------------------------------------------------------------------------
 void TE_BeamFollow( IRecipientFilter& filter, float delay,
-	int iEntIndex, int modelIndex, int haloIndex, float life, float width, float endWidth, 
+	int iEntIndex, modelindex_t modelIndex, modelindex_t haloIndex, float life, float width, float endWidth, 
 	float fadeLength,float r, float g, float b, float a )
 {
 	g_TEBeamFollow.m_iEntIndex		= (iEntIndex & 0x0FFF) | ((1 & 0xF)<<12);

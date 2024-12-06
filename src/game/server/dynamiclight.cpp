@@ -85,7 +85,7 @@ bool CDynamicLight::KeyValue( const char *szKeyName, const char *szValue )
 	{
 		color32 tmp;
 		UTIL_StringToColor32( &tmp, szValue );
-		SetRenderColor( tmp.r, tmp.g, tmp.b );
+		SetRenderColor( tmp.r(), tmp.g(), tmp.b() );
 	}
 	else if ( FStrEq( szKeyName, "pitch" ) )
 	{

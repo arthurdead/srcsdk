@@ -61,6 +61,64 @@ protected:
 	~IModelLoadCallback();
 };
 
+struct modelindex_t
+{
+public:
+	constexpr modelindex_t()
+		: value( -1 )
+	{
+	}
+
+	modelindex_t(int) = delete;
+	modelindex_t &operator=(int) = delete;
+
+	modelindex_t(const modelindex_t &) = default;
+	modelindex_t &operator=(const modelindex_t &) = default;
+
+	bool operator==(const modelindex_t &other) const
+	{ return value == other.value; }
+	bool operator!=(const modelindex_t &other) const
+	{ return value != other.value; }
+
+	bool operator>=(const modelindex_t &other) const
+	{ return value >= other.value; }
+	bool operator<=(const modelindex_t &other) const
+	{ return value <= other.value; }
+	bool operator>(const modelindex_t &other) const
+	{ return value > other.value; }
+	bool operator<(const modelindex_t &other) const
+	{ return value < other.value; }
+
+	bool IsValid() const
+	{ return value < -1 || value > 0; }
+
+	void Clear()
+	{ value = -1; }
+
+	bool IsDynamic() const
+	{ return value < -1; }
+	bool IsPrecached() const
+	{ return value > 0; }
+	bool IsNetworked() const
+	{ return value < -1 && !(value & 1); }
+	bool IsClientSide() const
+	{ return value < -1 && (value & 1); }
+
+	bool IsLoaded() const;
+
+	bool operator!() const
+	{ return !IsValid(); }
+	explicit operator bool() const
+	{ return IsValid(); }
+
+	int GetRaw() const
+	{ return value; }
+
+private:
+	int value;
+};
+
+constexpr inline const modelindex_t INVALID_MODEL_INDEX;
 
 //-----------------------------------------------------------------------------
 // Purpose: Automate refcount tracking on a model index
@@ -68,22 +126,25 @@ protected:
 class CRefCountedModelIndex
 {
 private:
-	int m_nIndex;
+	modelindex_t m_nIndex;
 public:
-	CRefCountedModelIndex() : m_nIndex( -1 ) { }
-	~CRefCountedModelIndex() { Set( -1 ); }
+	CRefCountedModelIndex() : m_nIndex( INVALID_MODEL_INDEX ) { }
+	~CRefCountedModelIndex() { Set( INVALID_MODEL_INDEX ); }
 
-	CRefCountedModelIndex( const CRefCountedModelIndex& src ) : m_nIndex( -1 ) { Set( src.m_nIndex ); }
+	CRefCountedModelIndex( const CRefCountedModelIndex& src ) : m_nIndex( INVALID_MODEL_INDEX ) { Set( src.m_nIndex ); }
 	CRefCountedModelIndex& operator=( const CRefCountedModelIndex& src ) { Set( src.m_nIndex ); return *this; }
 
-	explicit CRefCountedModelIndex( int i ) : m_nIndex( -1 ) { Set( i ); }
-	CRefCountedModelIndex& operator=( int i ) { Set( i ); return *this; }
+	explicit CRefCountedModelIndex( modelindex_t i ) : m_nIndex( INVALID_MODEL_INDEX ) { Set( i ); }
+	CRefCountedModelIndex& operator=( modelindex_t i ) { Set( i ); return *this; }
 
-	int Get() const { return m_nIndex; }
-	void Set( int i );
-	void Clear() { Set( -1 ); }
+	modelindex_t Get() const { return m_nIndex; }
+	void Set( modelindex_t i );
+	void Clear() { Set( INVALID_MODEL_INDEX ); }
 
-	operator int () const { return m_nIndex; }
+	bool IsValid() const
+	{ return m_nIndex.IsValid(); }
+
+	operator modelindex_t () const { return m_nIndex; }
 };
 
 
@@ -104,8 +165,8 @@ public:
 // - if the dynamic index is EVEN, then the model is NETWORKED
 //   and has a dynamic model string table index of (dynamic index)>>1
 
-inline bool IsDynamicModelIndex( int modelindex ) { return modelindex < -1; }
-inline bool IsClientOnlyModelIndex( int modelindex ) { return modelindex < -1 && (modelindex & 1); }
+inline bool IsDynamicModelIndex( modelindex_t modelindex ) { return modelindex.IsDynamic(); }
+inline bool IsClientOnlyModelIndex( modelindex_t modelindex ) { return modelindex.IsClientSide(); }
 
 abstract_class IVModelInfo
 {
@@ -113,16 +174,16 @@ public:
 	virtual							~IVModelInfo( void ) { }
 
 	// Returns model_t* pointer for a model given a precached or dynamic model index.
-	virtual const model_t			*GetModel( int modelindex ) = 0;
+	virtual const model_t			*GetModel( modelindex_t modelindex ) = 0;
 
 	// Returns index of model by name for precached or known dynamic models.
 	// Does not adjust reference count for dynamic models.
-	virtual int						GetModelIndex( const char *name ) const = 0;
+	virtual modelindex_t						GetModelIndex( const char *name ) const = 0;
 
 	// Returns name of model
 	virtual const char				*GetModelName( const model_t *model ) const = 0;
 	virtual vcollide_t				*GetVCollide( const model_t *model ) = 0;
-	virtual vcollide_t				*GetVCollide( int modelindex ) = 0;
+	virtual vcollide_t				*GetVCollide( modelindex_t modelindex ) = 0;
 	virtual void					GetModelBounds( const model_t *model, Vector& mins, Vector& maxs ) const = 0;
 	virtual	void					GetModelRenderBounds( const model_t *model, Vector& mins, Vector& maxs ) const = 0;
 	virtual int						GetModelFrameCount( const model_t *model ) const = 0;
@@ -131,7 +192,7 @@ public:
 	virtual bool					ModelHasMaterialProxy( const model_t *model ) const = 0;
 	virtual bool					IsTranslucent( model_t const* model ) const = 0;
 	virtual bool					IsTranslucentTwoPass( const model_t *model ) const = 0;
-	virtual void					RecomputeTranslucency( const model_t *model, int nSkin, int nBody, void /*IClientRenderable*/ *pClientRenderable, float fInstanceAlphaModulate=1.0f) = 0;
+	virtual void					RecomputeTranslucency( const model_t *model, int nSkin, int nBody, IClientRenderable *pClientRenderable, float fInstanceAlphaModulate=1.0f) = 0;
 	HACKMGR_CLASS_API RenderableTranslucencyType_t ComputeTranslucencyType( const model_t *model, int nSkin, int nBody );
 	virtual int						GetModelMaterialCount( const model_t* model ) const = 0;
 	virtual void					GetModelMaterials( const model_t *model, int count, IMaterial** ppMaterial ) = 0;
@@ -154,7 +215,7 @@ public:
 	virtual void					GetIlluminationPoint( const model_t *model, IClientRenderable *pRenderable, Vector const& origin, 
 										QAngle const& angles, Vector* pLightingCenter ) = 0;
 
-	virtual int						GetModelContents( int modelIndex ) = 0;
+	virtual int						GetModelContents( modelindex_t modelIndex ) = 0;
 	virtual studiohdr_t				*GetStudiomodel( const model_t *mod ) = 0;
 	virtual int						GetModelSpriteWidth( const model_t *model ) const = 0;
 	virtual int						GetModelSpriteHeight( const model_t *model ) const = 0;
@@ -183,9 +244,9 @@ public:
 	virtual const model_t			*DO_NOT_USE_FindOrLoadModel( const char *name ) { Assert(0); return NULL; }
 	virtual void					DO_NOT_USE_InitDynamicModels( ) { Assert(0); }
 	virtual void					DO_NOT_USE_ShutdownDynamicModels( ) { Assert(0); }
-	virtual void					DO_NOT_USE_AddDynamicModel( const char *name, int nModelIndex = -1 ) { Assert(0); }
-	virtual void					DO_NOT_USE_ReferenceModel( int modelindex ) { Assert(0); }
-	virtual void					DO_NOT_USE_UnreferenceModel( int modelindex ) { Assert(0); }
+	virtual void					DO_NOT_USE_AddDynamicModel( const char *name, modelindex_t nModelIndex = INVALID_MODEL_INDEX ) { Assert(0); }
+	virtual void					DO_NOT_USE_ReferenceModel( modelindex_t modelindex ) { Assert(0); }
+	virtual void					DO_NOT_USE_UnreferenceModel( modelindex_t modelindex ) { Assert(0); }
 	virtual void					DO_NOT_USE_CleanupDynamicModels( bool bForce = false ) { Assert(0); }
 
 	virtual MDLHandle_t				GetCacheHandle( const model_t *model ) const = 0;
@@ -198,20 +259,20 @@ public:
 	// Poked by engine host system
 	virtual void					OnLevelChange() = 0;
 
-	virtual int						GetModelClientSideIndex( const char *name ) const = 0;
+	virtual modelindex_t						GetModelClientSideIndex( const char *name ) const = 0;
 
 	// Returns index of model by name, dynamically registered if not already known.
-	virtual int						RegisterDynamicModel( const char *name, bool bClientSide ) = 0;
+	virtual modelindex_t						RegisterDynamicModel( const char *name, bool bClientSide ) = 0;
 
-	virtual bool					IsDynamicModelLoading( int modelIndex ) = 0;
+	virtual bool					IsDynamicModelLoading( modelindex_t modelIndex ) = 0;
 
-	virtual void					AddRefDynamicModel( int modelIndex ) = 0;
-	virtual void					ReleaseDynamicModel( int modelIndex ) = 0;
+	virtual void					AddRefDynamicModel( modelindex_t modelIndex ) = 0;
+	virtual void					ReleaseDynamicModel( modelindex_t modelIndex ) = 0;
 
 	// Registers callback for when dynamic model has finished loading.
 	// Automatically adds reference, pair with ReleaseDynamicModel.
-	virtual bool					RegisterModelLoadCallback( int modelindex, IModelLoadCallback* pCallback, bool bCallImmediatelyIfLoaded = true ) = 0;
-	virtual void					UnregisterModelLoadCallback( int modelindex, IModelLoadCallback* pCallback ) = 0;
+	virtual bool					RegisterModelLoadCallback( modelindex_t modelindex, IModelLoadCallback* pCallback, bool bCallImmediatelyIfLoaded = true ) = 0;
+	virtual void					UnregisterModelLoadCallback( modelindex_t modelindex, IModelLoadCallback* pCallback ) = 0;
 };
 
 abstract_class IVModelInfoClient : public IVModelInfo
@@ -223,48 +284,53 @@ public:
 	virtual const model_t *DO_NOT_USE_FindOrLoadModel( const char *name ) = 0;
 };
 
-
 struct virtualterrainparams_t
 {
 	// UNDONE: Add grouping here, specified in BSP file? (test grouping to see if this is necessary)
 	int index;
 };
 
+#if (defined CLIENT_DLL || defined TOOL_DLL) && !defined GAME_DLL
+extern IVModelInfoClient *modelinfo;
+#elif defined GAME_DLL
+extern IVModelInfo *modelinfo;
+#endif
+
+#if defined CLIENT_DLL || defined TOOL_DLL || defined GAME_DLL
+inline bool modelindex_t::IsLoaded() const
+{
+	if( value > 0 )
+		return true;
+
+	if( value < -1 )
+		return !modelinfo->IsDynamicModelLoading( *this );
+
+	return false;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Force removal from callback list on destruction to avoid crashes.
 //-----------------------------------------------------------------------------
 inline IModelLoadCallback::~IModelLoadCallback()
 {
-#ifdef CLIENT_DLL
-	extern IVModelInfoClient *modelinfo;
-#else
-	extern IVModelInfo *modelinfo;
-#endif
 	if ( modelinfo )
 	{
-		modelinfo->UnregisterModelLoadCallback( -1, this );
+		modelinfo->UnregisterModelLoadCallback( INVALID_MODEL_INDEX, this );
 	}
 }
-
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Automate refcount tracking on a model index
 //-----------------------------------------------------------------------------
-inline void CRefCountedModelIndex::Set( int i )
+inline void CRefCountedModelIndex::Set( modelindex_t i )
 {
-#ifdef CLIENT_DLL
-	extern IVModelInfoClient *modelinfo;
-#else
-	extern IVModelInfo *modelinfo;
-#endif
 	if ( i == m_nIndex )
 		return;
 	modelinfo->AddRefDynamicModel( i );
 	modelinfo->ReleaseDynamicModel( m_nIndex );
 	m_nIndex = i;
 }
+#endif
 
 
 #endif // IVMODELINFO_H

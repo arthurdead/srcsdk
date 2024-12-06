@@ -12,8 +12,8 @@
 
 #include <vgui/VGUI.h>
 #include "tier1/interface.h"
+#include "Color.h"
 
-class Color;
 class KeyValues;
 
 namespace vgui

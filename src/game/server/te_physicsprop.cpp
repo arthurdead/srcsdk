@@ -33,7 +33,7 @@ public:
 	CNetworkVector( m_vecOrigin );
 	CNetworkQAngle( m_angRotation );
 	CNetworkVector( m_vecVelocity );
-	CNetworkVar( int, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	CNetworkVar( int, m_nSkin );
 	CNetworkVar( int, m_nFlags );
 	CNetworkVar( int, m_nEffects );
@@ -49,7 +49,7 @@ CTEPhysicsProp::CTEPhysicsProp( const char *name ) :
 	m_vecOrigin.Init();
 	m_angRotation.Init();
 	m_vecVelocity.Init();
-	m_nModelIndex		= 0;
+	m_nModelIndex		= INVALID_MODEL_INDEX;
 	m_nSkin				= 0;
 	m_nFlags			= 0;
 	m_nEffects			= 0;
@@ -118,7 +118,7 @@ END_SEND_TABLE()
 static CTEPhysicsProp s_TEPhysicsProp( "physicsprop" );
 
 void TE_PhysicsProp( IRecipientFilter& filter, float delay,
-	int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects )
+	modelindex_t modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects )
 {
 	s_TEPhysicsProp.m_vecOrigin		= pos;
 	s_TEPhysicsProp.m_angRotation	= angles;

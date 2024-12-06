@@ -17,24 +17,24 @@ IMPLEMENT_NETWORKCLASS_ALIASED( FogController, DT_FogController )
 //-----------------------------------------------------------------------------
 BEGIN_NETWORK_TABLE_NOBASE( C_FogController, DT_FogController )
 	// fog data
-	RecvPropInt( RECVINFO( m_fog.enable ) ),
-	RecvPropInt( RECVINFO( m_fog.blend ) ),
-	RecvPropVector( RECVINFO( m_fog.dirPrimary ) ),
-	RecvPropInt( RECVINFO( m_fog.colorPrimary ), 0, RecvProxy_Int32ToColor32 ),
-	RecvPropInt( RECVINFO( m_fog.colorSecondary ), 0, RecvProxy_Int32ToColor32 ),
-	RecvPropFloat( RECVINFO( m_fog.start ) ),
-	RecvPropFloat( RECVINFO( m_fog.end ) ),
-	RecvPropFloat( RECVINFO( m_fog.farz ) ),
-	RecvPropFloat( RECVINFO( m_fog.maxdensity ) ),
+	RecvPropInt( RECVINFO_STRUCTELEM( m_fog, enable ) ),
+	RecvPropInt( RECVINFO_STRUCTELEM( m_fog, blend ) ),
+	RecvPropVector( RECVINFO_STRUCTELEM( m_fog, dirPrimary ) ),
+	RecvPropInt( RECVINFO_STRUCTELEM( m_fog, colorPrimary ), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropInt( RECVINFO_STRUCTELEM( m_fog, colorSecondary ), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_fog, start ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_fog, end ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_fog, farz ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_fog, maxdensity ) ),
 
-	RecvPropInt( RECVINFO( m_fog.colorPrimaryLerpTo ), 0, RecvProxy_Int32ToColor32 ),
-	RecvPropInt( RECVINFO( m_fog.colorSecondaryLerpTo ), 0, RecvProxy_Int32ToColor32 ),
-	RecvPropFloat( RECVINFO( m_fog.startLerpTo ) ),
-	RecvPropFloat( RECVINFO( m_fog.endLerpTo ) ),
-	RecvPropFloat( RECVINFO( m_fog.maxdensityLerpTo ) ),
-	RecvPropFloat( RECVINFO( m_fog.lerptime ) ),
-	RecvPropFloat( RECVINFO( m_fog.duration ) ),
-	RecvPropFloat( RECVINFO( m_fog.HDRColorScale ) ),
+	RecvPropInt( RECVINFO_STRUCTELEM( m_fog, colorPrimaryLerpTo ), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropInt( RECVINFO_STRUCTELEM( m_fog, colorSecondaryLerpTo ), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_fog, startLerpTo ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_fog, endLerpTo ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_fog, maxdensityLerpTo ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_fog, lerptime ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_fog, duration ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_fog, HDRColorScale ) ),
 END_NETWORK_TABLE()
 
 //-----------------------------------------------------------------------------

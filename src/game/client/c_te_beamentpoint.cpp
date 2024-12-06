@@ -52,7 +52,7 @@ C_TEBeamEntPoint::~C_TEBeamEntPoint( void )
 
 void TE_BeamEntPoint( IRecipientFilter& filter, float delay,
 	int	nStartEntity, const Vector *pStart, int nEndEntity, const Vector* pEnd, 
-	int modelindex, int haloindex, int startframe, int framerate,
+	modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 	float life, float width, float endWidth, int fadeLength, float amplitude, 
 	int r, int g, int b, int a, int speed )
 {

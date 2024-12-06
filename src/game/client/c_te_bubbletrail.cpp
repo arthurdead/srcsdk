@@ -32,7 +32,7 @@ public:
 	Vector			m_vecMins;
 	Vector			m_vecMaxs;
 	float			m_flWaterZ;
-	int				m_nModelIndex;
+	modelindex_t m_nModelIndex;
 	int				m_nCount;
 	float			m_fSpeed;
 };
@@ -45,7 +45,7 @@ C_TEBubbleTrail::C_TEBubbleTrail( void )
 	m_vecMins.Init();
 	m_vecMaxs.Init();
 	m_flWaterZ = 0.0;
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nCount = 0;
 	m_fSpeed = 0;
 }
@@ -58,7 +58,7 @@ C_TEBubbleTrail::~C_TEBubbleTrail( void )
 }
 
 void TE_BubbleTrail( IRecipientFilter& filter, float delay,
-	const Vector* mins, const Vector* maxs, float flWaterZ, int modelindex, int count, float speed )
+	const Vector* mins, const Vector* maxs, float flWaterZ, modelindex_t modelindex, int count, float speed )
 {
 	tempents->BubbleTrail( *mins, *maxs, flWaterZ, modelindex, count, speed );
 }

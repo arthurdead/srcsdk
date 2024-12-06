@@ -36,15 +36,14 @@ extern int	gEvilImpulse101;		// In Player.h
 // -----------------------------------------
 //	Sprite Index info
 // -----------------------------------------
-int		g_sModelIndexLaser;			// holds the index for the laser beam
-const char	*g_pModelNameLaser = "sprites/laserbeam.vmt";
-int		g_sModelIndexLaserDot;		// holds the index for the laser beam dot
-int		g_sModelIndexFireball;		// holds the index for the fireball
-int		g_sModelIndexSmoke;			// holds the index for the smoke cloud
-int		g_sModelIndexWExplosion;	// holds the index for the underwater explosion
-int		g_sModelIndexBubbles;		// holds the index for the bubbles model
-int		g_sModelIndexBloodDrop;		// holds the sprite index for the initial blood
-int		g_sModelIndexBloodSpray;	// holds the sprite index for splattered blood
+modelindex_t		g_sModelIndexLaser;			// holds the index for the laser beam
+modelindex_t		g_sModelIndexLaserDot;		// holds the index for the laser beam dot
+modelindex_t		g_sModelIndexFireball;		// holds the index for the fireball
+modelindex_t		g_sModelIndexSmoke;			// holds the index for the smoke cloud
+modelindex_t		g_sModelIndexWExplosion;	// holds the index for the underwater explosion
+modelindex_t		g_sModelIndexBubbles;		// holds the index for the bubbles model
+modelindex_t		g_sModelIndexBloodDrop;		// holds the sprite index for the initial blood
+modelindex_t		g_sModelIndexBloodSpray;	// holds the sprite index for splattered blood
 
 
 ConVar weapon_showproficiency( "weapon_showproficiency", "0" );
@@ -71,7 +70,7 @@ void W_Precache(void)
 
 	g_sModelIndexSmoke = CBaseEntity::PrecacheModel ("sprites/steam1.vmt");// smoke
 	g_sModelIndexBubbles = CBaseEntity::PrecacheModel ("sprites/bubble.vmt");//bubbles
-	g_sModelIndexLaser = CBaseEntity::PrecacheModel( (char *)g_pModelNameLaser );
+	g_sModelIndexLaser = CBaseEntity::PrecacheModel( "sprites/laserbeam.vmt" );
 
 	PrecacheParticleSystem( "blood_impact_red_01" );
 	PrecacheParticleSystem( "blood_impact_green_01" );

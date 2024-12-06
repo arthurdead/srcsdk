@@ -334,8 +334,8 @@ void CMessageDialog::PaintBackground( void )
 	{
 		int nAlpha = GetAlpha();
 
-		m_clrNotSimpleBG[3] = nAlpha;
-		m_clrNotSimpleBGBlack[3] = nAlpha;
+		m_clrNotSimpleBG.SetA( nAlpha );
+		m_clrNotSimpleBGBlack.SetA( nAlpha );
 
 		DrawBox( 0, 0, wide, tall, m_clrNotSimpleBGBlack, 1.0f );	
 		DrawBox( 0, 0, wide, tall - m_FooterTall, m_clrNotSimpleBG, 1.0f );	

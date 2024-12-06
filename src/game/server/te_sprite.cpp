@@ -35,7 +35,7 @@ public:
 
 public:
 	CNetworkVector( m_vecOrigin );
-	CNetworkVar( int, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	CNetworkVar( float, m_fScale );
 	CNetworkVar( int, m_nBrightness );
 };
@@ -48,7 +48,7 @@ CTESprite::CTESprite( const char *name ) :
 	CBaseTempEntity( name )
 {
 	m_vecOrigin.Init();
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_fScale = 0;
 	m_nBrightness = 0;
 }
@@ -109,7 +109,7 @@ END_SEND_TABLE()
 static CTESprite g_TESprite( "Sprite" );
 
 void TE_Sprite( IRecipientFilter& filter, float delay,
-	const Vector *pos, int modelindex, float size, int brightness )
+	const Vector *pos, modelindex_t modelindex, float size, int brightness )
 {
 	g_TESprite.m_vecOrigin		= *pos;
 	g_TESprite.m_nModelIndex	= modelindex;	

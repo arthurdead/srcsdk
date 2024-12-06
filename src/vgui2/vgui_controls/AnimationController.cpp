@@ -448,10 +448,10 @@ bool AnimationController::ParseScriptFile(char *pMem, int length, const char *fi
 						// HPE_END
 						//=============================================================================
 
-						cmdAnimate.target.a = col[0];
-						cmdAnimate.target.b = col[1];
-						cmdAnimate.target.c = col[2];
-						cmdAnimate.target.d = col[3];
+						cmdAnimate.target.a = col.r();
+						cmdAnimate.target.b = col.g();
+						cmdAnimate.target.c = col.b();
+						cmdAnimate.target.d = col.a();
 					}
 				}
 
@@ -1125,10 +1125,10 @@ void AnimationController::RunAnimationCommand(vgui::Panel *panel, const char *va
 	memset(&animateCmd, 0, sizeof(animateCmd));
 	animateCmd.panel = 0;
 	animateCmd.variable = var;
-	animateCmd.target.a = targetValue[0];
-	animateCmd.target.b = targetValue[1];
-	animateCmd.target.c = targetValue[2];
-	animateCmd.target.d = targetValue[3];
+	animateCmd.target.a = targetValue.r();
+	animateCmd.target.b = targetValue.g();
+	animateCmd.target.c = targetValue.b();
+	animateCmd.target.d = targetValue.a();
 	animateCmd.interpolationFunction = interpolator;
 	animateCmd.interpolationParameter = animParameter;
 	animateCmd.startTime = startDelaySeconds;
@@ -1483,18 +1483,18 @@ AnimationController::Value_t AnimationController::GetValue(ActiveAnimation_t& an
 	else if (var == m_sFgColor)
 	{
 		Color col = panel->GetFgColor();
-		val.a = col[0];
-		val.b = col[1];
-		val.c = col[2];
-		val.d = col[3];
+		val.a = col.r();
+		val.b = col.g();
+		val.c = col.b();
+		val.d = col.a();
 	}
 	else if (var == m_sBgColor)
 	{
 		Color col = panel->GetBgColor();
-		val.a = col[0];
-		val.b = col[1];
-		val.c = col[2];
-		val.d = col[3];
+		val.a = col.r();
+		val.b = col.g();
+		val.c = col.b();
+		val.d = col.a();
 	}
 	else if ( var == m_sXPos )
 	{
@@ -1537,10 +1537,10 @@ AnimationController::Value_t AnimationController::GetValue(ActiveAnimation_t& an
 			else if (kv && kv->GetDataType() == KeyValues::TYPE_COLOR)
 			{
 				Color col = kv->GetColor();
-				val.a = col[0];
-				val.b = col[1];
-				val.c = col[2];
-				val.d = col[3];
+				val.a = col.r();
+				val.b = col.g();
+				val.c = col.b();
+				val.d = col.a();
 			}
 		}
 		else
@@ -1569,20 +1569,12 @@ void AnimationController::SetValue(ActiveAnimation_t& anim, Panel *panel, UtlSym
 	}
 	else if (var == m_sFgColor)
 	{
-		Color col = panel->GetFgColor();
-		col[0] = (unsigned char)value.a;
-		col[1] = (unsigned char)value.b;
-		col[2] = (unsigned char)value.c;
-		col[3] = (unsigned char)value.d;
+		Color col( (unsigned char)value.a, (unsigned char)value.b, (unsigned char)value.c, (unsigned char)value.d );
 		panel->SetFgColor(col);
 	}
 	else if (var == m_sBgColor)
 	{
-		Color col = panel->GetBgColor();
-		col[0] = (unsigned char)value.a;
-		col[1] = (unsigned char)value.b;
-		col[2] = (unsigned char)value.c;
-		col[3] = (unsigned char)value.d;
+		Color col( (unsigned char)value.a, (unsigned char)value.b, (unsigned char)value.c, (unsigned char)value.d );
 		panel->SetBgColor(col);
 	}
 	else if (var == m_sXPos)

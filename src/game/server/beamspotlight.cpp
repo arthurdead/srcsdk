@@ -29,7 +29,7 @@ class CBeamSpotlight : public CBaseEntity
 {
 	DECLARE_CLASS( CBeamSpotlight, CBaseEntity );
 public:
-	DECLARE_DATADESC();
+	DECLARE_MAPENTITY();
 	DECLARE_SERVERCLASS();
 
 	CBeamSpotlight();
@@ -50,7 +50,7 @@ private:
 	int  UpdateTransmitState();
 	void RecalcRotation( void );
 
-	CNetworkVar( int, m_nHaloIndex );
+	CNetworkVar( modelindex_t, m_nHaloIndex );
 
 	CNetworkVar( bool, m_bSpotlightOn );
 	CNetworkVar( bool, m_bHasDynamicLight );
@@ -73,15 +73,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( beam_spotlight, CBeamSpotlight );
 
-BEGIN_DATADESC( CBeamSpotlight )
-	DEFINE_FIELD( m_nHaloIndex, FIELD_MODELINDEX ),
-	DEFINE_FIELD( m_bSpotlightOn, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bHasDynamicLight, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flRotationSpeed, FIELD_FLOAT ),
-	DEFINE_FIELD( m_isRotating, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_isReversed, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_nRotationAxis, FIELD_INTEGER ),
-
+BEGIN_MAPENTITY( CBeamSpotlight )
 	DEFINE_KEYFIELD( m_flmaxSpeed, FIELD_FLOAT, "maxspeed" ),
 	DEFINE_KEYFIELD( m_flSpotlightMaxLength,FIELD_FLOAT, "SpotlightLength"),
 	DEFINE_KEYFIELD( m_flSpotlightGoalWidth,FIELD_FLOAT, "SpotlightWidth"),
@@ -94,10 +86,10 @@ BEGIN_DATADESC( CBeamSpotlight )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Reverse", InputReverse ),
 	DEFINE_OUTPUT( m_OnOn, "OnLightOn" ),
 	DEFINE_OUTPUT( m_OnOff, "OnLightOff" ),
-END_DATADESC()
+END_MAPENTITY()
 
 IMPLEMENT_SERVERCLASS_ST(CBeamSpotlight, DT_BeamSpotlight)
-	SendPropInt( SENDINFO(m_nHaloIndex),	16, SPROP_UNSIGNED ),
+	SendPropModelIndex( SENDINFO(m_nHaloIndex) ),
 	SendPropBool( SENDINFO(m_bSpotlightOn) ),
 	SendPropBool( SENDINFO(m_bHasDynamicLight) ),
 	SendPropFloat( SENDINFO(m_flSpotlightMaxLength), 0, SPROP_NOSCALE ),

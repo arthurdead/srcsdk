@@ -536,7 +536,7 @@ public:
 	void Color3fv( const float *rgb );
 	void Color4f( float r, float g, float b, float a );
 	void Color4fv( const float *rgba );
-	void Color4Packed( int packedColor );
+	void Color4Packed( unsigned int packedColor );
 	int PackColor4( unsigned char r, unsigned char g, unsigned char b, unsigned char a );
 
 	// Faster versions of color
@@ -544,6 +544,7 @@ public:
 	void Color3ubv( unsigned char const* rgb );
 	void Color4ub( unsigned char r, unsigned char g, unsigned char b, unsigned char a );
 	void Color4ubv( unsigned char const* rgba );
+	void Color4ubv( color32 rgba );
 
 	// specular color setting
 	void Specular3f( float r, float g, float b );
@@ -1767,11 +1768,11 @@ inline void	CVertexBuilder::Color3f( float r, float g, float b )
 	Assert( (r <= 1.0) && (g <= 1.0) && (b <= 1.0) );
 
 #ifdef OPENGL_SWAP_COLORS
-	int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | 0xFF000000;
+	unsigned int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | 0xFF000000;
 #else
-	int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | 0xFF000000;
+	unsigned int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | 0xFF000000;
 #endif
-	*(int*)m_pCurrColor = col;
+	*(unsigned int*)m_pCurrColor = col;
 }
 
 inline void	CVertexBuilder::Color3fv( const float *rgb )
@@ -1783,11 +1784,11 @@ inline void	CVertexBuilder::Color3fv( const float *rgb )
 	Assert( (rgb[0] <= 1.0) && (rgb[1] <= 1.0) && (rgb[2] <= 1.0) );
 
 #ifdef OPENGL_SWAP_COLORS	
-	int col = (FastFToC(rgb[0])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[2]) << 16) | 0xFF000000;
+	unsigned int col = (FastFToC(rgb[0])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[2]) << 16) | 0xFF000000;
 #else
-	int col = (FastFToC(rgb[2])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[0]) << 16) | 0xFF000000;
+	unsigned int col = (FastFToC(rgb[2])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[0]) << 16) | 0xFF000000;
 #endif
-	*(int*)m_pCurrColor = col;
+	*(unsigned int*)m_pCurrColor = col;
 }
 
 inline void	CVertexBuilder::Color4f( float r, float g, float b, float a )
@@ -1798,11 +1799,11 @@ inline void	CVertexBuilder::Color4f( float r, float g, float b, float a )
 	Assert( (r <= 1.0) && (g <= 1.0) && (b <= 1.0) && (a <= 1.0) );
 
 #ifdef OPENGL_SWAP_COLORS
-	int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | (FastFToC(a) << 24);
+	unsigned int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | (FastFToC(a) << 24);
 #else
-	int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | (FastFToC(a) << 24);
+	unsigned int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | (FastFToC(a) << 24);
 #endif
-	*(int*)m_pCurrColor = col;
+	*(unsigned int*)m_pCurrColor = col;
 }
 
 inline void	CVertexBuilder::Color4fv( const float *rgba )
@@ -1814,11 +1815,11 @@ inline void	CVertexBuilder::Color4fv( const float *rgba )
 	Assert( (rgba[0] <= 1.0) && (rgba[1] <= 1.0) && (rgba[2] <= 1.0) && (rgba[3] <= 1.0) );
 
 #ifdef OPENGL_SWAP_COLORS
-	int col = (FastFToC(rgba[0])) | (FastFToC(rgba[1]) << 8) | (FastFToC(rgba[2]) << 16) | (FastFToC(rgba[3]) << 24);
+	unsigned int col = (FastFToC(rgba[0])) | (FastFToC(rgba[1]) << 8) | (FastFToC(rgba[2]) << 16) | (FastFToC(rgba[3]) << 24);
 #else
-	int col = (FastFToC(rgba[2])) | (FastFToC(rgba[1]) << 8) | (FastFToC(rgba[0]) << 16) | (FastFToC(rgba[3]) << 24);
+	unsigned int col = (FastFToC(rgba[2])) | (FastFToC(rgba[1]) << 8) | (FastFToC(rgba[0]) << 16) | (FastFToC(rgba[3]) << 24);
 #endif
-	*(int*)m_pCurrColor = col;
+	*(unsigned int*)m_pCurrColor = col;
 }
 
 
@@ -1832,12 +1833,12 @@ inline void CVertexBuilder::Color3ub( unsigned char r, unsigned char g, unsigned
 {
 	Assert( m_pColor && m_pCurrColor );
 	#ifdef OPENGL_SWAP_COLORS
-		int col = r | (g << 8) | (b << 16) | 0xFF000000;	// r, g, b, a in memory
+		unsigned int col = r | (g << 8) | (b << 16) | 0xFF000000;	// r, g, b, a in memory
 	#else
-		int col = b | (g << 8) | (r << 16) | 0xFF000000;
+		unsigned int col = b | (g << 8) | (r << 16) | 0xFF000000;
 	#endif
 	
-	*(int*)m_pCurrColor = col;
+	*(unsigned int*)m_pCurrColor = col;
 }
 
 inline void CVertexBuilder::Color3ubv( unsigned char const* rgb )
@@ -1845,24 +1846,24 @@ inline void CVertexBuilder::Color3ubv( unsigned char const* rgb )
 	Assert(rgb);
 	Assert( m_pColor && m_pCurrColor );
 	#ifdef OPENGL_SWAP_COLORS
-		int col = rgb[0] | (rgb[1] << 8) | (rgb[2] << 16) | 0xFF000000;	// r, g, b, a in memory
+		unsigned int col = rgb[0] | (rgb[1] << 8) | (rgb[2] << 16) | 0xFF000000;	// r, g, b, a in memory
 	#else
-		int col = rgb[2] | (rgb[1] << 8) | (rgb[0] << 16) | 0xFF000000;
+		unsigned int col = rgb[2] | (rgb[1] << 8) | (rgb[0] << 16) | 0xFF000000;
 	#endif
 
-	*(int*)m_pCurrColor = col;
+	*(unsigned int*)m_pCurrColor = col;
 }
 
 inline void CVertexBuilder::Color4ub( unsigned char r, unsigned char g, unsigned char b, unsigned char a )
 {
 	Assert( m_pColor && m_pCurrColor );
 	#ifdef OPENGL_SWAP_COLORS
-		int col = r | (g << 8) | (b << 16) | (a << 24);	// r, g, b, a in memory
+		unsigned int col = r | (g << 8) | (b << 16) | (a << 24);	// r, g, b, a in memory
 	#else
-		int col = b | (g << 8) | (r << 16) | (a << 24);
+		unsigned int col = b | (g << 8) | (r << 16) | (a << 24);
 	#endif
 
-	*(int*)m_pCurrColor = col;
+	*(unsigned int*)m_pCurrColor = col;
 }
 
 inline void CVertexBuilder::Color4ubv( unsigned char const* rgba )
@@ -1870,16 +1871,27 @@ inline void CVertexBuilder::Color4ubv( unsigned char const* rgba )
 	Assert( rgba );
 	Assert( m_pColor && m_pCurrColor );
 	#ifdef OPENGL_SWAP_COLORS
-		int col = rgba[0] | (rgba[1] << 8) | (rgba[2] << 16) | (rgba[3] << 24);	// r, g, b, a in memory
+		unsigned int col = rgba[0] | (rgba[1] << 8) | (rgba[2] << 16) | (rgba[3] << 24);	// r, g, b, a in memory
 	#else
-		int col = rgba[2] | (rgba[1] << 8) | (rgba[0] << 16) | (rgba[3] << 24);
+		unsigned int col = rgba[2] | (rgba[1] << 8) | (rgba[0] << 16) | (rgba[3] << 24);
 	#endif
-	*(int*)m_pCurrColor = col;
+	*(unsigned int*)m_pCurrColor = col;
 }
 
-FORCEINLINE void CVertexBuilder::Color4Packed( int packedColor )
+inline void CVertexBuilder::Color4ubv( color32 rgba )
 {
-	*(int*)m_pCurrColor = packedColor;
+	Assert( m_pColor && m_pCurrColor );
+	#ifdef OPENGL_SWAP_COLORS
+		unsigned int col = rgba[0] | (rgba[1] << 8) | (rgba[2] << 16) | (rgba[3] << 24);	// r, g, b, a in memory
+	#else
+		unsigned int col = rgba.b() | (rgba.g() << 8) | (rgba.r() << 16) | (rgba.a() << 24);
+	#endif
+	*(unsigned int*)m_pCurrColor = col;
+}
+
+FORCEINLINE void CVertexBuilder::Color4Packed( unsigned int packedColor )
+{
+	*(unsigned int*)m_pCurrColor = packedColor;
 }
 
 FORCEINLINE int CVertexBuilder::PackColor4( unsigned char r, unsigned char g, unsigned char b, unsigned char a )
@@ -1896,11 +1908,11 @@ inline void	CVertexBuilder::Specular3f( float r, float g, float b )
 
 	unsigned char* pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 #ifdef OPENGL_SWAP_COLORS
-	int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | 0xFF000000;
+	unsigned int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | 0xFF000000;
 #else
-	int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | 0xFF000000;
+	unsigned int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | 0xFF000000;
 #endif
-	*(int*)pSpecular = col;
+	*(unsigned int*)pSpecular = col;
 }
 
 inline void	CVertexBuilder::Specular3fv( const float *rgb )
@@ -1913,11 +1925,11 @@ inline void	CVertexBuilder::Specular3fv( const float *rgb )
 
 	unsigned char* pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 #ifdef OPENGL_SWAP_COLORS
-	int col = (FastFToC(rgb[0])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[2]) << 16) | 0xFF000000;
+	unsigned int col = (FastFToC(rgb[0])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[2]) << 16) | 0xFF000000;
 #else
-	int col = (FastFToC(rgb[2])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[0]) << 16) | 0xFF000000;
+	unsigned int col = (FastFToC(rgb[2])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[0]) << 16) | 0xFF000000;
 #endif
-	*(int*)pSpecular = col;
+	*(unsigned int*)pSpecular = col;
 }
 
 inline void	CVertexBuilder::Specular4f( float r, float g, float b, float a )
@@ -1929,11 +1941,11 @@ inline void	CVertexBuilder::Specular4f( float r, float g, float b, float a )
 
 	unsigned char* pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 #ifdef OPENGL_SWAP_COLORS
-	int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | (FastFToC(a) << 24);
+	unsigned int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | (FastFToC(a) << 24);
 #else
-	int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | (FastFToC(a) << 24);
+	unsigned int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | (FastFToC(a) << 24);
 #endif
-	*(int*)pSpecular = col;
+	*(unsigned int*)pSpecular = col;
 }
 
 inline void	CVertexBuilder::Specular4fv( const float *rgb )
@@ -1946,11 +1958,11 @@ inline void	CVertexBuilder::Specular4fv( const float *rgb )
 
 	unsigned char* pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 #ifdef OPENGL_SWAP_COLORS
-	int col = (FastFToC(rgb[0])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[2]) << 16) | (FastFToC(rgb[3]) << 24);
+	unsigned int col = (FastFToC(rgb[0])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[2]) << 16) | (FastFToC(rgb[3]) << 24);
 #else
-	int col = (FastFToC(rgb[2])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[0]) << 16) | (FastFToC(rgb[3]) << 24);
+	unsigned int col = (FastFToC(rgb[2])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[0]) << 16) | (FastFToC(rgb[3]) << 24);
 #endif
-	*(int*)pSpecular = col;
+	*(unsigned int*)pSpecular = col;
 }
 
 inline void CVertexBuilder::Specular3ub( unsigned char r, unsigned char g, unsigned char b )
@@ -1959,12 +1971,12 @@ inline void CVertexBuilder::Specular3ub( unsigned char r, unsigned char g, unsig
 	unsigned char *pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 
 	#ifdef OPENGL_SWAP_COLORS
-		int col = r | (g << 8) | (b << 16) | 0xFF000000;	// r, g, b, a in memory
+		unsigned int col = r | (g << 8) | (b << 16) | 0xFF000000;	// r, g, b, a in memory
 	#else
-		int col = b | (g << 8) | (r << 16) | 0xFF000000;
+		unsigned int col = b | (g << 8) | (r << 16) | 0xFF000000;
 	#endif
 	
-	*(int*)pSpecular = col;
+	*(unsigned int*)pSpecular = col;
 }
 
 inline void CVertexBuilder::Specular3ubv( unsigned char const *c )
@@ -1973,12 +1985,12 @@ inline void CVertexBuilder::Specular3ubv( unsigned char const *c )
 	unsigned char *pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 
 	#ifdef OPENGL_SWAP_COLORS
-		int col = c[0] | (c[1] << 8) | (c[2] << 16) | 0xFF000000;	// r, g, b, a in memory
+		unsigned int col = c[0] | (c[1] << 8) | (c[2] << 16) | 0xFF000000;	// r, g, b, a in memory
 	#else
-		int col = c[2] | (c[1] << 8) | (c[0] << 16) | 0xFF000000;
+		unsigned int col = c[2] | (c[1] << 8) | (c[0] << 16) | 0xFF000000;
 	#endif
 	
-	*(int*)pSpecular = col;
+	*(unsigned int*)pSpecular = col;
 }
 
 inline void CVertexBuilder::Specular4ub( unsigned char r, unsigned char g, unsigned char b, unsigned char a )
@@ -1987,12 +1999,12 @@ inline void CVertexBuilder::Specular4ub( unsigned char r, unsigned char g, unsig
 	unsigned char *pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 
 	#ifdef OPENGL_SWAP_COLORS
-		int col = r | (g << 8) | (b << 16) | (a << 24);	// r, g, b, a in memory
+		unsigned int col = r | (g << 8) | (b << 16) | (a << 24);	// r, g, b, a in memory
 	#else
-		int col = b | (g << 8) | (r << 16) | (a << 24);
+		unsigned int col = b | (g << 8) | (r << 16) | (a << 24);
 	#endif
 
-	*(int*)pSpecular = col;
+	*(unsigned int*)pSpecular = col;
 }
 
 inline void CVertexBuilder::Specular4ubv( unsigned char const *c )
@@ -2001,12 +2013,12 @@ inline void CVertexBuilder::Specular4ubv( unsigned char const *c )
 	unsigned char *pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 
 	#ifdef OPENGL_SWAP_COLORS
-		int col = c[0] | (c[1] << 8) | (c[2] << 16) | (c[3] << 24);
+		unsigned int col = c[0] | (c[1] << 8) | (c[2] << 16) | (c[3] << 24);
 	#else
-		int col = c[2] | (c[1] << 8) | (c[0] << 16) | (c[3] << 24);
+		unsigned int col = c[2] | (c[1] << 8) | (c[0] << 16) | (c[3] << 24);
 	#endif
 	
-	*(int*)pSpecular = col;
+	*(unsigned int*)pSpecular = col;
 }
 
 
@@ -3168,7 +3180,8 @@ public:
 	void Color3ubv( unsigned char const* rgb );
 	void Color4ub( unsigned char r, unsigned char g, unsigned char b, unsigned char a );
 	void Color4ubv( unsigned char const* rgba );
-	void Color4Packed( int packedColor );
+	void Color4ubv( color32 rgba );
+	void Color4Packed( unsigned int packedColor );
 	int PackColor4( unsigned char r, unsigned char g, unsigned char b, unsigned char a );
 
 	// specular color setting
@@ -3918,7 +3931,12 @@ FORCEINLINE void CMeshBuilder::Color4ubv( unsigned char const* rgba )
 	m_VertexBuilder.Color4ubv( rgba );
 }
 
-FORCEINLINE void CMeshBuilder::Color4Packed( int packedColor )
+FORCEINLINE void CMeshBuilder::Color4ubv( color32 rgba )
+{
+	m_VertexBuilder.Color4ubv( rgba );
+}
+
+FORCEINLINE void CMeshBuilder::Color4Packed( unsigned int packedColor )
 {
 	m_VertexBuilder.Color4Packed(packedColor);
 }

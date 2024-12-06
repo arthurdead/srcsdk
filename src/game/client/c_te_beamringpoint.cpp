@@ -55,7 +55,7 @@ C_TEBeamRingPoint::~C_TEBeamRingPoint( void )
 }
 
 void TE_BeamRingPoint( IRecipientFilter& filter, float delay,
-	const Vector& center, float start_radius, float end_radius, int modelindex, int haloindex, int startframe, int framerate,
+	const Vector& center, float start_radius, float end_radius, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 	float life, float width, int spread, float amplitude, int r, int g, int b, int a, int speed, int flags )
 {
 	beams->CreateBeamRingPoint( center, start_radius, end_radius, modelindex, haloindex, 0.0f,

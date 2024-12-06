@@ -25,14 +25,14 @@
 // -----------------------------------------
 //	Sprite Index info
 // -----------------------------------------
-int		g_sModelIndexLaser;			// holds the index for the laser beam
-int		g_sModelIndexLaserDot;		// holds the index for the laser beam dot
-int		g_sModelIndexFireball;		// holds the index for the fireball
-int		g_sModelIndexSmoke;			// holds the index for the smoke cloud
-int		g_sModelIndexWExplosion;	// holds the index for the underwater explosion
-int		g_sModelIndexBubbles;		// holds the index for the bubbles model
-int		g_sModelIndexBloodDrop;		// holds the sprite index for the initial blood
-int		g_sModelIndexBloodSpray;	// holds the sprite index for splattered blood
+modelindex_t		g_sModelIndexLaser;			// holds the index for the laser beam
+modelindex_t		g_sModelIndexLaserDot;		// holds the index for the laser beam dot
+modelindex_t		g_sModelIndexFireball;		// holds the index for the fireball
+modelindex_t		g_sModelIndexSmoke;			// holds the index for the smoke cloud
+modelindex_t		g_sModelIndexWExplosion;	// holds the index for the underwater explosion
+modelindex_t		g_sModelIndexBubbles;		// holds the index for the bubbles model
+modelindex_t		g_sModelIndexBloodDrop;		// holds the sprite index for the initial blood
+modelindex_t		g_sModelIndexBloodSpray;	// holds the sprite index for splattered blood
 
 //-----------------------------------------------------------------------------
 // Purpose: Precache global weapon sounds
@@ -138,9 +138,9 @@ static inline bool ShouldDrawLocalPlayerViewModel( void )
 // Purpose: 
 //-----------------------------------------------------------------------------
 
-int C_BaseCombatWeapon::GetWorldModelIndex( void )
+modelindex_t C_BaseCombatWeapon::GetWorldModelIndex( void )
 {
-	int iIndex = GetOwner() ? m_iWorldModelIndex.Get() : m_iDroppedModelIndex.Get();
+	modelindex_t iIndex = GetOwner() ? m_iWorldModelIndex.Get() : m_iDroppedModelIndex.Get();
 
 	if ( GameRules() )
 	{
@@ -320,13 +320,13 @@ void C_BaseCombatWeapon::DrawCrosshair()
 		// normal crosshairs
 		if ( bOnTarget && GetWpnData().iconAutoaim )
 		{
-			clr[3] = 255;
+			clr.SetA( 255 );
 
 			crosshair->SetCrosshair( GetWpnData().iconAutoaim, clr );
 		}
 		else if ( GetWpnData().iconCrosshair )
 		{
-			clr[3] = 255;
+			clr.SetA( 255 );
 			crosshair->SetCrosshair( GetWpnData().iconCrosshair, clr );
 		}
 		else
@@ -445,7 +445,7 @@ bool C_BaseCombatWeapon::GetShootPosition( Vector &vOrigin, QAngle &vAngles )
 //-----------------------------------------------------------------------------
 bool C_BaseCombatWeapon::ShouldDraw( void )
 {
-	if ( m_iWorldModelIndex == 0 )
+	if ( !m_iWorldModelIndex.IsValid() )
 		return false;
 
 	// FIXME: All weapons with owners are set to transmit in CBaseCombatWeapon::UpdateTransmitState,
@@ -566,8 +566,8 @@ int C_BaseCombatWeapon::DrawModel( int flags, const RenderableInstance_t &instan
 			if ( (!localplayer->InFirstPersonView() || (viewID != VIEW_MAIN && viewID != VIEW_INTRO_CAMERA)) && (viewID != VIEW_SHADOW_DEPTH_TEXTURE || !localplayer->IsEffectActive(EF_DIMLIGHT)) )
 			{
 				// TODO: Is this inefficient?
-				int nModelIndex = GetModelIndex();
-				int nWorldModelIndex = GetWorldModelIndex();
+				modelindex_t nModelIndex = GetModelIndex();
+				modelindex_t nWorldModelIndex = GetWorldModelIndex();
 				if (nModelIndex != nWorldModelIndex)
 				{
 					SetModelIndex(nWorldModelIndex);
@@ -634,7 +634,7 @@ void C_BaseCombatWeapon::EnsureCorrectRenderingModel()
 // the weapon timings are on the view model and not the world model. That means the
 // server needs to use the view model, but the client wants to use the world model.
 //-----------------------------------------------------------------------------
-int C_BaseCombatWeapon::CalcOverrideModelIndex() 
+modelindex_t C_BaseCombatWeapon::CalcOverrideModelIndex() 
 { 
 	C_BasePlayer *localplayer = C_BasePlayer::GetLocalPlayer();
 	if ( localplayer && 
@@ -658,8 +658,8 @@ void C_BaseCombatWeapon::GetToolRecordingState( KeyValues *msg )
 	if ( !ToolsEnabled() )
 		return;
 
-	int nModelIndex = GetModelIndex();
-	int nWorldModelIndex = GetWorldModelIndex();
+	modelindex_t nModelIndex = GetModelIndex();
+	modelindex_t nWorldModelIndex = GetWorldModelIndex();
 	if ( nModelIndex != nWorldModelIndex )
 	{
 		SetModelIndex( nWorldModelIndex );

@@ -19,10 +19,10 @@
 #include "consoleio.h"
 #include "logging.h"
 #include "hackmgr/hackmgr.h"
+#include "Color.h"
 
 #define printf USE_THE_LOGGING_SYSTEM
 
-class Color;
 class CValidator;
 
 //-----------------------------------------------------------------------------

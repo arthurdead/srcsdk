@@ -29,7 +29,7 @@ public:
 public:
 	void			CreateFunnel( void );
 
-	int				m_nModelIndex;
+	modelindex_t m_nModelIndex;
 	int				m_nReversed;
 };
 
@@ -38,7 +38,7 @@ public:
 //-----------------------------------------------------------------------------
 C_TELargeFunnel::C_TELargeFunnel( void )
 {
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nReversed = 0;
 }
 
@@ -150,7 +150,7 @@ IMPLEMENT_CLIENTCLASS_EVENT_DT(C_TELargeFunnel, DT_TELargeFunnel, CTELargeFunnel
 END_RECV_TABLE()
 
 void TE_LargeFunnel( IRecipientFilter& filter, float delay,
-	const Vector* pos, int modelindex, int reversed )
+	const Vector* pos, modelindex_t modelindex, int reversed )
 {
 	// Major hack to simulate receiving network message
 	__g_C_TELargeFunnel.m_vecOrigin = *pos;

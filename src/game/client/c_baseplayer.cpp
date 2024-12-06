@@ -176,48 +176,48 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	RecvPropInt		(RECVINFO(m_bAllowAutoMovement)),
 
 	// 3d skybox data
-	RecvPropInt(RECVINFO(m_skybox3d.scale)),
-	RecvPropVector(RECVINFO(m_skybox3d.origin)),
-	RecvPropInt(RECVINFO(m_skybox3d.area)),
-	RecvPropVector(RECVINFO(m_skybox3d.angles)),
-	RecvPropEHandle(RECVINFO(m_skybox3d.skycamera)),
-	RecvPropInt( RECVINFO( m_skybox3d.skycolor ), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropInt(RECVINFO_STRUCTELEM(m_skybox3d, scale)),
+	RecvPropVector(RECVINFO_STRUCTELEM(m_skybox3d, origin)),
+	RecvPropInt(RECVINFO_STRUCTELEM(m_skybox3d, area)),
+	RecvPropVector(RECVINFO_STRUCTELEM(m_skybox3d, angles)),
+	RecvPropEHandle(RECVINFO_STRUCTELEM(m_skybox3d, skycamera)),
+	RecvPropInt( RECVINFO_STRUCTELEM( m_skybox3d, skycolor ), 0, RecvProxy_Int32ToColor32 ),
 
 	// 3d skybox fog data
-	RecvPropInt( RECVINFO( m_skybox3d.fog.enable ) ),
-	RecvPropInt( RECVINFO( m_skybox3d.fog.blend ) ),
-	RecvPropVector( RECVINFO( m_skybox3d.fog.dirPrimary ) ),
-	RecvPropInt( RECVINFO( m_skybox3d.fog.colorPrimary ), 0, RecvProxy_Int32ToColor32 ),
-	RecvPropInt( RECVINFO( m_skybox3d.fog.colorSecondary ), 0, RecvProxy_Int32ToColor32 ),
-	RecvPropFloat( RECVINFO( m_skybox3d.fog.start ) ),
-	RecvPropFloat( RECVINFO( m_skybox3d.fog.end ) ),
-	RecvPropFloat( RECVINFO( m_skybox3d.fog.maxdensity ) ),
-	RecvPropFloat( RECVINFO( m_skybox3d.fog.HDRColorScale ) ),
-	RecvPropFloat( RECVINFO( m_skybox3d.fog.farz ) ),
+	RecvPropInt( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, enable ) ),
+	RecvPropInt( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, blend ) ),
+	RecvPropVector( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, dirPrimary ) ),
+	RecvPropInt( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, colorPrimary ), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropInt( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, colorSecondary ), 0, RecvProxy_Int32ToColor32 ),
+	RecvPropFloat( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, start ) ),
+	RecvPropFloat( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, end ) ),
+	RecvPropFloat( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, maxdensity ) ),
+	RecvPropFloat( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, HDRColorScale ) ),
+	RecvPropFloat( RECVINFO_NESTEDSTRUCTELEM( m_skybox3d, fog, farz ) ),
 
 	// fog data
-	RecvPropEHandle( RECVINFO( m_PlayerFog.m_hCtrl ) ),
+	RecvPropEHandle( RECVINFO_STRUCTELEM( m_PlayerFog, m_hCtrl ) ),
 
 	// audio data
-	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 0 ) ),
-	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 1 ) ),
-	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 2 ) ),
-	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 3 ) ),
-	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 4 ) ),
-	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 5 ) ),
-	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 6 ) ),
-	RecvPropVector( RECVINFO_ARRAYELEM( m_audio.localSound, 7 ) ),
-	RecvPropInt( RECVINFO( m_audio.soundscapeIndex ) ),
-	RecvPropInt( RECVINFO( m_audio.localBits ) ),
-	RecvPropEHandle( RECVINFO( m_audio.ent ) ),
+	RecvPropVector( RECVINFO_STRUCTARRAYELEM( m_audio, localSound, 0 ) ),
+	RecvPropVector( RECVINFO_STRUCTARRAYELEM( m_audio, localSound, 1 ) ),
+	RecvPropVector( RECVINFO_STRUCTARRAYELEM( m_audio, localSound, 2 ) ),
+	RecvPropVector( RECVINFO_STRUCTARRAYELEM( m_audio, localSound, 3 ) ),
+	RecvPropVector( RECVINFO_STRUCTARRAYELEM( m_audio, localSound, 4 ) ),
+	RecvPropVector( RECVINFO_STRUCTARRAYELEM( m_audio, localSound, 5 ) ),
+	RecvPropVector( RECVINFO_STRUCTARRAYELEM( m_audio, localSound, 6 ) ),
+	RecvPropVector( RECVINFO_STRUCTARRAYELEM( m_audio, localSound, 7 ) ),
+	RecvPropInt( RECVINFO_STRUCTELEM( m_audio, soundscapeIndex ) ),
+	RecvPropInt( RECVINFO_STRUCTELEM( m_audio, localBits ) ),
+	RecvPropEHandle( RECVINFO_STRUCTELEM( m_audio, ent ) ),
 
 	//Tony; tonemap stuff! -- TODO! Optimize this with bit sizes from env_tonemap_controller.
-	RecvPropFloat( RECVINFO( m_TonemapParams.m_flTonemapScale ) ),
-	RecvPropFloat( RECVINFO( m_TonemapParams.m_flTonemapRate ) ),
-	RecvPropFloat( RECVINFO( m_TonemapParams.m_flBloomScale ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_TonemapParams, m_flTonemapScale ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_TonemapParams, m_flTonemapRate ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_TonemapParams, m_flBloomScale ) ),
 
-	RecvPropFloat( RECVINFO( m_TonemapParams.m_flAutoExposureMin ) ),
-	RecvPropFloat( RECVINFO( m_TonemapParams.m_flAutoExposureMax ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_TonemapParams, m_flAutoExposureMin ) ),
+	RecvPropFloat( RECVINFO_STRUCTELEM( m_TonemapParams, m_flAutoExposureMax ) ),
 END_RECV_TABLE()
 
 // -------------------------------------------------------------------------------- //
@@ -1709,10 +1709,8 @@ void C_BasePlayer::CreateWaterEffects( void )
 		pParticle->m_vecVelocity = RandomVector( -2.0f, 2.0f );
 
 		//FIXME: We should tint these based on the water's fog value!
-		float color = random_valve->RandomInt( 32, 128 );
-		pParticle->m_uchColor[0] = color;
-		pParticle->m_uchColor[1] = color;
-		pParticle->m_uchColor[2] = color;
+		unsigned char color = random_valve->RandomInt( 32, 128 );
+		pParticle->m_uchColor.SetColor( color, color, color );
 
 		pParticle->m_uchStartSize	= 1;
 		pParticle->m_uchEndSize		= 1;
@@ -2776,7 +2774,7 @@ void C_BasePlayer::PhysicsSimulate( void )
 
 const QAngle& C_BasePlayer::GetPunchAngle()
 {
-	return m_Local.m_vecPunchAngle.Get();
+	return m_Local.m_vecPunchAngle;
 }
 
 
@@ -3275,9 +3273,9 @@ void C_BasePlayer::UpdateFogBlend( void )
 		if ( flTimeDelta < m_CurrentFog.duration )
 		{
 			float flScale = flTimeDelta / m_CurrentFog.duration;
-			m_CurrentFog.colorPrimary.SetR( ( m_Local.m_PlayerFog.m_NewColor.r * flScale ) + ( m_Local.m_PlayerFog.m_OldColor.r * ( 1.0f - flScale ) ) );
-			m_CurrentFog.colorPrimary.SetG( ( m_Local.m_PlayerFog.m_NewColor.g * flScale ) + ( m_Local.m_PlayerFog.m_OldColor.g * ( 1.0f - flScale ) ) );
-			m_CurrentFog.colorPrimary.SetB( ( m_Local.m_PlayerFog.m_NewColor.b * flScale ) + ( m_Local.m_PlayerFog.m_OldColor.b * ( 1.0f - flScale ) ) );
+			m_CurrentFog.colorPrimary.SetR( ( m_Local.m_PlayerFog.m_NewColor.r() * flScale ) + ( m_Local.m_PlayerFog.m_OldColor.r() * ( 1.0f - flScale ) ) );
+			m_CurrentFog.colorPrimary.SetG( ( m_Local.m_PlayerFog.m_NewColor.g() * flScale ) + ( m_Local.m_PlayerFog.m_OldColor.g() * ( 1.0f - flScale ) ) );
+			m_CurrentFog.colorPrimary.SetB( ( m_Local.m_PlayerFog.m_NewColor.b() * flScale ) + ( m_Local.m_PlayerFog.m_OldColor.b() * ( 1.0f - flScale ) ) );
 			m_CurrentFog.start.Set( ( m_Local.m_PlayerFog.m_flNewStart * flScale ) + ( ( m_Local.m_PlayerFog.m_flOldStart * ( 1.0f - flScale ) ) ) );
 			m_CurrentFog.end.Set( ( m_Local.m_PlayerFog.m_flNewEnd * flScale ) + ( ( m_Local.m_PlayerFog.m_flOldEnd * ( 1.0f - flScale ) ) ) );
 			m_CurrentFog.maxdensity.Set( ( m_Local.m_PlayerFog.m_flNewMaxDensity * flScale ) + ( ( m_Local.m_PlayerFog.m_flOldMaxDensity * ( 1.0f - flScale ) ) ) );
@@ -3297,9 +3295,9 @@ void C_BasePlayer::UpdateFogBlend( void )
 		else
 		{
 			// Slam the final fog values.
-			m_CurrentFog.colorPrimary.SetR( m_Local.m_PlayerFog.m_NewColor.r );
-			m_CurrentFog.colorPrimary.SetG( m_Local.m_PlayerFog.m_NewColor.g );
-			m_CurrentFog.colorPrimary.SetB( m_Local.m_PlayerFog.m_NewColor.b );
+			m_CurrentFog.colorPrimary.SetR( m_Local.m_PlayerFog.m_NewColor.r() );
+			m_CurrentFog.colorPrimary.SetG( m_Local.m_PlayerFog.m_NewColor.g() );
+			m_CurrentFog.colorPrimary.SetB( m_Local.m_PlayerFog.m_NewColor.b() );
 			m_CurrentFog.start.Set( m_Local.m_PlayerFog.m_flNewStart );
 			m_CurrentFog.end.Set( m_Local.m_PlayerFog.m_flNewEnd );
 			m_CurrentFog.maxdensity.Set( m_Local.m_PlayerFog.m_flNewMaxDensity );

@@ -683,7 +683,7 @@ void ComboBox::DoClick()
 	// we run into weird VGUI problems with pops
 	// and the stencil test
 	Color c = m_pDropDown->GetBgColor();
-	c[3] = 255;
+	c.SetA( 255 );
 	m_pDropDown->SetBgColor( c );
 
 	// notify

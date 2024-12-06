@@ -402,10 +402,11 @@ Color Button::GetButtonFgColor()
 
 	if ( _buttonFlags.IsFlagSet( BLINK ) )
 	{
-		cBlendedColor[ 0 ] = (float)cBlendedColor[ 0 ] * fBlink + (float)_blinkFgColor[ 0 ] * ( 1.0f - fBlink );
-		cBlendedColor[ 1 ] = (float)cBlendedColor[ 1 ] * fBlink + (float)_blinkFgColor[ 1 ] * ( 1.0f - fBlink );
-		cBlendedColor[ 2 ] = (float)cBlendedColor[ 2 ] * fBlink + (float)_blinkFgColor[ 2 ] * ( 1.0f - fBlink );
-		cBlendedColor[ 3 ] = (float)cBlendedColor[ 3 ] * fBlink + (float)_blinkFgColor[ 3 ] * ( 1.0f - fBlink );
+		unsigned char r = (float)cBlendedColor.r() * fBlink + (float)_blinkFgColor.r() * ( 1.0f - fBlink );
+		unsigned char g = (float)cBlendedColor.g() * fBlink + (float)_blinkFgColor.g() * ( 1.0f - fBlink );
+		unsigned char b = (float)cBlendedColor.b() * fBlink + (float)_blinkFgColor.b() * ( 1.0f - fBlink );
+		unsigned char a = (float)cBlendedColor.a() * fBlink + (float)_blinkFgColor.a() * ( 1.0f - fBlink );
+		cBlendedColor.SetColor( r, g, b, a );
 	}
 
 	return cBlendedColor;

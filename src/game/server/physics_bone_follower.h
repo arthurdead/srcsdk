@@ -95,7 +95,7 @@ public:
 	static CBoneFollower *Create( CBaseEntity *pOwner, const char *pModelName, solid_t &solid, const Vector &position, const QAngle &orientation );
 
 private:
-	CNetworkVar( int, m_modelIndex );
+	CNetworkModelIndex( m_modelIndex );
 	CNetworkVar( int, m_solidIndex );
 	int		m_physicsBone;
 	int		m_hitGroup;

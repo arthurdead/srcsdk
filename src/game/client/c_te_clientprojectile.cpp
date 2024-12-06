@@ -28,7 +28,7 @@ public:
 public:
 	Vector m_vecOrigin;
 	Vector m_vecVelocity;
-	int m_nModelIndex;
+	modelindex_t m_nModelIndex;
 	int m_nLifeTime;
 	EHANDLE m_hOwner;
 };
@@ -40,7 +40,7 @@ C_TEClientProjectile::C_TEClientProjectile( void )
 {
 	m_vecOrigin.Init();
 	m_vecVelocity.Init();
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nLifeTime = 0;
 	m_hOwner = NULL;
 }
@@ -53,7 +53,7 @@ C_TEClientProjectile::~C_TEClientProjectile( void )
 }
 
 void TE_ClientProjectile( IRecipientFilter& filter, float delay,
-					const Vector* vecOrigin, const Vector* vecVelocity, int modelindex, int lifetime, C_BaseEntity *pOwner )
+					const Vector* vecOrigin, const Vector* vecVelocity, modelindex_t modelindex, int lifetime, C_BaseEntity *pOwner )
 {
 	tempents->ClientProjectile( *vecOrigin, *vecVelocity, vec3_origin, modelindex, lifetime, pOwner );
 }

@@ -359,7 +359,7 @@ int C_BaseViewModel::DrawModel( int flags, const RenderableInstance_t &instance 
 
 			color24 c = GetRenderColor();
 			unsigned char a = GetRenderAlpha();
-			engine->Con_NPrintf( line++, "rendercolor=%d,%d,%d,%d", c.r, c.g, c.b, a );
+			engine->Con_NPrintf( line++, "rendercolor=%d,%d,%d,%d", c.r(), c.g(), c.b(), a );
 
 			engine->Con_NPrintf( line++, "origin=%f, %f, %f", GetRenderOrigin().x, GetRenderOrigin().y, GetRenderOrigin().z );
 			engine->Con_NPrintf( line++, "angles=%f, %f, %f", GetRenderAngles()[0], GetRenderAngles()[1], GetRenderAngles()[2] );

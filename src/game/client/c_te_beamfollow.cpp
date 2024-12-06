@@ -71,7 +71,7 @@ END_RECV_TABLE()
 
 
 void TE_BeamFollow( IRecipientFilter& filter, float delay,
-	int iEntIndex, int modelIndex, int haloIndex, float life, float width, float endWidth, 
+	int iEntIndex, modelindex_t modelIndex, modelindex_t haloIndex, float life, float width, float endWidth, 
 	float fadeLength,float r, float g, float b, float a )
 {
 	beams->CreateBeamFollow( iEntIndex, modelIndex, haloIndex, 0, life,

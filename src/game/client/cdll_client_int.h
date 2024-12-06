@@ -104,9 +104,10 @@ extern IEngineReplay *g_pEngineReplay;
 extern IEngineClientReplay *g_pEngineClientReplay;
 extern IShaderExtension* g_pShaderExtension;
 extern IGameLoopback* g_pGameLoopback;
-extern IGameServerLoopback* g_pGameServerLoopback;
+extern IGameServerLoopback* GetGameServerLoopback();
 extern IGameClientLoopback* g_pGameClientLoopback;
 extern IServerEngineTools *serverenginetools;
+extern bool IsListenServerHost();
 
 //-----------------------------------------------------------------------------
 // Purpose: engine to client .dll interface

@@ -21,6 +21,8 @@
 
 #include "tier1/utlvector.h"
 
+#include "engine/ivmodelinfo.h"
+
 #ifdef GNUC
 #undef offsetof
 #define offsetof(s,m)	__builtin_offsetof(s,m)
@@ -47,7 +49,7 @@ struct inputdata_t;
 
 #define INVALID_TIME (FLT_MAX * -1.0) // Special value not rebased on save/load
 
-typedef enum _fieldtypes
+enum _fieldtypes : unsigned char
 {
 	FIELD_VOID = 0,			// No type or value
 	FIELD_FLOAT,			// Any floating point value
@@ -93,7 +95,9 @@ typedef enum _fieldtypes
 	FIELD_VECTOR4D,			// 4 floats
 
 	FIELD_TYPECOUNT,		// MUST BE LAST
-} fieldtype_t;
+};
+
+typedef _fieldtypes fieldtype_t;
 
 
 //
@@ -153,7 +157,7 @@ DECLARE_FIELD_SIZE( FIELD_VMATRIX,		sizeof(VMatrix))
 DECLARE_FIELD_SIZE( FIELD_VMATRIX_WORLDSPACE,	sizeof(VMatrix))
 DECLARE_FIELD_SIZE( FIELD_MATRIX3X4_WORLDSPACE,	sizeof(matrix3x4_t))
 DECLARE_FIELD_SIZE( FIELD_INTERVAL,		sizeof( interval_t) )  // NOTE:  Must match interval.h definition
-DECLARE_FIELD_SIZE( FIELD_MODELINDEX,	sizeof(int) )
+DECLARE_FIELD_SIZE( FIELD_MODELINDEX,	sizeof(modelindex_t) )
 DECLARE_FIELD_SIZE( FIELD_MATERIALINDEX,	sizeof(int) )
 DECLARE_FIELD_SIZE( FIELD_VECTOR2D,		sizeof(Vector2D) )
 DECLARE_FIELD_SIZE( FIELD_INTEGER64,	sizeof(int64))
@@ -274,28 +278,37 @@ extern ICustomFieldOps *variantFuncs;
 #define DEFINE_FUNCTION( function ) \
 	typedescription_t(FIELD_VOID, nameHolder.GenerateName(#function), ((inputfunc_t)(&classNameTypedef::function)), FTYPEDESC_FUNCTIONTABLE, NULL)
 
+enum : uint64
+{
+	FTYPEDESC_NONE =                    0,
 
-#define FTYPEDESC_KEY				0x0004		// This field can be requested and written to by string name at load time
-#define FTYPEDESC_INPUT				0x0008		// This field can be written to by string name at run time, and a function called
-#define FTYPEDESC_OUTPUT			0x0010		// This field propogates it's value to all targets whenever it changes
-#define FTYPEDESC_FUNCTIONTABLE		0x0020		// This is a table entry for a member function pointer
-#define FTYPEDESC_PTR				0x0040		// This field is a pointer, not an embedded object
-#define FTYPEDESC_OVERRIDE			0x0080		// The field is an override for one in a base class (only used by prediction system for now)
+	FTYPEDESC_KEY =               (1 << 2),		// This field can be requested and written to by string name at load time
+	FTYPEDESC_INPUT =             (1 << 3),		// This field can be written to by string name at run time, and a function called
+	FTYPEDESC_OUTPUT =            (1 << 4),		// This field propogates it's value to all targets whenever it changes
+	FTYPEDESC_FUNCTIONTABLE =     (1 << 5),		// This is a table entry for a member function pointer
+	FTYPEDESC_PTR =               (1 << 6),		// This field is a pointer, not an embedded object
+	FTYPEDESC_OVERRIDE =          (1 << 7),		// The field is an override for one in a base class (only used by prediction system for now)
 
 // Flags used by other systems (e.g., prediction system)
-#define FTYPEDESC_INSENDTABLE		0x0100		// This field is present in a network SendTable
-#define FTYPEDESC_PRIVATE			0x0200		// The field is local to the client or server only (not referenced by prediction code and not replicated by networking)
-#define FTYPEDESC_NOERRORCHECK		0x0400		// The field is part of the prediction typedescription, but doesn't get compared when checking for errors
+	FTYPEDESC_INSENDTABLE =       (1 << 8),		// This field is present in a network SendTable
+	FTYPEDESC_PRIVATE =           (1 << 9),		// The field is local to the client or server only (not referenced by prediction code and not replicated by networking)
+	FTYPEDESC_NOERRORCHECK =      (1 << 10),		// The field is part of the prediction typedescription, but doesn't get compared when checking for errors
 
-#define FTYPEDESC_MODELINDEX		0x0800		// The field is a model index (used for debugging output)
+	FTYPEDESC_MODELINDEX =        (1 << 11),		// The field is a model index (used for debugging output)
 
-#define FTYPEDESC_INDEX				0x1000		// The field is an index into file data, used for byteswapping. 
+	FTYPEDESC_INDEX =             (1 << 12),		// The field is an index into file data, used for byteswapping. 
 
 // These flags apply to C_BasePlayer derived objects only
-#define FTYPEDESC_VIEW_OTHER_PLAYER		0x2000		// By default you can only view fields on the local player (yourself), 
+	FTYPEDESC_VIEW_OTHER_PLAYER = (1 << 13),		// By default you can only view fields on the local player (yourself), 
 													//   but if this is set, then we allow you to see fields on other players
-#define FTYPEDESC_VIEW_OWN_TEAM			0x4000		// Only show this data if the player is on the same team as the local player
-#define FTYPEDESC_VIEW_NEVER			0x8000		// Never show this field to anyone, even the local player (unusual)
+	FTYPEDESC_VIEW_OWN_TEAM =     (1 << 14),		// Only show this data if the player is on the same team as the local player
+	FTYPEDESC_VIEW_NEVER =        (1 << 15),		// Never show this field to anyone, even the local player (unusual)
+
+	FTYPEDESC_UNSIGNED =          (1 << 16),
+};
+
+typedef uint64 _fieldflags;
+typedef _fieldflags fieldflags_t;
 
 #define TD_MSECTOLERANCE		0.001f		// This is a FIELD_FLOAT and should only be checked to be within 0.001 of the networked info
 
@@ -345,16 +358,16 @@ struct typedescription_t
 	typedescription_t(typedescription_t &&) = default;
 	typedescription_t &operator=(typedescription_t &&) = delete;
 
-	typedescription_t(fieldtype_t type, const char *name, int bytes, int count, int offset, int flags_, const char *fgdname, float tol);
-	typedescription_t(fieldtype_t type, const char *name, inputfunc_t func, int flags_, const char *fgdname);
-	typedescription_t(ICustomFieldOps *funcs, const char *name, int bytes, int count, int offset, int flags_, const char *fgdname, float tol);
-	typedescription_t(datamap_t *embed, const char *name, int bytes, int count, int offset, int flags_, const char *fgdname);
+	typedescription_t(fieldtype_t type, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname, float tol);
+	typedescription_t(fieldtype_t type, const char *name, inputfunc_t func, fieldflags_t flags_, const char *fgdname);
+	typedescription_t(ICustomFieldOps *funcs, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname, float tol);
+	typedescription_t(datamap_t *embed, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname);
 
 	fieldtype_t			fieldType;
 	const char			*fieldName;
 	int					fieldOffset[ TD_OFFSET_COUNT ]; // 0 == normal, 1 == packed offset
 	unsigned short		fieldSize;
-	short				flags;
+	fieldflags_t				flags;
 	// the name of the variable in the map/fgd data, or the name of the action
 	const char			*externalName;	
 	// pointer to the function set for save/restoring of custom data types

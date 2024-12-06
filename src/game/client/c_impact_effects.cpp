@@ -118,7 +118,7 @@ void GetColorForSurface( trace_t *trace, Vector *color )
 		}
 
 		ICollideable *pCollide = pEnt->GetCollideable();
-		int modelIndex = pCollide->GetCollisionModelIndex();
+		modelindex_t modelIndex = pCollide->GetCollisionModelIndex();
 		model_t* pModel = const_cast<model_t*>(modelinfo->GetModel( modelIndex ));
 
 		// Ask the model info about what we need to know
@@ -753,7 +753,7 @@ void FX_BugBlood( Vector &pos, Vector &dir, Vector &vWorldMins, Vector &vWorldMa
 //-----------------------------------------------------------------------------
 // Purpose: Blood puff
 //-----------------------------------------------------------------------------
-void FX_Blood( const Vector &pos, const Vector &dir, float r, float g, float b, float a )
+void FX_Blood( const Vector &pos, const Vector &dir, color32 clr )
 {
 	VPROF_BUDGET( "FX_Blood", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 
@@ -789,10 +789,10 @@ void FX_Blood( const Vector &pos, const Vector &dir, float r, float g, float b, 
 		sParticle->m_vecVelocity	= vDir * (speed*i);
 		sParticle->m_vecVelocity[2] += random_valve->RandomFloat( -32.0f, -16.0f );
 
-		sParticle->m_uchColor[0]	= r;
-		sParticle->m_uchColor[1]	= g;
-		sParticle->m_uchColor[2]	= b;
-		sParticle->m_uchStartAlpha	= a;
+		sParticle->m_uchColor[0]	= clr.r();
+		sParticle->m_uchColor[1]	= clr.g();
+		sParticle->m_uchColor[2]	= clr.b();
+		sParticle->m_uchStartAlpha	= clr.a();
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchStartSize	= 2;
 		sParticle->m_uchEndSize		= sParticle->m_uchStartSize*4;
@@ -816,9 +816,9 @@ void FX_Blood( const Vector &pos, const Vector &dir, float r, float g, float b, 
 
 		sParticle->m_vecVelocity	= vDir * (speed*i);
 
-		sParticle->m_uchColor[0]	= r;
-		sParticle->m_uchColor[1]	= g;
-		sParticle->m_uchColor[2]	= b;
+		sParticle->m_uchColor[0]	= clr.r();
+		sParticle->m_uchColor[1]	= clr.g();
+		sParticle->m_uchColor[2]	= clr.b();
 		sParticle->m_uchStartAlpha	= 128;
 		sParticle->m_uchEndAlpha	= 0;
 		sParticle->m_uchStartSize	= 2;

@@ -616,19 +616,21 @@ inline void SendTable::SetHasPropsEncodedAgainstTickcount( bool bState )
 #define SENDINFO_ARRAYELEM(varName, i) \
 	DT_VARNAME_ARRAYELEM(varName, i), (offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName) + (sizeof(((currentSendDTClass*)0)->varName[i]) * i)), sizeof(((currentSendDTClass*)0)->varName[i])
 #define SENDINFO_NETWORKARRAYELEM(varName, i) \
-	DT_VARNAME_ARRAYELEM(varName, i), (offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName.m_Value) + (sizeof(((currentSendDTClass*)0)->varName.m_Value[i]) * i)), sizeof(((currentSendDTClass*)0)->varName.m_Value[i])
+	DT_VARNAME_ARRAYELEM(varName, i), (offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName) + (sizeof(((currentSendDTClass*)0)->varName[i]) * i)), sizeof(((currentSendDTClass*)0)->varName[i])
 
 // NOTE: Be VERY careful to specify any other vector elems for the same vector IN ORDER and 
 // right after each other, otherwise it might miss the Y or Z component in SP.
 //
 // Note: this macro specifies a negative offset so the engine can detect it and setup m_pNext
 #define SENDINFO_VECTORELEM(varName, i) \
-	DT_VARNAME_VECTORELEM(varName, i), -(int)(offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName.m_Value) + (sizeof(((currentSendDTClass*)0)->varName.m_Value[i]) * i)), sizeof(((currentSendDTClass*)0)->varName.m_Value[i])
+	DT_VARNAME_VECTORELEM(varName, i), -(int)(offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName) + (sizeof(((currentSendDTClass*)0)->varName[i]) * i)), sizeof(((currentSendDTClass*)0)->varName[i])
 
-#define SENDINFO_STRUCTELEM(varName) \
-	DT_VARNAME(varName), offsetof(currentSendDTClass, varName), sizeof(((currentSendDTClass*)0)->varName.m_Value)
-#define SENDINFO_STRUCTARRAYELEM(varName, i) \
-	DT_VARNAME_ARRAYELEM(varName, i), (offsetof(currentSendDTClass, varName.m_Value) + (sizeof(((currentSendDTClass*)0)->varName.m_Value[i]) * i)), sizeof(((currentSendDTClass*)0)->varName.m_Value[i])
+#define SENDINFO_STRUCTELEM(structVarName, varName) \
+	DT_VARNAME_STRUCTELEM(structVarName, varName), (offsetof(currentSendDTClass::MakeANetworkVar_##structVarName, structVarName) + offsetof(currentSendDTClass::NetworkVar_##structVarName::MakeANetworkVar_##varName, varName)), sizeof(((currentSendDTClass*)0)->structVarName.varName)
+#define SENDINFO_NESTEDSTRUCTELEM(structVarName, structVarName2, varName) \
+	DT_VARNAME_NESTEDSTRUCTELEM(structVarName, structVarName2, varName), (offsetof(currentSendDTClass::MakeANetworkVar_##structVarName, structVarName) + offsetof(currentSendDTClass::NetworkVar_##structVarName::MakeANetworkVar_##structVarName2, structVarName2) + offsetof(currentSendDTClass::NetworkVar_##structVarName::NetworkVar_##structVarName2::MakeANetworkVar_##varName, varName)), sizeof(((currentSendDTClass*)0)->structVarName.structVarName2.varName)
+#define SENDINFO_STRUCTARRAYELEM(structVarName, varName, i) \
+	DT_VARNAME_STRUCTELEM_ARRAYELEM(structVarName, varName, i), (offsetof(currentSendDTClass::MakeANetworkVar_##structVarName, structVarName) + offsetof(currentSendDTClass::NetworkVar_##structVarName::MakeANetworkVar_##varName, varName) + (sizeof(((currentSendDTClass*)0)->structVarName.varName[i]) * i)), sizeof(((currentSendDTClass*)0)->structVarName.varName[i])
 
 // Use this when you're not using a CNetworkVar to represent the data you're sending.
 #define SENDINFO_NOCHECK(varName) \

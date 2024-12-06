@@ -304,11 +304,13 @@ void WheelDustCallback( const CEffectData &data )
 		VectorNormalize( pParticle->m_vecVelocity );
 		pParticle->m_vecVelocity[2] += random_valve->RandomFloat( 16.0f, 32.0f ) * (data.m_flScale*2.0f);
 
-		int	color = random_valve->RandomInt( 100, 150 );
+		unsigned char	color = random_valve->RandomInt( 100, 150 );
 
-		pParticle->m_uchColor[0] = 16 + ( worldLight[0] * (float) color );
-		pParticle->m_uchColor[1] = 8 + ( worldLight[1] * (float) color );
-		pParticle->m_uchColor[2] = ( worldLight[2] * (float) color );
+		unsigned char r = 16 + ( worldLight[0] * (float) color );
+		unsigned char g = 8 + ( worldLight[1] * (float) color );
+		unsigned char b = ( worldLight[2] * (float) color );
+
+		pParticle->m_uchColor.SetColor( r, g, b );
 
 		pParticle->m_uchStartAlpha	= random_valve->RandomInt( 64.0f*data.m_flScale, 128.0f*data.m_flScale );
 		pParticle->m_uchEndAlpha	= 0;

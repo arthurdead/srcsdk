@@ -68,6 +68,7 @@
 #include "mapbase/datadesc_mod.h"
 #include "collisionproperty.h"
 #include "density_weight_map.h"
+#include "dt_utlvector_send.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -466,6 +467,11 @@ END_SEND_TABLE()
 BEGIN_SEND_TABLE_NOBASE( CBaseEntity, DT_FullTable )
 END_SEND_TABLE()
 
+BEGIN_SEND_TABLE_NOBASE( VisionModelIndex_t, DT_VisionModelIndex )
+	SendPropInt( SENDINFO_NOCHECK( flags ), MAX_SUPPORTED_VISION_FILTERS, SPROP_UNSIGNED ),
+	SendPropModelIndex( SENDINFO_NOCHECK( modelindex ) ),
+END_SEND_TABLE()
+
 // This table encodes the CBaseEntity data.
 IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropDataTable( "AnimTimeMustBeFirst", 0, &REFERENCE_SEND_TABLE(DT_AnimTimeMustBeFirst), SendProxy_ClientSideAnimation ),
@@ -522,9 +528,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropInt		(SENDINFO(m_bAnimatedEveryTick),		1, SPROP_UNSIGNED ),
 	SendPropBool( SENDINFO( m_bAlternateSorting )),
 
-#ifdef TF_DLL
-	SendPropArray3( SENDINFO_ARRAY3(m_nModelIndexOverrides), SendPropInt( SENDINFO_ARRAY(m_nModelIndexOverrides), SP_MODEL_INDEX_BITS, 0 ) ),
-#endif
+	SendPropUtlVectorDataTable( m_VisionModelIndexOverrides, MAX_SUPPORTED_VISION_FILTERS, DT_VisionModelIndex ),
 
 	SendPropFloat(SENDINFO(m_fViewDistance),				0, SPROP_NOSCALE),
 
@@ -595,7 +599,7 @@ protected:
 public:
 	explicit CBaseEntityModelLoadProxy( CBaseEntity *pEntity ) : m_pHandler( new Handler( pEntity ) ) { }
 	~CBaseEntityModelLoadProxy() { delete m_pHandler; }
-	void Register( int nModelIndex ) const { modelinfo->RegisterModelLoadCallback( nModelIndex, m_pHandler ); }
+	void Register( modelindex_t nModelIndex ) const { modelinfo->RegisterModelLoadCallback( nModelIndex, m_pHandler ); }
 	operator CBaseEntity * () const { return m_pHandler->m_pEntity; }
 
 private:
@@ -732,7 +736,7 @@ CBaseEntity::CBaseEntity( uint64 iEFlags )
 		ClearSolidFlags();
 	}
 
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_bDynamicModelAllowed = false;
 	m_bDynamicModelPending = false;
 	m_bDynamicModelSetBounds = false;
@@ -740,7 +744,7 @@ CBaseEntity::CBaseEntity( uint64 iEFlags )
 	SetMoveType( MOVETYPE_NONE );
 	SetOwnerEntity( NULL );
 	SetCheckUntouch( false );
-	SetModelIndex( 0 );
+	SetModelIndex( INVALID_MODEL_INDEX );
 	SetModelName( NULL_STRING );
 	m_nTransmitStateOwnedCounter = 0;
 
@@ -979,12 +983,12 @@ void CBaseEntity::SetClassname( string_t className )
 	m_iClassname = className;
 }
 
-void CBaseEntity::SetModelIndex( int index )
+void CBaseEntity::SetModelIndex( modelindex_t index )
 {
 	if ( IsDynamicModelIndex( index ) && !(GetBaseAnimating() && m_bDynamicModelAllowed) )
 	{
 		AssertMsg( false, "dynamic model support not enabled on server entity" );
-		index = -1;
+		index = INVALID_MODEL_INDEX;
 	}
 
 	if ( index != m_nModelIndex )
@@ -1016,25 +1020,12 @@ void CBaseEntity::SetModelIndex( int index )
 
 void CBaseEntity::ClearModelIndexOverrides( void )
 {
-#ifdef TF_DLL
-	for ( int index = 0 ; index < MAX_VISION_MODES ; index++ )
-	{
-		m_nModelIndexOverrides.Set( index, 0 );
-	}
-#endif
+	m_VisionModelIndexOverrides.Purge();
 }
 
-void CBaseEntity::SetModelIndexOverride( int index, int nValue )
+void CBaseEntity::AddModelIndexOverride( vision_filter_t flags, modelindex_t nValue )
 {
-#ifdef TF_DLL
-	if ( ( index >= VISION_MODE_NONE ) && ( index < MAX_VISION_MODES ) )
-	{
-		if ( nValue != m_nModelIndexOverrides[index] )
-		{
-			m_nModelIndexOverrides.Set( index, nValue );
-		}	
-	}
-#endif
+	m_VisionModelIndexOverrides.AddToTail( VisionModelIndex_t{ flags, nValue } );
 }
 	  
 // position to shoot at
@@ -2188,7 +2179,7 @@ BEGIN_MAPENTITY_NO_BASE( CBaseEntity )
 	DEFINE_KEYFIELD( m_nNextThinkTick, FIELD_TICK, "nextthink" ),
 	DEFINE_KEYFIELD( m_fEffects, FIELD_INTEGER, "effects" ),
 	DEFINE_KEYFIELD( m_clrRender, FIELD_COLOR32, "rendercolor" ),
-	DEFINE_KEYFIELD( m_nModelIndex, FIELD_SHORT, "modelindex" ),
+	DEFINE_KEYFIELD( m_nModelIndex, FIELD_MODELINDEX, "modelindex" ),
 
 	DEFINE_KEYFIELD( m_iszResponseContext, FIELD_STRING, "ResponseContext" ),
 
@@ -2456,7 +2447,7 @@ void CBaseEntity::UpdateOnRemove( void )
 	if ( IsDynamicModelIndex( m_nModelIndex ) )
 	{
 		modelinfo->ReleaseDynamicModel( m_nModelIndex ); // no-op if not dynamic
-		m_nModelIndex = -1;
+		m_nModelIndex = INVALID_MODEL_INDEX;
 	}
 }
 
@@ -3492,7 +3483,7 @@ bool CBaseEntity::IsViewable( void )
 			return true;
 		}
 	}
-	else if (GetModelIndex() != 0)
+	else if (GetModelIndex().IsValid())
 	{
 		// check for total transparency???
 		return true;
@@ -3829,7 +3820,7 @@ int CBaseEntity::UpdateTransmitState()
 	}
 
 	// Always send the world
-	if ( GetModelIndex() == 1 )
+	if ( IsWorld() )
 	{
 		return SetTransmitState( FL_EDICT_ALWAYS );
 	}
@@ -4192,7 +4183,7 @@ void CBaseEntity::InputColor( inputdata_t &inputdata )
 {
 	color32 clr = inputdata.value.Color32();
 
-	SetRenderColor( clr.r, clr.g, clr.b );
+	SetRenderColor( clr.r(), clr.g(), clr.b() );
 }
 
 
@@ -4514,7 +4505,7 @@ void CBaseEntity::GetVectors(Vector* pForward, Vector* pRight, Vector* pUp) cons
 //-----------------------------------------------------------------------------
 void CBaseEntity::SetModel( const char *szModelName )
 {
-	int modelIndex = modelinfo->GetModelIndex( szModelName );
+	modelindex_t modelIndex = modelinfo->GetModelIndex( szModelName );
 	const model_t *model = modelinfo->GetModel( modelIndex );
 	if ( model && modelinfo->GetModelType( model ) != mod_brush )
 	{
@@ -4841,7 +4832,7 @@ static CWatchForModelAccess g_WatchForModels;
 class CModelPrecacheSystem : public CAutoGameSystem
 {
 public:
-	CModelPrecacheSystem() : CAutoGameSystem( "CModelPrecacheSystem" ), m_RepeatCounts( 0, 0, DefLessFunc( int ) )
+	CModelPrecacheSystem() : CAutoGameSystem( "CModelPrecacheSystem" ), m_RepeatCounts( 0, 0, DefLessFunc( modelindex_t ) )
 	{
 	}
 
@@ -4851,7 +4842,7 @@ public:
 		m_RepeatCounts.Purge();
 	}
 
-	bool ShouldPrecache( int nModelIndex )
+	bool ShouldPrecache( modelindex_t nModelIndex )
 	{
 		int slot = m_RepeatCounts.Find( nModelIndex );
 		if ( slot != m_RepeatCounts.InvalidIndex() )
@@ -4866,7 +4857,7 @@ public:
 
 private:
 
-	CUtlMap< int, int > m_RepeatCounts;
+	CUtlMap< modelindex_t, int > m_RepeatCounts;
 };
 
 static CModelPrecacheSystem g_ModelPrecacheSystem;
@@ -4874,7 +4865,7 @@ static CModelPrecacheSystem g_ModelPrecacheSystem;
 //-----------------------------------------------------------------------------
 // Precache model components
 //-----------------------------------------------------------------------------
-void CBaseEntity::PrecacheModelComponents( int nModelIndex )
+void CBaseEntity::PrecacheModelComponents( modelindex_t nModelIndex )
 {
 	if ( !g_ModelPrecacheSystem.ShouldPrecache( nModelIndex ) )
 		return;
@@ -4983,14 +4974,14 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 // Input  : *name - model name
 // Output : int -- model index for model
 //-----------------------------------------------------------------------------
-int CBaseEntity::PrecacheModel( const char *name, bool bPreload )
+modelindex_t CBaseEntity::PrecacheModel( const char *name, bool bPreload )
 {
 	if ( !name || !*name )
 	{
 #ifdef STAGING_ONLY
 		Log_Error( LOG_MODEL, "Attempting to precache model, but model name is NULL\n");
 #endif
-		return -1;
+		return INVALID_MODEL_INDEX;
 	}
 
 	// Warn on out of order precache
@@ -5008,8 +4999,8 @@ int CBaseEntity::PrecacheModel( const char *name, bool bPreload )
 	}
 #endif
 
-	int idx = engine->PrecacheModel( name, bPreload );
-	if ( idx != -1 )
+	modelindex_t idx = engine->PrecacheModel( name, bPreload );
+	if ( idx != INVALID_MODEL_INDEX )
 	{
 		PrecacheModelComponents( idx );
 	}
@@ -8349,7 +8340,7 @@ void CBaseEntity::SUB_PerformFadeOut( void )
 	}
 	m_nRenderMode = kRenderTransTexture;
 	int speed = MAX(1,256*dt); // fade out over 1 second
-	SetRenderAlpha( UTIL_Approach( 0, m_clrRender->a, speed ) );
+	SetRenderAlpha( UTIL_Approach( 0, m_clrRender.GetA(), speed ) );
 }
 
 bool CBaseEntity::SUB_AllowedToFade( void )
@@ -8388,7 +8379,7 @@ void CBaseEntity::SUB_FadeOut( void  )
     
 	SUB_PerformFadeOut();
 
-	if ( m_clrRender->a == 0 )
+	if ( m_clrRender.GetA() == 0 )
 	{
 		// This was meant for KillWhenNotVisible before it used its own function,
 		// but there's not really any harm for keeping this here.
@@ -8413,9 +8404,9 @@ void CBaseEntity::SUB_RemoveWhenNotVisible( void )
 		return;
 	}
     
-	SetRenderAlpha( m_clrRender->a - 1 );
+	SetRenderAlpha( m_clrRender.GetA() - 1 );
 
-	if ( m_clrRender->a == 0 )
+	if ( m_clrRender.GetA() == 0 )
 	{
 		m_OnKilled.FireOutput(this, this);
 		UTIL_Remove(this);

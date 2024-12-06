@@ -111,12 +111,12 @@ void CHudVoiceSelfStatus::Paint()
 	if ( player &&
 		GetClientVoiceMgr()->IsLocalPlayerSpeakingAboveThreshold() )
 	{
-		m_clrIcon[3] = 255;
+		m_clrIcon.SetA( 255 );
 	}
 	else
 	{
 		// NOTE: Merge issue. This number should either be 0 or 255, dunno!
-		m_clrIcon[3] = 0;
+		m_clrIcon.SetA( 0 );
 	}
 	
 	int x, y, w, h;
@@ -390,7 +390,7 @@ void CHudVoiceStatus::Paint()
 
 		Color c = g_PR->GetTeamColor( g_PR ? g_PR->GetTeam(playerId) : TEAM_UNASSIGNED );
 
-		c[3] = 128;
+		c.SetA( 128 );
 
 		const char *pName = g_PR ? g_PR->GetPlayerName(playerId) : "unknown";
 		wchar_t szconverted[ 64 ];

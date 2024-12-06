@@ -11,8 +11,8 @@
 #pragma once
 
 #include "tier0/platform.h"
+#include "Color.h"
 
-class Color;
 class Vector;
 
 

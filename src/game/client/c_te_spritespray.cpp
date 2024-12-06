@@ -32,7 +32,7 @@ public:
 public:
 	Vector			m_vecOrigin;
 	Vector			m_vecDirection;
-	int				m_nModelIndex;
+	modelindex_t				m_nModelIndex;
 	int				m_nSpeed;
 	float			m_fNoise;
 	int				m_nCount;
@@ -59,7 +59,7 @@ C_TESpriteSpray::C_TESpriteSpray( void )
 {
 	m_vecOrigin.Init();
 	m_vecDirection.Init();
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_fNoise = 0;
 	m_nSpeed = 0;
 	m_nCount = 0;
@@ -77,14 +77,14 @@ C_TESpriteSpray::~C_TESpriteSpray( void )
 // Recording 
 //-----------------------------------------------------------------------------
 static inline void RecordSpriteSpray( const Vector& start, const Vector &direction, 
-	int nModelIndex, int nSpeed, float flNoise, int nCount )
+	modelindex_t nModelIndex, int nSpeed, float flNoise, int nCount )
 {
 	if ( !ToolsEnabled() )
 		return;
 
 	if ( clienttools->IsInRecordingMode() )
 	{
-		const model_t* pModel = (nModelIndex != 0) ? modelinfo->GetModel( nModelIndex ) : NULL;
+		const model_t* pModel = (nModelIndex != INVALID_MODEL_INDEX) ? modelinfo->GetModel( nModelIndex ) : NULL;
 		const char *pModelName = pModel ? modelinfo->GetModelName( pModel ) : "";
 
 		KeyValues *msg = new KeyValues( "TempEntity" );
@@ -120,7 +120,7 @@ void C_TESpriteSpray::PostDataUpdate( DataUpdateType_t updateType )
 }
 
 void TE_SpriteSpray( IRecipientFilter& filter, float delay,
-	const Vector* pos, const Vector* dir, int modelindex, int speed, float noise, int count )
+	const Vector* pos, const Vector* dir, modelindex_t modelindex, int speed, float noise, int count )
 {
 	tempents->Sprite_Spray( *pos, *dir, modelindex, count, speed * 0.2, noise * 100.0 );
 	RecordSpriteSpray( *pos, *dir, modelindex, speed, noise, count );
@@ -136,7 +136,7 @@ void TE_SpriteSpray( IRecipientFilter& filter, float delay, KeyValues *pKeyValue
 	vecDirection.y = pKeyValues->GetFloat( "directiony" );
 	vecDirection.z = pKeyValues->GetFloat( "directionz" );
 	const char *pModelName = pKeyValues->GetString( "model" );
-	int nModelIndex = pModelName[0] ? modelinfo->GetModelIndex( pModelName ) : 0;
+	modelindex_t nModelIndex = pModelName[0] ? modelinfo->GetModelIndex( pModelName ) : INVALID_MODEL_INDEX;
 	int nSpeed = pKeyValues->GetInt( "speed" );
 	float flNoise = pKeyValues->GetFloat( "noise" );
 	int nCount = pKeyValues->GetInt( "count" );

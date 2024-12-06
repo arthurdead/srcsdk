@@ -1066,10 +1066,7 @@ void UTIL_StringToColor32( color32 *color, const char *pString )
 {
 	int tmp[4];
 	UTIL_StringToIntArray( tmp, 4, pString );
-	color->r = tmp[0];
-	color->g = tmp[1];
-	color->b = tmp[2];
-	color->a = tmp[3];
+	color->SetColor( tmp[0], tmp[1], tmp[2], tmp[3] );
 }
 
 void UTIL_StringToFloatArray_PreserveArray( float *pVector, int count, const char *pString )
@@ -1798,7 +1795,7 @@ static bool					  s_HolidaysCalculated = false;
 static int s_NumGameHolidays = 0;
 static int s_NumTotalHolidays = NUM_SHARED_HOLIDAYS;
 
-static int s_HolidaysActive = 0;
+static EHolidayFlags s_HolidaysActive = 0;
 
 static char *s_TempHolidaysStrings = NULL;
 static char *s_ActiveHolidaysString = NULL;
@@ -1807,7 +1804,7 @@ static char **s_GameHolidaysStrings = NULL;
 static int s_AllHolidaysStringLen = (MAX_HOLIDAY_STRING * NUM_SHARED_HOLIDAYS);
 
 #ifdef CLIENT_DLL
-static int s_HolidaysVisionFilter = VISION_FILTER_NONE;
+static unsigned int s_HolidaysVisionFilter = VISION_FILTER_NONE;
 #endif
 
 static char s_SharedHolidaysStrings[NUM_SHARED_HOLIDAYS][MAX_HOLIDAY_STRING];
@@ -1942,8 +1939,8 @@ void UTIL_CalculateHolidays()
 
 	for ( int i = 0; i < NUM_SHARED_HOLIDAYS; ++i )
 	{
-		int iHolidayIndex = (i+1);
-		int iHolidayFlag = (1 << iHolidayIndex);
+		EHolidayIndex iHolidayIndex = (i+1);
+		EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
 
 		if(GameRules())
 		{
@@ -1965,8 +1962,8 @@ void UTIL_CalculateHolidays()
 	if(s_NumGameHolidays > 0) {
 		for ( int i = 0; i < s_NumGameHolidays; i++ )
 		{
-			int iHolidayIndex = (NUM_SHARED_HOLIDAYS+i);
-			int iHolidayFlag = (1 << iHolidayIndex);
+			EHolidayIndex iHolidayIndex = (NUM_SHARED_HOLIDAYS+i);
+			EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
 
 			if(!s_GameHolidaysStrings[i]) {
 				s_GameHolidaysStrings[i] = (char *)malloc(MAX_HOLIDAY_STRING);
@@ -2027,8 +2024,8 @@ const char		   *UTIL_GetHolidayString( EHolidayFlags eHoliday )
 
 	for ( int i = 0; i < NUM_SHARED_HOLIDAYS; i++ )
 	{
-		int iHolidayIndex = (i+1);
-		int iHolidayFlag = (1 << iHolidayIndex);
+		EHolidayIndex iHolidayIndex = (i+1);
+		EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
 
 		if(s_SharedHolidaysStrings[i][0] == '\0') {
 			continue;
@@ -2043,8 +2040,8 @@ const char		   *UTIL_GetHolidayString( EHolidayFlags eHoliday )
 	if(s_NumGameHolidays > 0 && s_GameHolidaysStrings) {
 		for ( int i = 0; i < s_NumGameHolidays; i++ )
 		{
-			int iHolidayIndex = (NUM_SHARED_HOLIDAYS+i);
-			int iHolidayFlag = (1 << iHolidayIndex);
+			EHolidayIndex iHolidayIndex = (NUM_SHARED_HOLIDAYS+i);
+			EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
 
 			if(!s_GameHolidaysStrings[i] || s_GameHolidaysStrings[i][0] == '\0') {
 				continue;
@@ -2075,7 +2072,7 @@ EHolidayFlags	UTIL_GetHolidaysForString( const char* pszHolidayName )
 		UTIL_CalculateHolidays();
 	}
 
-	int nHolidays = HOLIDAY_NONE;
+	EHolidayFlags nHolidays = HOLIDAY_NONE;
 
 	DebuggerBreak();
 
@@ -2087,8 +2084,8 @@ EHolidayFlags	UTIL_GetHolidaysForString( const char* pszHolidayName )
 
 			for ( int i = 0; i < NUM_SHARED_HOLIDAYS; i++ )
 			{
-				int iHolidayIndex = (i+1);
-				int iHolidayFlag = (1 << iHolidayIndex);
+				EHolidayIndex iHolidayIndex = (i+1);
+				EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
 
 				if(s_SharedHolidaysStrings[i][0] == '\0') {
 					continue;
@@ -2102,8 +2099,8 @@ EHolidayFlags	UTIL_GetHolidaysForString( const char* pszHolidayName )
 			if(s_NumGameHolidays > 0 && s_GameHolidaysStrings) {
 				for ( int i = 0; i < s_NumGameHolidays; i++ )
 				{
-					int iHolidayIndex = (NUM_SHARED_HOLIDAYS+i);
-					int iHolidayFlag = (1 << iHolidayIndex);
+					EHolidayIndex iHolidayIndex = (NUM_SHARED_HOLIDAYS+i);
+					EHolidayFlag iHolidayFlag = (1 << iHolidayIndex);
 
 					if(!s_GameHolidaysStrings[i] || s_GameHolidaysStrings[i][0] == '\0') {
 						continue;
@@ -2150,7 +2147,7 @@ const char* UTIL_GetActiveHolidaysString()
 }
 
 #ifdef CLIENT_DLL
-int UTIL_GetActiveHolidaysVisionFilter()
+unsigned int UTIL_GetActiveHolidaysVisionFilter()
 {
 	if ( !s_HolidaysCalculated )
 	{
@@ -2160,7 +2157,7 @@ int UTIL_GetActiveHolidaysVisionFilter()
 	return s_HolidaysVisionFilter;
 }
 
-int UTIL_HolidayToVisionFilter( EHolidayFlag eHoliday)
+unsigned int UTIL_HolidayToVisionFilter( EHolidayFlag eHoliday)
 {
 	if(eHoliday >= NUM_SHARED_HOLIDAYS) {
 		return 0;

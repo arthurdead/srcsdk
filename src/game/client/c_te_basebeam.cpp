@@ -21,8 +21,8 @@
 //-----------------------------------------------------------------------------
 C_TEBaseBeam::C_TEBaseBeam( void )
 {
-	m_nModelIndex	= 0;
-	m_nHaloIndex	= 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
+	m_nHaloIndex	= INVALID_MODEL_INDEX;
 	m_nStartFrame	= 0;
 	m_nFrameRate	= 0;
 	m_fLife			= 0.0;
@@ -30,7 +30,7 @@ C_TEBaseBeam::C_TEBaseBeam( void )
 	m_fEndWidth		= 0;
 	m_nFadeLength	= 0;
 	m_fAmplitude	= 0;
-	r = g = b = a = 0;
+	m_clr.SetColor( 0, 0, 0, 0 );
 	m_nSpeed		= 0;
 	m_nFlags		= 0;
 }
@@ -73,10 +73,7 @@ BEGIN_RECV_TABLE_NOBASE( C_TEBaseBeam, DT_BaseBeam )
 	RecvPropInt( RECVINFO(m_nFadeLength)),
 	RecvPropFloat( RECVINFO(m_fAmplitude)),
 	RecvPropInt( RECVINFO(m_nSpeed)),
-	RecvPropInt( RECVINFO(r)),
-	RecvPropInt( RECVINFO(g)),
-	RecvPropInt( RECVINFO(b)),
-	RecvPropInt( RECVINFO(a)),
+	RecvPropInt( RECVINFO(m_clr), SPROP_UNSIGNED, RecvProxy_Int32ToColor32 ),
 	RecvPropInt( RECVINFO(m_nFlags)),
 END_RECV_TABLE()
 

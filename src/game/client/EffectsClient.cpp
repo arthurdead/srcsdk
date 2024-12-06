@@ -22,12 +22,12 @@ public:
 	virtual ~CEffectsClient();
 
 	// Members of the IEffect interface
-	virtual void Beam( const Vector &Start, const Vector &End, int nModelIndex, 
+	virtual void Beam( const Vector &Start, const Vector &End, modelindex_t nModelIndex, 
 		int nHaloIndex, unsigned char frameStart, unsigned char frameRate,
 		float flLife, unsigned char width, unsigned char endWidth, unsigned char fadeLength, 
 		unsigned char noise, unsigned char red, unsigned char green,
 		unsigned char blue, unsigned char brightness, unsigned char speed);
-	virtual void Smoke( const Vector &origin, int modelIndex, float scale, float framerate );
+	virtual void Smoke( const Vector &origin, modelindex_t modelIndex, float scale, float framerate );
 	virtual void Sparks( const Vector &position, int nMagnitude = 1, int nTrailLength = 1, const Vector *pvecDir = NULL );
 	virtual void Dust( const Vector &pos, const Vector &dir, float size, float speed );
 	virtual void MuzzleFlash( const Vector &origin, const QAngle &angles, float fScale, int type );
@@ -102,7 +102,7 @@ void CEffectsClient::SuppressEffectsSounds( bool bSuppress )
 // Generates a beam
 //-----------------------------------------------------------------------------
 void CEffectsClient::Beam( const Vector &vecStartPoint, const Vector &vecEndPoint, 
-	int nModelIndex, int nHaloIndex, unsigned char frameStart, unsigned char nFrameRate,
+	modelindex_t nModelIndex, int nHaloIndex, unsigned char frameStart, unsigned char nFrameRate,
 	float flLife, unsigned char nWidth, unsigned char nEndWidth, unsigned char nFadeLength, 
 	unsigned char noise, unsigned char r, unsigned char g,
 	unsigned char b, unsigned char brightness, unsigned char nSpeed)
@@ -122,20 +122,17 @@ void CEffectsClient::Beam( const Vector &vecStartPoint, const Vector &vecEndPoin
 //-----------------------------------------------------------------------------
 // Generates various tempent effects
 //-----------------------------------------------------------------------------
-void CEffectsClient::Smoke( const Vector &vecOrigin, int modelIndex, float scale, float framerate )
+void CEffectsClient::Smoke( const Vector &vecOrigin, modelindex_t modelIndex, float scale, float framerate )
 {
 	CPVSFilter filter( vecOrigin );
 	if ( !SuppressTE( filter ) )
 	{
-		int iColor = random_valve->RandomInt(20,35);
-		color32 color;
-		color.r = iColor;
-		color.g = iColor;
-		color.b = iColor;
-		color.a = iColor;
+		unsigned char iColor = random_valve->RandomInt(20,35);
+		color24 color;
+		color.SetColor( iColor, iColor, iColor );
 		QAngle angles;
 		VectorAngles( Vector(0,0,1), angles );
-		FX_Smoke( vecOrigin, angles, scale * 0.1f, 4, (unsigned char *)&color, 255 );
+		FX_Smoke( vecOrigin, angles, scale * 0.1f, 4, &color, 255 );
 	}
 }
 

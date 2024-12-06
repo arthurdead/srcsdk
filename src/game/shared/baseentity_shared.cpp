@@ -490,7 +490,7 @@ bool CSharedBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 	{
 		color32 tmp;
 		UTIL_StringToColor32( &tmp, szValue );
-		SetRenderColor( tmp.r, tmp.g, tmp.b );
+		SetRenderColor( tmp.r(), tmp.g(), tmp.b() );
 		return true;
 	}
 
@@ -498,7 +498,7 @@ bool CSharedBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 	{
 		color32 tmp;
 		UTIL_StringToColor32( &tmp, szValue );
-		SetRenderColor( tmp.r, tmp.g, tmp.b );
+		SetRenderColor( tmp.r(), tmp.g(), tmp.b() );
 		return true;
 	}
 
@@ -506,8 +506,8 @@ bool CSharedBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 	{
 		color32 tmp;
 		UTIL_StringToColor32( &tmp, szValue );
-		SetRenderColor( tmp.r, tmp.g, tmp.b );
-		SetRenderAlpha( tmp.a );
+		SetRenderColor( tmp.r(), tmp.g(), tmp.b() );
+		SetRenderAlpha( tmp.a() );
 		return true;
 	}
 	
@@ -756,14 +756,14 @@ bool CSharedBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int i
 	if ( FStrEq( szKeyName, "rendercolor" ) )
 	{
 		color24 tmp = GetRenderColor();
-		Q_snprintf( szValue, iMaxLen, "%d %d %d", tmp.r, tmp.g, tmp.b );
+		Q_snprintf( szValue, iMaxLen, "%d %d %d", tmp.r(), tmp.g(), tmp.b() );
 		return true;
 	}
 
 	if ( FStrEq( szKeyName, "rendercolor24" ) )
 	{
 		color24 tmp = GetRenderColor();
-		Q_snprintf( szValue, iMaxLen, "%d %d %d", tmp.r, tmp.g, tmp.b );
+		Q_snprintf( szValue, iMaxLen, "%d %d %d", tmp.r(), tmp.g(), tmp.b() );
 		return true;
 	}
 
@@ -771,7 +771,7 @@ bool CSharedBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int i
 	{
 		color24 tmp = GetRenderColor();
 		unsigned char a = GetRenderAlpha();
-		Q_snprintf( szValue, iMaxLen, "%d %d %d %d", tmp.r, tmp.g, tmp.b, a );
+		Q_snprintf( szValue, iMaxLen, "%d %d %d %d", tmp.r(), tmp.g(), tmp.b(), a );
 		return true;
 	}
 	

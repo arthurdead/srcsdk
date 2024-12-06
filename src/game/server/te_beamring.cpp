@@ -17,7 +17,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern short	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
+extern modelindex_t g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
 
 //-----------------------------------------------------------------------------
 // Purpose: Dispatches a beam ring between two entities
@@ -109,7 +109,7 @@ static CTEBeamRing g_TEBeamRing( "BeamRing" );
 //			recipient - 
 //-----------------------------------------------------------------------------
 void TE_BeamRing( IRecipientFilter& filter, float delay,
-	int	start, int end, int modelindex, int haloindex, int startframe, int framerate,
+	int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 	float life, float width, int spread, float amplitude, int r, int g, int b, int a, int speed, int flags )
 {
 	g_TEBeamRing.m_nStartEntity = (start & 0x0FFF) | ((1 & 0xF)<<12);

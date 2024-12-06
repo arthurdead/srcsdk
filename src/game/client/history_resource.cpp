@@ -318,7 +318,7 @@ void CHudHistoryResource::Paint( void )
 			float elapsed = m_PickupHistory[i].DisplayTime - gpGlobals->curtime;
 			float scale = elapsed * 80;
 			Color clr = GetHud().m_clrNormal;
-			clr[3] = MIN( scale, 255 );
+			clr.SetA( MIN( scale, 255 ) );
 
 			bool bUseAmmoFullMsg = false;
 
@@ -356,7 +356,7 @@ void CHudHistoryResource::Paint( void )
 					bUseAmmoFullMsg = true;
 					// display as red
 					clr = GetHud().m_clrCaution;	
-					clr[3] = MIN( scale, 255 );
+					clr.SetA( MIN( scale, 255 ) );
 				}
 				break;
 
@@ -370,7 +370,7 @@ void CHudHistoryResource::Paint( void )
 					{
 						// if the weapon doesn't have ammo, display it as red
 						clr = GetHud().m_clrCaution;	
-						clr[3] = MIN( scale, 255 );
+						clr.SetA( MIN( scale, 255 ) );
 					}
 
 					itemIcon = pWeapon->GetSpriteInactive();
@@ -395,7 +395,7 @@ void CHudHistoryResource::Paint( void )
 			if ( !itemIcon )
 				continue;
 
-			if ( clr[3] )
+			if ( clr.a() > 0 )
 			{
 				// valid drawing will occur
 				m_bNeedsDraw = true;

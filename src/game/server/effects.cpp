@@ -75,7 +75,7 @@ private:
 
 	int		m_density;
 	int		m_frequency;
-	int		m_bubbleModel;
+	modelindex_t		m_bubbleModel;
 	int		m_state;
 };
 
@@ -339,7 +339,7 @@ protected:
 	int		m_iGibs;
 	int		m_iGibCapacity;
 	int		m_iGibMaterial;
-	int		m_iGibModelIndex;
+	modelindex_t		m_iGibModelIndex;
 	float	m_flGibVelocity;
 	QAngle	m_angGibRotation;
 	float	m_flGibAngVelocity;
@@ -1127,7 +1127,7 @@ public:
 	void	Precache( void );
 	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
-	int		m_iSprite;	// Don't save, precache
+	modelindex_t		m_iSprite;	// Don't save, precache
 
 	// This unfortunately doesn't work with the way the effect is set up
 	//string_t	m_iszSprite;
@@ -2358,7 +2358,7 @@ class CBreakableGibShooter : public CBaseEntity
 	DECLARE_MAPENTITY();
 public:
 
-	int GetRandomTemplateModelIndex( CPointTemplate *pTemplate );
+	modelindex_t GetRandomTemplateModelIndex( CPointTemplate *pTemplate );
 
 	void		Precache( void );
 
@@ -2407,7 +2407,7 @@ END_MAPENTITY()
 LINK_ENTITY_TO_CLASS( env_break_shooter, CBreakableGibShooter );
 
 
-int CBreakableGibShooter::GetRandomTemplateModelIndex( CPointTemplate *pTemplate )
+modelindex_t CBreakableGibShooter::GetRandomTemplateModelIndex( CPointTemplate *pTemplate )
 {
 	int iIndex = RandomInt( 0, pTemplate->GetNumTemplates() );
 	const char *szTemplate = STRING(Templates_FindByIndex(pTemplate->GetTemplateIndexForTemplate(iIndex)));
@@ -2427,7 +2427,7 @@ void CBreakableGibShooter::Precache( void )
 
 void CBreakableGibShooter::Shoot( void )
 {
-	int iModelIndex = 0;
+	modelindex_t iModelIndex = INVALID_MODEL_INDEX;
 	if (m_iModelType == MODELTYPE_MODEL)
 		iModelIndex = modelinfo->GetModelIndex( STRING(GetModelName()) );
 

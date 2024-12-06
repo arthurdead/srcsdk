@@ -44,7 +44,7 @@ public:
 	// 0-1 value - minimum translucency it's allowed to get to.
 	float			m_flTranslucencyLimit;
 
-	int				m_iBackgroundModelIndex;
+	modelindex_t				m_iBackgroundModelIndex;
 };
 
 IMPLEMENT_CLIENTCLASS_DT( C_FuncAreaPortalWindow, DT_FuncAreaPortalWindow, CFuncAreaPortalWindow )
@@ -94,7 +94,7 @@ int C_FuncAreaPortalWindow::DrawModel( int flags, const RenderableInstance_t &in
 
 	// Draw the optional foreground model next.
 	// Only use the alpha in the texture from the thing in the front.
-	if (m_iBackgroundModelIndex >= 0)
+	if (m_iBackgroundModelIndex.IsValid())
 	{
 		render->SetBlend( 1 );
 		model_t *pBackground = ( model_t * )modelinfo->GetModel( m_iBackgroundModelIndex );

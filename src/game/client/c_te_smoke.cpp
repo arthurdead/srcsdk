@@ -32,7 +32,7 @@ public:
 
 public:
 	Vector			m_vecOrigin;
-	int				m_nModelIndex;
+	modelindex_t m_nModelIndex;
 	float			m_fScale;
 	int				m_nFrameRate;
 };
@@ -43,7 +43,7 @@ public:
 C_TESmoke::C_TESmoke( void )
 {
 	m_vecOrigin.Init();
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_fScale = 0;
 	m_nFrameRate = 0;
 }
@@ -96,7 +96,7 @@ void C_TESmoke::PostDataUpdate( DataUpdateType_t updateType )
 }
 
 void TE_Smoke( IRecipientFilter& filter, float delay,
-	const Vector* pos, int modelindex, float scale, int framerate )
+	const Vector* pos, modelindex_t modelindex, float scale, int framerate )
 {
 	// The number passed down is 10 times smaller...
 	g_pEffects->Smoke( *pos, modelindex, scale * 10.0f, framerate );

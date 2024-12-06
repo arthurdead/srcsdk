@@ -16,7 +16,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern short	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
+extern modelindex_t	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
 
 //-----------------------------------------------------------------------------
 // Purpose: Dispatches smoke tempentity
@@ -33,7 +33,7 @@ public:
 	virtual void	Test( const Vector& current_origin, const QAngle& current_angles );
 	
 public:
-	CNetworkVar( int, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	CNetworkVar( int, m_nReversed );
 };
 
@@ -44,7 +44,7 @@ public:
 CTELargeFunnel::CTELargeFunnel( const char *name ) :
 	BaseClass( name )
 {
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nReversed = 0;
 }
 
@@ -92,7 +92,7 @@ END_SEND_TABLE()
 static CTELargeFunnel g_TELargeFunnel( "Large Funnel" );
 
 void TE_LargeFunnel( IRecipientFilter& filter, float delay,
-	const Vector* pos, int modelindex, int reversed )
+	const Vector* pos, modelindex_t modelindex, int reversed )
 {
 	g_TELargeFunnel.m_vecOrigin		= *pos;
 	g_TELargeFunnel.m_nModelIndex	= modelindex;	

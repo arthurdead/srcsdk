@@ -100,7 +100,7 @@ public:
 	CEnvExplosion( void )
 	{
 		// Default to invalid.
-		m_sFireballSprite = -1;
+		m_sFireballSprite = INVALID_MODEL_INDEX;
 	};
 
 	void Precache( void );
@@ -122,7 +122,7 @@ public:
 	int m_spriteScale; // what's the exact fireball sprite scale? 
 	float m_flDamageForce;	// How much damage force should we use?
 	string_t m_iszFireballSprite;
-	short m_sFireballSprite;
+	modelindex_t m_sFireballSprite;
 	EHANDLE m_hInflictor;
 	uint64 m_iCustomDamageType;
 
@@ -324,7 +324,7 @@ void CEnvExplosion::InputExplode( inputdata_t &inputdata )
 	CPASFilter filter( vecExplodeOrigin );
 	te->Explosion( filter, 0.0,
 		&vecExplodeOrigin, 
-		( m_sFireballSprite < 1 ) ? g_sModelIndexFireball : m_sFireballSprite,
+		( m_sFireballSprite == INVALID_MODEL_INDEX ) ? g_sModelIndexFireball : m_sFireballSprite,
 		!( m_spawnflags & SF_ENVEXPLOSION_NOFIREBALL ) ? ( m_spriteScale / 10.0 ) : 0.0,
 		15,
 		nFlags,

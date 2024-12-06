@@ -44,10 +44,10 @@ public:
 	
 	CNetworkVar( int, m_nSize );		// Size of the main core image
 	CNetworkVar( int, m_nOverlaySize ); // Size for the glow overlay
-	CNetworkVar( color32, m_clrOverlay );
+	CNetworkColor32( m_clrOverlay );
 	CNetworkVar( bool, m_bOn );
-	CNetworkVar( int, m_nMaterial );
-	CNetworkVar( int, m_nOverlayMaterial );
+	CNetworkModelIndex( m_nMaterial );
+	CNetworkModelIndex( m_nOverlayMaterial );
 	CNetworkVar( float, m_flHDRColorScale );
 };
 
@@ -57,8 +57,8 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CSun, DT_Sun )
 	SendPropInt( SENDINFO(m_bOn), 1, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nSize), 10, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nOverlaySize), 10, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(m_nMaterial), 32, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO(m_nOverlayMaterial), 32, SPROP_UNSIGNED ),
+	SendPropModelIndex( SENDINFO(m_nMaterial) ),
+	SendPropModelIndex( SENDINFO(m_nOverlayMaterial) ),
 	SendPropFloat( SENDINFO_NAME( m_flHDRColorScale, HDRColorScale ), 0,	SPROP_NOSCALE,	0.0f,	100.0f ),
 END_SEND_TABLE()
 
@@ -184,8 +184,8 @@ void CSun::InputTurnOff( inputdata_t &inputdata )
 void CSun::InputSetColor( inputdata_t &inputdata )
 {
 	color32 clrRender = inputdata.value.Color32();
-	SetRenderColor( clrRender.r, clrRender.g, clrRender.b );
-	SetRenderAlpha( clrRender.a );
+	SetRenderColor( clrRender.r(), clrRender.g(), clrRender.b() );
+	SetRenderAlpha( clrRender.a() );
 }
 
 int CSun::UpdateTransmitState()

@@ -556,7 +556,7 @@ void CBaseAnimating::InputSetModelScale( inputdata_t &inputdata )
 void CBaseAnimating::InputSetModel( inputdata_t &inputdata )
 {
 	const char *szModel = inputdata.value.String();
-	if (PrecacheModel(szModel, false) != -1)
+	if (PrecacheModel(szModel, false).IsValid())
 	{
 		SetModelName(AllocPooledString(szModel));
 		SetModel(szModel);
@@ -2663,7 +2663,7 @@ void CBaseAnimating::SetModel( const char *szModelName )
 	
 	if ( szModelName[0] )
 	{
-		int modelIndex = modelinfo->GetModelIndex( szModelName );
+		modelindex_t modelIndex = modelinfo->GetModelIndex( szModelName );
 		const model_t *model = modelinfo->GetModel( modelIndex );
 		if ( model && ( modelinfo->GetModelType( model ) != mod_studio ) )
 		{
@@ -3707,16 +3707,16 @@ void CBaseAnimating::Scorch( int rate, int floor )
 {
 	color24 color = GetRenderColor();
 
-	if( color.r > floor )
-		color.r -= rate;
+	if( color.r() > floor )
+		color.SetR( color.r() - rate );
 
-	if( color.g > floor )
-		color.g -= rate;
+	if( color.g() > floor )
+		color.SetG( color.g() - rate );
 
-	if( color.b > floor )
-		color.b -= rate;
+	if( color.b() > floor )
+		color.SetB( color.b() - rate );
 
-	SetRenderColor( color.r, color.g, color.b );
+	SetRenderColor( color.r(), color.g(), color.b() );
 }
 
 

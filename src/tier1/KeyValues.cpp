@@ -1561,34 +1561,28 @@ Color KeyValues::GetColor( const char *keyName )
 
 Color KeyValues::GetColor( const char *keyName ) const
 {
-	Color color(0, 0, 0, 0);
+	Color color(0, 0, 0, 255);
 	KeyValues *dat = FindKey( keyName );
 	if ( dat )
 	{
 		if ( dat->m_iDataType == TYPE_COLOR )
 		{
-			color[0] = dat->m_Color[0];
-			color[1] = dat->m_Color[1];
-			color[2] = dat->m_Color[2];
-			color[3] = dat->m_Color[3];
+			color = dat->m_Color;
 		}
 		else if ( dat->m_iDataType == TYPE_FLOAT )
 		{
-			color[0] = dat->m_flValue;
+			color.SetR( dat->m_flValue );
 		}
 		else if ( dat->m_iDataType == TYPE_INT )
 		{
-			color[0] = dat->m_iValue;
+			color.SetR( dat->m_iValue );
 		}
 		else if ( dat->m_iDataType == TYPE_STRING )
 		{
 			// parse the colors out of the string
 			float a = 0.0f, b = 0.0f, c = 0.0f, d = 0.0f;
 			sscanf(dat->m_sValue, "%f %f %f %f", &a, &b, &c, &d);
-			color[0] = (unsigned char)a;
-			color[1] = (unsigned char)b;
-			color[2] = (unsigned char)c;
-			color[3] = (unsigned char)d;
+			color.SetColor( a, b, c, d );
 		}
 	}
 	return color;
@@ -1604,10 +1598,7 @@ void KeyValues::SetColor( const char *keyName, Color value)
 	if ( dat )
 	{
 		dat->m_iDataType = TYPE_COLOR;
-		dat->m_Color[0] = value[0];
-		dat->m_Color[1] = value[1];
-		dat->m_Color[2] = value[2];
-		dat->m_Color[3] = value[3];
+		dat->m_Color = value;
 	}
 }
 
@@ -1876,10 +1867,7 @@ void KeyValues::CopyKeyValue( const KeyValues& src, size_t tmpBufferSizeB, char*
 		break;
 	case TYPE_COLOR:
 		{
-			m_Color[0] = src.m_Color[0];
-			m_Color[1] = src.m_Color[1];
-			m_Color[2] = src.m_Color[2];
-			m_Color[3] = src.m_Color[3];
+			m_Color = src.m_Color;
 		}
 		break;
 			
@@ -1978,10 +1966,7 @@ KeyValues *KeyValues::MakeCopy( void ) const
 		break;
 		
 	case TYPE_COLOR:
-		newKeyValue->m_Color[0] = m_Color[0];
-		newKeyValue->m_Color[1] = m_Color[1];
-		newKeyValue->m_Color[2] = m_Color[2];
-		newKeyValue->m_Color[3] = m_Color[3];
+		newKeyValue->m_Color = m_Color;
 		break;
 
 	case TYPE_UINT64:
@@ -2744,10 +2729,10 @@ bool KeyValues::WriteAsBinary( CUtlBuffer &buffer )
 			}
 		case TYPE_COLOR:
 			{
-				buffer.PutUnsignedChar( dat->m_Color[0] );
-				buffer.PutUnsignedChar( dat->m_Color[1] );
-				buffer.PutUnsignedChar( dat->m_Color[2] );
-				buffer.PutUnsignedChar( dat->m_Color[3] );
+				buffer.PutUnsignedChar( dat->m_Color.r() );
+				buffer.PutUnsignedChar( dat->m_Color.g() );
+				buffer.PutUnsignedChar( dat->m_Color.b() );
+				buffer.PutUnsignedChar( dat->m_Color.a() );
 				break;
 			}
 		case TYPE_PTR:
@@ -2848,10 +2833,7 @@ bool KeyValues::ReadAsBinary( CUtlBuffer &buffer, int nStackDepth )
 			}
 		case TYPE_COLOR:
 			{
-				dat->m_Color[0] = buffer.GetUnsignedChar();
-				dat->m_Color[1] = buffer.GetUnsignedChar();
-				dat->m_Color[2] = buffer.GetUnsignedChar();
-				dat->m_Color[3] = buffer.GetUnsignedChar();
+				dat->m_Color.SetColor( buffer.GetUnsignedChar(), buffer.GetUnsignedChar(), buffer.GetUnsignedChar(), buffer.GetUnsignedChar() );
 				break;
 			}
 		case TYPE_PTR:

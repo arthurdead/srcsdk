@@ -27,8 +27,8 @@ public:
 	void SetDensity( float density );
 
 private:
-	CNetworkVar( color32, m_Color1 );
-	CNetworkVar( color32, m_Color2 );
+	CNetworkColor32( m_Color1 );
+	CNetworkColor32( m_Color2 );
 	CNetworkString( m_MaterialName, 255 );
 	string_t m_String_tMaterialName;
 	CNetworkVar( float, m_ParticleDrawWidth );

@@ -176,7 +176,7 @@ public:
 		SetBrightness( a );
 		SetRenderFX( (RenderFx_t)fx );
 	}
-	inline void SetTexture( int spriteIndex ) { SetModelIndex( spriteIndex ); }
+	inline void SetTexture( modelindex_t spriteIndex ) { SetModelIndex( spriteIndex ); }
 	inline void SetColor( byte r, byte g, byte b ) { SetRenderColor( r, g, b ); }
 	
 	void SetBrightness( int brightness, float duration = 0.0f );

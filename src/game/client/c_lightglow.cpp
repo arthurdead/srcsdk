@@ -161,7 +161,7 @@ void C_LightGlow::OnDataChanged( DataUpdateType_t updateType )
 	{
 		// Setup our flare.
 		color24 c = GetRenderColor();
-		Vector vColor( c.r / 255.0f, c.g / 255.0f, c.b / 255.0f );
+		Vector vColor( c.r() / 255.0f, c.g() / 255.0f, c.b() / 255.0f );
 
 		m_Glow.m_nSprites = 1;
 
@@ -184,7 +184,7 @@ void C_LightGlow::OnDataChanged( DataUpdateType_t updateType )
 	{
 		// Setup our flare.
 		color24 c = GetRenderColor();
-		Vector vColor( c.r / 255.0f, c.g / 255.0f, c.b / 255.0f );
+		Vector vColor( c.r() / 255.0f, c.g() / 255.0f, c.b() / 255.0f );
 
 		m_Glow.m_Sprites[0].m_vColor = vColor;
 	}

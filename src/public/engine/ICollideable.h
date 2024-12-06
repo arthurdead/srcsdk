@@ -22,7 +22,7 @@ class QAngle;
 class CGameTrace;
 typedef CGameTrace trace_t;
 class IClientUnknown;
-
+struct modelindex_t;
 
 abstract_class ICollideable
 {
@@ -50,7 +50,7 @@ public:
 	virtual bool			TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr ) = 0;
 
 	// Returns the BRUSH model index if this is a brush model. Otherwise, returns -1.
-	virtual int				GetCollisionModelIndex() = 0;
+	virtual modelindex_t				GetCollisionModelIndex() = 0;
 
 	// Return the model, if it's a studio model.
 	virtual const model_t*	GetCollisionModel() = 0;

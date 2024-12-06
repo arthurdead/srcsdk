@@ -113,8 +113,8 @@ bool RagdollManager_SaveImportant( CAI_BaseNPC *pNPC );
 #define	MAX_GLASS_PENETRATION_DEPTH	16.0f
 
 extern bool			g_fDrawLines;
-extern short		g_sModelIndexLaser;		// holds the index for the laser beam
-extern short		g_sModelIndexLaserDot;	// holds the index for the laser beam dot
+extern modelindex_t g_sModelIndexLaser;		// holds the index for the laser beam
+extern modelindex_t g_sModelIndexLaserDot;	// holds the index for the laser beam dot
 
 // Debugging tools
 ConVar	ai_no_select_box( "ai_no_select_box", "0" );
@@ -3122,14 +3122,8 @@ bool CAI_BaseNPC::PreThink( void )
 			tTextParam.x			= 0.7;
 			tTextParam.y			= 0.65;
 			tTextParam.effect		= 0;
-			tTextParam.r1			= 255;
-			tTextParam.g1			= 255;
-			tTextParam.b1			= 255;
-			tTextParam.a1			= 255;
-			tTextParam.r2			= 255;
-			tTextParam.g2			= 255;
-			tTextParam.b2			= 255;
-			tTextParam.a2			= 255;
+			tTextParam.clr1.SetColor( 255, 255, 255, 255 );
+			tTextParam.clr2.SetColor( 255, 255, 255, 255 );
 			tTextParam.fadeinTime	= 0;
 			tTextParam.fadeoutTime	= 0;
 			tTextParam.holdTime		= 0.6;

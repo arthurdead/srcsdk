@@ -514,7 +514,7 @@ void CRecastMesh::DebugRender()
 	{
 		const float texScale = 1.0f / (m_cellSize * 10.0f);
 
-		IRecastMgr *pRecastMgr = g_pGameServerLoopback ? g_pGameServerLoopback->GetRecastMgr() : NULL;
+		IRecastMgr *pRecastMgr = GetGameServerLoopback() ? GetGameServerLoopback()->GetRecastMgr() : NULL;
 		if( pRecastMgr )
 		{
 			IMapMesh *pMapMesh = pRecastMgr->GetMapMesh( m_MapType );
@@ -533,7 +533,7 @@ void CRecastMesh::DebugRender()
 		dtNavMeshQuery *navQuery = NULL;
 		if( recast_draw_server.GetBool() )
 		{
-			IRecastMgr *pRecastMgr = g_pGameServerLoopback ? g_pGameServerLoopback->GetRecastMgr() : NULL;
+			IRecastMgr *pRecastMgr = GetGameServerLoopback() ? GetGameServerLoopback()->GetRecastMgr() : NULL;
 			if( pRecastMgr ) {
 				navMesh = pRecastMgr->GetNavMesh( m_Type );
 				navQuery = pRecastMgr->GetNavMeshQuery( m_Type );

@@ -142,6 +142,6 @@ void CLightGlow::Activate()
 void CLightGlow::InputColor(inputdata_t &inputdata)
 {
 	color32 clrRender = inputdata.value.Color32();
-	SetRenderColor( clrRender.r, clrRender.g, clrRender.b );
-	SetRenderAlpha( clrRender.a );
+	SetRenderColor( clrRender.r(), clrRender.g(), clrRender.b() );
+	SetRenderAlpha( clrRender.a() );
 }

@@ -77,20 +77,20 @@ void CFXLine::Draw( double frametime )
 	float alpha = m_FXData.m_flStartAlpha + ( ( m_FXData.m_flEndAlpha - m_FXData.m_flStartAlpha ) * scaleTimePerc );
 	alpha = clamp( alpha, 0.0f, 1.0f );
 
-	color.a *= alpha;
+	color.SetA( color.a() * alpha );
 
 	// Start
 	VectorMA( m_FXData.m_vecStart, -scale, cross, tmp );
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 1.0f, 1.0f );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 
 	VectorMA( m_FXData.m_vecStart, scale, cross, tmp );
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 0.0f, 1.0f );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 
@@ -98,14 +98,14 @@ void CFXLine::Draw( double frametime )
 	VectorMA( m_FXData.m_vecEnd, scale, cross, tmp );
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 0.0f, 0.0f );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 
 	VectorMA( m_FXData.m_vecEnd, -scale, cross, tmp );
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 1.0f, 0.0f );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 
@@ -171,28 +171,28 @@ void FX_DrawLine( const Vector &start, const Vector &end, float scale, IMaterial
 	VectorMA( start, -scale, cross, tmp );
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 1.0f, 1.0f );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 
 	VectorMA( start, scale, cross, tmp );
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 0.0f, 1.0f );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 
 	VectorMA( end, scale, cross, tmp );
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 0.0f, 0.0f );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 
 	VectorMA( end, -scale, cross, tmp );
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 1.0f, 0.0f );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 
@@ -247,42 +247,42 @@ void FX_DrawLineFade( const Vector &start, const Vector &end, float scale, IMate
 	Vector v1 = start + t0 * lineDir;
 	meshBuilder.Position3fv( v1.Base() );
 	meshBuilder.TexCoord2f( 0, 0.5f, t0 );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 	// v2
 	tmp = v1 - scale*cross;
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 1.0f, t0 );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 	// v3
 	tmp = v1 + scale*cross;
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 0.0f, t0 );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 	// v4
 	Vector v4 = start + t1 * lineDir;
 	meshBuilder.Position3fv( v4.Base() );
 	meshBuilder.TexCoord2f( 0, 0.5f, t1 );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 	// v5
 	tmp = v4 - scale*cross;
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 1.0f, t1 );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 	// v6
 	tmp = v4 + scale*cross;
 	meshBuilder.Position3fv( tmp.Base() );
 	meshBuilder.TexCoord2f( 0, 0.0f, t1 );
-	meshBuilder.Color4ub( color.r, color.g, color.b, color.a );
+	meshBuilder.Color4ub( color.r(), color.g(), color.b(), color.a() );
 	meshBuilder.Normal3fv( cross.Base() );
 	meshBuilder.AdvanceVertex();
 	// v7

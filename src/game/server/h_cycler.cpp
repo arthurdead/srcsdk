@@ -18,7 +18,7 @@
 
 #define FCYCLER_NOTSOLID		0x0001
 
-extern int		g_sModelIndexSmoke; // (in combatweapon.cpp) holds the index for the smoke cloud
+extern modelindex_t g_sModelIndexSmoke; // (in combatweapon.cpp) holds the index for the smoke cloud
 
 BEGIN_MAPENTITY( CCycler )
 

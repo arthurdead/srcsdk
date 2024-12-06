@@ -125,7 +125,7 @@ void ImagePanel::SetDrawColor( Color drawColor )
 //-----------------------------------------------------------------------------
 void ImagePanel::PaintBackground()
 {
-	if (m_FillColor[3] > 0)
+	if (m_FillColor.a() > 0)
 	{
 		// draw the specified fill color
 		int wide, tall;

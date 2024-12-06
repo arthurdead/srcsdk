@@ -13,6 +13,8 @@
 #include "tier1/utlvector.h"
 #include "tier1/convar.h"
 #include "bittools.h"
+#include "engine/ivmodelinfo.h"
+#include "networkvar.h"
 
 #define TICK_INTERVAL			(gpGlobals->interval_per_tick)
 
@@ -1134,7 +1136,7 @@ enum
 //-----------------------------------------------------------------------------
 #define MAX_HOLIDAY_STRING 64
 
-enum
+enum : unsigned int
 {
 	HOLIDAY_NONE =                   0,
 	HOLIDAY_GAME_RELEASE =     (1 << 0),
@@ -1153,15 +1155,16 @@ enum
 	MAX_SUPPORTED_HOLIDAYS = 32
 };
 
-typedef int EHolidayFlags;
-typedef int EHolidayFlag;
-typedef int EHolidayIndex;
+typedef unsigned int EHolidayFlags;
+typedef unsigned int EHolidayFlag;
+typedef unsigned int EHolidayIndex;
 
 #ifdef CLIENT_DLL
 //the engine checks this cvar for 0x01
 extern ConVar localplayer_visionflags;
+#endif
 
-enum
+enum : unsigned int
 {
 	VISION_FILTER_NONE = 0,
 
@@ -1186,7 +1189,14 @@ enum
 
 	MAX_SUPPORTED_VISION_FILTERS = 32
 };
-#endif
+
+typedef unsigned int vision_filter_t;
+
+struct VisionModelIndex_t
+{
+	vision_filter_t flags;
+	modelindex_t modelindex;
+};
 
 enum tprbGameInfo_e
 {

@@ -131,21 +131,21 @@ void CSharedFuncLadder::Spawn()
 	int i;
 	for ( i = 0; i < 3; i++ )
 	{
-		if ( m_vecPlayerMountPositionBottom.m_Value[ i ] < mins[ i ] )
+		if ( m_vecPlayerMountPositionBottom[ i ] < mins[ i ] )
 		{
-			mins[ i ] = m_vecPlayerMountPositionBottom.m_Value[ i ];
+			mins[ i ] = m_vecPlayerMountPositionBottom[ i ];
 		}
-		if ( m_vecPlayerMountPositionBottom.m_Value[ i ] > maxs[ i ] )
+		if ( m_vecPlayerMountPositionBottom[ i ] > maxs[ i ] )
 		{
-			maxs[ i ] = m_vecPlayerMountPositionBottom.m_Value[ i ];
+			maxs[ i ] = m_vecPlayerMountPositionBottom[ i ];
 		}
-		if ( m_vecPlayerMountPositionTop.m_Value[ i ] < mins[ i ] )
+		if ( m_vecPlayerMountPositionTop[ i ] < mins[ i ] )
 		{
-			mins[ i ] = m_vecPlayerMountPositionTop.m_Value[ i ];
+			mins[ i ] = m_vecPlayerMountPositionTop[ i ];
 		}
-		if ( m_vecPlayerMountPositionTop.m_Value[ i ] > maxs[ i ] )
+		if ( m_vecPlayerMountPositionTop[ i ] > maxs[ i ] )
 		{
-			maxs[ i ] = m_vecPlayerMountPositionTop.m_Value[ i ];
+			maxs[ i ] = m_vecPlayerMountPositionTop[ i ];
 		}
 	}
 

@@ -38,7 +38,7 @@ IMPLEMENT_SERVERCLASS_ST(CSmokeStack, DT_SmokeStack)
 
 	SendPropVector(SENDINFO(m_vWind), 0, SPROP_NOSCALE),
 	SendPropFloat(SENDINFO(m_flTwist), 0, SPROP_NOSCALE),
-	SendPropIntWithMinusOneFlag( SENDINFO(m_iMaterialModel), 16 )
+	SendPropModelIndex( SENDINFO(m_iMaterialModel) )
 
 END_SEND_TABLE()
 
@@ -87,7 +87,7 @@ CSmokeStack::CSmokeStack()
 	SetRenderAlpha( 255 );
 	m_vWind.GetForModify().Init();
 	m_WindAngle = m_WindSpeed = 0;
-	m_iMaterialModel = -1;
+	m_iMaterialModel = INVALID_MODEL_INDEX;
 	m_flRollSpeed = 0.0f;
 }
 
@@ -143,7 +143,7 @@ void CSmokeStack::Activate()
 	BaseClass::Activate();
 
 	// Legacy support..
-	if ( m_iMaterialModel == -1 )
+	if ( m_iMaterialModel == INVALID_MODEL_INDEX )
 		m_iMaterialModel = PrecacheModel( "particle/SmokeStack.vmt" );
 }
 

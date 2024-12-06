@@ -14,7 +14,7 @@
 
 #include "tier1/utlvector.h"
 #include "tier1/utlbuffer.h"
-
+#include "Color.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -25,7 +25,6 @@ class Vector4D;
 class QAngle;
 class Quaternion;
 class VMatrix;
-class Color;
 class CUtlBinaryBlock;
 class CUtlString;
 class CUtlCharConversion;

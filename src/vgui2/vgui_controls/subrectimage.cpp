@@ -142,7 +142,7 @@ void CSubRectImage::Paint()
 	}
 
 	// set the texture current, set the color, and draw the biatch
-	surface()->DrawSetColor( _color[0], _color[1], _color[2], _color[3] );
+	surface()->DrawSetColor( _color.r(), _color.g(), _color.b(), _color.a() );
 	surface()->DrawSetTexture( _id );
 
 	if ( _wide == 0 || _tall == 0 )

@@ -212,7 +212,7 @@ bool CSkyCamera::DoUpdate( bool bUpdateData )
 		{
 			pPlayer = UTIL_PlayerByIndex(i);
 			if (pPlayer)
-				pPlayer->m_Local.m_skybox3d.CopyFrom(m_skyboxData);
+				pPlayer->m_Local.m_skybox3d.GetForModify() = m_skyboxData;
 		}
 	}
 

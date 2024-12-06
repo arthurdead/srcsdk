@@ -76,8 +76,8 @@ public:
 	Vector				m_vDirection;
 	bool				m_bOn;
 
-	int					m_nMaterial;
-	int					m_nOverlayMaterial;
+	modelindex_t					m_nMaterial;
+	modelindex_t					m_nOverlayMaterial;
 };
 
 

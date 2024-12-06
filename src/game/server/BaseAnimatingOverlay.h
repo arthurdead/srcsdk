@@ -74,15 +74,15 @@ public:
 	int		m_nPriority;
 	CNetworkVar( int, m_nOrder );
 
-	bool	IsActive( void ) { return ((m_fFlags & ANIM_LAYER_ACTIVE) != 0); }
-	bool	IsAutokill( void ) { return ((m_fFlags & ANIM_LAYER_AUTOKILL) != 0); }
-	bool	IsKillMe( void ) { return ((m_fFlags & ANIM_LAYER_KILLME) != 0); }
-	bool	IsAutoramp( void ) { return (m_flBlendIn != 0.0 || m_flBlendOut != 0.0); }
+	bool	IsActive( void ) const { return ((m_fFlags & ANIM_LAYER_ACTIVE) != 0); }
+	bool	IsAutokill( void ) const { return ((m_fFlags & ANIM_LAYER_AUTOKILL) != 0); }
+	bool	IsKillMe( void ) const { return ((m_fFlags & ANIM_LAYER_KILLME) != 0); }
+	bool	IsAutoramp( void ) const { return (m_flBlendIn != 0.0 || m_flBlendOut != 0.0); }
 	void	KillMe( void ) { m_fFlags |= ANIM_LAYER_KILLME; }
 	void	Dying( void ) { m_fFlags |= ANIM_LAYER_DYING; }
-	bool	IsDying( void ) { return ((m_fFlags & ANIM_LAYER_DYING) != 0); }
+	bool	IsDying( void ) const { return ((m_fFlags & ANIM_LAYER_DYING) != 0); }
 	void	Dead( void ) { m_fFlags &= ~ANIM_LAYER_DYING; }
-	bool	NoEvents( void ) { return ((m_fFlags & ANIM_LAYER_NOEVENTS) != 0); }
+	bool	NoEvents( void ) const { return ((m_fFlags & ANIM_LAYER_NOEVENTS) != 0); }
 
 	void	SetSequence( int nSequence );
 	void	SetCycle( float flCycle );
@@ -96,7 +96,7 @@ public:
 	float	GetPlaybackRate( ) const;
 	float	GetWeight( ) const;
 
-	bool	IsAbandoned( void );
+	bool	IsAbandoned( void ) const;
 	void	MarkActive( void );
 
 	float	m_flLastEventCheck;
@@ -196,7 +196,7 @@ public:
 	};
 
 private:
-	CUtlVector< CAnimationLayer	> m_AnimOverlay;
+	CNetworkUtlVector( CAnimationLayer, m_AnimOverlay );
 	//int				m_nActiveLayers;
 	//int				m_nActiveBaseLayers;
 
@@ -252,7 +252,8 @@ public:
 	void	RemoveLayer( int iLayer, float flKillRate = 0.2, float flKillDelay = 0.0 );
 	void	FastRemoveLayer( int iLayer );
 
-	CAnimationLayer *GetAnimOverlay( int iIndex );
+	const CAnimationLayer *GetAnimOverlay( int iIndex ) const;
+	CAnimationLayer *GetAnimOverlayForModify( int iIndex );
 	int GetNumAnimOverlays() const;
 	void SetNumAnimOverlays( int num );
 

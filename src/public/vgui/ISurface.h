@@ -15,6 +15,7 @@
 #include "tier1/interface.h"
 #include "bitmap/imageformat.h"
 #include "hackmgr/hackmgr.h"
+#include "Color.h"
 
 #include "appframework/IAppSystem.h"
 #include "mathlib/vector2d.h"  // must be before the namespace line
@@ -29,7 +30,6 @@
 #undef PlaySound
 #endif
 
-class Color;
 class ITexture;
 
 namespace vgui

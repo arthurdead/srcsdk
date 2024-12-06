@@ -104,7 +104,7 @@ public:
 	// However, generic and decal are 0 based
 	// If preload is specified, the file is loaded into the server/client's cache memory before level startup, otherwise
 	//  it'll only load when actually used (which can cause a disk i/o hitch if it occurs during play of a level).
-	virtual int			PrecacheModel( const char *s, bool preload = false ) = 0;
+	virtual modelindex_t			PrecacheModel( const char *s, bool preload = false ) = 0;
 	virtual int			PrecacheSentenceFile( const char *s, bool preload = false ) = 0;
 	virtual int			PrecacheDecal( const char *name, bool preload = false ) = 0;
 	virtual int			PrecacheGeneric( const char *s, bool preload = false ) = 0;
@@ -183,7 +183,7 @@ public:
 	virtual void		LightStyle( int style, const char *val ) = 0;
 
 	// Project a static decal onto the specified entity / model (for level placed decals in the .bsp)
-	virtual void		StaticDecal( const Vector &originInEntitySpace, int decalIndex, int entityIndex, int modelIndex, bool lowpriority ) = 0;
+	virtual void		StaticDecal( const Vector &originInEntitySpace, int decalIndex, int entityIndex, modelindex_t modelIndex, bool lowpriority ) = 0;
 	
 	// Given the current PVS(or PAS) and origin, determine which players should hear/receive the message
 	virtual void		Message_DetermineMulticastRecipients( bool usepas, const Vector& origin, CBitVec< ABSOLUTE_PLAYER_LIMIT >& playerbits ) = 0;

@@ -272,7 +272,7 @@ void CSharedSprite::ComputeWorldSpaceSurroundingBox( Vector *pVecWorldMins, Vect
 //-----------------------------------------------------------------------------
 void CSharedSprite::SetModel( const char *szModelName )
 {
-	int index = modelinfo->GetModelIndex( szModelName );
+	modelindex_t index = modelinfo->GetModelIndex( szModelName );
 	const model_t *model = modelinfo->GetModel( index );
 	if ( model && modelinfo->GetModelType( model ) != mod_sprite )
 	{

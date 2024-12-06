@@ -23,10 +23,10 @@ public:
 	void ExplodeConcussion( CBaseEntity *pOther );
 
 protected:
-	static int m_nTrailSprite;
+	static modelindex_t m_nTrailSprite;
 };
 
-int CBaseGrenadeConcussion::m_nTrailSprite = 0;
+modelindex_t CBaseGrenadeConcussion::m_nTrailSprite = INVALID_MODEL_INDEX;
 
 LINK_ENTITY_TO_CLASS( npc_concussiongrenade, CBaseGrenadeConcussion );
 

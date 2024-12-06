@@ -137,9 +137,7 @@ bool C_EntityFlame::Simulate( void )
 		dlight_t *dl = effects->CL_AllocDlight( entindex() );
 		dl->origin = GetAbsOrigin();
  		dl->origin[2] += 16;
-		dl->color.r = 254;
-		dl->color.g = 174;
-		dl->color.b = 10;
+		dl->color.SetColor( 254, 174, 10 );
 		dl->radius = random_valve->RandomFloat(400,431);
 		dl->die = gpGlobals->curtime + 0.001;
 	}

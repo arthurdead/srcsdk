@@ -62,7 +62,7 @@ public:
 	virtual void			SetRecording( HTOOLHANDLE handle, bool recording );
 	virtual bool			ShouldRecord( HTOOLHANDLE handle );
 
-	virtual int				GetModelIndex( HTOOLHANDLE handle );
+	virtual modelindex_t				GetModelIndex( HTOOLHANDLE handle );
 	virtual const char*		GetModelName ( HTOOLHANDLE handle );
 	virtual const char*		GetClassname ( HTOOLHANDLE handle );
 
@@ -542,11 +542,11 @@ bool CClientTools::ShouldRecord( HTOOLHANDLE handle )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CClientTools::GetModelIndex( HTOOLHANDLE handle )
+modelindex_t CClientTools::GetModelIndex( HTOOLHANDLE handle )
 {
 	int idx = m_Handles.Find( HToolEntry_t( handle ) );
 	if ( idx == m_Handles.InvalidIndex() )
-		return 0;
+		return INVALID_MODEL_INDEX;
 
 	HToolEntry_t &entry = m_Handles[ idx ];
 	if ( entry.m_hEntity )
@@ -554,7 +554,7 @@ int CClientTools::GetModelIndex( HTOOLHANDLE handle )
 		return entry.m_hEntity->GetModelIndex();
 	}
 	Assert( 0 );
-	return 0;
+	return INVALID_MODEL_INDEX;
 }
 
 

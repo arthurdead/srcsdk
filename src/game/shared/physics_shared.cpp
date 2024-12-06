@@ -108,7 +108,7 @@ CPhysCollide *PhysCreateBbox( const Vector &minsIn, const Vector &maxsIn )
 //-----------------------------------------------------------------------------
 IPhysicsObject *PhysModelCreateBox( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, bool isStatic )
 {
-	int modelIndex = pEntity->GetModelIndex();
+	modelindex_t modelIndex = pEntity->GetModelIndex();
 	const char *pSurfaceProps = "flesh";
 	solid_t solid;
 	PhysGetDefaultAABBSolid( solid );
@@ -147,7 +147,7 @@ IPhysicsObject *PhysModelCreateBox( CSharedBaseEntity *pEntity, const Vector &mi
 //-----------------------------------------------------------------------------
 IPhysicsObject *PhysModelCreateSphere( CSharedBaseEntity *pEntity, float radius, const Vector &origin, bool isStatic )
 {
-	int modelIndex = pEntity->GetModelIndex();
+	modelindex_t modelIndex = pEntity->GetModelIndex();
 	const char *pSurfaceProps = "flesh";
 	solid_t solid;
 	//PhysGetDefaultAABBSolid( solid );
@@ -181,7 +181,7 @@ IPhysicsObject *PhysModelCreateSphere( CSharedBaseEntity *pEntity, float radius,
 //-----------------------------------------------------------------------------
 IPhysicsObject *PhysModelCreateOBB( CSharedBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, const QAngle &angle, bool isStatic )
 {
-	int modelIndex = pEntity->GetModelIndex();
+	modelindex_t modelIndex = pEntity->GetModelIndex();
 	const char *pSurfaceProps = "flesh";
 	solid_t solid;
 	PhysGetDefaultAABBSolid( solid );
@@ -218,7 +218,7 @@ IPhysicsObject *PhysModelCreateOBB( CSharedBaseEntity *pEntity, const Vector &mi
 //			solidIndex - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, int modelIndex, int solidIndex )
+bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, modelindex_t modelIndex, int solidIndex )
 {
 	vcollide_t *pCollide = modelinfo->GetVCollide( modelIndex );
 	if ( !pCollide )
@@ -272,7 +272,7 @@ bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, int
 //			modelIndex - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool PhysModelParseSolid( solid_t &solid, CSharedBaseEntity *pEntity, int modelIndex )
+bool PhysModelParseSolid( solid_t &solid, CSharedBaseEntity *pEntity, modelindex_t modelIndex )
 {
 	return PhysModelParseSolidByIndex( solid, pEntity, modelIndex, -1 );
 }
@@ -337,7 +337,7 @@ bool PhysModelParseSolidByIndex( solid_t &solid, CSharedBaseEntity *pEntity, vco
 //			*pSolid - 
 // Output : IPhysicsObject
 //-----------------------------------------------------------------------------
-IPhysicsObject *PhysModelCreate( CSharedBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles, solid_t *pSolid )
+IPhysicsObject *PhysModelCreate( CSharedBaseEntity *pEntity, modelindex_t modelIndex, const Vector &origin, const QAngle &angles, solid_t *pSolid )
 {
 	if ( !physenv )
 		return NULL;
@@ -393,7 +393,7 @@ IPhysicsObject *PhysModelCreate( CSharedBaseEntity *pEntity, int modelIndex, con
 //			&angles - 
 // Output : IPhysicsObject
 //-----------------------------------------------------------------------------
-IPhysicsObject *PhysModelCreateUnmoveable( CSharedBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles )
+IPhysicsObject *PhysModelCreateUnmoveable( CSharedBaseEntity *pEntity, modelindex_t modelIndex, const Vector &origin, const QAngle &angles )
 {
 	if ( !physenv )
 		return NULL;

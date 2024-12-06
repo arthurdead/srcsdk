@@ -102,8 +102,8 @@ public:
 	void SetStartAttachment( int attachment );
 	void SetEndAttachment( int attachment );
 
-	void SetTexture( int spriteIndex );
-	void SetHaloTexture( int spriteIndex );
+	void SetTexture( modelindex_t spriteIndex );
+	void SetHaloTexture( modelindex_t spriteIndex );
 	void SetHaloScale( float haloScale );
 	void SetWidth( float width );
 	void SetEndWidth( float endWidth );
@@ -132,7 +132,7 @@ public:
 
 	virtual const Vector &WorldSpaceCenter( void ) const;
 
-	int GetTexture( void ) const;
+	modelindex_t GetTexture( void ) const;
 	float GetWidth( void ) const;
 	float GetEndWidth( void ) const;
 	float GetFadeLength( void ) const;
@@ -239,7 +239,7 @@ private:
 #endif
 
 	// Beam Data Elements
-	CNetworkVar( int, m_nHaloIndex );
+	CNetworkModelIndex( m_nHaloIndex );
 	CNetworkVar( int, m_nBeamType );
 	CNetworkVar( int, m_nBeamFlags );
 	CNetworkArray( EHANDLE, m_hAttachEntity, MAX_BEAM_ENTS );
@@ -322,12 +322,12 @@ inline void CSharedBeam::SetEndAttachment( int attachment )
 	m_nAttachIndex.Set( m_nNumBeamEnts-1, attachment );
 }
 
-inline void CSharedBeam::SetTexture( int spriteIndex )		
+inline void CSharedBeam::SetTexture( modelindex_t spriteIndex )		
 { 
 	SetModelIndex( spriteIndex ); 
 }
 
-inline void CSharedBeam::SetHaloTexture( int spriteIndex )	
+inline void CSharedBeam::SetHaloTexture( modelindex_t spriteIndex )	
 { 
 	m_nHaloIndex = spriteIndex; 
 }
@@ -411,7 +411,7 @@ inline int CSharedBeam::GetEndAttachment() const
 	return m_nAttachIndex[m_nNumBeamEnts-1] & ATTACHMENT_INDEX_MASK;
 }
 
-inline int CSharedBeam::GetTexture( void ) const		
+inline modelindex_t CSharedBeam::GetTexture( void ) const		
 { 
 	return GetModelIndex(); 
 }

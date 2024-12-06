@@ -923,7 +923,7 @@ void TextEntry::PaintBackground()
 
 		surface()->DrawFilledRect( x, 2, x + m_nLangInset-2, tall - 2 );
 
-		saveBgColor[ 3 ] = 255;
+		saveBgColor.SetA( 255 );
 		surface()->DrawSetTextColor( saveBgColor );
 
 		x += 1;

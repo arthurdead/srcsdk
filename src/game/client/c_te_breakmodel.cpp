@@ -36,7 +36,7 @@ public:
 	Vector			m_vecSize;
 	Vector			m_vecVelocity;
 	int				m_nRandomization;
-	int				m_nModelIndex;
+	modelindex_t m_nModelIndex;
 	int				m_nCount;
 	float			m_fTime;
 	int				m_nFlags;
@@ -70,7 +70,7 @@ C_TEBreakModel::C_TEBreakModel( void )
 	m_angRotation.Init();
 	m_vecSize.Init();
 	m_vecVelocity.Init();
-	m_nModelIndex		= 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nRandomization	= 0;
 	m_nCount			= 0;
 	m_fTime				= 0.0;
@@ -86,14 +86,14 @@ C_TEBreakModel::~C_TEBreakModel( void )
 // Recording
 //-----------------------------------------------------------------------------
 static inline void RecordBreakModel( const Vector &start, const QAngle &angles, const Vector &size,
-	const Vector &vel, int nModelIndex, int nRandomization, int nCount, float flDuration, int nFlags )
+	const Vector &vel, modelindex_t nModelIndex, int nRandomization, int nCount, float flDuration, int nFlags )
 {
 	if ( !ToolsEnabled() )
 		return;
 
 	if ( clienttools->IsInRecordingMode() )
 	{
-		const model_t* pModel = (nModelIndex != 0) ? modelinfo->GetModel( nModelIndex ) : NULL;
+		const model_t* pModel = (nModelIndex.IsValid()) ? modelinfo->GetModel( nModelIndex ) : NULL;
 		const char *pModelName = pModel ? modelinfo->GetModelName( pModel ) : "";
 
 		KeyValues *msg = new KeyValues( "TempEntity" );
@@ -130,7 +130,7 @@ static inline void RecordBreakModel( const Vector &start, const QAngle &angles, 
 //-----------------------------------------------------------------------------
 void TE_BreakModel( IRecipientFilter& filter, float delay,
 	const Vector& pos, const QAngle &angles, const Vector& size, const Vector& vel, 
-	int modelindex, int randomization, int count, float time, int flags )
+	modelindex_t modelindex, int randomization, int count, float time, int flags )
 {
 	tempents->BreakModel( pos, angles, size, vel, randomization, time, count, modelindex, flags );
 	RecordBreakModel( pos, angles, size, vel, randomization, time, count, modelindex, flags ); 
@@ -168,7 +168,7 @@ void TE_BreakModel( IRecipientFilter& filter, float delay, KeyValues *pKeyValues
 	vecVel.z = pKeyValues->GetFloat( "velz" );
 	Color c = pKeyValues->GetColor( "color" );
 	const char *pModelName = pKeyValues->GetString( "model" );
-	int nModelIndex = pModelName[0] ? modelinfo->GetModelIndex( pModelName ) : 0;
+	modelindex_t nModelIndex = pModelName[0] ? modelinfo->GetModelIndex( pModelName ) : INVALID_MODEL_INDEX;
 	int nRandomization = pKeyValues->GetInt( "randomization" );
 	int nCount = pKeyValues->GetInt( "count" );
 	float flDuration = pKeyValues->GetFloat( "duration" );

@@ -17,8 +17,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern int		g_sModelIndexBloodDrop;	
-extern int		g_sModelIndexBloodSpray;
+extern modelindex_t g_sModelIndexBloodDrop;	
+extern modelindex_t g_sModelIndexBloodSpray;
 
 //-----------------------------------------------------------------------------
 // Purpose: Blood sprite
@@ -37,9 +37,9 @@ public:
 public:
 	Vector			m_vecOrigin;
 	Vector			m_vecDirection;
-	int				r, g, b, a;
-	int				m_nDropModel;
-	int				m_nSprayModel;
+	color32 m_clr;
+	modelindex_t				m_nDropModel;
+	modelindex_t				m_nSprayModel;
 	int				m_nSize;
 };
 
@@ -54,10 +54,7 @@ IMPLEMENT_CLIENTCLASS_EVENT( C_TEBloodSprite, DT_TEBloodSprite, CTEBloodSprite )
 BEGIN_RECV_TABLE_NOBASE(C_TEBloodSprite, DT_TEBloodSprite)
 	RecvPropVector( RECVINFO(m_vecOrigin)),
 	RecvPropVector( RECVINFO(m_vecDirection)),
-	RecvPropInt( RECVINFO(r)),
-	RecvPropInt( RECVINFO(g)),
-	RecvPropInt( RECVINFO(b)),
-	RecvPropInt( RECVINFO(a)),
+	RecvPropInt( RECVINFO(m_clr), SPROP_UNSIGNED, RecvProxy_Int32ToColor32 ),
 	RecvPropInt( RECVINFO(m_nSprayModel)),
 	RecvPropInt( RECVINFO(m_nDropModel)),
 	RecvPropInt( RECVINFO(m_nSize)),
@@ -72,10 +69,10 @@ C_TEBloodSprite::C_TEBloodSprite( void )
 	m_vecOrigin.Init();
 	m_vecDirection.Init();
 
-	r = g = b = a = 0;
+	m_clr.SetColor( 0, 0, 0, 0 );
 	m_nSize = 0;
-	m_nSprayModel = 0;
-	m_nDropModel = 0;
+	m_nSprayModel = INVALID_MODEL_INDEX;
+	m_nDropModel = INVALID_MODEL_INDEX;
 }
 
 //-----------------------------------------------------------------------------
@@ -90,17 +87,15 @@ C_TEBloodSprite::~C_TEBloodSprite( void )
 // Recording 
 //-----------------------------------------------------------------------------
 static inline void RecordBloodSprite( const Vector &start, const Vector &direction, 
-	int r, int g, int b, int a, int nSprayModelIndex, int nDropModelIndex, int size )
+	color32 clr, modelindex_t nSprayModelIndex, modelindex_t nDropModelIndex, int size )
 {
 	if ( !ToolsEnabled() )
 		return;
 
 	if ( clienttools->IsInRecordingMode() )
 	{
-		Color clr( r, g, b, a );
-
-		const model_t* pSprayModel = (nSprayModelIndex != 0) ? modelinfo->GetModel( nSprayModelIndex ) : NULL;
-		const model_t* pDropModel = (nDropModelIndex != 0) ? modelinfo->GetModel( nDropModelIndex ) : NULL;
+		const model_t* pSprayModel = (nSprayModelIndex.IsValid()) ? modelinfo->GetModel( nSprayModelIndex ) : NULL;
+		const model_t* pDropModel = (nDropModelIndex.IsValid()) ? modelinfo->GetModel( nDropModelIndex ) : NULL;
 		const char *pSprayModelName = pSprayModel ? modelinfo->GetModelName( pSprayModel ) : "";
 		const char *pDropModelName = pDropModel ? modelinfo->GetModelName( pDropModel ) : "";
 
@@ -130,13 +125,13 @@ static inline void RecordBloodSprite( const Vector &start, const Vector &directi
 // Recording 
 //-----------------------------------------------------------------------------
 void TE_BloodSprite( IRecipientFilter& filter, float delay,
-	const Vector* org, const Vector *dir, int r, int g, int b, int a, int size )
+	const Vector* org, const Vector *dir, color32 clr, int size )
 {
 	Vector	offset = *org + ( (*dir) * 4.0f );
 
-	tempents->BloodSprite( offset, r, g, b, a, g_sModelIndexBloodSpray, g_sModelIndexBloodDrop, size );	
-	FX_Blood( offset, (Vector &)*dir, r, g, b, a );
-	RecordBloodSprite( *org, *dir, r, g, b, a, g_sModelIndexBloodSpray, g_sModelIndexBloodDrop, size );
+	tempents->BloodSprite( offset, clr, g_sModelIndexBloodSpray, g_sModelIndexBloodDrop, size );	
+	FX_Blood( offset, (Vector &)*dir, clr );
+	RecordBloodSprite( *org, *dir, clr, g_sModelIndexBloodSpray, g_sModelIndexBloodDrop, size );
 }
 
 
@@ -149,9 +144,9 @@ void C_TEBloodSprite::PostDataUpdate( DataUpdateType_t updateType )
 
 	Vector	offset = m_vecOrigin + ( m_vecDirection * 4.0f );
 
-	tempents->BloodSprite( offset, r, g, b, a, m_nSprayModel, m_nDropModel, m_nSize );	
-	FX_Blood( offset, m_vecDirection, r, g, b, a );
-	RecordBloodSprite( m_vecOrigin, m_vecDirection, r, g, b, a, m_nSprayModel, m_nDropModel, m_nSize );
+	tempents->BloodSprite( offset, m_clr, m_nSprayModel, m_nDropModel, m_nSize );	
+	FX_Blood( offset, m_vecDirection, m_clr );
+	RecordBloodSprite( m_vecOrigin, m_vecDirection, m_clr, m_nSprayModel, m_nDropModel, m_nSize );
 }
 
 void TE_BloodSprite( IRecipientFilter& filter, float delay, KeyValues *pKeyValues )
@@ -167,5 +162,5 @@ void TE_BloodSprite( IRecipientFilter& filter, float delay, KeyValues *pKeyValue
 //	const char *pSprayModelName = pKeyValues->GetString( "spraymodel" );
 //	const char *pDropModelName = pKeyValues->GetString( "dropmodel" );
 	int nSize = pKeyValues->GetInt( "size" );
-	TE_BloodSprite( filter, 0.0f, &vecOrigin, &vecDirection, c.r(), c.g(), c.b(), c.a(), nSize );
+	TE_BloodSprite( filter, 0.0f, &vecOrigin, &vecDirection, c, nSize );
 }

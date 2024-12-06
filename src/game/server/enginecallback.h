@@ -54,6 +54,8 @@ extern IServerFoundry			*serverfoundry;
 #ifndef SWDS
 extern IGameLoopback* g_pGameLoopback;
 extern IGameServerLoopback* g_pGameServerLoopback;
+inline IGameServerLoopback* GetGameServerLoopback()
+{ return g_pGameServerLoopback; }
 extern IGameClientLoopback* g_pGameClientLoopback;
 #endif
 
@@ -110,6 +112,17 @@ void MessageWriteEntity( int iValue);
 void MessageWriteEHandle( CBaseEntity *pEntity ); //encoded as a long
 void MessageWriteBitVecIntegral( const Vector& vecValue );
 
+inline void MessageWriteModelIndex( modelindex_t iValue )
+{ MessageWriteWord( iValue.GetRaw() ); }
+
+inline void MessageWriteRGBA( color32 iValue )
+{
+	MessageWriteByte( iValue.r() );
+	MessageWriteByte( iValue.g() );
+	MessageWriteByte( iValue.b() );
+	MessageWriteByte( iValue.a() );
+}
+
 // bitwise
 void MessageWriteBool( bool bValue );
 void MessageWriteUBitLong( unsigned int data, int numbits );
@@ -137,6 +150,8 @@ extern bool GetSteamIDForPlayerIndex( int iPlayerIndex, CSteamID &steamid );
 #define WRITE_STRING	(MessageWriteString)
 #define WRITE_ENTITY	(MessageWriteEntity)
 #define WRITE_EHANDLE	(MessageWriteEHandle)
+#define WRITE_MODELINDEX		(MessageWriteModelIndex)
+#define WRITE_RGBA		(MessageWriteRGBA)
 
 // Bitwise
 #define WRITE_BOOL		(MessageWriteBool)

@@ -56,7 +56,7 @@ void C_Sun::OnDataChanged( DataUpdateType_t updateType )
 	// for the sun, which should always be completely opaque at its core.  Here, we renormalize the
 	// components to make sure only hue is altered.
 	color24 c = GetRenderColor();
-	float maxComponent = MAX( c.r, MAX( c.g, c.b ) );
+	float maxComponent = MAX( c.r(), MAX( c.g(), c.b() ) );
 
 	Vector vOverlayColor;
 	Vector vMainColor;
@@ -69,18 +69,18 @@ void C_Sun::OnDataChanged( DataUpdateType_t updateType )
 	}
 	else
 	{
-		vMainColor.x = c.r / maxComponent;
-		vMainColor.y = c.g / maxComponent;
-		vMainColor.z = c.b / maxComponent;
+		vMainColor.x = c.r() / maxComponent;
+		vMainColor.y = c.g() / maxComponent;
+		vMainColor.z = c.b() / maxComponent;
 	}
 	
 	// If we're non-zero, use the value (otherwise use the value we calculated above)
-	if ( m_clrOverlay.r != 0 || m_clrOverlay.g != 0 || m_clrOverlay.b != 0 )
+	if ( m_clrOverlay.r() != 0 || m_clrOverlay.g() != 0 || m_clrOverlay.b() != 0 )
 	{
 		// Get our overlay color
-		vOverlayColor.x = m_clrOverlay.r / 255.0f;
-		vOverlayColor.y = m_clrOverlay.g / 255.0f;
-		vOverlayColor.z = m_clrOverlay.b / 255.0f;
+		vOverlayColor.x = m_clrOverlay.r() / 255.0f;
+		vOverlayColor.y = m_clrOverlay.g() / 255.0f;
+		vOverlayColor.z = m_clrOverlay.b() / 255.0f;
 	}
 	else
 	{
@@ -98,7 +98,7 @@ void C_Sun::OnDataChanged( DataUpdateType_t updateType )
 	m_Overlay.m_Sprites[0].m_flHorzSize = m_nSize;
 	m_Overlay.m_Sprites[0].m_flVertSize = m_nSize;
 
-	const model_t* pModel = (m_nMaterial != 0) ? modelinfo->GetModel( m_nMaterial ) : NULL;
+	const model_t* pModel = m_nMaterial.IsValid() ? modelinfo->GetModel( m_nMaterial ) : NULL;
 	const char *pModelName = pModel ? modelinfo->GetModelName( pModel ) : "";
 	m_Overlay.m_Sprites[0].m_pMaterial = g_pMaterialSystem->FindMaterial( pModelName, TEXTURE_GROUP_OTHER );
 	m_Overlay.m_flProxyRadius = 0.05f; // about 1/20th of the screen
@@ -114,7 +114,7 @@ void C_Sun::OnDataChanged( DataUpdateType_t updateType )
 	m_GlowOverlay.m_Sprites[0].m_flHorzSize = m_nOverlaySize;
 	m_GlowOverlay.m_Sprites[0].m_flVertSize = m_nOverlaySize;
 
-	pModel = (m_nOverlayMaterial != 0) ? modelinfo->GetModel( m_nOverlayMaterial ) : NULL;
+	pModel = m_nOverlayMaterial.IsValid() ? modelinfo->GetModel( m_nOverlayMaterial ) : NULL;
 	pModelName = pModel ? modelinfo->GetModelName( pModel ) : "";
 	m_GlowOverlay.m_Sprites[0].m_pMaterial = g_pMaterialSystem->FindMaterial( pModelName, TEXTURE_GROUP_OTHER );
 

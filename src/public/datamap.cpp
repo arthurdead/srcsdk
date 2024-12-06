@@ -88,7 +88,7 @@ typedescription_t::typedescription_t()
 	fieldOffset[0] = 0;
 	fieldOffset[1] = 0;
 	fieldSize = 0;
-	flags = 0;
+	flags = FTYPEDESC_NONE;
 	externalName = NULL;
 	pFieldOps = NULL;
 	inputFunc = NULL;
@@ -103,7 +103,7 @@ typedescription_t::typedescription_t()
 	m_pDescription = NULL;
 }
 
-typedescription_t::typedescription_t(fieldtype_t type, const char *name, int bytes, int count, int offset, int flags_, const char *fgdname, float tol)
+typedescription_t::typedescription_t(fieldtype_t type, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname, float tol)
 {
 	fieldType = type;
 	fieldName = name;
@@ -111,6 +111,9 @@ typedescription_t::typedescription_t(fieldtype_t type, const char *name, int byt
 	fieldOffset[1] = 0;
 	fieldSize = count;
 	flags = flags_;
+	if(type == FIELD_MODELINDEX) {
+		flags |= FTYPEDESC_MODELINDEX;
+	}
 	externalName = fgdname;
 	pFieldOps = NULL;
 	inputFunc = NULL;
@@ -125,7 +128,7 @@ typedescription_t::typedescription_t(fieldtype_t type, const char *name, int byt
 	m_pDescription = NULL;
 }
 
-typedescription_t::typedescription_t(fieldtype_t type, const char *name, inputfunc_t func, int flags_, const char *fgdname)
+typedescription_t::typedescription_t(fieldtype_t type, const char *name, inputfunc_t func, fieldflags_t flags_, const char *fgdname)
 {
 	fieldType = type;
 	fieldName = name;
@@ -133,6 +136,9 @@ typedescription_t::typedescription_t(fieldtype_t type, const char *name, inputfu
 	fieldOffset[1] = 0;
 	fieldSize = 0;
 	flags = flags_;
+	if(type == FIELD_MODELINDEX) {
+		flags |= FTYPEDESC_MODELINDEX;
+	}
 	externalName = fgdname;
 	pFieldOps = NULL;
 	inputFunc = func;
@@ -147,7 +153,7 @@ typedescription_t::typedescription_t(fieldtype_t type, const char *name, inputfu
 	m_pDescription = NULL;
 }
 
-typedescription_t::typedescription_t(ICustomFieldOps *funcs, const char *name, int bytes, int count, int offset, int flags_, const char *fgdname, float tol)
+typedescription_t::typedescription_t(ICustomFieldOps *funcs, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname, float tol)
 {
 	fieldType = FIELD_CUSTOM;
 	fieldName = name;
@@ -169,7 +175,7 @@ typedescription_t::typedescription_t(ICustomFieldOps *funcs, const char *name, i
 	m_pDescription = NULL;
 }
 
-typedescription_t::typedescription_t(datamap_t *embed, const char *name, int bytes, int count, int offset, int flags_, const char *fgdname)
+typedescription_t::typedescription_t(datamap_t *embed, const char *name, int bytes, int count, int offset, fieldflags_t flags_, const char *fgdname)
 {
 	fieldType = FIELD_EMBEDDED;
 	fieldName = name;

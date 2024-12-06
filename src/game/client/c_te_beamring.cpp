@@ -53,7 +53,7 @@ C_TEBeamRing::~C_TEBeamRing( void )
 }
 
 void TE_BeamRing( IRecipientFilter& filter, float delay,
-	int	start, int end, int modelindex, int haloindex, int startframe, int framerate,
+	int	start, int end, modelindex_t modelindex, modelindex_t haloindex, int startframe, int framerate,
 	float life, float width, int spread, float amplitude, int r, int g, int b, int a, int speed, int flags )
 {
 	beams->CreateBeamRing( start, end, modelindex, haloindex, 0.0f,

@@ -46,6 +46,7 @@
 #include "collisionproperty.h"
 #include "tempent.h"
 #include "game_loopback/igameserverloopback.h"
+#include "dt_utlvector_recv.h"
 
 #if defined __GNUC__ && defined __linux__
 #include <cxxabi.h>
@@ -563,8 +564,8 @@ void RecvProxy_ClrRender( const CRecvProxyData *pData, void *pStruct, void *pOut
 	C_BaseEntity *pEnt = (C_BaseEntity*)pStruct;
 	uint32 color = LittleDWord((uint32)pData->m_Value.m_Int);
 	color32 c = *(color32*)( &color );
-	pEnt->SetRenderColor( c.r, c.g, c.b );
-	pEnt->SetRenderAlpha( c.a );
+	pEnt->SetRenderColor( c.r(), c.g(), c.b() );
+	pEnt->SetRenderAlpha( c.a() );
 }
 
 void RecvProxy_RenderMode( const CRecvProxyData *pData, void *pStruct, void *pOut )
@@ -589,25 +590,6 @@ BEGIN_RECV_TABLE_NOBASE( C_BaseEntity, DT_PredictableId )
 	RecvPropPredictableId( RECVINFO( m_PredictableID ) ),
 	RecvPropInt( RECVINFO( m_bIsPlayerSimulated ) ),
 END_RECV_TABLE()
-
-void RecvProxyArrayLength_ModelIndexesOverrides( void *pStruct, int objectID, int currentArrayLength )
-{
-	C_BaseEntity *pEnt = (C_BaseEntity *)pStruct;
-	if(currentArrayLength == 0) {
-		if(pEnt->m_nModelIndexOverrides) {
-			free(pEnt->m_nModelIndexOverrides);
-		}
-		pEnt->m_nModelIndexOverrides = NULL;
-		pEnt->m_nModelIndexOverridesLength = currentArrayLength;
-	} else if(pEnt->m_nModelIndexOverridesLength != currentArrayLength) {
-		if(!pEnt->m_nModelIndexOverrides) {
-			pEnt->m_nModelIndexOverrides = (int *)malloc(sizeof(int) * currentArrayLength);
-		} else {
-			pEnt->m_nModelIndexOverrides = (int *)realloc(pEnt->m_nModelIndexOverrides, sizeof(int) * currentArrayLength);
-		}
-		pEnt->m_nModelIndexOverridesLength = currentArrayLength;
-	}
-}
 
 void RecvProxy_FadeMinDist( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
@@ -634,6 +616,11 @@ BEGIN_RECV_TABLE_NOBASE( C_BaseEntity, DT_MinimalTable )
 END_RECV_TABLE()
 
 BEGIN_RECV_TABLE_NOBASE( C_BaseEntity, DT_FullTable )
+END_RECV_TABLE()
+
+BEGIN_RECV_TABLE_NOBASE( VisionModelIndex_t, DT_VisionModelIndex )
+	RecvPropInt( RECVINFO( flags ), SPROP_UNSIGNED ),
+	RecvPropInt( RECVINFO( modelindex ) ),
 END_RECV_TABLE()
 
 BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
@@ -704,7 +691,7 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 
 	RecvPropFloat( RECVINFO( m_fViewDistance ) ),
 
-	RecvPropArray2( RecvProxyArrayLength_ModelIndexesOverrides,	RecvPropInt( RECVINFO_ARRAYELEM(m_nModelIndexOverrides, 0) ), NUM_SHARED_VISION_FILTERS, sizeof(int), m_nModelIndexOverrides ),
+	RecvPropUtlVectorDataTable( m_VisionModelIndexOverrides, MAX_SUPPORTED_VISION_FILTERS, DT_VisionModelIndex ),
 
 	RecvPropDataTable( "minimaldata", 0, 0, &REFERENCE_RECV_TABLE(DT_MinimalTable) ),
 	RecvPropDataTable( "fulldata", 0, 0, &REFERENCE_RECV_TABLE(DT_FullTable) ),
@@ -737,7 +724,7 @@ BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 //	DEFINE_FIELD_FLAGS( m_flSimulationTime, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD_FLAGS( m_fFlags, FIELD_INTEGER64, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD_FLAGS_TOL( m_vecViewOffset, FIELD_VECTOR, FTYPEDESC_INSENDTABLE, 0.25f ),
-	DEFINE_FIELD_FLAGS( m_nModelIndex, FIELD_SHORT, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
+	DEFINE_FIELD_FLAGS( m_nModelIndex, FIELD_MODELINDEX, FTYPEDESC_INSENDTABLE | FTYPEDESC_MODELINDEX ),
 	DEFINE_FIELD_FLAGS( m_flFriction, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD_FLAGS( m_iTeamNum, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD( m_iHealth, FIELD_INTEGER ),
@@ -1249,7 +1236,7 @@ C_BaseEntity::C_BaseEntity( uint64 iEFlags ) :
 	ClearFlags();
 	m_vecViewOffset.Init();
 	m_vecBaseVelocity.Init();
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_flAnimTime = 0;
 	m_flSimulationTime = 0;
 
@@ -1312,9 +1299,6 @@ C_BaseEntity::C_BaseEntity( uint64 iEFlags ) :
 	m_spawnflags = 0;
 
 	m_flCreateTime = 0.0f;
-
-	m_nModelIndexOverridesLength = 0;
-	m_nModelIndexOverrides = NULL;
 
 	m_bIsClientCreated = true;
 
@@ -1459,10 +1443,6 @@ C_BaseEntity::~C_BaseEntity()
 	{
 		RemoveFromEntityList(entity_list_ids_t(i));
 	}
-
-	if(m_nModelIndexOverrides) {
-		free(m_nModelIndexOverrides);
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1519,9 +1499,9 @@ bool C_BaseEntity::InitializeAsServerEntity( int entnum, int iSerialNum )
 	}
 
 #ifdef _DEBUG
-	if( g_pGameServerLoopback )
+	if( GetGameServerLoopback() )
 	{
-		const char *sv_classname = g_pGameServerLoopback->GetEntityClassname( entnum, iSerialNum );
+		const char *sv_classname = GetGameServerLoopback()->GetEntityClassname( entnum, iSerialNum );
 
 		if(sv_classname)
 			AssertMsg( m_iClassname != NULL_STRING, "missing classname for %s (%s)", STRING(m_iRTTIClassname), sv_classname );
@@ -1629,7 +1609,7 @@ bool C_BaseEntity::PostConstructor( const char *szClassname )
 #endif
 
 #ifdef _DEBUG
-	if( IsEFlagSet( EFL_NOT_NETWORKED ) || !g_pGameServerLoopback )
+	if( IsEFlagSet( EFL_NOT_NETWORKED ) || !GetGameServerLoopback() )
 	{
 		AssertMsg( szClassname, "missing classname for %s", STRING(m_iRTTIClassname) );
 	}
@@ -2379,7 +2359,7 @@ void C_BaseEntity::SetNetworkAngles( const QAngle& ang )
 // Purpose: 
 // Input  : index - 
 //-----------------------------------------------------------------------------
-void C_BaseEntity::SetModelIndex( int index )
+void C_BaseEntity::SetModelIndex( modelindex_t index )
 {
 	m_nModelIndex = index;
 	const model_t *pModel = modelinfo->GetModel( m_nModelIndex );
@@ -3147,13 +3127,13 @@ bool C_BaseEntity::IsParentChanging()
 //-----------------------------------------------------------------------------
 void C_BaseEntity::ValidateModelIndex( void )
 {
-	for(int i = 0; i < m_nModelIndexOverridesLength; ++i) {
-		int flags = (m_nModelIndexOverrides[i] & 255);
-		int modelindex = (m_nModelIndexOverrides[i] >> 8);
+	for(int i = 0; i < m_VisionModelIndexOverrides.Count(); ++i) {
+		unsigned int flags = m_VisionModelIndexOverrides[i].flags;
+		modelindex_t modelindex = m_VisionModelIndexOverrides[i].modelindex;
 
 		if ( IsLocalPlayerUsingVisionFilterFlags( flags ) )
 		{
-			if ( modelindex > 0 )
+			if ( modelindex.IsValid() )
 			{
 				SetModelByIndex( modelindex );
 				return;
@@ -3374,7 +3354,7 @@ uint64 C_BaseEntity::GetEFlags() const
 //-----------------------------------------------------------------------------
 // Sets the model... 
 //-----------------------------------------------------------------------------
-void C_BaseEntity::SetModelByIndex( int nModelIndex )
+void C_BaseEntity::SetModelByIndex( modelindex_t nModelIndex )
 {
 	SetModelIndex( nModelIndex );
 }
@@ -3387,13 +3367,13 @@ bool C_BaseEntity::SetModel( const char *pModelName )
 {
 	if ( pModelName )
 	{
-		int nModelIndex = modelinfo->GetModelIndex( pModelName );
+		modelindex_t nModelIndex = modelinfo->GetModelIndex( pModelName );
 		SetModelByIndex( nModelIndex );
-		return ( nModelIndex != -1 );
+		return ( nModelIndex.IsValid() );
 	}
 	else
 	{
-		SetModelByIndex( -1 );
+		SetModelByIndex( INVALID_MODEL_INDEX );
 		return false;
 	}
 }
@@ -3653,7 +3633,7 @@ bool C_BaseEntity::CreateLightEffects( void )
 			if(dl) {
 				dl->origin = GetAbsOrigin();
 				dl->origin[2] += 16;
-				dl->color.r = dl->color.g = dl->color.b = 250;
+				dl->color.SetColor( 250, 250, 250 );
 				dl->radius = random_valve->RandomFloat(400,431);
 				dl->die = gpGlobals->curtime + 0.001;
 				bHasLightEffects = true;
@@ -3665,7 +3645,7 @@ bool C_BaseEntity::CreateLightEffects( void )
 			dl = effects->CL_AllocDlight ( entindex() );
 			if(dl) {
 				dl->origin = GetAbsOrigin();
-				dl->color.r = dl->color.g = dl->color.b = 100;
+				dl->color.SetColor( 100, 100, 100 );
 				dl->radius = random_valve->RandomFloat(200,231);
 				dl->die = gpGlobals->curtime + 0.001;
 				bHasLightEffects = true;
@@ -4013,9 +3993,9 @@ void C_BaseEntity::SetThinkHandle( ClientThinkHandle_t hThink )
 
 void C_BaseEntity::GetColorModulation( float* color )
 {
-	color[0] = m_clrRenderRGB->r / 255.0f;
-	color[1] = m_clrRenderRGB->g / 255.0f;
-	color[2] = m_clrRenderRGB->b / 255.0f;
+	color[0] = m_clrRenderRGB.GetR() / 255.0f;
+	color[1] = m_clrRenderRGB.GetG() / 255.0f;
+	color[2] = m_clrRenderRGB.GetB() / 255.0f;
 }
 
 
@@ -4035,7 +4015,7 @@ CollideType_t C_BaseEntity::GetCollideType( void )
 		return ENTITY_SHOULD_NOT_COLLIDE;
 
 	// Don't get stuck on point sized entities ( world doesn't count )
-	if ( m_nModelIndex != 1 )
+	if ( !IsWorld() )
 	{
 		if ( IsPointSized() )
 			return ENTITY_SHOULD_NOT_COLLIDE;
@@ -5199,7 +5179,7 @@ void C_BaseEntity::SetSize( const Vector &vecMin, const Vector &vecMax )
 // Input  : *name - 
 // Output : int
 //-----------------------------------------------------------------------------
-int C_BaseEntity::PrecacheModel( const char *name )
+modelindex_t C_BaseEntity::PrecacheModel( const char *name )
 {
 	return modelinfo->GetModelIndex( name );
 }
@@ -5426,11 +5406,7 @@ CON_COMMAND_F( dlight_debug, "Creates a dlight in front of the player", FCVAR_CH
 	el->radius = 200; 
 	el->decay = el->radius / 5.0f;
 	el->die = gpGlobals->curtime + 5.0f;
-	el->color.r = 255;
-	el->color.g = 192;
-	el->color.b = 64;
-	el->color.exponent = 5;
-
+	el->color.SetColor( 255, 192, 64, 5 );
 }
 
 //-----------------------------------------------------------------------------
@@ -6034,7 +6010,7 @@ static int g_FieldSizes[FIELD_TYPECOUNT] =
 	sizeof(VMatrix),	// FIELD_VMATRIX_WORLDSPACE
 	sizeof(matrix3x4_t),// FIELD_MATRIX3X4_WORLDSPACE	// NOTE: Use array(FIELD_FLOAT, 12) for matrix3x4_t NOT in worldspace
 	sizeof(interval_t), // FIELD_INTERVAL
-	sizeof(int),		// FIELD_MODELINDEX
+	sizeof(modelindex_t),		// FIELD_MODELINDEX
 	sizeof(int),		// FIELD_MATERIALINDEX
 	sizeof(Vector2D),		// FIELD_VECTOR2D
 	sizeof(int64),		// FIELD_INTEGER64
@@ -6438,7 +6414,7 @@ int C_BaseEntity::RestoreData( const char *context, int slot, int type )
 	uint64 savedEFlags = GetEFlags() & savedEFlagsMask;
 
 	// model index needs to be set manually for dynamic model refcounting purposes
-	int oldModelIndex = m_nModelIndex;
+	modelindex_t oldModelIndex = m_nModelIndex;
 
 	CPredictionCopy copyHelper( type, this, PC_DATA_NORMAL, src, PC_DATA_PACKED );
 	int error_count = copyHelper.TransferData( sz, entindex(), GetPredDescMap() );
@@ -6448,10 +6424,10 @@ int C_BaseEntity::RestoreData( const char *context, int slot, int type )
 	AddEFlags( savedEFlags );
 
 	// restore original model index and change via SetModelIndex
-	int newModelIndex = m_nModelIndex;
+	modelindex_t newModelIndex = m_nModelIndex;
 	m_nModelIndex = oldModelIndex;
-	int overrideModelIndex = CalcOverrideModelIndex();
-	if( overrideModelIndex != -1 )
+	modelindex_t overrideModelIndex = CalcOverrideModelIndex();
+	if( overrideModelIndex != INVALID_MODEL_INDEX )
 		newModelIndex = overrideModelIndex;
 	if ( oldModelIndex != newModelIndex )
 	{

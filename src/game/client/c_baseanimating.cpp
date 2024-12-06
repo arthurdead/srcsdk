@@ -989,7 +989,7 @@ void C_BaseAnimating::OnModelLoadComplete( const model_t* pModel )
 void C_BaseAnimating::ValidateModelIndex()
 {
 	BaseClass::ValidateModelIndex();
-	Assert( GetModelIndex() == 0 || m_AutoRefModelIndex.Get() );
+	Assert( GetModelIndex().IsValid() || m_AutoRefModelIndex.IsValid() );
 }
 
 CStudioHdr *C_BaseAnimating::OnNewModel()
@@ -1010,7 +1010,7 @@ CStudioHdr *C_BaseAnimating::OnNewModel()
 
 	if ( m_bDynamicModelPending )
 	{
-		modelinfo->UnregisterModelLoadCallback( -1, this );
+		modelinfo->UnregisterModelLoadCallback( INVALID_MODEL_INDEX, this );
 		m_bDynamicModelPending = false;
 	}
 
@@ -1020,13 +1020,13 @@ CStudioHdr *C_BaseAnimating::OnNewModel()
 		return NULL;
 
 	// Reference (and thus start loading) dynamic model
-	int nNewIndex = GetModelIndex();
+	modelindex_t nNewIndex = GetModelIndex();
 	if ( modelinfo->GetModel( nNewIndex ) != GetModel() )
 	{
 		// XXX what's authoritative? the model pointer or the model index? what a mess.
 		nNewIndex = modelinfo->GetModelIndex( modelinfo->GetModelName( GetModel() ) );
-		Assert( nNewIndex < 0 || modelinfo->GetModel( nNewIndex ) == GetModel() );
-		if ( nNewIndex < 0 )
+		Assert( IsDynamicModelIndex( nNewIndex ) || !nNewIndex.IsValid() || modelinfo->GetModel( nNewIndex ) == GetModel() );
+		if ( IsDynamicModelIndex( nNewIndex ) || !nNewIndex.IsValid() )
 			nNewIndex = GetModelIndex();
 	}
 
@@ -3862,10 +3862,7 @@ void C_BaseAnimating::ProcessMuzzleFlashEvent()
 			dl->radius = random_valve->RandomInt( 32, 64 ); 
 			dl->decay = dl->radius / 0.05f;
 			dl->die = gpGlobals->curtime + 0.05f;
-			dl->color.r = 255;
-			dl->color.g = 192;
-			dl->color.b = 64;
-			dl->color.exponent = 5;
+			dl->color.SetColor( 255, 192, 64, 5 );
 		}
 	}
 }
@@ -5374,7 +5371,8 @@ C_BaseAnimating *C_BaseAnimating::CreateRagdollCopy()
 	}
 
 	pRagdoll->SetRenderMode( GetRenderMode() );
-	pRagdoll->SetRenderColor( GetRenderColor().r, GetRenderColor().g, GetRenderColor().b );
+	color24 rndClr = GetRenderColor();
+	pRagdoll->SetRenderColor( rndClr.r(), rndClr.g(), rndClr.b() );
 	pRagdoll->SetRenderAlpha( GetRenderAlpha() );
 
 	pRagdoll->m_iViewHideFlags = m_iViewHideFlags;
@@ -6959,7 +6957,7 @@ public:
 	bool	TestCollision( const Ray_t &ray, unsigned int mask, trace_t& trace );
 
 private:
-	int m_modelIndex;
+	modelindex_t m_modelIndex;
 	int m_solidIndex;
 };
 
@@ -7006,7 +7004,7 @@ bool C_BoneFollower::TestCollision( const Ray_t &ray, unsigned int mask, trace_t
 	Assert( pCollide && pCollide->solidCount > m_solidIndex );
 	if ( !pCollide )
 	{
-		DevWarning("Failed to get collision model (%d, %d), %s (%s)\n", m_modelIndex, m_solidIndex, modelinfo->GetModelName(modelinfo->GetModel(m_modelIndex)), IsDormant() ? "dormant" : "active" );
+		DevWarning("Failed to get collision model (%d, %d), %s (%s)\n", m_modelIndex.Get(), m_solidIndex, modelinfo->GetModelName(modelinfo->GetModel(m_modelIndex)), IsDormant() ? "dormant" : "active" );
 		return false;
 	}
 

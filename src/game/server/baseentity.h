@@ -325,14 +325,14 @@ public:
 
 // IServerEntity overrides.
 public:
-	virtual void			SetModelIndex( int index );
-	virtual int				GetModelIndex( void ) const;
+	virtual void			SetModelIndex( modelindex_t index );
+	virtual modelindex_t				GetModelIndex( void ) const;
  	virtual string_t		GetModelName( void ) const;
 
  	virtual string_t		GetAIAddOn( void ) const;
 
 	void					ClearModelIndexOverrides( void );
-	virtual void			SetModelIndexOverride( int index, int nValue );
+	virtual void			AddModelIndexOverride( vision_filter_t flags, modelindex_t nValue );
 
 public:
 	// virtual methods for derived classes to override
@@ -823,11 +823,9 @@ private:
 	CNetworkVar( unsigned char, m_nRenderFX );
 	// was pev->rendermode
 	CNetworkVar( unsigned char, m_nRenderMode );
-	CNetworkVar( short, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	
-#ifdef TF_DLL
-	CNetworkArray( int, m_nModelIndexOverrides, MAX_VISION_MODES ); // used to override the base model index on the client if necessary
-#endif
+	CNetworkUtlVector( VisionModelIndex_t, m_VisionModelIndexOverrides ); // used to override the base model index on the client if necessary
 
 public:
 	// Prevents this entity from drawing under certain view IDs. Each flag is (1 << the view ID to hide from).
@@ -1587,7 +1585,7 @@ public:
 	void					ComputeAbsDirection( const Vector &vecLocalDirection, Vector *pAbsDirection );
 
 	// Precache model sounds + particles
-	static void PrecacheModelComponents( int nModelIndex );
+	static void PrecacheModelComponents( modelindex_t nModelIndex );
 	static void PrecacheSoundHelper( const char *pName );
 
 protected:
@@ -1901,7 +1899,7 @@ public:
 // Methods shared by client and server
 public:
 	void							SetSize( const Vector &vecMin, const Vector &vecMax ); // UTIL_SetSize( this, mins, maxs );
-	static int						PrecacheModel( const char *name, bool bPreload = true ); 
+	static modelindex_t						PrecacheModel( const char *name, bool bPreload = true ); 
 	static bool						PrecacheSound( const char *name );
 	static void						PrefetchSound( const char *name );
 
@@ -2612,23 +2610,23 @@ inline void CBaseEntity::SetWaterLevel( int nLevel )
 
 inline const color24 CBaseEntity::GetRenderColor() const
 {
-	color24 c = { m_clrRender->r, m_clrRender->g, m_clrRender->b };
+	color24 c( m_clrRender.GetR(), m_clrRender.GetG(), m_clrRender.GetB() );
 	return c;
 }
 
 inline byte CBaseEntity::GetRenderColorR() const
 {
-	return m_clrRender->r;
+	return m_clrRender.GetR();
 }
 
 inline byte CBaseEntity::GetRenderColorG() const
 {
-	return m_clrRender->g;
+	return m_clrRender.GetG();
 }
 
 inline byte CBaseEntity::GetRenderColorB() const
 {
-	return m_clrRender->b;
+	return m_clrRender.GetB();
 }
 
 inline void CBaseEntity::SetRenderAlpha( byte a )
@@ -2638,7 +2636,7 @@ inline void CBaseEntity::SetRenderAlpha( byte a )
 
 inline byte CBaseEntity::GetRenderAlpha( ) const
 {
-	return m_clrRender->a;
+	return m_clrRender.GetA();
 }
 
 inline void CBaseEntity::SetRenderColor( byte r, byte g, byte b )
@@ -2648,7 +2646,7 @@ inline void CBaseEntity::SetRenderColor( byte r, byte g, byte b )
 
 inline void CBaseEntity::SetRenderColor( color24 clr )
 {
-	m_clrRender.Init( clr.r, clr.g, clr.b );
+	m_clrRender.Init( clr.r(), clr.g(), clr.b() );
 }
 
 inline void CBaseEntity::SetMoveCollide( MoveCollide_t val )
@@ -2715,9 +2713,9 @@ inline string_t CBaseEntity::GetModelName( void ) const
 	return m_ModelName;
 }
 
-inline int CBaseEntity::GetModelIndex( void ) const
+inline modelindex_t CBaseEntity::GetModelIndex( void ) const
 {
-	return m_nModelIndex;
+	return m_nModelIndex.Get();
 }
 
 //-----------------------------------------------------------------------------

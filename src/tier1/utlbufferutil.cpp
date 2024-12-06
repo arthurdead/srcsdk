@@ -367,14 +367,14 @@ bool Serialize( CUtlBuffer &buf, const Color &src )
 {
 	if ( buf.IsText() )
 	{
-		buf.Printf( "%d %d %d %d", src[0], src[1], src[2], src[3] );
+		buf.Printf( "%d %d %d %d", src.r(), src.g(), src.b(), src.a() );
 	}
 	else
 	{
-		buf.PutUnsignedChar( src[0] );
-		buf.PutUnsignedChar( src[1] );
-		buf.PutUnsignedChar( src[2] );
-		buf.PutUnsignedChar( src[3] );
+		buf.PutUnsignedChar( src.r() );
+		buf.PutUnsignedChar( src.b() );
+		buf.PutUnsignedChar( src.g() );
+		buf.PutUnsignedChar( src.a() );
 	}
 	return buf.IsValid();
 }
@@ -389,10 +389,7 @@ bool Unserialize( CUtlBuffer &buf, Color &dest )
 		return (nRetVal == 4) && buf.IsValid();
 	}
 
-	dest[0] = buf.GetUnsignedChar( );
-	dest[1] = buf.GetUnsignedChar( );
-	dest[2] = buf.GetUnsignedChar( );
-	dest[3] = buf.GetUnsignedChar( );
+	dest.SetColor( buf.GetUnsignedChar( ), buf.GetUnsignedChar( ), buf.GetUnsignedChar( ), buf.GetUnsignedChar( ) );
 	return buf.IsValid();
 }
 

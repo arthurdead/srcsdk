@@ -35,7 +35,7 @@ public:
 	unsigned char	m_LightStyle;
 
 	float	m_Radius;
-	int		m_Exponent;
+	signed char		m_Exponent;
 	float	m_InnerAngle;
 	float	m_OuterAngle;
 	float	m_SpotRadius;
@@ -136,10 +136,7 @@ void C_DynamicLight::LightThink(void)
 		if ( m_OuterAngle > 0 )
 			m_pDynamicLight->flags |= DLIGHT_NO_WORLD_ILLUMINATION;
 		color24 c = GetRenderColor();
-		m_pDynamicLight->color.r = c.r;
-		m_pDynamicLight->color.g = c.g;
-		m_pDynamicLight->color.b = c.b;
-		m_pDynamicLight->color.exponent	= m_Exponent;	// this makes it match the world
+		m_pDynamicLight->color.SetColor( c.r(), c.g(), c.b(), m_Exponent );
 		m_pDynamicLight->origin		= GetAbsOrigin();
 		m_pDynamicLight->m_InnerAngle = m_InnerAngle;
 		m_pDynamicLight->m_OuterAngle = m_OuterAngle;
@@ -191,10 +188,8 @@ void C_DynamicLight::LightThink(void)
 			m_pSpotlightEnd->radius		= m_SpotRadius; // * falloff;
 			m_pSpotlightEnd->die		= gpGlobals->curtime + 1e6;
 			color24 c = GetRenderColor();
-			m_pSpotlightEnd->color.r	= c.r * falloff;
-			m_pSpotlightEnd->color.g	= c.g * falloff;
-			m_pSpotlightEnd->color.b	= c.b * falloff;
-			m_pSpotlightEnd->color.exponent	= m_Exponent;
+
+			m_pSpotlightEnd->color.SetColor( c.r() * falloff, c.g() * falloff, c.b() * falloff, m_Exponent );
 
 			// For bumped lighting
 			m_pSpotlightEnd->m_Direction = forward;

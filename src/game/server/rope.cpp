@@ -41,7 +41,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CRopeKeyframe, DT_RopeKeyframe )
 	SendPropInt( SENDINFO(m_RopeFlags), ROPE_NUMFLAGS, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nSegments), 4, SPROP_UNSIGNED ),
 	SendPropBool( SENDINFO(m_bConstrainBetweenEndpoints) ),
-	SendPropInt( SENDINFO(m_iRopeMaterialModelIndex), 16, SPROP_UNSIGNED ),
+	SendPropModelIndex( SENDINFO(m_iRopeMaterialModelIndex) ),
 	SendPropInt( SENDINFO(m_Subdiv), 4, SPROP_UNSIGNED ),
 
 	SendPropFloat( SENDINFO(m_TextureScale), 10, 0, 0.1f, 10.0f ),
@@ -102,7 +102,7 @@ CRopeKeyframe::CRopeKeyframe()
 	m_fLockedPoints = (int) (ROPE_LOCK_START_POINT | ROPE_LOCK_END_POINT); // by default, both points are locked
 	m_flScrollSpeed = 0;
 	m_RopeFlags = ROPE_SIMULATE | ROPE_INITIAL_HANG;
-	m_iRopeMaterialModelIndex = -1;
+	m_iRopeMaterialModelIndex = INVALID_MODEL_INDEX;
 	m_Subdiv = 2;
 
 	m_bCreatedFromMapFile = true;
@@ -366,7 +366,7 @@ void CRopeKeyframe::Activate()
 		return;
 
 	// Legacy support..
-	if ( m_iRopeMaterialModelIndex == -1 )
+	if ( m_iRopeMaterialModelIndex == INVALID_MODEL_INDEX )
 		m_iRopeMaterialModelIndex = PrecacheModel( "cable/cable.vmt" );
 
 	// Find the next entity in our chain.

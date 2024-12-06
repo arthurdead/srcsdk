@@ -33,8 +33,8 @@ class CBaseEntity;
 #define SF_ENVEXPLOSION_GENERIC_DAMAGE	0x00004000 // don't do BLAST damage
 #define SF_ENVEXPLOSION_ICE			0x00008000 // freeze stuff and do ice type effects
 
-extern int	g_sModelIndexFireball;
-extern int	g_sModelIndexSmoke;
+extern modelindex_t g_sModelIndexFireball;
+extern modelindex_t g_sModelIndexSmoke;
 
 void ExplosionCreate( const Vector &center, const QAngle &angles, 
 	CBaseEntity *pOwner, int magnitude, int radius, bool doDamage, float flExplosionForce = 0.0f, bool bSurfaceOnly = false, bool bSilent = false, uint64 iCustomDamageType = -1 );

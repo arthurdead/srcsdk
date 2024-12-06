@@ -65,7 +65,7 @@ private:
 	Vector	m_vSpotlightTargetPos;
 	Vector	m_vSpotlightCurrentPos;
 	Vector	m_vSpotlightDir;
-	int		m_nHaloSprite;
+	modelindex_t		m_nHaloSprite;
 	CHandle<CBeam>			m_hSpotlight;
 	CHandle<CSpotlightEnd>	m_hSpotlightTarget;
 	
@@ -556,7 +556,7 @@ void CPointSpotlight::InputSetColor( inputdata_t &inputdata )
 	if ( m_hSpotlight )
 	{
 		color32 clr = inputdata.value.Color32();
-		m_hSpotlight->SetColor( clr.r, clr.g, clr.b );
+		m_hSpotlight->SetColor( clr.r(), clr.g(), clr.b() );
 	}
 }
 

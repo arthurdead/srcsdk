@@ -33,7 +33,7 @@ void CNPC_Swat::Precache()
 void CNPC_Swat::Spawn()
 {
 	if(GetModelName() == NULL_STRING) {
-		SetModel(g_pszCopModels[random_valve->RandomInt(0, ARRAYSIZE(g_pszCopModels)-1)]);
+		SetModel( g_pszCopModels[random_valve->RandomInt(0, ARRAYSIZE(g_pszCopModels)-1)] );
 	}
 
 	ChangeTeam( TEAM_POLICE );

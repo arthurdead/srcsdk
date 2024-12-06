@@ -5,8 +5,8 @@
 
 #include "platform.h"
 #include "annotations.h"
+#include "Color.h"
 
-class Color;
 class CValidator;
 
 /* Various types of spew messages */

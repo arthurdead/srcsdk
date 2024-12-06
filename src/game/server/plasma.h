@@ -34,9 +34,9 @@ public:
 public:
 
 	//Client-side
-	CNetworkVar( int, m_nPlasmaModelIndex );
-	CNetworkVar( int, m_nPlasmaModelIndex2 );
-	CNetworkVar( int, m_nGlowModelIndex );
+	CNetworkModelIndex( m_nPlasmaModelIndex );
+	CNetworkModelIndex( m_nPlasmaModelIndex2 );
+	CNetworkModelIndex( m_nGlowModelIndex );
 
 	//Server-side
 };

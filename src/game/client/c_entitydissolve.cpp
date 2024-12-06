@@ -248,9 +248,10 @@ void C_EntityDissolve::BuildTeslaEffect( mstudiobbox_t *pHitBox, const matrix3x4
 				pParticle->m_vecVelocity = vec3_origin;
 				Vector color( 1,1,1 );
 				float  colorRamp = RandomFloat( 0.75f, 1.25f );
-				pParticle->m_uchColor[0]	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
-				pParticle->m_uchColor[1]	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
-				pParticle->m_uchColor[2]	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
+				unsigned char r	= MIN( 1.0f, color[0] * colorRamp ) * 255.0f;
+				unsigned char g	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
+				unsigned char b	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
+				pParticle->m_uchColor.SetColor( r, g, b );
 				pParticle->m_uchStartSize	= RandomFloat( 6,13 );
 				pParticle->m_uchEndSize		= pParticle->m_uchStartSize - 2;
 				pParticle->m_uchStartAlpha	= 255;
@@ -533,15 +534,17 @@ void C_EntityDissolve::DissolveThink( void )
 
 	color32 color;
 
-	color.r = ( 1.0f - GetFadeInPercentage() ) * m_vEffectColor.x;
-	color.g = ( 1.0f - GetFadeInPercentage() ) * m_vEffectColor.y;
-	color.b = ( 1.0f - GetFadeInPercentage() ) * m_vEffectColor.z;
-	color.a = GetModelFadeOutPercentage() * 255.0f;
+	color.SetColor(
+		( 1.0f - GetFadeInPercentage() ) * m_vEffectColor.x,
+		( 1.0f - GetFadeInPercentage() ) * m_vEffectColor.y,
+		( 1.0f - GetFadeInPercentage() ) * m_vEffectColor.z,
+		GetModelFadeOutPercentage() * 255.0f
+	);
 
 	// Setup the entity fade
 	pEnt->SetRenderMode( kRenderTransColor );
-	pEnt->SetRenderColor( color.r, color.g, color.b );
-	pEnt->SetRenderAlpha( color.a );
+	pEnt->SetRenderColor( color.r(), color.g(), color.b() );
+	pEnt->SetRenderAlpha( color.a() );
 
 	if ( GetModelFadeOutPercentage() <= 0.2f )
 	{
@@ -603,11 +606,11 @@ int C_EntityDissolve::DrawModel( int flags, const RenderableInstance_t &instance
 
 	studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( pAnimating->GetModel() );
 	if ( pStudioHdr == NULL )
-		return false;
+		return 0;
 
 	mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( pAnimating->GetHitboxSet() );
 	if ( set == NULL )
-		return false;
+		return 0;
 
 	// Make sure the emitter is setup properly
 	SetupEmitter();
@@ -735,12 +738,8 @@ int C_EntityDissolve::DrawModel( int flags, const RenderableInstance_t &instance
 
 			sParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
 
-			float alpha = 255;
-
-			sParticle->m_uchColor[0]	= m_vEffectColor.x;
-			sParticle->m_uchColor[1]	= m_vEffectColor.y;
-			sParticle->m_uchColor[2]	= m_vEffectColor.z;
-			sParticle->m_uchStartAlpha	= alpha;
+			sParticle->m_uchColor.SetColor( m_vEffectColor.x, m_vEffectColor.y, m_vEffectColor.z );
+			sParticle->m_uchStartAlpha	= 255;
 			sParticle->m_uchEndAlpha	= 0;
 			sParticle->m_uchEndSize		= 0;
 		}
@@ -763,12 +762,8 @@ int C_EntityDissolve::DrawModel( int flags, const RenderableInstance_t &instance
 			sParticle->m_flRoll			= random_valve->RandomInt( 0, 360 );
 			sParticle->m_flRollDelta	= random_valve->RandomFloat( -2.0f, 2.0f );
 
-			float alpha = 255;
-
-			sParticle->m_uchColor[0]	= m_vEffectColor.x;
-			sParticle->m_uchColor[1]	= m_vEffectColor.y;
-			sParticle->m_uchColor[2]	= m_vEffectColor.z;
-			sParticle->m_uchStartAlpha	= alpha;
+			sParticle->m_uchColor.SetColor( m_vEffectColor.x, m_vEffectColor.y, m_vEffectColor.z );
+			sParticle->m_uchStartAlpha	= 255;
 			sParticle->m_uchEndAlpha	= 0;
 			sParticle->m_uchEndSize		= 0;
 

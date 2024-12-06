@@ -32,8 +32,8 @@ public:
 	virtual void	PostDataUpdate( DataUpdateType_t updateType );
 
 public:
-	int				m_nModelIndex;
-	int				m_nHaloIndex;
+	modelindex_t m_nModelIndex;
+	modelindex_t m_nHaloIndex;
 	int				m_nStartFrame;
 	int				m_nFrameRate;
 	float			m_fLife;
@@ -41,7 +41,7 @@ public:
 	float			m_fEndWidth;
 	int				m_nFadeLength;
 	float			m_fAmplitude;
-	int				r, g, b, a;
+	color32 m_clr;
 	int				m_nSpeed;
 	int				m_nFlags;
 };

@@ -36,7 +36,7 @@ public:
 	DECLARE_MAPENTITY();
 
 	float			m_flDelay;
-	int				m_nGlowSpriteIndex;
+	modelindex_t				m_nGlowSpriteIndex;
 	int				m_nMagnitude;
 	int				m_nTrailLength;
 

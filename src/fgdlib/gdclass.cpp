@@ -33,10 +33,7 @@ GDclass::GDclass(void)
 	m_bGotSize = false;
 	m_bGotColor = false;
 
-	m_rgbColor.r = 220;
-	m_rgbColor.g = 30;
-	m_rgbColor.b = 220;
-	m_rgbColor.a = 0;
+	m_rgbColor.SetColor( 220, 30, 220, 0 );
 
 	m_pszDescription = NULL;
 
@@ -567,10 +564,7 @@ bool GDclass::ParseColor(TokenReader &tr)
 	}
 	BYTE b = atoi(szToken);
 
-	m_rgbColor.r = r;
-	m_rgbColor.g = g;
-	m_rgbColor.b = b;
-	m_rgbColor.a = 0;
+	m_rgbColor.SetColor( r, g, b, 0 );
 
 	m_bGotColor = true;
 

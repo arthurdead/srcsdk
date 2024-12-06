@@ -36,7 +36,7 @@ public:
 	CNetworkVector( m_vecVelocity );
 	CNetworkQAngle( m_angRotation );
 	CNetworkVar( int, m_nRandomization );
-	CNetworkVar( int, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	CNetworkVar( int, m_nCount );
 	CNetworkVar( float, m_fTime );
 	CNetworkVar( int, m_nFlags );
@@ -53,7 +53,7 @@ CTEBreakModel::CTEBreakModel( const char *name ) :
 	m_vecSize.Init();
 	m_vecVelocity.Init();
 	m_angRotation.Init();
-	m_nModelIndex		= 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nRandomization	= 0;
 	m_nCount			= 0;
 	m_fTime				= 0.0;
@@ -128,7 +128,7 @@ END_SEND_TABLE()
 static CTEBreakModel g_TEBreakModel( "breakmodel" );
 
 void TE_BreakModel( IRecipientFilter& filter, float delay,
-	const Vector& pos, const QAngle& angles, const Vector& size, const Vector& vel, int modelindex, int randomization,
+	const Vector& pos, const QAngle& angles, const Vector& size, const Vector& vel, modelindex_t modelindex, int randomization,
 	int count, float time, int flags )
 {
 	g_TEBreakModel.m_vecOrigin		= pos;

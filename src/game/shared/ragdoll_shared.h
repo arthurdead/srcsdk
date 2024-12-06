@@ -70,7 +70,7 @@ struct ragdollparams_t
 	void		*pGameData;
 	vcollide_t	*pCollide;
 	CStudioHdr	*pStudioHdr;
-	int			modelIndex;
+	modelindex_t			modelIndex;
 	Vector		forcePosition;
 	Vector		forceVector;
 	int			forceBoneIndex;
@@ -132,9 +132,9 @@ extern CRagdollLRURetirement s_RagdollLRU;
 bool RagdollCreate( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsEnvironment *pPhysEnv );
 bool RagdollCreateDestr( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsEnvironment *pPhysEnv );
 
-void RagdollActivateDestr( ragdoll_t &ragdoll, vcollide_t *pCollide, int modelIndex, bool bForceWake = true );
-void RagdollActivate( ragdoll_t &ragdoll, vcollide_t *pCollide, int modelIndex, bool bForceWake = true );
-void RagdollSetupCollisions( ragdoll_t &ragdoll, vcollide_t *pCollide, int modelIndex );
+void RagdollActivateDestr( ragdoll_t &ragdoll, vcollide_t *pCollide, modelindex_t modelIndex, bool bForceWake = true );
+void RagdollActivate( ragdoll_t &ragdoll, vcollide_t *pCollide, modelindex_t modelIndex, bool bForceWake = true );
+void RagdollSetupCollisions( ragdoll_t &ragdoll, vcollide_t *pCollide, modelindex_t modelIndex );
 void RagdollDestroy( ragdoll_t &ragdoll );
 
 // Gets the bone matrix for a ragdoll object

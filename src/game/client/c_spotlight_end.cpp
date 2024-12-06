@@ -103,11 +103,8 @@ void C_SpotlightEnd::SpotlightThink(void)
 	color24 c = GetRenderColor();
 	float a = GetRenderAlpha() / 255.0f;
 	ColorRGBExp32 color;
-	color.r	= c.r * a;
-	color.g	= c.g * a;
-	color.b	= c.b * a;
-	color.exponent = 0;
-	if ( color.r == 0 && color.g == 0 && color.b == 0 )
+	color.SetColor( c.r() * a, c.g() * a, c.b() * a, 0 );
+	if ( color.r() == 0 && color.g() == 0 && color.b() == 0 )
 		return;
 
 	// Deal with the environment light

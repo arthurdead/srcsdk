@@ -32,10 +32,10 @@ variant_t &variant_t::operator=(const variant_t &rhs)
 		bVal = rhs.bVal;
 		break;
 	case FIELD_EHANDLE:
-		eVal = rhs.eVal;
+		ehVal = rhs.ehVal;
 		break;
 	case FIELD_CLASSPTR:
-		pVal = rhs.pVal;
+		epVal = rhs.epVal;
 		break;
 	case FIELD_POSITION_VECTOR:
 	case FIELD_VECTOR:
@@ -60,7 +60,7 @@ variant_t &variant_t::operator=(const variant_t &rhs)
 
 void variant_t::SetEntity( CSharedBaseEntity *val ) 
 { 
-	eVal = val;
+	ehVal = val;
 	fieldType = FIELD_EHANDLE; 
 }
 
@@ -339,8 +339,8 @@ void variant_t::Set( fieldtype_t ftype, void *data )
 		break;
 	}
 
-	case FIELD_EHANDLE:		eVal = *((EHANDLE *)data);			break;
-	case FIELD_CLASSPTR:	eVal = *((CSharedBaseEntity **)data);		break;
+	case FIELD_EHANDLE:		ehVal = *((EHANDLE *)data);			break;
+	case FIELD_CLASSPTR:	ehVal = *((CSharedBaseEntity **)data);		break;
 	case FIELD_VOID:		
 	default:
 		iVal = 0; fieldType = FIELD_VOID;	
@@ -377,8 +377,8 @@ void variant_t::SetOther( void *data )
 		break;
 	}
 
-	case FIELD_EHANDLE:		*((EHANDLE *)data) = eVal;			break;
-	case FIELD_CLASSPTR:	*((CSharedBaseEntity **)data) = eVal;		break;
+	case FIELD_EHANDLE:		*((EHANDLE *)data) = ehVal;			break;
+	case FIELD_CLASSPTR:	*((CSharedBaseEntity **)data) = ehVal;		break;
 	}
 }
 
@@ -704,7 +704,7 @@ const char *variant_t::ToString( void ) const
 
 	case FIELD_COLOR32:
 		{
-			Q_snprintf(szBuf,sizeof(szBuf), "%d %d %d %d", (int)rgbaVal.r, (int)rgbaVal.g, (int)rgbaVal.b, (int)rgbaVal.a);
+			Q_snprintf(szBuf,sizeof(szBuf), "%d %d %d %d", rgbaVal.r(), (int)rgbaVal.g(), (int)rgbaVal.b(), (int)rgbaVal.a() );
 			return(szBuf);
 		}
 
@@ -731,89 +731,6 @@ const char *variant_t::ToString( void ) const
 
 	return g_szNoConversion;
 }
-
-#define classNameTypedef variant_t // to satisfy DEFINE... macros
-
-typedescription_t variant_t::m_SaveBool[] =
-{
-	DEFINE_FIELD( bVal, FIELD_BOOLEAN ),
-};
-typedescription_t variant_t::m_SaveInt[] =
-{
-	DEFINE_FIELD( iVal, FIELD_INTEGER ),
-};
-typedescription_t variant_t::m_SaveInt64[] =
-{
-	DEFINE_FIELD( iVal64, FIELD_INTEGER64 ),
-};
-typedescription_t variant_t::m_SaveFloat[] =
-{
-	DEFINE_FIELD( flVal, FIELD_FLOAT ),
-};
-typedescription_t variant_t::m_SaveEHandle[] =
-{
-	DEFINE_FIELD( eVal, FIELD_EHANDLE ),
-};
-typedescription_t variant_t::m_SaveString[] =
-{
-	DEFINE_FIELD( iszVal, FIELD_STRING ),
-};
-typedescription_t variant_t::m_SaveColor[] =
-{
-	DEFINE_FIELD( rgbaVal, FIELD_COLOR32 ),
-};
-
-#undef classNameTypedef
-
-//
-// Struct for saving and restoring vector variants, since they are
-// stored as float[3] and we want to take advantage of position vector
-// fixup across level transitions.
-//
-#define classNameTypedef variant_savevector_t // to satisfy DEFINE... macros
-
-struct variant_savevector_t
-{
-	Vector vecSave;
-};
-typedescription_t variant_t::m_SaveVector[] =
-{
-	// Just here to shut up ClassCheck
-//	DEFINE_ARRAY( vecVal, FIELD_FLOAT, 3 ),
-
-	DEFINE_FIELD( vecSave, FIELD_VECTOR ),
-};
-typedescription_t variant_t::m_SavePositionVector[] =
-{
-	DEFINE_FIELD( vecSave, FIELD_POSITION_VECTOR ),
-};
-#undef classNameTypedef
-
-#define classNameTypedef variant_savevmatrix_t // to satisfy DEFINE... macros
-struct variant_savevmatrix_t
-{
-	VMatrix matSave;
-};
-typedescription_t variant_t::m_SaveVMatrix[] =
-{
-	DEFINE_FIELD( matSave, FIELD_VMATRIX ),
-};
-typedescription_t variant_t::m_SaveVMatrixWorldspace[] =
-{
-	DEFINE_FIELD( matSave, FIELD_VMATRIX_WORLDSPACE ),
-};
-#undef classNameTypedef
-
-#define classNameTypedef variant_savevmatrix3x4_t // to satisfy DEFINE... macros
-struct variant_savevmatrix3x4_t
-{
-	matrix3x4_t matSave;
-};
-typedescription_t variant_t::m_SaveMatrix3x4Worldspace[] =
-{
-	DEFINE_FIELD( matSave, FIELD_MATRIX3X4_WORLDSPACE ),
-};
-#undef classNameTypedef
 
 class CVariantFieldOps : public CDefCustomFieldOps
 {

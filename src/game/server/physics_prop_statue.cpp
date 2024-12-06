@@ -216,7 +216,7 @@ bool CStatueProp::CreateVPhysicsFromHitBoxes( CBaseAnimating *pInitBaseAnimating
 
 	// Copy over any render color
 	color24 colorRender = pInitBaseAnimating->GetRenderColor();
-	SetRenderColor( colorRender.r, colorRender.g, colorRender.b );
+	SetRenderColor( colorRender.r(), colorRender.g(), colorRender.b() );
 	SetRenderAlpha( pInitBaseAnimating->GetRenderAlpha() );
 
 	// Get hitbox data

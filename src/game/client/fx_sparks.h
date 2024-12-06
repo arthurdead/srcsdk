@@ -38,34 +38,25 @@ public:
 
 inline void Color32ToFloat4( float colorOut[4], const color32 & colorIn )
 {
-	colorOut[0] = colorIn.r * (1.0f/255.0f);
-	colorOut[1] = colorIn.g * (1.0f/255.0f);
-	colorOut[2] = colorIn.b * (1.0f/255.0f);
-	colorOut[3] = colorIn.a * (1.0f/255.0f);
+	colorOut[0] = colorIn.r() * (1.0f/255.0f);
+	colorOut[1] = colorIn.g() * (1.0f/255.0f);
+	colorOut[2] = colorIn.b() * (1.0f/255.0f);
+	colorOut[3] = colorIn.a() * (1.0f/255.0f);
 }
 
 inline void FloatToColor32( color32 &out, float r, float g, float b, float a )
 {
-	out.r = r * 255;
-	out.g = g * 255;
-	out.b = b * 255;
-	out.a = a * 255;
+	out.SetColor( r * 255, g * 255, b * 255, a * 255 );
 }
 
 inline void Float4ToColor32( color32 &out, float colorIn[4] )
 {
-	out.r = colorIn[0] * 255;
-	out.g = colorIn[1] * 255;
-	out.b = colorIn[2] * 255;
-	out.a = colorIn[3] * 255;
+	out.SetColor( colorIn[0] * 255, colorIn[1] * 255, colorIn[2] * 255, colorIn[3] * 255 );
 }
 
-inline void Color32Init( color32 &out, int r, int g, int b, int a )
+inline void Color32Init( color32 &out, unsigned char r, unsigned char g, unsigned char b, unsigned char a )
 {
-	out.r = r;
-	out.g = g;
-	out.b = b;
-	out.a = a;
+	out.SetColor( r, g, b, a );
 }
 //
 // CTrailParticles

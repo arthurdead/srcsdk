@@ -310,7 +310,7 @@ void UTIL_Bubbles( const Vector& mins, const Vector& maxs, int count )
 
 	CPASFilter filter( mid );
 
-	int bubbles = modelinfo->GetModelIndex( "sprites/bubble.vmt" );
+	modelindex_t bubbles = modelinfo->GetModelIndex( "sprites/bubble.vmt" );
 
 	te->Bubbles( filter, 0.0,
 		&mins, &maxs, flHeight, bubbles, count, 8.0 );
@@ -395,7 +395,7 @@ int UTIL_PrecacheDecal( const char *name, bool preload )
 	return effects->Draw_DecalIndexFromName( (char*)name );
 }
 
-extern int g_sModelIndexSmoke;
+extern modelindex_t g_sModelIndexSmoke;
 
 void UTIL_Smoke( const Vector &origin, const float scale, const float framerate )
 {

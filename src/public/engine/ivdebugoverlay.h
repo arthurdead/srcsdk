@@ -23,10 +23,10 @@
 
 #include "tier0/platform.h"
 #include "hackmgr/hackmgr.h"
+#include "Color.h"
 
 class Vector;
 class QAngle;
-struct Color;
 
 #define VDEBUG_OVERLAY_INTERFACE_VERSION	"VDebugOverlay003"
 

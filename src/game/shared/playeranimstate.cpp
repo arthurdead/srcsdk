@@ -356,7 +356,7 @@ bool CPlayerAnimState::InitGestureSlots( void )
 
 	for ( int iGesture = 0; iGesture < GESTURE_SLOT_COUNT; ++iGesture )
 	{
-		m_aGestureSlots[iGesture].m_pAnimLayer = pPlayer->GetAnimOverlay( iGesture );
+		m_aGestureSlots[iGesture].m_pAnimLayer = pPlayer->GetAnimOverlayForModify( iGesture );
 		if ( !m_aGestureSlots[iGesture].m_pAnimLayer )
 			return false;
 
@@ -489,12 +489,12 @@ bool CPlayerAnimState::VerifyAnimLayerInSlot( int iGestureSlot )
 		return false;
 	}
 
-	CSharedAnimationLayer *pExpected = GetBasePlayer()->GetAnimOverlay( iGestureSlot );
+	const CSharedAnimationLayer *pExpected = GetBasePlayer()->GetAnimOverlay( iGestureSlot );
 	if ( m_aGestureSlots[iGestureSlot].m_pAnimLayer != pExpected )
 	{
 		AssertMsg3( false, "Gesture slot %d pointing to wrong address %p. Updating to new address %p.", iGestureSlot, m_aGestureSlots[iGestureSlot].m_pAnimLayer, pExpected );
 		Msg( "Gesture slot %d pointing to wrong address %p. Updating to new address %p.\n", iGestureSlot, m_aGestureSlots[iGestureSlot].m_pAnimLayer, pExpected );
-		m_aGestureSlots[iGestureSlot].m_pAnimLayer = pExpected;
+		m_aGestureSlots[iGestureSlot].m_pAnimLayer = GetBasePlayer()->GetAnimOverlayForModify( iGestureSlot );
 	}
 
 	return true;
@@ -1924,13 +1924,13 @@ void CPlayerAnimState::DebugShowAnimStateForPlayer()
 	for ( int iAnim = 0; iAnim < GetBasePlayer()->GetNumAnimOverlays(); ++iAnim )
 	{
 #ifdef CLIENT_DLL
-		C_AnimationLayer *pLayer = GetBasePlayer()->GetAnimOverlay( iAnim );
+		const C_AnimationLayer *pLayer = GetBasePlayer()->GetAnimOverlay( iAnim );
 		if ( pLayer && ( pLayer->m_nOrder != C_BaseAnimatingOverlay::MAX_OVERLAYS ) )
 		{
 			Anim_StatePrintf( iLine++, "Layer %s: Weight: %.2f, Cycle: %.2f", GetSequenceName( GetBasePlayer()->GetModelPtr(), pLayer->m_nSequence ), (float)pLayer->m_flWeight, (float)pLayer->m_flCycle );
 		}
 #else
-		CAnimationLayer *pLayer = GetBasePlayer()->GetAnimOverlay( iAnim );
+		const CAnimationLayer *pLayer = GetBasePlayer()->GetAnimOverlay( iAnim );
 		if ( pLayer && ( pLayer->m_nOrder != CBaseAnimatingOverlay::MAX_OVERLAYS ) )
 		{
 			Anim_StatePrintf( iLine++, "Layer %s: Weight: %.2f, Cycle: %.2f", GetSequenceName( GetBasePlayer()->GetModelPtr(), pLayer->m_nSequence ), (float)pLayer->m_flWeight, (float)pLayer->m_flCycle );
@@ -2034,7 +2034,7 @@ void CPlayerAnimState::DebugShowAnimState( int iStartLine )
 #if defined( CLIENT_DLL )
 	for ( int i=0; i < GetBasePlayer()->GetNumAnimOverlays()-1; i++ )
 	{
-		C_AnimationLayer *pLayer = GetBasePlayer()->GetAnimOverlay( i /*i+1?*/ );
+		const C_AnimationLayer *pLayer = GetBasePlayer()->GetAnimOverlay( i /*i+1?*/ );
 		Anim_StatePrintf( iLine++, "%s, weight: %.2f, cycle: %.2f, aim (%d)", 
 			pLayer->m_nOrder == C_BaseAnimatingOverlay::MAX_OVERLAYS ? "--" : GetSequenceName( GetBasePlayer()->GetModelPtr(), pLayer->m_nSequence ), 
 			pLayer->m_nOrder == C_BaseAnimatingOverlay::MAX_OVERLAYS ? -1 :(float)pLayer->m_flWeight, 

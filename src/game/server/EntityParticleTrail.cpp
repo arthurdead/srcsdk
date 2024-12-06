@@ -58,7 +58,7 @@ CEntityParticleTrail *CEntityParticleTrail::Create( CBaseEntity *pTarget, const 
 
 	pTrail->m_hConstraintEntity = pConstraintEntity;
 	pTrail->m_iMaterialName = iMaterialName;
-	pTrail->m_Info.CopyFrom(info);
+	pTrail->m_Info.GetForModify() = info;
 	pTrail->m_nRefCount = 1;
 	pTrail->AttachToEntity( pTarget );
 	pTrail->Spawn();

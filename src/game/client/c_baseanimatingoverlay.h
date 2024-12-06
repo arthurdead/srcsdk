@@ -30,7 +30,8 @@ public:
 
 	virtual CStudioHdr *OnNewModel();
 
-	C_AnimationLayer* GetAnimOverlay( int i );
+	const C_AnimationLayer* GetAnimOverlay( int i ) const;
+	C_AnimationLayer *GetAnimOverlayForModify( int iIndex );
 	void SetNumAnimOverlays( int num );	// This makes sure there is space for this # of layers.
 	int GetNumAnimOverlays() const;
 	void			SetOverlayPrevEventCycle( int nSlot, float flValue );

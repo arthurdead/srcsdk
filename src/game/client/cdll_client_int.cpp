@@ -136,6 +136,7 @@
 #include "point_template.h"
 #include "baseclientrendertargets.h"
 #include "viewpostprocess.h"
+#include "iserver.h"
 
 // NVNT includes
 #include "hud_macros.h"
@@ -474,7 +475,22 @@ CSysModule* game_loopbackDLL = NULL;
 IGameLoopback* g_pGameLoopback = NULL;
 
 CSysModule* serverDLL = NULL;
-IGameServerLoopback* g_pGameServerLoopback = NULL;
+IGameServerLoopback* s_GameServerLoopback = NULL;
+
+IServer *g_pListenServer = NULL;
+
+bool IsListenServerHost()
+{
+	return g_pListenServer && g_pListenServer->IsActive();
+}
+
+IGameServerLoopback* GetGameServerLoopback()
+{
+	if( !IsListenServerHost() )
+		return NULL;
+
+	return s_GameServerLoopback;
+}
 
 CSysModule* videoServicesDLL = NULL;
 
@@ -1260,6 +1276,13 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 
 	g_pMatchFramework = (IMatchFramework *)appSystemFactory( IMATCHFRAMEWORK_VERSION_STRING, NULL );
 
+	if(!CommandLine()->HasParm("-nogamedll") && !CommandLine()->HasParm("-dedicated")) {
+		IVEngineServer *engserver = (IVEngineServer *)appSystemFactory( INTERFACEVERSION_VENGINESERVER, NULL );
+		if(engserver) {
+			g_pListenServer = engserver->GetIServer();
+		}
+	}
+
 	if( !g_bTextMode ) {
 		debugoverlay = (IVDebugOverlay *)appSystemFactory( VDEBUG_OVERLAY_INTERFACE_VERSION, NULL );
 	}
@@ -1348,9 +1371,9 @@ int CClientDll::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn phys
 			CreateInterfaceFn serverFactory = Sys_GetFactory(serverDLL);
 			if(serverFactory) {
 				int status = IFACE_OK;
-				g_pGameServerLoopback = (IGameServerLoopback *)serverFactory(GAMESERVERLOOPBACK_INTERFACE_VERSION, &status);
+				s_GameServerLoopback = (IGameServerLoopback *)serverFactory(GAMESERVERLOOPBACK_INTERFACE_VERSION, &status);
 				if(status != IFACE_OK) {
-					g_pGameServerLoopback = NULL;
+					s_GameServerLoopback = NULL;
 				}
 			}
 		}

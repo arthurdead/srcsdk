@@ -467,7 +467,7 @@ DECLARE_CLIENT_EFFECT( MuzzleFlash, MuzzleFlashCallback );
 //			flRoll - 
 //			flRollDelta - 
 //-----------------------------------------------------------------------------
-CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity, float scale, int numParticles, float flDietime, const unsigned char *pColor, int iAlpha, const char *pMaterial, float flRoll, float flRollDelta )
+CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity, float scale, int numParticles, float flDietime, const color24 *pColor, int iAlpha, const char *pMaterial, float flRoll, float flRollDelta )
 {
 	VPROF_BUDGET( "FX_Smoke", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	CSmartPtr<CSimpleEmitter> pSimple = CSimpleEmitter::Create( "FX_Smoke" );
@@ -486,10 +486,7 @@ CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity
 		pParticle->m_flLifetime = 0.0f;
 		pParticle->m_flDieTime = flDietime;
 		pParticle->m_vecVelocity = velocity;
-		for( int i = 0; i < 3; ++i )
-		{
-			pParticle->m_uchColor[i] = pColor[i];
-		}
+		pParticle->m_uchColor = *pColor;
 		pParticle->m_uchStartAlpha	= iAlpha;
 		pParticle->m_uchEndAlpha	= 0;
 		pParticle->m_uchStartSize	= scale;
@@ -504,7 +501,7 @@ CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity
 //-----------------------------------------------------------------------------
 // Purpose: Smoke puffs
 //-----------------------------------------------------------------------------
-void FX_Smoke( const Vector &origin, const QAngle &angles, float scale, int numParticles, const unsigned char *pColor, int iAlpha )
+void FX_Smoke( const Vector &origin, const QAngle &angles, float scale, int numParticles, const color24 *pColor, int iAlpha )
 {
 	VPROF_BUDGET( "FX_Smoke", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	Vector vecVelocity;
@@ -525,16 +522,16 @@ void FX_Smoke( const Vector &origin, const QAngle &angles, float scale, int numP
 		unsigned char particlecolor[3];
 		if ( !pColor )
 		{
-			int color = random_valve->RandomInt( 64, 164 );
+			unsigned char color = random_valve->RandomInt( 64, 164 );
 			particlecolor[0] = color;
 			particlecolor[1] = color;
 			particlecolor[2] = color;
 		}
 		else
 		{
-			particlecolor[0] = pColor[0];
-			particlecolor[1] = pColor[1];
-			particlecolor[2] = pColor[2];
+			particlecolor[0] = pColor->r();
+			particlecolor[1] = pColor->g();
+			particlecolor[2] = pColor->b();
 		}
 
 		// Alpha

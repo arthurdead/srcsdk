@@ -23,8 +23,8 @@
 CTEBaseBeam::CTEBaseBeam( const char *name ) :
   CBaseTempEntity( name )
 {
-	m_nModelIndex	= 0;
-	m_nHaloIndex	= 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
+	m_nHaloIndex	= INVALID_MODEL_INDEX;
 	m_nStartFrame	= 0;
 	m_nFrameRate	= 0;
 	m_fLife			= 0.0;

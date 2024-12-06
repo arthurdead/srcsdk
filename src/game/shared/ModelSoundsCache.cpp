@@ -202,11 +202,11 @@ CStudioHdr *ModelSoundsCache_LoadModel( const char *filename )
 {
 	// Load the file
 #ifdef GAME_DLL
-	int idx = engine->PrecacheModel( filename, true );
+	modelindex_t idx = engine->PrecacheModel( filename, true );
 #else
-	int idx = modelinfo->GetModelIndex( filename );
+	modelindex_t idx = modelinfo->GetModelIndex( filename );
 #endif
-	if ( idx != -1 )
+	if ( idx.IsValid() )
 	{
 		model_t *mdl = (model_t *)modelinfo->GetModel( idx );
 		if ( mdl )

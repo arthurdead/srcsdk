@@ -11,8 +11,7 @@
 #pragma once
 
 #include <vgui/VGUI.h>
-
-class Color;
+#include "Color.h"
 
 namespace vgui
 {

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "appframework/IAppSystem.h"
+#include "Color.h"
 #include "tier1/iconvar.h"
 
 class ConCommandBase;
@@ -20,9 +21,6 @@ typedef ConVar ConVarBase;
 #else
 class ConVarBase;
 #endif
-
-class Color;
-
 
 //-----------------------------------------------------------------------------
 // ConVars/ComCommands are marked as having a particular DLL identifier

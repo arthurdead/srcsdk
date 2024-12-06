@@ -251,15 +251,15 @@ struct breakablepropparams_t
 
 const char *GetMassEquivalent(float flMass);
 int  GetAutoPhysicsMode( Vector size, float mass );
-void BuildPropList( const char *pszBlockName, CUtlVector<breakmodel_t> &list, int modelindex, float defBurstScale, int defCollisionGroup );
-void BreakModelList( CUtlVector<breakmodel_t> &list, int modelindex, float defBurstScale, int defCollisionGroup );
-void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CSharedBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLImit, bool defaultLocation = true );
-void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const Vector &origin, const QAngle &angles, const Vector &velocity, const AngularImpulse &angularVelocity, float impactEnergyScale, float burstScale, int collisionGroup, CSharedBaseEntity *pEntity = NULL, bool defaultLocation = true );
+void BuildPropList( const char *pszBlockName, CUtlVector<breakmodel_t> &list, modelindex_t modelindex, float defBurstScale, int defCollisionGroup );
+void BreakModelList( CUtlVector<breakmodel_t> &list, modelindex_t modelindex, float defBurstScale, int defCollisionGroup );
+void PropBreakableCreateAll( modelindex_t modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CSharedBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLImit, bool defaultLocation = true );
+void PropBreakableCreateAll( modelindex_t modelindex, IPhysicsObject *pPhysics, const Vector &origin, const QAngle &angles, const Vector &velocity, const AngularImpulse &angularVelocity, float impactEnergyScale, float burstScale, int collisionGroup, CSharedBaseEntity *pEntity = NULL, bool defaultLocation = true );
 
 // Player gibs.
-void PrecachePropsForModel( int iModel, const char *pszBlockName );
-void PrecacheGibsForModel( int iModel );
-void BuildGibList( CUtlVector<breakmodel_t> &list, int modelindex, float defBurstScale, int defCollisionGroup );
-CSharedBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CSharedBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLImit, bool defaultLocation = true, CUtlVector<EHANDLE> *pGibList = NULL, bool bBurning = false );
+void PrecachePropsForModel( modelindex_t iModel, const char *pszBlockName );
+void PrecacheGibsForModel( modelindex_t iModel );
+void BuildGibList( CUtlVector<breakmodel_t> &list, modelindex_t modelindex, float defBurstScale, int defCollisionGroup );
+CSharedBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, modelindex_t modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CSharedBaseEntity *pEntity, int iPrecomputedBreakableCount, bool bIgnoreGibLImit, bool defaultLocation = true, CUtlVector<EHANDLE> *pGibList = NULL, bool bBurning = false );
 
 #endif // PROPS_SHARED_H

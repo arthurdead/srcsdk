@@ -293,7 +293,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CSceneEntity, DT_SceneEntity )
 	SendPropUtlVector(
 		SENDINFO_UTLVECTOR( m_hActorList ),
 		MAX_ACTORS_IN_SCENE, // max elements
-		SendPropEHandle( NULL, 0 ) ),
+		SendPropEHandle( NULL, 0, sizeof(CHandle< CBaseFlex >) ) ),
 END_SEND_TABLE()
 
 BEGIN_MAPENTITY( CSceneEntity )
@@ -2236,7 +2236,6 @@ void CSceneEntity::StartPlayback( void )
 	m_bWaitingForActor	= false;
 	m_bWaitingForInterrupt = false;
 	m_bIsPlayingBack	= true;
-	NetworkProp()->NetworkStateForceUpdate();
 	m_bPaused			= false;
 	SetCurrentTime( 0.0f, true );
 	m_pScene->ResetSimulation();
@@ -2710,14 +2709,8 @@ void CSceneEntity::StartEvent( float currenttime, CChoreoScene *scene, CChoreoEv
 				tTextParam.x			= -1;
 				tTextParam.y			= 0.65;
 				tTextParam.effect		= 0;
-				tTextParam.r1			= 255;
-				tTextParam.g1			= 170;
-				tTextParam.b1			= 0;
-				tTextParam.a1			= 255;
-				tTextParam.r2			= 255;
-				tTextParam.g2			= 170;
-				tTextParam.b2			= 0;
-				tTextParam.a2			= 255;
+				tTextParam.clr1.SetColor( 255, 170, 0, 255 );
+				tTextParam.clr2.SetColor( 255, 170, 0, 255 );
 				tTextParam.fadeinTime	= 0;
 				tTextParam.fadeoutTime	= 0;
 				tTextParam.holdTime		= 3.1;
@@ -3242,7 +3235,6 @@ CBaseFlex *CSceneEntity::FindNamedActor( int index )
 	if (m_hActorList.Count() == 0)
 	{
 		m_hActorList.SetCount( m_pScene->GetNumActors() );
-		NetworkProp()->NetworkStateForceUpdate();
 	}
 
 	if ( !m_hActorList.IsValidIndex( index ) )
@@ -3264,8 +3256,7 @@ CBaseFlex *CSceneEntity::FindNamedActor( int index )
 		if (pActor)
 		{
 			// save who we found so we'll use them again
-			m_hActorList[ index ] = pActor;
-			NetworkProp()->NetworkStateForceUpdate();
+			m_hActorList.Set( index, pActor );
 		}
 	}
 
@@ -4031,56 +4022,48 @@ void CSceneEntity::ClearActivatorTargets( void )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
-		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget1 = NULL;
 	}
 	if ( IDENT_STRINGS( m_iszTarget2, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
-		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget2 = NULL;
 	}
 	if ( IDENT_STRINGS( m_iszTarget3, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
-		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget3 = NULL;
 	}
 	if ( IDENT_STRINGS( m_iszTarget4, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
-		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget4 = NULL;
 	}
 	if ( IDENT_STRINGS( m_iszTarget5, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
-		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget5 = NULL;
 	}
 	if ( IDENT_STRINGS( m_iszTarget6, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
-		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget6 = NULL;
 	}
 	if ( IDENT_STRINGS( m_iszTarget7, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
-		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget7 = NULL;
 	}
 	if ( IDENT_STRINGS( m_iszTarget8, gm_isz_name_activator ) )
 	{
 		// We need to clear out actors so they're re-evaluated
 		m_hActorList.Purge();
-		NetworkProp()->NetworkStateForceUpdate();
 		m_hTarget8 = NULL;
 	}
 }

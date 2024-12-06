@@ -137,10 +137,10 @@ bool KVPacker::WriteAsBinary( KeyValues *pNode, CUtlBuffer &buffer )
 		case KeyValues::TYPE_COLOR:
 			{
 				Color color = dat->GetColor();
-				buffer.PutUnsignedChar( color[0] );
-				buffer.PutUnsignedChar( color[1] );
-				buffer.PutUnsignedChar( color[2] );
-				buffer.PutUnsignedChar( color[3] );
+				buffer.PutUnsignedChar( color.r() );
+				buffer.PutUnsignedChar( color.g() );
+				buffer.PutUnsignedChar( color.b() );
+				buffer.PutUnsignedChar( color.a() );
 				break;
 			}
 		case KeyValues::TYPE_PTR:

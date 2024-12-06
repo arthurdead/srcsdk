@@ -66,9 +66,7 @@ public:
 
 				unsigned char color = random_valve->RandomInt( 128, 255 );
 
-				sParticle->m_uchColor[0]	= color;
-				sParticle->m_uchColor[1]	= color;
-				sParticle->m_uchColor[2]	= color;
+				sParticle->m_uchColor.SetColor( color, color, color );
 				sParticle->m_uchStartAlpha	= 255;
 				sParticle->m_uchEndAlpha	= 0;
 				sParticle->m_uchStartSize	= random_valve->RandomInt( 1, 2 );
@@ -89,9 +87,7 @@ public:
 
 				unsigned char color = random_valve->RandomInt( 200, 255 );
 
-				sParticle->m_uchColor[0]	= color;
-				sParticle->m_uchColor[1]	= color;
-				sParticle->m_uchColor[2]	= color;
+				sParticle->m_uchColor.SetColor( color, color, color );
 				sParticle->m_uchStartAlpha	= 128;
 				sParticle->m_uchEndAlpha	= 0;
 				sParticle->m_uchStartSize	= 2;

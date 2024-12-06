@@ -34,7 +34,7 @@ public:
 
 public:
 	int				m_nEntity;
-	int				m_nModelIndex;
+	modelindex_t m_nModelIndex;
 	int				m_nDensity;
 	int				m_nCurrent;
 };
@@ -45,7 +45,7 @@ public:
 C_TEFizz::C_TEFizz( void )
 {
 	m_nEntity		= 0;
-	m_nModelIndex	= 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nDensity		= 0;
 	m_nCurrent		= 0;
 }
@@ -73,7 +73,7 @@ void C_TEFizz::PostDataUpdate( DataUpdateType_t updateType )
 }
 
 void TE_Fizz( IRecipientFilter& filter, float delay,
-	const C_BaseEntity *ed, int modelindex, int density, int current )
+	const C_BaseEntity *ed, modelindex_t modelindex, int density, int current )
 {
 	C_BaseEntity *pEnt = (C_BaseEntity *)ed;
 	if (pEnt != NULL)

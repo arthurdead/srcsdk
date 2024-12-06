@@ -181,7 +181,7 @@ private:
 
 	bool WindEnabled() const;
 	int				m_RopeFlags;			// Combo of ROPE_ flags.
-	int				m_iRopeMaterialModelIndex;	// Index of sprite model with the rope's material.
+	modelindex_t				m_iRopeMaterialModelIndex;	// Index of sprite model with the rope's material.
 		
 	CRopePhysics<ROPE_MAX_SEGMENTS>	m_RopePhysics;
 	Vector			m_LightValues[ROPE_MAX_SEGMENTS]; // light info when the rope is created.

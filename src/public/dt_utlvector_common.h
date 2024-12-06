@@ -10,7 +10,7 @@
 
 
 #include "utlvector.h"
-
+#include "networkvar.h"
 
 typedef void (*EnsureCapacityFn)( void *pVoid, int offsetToUtlVector, int len );
 typedef void (*ResizeUtlVectorFn)( void *pVoid, int offsetToUtlVector, int len );
@@ -65,8 +65,20 @@ inline ResizeUtlVectorFn GetResizeUtlVectorTemplate( CUtlVector<T,A> &vec )
 	return &UtlVectorTemplate<T,A>::ResizeUtlVector;
 }
 
+template< class T, class A, class H >
+inline ResizeUtlVectorFn GetResizeUtlVectorTemplate( CNetworkUtlVectorBaseImpl< CUtlVector<T,A>, H > &vec )
+{
+	return &UtlVectorTemplate<T,A>::ResizeUtlVector;
+}
+
 template< class T, class A >
 inline EnsureCapacityFn GetEnsureCapacityTemplate( CUtlVector<T,A> &vec )
+{
+	return &UtlVectorTemplate<T,A>::EnsureCapacity;
+}
+
+template< class T, class A, class H >
+inline EnsureCapacityFn GetEnsureCapacityTemplate( CNetworkUtlVectorBaseImpl< CUtlVector<T,A>, H > &vec )
 {
 	return &UtlVectorTemplate<T,A>::EnsureCapacity;
 }

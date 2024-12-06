@@ -33,10 +33,10 @@ END_SEND_TABLE()
 
 
 BEGIN_SEND_TABLE_NOBASE( CBaseAnimatingOverlay, DT_OverlayVars )
-	SendPropUtlVector( 
-		SENDINFO_UTLVECTOR( m_AnimOverlay ),
+	SendPropUtlVectorDataTable( 
+		m_AnimOverlay,
 		CBaseAnimatingOverlay::MAX_OVERLAYS, // max elements
-		SendPropDataTable( NULL, 0, &REFERENCE_SEND_TABLE( DT_Animationlayer ) )  )
+		DT_Animationlayer )
 END_SEND_TABLE()
 
 
@@ -148,7 +148,7 @@ void CAnimationLayer::StudioFrameAdvance( float flInterval, CBaseAnimating *pOwn
 
 //------------------------------------------------------------------------------
 
-bool CAnimationLayer::IsAbandoned( void )
+bool CAnimationLayer::IsAbandoned( void ) const
 { 
 	if (IsActive() && !IsAutokill() && !IsKillMe() && m_flLastAccess > 0.0 && (gpGlobals->curtime - m_flLastAccess > 0.2)) 
 		return true; 
@@ -221,9 +221,11 @@ void CBaseAnimatingOverlay::VerifyOrder( void )
 //-----------------------------------------------------------------------------
 void CBaseAnimatingOverlay::SetModel( const char *szModelName )
 {
-	for ( int j=0; j<m_AnimOverlay.Count(); ++j )
+	auto &vecAnimOverlay = m_AnimOverlay.GetForModify();
+
+	for ( int j=0; j<vecAnimOverlay.Count(); ++j )
 	{
-		m_AnimOverlay[j].Init( this );
+		vecAnimOverlay[j].Init( this );
 	}
 
 	BaseClass::SetModel( szModelName );
@@ -244,9 +246,11 @@ void CBaseAnimatingOverlay::StudioFrameAdvance ()
 
 	BaseClass::StudioFrameAdvance();
 
-	for ( int i = 0; i < m_AnimOverlay.Count(); i++ )
+	auto &vecAnimOverlay = m_AnimOverlay.GetForModify();
+
+	for ( int i = 0; i < vecAnimOverlay.Count(); i++ )
 	{
-		CAnimationLayer *pLayer = &m_AnimOverlay[i];
+		CAnimationLayer *pLayer = &vecAnimOverlay[i];
 		
 		if (pLayer->IsActive())
 		{
@@ -331,7 +335,7 @@ void CBaseAnimatingOverlay::DispatchAnimEvents ( CBaseAnimating *eventHandler )
 	{
 		if (m_AnimOverlay[ i ].IsActive() && !m_AnimOverlay[ i ].NoEvents() )
 		{
-			m_AnimOverlay[ i ].DispatchAnimEvents( eventHandler, this );
+			m_AnimOverlay.GetWithoutModify()[ i ].DispatchAnimEvents( eventHandler, this );
 		}
 	}
 }
@@ -436,7 +440,7 @@ void CBaseAnimatingOverlay::GetSkeleton( CStudioHdr *pStudioHdr, Vector pos[], Q
 	}
 	for (i = 0; i < m_AnimOverlay.Count(); i++)
 	{
-		CAnimationLayer &pLayer = m_AnimOverlay[i];
+		const CAnimationLayer &pLayer = m_AnimOverlay[i];
 		if( (pLayer.m_flWeight > 0) && pLayer.IsActive() && pLayer.m_nOrder >= 0 && pLayer.m_nOrder < m_AnimOverlay.Count())
 		{
 			layer[pLayer.m_nOrder] = i;
@@ -446,7 +450,7 @@ void CBaseAnimatingOverlay::GetSkeleton( CStudioHdr *pStudioHdr, Vector pos[], Q
 	{
 		if (layer[i] >= 0 && layer[i] < m_AnimOverlay.Count())
 		{
-			CAnimationLayer &pLayer = m_AnimOverlay[layer[i]];
+			const CAnimationLayer &pLayer = m_AnimOverlay[layer[i]];
 			// UNDONE: Is it correct to use overlay weight for IK too?
 			boneSetup.AccumulatePose( pos, q, pLayer.m_nSequence, pLayer.m_flCycle, pLayer.m_flWeight, gpGlobals->curtime, m_pIk );
 		}
@@ -494,7 +498,7 @@ int CBaseAnimatingOverlay::AddGestureSequence( int nSequence, float flDuration, 
 
 	if (iLayer >= 0 && flDuration > 0)
 	{
-		m_AnimOverlay[iLayer].m_flPlaybackRate = SequenceDuration( nSequence ) / flDuration;
+		m_AnimOverlay.GetForModify(iLayer).m_flPlaybackRate = SequenceDuration( nSequence ) / flDuration;
 	}
 	return iLayer;
 }
@@ -524,7 +528,7 @@ int CBaseAnimatingOverlay::AddGesture( Activity activity, bool autokill /*= true
 	Assert( i != -1 );
 	if ( i != -1 )
 	{
-		m_AnimOverlay[ i ].m_nActivity = activity;
+		m_AnimOverlay.GetForModify( i ).m_nActivity = activity;
 	}
 
 	return i;
@@ -549,7 +553,7 @@ void CBaseAnimatingOverlay::SetLayerDuration( int iLayer, float flDuration )
 {
 	if (IsValidLayer( iLayer ) && flDuration > 0)
 	{
-		m_AnimOverlay[iLayer].m_flPlaybackRate = SequenceDuration( m_AnimOverlay[iLayer].m_nSequence ) / flDuration;
+		m_AnimOverlay.GetForModify(iLayer).m_flPlaybackRate = SequenceDuration( m_AnimOverlay[iLayer].m_nSequence ) / flDuration;
 	}
 }
 
@@ -594,17 +598,18 @@ int	CBaseAnimatingOverlay::AddLayeredSequence( int sequence, int iPriority )
 	// No room?
 	if ( IsValidLayer( i ) )
 	{
-		m_AnimOverlay[i].m_flCycle = 0;
-		m_AnimOverlay[i].m_flPrevCycle = 0;
-		m_AnimOverlay[i].m_flPlaybackRate = 1.0;
-		m_AnimOverlay[i].m_nActivity = ACT_INVALID;
-		m_AnimOverlay[i].m_nSequence = sequence;
-		m_AnimOverlay[i].m_flWeight = 1.0f;
-		m_AnimOverlay[i].m_flBlendIn = 0.0f;
-		m_AnimOverlay[i].m_flBlendOut = 0.0f;
-		m_AnimOverlay[i].m_bSequenceFinished = false;
-		m_AnimOverlay[i].m_flLastEventCheck = 0;
-		m_AnimOverlay[i].m_bLooping = ((GetSequenceFlags( GetModelPtr(), sequence ) & STUDIO_LOOPING) != 0);
+		CAnimationLayer &layer = m_AnimOverlay.GetForModify(i);
+		layer.m_flCycle = 0;
+		layer.m_flPrevCycle = 0;
+		layer.m_flPlaybackRate = 1.0;
+		layer.m_nActivity = ACT_INVALID;
+		layer.m_nSequence = sequence;
+		layer.m_flWeight = 1.0f;
+		layer.m_flBlendIn = 0.0f;
+		layer.m_flBlendOut = 0.0f;
+		layer.m_bSequenceFinished = false;
+		layer.m_flLastEventCheck = 0;
+		layer.m_bLooping = ((GetSequenceFlags( GetModelPtr(), sequence ) & STUDIO_LOOPING) != 0);
 		if (ai_sequence_debug.GetBool() == true && m_debugOverlays & OVERLAY_NPC_SELECTED_BIT)
 		{
 			Msg("%5.3f : adding %d (%d): %s : %5.3f (%.3f)\n", gpGlobals->curtime, i, m_AnimOverlay[ i ].m_nOrder.Get(), GetSequenceName( m_AnimOverlay[ i ].m_nSequence ), m_AnimOverlay[ i ].m_flCycle.Get(), m_AnimOverlay[ i ].m_flWeight.Get() );
@@ -633,20 +638,22 @@ int CBaseAnimatingOverlay::AllocateLayer( int iPriority )
 {
 	int i;
 
+	auto &vecAnimOverlay = m_AnimOverlay.GetForModify();
+
 	// look for an open slot and for existing layers that are lower priority
 	int iNewOrder = 0;
 	int iOpenLayer = -1;
 	int iNumOpen = 0;
-	for (i = 0; i < m_AnimOverlay.Count(); i++)
+	for (i = 0; i < vecAnimOverlay.Count(); i++)
 	{
-		if ( m_AnimOverlay[i].IsActive() )
+		if ( vecAnimOverlay[i].IsActive() )
 		{
-			if (m_AnimOverlay[i].m_nPriority <= iPriority)
+			if (vecAnimOverlay[i].m_nPriority <= iPriority)
 			{
-				iNewOrder = MAX( iNewOrder, m_AnimOverlay[i].m_nOrder + 1 );
+				iNewOrder = MAX( iNewOrder, vecAnimOverlay[i].m_nOrder + 1 );
 			}
 		}
-		else if (m_AnimOverlay[ i ].IsDying())
+		else if (vecAnimOverlay[ i ].IsDying())
 		{
 			// skip
 		}
@@ -662,40 +669,43 @@ int CBaseAnimatingOverlay::AllocateLayer( int iPriority )
 
 	if (iOpenLayer == -1)
 	{
-		if (m_AnimOverlay.Count() >= MAX_OVERLAYS)
+		if (vecAnimOverlay.Count() >= MAX_OVERLAYS)
 		{
 			return -1;
 		}
 
-		iOpenLayer = m_AnimOverlay.AddToTail();
-		m_AnimOverlay[iOpenLayer].Init( this );
-		m_AnimOverlay[iOpenLayer].NetworkStateChanged();
+		iOpenLayer = vecAnimOverlay.AddToTail();
+		CAnimationLayer &layer = vecAnimOverlay[iOpenLayer];
+		layer.Init( this );
 	}
 
 	// make sure there's always an empty unused layer so that history slots will be available on the client when it is used
 	if (iNumOpen == 0)
 	{
-		if (m_AnimOverlay.Count() < MAX_OVERLAYS)
+		if (vecAnimOverlay.Count() < MAX_OVERLAYS)
 		{
-			i = m_AnimOverlay.AddToTail();
-			m_AnimOverlay[i].Init( this );
-			m_AnimOverlay[i].NetworkStateChanged();
+			i = vecAnimOverlay.AddToTail();
+			CAnimationLayer &layer = vecAnimOverlay[i];
+			layer.Init( this );
 		}
 	}
 
-	for (i = 0; i < m_AnimOverlay.Count(); i++)
+	for (i = 0; i < vecAnimOverlay.Count(); i++)
 	{
-		if ( m_AnimOverlay[i].m_nOrder >= iNewOrder && m_AnimOverlay[i].m_nOrder < MAX_OVERLAYS)
+		if ( vecAnimOverlay[i].m_nOrder >= iNewOrder && vecAnimOverlay[i].m_nOrder < MAX_OVERLAYS)
 		{
-			m_AnimOverlay[i].m_nOrder++;
+			CAnimationLayer &layer = vecAnimOverlay[i];
+			layer.m_nOrder++;
 		}
 	}
 
-	m_AnimOverlay[iOpenLayer].m_fFlags = ANIM_LAYER_ACTIVE;
-	m_AnimOverlay[iOpenLayer].m_nOrder = iNewOrder;
-	m_AnimOverlay[iOpenLayer].m_nPriority = iPriority;
+	CAnimationLayer &layer = vecAnimOverlay[iOpenLayer];
 
-	m_AnimOverlay[iOpenLayer].MarkActive();
+	layer.m_fFlags = ANIM_LAYER_ACTIVE;
+	layer.m_nOrder = iNewOrder;
+	layer.m_nPriority = iPriority;
+
+	layer.MarkActive();
 	VerifyOrder();
 
 	return iOpenLayer;
@@ -714,50 +724,55 @@ void CBaseAnimatingOverlay::SetLayerPriority( int iLayer, int iPriority )
 		return;
 	}
 
-	if (m_AnimOverlay[iLayer].m_nPriority == iPriority)
+	auto &vecAnimOverlay = m_AnimOverlay.GetForModify();
+
+	if (vecAnimOverlay[iLayer].m_nPriority == iPriority)
 	{
 		return;
 	}
 
 	// look for an open slot and for existing layers that are lower priority
 	int i;
-	for (i = 0; i < m_AnimOverlay.Count(); i++)
+	for (i = 0; i < vecAnimOverlay.Count(); i++)
 	{
-		if ( m_AnimOverlay[i].IsActive() )
+		if ( vecAnimOverlay[i].IsActive() )
 		{
-			if (m_AnimOverlay[i].m_nOrder > m_AnimOverlay[iLayer].m_nOrder)
+			if (vecAnimOverlay[i].m_nOrder > vecAnimOverlay[iLayer].m_nOrder)
 			{
-				m_AnimOverlay[i].m_nOrder--;
+				CAnimationLayer &layer = vecAnimOverlay[i];
+				layer.m_nOrder--;
 			}
 		}
 	}
 
 	int iNewOrder = 0;
-	for (i = 0; i < m_AnimOverlay.Count(); i++)
+	for (i = 0; i < vecAnimOverlay.Count(); i++)
 	{
-		if ( i != iLayer && m_AnimOverlay[i].IsActive() )
+		if ( i != iLayer && vecAnimOverlay[i].IsActive() )
 		{
-			if (m_AnimOverlay[i].m_nPriority <= iPriority)
+			if (vecAnimOverlay[i].m_nPriority <= iPriority)
 			{
-				iNewOrder = MAX( iNewOrder, m_AnimOverlay[i].m_nOrder + 1 );
+				iNewOrder = MAX( iNewOrder, vecAnimOverlay[i].m_nOrder + 1 );
 			}
 		}
 	}
 
-	for (i = 0; i < m_AnimOverlay.Count(); i++)
+	for (i = 0; i < vecAnimOverlay.Count(); i++)
 	{
-		if ( i != iLayer && m_AnimOverlay[i].IsActive() )
+		if ( i != iLayer && vecAnimOverlay[i].IsActive() )
 		{
-			if ( m_AnimOverlay[i].m_nOrder >= iNewOrder)
+			if ( vecAnimOverlay[i].m_nOrder >= iNewOrder)
 			{
-				m_AnimOverlay[i].m_nOrder++;
+				CAnimationLayer &layer = vecAnimOverlay[i];
+				layer.m_nOrder++;
 			}
 		}
 	}
 
-	m_AnimOverlay[iLayer].m_nOrder = iNewOrder;
-	m_AnimOverlay[iLayer].m_nPriority = iPriority;
-	m_AnimOverlay[iLayer].MarkActive( );
+	CAnimationLayer &layer = vecAnimOverlay[iLayer];
+	layer.m_nOrder = iNewOrder;
+	layer.m_nPriority = iPriority;
+	layer.MarkActive( );
 
 	VerifyOrder();
 
@@ -814,9 +829,10 @@ void CBaseAnimatingOverlay::RestartGesture( Activity activity, bool addifmissing
 		return;
 	}
 
-	m_AnimOverlay[ idx ].m_flCycle = 0.0f;
-	m_AnimOverlay[ idx ].m_flPrevCycle = 0.0f;
-	m_AnimOverlay[ idx ].m_flLastEventCheck = 0.0f;
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( idx );
+	layer.m_flCycle = 0.0f;
+	layer.m_flPrevCycle = 0.0f;
+	layer.m_flLastEventCheck = 0.0f;
 }
 
 //-----------------------------------------------------------------------------
@@ -855,8 +871,10 @@ void CBaseAnimatingOverlay::SetLayerCycle( int iLayer, float flCycle )
 	{
 		flCycle = clamp( flCycle, 0.0f, 1.0f );
 	}
-	m_AnimOverlay[iLayer].m_flCycle = flCycle;
-	m_AnimOverlay[iLayer].MarkActive( );
+
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+	layer.m_flCycle = flCycle;
+	layer.MarkActive( );
 }
 
 
@@ -873,10 +891,12 @@ void CBaseAnimatingOverlay::SetLayerCycle( int iLayer, float flCycle, float flPr
 		flCycle = clamp( flCycle, 0.0f, 1.0f );
 		flPrevCycle = clamp( flPrevCycle, 0.0f, 1.0f );
 	}
-	m_AnimOverlay[iLayer].m_flCycle = flCycle;
-	m_AnimOverlay[iLayer].m_flPrevCycle = flPrevCycle;
-	m_AnimOverlay[iLayer].m_flLastEventCheck = flPrevCycle;
-	m_AnimOverlay[iLayer].MarkActive( );
+
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+	layer.m_flCycle = flCycle;
+	layer.m_flPrevCycle = flPrevCycle;
+	layer.m_flLastEventCheck = flPrevCycle;
+	layer.MarkActive( );
 }
 
 //-----------------------------------------------------------------------------
@@ -892,10 +912,12 @@ void CBaseAnimatingOverlay::SetLayerCycle( int iLayer, float flCycle, float flPr
 		flCycle = clamp( flCycle, 0.0f, 1.0f );
 		flPrevCycle = clamp( flPrevCycle, 0.0f, 1.0f );
 	}
-	m_AnimOverlay[iLayer].m_flCycle = flCycle;
-	m_AnimOverlay[iLayer].m_flPrevCycle = flPrevCycle;
-	m_AnimOverlay[iLayer].m_flLastEventCheck = flLastEventCheck;
-	m_AnimOverlay[iLayer].MarkActive( );
+
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+	layer.m_flCycle = flCycle;
+	layer.m_flPrevCycle = flPrevCycle;
+	layer.m_flLastEventCheck = flLastEventCheck;
+	layer.MarkActive( );
 }
 
 //-----------------------------------------------------------------------------
@@ -919,7 +941,8 @@ void CBaseAnimatingOverlay::SetLayerPlaybackRate( int iLayer, float flPlaybackRa
 
 	Assert( flPlaybackRate > -1.0 && flPlaybackRate < 40.0);
 
-	m_AnimOverlay[iLayer].m_flPlaybackRate = flPlaybackRate;
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+	layer.m_flPlaybackRate = flPlaybackRate;
 }
 
 //-----------------------------------------------------------------------------
@@ -931,8 +954,10 @@ void CBaseAnimatingOverlay::SetLayerWeight( int iLayer, float flWeight )
 		return;
 
 	flWeight = clamp( flWeight, 0.0f, 1.0f );
-	m_AnimOverlay[iLayer].m_flWeight = flWeight;
-	m_AnimOverlay[iLayer].MarkActive( );
+
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+	layer.m_flWeight = flWeight;
+	layer.MarkActive( );
 }
 
 
@@ -956,7 +981,8 @@ void CBaseAnimatingOverlay::SetLayerBlendIn( int iLayer, float flBlendIn )
 	if (!IsValidLayer( iLayer ))
 		return;
 
-	m_AnimOverlay[iLayer].m_flBlendIn = flBlendIn;
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+	layer.m_flBlendIn = flBlendIn;
 }
 
 //-----------------------------------------------------------------------------
@@ -967,7 +993,8 @@ void CBaseAnimatingOverlay::SetLayerBlendOut( int iLayer, float flBlendOut )
 	if (!IsValidLayer( iLayer ))
 		return;
 
-	m_AnimOverlay[iLayer].m_flBlendOut = flBlendOut;
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+	layer.m_flBlendOut = flBlendOut;
 }
 
 //-----------------------------------------------------------------------------
@@ -978,13 +1005,15 @@ void CBaseAnimatingOverlay::SetLayerAutokill( int iLayer, bool bAutokill )
 	if (!IsValidLayer( iLayer ))
 		return;
 
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+
 	if (bAutokill)
 	{
-		m_AnimOverlay[iLayer].m_fFlags |= ANIM_LAYER_AUTOKILL;
+		layer.m_fFlags |= ANIM_LAYER_AUTOKILL;
 	}
 	else
 	{
-		m_AnimOverlay[iLayer].m_fFlags &= ~ANIM_LAYER_AUTOKILL;
+		layer.m_fFlags &= ~ANIM_LAYER_AUTOKILL;
 	}
 }
 
@@ -997,7 +1026,8 @@ void CBaseAnimatingOverlay::SetLayerLooping( int iLayer, bool bLooping )
 	if (!IsValidLayer( iLayer ))
 		return;
 
-	m_AnimOverlay[iLayer].m_bLooping = bLooping;
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+	layer.m_bLooping = bLooping;
 }
 
 //-----------------------------------------------------------------------------
@@ -1008,13 +1038,15 @@ void CBaseAnimatingOverlay::SetLayerNoEvents( int iLayer, bool bNoEvents )
 	if (!IsValidLayer( iLayer ))
 		return;
 
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+
 	if (bNoEvents)
 	{
-		m_AnimOverlay[iLayer].m_fFlags |= ANIM_LAYER_NOEVENTS;
+		layer.m_fFlags |= ANIM_LAYER_NOEVENTS;
 	}
 	else
 	{
-		m_AnimOverlay[iLayer].m_fFlags &= ~ANIM_LAYER_NOEVENTS;
+		layer.m_fFlags &= ~ANIM_LAYER_NOEVENTS;
 	}
 }
 
@@ -1052,18 +1084,20 @@ void CBaseAnimatingOverlay::RemoveLayer( int iLayer, float flKillRate, float flK
 	if (!IsValidLayer( iLayer ))
 		return;
 
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+
 	if (flKillRate > 0)
 	{
-		m_AnimOverlay[iLayer].m_flKillRate = m_AnimOverlay[iLayer].m_flWeight / flKillRate;
+		layer.m_flKillRate = layer.m_flWeight / flKillRate;
 	}
 	else
 	{
-		m_AnimOverlay[iLayer].m_flKillRate = 100;
+		layer.m_flKillRate = 100;
 	}
 
-	m_AnimOverlay[iLayer].m_flKillDelay = flKillDelay;
+	layer.m_flKillDelay = flKillDelay;
 
-	m_AnimOverlay[iLayer].KillMe();
+	layer.KillMe();
 }
 
 void CBaseAnimatingOverlay::FastRemoveLayer( int iLayer )
@@ -1076,33 +1110,40 @@ void CBaseAnimatingOverlay::FastRemoveLayer( int iLayer )
 	{
 		if ((m_AnimOverlay[ j ].IsActive()) && m_AnimOverlay[ j ].m_nOrder > m_AnimOverlay[ iLayer ].m_nOrder)
 		{
-			m_AnimOverlay[ j ].m_nOrder--;
+			CAnimationLayer &layer = m_AnimOverlay.GetForModify( j );
+			layer.m_nOrder--;
 		}
 	}
-	m_AnimOverlay[ iLayer ].Init( this );
+
+	CAnimationLayer &layer = m_AnimOverlay.GetForModify( iLayer );
+	layer.Init( this );
 
 	VerifyOrder();
 }
 
-CAnimationLayer *CBaseAnimatingOverlay::GetAnimOverlay( int iIndex )
+const CAnimationLayer *CBaseAnimatingOverlay::GetAnimOverlay( int iIndex ) const
 {
 	iIndex = clamp( iIndex, 0, m_AnimOverlay.Count()-1 );
 
 	return &m_AnimOverlay[iIndex];
 }
 
+CAnimationLayer *CBaseAnimatingOverlay::GetAnimOverlayForModify( int iIndex )
+{
+	iIndex = clamp( iIndex, 0, m_AnimOverlay.Count()-1 );
+
+	return &m_AnimOverlay.GetForModify(iIndex);
+}
 
 void CBaseAnimatingOverlay::SetNumAnimOverlays( int num )
 {
 	if ( m_AnimOverlay.Count() < num )
 	{
 		m_AnimOverlay.AddMultipleToTail( num - m_AnimOverlay.Count() );
-		NetworkStateChanged();
 	}
 	else if ( m_AnimOverlay.Count() > num )
 	{
 		m_AnimOverlay.RemoveMultiple( num, m_AnimOverlay.Count() - num );
-		NetworkStateChanged();
 	}
 }
 

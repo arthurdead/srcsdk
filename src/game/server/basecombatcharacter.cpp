@@ -1471,7 +1471,7 @@ void CBaseCombatCharacter::FixupBurningServerRagdoll( CBaseEntity *pRagdoll )
  		pRagdoll->SetEffectEntity( pFireChild );
 
 		color24 color = GetRenderColor();
-		pRagdoll->SetRenderColor( color.r, color.g, color.b );
+		pRagdoll->SetRenderColor( color.r(), color.g(), color.b() );
 	}
 }
 

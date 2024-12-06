@@ -178,20 +178,15 @@ static void GetFadeParms( const CCommand &args, float &flTime, color32 &clrFade)
 		flTime = atof( args[1] );
 	}
 	
-	clrFade.r = 0;
-	clrFade.g = 0;
-	clrFade.b = 0;
-	clrFade.a = 255;
+	clrFade.SetColor( 0, 0, 0, 255 );
 
 	if ( args.ArgC() > 4 )
 	{
-		clrFade.r = atoi( args[2] );
-		clrFade.g = atoi( args[3] );
-		clrFade.b = atoi( args[4] );
+		clrFade.SetColor( atoi( args[2] ), atoi( args[3] ), atoi( args[4] ) );
 
 		if ( args.ArgC() == 5 )
 		{
-			clrFade.a = atoi( args[5] );
+			clrFade.SetA( atoi( args[5] ) );
 		}
 	}
 }

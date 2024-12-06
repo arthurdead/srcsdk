@@ -277,7 +277,7 @@ public:
 
 private:
 
-	CUtlVector< CHandle< CBaseFlex > >		m_hActorList;
+	CNetworkUtlVector( CHandle< CBaseFlex >, m_hActorList );
 	CUtlVector< CHandle< CBaseEntity > >	m_hRemoveActorList;
 
 private:

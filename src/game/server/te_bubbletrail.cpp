@@ -12,7 +12,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern short	g_sModelIndexBubbles;// holds the index for the bubbles model
+extern modelindex_t	g_sModelIndexBubbles;// holds the index for the bubbles model
 
 enum
 {
@@ -40,7 +40,7 @@ public:
 	CNetworkVector( m_vecMins );
 	CNetworkVector( m_vecMaxs );
 	CNetworkVar( float, m_flWaterZ );
-	CNetworkVar( int, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	CNetworkVar( int, m_nCount );
 	CNetworkVar( float, m_fSpeed );
 };
@@ -55,7 +55,7 @@ CTEBubbleTrail::CTEBubbleTrail( const char *name ) :
 	m_vecMins.Init();
 	m_vecMaxs.Init();
 	m_flWaterZ = 0.0;
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nCount = 0;
 	m_fSpeed = 0;
 }
@@ -126,7 +126,7 @@ static CTEBubbleTrail g_TEBubbleTrail( "Bubble Trail" );
 //			speed - 
 //-----------------------------------------------------------------------------
 void TE_BubbleTrail( IRecipientFilter& filter, float delay,
-	const Vector* mins, const Vector* maxs, float flWaterZ, int modelindex, int count, float speed )
+	const Vector* mins, const Vector* maxs, float flWaterZ, modelindex_t modelindex, int count, float speed )
 {
 	g_TEBubbleTrail.m_vecMins = *mins;
 	g_TEBubbleTrail.m_vecMaxs = *maxs;

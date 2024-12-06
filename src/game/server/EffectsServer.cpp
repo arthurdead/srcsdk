@@ -14,9 +14,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern short		g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
-extern short		g_sModelIndexBloodDrop;		// (in combatweapon.cpp) holds the sprite index for the initial blood
-extern short		g_sModelIndexBloodSpray;	// (in combatweapon.cpp) holds the sprite index for splattered blood
+extern modelindex_t g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
+extern modelindex_t g_sModelIndexBloodDrop;		// (in combatweapon.cpp) holds the sprite index for the initial blood
+extern modelindex_t g_sModelIndexBloodSpray;	// (in combatweapon.cpp) holds the sprite index for splattered blood
 
 
 //-----------------------------------------------------------------------------
@@ -29,12 +29,12 @@ public:
 	virtual ~CEffectsServer();
 
 	// Members of the IEffect interface
-	virtual void Beam( const Vector &Start, const Vector &End, int nModelIndex, 
-		int nHaloIndex, unsigned char frameStart, unsigned char frameRate,
+	virtual void Beam( const Vector &Start, const Vector &End, modelindex_t nModelIndex, 
+		modelindex_t nHaloIndex, unsigned char frameStart, unsigned char frameRate,
 		float flLife, unsigned char width, unsigned char endWidth, unsigned char fadeLength, 
 		unsigned char noise, unsigned char red, unsigned char green,
 		unsigned char blue, unsigned char brightness, unsigned char speed);
-	virtual void Smoke( const Vector &origin, int mModel, float flScale, float flFramerate );
+	virtual void Smoke( const Vector &origin, modelindex_t mModel, float flScale, float flFramerate );
 	virtual void Sparks( const Vector &position, int nMagnitude = 1, int nTrailLength = 1, const Vector *pvecDir = NULL );
 	virtual void Dust( const Vector &pos, const Vector &dir, float size, float speed );
 	virtual void MuzzleFlash( const Vector &origin, const QAngle &angles, float scale, int type );
@@ -100,8 +100,8 @@ CEffectsServer::~CEffectsServer()
 //-----------------------------------------------------------------------------
 // Generates a beam
 //-----------------------------------------------------------------------------
-void CEffectsServer::Beam( const Vector &vecStart, const Vector &vecEnd, int nModelIndex, 
-	int nHaloIndex, unsigned char frameStart, unsigned char frameRate,
+void CEffectsServer::Beam( const Vector &vecStart, const Vector &vecEnd, modelindex_t nModelIndex, 
+	modelindex_t nHaloIndex, unsigned char frameStart, unsigned char frameRate,
 	float flLife, unsigned char width, unsigned char endWidth, unsigned char fadeLength, 
 	unsigned char noise, unsigned char red, unsigned char green,
 	unsigned char blue, unsigned char brightness, unsigned char speed)
@@ -119,7 +119,7 @@ void CEffectsServer::Beam( const Vector &vecStart, const Vector &vecEnd, int nMo
 //-----------------------------------------------------------------------------
 // Generates various tempent effects
 //-----------------------------------------------------------------------------
-void CEffectsServer::Smoke( const Vector &origin, int mModel, float flScale, float flFramerate )
+void CEffectsServer::Smoke( const Vector &origin, modelindex_t mModel, float flScale, float flFramerate )
 {
 	CPVSFilter filter( origin );
 	if ( !SuppressTE( filter ) )

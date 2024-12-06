@@ -33,7 +33,7 @@ ConVar	cl_phys_props_respawnrate( "cl_phys_props_respawnrate", "60", 0, "Time, i
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-static int PropBreakablePrecacheAll( int modelIndex )
+static int PropBreakablePrecacheAll( modelindex_t modelIndex )
 {
 	CUtlVector<breakmodel_t> list;
 

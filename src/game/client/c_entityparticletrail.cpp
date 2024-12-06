@@ -144,9 +144,7 @@ void C_EntityParticleTrail::AddParticle( float flInitialDeltaTime, const Vector 
 	pParticle->m_flLifetime		= flInitialDeltaTime;
 	pParticle->m_flDieTime		= m_Info.m_flLifetime;
 
-	pParticle->m_uchColor[0]	= 64;
-	pParticle->m_uchColor[1]	= 140;
-	pParticle->m_uchColor[2]	= 225;
+	pParticle->m_uchColor.SetColor( 64, 140, 225 );
 	pParticle->m_uchStartAlpha	= random_valve->RandomInt( 64, 64 );
 	pParticle->m_uchEndAlpha	= 0;
 
@@ -218,7 +216,7 @@ inline void C_EntityParticleTrail::RenderParticles( CParticleRenderIterator *pIt
 		TransformParticle( ParticleMgr()->GetModelView(), pParticle->m_Pos, tPos );
 		float sortKey = tPos.z;
 
-		Vector	color = Vector( pParticle->m_uchColor[0] / 255.0f, pParticle->m_uchColor[1] / 255.0f, pParticle->m_uchColor[2] / 255.0f );
+		Vector	color = Vector( pParticle->m_uchColor.r() / 255.0f, pParticle->m_uchColor.g() / 255.0f, pParticle->m_uchColor.b() / 255.0f );
 		float alpha = Lerp( t, pParticle->m_uchStartAlpha / 255.0f, pParticle->m_uchEndAlpha / 255.0f );
 		float flSize = Lerp( t, pParticle->m_uchStartSize, pParticle->m_uchEndSize );
 

@@ -1384,7 +1384,7 @@ bool TransferPhysicsObject( CBaseEntity *pFrom, CBaseEntity *pTo, bool wakeUp )
 static CBaseEntity *CreateSimplePhysicsObject( CBaseEntity *pEntity, bool createAsleep, bool createAsDebris )
 {
 	CBaseEntity *pPhysEntity = NULL;
-	int modelindex = pEntity->GetModelIndex();
+	modelindex_t modelindex = pEntity->GetModelIndex();
 	const model_t *model = modelinfo->GetModel( modelindex );
 	if ( model && modelinfo->GetModelType(model) == mod_brush )
 	{
@@ -1417,7 +1417,7 @@ static CBaseEntity *CreateSimplePhysicsObject( CBaseEntity *pEntity, bool create
 static CBaseEntity *CreateConventionalPhysicsObject( CBaseEntity *pEntity, bool createAsleep, bool createAsDebris )
 {
 	CBaseEntity *pPhysEntity = NULL;
-	int modelindex = pEntity->GetModelIndex();
+	modelindex_t modelindex = pEntity->GetModelIndex();
 	const model_t *model = modelinfo->GetModel( modelindex );
 	if ( model && modelinfo->GetModelType(model) == mod_brush )
 	{
@@ -1562,7 +1562,7 @@ void CPhysConvert::InputConvertTarget( inputdata_t &inputdata )
 			pPhys->SetRenderMode( pEntity->GetRenderMode() );
 			pPhys->SetRenderFX( pEntity->GetRenderFX() );
 			const color24 rclr = pEntity->GetRenderColor();
-			pPhys->SetRenderColor(rclr.r, rclr.g, rclr.b);
+			pPhys->SetRenderColor(rclr.r(), rclr.g(), rclr.b());
 			pPhys->SetRenderAlpha( pEntity->GetRenderAlpha() );
 			if (pEntity->GetBaseAnimating() /*&& pPhys->GetBaseAnimating()*/)
 			{

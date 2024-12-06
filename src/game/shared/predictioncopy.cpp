@@ -303,9 +303,9 @@ void CPredictionCopy::DescribeInt( difftype_t dt, int *outvalue, const int *inva
 
 #if defined( CLIENT_DLL )
 	bool described = false;
-	if ( m_pCurrentField->flags & FTYPEDESC_MODELINDEX )
+	if ( m_pCurrentField->fieldType == FIELD_MODELINDEX || m_pCurrentField->flags & FTYPEDESC_MODELINDEX )
 	{
-		int modelindex = outvalue[0];
+		modelindex_t modelindex = *reinterpret_cast<modelindex_t *>(&outvalue[0]);
 		model_t const *m = modelinfo->GetModel( modelindex );
 		if ( m )
 		{
@@ -348,9 +348,9 @@ void CPredictionCopy::WatchInt( difftype_t dt, int *outvalue, const int *invalue
 
 #if defined( CLIENT_DLL )
 	bool described = false;
-	if ( m_pCurrentField->flags & FTYPEDESC_MODELINDEX )
+	if ( m_pCurrentField->fieldType == FIELD_MODELINDEX || m_pCurrentField->flags & FTYPEDESC_MODELINDEX )
 	{
-		int modelindex = outvalue[0];
+		modelindex_t modelindex = *reinterpret_cast<modelindex_t *>(&outvalue[0]);
 		model_t const *m = modelinfo->GetModel( modelindex );
 		if ( m )
 		{

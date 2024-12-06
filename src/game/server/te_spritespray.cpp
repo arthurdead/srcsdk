@@ -16,7 +16,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern short	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
+extern modelindex_t	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
 
 //-----------------------------------------------------------------------------
 // Purpose: Dispatches Sprite Spray tempentity
@@ -36,7 +36,7 @@ public:
 public:
 	CNetworkVector( m_vecOrigin );
 	CNetworkVector( m_vecDirection );
-	CNetworkVar( int, m_nModelIndex );
+	CNetworkModelIndex( m_nModelIndex );
 	CNetworkVar( int, m_nSpeed );
 	CNetworkVar( float, m_fNoise );
 	CNetworkVar( int, m_nCount );
@@ -51,7 +51,7 @@ CTESpriteSpray::CTESpriteSpray( const char *name ) :
 {
 	m_vecOrigin.Init();
 	m_vecDirection.Init();
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_fNoise = 0;
 	m_nSpeed = 0;
 	m_nCount = 0;
@@ -122,7 +122,7 @@ static CTESpriteSpray g_TESpriteSpray( "Sprite Spray" );
 //			count - 
 //-----------------------------------------------------------------------------
 void TE_SpriteSpray( IRecipientFilter& filter, float delay,
-	const Vector *pos, const Vector *dir, int modelindex, int speed, float noise, int count )
+	const Vector *pos, const Vector *dir, modelindex_t modelindex, int speed, float noise, int count )
 {
 	g_TESpriteSpray.m_vecOrigin		= *pos;
 	g_TESpriteSpray.m_vecDirection	= *dir;

@@ -35,7 +35,7 @@ public:
 	Vector			m_vecOrigin;
 	QAngle			m_angRotation;
 	Vector			m_vecVelocity;
-	int				m_nModelIndex;
+	modelindex_t m_nModelIndex;
 	int				m_nSkin;
 	int				m_nFlags;
 	int				m_nEffects;
@@ -66,7 +66,7 @@ C_TEPhysicsProp::C_TEPhysicsProp( void )
 	m_vecOrigin.Init();
 	m_angRotation.Init();
 	m_vecVelocity.Init();
-	m_nModelIndex		= 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_nSkin				= 0;
 	m_nFlags			= 0;
 	m_nEffects			= 0;
@@ -84,14 +84,14 @@ C_TEPhysicsProp::~C_TEPhysicsProp( void )
 // Recording 
 //-----------------------------------------------------------------------------
 static inline void RecordPhysicsProp( const Vector& start, const QAngle &angles, 
-	const Vector& vel, int nModelIndex, int flags, int nSkin, int nEffects )
+	const Vector& vel, modelindex_t nModelIndex, int flags, int nSkin, int nEffects )
 {
 	if ( !ToolsEnabled() )
 		return;
 
 	if ( clienttools->IsInRecordingMode() )
 	{
-		const model_t* pModel = (nModelIndex != 0) ? modelinfo->GetModel( nModelIndex ) : NULL;
+		const model_t* pModel = (nModelIndex.IsValid()) ? modelinfo->GetModel( nModelIndex ) : NULL;
 		const char *pModelName = pModel ? modelinfo->GetModelName( pModel ) : "";
 
 		KeyValues *msg = new KeyValues( "TempEntity" );
@@ -123,7 +123,7 @@ static inline void RecordPhysicsProp( const Vector& start, const QAngle &angles,
 // Purpose: 
 //-----------------------------------------------------------------------------
 void TE_PhysicsProp( IRecipientFilter& filter, float delay,
-	int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects )
+	modelindex_t modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects )
 {
 	tempents->PhysicsProp( modelindex, skin, pos, angles, vel, flags, effects );
 	RecordPhysicsProp( pos, angles, vel, modelindex, flags, skin, effects );
@@ -156,7 +156,7 @@ void TE_PhysicsProp( IRecipientFilter& filter, float delay, KeyValues *pKeyValue
 	vecVel.y = pKeyValues->GetFloat( "vely" );
 	vecVel.z = pKeyValues->GetFloat( "velz" );
 	const char *pModelName = pKeyValues->GetString( "model" );
-	int nModelIndex = pModelName[0] ? modelinfo->GetModelIndex( pModelName ) : 0;
+	modelindex_t nModelIndex = pModelName[0] ? modelinfo->GetModelIndex( pModelName ) : INVALID_MODEL_INDEX;
 	int flags = pKeyValues->GetInt( "breakmodel" );
 	int nEffects = pKeyValues->GetInt( "effects" );
 

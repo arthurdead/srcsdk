@@ -1914,7 +1914,7 @@ void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
 	{
 		CPVSFilter filter( GetAbsOrigin() );
 		UserMessageBegin( filter, STRING( m_iszBreakModelMessage ) );
-		WRITE_SHORT( GetModelIndex() );
+		WRITE_MODELINDEX( GetModelIndex() );
 		WRITE_VEC3COORD( GetAbsOrigin() );
 		WRITE_ANGLES( GetAbsAngles() );
 		MessageEnd();
@@ -4196,7 +4196,7 @@ int PropBreakablePrecacheAll( string_t modelName )
 		return iBreakables;
 	}
 
-	int modelIndex = CBaseEntity::PrecacheModel( STRING(modelName) );
+	modelindex_t modelIndex = CBaseEntity::PrecacheModel( STRING(modelName) );
 
 	CUtlVector<breakmodel_t> list;
 
@@ -4208,7 +4208,7 @@ int PropBreakablePrecacheAll( string_t modelName )
 	for ( int i = 0; i < iBreakables; i++ )
 	{
 		string_t breakModelName = AllocPooledString(list[i].modelName);
-		if ( modelIndex <= 0 )
+		if ( !modelIndex.IsValid() )
 		{
 			iBreakables--;
 			continue;
@@ -4246,8 +4246,8 @@ bool PropBreakableCapEdictsOnCreateAll( CUtlVector<breakmodel_t> &list, IPhysics
 			{
 				for ( int i = 0; i < list.Count(); i++ )
 				{
-					int modelIndex = modelinfo->GetModelIndex( list[i].modelName );
-					if ( modelIndex <= 0 )
+					modelindex_t modelIndex = modelinfo->GetModelIndex( list[i].modelName );
+					if ( !modelIndex.IsValid() )
 						continue;
 					numToCreate++;
 				}
@@ -4267,7 +4267,7 @@ bool PropBreakableCapEdictsOnCreateAll( CUtlVector<breakmodel_t> &list, IPhysics
 	return ( !numToCreate || ( nCurrentEntityCount + numToCreate + BREATHING_ROOM < MAX_EDICTS ) );
 }
 
-bool PropBreakableCapEdictsOnCreateAll(int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CBaseEntity *pEntity, int iPrecomputedBreakableCount = -1 )
+bool PropBreakableCapEdictsOnCreateAll(modelindex_t modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params, CBaseEntity *pEntity, int iPrecomputedBreakableCount = -1 )
 {
 	CUtlVector<breakmodel_t> list;
 	BreakModelList( list, modelindex, params.defBurstScale, params.defCollisionGroup );
@@ -6387,7 +6387,7 @@ void CPropDoorRotating::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &inf
 			pPhys->SetRenderMode( GetRenderMode() );
 			pPhys->SetRenderFX( GetRenderFX() );
 			const color24 rclr = GetRenderColor();
-			pPhys->SetRenderColor(rclr.r, rclr.g, rclr.b);
+			pPhys->SetRenderColor(rclr.r(), rclr.g(), rclr.b());
 			pPhys->SetRenderAlpha( GetRenderAlpha() );
 
 			CBaseAnimating *pPhysAnimating = pPhys->GetBaseAnimating();

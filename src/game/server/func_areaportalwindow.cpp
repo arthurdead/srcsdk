@@ -48,7 +48,7 @@ END_MAPENTITY()
 
 CFuncAreaPortalWindow::CFuncAreaPortalWindow()
 {
-	m_iBackgroundModelIndex = -1;
+	m_iBackgroundModelIndex = INVALID_MODEL_INDEX;
 }
 
 

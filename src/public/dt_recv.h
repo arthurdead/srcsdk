@@ -309,6 +309,13 @@ inline bool RecvTable::IsInMainList() const
 #define RECVINFO_ARRAYELEM(varName, i) \
 	DT_VARNAME_ARRAYELEM(varName, i), (offsetof(currentRecvDTClass, varName) + (sizeof(((currentRecvDTClass*)0)->varName[i]) * i)), sizeof(((currentRecvDTClass*)0)->varName[i])
 
+#define RECVINFO_STRUCTELEM(structVarName, varName) \
+	DT_VARNAME_STRUCTELEM(structVarName, varName), offsetof(currentRecvDTClass, structVarName.varName), sizeof(((currentRecvDTClass*)0)->structVarName.varName)
+#define RECVINFO_NESTEDSTRUCTELEM(structVarName, structVarName2, varName) \
+	DT_VARNAME_NESTEDSTRUCTELEM(structVarName, structVarName2, varName), offsetof(currentRecvDTClass, structVarName.structVarName2.varName), sizeof(((currentRecvDTClass*)0)->structVarName.structVarName2.varName)
+#define RECVINFO_STRUCTARRAYELEM(structVarName, varName, i) \
+	DT_VARNAME_STRUCTELEM_ARRAYELEM(structVarName, varName, i), (offsetof(currentRecvDTClass, structVarName.varName) + (sizeof(((currentRecvDTClass*)0)->structVarName.varName[i]) * i)), sizeof(((currentRecvDTClass*)0)->structVarName.varName[i])
+
 #define RECVINFO_NAME(varName, remoteVarName) \
 	DT_VARNAME(remoteVarName), offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName)
 #define RECVINFO_ARRAYELEM_NAME(varName, i, remoteVarName) \

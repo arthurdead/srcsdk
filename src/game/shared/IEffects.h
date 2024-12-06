@@ -34,8 +34,8 @@ public:
 	//
 	// Particle effects
 	//
-	virtual void Beam( const Vector &Start, const Vector &End, int nModelIndex, 
-		int nHaloIndex, unsigned char frameStart, unsigned char frameRate,
+	virtual void Beam( const Vector &Start, const Vector &End, modelindex_t nModelIndex, 
+		modelindex_t nHaloIndex, unsigned char frameStart, unsigned char frameRate,
 		float flLife, unsigned char width, unsigned char endWidth, unsigned char fadeLength, 
 		unsigned char noise, unsigned char red, unsigned char green,
 		unsigned char blue, unsigned char brightness, unsigned char speed) = 0;
@@ -46,7 +46,7 @@ public:
 	//			scale - Sprite scale * 10.
 	//			framerate - Framerate at which to animate the smoke sprites.
 	//-----------------------------------------------------------------------------
-	virtual void Smoke( const Vector &origin, int modelIndex, float scale, float framerate ) = 0;
+	virtual void Smoke( const Vector &origin, modelindex_t modelIndex, float scale, float framerate ) = 0;
 
 	virtual void Sparks( const Vector &position, int nMagnitude = 1, int nTrailLength = 1, const Vector *pvecDir = NULL ) = 0;
 

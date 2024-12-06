@@ -350,8 +350,8 @@ bool CMapMesh::GenerateDispVertsAndTris( void *fileContent, CUtlVector<float> &v
 //-----------------------------------------------------------------------------
 vcollide_t *LoadModelPhysCollide( const char *pModelName )
 {
-	int modelindex = CBaseEntity::PrecacheModel( pModelName );
-	if( modelindex == -1 )
+	modelindex_t modelindex = CBaseEntity::PrecacheModel( pModelName );
+	if( !modelindex )
 	{
 		Warning("LoadModelPhysCollide: unable to load model %s\n", pModelName);
 		return NULL;

@@ -33,7 +33,7 @@ public:
 
 public:
 	Vector			m_vecOrigin;
-	int				m_nModelIndex;
+	modelindex_t m_nModelIndex;
 	float			m_fScale;
 	int				m_nBrightness;
 };
@@ -56,7 +56,7 @@ END_RECV_TABLE()
 C_TESprite::C_TESprite( void )
 {
 	m_vecOrigin.Init();
-	m_nModelIndex = 0;
+	m_nModelIndex = INVALID_MODEL_INDEX;
 	m_fScale = 0;
 	m_nBrightness = 0;
 }
@@ -72,7 +72,7 @@ C_TESprite::~C_TESprite( void )
 //-----------------------------------------------------------------------------
 // Recording 
 //-----------------------------------------------------------------------------
-static inline void RecordSprite( const Vector& start, int nModelIndex, 
+static inline void RecordSprite( const Vector& start, modelindex_t nModelIndex, 
 								 float flScale, int nBrightness )
 {
 	if ( !ToolsEnabled() )
@@ -80,7 +80,7 @@ static inline void RecordSprite( const Vector& start, int nModelIndex,
 
 	if ( clienttools->IsInRecordingMode() )
 	{
-		const model_t* pModel = (nModelIndex != 0) ? modelinfo->GetModel( nModelIndex ) : NULL;
+		const model_t* pModel = (nModelIndex.IsValid()) ? modelinfo->GetModel( nModelIndex ) : NULL;
 		const char *pModelName = pModel ? modelinfo->GetModelName( pModel ) : "";
 
 		KeyValues *msg = new KeyValues( "TempEntity" );
@@ -114,7 +114,7 @@ void C_TESprite::PostDataUpdate( DataUpdateType_t updateType )
 }
 
 void TE_Sprite( IRecipientFilter& filter, float delay,
-	const Vector* pos, int modelindex, float size, int brightness )
+	const Vector* pos, modelindex_t modelindex, float size, int brightness )
 {
 	float a = ( 1.0 / 255.0 ) * brightness;
 	tempents->TempSprite( *pos, vec3_origin, size, modelindex, kRenderTransAdd, 0, a, 0, FTENT_SPRANIMATE );
@@ -128,7 +128,7 @@ void TE_Sprite( IRecipientFilter& filter, float delay, KeyValues *pKeyValues )
 	vecOrigin.y = pKeyValues->GetFloat( "originy" );
 	vecOrigin.z = pKeyValues->GetFloat( "originz" );
 	const char *pModelName = pKeyValues->GetString( "model" );
-	int nModelIndex = pModelName[0] ? modelinfo->GetModelIndex( pModelName ) : 0;
+	modelindex_t nModelIndex = pModelName[0] ? modelinfo->GetModelIndex( pModelName ) : INVALID_MODEL_INDEX;
 	float flScale = pKeyValues->GetFloat( "scale" );
 	int nBrightness = pKeyValues->GetInt( "brightness" );
 

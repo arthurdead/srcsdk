@@ -33,7 +33,6 @@ DECLARE_LOGGING_CHANNEL( LOG_KEYVALUES );
 
 class IBaseFileSystem;
 class CUtlBuffer;
-class Color;
 typedef void * FileHandle_t;
 class CKeyValuesGrowableStringTable;
 
@@ -346,7 +345,7 @@ private:
 		int m_iValue;
 		float m_flValue;
 		void *m_pValue;
-		unsigned char m_Color[4];
+		Color m_Color;
 	};
 	
 	char	   m_iDataType;

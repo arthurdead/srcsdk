@@ -141,7 +141,7 @@ public:
 	float		m_flStartTime;	// How long until its visible.
 	float		m_flDieTime;	// How long it lives for.
 	float		m_flLifetime;	// How long it has been alive for so far.
-	unsigned char	m_uchColor[3];
+	color24	m_uchColor;
 	unsigned char	m_uchStartAlpha;
 	unsigned char	m_uchEndAlpha;
 	unsigned char	m_uchStartSize;

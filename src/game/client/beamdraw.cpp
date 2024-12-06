@@ -124,8 +124,6 @@ void DrawHalo(IMaterial* pMaterial, const Vector& source, float scale, float con
 //-----------------------------------------------------------------------------
 void DrawSprite( const Vector &vecOrigin, float flWidth, float flHeight, color32 color )
 {
-	unsigned char pColor[4] = { color.r, color.g, color.b, color.a };
-
 	// Generate half-widths
 	flWidth *= 0.5f;
 	flHeight *= 0.5f;
@@ -159,28 +157,28 @@ void DrawSprite( const Vector &vecOrigin, float flWidth, float flHeight, color32
 
 	meshBuilder.Begin( pMesh, MATERIAL_QUADS, 1 );
 
-	meshBuilder.Color4ubv (pColor);
+	meshBuilder.Color4ubv (color);
 	meshBuilder.TexCoord2f (0, 0, 1);
 	VectorMA (vecOrigin, -flHeight, up, point);
 	VectorMA (point, -flWidth, right, point);
 	meshBuilder.Position3fv (point.Base());
 	meshBuilder.AdvanceVertex();
 
-	meshBuilder.Color4ubv (pColor);
+	meshBuilder.Color4ubv (color);
 	meshBuilder.TexCoord2f (0, 0, 0);
 	VectorMA (vecOrigin, flHeight, up, point);
 	VectorMA (point, -flWidth, right, point);
 	meshBuilder.Position3fv (point.Base());
 	meshBuilder.AdvanceVertex();
 
-	meshBuilder.Color4ubv (pColor);
+	meshBuilder.Color4ubv (color);
 	meshBuilder.TexCoord2f (0, 1, 0);
 	VectorMA (vecOrigin, flHeight, up, point);
 	VectorMA (point, flWidth, right, point);
 	meshBuilder.Position3fv (point.Base());
 	meshBuilder.AdvanceVertex();
 
-	meshBuilder.Color4ubv (pColor);
+	meshBuilder.Color4ubv (color);
 	meshBuilder.TexCoord2f (0, 1, 1);
 	VectorMA (vecOrigin, -flHeight, up, point);
 	VectorMA (point, flWidth, right, point);
